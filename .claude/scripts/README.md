@@ -60,14 +60,6 @@ refusal — against the real app, on the Table, Cards, mass-assign, and Properti
 alike, and asserts each one in `.nexus/properties.json`, the page files and the view's sidecar. It
 seeds `Collection A/Set Alpha` with its properties, view, and pages on debug port 9343.
 
-`nexus-watch.mjs` attaches to an app already running with a debug port and reads a Nexus as data:
-the registry's definitions with their options, how many files each definition resolves, a
-Collection's assigned properties, and the values its pages hold through `view:loadValues`. Given a
-gesture — one channel call, or an outside edit of a page's frontmatter key as another editor would
-make — it runs it and prints every value that moved, polling until the Nexus is still, so an
-adoption or a registration is read from the registry file and the loaded values rather than seen.
-It launches nothing and restores nothing; it reads the Nexus the app has open.
-
 `Text Property Drive/live-drive.mjs` drives the Text property end to end against the real app, in
 four groups that follow the phases that built it: the catalog and the inline field (decoding a
 foreign number or list, the spellings each commit writes, sort, filter, and the cell menu's Clear);
@@ -84,7 +76,14 @@ with its own userData and the drive's debug port, writes a screenshot of each st
 `$POMMORA_DRIVE_SHOTS` (a per-drive folder in the system temp directory otherwise), and restores
 `~/Test` when the run ends or is interrupted; it chooses native menus with System Events
 keystrokes, so the terminal needs Accessibility permission, and it refuses to send a key unless the
-app is frontmost.
+app is frontmost. Its `attach` connects to an instance already running on a debug port instead, with
+nothing to build, back up, or restore.
+
+`nexus-watch.mjs` attaches to an app already running with a debug port and reads a Nexus as data:
+the registry's definitions with their options, how many files each definition resolves, a
+Collection's assigned properties, and the values its pages hold through `view:loadValues`. Given a
+gesture — one channel call, or an outside edit of a page's frontmatter key as another editor would
+make — it runs it and prints every value that moved, polling until the Nexus is still.
 
 `loc.py` and `check-atlas.mjs` run before every commit through the versioned git hook
 `../hooks/pre-commit`, which copies the codebase audit into `Dashboard/Audit/audit.md`, runs
