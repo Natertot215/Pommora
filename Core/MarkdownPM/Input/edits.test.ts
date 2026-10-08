@@ -634,12 +634,13 @@ describe('sections and bullets', () => {
     expect(apply('a #', e)).toBe('a §')
     expect(e.selection).toBe(3)
   })
-  it('a heading, a bracket, a third hash, code, and the default leave it literal', () => {
+  it('a heading, a bracket, a link destination, a third hash, code, and the default leave it literal', () => {
     const on = { transformSections: true }
     expect(sectionSign(scanDoc('#'), 1, 1, '#', on)).toBeNull()
     expect(sectionSign(scanDoc('> #'), 3, 3, '#', on)).toBeNull()
     expect(sectionSign(scanDoc('a ##'), 4, 4, '#', on)).toBeNull()
     expect(sectionSign(scanDoc('a [^b#'), 6, 6, '#', on)).toBeNull()
+    expect(sectionSign(scanDoc('[a](Page#)'), 9, 9, '#', on)).toBeNull()
     expect(sectionSign(scanDoc('`a #`'), 4, 4, '#', on)).toBeNull()
     expect(sectionSign(scanDoc('a #'), 3, 3, '#')).toBeNull()
   })

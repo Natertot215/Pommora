@@ -110,6 +110,24 @@ describe('a heading link reads per the two heading settings', () => {
     const heading = view.dom.querySelector('.md-connection-heading-missing')
     expect(heading?.textContent).toBe('Gone')
   })
+
+  // The text a reader sees stands for the heading, so whatever it is — heading, alias, or label — reads missing with it.
+  it('an alias or a markdown label naming a missing heading reads missing; a present one does not', async () => {
+    for (const body of ['[[Alpha#Gone|the gone]]', '[the gone](Alpha#Gone)', '[the gone](#Gone)']) {
+      const view = await mountEditor({ initialBody: `## Setup\n\n${body}`, connections: conn })
+      expect(view.dom.querySelector('.md-connection-heading-missing')?.textContent).toBe('the gone')
+      await cleanupEditor()
+    }
+    for (const body of [
+      '[[Alpha#Setup|the setup]]',
+      '[the setup](Alpha#Setup)',
+      '[the setup](#Setup)',
+    ]) {
+      const view = await mountEditor({ initialBody: `## Setup\n\n${body}`, connections: conn })
+      expect(view.dom.querySelector('.md-connection-heading-missing')).toBeNull()
+      await cleanupEditor()
+    }
+  })
 })
 
 describe('a bare §Heading in prose resolves under Automatic', () => {

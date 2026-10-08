@@ -161,6 +161,63 @@ describe('the ( ) form', () => {
     expect(autocompleteQuery(doc, 5)?.form).not.toBe('target')
   })
 
+  const landed = (doc: string, edit: ReturnType<typeof commitEdit>): string => {
+    let text = doc
+    for (const c of [...edit.changes].reverse())
+      text = text.slice(0, c.from) + c.insert + text.slice(c.to)
+    return text
+  }
+
+  it('the page half queries alone, and a retarget drops the old fragment as a wikilink does', () => {
+    const doc = 'see [x](Work%20Notes#Setup) end'
+    const r = autocompleteQuery(doc, doc.indexOf('Work') + 2)!
+    expect(r.form).toBe('target')
+    expect(r.query).toBe('Work Notes')
+    expect(landed(doc, commitEdit(r, 'Other'))).toBe('see [x](Other) end')
+  })
+
+  it('after the #, the fragment form asks for the named page’s headings', () => {
+    const doc = 'see [x](Work%20Notes#Se) end'
+    const r = autocompleteQuery(doc, doc.indexOf('#Se') + 2)!
+    expect(r.form).toBe('fragment')
+    expect(r.title).toBe('Work Notes')
+    expect(r.query).toBe('Se')
+    expect(doc.slice(r.from, r.to)).toBe('Se')
+  })
+
+  it('a bare # asks for the page being written in', () => {
+    const doc = 'see [x](#) end'
+    const r = autocompleteQuery(doc, doc.indexOf('#') + 1)!
+    expect(r.form).toBe('fragment')
+    expect(r.title).toBe('')
+    expect(r.query).toBe('')
+  })
+
+  it('a # inside an address is the address’s own', () => {
+    const doc = 'see [x](https://a.com/#top) end'
+    expect(autocompleteQuery(doc, doc.indexOf('top'))?.form).toBe('target')
+  })
+
+  it('a heading commit encodes it, fills an empty label, and finishes past the )', () => {
+    const doc = 'see [](Work%20Notes#Se) end'
+    const r = autocompleteQuery(doc, doc.indexOf('#Se') + 2)!
+    const edit = commitEdit(r, 'Getting Started')
+    const text = landed(doc, edit)
+    expect(text).toBe('see [Getting Started](Work%20Notes#Getting%20Started) end')
+    expect(text.slice(edit.anchor)).toBe(' end')
+  })
+
+  it('the chevron writes the page and its # and anchors behind it', () => {
+    const doc = 'see [x](Wor) end'
+    const r = autocompleteQuery(doc, doc.indexOf('Wor') + 1)!
+    const edit = commitEdit(r, 'Work Notes', { openHeading: true })
+    const text = landed(doc, edit)
+    expect(text).toBe('see [x](Work%20Notes#) end')
+    expect(edit.opensHeading).toBe(true)
+    expect(text.slice(edit.anchor)).toBe(') end')
+    expect(autocompleteQuery(text, edit.anchor)?.form).toBe('fragment')
+  })
+
   it('commits its target percent-encoded', () => {
     expect(connectionInsert('Atomic Habits (Book)', 0, 'target').insert).toBe(
       'Atomic%20Habits%20%28Book%29',
@@ -321,6 +378,13 @@ describe('a typed § arms the section form', () => {
 
   it('a space right after the § is not a query', () => {
     expect(autocompleteQuery('see § Set', 8, false, 4)).toBeNull()
+  })
+
+  // A label is prose the way an alias is, and the scanner never reads a run inside a markdown link.
+  it('a § inside a markdown link is not armed', () => {
+    const doc = 'see [§Set](x) end'
+    const armed = doc.indexOf('§')
+    expect(autocompleteQuery(doc, armed + 4, false, armed)).toBeNull()
   })
 })
 

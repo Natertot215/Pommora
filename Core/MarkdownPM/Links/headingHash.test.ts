@@ -55,4 +55,32 @@ describe('headingHash', () => {
     })
     expect(headingHash(scanDoc('[[Alpha]] x'), 2, 10, '§')).toBeNull()
   })
+
+  it("a § typed in a markdown link's destination writes #, complete or still open", () => {
+    for (const [doc, at] of [
+      ['[a](Page)', 8],
+      ['[a]()', 4],
+      ['[a](Pa', 6],
+    ] as const)
+      expect(headingHash(scanDoc(doc), at, at, '§')).toEqual({
+        from: at,
+        to: at,
+        insert: '#',
+        selection: at + 1,
+      })
+  })
+
+  it('a § typed in the label, in the fragment, or in an address stays §', () => {
+    for (const [doc, at] of [
+      ['[al](Page)', 2],
+      ['[a](Page#Se)', 11],
+      ['[a](https://x.com)', 17],
+      ['[a](dir/Page)', 12],
+    ] as const)
+      expect(headingHash(scanDoc(doc), at, at, '§')).toBeNull()
+  })
+
+  it('a selection reaching past the destination stays §', () => {
+    expect(headingHash(scanDoc('[a](Page) x'), 5, 11, '§')).toBeNull()
+  })
 })

@@ -83,6 +83,12 @@ describe('what a markdown link’s target names', () => {
     expect(resolveMdTarget(conn, 'not a url').kind).toBe('invalid')
   })
 
+  // A fragment is the heading's own text, so a separator inside it doesn't make the target an address.
+  it('a heading holding a slash is still a heading', () => {
+    const t = resolveMdTarget(conn, 'Work%20Notes#A/B')
+    expect(t.kind === 'page' && t.heading).toBe('A/B')
+  })
+
   it('a %-bearing target resolves to something rather than throwing', () => {
     expect(() => resolveMdTarget(conn, 'Revenue 50% plan')).not.toThrow()
   })
@@ -96,6 +102,20 @@ describe('both syntaxes and both renderers agree', () => {
     const md = resolveMdTarget(conn, target)
     const wiki = conn.resolve('Work Notes')
     expect(md.kind === 'page' && md.page.id).toBe(wiki.page?.id)
+  })
+
+  it('the cell renderer reads an alias over a heading, and reads it missing as the editor does', async () => {
+    const missing = { ...conn, headingsOf: () => ['setup'] }
+    cellHost = document.createElement('div')
+    document.body.appendChild(cellHost)
+    cellRoot = createRoot(cellHost)
+    await act(async () =>
+      cellRoot?.render(
+        renderCellContent('[[Work Notes#Gone\\|al]] [lab](Work%20Notes#Gone)', () => missing),
+      ),
+    )
+    const shown = [...cellHost.querySelectorAll('.md-connection-heading-missing')]
+    expect(shown.map((e) => e.textContent)).toEqual(['al', 'lab'])
   })
 
   it('the cell renderer paints an internal target as a connection', async () => {

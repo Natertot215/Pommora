@@ -295,4 +295,81 @@ describe('the chevron slides in a page’s headings', () => {
     })
     expect(document.querySelectorAll('.mdpm-ac [class*="item"]')).toHaveLength(0)
   })
+
+  // The same slide, written into a markdown link's destination.
+  it('the chevron in ( ) writes the page and its #, lists its headings, and Return finishes past the )', async () => {
+    seatReady('pNotes', '## Setup\n\nbody')
+    const view = await mountEditor({ initialBody: '[x](Not)', connections: headingConn })
+    vi.spyOn(view, 'coordsAtPos').mockReturnValue(coords)
+    await act(async () => {
+      view.focus()
+      view.dispatch({ selection: { anchor: 5 } })
+    })
+    await act(async () => {
+      view.contentDOM.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }),
+      )
+    })
+    expect(view.state.doc.toString()).toBe('[x](Notes#)')
+    expect(document.querySelector('.mdpm-ac')?.textContent).toContain('Setup')
+    await act(async () => {
+      view.contentDOM.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }),
+      )
+    })
+    expect(view.state.doc.toString()).toBe('[x](Notes#Setup)')
+    expect(view.state.selection.main.head).toBe(view.state.doc.length)
+  })
+
+  it('an abandoned fragment in ( ) drops its # when the caret leaves', async () => {
+    seatReady('pNotes', '## Setup\n\nbody')
+    const view = await mountEditor({ initialBody: '[x](Not) tail', connections: headingConn })
+    vi.spyOn(view, 'coordsAtPos').mockReturnValue(coords)
+    await act(async () => {
+      view.focus()
+      view.dispatch({ selection: { anchor: 5 } })
+    })
+    await act(async () => {
+      view.contentDOM.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }),
+      )
+    })
+    expect(view.state.doc.toString()).toBe('[x](Notes#) tail')
+    await act(async () => {
+      view.dispatch({ selection: { anchor: view.state.doc.length } })
+      await new Promise((r) => setTimeout(r, 0))
+    })
+    expect(view.state.doc.toString()).toBe('[x](Notes) tail')
+  })
+
+  it('a bare # in ( ) lists the current document’s own headings', async () => {
+    const body = '## Setup\n\n[x](#)'
+    const view = await mountEditor({ initialBody: body, connections: headingConn })
+    vi.spyOn(view, 'coordsAtPos').mockReturnValue(coords)
+    await act(async () => {
+      view.focus()
+      view.dispatch({ selection: { anchor: body.lastIndexOf('#') + 1 } })
+    })
+    expect(document.querySelector('.mdpm-ac')?.textContent).toContain('Setup')
+  })
+
+  it('a typed § in prose lists the headings as the heading form does', async () => {
+    const body = '## Setup\n\nsee '
+    const view = await mountEditor({
+      initialBody: body,
+      connections: headingConn,
+      host: { settings: { inPageHeadingResolution: 'automatic' } },
+    })
+    vi.spyOn(view, 'coordsAtPos').mockReturnValue(coords)
+    await act(async () => {
+      view.focus()
+      view.dispatch({
+        changes: { from: body.length, insert: '§' },
+        selection: { anchor: body.length + 1 },
+        userEvent: 'input.type',
+      })
+    })
+    expect(document.querySelector('.mdpm-ac [data-drop-outline-spacer]')).not.toBeNull()
+    expect(document.querySelector('.mdpm-ac')?.textContent).toContain('Setup')
+  })
 })
