@@ -1,7 +1,7 @@
 import { globalStyle, style } from '@vanilla-extract/css'
 import { vars as colorVars } from '@pommora/uix/Theme/color.css'
 import { text } from '@pommora/uix/Theme/typography.css'
-import { item, side } from '@pommora/uix/Menus/menu-row.css'
+import { ROW_RADIUS, item, side } from '@pommora/uix/Menus/menu-row.css'
 import { growToContent } from '@pommora/uix/Menus/frameGrowth'
 
 const c = colorVars.color
@@ -42,6 +42,8 @@ export const group = style({
 })
 
 export const row = style([item])
+
+export const addSlot = style({ borderRadius: `${ROW_RADIUS}px` })
 
 export const value = style({
   flex: '0 1 auto',

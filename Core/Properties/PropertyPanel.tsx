@@ -12,6 +12,7 @@ import { cx } from '@pommora/uix/Utilities/cx'
 import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { useEntrance } from '@pommora/uix/Animations/useEntrance'
+import { useHeldPresence } from '@pommora/uix/Animations/useExitPresence'
 import type { PropertyDefinition } from './properties'
 import { isBlankValue, type PropertyValue, NULL_VALUE } from './propertyValue'
 import type { PageFrontmatter } from '../Nexus/schemas'
@@ -91,7 +92,6 @@ export function PropertyPanel({
   const assetMap = useSession((st) => st.assetMap)
   const [editing, setEditing] = useState<Editing>(null)
   const [addOpen, setAddOpen] = useState<{ key: GroupKey; fromRow: boolean } | null>(null)
-  const [heldAdd, setHeldAdd] = useState<GroupKey | null>(null)
   const triggerRef = useRef<HTMLElement | null>(null)
   const rootRef = useRef<HTMLDivElement>(null)
   const addRefs = useRef<Record<GroupKey, HTMLButtonElement | null>>({
@@ -110,7 +110,6 @@ export function PropertyPanel({
     setEditingFor(path)
     setEditing(null)
     setAddOpen(null)
-    setHeldAdd(null)
   }
 
   useEffect(() => {
@@ -154,7 +153,6 @@ export function PropertyPanel({
   useEffect(() => {
     setEditing(null)
     setAddOpen(null)
-    setHeldAdd(null)
     setRevealed(new Set())
   }, [nexusId])
 
@@ -283,6 +281,7 @@ export function PropertyPanel({
     return f && <Icon name={f.icon} />
   }
   const ghostApi = useGhostOptionAnchor(editing !== null || addOpen !== null)
+  const addSeat = useHeldPresence(addOpen?.fromRow ? addOpen.key : null, 'fast')
 
   const reveal = (id: string): void => setRevealed((prev) => new Set([...prev, id]))
   const runIntent = (
@@ -441,17 +440,27 @@ export function PropertyPanel({
             const standing = addable && rows.length === 0
             const opened = addOpen?.key === key
             const rowOpened = opened && addOpen.fromRow
-            const held = heldAdd === key
+            const addHeld = rowOpened || addSeat?.held === key
             const ghost =
               addable && !standing && ghostApi.ghost?.anchorId === key ? ghostApi.ghost : null
-            const addRow = (onClick: (anchor: HTMLElement) => void): React.JSX.Element => (
-              <MenuItem
-                className={cx(s.row, 'ghost-worn')}
-                leading={<Icon name="plus" size="control" />}
-                onClick={(e) => onClick(e.currentTarget)}
+            const addRow = (
+              onClick: (anchor: HTMLElement) => void,
+              hover?: { onPointerEnter: () => void; onPointerLeave: () => void },
+            ): React.JSX.Element => (
+              <div
+                data-ghost-root
+                data-reveal-held={rowOpened || undefined}
+                className={cx(s.addSlot, 'ghost-worn')}
+                {...hover}
               >
-                {add}
-              </MenuItem>
+                <MenuItem
+                  className={s.row}
+                  leading={<Icon name="plus" size="control" />}
+                  onClick={(e) => onClick(e.currentTarget)}
+                >
+                  {add}
+                </MenuItem>
+              </div>
             )
             return (
               <div key={key} data-reveal-host="" {...ghostAnchorProps(ghostApi, key)}>
@@ -471,7 +480,7 @@ export function PropertyPanel({
                     />
                   )}
                 </div>
-                {(rows.length > 0 || held || standing) && (
+                {(rows.length > 0 || addHeld || standing) && (
                   <LineZone
                     className={cx(s.group, panelHost === 'dropdown' && s.groupBordered)}
                     {...lineList({
@@ -483,29 +492,23 @@ export function PropertyPanel({
                     })}
                   >
                     {rows.map(renderRow)}
-                    {standing && (
-                      <div data-ghost-root data-reveal-held={rowOpened || undefined}>
-                        {addRow((anchor) => openAdd(key, anchor))}
-                      </div>
-                    )}
-                    {(ghost || held) && (
+                    {standing && addRow((anchor) => openAdd(key, anchor))}
+                    {(ghost || (addHeld && !standing)) && (
                       <Reveal
-                        open={held ? rowOpened : !ghost?.closing}
+                        open={rowOpened || (ghost !== null && !ghost.closing)}
                         enterOnMount
-                        onCollapsed={held ? () => setHeldAdd(null) : ghostApi.closed}
+                        onCollapsed={ghostApi.closed}
                       >
-                        <div
-                          data-ghost-root
-                          data-reveal-held={rowOpened || undefined}
-                          onPointerEnter={ghostApi.onGhostEnter}
-                          onPointerLeave={ghostApi.onGhostLeave}
-                        >
-                          {addRow((anchor) => {
+                        {addRow(
+                          (anchor) => {
                             ghostApi.take()
-                            setHeldAdd(key)
                             openAdd(key, anchor)
-                          })}
-                        </div>
+                          },
+                          {
+                            onPointerEnter: ghostApi.onGhostEnter,
+                            onPointerLeave: ghostApi.onGhostLeave,
+                          },
+                        )}
                       </Reveal>
                     )}
                   </LineZone>
