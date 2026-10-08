@@ -312,8 +312,8 @@ const penPlaced = async (cdp, scope, overlay) => {
   const pen = await rectOf(cdp, `(${scope}).querySelector(${JSON.stringify(PEN)})`)
   if (!text || !pen) return false
   if (!overlay) return !overlaps(text, pen)
-  const mask = await cdp.evaluate(`getComputedStyle((${scope}).querySelector('.cell-text-clip')).maskImage`)
-  return overlaps(text, pen) && mask.startsWith('linear-gradient')
+  const fade = await cdp.evaluate(`(() => { const clip = (${scope}).querySelector('.cell-text-clip'); return { mask: getComputedStyle(clip).maskImage, reveal: getComputedStyle(clip.parentElement).getPropertyValue('--reveal').trim() } })()`)
+  return overlaps(text, pen) && fade.mask.startsWith('linear-gradient') && fade.reveal === '1'
 }
 async function penOn(cdp, scope, tag) {
   await hover(cdp, scope)
@@ -412,7 +412,7 @@ async function group2(cdp, pid) {
   await showView(cdp, 'Drive Compact')
   await connectionsOn(cdp, cardValue('Drive Prose'), 'compact card')
   const flow = await cdp.evaluate(`(() => { const s = (${cardValue('Drive Prose')}).closest('.card-props.is-flow > span'); if (!s) return null; const probe = document.createElement('i'); probe.style.color = 'var(--border-base)'; s.appendChild(probe); const kit = getComputedStyle(probe).color; probe.remove(); const ring = /^(.*) 0px 0px 0px ([\\d.]+)px inset$/.exec(getComputedStyle(s).boxShadow); return { ring: ring && { color: ring[1], width: parseFloat(ring[2]) }, kit, floor: parseFloat(getComputedStyle(s).minHeight), h: s.getBoundingClientRect().height } })()`)
-  check("group 2: the Compact flow span wears the field's ring in the kit's border color and stands a field's height", !!flow?.ring && flow.ring.width > 0 && flow.ring.color === flow.kit && flow.floor > 0 && flow.h >= flow.floor - 0.5, JSON.stringify(flow))
+  check("group 2: the Compact flow span wears the field's ring in the kit's border color and wears the full field", !!flow?.ring && flow.ring.width > 0 && flow.ring.color === flow.kit && flow.floor > 0 && flow.h >= flow.floor - 0.5, JSON.stringify(flow))
   await penOn(cdp, cardValue('Drive Prose'), 'cards-compact')
 
   await showView(cdp, 'Drive Table')

@@ -13,7 +13,7 @@ import {
 import { perText } from '../Engine/perText'
 import { parseListMarker, type ListMarker } from '../Engine/detect'
 import { checkboxToggleChange } from '../Engine/listDragModel'
-import { applyEdits } from '../Engine/markdownCode'
+import { applyEdits, lineOffsetsOf } from '../Engine/markdownCode'
 import {
   wikiLinkView,
   linkMenuTarget,
@@ -44,9 +44,11 @@ const cellTokens = perText(tokenize, 4096)
 export function renderCellContent(
   text: string,
   getConn?: () => ConnectionsApi | undefined,
-  around?: CellPage,
-  headingLinkStyle?: HeadingLinkStyle,
-  base = 0,
+  {
+    around,
+    headingLinkStyle,
+    base = 0,
+  }: { around?: CellPage; headingLinkStyle?: HeadingLinkStyle; base?: number } = {},
 ): React.ReactNode {
   // No markdown-significant char → no token possible, so skip the mdast parse; this is the per-cell cost of a table scrolling in.
   if (!holdsTokens(text)) return text
@@ -206,13 +208,8 @@ function renderCellBody(
     return lm && glyph ? { lm, glyph } : null
   })
   if (items.every((it) => it === null))
-    return renderCellContent(text, getConn, around, headingLinkStyle)
-  let offset = 0
-  const starts = lines.map((l) => {
-    const from = offset
-    offset += l.length + 1
-    return from
-  })
+    return renderCellContent(text, getConn, { around, headingLinkStyle })
+  const starts = lineOffsetsOf(lines)
   const rails = railIntents(
     starts,
     items.map((it) => it?.lm.level ?? -1),
@@ -221,13 +218,11 @@ function renderCellBody(
   return lines.map((line, i) => {
     const it = items[i]
     const content = it ? line.slice(it.lm.contentStart) : line
-    const rendered = renderCellContent(
-      content,
-      getConn,
+    const rendered = renderCellContent(content, getConn, {
       around,
       headingLinkStyle,
-      starts[i] + (it?.lm.contentStart ?? 0),
-    )
+      base: starts[i] + (it?.lm.contentStart ?? 0),
+    })
     return (
       <div
         // biome-ignore lint/suspicious/noArrayIndexKey: a cell's lines are plain strings with no identity but their position — the index IS the key
@@ -438,7 +433,7 @@ export function linkGestures(
   }
 }
 
-export function cellLinkTarget(
+function cellLinkTarget(
   text: string,
   eventTarget: EventTarget | null,
   api: ConnectionsApi | undefined,

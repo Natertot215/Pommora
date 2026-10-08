@@ -297,6 +297,24 @@ describe('a text value', () => {
     expect(host.querySelector('.md-connection-resolved')?.textContent).toBe('Target')
     expect(host.querySelector('.md-connection-phantom')?.textContent).toBe('Nowhere')
   })
+  it('marks a link on a later line with its span in the whole value, the offsets every link gesture reads', () => {
+    const value = 'first\nsee [[Target]]'
+    act(() =>
+      root.render(
+        <Cell
+          row={rowWith({ prop_notes: value })}
+          column={col('prop_notes')}
+          ctx={{ ...ctx, connections: connectionsWith() }}
+          hideIcon={false}
+          style={dateDefaults('full')}
+        />,
+      ),
+    )
+    const at = value.indexOf('[[')
+    expect(host.querySelector('[data-link-span]')?.getAttribute('data-link-span')).toBe(
+      `${at},${value.length}`,
+    )
+  })
   it('opens the link menu on a right-click over a link it holds, and leaves the rest to the cell menu', () => {
     const menu = vi.fn()
     act(() =>

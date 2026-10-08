@@ -12,7 +12,7 @@ type Session = ReturnType<typeof useSession.getState>
 const held = new Map<Mode, { read: unknown[]; value: ConnectionsApi | undefined }>()
 
 /** `preview` follows the Open in Preview preference, `window` lands in the window's own tab strip, and `inert` opens no page, for a glance or a page's history — its own headings and external links still follow. One bundle per mode, rebuilt only when what it reads changes, so a caller may read it at the moment it needs it rather than subscribe. */
-export function connectionsOf(s: Session, mode: Mode): ConnectionsApi | undefined {
+function connectionsOf(s: Session, mode: Mode): ConnectionsApi | undefined {
   const { tree, headings, select, openWindowTab } = s
   const inWindow =
     mode === 'window' ||

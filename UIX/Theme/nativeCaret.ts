@@ -141,9 +141,9 @@ function fieldCaret(el: Field): CaretRect | null {
   const pos = caretHead(el, anchor)
   anchor = pos === el.selectionEnd ? el.selectionStart : el.selectionEnd
   m.textContent = el.value.slice(0, pos)
-  // The trailing span's LEFT edge marks the caret; a lone `.` boxes the end. Assumes left-aligned text.
+  // The trailing span's LEFT edge marks the caret; a zero-width space boxes the end without shifting aligned text.
   const span = document.createElement('span')
-  span.textContent = el.value.slice(pos) || '.'
+  span.textContent = el.value.slice(pos) || '\u200b'
   m.appendChild(span)
   const sr = span.getBoundingClientRect()
   m.textContent = ''

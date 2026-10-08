@@ -143,9 +143,9 @@ The chassis tokens — the floor, gaps, thumb height and share, and preview zoom
 | Scaled Floor | `--card-min` | `calc(var(--card-min-base) * var(--card-scale, 1))` |
 | Scaled Thumb | `--card-thumb-h` | `calc(var(--card-thumb-h-base) * var(--card-scale, 1))` |
 | Set-Card Floor | `--set-card-min` | `calc(var(--card-min) * 1.5)` |
-| Body Minimum | `--card-body-min` | `calc(var(--card-thumb-h) * 0.54)`; compact recomputes from its row stack |
+| Body Minimum | `--card-body-min` | `calc(16px + 18px + var(--card-min-rows) * (var(--card-row-h) + 4px))`; one row reserved, two in compact |
 | Band Clearance | `--band-clearance` | → `var(--card-gap-v)` (the seam rule's input) |
-| Compact Rows | `--card-row-h` / `--card-foot-h` | `17px` / composed |
+| Compact Rows | `--card-row-h` / `--card-foot-h` | `16px` / composed |
 | Label Retunes | `--label-pad-x` | `4px` |
 
 #### II. Prospects
