@@ -35,6 +35,25 @@ const selectDef = def({
 })
 
 describe('decodeValue — the declared type decides, never the shape', () => {
+  it('free text reads a string as itself and any other shape as the yaml that spells it', () => {
+    const text = def({ type: 'text' })
+    expect(decodeValue(text, 'see [[Plan]] first')).toEqual({
+      kind: 'text',
+      value: 'see [[Plan]] first',
+    })
+    expect(decodeValue(text, [])).toEqual({ kind: 'null' })
+    expect(decodeValue(text, ['a\nb', 'c'])).toEqual({ kind: 'text', value: '["a\\nb", "c"]' })
+    expect(decodeValue(text, 42)).toEqual({ kind: 'text', value: '42' })
+    expect(decodeValue(text, true)).toEqual({ kind: 'text', value: 'true' })
+    expect(decodeValue(text, 3.1)).toEqual({ kind: 'text', value: '3.1' })
+    expect(decodeValue(text, ['milk', 'eggs', 'bread'])).toEqual({
+      kind: 'text',
+      value: '[milk, eggs, bread]',
+    })
+    expect(decodeValue(text, { x: 1 })).toEqual({ kind: 'text', value: '{x: 1}' })
+    expect(decodeValue(text, [['Page']])).toEqual({ kind: 'text', value: '[[Page]]' })
+  })
+
   it('reads a status value as its bare label', () => {
     expect(decodeValue(statusDef, 'Done')).toEqual({ kind: 'select', value: 'Done' })
   })
@@ -62,6 +81,12 @@ describe('decodeValue — the declared type decides, never the shape', () => {
       kind: 'link',
       value: 'https://acme.io',
     })
+    // An unquoted `[[Page]]` is a nested one-element list to yaml, and reads as the link it spells.
+    expect(decodeValue(def({ type: 'link' }), [['Page']])).toEqual({
+      kind: 'link',
+      value: '[[Page]]',
+    })
+    expect(decodeValue(def({ type: 'link' }), 42)).toEqual({ kind: 'null' })
     expect(decodeValue(def({ type: 'dateTime' }), '2026-06-15')).toEqual({
       kind: 'dateTime',
       value: '2026-06-15',
@@ -275,6 +300,7 @@ describe('the no-empties rule — no value, no key', () => {
     { kind: 'file', value: [] },
     { kind: 'select', value: '' },
     { kind: 'link', value: '' },
+    { kind: 'text', value: '' },
     { kind: 'dateTime', value: '' },
   ]
   for (const v of empties) {
@@ -339,6 +365,17 @@ describe('applyValueAtRoot', () => {
 })
 
 describe('writtenSpelling', () => {
+  it('a string keeps a number, a list, and an unquoted wikilink the file spells when it reads as that text, and takes a typed string over anything else', () => {
+    expect(writtenSpelling('42', 42)).toBe(42)
+    expect(writtenSpelling('[milk, eggs]', ['milk', 'eggs'])).toEqual(['milk', 'eggs'])
+    // The same link a Link key decodes an unquoted `[[Page]]` to, so re-saving it leaves the file alone; a different link lands as typed.
+    expect(writtenSpelling('[[Page]]', [['Page']])).toEqual([['Page']])
+    expect(writtenSpelling('[[Other|Page]]', [['Page']])).toBe('[[Other|Page]]')
+    expect(writtenSpelling('forty-two', 42)).toBe('forty-two')
+    expect(writtenSpelling('note', 'note')).toBe('note')
+    expect(writtenSpelling('note', undefined)).toBe('note')
+  })
+
   it('gives each member the one held member its title folds to; a member held twice keeps the registered spelling', () => {
     expect(writtenSpelling(['Done'], ['done', 'Done'])).toEqual(['Done'])
     expect(writtenSpelling(['Done'], ['done', 'DONE'])).toEqual(['Done'])

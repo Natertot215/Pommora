@@ -55,6 +55,8 @@ function boolRank(row: ViewRow, propertyId: string, schema: PropertyDefinition[]
 function sortText(row: ViewRow, propertyId: string, schema: PropertyDefinition[]): string {
   const v = resolveFieldValue(row, propertyId, schema)
   switch (v.kind) {
+    case 'text':
+      return v.value
     case 'link':
       // Sort by the SHOWN text (alias, else URL) — the same parse boundary Cell renders, so an aliased link never sorts by its raw markdown.
       return linkDisplayText(v.value)
@@ -98,6 +100,7 @@ function buildCriterion(c: SortCriterion, schema: PropertyDefinition[]): Resolve
     case 'checkbox':
       return { extract: (r) => boolRank(r, c.property_id, schema), less: numericLess, ascending }
     case 'link':
+    case 'text':
     case 'multiSelect':
     case 'file':
       return { extract: (r) => sortText(r, c.property_id, schema), less: ciLess, ascending }

@@ -34,6 +34,7 @@ const schema: PropertyDefinition[] = [
   { id: 'prop_when', name: 'When', type: 'dateTime' },
   { id: 'prop_done', name: 'Done', type: 'checkbox' },
   { id: 'prop_tags', name: 'Tags', type: 'multiSelect' },
+  { id: 'prop_notes', name: 'Notes', type: 'text' },
 ]
 
 function row(
@@ -227,6 +228,25 @@ describe('applyFilter — per type', () => {
     expect(match('ends_on_or_after', '2026-06-18')).toEqual(['span'])
     expect(match('ends_on_or_after', '2026-06-20T10:00:00')).toEqual(['span'])
     expect(match('ends_on_or_before', '2026-06-20T10:00:00')).toEqual(['single'])
+  })
+
+  it('text: is is exact, contains folds', () => {
+    const rows = [
+      row('a', { props: { prop_notes: 'Buy milk\nand eggs' } }),
+      row('b', { props: { prop_notes: 'bread' } }),
+    ]
+    expect(
+      ids(rows, { match: 'all', rules: [{ property_id: 'prop_notes', op: 'is', value: 'bread' }] }),
+    ).toEqual(['b'])
+    expect(
+      ids(rows, { match: 'all', rules: [{ property_id: 'prop_notes', op: 'is', value: 'Bread' }] }),
+    ).toEqual([])
+    expect(
+      ids(rows, {
+        match: 'all',
+        rules: [{ property_id: 'prop_notes', op: 'contains', value: 'MILK' }],
+      }),
+    ).toEqual(['a'])
   })
 
   it('select (text): is / contains / does_not_contain', () => {

@@ -49,6 +49,7 @@ function directionOptions(
     case 'select':
       return OPTION_DIRECTIONS
     case 'link':
+    case 'text':
     case 'multiSelect':
     case 'file':
       return TEXT_DIRECTIONS

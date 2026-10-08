@@ -110,6 +110,10 @@ describe('styleMenuItems', () => {
   it('context gets no Style items', () => {
     expect(items('context')).toEqual([])
   })
+
+  it('text gets no Style items', () => {
+    expect(items('text')).toEqual([])
+  })
 })
 
 describe('columnMenuItems', () => {

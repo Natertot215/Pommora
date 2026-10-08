@@ -81,7 +81,7 @@ export function DisclosureRow({
   open: boolean
   onToggle: () => void
   onClick?: () => void
-  onContextMenu?: (e: React.MouseEvent) => void
+  onContextMenu?: (e: React.MouseEvent<HTMLDivElement>) => void
   active?: boolean
   picked?: PickRun
   className?: string

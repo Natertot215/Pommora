@@ -154,6 +154,11 @@ describe('cellMenuContextFor', () => {
     expect(cellMenuContextFor('context', DATES, false)).toBeNull()
   })
 
+  it('a text column → clear-only when filled, no menu when empty', () => {
+    expect(cellMenuContextFor('text', DATES, true)).toEqual({ kind: 'clear-only' })
+    expect(cellMenuContextFor('text', DATES, false)).toBeNull()
+  })
+
   it('a link column → the link menu, carrying filled; a file cell has no look left to offer', () => {
     expect(cellMenuContextFor('link', DATES, true)).toEqual({ kind: 'link', filled: true })
     expect(cellMenuContextFor('file', DATES, false)).toEqual({

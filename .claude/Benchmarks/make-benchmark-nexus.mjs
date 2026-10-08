@@ -129,6 +129,7 @@ const TYPES = [
   { type: 'select', name: 'Category', count: preset.optionProps, make: (o) => [pick(o)] },
   { type: 'multiSelect', name: 'Tags', count: preset.optionProps, make: (o) => sample(o, 1 + int(3)) },
   { type: 'status', name: 'Stage', count: preset.optionProps, make: (o) => [pick(o)] },
+  { type: 'text', name: 'Notes', count: preset.plainProps, make: () => `${pick(NOUNS)} ${pick(NOUNS).toLowerCase()} ${int(999)}` },
   { type: 'number', name: 'Priority', count: preset.plainProps, make: () => 1 + int(100) },
   { type: 'checkbox', name: 'Pinned', count: preset.plainProps, make: () => rand() < 0.5 },
   { type: 'dateTime', name: 'Due', count: preset.plainProps, make: () => dateOf(int(700)) },

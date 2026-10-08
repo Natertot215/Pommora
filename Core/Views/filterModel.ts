@@ -160,6 +160,7 @@ const KIND_OPS: Record<ValueKind, OperatorChoice[]> = {
   dateTime: DATE_OPS,
   checkbox: CHECKBOX_OPS,
   link: [...TEXT_OPS, ...EMPTIES],
+  text: [...TEXT_OPS, ...EMPTIES],
   file: EMPTIES,
 }
 

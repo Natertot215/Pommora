@@ -11,6 +11,7 @@ const FROM_GROUP_KEY: Record<ValueKind, ((key: string) => PropertyValue | null) 
   multiSelect: null,
   context: null,
   link: null,
+  text: null,
   file: null,
 }
 

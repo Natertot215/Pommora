@@ -13,6 +13,7 @@ import { barDivisor, formatDate, formatNumber } from '../formatValue'
 import { OptionChip } from './OptionChip'
 import { findOption } from './cellResolve'
 import { LinkCell } from './LinkCell'
+import { renderCellBody } from '../../MarkdownPM/Tables/cellStatic'
 import { CheckboxGlyph } from './CheckboxGlyph'
 import type { ValueContext } from '../valueContext'
 import { FileChip, NeutralChip } from '@pommora/uix/Labels/recipes'
@@ -123,7 +124,12 @@ export function Cell({
       )
     case 'link':
       return <LinkCell raw={v.value} def={def} look={style.look} showFullLink={showFullLink} />
-
+    case 'text':
+      return (
+        <OverScroll className="cell-text-scroll">
+          <div className="cell-text">{renderCellBody(v.value)}</div>
+        </OverScroll>
+      )
     case 'dateTime':
       return (
         <OverScroll className="cell-text-scroll cell-control">

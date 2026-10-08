@@ -117,6 +117,15 @@ describe('vocabulary', () => {
     { id: 'prop_tags', name: 'Tags', type: 'multiSelect' },
   ]
 
+  it("text reads Link's seven operators", () => {
+    const linkAndText: PropertyDefinition[] = [
+      { id: 'prop_url', name: 'Link', type: 'link' },
+      { id: 'prop_notes', name: 'Notes', type: 'text' },
+    ]
+    expect(operatorsFor('prop_notes', linkAndText)).toEqual(operatorsFor('prop_url', linkAndText))
+    expect(operatorsFor('prop_notes', linkAndText)).toHaveLength(7)
+  })
+
   it('checkbox operators carry the whole clause (slot none, implied values)', () => {
     const ops = operatorsFor('prop_done', schema)
     expect(ops.map((o) => o.label)).toEqual(['Is Checked', "Isn't Checked"])

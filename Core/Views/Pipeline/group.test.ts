@@ -544,6 +544,15 @@ describe('property grouping — configured / reversed / date', () => {
     expect(bucketKey(byId('p2'), 'prop_done', cbSchema, 'day')).toBeNull()
   })
 
+  it('a text value never buckets', () => {
+    const textSchema: PropertyDefinition[] = [{ id: 'prop_notes', name: 'Notes', type: 'text' }]
+    const values = pageValues({
+      p1: { [ID_KEY]: 'p1', ...propsAtRoot({ prop_notes: 'a note' }, textSchema) },
+    })
+    const { rows } = flattenContainer(collection([], [page('p1')]), values, {})
+    expect(bucketKey(rows[0], 'prop_notes', textSchema, 'day')).toBeNull()
+  })
+
   it('buckets dates by granularity (same month together)', () => {
     const dateSchema: PropertyDefinition[] = [{ id: 'prop_when', name: 'When', type: 'dateTime' }]
     const values = pageValues({

@@ -10,9 +10,11 @@ import {
 import { parseConnectionText } from '../Connections/connections'
 import { normalizeTitle } from '../Paths/caseFold'
 import { heldValue, landValue, writeTarget } from '../Files/heldKeys'
+import { yamlInline } from '../Files/pageFile'
 
 const strings = z.array(z.string())
 export const propertyValue = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('text'), value: z.string() }),
   z.object({ kind: z.literal('number'), value: z.number() }),
   z.object({ kind: z.literal('checkbox'), value: z.literal(true) }),
   // ISO-8601; a bare "yyyy-MM-dd" is a date-only value
@@ -29,8 +31,8 @@ export const propertyValue = z.discriminatedUnion('kind', [
 export type PropertyValue = z.infer<typeof propertyValue>
 export type ValueKind = Exclude<PropertyValue['kind'], 'null'>
 
-/** YAML reads an unquoted `[[Name.ext]]` as a nested flow sequence rather than a string; unwrapping single-element arrays keeps a hand-edit from nulling the whole value. */
-function fileEntry(v: unknown): string | null {
+/** A `[[Page]]` or `[[Name.ext]]` written unquoted is a nested flow sequence to yaml, not a string; unwrapping single-element arrays reads the connection the author spelled, so a hand-edit never nulls the value. */
+function linkEntry(v: unknown): string | null {
   if (typeof v === 'string') return v
   let inner: unknown = v
   while (Array.isArray(inner) && inner.length === 1) inner = inner[0]
@@ -74,9 +76,16 @@ export function decodeValue(def: PropertyDefinition, raw: unknown): PropertyValu
       return typeof raw === 'number' ? { kind, value: raw } : NULL_VALUE
     case 'checkbox':
       return isCheckedRaw(raw) ? { kind, value: true } : NULL_VALUE
-    case 'link':
+    case 'link': {
+      const entry = linkEntry(raw)
+      return entry === null ? NULL_VALUE : { kind, value: entry }
+    }
     case 'dateTime':
       return typeof raw === 'string' ? { kind, value: raw } : NULL_VALUE
+    // Free text reads whatever the file holds: a string as itself, any other shape as the yaml that spells it.
+    case 'text':
+      if (isBlankRaw(raw)) return NULL_VALUE
+      return { kind, value: typeof raw === 'string' ? raw : yamlInline(raw) }
     case 'select': {
       // The one rule for an externally written option list: the newest registered element wins.
       const value = optionList(raw)
@@ -94,7 +103,7 @@ export function decodeValue(def: PropertyDefinition, raw: unknown): PropertyValu
       // An entry nothing can spell is dropped rather than nulling the whole list and losing the other attachments.
       const entries: string[] = []
       for (const x of listOf(raw)) {
-        const entry = fileEntry(x)
+        const entry = linkEntry(x)
         if (entry !== null && entry !== '') entries.push(entry)
       }
       return entries.length === 0 ? NULL_VALUE : { kind, value: entries }
@@ -137,9 +146,11 @@ export function reconcilePropertyValue(
   return kept.length ? { kind: 'multiSelect', value: kept } : NULL_VALUE
 }
 
-/** `next` spelled as `raw` already spells it: a checked `true` keeps `raw`'s checked word, and each member takes the one member of `raw` its title folds to. A member `raw` names more than once keeps the spelling `next` gives it, the registered one. */
+/** `next` spelled as `raw` already spells it: a checked `true` keeps `raw`'s checked word, a string keeps a `raw` of any other shape whose inline yaml reads as that string, and each member takes the one member of `raw` its title folds to. A member `raw` names more than once keeps the spelling `next` gives it, the registered one. */
 export function writtenSpelling(next: unknown, raw: unknown): unknown {
   if (next === true) return isCheckedRaw(raw) ? raw : next
+  if (typeof next === 'string')
+    return raw != null && typeof raw !== 'string' && yamlInline(raw) === next ? raw : next
   if (!Array.isArray(next)) return next
   const written = listOf(raw).filter((w): w is string => typeof w === 'string')
   return next.map((v) => {
@@ -156,6 +167,7 @@ export function encodeValue(value: PropertyValue): unknown {
     case 'checkbox':
     case 'link':
     case 'dateTime':
+    case 'text':
     case 'multiSelect':
     case 'file':
     case 'context':
@@ -187,6 +199,7 @@ export function isBlankValue(value: PropertyValue | null): boolean {
     case 'select':
     case 'link':
     case 'dateTime':
+    case 'text':
       return value.value === ''
     case 'number':
     case 'checkbox':

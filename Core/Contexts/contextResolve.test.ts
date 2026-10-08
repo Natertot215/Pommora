@@ -93,9 +93,10 @@ const stageDef: PropertyDefinition = {
   type: 'select',
   select_options: [{ value: 'Done' }, { value: 'Open' }],
 }
+const notesDef: PropertyDefinition = { id: 'prop_notes', name: 'Notes', type: 'text' }
 const world: GovernedWorld = {
   contexts,
-  defs: byFoldedName([statusDef, tagsDef, stageDef]),
+  defs: byFoldedName([statusDef, tagsDef, stageDef, notesDef]),
 }
 
 describe('reconcileGovernedRoot — the context arm', () => {
@@ -176,6 +177,17 @@ describe('reconcileGovernedRoot — the context arm', () => {
 })
 
 describe('reconcileGovernedRoot — the property arm', () => {
+  it('a free-typed key keeps a foreign shape as written, live and frozen alike', () => {
+    for (const raw of [42, true, ['milk', 'eggs'], [['Page']]]) {
+      const live = reconcileGovernedRoot({ Notes: raw }, world)
+      expect(live.root).toEqual({ Notes: raw })
+      expect(live.changed).toEqual([])
+      const frozen = reconcileGovernedRoot({ Notes: raw }, world, {})
+      expect(frozen.root).toEqual({ Notes: raw })
+      expect(frozen.changed).toEqual([])
+    }
+  })
+
   it('re-encodes an assigned key as its definition reads it', () => {
     const { root, changed } = reconcileGovernedRoot({ Status: 'Active' }, world)
     expect(root.Status).toEqual(['Active'])

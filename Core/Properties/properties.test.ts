@@ -21,8 +21,9 @@ import {
 } from './properties'
 
 describe('propertyType', () => {
-  it('accepts the 11 type ids', () => {
+  it('accepts the 12 type ids', () => {
     for (const t of [
+      'text',
       'number',
       'checkbox',
       'dateTime',
@@ -200,6 +201,7 @@ describe('specOf and pickKindOf', () => {
     expect(pickKindOf('multiSelect')).toBe('multiSelect')
     expect(pickKindOf('context')).toBe('context')
     for (const t of [
+      'text',
       'number',
       'checkbox',
       'dateTime',

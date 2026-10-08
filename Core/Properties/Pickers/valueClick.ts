@@ -42,6 +42,8 @@ export function valueClickIntent(
       return { kind: 'file' }
     case 'number':
       return barDivisor(look, config) === undefined ? { kind: 'edit' } : { kind: 'numberPicker' }
+    case 'text':
+      return { kind: 'edit' }
     case 'link': {
       const raw = value.kind === 'link' ? value.value : ''
       const url = urlClickTarget(raw)

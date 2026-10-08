@@ -1,4 +1,4 @@
-import { type Document, type Pair, type ParsedNode, parseDocument, isMap } from 'yaml'
+import { type Document, type Pair, type ParsedNode, parseDocument, isMap, stringify } from 'yaml'
 import { join, titleFromPath } from '../Paths/posix'
 import { type Admission, admitContentFile, ID_KEY } from '../Nexus/identityMark'
 import type { ContentKind } from '../Nexus/entities'
@@ -51,13 +51,25 @@ export function parsePage(
 export const stampedId = (text: string): string | null =>
   asString(splitFrontmatter(text)[ID_KEY]) ?? null
 
+/** How a block is spelled on its way out: no wrapping, and a flow collection as its author wrote it, `[a, b]`. */
+const YAML_OUT = { lineWidth: 0, flowCollectionPadding: false } as const
+
+/** A parsed yaml value as one line of yaml — `[milk, eggs, bread]`, `{x: 1}`, `[[Page]]`, `42` — spelled as the writer spells it; a member holding a line break is double-quoted so the line stays one. */
+export function yamlInline(raw: unknown): string {
+  const flow = { ...YAML_OUT, collectionStyle: 'flow' } as const
+  const out = stringify(raw, flow).trimEnd()
+  return out.includes('\n')
+    ? stringify(raw, { ...flow, defaultStringType: 'QUOTE_DOUBLE' }).trimEnd()
+    : out
+}
+
 /** Broken frontmatter must never be re-serialized — the yaml doc holds only what the parser recovered, so writing it back destroys the rest. Broken is anything that can't round-trip, an alias token like `*word` included. */
 const mergeable = (doc: Document): boolean =>
   doc.errors.length === 0 && (doc.contents == null || isMap(doc.contents))
 
 const serialized = (doc: Document): string | null => {
   try {
-    const out = doc.toString({ lineWidth: 0 })
+    const out = doc.toString(YAML_OUT)
     // An empty block's only non-comment line is yaml's `{}` or `null` placeholder, so its comments are all that stays.
     return doc.contents === null || (isMap(doc.contents) && doc.contents.items.length === 0)
       ? out
@@ -109,7 +121,8 @@ function mergeInto(
       if (!written(key)) {
         if (doc.has(key)) doc.delete(key)
       } else if (JSON.stringify(held[key]) !== JSON.stringify(modeled[key]))
-        doc.set(key, modeled[key])
+        // A fresh node, so a changed value takes the spelling yaml gives it rather than the old node's quoting or block style.
+        doc.set(key, doc.createNode(modeled[key]))
     }
     const out = serialized(doc)
     if (out !== null) return out

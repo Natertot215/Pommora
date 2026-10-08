@@ -54,6 +54,7 @@ const schema: PropertyDefinition[] = [
   { id: 'prop_n', name: 'Count', type: 'number' },
   { id: 'prop_files', name: 'Files', type: 'file' },
   { id: 'prop_tags', name: 'Tags', type: 'multiSelect' },
+  { id: 'prop_notes', name: 'Notes', type: 'text' },
 ]
 const ctx = {
   schema,
@@ -261,5 +262,17 @@ describe('a chip list', () => {
     )
     expect(host.querySelector('button')).toBeNull()
     expect(chips()).toHaveLength(2)
+  })
+})
+
+describe('a text value', () => {
+  it('renders every line of the value; the one-line clip is the class, not a slice', () => {
+    mount(rowWith({ prop_notes: 'first line\nsecond line' }), 'prop_notes', {})
+    const root = host.querySelector('.cell-text')
+    expect(root?.textContent).toBe('first line\nsecond line')
+  })
+  it('renders a list value one item per line, as a resting table cell does', () => {
+    mount(rowWith({ prop_notes: '- milk\n- eggs' }), 'prop_notes', {})
+    expect(host.querySelectorAll('[data-cell-line]').length).toBe(2)
   })
 })

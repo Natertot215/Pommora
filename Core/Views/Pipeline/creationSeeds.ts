@@ -26,6 +26,7 @@ function ruleSeed(
     case 'number':
     case 'dateTime':
     case 'link':
+    case 'text':
     case 'file':
     case undefined:
       return rule.op === FILTER_OPS.is ? groupKeyToValue(operands[0], type) : null

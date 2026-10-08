@@ -18,6 +18,7 @@ const schema: PropertyDefinition[] = [
   { id: 'prop_done', name: 'Done', type: 'checkbox' },
   { id: 'prop_url', name: 'Link', type: 'link' },
   { id: 'prop_date', name: 'Due', type: 'dateTime' },
+  { id: 'prop_notes', name: 'Notes', type: 'text' },
 ]
 
 describe('column widths', () => {
@@ -107,10 +108,11 @@ describe('column alignment', () => {
       expect(defaultAlignFor('prop_date', schema)).toBe('center')
     })
 
-    it('left-aligns title, number, link, and modified', () => {
+    it('left-aligns title, number, link, text, and modified', () => {
       expect(defaultAlignFor(RESERVED_PROPERTY_ID.title, schema)).toBe('left')
       expect(defaultAlignFor('prop_n', schema)).toBe('left')
       expect(defaultAlignFor('prop_url', schema)).toBe('left')
+      expect(defaultAlignFor('prop_notes', schema)).toBe('left')
       expect(defaultAlignFor(RESERVED_PROPERTY_ID.modifiedAt, schema)).toBe('left')
     })
 

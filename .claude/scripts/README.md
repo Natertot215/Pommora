@@ -66,6 +66,21 @@ with its properties, view, and pages, writes a screenshot of each state it produ
 the terminal needs Accessibility permission, and the run refuses to send a key unless the app is
 frontmost.
 
+`Text Property Drive/live-drive.mjs` drives the Text property end to end against the real app, in
+four groups that follow the phases that built it: the catalog and the inline field (decoding a
+foreign number or list, the spellings each commit writes, sort, filter, and the cell menu's Clear);
+the value surfaces (live connections, the pen, the glance, and Link's own-page heading) on the
+Table, both Card formats, and the Properties panel; the index and the rename cascade reaching the
+links inside a value; and TextPane (list keys, autocomplete, formatting, the native menu, every
+way it saves, and style parity with the page body). It takes the groups to run as arguments —
+`node live-drive.mjs 1 2` — and asserts each step in the page files, the view sidecar, the DOM, or
+a channel's reply. It builds the app, backs up `~/Test`, launches the build with its own userData
+and debug port 9353, seeds `Collection A/Set Alpha` with its properties, views, and `Drive …`
+pages, writes a screenshot of each state it produces to `$POMMORA_DRIVE_SHOTS` (the system temp
+directory's `text-property-shots` otherwise), and restores `~/Test` when it ends or is
+interrupted. Native menus are chosen with System Events keystrokes, so the terminal needs
+Accessibility permission, and the run refuses to send a key unless the app is frontmost.
+
 `loc.py` and `check-atlas.mjs` run before every commit through the versioned git hook
 `../hooks/pre-commit`, which copies the codebase audit into `Dashboard/Audit/audit.md`, runs
 `loc.py --update`, stages both files into the commit, and runs `check-atlas.mjs`. Its partner

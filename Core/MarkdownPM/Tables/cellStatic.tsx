@@ -192,7 +192,7 @@ function MarkerGlyph({
 }
 
 // A cell holding a list draws one block per line, so the indent, the glyph and the rails have something to sit on; a cell holding none stays a single flow, which is what pre-wrap already renders correctly.
-function renderCellBody(
+export function renderCellBody(
   text: string,
   getConn?: () => ConnectionsApi | undefined,
   around?: CellPage,

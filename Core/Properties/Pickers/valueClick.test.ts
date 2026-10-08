@@ -7,6 +7,11 @@ import {
 } from './valueClick'
 
 describe('valueClickIntent', () => {
+  it('a text value edits in place, filled or empty', () => {
+    expect(valueClickIntent('text', { kind: 'text', value: 'a note' })).toEqual({ kind: 'edit' })
+    expect(valueClickIntent('text', { kind: 'null' })).toEqual({ kind: 'edit' })
+  })
+
   it('checkbox is true-or-absent: unchecked sets true, checked clears the key', () => {
     expect(valueClickIntent('checkbox', { kind: 'null' })).toEqual({
       kind: 'commit',

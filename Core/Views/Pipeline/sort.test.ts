@@ -50,6 +50,7 @@ const schema: PropertyDefinition[] = [
   },
   { id: 'prop_link', name: 'Link', type: 'link' },
   { id: 'prop_file', name: 'File', type: 'file' },
+  { id: 'prop_notes', name: 'Notes', type: 'text' },
 ]
 
 function makeRow(
@@ -83,6 +84,16 @@ describe('makeSorter — type-aware single criterion', () => {
     const sorter = makeSorter([{ property_id: 'prop_link', direction: 'ascending' }], schema)
     // Apple < https://m.co < Zebra by display — not clumped by the leading `[` of the two aliases.
     expect(ids(sorter?.(rows) ?? rows)).toEqual(['r_apple', 'r_bare', 'r_zebra'])
+  })
+
+  it('text sorts A → Z by its text, case-insensitively', () => {
+    const rows = [
+      makeRow('r_zebra', { props: { prop_notes: 'Zebra crossing' } }),
+      makeRow('r_apple', { props: { prop_notes: 'apple pie' } }),
+      makeRow('r_mango', { props: { prop_notes: 'Mango\nsecond line' } }),
+    ]
+    const sorter = makeSorter([{ property_id: 'prop_notes', direction: 'ascending' }], schema)
+    expect(ids(sorter?.(rows) ?? rows)).toEqual(['r_apple', 'r_mango', 'r_zebra'])
   })
 
   it('file sorts by the filename its wikilink names, case-insensitively', () => {

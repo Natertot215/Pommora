@@ -20,6 +20,7 @@ interface TypeMeta {
 // Title isn't a PropertyType, but it shares the glyph vocabulary, so every surface renders it from here.
 const TYPE_META: Record<PropertyType | 'title', TypeMeta> = {
   title: { label: 'Title', icon: 'text-align-justify' },
+  text: { label: 'Text', icon: 'text-align-start' },
   number: { label: 'Number', icon: 'hash' },
   checkbox: { label: 'Checkbox', icon: 'square-check' },
   dateTime: { label: 'Date', icon: 'calendar' },

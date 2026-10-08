@@ -378,7 +378,8 @@ export function PropertyFrame({
         }}
       />
     ),
-    // A registry Context and the two stamps carry no settings of their own.
+    // Text, a registry Context, and the two stamps carry no settings of their own.
+    text: NO_SETTINGS,
     context: NO_SETTINGS,
     createdTime: NO_SETTINGS,
     lastEditedTime: NO_SETTINGS,

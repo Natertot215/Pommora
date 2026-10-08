@@ -113,6 +113,7 @@ function evaluatorOf(kind: ValueKind): Evaluator {
       return evaluateCheckbox
     case 'select':
     case 'link':
+    case 'text':
       return evaluateText
     case 'multiSelect':
     case 'context':
@@ -141,6 +142,7 @@ function parseBool(s: string): boolean | null {
 function textValue(v: PropertyValue): string | null {
   switch (v.kind) {
     case 'select':
+    case 'text':
       return v.value
     case 'link':
       // Match the SHOWN text (alias, else URL) — the same parse Cell renders, so a `contains` on an aliased link tests the visible text, not its raw markdown.

@@ -36,6 +36,7 @@ describe('groupKeyToValue — destination group key → PropertyValue', () => {
       'multiSelect',
       'context',
       'link',
+      'text',
       'file',
       'title',
       undefined,

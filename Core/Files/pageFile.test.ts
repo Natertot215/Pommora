@@ -76,6 +76,29 @@ describe('mergeFrontmatter — an empty or absent block', () => {
     expect(mergeFrontmatter('Body', {}, ['ID'], 'Body')).toBe('Body')
   })
 
+  it('a flow collection another key’s write leaves alone keeps its unpadded spelling, and a padded one loses its padding', () => {
+    expect(
+      mergeFrontmatter('---\nList: [milk, eggs]\n---\nBody', { ID: 'X' }, ['ID'], 'Body'),
+    ).toBe('---\nList: [milk, eggs]\nID: X\n---\nBody')
+    expect(mergeFrontmatter('---\nList: [ milk ]\n---\nBody', { ID: 'X' }, ['ID'], 'Body')).toBe(
+      '---\nList: [milk]\nID: X\n---\nBody',
+    )
+  })
+
+  it('a changed value takes a fresh spelling: a quoted or block scalar does not hold the new value to its old style', () => {
+    expect(
+      mergeFrontmatter(
+        '---\nN: "42"\nB: |-\n  old\n  l2\n---\nBody',
+        { N: 'hello', B: 'x' },
+        ['N', 'B'],
+        'Body',
+      ),
+    ).toBe('---\nN: hello\nB: x\n---\nBody')
+    expect(mergeFrontmatter('---\nN: plain\n---\nBody', { N: 'a\nb' }, ['N'], 'Body')).toBe(
+      '---\nN: |-\n  a\n  b\n---\nBody',
+    )
+  })
+
   it('a comment-only block keeps its comment when an absent key is removed', () => {
     expect(mergeFrontmatter('---\n# c\n---\nBody', {}, ['ID'], 'Body')).toBe('---\n# c\n---\nBody')
   })
