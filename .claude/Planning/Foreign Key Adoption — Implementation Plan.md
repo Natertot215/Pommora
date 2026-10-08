@@ -37,24 +37,24 @@ Recorded 10-08-2026 at `26437f229` on `active`.
 
 - Gates: green at `26437f229` — `npm run typecheck` exit 0 · `npm run lint` "Checked 1425 files in 456ms. No fixes applied." exit 0 · `npm run test` 521 files, 7451 passed, 2 skipped, exit 0.
 - `grep -c "owed.options.add" Core/Nexus/fileEvents.ts` → 2 — rises to 4
-- `npm run test` → 7451 passed — rises by 3 (three settle tests and one frame test added, one menu test retired)
+- `npm run test` → 7451 passed — rises by 6 (five settle tests, one frame test, and one FrameSlide test added, one menu test retired)
 
 **START:** 2026-10-08T19:52:27Z
-**END:** {same, as the report is given}
+**END:** 2026-10-08T20:57:14Z
 
 #### Implementation Process
 
-- [ ] **Phase 1** — The Registry Names A Key `[Parallel with Phase 2]`
-  - [ ] Task 1.1
-  - [ ] Task 1.2
-- [ ] **Phase 2** — Create Lands In The List, Renaming `[Parallel with Phase 1]`
-  - [ ] Task 2.1
-- [ ] **Phase 3** — Documentation
-  - [ ] Task 3.1
-- [ ] **Phase 4** — The Watch Harness And NexusOS
-  - [ ] Task 4.1
-  - [ ] Task 4.2
-  - [ ] Review Checkpoint
+- [x] **Phase 1** — The Registry Names A Key `[Parallel with Phase 2]` — `56ffd8aa9`
+  - [x] Task 1.1
+  - [x] Task 1.2
+- [x] **Phase 2** — Create Lands In The List, Renaming `[Parallel with Phase 1]` — `af1fd00cd`
+  - [x] Task 2.1
+- [x] **Phase 3** — Documentation — `e95f2d230`
+  - [x] Task 3.1
+- [x] **Phase 4** — The Watch Harness And NexusOS — `dbee30cd0`
+  - [x] Task 4.1
+  - [x] Task 4.2
+  - [x] Review Checkpoint
 
 ### Phase 1 — The Registry Names A Key
 
@@ -573,49 +573,49 @@ PropertiesPM's option-types paragraph lists three registration moments and its P
 
 #### Review Checkpoint
 
-- [ ] Description adopted on NexusOS: the four descriptions in the loaded values, no page written.
-- [ ] Outside `tags:` edit registered `Harness` and the picker's source (the registry) shows it; reverted cleanly.
-- [ ] Color arrived through the registry file, Silver registered by the walk, the tag colored, the property kept with the palette icon.
-- [ ] `~/Test` rename-adopt through the drive harness on port 9353: Tags options `Option 1, alpha, beta, rho` after `property:rename`, Labels `Option 1, sigma` after `schema:add`, files byte-identical.
+- [x] Description adopted on NexusOS: the four descriptions in the loaded values, no page written. The script printed, at 500 ms, `± assigned: "…, Price" → "…, Price, Description"`, `± registry.Description: ∅ → "text[]"`, `± holders.Description: ∅ → 4`; the seven skill pages' mtimes compared identical before and after.
+- [x] Outside `tags:` edit registered `Harness` and the picker's source (the registry) shows it; reverted cleanly. At 500 ms: `± registry.Tags: "multiSelect[Tasks, Ideas, Label]" → "multiSelect[Tasks, Ideas, Label, Harness]"` and the page's `tags: ["Ideas"] → ["Tasks","Harness"]`; at 2000 ms the page's loaded values gained `Priority: ""`, a key the page's backup doesn't hold, so a third writer added it about 1.5 s after the script's write; Obsidian was open on the vault and its Sapphire plugin defines Priority, which is the inferred writer. The page copied back byte-identical, then `property:removeOption` printed `± registry.Tags: … → "multiSelect[Tasks, Ideas, Label]"`; the final Studio snapshot differs from the start in Description alone.
+- [x] Color arrived through the registry file, its members registered by the walk, every tag colored, the property kept with the palette icon. On the pre-plan instance the same sequence (sidecar first, then the registry) left `registry.Color: multiSelect[]` with `holders.Color: 40` and the Collection assigning it, and both files were restored byte-identical. On the new instance: the sidecar printed `± assigned: "Link, Price, Brand" → "…, prop_01M4EHWBQK170H1KPT2FR02RQH"`; the registry file printed, at 1000 ms, `± assigned: … → "Link, Price, Brand, Color"`, `± registry.Color: ∅ → "multiSelect[]"`, `± holders.Color: ∅ → 40`, and at 1500 ms `± registry.Color: "multiSelect[]" → "multiSelect[Black, Espresso, Navy, Silver, White, Stone, Mid-Grey, Taupe, Grey, Sage, Light Grey, Charcoal]"`. The 45 Assets pages' mtimes compared identical throughout. See *§Deviations* for the member count.
+- [x] `~/Test` rename-adopt through the drive harness on port 9353: the drive's page held `tags: [alpha, beta]`, `labels: [gamma, delta]`, and a `description`; Tags read `Option 1, alpha, beta` after `property:rename` onto it, Labels `Option 1, gamma, delta` after `schema:add`, the Text value loaded, and the page file printed unchanged; `~/Test` restored.
 
 ### Completion Criteria
 
 **Conformance**
 
-- [ ] `grep -rn "registerHeldOptions(" Core | grep -v test` → `optionOps.ts`, `handlers.ts`, `settle.ts` only.
-- [ ] `git diff --name-only 26437f229..HEAD` → the twelve files the plan names plus `Dashboard/Ledger/loc-history.json` and this plan.
+- [x] `grep -rn "registerHeldOptions(" Core | grep -v test` → `optionOps.ts`, `handlers.ts`, `settle.ts` only.
+- [x] `git diff --name-only 26437f229..HEAD` → the twelve files the plan names, `UIX/Menus/FrameSlide.tsx` and its test (the first Deviation), `Dashboard/Ledger/loc-history.json`, and this plan.
 
 **Correctness**
 
-- [ ] Rename onto held pages, create over a holding Space, and a walked outside arrival each register in the same settle (the three settle tests).
-- [ ] Creating a property lands on the list with its row renaming, and All Properties rows open no menu (the frame tests).
-- [ ] NexusOS: Description's values live on creation with no page write; an outside `tags:` edit reaches the registry; Color arriving through the registry file registers Silver through the walk.
+- [x] Rename onto held pages, create over a holding Space, and a walked outside arrival each register in the same settle (the three settle tests).
+- [x] Creating a property lands on the list with its row renaming, and All Properties rows open no menu (the frame tests).
+- [x] NexusOS: Description's values live on creation with no page write; an outside `tags:` edit reaches the registry; Color arriving through the registry file registers Silver through the walk.
 
 **Completeness**
 
-- [ ] Every task ticked; no scaffolding or debug output in `26437f229..HEAD`.
+- [x] Every task ticked; no scaffolding or debug output in `26437f229..HEAD`.
 
 **Confirmation**
 
-- [ ] The five tests go red with their change reverted; every script delta read, not inferred.
+- [x] The five tests go red with their change reverted; every script delta read, not inferred.
 
 **Continuity**
 
-- [ ] PropertiesPM and the decision log read true; the README lists the script.
+- [x] PropertiesPM and the decision log read true; the README lists the script.
 
 **Confidence**
 
-- [ ] Gates green from clean on `26437f229..HEAD`; Baseline counts moved as planned.
-- [ ] Diff about +30 production lines, comments and tests excluded, plus the script.
+- [x] Gates green from clean on `26437f229..HEAD`; Baseline counts moved as planned.
+- [x] Diff +44/−29 production lines, comments and tests excluded, plus the script.
 
 ### Final Verification
 
-- [ ] Phase review dispatched: Phase 1 · Phase 2 · Phase 3 · Phase 4
-- [ ] All findings fixed or ruled on
-- [ ] Neutral verification passed on `26437f229..HEAD`
-- [ ] Final pass: gates · baseline · diff · deviations · criteria
-- [ ] Reconciliation walked; living documents read
-- [ ] Report delivered
+- [x] Phase review dispatched: Phase 1 · Phase 2 · Phase 3 · Phase 4
+- [x] All findings fixed or ruled on
+- [x] Neutral verification passed on `26437f229..HEAD` (second pass, after the first failed on the create's focus)
+- [x] Final pass: gates · baseline · diff · deviations · criteria
+- [x] Reconciliation walked; living documents read
+- [x] Report delivered
 
 #### Reconciliation
 
@@ -633,3 +633,8 @@ The skill's report shape, with the line-count delta (comments and tests excluded
 ### Open Items
 
 - **A known gap, not closed:** a registry arriving from outside while an in-app registry write lands before the walk pays can leave an assigned Collection unowed until the next reopen. Closing it means holding an own create's definition out of the tree until the walk; left as is.
+
+### Deviations
+
+- **The list slot is live and shown in the render the create returns to it:** the plan's remedy was to begin the rename after the slide; what landed makes the slot live from that render instead, so nothing waits. `FrameSlide` lifted the root slot's `inert` and its `visibility: hidden` in effects after `open` flipped, so the rename input the create mounted called `focus()` while still inert and hidden, and Chromium left focus on `body` (the plan's foreseen case, read through a focus probe in a built instance on `~/Test`). The slot a flip is heading for is now live and shown from the render that chooses it (`UIX/Menus/FrameSlide.tsx`, `target`), for every FrameSlide consumer; a FrameSlide test probes what mounts in the destination slot on open and on close, the frame test records whether `focus()` ran inside an inert ancestor, and the same built-instance drive then read the input focused at every interval, `hue` committed by Enter, and `red, blue, teal` registered from the page and the Space with both files unchanged.
+- **Color holds twelve members, not one:** the Assets pages write `Color:` as a list, so the `grep "^Color:"` count the plan read as 39 empty keys and one `Silver` was 40 list heads; the walk registered all twelve held members. Each was colored by its name (`Silver` → `grey-3` as ruled; the greys stepped from `White` → `grey-0` to `Black` → `grey-7`, `Navy` → `blue-7`, `Espresso` → `brown-7`, `Taupe` → `brown-3`, `Stone` → `brown-1`, `Sage` → `green-2`), applying the "color each tag" ruling to what the pages hold.
