@@ -117,8 +117,11 @@ export const base = style({
   ...placeholderTone,
 })
 
-/** Sized to its text, so a frame that grows to its content holds its width when a value turns into this field. */
-export const fillInput = style([base, { fieldSizing: 'content', width: '100%', minWidth: 0 }])
+/** Sized to its text and aligned as its host, so a value turning into this field neither moves nor resizes a frame that grows to its content. */
+export const fillInput = style([
+  base,
+  { fieldSizing: 'content', width: '100%', minWidth: 0, textAlign: 'inherit' },
+])
 
 export const invalidInput = style({
   selectors: { '&[aria-invalid="true"]': { opacity: STATE_OPACITY.ghost } },

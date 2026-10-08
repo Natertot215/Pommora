@@ -1,6 +1,8 @@
 import { useRef } from 'react'
 import { isSecondaryClick } from '@pommora/uix/Interactions/chords'
+import { overScrollEllipsis } from '@pommora/uix/Interactions/OverScroll'
 import { AccessoryButton } from '@pommora/uix/Menus'
+import { cx } from '@pommora/uix/Utilities/cx'
 import type { ConnPage } from '../../Connections/pageIndex'
 import { glanceHost } from '../../Interface/Glance/glanceAction'
 import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'
@@ -37,6 +39,12 @@ export function TextCell({
     e.stopPropagation()
     resolveFollow(found.target, own, connections?.(), e, openWebLink)?.()
   }
+  let offset = 0
+  const lines = text.split('\n').map((line) => {
+    const from = offset
+    offset += line.length + 1
+    return { line, from }
+  })
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: the value's keyboard route is its field; a link inside it is pointer-followed as a resting table cell's is
     <div
@@ -48,7 +56,13 @@ export function TextCell({
       onPointerOver={onPointerOver}
       onPointerOut={onPointerOut}
     >
-      <div className="cell-text">{renderCellContent(text, connections)}</div>
+      <div className={cx('cell-text', overScrollEllipsis)}>
+        {lines.map(({ line, from }) => (
+          <span key={from} className="cell-text-line">
+            {renderCellContent(line, connections, undefined, undefined, from)}
+          </span>
+        ))}
+      </div>
       {onPane && (
         <span className="cell-pen">
           <AccessoryButton

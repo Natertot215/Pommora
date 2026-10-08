@@ -125,10 +125,11 @@ const card = (title) => `document.querySelector('[data-rid="${pageIds[title]}"]'
 const cardValue = (title, prop = NOTES) =>
   `[...${card(title)}.querySelectorAll('.card-value')].find((v) => v.closest('.card-prop-row')?.querySelector('.card-prop-label')?.textContent.trim() === ${JSON.stringify(prop)} || v.querySelector('.cell-text'))`
 const panelRow = (prop = NOTES) => `document.querySelector('[data-property-row="${ids[prop]}"]')`
-const cellText = (cdp, expr) => cdp.evaluate(`(${expr})?.querySelector('.cell-text')?.textContent ?? null`)
+const cellText = (cdp, expr) =>
+  cdp.evaluate(`(() => { const t = (${expr})?.querySelector('.cell-text'); return t ? [...t.querySelectorAll('.cell-text-line')].map((l) => l.textContent).join('\\n') : null })()`)
 // The value's box stands one line tall whatever it holds.
 const oneLine = (cdp, expr) =>
-  cdp.evaluate(`(() => { const t = (${expr})?.querySelector('.cell-text'); if (!t) return false; const lh = parseFloat(getComputedStyle(t).lineHeight) || parseFloat(getComputedStyle(t).fontSize) * 1.4; const h = t.getBoundingClientRect().height; const lines = t.textContent.split('\\n').length; return h > 0 && h <= lh * 1.5 && (lines > 1 ? t.scrollHeight > t.clientHeight : true) })()`)
+  cdp.evaluate(`(() => { const t = (${expr})?.querySelector('.cell-text'); if (!t) return false; const lh = parseFloat(getComputedStyle(t).lineHeight) || parseFloat(getComputedStyle(t).fontSize) * 1.4; const h = t.getBoundingClientRect().height; const hidden = [...t.querySelectorAll('.cell-text-line')].slice(1).every((l) => l.getClientRects().length === 0); return h > 0 && h <= lh * 1.5 && hidden })()`)
 const field = `document.activeElement?.tagName === 'INPUT' ? document.activeElement : null`
 const fieldValue = (cdp) => cdp.evaluate(`(${field})?.value ?? null`)
 async function pickRow(cdp, label) {
@@ -182,7 +183,7 @@ async function group1(cdp, pid) {
   const drawn = { first: (await cellText(cdp, cell('Drive Prose')))?.slice(0, 30), lines: (await cellText(cdp, cell('Drive Prose')))?.split('\n').length, oneLine: await oneLine(cdp, cell('Drive Prose')), empty: await cellText(cdp, cell('Drive Empty')) }
   check("group 1: Drive Prose's cell draws every line, one line tall; Drive Empty's is empty",
     drawn.first?.startsWith('see ') && drawn.lines === SHOWCASE.split('\n').length && drawn.oneLine && drawn.empty === null, JSON.stringify(drawn))
-  const items = await cdp.evaluate(`(() => { const t = (${cell('Drive Items')}).querySelector('.cell-text'); return { first: t.textContent.split('\\n')[0], marks: t.querySelectorAll('[class*="md-list-"]').length } })()`)
+  const items = await cdp.evaluate(`(() => { const t = (${cell('Drive Items')}).querySelector('.cell-text'); return { first: t.querySelector('.cell-text-line').textContent, marks: t.querySelectorAll('[class*="md-list-"]').length } })()`)
   check("group 1: Drive Items's list-spelled value reads as prose, its first line the literal - milk", items.first === '- milk' && items.marks === 0, JSON.stringify(items))
   await shot(cdp, 'table-filled-empty')
 
@@ -305,9 +306,9 @@ const rectOf = (cdp, expr) =>
   cdp.evaluate(`(() => { const e = (${expr}); if (!e) return null; const b = e.getBoundingClientRect(); return { left: b.left, right: b.right, top: b.top, bottom: b.bottom, width: b.width, height: b.height } })()`)
 const styleOf = (cdp, expr, props) =>
   cdp.evaluate(`(() => { const e = (${expr}); if (!e) return null; const s = getComputedStyle(e); return ${JSON.stringify(props)}.map((p) => s[p]) })()`)
-// The text's content box: the padding the text takes while the pen shows is the room the pen sits in.
+// The text's box: while the pen shows, the text stands clear of it by a margin.
 const penApart = async (cdp, scope) => {
-  const text = await cdp.evaluate(`(() => { const e = (${scope}).querySelector('.cell-text'); if (!e) return null; const b = e.getBoundingClientRect(); return { left: b.left, right: b.right - parseFloat(getComputedStyle(e).paddingRight), top: b.top, bottom: b.bottom } })()`)
+  const text = await cdp.evaluate(`(() => { const e = (${scope}).querySelector('.cell-text'); if (!e) return null; const b = e.getBoundingClientRect(); return { left: b.left, right: b.right, top: b.top, bottom: b.bottom } })()`)
   const pen = await rectOf(cdp, `(${scope}).querySelector(${JSON.stringify(PEN)})`)
   return !!text && !!pen && !overlaps(text, pen)
 }
@@ -357,15 +358,23 @@ async function group2(cdp, pid) {
   }
   check("group 2: at rest Drive Prose's text and Drive Items's end in an ellipsis", ellipsis.prose === 'ellipsis' && ellipsis.items === 'ellipsis', JSON.stringify(ellipsis))
 
-  // The box's scroll width is its widest line's, so a first line shorter than the next is the case a hover scroll would run into blank space.
+  // Only the first line is laid out, so a short first line over a long second has nothing to scroll, and a long first line scrolls to its own end.
   await must('a short first line on Drive Empty', ask(cdp, 'mutate', { op: 'setProperty', path: pagePath('Drive Empty'), propertyId: ids[NOTES], value: { kind: 'text', value: 'short\na much longer second line that runs well past the width of the cell it sits in' } }))
   await until("Drive Empty's value", async () => (await cellText(cdp, cell('Drive Empty'))) !== null)
-  await hover(cdp, `(${cell('Drive Empty')}).querySelector('.cell-text')`)
-  const at = await boxOf(cdp, `(${cell('Drive Empty')}).querySelector('.cell-text')`)
-  await cdp.send('Input.dispatchMouseEvent', { type: 'mouseWheel', x: at.x, y: at.y, deltaX: 300, deltaY: 0 })
-  await sleep(500)
-  const still = await cdp.evaluate(`(() => { const t = (${cell('Drive Empty')}).querySelector('.cell-text'); return { left: t.scrollLeft, overflow: getComputedStyle(t).textOverflow } })()`)
-  check('group 2: hovering and wheeling a value never scrolls it, so its first line stays in view', still.left === 0 && still.overflow === 'ellipsis', JSON.stringify(still))
+  const wheel = async (title) => {
+    const box = `(${cell(title)}).querySelector('.cell-text')`
+    await hover(cdp, box)
+    const at = await boxOf(cdp, box)
+    await cdp.send('Input.dispatchMouseEvent', { type: 'mouseWheel', x: at.x, y: at.y, deltaX: 300, deltaY: 0 })
+    await sleep(500)
+    return cdp.evaluate(`(() => { const t = ${box}; const s = getComputedStyle(t); const first = t.querySelector('.cell-text-line').getBoundingClientRect().width + parseFloat(s.paddingLeft) + parseFloat(s.paddingRight); return { left: t.scrollLeft, width: t.scrollWidth, first: Math.ceil(first), client: t.clientWidth } })()`)
+  }
+  const short = await wheel('Drive Empty')
+  check('group 2: a short first line over a long second has nothing to scroll', short.left === 0 && short.width <= short.client, JSON.stringify(short))
+  const long = await wheel('Drive Prose')
+  check("group 2: hovering and wheeling Drive Prose's value scrolls it to its first line's end and no further", long.left > 0 && long.width <= long.first + 1, JSON.stringify(long))
+  await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 4, y: 4, button: 'none' })
+  await sleep(600)
   await must('Drive Empty restored', ask(cdp, 'mutate', { op: 'setProperty', path: pagePath('Drive Empty'), propertyId: ids[NOTES], value: null }))
   await until('Drive Empty emptied', async () => (await cellText(cdp, cell('Drive Empty'))) === null)
 

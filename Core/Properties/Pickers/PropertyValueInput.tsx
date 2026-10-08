@@ -80,5 +80,5 @@ export function PropertyValueInput({
       onCancel={onClose}
     />
   )
-  return accent ? <span style={{ color: accent }}>{field}</span> : field
+  return accent ? <span style={{ color: accent, display: 'contents' }}>{field}</span> : field
 }

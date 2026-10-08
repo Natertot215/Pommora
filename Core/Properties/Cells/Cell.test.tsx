@@ -277,10 +277,10 @@ describe('a text value', () => {
       menu,
     }) as unknown as ConnectionsApi
 
-  it('renders every line of the value; the one-line clip is the class, not a slice', () => {
+  it('renders every line of the value, each on its own; the one-line clip is the class, not a slice', () => {
     mount(rowWith({ prop_notes: 'first line\nsecond line' }), 'prop_notes', {})
-    const root = host.querySelector('.cell-text')
-    expect(root?.textContent).toBe('first line\nsecond line')
+    const lines = [...host.querySelectorAll('.cell-text > .cell-text-line')]
+    expect(lines.map((l) => l.textContent)).toEqual(['first line', 'second line'])
   })
   it('colors a link it holds through the context’s connections, as a resting table cell does', () => {
     act(() =>
