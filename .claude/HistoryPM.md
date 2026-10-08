@@ -155,10 +155,10 @@
 #### PM-148 || Text Properties
 **DATE:** 10-08-2026
 
-Text became the first entry of the property catalog: a free-form value typed into a table cell, a card, the Properties panel, or the Properties menu, resting on one line with an ellipsis while its links stay live — coloring, opening, glancing, following renames, and turning phantom when their page is deleted. A pen over the value's trailing edge opens TextPane, which edits the full value across lines with the page editor's formatting and links, and links inside values joined the index and the rename cascade. A value another app wrote, whether a number, a list, or an unquoted link, reads as its text and stays untouched on disk until edited. Trailing values across panels, menus, and cards now stop at one shared reach short of their labels, and inline value fields size to their text so a content-sized panel holds its width while a value is edited.
+Text became the first entry of the property catalog: a free-form value typed into a table cell, a card, the Properties panel, or the Properties menu, resting on one line that ends in an ellipsis and scrolls under the pointer while its links stay live — coloring, opening, glancing, following renames, and turning phantom when their page is deleted. A pen over the value's trailing edge opens TextPane, which edits the full value across lines with the page editor's formatting and links, and links inside values joined the index and the rename cascade. A value another app wrote, whether a number, a list, or an unquoted link, reads as its text and stays untouched on disk until edited. Trailing values across panels, menus, and cards now stop at one shared reach short of their labels, and inline value fields size to their text and align as their value does, so a value turning editable neither moves nor resizes the panel around it.
 
-- **Commits:** `b80a7b12a^..203c9f6d2`
-- **Diff:** Net +689 | +964 / −275
+- **Commits:** `b80a7b12a^..4155770d1`
+- **Diff:** Net +704 | +988 / −284
 
 #### PM-147 || Codeblock Deltas
 **DATE:** 10-06-2026 → 10-07
