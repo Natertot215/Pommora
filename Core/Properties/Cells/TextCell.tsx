@@ -7,6 +7,7 @@ import type { ConnPage } from '../../Connections/pageIndex'
 import { glanceHost } from '../../Interface/Glance/glanceAction'
 import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'
 import { resolveFollow } from '../../MarkdownPM/Links/linkClicks'
+import { lineOffsetsOf } from '../../MarkdownPM/Engine/markdownCode'
 import { linkGestures, renderCellContent } from '../../MarkdownPM/Tables/cellStatic'
 import { openWebLink } from '../../Web/openWebLink'
 
@@ -39,12 +40,8 @@ export function TextCell({
     e.stopPropagation()
     resolveFollow(found.target, own, connections?.(), e, openWebLink)?.()
   }
-  let offset = 0
-  const lines = text.split('\n').map((line) => {
-    const from = offset
-    offset += line.length + 1
-    return { line, from }
-  })
+  const lines = text.split('\n')
+  const starts = lineOffsetsOf(lines)
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: the value's keyboard route is its field; a link inside it is pointer-followed as a resting table cell's is
     <div
@@ -58,9 +55,10 @@ export function TextCell({
     >
       <div className="cell-text-clip">
         <div className={cx('cell-text', overScrollEllipsis)}>
-          {lines.map(({ line, from }) => (
-            <span key={from} className="cell-text-line">
-              {renderCellContent(line, connections, undefined, undefined, from)}
+          {lines.map((line, i) => (
+            <span key={starts[i]} className="cell-text-line">
+              {renderCellContent(line, connections, { base: starts[i] })}
+              {line === '' && '\u200b'}
             </span>
           ))}
         </div>

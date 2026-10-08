@@ -125,9 +125,7 @@
 .card-value:has(.cell-checkbox, .cell-switch) {
   padding-inline: var(--label-pad-x);
 }
-.card-props.is-flow > span:has(.cell-bar) {
-  flex-basis: 100%;
-}
+.card-props.is-flow > span:has(.cell-bar),
 .card-props.is-flow > .card-text-value {
   flex-basis: 100%;
 }
