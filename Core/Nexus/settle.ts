@@ -1,4 +1,4 @@
-// The one place a change to the tree, pages, values, tiles, or assets reaches the window. The app's own writes land here as events while they happen; a write's gate and the watcher's batch then stamp what their events listed missing, and settle: the heading renames outside edits owed cascaded, the walk the events owed, whose own listing of what is missing its ID is stamped as `stampable` allows and settled in turn, the options the changed files hold registered, and one push of what moved.
+// The one place a change to the tree, pages, values, tiles, or assets reaches the window. The app's own writes land here as events while they happen; a write's gate and the watcher's batch then stamp what their events listed missing, and settle: the heading renames outside edits owed cascaded, the walk the events owed, whose own listing of what is missing its ID is stamped as `stampable` allows and settled in turn, the options the owed files hold registered, and one push of what moved.
 
 import { join, relDirname, relative } from '../Paths/posix'
 import { escapes } from '../Paths/pathSafety'
@@ -17,6 +17,7 @@ import {
   indexEvent,
   nothingOwed,
   oweAgain,
+  oweNamedKeys,
   oweRenames,
   oweRescope,
   oweWalk,
@@ -106,7 +107,10 @@ async function walkWhileOwed(root: string): Promise<void> {
       diskMoved()
       const was = heldTreeOf(root)?.config
       const walked = await refreshTree(root)
-      if (was) oweRescope(owed, scopeOf(was), scopeOf(walked.config))
+      if (was) {
+        oweRescope(owed, scopeOf(was), scopeOf(walked.config))
+        oweNamedKeys(owed, was, walked)
+      }
       owed.stamp.push(...stampable(owed, walked.unreadable ?? []))
       // The map is patch-only, so the fallback walk is where the listing is taken again.
       if (assets && (await refreshAssetMap(root)) !== assets) owed.assets = true

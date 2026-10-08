@@ -5,6 +5,7 @@ import { readJsonAt, tempRoot } from '../Testing/hostFs'
 import { settledMutate } from '../Testing/settledMutate'
 import type { TrashDeps } from '../Trash/bundle'
 import { assignProperty } from '../Properties/assignment'
+import { createProperty, renameProperty } from '../Properties/registryProperty'
 import { renameOption } from '../Properties/optionOps'
 import * as optionOps from '../Properties/optionOps'
 import { optionValues, type PropertyDefinition } from '../Properties/properties'
@@ -825,14 +826,13 @@ describe('held options — the Multi-Select members a changed file holds are reg
         },
       }),
     )
-  const stored = async (id: 'tags' | 'kind') =>
+  const stored = async (id: string) =>
     (
       await readJsonAt<{
         defs: Record<string, { select_options: { value: string; color?: string }[] }>
       }>(abs('.nexus', 'properties.json'))
     ).defs[id]?.select_options ?? []
-  const options = async (id: 'tags' | 'kind' = 'tags'): Promise<string[]> =>
-    (await stored(id)).map((o) => o.value)
+  const options = async (id = 'tags'): Promise<string[]> => (await stored(id)).map((o) => o.value)
   const walked = async (): Promise<void> => {
     shown = recordHanded(await refreshTree(root)).tree
   }
@@ -1023,6 +1023,42 @@ describe('held options — the Multi-Select members a changed file holds are reg
       'beta',
       'Ideas',
     ])
+  })
+
+  it('renaming the property onto a key its Collection’s pages already hold, in any casing, registers their members', async () => {
+    await writeFile(abs('Notes', 'A.md'), page(ULID_A, 'labels:\n  - Ideas\n'))
+    await walked()
+    expect((await renameProperty(root, 'tags', 'Labels')).ok).toBe(true)
+    await settleNow(pusher, root)
+    expect(await options()).toEqual(['alpha', 'Ideas'])
+  })
+
+  it('creating a property under a key a Space holds registers the Space’s members', async () => {
+    await writeFile(abs(...SPACE), JSON.stringify({ id: ULID_D, labels: ['Ideas'] }))
+    await walked()
+    const created = await createProperty(root, {
+      id: 'labels',
+      name: 'Labels',
+      type: 'multiSelect',
+    })
+    expect(created.ok).toBe(true)
+    await settleNow(pusher, root)
+    expect(await options('labels')).toEqual(['Option 1', 'Ideas'])
+  })
+
+  it('a registry arriving from outside with a property a Collection already assigns registers the members its pages hold', async () => {
+    await writeFile(
+      abs('Notes', '_pagecollection.json'),
+      JSON.stringify({ id: 'c1', properties: ['tags', 'kind', 'labels'] }),
+    )
+    await writeFile(abs('Notes', 'A.md'), page(ULID_A, 'Labels:\n  - Ideas\n'))
+    await walked()
+    const held = JSON.parse(await readFile(abs('.nexus', 'properties.json'), 'utf8'))
+    held.order.push('labels')
+    held.defs.labels = { id: 'labels', name: 'Labels', type: 'multiSelect', select_options: [] }
+    await writeFile(abs('.nexus', 'properties.json'), JSON.stringify(held))
+    await settleBatch(pusher, root, [ev('change', '.nexus', 'properties.json')])
+    expect(await options('labels')).toEqual(['Ideas'])
   })
 })
 
