@@ -15,9 +15,9 @@ import {
 import { toggled } from '@pommora/uix/Utilities/checkSet'
 import { docOutline, docScan } from '../docCache'
 import { inCodeAt } from '../Engine/docScan'
-import { linkAt, pageLinkPattern } from '../../Connections/connections'
+import { pageLinkPattern } from '../../Connections/connections'
 import { normalizeTitle } from '../../Paths/caseFold'
-import { inMarkdownLink } from '../../Connections/links'
+import { inBracket } from '../Input/edits'
 import { restedOnLink } from '../Links/linkReveal'
 import { headingTargetOf, pageHeadingTarget } from './headingTarget'
 import type { AutocompletePaneProps } from './AutocompletePane'
@@ -162,7 +162,7 @@ export function useConnectionAutocomplete(
     aside: (dir) => {
       const view = viewRef.current
       if (!view || !ac) return false
-      if (dir === 1 && (ac.form === 'link' || ac.form === 'target')) {
+      if (dir === 1 && (ac.form === 'link' || (ac.form === 'target' && ac.query !== ''))) {
         if (row?.kind !== 'page') return false
         commit(row, { openHeading: true })
         return true
@@ -219,7 +219,7 @@ export function detectConnectionQuery(
   setAc(next)
 }
 
-// Under Automatic, a `§` typed alone in prose, outside either link syntax and code, arms the section form at its position; the arm lapses once the caret leaves that line.
+// Under Automatic, a `§` typed alone in prose, outside a bracket and code, arms the section form at its position; the arm lapses once the caret leaves that line.
 export function sectionArmAfter(u: ViewUpdate, armed: number | null): number | null {
   let next = armed
   for (const tr of u.transactions) {
@@ -237,13 +237,7 @@ export function sectionArmAfter(u: ViewUpdate, armed: number | null): number | n
     })
     if (seen !== 1 || at === null) continue
     const line = tr.newDoc.lineAt(at)
-    const rel = at - line.from
-    if (
-      !linkAt(line.text, rel) &&
-      !inMarkdownLink(line.text, rel) &&
-      !inCodeAt(docScan(tr.newDoc), at)
-    )
-      next = at
+    if (!inBracket(line.text, at - line.from) && !inCodeAt(docScan(tr.newDoc), at)) next = at
   }
   if (next === null) return null
   const caretLine = u.state.doc.lineAt(u.state.selection.main.head).number

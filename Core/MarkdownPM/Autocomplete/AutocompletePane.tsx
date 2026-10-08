@@ -79,7 +79,9 @@ export function AutocompletePane({
   const keepInView = useKeepInView(v.index)
 
   const cameFrom = useRef<AcRow[]>([])
-  if (open && (v.ac.form === 'link' || v.ac.form === 'target')) cameFrom.current = v.candidates
+  // Only a link's page rows open a heading slot, so only they carry the chevron and stay behind the slide.
+  const linksPages = v.ac.form === 'link' || v.ac.form === 'target'
+  if (open && linksPages) cameFrom.current = v.candidates
   useEffect(() => {
     if (ac === null) cameFrom.current = []
   }, [ac])
@@ -118,7 +120,7 @@ export function AutocompletePane({
                 label={`Forget ${row.value}`}
                 onRemove={row.forget}
               />
-            ) : row.kind === 'page' ? (
+            ) : row.kind === 'page' && linksPages ? (
               <button
                 type="button"
                 className={cx(removeButton, revealTarget, side, 'mdpm-ac-aside')}

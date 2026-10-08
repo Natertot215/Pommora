@@ -4,12 +4,12 @@ import {
   decodeLinkTarget,
   encodeLinkTarget,
   escapeAlias,
-  inMarkdownLink,
   markdownDestinationAt,
   targetTitle,
 } from '../../Connections/links'
 import { NO_TRAIL, type TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { type DocScan, inCodeAt } from '../Engine/docScan'
+import { inBracket } from '../Input/edits'
 import { lineIndexAt, type TextEdit } from '../Engine/markdownCode'
 import type { ConnPage, PageIndex } from '../../Connections/pageIndex'
 import type { OutlineHeading } from '../Engine/headingScan'
@@ -58,8 +58,7 @@ export function autocompleteQuery(
       armedRel >= 0 &&
       armedRel < line.length &&
       caret >= armed + 1 &&
-      !linkAt(line, rel) &&
-      !inMarkdownLink(line, armedRel) &&
+      !inBracket(line, armedRel) &&
       !/^\s/.test(line.slice(armedRel + 1, rel))
     )
       return {
@@ -99,8 +98,8 @@ export function autocompleteQuery(
     const { dest, fragment } = md
     const label = { from: lineStart + md.label[0], to: lineStart + md.label[1] }
     const pageEnd = fragment ? fragment[0] - 1 : dest[1]
-    // As with a wikilink, the page half queries alone and a retarget replaces the fragment with the rest.
-    if (!fragment || rel <= pageEnd)
+    // As with a wikilink, the page half queries alone, an empty one before a fragment asks nothing, and a retarget replaces the fragment with the rest.
+    if (!fragment || (rel <= pageEnd && pageEnd > dest[0]))
       return {
         query: decodeLinkTarget(line.slice(dest[0], pageEnd)),
         from: lineStart + dest[0],
@@ -269,14 +268,13 @@ export function commitEdit(
     return { changes: [{ from: ac.from, to: ac.to, insert }], anchor: caret + 2 }
   // The anchor steps one past what was written: the `)` that finishes the link, or the `#` the heading slot opens behind.
   if (ac.form === 'target' || ac.form === 'fragment') {
-    const hash = opts.openHeading ? '#' : ''
-    const retarget = { from: ac.from, to: ac.to, insert: insert + hash }
+    const retarget = { from: ac.from, to: ac.to, insert: opts.openHeading ? `${insert}#` : insert }
     const fill = ac.label && ac.label.from === ac.label.to ? ac.label : null
     const label = fill ? escapeAlias(value) : ''
     return {
       changes: fill ? [{ from: fill.from, to: fill.to, insert: label }, retarget] : [retarget],
       anchor: caret + label.length + 1,
-      ...(hash ? { opensHeading: true } : {}),
+      opensHeading: opts.openHeading,
     }
   }
   return { changes: [{ from: ac.from, to: ac.to, insert }], anchor: caret }

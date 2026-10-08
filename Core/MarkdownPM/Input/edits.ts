@@ -1,5 +1,5 @@
 import { type Personalization, settingOf } from '../../Settings/personalization'
-import { linkDestinationAt } from '../../Connections/links'
+import { linkDestinationStart } from '../../Connections/links'
 import { aliasSpanAt } from '../../Connections/connections'
 import { inCalloutAt, inCodeAt, inFenceAt, spanAt, type DocScan } from '../Engine/docScan'
 import {
@@ -617,7 +617,7 @@ const inUrlRun = (doc: string, c: number): boolean => {
   const from = lineStartAt(doc, c)
   return (
     urlRunRe.test(doc.slice(from, c)) ||
-    linkDestinationAt(doc.slice(from, lineEndAt(doc, c)), c - from)
+    linkDestinationStart(doc.slice(from, lineEndAt(doc, c)), c - from) !== null
   )
 }
 const isLiteralAt = (scan: DocScan, c: number): boolean =>
@@ -628,7 +628,7 @@ const isLiteralAt = (scan: DocScan, c: number): boolean =>
   inUrlRun(scan.text, c)
 
 // An unclosed `[` holds a citation's label or a link's text: a glyph written there lands inside the reference.
-const inBracket = (doc: string, c: number): boolean => {
+export const inBracket = (doc: string, c: number): boolean => {
   const line = doc.slice(lineStartAt(doc, c), c)
   const open = line.lastIndexOf('[')
   return open !== -1 && !line.slice(open).includes(']')

@@ -95,7 +95,6 @@ export function linkMenuTarget(
 
 interface WikiLinkView {
   status: LinkStatus
-  page: ConnPage | null
   bare: boolean
   missing: boolean
 }
@@ -111,23 +110,22 @@ export function headingMissing(
   return known !== undefined && !known.includes(normalizeTitle(target.heading))
 }
 
-// How a wikilink token reads: the page half resolves, and its fragment reads as `headingMissing` says.
+function linkStatus(target: MdTarget): LinkStatus {
+  if (target.kind !== 'invalid') return 'resolved'
+  return target.ambiguous ? 'ambiguous' : 'phantom'
+}
+
 export function wikiLinkView(
   conn: ConnectionsApi,
   text: string,
   tk: Token,
   ownKeys: readonly string[] | undefined,
 ): WikiLinkView {
-  const [rs, re] = tk.resolveRange ?? tk.contentRange
-  const bare = rs === re
-  const res = bare ? null : conn.resolve(text.slice(rs, re))
-  const page = res?.page ?? null
-  const heading = headingOf(text, tk)
+  const target = tokenTarget(conn, text, tk)
   return {
-    status: res ? res.status : heading ? 'resolved' : 'phantom',
-    page,
-    bare,
-    missing: headingMissing(conn, tokenTarget(conn, text, tk), ownKeys),
+    status: linkStatus(target),
+    bare: target.kind === 'self',
+    missing: headingMissing(conn, target, ownKeys),
   }
 }
 
