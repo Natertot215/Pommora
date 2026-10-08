@@ -306,17 +306,21 @@ const rectOf = (cdp, expr) =>
   cdp.evaluate(`(() => { const e = (${expr}); if (!e) return null; const b = e.getBoundingClientRect(); return { left: b.left, right: b.right, top: b.top, bottom: b.bottom, width: b.width, height: b.height } })()`)
 const styleOf = (cdp, expr, props) =>
   cdp.evaluate(`(() => { const e = (${expr}); if (!e) return null; const s = getComputedStyle(e); return ${JSON.stringify(props)}.map((p) => s[p]) })()`)
-// The text's box: while the pen shows, the text stands clear of it by a margin.
-const penApart = async (cdp, scope) => {
-  const text = await cdp.evaluate(`(() => { const e = (${scope}).querySelector('.cell-text'); if (!e) return null; const b = e.getBoundingClientRect(); return { left: b.left, right: b.right, top: b.top, bottom: b.bottom } })()`)
+// The text's box: in a table cell the pen overlays it and the text fades out under the pen; elsewhere the text stands clear of it by a margin.
+const penPlaced = async (cdp, scope, overlay) => {
+  const text = await rectOf(cdp, `(${scope}).querySelector('.cell-text')`)
   const pen = await rectOf(cdp, `(${scope}).querySelector(${JSON.stringify(PEN)})`)
-  return !!text && !!pen && !overlaps(text, pen)
+  if (!text || !pen) return false
+  if (!overlay) return !overlaps(text, pen)
+  const mask = await cdp.evaluate(`getComputedStyle((${scope}).querySelector('.cell-text-clip')).maskImage`)
+  return overlaps(text, pen) && mask.startsWith('linear-gradient')
 }
 async function penOn(cdp, scope, tag) {
   await hover(cdp, scope)
   const shown = await cdp.evaluate(`(() => { const p = (${scope}).querySelector(${JSON.stringify(PEN)}); return !!p && parseFloat(getComputedStyle(p).opacity) > 0 })()`)
   check(`group 2: ${tag}: hovering the value shows the pen`, shown)
-  check(`group 2: ${tag}: on hover the pen's box stands clear of the text's`, await penApart(cdp, scope))
+  const overlay = tag === 'cell'
+  check(`group 2: ${tag}: on hover the pen ${overlay ? 'overlays the text, which fades out under it' : "stands clear of the text's box"}`, await penPlaced(cdp, scope, overlay))
   await shot(cdp, `${tag}-pen`)
   await mouseClick(cdp, `(${scope}).querySelector(${JSON.stringify(PEN)})`)
   const opened = await settles(() => portalOpen(cdp), 3000)
