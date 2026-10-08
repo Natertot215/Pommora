@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   decodeLinkTarget,
-  linkDestinationAt,
+  linkDestinationStart,
   encodeLinkTarget,
   markdownLinkRegex,
   MD_LINK,
@@ -157,59 +157,59 @@ describe('the codec reads back everything it writes', () => {
   })
 })
 
-describe('linkDestinationAt — is the caret inside a destination', () => {
+describe('linkDestinationStart — where the destination holding the caret begins', () => {
   it('sees the empty embed pair the door seats the caret in', () => {
-    expect(linkDestinationAt('![]()', 4)).toBe(true)
+    expect(linkDestinationStart('![]()', 4)).toBe(4)
   })
 
   it('sees an empty destination behind a written label', () => {
-    expect(linkDestinationAt('[label]()', 8)).toBe(true)
+    expect(linkDestinationStart('[label]()', 8)).toBe(8)
   })
 
   it('sees the inside of a full link, edges included', () => {
     const line = '[docs](https://example.com) tail'
     const open = line.indexOf('(')
     const close = line.indexOf(')')
-    expect(linkDestinationAt(line, open + 1)).toBe(true)
-    expect(linkDestinationAt(line, close)).toBe(true)
-    expect(linkDestinationAt(line, open + 5)).toBe(true)
+    expect(linkDestinationStart(line, open + 1)).toBe(open + 1)
+    expect(linkDestinationStart(line, close)).toBe(open + 1)
+    expect(linkDestinationStart(line, open + 5)).toBe(open + 1)
   })
 
   it('says no everywhere else on the same line', () => {
     const line = '[docs](https://example.com) tail'
-    expect(linkDestinationAt(line, 0)).toBe(false)
-    expect(linkDestinationAt(line, 2)).toBe(false)
-    expect(linkDestinationAt(line, line.indexOf('('))).toBe(false)
-    expect(linkDestinationAt(line, line.length)).toBe(false)
+    expect(linkDestinationStart(line, 0)).toBeNull()
+    expect(linkDestinationStart(line, 2)).toBeNull()
+    expect(linkDestinationStart(line, line.indexOf('('))).toBeNull()
+    expect(linkDestinationStart(line, line.length)).toBeNull()
   })
 
   it('says no on a line with no link at all', () => {
-    expect(linkDestinationAt('plain prose with (parens)', 20)).toBe(false)
+    expect(linkDestinationStart('plain prose with (parens)', 20)).toBeNull()
   })
 
   it('reads each link on a many-link line separately', () => {
     const line = '[a](https://a.com) and [b](https://b.com)'
-    expect(linkDestinationAt(line, 5)).toBe(true)
-    expect(linkDestinationAt(line, 20)).toBe(false)
-    expect(linkDestinationAt(line, 30)).toBe(true)
+    expect(linkDestinationStart(line, 5)).toBe(4)
+    expect(linkDestinationStart(line, 20)).toBeNull()
+    expect(linkDestinationStart(line, 30)).toBe(27)
   })
 
   it('sees a destination still open before the caret', () => {
     // Mid-typing: `](` with no `)` yet — the shape the smart-dash guard also reads.
     const line = '[docs](https://ex'
-    expect(linkDestinationAt(line, line.length)).toBe(true)
-    expect(linkDestinationAt('[docs](https://ex) after', 20)).toBe(false)
+    expect(linkDestinationStart(line, line.length)).toBe(7)
+    expect(linkDestinationStart('[docs](https://ex) after', 20)).toBeNull()
   })
 
   it('follows a destination through balanced parens', () => {
     const line = '[w](https://en.wikipedia.org/wiki/A_(b)_c) tail'
-    expect(linkDestinationAt(line, line.indexOf('_c)'))).toBe(true)
-    expect(linkDestinationAt(line, line.length)).toBe(false)
+    expect(linkDestinationStart(line, line.indexOf('_c)'))).toBe(4)
+    expect(linkDestinationStart(line, line.length)).toBeNull()
   })
 
   it('reads the embed form through its bang', () => {
     const line = '![label](https://example.com)'
-    expect(linkDestinationAt(line, 12)).toBe(true)
-    expect(linkDestinationAt(line, 4)).toBe(false)
+    expect(linkDestinationStart(line, 12)).toBe(9)
+    expect(linkDestinationStart(line, 4)).toBeNull()
   })
 })

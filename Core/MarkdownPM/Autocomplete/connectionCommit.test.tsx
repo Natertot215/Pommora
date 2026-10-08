@@ -321,27 +321,6 @@ describe('the chevron slides in a page’s headings', () => {
     expect(view.state.selection.main.head).toBe(view.state.doc.length)
   })
 
-  it('an abandoned fragment in ( ) drops its # when the caret leaves', async () => {
-    seatReady('pNotes', '## Setup\n\nbody')
-    const view = await mountEditor({ initialBody: '[x](Not) tail', connections: headingConn })
-    vi.spyOn(view, 'coordsAtPos').mockReturnValue(coords)
-    await act(async () => {
-      view.focus()
-      view.dispatch({ selection: { anchor: 5 } })
-    })
-    await act(async () => {
-      view.contentDOM.dispatchEvent(
-        new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }),
-      )
-    })
-    expect(view.state.doc.toString()).toBe('[x](Notes#) tail')
-    await act(async () => {
-      view.dispatch({ selection: { anchor: view.state.doc.length } })
-      await new Promise((r) => setTimeout(r, 0))
-    })
-    expect(view.state.doc.toString()).toBe('[x](Notes) tail')
-  })
-
   it('a bare # in ( ) lists the current document’s own headings', async () => {
     const body = '## Setup\n\n[x](#)'
     const view = await mountEditor({ initialBody: body, connections: headingConn })
@@ -371,5 +350,35 @@ describe('the chevron slides in a page’s headings', () => {
     })
     expect(document.querySelector('.mdpm-ac [data-drop-outline-spacer]')).not.toBeNull()
     expect(document.querySelector('.mdpm-ac')?.textContent).toContain('Setup')
+  })
+
+  // Arrowing out of ( ) with nothing typed is a caret move, not a pick of whichever page happens to be first.
+  it('ArrowRight in an empty ( ) writes no page', async () => {
+    const view = await mountEditor({ initialBody: 'a [sel]() b', connections: headingConn })
+    vi.spyOn(view, 'coordsAtPos').mockReturnValue(coords)
+    await act(async () => {
+      view.focus()
+      view.dispatch({ selection: { anchor: 8 } })
+    })
+    await act(async () => {
+      view.contentDOM.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }),
+      )
+    })
+    expect(view.state.doc.toString()).toBe('a [sel]() b')
+  })
+
+  // Unlike `[[Page#]]`, an empty fragment means something to every Markdown reader: the top of the page.
+  it('a markdown link to (#) keeps its # as the caret passes through', async () => {
+    const view = await mountEditor({ initialBody: 'see [top](#) tail', connections: headingConn })
+    await act(async () => {
+      view.focus()
+      view.dispatch({ selection: { anchor: 11 } })
+    })
+    await act(async () => {
+      view.dispatch({ selection: { anchor: view.state.doc.length } })
+      await new Promise((r) => setTimeout(r, 0))
+    })
+    expect(view.state.doc.toString()).toBe('see [top](#) tail')
   })
 })

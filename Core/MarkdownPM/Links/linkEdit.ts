@@ -1,7 +1,11 @@
 import { EditorView, type ViewUpdate } from '@codemirror/view'
 import { EditorSelection, type EditorState, type Extension, type Line } from '@codemirror/state'
-import { aliasSpanAt, emptyAliasPipeAt, linkAt } from '../../Connections/connections'
-import { markdownDestinationAt } from '../../Connections/links'
+import {
+  aliasSpanAt,
+  emptyAliasPipeAt,
+  emptyHeadingHashAt,
+  linkAt,
+} from '../../Connections/connections'
 import type { ConnEditAction } from '../../Actions/connectionMenu'
 import type { ConnectionsApi } from './connectionsApi'
 import { aliasedToken, linkTokenAt, type Token } from '../Engine/tokens'
@@ -96,21 +100,11 @@ interface Slot {
   kind: 'alias' | 'heading'
 }
 
-// A heading slot in either syntax: a wikilink's heading half, or a markdown link's fragment.
-const headingSpanAt = (line: string, rel: number): [number, number] | null =>
-  linkAt(line, rel)?.heading ?? markdownDestinationAt(line, rel)?.fragment ?? null
-
-// The `#` of an empty heading slot, `[[Page#]]` or `(Page#)`: like an empty pipe, it goes when the caret leaves it.
-function emptyHeadingHashAt(line: string, rel: number): number | null {
-  const h = headingSpanAt(line, rel)
-  return h && h[0] === h[1] ? h[0] - 1 : null
-}
-
 function slotNear(state: EditorState, at: number): Slot | null {
   const { line, rel } = lineNear(state, at)
   const alias = aliasSpanAt(line.text, rel)
   if (alias) return { start: line.from + alias[0], end: line.from + alias[1], kind: 'alias' }
-  const h = headingSpanAt(line.text, rel)
+  const h = linkAt(line.text, rel)?.heading
   return h && rel >= h[0] && rel <= h[1]
     ? { start: line.from + h[0], end: line.from + h[1], kind: 'heading' }
     : null

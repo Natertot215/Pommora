@@ -185,6 +185,11 @@ describe('the ( ) form', () => {
     expect(doc.slice(r.from, r.to)).toBe('Se')
   })
 
+  it('an empty page half before a fragment asks for no page', () => {
+    const doc = 'see [x](#Setup) end'
+    expect(autocompleteQuery(doc, doc.indexOf('#'))?.form).not.toBe('target')
+  })
+
   it('a bare # asks for the page being written in', () => {
     const doc = 'see [x](#) end'
     const r = autocompleteQuery(doc, doc.indexOf('#') + 1)!
@@ -381,10 +386,11 @@ describe('a typed § arms the section form', () => {
   })
 
   // A label is prose the way an alias is, and the scanner never reads a run inside a markdown link.
-  it('a § inside a markdown link is not armed', () => {
-    const doc = 'see [§Set](x) end'
-    const armed = doc.indexOf('§')
-    expect(autocompleteQuery(doc, armed + 4, false, armed)).toBeNull()
+  it('a § inside a bracket, a markdown link’s label included, is not armed', () => {
+    for (const doc of ['see [§Set](x) end', 'see [§Set'] as const) {
+      const armed = doc.indexOf('§')
+      expect(autocompleteQuery(doc, armed + 4, false, armed)).toBeNull()
+    }
   })
 })
 

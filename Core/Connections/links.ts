@@ -29,15 +29,6 @@ export function composeWebpageEmbedLine(label: string, url: string): string {
   return `![${escapeAlias(label)}](${url})`
 }
 
-/** Whether the character at `col` sits inside a markdown link, label or destination, empty halves included. */
-export function inMarkdownLink(lineText: string, col: number): boolean {
-  for (const m of lineText.matchAll(emptyTolerantLinkRegex())) {
-    if (m.index >= col) break
-    if (col < m.index + m[0].length) return true
-  }
-  return false
-}
-
 // Only the half before the first `#` decides: a scheme or a path separator there addresses something outside the Nexus, while a fragment is a heading's own text.
 const namesPage = (pageHalf: string): boolean =>
   !pageHalf.includes('/') && !HAS_SCHEME.test(pageHalf.trim())
@@ -58,7 +49,7 @@ export function markdownDestinationAt(lineText: string, col: number): Destinatio
     if (!label || !dest || dest[0] > col) break
     if (col > dest[1]) continue
     const hash = lineText.slice(dest[0], dest[1]).indexOf('#')
-    const named = hash !== -1 && opensFragment(lineText.slice(dest[0], dest[0] + hash))
+    const named = hash !== -1 && namesPage(lineText.slice(dest[0], dest[0] + hash))
     return { label, dest, fragment: named ? [dest[0] + hash + 1, dest[1]] : null }
   }
   return null
@@ -72,9 +63,6 @@ export function linkDestinationStart(lineText: string, col: number): number | nu
   const open = head.lastIndexOf('](')
   return open !== -1 && !head.slice(open + 2).includes(')') ? open + 2 : null
 }
-
-export const linkDestinationAt = (lineText: string, col: number): boolean =>
-  linkDestinationStart(lineText, col) !== null
 
 // `encodeURI` leaves parens and colons alone; a raw colon declares a target a URL and a lone `(` leaves the link untokenizable, so both are escaped on top. A lone surrogate makes encodeURI throw, and the rename cascade calls this unwrapped.
 export function encodeLinkTarget(target: string): string {

@@ -2,7 +2,7 @@ import { EditorView } from '@codemirror/view'
 import { decidePaste, pastedUrl } from './pasteDecision'
 import type { LinkPaste } from '../../Connections/linkValue'
 import { pasteAsTarget, pasteAsWrite, type PasteAsForm } from '../../Actions/pasteAsMenu'
-import { linkDestinationAt } from '../../Connections/links'
+import { linkDestinationStart } from '../../Connections/links'
 import { matchesCommand } from '../../Actions/commands'
 import { docScan, docString } from '../docCache'
 import { inCodeAt } from '../Engine/docScan'
@@ -41,7 +41,7 @@ function linkFor(view: EditorView, text: string, inverse: boolean): LinkPaste | 
 
 function destinationGuard(view: EditorView, pos: number): boolean {
   const line = view.state.doc.lineAt(pos)
-  return linkDestinationAt(line.text, pos - line.from)
+  return linkDestinationStart(line.text, pos - line.from) !== null
 }
 
 /** An insertion at a span's exclusive end still lands inside, so the position behind the caret answers too — except across a newline, or the first column after a fence would read as the fence's. */
