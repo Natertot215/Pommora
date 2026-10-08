@@ -109,7 +109,7 @@ async function walkWhileOwed(root: string): Promise<void> {
       const walked = await refreshTree(root)
       if (was) {
         oweRescope(owed, scopeOf(was), scopeOf(walked.config))
-        oweNamedKeys(owed, was, walked)
+        oweNamedKeys(owed, was.registry, walked)
       }
       owed.stamp.push(...stampable(owed, walked.unreadable ?? []))
       // The map is patch-only, so the fallback walk is where the listing is taken again.
