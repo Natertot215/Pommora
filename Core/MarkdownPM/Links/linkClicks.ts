@@ -14,7 +14,7 @@ import { drawnRawAt, MD_LINK_CLASS } from '../decorations'
 import { applyUrlLinkAction } from './linkFormat'
 import { pointerHandlers, type PointerTarget } from '../Gestures/pointerPath'
 import { travelToHeading } from '../travel'
-import { type EditorHost, editorHost, pageEditorAt } from '../api'
+import { type EditorHost, editorHost, ownPage, pageEditorAt } from '../api'
 
 type GetApi = () => ConnectionsApi | undefined
 
@@ -54,13 +54,17 @@ export function followTarget(
   event: FollowEvent,
 ): (() => void) | null {
   const el = event.target as Element
-  const { seat, view } = pageEditorAt(el)
+  const { view } = pageEditorAt(el)
   if (!view || target.kind === 'invalid') return null
   const host = view.state.facet(editorHost)
   if (host.glance?.contains(el)) return null
   switch (target.kind) {
-    case 'self':
-      return () => travelToHeading(view, target.heading, view.posAtDOM(seat))
+    case 'self': {
+      const own = ownPage(el)
+      if (own?.kind === 'held')
+        return api ? () => openPage(api, own.page, isCmd(event), target.heading) : null
+      return own && (() => travelToHeading(own.view, target.heading, own.view.posAtDOM(own.seat)))
+    }
     case 'page':
       return api ? () => openPage(api, target.page, isCmd(event), target.heading) : null
     case 'external':

@@ -39,6 +39,7 @@ export function ValuePickPresenter(): React.JSX.Element | null {
       popover={{ open: pending !== null, triggerRef }}
       def={def}
       current={current}
+      holder={shown.holder}
       onCommit={commit}
       onClose={dismiss}
     />

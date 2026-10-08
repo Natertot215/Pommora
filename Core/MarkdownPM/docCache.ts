@@ -81,7 +81,7 @@ export function perScopedDoc<T>(
       (doc) => derive(doc, scope),
       (prev, tr) => step(prev, tr, scope),
     )
-  const scoped = { page: of('page'), cell: of('cell') }
+  const scoped = { page: of('page'), cell: of('cell'), text: of('text') }
   return Object.assign((doc: Text, scope: MarkdownScope) => scoped[scope](doc), {
     after: (tr: Transaction, scope: MarkdownScope) => scoped[scope].after(tr),
   })

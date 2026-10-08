@@ -2,6 +2,10 @@
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { stubEditorBridge } from '../../Testing/editorHarness'
+import { makeTree } from '../../Testing/testTree'
+import { useSession } from '../../Session/store'
+import type { PropertyType } from '../properties'
 import { PropertyValueInput } from './PropertyValueInput'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -64,5 +68,38 @@ describe('PropertyValueInput', () => {
     enter()
     expect(onClose).toHaveBeenCalledOnce()
     expect(onCommit).not.toHaveBeenCalled()
+  })
+})
+
+describe('the popover routes', () => {
+  if (!('ResizeObserver' in globalThis))
+    (globalThis as { ResizeObserver?: unknown }).ResizeObserver = class {
+      observe(): void {}
+      unobserve(): void {}
+      disconnect(): void {}
+    }
+  stubEditorBridge()
+
+  const popoverFor = (type: PropertyType): Element => {
+    useSession.setState({ tree: makeTree() })
+    act(() =>
+      root.render(
+        <PropertyValueInput
+          def={{ id: 'prop_t', name: 'Notes', type }}
+          current={null}
+          popover={{ open: true, triggerRef: { current: host } }}
+          onCommit={onCommit}
+          onClose={onClose}
+        />,
+      ),
+    )
+    return document.querySelector('[data-picker-portal]:not([data-dismissal-shield])')!
+  }
+  it('opens TextPane for a Text value and the single-line popover for the rest', () => {
+    const text = popoverFor('text')
+    expect(text.querySelector('.text-pane .cm-editor')).not.toBeNull()
+    expect(text.querySelector('input')).toBeNull()
+    act(() => root.render(null))
+    expect(popoverFor('link').querySelector('input')).not.toBeNull()
   })
 })

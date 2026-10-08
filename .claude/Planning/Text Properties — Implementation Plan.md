@@ -86,21 +86,21 @@ One `opus-medium` agent implements Phase 1 and one `opus-high` agent each later 
   - [x] Task 1.5 The pipeline arms
   - [x] Task 1.6 The plain field's first line
   - [x] Review Checkpoint — drive group 1 (29/29; seven screenshots read; two opus-high reviews folded)
-- [ ] **Phase 2** — The Surfaces: live connections, the pen, one popover intent `[Parallel with Phase 3]`
-  - [ ] Task 2.1 `TextCell`: live connections, the pen, and the glance literal defined once
-  - [ ] Task 2.2 The clip, the reveal host, and Compact's chrome
-  - [ ] Task 2.3 One popover intent on every surface
-  - [ ] Task 2.4 `LinkCell`'s own-page heading
-  - [ ] Task 2.5 A row's value reach, stated once
-- [ ] **Phase 3** — Connections Inside a Value: index and cascade `[Parallel with Phase 2]`
-  - [ ] Task 3.1 The index reads the links inside every value
-  - [ ] Task 3.2 The rename cascade is type-aware
-  - [ ] Task 3.3 The Spaces heading gate
-- [ ] Review Checkpoint — Phases 2 and 3, drive groups 1–3
-- [ ] **Phase 4** — TextPane
-  - [ ] Task 4.1 The `text` scope
-  - [ ] Task 4.2 TextPane
-  - [ ] Review Checkpoint — drive groups 1–4
+- [x] **Phase 2** — The Surfaces: live connections, the pen, one popover intent `[Parallel with Phase 3]` — `f1bf08f74`, +178 / −63 and `TextCell.tsx` 65 lines (22 files, tests excluded)
+  - [x] Task 2.1 `TextCell`: live connections, the pen, and the glance literal defined once
+  - [x] Task 2.2 The clip, the reveal host, and Compact's chrome
+  - [x] Task 2.3 One popover intent on every surface
+  - [x] Task 2.4 `LinkCell`'s own-page heading
+  - [x] Task 2.5 A row's value reach, stated once
+- [x] **Phase 3** — Connections Inside a Value: index and cascade `[Parallel with Phase 2]` — `5aabe6707`, +110 / −63 (8 files, tests excluded)
+  - [x] Task 3.1 The index reads the links inside every value
+  - [x] Task 3.2 The rename cascade is type-aware
+  - [x] Task 3.3 The Spaces heading gate
+- [x] Review Checkpoint — Phases 2 and 3, drive groups 1–3 (72/72 after the glance fix; 21 screenshots read; one opus-high review each, folded)
+- [x] **Phase 4** — TextPane — +379 / −72 (24 files, tests excluded; `TextPane.tsx` 163 and `text-pane.css` 24 of it)
+  - [x] Task 4.1 The `text` scope
+  - [x] Task 4.2 TextPane
+  - [x] Review Checkpoint — drive groups 1–4 (101/101 before the review, 105/105 after its folds; the parity pair and six pane screenshots read)
 - [ ] **Phase 5** — Documentation
   - [ ] Task 5.1 The five documents
 - [ ] **Final Verification** — the three final agents, then the orchestrator's own pass and the report
@@ -2107,6 +2107,7 @@ Departures from the decision log, each with the line that forced it, and the rul
 - **`INDEX_GENERATION` 10 → 11.** Not in the log. Every page's rows gain the new reading on the first open after upgrade, so the sentence links files already hold are found without a rewrite.
 - **Lists (Nathan, 10-08-2026).** Text holds no lists: a line that spells a list marker is prose in the cell and in TextPane, because a YAML list under a key is a list to every other reader, and a Text string drawn as a list would be a list in Pommora alone. The log's list vocabulary for the pane, the shared key layer lifted out of `CellEditor`, and the cell's list geometry all go; the pane mounts a `text` scope holding the inline vocabulary only.
 - **`cellLinkTarget`'s ancestor check.** Removed as dead rather than hoisted around: its one caller's handlers sit on the `.mdpm-tbl-cell-static` element itself, so the check could never fail.
+- **The Properties ▸ seat passes a snapshot (Phase 4 review).** `ValuePickPresenter` hands the pane the value as it was when the menu's leaf was pressed, so an outside change made while a pane opened from that seat is untouched does not appear in it; the table, panel, and card seats pass the live value and do. Left as the seat's existing behavior for every picker it presents; the pane's own close still writes last.
 - **I-1 — PommoraUIX.** Unchanged: `PickerMenu` gains no prop under the F-3 deviation, and app-side pickers aren't listed there.
 - **The writer (Phase 1 review).** `pageFile.ts` emits a flow collection unpadded (`flowCollectionPadding: false`, one `YAML_OUT` shared with `yamlInline`), so a foreign `[milk, eggs]` survives an adjacent write byte for byte, and a changed value is set as a fresh node (`doc.createNode`), so a key once quoted or written as a block does not hold its next value to that style — `"42"` then `hello` lands `hello`, not `"hello"`. Both apply to every key; both are what "written plain wherever yaml allows" needs. Found by the Phase 1 reviews.
 - **Link reads an unquoted `[[Page]]` (Phase 1 review).** `writtenSpelling`'s string arm kept a nested-list raw for a Link whose typed value spelled the same, so a Link picked over an Obsidian-written unquoted `[[Page]]` never landed. The sibling fix: Link decodes that raw as the link it spells, through the one unwrapping File already does (`fileEntry`, now `linkEntry`, shared by both), so the raw reads and a re-save of the same link leaves the file alone.

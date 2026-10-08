@@ -490,8 +490,18 @@ export function calloutHeadPrefixLen(line: string): number | null {
   return tag ? pfx.length + tag[0].length : null
 }
 
-// A table cell reads the list vocabulary and nothing else: a `#`, a fence, a quote marker and a rule are literal text there, so every reader that walks a line takes the scope it is walking for.
-export type MarkdownScope = 'page' | 'cell'
+// A page reads every block; a table cell reads the list vocabulary and nothing else of them, so a `#`, a fence, a quote marker and a rule are literal text there; a Text value reads the inline marks alone, so a list marker is literal text too. Every reader that walks a line takes the scope it is walking for.
+export type MarkdownScope = 'page' | 'cell' | 'text'
+
+export function readsLists(scope: MarkdownScope): boolean {
+  switch (scope) {
+    case 'page':
+    case 'cell':
+      return true
+    case 'text':
+      return false
+  }
+}
 
 export const MAX_NESTING_LEVEL = 3
 

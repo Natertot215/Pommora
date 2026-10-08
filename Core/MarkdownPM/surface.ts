@@ -19,19 +19,41 @@ import { citationPointer } from './Citations/citationPointer'
 import { pasteLink } from './Links/pasteLink'
 import { pendingTitle } from './Links/pendingTitle'
 import { aliasOnLeave } from './Links/linkEdit'
+import { type EditorHost, editorHost } from './api'
+import { docScan } from './docCache'
+import { applyEdit } from './Input/applyEdit'
+import { autoDelete, smartBackspace } from './Input/edits'
+import { editorKeymap } from './Input/formatKeymap'
+import { paneKeys, whenPaneOpen } from './Menus/caretPane'
+import {
+  type ConnectionAutocomplete,
+  detectConnectionQuery,
+} from './Autocomplete/useConnectionAutocomplete'
 
-/** Everything a page body and a table cell share: inline rendering, list and block gestures, link and footnote pointers, the paste and alias rules, typing, and the right-click menu. The two surfaces differ only in what wraps this. */
+function blockGestures(scope: MarkdownScope): Extension {
+  switch (scope) {
+    case 'page':
+    case 'cell':
+      return [
+        listDragExtension(scope),
+        listRenumber(scope),
+        blockHandles(scope),
+        pointerReveal(scope),
+        blockDragExtension,
+        gripMenu,
+      ]
+    case 'text':
+      return []
+  }
+}
+
+/** Everything a page body, a table cell, and a Text value share: inline rendering, the block gestures their scope holds, link and footnote pointers, the paste and alias rules, typing, and the right-click menu. The surfaces differ only in what wraps this. */
 export const inlineSurface = (
   getConn: () => ConnectionsApi | undefined,
   scope: MarkdownScope,
 ): Extension => [
   markdownDecorations(getConn, scope),
-  listDragExtension(scope),
-  listRenumber(scope),
-  blockHandles(scope),
-  pointerReveal(scope),
-  blockDragExtension,
-  gripMenu,
+  blockGestures(scope),
   customCaret,
   customSelection,
   connectionClicks(getConn),
@@ -54,4 +76,52 @@ export const inlineSurface = (
   Prec.high(keymap.of(wrapChords)),
   typedInput(scope),
   editorMenu(scope),
+]
+
+/** What an editor mounted outside a page body holds beside its surface: the `[[` pane's keys, with Enter picking its row, the marker- and pair-aware Backspace, the format chords, and the query that opens the pane. Each mount adds only its own ways out. */
+export const editorBase = ({
+  host,
+  getConn,
+  scope,
+  ac: { acCtl, setAc },
+  formatExt,
+}: {
+  host: EditorHost
+  getConn: () => ConnectionsApi | undefined
+  scope: MarkdownScope
+  ac: Pick<ConnectionAutocomplete, 'acCtl' | 'setAc'>
+  formatExt: Extension
+}): Extension => [
+  editorHost.of(host),
+  inlineSurface(getConn, scope),
+  Prec.highest(
+    keymap.of([
+      ...paneKeys([acCtl]),
+      { key: 'Enter', run: whenPaneOpen([acCtl], (c) => c.pick()) },
+      {
+        key: 'Backspace',
+        run: (view) => {
+          const s = view.state.selection.main
+          const scan = docScan(view.state.doc)
+          return applyEdit(
+            view,
+            smartBackspace(scan, s.from, s.to, scope) ??
+              autoDelete(scan, s.from, s.to, host.settings()),
+            { userEvent: 'delete' },
+          )
+        },
+      },
+    ]),
+  ),
+  formatExt,
+  keymap.of(editorKeymap),
+  EditorView.domEventHandlers({
+    blur: () => {
+      setAc(null)
+      return false
+    },
+  }),
+  EditorView.updateListener.of((u) => {
+    if (u.docChanged || u.selectionSet) detectConnectionQuery(u.view, setAc)
+  }),
 ]

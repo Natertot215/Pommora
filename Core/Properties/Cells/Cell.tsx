@@ -15,7 +15,7 @@ import { findOption } from './cellResolve'
 import { LinkCell } from './LinkCell'
 import { TextCell } from './TextCell'
 import { CheckboxGlyph } from './CheckboxGlyph'
-import type { ValueContext } from '../valueContext'
+import { holderOf, type ValueContext } from '../valueContext'
 import { FileChip, NeutralChip } from '@pommora/uix/Labels/recipes'
 import { SortableZone, useDragItem } from '@pommora/uix/Interactions/drag'
 import { moveBefore } from '@pommora/uix/Utilities/moveItem'
@@ -57,7 +57,7 @@ export function Cell({
   const def = ctx.schema.find((d) => d.id === column.id)
   // A status value is a bare label on disk, indistinguishable from a select — the schema is the only thing that knows the declared type.
   const dt = def?.type
-  const holder = ctx.contextsById.has(row.id) ? undefined : row
+  const holder = holderOf(row, ctx)
 
   // Keyed off the schema TYPE rather than value presence, so a checkbox toggles in place without first assigning the property.
   if (dt === 'checkbox')

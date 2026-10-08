@@ -28,7 +28,7 @@ import { ROW_END, rowHover, useViewInteractions } from '../Host/useViewInteracti
 import { fileChipIndex, pickFileInto, runFileMenuAction } from '../../Properties/Pickers/filePick'
 import { useSession } from '../../Session/store'
 import { glanceShown } from '../../Interface/Glance/glanceAction'
-import type { ValueContext } from '../../Properties/valueContext'
+import { holderOf, type ValueContext } from '../../Properties/valueContext'
 import { isCmd, isSecondaryClick } from '@pommora/uix/Interactions/chords'
 import { Cell } from '../../Properties/Cells/Cell'
 import { EntityIcon } from '../../Assets/EntityIcon'
@@ -255,6 +255,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
         popover={{ open: editing?.mode === 'popover', triggerRef: triggerElRef }}
         def={def}
         current={resolveFieldValue(row, col.id, schema)}
+        holder={holderOf(row, ctx)}
         alias={def.type === 'link'}
         onCommit={(next) => commitValue(row, col, next)}
         onClose={() => setEditing(null)}

@@ -1,0 +1,28 @@
+/* The pane's size is its own; the body scrolls, so the `[[` pane bounds to it as it does to a glance's tile. */
+.text-pane {
+  width: 480px; /* KNOB — clears the autocomplete's title-fit width and holds a page line's run unwrapped */
+  padding: 0;
+}
+.text-pane-close {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 1;
+}
+/* The body is also the editor's shell, which a page sizes to its host and clips. */
+.text-pane .text-pane-body {
+  height: auto;
+  max-height: 320px; /* KNOB */
+  overflow-y: auto;
+}
+/* A page's editor fills its host and pads for a rail the pane doesn't have. */
+.text-pane .mdpm-editor,
+.text-pane .mdpm-editor .cm-editor {
+  height: auto;
+  overflow: visible;
+}
+.text-pane .mdpm-editor .cm-content {
+  /* KNOB — the pane's interior inset; the right edge clears the × (its 6px inset, 20px box, and 6px of air) */
+  padding: 12px 32px 12px 14px;
+  min-height: 96px; /* KNOB — room to see the placeholder */
+}

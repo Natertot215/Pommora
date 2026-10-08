@@ -32,7 +32,7 @@ import { containerSchema, owningCollection } from '../Nexus/treePatch'
 import { useValuesEpoch } from '../Views/Host/useContainerValues'
 import { PropertyValueInput } from './Pickers/PropertyValueInput'
 import { resolveFieldValue } from './value'
-import { buildValueContext, type ValueContext } from './valueContext'
+import { buildValueContext, holderOf, type ValueContext } from './valueContext'
 import {
   runValueIntent,
   type ValueIntent,
@@ -517,11 +517,12 @@ export function PropertyPanel({
             )
           })}
         </div>
-        {editing?.mode === 'popover' && editingDef && row && (
+        {editing?.mode === 'popover' && editingDef && row && ctx && (
           <PropertyValueInput
             alias={editingDef.type === 'link'}
             popover={{ open: true, triggerRef }}
             def={editingDef}
+            holder={holderOf(row, ctx)}
             current={resolveFieldValue(row, editing.id, schema)}
             onCommit={(next) => commit(editing.id, next)}
             onClose={() => setEditing(null)}

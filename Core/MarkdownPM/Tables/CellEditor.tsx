@@ -3,14 +3,12 @@ import { EditorView, keymap } from '@codemirror/view'
 import { Annotation, EditorSelection, EditorState, Prec } from '@codemirror/state'
 import { deleteCharForward, historyKeymap, redo, undo } from '@codemirror/commands'
 import { useReconfigured } from '../Input/useReconfigured'
-import { editorKeymap, formatKeymap } from '../Input/formatKeymap'
+import { formatKeymap } from '../Input/formatKeymap'
 import { cellCitations } from './cellCitations'
 import {
-  autoDelete,
   continueListOnEnter,
   indentListOnTab,
   outdentListOnShiftTab,
-  smartBackspace,
   type Edit,
 } from '../Input/edits'
 import { parseListMarker, type ListMarker, type MarkdownScope } from '../Engine/detect'
@@ -20,17 +18,13 @@ import { applyEdit } from '../Input/applyEdit'
 import { docLineIntentsOf, docScan } from '../docCache'
 import type { DocScan } from '../Engine/docScan'
 import { listGlyphOf, seatPastMarker } from '../Engine/intents'
-import {
-  useConnectionAutocomplete,
-  detectConnectionQuery,
-} from '../Autocomplete/useConnectionAutocomplete'
-import { paneKeys } from '../Menus/caretPane'
+import { useConnectionAutocomplete } from '../Autocomplete/useConnectionAutocomplete'
 import { AutocompletePane } from '../Autocomplete/AutocompletePane'
 import type { ConnectionsApi } from '../Links/connectionsApi'
 import type { NavDir } from '../Engine/Tables/navigate'
-import { type EditorHost, editorHost, redrawNudge } from '../api'
+import { type EditorHost, redrawNudge } from '../api'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
-import { inlineSurface } from '../surface'
+import { editorBase } from '../surface'
 
 const HISTORY_BINDINGS = historyKeymap.filter((b) => b.run === undo || b.run === redo)
 
@@ -151,8 +145,13 @@ export function CellEditor({
       state: EditorState.create({
         doc: initial,
         extensions: [
-          editorHost.of(host),
-          inlineSurface(() => connections?.(), 'cell'),
+          editorBase({
+            host,
+            getConn: () => connections?.(),
+            scope: 'cell',
+            ac: { acCtl, setAc },
+            formatExt,
+          }),
           cellCitations(() => ordinalOfRef.current),
           // Every paste reaches here tagged, the menu's and the inverse chord's included, so a table-shaped clipboard fills the cells instead of landing escaped in this one.
           EditorState.transactionFilter.of((tr) => {
@@ -187,13 +186,11 @@ export function CellEditor({
               {
                 key: 'Enter',
                 run: consume((view) => {
-                  if (acCtl.current.open) return acCtl.current.pick()
                   // The cell is left from a line no list owns; on one a list owns, the body writes a break wherever it cannot continue — before the marker, or over a selection.
                   if (!listLineAt(view)) return onNavigateRef.current('down')
                   if (!continueList(view)) view.dispatch(view.state.replaceSelection('\n'))
                 }),
               },
-              ...paneKeys([acCtl]),
               // The exit is the list's final item alone; above it, and outside a list, the break is the body's own, and the row does NOT split, because cellToSource serializes it as <br> on disk.
               {
                 key: 'Shift-Enter',
@@ -205,17 +202,6 @@ export function CellEditor({
               {
                 key: 'Backspace',
                 run: (view) => {
-                  const s = view.state.selection.main
-                  const scan = docScan(view.state.doc)
-                  if (
-                    applyEdit(
-                      view,
-                      smartBackspace(scan, s.from, s.to, 'cell') ??
-                        autoDelete(scan, s.from, s.to, host.settings()),
-                      { userEvent: 'delete' },
-                    )
-                  )
-                    return true
                   if (!joinEmptyHead(view)) return false
                   seatPastMarkerNow(view)
                   return true
@@ -236,13 +222,7 @@ export function CellEditor({
               })),
             ]),
           ),
-          formatExt,
-          keymap.of(editorKeymap),
           EditorView.domEventHandlers({
-            blur: () => {
-              setAc(null)
-              return false
-            },
             // A menu's native Undo or Redo arrives as input rather than keys, and reaches the page history the same way.
             beforeinput: (e) => {
               const forward =
@@ -260,7 +240,6 @@ export function CellEditor({
           EditorView.updateListener.of((u) => {
             if (u.docChanged && !u.transactions.some((t) => t.annotation(silentEdit)))
               onCommitRef.current(u.state.doc.toString())
-            if (u.docChanged || u.selectionSet) detectConnectionQuery(u.view, setAc)
           }),
         ],
       }),

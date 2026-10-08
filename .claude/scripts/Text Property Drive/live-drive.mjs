@@ -457,7 +457,7 @@ async function penOn(cdp, scope, tag) {
   await shot(cdp, `${tag}-pen`)
   await mouseClick(cdp, `(${scope}).querySelector(${JSON.stringify(PEN)})`)
   const opened = await settles(() => portalOpen(cdp), 3000)
-  const a = await boxOf(cdp, sel('[data-picker-portal]:has(input)')).catch(() => null)
+  const a = await boxOf(cdp, sel('[data-picker-portal]:not([data-dismissal-shield])')).catch(() => null)
   const b = await boxOf(cdp, scope)
   // Anchored at the value: across its span, touching or within a few pixels of its box.
   const anchored = a && a.left < b.right && b.left < a.right && a.top < b.bottom + 8 && b.top - 8 < a.bottom
@@ -629,7 +629,7 @@ async function group3(cdp) {
 
 const PANE = '.text-pane'
 const PANE_VIEW = `document.querySelector('${PANE} .cm-content').cmTile.root.view`
-const PAGE_VIEW = `[...document.querySelectorAll('.cm-content')].find((c) => !c.closest('${PANE}')).cmTile.root.view`
+const PAGE_VIEW = `[...document.querySelectorAll('.cm-content')].find((c) => !c.closest('${PANE}') && !c.closest('[inert]')).cmTile.root.view`
 const paneDoc = (cdp) => cdp.evaluate(`${PANE_VIEW}.state.doc.toString()`)
 const focusInPane = (cdp) => cdp.evaluate(`!!document.activeElement?.closest(${JSON.stringify(PANE)})`)
 async function openPane(cdp, scope) {
@@ -669,7 +669,7 @@ const SNAP_OF = (view) => `(() => {
       }
     }
     walk(el)
-    return { h: Math.round(el.getBoundingClientRect().height), runs }
+    return { lineHeight: getComputedStyle(el).lineHeight, runs }
   }
   const shown = ${JSON.stringify(SHOWCASE.split('\n'))}
   const out = []
@@ -679,10 +679,16 @@ const SNAP_OF = (view) => `(() => {
     const text = view.state.doc.lineAt(at).text
     if (shown.includes(text)) out.push({ text, ...line(el) })
   }
-  const caret = document.querySelector('.caret-bar')
+  const caret = view.dom.querySelector('.caret-bar')
   const cs = caret && getComputedStyle(caret)
-  return { lines: out, caret: cs ? [cs.backgroundColor, cs.width, cs.height] : null }
+  // To a tenth of a pixel: CM draws the caret through the editor's measured scale, which a fractional layout width nudges off 1.
+  const px = (v) => Math.round(parseFloat(v) * 10) / 10
+  return { lines: out, caret: cs ? [cs.backgroundColor, px(cs.width), px(cs.height)] : null }
 })()`
+
+const refusal = (cdp) => cdp.evaluate(`document.querySelector('[role="status"][aria-live="assertive"]')?.textContent.trim() ?? ''`)
+// The row menu's sixth row is Properties ▸, which lists the collection's properties in schema order.
+const PROPERTIES_NOTES = () => ({ downs: 6, into: [sidecar().properties.indexOf(ids[NOTES])] })
 
 async function group4(cdp, pid) {
   await showView(cdp, 'Drive Table')
@@ -701,29 +707,67 @@ async function group4(cdp, pid) {
   const beforeTab = await paneDoc(cdp)
   await pressKey(cdp, 'Tab')
   check('group 4: Tab inserts nothing and focus stays in the pane', (await paneDoc(cdp)) === beforeTab && (await focusInPane(cdp)))
-  await typeText(cdp, '[[Dri')
+  // One key at a time, as typing lands: the editor pairs a typed `[`, and a pasted run pairs nothing.
+  for (const ch of ['[', '[', 'Dri']) await typeText(cdp, ch)
   await until('the autocomplete', () => cdp.evaluate(`!!document.querySelector('.mdpm-ac')`), 4000).catch(() => {})
   const ac = await boxOf(cdp, sel('.mdpm-ac')).catch(() => null)
   const paneBox = await boxOf(cdp, sel(PANE))
   check('group 4: [[Dri opens the autocomplete inside the pane', ac && overlaps(ac, paneBox))
   await shot(cdp, 'pane-autocomplete')
-  await mouseClick(cdp, `${textEl('.mdpm-ac *', 'Drive Target')}`)
+  // The row's title draws its match apart from the rest, so the row is the innermost element reading the whole title.
+  await mouseClick(cdp, `[...document.querySelectorAll('.mdpm-ac *')].find((e) => e.textContent.trim() === 'Drive Target' && [...e.children].every((c) => c.textContent.trim() !== 'Drive Target'))`)
   check('group 4: a press on its row inserts [[Drive Target]] and the pane stays', (await paneDoc(cdp)).includes('🔴==\n[[Drive Target]]') && (await cdp.evaluate(`!!document.querySelector('${PANE}')`)))
+  await pressKey(cdp, 'Enter', SHIFT)
+  for (const ch of ['[', '[', 'Dri']) await typeText(cdp, ch)
+  await until('the autocomplete again', () => cdp.evaluate(`!!document.querySelector('.mdpm-ac')`), 4000).catch(() => {})
+  await pressKey(cdp, 'Enter')
+  check('group 4: Enter with the autocomplete open picks its row and the pane stays',
+    /\[\[Drive Target\]\]\n\[\[Drive [^\]\n]+\]\]\n/.test(await paneDoc(cdp)) && (await cdp.evaluate(`!!document.querySelector('${PANE}')`)), JSON.stringify((await paneDoc(cdp)).split('\n').slice(3, 6)))
   await cdp.evaluate(`(() => { const v = ${PANE_VIEW}; const i = v.state.doc.toString().indexOf('a third line'); v.dispatch({ selection: { anchor: i, head: i + 7 } }) })()`)
   await pressKey(cdp, 'b', META)
   check('group 4: ⌘B wraps the selection in **', (await paneDoc(cdp)).includes('**a third** line'))
   await placeAt(cdp, 'line, plain')
   await pressKey(cdp, 'Enter', SHIFT)
-  await typeText(cdp, 'https://example.com')
+  await cdp.evaluate(`(() => { const dt = new DataTransfer(); dt.setData('text/plain', 'https://example.com'); ${PANE_VIEW}.contentDOM.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true })) })()`)
   await sleep(600)
-  check('group 4: a typed URL lands in the Default Link Format', /\nhttps:\/\/example\.com$|\[[^\]]*\]\(https:\/\/example\.com\)|<https:\/\/example\.com>/.test(await paneDoc(cdp)), (await paneDoc(cdp)).split('\n').at(-1))
-  await activate(cdp, pid)
-  await mouseClick(cdp, `[...document.querySelectorAll('${PANE} .cm-line')].find((l) => l.textContent.startsWith('milk'))`, { button: 'right' })
-  await sleep(700)
-  screenShot('pane-format-menu')
-  key(KEY.esc)
-  await sleep(500)
+  check('group 4: a pasted URL lands in the Default Link Format', /\n\[[^\]\n]+\]\(https:\/\/example\.com\/?\)$/.test(await paneDoc(cdp)), (await paneDoc(cdp)).split('\n').at(-1))
+  // A native menu's rows can't be read back, so type-select proves them: a letter opens the row it begins, Right enters its submenu, and Return takes an entry. A letter no row begins leaves the menu on its first submenu, Format, so the most it writes is an inline mark.
+  const menuAt = async (letter, shotName, downs = 0) => {
+    const at = await cdp.evaluate(`(() => { const v = ${PANE_VIEW}; const i = v.state.doc.toString().indexOf('milk'); v.focus(); v.dispatch({ selection: { anchor: i, head: i + 4 } }); const c = v.coordsAtPos(i + 2); return { x: c.left, y: (c.top + c.bottom) / 2 } })()`)
+    await activate(cdp, pid)
+    await mouseAt(cdp, at, { button: 'right' })
+    await sleep(700)
+    try {
+      osa(`tell application "System Events" to keystroke "${letter}"`)
+      await sleep(300)
+      if (shotName) screenShot(shotName)
+      key(KEY.right)
+      await sleep(300)
+      for (let i = 0; i < downs; i++) key(KEY.down)
+      key(KEY.ret)
+    } catch (e) {
+      key(KEY.esc)
+      throw e
+    }
+    await sleep(600)
+  }
+  const unformatted = await paneDoc(cdp)
+  const unmarked = (doc) => doc.replace(/[*_`]/g, '')
+  const blockRows = []
+  // Heading's first entry is Paragraph, which writes nothing, so its Heading 1 is the one taken.
+  for (const [letter, downs] of [['l', 0], ['h', 1], ['i', 0], ['e', 0]]) {
+    await menuAt(letter, undefined, downs)
+    const after = await paneDoc(cdp)
+    if (unmarked(after) !== unmarked(unformatted)) blockRows.push([letter, after.split('\n')[1]])
+    await cdp.evaluate(`(() => { const v = ${PANE_VIEW}; v.dispatch({ changes: { from: 0, to: v.state.doc.length, insert: ${JSON.stringify(unformatted)} } }) })()`)
+  }
+  check("group 4: the pane's native menu holds no Lists, Heading, Insert, or Embed row", blockRows.length === 0 && (await cdp.evaluate(`!!document.querySelector('${PANE}')`)), JSON.stringify(blockRows))
+  await menuAt('f', 'pane-format-menu')
+  check('group 4: its Format row leads to the marks, Italic first', (await paneDoc(cdp)) === unformatted.replace('milk with', '*milk* with'), (await paneDoc(cdp)).split('\n')[1])
   const typed = await paneDoc(cdp)
+  await cdp.evaluate(`(() => { const v = ${PANE_VIEW}; v.focus(); v.dispatch({ selection: { anchor: 0, head: 3 } }) })()`)
+  await pressKey(cdp, 'Escape')
+  check('group 4: with a range selected the first Escape collapses it and the pane stays', (await cdp.evaluate(`!!document.querySelector('${PANE}') && ${PANE_VIEW}.state.selection.main.empty`)) && (await paneDoc(cdp)) === typed)
   await pressKey(cdp, 'Escape')
   check('group 4: Escape saves and closes as a |- block', await settles(async () => frontmatter('Drive Prose')[NOTES] === typed && keyLines('Drive Prose', NOTES).startsWith(`${NOTES}: |-`)) && !(await cdp.evaluate(`!!document.querySelector('${PANE}')`)))
   await openPane(cdp, cell('Drive Prose'))
@@ -748,20 +792,88 @@ async function group4(cdp, pid) {
   await openPane(cdp, cell('Drive Prose'))
   await typeText(cdp, 'z')
   await mouseClick(cdp, cell('Drive Empty'))
-  check('group 4: a press on another cell saves, closes, and opens nothing', await settles(async () => frontmatter('Drive Prose')[NOTES].endsWith(' xyz')) && !(await cdp.evaluate(`!!document.querySelector('${PANE}') || !!(${field})`)) && !(await portalOpen(cdp)))
+  check('group 4: a press on another cell saves, closes, opens nothing, and raises no refusal', await settles(async () => frontmatter('Drive Prose')[NOTES].endsWith(' xyz')) && !(await cdp.evaluate(`!!document.querySelector('${PANE}') || !!(${field})`)) && !(await portalOpen(cdp)) && !(await refusal(cdp)))
   await must('Drive Prose restored', ask(cdp, 'mutate', { op: 'setProperty', path: pagePath('Drive Prose'), propertyId: ids[NOTES], value: { kind: 'text', value: SHOWCASE } }))
 
-  await chooseNative(cdp, pid, `${row('Drive Prose')}.querySelector('.cell-title-text')`, { downs: 9, into: [0] })
+  const setNotes = (value) => must('an outside write', ask(cdp, 'mutate', { op: 'setProperty', path: pagePath('Drive Prose'), propertyId: ids[NOTES], value: { kind: 'text', value } }))
+  await openPane(cdp, cell('Drive Prose'))
+  await setNotes('from elsewhere')
+  check('group 4: an outside change reaches an untouched pane', await settles(async () => (await paneDoc(cdp)) === 'from elsewhere'), await paneDoc(cdp))
+  await typeText(cdp, '!')
+  await setNotes('again')
+  check("group 4: an outside change leaves a pane's typing alone", await holds(async () => (await paneDoc(cdp)) === 'from elsewhere!', 2000), await paneDoc(cdp))
+  await pressKey(cdp, 'Escape')
+  check("group 4: the pane's close writes last", await settles(async () => frontmatter('Drive Prose')[NOTES] === 'from elsewhere!'), frontmatter('Drive Prose')[NOTES])
+  await must('Drive Prose restored', ask(cdp, 'mutate', { op: 'setProperty', path: pagePath('Drive Prose'), propertyId: ids[NOTES], value: { kind: 'text', value: SHOWCASE } }))
+  await sleep(600)
+
+  const rawBytes = pageFile('Drive Raw')
+  await openPane(cdp, cell('Drive Raw'))
+  const gone = await must('delete Drive Raw', ask(cdp, 'mutate', { op: 'delete', path: pagePath('Drive Raw'), kind: 'page' }))
+  const unmounted = await settles(() => cdp.evaluate(`!document.querySelector('${PANE}')`))
+  await must('restore Drive Raw', ask(cdp, 'mutate', { op: 'restore', bundlePath: gone.trashed.bundlePath }))
+  check('group 4: a row deleted under an untouched pane unmounts it, writes nothing, and raises no refusal', unmounted && (await settles(async () => pageFile('Drive Raw') === rawBytes)) && !(await refusal(cdp)), keyLines('Drive Raw', NOTES))
+  await until("Drive Raw's row back", () => cdp.evaluate(`!!${row('Drive Raw')}`))
+
+  await openPane(cdp, cell('Drive Items'))
+  const items = await cdp.evaluate(`document.querySelector('${PANE}').querySelectorAll('[class*="md-list-"]').length`)
+  check("group 4: Drive Items's - milk lines read as literal text in the pane", (await paneDoc(cdp)) === ITEMS && items === 0, JSON.stringify([await paneDoc(cdp), items]))
+  const retype = async (lines) => {
+    await cdp.evaluate(`(() => { const v = ${PANE_VIEW}; v.focus(); v.dispatch({ selection: { anchor: 0, head: v.state.doc.length } }) })()`)
+    for (const [i, line] of lines.entries()) {
+      if (i > 0) await pressKey(cdp, 'Enter', SHIFT)
+      if (line) await typeText(cdp, line)
+    }
+    await pressKey(cdp, 'Escape')
+  }
+  for (const [lines, spelled] of [[['- a'], `${NOTES}: "- a"`], [['- a', '- b'], `${NOTES}: |-\n  - a\n  - b`], [['a', 'b', ''], `${NOTES}: |\n  a\n  b`]]) {
+    const value = lines.join('\n')
+    await retype(lines)
+    const landed = await settles(async () => keyLines('Drive Items', NOTES) === spelled && frontmatter('Drive Items')[NOTES] === value)
+    await openPane(cdp, cell('Drive Items'))
+    const back = { doc: await paneDoc(cdp), lists: await cdp.evaluate(`document.querySelector('${PANE}').querySelectorAll('[class*="md-list-"]').length`) }
+    check(`group 4: ${JSON.stringify(value)} lands as ${JSON.stringify(spelled.slice(NOTES.length + 2))} and reopens as the same literal lines`, landed && back.doc === value && back.lists === 0, JSON.stringify([keyLines('Drive Items', NOTES), back]))
+  }
+  await pressKey(cdp, 'Escape')
+  await must('Drive Items restored', ask(cdp, 'mutate', { op: 'setProperty', path: pagePath('Drive Items'), propertyId: ids[NOTES], value: { kind: 'text', value: ITEMS } }))
+  await sleep(600)
+
+  await chooseNative(cdp, pid, `${row('Drive Prose')}.querySelector('.cell-title-text')`, PROPERTIES_NOTES())
   check('group 4: Properties ▸ Drive Notes opens the pane', await settles(() => cdp.evaluate(`!!document.querySelector('${PANE}')`), 3000))
   await shot(cdp, 'pane-from-menu')
   await pressKey(cdp, 'Escape')
+  await sleep(500)
+  await chooseNative(cdp, pid, `${row('Drive Prose')}.querySelector('.cell-title-text')`, PROPERTIES_NOTES())
+  await until('the TextPane again', () => cdp.evaluate(`!!document.querySelector('${PANE} .cm-editor')`), 3000).catch(() => {})
+  const again = await paneDoc(cdp).catch(() => null)
+  await typeText(cdp, 'q')
+  check('group 4: a second Properties ▸ open shows the value and types', again === SHOWCASE && (await paneDoc(cdp).catch(() => null)) === `${SHOWCASE}q`, JSON.stringify(again))
+  await pressKey(cdp, 'Escape')
+  await must('Drive Prose restored', ask(cdp, 'mutate', { op: 'setProperty', path: pagePath('Drive Prose'), propertyId: ids[NOTES], value: { kind: 'text', value: SHOWCASE } }))
+  await sleep(600)
   await showView(cdp, 'Drive Cards')
-  await mouseClick(cdp, `${card('Drive Empty')}.querySelector('.card-props')`)
+  await openPane(cdp, cardValue('Drive Prose'))
+  await pressKey(cdp, 'Escape')
+  await sleep(500)
+  await openPane(cdp, cardValue('Drive Prose'))
+  const reopened = await paneDoc(cdp)
+  await typeText(cdp, 'q')
+  check('group 4: a Standard card value closed and reopened shows the value and types', reopened === SHOWCASE && (await paneDoc(cdp)) === `${SHOWCASE}q`, JSON.stringify(reopened))
+  await pressKey(cdp, 'Escape')
+  await must('Drive Prose restored', ask(cdp, 'mutate', { op: 'setProperty', path: pagePath('Drive Prose'), propertyId: ids[NOTES], value: { kind: 'text', value: SHOWCASE } }))
+  await sleep(600)
+  // A Compact card hides a blank value, so the chooser offers Drive Notes on Drive Empty; a press on the card's own text zone opens it.
+  await showView(cdp, 'Drive Compact')
+  await click(cdp, `${card('Drive Empty')}.querySelector('.card-text')`)
   await until('the Cards chooser', () => portalOpen(cdp))
   await pickRow(cdp, NOTES)
-  check("group 4: the Cards chooser's Drive Notes opens the pane on Drive Empty", await settles(() => cdp.evaluate(`!!document.querySelector('${PANE}')`), 3000))
+  check("group 4: the Cards chooser's Drive Notes opens the pane on Drive Empty", await settles(() => cdp.evaluate(`!!document.querySelector('${PANE} .cm-editor')`), 3000))
   await shot(cdp, 'pane-from-chooser')
+  await typeText(cdp, 'chosen')
   await pressKey(cdp, 'Escape')
+  check("group 4: a word typed in the chooser's pane lands on Drive Empty", await settles(async () => frontmatter('Drive Empty')[NOTES] === 'chosen'), keyLines('Drive Empty', NOTES))
+  await must('Drive Empty restored', ask(cdp, 'mutate', { op: 'setProperty', path: pagePath('Drive Empty'), propertyId: ids[NOTES], value: null }))
+  await sleep(600)
   await showView(cdp, 'Drive Table')
 
   await openPage(cdp, 'Drive Target')

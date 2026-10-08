@@ -26,6 +26,7 @@ import {
   signKind,
   type ListMarker,
   type MarkdownScope,
+  readsLists,
 } from '../Engine/detect'
 import { isColorMark, markAfter, markBefore } from '../Engine/highlightColors'
 import { tokenize } from '../Engine/tokens'
@@ -177,11 +178,11 @@ export function outdentListOnShiftTab(
   }
 }
 
-// A cell's `#` and `>` are prose, so only a list marker collapses there.
+// Off a page `#` and `>` are prose, so only a list marker collapses there, and in a Text value nothing does.
 function markerEndOf(line: string, scope: MarkdownScope): number | null {
-  const lm = parseListMarker(line)
+  const lm = readsLists(scope) ? parseListMarker(line) : null
   if (lm) return lm.contentStart
-  if (scope === 'cell') return null
+  if (scope !== 'page') return null
   return headingParts(line)?.contentStart ?? (quotePrefix(line).length || null)
 }
 
@@ -258,7 +259,7 @@ export function canonicalizeCheckbox(
   inserted: string,
   scope: MarkdownScope = 'page',
 ): Edit | null {
-  if (inserted !== ' ' || selStart !== selEnd) return null
+  if (inserted !== ' ' || selStart !== selEnd || !readsLists(scope)) return null
   const ls = lineStartAt(doc, selStart)
   const before = doc.slice(ls, selStart)
   const pfx = blockPrefix(before, scope)
