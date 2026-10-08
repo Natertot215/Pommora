@@ -124,11 +124,8 @@
 .card-props.is-flow > span:has(.cell-bar) {
   flex-basis: 100%;
 }
-/* The field's own minimum and padding would stand a Text row taller than the compact row it sits in. */
 .card-props.is-flow > .card-text-value {
   flex-basis: 100%;
-  min-height: 0;
-  padding-block: 0;
 }
 .card-value:has(.cell-bar) {
   flex: 1;

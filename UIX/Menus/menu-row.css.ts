@@ -3,7 +3,7 @@ import { STATE_OPACITY, vars as colorVars } from '../Theme/color.css'
 import { font, text } from '../Theme/typography.css'
 import { tintAt } from '../Theme/colors'
 import { ROW_RING } from '../Fields/fieldRing'
-import { borderedField, field, fillInput } from '../Fields/fields.css'
+import { field, fillInput } from '../Fields/fields.css'
 import { REVEAL_FADE, revealTarget } from '../Interactions/hover-reveal.css'
 import { duration, easing } from '../Animations/motion'
 
@@ -267,9 +267,8 @@ export const detail = style([text.footnote.emphasized, { flex: '0 1 auto', minWi
 
 /* A trailing value reaches no further than the row's mark and the label keeps the rest: past it, a field gives way and clips its text inside its own chrome, as a cell value clips inside its cap. */
 globalStyle(`${titleWrap} + ${side}`, { maxWidth: 'var(--row-value-reach)' })
-const trailingField = `:is(${field}, ${borderedField})`
-globalStyle(`${titleWrap} + ${side} > :has(${trailingField})`, { minWidth: 0 })
-globalStyle(`${titleWrap} + ${side} ${trailingField}`, {
+globalStyle(`${titleWrap} + ${side} > :has(${field})`, { minWidth: 0 })
+globalStyle(`${titleWrap} + ${side} ${field}`, {
   minWidth: 0,
   overflow: 'hidden',
   whiteSpace: 'nowrap',

@@ -19,7 +19,6 @@ import './text-pane.css'
 
 const stopBubble = (e: { stopPropagation: () => void }): void => e.stopPropagation()
 
-// Whitespace alone is a blank value, as a blank field's is.
 const settled = (doc: string): string => (doc.trim() === '' ? '' : doc)
 
 /** A Text value's pane: MarkdownPM's `'text'` scope with its own history and placeholder, saving once on every way out. The editor lives in the pane's body, which `PickerMenu` mounts and unmounts around each open. */
@@ -119,7 +118,7 @@ function TextPaneEditor({
           heldPage.of(holder ?? null),
           history(),
           placeholder('Begin typing.'),
-          // Enter saves and closes as a field's does, Shift-Enter breaks the line, and Tab writes nothing; Shift-Tab also stops short of the pane's focus trap, which would carry it to the ×.
+          // Shift-Tab stops short of the pane's focus trap, which would carry it to the ×.
           Prec.highest(
             keymap.of([
               {

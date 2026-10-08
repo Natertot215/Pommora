@@ -15,8 +15,8 @@ export function editorText(value?: PropertyValue | null): string {
 function textFromEdit(raw: string, current?: PropertyValue | null): PropertyValue | null {
   const first = raw.trim()
   const behind = current?.kind === 'text' ? current.value.split('\n').slice(1) : []
-  const lines =
-    first === '' ? behind.slice(behind.findIndex((l) => l.trim() !== '')) : [first, ...behind]
+  const kept = behind.findIndex((l) => l.trim() !== '')
+  const lines = first === '' ? (kept === -1 ? [] : behind.slice(kept)) : [first, ...behind]
   const value = lines.join('\n')
   return value.trim() === '' ? null : { kind: 'text', value }
 }
