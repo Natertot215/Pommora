@@ -1,4 +1,4 @@
-import type { ReactNode, MouseEvent, CSSProperties, Ref } from 'react'
+import type { ReactNode, MouseEvent, PointerEvent, CSSProperties, Ref } from 'react'
 import { DISCLOSURE_INDENT, type IconSize } from '../Theme/theme-vars.css'
 import { Button } from '../Buttons/Button'
 import { Icon, type IconName, LockGlyph } from '../Symbols'
@@ -91,12 +91,12 @@ type MenuItemProps = {
   inert?: boolean
   indent?: number
   tabIndex?: number
-  onClick?: (e: React.MouseEvent) => void
-  onContextMenu?: (e: MouseEvent) => void
-  onPointerDown?: (e: React.PointerEvent) => void
-  onMouseDown?: (e: MouseEvent) => void
-  onPointerEnter?: (e: React.PointerEvent) => void
-  onPointerLeave?: (e: React.PointerEvent) => void
+  onClick?: (e: MouseEvent<HTMLDivElement>) => void
+  onContextMenu?: (e: MouseEvent<HTMLDivElement>) => void
+  onPointerDown?: (e: PointerEvent<HTMLDivElement>) => void
+  onMouseDown?: (e: MouseEvent<HTMLDivElement>) => void
+  onPointerEnter?: (e: PointerEvent<HTMLDivElement>) => void
+  onPointerLeave?: (e: PointerEvent<HTMLDivElement>) => void
   className?: string
   children: ReactNode
   ref?: Ref<HTMLDivElement>

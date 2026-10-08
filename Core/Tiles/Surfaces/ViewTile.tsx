@@ -460,7 +460,7 @@ export function ViewTile({
     e.preventDefault()
     e.stopPropagation()
     if (locked) return
-    menuAnchorRef.current = e.currentTarget as HTMLElement
+    menuAnchorRef.current = e.currentTarget
     const action = await popHeld(
       viewRowMenuItems({
         titlesShown: labeled,

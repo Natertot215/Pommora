@@ -88,6 +88,7 @@ export function styleMenuItems(ctx: StyleMenuContext): ActionItem<StyleAction>[]
     }
     case 'context':
     case 'file':
+    case 'text':
       return []
   }
 }

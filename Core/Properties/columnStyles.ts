@@ -148,6 +148,7 @@ export function defaultStyleFor(
     case 'dateTime':
     case 'context':
     case 'file':
+    case 'text':
     case undefined:
       return {}
   }

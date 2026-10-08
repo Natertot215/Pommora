@@ -85,7 +85,7 @@ export function PropertyPanel({
   const mutate = useSession((st) => st.mutate)
   const assetMap = useSession((st) => st.assetMap)
   const [editing, setEditing] = useState<Editing>(null)
-  const [addOpen, setAddOpen] = useState<{ key: GroupKey; row: boolean } | null>(null)
+  const [addOpen, setAddOpen] = useState<{ key: GroupKey; fromRow: boolean } | null>(null)
   const [heldAdd, setHeldAdd] = useState<GroupKey | null>(null)
   const triggerRef = useRef<HTMLElement | null>(null)
   const rootRef = useRef<HTMLDivElement>(null)
@@ -216,9 +216,9 @@ export function PropertyPanel({
       .filter((f) => !isShown(f))
       .map((f) => ({ id: f.id, name: f.label, icon: f.icon, revealOnly: true, drillable: false }))
   const entering = useEntrance([...shown.contexts, ...shown.properties], (f) => f.id, fm !== null)
-  const openAdd = (key: GroupKey, row?: HTMLElement): void => {
-    triggerRef.current = row ?? addRefs.current[key]
-    setAddOpen({ key, row: row !== undefined })
+  const openAdd = (key: GroupKey, anchor?: HTMLElement): void => {
+    triggerRef.current = anchor ?? addRefs.current[key]
+    setAddOpen({ key, fromRow: anchor !== undefined })
   }
 
   const sendWithUndo = <T,>(send: (order: T) => void, next: T, prior: T): void => {
@@ -421,15 +421,15 @@ export function PropertyPanel({
             const addable = fields[key].some((f) => !isShown(f))
             const standing = addable && rows.length === 0
             const opened = addOpen?.key === key
-            const rowOpened = opened && addOpen.row
+            const rowOpened = opened && addOpen.fromRow
             const held = heldAdd === key
             const ghost =
               addable && !standing && ghostApi.ghost?.anchorId === key ? ghostApi.ghost : null
-            const addRow = (onClick: (row: HTMLElement) => void): React.JSX.Element => (
+            const addRow = (onClick: (anchor: HTMLElement) => void): React.JSX.Element => (
               <MenuItem
                 className={cx(s.row, 'ghost-worn')}
                 leading={<Icon name="plus" size="control" />}
-                onClick={(e) => onClick(e.currentTarget as HTMLElement)}
+                onClick={(e) => onClick(e.currentTarget)}
               >
                 {add}
               </MenuItem>
@@ -452,7 +452,7 @@ export function PropertyPanel({
                     />
                   )}
                 </div>
-                {(rows.length > 0 || ghost || held || standing) && (
+                {(rows.length > 0 || held || standing) && (
                   <LineZone
                     className={cx(s.group, panelHost === 'dropdown' && s.groupBordered)}
                     {...lineList({
@@ -466,7 +466,7 @@ export function PropertyPanel({
                     {rows.map(renderRow)}
                     {standing && (
                       <div data-ghost-root data-reveal-held={rowOpened || undefined}>
-                        {addRow((row) => openAdd(key, row))}
+                        {addRow((anchor) => openAdd(key, anchor))}
                       </div>
                     )}
                     {(ghost || held) && (
@@ -481,10 +481,10 @@ export function PropertyPanel({
                           onPointerEnter={ghostApi.onGhostEnter}
                           onPointerLeave={ghostApi.onGhostLeave}
                         >
-                          {addRow((row) => {
+                          {addRow((anchor) => {
                             ghostApi.take()
                             setHeldAdd(key)
-                            openAdd(key, row)
+                            openAdd(key, anchor)
                           })}
                         </div>
                       </Reveal>

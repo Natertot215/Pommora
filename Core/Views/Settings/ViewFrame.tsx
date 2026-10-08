@@ -78,9 +78,9 @@ export function ViewFrame({
     setRenamingId(null)
     void saveView(v, { name: next })
   }
-  const rowMenu = async (v: SavedView, e: React.MouseEvent): Promise<void> => {
+  const rowMenu = async (v: SavedView, e: React.MouseEvent<HTMLElement>): Promise<void> => {
     e.preventDefault()
-    menuAnchorRef.current = e.currentTarget as HTMLElement
+    menuAnchorRef.current = e.currentTarget
     const action = await popMenu(
       viewRowMenuItems({ deletable: views.length > 1, duplicable: views.length > 0 }),
     )

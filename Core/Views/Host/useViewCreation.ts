@@ -27,7 +27,7 @@ import type { ViewHostApi } from './useViewHost'
 import { personalizationOf } from '../../Session/configSlice'
 import { stageView, unstageView } from './pendingView'
 
-// Sort criteria whose value a new page can inherit from its anchor — single-value user properties, a link aside; under anything else the row simply lands where the sort puts it.
+// Sort criteria whose value a new page can inherit from its anchor — single-value user properties, a link and a text aside; under anything else the row simply lands where the sort puts it.
 const SEEDS_FROM_SORT: Record<ValueKind, boolean> = {
   select: true,
   checkbox: true,
@@ -36,6 +36,7 @@ const SEEDS_FROM_SORT: Record<ValueKind, boolean> = {
   multiSelect: false,
   context: false,
   link: false,
+  text: false,
   file: false,
 }
 

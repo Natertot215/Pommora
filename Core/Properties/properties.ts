@@ -8,6 +8,7 @@ import { foldKey, normalizeTitle } from '../Paths/caseFold'
 import type { ValueKind } from './propertyValue'
 
 const typeIds = z.enum([
+  'text',
   'number',
   'checkbox',
   'dateTime',
@@ -31,6 +32,7 @@ export type TypeSpec = Readonly<{
 }>
 
 export const PROPERTY_TYPES: Readonly<Record<PropertyType, TypeSpec>> = {
+  text: { kind: 'text', origin: 'user' },
   number: { kind: 'number', origin: 'user' },
   checkbox: { kind: 'checkbox', origin: 'user' },
   dateTime: { kind: 'dateTime', origin: 'user', groups: true },
@@ -86,6 +88,7 @@ export function pickKindOf(t: PropertyType | 'title' | undefined): OptionPickKin
     case 'dateTime':
     case 'link':
     case 'file':
+    case 'text':
     case undefined:
       return null
   }

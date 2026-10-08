@@ -68,6 +68,7 @@ function baseCellMenu(
     case 'file':
       return { kind: 'file', onChip }
     case 'context':
+    case 'text':
       return filled ? { kind: 'clear-only' } : null
     case 'select':
     case 'multiSelect':

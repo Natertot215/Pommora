@@ -189,6 +189,7 @@ export function bucketKey(
     case 'multiSelect':
     case 'context':
     case 'link':
+    case 'text':
     case 'file':
     case 'null':
       return null

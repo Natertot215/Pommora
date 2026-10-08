@@ -191,6 +191,13 @@
   max-width: 100%;
   vertical-align: middle;
 }
+/* Every line is drawn; the box is one line tall and clips the rest, so a wrapping container later shows them all. */
+.cell-text {
+  display: block;
+  white-space: pre;
+  max-height: 1lh;
+  overflow-y: clip;
+}
 .cell-chips {
   display: inline-flex;
   align-items: center;
