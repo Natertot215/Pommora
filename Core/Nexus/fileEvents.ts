@@ -26,7 +26,7 @@ import type { ContainerKind } from './entities'
 import type { Json } from '../Files/stableJson'
 import { isContentName } from '../Files/walk'
 import { queryHeadingMentions } from '../Index/contentIndex'
-import { normalizeTitle } from '../Paths/caseFold'
+import { foldKey, normalizeTitle } from '../Paths/caseFold'
 import {
   deindexPath,
   type HeadingRenameSeen,
@@ -55,6 +55,7 @@ import { errText } from '../Contract/result'
 import { containerNodeFrom } from './containerFields'
 import { contextsRegistry as contextsRegistrySchema, type ContextDef } from '../Contexts/contexts'
 import { spaceNodeFrom } from '../Contexts/spaceSidecar'
+import type { PropertyDefinition } from '../Properties/properties'
 import { orderedDefs, registryFrom, registryOf } from '../Properties/propertiesRegistry'
 import { stabilize } from './treeStabilize'
 import {
@@ -494,7 +495,7 @@ async function applyRegistry(root: string, ev: Changed, owed: Owed): Promise<App
     )
     if (arrived && ev.origin === 'watched') return null
     const next = repointRegistryInTree(t, orderedDefs(registry))
-    oweNamedKeys(owed, t.config, next)
+    oweNamedKeys(owed, t.config.registry, next)
     return next
   })
 }
@@ -517,16 +518,16 @@ export function oweRescope(owed: Owed, was: WatchScope, scope: WatchScope): bool
   return true
 }
 
-// A Multi-Select the registry came to name, seen by the registry's own event or by the walk an outside arrival takes, owes the Collections assigning it and every Space.
-export function oweNamedKeys(owed: Owed, was: NexusConfig, tree: NexusTree): void {
-  const prior = new Map(was.registry.map((d) => [d.id, d]))
+// A rename names a new key as a create does; every Space is owed because the registrar reads their values from the tree.
+export function oweNamedKeys(owed: Owed, was: PropertyDefinition[], tree: NexusTree): void {
+  const prior = registryOf(was)
   const named = new Set(
     tree.config.registry
       .filter((d) => {
-        const p = prior.get(d.id)
+        const p = prior[d.id]
         return (
           d.type === 'multiSelect' &&
-          (p?.type !== 'multiSelect' || normalizeTitle(p.name) !== normalizeTitle(d.name))
+          (p?.type !== 'multiSelect' || foldKey(p.name) !== foldKey(d.name))
         )
       })
       .map((d) => d.id),

@@ -1046,6 +1046,16 @@ describe('held options — the Multi-Select members a changed file holds are reg
     expect(await options('labels')).toEqual(['Option 1', 'Ideas'])
   })
 
+  it('a registry change that names no key, such as an option edit, owes no file', async () => {
+    await writeFile(abs('Notes', 'A.md'), page(ULID_A, tags('alpha', 'Ideas')))
+    await walked()
+    const registrar = vi.spyOn(optionOps, 'registerHeldOptions')
+    await registry('beta')
+    await settleBatch(pusher, root, [ev('change', '.nexus', 'properties.json')])
+    expect(registrar).not.toHaveBeenCalled()
+    expect(await options()).toEqual(['beta'])
+  })
+
   it('a registry arriving from outside with a property a Collection already assigns registers the members its pages hold', async () => {
     await writeFile(
       abs('Notes', '_pagecollection.json'),
