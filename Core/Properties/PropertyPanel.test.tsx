@@ -9,6 +9,7 @@ import { cachePageDetail } from '../Session/pageDetailCache'
 import { PropertyPanel } from './PropertyPanel'
 import { valuesReply } from '../Testing/pageValues'
 import { firePointer, stubPointerCapture, stubRect } from '@pommora/uix/Testing/pointerHarness'
+import { REVEAL_DWELL_MS } from '@pommora/uix/Interactions/hoverReveal'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -262,6 +263,57 @@ describe('PropertyPanel', () => {
     setTree({ Stage: 'Alpha', Rank: 7, $order: { properties: ['rank'] } })
     await renderPanel(<PropertyPanel subject={SPACE} host="dropdown" />)
     expect(text().indexOf('Rank')).toBeLessThan(text().indexOf('Stage'))
+  })
+})
+
+describe('the Add row', () => {
+  afterEach(() => vi.useRealTimers())
+
+  const addRow = (label: string): HTMLElement | null =>
+    [...host.querySelectorAll<HTMLElement>('[data-ghost-root]')].find(
+      (el) => el.textContent === label,
+    ) ?? null
+  const press = async (el: Element | null): Promise<void> => {
+    await act(async () => {
+      el?.querySelector<HTMLElement>('[role="button"]')?.click()
+    })
+  }
+  const dismiss = async (): Promise<void> => {
+    await act(async () => {
+      document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    })
+    await act(async () => {
+      vi.advanceTimersByTime(1000)
+    })
+  }
+
+  it('a standing Add row holds while the chooser it opened is open', async () => {
+    vi.useFakeTimers()
+    cachePageDetail(detail({ path: 'Col/Page.md' }))
+    await renderPanel(<PropertyPanel subject={PAGE} host="dropdown" />)
+    await press(addRow('Add Property'))
+    expect(addRow('Add Property')?.hasAttribute('data-reveal-held')).toBe(true)
+    expect(document.body.textContent).toContain('Note')
+    await dismiss()
+    expect(addRow('Add Property')?.hasAttribute('data-reveal-held')).toBe(false)
+  })
+
+  it('a hovered Add row stays held through its chooser, then leaves', async () => {
+    vi.useFakeTimers()
+    cachePageDetail(detail({ path: 'Col/Page.md', frontmatter: { Stage: 'Alpha' } }))
+    await renderPanel(<PropertyPanel subject={PAGE} host="dropdown" />)
+    const group = host.querySelector('[aria-label="Add Property"]')?.closest('[data-reveal-host]')
+    await act(async () => {
+      group?.dispatchEvent(new MouseEvent('pointerover', { bubbles: true }))
+      firePointer(window, 'pointermove')
+    })
+    await act(async () => {
+      vi.advanceTimersByTime(REVEAL_DWELL_MS)
+    })
+    await press(addRow('Add Property'))
+    expect(addRow('Add Property')?.hasAttribute('data-reveal-held')).toBe(true)
+    await dismiss()
+    expect(addRow('Add Property')).toBeNull()
   })
 })
 
