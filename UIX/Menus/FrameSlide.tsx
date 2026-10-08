@@ -88,12 +88,12 @@ export function FrameSlide({
         className={cx(s.track, enabled && s.trackAnimated)}
         style={{ transform: `translateX(-${shift}px)` }}
       >
-        <div className={cx(s.slot, idle('a') && s.slotIdle)} inert={active === 'b'}>
+        <div className={cx(s.slot, idle('a') && s.slotIdle)} inert={open}>
           <div ref={aRef} className={s.slotContent} style={slotBox}>
             {root}
           </div>
         </div>
-        <div className={cx(s.slot, idle('b') && s.slotIdle)} inert={active === 'a'}>
+        <div className={cx(s.slot, idle('b') && s.slotIdle)} inert={!open}>
           <div ref={bRef} className={s.slotContent} style={slotBox}>
             {shownDetail}
           </div>

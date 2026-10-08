@@ -154,7 +154,7 @@ function ListGroups({
                       />
                     }
                   >
-                    {title(d)}
+                    {d.name}
                   </MenuItem>
                 </LineRow>
               </Reveal>

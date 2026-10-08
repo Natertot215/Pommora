@@ -139,6 +139,14 @@ describe('the DRY nested slide (A-7)', () => {
 })
 
 const effortDef: PropertyDefinition = { id: 'prop_x', name: 'Effort', type: 'number' }
+const commitTitle = (input: HTMLInputElement, value: string): void => {
+  Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set?.call(
+    input,
+    value,
+  )
+  input.dispatchEvent(new Event('input', { bubbles: true }))
+  input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+}
 const titleDef: PropertyDefinition = { id: '_title', name: 'Title', type: 'link' }
 
 describe('the All Properties section (T5)', () => {
@@ -176,10 +184,19 @@ describe('the All Properties section (T5)', () => {
     expect(host.textContent).toContain('Checkbox')
   })
 
-  it('creating a property lands back on the list with its row renaming; Enter commits the name', async () => {
+  it('creating a property lands back on the list with its row renaming, focused once the list slot is live; Enter commits the name', async () => {
+    const focusedWhileInert: boolean[] = []
+    const focus = HTMLInputElement.prototype.focus
+    vi.spyOn(HTMLInputElement.prototype, 'focus').mockImplementation(function (
+      this: HTMLInputElement,
+    ) {
+      focusedWhileInert.push(this.closest('[inert]') !== null)
+      focus.call(this)
+    })
     await mountPane([...defs, { id: 'prop_new', name: 'New Text', type: 'text' }])
     await act(async () => {
       host.querySelector<HTMLButtonElement>('[aria-label="New Property"]')!.click()
+      await new Promise((r) => requestAnimationFrame(() => r(undefined)))
     })
     await act(async () => {
       ;[...host.querySelectorAll<HTMLElement>('[role="button"]')]
@@ -188,14 +205,10 @@ describe('the All Properties section (T5)', () => {
     })
     const input = host.querySelector<HTMLInputElement>('.row-title-input')
     expect(input?.value).toBe('New Text')
+    expect(focusedWhileInert).toEqual([false])
     expect(document.activeElement).toBe(input)
     await act(async () => {
-      Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set?.call(
-        input,
-        'Tags',
-      )
-      input!.dispatchEvent(new Event('input', { bubbles: true }))
-      input!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+      commitTitle(input!, 'Tags')
     })
     expect(renameSpy).toHaveBeenCalledWith('prop_new', 'Tags')
     expect(host.querySelector('.row-title-input')).toBeNull()
@@ -472,12 +485,7 @@ describe('native menus + the inline-rename channel (T7)', () => {
     const input = host.querySelector<HTMLInputElement>('.row-title-input')
     expect(input).toBeTruthy()
     await act(async () => {
-      Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set?.call(
-        input,
-        'Stage',
-      )
-      input!.dispatchEvent(new Event('input', { bubbles: true }))
-      input!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+      commitTitle(input!, 'Stage')
       input!.blur()
     })
     expect(renameSpy).toHaveBeenCalledWith('prop_status', 'Stage')
