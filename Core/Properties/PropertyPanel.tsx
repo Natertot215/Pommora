@@ -85,7 +85,8 @@ export function PropertyPanel({
   const mutate = useSession((st) => st.mutate)
   const assetMap = useSession((st) => st.assetMap)
   const [editing, setEditing] = useState<Editing>(null)
-  const [addOpen, setAddOpen] = useState<GroupKey | null>(null)
+  const [addOpen, setAddOpen] = useState<{ key: GroupKey; row: boolean } | null>(null)
+  const [heldAdd, setHeldAdd] = useState<GroupKey | null>(null)
   const triggerRef = useRef<HTMLElement | null>(null)
   const rootRef = useRef<HTMLDivElement>(null)
   const addRefs = useRef<Record<GroupKey, HTMLButtonElement | null>>({
@@ -213,9 +214,9 @@ export function PropertyPanel({
       .filter((f) => !isShown(f))
       .map((f) => ({ id: f.id, name: f.label, icon: f.icon, revealOnly: true, drillable: false }))
   const entering = useEntrance([...shown.contexts, ...shown.properties], (f) => f.id, fm !== null)
-  const openAdd = (key: GroupKey): void => {
-    triggerRef.current = addRefs.current[key]
-    setAddOpen(key)
+  const openAdd = (key: GroupKey, row?: HTMLElement): void => {
+    triggerRef.current = row ?? addRefs.current[key]
+    setAddOpen({ key, row: row !== undefined })
   }
 
   const sendWithUndo = <T,>(send: (order: T) => void, next: T, prior: T): void => {
@@ -417,13 +418,16 @@ export function PropertyPanel({
             const rows = shown[key]
             const addable = fields[key].some((f) => !isShown(f))
             const standing = addable && rows.length === 0
+            const opened = addOpen?.key === key
+            const rowOpened = opened && addOpen.row
+            const held = heldAdd === key
             const ghost =
               addable && !standing && ghostApi.ghost?.anchorId === key ? ghostApi.ghost : null
-            const addRow = (onClick: () => void): React.JSX.Element => (
+            const addRow = (onClick: (row: HTMLElement) => void): React.JSX.Element => (
               <MenuItem
                 className={cx(s.row, 'ghost-worn')}
                 leading={<Icon name="plus" size="control" />}
-                onClick={onClick}
+                onClick={(e) => onClick(e.currentTarget as HTMLElement)}
               >
                 {add}
               </MenuItem>
@@ -440,13 +444,13 @@ export function PropertyPanel({
                       icon="plus"
                       size={ICON.optionsAdd}
                       ariaLabel={add}
-                      className={addOpen === key ? undefined : revealTarget}
+                      className={opened && !rowOpened ? undefined : revealTarget}
                       create
                       onClick={() => openAdd(key)}
                     />
                   )}
                 </div>
-                {(rows.length > 0 || ghost || standing) && (
+                {(rows.length > 0 || ghost || held || standing) && (
                   <LineZone
                     className={cx(s.group, panelHost === 'dropdown' && s.groupBordered)}
                     {...lineList({
@@ -458,17 +462,27 @@ export function PropertyPanel({
                     })}
                   >
                     {rows.map(renderRow)}
-                    {standing && <div data-ghost-root>{addRow(() => openAdd(key))}</div>}
-                    {ghost && (
-                      <Reveal open={!ghost.closing} enterOnMount onCollapsed={ghostApi.closed}>
+                    {standing && (
+                      <div data-ghost-root data-reveal-held={rowOpened || undefined}>
+                        {addRow((row) => openAdd(key, row))}
+                      </div>
+                    )}
+                    {(ghost || held) && (
+                      <Reveal
+                        open={held ? rowOpened : !ghost?.closing}
+                        enterOnMount
+                        onCollapsed={held ? () => setHeldAdd(null) : ghostApi.closed}
+                      >
                         <div
                           data-ghost-root
+                          data-reveal-held={rowOpened || undefined}
                           onPointerEnter={ghostApi.onGhostEnter}
                           onPointerLeave={ghostApi.onGhostLeave}
                         >
-                          {addRow(() => {
+                          {addRow((row) => {
                             ghostApi.take()
-                            openAdd(key)
+                            setHeldAdd(key)
+                            openAdd(key, row)
                           })}
                         </div>
                       </Reveal>
@@ -491,7 +505,7 @@ export function PropertyPanel({
         )}
         <PropertyPicker
           target={panelTarget}
-          chooser={addOpen ? hidden(addOpen) : undefined}
+          chooser={addOpen ? hidden(addOpen.key) : undefined}
           open={panelTarget !== null || addOpen !== null}
           triggerRef={triggerRef}
           onCommit={(v) => {
