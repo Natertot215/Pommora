@@ -104,6 +104,10 @@
   text-align: right;
   max-width: var(--row-value-reach);
 }
+/* The value rests at the row's end, but typing runs rightward from the field's start rather than growing toward the label. */
+.card-prop-row > .card-value input {
+  text-align: start;
+}
 .card-value {
   display: inline-flex;
   align-items: center;
