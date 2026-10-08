@@ -2,6 +2,7 @@
 
 | Date                    | ID     | Entry                                                |
 | ----------------------- | ------ | ---------------------------------------------------- |
+| 10-08-2026              | PM-148 | Text Properties                                      |
 | 10-06-2026 → 10-07      | PM-147 | Codeblock Deltas                                     |
 | 09-29-2026              | PM-146 | Interface Scrollbars                                 |
 | 09-23-2026              | PM-145 | Metadata & Page Locking                              |
@@ -150,6 +151,14 @@
 | 06-14-2026 → 06-15      | PM-002 | The Headless Data Layer                              |
 | 06-14-2026              | PM-001 | Genesis — The Walking Skeleton                       |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot                                 |
+
+#### PM-148 || Text Properties
+**DATE:** 10-08-2026
+
+Text became the first entry of the property catalog: a free-form value typed into a table cell, a card, the Properties panel, or the Properties menu, resting on one line with an ellipsis while its links stay live — coloring, opening, glancing, following renames, and turning phantom when their page is deleted. A pen over the value's trailing edge opens TextPane, which edits the full value across lines with the page editor's formatting and links, and links inside values joined the index and the rename cascade. A value another app wrote, whether a number, a list, or an unquoted link, reads as its text and stays untouched on disk until edited. Trailing values across panels, menus, and cards now stop at one shared reach short of their labels, and inline value fields size to their text so a content-sized panel holds its width while a value is edited.
+
+- **Commits:** `b80a7b12a^..203c9f6d2`
+- **Diff:** Net +689 | +964 / −275
 
 #### PM-147 || Codeblock Deltas
 **DATE:** 10-06-2026 → 10-07
