@@ -34,7 +34,9 @@ export async function holds(fn, ms = 6000) {
 async function connect() {
   const target = await until('the app window', async () => {
     const list = await (await fetch(`http://127.0.0.1:${port}/json/list`)).json()
-    return list.find((t) => t.type === 'page' && t.url.startsWith('app://'))
+    return list.find(
+      (t) => t.type === 'page' && (t.url.startsWith('app://') || t.url.startsWith('http://localhost')),
+    )
   }, 30000)
   const ws = new WebSocket(target.webSocketDebuggerUrl)
   await new Promise((ok, fail) => { ws.onopen = ok; ws.onerror = fail })
@@ -179,6 +181,12 @@ export async function launch(debugPort, shotsName) {
   await until('the sidebar', () => cdp.evaluate(`!!document.querySelector('.row span')`), 30000)
   await sleep(3000)
   return { cdp, pid: child.pid }
+}
+
+/** Attaches to an instance already listening on `debugPort` — the dev instance, whose renderer the Vite server serves — with no build, backup, or launch; `restore` then has nothing to put back. */
+export async function attach(debugPort) {
+  port = debugPort
+  return { cdp: await connect() }
 }
 
 // A build that failed before the backup leaves nothing to restore.
