@@ -398,8 +398,8 @@ async function group2(cdp, pid) {
   await penOn(cdp, cardValue('Drive Prose'), 'cards-standard')
   await showView(cdp, 'Drive Compact')
   await connectionsOn(cdp, cardValue('Drive Prose'), 'compact card')
-  const flow = await cdp.evaluate(`(() => { const s = (${cardValue('Drive Prose')}).closest('.card-props.is-flow > span'); if (!s) return null; const probe = document.createElement('i'); probe.style.color = 'var(--border-base)'; s.appendChild(probe); const kit = getComputedStyle(probe).color; probe.remove(); const ring = /^(.*) 0px 0px 0px ([\\d.]+)px inset$/.exec(getComputedStyle(s).boxShadow); const others = [...s.parentElement.children].filter((e) => e !== s).map((e) => e.getBoundingClientRect().height); return { ring: ring && { color: ring[1], width: parseFloat(ring[2]) }, kit, tallest: Math.max(0, ...others), h: s.getBoundingClientRect().height } })()`)
-  check("group 2: the Compact flow span wears the field's ring in the kit's border color and stands no taller than its neighbors", !!flow?.ring && flow.ring.width > 0 && flow.ring.color === flow.kit && flow.h <= flow.tallest + 1, JSON.stringify(flow))
+  const flow = await cdp.evaluate(`(() => { const s = (${cardValue('Drive Prose')}).closest('.card-props.is-flow > span'); if (!s) return null; const probe = document.createElement('i'); probe.style.color = 'var(--border-base)'; s.appendChild(probe); const kit = getComputedStyle(probe).color; probe.remove(); const ring = /^(.*) 0px 0px 0px ([\\d.]+)px inset$/.exec(getComputedStyle(s).boxShadow); return { ring: ring && { color: ring[1], width: parseFloat(ring[2]) }, kit, floor: parseFloat(getComputedStyle(s).minHeight), h: s.getBoundingClientRect().height } })()`)
+  check("group 2: the Compact flow span wears the field's ring in the kit's border color and stands a field's height", !!flow?.ring && flow.ring.width > 0 && flow.ring.color === flow.kit && flow.floor > 0 && flow.h >= flow.floor - 0.5, JSON.stringify(flow))
   await penOn(cdp, cardValue('Drive Prose'), 'cards-compact')
 
   await showView(cdp, 'Drive Table')

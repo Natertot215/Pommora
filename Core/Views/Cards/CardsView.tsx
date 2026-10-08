@@ -52,7 +52,7 @@ import { NO_TRAIL, type TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { ancestryOf } from '../../Nexus/treeIndex'
 import { stabilize } from '../../Nexus/treeStabilize'
 import { type PickEntry, PropertyPicker } from '../../Properties/Pickers/PropertyPicker'
-import { borderedFieldFlush } from '@pommora/uix/Fields/fields.css'
+import { borderedField } from '@pommora/uix/Fields/fields.css'
 import { overScrollEllipsis } from '@pommora/uix/Interactions/OverScroll'
 import { columnType, resolveFieldValue } from '../../Properties/value'
 import { type Personalization, TENTHS_SCALE } from '../../Settings/personalization'
@@ -717,9 +717,7 @@ function CardProperties({
         <span
           key={c.id}
           className={
-            columnType(c, ctx.schema) === 'text'
-              ? cx('card-text-value', borderedFieldFlush)
-              : undefined
+            columnType(c, ctx.schema) === 'text' ? cx('card-text-value', borderedField) : undefined
           }
         >
           {value(c)}

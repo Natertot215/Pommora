@@ -52,9 +52,6 @@ export const borderedField = style([
   },
 ])
 
-/** The bordered chrome without its height floor or block inset, for a row that sets its own height. */
-export const borderedFieldFlush = style([borderedField, { minHeight: 0, paddingBlock: 0 }])
-
 /** `--field-ring` is color, not focus state — the ring survives the killed outline. */
 export const input = style([
   field,
@@ -120,7 +117,8 @@ export const base = style({
   ...placeholderTone,
 })
 
-export const fillInput = style([base, { width: '100%', minWidth: 0 }])
+/** Sized to its text, so a frame that grows to its content holds its width when a value turns into this field. */
+export const fillInput = style([base, { fieldSizing: 'content', width: '100%', minWidth: 0 }])
 
 export const invalidInput = style({
   selectors: { '&[aria-invalid="true"]': { opacity: STATE_OPACITY.ghost } },
