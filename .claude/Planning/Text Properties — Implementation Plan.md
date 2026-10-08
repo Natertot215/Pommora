@@ -101,8 +101,8 @@ One `opus-medium` agent implements Phase 1 and one `opus-high` agent each later 
   - [x] Task 4.1 The `text` scope
   - [x] Task 4.2 TextPane
   - [x] Review Checkpoint — drive groups 1–4 (101/101 before the review, 105/105 after its folds; the parity pair and six pane screenshots read)
-- [ ] **Phase 5** — Documentation
-  - [ ] Task 5.1 The five documents
+- [x] **Phase 5** — Documentation — eight documents, +35 / −34 prose; one opus-high review folded
+  - [x] Task 5.1 The five documents
 - [ ] **Final Verification** — the three final agents, then the orchestrator's own pass and the report
 
 ---
@@ -1934,7 +1934,7 @@ Run once, after both phases have landed and merged.
 
 #### Task 5.1
 
-**BEFORE:** PropertiesPM counts eleven types, has no Text row or section, says text-shaped values keep the shared field, and lists Text under *§Pending*; ViewTypesPM's filter table has a "Text (Title)" row and no Link row; ConnectionsPM says the rewrite covers "the Link property values in frontmatter", that File values are left alone (true only after Task 3.2), and counts two connection renderers; MarkdownPM describes the `'cell'` scope as a table's; PommoraPRD's property list (`:143`) lacks Text and says "There is no free-form text type yet" (`:145`); SymbolsPM's icon table (`:44-46`) has no Text row; PommoraUIX changes nothing (`PickerMenu` is untouched).
+**BEFORE:** PropertiesPM counts eleven types, has no Text row or section, says text-shaped values keep the shared field, and lists Text under *§Pending*; ViewTypesPM's filter table has a "Text (Title)" row and no Link row; ConnectionsPM says the rewrite covers "the Link property values in frontmatter", that File values are left alone (true only after Task 3.2), and counts two connection renderers; MarkdownPM describes the `'cell'` scope as a table's; PommoraPRD's property list (`:143`) lacks Text and says "There is no free-form text type yet" (`:145`); SymbolsPM's icon table (`:44-46`) has no Text row; PommoraUIX's Row Tokens lack `--row-value-reach` (`PickerMenu` is untouched).
 
 **TASK**
 
@@ -1999,7 +1999,7 @@ Run once, after both phases have landed and merged.
 
 - [ ] `grep -rn "eleven" .claude/Features .claude/Guidelines .claude/CLAUDE.md` → no hits; `grep -n "Text (Title)" .claude/Features/ViewTypesPM.md` → no hits; *§Pending* in PropertiesPM holds no Text entry.
 - [ ] Read each edited paragraph once in full: no sentence contradicts its neighbor, no "now" or "previously", no reference to this plan.
-- [ ] Nothing in `PommoraUIX.md` changed (`git diff --stat -- .claude/Features/PommoraUIX.md` is empty).
+- [ ] `PommoraUIX.md` changes on one line, the Row Tokens row (`git diff --stat -- .claude/Features/PommoraUIX.md` → 1 file, that row).
 
 ---
 
@@ -2107,8 +2107,9 @@ Departures from the decision log, each with the line that forced it, and the rul
 - **`INDEX_GENERATION` 10 → 11.** Not in the log. Every page's rows gain the new reading on the first open after upgrade, so the sentence links files already hold are found without a rewrite.
 - **Lists (Nathan, 10-08-2026).** Text holds no lists: a line that spells a list marker is prose in the cell and in TextPane, because a YAML list under a key is a list to every other reader, and a Text string drawn as a list would be a list in Pommora alone. The log's list vocabulary for the pane, the shared key layer lifted out of `CellEditor`, and the cell's list geometry all go; the pane mounts a `text` scope holding the inline vocabulary only.
 - **`cellLinkTarget`'s ancestor check.** Removed as dead rather than hoisted around: its one caller's handlers sit on the `.mdpm-tbl-cell-static` element itself, so the check could never fail.
+- **F-2 — Enter in TextPane (Nathan, 10-08-2026).** Enter saves and closes, as it does in a field; Shift-Enter writes the line break. The log had Enter write a new line in the pane.
 - **The Properties ▸ seat passes a snapshot (Phase 4 review).** `ValuePickPresenter` hands the pane the value as it was when the menu's leaf was pressed, so an outside change made while a pane opened from that seat is untouched does not appear in it; the table, panel, and card seats pass the live value and do. Left as the seat's existing behavior for every picker it presents; the pane's own close still writes last.
-- **I-1 — PommoraUIX.** Unchanged: `PickerMenu` gains no prop under the F-3 deviation, and app-side pickers aren't listed there.
+- **I-1 — PommoraUIX.** `PickerMenu` gains no prop under the F-3 deviation, and app-side pickers aren't listed there; its Row Tokens gain `--row-value-reach` (Task 2.5).
 - **The writer (Phase 1 review).** `pageFile.ts` emits a flow collection unpadded (`flowCollectionPadding: false`, one `YAML_OUT` shared with `yamlInline`), so a foreign `[milk, eggs]` survives an adjacent write byte for byte, and a changed value is set as a fresh node (`doc.createNode`), so a key once quoted or written as a block does not hold its next value to that style — `"42"` then `hello` lands `hello`, not `"hello"`. Both apply to every key; both are what "written plain wherever yaml allows" needs. Found by the Phase 1 reviews.
 - **Link reads an unquoted `[[Page]]` (Phase 1 review).** `writtenSpelling`'s string arm kept a nested-list raw for a Link whose typed value spelled the same, so a Link picked over an Obsidian-written unquoted `[[Page]]` never landed. The sibling fix: Link decodes that raw as the link it spells, through the one unwrapping File already does (`fileEntry`, now `linkEntry`, shared by both), so the raw reads and a re-save of the same link leaves the file alone.
 - **Task format.** `#### Task N.M` → `**BEFORE:**` one line → `**TASK**` checklist → `ts|diff` hunks → `**VERIFY**`, per Nathan's *§For Planning* and *Codeblock Deltas* Task 4.1; the skill's NOW/CHANGE/AFTER blocks are not used.

@@ -44,6 +44,7 @@ Which glyph each recurring concept uses. The app decides these — the frames in
 | Multi-Select | `tags` |
 | Last Edited | `history` |
 | Title | `text-align-justify` |
+| Text | `text-align-start` |
 
 The Context property type draws the Context entity kind's own glyph rather than naming one, so a column and the Context it points at can never wear different marks. `list-tree` is the page outline's glyph, distinct from `list-rounded`'s view type and `list-filter`'s predicate.
 

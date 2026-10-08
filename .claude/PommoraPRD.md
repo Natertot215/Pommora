@@ -140,9 +140,9 @@ Their fields are an open question — what replaces the removed inherited shape 
 
 Property **definitions** live in one nexus-wide registry (`.nexus/properties.json`) — defined once, assigned by any Collection, one shared definition and option set everywhere; an agenda config carries identity and nothing else. Property **values** live in each entity's frontmatter or JSON. A property's identity is a stable ULID held in the registry; its name is the key its values write under, unique nexus-wide, and a rename sweeps every page holding it. The v1 catalog:
 
-- **Number**, **Checkbox**, **Date** (date-only or with-time), **Select**, **Multi-select**, **Status**, **Link**, **Context** (registry-minted, one per Context), **Creation Time** and **Last Modified** (both derived), and **File**.
+- **Text**, **Number**, **Checkbox**, **Date** (date-only or with-time), **Select**, **Multi-select**, **Status**, **Link**, **Context** (registry-minted, one per Context), **Creation Time** and **Last Modified** (both derived), and **File**.
 
-There is no free-form text type yet — the filename is the title, and text-shaped values use creatable Select options. **Status** groups are an open set — seeded with three whose completion semantics drive calendar compatibility — with user-editable options inside each. There are no user-creatable relation properties — the Context link is the sole relation — and option lists are managed through the schema editor, not typed inline. Values are bare — a Status stores its label, a Number a number, a Date a timestamp — because the key already says which property the value belongs to; a key and an option match without regard to case. Context values are angle-bracket title keys at the entity root over bare Space titles.
+**Status** groups are an open set — seeded with three whose completion semantics drive calendar compatibility — with user-editable options inside each. There are no user-creatable relation properties — the Context link is the sole relation — and option lists are managed through the schema editor, not typed inline. Values are bare — a Status stores its label, a Number a number, a Date a timestamp — because the key already says which property the value belongs to; a key and an option match without regard to case. Context values are angle-bracket title keys at the entity root over bare Space titles.
 
 #### Views
 
@@ -156,7 +156,7 @@ The registered view types are **Table**, **Cards**, **List**, **Gallery**, **Cal
 
 #### Connections
 
-Connections are Content ←> Content links on the Markdown body via either `[[Title]]` or `[Alias](Title)` syntax, and may also be assigned on the Markdown’s frontmatter through the link property. Currently, only Pages use Connections; the Markdown surface of the pending Tasks feature will likely also support them.
+Connections are Content ←> Content links in the Markdown body or inside a Text property's value, via either `[[Title]]` or `[Alias](Title)` syntax, and may also be held as the whole value of a Link property. Currently, only Pages use Connections; the Markdown surface of the pending Tasks feature will likely also support them.
 
 In v1, connections resolve by title. A uniquely-held title is live and navigable; a title held by two Pages is ambiguous; an unmatched one renders as inert literal text with the brackets visible, going live the moment a single matching Page exists. Renaming a target **cascades** — every referencing body is rewritten to the new title, per-file atomic and re-runnable rather than transactional. Resolution runs on an in-memory map, and the cascade scans the page tree, so connections depend on no database at all. Typing `[[` plus at least one character opens an autocomplete over prefix-matching Pages Nexus-wide.
 
