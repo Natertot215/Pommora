@@ -3,7 +3,7 @@
 import { pageEmbedPattern, pageLinkPattern, titleOf } from './connections'
 import { normalizeTitle } from '../Paths/caseFold'
 import { markdownLinkRegex, targetFragment, targetTitle } from './links'
-import { linkEntry, readLink } from './linkValue'
+import { readLink, wholeValueLink } from './linkValue'
 import { codeMask, type CodeMask, lineEndAt, lineStartAt } from '../MarkdownPM/Engine/markdownCode'
 import { headingParts } from '../MarkdownPM/Engine/detect'
 
@@ -115,8 +115,7 @@ export function frontmatterMentions(
 ): { target: string; qualifier: string }[] {
   const out = new Map<string, { target: string; qualifier: string }>()
   for (const value of Object.values(values)) {
-    const entry = linkEntry(value, 2)
-    const link = entry === null ? null : readLink(entry)
+    const link = wholeValueLink(value)
     if (link?.kind !== 'page') continue
     const target = titleKey(link.title, normalizeTitle(ownTitle))
     const qualifier = normalizeTitle(link.heading ?? '')

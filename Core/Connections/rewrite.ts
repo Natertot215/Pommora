@@ -14,7 +14,7 @@ import {
   targetNamesTitle,
   targetTitle,
 } from './links'
-import { linkEntry, readLink } from './linkValue'
+import { wholeValueLink } from './linkValue'
 import { applyEdits, codeMask } from '../MarkdownPM/Engine/markdownCode'
 import { sectionRunsIn } from './scan'
 
@@ -122,8 +122,7 @@ export function rewriteFrontmatterConnections(
   const headingKey = 'heading' in change ? normalizeTitle(change.heading) : ''
   const patch: Record<string, string> = {}
   for (const [key, value] of Object.entries(values)) {
-    const entry = linkEntry(value, 2)
-    const link = entry === null ? null : readLink(entry)
+    const link = wholeValueLink(value)
     if (link?.kind !== 'page' || normalizeTitle(link.title || ownTitle) !== titleKey) continue
     if ('heading' in change) {
       if (normalizeTitle(link.heading ?? '') === headingKey)

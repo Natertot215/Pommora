@@ -356,6 +356,9 @@ async function group2(cdp, pid) {
   key(KEY.esc)
   await sleep(500)
   check('group 2: right-clicking Drive Target in a Text value opens the link menu, not the cell menu', linkMenu.includes('Copy Link') && !linkMenu.includes('Clear'), JSON.stringify(linkMenu))
+  // At rest means no pointer over the value: a hovered cap trades its ellipsis for the scroll.
+  await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 4, y: 4, button: 'none' })
+  await sleep(300)
   const ellipsis = {
     prose: (await styleOf(cdp, `(${cell('Drive Prose')}).querySelector('.cell-text')`, ['textOverflow']))?.[0],
     items: (await styleOf(cdp, `(${cell('Drive Items')}).querySelector('.cell-text')`, ['textOverflow']))?.[0],
