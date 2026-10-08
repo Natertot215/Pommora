@@ -3,7 +3,7 @@ import { chmod, rm, mkdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { noModeBits, tempRoot } from '../Testing/hostFs'
 import type { PropertyDefinition } from '../Properties/properties'
-import { deleteCascade, renameCascade } from './cascade'
+import { deleteCascade, renameCascade, spacesLinkHeading } from './cascade'
 import { sweepGovernedRoots, unsweptLine } from '../Properties/governedSweep'
 import { createTestPage } from '../Testing/createTestPage'
 import { dropLiveTree, heldTreeOf, refreshTree } from './liveTree'
@@ -15,6 +15,7 @@ import { rewritePageSerialized } from '../Files/atomicWrite'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import { seedContentIndex } from '../Index/indexSeed'
+import { queryHeadingMentions, queryMentions } from '../Index/contentIndex'
 import { ok } from '../Contract/result'
 import { machine } from '../Platform/machine'
 import { contextsDir, contextsRegistryFile, tileFilePath, homepageDir } from '../Paths/paths'
@@ -166,6 +167,8 @@ describe('renameCascade over frontmatter', () => {
     for (const name of [SOURCE, SITE]) {
       await createProperty(root, { id: '', name, type: 'link' } as PropertyDefinition)
     }
+    await createProperty(root, { id: '', name: 'Notes', type: 'text' } as PropertyDefinition)
+    await createProperty(root, { id: '', name: 'Files', type: 'file' } as PropertyDefinition)
   })
   it('moves a Link property naming the page, and the body’s links with it', async () => {
     const a = await createTestPage(dir, 'Cites', { body: 'see [[Target]]' })
@@ -201,6 +204,21 @@ describe('renameCascade over frontmatter', () => {
     expect(fm).not.toHaveProperty(SOURCE)
   })
 
+  it('moves an unquoted `[[Page]]` Link value, found through the index', async () => {
+    const a = await createTestPage(dir, 'Unquoted', { body: 'no links here' })
+    if (!a.ok) throw new Error('setup failed')
+    await setValue(a.value.path, SOURCE, 'held')
+    const bytes = await readFile(a.value.path, 'utf8')
+    await writeFile(a.value.path, bytes.replace(`${SOURCE}: held`, `${SOURCE}: [[Target]]`))
+    installStores(memoryStores().stores)
+    await seedContentIndex(root)
+    const mentions = queryMentions('target')
+    await renameCascade(root, 'Target', { title: 'New' })
+    installStores(NO_STORES)
+    expect(mentions).toEqual([rel(a.value.path)])
+    expect((await fmOf(a.value.path))[SOURCE]).toBe('[[New]]')
+  })
+
   it('leaves an address alone when its last segment happens to match', async () => {
     const a = await createTestPage(dir, 'Address', { body: 'no links here' })
     if (!a.ok) throw new Error('setup failed')
@@ -208,6 +226,30 @@ describe('renameCascade over frontmatter', () => {
 
     await renameCascade(root, 'Target', { title: 'New Target' })
     expect((await fmOf(a.value.path))[SITE]).toBe('https://example.com/Target')
+  })
+
+  it('rewrites a link inside a Text value as prose, alias kept, and writes a whole-value Text link once', async () => {
+    const a = await createTestPage(dir, 'Prose', { body: 'no links here' })
+    if (!a.ok) throw new Error('setup failed')
+    await setValue(a.value.path, 'Notes', 'see [[Target|the brief]] here')
+    const b = await createTestPage(dir, 'Whole', { body: 'no links here' })
+    if (!b.ok) throw new Error('setup failed')
+    await setValue(b.value.path, 'Notes', '[[Target|New Target]]')
+    await renameCascade(root, 'Target', { title: 'New Target' })
+    expect((await fmOf(a.value.path)).Notes).toBe('see [[New Target|the brief]] here')
+    expect((await fmOf(b.value.path)).Notes).toBe('[[New Target|New Target]]')
+  })
+
+  it('leaves a File value and a Select value that read as connections', async () => {
+    await createProperty(root, { id: '', name: 'Stage', type: 'select' } as PropertyDefinition)
+    const a = await createTestPage(dir, 'Other', { body: 'no links here' })
+    if (!a.ok) throw new Error('setup failed')
+    await setValue(a.value.path, 'Files', '[[Target]]')
+    await setValue(a.value.path, 'Stage', '[[Target]]')
+    await renameCascade(root, 'Target', { title: 'New Target' })
+    const fm = await fmOf(a.value.path)
+    expect(fm.Files).toBe('[[Target]]')
+    expect(fm.Stage).toBe('[[Target]]')
   })
 })
 
@@ -304,6 +346,60 @@ describe('renameCascade for a heading', () => {
     installStores(NO_STORES)
     expect(await bodyOf(b.value.path)).toBe('![[A#Intro]]')
   })
+
+  it('rewrites a `[[#Old]]` and a `§Old` run inside the page’s own Text value, with skipRel leaving its body alone', async () => {
+    await mkdir(join(root, '.nexus'), { recursive: true })
+    await writeFile(
+      join(root, '.nexus', 'settings.json'),
+      JSON.stringify({ personalization: { inPageHeadingResolution: 'automatic' } }),
+    )
+    await createProperty(root, { id: '', name: 'Notes', type: 'text' } as PropertyDefinition)
+    const a = await createTestPage(dir, 'A', { body: '## Setup\n[[#Setup]]' })
+    if (!a.ok) throw new Error('setup failed')
+    await setValue(a.value.path, 'Notes', 'see [[#Setup]] and §Setup')
+    installStores(memoryStores().stores)
+    await seedContentIndex(root)
+    const r = await renameCascade(root, 'A', { heading: 'Setup', to: 'Intro' }, rel(a.value.path))
+    installStores(NO_STORES)
+    expect(await bodyOf(a.value.path)).toBe('## Setup\n[[#Setup]]')
+    expect((await fmOf(a.value.path)).Notes).toBe('see [[#Intro]] and §Intro')
+    expect(r.pages).toEqual([rel(a.value.path)])
+  })
+
+  it('reaches the page’s own Text values after its save re-indexed the new heading, where a bare `[[#Old]]` and a `§Old` run are its only holders', async () => {
+    await mkdir(join(root, '.nexus'), { recursive: true })
+    await writeFile(
+      join(root, '.nexus', 'settings.json'),
+      JSON.stringify({ personalization: { inPageHeadingResolution: 'automatic' } }),
+    )
+    for (const name of ['Notes', 'Brief'])
+      await createProperty(root, { id: '', name, type: 'text' } as PropertyDefinition)
+    const a = await createTestPage(dir, 'A', { body: '## Intro' })
+    if (!a.ok) throw new Error('setup failed')
+    await setValue(a.value.path, 'Notes', 'see §Setup')
+    await setValue(a.value.path, 'Brief', '[[#Setup]]')
+    installStores(memoryStores().stores)
+    await seedContentIndex(root)
+    await renameCascade(root, 'A', { heading: 'Setup', to: 'Intro' }, rel(a.value.path))
+    installStores(NO_STORES)
+    const fm = await fmOf(a.value.path)
+    expect(fm.Notes).toBe('see §Intro')
+    expect(fm.Brief).toBe('[[#Intro]]')
+  })
+
+  it('moves a Link value `[[#Old]]` on its own page as a Text value moves', async () => {
+    await createProperty(root, { id: '', name: 'Ref', type: 'link' } as PropertyDefinition)
+    const a = await createTestPage(dir, 'A', { body: '## Intro' })
+    if (!a.ok) throw new Error('setup failed')
+    await setValue(a.value.path, 'Ref', '[[#Setup|the start]]')
+    installStores(memoryStores().stores)
+    await seedContentIndex(root)
+    const holders = queryHeadingMentions('a', 'setup')
+    await renameCascade(root, 'A', { heading: 'Setup', to: 'Intro' }, rel(a.value.path))
+    installStores(NO_STORES)
+    expect(holders).toEqual([rel(a.value.path)])
+    expect((await fmOf(a.value.path)).Ref).toBe('[[#Intro|the start]]')
+  })
 })
 
 describe('deleteCascade', () => {
@@ -364,6 +460,16 @@ describe('deleteCascade', () => {
       cascade: { pages: [rel(a.path)], hosts: [] },
       links: [{ page: a.id, property: related, value: '[[Target]]' }],
     })
+  })
+
+  it('strips an unquoted `[[Page]]` Link value, recording the link it spells', async () => {
+    const a = await linker('Cites', 'held')
+    const bytes = await readFile(a.path, 'utf8')
+    await writeFile(a.path, bytes.replace('Related: held', 'Related: [[Target]]'))
+    await refreshTree(root)
+    const r = await deleteCascade(root, target(), ['Target'])
+    expect(await fmOf(a.path)).not.toHaveProperty('Related')
+    expect(r.links).toEqual([{ page: a.id, property: related, value: '[[Target]]' }])
   })
 
   it('strips a Link value held under a key spelled in another case, recording it', async () => {
@@ -644,6 +750,38 @@ describe('the link cascades reach Spaces and caches', () => {
     await refreshTree(root)
     await renameCascade(root, 'Target', { heading: 'Intro', to: 'Overview' })
     expect((await readJson(sidecar())).Related).toBe('[[Target#Overview]]')
+  })
+
+  it('a title rename moves a Space’s Text value and a cached Text value onto the new title', async () => {
+    const notes = await createProperty(root, {
+      id: '',
+      name: 'Notes',
+      type: 'text',
+    } as PropertyDefinition)
+    if (!notes.ok) throw new Error('setup failed')
+    await space({ Notes: 'see [[Target]]' })
+    await writeFile(
+      collection(),
+      JSON.stringify({
+        id: 'col-notes',
+        property_cache: { [notes.value.id]: { values: { [LINKER]: 'see [[Target]]' } } },
+      }),
+    )
+    await refreshTree(root)
+    await renameCascade(root, 'Target', { title: 'New Target' })
+    expect((await readJson(sidecar())).Notes).toBe('see [[New Target]]')
+    expect((await readJson(collection())).property_cache[notes.value.id].values).toEqual({
+      [LINKER]: 'see [[New Target]]',
+    })
+  })
+
+  it('an outside heading rename reaches a Space whose value names the heading in a sentence', async () => {
+    await space({ Notes: 'see [[Target#Setup]] first' })
+    await refreshTree(root)
+    expect(spacesLinkHeading(root, 'Target', 'Setup')).toBe(true)
+    await space({ Notes: 'see [[Target]] first' })
+    await refreshTree(root)
+    expect(spacesLinkHeading(root, 'Target', 'Setup')).toBe(false)
   })
 
   it('opens no Space sidecar, and no Collection the tree lists without a cache, for a title nothing there names', async () => {

@@ -27,7 +27,8 @@ import { linkDefs, readKeptRegistry } from '../Properties/propertiesRegistry'
 import { readLiveSetting } from '../Settings/settings'
 import { rewriteTileConnections, tilesLinkHeading } from '../Tiles/tilesFile'
 import type { TilesChanged } from '../Tiles/tiles'
-import { readLink } from '../Connections/linkValue'
+import { linkEntry, readLink } from '../Connections/linkValue'
+import { frontmatterMentions, valueLinks } from '../Connections/scan'
 import { liveIdIndex, livePathOf, titleHeldOutside } from './heldPages'
 import { ID_KEY } from './identityMark'
 import { asString } from './coerce'
@@ -55,19 +56,14 @@ const spaceArm = (tree: NexusTree | null, rewrite: Rewrite): { sidecars?: Rewrit
     ? { sidecars: rewrite }
     : {}
 
-/** Whether a Space the tree holds links `title#heading`, which no index names. */
+/** Whether a Space the tree holds links `title#heading` — as a whole value or inside one — which no index names. */
 export function spacesLinkHeading(root: string, title: string, heading: string): boolean {
   const [page, section] = [normalizeTitle(title), normalizeTitle(heading)]
   return (heldTreeOf(root)?.contexts ?? []).some((g) =>
     g.spaces.some((s) =>
-      Object.values(s.values ?? {}).some((value) => {
-        const link = typeof value === 'string' ? readLink(value) : null
-        return (
-          link?.kind === 'page' &&
-          normalizeTitle(link.title) === page &&
-          normalizeTitle(link.heading ?? '') === section
-        )
-      }),
+      [...frontmatterMentions(s.values ?? {}), ...valueLinks(s.values ?? {})].some(
+        (h) => h.target === page && h.qualifier === section,
+      ),
     ),
   )
 }
@@ -96,15 +92,16 @@ export async function deleteCascade(
     const rels = hits.includes(null)
       ? await nexusCorpus(root)
       : [...new Set(hits.flatMap((h) => h ?? []))]
-    const namesGone = (value: unknown): value is string => {
-      if (typeof value !== 'string') return false
-      const link = readLink(value)
-      return link.kind === 'page' && gone.has(normalizeTitle(link.title))
+    const goneEntry = (value: unknown): string | null => {
+      const entry = linkEntry(value)
+      const link = entry === null ? null : readLink(entry)
+      return link?.kind === 'page' && gone.has(normalizeTitle(link.title)) ? entry : null
     }
     const named = (raw: Record<string, unknown>) =>
-      Object.entries(raw).flatMap(([key, value]) => {
+      Object.entries(raw).flatMap(([key, held]) => {
         const def = defs.get(foldKey(key))
-        return def !== undefined && namesGone(value) ? [{ key, def, value }] : []
+        const value = def && goneEntry(held)
+        return def && value ? [{ key, def, value }] : []
       })
     const strip: Rewrite = (raw) =>
       stripKeys(
@@ -159,7 +156,7 @@ export async function deleteCascade(
   }
 }
 
-/** A page rename sweeps the files the index names, or the whole corpus before there is one; a heading rename sweeps only what a ready index names, since a corpus scan per heading edit is an on-every-edit cost. Markdown tiles sit outside the index: a title rename reads every one, and a heading rename reads them when one links the heading. `skipRel` is a page whose editor has already rewritten its own links. */
+/** A page rename sweeps the files the index names, or the whole corpus before there is one; a heading rename sweeps what a ready index names and the caller's own page, whose body is already rewritten and whose frontmatter takes the patch, since a corpus scan per heading edit is an on-every-edit cost. Markdown tiles sit outside the index: a title rename reads every one, and a heading rename reads them when one links the heading. `skipRel` is a page whose editor has already rewritten its own links. */
 export async function renameCascade(
   root: string,
   title: string,
@@ -176,46 +173,68 @@ export async function renameCascade(
     const runs =
       'heading' in change &&
       (await readLiveSetting(root, 'inPageHeadingResolution')) === 'automatic'
-    const rewrite = (body: string, own = ''): string =>
+    const rewrite = (text: string, own = '', outlineOf = text): string =>
       'title' in change
-        ? rewriteConnections(body, title, change.title)
+        ? rewriteConnections(text, title, change.title)
         : rewriteHeadingConnections(
-            body,
+            text,
             title,
             change.heading,
             change.to,
             own,
             runs && normalizeTitle(own) === titleKey
-              ? headingOutline(body).map((h) => h.text)
+              ? headingOutline(outlineOf).map((h) => h.text)
               : undefined,
           )
     const defs = Object.values((await readKeptRegistry(root)).defs)
     const names = byFoldedName(defs)
-    const registered = (raw: Record<string, unknown>): Record<string, unknown> =>
-      Object.fromEntries(Object.entries(raw).filter(([k]) => names.has(foldKey(k))))
-    const moved = (values: Record<string, unknown>): Record<string, unknown> | null => {
-      const patch = rewriteFrontmatterConnections(values, title, change)
-      return Object.keys(patch).length ? { ...values, ...patch } : null
+    const byName = (key: string) => names.get(foldKey(key))?.type
+    // One writer per key: a Link value is a whole connection and takes the whole-value patch; a Text value is prose and takes the body's rewriter under the page's own title; every other type is left as written.
+    const patchOf = (
+      raw: Record<string, unknown>,
+      typeOf: (key: string) => string | undefined,
+      own = '',
+      outlineOf = '',
+    ): Record<string, string> => {
+      const patch: Record<string, string> = {}
+      for (const [key, value] of Object.entries(raw)) {
+        switch (typeOf(key)) {
+          case 'link':
+            Object.assign(
+              patch,
+              rewriteFrontmatterConnections({ [key]: value }, title, change, own),
+            )
+            break
+          case 'text': {
+            const text = linkEntry(value, 2)
+            const next = text === null ? null : rewrite(text, own, outlineOf)
+            if (next !== null && next !== text) patch[key] = next
+            break
+          }
+        }
+      }
+      return patch
     }
-    const spaceMoved: Rewrite = (raw) => {
-      const next = moved(registered(raw))
-      return next && { ...raw, ...next }
-    }
+    const withPatch = (
+      raw: Record<string, unknown>,
+      patch: Record<string, string>,
+    ): Record<string, unknown> | null => (Object.keys(patch).length ? { ...raw, ...patch } : null)
+    const spaceMoved: Rewrite = (raw) => withPatch(raw, patchOf(raw, byName))
     const text = (content: string, file: string): string | null => {
-      const patch = rewriteFrontmatterConnections(
-        registered(splitFrontmatter(content)),
-        title,
-        change,
-      )
-      const keys = Object.keys(patch)
       const { body } = splitEnvelope(content)
-      const next = rewrite(body, titleFromPath(file))
+      const own = titleFromPath(file)
+      const patch = patchOf(splitFrontmatter(content), byName, own, body)
+      const keys = Object.keys(patch)
+      // The caller's editor already rewrote its own body; its frontmatter still takes the patch.
+      const next = relative(root, file) === skipRel ? body : rewrite(body, own)
       return next === body && keys.length === 0
         ? null
         : mergeFrontmatter(content, patch, keys, next)
     }
     const tree = heldTreeOf(root)
-    const files = rels.filter((rel) => rel !== skipRel).map((rel) => join(root, rel))
+    const files = [...new Set([...rels, ...(skipRel ? [skipRel] : [])])].map((rel) =>
+      join(root, rel),
+    )
     const swept = await sweepGovernedRoots(root, files, {
       text,
       ...spaceArm(tree, spaceMoved),
@@ -224,10 +243,22 @@ export async function renameCascade(
       'title' in change || (await tilesLinkHeading(root, titleKey, normalizeTitle(change.heading)))
         ? await rewriteTileConnections(root, rewrite)
         : { hosts: [], failed: 0 }
-    // A heading edit settles often and a cached Link still reaches its page, so only a title reaches the caches.
-    const linkIds = new Set(defs.filter((d) => d.type === 'link').map((d) => d.id))
+    // A heading edit settles often and a cached Link still reaches its page, so only a title reaches the caches. A block is keyed by page id, so its type is its own definition's.
+    const cachedTypes = new Map(
+      defs.filter((d) => d.type === 'link' || d.type === 'text').map((d) => [d.id, d.type]),
+    )
+    const movedCache = (
+      values: Record<string, unknown>,
+      id: string,
+    ): Record<string, unknown> | null =>
+      withPatch(
+        values,
+        patchOf(values, () => cachedTypes.get(id)),
+      )
     const uncached =
-      'title' in change && tree ? await editCaches(root, tree.collections, linkIds, moved) : 0
+      'title' in change && tree
+        ? await editCaches(root, tree.collections, new Set(cachedTypes.keys()), movedCache)
+        : 0
     const unmoved = swept.skipped.length + tiles.failed + uncached
     return {
       pages: [...swept.touched.keys()].filter(isMarkdownFile).map((file) => relative(root, file)),

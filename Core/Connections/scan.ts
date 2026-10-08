@@ -3,7 +3,7 @@
 import { pageEmbedPattern, pageLinkPattern, titleOf } from './connections'
 import { normalizeTitle } from '../Paths/caseFold'
 import { markdownLinkRegex, targetFragment, targetTitle } from './links'
-import { readLink } from './linkValue'
+import { linkEntry, readLink } from './linkValue'
 import { codeMask, type CodeMask, lineEndAt, lineStartAt } from '../MarkdownPM/Engine/markdownCode'
 import { headingParts } from '../MarkdownPM/Engine/detect'
 
@@ -111,15 +111,28 @@ export function* linksIn(
 /** A Link property holds a connection as its whole value, so a rename reaching only bodies would leave it pointing at nothing. */
 export function frontmatterMentions(
   values: Record<string, unknown>,
+  ownTitle = '',
 ): { target: string; qualifier: string }[] {
   const out = new Map<string, { target: string; qualifier: string }>()
   for (const value of Object.values(values)) {
-    if (typeof value !== 'string') continue
-    const link = readLink(value)
-    if (link.kind !== 'page') continue
-    const target = normalizeTitle(link.title)
+    const entry = linkEntry(value, 2)
+    const link = entry === null ? null : readLink(entry)
+    if (link?.kind !== 'page') continue
+    const target = titleKey(link.title, normalizeTitle(ownTitle))
     const qualifier = normalizeTitle(link.heading ?? '')
     if (target) out.set(`${target}\0${qualifier}`, { target, qualifier })
   }
   return [...out.values()]
+}
+
+/** The links inside every string value that isn't one whole connection — a sentence under any key, registered or not, read as a body is; the whole-value ones are `frontmatterMentions`'. */
+export function* valueLinks(
+  values: Record<string, unknown>,
+  ownTitle = '',
+  outline: readonly string[] = [],
+): Generator<LinkHit> {
+  for (const value of Object.values(values)) {
+    if (typeof value !== 'string' || readLink(value).kind === 'page') continue
+    yield* linksIn(value, ownTitle, outline)
+  }
 }

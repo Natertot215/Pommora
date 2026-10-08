@@ -2,7 +2,7 @@
 
 import { describe, it, expect } from 'vitest'
 import { codeMask } from '../MarkdownPM/Engine/markdownCode'
-import { frontmatterMentions, type LinkHit, linksIn, sectionRunsIn } from './scan'
+import { frontmatterMentions, type LinkHit, linksIn, sectionRunsIn, valueLinks } from './scan'
 
 // `extractMentions` and `extractHeadingMentions` were the index's two readers of `linksIn` until the relation rows took their place. They are kept here, unchanged, so the properties they pinned keep answering over the one walker that remains.
 function extractMentions(body: string, ownTitle = ''): Set<string> {
@@ -182,6 +182,33 @@ describe('an empty fragment', () => {
   it('[[#]] indexes nothing, and a property holding a bare fragment writes no empty key', () => {
     expect([...extractMentions('[[#]]', 'Own')]).toEqual([])
     expect([...frontmatterMentions({ a: '[[#H]]' })]).toEqual([])
+  })
+})
+
+describe('frontmatterMentions', () => {
+  it('reads a bare `[[#H]]` as naming the page that holds it', () => {
+    expect(frontmatterMentions({ a: '[[#H]]' }, 'Own')).toEqual([{ target: 'own', qualifier: 'h' }])
+  })
+
+  it('reads an unquoted `[[Page]]` as the link it spells, and a one-item list as no link', () => {
+    expect(frontmatterMentions({ a: [['Zeta']], b: ['Pommora'] })).toEqual([
+      { target: 'zeta', qualifier: '' },
+    ])
+  })
+})
+
+describe('valueLinks', () => {
+  it('reads a sentence’s links, and nothing from a whole-value connection or a non-string', () => {
+    const hits = [
+      ...valueLinks(
+        { a: 'see [[Zeta]] and [[#Part]]', b: '[[Omega]]', c: 3, d: ['[[Pi]]'] },
+        'Own',
+      ),
+    ]
+    expect(hits.map(({ target, qualifier }) => ({ target, qualifier }))).toEqual([
+      { target: 'zeta', qualifier: '' },
+      { target: 'own', qualifier: 'part' },
+    ])
   })
 })
 

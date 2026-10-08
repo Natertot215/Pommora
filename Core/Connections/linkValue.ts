@@ -12,6 +12,15 @@ export type LinkTarget =
   | { kind: 'page'; title: string; alias?: string; heading?: string }
   | { kind: 'url'; url: string; alias?: string }
 
+/** A `[[Page]]` or `[[Name.ext]]` written unquoted is a nested flow sequence to yaml, not a string; unwrapping single-element arrays reads the connection the author spelled, so a hand-edit never nulls the value. A reader blind to the key's type asks for `nesting` 2, yaml's least for `[[Page]]`, so a one-item list stays a list. */
+export function linkEntry(v: unknown, nesting = 1): string | null {
+  if (typeof v === 'string') return v
+  let inner: unknown = v
+  let depth = 0
+  for (; Array.isArray(inner) && inner.length === 1; depth++) inner = inner[0]
+  return typeof inner === 'string' && depth >= nesting ? `[[${inner}]]` : null
+}
+
 export function readLink(raw: string): LinkTarget {
   const conn = parseConnectionText(raw)
   if (conn) return { kind: 'page', ...conn }

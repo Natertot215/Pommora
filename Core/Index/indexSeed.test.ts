@@ -339,4 +339,27 @@ describe('the relations a page yields', () => {
     await page('a sample `[[Zeta]]` here\n')
     expect(rowsOf('Notes/A.md')).toEqual([])
   })
+
+  it('a link inside a value is a `body` row under the page’s own title, whatever the key', async () => {
+    await writeFile(
+      abs('Notes', 'A.md'),
+      `---\nID: ${ULID_A}\ndescription: see [[Zeta]] and [[#Part]]\n---\n\n## Part\n`,
+    )
+    await seedContentIndex(root)
+    expect(rowsOf('Notes/A.md')).toEqual([
+      { kind: 'body', target: 'a', qualifier: 'part', count: 1 },
+      { kind: 'body', target: 'zeta', qualifier: '', count: 1 },
+    ])
+  })
+
+  it('a value’s link adds to the body’s count for the same target', async () => {
+    await writeFile(
+      abs('Notes', 'A.md'),
+      `---\nID: ${ULID_A}\nDescription: see [[Zeta]]\n---\n\nalso [[Zeta]]\n`,
+    )
+    await seedContentIndex(root)
+    expect(rowsOf('Notes/A.md')).toEqual([
+      { kind: 'body', target: 'zeta', qualifier: '', count: 2 },
+    ])
+  })
 })

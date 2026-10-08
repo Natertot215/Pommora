@@ -32,12 +32,12 @@ export function patchCacheBlock(
 export function editCacheBlocks(
   sidecar: Record<string, unknown>,
   ids: readonly string[],
-  edit: (values: Record<string, unknown>) => Record<string, unknown> | null,
+  edit: (values: Record<string, unknown>, id: string) => Record<string, unknown> | null,
 ): Record<string, unknown> | null {
   let next: Record<string, unknown> | null = null
   for (const id of ids) {
     const values = cachedValues(next ?? sidecar, id)
-    const edited = values && edit(values)
+    const edited = values && edit(values, id)
     if (edited)
       next = patchCacheBlock(
         next ?? sidecar,
@@ -53,7 +53,7 @@ export async function editCaches(
   root: string,
   collections: readonly CollectionNode[],
   propertyIds: ReadonlySet<string>,
-  edit: (values: Record<string, unknown>) => Record<string, unknown> | null,
+  edit: (values: Record<string, unknown>, id: string) => Record<string, unknown> | null,
 ): Promise<number> {
   let skipped = 0
   for (const node of collections) {

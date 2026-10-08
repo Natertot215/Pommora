@@ -11,6 +11,7 @@ import { parseConnectionText } from '../Connections/connections'
 import { normalizeTitle } from '../Paths/caseFold'
 import { heldValue, landValue, writeTarget } from '../Files/heldKeys'
 import { yamlInline } from '../Files/pageFile'
+import { linkEntry } from '../Connections/linkValue'
 
 const strings = z.array(z.string())
 export const propertyValue = z.discriminatedUnion('kind', [
@@ -30,14 +31,6 @@ export const propertyValue = z.discriminatedUnion('kind', [
 ])
 export type PropertyValue = z.infer<typeof propertyValue>
 export type ValueKind = Exclude<PropertyValue['kind'], 'null'>
-
-/** A `[[Page]]` or `[[Name.ext]]` written unquoted is a nested flow sequence to yaml, not a string; unwrapping single-element arrays reads the connection the author spelled, so a hand-edit never nulls the value. */
-function linkEntry(v: unknown): string | null {
-  if (typeof v === 'string') return v
-  let inner: unknown = v
-  while (Array.isArray(inner) && inner.length === 1) inner = inner[0]
-  return typeof inner === 'string' ? `[[${inner}]]` : null
-}
 
 export const NULL_VALUE: PropertyValue = { kind: 'null' }
 
