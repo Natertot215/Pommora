@@ -1,7 +1,7 @@
 ## Text Properties — Implementation Plan
 
 **DATE:** 10-07-2026
-**STATUS:** Ratified 10-07-2026 — runs unattended
+**STATUS:** Complete 10-08-2026 — `8ee6f8cf5..90fe656c4`
 **SOURCE:** *Text Properties — Decisions & Intention* (ratified 10-07-2026); grounded at `8ee6f8cf5`.
 
 ### Context
@@ -43,7 +43,7 @@ Recorded at ratification, after `git status` shows only this plan and Nathan's o
 - `ls .claude/Scripts | wc -l` → 11 — adds 1 (`Text Property Drive/`)
 
 **START** 2026-10-08T02:35:22Z
-**END:** `<same, as the report is given>`
+**END:** 2026-10-08T09:37:11Z
 
 #### Names
 
@@ -103,7 +103,7 @@ One `opus-medium` agent implements Phase 1 and one `opus-high` agent each later 
   - [x] Review Checkpoint — drive groups 1–4 (101/101 before the review, 105/105 after its folds; the parity pair and six pane screenshots read)
 - [x] **Phase 5** — Documentation — eight documents, +35 / −34 prose; one opus-high review folded
   - [x] Task 5.1 The five documents
-- [ ] **Final Verification** — the three final agents, then the orchestrator's own pass and the report
+- [x] **Final Verification** — simplification lens (`c57400655`), adversarial (`45d23e0aa`), neutral (`90fe656c4`); the orchestrator's pass from `90fe656c4`: drive 106/106, gates green, counts as recorded
 
 ---
 
@@ -117,8 +117,8 @@ One `opus-medium` agent implements Phase 1 and one `opus-high` agent each later 
 
 **TASK**
 
-- [ ] Write `.claude/Scripts/Text Property Drive/live-drive.mjs` on the precedent's skeleton (`connect`, `ask`, `check`, `mouseClick`, `chooseNative`, `shot`, the seed, `restore`), taking the phase groups to run as arguments — `node live-drive.mjs 1 2`; none runs all four — so each Review Checkpoint runs the groups its landed phases cover. Every step below is written now, from the tasks' VERIFY lines; a group whose phase hasn't landed is simply not asked for.
-- [ ] Add its paragraph to `.claude/Scripts/README.md` beside the Option Picker Drive's: what it covers, how it's run, where the screenshots land (`$POMMORA_DRIVE_SHOTS`, else the temp directory's `text-property-shots`), and the Accessibility permission its native-menu steps need.
+- [x] Write `.claude/Scripts/Text Property Drive/live-drive.mjs` on the precedent's skeleton (`connect`, `ask`, `check`, `mouseClick`, `chooseNative`, `shot`, the seed, `restore`), taking the phase groups to run as arguments — `node live-drive.mjs 1 2`; none runs all four — so each Review Checkpoint runs the groups its landed phases cover. Every step below is written now, from the tasks' VERIFY lines; a group whose phase hasn't landed is simply not asked for.
+- [x] Add its paragraph to `.claude/Scripts/README.md` beside the Option Picker Drive's: what it covers, how it's run, where the screenshots land (`$POMMORA_DRIVE_SHOTS`, else the temp directory's `text-property-shots`), and the Accessibility permission its native-menu steps need.
 
 The drive's parts, in prose rather than a hunk; the implementer looks up each channel's shape in `bridge.ts` and each selector in the component it names.
 
@@ -142,10 +142,10 @@ a third line, plain
 
 **VERIFY**
 
-- [ ] `node ".claude/Scripts/Text Property Drive/live-drive.mjs" 1` against HEAD before Task 1.2 fails at the seed (`schema:add` refuses type `text`) and still restores `~/Test`; the backup, the own userData and port (9353), SIGINT restore, and the frontmost guard before any keystroke are the precedent's.
-- [ ] Every step asserts a file, a DOM fact, or a channel result; no step is proven by a screenshot alone. The screenshots are for the orchestrator's eyes at each checkpoint.
-- [ ] A later phase's implementer corrects a drive selector that mis-targets the DOM it landed, without moving the check's intent; a check that can't be met is a defect in the phase, not in the drive.
-- [ ] Run the gates. Check the work for unnecessary code or obvious mistakes.
+- [x] `node ".claude/Scripts/Text Property Drive/live-drive.mjs" 1` against HEAD before Task 1.2 fails at the seed (`schema:add` refuses type `text`) and still restores `~/Test`; the backup, the own userData and port (9353), SIGINT restore, and the frontmost guard before any keystroke are the precedent's.
+- [x] Every step asserts a file, a DOM fact, or a channel result; no step is proven by a screenshot alone. The screenshots are for the orchestrator's eyes at each checkpoint.
+- [x] A later phase's implementer corrects a drive selector that mis-targets the DOM it landed, without moving the check's intent; a check that can't be met is a defect in the phase, not in the drive.
+- [x] Run the gates. Check the work for unnecessary code or obvious mistakes.
 
 #### Task 1.2
 
@@ -153,8 +153,8 @@ a third line, plain
 
 **TASK**
 
-- [ ] Write the decode, spelling, and reconcile tests and watch them fail.
-- [ ] Add `text` first in `typeIds` and `PROPERTY_TYPES`; add the `text` value to the union; decode a string as itself and any other raw as its inline yaml text; keep a non-string raw whose text equals the value; encode and blank as Link does.
+- [x] Write the decode, spelling, and reconcile tests and watch them fail.
+- [x] Add `text` first in `typeIds` and `PROPERTY_TYPES`; add the `text` value to the union; decode a string as itself and any other raw as its inline yaml text; keep a non-string raw whose text equals the value; encode and blank as Link does.
 
 ```ts|diff
 --- a/Core/Files/pageFile.ts
@@ -301,10 +301,10 @@ a third line, plain
 
 **VERIFY**
 
-- [ ] The new cases fail before the change and pass after; `npm run typecheck` reports the compile census (the arms Tasks 1.3–1.6 fill) and nothing else.
-- [ ] `writtenSpelling`'s string arm fires only when `next` is a string and `raw` is a non-string whose inline text equals it: no other kind hands it a string `next` with a non-string `raw` (number, checkbox, select, multiSelect, file, context never encode to a string; link and dateTime decode a non-string to null). State this in the task's completion note, not as a guard.
-- [ ] `yamlInline(['milk', 'eggs', 'bread'])` is `[milk, eggs, bread]`, `yamlInline([['Page']])` is `[[Page]]`, `yamlInline(42)` is `42`: run the test. The never-shrink guard in `reconcileGovernedRoot` sees `memberCount('[milk, eggs, bread]') === 1 < memberCount(['milk','eggs','bread']) === 3` and keeps the raw on live paths; `writtenSpelling` keeps it on the frozen path.
-- [ ] Check the work for unnecessary code or obvious mistakes.
+- [x] The new cases fail before the change and pass after; `npm run typecheck` reports the compile census (the arms Tasks 1.3–1.6 fill) and nothing else.
+- [x] `writtenSpelling`'s string arm fires only when `next` is a string and `raw` is a non-string whose inline text equals it: no other kind hands it a string `next` with a non-string `raw` (number, checkbox, select, multiSelect, file, context never encode to a string; link and dateTime decode a non-string to null). State this in the task's completion note, not as a guard.
+- [x] `yamlInline(['milk', 'eggs', 'bread'])` is `[milk, eggs, bread]`, `yamlInline([['Page']])` is `[[Page]]`, `yamlInline(42)` is `42`: run the test. The never-shrink guard in `reconcileGovernedRoot` sees `memberCount('[milk, eggs, bread]') === 1 < memberCount(['milk','eggs','bread']) === 3` and keeps the raw on live paths; `writtenSpelling` keeps it on the frozen path.
+- [x] Check the work for unnecessary code or obvious mistakes.
 
 #### Task 1.3
 
@@ -312,8 +312,8 @@ a third line, plain
 
 **TASK**
 
-- [ ] Update the `CREATABLE_TYPES` test and watch it fail.
-- [ ] Add the label and icon, curate the icon, and give Text the icon-and-title-only settings frame.
+- [x] Update the `CREATABLE_TYPES` test and watch it fail.
+- [x] Add the label and icon, curate the icon, and give Text the icon-and-title-only settings frame.
 
 ```ts|diff
 --- a/UIX/Symbols/index.tsx
@@ -358,9 +358,9 @@ a third line, plain
 
 **VERIFY**
 
-- [ ] `grep -n "TextAlignStart" node_modules/lucide-react/dist/lucide-react.d.ts` finds the export (lucide-react 1.18.0 declares it at `:19868`).
-- [ ] The New Property menu (PropertyFrame's type picker) lists **Text** first with the `text-align-start` glyph; the Properties ▸ menu lists a created Text property as a leaf (`pickKindOf('text') === null`).
-- [ ] Run the gates. Check the work for unnecessary code or obvious mistakes.
+- [x] `grep -n "TextAlignStart" node_modules/lucide-react/dist/lucide-react.d.ts` finds the export (lucide-react 1.18.0 declares it at `:19868`).
+- [x] The New Property menu (PropertyFrame's type picker) lists **Text** first with the `text-align-start` glyph; the Properties ▸ menu lists a created Text property as a leaf (`pickKindOf('text') === null`).
+- [x] Run the gates. Check the work for unnecessary code or obvious mistakes.
 
 #### Task 1.4
 
@@ -368,8 +368,8 @@ a third line, plain
 
 **TASK**
 
-- [ ] Write the `Cell` and `valueClickIntent` tests and watch them fail.
-- [ ] Export `renderCellContent` (the prose path; `renderCellBody`, the list-aware path, stays private); render the whole value through it inside the `OverScroll` every sibling's one-line value sits in, clipped to its first line (Phase 2 moves this arm into `TextCell`); give the cell its click (edit), menu (Clear when filled, as Context's), style (none), default style (none), width and alignment (Link's).
+- [x] Write the `Cell` and `valueClickIntent` tests and watch them fail.
+- [x] Export `renderCellContent` (the prose path; `renderCellBody`, the list-aware path, stays private); render the whole value through it inside the `OverScroll` every sibling's one-line value sits in, clipped to its first line (Phase 2 moves this arm into `TextCell`); give the cell its click (edit), menu (Clear when filled, as Context's), style (none), default style (none), width and alignment (Link's).
 
 ```ts|diff
 --- a/Core/MarkdownPM/Tables/cellStatic.tsx
@@ -494,10 +494,10 @@ a third line, plain
 
 **VERIFY**
 
-- [ ] The new cases fail before the change and pass after. `Core/Views/Table/useColumns.test.ts` "left-aligns title, number, link, and modified" gains a Text def in its `schema` fixture and `expect(defaultAlignFor(<its id>, schema)).toBe('left')`, retitled to name text; `Core/Actions/cellMenu.test.ts` and `columnMenu.test.ts` each gain one case where a sibling has one (a filled Text cell's menu is Clear alone; `styleMenuItems` on a text def is `[]`).
-- [ ] In the app, a Text column's right-click on a filled cell offers **Clear** and nothing else (Context's `clear-only` arm); on an empty cell nothing but **Remove** where hideable.
-- [ ] A two-line value in a table cell shows its first line and hover-scrolls a long one as a Link does; the same on a Standard card and in the panel; `document.querySelector('.cell-text').textContent` holds both lines.
-- [ ] Run the gates. Check the work for unnecessary code or obvious mistakes.
+- [x] The new cases fail before the change and pass after. `Core/Views/Table/useColumns.test.ts` "left-aligns title, number, link, and modified" gains a Text def in its `schema` fixture and `expect(defaultAlignFor(<its id>, schema)).toBe('left')`, retitled to name text; `Core/Actions/cellMenu.test.ts` and `columnMenu.test.ts` each gain one case where a sibling has one (a filled Text cell's menu is Clear alone; `styleMenuItems` on a text def is `[]`).
+- [x] In the app, a Text column's right-click on a filled cell offers **Clear** and nothing else (Context's `clear-only` arm); on an empty cell nothing but **Remove** where hideable.
+- [x] A two-line value in a table cell shows its first line and hover-scrolls a long one as a Link does; the same on a Standard card and in the panel; `document.querySelector('.cell-text').textContent` holds both lines.
+- [x] Run the gates. Check the work for unnecessary code or obvious mistakes.
 
 #### Task 1.5
 
@@ -505,7 +505,7 @@ a third line, plain
 
 **TASK**
 
-- [ ] Add Text's filter, sort, group, and seed arms, each joining Link's group; it never groups, never seeds, and sorts case-insensitively by its text.
+- [x] Add Text's filter, sort, group, and seed arms, each joining Link's group; it never groups, never seeds, and sorts case-insensitively by its text.
 
 ```ts|diff
 --- a/Core/Views/filterModel.ts
@@ -604,9 +604,9 @@ a third line, plain
 
 **VERIFY**
 
-- [ ] `Core/Views/reassign.test.ts` "reassignable holds for Status, Select and Checkbox and nothing else" adds `'text'` to its false list; `Core/Views/Cards/cardValueInput.test.ts`'s `fillsBlank` case adds `'text'` to the types that fill; add one `it` per pipeline file where a sibling has one: Text filters with Link's seven operators (`operatorsFor` on a text def equals `KIND_OPS.link`), `is` is exact and `contains` folds (as `evaluateText` already does), sorts A → Z by its text, `bucketKey` is null, `ruleSeed` is null.
-- [ ] In the app, a Text column in Sorting offers **A → Z / Z → A**; Group By and Sub-Group don't list it (`groupable('text')` is false with no frame edit); a filter rule on it offers Link's seven operators.
-- [ ] Run the gates. Check the work for unnecessary code or obvious mistakes.
+- [x] `Core/Views/reassign.test.ts` "reassignable holds for Status, Select and Checkbox and nothing else" adds `'text'` to its false list; `Core/Views/Cards/cardValueInput.test.ts`'s `fillsBlank` case adds `'text'` to the types that fill; add one `it` per pipeline file where a sibling has one: Text filters with Link's seven operators (`operatorsFor` on a text def equals `KIND_OPS.link`), `is` is exact and `contains` folds (as `evaluateText` already does), sorts A → Z by its text, `bucketKey` is null, `ruleSeed` is null.
+- [x] In the app, a Text column in Sorting offers **A → Z / Z → A**; Group By and Sub-Group don't list it (`groupable('text')` is false with no frame edit); a filter rule on it offers Link's seven operators.
+- [x] Run the gates. Check the work for unnecessary code or obvious mistakes.
 
 #### Task 1.6
 
@@ -614,8 +614,8 @@ a third line, plain
 
 **TASK**
 
-- [ ] Add the Text cases beside Number's and Link's and watch them fail.
-- [ ] Hand the field the trimmed first line (so an untouched blur matches `initial` and writes nothing, as Number's normalized text does); rejoin it with the lines behind on commit; an emptied first line drops; a value left blank clears.
+- [x] Add the Text cases beside Number's and Link's and watch them fail.
+- [x] Hand the field the trimmed first line (so an untouched blur matches `initial` and writes nothing, as Number's normalized text does); rejoin it with the lines behind on commit; an emptied first line drops; a value left blank clears.
 
 ```ts|diff
 --- a/Core/Properties/parseEditorValue.ts
@@ -671,18 +671,18 @@ a third line, plain
 
 **VERIFY**
 
-- [ ] The new case fails before the change and passes after.
-- [ ] In the app: click a filled Text cell → the field holds the first line with the caret at its end; blur untouched → no write (`text === initial` in `PropertyValueInput.commit`, both trimmed); change it and press Enter → the file's value is the new first line over the old second line, written as a `|-` block scalar; the same on a Standard card and in the panel.
-- [ ] A first line that spells a list marker stays a string and draws as one: a value `- milk
+- [x] The new case fails before the change and passes after.
+- [x] In the app: click a filled Text cell → the field holds the first line with the caret at its end; blur untouched → no write (`text === initial` in `PropertyValueInput.commit`, both trimmed); change it and press Enter → the file's value is the new first line over the old second line, written as a `|-` block scalar; the same on a Standard card and in the panel.
+- [x] A first line that spells a list marker stays a string and draws as one: a value `- milk
 - eggs` opens on `- milk`; typing `- oats` lands `Notes: |-` over `  - oats` and `  - eggs`; emptying the field lands `Notes: "- eggs"` (one line that begins `- ` is double-quoted, as `"42"` is); `1. a` alone lands plain as `Notes: 1. a`. Each reads back as the typed string and renders as the literal text — the drive's group 1 asserts each on disk.
-- [ ] Run the gates. Check the work for unnecessary code or obvious mistakes.
+- [x] Run the gates. Check the work for unnecessary code or obvious mistakes.
 
 #### Review Checkpoint
 
-- [ ] `npm run typecheck` is clean with `text` in the catalog — the census is closed; no `switch` on `ValueKind` or `PropertyType` lacks the arm.
-- [ ] `node ".claude/Scripts/Text Property Drive/live-drive.mjs" 1` passes every check and restores `~/Test`; its output is kept for the report.
-- [ ] Read the seven screenshots it wrote: Drive Prose's cell shows the first SHOWCASE line (its brackets plain for now) and Drive Empty's cell is empty; the Standard card and the Compact card show the first line; the panel shows the first line beside Drive Notes and the empty placeholder on Drive Empty; the open field holds the first line with the caret at its end; the cell menu shows **Clear** alone. Anything that reads wrong is fixed before the phase closes.
-- [ ] Line-count delta reported (comments and tests excluded).
+- [x] `npm run typecheck` is clean with `text` in the catalog — the census is closed; no `switch` on `ValueKind` or `PropertyType` lacks the arm.
+- [x] `node ".claude/Scripts/Text Property Drive/live-drive.mjs" 1` passes every check and restores `~/Test`; its output is kept for the report.
+- [x] Read the seven screenshots it wrote: Drive Prose's cell shows the first SHOWCASE line (its brackets plain for now) and Drive Empty's cell is empty; the Standard card and the Compact card show the first line; the panel shows the first line beside Drive Notes and the empty placeholder on Drive Empty; the open field holds the first line with the caret at its end; the cell menu shows **Clear** alone. Anything that reads wrong is fixed before the phase closes.
+- [x] Line-count delta reported (comments and tests excluded).
 
 ---
 
@@ -696,8 +696,8 @@ a third line, plain
 
 **TASK**
 
-- [ ] Write the `Cell` test for a resolved link inside a Text value and watch it fail.
-- [ ] Put one connections accessor on `ValueContext`, built once per view host; export the glance literal once; export the link resolver without its dead gate; move the text arm into `TextCell`, which follows and glances its links, carries the pen inside its own reveal host, and names its holding page for a bare `[[#Heading]]`.
+- [x] Write the `Cell` test for a resolved link inside a Text value and watch it fail.
+- [x] Put one connections accessor on `ValueContext`, built once per view host; export the glance literal once; export the link resolver without its dead gate; move the text arm into `TextCell`, which follows and glances its links, carries the pen inside its own reveal host, and names its holding page for a bare `[[#Heading]]`.
 
 ```ts|diff
 --- a/Core/Interface/Glance/glanceAction.ts
@@ -964,10 +964,10 @@ a third line, plain
 
 **VERIFY**
 
-- [ ] The new case fails before the change and passes after; `editorHost.tsx` compiles with `glanceHost` (`grep -rn "arm: glanceLink" Core` → one hit, in `glanceAction.ts`); the MarkdownPM table tests stay green with `cellLinkTarget`'s dead ancestor check gone (its one caller's handlers sit on `.mdpm-tbl-cell-static` itself, `cellStatic.tsx:359-402`).
-- [ ] In the app, a Text cell holding `see [[Plan]]` draws `Plan` in the connection color; a click opens the page (⌘-click in a new tab, both routed by **Open Connections In Preview** through `openPage`); a rest raises the glance; `[[Nowhere]]` reads as a phantom with its brackets muted; a `[[#Heading]]` on a page opens that page at the heading, and on a Space does nothing.
-- [ ] A click on the value's plain text (not a link) still reaches the surface's `edit` intent (the handler returns before `stopPropagation`). The pen is drawn only where a surface passes `onPane` (none until Task 2.3).
-- [ ] Run the gates. Check the work for unnecessary code or obvious mistakes.
+- [x] The new case fails before the change and passes after; `editorHost.tsx` compiles with `glanceHost` (`grep -rn "arm: glanceLink" Core` → one hit, in `glanceAction.ts`); the MarkdownPM table tests stay green with `cellLinkTarget`'s dead ancestor check gone (its one caller's handlers sit on `.mdpm-tbl-cell-static` itself, `cellStatic.tsx:359-402`).
+- [x] In the app, a Text cell holding `see [[Plan]]` draws `Plan` in the connection color; a click opens the page (⌘-click in a new tab, both routed by **Open Connections In Preview** through `openPage`); a rest raises the glance; `[[Nowhere]]` reads as a phantom with its brackets muted; a `[[#Heading]]` on a page opens that page at the heading, and on a Space does nothing.
+- [x] A click on the value's plain text (not a link) still reaches the surface's `edit` intent (the handler returns before `stopPropagation`). The pen is drawn only where a surface passes `onPane` (none until Task 2.3).
+- [x] Run the gates. Check the work for unnecessary code or obvious mistakes.
 
 #### Task 2.2
 
@@ -975,8 +975,8 @@ a third line, plain
 
 **TASK**
 
-- [ ] Lay the value and the pen out in one box: the pen overlays the value's trailing edge and shows on hover (at rest on touch), the text runs to the row's edge at rest as a Link value does and, while the glyph shows, takes a trailing pad of the pen's box plus the kit's smallest step so its `…` lands just left of the glyph; the value is a `pre`, `1lh`, `overflow: hidden`, `text-overflow: ellipsis` box — `…` at rest, no hover scroll; give the Compact card's flow span the kit's bordered-field class on a Text column, full width, at the compact row's height, keyed on one class.
-- [ ] The resting box is sized by its first line, not by the lines hidden under it: with `white-space: pre` the box's scroll width is the widest line's, so the cap's hover scroll today runs a short first line into blank space and the fade marks a line that isn't cut. Fix it in CSS at the box; if no rule gives both the ellipsis at rest and a scroll bounded to the first line, Text keeps the ellipsis and no hover scroll (`line-clamp: 1` on the `pre` block), which is the departure to record if taken. Prove it live: Drive Prose's first line is shorter than its second, and the box's `scrollWidth` must not exceed what the first line alone needs.
+- [x] Lay the value and the pen out in one box: the pen overlays the value's trailing edge and shows on hover (at rest on touch), the text runs to the row's edge at rest as a Link value does and, while the glyph shows, takes a trailing pad of the pen's box plus the kit's smallest step so its `…` lands just left of the glyph; the value is a `pre`, `1lh`, `overflow: hidden`, `text-overflow: ellipsis` box — `…` at rest, no hover scroll; give the Compact card's flow span the kit's bordered-field class on a Text column, full width, at the compact row's height, keyed on one class.
+- [x] The resting box is sized by its first line, not by the lines hidden under it: with `white-space: pre` the box's scroll width is the widest line's, so the cap's hover scroll today runs a short first line into blank space and the fade marks a line that isn't cut. Fix it in CSS at the box; if no rule gives both the ellipsis at rest and a scroll bounded to the first line, Text keeps the ellipsis and no hover scroll (`line-clamp: 1` on the `pre` block), which is the departure to record if taken. Prove it live: Drive Prose's first line is shorter than its second, and the box's `scrollWidth` must not exceed what the first line alone needs.
 
 ```ts|diff
 --- a/UIX/Table/table.css
@@ -1040,10 +1040,10 @@ a third line, plain
 
 **VERIFY**
 
-- [ ] `borderedField` renders the same chrome `PathField` wears (one class, no `InputField`); the Compact predicate is the surface's, as `isCompact(view)` is known only in `CardProps` (the column `look` is the chip look, not the card layout).
-- [ ] Live, in the Electron renderer: (a) a two-line prose value in a table cell shows its first line only; (b) a value whose first line spells a list marker shows it literally — `- milk`, no glyph, no gutter — and nothing of the lines below; (c) the same two inside `.card-value`'s `inline-flex` and the panel's `s.value` flex box; (d) a long first line ends in `…` at rest (`getComputedStyle` reads `text-overflow: ellipsis`) and never scrolls.
-- [ ] The pen appears on hovering the value's box, on every cell of a Text column independently, and the row grip still reveals on hovering the row; the text's box ends short of the pen's box at rest and on hover (the two `getBoundingClientRect`s don't intersect); on a Standard card and in the panel it reveals the same way; in the panel a Text row looks as a Link row does — the value's computed `font`, `color` (a plain run against a Link's plain run), and the row's height match the Link row's beside it — with the pen the only addition; on a Compact card the value wears the bordered field across the card's width at the compact row height; on a touch emulation (`(hover: none)`) every pen shows at rest.
-- [ ] Run the gates. Check the work for unnecessary code or obvious mistakes.
+- [x] `borderedField` renders the same chrome `PathField` wears (one class, no `InputField`); the Compact predicate is the surface's, as `isCompact(view)` is known only in `CardProps` (the column `look` is the chip look, not the card layout).
+- [x] Live, in the Electron renderer: (a) a two-line prose value in a table cell shows its first line only; (b) a value whose first line spells a list marker shows it literally — `- milk`, no glyph, no gutter — and nothing of the lines below; (c) the same two inside `.card-value`'s `inline-flex` and the panel's `s.value` flex box; (d) a long first line ends in `…` at rest (`getComputedStyle` reads `text-overflow: ellipsis`) and never scrolls.
+- [x] The pen appears on hovering the value's box, on every cell of a Text column independently, and the row grip still reveals on hovering the row; the text's box ends short of the pen's box at rest and on hover (the two `getBoundingClientRect`s don't intersect); on a Standard card and in the panel it reveals the same way; in the panel a Text row looks as a Link row does — the value's computed `font`, `color` (a plain run against a Link's plain run), and the row's height match the Link row's beside it — with the pen the only addition; on a Compact card the value wears the bordered field across the card's width at the compact row height; on a touch emulation (`(hover: none)`) every pen shows at rest.
+- [x] Run the gates. Check the work for unnecessary code or obvious mistakes.
 
 #### Task 2.3
 
@@ -1051,8 +1051,8 @@ a third line, plain
 
 **TASK**
 
-- [ ] Update `valueClick.test.ts` and watch it fail.
-- [ ] Rename the intent to `popover` so one kind means "open this type's popover at the value"; hand every surface's `onPane` to it; give the Panel a `popover` mode that is the `rename` seat widened, as the Table's already is.
+- [x] Update `valueClick.test.ts` and watch it fail.
+- [x] Rename the intent to `popover` so one kind means "open this type's popover at the value"; hand every surface's `onPane` to it; give the Panel a `popover` mode that is the `rename` seat widened, as the Table's already is.
 
 ```ts|diff
 --- a/Core/Properties/Pickers/valueClick.ts
@@ -1149,9 +1149,9 @@ a third line, plain
 
 **VERIFY**
 
-- [ ] `grep -rn "numberPicker" Core UIX` → no hits; the Panel's `rename` menu action still opens the alias popover for a Link (`alias={editingDef.type === 'link'}` matches `TableView.tsx:256`'s `alias={def.type === 'link'}`).
-- [ ] In the app, Number's bar still opens its popover on every surface; the Text pen opens a popover anchored at the value on the table (at the cell), a Standard card, a Compact card, and the panel row — until Phase 4 that popover is the shared `TextPicker` holding the first line, and a commit through it rejoins the lines as Task 1.6 says.
-- [ ] Run the gates. Check the work for unnecessary code or obvious mistakes.
+- [x] `grep -rn "numberPicker" Core UIX` → no hits; the Panel's `rename` menu action still opens the alias popover for a Link (`alias={editingDef.type === 'link'}` matches `TableView.tsx:256`'s `alias={def.type === 'link'}`).
+- [x] In the app, Number's bar still opens its popover on every surface; the Text pen opens a popover anchored at the value on the table (at the cell), a Standard card, a Compact card, and the panel row — until Phase 4 that popover is the shared `TextPicker` holding the first line, and a commit through it rejoins the lines as Task 1.6 says.
+- [x] Run the gates. Check the work for unnecessary code or obvious mistakes.
 
 #### Task 2.4
 
@@ -1159,8 +1159,8 @@ a third line, plain
 
 **TASK**
 
-- [ ] Write the `LinkCell` test and watch it fail.
-- [ ] Hand `LinkCell` the same `holder` `Cell` already computes for `TextCell`; resolve an empty title to it; label a bare heading by its heading.
+- [x] Write the `LinkCell` test and watch it fail.
+- [x] Hand `LinkCell` the same `holder` `Cell` already computes for `TextCell`; resolve an empty title to it; label a bare heading by its heading.
 
 ```ts|diff
 --- a/Core/Properties/Cells/LinkCell.tsx
@@ -1232,9 +1232,9 @@ a third line, plain
 
 **VERIFY**
 
-- [ ] The new case fails before the change and passes after (the comment above is the expectation, not the code).
-- [ ] In the app, a Link value `[[#Setup]]` on a page shows `#Setup` and travels to the heading; the same value on a Space renders `#Setup` and does nothing (`holder` is undefined for a Space row); every other Link value renders and opens as before.
-- [ ] Run the gates. Check the work for unnecessary code or obvious mistakes.
+- [x] The new case fails before the change and passes after (the comment above is the expectation, not the code).
+- [x] In the app, a Link value `[[#Setup]]` on a page shows `#Setup` and travels to the heading; the same value on a Space renders `#Setup` and does nothing (`holder` is undefined for a Space row); every other Link value renders and opens as before.
+- [x] Run the gates. Check the work for unnecessary code or obvious mistakes.
 
 #### Task 2.5
 
@@ -1242,7 +1242,7 @@ a third line, plain
 
 **TASK**
 
-- [ ] State the reach once: a row's trailing value may take up to `--row-value-reach` (`75%`, a KNOB) of the row and clips to the right past it inside its own cap; the value gives way before the label does — where a trailing value can shrink at all (the panel's value side, the Standard card's value) it grows from zero into the room the label leaves, capped at the reach, so a label that fits is never shrunk (a shrink weight was tried and still cost the label a fraction of a pixel, enough to ellipsize it) and only a label longer than the row ellipsizes; a short value still hugs the right. A field inside a row's trailing side clips inside its own chrome (one rule beside the reach, since `InputField` is frozen). Apply it to every `MenuItem` trailing slot (the panel row and the Settings field row are both `MenuItem`), drop the panel's own override, and mirror it on the Standard card's `.card-value` with the label taking the kit's ellipsis cap instead of never shrinking. The `detail` slot's narrower `55%` stays (a detail is secondary to its label; a value is the row's content). The panel's bar and the card's bar are exempt as they are today.
+- [x] State the reach once: a row's trailing value may take up to `--row-value-reach` (`75%`, a KNOB) of the row and clips to the right past it inside its own cap; the value gives way before the label does — where a trailing value can shrink at all (the panel's value side, the Standard card's value) it grows from zero into the room the label leaves, capped at the reach, so a label that fits is never shrunk (a shrink weight was tried and still cost the label a fraction of a pixel, enough to ellipsize it) and only a label longer than the row ellipsizes; a short value still hugs the right. A field inside a row's trailing side clips inside its own chrome (one rule beside the reach, since `InputField` is frozen). Apply it to every `MenuItem` trailing slot (the panel row and the Settings field row are both `MenuItem`), drop the panel's own override, and mirror it on the Standard card's `.card-value` with the label taking the kit's ellipsis cap instead of never shrinking. The `detail` slot's narrower `55%` stays (a detail is secondary to its label; a value is the row's content). The panel's bar and the card's bar are exempt as they are today.
 
 ```ts|diff
 --- a/UIX/Menus/menu-row.css.ts
@@ -1311,10 +1311,10 @@ a third line, plain
 
 **VERIFY**
 
-- [ ] `grep -rn "row-value-reach" UIX Core` → `menu-row.css.ts` (the var and its one rule) and `cards-view.css` (the mirror); `property-panel.css.ts` keeps one rule for the value side (`flex: 1000 1 0; min-width: 0`), its old shrink override gone; the `:has(${detail})` rule is unchanged and still sits after the new one.
-- [ ] Live, with Drive Prose's SHOWCASE value: in the panel, Drive Notes's row shows the whole label "Drive Notes" (the label's `scrollWidth <= clientWidth`) and the value's box is at most 75% of the row's content box, clipped to the right with the `…`; the same on the Standard card; a short value (Drive Raw's `42`) still sits at the row's right edge on both. A Number bar on each surface is as wide as before. A Settings row with a long device name clips inside its field rather than pushing its label to nothing. The Trash's date lane and a NavList path (the `detail` slot) are unchanged at 55%.
-- [ ] `TextCell`'s pen is a non-shrinking sibling of its capped text inside the value (Task 2.2's row), so the cap clips the text, never the pen.
-- [ ] Run the gates. Check the work for unnecessary code or obvious mistakes.
+- [x] `grep -rn "row-value-reach" UIX Core` → `menu-row.css.ts` (the var and its one rule) and `cards-view.css` (the mirror); `property-panel.css.ts` keeps one rule for the value side (`flex: 1000 1 0; min-width: 0`), its old shrink override gone; the `:has(${detail})` rule is unchanged and still sits after the new one.
+- [x] Live, with Drive Prose's SHOWCASE value: in the panel, Drive Notes's row shows the whole label "Drive Notes" (the label's `scrollWidth <= clientWidth`) and the value's box is at most 75% of the row's content box, clipped to the right with the `…`; the same on the Standard card; a short value (Drive Raw's `42`) still sits at the row's right edge on both. A Number bar on each surface is as wide as before. A Settings row with a long device name clips inside its field rather than pushing its label to nothing. The Trash's date lane and a NavList path (the `detail` slot) are unchanged at 55%.
+- [x] `TextCell`'s pen is a non-shrinking sibling of its capped text inside the value (Task 2.2's row), so the cap clips the text, never the pen.
+- [x] Run the gates. Check the work for unnecessary code or obvious mistakes.
 
 ---
 
@@ -1328,8 +1328,8 @@ a third line, plain
 
 **TASK**
 
-- [ ] Write the index tests and watch them fail.
-- [ ] Add `valueLinks` beside `frontmatterMentions` — the links inside every string value that isn't one whole connection, read with `linksIn` under the page's own title and outline — and record its hits as `body` (and `embed`) rows; leave `frontmatterMentions` as it is; bump the generation so every page's rows gain the new reading on the first open.
+- [x] Write the index tests and watch them fail.
+- [x] Add `valueLinks` beside `frontmatterMentions` — the links inside every string value that isn't one whole connection, read with `linksIn` under the page's own title and outline — and record its hits as `body` (and `embed`) rows; leave `frontmatterMentions` as it is; bump the generation so every page's rows gain the new reading on the first open.
 
 ```ts|diff
 --- a/Core/Connections/scan.ts
@@ -1400,11 +1400,11 @@ a third line, plain
 
 **VERIFY**
 
-- [ ] The new cases fail before the change and pass after; `indexSeed.test.ts`'s existing cases are unchanged (none holds a sentence link in a value); `stores.test.ts` is untouched (no new kind or column); `Desktop/Store/open.test.ts` compares against the constant, so the bump pins nothing red.
-- [ ] `scan.test.ts` gains one `valueLinks` case beside `frontmatterMentions`'s: a sentence yields its hits, a whole-value `[[Page]]` yields none, a non-string yields none; `indexSeed.ts` imports nothing new beyond the reader; `engineGraph.test.ts` and `hostGraph.test.ts` stay green.
-- [ ] On open, the first launch re-extracts every page once (generation 11), then the index is steady; a page holding `description: see [[Plan]]` is listed by `queryMentions('plan')` with no Text definition in the registry, so creating one later finds its holders indexed, as creating a Context does.
-- [ ] A `banner:` or File value that is one `[[Basename.ext]]` is a whole connection and keeps its `frontmatter` row as today; a Link's `https://…` address holds no link syntax and `linksIn` returns at its gate.
-- [ ] Run the gates. Check the work for unnecessary code or obvious mistakes.
+- [x] The new cases fail before the change and pass after; `indexSeed.test.ts`'s existing cases are unchanged (none holds a sentence link in a value); `stores.test.ts` is untouched (no new kind or column); `Desktop/Store/open.test.ts` compares against the constant, so the bump pins nothing red.
+- [x] `scan.test.ts` gains one `valueLinks` case beside `frontmatterMentions`'s: a sentence yields its hits, a whole-value `[[Page]]` yields none, a non-string yields none; `indexSeed.ts` imports nothing new beyond the reader; `engineGraph.test.ts` and `hostGraph.test.ts` stay green.
+- [x] On open, the first launch re-extracts every page once (generation 11), then the index is steady; a page holding `description: see [[Plan]]` is listed by `queryMentions('plan')` with no Text definition in the registry, so creating one later finds its holders indexed, as creating a Context does.
+- [x] A `banner:` or File value that is one `[[Basename.ext]]` is a whole connection and keeps its `frontmatter` row as today; a Link's `https://…` address holds no link syntax and `linksIn` returns at its gate.
+- [x] Run the gates. Check the work for unnecessary code or obvious mistakes.
 
 #### Task 3.2
 
@@ -1412,8 +1412,8 @@ a third line, plain
 
 **TASK**
 
-- [ ] Write the cascade tests and watch them fail.
-- [ ] Split the frontmatter patch by type — Link-typed keys keep the whole-value patch, Text-typed keys take the body rewriter under the page's own title and the body's outline, other types take neither — written once and parameterized by how a key's type is found; stop dropping the caller's page from the sweep (its body alone is skipped); let the cache pass know which property it edits.
+- [x] Write the cascade tests and watch them fail.
+- [x] Split the frontmatter patch by type — Link-typed keys keep the whole-value patch, Text-typed keys take the body rewriter under the page's own title and the body's outline, other types take neither — written once and parameterized by how a key's type is found; stop dropping the caller's page from the sweep (its body alone is skipped); let the cache pass know which property it edits.
 
 ```ts|diff
 --- a/Core/Properties/propertyCache.ts
@@ -1570,11 +1570,11 @@ a third line, plain
 
 **VERIFY**
 
-- [ ] The new cases fail before the change and pass after; the existing `skipRel` case (`cascade.test.ts:222`) still holds — the caller's page is in `rels` through its own `[[#Setup]]` body row, its body is untouched and its frontmatter patch empty, so `text()` returns `null`, it is never touched, and `r.pages` lists only the other page. When the index isn't ready a heading rename sweeps nothing (`?? []`), as today.
-- [ ] `grep -rn "registered(" Core/Nexus/cascade.ts` → no hits; `Core/Nexus/configReach.ts`'s `editCacheBlocks` call compiles unchanged (its `edit` ignores the new second argument).
-- [ ] A Text value of exactly `[[Old|New]]` lands as `[[New|New]]` (the body rewriter's spelling), never `[[New]]` — one writer.
-- [ ] On `~/Test`, rename a page another page's Text value names in a sentence: the sentence follows; delete that page: the sentence stays and reads as a phantom; restore it: the phantom resolves again.
-- [ ] Run the gates. Check the work for unnecessary code or obvious mistakes.
+- [x] The new cases fail before the change and pass after; the existing `skipRel` case (`cascade.test.ts:222`) still holds — the caller's page is in `rels` through its own `[[#Setup]]` body row, its body is untouched and its frontmatter patch empty, so `text()` returns `null`, it is never touched, and `r.pages` lists only the other page. When the index isn't ready a heading rename sweeps nothing (`?? []`), as today.
+- [x] `grep -rn "registered(" Core/Nexus/cascade.ts` → no hits; `Core/Nexus/configReach.ts`'s `editCacheBlocks` call compiles unchanged (its `edit` ignores the new second argument).
+- [x] A Text value of exactly `[[Old|New]]` lands as `[[New|New]]` (the body rewriter's spelling), never `[[New]]` — one writer.
+- [x] On `~/Test`, rename a page another page's Text value names in a sentence: the sentence follows; delete that page: the sentence stays and reads as a phantom; restore it: the phantom resolves again.
+- [x] Run the gates. Check the work for unnecessary code or obvious mistakes.
 
 #### Task 3.3
 
@@ -1582,8 +1582,8 @@ a third line, plain
 
 **TASK**
 
-- [ ] Write the gate test and watch it fail.
-- [ ] Read a Space's values with the index's two readers, so the gate and the index agree on what names a heading.
+- [x] Write the gate test and watch it fail.
+- [x] Read a Space's values with the index's two readers, so the gate and the index agree on what names a heading.
 
 ```ts|diff
 --- a/Core/Nexus/cascade.ts
@@ -1627,17 +1627,17 @@ a third line, plain
 
 **VERIFY**
 
-- [ ] The new case fails before the change and passes after; the existing Space heading case (`cascade.test.ts:642`) still passes through `frontmatterMentions`; `readLink` is still imported by `cascade.ts` for `deleteCascade`'s `namesGone`.
-- [ ] Run the gates. Check the work for unnecessary code or obvious mistakes.
+- [x] The new case fails before the change and passes after; the existing Space heading case (`cascade.test.ts:642`) still passes through `frontmatterMentions`; `readLink` is still imported by `cascade.ts` for `deleteCascade`'s `namesGone`.
+- [x] Run the gates. Check the work for unnecessary code or obvious mistakes.
 
 #### Review Checkpoint — Phases 2 and 3
 
 Run once, after both phases have landed and merged.
 
-- [ ] The two phases' `git diff --name-only` lists are disjoint; Phase 3's lists only host-run files and their tests; the compile is clean with `numberPicker` gone; `engineGraph.test.ts` and `hostGraph.test.ts` are green.
-- [ ] `node ".claude/Scripts/Text Property Drive/live-drive.mjs" 1 2 3` passes every check and restores `~/Test`. Spaces (`spaceMoved`, `spacesLinkHeading`) are proven by `cascade.test.ts` alone; the drive seeds no Space.
-- [ ] Read the screenshots: `Drive Target` in the connection color and `Nowhere` with muted brackets in the table cell, both cards, and the panel; the pen beside the value on hover on each surface, its glyph and size the row grip's, the first line ending in `…` short of it; the popover anchored at the value on each surface; the glance tile; the panel's Text row indistinguishable from its Link row but for the pen; the Compact card's value in the bordered field at the row's height; the phantom tone after the delete and the connection color after the restore. Anything that reads wrong is fixed before Phase 4 opens.
-- [ ] Line-count delta reported (comments and tests excluded).
+- [x] The two phases' `git diff --name-only` lists are disjoint; Phase 3's lists only host-run files and their tests; the compile is clean with `numberPicker` gone; `engineGraph.test.ts` and `hostGraph.test.ts` are green.
+- [x] `node ".claude/Scripts/Text Property Drive/live-drive.mjs" 1 2 3` passes every check and restores `~/Test`. Spaces (`spaceMoved`, `spacesLinkHeading`) are proven by `cascade.test.ts` alone; the drive seeds no Space.
+- [x] Read the screenshots: `Drive Target` in the connection color and `Nowhere` with muted brackets in the table cell, both cards, and the panel; the pen beside the value on hover on each surface, its glyph and size the row grip's, the first line ending in `…` short of it; the popover anchored at the value on each surface; the glance tile; the panel's Text row indistinguishable from its Link row but for the pen; the Compact card's value in the bordered field at the row's height; the phantom tone after the delete and the connection color after the restore. Anything that reads wrong is fixed before Phase 4 opens.
+- [x] Line-count delta reported (comments and tests excluded).
 
 ---
 
@@ -1651,15 +1651,15 @@ Run once, after both phases have landed and merged.
 
 **TASK**
 
-- [ ] Write the scope tests and watch them fail: in `detect`'s scope cases, a `- item`, `1. item`, `- [ ] item`, and `# heading` line under `'text'` is prose (no marker, no intent), while `**bold**`, `_italic_`, `==mark==`, `` `code` ``, and `[[Page]]` still read as marks; the menu builder for `'text'` yields Insert Link and Format and no Lists group.
-- [ ] Add `'text'` to `MarkdownScope`. `npm run typecheck` names every switch on the scope; in each, `text` takes the inline reading and no block one — `detect` (markers, headings, quotes, fences, tables, citations), the line intents (`docLineIntentsOf`, `seatPastMarker`, `listGlyphOf` reach no marker), the native menu's groups, the autocomplete's gate (`[[` opens, `![[` stays silent as in a cell), and `inlineSurface(getConn, scope)`. No `text`-only predicate outside the scope's own arms; where `cell` and `text` agree, they share the arm (`case 'cell': case 'text':`).
-- [ ] `detect.ts:493`'s comment names the three scopes.
+- [x] Write the scope tests and watch them fail: in `detect`'s scope cases, a `- item`, `1. item`, `- [x] item`, and `# heading` line under `'text'` is prose (no marker, no intent), while `**bold**`, `_italic_`, `==mark==`, `` `code` ``, and `[[Page]]` still read as marks; the menu builder for `'text'` yields Insert Link and Format and no Lists group.
+- [x] Add `'text'` to `MarkdownScope`. `npm run typecheck` names every switch on the scope; in each, `text` takes the inline reading and no block one — `detect` (markers, headings, quotes, fences, tables, citations), the line intents (`docLineIntentsOf`, `seatPastMarker`, `listGlyphOf` reach no marker), the native menu's groups, the autocomplete's gate (`[[` opens, `![[` stays silent as in a cell), and `inlineSurface(getConn, scope)`. No `text`-only predicate outside the scope's own arms; where `cell` and `text` agree, they share the arm (`case 'cell': case 'text':`).
+- [x] `detect.ts:493`'s comment names the three scopes.
 
 **VERIFY**
 
-- [ ] The new cases fail before the change and pass after; `cellLists.test.tsx`, `cellNavigation.test.tsx`, and every MarkdownPM test stay green with `CellEditor` untouched (`git diff --stat HEAD -- Core/MarkdownPM/Tables/CellEditor.tsx` empty).
-- [ ] `grep -rn "case 'text'" Core/MarkdownPM` lists only arms beside a `case 'cell'` or in a switch on `MarkdownScope`.
-- [ ] Run the gates. Check the work for unnecessary code or obvious mistakes.
+- [x] The new cases fail before the change and pass after; `cellLists.test.tsx`, `cellNavigation.test.tsx`, and every MarkdownPM test stay green with `CellEditor` untouched (`git diff --stat HEAD -- Core/MarkdownPM/Tables/CellEditor.tsx` empty).
+- [x] `grep -rn "case 'text'" Core/MarkdownPM` lists only arms beside a `case 'cell'` or in a switch on `MarkdownScope`.
+- [x] Run the gates. Check the work for unnecessary code or obvious mistakes.
 
 #### Task 4.2
 
@@ -1667,8 +1667,8 @@ Run once, after both phases have landed and merged.
 
 **TASK**
 
-- [ ] Write the TextPane tests and watch them fail.
-- [ ] Add `TextPane` beside `NumberValuePicker`: a shell (the `PickerMenu` and its ×) around a `TextPaneEditor` that mounts and unmounts with the pane's body, in the `text` scope; route `text` to it in `PropertyValueInput`; save on Escape, on an outside press, on the ×, and on unmount — once, through one `save()`; mirror an outside change only into a clean pane; let the editor's own right-click reach the Format menu.
+- [x] Write the TextPane tests and watch them fail.
+- [x] Add `TextPane` beside `NumberValuePicker`: a shell (the `PickerMenu` and its ×) around a `TextPaneEditor` that mounts and unmounts with the pane's body, in the `text` scope; route `text` to it in `PropertyValueInput`; save on Escape, on an outside press, on the ×, and on unmount — once, through one `save()`; mirror an outside change only into a clean pane; let the editor's own right-click reach the Format menu.
 
 ```ts|diff
 --- /dev/null
@@ -1910,21 +1910,21 @@ Run once, after both phases have landed and merged.
 
 **VERIFY**
 
-- [ ] The new cases fail before the change and pass after (write them against the `cellLists.test.tsx` harness; the comments are the expectations). `PropertyValueInput.test.tsx` gains the `text` route.
-- [ ] Open, close, and reopen the pane on the same Cards value and from the Properties ▸ menu twice in a row: the second open shows the value and types (the editor remounts with the body — `useHeld` keeps the seat's component alive across closes).
-- [ ] Two reachable losses are accepted, not guarded: a row deleted from another window while the pane holds typing — the unmount save lands on a gone path and `reportRefusal` toasts; a Compact card value blanked from another window while the pane holds typing — `CardsView` nulls its picker and `commitPicked` drops the save. Both need a second window acting on the same value mid-edit.
-- [ ] Live, on `~/Test`: the pen on a table cell, a Standard card, a Compact card, and a panel row opens TextPane anchored at the value; the Properties ▸ menu's Text leaf opens it where the menu originated; the Cards add-chooser's Text entry opens it. Typing renders bold, italic, highlights, and connections; a line typed as `- a` or `1. a` stays plain text; Enter saves and closes as a field's Enter does; Shift-Enter breaks the line; Tab writes nothing and never leaves the pane; `[[` opens the autocomplete bounded inside the pane body and a press on its rows keeps the pane open; a pasted URL lands as the **Default Link Format** writes it; ⌘B bolds; a right-click inside the text opens the native menu with Insert Link and Format (no Lists, Headings, Insert, or Embed); × saves and closes; Escape saves and closes (with a range selected the first Escape collapses it, as on a page); a press outside saves and closes; the value lands on disk as a `|-` block scalar and the cell shows its first line.
-- [ ] Open the pane, type, click another cell: the shield takes the press, the pane saves and closes through `close()`, and no refusal toast appears. Open it on a row, delete the row elsewhere: the pane unmounts and saves nothing if untouched.
-- [ ] A Text value changed in another window while the pane is open and untouched appears in the pane; one changed while the pane holds typing is left to the pane's close.
-- [ ] A document ending in a newline lands as `|` and reopens with its trailing line; a typed `- a` lands as `"- a"` and reopens as the same literal line. The drive's group 4 asserts each on disk.
-- [ ] Parity with MarkdownPM, one for one: the drive's `parity-page` and `parity-pane` records — each SHOWCASE line as runs of `color|fontWeight|fontStyle|fontSize|fontFamily|decoration|fill|verticalAlign`, the line's height, and the drawn caret's (`.caret-bar`) computed background color, width, and height — are identical between Drive Target's body and the pane, `.cm-content`'s padding aside.
-- [ ] Run the gates. Check the work for unnecessary code or obvious mistakes.
+- [x] The new cases fail before the change and pass after (write them against the `cellLists.test.tsx` harness; the comments are the expectations). `PropertyValueInput.test.tsx` gains the `text` route.
+- [x] Open, close, and reopen the pane on the same Cards value and from the Properties ▸ menu twice in a row: the second open shows the value and types (the editor remounts with the body — `useHeld` keeps the seat's component alive across closes).
+- [x] Two reachable losses are accepted, not guarded: a row deleted from another window while the pane holds typing — the unmount save lands on a gone path and `reportRefusal` toasts; a Compact card value blanked from another window while the pane holds typing — `CardsView` nulls its picker and `commitPicked` drops the save. Both need a second window acting on the same value mid-edit.
+- [x] Live, on `~/Test`: the pen on a table cell, a Standard card, a Compact card, and a panel row opens TextPane anchored at the value; the Properties ▸ menu's Text leaf opens it where the menu originated; the Cards add-chooser's Text entry opens it. Typing renders bold, italic, highlights, and connections; a line typed as `- a` or `1. a` stays plain text; Enter saves and closes as a field's Enter does; Shift-Enter breaks the line; Tab writes nothing and never leaves the pane; `[[` opens the autocomplete bounded inside the pane body and a press on its rows keeps the pane open; a pasted URL lands as the **Default Link Format** writes it; ⌘B bolds; a right-click inside the text opens the native menu with Insert Link and Format (no Lists, Headings, Insert, or Embed); × saves and closes; Escape saves and closes (with a range selected the first Escape collapses it, as on a page); a press outside saves and closes; the value lands on disk as a `|-` block scalar and the cell shows its first line.
+- [x] Open the pane, type, click another cell: the shield takes the press, the pane saves and closes through `close()`, and no refusal toast appears. Open it on a row, delete the row elsewhere: the pane unmounts and saves nothing if untouched.
+- [x] A Text value changed in another window while the pane is open and untouched appears in the pane; one changed while the pane holds typing is left to the pane's close.
+- [x] A document ending in a newline lands as `|` and reopens with its trailing line; a typed `- a` lands as `"- a"` and reopens as the same literal line. The drive's group 4 asserts each on disk.
+- [x] Parity with MarkdownPM, one for one: the drive's `parity-page` and `parity-pane` records — each SHOWCASE line as runs of `color|fontWeight|fontStyle|fontSize|fontFamily|decoration|fill|verticalAlign`, the line's height, and the drawn caret's (`.caret-bar`) computed background color, width, and height — are identical between Drive Target's body and the pane, `.cm-content`'s padding aside.
+- [x] Run the gates. Check the work for unnecessary code or obvious mistakes.
 
 #### Review Checkpoint
 
-- [ ] `node ".claude/Scripts/Text Property Drive/live-drive.mjs" 1 2 3 4` passes every check and restores `~/Test` — the whole run, as the final report will quote it.
-- [ ] Read the screenshots: the pane's bold, italic, highlight, connection colors, and caret against `parity-page` — the same shapes, spacing, tones, and caret; a `- milk` line drawn as plain text in the pane and in the cell; the autocomplete inside the pane body; the native menu with no Lists group; the pane opened from the Properties ▸ menu and from the Cards chooser, anchored where each originated; the × in the pane's corner at the kit's control size. Anything that reads wrong is fixed before Phase 5 opens.
-- [ ] Line-count delta reported (comments and tests excluded).
+- [x] `node ".claude/Scripts/Text Property Drive/live-drive.mjs" 1 2 3 4` passes every check and restores `~/Test` — the whole run, as the final report will quote it.
+- [x] Read the screenshots: the pane's bold, italic, highlight, connection colors, and caret against `parity-page` — the same shapes, spacing, tones, and caret; a `- milk` line drawn as plain text in the pane and in the cell; the autocomplete inside the pane body; the native menu with no Lists group; the pane opened from the Properties ▸ menu and from the Cards chooser, anchored where each originated; the × in the pane's corner at the kit's control size. Anything that reads wrong is fixed before Phase 5 opens.
+- [x] Line-count delta reported (comments and tests excluded).
 
 ---
 
@@ -1938,7 +1938,7 @@ Run once, after both phases have landed and merged.
 
 **TASK**
 
-- [ ] Make each passage true: the four hunks below, and in PommoraPRD add **Text** to the property list and remove the "no free-form text type yet" sentence (its remaining clauses stay), and in SymbolsPM add `| Text | \`text-align-start\` |` beside Title's row; in the Decision Log, rewrite every decision that gave Text lists to the ruling in *§Deviations*, surgically, as if it had always read so.
+- [x] Make each passage true: the four hunks below, and in PommoraPRD add **Text** to the property list and remove the "no free-form text type yet" sentence (its remaining clauses stay), and in SymbolsPM add `| Text | \`text-align-start\` |` beside Title's row; in the Decision Log, rewrite every decision that gave Text lists to the ruling in *§Deviations*, surgically, as if it had always read so.
 
 ```ts|diff
 --- a/.claude/Features/PropertiesPM.md
@@ -1997,9 +1997,9 @@ Run once, after both phases have landed and merged.
 
 **VERIFY**
 
-- [ ] `grep -rn "eleven" .claude/Features .claude/Guidelines .claude/CLAUDE.md` → no hits; `grep -n "Text (Title)" .claude/Features/ViewTypesPM.md` → no hits; *§Pending* in PropertiesPM holds no Text entry.
-- [ ] Read each edited paragraph once in full: no sentence contradicts its neighbor, no "now" or "previously", no reference to this plan.
-- [ ] `PommoraUIX.md` changes on one line, the Row Tokens row (`git diff --stat -- .claude/Features/PommoraUIX.md` → 1 file, that row).
+- [x] `grep -rn "eleven" .claude/Features .claude/Guidelines .claude/CLAUDE.md` → no hits; `grep -n "Text (Title)" .claude/Features/ViewTypesPM.md` → no hits; *§Pending* in PropertiesPM holds no Text entry.
+- [x] Read each edited paragraph once in full: no sentence contradicts its neighbor, no "now" or "previously", no reference to this plan.
+- [x] `PommoraUIX.md` changes on one line, the Row Tokens row (`git diff --stat -- .claude/Features/PommoraUIX.md` → 1 file, that row).
 
 ---
 
@@ -2007,40 +2007,40 @@ Run once, after both phases have landed and merged.
 
 **Conformance**
 
-- [ ] No duplicated mechanism: `grep -rn "arm: glanceLink" Core` → one hit; `grep -rn "numberPicker" Core UIX` → none; `grep -rn "registered(" Core/Nexus/cascade.ts` → none.
-- [ ] No `text`-only predicate outside Text's own arms: `grep -rn "=== 'text'" Core UIX --include='*.ts' --include='*.tsx'` lists only `PropertyValueInput.tsx`'s route (Number's twin), `CardsView.tsx`'s Compact span (the layout's one seat), and `cascade.ts`'s type split (beside its `'link'` twin).
-- [ ] Nothing changed outside what the plan named: `git diff --name-only <baseline>..HEAD` matches the union of the tasks' hunks.
-- [ ] `Core/Contract/bridge.ts` unchanged; `PickerMenu.tsx` unchanged.
+- [x] No duplicated mechanism: `grep -rn "arm: glanceLink" Core` → one hit; `grep -rn "numberPicker" Core UIX` → none; `grep -rn "registered(" Core/Nexus/cascade.ts` → none.
+- [x] No `text`-only predicate outside Text's own arms: `grep -rn "=== 'text'" Core UIX --include='*.ts' --include='*.tsx'` lists only `PropertyValueInput.tsx`'s route (Number's twin), `CardsView.tsx`'s Compact span (the layout's one seat), and `cascade.ts`'s type split (beside its `'link'` twin).
+- [x] Nothing changed outside what the plan named: `git diff --name-only 8ee6f8cf5..HEAD` matches the union of the tasks' hunks.
+- [x] `Core/Contract/bridge.ts` unchanged; `PickerMenu.tsx` unchanged.
 
 **Correctness**
 
-- [ ] A Text property is created first in the New Property menu with the `text-align-start` glyph, and a `description:` line a file already held appears on its page at once.
-- [ ] `Notes: 42`, `Notes: true`, `Notes: [milk, eggs, bread]`, and an unquoted `Notes: [[Plan]]` each show as their text and stay byte-identical on disk after Repair On Open, an adjacent write, and a frozen Trash restore; the first edit replaces them with the typed string.
-- [ ] Typing `opus` lands as `Notes: opus`; typing `42` lands as `Notes: "42"`; a two-line value lands as a `|-` block scalar and round-trips.
-- [ ] A click on a filled value edits its first line in place on the table, both card layouts, and the panel; the lines behind it are untouched; an emptied first line drops.
-- [ ] The pen reveals on hover per value, at rest on touch, and opens TextPane on every surface; the Properties ▸ leaf and the Cards chooser open it too; every way out saves once.
-- [ ] A link inside a Text value colors, opens (⌘ for a new tab), glances, is indexed as `body`, follows a page rename and a heading rename (the page's own included), and reads as a phantom after a delete; a Link value `[[#Heading]]` opens its own page at the heading.
-- [ ] Text takes Link's seven filter operators, sorts A → Z, is absent from Group By and Sub-Group, and seeds nothing on New Page Above/Below or an `Is` rule.
-- [ ] End to end: create Text **Notes**, fill it on three pages from three surfaces, write a `[[link]]` in one, rename the linked page, filter and sort by Notes, delete the linked page, restore it — every step as the log says.
+- [x] A Text property is created first in the New Property menu with the `text-align-start` glyph, and a `description:` line a file already held appears on its page at once.
+- [x] `Notes: 42`, `Notes: true`, `Notes: [milk, eggs, bread]`, and an unquoted `Notes: [[Plan]]` each show as their text and stay byte-identical on disk after Repair On Open, an adjacent write, and a frozen Trash restore; the first edit replaces them with the typed string.
+- [x] Typing `opus` lands as `Notes: opus`; typing `42` lands as `Notes: "42"`; a two-line value lands as a `|-` block scalar and round-trips.
+- [x] A click on a filled value edits its first line in place on the table, both card layouts, and the panel; the lines behind it are untouched; an emptied first line drops.
+- [x] The pen reveals on hover per value, at rest on touch, and opens TextPane on every surface; the Properties ▸ leaf and the Cards chooser open it too; every way out saves once.
+- [x] A link inside a Text value colors, opens (⌘ for a new tab), glances, is indexed as `body`, follows a page rename and a heading rename (the page's own included), and reads as a phantom after a delete; a Link value `[[#Heading]]` opens its own page at the heading.
+- [x] Text takes Link's seven filter operators, sorts A → Z, is absent from Group By and Sub-Group, and seeds nothing on New Page Above/Below or an `Is` rule.
+- [x] End to end: create Text **Notes**, fill it on three pages from three surfaces, write a `[[link]]` in one, rename the linked page, filter and sort by Notes, delete the linked page, restore it — every step as the log says.
 
 **Completeness**
 
-- [ ] Every task ticked; no scaffolding, debug output, or unauthorized TODO in `<baseline>..HEAD`.
+- [x] Every task ticked; no scaffolding, debug output, or unauthorized TODO in `8ee6f8cf5..HEAD`.
 
 **Confirmation**
 
-- [ ] Every verification result read; each new test goes red with its change reverted (the executor reverts one hunk per test file and watches).
-- [ ] The drive's full run (`live-drive.mjs 1 2 3 4`) is green from the final HEAD, and every screenshot it wrote was read by the orchestrator at the checkpoint that produced it.
-- [ ] A line typed as `- milk` or `1. a`, through the field or the pane, lands as a string and reads back as the literal text, on disk and on screen, in the drive's run.
+- [x] Every verification result read; each new test goes red with its change reverted (the executor reverts one hunk per test file and watches).
+- [x] The drive's full run (`live-drive.mjs 1 2 3 4`) is green from the final HEAD, and every screenshot it wrote was read by the orchestrator at the checkpoint that produced it.
+- [x] A line typed as `- milk` or `1. a`, through the field or the pane, lands as a string and reads back as the literal text, on disk and on screen, in the drive's run.
 
 **Continuity**
 
-- [ ] *§Reconciliation* complete; living documents read true; *§Deviations* each fixed or ruled on.
+- [x] *§Reconciliation* complete; living documents read true; *§Deviations* each fixed or ruled on.
 
 **Confidence**
 
-- [ ] Gates green from clean on `<baseline>..HEAD`; *§Baseline* counts moved as planned.
-- [ ] Diff size as the plan implied: roughly +500 / −80 lines (comments, tests, and the drive excluded) — the cascade's split is the removal; a larger figure is reported, not tidied away.
+- [x] Gates green from clean on `8ee6f8cf5..HEAD`; *§Baseline* counts moved as planned.
+- [x] Diff size as the plan implied: roughly +500 / −80 lines was the estimate; the run landed +961 / −269 (comments, tests, and the drive excluded; the reviews' folds — the shared editor base, the shared link gestures, the held page, the reach rule, the writer — are the difference), reported, not tidied away.
 
 ### Final Verification
 
@@ -2054,12 +2054,12 @@ Run once, after both phases have landed and merged.
 
 Every finding from the three is fixed in the run or ruled on in *§Deviations* with the reason; nothing is carried.
 
-- [ ] Phase review (`opus-high`): Phase 1 · Phase 2 and Phase 3 (one each, in parallel) · Phase 4 · Phase 5
-- [ ] All phase findings fixed or ruled on
-- [ ] Final review over `<baseline commit>..HEAD`: simplification lens → adversarial → neutral, each closed before the next opens
-- [ ] The orchestrator's own pass from the final HEAD: `live-drive.mjs 1 2 3 4` green · gates · baseline · diff · deviations · criteria
-- [ ] Reconciliation walked; living documents read
-- [ ] Report delivered
+- [x] Phase review (`opus-high`): Phase 1 · Phase 2 and Phase 3 (one each, in parallel) · Phase 4 · Phase 5
+- [x] All phase findings fixed or ruled on
+- [x] Final review over `8ee6f8cf5..HEAD`: simplification lens → adversarial → neutral, each closed before the next opens
+- [x] The orchestrator's own pass from the final HEAD: `live-drive.mjs 1 2 3 4` green · gates · baseline · diff · deviations · criteria
+- [x] Reconciliation walked; living documents read
+- [x] Report delivered
 
 #### Reconciliation
 
