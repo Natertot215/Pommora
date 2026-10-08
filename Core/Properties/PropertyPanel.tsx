@@ -104,6 +104,7 @@ export function PropertyPanel({
   if (editingFor !== path) {
     setEditingFor(path)
     setEditing(null)
+    setHeldAdd(null)
   }
 
   useEffect(() => {
@@ -146,6 +147,7 @@ export function PropertyPanel({
   const nexusId = tree?.nexus.id
   useEffect(() => {
     setEditing(null)
+    setHeldAdd(null)
     setRevealed(new Set())
   }, [nexusId])
 
