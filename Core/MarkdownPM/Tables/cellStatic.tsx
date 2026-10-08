@@ -17,6 +17,7 @@ import { applyEdits, lineOffsetsOf } from '../Engine/markdownCode'
 import {
   wikiLinkView,
   linkMenuTarget,
+  headingMissing,
   tokenTarget,
   type ConnectionsApi,
   type ConnMenuTarget,
@@ -80,12 +81,17 @@ export function renderCellContent(
           </Fragment>,
         )
       else {
-        const frag = view.status === 'resolved' ? tk.fragment : undefined
+        // An alias overrides both halves, so only an unaliased link draws its page and heading.
+        const alias = aliasedToken(tk)
+        const frag = view.status === 'resolved' && !alias ? tk.fragment : undefined
         const showPage = headingLinkStyle !== 'heading-only' && !view.bare
         out.push(
           <span
             key={key++}
-            className={`md-connection-${view.status}`}
+            className={cx(
+              `md-connection-${view.status}`,
+              alias && view.missing && 'md-connection-heading-missing',
+            )}
             data-conn-title={text.slice(rs, re)}
             data-link-span={`${base + s},${base + e}`}
           >
@@ -117,7 +123,10 @@ export function renderCellContent(
         target.kind === 'page' || target.kind === 'self' ? (
           <span
             key={key++}
-            className="md-connection-resolved"
+            className={cx(
+              'md-connection-resolved',
+              headingMissing(conn, target, around?.ownKeys) && 'md-connection-heading-missing',
+            )}
             data-conn-title={target.kind === 'page' ? target.page.title : undefined}
             data-link-span={`${base + s},${base + e}`}
           >

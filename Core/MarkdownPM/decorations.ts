@@ -61,7 +61,12 @@ import {
   spanAt,
 } from './Engine/docScan'
 import { lineEndOf, lineIndexAt } from './Engine/markdownCode'
-import { resolveMdTarget, wikiLinkView, type ConnectionsApi } from './Links/connectionsApi'
+import {
+  headingMissing,
+  resolveMdTarget,
+  wikiLinkView,
+  type ConnectionsApi,
+} from './Links/connectionsApi'
 import type { LinkStatus } from '../Connections/connections'
 import { editorHost, type OwnPage, ownPage, redrawNudge } from './api'
 import { checkMarkSvg, checkboxClass } from '@pommora/uix/Controls/Checkbox'
@@ -505,6 +510,8 @@ function build(view: EditorView, conn: ConnectionsApi | undefined, scope: Markdo
     else if (it.kind === 'prefix') continue
     else ranges.push(Decoration.replace({ widget: widgetFor(it.spec) }).range(it.from, it.to))
   }
+  const own = ownPage(view)
+  const ownKeys = ownHeadings(own, conn, docHeadingKeys)
   tokens.forEach((tk, i) => {
     if (tk.kind !== 'link') return
     const [open, close] = tk.markerRanges
@@ -516,7 +523,11 @@ function build(view: EditorView, conn: ConnectionsApi | undefined, scope: Markdo
     ranges.push(
       Decoration.mark({
         class: internal
-          ? cx('md-connection-resolved', isActive && 'md-connection-open')
+          ? cx(
+              'md-connection-resolved',
+              isActive && 'md-connection-open',
+              headingMissing(conn, target, ownKeys) && 'md-connection-heading-missing',
+            )
           : valid
             ? MD_LINK_CLASS
             : 'md-link-invalid',
@@ -541,10 +552,8 @@ function build(view: EditorView, conn: ConnectionsApi | undefined, scope: Markdo
       ranges.push(hideMarker.range(bracketEnd, close[1]))
     }
   })
-  const own = ownPage(view)
   if (conn) {
     const { headingLinkStyle } = settings
-    const ownKeys = ownHeadings(own, conn, docHeadingKeys)
     tokens.forEach((tk, i) => {
       if (tk.kind !== 'wikiLink') return
       const alias = aliasedToken(tk)
@@ -609,7 +618,11 @@ function build(view: EditorView, conn: ConnectionsApi | undefined, scope: Markdo
       }
       ranges.push(
         Decoration.mark({
-          class: cx(`md-connection-${status}`, open && 'md-connection-open'),
+          class: cx(
+            `md-connection-${status}`,
+            open && 'md-connection-open',
+            alias && missing && 'md-connection-heading-missing',
+          ),
         }).range(tk.contentRange[0], tk.contentRange[1]),
       )
       const bracket = open ? Decoration.mark({ class: 'md-bracket' }) : hideMarker

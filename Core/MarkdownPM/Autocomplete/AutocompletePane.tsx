@@ -23,7 +23,7 @@ import { CaretPane, CLOSED_GEOMETRY, useKeepInView } from '../Menus/caretPane'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
 import { text } from '@pommora/uix/Theme/typography.css'
 import { outlineTree, type OutlineNode } from '../Engine/outlineTree'
-import type { AcRow, HeadingRow } from './autocomplete'
+import { type AcRow, type HeadingRow, listsHeadings } from './autocomplete'
 import type { AcState } from './useConnectionAutocomplete'
 
 export interface AutocompletePaneProps {
@@ -79,11 +79,12 @@ export function AutocompletePane({
   const keepInView = useKeepInView(v.index)
 
   const cameFrom = useRef<AcRow[]>([])
-  if (open && v.ac.form === 'link') cameFrom.current = v.candidates
+  if (open && (v.ac.form === 'link' || v.ac.form === 'target')) cameFrom.current = v.candidates
   useEffect(() => {
     if (ac === null) cameFrom.current = []
   }, [ac])
-  const headingSlide = v.ac.form === 'heading' && v.viaChevron
+  const headingForm = listsHeadings(v.ac.form)
+  const headingSlide = headingForm && v.viaChevron
   const sliding = (v.ac.form === 'alias' && cameFrom.current.length > 0) || headingSlide
 
   const slot = (rows: AcRow[], active: boolean): React.JSX.Element => (
@@ -203,11 +204,7 @@ export function AutocompletePane({
         minWidth={w ?? AC_BOUNDS.min.w}
         maxWidth={w ?? AC_FIT_MAX}
         root={
-          sliding
-            ? slot(cameFrom.current, false)
-            : v.ac.form === 'heading'
-              ? headingSlot(v.candidates)
-              : shown
+          sliding ? slot(cameFrom.current, false) : headingForm ? headingSlot(v.candidates) : shown
         }
         detail={sliding ? (headingSlide ? headingSlot(v.candidates) : shown) : null}
       />

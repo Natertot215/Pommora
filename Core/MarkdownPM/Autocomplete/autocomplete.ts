@@ -2,9 +2,11 @@ import { expressibleHeading, linkAt, pageEmbedText } from '../../Connections/con
 import { normalizeTitle } from '../../Paths/caseFold'
 import {
   decodeLinkTarget,
-  emptyTolerantLinkRegex,
   encodeLinkTarget,
   escapeAlias,
+  inMarkdownLink,
+  markdownDestinationAt,
+  targetTitle,
 } from '../../Connections/links'
 import { NO_TRAIL, type TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { type DocScan, inCodeAt } from '../Engine/docScan'
@@ -14,7 +16,7 @@ import type { OutlineHeading } from '../Engine/headingScan'
 import type { EditorHost } from '../api'
 import type { ConnectionsApi } from '../Links/connectionsApi'
 
-type ConnectionForm = 'link' | 'embed' | 'alias' | 'target' | 'heading' | 'section'
+type ConnectionForm = 'link' | 'embed' | 'alias' | 'target' | 'heading' | 'fragment' | 'section'
 
 export interface AutocompleteQuery {
   query: string
@@ -35,17 +37,9 @@ export type AcRow = { value: string } & (
 
 export type HeadingRow = Extract<AcRow, { kind: 'heading' }>
 
-function markdownTargetAt(
-  line: string,
-  rel: number,
-): { from: number; to: number; label: [number, number] } | null {
-  for (const m of line.matchAll(emptyTolerantLinkRegex())) {
-    const [, label, dest] = m.indices ?? []
-    if (label && dest && rel >= dest[0] && rel <= dest[1])
-      return { from: dest[0], to: dest[1], label }
-  }
-  return null
-}
+/** The forms whose rows are a page's headings: a wikilink's heading half, a markdown link's fragment, and a bare section run. */
+export const listsHeadings = (form: ConnectionForm): boolean =>
+  form === 'heading' || form === 'fragment' || form === 'section'
 
 export function autocompleteQuery(
   scan: DocScan,
@@ -65,6 +59,7 @@ export function autocompleteQuery(
       armedRel < line.length &&
       caret >= armed + 1 &&
       !linkAt(line, rel) &&
+      !inMarkdownLink(line, armedRel) &&
       !/^\s/.test(line.slice(armedRel + 1, rel))
     )
       return {
@@ -99,15 +94,29 @@ export function autocompleteQuery(
       }
   }
   // An in-progress link has an EMPTY target and the grammar above requires a character, so it can never answer for what ⌘K writes.
-  const paren = markdownTargetAt(line, rel)
-  if (paren)
+  const md = markdownDestinationAt(line, rel)
+  if (md) {
+    const { dest, fragment } = md
+    const label = { from: lineStart + md.label[0], to: lineStart + md.label[1] }
+    const pageEnd = fragment ? fragment[0] - 1 : dest[1]
+    // As with a wikilink, the page half queries alone and a retarget replaces the fragment with the rest.
+    if (!fragment || rel <= pageEnd)
+      return {
+        query: decodeLinkTarget(line.slice(dest[0], pageEnd)),
+        from: lineStart + dest[0],
+        to: lineStart + dest[1],
+        form: 'target',
+        label,
+      }
     return {
-      query: decodeLinkTarget(line.slice(paren.from, paren.to)),
-      from: lineStart + paren.from,
-      to: lineStart + paren.to,
-      form: 'target',
-      label: { from: lineStart + paren.label[0], to: lineStart + paren.label[1] },
+      query: decodeLinkTarget(line.slice(fragment[0], fragment[1])),
+      from: lineStart + fragment[0],
+      to: lineStart + fragment[1],
+      form: 'fragment',
+      title: targetTitle(line.slice(dest[0], pageEnd)) ?? '',
+      label,
     }
+  }
   // A LOCAL match — the connections pattern excludes an embed opener by design, and `[` doesn't auto-pair after `!`, so an in-progress embed is usually unclosed.
   if (allowEmbeds) {
     for (let idx = line.indexOf('![['); idx !== -1; idx = line.indexOf('![[', idx + 3)) {
@@ -194,6 +203,7 @@ function formSyntax(value: string, form: ConnectionForm, alias?: string): string
     case 'section':
       return value
     case 'target':
+    case 'fragment':
       return encodeLinkTarget(value)
     case 'embed':
       return pageEmbedText(value)
@@ -257,13 +267,16 @@ export function commitEdit(
     return { changes: [{ from: ac.from, to: ac.to, insert }], anchor: caret }
   if (ac.form === 'alias' || ac.form === 'heading')
     return { changes: [{ from: ac.from, to: ac.to, insert }], anchor: caret + 2 }
-  if (ac.form === 'target') {
-    const retarget = { from: ac.from, to: ac.to, insert }
+  // The anchor steps one past what was written: the `)` that finishes the link, or the `#` the heading slot opens behind.
+  if (ac.form === 'target' || ac.form === 'fragment') {
+    const hash = opts.openHeading ? '#' : ''
+    const retarget = { from: ac.from, to: ac.to, insert: insert + hash }
     const fill = ac.label && ac.label.from === ac.label.to ? ac.label : null
     const label = fill ? escapeAlias(value) : ''
     return {
       changes: fill ? [{ from: fill.from, to: fill.to, insert: label }, retarget] : [retarget],
       anchor: caret + label.length + 1,
+      ...(hash ? { opensHeading: true } : {}),
     }
   }
   return { changes: [{ from: ac.from, to: ac.to, insert }], anchor: caret }

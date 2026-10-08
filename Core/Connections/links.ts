@@ -29,17 +29,52 @@ export function composeWebpageEmbedLine(label: string, url: string): string {
   return `![${escapeAlias(label)}](${url})`
 }
 
-/** Two shapes count: a complete link, empty halves included (⌘K seats the caret inside `[]()`), and a destination still open before the caret. */
-export function linkDestinationAt(lineText: string, col: number): boolean {
+/** Whether the character at `col` sits inside a markdown link, label or destination, empty halves included. */
+export function inMarkdownLink(lineText: string, col: number): boolean {
   for (const m of lineText.matchAll(emptyTolerantLinkRegex())) {
-    const span = m.indices?.[2]
-    if (!span || span[0] > col) break
-    if (col >= span[0] && col <= span[1]) return true
+    if (m.index >= col) break
+    if (col < m.index + m[0].length) return true
   }
+  return false
+}
+
+// Only the half before the first `#` decides: a scheme or a path separator there addresses something outside the Nexus, while a fragment is a heading's own text.
+const namesPage = (pageHalf: string): boolean =>
+  !pageHalf.includes('/') && !HAS_SCHEME.test(pageHalf.trim())
+
+/** Whether a `#` written after `head`, a destination read up to that point, opens its fragment — rather than landing inside one, or inside an address. */
+export const opensFragment = (head: string): boolean => !head.includes('#') && namesPage(head)
+
+interface DestinationSpans {
+  label: [number, number]
+  dest: [number, number]
+  fragment: [number, number] | null
+}
+
+/** The complete markdown link whose destination holds `col`, empty halves included (⌘K seats the caret inside `[]()`). `fragment` follows the `#` of a destination that names a page. */
+export function markdownDestinationAt(lineText: string, col: number): DestinationSpans | null {
+  for (const m of lineText.matchAll(emptyTolerantLinkRegex())) {
+    const [, label, dest] = m.indices ?? []
+    if (!label || !dest || dest[0] > col) break
+    if (col > dest[1]) continue
+    const hash = lineText.slice(dest[0], dest[1]).indexOf('#')
+    const named = hash !== -1 && opensFragment(lineText.slice(dest[0], dest[0] + hash))
+    return { label, dest, fragment: named ? [dest[0] + hash + 1, dest[1]] : null }
+  }
+  return null
+}
+
+/** Where the destination holding `col` begins: a complete link's, or one still open before the caret. */
+export function linkDestinationStart(lineText: string, col: number): number | null {
+  const complete = markdownDestinationAt(lineText, col)
+  if (complete) return complete.dest[0]
   const head = lineText.slice(0, col)
   const open = head.lastIndexOf('](')
-  return open !== -1 && !head.slice(open + 2).includes(')')
+  return open !== -1 && !head.slice(open + 2).includes(')') ? open + 2 : null
 }
+
+export const linkDestinationAt = (lineText: string, col: number): boolean =>
+  linkDestinationStart(lineText, col) !== null
 
 // `encodeURI` leaves parens and colons alone; a raw colon declares a target a URL and a lone `(` leaves the link untokenizable, so both are escaped on top. A lone surrogate makes encodeURI throw, and the rename cascade calls this unwrapped.
 export function encodeLinkTarget(target: string): string {
@@ -61,11 +96,10 @@ export function decodeLinkTarget(target: string): string {
 
 const pageTarget = (rawTarget: string): { page: string; fragment: string } | null => {
   const raw = rawTarget.trim()
-  if (!raw || raw.includes('/') || HAS_SCHEME.test(raw)) return null
   const i = raw.indexOf('#')
-  return i === -1
-    ? { page: raw, fragment: '' }
-    : { page: raw.slice(0, i), fragment: raw.slice(i + 1) }
+  const page = i === -1 ? raw : raw.slice(0, i)
+  if (!raw || !namesPage(page)) return null
+  return { page, fragment: i === -1 ? '' : raw.slice(i + 1) }
 }
 
 // Read on the raw target: a URL's scheme and separators are literal, while an encoded page title spells them out. The `#` is split before decoding so an encoded `%23` stays inside the title.

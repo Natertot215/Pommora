@@ -100,7 +100,18 @@ interface WikiLinkView {
   missing: boolean
 }
 
-// How a wikilink token reads: the page half resolves, and a fragment is missing only when the page's heading keys are known and lack it. A page absent from the map reads as present. A bare fragment resolves against the document's own keys, which a surface without page identity leaves undefined.
+// A fragment is missing only when the named page's heading keys are known and lack it; a page absent from the map reads as present. A bare fragment reads the document's own keys, which a surface without page identity leaves undefined.
+export function headingMissing(
+  conn: ConnectionsApi | undefined,
+  target: MdTarget,
+  ownKeys: readonly string[] | undefined,
+): boolean {
+  if ((target.kind !== 'page' && target.kind !== 'self') || !target.heading) return false
+  const known = target.kind === 'self' ? ownKeys : conn?.headingsOf?.(target.page.path)
+  return known !== undefined && !known.includes(normalizeTitle(target.heading))
+}
+
+// How a wikilink token reads: the page half resolves, and its fragment reads as `headingMissing` says.
 export function wikiLinkView(
   conn: ConnectionsApi,
   text: string,
@@ -111,11 +122,13 @@ export function wikiLinkView(
   const bare = rs === re
   const res = bare ? null : conn.resolve(text.slice(rs, re))
   const page = res?.page ?? null
-  const known = bare ? ownKeys : page ? conn.headingsOf?.(page.path) : undefined
   const heading = headingOf(text, tk)
-  const missing =
-    heading !== undefined && known !== undefined && !known.includes(normalizeTitle(heading))
-  return { status: res ? res.status : heading ? 'resolved' : 'phantom', page, bare, missing }
+  return {
+    status: res ? res.status : heading ? 'resolved' : 'phantom',
+    page,
+    bare,
+    missing: headingMissing(conn, tokenTarget(conn, text, tk), ownKeys),
+  }
 }
 
 export function openPage(
