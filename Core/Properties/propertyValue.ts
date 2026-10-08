@@ -70,7 +70,7 @@ export function decodeValue(def: PropertyDefinition, raw: unknown): PropertyValu
     case 'checkbox':
       return isCheckedRaw(raw) ? { kind, value: true } : NULL_VALUE
     case 'link': {
-      const entry = linkEntry(raw)
+      const entry = linkEntry(raw, 2)
       return entry === null ? NULL_VALUE : { kind, value: entry }
     }
     case 'dateTime':
