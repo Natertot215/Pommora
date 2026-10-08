@@ -14,7 +14,7 @@ import {
   targetNamesTitle,
   targetTitle,
 } from './links'
-import { readLink } from './linkValue'
+import { linkEntry, readLink } from './linkValue'
 import { applyEdits, codeMask } from '../MarkdownPM/Engine/markdownCode'
 import { sectionRunsIn } from './scan'
 
@@ -115,18 +115,20 @@ export function rewriteFrontmatterConnections(
   values: Record<string, unknown>,
   title: string,
   change: RenameChange,
+  ownTitle = '',
 ): Record<string, string> {
   if ('heading' in change && !expressibleHeading(change.to)) return {}
   const titleKey = normalizeTitle(title)
   const headingKey = 'heading' in change ? normalizeTitle(change.heading) : ''
   const patch: Record<string, string> = {}
   for (const [key, value] of Object.entries(values)) {
-    if (typeof value !== 'string') continue
-    const link = readLink(value)
-    if (link.kind !== 'page' || normalizeTitle(link.title) !== titleKey) continue
-    if ('title' in change) patch[key] = connectionText(change.title, link.alias, link.heading)
-    else if (normalizeTitle(link.heading ?? '') === headingKey)
-      patch[key] = connectionText(link.title, link.alias, change.to)
+    const entry = linkEntry(value)
+    const link = entry === null ? null : readLink(entry)
+    if (link?.kind !== 'page' || normalizeTitle(link.title || ownTitle) !== titleKey) continue
+    if ('heading' in change) {
+      if (normalizeTitle(link.heading ?? '') === headingKey)
+        patch[key] = connectionText(link.title, link.alias, change.to)
+    } else if (link.title) patch[key] = connectionText(change.title, link.alias, link.heading)
   }
   return patch
 }

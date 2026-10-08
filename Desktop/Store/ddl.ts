@@ -1,6 +1,6 @@
 import type { Db } from './driver'
 
-export const INDEX_GENERATION = 10
+export const INDEX_GENERATION = 11
 
 const META_DDL = `
   CREATE TABLE IF NOT EXISTS meta (

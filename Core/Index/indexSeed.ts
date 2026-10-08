@@ -2,7 +2,7 @@ import { join, relative, isMarkdownFile, titleFromPath } from '../Paths/posix'
 import { escapes } from '../Paths/pathSafety'
 import { errText } from '../Contract/result'
 import { listOf } from '../Contract/validators'
-import { frontmatterMentions, linksIn } from '../Connections/scan'
+import { frontmatterMentions, linksIn, valueLinks } from '../Connections/scan'
 import { headingOutlineOf } from '../MarkdownPM/Engine/headingScan'
 import { inCodeAt, scanDoc } from '../MarkdownPM/Engine/docScan'
 import { parseContextKey } from '../Contexts/contexts'
@@ -63,7 +63,10 @@ function extractPageIndex(rel: string, content: string): PageRead {
     if (hit.at >= scan.lineStarts[scan.citations.firstLine])
       add('citation', hit.target, hit.qualifier)
   }
-  for (const { target, qualifier } of frontmatterMentions(values))
+  // A value's links are a small body's — under the page's own title and outline, never citations.
+  for (const hit of valueLinks(values, own, outline))
+    add(hit.syntax === 'embed' ? 'embed' : 'body', hit.target, hit.qualifier)
+  for (const { target, qualifier } of frontmatterMentions(values, own))
     add('frontmatter', target, qualifier)
   for (const { target, qualifier } of spaceRelations(values)) add('space', target, qualifier)
   const headings = [...new Set(outline.map(normalizeTitle))].filter(Boolean)
