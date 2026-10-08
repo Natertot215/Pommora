@@ -101,7 +101,7 @@ interface Owed {
   pages: Set<string>
   // True while every write of the page was the editor's own body save.
   values: Map<string, boolean>
-  // Spaces, and Collections that gained a property, whose held options are yet to be registered.
+  // Spaces and Collections whose held options are yet to be registered.
   options: Set<string>
   tiles: Map<string, { host: TileHostRef; ids: Set<string> }>
   renames: HeadingRenameSeen[]
@@ -485,16 +485,17 @@ async function applyContexts(root: string, ev: Changed): Promise<Applied> {
   })
 }
 
-async function applyRegistry(root: string, ev: Changed): Promise<Applied> {
+async function applyRegistry(root: string, ev: Changed, owed: Owed): Promise<Applied> {
   const registry = registryFrom((await jsonOf(ev, readKept)) ?? {})
   return applyPatch(root, (t) => {
     // A definition arriving from outside may be one a sidecar already assigns, which only a read of the sidecars finds.
     const arrived = Object.keys(registry.defs).some(
       (id) => !t.config.registry.some((d) => d.id === id),
     )
-    return arrived && ev.origin === 'watched'
-      ? null
-      : repointRegistryInTree(t, orderedDefs(registry))
+    if (arrived && ev.origin === 'watched') return null
+    const next = repointRegistryInTree(t, orderedDefs(registry))
+    oweNamedKeys(owed, t.config, next)
+    return next
   })
 }
 
@@ -514,6 +515,26 @@ export function oweRescope(owed: Owed, was: WatchScope, scope: WatchScope): bool
   owed.whole.push(...[...was.excluded, was.assetDir].filter((rel) => !outsideContent(rel, scope)))
   owed.rescope = true
   return true
+}
+
+// A Multi-Select the registry came to name, seen by the registry's own event or by the walk an outside arrival takes, owes the Collections assigning it and every Space.
+export function oweNamedKeys(owed: Owed, was: NexusConfig, tree: NexusTree): void {
+  const prior = new Map(was.registry.map((d) => [d.id, d]))
+  const named = new Set(
+    tree.config.registry
+      .filter((d) => {
+        const p = prior.get(d.id)
+        return (
+          d.type === 'multiSelect' &&
+          (p?.type !== 'multiSelect' || normalizeTitle(p.name) !== normalizeTitle(d.name))
+        )
+      })
+      .map((d) => d.id),
+  )
+  if (!named.size) return
+  for (const c of tree.collections)
+    if (c.properties?.some((d) => named.has(d.id))) owed.options.add(c.path)
+  for (const s of tree.contexts.flatMap((g) => g.spaces)) owed.options.add(s.path)
 }
 
 async function applyShard(root: string, shard: string, ev: Changed): Promise<Applied> {
@@ -597,7 +618,7 @@ async function applyOne(root: string, ev: FileEvent, owed: Owed): Promise<Applie
     case 'contexts-leaf':
       return applyContexts(root, ev)
     case 'registry-leaf':
-      return applyRegistry(root, ev)
+      return applyRegistry(root, ev, owed)
     case 'settings-leaf':
       return applySettings(root, ev, owed)
     case 'tiles-leaf': {
