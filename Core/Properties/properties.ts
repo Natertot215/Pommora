@@ -265,8 +265,8 @@ export const KEY_REFUSAL = {
   reservedPrefix: `A name cannot start with ${RESERVED_NAME_PREFIX} or <.`,
   reserved: (name: string) => `"${name}" is a key Pommora manages.`,
   duplicate: (name: string) => `A property named "${name}" already exists.`,
-  held: (name: string, n: number) =>
-    `${n} ${n === 1 ? 'file already uses' : 'files already use'} "${name}" as a key.`,
+  held: (from: string, to: string, n: number) =>
+    `${n} ${n === 1 ? 'file holds' : 'files hold'} both "${from}" and "${to}".`,
 } as const
 
 export function normalizePropertyName(raw: string): string {

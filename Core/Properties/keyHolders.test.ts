@@ -72,9 +72,9 @@ describe('keyHolderFiles', () => {
     expect(await keyHolderFiles(root, 'Notes', [abs('Notes')])).toEqual([abs('Notes', 'Late.md')])
   })
 
-  it('a rename onto a held key is refused through the index, and the un-governed note never counts', async () => {
-    await page('Q9X', 'Phase: x\n')
-    await writeFile(abs('Loose', 'Other.md'), '---\nPhase: y\n---\n\nun-governed\n')
+  it('a rename onto a key a page holds beside the old one is refused through the index, and the un-governed note never counts', async () => {
+    await page('Q9X', 'Stage: s\nPhase: x\n')
+    await writeFile(abs('Loose', 'Other.md'), '---\nStage: s\nStep: y\n---\n\nun-governed\n')
     await seedContentIndex(root)
     const refused = await renameProperty(root, 'prop_s', 'Phase')
     expect(refused.ok).toBe(false)
@@ -101,10 +101,10 @@ describe('keyHolderFiles', () => {
   )
 
   it.skipIf(noModeBits)(
-    'a rename onto a key an unreadable page was last read holding is refused, and only that key',
+    'a rename onto a key an unreadable page was last read holding beside the old one is refused, and only that key',
     async () => {
       const q = abs('Notes', 'Q9X.md')
-      await page('Q9X', 'Phase: x\n')
+      await page('Q9X', 'Stage: s\nPhase: x\n')
       await seedContentIndex(root)
       try {
         await chmod(q, 0o000)

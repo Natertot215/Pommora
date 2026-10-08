@@ -99,6 +99,14 @@ export async function renameSweep(
 
 export type PropertyRename = { from: string; to: string } & SchemaCascade
 
+async function bothKeyHolders(root: string, from: string, to: string): Promise<string[]> {
+  const folders = await collectionFolders(root)
+  const fromHolders = await confirmedKeyHolders(root, from, folders)
+  if (fromHolders.length === 0) return []
+  const toHolders = new Set(await confirmedKeyHolders(root, to, folders))
+  return fromHolders.filter((f) => toHolders.has(f))
+}
+
 /** Validated before the journal and again on the registry it commits to, since a create can land between the two. The journal is staged BEFORE the commit: registry-first ordering means a crash between commit and sweep is recoverable from nowhere else, so the old name survives only there. */
 export function renameProperty(
   root: string,
@@ -113,12 +121,11 @@ export function renameProperty(
     if (to === prior.name) return ok(null)
     const named = validateName(to, Object.values(defs), propertyId)
     if (!named.ok) return named
-    // A change of case alone moves no key: every file's spelling already reads as the new name, and the holders a folded query finds are its own.
+    // A file holding only the new key is adopted, its value going live as a create's would; one holding both would lose a value to the merge. A change of case alone moves no key, and the holders a folded query finds are its own.
     const recased = normalizeTitle(to) === normalizeTitle(prior.name)
-    const holders = recased
-      ? []
-      : await confirmedKeyHolders(root, to, await collectionFolders(root))
-    if (holders.length) return fail('invalid-property', KEY_REFUSAL.held(to, holders.length))
+    const clashes = recased ? [] : await bothKeyHolders(root, prior.name, to)
+    if (clashes.length)
+      return fail('invalid-property', KEY_REFUSAL.held(prior.name, to, clashes.length))
     const record: SchemaJournal = { op: 'rename', id: propertyId, from: prior.name, to }
     await writeSchemaJournal(root, record)
     const edit = await mutateRegistry<Result<{ from: string; def: PropertyDefinition }>>(
