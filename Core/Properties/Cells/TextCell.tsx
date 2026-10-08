@@ -56,12 +56,14 @@ export function TextCell({
       onPointerOver={onPointerOver}
       onPointerOut={onPointerOut}
     >
-      <div className={cx('cell-text', overScrollEllipsis)}>
-        {lines.map(({ line, from }) => (
-          <span key={from} className="cell-text-line">
-            {renderCellContent(line, connections, undefined, undefined, from)}
-          </span>
-        ))}
+      <div className="cell-text-clip">
+        <div className={cx('cell-text', overScrollEllipsis)}>
+          {lines.map(({ line, from }) => (
+            <span key={from} className="cell-text-line">
+              {renderCellContent(line, connections, undefined, undefined, from)}
+            </span>
+          ))}
+        </div>
       </div>
       {onPane && (
         <span className="cell-pen">
