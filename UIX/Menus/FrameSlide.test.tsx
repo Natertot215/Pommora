@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { act, useEffect } from 'react'
+import { act, useEffect, useRef } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { FrameSlide } from './FrameSlide'
 import * as s from './frame-slide.css'
@@ -52,14 +52,15 @@ describe('FrameSlide', () => {
   it('what mounts in the slot a flip is heading for is live and shown in that render, so it can take focus', async () => {
     const seen: { inert: boolean; hidden: boolean }[] = []
     const Probe = (): React.JSX.Element => {
+      const ref = useRef<HTMLDivElement>(null)
       useEffect(() => {
-        const el = document.getElementById('probe')!
+        const el = ref.current!
         seen.push({
           inert: el.closest('[inert]') !== null,
           hidden: el.closest(`.${s.slotIdle}`) !== null,
         })
       }, [])
-      return <div id="probe">probe</div>
+      return <div ref={ref}>probe</div>
     }
     await act(async () => {
       root.render(<FrameSlide open={false} root={<div>alpha</div>} detail={null} />)
