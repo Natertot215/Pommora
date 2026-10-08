@@ -16,7 +16,7 @@ import { HIGHLIGHT_COLOR_NAMES, type HighlightColor } from '../MarkdownPM/Engine
 
 /** What sits under a right-click, sent to the host as the menu is asked for; main cannot see CM6 state. */
 export const editorMenuRequest = z.object({
-  scope: z.enum(['page', 'cell']),
+  scope: z.enum(['page', 'cell', 'text']),
   x: z.number(),
   y: z.number(),
   bold: z.boolean(),
@@ -132,7 +132,12 @@ export function editorContextItems(
     ),
   }
   const lists = { label: 'Lists', submenu: rows(LIST_ROWS) }
-  return s.scope === 'cell'
-    ? [...insertLink, lists, format]
-    : [...insertLink, lists, insert, format, embed, heading]
+  switch (s.scope) {
+    case 'page':
+      return [...insertLink, lists, insert, format, embed, heading]
+    case 'cell':
+      return [...insertLink, lists, format]
+    case 'text':
+      return [...insertLink, format]
+  }
 }

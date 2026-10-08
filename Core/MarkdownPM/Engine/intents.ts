@@ -14,6 +14,7 @@ import {
   type FenceInfo,
   type ListMarker,
   type MarkdownScope,
+  readsLists,
 } from './detect'
 import { carriedFrom, type DocScan, spanAt } from './docScan'
 import { isBlockquoteLine, lineIndexAt, quotePrefix, quotePrefixWidth } from './markdownCode'
@@ -570,7 +571,7 @@ function pushConstruct(
   const innerStart = ls + base
   const le = ls + line.length
   const caretOnLine = selStart >= ls && selStart <= le
-  const lm = parseListMarker(inner)
+  const lm = readsLists(scope) ? parseListMarker(inner) : null
   const glyph = lm && listGlyphOf(lm)
   // Only a resting caret reveals the marker: a drag's head snapping across the atomic marker would otherwise swap glyph and source under the pointer on every move.
   const onMarker =

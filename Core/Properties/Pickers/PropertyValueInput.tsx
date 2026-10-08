@@ -3,15 +3,18 @@ import { EditableInput } from '@pommora/uix/Fields/EditableInput'
 import { fillInput } from '@pommora/uix/Fields/fields.css'
 import { TextPicker } from '@pommora/uix/Pickers/TextPicker'
 import { solidColorCss } from '@pommora/uix/Theme/ramp'
+import type { ConnPage } from '../../Connections/pageIndex'
 import type { PropertyDefinition } from '../properties'
 import type { PropertyValue } from '../propertyValue'
 import { linkAlias, linkValueFromRename } from '../../Connections/linkValue'
 import { editorText, parseEditorValue } from '../parseEditorValue'
 import { NumberValuePicker } from './NumberValuePicker'
+import { TextPane } from './TextPane'
 
 export function PropertyValueInput({
   def,
   current,
+  holder,
   alias,
   popover,
   onCommit,
@@ -19,6 +22,7 @@ export function PropertyValueInput({
 }: {
   def: PropertyDefinition
   current: PropertyValue | null
+  holder?: ConnPage
   alias?: boolean
   popover?: { open: boolean; triggerRef: RefObject<HTMLElement | null> }
   onCommit: (next: PropertyValue | null) => void
@@ -30,6 +34,16 @@ export function PropertyValueInput({
         {...popover}
         def={def}
         current={current}
+        onCommit={onCommit}
+        onDismiss={onClose}
+      />
+    )
+  if (popover && def.type === 'text')
+    return (
+      <TextPane
+        {...popover}
+        current={current}
+        holder={holder}
         onCommit={onCommit}
         onDismiss={onClose}
       />

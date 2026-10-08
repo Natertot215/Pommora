@@ -17,19 +17,19 @@ import { inCodeAt } from '../Engine/docScan'
 import { linkAt, pageLinkPattern } from '../../Connections/connections'
 import { normalizeTitle } from '../../Paths/caseFold'
 import { restedOnLink } from '../Links/linkReveal'
-import { headingTargetOf } from './headingTarget'
+import { headingTargetOf, pageHeadingTarget } from './headingTarget'
 import type { AutocompletePaneProps } from './AutocompletePane'
 import type { ConnectionsApi } from '../Links/connectionsApi'
 import { embedExclusions } from '../Embeds/embedWidget'
 import { embeddable } from '../Engine/embedClaims'
 import type { OutlineHeading } from '../Engine/headingScan'
-import { type EditorHost, editorHost, pageEditorAt } from '../api'
+import { type EditorHost, editorHost, ownPage } from '../api'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import { caretGeometry, type CaretGeometry, type PaneCtl, usePaneCtl } from '../Menus/caretPane'
 
 export interface AcState extends AutocompleteQuery, CaretGeometry {}
 
-interface ConnectionAutocomplete {
+export interface ConnectionAutocomplete {
   setAc: (s: AcState | null) => void
   acCtl: RefObject<PaneCtl>
   pane: AutocompletePaneProps
@@ -56,10 +56,10 @@ export function useConnectionAutocomplete(
   const target = useMemo(() => {
     if (!heading) return null
     if (title) return headingTargetOf(host, getConnRef.current(), title)
-    // The host document's outline for a bare `#`: a cell's own document is one cell, so the page around it answers.
-    const view = viewRef.current
-    const page = view && (pageEditorAt(view.dom).view ?? view)
-    return { kind: 'warm' as const, outline: page ? docOutline(page.state.doc) : [] }
+    // The outline of the page a bare `#` answers to, never the editor's own document when that is a cell or a value.
+    const own = viewRef.current && ownPage(viewRef.current)
+    if (own?.kind === 'held') return pageHeadingTarget(host, own.page)
+    return { kind: 'warm' as const, outline: own ? docOutline(own.view.state.doc) : [] }
   }, [heading, title])
   const outline = target?.kind === 'warm' ? target.outline : fetched
   // A freshly typed `#` shows the empty frame while a cold page's rows load; a typed prefix, or a caret placed in a finished link, waits for the rows so nothing flashes.

@@ -63,7 +63,7 @@ import {
 import { lineEndOf, lineIndexAt } from './Engine/markdownCode'
 import { resolveMdTarget, wikiLinkView, type ConnectionsApi } from './Links/connectionsApi'
 import type { LinkStatus } from '../Connections/connections'
-import { editorHost, pageEditorAt, redrawNudge } from './api'
+import { editorHost, ownPage, redrawNudge } from './api'
 import { checkMarkSvg, checkboxClass } from '@pommora/uix/Controls/Checkbox'
 import * as btn from '@pommora/uix/Buttons/button-base.css'
 import { buttonClass, segmentDivider } from '@pommora/uix/Buttons/Button'
@@ -403,6 +403,17 @@ function atomicFor(
   })
 }
 
+// A body's headings as `read` takes them from its document; a held page's come from the index, which keys them.
+function ownHeadings(
+  view: EditorView,
+  conn: ConnectionsApi | undefined,
+  read: (doc: Text) => readonly string[],
+): readonly string[] | undefined {
+  const own = ownPage(view)
+  if (!own) return undefined
+  return own.kind === 'held' ? conn?.headingsOf?.(own.page.path) : read(own.view.state.doc)
+}
+
 function build(view: EditorView, conn: ConnectionsApi | undefined, scope: MarkdownScope): Built {
   // One derivation per doc VERSION (docCache) — a caret move re-derives only its own lines, never an O(doc) walk.
   const scan = docScan(view.state.doc)
@@ -533,8 +544,7 @@ function build(view: EditorView, conn: ConnectionsApi | undefined, scope: Markdo
   })
   if (conn) {
     const { headingLinkStyle } = settings
-    const page = scope === 'cell' ? pageEditorAt(view.dom).view : view
-    const ownKeys = page ? docHeadingKeys(page.state.doc) : undefined
+    const ownKeys = ownHeadings(view, conn, docHeadingKeys)
     tokens.forEach((tk, i) => {
       if (tk.kind !== 'wikiLink') return
       const alias = aliasedToken(tk)
@@ -607,7 +617,7 @@ function build(view: EditorView, conn: ConnectionsApi | undefined, scope: Markdo
     })
   }
   if (settings.inPageHeadingResolution === 'automatic') {
-    const sectionHeadings = docSectionHeadings(view.state.doc)
+    const sectionHeadings = ownHeadings(view, conn, docSectionHeadings) ?? []
     const sectionMark = Decoration.mark({ class: 'md-connection-resolved md-section-run' })
     for (const { from: a, to: b } of view.visibleRanges)
       for (const run of sectionRunsIn(

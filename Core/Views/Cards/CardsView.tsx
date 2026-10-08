@@ -47,7 +47,7 @@ import { useColumnStyleMap } from '../Host/useColumnStyles'
 import { GroupBand } from '../Bands/GroupBand'
 import { orderedChildren } from '../Pipeline/group'
 import { rowHover, type TitleMenuContext, useViewInteractions } from '../Host/useViewInteractions'
-import type { ValueContext } from '../../Properties/valueContext'
+import { holderOf, type ValueContext } from '../../Properties/valueContext'
 import { NO_TRAIL, type TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { ancestryOf } from '../../Nexus/treeIndex'
 import { stabilize } from '../../Nexus/treeStabilize'
@@ -230,6 +230,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     popoverOpen && vTarget ? { ...vTarget, ...valuePicker } : null,
     popoverOpen,
   )
+  const popoverRow = popover && rowById.get(popover.rowId)
   const commitPicked = (v: PropertyValue | null, entry?: PickEntry): void => {
     const req = valuePicker ?? addPicker
     const row = req && rowById.get(req.rowId)
@@ -491,6 +492,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
             popover={{ open: popoverOpen, triggerRef: pickerAnchorRef }}
             def={popover.def}
             current={popover.current}
+            holder={popoverRow ? holderOf(popoverRow, ctx) : undefined}
             alias={popover.kind === 'rename'}
             onCommit={commitPicked}
             onClose={() => setValuePicker(null)}

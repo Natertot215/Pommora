@@ -1,4 +1,5 @@
 import type { ActionItem, MenuOptions } from '../Actions/menuModel'
+import type { ConnPage } from '../Connections/pageIndex'
 import type { ColumnStyle } from '../Properties/columnStyles'
 import type { PropertyDefinition } from '../Properties/properties'
 import type { PropertyValue } from '../Properties/propertyValue'
@@ -16,6 +17,7 @@ interface MenuPending extends MenuOptions {
 export interface ValuePickRequest {
   def: PropertyDefinition
   current: PropertyValue
+  holder?: ConnPage
   trigger: HTMLElement
   commit: (value: PropertyValue | null) => void
   style?: ColumnStyle
