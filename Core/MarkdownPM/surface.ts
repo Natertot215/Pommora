@@ -78,7 +78,7 @@ export const inlineSurface = (
   editorMenu(scope),
 ]
 
-/** What an editor mounted outside a page body holds beside its surface: the `[[` pane's keys, with Enter picking its row, the marker- and pair-aware Backspace, the format chords, and the query that opens the pane. Each mount adds only its own ways out. */
+/** What an editor mounted outside a page body holds beside its surface: the `[[` pane's keys, with Enter and Tab picking its row, the marker- and pair-aware Backspace, the format chords, and the query that opens the pane. Each mount adds only its own ways out. */
 export const editorBase = ({
   host,
   getConn,
@@ -98,6 +98,7 @@ export const editorBase = ({
     keymap.of([
       ...paneKeys([acCtl]),
       { key: 'Enter', run: whenPaneOpen([acCtl], (c) => c.pick()) },
+      { key: 'Tab', run: whenPaneOpen([acCtl], (c) => c.pick()) },
       {
         key: 'Backspace',
         run: (view) => {

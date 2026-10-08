@@ -14,7 +14,7 @@ import { drawnRawAt, MD_LINK_CLASS } from '../decorations'
 import { applyUrlLinkAction } from './linkFormat'
 import { pointerHandlers, type PointerTarget } from '../Gestures/pointerPath'
 import { travelToHeading } from '../travel'
-import { type EditorHost, editorHost, ownPage, pageEditorAt } from '../api'
+import { type EditorHost, editorHost, type OwnPage, ownPage, pageEditorAt } from '../api'
 
 type GetApi = () => ConnectionsApi | undefined
 
@@ -55,20 +55,38 @@ export function followTarget(
 ): (() => void) | null {
   const el = event.target as Element
   const { view } = pageEditorAt(el)
-  if (!view || target.kind === 'invalid') return null
+  if (!view) return null
   const host = view.state.facet(editorHost)
   if (host.glance?.contains(el)) return null
-  switch (target.kind) {
-    case 'self': {
-      const own = ownPage(el)
-      if (own?.kind === 'held')
-        return api ? () => openPage(api, own.page, isCmd(event), target.heading) : null
-      return own && (() => travelToHeading(own.view, target.heading, own.view.posAtDOM(own.seat)))
-    }
+  return resolveFollow(target, ownPage(el), api, event, host.openLink)
+}
+
+/** A bare `#Heading` held by a value names the page holding the value. */
+export const heldTarget = (target: MdTarget, own: OwnPage | null): MdTarget =>
+  target.kind === 'self' && own?.kind === 'held'
+    ? { kind: 'page', page: own.page, heading: target.heading }
+    : target
+
+/** What a follow does once the surface it starts on is known: `own` is the page a bare `#Heading` answers to. */
+export function resolveFollow(
+  target: MdTarget,
+  own: OwnPage | null,
+  api: ConnectionsApi | undefined,
+  event: Pick<MouseEvent, 'metaKey' | 'ctrlKey'>,
+  openLink: (url: string) => void,
+): (() => void) | null {
+  const named = heldTarget(target, own)
+  switch (named.kind) {
+    case 'self':
+      return own?.kind === 'body'
+        ? () => travelToHeading(own.view, named.heading, own.view.posAtDOM(own.seat))
+        : null
     case 'page':
-      return api ? () => openPage(api, target.page, isCmd(event), target.heading) : null
+      return api ? () => openPage(api, named.page, isCmd(event), named.heading) : null
     case 'external':
-      return () => host.openLink(target.url)
+      return () => openLink(named.url)
+    case 'invalid':
+      return null
   }
 }
 

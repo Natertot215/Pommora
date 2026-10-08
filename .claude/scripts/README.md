@@ -56,15 +56,9 @@ table.
 Property Frame's option editor's share of them — creation from the footer, blank and duplicate
 refusals, drag reorder, the right-click menu's Style and Edit Option, the editor's Clear and Remove
 with the Items each names, the popup's rename, color, appearance and icon, and the host's own blank
-refusal — against the real app, on the
-Table, Cards, mass-assign, and Properties-panel surfaces alike, and asserts each one in
-`.nexus/properties.json`, the page files and the view's sidecar. It builds the app, backs up
-`~/Test`, launches the build with its own userData and debug port, seeds `Collection A/Set Alpha`
-with its properties, view, and pages, writes a screenshot of each state it produces to
-`$POMMORA_DRIVE_SHOTS` (the system temp directory's `option-picker-shots` otherwise), and restores
-`~/Test` when it ends or is interrupted. Native menus are chosen with System Events keystrokes, so
-the terminal needs Accessibility permission, and the run refuses to send a key unless the app is
-frontmost.
+refusal — against the real app, on the Table, Cards, mass-assign, and Properties-panel surfaces
+alike, and asserts each one in `.nexus/properties.json`, the page files and the view's sidecar. It
+seeds `Collection A/Set Alpha` with its properties, view, and pages on debug port 9343.
 
 `Text Property Drive/live-drive.mjs` drives the Text property end to end against the real app, in
 four groups that follow the phases that built it: the catalog and the inline field (decoding a
@@ -74,12 +68,15 @@ Table, both Card formats, and the Properties panel; the index and the rename cas
 links inside a value; and TextPane (keys, autocomplete, formatting, the native menu, every
 way it saves, and style parity with the page body). It takes the groups to run as arguments —
 `node live-drive.mjs 1 2` — and asserts each step in the page files, the view sidecar, the DOM, or
-a channel's reply. It builds the app, backs up `~/Test`, launches the build with its own userData
-and debug port 9353, seeds `Collection A/Set Alpha` with its properties, views, and `Drive …`
-pages, writes a screenshot of each state it produces to `$POMMORA_DRIVE_SHOTS` (the system temp
-directory's `text-property-shots` otherwise), and restores `~/Test` when it ends or is
-interrupted. Native menus are chosen with System Events keystrokes, so the terminal needs
-Accessibility permission, and the run refuses to send a key unless the app is frontmost.
+a channel's reply. It seeds `Collection A/Set Alpha` with its properties, views, and `Drive …` pages
+on debug port 9353.
+
+Both drives share `drive-harness.mjs`, which builds the app, backs up `~/Test`, launches the build
+with its own userData and the drive's debug port, writes a screenshot of each state to
+`$POMMORA_DRIVE_SHOTS` (a per-drive folder in the system temp directory otherwise), and restores
+`~/Test` when the run ends or is interrupted; it chooses native menus with System Events
+keystrokes, so the terminal needs Accessibility permission, and it refuses to send a key unless the
+app is frontmost.
 
 `loc.py` and `check-atlas.mjs` run before every commit through the versioned git hook
 `../hooks/pre-commit`, which copies the codebase audit into `Dashboard/Audit/audit.md`, runs

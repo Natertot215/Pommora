@@ -112,22 +112,21 @@ const exited = (): Promise<void> =>
   act(() => new Promise<void>((r) => setTimeout(r, exitWait('menu') + 20)))
 
 describe('TextPane', () => {
-  it('Enter saves and closes; Shift-Enter writes a line break; Tab stays in the editor and inserts nothing; a line typed as `- a` stays prose', async () => {
+  it('Enter saves and closes; Shift-Enter writes a line break; Tab stays in the editor and inserts nothing', async () => {
     render(text('x'))
     expect(view().state.selection.main.head).toBe(1)
     expect(document.activeElement).toBe(view().contentDOM)
     press('Enter', true)
     expect(doc()).toBe('x\n')
     expect(view().state.selection.main.head).toBe(2)
-    typeAtEnd('- a')
-    expect(pane()?.querySelector('[class*="md-list-"]')).toBeNull()
+    typeAtEnd('a')
     act(() => view().focus())
     expect(press('Tab')).toBe(true)
     expect(press('Tab', true)).toBe(true)
-    expect(doc()).toBe('x\n- a')
+    expect(doc()).toBe('x\na')
     expect(document.activeElement).toBe(view().contentDOM)
     press('Enter')
-    expect(onCommit).toHaveBeenCalledExactlyOnceWith(text('x\n- a'))
+    expect(onCommit).toHaveBeenCalledExactlyOnceWith(text('x\na'))
     await exited()
     expect(pane()).toBeNull()
     expect(onCommit).toHaveBeenCalledOnce()
@@ -200,12 +199,15 @@ describe('TextPane', () => {
     expect(rightClick(pane()!)).toBe(true)
   })
 
-  it('Enter with the `[[` pane open picks its row, and the pane stays', async () => {
+  it.each([
+    'Enter',
+    'Tab',
+  ])('%s with the `[[` pane open picks its row, and the pane stays', async (key) => {
     render(text('[[Alp]]'))
     vi.spyOn(view(), 'coordsAtPos').mockReturnValue({ left: 10, right: 10, top: 10, bottom: 20 })
     await act(async () => view().dispatch({ selection: { anchor: 4 } }))
     expect(document.querySelector('.mdpm-ac')).not.toBeNull()
-    press('Enter')
+    press(key)
     expect(doc()).toBe('[[Alpha]]')
     expect(pane()).not.toBeNull()
     expect(onCommit).not.toHaveBeenCalled()

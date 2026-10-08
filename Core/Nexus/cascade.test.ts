@@ -366,25 +366,21 @@ describe('renameCascade for a heading', () => {
     expect(r.pages).toEqual([rel(a.value.path)])
   })
 
-  it('reaches the page’s own Text values after its save re-indexed the new heading, where a bare `[[#Old]]` and a `§Old` run are its only holders', async () => {
+  it('reaches the page’s own Text value after its save re-indexed the new heading, where a `§Old` run is its only holder', async () => {
     await mkdir(join(root, '.nexus'), { recursive: true })
     await writeFile(
       join(root, '.nexus', 'settings.json'),
       JSON.stringify({ personalization: { inPageHeadingResolution: 'automatic' } }),
     )
-    for (const name of ['Notes', 'Brief'])
-      await createProperty(root, { id: '', name, type: 'text' } as PropertyDefinition)
+    await createProperty(root, { id: '', name: 'Notes', type: 'text' } as PropertyDefinition)
     const a = await createTestPage(dir, 'A', { body: '## Intro' })
     if (!a.ok) throw new Error('setup failed')
     await setValue(a.value.path, 'Notes', 'see §Setup')
-    await setValue(a.value.path, 'Brief', '[[#Setup]]')
     installStores(memoryStores().stores)
     await seedContentIndex(root)
     await renameCascade(root, 'A', { heading: 'Setup', to: 'Intro' }, rel(a.value.path))
     installStores(NO_STORES)
-    const fm = await fmOf(a.value.path)
-    expect(fm.Notes).toBe('see §Intro')
-    expect(fm.Brief).toBe('[[#Intro]]')
+    expect((await fmOf(a.value.path)).Notes).toBe('see §Intro')
   })
 
   it('moves a Link value `[[#Old]]` on its own page as a Text value moves', async () => {

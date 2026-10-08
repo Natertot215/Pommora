@@ -24,9 +24,9 @@ import {
 } from '../Links/connectionsApi'
 import { linkActionText, linkHalves } from '../Links/linkFormat'
 import { wikiAuthorTarget } from '../Links/linkEdit'
-import { dwellTarget, followTarget } from '../Links/linkClicks'
+import { dwellTarget, followTarget, heldTarget } from '../Links/linkClicks'
 import { CITE_GLYPH, followCitation } from '../Citations/citationPointer'
-import type { EditorHost } from '../api'
+import type { EditorHost, OwnPage } from '../api'
 import type { HeadingLinkStyle } from '../../Settings/personalization'
 import { CheckMark, checkboxClass } from '@pommora/uix/Controls/Checkbox'
 import { cx } from '@pommora/uix/Utilities/cx'
@@ -287,9 +287,34 @@ function StaticCellImpl({
   // What the cell reads NOW: a native menu can be held open while an undo moves the cell underneath it.
   const live = useLatest(text)
 
+  const menuAt = (e: React.MouseEvent, api: ConnectionsApi): ConnMenuTarget | null => {
+    const span = linkSpanAt(e.target)
+    const found = span && linkTokenAt(text, span[0])
+    if (!found) return null
+    return menuTarget(
+      () => {
+        const now = linkTokenAt(live.current, span[0])
+        return now && live.current.slice(...now.range) === text.slice(...found.range)
+          ? { text: live.current, tk: now }
+          : null
+      },
+      found,
+      text,
+      api,
+      host,
+      onCommit,
+      onSelect,
+    )
+  }
+  const { linkAt, dismiss, onContextMenu, onPointerOver, onPointerOut } = linkGestures(
+    text,
+    connections,
+    host.glance,
+    null,
+    menuAt,
+  )
+
   // Following waits for the click so a drag that starts on a link selects instead.
-  const linkAt = (e: React.MouseEvent): ReturnType<typeof cellLinkTarget> =>
-    cellLinkTarget(text, e.target, connections?.())
   const claimLink = (e: React.MouseEvent): (() => void) | null => {
     const found = linkAt(e)
     const go = found && followTarget(found.target, connections?.(), e)
@@ -326,52 +351,20 @@ function StaticCellImpl({
     return () => followCitation(label, connections?.(), e)
   }
 
-  const openMenu = (e: React.MouseEvent): boolean => {
-    const span = linkSpanAt(e.target)
-    const api = connections?.()
-    if (!span || !api?.menu) return false
-    const found = linkTokenAt(text, span[0])
-    if (!found) return false
-    const target = menuTarget(
-      () => {
-        const now = linkTokenAt(live.current, span[0])
-        return now && live.current.slice(...now.range) === text.slice(...found.range)
-          ? { text: live.current, tk: now }
-          : null
-      },
-      found,
-      text,
-      api,
-      host,
-      onCommit,
-      onSelect,
-    )
-    if (!target) return false
-    e.preventDefault()
-    e.stopPropagation()
-    api.menu(target)
-    return true
-  }
-
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: a pointer-only drag affordance; keyboard reordering is not implemented
     // biome-ignore lint/a11y/useKeyWithClickEvents: the cell's own keyboard route is its editor, entered by Enter from the grid
     <div
       className="mdpm-tbl-cell-static"
       onContextMenu={(e) => {
-        if (!host.glance?.contains(e.currentTarget)) host.glance?.close()
-        if (openMenu(e) || readOnly?.()) return
+        if (onContextMenu(e) || readOnly?.()) return
         onActivate({ x: e.clientX, y: e.clientY })
       }}
-      onPointerOver={(e) => {
-        const glance = host.glance
-        const found = glance && linkAt(e)
-        if (found) dwellTarget(found.target, glance, found.el)?.()
-      }}
-      onPointerOut={() => host.glance?.cancel()}
+      onPointerOver={onPointerOver}
+      onPointerOut={onPointerOut}
       onClick={(e) => {
         if (e.button !== 0) return
-        if (!host.glance?.contains(e.currentTarget)) host.glance?.close()
+        dismiss(e)
         const go = claimCheckbox(e) ?? claimCite(e) ?? claimLink(e)
         if (go) return go()
         if (readOnly?.()) return
@@ -403,6 +396,45 @@ function StaticCellImpl({
       {renderCellBody(text, connections, around, linkStyle)}
     </div>
   )
+}
+
+/** The link gestures a resting surface shares: a press outside the glance closes it, a link dwells into one, and a right-click on a link opens the menu `menuAt` builds — read-only by default, with `own` naming the page a bare `#Heading` answers to. */
+export function linkGestures(
+  text: string,
+  connections: (() => ConnectionsApi | undefined) | undefined,
+  glance: EditorHost['glance'],
+  own: OwnPage | null = null,
+  menuAt?: (e: React.MouseEvent, api: ConnectionsApi) => ConnMenuTarget | null,
+) {
+  const linkAt = (e: React.SyntheticEvent): ReturnType<typeof cellLinkTarget> =>
+    cellLinkTarget(text, e.target, connections?.())
+  const dismiss = (e: React.SyntheticEvent): void => {
+    if (!glance?.contains(e.currentTarget)) glance?.close()
+  }
+  const readOnlyMenu = (e: React.MouseEvent): ConnMenuTarget | null => {
+    const found = linkAt(e)
+    return found && linkMenuTarget(heldTarget(found.target, own))
+  }
+  return {
+    linkAt,
+    dismiss,
+    /** True when a link's menu opened. */
+    onContextMenu: (e: React.MouseEvent): boolean => {
+      dismiss(e)
+      const api = connections?.()
+      const target = api?.menu && (menuAt ? menuAt(e, api) : readOnlyMenu(e))
+      if (!target) return false
+      e.preventDefault()
+      e.stopPropagation()
+      api.menu?.(target)
+      return true
+    },
+    onPointerOver: (e: React.PointerEvent): void => {
+      const found = glance && linkAt(e)
+      if (found) dwellTarget(heldTarget(found.target, own), glance, found.el)?.()
+    },
+    onPointerOut: (): void => glance?.cancel(),
+  }
 }
 
 export function cellLinkTarget(

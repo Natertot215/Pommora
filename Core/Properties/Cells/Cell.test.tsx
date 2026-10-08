@@ -267,26 +267,28 @@ describe('a chip list', () => {
 })
 
 describe('a text value', () => {
+  const page = { id: 'p9', title: 'Target', path: 'X/Target.md' }
+  const connectionsWith = (menu?: ConnectionsApi['menu']) => (): ConnectionsApi | undefined =>
+    ({
+      resolve: (title: string) =>
+        title === 'Target' ? { status: 'resolved', page } : { status: 'phantom', page: null },
+      candidates: () => [],
+      open: () => {},
+      menu,
+    }) as unknown as ConnectionsApi
+
   it('renders every line of the value; the one-line clip is the class, not a slice', () => {
     mount(rowWith({ prop_notes: 'first line\nsecond line' }), 'prop_notes', {})
     const root = host.querySelector('.cell-text')
     expect(root?.textContent).toBe('first line\nsecond line')
   })
   it('colors a link it holds through the context’s connections, as a resting table cell does', () => {
-    const page = { id: 'p9', title: 'Target', path: 'X/Target.md' }
-    const connections = () =>
-      ({
-        resolve: (title: string) =>
-          title === 'Target' ? { status: 'resolved', page } : { status: 'phantom', page: null },
-        candidates: () => [],
-        open: () => {},
-      }) as unknown as ConnectionsApi
     act(() =>
       root.render(
         <Cell
           row={rowWith({ prop_notes: 'see [[Target]] and [[Nowhere]]' })}
           column={col('prop_notes')}
-          ctx={{ ...ctx, connections }}
+          ctx={{ ...ctx, connections: connectionsWith() }}
           hideIcon={false}
           style={dateDefaults('full')}
         />,
@@ -296,22 +298,13 @@ describe('a text value', () => {
     expect(host.querySelector('.md-connection-phantom')?.textContent).toBe('Nowhere')
   })
   it('opens the link menu on a right-click over a link it holds, and leaves the rest to the cell menu', () => {
-    const page = { id: 'p9', title: 'Target', path: 'X/Target.md' }
     const menu = vi.fn()
-    const connections = () =>
-      ({
-        resolve: (title: string) =>
-          title === 'Target' ? { status: 'resolved', page } : { status: 'phantom', page: null },
-        candidates: () => [],
-        open: () => {},
-        menu,
-      }) as unknown as ConnectionsApi
     act(() =>
       root.render(
         <Cell
           row={rowWith({ prop_notes: 'see [[Target]] first' })}
           column={col('prop_notes')}
-          ctx={{ ...ctx, connections }}
+          ctx={{ ...ctx, connections: connectionsWith(menu) }}
           hideIcon={false}
           style={dateDefaults('full')}
         />,

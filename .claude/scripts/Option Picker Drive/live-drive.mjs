@@ -1,103 +1,13 @@
-import { execFileSync, spawn } from 'node:child_process'
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
-import { homedir, tmpdir } from 'node:os'
-import { join } from 'node:path'
-import { ulid } from 'ulidx'
-import { parse } from 'yaml'
-
-const REPO = join(homedir(), 'The Studio/Projects/Project Pommora')
-const ELECTRON = join(REPO, 'node_modules/electron/dist/Electron.app/Contents/MacOS/Electron')
-const NEXUS = join(homedir(), 'Test')
-const PORT = 9343
-const SHOTS = process.env.POMMORA_DRIVE_SHOTS ?? join(tmpdir(), 'option-picker-shots')
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
-async function until(what, fn, ms = 30000) {
-  const end = Date.now() + ms
-  while (Date.now() < end) {
-    const v = await fn().catch(() => undefined)
-    if (v) return v
-    await sleep(100)
-  }
-  throw new Error(`Timed out waiting for ${what}`)
-}
-async function connect() {
-  const target = await until('the app window', async () => {
-    const list = await (await fetch(`http://127.0.0.1:${PORT}/json/list`)).json()
-    return list.find((t) => t.type === 'page' && t.url.startsWith('app://'))
-  })
-  const ws = new WebSocket(target.webSocketDebuggerUrl)
-  await new Promise((ok, fail) => { ws.onopen = ok; ws.onerror = fail })
-  const pending = new Map(); let next = 0
-  ws.onmessage = (m) => { const { id, result, error } = JSON.parse(m.data); pending.get(id)?.(error ? Promise.reject(new Error(error.message)) : result); pending.delete(id) }
-  const send = (method, params = {}) => new Promise((r) => { pending.set(++next, r); ws.send(JSON.stringify({ id: next, method, params })) })
-  const evaluate = async (expression) => {
-    const { result, exceptionDetails } = await send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true })
-    if (exceptionDetails) throw new Error(exceptionDetails.exception?.description ?? exceptionDetails.text)
-    return result.value
-  }
-  return { send, evaluate, close: () => ws.close() }
-}
-const ask = (cdp, channel, ...args) => cdp.evaluate(`window.nexus.ask(${JSON.stringify(channel)}, ...${JSON.stringify(args)})`)
-
-const results = []
-const check = (name, pass, detail) => { results.push({ name, pass }); console.log(`${pass ? 'PASS' : 'FAIL'}  ${name}${detail ? `\n      ${detail}` : ''}`) }
-
-const osa = (script) => execFileSync('osascript', ['-e', script], { encoding: 'utf8' }).trim()
-const key = (code) => osa(`tell application "System Events" to key code ${code}`)
-const KEY = { down: 125, right: 124, ret: 36, esc: 53 }
-
-async function activate(cdp, pid) {
-  osa(`tell application "System Events" to set frontmost of (first process whose unix id is ${pid}) to true`)
-  await cdp.send('Page.bringToFront')
-  await sleep(300)
-  const front = osa(`tell application "System Events" to get frontmost of (first process whose unix id is ${pid})`)
-  if (front !== 'true') throw new Error('The app is not frontmost; no keystroke was sent.')
-}
+import {
+  ask, boxOf, check, chooseNative, click, frontmatter, launch, mintPageId, mouseClick, portalOpen, pressKey, read,
+  restore, results, sel, shot, sleep, textEl, until,
+} from '../drive-harness.mjs'
 
 const PICKER_ROWS = '[data-picker-portal] [data-line-row]'
 const TITLE_FIELD = '[aria-label="Option Title"]'
-const sel = (css) => `document.querySelector(${JSON.stringify(css)})`
-const textEl = (scope, text) =>
-  `[...document.querySelectorAll(${JSON.stringify(scope)})].find((e) => e.children.length === 0 && e.textContent.trim() === ${JSON.stringify(text)})`
 const pickerRow = (label) =>
   `[...document.querySelectorAll(${JSON.stringify(PICKER_ROWS)})].find((e) => e.textContent.trim() === ${JSON.stringify(label)})`
 
-const boxOf = (cdp, expr) =>
-  cdp.evaluate(`(() => { const el = (${expr}); if (!el) throw new Error('no element for ' + ${JSON.stringify(expr)}); const b = el.getBoundingClientRect(); return { x: b.x + b.width / 2, y: b.y + b.height / 2 } })()`)
-
-async function mouseClick(cdp, expr, button = 'left') {
-  const { x, y } = await boxOf(cdp, expr)
-  for (const type of ['mousePressed', 'mouseReleased'])
-    await cdp.send('Input.dispatchMouseEvent', { type, x, y, button, clickCount: 1 })
-  await sleep(500)
-}
-
-// A freshly popped native menu highlights nothing: the first Down lands on row 1.
-async function chooseNative(cdp, pid, expr, { downs, into = [] }) {
-  await activate(cdp, pid)
-  await mouseClick(cdp, expr, 'right')
-  try {
-    for (let i = 0; i < downs; i++) key(KEY.down)
-    for (const d of into) {
-      key(KEY.right)
-      for (let i = 0; i < d; i++) key(KEY.down)
-    }
-    key(KEY.ret)
-  } catch (e) {
-    key(KEY.esc)
-    throw e
-  }
-  await sleep(600)
-}
-
-const click = (cdp, expr) => cdp.evaluate(`(${expr}).click()`)
-
-const VK = { Enter: 13, Escape: 27 }
-async function pressKey(cdp, name) {
-  for (const type of ['keyDown', 'keyUp'])
-    await cdp.send('Input.dispatchKeyEvent', { type, key: name, code: name, windowsVirtualKeyCode: VK[name] })
-  await sleep(300)
-}
 async function enter(cdp) {
   await pressKey(cdp, 'Enter')
   await sleep(800)
@@ -124,22 +34,11 @@ async function drag(cdp, from, to, held) {
   await sweep(cdp, a, { x: b.x, y: b.y - 6 }, { steps: 8, held })
 }
 
-let shots = 0
-async function shot(cdp, name) {
-  const { data } = await cdp.send('Page.captureScreenshot', { format: 'png' })
-  writeFileSync(join(SHOTS, `${String(++shots).padStart(2, '0')}-${name}.png`), Buffer.from(data, 'base64'))
-}
-
-const registry = () => JSON.parse(readFileSync(join(NEXUS, '.nexus/properties.json'), 'utf8')).defs
+const registry = () => JSON.parse(read('.nexus/properties.json')).defs
 const defNamed = (name) => Object.values(registry()).find((d) => d.name === name)
 const optionValues = (name) => (defNamed(name).select_options ?? []).map((o) => o.value)
-const read = (rel) => readFileSync(join(NEXUS, rel), 'utf8')
-const page = (title) => read(`Collection A/Set Alpha/${title}.md`)
-const frontmatter = (title) => parse(/^---\n([\s\S]*?)\n---/.exec(page(title))[1])
 const lists = (title, prop, value) => [frontmatter(title)[prop]].flat().includes(value)
 const driveView = () => JSON.parse(read('Collection A/_pagecollection.json')).views.find((v) => v.name === 'Drive Table')
-
-const mintPageId = () => { const id = ulid(); return `${id.slice(0, 10)}P${id.slice(11)}` }
 
 const PROPS = { 'Drive Select': 'select', 'Drive Multi': 'multiSelect', 'Drive Status': 'status' }
 const ids = {}
@@ -177,7 +76,6 @@ async function openDriveTable(cdp) {
   await pressKey(cdp, 'Escape')
 }
 
-const portalOpen = (cdp) => cdp.evaluate(`!!document.querySelector('[data-picker-portal]')`)
 const popupOpen = (cdp) => cdp.evaluate(`!!document.querySelector(${JSON.stringify(TITLE_FIELD)})`)
 const drafting = (cdp) => cdp.evaluate(`!!document.querySelector('[data-picker-portal] input')`)
 const cell = (title, prop) => `[...document.querySelectorAll('.data-row')].find((r) => r.textContent.includes(${JSON.stringify(title)})).querySelectorAll('.data-cell')[${Object.keys(PROPS).indexOf(prop) + 1}]`
@@ -402,35 +300,11 @@ async function stepHostRefusal(cdp) {
   check('the host refuses a blank option title', r.ok === false, JSON.stringify(r))
 }
 
-execFileSync('npm', ['run', 'build'], { cwd: REPO, stdio: ['ignore', 'ignore', 'inherit'] })
-const backup = mkdtempSync(join(tmpdir(), 'pommora-live-'))
-execFileSync('rsync', ['-a', NEXUS + '/', join(backup, 'Test') + '/'])
-const userData = join(backup, 'ud'); mkdirSync(userData)
-writeFileSync(join(userData, 'pommora.json'), JSON.stringify({ lastNexusPath: NEXUS }))
-mkdirSync(SHOTS, { recursive: true })
-
-let child, cdp
-async function restore() {
-  if (child) {
-    child.kill('SIGTERM')
-    await Promise.race([new Promise((r) => child.once('exit', r)), sleep(8000)])
-    if (child.exitCode === null) child.kill('SIGKILL')
-  }
-  const strays = execFileSync('ps', ['-A', '-o', 'pid=,command='], { encoding: 'utf8' }).split('\n').filter((l) => l.includes(userData)).map((l) => Number.parseInt(l, 10))
-  for (const pid of strays) try { process.kill(pid, 'SIGKILL') } catch {}
-  execFileSync('rsync', ['-a', '--delete', join(backup, 'Test') + '/', NEXUS + '/'])
-  rmSync(backup, { recursive: true, force: true })
-  console.log(`~/Test restored · screenshots in ${SHOTS}`)
-}
-process.once('SIGINT', () => restore().then(() => process.exit(130)))
+let cdp
 try {
-  const env = { ...process.env, POMMORA_USERDATA: userData, POMMORA_DEBUG_PORT: String(PORT) }
-  delete env.ELECTRON_RUN_AS_NODE; delete env.ELECTRON_RENDERER_URL
-  child = spawn(ELECTRON, ['.'], { cwd: join(REPO, 'Desktop'), env, stdio: 'ignore' })
-  const pid = child.pid
-  cdp = await connect()
-  await until('the sidebar', () => cdp.evaluate(`!!document.querySelector('.row span')`))
-  await sleep(3000)
+  const app = await launch(9343, 'option-picker-shots')
+  cdp = app.cdp
+  const { pid } = app
   await seed(cdp)
   await proveNativeMenu(cdp, pid)
   await stepCreate(cdp)

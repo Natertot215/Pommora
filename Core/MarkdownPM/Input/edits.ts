@@ -178,7 +178,6 @@ export function outdentListOnShiftTab(
   }
 }
 
-// Off a page `#` and `>` are prose, so only a list marker collapses there, and in a Text value nothing does.
 function markerEndOf(line: string, scope: MarkdownScope): number | null {
   const lm = readsLists(scope) ? parseListMarker(line) : null
   if (lm) return lm.contentStart

@@ -52,6 +52,9 @@ export const borderedField = style([
   },
 ])
 
+/** The bordered chrome without its height floor or block inset, for a row that sets its own height. */
+export const borderedFieldFlush = style([borderedField, { minHeight: 0, paddingBlock: 0 }])
+
 /** `--field-ring` is color, not focus state — the ring survives the killed outline. */
 export const input = style([
   field,

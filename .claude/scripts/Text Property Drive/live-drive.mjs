@@ -1,167 +1,21 @@
-import { execFileSync, spawn } from 'node:child_process'
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
-import { homedir, tmpdir } from 'node:os'
+import { statSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { ulid } from 'ulidx'
-import { parse, stringify } from 'yaml'
+import { stringify } from 'yaml'
+import {
+  activate, ask, boxOf, check, chooseNative, click, FM, frontmatter, frontRaw, hover, holds, key, KEY, launch, META,
+  mintPageId, mouseAt, mouseClick, must, nativeMenu, osa, NEXUS, overlaps, pageFile, pagePath, portalOpen, pressKey, read,
+  restore, results, screenShot, sel, SET, settles, SHIFT, shot, sleep, typeText, until,
+} from '../drive-harness.mjs'
 
-const REPO = join(homedir(), 'The Studio/Projects/Project Pommora')
-const ELECTRON = join(REPO, 'node_modules/electron/dist/Electron.app/Contents/MacOS/Electron')
-const NEXUS = join(homedir(), 'Test')
 const PORT = 9353
-const SHOTS = process.env.POMMORA_DRIVE_SHOTS ?? join(tmpdir(), 'text-property-shots')
 const GROUPS = new Set(process.argv.slice(2).map(Number))
 if (GROUPS.size === 0 || [...GROUPS].some((g) => ![1, 2, 3, 4].includes(g))) {
   console.error('usage: node live-drive.mjs <group…>   (groups 1–4)')
   process.exit(2)
 }
 
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
-async function until(what, fn, ms = 15000) {
-  const end = Date.now() + ms
-  while (Date.now() < end) {
-    const v = await fn().catch(() => undefined)
-    if (v) return v
-    await sleep(100)
-  }
-  throw new Error(`Timed out waiting for ${what}`)
-}
-const settles = async (fn, ms = 6000) => until('a settled read', fn, ms).then(() => true, () => false)
-// True only when every read across the window holds, so a late write is caught.
-async function holds(fn, ms = 6000) {
-  const end = Date.now() + ms
-  while (Date.now() < end) {
-    if (!(await fn().catch(() => false))) return false
-    await sleep(200)
-  }
-  return true
-}
-
-async function connect() {
-  const target = await until('the app window', async () => {
-    const list = await (await fetch(`http://127.0.0.1:${PORT}/json/list`)).json()
-    return list.find((t) => t.type === 'page' && t.url.startsWith('app://'))
-  }, 30000)
-  const ws = new WebSocket(target.webSocketDebuggerUrl)
-  await new Promise((ok, fail) => { ws.onopen = ok; ws.onerror = fail })
-  const pending = new Map(); let next = 0
-  ws.onmessage = (m) => { const { id, result, error } = JSON.parse(m.data); pending.get(id)?.(error ? Promise.reject(new Error(error.message)) : result); pending.delete(id) }
-  const send = (method, params = {}) => new Promise((r) => { pending.set(++next, r); ws.send(JSON.stringify({ id: next, method, params })) })
-  const evaluate = async (expression) => {
-    const { result, exceptionDetails } = await send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true })
-    if (exceptionDetails) throw new Error(exceptionDetails.exception?.description ?? exceptionDetails.text)
-    return result.value
-  }
-  return { send, evaluate, close: () => ws.close() }
-}
-const ask = (cdp, channel, ...args) => cdp.evaluate(`window.nexus.ask(${JSON.stringify(channel)}, ...${JSON.stringify(args)})`)
-const must = async (what, reply) => {
-  const r = await reply
-  if (!r?.ok) throw new Error(`${what} was refused: ${JSON.stringify(r)}`)
-  return r.value
-}
-
-const results = []
-const check = (name, pass, detail) => { results.push({ name, pass: !!pass }); console.log(`${pass ? 'PASS' : 'FAIL'}  ${name}${!pass && detail ? `\n      ${detail}` : ''}`) }
-
-// ── Native input ────────────────────────────────────────────────────────────
-
-const osa = (script) => execFileSync('osascript', ['-e', script], { encoding: 'utf8' }).trim()
-const key = (code) => osa(`tell application "System Events" to key code ${code}`)
-const KEY = { down: 125, right: 124, ret: 36, esc: 53 }
-
-async function activate(cdp, pid) {
-  osa(`tell application "System Events" to set frontmost of (first process whose unix id is ${pid}) to true`)
-  await cdp.send('Page.bringToFront')
-  await sleep(300)
-  const front = osa(`tell application "System Events" to get frontmost of (first process whose unix id is ${pid})`)
-  if (front !== 'true') throw new Error('The app is not frontmost; no keystroke was sent.')
-}
-
-const sel = (css) => `document.querySelector(${JSON.stringify(css)})`
-const textEl = (scope, text) =>
-  `[...document.querySelectorAll(${JSON.stringify(scope)})].find((e) => e.children.length === 0 && e.textContent.trim() === ${JSON.stringify(text)})`
-
-const boxOf = (cdp, expr) =>
-  cdp.evaluate(`(() => { const el = (${expr}); if (!el) throw new Error('no element for ' + ${JSON.stringify(expr)}); const b = el.getBoundingClientRect(); return { x: b.x + b.width / 2, y: b.y + b.height / 2, left: b.left, top: b.top, right: b.right, bottom: b.bottom } })()`)
-const overlaps = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom
-
-async function mouseAt(cdp, { x, y }, { button = 'left', modifiers = 0 } = {}) {
-  await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y, button: 'none' })
-  for (const type of ['mousePressed', 'mouseReleased'])
-    await cdp.send('Input.dispatchMouseEvent', { type, x, y, button, buttons: type === 'mousePressed' ? (button === 'left' ? 1 : 2) : 0, clickCount: 1, modifiers })
-  await sleep(500)
-}
-const mouseClick = async (cdp, expr, opts) => mouseAt(cdp, await boxOf(cdp, expr), opts)
-const hover = async (cdp, expr, dwell = 600) => {
-  const { x, y } = await boxOf(cdp, expr)
-  await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: x + 20, y, button: 'none' })
-  await sleep(100)
-  await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y, button: 'none' })
-  await sleep(dwell)
-}
-
-// A freshly popped native menu highlights nothing: the first Down lands on row 1. `seen` runs while the menu is up.
-// `edge` presses the element's leading padding, so a link inside it is never the target.
-async function chooseNative(cdp, pid, expr, { downs, into = [], seen, edge = false }) {
-  await activate(cdp, pid)
-  const box = await boxOf(cdp, expr)
-  await mouseAt(cdp, edge ? { x: box.left + 4, y: box.y } : box, { button: 'right' })
-  await sleep(700)
-  try {
-    if (seen) await seen()
-    for (let i = 0; i < downs; i++) key(KEY.down)
-    for (const d of into) {
-      key(KEY.right)
-      for (let i = 0; i < d; i++) key(KEY.down)
-    }
-    key(KEY.ret)
-  } catch (e) {
-    key(KEY.esc)
-    throw e
-  }
-  await sleep(800)
-}
-
-// The items of the native menu now up, read from the app's window; empty when none is.
-const nativeMenu = (pid) => {
-  try {
-    return osa(`tell application "System Events" to tell (first process whose unix id is ${pid}) to get name of every menu item of every menu of UI element 1`).split(', ')
-  } catch {
-    return []
-  }
-}
-
-const click = (cdp, expr) => cdp.evaluate(`(${expr}).click()`)
-
-const VK = { Enter: 13, Escape: 27, Tab: 9, Backspace: 8, b: 66 }
-async function pressKey(cdp, name, modifiers = 0) {
-  for (const type of ['rawKeyDown', 'keyUp'])
-    await cdp.send('Input.dispatchKeyEvent', { type, key: name, code: name.length === 1 ? `Key${name.toUpperCase()}` : name, windowsVirtualKeyCode: VK[name], modifiers })
-  await sleep(300)
-}
-const SHIFT = 8
-const META = 4
-const typeText = (cdp, text) => cdp.send('Input.insertText', { text })
-
-let shots = 0
-const shotPath = (name) => join(SHOTS, `${String(++shots).padStart(2, '0')}-${name}.png`)
-async function shot(cdp, name) {
-  const { data } = await cdp.send('Page.captureScreenshot', { format: 'png' })
-  writeFileSync(shotPath(name), Buffer.from(data, 'base64'))
-}
-// A native menu draws outside the web contents, so it is captured from the screen.
-const screenShot = (name) => execFileSync('screencapture', ['-x', shotPath(name)])
-
 // ── The Nexus on disk ───────────────────────────────────────────────────────
 
-const SET = 'Collection A/Set Alpha'
-const read = (rel) => readFileSync(join(NEXUS, rel), 'utf8')
-const pagePath = (title) => `${SET}/${title}.md`
-const pageFile = (title) => read(pagePath(title))
-const FM = /^---\n([\s\S]*?)\n---\n?/
-const frontRaw = (title) => FM.exec(pageFile(title))?.[1] ?? ''
-const frontmatter = (title) => parse(frontRaw(title)) ?? {}
 const has = (title, prop) => Object.hasOwn(frontmatter(title), prop)
 // The key's own line and every indented line behind it, exactly as written.
 function keyLines(title, prop) {
@@ -188,8 +42,6 @@ const collator = new Intl.Collator('en', { sensitivity: 'accent' })
 const sidecar = () => JSON.parse(read('Collection A/_pagecollection.json'))
 const viewNamed = (name) => sidecar().views.find((v) => v.name === name)
 const mtime = (title) => statSync(join(NEXUS, pagePath(title))).mtimeMs
-
-const mintPageId = () => { const id = ulid(); return `${id.slice(0, 10)}P${id.slice(11)}` }
 
 // ── The seed ────────────────────────────────────────────────────────────────
 
@@ -286,7 +138,6 @@ async function pickRow(cdp, label) {
   await click(cdp, row)
   await sleep(600)
 }
-const portalOpen = (cdp) => cdp.evaluate(`!!document.querySelector('[data-picker-portal]')`)
 const activeTab = (cdp) => cdp.evaluate(`document.querySelector('[role=tab][aria-selected=true]')?.getAttribute('title') ?? null`)
 
 // A press on the value's first glyph, so a link inside it is never the target.
@@ -913,35 +764,11 @@ async function group4(cdp, pid) {
 
 // ── The run ─────────────────────────────────────────────────────────────────
 
-execFileSync('npm', ['run', 'build'], { cwd: REPO, stdio: ['ignore', 'ignore', 'inherit'] })
-const backup = mkdtempSync(join(tmpdir(), 'pommora-text-'))
-execFileSync('rsync', ['-a', NEXUS + '/', join(backup, 'Test') + '/'])
-const userData = join(backup, 'ud'); mkdirSync(userData)
-writeFileSync(join(userData, 'pommora.json'), JSON.stringify({ lastNexusPath: NEXUS }))
-mkdirSync(SHOTS, { recursive: true })
-
-let child, cdp
-async function restore() {
-  if (child) {
-    child.kill('SIGTERM')
-    await Promise.race([new Promise((r) => child.once('exit', r)), sleep(8000)])
-    if (child.exitCode === null) child.kill('SIGKILL')
-  }
-  const strays = execFileSync('ps', ['-A', '-o', 'pid=,command='], { encoding: 'utf8' }).split('\n').filter((l) => l.includes(userData)).map((l) => Number.parseInt(l, 10))
-  for (const pid of strays) try { process.kill(pid, 'SIGKILL') } catch {}
-  execFileSync('rsync', ['-a', '--delete', join(backup, 'Test') + '/', NEXUS + '/'])
-  rmSync(backup, { recursive: true, force: true })
-  console.log(`~/Test restored · screenshots in ${SHOTS}`)
-}
-process.once('SIGINT', () => restore().then(() => process.exit(130)))
+let cdp
 try {
-  const env = { ...process.env, POMMORA_USERDATA: userData, POMMORA_DEBUG_PORT: String(PORT) }
-  delete env.ELECTRON_RUN_AS_NODE; delete env.ELECTRON_RENDERER_URL
-  child = spawn(ELECTRON, ['.'], { cwd: join(REPO, 'Desktop'), env, stdio: 'ignore' })
-  const pid = child.pid
-  cdp = await connect()
-  await until('the sidebar', () => cdp.evaluate(`!!document.querySelector('.row span')`), 30000)
-  await sleep(3000)
+  const app = await launch(PORT, 'text-property-shots')
+  cdp = app.cdp
+  const { pid } = app
   await seed(cdp)
   if (GROUPS.has(1)) await group1(cdp, pid)
   if (GROUPS.has(2)) await group2(cdp, pid)

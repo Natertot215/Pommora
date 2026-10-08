@@ -17,7 +17,8 @@ export function connectionsOf(s: Session, mode: Mode): ConnectionsApi | undefine
   const inWindow =
     mode === 'window' ||
     (mode === 'preview' && settingOf(personalizationOf(s), 'connectionsOpenInPreview'))
-  const read = [tree, inWindow, headings, select, openWindowTab]
+  // `select` and `openWindowTab` are stable store actions.
+  const read = [tree, inWindow, headings]
   const hit = held.get(mode)
   if (hit?.read.every((v, i) => v === read[i])) return hit.value
   const value = build()

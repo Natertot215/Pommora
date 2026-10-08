@@ -171,7 +171,6 @@ export function CellEditor({
               {
                 key: 'Tab',
                 run: consume((view) => {
-                  if (acCtl.current.open) return acCtl.current.pick()
                   if (!listClaims(view)) return onNavigateRef.current('next')
                   nestList(view)
                 }),

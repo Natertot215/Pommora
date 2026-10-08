@@ -189,29 +189,26 @@ export async function renameCascade(
     const defs = Object.values((await readKeptRegistry(root)).defs)
     const names = byFoldedName(defs)
     const byName = (key: string) => names.get(foldKey(key))?.type
-    // One writer per key: a Link value is a whole connection and takes the whole-value patch; a Text value is prose and takes the body's rewriter under the page's own title; every other type is left as written.
+    // Every other type is left as written.
     const patchOf = (
       raw: Record<string, unknown>,
       typeOf: (key: string) => string | undefined,
       own = '',
       outlineOf = '',
     ): Record<string, string> => {
-      const patch: Record<string, string> = {}
-      for (const [key, value] of Object.entries(raw)) {
-        switch (typeOf(key)) {
-          case 'link':
-            Object.assign(
-              patch,
-              rewriteFrontmatterConnections({ [key]: value }, title, change, own),
-            )
-            break
-          case 'text': {
-            const text = linkEntry(value, 2)
-            const next = text === null ? null : rewrite(text, own, outlineOf)
-            if (next !== null && next !== text) patch[key] = next
-            break
-          }
-        }
+      const entries = Object.entries(raw)
+      const patch = rewriteFrontmatterConnections(
+        Object.fromEntries(entries.filter(([key]) => typeOf(key) === 'link')),
+        title,
+        change,
+        own,
+      )
+      for (const [key, value] of entries) {
+        if (typeOf(key) !== 'text') continue
+        // A string, or a `[[Page]]` yaml read as a nested list; a foreign one-item list stays a list.
+        const text = linkEntry(value, 2)
+        const next = text === null ? null : rewrite(text, own, outlineOf)
+        if (next !== null && next !== text) patch[key] = next
       }
       return patch
     }
