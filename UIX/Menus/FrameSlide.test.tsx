@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { act } from 'react'
+import { act, useEffect } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { FrameSlide } from './FrameSlide'
+import * as s from './frame-slide.css'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 class ResizeObserverStub {
@@ -46,6 +47,35 @@ describe('FrameSlide', () => {
       await new Promise((r) => setTimeout(r, 320))
     })
     expect(host.textContent).not.toContain('beta')
+  })
+
+  it('what mounts in the slot a flip is heading for is live and shown in that render, so it can take focus', async () => {
+    const seen: { inert: boolean; hidden: boolean }[] = []
+    const Probe = (): React.JSX.Element => {
+      useEffect(() => {
+        const el = document.getElementById('probe')!
+        seen.push({
+          inert: el.closest('[inert]') !== null,
+          hidden: el.closest(`.${s.slotIdle}`) !== null,
+        })
+      }, [])
+      return <div id="probe">probe</div>
+    }
+    await act(async () => {
+      root.render(<FrameSlide open={false} root={<div>alpha</div>} detail={null} />)
+    })
+    await act(async () => {
+      root.render(<FrameSlide open={true} root={<div>alpha</div>} detail={<Probe />} />)
+    })
+    expect(seen).toEqual([{ inert: false, hidden: false }])
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 320))
+      root.render(<FrameSlide open={false} root={<Probe />} detail={null} />)
+    })
+    expect(seen).toEqual([
+      { inert: false, hidden: false },
+      { inert: false, hidden: false },
+    ])
   })
 
   it('never caps or scrolls a slot itself — a slot MenuScrollFrame owns that', async () => {
