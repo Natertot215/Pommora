@@ -63,6 +63,7 @@ export interface FenceInfo {
   to: number
   depth: number
   name?: CodeLangName
+  path?: string
   indent: number
   markerEnd: number
   ordinal?: number
@@ -87,13 +88,14 @@ export function scanFencedCode(lines: string[], lineStarts: number[]): (FenceInf
   const out: (FenceInfo | undefined)[] = new Array(lines.length)
   for (const span of fenceSpans(lines)) {
     const { open, close } = span
-    const { name, diff } = codeFence(span.fence.info)
+    const { name, diff, path } = codeFence(span.fence.info)
     const tally = diff ? { add: 0, del: 0 } : undefined
     const base = {
       from: lineStarts[open],
       to: lineEndOf({ lines, lineStarts }, close),
       depth: span.fence.depth,
       name: name ?? undefined,
+      path,
       indent: span.fence.indent,
       markerEnd: span.fence.markerEnd,
       tally,

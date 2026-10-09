@@ -51,7 +51,7 @@ export const chevron = style({
   margin: '0 4px',
   fontSize: font.scale.control.size,
   fontWeight: font.weight.bold,
-  color: c.label.tertiary,
+  color: `var(--nav-trail-glyph, ${c.label.tertiary})`,
 })
 
 export const chevronSmall = style({ fontSize: font.scale.caption.size })

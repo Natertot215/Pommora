@@ -72,6 +72,7 @@ import { editorHost, type OwnPage, ownPage, redrawNudge } from './api'
 import { checkMarkSvg, checkboxClass } from '@pommora/uix/Controls/Checkbox'
 import * as btn from '@pommora/uix/Buttons/button-base.css'
 import { buttonClass, segmentDivider } from '@pommora/uix/Buttons/Button'
+import * as trail from '@pommora/uix/Elements/nav-trail.css'
 import { svgFrame } from '@pommora/uix/Symbols/svgFrame'
 import { cx } from '@pommora/uix/Utilities/cx'
 
@@ -212,16 +213,33 @@ function tallyPill({ add, del }: DiffTally): HTMLElement {
   return pill
 }
 
+function pathTrail(path: string): (Node | string)[] {
+  return path
+    .split(/[\\/]/)
+    .filter((title) => title && title !== '.')
+    .flatMap((title, i) => {
+      if (i === 0) return [title]
+      const chevron = document.createElement('span')
+      chevron.className = trail.chevron
+      chevron.textContent = '›'
+      return [chevron, title]
+    })
+}
+
 class CodeTagWidget extends WidgetType {
   constructor(
     readonly name?: string,
     readonly tally?: DiffTally,
+    readonly path?: string,
   ) {
     super()
   }
   eq(o: CodeTagWidget): boolean {
     return (
-      o.name === this.name && o.tally?.add === this.tally?.add && o.tally?.del === this.tally?.del
+      o.name === this.name &&
+      o.path === this.path &&
+      o.tally?.add === this.tally?.add &&
+      o.tally?.del === this.tally?.del
     )
   }
   toDOM(view: EditorView): HTMLElement {
@@ -229,7 +247,7 @@ class CodeTagWidget extends WidgetType {
     el.className = 'codeblock-language'
     el.dataset.revealHost = ''
     const tag = this.name === undefined ? undefined : CODE_TAGS[this.name]
-    const resting = tag?.label ?? this.name ?? ''
+    const resting = this.path ? pathTrail(this.path) : [tag?.label ?? this.name ?? '']
 
     const slot = el.appendChild(document.createElement('span'))
     slot.className = 'codeblock-mark-slot'
@@ -237,8 +255,8 @@ class CodeTagWidget extends WidgetType {
     slot.appendChild(mark(COPY_GLYPH, 'codeblock-copy'))
     slot.appendChild(mark(CHECK_GLYPH, 'codeblock-copied'))
     const name = el.appendChild(document.createElement('span'))
-    name.className = 'codeblock-name'
-    name.textContent = resting
+    name.className = cx('codeblock-name', this.path && trail.option)
+    name.replaceChildren(...resting)
     const pill = this.tally ? el.appendChild(tallyPill(this.tally)) : null
 
     let timer: number | undefined
@@ -248,11 +266,11 @@ class CodeTagWidget extends WidgetType {
       if (!text) return
       void view.state.facet(editorHost).clipboard.write(text)
       el.classList.add('is-copied')
-      if (resting) name.textContent = 'Copied'
+      if (!pill && name.textContent) name.textContent = 'Copied'
       window.clearTimeout(timer)
       timer = window.setTimeout(() => {
         el.classList.remove('is-copied')
-        name.textContent = resting
+        name.replaceChildren(...resting)
       }, COPIED_MS)
     }
     // Swallowed: a caret on the fence line trades the tag back for the raw info word, unmounting what is being pressed.
@@ -482,9 +500,10 @@ function build(view: EditorView, conn: ConnectionsApi | undefined, scope: Markdo
     }
     if (it.kind === 'codeTag') {
       ranges.push(
-        Decoration.widget({ widget: new CodeTagWidget(it.name, it.tally), side: -1 }).range(
-          it.from,
-        ),
+        Decoration.widget({
+          widget: new CodeTagWidget(it.name, it.tally, it.path),
+          side: -1,
+        }).range(it.from),
       )
       continue
     }

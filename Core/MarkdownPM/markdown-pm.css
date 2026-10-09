@@ -960,6 +960,10 @@
   line-height: 1;
   gap: 0.3em;
   color: var(--label-control);
+  font-family: var(--font-family);
+  font-weight: var(--weight-emphasized);
+  white-space: nowrap;
+  word-break: normal;
   text-indent: 0;
   user-select: none;
   cursor: default;
@@ -1005,6 +1009,12 @@
 }
 .mdpm-editor .codeblock .codeblock-language .codeblock-name:empty {
   display: none;
+}
+.mdpm-editor .codeblock .codeblock-language .codeblock-name > span {
+  font-size: inherit;
+}
+.mdpm-editor .codeblock .codeblock-language .codeblock-name:not(:empty) + .codeblock-tally {
+  margin-left: 4px;
 }
 /* A diff block's tag is a Segmented run on plain DOM, outlined rather than glass. A copy keeps the pill's size: its counts fade out as "Copied" fades in over them, at the pill's own start. */
 .mdpm-editor .codeblock .codeblock-language .codeblock-tally {
