@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest'
 import { act } from 'react'
 import { EditorState } from '@codemirror/state'
 import { type EditorView, runScopeHandlers } from '@codemirror/view'
@@ -39,6 +39,26 @@ describe('a code line’s run', () => {
       await codeLanguage('ts')?.load()
     })
     expect(runs(view)[0].querySelector('span')).not.toBeNull()
+  })
+
+  it('rests with the color of its own code, apart from the same code in another language', async () => {
+    const style = document.head.appendChild(document.createElement('style'))
+    style.textContent = '.syntax-keyword { color: rgb(1, 2, 3) }'
+    onTestFinished(() => style.remove())
+    const view = await mountEditor({
+      initialBody: '```ts\nreturn\n```\n\n```\nreturn\n```',
+      ...scrolling,
+    })
+    // Colors are read on an update, and a jsdom mount draws none of its own.
+    await act(async () => {
+      await codeLanguage('ts')?.load()
+      view.dispatch({})
+    })
+    const cuts = [...view.contentDOM.querySelectorAll<HTMLElement>('.cm-line.codeblock-nowrap')]
+    expect(cuts.map((l) => l.style.getPropertyValue('--code-cut'))).toEqual([
+      'rgb(1, 2, 3)',
+      'rgb(0, 0, 0)',
+    ])
   })
 
   it('sits on content lines alone, and nowhere with the setting off', async () => {
@@ -100,6 +120,24 @@ describe('a block’s offset', () => {
       { codeScroll: codeScrolls },
     )
   const pairs = (s: EditorState) => s.toJSON({ codeScroll: codeScrolls }).codeScroll
+
+  it('moves the shown block’s lines alone under a sideways wheel', async () => {
+    const long = 'a'.repeat(40)
+    const doc = `\`\`\`ts\n${long}\nb\n\`\`\`\n\n\`\`\`ts\nc\n\`\`\``
+    const view = await mountEditor({ initialBody: doc, ...scrolling })
+    await act(async () => {
+      view.focus()
+      view.dispatch({ selection: { anchor: doc.indexOf('b') } })
+    })
+    const resting = lineOf(view, 'c').getAttribute('style')
+    await act(async () => {
+      lineOf(view, 'b').dispatchEvent(new WheelEvent('wheel', { deltaX: 50, bubbles: true }))
+    })
+    expect([long, 'b'].map((c) => lineOf(view, c).style.getPropertyValue('--code-scroll'))).toEqual(
+      ['50px', '50px'],
+    )
+    expect(lineOf(view, 'c').getAttribute('style')).toBe(resting)
+  })
 
   it('restores from its warm pair', () => {
     expect(pairs(state(body, [[second, 40]]))).toEqual([[second, 40]])
