@@ -344,13 +344,21 @@ const codeScrollPlugin = ViewPlugin.fromClass(CodeScroll, {
       if (from === this.live || from === hovered) {
         if (!b) return
         const x = clamp(b.x + e.deltaX, 0, b.overflow)
-        if (x !== b.x) view.dispatch({ effects: scrollBlock.of({ ...b, x }) })
+        if (x === b.x) return
+        // Scrolled back to its start, a wheel-revealed block rests again and takes its ellipsis back.
+        const rests = x === 0 && from !== this.live
+        view.dispatch({
+          effects: rests
+            ? [scrollBlock.of({ ...b, x }), hoverBlock.of(null)]
+            : scrollBlock.of({ ...b, x }),
+        })
         return
       }
       const g = this.gathered
       g.dx = g.from === from ? g.dx + e.deltaX : e.deltaX
       g.from = from
-      if (Math.abs(g.dx) < REVEAL_TRAVEL) return
+      // A block at its start has nowhere to go leftward, so only rightward travel reveals it.
+      if (Math.abs(g.dx) < REVEAL_TRAVEL || (g.dx < 0 && !b?.x)) return
       g.from = -1
       const overflow = overflowOf(view, from) ?? b?.overflow ?? 0
       view.dispatch({
