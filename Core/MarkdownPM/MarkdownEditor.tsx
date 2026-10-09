@@ -10,6 +10,7 @@ import { tableWidgetExtension, applySavedHeadingCols } from './Tables/widget'
 import { applySavedEmbeds, embedTiles, rerenderWebTiles } from './Embeds/embedWidget'
 import { type PageStats, rangeStats } from './Engine/subfieldStats'
 import { codeHighlight, pageCode } from './codeHighlight'
+import { codeScroll, codeScrolls } from './codeScroll'
 import { registerScrollHeal } from './Embeds/scrollHeal'
 import { calloutGuard } from './Guards/calloutGuard'
 import { embedGuard } from './Guards/embedGuard'
@@ -40,6 +41,8 @@ import './markdown-pm.css'
 import './highlights.css'
 
 export const EMPTY_PAGE_TEXT = 'Click to type or press / for actions'
+
+const WARM_FIELDS = { history: historyField, codeScroll: codeScrolls }
 
 interface Props {
   initialBody: string
@@ -195,6 +198,7 @@ export function MarkdownEditor({
         extensions: pageCode,
       }),
       codeHighlight,
+      codeScroll,
       inlineSurface(() => connectionsRef.current, 'page'),
       citationRowPointer(),
       citationRowMenu(),
@@ -255,11 +259,7 @@ export function MarkdownEditor({
     let warmState: EditorState | null = null
     if (saved?.editorState !== undefined) {
       try {
-        warmState = EditorState.fromJSON(
-          saved.editorState,
-          { extensions },
-          { history: historyField },
-        )
+        warmState = EditorState.fromJSON(saved.editorState, { extensions }, WARM_FIELDS)
       } catch {
         warmState = null
       }
@@ -317,7 +317,7 @@ export function MarkdownEditor({
         unregisterHeal?.()
         view.scrollDOM.removeEventListener('scroll', onWarmScroll)
         warm.capture({
-          editorState: view.state.toJSON({ history: historyField }),
+          editorState: view.state.toJSON(WARM_FIELDS),
           scrollTop: lastScrollTop,
         })
       }

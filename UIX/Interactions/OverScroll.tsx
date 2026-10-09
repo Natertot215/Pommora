@@ -6,7 +6,10 @@ import './over-scroll.css'
 
 export const overScrollLabel = 'scroll-fade-x over-scroll-cap'
 
-export const overScrollEllipsis = `${overScrollLabel} over-scroll-ellipsis`
+/** A label's fades and ellipsis without the cap, for a box whose offset something else drives. */
+export const overScrollFace = 'scroll-fade-x over-scroll-ellipsis'
+
+export const overScrollEllipsis = `${overScrollFace} over-scroll-cap`
 
 /** No mask, for a box whose DESCENDANTS must keep painting: a mask erases everything under it. */
 export const overScrollUnmasked = 'over-scroll-cap over-scroll-ellipsis'

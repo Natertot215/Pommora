@@ -137,6 +137,10 @@ export function fenceBodyStart(line: string, f: FenceInfo): number {
   return quote + Math.min(f.indent, indentWidth(line.slice(quote)))
 }
 
+/** Where a fence line's code begins: past its quote or indent prefix, and past a diff sign. */
+export const codeSeat = (line: string, f: FenceInfo): number =>
+  fenceBodyStart(line, f) + (signedLine(f) ? 1 : 0)
+
 export function fenceRangesOf(fences: readonly (FenceInfo | undefined)[]): [number, number][] {
   const out: [number, number][] = []
   for (const f of fences) if (f?.role === 'open') out.push([f.from, f.to])

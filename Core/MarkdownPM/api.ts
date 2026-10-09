@@ -76,6 +76,7 @@ export type GlanceTarget =
 
 const EDITOR_SETTING_KEYS = [
   'codeblockLineCount',
+  'codeblockScroll',
   'htmlShortcuts',
   'htmlFormatting',
   'removeTitleOnLinkChange',

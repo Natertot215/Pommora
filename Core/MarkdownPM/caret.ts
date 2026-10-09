@@ -2,7 +2,10 @@
 import { layer, RectangleMarker, type EditorView } from '@codemirror/view'
 import { EditorSelection } from '@codemirror/state'
 import { restartBlink } from '@pommora/uix/Theme/nativeCaret'
+import { codeClip } from './codeScroll'
+import { docScan } from './docCache'
 import { embedTileRanges } from './Embeds/embedWidget'
+import { caretInMargin } from './Engine/docScan'
 import { textColumn } from './lineDom'
 
 // A doc-edge tile owns the only legal seats inside its atomic span, and measuring those yields the tile box itself — so draw where the seat's insertion will land.
@@ -52,8 +55,12 @@ function caretMarkers(view: EditorView): RectangleMarker[] {
         continue
       }
     }
+    // A caret scrolled out of its code block's run draws nowhere; one in a diff margin stands beside the run, not in it.
+    const clip = codeClip(view, r.head)
+    const kept = !clip || caretInMargin(docScan(view.state.doc), r)
     for (const m of cursorMarkers(view, 'caret-bar', r.head, r.assoc))
-      out.push(clampToLine(view, 'caret-bar', m))
+      if (kept || (m.left >= clip.left && m.left <= clip.right))
+        out.push(clampToLine(view, 'caret-bar', m))
   }
   return out
 }

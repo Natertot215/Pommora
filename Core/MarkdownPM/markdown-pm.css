@@ -764,7 +764,8 @@
   --codeblock-inset: 0px;
   --codeblock-pad: 12px;
   --codeblock-mark-pad: 4px; /* KNOB — the chip the hover veil paints behind the mark */
-  --codeblock-border: var(--width-200) solid var(--border-base);
+  --codeblock-border-width: var(--width-200);
+  --codeblock-border: var(--codeblock-border-width) solid var(--border-base);
   --box-fill: var(--fill-quaternary);
   --box-inset: var(--codeblock-inset);
   --box-z: -1;
@@ -773,6 +774,7 @@
   --box-gap: var(--md-box-gap);
   --box-pad: 6px;
   --codeblock-edge: calc(var(--codeblock-inset) + var(--codeblock-pad));
+  --code-reach: calc(var(--codeblock-pad) - var(--codeblock-border-width));
   --codeblock-indent: calc(
     var(--codeblock-edge) +
     var(--diff-zone, 0px) +
@@ -1058,6 +1060,41 @@
   text-indent: 0;
   color: var(--label-tertiary);
   user-select: none;
+}
+
+/* A content line holds its code in one run that its block's offset shifts, so the frame, the gutter, and the tag hold still. The run wears a label's face but clips rather than scrolls: no line is ever a scroll container a caret could drag sideways alone. */
+.mdpm-editor .cm-line.codeblock-nowrap {
+  white-space: pre;
+}
+.mdpm-editor .codeblock-run {
+  --scroll-fade: var(--fade-light);
+  --scroll-fade-lead: clamp(0, var(--code-scroll, 0px) / var(--scroll-fade), 1);
+  display: inline-block;
+  /* Its code never sizes the content column, so a long line can't widen the page past the scroller. */
+  contain: inline-size;
+  width: 100%;
+  vertical-align: top;
+  overflow: clip;
+  text-indent: calc(-1 * var(--code-scroll, 0px));
+}
+/* Revealed, the run reaches the border's inner edge, and its tail fades for as long as code runs past it. */
+.mdpm-editor .codeblock-revealed .codeblock-run {
+  --scroll-fade-trail: clamp(
+    0,
+    (var(--code-overflow, 0px) - var(--code-scroll, 0px) - var(--code-reach)) /
+    var(--scroll-fade),
+    1
+  );
+  width: calc(100% + var(--code-reach));
+  text-overflow: clip;
+}
+/* With the caret in the block, a highlight spans the code's whole scroll width, held inside the border. */
+.mdpm-editor .codeblock-revealed.codeblock-diff-raw .md-diff {
+  left: calc(var(--codeblock-edge) - min(var(--code-reach), var(--code-scroll, 0px)));
+  right: calc(
+    var(--codeblock-edge) -
+    min(var(--code-reach), var(--code-overflow, 0px) - var(--code-scroll, 0px))
+  );
 }
 
 .mdpm-block-menu {
