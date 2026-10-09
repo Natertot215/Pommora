@@ -4,7 +4,7 @@ import { clamp, type SteppedRange } from '../Utilities/clamp'
 import { cx } from '../Utilities/cx'
 import { Icon } from '../Symbols'
 import * as s from './picker-control.css'
-import { FACTOR, type NumberUnit, numberFrom, unitLabel, unitNumber } from './numberUnit'
+import { FACTOR, type NumberUnit, numberFrom, unitLabel, unitNumber } from '../Utilities/numberUnit'
 
 export type PickerOption<T extends string> = {
   value: T

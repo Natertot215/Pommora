@@ -20,7 +20,7 @@ import type { SetTreeNode } from './group'
 import { linkDisplayText } from '../../Connections/linkValue'
 import { dayMs, readDate } from '../../Properties/formatValue'
 import { foldKey } from '../../Paths/caseFold'
-import { numberFrom } from '@pommora/uix/Pickers/numberUnit'
+import { numberFrom } from '@pommora/uix/Utilities/numberUnit'
 
 const FILTER_OP_SET = new Set<string>(Object.values(FILTER_OPS))
 
