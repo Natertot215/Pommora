@@ -173,6 +173,16 @@ describe('normalizing the section', () => {
     expect(normalized(doc)).toBe('x[^5]\n\n[^5]: five\n[^1]: orphan')
   })
 
+  it('never renames a row onto the number an unbound marker still holds', () => {
+    const doc = 'Body a[^1] b[^2] c\n\n[^2]: two'
+    expect(normalized(doc)).toBe(doc)
+  })
+
+  it('leaves a marker its number once its row turns to prose', () => {
+    const doc = 'a[^1] b[^2]\n\n- [^1]: one\n\n[^2]: two'
+    expect(normalized(doc)).toBe(doc)
+  })
+
   it('drops a duplicate that lost below the run, still shadowing its winner', () => {
     const doc = 'x[^7] y[^b]\n\n[^b]: bee\n[^7]: won\n[^7]: lost'
     expect(normalized(doc)).toBe('x[^1] y[^b]\n\n[^1]: won\n[^b]: bee\n[^1]: lost')
@@ -219,6 +229,14 @@ describe('a deletion carries its renumbering in the same transaction', () => {
     const doc = 'x[^1] y[^2]\n\n[^1]: one\n[^2]: two'
     const s = scanOf(doc)
     expect(committed(doc, deleteCitationChanges(s, s.citations.entries[0]))).toBe(
+      'x y[^1]\n\n[^1]: two',
+    )
+  })
+
+  it('renumbers what is left once an unbound marker is deleted', () => {
+    const doc = 'x[^1] y[^2]\n\n[^2]: two'
+    const s = scanOf(doc)
+    expect(committed(doc, deleteMarkerChanges(s, s.citations.markers[0]))).toBe(
       'x y[^1]\n\n[^1]: two',
     )
   })

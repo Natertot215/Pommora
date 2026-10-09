@@ -91,13 +91,12 @@ export function normalizeCitations(scan: CitationSlice): ChangeSpec[] {
 
   const placed = c.entries.filter((e) => e.ordinal !== null)
   const loose = c.entries.filter((e) => e.ordinal === null)
-  // A rename this pass refuses leaves that row's number standing, which can occupy the number the next row wanted.
-  const shadowed = new Set(placed.map((e) => foldLabel(e.label)))
+  // A loose row's or an unbound marker's number stays where it is, as does one whose rename this pass refuses, so no row is renamed onto it.
+  const placedLabels = new Set(placed.map((e) => foldLabel(e.label)))
   const held = new Set(
-    loose
-      .filter((e) => !shadowed.has(foldLabel(e.label)))
-      .map((e) => e.label)
-      .filter(numericLabel),
+    [...c.entries, ...c.markers]
+      .map((x) => x.label)
+      .filter((l) => numericLabel(l) && !placedLabels.has(foldLabel(l))),
   )
   const renamed = new Map<string, string>()
   for (let settled = false; !settled; ) {

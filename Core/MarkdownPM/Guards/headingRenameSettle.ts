@@ -3,9 +3,8 @@ import { ViewPlugin } from '@codemirror/view'
 import { normalizeTitle } from '../../Paths/caseFold'
 import { rewriteHeadingConnections } from '../../Connections/rewrite'
 import { headingParts } from '../Engine/detect'
-import { editorHost } from '../api'
+import { editorHost, mirrorBody } from '../api'
 import { docHeadingKeys, docOutline, docSectionHeadings, docString } from '../docCache'
-import { changesTo } from '../../Pages/merge3'
 
 interface HeldRename {
   old: string
@@ -56,12 +55,7 @@ export const headingRenameSettle = ViewPlugin.define(
             : undefined
         const doc = docString(now.doc)
         const body = rewriteHeadingConnections(doc, own, held.old, final, own, outline)
-        if (body !== doc)
-          view.dispatch({
-            changes: changesTo(doc, body),
-            annotations: Transaction.addToHistory.of(false),
-            filter: false,
-          })
+        mirrorBody(view, body, { echo: true })
       }
       if (defer) setTimeout(rewrite, 0)
       else rewrite()
