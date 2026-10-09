@@ -86,3 +86,36 @@ describe('the heading picker inside a cell', () => {
     expect(document.querySelector('.mdpm-ac')?.textContent).toContain('Setup')
   })
 })
+
+describe('what a resting cell reads from the page around it', () => {
+  it('reads the number a label holding = or ; leaves beside it', async () => {
+    await mountEditor({
+      initialBody: `x[^a] y[^a=b]\n\n${table('[^a] [^a=b]')}\n\n[^a]: one\n[^a=b]: two`,
+    })
+    const glyphs = [...(await tableEl()).querySelectorAll('.md-citation-reference')]
+    expect(glyphs.map((el) => el.textContent)).toEqual(['1', '2'])
+  })
+
+  it('finds the heading a markdown self-link names', async () => {
+    await mountEditor({
+      initialBody: `## Setup\n\n${table('[x](#Setup)')}`,
+      connections: headingConn,
+    })
+    const link = (await tableEl()).querySelector('.md-connection-resolved')
+    expect(link?.textContent).toBe('x')
+    expect(link?.classList.contains('md-connection-heading-missing')).toBe(false)
+  })
+
+  it('and marks it missing once the heading goes', async () => {
+    const view = await mountEditor({
+      initialBody: `## Setup\n\n${table('[x](#Setup)')}`,
+      connections: headingConn,
+    })
+    await tableEl()
+    await act(async () => {
+      view.dispatch({ changes: { from: 0, to: '## Setup'.length, insert: 'Setup' } })
+    })
+    const link = (await tableEl()).querySelector('.md-connection-resolved')
+    expect(link?.classList.contains('md-connection-heading-missing')).toBe(true)
+  })
+})

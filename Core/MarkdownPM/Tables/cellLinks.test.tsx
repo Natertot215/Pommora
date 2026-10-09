@@ -3,7 +3,7 @@ import { describe, it, expect, afterEach, vi } from 'vitest'
 import { createElement, act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { MarkdownTable } from './MarkdownTable'
-import { testHost } from '../../Testing/editorHarness'
+import { tableStubs, testHost } from '../../Testing/editorHarness'
 import type { TableModel } from '../Engine/Tables/model'
 import { EditorView } from '@codemirror/view'
 import type { ConnUrlAction } from '../../Actions/connectionMenu'
@@ -32,21 +32,7 @@ const model: TableModel = {
   rows: [['[[Quarterly Plan|the plan]]']],
 }
 
-const noop = (): void => {}
-const props = {
-  host: testHost(),
-  model,
-  connections: () => conn,
-  onCellCommit: noop,
-  onExit: noop,
-  onReorder: () => false,
-  onResize: () => false,
-  onMenu: noop,
-  onTableDrag: noop,
-  onUndo: noop,
-  onRedo: noop,
-  onAppend: noop,
-}
+const props = { ...tableStubs, host: testHost(), model, connections: () => conn }
 
 let container: HTMLDivElement
 let root: Root

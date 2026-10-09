@@ -12,7 +12,7 @@ describe('regions', () => {
     const doc = 'intro\n\n| a | b |\n|---|---|\n| 1 | 2 |\n\nafter'
     const [r] = tableRegions(doc)
     expect(r.rows.length).toBe(2)
-    expect(r.delimiter.columns.length).toBe(2)
+    expect(r.columns.length).toBe(2)
     expect(doc.slice(r.from, r.to)).toBe('| a | b |\n|---|---|\n| 1 | 2 |')
   })
 

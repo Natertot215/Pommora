@@ -13,7 +13,6 @@ import { type CellPage, StaticCell } from './cellStatic'
 import type { HeadingLinkStyle } from '../../Settings/personalization'
 import { cellToDisplay, cellToSource } from '../Engine/Tables/codec'
 import { decodePayload, encodeRect, rectGrid, type TablePayload } from '../Engine/Tables/clipboard'
-import { foldLabel } from '../Engine/detect'
 import { GLYPH_CLASS, GRIP_LINE } from '../Engine/intents'
 import { gutterLineAt } from '../lineDom'
 import { nextCell, type NavDir } from '../Engine/Tables/navigate'
@@ -98,8 +97,8 @@ export function MarkdownTable({
   host,
   linkStyle,
   model,
-  page,
-  headingColumn = false,
+  around,
+  headingColumn,
   onCellCommit,
   onSettled,
   onExit,
@@ -108,8 +107,6 @@ export function MarkdownTable({
   onAppend,
   onClearCells,
   onFill,
-  onCopyText,
-  readClipboard,
   onMenu,
   onTableDrag,
   onUndo,
@@ -119,25 +116,23 @@ export function MarkdownTable({
 }: {
   host: EditorHost
   model: TableModel
-  page?: string
-  headingColumn?: boolean
+  around: CellPage
+  headingColumn: boolean
   onCellCommit: (row: number, col: number, text: string) => void
-  onSettled?: () => void
+  onSettled: () => void
   onExit: (dir: 'before' | 'after') => void
   onReorder: (axis: Axis, from: number, to: number) => boolean
   onResize: (widths: number[]) => boolean
   onAppend: (axis: Axis) => void
-  onClearCells?: (r0: number, c0: number, r1: number, c1: number) => void
-  onFill?: (row: number, col: number, payload: TablePayload) => void
-  onCopyText?: (text: string) => void
-  readClipboard?: () => Promise<string>
+  onClearCells: (r0: number, c0: number, r1: number, c1: number) => void
+  onFill: (row: number, col: number, payload: TablePayload) => void
   onMenu: (ctx: TableMenuContext) => void
   onTableDrag: (e: PointerEvent) => void
   onUndo: () => void
   onRedo: () => void
-  connections?: () => ConnectionsApi | undefined
-  readOnly?: () => boolean
-  linkStyle?: HeadingLinkStyle
+  connections: () => ConnectionsApi | undefined
+  readOnly: () => boolean
+  linkStyle: HeadingLinkStyle
 }): React.JSX.Element {
   const total = model.columns.reduce((sum, c) => sum + Math.max(1, c.dashes), 0)
   const totalRows = model.rows.length + 1
@@ -149,6 +144,8 @@ export function MarkdownTable({
   const [geom, setGeom] = useState<Geom>({ cols: [], rows: [] })
   // A mid-drag re-measure must reach this; a state binding would freeze at the pointerdown render (the cfg-ref discipline).
   const geomRef = useLatest(geom)
+  // A resting cell's memo keeps the callbacks it first rendered with, so it commits through these to reach the table where it sits now.
+  const live = useLatest({ onCellCommit, onSettled })
   const [drag, setDrag] = useState<Drag | null>(null)
   const [resize, setResize] = useState<Resize | null>(null)
   const [active, setActive] = useState<{ row: number; col: number } | null>(null)
@@ -228,7 +225,7 @@ export function MarkdownTable({
       e.preventDefault()
       e.stopPropagation()
     }
-    const clear = (): void => onClearCells?.(rect.r0, rect.c0, rect.r1, rect.c1)
+    const clear = (): void => onClearCells(rect.r0, rect.c0, rect.r1, rect.c1)
     const onKey = (e: KeyboardEvent): void => {
       // Only a key aimed at the editor hosting this table, or at nothing, is the rectangle's; a parked tab's host is inert.
       const editor = wrapRef.current?.closest('.cm-editor')
@@ -241,23 +238,23 @@ export function MarkdownTable({
         clear()
       } else if (mod && (e.key === 'c' || e.key === 'x')) {
         claim(e)
-        onCopyText?.(encodeRect(rectGrid(model, rect.r0, rect.c0, rect.r1, rect.c1)))
+        void host.clipboard.write(encodeRect(rectGrid(model, rect.r0, rect.c0, rect.r1, rect.c1)))
         if (e.key === 'x') clear()
       } else if (mod && e.key === 'v') {
         claim(e)
-        void readClipboard?.().then((text) => {
+        void host.clipboard.read().then((text) => {
           if (!text) return
-          const payload = decodePayload(text) ?? {
-            kind: 'rect' as const,
+          const payload: TablePayload = decodePayload(text) ?? {
+            kind: 'rect',
             grid: [[cellToSource(text)]],
           }
-          if (payload.kind !== 'table') onFill?.(rect.r0, rect.c0, payload)
+          onFill(rect.r0, rect.c0, payload)
         })
       }
     }
     document.addEventListener('keydown', onKey, true)
     return () => document.removeEventListener('keydown', onKey, true)
-  }, [rect, model, onClearCells, onCopyText, onFill, readClipboard])
+  }, [rect, model, host, onClearCells, onFill])
 
   const selected = (r: number, c: number): boolean =>
     rect !== null && r >= rect.r0 && r <= rect.r1 && c >= rect.c0 && c <= rect.c1
@@ -266,20 +263,6 @@ export function MarkdownTable({
     const at = cellPosOf(e.target)
     if (at) setHover((cur) => (cur && cur.r === at.r && cur.c === at.c ? cur : at))
   }
-
-  const around = useMemo((): CellPage => {
-    const [cites, ...keys] = (page ?? '').split('\n')
-    const map = new Map(
-      cites
-        .split(';')
-        .filter(Boolean)
-        .map((pair) => {
-          const [label, ordinal] = pair.split('=')
-          return [label, Number(ordinal)] as const
-        }),
-    )
-    return { ordinalOf: (label) => map.get(foldLabel(label)) ?? null, ownKeys: keys }
-  }, [page])
 
   // The measure sweep runs on the table's SHAPE, never the model's identity — re-measuring per keystroke is an O(rows) forced layout.
   const shape = `${model.rows.length}x${model.columns.map((c) => `${c.align}:${c.dashes}`).join('|')}`
@@ -325,8 +308,8 @@ export function MarkdownTable({
   useEffect(() => {
     const prev = wasActive.current
     wasActive.current = active
-    if (prev && (prev.row !== active?.row || prev.col !== active?.col)) onSettled?.()
-  }, [active, onSettled])
+    if (prev && (prev.row !== active?.row || prev.col !== active?.col)) live.current.onSettled()
+  }, [active])
 
   useDismissal(active !== null, false, {
     layer: () => wrapRef.current,
@@ -456,9 +439,7 @@ export function MarkdownTable({
             onCellCommit(row, col, t)
           }}
           onNavigate={(dir) => navigate(row, col, dir)}
-          onTablePaste={(payload) => {
-            if (payload.kind !== 'table') onFill?.(row, col, payload)
-          }}
+          onTablePaste={(payload) => onFill(row, col, payload)}
           onUndo={onUndo}
           onRedo={onRedo}
         />
@@ -468,7 +449,6 @@ export function MarkdownTable({
       <StaticCell
         host={host}
         text={display}
-        page={page}
         around={around}
         connections={connections}
         readOnly={readOnly}
@@ -481,9 +461,9 @@ export function MarkdownTable({
           setActive({ row, col })
         }}
         onCommit={(t) => {
-          onCellCommit(row, col, t)
+          live.current.onCellCommit(row, col, t)
           // A resting cell never had an editor to demote, so without this the widget keeps drawing the pre-edit text.
-          onSettled?.()
+          live.current.onSettled()
         }}
         onSelect={(range) => {
           host.glance?.close()

@@ -13,12 +13,12 @@ import { parseTable } from '../../../Testing/markdownEngine'
 describe('codec', () => {
   it('splitRow splits on unescaped pipes, keeps \\| in-cell', () => {
     const r = splitRow('| a\\|b | c |', 0)
-    expect(r.cells.map((c) => c.text)).toEqual(['a\\|b', 'c'])
+    expect(r.cells).toEqual(['a\\|b', 'c'])
   })
 
   it('splitRow handles rows with no outer pipes', () => {
     const r = splitRow('a | b', 0)
-    expect(r.cells.map((c) => c.text)).toEqual(['a', 'b'])
+    expect(r.cells).toEqual(['a', 'b'])
   })
 
   it('splitRow: a pipe after an escaped backslash (\\\\|) is structural, not escaped', () => {

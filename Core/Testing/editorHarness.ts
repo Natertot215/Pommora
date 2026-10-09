@@ -4,6 +4,7 @@ import { createRoot, type Root } from 'react-dom/client'
 import { EditorView } from '@codemirror/view'
 import type { PickItem } from '../Actions/menuModel'
 import { MarkdownEditor } from '../MarkdownPM/MarkdownEditor'
+import type { MarkdownTable } from '../MarkdownPM/Tables/MarkdownTable'
 import { DEFAULT_COMMANDS } from '../Actions/commands'
 import { type EditorHost, type EditorSettings, editorSettingsOf } from '../MarkdownPM/api'
 import type { EditorPrefs } from '../Contract/bridge'
@@ -134,6 +135,27 @@ export const testHost = (spec: HarnessHost = {}): EditorHost =>
     () => {},
     () => {},
   ).host
+
+/** Every `MarkdownTable` prop but its host and model, as a table on a page with no footnotes or headings that writes nowhere. */
+export const tableStubs: Omit<Parameters<typeof MarkdownTable>[0], 'host' | 'model'> = {
+  around: { ordinalOf: () => null, ownKeys: [] },
+  headingColumn: false,
+  onCellCommit: () => {},
+  onSettled: () => {},
+  onExit: () => {},
+  onReorder: () => false,
+  onResize: () => false,
+  onAppend: () => {},
+  onClearCells: () => {},
+  onFill: () => {},
+  onMenu: () => {},
+  onTableDrag: () => {},
+  onUndo: () => {},
+  onRedo: () => {},
+  connections: () => undefined,
+  readOnly: () => false,
+  linkStyle: 'page-heading',
+}
 
 let container: HTMLDivElement | null = null
 let root: Root | null = null

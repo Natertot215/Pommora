@@ -33,11 +33,11 @@ export function parseTable(src: string): TableModel | null {
   if (ls.length < 2) return null
   const columns = parseDelimiter(ls[1].text)
   if (!columns) return null
-  const header = splitRow(ls[0].text, ls[0].from).cells.map((c) => c.text)
+  const header = splitRow(ls[0].text, ls[0].from).cells
   const rows = ls
     .slice(2)
     .filter((l) => l.text.trim() !== '')
-    .map((l) => splitRow(l.text, l.from).cells.map((c) => c.text))
+    .map((l) => splitRow(l.text, l.from).cells)
   return normalize({ columns, header, rows })
 }
 

@@ -2,11 +2,8 @@ import { parseListMarker } from '../detect'
 import { lineStartAt } from '../markdownCode'
 import type { Align, Column, TableModel } from './model'
 
-export interface CellSpan {
-  text: string
-}
 interface RowSplit {
-  cells: CellSpan[]
+  cells: string[]
   segments: [number, number][]
 }
 
@@ -52,7 +49,7 @@ export function splitRow(line: string, base: number): RowSplit {
     ? cuts.slice(hasLead ? 1 : 0)
     : [...(hasLead ? cuts.slice(1) : cuts), line.length]
   for (let k = 0; k < ends.length; k++) segs.push([starts[k] + 1, ends[k]])
-  const cells: CellSpan[] = segs.map(([s, e]) => ({ text: line.slice(s, e).trim() }))
+  const cells = segs.map(([s, e]) => line.slice(s, e).trim())
   const segments = segs.map(([s, e]) => [base + s, base + e] as [number, number])
   return { cells, segments }
 }

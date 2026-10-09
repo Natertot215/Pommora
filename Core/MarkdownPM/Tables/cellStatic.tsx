@@ -38,6 +38,9 @@ export interface CellPage {
   ownKeys: readonly string[]
 }
 
+/** A cell reads its page's headings only through a same-page link. */
+export const linksOwnHeadings = (text: string): boolean => /\[\[#|\]\(\s*#/.test(text)
+
 // KNOB — distinct cell texts remembered; a table scrolling back in re-reads its cells from here.
 const cellTokens = perText(tokenize, 4096)
 
@@ -205,9 +208,9 @@ function MarkerGlyph({
 // A cell holding a list draws one block per line, so the indent, the glyph and the rails have something to sit on; a cell holding none stays a single flow, which is what pre-wrap already renders correctly.
 function renderCellBody(
   text: string,
-  getConn?: () => ConnectionsApi | undefined,
-  around?: CellPage,
-  headingLinkStyle?: HeadingLinkStyle,
+  getConn: () => ConnectionsApi | undefined,
+  around: CellPage,
+  headingLinkStyle: HeadingLinkStyle,
 ): React.ReactNode {
   const lines = text.split('\n')
   // A marker nothing draws is prose here exactly as it is in the editor, so the two surfaces accept the same lines.
@@ -278,12 +281,10 @@ function StaticCellImpl({
 }: {
   host: EditorHost
   text: string
-  /** A word label never changes its text when the numbering moves, nor a heading link when its heading goes, so comparing the cell's text alone keeps them stale. */
-  page?: string
-  around?: CellPage
-  connections?: () => ConnectionsApi | undefined
-  linkStyle?: HeadingLinkStyle
-  readOnly?: () => boolean
+  around: CellPage
+  connections: () => ConnectionsApi | undefined
+  linkStyle: HeadingLinkStyle
+  readOnly: () => boolean
   onActivate: (coords: { x: number; y: number }, sweep?: 'start' | 'end') => void
   onCommit: (text: string) => void
   onSelect: (range: [number, number]) => void
@@ -321,7 +322,7 @@ function StaticCellImpl({
   // Following waits for the click so a drag that starts on a link selects instead.
   const claimLink = (e: React.MouseEvent): (() => void) | null => {
     const found = linkAt(e)
-    const go = found && followTarget(found.target, connections?.(), e)
+    const go = found && followTarget(found.target, connections(), e)
     if (!go) return null
     e.preventDefault()
     e.stopPropagation()
@@ -330,16 +331,13 @@ function StaticCellImpl({
 
   // A resting cell has no editor, so the toggle the list drag extension serves in a live one has to be offered here too.
   const claimCheckbox = (e: React.MouseEvent): (() => void) | null => {
-    if (readOnly?.()) return null
+    if (readOnly()) return null
     const seat = (e.target as HTMLElement | null)?.closest?.('.md-list-checkbox-seat')
     const row = seat?.closest('[data-cell-line]') as HTMLElement | null
     const index = row?.dataset.cellLine
     if (index === undefined) return null
     const doc = live.current
-    const lines = doc.split('\n')
-    let at = 0
-    for (let k = 0; k < Number(index); k++) at += lines[k].length + 1
-    const change = checkboxToggleChange(doc, at)
+    const change = checkboxToggleChange(doc, lineOffsetsOf(doc.split('\n'))[Number(index)])
     if (!change) return null
     e.preventDefault()
     e.stopPropagation()
@@ -352,7 +350,7 @@ function StaticCellImpl({
     if (!label) return null
     e.preventDefault()
     e.stopPropagation()
-    return () => followCitation(label, connections?.(), e)
+    return () => followCitation(label, connections(), e)
   }
 
   return (
@@ -361,7 +359,7 @@ function StaticCellImpl({
     <div
       className="mdpm-tbl-cell-static"
       onContextMenu={(e) => {
-        if (onContextMenu(e) || readOnly?.()) return
+        if (onContextMenu(e) || readOnly()) return
         onActivate({ x: e.clientX, y: e.clientY })
       }}
       onPointerOver={onPointerOver}
@@ -371,13 +369,13 @@ function StaticCellImpl({
         dismiss(e)
         const go = claimCheckbox(e) ?? claimCite(e) ?? claimLink(e)
         if (go) return go()
-        if (readOnly?.()) return
+        if (readOnly()) return
         if (e.detail === 1 && window.getSelection()?.isCollapsed === false) return
         onActivate({ x: e.clientX, y: e.clientY })
       }}
       onMouseUp={(e) => {
         // The page's document and the cell's are two documents, so only the half of a crossing sweep that reached this cell can act.
-        if (e.button !== 0 || readOnly?.()) return
+        if (e.button !== 0 || readOnly()) return
         const sel = window.getSelection()
         const anchor = sel?.anchorNode
         if (!sel || sel.isCollapsed || !anchor) return
@@ -498,5 +496,5 @@ export const StaticCell = memo(
   (a, b) =>
     a.text === b.text &&
     a.linkStyle === b.linkStyle &&
-    (a.page === b.page || !/\[\[#|\[\^/.test(a.text)),
+    (a.around === b.around || !(linksOwnHeadings(a.text) || a.text.includes('[^'))),
 )

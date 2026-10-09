@@ -1,7 +1,7 @@
 import { Decoration, type DecorationSet, EditorView } from '@codemirror/view'
 import { ReactWidget, type ReactDom } from '../reactWidget'
 import { docHeadingKeys, docScan, perDoc } from '../docCache'
-import { foldLabel } from '../Engine/detect'
+import { type CitationEntry, foldLabel } from '../Engine/detect'
 import { focusAt } from '../caretPlacement'
 import {
   Facet,
@@ -45,15 +45,15 @@ import { blockDeleteSpan } from '../Menus/gripMenu'
 import { tableMergeGuard, tablePasteGuard } from '../Guards/tableGuard'
 import type { TableModel } from '../Engine/Tables/model'
 import type { ConnectionsApi } from '../Links/connectionsApi'
+import { type CellPage, linksOwnHeadings } from './cellStatic'
 import type { TableMenuAction, TableMenuContext } from './tableMenu'
 import { editorHost, persistPref, redrawNudge } from '../api'
 import type { HeadingLinkStyle } from '../../Settings/personalization'
 import { sameSet } from '@pommora/uix/Utilities/same'
+import { capSet } from '@pommora/uix/Utilities/capMap'
 
 type ConnGetter = () => ConnectionsApi | undefined
-const tableConnections = Facet.define<ConnGetter, ConnGetter>({
-  combine: (vals) => vals[0] ?? (() => undefined),
-})
+const tableConnections = Facet.define<ConnGetter, ConnGetter>({ combine: (vals) => vals[0] })
 
 // A Pommora-only visual with no GFM equivalent, kept per machine (`local_state` rows) rather than in the file.
 const setHeadingColsEffect = StateEffect.define<number[]>()
@@ -61,7 +61,7 @@ const toggleHeadingColEffect = StateEffect.define<number>()
 
 // The header row's cell texts joined — a table's stable identity, unchanged when OTHER tables are inserted, removed, or reordered around it.
 function headerKeyOf(region: TableRegion): string {
-  return region.rows[0].cells.map((c) => c.text).join(' ')
+  return region.rows[0].cells.join(' ')
 }
 
 // Each table's ordinal after the transaction, or -1 once it's gone: every piece of per-table memory follows its table through this one rule. Header keys match in order, a tie going to the table nearest where the old one maps, and a table left unmatched keeps its ordinal when the count holds, since an in-place edit never moves tables.
@@ -210,9 +210,8 @@ class TableWidget extends ReactWidget {
     readonly model: TableModel,
     readonly tableIndex: number,
     readonly headingColumn: boolean,
-    /** What a cell draws from the page around it and its own text never holds — the footnote numbering, then the headings a same-page link is judged against — and this equality gates above the cell memo. */
-    readonly page: string,
-    readonly linkStyle: HeadingLinkStyle | undefined,
+    readonly around: CellPage,
+    readonly linkStyle: HeadingLinkStyle,
     readonly height: HeightBox = { px: -1 },
   ) {
     super()
@@ -227,7 +226,7 @@ class TableWidget extends ReactWidget {
       other.text === this.text &&
       other.tableIndex === this.tableIndex &&
       other.headingColumn === this.headingColumn &&
-      other.page === this.page &&
+      other.around === this.around &&
       other.linkStyle === this.linkStyle
     )
   }
@@ -272,16 +271,15 @@ class TableWidget extends ReactWidget {
     const clearCells = (r0: number, c0: number, r1: number, c1: number): void => {
       structural((m) => clearRect(m, r0, c0, r1, c1))
     }
+    // A whole table pasted into a table has no cells to land in.
     const fill = (row: number, col: number, payload: TablePayload): void => {
+      if (payload.kind === 'table') return
       structural((m) =>
         payload.kind === 'column'
           ? fillColumn(m, row, col, payload.header, payload.body)
-          : payload.kind === 'rect'
-            ? fillCells(m, row, col, payload.grid)
-            : m,
+          : fillCells(m, row, col, payload.grid),
       )
     }
-    const toClipboard = (text: string): void => void host.clipboard.write(text)
     const tableDrag = (e: PointerEvent): void => {
       const region = docScan(view.state.doc).tables[this.tableIndex]
       if (region) startBlockDrag(view, e, { from: region.from, to: region.to })
@@ -304,7 +302,7 @@ class TableWidget extends ReactWidget {
         const model = modelFromRegion(region)
         const copy = copyTextFor(action, ctx.index, source, model)
         if (copy !== null) {
-          toClipboard(copy)
+          void host.clipboard.write(copy)
           return
         }
         if (action === 'table:delete' || (action === 'col:delete' && model.columns.length <= 1)) {
@@ -330,7 +328,7 @@ class TableWidget extends ReactWidget {
       <TV
         host={host}
         model={this.model}
-        page={this.page}
+        around={this.around}
         headingColumn={this.headingColumn}
         onCellCommit={commit}
         onSettled={() => view.dispatch({ effects: refreshTableEffect.of(this.tableIndex) })}
@@ -340,8 +338,6 @@ class TableWidget extends ReactWidget {
         onAppend={append}
         onClearCells={clearCells}
         onFill={fill}
-        onCopyText={toClipboard}
-        readClipboard={() => host.clipboard.read()}
         onMenu={onMenu}
         onTableDrag={tableDrag}
         onUndo={() => undo(view)}
@@ -411,14 +407,14 @@ export function buildWidgetDecorations(
   }
   const ranges: Range<Decoration>[] = []
   const scan = docScan(doc)
-  const linkStyle = state.facet(editorHost)?.settings().headingLinkStyle
+  const linkStyle = state.facet(editorHost).settings().headingLinkStyle
   scan.tables.forEach((region, i) => {
     const text = doc.sliceString(region.from, region.to)
     const model = modelFromRegion(region)
-    const page = pageKey(doc, text)
+    const around = cellPage(doc, text)
     ranges.push(
       Decoration.replace({
-        widget: new TableWidget(text, model, i, headingCols.has(i), page, linkStyle, boxes[i]),
+        widget: new TableWidget(text, model, i, headingCols.has(i), around, linkStyle, boxes[i]),
         block: true,
       }).range(region.from, region.to),
     )
@@ -473,32 +469,47 @@ function rebuiltTable(deco: DecorationSet, state: EditorState, index: number): D
   const region = docScan(state.doc).tables[index]
   if (!region) return deco
   const text = state.doc.sliceString(region.from, region.to)
-  const page = pageKey(state.doc, text)
+  const around = cellPage(state.doc, text)
   return swapTableWidget(deco, index, (w) =>
-    w.text === text && w.page === page
+    w.text === text && w.around === around
       ? null
       : new TableWidget(
           text,
           modelFromRegion(region),
           index,
           w.headingColumn,
-          page,
+          around,
           w.linkStyle,
           w.height,
         ),
   )
 }
 
-const citeKey = perDoc((doc) =>
-  docScan(doc)
-    .citations.entries.filter((e) => e.ordinal !== null)
-    .map((e) => `${foldLabel(e.label)}=${e.ordinal}`)
-    .join(';'),
-)
+const numbered = (e: CitationEntry): [string, number][] =>
+  e.ordinal === null ? [] : [[foldLabel(e.label), e.ordinal]]
+const ordinals = perDoc((doc) => new Map(docScan(doc).citations.entries.flatMap(numbered)))
+// Each pair joins as `label,n`, and a label holds no whitespace, so no two numberings share a key.
+const citeKey = perDoc((doc) => [...ordinals(doc)].join(' '))
 const headingKey = perDoc((doc) => docHeadingKeys(doc).join('\n'))
 
-const pageKey = (doc: Text, text: string): string =>
-  text.includes('[[#') ? `${citeKey(doc)}\n${headingKey(doc)}` : citeKey(doc)
+// KNOB — page contexts every editor shares, one object each, so a widget and a cell compare what they draw from the page by identity.
+const cellPages = new Map<string, CellPage>()
+
+/** What a cell draws from the page around it and its own text never holds: the footnote numbering, and the headings a same-page link is judged against when the table holds one. */
+function cellPage(doc: Text, text: string): CellPage {
+  const linksHeadings = linksOwnHeadings(text)
+  const key = linksHeadings ? `${citeKey(doc)}\n${headingKey(doc)}` : citeKey(doc)
+  let page = cellPages.get(key)
+  if (!page) {
+    const numbers = ordinals(doc)
+    page = {
+      ordinalOf: (label) => numbers.get(foldLabel(label)) ?? null,
+      ownKeys: linksHeadings ? docHeadingKeys(doc) : [],
+    }
+    capSet(cellPages, key, page, 16)
+  }
+  return page
+}
 
 const widgetField = StateField.define<DecorationSet>({
   create: buildWidgetDecorations,
@@ -515,7 +526,7 @@ const widgetField = StateField.define<DecorationSet>({
         const region = docScan(tr.state.doc).tables[idx]
         const text = region ? tr.state.doc.sliceString(region.from, region.to) : w.text
         const model = region ? modelFromRegion(region) : w.model
-        return new TableWidget(text, model, idx, on, w.page, w.linkStyle, w.height)
+        return new TableWidget(text, model, idx, on, w.around, w.linkStyle, w.height)
       })
     }
     if (toggled) return toggledSet
@@ -539,14 +550,14 @@ const widgetField = StateField.define<DecorationSet>({
     if (citeKey(doc) === citeKey(was) && headingKey(doc) === headingKey(was)) return next
     for (const it = next.iter(); it.value; it.next()) {
       const w = it.value.spec.widget as TableWidget
-      if (w.page !== pageKey(doc, w.text)) next = rebuiltTable(next, tr.state, w.tableIndex)
+      if (w.around !== cellPage(doc, w.text)) next = rebuiltTable(next, tr.state, w.tableIndex)
     }
     return next
   },
   provide: (f) => EditorView.decorations.from(f),
 })
 
-export function tableWidgetExtension(connections?: ConnGetter): Extension {
+export function tableWidgetExtension(connections: ConnGetter): Extension {
   // Loaded ahead so the first table to scroll in draws with its frame rather than after an import.
   if (!MarkdownTableComp) void loadTable()
   // headingColField precedes widgetField so the widget reads the up-to-date set; atomicRanges makes the caret skip a table as one unit.
@@ -556,7 +567,7 @@ export function tableWidgetExtension(connections?: ConnGetter): Extension {
     tableMergeGuard,
     tablePasteGuard,
     EditorView.atomicRanges.of((view) => view.state.field(widgetField)),
-    connections ? tableConnections.of(connections) : [],
+    tableConnections.of(connections),
     // A remap correcting stale ordinals is written back too, so a reload can't re-apply them.
     persistPref(
       (s) => s.field(headingColField),

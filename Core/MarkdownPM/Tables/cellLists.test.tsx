@@ -331,6 +331,37 @@ describe('the list vocabulary inside a table cell', () => {
     expect(anyCellLive()).toBe(false)
   })
 
+  it('toggles a resting checkbox in its own table after a table is inserted above it', async () => {
+    // The paragraph keeps the insert clear of the lower table, so its node is reused under a new index rather than handed to the new table.
+    const view = await mountEditor({ initialBody: `intro\n\n${table('- [ ] b')}` })
+    await tableEl()
+    const upper = table('- [ ] n')
+    await act(async () => {
+      view.dispatch({ changes: { from: 0, insert: `${upper}\n\n` } })
+    })
+    const tables = editorContainer().querySelectorAll('table.mdpm-tbl')
+    const seat = tables[1].querySelector('.md-list-checkbox-seat') as HTMLElement
+    const ev = { bubbles: true, cancelable: true, button: 0, clientX: 4, clientY: 4 }
+    await act(async () => {
+      seat.dispatchEvent(new MouseEvent('mousedown', ev))
+      seat.dispatchEvent(new MouseEvent('click', { ...ev, detail: 1 }))
+    })
+    expect(view.state.doc.toString()).toBe(`${upper}\n\nintro\n\n${table('- [x] b')}`)
+    expect(tables[1].querySelector('.checkbox-checked')).not.toBeNull()
+  })
+
+  it('leaves a hand-formatted table as written when a whole table is pasted into its cell', async () => {
+    const body = '| A | B |\n|---|---|\n| x | z |'
+    const view = await mountEditor({ initialBody: body })
+    await enterCell()
+    const paste = { changes: { from: 0, insert: table('q') }, userEvent: 'input.paste' }
+    await act(async () => {
+      liveCell().view.dispatch(paste)
+      await new Promise((r) => setTimeout(r, 0))
+    })
+    expect(view.state.doc.toString()).toBe(body)
+  })
+
   it('treats a marker nothing draws as prose, for the keys as well as the glyphs', async () => {
     await mountEditor({ initialBody: table('- [] x') })
     await enterCell()

@@ -2,8 +2,9 @@
 import { describe, it, expect, afterEach, vi } from 'vitest'
 import { createElement, act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
+import { EditorView } from '@codemirror/view'
 import { MarkdownTable } from './MarkdownTable'
-import { testHost } from '../../Testing/editorHarness'
+import { tableStubs, testHost } from '../../Testing/editorHarness'
 import type { TableModel } from '../Engine/Tables/model'
 
 // jsdom lacks ResizeObserver (MarkdownTable measures cell geometry with it); a no-op stub is enough. The flag enables React's act() in this env.
@@ -28,20 +29,7 @@ const model: TableModel = {
   ],
 }
 
-const noop = (): void => {}
-const props = {
-  host: testHost(),
-  model,
-  onCellCommit: noop,
-  onExit: noop,
-  onReorder: () => false,
-  onResize: () => false,
-  onMenu: noop,
-  onTableDrag: noop,
-  onUndo: noop,
-  onRedo: noop,
-  onAppend: noop,
-}
+const props = { ...tableStubs, host: testHost(), model }
 
 let container: HTMLDivElement
 let root: Root
@@ -152,5 +140,35 @@ describe('a live cell under a menu’s native Undo and Redo', () => {
       )
     expect(onUndo).toHaveBeenCalledOnce()
     expect(onRedo).toHaveBeenCalledOnce()
+  })
+})
+
+describe('text landing in a live cell from elsewhere', () => {
+  const grown: TableModel = { ...model, rows: [['c1 and more', 'c2'], model.rows[1]] }
+  const land = async (onCellCommit = vi.fn()): Promise<EditorView> => {
+    await mount({ onCellCommit })
+    await clickCell(1, 0)
+    const view = EditorView.findFromDOM(container.querySelector('.cm-editor') as HTMLElement)!
+    // jsdom lays nothing out, so a focused view reads its selection back as 0 after any redraw.
+    await act(async () => {
+      view.dispatch({ selection: { anchor: 1 } })
+      view.contentDOM.blur()
+    })
+    await act(async () => {
+      root.render(createElement(MarkdownTable, { ...props, onCellCommit, model: grown }))
+    })
+    return view
+  }
+
+  it('keeps a mid-cell caret where it stood', async () => {
+    const view = await land()
+    expect(view.state.doc.toString()).toBe('c1 and more')
+    expect(view.state.selection.main.head).toBe(1)
+  })
+
+  it('and never commits the landing back into the page', async () => {
+    const onCellCommit = vi.fn()
+    await land(onCellCommit)
+    expect(onCellCommit).not.toHaveBeenCalled()
   })
 })

@@ -3,8 +3,8 @@ import { describe, it, expect, afterEach, vi } from 'vitest'
 import { createElement, act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { MarkdownTable } from './MarkdownTable'
-import { renderCellContent } from './cellStatic'
-import { testHost } from '../../Testing/editorHarness'
+import { type CellPage, renderCellContent } from './cellStatic'
+import { tableStubs, testHost } from '../../Testing/editorHarness'
 import type { TableModel } from '../Engine/Tables/model'
 import { followCitation } from '../Citations/citationPointer'
 
@@ -22,18 +22,23 @@ if (!('ResizeObserver' in globalThis)) {
   }
 }
 
-const noop = (): void => {}
 const model: TableModel = {
   columns: [{ align: null, dashes: 3 }],
   header: ['A'],
   rows: [['see [^note] and [^9]']],
 }
 
+// The page's numbering gives `[^note]` its ordinal and leaves `[^9]` unbound.
+const numbering = (n: number): CellPage => ({
+  ordinalOf: (label) => (label === 'note' ? n : null),
+  ownKeys: [],
+})
+
 let container: HTMLDivElement
 let root: Root
 const cited = (): string[] => vi.mocked(followCitation).mock.calls.map(([label]) => label)
 
-async function mount(page: string): Promise<void> {
+async function mount(around = tableStubs.around): Promise<void> {
   vi.mocked(followCitation).mockClear()
   container = document.createElement('div')
   document.body.appendChild(container)
@@ -41,18 +46,10 @@ async function mount(page: string): Promise<void> {
   await act(async () =>
     root.render(
       createElement(MarkdownTable, {
+        ...tableStubs,
         host: testHost(),
         model,
-        page,
-        onCellCommit: noop,
-        onExit: noop,
-        onReorder: () => false,
-        onResize: () => false,
-        onMenu: noop,
-        onTableDrag: noop,
-        onUndo: noop,
-        onRedo: noop,
-        onAppend: noop,
+        around,
       }),
     ),
   )
@@ -68,33 +65,25 @@ const glyphs = (): (string | null)[] =>
 
 describe('a resting cell draws a marker as the number the document gives it', () => {
   it('draws the ordinal, not the label', async () => {
-    await mount('NOTE=2')
+    await mount(numbering(2))
     expect(glyphs()).toEqual(['2'])
   })
 
   it('leaves an unmatched marker literal', async () => {
-    await mount('NOTE=2')
+    await mount(numbering(2))
     expect(container.textContent).toContain('[^9]')
   })
 
   it('redraws when the numbering moves under it, though its text has not changed', async () => {
-    await mount('NOTE=2')
+    await mount(numbering(2))
     expect(glyphs()).toEqual(['2'])
     await act(async () =>
       root.render(
         createElement(MarkdownTable, {
+          ...tableStubs,
           host: testHost(),
           model,
-          page: 'NOTE=3',
-          onCellCommit: noop,
-          onExit: noop,
-          onReorder: () => false,
-          onResize: () => false,
-          onMenu: noop,
-          onTableDrag: noop,
-          onUndo: noop,
-          onRedo: noop,
-          onAppend: noop,
+          around: numbering(3),
         }),
       ),
     )
@@ -102,7 +91,7 @@ describe('a resting cell draws a marker as the number the document gives it', ()
   })
 
   it('draws nothing when the document has no citations at all', async () => {
-    await mount('')
+    await mount()
     expect(glyphs()).toEqual([])
     expect(container.textContent).toContain('[^note]')
   })
@@ -110,7 +99,7 @@ describe('a resting cell draws a marker as the number the document gives it', ()
 
 describe('an entered cell draws what the resting cell drew', () => {
   it('replaces the marker in the cell editor too, so the glyph does not change on entry', async () => {
-    await mount('NOTE=2')
+    await mount(numbering(2))
     const cell = [...container.querySelectorAll('.mdpm-tbl-cell-static')].find((el) =>
       el.textContent?.includes('see'),
     ) as HTMLElement
@@ -126,7 +115,7 @@ describe('an entered cell draws what the resting cell drew', () => {
   })
 
   it('a right-click enters the cell too, so the menu has a target', async () => {
-    await mount('NOTE=2')
+    await mount(numbering(2))
     const cell = [...container.querySelectorAll('.mdpm-tbl-cell-static')].find((el) =>
       el.textContent?.includes('see'),
     ) as HTMLElement
@@ -148,19 +137,19 @@ describe('a marker in a resting cell leads to its citation', () => {
   }
 
   it('travels by the label the marker carries, not the number it draws', async () => {
-    await mount('NOTE=2')
+    await mount(numbering(2))
     await pressGlyph()
     expect(cited()).toEqual(['note'])
   })
 
   it('and the press never enters the cell', async () => {
-    await mount('NOTE=2')
+    await mount(numbering(2))
     await pressGlyph()
     expect(container.querySelector('.cm-editor')).toBeNull()
   })
 
   it('while a press beside it enters the cell as always', async () => {
-    await mount('NOTE=2')
+    await mount(numbering(2))
     const cell = [...container.querySelectorAll('.mdpm-tbl-cell-static')].find((el) =>
       el.textContent?.includes('see'),
     ) as HTMLElement
@@ -175,7 +164,7 @@ describe('a marker in a resting cell leads to its citation', () => {
 
 describe('an entered cell follows the numbering too', () => {
   it('redraws when the numbering moves while the cell is open', async () => {
-    await mount('NOTE=2')
+    await mount(numbering(2))
     const cell = [...container.querySelectorAll('.mdpm-tbl-cell-static')].find((el) =>
       el.textContent?.includes('see'),
     ) as HTMLElement
@@ -191,18 +180,10 @@ describe('an entered cell follows the numbering too', () => {
     await act(async () =>
       root.render(
         createElement(MarkdownTable, {
+          ...tableStubs,
           host: testHost(),
           model,
-          page: 'NOTE=3',
-          onCellCommit: noop,
-          onExit: noop,
-          onReorder: () => false,
-          onResize: () => false,
-          onMenu: noop,
-          onTableDrag: noop,
-          onUndo: noop,
-          onRedo: noop,
-          onAppend: noop,
+          around: numbering(3),
         }),
       ),
     )

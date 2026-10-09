@@ -4,7 +4,7 @@ import { act, createElement } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { EditorView } from '@codemirror/view'
 import { MarkdownTable } from './MarkdownTable'
-import { testHost } from '../../Testing/editorHarness'
+import { tableStubs, testHost } from '../../Testing/editorHarness'
 import type { ConnectionsApi } from '../Links/connectionsApi'
 import { buildPageIndex } from '../../Connections/pageIndex'
 import type { TableModel } from '../Engine/Tables/model'
@@ -28,7 +28,6 @@ const modelOf = (cell: string): TableModel => ({
   header: ['A'],
   rows: [[cell]],
 })
-const noop = (): void => {}
 
 let container: HTMLDivElement
 let root: Root
@@ -44,18 +43,10 @@ async function cellEditor(text = CELL): Promise<EditorView> {
   await act(async () =>
     root.render(
       createElement(MarkdownTable, {
+        ...tableStubs,
         host: testHost(),
         model: modelOf(text),
         connections: () => conn,
-        onCellCommit: noop,
-        onExit: noop,
-        onReorder: () => false,
-        onResize: () => false,
-        onMenu: noop,
-        onTableDrag: noop,
-        onUndo: noop,
-        onRedo: noop,
-        onAppend: noop,
       }),
     ),
   )

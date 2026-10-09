@@ -13,19 +13,19 @@ import { redrawNudge } from '../api'
 
 type OrdinalOf = (label: string) => number | null
 
-function marks(view: EditorView, ordinalOf?: OrdinalOf): DecorationSet {
+function marks(view: EditorView, ordinalOf: OrdinalOf): DecorationSet {
   const text = view.state.doc.toString()
   const builder = new RangeSetBuilder<Decoration>()
   for (const tk of tokenize(text)) {
     if (tk.kind !== 'citationRef') continue
-    const n = ordinalOf?.(text.slice(tk.contentRange[0], tk.contentRange[1])) ?? null
+    const n = ordinalOf(text.slice(tk.contentRange[0], tk.contentRange[1]))
     if (n !== null)
       builder.add(tk.range[0], tk.range[1], Decoration.replace({ widget: new CiteRefWidget(n) }))
   }
   return builder.finish()
 }
 
-export function cellCitations(getOrdinalOf: () => OrdinalOf | undefined): Extension {
+export function cellCitations(getOrdinalOf: () => OrdinalOf): Extension {
   const plugin = ViewPlugin.fromClass(
     class {
       deco: DecorationSet

@@ -4,6 +4,9 @@ import { type DecorationSet, EditorView } from '@codemirror/view'
 import { buildWidgetDecorations, refreshTableEffect, tableWidgetExtension } from './widget'
 import { scanDoc } from '../Engine/docScan'
 import { cellCommitChange as cellCommitIn, tableSelfEdit } from './sync'
+import { editorHost } from '../api'
+import { testHost } from '../../Testing/editorHarness'
+import type { CellPage } from './cellStatic'
 
 const cellCommitChange = (
   doc: string,
@@ -11,12 +14,15 @@ const cellCommitChange = (
 ): ReturnType<typeof cellCommitIn> => cellCommitIn(scanDoc(doc), ...rest)
 import type { TableModel } from '../Engine/Tables/model'
 
-const make = (doc: string): number => buildWidgetDecorations(EditorState.create({ doc })).size
+const tables = [editorHost.of(testHost()), tableWidgetExtension(() => undefined)]
+
+const make = (doc: string): number =>
+  buildWidgetDecorations(EditorState.create({ doc, extensions: tables })).size
 
 function firstTableWidget(state: EditorState): {
   text: string
   model: TableModel
-  page: string
+  around: CellPage
 } {
   for (const provider of state.facet(EditorView.decorations)) {
     if (typeof provider === 'function') continue
@@ -24,7 +30,7 @@ function firstTableWidget(state: EditorState): {
       const w = it.value.spec.widget as unknown as {
         text: string
         model: TableModel
-        page: string
+        around: CellPage
       } | null
       if (w && 'model' in w) return w
     }
@@ -70,7 +76,7 @@ describe('table widget decorations', () => {
 
   it('covers the full table region (block range spans header through last row)', () => {
     const doc = 'lead\n\n| a | b |\n| --- | --- |\n| 1 | 2 |'
-    const set = buildWidgetDecorations(EditorState.create({ doc }))
+    const set = buildWidgetDecorations(EditorState.create({ doc, extensions: tables }))
     let from = -1
     let to = -1
     set.between(0, doc.length, (f, t) => {
@@ -82,7 +88,7 @@ describe('table widget decorations', () => {
 
   it('leaves the widget alone on a cell self-edit', () => {
     const doc = '| a | b |\n| --- | --- |\n| 1 | 2 |'
-    const start = EditorState.create({ doc, extensions: [tableWidgetExtension()] })
+    const start = EditorState.create({ doc, extensions: tables })
     expect(firstTableWidget(start).model.rows[0][0]).toBe('1')
 
     const change = cellCommitChange(doc, 0, 1, 0, 'hello')
@@ -97,7 +103,7 @@ describe('table widget decorations', () => {
 
   it('rebuilds it when the cell settles', () => {
     const doc = '| a | b |\n| --- | --- |\n| 1 | 2 |'
-    const start = EditorState.create({ doc, extensions: [tableWidgetExtension()] })
+    const start = EditorState.create({ doc, extensions: tables })
     const change = cellCommitChange(doc, 0, 1, 0, 'hello')
     const edited = start.update({
       changes: change ?? undefined,
@@ -112,7 +118,7 @@ describe('table widget decorations', () => {
 
   it('and the widget still spans the table after an edit that lengthened it', () => {
     const doc = '| a | b |\n| --- | --- |\n| 1 | 2 |'
-    const start = EditorState.create({ doc, extensions: [tableWidgetExtension()] })
+    const start = EditorState.create({ doc, extensions: tables })
     const change = cellCommitChange(doc, 0, 1, 0, 'a much longer cell')
     const edited = start.update({
       changes: change ?? undefined,
@@ -123,15 +129,18 @@ describe('table widget decorations', () => {
 })
 
 describe("a table follows the document's footnote numbering", () => {
+  const numbering = ({ around }: { around: CellPage }): (number | null)[] =>
+    ['a', 'b', 'new'].map(around.ordinalOf)
   const doc = 'first [^a]\n\nmiddle line\n\n| h |\n| - |\n| [^b] |\n\n[^a]: one\n[^b]: two'
 
   it('carries the numbering the document gives it', () => {
-    const start = EditorState.create({ doc, extensions: [tableWidgetExtension()] })
-    expect(firstTableWidget(start).page).toBe('A=1;B=2')
+    const start = EditorState.create({ doc, extensions: tables })
+    expect(numbering(firstTableWidget(start))).toEqual([1, 2, null])
+    expect(firstTableWidget(start).around.ownKeys).toEqual([])
   })
 
   it('re-reads it after an edit far from the table renumbers a marker inside it', () => {
-    const start = EditorState.create({ doc, extensions: [tableWidgetExtension()] })
+    const start = EditorState.create({ doc, extensions: tables })
     const at = doc.indexOf('middle line')
     const next = start.update({
       changes: [
@@ -140,22 +149,23 @@ describe("a table follows the document's footnote numbering", () => {
       ],
     }).state
     expect(next.doc.toString()).toContain('[^new] middle line')
-    expect(firstTableWidget(next).page).toBe('A=1;B=3;NEW=2')
+    expect(numbering(firstTableWidget(next))).toEqual([1, 3, 2])
   })
 
   it('a table holding a same-page heading link carries the page’s heading keys after the numbering, and re-reads them when a heading far from it changes', () => {
     const linked = `## Setup\n\n${doc.replace('| [^b] |', '| [^b] [[#Setup]] |')}`
-    const start = EditorState.create({ doc: linked, extensions: [tableWidgetExtension()] })
-    expect(firstTableWidget(start).page).toBe('A=1;B=2\nsetup')
+    const start = EditorState.create({ doc: linked, extensions: tables })
+    expect(numbering(firstTableWidget(start))).toEqual([1, 2, null])
+    expect(firstTableWidget(start).around.ownKeys).toEqual(['setup'])
     const next = start.update({ changes: { from: 8, insert: 'x' } }).state
-    expect(firstTableWidget(next).page).toBe('A=1;B=2\nsetupx')
+    expect(firstTableWidget(next).around.ownKeys).toEqual(['setupx'])
   })
 
   it('a keystroke in a heading rebuilds only the table holding a same-page link', () => {
     const plain = '| h |\n| - |\n| x |'
     const start = EditorState.create({
       doc: `## Setup\n\n${plain}\n\n| h |\n| - |\n| [[#Setup]] |`,
-      extensions: [tableWidgetExtension()],
+      extensions: tables,
     })
     const next = start.update({ changes: { from: 8, insert: 'x' } }).state
     const [a0, b0] = tableWidgets(start)
@@ -165,7 +175,7 @@ describe("a table follows the document's footnote numbering", () => {
   })
 
   it('leaves the table alone when the edit moves no number', () => {
-    const start = EditorState.create({ doc, extensions: [tableWidgetExtension()] })
+    const start = EditorState.create({ doc, extensions: tables })
     const before = firstTableWidget(start)
     const next = start.update({ changes: { from: doc.indexOf('middle'), insert: 'plain ' } }).state
     expect(firstTableWidget(next)).toBe(before)

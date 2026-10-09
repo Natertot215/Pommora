@@ -50,7 +50,7 @@ function openTwoTables(onChange: (indices: number[]) => void): EditorView {
             prefs: prefsOf({}, (scope, value) => scope === 'headingCols' && onChange(value)),
           }),
         ),
-        tableWidgetExtension(),
+        tableWidgetExtension(() => undefined),
       ],
     }),
   })
@@ -101,7 +101,7 @@ interface TableWidgetLike {
   model: unknown
   tableIndex: number
   headingColumn: boolean
-  page: string
+  around: unknown
   linkStyle: unknown
   height: { px: number }
 }
@@ -118,12 +118,11 @@ function drawn(v: EditorView): TableWidgetLike[] {
   return out
 }
 
-// Everything the widget is built from except where it sits.
-const memoryOf = ({ text, model, headingColumn, page, linkStyle, height }: TableWidgetLike) => ({
+// Everything the widget is built from except where it sits and the page around it, which the widget holds by identity.
+const memoryOf = ({ text, model, headingColumn, linkStyle, height }: TableWidgetLike) => ({
   text,
   model,
   headingColumn,
-  page,
   linkStyle,
   height,
 })
@@ -142,6 +141,7 @@ describe('a table another table lands above is the same table', () => {
     const [added, after] = drawn(v)
     expect(after.tableIndex).toBe(1)
     expect(memoryOf(after)).toEqual(kept)
+    expect(after.around).toBe(before.around)
     expect(after.height).toBe(before.height)
     expect(added.headingColumn).toBe(false)
     expect(added.height.px).toBe(-1)

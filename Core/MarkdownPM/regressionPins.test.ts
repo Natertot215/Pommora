@@ -43,7 +43,7 @@ describe('codeMask — tilde fences + inline spans', () => {
 describe('splitRow — escaped trailing pipe is a cell, not a row end', () => {
   it('keeps the last cell when the row ends in \\|', () => {
     const { cells } = splitRow('a | b\\|', 0)
-    expect(cells.map((c) => c.text)).toEqual(['a', 'b\\|'])
+    expect(cells).toEqual(['a', 'b\\|'])
   })
 })
 

@@ -4,7 +4,7 @@ import { createElement, act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { firePointer, stubPointerCapture, stubRect } from '@pommora/uix/Utilities/pointerHarness'
 import { MarkdownTable } from './MarkdownTable'
-import { testHost } from '../../Testing/editorHarness'
+import { tableStubs, testHost } from '../../Testing/editorHarness'
 import type { TableModel } from '../Engine/Tables/model'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -22,7 +22,6 @@ const roCallbacks: ResizeObserverCallback[] = []
   disconnect(): void {}
 }
 
-const noop = (): void => {}
 const model: TableModel = {
   columns: [{ align: null, dashes: 3 }],
   header: ['A'],
@@ -51,17 +50,9 @@ async function mount(props: Record<string, unknown> = {}): Promise<void> {
   await act(async () =>
     root.render(
       createElement(MarkdownTable, {
+        ...tableStubs,
         host: testHost(),
         model,
-        onCellCommit: noop,
-        onExit: noop,
-        onReorder: () => false,
-        onResize: () => false,
-        onMenu: noop,
-        onTableDrag: noop,
-        onUndo: noop,
-        onRedo: noop,
-        onAppend: noop,
         ...props,
       }),
     ),
@@ -173,32 +164,29 @@ describe('a swept cell rectangle', () => {
 
   it('answers Delete and ⌘C aimed at its own editor or at nothing', async () => {
     const onClearCells = vi.fn()
-    const onCopyText = vi.fn()
-    await mount({ onClearCells, onCopyText })
+    const write = vi.fn(async () => {})
+    await mount({ onClearCells, host: testHost({ clipboard: { write } }) })
     await sweepDown()
     expect((await press(document.body, 'Backspace')).defaultPrevented).toBe(true)
     expect(onClearCells).toHaveBeenCalledExactlyOnceWith(0, 0, 1, 0)
     await press(editor, 'c', true)
-    expect(onCopyText).toHaveBeenCalledOnce()
+    expect(write).toHaveBeenCalledOnce()
   })
 
   it('cuts with ⌘X: the rectangle is copied, then cleared', async () => {
     const onClearCells = vi.fn()
-    const onCopyText = vi.fn()
-    await mount({ onClearCells, onCopyText })
+    const write = vi.fn(async () => {})
+    await mount({ onClearCells, host: testHost({ clipboard: { write } }) })
     await sweepDown()
     expect((await press(document.body, 'x', true)).defaultPrevented).toBe(true)
-    expect(onCopyText).toHaveBeenCalledExactlyOnceWith('| A |\n| one |')
+    expect(write).toHaveBeenCalledExactlyOnceWith('| A |\n| one |')
     expect(onClearCells).toHaveBeenCalledExactlyOnceWith(0, 0, 1, 0)
-    expect(onCopyText.mock.invocationCallOrder[0]).toBeLessThan(
-      onClearCells.mock.invocationCallOrder[0],
-    )
+    expect(write.mock.invocationCallOrder[0]).toBeLessThan(onClearCells.mock.invocationCallOrder[0])
   })
 
   it('pastes with ⌘V into the rectangle’s first cell', async () => {
     const onFill = vi.fn()
-    const readClipboard = vi.fn(async () => 'x')
-    await mount({ onFill, readClipboard })
+    await mount({ onFill, host: testHost({ clipboard: { read: async () => 'x' } }) })
     await sweepDown()
     expect((await press(document.body, 'v', true)).defaultPrevented).toBe(true)
     await act(async () => {})
@@ -207,9 +195,9 @@ describe('a swept cell rectangle', () => {
 
   it('leaves Delete, ⌘C, ⌘X, and ⌘V typed into an unrelated field to that field', async () => {
     const onClearCells = vi.fn()
-    const onCopyText = vi.fn()
-    const readClipboard = vi.fn(async () => 'x')
-    await mount({ onClearCells, onCopyText, readClipboard })
+    const write = vi.fn(async () => {})
+    const read = vi.fn(async () => 'x')
+    await mount({ onClearCells, host: testHost({ clipboard: { read, write } }) })
     await sweepDown()
     const input = document.createElement('input')
     document.body.appendChild(input)
@@ -222,8 +210,8 @@ describe('a swept cell rectangle', () => {
       ] as const)
         expect((await press(input, key, meta)).defaultPrevented).toBe(false)
       expect(onClearCells).not.toHaveBeenCalled()
-      expect(onCopyText).not.toHaveBeenCalled()
-      expect(readClipboard).not.toHaveBeenCalled()
+      expect(write).not.toHaveBeenCalled()
+      expect(read).not.toHaveBeenCalled()
     } finally {
       input.remove()
     }
