@@ -1,6 +1,6 @@
 ## Pommora Codebase Audit
 
-**Pinned:** `f6511401d` (09-23-2026) · **Reconciled:** `8a576b885` (10-05-2026) · **Findings:** 106/627
+**Pinned:** `f6511401d` (09-23-2026) · **Reconciled:** `0e7318f68` (10-09-2026) · **Findings:** 106/627
 
 Thirty-four Opus investigators read every production file in `Core`, `UIX`, `Desktop`, and `Sync` in full, sliced by folder and by the jobs the code performs. Two mergers combined their 857 candidates by root cause, and twenty-one reviewers who hadn't raised them re-read every citation, reproduced the High ones against real modules, and killed 63. This document is the current state: findings that were fixed, withdrawn, or ruled moot are removed rather than annotated, and rulings are written into the findings they settle. The readiness and pace sections are the orchestrator's judgment, drawn from the evidence below them. A system audit of MarkdownPM (10-08-2026) read the editor in full at `70fc6063c`, and its findings are folded in here: each fix was typed and compiled on a scratch worktree, so its nets are measured, and the owner's rulings on which fixes wait are written into the findings they settle. Findings were renumbered from F-001 on 10-08-2026, so F-numbers in earlier documents don't match these.
 
