@@ -1,5 +1,4 @@
 // The citations section must reach the document's end — anything left standing after it literalizes every citation at once. Atomicity stops CM's own motion but never a programmatic dispatch, so this sits at the transaction layer.
-import type { EditorState } from '@codemirror/state'
 import { citationEntries, splitWithOffsets } from '../Engine/detect'
 import { lineEndOf } from '../Engine/markdownCode'
 import type { CitationSlice } from '../Citations/citationEdits'
@@ -7,7 +6,7 @@ import { docScan } from '../docCache'
 import { type GuardVerdict, verdictFilter } from './verdictFilter'
 
 function tailHolds(after: string, at: number): boolean {
-  if (at >= after.length || (at > 0 && after[at - 1] !== '\n')) return false
+  if (at > 0 && after[at - 1] !== '\n') return false
   return citationEntries(splitWithOffsets(after.slice(at)), () => false)[0]?.line === 0
 }
 
@@ -34,8 +33,9 @@ export function citationTailVerdict(
   if (!kept) return { kind: 'ok' }
   const keptAt = lineStarts[kept.line]
   const start = keptAt < from ? keptAt : keptAt + inserted.length - (to - from)
-  const after = doc.slice(0, from) + inserted + doc.slice(to)
-  if (tailHolds(after, start))
+  // The tail and the character before its head are all that's read, so the edited text starts one character before the head or the change, whichever comes first.
+  const cut = Math.max(0, Math.min(keptAt, from) - 1)
+  if (tailHolds(doc.slice(cut, from) + inserted + doc.slice(to), start - cut))
     return entry ? { kind: 'rewrite', edits: [{ from, to, insert: inserted }] } : { kind: 'ok' }
 
   // Where the anchor holds prose, the body ends at that line's END — seating text at its start would land it above the paragraph it was written below.
@@ -57,7 +57,6 @@ export function citationTailVerdict(
   }
 }
 
-export const citationGuard = verdictFilter((doc, fromA, toA, inserted, state: EditorState) => {
-  const s = docScan(state.doc)
-  return citationTailVerdict(doc, fromA, toA, inserted, s)
-})
+export const citationGuard = verdictFilter((doc, fromA, toA, inserted, state) =>
+  citationTailVerdict(doc, fromA, toA, inserted, docScan(state.doc)),
+)

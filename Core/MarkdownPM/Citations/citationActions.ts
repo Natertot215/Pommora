@@ -99,15 +99,15 @@ export function seedTypedCitation(view: EditorView, at: number): boolean {
   ])
 }
 
+const sameLabels = (a: readonly { label: string }[], b: readonly { label: string }[]): boolean =>
+  a.length === b.length && a.every((x, i) => x.label === b[i].label)
+
+/** Every ordinal follows from the rows' and markers' labels in order, so those are all a binding is. */
 function bindingMoved(before: CitationScan, after: CitationScan): boolean {
-  if (before.entries.length !== after.entries.length) return true
-  return after.entries.some((e, i) => {
-    const was = before.entries[i]
-    return was.label !== e.label || was.ordinal !== e.ordinal
-  })
+  return !sameLabels(before.entries, after.entries) || !sameLabels(before.markers, after.markers)
 }
 
-/** The section a reader sees is first-use order or it is nothing, so the rewrite rides the same transaction; an ordinary keystroke pays one comparison over the rows. Filters run lowest precedence first, so at the highest it renumbers the edit every guard has already repaired. */
+/** The section a reader sees is first-use order or it is nothing, so the rewrite rides the same transaction; an ordinary keystroke pays one comparison over the rows and markers. Filters run lowest precedence first, so at the highest it renumbers the edit every guard has already repaired. */
 export const citationOrder: Extension = Prec.highest(
   EditorState.transactionFilter.of((tr) => {
     if (!tr.docChanged) return tr

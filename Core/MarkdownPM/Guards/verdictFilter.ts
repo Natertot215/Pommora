@@ -1,5 +1,4 @@
-import { type Annotation, EditorState, Transaction, type Extension } from '@codemirror/state'
-import { tableSelfEdit } from '../Tables/sync'
+import { EditorState, Transaction, type Extension } from '@codemirror/state'
 import { docString } from '../docCache'
 import type { TextEdit } from '../Engine/markdownCode'
 
@@ -11,15 +10,6 @@ export type GuardVerdict =
   | { kind: 'extend'; to: number }
   /** A list, because a repair that MOVES text is two disjoint edits — the swept range removed where it was, and the text written where it can live. */
   | { kind: 'rewrite'; edits: readonly TextEdit[] }
-
-function carriedAnnotations(tr: Transaction): Annotation<unknown>[] {
-  const out: Annotation<unknown>[] = []
-  const userEvent = tr.annotation(Transaction.userEvent)
-  if (userEvent !== undefined) out.push(Transaction.userEvent.of(userEvent))
-  const selfEdit = tr.annotation(tableSelfEdit)
-  if (selfEdit !== undefined) out.push(tableSelfEdit.of(selfEdit))
-  return out
-}
 
 export function verdictFilter(
   verdict: (
@@ -55,7 +45,7 @@ export function verdictFilter(
         changes,
         effects: tr.effects,
         scrollIntoView: tr.scrollIntoView,
-        annotations: carriedAnnotations(tr),
+        userEvent: tr.annotation(Transaction.userEvent),
       },
     ]
   })

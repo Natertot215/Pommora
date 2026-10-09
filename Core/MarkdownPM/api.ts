@@ -59,13 +59,13 @@ export function ownPage(at: EditorView | Element): OwnPage | null {
   return body && { kind: 'body', view: body, seat }
 }
 
-/** Another mount's text, already past its own guards, applied as the changed span only: no filter touches it, it stays out of undo history, and it never echoes back through `onChange`. */
-export function mirrorBody(view: EditorView, body: string): void {
+/** A whole body applied as the changed span only, past every filter and out of undo history. Another mount's body never echoes back through `onChange`; `echo` is for a rewrite this editor makes of its own. */
+export function mirrorBody(view: EditorView, body: string, { echo = false } = {}): void {
   const doc = docString(view.state.doc)
   if (body === doc) return
   view.dispatch({
     changes: changesTo(doc, body),
-    annotations: [mirrored.of(true), Transaction.addToHistory.of(false)],
+    annotations: [mirrored.of(!echo), Transaction.addToHistory.of(false)],
     filter: false,
   })
 }
