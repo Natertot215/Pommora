@@ -34,6 +34,7 @@ describe('a code line’s run', () => {
     expect(rest).toEqual([])
     expect(run.matches('.codeblock-run.scroll-fade-x.over-scroll-ellipsis')).toBe(true)
     expect(run.textContent).toBe('const a = 1')
+    expect(run.firstElementChild?.matches('.codeblock-ink')).toBe(true)
     await act(async () => {
       await codeLanguage('ts')?.load()
     })
