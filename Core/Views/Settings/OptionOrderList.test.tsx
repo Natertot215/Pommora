@@ -4,7 +4,7 @@ import { act } from 'react'
 import type { Root } from 'react-dom/client'
 import type { PropertyDefinition } from '../../Properties/properties'
 import { DragGroup } from '@pommora/uix/Interactions/drag'
-import { firePointer, pressEscape, stubRect } from '@pommora/uix/Testing/pointerHarness'
+import { firePointer, pressEscape, stubRect } from '@pommora/uix/Utilities/pointerHarness'
 import { mountEachTest } from '../../Testing/viewHarness'
 import { OptionOrderList } from './OptionOrderList'
 

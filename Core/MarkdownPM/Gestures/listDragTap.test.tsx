@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { act } from 'react'
 import type { EditorView } from '@codemirror/view'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '../../Testing/editorHarness'
-import { firePointer, stubPointerCapture } from '@pommora/uix/Testing/pointerHarness'
+import { firePointer, stubPointerCapture } from '@pommora/uix/Utilities/pointerHarness'
 
 class ResizeObserverStub {
   observe(): void {}

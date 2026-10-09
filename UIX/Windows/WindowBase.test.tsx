@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, Profiler, StrictMode, useEffect, useRef, useState } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { useDismissal } from '../Interactions/dismissalStack'
-import { firePointer, stubPointerCapture } from '../Testing/pointerHarness'
+import { firePointer, stubPointerCapture } from '../Utilities/pointerHarness'
 import type { Size } from '../Interactions/useResizable'
 import { WindowBase, type WindowFooter } from './WindowBase'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true

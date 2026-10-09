@@ -5,7 +5,7 @@ import type { ConnectionsApi } from '../Links/connectionsApi'
 import { buildPageIndex } from '../../Connections/pageIndex'
 import { embedField, setEmbedHeights } from './embedWidget'
 import { cleanupEditor, mountEditor, prefsOf, stubEditorBridge } from '../../Testing/editorHarness'
-import { firePointer, stubPointerCapture, stubRect } from '@pommora/uix/Testing/pointerHarness'
+import { firePointer, stubPointerCapture, stubRect } from '@pommora/uix/Utilities/pointerHarness'
 
 stubEditorBridge()
 stubPointerCapture()

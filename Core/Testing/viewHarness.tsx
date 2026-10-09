@@ -6,7 +6,7 @@ import { afterEach, beforeEach, vi } from 'vitest'
 import type { CollectionNode } from '../Nexus/tree'
 import type { PropertyDefinition } from '../Properties/properties'
 import { DragGroup } from '@pommora/uix/Interactions/drag'
-import { stubPointerCapture } from '@pommora/uix/Testing/pointerHarness'
+import { stubPointerCapture } from '@pommora/uix/Utilities/pointerHarness'
 import { ViewHost } from '../Views/Host/ViewHost'
 import { useSession } from '../Session/store'
 

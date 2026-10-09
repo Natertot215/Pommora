@@ -8,7 +8,7 @@ import { useSession } from '../Session/store'
 import { cachePageDetail } from '../Session/pageDetailCache'
 import { PropertyPanel } from './PropertyPanel'
 import { valuesReply } from '../Testing/pageValues'
-import { firePointer, stubPointerCapture, stubRect } from '@pommora/uix/Testing/pointerHarness'
+import { firePointer, stubPointerCapture, stubRect } from '@pommora/uix/Utilities/pointerHarness'
 import { REVEAL_DWELL_MS } from '@pommora/uix/Interactions/hoverReveal'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true

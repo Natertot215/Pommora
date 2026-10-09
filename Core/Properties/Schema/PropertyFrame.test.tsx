@@ -11,7 +11,7 @@ import {
   pressEscape,
   stubPointerCapture,
   stubRect,
-} from '@pommora/uix/Testing/pointerHarness'
+} from '@pommora/uix/Utilities/pointerHarness'
 import { useSession } from '../../Session/store'
 import { PropertyFrame } from './PropertyFrame'
 import { stubDialer } from '../../vitest.setup'

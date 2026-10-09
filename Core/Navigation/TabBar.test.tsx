@@ -7,7 +7,7 @@ import {
   pressEscape,
   stubPointerCapture,
   stubRect,
-} from '@pommora/uix/Testing/pointerHarness'
+} from '@pommora/uix/Utilities/pointerHarness'
 import type { Tab } from './navRef'
 import { useSession } from '../Session/store'
 import { TabBar } from './TabBar'

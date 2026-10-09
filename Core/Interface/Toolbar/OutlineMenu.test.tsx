@@ -2,7 +2,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import type { Root } from 'react-dom/client'
-import { firePointer, stubRect } from '@pommora/uix/Testing/pointerHarness'
+import { firePointer, stubRect } from '@pommora/uix/Utilities/pointerHarness'
 import { useSession } from '../../Session/store'
 import { mountEachTest } from '../../Testing/viewHarness'
 import { OutlineMenu } from './OutlineMenu'

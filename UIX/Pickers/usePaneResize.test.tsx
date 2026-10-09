@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { firePointer, pressEscape, stubPointerCapture } from '../Testing/pointerHarness'
+import { firePointer, pressEscape, stubPointerCapture } from '../Utilities/pointerHarness'
 import type { Size } from '../Interactions/useResizable'
 import { PickerMenu } from './PickerMenu'
 import { type PaneBounds, usePaneResize } from './usePaneResize'

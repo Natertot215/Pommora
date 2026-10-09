@@ -10,7 +10,7 @@ import { OptionEditor } from './OptionEditor'
 import { useSession } from '../../Session/store'
 import { makeTree } from '../../Testing/testTree'
 import { stubDialer } from '../../vitest.setup'
-import { firePointer, stubPointerCapture, stubRect } from '@pommora/uix/Testing/pointerHarness'
+import { firePointer, stubPointerCapture, stubRect } from '@pommora/uix/Utilities/pointerHarness'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 stubPointerCapture()

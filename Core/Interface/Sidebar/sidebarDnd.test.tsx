@@ -9,7 +9,7 @@ import {
   pressEscape,
   stubPointerCapture,
   stubRect,
-} from '@pommora/uix/Testing/pointerHarness'
+} from '@pommora/uix/Utilities/pointerHarness'
 import { menuDropLine } from '@pommora/uix/Menus'
 import { DragGroup, useLineRow, useLooseItem } from '@pommora/uix/Interactions/drag'
 import { TAB_FAMILY } from '../../Navigation/tabRows'

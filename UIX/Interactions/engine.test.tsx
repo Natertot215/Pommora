@@ -14,7 +14,7 @@ import {
   useLineEl,
   useLooseItem,
 } from './engine'
-import { firePointer, pressEscape, stubPointerCapture, stubRect } from '../Testing/pointerHarness'
+import { firePointer, pressEscape, stubPointerCapture, stubRect } from '../Utilities/pointerHarness'
 import { DEFAULT_FEEL } from '../Animations/feel'
 import { addSpring } from './dragDisclose'
 import type { Row } from './reorderModel'
