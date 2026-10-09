@@ -114,9 +114,7 @@ function tableProse(scan: DocScan): Map<number, string> {
     const last = lineIndexAt(scan, region.to)
     for (let i = lineIndexAt(scan, region.from); i <= last; i++) drawn.set(i, '')
     for (const row of region.rows) {
-      const cells = row.cells.map((c) =>
-        drawnSlice(c.text, 0, c.text.length, hiddenIn(c.text, cellHidden)),
-      )
+      const cells = row.cells.map((c) => drawnSlice(c, 0, c.length, hiddenIn(c, cellHidden)))
       drawn.set(lineIndexAt(scan, row.from), cells.join(GONE))
     }
   }

@@ -24,7 +24,7 @@ export function decodePayload(text: string): TablePayload | null {
     const t = l.trim()
     if (t.length < 2 || !t.startsWith('|') || !t.endsWith('|')) return null
   }
-  const grid = lines.map((l) => splitRow(l.trim(), 0).cells.map((c) => c.text))
+  const grid = lines.map((l) => splitRow(l.trim(), 0).cells)
   const delim = lines.length >= 2 ? parseDelimiter(lines[1]) : null
   if (delim) {
     if (delim.length > 1) return { kind: 'table' }

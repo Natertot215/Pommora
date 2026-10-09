@@ -3,10 +3,10 @@ import { parse } from '../parser'
 import type { CodeMask } from '../markdownCode'
 import type { DocLines } from '../detect'
 import { normalize, type Column, type TableModel } from './model'
-import { splitRow, parseDelimiter, type CellSpan } from './codec'
+import { splitRow, parseDelimiter } from './codec'
 
 interface RowGeom {
-  cells: CellSpan[]
+  cells: string[]
   segments: [number, number][]
   /** The row line's own span — what a commit replaces when the cell it names has no segment, which is every cell a ragged row is short of. */
   from: number
@@ -17,7 +17,7 @@ export interface TableRegion {
   from: number
   to: number
   rows: RowGeom[]
-  delimiter: { columns: Column[] }
+  columns: Column[]
 }
 
 // KNOB — distinct table sources remembered; a table being typed in mints one per keystroke.
@@ -62,7 +62,7 @@ export function tableRegions(
       from: lineStarts[i - 1],
       to: lineTo(last),
       rows,
-      delimiter: { columns },
+      columns,
     })
     i = last + 1
   }
@@ -72,8 +72,8 @@ export function tableRegions(
 // Equivalent to `parseTable` on the region's source (regression-tested), without a second micromark pass.
 export function modelFromRegion(region: TableRegion): TableModel {
   return normalize({
-    columns: region.delimiter.columns,
-    header: region.rows[0].cells.map((c) => c.text),
-    rows: region.rows.slice(1).map((r) => r.cells.map((c) => c.text)),
+    columns: region.columns,
+    header: region.rows[0].cells,
+    rows: region.rows.slice(1).map((r) => r.cells),
   })
 }

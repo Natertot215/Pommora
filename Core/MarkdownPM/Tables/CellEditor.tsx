@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import { EditorView, keymap } from '@codemirror/view'
-import { Annotation, EditorSelection, EditorState, Prec } from '@codemirror/state'
+import { EditorSelection, EditorState, Prec } from '@codemirror/state'
 import { deleteCharForward, historyKeymap, redo, undo } from '@codemirror/commands'
 import { useReconfigured } from '../Input/useReconfigured'
 import { formatKeymap } from '../Input/formatKeymap'
@@ -22,7 +22,7 @@ import { useConnectionAutocomplete } from '../Autocomplete/useConnectionAutocomp
 import { AutocompletePane } from '../Autocomplete/AutocompletePane'
 import type { ConnectionsApi } from '../Links/connectionsApi'
 import type { NavDir } from '../Engine/Tables/navigate'
-import { type EditorHost, redrawNudge } from '../api'
+import { type EditorHost, mirrorBody, mirrored, redrawNudge } from '../api'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import { editorBase } from '../surface'
 
@@ -35,9 +35,6 @@ const consume =
     run(view)
     return true
   }
-
-// Tags a programmatic content sync so the updateListener doesn't treat it as a user edit and echo it back through onCommit.
-const silentEdit = Annotation.define<boolean>()
 
 /** The list transforms are pure over the cell's own document; a null hands the key back to the table's navigation. */
 const listEdit =
@@ -118,14 +115,14 @@ export function CellEditor({
   initial: string
   onCommit: (text: string) => void
   onNavigate: (dir: NavDir) => void
-  onTablePaste?: (payload: TablePayload) => void
+  onTablePaste: (payload: TablePayload) => void
   onUndo: () => void
   onRedo: () => void
-  caretCoords?: { x: number; y: number } | null
-  initialSelect?: [number, number] | null
-  sweepFrom?: 'start' | 'end' | null
-  connections?: () => ConnectionsApi | undefined
-  ordinalOf?: (label: string) => number | null
+  caretCoords: { x: number; y: number } | null
+  initialSelect: [number, number] | null
+  sweepFrom: 'start' | 'end' | null
+  connections: () => ConnectionsApi | undefined
+  ordinalOf: (label: string) => number | null
 }): React.JSX.Element {
   const mountRef = useRef<HTMLDivElement>(null)
   const viewRef = useRef<EditorView | null>(null)
@@ -136,7 +133,7 @@ export function CellEditor({
   // The numbering is a whole-document fact and the extensions bake at mount, so it is read live.
   const ordinalOfRef = useLatest(ordinalOf)
   const onTablePasteRef = useLatest(onTablePaste)
-  const ac = useConnectionAutocomplete(viewRef, host, () => connections?.(), 'cell')
+  const ac = useConnectionAutocomplete(viewRef, host, connections, 'cell')
   const formatExt = useReconfigured(viewRef, host.settings().commands, formatKeymap)
 
   useEffect(() => {
@@ -147,7 +144,7 @@ export function CellEditor({
         extensions: [
           editorBase({
             host,
-            getConn: () => connections?.(),
+            getConn: connections,
             scope: 'cell',
             panes: [ac],
             formatExt,
@@ -155,14 +152,14 @@ export function CellEditor({
           cellCitations(() => ordinalOfRef.current),
           // Every paste reaches here tagged, the menu's and the inverse chord's included, so a table-shaped clipboard fills the cells instead of landing escaped in this one.
           EditorState.transactionFilter.of((tr) => {
-            if (!tr.isUserEvent('input.paste') || !onTablePasteRef.current) return tr
+            if (!tr.isUserEvent('input.paste')) return tr
             let text = ''
             tr.changes.iterChanges((_fa, _ta, _fb, _tb, inserted) => {
               text += inserted.toString()
             })
             const payload = decodePayload(text)
             if (!payload) return tr
-            queueMicrotask(() => onTablePasteRef.current?.(payload))
+            queueMicrotask(() => onTablePasteRef.current(payload))
             return []
           }),
           Prec.highest(
@@ -237,7 +234,7 @@ export function CellEditor({
             },
           }),
           EditorView.updateListener.of((u) => {
-            if (u.docChanged && !u.transactions.some((t) => t.annotation(silentEdit)))
+            if (u.docChanged && !u.transactions.some((t) => t.annotation(mirrored)))
               onCommitRef.current(u.state.doc.toString())
           }),
         ],
@@ -281,12 +278,8 @@ export function CellEditor({
   // Safe while focused: a keystroke makes `initial` equal the text just typed so the guard below no-ops, while a reorder or focused undo brings genuinely different text the sync must apply.
   useLayoutEffect(() => {
     const view = viewRef.current
-    if (!view || cellToSource(view.state.doc.toString()).trim() === cellToSource(initial).trim())
-      return
-    view.dispatch({
-      changes: { from: 0, to: view.state.doc.length, insert: initial },
-      annotations: silentEdit.of(true),
-    })
+    if (view && cellToSource(view.state.doc.toString()).trim() !== cellToSource(initial).trim())
+      mirrorBody(view, initial)
   }, [initial])
 
   return (

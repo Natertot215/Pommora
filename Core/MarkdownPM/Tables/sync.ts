@@ -1,7 +1,7 @@
 import { Annotation } from '@codemirror/state'
 import type { DocScan } from '../Engine/docScan'
 import { modelFromRegion } from '../Engine/Tables/regions'
-import { cellToSource, serialize } from '../Engine/Tables/codec'
+import { cellToSource, pipeRow, serialize } from '../Engine/Tables/codec'
 import type { TableModel } from '../Engine/Tables/model'
 import type { TextEdit } from '../Engine/markdownCode'
 
@@ -22,11 +22,9 @@ export function cellCommitChange(
   const seg = geom.segments[col]
   if (seg) return { from: seg[0], to: seg[1], insert: ` ${source} ` }
   // A RAGGED row is short of the columns the delimiter declares and the model pads it, so the cell being typed in has a position in the model and no span in the source. The row is rewritten with the padding made real, rather than the edit being dropped.
-  if (col >= region.delimiter.columns.length) return null
-  const cells = region.delimiter.columns.map((_, i) =>
-    i === col ? source : (geom.cells[i]?.text ?? ''),
-  )
-  return { from: geom.from, to: geom.to, insert: `| ${cells.join(' | ')} |` }
+  if (col >= region.columns.length) return null
+  const cells = region.columns.map((_, i) => (i === col ? source : (geom.cells[i] ?? '')))
+  return { from: geom.from, to: geom.to, insert: pipeRow(cells) }
 }
 
 export function structuralEditChange(
