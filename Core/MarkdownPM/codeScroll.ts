@@ -37,6 +37,15 @@ interface CodeScrolls {
 
 const scrollBlock = StateEffect.define<BlockScroll>()
 const hoverBlock = StateEffect.define<number | null>()
+const cutsRead = StateEffect.define<null>()
+
+/** A resting block's ellipsis colors by line code, for the run width, offset, and font they were read at; an empty color is a line that fits or is cut in plain text. */
+interface Cuts {
+  width: number
+  x: number
+  font: string
+  colors: Map<string, string>
+}
 
 // KNOB: how far a sideways wheel over a resting block travels before the block reveals.
 const REVEAL_TRAVEL = 24
@@ -82,13 +91,19 @@ const liveBlock = (view: EditorView): number | null =>
     : null
 
 const run = Decoration.mark({ class: `codeblock-run ${overScrollFace}` })
+const ink = Decoration.mark({ class: 'codeblock-ink' })
 const nowrap = Decoration.line({ class: 'codeblock-nowrap' })
 
-function decorate(view: EditorView, live: number | null): DecorationSet {
-  if (!on(view)) return Decoration.none
+function decorate(
+  view: EditorView,
+  live: number | null,
+  cuts: ReadonlyMap<number, Cuts>,
+): [DecorationSet, DecorationSet] {
+  if (!on(view)) return [Decoration.none, Decoration.none]
   const scan = docScan(view.state.doc)
   const { blocks, hovered } = view.state.field(codeScrolls)
   const ranges: Range<Decoration>[] = []
+  const inks: Range<Decoration>[] = []
   for (
     let i = lineIndexAt(scan, view.viewport.from), last = lineIndexAt(scan, view.viewport.to);
     i <= last;
@@ -101,28 +116,39 @@ function decorate(view: EditorView, live: number | null): DecorationSet {
     const seat = ls + codeSeat(scan.lines[i], f)
     const b = blocks.find((s) => s.from === f.from)
     const shown = f.from === live || f.from === hovered
+    const c = shown ? undefined : cuts.get(f.from)
+    const cut = c?.x === (b?.x ?? 0) ? c.colors.get(scan.lines[i].slice(seat - ls)) : undefined
+    const vars = [
+      (b || shown) && `--code-scroll:${b?.x ?? 0}px;--code-overflow:${b?.overflow ?? 0}px`,
+      cut && `--code-cut:${cut}`,
+    ].filter(Boolean)
     ranges.push(
-      b || shown
+      (vars.length > 0
         ? Decoration.line({
             class: shown ? 'codeblock-nowrap codeblock-revealed' : 'codeblock-nowrap',
-            attributes: {
-              style: `--code-scroll:${b?.x ?? 0}px;--code-overflow:${b?.overflow ?? 0}px`,
-            },
-          }).range(ls)
-        : nowrap.range(ls),
+            attributes: { style: vars.join(';') },
+          })
+        : nowrap
+      ).range(ls),
     )
-    if (seat < le) ranges.push(run.range(seat, le))
+    if (seat < le) {
+      ranges.push(run.range(seat, le))
+      inks.push(ink.range(seat, le))
+    }
   }
-  return Decoration.set(ranges)
+  return [Decoration.set(ranges), Decoration.set(inks)]
 }
 
 // Made on first use, so nothing that only imports the editor creates a canvas.
 let measure: CanvasRenderingContext2D | undefined
-const widthsOf = drawnLast((key: string) => {
+function textWidth(font: string, text: string): number {
   measure ??= document.createElement('canvas').getContext('2d')!
+  measure.font = font
+  return measure.measureText(text).width
+}
+const widthsOf = drawnLast((key: string) => {
   const cut = key.indexOf('\n')
-  measure.font = key.slice(0, cut)
-  return measure.measureText(key.slice(cut + 1)).width
+  return textWidth(key.slice(0, cut), key.slice(cut + 1))
 })
 
 /** A run's tab stops count from the run's own start, so a tab widens to the next stop there. */
@@ -166,6 +192,28 @@ function overflowOf(view: EditorView, from: number): number | null {
   const cs = getComputedStyle(sample)
   const rest = sample.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)
   return Math.max(0, Math.ceil(widestOf(view, from, cs.font) - rest))
+}
+
+/** The color of the code a resting run's ellipsis stands in for: the first character past what the run shows, found the way the ellipsis is placed, by the widths of the code before it. */
+function cutColor(runEl: HTMLElement, code: string, c: Cuts, tabSize: number): string {
+  const width = (text: string) => textWidth(c.font, expandTabs(text, tabSize))
+  const edge = c.x + c.width
+  if (width(code) <= edge) return ''
+  const room = edge - width('…')
+  let lo = 0
+  let hi = code.length - 1
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1
+    if (width(code.slice(0, mid + 1)) > room) hi = mid
+    else lo = mid + 1
+  }
+  const walk = document.createTreeWalker(runEl, NodeFilter.SHOW_TEXT)
+  for (let n = walk.nextNode(), at = 0; n; at += n.nodeValue!.length, n = walk.nextNode()) {
+    if (lo >= at + n.nodeValue!.length) continue
+    const host = n.parentElement!
+    return host.classList.contains('codeblock-ink') ? '' : getComputedStyle(host).color
+  }
+  return ''
 }
 
 /** The run's on-screen box for a position at or past its line's code, read only once the scan says the position is code. */
@@ -212,35 +260,80 @@ function blockUnder(view: EditorView, target: EventTarget | null): number | null
 
 class CodeScroll {
   deco: DecorationSet
+  inks: DecorationSet
   live: number | null
   /** Whether the live block's width or code may have moved since its overflow was last measured. */
   stale = true
   /** Sideways travel gathered over a resting block, toward revealing it. */
   gathered = { from: -1, dx: 0 }
+  cuts = new Map<number, Cuts>()
+  /** Whether a drawn resting line may have an ellipsis color not yet read. */
+  unread = true
 
   constructor(view: EditorView) {
     this.live = liveBlock(view)
-    this.deco = decorate(view, this.live)
+    ;[this.deco, this.inks] = decorate(view, this.live, this.cuts)
   }
 
   update(u: ViewUpdate): void {
     const live = liveBlock(u.view)
     if (live !== this.live || u.docChanged || u.geometryChanged) this.stale = true
+    if (u.geometryChanged) this.unread = true
     if (
       live !== this.live ||
       u.docChanged ||
       u.viewportChanged ||
       u.startState.field(codeScrolls) !== u.state.field(codeScrolls) ||
-      u.transactions.some((tr) => tr.effects.some((e) => e.is(redrawNudge)))
+      u.transactions.some((tr) => tr.effects.some((e) => e.is(redrawNudge) || e.is(cutsRead)))
     ) {
       this.live = live
-      this.deco = decorate(u.view, live)
+      ;[this.deco, this.inks] = decorate(u.view, live, this.cuts)
+      this.unread = true
     }
+  }
+
+  /** Reads the ellipsis color of every drawn resting line not yet read; true when one takes a color. */
+  readCuts(view: EditorView): boolean {
+    const scan = docScan(view.state.doc)
+    const { blocks, hovered } = view.state.field(codeScrolls)
+    let colored = false
+    let c: Cuts | undefined
+    let from = -1
+    for (
+      let i = lineIndexAt(scan, view.viewport.from), last = lineIndexAt(scan, view.viewport.to);
+      i <= last;
+      i++
+    ) {
+      const f = scan.fences[i]
+      if (f?.role !== 'content' || f.from === this.live || f.from === hovered) continue
+      const ls = scan.lineStarts[i]
+      const runEl = lineElementAt(view, ls)?.querySelector<HTMLElement>('.codeblock-run')
+      if (!runEl) continue
+      if (f.from !== from) {
+        from = f.from
+        const x = blocks.find((s) => s.from === from)?.x ?? 0
+        c = this.cuts.get(from)
+        if (c?.x !== x || c.width !== runEl.clientWidth) {
+          c = { width: runEl.clientWidth, x, font: getComputedStyle(runEl).font, colors: new Map() }
+          this.cuts.set(from, c)
+        }
+      }
+      const code = scan.lines[i].slice(codeSeat(scan.lines[i], f))
+      if (c!.colors.has(code)) continue
+      const color = cutColor(runEl, code, c!, view.state.tabSize)
+      c!.colors.set(code, color)
+      colored ||= color !== ''
+    }
+    return colored
   }
 }
 
 const codeScrollPlugin = ViewPlugin.fromClass(CodeScroll, {
-  provide: (p) => EditorView.outerDecorations.of((v) => v.plugin(p)?.deco ?? Decoration.none),
+  // The ink is a regular decoration, so it always sits inside the run, whichever way the syntax marks nest with it.
+  provide: (p) => [
+    EditorView.outerDecorations.of((v) => v.plugin(p)?.deco ?? Decoration.none),
+    EditorView.decorations.of((v) => v.plugin(p)?.inks ?? Decoration.none),
+  ],
   eventObservers: {
     wheel(e, view) {
       if (Math.abs(e.deltaX) <= Math.abs(e.deltaY) || !on(view)) return
@@ -320,4 +413,12 @@ const follow = EditorView.updateListener.of((u) => {
     u.view.dispatch({ effects: scrollBlock.of({ from, x, overflow }) })
 })
 
-export const codeScroll = [codeScrolls, codeScrollPlugin, boundaryKeys, follow]
+// The ellipsis colors are read once the lines they sit on are drawn, and a dispatch from here draws them before the frame paints.
+const readCuts = EditorView.updateListener.of((u) => {
+  const plugin = u.view.plugin(codeScrollPlugin)
+  if (!plugin?.unread || !on(u.view)) return
+  plugin.unread = false
+  if (plugin.readCuts(u.view)) u.view.dispatch({ effects: cutsRead.of(null) })
+})
+
+export const codeScroll = [codeScrolls, codeScrollPlugin, boundaryKeys, follow, readCuts]
