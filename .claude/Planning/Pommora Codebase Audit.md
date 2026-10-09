@@ -1,6 +1,6 @@
 ## Pommora Codebase Audit
 
-**Pinned:** `f6511401d` (09-23-2026) · **Reconciled:** `8a576b885` (10-05-2026) · **Findings:** 45/557
+**Pinned:** `f6511401d` (09-23-2026) · **Reconciled:** `8a576b885` (10-05-2026) · **Findings:** 51/557
 
 Thirty-four Opus investigators read every production file in `Core`, `UIX`, `Desktop`, and `Sync` in full, sliced by folder and by the jobs the code performs. Two mergers combined their 857 candidates by root cause, and twenty-one reviewers who hadn't raised them re-read every citation, reproduced the High ones against real modules, and killed 63. This document is the current state: findings that were fixed, withdrawn, or ruled moot are removed rather than annotated, and rulings are written into the findings they settle. The readiness and pace sections are the orchestrator's judgment, drawn from the evidence below them.
 
@@ -544,21 +544,97 @@ Deferred from the Data Layer work by its Decision Log (M-1), which keeps only th
 
 ---
 
+#### W30 · The Editor's Surface And Host Seams
+
+The MarkdownPM System Audit (10-08-2026) raised these four and the owner deferred them: each prepares the editor for a surface that doesn't exist yet (a SidePane editor, a fourth Properties scope), and each was typed and compiled on a scratch worktree, so the nets are measured rather than estimated. They land together when that surface is designed, since all four rewrite `MarkdownEditor.tsx`'s extension list and `editorHost.tsx`'s builder.
+
+##### F-645 · Scope is a three-member string read by 20 bare comparisons and 13 `= 'page'` defaults, so a fourth scope silently inherits page behavior in some places and cell behavior in others.
+
+> **Area:** MarkdownPM · **Lens:** Growth Constraint · **Weight:** Medium · **Size:** M · **Net:** +37 to +75 · **Origin:** Shortcut
+
+**Finding**
+
+A page, a table cell, and a Text value read different amounts of Markdown, and the code asks "is this the page?" or "is this the cell?" in twenty places across nine files instead of asking one question about what the surface reads. Thirteen parameters default to `'page'`, so a reader that forgets to pass its scope answers from the page-shaped scan. The only capability switches are `readsLists` and `blockGestures`. A new surface would be classified one site at a time, non-page at every `=== 'page'` and page at every `=== 'cell'`, silently. Inside a cell today the readers that forgot already diverge: `lineBodyBefore` and `opensLine` strip a `> ` prefix the cell draws as prose, `listDrag` and `listRenumber` read the quote-prefixed list grammar, and `blockDrag` takes block starts from the page's vocabulary; none of those is reachable from a glyph a cell draws, which is why this waits.[^626]
+
+**Fix | Deferred**
+
+One `Core/MarkdownPM/Engine/surfaces.ts` owns the scope tuple, the `MarkdownScope` type, and the capability predicates `readsLists`, `readsBlocks`, `readsTiles`, `gripKinds`, and `hasGutter`; the twenty compares read them, the thirteen defaults go so a forgotten scope is a compile error, and `listDrag`, `listRenumber`, `renumberRuns`, `dropChanges`, and `blockDragExtension` take the scope. Typed as five switches it measured +75; as one table keyed by scope with the five capabilities as columns, about +37 with the same exhaustiveness.
+
+##### F-646 · Connections reach the editor through a getter threaded through 23 signatures beside the host facet that carries everything else.
+
+> **Area:** MarkdownPM · **Lens:** Growth Constraint · **Weight:** Medium · **Size:** M · **Net:** −50 · **Origin:** Parallel Build
+
+**Finding**
+
+Every host capability reaches the editor's pieces through one shared facet, except the page index, which is handed down by hand through about a dozen editor functions and built four ways: `() => ConnectionsApi | undefined` appears in 23 production signatures; the getter is built in `MarkdownEditor.tsx`, in TextPane, in `CellEditor.tsx`, and re-wrapped as `embedHost.getConn`; `buildEditorHost` keeps its own `connRef`, a change still needs a manual nudge, and `useEditorHost`'s memo lists `connections` though the builder never reads it. A new host supplies connections twice. The work is a rework of three editor mounts for no behavior change, which is why it waits for the surface that needs it.[^627]
+
+**Fix | Deferred**
+
+Connections become an `EditorHost.connections()` member read live through `view.state.facet(editorHost)`: the host is seated once and every member reads live, where a facet would need a Compartment in each of the three mounts. The parameter drops out of every intermediate, `embedHost.getConn` goes, `connRef` stays as the member's backing, and the redraw nudge becomes one effect on `[host]`. Typed at −50.
+
+##### F-647 · What kind of surface an editor sits in is spread over five uncoordinated switches, two sentinel ancestor strings, and a CSS list of host classes.
+
+> **Area:** MarkdownPM · **Lens:** Growth Constraint · **Weight:** Low · **Size:** M · **Net:** +30 · **Origin:** Drift
+
+**Finding**
+
+To mount the editor somewhere new, a host picks among `readOnly`, `active`, `locked`, `inert`, `pageSurface`, `preview`, a connections mode (`preview | window | inert`; the history window sets both "inerts"), and fake ancestor strings (`HISTORY_ANCESTOR`, `GLANCE_ANCESTORS`) that switch off nested embeds through `host.ancestors.length <= 1`, then adds itself to the placeholder selector in `markdown-pm.css`. The sentinels carry one latent misfire: `embedExclusions` excludes every ancestor's title, so a page titled "glance" or "page-history" can't be embedded inside a glance or a history snapshot.[^628]
+
+**Fix | Deferred**
+
+One `EditorSurface` union on `EditorHostOptions` in `Core/Pages/editorHost.tsx` (`page`, `tile`, `preview`, `snapshot`, `value`), switched once in a `traitsOf(surface)` that derives the connections mode, `pageSurface`, `liveEmbeds`, `placeholder`, `preview`, and `inert`; `EditorHost` gains `liveEmbeds` and `placeholder`, the sentinel ancestors go, and the CSS host list becomes one `.mdpm-quiet .cm-placeholder` rule the shell sets. A tile's and a Text value's connections mode stays the holder's, since the surface can't derive it. Typed at +30, most of it the switch in `editorHost.tsx`.
+
+##### F-648 · A new block or tile kind falls through to silent defaults in the grip menu and block starts.
+
+> **Area:** MarkdownPM · **Lens:** Growth Constraint · **Weight:** Low · **Size:** S · **Net:** +13 · **Origin:** Shortcut
+
+**Finding**
+
+Adding a new kind of block (images are planned) would get the plain grip menu and default behavior in four places with nothing flagging the miss: `contextFor`'s `default`, the `GRIP_KINDS` plain `Set`, `blockStarts`' `default`, and a `startsWith` action chain in `gripMenu.ts` that drops an unhandled action.[^629]
+
+**Fix | Deferred**
+
+`contextFor` and `blockStarts` switch over every `BlockKind` with the plain kinds listed, and `GRIP_KINDS` becomes a `Record<BlockKind, boolean>`; the action chain can't be made exhaustive, since its actions are strings the menu rows mint. Lands with F-645, whose `gripKinds(scope)` is where the Record lives.
+
 ### Ride-Alongs
 
 #### MarkdownPM
 
-##### F-573 · A `#` line inside an HTML block lists as a heading.
+##### F-573 · A `#` line or a footnote run inside an HTML block still counts as a heading or as the footnotes section.
 
-> **Area:** MarkdownPM · **Lens:** Defect · **Weight:** Low · **Size:** M · **Net:** +15 · **Origin:** Drift
+> **Area:** MarkdownPM · **Lens:** Defect · **Weight:** Low · **Size:** M · **Net:** +98 · **Origin:** Drift
 
 **Finding**
 
-The heading scan skips a `#` line inside a fence or a `$$` math block but not one inside an HTML block, so `<div>` / `# x` / `</div>` still lists `x` in the Outline, the heading picker, the fold chevrons, and the index, and the editor draws the line as a heading. The HTML-block detector can't decide it as written: it opens a block on any line that starts with a tag and runs it to the next blank line, so a line led by an inline tag, an autolink, or a one-line comment (`<b>Note:</b> read this`, `<!-- todo -->`) would swallow every heading beneath it. `scanHeadings` skips through `inSealedLine` (fences, math, tables), and `htmlBlocks` matches `HTML_OPEN` without CommonMark's start and end conditions. The editor can now write such a block itself: with **HTML Shortcuts** on, ⌘/ over several lines wraps them in one `<!-- … -->`, and every heading after the first still lists.[^564]
+The heading scan skips a `#` line inside a fence or a `$$` math block but not one inside an HTML block, so `<div>` / `# x` / `</div>` still lists `x` in the Outline, the heading picker, the fold chevrons, and the index, and the editor draws the line as a heading. The same root leaves footnote definitions inside a `<!-- … -->` block numbered and drawn as the footnotes section, where other Markdown readers treat them as a hidden comment: `assembleCitations` excludes lines through `inSealedLine`, which seals fences, maths, and tables but not `html`. The editor can write such a block itself: with **HTML Shortcuts** on, ⌘/ over several lines wraps them in one `<!-- … -->`. The HTML-block detector can't decide this as written: it opens a block on any line that starts with a tag and runs it to the next blank line, so a line led by an inline tag or a one-line comment (`<b>Note:</b> read this`, `<!-- todo -->`) would swallow every heading beneath it. The owner ruled that whether they count follows the **HTML Formatting** setting: on, the heading scan, the footnote assembly, the line intents, and the block model seal HTML-block lines; off, they count and render.[^564]
 
-**Fix | Proposed**
+**Fix | Deferred**
 
-Make `htmlBlocks` follow CommonMark's seven start and end conditions, then skip HTML-block lines in the heading scan, the block model's heading kind, and the line intents' heading branch; `quietAt`, the rescan's other reader of the spans, moves with it.
+Typed and compiled on a scratch worktree at +98, four times the estimate, which is why it waits. CommonMark's seven start and end conditions in `markdownCode.ts` and `htmlBlocks` are +21 on their own. Following the setting is +41: the scan records the reading it was built under (`DocScan.sealsHtml`, `scanDoc(text, sealsHtml)`), `inSealedLine` adds the HTML clause, the editor's cache re-derives every held document when the setting turns, and the index seed, the rename cascade, and the footer's figures read the setting where they run. The remaining +36 is what keeps `rescan ≡ scanDoc` once a block may end at a closer across blank lines: the window re-pairs an HTML opener and its closer as it re-pairs a fence pair, a tag alone on a line opens a block only below a blank line (a fifth intentional CommonMark divergence, which the parser is masked to agree with), and three window edge guards follow from that. Two consequences come with it: with the setting on, `listRenumber`, `listDrag`, the `/` menu, and the embed seat also stop inside a raw HTML block, and the content index keeps each page's headings and citation relations under the setting as it stood when the page was indexed, so turning the setting would need a re-index.
+
+##### F-649 · The footer's word and character figures are a second reading of what the editor draws, and the two already disagree.
+
+> **Area:** MarkdownPM · **Lens:** Duplication · **Weight:** Low · **Size:** M · **Net:** +15 · **Origin:** Parallel Build
+
+**Finding**
+
+The footer's figures come from `subfieldStats`, which keeps its own chrome reader (`proseStart`) and hidden-token table (`hiddenOf`), where the editor's hide set comes from the line intents and `tokenIntents`; and `pageStats` runs `scanDoc(body)` from scratch on every settled body string (the 120 ms debounce exists because of that) while the editor holds the stepped scan of the same text. The two readings disagree: `- [] hello`, which the editor draws as plain text, counts 5 characters instead of 10, and in a paragraph of 40 or more lines a `*…*` spanning two lines has its markers counted as text. The freeze past 8,000 lines that sat beside this is the stats cache's eviction order, fixed on its own by the MarkdownPM cleanup; what remains is the second reading.[^630]
+
+**Fix | Deferred**
+
+The counts come from the editor's own derivations (the hides, prefixes, and widgets in the line intents plus `tokenIntents` over the chunk tokens), which deletes `proseStart` and `CHUNK_LINES` but keeps `hiddenOf` (the intents skip link, wikilink, and citation hides and draw inline code, against the counter's contract); the page figures read the open editor's held scan through a footer seam (`BodyMount` carries the view, `pageDetailCache.heldView(path)`, and the Subfield page holds `{ target, stats }`), with `computeStats(body)` kept for a page with no editor mounted. Typed at +15 beyond the cache fix.
+
+##### F-650 · Format ▸ Page Title on a link in a resting table cell writes the bare domain and never swaps the page title in.
+
+> **Area:** MarkdownPM · **Lens:** Defect · **Weight:** Low · **Size:** S · **Net:** +23 · **Origin:** Drift
+
+**Finding**
+
+In a table cell that isn't being edited, right-click an address, pick Format ▸ Page Title, and the link becomes its domain; when the title arrives, nothing rewrites the cell. In the body the same action swaps the title in: `linkFormat` dispatches with `awaitTitle` and `pendingTitle` swaps pending ranges, while the resting cell's `linkActionText` → `onCommit` → `host.linkTitles.resolve` carries no `awaitTitle`. The menu offers Format because `connectionMenuActions` defaults `surface` to `'editor'`. Confirmed by trace, not driven; a corner the owner deferred at its measured cost.[^631]
+
+**Fix | Deferred**
+
+The cell's link edit commits as one page-view transaction carrying `awaitTitle` at the cell's absolute offset (`pendingInSource` in `cellStatic.tsx`, the widget's commit passing `awaitTitle` through `MarkdownTable`), and `pendingTitle`'s sweep escapes a fetched title holding `|` through `cellToSource` before writing it into the row. Typed at +23.
 
 #### UIX
 
@@ -731,7 +807,7 @@ Route the four readers (the walk's `readConfig`, `readNavigationFile`, `readMatr
 [^403]: **F-408:** `Core/Matrix/MatrixCanvas.tsx:129-145`, `Core/Matrix/MatrixCanvas.tsx:176-197`, `Core/Matrix/matrix.css.ts:39-46`
 [^481]: **F-486:** `UIX/Pickers/PickerMenu.tsx:179-272` (`measure`), `UIX/Pickers/PickerMenu.test.tsx:390-481`
 [^559]: **F-568:** `UIX/Interactions/dismissalStack.ts:60-75` (`onPointerDown`), `UIX/Interactions/dismissalStack.ts:114` (`shields`), `UIX/Pickers/PickerMenu.tsx:113-121,292,307` (`PickerMenu`), `UIX/Animations/useExitPresence.ts:8-24` (`useExitPresence`), `UIX/Pickers/PickerControl.tsx:91-114,144-148` (`PickerControl`), `Core/Actions/menuActions.ts:20-23` (`popMenu`), `Core/Session/chromeSlice.ts:62-70` (`presentMenu`), `Core/Interface/Menus/MenuPresenter.tsx:84-103` (`MenuPresenter`), `Core/Tiles/Surfaces/ViewTile.tsx:652-660`, `Core/Interface/Toolbar/Toolbar.tsx:29-33`, `Core/Views/Settings/GroupFrame.tsx:235`, `UIX/Interactions/shared.ts:26-34` (`suppressReleaseClick`)
-[^564]: **F-573:** `Core/MarkdownPM/Engine/headingScan.ts:20-34` (`scanHeadings`), `Core/MarkdownPM/Engine/detect.ts:98-126` (`htmlBlocks`), `Core/MarkdownPM/Engine/intents.ts:532`, `Core/MarkdownPM/Engine/blockModel.ts:81` (`kindAt`), `Core/MarkdownPM/Engine/docScan.ts:103-111` (`quietAt`)
+[^564]: **F-573:** `Core/MarkdownPM/Engine/headingScan.ts:25` (`scanHeadings`), `Core/MarkdownPM/Engine/detect.ts:170-198` (`htmlBlocks`), `Core/MarkdownPM/Engine/docScan.ts:94,365-372` (`inSealedLine`, `scanDoc`), `Core/MarkdownPM/Engine/blockModel.ts:69-72` (`kindAt`), `Core/MarkdownPM/Engine/intents.ts:588`, `Core/MarkdownPM/Input/htmlShortcuts.ts:3,9`, `Core/MarkdownPM/Engine/parser.ts:17-36`, `.claude/Features/MarkdownPM.md:28`; MarkdownPM System Audit MD-051 and MD-052, *§Decisions* 5
 [^577]: **F-596:** `Core/Navigation/tab-base.css:8-10` (`.tab`), `Core/Navigation/tab-base.css:29-32` (`.tab:last-child`), `Core/Navigation/tab-base.css:143-155` (`.tabs-standard`, `.tabs-compact`), `Core/Settings/personalization.ts:45-48` (`TAB_MAX_WIDTH`), `Core/Settings/applyPersonalization.ts:50`, `.claude/Features/ConfigurationPM.md:66`
 [^585]: **F-604:** `Core/Files/atomicWrite.ts:202-203` (`readAppFile`), `Core/Files/atomicWrite.ts:178-193` (`readLast`), `Core/Files/atomicWrite.ts:207-212` (`readAppFileKnown`), `Core/Files/atomicWrite.ts:144-161` (`rmwLocked`), `Core/Files/atomicWrite.ts:225-236` (`updateNexusFile`), `Core/Files/atomicWrite.ts:265-271` (`updateNexusConfig`), `Core/Nexus/readNexus.ts:68` (`readOrder`), `Core/Nexus/readNexus.ts:113` (`readConfig`), `Core/Nexus/readNexus.ts:287` (`readNexusConfig`), `Core/Navigation/navigationFile.ts:33-41` (`readNavigationFile`), `Core/Matrix/matrixFile.ts:11` (`readMatrixFile`), `Core/Nexus/fileEvents.ts:543-562,633-634` (`applyOrder`), `Core/Session/navigationSlice.ts:268` (`writeNav`), `Core/Session/matrixSlice.ts:186` (`patchMatrix`), `Core/Interface/Notifications/notifications.ts` (`persist`, `reportRefusal`), `Core/Assets/assetMigrate.ts:85-114,166,175` (`collectRefs`, `migrateAssets`), `Core/Tiles/tileDoc.ts:20` (`readTileDocAt`)
 [^586]: **F-605:** `Core/Files/jsonMerge.ts:15-46` (`mergeKeys`), `Core/Contract/validators.ts:5-6` (`isPlainObject`), `Core/Sync/Arrival/mergePolicy.ts:19-40` (`isMergedJson`, `mergeDepthFor`), `Core/Sync/Arrival/land.ts:45-64` (`bytesToLand`), `Core/Sync/Arrival/land.ts:95`, `Core/Sync/Client/push.ts:299` (`resolveStale`), `Core/Contexts/contexts.ts:9,20` (`ContextsRegistry`), `Core/Contexts/contextCascade.ts:246-260`, `Core/Nexus/readNexus.ts:247-274` (`readContextGroups`), `Core/Nexus/order.ts:10-27` (`resolveOrder`), `Core/Properties/rowOrder.ts:1-13` (`resolveRowOrder`), `Core/Tiles/tiles.ts:95,182-184` (`active`, `TileDoc`), `Core/Tiles/TileHost.tsx:283` (`renderTile`), `Core/Views/viewsFile.ts:24` (`views`), `Core/Properties/properties.ts:117,142,149-150` (`select_options`, `status_groups`), `Core/Sync/Client/tap.ts:9` (`DEBOUNCE_MS`), `.claude/Features/NexusSyncPM.md:55,63`
@@ -755,3 +831,9 @@ Route the four readers (the walk's `readConfig`, `readNavigationFile`, `readMatr
 [^623]: **F-642:** `Core/Tiles/Layout/codec.ts:26-31`, `Core/Tiles/tileDocStore.ts:143-153` (`adopt`), `Core/Tiles/TileHost.tsx:283-295`, `Core/Tiles/tilesFile.ts:136-145,192,235-242,253,277`, `Core/Tiles/tileDoc.ts:20-23` (`readTileDocAt`), `Core/Files/atomicWrite.ts:215` (`setAside`)
 [^624]: **F-643:** `Core/Tiles/TileGrid.tsx:207-226` (`TileShell`'s comparator)
 [^625]: **F-644:** `Core/Tiles/tileHosts.ts:16-37` (`TILE_HOSTS`), `Core/Nexus/migrateConfig.ts:45-53` (`normalizeSavedViews`), `Core/Nexus/identity.ts:58-62` (`ensureConfigLayout`), `Core/Nexus/remint.ts:110`
+[^626]: **F-645:** compares at `Core/MarkdownPM/Engine/intents.ts:341,446,536,588,664`, `Core/MarkdownPM/Input/edits.ts:47,57,184,213`, `Core/MarkdownPM/Menus/blockHandles.ts:44,49,174,189`, `Core/MarkdownPM/decorations.ts:425,657`, `Core/MarkdownPM/Engine/subfieldStats.ts:40`, `Core/MarkdownPM/Gestures/listDrag.ts:52`, `Core/MarkdownPM/Input/listRenumber.ts:39`, `Core/MarkdownPM/Input/markdownInput.ts:228`, `Core/MarkdownPM/Menus/menu.ts:94`; defaults at `Core/MarkdownPM/Input/edits.ts:46,70,153,165,205,259`, `Core/MarkdownPM/Engine/intents.ts:418,495,532`, `Core/MarkdownPM/decorations.ts:776`, `Core/MarkdownPM/Menus/blockHandles.ts:43,148`, `Core/Testing/markdownEngine.ts:51`; switches at `Core/MarkdownPM/Engine/detect.ts:494-503`, `Core/MarkdownPM/surface.ts:33-48`; MarkdownPM System Audit MD-047, *§Decisions* 1 and 7
+[^627]: **F-646:** `Core/MarkdownPM/MarkdownEditor.tsx:107-109,198`, `Core/MarkdownPM/Tables/CellEditor.tsx:150`, `Core/MarkdownPM/Embeds/embedWidget.tsx:40-48`, `Core/Pages/editorHost.tsx:43,118,166`, `Core/MarkdownPM/surface.ts:51-61`, `Core/MarkdownPM/api.ts` (`EditorHost`); MarkdownPM System Audit MD-048
+[^628]: **F-647:** `Core/Pages/editorHost.tsx:26-33`, `Core/Session/pageConnections.ts:9`, `Core/Interface/Windows/PageHistoryWindow.tsx:35,117-118,251`, `Core/Interface/Glance/GlancePane.tsx:43,292`, `Core/MarkdownPM/Embeds/embedWidget.tsx:400`, `Core/MarkdownPM/Embeds/embedExclusions.ts`, `Core/MarkdownPM/markdown-pm.css:67`; MarkdownPM System Audit MD-049
+[^629]: **F-648:** `Core/MarkdownPM/Menus/gripMenu.ts:67,136-165`, `Core/MarkdownPM/Menus/blockHandles.ts:15-23`, `Core/MarkdownPM/Engine/blockModel.ts:209`; MarkdownPM System Audit MD-034
+[^630]: **F-649:** `Core/MarkdownPM/Engine/subfieldStats.ts:28-34,39-52,57-64,93,127-133,149-155`, `Core/MarkdownPM/docCache.ts:40-52` (`drawnLast`), `Core/Interface/Subfield/subfieldPage.ts:6-7`, `Core/Interface/Subfield/subfieldItems.tsx:27`, `Core/Interface/Subfield/CitationsToggle.tsx:10`, `Core/MarkdownPM/MarkdownEditor.tsx:235-244` (`rangeStats`); MarkdownPM System Audit MD-027, *§Decisions* 2
+[^631]: **F-650:** `Core/MarkdownPM/Tables/cellStatic.tsx:479-482`, `Core/MarkdownPM/Links/linkFormat.ts:82-92`, `Core/MarkdownPM/Links/pendingTitle.ts:50-65`, `Core/Interface/Menus/connectionMenuActions.ts:22`, `Core/Actions/connectionMenu.ts:87-99`; MarkdownPM System Audit MD-058, *§Decisions* 9

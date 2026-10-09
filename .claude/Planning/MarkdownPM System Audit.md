@@ -1027,21 +1027,21 @@ Candidates the reviewers struck, with their one reason each.
 
 ### Decisions
 
-Ruled by the owner on 10-08-2026; each names the findings it settles.
+Ruled by the owner on 10-08-2026 and narrowed the same day to the bugs, the reachable costs, and the reductions, after each finding was typed and measured on a scratch worktree; each names the findings it settles. What was deferred is recorded in the Codebase Audit at its measured cost.
 
-1. **Scope capability predicates, now** (MD-047). One new file, `Core/MarkdownPM/Engine/surfaces.ts`, owns what a surface reads: the scope tuple (`MARKDOWN_SCOPES`, which the zod enum in `Core/Actions/editorMenu.ts` derives from), the `MarkdownScope` type (leaving `detect.ts`), and the capability switches `readsLists` (moved from `detect.ts`), `readsBlocks`, `readsTiles`, `gripKinds`, and `hasGutter`. The `= 'page'` defaults go, so a forgotten scope is a compile error. `blockGestures` in `surface.ts` stays as assembly. The scope-shaped scan is left to the Properties scope work.
-2. **The live page figures come from the open editor's held scan** (MD-027); `scanDoc(body)` remains for a page with no editor mounted. The cache replacement lands either way.
+1. **Scope stays a string** (MD-047, MD-034). The capability predicates and the exhaustive grip and block switches wait for the surface that needs them, recorded as F-645 and F-648; the `= 'page'` defaults stay.
+2. **The stats cache is replaced; the figures stay a second reading** (MD-027). The eviction-order cache goes, so the freeze past 8,000 lines goes with it; the recount from the editor's own derivations and the footer seam wait, recorded as F-649.
 3. **Tab picks the `[[` row on a page** (MD-016), as cells and Text values already do.
-4. **Outside a page, `![[Page]]` draws as a connection** (MD-056). `readsTiles(scope)` is false for `cell` and `text`; the decoration pass reads the tile field's ranges instead of re-claiming, and where no tile can form the embed token takes the connection's look and gestures. A page is unchanged.
-5. **HTML blocks seal in accordance with HTML Formatting, and an opener nothing closes ends at the next blank line** (MD-051, MD-052). `htmlBlocks` takes CommonMark's start and end conditions. Whether a heading or a footnote run inside an HTML block counts follows the existing HTML Formatting toggle: on, the heading scan, the footnote assembly, the line intents' heading branch, and the block model seal HTML-block lines; off, they count and render. The readers take the flag from the host's settings, the scan records HTML spans whatever the setting, and the index seed reads the same setting from `settings.json`. The unclosed-opener rule is independent of the toggle, lands either way, and joins Editor-Internals' divergence list. About +25 lines rather than +21.
+4. **Outside a page, `![[Page]]` draws as a connection** (MD-056). The tile field forms no tile in a cell or a Text value; the decoration pass reads the tile field's ranges instead of re-claiming, and where no tile can form the embed token takes the connection's look and gestures. A page is unchanged.
+5. **An opener nothing closes ends at the next blank line** (MD-052), independent of any setting, and joins Editor-Internals' divergence list. Sealing HTML blocks by HTML Formatting and CommonMark's start and end conditions (MD-051) wait, recorded as F-573 at their measured cost.
 6. **After a guard relocates typed text, the caret follows it** (MD-054), so the following keys join that line.
 7. **A cell or Text value keeps reading fences as it does today** (MD-047); MarkdownPM.md:57's "fences stay literal text" is corrected to say the pair is read.
 8. **One link classifier** (MD-057): an unresolved schemeless target reads as a web address, a conversion keeps the alias and heading, and a heading-qualified connection offers its rows.
-9. **A resting cell's Page Title commits through the page view with `awaitTitle`** (MD-058).
-10. **The host seam:** the connections facet (MD-048) and a surface-kind union on `EditorHostOptions` in `api.ts`, switched once in `editorHost.tsx` (MD-049), are in scope; the menu seam (MD-050) waits for the SidePane.
+9. **A resting cell's Page Title waits** (MD-058), recorded as F-650.
+10. **The host seam waits** (MD-048, MD-049, MD-050): the connections member and the surface union are recorded as F-646 and F-647, and the menu seam waits for the SidePane.
 11. **The table-region rework is taken** (MD-053), on the measurement.
 12. **The behavior calls:** taken, MD-055, MD-059, MD-060, MD-063, MD-065; taken with a live check, MD-062; deferred, MD-061, MD-064, MD-066.
-13. **The surface model is planned as one slice**, the phase after the corruptions: MD-047, MD-056, MD-051, MD-052 (the vocabulary); MD-016, MD-017, MD-010, MD-011 (the assembly); MD-048, MD-049, MD-004 (the host seam). Planning them apart would rewrite `MarkdownEditor.tsx`'s extension list, `decorations.ts`'s build, and the Engine's readers three times.
+13. **The assembly lands as one phase after the corruptions** (MD-016, MD-017, MD-010, MD-011, MD-004, MD-056, MD-052), so `MarkdownEditor.tsx`'s extension list and `decorations.ts`'s build are rewritten once.
 
 ---
 
