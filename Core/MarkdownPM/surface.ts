@@ -7,7 +7,7 @@ import { listDragExtension } from './Gestures/listDrag'
 import { blockDragExtension } from './Gestures/blockDrag'
 import { linkRest, linkTyping } from './Links/linkReveal'
 import { listRenumber } from './Input/listRenumber'
-import { typedInput, wrapChords } from './Input/markdownInput'
+import { smartDelete, typedInput, wrapChords } from './Input/markdownInput'
 import { blockHandles, pointerReveal } from './Menus/blockHandles'
 import { gripMenu } from './Menus/gripMenu'
 import { editorMenu } from './Menus/menu'
@@ -20,15 +20,8 @@ import { pasteLink } from './Links/pasteLink'
 import { pendingTitle } from './Links/pendingTitle'
 import { aliasOnLeave } from './Links/linkEdit'
 import { type EditorHost, editorHost } from './api'
-import { docScan } from './docCache'
-import { applyEdit } from './Input/applyEdit'
-import { autoDelete, smartBackspace } from './Input/edits'
 import { editorKeymap } from './Input/formatKeymap'
-import { paneKeys, whenPaneOpen } from './Menus/caretPane'
-import {
-  type ConnectionAutocomplete,
-  detectConnectionQuery,
-} from './Autocomplete/useConnectionAutocomplete'
+import { type EditorPane, paneKeys } from './Menus/caretPane'
 
 function blockGestures(scope: MarkdownScope): Extension {
   switch (scope) {
@@ -78,51 +71,30 @@ export const inlineSurface = (
   editorMenu(scope),
 ]
 
-/** What an editor mounted outside a page body holds beside its surface: the `[[` pane's keys, with Enter and Tab picking its row, the marker- and pair-aware Backspace, the format chords, and the query that opens the pane. Each mount adds only its own ways out. */
+/** What every editor holds beside its surface: its panes, with Enter and Tab picking the open one's row, the marker- and pair-aware Backspace, and the format chords. Each mount adds only what it alone holds. */
 export const editorBase = ({
   host,
   getConn,
   scope,
-  ac: { acCtl, setAc },
+  panes,
   formatExt,
 }: {
   host: EditorHost
   getConn: () => ConnectionsApi | undefined
   scope: MarkdownScope
-  ac: Pick<ConnectionAutocomplete, 'acCtl' | 'setAc'>
+  panes: readonly EditorPane[]
   formatExt: Extension
 }): Extension => [
   editorHost.of(host),
   inlineSurface(getConn, scope),
   Prec.highest(
     keymap.of([
-      ...paneKeys([acCtl]),
-      { key: 'Enter', run: whenPaneOpen([acCtl], (c) => c.pick()) },
-      { key: 'Tab', run: whenPaneOpen([acCtl], (c) => c.pick()) },
-      {
-        key: 'Backspace',
-        run: (view) => {
-          const s = view.state.selection.main
-          const scan = docScan(view.state.doc)
-          return applyEdit(
-            view,
-            smartBackspace(scan, s.from, s.to, scope) ??
-              autoDelete(scan, s.from, s.to, host.settings()),
-            { userEvent: 'delete' },
-          )
-        },
-      },
+      ...paneKeys(panes.map((p) => p.ctl)),
+      { key: 'Backspace', run: smartDelete(scope) },
     ]),
   ),
+  panes.map((p) => p.extension),
+  // Ahead of the default keymap, which also binds Mod-i and Mod-[.
   formatExt,
   keymap.of(editorKeymap),
-  EditorView.domEventHandlers({
-    blur: () => {
-      setAc(null)
-      return false
-    },
-  }),
-  EditorView.updateListener.of((u) => {
-    if (u.docChanged || u.selectionSet) detectConnectionQuery(u.view, setAc)
-  }),
 ]

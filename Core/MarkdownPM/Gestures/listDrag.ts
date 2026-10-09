@@ -10,7 +10,7 @@ import {
   subBlockAt,
   dropChanges,
   checkboxToggleChange,
-  type SubBlock,
+  type BlockRange,
 } from '../Engine/listDragModel'
 import { GLYPH_CLASS } from '../Engine/intents'
 
@@ -37,7 +37,7 @@ function lineRightEdge(view: EditorView, from: number, fallback: number): number
 // Each list line offers two insertion boundaries, so a paragraph between two bullets splits to the nearer edge.
 function collectBoundaries(
   view: EditorView,
-  block: SubBlock,
+  block: BlockRange,
   scope: MarkdownScope,
 ): Boundary<Drop>[] {
   const doc = view.state.doc

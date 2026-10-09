@@ -30,16 +30,12 @@ export function checkboxToggleChange(doc: string, pos: number): TextEdit | null 
 }
 
 /** `to` is the last line's end, EXCLUSIVE of the trailing newline. The move logic reads only these two offsets, so it is block-type-blind. */
-interface BlockRange {
+export interface BlockRange {
   from: number
   to: number
 }
 
-export interface SubBlock extends BlockRange {
-  level: number
-}
-
-export function subBlockAt(scan: DocScan, pos: number): SubBlock | null {
+export function subBlockAt(scan: DocScan, pos: number): BlockRange | null {
   const { lines } = scan
   const first = lineIndexAt(scan, pos)
   const head = parseListMarker(lines[first])
@@ -57,7 +53,7 @@ export function subBlockAt(scan: DocScan, pos: number): SubBlock | null {
     }
     last = k
   }
-  return { from: scan.lineStarts[first], to: lineEndOf(scan, last), level: head.level }
+  return { from: scan.lineStarts[first], to: lineEndOf(scan, last) }
 }
 
 export interface Slot {

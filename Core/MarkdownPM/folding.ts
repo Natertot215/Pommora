@@ -357,8 +357,8 @@ export function applySavedFolds(view: EditorView, keys: string[]): void {
   if (effects.length) view.dispatch({ effects, annotations: initialFoldAnnotation.of(keys) })
 }
 
-/** The divider reports its press through `onCitationsToggle` rather than folding itself: the section's state is the page's visibility. */
-export function markdownFolding(onCitationsToggle: () => void): Extension {
+/** The divider toggles the host's footnote visibility rather than folding itself: the section's state is the page's visibility. */
+export function markdownFolding(): Extension {
   // The saved keys are read only at the next mount, so a heading renamed under its fold is re-derived where the editor is left, on each fold change, and on any unfocused edit a mirrored body didn't make.
   const persist = ViewPlugin.define((view) => {
     const keys = (): string[] =>
@@ -404,11 +404,12 @@ export function markdownFolding(onCitationsToggle: () => void): Extension {
     },
   })
   const dividerPress = EditorView.domEventHandlers({
-    mousedown(e) {
+    mousedown(e, view) {
       if (e.button !== 0) return false
       if (!(e.target as HTMLElement).closest?.(`.cm-line.${CITE_DIVIDER_LINE}`)) return false
       e.preventDefault()
-      onCitationsToggle()
+      const { citations } = view.state.facet(editorHost)
+      citations.set(!citations.shown())
       return true
     },
   })
