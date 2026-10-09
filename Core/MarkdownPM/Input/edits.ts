@@ -178,11 +178,13 @@ export function outdentListOnShiftTab(
   }
 }
 
-function markerEndOf(line: string, scope: MarkdownScope): number | null {
+/** Where a Backspace takes a line's whole marker: a list marker is one unit, so a caret anywhere past its first character takes all of it rather than leaving a stray space or half a box; a heading or quote prefix only from its end. */
+function markerSpanOf(line: string, scope: MarkdownScope): { from: number; to: number } | null {
   const lm = readsLists(scope) ? parseListMarker(line) : null
-  if (lm) return lm.contentStart
+  if (lm) return { from: lm.markerStart + 1, to: lm.contentStart }
   if (scope !== 'page') return null
-  return headingParts(line)?.contentStart ?? (quotePrefix(line).length || null)
+  const end = headingParts(line)?.contentStart ?? (quotePrefix(line).length || null)
+  return end === null ? null : { from: end, to: end }
 }
 
 /** A diff line's margin takes only a sign, which replaces the one the line wears; the same sign again changes nothing. */
@@ -230,7 +232,8 @@ export function smartBackspace(
       const lm = parseListMarker(line.slice(pfx.length))
       if (lm) {
         const innerContentStart = ls + pfx.length + lm.contentStart
-        if (selStart !== innerContentStart) return null
+        if (selStart <= ls + pfx.length + lm.markerStart || selStart > innerContentStart)
+          return null
         return {
           from: ls + pfx.length,
           to: innerContentStart,
@@ -244,11 +247,9 @@ export function smartBackspace(
     }
   }
 
-  const markerLen = markerEndOf(line, scope)
-  if (markerLen === null) return null
-  const contentStart = ls + markerLen
-  if (selStart !== contentStart) return null
-  return { from: ls, to: contentStart, insert: '', selection: ls }
+  const marker = markerSpanOf(line, scope)
+  if (marker === null || selStart < ls + marker.from || selStart > ls + marker.to) return null
+  return { from: ls, to: ls + marker.to, insert: '', selection: ls }
 }
 
 export function canonicalizeCheckbox(

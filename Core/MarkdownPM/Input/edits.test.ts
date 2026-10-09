@@ -118,6 +118,15 @@ describe('smart backspace (whole marker, all markers)', () => {
     expect(apply('> x', atContentStart('> x', '> ')!)).toBe('x')
     expect(apply('## x', atContentStart('## x', '## ')!)).toBe('x')
   })
+  it('takes a whole list marker from a caret inside it, leaving no space or half a box', () => {
+    const at = (doc: string, pos: number): string =>
+      apply(doc, smartBackspace(scanDoc(doc), pos, pos)!)
+    expect(at('- x', 1)).toBe('x')
+    expect(at('-  x', 2)).toBe('x')
+    expect(at('- [ ] x', 3)).toBe('x')
+    expect(at('> [!note] Head\n> - x', 18)).toBe('> [!note] Head\n> x')
+    expect(smartBackspace(scanDoc('## x'), 1, 1)).toBeNull()
+  })
   it('only fires at content-start, not mid-content', () => {
     expect(smartBackspace(scanDoc('- abc'), 4, 4)).toBeNull()
   })
