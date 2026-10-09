@@ -1,14 +1,14 @@
 ## Codeblock Paths — Implementation Plan
 
 **DATE:** 10-08-2026
-**STATUS:** Ratified 10-08-2026
+**STATUS:** Complete 10-08-2026
 **SOURCE:** The 10-08-2026 session's conversation with Nathan: a fence's info word may be a file path or filename, which names its language by its extension, as the language-recognition baseline a later filename heading builds on.
 
 **BASELINE**
 
 | Head | Tests | Start | End |
 |------|-------|-------|-----|
-| `975f715a4` | 7489 | 10-08-2026 10:46 PM | |
+| `975f715a4` | 7489 | 10-08-2026 10:46 PM | 10-08-2026 10:55 PM |
 
 ### Context
 
@@ -44,11 +44,11 @@ A fence word that is a path or filename resolves through its file: the text past
 
 #### Process Overview
 
-- [ ] **Phase 1** — Path Resolution
-  - [ ] Task 1-1
-  - [ ] Task 1-2
-  - [ ] Task 1-3
-  - [ ] Task 1-4
+- [x] **Phase 1** — Path Resolution
+  - [x] Task 1-1
+  - [x] Task 1-2
+  - [x] Task 1-3
+  - [x] Task 1-4
 
 ---
 
@@ -64,8 +64,8 @@ A fence word that is a path or filename resolves through its file: the text past
 
 **CHANGE**
 
-- [ ] Write the path tests in Task 1-3 and watch them fail.
-- [ ] Add `fileTerm`, route the lookup through it, and add `\\` to both joiner classes.
+- [x] Write the path tests in Task 1-3 and watch them fail.
+- [x] Add `fileTerm`, route the lookup through it, and add `\\` to both joiner classes.
 
 **AFTER**
 
@@ -103,7 +103,7 @@ Only the final extension counts, so `app.test.ts` and `app.d.ts` read as `ts`. `
 
 **VERIFY**
 
-- [ ] Task 1-3's tests pass, and every existing `codeLangs.test.ts` case passes unchanged.
+- [x] Task 1-3's tests pass, and every existing `codeLangs.test.ts` case passes unchanged.
 
 #### Task 1-2
 
@@ -150,7 +150,7 @@ Only the final extension counts, so `app.test.ts` and `app.d.ts` read as `ts`. `
 
 **VERIFY**
 
-- [ ] `lets no word name two languages` passes.
+- [x] `lets no word name two languages` passes.
 
 #### Task 1-3
 
@@ -205,8 +205,8 @@ Only the final extension counts, so `app.test.ts` and `app.d.ts` read as `ts`. `
 
 **VERIFY**
 
-- [ ] Run the gates.
-- [ ] Live: in `~/Test`, ` ```src/app.ts `, ` ```\src\app.ts `, and ` ```diff/app.ts ` each color as TypeScript and wear its tag (the last as a tally).
+- [x] Run the gates.
+- [x] Live: in `~/Test`, ` ```src/app.ts `, ` ```\src\app.ts `, and ` ```diff/app.ts ` each color as TypeScript and wear its tag (the last as a tally).
 
 #### Task 1-4
 
@@ -216,9 +216,9 @@ Only the final extension counts, so `app.test.ts` and `app.d.ts` read as `ts`. `
 
 **CHANGE**
 
-- [ ] Write the comment test and watch it fail.
-- [ ] `npm uninstall @codemirror/lang-json -w Core` then `npm install @shopify/lang-jsonc@^1.0.1 -w Core`.
-- [ ] Repoint the loader.
+- [x] Write the comment test and watch it fail.
+- [x] `npm uninstall @codemirror/lang-json -w Core` then `npm install @shopify/lang-jsonc@^1.0.1 -w Core`.
+- [x] Repoint the loader.
 
 **AFTER**
 
@@ -243,9 +243,9 @@ Only the final extension counts, so `app.test.ts` and `app.d.ts` read as `ts`. `
 
 **VERIFY**
 
-- [ ] `grep -rn "lang-json" Core` returns nothing outside `node_modules`.
-- [ ] Run the gates.
-- [ ] Live: a ` ```json ` block with keys, strings, numbers, `true`, and `null` colors as it did before the swap.
+- [x] `grep -rn "lang-json" Core` returns nothing outside `node_modules`.
+- [x] Run the gates.
+- [x] Live: a ` ```json ` block with keys, strings, numbers, `true`, and `null` colors as it did before the swap.
 
 ---
 
@@ -255,10 +255,10 @@ Every notation from the ask — `path/file.ts`, `/folder/path.ts`, `file.ts`, `\
 
 #### Final Verification
 
-- [ ] Own pass: gates · diff · criteria
-- [ ] `/closeout-review` taken
-- [ ] Reconciliation walked
-- [ ] Report delivered through `/view-changes`
+- [x] Own pass: gates · diff · criteria
+- [x] `/closeout-review` taken
+- [x] Reconciliation walked
+- [x] Report delivered through `/view-changes`
 
 #### Reconciliation
 

@@ -82,7 +82,7 @@ const LOADERS: Record<CodeLangName, () => Promise<LanguageSupport>> = {
     import('@codemirror/lang-javascript').then((m) =>
       m.javascript({ jsx: true, typescript: true }),
     ),
-  JSON: () => import('@codemirror/lang-json').then((m) => m.json()),
+  JSON: () => import('@shopify/lang-jsonc').then((m) => m.jsonc()),
   YAML: () => import('@codemirror/lang-yaml').then((m) => m.yaml()),
   CSS: () => import('@codemirror/lang-css').then((m) => m.css()),
   HTML: () => import('@codemirror/lang-html').then((m) => m.html()),

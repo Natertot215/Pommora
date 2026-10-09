@@ -72,6 +72,44 @@ describe('a fence word', () => {
     expect(codeFence('diffts')).toEqual({ name: null, diff: false })
     expect(codeFence('diff-')).toEqual({ name: null, diff: false })
   })
+  it('resolves a path or filename by its extension, however its folders are written', () => {
+    for (const word of [
+      'app.ts',
+      '.ts',
+      'src/app.ts',
+      '/src/app.ts',
+      '\\src\\app.ts',
+      'C:\\src\\app.ts',
+    ])
+      expect(codeFence(word)).toEqual({ name: 'TypeScript', diff: false })
+  })
+  it('reads only a filename’s final extension', () => {
+    expect(codeFence('app.test.ts').name).toBe('TypeScript')
+  })
+  it('resolves a filename with no extension by its whole name', () => {
+    expect(codeFence('docker/Dockerfile').name).toBe('Dockerfile')
+  })
+  it('answers nothing for a path whose file names no language', () => {
+    expect(codeFence('src/')).toEqual({ name: null, diff: false })
+    expect(codeFence('app.')).toEqual({ name: null, diff: false })
+    expect(codeFence('src/app.foo')).toEqual({ name: null, diff: false })
+  })
+  it('reads a diff joined to a path, and no diff in a path through a diff folder or file', () => {
+    for (const word of [
+      'diff/app.ts',
+      'diff\\app.ts',
+      'diff src/app.ts',
+      'src/app.ts diff',
+      'ts\\diff',
+    ])
+      expect(codeFence(word)).toEqual({ name: 'TypeScript', diff: true })
+    expect(codeFence('src/diff/app.ts')).toEqual({ name: 'TypeScript', diff: false })
+    expect(codeFence('diff.ts')).toEqual({ name: 'TypeScript', diff: false })
+  })
+  it('reads a diff or patch file as a diff with no colors', () => {
+    expect(codeFence('changes.diff')).toEqual({ name: null, diff: true })
+    expect(codeFence('src\\fix.patch')).toEqual({ name: null, diff: true })
+  })
 })
 
 describe('a code block’s colors', () => {
@@ -89,6 +127,20 @@ describe('a code block’s colors', () => {
 
   it('come from the language its fence names', async () => {
     expect(await painted('```js\nconst a = 1\n```')).toEqual(['const'])
+  })
+
+  it('come from the language a path’s extension names', async () => {
+    expect(await painted('```src/app.js\nconst a = 1\n```')).toEqual(['const'])
+  })
+
+  it('color a JSON block’s comments as comments', async () => {
+    expect(
+      await painted(
+        '```tsconfig.jsonc\n{ // a\n  "b": 1, /* c */\n}\n```',
+        'json',
+        'syntax-comment',
+      ),
+    ).toEqual(['// a', '/* c */'])
   })
 
   it('stay off prose the fences don’t hold', async () => {
