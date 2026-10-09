@@ -63,9 +63,17 @@ export const isConnCellAction = (action: ConnMenuAction): action is ConnCellActi
 
 function closingRows(ctx: ConnMenuContext): readonly ActionItem<ConnMenuAction>[] {
   if (ctx.surface === 'editor') return ctx.external && ctx.editable ? CONN_UNLINK_ROWS : []
+  return cellClosingRows(true, ctx.hideable)
+}
+
+export function cellClosingRows(
+  clearable: boolean,
+  hideable: boolean | undefined,
+  removeLabel = 'Remove',
+): ActionItem<ConnCellAction>[] {
   return [
-    { label: 'Clear', action: 'cell:clear' },
-    ...(ctx.hideable ? [{ label: 'Remove', action: 'cell:hide' as const }] : []),
+    ...(clearable ? [{ label: 'Clear', action: 'cell:clear' as const }] : []),
+    ...(hideable ? [{ label: removeLabel, action: 'cell:hide' as const }] : []),
   ]
 }
 

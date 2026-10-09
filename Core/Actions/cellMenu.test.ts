@@ -67,8 +67,8 @@ describe('cellMenuModel', () => {
     expect(m[0].submenu?.find((r) => r.action === 'style:look:standard')?.checked).toBe(true)
   })
 
-  it('clear-only (context): just Clear', () => {
-    const m = cellMenuModel({ kind: 'clear-only' })
+  it('a clearable bare cell (context): just Clear', () => {
+    const m = cellMenuModel({ kind: 'bare', clearable: true })
     expect(m.map((i) => [i.label, i.action])).toEqual([['Clear', 'cell:clear']])
     expect(m.some((i) => i.submenu)).toBe(false)
   })
@@ -90,7 +90,9 @@ describe('cellMenuModel', () => {
     const labels = card.map((i) => i.label)
     expect(labels).toEqual(['Add File', 'Replace File', 'Remove File', 'Remove from View'])
     expect(new Set(labels).size).toBe(labels.length)
-    expect(cellMenuModel({ kind: 'clear-only', hideable: true }).at(-1)?.label).toBe('Remove')
+    expect(cellMenuModel({ kind: 'bare', clearable: true, hideable: true }).at(-1)?.label).toBe(
+      'Remove',
+    )
   })
 
   it('link (a filled Link cell): Edit + Rename, then a separated Clear, no Style (its look is per-property)', () => {
@@ -120,7 +122,7 @@ describe('cellMenuModel', () => {
   })
 
   it('hideable (cards) appends Remove beside Clear', () => {
-    const m = cellMenuModel({ kind: 'clear-only', hideable: true })
+    const m = cellMenuModel({ kind: 'bare', clearable: true, hideable: true })
     expect(m.map((i) => [i.label, i.action])).toEqual([
       ['Clear', 'cell:clear'],
       ['Remove', 'cell:hide'],
@@ -128,8 +130,8 @@ describe('cellMenuModel', () => {
     expect(m.find((i) => i.action === 'cell:hide')?.separatorBefore).toBeUndefined()
   })
 
-  it('remove-only (a hideable cell with no other menu): Remove alone, no separator', () => {
-    const m = cellMenuModel({ kind: 'remove-only', hideable: true })
+  it('an unclearable bare cell (hideable, no other menu): Remove alone, no separator', () => {
+    const m = cellMenuModel({ kind: 'bare', clearable: false, hideable: true })
     expect(m.map((i) => [i.label, i.action])).toEqual([['Remove', 'cell:hide']])
     expect(m[0].separatorBefore).toBeUndefined()
   })
@@ -160,8 +162,8 @@ describe('cellMenuContextFor', () => {
     })
   })
 
-  it('a context column → clear-only when filled, no menu when empty', () => {
-    expect(cellMenuContextFor('context', DATES, true)).toEqual({ kind: 'clear-only' })
+  it('a context column → a clearable bare cell when filled, no menu when empty', () => {
+    expect(cellMenuContextFor('context', DATES, true)).toEqual({ kind: 'bare', clearable: true })
     expect(cellMenuContextFor('context', DATES, false)).toBeNull()
   })
 
@@ -250,7 +252,7 @@ describe('cellMenuContextFor', () => {
     expect(cellMenuContextFor(undefined, DATES, true)).toBeNull()
   })
 
-  it('hideable (cards): a styled cell carries hideable; a menu-less cell becomes remove-only', () => {
+  it('hideable (cards): a styled cell carries hideable; a menu-less cell becomes an unclearable bare cell', () => {
     expect(cellMenuContextFor('select', DATES, true, { hideable: true })).toEqual({
       kind: 'style-only',
       type: 'select',
@@ -261,7 +263,8 @@ describe('cellMenuContextFor', () => {
     const ctx = cellMenuContextFor('select', DATES, false, { hideable: true })
     expect(cellMenuModel(ctx as CellMenuContext).at(-1)?.action).toBe('cell:hide')
     expect(cellMenuContextFor(undefined, DATES, true, { hideable: true })).toEqual({
-      kind: 'remove-only',
+      kind: 'bare',
+      clearable: false,
       hideable: true,
     })
   })

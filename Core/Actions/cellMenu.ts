@@ -9,7 +9,7 @@ import {
 import type { PropertyAction } from './propertyRows'
 import { PROPERTY_TYPES, type PropertyType } from '../Properties/properties'
 import { type ActionItem, joinGroups } from './menuModel'
-import type { ConnEditAction } from './connectionMenu'
+import { type ConnCellAction, type ConnEditAction, cellClosingRows } from './connectionMenu'
 
 type CellMenuKind =
   | ({ kind: 'title'; alreadyOpen?: boolean } & PageMenuContext)
@@ -23,8 +23,7 @@ type CellMenuKind =
   | { kind: 'link'; filled: boolean }
   | { kind: 'text'; filled: boolean }
   | { kind: 'file'; onChip: boolean }
-  | { kind: 'clear-only' }
-  | { kind: 'remove-only' }
+  | { kind: 'bare'; clearable: boolean }
 export type CellMenuContext = CellMenuKind & { hideable?: boolean }
 
 export type CellMenuAction =
@@ -32,9 +31,8 @@ export type CellMenuAction =
   | PageMoveAction
   | PropertyAction
   | ConnEditAction
+  | ConnCellAction
   | 'cell:edit'
-  | 'cell:clear'
-  | 'cell:hide'
   | 'file:add'
   | 'file:replace'
   | 'file:remove'
@@ -49,8 +47,7 @@ export function cellMenuContextFor(
   { hideable = false, barCapable = false, onChip = false }: CellMenuFlags = {},
 ): CellMenuContext | null {
   const base = baseCellMenu(type, style, filled, barCapable, onChip)
-  // remove-only must CARRY the flag, since the model appends Remove only on it.
-  if (base === null) return hideable ? { kind: 'remove-only', hideable: true } : null
+  if (base === null) return hideable ? { kind: 'bare', clearable: false, hideable: true } : null
   return hideable ? { ...base, hideable: true } : base
 }
 
@@ -72,7 +69,7 @@ function baseCellMenu(
     case 'text':
       return { kind: 'text', filled }
     case 'context':
-      return filled ? { kind: 'clear-only' } : null
+      return filled ? { kind: 'bare', clearable: true } : null
     case 'select':
     case 'multiSelect':
     case 'dateTime':
@@ -91,32 +88,24 @@ function baseCellMenu(
 export function cellMenuModel(ctx: CellMenuContext): ActionItem<CellMenuAction>[] {
   return joinGroups([
     ...baseCellMenuModel(ctx),
-    [
-      ...(clearable(ctx) ? [{ label: 'Clear', action: 'cell:clear' as const }] : []),
-      ...(ctx.hideable && ctx.kind !== 'title'
-        ? [
-            {
-              label: ctx.kind === 'file' ? 'Remove from View' : 'Remove',
-              action: 'cell:hide' as const,
-            },
-          ]
-        : []),
-    ],
+    cellClosingRows(
+      clearable(ctx),
+      ctx.hideable && ctx.kind !== 'title',
+      ctx.kind === 'file' ? 'Remove from View' : 'Remove',
+    ),
   ])
 }
 
 function clearable(ctx: CellMenuContext): boolean {
   switch (ctx.kind) {
     case 'style-only':
+    case 'bare':
       return ctx.clearable === true
     case 'link':
     case 'text':
       return ctx.filled
-    case 'clear-only':
-      return true
     case 'title':
     case 'file':
-    case 'remove-only':
       return false
   }
 }
@@ -154,8 +143,7 @@ function baseCellMenuModel(ctx: CellMenuContext): ActionItem<CellMenuAction>[][]
             [{ label: 'Remove File', action: 'file:remove' }],
           ]
         : [[{ label: 'Add File', action: 'file:add' }]]
-    case 'clear-only':
-    case 'remove-only':
+    case 'bare':
       return []
   }
 }
