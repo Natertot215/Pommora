@@ -111,20 +111,20 @@ The setting, the shared seat helper, and the label face land first. The module a
 
 #### Implementation Process
 
-- [ ] **Phase 1** — Setting, Seat & Face
-  - [ ] Task 1-1
-  - [ ] Task 1-2
-- [ ] **Phase 2** — The Scroll Module `[Parallel with Phase 3]`
-  - [ ] Task 2-1
-  - [ ] Task 2-2
-- [ ] **Phase 3** — Styles `[Parallel with Phase 2]`
-  - [ ] Task 3-1
-- [ ] **Phase 4** — Layer Clip
-  - [ ] Task 4-1
-  - [ ] Review Checkpoint
+- [x] **Phase 1** — Setting, Seat & Face
+  - [x] Task 1-1
+  - [x] Task 1-2
+- [x] **Phase 2** — The Scroll Module `[Parallel with Phase 3]`
+  - [x] Task 2-1
+  - [x] Task 2-2
+- [x] **Phase 3** — Styles `[Parallel with Phase 2]`
+  - [x] Task 3-1
+- [x] **Phase 4** — Layer Clip
+  - [x] Task 4-1
+  - [x] Review Checkpoint
 - [ ] `[Stop: Nathan's visual pass on this plan's code blocks in NexusOS — a resting, a scrolled, and a revealed block; diff and line-count cases]`
-- [ ] **Phase 5** — Documentation
-  - [ ] Task 5-1
+- [x] **Phase 5** — Documentation
+  - [x] Task 5-1
 
 ---
 
@@ -838,3 +838,9 @@ export { codeScrolls }
 - **Wide line numbers (approved for now, a fix wanted later):** line numbers of four digits or more outgrow the `3ch` line-number zone, which already shifts their code 1ch in wrap mode. Under this setting that also pushes a revealed run about 6px past the border's inner edge. Widening the zone for such blocks is Nathan's call.
 
 #### Deviations
+
+- **Run containment:** the run carries `contain: inline-size`. Without it, a `width: 100%` inline-block's intrinsic width is its text's, and a long line widened the whole content column past the scroller.
+- **Widest-line memo:** `widestOf` keeps the last block's widest width per view, keyed by document, block, and font, so a geometry pass during scrolling reuses it instead of walking the block again. Overflow takes its font and resting width from the first drawn content line rather than its run, so a block whose first drawn line is blank still measures.
+- **Re-entrant follow:** reading the caret can run CodeMirror's pending measure, whose own follow dispatches first, so the outer follow stops when the state moved under it.
+- **Layer scope:** `codeClip` answers only on a surface that mounts the module, so table cells and Text values never read the fence scan for it. Selection pieces a clip collapses are dropped, corners are counted from the pieces drawn, and an unclipped zero-width piece draws as before.
+- **Smaller shapes:** the canvas context is made on first use, since node-environment tests import the module without a `document`; `--code-reach` is declared with the frame's other measures; the fade fractions divide by `--scroll-fade`; the boundary keys act on the main selection alone, since the editor holds one; the End test was dropped because jsdom's line-boundary fallback already lands at the line's end, and the live checkpoint covers the keys.

@@ -771,6 +771,12 @@ export const FRAMES = roster([
             label: 'Show Line Count In Code Blocks',
             hint: "Number a codeblock's lines — display chrome, never editable text.",
           },
+          {
+            kind: 'toggle',
+            key: 'codeblockScroll',
+            label: 'Scroll Long Lines In Code Blocks',
+            hint: "Codeblocks become scrollable when lines extend beyond their width; they're wrapped when this is turned off.",
+          },
         ],
       },
       {

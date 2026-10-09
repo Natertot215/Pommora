@@ -4,6 +4,7 @@ import type { SelectionRange } from '@codemirror/state'
 import { selCorner } from '@pommora/uix/Theme/nativeCaret'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { clampToLine, cursorMarkers } from './caret'
+import { codeClip } from './codeScroll'
 
 const CLS = 'sel-pill'
 
@@ -18,17 +19,33 @@ function rangeMarkers(view: EditorView, range: SelectionRange): RectangleMarker[
   const last = pieces.length - 1
   const head = range.from >= view.viewport.from ? caretEdge(view, range.from, 1) : undefined
   const foot = range.to <= view.viewport.to ? caretEdge(view, range.to, -1) : undefined
-  return pieces.map((m, i) => {
+  // An end inside a code block's run clips to what the run shows: the head on both sides, the foot on its right, and a foot whose glyph is scrolled out draws nothing.
+  const headClip = codeClip(view, range.from)
+  const footClip = codeClip(view, range.to)
+  const drawn = pieces.flatMap((m, i) => {
+    let left = m.left
+    let right = m.left + m.width!
+    if (i === 0 && headClip) {
+      left = Math.max(left, headClip.left)
+      right = Math.min(right, headClip.right)
+    }
+    if (i === last && footClip)
+      right = right <= footClip.left ? left : Math.min(right, footClip.right)
+    if (right < left || (right === left && m.width! > 0)) return []
     const top = i === 0 && head ? head.top : m.top
     const bottom = i === last && foot ? foot.top + foot.height : m.top + m.height
-    return new RectangleMarker(
-      cx(CLS, selCorner(i, pieces.length)),
-      m.left,
-      top,
-      m.width,
-      Math.max(bottom - top, 1),
-    )
+    return [{ left, right, top, bottom }]
   })
+  return drawn.map(
+    (p, i) =>
+      new RectangleMarker(
+        cx(CLS, selCorner(i, drawn.length)),
+        p.left,
+        p.top,
+        p.right - p.left,
+        Math.max(p.bottom - p.top, 1),
+      ),
+  )
 }
 
 export const customSelection = [

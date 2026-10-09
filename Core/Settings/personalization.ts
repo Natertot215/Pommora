@@ -146,6 +146,7 @@ const SETTINGS = {
   outlinerLines: flag(false),
   titleIcon: flag(false),
   codeblockLineCount: flag(false),
+  codeblockScroll: flag(false),
   htmlShortcuts: flag(false),
   htmlFormatting: flag(true),
   navCloseOnSelect: flag(true),

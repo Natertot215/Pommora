@@ -13,6 +13,7 @@ import {
   blockWebpageLines,
   awaitsSign,
   calloutLines,
+  codeSeat,
   fenceBodyStart,
   fenceRangesOf,
   htmlBlocks,
@@ -329,9 +330,8 @@ export function inJoinedMath(scan: LineScan, i: number, first: number, last: num
 export function signSeatAt(scan: DocScan, pos: number): number | null {
   const i = lineIndexAt(scan, pos)
   const f = scan.fences[i]
-  const signed = signedLine(f)
-  if (!signed && !awaitsSign(f)) return null
-  return scan.lineStarts[i] + fenceBodyStart(scan.lines[i], f!) + (signed ? 1 : 0)
+  if (!signedLine(f) && !awaitsSign(f)) return null
+  return scan.lineStarts[i] + codeSeat(scan.lines[i], f!)
 }
 
 /** A caret standing in a diff line's margin: at its seat, on the margin's side. */
