@@ -48,6 +48,13 @@ async function rightClick(view: EditorView, pos: number): Promise<void> {
   })
 }
 
+const caretTo = async (view: EditorView, anchor: number): Promise<void> => {
+  await act(async () => {
+    view.dispatch({ selection: { anchor } })
+    await new Promise((r) => setTimeout(r, 0))
+  })
+}
+
 describe('the connection menu knows its span and its surface', () => {
   it('offers the authoring pair on an editable surface', async () => {
     const view = await mountEditor({ initialBody: 'a [[Alpha]] b', connections: conn })
@@ -171,13 +178,6 @@ describe('an alias opened and abandoned leaves nothing behind', () => {
 })
 
 describe('the alias memory hears only what was authored', () => {
-  const caretTo = async (view: EditorView, anchor: number): Promise<void> => {
-    await act(async () => {
-      view.dispatch({ selection: { anchor } })
-      await new Promise((r) => setTimeout(r, 0))
-    })
-  }
-
   it('walking the caret through existing aliases remembers nothing', async () => {
     const view = await mountEditor({
       initialBody: 'a [[Alpha|one]] [[Alpha|two]] b',
@@ -213,6 +213,38 @@ describe('the alias memory hears only what was authored', () => {
   })
 })
 
+describe('an alias left in code stays as written', () => {
+  it('keeps an empty slot’s pipe or hash', async () => {
+    for (const [initialBody, anchor] of [
+      ['```\na [[Alpha|]] b\n```', 14],
+      ['a `[[Alpha#]]` b', 11],
+    ] as const) {
+      const view = await mountEditor({ initialBody, connections: conn })
+      await act(async () => view.focus())
+      await caretTo(view, anchor)
+      await caretTo(view, 0)
+      expect(view.state.doc.toString()).toBe(initialBody)
+      await cleanupEditor()
+    }
+  })
+
+  it('remembers no alias typed there', async () => {
+    const view = await mountEditor({ initialBody: '```\na [[Alpha|]] b\n```', connections: conn })
+    const remember = vi.spyOn(harnessState().host.aliases, 'remember')
+    await act(async () => view.focus())
+    await caretTo(view, 14)
+    await act(async () => {
+      view.dispatch({
+        changes: { from: 14, insert: 'new' },
+        selection: { anchor: 17 },
+        userEvent: 'input.type',
+      })
+    })
+    await caretTo(view, 0)
+    expect(remember).not.toHaveBeenCalled()
+  })
+})
+
 describe('Enter finishes an alias without writing anything', () => {
   it('rests the caret on the closer and leaves the text alone', async () => {
     const view = await mountEditor({ initialBody: 'a [[Alpha|the one]] b', connections: conn })
@@ -237,6 +269,22 @@ describe('Enter finishes an alias without writing anything', () => {
       view.dispatch({ selection: { anchor: 19 } })
     })
     expect(commitAliasOnEnter(view)).toBe(false)
+  })
+
+  it('declines in an alias inside code, so Enter still breaks the line', async () => {
+    for (const [initialBody, anchor] of [
+      ['```\na [[Alpha|the one]] b\n```', 17],
+      ['a `[[Alpha|the one]]` b', 14],
+      ['a [[Alpha|x `c` y]] b', 10],
+    ] as const) {
+      const view = await mountEditor({ initialBody, connections: conn })
+      await act(async () => {
+        view.focus()
+        view.dispatch({ selection: { anchor } })
+      })
+      expect(commitAliasOnEnter(view)).toBe(false)
+      await cleanupEditor()
+    }
   })
 
   it('declines outside an alias, so Enter still breaks the line', async () => {

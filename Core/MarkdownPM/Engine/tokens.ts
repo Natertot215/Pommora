@@ -44,10 +44,12 @@ export interface Token {
 export const aliasedToken = (tk: Token): boolean =>
   tk.resolveRange !== undefined && tk.contentRange[0] !== tk.resolveRange[0]
 
-export function linkTarget(text: string, tk: Token): string {
+export function linkAddress(tk: Token): [number, number] {
   const [, close] = tk.markerRanges
-  return text.slice(close[0] + 2, close[1] - 1)
+  return [close[0] + 2, close[1] - 1]
 }
+
+export const linkTarget = (text: string, tk: Token): string => text.slice(...linkAddress(tk))
 
 export const headingOf = (text: string, tk: Token): string | undefined =>
   tk.fragment && text.slice(tk.fragment[0], tk.fragment[1])
@@ -325,13 +327,13 @@ export function tokenizeChunk(text: string): { tokens: Token[]; html: Span[] } {
 
 export const tokenize = (text: string): Token[] => tokenizeChunk(text).tokens
 
-/** The link or wikiLink token an offset sits in, markers included — the one read every click, hover, and resting cell shares. At a boundary two abutting tokens both contain the offset; the later-starting one wins, so a span captured at a token's own start resolves to that token and not its neighbor. */
+/** The link or connection token an offset sits in, markers included, among tokens in start order: an editor's drawn set or a resting cell's. At a boundary two abutting tokens both contain the offset; the later-starting one wins, so a span captured at a token's own start resolves to that token and not its neighbor. */
 export function linkTokenAt(
-  text: string,
+  tokens: readonly Token[],
   offset: number,
   kind?: 'link' | 'wikiLink',
 ): Token | undefined {
-  return tokenize(text)
+  return tokens
     .filter(
       (t) =>
         (kind ? t.kind === kind : t.kind === 'link' || t.kind === 'wikiLink') &&

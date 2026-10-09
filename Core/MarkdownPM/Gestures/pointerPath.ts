@@ -22,13 +22,13 @@ interface PointerSpec<H extends PointerTarget> {
   hoverGate: string
   hitAt: (view: EditorView, event: MouseEvent) => H | null
   follow: (hit: H, view: EditorView, event: MouseEvent) => (() => void) | null
-  /** Never asked on a host without a glance, which then pays neither the layout read nor the tokenize. */
+  /** Never asked on a host without a glance, which then pays neither the layout read nor the token lookup. */
   dwell: (hit: H, el: Element, glance: Glance) => (() => void) | null
   menu: (hit: H, view: EditorView) => (() => void) | null
 }
 
 export function pointerHandlers<H extends PointerTarget>(spec: PointerSpec<H>): Extension {
-  // Never cancel before the gate: four handlers share one editor, and a pre-gate cancel from the ones that arm nothing would kill the dwell the one that does just started.
+  // Never cancel before the gate: several handlers share one editor, and a pre-gate cancel from the ones that arm nothing would kill the dwell the one that does just started.
   let editingOnPress = false
   // A native menu takes the pointer away and hands it back over the same link, and that re-entry would bloom a glance behind the menu.
   let actedOnLink = false

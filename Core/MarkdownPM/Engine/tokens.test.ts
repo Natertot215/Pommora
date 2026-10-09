@@ -282,13 +282,13 @@ describe('activeTokenIndices', () => {
 describe('linkTokenAt — the token an offset sits in', () => {
   it('at the boundary between two abutting links, the later-starting one wins', () => {
     // `[[a]][[b]]`: the second link starts at 5, which is also the first link's exclusive end.
-    expect(linkTokenAt('[[a]][[b]]', 5)?.range).toEqual([5, 10])
-    expect(linkTokenAt('[a](x)[b](y)', 6, 'link')?.range).toEqual([6, 12])
+    expect(linkTokenAt(tokenize('[[a]][[b]]'), 5)?.range).toEqual([5, 10])
+    expect(linkTokenAt(tokenize('[a](x)[b](y)'), 6, 'link')?.range).toEqual([6, 12])
   })
 
   it('resolves an interior offset and its kind filter', () => {
-    expect(linkTokenAt('[[a]] [b](y)', 2)?.kind).toBe('wikiLink')
-    expect(linkTokenAt('[[a]] [b](y)', 7, 'link')?.range).toEqual([6, 12])
-    expect(linkTokenAt('[[a]] [b](y)', 2, 'link')).toBeUndefined()
+    expect(linkTokenAt(tokenize('[[a]] [b](y)'), 2)?.kind).toBe('wikiLink')
+    expect(linkTokenAt(tokenize('[[a]] [b](y)'), 7, 'link')?.range).toEqual([6, 12])
+    expect(linkTokenAt(tokenize('[[a]] [b](y)'), 2, 'link')).toBeUndefined()
   })
 })

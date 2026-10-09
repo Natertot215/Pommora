@@ -13,8 +13,7 @@ import { gripMenu } from './Menus/gripMenu'
 import { editorMenu } from './Menus/menu'
 import { customCaret } from './caret'
 import { customSelection } from './selection'
-import { connectionClicks } from './Links/connectionClicks'
-import { markdownLinkClicks } from './Links/linkClicks'
+import { linkPointer } from './Links/linkClicks'
 import { citationPointer } from './Citations/citationPointer'
 import { pasteLink } from './Links/pasteLink'
 import { pendingTitle } from './Links/pendingTitle'
@@ -49,9 +48,8 @@ export const inlineSurface = (
   blockGestures(scope),
   customCaret,
   customSelection,
-  connectionClicks(getConn),
+  linkPointer(getConn),
   citationPointer(getConn),
-  markdownLinkClicks(getConn),
   pasteLink,
   pendingTitle,
   aliasOnLeave(getConn),

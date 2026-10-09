@@ -3,7 +3,9 @@ import type { ConnUrlAction } from '../../Actions/connectionMenu'
 import { unescapeAlias } from '../../Connections/links'
 import { linkPaste } from '../../Connections/linkValue'
 import type { LinkDisplay } from '../../Properties/properties'
-import { linkTarget, linkTokenAt, type Token } from '../Engine/tokens'
+import { linkAddress, linkTarget, type Token } from '../Engine/tokens'
+import { docString } from '../docCache'
+import { drawnLinkAt } from '../decorations'
 import { focusRange } from '../caretPlacement'
 import { awaitTitle } from './pendingTitle'
 import { type EditorHost, editorHost } from '../api'
@@ -12,11 +14,6 @@ interface LinkActionText {
   insert: string
   url: string
   wantsTitle: boolean
-}
-
-export function linkHalves(tk: Token): { label: [number, number]; address: [number, number] } {
-  const [, close] = tk.markerRanges
-  return { label: tk.contentRange, address: [close[0] + 2, close[1] - 1] }
 }
 
 export function linkActionText(
@@ -60,24 +57,20 @@ export function applyUrlLinkAction(
   action: ConnUrlAction,
   range: [number, number],
 ): void {
-  // The span was captured before a native menu opened, and `lineAt` throws past the document's end rather than clamping.
-  if (range[0] > view.state.doc.length) return
-  const line = view.state.doc.lineAt(range[0])
-  const tk = linkTokenAt(line.text, range[0] - line.from, 'link')
-  if (!tk || line.from + tk.range[0] !== range[0]) return
-  const at = (n: number): number => line.from + n
+  const tk = drawnLinkAt(view, range[0], 'link')
+  if (!tk || tk.range[0] !== range[0]) return
 
   // Both halves are selected rather than reached, since both are things you replace; the wikilink form seats a bare caret.
   if (action === 'rename' || action === 'editLink') {
-    const half = linkHalves(tk)[action === 'rename' ? 'label' : 'address']
-    focusRange(view, at(half[0]), at(half[1]))
+    const half = action === 'rename' ? tk.contentRange : linkAddress(tk)
+    focusRange(view, half[0], half[1])
     return
   }
 
   const titles = view.state.facet(editorHost).linkTitles
-  const edit = linkActionText(line.text, tk, action, titles)
+  const edit = linkActionText(docString(view.state.doc), tk, action, titles)
   if (!edit) return
-  const span = { from: at(tk.range[0]), to: at(tk.range[1]) }
+  const span = { from: tk.range[0], to: tk.range[1] }
   const to = span.from + edit.insert.length
   view.dispatch({
     changes:

@@ -221,6 +221,14 @@ describe('setBlock', () => {
   it('callout insert uses the `[!callout]` default (matches the `||` shorthand)', () => {
     expect(apply('hi', setBlock('hi', 0, 2, 'callout'))).toBe('> [!callout] hi')
   })
+  it('callout takes a heading’s or quote’s marker, and a list’s alone', () => {
+    for (const [line, out] of [
+      ['## hi', '> [!callout] hi'],
+      ['> hi', '> [!callout] hi'],
+      ['- > foo', '> [!callout] > foo'],
+    ])
+      expect(apply(line, setBlock(line, 0, line.length, 'callout'))).toBe(out)
+  })
   // The dispatcher hands a line formatter the whole selection, so quoting a block of prose makes one blockquote, not a quoted first line.
   const three = 'one\ntwo\nthree'
   it('quotes every selected line', () => {

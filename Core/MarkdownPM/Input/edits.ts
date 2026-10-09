@@ -1,6 +1,6 @@
 import { type Personalization, settingOf } from '../../Settings/personalization'
 import { linkDestinationStart } from '../../Connections/links'
-import { aliasSpanAt } from '../../Connections/connections'
+import { aliasSpanAt, linkAt } from '../../Connections/connections'
 import { inCalloutAt, inCodeAt, inFenceAt, spanAt, type DocScan } from '../Engine/docScan'
 import {
   fenceAt,
@@ -9,6 +9,7 @@ import {
   lineIndexAt,
   lineStartAt,
   lineEndAt,
+  inlineSpans,
   trimmedRange,
   quotePrefix,
   type TextEdit,
@@ -319,6 +320,23 @@ const emptyPairAt = (doc: string, c: number): boolean => {
   )
 }
 
+/** Code holds some of the connection written around `at`, so the editor draws it as text. */
+export function linkInCode(scan: DocScan, at: number): boolean {
+  const ls = lineStartAt(scan.text, at)
+  const line = scan.text.slice(ls, lineEndAt(scan.text, at))
+  const link = linkAt(line, at - ls)
+  if (!link) return false
+  if (inFenceAt(scan, at)) return true
+  return inlineSpans(line).some(([a, b]) => a < link.full[1] && b > link.full[0])
+}
+
+/** In a written connection's alias, where a `]` would truncate the link. */
+export function inAliasAt(scan: DocScan, at: number): boolean {
+  if (linkInCode(scan, at)) return false
+  const ls = lineStartAt(scan.text, at)
+  return aliasSpanAt(scan.text.slice(ls, lineEndAt(scan.text, at)), at - ls) !== null
+}
+
 export function autoPair(
   scan: DocScan,
   selStart: number,
@@ -354,11 +372,7 @@ export function autoPair(
     return { from: c, to: c, insert: '', selection: c + 1 }
   if (DOUBLED_ONLY.has(inserted)) return null
   if (!isPairEdge(prev, OPEN_MARKS) && !(inserted === '(' && prev === ']')) return null
-  if (inserted === '[') {
-    const ls = lineStartAt(doc, c)
-    // Never inside an alias: the pair's `]` is the character the input guard refuses there, and would truncate the link.
-    if (aliasSpanAt(doc.slice(ls, lineEndAt(doc, c)), c - ls)) return null
-  }
+  if (inserted === '[' && inAliasAt(scan, c)) return null
   return { from: c, to: c, insert: inserted + pair.close, selection: c + 1 }
 }
 

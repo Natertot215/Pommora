@@ -8,11 +8,14 @@ import {
 } from '../../Connections/connections'
 import type { ConnEditAction } from '../../Actions/connectionMenu'
 import type { ConnectionsApi } from './connectionsApi'
-import { aliasedToken, linkTokenAt, type Token } from '../Engine/tokens'
+import { aliasedToken, type Token } from '../Engine/tokens'
+import { docScan, docString } from '../docCache'
+import { spanAt } from '../Engine/docScan'
+import { linkInCode } from '../Input/edits'
 import { focusRange } from '../caretPlacement'
 import { restedOnLink } from './linkReveal'
 import { editorHost } from '../api'
-import { drawnRawAt } from '../decorations'
+import { drawnLinkAt } from '../decorations'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 
 /** Pure of any editor, because a connection in a resting table cell has none. Reads the token's spans, since a displayed alias hides where the title is. */
@@ -37,16 +40,11 @@ export function applyLinkAction(
   action: ConnEditAction,
   range: [number, number],
 ): void {
-  // The span was captured before a native menu opened, and `lineAt` throws past the document's end rather than clamping — the throw would land unhandled inside the menu's promise.
-  if (range[0] > view.state.doc.length) return
-  const line = view.state.doc.lineAt(range[0])
-  const tk = linkTokenAt(line.text, range[0] - line.from, 'wikiLink')
-  if (!tk || line.from + tk.range[0] !== range[0]) return
-  const at = (n: number): number => line.from + n
-  const { pipeAt, select } = wikiAuthorTarget(line.text, tk, action)
-  if (pipeAt !== undefined)
-    view.dispatch({ changes: { from: at(pipeAt), to: at(pipeAt), insert: '|' } })
-  focusRange(view, at(select[0]), at(select[1]))
+  const tk = drawnLinkAt(view, range[0], 'wikiLink')
+  if (!tk || tk.range[0] !== range[0]) return
+  const { pipeAt, select } = wikiAuthorTarget(docString(view.state.doc), tk, action)
+  if (pipeAt !== undefined) view.dispatch({ changes: { from: pipeAt, to: pipeAt, insert: '|' } })
+  focusRange(view, select[0], select[1])
 }
 
 /** The caret lands on the closer with no separating space, since the closer is the one caret position that doesn't reveal the syntax. */
@@ -54,11 +52,14 @@ export function commitAliasOnEnter(view: EditorView): boolean {
   const sel = view.state.selection.main
   if (!sel.empty) return false
   const line = view.state.doc.lineAt(sel.head)
-  const span = aliasSpanAt(line.text, sel.head - line.from)
-  if (!span) return false
-  const tk = linkTokenAt(line.text, span[0], 'wikiLink')
-  if (!tk || drawnRawAt(view, line.from + tk.range[0])) return false
-  const end = line.from + tk.range[1]
+  const rel = sel.head - line.from
+  const link = linkAt(line.text, rel)
+  if (!link || aliasSpanAt(line.text, rel) === null) return false
+  const scan = docScan(view.state.doc)
+  // Code holds no live link, and neither does an HTML block HTML Formatting draws raw.
+  const raw = view.state.facet(editorHost).settings().htmlFormatting && spanAt(scan.html, sel.head)
+  if (linkInCode(scan, sel.head) || raw) return false
+  const end = line.from + link.full[1]
   view.dispatch({
     selection: EditorSelection.cursor(end, 1),
     effects: restedOnLink.of(end),
@@ -102,6 +103,7 @@ interface Slot {
 
 function slotNear(state: EditorState, at: number): Slot | null {
   const { line, rel } = lineNear(state, at)
+  if (linkInCode(docScan(state.doc), line.from + rel)) return null
   const alias = aliasSpanAt(line.text, rel)
   if (alias) return { start: line.from + alias[0], end: line.from + alias[1], kind: 'alias' }
   const h = linkAt(line.text, rel)?.heading

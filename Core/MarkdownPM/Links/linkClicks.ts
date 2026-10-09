@@ -2,15 +2,18 @@ import type { Extension } from '@codemirror/state'
 import { isCmd } from '@pommora/uix/Interactions/chords'
 import type { EditorView } from '@codemirror/view'
 import { normalizeLinkUrl, WEB_ADDRESS } from '../../Paths/urlPath'
-import { linkTarget, linkTokenAt } from '../Engine/tokens'
+import type { Token } from '../Engine/tokens'
+import { docString } from '../docCache'
 import {
-  linkMenuTarget,
   openPage,
-  resolveMdTarget,
+  titleTarget,
+  tokenMenuTarget,
+  tokenTarget,
   type ConnectionsApi,
   type MdTarget,
 } from './connectionsApi'
-import { drawnRawAt, MD_LINK_CLASS } from '../decorations'
+import { drawnLinkAt, MD_LINK_CLASS } from '../decorations'
+import { applyLinkAction } from './linkEdit'
 import { applyUrlLinkAction } from './linkFormat'
 import { pointerHandlers, type PointerTarget } from '../Gestures/pointerPath'
 import { travelToHeading } from '../travel'
@@ -20,27 +23,48 @@ type GetApi = () => ConnectionsApi | undefined
 
 interface LinkHit extends PointerTarget {
   target: MdTarget
+  /** Absent on a bare `§Heading` run, which no token holds. */
+  tk?: Token
+}
+
+// A bare `§Heading` run in prose: no page, no menu, no glance — the run's own text is the target.
+function sectionRunAt(view: EditorView, event: MouseEvent, pos: number): LinkHit | null {
+  const span = (event.target as HTMLElement).closest?.('.md-section-run')
+  if (!span) return null
+  const text = span.textContent ?? ''
+  const from = view.posAtDOM(span)
+  return {
+    target: titleTarget(undefined, '', text.slice(1)),
+    range: [from, from + text.length],
+    onText: true,
+    hidesSyntax: true,
+    pos,
+  }
 }
 
 // `posAtCoords` clamps to the nearest rendered position and a valid link's markers are replaced to zero width, so a click past a short label resolves onto its last character.
-function linkUnder(view: EditorView, getApi: GetApi, event: MouseEvent): LinkHit | null {
+function linkUnder(
+  view: EditorView,
+  api: ConnectionsApi | undefined,
+  event: MouseEvent,
+): LinkHit | null {
   const pos = view.posAtCoords({ x: event.clientX, y: event.clientY })
   if (pos == null) return null
-  const line = view.state.doc.lineAt(pos)
-  const rel = pos - line.from
-  const tk = linkTokenAt(line.text, rel, 'link')
-  if (!tk || drawnRawAt(view, line.from + tk.range[0])) return null
-  const url = linkTarget(line.text, tk)
-  if (!url) return null
-  const target = resolveMdTarget(getApi(), url)
+  const run = sectionRunAt(view, event, pos)
+  if (run) return run
+  // A connection acts as one only where connections resolve.
+  const tk = drawnLinkAt(view, pos, api ? undefined : 'link')
+  if (!tk) return null
+  const target = heldTarget(tokenTarget(api, docString(view.state.doc), tk), ownPage(view))
   const el = (event.target as HTMLElement).closest?.(
-    `.${MD_LINK_CLASS}, .md-link-invalid, .md-connection-resolved`,
+    `.md-connection-resolved, .md-connection-ambiguous, .md-heading-symbol, .${MD_LINK_CLASS}, .md-link-invalid`,
   )
   return {
+    tk,
     target,
-    range: [line.from + tk.range[0], line.from + tk.range[1]],
-    onText: el != null && rel >= tk.contentRange[0] && rel <= tk.contentRange[1],
-    hidesSyntax: target.kind !== 'invalid',
+    range: tk.range,
+    onText: el != null && pos >= tk.contentRange[0] && pos <= tk.contentRange[1],
+    hidesSyntax: target.kind !== 'invalid' || (tk.kind === 'wikiLink' && target.ambiguous === true),
     pos,
   }
 }
@@ -105,21 +129,26 @@ export function dwellTarget(
   return WEB_ADDRESS.test(web) ? () => glance.arm({ kind: 'site', url: web }, el) : null
 }
 
-// A link naming a page raises the same glance, which the connection handler can't do: its hit-test reads wikiLink tokens and this is a `link`.
-export function markdownLinkClicks(getApi: GetApi): Extension {
+export function linkPointer(getApi: GetApi): Extension {
   return pointerHandlers<LinkHit>({
     // Both gates are required: external links wear the link class, not the connection one.
     hoverGate: `.md-connection-resolved, .${MD_LINK_CLASS}`,
-    hitAt: (view, event) => linkUnder(view, getApi, event),
+    hitAt: (view, event) => linkUnder(view, getApi(), event),
     follow: (hit, _, event) => (hit.onText ? followTarget(hit.target, getApi(), event) : null),
     dwell: (hit, el, glance) => (hit.onText ? dwellTarget(hit.target, glance, el) : null),
     menu: (hit, view) => {
       const menu = getApi()?.menu
       const target =
         hit.onText &&
-        linkMenuTarget(
+        tokenMenuTarget(
+          hit.tk,
           hit.target,
-          view.state.readOnly ? undefined : (action) => applyUrlLinkAction(view, action, hit.range),
+          view.state.readOnly
+            ? undefined
+            : {
+                wiki: (action) => applyLinkAction(view, action, hit.range),
+                url: (action) => applyUrlLinkAction(view, action, hit.range),
+              },
         )
       return menu && target ? () => menu(target) : null
     },

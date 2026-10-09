@@ -85,14 +85,6 @@ describe('every site resolves an aliased connection by the same span', () => {
     expect(opened).toHaveBeenCalledWith('p1')
   })
 
-  // The table's hover handler reaches a cell connection through the DOM, with no token to ask, so the resolve key has to travel on the span. Reading its text would resolve the alias instead.
-  it('a cell connection carries its resolve key, not just its text', async () => {
-    const host = await renderCell(DOC)
-    const el = host.querySelector('.md-connection-resolved') as HTMLElement
-    expect(el.textContent).toBe('Beta')
-    expect(el.dataset.connTitle).toBe('Alpha')
-  })
-
   it('a link the caret is already inside does not navigate on click', async () => {
     opened.mockClear()
     const view = await mountEditor({ initialBody: PADDED, connections: conn })

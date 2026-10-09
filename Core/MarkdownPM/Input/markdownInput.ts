@@ -33,12 +33,12 @@ import {
   indentListOnTab,
   outdentListOnShiftTab,
   wrapSelection,
+  inAliasAt,
   type Edit,
 } from './edits'
 import { isColorMark } from '../Engine/highlightColors'
 import { applyEdit } from './applyEdit'
 import { fenceAt, lineEndOf, lineIndexAt, lineOffsetsOf } from '../Engine/markdownCode'
-import { refusedInAlias } from '../Guards/aliasGuard'
 import { commitAliasOnEnter } from '../Links/linkEdit'
 import { headingHash } from '../Links/headingHash'
 import { embedTileRanges } from '../Embeds/embedWidget'
@@ -246,7 +246,7 @@ export const typedInput = (scope: MarkdownScope): Extension =>
         view,
         wrapSelection(scan, from, to, text, settings) ?? headingHash(scan, from, to, text),
       )
-    if (refusedInAlias(scan.text, from, text)) return true
+    if (text === ']' && inAliasAt(scan, from)) return true
     if (page && text === ']' && seedTypedCitation(view, from)) return true
     return apply(
       view,

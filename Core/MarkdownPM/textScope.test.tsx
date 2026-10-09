@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { EditorState, type Extension } from '@codemirror/state'
+import { EditorState, Prec, type Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { decorationsFor } from '../Testing/markdownEngine'
 import { testHost } from '../Testing/editorHarness'
@@ -25,6 +25,7 @@ const holder = { id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' }
 const conn: ConnectionsApi = {
   ...buildPageIndex([holder]),
   open: () => {},
+  menu: vi.fn(),
   headingsOf: (path) => (path === holder.path ? ['setup'] : undefined),
 }
 
@@ -108,6 +109,27 @@ describe('a bare heading in a Text value', () => {
     )
     go?.()
     expect(opened).toHaveBeenCalledWith('p1', 'Setup')
+  })
+
+  it('acts on hover and right-click as the resting value does', () => {
+    const arm = vi.fn()
+    const glance = { arm, cancel() {}, close() {}, contains: () => false }
+    const view = mount(
+      '[[#Setup]] x',
+      heldPage.of(holder),
+      Prec.highest(editorHost.of(testHost({ glance }))),
+    )
+    vi.spyOn(view, 'posAtCoords').mockReturnValue(5)
+    const heading = view.dom.querySelector('.md-connection-heading') as HTMLElement
+    heading.dispatchEvent(new PointerEvent('pointerover', { bubbles: true }))
+    expect(arm).toHaveBeenCalledWith(
+      { kind: 'page', id: 'p1', path: 'Notes/Alpha.md', heading: 'Setup' },
+      heading,
+    )
+    heading.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }))
+    expect(conn.menu).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: 'page', page: holder, heading: 'Setup' }),
+    )
   })
 
   it('goes unjudged when the seat names no page', () => {

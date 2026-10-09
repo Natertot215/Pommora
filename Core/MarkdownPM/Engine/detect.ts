@@ -463,7 +463,8 @@ export function calloutLines(
   const out: (CalloutLine | undefined)[] = new Array(lines.length)
   let i = 0
   while (i < lines.length) {
-    if (!isCalloutHead(lines[i]) || codeLine(i)) {
+    const head = codeLine(i) ? null : calloutHeadPrefixLen(lines[i])
+    if (head === null) {
       i++
       continue
     }
@@ -474,14 +475,12 @@ export function calloutLines(
       !(isCalloutHead(lines[j]) && !codeLine(j))
     )
       j++
-    const headPrefix = quotePrefix(lines[i])
-    const tag = calloutTagRe.exec(lines[i].slice(headPrefix.length))
     for (let k = i; k < j; k++) {
       const oneLevel = quotePrefixWidth(lines[k], 1)
       out[k] = {
         first: k === i,
         last: k === j - 1,
-        prefixEnd: k === i ? headPrefix.length + (tag?.[0].length ?? 0) : oneLevel,
+        prefixEnd: k === i ? head : oneLevel,
       }
     }
     i = j

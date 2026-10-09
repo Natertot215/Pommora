@@ -1,6 +1,6 @@
 import type { LinkStatus } from '../../Connections/connections'
 import { normalizeTitle } from '../../Paths/caseFold'
-import { headingOf, linkTarget, type Token } from '../Engine/tokens'
+import { aliasedToken, headingOf, linkTarget, type Token } from '../Engine/tokens'
 import type {
   ConnCellApply,
   ConnEditAction,
@@ -91,6 +91,24 @@ export function linkMenuTarget(
     default:
       return null
   }
+}
+
+/** A connection naming a page is authored in place, and every other link is a page or an address. */
+export function tokenMenuTarget(
+  tk: Token | undefined,
+  target: MdTarget,
+  edit?: { wiki: (action: ConnEditAction) => void; url: (action: ConnUrlAction) => void },
+): ConnMenuTarget | null {
+  if (tk?.kind === 'wikiLink' && target.kind === 'page')
+    return {
+      kind: 'page',
+      page: target.page,
+      heading: target.heading,
+      editable: edit !== undefined,
+      hasAlias: aliasedToken(tk),
+      apply: edit?.wiki,
+    }
+  return linkMenuTarget(target, edit?.url)
 }
 
 interface WikiLinkView {

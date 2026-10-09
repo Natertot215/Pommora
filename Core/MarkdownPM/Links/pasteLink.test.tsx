@@ -242,10 +242,9 @@ describe('pasting as an embed', () => {
     expect(view.state.doc.toString()).toBe('intro tail')
   })
 
-  it('writes nothing on a blank line inside a fence', async () => {
-    const body = '```\n\n```'
-    const view = await seated(body, 4)
+  it('lands the address as plain text on a blank line inside a fence', async () => {
+    const view = await seated('```\n\n```', 4)
     await act(async () => await pasteAs(view, 'embedLink'))
-    expect(view.state.doc.toString()).toBe(body)
+    expect(view.state.doc.toString()).toBe(`\`\`\`\n${URL}\n\`\`\``)
   })
 })

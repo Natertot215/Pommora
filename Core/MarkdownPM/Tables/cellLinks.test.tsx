@@ -50,11 +50,10 @@ afterEach(async () => {
 })
 
 describe('a connection in a resting cell behaves like one in the body', () => {
-  it('renders the alias, and carries the title it resolves by', async () => {
+  it('renders the alias, resolved by its title', async () => {
     await mount()
     const link = container.querySelector('.md-connection-resolved') as HTMLElement
     expect(link.textContent).toBe('the plan')
-    expect(link.dataset.connTitle).toBe('Quarterly Plan')
   })
 
   it('and a press on the cell beside the link still opens the editor', async () => {
@@ -95,7 +94,6 @@ describe('a heading link in a resting cell renders its three parts', () => {
     await mountHeading()
     const link = container.querySelector('.md-connection-resolved') as HTMLElement
     expect(link.textContent).toBe('Quarterly Plan§Setup')
-    expect(link.dataset.connTitle).toBe('Quarterly Plan')
   })
 })
 

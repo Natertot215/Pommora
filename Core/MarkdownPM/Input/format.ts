@@ -311,7 +311,8 @@ export function setBlock(doc: string, from: number, to: number, fmt: BlockFormat
     }
     case 'callout': {
       if (isCalloutHead(line)) return { changes: [] }
-      const next = `> [!callout] ${stripBlockMarkers(line)}`
+      const body = stripInnerMarkers(line)
+      const next = `> [!callout] ${parseListMarker(line) ? body : stripQuotePrefix(body)}`
       return { changes: [{ from: ls, to: le, insert: next }], selection: ls + next.length }
     }
     case 'code': {
@@ -342,11 +343,4 @@ function stripInnerMarkers(body: string): string {
   if (lm) return body.slice(lm.contentStart)
   const h = headingParts(body)
   return h ? h.indent + h.content : body
-}
-
-function stripBlockMarkers(line: string): string {
-  const lm = parseListMarker(line)
-  if (lm) return line.slice(lm.contentStart)
-  const h = headingParts(line)
-  return stripQuotePrefix(h ? h.indent + h.content : line)
 }

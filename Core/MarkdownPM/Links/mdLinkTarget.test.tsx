@@ -142,6 +142,22 @@ describe('both syntaxes and both renderers agree', () => {
     })
     expect(view.dom.querySelector('.md-link')?.textContent).toBe('site')
   })
+
+  it('each keeps its own extra class: the editor’s open link, the cell’s fixed invalid one', async () => {
+    const view = await mountEditor({
+      initialBody: `see [the notes](${target}) end`,
+      connections: conn,
+    })
+    await act(async () => {
+      view.focus()
+      view.dispatch({ selection: { anchor: 6 } })
+    })
+    expect(view.dom.querySelector('.md-connection-open')?.textContent).toBe('the notes')
+    const container = await renderCell('a [Home](not a url) b')
+    expect(
+      container.querySelector('.md-link-invalid')?.classList.contains('md-unresolved-fixed'),
+    ).toBe(true)
+  })
 })
 
 describe('following one', () => {

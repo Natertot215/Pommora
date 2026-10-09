@@ -7,6 +7,7 @@ import {
   smartBackspace,
   canonicalizeCheckbox,
   autoPair,
+  inAliasAt,
   pairColorMark,
   autoDelete,
   closeConstructOnEnter,
@@ -177,6 +178,9 @@ describe('auto-pair + auto-delete', () => {
   it('single [ pairs at line start, not after a word char', () => {
     expect(autoPair(scanDoc(''), 0, 0, '[')).not.toBeNull()
     expect(autoPair(scanDoc('-'), 1, 1, '[')).toBeNull()
+  })
+  it('[ never pairs inside an alias, where its ] would truncate the link', () => {
+    expect(autoPair(scanDoc('a [[Notes|My ]] b'), 13, 13, '[')).toBeNull()
   })
   it('backspace inside an empty pair deletes both halves', () => {
     const e = autoDelete(scanDoc('[]'), 1, 1)!
@@ -848,6 +852,21 @@ describe('nested list behavior inside a callout', () => {
     const doc = '> [!callout] head\n> -[]'
     const r = canonicalizeCheckbox(doc, doc.length, doc.length, ' ')!
     expect(apply(doc, r)).toBe('> [!callout] head\n> - [ ] ')
+  })
+})
+
+describe('inAliasAt', () => {
+  it('reads the alias on the line the offset sits in', () => {
+    const doc = 'a first line long enough\na [[Notes|Q3]] b'
+    expect(inAliasAt(scanDoc(doc), doc.indexOf('Q3'))).toBe(true)
+  })
+  it('an alias written in code is code', () => {
+    for (const doc of ['```\na [[Alpha|al]] b\n```', 'a `[[Alpha|al]]` b'])
+      expect(inAliasAt(scanDoc(doc), doc.indexOf('al]'))).toBe(false)
+  })
+  it('a connection code touches is code, as the editor draws it', () => {
+    const doc = 'a [[Alpha|x `c` y]] b'
+    expect(inAliasAt(scanDoc(doc), doc.indexOf('y]'))).toBe(false)
   })
 })
 

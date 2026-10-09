@@ -276,7 +276,7 @@ describe('the list vocabulary inside a table cell', () => {
     const cell = (await tableEl()).querySelector('tbody')!.children[0].children[0]
     const marked = cell.querySelector('[data-link-span]') as HTMLElement
     const from = Number(marked.dataset.linkSpan!.split(',')[0])
-    expect(linkTokenAt(display, from)).toBeTruthy()
+    expect(linkTokenAt(tokenize(display), from)).toBeTruthy()
   })
 
   it('leaves Tab to the cell when a range is selected, rather than eating it', async () => {

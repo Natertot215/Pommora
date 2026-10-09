@@ -99,6 +99,18 @@ describe('a connection acts on its text, and leaves its edges to the caret', () 
     expect(opened).not.toHaveBeenCalled()
   })
 
+  it('a press on a connection inside a fence stays where it lands', async () => {
+    opened.mockClear()
+    const view = await mountEditor({ initialBody: '```\na [[Alpha]] b\n```', connections: conn })
+    await act(async () => view.focus())
+    view.dispatch({ selection: { anchor: 0 } })
+    vi.spyOn(view, 'posAtCoords').mockReturnValue(12)
+    view.contentDOM.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 0 }))
+    expect([6, 15]).not.toContain(view.state.selection.main.head)
+    view.contentDOM.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0, detail: 1 }))
+    expect(opened).not.toHaveBeenCalled()
+  })
+
   it('a click that clamps into a resting link seats at the nearer bracket edge', async () => {
     const view = await mountEditor({ initialBody: 'a [[Alpha]] b', connections: conn })
     await act(async () => view.focus())
