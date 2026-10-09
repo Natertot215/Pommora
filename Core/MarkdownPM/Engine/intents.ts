@@ -80,7 +80,7 @@ export type DecoIntent =
   | { kind: 'prefix'; from: number; to: number; drawnOver: boolean }
   | { kind: 'widget'; from: number; to: number; spec: WidgetSpec }
   | { kind: 'lineWidget'; from: number; className: string; text?: string; side?: 1 }
-  | { kind: 'codeTag'; from: number; name?: string; tally?: DiffTally }
+  | { kind: 'codeTag'; from: number; name?: string; tally?: DiffTally; path?: string }
   | {
       kind: 'line'
       from: number
@@ -257,10 +257,11 @@ function pageChrome(
       intents.push({
         kind: 'codeTag',
         from: infoStart,
-        name: fence.tally ? undefined : fence.name,
+        name: fence.tally || fence.path ? undefined : fence.name,
         tally: fence.tally,
+        path: fence.path,
       })
-      if ((fence.name || fence.tally) && infoStart < le)
+      if ((fence.name || fence.tally || fence.path) && infoStart < le)
         intents.push({ kind: 'hide', from: infoStart, to: le })
     }
     if (fence.ordinal !== undefined)

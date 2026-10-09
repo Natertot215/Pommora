@@ -73,15 +73,8 @@ describe('a fence word', () => {
     expect(codeFence('diff-')).toEqual({ name: null, diff: false })
   })
   it('resolves a path or filename by its extension, however its folders are written', () => {
-    for (const word of [
-      'app.ts',
-      '.ts',
-      'src/app.ts',
-      '/src/app.ts',
-      '\\src\\app.ts',
-      'C:\\src\\app.ts',
-    ])
-      expect(codeFence(word)).toEqual({ name: 'TypeScript', diff: false })
+    for (const word of ['app.ts', 'src/app.ts', '/src/app.ts', '\\src\\app.ts', 'C:\\src\\app.ts'])
+      expect(codeFence(word)).toEqual({ name: 'TypeScript', diff: false, path: word })
   })
   it('reads only a filename’s final extension', () => {
     expect(codeFence('app.test.ts').name).toBe('TypeScript')
@@ -90,9 +83,9 @@ describe('a fence word', () => {
     expect(codeFence('docker/Dockerfile').name).toBe('Dockerfile')
   })
   it('answers nothing for a path whose file names no language', () => {
-    expect(codeFence('src/')).toEqual({ name: null, diff: false })
-    expect(codeFence('app.')).toEqual({ name: null, diff: false })
-    expect(codeFence('src/app.foo')).toEqual({ name: null, diff: false })
+    expect(codeFence('src/')).toEqual({ name: null, diff: false, path: 'src/' })
+    expect(codeFence('app.')).toEqual({ name: null, diff: false, path: 'app.' })
+    expect(codeFence('src/app.foo')).toEqual({ name: null, diff: false, path: 'src/app.foo' })
   })
   it('reads a diff joined to a path, and no diff in a path through a diff folder or file', () => {
     for (const word of [
@@ -102,13 +95,21 @@ describe('a fence word', () => {
       'src/app.ts diff',
       'ts\\diff',
     ])
-      expect(codeFence(word)).toEqual({ name: 'TypeScript', diff: true })
-    expect(codeFence('src/diff/app.ts')).toEqual({ name: 'TypeScript', diff: false })
-    expect(codeFence('diff.ts')).toEqual({ name: 'TypeScript', diff: false })
+      expect(codeFence(word)).toMatchObject({ name: 'TypeScript', diff: true })
+    expect(codeFence('src/diff/app.ts').diff).toBe(false)
+    expect(codeFence('diff.ts').diff).toBe(false)
   })
   it('reads a diff or patch file as a diff with no colors', () => {
-    expect(codeFence('changes.diff')).toEqual({ name: null, diff: true })
-    expect(codeFence('src\\fix.patch')).toEqual({ name: null, diff: true })
+    expect(codeFence('changes.diff')).toEqual({ name: null, diff: true, path: 'changes.diff' })
+    expect(codeFence('src\\fix.patch')).toEqual({ name: null, diff: true, path: 'src\\fix.patch' })
+  })
+  it('keeps a path as written, beside a diff on either side, and no path for a bare word or extension', () => {
+    expect(codeFence('diff Core/App.ts').path).toBe('Core/App.ts')
+    expect(codeFence('Core/App.ts DIFF').path).toBe('Core/App.ts')
+    expect(codeFence('Dockerfile').path).toBeUndefined()
+    expect(codeFence('.ts')).toEqual({ name: 'TypeScript', diff: false })
+    expect(codeFence('{.python .numberLines}').path).toBeUndefined()
+    expect(codeFence('ts\\diff').path).toBeUndefined()
   })
 })
 

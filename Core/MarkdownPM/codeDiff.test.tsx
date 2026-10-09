@@ -42,6 +42,47 @@ describe('a diff fence’s tally', () => {
   })
 })
 
+describe('a fence’s path', () => {
+  const tag = async (info: string) =>
+    (await mountEditor({ initialBody: `\`\`\`${info}\nx\n\`\`\`` })).contentDOM.querySelector(
+      '.codeblock-language',
+    )!
+
+  it('stands in for the language, its folders and file split by chevrons', async () => {
+    const el = await tag('Core/app.ts')
+    expect(el.querySelector('.codeblock-name')?.textContent).toBe('Core›app.ts')
+    expect(el.querySelector('.codeblock-mark')).toBeNull()
+  })
+
+  it('hides an info word that names no language, and drops a leading `./`', async () => {
+    const view = await mountEditor({ initialBody: '```./src/app.foo\nx\n```' })
+    expect(view.contentDOM.querySelector('.codeblock-first')?.textContent).toBe('```src›app.foo')
+  })
+
+  it('reads Copied when clicked, unless a tally takes the word', async () => {
+    for (const [info, after] of [
+      ['src/a.ts', 'Copied'],
+      ['diff src/a.ts', 'src›a.ts'],
+    ]) {
+      const name = (await tag(info)).querySelector<HTMLElement>('.codeblock-name')!
+      name.click()
+      expect(name.parentElement!.classList.contains('is-copied')).toBe(true)
+      expect(name.textContent).toBe(after)
+      await cleanupEditor()
+    }
+  })
+
+  it('sits before a diff’s tally', async () => {
+    const el = await tag('diff Core/app.ts')
+    expect([...el.children].map((c) => c.className.split(' ')[0])).toEqual([
+      'codeblock-mark-slot',
+      'codeblock-name',
+      'codeblock-tally',
+    ])
+    expect(el.querySelector('.codeblock-name')?.textContent).toBe('Core›app.ts')
+  })
+})
+
 describe('a diff fence’s caret', () => {
   const doc = '```diff\n+a\n-b\n```'
   const seat = doc.indexOf('+a') + 1

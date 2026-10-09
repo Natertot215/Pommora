@@ -49,7 +49,7 @@ export const CODE_LANGS = [
 export type CodeLangName = (typeof CODE_LANGS)[number]['name']
 
 const DIFF_WORD =
-  /^(?:(?:diff|patch)(?:(?:[-/|\\]|\s+)(\S+))?|(\S+?)(?:[-/|\\]|\s+)(?:diff|patch))(?:\s|$)/
+  /^(?:(?:diff|patch)(?:(?:[-/|\\]|\s+)(\S+))?|(\S+?)(?:[-/|\\]|\s+)(?:diff|patch))(?:\s|$)/i
 
 /** A path's file names its language by its extension, or by its whole name when it has none, as `Dockerfile` does. */
 function fileTerm(word: string): string {
@@ -57,13 +57,22 @@ function fileTerm(word: string): string {
   return file.slice(file.lastIndexOf('.') + 1)
 }
 
-/** The one reading of a fence's info string: the language its code colors as, and whether it draws as a diff — `diff` or `patch` alone, or joined to a language by `-`, `/`, `\`, `|`, or a space on either side. Past that, only the first word counts, and a path or filename there names its language by its extension, a `.diff` or `.patch` file drawing as a diff. A null name selects no parse, and the fence wears no language tag. */
-export function codeFence(info: string): { name: CodeLangName | null; diff: boolean } {
-  const text = info.trim().toLowerCase()
+/** The one reading of a fence's info string: the language its code colors as, and whether it draws as a diff — `diff` or `patch` alone, or joined to a language by `-`, `/`, `\`, `|`, or a space on either side. Past that, only the first word counts, and a path or filename there names its language by its extension, a `.diff` or `.patch` file drawing as a diff. A null name selects no parse. A word with a folder, or a filename with a name before its extension, comes back as written in `path`, which the fence's tag shows in place of the language. */
+export function codeFence(info: string): {
+  name: CodeLangName | null
+  diff: boolean
+  path?: string
+} {
+  const text = info.trim()
   const m = DIFF_WORD.exec(text)
-  const lang = fileTerm(m?.[1] ?? m?.[2] ?? text.split(/\s/, 1)[0])
+  const word = m?.[1] ?? m?.[2] ?? text.split(/\s/, 1)[0]
+  const lang = fileTerm(word).toLowerCase()
   const named = CODE_LANGS.find(
     (l) => l.name.toLowerCase() === lang || l.alias.some((a) => a === lang),
   )
-  return { name: named?.name ?? null, diff: m !== null || lang === 'diff' || lang === 'patch' }
+  return {
+    name: named?.name ?? null,
+    diff: m !== null || lang === 'diff' || lang === 'patch',
+    path: /[\\/]|^\w.*\./.test(word) ? word : undefined,
+  }
 }
