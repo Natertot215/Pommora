@@ -1,7 +1,7 @@
 import type { PropertyValue } from './propertyValue'
 import type { PropertyType } from './properties'
 import { linkEditText, linkValueFromEdit } from '../Connections/linkValue'
-import { numberFrom } from '@pommora/uix/Pickers/numberUnit'
+import { numberFrom } from '@pommora/uix/Utilities/numberUnit'
 import { resolveTitle } from './Cells/linkResolve'
 
 export function editorText(value?: PropertyValue | null): string {

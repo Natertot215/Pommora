@@ -151,7 +151,7 @@ The probe shifts some lines in `properties.ts` (+1 after line 21, +2 after line 
 | Refusal | What It Guards | Applies to a Text Value? |
 | --- | --- | --- |
 | `linkValueFromEdit` (`Core/Connections/linkValue.ts:67-80`) | Typed text that's neither a pasted link nor `isValidLink` returns `undefined` (`:76`); a pasted `[[…]]` resolves through `resolveTitle` (`Core/Properties/Cells/linkResolve.ts:7-8`) | No: a Link's value must name a target; a free string has none |
-| `numberFrom` (`UIX/Pickers/numberUnit.ts:12-15`) via `parseEditorValue.ts:19-23` | Non-finite input returns `undefined` | No |
+| `numberFrom` (`UIX/Utilities/numberUnit.ts:12-15`) via `parseEditorValue.ts:19-23` | Non-finite input returns `undefined` | No |
 | `KEY_REFUSAL` (`properties.ts:260-267`), `keyRefusal` and `validateName` (`schema.ts:21-40`) | Property names: empty, reserved prefix, managed key, duplicate, held | No: names, not values |
 | `mergeInto`'s throw (`Core/Files/pageFile.ts:117-119`), `frontmatterWritable` (`:76-77`), `sweepParse`'s skip (`:198`) | The page's existing frontmatter has parse errors, isn't a map, or fails to serialize (`:55-56, 58-74`) | Equally to every type: the refusal belongs to the file, not to the value written |
 | Wire validation (`mutateRequest.ts:85`) | `z.string()` admits any string | Admits all |

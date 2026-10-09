@@ -8,7 +8,7 @@ import {
   type ScrollbarReveal,
 } from './devicePrefs'
 import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
-import { type NumberUnit, unitLabel } from '@pommora/uix/Pickers/numberUnit'
+import { type NumberUnit, unitLabel } from '@pommora/uix/Utilities/numberUnit'
 import type { NumberRange } from '@pommora/uix/Utilities/clamp'
 import { LINK_FORMAT_OPTIONS } from '../Properties/Schema/linkFormatOptions'
 import type { LinkDisplay } from '../Properties/properties'

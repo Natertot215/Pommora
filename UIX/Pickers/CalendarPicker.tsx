@@ -18,7 +18,7 @@ import * as s from './calendar-picker.css'
 import { clamp } from '../Utilities/clamp'
 import { useLatest } from '../Utilities/stableApi'
 import { EditableInput } from '../Fields/EditableInput'
-import { numberFrom } from './numberUnit'
+import { numberFrom } from '../Utilities/numberUnit'
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 

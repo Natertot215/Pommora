@@ -8,7 +8,7 @@ import {
 import { numberBarCapable } from '../formatValue'
 import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
 import { MenuRowView, pickerRow, type MenuRow, type Trailing } from '@pommora/uix/Menus'
-import { numberFrom } from '@pommora/uix/Pickers/numberUnit'
+import { numberFrom } from '@pommora/uix/Utilities/numberUnit'
 import * as s from './number-editor.css'
 
 type NumberLook = (typeof NUMBER_LOOKS)[number]

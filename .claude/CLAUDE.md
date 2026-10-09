@@ -94,6 +94,23 @@ Everything about Pommora’s design — what it builds and how it’s built — 
 └── // Web           | • The web guest element, link opening, and guest partitions
 
 // UIX               | • The design kit — reaches nothing outside itself
+├── // Animations    | • Motion tokens, feels, entrance and exit presence, and slides
+├── // Buttons       | • Button.tsx + button-base.css
+├── // Cards         | • Card.tsx + cards.css
+├── // Controls      | • Checkbox • ColorSwatch • DualSwitch • Slider
+├── // Elements      | • Small display pieces: trails, segments, toggles, progress bars
+├── // Fields        | • Text inputs, path and search fields, and renamables
+├── // Glass         | • GlassControl • GlassPane • GlassSurface • GlassWindow
+├── // Interactions  | • Drag, drop, reorder, keyboard, focus, scroll, and hover primitives
+├── // Labels        | • Label & Chips
+├── // Menus         | • Menu surfaces, rows, anchors, and frame slides
+├── // Pickers       | • Shared Picker Primitives: Color • Calendar • Icon • Text
+├── // Symbols       | • The icon roster, custom glyphs, file-type icons, and the mark
+├── // Table         | • The shared table tokens and grid
+├── // Theme         | • Colors, fills, ramps, fades, variables, typography, layers, and the caret
+├── // Utilities     | • Small shared helpers and the icon-name generator
+└── // Windows       | • Floating Windows: ModalScrim • WindowActions • WindowBase • WindowPanel
+
 // Desktop           | • The Electron host — the app's only caller of Node
 // Mobile            | • The mobile companion
 // Dashboard         | • The line ledger and design-system showcase pages

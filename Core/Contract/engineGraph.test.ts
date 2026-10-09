@@ -23,12 +23,12 @@ describe('the engine graph from serve.ts', () => {
   it('reaches exactly the pure UIX leaves', () => {
     expect(graph.files.filter((f) => f.startsWith('UIX/'))).toEqual([
       'UIX/Interactions/chords.ts',
-      'UIX/Pickers/numberUnit.ts',
       'UIX/Theme/colors.ts',
       'UIX/Utilities/capMap.ts',
       'UIX/Utilities/capitalize.ts',
       'UIX/Utilities/clamp.ts',
       'UIX/Utilities/moveItem.ts',
+      'UIX/Utilities/numberUnit.ts',
       'UIX/Utilities/pad.ts',
       'UIX/Utilities/same.ts',
       'UIX/Utilities/tileMetrics.ts',
