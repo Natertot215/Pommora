@@ -22,7 +22,7 @@ import { clamp } from '@pommora/uix/Utilities/clamp'
 import { editorHost, redrawNudge } from './api'
 import { languageLoaded } from './codeHighlight'
 import { docScan, drawnLast } from './docCache'
-import { codeSeat } from './Engine/detect'
+import { codeSeat, type FenceInfo } from './Engine/detect'
 import type { DocScan } from './Engine/docScan'
 import { lineIndexAt } from './Engine/markdownCode'
 import { perText } from './Engine/perText'
@@ -114,8 +114,32 @@ class TabStop extends WidgetType {
 }
 const tabStop = perText((cols) => Decoration.replace({ widget: new TabStop(Number(cols)) }), 16)
 
-const cutKey = (rest: Rest, x: number, code: string): string =>
-  `${rest.width}|${x}|${rest.font}|${code}`
+// The language and the line's place in its block stand in for its context, since the same code colors differently inside a comment or another language.
+const cutKey = (rest: Rest, x: number, f: FenceInfo, code: string): string =>
+  `${rest.width}|${x}|${rest.font}|${f.name ?? ''}|${f.ordinal}|${code}`
+
+/** The first and last of a block's content lines the viewport holds. */
+function drawnSpan(view: EditorView, scan: DocScan, from: number): [number, number] {
+  const open = lineIndexAt(scan, from)
+  return [
+    Math.max(open + 1, lineIndexAt(scan, view.viewport.from)),
+    Math.min(lineIndexAt(scan, scan.fences[open]!.to) - 1, lineIndexAt(scan, view.viewport.to)),
+  ]
+}
+
+/** A code line's frame: its block's offset and overflow once the block shows or has scrolled, and the color its resting ellipsis takes. */
+function frameOf(b: BlockScroll | undefined, shown: boolean, cut?: string): Decoration {
+  const vars = [
+    (b || shown) && `--code-scroll:${b?.x ?? 0}px;--code-overflow:${b?.overflow ?? 0}px`,
+    cut && `--code-cut:${cut}`,
+  ].filter(Boolean)
+  return vars.length > 0
+    ? Decoration.line({
+        class: shown ? 'codeblock-nowrap codeblock-revealed' : 'codeblock-nowrap',
+        attributes: { style: vars.join(';') },
+      })
+    : nowrap
+}
 
 function decorate(
   view: EditorView,
@@ -141,25 +165,12 @@ function decorate(
     const b = blocks.find((s) => s.from === f.from)
     const shown = f.from === live || f.from === hovered
     const rest = rests.get(f.from)
-    const cut =
-      !shown && rest ? cuts.get(cutKey(rest, b?.x ?? 0, scan.lines[i].slice(seat - ls))) : undefined
-    const vars = [
-      (b || shown) && `--code-scroll:${b?.x ?? 0}px;--code-overflow:${b?.overflow ?? 0}px`,
-      cut && `--code-cut:${cut}`,
-    ].filter(Boolean)
-    ranges.push(
-      (vars.length > 0
-        ? Decoration.line({
-            class: shown ? 'codeblock-nowrap codeblock-revealed' : 'codeblock-nowrap',
-            attributes: { style: vars.join(';') },
-          })
-        : nowrap
-      ).range(ls),
-    )
+    const code = scan.lines[i].slice(seat - ls)
+    const cut = !shown && rest ? cuts.get(cutKey(rest, b?.x ?? 0, f, code)) : undefined
+    ranges.push(frameOf(b, shown, cut).range(ls))
     if (seat < le) {
       ranges.push(run.range(seat, le))
       inks.push(ink.range(seat, le))
-      const code = scan.lines[i].slice(seat - ls)
       if (code.includes('\t'))
         for (let k = 0, col = 0; k < code.length; k++) {
           if (code[k] !== '\t') col++
@@ -172,6 +183,29 @@ function decorate(
     }
   }
   return [Decoration.set(ranges, true), Decoration.set(inks, true)]
+}
+
+/** Moves each shown block's drawn lines to its new offset, leaving the runs, the ink, and every other line as drawn. */
+function shiftFrames(
+  view: EditorView,
+  deco: DecorationSet,
+  moved: readonly BlockScroll[],
+): DecorationSet {
+  const scan = docScan(view.state.doc)
+  for (const b of moved) {
+    const [first, last] = drawnSpan(view, scan, b.from)
+    if (first > last) continue
+    const frame = frameOf(b, true)
+    const add: Range<Decoration>[] = []
+    for (let i = first; i <= last; i++) add.push(frame.range(scan.lineStarts[i]))
+    deco = deco.update({
+      add,
+      filter: (from, to) => to > from,
+      filterFrom: scan.lineStarts[first],
+      filterTo: scan.lineStarts[last],
+    })
+  }
+  return deco
 }
 
 // Made on first use, so nothing that only imports the editor creates a canvas.
@@ -256,14 +290,9 @@ function restOf(line: HTMLElement): Rest {
 /** How far a block's widest line runs past the width its lines rest at, in layout pixels; null while none of its lines is drawn to take the font and width from. */
 function overflowOf(view: EditorView, from: number, edit?: ViewUpdate): number | null {
   const scan = docScan(view.state.doc)
-  const open = lineIndexAt(scan, from)
-  const last = Math.min(
-    lineIndexAt(scan, scan.fences[open]!.to) - 1,
-    lineIndexAt(scan, view.viewport.to),
-  )
+  const [first, last] = drawnSpan(view, scan, from)
   let sample: HTMLElement | null = null
-  for (let i = Math.max(open + 1, lineIndexAt(scan, view.viewport.from)); i <= last && !sample; i++)
-    sample = lineElementAt(view, scan.lineStarts[i])
+  for (let i = first; i <= last && !sample; i++) sample = lineElementAt(view, scan.lineStarts[i])
   if (!sample) return null
   const rest = restOf(sample)
   return Math.max(0, Math.ceil(widestOf(view, from, rest.font, edit) - rest.width))
@@ -360,17 +389,31 @@ class CodeScroll {
       this.cuts.clear()
       this.unread = true
     }
+    const was = u.startState.field(codeScrolls)
+    const now = u.state.field(codeScrolls)
     if (
       live !== this.live ||
       u.docChanged ||
       u.viewportChanged ||
-      u.startState.field(codeScrolls) !== u.state.field(codeScrolls) ||
       u.transactions.some((tr) => tr.effects.some((e) => e.is(redrawNudge) || e.is(cutsRead)))
-    ) {
-      this.live = live
-      ;[this.deco, this.inks] = decorate(u.view, live, this.rests, this.cuts)
-      this.unread = true
+    )
+      this.redraw(u.view, live)
+    else if (was !== now) {
+      const moved = now.blocks.filter((b) => !was.blocks.includes(b))
+      // A shown block has no ellipsis to recolor, so an offset that moved alone changes only its lines' frames.
+      if (
+        was.hovered === now.hovered &&
+        moved.every((b) => b.from === live || b.from === now.hovered)
+      )
+        this.deco = shiftFrames(u.view, this.deco, moved)
+      else this.redraw(u.view, live)
     }
+  }
+
+  private redraw(view: EditorView, live: number | null): void {
+    this.live = live
+    ;[this.deco, this.inks] = decorate(view, live, this.rests, this.cuts)
+    this.unread = true
   }
 
   /** Reads what the drawn blocks other than the live one lack: each block's rest, which re-clamps an offset its width no longer allows, and each resting line's ellipsis color. */
@@ -407,7 +450,7 @@ class CodeScroll {
       if (f.from === hovered) continue
       const seat = scan.lineStarts[i] + codeSeat(scan.lines[i], f)
       const code = scan.lines[i].slice(seat - scan.lineStarts[i])
-      const key = cutKey(rest, b?.x ?? 0, code)
+      const key = cutKey(rest, b?.x ?? 0, f, code)
       let color = this.cuts.get(key)
       if (color === undefined) {
         color = cutColor(view, seat, code, rest, b?.x ?? 0)
