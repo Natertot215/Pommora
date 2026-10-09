@@ -30,7 +30,7 @@ function rangeMarkers(view: EditorView, range: SelectionRange): RectangleMarker[
       right = Math.min(right, headClip.right)
     }
     if (i === last && footClip)
-      right = right <= footClip.left ? left : Math.min(right, footClip.right)
+      right = right < footClip.left ? left : Math.min(right, footClip.right)
     if (right < left || (right === left && m.width! > 0)) return []
     const top = i === 0 && head ? head.top : m.top
     const bottom = i === last && foot ? foot.top + foot.height : m.top + m.height

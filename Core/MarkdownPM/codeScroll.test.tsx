@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { EditorState } from '@codemirror/state'
-import type { EditorView } from '@codemirror/view'
+import { type EditorView, runScopeHandlers } from '@codemirror/view'
 import { cleanupEditor, mountEditor, stubEditorBridge, testHost } from '../Testing/editorHarness'
 import { editorHost } from './api'
 import { codeLanguage } from './codeHighlight'
@@ -53,6 +53,29 @@ describe('a code line’s run', () => {
     expect(runs(view).map((r) => r.textContent)).toEqual(['x'])
   })
 
+  it('draws each tab as the stop it reaches from the run’s start', async () => {
+    const view = await mountEditor({ initialBody: '```go\na\tb\n\tc\n```', ...scrolling })
+    const stops = (code: string) =>
+      [...lineOf(view, code).querySelectorAll<HTMLElement>('.codeblock-tab')].map(
+        (t) => t.style.width,
+      )
+    expect(stops('ab')).toEqual(['3ch'])
+    expect(stops('c')).toEqual(['4ch'])
+  })
+
+  it('takes Home to the code’s indentation, then to its start', async () => {
+    const body = '```ts\n    return x\n```'
+    const view = await mountEditor({ initialBody: body, ...scrolling })
+    const start = body.indexOf('    return')
+    view.dispatch({ selection: { anchor: body.indexOf('x') } })
+    const home = () =>
+      runScopeHandlers(view, new KeyboardEvent('keydown', { key: 'Home' }), 'editor')
+    home()
+    expect(view.state.selection.main.head).toBe(start + 4)
+    home()
+    expect(view.state.selection.main.head).toBe(start)
+  })
+
   it('reveals the block the focused caret stands in, and no other', async () => {
     const body = '```ts\na\n```\n\n```ts\nb\n```'
     const view = await mountEditor({ initialBody: body, ...scrolling })
@@ -90,6 +113,12 @@ describe('a block’s offset', () => {
     expect(pairs(s.update({ changes: { from: second, insert: '\n' } }).state)).toEqual([
       [second + 1, 40],
     ])
+  })
+
+  it('drops a block whose opener is deleted rather than handing its offset to the next', () => {
+    const s = state(body, [[0, 40]])
+    const after = s.update({ changes: { from: 0, to: second } }).state
+    expect(pairs(after)).toEqual([])
   })
 
   it('drops once no fence opens at its key', () => {

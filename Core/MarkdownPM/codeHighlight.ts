@@ -163,7 +163,7 @@ export function blockLines(scan: DocScan, f: FenceInfo): string[] {
   })
 }
 
-const loaded = StateEffect.define<null>()
+export const languageLoaded = StateEffect.define<null>()
 
 type Mark = readonly [from: number, to: number, cls: string]
 
@@ -200,7 +200,7 @@ function paint(
   const desc = f.name === undefined ? undefined : described.get(f.name)
   if (desc && !desc.support)
     desc.load().then(() => {
-      if (view.dom.isConnected) view.dispatch({ effects: loaded.of(null) })
+      if (view.dom.isConnected) view.dispatch({ effects: languageLoaded.of(null) })
     })
   const tree = read(lines.join('\n'), !desc || !!desc.support)
   const starts = lineOffsetsOf(lines)
@@ -245,7 +245,7 @@ export const codeHighlight = ViewPlugin.fromClass(
       if (
         u.docChanged ||
         u.viewportChanged ||
-        u.transactions.some((tr) => tr.effects.some((e) => e.is(loaded)))
+        u.transactions.some((tr) => tr.effects.some((e) => e.is(languageLoaded)))
       )
         this.deco = colors(u.view)
     }

@@ -1078,6 +1078,9 @@
   text-indent: calc(-1 * var(--code-scroll, 0px));
   -webkit-text-fill-color: var(--code-cut, currentColor);
 }
+.mdpm-editor .codeblock-tab {
+  display: inline-block;
+}
 /* The ellipsis paints in its run's own fill, so it takes the color of the code it stands in for while the code keeps its own. */
 .mdpm-editor .codeblock-ink {
   -webkit-text-fill-color: currentColor;
