@@ -2,19 +2,20 @@ import { useState, type RefObject } from 'react'
 import { type Extension, Transaction } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import type { BlockMenuAction } from '../../Actions/blockMenu'
-import { caretGeometry, usePaneCtl, type PaneCtl, type CaretGeometry } from './caretPane'
+import { caretGeometry, usePaneCtl, type EditorPane, type CaretGeometry } from './caretPane'
 import { blockQuery, closeBlockQuery, type OpenBlockQuery } from './blockQuery'
 import { applyEditorAction } from './menu'
 
 export type BlockMenuState = OpenBlockQuery & CaretGeometry
 
-interface BlockMenu {
-  extension: Extension
+interface BlockMenu extends EditorPane {
   state: BlockMenuState | null
-  close: () => void
   selected: BlockMenuAction | null
   pick: (action: BlockMenuAction) => void
-  ctl: RefObject<PaneCtl>
+}
+
+const closeMenu = (view: EditorView | null): void => {
+  if (view?.state.field(blockQuery)) view.dispatch({ effects: closeBlockQuery.of(null) })
 }
 
 export function useBlockMenu(viewRef: RefObject<EditorView | null>): BlockMenu {
@@ -27,11 +28,13 @@ export function useBlockMenu(viewRef: RefObject<EditorView | null>): BlockMenu {
       const g = q && caretGeometry(u.view, q.to)
       setState(q && g ? { ...q, ...g } : null)
     }),
+    EditorView.domEventHandlers({
+      blur: (_, view) => {
+        closeMenu(view)
+        return false
+      },
+    }),
   ])
-  const close = (): void => {
-    const view = viewRef.current
-    if (view?.state.field(blockQuery)) view.dispatch({ effects: closeBlockQuery.of(null) })
-  }
   const rows = state?.matches.flatMap((m) => m.rows) ?? []
 
   const pick = (action: BlockMenuAction): void => {
@@ -49,10 +52,10 @@ export function useBlockMenu(viewRef: RefObject<EditorView | null>): BlockMenu {
   const { row, ctl } = usePaneCtl(
     rows,
     state?.query,
-    { open: state !== null, pick: (r) => pick(r.action), close },
+    { open: state !== null, pick: (r) => pick(r.action), close: () => closeMenu(viewRef.current) },
     null,
   )
   const selected = row?.action ?? null
 
-  return { extension, state, close, selected, pick, ctl }
+  return { extension, state, selected, pick, ctl }
 }

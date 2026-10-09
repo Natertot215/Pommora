@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useReducer, useState, type RefObject } from 'react'
-import type { EditorView, ViewUpdate } from '@codemirror/view'
+import { useEffect, useMemo, useReducer, useRef, useState, type RefObject } from 'react'
+import { EditorView, type ViewUpdate } from '@codemirror/view'
+import type { Extension } from '@codemirror/state'
 import {
   AC_MAX,
   aliasRows,
@@ -15,6 +16,7 @@ import {
 import { toggled } from '@pommora/uix/Utilities/checkSet'
 import { docOutline, docScan } from '../docCache'
 import { inCodeAt } from '../Engine/docScan'
+import type { MarkdownScope } from '../Engine/detect'
 import { pageLinkPattern } from '../../Connections/connections'
 import { normalizeTitle } from '../../Paths/caseFold'
 import { inBracket } from '../Input/edits'
@@ -27,13 +29,11 @@ import { embeddable } from '../Engine/embedClaims'
 import type { OutlineHeading } from '../Engine/headingScan'
 import { type EditorHost, editorHost, ownPage } from '../api'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
-import { caretGeometry, type CaretGeometry, type PaneCtl, usePaneCtl } from '../Menus/caretPane'
+import { caretGeometry, type CaretGeometry, type EditorPane, usePaneCtl } from '../Menus/caretPane'
 
 export interface AcState extends AutocompleteQuery, CaretGeometry {}
 
-export interface ConnectionAutocomplete {
-  setAc: (s: AcState | null) => void
-  acCtl: RefObject<PaneCtl>
+interface ConnectionAutocomplete extends EditorPane {
   pane: AutocompletePaneProps
 }
 
@@ -41,8 +41,46 @@ export function useConnectionAutocomplete(
   viewRef: RefObject<EditorView | null>,
   host: EditorHost,
   getConn: () => ConnectionsApi | undefined,
+  scope: MarkdownScope,
 ): ConnectionAutocomplete {
   const [ac, setAc] = useState<AcState | null>(null)
+  // The position of a typed `§` that opens the heading list in prose; cleared once the caret leaves its line or the pane closes.
+  const armed = useRef<number | null>(null)
+  const measured = useRef<AutocompleteQuery | null>(null)
+  const [extension] = useState<Extension>(() => [
+    EditorView.domEventHandlers({
+      blur: () => {
+        measured.current = null
+        setAc(null)
+        return false
+      },
+    }),
+    EditorView.updateListener.of((u) => {
+      armed.current = sectionArmAfter(u, armed.current)
+      // A click seating the caret inside a rendered [[Title]] would otherwise pop the picker over a surface that can't accept an edit.
+      if (!(u.docChanged || u.selectionSet) || u.state.readOnly) return
+      const { empty, head } = u.state.selection.main
+      const q = empty
+        ? autocompleteQuery(
+            docScan(u.state.doc),
+            head,
+            scope === 'page',
+            armed.current ?? undefined,
+          )
+        : null
+      // The caret is measured only when the query moves, so arrowing inside a finished link reads no layout.
+      if (q && sameQuery(q, measured.current)) return
+      const g = q && caretGeometry(u.view, head)
+      measured.current = g ? q : null
+      setAc(q && g ? { ...q, ...g } : null)
+    }),
+  ])
+  // The pane closing (Escape, a commit, a blur) leaves the § bare rather than arming the next keystroke near it.
+  const formRef = useRef<string | null>(null)
+  useEffect(() => {
+    if (ac?.form !== 'section' && formRef.current === 'section') armed.current = null
+    formRef.current = ac?.form ?? null
+  }, [ac])
   const [fetched, setFetched] = useState<OutlineHeading[] | null>(null)
   const [viaChevron, setViaChevron] = useState(false)
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set())
@@ -148,7 +186,7 @@ export function useConnectionAutocomplete(
       ...(opensAlias || opensHeading ? {} : { effects: restedOnLink.of(anchor) }),
       userEvent: 'input',
     })
-    // NOT cleared here: `detectConnectionQuery` runs on this dispatch, and closing afterwards would wipe the alias picker it just earned.
+    // NOT cleared here: the query listener runs on this dispatch, and closing afterwards would wipe the alias picker it just earned.
     view.focus()
   }
 
@@ -181,8 +219,8 @@ export function useConnectionAutocomplete(
   })
 
   return {
-    setAc,
-    acCtl: ctl,
+    extension,
+    ctl,
     pane: {
       open,
       ac,
@@ -201,26 +239,16 @@ export function useConnectionAutocomplete(
   }
 }
 
-export function detectConnectionQuery(
-  view: EditorView,
-  setAc: (s: AcState | null) => void,
-  allowEmbeds = false,
-  armed?: number,
-): void {
-  const sel = view.state.selection.main
-  let next: AcState | null = null
-  if (sel.empty) {
-    const q = autocompleteQuery(docScan(view.state.doc), sel.head, allowEmbeds, armed)
-    if (q) {
-      const g = caretGeometry(view, sel.head)
-      if (g) next = { ...q, ...g }
-    }
-  }
-  setAc(next)
-}
+const sameQuery = (a: AutocompleteQuery, b: AutocompleteQuery | null): boolean =>
+  b !== null &&
+  a.form === b.form &&
+  a.from === b.from &&
+  a.to === b.to &&
+  a.query === b.query &&
+  a.title === b.title
 
 // Under Automatic, a `§` typed alone in prose, outside a bracket and code, arms the section form at its position; the arm lapses once the caret leaves that line.
-export function sectionArmAfter(u: ViewUpdate, armed: number | null): number | null {
+function sectionArmAfter(u: ViewUpdate, armed: number | null): number | null {
   let next = armed
   for (const tr of u.transactions) {
     if (

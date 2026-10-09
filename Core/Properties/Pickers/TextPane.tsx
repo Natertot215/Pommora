@@ -97,7 +97,7 @@ function TextPaneEditor({
   const viewRef = useRef<EditorView | null>(null)
   const committed = useRef(text)
   const onCommitRef = useLatest(onCommit)
-  const { setAc, acCtl, pane } = useConnectionAutocomplete(viewRef, host, connections)
+  const ac = useConnectionAutocomplete(viewRef, host, connections, 'text')
   const formatExt = useReconfigured(viewRef, host.settings().commands, formatKeymap)
 
   const save = (): void => {
@@ -118,7 +118,7 @@ function TextPaneEditor({
             host,
             getConn: connections,
             scope: 'text',
-            ac: { acCtl, setAc },
+            panes: [ac],
             formatExt,
           }),
           heldPage.of(holder ?? null),
@@ -177,7 +177,7 @@ function TextPaneEditor({
       <div className="text-pane-body mdpm-shell" onContextMenu={stopBubble}>
         <div ref={mountRef} className="mdpm-editor" />
       </div>
-      <AutocompletePane {...pane} />
+      <AutocompletePane {...ac.pane} />
     </>
   )
 }

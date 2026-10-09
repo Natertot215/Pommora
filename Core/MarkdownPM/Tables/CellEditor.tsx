@@ -136,7 +136,7 @@ export function CellEditor({
   // The numbering is a whole-document fact and the extensions bake at mount, so it is read live.
   const ordinalOfRef = useLatest(ordinalOf)
   const onTablePasteRef = useLatest(onTablePaste)
-  const { setAc, acCtl, pane } = useConnectionAutocomplete(viewRef, host, () => connections?.())
+  const ac = useConnectionAutocomplete(viewRef, host, () => connections?.(), 'cell')
   const formatExt = useReconfigured(viewRef, host.settings().commands, formatKeymap)
 
   useEffect(() => {
@@ -149,7 +149,7 @@ export function CellEditor({
             host,
             getConn: () => connections?.(),
             scope: 'cell',
-            ac: { acCtl, setAc },
+            panes: [ac],
             formatExt,
           }),
           cellCitations(() => ordinalOfRef.current),
@@ -292,7 +292,7 @@ export function CellEditor({
   return (
     <>
       <div ref={mountRef} className="mdpm-tbl-cell-editor" />
-      <AutocompletePane {...pane} />
+      <AutocompletePane {...ac.pane} />
     </>
   )
 }

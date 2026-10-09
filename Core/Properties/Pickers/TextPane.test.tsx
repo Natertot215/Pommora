@@ -242,4 +242,15 @@ describe('TextPane', () => {
     expect(rows).toContain('Setup')
     expect(rows).not.toContain('Foo')
   })
+
+  it('under Automatic, a typed § lists the holding page’s headings as a page does', async () => {
+    useSession.setState({
+      tree: makeTree({ personalization: { inPageHeadingResolution: 'automatic' } }),
+    })
+    render(text('see '), ALPHA)
+    vi.spyOn(view(), 'coordsAtPos').mockReturnValue({ left: 10, right: 10, top: 10, bottom: 20 })
+    typeAtEnd('§')
+    await act(() => new Promise<void>((r) => setTimeout(r, 50)))
+    expect(document.querySelector('.mdpm-ac')?.textContent).toContain('Setup')
+  })
 })

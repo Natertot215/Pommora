@@ -184,17 +184,26 @@ const onForwardDelete = (view: EditorView): boolean => {
   return true
 }
 
-const onBackspace = (view: EditorView): boolean => {
-  const s = view.state.selection.main
-  if (s.empty && embedTileRanges(view.state).some((r) => s.from === r.to + 1 || s.from === r.to))
-    return true
-  if (citationCascade(view, s.from, s.to)) return true
-  const scan = docScan(view.state.doc)
-  return apply(
-    view,
-    smartBackspace(scan, s.from, s.to) ?? autoDelete(scan, s.from, s.to, settingsOf(view)),
-  )
-}
+/** Every surface's Backspace: a page first holds an embedded tile and cascades a footnote's removal, then a marker or an empty pair goes as a delete of its own. */
+export const smartDelete =
+  (scope: MarkdownScope) =>
+  (view: EditorView): boolean => {
+    const s = view.state.selection.main
+    if (scope === 'page') {
+      if (
+        s.empty &&
+        embedTileRanges(view.state).some((r) => s.from === r.to + 1 || s.from === r.to)
+      )
+        return true
+      if (citationCascade(view, s.from, s.to)) return true
+    }
+    const scan = docScan(view.state.doc)
+    return applyEdit(
+      view,
+      smartBackspace(scan, s.from, s.to, scope) ?? autoDelete(scan, s.from, s.to, settingsOf(view)),
+      { scrollIntoView: true, userEvent: 'delete' },
+    )
+  }
 
 // Except inside a callout, where it stays in the box. An unclosed pair is closed first so the break never lands inside it.
 const onShiftEnter = (view: EditorView): boolean => {
@@ -266,10 +275,9 @@ export const markdownInput = [
       { key: 'Mod-Enter', run: diffBreak(insertBlankLine, ' ') },
       { key: 'Tab', run: nest(indentListOnTab) },
       { key: 'Shift-Tab', run: nest(outdentListOnShiftTab) },
-      { key: 'Backspace', run: onBackspace },
       { key: 'Delete', run: onForwardDelete },
       // Shift+Backspace joins like Backspace inside a callout instead of falling to the default delete, which would erode the body prefix.
-      { key: 'Shift-Backspace', run: onBackspace },
+      { key: 'Shift-Backspace', run: smartDelete('page') },
     ]),
   ),
 ]

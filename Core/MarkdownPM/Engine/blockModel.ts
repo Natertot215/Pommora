@@ -1,4 +1,4 @@
-// `to` is EXCLUSIVE of the trailing newline, matching SubBlock.to / headingSections.to / TableRegion.to, which the drag's self-drop guard relies on.
+// `to` is EXCLUSIVE of the trailing newline, matching BlockRange.to / headingSections.to / TableRegion.to, which the drag's self-drop guard relies on.
 import { parseListMarkerPrefixed, type CalloutLine } from './detect'
 import { type DocScan, inJoinedMath, type Span, fromOf, spanAt, toOf } from './docScan'
 import { lineEndOf, lineIndexAt } from './markdownCode'

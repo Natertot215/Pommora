@@ -104,6 +104,24 @@ describe('the alias picker', () => {
   })
 })
 
+describe('Tab with the picker open', () => {
+  it('takes Tab as the pick, before a list line could nest', async () => {
+    const view = await mountEditor({ initialBody: '- [[Alp]]', connections: conn })
+    vi.spyOn(view, 'coordsAtPos').mockReturnValue(coords)
+    await act(async () => {
+      view.focus()
+      view.dispatch({ selection: { anchor: 6 } })
+    })
+    expect(document.querySelector('.mdpm-ac')).toBeTruthy()
+    await act(async () => {
+      view.contentDOM.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }),
+      )
+    })
+    expect(view.state.doc.toString()).toBe('- [[Alpha]]')
+  })
+})
+
 describe('the picker stands down when it has nothing to add', () => {
   it('a sole suggestion identical to what is written opens no panel', async () => {
     const view = await mountEditor({ initialBody: '[[Alpha]]', connections: conn })
@@ -132,6 +150,39 @@ describe('the picker stands down when it has nothing to add', () => {
       held?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }))
     })
     expect(view.state.doc.toString()).toBe('[[Alpha]]')
+  })
+
+  it('reads no layout as it moves within the link', async () => {
+    const view = await mountEditor({ initialBody: '[[Alpha]] x', connections: conn })
+    const measure = vi.spyOn(view, 'coordsAtPos').mockReturnValue(coords)
+    await act(async () => {
+      view.focus()
+      view.dispatch({ selection: { anchor: 4 } })
+    })
+    const settled = measure.mock.calls.length
+    for (const anchor of [5, 6, 5])
+      await act(async () => {
+        view.dispatch({ selection: { anchor } })
+      })
+    expect(measure.mock.calls.length).toBe(settled)
+  })
+
+  it('opens again where the caret returns after a blur', async () => {
+    const view = await mountEditor({ initialBody: '[[Alp]] x', connections: conn })
+    vi.spyOn(view, 'coordsAtPos').mockReturnValue(coords)
+    await act(async () => {
+      view.focus()
+      view.dispatch({ selection: { anchor: 5 } })
+    })
+    await act(async () => {
+      view.contentDOM.dispatchEvent(new FocusEvent('blur'))
+      await new Promise((r) => setTimeout(r, 300))
+    })
+    expect(document.querySelector('.mdpm-ac')).toBeNull()
+    await act(async () => {
+      view.dispatch({ selection: { anchor: 5 }, userEvent: 'select.pointer' })
+    })
+    expect(document.querySelector('.mdpm-ac')).toBeTruthy()
   })
 
   it('but a partial query still opens it', async () => {

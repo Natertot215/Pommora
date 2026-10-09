@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { docScan, docString } from './docCache'
 import { travelToHeading } from './travel'
 import { EditorView, keymap, placeholder } from '@codemirror/view'
-import { Compartment, EditorState, Prec } from '@codemirror/state'
+import { Compartment, EditorState } from '@codemirror/state'
 import { history, historyField, historyKeymap } from '@codemirror/commands'
 import { markdown } from '@codemirror/lang-markdown'
 import { markdownInput } from './Input/markdownInput'
@@ -16,25 +16,20 @@ import { calloutGuard } from './Guards/calloutGuard'
 import { embedGuard } from './Guards/embedGuard'
 import { headingRenameSettle } from './Guards/headingRenameSettle'
 import { citationGuard } from './Guards/citationGuard'
-import { citationHost, citationOrder } from './Citations/citationActions'
+import { citationOrder } from './Citations/citationActions'
 import { citationRowMenu, citationRowPointer } from './Citations/citationPointer'
 import { markdownFolding, applySavedFolds, applyCitationsVisibility } from './folding'
 import { useReconfigured } from './Input/useReconfigured'
 import { htmlShortcuts, htmlTags } from './Input/htmlShortcuts'
-import { editorKeymap, formatKeymap } from './Input/formatKeymap'
-import { inlineSurface } from './surface'
-import {
-  useConnectionAutocomplete,
-  detectConnectionQuery,
-  sectionArmAfter,
-} from './Autocomplete/useConnectionAutocomplete'
-import { paneKeys, whenPaneOpen } from './Menus/caretPane'
+import { formatKeymap } from './Input/formatKeymap'
+import { editorBase } from './surface'
+import { useConnectionAutocomplete } from './Autocomplete/useConnectionAutocomplete'
 import { AutocompletePane } from './Autocomplete/AutocompletePane'
 import { BlockMenuPane } from './Menus/BlockMenuPane'
 import { useBlockMenu } from './Menus/useBlockMenu'
 import type { ConnectionsApi } from './Links/connectionsApi'
 import type { WarmSeam } from './warmSeam'
-import { type EditorHost, editorHost, mirrorBody, mirrored, redrawNudge } from './api'
+import { type EditorHost, mirrored, redrawNudge } from './api'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import { Scrollbar } from '@pommora/uix/Interactions/Scrollbar'
 import './markdown-pm.css'
@@ -59,8 +54,6 @@ interface Props {
   register?: (view: EditorView | null) => void
   /** The focused main range's figures, or null while the caret is collapsed or the surface is unfocused. */
   onSelection?: (stats: PageStats | null) => void
-  /** A later value replaces the document in place while the editor stays mounted — another mount's typing, mirrored into a read-only surface. */
-  body?: string
   /** A heading to travel to once folds settle, or on a later value while the editor stays mounted. */
   arrive?: string
   onArrived?: () => void
@@ -81,7 +74,6 @@ export function MarkdownEditor({
   register,
   onSelection,
   active = true,
-  body,
   arrive,
   onArrived,
   onHeadingRename,
@@ -103,32 +95,21 @@ export function MarkdownEditor({
   const arriveRef = useLatest(arrive)
   const onArrivedRef = useLatest(onArrived)
   const onHeadingRenameRef = useLatest(onHeadingRename)
-  // The position of a typed `§` that opens the heading list in prose; cleared once the caret leaves its line or the pane closes.
-  const sectionArmedRef = useRef<number | null>(null)
-
-  // Decorations rebuild only on editor updates, so a real tree change dispatches an empty transaction.
-  useEffect(() => {
-    if (connections) viewRef.current?.dispatch({ effects: redrawNudge.of(null) })
-  }, [connections])
 
   const settings = host.settings()
+  // Decorations rebuild only on editor updates, so a real tree or settings change dispatches an empty transaction.
+  useEffect(() => {
+    viewRef.current?.dispatch({ effects: redrawNudge.of(null) })
+  }, [connections, settings])
+
   useEffect(() => {
     viewRef.current?.requestMeasure()
   }, [settings.codeblockLineCount])
 
   useEffect(() => {
-    viewRef.current?.dispatch({ effects: redrawNudge.of(null) })
-  }, [settings])
-
-  useEffect(() => {
     const view = viewRef.current
     if (view) rerenderWebTiles(view)
   }, [active])
-
-  useEffect(() => {
-    const view = viewRef.current
-    if (view && body !== undefined) mirrorBody(view, body)
-  }, [body])
 
   useEffect(() => {
     const view = viewRef.current
@@ -138,58 +119,27 @@ export function MarkdownEditor({
   }, [arrive])
 
   const citesShown = host.citations.shown()
-  const citesShownRef = useLatest(citesShown)
-  // The first change this effect carries is the nexus-wide seed settling in, not a user toggle.
-  const followed = useRef(false)
   useEffect(() => {
     const view = viewRef.current
-    if (!view) return
-    applyCitationsVisibility(view, citesShown, followed.current)
-    followed.current = true
+    if (view) applyCitationsVisibility(view, citesShown)
   }, [citesShown])
 
-  const { setAc, acCtl, pane } = useConnectionAutocomplete(
-    viewRef,
-    host,
-    () => connectionsRef.current,
-  )
+  const ac = useConnectionAutocomplete(viewRef, host, () => connectionsRef.current, 'page')
   const formatExt = useReconfigured(viewRef, settings.commands, formatKeymap)
   const htmlExt = useReconfigured(viewRef, settings.htmlShortcuts, htmlShortcuts)
   const block = useBlockMenu(viewRef)
 
-  // The pane closing (Escape, a commit, a blur) leaves the § bare rather than arming the next keystroke near it.
-  const acFormRef = useRef<string | null>(null)
   useEffect(() => {
-    if (pane.ac?.form !== 'section' && acFormRef.current === 'section')
-      sectionArmedRef.current = null
-    acFormRef.current = pane.ac?.form ?? null
-  }, [pane.ac])
-
-  useEffect(() => {
-    const paneCtls = [acCtl, block.ctl]
     const parent = editorRef.current
     if (!parent) return
     const prefs = hostRef.current.prefs
     const extensions = [
-      editorHost.of(hostRef.current),
-      // Editable stays true even read-only: selection renders natively, so the at-rest embed must stay focusable.
-      EditorView.editable.of(true),
       readOnlyGate.current.of(EditorState.readOnly.of(lastReadOnly.current)),
       // EditorState.readOnly is ADVISORY — it stops the view's input pipeline but not a programmatic dispatch; a mirrored body and the heading-rename settle's link rewrite skip filters and pass.
       EditorState.changeFilter.of((tr) => !(tr.startState.readOnly && tr.docChanged)),
       history(),
       placeholder(EMPTY_PAGE_TEXT),
-      Prec.highest(
-        keymap.of([
-          ...paneKeys(paneCtls),
-          { key: 'Enter', run: whenPaneOpen(paneCtls, (c) => c.pick()) },
-        ]),
-      ),
       markdownInput,
-      // Ahead of the default keymap, which also binds Mod-i and Mod-[.
-      formatExt,
-      htmlExt,
-      keymap.of([...editorKeymap, ...historyKeymap]),
       markdown({
         addKeymap: false,
         pasteURLAsLink: false,
@@ -199,7 +149,15 @@ export function MarkdownEditor({
       }),
       codeHighlight,
       codeScroll,
-      inlineSurface(() => connectionsRef.current, 'page'),
+      editorBase({
+        host: hostRef.current,
+        getConn: () => connectionsRef.current,
+        scope: 'page',
+        panes: [ac, block],
+        formatExt,
+      }),
+      htmlExt,
+      keymap.of(historyKeymap),
       citationRowPointer(),
       citationRowMenu(),
       tableWidgetExtension(() => connectionsRef.current),
@@ -212,23 +170,8 @@ export function MarkdownEditor({
       calloutGuard,
       headingRenameSettle.of(() => onHeadingRenameRef.current),
       citationGuard,
-      citationHost.of({
-        shown: () => citesShownRef.current,
-        reveal: () => hostRef.current.citations.set(true),
-      }),
       citationOrder,
-      block.extension,
-      EditorView.domEventHandlers({
-        blur: () => {
-          setAc(null)
-          block.close()
-          return false
-        },
-      }),
-      markdownFolding(() => {
-        const { citations } = hostRef.current
-        citations.set(!citations.shown())
-      }),
+      markdownFolding(),
       EditorView.updateListener.of((u) => {
         if (!(u.docChanged || u.selectionSet || u.focusChanged)) return
         const doc = docString(u.state.doc)
@@ -246,12 +189,6 @@ export function MarkdownEditor({
               range ? rangeStats(docScan(u.state.doc), range.from, range.to) : null,
             )
           }
-        }
-
-        sectionArmedRef.current = sectionArmAfter(u, sectionArmedRef.current)
-        // A click seating the caret inside a rendered [[Title]] would otherwise pop the picker over a surface that can't accept an edit.
-        if ((u.docChanged || u.selectionSet) && !u.state.readOnly) {
-          detectConnectionQuery(u.view, setAc, true, sectionArmedRef.current ?? undefined)
         }
       }),
     ]
@@ -285,7 +222,7 @@ export function MarkdownEditor({
     }
     if (edgeFade) view.scrollDOM.classList.add('scroll-fade', 'scroll-fade-gated')
     if (autoFocus && !lastReadOnly.current) view.focus()
-    applyCitationsVisibility(view, citesShownRef.current, false)
+    applyCitationsVisibility(view, citesShown, false)
     // The warm scroll restores AFTER folds settle: folding changes content height, so restoring first lands on a pre-fold offset.
     const land = (): void => {
       // != null, not truthy — a saved top-of-page (0) must still override CM's own restore scroll.
@@ -358,7 +295,7 @@ export function MarkdownEditor({
       {header}
       <div ref={editorRef} className="mdpm-editor interface-inset" />
       <Scrollbar of={scroller} page timeline="--mdpm-scroll" />
-      <AutocompletePane {...pane} />
+      <AutocompletePane {...ac.pane} />
       <BlockMenuPane
         state={block.state}
         selected={block.selected}

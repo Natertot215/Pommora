@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { EditorView, runScopeHandlers } from '@codemirror/view'
+import type { TransactionSpec } from '@codemirror/state'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '../Testing/editorHarness'
 
 stubEditorBridge()
@@ -157,5 +158,17 @@ describe('Delete at a line end joins the next line by its visible text', () => {
     const view = await open(doc, doc.indexOf('one') + 3)
     await press(view, 'Delete')
     expect(view.state.doc.toString()).not.toBe('a[^1] [^2]\n\n[^1]: onetwo')
+  })
+})
+
+describe('Backspace on a page', () => {
+  it('a marker Backspace on a page lands as a delete', async () => {
+    const view = await open('- ', 2)
+    const dispatch = vi.spyOn(view, 'dispatch')
+    await press(view, 'Backspace')
+    expect(view.state.doc.toString()).toBe('')
+    expect(dispatch.mock.calls.map(([spec]) => (spec as TransactionSpec).userEvent)).toEqual([
+      'delete',
+    ])
   })
 })

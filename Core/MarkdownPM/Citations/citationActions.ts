@@ -4,7 +4,7 @@ import {
   type ChangeSpec,
   EditorState,
   type Extension,
-  Facet,
+  Prec,
 } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
 import type { CitationMenuAction } from './citationMenu'
@@ -23,19 +23,12 @@ import { editAcrossCitations } from '../folding'
 import { travelTo } from '../travel'
 import { editorHost } from '../api'
 
-interface CitationHost {
-  shown: () => boolean
-  reveal?: () => void
-}
-
-export const citationHost = Facet.define<CitationHost, CitationHost>({
-  combine: (v) => v[0] ?? { shown: () => false },
-})
+const citationsOf = (view: EditorView) => view.state.facet(editorHost).citations
 
 export function travelToCitation(view: EditorView, label: string): void {
   const entry = citationFor(docScan(view.state.doc).citations, label)
   if (!entry) return
-  view.state.facet(citationHost).reveal?.()
+  citationsOf(view).set(true)
   travelTo(view, entry.contentStart)
 }
 
@@ -52,7 +45,7 @@ export function commitCitation(
   userEvent: string,
 ): ChangeSet | null {
   let landed: ChangeSet | null = null
-  editAcrossCitations(view, view.state.facet(citationHost).shown(), () => {
+  editAcrossCitations(view, citationsOf(view).shown(), () => {
     const tr = view.state.update({ changes, userEvent })
     if (!tr.docChanged) return
     view.dispatch(tr)
@@ -72,10 +65,15 @@ function writeCitation(view: EditorView, markerFrom: number, changes: ChangeSpec
     focusRange(view, marker?.to ?? markerFrom)
     return true
   }
-  view.state.facet(citationHost).reveal?.()
-  focusRange(view, entry.contentStart)
-  travelTo(view, entry.contentStart)
+  editCitation(view, entry.contentStart)
   return true
+}
+
+/** The section opens before the caret seats: a caret seated in a hidden section takes typing no one can see. */
+function editCitation(view: EditorView, at: number): void {
+  citationsOf(view).set(true)
+  focusRange(view, at)
+  travelTo(view, at)
 }
 
 export function insertCitation(view: EditorView, text = ''): boolean {
@@ -109,14 +107,16 @@ function bindingMoved(before: CitationScan, after: CitationScan): boolean {
   })
 }
 
-/** The section a reader sees is first-use order or it is nothing, so the rewrite rides the same transaction; an ordinary keystroke pays one comparison over the rows. */
-export const citationOrder: Extension = EditorState.transactionFilter.of((tr) => {
-  if (!tr.docChanged) return tr
-  const after = docScan.after(tr)
-  if (!bindingMoved(docScan(tr.startState.doc).citations, after.citations)) return tr
-  const changes = normalizeCitations(after)
-  return changes.length === 0 ? tr : [tr, { changes, sequential: true }]
-})
+/** The section a reader sees is first-use order or it is nothing, so the rewrite rides the same transaction; an ordinary keystroke pays one comparison over the rows. Filters run lowest precedence first, so at the highest it renumbers the edit every guard has already repaired. */
+export const citationOrder: Extension = Prec.highest(
+  EditorState.transactionFilter.of((tr) => {
+    if (!tr.docChanged) return tr
+    const after = docScan.after(tr)
+    if (!bindingMoved(docScan(tr.startState.doc).citations, after.citations)) return tr
+    const changes = normalizeCitations(after)
+    return changes.length === 0 ? tr : [tr, { changes, sequential: true }]
+  }),
+)
 
 /** Identified by the label it carried — an offset alone would name whatever moved into that seat while the menu stood open. */
 type CitationSubject =
@@ -142,7 +142,7 @@ export function applyCitationAction(
 
   switch (action) {
     case 'cite:edit':
-      if (entry) focusRange(view, entry.contentStart)
+      if (entry) editCitation(view, entry.contentStart)
       return
     case 'cite:copy':
       // The raw reference, not the citation's text: pasting it back IS the second reference.

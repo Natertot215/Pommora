@@ -464,23 +464,12 @@ describe('the citations divider draws where it can and folds nothing itself', ()
   })
 })
 
-// Per-page overrides are fetched after the tree is applied, so a page mounts on the default and hears the truth a beat later.
 const revealRows = (view: EditorView): string | undefined =>
   view.dom.querySelector<HTMLElement>('.mdpm-fold-reveal')?.style.gridTemplateRows
 
-describe('a value arriving after mount is still a seed', () => {
-  it('the first change to reach a live view lands without animating', async () => {
+describe('a visibility change reaching a live view', () => {
+  it('animates, the first one after mount included', async () => {
     const view = await mountEditor({ initialBody: CITED, citationsShown: true })
-    expect(kinds(view)).toEqual([])
-    await rerenderEditor({ initialBody: CITED, citationsShown: false })
-    expect(kinds(view)).toEqual(['citations'])
-    expect(view.dom.querySelector('.mdpm-fold-reveal')?.childElementCount).toBe(0)
-  })
-
-  it('and every change after it animates', async () => {
-    const view = await mountEditor({ initialBody: CITED, citationsShown: true })
-    await rerenderEditor({ initialBody: CITED, citationsShown: false })
-    await rerenderEditor({ initialBody: CITED, citationsShown: true })
     await rerenderEditor({ initialBody: CITED, citationsShown: false })
     expect(kinds(view)).toEqual(['citations'])
     expect(revealRows(view)).toBe('1fr')

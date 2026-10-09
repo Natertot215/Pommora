@@ -13,7 +13,7 @@ import {
 } from './Input/edits'
 import { setHeading, setList } from './Input/format'
 import { landEdit } from '../Testing/markdownEngine'
-import { subBlockAt, renumberRuns } from './Engine/listDragModel'
+import { renumberRuns } from './Engine/listDragModel'
 import { calloutDeleteVerdict } from './Guards/calloutGuard'
 import type { GuardVerdict } from './Guards/verdictFilter'
 import { headingSections } from './Engine/headingScan'
@@ -206,13 +206,6 @@ describe('format transforms — prefix-aware', () => {
     const doc = '> item'
     const { changes } = setList(doc, 4, 4, 'bullet')
     expect(changes).toEqual([{ from: 2, to: 6, insert: '- item' }])
-  })
-})
-
-describe('subBlockAt — continuation lines ride with their item', () => {
-  it("includes a wrapped item's indented body", () => {
-    const doc = '- item one\n  continued text\n- item two'
-    expect(subBlockAt(scanDoc(doc), 2)).toEqual({ from: 0, to: 27, level: 0 })
   })
 })
 

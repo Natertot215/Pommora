@@ -147,6 +147,15 @@ describe('picking a row writes the block and leaves one undo step', () => {
     expect(view.state.doc.toString()).toBe('')
   })
 
+  it('takes Tab as the pick, as Enter does', async () => {
+    const view = await open('')
+    await type(view, '/')
+    await press(view, 'ArrowDown')
+    await press(view, 'ArrowDown')
+    await press(view, 'Tab')
+    expect(view.state.doc.toString()).toBe('## ')
+  })
+
   it('continues the numbered list above it, and one undo takes the item and its count', async () => {
     const view = await open('1. a\n2. b\n')
     await type(view, '/numbered')

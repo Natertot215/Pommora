@@ -62,7 +62,7 @@ One picker (`Core/MarkdownPM/Autocomplete/autocomplete.ts`, driven by `useConnec
 
 ### In-Page Heading Resolution
 
-**In-Page Heading Resolution** decides what reaches a heading on the page being written. Under Explicit, the default, link syntax does. Under Automatic, a bare `§Heading` in prose reaches one as well: the text after the `§` is read against the page's outline, and the longest heading it begins with is the target, provided the match ends at the run's end or at a non-word character. Typing a `§` in prose opens the current page's heading list on the keystroke, and picking a heading writes the bare text. The file keeps that text bare, so the page reads as prose in every other Markdown tool.
+**In-Page Heading Resolution** decides what reaches a heading on the page being written. Under Explicit, the default, link syntax does. Under Automatic, a bare `§Heading` in prose reaches one as well: the text after the `§` is read against the page's outline, and the longest heading it begins with is the target, provided the match ends at the run's end or at a non-word character. Typing a `§` in prose opens the heading list on the keystroke, in a table cell or a Text value listing the page it sits on, and picking a heading writes the bare text. The file keeps that text bare, so the page reads as prose in every other Markdown tool.
 
 ---
 

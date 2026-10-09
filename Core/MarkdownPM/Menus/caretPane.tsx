@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, type ReactNode, type RefObject } from 'react'
+import type { Extension } from '@codemirror/state'
 import type { EditorView, KeyBinding } from '@codemirror/view'
 import { scrollContainer } from '@pommora/uix/Interactions/autoscroll'
 import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
@@ -84,6 +85,12 @@ export function useKeepInView(active: unknown): (el: HTMLElement | null) => void
   )
 }
 
+/** A pane an editor mounts: what it adds to the editor, and the control its keys drive. */
+export interface EditorPane {
+  extension: Extension
+  ctl: RefObject<PaneCtl>
+}
+
 export interface PaneCtl {
   open: boolean
   pick: () => void
@@ -135,8 +142,9 @@ export const whenPaneOpen =
     return typeof handled === 'boolean' ? handled : true
   }
 
-/** A pane's own keys; Enter is each surface's, since a cell's Enter also leaves the cell. */
 export const paneKeys = (ctls: readonly RefObject<PaneCtl>[]): KeyBinding[] => [
+  { key: 'Enter', run: whenPaneOpen(ctls, (c) => c.pick()) },
+  { key: 'Tab', run: whenPaneOpen(ctls, (c) => c.pick()) },
   { key: 'ArrowDown', run: whenPaneOpen(ctls, (c) => c.move(1)) },
   { key: 'ArrowUp', run: whenPaneOpen(ctls, (c) => c.move(-1)) },
   { key: 'Escape', run: whenPaneOpen(ctls, (c) => c.close()) },

@@ -473,6 +473,41 @@ describe('copying an unbound citation', () => {
   })
 })
 
+describe('a marker’s Edit', () => {
+  it('lands in the citation as creation does', async () => {
+    const view = await mountEditor({ initialBody: 'a[^1] b\n\n[^1]: one' })
+    expect(hidden(view)).toBe(true)
+    await act(async () => {
+      applyCitationAction(view, 'cite:edit', {
+        kind: 'marker',
+        marker: { from: 1, to: 5, label: '1' },
+      })
+    })
+    expect(hidden(view)).toBe(false)
+    expect(view.state.selection.main.head).toBe(doc(view).indexOf('one'))
+  })
+})
+
+describe('a paste into a row that moves into the body', () => {
+  it.each([
+    ['numbered', '1'],
+    ['word-labeled', 'x'],
+  ])('keeps each marker on its own footnote under a %s first row', async (_, label) => {
+    const row = `[^${label}]: one`
+    const body = `Body a[^${label}] b[^2]\n\n${row}\n[^2]: two`
+    const view = await mountEditor({ initialBody: body, citationsShown: true })
+    const end = body.indexOf(row) + row.length
+    await act(async () => {
+      view.dispatch({
+        changes: { from: end, insert: '\nfoo\n\nbar' },
+        selection: { anchor: end + 9 },
+        userEvent: 'input.paste',
+      })
+    })
+    expect(doc(view)).toBe(`Body a[^${label}] b[^2]\nfoo\n\nbar\n\n${row}\n[^2]: two`)
+  })
+})
+
 describe('an edit that binds a row reorders the section', () => {
   it('a hand-written marker adopting an orphan lifts its row into first-use order', async () => {
     const body = 'one[^a] two\n\n[^lost]: orphan\n[^a]: first'

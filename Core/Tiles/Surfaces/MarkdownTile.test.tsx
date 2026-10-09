@@ -6,9 +6,8 @@ import { createRoot, type Root } from 'react-dom/client'
 const seeds = vi.hoisted(() => [] as string[])
 
 vi.mock('../../MarkdownPM/MarkdownEditor', () => ({
-  MarkdownEditor: (p: { initialBody: string; body?: string; onChange: (next: string) => void }) => {
-    const [own, setBody] = useState(p.initialBody)
-    const body = p.body ?? own
+  MarkdownEditor: (p: { initialBody: string; onChange: (next: string) => void }) => {
+    const [body, setBody] = useState(p.initialBody)
     useEffect(() => {
       seeds.push(p.initialBody)
     }, [])
