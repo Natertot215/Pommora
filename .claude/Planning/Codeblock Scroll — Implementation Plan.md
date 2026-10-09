@@ -1,14 +1,14 @@
 ## Codeblock Scroll — Implementation Plan
 
 **DATE:** 10-08-2026
-**STATUS:** Draft
+**STATUS:** Ratified 10-08-2026
 **SOURCE:** The 10-08-2026 session's conversation with Nathan, which settled the setting, its reveal triggers, its fades, its memory, its copy, and how much of the label over-scroll it reuses.
 
 **BASELINE**
 
 | Head | Tests | Start | End |
 |------|-------|-------|-----|
-| `HASH` | {count} | {MM-DD-YYYY h:mm AM/PM} | {MM-DD-YYYY h:mm AM/PM} |
+| `6d9fd1078` | 7481 (7472 pass · 2 skip · 7 time out under the full run only — `embedAbsorb`, `citationBreakage`; both pass alone) | 10-08-2026 8:37 PM | |
 
 ### Context
 
