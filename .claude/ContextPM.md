@@ -54,7 +54,7 @@ Known shortcuts, none broken today. Each is cheap on its own and best taken when
 
 ### Known Issues
 
-- [ ] **A second dropdown pressed inside a pop-up pane reopens the closing list there.** → See `Pommora Codebase Audit.md`, F-568.
+- [ ] **A second dropdown pressed inside a pop-up pane reopens the closing list there.** → See `Pommora Codebase Audit.md`, F-077.
 
 ### Recent Work
 

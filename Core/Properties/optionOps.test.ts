@@ -184,7 +184,7 @@ describe('a definition stored with two options that fold alike', () => {
   })
 })
 
-describe('a rename followed by a registry-only edit (F-134)', () => {
+describe('a rename followed by a registry-only edit', () => {
   it('an edit still addressed to the old value is refused, and the new title holds in the registry and on the page', async () => {
     const id = await mkSelect([{ value: 'Urgent' }])
     const page = await pageHolding(id, 'Urgent')
@@ -214,7 +214,7 @@ describe('a rename followed by a registry-only edit (F-134)', () => {
   })
 })
 
-describe('an option edit leaves every other stored entry as written (F-562)', () => {
+describe('an option edit leaves every other stored entry as written', () => {
   const selectSeed = [
     { value: 'A' },
     { value: 'B', appearance: 'outline', icon: 7, tint: 'x' },

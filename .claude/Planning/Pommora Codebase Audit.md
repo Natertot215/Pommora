@@ -2,7 +2,7 @@
 
 **Pinned:** `f6511401d` (09-23-2026) · **Reconciled:** `8a576b885` (10-05-2026) · **Findings:** 115/627
 
-Thirty-four Opus investigators read every production file in `Core`, `UIX`, `Desktop`, and `Sync` in full, sliced by folder and by the jobs the code performs. Two mergers combined their 857 candidates by root cause, and twenty-one reviewers who hadn't raised them re-read every citation, reproduced the High ones against real modules, and killed 63. This document is the current state: findings that were fixed, withdrawn, or ruled moot are removed rather than annotated, and rulings are written into the findings they settle. The readiness and pace sections are the orchestrator's judgment, drawn from the evidence below them. The MarkdownPM System Audit (10-08-2026) read the editor in full at `70fc6063c` and is folded in here: each of its fixes was typed and compiled on a scratch worktree, so its nets are measured, and the owner's rulings on which fixes wait are written into the findings they settle. Findings were renumbered from F-001 on 10-08-2026, so F-numbers in earlier documents don't match these.
+Thirty-four Opus investigators read every production file in `Core`, `UIX`, `Desktop`, and `Sync` in full, sliced by folder and by the jobs the code performs. Two mergers combined their 857 candidates by root cause, and twenty-one reviewers who hadn't raised them re-read every citation, reproduced the High ones against real modules, and killed 63. This document is the current state: findings that were fixed, withdrawn, or ruled moot are removed rather than annotated, and rulings are written into the findings they settle. The readiness and pace sections are the orchestrator's judgment, drawn from the evidence below them. A system audit of MarkdownPM (10-08-2026) read the editor in full at `70fc6063c`, and its findings are folded in here: each fix was typed and compiled on a scratch worktree, so its nets are measured, and the owner's rulings on which fixes wait are written into the findings they settle. Findings were renumbered from F-001 on 10-08-2026, so F-numbers in earlier documents don't match these.
 
 ### Verdict
 
@@ -1041,7 +1041,7 @@ Tighten each to the exact expectation the appendix gives, every value captured b
 
 **Finding**
 
-Thirty-two test files repeat setup that never takes effect. `UIX/vitest.setup.ts` installs a no-op `ResizeObserver` for every Core suite through `Core/vitest.setup.ts`. Nine table tests carry a guarded seven-line copy that never runs, two more carry guarded blocks, nineteen files carry an unconditional six-line `ResizeObserverStub` that overwrites the shared stub with an identical one, and `embedResize.test.tsx`'s `Watcher` is the same no-op. Four of the table tests also set `IS_REACT_ACT_ENVIRONMENT = true` after their module-level `stubEditorBridge()` already has, and `readOnlySelection.test.tsx` hand-rolls the 32 lines that `mountEditor`, `cleanupEditor`, and `stubEditorBridge` provide. Deleting every stub and running all touched files through the root config passed, which proves the chain. Twenty-five test files outside the editor carry the same no-op stub through the same chain, since `UIX/vitest.config.ts` runs the same setup file: seventeen unconditional copies across Properties, Matrix, Glance, and the UIX menus and pickers, four guarded copies (`LinkCell`, `PropertyValueInput`, `TextPane`, `Slider`), two `??=` copies (`PageView`, `pendingTravel`), and two `vi.stubGlobal` copies (`AssetImage`, `ImagePicker`), about 170 lines.[^74]
+Thirty-two test files repeat setup that never takes effect. `UIX/vitest.setup.ts` installs a no-op `ResizeObserver` for every Core suite through `Core/vitest.setup.ts`. Nine table tests carry a guarded seven-line copy that never runs, two more carry guarded blocks, nineteen files carry an unconditional six-line `ResizeObserverStub` that overwrites the shared stub with an identical one, and `embedResize.test.tsx`'s `Watcher` is the same no-op. Four of the table tests also set `IS_REACT_ACT_ENVIRONMENT = true` after their module-level `stubEditorBridge()` already has, and `readOnlySelection.test.tsx` hand-rolls the 32 lines that `mountEditor`, `cleanupEditor`, and `stubEditorBridge` provide. Deleting every stub and running all touched files through the root config passed, which proves the chain. Twenty-five test files outside the editor carry the same no-op stub through the same chain, since `UIX/vitest.config.ts` runs the same setup file: seventeen unconditional copies across Properties, Matrix, Glance, and the UIX menus and pickers, four guarded copies (`LinkCell`, `PropertyValueInput`, `TextPane`, `Slider`), two `??=` copies (`PageView`, `pendingTravel`), and two `vi.stubGlobal` copies (`AssetImage`, `ImagePicker`), about 170 lines; deleting one of each form, in Properties, Session, Assets, and two UIX suites, passed the same way.[^74]
 
 **Fix | Literal**
 
@@ -1545,7 +1545,7 @@ Before a layout write replaces undecodable bytes, the writer copies them under a
 
 ##### F-111 · The tile shell's memo comparator lists its props by hand.
 
-> **Area:** Tiles · **Lens:** Residue · **Weight:** Low · **Size:** S · **Net:** −8 · **Origin:** Shortcut
+> **Area:** Tiles · **Lens:** Growth Constraint · **Weight:** Low · **Size:** S · **Net:** −8 · **Origin:** Shortcut
 
 **Finding**
 
@@ -1557,7 +1557,7 @@ A generic comparison over the props doesn't fit as written: the comparator compa
 
 ##### F-112 · Three sites that run without a tree name the tile hosts' folders by hand.
 
-> **Area:** Tiles, Nexus · **Lens:** Ownership · **Weight:** Low · **Size:** S · **Net:** ≈0 · **Origin:** Drift
+> **Area:** Tiles, Nexus · **Lens:** Duplication · **Weight:** Low · **Size:** S · **Net:** ≈0 · **Origin:** Drift
 
 **Finding**
 

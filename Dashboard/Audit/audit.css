@@ -68,21 +68,6 @@
   font-size: var(--text-title-small-size);
   font-weight: var(--weight-bold);
 }
-.au-verdict {
-  margin: 0 0 14px;
-  padding: 18px 20px 6px;
-  border-radius: 10px;
-  background: var(--fill-quaternary);
-  border: var(--width-100) solid var(--border-base);
-}
-.au-verdict h4 {
-  margin: 0 0 12px;
-  font-size: var(--text-headline-size);
-  font-weight: var(--weight-semibold);
-}
-.au-verdict .au-table-wrap {
-  background: var(--surface-primary);
-}
 
 .au-prose,
 .au-finding p,
@@ -385,9 +370,6 @@
 @media (max-width: 720px) {
   .au-page {
     padding: 28px 16px 72px;
-  }
-  .au-verdict {
-    padding: 14px 14px 4px;
   }
   .au-table thead {
     display: none;

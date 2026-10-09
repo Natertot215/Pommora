@@ -671,7 +671,7 @@ describe('resolveView — hidden groups + Hide Empty Groups', () => {
     expect(keys(groups)).toEqual(['2025-08'])
   })
 
-  it('a bucket hidden under one property leaves the same bucket of another (F-383)', () => {
+  it('a bucket hidden under one property leaves the same bucket of another', () => {
     const twoStatus: PropertyDefinition[] = [
       ...selectSchema,
       {

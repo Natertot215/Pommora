@@ -221,7 +221,7 @@ describe('the persist fold', () => {
     expect(lastSavedView().hide_borders).toBe(true)
   })
 
-  it('F-122: a band order the walker replaced paints and saves as the walker wrote it', async () => {
+  it('a band order the walker replaced paints and saves as the walker wrote it', async () => {
     await mount(banded(CONFIGURED))
     const configured = bandKeys()
     act(

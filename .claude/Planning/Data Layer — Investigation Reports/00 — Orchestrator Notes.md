@@ -122,7 +122,7 @@ The walk (`Core/Nexus/treeIndex.ts:57-142`) reads `personalization.defaultIcons`
 - **Phase 5:** Stays in the main plan as its last phase. J-8's threshold is manageability, and phase 5 is the smallest phase (about 140 removed and 140 added). Its cuttability is already served by running last, and J-6's re-pin at its start covers C's point that it builds on phase 2's vocabulary and phase 3's readers. The plan writes it to near-literal code where HEAD code exists (`land.ts`, `watchSettle.ts`, `watcher.ts`) and to signature level where it composes phase 2 and 3 names.
 - **Phase 3's Watcher Stamp and Index-From-the-Walk:** Stay in phase 3; both follow `readPage`'s signature, and E-6 is phase 3's by the Decision Log's order.
 - **Incremental `treeIndex` Maintenance:** Deferred, with an A-6 measurement at phase 2's closeout: today a mutation rebuilds the index twice (the optimistic apply and the confirming push); phase 2 rebuilds it once per change list, so nothing regresses. D sized it at about +60.
-- **No other split.** E's delete replay goes to F-622 only if it grows past one record variant and one replay arm.
+- **No other split.** E's delete replay goes to F-083 only if it grows past one record variant and one replay arm.
 
 ---
 
@@ -359,7 +359,7 @@ About −140 removed and +140 added, roughly flat. C's figures (−165, +140) le
 
 **De-Duplication:** B's phase-1 `persistable` is E-6 and sits in A's phase 3. D's phase-1 `tree.ts` fields and `applySettingsLeaves` overlap A's; D's phase-2 switch and window apply overlap B's. C's phase-3 E-6 sites overlap A's, and its seed traversal stays under the remainder pass. C's phase-5 patchers include the builders A replaces in phase 3. A's phase 4 and 5 share (the attach pass and `resolveEntityContexts`) and F's `liveWorld` are E's. Not sized by any slice: the handler call sites of the confirm helpers (about −30) and incremental `treeIndex` maintenance (about +60, deferred).
 
-**Against the Decision Log:** *§Overview*'s "about 850 to 2,300 fewer" comes from the investigation's untrimmed catalogue, which counted F-611's door folding, F-622's shared machinery, and a flat store. With those deferred or rejected and the nested store kept, the slices size the mandate at roughly flat to about −350 net. The added side is the least certain, since the applier, the readers, and the lookup aren't designed yet.
+**Against the Decision Log:** *§Overview*'s "about 850 to 2,300 fewer" comes from the investigation's untrimmed catalogue, which counted F-078's door folding, F-083's shared machinery, and a flat store. With those deferred or rejected and the nested store kept, the slices size the mandate at roughly flat to about −350 net. The added side is the least certain, since the applier, the readers, and the lookup aren't designed yet.
 
 ---
 

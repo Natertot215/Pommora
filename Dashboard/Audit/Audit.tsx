@@ -90,18 +90,6 @@ function Document({ audit }: { audit: AuditDoc }): React.JSX.Element {
           />
         </div>
       </div>
-      {audit.intro && <Markdown source={audit.intro} />}
-      {audit.verdict.length > 0 && (
-        <>
-          <h3 className="au-part">Verdict</h3>
-          {audit.verdict.map((s) => (
-            <section key={s.title} className="au-verdict">
-              <h4>{s.title}</h4>
-              <Markdown source={s.body} />
-            </section>
-          ))}
-        </>
-      )}
       {parts.map(
         (part) =>
           part.groups.length > 0 && (

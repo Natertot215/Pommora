@@ -39,12 +39,8 @@ export type Group = {
   findings: Finding[]
 }
 
-export type Section = { title: string; body: string }
-
 export type Audit = {
   pin: string
-  intro: string
-  verdict: Section[]
   workstreams: Group[]
   rideAlongs: Group[]
   findings: Finding[]
@@ -79,7 +75,7 @@ const CLOSING_RULE = /(?:\n\s*(?:[-*_]\s*){3,})+\s*$/
 const text = (node: Outline | undefined): string =>
   node?.lines.join('\n').replace(CLOSING_RULE, '').trim() ?? ''
 
-// "W1 · Name" and "F-014 · Title" both lead with a code before the separator.
+// "W1 · Name" and "F-### · Title" both lead with a code before the separator.
 function splitCode(title: string): { code: string; name: string } {
   const m = /^(\S+)\s+[·\-–—]\s+(.+)$/.exec(title)
   return m ? { code: m[1], name: m[2] } : { code: '', name: title }
@@ -103,8 +99,8 @@ function fields(meta: string): Partial<Record<FieldLabel, string>> {
 
 // The meta line, then **Finding**, then **Fix | Kind**.
 const BODY = /^([\s\S]*?)^\*\*Finding\*\*[ \t]*$([\s\S]*?)^\*\*Fix \| (.+?)\*\*[ \t]*$([\s\S]*)/m
-// The page carries no citations: every [^N] reference and the definitions gathered at the file's end are dropped.
-const FOOTNOTES = /^\[\^[^\]]+\]:.*$|\[\^[^\]]+\]/gm
+// The page carries no citations: every [^N] reference and the definitions gathered at the file's end are dropped, while a code span keeps its text.
+const FOOTNOTES = /^\[\^[^\]\n]+\]:.*$|(`+)[^`\n]*?\1|\[\^[^\]\s`]+\]/gm
 
 export function parseNet(value: string): number | undefined {
   const m = /[+-]?\s*\d[\d,]*/.exec(value.replace(/[−–]/g, '-'))
@@ -118,7 +114,7 @@ export function formatNet(n: number): string {
 
 function finding(node: Outline, fallbackArea: string): Finding {
   const { code, name } = splitCode(node.title)
-  const body = node.lines.join('\n')
+  const body = node.lines.join('\n').replace(CLOSING_RULE, '')
   const [, meta = body, found = '', fixKind = '', fix = ''] = BODY.exec(body) ?? []
   const f = fields(meta)
   const netText = f.Net ?? ''
@@ -148,19 +144,16 @@ function groups(section: Outline | undefined, prefix: string, areaFallback: bool
 }
 
 export function parseAudit(md: string): Audit {
-  const root = outline(md.replace(FOOTNOTES, ''))
+  const root = outline(md.replace(FOOTNOTES, (m, code) => (code ? m : '')))
   const doc = root.children.find((c) => c.level === 2) ?? root
-  const verdict = child(doc, 'verdict')
   const workstreams = groups(child(doc, 'workstreams'), 'ws', false)
   const rideAlongs = groups(child(doc, 'ridealongs'), 'ra', true)
-  if (!verdict && workstreams.length === 0 && rideAlongs.length === 0) {
-    throw new Error('audit.md holds no Verdict, Workstreams or Ride-Alongs section.')
+  if (workstreams.length === 0 && rideAlongs.length === 0) {
+    throw new Error('audit.md holds no Workstreams or Ride-Alongs section.')
   }
-  const [pin = '', ...intro] = text(doc).split(/\n\s*\n/)
+  const [pin = ''] = text(doc).split(/\n\s*\n/)
   return {
     pin,
-    intro: intro.join('\n\n'),
-    verdict: (verdict?.children ?? []).map((c) => ({ title: c.title, body: text(c) })),
     workstreams,
     rideAlongs,
     findings: [...workstreams, ...rideAlongs].flatMap((g) => g.findings),

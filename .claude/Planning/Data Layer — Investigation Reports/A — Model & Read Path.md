@@ -437,7 +437,7 @@ Estimates for this slice's files, code lines only:
 - **Session/nexusSlice.ts:** each push runs `stabilize` and a full treeIndex rebuild (nexusSlice.ts:189,191). It also holds the optimistic switch (:238-293, F-186/F-187) and copies settings from the tree (:196-200, F-194).
 - **Contexts/contextWrite.ts:** loadContextWorld re-reads every Space sidecar on every write instead of using the live tree (F-201).
 - **Views/loadValues.ts:** finds files for page ids, and decodes the frontmatter a second time through `pageFrontmatter`.
-- **Index/indexSeed.ts:** the seed's corpus differs from the tree's; a cold seed commits row by row (F-198).
+- **Index/indexSeed.ts:** the seed's corpus differs from the tree's; a cold seed commits row by row (F-081).
 - **Properties/repairSweep.ts:** a third read of the pages the seed re-read on a warm open.
 - **Trash/resolve.ts and spend.ts:** the "id is live" check uses the baseline projection, which leaves out adopted ids (resolve.ts:35-37).
 - **migrateConfig normalizeSavedViews:** read-modify-writes every trash sidecar and tile doc on every open (migrateConfig.ts:76-82).

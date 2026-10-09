@@ -123,7 +123,7 @@ Residual: about 19 transform arms in one table, about 7 non-sidecar re-read arms
 - The host's page-id index (09-01) was built because `treeIndex` sat across the process boundary.
 - The watcher kept its own confirm for 40 days because it lived in a separate module.
 
-F-188 and F-240 target exactly those. No twin arose because the tree is nested.
+F-188 and F-090 target exactly those. No twin arose because the tree is nested.
 
 ###### Writer-Reported Sidecar Changes Use Two Conventions — `MEDIUM — CONFIRMED (static)`
 

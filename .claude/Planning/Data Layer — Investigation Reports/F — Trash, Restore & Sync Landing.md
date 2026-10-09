@@ -78,8 +78,8 @@ The reverse edges come from the file format more than from scaffolding. Governed
 5. **Merge Shape:** `mergeKeys` (`jsonMerge.ts:15-46`) is a three-way merge over plain-object maps.
    - The depth budget is named per top key and applied uniformly below it (`:12-13, 41`). An array or scalar that changed on both sides goes whole to the newer side (`:36, 43`).
    - The registry, sidecars, and tile documents merge at depth `{}` (`mergePolicy.ts:24-39`).
-   - If config lists were stored as maps keyed by id, `mergeKeys` would already merge them item by item, needing only depth entries. F-605's alternative teaches it id-keyed arrays instead (the ledger sizes that fix at Net +40).
-   - Neither approach fixes F-605's worst case at its root. A Context's identity on disk is its title in three places (registry entry, folder name, members' `<Title>:` keys), and Sync carries each as an independent file change.
+   - If config lists were stored as maps keyed by id, `mergeKeys` would already merge them item by item, needing only depth entries. F-006's alternative teaches it id-keyed arrays instead (the ledger sizes that fix at Net +40).
+   - Neither approach fixes F-006's worst case at its root. A Context's identity on disk is its title in three places (registry entry, folder name, members' `<Title>:` keys), and Sync carries each as an independent file change.
    - The property-registry writer is a second consumer of `mergeKeys` (`propertiesRegistry.ts:92`).
 6. **Taps:** there are three hooks, all installed together (`tap.ts:54-62`):
    - `setWriteTap` receives `wrote`/`renamed` (`writeEcho.ts:16-32`).

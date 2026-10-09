@@ -264,7 +264,7 @@ Is the bridge narrow? No. It has 115 channels, 41 distinct ask reply types and 1
 
 ### What the Audit's Fixes Leave Standing
 
-F-240, 241, 242, 246, 247, 248, 249, 250 and 216 share one mechanism: placement and spelling. They change where a file sits, what a name means and which import form gets used. F-212 adds a single kind table. None of them changes how many write doors, push channels, confirmation paths or reply shapes there are. Nor do they touch Core driving the host through callbacks, or the untested second seam. After every one of them lands, these all remain:
+F-090, 241, 242, 246, 247, 248, 249, 250 and 216 share one mechanism: placement and spelling. They change where a file sits, what a name means and which import form gets used. F-212 adds a single kind table. None of them changes how many write doors, push channels, confirmation paths or reply shapes there are. Nor do they touch Core driving the host through callbacks, or the untested second seam. After every one of them lands, these all remain:
 
 - 71 write doors, and three files that can each be written two ways.
 - 7 content push channels, 5 with two emitters.

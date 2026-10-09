@@ -84,7 +84,7 @@ The same engine also serves the exclusion clear (exclusionScan.ts:89), the resto
 
 #### Two Registries
 
-This section and *Journals* are F-622's material (Decision Log G-2): phase 4 keeps both registries' machinery and takes only the journal gaps *Plan Inputs* lists.
+This section and *Journals* are F-083's material (Decision Log G-2): phase 4 keeps both registries' machinery and takes only the journal gaps *Plan Inputs* lists.
 
 The two layers are one pattern written twice:
 
@@ -132,7 +132,7 @@ The table below compares the two implementations.
 
 #### Journals
 
-F-622's material, as *Two Registries* is; phase 4 takes the first three gaps below (*Plan Inputs*).
+F-083's material, as *Two Registries* is; phase 4 takes the first three gaps below (*Plan Inputs*).
 
 There is one mechanism, `journalSlot` (journalSlot.ts:15-52): a single-record file under `.nexus`. A write won't displace a different held record (38); a corrupt record is set aside (39); a clear removes only the caller's own record (46). It carries two vocabularies, run by two replayers.
 
@@ -233,9 +233,9 @@ It also edits the Collection `property_cache` on option edits (311-324, through 
 | Views/viewsFile.ts | 179 | View writes | — | — | 179 | Positional-id repair (42-65) |
 | Tiles/tilesFile.ts | 331 | Tile I/O and link rewrite | — | — | 323 | Stale-write capture (263-269); mtime (319-320) |
 
-**Total at the pin:** 4,794 raw lines (4,267 excluding blank and comment lines) across 38 files. The estimated survivors are about 3,960 lines, plus about 100 new lines (the world and holder projections, and the read-time drop), for about 4,060, a reduction of roughly 730 lines under the whole candidate law. Under the Decision Log's scope that figure splits: the confirm becoming `apply` and admission returning the parsed doc are phases 2 and 3, the read-time drop of `CLEAR` and `GONE` is in no phase, and the survivor column's journal-union, single-replayer, one-chain and shared-cascade rows (contextJournal, propertyJournal, replaySchemaCascade, schemaChain, registryProperty, much of contextCascade) assume F-622. Phase 4's own count is roughly flat (*Plan Inputs*).
+**Total at the pin:** 4,794 raw lines (4,267 excluding blank and comment lines) across 38 files. The estimated survivors are about 3,960 lines, plus about 100 new lines (the world and holder projections, and the read-time drop), for about 4,060, a reduction of roughly 730 lines under the whole candidate law. Under the Decision Log's scope that figure splits: the confirm becoming `apply` and admission returning the parsed doc are phases 2 and 3, the read-time drop of `CLEAR` and `GONE` is in no phase, and the survivor column's journal-union, single-replayer, one-chain and shared-cascade rows (contextJournal, propertyJournal, replaySchemaCascade, schemaChain, registryProperty, much of contextCascade) assume F-083. Phase 4's own count is roughly flat (*Plan Inputs*).
 
-Merging Contexts and Properties into one parameterized key and value cascade, with one journal and one replayer, is F-622 (G-2). Its roughly 150 further lines belong to that estimate, on top of the F-622 rows above.
+Merging Contexts and Properties into one parameterized key and value cascade, with one journal and one replayer, is F-083 (G-2). Its roughly 150 further lines belong to that estimate, on top of the F-083 rows above.
 
 The rest of the slice is essential semantics the law doesn't touch:
 - The type catalog (342).
@@ -285,7 +285,7 @@ Files are canonical, so every holder file still has to be rewritten on a rename.
 
 #### Plan Inputs
 
-Phase 4 at the Decision Log's scope (G-3 and G-4, with F-200 and F-201 as K-1 and K-2 word them) is one Context-world and key-holder lookup built from the tree, and the five fixes G-3 lists beside it. The two registries, their journals, replayers and sweep loops stay as they are; sharing them is F-622.
+Phase 4 at the Decision Log's scope (G-3 and G-4, with F-200 and F-201 as K-1 and K-2 word them) is one Context-world and key-holder lookup built from the tree, and the five fixes G-3 lists beside it. The two registries, their journals, replayers and sweep loops stay as they are; sharing them is F-083.
 
 ##### The Seven Derivations
 
@@ -311,7 +311,7 @@ The per-call rebuilds inside `resolveContextKeys` (contextResolve.ts:50, 56) and
 | Every Space sidecar write | contextWrite.ts:166 (`writeSpaceSidecar`) | Keeps | G-4: the Space link decides each far half inside its own read-modify-write |
 | Restore scrub | restoreScrub.ts:95 | Keeps | G-4: the deliberate drop, inside a read-modify-write |
 | Sweep sidecar leg | governedSweep.ts:95-103 | Keeps | Read-modify-write under the file lock; enumerated by folder (`spaceSidecars`, spaceSidecar.ts:29-37) because a Context mid-rename has moved on disk before the tree follows |
-| Space rename replay | contextCascade.ts:335 | Keeps | Open time, before the walk; F-622's |
+| Space rename replay | contextCascade.ts:335 | Keeps | Open time, before the walk; F-083's |
 | Rename collision check | keyHolders.ts:34-37 | Candidate caller | Below |
 | Property delete snapshot | deleteProperty.ts:49-59 | Keeps | The Trash's write-ahead evidence: the record holds what the files hold |
 | Trash gather | Trash/gather.ts:93 | Keeps | Reads only the deleted folder |
@@ -418,7 +418,7 @@ Host callers read `contextWorldOf((await liveTreeOf(root)).contexts)` and take `
 
 ##### Own Plan
 
-No. At this scope phase 4 is one projection and five local fixes over about ten files, all on the Contexts side except the value write, and it needs phase 2's applier only for the identity invariant above. The one piece with design surface is the delete replay (its record, its placement in the open, its meeting with a stranded rename); if it grows past a record variant and one replay arm, it belongs with F-622.
+No. At this scope phase 4 is one projection and five local fixes over about ten files, all on the Contexts side except the value write, and it needs phase 2's applier only for the identity invariant above. The one piece with design surface is the delete replay (its record, its placement in the open, its meeting with a stranded rename); if it grows past a record variant and one replay arm, it belongs with F-083.
 
 ##### Estimate
 
@@ -437,7 +437,7 @@ Phase 4, raw lines at ±25%: about 120 removed (the disk world, drift map, `live
 - The restore scrub deliberately drops unresolvable tags (restoreScrub.ts:49, 84).
 - The Contexts-folder lock is in-process only.
 - `createContextGroup` runs `mkdir` without an echo record (contextWrite.ts:240; F-205).
-- `properties.json` merges per def on Sync, while `contexts.json` merges its whole list (propertiesRegistry.ts:95; F-605).
+- `properties.json` merges per def on Sync, while `contexts.json` merges its whole list (propertiesRegistry.ts:95; F-006).
 
 #### Confidence
 

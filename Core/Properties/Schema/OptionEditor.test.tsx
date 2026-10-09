@@ -199,7 +199,7 @@ describe('creating an option', () => {
   })
 })
 
-describe('the popup through a rename (F-134)', () => {
+describe('the popup through a rename', () => {
   it('a recolor after a rename addresses the new title, and the popup stays open', async () => {
     render('select', select)
     openPopup()
