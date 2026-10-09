@@ -1,6 +1,13 @@
 import { Fragment, memo } from 'react'
-import { aliasedToken, holdsTokens, linkTokenAt, tokenize, type Token } from '../Engine/tokens'
-import { MD_LINK_CLASS } from '../decorations'
+import {
+  aliasedToken,
+  holdsTokens,
+  linkAddress,
+  linkTokenAt,
+  tokenize,
+  type Token,
+} from '../Engine/tokens'
+import { MD_LINK_CLASS, mdLinkClass } from '../decorations'
 import {
   contentClass,
   listGlyphOf,
@@ -17,13 +24,13 @@ import { applyEdits, lineOffsetsOf } from '../Engine/markdownCode'
 import {
   wikiLinkView,
   linkMenuTarget,
-  headingMissing,
+  tokenMenuTarget,
   tokenTarget,
   type ConnectionsApi,
   type ConnMenuTarget,
   type MdTarget,
 } from '../Links/connectionsApi'
-import { linkActionText, linkHalves } from '../Links/linkFormat'
+import { linkActionText } from '../Links/linkFormat'
 import { wikiAuthorTarget } from '../Links/linkEdit'
 import { dwellTarget, followTarget, heldTarget } from '../Links/linkClicks'
 import { CITE_GLYPH, followCitation } from '../Citations/citationPointer'
@@ -95,7 +102,6 @@ export function renderCellContent(
               `md-connection-${view.status}`,
               alias && view.missing && 'md-connection-heading-missing',
             )}
-            data-conn-title={text.slice(rs, re)}
             data-link-span={`${base + s},${base + e}`}
           >
             {frag ? (
@@ -123,29 +129,16 @@ export function renderCellContent(
       // Without the shared resolver a cell would call an encoded internal target broken and color the same link two ways.
       const target = tokenTarget(conn, text, tk)
       out.push(
-        target.kind === 'page' || target.kind === 'self' ? (
-          <span
-            key={key++}
-            className={cx(
-              'md-connection-resolved',
-              headingMissing(conn, target, around?.ownKeys) && 'md-connection-heading-missing',
-            )}
-            data-conn-title={target.kind === 'page' ? target.page.title : undefined}
-            data-link-span={`${base + s},${base + e}`}
-          >
-            {content}
-          </span>
-        ) : (
-          <span
-            key={key++}
-            className={
-              target.kind === 'external' ? MD_LINK_CLASS : 'md-link-invalid md-unresolved-fixed'
-            }
-            data-link-span={`${base + s},${base + e}`}
-          >
-            {content}
-          </span>
-        ),
+        <span
+          key={key++}
+          className={cx(
+            mdLinkClass(conn, target, around?.ownKeys),
+            target.kind === 'invalid' && 'md-unresolved-fixed',
+          )}
+          data-link-span={`${base + s},${base + e}`}
+        >
+          {content}
+        </span>,
       )
     } else if (tk.kind === 'htmlTag') {
       const [open, close] = tk.markerRanges
@@ -294,11 +287,11 @@ function StaticCellImpl({
 
   const menuAt = (e: React.MouseEvent, api: ConnectionsApi): ConnMenuTarget | null => {
     const span = linkSpanAt(e.target)
-    const found = span && linkTokenAt(text, span[0])
+    const found = span && linkTokenAt(cellTokens(text), span[0])
     if (!found) return null
     return menuTarget(
       () => {
-        const now = linkTokenAt(live.current, span[0])
+        const now = linkTokenAt(cellTokens(live.current), span[0])
         return now && live.current.slice(...now.range) === text.slice(...found.range)
           ? { text: live.current, tk: now }
           : null
@@ -448,7 +441,7 @@ function cellLinkTarget(
   const el = (eventTarget as HTMLElement | null)?.closest?.(LINK_SELECTOR)
   if (!el || !api) return null
   const span = linkSpanAt(eventTarget)
-  const tk = span && linkTokenAt(text, span[0])
+  const tk = span && linkTokenAt(cellTokens(text), span[0])
   return tk ? { el, target: tokenTarget(api, text, tk) } : null
 }
 
@@ -462,31 +455,24 @@ function menuTarget(
   onCommit: (text: string) => void,
   onSelect: (range: [number, number]) => void,
 ): ConnMenuTarget | null {
-  const target = tokenTarget(api, text, tk)
-  if (target.kind === 'page' && tk.kind === 'wikiLink')
-    return {
-      kind: 'page',
-      page: target.page,
-      heading: target.heading,
-      editable: true,
-      hasAlias: aliasedToken(tk),
-      apply: (action) => {
-        const now = still()
-        if (!now) return
-        const { pipeAt, select } = wikiAuthorTarget(now.text, now.tk, action)
-        if (pipeAt !== undefined) onCommit(`${now.text.slice(0, pipeAt)}|${now.text.slice(pipeAt)}`)
-        onSelect(select)
-      },
-    }
-  return linkMenuTarget(target, (action) => {
-    const now = still()
-    if (!now) return
-    if (action === 'rename' || action === 'editLink')
-      return onSelect(linkHalves(now.tk)[action === 'rename' ? 'label' : 'address'])
-    const edit = linkActionText(now.text, now.tk, action, host.linkTitles)
-    if (!edit) return
-    onCommit(now.text.slice(0, now.tk.range[0]) + edit.insert + now.text.slice(now.tk.range[1]))
-    if (edit.wantsTitle) host.linkTitles.resolve(edit.url)
+  return tokenMenuTarget(tk, tokenTarget(api, text, tk), {
+    wiki: (action) => {
+      const now = still()
+      if (!now) return
+      const { pipeAt, select } = wikiAuthorTarget(now.text, now.tk, action)
+      if (pipeAt !== undefined) onCommit(`${now.text.slice(0, pipeAt)}|${now.text.slice(pipeAt)}`)
+      onSelect(select)
+    },
+    url: (action) => {
+      const now = still()
+      if (!now) return
+      if (action === 'rename' || action === 'editLink')
+        return onSelect(action === 'rename' ? now.tk.contentRange : linkAddress(now.tk))
+      const edit = linkActionText(now.text, now.tk, action, host.linkTitles)
+      if (!edit) return
+      onCommit(now.text.slice(0, now.tk.range[0]) + edit.insert + now.text.slice(now.tk.range[1]))
+      if (edit.wantsTitle) host.linkTitles.resolve(edit.url)
+    },
   })
 }
 

@@ -22,8 +22,7 @@ function linkFor(view: EditorView, text: string, inverse: boolean): LinkPaste | 
   if (!url) return null
 
   const sel = view.state.selection.main
-  if (destinationGuard(view, sel.from)) return null
-  if (insideCodeAtCaret(view, sel.from)) return null
+  if (literalAt(view, sel.from)) return null
 
   const host = view.state.facet(editorHost)
   const settings = host.settings()
@@ -39,16 +38,12 @@ function linkFor(view: EditorView, text: string, inverse: boolean): LinkPaste | 
   return decision.kind === 'literal' ? null : decision
 }
 
-function destinationGuard(view: EditorView, pos: number): boolean {
+/** Code and another link's destination take the clipboard as written. An insertion at a code span's exclusive end still lands inside, so the position behind the caret answers too, except at the line's start, where it would read the fence above. */
+function literalAt(view: EditorView, pos: number): boolean {
   const line = view.state.doc.lineAt(pos)
-  return linkDestinationStart(line.text, pos - line.from) !== null
-}
-
-/** An insertion at a span's exclusive end still lands inside, so the position behind the caret answers too — except across a newline, or the first column after a fence would read as the fence's. */
-function insideCodeAtCaret(view: EditorView, pos: number): boolean {
+  if (linkDestinationStart(line.text, pos - line.from) !== null) return true
   const scan = docScan(view.state.doc)
-  if (inCodeAt(scan, pos)) return true
-  return pos > 0 && view.state.sliceDoc(pos - 1, pos) !== '\n' && inCodeAt(scan, pos - 1)
+  return inCodeAt(scan, pos) || (pos > line.from && inCodeAt(scan, pos - 1))
 }
 
 function writeLink(view: EditorView, link: LinkPaste): void {
@@ -94,7 +89,7 @@ export async function pasteAs(view: EditorView, form: PasteAsForm | 'literal'): 
   // The menu can be held open indefinitely — a table cell's editor is destroyed the moment its cell deactivates.
   if (!text || !view.dom.isConnected || view.state.readOnly) return
   // The explicit pick overrides the settings, never the syntax, or the picked form would nest a link inside the one being authored.
-  if (form === 'literal' || destinationGuard(view, view.state.selection.main.from)) {
+  if (form === 'literal' || literalAt(view, view.state.selection.main.from)) {
     writePlain(view, text)
     view.focus()
     return

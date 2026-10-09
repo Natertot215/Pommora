@@ -23,7 +23,7 @@ import {
   tokenizeChunk,
   activeTokenIndices,
   aliasedToken,
-  linkTarget,
+  linkTokenAt,
   shiftToken,
   type Token,
 } from './Engine/tokens'
@@ -63,9 +63,10 @@ import {
 import { lineEndOf, lineIndexAt } from './Engine/markdownCode'
 import {
   headingMissing,
-  resolveMdTarget,
+  tokenTarget,
   wikiLinkView,
   type ConnectionsApi,
+  type MdTarget,
 } from './Links/connectionsApi'
 import type { LinkStatus } from '../Connections/connections'
 import { editorHost, type OwnPage, ownPage, redrawNudge } from './api'
@@ -77,6 +78,25 @@ import { svgFrame } from '@pommora/uix/Symbols/svgFrame'
 import { cx } from '@pommora/uix/Utilities/cx'
 
 export const MD_LINK_CLASS = 'md-link'
+
+export function mdLinkClass(
+  conn: ConnectionsApi | undefined,
+  target: MdTarget,
+  ownKeys: readonly string[] | undefined,
+): string {
+  switch (target.kind) {
+    case 'page':
+    case 'self':
+      return cx(
+        'md-connection-resolved',
+        headingMissing(conn, target, ownKeys) && 'md-connection-heading-missing',
+      )
+    case 'external':
+      return MD_LINK_CLASS
+    case 'invalid':
+      return 'md-link-invalid'
+  }
+}
 
 // WidgetType.ignoreEvent defaults to true, which would swallow the pointerdown the editor's own gestures act on, like listDrag on a bullet.
 export abstract class GlyphWidget extends WidgetType {
@@ -344,11 +364,14 @@ const atomicSpan = Decoration.mark({})
 const NO_ACTIVE = new Set<number>()
 
 const chunkTokens = drawnLast(tokenizeChunk)
-const drawnRaw = new WeakMap<EditorView, readonly [number, number][]>()
+const drawnTokens = new WeakMap<EditorView, readonly Token[]>()
 
-/** Inside an HTML block the last draw left as written, where a link gesture has no drawn link to act on. */
-export const drawnRawAt = (view: EditorView, pos: number): boolean =>
-  spanAt(drawnRaw.get(view) ?? [], pos) !== undefined
+/** The link token the last draw tokenized at `pos`; code, and an HTML block drawn raw, hold none. */
+export const drawnLinkAt = (
+  view: EditorView,
+  pos: number,
+  kind?: 'link' | 'wikiLink',
+): Token | undefined => linkTokenAt(drawnTokens.get(view) ?? [], pos, kind)
 
 // On-screen chunks only — the whole-document parse is what made long docs lag.
 function visibleInline(view: EditorView, scan: DocScan): ReturnType<typeof tokenizeChunk> {
@@ -446,7 +469,6 @@ function build(view: EditorView, conn: ConnectionsApi | undefined, scope: Markdo
   const inline = visibleInline(view, scan)
   // A cell's text parses alone, where a leading tag reads as a block the table never holds.
   const raw = scope === 'page' && settings.htmlFormatting ? inline.html : []
-  drawnRaw.set(view, raw)
   let tokens = raw.length > 0 ? inline.tokens.filter((tk) => !tk.inHtml) : inline.tokens
   // A CLAIMED embed line's token styling stands down; the claim is the tile field's own predicate, so one owner decides.
   if (conn && scan.embeds.length > 0) {
@@ -459,6 +481,7 @@ function build(view: EditorView, conn: ConnectionsApi | undefined, scope: Markdo
           ),
       )
   }
+  drawnTokens.set(view, tokens)
   const active = focused
     ? activeTokenIndices(tokens, sel.from, sel.to, view.state.field(linkRest, false) ?? null)
     : NO_ACTIVE
@@ -535,21 +558,13 @@ function build(view: EditorView, conn: ConnectionsApi | undefined, scope: Markdo
     if (tk.kind !== 'link') return
     const [open, close] = tk.markerRanges
     const bracketEnd = close[0] + 1
-    const target = resolveMdTarget(conn, linkTarget(text, tk))
+    const target = tokenTarget(conn, text, tk)
     const valid = target.kind !== 'invalid'
     const internal = target.kind === 'page' || target.kind === 'self'
     const isActive = active.has(i)
     ranges.push(
       Decoration.mark({
-        class: internal
-          ? cx(
-              'md-connection-resolved',
-              isActive && 'md-connection-open',
-              headingMissing(conn, target, ownKeys) && 'md-connection-heading-missing',
-            )
-          : valid
-            ? MD_LINK_CLASS
-            : 'md-link-invalid',
+        class: cx(mdLinkClass(conn, target, ownKeys), internal && isActive && 'md-connection-open'),
       }).range(tk.contentRange[0], tk.contentRange[1]),
     )
     const dim = Decoration.mark({ class: valid ? 'md-control' : 'md-unresolved-syntax' })
