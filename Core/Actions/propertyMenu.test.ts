@@ -14,4 +14,25 @@ describe('propertyMenuModel', () => {
       propertyMenuModel({ kind: 'assigned-row', name: 'Status' }).map((i) => i.action),
     ).toEqual(['property:rename', 'property:remove'])
   })
+
+  it('a page value yields Clear · Remove, led by a separated Edit when editable', () => {
+    const rows = (filled: boolean, editable?: boolean) =>
+      propertyMenuModel({ kind: 'page-value', name: 'Note', filled, editable }).map((i) => [
+        i.action,
+        i.separatorBefore,
+      ])
+    expect(rows(true)).toEqual([
+      ['value:clear', undefined],
+      ['value:remove', undefined],
+    ])
+    expect(rows(true, true)).toEqual([
+      ['value:edit', undefined],
+      ['value:clear', true],
+      ['value:remove', undefined],
+    ])
+    expect(rows(false, true)).toEqual([
+      ['value:edit', undefined],
+      ['value:remove', true],
+    ])
+  })
 })

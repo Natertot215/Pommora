@@ -55,6 +55,7 @@ export function valueClickIntent(
 
 const MENU_INTENTS: Partial<Record<CellMenuAction, ValueIntent>> = {
   editLink: { kind: 'edit' },
+  'cell:edit': { kind: 'edit' },
   rename: { kind: 'rename' },
   'cell:clear': { kind: 'commit', value: null },
   'cell:hide': { kind: 'hide' },

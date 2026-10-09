@@ -161,6 +161,14 @@ async function openPage(cdp, title) {
   await until(`${title}'s tab`, async () => (await activeTab(cdp)) === title)
   await sleep(800)
 }
+// A value's native menu reads its rows, and its Edit opens the inline field.
+async function menuEdits(cdp, pid, expr, rows, name) {
+  let read = []
+  await chooseNative(cdp, pid, expr, { downs: 1, edge: true, seen: async () => { read = nativeMenu(pid).filter((n) => n && n !== 'missing value') } })
+  check(`group 1: ${name}'s menu reads ${rows.join(' · ')}`, JSON.stringify(read) === JSON.stringify(rows), JSON.stringify(read))
+  check(`group 1: ${name}'s Edit opens the inline field`, await settles(() => cdp.evaluate(`!!(${field})`), 3000))
+  await pressKey(cdp, 'Escape')
+}
 async function openPanel(cdp) {
   if (await cdp.evaluate(`!!document.querySelector('[aria-label="Add Property"]')`)) return
   await mouseClick(cdp, SETTINGS_BUTTON)
@@ -256,10 +264,12 @@ async function group1(cdp, pid) {
   await must('filter off', ask(cdp, 'views:save', 'Collection A', 'collection', table(), { filter_enabled: false }))
   await until('every row back', async () => (await titles()).includes('Drive Empty'))
 
-  await chooseNative(cdp, pid, cell('Drive Prose'), { downs: 1, edge: true, seen: async () => screenShot('cell-menu') })
+  await chooseNative(cdp, pid, cell('Drive Prose'), { downs: 2, edge: true, seen: async () => screenShot('cell-menu') })
   check("group 1: the cell menu's Clear empties the cell and the key", await settles(async () => !has('Drive Prose', NOTES) && (await cellText(cdp, cell('Drive Prose'))) === null), keyLines('Drive Prose', NOTES))
   await must('Drive Prose restored', ask(cdp, 'mutate', { op: 'setProperty', path: pagePath('Drive Prose'), propertyId: ids[NOTES], value: { kind: 'text', value: SHOWCASE } }))
   await until("Drive Prose's value back", async () => (await cellText(cdp, cell('Drive Prose'))) !== null)
+  await menuEdits(cdp, pid, cell('Drive Prose'), ['Edit', 'Clear'], 'a table cell')
+  await menuEdits(cdp, pid, cell('Drive Empty'), ['Edit'], 'an empty table cell')
 
   for (const [name, tag] of [['Drive Cards', 'cards-standard'], ['Drive Compact', 'cards-compact']]) {
     await showView(cdp, name)
@@ -271,6 +281,7 @@ async function group1(cdp, pid) {
   await openField(cdp, cardValue('Drive Prose'))
   check("group 1: a Standard card's field holds the first line", (await fieldValue(cdp)) === SHOWCASE.split('\n')[0], await fieldValue(cdp))
   await pressKey(cdp, 'Escape')
+  await menuEdits(cdp, pid, cardValue('Drive Prose'), ['Edit', 'Clear', 'Remove'], 'a card value')
   await showView(cdp, 'Drive Table')
 
   await openPage(cdp, 'Drive Prose')
@@ -280,6 +291,7 @@ async function group1(cdp, pid) {
   await openField(cdp, panelRow())
   check("group 1: the panel's field holds the first line", (await fieldValue(cdp)) === SHOWCASE.split('\n')[0], await fieldValue(cdp))
   await pressKey(cdp, 'Escape')
+  await menuEdits(cdp, pid, panelRow(), ['Edit', 'Clear', 'Remove'], 'a panel row')
   await closePanel(cdp)
   await openCollection(cdp)
   await openPage(cdp, 'Drive Empty')

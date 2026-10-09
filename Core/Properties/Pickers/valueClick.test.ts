@@ -73,6 +73,7 @@ describe('valueMenuIntent', () => {
   it('maps the value edits both link menus share, and nothing else', () => {
     expect(valueMenuIntent('editLink')).toEqual({ kind: 'edit' })
     expect(valueMenuIntent('rename')).toEqual({ kind: 'rename' })
+    expect(valueMenuIntent('cell:edit')).toEqual({ kind: 'edit' })
     expect(valueMenuIntent('cell:clear')).toEqual({ kind: 'commit', value: null })
     expect(valueMenuIntent('cell:hide')).toEqual({ kind: 'hide' })
     expect(valueMenuIntent('style:look:bar')).toBeNull()

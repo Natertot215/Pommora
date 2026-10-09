@@ -93,14 +93,25 @@ describe('cellMenuModel', () => {
     expect(cellMenuModel({ kind: 'clear-only', hideable: true }).at(-1)?.label).toBe('Remove')
   })
 
-  it('link (a filled Link cell): Edit + Rename + Clear, no Style (its look is per-property)', () => {
+  it('link (a filled Link cell): Edit + Rename, then a separated Clear, no Style (its look is per-property)', () => {
     const m = cellMenuModel({ kind: 'link', filled: true })
     expect(m.map((i) => [i.label, i.action])).toEqual([
       ['Edit', 'editLink'],
       ['Rename', 'rename'],
       ['Clear', 'cell:clear'],
     ])
+    expect(m[2].separatorBefore).toBe(true)
     expect(m.some((i) => i.submenu)).toBe(false)
+  })
+
+  it('text: Edit, then Clear and Remove together beneath it', () => {
+    const m = cellMenuModel({ kind: 'text', filled: true, hideable: true })
+    expect(m.map((i) => [i.label, i.action, i.separatorBefore])).toEqual([
+      ['Edit', 'cell:edit', undefined],
+      ['Clear', 'cell:clear', true],
+      ['Remove', 'cell:hide', undefined],
+    ])
+    expect(cellMenuModel({ kind: 'text', filled: false }).map((i) => i.label)).toEqual(['Edit'])
   })
 
   it('link (an empty Link cell): Edit alone — Rename/Clear are no-ops with no value', () => {
@@ -108,13 +119,13 @@ describe('cellMenuModel', () => {
     expect(m.map((i) => [i.label, i.action])).toEqual([['Edit', 'editLink']])
   })
 
-  it('hideable (cards) appends a separated Remove after the base items', () => {
+  it('hideable (cards) appends Remove beside Clear', () => {
     const m = cellMenuModel({ kind: 'clear-only', hideable: true })
     expect(m.map((i) => [i.label, i.action])).toEqual([
       ['Clear', 'cell:clear'],
       ['Remove', 'cell:hide'],
     ])
-    expect(m.find((i) => i.action === 'cell:hide')?.separatorBefore).toBe(true)
+    expect(m.find((i) => i.action === 'cell:hide')?.separatorBefore).toBeUndefined()
   })
 
   it('remove-only (a hideable cell with no other menu): Remove alone, no separator', () => {
@@ -154,9 +165,9 @@ describe('cellMenuContextFor', () => {
     expect(cellMenuContextFor('context', DATES, false)).toBeNull()
   })
 
-  it('a text column → clear-only when filled, no menu when empty', () => {
-    expect(cellMenuContextFor('text', DATES, true)).toEqual({ kind: 'clear-only' })
-    expect(cellMenuContextFor('text', DATES, false)).toBeNull()
+  it('a text column → its Edit menu, filled or empty', () => {
+    expect(cellMenuContextFor('text', DATES, true)).toEqual({ kind: 'text', filled: true })
+    expect(cellMenuContextFor('text', DATES, false)).toEqual({ kind: 'text', filled: false })
   })
 
   it('a link column → the link menu, carrying filled; a file cell has no look left to offer', () => {
