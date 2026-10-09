@@ -1,14 +1,14 @@
 ## Link Gestures — Implementation Plan
 
 **DATE:** 10-09-2026
-**STATUS:** Ratified 10-09-2026
+**STATUS:** Complete 10-09-2026 — `cc725b334..75c3bcb9c`
 **SOURCE:** Pommora Codebase Audit (W6 · Links and the Picker, W12 · Residue and Small Duplications): F-034, F-033, F-038, F-068, F-036, F-037, F-039, and the conversation's rulings of 10-09-2026.
 
 **BASELINE**
 
 | Head | Tests | Start | End |
 |------|-------|-------|-----|
-| `cc725b334` | 7523 passed, 2 skipped (522 files) | 10-09-2026 6:21 PM | |
+| `cc725b334` | 7523 passed, 2 skipped (522 files) | 10-09-2026 6:21 PM | 10-09-2026 7:38 PM |
 
 ### Context
 
@@ -35,6 +35,7 @@ Alongside it, each duplicated rule is written once: which menu a link gets (shar
 | `linkPointer` • Function | The one pointer handler for both link kinds in an editor. | `Core/MarkdownPM/Links/linkClicks.ts` |
 | `drawnLinkAt` • Function | The link or connection token the last draw tokenized at a position. | `Core/MarkdownPM/decorations.ts` |
 | `tokenMenuTarget` • Function | Which menu a link token gets: a connection naming a page is authored in place, and every other link is a page or an address. | `Core/MarkdownPM/Links/connectionsApi.ts` |
+| `linkInCode` • Function | Whether code holds any of the connection written around an offset, where the editor draws none. | `Core/MarkdownPM/Input/edits.ts` |
 | `inAliasAt` • Function | Whether an offset sits in a written connection's alias, outside code. | `Core/MarkdownPM/Input/edits.ts` |
 | `literalAt` • Function | Whether a paste at a position must land as written: code, or another link's destination. | `Core/MarkdownPM/Links/pasteLink.ts` |
 | `linkAddress` • Function | A markdown link token's address span. | `Core/MarkdownPM/Engine/tokens.ts` |
@@ -55,7 +56,7 @@ Alongside it, each duplicated rule is written once: which menu a link gets (shar
 
 #### Delta
 
-Production lines per file, counted from each task's AFTER against `cc725b334` (Biome's known wrapping included). Whole-file deletions are listed at full length. Closeout replaces this estimate with the measured figure.
+**Measured at closeout:** +197 / −258, net **−61** production lines (comments and blank lines excluded; `git diff cc725b334` over the 16 production files). The estimate below was counted from each task's AFTER; the gap is `linkInCode` (*§Deviations*) and Biome's wrapping.
 
 | File | Phase 1 | Phase 2 | Phase 3 | Net |
 | --- | --- | --- | --- | --- |
@@ -96,23 +97,23 @@ The additions are the merged pointer handler (`sectionRunAt` and `linkUnder` now
 
 #### Process Overview
 
-- [ ] **Phase 1** — Pointer Gestures Read the Drawn Link
-  - [ ] Task 1-1 · Pins at the baseline
-  - [ ] Task 1-2 · The picker and the drawn list
-  - [ ] Task 1-3 · One pointer handler and one menu rule
-  - [ ] Task 1-4 · The appliers read the drawn link; Enter reads the written text
-  - [ ] Review Checkpoint
-- [ ] **Phase 2** — Written Text in Code Stays Code
-  - [ ] Task 2-1 · One alias check
-  - [ ] Task 2-2 · Slots in code
-  - [ ] Task 2-3 · One paste guard
-  - [ ] Review Checkpoint (live drive)
-- [ ] **Phase 3** — One Definition Each
-  - [ ] Task 3-1 · The address span
-  - [ ] Task 3-2 · The markdown link's look
-  - [ ] Task 3-3 · The callout head and its conversion
-- [ ] Final Verification
-- [ ] Commit, Reconcile, Report
+- [x] **Phase 1** — Pointer Gestures Read the Drawn Link
+  - [x] Task 1-1 · Pins at the baseline
+  - [x] Task 1-2 · The picker and the drawn list
+  - [x] Task 1-3 · One pointer handler and one menu rule
+  - [x] Task 1-4 · The appliers read the drawn link; Enter reads the written text
+  - [x] Review Checkpoint
+- [x] **Phase 2** — Written Text in Code Stays Code
+  - [x] Task 2-1 · One alias check
+  - [x] Task 2-2 · Slots in code
+  - [x] Task 2-3 · One paste guard
+  - [x] Review Checkpoint (live drive)
+- [x] **Phase 3** — One Definition Each
+  - [x] Task 3-1 · The address span
+  - [x] Task 3-2 · The markdown link's look
+  - [x] Task 3-3 · The callout head and its conversion
+- [x] Final Verification
+- [x] Commit, Reconcile, Report
 
 ---
 
@@ -128,14 +129,14 @@ The additions are the merged pointer handler (`sectionRunAt` and `linkUnder` now
 
 **CHANGE**
 
-- [ ] `linkEdges.test.tsx` "a press on a connection inside a fence is left to the editor": body ```` ```\na [[Alpha]] b\n``` ````, focus, caret at 0, `posAtCoords` mocked to 12, dispatch a cancelable `mousedown` (button 0, detail 1) on `contentDOM`, and `expect(event.defaultPrevented).toBe(false)`. At `cc725b334` the handler claims the press and seats the caret at the link's edge through `seatAtNearerEdge` (probed: prevented, head at the edge). If CodeMirror's own mousedown turns out to prevent the event once the handler declines, assert instead that the head isn't the link's edge (`15`).
-- [ ] `linkEdit.test.tsx` "declines in an alias inside code, so Enter still breaks the line", beside `:230`: `expect(commitAliasOnEnter(view)).toBe(false)` with the caret inside the alias of ```` ```\na [[Alpha|the one]] b\n``` ```` (caret 17) and of `` a `[[Alpha|the one]]` b `` (capture its offset by running). At `cc725b334` the fenced case commits (probed); record what the inline-code case does there.
-- [ ] `textScope.test.tsx` "a bare heading in a Text value's pane acts as the resting value does": add a `menu` `vi.fn()` to the module `conn` (or to a test-local copy, if another test in the file relies on `conn.menu` being absent); mount `'[[#Setup]] x'` with `heldPage.of(holder)` and `Prec.highest(editorHost.of(testHost({ glance: { arm, cancel() {}, close() {}, contains: () => false } })))`; mock `posAtCoords` to 5. `pointerover` on `.md-connection-heading` → `arm` called with `{ kind: 'page', id: 'p1', path: 'Notes/Alpha.md', heading: 'Setup' }` and the element; `contextmenu` → `menu` called with `objectContaining({ kind: 'page', page: holder, heading: 'Setup' })`.
-- [ ] Run the three at `cc725b334`; each fails for the reason named in its bullet. Keep them uncommitted in the tree.
+- [x] `linkEdges.test.tsx` "a press on a connection inside a fence is left to the editor": body ```` ```\na [[Alpha]] b\n``` ````, focus, caret at 0, `posAtCoords` mocked to 12, dispatch a cancelable `mousedown` (button 0, detail 1) on `contentDOM`, and `expect(event.defaultPrevented).toBe(false)`. At `cc725b334` the handler claims the press and seats the caret at the link's edge through `seatAtNearerEdge` (probed: prevented, head at the edge). If CodeMirror's own mousedown turns out to prevent the event once the handler declines, assert instead that the head isn't the link's edge (`15`).
+- [x] `linkEdit.test.tsx` "declines in an alias inside code, so Enter still breaks the line", beside `:230`: `expect(commitAliasOnEnter(view)).toBe(false)` with the caret inside the alias of ```` ```\na [[Alpha|the one]] b\n``` ```` (caret 17) and of `` a `[[Alpha|the one]]` b `` (capture its offset by running). At `cc725b334` the fenced case commits (probed); record what the inline-code case does there.
+- [x] `textScope.test.tsx` "a bare heading in a Text value's pane acts as the resting value does": add a `menu` `vi.fn()` to the module `conn` (or to a test-local copy, if another test in the file relies on `conn.menu` being absent); mount `'[[#Setup]] x'` with `heldPage.of(holder)` and `Prec.highest(editorHost.of(testHost({ glance: { arm, cancel() {}, close() {}, contains: () => false } })))`; mock `posAtCoords` to 5. `pointerover` on `.md-connection-heading` → `arm` called with `{ kind: 'page', id: 'p1', path: 'Notes/Alpha.md', heading: 'Setup' }` and the element; `contextmenu` → `menu` called with `objectContaining({ kind: 'page', page: holder, heading: 'Setup' })`.
+- [x] Run the three at `cc725b334`; each fails for the reason named in its bullet. Keep them uncommitted in the tree.
 
 **VERIFY**
 
-- [ ] Three failures observed at `cc725b334`, each on its own assertion (not a setup error).
+- [x] Three failures observed at `cc725b334`, each on its own assertion (not a setup error).
 
 #### Task 1-2
 
@@ -145,10 +146,10 @@ The additions are the merged pointer handler (`sectionRunAt` and `linkUnder` now
 
 **CHANGE**
 
-- [ ] Rewrite `linkTokenAt` and its doc comment.
-- [ ] Replace `drawnRaw`/`drawnRawAt` with `drawnTokens`/`drawnLinkAt`; set the list after the claimed-embed filter. The local `raw` stays (`sectionRunsIn`'s mask reads it), and so does the `spanAt` import (the section-run mask reads it).
-- [ ] Point the three cell calls at `cellTokens(…)`.
-- [ ] Reword `tokens.test.ts:285-292` (pass `tokenize('…')`) and `cellLists.test.tsx:279` (`linkTokenAt(tokenize(display), from)`), importing `tokenize` where missing.
+- [x] Rewrite `linkTokenAt` and its doc comment.
+- [x] Replace `drawnRaw`/`drawnRawAt` with `drawnTokens`/`drawnLinkAt`; set the list after the claimed-embed filter. The local `raw` stays (`sectionRunsIn`'s mask reads it), and so does the `spanAt` import (the section-run mask reads it).
+- [x] Point the three cell calls at `cellTokens(…)`.
+- [x] Reword `tokens.test.ts:285-292` (pass `tokenize('…')`) and `cellLists.test.tsx:279` (`linkTokenAt(tokenize(display), from)`), importing `tokenize` where missing.
 
 **AFTER**
 
@@ -210,7 +211,7 @@ The additions are the merged pointer handler (`sectionRunAt` and `linkUnder` now
 
 **VERIFY**
 
-- [ ] Deferred to Task 1-4: the tree doesn't compile until the consumers move.
+- [x] Deferred to Task 1-4: the tree doesn't compile until the consumers move.
 
 #### Task 1-3
 
@@ -220,12 +221,12 @@ The additions are the merged pointer handler (`sectionRunAt` and `linkUnder` now
 
 **CHANGE**
 
-- [ ] Delete `Links/connectionClicks.ts` (all 103 lines).
-- [ ] Add `tokenMenuTarget` to `connectionsApi.ts` beside `linkMenuTarget`. A read-only body passes no `edit`; `showConnectionMenu` already reads `editable && apply !== undefined` (`Interface/Menus/connectionMenuActions.ts:23`), so the menu it shows is unchanged. No test asserts a body menu target's raw `editable` on a read-only editor: `linkEdit.test.tsx:107-124` and `externalLink.test.tsx:137-150` read the model `showConnectionMenu` computes, and `linkEdges.test.tsx:420`'s `editable: true` is an editable mount.
-- [ ] Rewrite `linkClicks.ts`'s hit-test and handler as below; `followTarget`, `heldTarget`, `resolveFollow`, and `dwellTarget` (`:48-106`) stay unchanged. The `§`-run check runs first, so a press on a run written against a link's edge travels to its heading: `[x](https://e.com)§Setup` keeps the click `connectionClicks` gave it, and in `[[Alpha]]§Setup` the run now takes a press the connection used to claim.
-- [ ] Rewrite the resting cell's `menuTarget` onto `tokenMenuTarget`, keeping its `still()` closures.
-- [ ] `surface.ts`: one import and one mount, in `connectionClicks`' slot.
-- [ ] `pointerPath.ts:31` "four handlers share one editor" → "several handlers share one editor"; `:25` "pays neither the layout read nor the tokenize" → "pays neither the layout read nor the token lookup".
+- [x] Delete `Links/connectionClicks.ts` (all 103 lines).
+- [x] Add `tokenMenuTarget` to `connectionsApi.ts` beside `linkMenuTarget`. A read-only body passes no `edit`; `showConnectionMenu` already reads `editable && apply !== undefined` (`Interface/Menus/connectionMenuActions.ts:23`), so the menu it shows is unchanged. No test asserts a body menu target's raw `editable` on a read-only editor: `linkEdit.test.tsx:107-124` and `externalLink.test.tsx:137-150` read the model `showConnectionMenu` computes, and `linkEdges.test.tsx:420`'s `editable: true` is an editable mount.
+- [x] Rewrite `linkClicks.ts`'s hit-test and handler as below; `followTarget`, `heldTarget`, `resolveFollow`, and `dwellTarget` (`:48-106`) stay unchanged. The `§`-run check runs first, so a press on a run written against a link's edge travels to its heading: `[x](https://e.com)§Setup` keeps the click `connectionClicks` gave it, and in `[[Alpha]]§Setup` the run now takes a press the connection used to claim.
+- [x] Rewrite the resting cell's `menuTarget` onto `tokenMenuTarget`, keeping its `still()` closures.
+- [x] `surface.ts`: one import and one mount, in `connectionClicks`' slot.
+- [x] `pointerPath.ts:31` "four handlers share one editor" → "several handlers share one editor"; `:25` "pays neither the layout read nor the tokenize" → "pays neither the layout read nor the token lookup".
 
 **AFTER**
 
@@ -451,7 +452,7 @@ The single label selector is behavior-neutral: `md-link` and `md-link-invalid` a
 
 **VERIFY**
 
-- [ ] Deferred to Task 1-4.
+- [x] Deferred to Task 1-4.
 
 #### Task 1-4
 
@@ -461,7 +462,7 @@ The single label selector is behavior-neutral: `md-link` and `md-link-invalid` a
 
 **CHANGE**
 
-- [ ] Rewrite the three functions as below; drop the imports that lose their last use.
+- [x] Rewrite the three functions as below; drop the imports that lose their last use.
 
 **AFTER**
 
@@ -547,17 +548,17 @@ The single label selector is behavior-neutral: `md-link` and `md-link-invalid` a
 
 **VERIFY**
 
-- [ ] Run the gates.
-- [ ] Task 1-1's three tests pass, and `linkEdit.test.tsx:230` ("declines in an alias left as written in an HTML block") passes unchanged.
-- [ ] Red-proof each on the compiling tree: the fence press goes red with `linkUnder`'s `drawnLinkAt` call replaced by the line-local reading `linkTokenAt(tokenize(line.text).map((t) => shiftToken(t, line.from)), pos, …)` (with `line = view.state.doc.lineAt(pos)`); the code-Enter cases go red with `inCodeAt(scan, sel.head) ||` removed; `:230` goes red with `|| raw` removed; the Text-pane test goes red with the `heldTarget(…, ownPage(view))` wrap removed.
-- [ ] `git grep -n "drawnRaw\|connectionClicks\|markdownLinkClicks" -- Core` returns nothing; `git grep -n "drawnLinkAt(" -- Core` shows exactly `linkUnder`, `applyLinkAction`, and `applyUrlLinkAction` besides its definition; `git grep -n "linkTokenAt(" -- Core` shows no string first argument, and its production hits are `tokens.ts`, `decorations.ts`, and `cellStatic.tsx` only.
-- [ ] Check for unnecessary code or mistakes.
+- [x] Run the gates.
+- [x] Task 1-1's three tests pass, and `linkEdit.test.tsx:230` ("declines in an alias left as written in an HTML block") passes unchanged.
+- [x] Red-proof each on the compiling tree: the fence press goes red with `linkUnder`'s `drawnLinkAt` call replaced by the line-local reading `linkTokenAt(tokenize(line.text).map((t) => shiftToken(t, line.from)), pos, …)` (with `line = view.state.doc.lineAt(pos)`); the code-Enter cases go red with `inCodeAt(scan, sel.head) ||` removed; `:230` goes red with `|| raw` removed; the Text-pane test goes red with the `heldTarget(…, ownPage(view))` wrap removed.
+- [x] `git grep -n "drawnRaw\|connectionClicks\|markdownLinkClicks" -- Core` returns nothing; `git grep -n "drawnLinkAt(" -- Core` shows exactly `linkUnder`, `applyLinkAction`, and `applyUrlLinkAction` besides its definition; `git grep -n "linkTokenAt(" -- Core` shows no string first argument, and its production hits are `tokens.ts`, `decorations.ts`, and `cellStatic.tsx` only.
+- [x] Check for unnecessary code or mistakes.
 
 #### Review Checkpoint
 
-- [ ] The 20 link suites pass with no assertion changed beyond Task 1-2's two rewordings.
-- [ ] Every pointer consumer listed in *§Context* reads `drawnLinkAt` or `cellTokens`; nothing re-tokenizes a line for a gesture; the menu rule exists once; Enter reads the written text.
-- [ ] A long-document probe: mount a 2,000-line body with `[[Alpha]]` on the last line, scroll it into view (`view.dispatch({ effects: EditorView.scrollIntoView(pos) })`), assert `view.visibleRanges` covers that line, then press and click on it and assert `conn.open` was called. Deleted afterward; the result is recorded here.
+- [x] The 20 link suites pass with no assertion changed beyond Task 1-2's two rewordings.
+- [x] Every pointer consumer listed in *§Context* reads `drawnLinkAt` or `cellTokens`; nothing re-tokenizes a line for a gesture; the menu rule exists once; Enter reads the written text.
+- [x] A long-document probe: mount a 2,000-line body with `[[Alpha]]` on the last line, scroll it into view (`view.dispatch({ effects: EditorView.scrollIntoView(pos) })`), assert `view.visibleRanges` covers that line, then press and click on it and assert `conn.open` was called. Deleted afterward. **Result:** `visibleRanges` moved from `[0,179]` to `[9825,10008]`, covering the link, and the press and click opened `p1`.
 
 ---
 
@@ -573,9 +574,9 @@ The single label selector is behavior-neutral: `md-link` and `md-link-invalid` a
 
 **CHANGE**
 
-- [ ] Write `edits.test.ts` `describe('inAliasAt')`: "reads the alias on the line the offset sits in" (`doc = 'a first line long enough\na [[Notes|Q3]] b'`, `inAliasAt(scanDoc(doc), doc.indexOf('Q3'))` true; red when the offset isn't taken relative to the line start) and "an alias written in code is code" (`inAliasAt` false at the alias in ```` ```\na [[Alpha|al]] b\n``` ```` and in `` a `[[Alpha|al]]` b ``; red without the `inCodeAt` line). Add `expect(autoPair(scanDoc('a [[Notes|My ]] b'), 13, 13, '[')).toBeNull()` to the auto-pair block, red without `autoPair`'s alias check.
-- [ ] Delete `Guards/aliasGuard.ts` (9 lines) and `Guards/aliasGuard.test.ts` (its "still pairs a bracket in ordinary prose" repeats `edits.test.ts:178`).
-- [ ] Apply the AFTER.
+- [x] Write `edits.test.ts` `describe('inAliasAt')`: "reads the alias on the line the offset sits in" (`doc = 'a first line long enough\na [[Notes|Q3]] b'`, `inAliasAt(scanDoc(doc), doc.indexOf('Q3'))` true; red when the offset isn't taken relative to the line start) and "an alias written in code is code" (`inAliasAt` false at the alias in ```` ```\na [[Alpha|al]] b\n``` ```` and in `` a `[[Alpha|al]]` b ``; red without the `inCodeAt` line). Add `expect(autoPair(scanDoc('a [[Notes|My ]] b'), 13, 13, '[')).toBeNull()` to the auto-pair block, red without `autoPair`'s alias check.
+- [x] Delete `Guards/aliasGuard.ts` (9 lines) and `Guards/aliasGuard.test.ts` (its "still pairs a bracket in ordinary prose" repeats `edits.test.ts:178`).
+- [x] Apply the AFTER.
 
 **AFTER**
 
@@ -620,9 +621,9 @@ The single label selector is behavior-neutral: `md-link` and `md-link-invalid` a
 
 **VERIFY**
 
-- [ ] Each new assertion red with its line reverted, green restored.
-- [ ] `git grep -n "refusedInAlias\|aliasGuard" -- Core` returns nothing.
-- [ ] `cellAlias.test.tsx:70-87` passes unchanged (its two tests pin `inAliasAt` and `text === ']'` at the call site).
+- [x] Each new assertion red with its line reverted, green restored.
+- [x] `git grep -n "refusedInAlias\|aliasGuard" -- Core` returns nothing.
+- [x] `cellAlias.test.tsx:70-87` passes unchanged (its two tests pin `inAliasAt` and `text === ']'` at the call site).
 
 #### Task 2-2
 
@@ -632,8 +633,8 @@ The single label selector is behavior-neutral: `md-link` and `md-link-invalid` a
 
 **CHANGE**
 
-- [ ] Write `linkEdit.test.tsx` "an alias left in code stays as written": an empty `[[Alpha|]]` in a fence keeps its pipe after the caret moves into it and away; an empty `` a `[[Alpha#]]` b `` keeps its hash; a fenced `[[Alpha|]]` with `new` typed (`userEvent: 'input.type'`) then left never calls `remember`. Use the file's `caretTo` pattern; capture offsets by running. Red without the gate.
-- [ ] Apply the AFTER.
+- [x] Write `linkEdit.test.tsx` "an alias left in code stays as written": an empty `[[Alpha|]]` in a fence keeps its pipe after the caret moves into it and away; an empty `` a `[[Alpha#]]` b `` keeps its hash; a fenced `[[Alpha|]]` with `new` typed (`userEvent: 'input.type'`) then left never calls `remember`. Use the file's `caretTo` pattern; capture offsets by running. Red without the gate.
+- [x] Apply the AFTER.
 
 **AFTER**
 
@@ -646,8 +647,8 @@ The single label selector is behavior-neutral: `md-link` and `md-link-invalid` a
 
 **VERIFY**
 
-- [ ] The three cases red with the gate removed, green restored.
-- [ ] `linkEdit.test.tsx`'s "an alias opened and abandoned" and "the alias memory hears only what was authored" pass unchanged.
+- [x] The three cases red with the gate removed, green restored.
+- [x] `linkEdit.test.tsx`'s "an alias opened and abandoned" and "the alias memory hears only what was authored" pass unchanged.
 
 #### Task 2-3
 
@@ -657,8 +658,8 @@ The single label selector is behavior-neutral: `md-link` and `md-link-invalid` a
 
 **CHANGE**
 
-- [ ] Rewrite `pasteLink.test.tsx:245-250` in place as "lands the address as plain text on a blank line inside a fence": same body and seat, expect ```` `\`\`\`\n${URL}\n\`\`\`` ````. Red at `cc725b334` (it writes nothing) and with `pasteAs` checking the destination alone.
-- [ ] Apply the AFTER.
+- [x] Rewrite `pasteLink.test.tsx:245-250` in place as "lands the address as plain text on a blank line inside a fence": same body and seat, expect ```` `\`\`\`\n${URL}\n\`\`\`` ````. Red at `cc725b334` (it writes nothing) and with `pasteAs` checking the destination alone.
+- [x] Apply the AFTER.
 
 **AFTER**
 
@@ -696,16 +697,16 @@ The single label selector is behavior-neutral: `md-link` and `md-link-invalid` a
 
 **VERIFY**
 
-- [ ] The rewritten test red with `pasteAs` reverted, green restored.
-- [ ] `git grep -n "destinationGuard\|insideCodeAtCaret" -- Core` returns nothing.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] The rewritten test red with `pasteAs` reverted, green restored.
+- [x] `git grep -n "destinationGuard\|insideCodeAtCaret" -- Core` returns nothing.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Review Checkpoint
 
-- [ ] All five F-033 symptoms named in *§Context* are each pinned by a test that is red at `cc725b334` and green now.
-- [ ] `drawnLinkAt` has its three pointer-side readers only, and every caret path reads the written text.
-- [ ] **Live drive (Claude, per the owner):** load the `interaction-testing` skill, then drive the built app through `.claude/scripts/drive-harness.mjs` (`launch(port, name)` backs up `~/Test`; `activate(cdp, pid)` before typing; `restore()` at the end). Seed a page through `ask(cdp, 'mutate', { op: 'createPage', … })` whose body holds ```` ```\n[[Alpha]]\n``` ````, a body `[[Alpha]]`, a fenced `[[Alpha|al]]`, and a `<div>` block holding `[[Alpha|al]]`; open it from Collection A's cards. Over CDP: a real press and click on the fenced connection leaves the page open with the caret placed; the same on the body connection opens Alpha; Enter with the caret in the fenced alias breaks the line; Enter in the `<div>` alias breaks the line; Enter in a body alias rests the caret on the closer. The drive earns trust only when the fenced press fails with `linkUnder`'s `drawnLinkAt` reverted to the line-local read; rebuild and repeat it once that way, then restore.
+- [x] All five F-033 symptoms named in *§Context* are each pinned by a test that is red at `cc725b334` and green now.
+- [x] `drawnLinkAt` has its three pointer-side readers only, and every caret path reads the written text.
+- [x] **Live drive (Claude, per the owner):** load the `interaction-testing` skill, then drive the built app through `.claude/scripts/drive-harness.mjs` (`launch(port, name)` backs up `~/Test`; `activate(cdp, pid)` before typing; `restore()` at the end). Seed a page through `ask(cdp, 'mutate', { op: 'createPage', … })` whose body holds ```` ```\n[[Alpha]]\n``` ````, a body `[[Alpha]]`, a fenced `[[Alpha|al]]`, and a `<div>` block holding `[[Alpha|al]]`; open it from Collection A's cards. Over CDP: a real press and click on the fenced connection leaves the page open with the caret placed; the same on the body connection opens Alpha; Enter with the caret in the fenced alias breaks the line; Enter in the `<div>` alias breaks the line; Enter in a body alias rests the caret on the closer. The drive earns trust only when the fenced press fails with `linkUnder`'s `drawnLinkAt` reverted to the line-local read; rebuild and repeat it once that way, then restore.
 
 ---
 
@@ -721,7 +722,7 @@ The single label selector is behavior-neutral: `md-link` and `md-link-invalid` a
 
 **CHANGE**
 
-- [ ] Apply the AFTER; `cellStatic.tsx` imports `linkAddress` from `Engine/tokens` and drops `linkHalves` from its `linkFormat` import. Biome wraps the widened `Engine/tokens` import (+7, counted in *§Delta*).
+- [x] Apply the AFTER; `cellStatic.tsx` imports `linkAddress` from `Engine/tokens` and drops `linkHalves` from its `linkFormat` import. Biome wraps the widened `Engine/tokens` import (+7, counted in *§Delta*).
 
 **AFTER**
 
@@ -759,8 +760,8 @@ The single label selector is behavior-neutral: `md-link` and `md-link-invalid` a
 
 **VERIFY**
 
-- [ ] `git grep -n "linkHalves" -- Core` returns nothing.
-- [ ] `linkFormat`, `cellLinks`, `mdLinkTarget`, and `tokens` suites pass unchanged (`linkFormat.test.tsx:137-147` and `cellLinks.test.tsx:255-270` pin Rename and Edit Link's selections).
+- [x] `git grep -n "linkHalves" -- Core` returns nothing.
+- [x] `linkFormat`, `cellLinks`, `mdLinkTarget`, and `tokens` suites pass unchanged (`linkFormat.test.tsx:137-147` and `cellLinks.test.tsx:255-270` pin Rename and Edit Link's selections).
 
 #### Task 3-2
 
@@ -770,9 +771,9 @@ The single label selector is behavior-neutral: `md-link` and `md-link-invalid` a
 
 **CHANGE**
 
-- [ ] Write the pin in `mdLinkTarget.test.tsx`'s "both syntaxes and both renderers agree" block: mount `` `see [the notes](${target}) end` ``, `await act(async () => view.focus())`, set the caret to 6, and expect `.md-connection-open` to read "the notes"; render `'a [Home](not a url) b'` in a cell and expect its `.md-link-invalid` to carry `md-unresolved-fixed`. Red if either renderer's extra class is dropped.
-- [ ] Remove `data-conn-title` from both cell spans. Delete `aliasSites.test.tsx`'s "a cell connection carries its resolve key, not just its text" (`:88-94`, with its stale comment); `cellLinks.test.tsx:53`'s `.md-connection-resolved` query on `[[Quarterly Plan|the plan]]` still pins that an aliased resting connection resolves by its title, since the alias names no page. Drop the `connTitle` asserts at `cellLinks.test.tsx:57` and `:98`, retitling `:53` "renders the alias, resolved by its title".
-- [ ] Apply the AFTER.
+- [x] Write the pin in `mdLinkTarget.test.tsx`'s "both syntaxes and both renderers agree" block: mount `` `see [the notes](${target}) end` ``, `await act(async () => view.focus())`, set the caret to 6, and expect `.md-connection-open` to read "the notes"; render `'a [Home](not a url) b'` in a cell and expect its `.md-link-invalid` to carry `md-unresolved-fixed`. Red if either renderer's extra class is dropped.
+- [x] Remove `data-conn-title` from both cell spans. Delete `aliasSites.test.tsx`'s "a cell connection carries its resolve key, not just its text" (`:88-94`, with its stale comment); `cellLinks.test.tsx:53`'s `.md-connection-resolved` query on `[[Quarterly Plan|the plan]]` still pins that an aliased resting connection resolves by its title, since the alias names no page. Drop the `connTitle` asserts at `cellLinks.test.tsx:57` and `:98`, retitling `:53` "renders the alias, resolved by its title".
+- [x] Apply the AFTER.
 
 **AFTER**
 
@@ -881,9 +882,9 @@ The single label selector is behavior-neutral: `md-link` and `md-link-invalid` a
 
 **VERIFY**
 
-- [ ] The new pin red with each extra class removed in turn, green restored.
-- [ ] `git grep -n "conn-title\|connTitle" -- Core` returns nothing.
-- [ ] `mdLinkTarget`, `externalLink`, `cellLinks`, `aliasRender`, `textScope`, `cellHeadings`, and `linkEdges` suites pass.
+- [x] The new pin red with each extra class removed in turn, green restored.
+- [x] `git grep -n "conn-title\|connTitle" -- Core` returns nothing.
+- [x] `mdLinkTarget`, `externalLink`, `cellLinks`, `aliasRender`, `textScope`, `cellHeadings`, and `linkEdges` suites pass.
 
 #### Task 3-3
 
@@ -893,8 +894,8 @@ The single label selector is behavior-neutral: `md-link` and `md-link-invalid` a
 
 **CHANGE**
 
-- [ ] Write `format.test.ts` "callout takes a heading's or quote's marker, and a list's alone": `## hi` → `> [!callout] hi`, `> hi` → `> [!callout] hi`, `- > foo` → `> [!callout] > foo`. The `- > foo` row goes red under the unconditional compose `stripQuotePrefix(stripInnerMarkers(line))`.
-- [ ] Apply the AFTER.
+- [x] Write `format.test.ts` "callout takes a heading's or quote's marker, and a list's alone": `## hi` → `> [!callout] hi`, `> hi` → `> [!callout] hi`, `- > foo` → `> [!callout] > foo`. The `- > foo` row goes red under the unconditional compose `stripQuotePrefix(stripInnerMarkers(line))`.
+- [x] Apply the AFTER.
 
 **AFTER**
 
@@ -934,11 +935,11 @@ The single label selector is behavior-neutral: `md-link` and `md-link-invalid` a
 
 **VERIFY**
 
-- [ ] `detect.test.ts:168-172` passes unchanged (it pins the head's `prefixEnd`).
-- [ ] The new `format.test.ts` row red under the unconditional compose, green restored.
-- [ ] `git grep -n "stripBlockMarkers" -- Core` returns nothing.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `detect.test.ts:168-172` passes unchanged (it pins the head's `prefixEnd`).
+- [x] The new `format.test.ts` row red under the unconditional compose, green restored.
+- [x] `git grep -n "stripBlockMarkers" -- Core` returns nothing.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 ---
 
@@ -955,12 +956,12 @@ The single label selector is behavior-neutral: `md-link` and `md-link-invalid` a
 
 **THE STANDARD:** The work is finished when a later review of it finds nothing to correct. Not just doing the chores — doing the laundry, folding it, picking up what fell out of the hamper, emptying the lint trap, leaving no trace that anything went wrong. Nothing is carried as a concern, nothing is deferred where the fix is known, and nothing is declared that wasn't watched happen. Where something genuinely couldn't get there, the report names which and why, and everything else is still finished. Ambiguity met during execution took the simplest reading and was recorded; it didn't stop the run.
 
-- [ ] Phase review (opus-medium, a simplification and a correctness reader per phase): Phase 1 · Phase 2 · Phase 3
-- [ ] Simplification (`code-simplification`) → adversarial (`adversarial-review`) over `cc725b334..HEAD`
-- [ ] Neutral before/after review (opus-high): the file list only; Before is `git show cc725b334:<path>`, After is the working tree; forbidden from `git diff`, `git log`, commit messages, and `.claude/`; returns a Positive/Neutral/Negative verdict, a per-file account, a ranked list of anything worse in After with `file:line`, and before/after line counts. Everything it ranks worse is resolved or ruled on before commit.
-- [ ] Own pass: gates · diff · deviations · criteria
-- [ ] Commit the work, reconcile the ledger, then a docs commit whose header names the work commit
-- [ ] Report delivered with `/view-changes` and the ± production delta
+- [x] Phase review (opus-medium, a simplification and a correctness reader per phase): Phase 1 · Phase 2 · Phase 3
+- [x] Simplification (`code-simplification`) → adversarial (`adversarial-review`) over `cc725b334..HEAD`
+- [x] Neutral before/after review (opus-high): the file list only; Before is `git show cc725b334:<path>`, After is the working tree; forbidden from `git diff`, `git log`, commit messages, and `.claude/`; returns a Positive/Neutral/Negative verdict, a per-file account, a ranked list of anything worse in After with `file:line`, and before/after line counts. Everything it ranks worse is resolved or ruled on before commit.
+- [x] Own pass: gates · diff · deviations · criteria
+- [x] Commit the work, reconcile the ledger, then a docs commit whose header names the work commit
+- [x] Report delivered with `/view-changes` and the ± production delta
 
 #### Reconciliation
 
@@ -986,3 +987,8 @@ The single label selector is behavior-neutral: `md-link` and `md-link-invalid` a
 #### Open Items
 
 #### Deviations
+
+- **Fence press test:** CodeMirror's own mousedown prevents the event once `linkPointer` declines, so the test asserts the caret lands off the link's edges and nothing opens, mirroring its HTML-block sibling (the plan's stated fallback).
+- **`linkInCode`:** The adversarial review found that a connection whose alias holds inline code (``[[Alpha|the `git` command]]``) is drawn as text, yet Enter committed it, and `slotNear`, `]`, and `[` already acted on it. At the owner's ruling, one `linkInCode` in `Input/edits.ts` replaces the caret-point `inCodeAt` checks in `commitAliasOnEnter`, `slotNear`, and `inAliasAt`, so the caret paths treat any connection code touches as text.
+- **`tokenMenuTarget`:** A connection's `editable` reads `edit !== undefined` rather than `true`, so a read-only target says so itself (neutral review).
+- **Live drive:** Ran after Phase 3 rather than between Phases 2 and 3, since Phase 3 changes no behavior; Enter went through CDP key events because the native key code didn't reach the window. Log: `.claude/skills/interaction-testing/test-logs/Pommora-LinkGestures-10-09-2026-1833.md`.
