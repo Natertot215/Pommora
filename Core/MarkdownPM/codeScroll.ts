@@ -1,6 +1,7 @@
 // A code block's lines scroll as one: each content line's code sits in a run its block's offset shifts, so the frame, the gutter, and the tag hold still while the code moves under them.
 import {
   EditorSelection,
+  MapMode,
   Prec,
   type Range,
   StateEffect,
@@ -14,14 +15,17 @@ import {
   keymap,
   ViewPlugin,
   type ViewUpdate,
+  WidgetType,
 } from '@codemirror/view'
 import { overScrollFace } from '@pommora/uix/Interactions/OverScroll'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 import { editorHost, redrawNudge } from './api'
+import { languageLoaded } from './codeHighlight'
 import { docScan, drawnLast } from './docCache'
 import { codeSeat } from './Engine/detect'
 import type { DocScan } from './Engine/docScan'
 import { lineIndexAt } from './Engine/markdownCode'
+import { perText } from './Engine/perText'
 import { lineElementAt } from './lineDom'
 
 /** A block by the start of its opening fence line; `overflow` is how far its widest line runs past the width its lines rest at. */
@@ -39,12 +43,10 @@ const scrollBlock = StateEffect.define<BlockScroll>()
 const hoverBlock = StateEffect.define<number | null>()
 const cutsRead = StateEffect.define<null>()
 
-/** A resting block's ellipsis colors by line code, for the run width, offset, and font they were read at; an empty color is a line that fits or is cut in plain text. */
-interface Cuts {
+/** The width a block's lines rest at and the font its code is set in, read from its first drawn line. */
+interface Rest {
   width: number
-  x: number
   font: string
-  colors: Map<string, string>
 }
 
 // KNOB: how far a sideways wheel over a resting block travels before the block reveals.
@@ -59,10 +61,10 @@ export const codeScrolls = StateField.define<CodeScrolls>({
     let { blocks, hovered } = value
     if (tr.docChanged && (blocks.length > 0 || hovered !== null)) {
       const scan = docScan.after(tr)
-      // Forward, so a line opened at the fence's own start leaves the key on the fence.
+      // Forward, so a line opened at the fence's own start leaves the key on the fence, and a deleted opener drops it.
       const kept = (from: number): number | null => {
-        const at = tr.changes.mapPos(from, 1)
-        return openerAt(scan, at) === at ? at : null
+        const at = tr.changes.mapPos(from, 1, MapMode.TrackAfter)
+        return at !== null && openerAt(scan, at) === at ? at : null
       }
       blocks = blocks.flatMap((b) => {
         const from = kept(b.from)
@@ -76,7 +78,7 @@ export const codeScrolls = StateField.define<CodeScrolls>({
     return blocks === value.blocks && hovered === value.hovered ? value : { blocks, hovered }
   },
   toJSON: ({ blocks }) => blocks.filter((b) => b.x > 0).map((b) => [b.from, b.x]),
-  // A warm entry restores only onto the text it was captured from, so its keys still open their fences; overflow is measured again on the next reveal.
+  // A warm entry restores only onto the text it was captured from, so its keys still open their fences; overflow is measured again once the block is drawn.
   fromJSON: (json: [number, number][]) => ({
     blocks: json.map(([from, x]) => ({ from, x, overflow: x })),
     hovered: null,
@@ -90,14 +92,36 @@ const liveBlock = (view: EditorView): number | null =>
     ? openerAt(docScan(view.state.doc), view.state.selection.main.head)
     : null
 
-const run = Decoration.mark({ class: `codeblock-run ${overScrollFace}` })
+// Inclusive, so a tab stop at either edge of the code draws inside its run.
+const run = Decoration.mark({ class: `codeblock-run ${overScrollFace}`, inclusive: true })
 const ink = Decoration.mark({ class: 'codeblock-ink' })
 const nowrap = Decoration.line({ class: 'codeblock-nowrap' })
+
+/** A tab drawn as the stop it reaches from its run's start; a run shifts by text-indent, which moves where the browser would otherwise count stops from. */
+class TabStop extends WidgetType {
+  constructor(readonly cols: number) {
+    super()
+  }
+  eq(other: TabStop): boolean {
+    return other.cols === this.cols
+  }
+  toDOM(): HTMLElement {
+    const el = document.createElement('span')
+    el.className = 'codeblock-tab'
+    el.style.width = `${this.cols}ch`
+    return el
+  }
+}
+const tabStop = perText((cols) => Decoration.replace({ widget: new TabStop(Number(cols)) }), 16)
+
+const cutKey = (rest: Rest, x: number, code: string): string =>
+  `${rest.width}|${x}|${rest.font}|${code}`
 
 function decorate(
   view: EditorView,
   live: number | null,
-  cuts: ReadonlyMap<number, Cuts>,
+  rests: ReadonlyMap<number, Rest>,
+  cuts: ReadonlyMap<string, string>,
 ): [DecorationSet, DecorationSet] {
   if (!on(view)) return [Decoration.none, Decoration.none]
   const scan = docScan(view.state.doc)
@@ -116,8 +140,9 @@ function decorate(
     const seat = ls + codeSeat(scan.lines[i], f)
     const b = blocks.find((s) => s.from === f.from)
     const shown = f.from === live || f.from === hovered
-    const c = shown ? undefined : cuts.get(f.from)
-    const cut = c?.x === (b?.x ?? 0) ? c.colors.get(scan.lines[i].slice(seat - ls)) : undefined
+    const rest = rests.get(f.from)
+    const cut =
+      !shown && rest ? cuts.get(cutKey(rest, b?.x ?? 0, scan.lines[i].slice(seat - ls))) : undefined
     const vars = [
       (b || shown) && `--code-scroll:${b?.x ?? 0}px;--code-overflow:${b?.overflow ?? 0}px`,
       cut && `--code-cut:${cut}`,
@@ -134,9 +159,19 @@ function decorate(
     if (seat < le) {
       ranges.push(run.range(seat, le))
       inks.push(ink.range(seat, le))
+      const code = scan.lines[i].slice(seat - ls)
+      if (code.includes('\t'))
+        for (let k = 0, col = 0; k < code.length; k++) {
+          if (code[k] !== '\t') col++
+          else {
+            const cols = view.state.tabSize - (col % view.state.tabSize)
+            inks.push(tabStop(String(cols)).range(seat + k, seat + k + 1))
+            col += cols
+          }
+        }
     }
   }
-  return [Decoration.set(ranges), Decoration.set(inks)]
+  return [Decoration.set(ranges, true), Decoration.set(inks, true)]
 }
 
 // Made on first use, so nothing that only imports the editor creates a canvas.
@@ -151,34 +186,75 @@ const widthsOf = drawnLast((key: string) => {
   return textWidth(key.slice(0, cut), key.slice(cut + 1))
 })
 
-/** A run's tab stops count from the run's own start, so a tab widens to the next stop there. */
+/** A run's tabs reach stops counted from the run's own start, as its tab stops draw them. */
 const expandTabs = (text: string, size: number): string =>
   text.replace(/[^\t]*\t/g, (s) => s.slice(0, -1) + ' '.repeat(size - ((s.length - 1) % size)))
 
-/** The width of a block's widest code line, read from every line of the block, drawn or not; a pass that leaves the text, block, and font alone reuses the last one. */
-const widestHeld = new WeakMap<
-  EditorView,
-  { doc: Text; from: number; font: string; widest: number }
->()
-function widestOf(view: EditorView, from: number, font: string): number {
-  const { doc } = view.state
+interface Widest {
+  widest: number
+  at: number
+  end: number
+}
+
+/** The width of a block's widest code line, read from every line of the block, drawn or not. A pass that leaves the text, block, and font alone reuses the last one, and an edit inside the block measures only the lines it touched unless it shortened the widest. */
+const widestHeld = new WeakMap<EditorView, Widest & { doc: Text; from: number; font: string }>()
+function widestOf(view: EditorView, from: number, font: string, edit?: ViewUpdate): number {
+  const { doc, tabSize } = view.state
   const held = widestHeld.get(view)
   if (held?.doc === doc && held.from === from && held.font === font) return held.widest
   const scan = docScan(doc)
-  const close = lineIndexAt(scan, scan.fences[lineIndexAt(scan, from)]!.to)
-  let widest = 0
-  widthsOf(view, (read) => {
-    for (let i = lineIndexAt(scan, from) + 1; i < close; i++) {
-      const code = scan.lines[i].slice(codeSeat(scan.lines[i], scan.fences[i]!))
-      widest = Math.max(widest, read(`${font}\n${expandTabs(code, view.state.tabSize)}`))
-    }
+  const open = lineIndexAt(scan, from)
+  const close = lineIndexAt(scan, scan.fences[open]!.to)
+  const lineOf = (i: number, w: number): Widest => ({
+    widest: w,
+    at: scan.lineStarts[i],
+    end: scan.lineStarts[i] + scan.lines[i].length,
   })
-  widestHeld.set(view, { doc, from, font, widest })
-  return widest
+  const codeOf = (i: number) =>
+    expandTabs(scan.lines[i].slice(codeSeat(scan.lines[i], scan.fences[i]!)), tabSize)
+  const changes = edit?.changes
+  const carried =
+    held &&
+    changes &&
+    held.doc === edit.startState.doc &&
+    held.font === font &&
+    changes.mapPos(held.from, 1, MapMode.TrackAfter) === from
+  let best: Widest = { widest: 0, at: -1, end: -1 }
+  if (carried) {
+    changes.iterChangedRanges((_fa, _ta, fb, tb) => {
+      const last = Math.min(close - 1, lineIndexAt(scan, tb))
+      for (let i = Math.max(open + 1, lineIndexAt(scan, fb)); i <= last; i++) {
+        const w = textWidth(font, codeOf(i))
+        if (w > best.widest) best = lineOf(i, w)
+      }
+    })
+    if (!changes.touchesRange(held.at, held.end) && held.widest > best.widest)
+      best = { widest: held.widest, at: changes.mapPos(held.at), end: changes.mapPos(held.end) }
+  }
+  if (!carried || (changes.touchesRange(held.at, held.end) && best.widest < held.widest)) {
+    best = { widest: 0, at: -1, end: -1 }
+    widthsOf(view, (read) => {
+      for (let i = open + 1; i < close; i++) {
+        const w = read(`${font}\n${codeOf(i)}`)
+        if (w > best.widest) best = lineOf(i, w)
+      }
+    })
+  }
+  widestHeld.set(view, { doc, from, font, ...best })
+  return best.widest
+}
+
+/** The width a drawn code line rests at and its font. */
+function restOf(line: HTMLElement): Rest {
+  const cs = getComputedStyle(line)
+  return {
+    width: line.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight),
+    font: cs.font,
+  }
 }
 
 /** How far a block's widest line runs past the width its lines rest at, in layout pixels; null while none of its lines is drawn to take the font and width from. */
-function overflowOf(view: EditorView, from: number): number | null {
+function overflowOf(view: EditorView, from: number, edit?: ViewUpdate): number | null {
   const scan = docScan(view.state.doc)
   const open = lineIndexAt(scan, from)
   const last = Math.min(
@@ -189,15 +265,14 @@ function overflowOf(view: EditorView, from: number): number | null {
   for (let i = Math.max(open + 1, lineIndexAt(scan, view.viewport.from)); i <= last && !sample; i++)
     sample = lineElementAt(view, scan.lineStarts[i])
   if (!sample) return null
-  const cs = getComputedStyle(sample)
-  const rest = sample.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)
-  return Math.max(0, Math.ceil(widestOf(view, from, cs.font) - rest))
+  const rest = restOf(sample)
+  return Math.max(0, Math.ceil(widestOf(view, from, rest.font, edit) - rest.width))
 }
 
 /** The color of the code a resting run's ellipsis stands in for: the first character past what the run shows, found the way the ellipsis is placed, by the widths of the code before it. */
-function cutColor(runEl: HTMLElement, code: string, c: Cuts, tabSize: number): string {
-  const width = (text: string) => textWidth(c.font, expandTabs(text, tabSize))
-  const edge = c.x + c.width
+function cutColor(view: EditorView, start: number, code: string, rest: Rest, x: number): string {
+  const width = (text: string) => textWidth(rest.font, expandTabs(text, view.state.tabSize))
+  const edge = x + rest.width
   if (width(code) <= edge) return ''
   const room = edge - width('…')
   let lo = 0
@@ -207,13 +282,9 @@ function cutColor(runEl: HTMLElement, code: string, c: Cuts, tabSize: number): s
     if (width(code.slice(0, mid + 1)) > room) hi = mid
     else lo = mid + 1
   }
-  const walk = document.createTreeWalker(runEl, NodeFilter.SHOW_TEXT)
-  for (let n = walk.nextNode(), at = 0; n; at += n.nodeValue!.length, n = walk.nextNode()) {
-    if (lo >= at + n.nodeValue!.length) continue
-    const host = n.parentElement!
-    return host.classList.contains('codeblock-ink') ? '' : getComputedStyle(host).color
-  }
-  return ''
+  const { node } = view.domAtPos(start + lo + 1, -1)
+  const host = node.nodeType === Node.TEXT_NODE ? node.parentElement : (node as HTMLElement)
+  return host ? getComputedStyle(host).color : ''
 }
 
 /** The run's on-screen box for a position at or past its line's code, read only once the scan says the position is code. */
@@ -266,19 +337,29 @@ class CodeScroll {
   stale = true
   /** Sideways travel gathered over a resting block, toward revealing it. */
   gathered = { from: -1, dx: 0 }
-  cuts = new Map<number, Cuts>()
-  /** Whether a drawn resting line may have an ellipsis color not yet read. */
+  /** Each drawn block's resting width and font, by its key; an edit that touches a block drops it to be read again. */
+  rests = new Map<number, Rest>()
+  /** Whether geometry moved since the drawn blocks' rests were last checked. */
+  reflow = false
+  /** Each drawn resting line's ellipsis color, by its block's rest, its offset, and its code; empty where the line fits. */
+  cuts = new Map<string, string>()
+  /** Whether a drawn line may have a rest or an ellipsis color not yet read. */
   unread = true
 
   constructor(view: EditorView) {
     this.live = liveBlock(view)
-    ;[this.deco, this.inks] = decorate(view, this.live, this.cuts)
+    ;[this.deco, this.inks] = decorate(view, this.live, this.rests, this.cuts)
   }
 
   update(u: ViewUpdate): void {
     const live = liveBlock(u.view)
     if (live !== this.live || u.docChanged || u.geometryChanged) this.stale = true
-    if (u.geometryChanged) this.unread = true
+    if (u.docChanged) this.rests = mapRests(this.rests, u)
+    if (u.geometryChanged) this.reflow = this.unread = true
+    if (u.transactions.some((tr) => tr.effects.some((e) => e.is(languageLoaded)))) {
+      this.cuts.clear()
+      this.unread = true
+    }
     if (
       live !== this.live ||
       u.docChanged ||
@@ -287,49 +368,74 @@ class CodeScroll {
       u.transactions.some((tr) => tr.effects.some((e) => e.is(redrawNudge) || e.is(cutsRead)))
     ) {
       this.live = live
-      ;[this.deco, this.inks] = decorate(u.view, live, this.cuts)
+      ;[this.deco, this.inks] = decorate(u.view, live, this.rests, this.cuts)
       this.unread = true
     }
   }
 
-  /** Reads the ellipsis color of every drawn resting line not yet read; true when one takes a color. */
-  readCuts(view: EditorView): boolean {
+  /** Reads what the drawn blocks other than the live one lack: each block's rest, which re-clamps an offset its width no longer allows, and each resting line's ellipsis color. */
+  read(view: EditorView): StateEffect<unknown>[] {
     const scan = docScan(view.state.doc)
     const { blocks, hovered } = view.state.field(codeScrolls)
+    const cuts = new Map<string, string>()
+    const checked = new Set<number>()
+    const effects: StateEffect<unknown>[] = []
     let colored = false
-    let c: Cuts | undefined
-    let from = -1
     for (
       let i = lineIndexAt(scan, view.viewport.from), last = lineIndexAt(scan, view.viewport.to);
       i <= last;
       i++
     ) {
       const f = scan.fences[i]
-      if (f?.role !== 'content' || f.from === this.live || f.from === hovered) continue
-      const ls = scan.lineStarts[i]
-      const runEl = lineElementAt(view, ls)?.querySelector<HTMLElement>('.codeblock-run')
-      if (!runEl) continue
-      if (f.from !== from) {
-        from = f.from
-        const x = blocks.find((s) => s.from === from)?.x ?? 0
-        c = this.cuts.get(from)
-        if (c?.x !== x || c.width !== runEl.clientWidth) {
-          c = { width: runEl.clientWidth, x, font: getComputedStyle(runEl).font, colors: new Map() }
-          this.cuts.set(from, c)
+      if (f?.role !== 'content' || f.from === this.live) continue
+      const b = blocks.find((s) => s.from === f.from)
+      let rest = this.rests.get(f.from)
+      if (!rest || (this.reflow && !checked.has(f.from))) {
+        const line = lineElementAt(view, scan.lineStarts[i])
+        if (!line) continue
+        checked.add(f.from)
+        const read = restOf(line)
+        const moved = read.width !== rest?.width || read.font !== rest.font
+        rest = moved ? read : rest!
+        this.rests.set(f.from, rest)
+        if (b && moved) {
+          const overflow = Math.max(0, Math.ceil(widestOf(view, f.from, rest.font) - rest.width))
+          if (overflow !== b.overflow)
+            effects.push(scrollBlock.of({ ...b, x: Math.min(b.x, overflow), overflow }))
         }
       }
-      const code = scan.lines[i].slice(codeSeat(scan.lines[i], f))
-      if (c!.colors.has(code)) continue
-      const color = cutColor(runEl, code, c!, view.state.tabSize)
-      c!.colors.set(code, color)
-      colored ||= color !== ''
+      if (f.from === hovered) continue
+      const seat = scan.lineStarts[i] + codeSeat(scan.lines[i], f)
+      const code = scan.lines[i].slice(seat - scan.lineStarts[i])
+      const key = cutKey(rest, b?.x ?? 0, code)
+      let color = this.cuts.get(key)
+      if (color === undefined) {
+        color = cutColor(view, seat, code, rest, b?.x ?? 0)
+        colored ||= color !== ''
+      }
+      cuts.set(key, color)
     }
-    return colored
+    this.cuts = cuts
+    this.reflow = false
+    if (colored) effects.push(cutsRead.of(null))
+    return effects
   }
 }
 
+/** Carries each block's rest through an edit to its new key, dropping a block the edit touched or whose opener it deleted. */
+function mapRests(rests: Map<number, Rest>, u: ViewUpdate): Map<number, Rest> {
+  const scan = docScan(u.startState.doc)
+  const out = new Map<number, Rest>()
+  for (const [from, rest] of rests) {
+    const to = scan.fences[lineIndexAt(scan, from)]?.to ?? from
+    const at = u.changes.mapPos(from, 1, MapMode.TrackAfter)
+    if (at !== null && !u.changes.touchesRange(from, to)) out.set(at, rest)
+  }
+  return out
+}
+
 const codeScrollPlugin = ViewPlugin.fromClass(CodeScroll, {
-  // The ink is a regular decoration, so it always sits inside the run, whichever way the syntax marks nest with it.
+  // The ink and the tab stops are regular decorations, so they sit inside the run, whichever way the syntax marks nest with them.
   provide: (p) => [
     EditorView.outerDecorations.of((v) => v.plugin(p)?.deco ?? Decoration.none),
     EditorView.decorations.of((v) => v.plugin(p)?.inks ?? Decoration.none),
@@ -377,13 +483,21 @@ const codeScrollPlugin = ViewPlugin.fromClass(CodeScroll, {
   },
 })
 
-/** A code line clips rather than wraps, so its boundary is its logical end; CM's wrap probe at the editor's edge would land on a clipped glyph. */
+/** A code line clips rather than wraps, so its boundary is its logical end; CM's wrap probe at the editor's edge would land on a clipped glyph. Backward, it takes the code's indentation first, then the code's start, as CM's own Home does. */
 function lineBoundary(forward: boolean, extend: boolean) {
   return (view: EditorView): boolean => {
     const scan = docScan(view.state.doc)
     const r = view.state.selection.main
-    if (!on(view) || scan.fences[lineIndexAt(scan, r.head)]?.role !== 'content') return false
-    const to = view.moveToLineBoundary(r, forward, false)
+    const i = lineIndexAt(scan, r.head)
+    const f = scan.fences[i]
+    if (!on(view) || f?.role !== 'content') return false
+    let to = view.moveToLineBoundary(r, forward, false)
+    if (!forward) {
+      const seat = scan.lineStarts[i] + codeSeat(scan.lines[i], f)
+      const text = scan.lines[i].slice(seat - scan.lineStarts[i])
+      const indent = seat + text.length - text.trimStart().length
+      to = EditorSelection.cursor(r.head === indent ? seat : indent)
+    }
     view.dispatch({
       selection: EditorSelection.create([extend ? EditorSelection.range(r.anchor, to.head) : to]),
       scrollIntoView: true,
@@ -407,26 +521,27 @@ const follow = EditorView.updateListener.of((u) => {
   const plugin = u.view.plugin(codeScrollPlugin)
   const from = plugin?.live ?? null
   if (!plugin || from === null || (!plugin.stale && !u.selectionSet)) return
-  const { state } = u.view
-  const b = state.field(codeScrolls).blocks.find((s) => s.from === from)
-  const measured = plugin.stale || !b ? overflowOf(u.view, from) : null
+  const field = u.view.state.field(codeScrolls)
+  const b = field.blocks.find((s) => s.from === from)
+  const measured = plugin.stale || !b ? overflowOf(u.view, from, u) : null
   if (measured !== null) plugin.stale = false
   const overflow = measured ?? b?.overflow
   if (overflow === undefined) return
   const shift = caretShift(u.view)
-  // Reading the caret can run CM's pending measure, whose own follow then already dispatched from fresher layout.
-  if (u.view.state !== state) return
+  // Reading the caret can run CM's pending measure, whose own follow may already have moved the offset from fresher layout.
+  if (u.view.state.field(codeScrolls) !== field) return
   const x = clamp((b?.x ?? 0) + shift, 0, overflow)
   if (x !== b?.x || overflow !== b?.overflow)
     u.view.dispatch({ effects: scrollBlock.of({ from, x, overflow }) })
 })
 
-// The ellipsis colors are read once the lines they sit on are drawn, and a dispatch from here draws them before the frame paints.
-const readCuts = EditorView.updateListener.of((u) => {
+// Rests and ellipsis colors are read once the lines they belong to are drawn, and a dispatch from here draws them before the frame paints.
+const readDrawn = EditorView.updateListener.of((u) => {
   const plugin = u.view.plugin(codeScrollPlugin)
   if (!plugin?.unread || !on(u.view)) return
   plugin.unread = false
-  if (plugin.readCuts(u.view)) u.view.dispatch({ effects: cutsRead.of(null) })
+  const effects = plugin.read(u.view)
+  if (effects.length > 0) u.view.dispatch({ effects })
 })
 
-export const codeScroll = [codeScrolls, codeScrollPlugin, boundaryKeys, follow, readCuts]
+export const codeScroll = [codeScrolls, codeScrollPlugin, boundaryKeys, follow, readDrawn]
