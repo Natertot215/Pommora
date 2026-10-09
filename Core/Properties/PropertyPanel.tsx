@@ -318,10 +318,17 @@ export function PropertyPanel({
     else setRevealed((prev) => new Set([...prev].filter((r) => r !== id)))
   }
   const rowMenu = async (id: string, name: string, value: PropertyValue): Promise<void> => {
+    const def = schema.find((d) => d.id === id)
     const action = await popMenu(
-      propertyMenuModel({ kind: 'page-value', name, filled: !isBlankValue(value) }),
+      propertyMenuModel({
+        kind: 'page-value',
+        name,
+        filled: !isBlankValue(value),
+        editable: def?.type === 'text',
+      }),
     )
-    if (action === 'value:clear' || action === 'value:remove')
+    if (action === 'value:edit' && def) runIntent(def, value, { kind: 'edit' }, null)
+    else if (action === 'value:clear' || action === 'value:remove')
       emptyRow(id, action === 'value:clear')
   }
   const valueMenu = (id: string, value: PropertyValue, target: EventTarget | null): boolean => {

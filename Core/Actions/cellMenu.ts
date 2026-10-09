@@ -21,6 +21,7 @@ type CellMenuKind =
       barCapable?: boolean
     }
   | { kind: 'link'; filled: boolean }
+  | { kind: 'text'; filled: boolean }
   | { kind: 'file'; onChip: boolean }
   | { kind: 'clear-only' }
   | { kind: 'remove-only' }
@@ -31,6 +32,7 @@ export type CellMenuAction =
   | PageMoveAction
   | PropertyAction
   | ConnEditAction
+  | 'cell:edit'
   | 'cell:clear'
   | 'cell:hide'
   | 'file:add'
@@ -67,8 +69,9 @@ function baseCellMenu(
       return { kind: 'link', filled }
     case 'file':
       return { kind: 'file', onChip }
-    case 'context':
     case 'text':
+      return { kind: 'text', filled }
+    case 'context':
       return filled ? { kind: 'clear-only' } : null
     case 'select':
     case 'multiSelect':
@@ -88,10 +91,34 @@ function baseCellMenu(
 export function cellMenuModel(ctx: CellMenuContext): ActionItem<CellMenuAction>[] {
   return joinGroups([
     ...baseCellMenuModel(ctx),
-    ctx.hideable && ctx.kind !== 'title'
-      ? [{ label: ctx.kind === 'file' ? 'Remove from View' : 'Remove', action: 'cell:hide' }]
-      : [],
+    [
+      ...(clearable(ctx) ? [{ label: 'Clear', action: 'cell:clear' as const }] : []),
+      ...(ctx.hideable && ctx.kind !== 'title'
+        ? [
+            {
+              label: ctx.kind === 'file' ? 'Remove from View' : 'Remove',
+              action: 'cell:hide' as const,
+            },
+          ]
+        : []),
+    ],
   ])
+}
+
+function clearable(ctx: CellMenuContext): boolean {
+  switch (ctx.kind) {
+    case 'style-only':
+      return ctx.clearable === true
+    case 'link':
+    case 'text':
+      return ctx.filled
+    case 'clear-only':
+      return true
+    case 'title':
+    case 'file':
+    case 'remove-only':
+      return false
+  }
 }
 
 function baseCellMenuModel(ctx: CellMenuContext): ActionItem<CellMenuAction>[][] {
@@ -107,20 +134,16 @@ function baseCellMenuModel(ctx: CellMenuContext): ActionItem<CellMenuAction>[][]
         }),
       ]
     case 'style-only':
-      return [
-        styleBranch({ type: ctx.type, current: ctx.current, barCapable: ctx.barCapable }),
-        ctx.clearable ? [{ label: 'Clear', action: 'cell:clear' }] : [],
-      ]
+      return [styleBranch({ type: ctx.type, current: ctx.current, barCapable: ctx.barCapable })]
     case 'link':
       return [
-        ctx.filled
-          ? [
-              { label: 'Edit', action: 'editLink' },
-              { label: 'Rename', action: 'rename' },
-              { label: 'Clear', action: 'cell:clear' },
-            ]
-          : [{ label: 'Edit', action: 'editLink' }],
+        [
+          { label: 'Edit', action: 'editLink' },
+          ...(ctx.filled ? [{ label: 'Rename', action: 'rename' as const }] : []),
+        ],
       ]
+    case 'text':
+      return [[{ label: 'Edit', action: 'cell:edit' }]]
     case 'file':
       return ctx.onChip
         ? [
@@ -132,7 +155,6 @@ function baseCellMenuModel(ctx: CellMenuContext): ActionItem<CellMenuAction>[][]
           ]
         : [[{ label: 'Add File', action: 'file:add' }]]
     case 'clear-only':
-      return [[{ label: 'Clear', action: 'cell:clear' }]]
     case 'remove-only':
       return []
   }
