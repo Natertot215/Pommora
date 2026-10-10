@@ -102,12 +102,12 @@ What a person sees: `[x](Page)` edits like `[[Page]]`; every link reads **Rename
 
 #### Process Overview
 
-- [ ] **Phase 1** — Reading Foundation
-  - [ ] Task 1-1 — Apply the proven foundation
-  - [ ] Task 1-2 — The token type's `wikiLink` arm
-  - [ ] Task 1-3 — The Format menu reads the fence
-  - [ ] Task 1-4 — The unclosed reader
-  - [ ] Review Checkpoint
+- [x] **Phase 1** — Reading Foundation
+  - [x] Task 1-1 — Apply the proven foundation
+  - [x] Task 1-2 — The token type's `wikiLink` arm
+  - [x] Task 1-3 — The Format menu reads the fence
+  - [x] Task 1-4 — The unclosed reader
+  - [x] Review Checkpoint
 - [ ] **Phase 2** — Values, Writers, and the Clipboard Reader
   - [ ] Task 2-1 — One reader for a whole link
   - [ ] Task 2-2 — The host readers move together
@@ -4710,3 +4710,7 @@ The anchor is pinned by a test for a filled and an unfilled label.
 - **A Text value's pane and a rename in another window:** With connections read from the host (Task 3-1), an open TextPane reads the index as of its last render, so a rename made in another window while the pane is open can trail by one render (the audit's F-094 note).
 
 #### Deviations
+
+- **Task 1-2, the `Token` union's plain arm:** the AFTER's `TokenBase & { kind: Exclude<TokenKind, 'wikiLink'> }` made `TokenOf<'link'>` resolve to `never` and stopped `kind === 'link'` from narrowing; it landed as a distributive mapped type over the plain kinds (`tokens.ts`), so `TokenOf<K>` resolves for every kind. Later AFTER blocks that write `TokenOf<'link'>` work as written against the tree.
+- **Task 1-4, `isLiteralAt`:** the AFTER read `connectionAt(scan, c) ?? openConnectionAt(scan, c)`, and `connectionAt` counts a caret on a link's first bracket as inside it, so every typography replacement stood down with the caret directly before a `[[…]]` (`see -[[B]]` then `>` wrote nothing where the baseline wrote `→`). It reads `openConnectionAt` alone, which is non-null inside a closed or unclosed connection and null before its `[[`; pinned in `edits.test.ts`. Found at the Phase 1 checkpoint.
+- **Task 1-1, the embed-line tests:** the proven diff deleted `embedClaims.test.ts` whole, though eight of its cases pinned `blockEmbedLines` and the scan's embed lines, which survive and feed `buildTiles`; those eight moved unchanged into `detect.test.ts` at the checkpoint.
