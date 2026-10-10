@@ -6,9 +6,12 @@ import {
   linkTokenAt,
   shiftToken,
   type Token,
+  type TokenKind,
+  type TokenOf,
 } from './tokens'
 
-const byKind = (tokens: Token[], kind: string): Token[] => tokens.filter((t) => t.kind === kind)
+const byKind = <K extends TokenKind>(tokens: Token[], kind: K): TokenOf<K>[] =>
+  tokens.filter((t): t is TokenOf<K> => t.kind === kind)
 const slice = (text: string, r: [number, number]): string => text.slice(r[0], r[1])
 
 describe('emphasis tokens (marker geometry)', () => {
@@ -118,7 +121,7 @@ describe('an aliased wikilink separates what it shows from what it resolves', ()
     const t = '[[Q3 Plan|the plan]]'
     const w = byKind(tokenize(t), 'wikiLink')[0]
     expect(slice(t, w.contentRange)).toBe('the plan')
-    expect(slice(t, w.resolveRange as [number, number])).toBe('Q3 Plan')
+    expect(slice(t, w.resolveRange)).toBe('Q3 Plan')
     expect(w.markerRanges.map((m) => slice(t, m))).toEqual(['[[Q3 Plan|', ']]'])
   })
 
@@ -145,9 +148,9 @@ describe('an aliased wikilink separates what it shows from what it resolves', ()
     expect(Object.keys(moved).sort()).toEqual(Object.keys(raw).sort())
     expect(moved.range).toEqual([raw.range[0] + 10, raw.range[1] + 10])
     expect(moved.contentRange).toEqual([raw.contentRange[0] + 10, raw.contentRange[1] + 10])
-    expect(moved.resolveRange).toEqual([
-      (raw.resolveRange as [number, number])[0] + 10,
-      (raw.resolveRange as [number, number])[1] + 10,
+    expect(moved).toHaveProperty('resolveRange', [
+      raw.resolveRange[0] + 10,
+      raw.resolveRange[1] + 10,
     ])
     expect(moved.markerRanges).toEqual(raw.markerRanges.map(([s, e]) => [s + 10, e + 10]))
   })
@@ -157,8 +160,8 @@ describe('a heading link separates its page half, its fragment, and what it reso
   it('[[Page#H]] carries resolveRange on the page, fragment on the heading, and content across both', () => {
     const t = '[[Page#H]]'
     const w = byKind(tokenize(t), 'wikiLink')[0]
-    expect(slice(t, w.resolveRange as [number, number])).toBe('Page')
-    expect(slice(t, w.fragment as [number, number])).toBe('H')
+    expect(slice(t, w.resolveRange)).toBe('Page')
+    expect(slice(t, w.heading as [number, number])).toBe('H')
     expect(slice(t, w.contentRange)).toBe('Page#H')
     expect(aliasedToken(w)).toBe(false)
   })
@@ -166,24 +169,33 @@ describe('a heading link separates its page half, its fragment, and what it reso
   it('[[#H]] resolves an empty page span and carries the heading as its fragment', () => {
     const t = '[[#H]]'
     const w = byKind(tokenize(t), 'wikiLink')[0]
-    const [rs, re] = w.resolveRange as [number, number]
+    const [rs, re] = w.resolveRange
     expect(re - rs).toBe(0)
-    expect(slice(t, w.fragment as [number, number])).toBe('H')
+    expect(slice(t, w.heading as [number, number])).toBe('H')
   })
 
   it('[[Page#H|a]] shows the alias, resolves the page, and still carries the heading as its fragment', () => {
     const t = '[[Page#H|a]]'
     const w = byKind(tokenize(t), 'wikiLink')[0]
     expect(slice(t, w.contentRange)).toBe('a')
-    expect(slice(t, w.resolveRange as [number, number])).toBe('Page')
-    expect(slice(t, w.fragment as [number, number])).toBe('H')
+    expect(slice(t, w.resolveRange)).toBe('Page')
+    expect(slice(t, w.heading as [number, number])).toBe('H')
     expect(aliasedToken(w)).toBe(true)
+  })
+
+  it('a wikiLink carries its title span as resolveRange and its heading span as heading, and a weblink carries no resolveRange', () => {
+    expect(tokenize('[[Page#H|a]]')[0]).toMatchObject({
+      kind: 'wikiLink',
+      resolveRange: [2, 6],
+      heading: [7, 8],
+    })
+    expect(tokenize('[x](u)')[0]).not.toHaveProperty('resolveRange')
   })
 
   it('[[Page#]] carries no fragment and reads as the page alone', () => {
     const t = '[[Page#]]'
     const w = byKind(tokenize(t), 'wikiLink')[0]
-    expect(w.fragment).toBeUndefined()
+    expect(w.heading).toBeUndefined()
     expect(slice(t, w.contentRange)).toBe('Page')
   })
 })

@@ -1,6 +1,13 @@
 import type { LinkStatus } from '../../Connections/connections'
 import { normalizeTitle } from '../../Paths/caseFold'
-import { aliasedToken, headingOf, linkTarget, type Token } from '../Engine/tokens'
+import {
+  aliasedToken,
+  headingOf,
+  type LinkKind,
+  linkTarget,
+  type Token,
+  type TokenOf,
+} from '../Engine/tokens'
 import type {
   ConnCellApply,
   ConnEditAction,
@@ -67,9 +74,13 @@ export function resolveMdTarget(index: PageIndex | undefined, rawTarget: string)
   return { kind: 'external', url: rawTarget }
 }
 
-export function tokenTarget(index: PageIndex | undefined, text: string, tk: Token): MdTarget {
+export function tokenTarget(
+  index: PageIndex | undefined,
+  text: string,
+  tk: TokenOf<LinkKind>,
+): MdTarget {
   if (tk.kind === 'link') return resolveMdTarget(index, linkTarget(text, tk))
-  const [rs, re] = tk.resolveRange!
+  const [rs, re] = tk.resolveRange
   return titleTarget(index, text.slice(rs, re), headingOf(text, tk))
 }
 
@@ -136,7 +147,7 @@ function linkStatus(target: MdTarget): LinkStatus {
 export function wikiLinkView(
   conn: ConnectionsApi,
   text: string,
-  tk: Token,
+  tk: TokenOf<'wikiLink'>,
   ownKeys: readonly string[] | undefined,
 ): WikiLinkView {
   const target = tokenTarget(conn, text, tk)

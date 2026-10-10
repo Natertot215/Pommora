@@ -1,4 +1,4 @@
-import { shiftToken, tokenize, type TokenKind, wrappedSpan } from '../Engine/tokens'
+import { type LinkKind, shiftToken, tokenize, type TokenKind, wrappedSpan } from '../Engine/tokens'
 import {
   headingParts,
   calloutHeadPrefixLen,
@@ -45,7 +45,7 @@ const WRAP = {
 } as const
 
 interface LinkWrap {
-  kind: 'link' | 'wikiLink'
+  kind: LinkKind
   open: string
   close: string
   caret: (from: number, to: number) => number

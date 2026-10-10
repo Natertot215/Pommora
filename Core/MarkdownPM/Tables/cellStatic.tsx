@@ -4,8 +4,9 @@ import {
   holdsTokens,
   linkAddress,
   linkTokenAt,
+  type LinkKind,
   tokenize,
-  type Token,
+  type TokenOf,
 } from '../Engine/tokens'
 import { MD_LINK_CLASS, mdLinkClass } from '../decorations'
 import {
@@ -75,7 +76,7 @@ export function renderCellContent(
     if (s > pos) out.push(text.slice(pos, s))
     const content = text.slice(tk.contentRange[0], tk.contentRange[1])
     if (tk.kind === 'wikiLink') {
-      const [rs, re] = tk.resolveRange!
+      const [rs, re] = tk.resolveRange
       const view = conn && wikiLinkView(conn, text, tk, around?.ownKeys)
       if (!view) out.push(text.slice(s, e))
       else if (view.status === 'phantom')
@@ -93,7 +94,7 @@ export function renderCellContent(
       else {
         // An alias overrides both halves, so only an unaliased link draws its page and heading.
         const alias = aliasedToken(tk)
-        const frag = view.status === 'resolved' && !alias ? tk.fragment : undefined
+        const frag = view.status === 'resolved' && !alias ? tk.heading : undefined
         const showPage = headingLinkStyle !== 'heading-only' && !view.bare
         out.push(
           <span
@@ -447,8 +448,8 @@ function cellLinkTarget(
 
 /** `still` re-reads the link when the action is chosen; `tk` and `text` are what the menu was built from. */
 function menuTarget(
-  still: () => { text: string; tk: Token } | null,
-  tk: Token,
+  still: () => { text: string; tk: TokenOf<LinkKind> } | null,
+  tk: TokenOf<LinkKind>,
   text: string,
   api: ConnectionsApi,
   host: EditorHost,
@@ -458,7 +459,7 @@ function menuTarget(
   return tokenMenuTarget(tk, tokenTarget(api, text, tk), {
     wiki: (action) => {
       const now = still()
-      if (!now) return
+      if (now?.tk.kind !== 'wikiLink') return
       const { pipeAt, select } = wikiAuthorTarget(now.text, now.tk, action)
       if (pipeAt !== undefined) onCommit(`${now.text.slice(0, pipeAt)}|${now.text.slice(pipeAt)}`)
       onSelect(select)

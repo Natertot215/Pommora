@@ -26,21 +26,30 @@ export type TokenKind =
   | 'citationRef'
   | 'htmlTag'
 
-export interface Token {
-  kind: TokenKind
-  range: [number, number]
-  contentRange: [number, number]
-  resolveRange?: [number, number]
-  fragment?: [number, number]
-  markerRanges: [number, number][]
+type Span = [number, number]
+
+interface TokenBase {
+  range: Span
+  contentRange: Span
+  markerRanges: Span[]
   color?: HighlightColor
   /** Inside an HTML block, where HTML Formatting draws the source raw. */
   inHtml?: true
 }
 
+export type LinkKind = 'link' | 'wikiLink'
+
+type PlainKind = Exclude<TokenKind, 'wikiLink'>
+
+export type Token =
+  | (TokenBase & { kind: 'wikiLink'; resolveRange: Span; heading?: Span })
+  | { [K in PlainKind]: TokenBase & { kind: K } }[PlainKind]
+
+export type TokenOf<K extends TokenKind> = Extract<Token, { kind: K }>
+
 // A connection's title half, which alone resolves; it starts the shown text unless an alias replaces it.
 export const aliasedToken = (tk: Token): boolean =>
-  tk.resolveRange !== undefined && tk.contentRange[0] !== tk.resolveRange[0]
+  tk.kind === 'wikiLink' && tk.contentRange[0] !== tk.resolveRange[0]
 
 export function linkAddress(tk: Token): [number, number] {
   const [, close] = tk.markerRanges
@@ -49,28 +58,30 @@ export function linkAddress(tk: Token): [number, number] {
 
 export const linkTarget = (text: string, tk: Token): string => text.slice(...linkAddress(tk))
 
-export const headingOf = (text: string, tk: Token): string | undefined =>
-  tk.fragment && text.slice(tk.fragment[0], tk.fragment[1])
+export const headingOf = (text: string, tk: TokenOf<'wikiLink'>): string | undefined =>
+  tk.heading && text.slice(tk.heading[0], tk.heading[1])
 
 /** What a mark wraps, seen from outside it: a highlight's color marks sit inside its `==`, so a caret on them is still inside the highlight. */
 export const wrappedSpan = (tk: Token): [number, number] =>
   tk.kind === 'highlight' ? [tk.range[0] + 2, tk.range[1] - 2] : tk.contentRange
 
 export function shiftToken(tk: Token, by: number): Token {
-  const move = ([s, e]: [number, number]): [number, number] => [s + by, e + by]
-  return {
-    kind: tk.kind,
+  const move = ([s, e]: Span): Span => [s + by, e + by]
+  const base: TokenBase = {
     range: move(tk.range),
     contentRange: move(tk.contentRange),
-    ...(tk.resolveRange ? { resolveRange: move(tk.resolveRange) } : {}),
-    ...(tk.fragment ? { fragment: move(tk.fragment) } : {}),
     markerRanges: tk.markerRanges.map(move),
     ...(tk.color ? { color: tk.color } : {}),
     ...(tk.inHtml ? { inHtml: true } : {}),
   }
+  if (tk.kind !== 'wikiLink') return { ...base, kind: tk.kind }
+  return {
+    ...base,
+    kind: 'wikiLink',
+    resolveRange: move(tk.resolveRange),
+    ...(tk.heading ? { heading: move(tk.heading) } : {}),
+  }
 }
-
-type Span = [number, number]
 const overlaps = (a: Span, b: Span): boolean => a[0] < b[1] && b[0] < a[1]
 
 const notOverlapping =
@@ -135,7 +146,7 @@ function walkEmphasis(node: MdNode, out: Token[]): void {
 }
 
 interface RegexSpec {
-  kind: TokenKind
+  kind: PlainKind
   re: RegExp
   open: number
   close: number
@@ -236,14 +247,14 @@ function linkToken(o: LinkOccurrence): Token {
     }
   // The leading marker swallows `[[Title|`. An opened-but-empty alias shows nothing, so it stays a plain link.
   const alias = o.alias && o.alias[1] > o.alias[0] ? o.alias : null
-  const fragment = o.heading && o.heading[1] > o.heading[0] ? o.heading : null
-  const shown = alias ?? [o.title[0], fragment ? fragment[1] : o.title[1]]
+  const heading = o.heading && o.heading[1] > o.heading[0] ? o.heading : null
+  const shown = alias ?? [o.title[0], heading ? heading[1] : o.title[1]]
   return {
     kind: 'wikiLink',
     range: o.full,
     contentRange: shown,
     resolveRange: o.title,
-    ...(fragment ? { fragment } : {}),
+    ...(heading ? { heading } : {}),
     // The markers tile the whole token, so a renderer drawing only the content span can't disagree with one hiding markers.
     markerRanges: [
       [fs, shown[0]],
@@ -306,14 +317,14 @@ export function tokenizeChunk(text: string): { tokens: Token[]; html: Span[] } {
 export const tokenize = (text: string): Token[] => tokenizeChunk(text).tokens
 
 /** The link or connection token an offset sits in, markers included, among tokens in start order: an editor's drawn set or a resting cell's. At a boundary two abutting tokens both contain the offset; the later-starting one wins, so a span captured at a token's own start resolves to that token and not its neighbor. */
-export function linkTokenAt(
+export function linkTokenAt<K extends LinkKind = LinkKind>(
   tokens: readonly Token[],
   offset: number,
-  kind?: 'link' | 'wikiLink',
-): Token | undefined {
+  kind?: K,
+): TokenOf<K> | undefined {
   return tokens
     .filter(
-      (t) =>
+      (t): t is TokenOf<K> =>
         (kind ? t.kind === kind : t.kind === 'link' || t.kind === 'wikiLink') &&
         offset >= t.range[0] &&
         offset <= t.range[1],
