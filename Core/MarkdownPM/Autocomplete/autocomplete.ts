@@ -1,4 +1,4 @@
-import { expressibleHeading, pageEmbedText } from '../../Connections/connections'
+import { expressibleInLink, pageEmbedText } from '../../Connections/connections'
 import { normalizeTitle } from '../../Paths/caseFold'
 import {
   decodeLinkTarget,
@@ -147,7 +147,7 @@ export function headingRows(outline: readonly OutlineHeading[], query: string): 
   return outline
     .filter((h) => {
       const key = normalizeTitle(h.text)
-      if (!key.startsWith(q) || seen.has(key) || !expressibleHeading(h.text)) return false
+      if (!key.startsWith(q) || seen.has(key) || !expressibleInLink(h.text)) return false
       seen.add(key)
       return true
     })

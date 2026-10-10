@@ -1,5 +1,5 @@
 import { EditorView } from '@codemirror/view'
-import { connectionText, expressibleHeading, pageEmbedText } from '../../Connections/connections'
+import { connectionText, expressibleInLink, pageEmbedText } from '../../Connections/connections'
 import type { GripMenuContext, HeadingLevel, ListKind } from '../../Actions/gripMenu'
 import type { PickItem } from '../../Actions/menuModel'
 import { COPY_LINK_ROW } from '../../Actions/pageMenu'
@@ -81,7 +81,7 @@ function popHeadingMenu(view: EditorView, headingEl: HTMLElement): void {
   const level = openedParts.hashes.length
   const host = view.state.facet(editorHost)
   const title = host.pageTitle()
-  const linkable = title !== null && expressibleHeading(openedParts.content.trim())
+  const linkable = title !== null && expressibleInLink(openedParts.content.trim())
   void host.menus
     .grip({ kind: 'heading', level, linkable, editable: !view.state.readOnly })
     .then((action) => {
