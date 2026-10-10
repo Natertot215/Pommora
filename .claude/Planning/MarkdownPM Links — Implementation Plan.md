@@ -20,7 +20,7 @@ The investigation behind this plan (twelve scouts, three verifiers, and a provin
 
 After this plan, link syntax is read in one place: a single walk in the Connections layer that the editor's drawing, its typing behaviors, the content index, and the rename cascade all share, with one rule for "this link sits in code." "Is this text a page or a web address" is answered by one function, with the page index when a surface has one and by one fixed tiebreak when it doesn't (main has no index, so a title-shaped target that isn't a valid address reads as a page there; a spaceless dotted title such as `v1.2` reads as an address, a case Nathan ruled acceptable). Every link's right-click menu is built by one builder from one model and answers with the row picked, like the app's other menus; one pure function turns the pick into text, and one applier writes it in a live editor. Pasting a link onto a link, picking a page in the picker, and Edit Title or Edit Link on a Link value all change the target under one rule with one carve-out point. A Link property's value draws, follows, glances, and routes the way every other link does, through the renderer resting cells and Text values already share; only an address keeps the property's own look. A resting MarkdownPM table cell gives every construct its menu without being focused, writes land without placing the caret, and the rows that need typing enter the cell. The page index reaches every editor through the host it already carries, and the index holds each page's heading text and level, so the picker, the missing-heading mark, and `§` runs read one source. An `![[Page]]` is a tile only when it stands alone on its own line in a page body; anywhere else it's `!` followed by an ordinary connection.
 
-What a person sees: `[x](Page)` edits like `[[Page]]`; every link reads **Rename** then **Edit Title** (a connection) or **Edit Link** (a weblink), with no "Add Title"; unresolved links look the same whichever syntax wrote them, and **Display Unresolved Links As Plain Syntax** reaches cells and values; a Link value shows `Page § Heading`, the phantom and ambiguous tones, and the glance, opens where connections open, and accepts `[[#Heading]]` and `[x](example.com)`; a right-click anywhere in a resting table cell opens that construct's menu; `[[` and `[label](` open the picker whether or not Pair Brackets is on; pasting a link onto a link replaces its target; Format ▸ Page Title at rest writes the title once it arrives; `mailto:` goes to the system; and embeds that don't tile act as the connections they are. Two ledgers of this plan's AFTER blocks against the tree, reconciled, put the cleanup at about −280 production lines and the resting cell (Phase 9, ruled additive and shipped in this bundle) at about +160, so the bundle estimates at about −120 (the Continuation's §9 holds the method); the reviews keep tightening every addition that doesn't earn its place, and the measured figure is reported at closeout in those two numbers (*§Delta* in the report).
+What a person sees: `[x](Page)` edits like `[[Page]]`; every link reads **Rename** then **Edit Title** (a connection) or **Edit Link** (a weblink), with no "Add Title"; unresolved links look the same whichever syntax wrote them, and **Display Unresolved Links As Plain Syntax** reaches cells and values; a Link value shows `Page § Heading`, the phantom and ambiguous tones, and the glance, opens where connections open, and accepts `[[#Heading]]` and `[x](example.com)`, its Edit Title seed showing the page without its alias as the address seed shows the bare address; a right-click anywhere in a resting table cell opens that construct's menu; `[[` and `[label](` open the picker whether or not Pair Brackets is on; pasting a link onto a link replaces its target; Format ▸ Page Title at rest writes the title once it arrives; `mailto:` goes to the system; and embeds that don't tile act as the connections they are. Two ledgers of this plan's AFTER blocks against the tree, reconciled, put the cleanup at about −280 production lines and the resting cell (Phase 9, ruled additive and shipped in this bundle) at about +160, so the bundle estimates at about −120 (the Continuation's §9 holds the method); the reviews keep tightening every addition that doesn't earn its place, and the measured figure is reported at closeout in those two numbers (*§Delta* in the report).
 
 #### Concepts
 
@@ -37,9 +37,9 @@ What a person sees: `[x](Page)` edits like `[[Page]]`; every link reads **Rename
 | `markdownPageLink` • Function                                                                             | The one markdown spelling of a page link.                                                                                                                       | `Core/Connections/links.ts`                                                             |
 | `isWebAddress` • Function                                                                                 | A URL with a written http(s) scheme that validates; the paste, embed, and guest gates read it.                                                                  | `Core/Paths/urlPath.ts`                                                                 |
 | `EditorHost.connections` • Member                                                                         | The page index as every editor piece reads it, live through the host facet.                                                                                     | `Core/MarkdownPM/api.ts`                                                                |
-| `inRawHtml` • Function                                                                                    | Whether an offset sits inside a raw-HTML block on a page.                                                                                                       | `Core/MarkdownPM/Links/linkEdit.ts`                                                     |
+| `inRawHtml` • Function | Whether an offset sits inside a raw-HTML block on a page. | `Core/MarkdownPM/decorations.ts` |
 | `PageHeading` • Type                                                                                      | A heading's text and level as the index stores it.                                                                                                              | `Core/Platform/stores.ts`                                                               |
-| `PageHeadings` • Type, `headingKeys` • Function | A page's heading keys and outline as the renderer holds them, and the one derivation of the keys from an outline. | `Core/Connections/pageIndex.ts`                                                         |
+| `PageHeadings` • Type, `headingKeys` • Function | A page's heading keys, texts, and outline as the renderer holds them, and the one derivation of the keys from an outline. | `Core/Connections/pageIndex.ts`                                                         |
 | `LinkLook` • Type, `linkLook`, `linkClass` • Functions                                                    | One link's target, status, missing mark, bare flag, and heading join, and the class its tone wears; both renderers read it.                                     | `Core/MarkdownPM/Links/connectionsApi.ts`                                               |
 | `md-block-query` • Class                                                                                  | The `/` menu's query look.                                                                                                                                      | `Core/MarkdownPM/markdown-pm.css`                                                       |
 | `srcOf` • Function, `RestingHit` • Type, `data-src` / `data-link` / `data-at` / `data-base` • Attributes  | The resting renderer's source spans on every drawn element, the link mark, verbatim offsets, and line bases.                                                    | `Core/MarkdownPM/Tables/cellStatic.tsx`                                                 |
@@ -70,7 +70,7 @@ What a person sees: `[x](Page)` edits like `[[Page]]`; every link reads **Rename
 | `embedClaims.ts` • File, `embeddable` • Function | The second embed-claim owner and the picker's pool filter. | `Core/MarkdownPM/Engine/embedClaims.ts`, `Core/MarkdownPM/Embeds/embedWidget.tsx` |
 | `pageEmbedPattern`, `linkAt`, `aliasSpanAt`, `emptyAliasPipeAt`, `emptyHeadingHashAt`, `expressibleHeading`, `embeddableTitle` | The regex readers and the two expressibility checks the walk and `expressibleInLink` replace. | `Core/Connections/connections.ts` |
 | `linkInCode`, `isInsideWikilink` | Two caret readers the code mask and `openConnectionAt` replace. | `Core/MarkdownPM/Input/edits.ts` |
-| `readLink`, `parseLink`, `parsePastedLink`, `linkAlias`, `urlClickTarget`, `LinkValue`, `ConnectionParts`, `ResolveTitle` | The value readers and types `readLinkText` and `LinkTarget` absorb. | `Core/Connections/linkValue.ts`, `Core/Connections/connections.ts` |
+| `readLink`, `parseLink`, `linkAlias`, `urlClickTarget`, `LinkValue`, `ConnectionParts` | The value readers and types `readLinkText` and `LinkTarget` absorb. | `Core/Connections/linkValue.ts`, `Core/Connections/connections.ts` |
 | `PasteAsTarget`, `wholeWikiLink`, `pasteAsTarget` | Paste As's own clipboard reader. | `Core/Actions/pasteAsMenu.ts` |
 | `namesGonePage` | The boolean the three restore paths read before re-reading the value for its note. | `Core/Properties/propertyValue.ts` |
 | `pasteDecision.ts` • File; `linkFor`, `literalAt`, `writeLink`, `pasteAs` | The second paste decision and the writers the pipeline replaces. | `Core/MarkdownPM/Links/` |
@@ -84,7 +84,7 @@ What a person sees: `[x](Page)` edits like `[[Page]]`; every link reads **Rename
 | `LinkCellAction`, `linkValueMenuTarget`, `ConnMenuTarget`, `tokenMenuTarget` | The value's and the token's own menu builders. | `Core/Interface/Menus/connectionMenuActions.ts`, `Core/MarkdownPM/Links/connectionsApi.ts` |
 | `linkFormat.ts` • File; `wikiAuthorTarget`, `applyUrlLinkAction`, `linkActionText`, `LinkActionText`, `formatted` | The split appliers `linkEdit` replaces. | `Core/MarkdownPM/Links/` |
 | `ConnectionCell` • Component, `.cell-connection` • Class, the `open` click intent and its three handlers | A Link value's own render and open path. | `Core/Properties/Cells/LinkCell.tsx`, `Core/Properties/Pickers/valueClick.ts` |
-| `linkResolve.ts` • File, `resolveConnection` | The tree-reading resolver whose null blanked ambiguity. | `Core/Properties/Cells/linkResolve.ts`, `Core/Nexus/treeIndex.ts` |
+| `linkResolve.ts` • File, `resolveConnection`, `parsePastedLink`, `ResolveTitle` | The tree-reading resolver whose null blanked ambiguity, and the string resolver and reader it fed until Task 8-3 rewrites the commit. | `Core/Properties/Cells/linkResolve.ts`, `Core/Nexus/treeIndex.ts`, `Core/Connections/linkValue.ts` |
 | `caretCoords`, `initialSelect`, `sweepFrom` • Refs; `onSelect` • Prop | Three ways to enter a cell. | `Core/MarkdownPM/Tables/` |
 | `insertLinkOverSelection` | Insert Link dispatched on the view. | `Core/MarkdownPM/Menus/menu.ts` |
 | `'embed'` form, `allowEmbeds`, `formSyntax`, `connectionInsert`, `AcQuery`, `sectionArmAfter`, `viaChevron`, `cameFrom`, `fetched`, `loading`, `NONE` | The picker's embed loop, hand spellings, React-held state, and optional-prop defaults. | `Core/MarkdownPM/Autocomplete/` |
@@ -590,7 +590,7 @@ Deleted whole: `Core/MarkdownPM/Engine/embedClaims.ts` and its test. Also: `targ
 
 #### Task 2-1 — One reader for a whole link
 
-**TASK:** `readLinkText(text, resolve?)` in `linkValue.ts` becomes the one reader of a whole link: a page if the text names a title (resolved when a resolver is given, title-shaped and not a valid address when none is), a weblink if valid (normalized to a scheme), else nothing. It carries the written syntax so renames keep it. `readLink`, `parsePastedLink`, `parseLink`, `LinkValue`, `ConnectionParts`, and `PasteAsTarget` go, and `MD_LINK` is rebuilt from the tokenizer's grammar.
+**TASK:** `readLinkText(text, resolve?)` in `linkValue.ts` becomes the one reader of a whole link: a page if the text names a title (resolved when a resolver is given, title-shaped and not a valid address when none is), a weblink if valid (normalized to a scheme), else nothing. It carries the written syntax so renames keep it. `readLink`, `parseLink`, `LinkValue`, `ConnectionParts`, and `PasteAsTarget` go, and `MD_LINK` is rebuilt from the tokenizer's grammar.
 
 **NOW:** Four readers answer the question four ways (synthesis §3.1): `readLink` (`linkValue.ts:30`) reads any non-wikilink as a URL; `parsePastedLink` (`:48`) refuses an unresolved markdown title; `pasteAsTarget` (`pasteAsMenu.ts:35`) reads `[x](example.com)` as a page; `resolveMdTarget` tries the page first. `MD_LINK` (`links.ts:5`) is a second markdown grammar with no caps and a greedy destination, so `[a](b) [c](d)` reads as one link and `[^1](x)` as a link. `wholeWikiLink` (`pasteAsMenu.ts:30`) drops the alias and refuses a heading, so Paste As loses what it's handed (F-042) and `[[T#H]]` offers nothing.
 
@@ -598,8 +598,8 @@ Deleted whole: `Core/MarkdownPM/Engine/embedClaims.ts` and its test. Also: `targ
 
 - [ ] Write the tests in `linkValue.test.ts` (replacing the `readLink`/`parseLink` cases): without a resolver, `readLinkText('[[T#H|a]]')` → `{ kind: 'page', syntax: 'wiki', title: 'T', heading: 'H', alias: 'a' }`; `readLinkText('[x](Old)')` → `{ kind: 'page', syntax: 'markdown', title: 'Old', alias: 'x' }`; `readLinkText('[x](example.com)')` → `{ kind: 'url', syntax: 'markdown', url: 'https://example.com', alias: 'x' }`; `readLinkText('example.com')` → `{ kind: 'url', syntax: 'bare', url: 'https://example.com' }`; `readLinkText('[x](#H)')` → `{ kind: 'page', syntax: 'markdown', title: '', heading: 'H', alias: 'x' }`; `readLinkText('[^1](https://a.com)')` → `null`; `readLinkText('[a](b) [c](d)')` → `null`; `readLinkText('foo bar')` → `null`. With a resolver answering only `Meeting Notes`: `readLinkText('[[meeting notes]]', r)` → title `Meeting Notes`; `readLinkText('[x](meeting notes)', r)` → title `Meeting Notes`; `readLinkText('[x](example.com)', r)` → `{ kind: 'url', … 'https://example.com' }` (no such page, so the address arm); `readLinkText('[x](Nope)', r)` → `null` (title-shaped, no page, no valid address); `readLinkText('[[Dup]]', ambiguous)` → `null`, and `readLinkText('[x](dup.io)', ambiguousDotted)` → `null` (ambiguity wins over the address shape; T-06); `readLinkText('[[#H]]', r)` → `null` and with a resolver answering `''` as resolved → `{ kind: 'page', syntax: 'wiki', title: '', heading: 'H' }`. Watch them fail.
 - [ ] Rebuild `MD_LINK` from `emptyTolerantLinkRegex`'s source, anchored, as `WHOLE_LINK` is built from `pageLinkPattern`.
-- [ ] Write `readLinkText`; `wholeValueLink(v)` reads it; delete `readLink`, `parseLink`, `parsePastedLink`, `LinkValue`, `ConnectionParts` (its shape is `readLinkText`'s page arm), `PasteAsTarget`, `wholeWikiLink`, `pasteAsTarget`; `pasteAsRows` reads `readLinkText(clipboard)` (its `embeddableTarget` and rows follow in Task 2-3). `serializeLink(url, label?)`.
-- [ ] `linkEditText`, `linkDisplayText`, `linkValueFromRename`, `urlClickTarget`, `valueLinks`' exclusion, `frontmatterMentions`, `goneEntry`, `parkLinks`, `namesGonePage`, `LinkCell.tsx:30`, `valueClick.ts:51`, and `connectionMenuActions.ts:81` read `readLinkText`; `linkValueFromEdit` is rewritten whole in Task 8-3 and until then calls `readLinkText(trimmed, resolve)` in place of `parsePastedLink` with its alias-carry arm unchanged. `linkAlias` reads `readLinkText(raw)?.alias`.
+- [ ] Write `readLinkText`; `wholeValueLink(v)` reads it; delete `readLink`, `parseLink`, `LinkValue`, `ConnectionParts` (its shape is `readLinkText`'s page arm), `PasteAsTarget`, `wholeWikiLink`, `pasteAsTarget`; `pasteAsRows` reads `readLinkText(clipboard)` (its `embeddableTarget` and rows follow in Task 2-3). `serializeLink(url, label?)`.
+- [ ] `linkEditText`, `linkDisplayText`, `linkValueFromRename`, `urlClickTarget`, `valueLinks`' exclusion, `frontmatterMentions`, `goneEntry`, `parkLinks`, `namesGonePage`, `LinkCell.tsx:30`, `valueClick.ts:51`, and `connectionMenuActions.ts:81` read `readLinkText`; `linkValueFromEdit`, `parsePastedLink`, and `ResolveTitle` stand until Task 8-3 rewrites the first and deletes the other two (`parseEditorValue.ts` and `linkResolve.ts` read them until then); `linkValueFromEdit`'s only changes here are `readLink(current)` → `readLinkText(current)` and `serializeLink(normalizeLinkUrl(trimmed), alias)`. `linkAlias` reads `readLinkText(raw)?.alias`.
 
 **AFTER**
 
@@ -617,7 +617,6 @@ Deleted whole: `Core/MarkdownPM/Engine/embedClaims.ts` and its test. Also: `targ
 ```Core/Connections/linkValue.ts diff
 @@ types @@
 - type LinkValue = { url: string; alias?: string }
-- export type ResolveTitle = (rawTitle: string) => string | null
 - export type LinkTarget =
 -   | { kind: 'page'; title: string; alias?: string; heading?: string }
 -   | { kind: 'url'; url: string; alias?: string }
@@ -633,10 +632,16 @@ Deleted whole: `Core/MarkdownPM/Engine/embedClaims.ts` and its test. Also: `targ
 +   return entry === null ? null : readLinkText(entry)
   }
 
+@@ linkValueFromEdit (rewritten whole in Task 8-3) @@
+-   const cur = current ? readLink(current) : undefined
++   const cur = current ? readLinkText(current) : null
+    const alias = cur?.kind === 'url' ? cur.alias : undefined
+-   return { kind: 'link', value: serializeLink({ url: normalizeLinkUrl(trimmed), alias }) }
++   return { kind: 'link', value: serializeLink(normalizeLinkUrl(trimmed), alias) }
+
 @@ readLinkText @@
 - export function readLink(raw: string): LinkTarget { … }
 - export function parseLink(raw: string): LinkValue { … }
-- function parsePastedLink(text: string, resolve?: ResolveTitle): string | null { … }
 + /** The one reader of a whole link. A connection is a page, and a bare `#Heading` in either syntax a page with an empty title that the caller's resolver answers with the holder. With a resolver, a title the index resolves is that page under its own capitalization, an ambiguous one is refused, and one the index has no page for falls to the address arm; without one (main has none), a title-shaped target that is no valid address is a page, so a spaceless dotted title reads as an address there (a conceded case). Anything else is a valid address normalized to a scheme, or nothing. */
 + export function readLinkText(text: string, resolve?: PageIndex['resolve']): LinkTarget | null {
 +   const conn = parseConnectionText(text)
@@ -740,18 +745,18 @@ The edit seed (`linkEditText`) now shows a page without its alias, matching the 
 +   const target = clipboard.includes('\n') ? null : readLinkText(clipboard)
 ```
 
-`pasteAsWrite` keeps its shape until Task 7-1 and reads `LinkTarget` from here (`target.title`, `target.url`); its `markdown` arm writes `markdownPageLink(target.title, target.heading, target.alias ?? target.title)` and its `connection` arm `connectionText(target.title, target.alias, target.heading)`, which is what makes Paste As keep alias and heading.
+`pasteAsWrite` keeps its shape until Task 7-1 and reads `LinkTarget` from here (`target.title`, `target.url`); its `markdown` arm writes `markdownPageLink(target.title, target.heading, target.alias)` and its `connection` arm `connectionText(target.title, target.alias, target.heading)`, which is what makes Paste As keep alias and heading.
 
 **VERIFY**
 
-- [ ] `pasteAsRows('[[T#H]]', false, false)` → Connection, Markdown Link; `pasteAsRows('[x](#H)', …)` and `pasteAsRows('[[#H]]', …)` → Connection, Markdown Link (a held heading in either syntax; no Embedded Page, since it carries a heading); `pasteAsRows('[x](example.com)', …)` → the address rows; `pasteAsWrite(readLinkText('[[T|a]]'), 'connection')` → `[[T|a]]`.
-- [ ] `grep -rn "readLink(\|parseLink(\|parsePastedLink\|PasteAsTarget\|wholeWikiLink\|ResolveTitle" Core Desktop --include='*.ts' --include='*.tsx'` is empty.
+- [ ] `pasteAsRows('[[T#H]]', false, false)` → Connection, Markdown Link; `pasteAsRows('[x](#H)', …)` and `pasteAsRows('[[#H]]', …)` → Connection, Markdown Link (a held heading in either syntax; no Embedded Page, since it carries a heading); `pasteAsRows('[x](example.com)', …)` → the address rows; `pasteAsWrite(readLinkText('[[T|a]]'), 'connection')` → `[[T|a]]`; `pasteAsWrite(readLinkText('[[#H]]'), 'markdown')` → `[H](#H)`.
+- [ ] `grep -rn "readLink(\|parseLink(\|PasteAsTarget\|wholeWikiLink" Core Desktop --include='*.ts' --include='*.tsx'` is empty.
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
 #### Task 2-2 — The host readers move together
 
-**TASK:** `goneEntry`, `parkLinks`, `namesGonePage`, and `frontmatterMentions` all read `wholeValueLink` (the resolver-free `readLinkText`), so a hand-written `[x](Page)` value is stripped, parked, and restored like `[[Page]]`, and the three restore notes write the entry `linkEntry` reads rather than `String(raw)`.
+**TASK:** `goneEntry`, `parkLinks`, `namesGonePage`, and `frontmatterMentions` all read the resolver-free `readLinkText` (`parkLinks` on the entry string it already holds, the rest through `wholeValueLink`), so a hand-written `[x](Page)` value is stripped, parked, and restored like `[[Page]]`, and the three restore notes write the entry `linkEntry` reads rather than `String(raw)`.
 
 **NOW:** `goneEntry` (`cascade.ts:95-99`) unwraps nested YAML and reads `readLink`; `parkLinks` (`holdings.ts:89`) reads `parseConnectionText` on the string; `namesGonePage` (`propertyValue.ts:123-126`) reads `parseConnectionText` on strings only, so a hand-written unquoted `[[Gone]]` (a nested YAML sequence) is stripped on a frozen restore and never noted or parked (M9-01); `frontmatterMentions` reads `wholeValueLink`. The notes write `String(raw)` (`restoreScrub.ts:43`, `restoreProperty.ts:66`, `assignment.ts:99`), which `parkLinks` can't read for a nested value.
 
@@ -893,7 +898,7 @@ The note writes the entry `parkLinks` reads, so a nested-YAML value parks as the
 
 **CHANGE**
 
-- [ ] Write the tests: `markdownPageLink('Meeting Notes', 'H', 'x')` → `[x](Meeting%20Notes#H)`; `markdownPageLink('P')` → `[P](P)`; `nameError('Draft]', 'page')` and `nameError('A]]B', 'page')` return a message, `nameError('A]B', 'page')` is `null`; `expressibleInLink('a|b')`, `expressibleInLink('C#')`, `expressibleInLink('x]')` are `false`. Watch them fail.
+- [ ] Write the tests: `markdownPageLink('Meeting Notes', 'H', 'x')` → `[x](Meeting%20Notes#H)`; `markdownPageLink('P')` → `[P](P)`; `markdownPageLink('', 'H')` → `[H](#H)`; `nameError('Draft]', 'page')` and `nameError('A]]B', 'page')` return a message, `nameError('A]B', 'page')` is `null`; `expressibleInLink('a|b')`, `expressibleInLink('C#')`, `expressibleInLink('x]')` are `false`. Watch them fail.
 - [ ] Add `markdownPageLink` to `links.ts`; `pasteAsWrite`'s markdown arm reads it (Task 2-1 wrote the call).
 - [ ] `webpageInsertAtCaret` inserts `composeWebpageEmbedLine('', '')`.
 - [ ] `expressibleInLink` replaces both predicates; readers: `headingRows` (`autocomplete.ts:151`), `rewriteHeadingConnections`'s `wiki` gate, `buildTiles`' claim, `embeddable` (`embedWidget.tsx`), `embeddableTarget` (`pasteAsMenu.ts`).
@@ -902,10 +907,10 @@ The note writes the entry `parkLinks` reads, so a nested-YAML value parks as the
 **AFTER**
 
 ```Core/Connections/links.ts diff
-+ /** The one markdown spelling of a page link; the label is the title when none is given, since an empty label isn't a link. */
++ /** The one markdown spelling of a page link; the label is the title when none is given, or the heading of a bare `#Heading`, since an empty label isn't a link. */
 + export function markdownPageLink(title: string, heading?: string, label?: string): string {
 +   const dest = encodeLinkTarget(title) + (heading ? `#${encodeLinkTarget(heading)}` : '')
-+   return `[${escapeAlias(label ?? title)}](${dest})`
++   return `[${escapeAlias(label ?? (title || heading || ''))}](${dest})`
 + }
 ```
 
@@ -1100,7 +1105,7 @@ The carve-out: `keepTitle` is Remove Title On Link Change read as "off" at each 
 - [ ] Write the test (`editorHarness`): an editor mounted with `connections` on the host and none on the component draws `[[Alpha]]` resolved; a `slotNear` test on a page with HTML Formatting on and `[[Foo|]]` inside a `<div>` block: leaving the slot collapses nothing. Watch the first fail on the removed prop, the second on the collapse.
 - [ ] `api.ts`: `EditorHost.connections(): ConnectionsApi | undefined`; `editorHost.tsx`: `connections: () => connRef.current`; the harness host: `connections: () => state.connections`, seated by `mountEditor`'s option.
 - [ ] `surface.ts`, `decorations.ts`, `linkClicks.ts`, `citationPointer.ts`, `linkEdit.ts`, `embedWidget.tsx`, `widget.tsx`, `MarkdownTable.tsx`, `CellEditor.tsx`, `cellStatic.tsx`, `useConnectionAutocomplete.ts`, `MarkdownEditor.tsx`, `TextPane.tsx`, `PageView.tsx`, `PageTile.tsx`, `MarkdownTile.tsx`: as below.
-- [ ] Add `inRawHtml(state, at, scope)` to `linkEdit.ts`; `commitAliasOnEnter` and `slotNear` read it (`aliasOnLeave(scope)` passes its scope through). The picker reads it in Task 10-2.
+- [ ] Add `inRawHtml(state, at, scope)` to `decorations.ts`, beside the `raw` read it shares (`linkEdit.ts` already imports from `decorations.ts`; the reverse edge would be a cycle); `commitAliasOnEnter` and `slotNear` read it (`aliasOnLeave(scope)` passes its scope through). The picker reads it in Task 10-2.
 
 **AFTER**
 
@@ -1189,20 +1194,20 @@ The carve-out: `keepTitle` is Remove Title On Link Change read as "off" at each 
 +   follow: (hit, view, event) => () => followCitation(hit.marker.label, view.state.facet(editorHost).connections(), event),
 ```
 
-```Core/MarkdownPM/Links/linkEdit.ts diff
+```Core/MarkdownPM/decorations.ts diff
 + /** An HTML block a page's HTML Formatting draws raw holds no live link: the picker, the slot cleanup, the alias memory, and Enter all stand down there, as the draw does. A cell's text parses alone and never draws raw. */
-+ export const drawsRawHtml = (scope: MarkdownScope, settings: EditorSettings): boolean => scope === 'page' && settings.htmlFormatting
++ const drawsRawHtml = (scope: MarkdownScope, settings: EditorSettings): boolean => scope === 'page' && settings.htmlFormatting
 +
 + export function inRawHtml(state: EditorState, at: number, scope: MarkdownScope): boolean {
 +   return drawsRawHtml(scope, state.facet(editorHost).settings()) && spanAt(docScan(state.doc).html, at) !== undefined
 + }
-```
 
-```Core/MarkdownPM/decorations.ts diff
 @@ build @@
 -   const raw = scope === 'page' && settings.htmlFormatting ? inline.html : []
 +   const raw = drawsRawHtml(scope, settings) ? inline.html : []
+```
 
+```Core/MarkdownPM/Links/linkEdit.ts diff
 @@ commitAliasOnEnter @@
     const link = connectionAt(scan, sel.head)
     if (!link?.alias || rel < link.alias[0] || rel > link.alias[1]) return false
@@ -1417,7 +1422,7 @@ The carve-out: `keepTitle` is Remove Title On Link Change read as "off" at each 
 ```
 
 ```Core/Connections/pageIndex.ts diff
-+ /** A page's headings as the index holds them: the normalized keys a heading link is judged against, and the outline a picker or a `§` run reads. */
++ /** A page's headings as the index holds them: the normalized keys a heading link is judged against, the texts a `§` run and a Text cell read on every build, and the outline a picker reads. */
 + export interface PageHeadings {
 +   keys: string[]
 +   texts: string[]
@@ -1484,7 +1489,7 @@ A live TextPane's `§` runs read the index's heading texts, as the resting Text 
 **VERIFY**
 
 - [ ] `grep -rn "headingsOf\|s\.headings\[" Core --include='*.ts' --include='*.tsx' | grep -v test` lists only `.keys` or `.outline` reads and the two builders.
-- [ ] `engineGraph.test.ts` and `hostGraph.test.ts` pass with `Core/Connections/pageIndex.ts` importing the `PageHeading` type from `Core/Platform/stores.ts` (the first `Core/Connections → Core/Platform` edge in the tree, type-only); if a graph rule refuses it, `PageHeading` moves to `pageIndex.ts` and `stores.ts` imports it from there, and the task says so.
+- [ ] `engineGraph.test.ts` and `hostGraph.test.ts` pass with `Core/Connections/pageIndex.ts` importing the `PageHeading` type from `Core/Platform/stores.ts` (the first `Core/Connections → Core/Platform` edge in the tree, type-only; the graph tests check externals and `.tsx` reach, not import direction).
 - [ ] Run the gates; `indexSeed.test.ts`, `open.test.ts`, `contentIndex.test.ts`, `pageConnections.test.tsx` pass.
 - [ ] Open `~/Test`: the index reseeds once (log line or the `index_generation` row at 12), and a `[[Alpha#Missing]]` still draws the missing mark.
 - [ ] Check for unnecessary code or mistakes.
@@ -1497,7 +1502,7 @@ A live TextPane's `§` runs read the index's heading texts, as the resting Text 
 
 **CHANGE**
 
-- [ ] Write the test (`pageConnections.test.tsx:57` rewritten): `open(page, 'Setup', true)` in window mode calls `select` with `{ newTab: true, heading: 'Setup' }`; `open(page, 'Setup')` in window mode calls `openWindowTab`; `open(page)` in preview mode with Open Connections In Preview off calls `select` with `{ heading: undefined }` and no `newTab` key. Watch it fail.
+- [ ] Write the test (`pageConnections.test.tsx:57` rewritten): `open(page, 'Setup', true)` in window mode calls `select` with `{ newTab: true, heading: 'Setup' }`; `open(page, 'Setup')` in window mode calls `openWindowTab`; `open(page)` in preview mode with Open Connections In Preview off calls `select` with `{ newTab: undefined, heading: undefined }`. Watch it fail.
 - [ ] Rewrite as below; `resolveFollow` calls `api.open(named.page, named.heading, isCmd(event))`; `TileHost`'s `openRoute` keeps `connections?.open`.
 
 **AFTER**
@@ -1652,7 +1657,7 @@ Every current caller (`pasteLink.ts:62`, `linkFormat.ts:85`, `cellStatic.tsx:474
 
 **CHANGE**
 
-- [ ] Write the tests: `mdLinkTarget.test.tsx:158` and `externalLink.test.tsx:80` rewritten so `[x](Dup)` with two Dup pages draws `md-connection-ambiguous` and `[x](Missing)` draws `md-connection-phantom` with no underline rule; a cellStatic test: a resting `[x](Missing)` draws its `[`, `](Missing)` as `md-phantom-syntax` spans around a `md-connection-phantom` label. Watch them fail.
+- [ ] Write the tests: `mdLinkTarget.test.tsx:158` and `externalLink.test.tsx:80` rewritten so `[x](Dup)` with two Dup pages draws `md-connection-ambiguous`, `[x](dup.io)` with two `dup.io` pages draws the same (an ambiguous title is never an address, the input Task 4-5 pins on `valueTarget` and Task 2-1 on `readLinkText`), and `[x](Missing)` draws `md-connection-phantom` with no underline rule; a cellStatic test: a resting `[x](Missing)` draws its `[`, `](Missing)` as `md-phantom-syntax` spans around a `md-connection-phantom` label. Watch them fail.
 - [ ] Add `linkLook` and `linkClass`; rewrite the two draw sites; delete the five names; inline `'md-link'`.
 - [ ] CSS: merge the rules; delete the `md-link-invalid` underline.
 - [ ] `MdTarget` `'external'` → `'url'` (`connectionsApi.ts`, `linkClicks.ts`, `decorations.ts`, `cellStatic.tsx`, `linkMenuTarget`); `GlanceTarget` `'site'` → `'url'` (`api.ts`, `GlancePane.tsx`, `linkClicks.ts`, `glanceAction.ts` if it switches on it).
@@ -1703,6 +1708,8 @@ Every current caller (`pasteLink.ts:62`, `linkFormat.ts:85`, `cellStatic.tsx:474
 -   | { kind: 'external'; url: string }
 +   | { kind: 'url'; url: string }
 @@ resolveMdTarget @@
+-   if (target.kind !== 'invalid' || !isValidLink(rawTarget)) return target
++   if (target.kind !== 'invalid' || target.ambiguous || !isValidLink(rawTarget)) return target
 -   return { kind: 'external', url: rawTarget }
 +   return { kind: 'url', url: rawTarget }
 @@ linkMenuTarget @@
@@ -2115,7 +2122,7 @@ Every `cellPage(doc, text)` call passes `state.facet(editorHost).settings().inPa
 
 **CHANGE**
 
-- [ ] Write the tests: `valueTarget(api, '[[Old|a]]')` → page; `valueTarget(api, '[[#H]]', holder)` → `{ kind: 'page', page: holder, heading: 'H' }`; `valueTarget(api, '[[Dup]]')` → `{ kind: 'invalid', ambiguous: true }`; `valueTarget(api, '[x](example.com)')` → `{ kind: 'url', url: 'example.com' }`; `valueTarget(api, 'https://a.com')` → url; `valueTarget(api, 'foo')` → invalid; `valueTarget(api, '[a](b) [c](d)')` → invalid. Watch them fail.
+- [ ] Write the tests: `valueTarget(api, '[[Old|a]]')` → page; `valueTarget(api, '[[#H]]', holder)` → `{ kind: 'page', page: holder, heading: 'H' }`; `valueTarget(api, '[[Dup]]')` → `{ kind: 'invalid', ambiguous: true }`; `valueTarget(api, '[x](dup.io)')` with two `dup.io` pages → `{ kind: 'invalid', ambiguous: true }`; `valueTarget(api, '[x](example.com)')` → `{ kind: 'url', url: 'example.com' }`; `valueTarget(api, 'https://a.com')` → url; `valueTarget(api, 'foo')` → invalid; `valueTarget(api, '[a](b) [c](d)')` → invalid. Watch them fail.
 - [ ] `wholeLinkToken(tokens, text)` in `tokens.ts`; `loneTarget` reads it; `valueTarget` in `Core/Properties/Cells/valueTarget.ts` reads it through `cellTokens` (exported from `cellStatic.tsx`).
 - [ ] `linkGestures` returns the converted hit; `readOnlyMenu` and `onPointerOver` drop their `heldTarget`; `StaticCellImpl.menuAt` reads `found.tk`/`found.span` (its body is Task 6-4's).
 - [ ] `dwellTarget` reads `isHttpLink`.
@@ -2693,7 +2700,7 @@ The url arm carries no `windowed`: no producer ever set it (the filter at `conne
 
 **CHANGE**
 
-- [ ] Write the tests (`linkEdit.test.tsx` rewritten; `linkFormat.test.tsx` folded in): on `[[P|a]]` Rename selects `a`, Edit Title selects `P`; on `[[P]]` Rename writes `|` after `P` and seats after it, and with `[[P|]]` already there seats after the pipe; on `[[P#H]]` Edit Title selects `P`, Rename seats after `H`; on `[x](https://a.com)` Rename selects `x`, Edit Link selects the address, Remove Link writes `x`, Delete writes nothing, Format ▸ Short Link writes `[a.com](https://a.com)`, Format ▸ Page Title with no cached title writes the short form and `awaits` the address; on `[x](Page)` Edit Title selects `Page`; Remove Link on `[[P|a]]` writes `a` and on `[[P]]` writes `P`; a Format on a connection returns `null`; the applier focuses the view after Remove Link. Watch them fail.
+- [ ] Write the tests (`linkEdit.test.tsx` rewritten; `linkFormat.test.tsx` folded in): on `[[P|a]]` Rename selects `a`, Edit Title selects `P`; on `[[P]]` Rename writes `|` after `P` and seats after it, and with `[[P|]]` already there seats after the pipe; on `[[P#H]]` Edit Title selects `P`, Rename seats after `H`; on `[x](https://a.com)` Rename selects `x`, Edit Link selects the address, Remove Link writes `x`, Delete writes nothing, Format ▸ Short Link writes `[a.com](https://a.com)`, Format ▸ Page Title with no cached title writes the short form and `awaits` the address; on `[x](Page)` Edit Title selects `Page`; Remove Link on `[[P|a]]` writes `a`, on `[[P]]` writes `P`, on `[[P#H]]` writes `P § H`, and on `[[#H]]` writes `H`; a Format on a connection returns `null`; the applier focuses the view after Remove Link. Watch them fail.
 - [ ] Write `linkEdit` and the applier; delete `linkFormat.ts`, `wikiAuthorTarget`, `applyUrlLinkAction`, `linkActionText`, `formatted`, `LinkActionText`.
 
 **AFTER**
@@ -2706,6 +2713,14 @@ The url arm carries no `windowed`: no producer ever set it (the filter at `conne
 + export type LinkEdit =
 +   | { kind: 'select'; range: Span }
 +   | { kind: 'write'; from: number; to: number; text: string; awaits?: string; select?: number }
++
++ /** What an unaliased connection shows: its title and heading joined as the draw joins them, or the heading alone when it's held. */
++ function shownConnection(text: string, tk: TokenOf<'wikiLink'>): string {
++   const heading = aliasedToken(tk) ? undefined : headingOf(text, tk)
++   if (!heading) return text.slice(tk.contentRange[0], tk.contentRange[1])
++   const title = text.slice(tk.resolveRange[0], tk.resolveRange[1])
++   return title ? `${title} § ${heading}` : heading
++ }
 +
 + export function linkEdit(
 +   text: string,
@@ -2725,7 +2740,7 @@ The url arm carries no `windowed`: no producer ever set it (the filter at `conne
 +     case 'editLink':
 +       return { kind: 'select', range: tk.kind === 'link' ? linkAddress(tk) : tk.resolveRange }
 +     case 'link:remove':
-+       return { kind: 'write', from: s, to: e, text: tk.kind === 'link' ? unescapeAlias(text.slice(cs, ce)) : text.slice(cs, ce) }
++       return { kind: 'write', from: s, to: e, text: tk.kind === 'link' ? unescapeAlias(text.slice(cs, ce)) : shownConnection(text, tk) }
 +     case 'link:delete':
 +       return { kind: 'write', from: s, to: e, text: '' }
 +     case 'format:link-full':
@@ -3569,11 +3584,13 @@ Phase 9's resting Paste row reads `pastedCellText` too.
 **CHANGE**
 
 - [ ] Write the tests (`linkValue.test.ts`): with an index holding Alpha and two Dups and a holder: `linkValueFromEdit('[[alpha]]', undefined, resolve, false)` → `[[Alpha]]`; `'[[Dup]]'` → `undefined`; `'[[#Setup]]'` → `[[#Setup]]`, and without a holder → `undefined`; `'[x](example.com)'` → `[x](https://example.com)`; `'[x](Nope)'` → `undefined`; `'example.com'` → `https://example.com`; `'[[Alpha]]'` over `[[Beta|Mine]]` with `keepTitle` true → `[[Alpha|Mine]]` and false → `[[Alpha]]`; `'https://b.com'` over `[x](https://a.com)` with `keepTitle` false → `https://b.com`; `'[[beta]]'` over `[[Beta|Mine]]` with `keepTitle` false → `[[Beta|Mine]]` (same target); `'[[Alpha]]'` over `[x](https://a.com)` → `[[Alpha]]` (a page is stored as a connection). Watch them fail.
-- [ ] Rewrite `linkValueFromEdit`; `parseEditorValue(type, raw, current, link?)`; `PropertyValueInput` reads the setting and builds the resolver; the three inline editor mounts pass `holder` and `connections`; delete `linkResolve.ts`, `resolveConnection`, and `ResolveTitle`.
+- [ ] Rewrite `linkValueFromEdit`; `parseEditorValue(type, raw, current, link?)`; `PropertyValueInput` reads the setting and builds the resolver; the three inline editor mounts pass `holder` and `connections`; delete `linkResolve.ts`, `resolveConnection`, `parsePastedLink`, and `ResolveTitle`.
 
 **AFTER**
 
 ```Core/Connections/linkValue.ts diff
+- export type ResolveTitle = (rawTitle: string) => string | null
+- function parsePastedLink(text: string, resolve?: ResolveTitle): string | null { … }
 - // `null` clears, `undefined` refuses the commit. Only an address carries its alias through an edit: its field shows the bare URL, so an alias left off the typed text was never on screen.
 - export function linkValueFromEdit(raw: string, current: string | undefined, resolve?: ResolveTitle): PropertyValue | null | undefined {
 -   const trimmed = raw.trim()
@@ -3649,7 +3666,7 @@ Phase 9's resting Paste row reads `pastedCellText` too.
 
 **VERIFY**
 
-- [ ] `grep -rn "resolveConnection\|linkResolve\|ResolveTitle\|resolveTitle" Core --include='*.ts' --include='*.tsx'` is empty.
+- [ ] `grep -rn "resolveConnection\|linkResolve\|parsePastedLink\|ResolveTitle\|resolveTitle" Core --include='*.ts' --include='*.tsx'` is empty.
 - [ ] Run the gates; `linkValue.test.ts:241,249,255-262` are rewritten to the rules above.
 - [ ] In `~/Test`: Edit Link on a Link value, type `[[#Setup]]` on a page with a Setup heading: it commits and draws `§Setup`; type `[[Dup]]` with two Dup pages: the field marks invalid; type `example.com`: it commits as `https://example.com`.
 - [ ] Check for unnecessary code or mistakes.
@@ -4070,6 +4087,10 @@ A `table`-kind payload still falls to the widget's `fill`, which returns early f
 +   const s = closedLink ?? openConnectionAt(scan, caret)
     if (s) {
 +     const closed = closedLink !== null
++     if (!closed && s.title[0] === s.title[1]) {
++       const after = line.startsWith(']]', rel)
++       return { query: '', from: lineStart + s.full[0], to: lineStart + rel + (after ? 2 : 0), form: 'link', closed: after }
++     }
       const title = line.slice(s.title[0], s.title[1])
       // Only the TITLE opens the page picker: accepting replaces the whole token, so a caret in the alias would arm a list keyed on the title and discard the alias on Enter.
       if (rel >= s.title[0] && rel <= s.title[1])
@@ -4101,7 +4122,7 @@ A `table`-kind payload still falls to the widget's `fill`, which returns early f
   }
 ```
 
-An unclosed link is read up to the caret, so a pick replaces what stands before the caret and leaves what follows it, as typing would (`[[Projct` with the caret moved back two and a pick of Project reads `[[Project]]ct`). An empty `[[` (`openConnectionAt`'s empty opener) returns `from` on the brackets and `to` at the caret, or past an existing `]]` when one follows: in the empty-opener branch of `autocompleteQuery`, `to = line.startsWith(']]', rel) ? lineStart + rel + 2 : lineStart + rel` and `closed` accordingly, so `![[]]` and a Pair-Bracketed `[[|]]` open with `closed: true`.
+An unclosed link is read up to the caret, so a pick replaces what stands before the caret and leaves what follows it, as typing would (`[[Projct` with the caret moved back two and a pick of Project reads `[[Project]]ct`). An empty `[[` (`openConnectionAt`'s empty opener) opens from the brackets to the caret, or past an existing `]]` when one follows, so `![[]]` and a Pair-Bracketed `[[|]]` open with `closed: true`.
 
 ```Core/MarkdownPM/Autocomplete/autocomplete.ts diff
 @@ formSyntax · commitEdit @@
@@ -4171,7 +4192,7 @@ The link form's commit is Task 10-3's; `commitEdit`'s slot arms (`heading`, `ali
 + import { docScan } from '../docCache'
 + import { inCodeAt } from '../Engine/docScan'
 + import { inBracket } from '../Input/edits'
-+ import { inRawHtml } from '../Links/linkEdit'
++ import { inRawHtml } from '../decorations'
 + import { editorHost } from '../api'
 + import type { MarkdownScope } from '../Engine/detect'
 + import { autocompleteQuery, type AutocompleteQuery } from './autocomplete'
@@ -4399,6 +4420,7 @@ The anchor is pinned by a test for a filled and an unfilled label.
 **AFTER**
 
 ```Core/MarkdownPM/Autocomplete/useConnectionAutocomplete.ts diff
++ import type { PageHeading } from '../../Platform/stores'
 -   const [fetched, setFetched] = useState<OutlineHeading[] | null>(null)
     …
 -   const target = useMemo(() => { … headingTargetOf … pageHeadingTarget … }, [heading, title])
@@ -4446,6 +4468,14 @@ The anchor is pinned by a test for a filled and an unfilled label.
 +     const node: OutlineNode<T> = { ...heading, children: [] }
 ```
 
+```Core/MarkdownPM/Autocomplete/autocomplete.ts diff
+@@ headingRows @@
+- import type { OutlineHeading } from '../Engine/headingScan'
++ import type { PageHeading } from '../../Platform/stores'
+- export function headingRows(outline: readonly OutlineHeading[], query: string): HeadingRow[] {
++ export function headingRows(outline: readonly PageHeading[], query: string): HeadingRow[] {
+```
+
 ```Core/MarkdownPM/Autocomplete/AutocompletePane.tsx diff
   export interface AutocompletePaneProps {
     open: boolean
@@ -4462,7 +4492,7 @@ The anchor is pinned by a test for a filled and an unfilled label.
 -   onBack?: () => void
 +   behind: AcRow[] | null
 +   headingRows: HeadingRow[]
-+   tree: OutlineNode[]
++   tree: OutlineNode<PageHeading>[]
 +   collapsed: ReadonlySet<string>
 +   onToggleHeading: (value: string) => void
 +   onAside: (row: AcRow) => void
@@ -4648,7 +4678,7 @@ The anchor is pinned by a test for a filled and an unfilled label.
 - `MarkdownPM.md:97` — "The right-clicked editor sends what sits under the click" — Task 9-1, 11-2
 - `MarkdownPM.md:103` — "Embed ▸ — Internal Page or Webpage" — Task 11-1, 11-2
 - `MarkdownPM.md:107` — Paste As offers for a copied connection — Task 2-1, 7-1, 11-2
-- `PropertiesPM.md:81-83` — alias "set through Rename and stored as `[alias](url)`"; "a title no page answers to is refused at commit"; "the connection color, a click that opens the page" — Task 8-1, 8-3, 11-2
+- `PropertiesPM.md:81-83` — alias "set through Rename and stored as `[alias](url)`"; "a title no page answers to is refused at commit"; "the connection color, a click that opens the page" — Task 2-1, 8-1, 8-3, 11-2
 - `ConfigurationPM.md:100` and `Settings/frames.ts:532` — "Pointing a connection at another page drops the alias it was wearing" — Task 2-4, 7-1, 10-3, 8-3, 11-2
 - `ConfigurationPM.md:171` — "Page prose only" — Task 4-2, 11-2
 - `WebviewPM.md:20` — "decides where every external link opens" — Task 5-1, 11-2
