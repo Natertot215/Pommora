@@ -9,6 +9,7 @@ import { LineRow, LineZone, lineList } from '@pommora/uix/Interactions/drag'
 import { nexusReorderIndex } from './paneDrop'
 import { moveItem } from '@pommora/uix/Utilities/moveItem'
 import { cx } from '@pommora/uix/Utilities/cx'
+import { text } from '@pommora/uix/Theme/typography.css'
 import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { useEntrance } from '@pommora/uix/Animations/useEntrance'
@@ -394,7 +395,7 @@ export function PropertyPanel({
           trailing={
             // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a grid cell; the grid wants roving tabindex, not per-cell tab stops
             <span
-              className={s.value}
+              className={cx(s.value, 'value-seat')}
               data-property-row={id}
               onContextMenu={(e) => {
                 triggerRef.current = e.currentTarget
@@ -419,7 +420,7 @@ export function PropertyPanel({
                   hideIcon={false}
                   style={{ look: 'standard', ...dateDefaults(dateFormat) }}
                   commit={(next) => commit(id, next)}
-                  empty={<EmptyValue className={s.empty} />}
+                  empty={<EmptyValue className={cx('cell-empty', text.caption.standard)} />}
                   onPane={
                     def
                       ? (anchor) => {

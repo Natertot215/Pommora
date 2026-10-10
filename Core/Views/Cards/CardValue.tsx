@@ -137,7 +137,7 @@ export function CardValue({
     // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix
     <span
       ref={anchorRef}
-      className="card-value"
+      className="card-value value-seat"
       data-drag-slop=""
       onClick={onClick}
       onContextMenu={onContextMenu}
@@ -158,7 +158,7 @@ export function CardValue({
           style={style}
           empty={
             fillsBlank(t) ? (
-              <EmptyValue className={cx('card-value-empty', text.caption.emphasized)} />
+              <EmptyValue className={cx('cell-empty', text.caption.emphasized)} />
             ) : undefined
           }
           commit={commit}
