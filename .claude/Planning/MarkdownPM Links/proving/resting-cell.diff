@@ -1,0 +1,1369 @@
+diff --git a/Core/Actions/editorMenu.test.ts b/Core/Actions/editorMenu.test.ts
+index 807dba420..db228ba94 100644
+--- a/Core/Actions/editorMenu.test.ts
++++ b/Core/Actions/editorMenu.test.ts
+@@ -18,6 +18,7 @@ const state: EditorMenuRequest = {
+   block: 'quote',
+   embedSeat: false,
+   citeSeat: true,
++  resting: null,
+ }
+ 
+ const items = editorContextItems(state, DEFAULT_COMMANDS, '')
+diff --git a/Core/Actions/editorMenu.ts b/Core/Actions/editorMenu.ts
+index 997073649..a55fd643c 100644
+--- a/Core/Actions/editorMenu.ts
++++ b/Core/Actions/editorMenu.ts
+@@ -34,11 +34,14 @@ export const editorMenuRequest = z.object({
+   block: z.literal('quote').nullable(),
+   embedSeat: z.boolean(),
+   citeSeat: z.boolean(),
++  // A resting table cell has no focused editor for the native edit roles to act on, so it sends the source its reply acts over.
++  resting: z.object({ selection: z.string() }).nullable(),
+ })
+ export type EditorMenuRequest = z.infer<typeof editorMenuRequest>
+ 
+ export const INSERT_LINK_ACTION = 'link:insert' as const
+ export const PASTE_PLAIN_ACTION = 'paste:plain' as const
++export const RESTING_EDITS = { cut: 'edit:cut', copy: 'edit:copy', paste: 'edit:paste' } as const
+ 
+ export type FormatChordAction = Extract<CommandId, `format:${string}`>
+ 
+diff --git a/Core/MarkdownPM/Input/formatState.ts b/Core/MarkdownPM/Input/formatState.ts
+index 2cdceb67e..9be1e798c 100644
+--- a/Core/MarkdownPM/Input/formatState.ts
++++ b/Core/MarkdownPM/Input/formatState.ts
+@@ -8,7 +8,7 @@ export function readFormatState(
+   doc: string,
+   from: number,
+   to: number,
+-): Omit<EditorMenuRequest, 'scope' | 'x' | 'y' | 'embedSeat' | 'citeSeat'> {
++): Omit<EditorMenuRequest, 'scope' | 'x' | 'y' | 'embedSeat' | 'citeSeat' | 'resting'> {
+   // Inline marks are line-local, so only the caret's line is tokenized, in line-relative coords. A cross-line selection can't sit inside one inline token anyway.
+   const ls = lineStartAt(doc, from)
+   const le = lineEndAt(doc, from)
+diff --git a/Core/MarkdownPM/Menus/menu.ts b/Core/MarkdownPM/Menus/menu.ts
+index b56c74871..457372914 100644
+--- a/Core/MarkdownPM/Menus/menu.ts
++++ b/Core/MarkdownPM/Menus/menu.ts
+@@ -25,9 +25,12 @@ import {
+ import { trimmedRange } from '../Engine/markdownCode'
+ import type { HighlightColor } from '../Engine/highlightColors'
+ 
+-function editFor(action: string, doc: string, from: number, to: number): FormatEdit | null {
++/** The pure edit a menu action makes over `[from, to]` of `doc`, for a live view and a resting cell alike. */
++export function editFor(action: string, doc: string, from: number, to: number): FormatEdit | null {
+   const [group, value] = action.split(':')
+   switch (group) {
++    case 'link':
++      return action === INSERT_LINK_ACTION ? insertLinkEdit(doc, from, to) : null
+     case 'format':
+       return toggleInline(doc, from, to, value as InlineFormat)
+     case 'highlight':
+@@ -44,26 +47,18 @@ function editFor(action: string, doc: string, from: number, to: number): FormatE
+ }
+ 
+ /** The selected words stay the label, so a schemeless address keeps its bare form while its target gains the scheme. */
+-function insertLinkOverSelection(view: EditorView): boolean {
+-  const sel = view.state.selection.main
+-  const [from, to] = trimmedRange(docString(view.state.doc), sel.from, sel.to)
+-  const text = view.state.sliceDoc(from, to)
+-  if (!text.trim() || !isValidLink(text)) return false
++function insertLinkEdit(doc: string, selFrom: number, selTo: number): FormatEdit | null {
++  const [from, to] = trimmedRange(doc, selFrom, selTo)
++  const text = doc.slice(from, to)
++  if (!text.trim() || !isValidLink(text)) return null
+   const insert = serializeLink({ url: normalizeLinkUrl(text), alias: text })
+-  view.dispatch({
+-    changes: { from, to, insert },
+-    selection: { anchor: from + insert.length },
+-    userEvent: 'input',
+-  })
+-  view.focus()
+-  return true
++  return { changes: [{ from, to, insert }], selection: from + insert.length }
+ }
+ 
+ /** Runs the menu's, the block pane's, or a chord's action on the view handed in. */
+ export function applyEditorAction(view: EditorView, action: string): boolean {
+   if (action === 'block:page') return embedInsertAtCaret(view)
+   if (action === 'block:webpage') return webpageInsertAtCaret(view)
+-  if (action === INSERT_LINK_ACTION) return insertLinkOverSelection(view)
+   if (action === 'block:citation') return insertCitation(view)
+   if (action === PASTE_PLAIN_ACTION) {
+     void pasteAs(view, 'literal')
+@@ -99,6 +94,7 @@ export const editorMenu = (scope: MarkdownScope): Extension =>
+           y: event.clientY,
+           embedSeat: page && embedSeatAt(view.state, from),
+           citeSeat: page && citationSeatAt(view.state, to),
++          resting: null,
+         }).then((action) => {
+           if (action && view.dom.isConnected) applyEditorAction(view, action)
+         })
+diff --git a/Core/MarkdownPM/Tables/CellEditor.tsx b/Core/MarkdownPM/Tables/CellEditor.tsx
+index 30d65ee28..b83fad081 100644
+--- a/Core/MarkdownPM/Tables/CellEditor.tsx
++++ b/Core/MarkdownPM/Tables/CellEditor.tsx
+@@ -97,6 +97,29 @@ const atListEnd = (view: EditorView): boolean => {
+   return true
+ }
+ 
++/** How a cell is entered: at a pointer, which a sweep that crossed into the cell extends from one edge, or over a range of its text. */
++export type Seat =
++  | { kind: 'point'; x: number; y: number; sweep?: 'start' | 'end' }
++  | { kind: 'select'; range: [number, number] }
++
++/** A cell entered with no seat, as Tab and Enter enter one, takes the caret at its end. */
++export function seatSelection(
++  seat: Seat | null,
++  end: number,
++  posAt: (p: { x: number; y: number }) => number | null,
++): { anchor: number; head: number } {
++  if (!seat) return { anchor: end, head: end }
++  switch (seat.kind) {
++    case 'select':
++      return { anchor: Math.min(seat.range[0], end), head: Math.min(seat.range[1], end) }
++    case 'point': {
++      const head = posAt(seat) ?? end
++      if (!seat.sweep) return { anchor: head, head }
++      return { anchor: seat.sweep === 'start' ? 0 : end, head }
++    }
++  }
++}
++
+ export function CellEditor({
+   host,
+   initial,
+@@ -105,9 +128,7 @@ export function CellEditor({
+   onTablePaste,
+   onUndo,
+   onRedo,
+-  caretCoords,
+-  initialSelect,
+-  sweepFrom,
++  seat,
+   connections,
+   ordinalOf,
+ }: {
+@@ -118,9 +139,7 @@ export function CellEditor({
+   onTablePaste: (payload: TablePayload) => void
+   onUndo: () => void
+   onRedo: () => void
+-  caretCoords: { x: number; y: number } | null
+-  initialSelect: [number, number] | null
+-  sweepFrom: 'start' | 'end' | null
++  seat: Seat | null
+   connections: () => ConnectionsApi | undefined
+   ordinalOf: (label: string) => number | null
+ }): React.JSX.Element {
+@@ -241,25 +260,16 @@ export function CellEditor({
+       }),
+     })
+     viewRef.current = view
+-    // posAtCoords can throw before the view has measured.
+     view.focus()
+-    const end = view.state.doc.length
+-    let pos: number | null = null
+-    if (!initialSelect && caretCoords) {
++    const posAt = (p: { x: number; y: number }): number | null => {
++      // posAtCoords can throw before the view has measured.
+       try {
+-        pos = view.posAtCoords(caretCoords)
++        return view.posAtCoords(p)
+       } catch {
+-        pos = null
++        return null
+       }
+     }
+-    const head = pos ?? end
+-    view.dispatch({
+-      selection: initialSelect
+-        ? { anchor: Math.min(initialSelect[0], end), head: Math.min(initialSelect[1], end) }
+-        : sweepFrom
+-          ? { anchor: sweepFrom === 'start' ? 0 : end, head }
+-          : { anchor: head },
+-    })
++    view.dispatch({ selection: seatSelection(seat, view.state.doc.length, posAt) })
+     // The press that promoted this cell never reached CM, so the seat its own pointer filter would have given lands here.
+     seatPastMarkerNow(view)
+     return () => {
+diff --git a/Core/MarkdownPM/Tables/MarkdownTable.tsx b/Core/MarkdownPM/Tables/MarkdownTable.tsx
+index 1be707f9f..ec1dd17a1 100644
+--- a/Core/MarkdownPM/Tables/MarkdownTable.tsx
++++ b/Core/MarkdownPM/Tables/MarkdownTable.tsx
+@@ -8,7 +8,7 @@ import { cx } from '@pommora/uix/Utilities/cx'
+ import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
+ import type { Align, TableModel } from '../Engine/Tables/model'
+ import type { TableMenuContext } from './tableMenu'
+-import { CellEditor } from './CellEditor'
++import { CellEditor, type Seat } from './CellEditor'
+ import { type CellPage, StaticCell } from './cellStatic'
+ import type { HeadingLinkStyle } from '../../Settings/personalization'
+ import { cellToDisplay, cellToSource } from '../Engine/Tables/codec'
+@@ -145,13 +145,11 @@ export function MarkdownTable({
+   // A mid-drag re-measure must reach this; a state binding would freeze at the pointerdown render (the cfg-ref discipline).
+   const geomRef = useLatest(geom)
+   // A resting cell's memo keeps the callbacks it first rendered with, so it commits through these to reach the table where it sits now.
+-  const live = useLatest({ onCellCommit, onSettled })
++  const live = useLatest({ onCellCommit, onSettled, onFill })
+   const [drag, setDrag] = useState<Drag | null>(null)
+   const [resize, setResize] = useState<Resize | null>(null)
+   const [active, setActive] = useState<{ row: number; col: number } | null>(null)
+-  const caretCoords = useRef<{ x: number; y: number } | null>(null)
+-  const initialSelect = useRef<[number, number] | null>(null)
+-  const sweepFrom = useRef<'start' | 'end' | null>(null)
++  const seat = useRef<Seat | null>(null)
+ 
+   const [sel, setSel] = useState<{ a: GridPos; h: GridPos } | null>(null)
+   const [sweeping, setSweeping] = useState(false)
+@@ -416,9 +414,7 @@ export function MarkdownTable({
+       onExit(target)
+       return
+     }
+-    caretCoords.current = null
+-    initialSelect.current = null
+-    sweepFrom.current = null
++    seat.current = null
+     setActive({ row: target.row, col: target.col })
+   }
+ 
+@@ -431,9 +427,7 @@ export function MarkdownTable({
+           initial={display}
+           connections={connections}
+           ordinalOf={around.ordinalOf}
+-          caretCoords={caretCoords.current}
+-          initialSelect={initialSelect.current}
+-          sweepFrom={sweepFrom.current}
++          seat={seat.current}
+           onCommit={(t) => {
+             setAddsHidden(true)
+             onCellCommit(row, col, t)
+@@ -453,11 +447,9 @@ export function MarkdownTable({
+         connections={connections}
+         readOnly={readOnly}
+         linkStyle={linkStyle}
+-        onActivate={(coords, sweep) => {
++        onActivate={(at) => {
+           host.glance?.close()
+-          caretCoords.current = coords
+-          initialSelect.current = null
+-          sweepFrom.current = sweep ?? null
++          seat.current = at
+           setActive({ row, col })
+         }}
+         onCommit={(t) => {
+@@ -465,13 +457,7 @@ export function MarkdownTable({
+           // A resting cell never had an editor to demote, so without this the widget keeps drawing the pre-edit text.
+           live.current.onSettled()
+         }}
+-        onSelect={(range) => {
+-          host.glance?.close()
+-          caretCoords.current = null
+-          initialSelect.current = range
+-          sweepFrom.current = null
+-          setActive({ row, col })
+-        }}
++        onFill={(payload) => live.current.onFill(row, col, payload)}
+       />
+     )
+   }
+diff --git a/Core/MarkdownPM/Tables/cellOffsets.test.tsx b/Core/MarkdownPM/Tables/cellOffsets.test.tsx
+new file mode 100644
+index 000000000..cf41c07f4
+--- /dev/null
++++ b/Core/MarkdownPM/Tables/cellOffsets.test.tsx
+@@ -0,0 +1,131 @@
++// @vitest-environment jsdom
++import { afterEach, describe, expect, it } from 'vitest'
++import { act, createElement } from 'react'
++import { createRoot, type Root } from 'react-dom/client'
++import { MarkdownTable } from './MarkdownTable'
++import { cellOffsetAt } from './cellStatic'
++import { tableStubs, testHost } from '../../Testing/editorHarness'
++import type { CellPage } from './cellStatic'
++import type { ConnectionsApi } from '../Links/connectionsApi'
++import { buildPageIndex } from '../../Connections/pageIndex'
++
++;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
++if (!('ResizeObserver' in globalThis)) {
++  ;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = class {
++    observe(): void {}
++    unobserve(): void {}
++    disconnect(): void {}
++  }
++}
++
++const conn: ConnectionsApi = {
++  ...buildPageIndex([{ id: 'p1', title: 'Quarterly Plan', path: 'N/Quarterly Plan.md' }]),
++  open: () => {},
++}
++
++let container: HTMLDivElement
++let root: Root
++afterEach(async () => {
++  await act(async () => root.unmount())
++  container.remove()
++})
++
++async function restingCell(
++  text: string,
++  around: CellPage = tableStubs.around,
++): Promise<HTMLElement> {
++  container = document.createElement('div')
++  document.body.appendChild(container)
++  root = createRoot(container)
++  await act(async () =>
++    root.render(
++      createElement(MarkdownTable, {
++        ...tableStubs,
++        host: testHost(),
++        model: { columns: [{ align: null, dashes: 3 }], header: ['A'], rows: [[text]] },
++        connections: () => conn,
++        around,
++      }),
++    ),
++  )
++  return container.querySelector('tbody .mdpm-tbl-cell-static') as HTMLElement
++}
++
++/** The text node drawing `drawn`, the `nth` one when several do. */
++function textNode(cell: Element, drawn: string, nth = 0): Text {
++  const walker = document.createTreeWalker(cell, NodeFilter.SHOW_TEXT)
++  const hits: Text[] = []
++  for (let n = walker.nextNode(); n; n = walker.nextNode())
++    if (n.textContent === drawn) hits.push(n as Text)
++  if (!hits[nth]) throw new Error(`no text node "${drawn}"`)
++  return hits[nth]
++}
++
++describe('a point in a resting cell maps to the source it draws', () => {
++  it('reads a marked run through the markers it hides', async () => {
++    const cell = await restingCell('**a** bc')
++    expect(cellOffsetAt(cell, textNode(cell, 'a'), 1)).toBe(3)
++    expect(cellOffsetAt(cell, textNode(cell, ' bc'), 2)).toBe(7)
++  })
++
++  it('takes a mark’s hidden markers into a selection that reaches its edge', async () => {
++    const cell = await restingCell('**a** bc')
++    expect(cellOffsetAt(cell, textNode(cell, 'a'), 0, 'start')).toBe(0)
++    expect(cellOffsetAt(cell, textNode(cell, 'a'), 1, 'end')).toBe(5)
++  })
++
++  it('reads the plain text before any token from the cell’s start', async () => {
++    const cell = await restingCell('xy **a**')
++    expect(cellOffsetAt(cell, textNode(cell, 'xy '), 1)).toBe(1)
++  })
++
++  it('clamps a point inside an alias to the link it stands for, and reads past it', async () => {
++    const cell = await restingCell('x [[Quarterly Plan|the plan]] y')
++    const alias = textNode(cell, 'the plan')
++    expect(cellOffsetAt(cell, alias, 3, 'start')).toBe(2)
++    expect(cellOffsetAt(cell, alias, 3, 'end')).toBe(29)
++    expect(cellOffsetAt(cell, textNode(cell, ' y'), 1)).toBe(30)
++  })
++
++  it('clamps the § a heading link draws to the link', async () => {
++    const cell = await restingCell('[[Quarterly Plan#Goals]] z')
++    const glyph = textNode(cell, '§')
++    expect(cellOffsetAt(cell, glyph, 1, 'start')).toBe(0)
++    expect(cellOffsetAt(cell, glyph, 1, 'end')).toBe(24)
++    expect(cellOffsetAt(cell, textNode(cell, ' z'), 1)).toBe(25)
++  })
++
++  it('clamps a footnote’s drawn ordinal to its marker', async () => {
++    const cell = await restingCell('see [^note] ok', {
++      ordinalOf: (label) => (label === 'note' ? 7 : null),
++      ownKeys: [],
++    })
++    expect(cellOffsetAt(cell, textNode(cell, '7'), 1, 'end')).toBe(11)
++    expect(cellOffsetAt(cell, textNode(cell, ' ok'), 1)).toBe(12)
++  })
++
++  it('reads a list line from its own base, past the glyph it draws', async () => {
++    const cell = await restingCell('- a\n- **b** c')
++    expect(cellOffsetAt(cell, textNode(cell, 'a'), 0)).toBe(2)
++    expect(cellOffsetAt(cell, textNode(cell, 'b'), 1)).toBe(9)
++    expect(cellOffsetAt(cell, textNode(cell, ' c'), 1)).toBe(12)
++    expect(cellOffsetAt(cell, textNode(cell, '•', 1), 1, 'end')).toBe(6)
++  })
++
++  it('reads an empty line’s filler as the line’s own start', async () => {
++    const cell = await restingCell('- a\n\nb')
++    expect(cellOffsetAt(cell, textNode(cell, '​'), 1)).toBe(4)
++    expect(cellOffsetAt(cell, textNode(cell, 'b'), 1)).toBe(6)
++  })
++
++  it('reads an empty item’s filler as where its content would begin', async () => {
++    const cell = await restingCell('- a\n- ')
++    expect(cellOffsetAt(cell, textNode(cell, '​'), 0)).toBe(6)
++  })
++
++  it('reads a point between nodes from the cell’s edges', async () => {
++    const cell = await restingCell('**a** bc')
++    expect(cellOffsetAt(cell, cell, 0)).toBe(0)
++    expect(cellOffsetAt(cell, cell, cell.childNodes.length)).toBe(8)
++  })
++})
+diff --git a/Core/MarkdownPM/Tables/cellRestingMenu.test.tsx b/Core/MarkdownPM/Tables/cellRestingMenu.test.tsx
+new file mode 100644
+index 000000000..41364b3b1
+--- /dev/null
++++ b/Core/MarkdownPM/Tables/cellRestingMenu.test.tsx
+@@ -0,0 +1,282 @@
++// @vitest-environment jsdom
++import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
++import { act, createElement } from 'react'
++import { createRoot, type Root } from 'react-dom/client'
++import { EditorView } from '@codemirror/view'
++import { MarkdownTable } from './MarkdownTable'
++import { tableStubs, testHost } from '../../Testing/editorHarness'
++import type { EditorMenuRequest } from '../../Actions/editorMenu'
++import type { TablePayload } from '../Engine/Tables/clipboard'
++
++;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
++if (!('ResizeObserver' in globalThis)) {
++  ;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = class {
++    observe(): void {}
++    unobserve(): void {}
++    disconnect(): void {}
++  }
++}
++
++let reply: (action: string | null) => void = () => {}
++const format = vi.fn<(req: EditorMenuRequest) => Promise<string | null>>()
++const written = vi.fn<(text: string) => Promise<void>>()
++const committed = vi.fn<(row: number, col: number, text: string) => void>()
++const filled = vi.fn<(row: number, col: number, payload: TablePayload) => void>()
++let clipboard = ''
++let readOnly = false
++
++let container: HTMLDivElement
++let root: Root
++let cellText = ''
++
++beforeEach(() => {
++  format.mockReset()
++  format.mockImplementation(
++    () =>
++      new Promise((resolve) => {
++        reply = resolve
++      }),
++  )
++  written.mockReset()
++  written.mockResolvedValue(undefined)
++  committed.mockReset()
++  filled.mockReset()
++  clipboard = ''
++  readOnly = false
++})
++
++afterEach(async () => {
++  await act(async () => root.unmount())
++  container.remove()
++  window.getSelection()?.removeAllRanges()
++  delete (document as { caretPositionFromPoint?: unknown }).caretPositionFromPoint
++})
++
++const host = testHost({
++  menus: { format },
++  clipboard: { read: async () => clipboard, write: written },
++})
++
++function draw(): Promise<void> {
++  return act(async () =>
++    root.render(
++      createElement(MarkdownTable, {
++        ...tableStubs,
++        host,
++        model: { columns: [{ align: null, dashes: 3 }], header: ['A'], rows: [[cellText]] },
++        readOnly: () => readOnly,
++        onCellCommit: (row, col, text) => {
++          committed(row, col, text)
++          cellText = text
++        },
++        onSettled: () => void draw(),
++        onFill: filled,
++      }),
++    ),
++  )
++}
++
++async function mount(text: string): Promise<void> {
++  cellText = text
++  container = document.createElement('div')
++  document.body.appendChild(container)
++  root = createRoot(container)
++  await draw()
++}
++
++const cell = (): HTMLElement =>
++  container.querySelector('tbody .mdpm-tbl-cell-static') as HTMLElement
++
++function textNode(drawn: string): Text {
++  const walker = document.createTreeWalker(cell(), NodeFilter.SHOW_TEXT)
++  for (let n = walker.nextNode(); n; n = walker.nextNode())
++    if (n.textContent === drawn) return n as Text
++  throw new Error(`no text node "${drawn}"`)
++}
++
++/** Right-clicks the cell with the pointer over `offset` of the text node drawing `drawn`. */
++async function rightClick(drawn: string, offset: number): Promise<MouseEvent> {
++  const node = textNode(drawn)
++  ;(document as { caretPositionFromPoint?: unknown }).caretPositionFromPoint = () => ({
++    offsetNode: node,
++    offset,
++  })
++  const event = new MouseEvent('contextmenu', {
++    bubbles: true,
++    cancelable: true,
++    button: 2,
++    clientX: 12,
++    clientY: 34,
++  })
++  await act(async () => {
++    node.parentElement?.dispatchEvent(event)
++  })
++  return event
++}
++
++function select(drawnFrom: string, from: number, drawnTo: string, to: number): void {
++  const range = document.createRange()
++  range.setStart(textNode(drawnFrom), from)
++  range.setEnd(textNode(drawnTo), to)
++  window.getSelection()?.removeAllRanges()
++  window.getSelection()?.addRange(range)
++}
++
++async function choose(action: string | null): Promise<void> {
++  await act(async () => {
++    reply(action)
++    await Promise.resolve()
++    await Promise.resolve()
++  })
++}
++
++const entered = (): EditorView | null => {
++  const dom = container.querySelector('.mdpm-tbl-cell-editor .cm-editor')
++  return dom && EditorView.findFromDOM(dom as HTMLElement)
++}
++
++describe('a right-click on a resting cell', () => {
++  it('asks the editor menu at rest, at the click, and leaves the cell resting', async () => {
++    await mount('**a** bc')
++    const event = await rightClick('a', 1)
++    expect(format).toHaveBeenCalledWith(
++      expect.objectContaining({
++        scope: 'cell',
++        x: 12,
++        y: 34,
++        bold: true,
++        resting: { selection: '' },
++      }),
++    )
++    expect(event.defaultPrevented).toBe(false)
++    expect(entered()).toBeNull()
++  })
++
++  it('sends the source a selection inside the click covers', async () => {
++    await mount('**a** bc')
++    select('a', 0, ' bc', 3)
++    await rightClick(' bc', 1)
++    expect(format).toHaveBeenCalledWith(
++      expect.objectContaining({ bold: false, resting: { selection: '**a** bc' } }),
++    )
++  })
++
++  it('reads a point when the click lands outside the selection', async () => {
++    await mount('**a** bc')
++    select(' bc', 1, ' bc', 2)
++    await rightClick('a', 1)
++    expect(format).toHaveBeenCalledWith(expect.objectContaining({ resting: { selection: '' } }))
++  })
++
++  it('claims the right press, so the browser seats no word before the menu', async () => {
++    await mount('plain words')
++    const press = new MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 2 })
++    await act(async () => {
++      cell().dispatchEvent(press)
++    })
++    expect(press.defaultPrevented).toBe(true)
++  })
++
++  it('asks nothing of a read-only cell', async () => {
++    readOnly = true
++    await mount('**a** bc')
++    await rightClick('a', 1)
++    expect(format).not.toHaveBeenCalled()
++  })
++})
++
++describe('a row chosen at rest', () => {
++  it('commits a format over a selection without entering the cell', async () => {
++    await mount('ab cd')
++    select('ab cd', 3, 'ab cd', 5)
++    await rightClick('ab cd', 4)
++    await choose('format:bold')
++    expect(committed).toHaveBeenLastCalledWith(1, 0, 'ab **cd**')
++    expect(entered()).toBeNull()
++  })
++
++  it('enters the cell with the caret in the slot a format at a point writes', async () => {
++    await mount('ab cd')
++    await rightClick('ab cd', 3)
++    await choose('format:bold')
++    expect(committed).toHaveBeenLastCalledWith(1, 0, 'ab ****cd')
++    const view = entered()
++    expect(view?.state.doc.toString()).toBe('ab ****cd')
++    expect(view?.state.selection.main.head).toBe(5)
++  })
++
++  it('commits a format a point removes without entering the cell', async () => {
++    await mount('**ab** cd')
++    await rightClick('ab', 1)
++    await choose('format:bold')
++    expect(committed).toHaveBeenLastCalledWith(1, 0, 'ab cd')
++    expect(entered()).toBeNull()
++  })
++
++  it('commits a list over the cell at rest', async () => {
++    await mount('ab')
++    await rightClick('ab', 1)
++    await choose('list:bullet')
++    expect(committed).toHaveBeenLastCalledWith(1, 0, '- ab')
++    expect(entered()).toBeNull()
++  })
++
++  it('copies the source a selection covers, not the text it draws', async () => {
++    await mount('**a** bc')
++    select('a', 0, ' bc', 2)
++    await rightClick('a', 1)
++    await choose('edit:copy')
++    expect(written).toHaveBeenCalledWith('**a** b')
++    expect(committed).not.toHaveBeenCalled()
++  })
++
++  it('cuts by copying the source and committing its removal', async () => {
++    await mount('ab cd')
++    select('ab cd', 2, 'ab cd', 5)
++    await rightClick('ab cd', 3)
++    await choose('edit:cut')
++    expect(written).toHaveBeenCalledWith(' cd')
++    expect(committed).toHaveBeenLastCalledWith(1, 0, 'ab')
++  })
++
++  it('pastes the clipboard literally at the click', async () => {
++    clipboard = 'X|Y'
++    await mount('ab')
++    await rightClick('ab', 1)
++    await choose('edit:paste')
++    expect(committed).toHaveBeenLastCalledWith(1, 0, 'aX|Yb')
++    expect(entered()).toBeNull()
++  })
++
++  it('fills the cells from a table-shaped clipboard, as a live paste does', async () => {
++    clipboard = '| p | q |\n| r | s |'
++    await mount('ab')
++    await rightClick('ab', 1)
++    await choose('paste:plain')
++    expect(filled).toHaveBeenCalledWith(1, 0, {
++      kind: 'rect',
++      grid: [
++        ['p', 'q'],
++        ['r', 's'],
++      ],
++    })
++    expect(committed).not.toHaveBeenCalled()
++  })
++
++  it('stands down when the cell moved while the menu stood open', async () => {
++    await mount('ab cd')
++    await rightClick('ab cd', 3)
++    cellText = 'moved'
++    await draw()
++    await choose('format:bold')
++    expect(committed).not.toHaveBeenCalled()
++    expect(entered()).toBeNull()
++  })
++
++  it('commits nothing for an edit that leaves the text as it was', async () => {
++    await mount('ab cd')
++    await rightClick('ab cd', 3)
++    await choose('edit:cut')
++    expect(committed).not.toHaveBeenCalled()
++  })
++})
+diff --git a/Core/MarkdownPM/Tables/cellSeat.test.ts b/Core/MarkdownPM/Tables/cellSeat.test.ts
+new file mode 100644
+index 000000000..af2b33d2f
+--- /dev/null
++++ b/Core/MarkdownPM/Tables/cellSeat.test.ts
+@@ -0,0 +1,40 @@
++import { describe, expect, it } from 'vitest'
++import { seatSelection } from './CellEditor'
++
++const at = (pos: number | null) => () => pos
++
++describe('where an entered cell seats its selection', () => {
++  it('takes the caret at the end when entered with no seat', () => {
++    expect(seatSelection(null, 9, at(3))).toEqual({ anchor: 9, head: 9 })
++  })
++
++  it('takes the caret under the pointer, or the end where the pointer reads nothing', () => {
++    expect(seatSelection({ kind: 'point', x: 1, y: 2 }, 9, at(3))).toEqual({ anchor: 3, head: 3 })
++    expect(seatSelection({ kind: 'point', x: 1, y: 2 }, 9, at(null))).toEqual({
++      anchor: 9,
++      head: 9,
++    })
++  })
++
++  it('extends a crossing sweep from the edge it came in by', () => {
++    expect(seatSelection({ kind: 'point', x: 1, y: 2, sweep: 'start' }, 9, at(3))).toEqual({
++      anchor: 0,
++      head: 3,
++    })
++    expect(seatSelection({ kind: 'point', x: 1, y: 2, sweep: 'end' }, 9, at(3))).toEqual({
++      anchor: 9,
++      head: 3,
++    })
++  })
++
++  it('selects a range, clamped to the text', () => {
++    expect(seatSelection({ kind: 'select', range: [2, 5] }, 9, at(3))).toEqual({
++      anchor: 2,
++      head: 5,
++    })
++    expect(seatSelection({ kind: 'select', range: [7, 12] }, 9, at(3))).toEqual({
++      anchor: 7,
++      head: 9,
++    })
++  })
++})
+diff --git a/Core/MarkdownPM/Tables/cellStatic.test.tsx b/Core/MarkdownPM/Tables/cellStatic.test.tsx
+index 572934fec..9e2fe9488 100644
+--- a/Core/MarkdownPM/Tables/cellStatic.test.tsx
++++ b/Core/MarkdownPM/Tables/cellStatic.test.tsx
+@@ -114,7 +114,7 @@ describe('an entered cell draws what the resting cell drew', () => {
+     ).toEqual(['2'])
+   })
+ 
+-  it('a right-click enters the cell too, so the menu has a target', async () => {
++  it('a right-click leaves the cell resting', async () => {
+     await mount(numbering(2))
+     const cell = [...container.querySelectorAll('.mdpm-tbl-cell-static')].find((el) =>
+       el.textContent?.includes('see'),
+@@ -123,7 +123,7 @@ describe('an entered cell draws what the resting cell drew', () => {
+       cell.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 2 }))
+       cell.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, button: 2 }))
+     })
+-    expect(container.querySelector('.cm-editor')).not.toBeNull()
++    expect(container.querySelector('.cm-editor')).toBeNull()
+   })
+ })
+ 
+diff --git a/Core/MarkdownPM/Tables/cellStatic.tsx b/Core/MarkdownPM/Tables/cellStatic.tsx
+index ea1e54ade..167e27841 100644
+--- a/Core/MarkdownPM/Tables/cellStatic.tsx
++++ b/Core/MarkdownPM/Tables/cellStatic.tsx
+@@ -20,7 +20,11 @@ import {
+ import { perText } from '../Engine/perText'
+ import { parseListMarker, type ListMarker } from '../Engine/detect'
+ import { checkboxToggleChange } from '../Engine/listDragModel'
+-import { applyEdits, lineOffsetsOf } from '../Engine/markdownCode'
++import { applyEdits, lineOffsetsOf, type TextEdit } from '../Engine/markdownCode'
++import { decodePayload, type TablePayload } from '../Engine/Tables/clipboard'
++import { readFormatState } from '../Input/formatState'
++import { editFor } from '../Menus/menu'
++import { PASTE_PLAIN_ACTION, RESTING_EDITS } from '../../Actions/editorMenu'
+ import {
+   wikiLinkView,
+   linkMenuTarget,
+@@ -35,6 +39,7 @@ import { wikiAuthorTarget } from '../Links/linkEdit'
+ import { dwellTarget, followTarget, heldTarget } from '../Links/linkClicks'
+ import { CITE_GLYPH, followCitation } from '../Citations/citationPointer'
+ import type { EditorHost, OwnPage } from '../api'
++import type { Seat } from './CellEditor'
+ import type { HeadingLinkStyle } from '../../Settings/personalization'
+ import { CheckMark, checkboxClass } from '@pommora/uix/Controls/Checkbox'
+ import { cx } from '@pommora/uix/Utilities/cx'
+@@ -66,6 +71,11 @@ export function renderCellContent(
+   const tokens = cellTokens(text)
+   if (tokens.length === 0) return text
+   const conn = getConn?.()
++  // A drawn span names the source it stands for, and `at` where its text begins when that text IS the source; `cellOffsetAt` reads both.
++  const src = (range: readonly [number, number], at?: number) => ({
++    'data-src': `${base + range[0]},${base + range[1]}`,
++    'data-at': at === undefined ? undefined : base + at,
++  })
+   const out: React.ReactNode[] = []
+   let pos = 0
+   let key = 0
+@@ -81,11 +91,22 @@ export function renderCellContent(
+       else if (view.status === 'phantom')
+         out.push(
+           <Fragment key={key++}>
+-            <span className="md-phantom-syntax md-unresolved-fixed">
++            <span
++              className="md-phantom-syntax md-unresolved-fixed"
++              {...src([s, tk.contentRange[0]], s)}
++            >
+               {text.slice(s, tk.contentRange[0])}
+             </span>
+-            <span className="md-connection-phantom md-unresolved-fixed">{content}</span>
+-            <span className="md-phantom-syntax md-unresolved-fixed">
++            <span
++              className="md-connection-phantom md-unresolved-fixed"
++              {...src(tk.contentRange, tk.contentRange[0])}
++            >
++              {content}
++            </span>
++            <span
++              className="md-phantom-syntax md-unresolved-fixed"
++              {...src([tk.contentRange[1], e], tk.contentRange[1])}
++            >
+               {text.slice(tk.contentRange[1], e)}
+             </span>
+           </Fragment>,
+@@ -144,9 +165,15 @@ export function renderCellContent(
+       const [open, close] = tk.markerRanges
+       out.push(
+         <Fragment key={key++}>
+-          <span className="md-bracket">{text.slice(open[0], open[1])}</span>
+-          <span className="md-html-tag">{content}</span>
+-          <span className="md-bracket">{text.slice(close[0], close[1])}</span>
++          <span className="md-bracket" {...src(open, open[0])}>
++            {text.slice(open[0], open[1])}
++          </span>
++          <span className="md-html-tag" {...src(tk.contentRange, tk.contentRange[0])}>
++            {content}
++          </span>
++          <span className="md-bracket" {...src(close, close[0])}>
++            {text.slice(close[0], close[1])}
++          </span>
+         </Fragment>,
+       )
+     } else if (tk.kind === 'citationRef') {
+@@ -155,23 +182,22 @@ export function renderCellContent(
+         n === null ? (
+           text.slice(s, e)
+         ) : (
+-          <span key={key++} className="md-citation-reference" data-cite-label={content}>
++          <span
++            key={key++}
++            className="md-citation-reference"
++            data-cite-label={content}
++            {...src(tk.range)}
++          >
+             {n}
+           </span>
+         ),
+       )
+-    } else {
+-      const cls = contentClass(tk)
++    } else
+       out.push(
+-        cls ? (
+-          <span key={key++} className={cls}>
+-            {content}
+-          </span>
+-        ) : (
+-          content
+-        ),
++        <span key={key++} className={contentClass(tk)} {...src(tk.range, tk.contentRange[0])}>
++          {content}
++        </span>,
+       )
+-    }
+     pos = e
+   }
+   if (pos < text.length) out.push(text.slice(pos))
+@@ -182,20 +208,32 @@ function MarkerGlyph({
+   lm,
+   glyph,
+   line,
++  at,
+ }: {
+   lm: ListMarker
+   glyph: ListGlyph
+   line: string
++  at: number
+ }): React.JSX.Element {
++  const src = `${at},${at + lm.contentStart}`
+   if (glyph === 'checkbox')
+     return (
+-      <span className="md-list-checkbox-seat">
++      <span className="md-list-checkbox-seat" data-src={src}>
+         <span className={checkboxClass(lm.checked)}>{lm.checked && <CheckMark size={12} />}</span>
+       </span>
+     )
+-  if (glyph === 'bullet') return <span className="md-list-bullet">•</span>
++  if (glyph === 'bullet')
++    return (
++      <span className="md-list-bullet" data-src={src}>
++        •
++      </span>
++    )
+   const text = line.slice(lm.markerStart, lm.markerEnd)
+-  return <span className={`md-list-${glyph} md-control`}>{text}</span>
++  return (
++    <span className={`md-list-${glyph} md-control`} data-src={src}>
++      {text}
++    </span>
++  )
+ }
+ 
+ // A cell holding a list draws one block per line, so the indent, the glyph and the rails have something to sit on; a cell holding none stays a single flow, which is what pre-wrap already renders correctly.
+@@ -235,6 +273,7 @@ function renderCellBody(
+         className={it ? listLineClass(it.lm) : undefined}
+         style={it ? ({ '--list-level': it.lm.level } as React.CSSProperties) : undefined}
+         data-cell-line={i}
++        data-base={starts[i]}
+       >
+         {rails[i]?.map((r) => (
+           <span
+@@ -244,7 +283,7 @@ function renderCellBody(
+             aria-hidden="true"
+           />
+         ))}
+-        {it && <MarkerGlyph lm={it.lm} glyph={it.glyph} line={line} />}
++        {it && <MarkerGlyph lm={it.lm} glyph={it.glyph} line={line} at={starts[i]} />}
+         {it ? <span className="md-list-text">{rendered}</span> : rendered}
+         {content === '' && '\u200b'}
+       </div>
+@@ -253,6 +292,67 @@ function renderCellBody(
+ }
+ 
+ const LINK_SELECTOR = `.${MD_LINK_CLASS}, .md-connection-resolved, [data-link-span]`
++const DRAWN = '[data-src], [data-link-span]'
++
++const drawnSpan = (el: HTMLElement): [number, number] => {
++  const [s, e] = (el.dataset.src ?? el.dataset.linkSpan ?? '').split(',').map(Number)
++  return [s, e]
++}
++
++const isFiller = (n: Node): boolean =>
++  n.nodeType === Node.TEXT_NODE &&
++  n.textContent === '\u200b' &&
++  n.parentElement?.dataset.cellLine !== undefined
++
++/** Where a DOM point inside a resting cell sits in the cell's text. A glyph drawn in place of its source (an alias, a `§`, an ordinal, a list glyph) clamps to the token it stands for, toward `side`; text between tokens reads from what precedes it. Read at a right-click or a copy, never on render. */
++export function cellOffsetAt(
++  cell: Element,
++  node: Node,
++  offset: number,
++  side: 'start' | 'end' = 'start',
++): number {
++  // A point between children reads as the start of the child after it.
++  while (
++    node.nodeType !== Node.TEXT_NODE &&
++    offset < node.childNodes.length &&
++    !(node as HTMLElement).matches(DRAWN)
++  ) {
++    node = node.childNodes[offset]
++    offset = 0
++  }
++  const drawn = (
++    node.nodeType === Node.TEXT_NODE ? node.parentElement : (node as HTMLElement)
++  )?.closest<HTMLElement>(DRAWN)
++  if (drawn && cell.contains(drawn)) {
++    const [s, e] = drawnSpan(drawn)
++    if (node === drawn) return offset === 0 ? s : e
++    const at = drawn.dataset.at
++    // A selection reaching a mark's edge takes the markers it hides with it.
++    const edge = offset === (side === 'start' ? 0 : node.textContent?.length)
++    if (at !== undefined && node.parentNode === drawn && !edge) return Number(at) + offset
++    return side === 'start' ? s : e
++  }
++  let acc = node.nodeType === Node.TEXT_NODE && !isFiller(node) ? offset : 0
++  let prev = node.nodeType === Node.TEXT_NODE ? node.previousSibling : node.childNodes[offset - 1]
++  let parent = node.nodeType === Node.TEXT_NODE ? node.parentElement : (node as HTMLElement)
++  while (parent) {
++    for (; prev; prev = prev.previousSibling) {
++      if (prev.nodeType === Node.TEXT_NODE) {
++        if (!isFiller(prev)) acc += (prev as Text).data.length
++        continue
++      }
++      const sib = prev as HTMLElement
++      if (sib.matches(DRAWN)) return drawnSpan(sib)[1] + acc
++      return cellOffsetAt(cell, sib, sib.childNodes.length) + acc
++    }
++    if (parent === cell) return acc
++    const base = parent.dataset.base
++    if (base !== undefined) return Number(base) + acc
++    prev = parent.previousSibling
++    parent = parent.parentElement
++  }
++  return acc
++}
+ 
+ function linkSpanAt(target: EventTarget | null): [number, number] | null {
+   const el = (target as HTMLElement | null)?.closest?.(LINK_SELECTOR)
+@@ -261,6 +361,25 @@ function linkSpanAt(target: EventTarget | null): [number, number] | null {
+   return [Number(raw[0]), Number(raw[1])]
+ }
+ 
++/** The source a right-click reads: the selection when the click lands inside it, clamped to this cell, else the point under the pointer. */
++function restingRange(cell: HTMLElement, x: number, y: number, length: number): [number, number] {
++  const caret = document.caretPositionFromPoint?.(x, y)
++  const at =
++    caret && cell.contains(caret.offsetNode)
++      ? cellOffsetAt(cell, caret.offsetNode, caret.offset)
++      : length
++  const sel = window.getSelection()
++  const range = sel && !sel.isCollapsed && sel.rangeCount > 0 ? sel.getRangeAt(0) : null
++  if (!range?.intersectsNode(cell)) return [at, at]
++  const from = cell.contains(range.startContainer)
++    ? cellOffsetAt(cell, range.startContainer, range.startOffset, 'start')
++    : 0
++  const to = cell.contains(range.endContainer)
++    ? cellOffsetAt(cell, range.endContainer, range.endOffset, 'end')
++    : length
++  return at >= from && at <= to ? [from, to] : [at, at]
++}
++
+ function StaticCellImpl({
+   host,
+   text,
+@@ -270,7 +389,7 @@ function StaticCellImpl({
+   linkStyle,
+   onActivate,
+   onCommit,
+-  onSelect,
++  onFill,
+ }: {
+   host: EditorHost
+   text: string
+@@ -278,13 +397,68 @@ function StaticCellImpl({
+   connections: () => ConnectionsApi | undefined
+   linkStyle: HeadingLinkStyle
+   readOnly: () => boolean
+-  onActivate: (coords: { x: number; y: number }, sweep?: 'start' | 'end') => void
++  onActivate: (seat: Seat) => void
+   onCommit: (text: string) => void
+-  onSelect: (range: [number, number]) => void
++  onFill: (payload: TablePayload) => void
+ }): React.JSX.Element {
+   // What the cell reads NOW: a native menu can be held open while an undo moves the cell underneath it.
+   const live = useLatest(text)
+ 
++  /** Stands down unless the cell still reads `built`, the text the gesture read, and writes nothing an edit leaves unchanged. */
++  const commitEdit = (built: string, edits: readonly TextEdit[]): boolean => {
++    if (live.current !== built) return false
++    const next = applyEdits(built, edits)
++    if (next === built) return false
++    onCommit(next)
++    return true
++  }
++
++  // Paste As forms are left to the editor's paste, which a resting cell has none of.
++  const restingAction = (action: string, built: string, from: number, to: number): void => {
++    const pasteOver = (clip: string): void => {
++      const payload = decodePayload(clip)
++      if (payload) onFill(payload)
++      else commitEdit(built, [{ from, to, insert: clip }])
++    }
++    switch (action) {
++      case RESTING_EDITS.copy:
++        void host.clipboard.write(built.slice(from, to))
++        return
++      case RESTING_EDITS.cut:
++        void host.clipboard.write(built.slice(from, to))
++        commitEdit(built, [{ from, to, insert: '' }])
++        return
++      case RESTING_EDITS.paste:
++      case PASTE_PLAIN_ACTION:
++        void host.clipboard.read().then(pasteOver)
++        return
++    }
++    const edit = editFor(action, built, from, to)
++    if (!edit || !commitEdit(built, edit.changes)) return
++    // A mark written at a point is an empty slot, which only typing fills.
++    const caret = edit.selection
++    if (from === to && caret !== undefined && /^(format|highlight):/.test(action))
++      onActivate({ kind: 'select', range: [caret, caret] })
++  }
++
++  const restingMenu = (e: React.MouseEvent<HTMLElement>): void => {
++    const ask = host.menus.format
++    if (!ask) return
++    const built = text
++    const [from, to] = restingRange(e.currentTarget, e.clientX, e.clientY, built.length)
++    void ask({
++      ...readFormatState(built, from, to),
++      scope: 'cell',
++      x: e.clientX,
++      y: e.clientY,
++      embedSeat: false,
++      citeSeat: false,
++      resting: { selection: built.slice(from, to) },
++    }).then((action) => {
++      if (action) restingAction(action, built, from, to)
++    })
++  }
++
+   const menuAt = (e: React.MouseEvent, api: ConnectionsApi): ConnMenuTarget | null => {
+     const span = linkSpanAt(e.target)
+     const found = span && linkTokenAt(cellTokens(text), span[0])
+@@ -301,7 +475,7 @@ function StaticCellImpl({
+       api,
+       host,
+       onCommit,
+-      onSelect,
++      onActivate,
+     )
+   }
+   const { linkAt, dismiss, onContextMenu, onPointerOver, onPointerOut } = linkGestures(
+@@ -334,7 +508,7 @@ function StaticCellImpl({
+     if (!change) return null
+     e.preventDefault()
+     e.stopPropagation()
+-    return () => onCommit(applyEdits(doc, [change]))
++    return () => commitEdit(doc, [change])
+   }
+ 
+   const claimCite = (e: React.MouseEvent): (() => void) | null => {
+@@ -352,8 +526,9 @@ function StaticCellImpl({
+     <div
+       className="mdpm-tbl-cell-static"
+       onContextMenu={(e) => {
++        // The link's own menu claims the event; the editor menu leaves it to the browser, whose native menu main pops.
+         if (onContextMenu(e) || readOnly()) return
+-        onActivate({ x: e.clientX, y: e.clientY })
++        restingMenu(e)
+       }}
+       onPointerOver={onPointerOver}
+       onPointerOut={onPointerOut}
+@@ -364,7 +539,7 @@ function StaticCellImpl({
+         if (go) return go()
+         if (readOnly()) return
+         if (e.detail === 1 && window.getSelection()?.isCollapsed === false) return
+-        onActivate({ x: e.clientX, y: e.clientY })
++        onActivate({ kind: 'point', x: e.clientX, y: e.clientY })
+       }}
+       onMouseUp={(e) => {
+         // The page's document and the cell's are two documents, so only the half of a crossing sweep that reached this cell can act.
+@@ -376,15 +551,17 @@ function StaticCellImpl({
+         if (!wrap || wrap.contains(anchor)) return
+         const above =
+           (wrap.compareDocumentPosition(anchor) & Node.DOCUMENT_POSITION_PRECEDING) !== 0
+-        const coords = { x: e.clientX, y: e.clientY }
+-        queueMicrotask(() => onActivate(coords, above ? 'start' : 'end'))
++        const at: Seat = {
++          kind: 'point',
++          x: e.clientX,
++          y: e.clientY,
++          sweep: above ? 'start' : 'end',
++        }
++        queueMicrotask(() => onActivate(at))
+       }}
+       onMouseDown={(e) => {
+         // Claiming a right press here is what stops the browser selecting the word under the pointer before the menu opens.
+-        if (e.button === 2) {
+-          if (linkSpanAt(e.target)) e.preventDefault()
+-          return
+-        }
++        if (e.button === 2) return e.preventDefault()
+         if (e.button === 0) claimCheckbox(e) ?? claimCite(e) ?? claimLink(e)
+       }}
+     >
+@@ -453,7 +630,7 @@ function menuTarget(
+   api: ConnectionsApi,
+   host: EditorHost,
+   onCommit: (text: string) => void,
+-  onSelect: (range: [number, number]) => void,
++  onActivate: (seat: Seat) => void,
+ ): ConnMenuTarget | null {
+   return tokenMenuTarget(tk, tokenTarget(api, text, tk), {
+     wiki: (action) => {
+@@ -461,13 +638,16 @@ function menuTarget(
+       if (!now) return
+       const { pipeAt, select } = wikiAuthorTarget(now.text, now.tk, action)
+       if (pipeAt !== undefined) onCommit(`${now.text.slice(0, pipeAt)}|${now.text.slice(pipeAt)}`)
+-      onSelect(select)
++      onActivate({ kind: 'select', range: select })
+     },
+     url: (action) => {
+       const now = still()
+       if (!now) return
+       if (action === 'rename' || action === 'editLink')
+-        return onSelect(action === 'rename' ? now.tk.contentRange : linkAddress(now.tk))
++        return onActivate({
++          kind: 'select',
++          range: action === 'rename' ? now.tk.contentRange : linkAddress(now.tk),
++        })
+       const edit = linkActionText(now.text, now.tk, action, host.linkTitles)
+       if (!edit) return
+       onCommit(now.text.slice(0, now.tk.range[0]) + edit.insert + now.text.slice(now.tk.range[1]))
+diff --git a/Desktop/Actions/editorMenu.test.ts b/Desktop/Actions/editorMenu.test.ts
+index 58ea63a14..ea700370c 100644
+--- a/Desktop/Actions/editorMenu.test.ts
++++ b/Desktop/Actions/editorMenu.test.ts
+@@ -37,6 +37,7 @@ const req = (x: number, y: number): EditorMenuRequest => ({
+   block: null,
+   embedSeat: false,
+   citeSeat: false,
++  resting: null,
+ })
+ 
+ describe('matching an editor’s ask to the click', () => {
+@@ -146,6 +147,74 @@ describe('the window’s right-click', () => {
+     expect(labels()).not.toContain('Paste As')
+   })
+ 
++  describe('over a resting cell, which Chromium reports as not editable', () => {
++    const resting = (selection: string): EditorMenuRequest => ({
++      ...req(10, 10),
++      scope: 'cell',
++      resting: { selection },
++    })
++
++    it('pops the edit rows the renderer acts on, without Undo, Redo, or Select All', async () => {
++      native.clipboard = ''
++      const asked = askEditorMenu(resting('wo'))
++      rightClick({
++        isEditable: false,
++        editFlags: { canPaste: false } as ContextMenuParams['editFlags'],
++      })
++      expect(labels()).not.toContain('undo')
++      expect(labels()).not.toContain('redo')
++      expect(labels()).not.toContain('selectAll')
++      expect(labels().slice(0, 4)).toEqual(['Cut', 'Copy', 'Paste', 'Paste Without Formatting'])
++      expect(labels()).toContain('Format')
++      pick(row('Cut'))
++      await expect(asked).resolves.toBe('edit:cut')
++    })
++
++    it('answers Copy and Paste as actions rather than roles', async () => {
++      native.clipboard = 'x'
++      const copied = askEditorMenu(resting('wo'))
++      rightClick({ isEditable: false })
++      expect(row('Copy')?.role).toBeUndefined()
++      pick(row('Copy'))
++      await expect(copied).resolves.toBe('edit:copy')
++      const pasted = askEditorMenu(resting(''))
++      rightClick({ isEditable: false })
++      pick(row('Paste'))
++      await expect(pasted).resolves.toBe('edit:paste')
++    })
++
++    it('enables Cut and Copy from the source selection, and the pastes from the clipboard', () => {
++      native.clipboard = ''
++      void askEditorMenu(resting(''))
++      rightClick({
++        isEditable: false,
++        editFlags: { canCopy: true, canPaste: true } as ContextMenuParams['editFlags'],
++      })
++      expect([row('Cut')?.enabled, row('Copy')?.enabled]).toEqual([false, false])
++      expect([row('Paste')?.enabled, row('Paste Without Formatting')?.enabled]).toEqual([
++        false,
++        false,
++      ])
++      native.clipboard = 'x'
++      void askEditorMenu(resting('wo'))
++      rightClick({
++        isEditable: false,
++        editFlags: { canPaste: false } as ContextMenuParams['editFlags'],
++      })
++      expect([row('Cut')?.enabled, row('Copy')?.enabled]).toEqual([true, true])
++      expect([row('Paste')?.enabled, row('Paste Without Formatting')?.enabled]).toEqual([
++        true,
++        true,
++      ])
++    })
++
++    it('offers Insert Link from the source selection, not the drawn one', () => {
++      void askEditorMenu(resting('example.com'))
++      rightClick({ isEditable: false, selectionText: 'the site' })
++      expect(labels()).toContain('Insert Link')
++    })
++  })
++
+   it('seats Change Color under Select All, above the line over the editor block', async () => {
+     const asked = askEditorMenu({ ...req(10, 10), highlight: 'accent' })
+     rightClick({})
+diff --git a/Desktop/Actions/editorMenu.ts b/Desktop/Actions/editorMenu.ts
+index 5365bbeeb..8bdd19c54 100644
+--- a/Desktop/Actions/editorMenu.ts
++++ b/Desktop/Actions/editorMenu.ts
+@@ -10,6 +10,7 @@ import {
+   changeColorItems,
+   editorContextItems,
+   PASTE_PLAIN_ACTION,
++  RESTING_EDITS,
+ } from '@pommora/core/Actions/editorMenu'
+ import type { ActionItem } from '@pommora/core/Actions/menuModel'
+ import { PASTE_AS_PREFIX, pasteAsRows } from '@pommora/core/Actions/pasteAsMenu'
+@@ -70,26 +71,46 @@ function systemItems(
+     )
+   }
+ 
++  const resting = editor?.req.resting
++  const canPaste = resting ? clipboard.readText() !== '' : f.canPaste
+   items.push(
+-    { role: 'undo', enabled: f.canUndo },
+-    { role: 'redo', enabled: f.canRedo },
+-    { type: 'separator' },
+-    { role: 'cut', enabled: f.canCut },
+-    { role: 'copy', enabled: f.canCopy },
+-    { role: 'paste', enabled: f.canPaste },
++    ...(resting && editor
++      ? restingEditItems(editor, resting.selection !== '', canPaste)
++      : ([
++          { role: 'undo', enabled: f.canUndo },
++          { role: 'redo', enabled: f.canRedo },
++          { type: 'separator' },
++          { role: 'cut', enabled: f.canCut },
++          { role: 'copy', enabled: f.canCopy },
++          { role: 'paste', enabled: f.canPaste },
++        ] satisfies MenuItemConstructorOptions[])),
+     ...(editor ? pasteAsItems(editor) : []),
+     // The `pasteAndMatchStyle` role would take back ⌘⇧V, which belongs to the inverse paste command.
+     {
+       label: 'Paste Without Formatting',
+-      enabled: f.canPaste,
++      enabled: canPaste,
+       click: editor ? () => editor.resolve(PASTE_PLAIN_ACTION) : () => wc.pasteAndMatchStyle(),
+     },
+-    { role: 'selectAll' },
++    ...(resting ? [] : [{ role: 'selectAll' } as const]),
+     ...(editor ? editorRows(editor, changeColorItems(editor.req, heldCommands())) : []),
+   )
+   return items
+ }
+ 
++// A role acts on whatever holds focus, which a resting cell never does, so its edits answer the cell instead; with no focused history behind it, Undo, Redo, and Select All have nothing to act on.
++function restingEditItems(
++  editor: EditorMenu,
++  selected: boolean,
++  canPaste: boolean,
++): MenuItemConstructorOptions[] {
++  const answer = (action: string) => () => editor.resolve(action)
++  return [
++    { label: 'Cut', enabled: selected, click: answer(RESTING_EDITS.cut) },
++    { label: 'Copy', enabled: selected, click: answer(RESTING_EDITS.copy) },
++    { label: 'Paste', enabled: canPaste, click: answer(RESTING_EDITS.paste) },
++  ]
++}
++
+ // Last, so the Pommora formatting block sits directly under the edit items.
+ function speechShareItems(params: ContextMenuParams): MenuItemConstructorOptions[] {
+   if (!params.selectionText || process.platform !== 'darwin') return []
+@@ -125,13 +146,16 @@ function editorRows(
+ export function installEditorContextMenu(win: BrowserWindow): void {
+   win.webContents.on('context-menu', (_e, params) => {
+     const editor = takeEditorMenu(win, params)
+-    if (!params.isEditable) return editor?.resolve(null) // the sidebar keeps its own menus
++    // The sidebar keeps its own menus; a resting cell reads as not editable but asks for this one.
++    if (!params.isEditable && !editor?.req.resting) return editor?.resolve(null)
+     const items = systemItems(win.webContents, params, editor)
+-    if (editor)
++    if (editor) {
++      const selection = editor.req.resting?.selection ?? params.selectionText
+       items.push(
+         { type: 'separator' },
+-        ...editorRows(editor, editorContextItems(editor.req, heldCommands(), params.selectionText)),
++        ...editorRows(editor, editorContextItems(editor.req, heldCommands(), selection)),
+       )
++    }
+     items.push(...speechShareItems(params))
+     Menu.buildFromTemplate(items).popup({ window: win, callback: () => editor?.resolve(null) })
+   })

@@ -186,3 +186,37 @@ Every question put to Nathan during the investigation, with his answer as it sta
 
 **Q:** Should the next session keep stopping to ask when an answer has two readings?
 **A:** Yes. When an answer can be read two ways, contradicts an earlier ruling, or leaves a case unnamed, stop and ask. Lay out the readings side by side with a recommendation. Nathan values this pushback.
+
+---
+
+### Planning Checkpoint (10-10-2026)
+
+**Q:** One menu model moves a web-address value's Copy Link from beside the open rows to after Rename and Edit Link, where every other link already has it. Keep today's order or accept the move?
+**A:** Accept the move.
+
+**Q:** Do phantom, ambiguous, and invalid links get a link menu? In a page body they already fall through to the ordinary editor menu.
+**A:** None, unless allowing it is cheap; the planner's choice. Decided: no link menu; a held `[[#Heading]]` keeps a page menu wherever a page holds it.
+
+**Q:** Does a Link cell's right-click gain the column's Format ▸, as Number, Select, and Date cells have?
+**A:** Leave it; it belongs with the app-wide open item.
+
+**Q:** At rest, Bold with nothing selected writes `****` and Format ▸ Link or Connection writes an empty slot. Commit as written, or enter the cell?
+**A:** Enter the cell: formatting with nothing selected opens the typing.
+
+**Q:** Should the one applier focus the editor after Remove Link, Delete, and Format, as the editor menu does after every edit?
+**A:** Yes.
+
+**Q:** A `§Heading` run will draw at rest. Should clicking it follow, as a live one does?
+**A:** Yes, by the same logic heading links draw at rest; the planner makes the best choice. Decided: it follows.
+
+**Q:** Paste As says "Embedded Link" where the Embed ▸ row says "Webpage" for the same thing. Which word?
+**A:** Paste As keeps **Embedded Link**; the Embed ▸ row reads **External Link**.
+
+**Q:** Main has no resolver, so a lone `![[Page]]` line that draws as a link (a duplicate, a self-embed, a headed or aliased one) still counts as an embed for the Matrix and stays out of it. Accept, or resolve on the host?
+**A:** Find the most efficient way to keep embeds from counting as connections, riding the lone-line logic that already exists. Decided: the index's lone-line rule keeps every lone embed line as an `embed` relation; nothing is added on the host.
+
+**Q:** A pick in the title half of `[[Page#Heading` replaces the target; the heading belongs to the target, so it's dropped, as pasting `[[Other]]` onto `[[Page#Heading]]` yields `[[Other]]`. Keep that rule?
+**A:** Keep.
+
+**Q:** Without an index, the fixed tiebreak reads a hand-written `[x](example.com)` Link value as an address, so deleting a page literally titled "example.com" never strips it. Take that as the one rule for all four host readers?
+**A:** Unreachable in practice; make the most coherent choice. Decided: one rule for all four readers. (Page titles may hold a dot; the name rule forbids one only in folder names, so a spaceless dotted title such as `v1.2` is the case this concedes.)
