@@ -1,6 +1,5 @@
 import { globalStyle, style } from '@vanilla-extract/css'
 import { vars as colorVars } from '@pommora/uix/Theme/color.css'
-import { text } from '@pommora/uix/Theme/typography.css'
 import { ROW_RADIUS, item, side } from '@pommora/uix/Menus/menu-row.css'
 import { growToContent } from '@pommora/uix/Menus/frameGrowth'
 
@@ -60,7 +59,5 @@ globalStyle(`${side}:has(> ${value})`, {
   minWidth: 0,
   justifyContent: 'flex-end',
 })
-
-export const empty = style([text.caption.standard, { paddingRight: 'var(--row-pad-standard)' }])
 
 export const groupBordered = style({ border: `var(--width-100) solid ${c.border.base}` })

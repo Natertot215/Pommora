@@ -23,6 +23,8 @@ export const SIZE = {
   textMax: '85px',
 } as const
 
+globalStyle(':root', { vars: { '--label-pad-x': SIZE.padX } })
+
 const labelBase = style([
   text.control.semibold,
   {
@@ -40,7 +42,7 @@ const chip = (radius: string): ComplexStyleRule => [
   labelBase,
   {
     height: SIZE.height,
-    padding: `0 var(--label-pad-x, ${SIZE.padX})`,
+    padding: '0 var(--label-pad-x)',
     borderRadius: radius,
     borderWidth: SIZE.border,
   },
