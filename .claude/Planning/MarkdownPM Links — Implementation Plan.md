@@ -20,7 +20,7 @@ The investigation behind this plan (twelve scouts, three verifiers, and a provin
 
 After this plan, link syntax is read in one place: a single walk in the Connections layer that the editor's drawing, its typing behaviors, the content index, and the rename cascade all share, with one rule for "this link sits in code." "Is this text a page or a web address" is answered by one function, with the page index when a surface has one and by one fixed tiebreak when it doesn't (main has no index, so a title-shaped target that isn't a valid address reads as a page there; a spaceless dotted title such as `v1.2` reads as an address, a case Nathan ruled acceptable). Every link's right-click menu is built by one builder from one model and answers with the row picked, like the app's other menus; one pure function turns the pick into text, and one applier writes it in a live editor. Pasting a link onto a link, picking a page in the picker, and Edit Title or Edit Link on a Link value all change the target under one rule with one carve-out point. A Link property's value draws, follows, glances, and routes the way every other link does, through the renderer resting cells and Text values already share; only an address keeps the property's own look. A resting MarkdownPM table cell gives every construct its menu without being focused, writes land without placing the caret, and the rows that need typing enter the cell. The page index reaches every editor through the host it already carries, and the index holds each page's heading text and level, so the picker, the missing-heading mark, and `§` runs read one source. An `![[Page]]` is a tile only when it stands alone on its own line in a page body; anywhere else it's `!` followed by an ordinary connection.
 
-What a person sees: `[x](Page)` edits like `[[Page]]`; every link reads **Rename** then **Edit Title** (a connection) or **Edit Link** (a weblink), with no "Add Title"; unresolved links look the same whichever syntax wrote them, and **Display Unresolved Links As Plain Syntax** reaches cells and values; a Link value shows `Page § Heading`, the phantom and ambiguous tones, and the glance, opens where connections open, and accepts `[[#Heading]]` and `[x](example.com)`; a right-click anywhere in a resting table cell opens that construct's menu; `[[` and `[label](` open the picker whether or not Pair Brackets is on; pasting a link onto a link replaces its target; Format ▸ Page Title at rest writes the title once it arrives; `mailto:` goes to the system; and embeds that don't tile act as the connections they are. A ledger of this plan's AFTER blocks against the tree, with every collapsed deletion expanded to its baseline size and the two measured prototypes substituted for their tasks, puts the cleanup at about −160 production lines and the resting cell (Phase 9, ruled additive) at about +170, so the bundle as drafted is near net zero; the fold after the plan reviews tightens every task whose addition doesn't earn its place in minimal form, and the measured figure is reported at closeout in those two numbers (*§Delta* in the report).
+What a person sees: `[x](Page)` edits like `[[Page]]`; every link reads **Rename** then **Edit Title** (a connection) or **Edit Link** (a weblink), with no "Add Title"; unresolved links look the same whichever syntax wrote them, and **Display Unresolved Links As Plain Syntax** reaches cells and values; a Link value shows `Page § Heading`, the phantom and ambiguous tones, and the glance, opens where connections open, and accepts `[[#Heading]]` and `[x](example.com)`; a right-click anywhere in a resting table cell opens that construct's menu; `[[` and `[label](` open the picker whether or not Pair Brackets is on; pasting a link onto a link replaces its target; Format ▸ Page Title at rest writes the title once it arrives; `mailto:` goes to the system; and embeds that don't tile act as the connections they are. Two ledgers of this plan's AFTER blocks against the tree, reconciled, put the cleanup at about −280 production lines and the resting cell (Phase 9, ruled additive and shipped in this bundle) at about +160, so the bundle estimates at about −120 (the Continuation's §9 holds the method); the reviews keep tightening every addition that doesn't earn its place, and the measured figure is reported at closeout in those two numbers (*§Delta* in the report).
 
 #### Concepts
 
@@ -52,7 +52,7 @@ What a person sees: `[x](Page)` edits like `[[Page]]`; every link reads **Rename
 | `LinkMenuContext`, `LinkEditAction`, `LinkAction` • Types; `isLinkAction`, `FORMAT_ROW`                   | The link menu's one model and its action vocabulary.                                                                                                            | `Core/Actions/connectionMenu.ts`                                                        |
 | `LinkMenuTarget` • Type                                                                                   | What a link's menu is built from: the target, editability, and the value's closing rows.                                                                        | `Core/MarkdownPM/Links/connectionsApi.ts`                                               |
 | `LinkEdit` • Type, `linkEdit` • Function                                                                  | A menu pick turned into text or a selection, pure.                                                                                                              | `Core/MarkdownPM/Links/linkEdit.ts`                                                     |
-| `PasteHow` • Type                                                                                         | A paste's form: a Paste As form, the plain paste, the inverse chord, or literal.                                                                                | `Core/Actions/pasteAsMenu.ts`                                                           |
+| `PasteMode` • Type                                                                                         | A paste's form: a Paste As form, the plain paste, the inverse chord, or literal.                                                                                | `Core/Actions/pasteAsMenu.ts`                                                           |
 | `paste`, `pasteFromClipboard`, `pastedCellText` • Functions                                               | The one paste pipeline, its clipboard entry, and the text a paste writes into a cell that holds no editor.                                                      | `Core/MarkdownPM/Links/pasteLink.ts`                                                    |
 | `LinkEditContext` • Type, `linkResolver` • Function                                                       | A Link value's commit context: the resolver (the holder answering a bare `[[#Heading]]`) and the setting.                                                       | `Core/Properties/parseEditorValue.ts`, `Core/Properties/Pickers/PropertyValueInput.tsx` |
 | `Seat` • Type, `seatSelection` • Function                                                                 | How a table cell is entered: a point, a sweep edge, or a range.                                                                                                 | `Core/MarkdownPM/Tables/CellEditor.tsx`                                                 |
@@ -3054,14 +3054,14 @@ The url arm carries no `windowed`: no producer ever set it (the filter at `conne
 
 ```Core/Actions/pasteAsMenu.ts diff
 + /** How a paste lands: a form picked from Paste As, `auto` for a plain ⌘V, `inverse` for the chord that flips whichever axis a plain paste chose, `literal` for the clipboard as typed. */
-+ export type PasteHow = PasteAsForm | 'auto' | 'inverse' | 'literal'
++ export type PasteMode = PasteAsForm | 'auto' | 'inverse' | 'literal'
 
 - export function pasteAsWrite(target: PasteAsTarget, form: PasteAsForm, title?: string): LinkPaste | TextPaste | LinePaste | null {
 -   if (!target || form === 'footnote') return null
 -   …
 + export function pasteAsWrite(
 +   target: LinkTarget | null,
-+   how: PasteHow,
++   how: PasteMode,
 +   over: { selection: string; format: LinkDisplay; title?: string },
 + ): LinkPaste | TextPaste | LinePaste | null {
 +   if (!target || how === 'footnote' || how === 'literal') return null
@@ -3105,7 +3105,7 @@ The url arm carries no `windowed`: no producer ever set it (the filter at `conne
 - function literalAt(view, pos): boolean { … }
 - function writeLink(view, link): void { … }
 + /** What the clipboard names: a link in either syntax, or a bare address, which a plain paste reads only with its scheme written, so `3.14` and `App.tsx` stay text; a form picked by hand reads any address. */
-+ function clipboardTarget(text: string, how: PasteHow): LinkTarget | null {
++ function clipboardTarget(text: string, how: PasteMode): LinkTarget | null {
 +   const target = readLinkText(text)
 +   if (target?.syntax === 'bare' && (how === 'auto' || how === 'inverse') && !isWebAddress(text)) return null
 +   return target
@@ -3121,7 +3121,7 @@ The url arm carries no `windowed`: no producer ever set it (the filter at `conne
 + }
 +
 + /** The one paste. In order: a read-only view declines; code takes the text as written; a link the selection sits inside takes the clipboard as its new target; a seat inside another link's `( )` takes the text as written; otherwise the form decides, and a plain paste nothing claims is the editor's own. */
-+ export function paste(view: EditorView, text: string, how: PasteHow): boolean {
++ export function paste(view: EditorView, text: string, how: PasteMode): boolean {
 +   // The read-only change filter drops a doc-changing transaction without a trace, so decline before dispatching.
 +   if (view.state.readOnly) return false
 +   const host = view.state.facet(editorHost)
@@ -3167,7 +3167,7 @@ The url arm carries no `windowed`: no producer ever set it (the filter at `conne
 + }
 +
 + /** Reads the clipboard through main and pastes; the view this was aimed at may be gone by the time the read lands. */
-+ export async function pasteFromClipboard(view: EditorView, how: PasteHow): Promise<void> {
++ export async function pasteFromClipboard(view: EditorView, how: PasteMode): Promise<void> {
 +   const text = await view.state.facet(editorHost).clipboard.read()
 +   if (text && view.dom.isConnected) paste(view, text, how)
 + }
@@ -3246,7 +3246,7 @@ The container step of `paste` in Task 7-1.
 
 ```Core/MarkdownPM/Links/pasteLink.ts diff
 + /** What a paste writes into a cell that has no editor to hold a title swap: the form's text as a live paste would write it, with a title awaited first, and the clipboard itself where the form doesn't apply. */
-+ export async function pastedCellText(host: EditorHost, text: string, how: PasteHow = 'auto', selection = ''): Promise<string> {
++ export async function pastedCellText(host: EditorHost, text: string, how: PasteMode = 'auto', selection = ''): Promise<string> {
 +   if (how === 'literal') return text
 +   const target = clipboardTarget(text, how)
 +   const write = target && pasteAsWrite(target, how, { selection, format: host.settings().defaultLinkFormat })
@@ -3943,7 +3943,7 @@ Unchanged: `Core/Actions/cellMenu.ts`'s `link` arm.
 +   /** A table-shaped clipboard pasted at rest fills cells, as a live paste does. */
 +   onFill: (payload: TablePayload) => void
 @@ StaticCellImpl @@
-+   const pasteAtRest = async (built: string, from: number, to: number, how: PasteHow): Promise<void> => {
++   const pasteAtRest = async (built: string, from: number, to: number, how: PasteMode): Promise<void> => {
 +     const clip = await host.clipboard.read()
 +     if (!clip) return
 +     const payload = decodePayload(clip)
