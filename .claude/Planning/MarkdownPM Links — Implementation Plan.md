@@ -1246,7 +1246,7 @@ The carve-out: `keepTitle` is Remove Title On Link Change read as "off" at each 
 +       if (u.view.hasFocus && slotNear(u.state, u.state.selection.main.head, scope)?.start === left.start)
 ```
 
-`commitAliasOnEnter` is bound only by `markdownInput`, which only the page editor mounts, so `'page'` is its scope.
+`commitAliasOnEnter` is bound only by `markdownInput`, which only the page editor mounts, so `'page'` is its scope. `spanAt` leaves `linkEdit.ts`'s imports with its last reader.
 
 ```Core/MarkdownPM/Embeds/embedWidget.tsx diff
   interface EmbedHost {
@@ -1915,7 +1915,7 @@ Every current caller (`pasteLink.ts:62`, `linkFormat.ts:85`, `cellStatic.tsx:474
   export function renderCellContent(
     text: string,
     getConn?: () => ConnectionsApi | undefined,
-    { around, headingLinkStyle, base = 0 }: { around?: CellPage; headingLinkStyle?: HeadingLinkStyle; base?: number } = {},
+    { around, headingLinkStyle = 'page-heading', base = 0 }: { around?: CellPage; headingLinkStyle?: HeadingLinkStyle; base?: number } = {},
   ): React.ReactNode {
 +   const runs =
 +     around && around.sectionHeadings.length > 0 && text.includes('§')
@@ -4460,7 +4460,7 @@ The anchor is pinned by a test for a filled and an unfilled label.
     return { extension, ctl, pane: { open, ac, candidates, index: index ?? 0, onPick: commit, behind, headingRows: allHeadingRows, tree, collapsed, onToggleHeading, onAside, onBack, geometry } }
 ```
 
-`openHeadingRows` stays as the one rule for which rows a collapse hides (it reads rows and levels, not a tree). `outlineTree` reads only `level`, so it takes any heading shape; `OutlineMenu.tsx` keeps passing `OutlineHeading`s and its `OutlineNode` type through the default.
+`openHeadingRows` stays as the one rule for which rows a collapse hides (it reads rows and levels, not a tree). `outlineTree` leaves the pane's imports; the hook builds the tree. `outlineTree` reads only `level`, so it takes any heading shape; `OutlineMenu.tsx` keeps passing `OutlineHeading`s and its `OutlineNode` type through the default.
 
 ```Core/MarkdownPM/Engine/outlineTree.ts diff
 - export interface OutlineNode extends OutlineHeading {
