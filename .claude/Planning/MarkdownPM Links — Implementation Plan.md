@@ -2630,7 +2630,7 @@ The Preview row and the link menu's Page Title row hide for a non-web address in
 - export function linkValueMenuTarget(raw, apply, hideable = false): ConnMenuTarget | null { … }
 ```
 
-The url arm carries no `windowed`: no producer ever set it (the filter at `connectionMenu.ts:92` read a page field), so the site rows filter on `web` alone.
+The url arm carries no `windowed`: no producer ever set it (the filter at `connectionMenu.ts:92` read a page field), so the site rows filter on `web` alone. `LinkMenuTarget` is Task 6-2's, which renames `ConnMenuTarget` and gives it one builder; write the two tasks in one commit.
 
 **VERIFY**
 
