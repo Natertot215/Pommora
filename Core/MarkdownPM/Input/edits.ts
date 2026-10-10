@@ -1,7 +1,14 @@
 import { type Personalization, settingOf } from '../../Settings/personalization'
 import { linkDestinationStart } from '../../Connections/links'
 import { type LinkSpans, linkOccurrences } from '../../Connections/connections'
-import { inCalloutAt, inCodeAt, inFenceAt, spanAt, type DocScan } from '../Engine/docScan'
+import {
+  inCalloutAt,
+  inCodeAt,
+  inCodeNear,
+  inFenceAt,
+  spanAt,
+  type DocScan,
+} from '../Engine/docScan'
 import {
   fenceAt,
   isBlockquoteLine,
@@ -330,6 +337,22 @@ export function connectionAt(scan: DocScan, at: number): LinkSpans | null {
   return null
 }
 
+export function openConnectionAt(scan: DocScan, at: number): LinkSpans | null {
+  const i = lineIndexAt(scan, at)
+  const ls = scan.lineStarts[i]
+  const head = scan.lines[i].slice(0, at - ls)
+  if (!head.includes('[[')) return null
+  if (head.endsWith('[[')) {
+    const rel = head.length
+    return { full: [rel - 2, rel], title: [rel, rel], heading: null, alias: null }
+  }
+  const closed = `${head}]]`
+  for (const o of linkOccurrences(closed, (p) => inCodeAt(scan, ls + p)))
+    if (o.syntax === 'wiki' && o.full[1] === closed.length)
+      return { ...o, full: [o.full[0], head.length] }
+  return null
+}
+
 /** In a written connection's alias, where a `]` would truncate the link. */
 export function inAliasAt(scan: DocScan, at: number): boolean {
   const alias = connectionAt(scan, at)?.alias
@@ -608,24 +631,6 @@ export function closeConstructOnShiftEnter(
   return end === null ? null : shiftEnterEdit(scan, end, end)
 }
 
-// Line-scoped so an unclosed `[[` never bleeds across lines.
-export function isInsideWikilink(offset: number, text: string): boolean {
-  let depth = 0
-  let i = lineStartAt(text, offset)
-  while (i < offset) {
-    if (text[i] === '[' && text[i + 1] === '[') {
-      depth++
-      i += 2
-    } else if (text[i] === ']' && text[i + 1] === ']') {
-      depth = Math.max(0, depth - 1)
-      i += 2
-    } else {
-      i++
-    }
-  }
-  return depth > 0
-}
-
 // A URL-shaped run or a link address the caret sits in is link content: converting `--` → `—` would corrupt the path.
 const urlRunRe = /(?:^|[\s([{<"'])[a-z][a-z0-9+.-]*:\/\/\S*$/i
 const inUrlRun = (doc: string, c: number): boolean => {
@@ -636,10 +641,9 @@ const inUrlRun = (doc: string, c: number): boolean => {
   )
 }
 const isLiteralAt = (scan: DocScan, c: number): boolean =>
-  inCodeAt(scan, c) ||
+  inCodeNear(scan, c) ||
   spanAt(scan.maths, c) !== undefined ||
-  inCodeAt(scan, c - 1) ||
-  isInsideWikilink(c, scan.text) ||
+  (connectionAt(scan, c) ?? openConnectionAt(scan, c)) !== null ||
   inUrlRun(scan.text, c)
 
 // An unclosed `[` holds a citation's label or a link's text: a glyph written there lands inside the reference.
