@@ -9,6 +9,7 @@ import {
   reconcilePropertyValue,
   unregisteredMembers,
   type PropertyValue,
+  gonePageEntry,
 } from './propertyValue'
 
 const def = (over: Partial<PropertyDefinition>): PropertyDefinition =>
@@ -354,6 +355,21 @@ describe('reconcilePropertyValue — a frozen copy names only what still exists'
       kind: 'link',
       value: '[[Gone]]',
     })
+  })
+})
+
+describe('gonePageEntry — the entry a restore parks', () => {
+  const gone = { holds: () => false }
+  it('reads an unquoted `[[Page]]` as the entry it spells', () => {
+    expect(gonePageEntry([['Gone']], gone)).toBe('[[Gone]]')
+  })
+  it('reads a hand-written markdown link to a page', () => {
+    expect(gonePageEntry('[x](Gone)', gone)).toBe('[x](Gone)')
+  })
+  it('leaves an address, a bare heading, and a page the world holds', () => {
+    expect(gonePageEntry('[x](example.com)', gone)).toBeNull()
+    expect(gonePageEntry('[[#Intro]]', gone)).toBeNull()
+    expect(gonePageEntry('[[Alpha]]', { holds: (t) => t === 'Alpha' })).toBeNull()
   })
 })
 

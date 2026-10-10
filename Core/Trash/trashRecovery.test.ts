@@ -354,6 +354,16 @@ describe('links come back with the page', () => {
     expect((await frontmatter()).Related).toBe('[x](Alpha)')
   })
 
+  it('a page restored while its unquoted link’s page sits in the Trash parks the link it spells', async () => {
+    await linker(beta, BETA_ID, 'Related: [[Alpha]]')
+    await del(beta, 'page')
+    await del('Journal/Daily/Alpha.md', 'page')
+    expect(await restore('Beta')).toBeUndefined()
+    expect(await frontmatter()).not.toHaveProperty('Related')
+    expect(await restore('Alpha')).toBeUndefined()
+    expect((await frontmatter()).Related).toBe('[[Alpha]]')
+  })
+
   it('a Link held under two spellings comes back as the spelling that’s read', async () => {
     await linker(beta, BETA_ID, 'Related: "[[Alpha]]"\nrelated: "[[Alpha|al]]"')
     await del('Journal/Daily/Alpha.md', 'page')
@@ -532,6 +542,17 @@ describe('links come back with the page', () => {
     await linker(beta, BETA_ID, '')
     await del('Journal/Daily/Alpha.md', 'page')
     await linker(beta, BETA_ID, 'Related: "[[Alpha]]"')
+    expect((await deleteProperty(root, 'prop_related')).ok).toBe(true)
+    expect(await restore('Related')).toBeUndefined()
+    expect(await frontmatter()).not.toHaveProperty('Related')
+    expect(await restore('Alpha')).toBeUndefined()
+    expect((await frontmatter()).Related).toBe('[[Alpha]]')
+  })
+
+  it('a property restored while its unquoted link’s page sits in the Trash parks the link it spells', async () => {
+    await linker(beta, BETA_ID, '')
+    await del('Journal/Daily/Alpha.md', 'page')
+    await linker(beta, BETA_ID, 'Related: [[Alpha]]')
     expect((await deleteProperty(root, 'prop_related')).ok).toBe(true)
     expect(await restore('Related')).toBeUndefined()
     expect(await frontmatter()).not.toHaveProperty('Related')

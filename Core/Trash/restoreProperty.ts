@@ -9,7 +9,7 @@ import { frozenWorld } from '../Nexus/heldPages'
 import { join } from '../Paths/posix'
 import { assignInner, refillValues } from '../Properties/assignment'
 import { patchCacheBlock } from '../Properties/propertyCache'
-import { isBlankRaw, namesGonePage } from '../Properties/propertyValue'
+import { isBlankRaw, gonePageEntry } from '../Properties/propertyValue'
 import type { StrippedLink } from '../Nexus/cascade'
 import { createProperty } from '../Properties/registryProperty'
 
@@ -62,8 +62,9 @@ async function restoreInner(
     Object.entries(record.values).filter(([id, raw]) => {
       if ((roots[id]?.kind !== 'page' && roots[id]?.kind !== 'space') || isBlankRaw(raw))
         return false
-      if (def.type !== 'link' || !namesGonePage(raw, frozen)) return true
-      dropped.push({ page: id, property: def.id, value: String(raw) })
+      const entry = def.type === 'link' ? gonePageEntry(raw, frozen) : null
+      if (entry === null) return true
+      dropped.push({ page: id, property: def.id, value: entry })
       return false
     }),
   )
