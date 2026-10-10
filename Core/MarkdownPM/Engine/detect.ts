@@ -13,7 +13,7 @@ import {
 } from './markdownCode'
 import { emptyTolerantLinkRegex, unescapeAlias } from '../../Connections/links'
 import { pageLinkPattern } from '../../Connections/connections'
-import { isValidLink, WEB_ADDRESS } from '../../Paths/urlPath'
+import { isWebAddress } from '../../Paths/urlPath'
 import type { ListKind } from '../../Actions/gripMenu'
 export const highlightRegex = (): RegExp => /(?<!=)==(?!=)((?:[^=\n]|=(?!=))+)==(?!=)/dg
 export const inlineLatexRegex = (): RegExp => /(?<!\$)\$(?!\$)([^$\n]+?)\$(?!\$)/dg
@@ -413,7 +413,7 @@ export function loneWebpageEmbed(lineText: string): { label: string; url: string
   if (!m) return null
   if (m.index !== 1 || m.index + m[0].length !== line.length) return null
   const url = m[2]
-  if (!url || !WEB_ADDRESS.test(url) || !isValidLink(url)) return null
+  if (!isWebAddress(url)) return null
   return { label: unescapeAlias(m[1]), url }
 }
 

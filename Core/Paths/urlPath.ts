@@ -21,6 +21,10 @@ export function isHttpLink(url: string): boolean {
   return isValidLink(url) && WEB_ADDRESS.test(normalizeLinkUrl(url))
 }
 
+export function isWebAddress(url: string): boolean {
+  return WEB_ADDRESS.test(url.trim()) && isValidLink(url)
+}
+
 export function isValidLink(url: string): boolean {
   const u = url.trim()
   if (!u || /\s/.test(u)) return false

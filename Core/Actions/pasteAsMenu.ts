@@ -1,6 +1,6 @@
 import { expressibleInLink, pageEmbedText, connectionText } from '../Connections/connections'
 import { composeWebpageEmbedLine, markdownPageLink } from '../Connections/links'
-import { WEB_ADDRESS } from '../Paths/urlPath'
+import { isWebAddress } from '../Paths/urlPath'
 import { linkPaste, readLinkText, type LinkPaste, type LinkTarget } from '../Connections/linkValue'
 import { LINK_DISPLAY_LABELS, LINK_DISPLAYS, type LinkDisplay } from '../Properties/properties'
 
@@ -37,7 +37,7 @@ const URL_EMBED_ROW: PasteAsRow = { label: 'Embedded Link', form: 'embedLink' }
 function embeddableTarget(target: LinkTarget): boolean {
   return target.kind === 'page'
     ? expressibleInLink(target.title) && !target.heading && !target.alias
-    : WEB_ADDRESS.test(target.url)
+    : isWebAddress(target.url)
 }
 
 export function pasteAsRows(

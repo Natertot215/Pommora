@@ -1,6 +1,6 @@
 // Pure, so the same decision serves both editors (page body and table cell) and is testable without fabricating clipboard events.
 
-import { isValidLink, WEB_ADDRESS } from '../../Paths/urlPath'
+import { isWebAddress } from '../../Paths/urlPath'
 import { linkPaste, serializeLink, type LinkPaste } from '../../Connections/linkValue'
 import type { LinkDisplay } from '../../Properties/properties'
 
@@ -20,10 +20,7 @@ const LITERAL: PasteDecision = { kind: 'literal' }
 /** Deliberately stricter than `isValidLink`, which also accepts things like `App.tsx` or `3.14`; a paste requires an explicit scheme. Paste As uses the looser test since there the user picked the form by hand. */
 export function pastedUrl(clipboard: string): string | null {
   const s = clipboard.trim()
-  // One token, so a pasted document holding an address among prose stays a document.
-  if (!s || /\s/.test(s)) return null
-  if (!WEB_ADDRESS.test(s)) return null
-  return isValidLink(s) ? s : null
+  return isWebAddress(s) ? s : null
 }
 
 export function decidePaste(input: PasteInput): PasteDecision {
