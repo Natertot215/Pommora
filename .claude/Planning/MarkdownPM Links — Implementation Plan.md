@@ -1195,6 +1195,9 @@ The carve-out: `keepTitle` is Remove Title On Link Change read as "off" at each 
 ```
 
 ```Core/MarkdownPM/decorations.ts diff
+- import { editorHost, type OwnPage, ownPage, redrawNudge } from './api'
++ import { editorHost, type EditorSettings, type OwnPage, ownPage, redrawNudge } from './api'
+
 + /** An HTML block a page's HTML Formatting draws raw holds no live link: the picker, the slot cleanup, the alias memory, and Enter all stand down there, as the draw does. A cell's text parses alone and never draws raw. */
 + const drawsRawHtml = (scope: MarkdownScope, settings: EditorSettings): boolean => scope === 'page' && settings.htmlFormatting
 +
@@ -1208,6 +1211,9 @@ The carve-out: `keepTitle` is Remove Title On Link Change read as "off" at each 
 ```
 
 ```Core/MarkdownPM/Links/linkEdit.ts diff
+- import { drawnLinkAt } from '../decorations'
++ import { drawnLinkAt, inRawHtml } from '../decorations'
+
 @@ commitAliasOnEnter @@
     const link = connectionAt(scan, sel.head)
     if (!link?.alias || rel < link.alias[0] || rel > link.alias[1]) return false
@@ -2772,6 +2778,8 @@ The url arm carries no `windowed`: no producer ever set it (the filter at `conne
 +   else view.focus()
 + }
 ```
+
+Remove Link on an unaliased heading connection writes `Page § Heading` whatever the Heading Link Style or the link's resolution, since the edit reads nothing from the view; the drawn text under Heading Only or on a phantom differs, and the written form is the one the rule names.
 
 `cell:clear` and `cell:hide` reach `linkEdit` only through the type; they're a value's, and the default arm returns null.
 
@@ -4477,6 +4485,8 @@ The anchor is pinned by a test for a filled and an unfilled label.
 ```
 
 ```Core/MarkdownPM/Autocomplete/AutocompletePane.tsx diff
++ import type { PageHeading } from '../../Platform/stores'
+
   export interface AutocompletePaneProps {
     open: boolean
     ac: AcState | null
