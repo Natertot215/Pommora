@@ -1,8 +1,6 @@
 import { HAS_SCHEME } from '../Paths/urlPath'
 import { stripMarkdownExt } from '../Paths/posix'
 
-export const MD_LINK = /^\[((?:[^\]\\]|\\.)*)\]\((.*)\)$/
-
 // The label's cap is load-bearing: reading escapes makes it an alternation under a quantifier, which backtracks quadratically on a long run of unclosed `[`. A label may not open with `^` because GFM reads `[^1](url)` as a footnote reference. The target admits parentheses nested two deep, what cmark renders.
 const LINK_LABEL = (min: 0 | 1): string => `((?!\\^)(?:[^\\]\\\\\\r\\n]|\\\\.){${min},255})`
 const LINK_DEST = (min: 0 | 1): string =>
@@ -70,6 +68,11 @@ export function encodeLinkTarget(target: string): string {
   } catch {
     return target
   }
+}
+
+export function markdownPageLink(title: string, heading?: string, label?: string): string {
+  const dest = encodeLinkTarget(title) + (heading ? `#${encodeLinkTarget(heading)}` : '')
+  return `[${escapeAlias(label ?? (title || heading || ''))}](${dest})`
 }
 
 // `decodeURIComponent` throws on a lone `%`, and CodeMirror deactivates a throwing ViewPlugin.

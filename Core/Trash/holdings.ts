@@ -3,7 +3,7 @@
 import { basename, join, relative, titleFromPath } from '../Paths/posix'
 import { SPACE_SIDECAR, TRASH_DIR } from '../Paths/nexusPaths'
 import { heldValue, landValue, writeTarget } from '../Files/heldKeys'
-import { parseConnectionText } from '../Connections/connections'
+import { readLinkText } from '../Connections/linkValue'
 import { normalizeTitle } from '../Paths/caseFold'
 import type { StrippedLink } from '../Nexus/cascade'
 import { spaceIdsIn } from '../Contexts/spaceSidecar'
@@ -86,8 +86,8 @@ export async function parkLinks(root: string, links: StrippedLink[]): Promise<vo
   const newest = await trashedTitles(root)
   const parked = new Map<string, StrippedLink[]>()
   for (const link of links) {
-    const page = parseConnectionText(link.value)
-    const bundle = page && newest.get(normalizeTitle(page.title))
+    const page = readLinkText(link.value)
+    const bundle = page?.kind === 'page' && newest.get(normalizeTitle(page.title))
     if (bundle) parked.set(bundle, [...(parked.get(bundle) ?? []), link])
   }
   for (const [bundle, rows] of parked) await appendLinks(bundle, rows)

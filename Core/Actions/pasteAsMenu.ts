@@ -1,17 +1,7 @@
-import {
-  embeddableTitle,
-  pageEmbedText,
-  pageLinkPattern,
-  connectionText,
-} from '../Connections/connections'
-import {
-  MD_LINK,
-  composeWebpageEmbedLine,
-  encodeLinkTarget,
-  targetTitle,
-} from '../Connections/links'
-import { isValidLink, WEB_ADDRESS } from '../Paths/urlPath'
-import { linkPaste, serializeLink, type LinkPaste } from '../Connections/linkValue'
+import { embeddableTitle, pageEmbedText, connectionText } from '../Connections/connections'
+import { composeWebpageEmbedLine, markdownPageLink } from '../Connections/links'
+import { WEB_ADDRESS } from '../Paths/urlPath'
+import { linkPaste, readLinkText, type LinkPaste, type LinkTarget } from '../Connections/linkValue'
 import { LINK_DISPLAY_LABELS, LINK_DISPLAYS, type LinkDisplay } from '../Properties/properties'
 
 export type PasteAsForm =
@@ -24,27 +14,6 @@ export type PasteAsForm =
   | 'footnote'
 
 export const PASTE_AS_PREFIX = 'pasteAs:'
-
-type PasteAsTarget = { kind: 'url'; url: string } | { kind: 'page'; title: string } | null
-
-function wholeWikiLink(s: string): string | null {
-  const m = pageLinkPattern().exec(s)
-  return m && m[0] === s && m.groups?.heading === undefined ? (m.groups?.page ?? null) : null
-}
-
-export function pasteAsTarget(clipboard: string): PasteAsTarget {
-  const s = clipboard.trim()
-  if (!s || /[\r\n]/.test(s)) return null
-
-  const wiki = wholeWikiLink(s)
-  if (wiki !== null) return { kind: 'page', title: wiki }
-
-  const md = MD_LINK.exec(s)
-  const raw = md ? md[2].trim() : s
-  const title = targetTitle(raw)
-  if (md && title !== null) return { kind: 'page', title }
-  return isValidLink(raw) ? { kind: 'url', url: raw } : null
-}
 
 interface PasteAsRow {
   label: string
@@ -66,7 +35,7 @@ const PAGE_EMBED_ROW: PasteAsRow = { label: 'Embedded Page', form: 'embedPage' }
 const URL_EMBED_ROW: PasteAsRow = { label: 'Embedded Link', form: 'embedLink' }
 
 /** `![[…]]` can't carry a `]`, and a tile forms only over an explicit http(s) address. */
-function embeddableTarget(target: NonNullable<PasteAsTarget>): boolean {
+function embeddableTarget(target: LinkTarget): boolean {
   return target.kind === 'page' ? embeddableTitle(target.title) : WEB_ADDRESS.test(target.url)
 }
 
@@ -75,9 +44,8 @@ export function pasteAsRows(
   embedSeat: boolean,
   citeSeat: boolean,
 ): readonly PasteAsRow[] {
-  // Footnote reads the clipboard, not `pasteAsTarget`: that reader refuses the newline it normalizes.
   const footnote = citeSeat && clipboard.trim() !== '' ? [FOOTNOTE_ROW] : []
-  const target = pasteAsTarget(clipboard)
+  const target = readLinkText(clipboard)
   if (!target) return footnote
   const page = target.kind === 'page'
   const embed = embedSeat && embeddableTarget(target)
@@ -97,7 +65,7 @@ interface LinePaste {
 }
 
 export function pasteAsWrite(
-  target: PasteAsTarget,
+  target: LinkTarget | null,
   form: PasteAsForm,
   title?: string,
 ): LinkPaste | TextPaste | LinePaste | null {
@@ -105,14 +73,11 @@ export function pasteAsWrite(
   if (!target || form === 'footnote') return null
   if ((form === 'embedPage' || form === 'embedLink') && !embeddableTarget(target)) return null
   if (target.kind === 'page') {
-    if (form === 'connection') return { kind: 'text', text: connectionText(target.title) }
+    if (form === 'connection')
+      return { kind: 'text', text: connectionText(target.title, target.alias, target.heading) }
     if (form === 'embedPage') return { kind: 'line', text: pageEmbedText(target.title) }
-    // Through the serializer so a `]` escapes: inline, `Notes [WIP]` tokenizes as nothing.
     if (form === 'markdown')
-      return {
-        kind: 'text',
-        text: serializeLink({ url: encodeLinkTarget(target.title), alias: target.title }),
-      }
+      return { kind: 'text', text: markdownPageLink(target.title, target.heading, target.alias) }
     return null
   }
   if (form === 'plain') return { kind: 'text', text: target.url }

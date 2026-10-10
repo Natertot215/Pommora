@@ -35,7 +35,7 @@ export function decidePaste(input: PasteInput): PasteDecision {
   if (wrappable && !input.inverse)
     return {
       kind: 'link',
-      text: serializeLink({ url: target, alias: input.selectionText }),
+      text: serializeLink(target, input.selectionText),
       target,
       wantsTitle: false,
     }

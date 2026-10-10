@@ -26,7 +26,7 @@ import { linkDefs, readKeptRegistry } from '../Properties/propertiesRegistry'
 import { readLiveSetting } from '../Settings/settings'
 import { rewriteTileConnections, tilesLinkHeading } from '../Tiles/tilesFile'
 import type { TilesChanged } from '../Tiles/tiles'
-import { linkEntry, readLink } from '../Connections/linkValue'
+import { linkEntry, readLinkText } from '../Connections/linkValue'
 import { frontmatterMentions, valueLinks } from '../Connections/scan'
 import { liveIdIndex, livePathOf, titleHeldOutside } from './heldPages'
 import { ID_KEY } from './identityMark'
@@ -93,7 +93,7 @@ export async function deleteCascade(
       : [...new Set(hits.flatMap((h) => h ?? []))]
     const goneEntry = (value: unknown): string | null => {
       const entry = linkEntry(value, 2)
-      const link = entry === null ? null : readLink(entry)
+      const link = entry === null ? null : readLinkText(entry)
       return link?.kind === 'page' && gone.has(normalizeTitle(link.title)) ? entry : null
     }
     const named = (raw: Record<string, unknown>) =>

@@ -22,10 +22,6 @@ export type LinkOccurrence =
   | ({ syntax: 'wiki' } & LinkSpans)
   | { syntax: 'markdown'; full: Span; label: Span; destination: Span }
 
-// A GFM cell escapes `|`, so an aliased connection inside a table arrives as `[[Title\|alias]]` or `[[Title#Heading\|alias]]` — the backslash is the cell's, and it sits on whichever half precedes the pipe.
-const titleOf = (rawTitle: string): string =>
-  rawTitle.endsWith('\\') ? rawTitle.slice(0, -1) : rawTitle
-
 function linkSpans(m: RegExpMatchArray): LinkSpans | null {
   const at = m.index
   const g = m.indices?.groups
@@ -73,7 +69,13 @@ export function linkOccurrences(text: string, inCode: CodeMask): LinkOccurrence[
   return out
 }
 
-const WHOLE_LINK = new RegExp(`^(?:${pageLinkPattern().source})$`, 'd')
+const NO_CODE: CodeMask = () => false
+
+export function wholeLink(text: string): LinkOccurrence | null {
+  return (
+    linkOccurrences(text, NO_CODE).find((o) => o.full[0] === 0 && o.full[1] === text.length) ?? null
+  )
+}
 
 interface ConnectionParts {
   title: string
@@ -82,18 +84,15 @@ interface ConnectionParts {
 }
 
 export function parseConnectionText(raw: string): ConnectionParts | null {
-  const m = WHOLE_LINK.exec(raw.trim())
-  const g = m?.groups
-  if (!g) return null
-  const written = g.heading !== undefined
-  const title = (written ? g.page : titleOf(g.page)).trim()
-  const heading = written ? titleOf(g.heading).trim() : ''
+  const text = raw.trim()
+  const o = wholeLink(text)
+  if (o?.syntax !== 'wiki') return null
+  const slice = ([s, e]: Span): string => text.slice(s, e).trim()
+  const title = slice(o.title)
+  const heading = o.heading ? slice(o.heading) : ''
+  const alias = o.alias ? slice(o.alias) : ''
   if (!title && !heading) return null
-  return {
-    title,
-    ...(heading ? { heading } : {}),
-    ...(g.alias?.trim() ? { alias: g.alias.trim() } : {}),
-  }
+  return { title, ...(heading ? { heading } : {}), ...(alias ? { alias } : {}) }
 }
 
 export function connectionText(title: string, alias?: string, heading?: string): string {
