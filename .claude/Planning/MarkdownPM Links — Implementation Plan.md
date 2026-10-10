@@ -30,6 +30,7 @@ What a person sees: `[x](Page)` edits like `[[Page]]`; every link reads **Rename
 | --------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
 | `LinkOccurrence` • Type, `linkOccurrences` • Function, `LinkSpans` • Type                                 | The one walk over both link syntaxes against a code mask, and the spans (full, title, heading, alias) one connection occupies.                                  | `Core/Connections/connections.ts`                                                       |
 | `expressibleInLink` • Function                                                                            | Whether a title or heading can be written inside link syntax; the name rule and the embed tree read it.                                                         | `Core/Connections/connections.ts`                                                       |
+| `wholeLink` • Function | The one link that is the whole of a text, in either syntax; a Link value and a clipboard are read through the walk by it. | `Core/Connections/connections.ts` |
 | `connectionAt`, `openConnectionAt` • Functions                                                            | The closed connection at an offset, and the unclosed one read as if its `]]` were written.                                                                      | `Core/MarkdownPM/Input/edits.ts`                                                        |
 | `TokenBase`, `LinkKind`, `TokenOf<K>` • Types; `wholeLinkToken` • Function                                | The token union with a `wikiLink` arm that always carries `resolveRange`, and the one reader of a text that is exactly one link.                                | `Core/MarkdownPM/Engine/tokens.ts`                                                      |
 | `readLinkText` • Function                                                               | The one reader of a whole link's text: page or URL, with its written syntax, resolved by the index when a resolver is given and by the fixed tiebreak when not. | `Core/Connections/linkValue.ts`                                                         |
@@ -70,7 +71,7 @@ What a person sees: `[x](Page)` edits like `[[Page]]`; every link reads **Rename
 | `embedClaims.ts` • File, `embeddable` • Function | The second embed-claim owner and the picker's pool filter. | `Core/MarkdownPM/Engine/embedClaims.ts`, `Core/MarkdownPM/Embeds/embedWidget.tsx` |
 | `pageEmbedPattern`, `linkAt`, `aliasSpanAt`, `emptyAliasPipeAt`, `emptyHeadingHashAt`, `expressibleHeading`, `embeddableTitle` | The regex readers and the two expressibility checks the walk and `expressibleInLink` replace. | `Core/Connections/connections.ts` |
 | `linkInCode`, `isInsideWikilink` | Two caret readers the code mask and `openConnectionAt` replace. | `Core/MarkdownPM/Input/edits.ts` |
-| `readLink`, `parseLink`, `linkAlias`, `urlClickTarget`, `LinkValue`, `ConnectionParts` | The value readers and types `readLinkText` and `LinkTarget` absorb. | `Core/Connections/linkValue.ts`, `Core/Connections/connections.ts` |
+| `readLink`, `parseLink`, `linkAlias`, `urlClickTarget`, `LinkValue`, `MD_LINK`, `WHOLE_LINK`, `titleOf` | The value readers, types, and whole-text grammars `readLinkText`, `LinkTarget`, and `wholeLink` absorb. | `Core/Connections/linkValue.ts`, `Core/Connections/links.ts`, `Core/Connections/connections.ts` |
 | `PasteAsTarget`, `wholeWikiLink`, `pasteAsTarget` | Paste As's own clipboard reader. | `Core/Actions/pasteAsMenu.ts` |
 | `namesGonePage` | The boolean the three restore paths read before re-reading the value for its note. | `Core/Properties/propertyValue.ts` |
 | `pasteDecision.ts` • File; `linkFor`, `literalAt`, `writeLink`, `pasteAs` | The second paste decision and the writers the pipeline replaces. | `Core/MarkdownPM/Links/` |
@@ -591,15 +592,15 @@ Deleted whole: `Core/MarkdownPM/Engine/embedClaims.ts` and its test. Also: `targ
 
 #### Task 2-1 — One reader for a whole link
 
-**TASK:** `readLinkText(text, resolve?)` in `linkValue.ts` becomes the one reader of a whole link: a page if the text names a title (resolved when a resolver is given, title-shaped and not a valid address when none is), a weblink if valid (normalized to a scheme), else nothing. It carries the written syntax so renames keep it. `readLink`, `parseLink`, `LinkValue`, `ConnectionParts`, and `PasteAsTarget` go, and `MD_LINK` is rebuilt from the tokenizer's grammar.
+**TASK:** `readLinkText(text, resolve?)` in `linkValue.ts` becomes the one reader of a whole link: a page if the text names a title (resolved when a resolver is given, title-shaped and not a valid address when none is), a weblink if valid (normalized to a scheme), else nothing. It carries the written syntax so renames keep it. A whole value or clipboard is read through the one walk (`wholeLink`), so it and the editor agree on what is a link; `readLink`, `parseLink`, `LinkValue`, `PasteAsTarget`, `MD_LINK`, `WHOLE_LINK`, and `titleOf` go.
 
 **NOW:** Four readers answer the question four ways (synthesis §3.1): `readLink` (`linkValue.ts:30`) reads any non-wikilink as a URL; `parsePastedLink` (`:48`) refuses an unresolved markdown title; `pasteAsTarget` (`pasteAsMenu.ts:35`) reads `[x](example.com)` as a page; `resolveMdTarget` tries the page first. `MD_LINK` (`links.ts:5`) is a second markdown grammar with no caps and a greedy destination, so `[a](b) [c](d)` reads as one link and `[^1](x)` as a link. `wholeWikiLink` (`pasteAsMenu.ts:30`) drops the alias and refuses a heading, so Paste As loses what it's handed (F-042) and `[[T#H]]` offers nothing.
 
 **CHANGE**
 
-- [ ] Write the tests in `linkValue.test.ts` (replacing the `readLink`/`parseLink` cases): without a resolver, `readLinkText('[[T#H|a]]')` → `{ kind: 'page', syntax: 'wiki', title: 'T', heading: 'H', alias: 'a' }`; `readLinkText('[x](Old)')` → `{ kind: 'page', syntax: 'markdown', title: 'Old', alias: 'x' }`; `readLinkText('[x](example.com)')` → `{ kind: 'url', syntax: 'markdown', url: 'https://example.com', alias: 'x' }`; `readLinkText('example.com')` → `{ kind: 'url', syntax: 'bare', url: 'https://example.com' }`; `readLinkText('[x](#H)')` → `{ kind: 'page', syntax: 'markdown', title: '', heading: 'H', alias: 'x' }`; `readLinkText('[^1](https://a.com)')` → `null`; `readLinkText('[a](b) [c](d)')` → `null`; `readLinkText('foo bar')` → `null`. With a resolver answering only `Meeting Notes`: `readLinkText('[[meeting notes]]', r)` → title `Meeting Notes`; `readLinkText('[x](meeting notes)', r)` → title `Meeting Notes`; `readLinkText('[x](example.com)', r)` → `{ kind: 'url', … 'https://example.com' }` (no such page, so the address arm); `readLinkText('[x](Nope)', r)` → `null` (title-shaped, no page, no valid address); `readLinkText('[[Dup]]', ambiguous)` → `null`, and `readLinkText('[x](dup.io)', ambiguousDotted)` → `null` (ambiguity wins over the address shape; T-06); `readLinkText('[[#H]]', r)` → `null` and with a resolver answering `''` as resolved → `{ kind: 'page', syntax: 'wiki', title: '', heading: 'H' }`. Watch them fail.
-- [ ] Rebuild `MD_LINK` from `emptyTolerantLinkRegex`'s source, anchored, as `WHOLE_LINK` is built from `pageLinkPattern`.
-- [ ] Write `readLinkText`; `wholeValueLink(v)` reads it; delete `readLink`, `parseLink`, `LinkValue`, `ConnectionParts` (its shape is `readLinkText`'s page arm), `PasteAsTarget`, `wholeWikiLink`, `pasteAsTarget`; `pasteAsRows` reads `readLinkText(clipboard)` (its `embeddableTarget` and rows follow in Task 2-3). `serializeLink(url, label?)`.
+- [ ] Write the tests in `linkValue.test.ts` (replacing the `readLink`/`parseLink` cases): without a resolver, `readLinkText('[[T#H|a]]')` → `{ kind: 'page', syntax: 'wiki', title: 'T', heading: 'H', alias: 'a' }`; `readLinkText('[x](Old)')` → `{ kind: 'page', syntax: 'markdown', title: 'Old', alias: 'x' }`; `readLinkText('[x](example.com)')` → `{ kind: 'url', syntax: 'markdown', url: 'https://example.com', alias: 'x' }`; `readLinkText('example.com')` → `{ kind: 'url', syntax: 'bare', url: 'https://example.com' }`; `readLinkText('[x](#H)')` → `{ kind: 'page', syntax: 'markdown', title: '', heading: 'H', alias: 'x' }`; `readLinkText('[^1](https://a.com)')` → `null`; `readLinkText('[a](b) [c](d)')` → `null`; `readLinkText('foo bar')` → `null`. With a resolver answering only `Meeting Notes`: `readLinkText('[[meeting notes]]', r)` → title `Meeting Notes`; `readLinkText('[x](meeting notes)', r)` → title `Meeting Notes`; `readLinkText('[x](example.com)', r)` → `{ kind: 'url', … 'https://example.com' }` (no such page, so the address arm); `readLinkText('[x](Nope)', r)` → `null` (title-shaped, no page, no valid address); `readLinkText('[[Dup]]', ambiguous)` → `null`, and `readLinkText('[x](dup.io)', ambiguousDotted)` → `null` (ambiguity wins over the address shape; T-06); `readLinkText('[[#H]]', r)` → `null` and with a resolver answering `''` as resolved → `{ kind: 'page', syntax: 'wiki', title: '', heading: 'H' }`; `readLinkText('[[A\\]]')` → title `A\`, and `readLinkText('[[A#Note\\]]')` → heading `Note\` (the walk strips the cell's backslash only before an alias, so `parseConnectionText('[[T\\|a]]')` → title `T`, alias `a`); `readLinkText('[](Page)')` → `null` (an empty label isn't a link, as the draw already says). Watch them fail.
+- [ ] Add `wholeLink(text)` to `connections.ts`: the one `linkOccurrences` occurrence spanning the whole text, in either syntax, or null. `parseConnectionText` reads it and keeps its readers (`Assets/assetMigrate.ts`, `assetRoots.ts`, `assetUrl.ts`, `Properties/value.ts`; `holdings.ts` and `propertyValue.ts` move onto `readLinkText` in Task 2-2); `WHOLE_LINK` and `titleOf` go, since the walk's `linkSpans` already strips the cell's backslash only where an alias follows. `MD_LINK` goes with its last readers, so `[](Page)` and `[^1](x)` read as nothing, as they draw.
+- [ ] Write `readLinkText`; `wholeValueLink(v)` reads it; delete `readLink`, `parseLink`, `LinkValue`, `PasteAsTarget`, `wholeWikiLink`, `pasteAsTarget`; `pasteAsRows` reads `readLinkText(clipboard)` (its `embeddableTarget` and rows follow in Task 2-3). `serializeLink(url, label?)`.
 - [ ] `linkEditText`, `linkDisplayText`, `linkValueFromRename`, `urlClickTarget`, `valueLinks`' exclusion, `frontmatterMentions`, `goneEntry`, `parkLinks`, `namesGonePage`, `LinkCell.tsx:30`, `valueClick.ts:51`, and `connectionMenuActions.ts:81` read `readLinkText`; `linkValueFromEdit`, `parsePastedLink`, and `ResolveTitle` stand until Task 8-3 rewrites the first and deletes the other two (`parseEditorValue.ts` and `linkResolve.ts` read them until then); `linkValueFromEdit`'s only changes here are `readLink(current)` → `readLinkText(current)` and `serializeLink(normalizeLinkUrl(trimmed), alias)`. `PropertyValueInput.tsx:56` reads `readLinkText(raw)?.alias` in place of `linkAlias`, which goes.
 
 **AFTER**
@@ -607,12 +608,43 @@ Deleted whole: `Core/MarkdownPM/Engine/embedClaims.ts` and its test. Also: `targ
 ```Core/Connections/links.ts diff
 @@ grammars @@
 - export const MD_LINK = /^\[((?:[^\]\\]|\\.)*)\]\((.*)\)$/
-  const LINK_LABEL = …
-  const LINK_DEST = …
-  export const markdownLinkRegex = (): RegExp => new RegExp(`\\[${LINK_LABEL(1)}\\]\\(${LINK_DEST(1)}\\)`, 'dg')
-  export const emptyTolerantLinkRegex = (): RegExp => new RegExp(`\\[${LINK_LABEL(0)}\\]\\(${LINK_DEST(0)}\\)`, 'dg')
-+ /** A whole value or clipboard that is one markdown link, empty halves admitted so `[](Page)` reads as a page with no label. */
-+ export const MD_LINK = new RegExp(`^${emptyTolerantLinkRegex().source}$`)
+```
+
+```Core/Connections/connections.ts diff
+- // A GFM cell escapes `|`, so an aliased connection inside a table arrives as `[[Title\|alias]]` …
+- const titleOf = (rawTitle: string): string => rawTitle.endsWith('\\') ? rawTitle.slice(0, -1) : rawTitle
+- const WHOLE_LINK = new RegExp(`^(?:${pageLinkPattern().source})$`, 'd')
++ const NO_CODE: CodeMask = () => false
++
++ /** The one link that is the whole of `text`, in either syntax, or null: a Link value and a clipboard are read here, by the walk the editor and the index read. */
++ export function wholeLink(text: string): LinkOccurrence | null {
++   return linkOccurrences(text, NO_CODE).find((o) => o.full[0] === 0 && o.full[1] === text.length) ?? null
++ }
+
+@@ parseConnectionText @@
+  export function parseConnectionText(raw: string): ConnectionParts | null {
+-   const m = WHOLE_LINK.exec(raw.trim())
+-   const g = m?.groups
+-   if (!g) return null
+-   const written = g.heading !== undefined
+-   const title = (written ? g.page : titleOf(g.page)).trim()
+-   const heading = written ? titleOf(g.heading).trim() : ''
+-   if (!title && !heading) return null
+-   return {
+-     title,
+-     ...(heading ? { heading } : {}),
+-     ...(g.alias?.trim() ? { alias: g.alias.trim() } : {}),
+-   }
++   const text = raw.trim()
++   const o = wholeLink(text)
++   if (o?.syntax !== 'wiki') return null
++   const slice = ([s, e]: Span): string => text.slice(s, e).trim()
++   const title = slice(o.title)
++   const heading = o.heading ? slice(o.heading) : ''
++   const alias = o.alias ? slice(o.alias) : ''
++   if (!title && !heading) return null
++   return { title, ...(heading ? { heading } : {}), ...(alias ? { alias } : {}) }
+  }
 ```
 
 ```Core/Connections/linkValue.ts diff
@@ -647,15 +679,17 @@ Deleted whole: `Core/MarkdownPM/Engine/embedClaims.ts` and its test. Also: `targ
 + export function readLinkText(text: string, resolve?: PageIndex['resolve']): LinkTarget | null {
 +   const conn = parseConnectionText(text)
 +   if (conn) return page('wiki', conn.title, conn.heading, conn.alias, resolve?.(conn.title))
-+   const m = MD_LINK.exec(text.trim())
-+   const alias = m ? unescapeAlias(m[1]).trim() || undefined : undefined
-+   const dest = m ? m[2].trim() : text.trim()
-+   const title = m ? targetTitle(dest) : null
++   const s = text.trim()
++   const whole = wholeLink(s)
++   const md = whole?.syntax === 'markdown' ? whole : null
++   const alias = md ? unescapeAlias(s.slice(md.label[0], md.label[1])).trim() || undefined : undefined
++   const dest = md ? s.slice(md.destination[0], md.destination[1]).trim() : s
++   const title = md ? targetTitle(dest) : null
 +   const res = title === null ? undefined : resolve?.(title)
 +   if (title !== null && (res ? res.status !== 'phantom' : !isValidLink(dest)))
 +     return page('markdown', title, targetFragment(dest) || undefined, alias, res)
 +   if (!isValidLink(dest)) return null
-+   return { kind: 'url', syntax: m ? 'markdown' : 'bare', url: normalizeLinkUrl(dest), alias }
++   return { kind: 'url', syntax: md ? 'markdown' : 'bare', url: normalizeLinkUrl(dest), alias }
 +
 +   function page(syntax, title, heading, alias, res?: ConnResolution): LinkTarget | null {
 +     if (title === '' && !heading) return null
@@ -751,7 +785,7 @@ The edit seed (`linkEditText`) now shows a page without its alias, matching the 
 **VERIFY**
 
 - [ ] `pasteAsRows('[[T#H]]', false, false)` → Connection, Markdown Link; `pasteAsRows('[x](#H)', …)` and `pasteAsRows('[[#H]]', …)` → Connection, Markdown Link (a held heading in either syntax; no Embedded Page, since it carries a heading); `pasteAsRows('[x](example.com)', …)` → the address rows; `pasteAsWrite(readLinkText('[[T|a]]'), 'connection')` → `[[T|a]]`; `pasteAsWrite(readLinkText('[[#H]]'), 'markdown')` → `[H](#H)`.
-- [ ] `grep -rn "readLink(\|parseLink(\|PasteAsTarget\|wholeWikiLink" Core Desktop --include='*.ts' --include='*.tsx'` is empty.
+- [ ] `grep -rn "readLink(\|parseLink(\|PasteAsTarget\|wholeWikiLink\|MD_LINK\b\|WHOLE_LINK\|titleOf" Core Desktop --include='*.ts' --include='*.tsx'` is empty.
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
@@ -4714,3 +4748,4 @@ The anchor is pinned by a test for a filled and an unfilled label.
 - **Task 1-2, the `Token` union's plain arm:** the AFTER's `TokenBase & { kind: Exclude<TokenKind, 'wikiLink'> }` made `TokenOf<'link'>` resolve to `never` and stopped `kind === 'link'` from narrowing; it landed as a distributive mapped type over the plain kinds (`tokens.ts`), so `TokenOf<K>` resolves for every kind. Later AFTER blocks that write `TokenOf<'link'>` work as written against the tree.
 - **Task 1-4, `isLiteralAt`:** the AFTER read `connectionAt(scan, c) ?? openConnectionAt(scan, c)`, and `connectionAt` counts a caret on a link's first bracket as inside it, so every typography replacement stood down with the caret directly before a `[[…]]` (`see -[[B]]` then `>` wrote nothing where the baseline wrote `→`). It reads `openConnectionAt` alone, which is non-null inside a closed or unclosed connection and null before its `[[`; pinned in `edits.test.ts`. Found at the Phase 1 checkpoint.
 - **Task 1-1, the embed-line tests:** the proven diff deleted `embedClaims.test.ts` whole, though eight of its cases pinned `blockEmbedLines` and the scan's embed lines, which survive and feed `buildTiles`; those eight moved unchanged into `detect.test.ts` at the checkpoint.
+- **Task 2-1, the whole-text grammars:** as drafted, a Link value or clipboard was read by `WHOLE_LINK`/`parseConnectionText` (stripping a trailing `\` unconditionally through `titleOf`) and an `MD_LINK` rebuilt from the empty-tolerant regex, while the editor and the index read `linkOccurrences`; the Phase 1 checkpoint showed the pair disagreeing with the walk (`[[A#Note\]]` named `Note` to a value and `Note\` to the index; `[](Page)` was a page to a value and text to the body, so it would have been stripped and parked but never renamed). The task now reads a whole text through the walk (`wholeLink`), and the three grammars go. Decided before Phase 2 was dispatched; it serves §5.2 (One Reader) and changes no ruling.
