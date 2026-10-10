@@ -12,6 +12,7 @@ import {
   type CodeMask,
 } from './markdownCode'
 import { emptyTolerantLinkRegex, unescapeAlias } from '../../Connections/links'
+import { pageLinkPattern } from '../../Connections/connections'
 import { isValidLink, WEB_ADDRESS } from '../../Paths/urlPath'
 import type { ListKind } from '../../Actions/gripMenu'
 export const highlightRegex = (): RegExp => /(?<!=)==(?!=)((?:[^=\n]|=(?!=))+)==(?!=)/dg
@@ -397,10 +398,11 @@ export interface EmbedLine {
   title: string
 }
 
-const loneEmbedRe = /^!\[\[([^\]\r\n]*)\]\][ \t]*$/
+const loneEmbedRe = new RegExp(`^!(?:${pageLinkPattern().source})[ \\t]*$`)
 
+/** What a connection alone on its line behind a `!` holds between its brackets, empty included. */
 export function loneEmbedTitle(line: string): string | null {
-  return loneEmbedRe.exec(line)?.[1] ?? null
+  return loneEmbedRe.exec(line)?.[0].trimEnd().slice(3, -2) ?? null
 }
 
 /** Never indented: an indented line is list continuation, mirroring the page embed's anchor. A mid-typed prefix like `https://example.c` passes, which is why claims are formation-gated on the selection rather than on the grammar. */

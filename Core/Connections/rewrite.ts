@@ -1,62 +1,25 @@
-import {
-  connectionText,
-  expressibleHeading,
-  pageEmbedPattern,
-  pageEmbedText,
-  pageLinkPattern,
-  titleOf,
-} from './connections'
+import { expressibleHeading } from './connections'
 import { normalizeTitle } from '../Paths/caseFold'
-import {
-  encodeLinkTarget,
-  markdownLinkRegex,
-  targetFragment,
-  targetNamesTitle,
-  targetTitle,
-} from './links'
-import { wholeValueLink } from './linkValue'
-import { applyEdits, codeMask } from '../MarkdownPM/Engine/markdownCode'
-import { sectionRunsIn } from './scan'
-
-type LinkGroups = { page: string; heading?: string; alias?: string }
-const groupsOf = (args: unknown[]): LinkGroups => args[args.length - 1] as LinkGroups
-const offsetOf = (args: unknown[]): number => args[args.length - 3] as number
-
-const escapedPipe = (half: string, alias: string | undefined): string =>
-  alias ? `${half.endsWith('\\') ? '\\|' : '|'}${alias}` : ''
+import { encodeLinkTarget } from './links'
+import { applyEdits, type TextEdit } from '../MarkdownPM/Engine/markdownCode'
+import { linksIn } from './scan'
 
 export type RenameChange = { title: string } | { heading: string; to: string }
 
-/** Code stays untouched — a page documenting `[[Old Title]]` in a fenced block is showing a sample. An alias and a markdown link's label ride through. */
+/** Code stays untouched — a page documenting `[[Old Title]]` in a fenced block is showing a sample. Only the written page name changes, so a heading, an alias, a label, and a table cell's escaped pipe ride through, and a link naming its own page by leaving the name out stays as written; an empty alias, or one that would repeat the new target, goes, as `connectionText` drops one. */
 export function rewriteConnections(body: string, oldTitle: string, newTitle: string): string {
-  if (!body.includes('[[') && !body.includes('](')) return body
   const oldKey = normalizeTitle(oldTitle)
-  const inCode = codeMask(body)
-  const afterLinks = body.replace(pageLinkPattern(), (match, ...args) => {
-    const { page, heading, alias } = groupsOf(args)
-    if (inCode(offsetOf(args)) || normalizeTitle(titleOf(page)) !== oldKey) return match
-    // A table cell's pipe-escape is re-emitted exactly as it arrived: dropping it would write a bare `|` into a cell and split the row into an extra column.
-    const fragment = heading === undefined ? '' : `#${titleOf(heading)}`
-    return `[[${newTitle}${fragment}${escapedPipe(heading ?? page, alias)}]]`
-  })
-  // The embed pass sees POST-link-pass offsets — its mask must be built over the same string, or any length-changing link rewrite above shifts every later offset off the original mask.
-  const inCodeAfter = codeMask(afterLinks)
-  const afterEmbeds = afterLinks.replace(pageEmbedPattern(), (match, ...args) => {
-    const { page, heading } = groupsOf(args)
-    if (inCodeAfter(offsetOf(args)) || normalizeTitle(page) !== oldKey) return match
-    return heading === undefined ? pageEmbedText(newTitle) : `![[${newTitle}#${heading}]]`
-  })
-  // Rebuilt for the same reason. Only a target that NAMES a page moves, so a URL whose last segment happens to match the renamed title is left as written.
-  const inCodeFinal = codeMask(afterEmbeds)
-  return afterEmbeds.replace(
-    markdownLinkRegex(),
-    (match, label: string, target: string, offset: number) => {
-      if (inCodeFinal(offset) || !targetNamesTitle(target, oldKey)) return match
-      const hash = target.indexOf('#')
-      const fragment = hash === -1 ? '' : target.slice(hash)
-      return `[${label}](${encodeLinkTarget(newTitle)}${fragment})`
-    },
-  )
+  const edits: TextEdit[] = []
+  for (const { syntax, target, title, heading, alias } of linksIn(body)) {
+    if (target !== oldKey) continue
+    const insert = syntax === 'markdown' ? encodeLinkTarget(newTitle) : newTitle
+    edits.push({ from: title[0], to: title[1], insert })
+    const named = heading ? `${newTitle}#${body.slice(heading[0], heading[1])}` : newTitle
+    const shown = alias && normalizeTitle(body.slice(alias[0], alias[1]))
+    if (alias && (!shown || shown === normalizeTitle(named)))
+      edits.push({ from: (heading ?? title)[1], to: alias[1], insert: '' })
+  }
+  return applyEdits(body, edits)
 }
 
 const HEADING_REFERENCE = /\[\[[^\r\n]*#|\]\([^\r\n]*#|§/
@@ -73,61 +36,13 @@ export function rewriteHeadingConnections(
   if (!HEADING_REFERENCE.test(body)) return body
   const titleKey = normalizeTitle(title)
   const oldKey = normalizeTitle(oldHeading)
-  const own = normalizeTitle(ownTitle) === titleKey
-  const names = (page: string | null): boolean =>
-    page === '' ? own : page !== null && normalizeTitle(page) === titleKey
-  const inCode = codeMask(body)
   const wiki = expressibleHeading(newHeading)
-  const afterLinks = body.replace(pageLinkPattern(), (match, ...args) => {
-    const { page, heading, alias } = groupsOf(args)
-    if (!wiki || heading === undefined || inCode(offsetOf(args))) return match
-    if (!names(page) || normalizeTitle(titleOf(heading)) !== oldKey) return match
-    return `[[${page}#${newHeading}${escapedPipe(heading, alias)}]]`
-  })
-  const inCodeEmbeds = codeMask(afterLinks)
-  const afterEmbeds = afterLinks.replace(pageEmbedPattern(), (match, ...args) => {
-    const { page, heading } = groupsOf(args)
-    if (!wiki || heading === undefined || inCodeEmbeds(offsetOf(args))) return match
-    if (!names(page) || normalizeTitle(heading) !== oldKey) return match
-    return `![[${page}#${newHeading}]]`
-  })
-  const inCodeAfter = codeMask(afterEmbeds)
-  const afterMd = afterEmbeds.replace(
-    markdownLinkRegex(),
-    (match, label: string, target: string, offset: number) => {
-      if (inCodeAfter(offset) || !names(targetTitle(target))) return match
-      if (normalizeTitle(targetFragment(target)) !== oldKey) return match
-      return `[${label}](${target.slice(0, target.indexOf('#'))}#${encodeLinkTarget(newHeading)})`
-    },
-  )
-  if (!own || !outline) return afterMd
-  const inCodeFinal = codeMask(afterMd)
-  return applyEdits(
-    afterMd,
-    sectionRunsIn(afterMd, [...outline, oldHeading], inCodeFinal)
-      .filter((run) => normalizeTitle(run.heading) === oldKey)
-      .map((run) => ({ from: run.from + 1, to: run.to, insert: newHeading })),
-  )
-}
-
-/** Empty when the frontmatter names nothing — the cascade reads that as "no field write". */
-export function rewriteFrontmatterConnections(
-  values: Record<string, unknown>,
-  title: string,
-  change: RenameChange,
-  ownTitle = '',
-): Record<string, string> {
-  if ('heading' in change && !expressibleHeading(change.to)) return {}
-  const titleKey = normalizeTitle(title)
-  const headingKey = 'heading' in change ? normalizeTitle(change.heading) : ''
-  const patch: Record<string, string> = {}
-  for (const [key, value] of Object.entries(values)) {
-    const link = wholeValueLink(value)
-    if (link?.kind !== 'page' || normalizeTitle(link.title || ownTitle) !== titleKey) continue
-    if ('heading' in change) {
-      if (normalizeTitle(link.heading ?? '') === headingKey)
-        patch[key] = connectionText(link.title, link.alias, change.to)
-    } else if (link.title) patch[key] = connectionText(change.title, link.alias, link.heading)
+  const edits: TextEdit[] = []
+  for (const hit of linksIn(body, ownTitle, outline && [...outline, oldHeading])) {
+    if (hit.target !== titleKey || hit.qualifier !== oldKey || !hit.heading) continue
+    const [from, to] = hit.heading
+    if (hit.syntax === 'markdown') edits.push({ from, to, insert: encodeLinkTarget(newHeading) })
+    else if (hit.syntax === 'section' || wiki) edits.push({ from, to, insert: newHeading })
   }
-  return patch
+  return applyEdits(body, edits)
 }

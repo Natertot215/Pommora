@@ -7,9 +7,14 @@ import { listKindOf, setHeading, setListKind } from '../Input/format'
 import { headingParts, webpageEmbedUrlSpan } from '../Engine/detect'
 import { type Block, blockAt } from '../Engine/blockModel'
 import { docScan, docString } from '../docCache'
-import { embeddable } from '../Engine/embedClaims'
 import { HEADING_LINE } from '../folding'
-import { applyEmbedZoom, embedExclusions, embedZoomAt, setWebLinkSeat } from '../Embeds/embedWidget'
+import {
+  applyEmbedZoom,
+  embeddable,
+  embedExclusions,
+  embedZoomAt,
+  setWebLinkSeat,
+} from '../Embeds/embedWidget'
 import { focusRange } from '../caretPlacement'
 import { lineEndAt, lineStartAt } from '../Engine/markdownCode'
 import { applyEdit } from '../Input/applyEdit'

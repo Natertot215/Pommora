@@ -296,8 +296,7 @@
   color: var(--connection);
 }
 .md-bracket,
-.md-latex,
-.md-embed {
+.md-latex {
   color: var(--label-secondary);
 }
 
@@ -338,10 +337,6 @@
   /* KNOB — the grip's seat at the tile's top corner. Fixed pixels: the collapsed line's zero-height text row is no anchor, and the tile's box doesn't ride the glyph zoom. */
   --grip-top: 28px;
 }
-.mdpm-embed-cycle {
-  color: var(--label-secondary);
-}
-
 .md-control {
   color: var(--label-control);
 }

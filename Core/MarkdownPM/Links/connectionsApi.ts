@@ -69,7 +69,7 @@ export function resolveMdTarget(index: PageIndex | undefined, rawTarget: string)
 
 export function tokenTarget(index: PageIndex | undefined, text: string, tk: Token): MdTarget {
   if (tk.kind === 'link') return resolveMdTarget(index, linkTarget(text, tk))
-  const [rs, re] = tk.resolveRange ?? tk.contentRange
+  const [rs, re] = tk.resolveRange!
   return titleTarget(index, text.slice(rs, re), headingOf(text, tk))
 }
 

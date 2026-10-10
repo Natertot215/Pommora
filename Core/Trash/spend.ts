@@ -20,7 +20,7 @@ import { scrubReturning } from './restoreScrub'
 import { exclusionWriteRefusal, readLiveSetting, reseatExcludedFolders } from '../Settings/settings'
 import { sweepRootsById } from '../Properties/governedSweep'
 import { heldValue, joinValues, landValue, writeTarget } from '../Files/heldKeys'
-import { rewriteFrontmatterConnections } from '../Connections/rewrite'
+import { rewriteConnections } from '../Connections/rewrite'
 import { linkDefs } from '../Properties/propertiesRegistry'
 import { refillValues } from '../Properties/assignment'
 import { BUNDLE_SUFFIX } from './bundle'
@@ -257,15 +257,17 @@ async function restoreArtifact(
     const defs = await linkDefs(root)
     const trashed: StrippedLink[] = []
     for (const def of defs) {
-      const values = Object.fromEntries(
-        record.links.filter((l) => l.property === def.id).map((l) => [l.page, l.value]),
+      const all = Object.fromEntries(
+        record.links
+          .filter((l) => l.property === def.id)
+          .map((l) => [
+            l.page,
+            landed === was ? l.value : rewriteConnections(l.value, was, landed),
+          ]),
       )
-      const rebuilt =
-        landed === was ? {} : rewriteFrontmatterConnections(values, was, { title: landed })
-      const all = { ...values, ...rebuilt }
       const taken = await refillValues(root, def, roots, all, frozen)
-      for (const id of Object.keys(values))
-        if (!roots[id]) trashed.push({ page: id, property: def.id, value: String(all[id]) })
+      for (const id of Object.keys(all))
+        if (!roots[id]) trashed.push({ page: id, property: def.id, value: all[id] })
         else if (!taken.has(id)) unlinked.add(id)
     }
     // A page or Space in the Trash takes its value back into its trashed copy, so it returns with it.

@@ -1,6 +1,6 @@
 import { type Personalization, settingOf } from '../../Settings/personalization'
 import { linkDestinationStart } from '../../Connections/links'
-import { aliasSpanAt, linkAt } from '../../Connections/connections'
+import { type LinkSpans, linkOccurrences } from '../../Connections/connections'
 import { inCalloutAt, inCodeAt, inFenceAt, spanAt, type DocScan } from '../Engine/docScan'
 import {
   fenceAt,
@@ -9,7 +9,6 @@ import {
   lineIndexAt,
   lineStartAt,
   lineEndAt,
-  inlineSpans,
   trimmedRange,
   quotePrefix,
   type TextEdit,
@@ -320,21 +319,22 @@ const emptyPairAt = (doc: string, c: number): boolean => {
   )
 }
 
-/** Code holds some of the connection written around `at`, so the editor draws it as text. */
-export function linkInCode(scan: DocScan, at: number): boolean {
-  const ls = lineStartAt(scan.text, at)
-  const line = scan.text.slice(ls, lineEndAt(scan.text, at))
-  const link = linkAt(line, at - ls)
-  if (!link) return false
-  if (inFenceAt(scan, at)) return true
-  return inlineSpans(line).some(([a, b]) => a < link.full[1] && b > link.full[0])
+/** The connection written around `at` as the editor draws it, so code touching it leaves none; its spans are relative to `at`'s line, empty slots kept. */
+export function connectionAt(scan: DocScan, at: number): LinkSpans | null {
+  const i = lineIndexAt(scan, at)
+  const line = scan.lines[i]
+  if (!line.includes('[[')) return null
+  const ls = scan.lineStarts[i]
+  for (const o of linkOccurrences(line, (p) => inCodeAt(scan, ls + p)))
+    if (o.syntax === 'wiki' && at - ls >= o.full[0] && at - ls <= o.full[1]) return o
+  return null
 }
 
 /** In a written connection's alias, where a `]` would truncate the link. */
 export function inAliasAt(scan: DocScan, at: number): boolean {
-  if (linkInCode(scan, at)) return false
-  const ls = lineStartAt(scan.text, at)
-  return aliasSpanAt(scan.text.slice(ls, lineEndAt(scan.text, at)), at - ls) !== null
+  const alias = connectionAt(scan, at)?.alias
+  const rel = at - lineStartAt(scan.text, at)
+  return alias != null && rel >= alias[0] && rel <= alias[1]
 }
 
 export function autoPair(

@@ -3,7 +3,6 @@ import type { Root, RootContent, PhrasingContent } from 'mdast'
 import { parse, parseThroughHtml } from './parser'
 import { inlineSpans, type CodeMask } from './markdownCode'
 import { inCodeAt, scanDoc } from './docScan'
-import { markdownLinkRegex } from '../../Connections/links'
 import {
   htmlTagRegex,
   isInlineMathContent,
@@ -11,7 +10,7 @@ import {
   inlineLatexRegex,
   markerRegex,
 } from './detect'
-import { linkSpans, pageEmbedPattern, pageLinkPattern } from '../../Connections/connections'
+import { type LinkOccurrence, linkOccurrences } from '../../Connections/connections'
 import { type HighlightColor, markAfter, markBefore } from './highlightColors'
 
 export type TokenKind =
@@ -22,7 +21,6 @@ export type TokenKind =
   | 'highlight'
   | 'blockLatex'
   | 'inlineLatex'
-  | 'embed'
   | 'wikiLink'
   | 'link'
   | 'citationRef'
@@ -40,7 +38,7 @@ export interface Token {
   inHtml?: true
 }
 
-// The page half alone resolves; a heading token carries `resolveRange` too and is not aliased by that alone.
+// A connection's title half, which alone resolves; it starts the shown text unless an alias replaces it.
 export const aliasedToken = (tk: Token): boolean =>
   tk.resolveRange !== undefined && tk.contentRange[0] !== tk.resolveRange[0]
 
@@ -224,32 +222,34 @@ function blockLatexTokens(text: string, maths: readonly [number, number][]): Tok
   })
 }
 
-// No `d` flag, so offsets are derived from the known `[[` prefix.
-function wikiLinkTokens(text: string, inCode: (offset: number) => boolean): Token[] {
-  const tokens: Token[] = []
-  for (const m of text.matchAll(pageLinkPattern())) {
-    const s = linkSpans(m)
-    if (!s || inCode(s.full[0])) continue
-    const [fs, fe] = s.full
-    // The leading marker swallows `[[Title|`. An opened-but-empty alias shows nothing, so it stays a plain link.
-    const alias = s.alias && s.alias[1] > s.alias[0] ? s.alias : null
-    const fragment = s.heading && s.heading[1] > s.heading[0] ? s.heading : null
-    const target: [number, number] = [s.title[0], fragment ? fragment[1] : s.title[1]]
-    const shown = alias ?? target
-    tokens.push({
-      kind: 'wikiLink',
-      range: [fs, fe],
-      contentRange: shown,
-      ...(alias || s.heading ? { resolveRange: s.title } : {}),
-      ...(fragment ? { fragment } : {}),
-      // The markers tile the whole token, so a renderer drawing only the content span can't disagree with one hiding markers.
+function linkToken(o: LinkOccurrence): Token {
+  const [fs, fe] = o.full
+  if (o.syntax === 'markdown')
+    return {
+      kind: 'link',
+      range: o.full,
+      contentRange: o.label,
       markerRanges: [
-        [fs, shown[0]],
-        [shown[1], fe],
+        [fs, o.label[0]],
+        [o.label[1], fe],
       ],
-    })
+    }
+  // The leading marker swallows `[[Title|`. An opened-but-empty alias shows nothing, so it stays a plain link.
+  const alias = o.alias && o.alias[1] > o.alias[0] ? o.alias : null
+  const fragment = o.heading && o.heading[1] > o.heading[0] ? o.heading : null
+  const shown = alias ?? [o.title[0], fragment ? fragment[1] : o.title[1]]
+  return {
+    kind: 'wikiLink',
+    range: o.full,
+    contentRange: shown,
+    resolveRange: o.title,
+    ...(fragment ? { fragment } : {}),
+    // The markers tile the whole token, so a renderer drawing only the content span can't disagree with one hiding markers.
+    markerRanges: [
+      [fs, shown[0]],
+      [shown[1], fe],
+    ],
   }
-  return tokens
 }
 
 /** Every token opens on one of these, so text holding none of them tokenizes to nothing. */
@@ -270,24 +270,11 @@ export function tokenizeChunk(text: string): { tokens: Token[]; html: Span[] } {
   const inCode: CodeMask = (p) => inCodeAt(scan, p)
   const matches = (spec: RegexSpec): Token[] => regexTokens(text, spec, inCode)
 
-  // Code tokenizes FIRST so a [[link]] in code renders and clicks as literal code, not a live connection.
   const code = inlineCodeTokens(text, inCode)
-  const embeds = matches({
-    kind: 'embed',
-    re: pageEmbedPattern(),
-    open: 3,
-    close: 2,
-  })
-  // `[[Title]](target)` stays a connection trailed by literal parens, matching Obsidian. CommonMark would read it as a link labeled `[Title]`, which the rename cascade's grammar can't match, so its target would rot silently.
-  const wikis = wikiLinkTokens(text, inCode).filter(notOverlapping([...embeds, ...code]))
-  const links = matches({
-    kind: 'link',
-    re: markdownLinkRegex(),
-    open: 1,
-    close: 1,
-  }).filter(notOverlapping([...embeds, ...wikis, ...code]))
+  const links = linkOccurrences(text, inCode).map(linkToken)
+  const wikis = links.filter((tk) => tk.kind === 'wikiLink')
   const cites = matches({ kind: 'citationRef', re: markerRegex(), open: 2, close: 1 }).filter(
-    notOverlapping([...embeds, ...wikis, ...code]),
+    notOverlapping([...wikis, ...code]),
   )
   const highlights = matches({
     kind: 'highlight',
@@ -295,7 +282,7 @@ export function tokenizeChunk(text: string): { tokens: Token[]; html: Span[] } {
     open: 2,
     close: 2,
   })
-    .filter(notOverlapping([...code, ...embeds, ...wikis, ...links]))
+    .filter(notOverlapping([...code, ...links]))
     .map((tk) => colorHighlight(text, tk))
   const blockTex = blockLatexTokens(text, scan.maths).filter(notOverlapping(code))
   const inlineTex = matches({
@@ -306,19 +293,10 @@ export function tokenizeChunk(text: string): { tokens: Token[]; html: Span[] } {
     accept: isInlineMathContent,
   }).filter(notOverlapping([...code, ...blockTex]))
   const tags = matches({ kind: 'htmlTag', re: htmlTagRegex(), open: 1, close: 1 }).filter(
-    notOverlapping([...code, ...embeds, ...wikis, ...links, ...blockTex, ...inlineTex]),
+    notOverlapping([...code, ...links, ...blockTex, ...inlineTex]),
   )
 
-  tokens.push(
-    ...embeds,
-    ...wikis,
-    ...links,
-    ...code,
-    ...cites,
-    ...highlights,
-    ...blockTex,
-    ...inlineTex,
-  )
+  tokens.push(...links, ...code, ...cites, ...highlights, ...blockTex, ...inlineTex)
   for (const tk of tokens) if (blocks.some((b) => overlaps(b, tk.range))) tk.inHtml = true
   tokens.push(...tags)
   tokens.sort((a, b) => a.range[0] - b.range[0])

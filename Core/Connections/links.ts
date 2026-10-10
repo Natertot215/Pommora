@@ -1,5 +1,4 @@
 import { HAS_SCHEME } from '../Paths/urlPath'
-import { normalizeTitle } from '../Paths/caseFold'
 import { stripMarkdownExt } from '../Paths/posix'
 
 export const MD_LINK = /^\[((?:[^\]\\]|\\.)*)\]\((.*)\)$/
@@ -102,9 +101,4 @@ export function targetTitle(rawTarget: string): string | null {
 export function targetFragment(rawTarget: string): string {
   const t = pageTarget(rawTarget)
   return t ? decodeLinkTarget(t.fragment).trim() : ''
-}
-
-export function targetNamesTitle(rawTarget: string, normalizedKey: string): boolean {
-  const named = targetTitle(rawTarget)
-  return named !== null && normalizeTitle(named) === normalizedKey
 }
