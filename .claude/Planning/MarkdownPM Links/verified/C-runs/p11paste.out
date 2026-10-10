@@ -1,0 +1,26 @@
+pastedUrl "[[P]]" -> null
+pastedUrl "[[P#H|a]]" -> null
+pastedUrl "[x](P)" -> null
+pastedUrl "[x](https://a.co)" -> null
+pastedUrl "https://a.co" -> "https://a.co"
+literal(linkDestinationStart) alias slot "[[Foo|]]" 6 -> null
+literal(linkDestinationStart) title "[[Foo]]" 4 -> null
+literal(linkDestinationStart) heading "[[Foo#H]]" 7 -> null
+literal(linkDestinationStart) md label "[x](Page)" 1 -> null
+literal(linkDestinationStart) md dest "[x](Page)" 6 -> 4
+literal(linkDestinationStart) url dest "[x](https://b.co)" 8 -> 4
+decidePaste url in [[Foo|]] {"kind":"link","text":"[a.co](https://a.co)","target":"https://a.co","wantsTitle":false}
+decidePaste url, selection "Foo" (inside [[Foo]]) {"kind":"link","text":"[Foo](https://a.co)","target":"https://a.co","wantsTitle":false}
+after paste [[Foo|[a.co](https://a.co)]] tokens [["link","[[Foo|[a.co](https://a.co)"]] linkAt null
+raw ⌘V [[P2]] into [[P1]] title [[P[[P2]]1]] [["wikiLink","[[P[[P2]]"]]
+raw ⌘V [y](P2) into alias [[P1|x[y](P2)]] [["link","[[P1|x[y](P2)"]]
+pasteAsTarget "[[P]]" {"kind":"page","title":"P"} rows ["connection","markdown"]
+pasteAsTarget "[[P#H|a]]" null rows []
+pasteAsTarget "[x](P)" {"kind":"page","title":"P"} rows ["connection","markdown"]
+pasteAsTarget "[x](https://a.co)" {"kind":"url","url":"https://a.co"} rows ["link-full","link-short","link-title","plain"]
+pasteAsTarget "https://a.co" {"kind":"url","url":"https://a.co"} rows ["link-full","link-short","link-title","plain"]
+readLink "[[P]]" {"kind":"page","title":"P"} parseConn {"title":"P"}
+readLink "[[P#H|a]]" {"kind":"page","title":"P","heading":"H","alias":"a"} parseConn {"title":"P","heading":"H","alias":"a"}
+readLink "[x](P)" {"kind":"url","url":"P","alias":"x"} parseConn null
+readLink "[x](https://a.co)" {"kind":"url","url":"https://a.co","alias":"x"} parseConn null
+readLink "https://a.co" {"kind":"url","url":"https://a.co"} parseConn null

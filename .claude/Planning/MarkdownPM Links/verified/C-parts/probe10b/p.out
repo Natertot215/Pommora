@@ -1,0 +1,16 @@
+"pre [d.co](https://d.co) post" slice ok: true "[d.co](https://d.co)"
+"a|b [d.co](https://d.co|x) c" slice ok: true "[d.co](https://d.co\\|x)"
+"line1\nline2 [d.co](https://d.co)" slice ok: true "[d.co](https://d.co)"
+"back\\ [d.co](https://d.co)" slice ok: true "[d.co](https://d.co)"
+"x\\\\[d.co](https://d.co)" slice ok: true "[d.co](https://d.co)"
+additive at cut 2? false "a\\" "a\\\\\\|b"
+whole replace maps entry to 52 25 (dropped if to<=from)
+minimal diff [{"from":29,"to":29,"insert":"e"}] maps entry to 31 51 text kept: true
+same result as whole replace: true
+changesTo identical: []
+today identical commit is a change: {"from":25,"to":51,"insert":" pre [d.co](https://d.co) "} empty? false
+ragged segments: [[21,24]] commit: {"from":20,"to":25,"insert":"| x | [d.co](https://d.co) |"}
+"[x **b**](https://a.co)" [["link",[0,23]],["bold",[3,8]]]
+"**a [x](https://a.co) b**" [["bold",[0,25]],["link",[4,21]]]
+"[[P|a **b**]]" [["wikiLink",[0,13]],["bold",[6,11]]]
+"**a [[P]] b**" [["bold",[0,13]],["wikiLink",[4,9]]]

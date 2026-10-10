@@ -1,0 +1,13 @@
+== closed-but-empty destinations: literal today via the complete half; token?
+"[]()" col 3 complete [3,3] linkDestinationStart 3 tokens [] linkTokenAt null
+"![]()" col 4 complete [4,4] linkDestinationStart 4 tokens [] linkTokenAt null
+"[x]()" col 4 complete [4,4] linkDestinationStart 4 tokens [] linkTokenAt null
+"[](P)" col 3 complete [3,4] linkDestinationStart 3 tokens [] linkTokenAt null
+"[x](P)" col 5 complete [4,5] linkDestinationStart 4 tokens ["link@0,6"] linkTokenAt [0,6]
+"[x](" col 4 complete null linkDestinationStart 4 tokens [] linkTokenAt null
+decidePaste at a bare caret (what step 4 would write once the closed half leaves literalAt): {"kind":"link","text":"[a.co](https://a.co)","target":"https://a.co","wantsTitle":false}
+== readFormatState connection/link flag at the resting seat (edge-inclusive)
+"[[P]] tail" 5 connection true link false linkTokenAt [0,5]
+"[[P]] tail" 0 connection true link false linkTokenAt [0,5]
+"[x](https://a.co) tail" 17 connection false link true linkTokenAt [0,17]
+"[[P]] tail" 3 connection true link false linkTokenAt [0,5]

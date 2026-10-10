@@ -1,0 +1,1961 @@
+diff --git a/Core/Connections/connections.test.ts b/Core/Connections/connections.test.ts
+index 150e561d7..9f43f3649 100644
+--- a/Core/Connections/connections.test.ts
++++ b/Core/Connections/connections.test.ts
+@@ -1,27 +1,51 @@
+ import { describe, it, expect } from 'vitest'
+ import {
+-  aliasSpanAt,
+-  emptyAliasPipeAt,
+   connectionText,
+   embeddableTitle,
++  linkOccurrences,
+   parseConnectionText,
+ } from './connections'
++import { codeMask } from '../MarkdownPM/Engine/markdownCode'
+ 
+-describe('aliasSpanAt', () => {
+-  const line = 'see [[Q3 Plan|the plan]] end'
+-  it('finds the alias span from anywhere inside it', () => {
+-    expect(
+-      line.slice(...(aliasSpanAt(line, line.indexOf('the plan') + 3) as [number, number])),
+-    ).toBe('the plan')
++const walk = (text: string) => linkOccurrences(text, codeMask(text))
++
++describe('linkOccurrences', () => {
++  it('reads a connection’s slots, empty ones kept, and the cell escape off the half before the pipe', () => {
++    expect(walk('a [[P#H|al]]')).toEqual([
++      { syntax: 'wiki', full: [2, 12], title: [4, 5], heading: [6, 7], alias: [8, 10] },
++    ])
++    expect(walk('[[P|]] [[Q#]]').map((o) => o.syntax === 'wiki' && [o.alias, o.heading])).toEqual([
++      [[4, 4], null],
++      [null, [11, 11]],
++    ])
++    expect(walk('[[P\\|al]]')[0]).toMatchObject({ title: [2, 3], alias: [5, 7] })
++    expect(walk('[[]] [[|x]]')).toEqual([])
++  })
++
++  it('reads a markdown link’s label and destination', () => {
++    expect(walk('[x](Page#H)')).toEqual([
++      { syntax: 'markdown', full: [0, 11], label: [1, 2], destination: [4, 10] },
++    ])
++  })
++
++  it('a `!` before a connection is text', () => {
++    expect(walk('see ![[P]]').map((o) => o.full)).toEqual([[5, 10]])
++  })
++
++  it('a markdown link overlapping a connection yields to it', () => {
++    expect(walk('[x]([[T]])').map((o) => o.syntax)).toEqual(['wiki'])
++    expect(walk('[[T]](x)').map((o) => o.syntax)).toEqual(['wiki'])
+   })
+-  it('includes both ends, so a `]` at either is still refused', () => {
+-    expect(aliasSpanAt(line, line.indexOf('the plan'))).not.toBeNull()
+-    expect(aliasSpanAt(line, line.indexOf('the plan') + 'the plan'.length)).not.toBeNull()
++
++  it('a link code touches is text: in a fence, starting in code, or holding code', () => {
++    expect(walk('```\n[[A]]\n```')).toEqual([])
++    expect(walk('x `[[A`]] y')).toEqual([])
++    expect(walk('[[A `b` C]] [x](`y`)')).toEqual([])
++    expect(walk('[[A]] `b`').map((o) => o.syntax)).toEqual(['wiki'])
+   })
+-  it('is null in the title, in the prose, and in an unaliased link', () => {
+-    expect(aliasSpanAt(line, line.indexOf('Q3') + 1)).toBeNull()
+-    expect(aliasSpanAt(line, 1)).toBeNull()
+-    expect(aliasSpanAt('see [[Q3 Plan]] end', 8)).toBeNull()
++
++  it('an unclosed backtick inside a link is not code', () => {
++    expect(walk('[[A `b]]').map((o) => o.syntax)).toEqual(['wiki'])
+   })
+ })
+ 
+@@ -64,10 +88,3 @@ describe('connectionText and embeddableTitle', () => {
+     expect(embeddableTitle('C#')).toBe(false)
+   })
+ })
+-
+-describe('emptyAliasPipeAt', () => {
+-  it('finds the pipe after a heading, not the page half', () => {
+-    expect(emptyAliasPipeAt('[[P#H|]]', 6)).toBe(5)
+-    expect(emptyAliasPipeAt('[[P|]]', 4)).toBe(3)
+-  })
+-})
+diff --git a/Core/Connections/connections.ts b/Core/Connections/connections.ts
+index 5219444f6..fdf31ee96 100644
+--- a/Core/Connections/connections.ts
++++ b/Core/Connections/connections.ts
+@@ -1,27 +1,32 @@
+ import { normalizeTitle } from '../Paths/caseFold'
+-
+-export const pageEmbedPattern = (): RegExp =>
+-  /!\[\[(?<page>[^\]\r\n#]*)(?:#(?<heading>[^\]\r\n]*))?\]\]/dg
++import { markdownLinkRegex } from './links'
++import { type CodeMask, inlineSpans } from '../MarkdownPM/Engine/markdownCode'
+ 
+ // Fresh per call so callers never share `lastIndex`. `]` is content unless it closes the pair; the 255 cap is load-bearing, since an unbounded run backtracks quadratically on an unclosed `[`-run. The page half stops at the first `#`; the heading takes the rest up to the pipe.
+ export function pageLinkPattern(): RegExp {
+-  return /(?<!!)\[\[(?<page>(?:[^\]\r\n|#]|\](?!\])){0,255})(?:#(?<heading>(?:[^\]\r\n|]|\](?!\])){0,255}))?(?:\|(?<alias>[^\]\r\n]{0,255}))?\]\]/dg
++  return /\[\[(?<page>(?:[^\]\r\n|#]|\](?!\])){0,255})(?:#(?<heading>(?:[^\]\r\n|]|\](?!\])){0,255}))?(?:\|(?<alias>[^\]\r\n]{0,255}))?\]\]/dg
+ }
+ 
+ export type LinkStatus = 'resolved' | 'phantom' | 'ambiguous'
+ 
+-interface LinkSpans {
+-  full: [number, number]
+-  title: [number, number]
+-  heading: [number, number] | null
+-  alias: [number, number] | null
++type Span = [number, number]
++
++export interface LinkSpans {
++  full: Span
++  title: Span
++  heading: Span | null
++  alias: Span | null
+ }
+ 
++export type LinkOccurrence =
++  | ({ syntax: 'wiki' } & LinkSpans)
++  | { syntax: 'markdown'; full: Span; label: Span; destination: Span }
++
+ // A GFM cell escapes `|`, so an aliased connection inside a table arrives as `[[Title\|alias]]` or `[[Title#Heading\|alias]]` — the backslash is the cell's, and it sits on whichever half precedes the pipe.
+-export const titleOf = (rawTitle: string): string =>
++const titleOf = (rawTitle: string): string =>
+   rawTitle.endsWith('\\') ? rawTitle.slice(0, -1) : rawTitle
+ 
+-export function linkSpans(m: RegExpMatchArray): LinkSpans | null {
++function linkSpans(m: RegExpMatchArray): LinkSpans | null {
+   const at = m.index
+   const g = m.indices?.groups
+   if (at == null || !g?.page) return null
+@@ -29,7 +34,7 @@ export function linkSpans(m: RegExpMatchArray): LinkSpans | null {
+   const heading = g.heading ?? null
+   if (page[1] === page[0] && heading === null) return null
+   const alias = g.alias ?? null
+-  const unescaped = (r: [number, number]): [number, number] =>
++  const unescaped = (r: Span): Span =>
+     alias !== null && m[0][r[1] - 1 - at] === '\\' ? [r[0], r[1] - 1] : r
+   return {
+     full: [at, at + m[0].length],
+@@ -39,28 +44,33 @@ export function linkSpans(m: RegExpMatchArray): LinkSpans | null {
+   }
+ }
+ 
+-export function linkAt(line: string, rel: number): LinkSpans | null {
+-  for (const m of line.matchAll(pageLinkPattern())) {
+-    const s = linkSpans(m)
+-    if (s && rel >= s.full[0] && rel <= s.full[1]) return s
+-  }
+-  return null
+-}
+-
+-export function aliasSpanAt(line: string, rel: number): [number, number] | null {
+-  const alias = linkAt(line, rel)?.alias
+-  return alias && rel >= alias[0] && rel <= alias[1] ? alias : null
+-}
+-
+-export function emptyAliasPipeAt(line: string, rel: number): number | null {
+-  const s = linkAt(line, rel)
+-  return s?.alias && s.alias[0] === s.alias[1] ? (s.heading ?? s.title)[1] : null
++const overlaps = (a: Span, b: Span): boolean => a[0] < b[1] && b[0] < a[1]
++
++// Code touches a link when its start sits in code, or a closed inline code span, backticks included, overlaps it; such a link is text.
++function codeTouches(text: string, inCode: CodeMask, [from, to]: Span): boolean {
++  if (inCode(from)) return true
++  const start = text.lastIndexOf('\n', from - 1) + 1
++  const end = text.indexOf('\n', from)
++  const line = text.slice(start, end === -1 ? text.length : end)
++  return inlineSpans(line).some(
++    ([a, b, run]) => b <= line.length && overlaps([start + a - run, start + b + run], [from, to]),
++  )
+ }
+ 
+-// The `#` of an empty heading slot, `[[Page#]]`: like an empty pipe, it goes when the caret leaves it.
+-export function emptyHeadingHashAt(line: string, rel: number): number | null {
+-  const s = linkAt(line, rel)
+-  return s?.heading && s.heading[0] === s.heading[1] ? s.heading[0] - 1 : null
++/** Every connection and markdown link in `text` that code doesn't touch, with empty slots kept. A markdown link overlapping a connection yields to it, so `[[Title]](target)` stays a connection trailed by literal parens, as Obsidian reads it. */
++export function linkOccurrences(text: string, inCode: CodeMask): LinkOccurrence[] {
++  const out: LinkOccurrence[] = []
++  for (const m of text.matchAll(pageLinkPattern())) {
++    const s = linkSpans(m)
++    if (s && !codeTouches(text, inCode, s.full)) out.push({ syntax: 'wiki', ...s })
++  }
++  for (const m of text.matchAll(markdownLinkRegex())) {
++    const [full, label, destination] = m.indices as [Span, Span, Span]
++    if (codeTouches(text, inCode, full)) continue
++    if (!out.some((o) => o.syntax === 'wiki' && overlaps(o.full, full)))
++      out.push({ syntax: 'markdown', full, label, destination })
++  }
++  return out
+ }
+ 
+ const WHOLE_LINK = new RegExp(`^(?:${pageLinkPattern().source})$`, 'd')
+diff --git a/Core/Connections/linkValue.test.ts b/Core/Connections/linkValue.test.ts
+index 8b54ac8eb..621afbfe8 100644
+--- a/Core/Connections/linkValue.test.ts
++++ b/Core/Connections/linkValue.test.ts
+@@ -1,5 +1,5 @@
+ import { describe, it, expect } from 'vitest'
+-import { rewriteFrontmatterConnections } from './rewrite'
++import { rewriteConnections, rewriteHeadingConnections } from './rewrite'
+ import { LINK_DISPLAYS } from '../Properties/properties'
+ import {
+   linkDisplayText,
+@@ -181,30 +181,19 @@ describe('internal links', () => {
+       value: '[[Meeting Notes]]',
+     })
+   })
+-  it('a page rename rewrites the page it points at, and nothing else', () => {
+-    expect(
+-      rewriteFrontmatterConnections(
+-        { A: '[[Meeting Notes]]', B: 'https://example.com/Meeting Notes' },
+-        'Meeting Notes',
+-        { title: 'New Title' },
+-      ),
+-    ).toEqual({ A: '[[New Title]]' })
++  it('a page rename rewrites a Link value naming the page in either syntax, and nothing else', () => {
++    const rename = (value: string) => rewriteConnections(value, 'Meeting Notes', 'New Title')
++    expect(rename('[[Meeting Notes]]')).toBe('[[New Title]]')
++    expect(rename('[x](Meeting%20Notes#H)')).toBe('[x](New%20Title#H)')
++    expect(rename('https://example.com/Meeting Notes')).toBe('https://example.com/Meeting Notes')
+   })
+   it('a heading rename moves a Link value aimed at that heading, alias kept, and nothing else', () => {
+-    const values = {
+-      A: '[[Meeting Notes#Decisions|D]]',
+-      B: '[[Meeting Notes#Other]]',
+-      C: '[[Meeting Notes]]',
+-    }
+-    expect(
+-      rewriteFrontmatterConnections(values, 'Meeting Notes', {
+-        heading: 'Decisions',
+-        to: 'Outcomes',
+-      }),
+-    ).toEqual({ A: '[[Meeting Notes#Outcomes|D]]' })
+-    expect(
+-      rewriteFrontmatterConnections(values, 'Meeting Notes', { heading: 'Decisions', to: 'A|B' }),
+-    ).toEqual({})
++    const move = (value: string, to = 'Outcomes') =>
++      rewriteHeadingConnections(value, 'Meeting Notes', 'Decisions', to)
++    expect(move('[[Meeting Notes#Decisions|D]]')).toBe('[[Meeting Notes#Outcomes|D]]')
++    expect(move('[[Meeting Notes#Other]]')).toBe('[[Meeting Notes#Other]]')
++    expect(move('[[Meeting Notes]]')).toBe('[[Meeting Notes]]')
++    expect(move('[[Meeting Notes#Decisions|D]]', 'A|B')).toBe('[[Meeting Notes#Decisions|D]]')
+   })
+   it('reads a heading link with its heading', () => {
+     expect(readLink('[[Page#H]]')).toEqual({ kind: 'page', title: 'Page', heading: 'H' })
+@@ -212,11 +201,9 @@ describe('internal links', () => {
+   it('keeps the heading through a page rename, an edit, a typed commit, and an alias rename', () => {
+     const resolve = (raw: string): string | null =>
+       raw.trim().toLowerCase() === 'meeting notes' ? 'Meeting Notes' : null
+-    expect(
+-      rewriteFrontmatterConnections({ Link: '[[Meeting Notes#Decisions]]' }, 'Meeting Notes', {
+-        title: 'New Title',
+-      }),
+-    ).toEqual({ Link: '[[New Title#Decisions]]' })
++    expect(rewriteConnections('[[Meeting Notes#Decisions]]', 'Meeting Notes', 'New Title')).toBe(
++      '[[New Title#Decisions]]',
++    )
+     expect(linkEditText('[[Meeting Notes#Decisions]]')).toBe('[[Meeting Notes#Decisions]]')
+     expect(linkValueFromEdit('[[meeting notes#Decisions]]', undefined, resolve)).toEqual({
+       kind: 'link',
+diff --git a/Core/Connections/links.ts b/Core/Connections/links.ts
+index 958179c0c..a125c1be6 100644
+--- a/Core/Connections/links.ts
++++ b/Core/Connections/links.ts
+@@ -1,5 +1,4 @@
+ import { HAS_SCHEME } from '../Paths/urlPath'
+-import { normalizeTitle } from '../Paths/caseFold'
+ import { stripMarkdownExt } from '../Paths/posix'
+ 
+ export const MD_LINK = /^\[((?:[^\]\\]|\\.)*)\]\((.*)\)$/
+@@ -103,8 +102,3 @@ export function targetFragment(rawTarget: string): string {
+   const t = pageTarget(rawTarget)
+   return t ? decodeLinkTarget(t.fragment).trim() : ''
+ }
+-
+-export function targetNamesTitle(rawTarget: string, normalizedKey: string): boolean {
+-  const named = targetTitle(rawTarget)
+-  return named !== null && normalizeTitle(named) === normalizedKey
+-}
+diff --git a/Core/Connections/rewrite.test.ts b/Core/Connections/rewrite.test.ts
+index 149624e38..834be11be 100644
+--- a/Core/Connections/rewrite.test.ts
++++ b/Core/Connections/rewrite.test.ts
+@@ -1,6 +1,6 @@
+ import { describe, it, expect } from 'vitest'
+ import { rewriteConnections, rewriteHeadingConnections } from './rewrite'
+-import { pageEmbedPattern } from './connections'
++import { loneEmbedTitle } from '../MarkdownPM/Engine/detect'
+ 
+ describe('rewriteConnections', () => {
+   it('rewrites a normalized-matching link to the new title', () => {
+@@ -19,6 +19,24 @@ describe('rewriteConnections', () => {
+     expect(rewriteConnections('[[Old|]]', 'Old', 'New')).toBe('[[New]]')
+   })
+ 
++  it('drops an alias the new target repeats, cell escape included, as a written connection does', () => {
++    expect(rewriteConnections('[[Old|New]] [[Old#H|new#h]] [[Old|Other]]', 'Old', 'New')).toBe(
++      '[[New]] [[New#H]] [[New|Other]]',
++    )
++    expect(rewriteConnections('| [[Old\\|New]] |', 'Old', 'New')).toBe('| [[New]] |')
++  })
++
++  it('never gives a bare fragment a title: `[[#H]]` on the renamed page stays as written', () => {
++    const body = '[[#H]] [x](#H) [[Old#H]] [[#H|Old]]'
++    expect(rewriteConnections(body, 'Old', 'New')).toBe('[[#H]] [x](#H) [[New#H]] [[#H|Old]]')
++  })
++
++  it('edits only the page name, so unusual spacing and escapes survive byte for byte', () => {
++    expect(rewriteConnections('[[ Old ]] [x]( Old#Part ) [[Old\\|a]]', 'Old', 'New')).toBe(
++      '[[New]] [x]( New#Part ) [[New\\|a]]',
++    )
++  })
++
+   it('leaves non-matching links untouched; a matching embed follows the rename', () => {
+     // An embed names a page the same way a connection does — the sweep reaches both.
+     expect(rewriteConnections('[[Other]] and ![[Old.png]]', 'Old.png', 'X')).toBe(
+@@ -95,21 +113,11 @@ describe('the embed sweep', () => {
+ })
+ 
+ describe('one title grammar across the layers', () => {
+-  // The embed pattern, the renderer's embed regex, and the autocomplete's embed branch must accept the same titles — one corpus feeds all three shapes.
+-  const corpus = ['Plain', 'With Space', 'Dotted 3.5', 'ümlaut', 'a|pipe', 'brack]et', '']
+-  it('the shared pattern and the lone-line regex agree on every title', () => {
+-    for (const t of corpus) {
+-      const line = `![[${t}]]`
+-      const viaPattern = [...line.matchAll(pageEmbedPattern())].map((m) => m[1])
+-      const lone = /^!\[\[([^\]\r\n]*)\]\][ \t]*$/.exec(line)?.[1] ?? null
+-      if (t.includes(']')) {
+-        expect(lone).not.toBe(t)
+-        expect(viaPattern).not.toContain(t)
+-      } else {
+-        expect(lone).toBe(t)
+-        expect(viaPattern).toEqual([t])
+-      }
+-    }
++  const corpus = ['Plain', 'With Space', 'Dotted 3.5', 'ümlaut', 'a|pipe', 'brack]et', 'P#H', '']
++  it('a lone embed holds whatever the connection after its `!` holds', () => {
++    for (const t of corpus) expect(loneEmbedTitle(`![[${t}]] `)).toBe(t)
++    expect(loneEmbedTitle(' ![[Plain]]')).toBeNull()
++    expect(loneEmbedTitle('![[Plain]] x')).toBeNull()
+   })
+ })
+ 
+diff --git a/Core/Connections/rewrite.ts b/Core/Connections/rewrite.ts
+index 7552b7587..2f48fb507 100644
+--- a/Core/Connections/rewrite.ts
++++ b/Core/Connections/rewrite.ts
+@@ -1,62 +1,25 @@
+-import {
+-  connectionText,
+-  expressibleHeading,
+-  pageEmbedPattern,
+-  pageEmbedText,
+-  pageLinkPattern,
+-  titleOf,
+-} from './connections'
++import { expressibleHeading } from './connections'
+ import { normalizeTitle } from '../Paths/caseFold'
+-import {
+-  encodeLinkTarget,
+-  markdownLinkRegex,
+-  targetFragment,
+-  targetNamesTitle,
+-  targetTitle,
+-} from './links'
+-import { wholeValueLink } from './linkValue'
+-import { applyEdits, codeMask } from '../MarkdownPM/Engine/markdownCode'
+-import { sectionRunsIn } from './scan'
+-
+-type LinkGroups = { page: string; heading?: string; alias?: string }
+-const groupsOf = (args: unknown[]): LinkGroups => args[args.length - 1] as LinkGroups
+-const offsetOf = (args: unknown[]): number => args[args.length - 3] as number
+-
+-const escapedPipe = (half: string, alias: string | undefined): string =>
+-  alias ? `${half.endsWith('\\') ? '\\|' : '|'}${alias}` : ''
++import { encodeLinkTarget } from './links'
++import { applyEdits, type TextEdit } from '../MarkdownPM/Engine/markdownCode'
++import { linksIn } from './scan'
+ 
+ export type RenameChange = { title: string } | { heading: string; to: string }
+ 
+-/** Code stays untouched — a page documenting `[[Old Title]]` in a fenced block is showing a sample. An alias and a markdown link's label ride through. */
++/** Code stays untouched — a page documenting `[[Old Title]]` in a fenced block is showing a sample. Only the written page name changes, so a heading, an alias, a label, and a table cell's escaped pipe ride through, and a link naming its own page by leaving the name out stays as written; an empty alias, or one that would repeat the new target, goes, as `connectionText` drops one. */
+ export function rewriteConnections(body: string, oldTitle: string, newTitle: string): string {
+-  if (!body.includes('[[') && !body.includes('](')) return body
+   const oldKey = normalizeTitle(oldTitle)
+-  const inCode = codeMask(body)
+-  const afterLinks = body.replace(pageLinkPattern(), (match, ...args) => {
+-    const { page, heading, alias } = groupsOf(args)
+-    if (inCode(offsetOf(args)) || normalizeTitle(titleOf(page)) !== oldKey) return match
+-    // A table cell's pipe-escape is re-emitted exactly as it arrived: dropping it would write a bare `|` into a cell and split the row into an extra column.
+-    const fragment = heading === undefined ? '' : `#${titleOf(heading)}`
+-    return `[[${newTitle}${fragment}${escapedPipe(heading ?? page, alias)}]]`
+-  })
+-  // The embed pass sees POST-link-pass offsets — its mask must be built over the same string, or any length-changing link rewrite above shifts every later offset off the original mask.
+-  const inCodeAfter = codeMask(afterLinks)
+-  const afterEmbeds = afterLinks.replace(pageEmbedPattern(), (match, ...args) => {
+-    const { page, heading } = groupsOf(args)
+-    if (inCodeAfter(offsetOf(args)) || normalizeTitle(page) !== oldKey) return match
+-    return heading === undefined ? pageEmbedText(newTitle) : `![[${newTitle}#${heading}]]`
+-  })
+-  // Rebuilt for the same reason. Only a target that NAMES a page moves, so a URL whose last segment happens to match the renamed title is left as written.
+-  const inCodeFinal = codeMask(afterEmbeds)
+-  return afterEmbeds.replace(
+-    markdownLinkRegex(),
+-    (match, label: string, target: string, offset: number) => {
+-      if (inCodeFinal(offset) || !targetNamesTitle(target, oldKey)) return match
+-      const hash = target.indexOf('#')
+-      const fragment = hash === -1 ? '' : target.slice(hash)
+-      return `[${label}](${encodeLinkTarget(newTitle)}${fragment})`
+-    },
+-  )
++  const edits: TextEdit[] = []
++  for (const { syntax, target, title, heading, alias } of linksIn(body)) {
++    if (target !== oldKey) continue
++    const insert = syntax === 'markdown' ? encodeLinkTarget(newTitle) : newTitle
++    edits.push({ from: title[0], to: title[1], insert })
++    const named = heading ? `${newTitle}#${body.slice(heading[0], heading[1])}` : newTitle
++    const shown = alias && normalizeTitle(body.slice(alias[0], alias[1]))
++    if (alias && (!shown || shown === normalizeTitle(named)))
++      edits.push({ from: (heading ?? title)[1], to: alias[1], insert: '' })
++  }
++  return applyEdits(body, edits)
+ }
+ 
+ const HEADING_REFERENCE = /\[\[[^\r\n]*#|\]\([^\r\n]*#|§/
+@@ -73,61 +36,13 @@ export function rewriteHeadingConnections(
+   if (!HEADING_REFERENCE.test(body)) return body
+   const titleKey = normalizeTitle(title)
+   const oldKey = normalizeTitle(oldHeading)
+-  const own = normalizeTitle(ownTitle) === titleKey
+-  const names = (page: string | null): boolean =>
+-    page === '' ? own : page !== null && normalizeTitle(page) === titleKey
+-  const inCode = codeMask(body)
+   const wiki = expressibleHeading(newHeading)
+-  const afterLinks = body.replace(pageLinkPattern(), (match, ...args) => {
+-    const { page, heading, alias } = groupsOf(args)
+-    if (!wiki || heading === undefined || inCode(offsetOf(args))) return match
+-    if (!names(page) || normalizeTitle(titleOf(heading)) !== oldKey) return match
+-    return `[[${page}#${newHeading}${escapedPipe(heading, alias)}]]`
+-  })
+-  const inCodeEmbeds = codeMask(afterLinks)
+-  const afterEmbeds = afterLinks.replace(pageEmbedPattern(), (match, ...args) => {
+-    const { page, heading } = groupsOf(args)
+-    if (!wiki || heading === undefined || inCodeEmbeds(offsetOf(args))) return match
+-    if (!names(page) || normalizeTitle(heading) !== oldKey) return match
+-    return `![[${page}#${newHeading}]]`
+-  })
+-  const inCodeAfter = codeMask(afterEmbeds)
+-  const afterMd = afterEmbeds.replace(
+-    markdownLinkRegex(),
+-    (match, label: string, target: string, offset: number) => {
+-      if (inCodeAfter(offset) || !names(targetTitle(target))) return match
+-      if (normalizeTitle(targetFragment(target)) !== oldKey) return match
+-      return `[${label}](${target.slice(0, target.indexOf('#'))}#${encodeLinkTarget(newHeading)})`
+-    },
+-  )
+-  if (!own || !outline) return afterMd
+-  const inCodeFinal = codeMask(afterMd)
+-  return applyEdits(
+-    afterMd,
+-    sectionRunsIn(afterMd, [...outline, oldHeading], inCodeFinal)
+-      .filter((run) => normalizeTitle(run.heading) === oldKey)
+-      .map((run) => ({ from: run.from + 1, to: run.to, insert: newHeading })),
+-  )
+-}
+-
+-/** Empty when the frontmatter names nothing — the cascade reads that as "no field write". */
+-export function rewriteFrontmatterConnections(
+-  values: Record<string, unknown>,
+-  title: string,
+-  change: RenameChange,
+-  ownTitle = '',
+-): Record<string, string> {
+-  if ('heading' in change && !expressibleHeading(change.to)) return {}
+-  const titleKey = normalizeTitle(title)
+-  const headingKey = 'heading' in change ? normalizeTitle(change.heading) : ''
+-  const patch: Record<string, string> = {}
+-  for (const [key, value] of Object.entries(values)) {
+-    const link = wholeValueLink(value)
+-    if (link?.kind !== 'page' || normalizeTitle(link.title || ownTitle) !== titleKey) continue
+-    if ('heading' in change) {
+-      if (normalizeTitle(link.heading ?? '') === headingKey)
+-        patch[key] = connectionText(link.title, link.alias, change.to)
+-    } else if (link.title) patch[key] = connectionText(change.title, link.alias, link.heading)
++  const edits: TextEdit[] = []
++  for (const hit of linksIn(body, ownTitle, outline && [...outline, oldHeading])) {
++    if (hit.target !== titleKey || hit.qualifier !== oldKey || !hit.heading) continue
++    const [from, to] = hit.heading
++    if (hit.syntax === 'markdown') edits.push({ from, to, insert: encodeLinkTarget(newHeading) })
++    else if (hit.syntax === 'section' || wiki) edits.push({ from, to, insert: newHeading })
+   }
+-  return patch
++  return applyEdits(body, edits)
+ }
+diff --git a/Core/Connections/scan.test.ts b/Core/Connections/scan.test.ts
+index 920e9547b..280894f8b 100644
+--- a/Core/Connections/scan.test.ts
++++ b/Core/Connections/scan.test.ts
+@@ -219,7 +219,9 @@ describe('linksIn', () => {
+ 
+   it('names the syntax each occurrence was written in', () => {
+     expect(hits('a [[Alpha]] link').map((h) => h.syntax)).toEqual(['wiki'])
+-    expect(hits('an ![[Alpha]] embed').map((h) => h.syntax)).toEqual(['embed'])
++    expect(hits('![[Alpha]] ').map((h) => h.syntax)).toEqual(['embed'])
++    expect(hits('an ![[Alpha]] embed').map((h) => h.syntax)).toEqual(['wiki'])
++    expect(hits('```\n![[Alpha]]\n```\n- ![[Alpha]]').map((h) => h.syntax)).toEqual(['wiki'])
+     expect(hits('a [label](Alpha.md) link').map((h) => h.syntax)).toEqual(['markdown'])
+     expect(hits('see §Setup', 'Own', ['Setup']).map((h) => h.syntax)).toEqual(['section'])
+   })
+@@ -241,20 +243,28 @@ describe('linksIn', () => {
+   it('reports `at` as the offset the match begins at', () => {
+     const body = 'lead words [[Alpha]] trail'
+     expect(hits(body)[0].at).toBe(body.indexOf('[[Alpha]]'))
+-    const embed = 'lead ![[Alpha]] trail'
+-    expect(hits(embed)[0].at).toBe(embed.indexOf('![[Alpha]]'))
++    const embed = '![[Alpha]]'
++    expect(hits(embed)[0].at).toBe(embed.indexOf('[[Alpha]]'))
+   })
+ 
+   it('stops the page half at the first `#`, a trailing backslash included', () => {
+     expect(hits('[[Foo\\#Bar]]')[0]).toMatchObject({ target: 'foo\\', qualifier: 'bar' })
+   })
+ 
+-  it('yields a `§` run only when an outline AND an own title are both supplied', () => {
++  it('yields a `§` run only under an outline, keyed to the own title, blank when none is given', () => {
+     expect(hits('see §Setup', 'Own', ['Setup'])).toEqual([
+-      { syntax: 'section', target: 'own', qualifier: 'setup', at: 4 },
++      {
++        syntax: 'section',
++        target: 'own',
++        qualifier: 'setup',
++        at: 4,
++        title: [4, 4],
++        heading: [5, 10],
++        alias: null,
++      },
+     ])
+     expect(hits('see §Setup', 'Own', [])).toEqual([])
+-    expect(hits('see §Setup', '', ['Setup'])).toEqual([])
++    expect(hits('see §Setup', '', ['Setup'])).toMatchObject([{ target: '', qualifier: 'setup' }])
+   })
+ 
+   it('honors a mask passed in rather than building its own', () => {
+diff --git a/Core/Connections/scan.ts b/Core/Connections/scan.ts
+index c6bf5322f..63c17a964 100644
+--- a/Core/Connections/scan.ts
++++ b/Core/Connections/scan.ts
+@@ -1,11 +1,19 @@
+-// `![[ ]]` embeds are NOT connections, but the cascade still sweeps them so a rename reaches them — one walker answers for every syntax, and `syntax` keeps them apart for a reader that cares.
++// One walker answers for every link syntax, and `syntax` keeps them apart for a reader that cares: a connection alone on its line behind a `!` is an embed, a tile's relation rather than a body link.
+ 
+-import { pageEmbedPattern, pageLinkPattern, titleOf } from './connections'
++import { linkOccurrences } from './connections'
+ import { normalizeTitle } from '../Paths/caseFold'
+-import { markdownLinkRegex, targetFragment, targetTitle } from './links'
++import { targetFragment, targetTitle } from './links'
+ import { readLink, wholeValueLink } from './linkValue'
+-import { codeMask, type CodeMask, lineEndAt, lineStartAt } from '../MarkdownPM/Engine/markdownCode'
+-import { headingParts } from '../MarkdownPM/Engine/detect'
++import {
++  codeMask,
++  type CodeMask,
++  lineEndAt,
++  lineStartAt,
++  trimmedRange,
++} from '../MarkdownPM/Engine/markdownCode'
++import { headingParts, loneEmbedTitle } from '../MarkdownPM/Engine/detect'
++
++type Span = [number, number]
+ 
+ interface SectionRun {
+   from: number
+@@ -15,10 +23,11 @@ interface SectionRun {
+ 
+ const wordChar = /[\p{L}\p{N}_]/u
+ 
+-function titleKey(raw: string | null, own: string): string {
+-  if (raw === null) return ''
+-  return raw === '' ? own : normalizeTitle(raw)
+-}
++const titleKey = (raw: string, own: string): string => (raw === '' ? own : normalizeTitle(raw))
++
++// A blank title names nothing; a bare fragment names this page, whose key is '' when no title is given, and `[[#]]` names nothing at all.
++const names = (target: string, written: string, qualifier: string): boolean =>
++  written === '' ? qualifier !== '' : target !== ''
+ 
+ // A bare `§Heading` in prose: the longest outline heading the text after `§` begins with, ending at the run's end or a non-word character, so `§Overviewing` never links `Overview`. Runs inside code, a wikilink, a markdown link, or a heading line (whose `§` is the heading's own text) are never runs.
+ export function sectionRunsIn(
+@@ -27,8 +36,8 @@ export function sectionRunsIn(
+   inCode: CodeMask,
+ ): SectionRun[] {
+   if (!text.includes('§') || headings.length === 0) return []
+-  const links = [...text.matchAll(pageLinkPattern()), ...text.matchAll(markdownLinkRegex())]
+-    .map((m) => [m.index ?? 0, (m.index ?? 0) + m[0].length])
++  const links = linkOccurrences(text, inCode)
++    .map((o) => o.full)
+     .sort((a, b) => a[0] - b[0])
+   const byLength = new Map<number, Map<string, string>>()
+   for (const heading of headings) {
+@@ -58,12 +67,32 @@ export function sectionRunsIn(
+ 
+ export type LinkSyntax = 'wiki' | 'embed' | 'markdown' | 'section'
+ 
+-/** One occurrence. `target` and `qualifier` are normalized keys; `qualifier` is '' when the link names no heading. `at` is the offset into `body`, which the indexer resolves to a line. */
++/** One occurrence. `target` and `qualifier` are normalized keys; `qualifier` is '' when the link names no heading. `at` is the offset into `body`, which the indexer resolves to a line. `title` is the page name as written, empty where the link names its own page by leaving it out; `heading` and a connection's `alias` are as written. */
+ export interface LinkHit {
+   syntax: LinkSyntax
+   target: string
+   qualifier: string
+   at: number
++  title: Span
++  heading: Span | null
++  alias: Span | null
++}
++
++const loneEmbed = (body: string, at: number): boolean =>
++  body[at - 1] === '!' &&
++  lineStartAt(body, at) === at - 1 &&
++  loneEmbedTitle(body.slice(at - 1, lineEndAt(body, at))) !== null
++
++// A markdown destination's page half and fragment, trimmed: a rename edits them in place.
++function destinationHalves(body: string, [from, to]: Span): [Span, Span | null] {
++  const [start, end] = trimmedRange(body, from, to)
++  const hash = start + body.slice(start, end).indexOf('#')
++  return hash < start
++    ? [[start, end], null]
++    : [
++        [start, hash],
++        [hash + 1, end],
++      ]
+ }
+ 
+ /** The gate in front is on SYNTAX rather than any title: a substring test would break the NFC invariant `normalizeTitle` exists for, and an NFD-composed body would be skipped silently. `inCode` is resolved inside the body, never as a default parameter: a generator binds its parameters at call time, so a default would build a whole-document mask even for the calls that return at the gate. */
+@@ -77,35 +106,38 @@ export function* linksIn(
+   if (!body.includes('[[') && !body.includes('](') && !runs) return
+   const mask = inCode ?? codeMask(body)
+   const own = normalizeTitle(ownTitle)
+-  for (const m of body.matchAll(pageLinkPattern())) {
+-    const g = m.groups
+-    const at = m.index
+-    if (!g || mask(at)) continue
+-    // `[[]]` matches with an empty page and no heading; it names nothing, and never the page itself.
+-    if (g.page === '' && !g.heading) continue
+-    // `titleOf` only where the page half ends the link: with a heading present a trailing backslash is the title's own, not a table cell's escaped pipe.
+-    const target = titleKey(g.heading === undefined ? titleOf(g.page) : g.page, own)
+-    if (!target) continue
+-    const qualifier = g.heading === undefined ? '' : normalizeTitle(titleOf(g.heading))
+-    yield { syntax: 'wiki', target, qualifier, at }
+-  }
+-  for (const m of body.matchAll(pageEmbedPattern())) {
+-    const at = m.index
+-    if (mask(at)) continue
+-    const target = titleKey(m.groups?.page ?? null, own)
+-    if (target)
+-      yield { syntax: 'embed', target, qualifier: normalizeTitle(m.groups?.heading ?? ''), at }
+-  }
+-  for (const m of body.matchAll(markdownLinkRegex())) {
+-    const at = m.index
+-    if (mask(at)) continue
+-    const target = titleKey(targetTitle(m[2]), own)
+-    if (!target) continue
+-    yield { syntax: 'markdown', target, qualifier: normalizeTitle(targetFragment(m[2])), at }
++  const read = (s: Span): string => body.slice(s[0], s[1])
++  for (const o of linkOccurrences(body, mask)) {
++    const at = o.full[0]
++    if (o.syntax === 'wiki') {
++      const written = read(o.title)
++      const target = titleKey(written, own)
++      const qualifier = o.heading ? normalizeTitle(read(o.heading)) : ''
++      if (!names(target, written, qualifier)) continue
++      const syntax = loneEmbed(body, at) ? 'embed' : 'wiki'
++      yield { syntax, target, qualifier, at, title: o.title, heading: o.heading, alias: o.alias }
++      continue
++    }
++    const dest = read(o.destination)
++    const written = targetTitle(dest)
++    if (written === null) continue
++    const target = titleKey(written, own)
++    const qualifier = normalizeTitle(targetFragment(dest))
++    if (!names(target, written, qualifier)) continue
++    const [title, heading] = destinationHalves(body, o.destination)
++    yield { syntax: 'markdown', target, qualifier, at, title, heading, alias: null }
+   }
+-  if (!runs || own === '') return
+-  for (const run of sectionRunsIn(body, outline, mask))
+-    yield { syntax: 'section', target: own, qualifier: normalizeTitle(run.heading), at: run.from }
++  if (!runs) return
++  for (const { from, to, heading } of sectionRunsIn(body, outline, mask))
++    yield {
++      syntax: 'section',
++      target: own,
++      qualifier: normalizeTitle(heading),
++      at: from,
++      title: [from, from],
++      heading: [from + 1, to],
++      alias: null,
++    }
+ }
+ 
+ /** A Link property holds a connection as its whole value, so a rename reaching only bodies would leave it pointing at nothing. */
+diff --git a/Core/Index/indexSeed.test.ts b/Core/Index/indexSeed.test.ts
+index d3961f8d9..8fd73ad2f 100644
+--- a/Core/Index/indexSeed.test.ts
++++ b/Core/Index/indexSeed.test.ts
+@@ -226,15 +226,22 @@ describe('the relations a page yields', () => {
+     ])
+   })
+ 
+-  it('an embed is an `embed` row, never a `body` one', async () => {
+-    await page('shows ![[Zeta]]\n')
++  it('a lone embed is an `embed` row, never a `body` one', async () => {
++    await page('![[Zeta]]\n')
+     expect(rowsOf('Notes/A.md')).toEqual([
+       { kind: 'embed', target: 'zeta', qualifier: '', count: 1 },
+     ])
+   })
+ 
+-  it('a heading embed is an `embed` row qualified by the heading', async () => {
+-    await page('shows ![[Zeta#Part]]\n')
++  it('a mid-line embed is the connection after its `!`, a `body` row', async () => {
++    await page('shows ![[Zeta]]\n')
++    expect(rowsOf('Notes/A.md')).toEqual([
++      { kind: 'body', target: 'zeta', qualifier: '', count: 1 },
++    ])
++  })
++
++  it('a lone heading embed is an `embed` row qualified by the heading', async () => {
++    await page('![[Zeta#Part]]\n')
+     expect(rowsOf('Notes/A.md')).toEqual([
+       { kind: 'embed', target: 'zeta', qualifier: 'part', count: 1 },
+     ])
+@@ -286,14 +293,6 @@ describe('the relations a page yields', () => {
+     ])
+   })
+ 
+-  it('an embed inside a footnote definition overlays the citation on the embed, not on a body row', async () => {
+-    await page('intro\n\n[^1]: see ![[Zeta]]\n')
+-    expect(rowsOf('Notes/A.md')).toEqual([
+-      { kind: 'citation', target: 'zeta', qualifier: '', count: 1 },
+-      { kind: 'embed', target: 'zeta', qualifier: '', count: 1 },
+-    ])
+-  })
+-
+   it('two occurrences of one target are one row counting two', async () => {
+     await page('links [[Zeta]] and again [[Zeta]]\n')
+     expect(rowsOf('Notes/A.md')).toEqual([
+diff --git a/Core/Index/indexSeed.ts b/Core/Index/indexSeed.ts
+index b009bb812..9c9cbd40c 100644
+--- a/Core/Index/indexSeed.ts
++++ b/Core/Index/indexSeed.ts
+@@ -2,7 +2,7 @@ import { join, relative, isMarkdownFile, titleFromPath } from '../Paths/posix'
+ import { escapes } from '../Paths/pathSafety'
+ import { errText } from '../Contract/result'
+ import { listOf } from '../Contract/validators'
+-import { frontmatterMentions, type LinkHit, linksIn, valueLinks } from '../Connections/scan'
++import { frontmatterMentions, linksIn, valueLinks } from '../Connections/scan'
+ import { headingOutlineOf } from '../MarkdownPM/Engine/headingScan'
+ import { inCodeAt, scanDoc } from '../MarkdownPM/Engine/docScan'
+ import { parseContextKey } from '../Contexts/contexts'
+@@ -58,15 +58,13 @@ function extractPageIndex(rel: string, content: string): PageRead {
+     if (held) held.count++
+     else tally.set(key, { kind, target, qualifier, count: 1 })
+   }
+-  const linked = (hit: LinkHit): void =>
+-    add(hit.syntax === 'embed' ? 'embed' : 'body', hit.target, hit.qualifier)
+   for (const hit of linksIn(body, own, outline, (p) => inCodeAt(scan, p))) {
+-    linked(hit)
++    add(hit.syntax === 'embed' ? 'embed' : 'body', hit.target, hit.qualifier)
+     if (hit.at >= scan.lineStarts[scan.citations.firstLine])
+       add('citation', hit.target, hit.qualifier)
+   }
+-  // A value's links are a small body's — under the page's own title and outline, never citations.
+-  for (const hit of valueLinks(values, own, outline)) linked(hit)
++  // A value's links are a small body's — under the page's own title and outline, never citations, and never a tile's.
++  for (const hit of valueLinks(values, own, outline)) add('body', hit.target, hit.qualifier)
+   for (const { target, qualifier } of frontmatterMentions(values, own))
+     add('frontmatter', target, qualifier)
+   for (const { target, qualifier } of spaceRelations(values)) add('space', target, qualifier)
+diff --git a/Core/MarkdownPM/Autocomplete/aliasPicker.test.tsx b/Core/MarkdownPM/Autocomplete/aliasPicker.test.tsx
+index 28cc90aea..0c9e0a423 100644
+--- a/Core/MarkdownPM/Autocomplete/aliasPicker.test.tsx
++++ b/Core/MarkdownPM/Autocomplete/aliasPicker.test.tsx
+@@ -2,7 +2,8 @@
+ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+ import { act } from 'react'
+ import { createRoot, type Root } from 'react-dom/client'
+-import { aliasSpanAt, emptyAliasPipeAt, linkAt } from '../../Connections/connections'
++import { connectionAt, inAliasAt } from '../Input/edits'
++import { scanDoc } from '../Engine/docScan'
+ import { aliasRows, type HeadingRow } from './autocomplete'
+ import { AutocompletePane } from './AutocompletePane'
+ import { buildPageIndex } from '../../Connections/pageIndex'
+@@ -227,24 +228,34 @@ describe('the heading slide’s top row marks how it arrived', () => {
+   })
+ })
+ 
+-describe('linkAt is the one answer to which link holds an offset', () => {
+-  const line = 'see [[Q3 Plan|the plan]] and [[Other]] end'
++describe('connectionAt is the one answer to which connection holds an offset', () => {
++  const scan = scanDoc('see [[Q3 Plan|the plan]] and [[Other]] end')
+ 
+-  it('finds the link an offset sits in, at either bracket edge', () => {
+-    expect(linkAt(line, 4)?.full).toEqual([4, 24])
+-    expect(linkAt(line, 24)?.full).toEqual([4, 24])
+-    expect(linkAt(line, 30)?.full).toEqual([29, 38])
+-    expect(linkAt(line, 26)).toBeNull()
++  it('finds the connection an offset sits in, at either bracket edge', () => {
++    expect(connectionAt(scan, 4)?.full).toEqual([4, 24])
++    expect(connectionAt(scan, 24)?.full).toEqual([4, 24])
++    expect(connectionAt(scan, 30)?.full).toEqual([29, 38])
++    expect(connectionAt(scan, 26)).toBeNull()
+   })
+ 
+-  it('the alias span demands the caret be in the alias itself', () => {
+-    expect(aliasSpanAt(line, 6)).toBeNull()
+-    expect(aliasSpanAt(line, 16)).toEqual([14, 22])
++  it('reads spans relative to the offset’s own line', () => {
++    expect(connectionAt(scanDoc('intro\n[[Alpha]]'), 8)?.full).toEqual([0, 9])
+   })
+ 
+-  it('an opened-but-empty alias reports its pipe and nothing else does', () => {
+-    expect(emptyAliasPipeAt('a [[Alpha|]] b', 10)).toBe(9)
+-    expect(emptyAliasPipeAt('a [[Alpha|x]] b', 10)).toBeNull()
+-    expect(emptyAliasPipeAt('a [[Alpha]] b', 5)).toBeNull()
++  it('the alias demands the caret be in the alias itself', () => {
++    expect(inAliasAt(scan, 6)).toBe(false)
++    expect(inAliasAt(scan, 16)).toBe(true)
++  })
++
++  it('an opened-but-empty alias keeps its zero-width slot', () => {
++    expect(connectionAt(scanDoc('a [[Alpha|]] b'), 10)?.alias).toEqual([10, 10])
++    expect(connectionAt(scanDoc('a [[Alpha|x]] b'), 10)?.alias).toEqual([10, 11])
++    expect(connectionAt(scanDoc('a [[Alpha]] b'), 5)?.alias).toBeNull()
++  })
++
++  it('a connection code touches is text, as the editor draws it', () => {
++    expect(connectionAt(scanDoc('x `[[A`]] y'), 7)).toBeNull()
++    expect(connectionAt(scanDoc('```\n[[A]]\n```'), 6)).toBeNull()
++    expect(inAliasAt(scanDoc('x `[[A|b`]] y'), 9)).toBe(false)
+   })
+ })
+diff --git a/Core/MarkdownPM/Autocomplete/autocomplete.test.ts b/Core/MarkdownPM/Autocomplete/autocomplete.test.ts
+index ed69e0820..5b190cfdf 100644
+--- a/Core/MarkdownPM/Autocomplete/autocomplete.test.ts
++++ b/Core/MarkdownPM/Autocomplete/autocomplete.test.ts
+@@ -25,8 +25,12 @@ describe('autocompleteQuery', () => {
+   it('suppresses on an empty placeholder', () => {
+     expect(autocompleteQuery('see [[]] end', 6)).toBeNull()
+   })
+-  it('suppresses image embeds ![[…]]', () => {
+-    expect(autocompleteQuery('see ![[Pic]] end', 9)).toBeNull()
++  it('reads a closed ![[…]] as the connection after its `!`', () => {
++    expect(autocompleteQuery('see ![[Pic]] end', 9)).toMatchObject({
++      from: 5,
++      to: 12,
++      form: 'link',
++    })
+   })
+   it('never opens inside a fenced block, however plain the line reads', () => {
+     const doc = 'intro\n```\nsee [[Pro]] end\n```\nafter'
+@@ -88,12 +92,12 @@ describe('embed autocomplete detection', () => {
+     })
+   })
+ 
+-  it('a closed ![[..]] span covers the closer', () => {
++  it('a closed ![[..]] is a connection, so its `!` survives the commit', () => {
+     expect(autocompleteQuery('![[Fo]]', 5, true)).toEqual({
+       query: 'Fo',
+-      from: 0,
++      from: 1,
+       to: 7,
+-      form: 'embed',
++      form: 'link',
+     })
+   })
+ 
+diff --git a/Core/MarkdownPM/Autocomplete/autocomplete.ts b/Core/MarkdownPM/Autocomplete/autocomplete.ts
+index 367585725..c638e04c7 100644
+--- a/Core/MarkdownPM/Autocomplete/autocomplete.ts
++++ b/Core/MarkdownPM/Autocomplete/autocomplete.ts
+@@ -1,4 +1,4 @@
+-import { expressibleHeading, linkAt, pageEmbedText } from '../../Connections/connections'
++import { expressibleHeading, pageEmbedText } from '../../Connections/connections'
+ import { normalizeTitle } from '../../Paths/caseFold'
+ import {
+   decodeLinkTarget,
+@@ -9,7 +9,7 @@ import {
+ } from '../../Connections/links'
+ import { NO_TRAIL, type TrailSegment } from '@pommora/uix/Elements/NavTrail'
+ import { type DocScan, inCodeAt } from '../Engine/docScan'
+-import { inBracket } from '../Input/edits'
++import { connectionAt, inBracket } from '../Input/edits'
+ import { lineIndexAt, type TextEdit } from '../Engine/markdownCode'
+ import type { ConnPage, PageIndex } from '../../Connections/pageIndex'
+ import type { OutlineHeading } from '../Engine/headingScan'
+@@ -69,7 +69,7 @@ export function autocompleteQuery(
+         title: '',
+       }
+   }
+-  const s = linkAt(line, rel)
++  const s = connectionAt(scan, caret)
+   if (s) {
+     const title = line.slice(s.title[0], s.title[1])
+     // Only the TITLE opens the page picker: accepting replaces the whole token, so a caret in the alias would arm a list keyed on the title and discard the alias on Enter.
+diff --git a/Core/MarkdownPM/Autocomplete/useConnectionAutocomplete.ts b/Core/MarkdownPM/Autocomplete/useConnectionAutocomplete.ts
+index b7228250d..be14cd9c3 100644
+--- a/Core/MarkdownPM/Autocomplete/useConnectionAutocomplete.ts
++++ b/Core/MarkdownPM/Autocomplete/useConnectionAutocomplete.ts
+@@ -24,8 +24,7 @@ import { restedOnLink } from '../Links/linkReveal'
+ import { headingTargetOf, pageHeadingTarget } from './headingTarget'
+ import type { AutocompletePaneProps } from './AutocompletePane'
+ import type { ConnectionsApi } from '../Links/connectionsApi'
+-import { embedExclusions } from '../Embeds/embedWidget'
+-import { embeddable } from '../Engine/embedClaims'
++import { embeddable, embedExclusions } from '../Embeds/embedWidget'
+ import type { OutlineHeading } from '../Engine/headingScan'
+ import { type EditorHost, editorHost, ownPage } from '../api'
+ import { useLatest } from '@pommora/uix/Utilities/stableApi'
+diff --git a/Core/MarkdownPM/Embeds/embedSuppression.test.tsx b/Core/MarkdownPM/Embeds/embedSuppression.test.tsx
+index 7986cd278..1f5a45421 100644
+--- a/Core/MarkdownPM/Embeds/embedSuppression.test.tsx
++++ b/Core/MarkdownPM/Embeds/embedSuppression.test.tsx
+@@ -21,24 +21,29 @@ const mount = async (initialBody: string): Promise<void> => {
+   await mountEditor({ initialBody, connections: conn })
+ }
+ 
+-const embedSpans = (): string[] =>
+-  [...editorContainer().querySelectorAll('.md-embed')].map((el) => el.textContent ?? '')
++const tiles = (): number => editorContainer().querySelectorAll('.mdpm-embed-tile').length
++const connections = (status: string): string[] =>
++  [...editorContainer().querySelectorAll(`.cm-content .md-connection-${status}`)].map(
++    (el) => el.textContent ?? '',
++  )
+ 
+-describe('claim-gated token suppression', () => {
+-  it('suppresses the claimed lone-line, keeps the unresolved one', async () => {
++describe('an embed is a connection unless it tiles', () => {
++  it('a tile over its line draws no connection, and an unresolved lone embed is a phantom connection', async () => {
+     await mount('![[Alpha]]\n\n![[Nowhere]]')
+-    const spans = embedSpans()
+-    expect(spans.some((s) => s.includes('Nowhere'))).toBe(true)
+-    expect(spans.some((s) => s.includes('Alpha'))).toBe(false)
++    expect(tiles()).toBe(1)
++    expect(connections('resolved')).toEqual([])
++    expect(connections('phantom')).toEqual(['Nowhere'])
+   })
+ 
+-  it('keeps the dim token on a duplicate of a claimed title', async () => {
++  it('a duplicate of a tiled title draws as the connection it is', async () => {
+     await mount('![[Alpha]]\n\ntext\n\n![[Alpha]]')
+-    expect(embedSpans().filter((s) => s.includes('Alpha'))).toHaveLength(1)
++    expect(tiles()).toBe(1)
++    expect(connections('resolved')).toEqual(['Alpha'])
+   })
+ 
+-  it('keeps the inline token on a non-lone line', async () => {
+-    await mount('see ![[Alpha]] here')
+-    expect(embedSpans().some((s) => s.includes('Alpha'))).toBe(true)
++  it('a mid-line embed and a lone headed one are connections', async () => {
++    await mount('see ![[Alpha]] here\n\n![[Alpha#Part]]')
++    expect(tiles()).toBe(0)
++    expect(connections('resolved')).toEqual(['Alpha', 'Alpha', 'Part'])
+   })
+ })
+diff --git a/Core/MarkdownPM/Embeds/embedWidget.tsx b/Core/MarkdownPM/Embeds/embedWidget.tsx
+index 5799c319e..bd1536cc7 100644
+--- a/Core/MarkdownPM/Embeds/embedWidget.tsx
++++ b/Core/MarkdownPM/Embeds/embedWidget.tsx
+@@ -30,7 +30,7 @@ import '../../Tiles/tile-base.css'
+ import { ZOOM } from '../../Settings/personalization'
+ import { zoomStep } from '../../Tiles/tileZoom'
+ import { docScan } from '../docCache'
+-import { claimedEmbeds } from '../Engine/embedClaims'
++import { embeddableTitle } from '../../Connections/connections'
+ import { ownElements } from '../lineDom'
+ import { healTileScrolls } from './scrollHeal'
+ import type { ConnectionsApi } from '../Links/connectionsApi'
+@@ -141,10 +141,8 @@ function releaseOnPress(dom: HTMLElement, view: EditorView): void {
+ class EmbedTileWidget extends ReactWidget {
+   constructor(
+     readonly path: string,
+-    readonly title: string,
+     readonly editing: boolean,
+     readonly interactive: boolean,
+-    readonly cyclic: boolean,
+     readonly ancestors: readonly string[],
+     readonly targetId: string,
+     readonly height: number | undefined,
+@@ -158,7 +156,6 @@ class EmbedTileWidget extends ReactWidget {
+       o.path === this.path &&
+       o.editing === this.editing &&
+       o.interactive === this.interactive &&
+-      o.cyclic === this.cyclic &&
+       o.height === this.height
+     )
+   }
+@@ -200,18 +197,13 @@ class EmbedTileWidget extends ReactWidget {
+ 
+   toDOM(view: EditorView): HTMLElement {
+     const dom = document.createElement('span') as ReactDom
+-    if (this.cyclic) {
+-      dom.className = 'mdpm-embed-cycle md-embed'
+-      dom.textContent = this.title
+-      return dom
+-    }
+     releaseOnPress(dom, view)
+     this.renderInto(dom, view)
+     return dom
+   }
+ 
+   updateDOM(dom: HTMLElement, view: EditorView): boolean {
+-    if (this.cyclic || !this.mounted(dom)) return false
++    if (!this.mounted(dom)) return false
+     this.renderInto(dom as ReactDom, view)
+     return true
+   }
+@@ -401,13 +393,20 @@ function buildTiles(
+   let unformed = 0
+ 
+   const tiles: TileRange[] = []
+-  if (conn && scan.embeds.length > 0) {
+-    for (const e of claimedEmbeds(scan.embeds, (t) => conn.resolve(t).status)) {
+-      const r = conn.resolve(e.title)
+-      if (r.status !== 'resolved' || !r.page) continue
+-      const { path, id } = r.page
+-      tiles.push({ kind: 'page', from: e.from, to: e.to, path, title: e.title, id })
+-    }
++  const shown = new Set<string>()
++  // A tile shows one whole page, once per document and never inside itself, so two tiles never edit one page; any other lone embed reads as the connection it is.
++  for (const e of conn ? scan.embeds : []) {
++    const page = embeddableTitle(e.title) ? conn?.resolve(e.title).page : undefined
++    if (!page || shown.has(page.path) || host.ancestors.includes(page.path)) continue
++    shown.add(page.path)
++    tiles.push({
++      kind: 'page',
++      from: e.from,
++      to: e.to,
++      path: page.path,
++      title: e.title,
++      id: page.id,
++    })
+   }
+   // The formation gate: typing `https://example.c` mid-address passes the grammar, so the grammar alone can't decide.
+   for (const w of scan.webpages) {
+@@ -430,16 +429,13 @@ function buildTiles(
+   const builder = new RangeSetBuilder<Decoration>()
+   let lastFence = -1
+   for (const t of tiles) {
+-    const cyclic = t.kind === 'page' && host.ancestors.includes(t.path)
+     const height = heights[keyOf(t)]
+     const widget =
+       t.kind === 'page'
+         ? new EmbedTileWidget(
+             t.path,
+-            t.title,
+             memory.editing === t.path,
+-            interactive && !cyclic,
+-            cyclic,
++            interactive,
+             host.ancestors,
+             t.id,
+             height,
+@@ -648,6 +644,11 @@ export function embedTileRanges(state: EditorState): readonly TileRange[] {
+   return state.field(embedField, false)?.ranges ?? []
+ }
+ 
++/** A title not already held by a tile in this document or a host above it, which would land a duplicate or a cycle. */
++export function embeddable(title: string, exclude: ReadonlySet<string>): boolean {
++  return embeddableTitle(title) && !exclude.has(normalizeTitle(title))
++}
++
+ export function embedExclusions(state: EditorState): Set<string> {
+   const out = new Set<string>()
+   const host = state.facet(embedHost)
+diff --git a/Core/MarkdownPM/Engine/detect.test.ts b/Core/MarkdownPM/Engine/detect.test.ts
+index 3f68634da..8afb8d7a8 100644
+--- a/Core/MarkdownPM/Engine/detect.test.ts
++++ b/Core/MarkdownPM/Engine/detect.test.ts
+@@ -15,7 +15,7 @@ import {
+   scanFencedCode,
+   splitWithOffsets,
+ } from './detect'
+-import { pageEmbedPattern, pageLinkPattern } from '../../Connections/connections'
++import { pageLinkPattern } from '../../Connections/connections'
+ 
+ describe('thematic break (HR)', () => {
+   it('treats ---, ***, ___ as HR; rejects too-short / list lines', () => {
+@@ -137,18 +137,14 @@ describe('blockquote', () => {
+ })
+ 
+ describe('inline matchers (verbatim regexes)', () => {
+-  it('image embed ![[name]]', () => {
+-    const m = pageEmbedPattern().exec('see ![[pic]] here')
+-    expect(m?.[1]).toBe('pic')
+-  })
+   it('markdown link [t](u)', () => {
+     const m = markdownLinkRegex().exec('[t](http://u)')
+     expect(m?.[1]).toBe('t')
+     expect(m?.[2]).toBe('http://u')
+   })
+-  it('wikilink detection reuses Core/Connections (title-only, excludes ![[ ]])', () => {
++  it('wikilink detection reuses Core/Connections, and a `!` before it is text', () => {
+     expect([...'[[Page]]'.matchAll(pageLinkPattern())].map((m) => m[1])).toEqual(['Page'])
+-    expect([...'![[img]]'.matchAll(pageLinkPattern())]).toHaveLength(0)
++    expect([...'![[img]]'.matchAll(pageLinkPattern())].map((m) => m.index)).toEqual([1])
+   })
+ })
+ 
+diff --git a/Core/MarkdownPM/Engine/detect.ts b/Core/MarkdownPM/Engine/detect.ts
+index 3af6004b9..fdd937ba6 100644
+--- a/Core/MarkdownPM/Engine/detect.ts
++++ b/Core/MarkdownPM/Engine/detect.ts
+@@ -12,6 +12,7 @@ import {
+   type CodeMask,
+ } from './markdownCode'
+ import { emptyTolerantLinkRegex, unescapeAlias } from '../../Connections/links'
++import { pageLinkPattern } from '../../Connections/connections'
+ import { isValidLink, WEB_ADDRESS } from '../../Paths/urlPath'
+ import type { ListKind } from '../../Actions/gripMenu'
+ export const highlightRegex = (): RegExp => /(?<!=)==(?!=)((?:[^=\n]|=(?!=))+)==(?!=)/dg
+@@ -397,10 +398,11 @@ export interface EmbedLine {
+   title: string
+ }
+ 
+-const loneEmbedRe = /^!\[\[([^\]\r\n]*)\]\][ \t]*$/
++const loneEmbedRe = new RegExp(`^!(?:${pageLinkPattern().source})[ \\t]*$`)
+ 
++/** What a connection alone on its line behind a `!` holds between its brackets, empty included. */
+ export function loneEmbedTitle(line: string): string | null {
+-  return loneEmbedRe.exec(line)?.[1] ?? null
++  return loneEmbedRe.exec(line)?.[0].trimEnd().slice(3, -2) ?? null
+ }
+ 
+ /** Never indented: an indented line is list continuation, mirroring the page embed's anchor. A mid-typed prefix like `https://example.c` passes, which is why claims are formation-gated on the selection rather than on the grammar. */
+diff --git a/Core/MarkdownPM/Engine/embedClaims.test.ts b/Core/MarkdownPM/Engine/embedClaims.test.ts
+deleted file mode 100644
+index 81feb5dea..000000000
+--- a/Core/MarkdownPM/Engine/embedClaims.test.ts
++++ /dev/null
+@@ -1,80 +0,0 @@
+-import { describe, expect, it } from 'vitest'
+-import { blockEmbedLines, splitWithOffsets } from './detect'
+-import { scanDoc } from './docScan'
+-import { claimedEmbeds } from './embedClaims'
+-
+-const lines = splitWithOffsets
+-const docEmbedLines = (doc: string): ReturnType<typeof blockEmbedLines> => scanDoc(doc).embeds
+-import type { LinkStatus } from '../../Connections/connections'
+-
+-const status =
+-  (map: Record<string, LinkStatus>) =>
+-  (title: string): LinkStatus =>
+-    map[title] ?? 'phantom'
+-
+-describe('blockEmbedLines', () => {
+-  it('claims a lone-line embed, trailing whitespace tolerated', () => {
+-    expect(blockEmbedLines(lines('a\n![[Foo]]  \nb'), [])).toEqual([
+-      { from: 2, to: 12, title: 'Foo' },
+-    ])
+-  })
+-
+-  it('a leading indent is continuation context, never an embed', () => {
+-    expect(blockEmbedLines(lines('- item\n  ![[Foo]]'), [])).toEqual([])
+-    expect(blockEmbedLines(lines('  ![[Foo]]'), [])).toEqual([])
+-  })
+-
+-  it('rejects any line carrying more than the embed', () => {
+-    expect(blockEmbedLines(lines('x ![[Foo]]\n![[Foo]] y\n![[A]] ![[B]]'), [])).toEqual([])
+-  })
+-
+-  it('captures an empty title without claiming resolution', () => {
+-    expect(blockEmbedLines(lines('![[]]'), [])).toEqual([{ from: 0, to: 5, title: '' }])
+-  })
+-
+-  it('excluded regions own their lines', () => {
+-    const doc = '![[A]]\n![[B]]'
+-    expect(blockEmbedLines(lines(doc), [[0, 6]])).toEqual([{ from: 7, to: 13, title: 'B' }])
+-  })
+-})
+-
+-describe('docEmbedLines exclusions', () => {
+-  it('a fenced ![[…]] is code, not an embed', () => {
+-    expect(docEmbedLines('```\n![[Foo]]\n```')).toEqual([])
+-  })
+-
+-  it('an ![[…]] inside display math is formula source, and cannot steal a later claim', () => {
+-    expect(docEmbedLines('$$\n![[Foo]]\n$$\n\n![[Foo]]')).toEqual([
+-      { from: 16, to: 24, title: 'Foo' },
+-    ])
+-  })
+-
+-  it('a lone-line embed between blocks still claims', () => {
+-    expect(docEmbedLines('para\n\n![[Foo]]\n\n- item')).toEqual([{ from: 6, to: 14, title: 'Foo' }])
+-  })
+-})
+-
+-describe('claimedEmbeds — the one ownership predicate', () => {
+-  const embeds = [
+-    { from: 0, to: 8, title: 'Alpha' },
+-    { from: 10, to: 18, title: 'alpha' },
+-    { from: 20, to: 28, title: 'Beta' },
+-    { from: 30, to: 38, title: 'Ghost' },
+-    { from: 40, to: 48, title: 'Twin' },
+-  ]
+-  const st = status({ Alpha: 'resolved', alpha: 'resolved', Beta: 'resolved', Twin: 'ambiguous' })
+-
+-  it('first occurrence per normalized title wins; later duplicates stay unclaimed', () => {
+-    const claimed = claimedEmbeds(embeds, st)
+-    expect(claimed.map((e) => e.from)).toEqual([0, 20])
+-  })
+-
+-  it('phantom and ambiguous titles claim nothing', () => {
+-    const claimed = claimedEmbeds(embeds, st)
+-    expect(claimed.some((e) => e.title === 'Ghost' || e.title === 'Twin')).toBe(false)
+-  })
+-
+-  it('an empty embed list claims nothing', () => {
+-    expect(claimedEmbeds([], st)).toEqual([])
+-  })
+-})
+diff --git a/Core/MarkdownPM/Engine/embedClaims.ts b/Core/MarkdownPM/Engine/embedClaims.ts
+deleted file mode 100644
+index 8eda54069..000000000
+--- a/Core/MarkdownPM/Engine/embedClaims.ts
++++ /dev/null
+@@ -1,25 +0,0 @@
+-import type { EmbedLine } from './detect'
+-import { embeddableTitle, type LinkStatus } from '../../Connections/connections'
+-import { normalizeTitle } from '../../Paths/caseFold'
+-
+-/** A title not already held by a tile in this document or a host above it, which would land the inert duplicate or a cycle. */
+-export function embeddable(title: string, exclude: ReadonlySet<string>): boolean {
+-  return embeddableTitle(title) && !exclude.has(normalizeTitle(title))
+-}
+-
+-/** Claimed when its title resolves to exactly one page and it is the first line naming it — a later duplicate stays the inert token, so two tiles can never edit one page from one document. */
+-export function claimedEmbeds(
+-  embeds: readonly EmbedLine[],
+-  statusOf: (title: string) => LinkStatus,
+-): EmbedLine[] {
+-  const seen = new Set<string>()
+-  const out: EmbedLine[] = []
+-  for (const e of embeds) {
+-    if (statusOf(e.title) !== 'resolved') continue
+-    const key = normalizeTitle(e.title)
+-    if (seen.has(key)) continue
+-    seen.add(key)
+-    out.push(e)
+-  }
+-  return out
+-}
+diff --git a/Core/MarkdownPM/Engine/intents.test.ts b/Core/MarkdownPM/Engine/intents.test.ts
+index 30fac2b68..c96b7ee9c 100644
+--- a/Core/MarkdownPM/Engine/intents.test.ts
++++ b/Core/MarkdownPM/Engine/intents.test.ts
+@@ -762,12 +762,4 @@ describe('embed token styling', () => {
+     expect(drawn(new Set())).toEqual(['md-html-tag', 'md-bracket', 'md-bracket'])
+     expect(drawn(new Set([0]))).toEqual(drawn(new Set()))
+   })
+-
+-  it('the embed token wears the embed content class', () => {
+-    const tokens = tokenize('see ![[Foo]] here')
+-    const embed = tokens.find((t) => t.kind === 'embed')
+-    expect(embed).toBeDefined()
+-    const intents = tokenIntents(tokens, new Set())
+-    expect(intents.some((i) => i.kind === 'class' && i.className === 'md-embed')).toBe(true)
+-  })
+ })
+diff --git a/Core/MarkdownPM/Engine/intents.ts b/Core/MarkdownPM/Engine/intents.ts
+index 581ac396d..7d8e8cb14 100644
+--- a/Core/MarkdownPM/Engine/intents.ts
++++ b/Core/MarkdownPM/Engine/intents.ts
+@@ -123,7 +123,6 @@ const CONTENT_CLASS: Partial<Record<TokenKind, string>> = {
+   strikethrough: 'md-strike',
+   inlineCode: 'md-code',
+   highlight: 'md-highlight',
+-  embed: 'md-embed',
+   inlineLatex: 'md-latex',
+   blockLatex: 'md-latex',
+   htmlTag: 'md-html-tag',
+diff --git a/Core/MarkdownPM/Engine/tokens.test.ts b/Core/MarkdownPM/Engine/tokens.test.ts
+index cc52113cf..f904aafd6 100644
+--- a/Core/MarkdownPM/Engine/tokens.test.ts
++++ b/Core/MarkdownPM/Engine/tokens.test.ts
+@@ -55,10 +55,14 @@ describe('inline regex tokens + overlap rules', () => {
+     expect(w.markerRanges.map((m) => slice(t, m))).toEqual(['[[', ']]'])
+   })
+ 
+-  it('image ![[pic]] wins over wikilink (no wikiLink emitted)', () => {
++  it('![[pic]] is a literal `!` and the connection after it', () => {
+     const tokens = tokenize('![[pic]]')
+-    expect(byKind(tokens, 'embed')).toHaveLength(1)
+-    expect(byKind(tokens, 'wikiLink')).toHaveLength(0)
++    expect(tokens.map((tk) => [tk.kind, tk.range])).toEqual([['wikiLink', [1, 8]]])
++  })
++
++  it('a link code touches is text, so only the code tokenizes', () => {
++    expect(tokenize('x `[[A`]] y').map((tk) => tk.kind)).toEqual(['inlineCode'])
++    expect(tokenize('[[A `b` C]]').map((tk) => tk.kind)).toEqual(['inlineCode'])
+   })
+ 
+   it('inline latex $x+1$ tokenizes; prose $word here$ does not', () => {
+@@ -118,10 +122,11 @@ describe('an aliased wikilink separates what it shows from what it resolves', ()
+     expect(w.markerRanges.map((m) => slice(t, m))).toEqual(['[[Q3 Plan|', ']]'])
+   })
+ 
+-  it('a bare [[Title]] has no resolve span — contentRange is the key', () => {
++  it('a bare [[Title]] resolves the span it shows', () => {
+     const t = '[[Page]]'
+     const w = byKind(tokenize(t), 'wikiLink')[0]
+-    expect(w.resolveRange).toBeUndefined()
++    expect(w.resolveRange).toEqual(w.contentRange)
++    expect(aliasedToken(w)).toBe(false)
+     expect(slice(t, w.contentRange)).toBe('Page')
+     expect(w.markerRanges.map((m) => slice(t, m))).toEqual(['[[', ']]'])
+   })
+@@ -129,7 +134,7 @@ describe('an aliased wikilink separates what it shows from what it resolves', ()
+   it('an empty alias [[Title|]] reads as no alias at all', () => {
+     const t = '[[Page|]]'
+     const w = byKind(tokenize(t), 'wikiLink')[0]
+-    expect(w.resolveRange).toBeUndefined()
++    expect(aliasedToken(w)).toBe(false)
+     expect(slice(t, w.contentRange)).toBe('Page')
+   })
+ 
+diff --git a/Core/MarkdownPM/Engine/tokens.ts b/Core/MarkdownPM/Engine/tokens.ts
+index d92618872..85627f1ca 100644
+--- a/Core/MarkdownPM/Engine/tokens.ts
++++ b/Core/MarkdownPM/Engine/tokens.ts
+@@ -3,7 +3,6 @@ import type { Root, RootContent, PhrasingContent } from 'mdast'
+ import { parse, parseThroughHtml } from './parser'
+ import { inlineSpans, type CodeMask } from './markdownCode'
+ import { inCodeAt, scanDoc } from './docScan'
+-import { markdownLinkRegex } from '../../Connections/links'
+ import {
+   htmlTagRegex,
+   isInlineMathContent,
+@@ -11,7 +10,7 @@ import {
+   inlineLatexRegex,
+   markerRegex,
+ } from './detect'
+-import { linkSpans, pageEmbedPattern, pageLinkPattern } from '../../Connections/connections'
++import { type LinkOccurrence, linkOccurrences } from '../../Connections/connections'
+ import { type HighlightColor, markAfter, markBefore } from './highlightColors'
+ 
+ export type TokenKind =
+@@ -22,7 +21,6 @@ export type TokenKind =
+   | 'highlight'
+   | 'blockLatex'
+   | 'inlineLatex'
+-  | 'embed'
+   | 'wikiLink'
+   | 'link'
+   | 'citationRef'
+@@ -40,7 +38,7 @@ export interface Token {
+   inHtml?: true
+ }
+ 
+-// The page half alone resolves; a heading token carries `resolveRange` too and is not aliased by that alone.
++// A connection's title half, which alone resolves; it starts the shown text unless an alias replaces it.
+ export const aliasedToken = (tk: Token): boolean =>
+   tk.resolveRange !== undefined && tk.contentRange[0] !== tk.resolveRange[0]
+ 
+@@ -224,32 +222,34 @@ function blockLatexTokens(text: string, maths: readonly [number, number][]): Tok
+   })
+ }
+ 
+-// No `d` flag, so offsets are derived from the known `[[` prefix.
+-function wikiLinkTokens(text: string, inCode: (offset: number) => boolean): Token[] {
+-  const tokens: Token[] = []
+-  for (const m of text.matchAll(pageLinkPattern())) {
+-    const s = linkSpans(m)
+-    if (!s || inCode(s.full[0])) continue
+-    const [fs, fe] = s.full
+-    // The leading marker swallows `[[Title|`. An opened-but-empty alias shows nothing, so it stays a plain link.
+-    const alias = s.alias && s.alias[1] > s.alias[0] ? s.alias : null
+-    const fragment = s.heading && s.heading[1] > s.heading[0] ? s.heading : null
+-    const target: [number, number] = [s.title[0], fragment ? fragment[1] : s.title[1]]
+-    const shown = alias ?? target
+-    tokens.push({
+-      kind: 'wikiLink',
+-      range: [fs, fe],
+-      contentRange: shown,
+-      ...(alias || s.heading ? { resolveRange: s.title } : {}),
+-      ...(fragment ? { fragment } : {}),
+-      // The markers tile the whole token, so a renderer drawing only the content span can't disagree with one hiding markers.
++function linkToken(o: LinkOccurrence): Token {
++  const [fs, fe] = o.full
++  if (o.syntax === 'markdown')
++    return {
++      kind: 'link',
++      range: o.full,
++      contentRange: o.label,
+       markerRanges: [
+-        [fs, shown[0]],
+-        [shown[1], fe],
++        [fs, o.label[0]],
++        [o.label[1], fe],
+       ],
+-    })
++    }
++  // The leading marker swallows `[[Title|`. An opened-but-empty alias shows nothing, so it stays a plain link.
++  const alias = o.alias && o.alias[1] > o.alias[0] ? o.alias : null
++  const fragment = o.heading && o.heading[1] > o.heading[0] ? o.heading : null
++  const shown = alias ?? [o.title[0], fragment ? fragment[1] : o.title[1]]
++  return {
++    kind: 'wikiLink',
++    range: o.full,
++    contentRange: shown,
++    resolveRange: o.title,
++    ...(fragment ? { fragment } : {}),
++    // The markers tile the whole token, so a renderer drawing only the content span can't disagree with one hiding markers.
++    markerRanges: [
++      [fs, shown[0]],
++      [shown[1], fe],
++    ],
+   }
+-  return tokens
+ }
+ 
+ /** Every token opens on one of these, so text holding none of them tokenizes to nothing. */
+@@ -270,24 +270,11 @@ export function tokenizeChunk(text: string): { tokens: Token[]; html: Span[] } {
+   const inCode: CodeMask = (p) => inCodeAt(scan, p)
+   const matches = (spec: RegexSpec): Token[] => regexTokens(text, spec, inCode)
+ 
+-  // Code tokenizes FIRST so a [[link]] in code renders and clicks as literal code, not a live connection.
+   const code = inlineCodeTokens(text, inCode)
+-  const embeds = matches({
+-    kind: 'embed',
+-    re: pageEmbedPattern(),
+-    open: 3,
+-    close: 2,
+-  })
+-  // `[[Title]](target)` stays a connection trailed by literal parens, matching Obsidian. CommonMark would read it as a link labeled `[Title]`, which the rename cascade's grammar can't match, so its target would rot silently.
+-  const wikis = wikiLinkTokens(text, inCode).filter(notOverlapping([...embeds, ...code]))
+-  const links = matches({
+-    kind: 'link',
+-    re: markdownLinkRegex(),
+-    open: 1,
+-    close: 1,
+-  }).filter(notOverlapping([...embeds, ...wikis, ...code]))
++  const links = linkOccurrences(text, inCode).map(linkToken)
++  const wikis = links.filter((tk) => tk.kind === 'wikiLink')
+   const cites = matches({ kind: 'citationRef', re: markerRegex(), open: 2, close: 1 }).filter(
+-    notOverlapping([...embeds, ...wikis, ...code]),
++    notOverlapping([...wikis, ...code]),
+   )
+   const highlights = matches({
+     kind: 'highlight',
+@@ -295,7 +282,7 @@ export function tokenizeChunk(text: string): { tokens: Token[]; html: Span[] } {
+     open: 2,
+     close: 2,
+   })
+-    .filter(notOverlapping([...code, ...embeds, ...wikis, ...links]))
++    .filter(notOverlapping([...code, ...links]))
+     .map((tk) => colorHighlight(text, tk))
+   const blockTex = blockLatexTokens(text, scan.maths).filter(notOverlapping(code))
+   const inlineTex = matches({
+@@ -306,19 +293,10 @@ export function tokenizeChunk(text: string): { tokens: Token[]; html: Span[] } {
+     accept: isInlineMathContent,
+   }).filter(notOverlapping([...code, ...blockTex]))
+   const tags = matches({ kind: 'htmlTag', re: htmlTagRegex(), open: 1, close: 1 }).filter(
+-    notOverlapping([...code, ...embeds, ...wikis, ...links, ...blockTex, ...inlineTex]),
++    notOverlapping([...code, ...links, ...blockTex, ...inlineTex]),
+   )
+ 
+-  tokens.push(
+-    ...embeds,
+-    ...wikis,
+-    ...links,
+-    ...code,
+-    ...cites,
+-    ...highlights,
+-    ...blockTex,
+-    ...inlineTex,
+-  )
++  tokens.push(...links, ...code, ...cites, ...highlights, ...blockTex, ...inlineTex)
+   for (const tk of tokens) if (blocks.some((b) => overlaps(b, tk.range))) tk.inHtml = true
+   tokens.push(...tags)
+   tokens.sort((a, b) => a.range[0] - b.range[0])
+diff --git a/Core/MarkdownPM/Input/edits.ts b/Core/MarkdownPM/Input/edits.ts
+index e832f4f50..c3c7b40cc 100644
+--- a/Core/MarkdownPM/Input/edits.ts
++++ b/Core/MarkdownPM/Input/edits.ts
+@@ -1,6 +1,6 @@
+ import { type Personalization, settingOf } from '../../Settings/personalization'
+ import { linkDestinationStart } from '../../Connections/links'
+-import { aliasSpanAt, linkAt } from '../../Connections/connections'
++import { type LinkSpans, linkOccurrences } from '../../Connections/connections'
+ import { inCalloutAt, inCodeAt, inFenceAt, spanAt, type DocScan } from '../Engine/docScan'
+ import {
+   fenceAt,
+@@ -9,7 +9,6 @@ import {
+   lineIndexAt,
+   lineStartAt,
+   lineEndAt,
+-  inlineSpans,
+   trimmedRange,
+   quotePrefix,
+   type TextEdit,
+@@ -320,21 +319,22 @@ const emptyPairAt = (doc: string, c: number): boolean => {
+   )
+ }
+ 
+-/** Code holds some of the connection written around `at`, so the editor draws it as text. */
+-export function linkInCode(scan: DocScan, at: number): boolean {
+-  const ls = lineStartAt(scan.text, at)
+-  const line = scan.text.slice(ls, lineEndAt(scan.text, at))
+-  const link = linkAt(line, at - ls)
+-  if (!link) return false
+-  if (inFenceAt(scan, at)) return true
+-  return inlineSpans(line).some(([a, b]) => a < link.full[1] && b > link.full[0])
++/** The connection written around `at` as the editor draws it, so code touching it leaves none; its spans are relative to `at`'s line, empty slots kept. */
++export function connectionAt(scan: DocScan, at: number): LinkSpans | null {
++  const i = lineIndexAt(scan, at)
++  const line = scan.lines[i]
++  if (!line.includes('[[')) return null
++  const ls = scan.lineStarts[i]
++  for (const o of linkOccurrences(line, (p) => inCodeAt(scan, ls + p)))
++    if (o.syntax === 'wiki' && at - ls >= o.full[0] && at - ls <= o.full[1]) return o
++  return null
+ }
+ 
+ /** In a written connection's alias, where a `]` would truncate the link. */
+ export function inAliasAt(scan: DocScan, at: number): boolean {
+-  if (linkInCode(scan, at)) return false
+-  const ls = lineStartAt(scan.text, at)
+-  return aliasSpanAt(scan.text.slice(ls, lineEndAt(scan.text, at)), at - ls) !== null
++  const alias = connectionAt(scan, at)?.alias
++  const rel = at - lineStartAt(scan.text, at)
++  return alias != null && rel >= alias[0] && rel <= alias[1]
+ }
+ 
+ export function autoPair(
+diff --git a/Core/MarkdownPM/Links/connectionsApi.ts b/Core/MarkdownPM/Links/connectionsApi.ts
+index c9289a4ea..bac6afd24 100644
+--- a/Core/MarkdownPM/Links/connectionsApi.ts
++++ b/Core/MarkdownPM/Links/connectionsApi.ts
+@@ -69,7 +69,7 @@ export function resolveMdTarget(index: PageIndex | undefined, rawTarget: string)
+ 
+ export function tokenTarget(index: PageIndex | undefined, text: string, tk: Token): MdTarget {
+   if (tk.kind === 'link') return resolveMdTarget(index, linkTarget(text, tk))
+-  const [rs, re] = tk.resolveRange ?? tk.contentRange
++  const [rs, re] = tk.resolveRange!
+   return titleTarget(index, text.slice(rs, re), headingOf(text, tk))
+ }
+ 
+diff --git a/Core/MarkdownPM/Links/headingHash.test.ts b/Core/MarkdownPM/Links/headingHash.test.ts
+index a574482f7..869913261 100644
+--- a/Core/MarkdownPM/Links/headingHash.test.ts
++++ b/Core/MarkdownPM/Links/headingHash.test.ts
+@@ -9,15 +9,19 @@ describe('headingHash', () => {
+     expect(headingHash(scan, 6, 6, '§')).toEqual({ from: 6, to: 6, insert: '#', selection: 7 })
+   })
+ 
+-  it('a § typed in the alias half, in an embed, or in the heading stays §', () => {
++  it('a § typed in the alias half or in the heading stays §', () => {
+     for (const [doc, at] of [
+       ['[[Page|al]]', 9],
+-      ['![[Page]]', 7],
+       ['[[Page#Se]]', 9],
+     ] as const)
+       expect(headingHash(scanDoc(doc), at, at, '§')).toBeNull()
+   })
+ 
++  it("a § typed in an embed's title writes #, since an embed is a connection", () => {
++    expect(headingHash(scanDoc('![[Page]]'), 7, 7, '§')).toMatchObject({ insert: '#' })
++    expect(headingHash(scanDoc('![[]]'), 3, 3, '§')).toMatchObject({ insert: '#' })
++  })
++
+   it('a § typed in prose does nothing', () => {
+     const doc = 'plain prose '
+     const scan = scanDoc(doc)
+@@ -30,10 +34,11 @@ describe('headingHash', () => {
+     expect(headingHash(scan, 4, 4, '§')).toBeNull()
+   })
+ 
+-  it('a § at the closing backtick stays, and one past it writes #', () => {
++  it('a connection code touches is text, so a § anywhere in it stays', () => {
+     const scan = scanDoc('[[`Page`]]')
+     expect(headingHash(scan, 7, 7, '§')).toBeNull()
+-    expect(headingHash(scan, 8, 8, '§')).toEqual({ from: 8, to: 8, insert: '#', selection: 9 })
++    expect(headingHash(scan, 8, 8, '§')).toBeNull()
++    expect(headingHash(scanDoc('x `[[A`]] y'), 7, 7, '§')).toBeNull()
+   })
+ 
+   it('an empty title, [[ then §, is the title half', () => {
+@@ -43,7 +48,6 @@ describe('headingHash', () => {
+       insert: '#',
+       selection: 3,
+     })
+-    expect(headingHash(scanDoc('![[]]'), 3, 3, '§')).toBeNull()
+   })
+ 
+   it('a § typed over a selection inside the title replaces it with #', () => {
+diff --git a/Core/MarkdownPM/Links/headingHash.ts b/Core/MarkdownPM/Links/headingHash.ts
+index 0b10ffd84..bf16cd474 100644
+--- a/Core/MarkdownPM/Links/headingHash.ts
++++ b/Core/MarkdownPM/Links/headingHash.ts
+@@ -1,17 +1,13 @@
+-import { linkAt } from '../../Connections/connections'
+ import { linkDestinationStart, opensFragment } from '../../Connections/links'
+ import { type DocScan, inCodeAt } from '../Engine/docScan'
+ import { lineIndexAt } from '../Engine/markdownCode'
+-import type { Edit } from '../Input/edits'
++import { connectionAt, type Edit } from '../Input/edits'
+ 
+-function titleSpanAt(line: string, rel: number): [number, number] | null {
+-  const s = linkAt(line, rel)
+-  if (s) return s.title
+-  const opened = line.slice(rel - 2, rel) === '[[' && line[rel - 3] !== '!'
+-  return opened && /^(?:\||\]\])/.test(line.slice(rel)) ? [rel, rel] : null
+-}
++// A `[[` just typed before its closer or a pipe: the empty title the link grammar doesn't read yet.
++const openedTitle = (line: string, rel: number): [number, number] | null =>
++  line.slice(rel - 2, rel) === '[[' && /^(?:\||\]\])/.test(line.slice(rel)) ? [rel, rel] : null
+ 
+-// The one transform that fires only where a link names its page — a wikilink's title half or a markdown link's destination: every transform in `Input/edits.ts` stands down there, and the file only ever holds `#`. An alias or a label is prose, an embed takes no fragment, and a heading may hold the character.
++// The one transform that fires only where a link names its page — a wikilink's title half or a markdown link's destination: every transform in `Input/edits.ts` stands down there, and the file only ever holds `#`. An alias or a label is prose, and a heading may hold the character.
+ export function headingHash(
+   scan: DocScan,
+   selStart: number,
+@@ -23,7 +19,7 @@ export function headingHash(
+   const from = selStart - scan.lineStarts[li]
+   const to = selEnd - scan.lineStarts[li]
+   const line = scan.lines[li]
+-  const title = titleSpanAt(line, from)
++  const title = connectionAt(scan, selStart)?.title ?? openedTitle(line, from)
+   const dest = linkDestinationStart(line, from)
+   const inTitle = title !== null && from >= title[0] && to <= title[1]
+   const inPageHalf =
+diff --git a/Core/MarkdownPM/Links/linkEdit.ts b/Core/MarkdownPM/Links/linkEdit.ts
+index fa2786616..1b9b0ec47 100644
+--- a/Core/MarkdownPM/Links/linkEdit.ts
++++ b/Core/MarkdownPM/Links/linkEdit.ts
+@@ -1,17 +1,12 @@
+ import { EditorView, type ViewUpdate } from '@codemirror/view'
+ import { EditorSelection, type EditorState, type Extension, type Line } from '@codemirror/state'
+-import {
+-  aliasSpanAt,
+-  emptyAliasPipeAt,
+-  emptyHeadingHashAt,
+-  linkAt,
+-} from '../../Connections/connections'
++import type { LinkSpans } from '../../Connections/connections'
+ import type { ConnEditAction } from '../../Actions/connectionMenu'
+ import type { ConnectionsApi } from './connectionsApi'
+ import { aliasedToken, type Token } from '../Engine/tokens'
+ import { docScan, docString } from '../docCache'
+ import { spanAt } from '../Engine/docScan'
+-import { linkInCode } from '../Input/edits'
++import { connectionAt } from '../Input/edits'
+ import { focusRange } from '../caretPlacement'
+ import { restedOnLink } from './linkReveal'
+ import { editorHost } from '../api'
+@@ -25,7 +20,7 @@ export function wikiAuthorTarget(
+   action: ConnEditAction,
+ ): { pipeAt?: number; select: [number, number] } {
+   if (action === 'editLink') {
+-    const [, titleEnd] = tk.resolveRange ?? tk.contentRange
++    const [, titleEnd] = tk.resolveRange!
+     return { select: [titleEnd, titleEnd] }
+   }
+   if (aliasedToken(tk)) return { select: [tk.contentRange[0], tk.contentRange[1]] }
+@@ -53,12 +48,12 @@ export function commitAliasOnEnter(view: EditorView): boolean {
+   if (!sel.empty) return false
+   const line = view.state.doc.lineAt(sel.head)
+   const rel = sel.head - line.from
+-  const link = linkAt(line.text, rel)
+-  if (!link || aliasSpanAt(line.text, rel) === null) return false
+   const scan = docScan(view.state.doc)
+-  // Code holds no live link, and neither does an HTML block HTML Formatting draws raw.
+-  const raw = view.state.facet(editorHost).settings().htmlFormatting && spanAt(scan.html, sel.head)
+-  if (linkInCode(scan, sel.head) || raw) return false
++  const link = connectionAt(scan, sel.head)
++  if (!link?.alias || rel < link.alias[0] || rel > link.alias[1]) return false
++  // An HTML block HTML Formatting draws raw holds no live link.
++  if (view.state.facet(editorHost).settings().htmlFormatting && spanAt(scan.html, sel.head))
++    return false
+   const end = line.from + link.full[1]
+   view.dispatch({
+     selection: EditorSelection.cursor(end, 1),
+@@ -76,13 +71,14 @@ function lineNear(state: EditorState, at: number): { line: Line; rel: number } {
+ }
+ 
+ /** Authoring is the only moment the memory is written: a body scan can't honor a real forget. */
+-function rememberAliasNear(view: EditorView, api: ConnectionsApi | undefined, at: number): void {
+-  if (!api) return
+-  const { line, rel } = lineNear(view.state, at)
+-  const s = linkAt(line.text, rel)
+-  if (!s?.alias) return
+-  const alias = line.text.slice(s.alias[0], s.alias[1])
+-  if (!alias.trim()) return
++function rememberAlias(
++  view: EditorView,
++  api: ConnectionsApi | undefined,
++  line: Line,
++  s: LinkSpans,
++): void {
++  const alias = s.alias && line.text.slice(s.alias[0], s.alias[1])
++  if (!api || !alias?.trim()) return
+   const res = api.resolve(line.text.slice(s.title[0], s.title[1]))
+   // A phantom or ambiguous title names no single page, and the memory is keyed by page id.
+   if (res.status === 'resolved' && res.page)
+@@ -103,13 +99,13 @@ interface Slot {
+ 
+ function slotNear(state: EditorState, at: number): Slot | null {
+   const { line, rel } = lineNear(state, at)
+-  if (linkInCode(docScan(state.doc), line.from + rel)) return null
+-  const alias = aliasSpanAt(line.text, rel)
+-  if (alias) return { start: line.from + alias[0], end: line.from + alias[1], kind: 'alias' }
+-  const h = linkAt(line.text, rel)?.heading
+-  return h && rel >= h[0] && rel <= h[1]
+-    ? { start: line.from + h[0], end: line.from + h[1], kind: 'heading' }
+-    : null
++  const s = connectionAt(docScan(state.doc), line.from + rel)
++  for (const kind of ['alias', 'heading'] as const) {
++    const span = s?.[kind]
++    if (span && rel >= span[0] && rel <= span[1])
++      return { start: line.from + span[0], end: line.from + span[1], kind }
++  }
++  return null
+ }
+ 
+ /** An empty alias takes its pipe with it, and an empty heading its hash, matching the nexus-wide rule that an emptied value drops its key. */
+@@ -121,12 +117,14 @@ function leaveSlot(
+   defer: boolean,
+ ): void {
+   const { line, rel } = lineNear(view.state, at)
+-  const marker = (kind === 'alias' ? emptyAliasPipeAt : emptyHeadingHashAt)(line.text, rel)
+-  if (marker === null) {
+-    if (kind === 'alias') rememberAliasNear(view, api, at)
++  const s = connectionAt(docScan(view.state.doc), line.from + rel)
++  const span = s?.[kind]
++  if (!s || !span) return
++  if (span[0] !== span[1]) {
++    if (kind === 'alias') rememberAlias(view, api, line, s)
+     return
+   }
+-  const slot = line.from + marker
++  const slot = line.from + (kind === 'alias' ? (s.heading ?? s.title)[1] : span[0] - 1)
+   if (defer) setTimeout(() => collapseAt(view, slot), 0)
+   else collapseAt(view, slot)
+ }
+diff --git a/Core/MarkdownPM/Links/linkReveal.ts b/Core/MarkdownPM/Links/linkReveal.ts
+index bae70038e..2958d9b97 100644
+--- a/Core/MarkdownPM/Links/linkReveal.ts
++++ b/Core/MarkdownPM/Links/linkReveal.ts
+@@ -1,5 +1,6 @@
+ import { StateEffect, StateField } from '@codemirror/state'
+-import { linkAt } from '../../Connections/connections'
++import { docScan } from '../docCache'
++import { connectionAt } from '../Input/edits'
+ 
+ export const restedOnLink = StateEffect.define<number>()
+ 
+@@ -19,8 +20,7 @@ export const linkTyping = StateField.define<number | null>({
+   update(value, tr) {
+     if (!tr.docChanged) return tr.selection ? null : value
+     const head = tr.newSelection.main.head
+-    const line = tr.newDoc.lineAt(head)
+-    const s = linkAt(line.text, head - line.from)
+-    return s ? line.from + s.full[0] : null
++    const s = connectionAt(docScan.after(tr), head)
++    return s ? tr.newDoc.lineAt(head).from + s.full[0] : null
+   },
+ })
+diff --git a/Core/MarkdownPM/Menus/gripMenu.ts b/Core/MarkdownPM/Menus/gripMenu.ts
+index a6cec512f..f301f5556 100644
+--- a/Core/MarkdownPM/Menus/gripMenu.ts
++++ b/Core/MarkdownPM/Menus/gripMenu.ts
+@@ -7,9 +7,14 @@ import { listKindOf, setHeading, setListKind } from '../Input/format'
+ import { headingParts, webpageEmbedUrlSpan } from '../Engine/detect'
+ import { type Block, blockAt } from '../Engine/blockModel'
+ import { docScan, docString } from '../docCache'
+-import { embeddable } from '../Engine/embedClaims'
+ import { HEADING_LINE } from '../folding'
+-import { applyEmbedZoom, embedExclusions, embedZoomAt, setWebLinkSeat } from '../Embeds/embedWidget'
++import {
++  applyEmbedZoom,
++  embeddable,
++  embedExclusions,
++  embedZoomAt,
++  setWebLinkSeat,
++} from '../Embeds/embedWidget'
+ import { focusRange } from '../caretPlacement'
+ import { lineEndAt, lineStartAt } from '../Engine/markdownCode'
+ import { applyEdit } from '../Input/applyEdit'
+diff --git a/Core/MarkdownPM/Tables/cellStatic.tsx b/Core/MarkdownPM/Tables/cellStatic.tsx
+index ea1e54ade..763c411a2 100644
+--- a/Core/MarkdownPM/Tables/cellStatic.tsx
++++ b/Core/MarkdownPM/Tables/cellStatic.tsx
+@@ -75,7 +75,7 @@ export function renderCellContent(
+     if (s > pos) out.push(text.slice(pos, s))
+     const content = text.slice(tk.contentRange[0], tk.contentRange[1])
+     if (tk.kind === 'wikiLink') {
+-      const [rs, re] = tk.resolveRange ?? tk.contentRange
++      const [rs, re] = tk.resolveRange!
+       const view = conn && wikiLinkView(conn, text, tk, around?.ownKeys)
+       if (!view) out.push(text.slice(s, e))
+       else if (view.status === 'phantom')
+diff --git a/Core/MarkdownPM/decorations.ts b/Core/MarkdownPM/decorations.ts
+index a07db82d5..037901858 100644
+--- a/Core/MarkdownPM/decorations.ts
++++ b/Core/MarkdownPM/decorations.ts
+@@ -38,7 +38,6 @@ import {
+ import type { DiffTally, MarkdownScope } from './Engine/detect'
+ import { sectionRunsIn } from '../Connections/scan'
+ import { CHECK_GLYPH, CODE_TAGS, COPY_GLYPH } from './codeGlyphs'
+-import { claimedEmbeds } from './Engine/embedClaims'
+ import { linkRest, linkTyping } from './Links/linkReveal'
+ import {
+   assembleLineIntents,
+@@ -469,18 +468,7 @@ function build(view: EditorView, conn: ConnectionsApi | undefined, scope: Markdo
+   const inline = visibleInline(view, scan)
+   // A cell's text parses alone, where a leading tag reads as a block the table never holds.
+   const raw = scope === 'page' && settings.htmlFormatting ? inline.html : []
+-  let tokens = raw.length > 0 ? inline.tokens.filter((tk) => !tk.inHtml) : inline.tokens
+-  // A CLAIMED embed line's token styling stands down; the claim is the tile field's own predicate, so one owner decides.
+-  if (conn && scan.embeds.length > 0) {
+-    const claimed = claimedEmbeds(scan.embeds, (t) => conn.resolve(t).status)
+-    if (claimed.length > 0)
+-      tokens = tokens.filter(
+-        (tk) =>
+-          !(
+-            tk.kind === 'embed' && claimed.some((e) => tk.range[0] >= e.from && tk.range[1] <= e.to)
+-          ),
+-      )
+-  }
++  const tokens = raw.length > 0 ? inline.tokens.filter((tk) => !tk.inHtml) : inline.tokens
+   drawnTokens.set(view, tokens)
+   const active = focused
+     ? activeTokenIndices(tokens, sel.from, sel.to, view.state.field(linkRest, false) ?? null)
+@@ -591,7 +579,7 @@ function build(view: EditorView, conn: ConnectionsApi | undefined, scope: Markdo
+     tokens.forEach((tk, i) => {
+       if (tk.kind !== 'wikiLink') return
+       const alias = aliasedToken(tk)
+-      const [rs, re] = tk.resolveRange ?? tk.contentRange
++      const [rs, re] = tk.resolveRange!
+       const { status, bare, missing } = wikiLinkView(conn, text, tk, ownKeys)
+       const open = active.has(i)
+       // `[[#]]` is a link being written: nothing to mark, only its syntax to dim.
+diff --git a/Core/MarkdownPM/markdown-pm.css b/Core/MarkdownPM/markdown-pm.css
+index f75b92325..f489eb3d1 100644
+--- a/Core/MarkdownPM/markdown-pm.css
++++ b/Core/MarkdownPM/markdown-pm.css
+@@ -296,8 +296,7 @@
+   color: var(--connection);
+ }
+ .md-bracket,
+-.md-latex,
+-.md-embed {
++.md-latex {
+   color: var(--label-secondary);
+ }
+ 
+@@ -338,10 +337,6 @@
+   /* KNOB — the grip's seat at the tile's top corner. Fixed pixels: the collapsed line's zero-height text row is no anchor, and the tile's box doesn't ride the glyph zoom. */
+   --grip-top: 28px;
+ }
+-.mdpm-embed-cycle {
+-  color: var(--label-secondary);
+-}
+-
+ .md-control {
+   color: var(--label-control);
+ }
+diff --git a/Core/Nexus/cascade.test.ts b/Core/Nexus/cascade.test.ts
+index c1711a72f..305f7daff 100644
+--- a/Core/Nexus/cascade.test.ts
++++ b/Core/Nexus/cascade.test.ts
+@@ -228,7 +228,7 @@ describe('renameCascade over frontmatter', () => {
+     expect((await fmOf(a.value.path))[SITE]).toBe('https://example.com/Target')
+   })
+ 
+-  it('rewrites a link inside a Text value as prose, alias kept, and writes a whole-value Text link once', async () => {
++  it('rewrites a link inside a Text value as prose, alias kept, and drops a whole-value alias the new title repeats', async () => {
+     const a = await createTestPage(dir, 'Prose', { body: 'no links here' })
+     if (!a.ok) throw new Error('setup failed')
+     await setValue(a.value.path, 'Notes', 'see [[Target|the brief]] here')
+@@ -237,7 +237,7 @@ describe('renameCascade over frontmatter', () => {
+     await setValue(b.value.path, 'Notes', '[[Target|New Target]]')
+     await renameCascade(root, 'Target', { title: 'New Target' })
+     expect((await fmOf(a.value.path)).Notes).toBe('see [[New Target|the brief]] here')
+-    expect((await fmOf(b.value.path)).Notes).toBe('[[New Target|New Target]]')
++    expect((await fmOf(b.value.path)).Notes).toBe('[[New Target]]')
+   })
+ 
+   it('leaves a File value and a Select value that read as connections', async () => {
+diff --git a/Core/Nexus/cascade.ts b/Core/Nexus/cascade.ts
+index 247d8a3da..a3be6948d 100644
+--- a/Core/Nexus/cascade.ts
++++ b/Core/Nexus/cascade.ts
+@@ -17,7 +17,6 @@ import { withheldIn } from './treePatch'
+ import {
+   type RenameChange,
+   rewriteConnections,
+-  rewriteFrontmatterConnections,
+   rewriteHeadingConnections,
+ } from '../Connections/rewrite'
+ import { headingOutline } from '../MarkdownPM/Engine/headingScan'
+@@ -196,15 +195,10 @@ export async function renameCascade(
+       own = '',
+       outlineOf = '',
+     ): Record<string, string> => {
+-      const entries = Object.entries(raw)
+-      const patch = rewriteFrontmatterConnections(
+-        Object.fromEntries(entries.filter(([key]) => typeOf(key) === 'link')),
+-        title,
+-        change,
+-        own,
+-      )
+-      for (const [key, value] of entries) {
+-        if (typeOf(key) !== 'text') continue
++      const patch: Record<string, string> = {}
++      for (const [key, value] of Object.entries(raw)) {
++        const type = typeOf(key)
++        if (type !== 'text' && type !== 'link') continue
+         // A string, or a `[[Page]]` yaml read as a nested list; a foreign one-item list stays a list.
+         const text = linkEntry(value, 2)
+         const next = text === null ? null : rewrite(text, own, outlineOf)
+diff --git a/Core/Trash/spend.ts b/Core/Trash/spend.ts
+index 83ba8f2d9..dc5766bfb 100644
+--- a/Core/Trash/spend.ts
++++ b/Core/Trash/spend.ts
+@@ -20,7 +20,7 @@ import { scrubReturning } from './restoreScrub'
+ import { exclusionWriteRefusal, readLiveSetting, reseatExcludedFolders } from '../Settings/settings'
+ import { sweepRootsById } from '../Properties/governedSweep'
+ import { heldValue, joinValues, landValue, writeTarget } from '../Files/heldKeys'
+-import { rewriteFrontmatterConnections } from '../Connections/rewrite'
++import { rewriteConnections } from '../Connections/rewrite'
+ import { linkDefs } from '../Properties/propertiesRegistry'
+ import { refillValues } from '../Properties/assignment'
+ import { BUNDLE_SUFFIX } from './bundle'
+@@ -257,15 +257,17 @@ async function restoreArtifact(
+     const defs = await linkDefs(root)
+     const trashed: StrippedLink[] = []
+     for (const def of defs) {
+-      const values = Object.fromEntries(
+-        record.links.filter((l) => l.property === def.id).map((l) => [l.page, l.value]),
++      const all = Object.fromEntries(
++        record.links
++          .filter((l) => l.property === def.id)
++          .map((l) => [
++            l.page,
++            landed === was ? l.value : rewriteConnections(l.value, was, landed),
++          ]),
+       )
+-      const rebuilt =
+-        landed === was ? {} : rewriteFrontmatterConnections(values, was, { title: landed })
+-      const all = { ...values, ...rebuilt }
+       const taken = await refillValues(root, def, roots, all, frozen)
+-      for (const id of Object.keys(values))
+-        if (!roots[id]) trashed.push({ page: id, property: def.id, value: String(all[id]) })
++      for (const id of Object.keys(all))
++        if (!roots[id]) trashed.push({ page: id, property: def.id, value: all[id] })
+         else if (!taken.has(id)) unlinked.add(id)
+     }
+     // A page or Space in the Trash takes its value back into its trashed copy, so it returns with it.

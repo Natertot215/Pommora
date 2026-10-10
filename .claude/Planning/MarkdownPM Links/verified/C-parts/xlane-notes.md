@@ -1,0 +1,12 @@
+## Cross-Lane Notes (coordinator-verifier, in progress)
+
+- X-1 P-21 vs S3-1: two "one reader" rules. P-21 readLink: markdown target with non-null targetTitle → page (resolver-free). S3-1 readLinkText(text, resolve?): without resolver, page only when not a valid address. `[x](example.com)` → page (P-21) vs url (S3-1). Reconcile: one reader whose resolver decides; host passes a predicate built from what it knows (the renamed/gone title; the frozen world). 
+- X-2 E-23 title precedence inverted vs 1c: 1c = pasted alias first, else own alias unless Remove Title On Link Change. E-23 = keepTitle && container.title first, else next.alias. E-30 table follows the inverted rule. ±0 lines; behavior fix.
+- X-3 P-25 "Link value Edit Title should call retarget" vs E-18 "None should call a paste retarget". Syntax differs (P-02 canonicalizes pages to wiki); title rule can be shared. P-23 keeps label always — ignores the setting (default On) → odd-one-out under 1d "one rule for every link syntax".
+- X-4 Resting Text value right-click: today parent value menu (Edit, Clear, Remove; cellMenu.ts:126-127 'text' kind). 1d gives Text values the resting editor-menu mechanism. Neither lane says how value rows (Clear/Remove/Edit) and editor rows combine. P-25 pattern (link menu + destructive rows) is the analog.
+- X-5 headingHash.ts:10 `line[rel - 3] !== '!'` + comment :14 "an embed takes no fragment" — `!` special case E-08 didn't list; 1d makes `![[P#H]]` a heading link.
+- X-6 1b/1c "every link" menus: linkMenuTarget `default: return null` (connectionsApi.ts:91-92) → phantom, ambiguous, invalid, self (`[[#H]]`) get no link menu in body or rest. Lane 10 R-28 hands to "menu lane"; no lane costs it.
+- X-7 Lane 10 applier (applyEdit + effects + resolve) vs S3-2 writeLinkAt (pendingTitle.ts): two announce-and-fetch writers unless the applier calls writeLinkAt.
+- X-8 #9 S3-2 mid −45 includes Plain Text removal −3; Q8 ruled Plain Text stays → −42 (the Lean bundle already used −42; Full bundles didn't).
+- X-9 F-054 is Fix | Literal (taken) at audit :501, unimplemented at HEAD (p10: cell `![[Page]]` → ["embed"]). Lane 11's "+12 disappears" is a cost avoided vs the taken fix, not a deletion; the bundle used only the claim half (#20 −6).
+- X-10 E-35: in a live cell the doc is display form; cellCommitChange escapes via cellToSource (sync.ts:21). At rest (1d paste), commit goes through onCommit too. Retarget writing a bare pipe is escaped on commit — check whether any path writes page coordinates directly (only T-A's page sweep).

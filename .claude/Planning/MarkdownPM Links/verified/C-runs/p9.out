@@ -1,0 +1,81 @@
+--- title rename Old->New: body-path | frontmatter-path
+"[[Old]]" => "[[New]]" | "[[New]]"
+"[[Old|a]]" => "[[New|a]]" | "[[New|a]]"
+"[[Old|New]]" => "[[New|New]]" | "[[New]]"
+"[[Old#H]]" => "[[New#H]]" | "[[New#H]]"
+"[[Old#H|a]]" => "[[New#H|a]]" | "[[New#H|a]]"
+"[x](Old)" => "[x](New)" | "[x](Old)"
+"[x](Old#H)" => "[x](New#H)" | "[x](Old#H)"
+"[[#H]]" => "[[#H]]" | "[[#H]]"
+"[[#H|a]]" => "[[#H|a]]" | "[[#H|a]]"
+"[x](#H)" => "[x](#H)" | "[x](#H)"
+"[[ Old ]]" => "[[New]]" | "[[New]]"
+"[x](https://old.com)" => "[x](https://old.com)" | "[x](https://old.com)"
+"see [[Old]] too" => "see [[New]] too" | "see [[Old]] too"
+"[New](Old)" => "[New](New)" | "[New](Old)"
+--- own-page title rename (own=Own) Own->Neu, value [[#H]]
+"[[#H]]" {}
+--- heading rename Old#H -> H2 (own=Old): body | fm
+"[[Old#H]]" => "[[Old#H2]]" | "[[Old#H2]]"
+"[[Old#H|a]]" => "[[Old#H2|a]]" | "[[Old#H2|a]]"
+"[x](Old#H)" => "[x](Old#H2)" | "[x](Old#H)"
+"[[#H]]" => "[[#H2]]" | "[[#H2]]"
+"[x](#H)" => "[x](#H2)" | "[x](#H)"
+"§H" => "§H2" | "§H"
+"[[Old#H|H2]]" => "[[Old#H2|H2]]" | "[[Old#H2|H2]]"
+--- heading rename to inexpressible "A|B": body | fm
+"[[Old#H]]" "[[Old#H]]" "[[Old#H]]"
+"[x](Old#H)" "[x](Old#A%7CB)" "[x](Old#H)"
+--- readLink kinds
+"[[Old]]" {"kind":"page","title":"Old"}
+"[[Old|a]]" {"kind":"page","title":"Old","alias":"a"}
+"[[Old|New]]" {"kind":"page","title":"Old","alias":"New"}
+"[[Old#H]]" {"kind":"page","title":"Old","heading":"H"}
+"[[Old#H|a]]" {"kind":"page","title":"Old","heading":"H","alias":"a"}
+"[x](Old)" {"kind":"url","url":"Old","alias":"x"}
+"[x](Old#H)" {"kind":"url","url":"Old#H","alias":"x"}
+"[[#H]]" {"kind":"page","title":"","heading":"H"}
+"[[#H|a]]" {"kind":"page","title":"","heading":"H","alias":"a"}
+"[x](#H)" {"kind":"url","url":"#H","alias":"x"}
+"[[ Old ]]" {"kind":"page","title":"Old"}
+"[x](https://old.com)" {"kind":"url","url":"https://old.com","alias":"x"}
+"see [[Old]] too" {"kind":"url","url":"see [[Old]] too"}
+"[New](Old)" {"kind":"url","url":"Old","alias":"New"}
+--- index: frontmatterMentions + valueLinks per value (own=Me)
+"[[Old]]" [{"target":"old","qualifier":""}] []
+"[[Old|a]]" [{"target":"old","qualifier":""}] []
+"[[Old|New]]" [{"target":"old","qualifier":""}] []
+"[[Old#H]]" [{"target":"old","qualifier":"h"}] []
+"[[Old#H|a]]" [{"target":"old","qualifier":"h"}] []
+"[x](Old)" [] [["markdown","old",""]]
+"[x](Old#H)" [] [["markdown","old","h"]]
+"[[#H]]" [{"target":"me","qualifier":"h"}] []
+"[[#H|a]]" [{"target":"me","qualifier":"h"}] []
+"[x](#H)" [] [["markdown","me","h"]]
+"[[ Old ]]" [{"target":"old","qualifier":""}] []
+"[x](https://old.com)" [] []
+"see [[Old]] too" [] [["wiki","old",""]]
+"[New](Old)" [] [["markdown","old",""]]
+--- linkValueFromEdit (resolver knows Old, Page)
+"[[Old]]" => {"kind":"link","value":"[[Old]]"}
+"[[Old|a]]" => {"kind":"link","value":"[[Old|a]]"}
+"[x](Old)" => {"kind":"link","value":"[[Old|x]]"}
+"[x](Old#H)" => {"kind":"link","value":"[[Old#H|x]]"}
+"[x](https://a.com)" => {"kind":"link","value":"[x](https://a.com)"}
+"[x](example.com)" => undefined
+"example.com" => {"kind":"link","value":"https://example.com"}
+"[[#H]]" => undefined
+"[[Nope]]" => undefined
+"[x](Nope)" => undefined
+"[x](#H)" => undefined
+"[[Old#H|a]]" => {"kind":"link","value":"[[Old#H|a]]"}
+"[a](b) [c](d)" => undefined
+"[^1](https://a.com)" => {"kind":"link","value":"[^1](https://a.com)"}
+"[[Old|Old]]" => {"kind":"link","value":"[[Old]]"}
+--- linkEditText / linkDisplayText
+"[[Old|a]]" "[[Old|a]]" "a"
+"[x](Old)" "Old" "x"
+"[x](https://a.com)" "https://a.com" "x"
+"[[#H]]" "[[#H]]" ""
+"[[Old#H]]" "[[Old#H]]" "Old"
+--- yaml nested {"kind":"page","title":"Old"} {"title":"","heading":"H"}

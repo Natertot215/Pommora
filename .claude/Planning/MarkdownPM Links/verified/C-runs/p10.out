@@ -1,0 +1,11 @@
+linkMarkdown: [A | B](https://a.co)
+cellToSource: [A \| B](https://a.co)  display back: [A | B](https://a.co)  roundtrip: true
+row cells (escaped): ["x","[A \\| B](https://a.co)"]
+row cells (raw): ["x","[A","B](https://a.co)"]
+display tokens: ["link"]
+cell markers: [{"line":0,"from":3,"to":7,"label":"1","ordinal":null}]
+toggle off inside bold: {"changes":[{"from":2,"to":4,"insert":""},{"from":8,"to":10,"insert":""}]}
+toggle at plain caret: {"changes":[{"from":0,"to":0,"insert":"**"},{"from":0,"to":0,"insert":"**"}],"selection":2}
+toggle over selection: {"changes":[{"from":2,"to":2,"insert":"**"},{"from":6,"to":6,"insert":"**"}],"selection":8}
+formatState in bold: {"bold":true,"italic":false,"strikethrough":false,"highlight":null,"inlineCode":false,"link":false,"connection":false,"heading":0,"list":null,"block":null}
+cell embed tokens: ["embed"]

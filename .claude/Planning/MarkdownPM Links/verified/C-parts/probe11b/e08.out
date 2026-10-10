@@ -1,0 +1,78 @@
+== tokenize: before || after
+"![[P]]" :: embed[![[P]]]@0,6 shown="P" || wikiLink[[[P]]]@1,6 shown="P"
+"![[P#H|a]]" :: embed[![[P#H|a]]]@0,10 shown="P" || wikiLink[[[P#H|a]]]@1,10 shown="a"
+"!![[P]]" :: embed[![[P]]]@1,7 shown="P" || wikiLink[[[P]]]@2,7 shown="P"
+"![[P]]]" :: embed[![[P]]]@0,6 shown="P" || wikiLink[[[P]]]@1,6 shown="P"
+"![[]]" :: embed[![[]]]@0,5 shown="" || (none)
+"x ![[P]] y" :: embed[![[P]]]@2,8 shown="P" || wikiLink[[[P]]]@3,8 shown="P"
+"![[#H]]" :: embed[![[#H]]]@0,7 shown="" || wikiLink[[[#H]]]@1,7 shown="#H"
+"![[P|a]]" :: embed[![[P|a]]]@0,8 shown="P|a" || wikiLink[[[P|a]]]@1,8 shown="a"
+"![[P\\|a]]" :: embed[![[P\|a]]]@0,9 shown="P\\|a" || wikiLink[[[P\|a]]]@1,9 shown="a"
+== linkAt (after) at every offset
+"![[P]]" 0:- 1:1,6 2:1,6 3:1,6 4:1,6 5:1,6 6:1,6  alias@ null
+"![[P#H|a]]" 0:- 1:1,10 2:1,10 3:1,10 4:1,10 5:1,10 6:1,10 7:1,10 8:1,10 9:1,10 10:1,10  alias@ [7,8]
+"!![[P]]" 0:- 1:- 2:2,7 3:2,7 4:2,7 5:2,7 6:2,7 7:2,7  alias@ null
+"![[P]]]" 0:- 1:1,6 2:1,6 3:1,6 4:1,6 5:1,6 6:1,6 7:-  alias@ null
+"![[]]" 0:- 1:- 2:- 3:- 4:- 5:-  alias@ null
+"x ![[P]] y" 0:- 1:- 2:- 3:3,8 4:3,8 5:3,8 6:3,8 7:3,8 8:3,8 9:- 10:-  alias@ null
+"![[#H]]" 0:- 1:1,7 2:1,7 3:1,7 4:1,7 5:1,7 6:1,7 7:1,7  alias@ null
+"![[P|a]]" 0:- 1:1,8 2:1,8 3:1,8 4:1,8 5:1,8 6:1,8 7:1,8 8:1,8  alias@ [5,6]
+"![[P\\|a]]" 0:- 1:1,9 2:1,9 3:1,9 4:1,9 5:1,9 6:1,9 7:1,9 8:1,9 9:1,9  alias@ [6,7]
+== parseConnectionText before || after
+"![[P]]" null || null
+"![[P#H|a]]" null || null
+"!![[P]]" null || null
+"![[P]]]" null || null
+"![[]]" null || null
+"x ![[P]] y" null || null
+"![[#H]]" null || null
+"![[P|a]]" null || null
+"![[P\\|a]]" null || null
+== wholeWikiLink logic (after pattern)
+"![[P]]" index 1 whole false
+"![[P#H|a]]" index 1 whole false
+"!![[P]]" index 2 whole false
+"![[P]]]" index 1 whole false
+"![[]]" index 1 whole false
+"x ![[P]] y" index 3 whole false
+"![[#H]]" index 1 whole false
+"![[P|a]]" index 1 whole false
+"![[P\\|a]]" index 1 whole false
+== linksIn before || after(loop kept) || after(loop removed)
+"![[P]]" ["embed:p#@0"] || ["wiki:p#@1","embed:p#@0"] || ["wiki:p#@1"]
+"![[P#H|a]]" ["embed:p#h|a@0"] || ["wiki:p#h@1","embed:p#h|a@0"] || ["wiki:p#h@1"]
+"!![[P]]" ["embed:p#@1"] || ["wiki:p#@2","embed:p#@1"] || ["wiki:p#@2"]
+"![[P]]]" ["embed:p#@0"] || ["wiki:p#@1","embed:p#@0"] || ["wiki:p#@1"]
+"![[]]" ["embed:own#@0"] || ["embed:own#@0"] || []
+"x ![[P]] y" ["embed:p#@2"] || ["wiki:p#@3","embed:p#@2"] || ["wiki:p#@3"]
+"![[#H]]" ["embed:own#h@0"] || ["wiki:own#h@1","embed:own#h@0"] || ["wiki:own#h@1"]
+"![[P|a]]" ["embed:p|a#@0"] || ["wiki:p#@1","embed:p|a#@0"] || ["wiki:p#@1"]
+"![[P\\|a]]" ["embed:p\\|a#@0"] || ["wiki:p#@1","embed:p\\|a#@0"] || ["wiki:p#@1"]
+"![[Own]]" ["embed:own#@0"] || ["wiki:own#@1","embed:own#@0"] || ["wiki:own#@1"]
+== sectionRunsIn §H inside embed: before || after
+"![[A §Intro]] and §Intro" [{"from":5,"to":11,"heading":"Intro"},{"from":18,"to":24,"heading":"Intro"}] || [{"from":18,"to":24,"heading":"Intro"}]
+== rewriteConnections Old->New: before || after(passes kept) || after(passes removed)
+"![[Old]]" "![[New]]" || "![[New]]" || "![[New]]"
+"![[Old#H]]" "![[New#H]]" || "![[New#H]]" || "![[New#H]]"
+"![[Old|a]]" "![[Old|a]]" || "![[New|a]]" || "![[New|a]]"
+"!![[Old]]" "!![[New]]" || "!![[New]]" || "!![[New]]"
+"x ![[Old]] [[Old]] [y](Old)" "x ![[New]] [[New]] [y](New)" || "x ![[New]] [[New]] [y](New)" || "x ![[New]] [[New]] [y](New)"
+"`![[Old]]`" "`![[Old]]`" || "`![[Old]]`" || "`![[Old]]`"
+"![[Old\\|a]]" "![[Old\\|a]]" || "![[New\\|a]]" || "![[New\\|a]]"
+== rewriteHeadingConnections P#H->Z
+"![[P#H]]" "![[P#Z]]" || "![[P#Z]]" || "![[P#Z]]"
+"![[P#H|a]]" "![[P#H|a]]" || "![[P#Z|a]]" || "![[P#Z|a]]"
+"x ![[P#H]] [[P#H]]" "x ![[P#Z]] [[P#Z]]" || "x ![[P#Z]] [[P#Z]]" || "x ![[P#Z]] [[P#Z]]"
+== E-09 anchored lone grammar
+"![[P]]" old "P" new {"page":"P"} indices.page=[3,4] linkSpans {"full":[0,6],"title":[3,4],"heading":null,"alias":null}
+"![[P]]  " old "P" new {"page":"P"} indices.page=[3,4] linkSpans {"full":[0,8],"title":[3,4],"heading":null,"alias":null}
+"![[P#H]]" old "P#H" new {"page":"P","heading":"H"} indices.page=[3,4] linkSpans {"full":[0,8],"title":[3,4],"heading":[5,6],"alias":null}
+"![[P|a]]" old "P|a" new {"page":"P","alias":"a"} indices.page=[3,4] linkSpans {"full":[0,8],"title":[3,4],"heading":null,"alias":[5,6]}
+"![[]]" old "" new {"page":""} indices.page=[3,3] linkSpans null
+"![[#H]]" old "#H" new {"page":"","heading":"H"} indices.page=[3,3] linkSpans {"full":[0,7],"title":[3,3],"heading":[4,5],"alias":null}
+"  ![[P]]" old null new null linkSpans -
+"![[P]]]" old null new null linkSpans -
+"!![[P]]" old null new null linkSpans -
+"![[P\\|a]]" old "P\\|a" new {"page":"P\\","alias":"a"} indices.page=[3,5] linkSpans {"full":[0,9],"title":[3,4],"heading":null,"alias":[6,7]}
+"![[a]b]]" old null new {"page":"a]b"} indices.page=[3,6] linkSpans {"full":[0,8],"title":[3,6],"heading":null,"alias":null}
+flags d source has lookbehind? false
