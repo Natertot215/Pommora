@@ -15,7 +15,7 @@ One working practice Nathan asked to be passed on explicitly. When an answer can
 ### 1. Where Things Stand
 
 - **Repository:** `~/The Studio/Projects/Project Pommora`, branch `active`. Production code is unchanged since `42a18f4a5`, which is the Link Gestures commit `75c3bcb9c` plus its docs reconcile; every later commit touches `.claude/` only. Nothing from this effort is implemented.
-- **The Plan:** `.claude/Planning/MarkdownPM Links — Implementation Plan.md`, drafted 10-10-2026, STATUS Draft, eleven phases and forty-four tasks, with every AFTER written as the intended code. Its BASELINE table is filled at ratification: head `42a18f4a5`, 521 test files / 7,528 tests.
+- **The Plan:** `.claude/Planning/MarkdownPM Links — Implementation Plan.md`, drafted 10-10-2026, STATUS Draft, eleven phases and forty-three tasks, with every AFTER written as the intended code. Its BASELINE table is filled at ratification: head `42a18f4a5`, 521 test files / 7,528 tests.
 - **The Checkpoints:** The first (approach, phase order, ten questions, disclosed calls) was taken 10-10-2026 and its answers are folded into §5 and §12. The second (the drafted plan walked through in plain terms) was delivered with the plan; any adjustment Nathan gives lands in the plan before the first reviewer reads it.
 - **Next:** The plan reviews (§4.2), then presentation and ratification, then implementation in a later session.
 - **Proving Work:** Two scouts built parts of the design on scratch worktrees at `42a18f4a5` and saved their diffs (§7). Neither is committed to the code; the plan applies the first in Task 1-1 and writes Phase 9 from the second.
