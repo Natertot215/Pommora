@@ -50,6 +50,10 @@ describe('headingHash', () => {
     })
   })
 
+  it('an unclosed title, [[Pa then §, is the title half', () => {
+    expect(headingHash(scanDoc('[[Pa'), 4, 4, '§')).toMatchObject({ insert: '#' })
+  })
+
   it('a § typed over a selection inside the title replaces it with #', () => {
     expect(headingHash(scanDoc('[[Alpha]]'), 2, 7, '§')).toEqual({
       from: 2,

@@ -1,11 +1,7 @@
 import { linkDestinationStart, opensFragment } from '../../Connections/links'
-import { type DocScan, inCodeAt } from '../Engine/docScan'
+import { type DocScan, inCodeNear } from '../Engine/docScan'
 import { lineIndexAt } from '../Engine/markdownCode'
-import { connectionAt, type Edit } from '../Input/edits'
-
-// A `[[` just typed before its closer or a pipe: the empty title the link grammar doesn't read yet.
-const openedTitle = (line: string, rel: number): [number, number] | null =>
-  line.slice(rel - 2, rel) === '[[' && /^(?:\||\]\])/.test(line.slice(rel)) ? [rel, rel] : null
+import { connectionAt, type Edit, openConnectionAt } from '../Input/edits'
 
 // The one transform that fires only where a link names its page — a wikilink's title half or a markdown link's destination: every transform in `Input/edits.ts` stands down there, and the file only ever holds `#`. An alias or a label is prose, and a heading may hold the character.
 export function headingHash(
@@ -14,14 +10,14 @@ export function headingHash(
   selEnd: number,
   inserted: string,
 ): Edit | null {
-  if (inserted !== '§' || inCodeAt(scan, selStart) || inCodeAt(scan, selStart - 1)) return null
+  if (inserted !== '§' || inCodeNear(scan, selStart)) return null
   const li = lineIndexAt(scan, selStart)
   const from = selStart - scan.lineStarts[li]
   const to = selEnd - scan.lineStarts[li]
   const line = scan.lines[li]
-  const title = connectionAt(scan, selStart)?.title ?? openedTitle(line, from)
+  const title = (connectionAt(scan, selStart) ?? openConnectionAt(scan, selStart))?.title
   const dest = linkDestinationStart(line, from)
-  const inTitle = title !== null && from >= title[0] && to <= title[1]
+  const inTitle = title !== undefined && from >= title[0] && to <= title[1]
   const inPageHalf =
     dest !== null &&
     opensFragment(line.slice(dest, from)) &&

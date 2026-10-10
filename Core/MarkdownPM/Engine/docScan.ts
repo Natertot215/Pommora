@@ -4,6 +4,7 @@ import {
   isBlockquoteLine,
   lineEndOf,
   lineIndexAt,
+  lineStartAt,
   type CodeMask,
 } from './markdownCode'
 import {
@@ -353,6 +354,9 @@ export function inCodeAt(
 ): boolean {
   return codeAt(scan, (i) => scan.fences[i] !== undefined, pos)
 }
+
+export const inCodeNear = (scan: DocScan, pos: number): boolean =>
+  inCodeAt(scan, pos) || (pos > lineStartAt(scan.text, pos) && inCodeAt(scan, pos - 1))
 
 export const inFenceAt = (scan: DocScan, pos: number): boolean =>
   scan.fences[lineIndexAt(scan, pos)] !== undefined

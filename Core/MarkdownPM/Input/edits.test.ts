@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { scanDoc } from '../Engine/docScan'
 import {
   marginSign,
-  isInsideWikilink,
+  openConnectionAt,
   continueListOnEnter,
   smartBackspace,
   canonicalizeCheckbox,
@@ -517,6 +517,10 @@ describe('dash + arrow auto-format', () => {
   it('an arrow typed inside a link address stays literal', () => {
     expect(dashArrow(scanDoc('[w](a-)'), 6, 6, '>')).toBeNull()
   })
+  it('a dash inside a connection stays literal, closed or still open', () => {
+    expect(dashArrow(scanDoc('[[A --'), 6, 6, 'b')).toBeNull()
+    expect(dashArrow(scanDoc('[[A --]]'), 6, 6, 'b')).toBeNull()
+  })
   it('-- then a letter → em-dash', () => {
     const doc = '--'
     const e = dashArrow(scanDoc(doc), 2, 2, 'a')!
@@ -870,16 +874,29 @@ describe('inAliasAt', () => {
   })
 })
 
-describe('isInsideWikilink', () => {
-  it('true inside [[...]], false past the closer', () => {
-    const t = '[[ab]] x'
-    expect(isInsideWikilink(3, t)).toBe(true)
-    expect(isInsideWikilink(7, t)).toBe(false)
+describe('openConnectionAt', () => {
+  it('reads an unclosed [[ as the connection it would be once closed, ending at the caret', () => {
+    expect(openConnectionAt(scanDoc('see [[Pro'), 9)).toMatchObject({
+      full: [4, 9],
+      title: [6, 9],
+      heading: null,
+      alias: null,
+    })
+    expect(openConnectionAt(scanDoc('[[Page#He'), 9)?.heading).toEqual([7, 9])
   })
 
-  it('resets per line (an unclosed [[ does not bleed to the next line)', () => {
-    const t = 'a [[b\nc]] d'
-    expect(isInsideWikilink(t.indexOf('c]]'), t)).toBe(false)
+  it('reads a [[ just typed as the empty opener', () => {
+    expect(openConnectionAt(scanDoc('x [['), 4)).toMatchObject({
+      full: [2, 4],
+      title: [4, 4],
+      heading: null,
+      alias: null,
+    })
+  })
+
+  it('reads nothing past a closed connection or inside a closed fence', () => {
+    expect(openConnectionAt(scanDoc('[[A]] b'), 6)).toBeNull()
+    expect(openConnectionAt(scanDoc('```\n[[A\n```'), 7)).toBeNull()
   })
 })
 
