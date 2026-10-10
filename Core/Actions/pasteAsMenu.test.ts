@@ -104,8 +104,7 @@ describe('what each form writes', () => {
     expect(w).toEqual({
       kind: 'link',
       text: `[example.com](${URL})`,
-      target: URL,
-      wantsTitle: true,
+      awaits: URL,
     })
   })
 

@@ -33,12 +33,7 @@ export function decidePaste(input: PasteInput): PasteDecision {
   // A selection chooses the wrap axis; a bare caret chooses the format axis. The chord inverts only whichever axis is in play.
   const wrappable = input.selectionText !== '' && !/[\r\n]/.test(input.selectionText)
   if (wrappable && !input.inverse)
-    return {
-      kind: 'link',
-      text: serializeLink(target, input.selectionText),
-      target,
-      wantsTitle: false,
-    }
+    return { kind: 'link', text: serializeLink(target, input.selectionText) }
 
   // A chord spent choosing the wrap axis does not also flip the format axis.
   if (!wrappable && input.inverse) return LITERAL

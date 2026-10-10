@@ -1,6 +1,7 @@
 import { connectionText, parseConnectionText, wholeLink } from './connections'
 import { escapeAlias, markdownPageLink, targetFragment, targetTitle, unescapeAlias } from './links'
-import { isValidLink, linkDomain, normalizeLinkUrl } from '../Paths/urlPath'
+import { isHttpLink, isValidLink, linkDomain, normalizeLinkUrl } from '../Paths/urlPath'
+import { normalizeTitle } from '../Paths/caseFold'
 import type { LinkDisplay } from '../Properties/properties'
 import type { PropertyValue } from '../Properties/propertyValue'
 import type { ConnResolution, PageIndex } from './pageIndex'
@@ -148,8 +149,7 @@ export function linkDisplayText(raw: string, display?: LinkDisplay, title?: stri
 export interface LinkPaste {
   kind: 'link'
   text: string
-  target: string
-  wantsTitle: boolean
+  awaits?: string
 }
 
 /** The editor's deferred title rewrite reads this same function once its fetch lands, so a paste and its swap-in can never disagree about the form. */
@@ -159,10 +159,33 @@ export function linkMarkdown(url: string, display: LinkDisplay, title?: string):
 
 /** Every writer of a formatted link — paste, Paste As, Format rewrite — comes through here, so a link waiting on a title is announced the same way regardless of how it came to be. */
 export function linkPaste(url: string, display: LinkDisplay, title?: string): LinkPaste {
-  return {
-    kind: 'link',
-    text: linkMarkdown(url, display, title),
-    target: url,
-    wantsTitle: display === 'link-title' && title === undefined,
+  const text = linkMarkdown(url, display, title)
+  const awaits = display === 'link-title' && title === undefined && isHttpLink(url)
+  return awaits ? { kind: 'link', text, awaits: url } : { kind: 'link', text }
+}
+
+const sameTarget = (a: LinkTarget, b: LinkTarget): boolean =>
+  a.kind === 'page' && b.kind === 'page'
+    ? normalizeTitle(a.title) === normalizeTitle(b.title) &&
+      normalizeTitle(a.heading ?? '') === normalizeTitle(b.heading ?? '')
+    : a.kind === 'url' && b.kind === 'url' && a.url === b.url
+
+export function retarget(
+  syntax: 'wiki' | 'markdown',
+  container: LinkTarget | null,
+  next: LinkTarget,
+  keepTitle: boolean,
+  into?: { format: LinkDisplay; title?: string },
+): LinkPaste {
+  const kept = container && (keepTitle || sameTarget(container, next)) ? container.alias : undefined
+  const shown = next.alias ?? kept
+  if (next.kind === 'page') {
+    const text =
+      syntax === 'wiki'
+        ? connectionText(next.title, shown, next.heading)
+        : markdownPageLink(next.title, next.heading, shown)
+    return { kind: 'link', text }
   }
+  if (shown) return { kind: 'link', text: serializeLink(next.url, shown) }
+  return into ? linkPaste(next.url, into.format, into.title) : { kind: 'link', text: next.url }
 }

@@ -99,25 +99,20 @@ describe('decidePaste — which form the label takes', () => {
   it('writes a resolved title for Page Title, and asks for no fetch', () => {
     const d = at({ format: 'link-title', title: 'Example Domain' })
     expect(textOf(d)).toBe(`[Example Domain](${URL})`)
-    expect(d.kind === 'link' && d.wantsTitle).toBe(false)
+    expect(d.kind === 'link' && d.awaits).toBeUndefined()
   })
 
   it('writes Short Link for Page Title until the fetch lands, and asks for one', () => {
     const d = at({ format: 'link-title' })
     expect(textOf(d)).toBe(`[example.com](${URL})`)
-    expect(d.kind === 'link' && d.wantsTitle).toBe(true)
+    expect(d.kind === 'link' && d.awaits).toBe(URL)
   })
 
   it('never asks for a fetch in a form that has no title to show', () => {
     for (const format of ['link-full', 'link-short'] as const) {
       const d = at({ format })
-      expect(d.kind === 'link' && d.wantsTitle, format).toBe(false)
+      expect(d.kind === 'link' && d.awaits, format).toBeUndefined()
     }
-  })
-
-  it('reports the target it pointed at, whatever the label reads', () => {
-    const d = at({ format: 'link-short' })
-    expect(d.kind === 'link' && d.target).toBe(URL)
   })
 })
 

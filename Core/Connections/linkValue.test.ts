@@ -3,13 +3,16 @@ import { rewriteConnections, rewriteHeadingConnections } from './rewrite'
 import { LINK_DISPLAYS } from '../Properties/properties'
 import { parseConnectionText } from './connections'
 import type { ConnResolution, PageIndex } from './pageIndex'
+import type { LinkTarget } from './linkValue'
 import { normalizeTitle } from '../Paths/caseFold'
 import {
   linkDisplayText,
   linkEditText,
   linkValueFromEdit,
   linkValueFromRename,
+  linkPaste,
   readLinkText,
+  retarget,
   serializeLink,
   urlClickTarget,
 } from './linkValue'
@@ -328,5 +331,56 @@ describe('a connection under the Link cell’s three menu actions', () => {
       kind: 'link',
       value: '[[Meeting Notes]]',
     })
+  })
+})
+
+describe('retarget — the one rule for a link whose target changes', () => {
+  const pageOf = (title: string, alias?: string): LinkTarget => ({
+    kind: 'page',
+    syntax: 'wiki',
+    title,
+    ...(alias ? { alias } : {}),
+  })
+  const urlOf = (url: string): LinkTarget => ({ kind: 'url', syntax: 'bare', url })
+  const text = (...args: Parameters<typeof retarget>): string => retarget(...args).text
+
+  it('takes the next target, and the next link’s own alias', () => {
+    expect(text('wiki', pageOf('Page1'), pageOf('Page2'), false)).toBe('[[Page2]]')
+    expect(text('wiki', pageOf('Page1'), pageOf('Page2', 'x'), false)).toBe('[[Page2|x]]')
+  })
+  it('keeps the container’s alias only where the setting keeps it', () => {
+    expect(text('wiki', pageOf('Page1', 'Mine'), pageOf('Page2'), false)).toBe('[[Page2]]')
+    expect(text('wiki', pageOf('Page1', 'Mine'), pageOf('Page2'), true)).toBe('[[Page2|Mine]]')
+  })
+  it('keeps a markdown container markdown', () => {
+    expect(text('markdown', pageOf('Page1', 'y'), pageOf('Page2'), false)).toBe('[Page2](Page2)')
+    expect(text('markdown', pageOf('Page1', 'y'), pageOf('Page2'), true)).toBe('[y](Page2)')
+  })
+  it('writes an address in a connection as a weblink under the Default Link Format', () => {
+    expect(
+      retarget('wiki', pageOf('Page1'), urlOf('https://x.com'), false, { format: 'link-short' }),
+    ).toEqual({ kind: 'link', text: '[x.com](https://x.com)' })
+    expect(
+      retarget('wiki', pageOf('Page1'), urlOf('https://x.com'), false, { format: 'link-title' })
+        .awaits,
+    ).toBe('https://x.com')
+  })
+  it('keeps the alias when the target is unchanged', () => {
+    expect(text('wiki', pageOf('Page1', 'Mine'), pageOf('page1'), false)).toBe('[[page1|Mine]]')
+  })
+  it('writes a Link value’s address bare, with no format label', () => {
+    expect(retarget('wiki', null, urlOf('https://x.com'), false)).toEqual({
+      kind: 'link',
+      text: 'https://x.com',
+    })
+  })
+})
+
+describe('linkPaste — what awaits a title', () => {
+  it('awaits only an http address with no cached title under Page Title', () => {
+    expect(linkPaste('https://x.com', 'link-title').awaits).toBe('https://x.com')
+    expect(linkPaste('https://x.com', 'link-title', 'X').awaits).toBeUndefined()
+    expect(linkPaste('https://x.com', 'link-short').awaits).toBeUndefined()
+    expect(linkPaste('mailto:a@b.co', 'link-title').awaits).toBeUndefined()
   })
 })

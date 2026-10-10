@@ -54,12 +54,12 @@ function writeLink(view: EditorView, link: LinkPaste): void {
     changes: { from, to: selTo, insert: link.text },
     selection: { anchor: to },
     userEvent: 'input.paste',
-    effects: link.wantsTitle
-      ? awaitTitle.of({ from, to, url: link.target, text: link.text })
+    effects: link.awaits
+      ? awaitTitle.of({ from, to, url: link.awaits, text: link.text })
       : undefined,
   })
   // Fire-and-forget: the anchor effect above picks the answer back up.
-  if (link.wantsTitle) view.state.facet(editorHost).linkTitles.resolve(link.target)
+  if (link.awaits) view.state.facet(editorHost).linkTitles.resolve(link.awaits)
 }
 
 /** Re-read here rather than trusted from the menu: the document may have moved while it stood open. */
