@@ -220,3 +220,6 @@ Every question put to Nathan during the investigation, with his answer as it sta
 
 **Q:** Without an index, the fixed tiebreak reads a hand-written `[x](example.com)` Link value as an address, so deleting a page literally titled "example.com" never strips it. Take that as the one rule for all four host readers?
 **A:** Unreachable in practice; make the most coherent choice. Decided: one rule for all four readers. (Page titles may hold a dot; the name rule forbids one only in folder names, so a spaceless dotted title such as `v1.2` is the case this concedes.)
+
+**Q:** A Paste As pick inside a link: does the container keep its own syntax, as a plain ⌘V does, or does the row picked decide?
+**A:** Delegated to the planner. Decided: the row picked decides (Markdown Link or Connection sets the syntax, a link format sets the format, Plain Text lands the address as text); the container keeps its syntax only under ⌘V, where nothing was picked.
