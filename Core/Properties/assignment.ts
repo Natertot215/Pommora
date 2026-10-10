@@ -15,7 +15,7 @@ import {
   type Frozen,
   heldPropertyValue,
   isBlankValue,
-  namesGonePage,
+  gonePageEntry,
   reconcilePropertyValue,
   writtenSpelling,
 } from './propertyValue'
@@ -92,16 +92,16 @@ async function restoreCachedValues(
   // A cached Link naming a page gone leaves the cache: one whose page the Trash holds joins its bundle, one naming nothing is dropped.
   const gone =
     def.type === 'link'
-      ? Object.keys(members).filter((id) => namesGonePage(cached[id], frozen))
+      ? Object.keys(members).flatMap((id) => {
+          const entry = gonePageEntry(cached[id], frozen)
+          return entry === null ? [] : [{ page: id, property: propertyId, value: entry }]
+        })
       : []
   const spent = await refillValues(root, def, members, cached, frozen)
-  await parkLinks(
-    root,
-    gone.map((id) => ({ page: id, property: propertyId, value: String(cached[id]) })),
-  )
+  await parkLinks(root, gone)
   const written = await patchSidecar(collectionFolder, 'collection', (cur) => {
     const left = { ...(cachedValues(cur, propertyId) ?? {}) }
-    for (const id of [...spent, ...gone]) delete left[id]
+    for (const id of [...spent, ...gone.map((g) => g.page)]) delete left[id]
     return patchCacheBlock(cur, propertyId, Object.keys(left).length ? { values: left } : undefined)
   })
   return written.ok ? ok(null) : written

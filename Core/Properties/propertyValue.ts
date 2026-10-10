@@ -10,7 +10,7 @@ import {
 import { normalizeTitle } from '../Paths/caseFold'
 import { heldValue, landValue, writeTarget } from '../Files/heldKeys'
 import { yamlInline } from '../Files/pageFile'
-import { linkEntry, readLinkText } from '../Connections/linkValue'
+import { linkEntry, wholeValueLink } from '../Connections/linkValue'
 
 const strings = z.array(z.string())
 export const propertyValue = z.discriminatedUnion('kind', [
@@ -118,12 +118,14 @@ export interface Frozen {
   holds?: (title: string) => boolean
 }
 
-/** Whether `raw` is a Link naming a page `frozen` doesn't hold; one naming only a heading of its own page always stands. */
-export function namesGonePage(raw: unknown, frozen: Frozen): boolean {
-  const page = typeof raw === 'string' ? readLinkText(raw) : null
-  return (
-    page?.kind === 'page' && !!page.title && frozen.holds !== undefined && !frozen.holds(page.title)
-  )
+export function gonePageEntry(raw: unknown, frozen: Frozen): string | null {
+  const link = wholeValueLink(raw)
+  const gone =
+    link?.kind === 'page' &&
+    link.title !== '' &&
+    frozen.holds !== undefined &&
+    !frozen.holds(link.title)
+  return gone ? linkEntry(raw, 2) : null
 }
 
 // A restore of a frozen copy keeps only the options the definition still offers and the pages its world holds, so a deleted option or page never comes back through it.
@@ -134,7 +136,7 @@ export function reconcilePropertyValue(
 ): PropertyValue {
   const value = decodeValue(def, raw)
   if (!frozen) return value
-  if (value.kind === 'link') return namesGonePage(value.value, frozen) ? NULL_VALUE : value
+  if (value.kind === 'link') return gonePageEntry(value.value, frozen) === null ? value : NULL_VALUE
   if (value.kind !== 'multiSelect') return value
   const kept = value.value.filter((v) => registeredOption(def, v) !== undefined)
   return kept.length ? { kind: 'multiSelect', value: kept } : NULL_VALUE
