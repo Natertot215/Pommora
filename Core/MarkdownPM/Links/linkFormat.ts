@@ -47,8 +47,8 @@ function formatted(
   display: LinkDisplay,
   titles: EditorHost['linkTitles'],
 ): LinkActionText {
-  const { text, wantsTitle } = linkPaste(url, display, titles.get(url) ?? undefined)
-  return { insert: text, url, wantsTitle }
+  const { text, awaits } = linkPaste(url, display, titles.get(url) ?? undefined)
+  return { insert: text, url, wantsTitle: awaits !== undefined }
 }
 
 /** Works off the token's spans, the only thing that still knows where the label ends once the syntax is drawn away. `applyLinkAction` is the parallel for a wikilink, whose label is an alias over a title that resolves. */
