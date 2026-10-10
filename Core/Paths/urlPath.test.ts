@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isHttpLink, isValidLink, linkDomain, normalizeLinkUrl } from './urlPath'
+import { isHttpLink, isValidLink, isWebAddress, linkDomain, normalizeLinkUrl } from './urlPath'
 
 describe('linkDomain', () => {
   it('returns the bare host', () => {
@@ -56,5 +56,16 @@ describe('isHttpLink (the title-fetch gate — http(s) only)', () => {
   })
   it('rejects garbage the same as isValidLink', () => {
     expect(isHttpLink('not a url')).toBe(false)
+  })
+})
+
+describe('isWebAddress (a valid address with its http(s) scheme written)', () => {
+  it('admits a written https address', () => {
+    expect(isWebAddress('https://a.com')).toBe(true)
+  })
+  it('refuses a schemeless address, an invalid host, and another scheme', () => {
+    expect(isWebAddress('a.com')).toBe(false)
+    expect(isWebAddress('https://a')).toBe(false)
+    expect(isWebAddress('mailto:a@b.co')).toBe(false)
   })
 })

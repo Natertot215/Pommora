@@ -1,7 +1,7 @@
 // One owner for the guest-webview story: the attach gate, the shared session, popup routing, zoom.
 
 import { app, session, webContents, BrowserWindow, type Session, type WebContents } from 'electron'
-import { isHttpLink, WEB_ADDRESS } from '@pommora/core/Paths/urlPath'
+import { isWebAddress } from '@pommora/core/Paths/urlPath'
 import { WEB_PARTITION } from '@pommora/core/Web/guest'
 import { SETTING_DEFAULTS } from '@pommora/core/Settings/personalization'
 import { readInterfaceScale } from '@pommora/core/Settings/devicePrefs'
@@ -13,9 +13,6 @@ import { isWindows } from '../Platform/hostPath'
 
 /** Its server-side detection additionally trips on the Chrome token. */
 const GOOGLE_SIGNIN_HOST = 'accounts.google.com'
-
-// `isHttpLink` alone normalizes a schemeless string to https, admitting what the renderer refuses.
-const isWebUrl = (url: string): boolean => WEB_ADDRESS.test(url) && isHttpLink(url)
 
 // A page's own subframes draw generated content — PDF previews, sandboxed editors — from these.
 const FRAME_CONTENT = /^(?:blob|data):/i
@@ -114,7 +111,7 @@ function wireAppLevel(): void {
     // The renderer's one open-link adjudicator decides where the URL goes; no OS window ever opens.
     contents.setWindowOpenHandler(({ url }) => {
       const host = embedderOf(contents)
-      if (host && isWebUrl(url)) push(host, 'web:popup', url)
+      if (host && isWebAddress(url)) push(host, 'web:popup', url)
       return { action: 'deny' }
     })
 
@@ -137,7 +134,7 @@ function wireAppLevel(): void {
 
     // Re-asserted per navigation in every frame: a guest re-aimed after a clean attach would otherwise sail through on the signed-in partition.
     contents.on('will-frame-navigate', (event) => {
-      if (!isWebUrl(event.url) && (event.isMainFrame || !FRAME_CONTENT.test(event.url)))
+      if (!isWebAddress(event.url) && (event.isMainFrame || !FRAME_CONTENT.test(event.url)))
         event.preventDefault()
     })
 
@@ -154,7 +151,7 @@ export function installWebGuests(win: BrowserWindow): void {
     // Validator, not rewriter — spike-proven: `params` edits here don't reach the attach, so the surfaces carry `partition` and `allowpopups` as attributes (without the latter a guest's window.open dies inside Blink). This is the trust boundary.
     const src = params.src ?? ''
     if (
-      (src !== '' && !isWebUrl(src)) ||
+      (src !== '' && !isWebAddress(src)) ||
       params.partition !== WEB_PARTITION ||
       params.webpreferences
     ) {
