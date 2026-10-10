@@ -4,8 +4,6 @@ import { INSERT_LINK_ACTION, PASTE_PLAIN_ACTION } from '../../Actions/editorMenu
 import { isValidLink, normalizeLinkUrl } from '../../Paths/urlPath'
 import { serializeLink } from '../../Connections/linkValue'
 import { PASTE_AS_PREFIX, type PasteAsForm } from '../../Actions/pasteAsMenu'
-import type { HeadingLevel, ListKind } from '../../Actions/gripMenu'
-import type { BlockFormat } from '../../Actions/blockMenu'
 import { citationSeatAt, insertCitation } from '../Citations/citationActions'
 import { embedInsertAtCaret, embedSeatAt, webpageInsertAtCaret } from '../Embeds/embedInsert'
 import { pasteAs } from '../Links/pasteLink'
@@ -13,35 +11,9 @@ import { readFormatState } from '../Input/formatState'
 import type { MarkdownScope } from '../Engine/detect'
 import { editorHost } from '../api'
 import { applyEdit } from '../Input/applyEdit'
-import { docString } from '../docCache'
-import {
-  toggleInline,
-  setHeading,
-  setList,
-  setBlock,
-  type FormatEdit,
-  type InlineFormat,
-} from '../Input/format'
+import { docScan, docString } from '../docCache'
+import { editFor } from '../Input/format'
 import { trimmedRange } from '../Engine/markdownCode'
-import type { HighlightColor } from '../Engine/highlightColors'
-
-function editFor(action: string, doc: string, from: number, to: number): FormatEdit | null {
-  const [group, value] = action.split(':')
-  switch (group) {
-    case 'format':
-      return toggleInline(doc, from, to, value as InlineFormat)
-    case 'highlight':
-      return toggleInline(doc, from, to, 'highlight', value as HighlightColor)
-    case 'heading':
-      return setHeading(doc, from, to, Number(value) as HeadingLevel)
-    case 'list':
-      return setList(doc, from, to, value as ListKind)
-    case 'block':
-      return setBlock(doc, from, to, value as BlockFormat)
-    default:
-      return null
-  }
-}
 
 /** The selected words stay the label, so a schemeless address keeps its bare form while its target gains the scheme. */
 function insertLinkOverSelection(view: EditorView): boolean {
@@ -74,7 +46,7 @@ export function applyEditorAction(view: EditorView, action: string): boolean {
     return true
   }
   const sel = view.state.selection.main
-  if (!applyEdit(view, editFor(action, docString(view.state.doc), sel.from, sel.to))) return false
+  if (!applyEdit(view, editFor(action, docScan(view.state.doc), sel.from, sel.to))) return false
   view.focus()
   return true
 }
@@ -93,7 +65,7 @@ export const editorMenu = (scope: MarkdownScope): Extension =>
           at !== null && (at < sel.from || at > sel.to) ? [at, at] : [sel.from, sel.to]
         const page = scope === 'page'
         void ask({
-          ...readFormatState(docString(view.state.doc), from, to),
+          ...readFormatState(docScan(view.state.doc), from, to),
           scope,
           x: event.clientX,
           y: event.clientY,

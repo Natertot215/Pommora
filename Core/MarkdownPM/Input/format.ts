@@ -22,6 +22,7 @@ import type { BlockFormat, LinkFormat } from '../../Actions/blockMenu'
 import { emptyTable } from '../Engine/Tables/model'
 import { type HighlightColor, writtenMark } from '../Engine/highlightColors'
 import { serialize } from '../Engine/Tables/codec'
+import { type DocScan, inFenceAt } from '../Engine/docScan'
 
 export type InlineFormat = keyof typeof WRAP | LinkFormat
 
@@ -63,12 +64,14 @@ const MARKER_CHARS = '*_~=`'
 
 /** A highlight's `color` is null for the accent; one already highlighted in another color is recolored rather than removed. */
 export function toggleInline(
-  doc: string,
+  scan: DocScan,
   selFrom: number,
   selTo: number,
   fmt: InlineFormat,
   color: HighlightColor | null = null,
-): FormatEdit {
+): FormatEdit | null {
+  if (inFenceAt(scan, selFrom)) return null
+  const doc = scan.text
   const [from, to] = trimmedRange(doc, selFrom, selTo)
   if (fmt in LINKS) return toggleWrap(doc, from, to, LINKS[fmt as LinkFormat])
   const kind = fmt as keyof typeof WRAP & TokenKind
@@ -110,6 +113,29 @@ export function toggleInline(
       { from: to, to, insert: close },
     ],
     selection: to + open.length,
+  }
+}
+
+export function editFor(
+  action: string,
+  scan: DocScan,
+  from: number,
+  to: number,
+): FormatEdit | null {
+  const [group, value] = action.split(':')
+  switch (group) {
+    case 'format':
+      return toggleInline(scan, from, to, value as InlineFormat)
+    case 'highlight':
+      return toggleInline(scan, from, to, 'highlight', value as HighlightColor)
+    case 'heading':
+      return setHeading(scan.text, from, to, Number(value) as HeadingLevel)
+    case 'list':
+      return setList(scan.text, from, to, value as ListKind)
+    case 'block':
+      return setBlock(scan.text, from, to, value as BlockFormat)
+    default:
+      return null
   }
 }
 

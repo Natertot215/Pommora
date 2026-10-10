@@ -9,63 +9,86 @@ import {
   type FormatEdit,
 } from './format'
 import { landEdit } from '../../Testing/markdownEngine'
+import { scanDoc } from '../Engine/docScan'
 
-const apply = (doc: string, edit: FormatEdit): string => landEdit(doc, edit.changes, edit.relist)
+const apply = (doc: string, edit: FormatEdit | null): string => {
+  if (!edit) throw new Error('no edit')
+  return landEdit(doc, edit.changes, edit.relist)
+}
 
 describe('toggleInline', () => {
   it('wraps a selection', () => {
-    expect(apply('hello', toggleInline('hello', 0, 5, 'bold'))).toBe('**hello**')
+    expect(apply('hello', toggleInline(scanDoc('hello'), 0, 5, 'bold'))).toBe('**hello**')
   })
   it('unwraps when the selection already sits inside the mark', () => {
     const doc = 'a **bold** b'
-    expect(apply(doc, toggleInline(doc, 5, 5, 'bold'))).toBe('a bold b')
+    expect(apply(doc, toggleInline(scanDoc(doc), 5, 5, 'bold'))).toBe('a bold b')
   })
   it('unwraps a selection that includes the revealed markers', () => {
-    expect(apply('a **bold** b', toggleInline('a **bold** b', 2, 10, 'bold'))).toBe('a bold b')
-    expect(apply('a *it* b', toggleInline('a *it* b', 2, 6, 'italic'))).toBe('a it b')
+    expect(apply('a **bold** b', toggleInline(scanDoc('a **bold** b'), 2, 10, 'bold'))).toBe(
+      'a bold b',
+    )
+    expect(apply('a *it* b', toggleInline(scanDoc('a *it* b'), 2, 6, 'italic'))).toBe('a it b')
   })
   it('bold and italic replace each other instead of nesting', () => {
-    expect(apply('a **bold** b', toggleInline('a **bold** b', 4, 8, 'italic'))).toBe('a *bold* b')
-    expect(apply('a **bold** b', toggleInline('a **bold** b', 2, 10, 'italic'))).toBe('a *bold* b')
-    expect(apply('a **bold** b', toggleInline('a **bold** b', 5, 5, 'italic'))).toBe('a *bold* b')
-    expect(apply('a *it* b', toggleInline('a *it* b', 3, 5, 'bold'))).toBe('a **it** b')
-    expect(apply('a __b__ c', toggleInline('a __b__ c', 4, 5, 'italic'))).toBe('a *b* c')
+    expect(apply('a **bold** b', toggleInline(scanDoc('a **bold** b'), 4, 8, 'italic'))).toBe(
+      'a *bold* b',
+    )
+    expect(apply('a **bold** b', toggleInline(scanDoc('a **bold** b'), 2, 10, 'italic'))).toBe(
+      'a *bold* b',
+    )
+    expect(apply('a **bold** b', toggleInline(scanDoc('a **bold** b'), 5, 5, 'italic'))).toBe(
+      'a *bold* b',
+    )
+    expect(apply('a *it* b', toggleInline(scanDoc('a *it* b'), 3, 5, 'bold'))).toBe('a **it** b')
+    expect(apply('a __b__ c', toggleInline(scanDoc('a __b__ c'), 4, 5, 'italic'))).toBe('a *b* c')
   })
   it('a partial selection inside the other mark nests instead of swapping the whole span', () => {
     const doc = 'a **one two** b'
-    expect(apply(doc, toggleInline(doc, 4, 7, 'italic'))).toBe('a ***one* two** b')
+    expect(apply(doc, toggleInline(scanDoc(doc), 4, 7, 'italic'))).toBe('a ***one* two** b')
   })
   it('bold-italic drops only the pressed mark, and other marks still nest', () => {
-    expect(apply('a ***bi*** b', toggleInline('a ***bi*** b', 2, 10, 'bold'))).toBe('a *bi* b')
-    expect(apply('a ***bi*** b', toggleInline('a ***bi*** b', 5, 7, 'italic'))).toBe('a **bi** b')
-    expect(apply('a ~~s~~ b', toggleInline('a ~~s~~ b', 4, 5, 'bold'))).toBe('a ~~**s**~~ b')
+    expect(apply('a ***bi*** b', toggleInline(scanDoc('a ***bi*** b'), 2, 10, 'bold'))).toBe(
+      'a *bi* b',
+    )
+    expect(apply('a ***bi*** b', toggleInline(scanDoc('a ***bi*** b'), 5, 7, 'italic'))).toBe(
+      'a **bi** b',
+    )
+    expect(apply('a ~~s~~ b', toggleInline(scanDoc('a ~~s~~ b'), 4, 5, 'bold'))).toBe(
+      'a ~~**s**~~ b',
+    )
   })
   it('a leading or trailing space stays outside the wrap', () => {
-    expect(apply('a bold b', toggleInline('a bold b', 1, 7, 'bold'))).toBe('a **bold** b')
-    expect(apply('a Page b', toggleInline('a Page b', 2, 7, 'connection'))).toBe('a [[Page]] b')
+    expect(apply('a bold b', toggleInline(scanDoc('a bold b'), 1, 7, 'bold'))).toBe('a **bold** b')
+    expect(apply('a Page b', toggleInline(scanDoc('a Page b'), 2, 7, 'connection'))).toBe(
+      'a [[Page]] b',
+    )
   })
   it('link wraps with an empty url ready for typing', () => {
-    expect(apply('site', toggleInline('site', 0, 4, 'link'))).toBe('[site]()')
+    expect(apply('site', toggleInline(scanDoc('site'), 0, 4, 'link'))).toBe('[site]()')
   })
   it('seats an empty link at its url, and an alias-first one at its text', () => {
-    const url = toggleInline('', 0, 0, 'link')
-    expect(url.changes.map((c) => c.insert).join('')).toBe('[]()')
-    expect(url.selection).toBe(3)
-    const text = toggleInline('', 0, 0, 'linkText')
-    expect(text.changes.map((c) => c.insert).join('')).toBe('[]()')
-    expect(text.selection).toBe(1)
+    const url = toggleInline(scanDoc(''), 0, 0, 'link')
+    expect(url?.changes.map((c) => c.insert).join('')).toBe('[]()')
+    expect(url?.selection).toBe(3)
+    const text = toggleInline(scanDoc(''), 0, 0, 'linkText')
+    expect(text?.changes.map((c) => c.insert).join('')).toBe('[]()')
+    expect(text?.selection).toBe(1)
   })
   it('connection wraps the selection in [[ ]], and unwraps from inside', () => {
-    expect(apply('Page', toggleInline('Page', 0, 4, 'connection'))).toBe('[[Page]]')
-    expect(toggleInline('Page', 0, 4, 'connection').selection).toBe(6)
-    expect(toggleInline('', 0, 0, 'connection').selection).toBe(2)
+    expect(apply('Page', toggleInline(scanDoc('Page'), 0, 4, 'connection'))).toBe('[[Page]]')
+    expect(toggleInline(scanDoc('Page'), 0, 4, 'connection')?.selection).toBe(6)
+    expect(toggleInline(scanDoc(''), 0, 0, 'connection')?.selection).toBe(2)
     const doc = 'a [[Page]] b'
-    expect(apply(doc, toggleInline(doc, 5, 5, 'connection'))).toBe('a Page b')
+    expect(apply(doc, toggleInline(scanDoc(doc), 5, 5, 'connection'))).toBe('a Page b')
   })
   // Unwrapping leaves the words that were in the sentence; for an aliased link those are the alias, not the title — removing a link shouldn't rewrite the prose to a name the reader never saw.
   it('unwrapping an aliased connection leaves the alias behind, not the title', () => {
     const doc = 'a [[Q3 Plan|the plan]] b'
-    expect(apply(doc, toggleInline(doc, 14, 14, 'connection'))).toBe('a the plan b')
+    expect(apply(doc, toggleInline(scanDoc(doc), 14, 14, 'connection'))).toBe('a the plan b')
+  })
+  it('stands down on a fenced line', () => {
+    expect(toggleInline(scanDoc('```\n**b**\n```'), 6, 6, 'bold')).toBeNull()
   })
 })
 
@@ -306,26 +329,34 @@ describe('setBlock', () => {
 
 describe('highlight colors', () => {
   it('wraps in the written circle on both sides, caret after the content', () => {
-    const e = toggleInline('hi', 0, 2, 'highlight', 'red')
+    const e = toggleInline(scanDoc('hi'), 0, 2, 'highlight', 'red')
     expect(apply('hi', e)).toBe('==🔴hi🔴==')
-    expect(e.selection).toBe(6)
+    expect(e?.selection).toBe(6)
   })
   it('recolors a highlight of another color, the accent included', () => {
-    expect(apply('==hi==', toggleInline('==hi==', 3, 3, 'highlight', 'blue'))).toBe('==🔵hi🔵==')
-    expect(apply('==🟥hi🟥==', toggleInline('==🟥hi🟥==', 5, 5, 'highlight', 'green'))).toBe(
-      '==🟢hi🟢==',
+    expect(apply('==hi==', toggleInline(scanDoc('==hi=='), 3, 3, 'highlight', 'blue'))).toBe(
+      '==🔵hi🔵==',
     )
-    expect(apply('==🔴hi🔴==', toggleInline('==🔴hi🔴==', 5, 5, 'highlight'))).toBe('==hi==')
+    expect(
+      apply('==🟥hi🟥==', toggleInline(scanDoc('==🟥hi🟥=='), 5, 5, 'highlight', 'green')),
+    ).toBe('==🟢hi🟢==')
+    expect(apply('==🔴hi🔴==', toggleInline(scanDoc('==🔴hi🔴=='), 5, 5, 'highlight'))).toBe(
+      '==hi==',
+    )
   })
   it('removes a highlight already in the picked color', () => {
-    expect(apply('==🔴hi🔴==', toggleInline('==🔴hi🔴==', 5, 5, 'highlight', 'red'))).toBe('hi')
-    expect(apply('==hi==', toggleInline('==hi==', 3, 3, 'highlight'))).toBe('hi')
+    expect(apply('==🔴hi🔴==', toggleInline(scanDoc('==🔴hi🔴=='), 5, 5, 'highlight', 'red'))).toBe(
+      'hi',
+    )
+    expect(apply('==hi==', toggleInline(scanDoc('==hi=='), 3, 3, 'highlight'))).toBe('hi')
   })
   it('reaches a colored highlight from its revealed color marks', () => {
     const doc = 'a ==🔴text🔴== b'
-    expect(apply(doc, toggleInline(doc, 4, 4, 'highlight'))).toBe('a ==text== b')
-    expect(apply(doc, toggleInline(doc, 12, 12, 'highlight', 'red'))).toBe('a text b')
-    expect(apply(doc, toggleInline(doc, 2, 14, 'highlight', 'green'))).toBe('a ==🟢text🟢== b')
-    expect(apply(doc, toggleInline(doc, 4, 12, 'highlight'))).toBe('a ==text== b')
+    expect(apply(doc, toggleInline(scanDoc(doc), 4, 4, 'highlight'))).toBe('a ==text== b')
+    expect(apply(doc, toggleInline(scanDoc(doc), 12, 12, 'highlight', 'red'))).toBe('a text b')
+    expect(apply(doc, toggleInline(scanDoc(doc), 2, 14, 'highlight', 'green'))).toBe(
+      'a ==🟢text🟢== b',
+    )
+    expect(apply(doc, toggleInline(scanDoc(doc), 4, 12, 'highlight'))).toBe('a ==text== b')
   })
 })
