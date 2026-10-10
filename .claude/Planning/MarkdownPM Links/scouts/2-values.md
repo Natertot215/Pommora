@@ -31,52 +31,52 @@ In-flight files (`Core/MarkdownPM/Links/*`, `decorations.ts`, `Tables/cellStatic
 
 ### 2. Duplicated or Parallel Rules
 
-##### 2.1 Resolving a Connection Value: Two Resolvers Over One Index
+#### 2.1 Resolving a Connection Value: Two Resolvers Over One Index
 - **Value Side:** `resolveConnection(tree, title)` at `treeIndex.ts:284-288` returns `ConnPage | null` and discards `status`. Its callers are `LinkCell.tsx:75`, `connectionMenuActions.ts:90`, and `linkResolve.ts:8`.
 - **Editor / Text-Value Side:** `PageIndex.resolve` → `titleTarget` → `MdTarget` (`connectionsApi.ts`), carrying `ambiguous`.
 - **Difference:** Both read `pageIndexOf(tree)` (`treeIndex.ts:270,286`), so the resolution is identical, but the value side throws away phantom-vs-ambiguous. That's **drift**: it's why `ConnectionCell` draws every connection with one `.cell-connection` color (`UIX/Table/table.css:258-262`), whether it's resolved, phantom, or ambiguous. The editor and TextCell draw `md-connection-phantom` / `-ambiguous` (`renderCellContent`).
 
-##### 2.2 The Held `[[#Heading]]` Rule, Written Three Times
+#### 2.2 The Held `[[#Heading]]` Rule, Written Three Times
 - `heldTarget` (`linkClicks.ts`) is used by `linkGestures` and `resolveFollow` (TextCell, body).
 - `LinkCell.tsx:75`: `target.title ? resolveConnection(...) : (holder ?? null)`, a hand-written copy.
 - `linkValueMenuTarget` (`connectionMenuActions.ts:89-91`) has **no** held rule. `resolveConnection(tree, '')` hits `byTitle.get('')`, which `buildPageIndex` never fills (`pageIndex.ts:26`), so it returns null and the menu falls back to the generic `cellMenuModel({kind:'link'})` (`PropertyPanel.tsx:346`, `CardValue.tsx:116-121`, `TableView.tsx:289-293`). **Verified by reading:** a `[[#Setup]]` Link value follows to its holder on click (`LinkCell.test.tsx:42`) but right-clicks to "Edit / Rename / Clear" with no page rows, where a Text value's `[[#Setup]]` gets the page menu. That's **drift**.
 
-##### 2.3 Opening a Page Link: Bypasses the Connections Bundle
+#### 2.3 Opening a Page Link: Bypasses the Connections Bundle
 - `ConnectionCell` calls `useSession.select(...)` directly (`LinkCell.tsx:87-90`).
 - TextCell and the editor call `resolveFollow` → `openPage(api, …)` → `api.open`. `connectionsOf` honors `connectionsOpenInPreview` and the `'window'` mode there (`Core/Session/pageConnections.ts:17-19,37-39`).
 - **Verified by reading:** `Cell.tsx:131-137` doesn't pass `ctx.connections` to `LinkCell`. In a window's side pane, `WindowTabBody.tsx:160` passes `useConnections('window')` to `PropertyPanel` (`:215-219`), which flows into `ctx.connections` (`PropertyPanel.tsx:172`). A Text value's `[[Page]]` there opens in the window's tab strip (`openWindowTab`), while a Link value's `[[Page]]` calls `select` and lands in the main content view. Under the Open in Preview preference, a Link value also ignores it. In a glance (`'inert'` mode, `GlancePane.tsx:216`), the shared stack opens nothing; Link values reach PropertyPanel only via `hostConnections` (inferred: glance doesn't mount a PropertyPanel, so this is unverified there). This is a **user-visible defect**.
 
-##### 2.4 Displaying a Page Link: The Heading Is Dropped
+#### 2.4 Displaying a Page Link: The Heading Is Dropped
 - `ConnectionCell` shows `target.alias ?? (target.title || '#' + heading)` (`LinkCell.tsx:76,93`), so `[[Alpha#Setup]]` reads "Alpha" and the heading is invisible. A bare one reads `#Setup`.
 - `renderCellContent` (TextCell, cell, editor) draws `Alpha § Setup` and `§Setup`, with heading-missing marking and Heading Link Style.
 - `linkDisplayText` (`linkValue.ts:110-113`) mirrors the cell ("Alpha"), so filter and sort agree with the cell but not with the editor. That's **drift**.
 
-##### 2.5 Hover Preview
+#### 2.5 Hover Preview
 - TextCell: `onPointerOver` → `dwellTarget` (via `linkGestures`).
 - LinkCell: none. A Link value never glances, whether it's a page or an address. That's **drift** (`ConnectionsPM.md:73` names it).
 
-##### 2.6 Opening a URL: Two Openers on One Click
+#### 2.6 Opening a URL: Two Openers on One Click
 - The anchor `onClick` → `openWebLink(url)` fires for **any** non-empty `url` (`LinkCell.tsx:42,51-56`) and `stopPropagation`s.
 - Clicking the padding bubbles to `valueClickIntent` → `urlClickTarget` (`linkValue.ts:64-68`), which opens only when `isValidLink`; otherwise it returns `{kind:'edit'}` (`valueClick.ts:47-52`). The handlers are `open: ({url}) => openWebLink(url)` at `PropertyPanel.tsx:304`, `CardValue.tsx:91`, and `TableView.tsx:154`. `{kind:'open'}` has no other producer (`git grep "kind: 'open'"`).
 - **Difference:** For an invalid address (e.g. a hand-written `foo`, or `[x](Some%20Page)`, which `readLink` reads as url `Some%20Page`), clicking the text opens it, while clicking the padding edits it. `link:open` refuses it host-side (`Core/Web/handlers.ts:39-40`). With `openLinksInApp` on, `openWebLink` → `openBrowser(url)` (`openWebLink.ts:9`, `windowSlice.ts:247`) has no validity gate. *Inferred:* WebWindow opens on a non-address. The editor never follows an invalid target (`resolveFollow`'s `'invalid'` arm). This is **drift**, and the anchor's opener is the odd one.
 
-##### 2.7 The Link Look
+#### 2.7 The Link Look
 - The editor, cells, and Text values use `mdLinkClass(conn, target, ownKeys)` (`decorations.ts`): `md-link` / `md-link-invalid` / `md-connection-resolved` plus heading-missing.
 - LinkCell uses `.cell-link` (+ `.cell-link-underline`) with an inline `solidColorCss(def.link_color)` (`LinkCell.tsx:46-47`, `table.css:252-257`), and an invalid address draws exactly like a valid one.
 - **Difference:** The per-property color and underline **earn themselves** (`PropertiesPM.md:81`). The missing invalid tone is **drift**.
 
-##### 2.8 Title Fetch for an Address: Two Hooks
+#### 2.8 Title Fetch for an Address: Two Hooks
 - `LinkCell.tsx:33-38` and `WebTile.tsx:21-28` are the same four lines: `wantsTitle` gate, the `s.linkTitles[url]` selector, the `resolveLinkTitle` selector, and the effect. The editor's third reader is imperative (`editorHost.tsx:69-71`) and is correctly different, since it's a facet and not a hook.
 - **Difference:** Only the `wantsTitle` predicate differs. LinkCell adds `!alias && isHttpLink`; WebTile uses `label === ''`. That's mechanical duplication.
 
-##### 2.9 Four Parsers Over Copied/Typed Link Text
+#### 2.9 Four Parsers Over Copied/Typed Link Text
 - `readLink` (`linkValue.ts:30`): connection, else `[a](u)` → url, else bare url. A markdown link naming a page reads as **url**.
 - `parsePastedLink` (`linkValue.ts:48-62`): a markdown link naming a page reads as **page** (with resolve).
 - `pasteAsTarget` + `wholeWikiLink` (`Core/Actions/pasteAsMenu.ts:28-47`): F-042 already covers these.
 - `namesGonePage` (`propertyValue.ts:123-126`) calls `parseConnectionText` directly, not `readLink`. It's equivalent for a connection, but it's a fourth entry point.
 - **Consequence (verified by reading):** a Link value hand-written as `[x](Old)` is indexed as a backlink to *Old*. `valueLinks` skips only `readLink(...).kind === 'page'` (`scan.ts:134`), then `linksIn` reads the markdown link as a page mention (`scan.ts:99-104`). A rename doesn't rewrite it, though: `patchOf` sends Link-typed keys only through `rewriteFrontmatterConnections` (`cascade.ts:199-204`), which skips non-`page` `readLink` results (`rewrite.ts:125-126`). Delete doesn't strip it either (`cascade.ts:95-99`). It displays and opens as an (invalid) address (§2.6). The app's own field never writes this form, because `linkValueFromEdit` converts it to `[[Title|x]]` (`linkValue.ts:89`, `:59-60`). So the state comes from hand-edits and external writers (an agent or Obsidian). **Drift:** the value side answers "is `[x](Page)` a page?" yes when typed, no when read.
 
-##### 2.10 Two Value-Menu Builders Beside the Token Ones
+#### 2.10 Two Value-Menu Builders Beside the Token Ones
 - `linkValueMenuTarget` (`connectionMenuActions.ts:76-103`) resolves on its own and builds `ConnMenuTarget` by hand, narrowing `ConnUrlAction` → `ConnEditAction` with a filtering wrapper (`:98-100`).
 - `linkMenuTarget` / `tokenMenuTarget` (`connectionsApi.ts`) build from `MdTarget`.
 - **Difference:** The value menu genuinely needs `surface:'cell'`, `editable`, `hasAlias`, and `onCell`, which the surface earns. Its separate resolution doesn't (§2.1, §2.2).
@@ -110,7 +110,7 @@ In-flight files (`Core/MarkdownPM/Links/*`, `decorations.ts`, `Tables/cellStatic
 
 Baseline line counts come from `wc -l` (production). Deltas are estimates from reading.
 
-##### A: A Link Value Naming a Page Rides the Shared Stack (Lead)
+#### A: A Link Value Naming a Page Rides the Shared Stack (Lead)
 - **Deletes:** `ConnectionCell` (`LinkCell.tsx:64-97`, −34), the page branch and its imports (`isCmd`, `resolveConnection`, the `LinkTarget` type; about −5), and `.cell-connection` (`table.css:258-262`, −5).
 - **Adds:** LinkCell's page kind renders `<TextCell text={showFullLink ? unaliased : raw} connections={connections} holder={holder} />` (+3, where `unaliased` is `connectionText(title, undefined, heading)` to keep `TableView.tsx:680`'s alias-popover behavior). `Cell.tsx:131-137` passes `ctx.connections` (+1).
 - **Menu Seam:** TextCell's `linkGestures` would otherwise open the read-only link menu and `stopPropagation`, pre-empting the parent's editable value menu. That makes A depend on B. If it's taken alone, TextCell has to decline the menu (+2 for an optional `menuAt` passthrough, which `linkGestures` already accepts).
@@ -123,14 +123,14 @@ Baseline line counts come from `wc -l` (production). Deltas are estimates from r
   - Hovering glances.
 - **Depends On:** `linkGestures` / `resolveFollow` / `renderCellContent` staying exported (they're in-flight in `cellStatic.tsx` / `linkClicks.ts`). It also inherits TextCell's F-062 gap (no `around` or `headingLinkStyle`); fix F-062 once in TextCell and both values get it.
 
-##### B: The Value Menu Lives With the Value (Stacks on A)
+#### B: The Value Menu Lives With the Value (Stacks on A)
 - **Deletes:** The three parent `if (t === 'link')` blocks (`TableView.tsx:287-293`, `CardValue.tsx:114-121`, `PropertyPanel.tsx:339-347`'s link half; about −20). `linkValueMenuTarget`'s own resolve plus the `apply` filter go too (`connectionMenuActions.ts:81-102` → about 10 lines, built as `linkMenuTarget(heldTarget(titleTarget(api, …), own), …)` spread with the cell fields; about −12). That also fixes §2.2's `[[#H]]` menu.
 - **Adds:** One `onLinkAction`-shaped prop threaded through `Cell` (+2) and passed by the three surfaces (+3 each, +9), plus the `menuAt` handed to `linkGestures` (+3).
 - **Net:** −20 − 12 + 2 + 9 + 3 ≈ **−18**.
 - **Behavior:** Unchanged, except the `[[#H]]` menu gains its page rows.
 - **Depends On:** The `menuAt` parameter of `linkGestures` (in-flight `cellStatic.tsx`). The parents' `runMenuIntent` closures stay, so B can't be zero-add.
 
-##### C: One Reader per Concern, Unused Machinery Out (Independent, Mostly Mechanical)
+#### C: One Reader per Concern, Unused Machinery Out (Independent, Mostly Mechanical)
 - **`useLinkTitle(url, wants)`:** One hook in `Core/Session/cacheSlice.ts` (+7) replaces `LinkCell.tsx:33-38` (−6) and `WebTile.tsx:21-28`'s body (−7, keeping the `label` fallback). Net −6.
 - **One URL Opener:** The LinkCell anchor's `onClick` becomes `preventDefault` only (−4), and the click bubbles to `valueClickIntent`'s `open`. This fixes §2.6: invalid addresses edit instead of opening, and the text and the padding agree. `linkDisplayText` / the anchor render only valid URLs with the `md-link-invalid` look (+1). Net −3.
 - **`urlClickTarget`** (`linkValue.ts:64-68`, −6): `valueClick.ts:47-52` reads `readLink` once and checks `isValidLink` itself (+1). Net −5.
@@ -141,7 +141,7 @@ Baseline line counts come from `wc -l` (production). Deltas are estimates from r
 
 **A + B + C Total:** about **−88** production lines.
 
-##### D (Optional, Cross-Scout, Behavioral): `readLink` Reads a Markdown Link Naming a Page as a Page
+#### D (Optional, Cross-Scout, Behavioral): `readLink` Reads a Markdown Link Naming a Page as a Page
 `readLink` gains `parsePastedLink`'s page-target arm, without resolving (+4). `parsePastedLink` reduces to "readLink, then resolve a page arm" (−8). That makes the value read, the scan, the rename, and the delete agree on `[x](Page)` (§2.9). The cost: a rename rewrites such a value through `connectionText` (`rewrite.ts:130`), which converts the form to `[[New|x]]`, and that change is visible in the file. Net about −4. It overlaps with F-042's `readPastedLink` and should be decided with the paste scout.
 
 ### 7. Would Go False

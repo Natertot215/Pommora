@@ -571,19 +571,19 @@ The planner must add an unclosed-opener read for `[[` and `[label](`, most natur
 
 **A-113 [C] De-Duplicated Ledger for These Four Surfaces:** Estimates, not measurements. Each line is counted once:
 
-| Item | Delta |
-|---|---|
-| S1-A | −46 |
-| S1-B, unique part | −11 |
-| S2-A (excluding CSS) | −33 |
-| S2-B, corrected | −13 |
-| S2-C | −32 |
-| One link reader (S3-1; absorbs S2-D's −4, which deletes the same `parsePastedLink` lines) | −15 |
-| S3-2 beyond S3-1, corrected | about −45 |
-| S3-3 | +3 |
-| S4-A | −14 |
-| S4-B | −18 |
-| S4-C | −32 |
+| Item                                                                                      | Delta     |
+| ----------------------------------------------------------------------------------------- | --------- |
+| S1-A                                                                                      | −46       |
+| S1-B, unique part                                                                         | −11       |
+| S2-A (excluding CSS)                                                                      | −33       |
+| S2-B, corrected                                                                           | −13       |
+| S2-C                                                                                      | −32       |
+| One link reader (S3-1; absorbs S2-D's −4, which deletes the same `parsePastedLink` lines) | −15       |
+| S3-2 beyond S3-1, corrected                                                               | about −45 |
+| S3-3                                                                                      | +3        |
+| S4-A                                                                                      | −14       |
+| S4-B                                                                                      | −18       |
+| S4-C                                                                                      | −32       |
 
 - **Total:** **About −256**, with S1-C (−6) and `aliasMemory` (−4) optional.
 - **Picker Ruling:** A-112's implementation will **add** lines not in any estimate.

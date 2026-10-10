@@ -16,7 +16,10 @@ Every question put to Nathan during the investigation, with his answer as it sta
 **A:** All of them (the Connections layer, the `[[` picker, Paste As and the clipboard, opening, embeds, and citations) wherever leaving one out would leave odd-ones-out behavior.
 
 **Q:** What does each neutral reviewer get?
-**A:** The plan-stage neutral reviewer gets the plan, its intent, and the whole codebase, and runs on Opus at xhigh effort. The post-implementation neutral reviewer gets only the before and after of the changed files, with no docs, plan, or statement of intent.
+**A:** The plan-stage neutral reviewer gets the plan, its intent, and the whole codebase. The post-implementation neutral reviewer gets only the before and after of the changed files, with no docs, plan, or statement of intent.
+
+**Q:** Which models run the reviews?
+**A:** Fable, for every plan review and post-implementation review.
 
 **Q:** Does `writing-plans-v3` change to match?
 **A:** No. The skill stays as it is; this effort adapts how it's used.
@@ -51,7 +54,7 @@ Every question put to Nathan during the investigation, with his answer as it sta
 **A:** Yes. It opens either way. Enter or picking a page completes it to `[[Page]]` and writes the closer.
 
 **Q:** And `[label](`?
-**A:** The same rule: it opens either way, and Enter or a pick writes the closing `)`.
+**A:** The same rule: it opens either way, and Enter or a pick writes the closing `)` and places the caret outside of the syntax like enter already does today.
 
 **Q:** Should the picker's heading list and the missing-heading mark read the same source?
 **A:** Yes, both read the index. The lag (a heading typed in another page moments ago) isn't reachable in practice.

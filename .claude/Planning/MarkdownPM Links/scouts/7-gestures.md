@@ -42,18 +42,18 @@ Baseline `75c3bcb9c`. Every claim is verified by reading unless marked *inferred
 
 #### Q2: Paths That Apply a Link Edit
 
-| Path | Where | Syntax Writer | Transaction |
-|---|---|---|---|
-| Body menu, wikilink | `linkEdit.ts:38-48` | `wikiAuthorTarget` inserts `\|` | `view.dispatch` + `focusRange` |
-| Body menu, markdown link | `linkFormat.ts:55-85` | `linkActionText` → `linkPaste` / `unescapeAlias` | `view.dispatch` + `awaitTitle` |
-| Resting cell menu, both kinds | `cellStatic.tsx:449-478` | Same two pure halves | `onCommit(string)` + `onSelect(range)` → `initialSelect` (`MarkdownTable.tsx:471`) → seat on mount (`CellEditor.tsx:257`); no `awaitTitle` (F-043) |
-| Format ▸ Page Title swap | `pendingTitle.ts:59` | `linkMarkdown` | Plugin dispatch |
-| Alias commit (Enter) | `linkEdit.ts:51-69` | None (caret only) | Dispatch |
-| Slot collapse | `linkEdit.ts:92-95` | Deletes `\|` or `#` | Dispatch |
-| Picker commit | `autocomplete.ts:198-250` (S4) | Hand-spelled `[[${value}]]`, `[[${value}#]]`, `[[${value}\|]]` | Hook dispatch |
-| Insert Link | `menu.ts:47-60` | `serializeLink` | Dispatch, `userEvent: 'input'` |
-| Format ▸ Link / Connection | `format.ts:55-59,116-145` | Its own `LINKS` table | `applyEdit` |
-| Paste and Paste As | S3 | `linkPaste`, `serializeLink`, `connectionText` | S3 |
+| Path                          | Where                          | Syntax Writer                                                  | Transaction                                                                                                                                        |
+| ----------------------------- | ------------------------------ | -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Body menu, wikilink           | `linkEdit.ts:38-48`            | `wikiAuthorTarget` inserts `\|`                                | `view.dispatch` + `focusRange`                                                                                                                     |
+| Body menu, markdown link      | `linkFormat.ts:55-85`          | `linkActionText` → `linkPaste` / `unescapeAlias`               | `view.dispatch` + `awaitTitle`                                                                                                                     |
+| Resting cell menu, both kinds | `cellStatic.tsx:449-478`       | Same two pure halves                                           | `onCommit(string)` + `onSelect(range)` → `initialSelect` (`MarkdownTable.tsx:471`) → seat on mount (`CellEditor.tsx:257`); no `awaitTitle` (F-043) |
+| Format ▸ Page Title swap      | `pendingTitle.ts:59`           | `linkMarkdown`                                                 | Plugin dispatch                                                                                                                                    |
+| Alias commit (Enter)          | `linkEdit.ts:51-69`            | None (caret only)                                              | Dispatch                                                                                                                                           |
+| Slot collapse                 | `linkEdit.ts:92-95`            | Deletes `\|` or `#`                                            | Dispatch                                                                                                                                           |
+| Picker commit                 | `autocomplete.ts:198-250` (S4) | Hand-spelled `[[${value}]]`, `[[${value}#]]`, `[[${value}\|]]` | Hook dispatch                                                                                                                                      |
+| Insert Link                   | `menu.ts:47-60`                | `serializeLink`                                                | Dispatch, `userEvent: 'input'`                                                                                                                     |
+| Format ▸ Link / Connection    | `format.ts:55-59,116-145`      | Its own `LINKS` table                                          | `applyEdit`                                                                                                                                        |
+| Paste and Paste As            | S3                             | `linkPaste`, `serializeLink`, `connectionText`                 | S3                                                                                                                                                 |
 
 These paths don't share one writer. The **rename/editLink caret rule for a markdown link is written twice**: `linkFormat.ts:64-66` and `cellStatic.tsx:469-470`. **Unlinking is written twice with different escaping**: Remove Link unescapes the label (`linkFormat.ts:32`), while Format ▸ Link toggled off writes the raw `contentRange` (`format.ts:124-133`), so `[a\]b](x)` becomes `a]b` one way and `a\]b` the other. **Wrapping a selection is written three times**: paste-over-selection (`pasteDecision.ts:38`) and Insert Link (`menu.ts:52`) escape through `serializeLink`, but `toggleWrap` (`format.ts:138-143`) writes `[`+selection+`]()` raw, so a selection holding `]` produces a broken link.
 
