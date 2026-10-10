@@ -1,14 +1,10 @@
 # Machine-local overrides: absolute paths and per-host hooks.
 settings.local.json
 
-# Symlinks into the Studio's own folders.
 skills
 commands
 agents
-
 scheduled_tasks.lock
-
-# Per-session scratch worktrees.
 worktrees/
-
+sessions/
 .DS_Store
