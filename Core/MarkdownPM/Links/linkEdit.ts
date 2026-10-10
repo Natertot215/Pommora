@@ -3,7 +3,7 @@ import { EditorSelection, type EditorState, type Extension, type Line } from '@c
 import type { LinkSpans } from '../../Connections/connections'
 import type { ConnEditAction } from '../../Actions/connectionMenu'
 import type { ConnectionsApi } from './connectionsApi'
-import { aliasedToken, type Token } from '../Engine/tokens'
+import { aliasedToken, type TokenOf } from '../Engine/tokens'
 import { docScan, docString } from '../docCache'
 import { spanAt } from '../Engine/docScan'
 import { connectionAt } from '../Input/edits'
@@ -16,11 +16,11 @@ import { clamp } from '@pommora/uix/Utilities/clamp'
 /** Pure of any editor, because a connection in a resting table cell has none. Reads the token's spans, since a displayed alias hides where the title is. */
 export function wikiAuthorTarget(
   text: string,
-  tk: Token,
+  tk: TokenOf<'wikiLink'>,
   action: ConnEditAction,
 ): { pipeAt?: number; select: [number, number] } {
   if (action === 'editLink') {
-    const [, titleEnd] = tk.resolveRange!
+    const [, titleEnd] = tk.resolveRange
     return { select: [titleEnd, titleEnd] }
   }
   if (aliasedToken(tk)) return { select: [tk.contentRange[0], tk.contentRange[1]] }

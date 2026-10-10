@@ -2,7 +2,7 @@ import type { Extension } from '@codemirror/state'
 import { isCmd } from '@pommora/uix/Interactions/chords'
 import type { EditorView } from '@codemirror/view'
 import { normalizeLinkUrl, WEB_ADDRESS } from '../../Paths/urlPath'
-import type { Token } from '../Engine/tokens'
+import type { LinkKind, Token } from '../Engine/tokens'
 import { docString } from '../docCache'
 import {
   openPage,
@@ -53,7 +53,7 @@ function linkUnder(
   const run = sectionRunAt(view, event, pos)
   if (run) return run
   // A connection acts as one only where connections resolve.
-  const tk = drawnLinkAt(view, pos, api ? undefined : 'link')
+  const tk = drawnLinkAt<LinkKind>(view, pos, api ? undefined : 'link')
   if (!tk) return null
   const target = heldTarget(tokenTarget(api, docString(view.state.doc), tk), ownPage(view))
   const el = (event.target as HTMLElement).closest?.(

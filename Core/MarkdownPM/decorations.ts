@@ -25,7 +25,9 @@ import {
   aliasedToken,
   linkTokenAt,
   shiftToken,
+  type LinkKind,
   type Token,
+  type TokenOf,
 } from './Engine/tokens'
 import {
   docHeadingKeys,
@@ -366,11 +368,11 @@ const chunkTokens = drawnLast(tokenizeChunk)
 const drawnTokens = new WeakMap<EditorView, readonly Token[]>()
 
 /** The link token the last draw tokenized at `pos`; code, and an HTML block drawn raw, hold none. */
-export const drawnLinkAt = (
+export const drawnLinkAt = <K extends LinkKind = LinkKind>(
   view: EditorView,
   pos: number,
-  kind?: 'link' | 'wikiLink',
-): Token | undefined => linkTokenAt(drawnTokens.get(view) ?? [], pos, kind)
+  kind?: K,
+): TokenOf<K> | undefined => linkTokenAt(drawnTokens.get(view) ?? [], pos, kind)
 
 // On-screen chunks only — the whole-document parse is what made long docs lag.
 function visibleInline(view: EditorView, scan: DocScan): ReturnType<typeof tokenizeChunk> {
@@ -579,7 +581,7 @@ function build(view: EditorView, conn: ConnectionsApi | undefined, scope: Markdo
     tokens.forEach((tk, i) => {
       if (tk.kind !== 'wikiLink') return
       const alias = aliasedToken(tk)
-      const [rs, re] = tk.resolveRange!
+      const [rs, re] = tk.resolveRange
       const { status, bare, missing } = wikiLinkView(conn, text, tk, ownKeys)
       const open = active.has(i)
       // `[[#]]` is a link being written: nothing to mark, only its syntax to dim.
@@ -590,7 +592,7 @@ function build(view: EditorView, conn: ConnectionsApi | undefined, scope: Markdo
       }
       // Revealed, an alias shows its whole target, page and heading both.
       const pipe: [number, number] | undefined = alias
-        ? [rs, tk.fragment?.[1] ?? re]
+        ? [rs, tk.heading?.[1] ?? re]
         : text[tk.contentRange[1]] === '|'
           ? tk.contentRange
           : undefined
@@ -600,8 +602,8 @@ function build(view: EditorView, conn: ConnectionsApi | undefined, scope: Markdo
         if (pipe)
           ranges.push(Decoration.mark({ class: 'md-connection-target' }).range(pipe[0], pipe[1]))
       }
-      if (tk.fragment && !open && !alias && status === 'resolved') {
-        const [hs, he] = tk.fragment
+      if (tk.heading && !open && !alias && status === 'resolved') {
+        const [hs, he] = tk.heading
         const showPage = headingLinkStyle !== 'heading-only' && !bare
         if (!bare)
           ranges.push(

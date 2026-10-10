@@ -3,7 +3,7 @@ import { EditorView } from '@codemirror/view'
 import { tokenTarget, type ConnectionsApi } from '../Links/connectionsApi'
 import { type MarkerRef, citationFor, markersFor } from '../Engine/detect'
 import { lineEndOf } from '../Engine/markdownCode'
-import { tokenize, type Token } from '../Engine/tokens'
+import { type LinkKind, tokenize, type TokenOf } from '../Engine/tokens'
 import { docScan, docString } from '../docCache'
 import { type FollowEvent, followTarget } from '../Links/linkClicks'
 import { applyCitationAction, travelToCitation } from './citationActions'
@@ -16,7 +16,7 @@ export const CITE_GLYPH = '.md-citation-reference'
 /** Drawn over hidden source rather than written, so it is the one element a press on the row can be aimed at. */
 const CITE_ROW_GLYPH = '.md-citation-number'
 
-export function loneTarget(content: string): { text: string; tk: Token } | null {
+export function loneTarget(content: string): { text: string; tk: TokenOf<LinkKind> } | null {
   const text = content.trim()
   const tk = tokenize(text).find((t) => t.range[0] === 0 && t.range[1] === text.length)
   return tk?.kind === 'wikiLink' || tk?.kind === 'link' ? { text, tk } : null
