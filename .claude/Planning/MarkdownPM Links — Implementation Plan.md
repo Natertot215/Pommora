@@ -32,21 +32,23 @@ What a person sees: `[x](Page)` edits like `[[Page]]`; every link reads **Rename
 | `expressibleInLink` • Function                                                                            | Whether a title or heading can be written inside link syntax; the name rule and the embed tree read it.                                                         | `Core/Connections/connections.ts`                                                       |
 | `connectionAt`, `openConnectionAt` • Functions                                                            | The closed connection at an offset, and the unclosed one read as if its `]]` were written.                                                                      | `Core/MarkdownPM/Input/edits.ts`                                                        |
 | `TokenBase`, `LinkKind`, `TokenOf<K>` • Types; `wholeLinkToken` • Function                                | The token union with a `wikiLink` arm that always carries `resolveRange`, and the one reader of a text that is exactly one link.                                | `Core/MarkdownPM/Engine/tokens.ts`                                                      |
-| `readLinkText` • Function, `Resolve` • Type                                                               | The one reader of a whole link's text: page or URL, with its written syntax, resolved by the index when a resolver is given and by the fixed tiebreak when not. | `Core/Connections/linkValue.ts`                                                         |
+| `readLinkText` • Function                                                               | The one reader of a whole link's text: page or URL, with its written syntax, resolved by the index when a resolver is given and by the fixed tiebreak when not. | `Core/Connections/linkValue.ts`                                                         |
 | `retarget` • Function                                                                                     | The one rule for changing a link's target: syntax kept (a URL into `[[…]]` becomes markdown), shown text per the pasted alias, the kept alias, or the setting.  | `Core/Connections/linkValue.ts`                                                         |
 | `markdownPageLink` • Function                                                                             | The one markdown spelling of a page link.                                                                                                                       | `Core/Connections/links.ts`                                                             |
 | `isWebAddress` • Function                                                                                 | A URL with a written http(s) scheme that validates; the paste, embed, and guest gates read it.                                                                  | `Core/Paths/urlPath.ts`                                                                 |
 | `EditorHost.connections` • Member                                                                         | The page index as every editor piece reads it, live through the host facet.                                                                                     | `Core/MarkdownPM/api.ts`                                                                |
 | `inRawHtml` • Function                                                                                    | Whether an offset sits inside a raw-HTML block on a page.                                                                                                       | `Core/MarkdownPM/Links/linkEdit.ts`                                                     |
 | `PageHeading` • Type                                                                                      | A heading's text and level as the index stores it.                                                                                                              | `Core/Platform/stores.ts`                                                               |
-| `PageHeadings` • Type                                                                                     | A page's heading keys and outline as the renderer holds them.                                                                                                   | `Core/Connections/pageIndex.ts`                                                         |
+| `PageHeadings` • Type, `headingKeys` • Function | A page's heading keys and outline as the renderer holds them, and the one derivation of the keys from an outline. | `Core/Connections/pageIndex.ts`                                                         |
 | `LinkLook` • Type, `linkLook`, `linkClass` • Functions                                                    | One link's target, status, missing mark, bare flag, and heading join, and the class its tone wears; both renderers read it.                                     | `Core/MarkdownPM/Links/connectionsApi.ts`                                               |
 | `md-block-query` • Class                                                                                  | The `/` menu's query look.                                                                                                                                      | `Core/MarkdownPM/markdown-pm.css`                                                       |
 | `srcOf` • Function, `RestingHit` • Type, `data-src` / `data-link` / `data-at` / `data-base` • Attributes  | The resting renderer's source spans on every drawn element, the link mark, verbatim offsets, and line bases.                                                    | `Core/MarkdownPM/Tables/cellStatic.tsx`                                                 |
 | `cellOffsetAt`, `restingRange`, `commitEdit`, `restingAction`, `pasteAtRest` • Functions; `onFill` • Prop | The pointer-to-source mapper, the resting right-click's range, the one guarded commit, and the resting menu's reply dispatch.                                   | `Core/MarkdownPM/Tables/cellStatic.tsx`                                                 |
-| `valueTarget` • Function                                                                                  | A property value's resolved target through the shared token path.                                                                                               | `Core/Properties/Cells/valueTarget.ts`                                                  |
+| `valueTarget`, `valueMenuTarget` • Functions | A property value's resolved target through the shared token path, and its link menu target built from its context and row. | `Core/Properties/Cells/valueTarget.ts`                                                  |
 | `useLinkTitle` • Hook                                                                                     | Subscribes to an address's title and fetches it once when wanted.                                                                                               | `Core/Web/useLinkTitle.ts`                                                              |
-| `writeLinkAt`, `forwardTitles` • Functions                                                                | The one writer that announces a pending title and settles it, and the forward for an editor closing with one pending.                                           | `Core/MarkdownPM/Links/pendingTitle.ts`                                                 |
+| `writeLinkAt`, `forwardTitles`, `settledLinkText` • Functions | The one writer that announces a pending title and settles it, the forward for an editor closing with one pending, and the text a surface with no editor commits once the title answers. | `Core/MarkdownPM/Links/pendingTitle.ts` |
+| `inCodeNear` • Function | Code at the caret or just behind it on the same line; the caret paths and the paste read it. | `Core/MarkdownPM/Engine/docScan.ts` |
+| `gonePageEntry` • Function | The entry a Link value holds when it names a page the frozen world lacks; the three restore paths note and park it. | `Core/Properties/propertyValue.ts` |
 | `LinkMenuContext`, `LinkEditAction`, `LinkAction` • Types; `isLinkAction`, `FORMAT_ROW`                   | The link menu's one model and its action vocabulary.                                                                                                            | `Core/Actions/connectionMenu.ts`                                                        |
 | `LinkMenuTarget` • Type                                                                                   | What a link's menu is built from: the target, editability, and the value's closing rows.                                                                        | `Core/MarkdownPM/Links/connectionsApi.ts`                                               |
 | `LinkEdit` • Type, `linkEdit` • Function                                                                  | A menu pick turned into text or a selection, pure.                                                                                                              | `Core/MarkdownPM/Links/linkEdit.ts`                                                     |
@@ -70,10 +72,11 @@ What a person sees: `[x](Page)` edits like `[[Page]]`; every link reads **Rename
 | `linkInCode`, `isInsideWikilink` | Two caret readers the code mask and `openConnectionAt` replace. | `Core/MarkdownPM/Input/edits.ts` |
 | `readLink`, `parseLink`, `parsePastedLink`, `linkAlias`, `urlClickTarget`, `LinkValue`, `ConnectionParts`, `ResolveTitle` | The value readers and types `readLinkText` and `LinkTarget` absorb. | `Core/Connections/linkValue.ts`, `Core/Connections/connections.ts` |
 | `PasteAsTarget`, `wholeWikiLink`, `pasteAsTarget` | Paste As's own clipboard reader. | `Core/Actions/pasteAsMenu.ts` |
+| `namesGonePage` | The boolean the three restore paths read before re-reading the value for its note. | `Core/Properties/propertyValue.ts` |
 | `pasteDecision.ts` • File; `linkFor`, `literalAt`, `writeLink`, `pasteAs` | The second paste decision and the writers the pipeline replaces. | `Core/MarkdownPM/Links/` |
 | The connections getter (22 signatures), `embedHost.getConn`, `tableConnections` • Facet, `ConnGetter`, the `connections` prop on `MarkdownEditor`, `CellEditor`, `MarkdownTable`, `StaticCell` | Connections threaded by hand. | `Core/MarkdownPM/` |
 | `openPage`, `ConnectionsApi.bypass` | The second and third page-open routes. | `Core/MarkdownPM/Links/connectionsApi.ts`, `Core/Session/pageConnections.ts` |
-| `WikiLinkView`, `wikiLinkView`, `linkStatus`, `mdLinkClass`, `MD_LINK_CLASS` | The two look rules. | `Core/MarkdownPM/Links/connectionsApi.ts`, `Core/MarkdownPM/decorations.ts` |
+| `WikiLinkView`, `wikiLinkView`, `mdLinkClass`, `MD_LINK_CLASS` | The two look rules. | `Core/MarkdownPM/Links/connectionsApi.ts`, `Core/MarkdownPM/decorations.ts` |
 | `md-link-invalid`, `md-unresolved-syntax`, `md-unresolved-fixed` • Classes | The second unresolved treatment and the class that kept the plain-syntax setting out of resting cells. | `Core/MarkdownPM/markdown-pm.css` |
 | `LINK_SELECTOR`, `linkSpanAt`, `data-link-span`, `menuTarget`, `still` | The resting renderer's own hit test and menu. | `Core/MarkdownPM/Tables/cellStatic.tsx` |
 | `sweepOnTitles` • Plugin, `linkTitles.subscribe` • Member | The subscription sweep the promise replaces. | `Core/MarkdownPM/Links/pendingTitle.ts`, `Core/MarkdownPM/api.ts` |
@@ -133,8 +136,9 @@ What a person sees: `[x](Page)` edits like `[[Page]]`; every link reads **Rename
   - [ ] Task 6-1 — The link menu answers
   - [ ] Task 6-2 — One builder and one target type
   - [ ] Task 6-3 — One pure edit and one live applier
-  - [ ] Task 6-4 — The body, the resting cell's link door, and the Text value read the builder
-  - [ ] Task 6-5 — The three value parents read the builder
+  - [ ] Task 6-4 — The resting cell's seat and guarded commit
+  - [ ] Task 6-5 — The body, the resting cell's link door, and the Text value read the builder
+  - [ ] Task 6-6 — The three value parents read the builder
   - [ ] Review Checkpoint
 - [ ] **Phase 7** — Paste
   - [ ] Task 7-1 — One pipeline
@@ -148,10 +152,9 @@ What a person sees: `[x](Page)` edits like `[[Page]]`; every link reads **Rename
   - [ ] Task 8-4 — Panel Remove, the popover's alias, and the fallback menu
   - [ ] Review Checkpoint
 - [ ] **Phase 9** — MarkdownPM Table Cells at Rest
-  - [ ] Task 9-1 — One seat
-  - [ ] Task 9-2 — Every construct answers at rest
-  - [ ] Task 9-3 — Commit at rest
-  - [ ] Task 9-4 — System rows at rest
+  - [ ] Task 9-1 — Every construct answers at rest
+  - [ ] Task 9-2 — Commit at rest
+  - [ ] Task 9-3 — System rows at rest
   - [ ] Review Checkpoint
 - [ ] **Phase 10** — The Picker
   - [ ] Task 10-1 — The opener rule, and the embed form's end
@@ -438,7 +441,6 @@ Deleted whole: `Core/MarkdownPM/Engine/embedClaims.ts` and its test. Also: `targ
     const le = lineEndAt(doc, from)
     const line = doc.slice(ls, le)
 -   const tokens = tokenize(line)
-+   // Fenced lines hold no inline tokens.
 +   const tokens = inFenceAt(scan, from) ? [] : tokenize(line)
 ```
 
@@ -539,12 +541,20 @@ Deleted whole: `Core/MarkdownPM/Engine/embedClaims.ts` and its test. Also: `targ
 
 @@ isLiteralAt @@
   const isLiteralAt = (scan: DocScan, c: number): boolean =>
-    inCodeAt(scan, c) ||
+-   inCodeAt(scan, c) ||
++   inCodeNear(scan, c) ||
     spanAt(scan.maths, c) !== undefined ||
-    inCodeAt(scan, c - 1) ||
+-   inCodeAt(scan, c - 1) ||
 -   isInsideWikilink(c, scan.text) ||
 +   (connectionAt(scan, c) ?? openConnectionAt(scan, c)) !== null ||
     inUrlRun(scan.text, c)
+```
+
+```Core/MarkdownPM/Engine/docScan.ts diff
+@@ inCodeAt @@
++ /** Code at the caret or just behind it on the same line, which is where a typed character lands against a closing backtick; the caret paths and the paste read it. */
++ export const inCodeNear = (scan: DocScan, pos: number): boolean =>
++   inCodeAt(scan, pos) || (pos > lineStartAt(scan.text, pos) && inCodeAt(scan, pos - 1))
 ```
 
 ```Core/MarkdownPM/Links/headingHash.ts diff
@@ -552,9 +562,14 @@ Deleted whole: `Core/MarkdownPM/Engine/embedClaims.ts` and its test. Also: `targ
 - const openedTitle = (line: string, rel: number): [number, number] | null =>
 -   line.slice(rel - 2, rel) === '[[' && /^(?:\||\]\])/.test(line.slice(rel)) ? [rel, rel] : null
 @@ headingHash @@
+-   if (inserted !== '§' || inCodeAt(scan, selStart) || inCodeAt(scan, selStart - 1)) return null
++   if (inserted !== '§' || inCodeNear(scan, selStart)) return null
+    …
 -   const title = connectionAt(scan, selStart)?.title ?? openedTitle(line, from)
 +   const title = (connectionAt(scan, selStart) ?? openConnectionAt(scan, selStart))?.title
 ```
+
+`isLiteralAt` (`edits.ts:641`), `headingHash` (`headingHash.ts:21`), and `literalAt` (`pasteLink.ts:46`, rewritten in Task 7-1) spelled "code at or just behind the caret" three ways; `inCodeNear` is the one spelling, and the two caret paths gain the line-start exception only the paste had, so a `§` or a typographic replacement typed at the first column after a closing fence no longer stands down.
 
 **VERIFY**
 
@@ -610,8 +625,6 @@ Deleted whole: `Core/MarkdownPM/Engine/embedClaims.ts` and its test. Also: `targ
 + export type LinkTarget =
 +   | { kind: 'page'; syntax: 'wiki' | 'markdown'; title: string; heading?: string; alias?: string }
 +   | { kind: 'url'; syntax: 'markdown' | 'bare'; url: string; alias?: string }
-+
-+ export type Resolve = (title: string) => ConnResolution
 
 @@ wholeValueLink @@
   export function wholeValueLink(v: unknown): LinkTarget | null {
@@ -624,19 +637,16 @@ Deleted whole: `Core/MarkdownPM/Engine/embedClaims.ts` and its test. Also: `targ
 - export function readLink(raw: string): LinkTarget { … }
 - export function parseLink(raw: string): LinkValue { … }
 - function parsePastedLink(text: string, resolve?: ResolveTitle): string | null { … }
-+ /** The one reader of a whole link. A connection is a page. A markdown link whose target names a title is a page when the resolver says so, or, with no resolver (main has none), when the title is no valid address, so a spaceless dotted title reads as an address there (a conceded case). Anything else is a valid address normalized to a scheme, or nothing; ambiguity and a bare `[x](#Heading)` are refused. */
-+ export function readLinkText(text: string, resolve?: Resolve): LinkTarget | null {
++ /** The one reader of a whole link. A connection is a page, and a bare `#Heading` in either syntax a page with an empty title that the caller's resolver answers with the holder. A markdown link whose target names a title is a page when the resolver says so, or, with no resolver (main has none), when the title is no valid address, so a spaceless dotted title reads as an address there (a conceded case); a title-shaped target the resolver doesn't resolve is nothing, never an address. Anything else is a valid address normalized to a scheme, or nothing. */
++ export function readLinkText(text: string, resolve?: PageIndex['resolve']): LinkTarget | null {
 +   const conn = parseConnectionText(text)
 +   if (conn) return page('wiki', conn.title, conn.heading, conn.alias)
 +   const m = MD_LINK.exec(text.trim())
 +   const alias = m ? unescapeAlias(m[1]).trim() || undefined : undefined
 +   const dest = m ? m[2].trim() : text.trim()
 +   const title = m ? targetTitle(dest) : null
-+   if (title !== null) {
-+     const named = resolve ? resolve(title).status === 'resolved' : !isValidLink(dest)
-+     if (named) return page('markdown', title, targetFragment(dest) || undefined, alias)
-+     if (resolve) return null
-+   }
++   if (title !== null && (resolve || !isValidLink(dest)))
++     return page('markdown', title, targetFragment(dest) || undefined, alias)
 +   if (!isValidLink(dest)) return null
 +   return { kind: 'url', syntax: m ? 'markdown' : 'bare', url: normalizeLinkUrl(dest), alias }
 +
@@ -732,7 +742,7 @@ The edit seed (`linkEditText`) now shows a page without its alias, matching the 
 
 **VERIFY**
 
-- [ ] `pasteAsRows('[[T#H]]', false, false)` → Connection, Markdown Link; `pasteAsRows('[x](#H)', …)` → `[]`; `pasteAsRows('[x](example.com)', …)` → the address rows; `pasteAsWrite(readLinkText('[[T|a]]'), 'connection')` → `[[T|a]]`.
+- [ ] `pasteAsRows('[[T#H]]', false, false)` → Connection, Markdown Link; `pasteAsRows('[x](#H)', …)` and `pasteAsRows('[[#H]]', …)` → Connection, Markdown Link (a held heading in either syntax; no Embedded Page, since it carries a heading); `pasteAsRows('[x](example.com)', …)` → the address rows; `pasteAsWrite(readLinkText('[[T|a]]'), 'connection')` → `[[T|a]]`.
 - [ ] `grep -rn "readLink(\|parseLink(\|parsePastedLink\|PasteAsTarget\|wholeWikiLink\|ResolveTitle" Core Desktop --include='*.ts' --include='*.tsx'` is empty.
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
@@ -771,25 +781,100 @@ The edit seed (`linkEditText`) now shows a page without its alias, matching the 
 ```
 
 ```Core/Properties/propertyValue.ts diff
-@@ namesGonePage @@
-  export function namesGonePage(raw: unknown, frozen: Frozen): boolean {
+@@ namesGonePage → gonePageEntry @@
+- /** Whether `raw` is a Link naming a page `frozen` doesn't hold; one naming only a heading of its own page always stands. */
+- export function namesGonePage(raw: unknown, frozen: Frozen): boolean {
 -   const page = typeof raw === 'string' ? parseConnectionText(raw) : null
 -   return !!page?.title && frozen.holds !== undefined && !frozen.holds(page.title)
++ /** The entry a Link value holds when it names a page `frozen` doesn't hold, which the restore parks; one naming only a heading of its own page always stands. */
++ export function gonePageEntry(raw: unknown, frozen: Frozen): string | null {
 +   const link = wholeValueLink(raw)
-+   return link?.kind === 'page' && link.title !== '' && frozen.holds !== undefined && !frozen.holds(link.title)
++   const gone = link?.kind === 'page' && link.title !== '' && frozen.holds !== undefined && !frozen.holds(link.title)
++   return gone ? linkEntry(raw, 2) : null
   }
 ```
 
-```Core/Trash/restoreScrub.ts · Core/Trash/restoreProperty.ts · Core/Properties/assignment.ts diff
--     dropped.push({ page: id, property: def.id, value: String(raw[key]) })
-+     dropped.push({ page: id, property: def.id, value: linkEntry(raw[key], 2) ?? '' })
--     dropped.push({ page: id, property: def.id, value: String(raw) })
-+     dropped.push({ page: id, property: def.id, value: linkEntry(raw, 2) ?? '' })
--     gone.map((id) => ({ page: id, property: propertyId, value: String(cached[id]) })),
-+     gone.map((id) => ({ page: id, property: propertyId, value: linkEntry(cached[id], 2) ?? '' })),
+```Core/Trash/restoreScrub.ts diff
+@@ restoreScrub @@
+-   // Whether or not the destination assigns its key, a Link naming a page gone leaves, noted by its root's id.
+-   const unlinked = (raw: Record<string, unknown>): string[] =>
+-     Object.keys(raw).filter((k) => links.has(foldKey(k)) && namesGonePage(raw[k], frozen))
+-   const note = (raw: Record<string, unknown>, keys: string[], id: string | undefined): void => {
+-     for (const key of keys) {
++   // Whether or not the destination assigns its key, a Link naming a page gone leaves, noted by its root's id with the entry it held.
++   const unlinked = (raw: Record<string, unknown>): Record<string, string> =>
++     Object.fromEntries(
++       Object.entries(raw).flatMap(([k, v]) => {
++         const entry = links.has(foldKey(k)) ? gonePageEntry(v, frozen) : null
++         return entry === null ? [] : [[k, entry]]
++       }),
++     )
++   const note = (gone: Record<string, string>, id: string | undefined): void => {
++     for (const [key, value] of Object.entries(gone)) {
+        const def = links.get(foldKey(key))
+-       if (def && id) dropped.push({ page: id, property: def.id, value: String(raw[key]) })
++       if (def && id) dropped.push({ page: id, property: def.id, value })
+      }
+    }
+-   const unstamped = new Map<string, Record<string, unknown>>()
++   const unstamped = new Map<string, Record<string, string>>()
+    const text = (content: string, file: string): string | null => {
+      …
+      const gone = unlinked(raw)
+-     if (!r.changed.length && !gone.length) return null
+-     if (raw[ID_KEY] === undefined && gone.length)
+-       unstamped.set(file, Object.fromEntries(gone.map((k) => [k, raw[k]])))
+-     else note(raw, gone, asString(raw[ID_KEY]))
+-     const keys = [...new Set([...r.changed, ...gone])]
+-     const kept = stripKeys(r.root, gone) ?? r.root
++     const goneKeys = Object.keys(gone)
++     if (!r.changed.length && !goneKeys.length) return null
++     if (raw[ID_KEY] === undefined && goneKeys.length) unstamped.set(file, gone)
++     else note(gone, asString(raw[ID_KEY]))
++     const keys = [...new Set([...r.changed, ...goneKeys])]
++     const kept = stripKeys(r.root, goneKeys) ?? r.root
+      …
+-   for (const [file, lost] of unstamped)
+-     note(lost, Object.keys(lost), valueOr(await ensurePageId(file), undefined))
++   for (const [file, lost] of unstamped) note(lost, valueOr(await ensurePageId(file), undefined))
+    …
+        const gone = unlinked(next ?? raw)
+-       note(raw, gone, asString(raw.id))
+-       return stripKeys(next ?? raw, gone) ?? next
++       note(gone, asString(raw.id))
++       return stripKeys(next ?? raw, Object.keys(gone)) ?? next
 ```
 
-`namesGonePage` is true only for a value `wholeValueLink` reads as a page, so the `?? ''` arm is unreachable in practice and exists for the type; if the executor finds a cleaner spelling (a `noted(raw)` helper beside `linkEntry` that both `goneEntry` and the notes read), take it and say so.
+```Core/Trash/restoreProperty.ts diff
+-       if (def.type !== 'link' || !namesGonePage(raw, frozen)) return true
+-       dropped.push({ page: id, property: def.id, value: String(raw) })
++       const entry = def.type === 'link' ? gonePageEntry(raw, frozen) : null
++       if (entry === null) return true
++       dropped.push({ page: id, property: def.id, value: entry })
+        return false
+```
+
+```Core/Properties/assignment.ts diff
+    const gone =
+      def.type === 'link'
+-       ? Object.keys(members).filter((id) => namesGonePage(cached[id], frozen))
++       ? Object.keys(members).flatMap((id) => {
++           const entry = gonePageEntry(cached[id], frozen)
++           return entry === null ? [] : [{ page: id, property: propertyId, value: entry }]
++         })
+        : []
+    const spent = await refillValues(root, def, members, cached, frozen)
+-   await parkLinks(
+-     root,
+-     gone.map((id) => ({ page: id, property: propertyId, value: String(cached[id]) })),
+-   )
++   await parkLinks(root, gone)
+    …
+-     for (const id of [...spent, ...gone]) delete left[id]
++     for (const id of [...spent, ...gone.map((g) => g.page)]) delete left[id]
+```
+
+The note writes the entry `parkLinks` reads, so a nested-YAML value parks as the string it held; `namesGonePage`'s three callers all read the entry once.
 
 **VERIFY**
 
@@ -1315,7 +1400,6 @@ The carve-out: `keepTitle` is Remove Title On Link Change read as "off" at each 
 +   }
 
 @@ reindex @@
-+ const headingKeys = (headings: readonly PageHeading[]): string[] => [...new Set(headings.map((h) => normalizeTitle(h.text)))]
   function reindex(rows: readonly ReadRow[]): HeadingRenameSeen[] {
     const held = readHeadings(rows.map(({ path }) => path)) ?? {}
     upsertPageIndexes(rows)
@@ -1332,6 +1416,9 @@ The carve-out: `keepTitle` is Remove Title On Link Change read as "off" at each 
 +   keys: string[]
 +   outline: PageHeading[]
 + }
++
++ /** The keys an outline's headings answer to, each once; the host's rename detection and the session's `headingsOf` both derive them here. */
++ export const headingKeys = (headings: readonly PageHeading[]): string[] => [...new Set(headings.map((h) => normalizeTitle(h.text)))]
 ```
 
 ```Core/Session/nexusSlice.ts diff
@@ -1344,7 +1431,7 @@ The carve-out: `keepTitle` is Remove Title On Link Change read as "off" at each 
 +       const read = Object.fromEntries(
 +         Object.entries(res.value).map(([path, outline]) => [
 +           path,
-+           { keys: outline.map((h) => normalizeTitle(h.text)), outline },
++           { keys: headingKeys(outline), outline },
 +         ]),
 +       )
 +       set((s) => ({ headings: paths ? { ...s.headings, ...read } : read }))
@@ -1370,6 +1457,7 @@ The carve-out: `keepTitle` is Remove Title On Link Change read as "off" at each 
 **VERIFY**
 
 - [ ] `grep -rn "headingsOf\|s\.headings\[" Core --include='*.ts' --include='*.tsx' | grep -v test` lists only `.keys` or `.outline` reads and the two builders.
+- [ ] `engineGraph.test.ts` and `hostGraph.test.ts` pass with `Core/Connections/pageIndex.ts` importing the `PageHeading` type from `Core/Platform/stores.ts` (the first `Core/Connections → Core/Platform` edge in the tree, type-only); if a graph rule refuses it, `PageHeading` moves to `pageIndex.ts` and `stores.ts` imports it from there, and the task says so.
 - [ ] Run the gates; `indexSeed.test.ts`, `open.test.ts`, `contentIndex.test.ts`, `pageConnections.test.tsx` pass.
 - [ ] Open `~/Test`: the index reseeds once (log line or the `index_generation` row at 12), and a `[[Alpha#Missing]]` still draws the missing mark.
 - [ ] Check for unnecessary code or mistakes.
@@ -1547,7 +1635,6 @@ Every current caller (`pasteLink.ts:62`, `linkFormat.ts:85`, `cellStatic.tsx:474
 
 ```Core/MarkdownPM/Links/connectionsApi.ts diff
 - interface WikiLinkView { status: LinkStatus; bare: boolean; missing: boolean }
-- function linkStatus(target: MdTarget): LinkStatus { … }
 - export function wikiLinkView(conn, text, tk, ownKeys): WikiLinkView { … }
 + export interface LinkLook {
 +   target: MdTarget
@@ -1569,8 +1656,7 @@ Every current caller (`pasteLink.ts:62`, `linkFormat.ts:85`, `cellStatic.tsx:474
 +   headingLinkStyle: HeadingLinkStyle,
 + ): LinkLook {
 +   const target = tokenTarget(conn, text, tk)
-+   const status: LinkStatus =
-+     target.kind !== 'invalid' ? 'resolved' : target.ambiguous ? 'ambiguous' : 'phantom'
++   const status = linkStatus(target)
 +   const bare = target.kind === 'self'
 +   const join =
 +     tk.kind === 'wikiLink' && tk.heading && status === 'resolved' && !aliasedToken(tk)
@@ -1664,8 +1750,8 @@ Every current caller (`pasteLink.ts:62`, `linkFormat.ts:85`, `cellStatic.tsx:474
 ```Core/MarkdownPM/Links/linkClicks.ts diff
 @@ linkUnder @@
 -   const target = heldTarget(tokenTarget(api, docString(view.state.doc), tk), ownPage(view))
-+   const look = linkLook(api, docString(view.state.doc), tk, undefined, 'full')
-+   const target = heldTarget(look.target, ownPage(view))
++   const named = tokenTarget(api, docString(view.state.doc), tk)
++   const target = heldTarget(named, ownPage(view))
     const el = (event.target as HTMLElement).closest?.(
 -     `.md-connection-resolved, .md-connection-ambiguous, .md-heading-symbol, .${MD_LINK_CLASS}, .md-link-invalid`,
 +     '.md-connection-resolved, .md-connection-ambiguous, .md-heading-symbol, .md-link',
@@ -1674,7 +1760,7 @@ Every current caller (`pasteLink.ts:62`, `linkFormat.ts:85`, `cellStatic.tsx:474
       tk, target, range: tk.range,
       onText: el != null && pos >= tk.contentRange[0] && pos <= tk.contentRange[1],
 -     hidesSyntax: target.kind !== 'invalid' || (tk.kind === 'wikiLink' && target.ambiguous === true),
-+     hidesSyntax: look.status !== 'phantom',
++     hidesSyntax: linkStatus(named) !== 'phantom',
       pos,
     }
 @@ linkPointer @@
@@ -1682,7 +1768,7 @@ Every current caller (`pasteLink.ts:62`, `linkFormat.ts:85`, `cellStatic.tsx:474
 +   hoverGate: '.md-connection-resolved, .md-link',
 ```
 
-`linkUnder` wants only the target and the status, so `ownKeys` and the style don't matter to it; `'full'` is the setting's first value. If the reviewer prefers `tokenTarget` plus a status read here, the status rule must still live once: keep `linkLook`.
+`linkStatus` (`connectionsApi.ts:131`) stays as the one status rule: `linkLook` reads it for both renderers, and `linkUnder`, which wants only the target and its status, reads it directly.
 
 ```Core/MarkdownPM/markdown-pm.css diff
 - .md-link-invalid,
@@ -1799,10 +1885,12 @@ Every current caller (`pasteLink.ts:62`, `linkFormat.ts:85`, `cellStatic.tsx:474
 -   if (!holdsTokens(text)) return text
 -   const tokens = cellTokens(text)
 -   if (tokens.length === 0) return text
-+   const tokens: Drawn[] = holdsTokens(text) ? cellTokens(text) : []
-+   if (tokens.length === 0 && runs.length === 0) return text
-+   for (const r of runs) tokens.push({ kind: 'section', range: [r.from, r.to], contentRange: [r.from, r.to] })
-+   if (runs.length > 0) tokens.sort((a, b) => a.range[0] - b.range[0])
++   const held = holdsTokens(text) ? cellTokens(text) : []
++   if (held.length === 0 && runs.length === 0) return text
++   // The memo hands out its own array, so runs join a copy of it.
++   const tokens: readonly Drawn[] = runs.length
++     ? [...held, ...runs.map((r): Drawn => ({ kind: 'section', range: [r.from, r.to], contentRange: [r.from, r.to] }))].sort((a, b) => a.range[0] - b.range[0])
++     : held
     const conn = getConn?.()
 -   const out: React.ReactNode[] = []
 -   let pos = 0
@@ -1887,7 +1975,7 @@ Every current caller (`pasteLink.ts:62`, `linkFormat.ts:85`, `cellStatic.tsx:474
 +       }
 +       case 'citationRef': {
 +         const label = text.slice(cs, ce)
-+         const n = around?.ordinalOf(label) ?? null
++         const n = around?.ordinalOf?.(label) ?? null
 +         return n === null ? text.slice(s, e) : <span key={key++} className="md-citation-reference" data-cite-label={label}>{n}</span>
 +       }
 +       default:
@@ -1970,7 +2058,6 @@ Every `cellPage(doc, text)` call passes `state.facet(editorHost).settings().inPa
 +   const automatic = useSetting('inPageHeadingResolution') === 'automatic'
 +   const headings = holder && connections?.()?.headingsOf(holder.path)
 +   const around: CellPage | undefined = headings && {
-+     ordinalOf: () => null,
 +     ownKeys: headings.keys,
 +     sectionHeadings: automatic ? headings.outline.map((h) => h.text) : [],
 +   }
@@ -2070,12 +2157,13 @@ Every `cellPage(doc, text)` call passes `state.facet(editorHost).settings().inPa
         if (!api?.menu) return false
 -       const target = menuAt ? menuAt(e, api) : readOnlyMenu(e)
 +       const found = linkAt(e)
-+       const target = found && (menuAt ? menuAt(e, found, api) : linkMenuTarget(found.target))
++       if (!found?.tk) return false
++       const target = menuAt ? menuAt(e, found, api) : linkMenuTarget(found.target)
         …
       onPointerOver: (e) => {
         const found = glance && linkAt(e)
 -       if (found) dwellTarget(heldTarget(found.target, own), glance, found.el)?.()
-+       if (found) dwellTarget(found.target, glance, found.el)?.()
++       if (found?.tk) dwellTarget(found.target, glance, found.el)?.()
       },
 
 - function cellLinkTarget(text, eventTarget, api): { el: Element; target: MdTarget } | null {
@@ -2094,6 +2182,11 @@ Every `cellPage(doc, text)` call passes `state.facet(editorHost).settings().inPa
 +   const tk = linkTokenAt(cellTokens(text), span[0])
 +   return tk ? { el, span, tk, target: heldTarget(tokenTarget(api, text, tk), own) } : null
 + }
+```
+
+A `§` run is prose that follows: it draws and a click travels, but it carries no token, so it gets no menu and no glance, at rest as in the body (`sectionRunAt`, `linkClicks.ts:31`); only a token hit reaches the menu and the dwell.
+
+```Core/MarkdownPM/Tables/cellStatic.tsx diff
 ```
 
 `LINK_SELECTOR`, `linkSpanAt`, and the `readOnlyMenu` closure go (`linkMenuTarget(found.target)` is the one default); the right-press claim in `StaticCellImpl.onMouseDown` reads `closest('[data-link]')` until Phase 9 claims every right press.
@@ -2223,7 +2316,7 @@ The Preview row and the link menu's Page Title row hide for a non-web address in
 
 #### Task 5-3 — Pending titles settle through the promise
 
-**TASK:** `writeLinkAt(view, from, to, write, userEvent)` becomes the one writer that announces a pending title, and each announce awaits `linkTitles.resolve` and settles its own entry; `forwardTitles` lets a surface that closes, or has no editor, wait for a title and commit it once under a text guard; the subscription sweep, `linkTitles.subscribe`, and the harness's watchers go.
+**TASK:** `writeLinkAt(view, from, to, write, userEvent)` becomes the one writer that announces a pending title, and each announce awaits `linkTitles.resolve` and settles its own entry; `forwardTitles` lets an editor that closes with entries pending land each once under a text guard, and `settledLinkText` gives a surface with no editor the text it commits once the title answers; the subscription sweep, `linkTitles.subscribe`, and the harness's watchers go.
 
 **NOW:** `writeLink` (`pasteLink.ts:49-63`), `applyUrlLinkAction` (`linkFormat.ts:75-85`), and the resting cell's url arm (`cellStatic.tsx:471-474`) each announce or fetch; `sweepOnTitles` (`pendingTitle.ts:44-72`) subscribes to the store and swaps every pending entry whose title arrived, and unsubscribes on `destroy`, so a fetch landing after a live cell or TextPane closes reaches nothing (B-158), a failed fetch never settles (A-61), and a resting cell's Page Title stays the short form (F-043).
 
@@ -2279,7 +2372,6 @@ The Preview row and the link menu's Page Title row hide for a non-web address in
 +     const held = view.state.field(pendingTitles).find((p) => p.url === entry.url && p.text === entry.text)
 +     if (!held) return
 +     const text = title === null ? held.text : linkMarkdown(held.url, 'link-title', title)
-+     // An ordinary history entry: removing a paste whose title arrived takes two undos, since the swap is a real edit.
 +     view.dispatch({
 +       changes: text === held.text ? undefined : { from: held.from, to: held.to, insert: text },
 +       effects: titleSettled.of(held),
@@ -2300,6 +2392,13 @@ The Preview row and the link menu's Page Title row hide for a non-web address in
 +       if (!title || held === null || held.slice(p.from, p.to) !== p.text) return
 +       commit(held.slice(0, p.from) + linkMarkdown(p.url, 'link-title', title) + held.slice(p.to))
 +     })
++ }
++
++ /** The text a write lands as on a surface with no editor to hold a swap: the titled form once the title answers, else the text as written. A resting cell commits it once. */
++ export async function settledLinkText(host: EditorHost, write: { text: string; awaits?: string }): Promise<string> {
++   if (!write.awaits) return write.text
++   const title = await host.linkTitles.resolve(write.awaits)
++   return title ? linkMarkdown(write.awaits, 'link-title', title) : write.text
 + }
 ```
 
@@ -2413,10 +2512,12 @@ The Preview row and the link menu's Page Title row hide for a non-web address in
 + /** What a link's menu is built from: whether the surface can author it, whether it's a property value (which closes with Clear and Remove rather than Remove Link and Delete, and takes no Format), and what the link is. */
 + export type LinkMenuContext = { editable: boolean; value?: { hideable: boolean } } & (
 +   | { kind: 'page'; open: 'closed' | 'tab' | 'detail'; windowed: boolean }
-+   | { kind: 'url'; web: boolean; windowed: boolean }
++   | { kind: 'url'; web: boolean }
 + )
   export type ConnEditAction = 'rename' | 'editLink'
-  export type ConnCellAction = 'cell:clear' | 'cell:hide'
+- export type ConnCellAction = 'cell:clear' | 'cell:hide'
++ const CELL_ACTIONS = ['cell:clear', 'cell:hide'] as const
++ export type ConnCellAction = (typeof CELL_ACTIONS)[number]
 - export type ConnCellApply = (action: ConnCellAction) => void
   type ConnCopyAction = Extract<PageMetaAction, 'title:copylink' | 'title:copypath'>
   type ConnSiteAction = 'link:window' | 'link:browser'
@@ -2426,7 +2527,8 @@ The Preview row and the link menu's Page Title row hide for a non-web address in
 + const LINK_EDIT_ACTIONS = ['rename', 'editLink', 'format:link-full', 'format:link-short', 'format:link-title', 'link:remove', 'link:delete'] as const
 + /** What a link's menu hands back for its caller to apply; the opens and copies it runs itself. */
 + export type LinkEditAction = (typeof LINK_EDIT_ACTIONS)[number]
-+ export type LinkAction = LinkEditAction | ConnCellAction
++ const LINK_ACTIONS = [...LINK_EDIT_ACTIONS, ...CELL_ACTIONS] as const
++ export type LinkAction = (typeof LINK_ACTIONS)[number]
 - const CONN_UNLINK_ROWS: readonly ActionItem<ConnUrlAction>[] = …
 + const CONN_UNLINK_ROWS: readonly ActionItem<LinkEditAction>[] = [ { label: 'Remove Link', action: 'link:remove' }, { label: 'Delete', action: 'link:delete' } ]
 + const FORMAT_ROW = (web: boolean): ActionItem<LinkEditAction> => ({
@@ -2435,8 +2537,7 @@ The Preview row and the link menu's Page Title row hide for a non-web address in
 + })
   export type ConnMenuAction = PageOpenAction | ConnSiteAction | ConnEditAction | ConnCellAction | ConnCopyAction | LinkEditAction
 - export const isConnUrlAction = (action: ConnMenuAction): action is ConnUrlAction => (CONN_URL_ACTIONS as readonly string[]).includes(action)
-+ export const isLinkAction = (action: ConnMenuAction): action is LinkAction =>
-+   (LINK_EDIT_ACTIONS as readonly string[]).includes(action) || action === 'cell:clear' || action === 'cell:hide'
++ export const isLinkAction = (action: ConnMenuAction): action is LinkAction => (LINK_ACTIONS as readonly string[]).includes(action)
 - export const isConnCellAction = …
 - function closingRows(ctx: ConnMenuContext) { … }
   export function cellClosingRows(…)   (unchanged; the cell menu reads it)
@@ -2447,7 +2548,7 @@ The Preview row and the link menu's Page Title row hide for a non-web address in
 +   const opens: readonly ActionItem<ConnMenuAction>[] =
 +     ctx.kind === 'page'
 +       ? pageOpenRows({ alreadyOpen: ctx.open === 'tab', window: !ctx.windowed, newTab: ctx.open !== 'detail' })
-+       : CONN_SITE_ROWS.filter((r) => r.action !== 'link:window' || (ctx.web && !ctx.windowed))
++       : CONN_SITE_ROWS.filter((r) => r.action !== 'link:window' || ctx.web)
 +   const authoring: ActionItem<ConnMenuAction>[] = ctx.editable
 +     ? [
 +         { label: 'Rename', action: 'rename' },
@@ -2468,7 +2569,7 @@ The Preview row and the link menu's Page Title row hide for a non-web address in
 +   const s = useSession.getState()
 +   const shared = { editable: target.editable, ...(target.value ? { value: target.value } : {}) }
 +   if (target.kind === 'url') {
-+     const ctx: LinkMenuContext = { ...shared, kind: 'url', web: isHttpLink(target.url), windowed: false }
++     const ctx: LinkMenuContext = { ...shared, kind: 'url', web: isHttpLink(target.url) }
 +     return popMenu(connectionMenuModel(ctx)).then((action) => {
 +       if (action === 'link:window') s.openBrowser(target.url)
 +       else if (action === 'link:browser') void dialer().ask('link:open', target.url)
@@ -2494,7 +2595,7 @@ The Preview row and the link menu's Page Title row hide for a non-web address in
 - export function linkValueMenuTarget(raw, apply, hideable = false): ConnMenuTarget | null { … }
 ```
 
-`windowed` on a URL was never set by any producer (the `windowed` filter at `connectionMenu.ts:92` read a page field), so the URL arm passes `false`; drop the field from the url arm if the type allows it cleanly.
+The url arm carries no `windowed`: no producer ever set it (the filter at `connectionMenu.ts:92` read a page field), so the site rows filter on `web` alone.
 
 **VERIFY**
 
@@ -2589,7 +2690,6 @@ The Preview row and the link menu's Page Title row hide for a non-web address in
 +   switch (action) {
 +     case 'rename': {
 +       if (tk.kind === 'link' || aliasedToken(tk)) return { kind: 'select', range: [cs, ce] }
-+       // A pipe already sitting there is a Rename that was abandoned: reuse it rather than stacking a second.
 +       const afterTitle = (tk.heading ?? tk.resolveRange)[1]
 +       if (text[afterTitle] === '|') return { kind: 'select', range: [afterTitle + 1, afterTitle + 1] }
 +       return { kind: 'write', from: afterTitle, to: afterTitle, text: '|', select: afterTitle + 1 }
@@ -2600,7 +2700,6 @@ The Preview row and the link menu's Page Title row hide for a non-web address in
 +       return { kind: 'write', from: s, to: e, text: tk.kind === 'link' ? unescapeAlias(text.slice(cs, ce)) : text.slice(cs, ce) }
 +     case 'link:delete':
 +       return { kind: 'write', from: s, to: e, text: '' }
-+     // Spelled out rather than sliced off the id, which would put a second, weaker definition of a link form here.
 +     case 'format:link-full':
 +       return tk.kind === 'link' ? formatted(text, tk, 'link-full', titles) : null
 +     case 'format:link-short':
@@ -2639,15 +2738,141 @@ The Preview row and the link menu's Page Title row hide for a non-web address in
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
-#### Task 6-4 — The body, the resting cell's link door, and the Text value read the builder
+#### Task 6-4 — The resting cell's seat and guarded commit
 
-**TASK:** The body's menu becomes `menu(target).then(apply)`; `linkGestures` pops the builder's target and hands the answer to the surface's applier; the resting cell applies through `linkEdit` and commits under a whole-text guard, waiting for a title through `forwardTitles`; a Text value's links get the read-only menu through the same door; `menuTarget`, `still()`, and the `wiki`/`url` closure pair go.
+**TASK:** Entering a cell is one `Seat | null`, a point with an optional sweep edge or a range, in one ref on `MarkdownTable`, one `CellEditor` prop, and one `onActivate(seat)`, with the nested ternary becoming `seatSelection`; and every write made at rest commits through one `commitEdit(built, edits)` on `StaticCellImpl`, which stands down when the cell no longer reads the text the gesture read and writes nothing an edit leaves unchanged. The link door (Task 6-5) and the resting menu (Phase 9) both read them.
+
+**NOW:** Three refs (`caretCoords`, `initialSelect`, `sweepFrom`, `MarkdownTable.tsx:152-154`), reset at three sites, passed as three `CellEditor` props, consumed by one nested ternary (`CellEditor.tsx:247-262`), with `onActivate(coords, sweep?)` and `onSelect(range)` as two entries (R-09); Tab and Enter navigation enters with no coordinates at all. The checkbox and `menuTarget`'s writes commit through `onCommit` directly, and `cellCommitChange` returns a non-empty replace for identical text (`sync.ts:23`), so a write that changes nothing records an undo step (M10-04).
+
+**CHANGE**
+
+- [ ] Write the tests (`cellSeat.test.ts`): `seatSelection(null, 5, posAt)` → `{ anchor: 5, head: 5 }`; `({ kind: 'select', range: [1, 3] }, 2, …)` clamps to `{ 1, 2 }`; `({ kind: 'point', x, y }, 5, () => 2)` → `{ 2, 2 }`; `({ kind: 'point', x, y, sweep: 'start' }, 5, () => 2)` → `{ 0, 2 }`; `cellStatic.test.tsx`: a checkbox toggle whose cell text changed under it commits nothing, and one producing identical text commits nothing. Watch them fail.
+- [ ] Rewrite as below; `menuTarget`'s two `onSelect(range)` calls read `onActivate({ kind: 'select', range })` until Task 6-5 deletes the function.
+
+**AFTER**
+
+```Core/MarkdownPM/Tables/CellEditor.tsx diff
++ /** How a cell is entered: at a pointer, which a sweep that crossed into the cell extends from one edge, or over a range of its text. Tab and Enter enter with no seat and take the caret at the end. */
++ export type Seat =
++   | { kind: 'point'; x: number; y: number; sweep?: 'start' | 'end' }
++   | { kind: 'select'; range: [number, number] }
++
++ export function seatSelection(
++   seat: Seat | null,
++   end: number,
++   posAt: (p: { x: number; y: number }) => number | null,
++ ): { anchor: number; head: number } {
++   if (!seat) return { anchor: end, head: end }
++   switch (seat.kind) {
++     case 'select':
++       return { anchor: Math.min(seat.range[0], end), head: Math.min(seat.range[1], end) }
++     case 'point': {
++       const head = posAt(seat) ?? end
++       if (!seat.sweep) return { anchor: head, head }
++       return { anchor: seat.sweep === 'start' ? 0 : end, head }
++     }
++   }
++ }
+
+  export function CellEditor({ …,
+-   caretCoords, initialSelect, sweepFrom,
++   seat,
+    … }: { …
+-   caretCoords: { x: number; y: number } | null
+-   initialSelect: [number, number] | null
+-   sweepFrom: 'start' | 'end' | null
++   seat: Seat | null
+    … }) {
+    …
+      view.focus()
+-     const end = view.state.doc.length
+-     let pos: number | null = null
+-     if (!initialSelect && caretCoords) { try { pos = view.posAtCoords(caretCoords) } catch { pos = null } }
+-     const head = pos ?? end
+-     view.dispatch({ selection: initialSelect ? … : sweepFrom ? … : { anchor: head } })
++     const posAt = (p: { x: number; y: number }): number | null => {
++       // posAtCoords can throw before the view has measured.
++       try {
++         return view.posAtCoords(p)
++       } catch {
++         return null
++       }
++     }
++     view.dispatch({ selection: seatSelection(seat, view.state.doc.length, posAt) })
+```
+
+```Core/MarkdownPM/Tables/MarkdownTable.tsx diff
+-   const caretCoords = useRef<{ x: number; y: number } | null>(null)
+-   const initialSelect = useRef<[number, number] | null>(null)
+-   const sweepFrom = useRef<'start' | 'end' | null>(null)
++   const seat = useRef<Seat | null>(null)
+@@ navigate @@
+-     caretCoords.current = null
+-     initialSelect.current = null
+-     sweepFrom.current = null
++     seat.current = null
+@@ cell @@
+-         caretCoords={caretCoords.current}
+-         initialSelect={initialSelect.current}
+-         sweepFrom={sweepFrom.current}
++         seat={seat.current}
+        …
+-       onActivate={(coords, sweep) => {
+-         host.glance?.close()
+-         caretCoords.current = coords
+-         initialSelect.current = null
+-         sweepFrom.current = sweep ?? null
+-         setActive({ row, col })
+-       }}
++       onActivate={(at) => {
++         host.glance?.close()
++         seat.current = at
++         setActive({ row, col })
++       }}
+        …
+-       onSelect={(range) => { … }}
+```
+
+```Core/MarkdownPM/Tables/cellStatic.tsx diff
+-   onActivate: (coords: { x: number; y: number }, sweep?: 'start' | 'end') => void
+-   onSelect: (range: [number, number]) => void
++   onActivate: (seat: Seat) => void
+    …
+-       onActivate({ x: e.clientX, y: e.clientY })
++       onActivate({ kind: 'point', x: e.clientX, y: e.clientY })
+    …
+-       queueMicrotask(() => onActivate(coords, above ? 'start' : 'end'))
++       const at: Seat = { kind: 'point', x: e.clientX, y: e.clientY, sweep: above ? 'start' : 'end' }
++       queueMicrotask(() => onActivate(at))
+@@ StaticCellImpl @@
++   /** Every resting write: it stands down unless the cell still reads `built`, the text the gesture read, since a menu can stand open while an undo moves the cell, and writes nothing an edit leaves unchanged. */
++   const commitEdit = (built: string, edits: readonly TextEdit[]): boolean => {
++     if (live.current !== built) return false
++     const next = applyEdits(built, edits)
++     if (next === built) return false
++     onCommit(next)
++     return true
++   }
+@@ claimCheckbox @@
+-     return () => onCommit(applyEdits(doc, [change]))
++     return () => commitEdit(doc, [change])
+```
+
+**VERIFY**
+
+- [ ] `grep -rn "caretCoords\|initialSelect\|sweepFrom\|onSelect" Core/MarkdownPM/Tables` is empty; `cellNavigation.test.tsx` passes.
+- [ ] Run the gates.
+- [ ] Check for unnecessary code or mistakes.
+
+#### Task 6-5 — The body, the resting cell's link door, and the Text value read the builder
+
+**TASK:** The body's menu becomes `menu(target).then(apply)`; `linkGestures` pops the builder's target and hands the answer to the surface's applier; the resting cell applies through `linkEdit`, awaits a title through `settledLinkText`, and commits once through `commitEdit`; a Text value's links get the read-only menu through the same door; `menuTarget`, `still()`, and the `wiki`/`url` closure pair go.
 
 **NOW:** `linkPointer.menu` (`linkClicks.ts:139-154`) builds a `{ wiki, url }` closure pair; `menuAt`/`menuTarget` (`cellStatic.tsx:288-306,449-477`) re-find the link through `still()` and split by syntax; the resting url arm commits the short form and calls `linkTitles.resolve` with nothing awaiting (F-043); `linkGestures`' `readOnlyMenu` builds a read-only target for `TextCell`.
 
 **CHANGE**
 
-- [ ] Write the tests (`cellLinks.test.tsx:194-269` rewritten): at rest, Remove Link on `[[P|a]]` commits `a` without entering; Rename on `[[P]]` commits `[[P|]]` and enters with the caret after the pipe; Edit Title enters with `P` selected; Format ▸ Page Title on `[x](https://a.com)` commits the short form and, when the harness settles the title, commits the titled form (the F-043 proof); a resting `[x](Page)` offers Rename and Edit Title; a cell edited while its menu stood open declines the pick; a read-only resting cell's menu has no authoring rows (B-56). Watch them fail.
+- [ ] Write the tests (`cellLinks.test.tsx:194-269` rewritten): at rest, Remove Link on `[[P|a]]` commits `a` without entering; Rename on `[[P]]` commits `[[P|]]` and enters with the caret after the pipe; Edit Title enters with `P` selected; Format ▸ Page Title on `[x](https://a.com)` commits nothing until the harness settles the title, then commits the titled form once (the F-043 proof), and commits the short form once when the harness settles `null`; a resting `[x](Page)` offers Rename and Edit Title; a cell edited while its menu stood open declines the pick; a read-only resting cell's menu has no authoring rows (B-56). Watch them fail.
 - [ ] Rewrite as below.
 
 **AFTER**
@@ -2674,7 +2899,7 @@ The Preview row and the link menu's Page Title row hide for a non-web address in
 +   connections: (() => ConnectionsApi | undefined) | undefined,
 +   glance: EditorHost['glance'],
 +   own: OwnPage | null = null,
-+   authoring?: { editable: () => boolean; apply: (hit: RestingHit, action: LinkAction) => void },
++   authoring?: { editable: () => boolean; apply: (tk: TokenOf<LinkKind>, action: LinkAction) => void },
 + ) {
     …
     onContextMenu: (e: React.MouseEvent): boolean => {
@@ -2682,30 +2907,29 @@ The Preview row and the link menu's Page Title row hide for a non-web address in
       const api = connections?.()
       if (!api?.menu) return false
       const found = linkAt(e)
--     const target = found && (menuAt ? menuAt(e, found, api) : linkMenuTarget(found.target))
-+     const target = found && linkMenuTarget(found.target, authoring?.editable() ?? false)
+      if (!found?.tk) return false
+-     const target = menuAt ? menuAt(e, found, api) : linkMenuTarget(found.target)
++     const { tk } = found
++     const target = linkMenuTarget(found.target, authoring?.editable() ?? false)
       if (!target) return false
       e.preventDefault()
       e.stopPropagation()
 -     api.menu(target)
-+     void api.menu(target).then((action) => action && found && authoring?.apply(found, action))
++     void api.menu(target).then((action) => action && authoring?.apply(tk, action))
       return true
     },
 
 @@ StaticCellImpl @@
 - const menuAt = (e, api) => { … menuTarget(…) … }
 - const { linkAt, dismiss, onContextMenu, onPointerOver, onPointerOut } = linkGestures(text, host.connections, host.glance, null, menuAt)
-+ /** A pick applied at rest: a selection enters the cell seated; a write commits without entering, unless the cell changed while the menu stood open; a title still to come lands once it does. */
-+ const applyAtRest = (hit: RestingHit, action: LinkAction): void => {
-+   if (!hit.tk || live.current !== text) return
-+   const edit = linkEdit(text, hit.tk, action, host.linkTitles)
++ /** A pick applied at rest: a selection enters the cell seated; a write commits once, without entering, with a title it awaits landed first; a cell that changed while the menu stood open or the title was fetched takes nothing. */
++ const applyAtRest = async (tk: TokenOf<LinkKind>, action: LinkAction): Promise<void> => {
++   const edit = linkEdit(text, tk, action, host.linkTitles)
 +   if (!edit) return
-+   if (edit.kind === 'select') return onSelect(edit.range)
-+   const next = applyEdits(text, [{ from: edit.from, to: edit.to, insert: edit.text }])
-+   if (next !== text) onCommit(next)
-+   if (edit.awaits)
-+     forwardTitles(host, [{ from: edit.from, to: edit.from + edit.text.length, url: edit.awaits, text: edit.text }], () => live.current, onCommit)
-+   if (edit.select !== undefined) onSelect([edit.select, edit.select])
++   if (edit.kind === 'select') return onActivate({ kind: 'select', range: edit.range })
++   const insert = await settledLinkText(host, edit)
++   if (!commitEdit(text, [{ from: edit.from, to: edit.to, insert }])) return
++   if (edit.select !== undefined) onActivate({ kind: 'select', range: [edit.select, edit.select] })
 + }
 + const { linkAt, dismiss, onContextMenu, onPointerOver, onPointerOut } = linkGestures(
 +   text, host.connections, host.glance, null,
@@ -2722,10 +2946,10 @@ The Preview row and the link menu's Page Title row hide for a non-web address in
 
 - [ ] `grep -rn "menuTarget\|still()" Core/MarkdownPM/Tables Core/MarkdownPM/Links` is empty.
 - [ ] Run the gates.
-- [ ] **Live Check (F-043):** at rest, Format ▸ Page Title writes the short form and then the title once it arrives. **Live Check (B-56):** a read-only embedded page's resting cells offer no authoring rows.
+- [ ] **Live Check (F-043):** at rest, Format ▸ Page Title leaves the cell as it was until the title arrives, then writes the titled form in one step (one undo removes it). **Live Check (B-56):** a read-only embedded page's resting cells offer no authoring rows.
 - [ ] Check for unnecessary code or mistakes.
 
-#### Task 6-5 — The three value parents read the builder
+#### Task 6-6 — The three value parents read the builder
 
 **TASK:** `TableView`, `CardValue`, and `PropertyPanel` pop a Link value's menu through `valueTarget` and `linkMenuTarget`, await the answering menu inside `holdGhost`, and hand the pick to `runMenuIntent`; `valueMenuIntent` takes the link actions; the Panel's value menu gains Remove; `linkValueMenuTarget` and the `onCell` channel go.
 
@@ -2738,12 +2962,17 @@ The Preview row and the link menu's Page Title row hide for a non-web address in
 
 **AFTER**
 
+```Core/Properties/Cells/valueTarget.ts diff
++ /** A property value's link menu target: the value resolved through the index its context carries, the row's holder answering a bare `[[#Heading]]`. */
++ export const valueMenuTarget = (ctx: ValueContext, row: ViewRow, raw: string, hideable: boolean): LinkMenuTarget | null =>
++   linkMenuTarget(valueTarget(ctx.connections?.(), raw, holderOf(row, ctx)), true, { hideable })
+```
+
 ```Core/Views/Table/TableView.tsx diff
 @@ openCellMenu @@
     if (dt === 'link') {
 -     const target = linkValueMenuTarget(value.kind === 'link' ? value.value : '', runMenuIntent)
-+     const raw = value.kind === 'link' ? value.value : ''
-+     const target = linkMenuTarget(valueTarget(ctx.connections?.(), raw, holderOf(row, ctx)), true, { hideable: false })
++     const target = valueMenuTarget(ctx, row, value.kind === 'link' ? value.value : '', false)
       if (target) {
 -       await interactions.holdGhost(async () => showConnectionMenu(target))
 +       const action = await interactions.holdGhost(() => showConnectionMenu(target))
@@ -2756,7 +2985,7 @@ The Preview row and the link menu's Page Title row hide for a non-web address in
 ```Core/Views/Cards/CardValue.tsx diff
     if (t === 'link') {
 -     const target = linkValueMenuTarget(v.kind === 'link' ? v.value : '', runMenuIntent, true)
-+     const target = linkMenuTarget(valueTarget(ctx.connections?.(), v.kind === 'link' ? v.value : '', holderOf(row, ctx)), true, { hideable: true })
++     const target = valueMenuTarget(ctx, row, v.kind === 'link' ? v.value : '', true)
       if (target) {
 -       await holdGhost(async () => showConnectionMenu(target))
 +       const action = await holdGhost(() => showConnectionMenu(target))
@@ -2777,7 +3006,7 @@ The Preview row and the link menu's Page Title row hide for a non-web address in
     }
 -   const link = linkValueMenuTarget(value.value, run)
 -   if (link) showConnectionMenu(link)
-+   const link = row && ctx && linkMenuTarget(valueTarget(ctx.connections?.(), value.value, holderOf(row, ctx)), true, { hideable: true })
++   const link = row && ctx && valueMenuTarget(ctx, row, value.value, true)
 +   if (link) void showConnectionMenu(link).then(run)
     else void popMenu(cellMenuModel({ kind: 'link', filled: true })).then(run)
     return true
@@ -2835,7 +3064,6 @@ The Preview row and the link menu's Page Title row hide for a non-web address in
 +   how: PasteHow,
 +   over: { selection: string; format: LinkDisplay; title?: string },
 + ): LinkPaste | TextPaste | LinePaste | null {
-+   // A footnote writes two disjoint sites and a literal writes the clipboard itself, so both callers fork ahead of this single-range writer.
 +   if (!target || how === 'footnote' || how === 'literal') return null
 +   if ((how === 'embedPage' || how === 'embedLink') && !embeddableTarget(target)) return null
 +   if (target.kind === 'page') {
@@ -2850,7 +3078,6 @@ The Preview row and the link menu's Page Title row hide for a non-web address in
 +         return null
 +     }
 +   }
-+   // A selection chooses the wrap axis and a bare caret the format axis; the chord inverts only whichever axis is in play.
 +   const wrappable = over.selection !== '' && !/[\r\n]/.test(over.selection)
 +   switch (how) {
 +     case 'plain':
@@ -2884,10 +3111,6 @@ The Preview row and the link menu's Page Title row hide for a non-web address in
 +   return target
 + }
 +
-+ /** Code takes the clipboard as written. An insertion at a code span's exclusive end still lands inside, so the position behind the caret answers too, except at the line's start, where it would read the fence above. */
-+ const inCodeNear = (scan: DocScan, pos: number): boolean =>
-+   inCodeAt(scan, pos) || (pos > lineStartAt(scan.text, pos) && inCodeAt(scan, pos - 1))
-+
 + /** The link a selection sits strictly inside, read from the written line; a paste there retargets it. The edges are out, since a finished link leaves the caret on its end. */
 + function linkContainerAt(scan: DocScan, sel: { from: number; to: number }): { kind: LinkKind; range: Span; text: string } | null {
 +   const ls = lineStartAt(scan.text, sel.from)
@@ -2908,11 +3131,11 @@ The Preview row and the link menu's Page Title row hide for a non-web address in
 +   const literal = how === 'literal' || inCodeNear(scan, sel.from)
 +   const target = literal ? null : clipboardTarget(text, how)
 +   const within = target && linkContainerAt(scan, sel)
++   const cachedTitle = target?.kind === 'url' ? (host.linkTitles.get(target.url) ?? undefined) : undefined
 +   if (target && within) {
-+     const url = target.kind === 'url' ? target.url : ''
 +     const write = retarget(within.kind === 'wikiLink' ? 'wiki' : 'markdown', readLinkText(within.text), target, !settings.removeTitleOnLinkChange, {
 +       format: settings.defaultLinkFormat,
-+       title: host.linkTitles.get(url) ?? undefined,
++       title: cachedTitle,
 +     })
 +     writeLinkAt(view, within.range[0], within.range[1], write, 'input.paste')
 +     view.focus()
@@ -2930,7 +3153,7 @@ The Preview row and the link menu's Page Title row hide for a non-web address in
 +       ? pasteAsWrite(target, how, {
 +           selection: view.state.sliceDoc(from, to),
 +           format: settings.defaultLinkFormat,
-+           title: target.kind === 'url' ? (host.linkTitles.get(target.url) ?? undefined) : undefined,
++           title: cachedTitle,
 +         })
 +       : null
 +   if (!write) {
@@ -3028,9 +3251,7 @@ The container step of `paste` in Task 7-1.
 +   const target = clipboardTarget(text, how)
 +   const write = target && pasteAsWrite(target, how, { selection, format: host.settings().defaultLinkFormat })
 +   if (!write || write.kind === 'line') return text
-+   if (write.kind === 'text' || !write.awaits) return write.text
-+   const title = await host.linkTitles.resolve(write.awaits)
-+   return title ? linkMarkdown(write.awaits, 'link-title', title) : write.text
++   return write.kind === 'text' ? write.text : settledLinkText(host, write)
 + }
 
   export const pasteLink = EditorView.domEventHandlers({
@@ -3135,7 +3356,7 @@ Phase 9's resting Paste row reads `pastedCellText` too.
 +   if (!url) return null
 +   const api = connections?.()
 +   const own = holder ? ({ kind: 'held', page: holder } as const) : null
-+   const target: MdTarget = link ? { kind: 'url', url } : { kind: 'invalid' }
++   const target = valueTarget(api, raw, holder)
     return (
       <OverScroll className="cell-text-scroll">
         <a
@@ -3314,7 +3535,7 @@ Phase 9's resting Paste row reads `pastedCellText` too.
 + export function linkValueFromEdit(
 +   raw: string,
 +   current: string | undefined,
-+   resolve: Resolve,
++   resolve: PageIndex['resolve'],
 +   keepTitle: boolean,
 + ): PropertyValue | null | undefined {
 +   const trimmed = raw.trim()
@@ -3328,7 +3549,7 @@ Phase 9's resting Paste row reads `pastedCellText` too.
 
 ```Core/Properties/parseEditorValue.ts diff
 - import { resolveTitle } from './Cells/linkResolve'
-+ export interface LinkEditContext { resolve: Resolve; keepTitle: boolean }
++ export interface LinkEditContext { resolve: PageIndex['resolve']; keepTitle: boolean }
   export function parseEditorValue(
     type: PropertyType | 'title' | undefined,
     raw: string,
@@ -3343,7 +3564,7 @@ Phase 9's resting Paste row reads `pastedCellText` too.
 
 ```Core/Properties/Pickers/PropertyValueInput.tsx diff
 + /** The index read at the gesture, with a bare `[[#Heading]]` answered by the page holding the value; a Space holds none, so there it stays unresolved. */
-+ const linkResolver = (api: ConnectionsApi | undefined, holder: ConnPage | undefined): Resolve => (title) =>
++ const linkResolver = (api: ConnectionsApi | undefined, holder: ConnPage | undefined): PageIndex['resolve'] => (title) =>
 +   title === '' ? (holder ? { status: 'resolved', page: holder } : { status: 'phantom' }) : (api?.resolve(title) ?? { status: 'phantom' })
 
   export function PropertyValueInput({ def, current, holder, connections, alias, popover, onCommit, onClose }) {
@@ -3407,128 +3628,9 @@ Unchanged: `Core/Actions/cellMenu.ts`'s `link` arm.
 
 ### Phase 9 — MarkdownPM Table Cells at Rest
 
-**GOAL:** A right-click anywhere in a resting table cell opens that construct's menu without focusing the cell: a link takes the link door (Phase 6), everything else the same editor-menu door a live cell asks through, with the system rows acting at rest. A chosen row that writes commits without placing the caret; a row that opens a typing slot or needs typing enters the cell with the selection seated. Entering a cell is one seat. A proving scout built this phase on a scratch worktree at `42a18f4a5`; its diff is `.claude/Planning/MarkdownPM Links/proving/resting-cell.diff` (gates green, 524 files / 7,561 tests), and the tasks below are written from it with four corrections: the mapper reads the `data-src` spans Phase 4 draws, a point bypasses the selection-edge rule, Paste and Paste As run through Phase 7's pipeline, and Format ▸ External Link over a selection enters the cell since its address is empty.
+**GOAL:** A right-click anywhere in a resting table cell opens that construct's menu without focusing the cell: a link takes the link door (Phase 6), everything else the same editor-menu door a live cell asks through, with the system rows acting at rest. A chosen row that writes commits without placing the caret; a row that opens a typing slot or needs typing enters the cell with the selection seated. The seat and the guarded commit landed in Task 6-4. A proving scout built this phase on a scratch worktree at `42a18f4a5`; its diff is `.claude/Planning/MarkdownPM Links/proving/resting-cell.diff` (gates green, 524 files / 7,561 tests), and the tasks below are written from it with five corrections: the mapper reads the `data-src` spans Phase 4 draws, a point bypasses the selection-edge rule, Paste and Paste As run through Phase 7's pipeline, Format ▸ External Link over a selection enters the cell since its address is empty, and the seat and `commitEdit` land ahead of the link door that reads them.
 
-#### Task 9-1 — One seat
-
-**TASK:** Entering a cell is one `Seat | null`: a point (with an optional sweep edge) or a range, in one ref on `MarkdownTable`, one `CellEditor` prop, and one `onActivate(seat)`; `onSelect` goes, and the nested ternary becomes `seatSelection`.
-
-**NOW:** Three refs (`caretCoords`, `initialSelect`, `sweepFrom`, `MarkdownTable.tsx:152-154`), reset at three sites, passed as three `CellEditor` props, consumed by one nested ternary (`CellEditor.tsx:247-262`), with `onActivate(coords, sweep?)` and `onSelect(range)` as two entries (R-09). Tab and Enter navigation enters with no coordinates at all.
-
-**CHANGE**
-
-- [ ] Write the tests (`cellSeat.test.ts`): `seatSelection(null, 5, posAt)` → `{ anchor: 5, head: 5 }`; `({ kind: 'select', range: [1, 3] }, 2, …)` clamps to `{ 1, 2 }`; `({ kind: 'point', x, y }, 5, () => 2)` → `{ 2, 2 }`; `({ kind: 'point', x, y, sweep: 'start' }, 5, () => 2)` → `{ 0, 2 }`. Watch them fail.
-- [ ] Rewrite as below; Task 6-4's `onSelect(range)` calls become `onActivate({ kind: 'select', range })`.
-
-**AFTER**
-
-```Core/MarkdownPM/Tables/CellEditor.tsx diff
-+ /** How a cell is entered: at a pointer, which a sweep that crossed into the cell extends from one edge, or over a range of its text. Tab and Enter enter with no seat and take the caret at the end. */
-+ export type Seat =
-+   | { kind: 'point'; x: number; y: number; sweep?: 'start' | 'end' }
-+   | { kind: 'select'; range: [number, number] }
-+
-+ export function seatSelection(
-+   seat: Seat | null,
-+   end: number,
-+   posAt: (p: { x: number; y: number }) => number | null,
-+ ): { anchor: number; head: number } {
-+   if (!seat) return { anchor: end, head: end }
-+   switch (seat.kind) {
-+     case 'select':
-+       return { anchor: Math.min(seat.range[0], end), head: Math.min(seat.range[1], end) }
-+     case 'point': {
-+       const head = posAt(seat) ?? end
-+       if (!seat.sweep) return { anchor: head, head }
-+       return { anchor: seat.sweep === 'start' ? 0 : end, head }
-+     }
-+   }
-+ }
-
-  export function CellEditor({ …,
--   caretCoords, initialSelect, sweepFrom,
-+   seat,
-    … }: { …
--   caretCoords: { x: number; y: number } | null
--   initialSelect: [number, number] | null
--   sweepFrom: 'start' | 'end' | null
-+   seat: Seat | null
-    … }) {
-    …
-      view.focus()
--     const end = view.state.doc.length
--     let pos: number | null = null
--     if (!initialSelect && caretCoords) { try { pos = view.posAtCoords(caretCoords) } catch { pos = null } }
--     const head = pos ?? end
--     view.dispatch({ selection: initialSelect ? … : sweepFrom ? … : { anchor: head } })
-+     const posAt = (p: { x: number; y: number }): number | null => {
-+       // posAtCoords can throw before the view has measured.
-+       try {
-+         return view.posAtCoords(p)
-+       } catch {
-+         return null
-+       }
-+     }
-+     view.dispatch({ selection: seatSelection(seat, view.state.doc.length, posAt) })
-```
-
-```Core/MarkdownPM/Tables/MarkdownTable.tsx diff
--   const caretCoords = useRef<{ x: number; y: number } | null>(null)
--   const initialSelect = useRef<[number, number] | null>(null)
--   const sweepFrom = useRef<'start' | 'end' | null>(null)
-+   const seat = useRef<Seat | null>(null)
-@@ navigate @@
--     caretCoords.current = null
--     initialSelect.current = null
--     sweepFrom.current = null
-+     seat.current = null
-@@ cell @@
--         caretCoords={caretCoords.current}
--         initialSelect={initialSelect.current}
--         sweepFrom={sweepFrom.current}
-+         seat={seat.current}
-        …
--       onActivate={(coords, sweep) => {
--         host.glance?.close()
--         caretCoords.current = coords
--         initialSelect.current = null
--         sweepFrom.current = sweep ?? null
--         setActive({ row, col })
--       }}
-+       onActivate={(at) => {
-+         host.glance?.close()
-+         seat.current = at
-+         setActive({ row, col })
-+       }}
-        …
--       onSelect={(range) => { … }}
-```
-
-```Core/MarkdownPM/Tables/cellStatic.tsx diff
--   onActivate: (coords: { x: number; y: number }, sweep?: 'start' | 'end') => void
--   onSelect: (range: [number, number]) => void
-+   onActivate: (seat: Seat) => void
-    …
--       onActivate({ x: e.clientX, y: e.clientY })
-+       onActivate({ kind: 'point', x: e.clientX, y: e.clientY })
-    …
--       queueMicrotask(() => onActivate(coords, above ? 'start' : 'end'))
-+       const at: Seat = { kind: 'point', x: e.clientX, y: e.clientY, sweep: above ? 'start' : 'end' }
-+       queueMicrotask(() => onActivate(at))
-@@ applyAtRest @@
--     if (edit.kind === 'select') return onSelect(edit.range)
-+     if (edit.kind === 'select') return onActivate({ kind: 'select', range: edit.range })
--     if (edit.select !== undefined) onSelect([edit.select, edit.select])
-+     if (edit.select !== undefined) onActivate({ kind: 'select', range: [edit.select, edit.select] })
-```
-
-**VERIFY**
-
-- [ ] `grep -rn "caretCoords\|initialSelect\|sweepFrom\|onSelect" Core/MarkdownPM/Tables` is empty; `cellNavigation.test.tsx` passes.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
-
-#### Task 9-2 — Every construct answers at rest
+#### Task 9-1 — Every construct answers at rest
 
 **TASK:** A resting cell claims every right press, consults `readOnly()` once, and for a non-link right-click asks the editor menu through `host.menus.format` with `resting: { selection }` carrying the source text under the click; a pointer-to-offset mapper reads the `data-src` spans the renderer draws; main pops the menu for a resting request with renderer-resolved Cut, Copy, and Paste and without Undo, Redo, and Select All.
 
@@ -3723,7 +3825,7 @@ Unchanged: `Core/Actions/cellMenu.ts`'s `link` arm.
         className="mdpm-tbl-cell-static"
         onContextMenu={(e) => {
 -         if (onContextMenu(e) || readOnly()) return
--         onActivate({ x: e.clientX, y: e.clientY })
+-         onActivate({ kind: 'point', x: e.clientX, y: e.clientY })
 +         // The link's own menu claims the event; the editor menu leaves it undefaulted, since main pops the native menu only when the renderer does.
 +         if (onContextMenu(e) || readOnly()) return
 +         e.stopPropagation()
@@ -3742,7 +3844,7 @@ Unchanged: `Core/Actions/cellMenu.ts`'s `link` arm.
         }}
 ```
 
-`restingAction` is Task 9-3's. On an `inert` host (`menus.format` undefined: a glance, a page's history) a resting right-click does nothing, where it used to enter a read-only cell; the link door still answers there.
+`restingAction` is Task 9-2's. On an `inert` host (`menus.format` undefined: a glance, a page's history) a resting right-click does nothing, where it used to enter a read-only cell; the link door still answers there.
 
 **VERIFY**
 
@@ -3751,15 +3853,15 @@ Unchanged: `Core/Actions/cellMenu.ts`'s `link` arm.
 - [ ] **Live Checks (R-16, R-19, R-20):** in `~/Test`, right-click plain text in a resting cell: the editor menu pops with Cut/Copy/Paste, Paste As, Paste Without Formatting, Lists ▸, Format ▸ and no Undo/Redo/Select All; Paste Without Formatting is enabled only with clipboard text; no role row reaches the page body's caret; a right-click on a link still pops the link menu and nothing else.
 - [ ] Check for unnecessary code or mistakes.
 
-#### Task 9-3 — Commit at rest
+#### Task 9-2 — Commit at rest
 
-**TASK:** One `commitEdit(built, edits)` on `StaticCellImpl` commits every resting write under a whole-text guard and a no-op guard; `restingAction` dispatches the editor menu's reply through `editFor`, enters the cell for a slot meant for typing, and Insert Link becomes a pure `insertLinkEdit` in `editFor`'s switch; `claimCheckbox` and the link door's writes commit through it.
+**TASK:** `restingAction` dispatches the editor menu's reply through `editFor` and commits through `commitEdit` (Task 6-4), enters the cell for a slot meant for typing, and Insert Link becomes a pure `insertLinkEdit` in `editFor`'s switch.
 
-**NOW:** The link door's writes (Task 6-4) and the checkbox commit through `onCommit` directly; `cellCommitChange` returns a non-empty replace for identical text (`sync.ts:23`), so a write that changes nothing records an undo step (M10-04); `insertLinkOverSelection` (`menu.ts:47-60`) dispatches on the view.
+**NOW:** No row the editor menu offers has a resting applier, since no construct but a link answers a resting right-click; `insertLinkOverSelection` (`menu.ts:47-60`) dispatches on the view.
 
 **CHANGE**
 
-- [ ] Write the tests (`cellRestingMenu.test.tsx`): Bold over a selection commits `**sel**` and mounts no editor; Bold at a point commits `****` and enters with the caret between; Lists ▸ Bulleted commits `- text`; Format ▸ External Link over a selection commits `[sel]()` and enters with the caret inside `()`; Format ▸ Connection over a selection commits `[[sel]]` and stays at rest; a reply arriving after the cell's text changed commits nothing; an edit leaving the text unchanged commits nothing; Insert Link over `example.com` commits `[example.com](https://example.com)`. Watch them fail.
+- [ ] Write the tests (`cellRestingMenu.test.tsx`): Bold over a selection commits `**sel**` and mounts no editor; Bold at a point commits `****` and enters with the caret between; Lists ▸ Bulleted at a point commits `- text` and stays at rest; Format ▸ External Link over a selection commits `[sel]()` and enters with the caret inside `()`; Format ▸ Connection over a selection commits `[[sel]]` and stays at rest; Insert Link over `example.com` commits `[example.com](https://example.com)`. Watch them fail.
 - [ ] Rewrite as below; `insertLinkEdit` joins `editFor` in `Input/format.ts`; `insertLinkOverSelection` and its `applyEditorAction` line go.
 
 **AFTER**
@@ -3768,7 +3870,7 @@ Unchanged: `Core/Actions/cellMenu.ts`'s `link` arm.
 @@ editFor @@
     switch (group) {
 +     case 'link':
-+       return action === INSERT_LINK_ACTION ? insertLinkEdit(scan.text, from, to) : null
++       return value === 'insert' ? insertLinkEdit(scan.text, from, to) : null
       case 'format':
       …
 + /** The selected words stay the label, so a schemeless address keeps its bare form while its target gains the scheme. */
@@ -3792,15 +3894,6 @@ Unchanged: `Core/Actions/cellMenu.ts`'s `link` arm.
 
 ```Core/MarkdownPM/Tables/cellStatic.tsx diff
 @@ StaticCellImpl @@
-+   /** Every resting write: it stands down unless the cell still reads `built`, the text the gesture read, since a native menu can stand open while an undo moves the cell, and writes nothing an edit leaves unchanged. */
-+   const commitEdit = (built: string, edits: readonly TextEdit[]): boolean => {
-+     if (live.current !== built) return false
-+     const next = applyEdits(built, edits)
-+     if (next === built) return false
-+     onCommit(next)
-+     return true
-+   }
-+
 +   /** A row the editor menu answered with, applied at rest. A mark written at a point and a link written with an empty address are slots only typing fills, so those enter the cell; every other write commits where it stands. */
 +   const restingAction = async (action: string, built: string, from: number, to: number): Promise<void> => {
 +     switch (action) {
@@ -3819,21 +3912,12 @@ Unchanged: `Core/Actions/cellMenu.ts`'s `link` arm.
 +       return pasteAtRest(built, from, to, action.slice(PASTE_AS_PREFIX.length) as PasteAsForm)
 +     const edit = editFor(action, scanDoc(built), from, to)
 +     if (!edit || !commitEdit(built, edit.changes)) return
-+     const slot = from === to || action === 'format:link' || action === 'format:linkText'
++     const slot = /^(format|highlight):/.test(action) && (from === to || action === 'format:link' || action === 'format:linkText')
 +     if (slot && edit.selection !== undefined) onActivate({ kind: 'select', range: [edit.selection, edit.selection] })
 +   }
-
-@@ claimCheckbox @@
--     return () => onCommit(applyEdits(doc, [change]))
-+     return () => commitEdit(doc, [change])
-
-@@ applyAtRest (Task 6-4) @@
--     const next = applyEdits(text, [{ from: edit.from, to: edit.to, insert: edit.text }])
--     if (next !== text) onCommit(next)
-+     commitEdit(text, [{ from: edit.from, to: edit.to, insert: edit.text }])
 ```
 
-`pasteAtRest` is Task 9-4's; `applyAtRest`'s own `live.current !== text` guard folds into `commitEdit`'s.
+`pasteAtRest` is Task 9-3's. The slot rule is gated on the format and highlight rows because a list, heading, or block row also returns a `selection` for a single-line edit (`format.ts:180,237,310-335`), and those write a line and stay at rest.
 
 **VERIFY**
 
@@ -3841,7 +3925,7 @@ Unchanged: `Core/Actions/cellMenu.ts`'s `link` arm.
 - [ ] In `~/Test`: in a resting cell, select a word and choose Format ▸ Bold: the cell stays at rest, bold applied; right-click a blank spot and choose Bold: the cell opens with the caret inside `****`; Format ▸ Connection over a word writes `[[word]]` at rest.
 - [ ] Check for unnecessary code or mistakes.
 
-#### Task 9-4 — System rows at rest
+#### Task 9-3 — System rows at rest
 
 **TASK:** Cut and Copy write the source slice through `host.clipboard`; Paste, Paste As, and Paste Without Formatting run through Phase 7's pipeline at the click's range, with a table-shaped clipboard filling cells through `onFill`.
 
@@ -4181,15 +4265,16 @@ The field is defined per mount (`acQuery(scope)` in the hook's `useState`) becau
 +   const same = ac.form === 'target' && normalizeTitle(ac.query) === normalizeTitle(value)
 +   const fill = ac.label && (ac.label.from === ac.label.to || (ac.form === 'target' && !opts.keepTitle && !same)) ? ac.label : null
 +   const label = fill ? escapeAlias(value) : ''
++   // One past the written destination (`#` or `)`) once both changes apply.
 +   return {
 +     changes: fill ? [{ from: fill.from, to: fill.to, insert: label }, dest] : [dest],
-+     anchor: ac.from + encoded.length + (fill ? label - (fill.to - fill.from) : 0) + 1,   // see the note
++     anchor: ac.from + (label.length - (fill ? fill.to - fill.from : 0)) + encoded.length + 1,
 +     opensHeading: opts.openHeading,
 +   }
   }
 ```
 
-The anchor for the markdown arms is the position one past the written destination (`#` or `)`) after both changes apply; write it as `ac.from + (label.length - (fill ? fill.to - fill.from : 0)) + encoded.length + 1`, mirroring today's `caret + label.length + 1`, and pin it with a test for a filled and an unfilled label.
+The anchor is pinned by a test for a filled and an unfilled label.
 
 ```Core/MarkdownPM/Autocomplete/useConnectionAutocomplete.ts diff
 -   const [viaChevron, setViaChevron] = useState(false)
@@ -4282,14 +4367,30 @@ The anchor for the markdown arms is the position one past the written destinatio
 +   }, [heading, page, title])
     …
     const allHeadingRows = useMemo(() => (heading && query !== null ? headingRows(outline, query) : []), [heading, outline, query])
-+   const tree = useMemo(() => outlineTree(outline.map((h, i) => ({ from: i, level: h.level, text: h.text, key: h.text }))), [outline])
++   const tree = useMemo(() => outlineTree(outline), [outline])
     …
 -   const open = ac !== null && (candidates.length > 0 || loading)
 +   const open = ac !== null && candidates.length > 0
     return { extension, ctl, pane: { open, ac, candidates, index: index ?? 0, onPick: commit, behind, headingRows: allHeadingRows, tree, collapsed, onToggleHeading, onAside, onBack, geometry } }
 ```
 
-`openHeadingRows` stays as the one rule for which rows a collapse hides (it reads rows and levels, not a tree). `outlineTree` takes `OutlineHeading`s; the index's `PageHeading` has no `from` or `key`, so the hook supplies the index as `from` and the text as `key`, once, where the pane did it on every render. If `outlineTree`'s input can be narrowed to `{ level; text }` without a second type, do that instead and say so.
+`openHeadingRows` stays as the one rule for which rows a collapse hides (it reads rows and levels, not a tree). `outlineTree` reads only `level`, so it takes any heading shape; `OutlineMenu.tsx` keeps passing `OutlineHeading`s and its `OutlineNode` type through the default.
+
+```Core/MarkdownPM/Engine/outlineTree.ts diff
+- export interface OutlineNode extends OutlineHeading {
+-   children: OutlineNode[]
+- }
++ export type OutlineNode<T = OutlineHeading> = T & { children: OutlineNode<T>[] }
+- export function outlineTree(headings: readonly OutlineHeading[]): OutlineNode[] {
+-   const roots: OutlineNode[] = []
+-   const ancestors: OutlineNode[] = []
++ export function outlineTree<T extends { level: number }>(headings: readonly T[]): OutlineNode<T>[] {
++   const roots: OutlineNode<T>[] = []
++   const ancestors: OutlineNode<T>[] = []
+    for (const heading of headings) {
+-     const node: OutlineNode = { ...heading, children: [] }
++     const node: OutlineNode<T> = { ...heading, children: [] }
+```
 
 ```Core/MarkdownPM/Autocomplete/AutocompletePane.tsx diff
   export interface AutocompletePaneProps {
@@ -4323,7 +4424,7 @@ The anchor for the markdown arms is the position one past the written destinatio
 -   }
 +   const nested = (): React.JSX.Element[] => {
 +     const at = new Map(v.candidates.map((r, i) => [r.value, i]))
-+     const walk = (nodes: OutlineNode[]): React.JSX.Element[] =>
++     const walk = (nodes: OutlineNode<PageHeading>[]): React.JSX.Element[] =>
 +       nodes.flatMap((n) => {
 +         const i = at.get(n.text)
 +         return i === undefined ? [] : headingRow(v.candidates[i], i, n.children.length ? walk(n.children) : undefined)
@@ -4481,16 +4582,16 @@ The anchor for the markdown arms is the position one past the written destinatio
 - `ConnectionsPM.md:32` — "one that names neither keeps the broken-link treatment" — Task 4-1, 11-2
 - `ConnectionsPM.md:34` — "applies to page prose only — cells and other fields stay muted"; Link values and Open Connections In Preview — Task 4-2, 8-1, 11-2
 - `ConnectionsPM.md:38` — "never depend on where it was found" — Task 8-1, 11-2
-- `ConnectionsPM.md:42-49` — Add Title / Edit Title · Edit Link; "Format (editor only)"; Close rows; read-only surfaces — Task 6-1, 6-5, 9-2, 11-2
+- `ConnectionsPM.md:42-49` — Add Title / Edit Title · Edit Link; "Format (editor only)"; Close rows; read-only surfaces — Task 6-1, 6-6, 9-1, 11-2
 - `ConnectionsPM.md:53-59` — the picker's openers, `![[ ]]` entry, heading rows, alias slide — Task 10-1, 10-3, 10-4, 11-2
 - `ConnectionsPM.md:65` — `§` opens the heading list (add `##` → `§`) — Task 10-2, 11-2
 - `ConnectionsPM.md:72-73` — the two limitations — Task 4-3, 4-4, 11-2
 - `MarkdownPM.md:8` — "`Links/` … the connection layer" — Task 11-2
 - `MarkdownPM.md:21` — "suppressed inside code" — Task 1-1, 1-3 (true now), 11-2
 - `MarkdownPM.md:33` — "another link's `( )`, the address lands as the literal text"; "Pasted anywhere in the editor" — Task 7-1, 7-3, 11-2
-- `MarkdownPM.md:56-57` — a resting cell "renders the same content as plain markup" — Task 9-2, 9-3, 11-2
+- `MarkdownPM.md:56-57` — a resting cell "renders the same content as plain markup" — Task 9-1, 9-2, 11-2
 - `MarkdownPM.md:68-70` — `embedClaims.ts`; "four ways to create one"; "the `![[` autocomplete, which offers only pages the syntax can express" — Task 1-1, 10-1, 11-2
-- `MarkdownPM.md:97` — "The right-clicked editor sends what sits under the click" — Task 9-2, 11-2
+- `MarkdownPM.md:97` — "The right-clicked editor sends what sits under the click" — Task 9-1, 11-2
 - `MarkdownPM.md:103` — "Embed ▸ — Internal Page or Webpage" — Task 11-1, 11-2
 - `MarkdownPM.md:107` — Paste As offers for a copied connection — Task 2-1, 7-1, 11-2
 - `PropertiesPM.md:81-83` — alias "set through Rename and stored as `[alias](url)`"; "a title no page answers to is refused at commit"; "the connection color, a click that opens the page" — Task 8-1, 8-3, 11-2
@@ -4500,7 +4601,7 @@ The anchor for the markdown arms is the position one past the written destinatio
 - `Editor-Internals.md:12` — "Fenced lines hold no inline tokens" — Task 1-1, 1-3 (true now), 11-2
 - `Editor-Internals.md:25` — the embed claim's readers ("token suppression … and the autocomplete pool") — Task 1-1, 10-1, 11-2
 - `Pommora Codebase Audit.md:997,1013` — W21 lands together; F-094 deferred — Task 3-1, 11-2; F-035 (Task 10-3), F-043 (Task 5-3), F-042 (Task 2-1, 8-3), F-054 (Task 1-1), F-062 (Task 4-4)
-- Tests, each rewritten in the task that changes the behavior it pins: `connections.test.ts`, `aliasPicker.test.tsx`, `tokens.test.ts:58-61,120-133`, `embedClaims.test.ts` (deleted), `embedSuppression.test.tsx`, `intents.test.ts`, `detect.test.ts`, `scan.test.ts`, `indexSeed.test.ts`, `headingHash.test.ts`, `rewrite.test.ts`, `cascade.test.ts`, `linkValue.test.ts`, `headingRename.test.tsx` (Task 1-1); `headingHash.test.ts:33-37`, `edits.test.ts:873-` (Task 1-3, 1-4); `pageConnections.test.tsx:57` (Task 3-3); `externalLink.test.tsx:80`, `mdLinkTarget.test.tsx:158`, `blockMenuFlow.test.tsx:301,308` (Task 4-1); `connectionMenu.test.ts`, `connectionMenuActions.test.ts`, `linkEdit.test.tsx`, `linkFormat.test.tsx` (deleted), `linkEdges.test.tsx:432`, `externalLink.test.tsx:129,145`, `cellLinks.test.tsx` (Task 6-1 to 6-4); `pasteDecision.test.ts` (deleted), `pasteLink.test.tsx` (Task 7-1, 7-2); `LinkCell.test.tsx`, `valueClick.test.ts`, `linkValue.test.ts` (Task 8-1 to 8-3); `cellStatic.test.tsx:117-127`, `cellLinks.test.tsx:207-269`, `Desktop/Actions/editorMenu.test.ts`, `Menus/editorMenu.test.tsx:59-177` (Task 9-1 to 9-4); `autocomplete.test.ts`, `connectionCommit.test.tsx`, `aliasPicker.test.tsx:97,193` (Task 10-1 to 10-4).
+- Tests, each rewritten in the task that changes the behavior it pins: `connections.test.ts`, `aliasPicker.test.tsx`, `tokens.test.ts:58-61,120-133`, `embedClaims.test.ts` (deleted), `embedSuppression.test.tsx`, `intents.test.ts`, `detect.test.ts`, `scan.test.ts`, `indexSeed.test.ts`, `headingHash.test.ts`, `rewrite.test.ts`, `cascade.test.ts`, `linkValue.test.ts`, `headingRename.test.tsx` (Task 1-1); `headingHash.test.ts:33-37`, `edits.test.ts:873-` (Task 1-3, 1-4); `pageConnections.test.tsx:57` (Task 3-3); `externalLink.test.tsx:80`, `mdLinkTarget.test.tsx:158`, `blockMenuFlow.test.tsx:301,308` (Task 4-1); `connectionMenu.test.ts`, `connectionMenuActions.test.ts`, `linkEdit.test.tsx`, `linkFormat.test.tsx` (deleted), `linkEdges.test.tsx:432`, `externalLink.test.tsx:129,145`, `cellLinks.test.tsx` (Task 6-1 to 6-5); `pasteDecision.test.ts` (deleted), `pasteLink.test.tsx` (Task 7-1, 7-2); `LinkCell.test.tsx`, `valueClick.test.ts`, `linkValue.test.ts` (Task 8-1 to 8-3); `cellStatic.test.tsx:117-127`, `cellLinks.test.tsx:207-269`, `Desktop/Actions/editorMenu.test.ts`, `Menus/editorMenu.test.tsx:59-177` (Task 6-4, 9-1 to 9-3); `autocomplete.test.ts`, `connectionCommit.test.tsx`, `aliasPicker.test.tsx:97,193` (Task 10-1 to 10-4).
 
 #### Open Items
 
