@@ -1,4 +1,4 @@
-import { expressibleHeading } from './connections'
+import { expressibleInLink } from './connections'
 import { normalizeTitle } from '../Paths/caseFold'
 import { encodeLinkTarget } from './links'
 import { applyEdits, type TextEdit } from '../MarkdownPM/Engine/markdownCode'
@@ -36,7 +36,7 @@ export function rewriteHeadingConnections(
   if (!HEADING_REFERENCE.test(body)) return body
   const titleKey = normalizeTitle(title)
   const oldKey = normalizeTitle(oldHeading)
-  const wiki = expressibleHeading(newHeading)
+  const wiki = expressibleInLink(newHeading)
   const edits: TextEdit[] = []
   for (const hit of linksIn(body, ownTitle, outline && [...outline, oldHeading])) {
     if (hit.target !== titleKey || hit.qualifier !== oldKey || !hit.heading) continue

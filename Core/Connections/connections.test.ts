@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   connectionText,
-  embeddableTitle,
+  expressibleInLink,
   linkOccurrences,
   parseConnectionText,
 } from './connections'
@@ -82,9 +82,15 @@ describe('parseConnectionText', () => {
   })
 })
 
-describe('connectionText and embeddableTitle', () => {
-  it('writes a bare-fragment target with an empty title, and refuses `#` in an embed title', () => {
+describe('connectionText and expressibleInLink', () => {
+  it('writes a bare-fragment target with an empty title', () => {
     expect(connectionText('', undefined, 'H')).toBe('[[#H]]')
-    expect(embeddableTitle('C#')).toBe(false)
+  })
+  it('refuses text that would end a link early or split it', () => {
+    expect(expressibleInLink('a|b')).toBe(false)
+    expect(expressibleInLink('C#')).toBe(false)
+    expect(expressibleInLink('x]')).toBe(false)
+    expect(expressibleInLink('A]]B')).toBe(false)
+    expect(expressibleInLink('A]B')).toBe(true)
   })
 })

@@ -30,7 +30,7 @@ import '../../Tiles/tile-base.css'
 import { ZOOM } from '../../Settings/personalization'
 import { zoomStep } from '../../Tiles/tileZoom'
 import { docScan } from '../docCache'
-import { embeddableTitle } from '../../Connections/connections'
+import { expressibleInLink } from '../../Connections/connections'
 import { ownElements } from '../lineDom'
 import { healTileScrolls } from './scrollHeal'
 import type { ConnectionsApi } from '../Links/connectionsApi'
@@ -396,7 +396,7 @@ function buildTiles(
   const shown = new Set<string>()
   // A tile shows one whole page, once per document and never inside itself, so two tiles never edit one page; any other lone embed reads as the connection it is.
   for (const e of conn ? scan.embeds : []) {
-    const page = embeddableTitle(e.title) ? conn?.resolve(e.title).page : undefined
+    const page = expressibleInLink(e.title) ? conn?.resolve(e.title).page : undefined
     if (!page || shown.has(page.path) || host.ancestors.includes(page.path)) continue
     shown.add(page.path)
     tiles.push({
@@ -646,7 +646,7 @@ export function embedTileRanges(state: EditorState): readonly TileRange[] {
 
 /** A title not already held by a tile in this document or a host above it, which would land a duplicate or a cycle. */
 export function embeddable(title: string, exclude: ReadonlySet<string>): boolean {
-  return embeddableTitle(title) && !exclude.has(normalizeTitle(title))
+  return expressibleInLink(title) && !exclude.has(normalizeTitle(title))
 }
 
 export function embedExclusions(state: EditorState): Set<string> {

@@ -1519,11 +1519,16 @@ describe('handleMutate — setBanner', () => {
   })
 
   it('a name no wikilink can spell is refused', async () => {
-    // `[[…]]` carries no escape for a `]`, so the reference has no spelling at all.
     await withAssetDir()
-    const r = await setBanner(await pick('Bad]Name.png'))
+    const r = await setBanner(await pick('Bad]]Name.png'))
     expect(r.ok).toBe(false)
     expect(await bannerOf()).toBeUndefined()
+  })
+
+  it('a name holding a lone `]` is spelled as the wikilink grammar reads it', async () => {
+    await withAssetDir()
+    expect((await setBanner(await pick('Odd]Name.png'))).ok).toBe(true)
+    expect(await bannerOf()).toBe('[[Odd]Name.png]]')
   })
 
   it('a name held ANYWHERE under the root steps aside, not just one in the same folder', async () => {

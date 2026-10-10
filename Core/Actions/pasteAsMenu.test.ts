@@ -82,7 +82,13 @@ describe('what the clipboard offers to become', () => {
 
   it('withholds an embed the syntax could not spell', () => {
     expect(labels('mailto:someone@example.com', true)).not.toContain('Embedded Link')
-    expect(labels('[[Notes [WIP] final]]', true)).not.toContain('Embedded Page')
+    expect(labels('[x](Draft%5D)', true)).not.toContain('Embedded Page')
+    expect(labels('[[Notes [WIP] final]]', true)).toContain('Embedded Page')
+  })
+
+  it('withholds Embedded Page from a page link carrying a heading or an alias', () => {
+    expect(labels('[[T#H]]', true)).toEqual(['Connection', 'Markdown Link'])
+    expect(labels('[[T|a]]', true)).toEqual(['Connection', 'Markdown Link'])
   })
 })
 
@@ -138,7 +144,7 @@ describe('what each form writes', () => {
   it('writes nothing for a form the clipboard cannot take', () => {
     expect(pasteAsWrite(readLinkText(URL), 'embedPage')).toBeNull()
     expect(pasteAsWrite(readLinkText('[[Alpha]]'), 'embedLink')).toBeNull()
-    expect(pasteAsWrite(readLinkText('[[Notes [WIP] final]]'), 'embedPage')).toBeNull()
+    expect(pasteAsWrite(readLinkText('[[T#H]]'), 'embedPage')).toBeNull()
     expect(pasteAsWrite(readLinkText(URL), 'connection')).toBeNull()
     expect(pasteAsWrite(readLinkText('[[Alpha]]'), 'link-short')).toBeNull()
     expect(pasteAsWrite(null, 'plain')).toBeNull()

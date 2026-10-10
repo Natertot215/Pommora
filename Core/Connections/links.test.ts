@@ -4,6 +4,7 @@ import {
   linkDestinationStart,
   encodeLinkTarget,
   markdownLinkRegex,
+  markdownPageLink,
   targetFragment,
   targetTitle,
 } from './links'
@@ -204,5 +205,15 @@ describe('linkDestinationStart — where the destination holding the caret begin
     const line = '![label](https://example.com)'
     expect(linkDestinationStart(line, 12)).toBe(9)
     expect(linkDestinationStart(line, 4)).toBeNull()
+  })
+})
+
+describe('markdownPageLink', () => {
+  it('writes the title, heading, and label it is given', () => {
+    expect(markdownPageLink('Meeting Notes', 'H', 'x')).toBe('[x](Meeting%20Notes#H)')
+  })
+  it('labels a link by its title, or a bare heading by the heading', () => {
+    expect(markdownPageLink('P')).toBe('[P](P)')
+    expect(markdownPageLink('', 'H')).toBe('[H](#H)')
   })
 })

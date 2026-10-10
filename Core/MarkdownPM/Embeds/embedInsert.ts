@@ -4,6 +4,7 @@ import { blockAt } from '../Engine/blockModel'
 import { inSealedLine } from '../Engine/docScan'
 import { lineEndAt, lineStartAt, type TextEdit } from '../Engine/markdownCode'
 import { docScan, docString } from '../docCache'
+import { composeWebpageEmbedLine } from '../../Connections/links'
 
 export function embedInsertAfter(
   doc: string,
@@ -57,5 +58,5 @@ export function embedInsertAtCaret(view: EditorView): boolean {
 
 /** The empty pair with the caret seated inside the target: the destination guard keeps a pasted address literal there, and leaving the line forms the tile. */
 export function webpageInsertAtCaret(view: EditorView): boolean {
-  return insertEmbedToken(view, '![]()', ')'.length)
+  return insertEmbedToken(view, composeWebpageEmbedLine('', ''), ')'.length)
 }

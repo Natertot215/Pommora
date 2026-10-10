@@ -5,7 +5,7 @@ import { assetSubRoot } from '../Paths/nexusPaths'
 import { WEB_ADDRESS } from '../Paths/urlPath'
 import { neverWatched } from '../Paths/exclusion'
 import { readWatchScope } from '../Settings/settings'
-import { connectionText, embeddableTitle } from '../Connections/connections'
+import { connectionText, expressibleInLink } from '../Connections/connections'
 import { fault, ok, type Result } from '../Contract/result'
 import { ASSET_MIME } from './assetMime'
 import { AMBIGUOUS, indexable, liveAssetMap, resolveAssetName } from './assetMap'
@@ -21,7 +21,7 @@ export async function adoptFile(
   opts: { allow: 'image' | 'any'; subfolder?: string },
 ): Promise<Result<string>> {
   const base = basename(absSource)
-  if (!base || !embeddableTitle(base) || neverWatched([base]))
+  if (!base || !expressibleInLink(base) || neverWatched([base]))
     return fault('That file’s name can’t be written as a link.')
   if (opts.allow === 'image' && !(extname(base).toLowerCase() in ASSET_MIME))
     return fault('That file isn’t an image Pommora can show.')

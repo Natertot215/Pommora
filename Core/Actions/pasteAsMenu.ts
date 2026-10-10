@@ -1,4 +1,4 @@
-import { embeddableTitle, pageEmbedText, connectionText } from '../Connections/connections'
+import { expressibleInLink, pageEmbedText, connectionText } from '../Connections/connections'
 import { composeWebpageEmbedLine, markdownPageLink } from '../Connections/links'
 import { WEB_ADDRESS } from '../Paths/urlPath'
 import { linkPaste, readLinkText, type LinkPaste, type LinkTarget } from '../Connections/linkValue'
@@ -34,9 +34,10 @@ const FOOTNOTE_ROW: PasteAsRow = { label: 'Footnote', form: 'footnote' }
 const PAGE_EMBED_ROW: PasteAsRow = { label: 'Embedded Page', form: 'embedPage' }
 const URL_EMBED_ROW: PasteAsRow = { label: 'Embedded Link', form: 'embedLink' }
 
-/** `![[…]]` can't carry a `]`, and a tile forms only over an explicit http(s) address. */
 function embeddableTarget(target: LinkTarget): boolean {
-  return target.kind === 'page' ? embeddableTitle(target.title) : WEB_ADDRESS.test(target.url)
+  return target.kind === 'page'
+    ? expressibleInLink(target.title) && !target.heading && !target.alias
+    : WEB_ADDRESS.test(target.url)
 }
 
 export function pasteAsRows(
