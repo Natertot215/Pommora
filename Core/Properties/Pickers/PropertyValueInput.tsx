@@ -7,7 +7,7 @@ import { solidColorCss } from '@pommora/uix/Theme/ramp'
 import type { ConnPage } from '../../Connections/pageIndex'
 import type { PropertyDefinition } from '../properties'
 import type { PropertyValue } from '../propertyValue'
-import { linkAlias, linkValueFromRename } from '../../Connections/linkValue'
+import { linkValueFromRename, readLinkText } from '../../Connections/linkValue'
 import { editorText, parseEditorValue } from '../parseEditorValue'
 import { NumberValuePicker } from './NumberValuePicker'
 import { TextPane } from './TextPane'
@@ -53,7 +53,7 @@ export function PropertyValueInput({
       />
     )
   const raw = current?.kind === 'link' ? current.value : ''
-  const initial = alias ? (linkAlias(raw) ?? '') : editorText(current)
+  const initial = alias ? (readLinkText(raw)?.alias ?? '') : editorText(current)
   const parse = (text: string): PropertyValue | null | undefined =>
     alias ? linkValueFromRename(text, raw) : parseEditorValue(def.type, text, current)
   const invalid = (text: string): boolean => parse(text) === undefined

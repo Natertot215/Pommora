@@ -1,7 +1,7 @@
 import { EditorView } from '@codemirror/view'
 import { decidePaste, pastedUrl } from './pasteDecision'
-import type { LinkPaste } from '../../Connections/linkValue'
-import { pasteAsTarget, pasteAsWrite, type PasteAsForm } from '../../Actions/pasteAsMenu'
+import { readLinkText, type LinkPaste } from '../../Connections/linkValue'
+import { pasteAsWrite, type PasteAsForm } from '../../Actions/pasteAsMenu'
 import { linkDestinationStart } from '../../Connections/links'
 import { matchesCommand } from '../../Actions/commands'
 import { docScan, docString } from '../docCache'
@@ -98,7 +98,7 @@ export async function pasteAs(view: EditorView, form: PasteAsForm | 'literal'): 
     insertCitation(view, citationText(text))
     return
   }
-  const target = pasteAsTarget(text)
+  const target = readLinkText(text)
   const cached = target?.kind === 'url' ? (host.linkTitles.get(target.url) ?? undefined) : undefined
   const write = pasteAsWrite(target, form, cached)
   if (!write) return

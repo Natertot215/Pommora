@@ -336,6 +336,24 @@ describe('links come back with the page', () => {
     expect(await rows()).toHaveLength(0)
   })
 
+  it('a hand-written markdown Link value leaves with its page and comes back as written', async () => {
+    await linker(beta, BETA_ID, 'Related: "[x](Alpha)"')
+    await del('Journal/Daily/Alpha.md', 'page')
+    expect((await frontmatter()).Related).toBeUndefined()
+    expect(await restore('Alpha')).toBeUndefined()
+    expect((await frontmatter()).Related).toBe('[x](Alpha)')
+  })
+
+  it('a page restored while its markdown link’s page sits in the Trash parks it for that page', async () => {
+    await linker(beta, BETA_ID, 'Related: "[x](Alpha)"')
+    await del(beta, 'page')
+    await del('Journal/Daily/Alpha.md', 'page')
+    expect(await restore('Beta')).toBeUndefined()
+    expect(await frontmatter()).not.toHaveProperty('Related')
+    expect(await restore('Alpha')).toBeUndefined()
+    expect((await frontmatter()).Related).toBe('[x](Alpha)')
+  })
+
   it('a Link held under two spellings comes back as the spelling that’s read', async () => {
     await linker(beta, BETA_ID, 'Related: "[[Alpha]]"\nrelated: "[[Alpha|al]]"')
     await del('Journal/Daily/Alpha.md', 'page')

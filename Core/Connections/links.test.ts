@@ -4,7 +4,6 @@ import {
   linkDestinationStart,
   encodeLinkTarget,
   markdownLinkRegex,
-  MD_LINK,
   targetFragment,
   targetTitle,
 } from './links'
@@ -48,12 +47,6 @@ describe('markdownLinkRegex — the balanced-parens destination', () => {
 
   it('stops at two levels of nesting', () => {
     expect(target('[t](https://a.com/a_(b_(c_(d)_e)_f))')).toBeUndefined()
-  })
-
-  // Two forms of one grammar: this scans a body, MD_LINK reads a whole stored value. Disagreeing about where a link ends is how one surface renders a link the other cannot follow.
-  it('agrees with MD_LINK about where a parenthesized target ends', () => {
-    const s = '[x](https://a.com/a_(b))'
-    expect(target(s)).toBe(MD_LINK.exec(s)?.[2])
   })
 
   // These assert a result — a backtracking hang fails them by timeout, not by a threshold.

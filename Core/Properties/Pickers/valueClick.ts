@@ -3,7 +3,7 @@
 import type { PropertyValue } from '../propertyValue'
 import type { ColumnLook } from '../columnStyles'
 import type { CellMenuAction } from '../../Actions/cellMenu'
-import { readLink, urlClickTarget } from '../../Connections/linkValue'
+import { readLinkText, urlClickTarget } from '../../Connections/linkValue'
 import { type NumberConfig, type PropertyType, specOf } from '../properties'
 import { barDivisor } from '../formatValue'
 
@@ -48,7 +48,7 @@ export function valueClickIntent(
       const raw = value.kind === 'link' ? value.value : ''
       const url = urlClickTarget(raw)
       if (url) return { kind: 'open', url }
-      return readLink(raw).kind === 'page' ? null : { kind: 'edit' }
+      return readLinkText(raw)?.kind === 'page' ? null : { kind: 'edit' }
     }
   }
 }

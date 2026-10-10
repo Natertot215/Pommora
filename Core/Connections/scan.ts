@@ -3,7 +3,7 @@
 import { linkOccurrences } from './connections'
 import { normalizeTitle } from '../Paths/caseFold'
 import { targetFragment, targetTitle } from './links'
-import { readLink, wholeValueLink } from './linkValue'
+import { readLinkText, wholeValueLink } from './linkValue'
 import {
   codeMask,
   type CodeMask,
@@ -163,7 +163,7 @@ export function* valueLinks(
   outline: readonly string[] = [],
 ): Generator<LinkHit> {
   for (const value of Object.values(values)) {
-    if (typeof value !== 'string' || readLink(value).kind === 'page') continue
+    if (typeof value !== 'string' || readLinkText(value)?.kind === 'page') continue
     yield* linksIn(value, ownTitle, outline)
   }
 }

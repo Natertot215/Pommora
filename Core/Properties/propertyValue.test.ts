@@ -330,6 +330,14 @@ describe('reconcilePropertyValue — a frozen copy names only what still exists'
     expect(reconcilePropertyValue(link, '[[Gone]]', { holds })).toEqual({ kind: 'null' })
   })
 
+  it('drops a hand-written markdown link naming a page the world doesn’t hold, and keeps an address', () => {
+    expect(reconcilePropertyValue(link, '[x](Gone)', { holds })).toEqual({ kind: 'null' })
+    expect(reconcilePropertyValue(link, '[x](example.com)', { holds })).toEqual({
+      kind: 'link',
+      value: '[x](example.com)',
+    })
+  })
+
   it('keeps a Link value naming only a heading of the page it sits on', () => {
     const value = '[[#Intro]]'
     expect(reconcilePropertyValue(link, value, { holds })).toEqual({ kind: 'link', value })

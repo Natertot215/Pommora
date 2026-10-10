@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { markdownLinkRegex } from '../Connections/links'
-import { pasteAsRows, pasteAsTarget, pasteAsWrite, type PasteAsForm } from './pasteAsMenu'
+import { readLinkText } from '../Connections/linkValue'
+import { pasteAsRows, pasteAsWrite, type PasteAsForm } from './pasteAsMenu'
 
 const URL = 'https://www.example.com/a/b'
 
@@ -10,7 +11,7 @@ const forms = (clipboard: string, seat = false, cite = false): PasteAsForm[] =>
   pasteAsRows(clipboard, seat, cite).map((r) => r.form)
 
 const written = (clipboard: string, form: PasteAsForm, title?: string): string | undefined =>
-  pasteAsWrite(pasteAsTarget(clipboard), form, title)?.text
+  pasteAsWrite(readLinkText(clipboard), form, title)?.text
 
 describe('the footnote form answers to the clipboard alone', () => {
   it('is offered for a multi-paragraph clipboard, where no other form is', () => {
@@ -32,8 +33,8 @@ describe('the footnote form answers to the clipboard alone', () => {
   })
 
   it('writes nothing through the shared writer', () => {
-    expect(pasteAsWrite(pasteAsTarget(URL), 'footnote')).toBeNull()
-    expect(pasteAsWrite(pasteAsTarget('[[Alpha]]'), 'footnote')).toBeNull()
+    expect(pasteAsWrite(readLinkText(URL), 'footnote')).toBeNull()
+    expect(pasteAsWrite(readLinkText('[[Alpha]]'), 'footnote')).toBeNull()
   })
 })
 
@@ -50,6 +51,12 @@ describe('what the clipboard offers to become', () => {
   it('reads a markdown link through its target', () => {
     expect(forms(`[Home](${URL})`)).toEqual(['link-full', 'link-short', 'link-title', 'plain'])
     expect(labels('[Alpha](Alpha)')).toEqual(['Connection', 'Markdown Link'])
+  })
+
+  it('offers a held heading the two ways of naming a page, in either syntax', () => {
+    expect(labels('[[T#H]]')).toEqual(['Connection', 'Markdown Link'])
+    expect(labels('[x](#H)')).toEqual(['Connection', 'Markdown Link'])
+    expect(labels('[[#H]]')).toEqual(['Connection', 'Markdown Link'])
   })
 
   it('offers nothing for a clipboard holding neither', () => {
@@ -87,7 +94,7 @@ describe('what each form writes', () => {
   })
 
   it('stands the domain in for a title it does not have yet, and says so', () => {
-    const w = pasteAsWrite(pasteAsTarget(URL), 'link-title')
+    const w = pasteAsWrite(readLinkText(URL), 'link-title')
     expect(w).toEqual({
       kind: 'link',
       text: `[example.com](${URL})`,
@@ -106,6 +113,12 @@ describe('what each form writes', () => {
     expect(written('[[Alpha]]', 'markdown')).toBe('[Alpha](Alpha)')
   })
 
+  it('keeps the alias and heading it was handed', () => {
+    expect(written('[[T|a]]', 'connection')).toBe('[[T|a]]')
+    expect(written('[[T#H|a]]', 'markdown')).toBe('[a](T#H)')
+    expect(written('[[#H]]', 'markdown')).toBe('[H](#H)')
+  })
+
   it('encodes a page title the markdown form cannot carry raw', () => {
     expect(written('[[Notes (draft)]]', 'markdown')).toBe('[Notes (draft)](Notes%20%28draft%29)')
   })
@@ -119,15 +132,15 @@ describe('what each form writes', () => {
   it('writes each embed as the line its grammar reads', () => {
     expect(written('[[Alpha]]', 'embedPage')).toBe('![[Alpha]]')
     expect(written(URL, 'embedLink')).toBe(`![](${URL})`)
-    expect(pasteAsWrite(pasteAsTarget('[[Alpha]]'), 'embedPage')?.kind).toBe('line')
+    expect(pasteAsWrite(readLinkText('[[Alpha]]'), 'embedPage')?.kind).toBe('line')
   })
 
   it('writes nothing for a form the clipboard cannot take', () => {
-    expect(pasteAsWrite(pasteAsTarget(URL), 'embedPage')).toBeNull()
-    expect(pasteAsWrite(pasteAsTarget('[[Alpha]]'), 'embedLink')).toBeNull()
-    expect(pasteAsWrite(pasteAsTarget('[[Notes [WIP] final]]'), 'embedPage')).toBeNull()
-    expect(pasteAsWrite(pasteAsTarget(URL), 'connection')).toBeNull()
-    expect(pasteAsWrite(pasteAsTarget('[[Alpha]]'), 'link-short')).toBeNull()
+    expect(pasteAsWrite(readLinkText(URL), 'embedPage')).toBeNull()
+    expect(pasteAsWrite(readLinkText('[[Alpha]]'), 'embedLink')).toBeNull()
+    expect(pasteAsWrite(readLinkText('[[Notes [WIP] final]]'), 'embedPage')).toBeNull()
+    expect(pasteAsWrite(readLinkText(URL), 'connection')).toBeNull()
+    expect(pasteAsWrite(readLinkText('[[Alpha]]'), 'link-short')).toBeNull()
     expect(pasteAsWrite(null, 'plain')).toBeNull()
   })
 })

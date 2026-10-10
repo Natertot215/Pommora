@@ -7,8 +7,7 @@ import {
   type ConnEditAction,
   type ConnMenuContext,
 } from '../../Actions/connectionMenu'
-import { isValidLink } from '../../Paths/urlPath'
-import { readLink } from '../../Connections/linkValue'
+import { readLinkText } from '../../Connections/linkValue'
 import { resolveConnection } from '../../Nexus/treeIndex'
 import { isOpenInTabs } from '../../Navigation/tabsModel'
 import { shownDetail, useSession, windowTargetOf } from '../../Session/store'
@@ -78,7 +77,8 @@ export function linkValueMenuTarget(
   apply: (action: LinkCellAction) => void,
   hideable = false,
 ): ConnMenuTarget | null {
-  const value = readLink(raw.trim())
+  const value = readLinkText(raw)
+  if (!value) return null
   const base = {
     surface: 'cell',
     editable: true,
@@ -90,14 +90,12 @@ export function linkValueMenuTarget(
     const page = resolveConnection(useSession.getState().tree, value.title)
     return page ? { ...base, kind: 'page', page, heading: value.heading, apply } : null
   }
-  return isValidLink(value.url)
-    ? {
-        ...base,
-        kind: 'url',
-        url: value.url,
-        apply: (action) => {
-          if (action === 'rename' || action === 'editLink') apply(action)
-        },
-      }
-    : null
+  return {
+    ...base,
+    kind: 'url',
+    url: value.url,
+    apply: (action) => {
+      if (action === 'rename' || action === 'editLink') apply(action)
+    },
+  }
 }

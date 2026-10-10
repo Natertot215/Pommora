@@ -1,77 +1,133 @@
 import { describe, it, expect } from 'vitest'
 import { rewriteConnections, rewriteHeadingConnections } from './rewrite'
 import { LINK_DISPLAYS } from '../Properties/properties'
+import { parseConnectionText } from './connections'
+import type { ConnResolution, PageIndex } from './pageIndex'
+import { normalizeTitle } from '../Paths/caseFold'
 import {
   linkDisplayText,
-  linkAlias,
   linkEditText,
   linkValueFromEdit,
   linkValueFromRename,
-  parseLink,
-  readLink,
+  readLinkText,
   serializeLink,
   urlClickTarget,
 } from './linkValue'
 
-describe('parseLink', () => {
-  it('parses a bare URL as no-alias', () => {
-    expect(parseLink('https://example.com')).toEqual({ url: 'https://example.com' })
-  })
-  it('parses a markdown link into url + alias', () => {
-    expect(parseLink('[My Site](https://example.com)')).toEqual({
-      url: 'https://example.com',
-      alias: 'My Site',
+const page = (title: string): ConnResolution => ({
+  status: 'resolved',
+  page: { id: title, title, path: `${title}.md` },
+})
+const only =
+  (title: string): PageIndex['resolve'] =>
+  (raw) =>
+    normalizeTitle(raw) === normalizeTitle(title) ? page(title) : { status: 'phantom' }
+const ambiguous: PageIndex['resolve'] = () => ({ status: 'ambiguous' })
+
+describe('readLinkText without a resolver', () => {
+  it('reads a connection with its heading and alias', () => {
+    expect(readLinkText('[[T#H|a]]')).toEqual({
+      kind: 'page',
+      syntax: 'wiki',
+      title: 'T',
+      heading: 'H',
+      alias: 'a',
     })
   })
-  it('collapses an empty alias to no alias', () => {
-    expect(parseLink('[](https://example.com)')).toEqual({ url: 'https://example.com' })
+  it('reads a markdown link to a title-shaped target as a page', () => {
+    expect(readLinkText('[x](Old)')).toEqual({
+      kind: 'page',
+      syntax: 'markdown',
+      title: 'Old',
+      alias: 'x',
+    })
   })
-  it('keeps a URL that itself contains parens', () => {
-    expect(parseLink('[Wiki](https://en.wikipedia.org/wiki/Foo_(bar))')).toEqual({
+  it('reads a valid address as a weblink under a scheme', () => {
+    expect(readLinkText('[x](example.com)')).toEqual({
+      kind: 'url',
+      syntax: 'markdown',
+      url: 'https://example.com',
+      alias: 'x',
+    })
+    expect(readLinkText('example.com')).toEqual({
+      kind: 'url',
+      syntax: 'bare',
+      url: 'https://example.com',
+    })
+  })
+  it('reads a bare heading as a page with an empty title', () => {
+    expect(readLinkText('[x](#H)')).toEqual({
+      kind: 'page',
+      syntax: 'markdown',
+      title: '',
+      heading: 'H',
+      alias: 'x',
+    })
+  })
+  it('reads nothing the editor would not draw as one whole link', () => {
+    expect(readLinkText('[^1](https://a.com)')).toBeNull()
+    expect(readLinkText('[a](b) [c](d)')).toBeNull()
+    expect(readLinkText('foo bar')).toBeNull()
+    expect(readLinkText('[](Page)')).toBeNull()
+  })
+  it('keeps a backslash the cell escape did not put there', () => {
+    expect(readLinkText('[[A\\]]')).toMatchObject({ kind: 'page', title: 'A\\' })
+    expect(readLinkText('[[A#Note\\]]')).toMatchObject({ title: 'A', heading: 'Note\\' })
+    expect(parseConnectionText('[[T\\|a]]')).toEqual({ title: 'T', alias: 'a' })
+  })
+  it('keeps a URL that itself contains parens, and an escaped label', () => {
+    expect(readLinkText('[Wiki](https://en.wikipedia.org/wiki/Foo_(bar))')).toMatchObject({
       url: 'https://en.wikipedia.org/wiki/Foo_(bar)',
       alias: 'Wiki',
     })
+    expect(readLinkText(serializeLink('https://example.com', 'a](b \\ c'))).toMatchObject({
+      url: 'https://example.com',
+      alias: 'a](b \\ c',
+    })
   })
-  it('trims surrounding whitespace', () => {
-    expect(parseLink('  https://example.com  ')).toEqual({ url: 'https://example.com' })
+})
+
+describe('readLinkText with a resolver', () => {
+  const r = only('Meeting Notes')
+  it('names a resolved page under its own capitalization', () => {
+    expect(readLinkText('[[meeting notes]]', r)).toMatchObject({ title: 'Meeting Notes' })
+    expect(readLinkText('[x](meeting notes)', r)).toMatchObject({ title: 'Meeting Notes' })
+  })
+  it('falls to the address arm when no page holds the title', () => {
+    expect(readLinkText('[x](example.com)', r)).toEqual({
+      kind: 'url',
+      syntax: 'markdown',
+      url: 'https://example.com',
+      alias: 'x',
+    })
+    expect(readLinkText('[x](Nope)', r)).toBeNull()
+  })
+  it('refuses an ambiguous title, address-shaped or not', () => {
+    expect(readLinkText('[[Dup]]', ambiguous)).toBeNull()
+    expect(readLinkText('[x](dup.io)', ambiguous)).toBeNull()
+  })
+  it('reads a bare heading only where the resolver answers the holder', () => {
+    expect(readLinkText('[[#H]]', r)).toBeNull()
+    expect(
+      readLinkText('[[#H]]', (t) => (t === '' ? page('Holder') : { status: 'phantom' })),
+    ).toEqual({
+      kind: 'page',
+      syntax: 'wiki',
+      title: '',
+      heading: 'H',
+    })
   })
 })
 
 describe('serializeLink', () => {
-  it('writes a bare url when there is no alias', () => {
-    expect(serializeLink({ url: 'https://example.com' })).toBe('https://example.com')
+  it('writes a bare url when there is no label', () => {
+    expect(serializeLink('https://example.com')).toBe('https://example.com')
   })
-  it('writes a markdown link when there is an alias', () => {
-    expect(serializeLink({ url: 'https://example.com', alias: 'My Site' })).toBe(
-      '[My Site](https://example.com)',
-    )
-  })
-  it('round-trips through parse', () => {
-    const raw = '[Docs](https://example.com/docs)'
-    expect(serializeLink(parseLink(raw))).toBe(raw)
-  })
-})
-
-describe('alias with markdown-breaking chars — escaped, never corrupts', () => {
-  it('escapes `]` in the alias so the shape survives', () => {
-    expect(serializeLink({ url: 'https://example.com', alias: 'Chapter [2]' })).toBe(
+  it('writes a markdown link when there is a label, escaping a bracket', () => {
+    expect(serializeLink('https://example.com', 'My Site')).toBe('[My Site](https://example.com)')
+    expect(serializeLink('https://example.com', 'Chapter [2]')).toBe(
       '[Chapter [2\\]](https://example.com)',
     )
-  })
-  it('round-trips an alias containing `]`', () => {
-    const v = { url: 'https://example.com', alias: 'Chapter [2]' }
-    expect(parseLink(serializeLink(v))).toEqual(v)
-  })
-  it('round-trips an alias containing `](` and a backslash', () => {
-    const v = { url: 'https://example.com', alias: 'a](b \\ c' }
-    expect(parseLink(serializeLink(v))).toEqual(v)
-  })
-  it('the escaped form stays a url through the codec, never a select pill', () => {
-    // a bare `]` in the alias would otherwise reclassify to select — the exact fixed bug
-    expect(parseLink(serializeLink({ url: 'https://example.com', alias: 'TODO]' }))).toEqual({
-      url: 'https://example.com',
-      alias: 'TODO]',
-    })
   })
 })
 
@@ -169,7 +225,7 @@ describe('internal links', () => {
   })
   it('has no address to open, and edits as itself', () => {
     expect(urlClickTarget('[[Meeting Notes]]')).toBeNull()
-    expect(linkEditText('[[Meeting Notes|Today]]')).toBe('[[Meeting Notes|Today]]')
+    expect(linkEditText('[[Meeting Notes|Today]]')).toBe('[[Meeting Notes]]')
   })
   it('renames by setting the connection’s alias', () => {
     expect(linkValueFromRename('Today', '[[Meeting Notes]]')).toEqual({
@@ -179,6 +235,12 @@ describe('internal links', () => {
     expect(linkValueFromRename('', '[[Meeting Notes|Today]]')).toEqual({
       kind: 'link',
       value: '[[Meeting Notes]]',
+    })
+  })
+  it('renames a markdown page link in its own syntax', () => {
+    expect(linkValueFromRename('Today', '[x](Meeting%20Notes#H)')).toEqual({
+      kind: 'link',
+      value: '[Today](Meeting%20Notes#H)',
     })
   })
   it('a page rename rewrites a Link value naming the page in either syntax, and nothing else', () => {
@@ -196,7 +258,12 @@ describe('internal links', () => {
     expect(move('[[Meeting Notes#Decisions|D]]', 'A|B')).toBe('[[Meeting Notes#Decisions|D]]')
   })
   it('reads a heading link with its heading', () => {
-    expect(readLink('[[Page#H]]')).toEqual({ kind: 'page', title: 'Page', heading: 'H' })
+    expect(readLinkText('[[Page#H]]')).toEqual({
+      kind: 'page',
+      syntax: 'wiki',
+      title: 'Page',
+      heading: 'H',
+    })
   })
   it('keeps the heading through a page rename, an edit, a typed commit, and an alias rename', () => {
     const resolve = (raw: string): string | null =>
@@ -225,13 +292,9 @@ describe('a connection under the Link cell’s three menu actions', () => {
     raw.trim().toLowerCase() === 'meeting notes' ? 'Meeting Notes' : null
   const CONNECTION = '[[Meeting Notes|Today]]'
 
-  it('Edit opens on the connection and round-trips it unchanged', () => {
-    const text = linkEditText(CONNECTION)
-    expect(text).toBe(CONNECTION)
-    expect(linkValueFromEdit(text, CONNECTION, resolve)).toEqual({
-      kind: 'link',
-      value: CONNECTION,
-    })
+  it('Edit opens on the page alone, as an address opens on the address', () => {
+    expect(linkEditText(CONNECTION)).toBe('[[Meeting Notes]]')
+    expect(linkEditText('[My Site](https://example.com)')).toBe('https://example.com')
   })
   it('Edit re-targets to a different page, keeping nothing of the old one', () => {
     expect(linkValueFromEdit('[[meeting notes]]', CONNECTION, resolve)).toEqual({
@@ -254,7 +317,7 @@ describe('a connection under the Link cell’s three menu actions', () => {
     })
   })
   it('Rename opens on the alias and writes it back onto the same page', () => {
-    expect(linkAlias(CONNECTION)).toBe('Today')
+    expect(readLinkText(CONNECTION)?.alias).toBe('Today')
     expect(linkValueFromRename('Tomorrow', CONNECTION)).toEqual({
       kind: 'link',
       value: '[[Meeting Notes|Tomorrow]]',

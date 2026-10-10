@@ -6,7 +6,7 @@ import { useSession } from '../../Session/store'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { isCmd, isSecondaryClick } from '@pommora/uix/Interactions/chords'
 import { OverScroll } from '@pommora/uix/Interactions/OverScroll'
-import { linkDisplayText, readLink, type LinkTarget } from '../../Connections/linkValue'
+import { linkDisplayText, readLinkText, type LinkTarget } from '../../Connections/linkValue'
 import { resolveConnection } from '../../Nexus/treeIndex'
 import { solidColorCss } from '@pommora/uix/Theme/ramp'
 import { openWebLink } from '../../Web/openWebLink'
@@ -27,17 +27,17 @@ export function LinkCell({
   /** The page the value sits on, which a bare `[[#Heading]]` names; a Space has none to name. */
   holder?: ConnPage
 }): React.JSX.Element | null {
-  const target = readLink(raw)
-  const url = target.kind === 'url' ? target.url : ''
+  const target = readLinkText(raw)
+  const url = target === null ? raw.trim() : target.kind === 'url' ? target.url : ''
   const display = isLinkDisplay(look) ? look : (def?.link_display ?? DEFAULT_LINK_DISPLAY)
-  const wantsTitle = display === 'link-title' && !target.alias && isHttpLink(url)
+  const wantsTitle = display === 'link-title' && !target?.alias && isHttpLink(url)
   const title = useSession((s) => (wantsTitle ? s.linkTitles[url] : undefined))
   const resolveLinkTitle = useSession((s) => s.resolveLinkTitle)
   useEffect(() => {
     if (wantsTitle && !title) resolveLinkTitle(url)
   }, [wantsTitle, title, url, resolveLinkTitle])
 
-  if (target.kind === 'page')
+  if (target?.kind === 'page')
     return <ConnectionCell target={target} showTitle={showFullLink === true} holder={holder} />
   if (!url) return null
   return (

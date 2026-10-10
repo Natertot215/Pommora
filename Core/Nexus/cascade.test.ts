@@ -458,6 +458,14 @@ describe('deleteCascade', () => {
     })
   })
 
+  it('strips a hand-written markdown Link value naming the page, recording it as written', async () => {
+    const a = await linker('Cites', '[x](Target)')
+    await refreshTree(root)
+    const r = await deleteCascade(root, target(), ['Target'])
+    expect(await fmOf(a.path)).not.toHaveProperty('Related')
+    expect(r.links).toEqual([{ page: a.id, property: related, value: '[x](Target)' }])
+  })
+
   it('strips an unquoted `[[Page]]` Link value, recording the link it spells', async () => {
     const a = await linker('Cites', 'held')
     const bytes = await readFile(a.path, 'utf8')

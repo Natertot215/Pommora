@@ -7,11 +7,10 @@ import {
   PROPERTY_TYPES,
   type PropertyDefinition,
 } from './properties'
-import { parseConnectionText } from '../Connections/connections'
 import { normalizeTitle } from '../Paths/caseFold'
 import { heldValue, landValue, writeTarget } from '../Files/heldKeys'
 import { yamlInline } from '../Files/pageFile'
-import { linkEntry } from '../Connections/linkValue'
+import { linkEntry, readLinkText } from '../Connections/linkValue'
 
 const strings = z.array(z.string())
 export const propertyValue = z.discriminatedUnion('kind', [
@@ -121,8 +120,10 @@ export interface Frozen {
 
 /** Whether `raw` is a Link naming a page `frozen` doesn't hold; one naming only a heading of its own page always stands. */
 export function namesGonePage(raw: unknown, frozen: Frozen): boolean {
-  const page = typeof raw === 'string' ? parseConnectionText(raw) : null
-  return !!page?.title && frozen.holds !== undefined && !frozen.holds(page.title)
+  const page = typeof raw === 'string' ? readLinkText(raw) : null
+  return (
+    page?.kind === 'page' && !!page.title && frozen.holds !== undefined && !frozen.holds(page.title)
+  )
 }
 
 // A restore of a frozen copy keeps only the options the definition still offers and the pages its world holds, so a deleted option or page never comes back through it.

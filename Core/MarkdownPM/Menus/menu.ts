@@ -21,7 +21,7 @@ function insertLinkOverSelection(view: EditorView): boolean {
   const [from, to] = trimmedRange(docString(view.state.doc), sel.from, sel.to)
   const text = view.state.sliceDoc(from, to)
   if (!text.trim() || !isValidLink(text)) return false
-  const insert = serializeLink({ url: normalizeLinkUrl(text), alias: text })
+  const insert = serializeLink(normalizeLinkUrl(text), text)
   view.dispatch({
     changes: { from, to, insert },
     selection: { anchor: from + insert.length },
