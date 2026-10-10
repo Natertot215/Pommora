@@ -3,17 +3,19 @@ import { parseListMarker, headingParts } from '../Engine/detect'
 import { isQuoteToggleable, splitPrefix } from './format'
 import type { EditorMenuRequest } from '../../Actions/editorMenu'
 import { lineStartAt, lineEndAt } from '../Engine/markdownCode'
+import { type DocScan, inFenceAt } from '../Engine/docScan'
 
 export function readFormatState(
-  doc: string,
+  scan: DocScan,
   from: number,
   to: number,
 ): Omit<EditorMenuRequest, 'scope' | 'x' | 'y' | 'embedSeat' | 'citeSeat'> {
+  const doc = scan.text
   // Inline marks are line-local, so only the caret's line is tokenized, in line-relative coords. A cross-line selection can't sit inside one inline token anyway.
   const ls = lineStartAt(doc, from)
   const le = lineEndAt(doc, from)
   const line = doc.slice(ls, le)
-  const tokens = tokenize(line)
+  const tokens = inFenceAt(scan, from) ? [] : tokenize(line)
   const f = from - ls
   const t = to - ls
   const wrapping = (kind: string) =>
