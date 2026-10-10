@@ -643,7 +643,7 @@ const inUrlRun = (doc: string, c: number): boolean => {
 const isLiteralAt = (scan: DocScan, c: number): boolean =>
   inCodeNear(scan, c) ||
   spanAt(scan.maths, c) !== undefined ||
-  (connectionAt(scan, c) ?? openConnectionAt(scan, c)) !== null ||
+  openConnectionAt(scan, c) !== null ||
   inUrlRun(scan.text, c)
 
 // An unclosed `[` holds a citation's label or a link's text: a glyph written there lands inside the reference.

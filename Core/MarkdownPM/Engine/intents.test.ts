@@ -748,7 +748,7 @@ describe('outliner rails', () => {
   })
 })
 
-describe('embed token styling', () => {
+describe('a lone embed line and an HTML tag', () => {
   it('a lone-line embed matches no line construct — no gate needed, pinned so one arriving would show', () => {
     const scan = scanDoc('- item\n![[Foo]]\n# Head')
     const { perLine } = docLineIntents(scan)

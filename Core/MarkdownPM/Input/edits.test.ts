@@ -521,6 +521,10 @@ describe('dash + arrow auto-format', () => {
     expect(dashArrow(scanDoc('[[A --'), 6, 6, 'b')).toBeNull()
     expect(dashArrow(scanDoc('[[A --]]'), 6, 6, 'b')).toBeNull()
   })
+  it('a caret resting directly before a connection is outside it, so the dash before it converts', () => {
+    expect(dashArrow(scanDoc('see -[[B]]'), 5, 5, '>')).not.toBeNull()
+    expect(dashArrow(scanDoc('see -![[B]]'), 5, 5, '>')).not.toBeNull()
+  })
   it('-- then a letter → em-dash', () => {
     const doc = '--'
     const e = dashArrow(scanDoc(doc), 2, 2, 'a')!

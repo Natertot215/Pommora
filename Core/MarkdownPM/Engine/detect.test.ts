@@ -4,6 +4,7 @@ import { tokenize } from './tokens'
 import { scanDoc } from './docScan'
 import { isBlockquoteLine, quoteDepthOf } from './markdownCode'
 import {
+  blockEmbedLines,
   loneWebpageEmbed,
   isThematicBreakLine,
   isHeadingLine,
@@ -423,5 +424,50 @@ describe('composeWebpageEmbedLine — the ONE assembly path', () => {
 
   it('writes the bare form for an empty label', () => {
     expect(composeWebpageEmbedLine('', URL)).toBe(`![](${URL})`)
+  })
+})
+
+describe('blockEmbedLines', () => {
+  const lines = splitWithOffsets
+  it('claims a lone-line embed, trailing whitespace tolerated', () => {
+    expect(blockEmbedLines(lines('a\n![[Foo]]  \nb'), [])).toEqual([
+      { from: 2, to: 12, title: 'Foo' },
+    ])
+  })
+
+  it('a leading indent is continuation context, never an embed', () => {
+    expect(blockEmbedLines(lines('- item\n  ![[Foo]]'), [])).toEqual([])
+    expect(blockEmbedLines(lines('  ![[Foo]]'), [])).toEqual([])
+  })
+
+  it('rejects any line carrying more than the embed', () => {
+    expect(blockEmbedLines(lines('x ![[Foo]]\n![[Foo]] y\n![[A]] ![[B]]'), [])).toEqual([])
+  })
+
+  it('captures an empty title without claiming resolution', () => {
+    expect(blockEmbedLines(lines('![[]]'), [])).toEqual([{ from: 0, to: 5, title: '' }])
+  })
+
+  it('excluded regions own their lines', () => {
+    expect(blockEmbedLines(lines('![[A]]\n![[B]]'), [[0, 6]])).toEqual([
+      { from: 7, to: 13, title: 'B' },
+    ])
+  })
+})
+
+describe("the document scan's embed lines", () => {
+  const docEmbedLines = (doc: string) => scanDoc(doc).embeds
+  it('a fenced ![[…]] is code, not an embed', () => {
+    expect(docEmbedLines('```\n![[Foo]]\n```')).toEqual([])
+  })
+
+  it('an ![[…]] inside display math is formula source, and cannot steal a later claim', () => {
+    expect(docEmbedLines('$$\n![[Foo]]\n$$\n\n![[Foo]]')).toEqual([
+      { from: 16, to: 24, title: 'Foo' },
+    ])
+  })
+
+  it('a lone-line embed between blocks still claims', () => {
+    expect(docEmbedLines('para\n\n![[Foo]]\n\n- item')).toEqual([{ from: 6, to: 14, title: 'Foo' }])
   })
 })

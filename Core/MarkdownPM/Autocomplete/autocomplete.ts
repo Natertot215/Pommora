@@ -116,7 +116,6 @@ export function autocompleteQuery(
       label,
     }
   }
-  // A LOCAL match — the connections pattern excludes an embed opener by design, and `[` doesn't auto-pair after `!`, so an in-progress embed is usually unclosed.
   if (allowEmbeds) {
     for (let idx = line.indexOf('![['); idx !== -1; idx = line.indexOf('![[', idx + 3)) {
       const contentStart = idx + 3

@@ -5,7 +5,7 @@ import { pasteAsTarget, pasteAsWrite, type PasteAsForm } from '../../Actions/pas
 import { linkDestinationStart } from '../../Connections/links'
 import { matchesCommand } from '../../Actions/commands'
 import { docScan, docString } from '../docCache'
-import { inCodeAt } from '../Engine/docScan'
+import { inCodeNear } from '../Engine/docScan'
 import { insertCitation } from '../Citations/citationActions'
 import { citationText } from '../Citations/citationEdits'
 import { embedSeatAt } from '../Embeds/embedInsert'
@@ -43,7 +43,7 @@ function literalAt(view: EditorView, pos: number): boolean {
   const line = view.state.doc.lineAt(pos)
   if (linkDestinationStart(line.text, pos - line.from) !== null) return true
   const scan = docScan(view.state.doc)
-  return inCodeAt(scan, pos) || (pos > line.from && inCodeAt(scan, pos - 1))
+  return inCodeNear(scan, pos)
 }
 
 function writeLink(view: EditorView, link: LinkPaste): void {

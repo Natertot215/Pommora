@@ -156,8 +156,8 @@ describe('an aliased wikilink separates what it shows from what it resolves', ()
   })
 })
 
-describe('a heading link separates its page half, its fragment, and what it resolves', () => {
-  it('[[Page#H]] carries resolveRange on the page, fragment on the heading, and content across both', () => {
+describe('a heading link separates its page half, its heading, and what it resolves', () => {
+  it('[[Page#H]] carries resolveRange on the page, heading on the heading, and content across both', () => {
     const t = '[[Page#H]]'
     const w = byKind(tokenize(t), 'wikiLink')[0]
     expect(slice(t, w.resolveRange)).toBe('Page')
@@ -166,7 +166,7 @@ describe('a heading link separates its page half, its fragment, and what it reso
     expect(aliasedToken(w)).toBe(false)
   })
 
-  it('[[#H]] resolves an empty page span and carries the heading as its fragment', () => {
+  it('[[#H]] resolves an empty page span and carries its heading', () => {
     const t = '[[#H]]'
     const w = byKind(tokenize(t), 'wikiLink')[0]
     const [rs, re] = w.resolveRange
@@ -174,7 +174,7 @@ describe('a heading link separates its page half, its fragment, and what it reso
     expect(slice(t, w.heading as [number, number])).toBe('H')
   })
 
-  it('[[Page#H|a]] shows the alias, resolves the page, and still carries the heading as its fragment', () => {
+  it('[[Page#H|a]] shows the alias, resolves the page, and still carries its heading', () => {
     const t = '[[Page#H|a]]'
     const w = byKind(tokenize(t), 'wikiLink')[0]
     expect(slice(t, w.contentRange)).toBe('a')
@@ -192,7 +192,7 @@ describe('a heading link separates its page half, its fragment, and what it reso
     expect(tokenize('[x](u)')[0]).not.toHaveProperty('resolveRange')
   })
 
-  it('[[Page#]] carries no fragment and reads as the page alone', () => {
+  it('[[Page#]] carries no heading and reads as the page alone', () => {
     const t = '[[Page#]]'
     const w = byKind(tokenize(t), 'wikiLink')[0]
     expect(w.heading).toBeUndefined()
