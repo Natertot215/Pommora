@@ -25,8 +25,12 @@ describe('autocompleteQuery', () => {
   it('suppresses on an empty placeholder', () => {
     expect(autocompleteQuery('see [[]] end', 6)).toBeNull()
   })
-  it('suppresses image embeds ![[…]]', () => {
-    expect(autocompleteQuery('see ![[Pic]] end', 9)).toBeNull()
+  it('reads a closed ![[…]] as the connection after its `!`', () => {
+    expect(autocompleteQuery('see ![[Pic]] end', 9)).toMatchObject({
+      from: 5,
+      to: 12,
+      form: 'link',
+    })
   })
   it('never opens inside a fenced block, however plain the line reads', () => {
     const doc = 'intro\n```\nsee [[Pro]] end\n```\nafter'
@@ -88,12 +92,12 @@ describe('embed autocomplete detection', () => {
     })
   })
 
-  it('a closed ![[..]] span covers the closer', () => {
+  it('a closed ![[..]] is a connection, so its `!` survives the commit', () => {
     expect(autocompleteQuery('![[Fo]]', 5, true)).toEqual({
       query: 'Fo',
-      from: 0,
+      from: 1,
       to: 7,
-      form: 'embed',
+      form: 'link',
     })
   })
 

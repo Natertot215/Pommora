@@ -762,12 +762,4 @@ describe('embed token styling', () => {
     expect(drawn(new Set())).toEqual(['md-html-tag', 'md-bracket', 'md-bracket'])
     expect(drawn(new Set([0]))).toEqual(drawn(new Set()))
   })
-
-  it('the embed token wears the embed content class', () => {
-    const tokens = tokenize('see ![[Foo]] here')
-    const embed = tokens.find((t) => t.kind === 'embed')
-    expect(embed).toBeDefined()
-    const intents = tokenIntents(tokens, new Set())
-    expect(intents.some((i) => i.kind === 'class' && i.className === 'md-embed')).toBe(true)
-  })
 })

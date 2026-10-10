@@ -1,5 +1,6 @@
 import { StateEffect, StateField } from '@codemirror/state'
-import { linkAt } from '../../Connections/connections'
+import { docScan } from '../docCache'
+import { connectionAt } from '../Input/edits'
 
 export const restedOnLink = StateEffect.define<number>()
 
@@ -19,8 +20,7 @@ export const linkTyping = StateField.define<number | null>({
   update(value, tr) {
     if (!tr.docChanged) return tr.selection ? null : value
     const head = tr.newSelection.main.head
-    const line = tr.newDoc.lineAt(head)
-    const s = linkAt(line.text, head - line.from)
-    return s ? line.from + s.full[0] : null
+    const s = connectionAt(docScan.after(tr), head)
+    return s ? tr.newDoc.lineAt(head).from + s.full[0] : null
   },
 })

@@ -219,7 +219,9 @@ describe('linksIn', () => {
 
   it('names the syntax each occurrence was written in', () => {
     expect(hits('a [[Alpha]] link').map((h) => h.syntax)).toEqual(['wiki'])
-    expect(hits('an ![[Alpha]] embed').map((h) => h.syntax)).toEqual(['embed'])
+    expect(hits('![[Alpha]] ').map((h) => h.syntax)).toEqual(['embed'])
+    expect(hits('an ![[Alpha]] embed').map((h) => h.syntax)).toEqual(['wiki'])
+    expect(hits('```\n![[Alpha]]\n```\n- ![[Alpha]]').map((h) => h.syntax)).toEqual(['wiki'])
     expect(hits('a [label](Alpha.md) link').map((h) => h.syntax)).toEqual(['markdown'])
     expect(hits('see §Setup', 'Own', ['Setup']).map((h) => h.syntax)).toEqual(['section'])
   })
@@ -241,20 +243,28 @@ describe('linksIn', () => {
   it('reports `at` as the offset the match begins at', () => {
     const body = 'lead words [[Alpha]] trail'
     expect(hits(body)[0].at).toBe(body.indexOf('[[Alpha]]'))
-    const embed = 'lead ![[Alpha]] trail'
-    expect(hits(embed)[0].at).toBe(embed.indexOf('![[Alpha]]'))
+    const embed = '![[Alpha]]'
+    expect(hits(embed)[0].at).toBe(embed.indexOf('[[Alpha]]'))
   })
 
   it('stops the page half at the first `#`, a trailing backslash included', () => {
     expect(hits('[[Foo\\#Bar]]')[0]).toMatchObject({ target: 'foo\\', qualifier: 'bar' })
   })
 
-  it('yields a `§` run only when an outline AND an own title are both supplied', () => {
+  it('yields a `§` run only under an outline, keyed to the own title, blank when none is given', () => {
     expect(hits('see §Setup', 'Own', ['Setup'])).toEqual([
-      { syntax: 'section', target: 'own', qualifier: 'setup', at: 4 },
+      {
+        syntax: 'section',
+        target: 'own',
+        qualifier: 'setup',
+        at: 4,
+        title: [4, 4],
+        heading: [5, 10],
+        alias: null,
+      },
     ])
     expect(hits('see §Setup', 'Own', [])).toEqual([])
-    expect(hits('see §Setup', '', ['Setup'])).toEqual([])
+    expect(hits('see §Setup', '', ['Setup'])).toMatchObject([{ target: '', qualifier: 'setup' }])
   })
 
   it('honors a mask passed in rather than building its own', () => {

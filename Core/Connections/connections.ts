@@ -1,27 +1,32 @@
 import { normalizeTitle } from '../Paths/caseFold'
-
-export const pageEmbedPattern = (): RegExp =>
-  /!\[\[(?<page>[^\]\r\n#]*)(?:#(?<heading>[^\]\r\n]*))?\]\]/dg
+import { markdownLinkRegex } from './links'
+import { type CodeMask, inlineSpans } from '../MarkdownPM/Engine/markdownCode'
 
 // Fresh per call so callers never share `lastIndex`. `]` is content unless it closes the pair; the 255 cap is load-bearing, since an unbounded run backtracks quadratically on an unclosed `[`-run. The page half stops at the first `#`; the heading takes the rest up to the pipe.
 export function pageLinkPattern(): RegExp {
-  return /(?<!!)\[\[(?<page>(?:[^\]\r\n|#]|\](?!\])){0,255})(?:#(?<heading>(?:[^\]\r\n|]|\](?!\])){0,255}))?(?:\|(?<alias>[^\]\r\n]{0,255}))?\]\]/dg
+  return /\[\[(?<page>(?:[^\]\r\n|#]|\](?!\])){0,255})(?:#(?<heading>(?:[^\]\r\n|]|\](?!\])){0,255}))?(?:\|(?<alias>[^\]\r\n]{0,255}))?\]\]/dg
 }
 
 export type LinkStatus = 'resolved' | 'phantom' | 'ambiguous'
 
-interface LinkSpans {
-  full: [number, number]
-  title: [number, number]
-  heading: [number, number] | null
-  alias: [number, number] | null
+type Span = [number, number]
+
+export interface LinkSpans {
+  full: Span
+  title: Span
+  heading: Span | null
+  alias: Span | null
 }
 
+export type LinkOccurrence =
+  | ({ syntax: 'wiki' } & LinkSpans)
+  | { syntax: 'markdown'; full: Span; label: Span; destination: Span }
+
 // A GFM cell escapes `|`, so an aliased connection inside a table arrives as `[[Title\|alias]]` or `[[Title#Heading\|alias]]` — the backslash is the cell's, and it sits on whichever half precedes the pipe.
-export const titleOf = (rawTitle: string): string =>
+const titleOf = (rawTitle: string): string =>
   rawTitle.endsWith('\\') ? rawTitle.slice(0, -1) : rawTitle
 
-export function linkSpans(m: RegExpMatchArray): LinkSpans | null {
+function linkSpans(m: RegExpMatchArray): LinkSpans | null {
   const at = m.index
   const g = m.indices?.groups
   if (at == null || !g?.page) return null
@@ -29,7 +34,7 @@ export function linkSpans(m: RegExpMatchArray): LinkSpans | null {
   const heading = g.heading ?? null
   if (page[1] === page[0] && heading === null) return null
   const alias = g.alias ?? null
-  const unescaped = (r: [number, number]): [number, number] =>
+  const unescaped = (r: Span): Span =>
     alias !== null && m[0][r[1] - 1 - at] === '\\' ? [r[0], r[1] - 1] : r
   return {
     full: [at, at + m[0].length],
@@ -39,28 +44,33 @@ export function linkSpans(m: RegExpMatchArray): LinkSpans | null {
   }
 }
 
-export function linkAt(line: string, rel: number): LinkSpans | null {
-  for (const m of line.matchAll(pageLinkPattern())) {
+const overlaps = (a: Span, b: Span): boolean => a[0] < b[1] && b[0] < a[1]
+
+// Code touches a link when its start sits in code, or a closed inline code span, backticks included, overlaps it; such a link is text.
+function codeTouches(text: string, inCode: CodeMask, [from, to]: Span): boolean {
+  if (inCode(from)) return true
+  const start = text.lastIndexOf('\n', from - 1) + 1
+  const end = text.indexOf('\n', from)
+  const line = text.slice(start, end === -1 ? text.length : end)
+  return inlineSpans(line).some(
+    ([a, b, run]) => b <= line.length && overlaps([start + a - run, start + b + run], [from, to]),
+  )
+}
+
+/** Every connection and markdown link in `text` that code doesn't touch, with empty slots kept. A markdown link overlapping a connection yields to it, so `[[Title]](target)` stays a connection trailed by literal parens, as Obsidian reads it. */
+export function linkOccurrences(text: string, inCode: CodeMask): LinkOccurrence[] {
+  const out: LinkOccurrence[] = []
+  for (const m of text.matchAll(pageLinkPattern())) {
     const s = linkSpans(m)
-    if (s && rel >= s.full[0] && rel <= s.full[1]) return s
+    if (s && !codeTouches(text, inCode, s.full)) out.push({ syntax: 'wiki', ...s })
   }
-  return null
-}
-
-export function aliasSpanAt(line: string, rel: number): [number, number] | null {
-  const alias = linkAt(line, rel)?.alias
-  return alias && rel >= alias[0] && rel <= alias[1] ? alias : null
-}
-
-export function emptyAliasPipeAt(line: string, rel: number): number | null {
-  const s = linkAt(line, rel)
-  return s?.alias && s.alias[0] === s.alias[1] ? (s.heading ?? s.title)[1] : null
-}
-
-// The `#` of an empty heading slot, `[[Page#]]`: like an empty pipe, it goes when the caret leaves it.
-export function emptyHeadingHashAt(line: string, rel: number): number | null {
-  const s = linkAt(line, rel)
-  return s?.heading && s.heading[0] === s.heading[1] ? s.heading[0] - 1 : null
+  for (const m of text.matchAll(markdownLinkRegex())) {
+    const [full, label, destination] = m.indices as [Span, Span, Span]
+    if (codeTouches(text, inCode, full)) continue
+    if (!out.some((o) => o.syntax === 'wiki' && overlaps(o.full, full)))
+      out.push({ syntax: 'markdown', full, label, destination })
+  }
+  return out
 }
 
 const WHOLE_LINK = new RegExp(`^(?:${pageLinkPattern().source})$`, 'd')

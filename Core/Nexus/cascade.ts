@@ -17,7 +17,6 @@ import { withheldIn } from './treePatch'
 import {
   type RenameChange,
   rewriteConnections,
-  rewriteFrontmatterConnections,
   rewriteHeadingConnections,
 } from '../Connections/rewrite'
 import { headingOutline } from '../MarkdownPM/Engine/headingScan'
@@ -196,15 +195,10 @@ export async function renameCascade(
       own = '',
       outlineOf = '',
     ): Record<string, string> => {
-      const entries = Object.entries(raw)
-      const patch = rewriteFrontmatterConnections(
-        Object.fromEntries(entries.filter(([key]) => typeOf(key) === 'link')),
-        title,
-        change,
-        own,
-      )
-      for (const [key, value] of entries) {
-        if (typeOf(key) !== 'text') continue
+      const patch: Record<string, string> = {}
+      for (const [key, value] of Object.entries(raw)) {
+        const type = typeOf(key)
+        if (type !== 'text' && type !== 'link') continue
         // A string, or a `[[Page]]` yaml read as a nested list; a foreign one-item list stays a list.
         const text = linkEntry(value, 2)
         const next = text === null ? null : rewrite(text, own, outlineOf)

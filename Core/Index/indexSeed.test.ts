@@ -226,15 +226,22 @@ describe('the relations a page yields', () => {
     ])
   })
 
-  it('an embed is an `embed` row, never a `body` one', async () => {
-    await page('shows ![[Zeta]]\n')
+  it('a lone embed is an `embed` row, never a `body` one', async () => {
+    await page('![[Zeta]]\n')
     expect(rowsOf('Notes/A.md')).toEqual([
       { kind: 'embed', target: 'zeta', qualifier: '', count: 1 },
     ])
   })
 
-  it('a heading embed is an `embed` row qualified by the heading', async () => {
-    await page('shows ![[Zeta#Part]]\n')
+  it('a mid-line embed is the connection after its `!`, a `body` row', async () => {
+    await page('shows ![[Zeta]]\n')
+    expect(rowsOf('Notes/A.md')).toEqual([
+      { kind: 'body', target: 'zeta', qualifier: '', count: 1 },
+    ])
+  })
+
+  it('a lone heading embed is an `embed` row qualified by the heading', async () => {
+    await page('![[Zeta#Part]]\n')
     expect(rowsOf('Notes/A.md')).toEqual([
       { kind: 'embed', target: 'zeta', qualifier: 'part', count: 1 },
     ])
@@ -283,14 +290,6 @@ describe('the relations a page yields', () => {
     expect(rowsOf('Notes/A.md')).toEqual([
       { kind: 'body', target: 'zeta', qualifier: '', count: 1 },
       { kind: 'citation', target: 'zeta', qualifier: '', count: 1 },
-    ])
-  })
-
-  it('an embed inside a footnote definition overlays the citation on the embed, not on a body row', async () => {
-    await page('intro\n\n[^1]: see ![[Zeta]]\n')
-    expect(rowsOf('Notes/A.md')).toEqual([
-      { kind: 'citation', target: 'zeta', qualifier: '', count: 1 },
-      { kind: 'embed', target: 'zeta', qualifier: '', count: 1 },
     ])
   })
 

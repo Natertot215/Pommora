@@ -75,7 +75,7 @@ export function renderCellContent(
     if (s > pos) out.push(text.slice(pos, s))
     const content = text.slice(tk.contentRange[0], tk.contentRange[1])
     if (tk.kind === 'wikiLink') {
-      const [rs, re] = tk.resolveRange ?? tk.contentRange
+      const [rs, re] = tk.resolveRange!
       const view = conn && wikiLinkView(conn, text, tk, around?.ownKeys)
       if (!view) out.push(text.slice(s, e))
       else if (view.status === 'phantom')

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { rewriteFrontmatterConnections } from './rewrite'
+import { rewriteConnections, rewriteHeadingConnections } from './rewrite'
 import { LINK_DISPLAYS } from '../Properties/properties'
 import {
   linkDisplayText,
@@ -181,30 +181,19 @@ describe('internal links', () => {
       value: '[[Meeting Notes]]',
     })
   })
-  it('a page rename rewrites the page it points at, and nothing else', () => {
-    expect(
-      rewriteFrontmatterConnections(
-        { A: '[[Meeting Notes]]', B: 'https://example.com/Meeting Notes' },
-        'Meeting Notes',
-        { title: 'New Title' },
-      ),
-    ).toEqual({ A: '[[New Title]]' })
+  it('a page rename rewrites a Link value naming the page in either syntax, and nothing else', () => {
+    const rename = (value: string) => rewriteConnections(value, 'Meeting Notes', 'New Title')
+    expect(rename('[[Meeting Notes]]')).toBe('[[New Title]]')
+    expect(rename('[x](Meeting%20Notes#H)')).toBe('[x](New%20Title#H)')
+    expect(rename('https://example.com/Meeting Notes')).toBe('https://example.com/Meeting Notes')
   })
   it('a heading rename moves a Link value aimed at that heading, alias kept, and nothing else', () => {
-    const values = {
-      A: '[[Meeting Notes#Decisions|D]]',
-      B: '[[Meeting Notes#Other]]',
-      C: '[[Meeting Notes]]',
-    }
-    expect(
-      rewriteFrontmatterConnections(values, 'Meeting Notes', {
-        heading: 'Decisions',
-        to: 'Outcomes',
-      }),
-    ).toEqual({ A: '[[Meeting Notes#Outcomes|D]]' })
-    expect(
-      rewriteFrontmatterConnections(values, 'Meeting Notes', { heading: 'Decisions', to: 'A|B' }),
-    ).toEqual({})
+    const move = (value: string, to = 'Outcomes') =>
+      rewriteHeadingConnections(value, 'Meeting Notes', 'Decisions', to)
+    expect(move('[[Meeting Notes#Decisions|D]]')).toBe('[[Meeting Notes#Outcomes|D]]')
+    expect(move('[[Meeting Notes#Other]]')).toBe('[[Meeting Notes#Other]]')
+    expect(move('[[Meeting Notes]]')).toBe('[[Meeting Notes]]')
+    expect(move('[[Meeting Notes#Decisions|D]]', 'A|B')).toBe('[[Meeting Notes#Decisions|D]]')
   })
   it('reads a heading link with its heading', () => {
     expect(readLink('[[Page#H]]')).toEqual({ kind: 'page', title: 'Page', heading: 'H' })
@@ -212,11 +201,9 @@ describe('internal links', () => {
   it('keeps the heading through a page rename, an edit, a typed commit, and an alias rename', () => {
     const resolve = (raw: string): string | null =>
       raw.trim().toLowerCase() === 'meeting notes' ? 'Meeting Notes' : null
-    expect(
-      rewriteFrontmatterConnections({ Link: '[[Meeting Notes#Decisions]]' }, 'Meeting Notes', {
-        title: 'New Title',
-      }),
-    ).toEqual({ Link: '[[New Title#Decisions]]' })
+    expect(rewriteConnections('[[Meeting Notes#Decisions]]', 'Meeting Notes', 'New Title')).toBe(
+      '[[New Title#Decisions]]',
+    )
     expect(linkEditText('[[Meeting Notes#Decisions]]')).toBe('[[Meeting Notes#Decisions]]')
     expect(linkValueFromEdit('[[meeting notes#Decisions]]', undefined, resolve)).toEqual({
       kind: 'link',

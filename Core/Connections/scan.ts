@@ -1,11 +1,19 @@
-// `![[ ]]` embeds are NOT connections, but the cascade still sweeps them so a rename reaches them — one walker answers for every syntax, and `syntax` keeps them apart for a reader that cares.
+// One walker answers for every link syntax, and `syntax` keeps them apart for a reader that cares: a connection alone on its line behind a `!` is an embed, a tile's relation rather than a body link.
 
-import { pageEmbedPattern, pageLinkPattern, titleOf } from './connections'
+import { linkOccurrences } from './connections'
 import { normalizeTitle } from '../Paths/caseFold'
-import { markdownLinkRegex, targetFragment, targetTitle } from './links'
+import { targetFragment, targetTitle } from './links'
 import { readLink, wholeValueLink } from './linkValue'
-import { codeMask, type CodeMask, lineEndAt, lineStartAt } from '../MarkdownPM/Engine/markdownCode'
-import { headingParts } from '../MarkdownPM/Engine/detect'
+import {
+  codeMask,
+  type CodeMask,
+  lineEndAt,
+  lineStartAt,
+  trimmedRange,
+} from '../MarkdownPM/Engine/markdownCode'
+import { headingParts, loneEmbedTitle } from '../MarkdownPM/Engine/detect'
+
+type Span = [number, number]
 
 interface SectionRun {
   from: number
@@ -15,10 +23,11 @@ interface SectionRun {
 
 const wordChar = /[\p{L}\p{N}_]/u
 
-function titleKey(raw: string | null, own: string): string {
-  if (raw === null) return ''
-  return raw === '' ? own : normalizeTitle(raw)
-}
+const titleKey = (raw: string, own: string): string => (raw === '' ? own : normalizeTitle(raw))
+
+// A blank title names nothing; a bare fragment names this page, whose key is '' when no title is given, and `[[#]]` names nothing at all.
+const names = (target: string, written: string, qualifier: string): boolean =>
+  written === '' ? qualifier !== '' : target !== ''
 
 // A bare `§Heading` in prose: the longest outline heading the text after `§` begins with, ending at the run's end or a non-word character, so `§Overviewing` never links `Overview`. Runs inside code, a wikilink, a markdown link, or a heading line (whose `§` is the heading's own text) are never runs.
 export function sectionRunsIn(
@@ -27,8 +36,8 @@ export function sectionRunsIn(
   inCode: CodeMask,
 ): SectionRun[] {
   if (!text.includes('§') || headings.length === 0) return []
-  const links = [...text.matchAll(pageLinkPattern()), ...text.matchAll(markdownLinkRegex())]
-    .map((m) => [m.index ?? 0, (m.index ?? 0) + m[0].length])
+  const links = linkOccurrences(text, inCode)
+    .map((o) => o.full)
     .sort((a, b) => a[0] - b[0])
   const byLength = new Map<number, Map<string, string>>()
   for (const heading of headings) {
@@ -58,12 +67,32 @@ export function sectionRunsIn(
 
 export type LinkSyntax = 'wiki' | 'embed' | 'markdown' | 'section'
 
-/** One occurrence. `target` and `qualifier` are normalized keys; `qualifier` is '' when the link names no heading. `at` is the offset into `body`, which the indexer resolves to a line. */
+/** One occurrence. `target` and `qualifier` are normalized keys; `qualifier` is '' when the link names no heading. `at` is the offset into `body`, which the indexer resolves to a line. `title` is the page name as written, empty where the link names its own page by leaving it out; `heading` and a connection's `alias` are as written. */
 export interface LinkHit {
   syntax: LinkSyntax
   target: string
   qualifier: string
   at: number
+  title: Span
+  heading: Span | null
+  alias: Span | null
+}
+
+const loneEmbed = (body: string, at: number): boolean =>
+  body[at - 1] === '!' &&
+  lineStartAt(body, at) === at - 1 &&
+  loneEmbedTitle(body.slice(at - 1, lineEndAt(body, at))) !== null
+
+// A markdown destination's page half and fragment, trimmed: a rename edits them in place.
+function destinationHalves(body: string, [from, to]: Span): [Span, Span | null] {
+  const [start, end] = trimmedRange(body, from, to)
+  const hash = start + body.slice(start, end).indexOf('#')
+  return hash < start
+    ? [[start, end], null]
+    : [
+        [start, hash],
+        [hash + 1, end],
+      ]
 }
 
 /** The gate in front is on SYNTAX rather than any title: a substring test would break the NFC invariant `normalizeTitle` exists for, and an NFD-composed body would be skipped silently. `inCode` is resolved inside the body, never as a default parameter: a generator binds its parameters at call time, so a default would build a whole-document mask even for the calls that return at the gate. */
@@ -77,35 +106,38 @@ export function* linksIn(
   if (!body.includes('[[') && !body.includes('](') && !runs) return
   const mask = inCode ?? codeMask(body)
   const own = normalizeTitle(ownTitle)
-  for (const m of body.matchAll(pageLinkPattern())) {
-    const g = m.groups
-    const at = m.index
-    if (!g || mask(at)) continue
-    // `[[]]` matches with an empty page and no heading; it names nothing, and never the page itself.
-    if (g.page === '' && !g.heading) continue
-    // `titleOf` only where the page half ends the link: with a heading present a trailing backslash is the title's own, not a table cell's escaped pipe.
-    const target = titleKey(g.heading === undefined ? titleOf(g.page) : g.page, own)
-    if (!target) continue
-    const qualifier = g.heading === undefined ? '' : normalizeTitle(titleOf(g.heading))
-    yield { syntax: 'wiki', target, qualifier, at }
+  const read = (s: Span): string => body.slice(s[0], s[1])
+  for (const o of linkOccurrences(body, mask)) {
+    const at = o.full[0]
+    if (o.syntax === 'wiki') {
+      const written = read(o.title)
+      const target = titleKey(written, own)
+      const qualifier = o.heading ? normalizeTitle(read(o.heading)) : ''
+      if (!names(target, written, qualifier)) continue
+      const syntax = loneEmbed(body, at) ? 'embed' : 'wiki'
+      yield { syntax, target, qualifier, at, title: o.title, heading: o.heading, alias: o.alias }
+      continue
+    }
+    const dest = read(o.destination)
+    const written = targetTitle(dest)
+    if (written === null) continue
+    const target = titleKey(written, own)
+    const qualifier = normalizeTitle(targetFragment(dest))
+    if (!names(target, written, qualifier)) continue
+    const [title, heading] = destinationHalves(body, o.destination)
+    yield { syntax: 'markdown', target, qualifier, at, title, heading, alias: null }
   }
-  for (const m of body.matchAll(pageEmbedPattern())) {
-    const at = m.index
-    if (mask(at)) continue
-    const target = titleKey(m.groups?.page ?? null, own)
-    if (target)
-      yield { syntax: 'embed', target, qualifier: normalizeTitle(m.groups?.heading ?? ''), at }
-  }
-  for (const m of body.matchAll(markdownLinkRegex())) {
-    const at = m.index
-    if (mask(at)) continue
-    const target = titleKey(targetTitle(m[2]), own)
-    if (!target) continue
-    yield { syntax: 'markdown', target, qualifier: normalizeTitle(targetFragment(m[2])), at }
-  }
-  if (!runs || own === '') return
-  for (const run of sectionRunsIn(body, outline, mask))
-    yield { syntax: 'section', target: own, qualifier: normalizeTitle(run.heading), at: run.from }
+  if (!runs) return
+  for (const { from, to, heading } of sectionRunsIn(body, outline, mask))
+    yield {
+      syntax: 'section',
+      target: own,
+      qualifier: normalizeTitle(heading),
+      at: from,
+      title: [from, from],
+      heading: [from + 1, to],
+      alias: null,
+    }
 }
 
 /** A Link property holds a connection as its whole value, so a rename reaching only bodies would leave it pointing at nothing. */

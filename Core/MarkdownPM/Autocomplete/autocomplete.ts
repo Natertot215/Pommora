@@ -1,4 +1,4 @@
-import { expressibleHeading, linkAt, pageEmbedText } from '../../Connections/connections'
+import { expressibleHeading, pageEmbedText } from '../../Connections/connections'
 import { normalizeTitle } from '../../Paths/caseFold'
 import {
   decodeLinkTarget,
@@ -9,7 +9,7 @@ import {
 } from '../../Connections/links'
 import { NO_TRAIL, type TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { type DocScan, inCodeAt } from '../Engine/docScan'
-import { inBracket } from '../Input/edits'
+import { connectionAt, inBracket } from '../Input/edits'
 import { lineIndexAt, type TextEdit } from '../Engine/markdownCode'
 import type { ConnPage, PageIndex } from '../../Connections/pageIndex'
 import type { OutlineHeading } from '../Engine/headingScan'
@@ -69,7 +69,7 @@ export function autocompleteQuery(
         title: '',
       }
   }
-  const s = linkAt(line, rel)
+  const s = connectionAt(scan, caret)
   if (s) {
     const title = line.slice(s.title[0], s.title[1])
     // Only the TITLE opens the page picker: accepting replaces the whole token, so a caret in the alias would arm a list keyed on the title and discard the alias on Enter.

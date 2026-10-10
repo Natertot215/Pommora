@@ -15,7 +15,7 @@ import {
   scanFencedCode,
   splitWithOffsets,
 } from './detect'
-import { pageEmbedPattern, pageLinkPattern } from '../../Connections/connections'
+import { pageLinkPattern } from '../../Connections/connections'
 
 describe('thematic break (HR)', () => {
   it('treats ---, ***, ___ as HR; rejects too-short / list lines', () => {
@@ -137,18 +137,14 @@ describe('blockquote', () => {
 })
 
 describe('inline matchers (verbatim regexes)', () => {
-  it('image embed ![[name]]', () => {
-    const m = pageEmbedPattern().exec('see ![[pic]] here')
-    expect(m?.[1]).toBe('pic')
-  })
   it('markdown link [t](u)', () => {
     const m = markdownLinkRegex().exec('[t](http://u)')
     expect(m?.[1]).toBe('t')
     expect(m?.[2]).toBe('http://u')
   })
-  it('wikilink detection reuses Core/Connections (title-only, excludes ![[ ]])', () => {
+  it('wikilink detection reuses Core/Connections, and a `!` before it is text', () => {
     expect([...'[[Page]]'.matchAll(pageLinkPattern())].map((m) => m[1])).toEqual(['Page'])
-    expect([...'![[img]]'.matchAll(pageLinkPattern())]).toHaveLength(0)
+    expect([...'![[img]]'.matchAll(pageLinkPattern())].map((m) => m.index)).toEqual([1])
   })
 })
 

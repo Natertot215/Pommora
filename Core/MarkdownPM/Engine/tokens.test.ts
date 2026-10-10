@@ -55,10 +55,14 @@ describe('inline regex tokens + overlap rules', () => {
     expect(w.markerRanges.map((m) => slice(t, m))).toEqual(['[[', ']]'])
   })
 
-  it('image ![[pic]] wins over wikilink (no wikiLink emitted)', () => {
+  it('![[pic]] is a literal `!` and the connection after it', () => {
     const tokens = tokenize('![[pic]]')
-    expect(byKind(tokens, 'embed')).toHaveLength(1)
-    expect(byKind(tokens, 'wikiLink')).toHaveLength(0)
+    expect(tokens.map((tk) => [tk.kind, tk.range])).toEqual([['wikiLink', [1, 8]]])
+  })
+
+  it('a link code touches is text, so only the code tokenizes', () => {
+    expect(tokenize('x `[[A`]] y').map((tk) => tk.kind)).toEqual(['inlineCode'])
+    expect(tokenize('[[A `b` C]]').map((tk) => tk.kind)).toEqual(['inlineCode'])
   })
 
   it('inline latex $x+1$ tokenizes; prose $word here$ does not', () => {
@@ -118,10 +122,11 @@ describe('an aliased wikilink separates what it shows from what it resolves', ()
     expect(w.markerRanges.map((m) => slice(t, m))).toEqual(['[[Q3 Plan|', ']]'])
   })
 
-  it('a bare [[Title]] has no resolve span — contentRange is the key', () => {
+  it('a bare [[Title]] resolves the span it shows', () => {
     const t = '[[Page]]'
     const w = byKind(tokenize(t), 'wikiLink')[0]
-    expect(w.resolveRange).toBeUndefined()
+    expect(w.resolveRange).toEqual(w.contentRange)
+    expect(aliasedToken(w)).toBe(false)
     expect(slice(t, w.contentRange)).toBe('Page')
     expect(w.markerRanges.map((m) => slice(t, m))).toEqual(['[[', ']]'])
   })
@@ -129,7 +134,7 @@ describe('an aliased wikilink separates what it shows from what it resolves', ()
   it('an empty alias [[Title|]] reads as no alias at all', () => {
     const t = '[[Page|]]'
     const w = byKind(tokenize(t), 'wikiLink')[0]
-    expect(w.resolveRange).toBeUndefined()
+    expect(aliasedToken(w)).toBe(false)
     expect(slice(t, w.contentRange)).toBe('Page')
   })
 

@@ -228,7 +228,7 @@ describe('renameCascade over frontmatter', () => {
     expect((await fmOf(a.value.path))[SITE]).toBe('https://example.com/Target')
   })
 
-  it('rewrites a link inside a Text value as prose, alias kept, and writes a whole-value Text link once', async () => {
+  it('rewrites a link inside a Text value as prose, alias kept, and drops a whole-value alias the new title repeats', async () => {
     const a = await createTestPage(dir, 'Prose', { body: 'no links here' })
     if (!a.ok) throw new Error('setup failed')
     await setValue(a.value.path, 'Notes', 'see [[Target|the brief]] here')
@@ -237,7 +237,7 @@ describe('renameCascade over frontmatter', () => {
     await setValue(b.value.path, 'Notes', '[[Target|New Target]]')
     await renameCascade(root, 'Target', { title: 'New Target' })
     expect((await fmOf(a.value.path)).Notes).toBe('see [[New Target|the brief]] here')
-    expect((await fmOf(b.value.path)).Notes).toBe('[[New Target|New Target]]')
+    expect((await fmOf(b.value.path)).Notes).toBe('[[New Target]]')
   })
 
   it('leaves a File value and a Select value that read as connections', async () => {

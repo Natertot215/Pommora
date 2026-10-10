@@ -123,7 +123,6 @@ const CONTENT_CLASS: Partial<Record<TokenKind, string>> = {
   strikethrough: 'md-strike',
   inlineCode: 'md-code',
   highlight: 'md-highlight',
-  embed: 'md-embed',
   inlineLatex: 'md-latex',
   blockLatex: 'md-latex',
   htmlTag: 'md-html-tag',

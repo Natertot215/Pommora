@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { rewriteConnections, rewriteHeadingConnections } from './rewrite'
-import { pageEmbedPattern } from './connections'
+import { loneEmbedTitle } from '../MarkdownPM/Engine/detect'
 
 describe('rewriteConnections', () => {
   it('rewrites a normalized-matching link to the new title', () => {
@@ -17,6 +17,24 @@ describe('rewriteConnections', () => {
 
   it('drops an empty alias segment rather than preserving a bare pipe', () => {
     expect(rewriteConnections('[[Old|]]', 'Old', 'New')).toBe('[[New]]')
+  })
+
+  it('drops an alias the new target repeats, cell escape included, as a written connection does', () => {
+    expect(rewriteConnections('[[Old|New]] [[Old#H|new#h]] [[Old|Other]]', 'Old', 'New')).toBe(
+      '[[New]] [[New#H]] [[New|Other]]',
+    )
+    expect(rewriteConnections('| [[Old\\|New]] |', 'Old', 'New')).toBe('| [[New]] |')
+  })
+
+  it('never gives a bare fragment a title: `[[#H]]` on the renamed page stays as written', () => {
+    const body = '[[#H]] [x](#H) [[Old#H]] [[#H|Old]]'
+    expect(rewriteConnections(body, 'Old', 'New')).toBe('[[#H]] [x](#H) [[New#H]] [[#H|Old]]')
+  })
+
+  it('edits only the page name, so unusual spacing and escapes survive byte for byte', () => {
+    expect(rewriteConnections('[[ Old ]] [x]( Old#Part ) [[Old\\|a]]', 'Old', 'New')).toBe(
+      '[[New]] [x]( New#Part ) [[New\\|a]]',
+    )
   })
 
   it('leaves non-matching links untouched; a matching embed follows the rename', () => {
@@ -95,21 +113,11 @@ describe('the embed sweep', () => {
 })
 
 describe('one title grammar across the layers', () => {
-  // The embed pattern, the renderer's embed regex, and the autocomplete's embed branch must accept the same titles — one corpus feeds all three shapes.
-  const corpus = ['Plain', 'With Space', 'Dotted 3.5', 'ümlaut', 'a|pipe', 'brack]et', '']
-  it('the shared pattern and the lone-line regex agree on every title', () => {
-    for (const t of corpus) {
-      const line = `![[${t}]]`
-      const viaPattern = [...line.matchAll(pageEmbedPattern())].map((m) => m[1])
-      const lone = /^!\[\[([^\]\r\n]*)\]\][ \t]*$/.exec(line)?.[1] ?? null
-      if (t.includes(']')) {
-        expect(lone).not.toBe(t)
-        expect(viaPattern).not.toContain(t)
-      } else {
-        expect(lone).toBe(t)
-        expect(viaPattern).toEqual([t])
-      }
-    }
+  const corpus = ['Plain', 'With Space', 'Dotted 3.5', 'ümlaut', 'a|pipe', 'brack]et', 'P#H', '']
+  it('a lone embed holds whatever the connection after its `!` holds', () => {
+    for (const t of corpus) expect(loneEmbedTitle(`![[${t}]] `)).toBe(t)
+    expect(loneEmbedTitle(' ![[Plain]]')).toBeNull()
+    expect(loneEmbedTitle('![[Plain]] x')).toBeNull()
   })
 })
 

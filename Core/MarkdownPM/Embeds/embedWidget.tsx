@@ -30,7 +30,7 @@ import '../../Tiles/tile-base.css'
 import { ZOOM } from '../../Settings/personalization'
 import { zoomStep } from '../../Tiles/tileZoom'
 import { docScan } from '../docCache'
-import { claimedEmbeds } from '../Engine/embedClaims'
+import { embeddableTitle } from '../../Connections/connections'
 import { ownElements } from '../lineDom'
 import { healTileScrolls } from './scrollHeal'
 import type { ConnectionsApi } from '../Links/connectionsApi'
@@ -141,10 +141,8 @@ function releaseOnPress(dom: HTMLElement, view: EditorView): void {
 class EmbedTileWidget extends ReactWidget {
   constructor(
     readonly path: string,
-    readonly title: string,
     readonly editing: boolean,
     readonly interactive: boolean,
-    readonly cyclic: boolean,
     readonly ancestors: readonly string[],
     readonly targetId: string,
     readonly height: number | undefined,
@@ -158,7 +156,6 @@ class EmbedTileWidget extends ReactWidget {
       o.path === this.path &&
       o.editing === this.editing &&
       o.interactive === this.interactive &&
-      o.cyclic === this.cyclic &&
       o.height === this.height
     )
   }
@@ -200,18 +197,13 @@ class EmbedTileWidget extends ReactWidget {
 
   toDOM(view: EditorView): HTMLElement {
     const dom = document.createElement('span') as ReactDom
-    if (this.cyclic) {
-      dom.className = 'mdpm-embed-cycle md-embed'
-      dom.textContent = this.title
-      return dom
-    }
     releaseOnPress(dom, view)
     this.renderInto(dom, view)
     return dom
   }
 
   updateDOM(dom: HTMLElement, view: EditorView): boolean {
-    if (this.cyclic || !this.mounted(dom)) return false
+    if (!this.mounted(dom)) return false
     this.renderInto(dom as ReactDom, view)
     return true
   }
@@ -401,13 +393,20 @@ function buildTiles(
   let unformed = 0
 
   const tiles: TileRange[] = []
-  if (conn && scan.embeds.length > 0) {
-    for (const e of claimedEmbeds(scan.embeds, (t) => conn.resolve(t).status)) {
-      const r = conn.resolve(e.title)
-      if (r.status !== 'resolved' || !r.page) continue
-      const { path, id } = r.page
-      tiles.push({ kind: 'page', from: e.from, to: e.to, path, title: e.title, id })
-    }
+  const shown = new Set<string>()
+  // A tile shows one whole page, once per document and never inside itself, so two tiles never edit one page; any other lone embed reads as the connection it is.
+  for (const e of conn ? scan.embeds : []) {
+    const page = embeddableTitle(e.title) ? conn?.resolve(e.title).page : undefined
+    if (!page || shown.has(page.path) || host.ancestors.includes(page.path)) continue
+    shown.add(page.path)
+    tiles.push({
+      kind: 'page',
+      from: e.from,
+      to: e.to,
+      path: page.path,
+      title: e.title,
+      id: page.id,
+    })
   }
   // The formation gate: typing `https://example.c` mid-address passes the grammar, so the grammar alone can't decide.
   for (const w of scan.webpages) {
@@ -430,16 +429,13 @@ function buildTiles(
   const builder = new RangeSetBuilder<Decoration>()
   let lastFence = -1
   for (const t of tiles) {
-    const cyclic = t.kind === 'page' && host.ancestors.includes(t.path)
     const height = heights[keyOf(t)]
     const widget =
       t.kind === 'page'
         ? new EmbedTileWidget(
             t.path,
-            t.title,
             memory.editing === t.path,
-            interactive && !cyclic,
-            cyclic,
+            interactive,
             host.ancestors,
             t.id,
             height,
@@ -646,6 +642,11 @@ export function applySavedEmbeds(
 
 export function embedTileRanges(state: EditorState): readonly TileRange[] {
   return state.field(embedField, false)?.ranges ?? []
+}
+
+/** A title not already held by a tile in this document or a host above it, which would land a duplicate or a cycle. */
+export function embeddable(title: string, exclude: ReadonlySet<string>): boolean {
+  return embeddableTitle(title) && !exclude.has(normalizeTitle(title))
 }
 
 export function embedExclusions(state: EditorState): Set<string> {

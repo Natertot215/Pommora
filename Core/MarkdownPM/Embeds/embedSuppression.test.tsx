@@ -21,24 +21,29 @@ const mount = async (initialBody: string): Promise<void> => {
   await mountEditor({ initialBody, connections: conn })
 }
 
-const embedSpans = (): string[] =>
-  [...editorContainer().querySelectorAll('.md-embed')].map((el) => el.textContent ?? '')
+const tiles = (): number => editorContainer().querySelectorAll('.mdpm-embed-tile').length
+const connections = (status: string): string[] =>
+  [...editorContainer().querySelectorAll(`.cm-content .md-connection-${status}`)].map(
+    (el) => el.textContent ?? '',
+  )
 
-describe('claim-gated token suppression', () => {
-  it('suppresses the claimed lone-line, keeps the unresolved one', async () => {
+describe('an embed is a connection unless it tiles', () => {
+  it('a tile over its line draws no connection, and an unresolved lone embed is a phantom connection', async () => {
     await mount('![[Alpha]]\n\n![[Nowhere]]')
-    const spans = embedSpans()
-    expect(spans.some((s) => s.includes('Nowhere'))).toBe(true)
-    expect(spans.some((s) => s.includes('Alpha'))).toBe(false)
+    expect(tiles()).toBe(1)
+    expect(connections('resolved')).toEqual([])
+    expect(connections('phantom')).toEqual(['Nowhere'])
   })
 
-  it('keeps the dim token on a duplicate of a claimed title', async () => {
+  it('a duplicate of a tiled title draws as the connection it is', async () => {
     await mount('![[Alpha]]\n\ntext\n\n![[Alpha]]')
-    expect(embedSpans().filter((s) => s.includes('Alpha'))).toHaveLength(1)
+    expect(tiles()).toBe(1)
+    expect(connections('resolved')).toEqual(['Alpha'])
   })
 
-  it('keeps the inline token on a non-lone line', async () => {
-    await mount('see ![[Alpha]] here')
-    expect(embedSpans().some((s) => s.includes('Alpha'))).toBe(true)
+  it('a mid-line embed and a lone headed one are connections', async () => {
+    await mount('see ![[Alpha]] here\n\n![[Alpha#Part]]')
+    expect(tiles()).toBe(0)
+    expect(connections('resolved')).toEqual(['Alpha', 'Alpha', 'Part'])
   })
 })

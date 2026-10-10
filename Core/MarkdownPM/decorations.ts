@@ -38,7 +38,6 @@ import {
 import type { DiffTally, MarkdownScope } from './Engine/detect'
 import { sectionRunsIn } from '../Connections/scan'
 import { CHECK_GLYPH, CODE_TAGS, COPY_GLYPH } from './codeGlyphs'
-import { claimedEmbeds } from './Engine/embedClaims'
 import { linkRest, linkTyping } from './Links/linkReveal'
 import {
   assembleLineIntents,
@@ -469,18 +468,7 @@ function build(view: EditorView, conn: ConnectionsApi | undefined, scope: Markdo
   const inline = visibleInline(view, scan)
   // A cell's text parses alone, where a leading tag reads as a block the table never holds.
   const raw = scope === 'page' && settings.htmlFormatting ? inline.html : []
-  let tokens = raw.length > 0 ? inline.tokens.filter((tk) => !tk.inHtml) : inline.tokens
-  // A CLAIMED embed line's token styling stands down; the claim is the tile field's own predicate, so one owner decides.
-  if (conn && scan.embeds.length > 0) {
-    const claimed = claimedEmbeds(scan.embeds, (t) => conn.resolve(t).status)
-    if (claimed.length > 0)
-      tokens = tokens.filter(
-        (tk) =>
-          !(
-            tk.kind === 'embed' && claimed.some((e) => tk.range[0] >= e.from && tk.range[1] <= e.to)
-          ),
-      )
-  }
+  const tokens = raw.length > 0 ? inline.tokens.filter((tk) => !tk.inHtml) : inline.tokens
   drawnTokens.set(view, tokens)
   const active = focused
     ? activeTokenIndices(tokens, sel.from, sel.to, view.state.field(linkRest, false) ?? null)
@@ -591,7 +579,7 @@ function build(view: EditorView, conn: ConnectionsApi | undefined, scope: Markdo
     tokens.forEach((tk, i) => {
       if (tk.kind !== 'wikiLink') return
       const alias = aliasedToken(tk)
-      const [rs, re] = tk.resolveRange ?? tk.contentRange
+      const [rs, re] = tk.resolveRange!
       const { status, bare, missing } = wikiLinkView(conn, text, tk, ownKeys)
       const open = active.has(i)
       // `[[#]]` is a link being written: nothing to mark, only its syntax to dim.

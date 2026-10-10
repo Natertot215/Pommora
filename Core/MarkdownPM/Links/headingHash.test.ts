@@ -9,13 +9,17 @@ describe('headingHash', () => {
     expect(headingHash(scan, 6, 6, '§')).toEqual({ from: 6, to: 6, insert: '#', selection: 7 })
   })
 
-  it('a § typed in the alias half, in an embed, or in the heading stays §', () => {
+  it('a § typed in the alias half or in the heading stays §', () => {
     for (const [doc, at] of [
       ['[[Page|al]]', 9],
-      ['![[Page]]', 7],
       ['[[Page#Se]]', 9],
     ] as const)
       expect(headingHash(scanDoc(doc), at, at, '§')).toBeNull()
+  })
+
+  it("a § typed in an embed's title writes #, since an embed is a connection", () => {
+    expect(headingHash(scanDoc('![[Page]]'), 7, 7, '§')).toMatchObject({ insert: '#' })
+    expect(headingHash(scanDoc('![[]]'), 3, 3, '§')).toMatchObject({ insert: '#' })
   })
 
   it('a § typed in prose does nothing', () => {
@@ -30,10 +34,11 @@ describe('headingHash', () => {
     expect(headingHash(scan, 4, 4, '§')).toBeNull()
   })
 
-  it('a § at the closing backtick stays, and one past it writes #', () => {
+  it('a connection code touches is text, so a § anywhere in it stays', () => {
     const scan = scanDoc('[[`Page`]]')
     expect(headingHash(scan, 7, 7, '§')).toBeNull()
-    expect(headingHash(scan, 8, 8, '§')).toEqual({ from: 8, to: 8, insert: '#', selection: 9 })
+    expect(headingHash(scan, 8, 8, '§')).toBeNull()
+    expect(headingHash(scanDoc('x `[[A`]] y'), 7, 7, '§')).toBeNull()
   })
 
   it('an empty title, [[ then §, is the title half', () => {
@@ -43,7 +48,6 @@ describe('headingHash', () => {
       insert: '#',
       selection: 3,
     })
-    expect(headingHash(scanDoc('![[]]'), 3, 3, '§')).toBeNull()
   })
 
   it('a § typed over a selection inside the title replaces it with #', () => {

@@ -1,17 +1,12 @@
 import { EditorView, type ViewUpdate } from '@codemirror/view'
 import { EditorSelection, type EditorState, type Extension, type Line } from '@codemirror/state'
-import {
-  aliasSpanAt,
-  emptyAliasPipeAt,
-  emptyHeadingHashAt,
-  linkAt,
-} from '../../Connections/connections'
+import type { LinkSpans } from '../../Connections/connections'
 import type { ConnEditAction } from '../../Actions/connectionMenu'
 import type { ConnectionsApi } from './connectionsApi'
 import { aliasedToken, type Token } from '../Engine/tokens'
 import { docScan, docString } from '../docCache'
 import { spanAt } from '../Engine/docScan'
-import { linkInCode } from '../Input/edits'
+import { connectionAt } from '../Input/edits'
 import { focusRange } from '../caretPlacement'
 import { restedOnLink } from './linkReveal'
 import { editorHost } from '../api'
@@ -25,7 +20,7 @@ export function wikiAuthorTarget(
   action: ConnEditAction,
 ): { pipeAt?: number; select: [number, number] } {
   if (action === 'editLink') {
-    const [, titleEnd] = tk.resolveRange ?? tk.contentRange
+    const [, titleEnd] = tk.resolveRange!
     return { select: [titleEnd, titleEnd] }
   }
   if (aliasedToken(tk)) return { select: [tk.contentRange[0], tk.contentRange[1]] }
@@ -53,12 +48,12 @@ export function commitAliasOnEnter(view: EditorView): boolean {
   if (!sel.empty) return false
   const line = view.state.doc.lineAt(sel.head)
   const rel = sel.head - line.from
-  const link = linkAt(line.text, rel)
-  if (!link || aliasSpanAt(line.text, rel) === null) return false
   const scan = docScan(view.state.doc)
-  // Code holds no live link, and neither does an HTML block HTML Formatting draws raw.
-  const raw = view.state.facet(editorHost).settings().htmlFormatting && spanAt(scan.html, sel.head)
-  if (linkInCode(scan, sel.head) || raw) return false
+  const link = connectionAt(scan, sel.head)
+  if (!link?.alias || rel < link.alias[0] || rel > link.alias[1]) return false
+  // An HTML block HTML Formatting draws raw holds no live link.
+  if (view.state.facet(editorHost).settings().htmlFormatting && spanAt(scan.html, sel.head))
+    return false
   const end = line.from + link.full[1]
   view.dispatch({
     selection: EditorSelection.cursor(end, 1),
@@ -76,13 +71,14 @@ function lineNear(state: EditorState, at: number): { line: Line; rel: number } {
 }
 
 /** Authoring is the only moment the memory is written: a body scan can't honor a real forget. */
-function rememberAliasNear(view: EditorView, api: ConnectionsApi | undefined, at: number): void {
-  if (!api) return
-  const { line, rel } = lineNear(view.state, at)
-  const s = linkAt(line.text, rel)
-  if (!s?.alias) return
-  const alias = line.text.slice(s.alias[0], s.alias[1])
-  if (!alias.trim()) return
+function rememberAlias(
+  view: EditorView,
+  api: ConnectionsApi | undefined,
+  line: Line,
+  s: LinkSpans,
+): void {
+  const alias = s.alias && line.text.slice(s.alias[0], s.alias[1])
+  if (!api || !alias?.trim()) return
   const res = api.resolve(line.text.slice(s.title[0], s.title[1]))
   // A phantom or ambiguous title names no single page, and the memory is keyed by page id.
   if (res.status === 'resolved' && res.page)
@@ -103,13 +99,13 @@ interface Slot {
 
 function slotNear(state: EditorState, at: number): Slot | null {
   const { line, rel } = lineNear(state, at)
-  if (linkInCode(docScan(state.doc), line.from + rel)) return null
-  const alias = aliasSpanAt(line.text, rel)
-  if (alias) return { start: line.from + alias[0], end: line.from + alias[1], kind: 'alias' }
-  const h = linkAt(line.text, rel)?.heading
-  return h && rel >= h[0] && rel <= h[1]
-    ? { start: line.from + h[0], end: line.from + h[1], kind: 'heading' }
-    : null
+  const s = connectionAt(docScan(state.doc), line.from + rel)
+  for (const kind of ['alias', 'heading'] as const) {
+    const span = s?.[kind]
+    if (span && rel >= span[0] && rel <= span[1])
+      return { start: line.from + span[0], end: line.from + span[1], kind }
+  }
+  return null
 }
 
 /** An empty alias takes its pipe with it, and an empty heading its hash, matching the nexus-wide rule that an emptied value drops its key. */
@@ -121,12 +117,14 @@ function leaveSlot(
   defer: boolean,
 ): void {
   const { line, rel } = lineNear(view.state, at)
-  const marker = (kind === 'alias' ? emptyAliasPipeAt : emptyHeadingHashAt)(line.text, rel)
-  if (marker === null) {
-    if (kind === 'alias') rememberAliasNear(view, api, at)
+  const s = connectionAt(docScan(view.state.doc), line.from + rel)
+  const span = s?.[kind]
+  if (!s || !span) return
+  if (span[0] !== span[1]) {
+    if (kind === 'alias') rememberAlias(view, api, line, s)
     return
   }
-  const slot = line.from + marker
+  const slot = line.from + (kind === 'alias' ? (s.heading ?? s.title)[1] : span[0] - 1)
   if (defer) setTimeout(() => collapseAt(view, slot), 0)
   else collapseAt(view, slot)
 }
