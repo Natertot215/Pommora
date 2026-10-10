@@ -244,7 +244,8 @@
 .value-seat .cell-text-scroll,
 .value-seat .cell-text-host,
 .value-seat .cell-control,
-.value-seat .cell-empty {
+.value-seat .cell-empty,
+.value-seat input {
   padding: 0 var(--label-pad-x);
 }
 .value-seat:has(.cell-checkbox, .cell-switch) {
