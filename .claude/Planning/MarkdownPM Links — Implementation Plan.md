@@ -181,8 +181,8 @@ What a person sees: `[x](Page)` edits like `[[Page]]`; every link reads **Rename
 **CHANGE**
 
 - [ ] `git apply --3way ".claude/Planning/MarkdownPM Links/proving/foundation.diff"` from the repo root; the production code at HEAD is identical to the diff's base, so it applies clean. Run the gates; the expected test movement is the prototype report's §3 (46 red on the pre-rewrite tests, all rewritten in the diff).
-- [ ] The diff leaves `rememberAlias` (`Links/linkEdit.ts`) reading `api.resolve(...)` raw and keeping `status === 'resolved' && res.page`; leave it, since Task 3-2 makes `titleTarget` the one adapter and rewrites this line then.
-- [ ] The diff keeps `pageEmbedText` and the picker's `![[` loop; both go in Phase 10.
+- [ ] The diff leaves `rememberAlias` (`Links/linkEdit.ts`) reading `api.resolve(...)` raw and keeping `status === 'resolved' && res.page`; leave it, since Task 3-3 makes `titleTarget` the one adapter and rewrites this line then.
+- [ ] The diff keeps `pageEmbedText` (Paste As ▸ Embedded Page writes it) and the picker's `![[` loop, which goes in Phase 10.
 - [ ] Record in the commit message that the diff is the proving scout's, applied as proven.
 
 **AFTER**
@@ -599,7 +599,7 @@ Deleted whole: `Core/MarkdownPM/Engine/embedClaims.ts` and its test. Also: `targ
 - [ ] Write the tests in `linkValue.test.ts` (replacing the `readLink`/`parseLink` cases): without a resolver, `readLinkText('[[T#H|a]]')` → `{ kind: 'page', syntax: 'wiki', title: 'T', heading: 'H', alias: 'a' }`; `readLinkText('[x](Old)')` → `{ kind: 'page', syntax: 'markdown', title: 'Old', alias: 'x' }`; `readLinkText('[x](example.com)')` → `{ kind: 'url', syntax: 'markdown', url: 'https://example.com', alias: 'x' }`; `readLinkText('example.com')` → `{ kind: 'url', syntax: 'bare', url: 'https://example.com' }`; `readLinkText('[x](#H)')` → `{ kind: 'page', syntax: 'markdown', title: '', heading: 'H', alias: 'x' }`; `readLinkText('[^1](https://a.com)')` → `null`; `readLinkText('[a](b) [c](d)')` → `null`; `readLinkText('foo bar')` → `null`. With a resolver answering only `Meeting Notes`: `readLinkText('[[meeting notes]]', r)` → title `Meeting Notes`; `readLinkText('[x](meeting notes)', r)` → title `Meeting Notes`; `readLinkText('[x](example.com)', r)` → `{ kind: 'url', … 'https://example.com' }` (no such page, so the address arm); `readLinkText('[x](Nope)', r)` → `null` (title-shaped, no page, no valid address); `readLinkText('[[Dup]]', ambiguous)` → `null`, and `readLinkText('[x](dup.io)', ambiguousDotted)` → `null` (ambiguity wins over the address shape; T-06); `readLinkText('[[#H]]', r)` → `null` and with a resolver answering `''` as resolved → `{ kind: 'page', syntax: 'wiki', title: '', heading: 'H' }`. Watch them fail.
 - [ ] Rebuild `MD_LINK` from `emptyTolerantLinkRegex`'s source, anchored, as `WHOLE_LINK` is built from `pageLinkPattern`.
 - [ ] Write `readLinkText`; `wholeValueLink(v)` reads it; delete `readLink`, `parseLink`, `LinkValue`, `ConnectionParts` (its shape is `readLinkText`'s page arm), `PasteAsTarget`, `wholeWikiLink`, `pasteAsTarget`; `pasteAsRows` reads `readLinkText(clipboard)` (its `embeddableTarget` and rows follow in Task 2-3). `serializeLink(url, label?)`.
-- [ ] `linkEditText`, `linkDisplayText`, `linkValueFromRename`, `urlClickTarget`, `valueLinks`' exclusion, `frontmatterMentions`, `goneEntry`, `parkLinks`, `namesGonePage`, `LinkCell.tsx:30`, `valueClick.ts:51`, and `connectionMenuActions.ts:81` read `readLinkText`; `linkValueFromEdit`, `parsePastedLink`, and `ResolveTitle` stand until Task 8-3 rewrites the first and deletes the other two (`parseEditorValue.ts` and `linkResolve.ts` read them until then); `linkValueFromEdit`'s only changes here are `readLink(current)` → `readLinkText(current)` and `serializeLink(normalizeLinkUrl(trimmed), alias)`. `linkAlias` reads `readLinkText(raw)?.alias`.
+- [ ] `linkEditText`, `linkDisplayText`, `linkValueFromRename`, `urlClickTarget`, `valueLinks`' exclusion, `frontmatterMentions`, `goneEntry`, `parkLinks`, `namesGonePage`, `LinkCell.tsx:30`, `valueClick.ts:51`, and `connectionMenuActions.ts:81` read `readLinkText`; `linkValueFromEdit`, `parsePastedLink`, and `ResolveTitle` stand until Task 8-3 rewrites the first and deletes the other two (`parseEditorValue.ts` and `linkResolve.ts` read them until then); `linkValueFromEdit`'s only changes here are `readLink(current)` → `readLinkText(current)` and `serializeLink(normalizeLinkUrl(trimmed), alias)`. `PropertyValueInput.tsx:56` reads `readLinkText(raw)?.alias` in place of `linkAlias`, which goes.
 
 **AFTER**
 
@@ -955,7 +955,7 @@ The note writes the entry `parkLinks` reads, so a nested-YAML value parks as the
 
 **VERIFY**
 
-- [ ] `grep -rn "expressibleHeading\|embeddableTitle" Core --include='*.ts' --include='*.tsx'` is empty; `grep -rn "'!\[\]()'\|\`!\[\[" Core --include='*.ts' | grep -v test` lists only `pageEmbedText` (Phase 10 removes its last writer) and `detect.ts`'s grammar.
+- [ ] `grep -rn "expressibleHeading\|embeddableTitle" Core --include='*.ts' --include='*.tsx'` is empty; `grep -rn "'!\[\]()'\|\`!\[\[" Core --include='*.ts' | grep -v test` lists only `pageEmbedText` and `detect.ts`'s grammar (the picker's own `![[` spelling goes in Phase 10).
 - [ ] `names.test.ts` passes with the new rule; a rename to `Draft]` is refused in `~/Test` with the message shown.
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
@@ -1334,13 +1334,13 @@ The carve-out: `keepTitle` is Remove Title On Link Change read as "off" at each 
 
 #### Task 3-2 — The heading index carries text and level
 
-**TASK:** The content index stores each page's headings as text and level in document order; the session derives the normalized keys once on reply; `ConnectionsApi.headingsOf(path)` answers `{ keys, outline }`, so the missing-heading mark keeps reading keys and the picker and `§` runs will read the outline.
+**TASK:** The content index stores each page's headings as text and level in document order; the session derives the normalized keys once on reply; `ConnectionsApi.headingsOf(path)` answers `{ keys, texts, outline }`, so the missing-heading mark keeps reading keys, `§` runs read the texts, and the picker reads the outline.
 
 **NOW:** `indexSeed.ts:73` stores `[...new Set(outline.map(normalizeTitle))]`; the `headings` table is `(path, heading, ordinal)` keyed on `(path, heading)` (`ddl.ts:27-32`); `readHeadings` returns `Record<string, string[]>`; `nexusSlice.headings` holds the keys; `pageConnections.ts:31` hands them out as `headingsOf`. The picker reads a page's headings by fetching its body (`headingTarget.ts`), a second source the ruling retires in Task 10-4. `reindex` (`indexSeed.ts:143-160`) detects a heading rename by comparing the stored keys with the fresh ones.
 
 **CHANGE**
 
-- [ ] Write the tests: `indexSeed.test.ts` — a page `## Setup\n### Notes` yields `headings: [{ text: 'Setup', level: 2 }, { text: 'Notes', level: 3 }]`; `Desktop/Store/open.test.ts` — `INDEX_GENERATION` is `12` and a database at 11 drops and recreates the index tables; `nexusSlice` — a `loadHeadings` reply `{ 'A.md': [{ text: 'Setup', level: 2 }] }` lands as `{ keys: ['setup'], outline: [...] }`. Watch them fail.
+- [ ] Write the tests: `indexSeed.test.ts` — a page `## Setup\n### Notes` yields `headings: [{ text: 'Setup', level: 2 }, { text: 'Notes', level: 3 }]`; `Desktop/Store/open.test.ts` — `INDEX_GENERATION` is `12` and a database at 11 drops and recreates the index tables; `nexusSlice` — a `loadHeadings` reply `{ 'A.md': [{ text: 'Setup', level: 2 }] }` lands as `{ keys: ['setup'], texts: ['Setup'], outline: [...] }`. Watch them fail.
 - [ ] `Core/Platform/stores.ts`: `PageHeading`, `PageIndexEntry.headings: PageHeading[]`, `readHeadings(): Record<string, PageHeading[]>`.
 - [ ] `Desktop/Store/ddl.ts`: the table and the generation; `stores.ts`: the insert and the select.
 - [ ] `Core/Contract/bridge.ts`: `index:headings` replies `Record<string, PageHeading[]>`.
@@ -1529,8 +1529,7 @@ A live TextPane's `§` runs read the index's heading texts, as the resting Text 
 ```
 
 ```Core/Session/pageConnections.ts diff
--   if (mode === 'inert') return { ...index, open: () => {}, headingsOf, location }
-+   if (mode === 'inert') return { ...index, open: () => {}, headingsOf, location }
+    if (mode === 'inert') return { ...index, open: () => {}, headingsOf, location }
     return {
       ...index,
 -     open: ({ id, path }, heading) => {
@@ -1657,14 +1656,14 @@ Every current caller (`pasteLink.ts:62`, `linkFormat.ts:85`, `cellStatic.tsx:474
 
 #### Task 4-1 — One look rule and one unresolved treatment
 
-**TASK:** `linkLook(conn, text, tk, ownKeys, headingLinkStyle)` in `connectionsApi.ts` returns a link's target, status, missing mark, bare flag, and heading join; `linkClass(look)` is the class its shown text wears. `wikiLinkView`, `WikiLinkView`, `linkStatus`, `mdLinkClass`, and `MD_LINK_CLASS` go; `md-link-invalid` merges into `md-connection-phantom` and `md-unresolved-syntax` into `md-phantom-syntax`; `MdTarget`'s `external` arm becomes `url` and `GlanceTarget`'s `site` becomes `url`.
+**TASK:** `linkLook(conn, text, tk, ownKeys, headingLinkStyle)` in `connectionsApi.ts` returns a link's target, status, missing mark, bare flag, and heading join; `linkClass(look)` is the class its shown text wears. `wikiLinkView`, `WikiLinkView`, `mdLinkClass`, and `MD_LINK_CLASS` go; `md-link-invalid` merges into `md-connection-phantom` and `md-unresolved-syntax` into `md-phantom-syntax`; `MdTarget`'s `external` arm becomes `url` and `GlanceTarget`'s `site` becomes `url`.
 
 **NOW:** Two renderers decide one look (synthesis §3.6): `build` (`decorations.ts:557-664`) and `renderCellContent` (`cellStatic.tsx:72-141`) each state the heading join (`showPage`, `resolved && !alias`) and the phantom spans; `mdLinkClass` maps every `invalid` target to `md-link-invalid`, so an ambiguous markdown link draws as broken (B-62) and underlined (B-63) where a connection to the same title draws `md-connection-ambiguous`; `cellStatic.tsx:10` imports the CodeMirror draw module for two names; `linkClicks.ts:60,135` and `cellStatic.tsx:255` hold three "is this a link" selectors, two of whose class arms never decide anything (B-41).
 
 **CHANGE**
 
 - [ ] Write the tests: `mdLinkTarget.test.tsx:158` and `externalLink.test.tsx:80` rewritten so `[x](Dup)` with two Dup pages draws `md-connection-ambiguous`, `[x](dup.io)` with two `dup.io` pages draws the same (an ambiguous title is never an address, the input Task 4-5 pins on `valueTarget` and Task 2-1 on `readLinkText`), and `[x](Missing)` draws `md-connection-phantom` with no underline rule; a cellStatic test: a resting `[x](Missing)` draws its `[`, `](Missing)` as `md-phantom-syntax` spans around a `md-connection-phantom` label. Watch them fail.
-- [ ] Add `linkLook` and `linkClass`; rewrite the two draw sites; delete the five names; inline `'md-link'`.
+- [ ] Add `linkLook` and `linkClass`; rewrite the two draw sites; delete the four names; inline `'md-link'`.
 - [ ] CSS: merge the rules; delete the `md-link-invalid` underline.
 - [ ] `MdTarget` `'external'` → `'url'` (`connectionsApi.ts`, `linkClicks.ts`, `decorations.ts`, `cellStatic.tsx`, `linkMenuTarget`); `GlanceTarget` `'site'` → `'url'` (`api.ts`, `GlancePane.tsx`, `linkClicks.ts`, `glanceAction.ts` if it switches on it).
 - [ ] `linkClicks.ts`: `linkUnder`'s `hidesSyntax` reads the look's status; the two selectors read the merged classes.
@@ -1916,7 +1915,7 @@ Every current caller (`pasteLink.ts:62`, `linkFormat.ts:85`, `cellStatic.tsx:474
   export function renderCellContent(
     text: string,
     getConn?: () => ConnectionsApi | undefined,
-    { around, headingLinkStyle = 'full', base = 0 }: { around?: CellPage; headingLinkStyle?: HeadingLinkStyle; base?: number } = {},
+    { around, headingLinkStyle, base = 0 }: { around?: CellPage; headingLinkStyle?: HeadingLinkStyle; base?: number } = {},
   ): React.ReactNode {
 +   const runs =
 +     around && around.sectionHeadings.length > 0 && text.includes('§')
@@ -2086,7 +2085,7 @@ Every `cellPage(doc, text)` call passes `state.facet(editorHost).settings().inPa
 
 **CHANGE**
 
-- [ ] Write the tests: a `TextCell` with `holder` and a `connections` whose `headingsOf` answers `{ keys: ['setup'], outline: [...] }` draws `[[#Nope]]` with `md-connection-heading-missing` and, with Automatic on, draws `§Setup` as a run; clicking the run calls `open(holder, 'Setup')`. Watch them fail.
+- [ ] Write the tests: a `TextCell` with `holder` and a `connections` whose `headingsOf` answers `{ keys: ['setup'], texts: ['Setup'], outline: [...] }` draws `[[#Nope]]` with `md-connection-heading-missing` and, with Automatic on, draws `§Setup` as a run; clicking the run calls `open(holder, 'Setup')`. Watch them fail.
 - [ ] `TextCell` builds `around` from the holder; `cellLinkTarget` gains the run arm (Task 4-5 writes the hit shape; land both in one commit).
 
 **AFTER**
@@ -2226,9 +2225,6 @@ Every `cellPage(doc, text)` call passes `state.facet(editorHost).settings().inPa
 ```
 
 A `§` run is prose that follows: it draws and a click travels, but it carries no token, so it gets no menu and no glance, at rest as in the body (`sectionRunAt`, `linkClicks.ts:31`); only a token hit reaches the menu and the dwell.
-
-```Core/MarkdownPM/Tables/cellStatic.tsx diff
-```
 
 `LINK_SELECTOR`, `linkSpanAt`, and the `readOnlyMenu` closure go (`linkMenuTarget(found.target)` is the one default); the right-press claim in `StaticCellImpl.onMouseDown` reads `closest('[data-link]')` until Phase 9 claims every right press.
 
@@ -2991,7 +2987,7 @@ Remove Link on an unaliased heading connection writes `Page § Heading` whatever
 - function menuTarget(still, tk, text, api, host, onCommit, onSelect): ConnMenuTarget | null { … }
 ```
 
-`onSelect` becomes `onActivate({ kind: 'select', range })` in Task 9-1. `TextCell` passes no `authoring`, so its links read `editable: false` and the pick is discarded, which is the read-only menu.
+`TextCell` passes no `authoring`, so its links read `editable: false` and the pick is discarded, which is the read-only menu.
 
 **VERIFY**
 
@@ -3337,8 +3333,9 @@ The container step of `paste` in Task 7-1.
 +   // A link dragged from outside carries `text/uri-list`; the editor's own drags carry text alone and stay CodeMirror's, which moves rather than copies them.
 +   drop(event, view) {
 +     const text = event.dataTransfer?.types.includes('text/uri-list') ? event.dataTransfer.getData('text/plain') : ''
-+     const pos = text && view.posAtCoords({ x: event.clientX, y: event.clientY })
-+     if (!text || pos === null || pos === false) return false
++     if (!text) return false
++     const pos = view.posAtCoords({ x: event.clientX, y: event.clientY })
++     if (pos === null) return false
 +     view.dispatch({ selection: { anchor: pos } })
 +     if (!paste(view, text, 'auto')) return false
 +     event.preventDefault()
@@ -3650,8 +3647,7 @@ Phase 9's resting Paste row reads `pastedCellText` too.
 +   const keepTitle = !useSetting('removeTitleOnLinkChange')
     …
     const raw = current?.kind === 'link' ? current.value : ''
--   const initial = alias ? (linkAlias(raw) ?? '') : editorText(current)
-+   const initial = alias ? (readLinkText(raw)?.alias ?? '') : editorText(current)
+    const initial = alias ? (readLinkText(raw)?.alias ?? '') : editorText(current)
     const parse = (text: string): PropertyValue | null | undefined =>
 -     alias ? linkValueFromRename(text, raw) : parseEditorValue(def.type, text, current)
 +     alias
@@ -4383,7 +4379,10 @@ The anchor is pinned by a test for a filled and an unfilled label.
 +       if (dir === -1 && heading && behind) {
 @@ lookup · alias @@
 -     if (form === 'alias') return aliasRows(conn, host.aliases, title, q)
-+     if (form === 'alias') return aliasRows(host.aliases, target?.pageId ?? titleTarget(conn, title ?? '').page?.id, q)
++     if (form === 'alias') {
++       const named = titleTarget(conn, title ?? '')
++       return aliasRows(host.aliases, target?.pageId ?? (named.kind === 'page' ? named.page.id : undefined), q)
++     }
 @@ pane @@
 -     viaChevron,
 +     behind,
@@ -4439,7 +4438,10 @@ The anchor is pinned by a test for a filled and an unfilled label.
 +   const page = useMemo(() => {
 +     if (!heading) return null
 +     const conn = host.connections()
-+     if (title) return titleTarget(conn, title).page ?? null
++     if (title) {
++       const named = titleTarget(conn, title)
++       return named.kind === 'page' ? named.page : null
++     }
 +     const own = viewRef.current && ownPage(viewRef.current)
 +     return own?.kind === 'held' ? own.page : null
 +   }, [heading, title])
