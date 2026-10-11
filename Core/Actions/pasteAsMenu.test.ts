@@ -2,22 +2,15 @@ import { describe, it, expect } from 'vitest'
 import { markdownLinkRegex } from '../Connections/links'
 import { readLinkText, type LinkTarget } from '../Connections/linkValue'
 import { PASTE_LITERAL_ACTION, RESTING_EDITS } from './editorMenu'
-import {
-  PASTE_AS_PREFIX,
-  pasteAsRows,
-  pasteAsWrite,
-  pasteModeOf,
-  type PasteAsForm,
-  type PasteMode,
-} from './pasteAsMenu'
+import { pasteAsRows, pasteAsWrite, pasteModeOf, type PasteMode } from './pasteAsMenu'
 
 const URL = 'https://www.example.com/a/b'
 const A = 'https://a.com'
 
 const labels = (clipboard: string, seat = false, cite = false): string[] =>
   pasteAsRows(clipboard, seat, cite).map((r) => r.label)
-const forms = (clipboard: string, seat = false, cite = false): PasteAsForm[] =>
-  pasteAsRows(clipboard, seat, cite).map((r) => r.form)
+const forms = (clipboard: string, seat = false, cite = false): (PasteMode | null)[] =>
+  pasteAsRows(clipboard, seat, cite).map((r) => pasteModeOf(r.action))
 
 const over = (selection = '', title?: string) => ({
   selection,
@@ -211,7 +204,7 @@ describe('which paste an action asks for', () => {
   it('reads the literal paste, the resting Paste, and each Paste As action, and nothing else', () => {
     expect(pasteModeOf(PASTE_LITERAL_ACTION)).toBe('literal')
     expect(pasteModeOf(RESTING_EDITS.paste)).toBe('auto')
-    expect(pasteModeOf(`${PASTE_AS_PREFIX}embedLink`)).toBe('embedLink')
+    expect(forms(URL, true)).toContain('embedLink')
     expect(pasteModeOf('format:bold')).toBeNull()
   })
 })

@@ -64,6 +64,7 @@ import {
 import { lineEndOf, lineIndexAt } from './Engine/markdownCode'
 import { linkClass, linkLook, type ConnectionsApi } from './Links/connectionsApi'
 import type { LinkStatus } from '../Connections/connections'
+import type { PageHeadings } from '../Connections/pageIndex'
 import { editorHost, type EditorSettings, type OwnPage, ownPage, redrawNudge } from './api'
 import { checkMarkSvg, checkboxClass } from '@pommora/uix/Controls/Checkbox'
 import * as btn from '@pommora/uix/Buttons/button-base.css'
@@ -426,7 +427,7 @@ function atomicFor(
 function ownHeadings(
   own: OwnPage | null,
   conn: ConnectionsApi | undefined,
-): { keys: readonly string[]; texts: readonly string[] } | undefined {
+): Pick<PageHeadings, 'keys' | 'texts'> | undefined {
   if (!own) return undefined
   if (own.kind === 'held') return conn?.headingsOf(own.page.path)
   const doc = own.view.state.doc

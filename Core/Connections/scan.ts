@@ -65,7 +65,7 @@ export function sectionRunsIn(
   return out
 }
 
-export type LinkSyntax = 'wiki' | 'embed' | 'markdown' | 'section'
+type LinkSyntax = 'wiki' | 'embed' | 'markdown' | 'section'
 
 /** One occurrence. `target` and `qualifier` are normalized keys; `qualifier` is '' when the link names no heading. `at` is the offset into `body`, which the indexer resolves to a line. `title` is the page name as written, empty where the link names its own page by leaving it out; `heading` and a connection's `alias` are as written. */
 export interface LinkHit {

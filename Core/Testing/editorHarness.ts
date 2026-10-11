@@ -51,7 +51,7 @@ interface HarnessState {
   connections: ConnectionsApi | undefined
   aliases: Record<string, string[]>
   linkTitles: Record<string, string>
-  pendingTitles: Map<
+  titleFetches: Map<
     string,
     { promise: Promise<string | null>; settle: (title: string | null) => void }
   >
@@ -77,7 +77,7 @@ function harnessHost(
     connections: undefined,
     aliases: { ...spec.aliases },
     linkTitles: { ...spec.linkTitles },
-    pendingTitles: new Map(),
+    titleFetches: new Map(),
     aliasWatchers: new Set<() => void>(),
     citationsShown: false,
   } as HarnessState
@@ -104,13 +104,13 @@ function harnessHost(
       resolve: (url) => {
         const held = state.linkTitles[url]
         if (held) return Promise.resolve(held)
-        const pending = state.pendingTitles.get(url)
+        const pending = state.titleFetches.get(url)
         if (pending) return pending.promise
         let settle!: (title: string | null) => void
         const promise = new Promise<string | null>((r) => {
           settle = r
         })
-        state.pendingTitles.set(url, { promise, settle })
+        state.titleFetches.set(url, { promise, settle })
         return promise
       },
     },
@@ -148,7 +148,7 @@ export const testHost = (spec: HarnessHost = {}): EditorHost =>
 
 /** Every `MarkdownTable` prop but its host and model, as a table on a page with no footnotes or headings that writes nowhere. */
 export const tableStubs: Omit<Parameters<typeof MarkdownTable>[0], 'host' | 'model'> = {
-  around: { ordinalOf: () => null, ownKeys: [], sectionHeadings: [] },
+  around: { ordinalOf: () => null, keys: [], texts: [] },
   headingColumn: false,
   onCellCommit: () => {},
   cellAt: () => null,
@@ -250,8 +250,8 @@ export async function settleTitle(url: string, title: string | null): Promise<vo
   const s = harnessState()
   if (title !== null) s.linkTitles[url] = title
   await act(async () => {
-    s.pendingTitles.get(url)?.settle(title)
-    s.pendingTitles.delete(url)
+    s.titleFetches.get(url)?.settle(title)
+    s.titleFetches.delete(url)
   })
 }
 

@@ -1,7 +1,7 @@
 // Emphasis is located on the mdast AST so `_`/`*` mixing/nesting is correct and code spans never emit emphasis.
 import type { Root, RootContent, PhrasingContent } from 'mdast'
 import { parse, parseThroughHtml } from './parser'
-import { inlineSpans, type CodeMask } from './markdownCode'
+import { inlineSpans, type CodeMask, overlaps } from './markdownCode'
 import { inCodeAt, scanDoc } from './docScan'
 import {
   htmlTagRegex,
@@ -90,7 +90,6 @@ export function shiftToken(tk: Token, by: number): Token {
     ...(tk.heading ? { heading: move(tk.heading) } : {}),
   }
 }
-const overlaps = (a: Span, b: Span): boolean => a[0] < b[1] && b[0] < a[1]
 
 const notOverlapping =
   (claimed: Token[]) =>

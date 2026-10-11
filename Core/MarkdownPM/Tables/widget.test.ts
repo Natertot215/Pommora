@@ -136,7 +136,7 @@ describe("a table follows the document's footnote numbering", () => {
   it('carries the numbering the document gives it', () => {
     const start = EditorState.create({ doc, extensions: tables })
     expect(numbering(firstTableWidget(start))).toEqual([1, 2, null])
-    expect(firstTableWidget(start).around.ownKeys).toEqual([])
+    expect(firstTableWidget(start).around.keys).toEqual([])
   })
 
   it('re-reads it after an edit far from the table renumbers a marker inside it', () => {
@@ -156,9 +156,9 @@ describe("a table follows the document's footnote numbering", () => {
     const linked = `## Setup\n\n${doc.replace('| [^b] |', '| [^b] [[#Setup]] |')}`
     const start = EditorState.create({ doc: linked, extensions: tables })
     expect(numbering(firstTableWidget(start))).toEqual([1, 2, null])
-    expect(firstTableWidget(start).around.ownKeys).toEqual(['setup'])
+    expect(firstTableWidget(start).around.keys).toEqual(['setup'])
     const next = start.update({ changes: { from: 8, insert: 'x' } }).state
-    expect(firstTableWidget(next).around.ownKeys).toEqual(['setupx'])
+    expect(firstTableWidget(next).around.keys).toEqual(['setupx'])
   })
 
   it('a keystroke in a heading rebuilds only the table holding a same-page link', () => {

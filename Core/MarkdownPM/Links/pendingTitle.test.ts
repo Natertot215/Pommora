@@ -181,7 +181,7 @@ describe('writeLinkAt', () => {
 
   it('a closed cell whose table is gone writes its title nowhere', async () => {
     const view = await closeCellPending()
-    const replaced = `| B |\n| --- |\n| y |\n\n| A |\n| --- |\n| ${LINK} |`
+    const replaced = `| B |\n| --- |\n| ${LINK} |\n\n| A |\n| --- |\n| ${LINK} |`
     for (const body of ['gone', replaced])
       await act(async () => {
         view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: body } })

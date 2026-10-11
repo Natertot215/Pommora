@@ -125,8 +125,8 @@ describe('a point in a resting cell maps to the source it draws', () => {
   it('reads a point on a § run as its end', async () => {
     const cell = await restingCell('see §Setup ok', {
       ordinalOf: () => null,
-      ownKeys: ['setup'],
-      sectionHeadings: ['Setup'],
+      keys: ['setup'],
+      texts: ['Setup'],
     })
     const run = textNode(cell, '§Setup')
     expect(cellOffsetAt(cell, run, 2)).toBe(10)
@@ -137,8 +137,8 @@ describe('a point in a resting cell maps to the source it draws', () => {
   it('clamps a footnote’s drawn ordinal to its marker', async () => {
     const cell = await restingCell('see [^note] ok', {
       ordinalOf: (label) => (label === 'note' ? 7 : null),
-      ownKeys: [],
-      sectionHeadings: [],
+      keys: [],
+      texts: [],
     })
     expect(cellOffsetAt(cell, textNode(cell, '7'), 1, 'end')).toBe(11)
     expect(cellOffsetAt(cell, textNode(cell, ' ok'), 1)).toBe(12)

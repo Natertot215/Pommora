@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
+  editFor,
   toggleInline,
   setHeading,
   setList,
@@ -66,6 +67,12 @@ describe('toggleInline', () => {
   })
   it('link wraps with an empty url ready for typing', () => {
     expect(apply('site', toggleInline(scanDoc('site'), 0, 4, 'link'))).toBe('[site]()')
+  })
+  it('Insert Link stands down on a fenced line, as the wraps do', () => {
+    expect(editFor('link:insert', scanDoc('```\nexample.com\n```'), 4, 15)).toBeNull()
+    expect(apply('example.com', editFor('link:insert', scanDoc('example.com'), 0, 11))).toBe(
+      '[example.com](https://example.com)',
+    )
   })
   it('seats an empty link at its url, and an alias-first one at its text', () => {
     const url = toggleInline(scanDoc(''), 0, 0, 'link')

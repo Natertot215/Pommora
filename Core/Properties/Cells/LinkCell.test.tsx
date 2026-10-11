@@ -113,9 +113,9 @@ describe('a Link value naming a page draws and follows as every link does', () =
 })
 
 describe('a Link value holding an address or plain text keeps the property’s own look', () => {
-  it('an address draws in the property color, arms the glance on pointer over, and a click drops the dwell', async () => {
+  it('an address draws in the property color, arms the glance on pointer over, and a click closes a glance it is not inside', async () => {
     const arm = vi.spyOn(glanceHost, 'arm').mockImplementation(() => {})
-    const cancel = vi.spyOn(glanceHost, 'cancel').mockImplementation(() => {})
+    const close = vi.spyOn(glanceHost, 'close').mockImplementation(() => {})
     const el = await mount('https://a.com')
     const link = el.querySelector('a.cell-link') as HTMLAnchorElement
     expect(link.textContent).toBe('https://a.com')
@@ -125,7 +125,7 @@ describe('a Link value holding an address or plain text keeps the property’s o
     })
     expect(arm).toHaveBeenCalledWith({ kind: 'url', url: 'https://a.com' }, link)
     await click(link)
-    expect(cancel).toHaveBeenCalledOnce()
+    expect(close).toHaveBeenCalledOnce()
     expect(openWebLink).toHaveBeenCalledWith('https://a.com')
   })
 

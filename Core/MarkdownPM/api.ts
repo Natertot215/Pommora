@@ -50,11 +50,14 @@ export type OwnPage =
   | { kind: 'body'; view: EditorView; seat: Element }
   | { kind: 'held'; page: ConnPage }
 
+export const heldBy = (page: ConnPage | null | undefined): OwnPage | null =>
+  page ? { kind: 'held', page } : null
+
 /** The page every bare `#Heading` at `at` answers to: a page body is its own, a table cell's is the page holding the table, and a Text value's is the page holding the value. An editor still being built isn't yet found from its DOM, so it answers for itself. */
 export function ownPage(at: EditorView | Element): OwnPage | null {
   const own = at instanceof EditorView ? at : editorAt(at)
   const held = own?.state.facet(heldPage)
-  if (held !== undefined) return held && { kind: 'held', page: held }
+  if (held !== undefined) return heldBy(held)
   const { seat, view } = pageEditorAt(at instanceof EditorView ? at.dom : at)
   const body = view ?? own
   return body && { kind: 'body', view: body, seat }

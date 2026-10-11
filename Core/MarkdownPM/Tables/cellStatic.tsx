@@ -29,11 +29,11 @@ import { RESTING_EDITS } from '../../Actions/editorMenu'
 import { pasteModeOf, type PasteMode } from '../../Actions/pasteAsMenu'
 import { codeMask, lineOffsetsOf, type TextEdit } from '../Engine/markdownCode'
 import { sectionRunsIn } from '../../Connections/scan'
+import type { PageHeadings } from '../../Connections/pageIndex'
 import {
   linkClass,
   linkLook,
   linkMenuTarget,
-  titleTarget,
   tokenTarget,
   type ConnectionsApi,
   type MdTarget,
@@ -49,13 +49,11 @@ import type { HeadingLinkStyle } from '../../Settings/personalization'
 import { CheckMark, checkboxClass } from '@pommora/uix/Controls/Checkbox'
 import { cx } from '@pommora/uix/Utilities/cx'
 
-export interface CellPage {
+export type CellPage = Pick<PageHeadings, 'keys' | 'texts'> & {
   ordinalOf: (label: string) => number | null
-  ownKeys: readonly string[]
-  sectionHeadings: readonly string[]
 }
 
-export const linksOwnHeadings = (text: string): boolean => /\[\[#|\]\(\s*#|§/.test(text)
+export const readsOwnHeadings = (text: string): boolean => /\[\[#|\]\(\s*#|§/.test(text)
 
 // KNOB — distinct cell texts remembered; a table scrolling back in re-reads its cells from here.
 export const cellTokens = perText(tokenize, 4096)
@@ -72,8 +70,8 @@ export function renderCellContent(
   }: { around?: CellPage; headingLinkStyle?: HeadingLinkStyle; base?: number } = {},
 ): React.ReactNode {
   const runs =
-    around && around.sectionHeadings.length > 0 && text.includes('§')
-      ? sectionRunsIn(text, around.sectionHeadings, codeMask(text))
+    around && around.texts.length > 0 && text.includes('§')
+      ? sectionRunsIn(text, around.texts, codeMask(text))
       : []
   // No markdown-significant char → no token possible, so skip the mdast parse; this is the per-cell cost of a table scrolling in.
   const held = holdsTokens(text) ? cellTokens(text) : []
@@ -129,7 +127,7 @@ export function renderCellContent(
       case 'wikiLink':
       case 'link': {
         if (tk.kind === 'wikiLink' && !conn) return text.slice(s, e)
-        const look = linkLook(conn, text, tk, around?.ownKeys, headingLinkStyle)
+        const look = linkLook(conn, text, tk, around?.keys, headingLinkStyle)
         if (look.status === 'phantom')
           return (
             <Fragment key={key++}>
@@ -560,7 +558,7 @@ export function linkGestures(
   text: string,
   connections: (() => ConnectionsApi | undefined) | undefined,
   glance: EditorHost['glance'],
-  own: OwnPage | null = null,
+  own: OwnPage | null,
   authoring?: {
     editable: () => boolean
     apply: (tk: TokenOf<LinkKind>, action: LinkAction) => void
@@ -610,7 +608,7 @@ function cellLinkTarget(
   if (el.classList.contains('md-section-run'))
     return {
       el,
-      target: heldTarget(titleTarget(undefined, '', (el.textContent ?? '').slice(1)), own),
+      target: heldTarget({ kind: 'self', heading: (el.textContent ?? '').slice(1) }, own),
     }
   const tk = linkTokenAt(cellTokens(text), span[0])
   return tk ? { el, tk, target: heldTarget(tokenTarget(api, text, tk), own) } : null
@@ -622,5 +620,5 @@ export const StaticCell = memo(
   (a, b) =>
     a.text === b.text &&
     a.linkStyle === b.linkStyle &&
-    (a.around === b.around || !(linksOwnHeadings(a.text) || a.text.includes('[^'))),
+    (a.around === b.around || !(readsOwnHeadings(a.text) || a.text.includes('[^'))),
 )

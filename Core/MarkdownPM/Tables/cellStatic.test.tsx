@@ -32,8 +32,8 @@ const model: TableModel = {
 // The page's numbering gives `[^note]` its ordinal and leaves `[^9]` unbound.
 const numbering = (n: number): CellPage => ({
   ordinalOf: (label) => (label === 'note' ? n : null),
-  ownKeys: [],
-  sectionHeadings: [],
+  keys: [],
+  texts: [],
 })
 
 let container: HTMLDivElement
@@ -261,7 +261,7 @@ describe('a resting cell draws every token as a span, through the tokens inside 
   })
 
   it('a § run over a heading of the page draws as a link', async () => {
-    await draw('see §Setup', { ordinalOf: () => null, ownKeys: [], sectionHeadings: ['Setup'] })
+    await draw('see §Setup', { ordinalOf: () => null, keys: [], texts: ['Setup'] })
     const run = container.querySelector('.md-section-run') as HTMLElement
     expect(run.textContent).toBe('§Setup')
     expect(run.hasAttribute('data-link')).toBe(true)

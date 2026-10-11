@@ -11,8 +11,9 @@ import {
 } from '../Connections/linkValue'
 import { LINK_DISPLAY_LABELS, LINK_DISPLAYS, type LinkDisplay } from '../Properties/properties'
 import { PASTE_LITERAL_ACTION, RESTING_EDITS } from './editorMenu'
+import type { LeafItem } from './menuModel'
 
-export type PasteAsForm =
+type PasteAsForm =
   | LinkDisplay
   | 'plain'
   | 'connection'
@@ -23,7 +24,7 @@ export type PasteAsForm =
 
 export type PasteMode = PasteAsForm | 'auto' | 'inverse' | 'literal'
 
-export const PASTE_AS_PREFIX = 'pasteAs:'
+const PASTE_AS_PREFIX = 'pasteAs:'
 
 export const pasteModeOf = (action: string): PasteMode | null => {
   if (action === PASTE_LITERAL_ACTION) return 'literal'
@@ -52,6 +53,11 @@ const FOOTNOTE_ROW: PasteAsRow = { label: 'Footnote', form: 'footnote' }
 const PAGE_EMBED_ROW: PasteAsRow = { label: 'Embedded Page', form: 'embedPage' }
 const URL_EMBED_ROW: PasteAsRow = { label: 'Embedded Link', form: 'embedLink' }
 
+const asAction = (r: PasteAsRow): LeafItem<string> => ({
+  label: r.label,
+  action: PASTE_AS_PREFIX + r.form,
+})
+
 function embeddableTarget(target: LinkTarget): boolean {
   return target.kind === 'page'
     ? expressibleInLink(target.title) && !target.heading && !target.alias
@@ -62,17 +68,17 @@ export function pasteAsRows(
   clipboard: string,
   embedSeat: boolean,
   citeSeat: boolean,
-): readonly PasteAsRow[] {
+): LeafItem<string>[] {
   const footnote = citeSeat && clipboard.trim() !== '' ? [FOOTNOTE_ROW] : []
   const target = readLinkText(clipboard)
-  if (!target) return footnote
+  if (!target) return footnote.map(asAction)
   const page = target.kind === 'page'
   const embed = embedSeat && embeddableTarget(target)
   const rows = page
     ? PAGE_ROWS.filter((r) => r.form !== 'connection' || connectionSpells(target))
     : URL_ROWS.filter((r) => r.form !== 'link-title' || isHttpLink(target.url))
   const embedRow = page ? PAGE_EMBED_ROW : URL_EMBED_ROW
-  return [...footnote, ...rows, ...(embed ? [embedRow] : [])]
+  return [...footnote, ...rows, ...(embed ? [embedRow] : [])].map(asAction)
 }
 
 interface TextPaste {
