@@ -346,6 +346,12 @@ describe('pasting inside a link', () => {
     expect(await pastedAt('[[P1]]', 4, 'https://a.co', 'inverse')).toBe('[[P1https://a.co]]')
   })
 
+  it('writes the address under Plain Text inside a link destination', async () => {
+    expect(await pastedAt('[docs]() tail', 7, '[Home](https://a.com)', 'plain')).toBe(
+      '[docs](https://a.com) tail',
+    )
+  })
+
   it('writes the form a Paste As pick names', async () => {
     settings({ removeTitleOnLinkChange: false })
     expect(await pastedAt('[[P1|a]]', 3, '[[P2]]', 'markdown')).toBe('[a](P2)')

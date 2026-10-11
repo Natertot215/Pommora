@@ -209,6 +209,29 @@ describe('a swept cell rectangle', () => {
     })
   })
 
+  it('writes nothing when the target cell changed while ⌘V awaited a Page Title', async () => {
+    const onFill = vi.fn()
+    let cell = 'one'
+    let settle: (title: string | null) => void = () => {}
+    const host = {
+      ...testHost({
+        settings: { defaultLinkFormat: 'link-title' },
+        clipboard: { read: async () => 'https://a.com' },
+      }),
+      linkTitles: {
+        get: () => null,
+        resolve: () => new Promise<string | null>((resolve) => (settle = resolve)),
+      },
+    }
+    await mount({ onFill, host, cellAt: () => cell })
+    await sweepDown()
+    await press(document.body, 'v', true)
+    await act(async () => {})
+    cell = 'typed'
+    await act(async () => settle('A'))
+    expect(onFill).not.toHaveBeenCalled()
+  })
+
   it('leaves Delete, ⌘C, ⌘X, and ⌘V typed into an unrelated field to that field', async () => {
     const onClearCells = vi.fn()
     const write = vi.fn(async () => {})

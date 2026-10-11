@@ -99,8 +99,9 @@ export function pasteEdit(
   }
   const ls = lineStartAt(scan.text, sel.from)
   if (
+    how !== 'plain' &&
     linkDestinationStart(scan.text.slice(ls, lineEndAt(scan.text, sel.from)), sel.from - ls) !==
-    null
+      null
   )
     return null
   const [from, to] = trimmedRange(scan.text, sel.from, sel.to)
