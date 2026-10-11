@@ -169,7 +169,7 @@ export interface EditorHost {
   }
   linkTitles: {
     get(url: string): string | null
-    resolve(url: string): void
+    resolve(url: string): Promise<string | null>
     subscribe(cb: () => void): () => void
   }
   citations: { shown(): boolean; set(v: boolean): void }

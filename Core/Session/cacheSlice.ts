@@ -5,7 +5,7 @@ import { dialer } from '../Platform/dialer'
 
 export interface CacheSlice {
   linkTitles: Record<string, string>
-  resolveLinkTitle: (url: string) => void
+  resolveLinkTitle: (url: string) => Promise<string | null>
   assetMap: AssetMap
   applyAssetMap: (map: AssetMap) => void
   /** A view's values snapshot is fetched once per container open, so a property rename or a pushed value change bumps this to refresh it; a rename's key pair rides along to re-key the optimistic overrides. */
@@ -15,23 +15,29 @@ export interface CacheSlice {
   resetCaches: () => void
 }
 
-const inFlightTitles = new Set<string>()
+const inFlightTitles = new Map<string, Promise<string | null>>()
 const failedTitles = new Set<string>()
 
 export const createCacheSlice: Slice<CacheSlice> = (set, get) => ({
   linkTitles: {},
   resolveLinkTitle: (url) => {
-    if (inFlightTitles.has(url) || failedTitles.has(url) || get().linkTitles[url]) return
-    inFlightTitles.add(url)
-    dialer()
+    const cached = get().linkTitles[url]
+    if (cached) return Promise.resolve(cached)
+    if (failedTitles.has(url)) return Promise.resolve(null)
+    const flying = inFlightTitles.get(url)
+    if (flying) return flying
+    const fetch = dialer()
       .ask('linkTitles:fetch', url)
       .then((res) => {
         // A late fetch resolving after a nexus switch merges harmlessly: a URL's <title> is identical in any nexus, and main won't persist it cross-nexus.
-        const title = res.ok ? res.value.title : null
+        const title = (res.ok && res.value.title) || null
         if (title) set((s) => ({ linkTitles: { ...s.linkTitles, [url]: title } }))
         else failedTitles.add(url)
+        return title
       })
       .finally(() => inFlightTitles.delete(url))
+    inFlightTitles.set(url, fetch)
+    return fetch
   },
 
   assetMap: EMPTY_ASSET_MAP,
