@@ -102,6 +102,12 @@ export function beginPointerGesture(spec: PointerGestureSpec): GestureHandle | n
     }
   }
 
+  const drop = (swallowClick: () => void): void => {
+    detach(g)
+    swallowClick()
+    spec.onDrop()
+  }
+
   const g: LiveGesture = {
     spec,
     active: false,
@@ -128,8 +134,10 @@ export function beginPointerGesture(spec: PointerGestureSpec): GestureHandle | n
     handlers: {
       move: (ev) => {
         if (ev.pointerId !== e.pointerId) return
+        // A trackpad can report its release as a buttonless move ahead of the pointerup itself.
         if (ev.buttons === 0) {
-          g.handlers.cancel()
+          if (g.active) drop(suppressReleaseClick)
+          else g.handlers.cancel()
           return
         }
         point.x = ev.clientX
@@ -165,12 +173,11 @@ export function beginPointerGesture(spec: PointerGestureSpec): GestureHandle | n
       },
       up: (ev) => {
         if (ev.pointerId !== e.pointerId) return
-        const wasActive = g.active
-        detach(g)
-        if (wasActive) {
-          suppressNextClick()
-          spec.onDrop()
-        } else spec.onTap?.()
+        if (g.active) drop(suppressNextClick)
+        else {
+          detach(g)
+          spec.onTap?.()
+        }
       },
       cancel: (ev) => {
         if (ev && ev.pointerId !== e.pointerId) return
