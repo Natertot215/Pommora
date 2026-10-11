@@ -100,7 +100,7 @@ export function renderCellContent(
     'data-link': '',
     ...(at !== undefined && { 'data-at': base + at }),
   })
-  const verbatim = (s: number, e: number, at: number) => ({ ...src(s, e), 'data-at': base + at })
+  const verbatim = (s: number, e: number, at = s) => ({ ...src(s, e), 'data-at': base + at })
   const draw = (from: number, to: number, within: readonly Drawn[]): React.ReactNode[] => {
     const out: React.ReactNode[] = []
     let pos = from
@@ -133,13 +133,13 @@ export function renderCellContent(
         if (look.status === 'phantom')
           return (
             <Fragment key={key++}>
-              <span className="md-phantom-syntax" {...verbatim(s, cs, s)}>
+              <span className="md-phantom-syntax" {...verbatim(s, cs)}>
                 {text.slice(s, cs)}
               </span>
-              <span className="md-connection-phantom" {...verbatim(cs, ce, cs)}>
+              <span className="md-connection-phantom" {...verbatim(cs, ce)}>
                 {text.slice(cs, ce)}
               </span>
-              <span className="md-phantom-syntax" {...verbatim(ce, e, ce)}>
+              <span className="md-phantom-syntax" {...verbatim(ce, e)}>
                 {text.slice(ce, e)}
               </span>
             </Fragment>
@@ -169,13 +169,13 @@ export function renderCellContent(
         const [open, close] = tk.markerRanges
         return (
           <Fragment key={key++}>
-            <span className="md-bracket" {...verbatim(open[0], open[1], open[0])}>
+            <span className="md-bracket" {...verbatim(open[0], open[1])}>
               {text.slice(open[0], open[1])}
             </span>
-            <span className={contentClass(tk)} {...verbatim(cs, ce, cs)}>
+            <span className={contentClass(tk)} {...verbatim(cs, ce)}>
               {text.slice(cs, ce)}
             </span>
-            <span className="md-bracket" {...verbatim(close[0], close[1], close[0])}>
+            <span className="md-bracket" {...verbatim(close[0], close[1])}>
               {text.slice(close[0], close[1])}
             </span>
           </Fragment>
@@ -405,14 +405,10 @@ function StaticCellImpl({
   onCommit: (text: string) => void
   onFill: (payload: TablePayload) => void
 }): React.JSX.Element {
-  const commitAtRest = (
-    built: string,
-    edits: readonly TextEdit[],
-    userEvent = 'input',
-  ): boolean => {
-    if (current() !== built) return false
-    const next = landEdit(built, edits, userEvent, 'cell')
-    if (next === built) return false
+  const commitAtRest = (edits: readonly TextEdit[], userEvent = 'input'): boolean => {
+    if (current() !== text) return false
+    const next = landEdit(text, edits, userEvent, 'cell')
+    if (next === text) return false
     onCommit(next)
     return true
   }
@@ -423,7 +419,7 @@ function StaticCellImpl({
     if (!edit) return
     if (edit.kind === 'select') return onActivate({ kind: 'select', range: edit.range })
     const insert = await settledLinkText(host, edit)
-    if (!commitAtRest(text, [{ from: edit.from, to: edit.to, insert }])) return
+    if (!commitAtRest([{ from: edit.from, to: edit.to, insert }])) return
     if (edit.select !== undefined) onActivate({ kind: 'select', range: [edit.select, edit.select] })
   }
   const { linkAt, dismiss, onContextMenu, onPointerOver, onPointerOut } = linkGestures(
@@ -455,47 +451,35 @@ function StaticCellImpl({
     if (!change) return null
     e.preventDefault()
     e.stopPropagation()
-    return () => commitAtRest(text, [change])
+    return () => commitAtRest([change])
   }
 
-  const pasteAtRest = async (
-    built: string,
-    from: number,
-    to: number,
-    how: PasteMode,
-  ): Promise<void> => {
+  const pasteAtRest = async (from: number, to: number, how: PasteMode): Promise<void> => {
     const clip = await host.clipboard.read()
     if (!clip) return
     const payload = decodePayload(clip)
     if (payload) return onFill(payload)
-    commitAtRest(built, [await pastedCellText(host, built, { from, to }, clip, how)], 'input.paste')
+    commitAtRest([await pastedCellText(host, text, { from, to }, clip, how)], 'input.paste')
   }
 
-  const restingAction = async (
-    action: string,
-    built: string,
-    from: number,
-    to: number,
-  ): Promise<void> => {
+  const restingAction = async (action: string, from: number, to: number): Promise<void> => {
     switch (action) {
       case RESTING_EDITS.copy:
-        return void host.clipboard.write(built.slice(from, to))
+        return void host.clipboard.write(text.slice(from, to))
       case RESTING_EDITS.cut:
-        if (commitAtRest(built, [{ from, to, insert: '' }], 'delete'))
-          void host.clipboard.write(built.slice(from, to))
+        if (commitAtRest([{ from, to, insert: '' }], 'delete'))
+          void host.clipboard.write(text.slice(from, to))
         return
       case RESTING_EDITS.paste:
-        return pasteAtRest(built, from, to, 'auto')
+        return pasteAtRest(from, to, 'auto')
       case PASTE_LITERAL_ACTION:
-        return pasteAtRest(built, from, to, 'literal')
+        return pasteAtRest(from, to, 'literal')
     }
     if (action.startsWith(PASTE_AS_PREFIX))
-      return pasteAtRest(built, from, to, action.slice(PASTE_AS_PREFIX.length) as PasteAsForm)
-    const edit = editFor(action, scanDoc(built), from, to)
-    if (!edit || !commitAtRest(built, edit.changes, editEvent(edit))) return
-    const slot =
-      /^(format|highlight):/.test(action) &&
-      (from === to || action === 'format:link' || action === 'format:linkText')
+      return pasteAtRest(from, to, action.slice(PASTE_AS_PREFIX.length) as PasteAsForm)
+    const edit = editFor(action, scanDoc(text), from, to)
+    if (!edit || !commitAtRest(edit.changes, editEvent(edit))) return
+    const slot = /^(format|highlight):/.test(action) && (from === to || action === 'format:link')
     if (slot && edit.selection !== undefined)
       onActivate({ kind: 'select', range: [edit.selection, edit.selection] })
   }
@@ -503,18 +487,17 @@ function StaticCellImpl({
   const restingMenu = (e: React.MouseEvent<HTMLElement>): void => {
     const ask = host.menus.format
     if (!ask) return
-    const built = text
-    const [from, to] = restingRange(e.currentTarget, e.clientX, e.clientY, built.length)
+    const [from, to] = restingRange(e.currentTarget, e.clientX, e.clientY, text.length)
     void ask({
-      ...readFormatState(scanDoc(built), from, to),
+      ...readFormatState(scanDoc(text), from, to),
       scope: 'cell',
       x: e.clientX,
       y: e.clientY,
       embedSeat: false,
       citeSeat: false,
-      resting: { selection: built.slice(from, to) },
+      resting: { selection: text.slice(from, to) },
     }).then((action) => {
-      if (action) void restingAction(action, built, from, to)
+      if (action) void restingAction(action, from, to)
     })
   }
 

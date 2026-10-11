@@ -102,30 +102,11 @@ function restingEditItems(
   selected: boolean,
   canPaste: boolean,
 ): MenuItemConstructorOptions[] {
-  const answer = (action: string) => () => editor.resolve(action)
-  return [
-    {
-      label: 'Cut',
-      enabled: selected,
-      accelerator: 'CmdOrCtrl+X',
-      registerAccelerator: false,
-      click: answer(RESTING_EDITS.cut),
-    },
-    {
-      label: 'Copy',
-      enabled: selected,
-      accelerator: 'CmdOrCtrl+C',
-      registerAccelerator: false,
-      click: answer(RESTING_EDITS.copy),
-    },
-    {
-      label: 'Paste',
-      enabled: canPaste,
-      accelerator: 'CmdOrCtrl+V',
-      registerAccelerator: false,
-      click: answer(RESTING_EDITS.paste),
-    },
-  ]
+  return editorRows(editor, [
+    { label: 'Cut', action: RESTING_EDITS.cut, chord: 'cmd+x', disabled: !selected },
+    { label: 'Copy', action: RESTING_EDITS.copy, chord: 'cmd+c', disabled: !selected },
+    { label: 'Paste', action: RESTING_EDITS.paste, chord: 'cmd+v', disabled: !canPaste },
+  ])
 }
 
 // Last, so the Pommora formatting block sits directly under the edit items.
