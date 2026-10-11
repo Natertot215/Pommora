@@ -115,4 +115,20 @@ export async function run(d) {
     })
     d.check('resting cell: clicking a § run follows to the heading', /Setup|Beta/.test(where), { where })
   } else d.check('resting cell: a § run is present to click', false, {})
+
+  // -- Task 4-6: the headings map follows the app's own writes ------------
+  await d.scratchPage('Alpha', '# Alpha\n\n## Setup\n\nThe setup section.\n\n## Fresh\n\nAdded in the app.\n')
+  await d.settle(3000)
+  await d.scratchPage('Scratch', '# Scratch\n\nsee [[Alpha#Fresh]] and [[Alpha#Nope]]\n')
+  await d.settle(600)
+  const marks = () => d.eval(() => $$('.cm-content')[0] && [...$$('.cm-content')[0].querySelectorAll('.md-connection-heading-missing')].map((e) => e.textContent))
+  d.check('4-6: a heading typed in the app is known to the missing mark without a restart', JSON.stringify(await marks()) === JSON.stringify(['Nope']), { marks: await marks() })
+  const alpha = await d.page('Alpha')
+  await d.store((s, p) => s.mutate({ op: 'rename', kind: 'page', path: p.path, newName: 'Alpha Two' }), alpha)
+  await d.waitFor(() => $$('.cm-content')[0]?.textContent?.includes('Alpha Two'), { label: 'the rename reaching Scratch', timeout: 8000 })
+  await d.settle(400)
+  d.check('4-6: after a rename the new path keeps its headings (Fresh unmarked, Nope marked)', JSON.stringify(await marks()) === JSON.stringify(['Nope']), { marks: await marks(), doc: await d.editor().doc() })
+  const two = await d.page('Alpha Two')
+  await d.store((s, p) => s.mutate({ op: 'rename', kind: 'page', path: p.path, newName: 'Alpha' }), two)
+  await d.settle(800)
 }

@@ -93,7 +93,7 @@ What a person sees: `[x](Page)` edits like `[[Page]]`; every link reads **Rename
 
 #### Constraints
 
-- **Agents:** Implementation phases run on opus-medium (Phases 2, 3, 5, 7, 8, 11) or opus-high (Phases 1, 4, 6, 9, 10); every phase review on opus-high; the three closing reviews on fable-extra.
+- **Agents:** Every implementation phase runs on opus-high (from Phase 5; Phases 2 and 3 ran on opus-medium). Each phase closes with an opus-high correctness review and an opus-high simplification review of its range, the findings of both closed before the next phase opens; the three closing reviews run on fable-extra. Reviews judge correction, completion, cohesiveness, maintainability, and fit with the whole plan, not breakage for its own sake; a plan reviewed four times before ratification isn't redesigned at a checkpoint, and a finding changes code only when it names a defect, an incompleteness against the task text, or a departure from the simplification mandate. Live checks run headlessly through `.claude/Planning/MarkdownPM Links/drive/` (one process, a scratch instance, per-phase scenario files); Nathan's hand-checks are driven there too, with the screenshots read.
 - **Gates:** `npm run typecheck` (the only type gate), `npm run test` (vitest; the **BASELINE** count is the floor, with the files this plan deletes accounted for), and `npm run lint` (`biome check .`, clean), all from the repo root. In a worktree, lint is `npx biome check Core UIX Desktop Sync`. Biome formats every TS/CSS/JSON write, so an Edit that fails on whitespace means it reformatted: re-read and retry. "Run the gates" means these three.
 - **Frozen:** The persisted keys `link_display` and every settings key (`frames.ts`); the `'wikiLink'` token kind's name; `Relation.qualifier`'s name and width; the channel set in `Core/Contract/bridge.ts` (fields may widen, no channel is added or removed); `pendingTitles`' exact-text match; the 255 and 2048 caps in the link grammars; `pageIndex.ts`'s lazy alphabetical sort; `linkEntry`'s YAML unwrap; the `input.paste` tag on every paste write; a written scheme before a pasted bare address formats or retargets (`isWebAddress`); one tile per page per document, first-per-page; `resolveFollow`'s own `heldTarget`; `EditorHost.openLink`; the explicit browser picks (`link:window`, `link:browser`, the browser window's title button) calling their arm directly; `drawnLast`; the two tokenizer memos (`drawnLast(tokenizeChunk)` for CodeMirror, `perText(tokenize)` for React).
 - **Hard Rules:** Core reaches the machine only through `Core/Platform`; the host-run half of Core imports no React (`engineGraph.test.ts`, `hostGraph.test.ts`); `Core/Connections` imports `MarkdownPM/Engine` and never `MarkdownPM/Links`; finite states are unions + switch; no O(N), allocating, or layout-reading work on a keystroke, caret move, or pointer move; read-write separation.
@@ -122,14 +122,14 @@ What a person sees: `[x](Page)` edits like `[[Page]]`; every link reads **Rename
   - [x] Task 3-3 — The connections bundle settles its shape
   - [x] Task 3-4 — Title fetches answer with a promise
   - [x] Review Checkpoint
-- [ ] **Phase 4** — Looks and Resolution
-  - [ ] Task 4-1 — One look rule and one unresolved treatment
-  - [ ] Task 4-2 — Plain syntax everywhere, and the slash menu's own look
-  - [ ] Task 4-3 — The resting renderer nests, draws every span, and draws `§` runs
-  - [ ] Task 4-4 — A Text value draws against its page and follows a `§` run
-  - [ ] Task 4-5 — The value's resolved target and one hit shape
-  - [ ] Task 4-6 — The headings map follows the app's own writes
-  - [ ] Review Checkpoint
+- [x] **Phase 4** — Looks and Resolution
+  - [x] Task 4-1 — One look rule and one unresolved treatment
+  - [x] Task 4-2 — Plain syntax everywhere, and the slash menu's own look
+  - [x] Task 4-3 — The resting renderer nests, draws every span, and draws `§` runs
+  - [x] Task 4-4 — A Text value draws against its page and follows a `§` run
+  - [x] Task 4-5 — The value's resolved target and one hit shape
+  - [x] Task 4-6 — The headings map follows the app's own writes
+  - [x] Review Checkpoint
 - [ ] **Phase 5** — Opening and Titles
   - [ ] Task 5-1 — Addresses that open and titles that fetch
   - [ ] Task 5-2 — One title hook
@@ -3013,7 +3013,7 @@ Remove Link on an unaliased heading connection writes `Page § Heading` whatever
 
 ```Core/MarkdownPM/Tables/cellStatic.tsx diff
 @@ linkGestures @@
-- export function linkGestures(text, connections, glance, own = null, menuAt?: (e, hit, api) => ConnMenuTarget | null) {
+- export function linkGestures(text, connections, glance, own = null, menuAt?: (tk, api) => ConnMenuTarget | null) {
 + /** The link gestures a resting surface shares. `editable` and `apply` are the authoring surface's; a surface without them offers the read-only menu. */
 + export function linkGestures(
 +   text: string,
@@ -3029,7 +3029,7 @@ Remove Link on an unaliased heading connection writes `Page § Heading` whatever
       if (!api?.menu) return false
       const found = linkAt(e)
       if (!found?.tk) return false
--     const target = menuAt ? menuAt(e, found, api) : linkMenuTarget(found.target)
+-     const target = menuAt ? menuAt(found.tk, api) : linkMenuTarget(found.target)
 +     const { tk } = found
 +     const target = linkMenuTarget(found.target, authoring?.editable() ?? false)
       if (!target) return false
@@ -3041,7 +3041,7 @@ Remove Link on an unaliased heading connection writes `Page § Heading` whatever
     },
 
 @@ StaticCellImpl @@
-- const menuAt = (e, api) => { … menuTarget(…) … }
+- const menuAt = (found, api) => { … menuTarget(…) … }
 - const { linkAt, dismiss, onContextMenu, onPointerOver, onPointerOut } = linkGestures(text, host.connections, host.glance, null, menuAt)
 + /** A pick applied at rest: a selection enters the cell seated; a write commits once, without entering, with a title it awaits landed first; a cell that changed while the menu stood open or the title was fetched takes nothing. */
 + const applyAtRest = async (tk: TokenOf<LinkKind>, action: LinkAction): Promise<void> => {
@@ -3086,8 +3086,7 @@ Remove Link on an unaliased heading connection writes `Page § Heading` whatever
 ```Core/Properties/Cells/valueTarget.ts diff
 + /** A property value's link menu target: the value resolved through the index its context carries, the row's holder answering a bare `[[#Heading]]`. */
 + export const valueMenuTarget = (ctx: ValueContext, row: ViewRow, raw: string, hideable: boolean): LinkMenuTarget | null => {
-+   const target = valueTarget(ctx.connections?.(), raw, holderOf(row, ctx))
-+   return target && linkMenuTarget(target, true, { hideable })
++   return linkMenuTarget(valueTarget(ctx.connections?.(), raw, holderOf(row, ctx)), true, { hideable })
 + }
 ```
 
@@ -3486,7 +3485,7 @@ Phase 9's resting Paste row reads `pastedCellText` too.
 +   // One classifier for the value: the index decides page against address where it has an answer, as every editor link does.
 +   const api = connections?.()
 +   const target = valueTarget(api, raw, holder)
-+   const url = target?.kind === 'url' ? target.url : raw.trim()
++   const url = target.kind === 'url' ? target.url : raw.trim()
     const display = isLinkDisplay(look) ? look : (def?.link_display ?? DEFAULT_LINK_DISPLAY)
 -   const wantsTitle = display === 'link-title' && !target.alias && isHttpLink(url)
 -   const title = useLinkTitle(url, wantsTitle)
@@ -3494,7 +3493,7 @@ Phase 9's resting Paste row reads `pastedCellText` too.
 -     return <ConnectionCell target={target} showTitle={showFullLink === true} holder={holder} />
 -   if (!url) return null
 +   const title = useLinkTitle(url, display === 'link-title' && !readLinkText(raw)?.alias && isHttpLink(url))
-+   if (target && target.kind !== 'url')
++   if (target.kind === 'page' || target.kind === 'self')
 +     return (
 +       <TextCell
 +         text={showFullLink && target.kind === 'page' ? connectionText(target.page.title, undefined, target.heading) : raw}
@@ -3520,12 +3519,12 @@ Phase 9's resting Paste row reads `pastedCellText` too.
 -           openWebLink(url)
 +           // The anchor never navigates; a value that follows nothing lets the click bubble to the value, which edits.
 +           e.preventDefault()
-+           const go = target && resolveFollow(target, own, api, e, openWebLink)
++           const go = resolveFollow(target, own, api, e, openWebLink)
 +           if (!go) return
 +           e.stopPropagation()
 +           go()
           }}
-+         onPointerOver={(e) => target && dwellTarget(target, glanceHost, e.currentTarget)?.()}
++         onPointerOver={(e) => dwellTarget(target, glanceHost, e.currentTarget)?.()}
 +         onPointerOut={() => glanceHost.cancel()}
         >
           {showFullLink ? url : linkDisplayText(raw, display, title)}
@@ -3536,7 +3535,7 @@ Phase 9's resting Paste row reads `pastedCellText` too.
 - function ConnectionCell({ … }) { … }
 ```
 
-`useSession`, `resolveConnection`, `isCmd`, and `LinkTarget` leave the imports; `glanceHost`, `resolveFollow`, `dwellTarget`, `connectionText`, `readLinkText` (the alias read alone), `valueTarget`, and `TextCell` join them.
+`valueTarget` answers `MdTarget`, never null (text that names nothing is `{ kind: 'invalid' }`, which keeps the address render as the baseline did); `useSession`, `resolveConnection`, `isCmd`, and `LinkTarget` leave the imports; `glanceHost`, `resolveFollow`, `dwellTarget`, `connectionText`, `readLinkText` (the alias read alone), `valueTarget`, and `TextCell` join them.
 
 ```Core/Properties/Cells/TextCell.tsx diff
   export function TextCell({
@@ -4798,3 +4797,8 @@ The anchor is pinned by a test for a filled and an unfilled label.
 - **Task 3-1, a fifth mount:** `PageHistoryWindow.tsx` also passed `connections=` to `MarkdownEditor`; the prop left it with the four the plan named.
 - **Task 3-1, the Text value's pane:** the AFTER's `useEditorHost({ connections: connections() })` took the bundle as a render-time snapshot where the baseline read it live, so a page created in another window stayed phantom in an open pane; it reads `useSession(() => connections())`, which re-renders only when the bundle is rebuilt. Found at the Phase 3 checkpoint.
 - **Task 3-2, the shape:** `ownHeadings` answers `{ keys, texts }` once in place of two calls with picker lambdas; the index entry's `headings` is the filtered outline itself, so `PageRead.outline` and the `{ text, level }` re-mapping went and `reindex` reads the entry. The checkpoint's weight pass; about −8 against 3-2's +37.
+- **Task 4-5, `valueTarget` never null:** the AFTER's `MdTarget | null` became `MdTarget`, with text that names nothing answering `{ kind: 'invalid' }` as the task's own test text says; Tasks 6-6 and 8-1 are reconciled to read it that way. `linkGestures`' `menuAt` takes `(tk, api)`.
+- **Task 4-6, the seat:** `pageIO.write` reaches `loadHeadings` through a sink the bridge subscriptions seat (one `setSaveSinks` beside the stale sink after the simplification pass), because `saveScheduler.ts` is imported by five slices and importing the store would close the cycle `sliceGraph.test.ts` guards. The checkpoint then replaced the rename arm's `index:headings` ask with one rule for every path-moving op (`rename`, `movePage`, `moveSet`): `movedHeadings` re-keys the session's map from the tree the host already pushed, which a rename alone had left stale for a moved page or a renamed set; `loadHeadings` keeps an entry and the map's identity when the outline it reads matches, so a save that touches no heading no longer re-identifies every editor host and redraws every editor; a resting Text value subscribes to its holder's entry rather than reading the unsubscribed getter.
+- **Task 4-1, a revealed ambiguous markdown title:** the AFTER's `internal` (page or self) gave `(Dup)` the address look when revealed; it reads `target.kind !== 'url' && status !== 'phantom'`, so an ambiguous title is a page destination in both syntaxes (§5.4).
+- **Phase 4 simplification pass:** `RestingHit.span` (its reader keys on `tk.range[0]`), the heading half's missing mark decided once in `linkLook` as `join.className`, the `/` query's CSS block merged into the phantom rule it duplicated, one `setSaveSinks` for the two save sinks, four dead `export`s, and the cell's `htmlTag` class read from `contentClass`.
+- **Hand-checks:** driven headlessly by the orchestrator through the drive tool, with the screenshots read, at Nathan's instruction.
