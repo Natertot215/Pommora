@@ -12,19 +12,14 @@ import { docScan } from '../docCache'
 import { editFor } from '../Input/format'
 
 /** Runs the menu's, the block pane's, or a chord's action on the view handed in. */
-export function applyEditorAction(view: EditorView, action: string): boolean {
-  if (action === 'block:page') return embedInsertAtCaret(view)
-  if (action === 'block:webpage') return webpageInsertAtCaret(view)
-  if (action === 'block:citation') return insertCitation(view)
+export function applyEditorAction(view: EditorView, action: string): void {
   const how = pasteModeOf(action)
-  if (how) {
-    void pasteFromClipboard(view, how)
-    return true
-  }
   const sel = view.state.selection.main
-  if (!applyEdit(view, editFor(action, docScan(view.state.doc), sel.from, sel.to))) return false
-  view.focus()
-  return true
+  if (action === 'block:page') embedInsertAtCaret(view)
+  else if (action === 'block:webpage') webpageInsertAtCaret(view)
+  else if (action === 'block:citation') insertCitation(view)
+  else if (how) void pasteFromClipboard(view, how)
+  else if (applyEdit(view, editFor(action, docScan(view.state.doc), sel.from, sel.to))) view.focus()
 }
 
 /** Asks at the click and answers to the reply: the native menu holds focus, so nothing read later could say which view was clicked. Lowest precedence, so a grip, a link, or a footnote row that claimed the press keeps its own menu. */
