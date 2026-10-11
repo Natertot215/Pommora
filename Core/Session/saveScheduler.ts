@@ -107,16 +107,11 @@ export function releaseSaves(): void {
 
 export const pageWriter = createBodyWriter('the page')
 
-let staleSink: ((path: string, body: string) => void) | null = null
+let sinks: { stale: (path: string, body: string) => void; written: (path: string) => void } | null =
+  null
 
-export function setStaleSaveSink(fn: ((path: string, body: string) => void) | null): void {
-  staleSink = fn
-}
-
-let writtenSink: ((path: string) => void) | null = null
-
-export function setWrittenSaveSink(fn: ((path: string) => void) | null): void {
-  writtenSink = fn
+export function setSaveSinks(next: typeof sinks): void {
+  sinks = next
 }
 
 /** Where one body reads, writes, and keeps the text it loses: a page through its own channels, a markdown tile through its host's. */
@@ -138,12 +133,12 @@ export const pageIO: BodyIO = {
   },
   write: async (path, body, baseHash) => {
     const res = await dialer().ask('page:updateBody', path, body, baseHash)
-    if (res.ok && !res.value.stale) writtenSink?.(path)
+    if (res.ok && !res.value.stale) sinks?.written(path)
     return res
   },
   capture: (path, text) =>
     void persist('the conflicting version', dialer().ask('sync:captureLocal', path, text)),
-  stale: (path, body) => staleSink?.(path, body),
+  stale: (path, body) => sinks?.stale(path, body),
 }
 
 export function scheduleBodySave(key: string, body: string, io: BodyIO): void {

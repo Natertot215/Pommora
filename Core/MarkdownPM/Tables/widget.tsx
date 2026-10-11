@@ -490,10 +490,10 @@ const headingKey = perDoc((doc) => docHeadingKeys(doc).join('\n'))
 // KNOB — page contexts every editor shares, one object each, so a widget and a cell compare what they draw from the page by identity.
 const cellPages = new Map<string, CellPage>()
 
-/** What a cell draws from the page around it and its own text never holds: the footnote numbering, and the headings a same-page link is judged against when the table holds one. */
 const automaticIn = (state: EditorState): boolean =>
   state.facet(editorHost).settings().inPageHeadingResolution === 'automatic'
 
+/** What a cell draws from the page around it and its own text never holds: the footnote numbering, the headings a same-page link is judged against when the table holds one, and the outline texts a `§` run reads. */
 function cellPage(doc: Text, text: string, automatic: boolean): CellPage {
   const linksHeadings = linksOwnHeadings(text)
   const runs = automatic && text.includes('§')

@@ -130,7 +130,7 @@ export function tokenMenuTarget(
 }
 
 // A fragment is missing only when the named page's heading keys are known and lack it; a page absent from the map reads as present. A bare fragment reads the document's own keys, which a surface without page identity leaves undefined.
-export function headingMissing(
+function headingMissing(
   conn: ConnectionsApi | undefined,
   target: MdTarget,
   ownKeys: readonly string[] | undefined,
@@ -145,12 +145,12 @@ export function linkStatus(target: MdTarget): LinkStatus {
   return target.ambiguous ? 'ambiguous' : 'phantom'
 }
 
-export interface LinkLook {
+interface LinkLook {
   target: MdTarget
   status: LinkStatus
   missing: boolean
   bare: boolean
-  join: { showPage: boolean; heading: [number, number] } | null
+  join: { showPage: boolean; heading: [number, number]; className: string } | null
 }
 
 export function linkLook(
@@ -163,11 +163,16 @@ export function linkLook(
   const target = tokenTarget(conn, text, tk)
   const status = linkStatus(target)
   const bare = target.kind === 'self'
+  const missing = headingMissing(conn, target, ownKeys)
   const join =
     tk.kind === 'wikiLink' && tk.heading && status === 'resolved' && !aliasedToken(tk)
-      ? { showPage: headingLinkStyle !== 'heading-only' && !bare, heading: tk.heading }
+      ? {
+          showPage: headingLinkStyle !== 'heading-only' && !bare,
+          heading: tk.heading,
+          className: cx('md-connection-heading', missing && 'md-connection-heading-missing'),
+        }
       : null
-  return { target, status, missing: headingMissing(conn, target, ownKeys), bare, join }
+  return { target, status, missing, bare, join }
 }
 
 export function linkClass(look: LinkLook): string {

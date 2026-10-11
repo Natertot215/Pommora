@@ -141,12 +141,7 @@ export function renderCellContent(
                 >
                   §
                 </span>
-                <span
-                  className={cx(
-                    'md-connection-heading',
-                    look.missing && 'md-connection-heading-missing',
-                  )}
-                >
+                <span className={join.className}>
                   {text.slice(join.heading[0], join.heading[1])}
                 </span>
               </>
@@ -161,7 +156,7 @@ export function renderCellContent(
         return (
           <Fragment key={key++}>
             <span className="md-bracket">{text.slice(open[0], open[1])}</span>
-            <span className="md-html-tag">{text.slice(cs, ce)}</span>
+            <span className={contentClass(tk)}>{text.slice(cs, ce)}</span>
             <span className="md-bracket">{text.slice(close[0], close[1])}</span>
           </Fragment>
         )
@@ -262,15 +257,14 @@ function renderCellBody(
   })
 }
 
-export function srcOf(el: Element): [number, number] | null {
+function srcOf(el: Element): [number, number] | null {
   const raw = (el as HTMLElement).dataset.src?.split(',')
   if (raw?.length !== 2) return null
   return [Number(raw[0]), Number(raw[1])]
 }
 
-export interface RestingHit {
+interface RestingHit {
   el: Element
-  span: [number, number]
   target: MdTarget
   tk?: TokenOf<LinkKind>
 }
@@ -297,14 +291,10 @@ function StaticCellImpl({
   // What the cell reads NOW: a native menu can be held open while an undo moves the cell underneath it.
   const live = useLatest(text)
 
-  const menuAt = (
-    found: TokenOf<LinkKind>,
-    span: [number, number],
-    api: ConnectionsApi,
-  ): ConnMenuTarget | null =>
+  const menuAt = (found: TokenOf<LinkKind>, api: ConnectionsApi): ConnMenuTarget | null =>
     menuTarget(
       () => {
-        const now = linkTokenAt(cellTokens(live.current), span[0])
+        const now = linkTokenAt(cellTokens(live.current), found.range[0])
         return now && live.current.slice(...now.range) === text.slice(...found.range)
           ? { text: live.current, tk: now }
           : null
@@ -411,11 +401,7 @@ export function linkGestures(
   connections: (() => ConnectionsApi | undefined) | undefined,
   glance: EditorHost['glance'],
   own: OwnPage | null = null,
-  menuAt?: (
-    tk: TokenOf<LinkKind>,
-    span: [number, number],
-    api: ConnectionsApi,
-  ) => ConnMenuTarget | null,
+  menuAt?: (tk: TokenOf<LinkKind>, api: ConnectionsApi) => ConnMenuTarget | null,
 ) {
   const linkAt = (e: React.SyntheticEvent): RestingHit | null =>
     cellLinkTarget(text, e.target, connections?.(), own)
@@ -432,7 +418,7 @@ export function linkGestures(
       if (!api?.menu) return false
       const found = linkAt(e)
       if (!found?.tk) return false
-      const target = menuAt ? menuAt(found.tk, found.span, api) : linkMenuTarget(found.target)
+      const target = menuAt ? menuAt(found.tk, api) : linkMenuTarget(found.target)
       if (!target) return false
       e.preventDefault()
       e.stopPropagation()
@@ -460,11 +446,10 @@ function cellLinkTarget(
   if (el.classList.contains('md-section-run'))
     return {
       el,
-      span,
       target: heldTarget(titleTarget(undefined, '', (el.textContent ?? '').slice(1)), own),
     }
   const tk = linkTokenAt(cellTokens(text), span[0])
-  return tk ? { el, span, tk, target: heldTarget(tokenTarget(api, text, tk), own) } : null
+  return tk ? { el, tk, target: heldTarget(tokenTarget(api, text, tk), own) } : null
 }
 
 /** `still` re-reads the link when the action is chosen; `tk` and `text` are what the menu was built from. */

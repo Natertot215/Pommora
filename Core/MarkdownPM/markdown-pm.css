@@ -230,7 +230,8 @@
   text-decoration: underline;
   cursor: pointer;
 }
-.md-connection-phantom {
+.md-connection-phantom,
+.md-block-query {
   color: var(--label-primary);
   opacity: var(--state-inactive);
 }
@@ -243,10 +244,6 @@
 }
 :root.plain-unresolved .md-phantom-syntax {
   color: inherit;
-}
-.md-block-query {
-  color: var(--label-primary);
-  opacity: var(--state-inactive);
 }
 .md-link-url {
   font-style: italic;

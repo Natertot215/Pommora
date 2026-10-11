@@ -568,7 +568,7 @@ function build(view: EditorView, scope: MarkdownScope): Built {
     const alias = aliasedToken(tk)
     const [rs, re] = tk.resolveRange
     const look = linkLook(conn, text, tk, ownKeys, headingLinkStyle)
-    const { status, bare, missing, join } = look
+    const { status, bare, join } = look
     const open = active.has(i)
     // `[[#]]` is a link being written: nothing to mark, only its syntax to dim.
     if (tk.contentRange[0] === tk.contentRange[1]) {
@@ -601,12 +601,7 @@ function build(view: EditorView, scope: MarkdownScope): Built {
         Decoration.replace({ widget: new HeadingJoinWidget(join.showPage) }).range(hs - 1, hs),
       )
       ranges.push(
-        Decoration.mark({
-          class: cx(
-            'md-connection-resolved md-connection-heading',
-            missing && 'md-connection-heading-missing',
-          ),
-        }).range(hs, he),
+        Decoration.mark({ class: cx('md-connection-resolved', join.className) }).range(hs, he),
       )
       for (const [s, e] of tk.markerRanges) ranges.push(hideMarker.range(s, e))
       return
