@@ -66,23 +66,25 @@ export function pasteAsRows(
   return [...footnote, ...rows, ...(embed ? [embedRow] : [])]
 }
 
-export interface TextPaste {
+interface TextPaste {
   kind: 'text'
   text: string
 }
 
-export interface LinePaste {
+interface LinePaste {
   kind: 'line'
   text: string
 }
 
+export type PasteWrite = LinkPaste | TextPaste | LinePaste
+
 export function pasteAsWrite(
-  target: LinkTarget | null,
+  target: LinkTarget,
   how: PasteMode,
   over: { selection: string; format: LinkDisplay; title?: string },
-): LinkPaste | TextPaste | LinePaste | null {
+): PasteWrite | null {
   // A footnote writes two disjoint sites, so the caller forks ahead of this single-range writer.
-  if (!target || how === 'footnote' || how === 'literal') return null
+  if (how === 'footnote' || how === 'literal') return null
   if ((how === 'embedPage' || how === 'embedLink') && !embeddableTarget(target)) return null
   if (target.kind === 'page') {
     switch (how) {

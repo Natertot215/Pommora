@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { markdownLinkRegex } from '../Connections/links'
-import { readLinkText } from '../Connections/linkValue'
+import { readLinkText, type LinkTarget } from '../Connections/linkValue'
 import { pasteAsRows, pasteAsWrite, type PasteAsForm, type PasteMode } from './pasteAsMenu'
 
 const URL = 'https://www.example.com/a/b'
@@ -17,12 +17,18 @@ const over = (selection = '', title?: string) => ({
   title,
 })
 
+const link = (clipboard: string): LinkTarget => {
+  const target = readLinkText(clipboard)
+  if (!target) throw new Error(`no link in ${clipboard}`)
+  return target
+}
+
 const written = (
   clipboard: string,
   how: PasteMode,
   title?: string,
   selection = '',
-): string | undefined => pasteAsWrite(readLinkText(clipboard), how, over(selection, title))?.text
+): string | undefined => pasteAsWrite(link(clipboard), how, over(selection, title))?.text
 
 describe('the footnote form answers to the clipboard alone', () => {
   it('is offered for a multi-paragraph clipboard, where no other form is', () => {
@@ -44,8 +50,8 @@ describe('the footnote form answers to the clipboard alone', () => {
   })
 
   it('writes nothing through the shared writer', () => {
-    expect(pasteAsWrite(readLinkText(URL), 'footnote', over())).toBeNull()
-    expect(pasteAsWrite(readLinkText('[[Alpha]]'), 'footnote', over())).toBeNull()
+    expect(pasteAsWrite(link(URL), 'footnote', over())).toBeNull()
+    expect(pasteAsWrite(link('[[Alpha]]'), 'footnote', over())).toBeNull()
   })
 })
 
@@ -118,7 +124,7 @@ describe('what each form writes', () => {
   })
 
   it('stands the domain in for a title it does not have yet, and says so', () => {
-    const w = pasteAsWrite(readLinkText(URL), 'link-title', over())
+    const w = pasteAsWrite(link(URL), 'link-title', over())
     expect(w).toEqual({
       kind: 'link',
       text: `[example.com](${URL})`,
@@ -155,7 +161,7 @@ describe('what each form writes', () => {
   it('writes each embed as the line its grammar reads', () => {
     expect(written('[[Alpha]]', 'embedPage')).toBe('![[Alpha]]')
     expect(written(URL, 'embedLink')).toBe(`![](${URL})`)
-    expect(pasteAsWrite(readLinkText('[[Alpha]]'), 'embedPage', over())?.kind).toBe('line')
+    expect(pasteAsWrite(link('[[Alpha]]'), 'embedPage', over())?.kind).toBe('line')
   })
 
   it('writes nothing for a form the clipboard cannot take', () => {
@@ -164,16 +170,15 @@ describe('what each form writes', () => {
     expect(written('[[T#H]]', 'embedPage')).toBeUndefined()
     expect(written(URL, 'connection')).toBeUndefined()
     expect(written('[[Alpha]]', 'link-short')).toBeUndefined()
-    expect(pasteAsWrite(null, 'plain', over())).toBeNull()
   })
 })
 
 describe('what a plain paste writes', () => {
   it('wraps a selection, and writes the Default Link Format at a caret', () => {
     expect(written(A, 'auto', undefined, 'docs')).toBe(`[docs](${A})`)
-    expect(
-      pasteAsWrite(readLinkText(A), 'auto', { selection: '', format: 'link-short' })?.text,
-    ).toBe(`[a.com](${A})`)
+    expect(pasteAsWrite(link(A), 'auto', { selection: '', format: 'link-short' })?.text).toBe(
+      `[a.com](${A})`,
+    )
   })
 
   it('escapes a wrapped selection, and leaves a multi-line selection unwrapped', () => {
