@@ -8,14 +8,9 @@ import { headingParts, webpageEmbedUrlSpan } from '../Engine/detect'
 import { type Block, blockAt } from '../Engine/blockModel'
 import { docScan, docString } from '../docCache'
 import { HEADING_LINE } from '../folding'
-import {
-  applyEmbedZoom,
-  embeddable,
-  embedExclusions,
-  embedZoomAt,
-  setWebLinkSeat,
-} from '../Embeds/embedWidget'
+import { applyEmbedZoom, embedExclusions, embedZoomAt, setWebLinkSeat } from '../Embeds/embedWidget'
 import { focusRange } from '../caretPlacement'
+import { normalizeTitle } from '../../Paths/caseFold'
 import { lineEndAt, lineStartAt } from '../Engine/markdownCode'
 import { applyEdit } from '../Input/applyEdit'
 import { type EditorHost, editorHost } from '../api'
@@ -31,7 +26,7 @@ export function embedPickTree(
 ): PickItem<string>[] {
   return nodes.flatMap((n) => {
     if (n.pick === undefined) return [{ ...n, submenu: embedPickTree(n.submenu ?? [], exclude) }]
-    return embeddable(n.pick, exclude) ? [n] : []
+    return expressibleInLink(n.pick) && !exclude.has(normalizeTitle(n.pick)) ? [n] : []
   })
 }
 

@@ -52,7 +52,14 @@ const AC_BOUNDS: PaneBounds = {
 }
 const AC_FIT_MAX = 320
 
-const CLOSED: AcState = { query: '', from: 0, to: 0, form: 'link', ...CLOSED_GEOMETRY }
+const CLOSED: AcState = {
+  query: '',
+  from: 0,
+  to: 0,
+  form: 'link',
+  closed: true,
+  ...CLOSED_GEOMETRY,
+}
 
 export function AutocompletePane({
   open,
