@@ -229,7 +229,12 @@ describe('PropertyPanel', () => {
     const menu = ask.mock.calls.find((c) => c[0] === 'menu')?.[1] as {
       items: { label?: string }[]
     }
-    expect(menu.items.map((i) => i.label).slice(0, 2)).toEqual(['Edit', 'Rename'])
+    expect(menu.items.map((i) => i.label).filter(Boolean)).toEqual([
+      'Edit',
+      'Rename',
+      'Clear',
+      'Remove',
+    ])
     expect(host.querySelector('[data-property-row="prop_site"] input')).not.toBeNull()
   })
 

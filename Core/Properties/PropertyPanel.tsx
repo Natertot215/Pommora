@@ -344,7 +344,7 @@ export function PropertyPanel({
     }
     const link = row && ctx && valueMenuTarget(ctx, row, value.value, true)
     if (link) void showConnectionMenu(link).then(run)
-    else void popMenu(cellMenuModel({ kind: 'link', filled: true })).then(run)
+    else void popMenu(cellMenuModel({ kind: 'link', filled: true, hideable: true })).then(run)
     return true
   }
   const revealAndEdit = (id: string, def?: PropertyDefinition): void => {
