@@ -1,24 +1,29 @@
 import { DEFAULT_LINK_DISPLAY, isLinkDisplay, type PropertyDefinition } from '../properties'
 import type { ColumnLook } from '../columnStyles'
 import { isHttpLink } from '../../Paths/urlPath'
-import { useSession } from '../../Session/store'
 import { cx } from '@pommora/uix/Utilities/cx'
-import { isCmd, isSecondaryClick } from '@pommora/uix/Interactions/chords'
+import { isSecondaryClick } from '@pommora/uix/Interactions/chords'
 import { OverScroll } from '@pommora/uix/Interactions/OverScroll'
-import { linkDisplayText, readLinkText, type LinkTarget } from '../../Connections/linkValue'
-import { resolveConnection } from '../../Nexus/treeIndex'
+import { connectionText } from '../../Connections/connections'
+import { linkDisplayText, readLinkText } from '../../Connections/linkValue'
 import { solidColorCss } from '@pommora/uix/Theme/ramp'
+import { glanceHost } from '../../Interface/Glance/glanceAction'
+import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'
+import { dwellTarget, resolveFollow } from '../../MarkdownPM/Links/linkClicks'
 import { openWebLink } from '../../Web/openWebLink'
 import { useLinkTitle } from '../../Web/useLinkTitle'
 import type { ConnPage } from '../../Connections/pageIndex'
+import { TextCell } from './TextCell'
+import { valueTarget } from './valueTarget'
 
-/** Opens through the sanctioned IPC — a raw <a> nav is denied by main's will-navigate hardening. Only the Page Title format fetches; the other two derive from the URL itself. */
+/** A Link value is a link like every other. A page in either syntax, a held heading, and an unresolved title draw and act through the shared resting stack; an address keeps the property's own look, and follows and glances through the shared gestures. Only the Page Title format fetches. */
 export function LinkCell({
   raw,
   def,
   look,
   showFullLink,
   holder,
+  connections,
 }: {
   raw: string
   def: PropertyDefinition | undefined
@@ -26,16 +31,29 @@ export function LinkCell({
   showFullLink?: boolean
   /** The page the value sits on, which a bare `[[#Heading]]` names; a Space has none to name. */
   holder?: ConnPage
+  connections?: () => ConnectionsApi | undefined
 }): React.JSX.Element | null {
-  const target = readLinkText(raw)
-  const url = target === null ? raw.trim() : target.kind === 'url' ? target.url : ''
+  const api = connections?.()
+  const target = valueTarget(api, raw, holder)
+  const written = readLinkText(raw)
+  const url = target.kind === 'url' ? target.url : raw.trim()
   const display = isLinkDisplay(look) ? look : (def?.link_display ?? DEFAULT_LINK_DISPLAY)
-  const wantsTitle = display === 'link-title' && !target?.alias && isHttpLink(url)
-  const title = useLinkTitle(url, wantsTitle)
-
-  if (target?.kind === 'page')
-    return <ConnectionCell target={target} showTitle={showFullLink === true} holder={holder} />
+  const title = useLinkTitle(url, display === 'link-title' && !written?.alias && isHttpLink(url))
+  if (written && target.kind !== 'url')
+    return (
+      <TextCell
+        text={
+          showFullLink && target.kind === 'page'
+            ? connectionText(target.page.title, undefined, target.heading)
+            : raw
+        }
+        connections={connections}
+        holder={holder}
+        menu={false}
+      />
+    )
   if (!url) return null
+  const own = holder ? ({ kind: 'held', page: holder } as const) : null
   return (
     <OverScroll className="cell-text-scroll">
       <a
@@ -46,47 +64,16 @@ export function LinkCell({
         draggable={false}
         onClick={(e) => {
           e.preventDefault()
-          e.stopPropagation()
           if (isSecondaryClick(e)) return
-          openWebLink(url)
+          const go = resolveFollow(target, own, api, e, openWebLink)
+          if (!go) return
+          e.stopPropagation()
+          go()
         }}
+        onPointerOver={(e) => dwellTarget(target, glanceHost, e.currentTarget)?.()}
+        onPointerOut={() => glanceHost.cancel()}
       >
         {showFullLink ? url : linkDisplayText(raw, display, title)}
-      </a>
-    </OverScroll>
-  )
-}
-
-function ConnectionCell({
-  target,
-  showTitle,
-  holder,
-}: {
-  target: Extract<LinkTarget, { kind: 'page' }>
-  showTitle: boolean
-  holder?: ConnPage
-}): React.JSX.Element {
-  const tree = useSession((s) => s.tree)
-  const select = useSession((s) => s.select)
-  const page = target.title ? resolveConnection(tree, target.title) : (holder ?? null)
-  const name = target.title || `#${target.heading}`
-  return (
-    <OverScroll className="cell-text-scroll">
-      <a
-        className="cell-connection"
-        href={page?.path}
-        draggable={false}
-        onClick={(e) => {
-          e.preventDefault()
-          e.stopPropagation()
-          if (isSecondaryClick(e) || !page) return
-          void select(
-            { kind: 'page', id: page.id, path: page.path },
-            { newTab: isCmd(e), heading: target.heading },
-          )
-        }}
-      >
-        {showTitle ? name : (target.alias ?? name)}
       </a>
     </OverScroll>
   )

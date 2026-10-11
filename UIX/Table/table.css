@@ -271,11 +271,6 @@
 .cell-link-underline {
   text-decoration: underline;
 }
-.cell-connection {
-  color: var(--connection);
-  text-decoration: none;
-  cursor: pointer;
-}
 .cell-control {
   color: var(--label-control);
 }
