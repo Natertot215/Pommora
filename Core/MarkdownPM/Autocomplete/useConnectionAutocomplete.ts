@@ -15,7 +15,7 @@ import {
 import { toggled } from '@pommora/uix/Utilities/checkSet'
 import { docOutline } from '../docCache'
 import type { MarkdownScope } from '../Engine/detect'
-import { readLinkText } from '../../Connections/linkValue'
+import { readLinkText, sameTarget } from '../../Connections/linkValue'
 import { normalizeTitle } from '../../Paths/caseFold'
 import { restedOnLink } from '../Links/linkReveal'
 import { titleTarget } from '../Links/connectionsApi'
@@ -125,20 +125,26 @@ export function useConnectionAutocomplete(
     const settings = host.settings()
     const conn = host.connections()
     const origin = view.state.field(field).origin
-    const container = origin === null ? null : readLinkText(origin)
+    const container = origin === null ? null : readLinkText(origin.text)
     const pointed =
       container?.kind === 'url' ||
       (container?.kind === 'page' && conn?.resolve(container.title).status === 'resolved')
+    const keepTitle = !settings.removeTitleOnLinkChange || !pointed
+    const keepsAlias =
+      ac.form === 'link' &&
+      !!container?.alias &&
+      (keepTitle || sameTarget(container, { kind: 'page', syntax: 'wiki', title: row.value }))
     const pageId = row.kind === 'page' ? row.pageId : page?.id
     // Only a page the picker offered can open an alias slot — an empty pipe with nothing behind it is a slot the user has to close.
     const openAlias =
       (ac.form === 'link' || ac.form === 'heading') &&
       !opts.openHeading &&
+      !keepsAlias &&
       settings.aliasPickerOnCommit &&
       host.aliases.list(pageId ?? '').length > 0
     const { changes, anchor, opensAlias, opensHeading } = commitEdit(ac, row.value, {
       container,
-      keepTitle: !settings.removeTitleOnLinkChange || !pointed,
+      keepTitle,
       openAlias,
       openHeading: opts.openHeading,
     })

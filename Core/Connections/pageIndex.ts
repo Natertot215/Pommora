@@ -51,7 +51,7 @@ export function buildPageIndex(pages: ConnPage[]): PageIndex {
     candidates(query, limit = 20) {
       alphabetical ??= [...entries].sort((a, b) => compareTitles(a.p.title, b.p.title))
       const q = normalizeTitle(query)
-      // An empty query browses the whole index alphabetically — the just-inserted embed opener's state.
+      // An empty query browses the whole index alphabetically, as an empty `[[` or `[label](` lists.
       if (!q) return alphabetical.slice(0, limit).map((x) => x.p)
       return alphabetical
         .filter((x) => x.norm.startsWith(q))

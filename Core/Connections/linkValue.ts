@@ -150,7 +150,7 @@ export function linkPaste(url: string, display: LinkDisplay, title?: string): Li
 export const connectionSpells = (target: { title: string; heading?: string }): boolean =>
   expressibleInLink(target.title) && (!target.heading || expressibleInLink(target.heading))
 
-const sameTarget = (a: LinkTarget, b: LinkTarget): boolean =>
+export const sameTarget = (a: LinkTarget, b: LinkTarget): boolean =>
   a.kind === 'page' && b.kind === 'page'
     ? normalizeTitle(a.title) === normalizeTitle(b.title) &&
       normalizeTitle(a.heading ?? '') === normalizeTitle(b.heading ?? '')
