@@ -1,5 +1,5 @@
 import { HAS_SCHEME } from '../Paths/urlPath'
-import { stripMarkdownExt } from '../Paths/posix'
+import { isMarkdownFile, stripMarkdownExt } from '../Paths/posix'
 
 // The label's cap is load-bearing: reading escapes makes it an alternation under a quantifier, which backtracks quadratically on a long run of unclosed `[`. A label may not open with `^` because GFM reads `[^1](url)` as a footnote reference. The target admits parentheses nested two deep, what cmark renders.
 const LINK_LABEL = (min: 0 | 1): string => `((?!\\^)(?:[^\\]\\\\\\r\\n]|\\\\.){${min},255})`
@@ -99,6 +99,11 @@ export function targetTitle(rawTarget: string): string | null {
   const decoded = decodeLinkTarget(t.page).trim()
   if (!decoded) return t.fragment ? '' : null
   return stripMarkdownExt(decoded)
+}
+
+export function targetNamesFile(rawTarget: string): boolean {
+  const t = pageTarget(rawTarget)
+  return t !== null && isMarkdownFile(decodeLinkTarget(t.page))
 }
 
 export function targetFragment(rawTarget: string): string {

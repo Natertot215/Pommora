@@ -82,6 +82,8 @@ describe('what the clipboard offers to become', () => {
 
   it('withholds an embed the syntax could not spell', () => {
     expect(labels('mailto:someone@example.com', true)).not.toContain('Embedded Link')
+    expect(labels('example.com', true)).toContain('Embedded Link')
+    expect(labels('[x](Notes.md)', true)).toEqual(['Connection', 'Markdown Link'])
     expect(labels('[x](Draft%5D)', true)).not.toContain('Embedded Page')
     expect(labels('[[Notes [WIP] final]]', true)).toContain('Embedded Page')
   })

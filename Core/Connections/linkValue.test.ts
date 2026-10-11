@@ -45,6 +45,21 @@ describe('readLinkText without a resolver', () => {
       alias: 'x',
     })
   })
+  it('reads a destination written as a markdown file as the page it names, dotted or not', () => {
+    expect(readLinkText('[x](Notes.md)')).toEqual({
+      kind: 'page',
+      syntax: 'markdown',
+      title: 'Notes',
+      alias: 'x',
+    })
+    expect(readLinkText('[x](Notes.md#Setup)')).toEqual({
+      kind: 'page',
+      syntax: 'markdown',
+      title: 'Notes',
+      heading: 'Setup',
+      alias: 'x',
+    })
+  })
   it('reads a valid address as a weblink under a scheme', () => {
     expect(readLinkText('[x](example.com)')).toEqual({
       kind: 'url',
