@@ -62,13 +62,13 @@ describe('embedInsertAfter', () => {
     expect(next[c.caret - 2]).toBe('(')
   })
 
-  it('the Embed ▸ Internal Page pair hands off to the embed autocomplete', () => {
+  it('the Embed ▸ Internal Page pair opens the picker’s browse on its empty connection', () => {
     const doc = 'para\nnext'
     const c = embedInsertAfter(doc, 4, '![[]]')
     const next = doc.slice(0, c.from) + c.insert + doc.slice(c.to)
     expect(next).toBe('para\n\n![[]]\n\nnext')
-    const q = autocompleteQuery(scanDoc(next), c.caret - 2, true)
-    expect(q).toMatchObject({ form: 'embed', query: '' })
-    expect(next.slice(q?.from, q?.to)).toBe('![[]]')
+    const q = autocompleteQuery(scanDoc(next), c.caret - 2)
+    expect(q).toMatchObject({ form: 'link', query: '', closed: true })
+    expect(next.slice(q?.from, q?.to)).toBe('[[]]')
   })
 })

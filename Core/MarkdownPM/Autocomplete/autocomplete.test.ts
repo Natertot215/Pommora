@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest'
 import {
   autocompleteQuery as queryOf,
   commitEdit,
-  connectionInsert,
   headingRows,
   openHeadingRows,
   type HeadingRow,
@@ -10,8 +9,13 @@ import {
 import { tokenize } from '../Engine/tokens'
 import { scanDoc } from '../Engine/docScan'
 
-const autocompleteQuery = (doc: string, caret: number, allowEmbeds = false, armed?: number) =>
-  queryOf(scanDoc(doc), caret, allowEmbeds, armed)
+const autocompleteQuery = (doc: string, caret: number, armed?: number) =>
+  queryOf(scanDoc(doc), caret, armed)
+
+const KEEP = { keepTitle: true }
+
+const landed = (doc: string, edit: ReturnType<typeof commitEdit>): string =>
+  edit.changes.reduceRight((t, c) => t.slice(0, c.from) + c.insert + t.slice(c.to), doc)
 
 const tokenizeHasLink = (text: string): boolean => tokenize(text).some((t) => t.kind === 'link')
 
@@ -22,8 +26,14 @@ describe('autocompleteQuery', () => {
     expect(r.query).toBe('Pro')
     expect(doc.slice(r.from, r.to)).toBe('[[Pro]]')
   })
-  it('suppresses on an empty placeholder', () => {
-    expect(autocompleteQuery('see [[]] end', 6)).toBeNull()
+  it('browses from an empty placeholder, closed', () => {
+    expect(autocompleteQuery('see [[]] end', 6)).toEqual({
+      query: '',
+      from: 4,
+      to: 8,
+      form: 'link',
+      closed: true,
+    })
   })
   it('reads a closed ![[…]] as the connection after its `!`', () => {
     expect(autocompleteQuery('see ![[Pic]] end', 9)).toMatchObject({
@@ -75,57 +85,95 @@ describe('autocompleteQuery', () => {
   })
 })
 
-describe('connectionInsert', () => {
-  it('builds [[Title]] and the caret after the closer', () => {
-    const { insert, caret } = connectionInsert('Page A', 4)
-    expect(insert).toBe('[[Page A]]')
-    expect(caret).toBe(4 + '[[Page A]]'.length)
-  })
-})
-describe('embed autocomplete detection', () => {
-  it('an unclosed ![[ query resolves with the span to line end', () => {
-    expect(autocompleteQuery('x ![[Fo', 7, true)).toEqual({
-      query: 'Fo',
-      from: 2,
-      to: 7,
-      form: 'embed',
-    })
-  })
-
-  it('a closed ![[..]] is a connection, so its `!` survives the commit', () => {
-    expect(autocompleteQuery('![[Fo]]', 5, true)).toEqual({
-      query: 'Fo',
-      from: 1,
-      to: 7,
+describe('an unclosed link reads as the link it would be once closed', () => {
+  it('reads an unclosed [[ up to the caret', () => {
+    expect(autocompleteQuery('see [[Pro', 9)).toEqual({
+      query: 'Pro',
+      from: 4,
+      to: 9,
       form: 'link',
+      closed: false,
     })
   })
 
-  it('without the flag, ![[ stays silent — the cell behavior', () => {
-    expect(autocompleteQuery('x ![[Fo', 7)).toBeNull()
-  })
-
-  it('a plain [[ query keeps its link form, flag or not', () => {
-    expect(autocompleteQuery('[[Fo]]', 4, true)).toEqual({
-      query: 'Fo',
-      from: 0,
+  it('opens on a bare [[', () => {
+    expect(autocompleteQuery('see [[', 6)).toEqual({
+      query: '',
+      from: 4,
       to: 6,
       form: 'link',
+      closed: false,
     })
   })
-})
 
-describe('connectionInsert forms', () => {
-  it('the alias form commits its words alone', () => {
-    expect(connectionInsert('the plan', 5, 'alias')).toEqual({ insert: 'the plan', caret: 13 })
+  it('opens an inserted ![[]] past its written closer, keeping the !', () => {
+    expect(autocompleteQuery('![[]]', 3)).toEqual({
+      query: '',
+      from: 1,
+      to: 5,
+      form: 'link',
+      closed: true,
+    })
   })
 
-  it('writes the embed form with the caret past the closer', () => {
-    expect(connectionInsert('Alpha', 3, 'embed')).toEqual({ insert: '![[Alpha]]', caret: 13 })
+  it('reads an unclosed ![[ as ! plus a connection', () => {
+    expect(autocompleteQuery('x ![[Pro', 8)).toMatchObject({ query: 'Pro', from: 3, to: 8 })
   })
 
-  it('defaults to the link form', () => {
-    expect(connectionInsert('Alpha', 0)).toEqual({ insert: '[[Alpha]]', caret: 9 })
+  it('reads an unclosed heading half', () => {
+    expect(autocompleteQuery('[[Page#He', 9)).toEqual({
+      query: 'He',
+      from: 7,
+      to: 9,
+      form: 'heading',
+      closed: false,
+      title: 'Page',
+    })
+  })
+
+  it('reads an unclosed bare # as the heading form', () => {
+    expect(autocompleteQuery('[[#Se', 5)).toMatchObject({
+      query: 'Se',
+      form: 'heading',
+      closed: false,
+      title: '',
+    })
+  })
+
+  it('reads an unclosed markdown destination', () => {
+    expect(autocompleteQuery('[label](Pa', 10)).toMatchObject({
+      query: 'Pa',
+      from: 8,
+      to: 10,
+      form: 'target',
+      closed: false,
+    })
+  })
+
+  it('a written closer reads as closed', () => {
+    expect(autocompleteQuery('[[Pro]]', 5)?.closed).toBe(true)
+  })
+
+  it('a pick writes the closer an unclosed link lacks', () => {
+    const doc = 'see [[Pro'
+    const edit = commitEdit(autocompleteQuery(doc, 9)!, 'Project', KEEP)
+    expect(landed(doc, edit)).toBe('see [[Project]]')
+    expect(edit.anchor).toBe('see [[Project]]'.length)
+  })
+
+  it('a heading pick in an unclosed link writes the closer after it', () => {
+    const doc = '[[Page#He'
+    const edit = commitEdit(autocompleteQuery(doc, 9)!, 'Heading', KEEP)
+    expect(edit.changes).toEqual([{ from: 7, to: 9, insert: 'Heading]]' }])
+    expect(edit.anchor).toBe('[[Page#Heading]]'.length)
+  })
+
+  it('a target pick in an unclosed destination writes the )', () => {
+    const doc = '[label](Pa'
+    const edit = commitEdit(autocompleteQuery(doc, 10)!, 'Page', KEEP)
+    expect(edit.changes).toEqual([{ from: 8, to: 10, insert: 'Page)' }])
+    expect(landed(doc, edit)).toBe('[label](Page)')
+    expect(edit.anchor).toBe('[label](Page)'.length)
   })
 })
 
@@ -165,19 +213,12 @@ describe('the ( ) form', () => {
     expect(autocompleteQuery(doc, 5)?.form).not.toBe('target')
   })
 
-  const landed = (doc: string, edit: ReturnType<typeof commitEdit>): string => {
-    let text = doc
-    for (const c of [...edit.changes].reverse())
-      text = text.slice(0, c.from) + c.insert + text.slice(c.to)
-    return text
-  }
-
   it('the page half queries alone, and a retarget drops the old fragment as a wikilink does', () => {
     const doc = 'see [x](Work%20Notes#Setup) end'
     const r = autocompleteQuery(doc, doc.indexOf('Work') + 2)!
     expect(r.form).toBe('target')
     expect(r.query).toBe('Work Notes')
-    expect(landed(doc, commitEdit(r, 'Other'))).toBe('see [x](Other) end')
+    expect(landed(doc, commitEdit(r, 'Other', KEEP))).toBe('see [x](Other) end')
   })
 
   it('after the #, the fragment form asks for the named page’s headings', () => {
@@ -210,7 +251,7 @@ describe('the ( ) form', () => {
   it('a heading commit encodes it, fills an empty label, and finishes past the )', () => {
     const doc = 'see [](Work%20Notes#Se) end'
     const r = autocompleteQuery(doc, doc.indexOf('#Se') + 2)!
-    const edit = commitEdit(r, 'Getting Started')
+    const edit = commitEdit(r, 'Getting Started', KEEP)
     const text = landed(doc, edit)
     expect(text).toBe('see [Getting Started](Work%20Notes#Getting%20Started) end')
     expect(text.slice(edit.anchor)).toBe(' end')
@@ -219,7 +260,7 @@ describe('the ( ) form', () => {
   it('the chevron writes the page and its # and anchors behind it', () => {
     const doc = 'see [x](Wor) end'
     const r = autocompleteQuery(doc, doc.indexOf('Wor') + 1)!
-    const edit = commitEdit(r, 'Work Notes', { openHeading: true })
+    const edit = commitEdit(r, 'Work Notes', { ...KEEP, openHeading: true })
     const text = landed(doc, edit)
     expect(text).toBe('see [x](Work%20Notes#) end')
     expect(edit.opensHeading).toBe(true)
@@ -228,9 +269,9 @@ describe('the ( ) form', () => {
   })
 
   it('commits its target percent-encoded', () => {
-    expect(connectionInsert('Atomic Habits (Book)', 0, 'target').insert).toBe(
-      'Atomic%20Habits%20%28Book%29',
-    )
+    const doc = '[x](Atom)'
+    const edit = commitEdit(autocompleteQuery(doc, 5)!, 'Atomic Habits (Book)', KEEP)
+    expect(landed(doc, edit)).toBe('[x](Atomic%20Habits%20%28Book%29)')
   })
 })
 
@@ -255,7 +296,7 @@ describe('a label the picker writes is markdown, not plain text', () => {
   it('escapes a bracket-bearing title into the label slot', () => {
     const doc = 'see []() end'
     const ac = autocompleteQuery(doc, doc.indexOf('(') + 1)!
-    const edit = commitEdit(ac, 'Notes [WIP]')
+    const edit = commitEdit(ac, 'Notes [WIP]', KEEP)
     const written = edit.changes.reduceRight(
       (t, c) => t.slice(0, c.from) + c.insert + t.slice(c.to),
       doc,
@@ -271,7 +312,7 @@ describe('what accepting a suggestion finishes', () => {
     const doc = 'a [[Alpha|th]] b'
     const ac = autocompleteQuery(doc, doc.indexOf('th') + 1)!
     expect(ac.form).toBe('alias')
-    const edit = commitEdit(ac, 'the plan')
+    const edit = commitEdit(ac, 'the plan', KEEP)
     const text =
       doc.slice(0, edit.changes[0].from) + edit.changes[0].insert + doc.slice(edit.changes[0].to)
     expect(text).toBe('a [[Alpha|the plan]] b')
@@ -281,7 +322,7 @@ describe('what accepting a suggestion finishes', () => {
   it('accepting a page opens its alias slot when asked to', () => {
     const doc = 'a [[Alph]] b'
     const ac = autocompleteQuery(doc, doc.indexOf('Alph') + 2)!
-    const edit = commitEdit(ac, 'Alpha', { openAlias: true })
+    const edit = commitEdit(ac, 'Alpha', { ...KEEP, openAlias: true })
     const text =
       doc.slice(0, edit.changes[0].from) + edit.changes[0].insert + doc.slice(edit.changes[0].to)
     expect(text).toBe('a [[Alpha|]] b')
@@ -292,7 +333,7 @@ describe('what accepting a suggestion finishes', () => {
   it('and finishes the link when not', () => {
     const doc = 'a [[Alph]] b'
     const ac = autocompleteQuery(doc, doc.indexOf('Alph') + 2)!
-    const edit = commitEdit(ac, 'Alpha')
+    const edit = commitEdit(ac, 'Alpha', KEEP)
     const text =
       doc.slice(0, edit.changes[0].from) + edit.changes[0].insert + doc.slice(edit.changes[0].to)
     expect(text).toBe('a [[Alpha]] b')
@@ -345,7 +386,7 @@ describe('the heading form opens after a typed #', () => {
   it('the chevron commit writes an empty fragment and anchors before the closer', () => {
     const doc = 'a [[Pag]] b'
     const ac = autocompleteQuery(doc, doc.indexOf('Pag') + 1)!
-    const edit = commitEdit(ac, 'Page', { openHeading: true })
+    const edit = commitEdit(ac, 'Page', { ...KEEP, openHeading: true })
     const text =
       doc.slice(0, edit.changes[0].from) + edit.changes[0].insert + doc.slice(edit.changes[0].to)
     expect(text).toBe('a [[Page#]] b')
@@ -356,7 +397,7 @@ describe('the heading form opens after a typed #', () => {
   it('a heading commit finishes the link past the closer', () => {
     const doc = 'a [[Page#Se]] b'
     const ac = autocompleteQuery(doc, doc.indexOf('Se') + 1)!
-    const edit = commitEdit(ac, 'Setup')
+    const edit = commitEdit(ac, 'Setup', KEEP)
     const text =
       doc.slice(0, edit.changes[0].from) + edit.changes[0].insert + doc.slice(edit.changes[0].to)
     expect(text).toBe('a [[Page#Setup]] b')
@@ -368,7 +409,7 @@ describe('a typed § arms the section form', () => {
   it('returns form: section for an armed §, keyed from just past it', () => {
     const doc = 'see §Set end'
     const armed = doc.indexOf('§')
-    const r = autocompleteQuery(doc, armed + 4, false, armed)!
+    const r = autocompleteQuery(doc, armed + 4, armed)!
     expect(r.form).toBe('section')
     expect(r.query).toBe('Set')
     expect(r.from).toBe(armed + 1)
@@ -380,20 +421,20 @@ describe('a typed § arms the section form', () => {
 
   it('a space inside the query rides through, so a multi-word heading is reachable', () => {
     const doc = 'see §Getting S'
-    const r = autocompleteQuery(doc, doc.length, false, 4)!
+    const r = autocompleteQuery(doc, doc.length, 4)!
     expect(r.form).toBe('section')
     expect(r.query).toBe('Getting S')
   })
 
   it('a space right after the § is not a query', () => {
-    expect(autocompleteQuery('see § Set', 8, false, 4)).toBeNull()
+    expect(autocompleteQuery('see § Set', 8, 4)).toBeNull()
   })
 
   // A label is prose the way an alias is, and the scanner never reads a run inside a markdown link.
   it('a § inside a bracket, a markdown link’s label included, is not armed', () => {
     for (const doc of ['see [§Set](x) end', 'see [§Set'] as const) {
       const armed = doc.indexOf('§')
-      expect(autocompleteQuery(doc, armed + 4, false, armed)).toBeNull()
+      expect(autocompleteQuery(doc, armed + 4, armed)).toBeNull()
     }
   })
 })

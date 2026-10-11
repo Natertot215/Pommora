@@ -1,4 +1,5 @@
-import { expressibleInLink, pageEmbedText } from '../../Connections/connections'
+import { expressibleInLink } from '../../Connections/connections'
+import { type LinkTarget, retarget } from '../../Connections/linkValue'
 import { normalizeTitle } from '../../Paths/caseFold'
 import {
   decodeLinkTarget,
@@ -9,25 +10,24 @@ import {
 } from '../../Connections/links'
 import type { TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { type DocScan, inCodeAt } from '../Engine/docScan'
-import { connectionAt, inBracket } from '../Input/edits'
+import { connectionAt, inBracket, openConnectionAt } from '../Input/edits'
 import { lineIndexAt, type TextEdit } from '../Engine/markdownCode'
 import type { ConnPage, PageIndex } from '../../Connections/pageIndex'
 import type { OutlineHeading } from '../Engine/headingScan'
 import type { EditorHost } from '../api'
 import type { ConnectionsApi } from '../Links/connectionsApi'
 
-type ConnectionForm = 'link' | 'embed' | 'alias' | 'target' | 'heading' | 'fragment' | 'section'
+type ConnectionForm = 'link' | 'alias' | 'target' | 'heading' | 'fragment' | 'section'
 
 export interface AutocompleteQuery {
   query: string
   from: number
   to: number
   form: ConnectionForm
+  closed: boolean
   title?: string
   label?: { from: number; to: number }
 }
-
-export type AcQuery = Pick<AutocompleteQuery, 'query' | 'form' | 'title'>
 
 export type AcRow = { value: string } & (
   | { kind: 'page'; pageId: string; location: TrailSegment[] }
@@ -44,7 +44,6 @@ export const listsHeadings = (form: ConnectionForm): boolean =>
 export function autocompleteQuery(
   scan: DocScan,
   caret: number,
-  allowEmbeds = false,
   armed?: number,
 ): AutocompleteQuery | null {
   if (inCodeAt(scan, caret)) return null
@@ -66,21 +65,41 @@ export function autocompleteQuery(
         from: armed + 1,
         to: caret,
         form: 'section',
+        closed: true,
         title: '',
       }
   }
-  const s = connectionAt(scan, caret)
+  const closedLink = connectionAt(scan, caret)
+  const s = closedLink ?? openConnectionAt(scan, caret)
   if (s) {
+    const closed = closedLink !== null
+    if (!closed && !s.heading && s.title[0] === s.title[1]) {
+      const after = line.startsWith(']]', rel)
+      return {
+        query: '',
+        from: lineStart + s.full[0],
+        to: lineStart + rel + (after ? 2 : 0),
+        form: 'link',
+        closed: after,
+      }
+    }
     const title = line.slice(s.title[0], s.title[1])
     // Only the TITLE opens the page picker: accepting replaces the whole token, so a caret in the alias would arm a list keyed on the title and discard the alias on Enter.
     if (rel >= s.title[0] && rel <= s.title[1])
-      return { query: title, from: lineStart + s.full[0], to: lineStart + s.full[1], form: 'link' }
+      return {
+        query: title,
+        from: lineStart + s.full[0],
+        to: lineStart + s.full[1],
+        form: 'link',
+        closed,
+      }
     if (s.heading && rel >= s.heading[0] && rel <= s.heading[1])
       return {
         query: line.slice(s.heading[0], s.heading[1]),
         from: lineStart + s.heading[0],
         to: lineStart + s.heading[1],
         form: 'heading',
+        closed,
         title,
       }
     if (s.alias && rel >= s.alias[0] && rel <= s.alias[1])
@@ -89,12 +108,15 @@ export function autocompleteQuery(
         from: lineStart + s.alias[0],
         to: lineStart + s.alias[1],
         form: 'alias',
+        closed,
         title,
       }
   }
   // An in-progress link has an EMPTY target and the grammar above requires a character, so it can never answer for what ⌘K writes.
-  const md = markdownDestinationAt(line, rel)
+  const closedMd = markdownDestinationAt(line, rel)
+  const md = closedMd ?? markdownDestinationAt(`${line.slice(0, rel)})`, rel)
   if (md) {
+    const closed = closedMd !== null
     const { dest, fragment } = md
     const label = { from: lineStart + md.label[0], to: lineStart + md.label[1] }
     const pageEnd = fragment ? fragment[0] - 1 : dest[1]
@@ -105,6 +127,7 @@ export function autocompleteQuery(
         from: lineStart + dest[0],
         to: lineStart + dest[1],
         form: 'target',
+        closed,
         label,
       }
     return {
@@ -112,23 +135,9 @@ export function autocompleteQuery(
       from: lineStart + fragment[0],
       to: lineStart + fragment[1],
       form: 'fragment',
+      closed,
       title: targetTitle(line.slice(dest[0], pageEnd)) ?? '',
       label,
-    }
-  }
-  if (allowEmbeds) {
-    for (let idx = line.indexOf('![['); idx !== -1; idx = line.indexOf('![[', idx + 3)) {
-      const contentStart = idx + 3
-      const closeIdx = line.indexOf(']]', contentStart)
-      const contentEnd = closeIdx === -1 ? line.length : closeIdx
-      const spanEnd = closeIdx === -1 ? line.length : closeIdx + 2
-      if (rel >= contentStart && rel <= contentEnd)
-        return {
-          query: line.slice(contentStart, contentEnd),
-          from: lineStart + idx,
-          to: lineStart + spanEnd,
-          form: 'embed',
-        }
     }
   }
   return null
@@ -193,32 +202,8 @@ export function aliasRows(
     )
 }
 
-/** A carried `alias` rides only the link form — `![[ ]]` has no alias syntax, and the alias form writes into a link that already exists. */
-function formSyntax(value: string, form: ConnectionForm, alias?: string): string {
-  switch (form) {
-    case 'alias':
-    case 'heading':
-    case 'section':
-      return value
-    case 'target':
-    case 'fragment':
-      return encodeLinkTarget(value)
-    case 'embed':
-      return pageEmbedText(value)
-    case 'link':
-      return alias ? `[[${value}|${alias}]]` : `[[${value}]]`
-  }
-}
-
-export function connectionInsert(
-  value: string,
-  from: number,
-  form: ConnectionForm = 'link',
-  alias?: string,
-): { insert: string; caret: number } {
-  const insert = formSyntax(value, form, alias)
-  return { insert, caret: from + insert.length }
-}
+const closerOf = (form: ConnectionForm): string =>
+  form === 'target' || form === 'fragment' ? ')' : form === 'section' ? '' : ']]'
 
 interface CommitEdit {
   changes: TextEdit[]
@@ -230,7 +215,12 @@ interface CommitEdit {
 export function commitEdit(
   ac: AutocompleteQuery,
   value: string,
-  opts: { keepAlias?: string; openAlias?: boolean; openHeading?: boolean } = {},
+  opts: {
+    container?: LinkTarget | null
+    keepTitle: boolean
+    openAlias?: boolean
+    openHeading?: boolean
+  },
 ): CommitEdit {
   // Opening the heading slot writes an empty fragment and slides the pane in, rather than finishing the link.
   if (ac.form === 'link' && opts.openHeading) {
@@ -259,24 +249,41 @@ export function commitEdit(
       opensAlias: true,
     }
   }
-  const { insert, caret } = connectionInsert(value, ac.from, ac.form, opts.keepAlias)
+  const closer = ac.closed ? '' : closerOf(ac.form)
+  if (ac.form === 'link') {
+    const { text } = retarget(
+      'wiki',
+      opts.container ?? null,
+      { kind: 'page', syntax: 'wiki', title: value },
+      opts.keepTitle,
+    )
+    return { changes: [{ from: ac.from, to: ac.to, insert: text }], anchor: ac.from + text.length }
+  }
   // Bare text, no wrapping syntax to land inside of — the anchor sits right after the heading itself.
   if (ac.form === 'section')
-    return { changes: [{ from: ac.from, to: ac.to, insert }], anchor: caret }
-  if (ac.form === 'alias' || ac.form === 'heading')
-    return { changes: [{ from: ac.from, to: ac.to, insert }], anchor: caret + 2 }
-  // The anchor steps one past what was written: the `)` that finishes the link, or the `#` the heading slot opens behind.
-  if (ac.form === 'target' || ac.form === 'fragment') {
-    const retarget = { from: ac.from, to: ac.to, insert: opts.openHeading ? `${insert}#` : insert }
-    const fill = ac.label && ac.label.from === ac.label.to ? ac.label : null
-    const label = fill ? escapeAlias(value) : ''
     return {
-      changes: fill ? [{ from: fill.from, to: fill.to, insert: label }, retarget] : [retarget],
-      anchor: caret + label.length + 1,
-      opensHeading: opts.openHeading,
+      changes: [{ from: ac.from, to: ac.to, insert: value }],
+      anchor: ac.from + value.length,
     }
+  if (ac.form === 'alias' || ac.form === 'heading')
+    return {
+      changes: [{ from: ac.from, to: ac.to, insert: value + closer }],
+      anchor: ac.from + value.length + 2,
+    }
+  // The anchor steps one past what was written: the `)` that finishes the link, or the `#` the heading slot opens behind.
+  const encoded = encodeLinkTarget(value)
+  const dest = {
+    from: ac.from,
+    to: ac.to,
+    insert: opts.openHeading ? `${encoded}#` : encoded + closer,
   }
-  return { changes: [{ from: ac.from, to: ac.to, insert }], anchor: caret }
+  const fill = ac.label && ac.label.from === ac.label.to ? ac.label : null
+  const label = fill ? escapeAlias(value) : ''
+  return {
+    changes: fill ? [{ from: fill.from, to: fill.to, insert: label }, dest] : [dest],
+    anchor: ac.from + label.length + encoded.length + 1,
+    opensHeading: opts.openHeading,
+  }
 }
 
 // KNOB — how many suggestions are ranked before the rest are dropped; the pane's own max-height decides how many are visible at once.

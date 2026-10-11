@@ -240,7 +240,7 @@ describe('picking a page inside the parens', () => {
   const applied = (doc: string, caret: number): { text: string; after: string } => {
     const ac = autocompleteQuery(scanDoc(doc), caret)!
     expect(ac.form).toBe('target')
-    const edit = commitEdit(ac, 'Work Notes')
+    const edit = commitEdit(ac, 'Work Notes', { keepTitle: false })
     let text = doc
     for (const c of [...edit.changes].reverse()) {
       text = text.slice(0, c.from) + c.insert + text.slice(c.to)

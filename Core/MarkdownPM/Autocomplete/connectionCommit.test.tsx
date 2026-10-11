@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
+import { EditorView } from '@codemirror/view'
 import { matchText } from '@pommora/uix/Menus/menu-row.css'
 import type { ConnectionsApi } from '../Links/connectionsApi'
 import { buildPageIndex } from '../../Connections/pageIndex'
@@ -195,6 +196,75 @@ describe('the picker stands down when it has nothing to add', () => {
       view.dispatch({ selection: { anchor: 4 } })
     })
     expect(document.querySelector('.mdpm-ac')).toBeTruthy()
+  })
+})
+
+describe('an unclosed opener with Pair Brackets off', () => {
+  const projects: ConnectionsApi = {
+    ...buildPageIndex([{ id: 'p2', title: 'Project', path: 'Project.md' }]),
+    headingsOf: () => undefined,
+    location: () => [],
+    open: () => {},
+  }
+
+  const typed = async (view: EditorView, text: string): Promise<void> => {
+    for (const ch of text)
+      await act(async () => {
+        const at = view.state.selection.main.head
+        const insert = () =>
+          view.state.update({
+            changes: { from: at, insert: ch },
+            selection: { anchor: at + 1 },
+            userEvent: 'input.type',
+          })
+        const handled = view.state
+          .facet(EditorView.inputHandler)
+          .some((h) => h(view, at, at, ch, insert))
+        if (!handled) view.dispatch(insert())
+      })
+  }
+
+  const press = async (view: EditorView, key: string): Promise<void> => {
+    await act(async () => {
+      view.contentDOM.dispatchEvent(
+        new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }),
+      )
+    })
+  }
+
+  const typedOpener = async (): Promise<EditorView> => {
+    const view = await mountEditor({
+      initialBody: '',
+      connections: projects,
+      host: { settings: { pairBrackets: false } },
+    })
+    vi.spyOn(view, 'coordsAtPos').mockReturnValue(coords)
+    await act(async () => view.focus())
+    await typed(view, '[[Pro')
+    return view
+  }
+
+  it('opens the pane, and Enter writes the closer with the caret after it', async () => {
+    const view = await typedOpener()
+    expect(view.state.doc.toString()).toBe('[[Pro')
+    expect(document.querySelector('.mdpm-ac')).toBeTruthy()
+    await press(view, 'Enter')
+    expect(view.state.doc.toString()).toBe('[[Project]]')
+    expect(view.state.selection.main.head).toBe('[[Project]]'.length)
+  })
+
+  it('a title typed in full still finishes on Enter', async () => {
+    const view = await typedOpener()
+    await typed(view, 'ject')
+    expect(document.querySelector('.mdpm-ac')).toBeTruthy()
+    await press(view, 'Enter')
+    expect(view.state.doc.toString()).toBe('[[Project]]')
+  })
+
+  it('Escape leaves the typed text', async () => {
+    const view = await typedOpener()
+    await press(view, 'Escape')
+    expect(view.state.doc.toString()).toBe('[[Pro')
   })
 })
 

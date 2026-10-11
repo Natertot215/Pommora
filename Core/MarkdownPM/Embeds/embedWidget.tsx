@@ -642,11 +642,6 @@ export function embedTileRanges(state: EditorState): readonly TileRange[] {
   return state.field(embedField, false)?.ranges ?? []
 }
 
-/** A title not already held by a tile in this document or a host above it, which would land a duplicate or a cycle. */
-export function embeddable(title: string, exclude: ReadonlySet<string>): boolean {
-  return expressibleInLink(title) && !exclude.has(normalizeTitle(title))
-}
-
 export function embedExclusions(state: EditorState): Set<string> {
   const out = new Set<string>()
   const host = state.facet(embedHost)

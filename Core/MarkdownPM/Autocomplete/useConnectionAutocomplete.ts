@@ -1,10 +1,9 @@
-import { useEffect, useMemo, useReducer, useRef, useState, type RefObject } from 'react'
-import { EditorView, type ViewUpdate } from '@codemirror/view'
+import { useEffect, useMemo, useReducer, useState, type RefObject } from 'react'
+import { EditorView } from '@codemirror/view'
 import type { Extension } from '@codemirror/state'
 import {
   AC_MAX,
   aliasRows,
-  autocompleteQuery,
   commitEdit,
   headingRows,
   listsHeadings,
@@ -14,18 +13,16 @@ import {
   type AutocompleteQuery,
 } from './autocomplete'
 import { toggled } from '@pommora/uix/Utilities/checkSet'
-import { docOutline, docScan } from '../docCache'
-import { inCodeAt } from '../Engine/docScan'
+import { docOutline } from '../docCache'
 import type { MarkdownScope } from '../Engine/detect'
-import { pageLinkPattern } from '../../Connections/connections'
+import { readLinkText } from '../../Connections/linkValue'
 import { normalizeTitle } from '../../Paths/caseFold'
-import { inBracket } from '../Input/edits'
 import { restedOnLink } from '../Links/linkReveal'
 import { headingTargetOf, pageHeadingTarget } from './headingTarget'
 import type { AutocompletePaneProps } from './AutocompletePane'
-import { embeddable, embedExclusions } from '../Embeds/embedWidget'
+import { acQuery, closeAcQuery } from './acQuery'
 import type { OutlineHeading } from '../Engine/headingScan'
-import { type EditorHost, editorHost, ownPage } from '../api'
+import { type EditorHost, ownPage } from '../api'
 import { caretGeometry, type CaretGeometry, type EditorPane, usePaneCtl } from '../Menus/caretPane'
 
 export interface AcState extends AutocompleteQuery, CaretGeometry {}
@@ -40,43 +37,26 @@ export function useConnectionAutocomplete(
   scope: MarkdownScope,
 ): ConnectionAutocomplete {
   const [ac, setAc] = useState<AcState | null>(null)
-  // The position of a typed `§` that opens the heading list in prose; cleared once the caret leaves its line or the pane closes.
-  const armed = useRef<number | null>(null)
-  const measured = useRef<AutocompleteQuery | null>(null)
+  const [field] = useState(() => acQuery(scope))
   const [extension] = useState<Extension>(() => [
+    field,
+    EditorView.updateListener.of((u) => {
+      const q = u.state.field(field).query
+      if (q === u.startState.field(field).query) return
+      const g = q && caretGeometry(u.view, u.state.selection.main.head)
+      setAc(q && g ? { ...q, ...g } : null)
+    }),
     EditorView.domEventHandlers({
-      blur: () => {
-        measured.current = null
-        setAc(null)
+      blur: (_, view) => {
+        if (view.state.field(field).query) view.dispatch({ effects: closeAcQuery.of('blur') })
         return false
       },
     }),
-    EditorView.updateListener.of((u) => {
-      armed.current = sectionArmAfter(u, armed.current)
-      // A click seating the caret inside a rendered [[Title]] would otherwise pop the picker over a surface that can't accept an edit.
-      if (!(u.docChanged || u.selectionSet) || u.state.readOnly) return
-      const { empty, head } = u.state.selection.main
-      const q = empty
-        ? autocompleteQuery(
-            docScan(u.state.doc),
-            head,
-            scope === 'page',
-            armed.current ?? undefined,
-          )
-        : null
-      // The caret is measured only when the query moves, so arrowing inside a finished link reads no layout.
-      if (q && sameQuery(q, measured.current)) return
-      const g = q && caretGeometry(u.view, head)
-      measured.current = g ? q : null
-      setAc(q && g ? { ...q, ...g } : null)
-    }),
   ])
-  // The pane closing (Escape, a commit, a blur) leaves the § bare rather than arming the next keystroke near it.
-  const formRef = useRef<string | null>(null)
-  useEffect(() => {
-    if (ac?.form !== 'section' && formRef.current === 'section') armed.current = null
-    formRef.current = ac?.form ?? null
-  }, [ac])
+  const close = (): void => {
+    const view = viewRef.current
+    if (view?.state.field(field).query) view.dispatch({ effects: closeAcQuery.of('dismiss') })
+  }
   const [fetched, setFetched] = useState<OutlineHeading[] | null>(null)
   const [viaChevron, setViaChevron] = useState(false)
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set())
@@ -85,6 +65,7 @@ export function useConnectionAutocomplete(
   const query = ac?.query ?? null
   const form = ac?.form ?? 'link'
   const title = ac?.title
+  const closed = ac?.closed ?? true
   const heading = listsHeadings(form)
   // Read in render so a warm outline answers in the same pass and an exact heading closes without a frame ever mounting.
   const target = useMemo(() => {
@@ -126,28 +107,20 @@ export function useConnectionAutocomplete(
     const conn = host.connections()
     if (!conn) return []
     if (form === 'alias') return aliasRows(conn, host.aliases, title, q)
-    const embed = form === 'embed'
-    let pool = conn.candidates(q, embed ? AC_MAX * 2 : AC_MAX)
-    if (embed) {
-      const state = viewRef.current?.state
-      const taken = state ? embedExclusions(state) : new Set<string>()
-      pool = pool.filter((p) => embeddable(p.title, taken))
-    }
-    return pool.slice(0, AC_MAX).map((p) => pageRow(p, conn))
+    return conn.candidates(q, AC_MAX).map((p) => pageRow(p, conn))
   }
   // A query that names its one match exactly is a finished link, so the caret resting in one opens nothing; Back is the exception.
   const candidates = useMemo(() => {
     if (query === null) return []
-    if (query === '' && form === 'link') return []
     const found = heading
       ? query === ''
         ? openHeadingRows(allHeadingRows, collapsed)
         : allHeadingRows
       : lookup(query)
     const exact = found.length === 1 && normalizeTitle(found[0].value) === normalizeTitle(query)
-    if (exact && normalizeTitle(query) !== normalizeTitle(backedTo ?? '')) return []
+    if (exact && closed && normalizeTitle(query) !== normalizeTitle(backedTo ?? '')) return []
     return found
-  }, [query, form, title, host, aliasEpoch, heading, allHeadingRows, collapsed, backedTo])
+  }, [query, closed, form, title, host, aliasEpoch, heading, allHeadingRows, collapsed, backedTo])
 
   useEffect(() => {
     if (ac === null) setBackedTo(null)
@@ -157,11 +130,10 @@ export function useConnectionAutocomplete(
     const view = viewRef.current
     if (!view || !ac || !ctl.current.open) return
     const settings = host.settings()
-    // Retargeting replaces the WHOLE token, so an alias the link was wearing is destroyed unless deliberately re-emitted.
-    const worn =
+    const container =
       ac.form === 'link'
-        ? pageLinkPattern().exec(view.state.doc.sliceString(ac.from, ac.to))?.groups?.alias
-        : undefined
+        ? readLinkText(view.state.sliceDoc(ac.from, ac.to) + (ac.closed ? '' : ']]'))
+        : null
     const pageId = row.kind === 'page' ? row.pageId : target?.pageId
     // Only a page the picker offered can open an alias slot — an empty pipe with nothing behind it is a slot the user has to close.
     const openAlias =
@@ -170,7 +142,8 @@ export function useConnectionAutocomplete(
       settings.aliasPickerOnCommit &&
       host.aliases.list(pageId ?? '').length > 0
     const { changes, anchor, opensAlias, opensHeading } = commitEdit(ac, row.value, {
-      keepAlias: settings.removeTitleOnLinkChange ? undefined : worn,
+      container,
+      keepTitle: !settings.removeTitleOnLinkChange,
       openAlias,
       openHeading: opts.openHeading,
     })
@@ -191,7 +164,7 @@ export function useConnectionAutocomplete(
   const { index, row, ctl } = usePaneCtl(candidates, resetKey, {
     open,
     pick: commit,
-    close: () => setAc(null),
+    close,
     aside: (dir) => {
       const view = viewRef.current
       if (!view || !ac) return false
@@ -232,37 +205,4 @@ export function useConnectionAutocomplete(
       geometry: host.paneGeometry?.('autocomplete'),
     },
   }
-}
-
-const sameQuery = (a: AutocompleteQuery, b: AutocompleteQuery | null): boolean =>
-  b !== null &&
-  a.form === b.form &&
-  a.from === b.from &&
-  a.to === b.to &&
-  a.query === b.query &&
-  a.title === b.title
-
-// Under Automatic, a `§` typed alone in prose, outside a bracket and code, arms the section form at its position; the arm lapses once the caret leaves that line.
-function sectionArmAfter(u: ViewUpdate, armed: number | null): number | null {
-  let next = armed
-  for (const tr of u.transactions) {
-    if (
-      !tr.isUserEvent('input.type') ||
-      u.state.facet(editorHost).settings().inPageHeadingResolution !== 'automatic'
-    )
-      continue
-    let at: number | null = null
-    let seen = 0
-    tr.changes.iterChangedRanges((fromA, toA, fromB, toB) => {
-      seen++
-      if (fromA === toA && toB - fromB === 1 && tr.newDoc.sliceString(fromB, toB) === '§')
-        at = fromB
-    })
-    if (seen !== 1 || at === null) continue
-    const line = tr.newDoc.lineAt(at)
-    if (!inBracket(line.text, at - line.from) && !inCodeAt(docScan(tr.newDoc), at)) next = at
-  }
-  if (next === null) return null
-  const caretLine = u.state.doc.lineAt(u.state.selection.main.head).number
-  return next > u.state.doc.length || u.state.doc.lineAt(next).number !== caretLine ? null : next
 }
