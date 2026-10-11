@@ -21,12 +21,13 @@ describe('parseEditorValue', () => {
   })
 
   it('link: normalizes + serializes a valid link, clears on empty, rejects invalid', () => {
-    expect(parseEditorValue('link', 'example.com')).toEqual({
+    const link = { resolve: () => ({ status: 'phantom' }) as const, keepTitle: false }
+    expect(parseEditorValue('link', 'example.com', null, link)).toEqual({
       kind: 'link',
       value: 'https://example.com',
     })
-    expect(parseEditorValue('link', '')).toBeNull()
-    expect(parseEditorValue('link', 'not a url')).toBeUndefined()
+    expect(parseEditorValue('link', '', null, link)).toBeNull()
+    expect(parseEditorValue('link', 'not a url', null, link)).toBeUndefined()
   })
 
   it('text: opens on its trimmed first line, rejoins it with the lines behind, drops an emptied first line, clears a blank', () => {

@@ -6,6 +6,8 @@ import { stubEditorBridge } from '../../Testing/editorHarness'
 import { makeTree } from '../../Testing/testTree'
 import { useSession } from '../../Session/store'
 import type { PropertyType } from '../properties'
+import { buildPageIndex } from '../../Connections/pageIndex'
+import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'
 import { PropertyValueInput } from './PropertyValueInput'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -101,5 +103,48 @@ describe('the popover routes', () => {
     expect(text.querySelector('input')).toBeNull()
     act(() => root.render(null))
     expect(popoverFor('link').querySelector('input')).not.toBeNull()
+  })
+})
+
+describe('Edit Link reads the index at the gesture', () => {
+  const holder = { id: 'h', title: 'Holder', path: 'Holder.md' }
+  const conn: ConnectionsApi = {
+    ...buildPageIndex([
+      holder,
+      { id: 'd1', title: 'Dup', path: 'A/Dup.md' },
+      { id: 'd2', title: 'Dup', path: 'B/Dup.md' },
+    ]),
+    headingsOf: () => undefined,
+    location: () => [],
+    open: () => {},
+  }
+  const mountLink = (onPage: boolean): void =>
+    act(() =>
+      root.render(
+        <PropertyValueInput
+          def={{ id: 'prop_l', name: 'Site', type: 'link' }}
+          current={null}
+          connections={() => conn}
+          {...(onPage ? { holder } : {})}
+          onCommit={onCommit}
+          onClose={onClose}
+        />,
+      ),
+    )
+
+  it('commits a bare heading on a page, and marks it invalid on a Space', () => {
+    mountLink(true)
+    typeInto('[[#Setup]]')
+    enter()
+    expect(onCommit).toHaveBeenCalledWith({ kind: 'link', value: '[[#Setup]]' })
+    mountLink(false)
+    typeInto('[[#Setup]]')
+    expect(input().getAttribute('aria-invalid')).toBe('true')
+  })
+
+  it('marks a title two pages share invalid', () => {
+    mountLink(true)
+    typeInto('[[Dup]]')
+    expect(input().getAttribute('aria-invalid')).toBe('true')
   })
 })

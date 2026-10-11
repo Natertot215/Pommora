@@ -214,6 +214,8 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       <PropertyValueInput
         def={def}
         current={resolveFieldValue(row, col.id, schema)}
+        holder={holderOf(row, ctx)}
+        connections={ctx.connections}
         onCommit={(next) => commitValue(row, col, next)}
         onClose={() => setEditing(null)}
       />

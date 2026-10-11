@@ -13,8 +13,6 @@ import type { LinkDisplay } from '../Properties/properties'
 import type { PropertyValue } from '../Properties/propertyValue'
 import type { ConnResolution, PageIndex } from './pageIndex'
 
-export type ResolveTitle = (rawTitle: string) => string | null
-
 export type LinkTarget =
   | { kind: 'page'; syntax: 'wiki' | 'markdown'; title: string; heading?: string; alias?: string }
   | { kind: 'url'; syntax: 'markdown' | 'bare'; url: string; alias?: string }
@@ -78,23 +76,6 @@ export function serializeLink(url: string, label?: string): string {
   return label ? `[${escapeAlias(label)}](${url})` : url
 }
 
-function parsePastedLink(text: string, resolve?: ResolveTitle): string | null {
-  const named = (rawTitle: string, alias?: string, heading?: string): string | null => {
-    const title = resolve?.(rawTitle)
-    return title ? connectionText(title, alias, heading) : null
-  }
-  const conn = parseConnectionText(text)
-  if (conn) return named(conn.title, conn.alias, conn.heading)
-  const s = text.trim()
-  const md = wholeLink(s)
-  if (md?.syntax !== 'markdown') return null
-  const alias = unescapeAlias(s.slice(md.label[0], md.label[1])).trim() || undefined
-  const target = s.slice(md.destination[0], md.destination[1]).trim()
-  const title = targetTitle(target)
-  if (title !== null) return named(title, alias, targetFragment(target) || undefined)
-  return isValidLink(target) ? serializeLink(normalizeLinkUrl(target), alias) : null
-}
-
 export function linkEditText(raw: string): string {
   const target = readLinkText(raw)
   if (!target) return raw
@@ -106,16 +87,15 @@ export function linkEditText(raw: string): string {
 export function linkValueFromEdit(
   raw: string,
   current: string | undefined,
-  resolve?: ResolveTitle,
+  resolve: PageIndex['resolve'],
+  keepTitle: boolean,
 ): PropertyValue | null | undefined {
   const trimmed = raw.trim()
   if (trimmed === '') return null
-  const pasted = parsePastedLink(trimmed, resolve)
-  if (pasted !== null) return { kind: 'link', value: pasted }
-  if (!isValidLink(trimmed)) return undefined
-  const cur = current ? readLinkText(current) : null
-  const alias = cur?.kind === 'url' ? cur.alias : undefined
-  return { kind: 'link', value: serializeLink(normalizeLinkUrl(trimmed), alias) }
+  const next = readLinkText(trimmed, resolve)
+  if (!next) return undefined
+  const was = current ? readLinkText(current) : null
+  return { kind: 'link', value: retarget('wiki', was, next, keepTitle).text }
 }
 
 export function linkValueFromRename(alias: string, current: string): PropertyValue {

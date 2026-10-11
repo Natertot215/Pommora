@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { rewriteConnections, rewriteHeadingConnections } from './rewrite'
 import { LINK_DISPLAYS } from '../Properties/properties'
 import { parseConnectionText } from './connections'
-import type { ConnResolution, PageIndex } from './pageIndex'
+import { buildPageIndex, type ConnResolution, type PageIndex } from './pageIndex'
 import type { LinkTarget } from './linkValue'
 import { normalizeTitle } from '../Paths/caseFold'
 import {
@@ -200,38 +200,39 @@ describe('linkDisplayText — no alias, the look decides', () => {
 })
 
 describe('internal links', () => {
-  const resolve = (raw: string): string | null =>
-    raw.trim().toLowerCase() === 'meeting notes' ? 'Meeting Notes' : null
+  const resolve = only('Meeting Notes')
 
   it('commits a pasted connection under the page’s canonical title', () => {
-    expect(linkValueFromEdit('[[meeting notes]]', undefined, resolve)).toEqual({
+    expect(linkValueFromEdit('[[meeting notes]]', undefined, resolve, false)).toEqual({
       kind: 'link',
       value: '[[Meeting Notes]]',
     })
   })
   it('keeps a pasted connection’s alias', () => {
-    expect(linkValueFromEdit('[[Meeting Notes|Today]]', undefined, resolve)).toEqual({
+    expect(linkValueFromEdit('[[Meeting Notes|Today]]', undefined, resolve, false)).toEqual({
       kind: 'link',
       value: '[[Meeting Notes|Today]]',
     })
   })
   it('reads a markdown link naming a page as a connection, label and all', () => {
-    expect(linkValueFromEdit('[Today](Meeting%20Notes)', undefined, resolve)).toEqual({
+    expect(linkValueFromEdit('[Today](Meeting%20Notes)', undefined, resolve, false)).toEqual({
       kind: 'link',
       value: '[[Meeting Notes|Today]]',
     })
   })
   it('drops an alias that merely repeats the title', () => {
-    expect(linkValueFromEdit('[[Meeting Notes|meeting notes]]', undefined, resolve)).toEqual({
-      kind: 'link',
-      value: '[[Meeting Notes]]',
-    })
+    expect(linkValueFromEdit('[[Meeting Notes|meeting notes]]', undefined, resolve, false)).toEqual(
+      {
+        kind: 'link',
+        value: '[[Meeting Notes]]',
+      },
+    )
   })
   it('refuses a title no page answers to', () => {
-    expect(linkValueFromEdit('[[Nowhere]]', undefined, resolve)).toBeUndefined()
+    expect(linkValueFromEdit('[[Nowhere]]', undefined, resolve, false)).toBeUndefined()
   })
   it('reads a markdown link over an address as the aliased URL', () => {
-    expect(linkValueFromEdit('[My Site](https://example.com)', undefined, resolve)).toEqual({
+    expect(linkValueFromEdit('[My Site](https://example.com)', undefined, resolve, false)).toEqual({
       kind: 'link',
       value: '[My Site](https://example.com)',
     })
@@ -283,17 +284,18 @@ describe('internal links', () => {
     })
   })
   it('keeps the heading through a page rename, an edit, a typed commit, and an alias rename', () => {
-    const resolve = (raw: string): string | null =>
-      raw.trim().toLowerCase() === 'meeting notes' ? 'Meeting Notes' : null
+    const resolve = only('Meeting Notes')
     expect(rewriteConnections('[[Meeting Notes#Decisions]]', 'Meeting Notes', 'New Title')).toBe(
       '[[New Title#Decisions]]',
     )
     expect(linkEditText('[[Meeting Notes#Decisions]]')).toBe('[[Meeting Notes#Decisions]]')
-    expect(linkValueFromEdit('[[meeting notes#Decisions]]', undefined, resolve)).toEqual({
+    expect(linkValueFromEdit('[[meeting notes#Decisions]]', undefined, resolve, false)).toEqual({
       kind: 'link',
       value: '[[Meeting Notes#Decisions]]',
     })
-    expect(linkValueFromEdit('[Label](Meeting%20Notes#Decisions)', undefined, resolve)).toEqual({
+    expect(
+      linkValueFromEdit('[Label](Meeting%20Notes#Decisions)', undefined, resolve, false),
+    ).toEqual({
       kind: 'link',
       value: '[[Meeting Notes#Decisions|Label]]',
     })
@@ -305,30 +307,31 @@ describe('internal links', () => {
 })
 
 describe('a connection under the Link cell’s three menu actions', () => {
-  const resolve = (raw: string): string | null =>
-    raw.trim().toLowerCase() === 'meeting notes' ? 'Meeting Notes' : null
+  const resolve = only('Meeting Notes')
   const CONNECTION = '[[Meeting Notes|Today]]'
 
   it('Edit opens on the page alone, as an address opens on the address', () => {
     expect(linkEditText(CONNECTION)).toBe('[[Meeting Notes]]')
     expect(linkEditText('[My Site](https://example.com)')).toBe('https://example.com')
   })
-  it('Edit re-targets to a different page, keeping nothing of the old one', () => {
-    expect(linkValueFromEdit('[[meeting notes]]', CONNECTION, resolve)).toEqual({
+  it('Edit re-typing the same page keeps the alias', () => {
+    expect(linkValueFromEdit('[[meeting notes]]', CONNECTION, resolve, false)).toEqual({
       kind: 'link',
-      value: '[[Meeting Notes]]',
+      value: CONNECTION,
     })
   })
   it('Edit swaps a connection for an address, and an address back for a connection', () => {
-    expect(linkValueFromEdit('example.com', CONNECTION, resolve)).toEqual({
+    expect(linkValueFromEdit('example.com', CONNECTION, resolve, false)).toEqual({
       kind: 'link',
       value: 'https://example.com',
     })
-    expect(linkValueFromEdit('example.org', '[My Site](https://example.com)', resolve)).toEqual({
+    expect(
+      linkValueFromEdit('example.org', '[My Site](https://example.com)', resolve, true),
+    ).toEqual({
       kind: 'link',
       value: '[My Site](https://example.org)',
     })
-    expect(linkValueFromEdit(CONNECTION, 'https://example.com', resolve)).toEqual({
+    expect(linkValueFromEdit(CONNECTION, 'https://example.com', resolve, false)).toEqual({
       kind: 'link',
       value: CONNECTION,
     })
@@ -345,6 +348,45 @@ describe('a connection under the Link cell’s three menu actions', () => {
       kind: 'link',
       value: '[[Meeting Notes]]',
     })
+  })
+})
+
+describe('a Link value’s Edit commit', () => {
+  const holder = { id: 'h', title: 'Holder', path: 'Holder.md' }
+  const index = buildPageIndex([
+    { id: 'a', title: 'Alpha', path: 'Alpha.md' },
+    { id: 'b', title: 'Beta', path: 'Beta.md' },
+    { id: 'd1', title: 'Dup', path: 'A/Dup.md' },
+    { id: 'd2', title: 'Dup', path: 'B/Dup.md' },
+  ])
+  const held: PageIndex['resolve'] = (title) =>
+    title === '' ? { status: 'resolved', page: holder } : index.resolve(title)
+  const commit = (raw: string, current?: string, keepTitle = false, resolve = held) => {
+    const next = linkValueFromEdit(raw, current, resolve, keepTitle)
+    return next?.kind === 'link' ? next.value : next
+  }
+
+  it('names a resolved page by its title, and refuses a shared or missing one', () => {
+    expect(commit('[[alpha]]')).toBe('[[Alpha]]')
+    expect(commit('[[Dup]]')).toBeUndefined()
+    expect(commit('[x](Nope)')).toBeUndefined()
+  })
+  it('a bare heading commits on a page, and is refused where nothing holds the value', () => {
+    expect(commit('[[#Setup]]')).toBe('[[#Setup]]')
+    expect(commit('[[#Setup]]', undefined, false, index.resolve)).toBeUndefined()
+  })
+  it('an address commits with a scheme, written in a link or bare', () => {
+    expect(commit('[x](example.com)')).toBe('[x](https://example.com)')
+    expect(commit('example.com')).toBe('https://example.com')
+  })
+  it('a new target keeps the old alias only when the setting keeps it, and the same target always', () => {
+    expect(commit('[[Alpha]]', '[[Beta|Mine]]', true)).toBe('[[Alpha|Mine]]')
+    expect(commit('[[Alpha]]', '[[Beta|Mine]]', false)).toBe('[[Alpha]]')
+    expect(commit('https://b.com', '[x](https://a.com)', false)).toBe('https://b.com')
+    expect(commit('[[beta]]', '[[Beta|Mine]]', false)).toBe('[[Beta|Mine]]')
+  })
+  it('a page is stored as a connection whatever the old value was', () => {
+    expect(commit('[[Alpha]]', '[x](https://a.com)')).toBe('[[Alpha]]')
   })
 })
 

@@ -15,7 +15,7 @@ import { showConnectionMenu } from '../../Interface/Menus/connectionMenuActions'
 import { valueMenuTarget } from '../../Properties/Cells/valueTarget'
 import type { LinkAction } from '../../Actions/connectionMenu'
 import { PropertyValueInput } from '../../Properties/Pickers/PropertyValueInput'
-import type { ValueContext } from '../../Properties/valueContext'
+import { holderOf, type ValueContext } from '../../Properties/valueContext'
 import { numberBarCapable } from '../../Properties/formatValue'
 import {
   runValueIntent,
@@ -144,6 +144,8 @@ export function CardValue({
         <PropertyValueInput
           def={def}
           current={v}
+          holder={holderOf(row, ctx)}
+          connections={ctx.connections}
           onCommit={commit}
           onClose={() => setEditing(false)}
         />
