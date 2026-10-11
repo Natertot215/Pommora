@@ -22,6 +22,10 @@ import { checkboxToggleChange } from '../Engine/listDragModel'
 import { scanDoc } from '../Engine/docScan'
 import { readFormatState } from '../Input/formatState'
 import { editFor } from '../Input/format'
+import { decodePayload, type TablePayload } from '../Engine/Tables/clipboard'
+import { pastedCellText } from '../Links/pasteLink'
+import { PASTE_LITERAL_ACTION, RESTING_EDITS } from '../../Actions/editorMenu'
+import { PASTE_AS_PREFIX, type PasteAsForm, type PasteMode } from '../../Actions/pasteAsMenu'
 import { applyEdits, codeMask, lineOffsetsOf, type TextEdit } from '../Engine/markdownCode'
 import { sectionRunsIn } from '../../Connections/scan'
 import {
@@ -381,6 +385,7 @@ function StaticCellImpl({
   linkStyle,
   onActivate,
   onCommit,
+  onFill,
 }: {
   host: EditorHost
   text: string
@@ -390,6 +395,7 @@ function StaticCellImpl({
   readOnly: () => boolean
   onActivate: (seat: Seat) => void
   onCommit: (text: string) => void
+  onFill: (payload: TablePayload) => void
 }): React.JSX.Element {
   const commitAtRest = (built: string, edits: readonly TextEdit[]): boolean => {
     if (current() !== built) return false
@@ -440,12 +446,39 @@ function StaticCellImpl({
     return () => commitAtRest(text, [change])
   }
 
+  const pasteAtRest = async (
+    built: string,
+    from: number,
+    to: number,
+    how: PasteMode,
+  ): Promise<void> => {
+    const clip = await host.clipboard.read()
+    if (!clip) return
+    const payload = decodePayload(clip)
+    if (payload) return onFill(payload)
+    commitAtRest(built, [await pastedCellText(host, built, { from, to }, clip, how)])
+  }
+
   const restingAction = async (
     action: string,
     built: string,
     from: number,
     to: number,
   ): Promise<void> => {
+    switch (action) {
+      case RESTING_EDITS.copy:
+        return void host.clipboard.write(built.slice(from, to))
+      case RESTING_EDITS.cut:
+        void host.clipboard.write(built.slice(from, to))
+        commitAtRest(built, [{ from, to, insert: '' }])
+        return
+      case RESTING_EDITS.paste:
+        return pasteAtRest(built, from, to, 'auto')
+      case PASTE_LITERAL_ACTION:
+        return pasteAtRest(built, from, to, 'literal')
+    }
+    if (action.startsWith(PASTE_AS_PREFIX))
+      return pasteAtRest(built, from, to, action.slice(PASTE_AS_PREFIX.length) as PasteAsForm)
     const edit = editFor(action, scanDoc(built), from, to)
     if (!edit || !commitAtRest(built, edit.changes)) return
     const slot =
