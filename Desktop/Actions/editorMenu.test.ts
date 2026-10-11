@@ -37,6 +37,7 @@ const req = (x: number, y: number): EditorMenuRequest => ({
   block: null,
   embedSeat: false,
   citeSeat: false,
+  resting: null,
 })
 
 describe('matching an editor’s ask to the click', () => {
@@ -144,6 +145,81 @@ describe('the window’s right-click', () => {
     void askEditorMenu(req(10, 10))
     rightClick({})
     expect(labels()).not.toContain('Paste As')
+  })
+
+  describe('over a resting cell, which Chromium reports as not editable', () => {
+    const resting = (selection: string): EditorMenuRequest => ({
+      ...req(10, 10),
+      scope: 'cell',
+      resting: { selection },
+    })
+
+    it('pops the edit rows the renderer acts on, without Undo, Redo, or Select All', async () => {
+      native.clipboard = ''
+      const asked = askEditorMenu(resting('wo'))
+      rightClick({
+        isEditable: false,
+        editFlags: { canPaste: false } as ContextMenuParams['editFlags'],
+      })
+      expect(labels()).not.toContain('undo')
+      expect(labels()).not.toContain('redo')
+      expect(labels()).not.toContain('selectAll')
+      expect(labels().slice(0, 4)).toEqual(['Cut', 'Copy', 'Paste', 'Paste Without Formatting'])
+      expect(labels()).toContain('Lists')
+      expect(labels()).toContain('Format')
+      pick(row('Cut'))
+      await expect(asked).resolves.toBe('edit:cut')
+    })
+
+    it('answers Copy and Paste as actions rather than roles, keeping their chord hints', async () => {
+      native.clipboard = 'x'
+      const copied = askEditorMenu(resting('wo'))
+      rightClick({ isEditable: false })
+      expect(row('Copy')?.role).toBeUndefined()
+      expect(['Cut', 'Copy', 'Paste'].map((l) => row(l)?.accelerator)).toEqual([
+        'CmdOrCtrl+X',
+        'CmdOrCtrl+C',
+        'CmdOrCtrl+V',
+      ])
+      expect(row('Paste')?.registerAccelerator).toBe(false)
+      pick(row('Copy'))
+      await expect(copied).resolves.toBe('edit:copy')
+      const pasted = askEditorMenu(resting(''))
+      rightClick({ isEditable: false })
+      pick(row('Paste'))
+      await expect(pasted).resolves.toBe('edit:paste')
+    })
+
+    it('enables Cut and Copy from the source selection, and the pastes from the clipboard', () => {
+      native.clipboard = ''
+      void askEditorMenu(resting(''))
+      rightClick({
+        isEditable: false,
+        editFlags: { canCopy: true, canPaste: true } as ContextMenuParams['editFlags'],
+      })
+      expect([row('Cut')?.enabled, row('Copy')?.enabled]).toEqual([false, false])
+      expect([row('Paste')?.enabled, row('Paste Without Formatting')?.enabled]).toEqual([
+        false,
+        false,
+      ])
+      native.clipboard = 'x'
+      void askEditorMenu(resting('wo'))
+      rightClick({
+        isEditable: false,
+        editFlags: { canPaste: false } as ContextMenuParams['editFlags'],
+      })
+      expect([row('Cut')?.enabled, row('Copy')?.enabled]).toEqual([true, true])
+      expect([row('Paste')?.enabled, row('Paste Without Formatting')?.enabled]).toEqual([
+        true,
+        true,
+      ])
+    })
+
+    it('offers Insert Link from the source selection, not the drawn one', () => {
+      void askEditorMenu(resting('example.com'))
+      rightClick({ isEditable: false, selectionText: 'the site' })
+      expect(labels()).toContain('Insert Link')
+    })
   })
 
   it('seats Change Color under Select All, above the line over the editor block', async () => {

@@ -18,6 +18,7 @@ const state: EditorMenuRequest = {
   block: 'quote',
   embedSeat: false,
   citeSeat: true,
+  resting: null,
 }
 
 const items = editorContextItems(state, DEFAULT_COMMANDS, '')

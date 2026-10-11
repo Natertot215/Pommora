@@ -116,7 +116,7 @@ describe('an entered cell draws what the resting cell drew', () => {
     ).toEqual(['2'])
   })
 
-  it('a right-click enters the cell too, so the menu has a target', async () => {
+  it('a right-click leaves the cell resting', async () => {
     await mount(numbering(2))
     const cell = [...container.querySelectorAll('.mdpm-tbl-cell-static')].find((el) =>
       el.textContent?.includes('see'),
@@ -125,7 +125,7 @@ describe('an entered cell draws what the resting cell drew', () => {
       cell.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 2 }))
       cell.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, button: 2 }))
     })
-    expect(container.querySelector('.cm-editor')).not.toBeNull()
+    expect(container.querySelector('.cm-editor')).toBeNull()
   })
 })
 

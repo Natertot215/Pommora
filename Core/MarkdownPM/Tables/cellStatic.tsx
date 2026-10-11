@@ -19,6 +19,8 @@ import {
 import { perText } from '../Engine/perText'
 import { parseListMarker, type ListMarker } from '../Engine/detect'
 import { checkboxToggleChange } from '../Engine/listDragModel'
+import { scanDoc } from '../Engine/docScan'
+import { readFormatState } from '../Input/formatState'
 import { applyEdits, codeMask, lineOffsetsOf, type TextEdit } from '../Engine/markdownCode'
 import { sectionRunsIn } from '../../Connections/scan'
 import {
@@ -91,6 +93,7 @@ export function renderCellContent(
     ...src(s, e),
     'data-link': '',
   })
+  const verbatim = (s: number, e: number, at: number) => ({ ...src(s, e), 'data-at': base + at })
   const draw = (from: number, to: number, within: readonly Drawn[]): React.ReactNode[] => {
     const out: React.ReactNode[] = []
     let pos = from
@@ -123,9 +126,15 @@ export function renderCellContent(
         if (look.status === 'phantom')
           return (
             <Fragment key={key++}>
-              <span className="md-phantom-syntax">{text.slice(s, cs)}</span>
-              <span className="md-connection-phantom">{text.slice(cs, ce)}</span>
-              <span className="md-phantom-syntax">{text.slice(ce, e)}</span>
+              <span className="md-phantom-syntax" {...verbatim(s, cs, s)}>
+                {text.slice(s, cs)}
+              </span>
+              <span className="md-connection-phantom" {...verbatim(cs, ce, cs)}>
+                {text.slice(cs, ce)}
+              </span>
+              <span className="md-phantom-syntax" {...verbatim(ce, e, ce)}>
+                {text.slice(ce, e)}
+              </span>
             </Fragment>
           )
         const { join } = look
@@ -153,9 +162,15 @@ export function renderCellContent(
         const [open, close] = tk.markerRanges
         return (
           <Fragment key={key++}>
-            <span className="md-bracket">{text.slice(open[0], open[1])}</span>
-            <span className={contentClass(tk)}>{text.slice(cs, ce)}</span>
-            <span className="md-bracket">{text.slice(close[0], close[1])}</span>
+            <span className="md-bracket" {...verbatim(open[0], open[1], open[0])}>
+              {text.slice(open[0], open[1])}
+            </span>
+            <span className={contentClass(tk)} {...verbatim(cs, ce, cs)}>
+              {text.slice(cs, ce)}
+            </span>
+            <span className="md-bracket" {...verbatim(close[0], close[1], close[0])}>
+              {text.slice(close[0], close[1])}
+            </span>
           </Fragment>
         )
       }
@@ -165,14 +180,19 @@ export function renderCellContent(
         return n === null ? (
           text.slice(s, e)
         ) : (
-          <span key={key++} className="md-citation-reference" data-cite-label={label}>
+          <span
+            key={key++}
+            className="md-citation-reference"
+            data-cite-label={label}
+            {...src(s, e)}
+          >
             {n}
           </span>
         )
       }
       default:
         return (
-          <span key={key++} className={contentClass(tk)} {...src(s, e)}>
+          <span key={key++} className={contentClass(tk)} {...verbatim(s, e, cs)}>
             {draw(cs, ce, inner)}
           </span>
         )
@@ -185,20 +205,32 @@ function MarkerGlyph({
   lm,
   glyph,
   line,
+  at,
 }: {
   lm: ListMarker
   glyph: ListGlyph
   line: string
+  at: number
 }): React.JSX.Element {
+  const src = `${at},${at + lm.contentStart}`
   if (glyph === 'checkbox')
     return (
-      <span className="md-list-checkbox-seat">
+      <span className="md-list-checkbox-seat" data-src={src}>
         <span className={checkboxClass(lm.checked)}>{lm.checked && <CheckMark size={12} />}</span>
       </span>
     )
-  if (glyph === 'bullet') return <span className="md-list-bullet">•</span>
+  if (glyph === 'bullet')
+    return (
+      <span className="md-list-bullet" data-src={src}>
+        •
+      </span>
+    )
   const text = line.slice(lm.markerStart, lm.markerEnd)
-  return <span className={`md-list-${glyph} md-control`}>{text}</span>
+  return (
+    <span className={`md-list-${glyph} md-control`} data-src={src}>
+      {text}
+    </span>
+  )
 }
 
 // A cell holding a list draws one block per line, so the indent, the glyph and the rails have something to sit on; a cell holding none stays a single flow, which is what pre-wrap already renders correctly.
@@ -238,6 +270,7 @@ function renderCellBody(
         className={it ? listLineClass(it.lm) : undefined}
         style={it ? ({ '--list-level': it.lm.level } as React.CSSProperties) : undefined}
         data-cell-line={i}
+        data-base={starts[i]}
       >
         {rails[i]?.map((r) => (
           <span
@@ -247,7 +280,7 @@ function renderCellBody(
             aria-hidden="true"
           />
         ))}
-        {it && <MarkerGlyph lm={it.lm} glyph={it.glyph} line={line} />}
+        {it && <MarkerGlyph lm={it.lm} glyph={it.glyph} line={line} at={starts[i]} />}
         {it ? <span className="md-list-text">{rendered}</span> : rendered}
         {content === '' && '\u200b'}
       </div>
@@ -259,6 +292,77 @@ function srcOf(el: Element): [number, number] | null {
   const raw = (el as HTMLElement).dataset.src?.split(',')
   if (raw?.length !== 2) return null
   return [Number(raw[0]), Number(raw[1])]
+}
+
+const isFiller = (n: Node): boolean =>
+  n.nodeType === Node.TEXT_NODE &&
+  n.textContent === '\u200b' &&
+  n.parentElement?.dataset.cellLine !== undefined
+
+export function cellOffsetAt(
+  cell: Element,
+  node: Node,
+  offset: number,
+  side?: 'start' | 'end',
+): number {
+  while (
+    node.nodeType !== Node.TEXT_NODE &&
+    offset < node.childNodes.length &&
+    !(node as HTMLElement).matches('[data-src]')
+  ) {
+    node = node.childNodes[offset]
+    offset = 0
+  }
+  const drawn = (
+    node.nodeType === Node.TEXT_NODE ? node.parentElement : (node as HTMLElement)
+  )?.closest<HTMLElement>('[data-src]')
+  if (drawn && cell.contains(drawn)) {
+    const [s, e] = srcOf(drawn) ?? [0, 0]
+    if (node === drawn) return offset === 0 ? s : e
+    const edge =
+      side === 'start'
+        ? offset === 0 && node === drawn.firstChild
+        : side === 'end' && offset === node.textContent?.length && node === drawn.lastChild
+    if (drawn.dataset.at === undefined || edge) return side === 'end' ? e : s
+  }
+  let acc = node.nodeType === Node.TEXT_NODE && !isFiller(node) ? offset : 0
+  let prev = node.nodeType === Node.TEXT_NODE ? node.previousSibling : node.childNodes[offset - 1]
+  let parent = node.nodeType === Node.TEXT_NODE ? node.parentElement : (node as HTMLElement)
+  while (parent) {
+    for (; prev; prev = prev.previousSibling) {
+      if (prev.nodeType === Node.TEXT_NODE) {
+        if (!isFiller(prev)) acc += (prev as Text).data.length
+        continue
+      }
+      const sib = prev as HTMLElement
+      if (sib.matches('[data-src]')) return (srcOf(sib)?.[1] ?? 0) + acc
+      return cellOffsetAt(cell, sib, sib.childNodes.length) + acc
+    }
+    if (parent === cell) return acc
+    const base = parent.dataset.base ?? parent.dataset.at
+    if (base !== undefined) return Number(base) + acc
+    prev = parent.previousSibling
+    parent = parent.parentElement
+  }
+  return acc
+}
+
+function restingRange(cell: HTMLElement, x: number, y: number, length: number): [number, number] {
+  const caret = document.caretPositionFromPoint?.(x, y)
+  const at =
+    caret && cell.contains(caret.offsetNode)
+      ? cellOffsetAt(cell, caret.offsetNode, caret.offset)
+      : length
+  const sel = window.getSelection()
+  const range = sel && !sel.isCollapsed && sel.rangeCount > 0 ? sel.getRangeAt(0) : null
+  if (!range?.intersectsNode(cell)) return [at, at]
+  const from = cell.contains(range.startContainer)
+    ? cellOffsetAt(cell, range.startContainer, range.startOffset, 'start')
+    : 0
+  const to = cell.contains(range.endContainer)
+    ? cellOffsetAt(cell, range.endContainer, range.endOffset, 'end')
+    : length
+  return at >= from && at <= to ? [from, to] : [at, at]
 }
 
 interface RestingHit {
@@ -335,6 +439,22 @@ function StaticCellImpl({
     return () => commitAtRest(text, [change])
   }
 
+  const restingMenu = (e: React.MouseEvent<HTMLElement>): void => {
+    const ask = host.menus.format
+    if (!ask) return
+    const built = text
+    const [from, to] = restingRange(e.currentTarget, e.clientX, e.clientY, built.length)
+    void ask({
+      ...readFormatState(scanDoc(built), from, to),
+      scope: 'cell',
+      x: e.clientX,
+      y: e.clientY,
+      embedSeat: false,
+      citeSeat: false,
+      resting: { selection: built.slice(from, to) },
+    })
+  }
+
   const claimCite = (e: React.MouseEvent): (() => void) | null => {
     const el = (e.target as HTMLElement | null)?.closest?.(CITE_GLYPH) as HTMLElement | null
     const label = el?.dataset.citeLabel
@@ -351,7 +471,8 @@ function StaticCellImpl({
       className="mdpm-tbl-cell-static"
       onContextMenu={(e) => {
         if (onContextMenu(e) || readOnly()) return
-        onActivate({ kind: 'point', x: e.clientX, y: e.clientY })
+        e.stopPropagation()
+        restingMenu(e)
       }}
       onPointerOver={onPointerOver}
       onPointerOut={onPointerOut}
@@ -383,11 +504,7 @@ function StaticCellImpl({
         queueMicrotask(() => onActivate(at))
       }}
       onMouseDown={(e) => {
-        // Claiming a right press here is what stops the browser selecting the word under the pointer before the menu opens.
-        if (e.button === 2) {
-          if ((e.target as HTMLElement | null)?.closest?.('[data-link]')) e.preventDefault()
-          return
-        }
+        if (e.button === 2) return e.preventDefault()
         if (e.button === 0) claimCheckbox(e) ?? claimCite(e) ?? claimLink(e)
       }}
     >
