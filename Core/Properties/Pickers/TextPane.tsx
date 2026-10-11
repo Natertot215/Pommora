@@ -8,6 +8,7 @@ import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import type { ConnPage } from '../../Connections/pageIndex'
 import { type EditorHost, heldPage, mirrorBody } from '../../MarkdownPM/api'
 import { editorBase } from '../../MarkdownPM/surface'
+import { forwardTitles, pendingTitles } from '../../MarkdownPM/Links/pendingTitle'
 import { formatKeymap } from '../../MarkdownPM/Input/formatKeymap'
 import { useReconfigured } from '../../MarkdownPM/Input/useReconfigured'
 import { useConnectionAutocomplete } from '../../MarkdownPM/Autocomplete/useConnectionAutocomplete'
@@ -148,6 +149,15 @@ function TextPaneEditor({
     shell?.addEventListener('animationend', settle)
     return () => {
       shell?.removeEventListener('animationend', settle)
+      forwardTitles(
+        host,
+        view.state.field(pendingTitles),
+        () => committed.current,
+        (next) => {
+          committed.current = settled(next)
+          onCommitRef.current(committed.current === '' ? null : { kind: 'text', value: next })
+        },
+      )
       view.destroy()
       viewRef.current = null
     }

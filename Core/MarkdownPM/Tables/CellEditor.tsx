@@ -24,6 +24,7 @@ import type { NavDir } from '../Engine/Tables/navigate'
 import { type EditorHost, mirrorBody, mirrored, redrawNudge } from '../api'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import { editorBase } from '../surface'
+import { type PendingTitle, pendingTitles } from '../Links/pendingTitle'
 
 const HISTORY_BINDINGS = historyKeymap.filter((b) => b.run === undo || b.run === redo)
 
@@ -108,6 +109,7 @@ export function CellEditor({
   initialSelect,
   sweepFrom,
   ordinalOf,
+  onClose,
 }: {
   host: EditorHost
   initial: string
@@ -120,6 +122,7 @@ export function CellEditor({
   initialSelect: [number, number] | null
   sweepFrom: 'start' | 'end' | null
   ordinalOf: (label: string) => number | null
+  onClose: (pending: readonly PendingTitle[]) => void
 }): React.JSX.Element {
   const mountRef = useRef<HTMLDivElement>(null)
   const viewRef = useRef<EditorView | null>(null)
@@ -130,6 +133,7 @@ export function CellEditor({
   // The numbering is a whole-document fact and the extensions bake at mount, so it is read live.
   const ordinalOfRef = useLatest(ordinalOf)
   const onTablePasteRef = useLatest(onTablePaste)
+  const onCloseRef = useLatest(onClose)
   const ac = useConnectionAutocomplete(viewRef, host, 'cell')
   const formatExt = useReconfigured(viewRef, host.settings().commands, formatKeymap)
 
@@ -259,6 +263,7 @@ export function CellEditor({
     // The press that promoted this cell never reached CM, so the seat its own pointer filter would have given lands here.
     seatPastMarkerNow(view)
     return () => {
+      onCloseRef.current(view.state.field(pendingTitles))
       view.destroy()
       viewRef.current = null
     }

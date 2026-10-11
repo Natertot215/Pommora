@@ -1,10 +1,9 @@
 import { StateEffect, StateField, type Extension } from '@codemirror/state'
-import { type EditorView, ViewPlugin } from '@codemirror/view'
+import type { EditorView } from '@codemirror/view'
 import { linkMarkdown } from '../../Connections/linkValue'
-import { editorHost } from '../api'
-import type { TextEdit } from '../Engine/markdownCode'
+import { type EditorHost, editorHost } from '../api'
 
-// Page Title writes the Short Link first and swaps the label in when the fetch lands. To know WHICH link to swap when the same address is pasted twice, the rewrite tracks the range it inserted and only fires while the text there still matches exactly what was written.
+// Page Title writes the Short Link first and swaps the title in when the fetch lands. Each write awaits its own fetch; to know WHICH link to swap when the same address is pasted twice, the entry tracks the range it inserted and fires only while the text there still matches exactly what was written.
 
 export interface PendingTitle {
   from: number
@@ -15,7 +14,7 @@ export interface PendingTitle {
 
 export const awaitTitle = StateEffect.define<PendingTitle>()
 
-const titleSettled = StateEffect.define<readonly PendingTitle[]>()
+const titleSettled = StateEffect.define<PendingTitle>()
 
 export const pendingTitles = StateField.define<readonly PendingTitle[]>({
   create: () => [],
@@ -34,41 +33,63 @@ export const pendingTitles = StateField.define<readonly PendingTitle[]>({
     }
     for (const e of tr.effects) {
       if (e.is(awaitTitle)) next = [...next, e.value]
-      else if (e.is(titleSettled)) next = next.filter((p) => !e.value.includes(p))
+      else if (e.is(titleSettled)) next = next.filter((p) => p !== e.value)
     }
     return next
   },
 })
 
-/** The subscription is torn down with the view, so a fetch resolving after the page or a deactivated table-cell editor closes reaches nothing. */
-const sweepOnTitles = ViewPlugin.fromClass(
-  class {
-    private readonly unsubscribe: () => void
+export const pendingTitle: Extension = pendingTitles
 
-    constructor(view: EditorView) {
-      const titles = view.state.facet(editorHost).linkTitles
-      this.unsubscribe = titles.subscribe(() => {
-        const pending = view.state.field(pendingTitles, false)
-        if (!pending || pending.length === 0) return
-        const changes: TextEdit[] = []
-        const settled: PendingTitle[] = []
-        for (const p of pending) {
-          const title = titles.get(p.url)
-          if (title === null) continue
-          settled.push(p)
-          const text = linkMarkdown(p.url, 'link-title', title)
-          if (text !== p.text) changes.push({ from: p.from, to: p.to, insert: text })
-        }
-        if (settled.length === 0) return
-        // An ordinary history entry: removing a paste whose title arrived takes two undos, since the swap is a real edit.
-        view.dispatch({ changes, effects: titleSettled.of(settled) })
-      })
-    }
+export function writeLinkAt(
+  view: EditorView,
+  from: number,
+  to: number,
+  write: { text: string; awaits?: string },
+  userEvent: string,
+): void {
+  const end = from + write.text.length
+  const entry = write.awaits ? { from, to: end, url: write.awaits, text: write.text } : null
+  view.dispatch({
+    changes:
+      view.state.sliceDoc(from, to) === write.text ? undefined : { from, to, insert: write.text },
+    selection: { anchor: end },
+    userEvent,
+    effects: entry ? awaitTitle.of(entry) : undefined,
+  })
+  if (!entry) return
+  void settledLinkText(view.state.facet(editorHost), write).then((text) => {
+    if (!view.dom.isConnected) return
+    const held = view.state
+      .field(pendingTitles)
+      .find((p) => p.url === entry.url && p.text === entry.text)
+    if (!held) return
+    view.dispatch({
+      changes: text === held.text ? undefined : { from: held.from, to: held.to, insert: text },
+      effects: titleSettled.of(held),
+    })
+  })
+}
 
-    destroy(): void {
-      this.unsubscribe()
-    }
-  },
-)
+export function forwardTitles(
+  host: EditorHost,
+  entries: readonly PendingTitle[],
+  text: () => string | null,
+  commit: (next: string) => void,
+): void {
+  for (const p of entries)
+    void settledLinkText(host, { text: p.text, awaits: p.url }).then((titled) => {
+      const held = text()
+      if (titled === p.text || held === null || held.slice(p.from, p.to) !== p.text) return
+      commit(held.slice(0, p.from) + titled + held.slice(p.to))
+    })
+}
 
-export const pendingTitle: Extension = [pendingTitles, sweepOnTitles]
+export async function settledLinkText(
+  host: EditorHost,
+  write: { text: string; awaits?: string },
+): Promise<string> {
+  if (!write.awaits) return write.text
+  const title = await host.linkTitles.resolve(write.awaits)
+  return title ? linkMarkdown(write.awaits, 'link-title', title) : write.text
+}
