@@ -97,7 +97,7 @@ Every setting here is a machine-level preference, stored in the device database 
 
 | Setting | Key | Description | Options |
 | --- | --- | --- | --- |
-| Remove Title On Link Change | `removeTitleOnLinkChange` | Pointing a connection at another page drops the alias it was wearing. | **On** · Off |
+| Remove Title On Link Change | `removeTitleOnLinkChange` | Pointing a link at another target drops the title it was showing. | **On** · Off |
 | Automatically Suggest Existing Aliases When Linking A Page | `aliasPickerOnCommit` | Accepting a page from the connection picker offers the names it already carries. | **On** · Off |
 
 **Assets**
@@ -168,7 +168,7 @@ Every setting here is a machine-level preference, stored in the device database 
 | HTML Shortcuts | `htmlShortcuts` | Use ⌘/ to insert <!-- --> comments, and auto-close <div> tags. | On · **Off** |
 | HTML Formatting | `htmlFormatting` | Markdown inside an HTML block reads as written; off, it renders like the rest of the page. | **On** · Off |
 | Mute Checked Items | `muteCheckedItems` | A checked task reads as done — dimmed and struck through. Drawn, never written. | On · **Off** |
-| Display Unresolved Links As Plain Syntax | `plainUnresolvedLinks` | A link leading nowhere reads as the prose it is written as rather than muted with its syntax showing. Page prose only. | On · **Off** |
+| Display Unresolved Links As Plain Syntax | `plainUnresolvedLinks` | A link leading nowhere reads as the prose it is written as rather than muted with its syntax showing. | On · **Off** |
 | Heading Link Style | `headingLinkStyle` | How a link naming a heading reads — the page and the heading together, or the heading alone. A link to a heading on its own page reads as the heading either way. | **Page & Heading** · Heading Only |
 | In-Page Heading Resolution | `inPageHeadingResolution` | What reaches a heading on the page being written — link syntax alone, or a bare `§Heading` in prose as well. | **Explicit** · Automatic |
 

@@ -529,7 +529,7 @@ export const FRAMES = roster([
             kind: 'toggle',
             key: 'removeTitleOnLinkChange',
             label: 'Remove Title On Link Change',
-            hint: 'Pointing a connection at another page drops the alias it was wearing.',
+            hint: 'Pointing a link at another target drops the title it was showing.',
           },
           {
             kind: 'toggle',
