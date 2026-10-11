@@ -40,7 +40,6 @@ import {
   valueClickIntent,
   valueMenuIntent,
 } from './Pickers/valueClick'
-import { openWebLink } from '../Web/openWebLink'
 import { fileChipIndex, fileValueMenu, pickFileInto } from './Pickers/filePick'
 import { contextPaneTargets, type PaneTarget, schemaTargets } from './Cells/PropertyTypes'
 import { useGhostOptionAnchor } from './Schema/GhostOptionChip'
@@ -301,7 +300,6 @@ export function PropertyPanel({
       dateTime: editAs('picker'),
       edit: editAs('editor'),
       rename: editAs('popover'),
-      open: ({ url }) => openWebLink(url),
       popover: editAs('popover'),
       hide: () => emptyRow(def.id, false),
     })

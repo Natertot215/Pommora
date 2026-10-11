@@ -1,10 +1,9 @@
-// One home for what a click or a value menu means on every surface: a checkbox is true-or-absent on disk, never a stored false; the option kinds open their picker; a Date opens the calendar; a valid address opens, and a stamp opens nothing. Each surface only maps the intent to its own widget.
+// One home for what a click or a value menu means on every surface: a checkbox is true-or-absent on disk, never a stored false; the option kinds open their picker; a Date opens the calendar; a stamp opens nothing. Each surface only maps the intent to its own widget.
 
 import type { PropertyValue } from '../propertyValue'
 import type { ColumnLook } from '../columnStyles'
 import type { CellMenuAction } from '../../Actions/cellMenu'
 import type { LinkAction } from '../../Actions/connectionMenu'
-import { readLinkText, urlClickTarget } from '../../Connections/linkValue'
 import { type NumberConfig, type PropertyType, specOf } from '../properties'
 import { barDivisor } from '../formatValue'
 
@@ -16,10 +15,9 @@ export type ValueIntent =
   | { kind: 'edit' }
   | { kind: 'popover' }
   | { kind: 'rename' }
-  | { kind: 'open'; url: string }
   | { kind: 'hide' }
 
-/** Null = the click does nothing: a stamp, the title, or a page link, whose own text opens it. */
+/** Null = the click does nothing: a stamp or the title. A link's text follows on its own, so a click on the value edits it. */
 export function valueClickIntent(
   type: PropertyType | 'title' | undefined,
   value: PropertyValue,
@@ -44,13 +42,8 @@ export function valueClickIntent(
     case 'number':
       return barDivisor(look, config) === undefined ? { kind: 'edit' } : { kind: 'popover' }
     case 'text':
+    case 'link':
       return { kind: 'edit' }
-    case 'link': {
-      const raw = value.kind === 'link' ? value.value : ''
-      const url = urlClickTarget(raw)
-      if (url) return { kind: 'open', url }
-      return readLinkText(raw)?.kind === 'page' ? null : { kind: 'edit' }
-    }
   }
 }
 

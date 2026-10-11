@@ -25,7 +25,6 @@ import {
 } from '../../Properties/Pickers/valueClick'
 import { fileChipIndex, pickFileInto, runFileMenuAction } from '../../Properties/Pickers/filePick'
 import { popMenu } from '../../Actions/menuActions'
-import { openWebLink } from '../../Web/openWebLink'
 import { fillsBlank } from './cardValueInput'
 
 export type CardPickerKind = 'picker' | 'dateTime' | 'popover'
@@ -90,7 +89,6 @@ export function CardValue({
       rename: () => open('popover'),
       popover: () => open('popover'),
       edit: () => setEditing(true),
-      open: ({ url }) => openWebLink(url),
       hide: () => onHide(column.id),
     })
   }

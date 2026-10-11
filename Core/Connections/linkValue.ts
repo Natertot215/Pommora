@@ -95,12 +95,6 @@ function parsePastedLink(text: string, resolve?: ResolveTitle): string | null {
   return isValidLink(target) ? serializeLink(normalizeLinkUrl(target), alias) : null
 }
 
-export function urlClickTarget(value: string | undefined): string | null {
-  if (!value) return null
-  const target = readLinkText(value)
-  return target?.kind === 'url' ? target.url : null
-}
-
 export function linkEditText(raw: string): string {
   const target = readLinkText(raw)
   if (!target) return raw

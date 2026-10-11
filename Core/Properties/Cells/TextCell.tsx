@@ -12,7 +12,7 @@ import { type CellPage, linkGestures, renderCellContent } from '../../MarkdownPM
 import { useSession, useSetting } from '../../Session/store'
 import { openWebLink } from '../../Web/openWebLink'
 
-/** A link inside the value follows, glances, and opens its menu as a body link does; a press on any link stops there, and a dead one does nothing. */
+/** A link inside the value follows, glances, and opens its menu as a body link does; a press on a link that follows stops there, and one that follows nothing is left to the value. */
 export function TextCell({
   text,
   connections,
@@ -46,10 +46,11 @@ export function TextCell({
     if (isSecondaryClick(e)) return
     dismiss(e)
     const found = linkAt(e)
-    if (!found) return
+    const go = found && resolveFollow(found.target, own, connections?.(), e, openWebLink)
+    if (!go) return
     e.preventDefault()
     e.stopPropagation()
-    resolveFollow(found.target, own, connections?.(), e, openWebLink)?.()
+    go()
   }
   const lines = text.split('\n')
   const starts = lineOffsetsOf(lines)
