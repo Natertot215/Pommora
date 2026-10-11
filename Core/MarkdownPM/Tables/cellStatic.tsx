@@ -4,6 +4,7 @@ import {
   linkAddress,
   linkTokenAt,
   type LinkKind,
+  type Token,
   tokenize,
   type TokenOf,
 } from '../Engine/tokens'
@@ -19,7 +20,8 @@ import {
 import { perText } from '../Engine/perText'
 import { parseListMarker, type ListMarker } from '../Engine/detect'
 import { checkboxToggleChange } from '../Engine/listDragModel'
-import { applyEdits, lineOffsetsOf } from '../Engine/markdownCode'
+import { applyEdits, codeMask, lineOffsetsOf } from '../Engine/markdownCode'
+import { sectionRunsIn } from '../../Connections/scan'
 import {
   linkClass,
   linkLook,
@@ -43,15 +45,16 @@ import { useLatest } from '@pommora/uix/Utilities/stableApi'
 export interface CellPage {
   ordinalOf: (label: string) => number | null
   ownKeys: readonly string[]
+  sectionHeadings: readonly string[]
 }
 
-/** A cell reads its page's headings only through a same-page link. */
-export const linksOwnHeadings = (text: string): boolean => /\[\[#|\]\(\s*#/.test(text)
+export const linksOwnHeadings = (text: string): boolean => /\[\[#|\]\(\s*#|§/.test(text)
 
 // KNOB — distinct cell texts remembered; a table scrolling back in re-reads its cells from here.
 const cellTokens = perText(tokenize, 4096)
 
-// `base` is where `text` begins in the cell, because every reader of `data-link-span` resolves it against the WHOLE cell; a line rendered on its own would hand them offsets from a document that does not exist.
+type Drawn = Token | { kind: 'section'; range: [number, number]; contentRange: [number, number] }
+
 export function renderCellContent(
   text: string,
   getConn?: () => ConnectionsApi | undefined,
@@ -61,35 +64,74 @@ export function renderCellContent(
     base = 0,
   }: { around?: CellPage; headingLinkStyle?: HeadingLinkStyle; base?: number } = {},
 ): React.ReactNode {
+  const runs =
+    around && around.sectionHeadings.length > 0 && text.includes('§')
+      ? sectionRunsIn(text, around.sectionHeadings, codeMask(text))
+      : []
   // No markdown-significant char → no token possible, so skip the mdast parse; this is the per-cell cost of a table scrolling in.
-  if (!holdsTokens(text)) return text
-  const tokens = cellTokens(text)
-  if (tokens.length === 0) return text
+  const held = holdsTokens(text) ? cellTokens(text) : []
+  if (held.length === 0 && runs.length === 0) return text
+  const tokens: readonly Drawn[] = runs.length
+    ? [
+        ...held,
+        ...runs.map(
+          (r): Drawn => ({
+            kind: 'section',
+            range: [r.from, r.to],
+            contentRange: [r.from, r.to],
+          }),
+        ),
+      ].sort((a, b) => a.range[0] - b.range[0])
+    : held
   const conn = getConn?.()
-  const out: React.ReactNode[] = []
-  let pos = 0
   let key = 0
-  for (const tk of tokens) {
+  const src = (s: number, e: number): { 'data-src': string } => ({
+    'data-src': `${base + s},${base + e}`,
+  })
+  const linkSpan = (s: number, e: number): { 'data-src': string; 'data-link': '' } => ({
+    ...src(s, e),
+    'data-link': '',
+  })
+  const draw = (from: number, to: number, within: readonly Drawn[]): React.ReactNode[] => {
+    const out: React.ReactNode[] = []
+    let pos = from
+    within.forEach((tk, i) => {
+      const [s, e] = tk.range
+      if (s < pos) return
+      if (s > pos) out.push(text.slice(pos, s))
+      const [cs, ce] = tk.contentRange
+      const inner = within.slice(i + 1).filter((t) => t.range[0] >= cs && t.range[1] <= ce)
+      out.push(drawOne(tk, inner))
+      pos = e
+    })
+    if (pos < to) out.push(text.slice(pos, to))
+    return out
+  }
+  const drawOne = (tk: Drawn, inner: readonly Drawn[]): React.ReactNode => {
     const [s, e] = tk.range
-    if (s < pos) continue
-    if (s > pos) out.push(text.slice(pos, s))
-    const content = text.slice(tk.contentRange[0], tk.contentRange[1])
-    if (tk.kind === 'wikiLink' || tk.kind === 'link') {
-      const look =
-        (tk.kind === 'link' || conn) && linkLook(conn, text, tk, around?.ownKeys, headingLinkStyle)
-      if (!look) out.push(text.slice(s, e))
-      else if (look.status === 'phantom')
-        out.push(
-          <Fragment key={key++}>
-            <span className="md-phantom-syntax">{text.slice(s, tk.contentRange[0])}</span>
-            <span className="md-connection-phantom">{content}</span>
-            <span className="md-phantom-syntax">{text.slice(tk.contentRange[1], e)}</span>
-          </Fragment>,
+    const [cs, ce] = tk.contentRange
+    switch (tk.kind) {
+      case 'section':
+        return (
+          <span key={key++} className="md-connection-resolved md-section-run" {...linkSpan(s, e)}>
+            {text.slice(s, e)}
+          </span>
         )
-      else {
+      case 'wikiLink':
+      case 'link': {
+        if (tk.kind === 'wikiLink' && !conn) return text.slice(s, e)
+        const look = linkLook(conn, text, tk, around?.ownKeys, headingLinkStyle)
+        if (look.status === 'phantom')
+          return (
+            <Fragment key={key++}>
+              <span className="md-phantom-syntax">{text.slice(s, cs)}</span>
+              <span className="md-connection-phantom">{text.slice(cs, ce)}</span>
+              <span className="md-phantom-syntax">{text.slice(ce, e)}</span>
+            </Fragment>
+          )
         const { join } = look
-        out.push(
-          <span key={key++} className={linkClass(look)} data-link-span={`${base + s},${base + e}`}>
+        return (
+          <span key={key++} className={linkClass(look)} {...linkSpan(s, e)}>
             {join && tk.kind === 'wikiLink' ? (
               <>
                 {join.showPage && text.slice(tk.resolveRange[0], tk.resolveRange[1])}
@@ -108,47 +150,41 @@ export function renderCellContent(
                 </span>
               </>
             ) : (
-              content
+              draw(cs, ce, inner)
             )}
-          </span>,
+          </span>
         )
       }
-    } else if (tk.kind === 'htmlTag') {
-      const [open, close] = tk.markerRanges
-      out.push(
-        <Fragment key={key++}>
-          <span className="md-bracket">{text.slice(open[0], open[1])}</span>
-          <span className="md-html-tag">{content}</span>
-          <span className="md-bracket">{text.slice(close[0], close[1])}</span>
-        </Fragment>,
-      )
-    } else if (tk.kind === 'citationRef') {
-      const n = around?.ordinalOf(content) ?? null
-      out.push(
-        n === null ? (
+      case 'htmlTag': {
+        const [open, close] = tk.markerRanges
+        return (
+          <Fragment key={key++}>
+            <span className="md-bracket">{text.slice(open[0], open[1])}</span>
+            <span className="md-html-tag">{text.slice(cs, ce)}</span>
+            <span className="md-bracket">{text.slice(close[0], close[1])}</span>
+          </Fragment>
+        )
+      }
+      case 'citationRef': {
+        const label = text.slice(cs, ce)
+        const n = around?.ordinalOf(label) ?? null
+        return n === null ? (
           text.slice(s, e)
         ) : (
-          <span key={key++} className="md-citation-reference" data-cite-label={content}>
+          <span key={key++} className="md-citation-reference" data-cite-label={label}>
             {n}
           </span>
-        ),
-      )
-    } else {
-      const cls = contentClass(tk)
-      out.push(
-        cls ? (
-          <span key={key++} className={cls}>
-            {content}
+        )
+      }
+      default:
+        return (
+          <span key={key++} className={contentClass(tk)} {...src(s, e)}>
+            {draw(cs, ce, inner)}
           </span>
-        ) : (
-          content
-        ),
-      )
+        )
     }
-    pos = e
   }
-  if (pos < text.length) out.push(text.slice(pos))
-  return out
+  return draw(0, text.length, tokens)
 }
 
 function MarkerGlyph({
@@ -225,13 +261,17 @@ function renderCellBody(
   })
 }
 
-const LINK_SELECTOR = '.md-link, .md-connection-resolved, [data-link-span]'
+const LINK_SELECTOR = '[data-link]'
+
+export function srcOf(el: Element): [number, number] | null {
+  const raw = (el as HTMLElement).dataset.src?.split(',')
+  if (raw?.length !== 2) return null
+  return [Number(raw[0]), Number(raw[1])]
+}
 
 function linkSpanAt(target: EventTarget | null): [number, number] | null {
   const el = (target as HTMLElement | null)?.closest?.(LINK_SELECTOR)
-  const raw = (el as HTMLElement | undefined)?.dataset.linkSpan?.split(',')
-  if (raw?.length !== 2) return null
-  return [Number(raw[0]), Number(raw[1])]
+  return el ? srcOf(el) : null
 }
 
 function StaticCellImpl({
@@ -447,7 +487,7 @@ function menuTarget(
   })
 }
 
-/** Comparing text and the page around it rather than every prop keeps one cell's keystroke off every other cell, and a cell holding no marker or same-page link reads nothing of the page. */
+/** Comparing text and the page around it rather than every prop keeps one cell's keystroke off every other cell. */
 export const StaticCell = memo(
   StaticCellImpl,
   (a, b) =>

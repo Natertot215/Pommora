@@ -1,4 +1,4 @@
-import type { Token, TokenKind } from './tokens'
+import type { LinkKind, Token, TokenKind, TokenOf } from './tokens'
 import {
   isThematicBreakLine,
   isHeadingLine,
@@ -117,7 +117,9 @@ export function listLineClass(lm: ListMarker): string {
   return isSequenced(lm.kind) ? 'md-list-item md-list-ordered' : 'md-list-item'
 }
 
-const CONTENT_CLASS: Partial<Record<TokenKind, string>> = {
+type ContentKind = Exclude<TokenKind, LinkKind | 'citationRef'>
+
+const CONTENT_CLASS: Record<ContentKind, string> = {
   bold: 'md-bold',
   italic: 'md-italic',
   strikethrough: 'md-strike',
@@ -128,21 +130,19 @@ const CONTENT_CLASS: Partial<Record<TokenKind, string>> = {
   htmlTag: 'md-html-tag',
 }
 
-export const contentClass = (tk: Token): string | undefined =>
+export const contentClass = (tk: TokenOf<ContentKind>): string =>
   tk.color ? `${CONTENT_CLASS.highlight} md-highlight-${tk.color}` : CONTENT_CLASS[tk.kind]
 
 export function tokenIntents(tokens: Token[], active: Set<number>): DecoIntent[] {
   const intents: DecoIntent[] = []
   tokens.forEach((tk, i) => {
     if (tk.kind === 'wikiLink' || tk.kind === 'link' || tk.kind === 'citationRef') return
-    const cls = contentClass(tk)
-    if (cls)
-      intents.push({
-        kind: 'class',
-        from: tk.contentRange[0],
-        to: tk.contentRange[1],
-        className: cls,
-      })
+    intents.push({
+      kind: 'class',
+      from: tk.contentRange[0],
+      to: tk.contentRange[1],
+      className: contentClass(tk),
+    })
     // A tag's brackets are its syntax on show, never hidden.
     if (tk.kind === 'htmlTag')
       for (const [s, e] of tk.markerRanges)

@@ -1,6 +1,6 @@
 import { Decoration, type DecorationSet, EditorView } from '@codemirror/view'
 import { ReactWidget, type ReactDom } from '../reactWidget'
-import { docHeadingKeys, docScan, perDoc } from '../docCache'
+import { docHeadingKeys, docScan, docSectionHeadings, perDoc } from '../docCache'
 import { type CitationEntry, foldLabel } from '../Engine/detect'
 import { focusAt } from '../caretPlacement'
 import {
@@ -402,10 +402,11 @@ export function buildWidgetDecorations(
   const ranges: Range<Decoration>[] = []
   const scan = docScan(doc)
   const linkStyle = state.facet(editorHost).settings().headingLinkStyle
+  const automatic = automaticIn(state)
   scan.tables.forEach((region, i) => {
     const text = doc.sliceString(region.from, region.to)
     const model = modelFromRegion(region)
-    const around = cellPage(doc, text)
+    const around = cellPage(doc, text, automatic)
     ranges.push(
       Decoration.replace({
         widget: new TableWidget(text, model, i, headingCols.has(i), around, linkStyle, boxes[i]),
@@ -463,7 +464,7 @@ function rebuiltTable(deco: DecorationSet, state: EditorState, index: number): D
   const region = docScan(state.doc).tables[index]
   if (!region) return deco
   const text = state.doc.sliceString(region.from, region.to)
-  const around = cellPage(state.doc, text)
+  const around = cellPage(state.doc, text, automaticIn(state))
   return swapTableWidget(deco, index, (w) =>
     w.text === text && w.around === around
       ? null
@@ -490,15 +491,20 @@ const headingKey = perDoc((doc) => docHeadingKeys(doc).join('\n'))
 const cellPages = new Map<string, CellPage>()
 
 /** What a cell draws from the page around it and its own text never holds: the footnote numbering, and the headings a same-page link is judged against when the table holds one. */
-function cellPage(doc: Text, text: string): CellPage {
+const automaticIn = (state: EditorState): boolean =>
+  state.facet(editorHost).settings().inPageHeadingResolution === 'automatic'
+
+function cellPage(doc: Text, text: string, automatic: boolean): CellPage {
   const linksHeadings = linksOwnHeadings(text)
-  const key = linksHeadings ? `${citeKey(doc)}\n${headingKey(doc)}` : citeKey(doc)
+  const runs = automatic && text.includes('§')
+  const key = linksHeadings ? `${citeKey(doc)}\n${headingKey(doc)}\n${runs}` : citeKey(doc)
   let page = cellPages.get(key)
   if (!page) {
     const numbers = ordinals(doc)
     page = {
       ordinalOf: (label) => numbers.get(foldLabel(label)) ?? null,
       ownKeys: linksHeadings ? docHeadingKeys(doc) : [],
+      sectionHeadings: runs ? docSectionHeadings(doc) : [],
     }
     capSet(cellPages, key, page, 16)
   }
@@ -542,9 +548,11 @@ const widgetField = StateField.define<DecorationSet>({
     let next = deco.map(tr.changes)
     const was = tr.startState.doc
     if (citeKey(doc) === citeKey(was) && headingKey(doc) === headingKey(was)) return next
+    const automatic = automaticIn(tr.state)
     for (const it = next.iter(); it.value; it.next()) {
       const w = it.value.spec.widget as TableWidget
-      if (w.around !== cellPage(doc, w.text)) next = rebuiltTable(next, tr.state, w.tableIndex)
+      if (w.around !== cellPage(doc, w.text, automatic))
+        next = rebuiltTable(next, tr.state, w.tableIndex)
     }
     return next
   },
