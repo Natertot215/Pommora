@@ -58,7 +58,11 @@ afterEach(async () => {
 })
 
 const conn: ConnectionsApi = {
-  ...buildPageIndex([{ id: 'p1', title: 'Quarterly Plan', path: 'N/Quarterly Plan.md' }]),
+  ...buildPageIndex([
+    { id: 'p1', title: 'Quarterly Plan', path: 'N/Quarterly Plan.md' },
+    { id: 'p2', title: 'Amb', path: 'N/Amb.md' },
+    { id: 'p3', title: 'Amb', path: 'M/Amb.md' },
+  ]),
   location: () => [],
   open: () => {},
   headingsOf: () => undefined,
@@ -247,6 +251,22 @@ describe('a row chosen at rest', () => {
     expect(entered()).toBe(false)
   })
 
+  it('counts Lists ▸ Numbered over a selection as a live cell does', async () => {
+    await mount('a\nb\nc')
+    select('a\nb\nc', 0, 'a\nb\nc', 5)
+    await rightClick('a\nb\nc', 2)
+    await choose('list:ordered')
+    expect(committed).toHaveBeenLastCalledWith(1, 0, '1. a\n2. b\n3. c')
+  })
+
+  it('enters with the caret in the slot Bold writes at a point on a list glyph', async () => {
+    await mount('- ab')
+    await rightClick('•', 1)
+    await choose('format:bold')
+    expect(committed).toHaveBeenLastCalledWith(1, 0, '- ****ab')
+    expect(liveCell()?.state.selection.main.head).toBe(4)
+  })
+
   it('enters with the caret inside the empty address External Link writes over a selection', async () => {
     await mount('ab cd')
     select('ab cd', 3, 'ab cd', 5)
@@ -284,6 +304,17 @@ describe('a row chosen at rest', () => {
     expect(committed).not.toHaveBeenCalled()
     expect(entered()).toBe(false)
   })
+
+  it('cuts nothing to the clipboard when the cell moved while the menu stood open', async () => {
+    await mount('ab cd')
+    select('ab cd', 2, 'ab cd', 5)
+    await rightClick('ab cd', 3)
+    cellText = 'moved'
+    await draw()
+    await choose('edit:cut')
+    expect(written).not.toHaveBeenCalled()
+    expect(committed).not.toHaveBeenCalled()
+  })
 })
 
 describe('a system row chosen at rest', () => {
@@ -304,6 +335,22 @@ describe('a system row chosen at rest', () => {
     expect(written).toHaveBeenCalledWith(' cd')
     expect(committed).toHaveBeenLastCalledWith(1, 0, 'ab')
     expect(entered()).toBe(false)
+  })
+
+  it('closes the count a cut across a numbered run’s line break leaves', async () => {
+    await mount('1. a\n2. b\n3. c')
+    select('a', 0, 'b', 0)
+    await rightClick('b', 0)
+    await choose('edit:cut')
+    expect(committed).toHaveBeenLastCalledWith(1, 0, '1. b\n2. c')
+  })
+
+  it('retargets an ambiguous link with an address pasted at a point inside it', async () => {
+    clipboard = 'https://a.com'
+    await mount('[[Amb]]')
+    await rightClick('Amb', 1)
+    await choose('edit:paste')
+    expect(committed).toHaveBeenLastCalledWith(1, 0, '[https://a.com](https://a.com)')
   })
 
   it('pastes an address at a point in the Default Link Format', async () => {

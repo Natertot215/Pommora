@@ -2,11 +2,13 @@ import { EditorState, type Extension } from '@codemirror/state'
 import { docScan, docString } from '../docCache'
 import { renumberRuns } from '../Engine/listDragModel'
 import { inSealedLine } from '../Engine/docScan'
-import { lineIndexAt } from '../Engine/markdownCode'
+import { lineIndexAt, type TextEdit } from '../Engine/markdownCode'
 import { isSequenced, parseListMarkerPrefixed, type MarkdownScope } from '../Engine/detect'
 
 /** The user event of an edit that writes list markers: Enter continuing a list, Tab and Shift+Tab, and the Lists menu. */
 export const RELIST = 'input.list'
+
+export const editEvent = (edit: { relist?: boolean }): string => (edit.relist ? RELIST : 'input')
 
 // Every edit that reshapes a sequenced run counts it here, riding the same transaction so one undo takes both: a marker-writing edit recounts the runs it touched and, where it touched a numbered or lettered item, the run just below, which is the one a nested item left; a deletion that removes a whole line closes the gap it leaves. Nothing inside a page's code, math or tables is counted.
 export const listRenumber = (scope: MarkdownScope): Extension =>
@@ -40,3 +42,15 @@ export const listRenumber = (scope: MarkdownScope): Extension =>
     const changes = renumberRuns(scan.text, counted, arrived)
     return changes.length === 0 ? tr : [tr, { changes, sequential: true }]
   })
+
+/** An edit as the editor lands it: its changes, then the list renumber that rides the same transaction. */
+export function landEdit(
+  doc: string,
+  changes: readonly TextEdit[],
+  userEvent: string,
+  scope: MarkdownScope,
+): string {
+  return EditorState.create({ doc, extensions: listRenumber(scope) })
+    .update({ changes: [...changes], userEvent })
+    .state.doc.toString()
+}

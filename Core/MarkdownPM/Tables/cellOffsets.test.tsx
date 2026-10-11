@@ -96,13 +96,22 @@ describe('a point in a resting cell maps to the source it draws', () => {
     expect(cellOffsetAt(cell, textNode(cell, 'xy '), 1)).toBe(1)
   })
 
-  it('clamps a point inside an alias to the link it stands for, and reads past it', async () => {
+  it('reads a point inside an alias as the alias, takes the link’s edges into a range that reaches its text’s, and reads past it', async () => {
     const cell = await restingCell('x [[Quarterly Plan|the plan]] y')
     const alias = textNode(cell, 'the plan')
-    expect(cellOffsetAt(cell, alias, 3)).toBe(2)
-    expect(cellOffsetAt(cell, alias, 3, 'start')).toBe(2)
-    expect(cellOffsetAt(cell, alias, 3, 'end')).toBe(29)
+    expect(cellOffsetAt(cell, alias, 3)).toBe(22)
+    expect(cellOffsetAt(cell, alias, 3, 'start')).toBe(22)
+    expect(cellOffsetAt(cell, alias, 0, 'start')).toBe(2)
+    expect(cellOffsetAt(cell, alias, 8, 'end')).toBe(29)
     expect(cellOffsetAt(cell, textNode(cell, ' y'), 1)).toBe(30)
+  })
+
+  it('takes the outermost token’s edges into a range that reaches the text of a token flush inside it', async () => {
+    const cell = await restingCell('a ~~[x](https://a.com)~~ b')
+    const x = textNode(cell, 'x')
+    expect(cellOffsetAt(cell, x, 0, 'start')).toBe(2)
+    expect(cellOffsetAt(cell, x, 1, 'end')).toBe(24)
+    expect(cellOffsetAt(cell, x, 0)).toBe(5)
   })
 
   it('clamps the § a heading link draws to the link', async () => {
@@ -113,15 +122,15 @@ describe('a point in a resting cell maps to the source it draws', () => {
     expect(cellOffsetAt(cell, textNode(cell, ' z'), 1)).toBe(25)
   })
 
-  it('clamps a § run to its run', async () => {
+  it('reads a point on a § run as its end', async () => {
     const cell = await restingCell('see §Setup ok', {
       ordinalOf: () => null,
       ownKeys: ['setup'],
       sectionHeadings: ['Setup'],
     })
     const run = textNode(cell, '§Setup')
-    expect(cellOffsetAt(cell, run, 2)).toBe(4)
-    expect(cellOffsetAt(cell, run, 2, 'end')).toBe(10)
+    expect(cellOffsetAt(cell, run, 2)).toBe(10)
+    expect(cellOffsetAt(cell, run, 2, 'start')).toBe(4)
     expect(cellOffsetAt(cell, textNode(cell, ' ok'), 1)).toBe(11)
   })
 
@@ -135,13 +144,13 @@ describe('a point in a resting cell maps to the source it draws', () => {
     expect(cellOffsetAt(cell, textNode(cell, ' ok'), 1)).toBe(12)
   })
 
-  it('reads a list line from its own base, and clamps the glyph to its marker', async () => {
+  it('reads a list line from its own base, and a point on the glyph as where its content begins', async () => {
     const cell = await restingCell('- a\n- **b** c')
     expect(cellOffsetAt(cell, textNode(cell, 'a'), 0)).toBe(2)
     expect(cellOffsetAt(cell, textNode(cell, 'b'), 1)).toBe(9)
     expect(cellOffsetAt(cell, textNode(cell, ' c'), 1)).toBe(12)
-    expect(cellOffsetAt(cell, textNode(cell, '•', 1), 1)).toBe(4)
-    expect(cellOffsetAt(cell, textNode(cell, '•', 1), 1, 'end')).toBe(6)
+    expect(cellOffsetAt(cell, textNode(cell, '•', 1), 1)).toBe(6)
+    expect(cellOffsetAt(cell, textNode(cell, '•', 1), 1, 'start')).toBe(4)
   })
 
   it('reads an empty line’s filler as the line’s own start', async () => {

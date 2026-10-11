@@ -22,11 +22,12 @@ import { checkboxToggleChange } from '../Engine/listDragModel'
 import { scanDoc } from '../Engine/docScan'
 import { readFormatState } from '../Input/formatState'
 import { editFor } from '../Input/format'
+import { editEvent, landEdit } from '../Input/listRenumber'
 import { decodePayload, type TablePayload } from '../Engine/Tables/clipboard'
 import { pastedCellText } from '../Links/pasteLink'
 import { PASTE_LITERAL_ACTION, RESTING_EDITS } from '../../Actions/editorMenu'
 import { PASTE_AS_PREFIX, type PasteAsForm, type PasteMode } from '../../Actions/pasteAsMenu'
-import { applyEdits, codeMask, lineOffsetsOf, type TextEdit } from '../Engine/markdownCode'
+import { codeMask, lineOffsetsOf, type TextEdit } from '../Engine/markdownCode'
 import { sectionRunsIn } from '../../Connections/scan'
 import {
   linkClass,
@@ -94,9 +95,10 @@ export function renderCellContent(
   const src = (s: number, e: number): { 'data-src': string } => ({
     'data-src': `${base + s},${base + e}`,
   })
-  const linkSpan = (s: number, e: number): { 'data-src': string; 'data-link': '' } => ({
+  const linkSpan = (s: number, e: number, at?: number) => ({
     ...src(s, e),
     'data-link': '',
+    ...(at !== undefined && { 'data-at': base + at }),
   })
   const verbatim = (s: number, e: number, at: number) => ({ ...src(s, e), 'data-at': base + at })
   const draw = (from: number, to: number, within: readonly Drawn[]): React.ReactNode[] => {
@@ -142,10 +144,10 @@ export function renderCellContent(
               </span>
             </Fragment>
           )
-        const { join } = look
+        const join = tk.kind === 'wikiLink' && look.join
         return (
-          <span key={key++} className={linkClass(look)} {...linkSpan(s, e)}>
-            {join && tk.kind === 'wikiLink' ? (
+          <span key={key++} className={linkClass(look)} {...linkSpan(s, e, join ? undefined : cs)}>
+            {join ? (
               <>
                 {join.showPage && text.slice(tk.resolveRange[0], tk.resolveRange[1])}
                 <span
@@ -318,17 +320,23 @@ export function cellOffsetAt(
     node = node.childNodes[offset]
     offset = 0
   }
-  const drawn = (
+  let drawn = (
     node.nodeType === Node.TEXT_NODE ? node.parentElement : (node as HTMLElement)
   )?.closest<HTMLElement>('[data-src]')
   if (drawn && cell.contains(drawn)) {
-    const [s, e] = srcOf(drawn) ?? [0, 0]
-    if (node === drawn) return offset === 0 ? s : e
     const edge =
       side === 'start'
         ? offset === 0 && node === drawn.firstChild
         : side === 'end' && offset === node.textContent?.length && node === drawn.lastChild
-    if (drawn.dataset.at === undefined || edge) return side === 'end' ? e : s
+    while (
+      edge &&
+      drawn.parentElement?.matches('[data-src]') &&
+      drawn === (side === 'start' ? drawn.parentElement.firstChild : drawn.parentElement.lastChild)
+    )
+      drawn = drawn.parentElement
+    const [s, e] = srcOf(drawn) ?? [0, 0]
+    if (node === drawn) return offset === 0 ? s : e
+    if (drawn.dataset.at === undefined || edge) return side === 'start' ? s : e
   }
   let acc = node.nodeType === Node.TEXT_NODE && !isFiller(node) ? offset : 0
   let prev = node.nodeType === Node.TEXT_NODE ? node.previousSibling : node.childNodes[offset - 1]
@@ -397,9 +405,13 @@ function StaticCellImpl({
   onCommit: (text: string) => void
   onFill: (payload: TablePayload) => void
 }): React.JSX.Element {
-  const commitAtRest = (built: string, edits: readonly TextEdit[]): boolean => {
+  const commitAtRest = (
+    built: string,
+    edits: readonly TextEdit[],
+    userEvent = 'input',
+  ): boolean => {
     if (current() !== built) return false
-    const next = applyEdits(built, edits)
+    const next = landEdit(built, edits, userEvent, 'cell')
     if (next === built) return false
     onCommit(next)
     return true
@@ -456,7 +468,7 @@ function StaticCellImpl({
     if (!clip) return
     const payload = decodePayload(clip)
     if (payload) return onFill(payload)
-    commitAtRest(built, [await pastedCellText(host, built, { from, to }, clip, how)])
+    commitAtRest(built, [await pastedCellText(host, built, { from, to }, clip, how)], 'input.paste')
   }
 
   const restingAction = async (
@@ -469,8 +481,8 @@ function StaticCellImpl({
       case RESTING_EDITS.copy:
         return void host.clipboard.write(built.slice(from, to))
       case RESTING_EDITS.cut:
-        void host.clipboard.write(built.slice(from, to))
-        commitAtRest(built, [{ from, to, insert: '' }])
+        if (commitAtRest(built, [{ from, to, insert: '' }], 'delete'))
+          void host.clipboard.write(built.slice(from, to))
         return
       case RESTING_EDITS.paste:
         return pasteAtRest(built, from, to, 'auto')
@@ -480,7 +492,7 @@ function StaticCellImpl({
     if (action.startsWith(PASTE_AS_PREFIX))
       return pasteAtRest(built, from, to, action.slice(PASTE_AS_PREFIX.length) as PasteAsForm)
     const edit = editFor(action, scanDoc(built), from, to)
-    if (!edit || !commitAtRest(built, edit.changes)) return
+    if (!edit || !commitAtRest(built, edit.changes, editEvent(edit))) return
     const slot =
       /^(format|highlight):/.test(action) &&
       (from === to || action === 'format:link' || action === 'format:linkText')
