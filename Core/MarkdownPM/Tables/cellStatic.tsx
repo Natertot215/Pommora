@@ -20,7 +20,7 @@ import {
 import { perText } from '../Engine/perText'
 import { parseListMarker, type ListMarker } from '../Engine/detect'
 import { checkboxToggleChange } from '../Engine/listDragModel'
-import { applyEdits, codeMask, lineOffsetsOf } from '../Engine/markdownCode'
+import { applyEdits, codeMask, lineOffsetsOf, type TextEdit } from '../Engine/markdownCode'
 import { sectionRunsIn } from '../../Connections/scan'
 import {
   linkClass,
@@ -38,6 +38,7 @@ import { wikiAuthorTarget } from '../Links/linkEdit'
 import { dwellTarget, followTarget, heldTarget } from '../Links/linkClicks'
 import { CITE_GLYPH, followCitation } from '../Citations/citationPointer'
 import type { EditorHost, OwnPage } from '../api'
+import type { Seat } from './CellEditor'
 import type { HeadingLinkStyle } from '../../Settings/personalization'
 import { CheckMark, checkboxClass } from '@pommora/uix/Controls/Checkbox'
 import { cx } from '@pommora/uix/Utilities/cx'
@@ -277,19 +278,25 @@ function StaticCellImpl({
   linkStyle,
   onActivate,
   onCommit,
-  onSelect,
 }: {
   host: EditorHost
   text: string
   around: CellPage
   linkStyle: HeadingLinkStyle
   readOnly: () => boolean
-  onActivate: (coords: { x: number; y: number }, sweep?: 'start' | 'end') => void
+  onActivate: (seat: Seat) => void
   onCommit: (text: string) => void
-  onSelect: (range: [number, number]) => void
 }): React.JSX.Element {
   // What the cell reads NOW: a native menu can be held open while an undo moves the cell underneath it.
   const live = useLatest(text)
+
+  const commitAtRest = (built: string, edits: readonly TextEdit[]): boolean => {
+    if (live.current !== built) return false
+    const next = applyEdits(built, edits)
+    if (next === built) return false
+    onCommit(next)
+    return true
+  }
 
   const menuAt = (found: TokenOf<LinkKind>, api: ConnectionsApi): ConnMenuTarget | null =>
     menuTarget(
@@ -304,7 +311,7 @@ function StaticCellImpl({
       api,
       host,
       onCommit,
-      onSelect,
+      onActivate,
     )
   const { linkAt, dismiss, onContextMenu, onPointerOver, onPointerOut } = linkGestures(
     text,
@@ -336,7 +343,7 @@ function StaticCellImpl({
     if (!change) return null
     e.preventDefault()
     e.stopPropagation()
-    return () => onCommit(applyEdits(doc, [change]))
+    return () => commitAtRest(doc, [change])
   }
 
   const claimCite = (e: React.MouseEvent): (() => void) | null => {
@@ -355,7 +362,7 @@ function StaticCellImpl({
       className="mdpm-tbl-cell-static"
       onContextMenu={(e) => {
         if (onContextMenu(e) || readOnly()) return
-        onActivate({ x: e.clientX, y: e.clientY })
+        onActivate({ kind: 'point', x: e.clientX, y: e.clientY })
       }}
       onPointerOver={onPointerOver}
       onPointerOut={onPointerOut}
@@ -366,7 +373,7 @@ function StaticCellImpl({
         if (go) return go()
         if (readOnly()) return
         if (e.detail === 1 && window.getSelection()?.isCollapsed === false) return
-        onActivate({ x: e.clientX, y: e.clientY })
+        onActivate({ kind: 'point', x: e.clientX, y: e.clientY })
       }}
       onMouseUp={(e) => {
         // The page's document and the cell's are two documents, so only the half of a crossing sweep that reached this cell can act.
@@ -378,8 +385,13 @@ function StaticCellImpl({
         if (!wrap || wrap.contains(anchor)) return
         const above =
           (wrap.compareDocumentPosition(anchor) & Node.DOCUMENT_POSITION_PRECEDING) !== 0
-        const coords = { x: e.clientX, y: e.clientY }
-        queueMicrotask(() => onActivate(coords, above ? 'start' : 'end'))
+        const at: Seat = {
+          kind: 'point',
+          x: e.clientX,
+          y: e.clientY,
+          sweep: above ? 'start' : 'end',
+        }
+        queueMicrotask(() => onActivate(at))
       }}
       onMouseDown={(e) => {
         // Claiming a right press here is what stops the browser selecting the word under the pointer before the menu opens.
@@ -460,7 +472,7 @@ function menuTarget(
   api: ConnectionsApi,
   host: EditorHost,
   onCommit: (text: string) => void,
-  onSelect: (range: [number, number]) => void,
+  onActivate: (seat: Seat) => void,
 ): ConnMenuTarget | null {
   return tokenMenuTarget(tk, tokenTarget(api, text, tk), {
     wiki: (action) => {
@@ -468,13 +480,16 @@ function menuTarget(
       if (now?.tk.kind !== 'wikiLink') return
       const { pipeAt, select } = wikiAuthorTarget(now.text, now.tk, action)
       if (pipeAt !== undefined) onCommit(`${now.text.slice(0, pipeAt)}|${now.text.slice(pipeAt)}`)
-      onSelect(select)
+      onActivate({ kind: 'select', range: select })
     },
     url: (action) => {
       const now = still()
       if (!now) return
       if (action === 'rename' || action === 'editLink')
-        return onSelect(action === 'rename' ? now.tk.contentRange : linkAddress(now.tk))
+        return onActivate({
+          kind: 'select',
+          range: action === 'rename' ? now.tk.contentRange : linkAddress(now.tk),
+        })
       const edit = linkActionText(now.text, now.tk, action, host.linkTitles)
       if (!edit) return
       onCommit(now.text.slice(0, now.tk.range[0]) + edit.insert + now.text.slice(now.tk.range[1]))
