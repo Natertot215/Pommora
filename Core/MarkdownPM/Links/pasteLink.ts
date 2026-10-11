@@ -79,7 +79,8 @@ export function pasteEdit(
   const target = clipboardTarget(text, how)
   if (!target) return null
   const title = target.kind === 'url' ? opts.title(target.url) : undefined
-  const within = how === 'plain' || how === 'inverse' ? null : linkContainerAt(scan, sel)
+  const within = how === 'plain' ? null : linkContainerAt(scan, sel)
+  if (how === 'inverse' && within) return null
   if (within) {
     const syntax =
       how === 'markdown'
