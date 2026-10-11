@@ -49,7 +49,6 @@ import './table-view.css'
 import type { GhostAnchor } from '@pommora/uix/Interactions/ghostCreate'
 import { useCellSweep } from './cellSweep'
 import { LineGroup, LineZone, useLineRow } from '@pommora/uix/Interactions/drag'
-import { openWebLink } from '../../Web/openWebLink'
 import { showConnectionMenu } from '../../Interface/Menus/connectionMenuActions'
 import { valueMenuTarget } from '../../Properties/Cells/valueTarget'
 import type { LinkAction } from '../../Actions/connectionMenu'
@@ -151,7 +150,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       edit: editAs('editor'),
       popover: editAs('popover'),
       rename: editAs('popover'),
-      open: ({ url }) => openWebLink(url),
       hide: null,
     })
   }

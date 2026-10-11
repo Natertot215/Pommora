@@ -58,14 +58,10 @@ describe('valueClickIntent', () => {
     })
   })
 
-  it('a valid address opens, an empty or malformed link edits, and a page link leaves the click to its text', () => {
-    expect(valueClickIntent('link', { kind: 'link', value: 'https://a.com' })).toEqual({
-      kind: 'open',
-      url: 'https://a.com',
-    })
+  it('a link value edits, whatever it holds, since its text follows on its own', () => {
+    for (const value of ['https://a.com', '[[Alpha]]', 'TBD'])
+      expect(valueClickIntent('link', { kind: 'link', value })).toEqual({ kind: 'edit' })
     expect(valueClickIntent('link', { kind: 'null' })).toEqual({ kind: 'edit' })
-    expect(valueClickIntent('link', { kind: 'link', value: '[[Alpha]]' })).toBeNull()
-    expect(valueClickIntent('link', { kind: 'link', value: 'TBD' })).toEqual({ kind: 'edit' })
   })
 })
 
@@ -90,7 +86,6 @@ describe('runValueIntent', () => {
     edit,
     popover: null,
     rename: null,
-    open: null,
     hide: null,
   })
   it('runs the handler and reports it ran', () => {

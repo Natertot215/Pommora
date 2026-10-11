@@ -61,6 +61,32 @@ describe('a Text value draws against the page that holds it', () => {
     expect(open).toHaveBeenCalledWith(holder, 'Setup', false)
   })
 
+  it('a click on a link that follows nothing is left to the value', async () => {
+    useSession.setState({ tree: makeTree() })
+    const dup = {
+      ...conn,
+      ...buildPageIndex([holder, { ...holder, id: 'h2', path: 'Y/Holder.md' }]),
+    }
+    const bubbled = vi.fn()
+    host = document.createElement('div')
+    document.body.appendChild(host)
+    root = createRoot(host)
+    await act(async () =>
+      root?.render(
+        createElement(
+          'div',
+          { onClick: bubbled },
+          createElement(TextCell, { text: '[[Holder]]', connections: () => dup }),
+        ),
+      ),
+    )
+    const link = host.querySelector('.md-connection-ambiguous') as HTMLElement
+    await act(async () => {
+      link.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 }))
+    })
+    expect(bubbled).toHaveBeenCalledOnce()
+  })
+
   it('redraws when its holder’s headings change in the session', async () => {
     const el = await mount()
     expect(el.querySelector('.md-section-run')).not.toBeNull()

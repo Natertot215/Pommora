@@ -14,7 +14,6 @@ import {
   readLinkText,
   retarget,
   serializeLink,
-  urlClickTarget,
 } from './linkValue'
 
 const page = (title: string): ConnResolution => ({
@@ -242,8 +241,7 @@ describe('internal links', () => {
       expect(linkDisplayText('[[Meeting Notes]]', display)).toBe('Meeting Notes')
     expect(linkDisplayText('[[Meeting Notes|Today]]', 'link-short')).toBe('Today')
   })
-  it('has no address to open, and edits as itself', () => {
-    expect(urlClickTarget('[[Meeting Notes]]')).toBeNull()
+  it('edits as itself', () => {
     expect(linkEditText('[[Meeting Notes|Today]]')).toBe('[[Meeting Notes]]')
   })
   it('renames by setting the connection’s alias', () => {
