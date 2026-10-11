@@ -58,7 +58,7 @@ export function pasteAsRows(
   const embed = embedSeat && embeddableTarget(target)
   const rows = page
     ? PAGE_ROWS.filter((r) => r.form !== 'connection' || connectionSpells(target))
-    : URL_ROWS
+    : URL_ROWS.filter((r) => r.form !== 'link-title' || isHttpLink(target.url))
   const embedRow = page ? PAGE_EMBED_ROW : URL_EMBED_ROW
   return [...footnote, ...rows, ...(embed ? [embedRow] : [])]
 }

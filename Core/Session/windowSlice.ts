@@ -18,6 +18,7 @@ import { clearWindowCache, dropWindowCache } from '../Interface/Windows/windowCa
 import { stashWindowMorph } from '../Interface/Windows/windowMorph'
 import type { SessionState, Slice } from './sessionState'
 import { scheduleWindowsSave } from './saveScheduler'
+import { normalizeLinkUrl } from '../Paths/urlPath'
 
 export interface WindowSlice {
   windowSlot: WindowState | null
@@ -244,7 +245,7 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
     },
 
     // Monotonic across closes: living outside the summon object, a re-summon inside the window's exit presence still reads as a new event.
-    openBrowser: (url) => set({ browserSummon: { url, seq: ++browserSeq } }),
+    openBrowser: (url) => set({ browserSummon: { url: normalizeLinkUrl(url), seq: ++browserSeq } }),
     closeBrowser: () => set({ browserSummon: null }),
 
     closeSettings: () => set({ settingsOpen: false }),
