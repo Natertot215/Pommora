@@ -97,6 +97,27 @@ const atListEnd = (view: EditorView): boolean => {
   return true
 }
 
+export type Seat =
+  | { kind: 'point'; x: number; y: number; sweep?: 'start' | 'end' }
+  | { kind: 'select'; range: [number, number] }
+
+export function seatSelection(
+  seat: Seat | null,
+  end: number,
+  posAt: (p: { x: number; y: number }) => number | null,
+): { anchor: number; head: number } {
+  if (!seat) return { anchor: end, head: end }
+  switch (seat.kind) {
+    case 'select':
+      return { anchor: Math.min(seat.range[0], end), head: Math.min(seat.range[1], end) }
+    case 'point': {
+      const head = posAt(seat) ?? end
+      if (!seat.sweep) return { anchor: head, head }
+      return { anchor: seat.sweep === 'start' ? 0 : end, head }
+    }
+  }
+}
+
 export function CellEditor({
   host,
   initial,
@@ -105,9 +126,7 @@ export function CellEditor({
   onTablePaste,
   onUndo,
   onRedo,
-  caretCoords,
-  initialSelect,
-  sweepFrom,
+  seat,
   ordinalOf,
   onClose,
 }: {
@@ -118,9 +137,7 @@ export function CellEditor({
   onTablePaste: (payload: TablePayload) => void
   onUndo: () => void
   onRedo: () => void
-  caretCoords: { x: number; y: number } | null
-  initialSelect: [number, number] | null
-  sweepFrom: 'start' | 'end' | null
+  seat: Seat | null
   ordinalOf: (label: string) => number | null
   onClose: (pending: readonly PendingTitle[]) => void
 }): React.JSX.Element {
@@ -241,25 +258,16 @@ export function CellEditor({
       }),
     })
     viewRef.current = view
-    // posAtCoords can throw before the view has measured.
     view.focus()
-    const end = view.state.doc.length
-    let pos: number | null = null
-    if (!initialSelect && caretCoords) {
+    const posAt = (p: { x: number; y: number }): number | null => {
+      // posAtCoords can throw before the view has measured.
       try {
-        pos = view.posAtCoords(caretCoords)
+        return view.posAtCoords(p)
       } catch {
-        pos = null
+        return null
       }
     }
-    const head = pos ?? end
-    view.dispatch({
-      selection: initialSelect
-        ? { anchor: Math.min(initialSelect[0], end), head: Math.min(initialSelect[1], end) }
-        : sweepFrom
-          ? { anchor: sweepFrom === 'start' ? 0 : end, head }
-          : { anchor: head },
-    })
+    view.dispatch({ selection: seatSelection(seat, view.state.doc.length, posAt) })
     // The press that promoted this cell never reached CM, so the seat its own pointer filter would have given lands here.
     seatPastMarkerNow(view)
     return () => {

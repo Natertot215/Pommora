@@ -8,7 +8,7 @@ import { cx } from '@pommora/uix/Utilities/cx'
 import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
 import type { Align, TableModel } from '../Engine/Tables/model'
 import type { TableMenuContext } from './tableMenu'
-import { CellEditor } from './CellEditor'
+import { CellEditor, type Seat } from './CellEditor'
 import { forwardTitles } from '../Links/pendingTitle'
 import { type CellPage, StaticCell } from './cellStatic'
 import type { HeadingLinkStyle } from '../../Settings/personalization'
@@ -154,9 +154,7 @@ export function MarkdownTable({
   const [drag, setDrag] = useState<Drag | null>(null)
   const [resize, setResize] = useState<Resize | null>(null)
   const [active, setActive] = useState<{ row: number; col: number } | null>(null)
-  const caretCoords = useRef<{ x: number; y: number } | null>(null)
-  const initialSelect = useRef<[number, number] | null>(null)
-  const sweepFrom = useRef<'start' | 'end' | null>(null)
+  const seat = useRef<Seat | null>(null)
 
   const [sel, setSel] = useState<{ a: GridPos; h: GridPos } | null>(null)
   const [sweeping, setSweeping] = useState(false)
@@ -421,9 +419,7 @@ export function MarkdownTable({
       onExit(target)
       return
     }
-    caretCoords.current = null
-    initialSelect.current = null
-    sweepFrom.current = null
+    seat.current = null
     setActive({ row: target.row, col: target.col })
   }
 
@@ -440,9 +436,7 @@ export function MarkdownTable({
           host={host}
           initial={display}
           ordinalOf={around.ordinalOf}
-          caretCoords={caretCoords.current}
-          initialSelect={initialSelect.current}
-          sweepFrom={sweepFrom.current}
+          seat={seat.current}
           onCommit={(t) => {
             setAddsHidden(true)
             onCellCommit(row, col, t)
@@ -473,21 +467,12 @@ export function MarkdownTable({
         around={around}
         readOnly={readOnly}
         linkStyle={linkStyle}
-        onActivate={(coords, sweep) => {
+        onActivate={(at) => {
           host.glance?.close()
-          caretCoords.current = coords
-          initialSelect.current = null
-          sweepFrom.current = sweep ?? null
+          seat.current = at
           setActive({ row, col })
         }}
         onCommit={commitResting}
-        onSelect={(range) => {
-          host.glance?.close()
-          caretCoords.current = null
-          initialSelect.current = range
-          sweepFrom.current = null
-          setActive({ row, col })
-        }}
       />
     )
   }
