@@ -32,6 +32,17 @@ describe('the picker’s query as editor state', () => {
     expect(typed.update({ selection: { anchor: 5 } }).state.field(field).query).toBe(q)
   })
 
+  it('keeps its query object as the caret moves within the link', () => {
+    const { field, state } = stateOf('[[Alpha]] x', 0)
+    let moved = state.update({ selection: { anchor: 4 } }).state
+    const q = moved.field(field).query
+    expect(q).toMatchObject({ query: 'Alpha' })
+    for (const anchor of [5, 6, 5]) {
+      moved = moved.update({ selection: { anchor } }).state
+      expect(moved.field(field).query).toBe(q)
+    }
+  })
+
   it('stays dismissed under the query it closed on until the query changes', () => {
     const { field, state } = stateOf('[[Pro]] x', 4)
     const opened = state.update({ selection: { anchor: 5 } }).state
@@ -68,28 +79,65 @@ describe('the link the picker opened on', () => {
   it('keeps the text it first read while the query continues', () => {
     const { field, state } = stateOf('[x](', 4)
     const opened = typed(state, 4, 'A')
-    expect(opened.field(field).origin).toBe('[x](A)')
-    expect(typed(opened, 5, 'l').field(field).origin).toBe('[x](A)')
+    expect(opened.field(field).origin?.text).toBe('[x](A)')
+    expect(typed(opened, 5, 'l').field(field).origin?.text).toBe('[x](A)')
   })
 
   it('reads a closed link the caret is placed in, and keeps it through a retype', () => {
     const { field, state } = stateOf('[Mine](Old) x', 0)
     const placed = state.update({ selection: { anchor: 10 } }).state
-    expect(placed.field(field).origin).toBe('[Mine](Old)')
+    expect(placed.field(field).origin?.text).toBe('[Mine](Old)')
     const retyped = placed.update({
       changes: { from: 7, to: 10, insert: 'Gam' },
       selection: { anchor: 10 },
       userEvent: 'input.type',
     }).state
     expect(retyped.field(field).query).toMatchObject({ query: 'Gam' })
-    expect(retyped.field(field).origin).toBe('[Mine](Old)')
+    expect(retyped.field(field).origin?.text).toBe('[Mine](Old)')
   })
 
   it('a query at another link replaces it', () => {
     const { field, state } = stateOf('[[Old|Mine]] [[New]]', 4)
     const first = state.update({ selection: { anchor: 3 } }).state
-    expect(first.field(field).origin).toBe('[[Old|Mine]]')
-    expect(first.update({ selection: { anchor: 16 } }).state.field(field).origin).toBe('[[New]]')
+    expect(first.field(field).origin?.text).toBe('[[Old|Mine]]')
+    expect(first.update({ selection: { anchor: 16 } }).state.field(field).origin?.text).toBe(
+      '[[New]]',
+    )
+  })
+
+  it('a heading slot opened and backed out of is the same link', () => {
+    const { field, state } = stateOf('[x]()', 0)
+    const placed = state.update({ selection: { anchor: 4 } }).state
+    expect(placed.field(field).origin?.text).toBe('[x]()')
+    const sliding = placed.update({
+      changes: { from: 4, insert: 'Alpha#' },
+      selection: { anchor: 10 },
+      userEvent: 'input',
+    }).state
+    expect(sliding.field(field).query).toMatchObject({ form: 'fragment' })
+    const back = sliding.update({
+      changes: { from: 9, to: 10 },
+      selection: { anchor: 9 },
+      userEvent: 'delete',
+    }).state
+    expect(back.field(field).query).toMatchObject({ form: 'target', query: 'Alpha' })
+    expect(back.field(field).origin?.text).toBe('[x]()')
+  })
+
+  it('keeps the link through a selection inside it and the text typed over that, until the caret leaves', () => {
+    const { field, state } = stateOf('[[Old|Mine]] x', 0)
+    const placed = state.update({ selection: { anchor: 4 } }).state
+    const selected = placed.update({ selection: { anchor: 2, head: 5 } }).state
+    expect(selected.field(field).query).toBeNull()
+    const retyped = selected.update({
+      changes: { from: 2, to: 5, insert: 'G' },
+      selection: { anchor: 3 },
+      userEvent: 'input.type',
+    }).state
+    expect(retyped.field(field).query).toMatchObject({ query: 'G' })
+    expect(retyped.field(field).origin?.text).toBe('[[Old|Mine]]')
+    const left = retyped.update({ selection: { anchor: retyped.doc.length } }).state
+    expect(left.field(field).origin).toBeNull()
   })
 })
 
@@ -107,6 +155,19 @@ describe('the § arm', () => {
     expect(
       shifted.update({ selection: { anchor: shifted.doc.length } }).state.field(field).armed,
     ).toBeNull()
+  })
+
+  it('a deleted § disarms, so the text typed after it opens nothing', () => {
+    const { field, state } = stateOf('see ', 4, automatic)
+    const armed = type(state, { changes: { from: 4, insert: '§' }, selection: { anchor: 5 } })
+    const deleted = armed.update({
+      changes: { from: 4, to: 5 },
+      selection: { anchor: 4 },
+      userEvent: 'delete.backward',
+    }).state
+    const after = type(deleted, { changes: { from: 4, insert: 'x' }, selection: { anchor: 5 } })
+    expect(after.field(field).armed).toBeNull()
+    expect(after.field(field).query).toBeNull()
   })
 
   it('a ## converted to § arms the heading list', () => {

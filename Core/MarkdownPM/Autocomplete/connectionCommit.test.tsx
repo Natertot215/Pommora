@@ -189,12 +189,13 @@ describe('the picker stands down when it has nothing to add', () => {
       view.focus()
       view.dispatch({ selection: { anchor: 4 } })
     })
-    const settled = measure.mock.calls.length
+    const ownReads = () => measure.mock.calls.filter((args) => args.length === 1).length
+    const settled = ownReads()
     for (const anchor of [5, 6, 5])
       await act(async () => {
         view.dispatch({ selection: { anchor } })
       })
-    expect(measure.mock.calls.length).toBe(settled)
+    expect(ownReads()).toBe(settled)
   })
 
   it('opens again where the caret returns after a blur', async () => {
@@ -350,16 +351,18 @@ describe('a pick retargets the link the picker opened on', () => {
   it.each([
     ['[Mine](Old) x', 7, 10, 'Gam', true, '[Gamma](Gamma) x'],
     ['[Mine](Old) x', 7, 10, 'Gam', false, '[Mine](Gamma) x'],
-    ['[[Old|Mine]] x', 2, 5, 'Gam', true, '[[Gamma]] x'],
+    ['[[Old|Mine]] x', 2, 5, 'Gam', true, '[[Gamma|]] x'],
     ['[[Old|Mine]] x', 2, 5, 'Gam', false, '[[Gamma|Mine]] x'],
     ['[[Old|Mine]] x', 2, 5, 'Ol', true, '[[Old|Mine]] x'],
     ['[[Nope|Mine]] x', 2, 6, 'Gam', true, '[[Gamma|Mine]] x'],
-  ] as const)('%s, %i to %i retyped as %s, dropping titles: %s, writes %s', async (...row) => {
+  ] as const)('%s, %i to %i selected and retyped as %s, dropping titles: %s, writes %s', async (...row) => {
     const [body, from, to, insert, removeTitleOnLinkChange, written] = row
+    seedHost({ aliases: { pOld: ['Mine'], pGamma: ['Gee'] } })
     const view = await mounted(body, { removeTitleOnLinkChange })
-    await act(async () => {
-      view.dispatch({ selection: { anchor: to } })
-    })
+    for (const selection of [{ anchor: to }, { anchor: from, head: to }])
+      await act(async () => {
+        view.dispatch({ selection })
+      })
     await act(async () => {
       view.dispatch({
         changes: { from, to, insert },

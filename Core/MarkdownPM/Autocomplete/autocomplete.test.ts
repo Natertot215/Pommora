@@ -169,6 +169,22 @@ describe('an unclosed link reads as the link it would be once closed', () => {
     expect(edit.anchor).toBe('[[Page#Heading]]'.length)
   })
 
+  it('a heading pick that opens the alias slot writes the closer behind it', () => {
+    const doc = '[[Page#He'
+    const edit = commitEdit(autocompleteQuery(doc, 9)!, 'Heading', { ...KEEP, openAlias: true })
+    expect(landed(doc, edit)).toBe('[[Page#Heading|]]')
+    expect(edit.anchor).toBe('[[Page#Heading|'.length)
+  })
+
+  it('a target pick that opens the heading slot writes the ) behind it', () => {
+    const doc = '[label](Al'
+    const edit = commitEdit(autocompleteQuery(doc, 10)!, 'Alpha', { ...KEEP, openHeading: true })
+    const text = landed(doc, edit)
+    expect(text).toBe('[label](Alpha#)')
+    expect(text.slice(edit.anchor)).toBe(')')
+    expect(autocompleteQuery(text, edit.anchor)?.form).toBe('fragment')
+  })
+
   it('a target pick in an unclosed destination writes the )', () => {
     const doc = '[label](Pa'
     const edit = commitEdit(autocompleteQuery(doc, 10)!, 'Page', KEEP)
@@ -300,6 +316,11 @@ describe('a pick retargets under Remove Title On Link Change', () => {
   it('re-picking the same page keeps the alias either way', () => {
     expect(pick('[[Old|Mine]]', 'Old', 'Old', false).text).toBe('[[Old|Mine]] x')
     expect(pick('[[Old|Mine]]', 'Old', 'Old', true).text).toBe('[[Old|Mine]] x')
+  })
+
+  it('re-picking the page of a link that named a heading drops a markdown label as it drops an alias', () => {
+    expect(pick('[Mine](Old#H)', 'Old', 'Old', false).text).toBe('[Old](Old) x')
+    expect(pick('[[Old#H|Mine]]', 'Old', 'Old', false).text).toBe('[[Old]] x')
   })
 
   it('a markdown label takes the new title with the setting on, and rests past the link', () => {

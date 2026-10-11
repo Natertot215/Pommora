@@ -1,5 +1,5 @@
 import { expressibleInLink } from '../../Connections/connections'
-import { type LinkTarget, retarget } from '../../Connections/linkValue'
+import { type LinkTarget, retarget, sameTarget } from '../../Connections/linkValue'
 import { normalizeTitle } from '../../Paths/caseFold'
 import {
   decodeLinkTarget,
@@ -218,6 +218,7 @@ export function commitEdit(
     openHeading?: boolean
   },
 ): CommitEdit {
+  const closer = ac.closed ? '' : closerOf(ac.form)
   // Opening the heading slot writes an empty fragment and slides the pane in, rather than finishing the link.
   if (ac.form === 'link' && opts.openHeading) {
     const text = `[[${value}#]]`
@@ -238,14 +239,12 @@ export function commitEdit(
   }
   // The heading span is the only text the query owns, so the slot opens by appending the pipe to the heading.
   if (ac.form === 'heading' && opts.openAlias) {
-    const text = `${value}|`
     return {
-      changes: [{ from: ac.from, to: ac.to, insert: text }],
-      anchor: ac.from + text.length,
+      changes: [{ from: ac.from, to: ac.to, insert: `${value}|${closer}` }],
+      anchor: ac.from + value.length + 1,
       opensAlias: true,
     }
   }
-  const closer = ac.closed ? '' : closerOf(ac.form)
   const container = opts.container ?? null
   if (ac.form === 'link') {
     const { text } = retarget(
@@ -272,13 +271,13 @@ export function commitEdit(
   const dest = {
     from: ac.from,
     to: ac.to,
-    insert: opts.openHeading ? `${encoded}#` : encoded + closer,
+    insert: encoded + (opts.openHeading ? '#' : '') + closer,
   }
   const retitles =
     ac.form === 'target' &&
     !opts.keepTitle &&
     container !== null &&
-    normalizeTitle(container.kind === 'page' ? container.title : '') !== normalizeTitle(value)
+    !sameTarget(container, { kind: 'page', syntax: 'markdown', title: value })
   const fill = ac.label && (ac.label.from === ac.label.to || retitles) ? ac.label : null
   const label = fill ? escapeAlias(value) : ''
   return {
