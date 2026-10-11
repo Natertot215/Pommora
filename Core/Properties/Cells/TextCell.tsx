@@ -9,7 +9,12 @@ import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'
 import { resolveFollow } from '../../MarkdownPM/Links/linkClicks'
 import { heldBy } from '../../MarkdownPM/api'
 import { lineOffsetsOf } from '../../MarkdownPM/Engine/markdownCode'
-import { type CellPage, linkGestures, renderCellContent } from '../../MarkdownPM/Tables/cellStatic'
+import {
+  type CellPage,
+  linkGestures,
+  readsOwnHeadings,
+  renderCellContent,
+} from '../../MarkdownPM/Tables/cellStatic'
 import { useSession, useSetting } from '../../Session/store'
 import { openWebLink } from '../../Web/openWebLink'
 
@@ -31,7 +36,8 @@ export function TextCell({
   const own = heldBy(holder)
   const headingLinkStyle = useSetting('headingLinkStyle')
   const automatic = useSetting('inPageHeadingResolution') === 'automatic'
-  const headings = useSession((s) => (holder ? s.headings[holder.path] : undefined))
+  const ownPath = holder && readsOwnHeadings(text) ? holder.path : null
+  const headings = useSession((s) => (ownPath ? s.headings[ownPath] : undefined))
   const around: CellPage | undefined = headings && {
     ordinalOf: () => null,
     keys: headings.keys,

@@ -15,7 +15,6 @@ import { stabilize } from '../Nexus/treeStabilize'
 import { applyPersonalization } from '../Settings/applyPersonalization'
 import { pagesByIdOf, reconcileIndexOf } from '../Nexus/treeIndex'
 import { headingKeys, type PageHeadings } from '../Connections/pageIndex'
-import type { PageHeading } from '../Platform/stores'
 import { flushAllTileDocs, tileBodyWriter } from '../Tiles/tileDocStore'
 import {
   cancelAllSaves,
@@ -30,11 +29,6 @@ import { dialer } from '../Platform/dialer'
 import { inTurns } from '../Platform/inTurns'
 import { withOwnSettings } from './configSlice'
 import { emitter } from '@pommora/uix/Utilities/subscribable'
-
-const sameOutline = (a: PageHeadings | undefined, b: readonly PageHeading[]): boolean =>
-  a !== undefined &&
-  a.outline.length === b.length &&
-  a.outline.every((h, i) => h.text === b[i].text && h.level === b[i].level)
 
 export function movedHeadings(
   headings: Record<string, PageHeadings>,
@@ -176,18 +170,13 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       headingsInTurn(async () => {
         const res = await dialer().ask('index:headings', paths)
         if (!res.ok) return
-        const held = get().headings
         const read = Object.fromEntries(
           Object.entries(res.value).map(([path, outline]) => [
             path,
-            sameOutline(held[path], outline)
-              ? held[path]
-              : { keys: headingKeys(outline), texts: outline.map((h) => h.text), outline },
+            { keys: headingKeys(outline), texts: outline.map((h) => h.text), outline },
           ]),
         )
-        const unchanged = Object.entries(read).every(([path, entry]) => held[path] === entry)
-        if (unchanged && (paths || Object.keys(held).length === Object.keys(read).length)) return
-        set((s) => ({ headings: paths ? { ...s.headings, ...read } : read }))
+        set((s) => ({ headings: stabilize(paths ? { ...s.headings, ...read } : read, s.headings) }))
       }),
 
     load: async () => {
