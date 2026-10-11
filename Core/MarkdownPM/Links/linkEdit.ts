@@ -46,10 +46,9 @@ export function linkEdit(
   switch (action) {
     case 'rename': {
       if (tk.kind === 'link' || aliasedToken(tk)) return { kind: 'select', range: [cs, ce] }
-      const afterTitle = (tk.heading ?? tk.resolveRange)[1]
-      if (text[afterTitle] === '|')
-        return { kind: 'select', range: [afterTitle + 1, afterTitle + 1] }
-      return { kind: 'write', from: afterTitle, to: afterTitle, text: '|', select: afterTitle + 1 }
+      const slot = tk.range[1] - 2
+      if (text[slot - 1] === '|') return { kind: 'select', range: [slot, slot] }
+      return { kind: 'write', from: slot, to: slot, text: '|', select: slot + 1 }
     }
     case 'editLink':
       return { kind: 'select', range: tk.kind === 'link' ? linkAddress(tk) : tk.resolveRange }
