@@ -87,7 +87,8 @@
 }
 
 .banner-empty.is-surface {
-  padding-right: 0;
+  margin-inline: var(--sidebar-clearance) var(--side-pane-clearance);
+  padding-inline: var(--content-edge);
 }
 
 .window .banner-empty {
