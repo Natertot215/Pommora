@@ -15,7 +15,7 @@ import { customSelection } from './selection'
 import { linkPointer } from './Links/linkClicks'
 import { citationPointer } from './Citations/citationPointer'
 import { pasteLink } from './Links/pasteLink'
-import { pendingTitle } from './Links/pendingTitle'
+import { pendingTitles } from './Links/pendingTitle'
 import { aliasOnLeave } from './Links/linkEdit'
 import { type EditorHost, editorHost } from './api'
 import { editorKeymap } from './Input/formatKeymap'
@@ -47,7 +47,7 @@ export const inlineSurface = (scope: MarkdownScope): Extension => [
   linkPointer(),
   citationPointer(),
   pasteLink,
-  pendingTitle,
+  pendingTitles,
   aliasOnLeave(scope),
   linkRest,
   linkTyping,

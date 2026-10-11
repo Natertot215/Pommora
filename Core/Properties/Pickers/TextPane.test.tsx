@@ -228,16 +228,16 @@ describe('TextPane', () => {
     expect(doc()).toBe('')
   })
 
-  it('closing with a title pending commits the titled value once it lands', async () => {
+  it('closing with a title pending commits the short form and nothing once it lands', async () => {
     const url = 'https://pane.example.com'
     const short = `[pane.example.com](${url})`
-    render(text(short))
-    act(() => writeLinkAt(view(), 0, short.length, { text: short, awaits: url }, 'input.paste'))
+    render(null)
+    act(() => writeLinkAt(view(), 0, 0, { text: short, awaits: url }, 'input.paste'))
     press('Escape')
     await exited()
-    expect(onCommit).not.toHaveBeenCalled()
+    expect(onCommit).toHaveBeenCalledExactlyOnceWith(text(short))
     await act(async () => answerTitle({ ok: true, value: { title: 'Pane' } }))
-    expect(onCommit).toHaveBeenCalledExactlyOnceWith(text(`[Pane](${url})`))
+    expect(onCommit).toHaveBeenCalledOnce()
   })
 
   it('a blank pane over an empty value commits nothing', async () => {

@@ -86,6 +86,15 @@ describe('the pending-title anchor', () => {
     expect(s.sliceDoc(second.from, second.to)).toBe(LINK)
   })
 
+  it('refuses an announced entry whose range does not read as its text', () => {
+    const state = EditorState.create({ doc: `pad ${LINK}`, extensions: [pendingTitles] })
+    const moved = state.update({
+      effects: awaitTitle.of({ from: 0, to: LINK.length, url: URL, text: LINK }),
+    }).state
+    expect(anchors(moved)).toHaveLength(0)
+    expect(anchors(armed(`pad ${LINK}`, 4))).toHaveLength(1)
+  })
+
   it('drops only the edited one when two are armed', () => {
     const after = armedTwice().update({ changes: { from: 1, to: 12, insert: 'Mine' } }).state
     expect(anchors(after)).toHaveLength(1)
@@ -139,7 +148,7 @@ describe('writeLinkAt', () => {
     expect(view.state.field(pendingTitles)).toHaveLength(0)
   })
 
-  it('a table cell closing with a title pending hands it to the resting cell', async () => {
+  async function closeCellPending(): Promise<EditorView> {
     const view = await mountEditor({ initialBody: '| A |\n| --- |\n| x |' })
     let table = editorContainer().querySelector('table.mdpm-tbl')
     for (let i = 0; !table && i < 50; i++) {
@@ -161,7 +170,23 @@ describe('writeLinkAt', () => {
       document.body.dispatchEvent(new MouseEvent('pointerdown', at))
     })
     expect(editorContainer().querySelectorAll('tbody .cm-editor')).toHaveLength(0)
+    return view
+  }
+
+  it('a table cell closing with a title pending hands it to the resting cell', async () => {
+    const view = await closeCellPending()
     await settleTitle(URL, 'Example Domain')
     expect(view.state.doc.toString()).toBe(`| A |\n| --- |\n| ${TITLED} |`)
+  })
+
+  it('a closed cell whose table is gone writes its title nowhere', async () => {
+    const view = await closeCellPending()
+    const replaced = `| B |\n| --- |\n| y |\n\n| A |\n| --- |\n| ${LINK} |`
+    for (const body of ['gone', replaced])
+      await act(async () => {
+        view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: body } })
+      })
+    await settleTitle(URL, 'Example Domain')
+    expect(view.state.doc.toString()).toBe(replaced)
   })
 })
