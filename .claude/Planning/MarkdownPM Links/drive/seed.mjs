@@ -22,6 +22,20 @@ const pageId = () => {
 const SET = join('Collection A', 'Set Alpha')
 const SET_B = join('Collection A', 'Set Beta')
 
+// The Link property every scenario reads (`Fixture Link`, no display set), and three the Phase 8 hand-check adds, one per Format.
+export const LINK_PROPS = {
+  fixture: 'prop_01M32H2GJE1QEW9CFDWJ4MCQ5K',
+  full: 'prop_01M4M4059B000000000000FXXF',
+  short: 'prop_01M4M4059B00000000000SH0RT',
+  title: 'prop_01M4M4059B00000000000T1T1E',
+}
+const NOTES_PROP = 'prop_01M4M4059AT100T3YMZX7FV57Q'
+const LINK_DEFS = {
+  [LINK_PROPS.full]: { id: LINK_PROPS.full, name: 'Drive Full', type: 'link', link_display: 'link-full' },
+  [LINK_PROPS.short]: { id: LINK_PROPS.short, name: 'Drive Short', type: 'link', link_display: 'link-short' },
+  [LINK_PROPS.title]: { id: LINK_PROPS.title, name: 'Drive Title', type: 'link', link_display: 'link-title' },
+}
+
 // Titles the scenarios open by name. Every link form the plan touches appears somewhere below.
 export const PAGES = {
   Alpha: { dir: SET, body: `# Alpha\n\n## Setup\n\nThe setup section.\n\n### Notes\n\nNotes under setup.\n\n## Usage\n\nSee [[Beta]] and [Beta](Beta).\n` },
@@ -65,11 +79,48 @@ export const PAGES = {
   Scratch: { dir: SET, body: '# Scratch\n\n' },
   Dup: { dir: SET, body: '# Dup\n\nFirst of two.\n' },
   'Dup (Set Beta)': { dir: SET_B, file: 'Dup.md', body: '# Dup\n\nSecond of two.\n' },
+  // Phase 8's Link value rows: every value form the hand-check names, one page per row, plus one row to commit into.
+  Links: {
+    dir: SET,
+    props: { 'Fixture Link': '"[[Alpha|Mine]]"', 'Drive Full': '"https://example.com"', 'Drive Short': '"https://example.com"', 'Drive Title': '"https://example.com"' },
+    body: '# Links\n\nThe row with an alias and an address in each Format.\n',
+  },
+  Phantom: { dir: SET, props: { 'Fixture Link': '"[[Missing]]"' }, body: '# Phantom\n' },
+  Ambiguous: { dir: SET, props: { 'Fixture Link': '"[[Dup]]"' }, body: '# Ambiguous\n' },
+  Written: { dir: SET, props: { 'Fixture Link': '"[x](Alpha)"' }, body: '# Written\n' },
+  Invalid: { dir: SET, props: { 'Fixture Link': 'TBD' }, body: '# Invalid\n' },
+  Long: { dir: SET, props: { 'Fixture Link': '"[[Alpha|An alias long enough to overflow the column it sits in and show the ellipsis]]"' }, body: '# Long\n' },
+  Commit: { dir: SET, props: { 'Fixture Link': '"[[Alpha]]"' }, body: '# Commit\n\n## Setup\n\nA heading for a held value.\n' },
+  'Card Links': { dir: SET_B, props: { 'Fixture Link': '"[[Alpha#Setup]]"', 'Drive Short': '"https://example.com"' }, body: '# Card Links\n' },
+  'Card Phantom': { dir: SET_B, props: { 'Fixture Link': '"[[Missing]]"' }, body: '# Card Phantom\n' },
 }
 
 function pageFile({ props = {}, body }) {
   const lines = ['---', ...Object.entries(props).map(([k, v]) => `${k}: ${v}`), `ID: ${pageId()}`, '---', '']
   return lines.join('\n') + body
+}
+
+function addLinkDefs(registry) {
+  const json = JSON.parse(readFileSync(registry, 'utf8'))
+  Object.assign(json.defs, LINK_DEFS)
+  json.order = [...json.order.filter((id) => !(id in LINK_DEFS)), ...Object.keys(LINK_DEFS)]
+  writeFileSync(registry, JSON.stringify(json, null, 2))
+}
+
+// A collection validates the properties its pages use, so the added Link properties join Collection A's list.
+function assignProperties(sidecar, ids) {
+  const json = JSON.parse(readFileSync(sidecar, 'utf8'))
+  json.properties = [...(json.properties ?? []).filter((id) => !ids.includes(id)), ...ids]
+  writeFileSync(sidecar, JSON.stringify(json, null, 2))
+}
+
+// Set Beta opens as a Cards view, so the Card parent is driven without a view switch.
+function cardsView(sidecar, ids) {
+  const json = JSON.parse(readFileSync(sidecar, 'utf8'))
+  const cards = { id: 'view_01M4M4059B0000000000CARDS0', name: 'Cards', type: 'cards', property_order: ['_title', ...ids] }
+  json.views = [cards, ...(json.views ?? []).filter((v) => v.id !== cards.id)]
+  json.active_view = cards.id
+  writeFileSync(sidecar, JSON.stringify(json, null, 2))
 }
 
 function showColumns(sidecar, ids) {
@@ -91,7 +142,10 @@ export function seedScratch() {
     mkdirSync(dir, { recursive: true })
     writeFileSync(join(dir, spec.file ?? `${title}.md`), pageFile(spec))
   }
-  showColumns(join(SCRATCH.nexus, SET, '_pageset.json'), ['prop_01M4M4059AT100T3YMZX7FV57Q', 'prop_01M32H2GJE1QEW9CFDWJ4MCQ5K'])
+  addLinkDefs(join(SCRATCH.nexus, '.nexus', 'properties.json'))
+  assignProperties(join(SCRATCH.nexus, 'Collection A', '_pagecollection.json'), [LINK_PROPS.full, LINK_PROPS.short, LINK_PROPS.title])
+  showColumns(join(SCRATCH.nexus, SET, '_pageset.json'), [NOTES_PROP, LINK_PROPS.fixture, LINK_PROPS.full, LINK_PROPS.short, LINK_PROPS.title])
+  cardsView(join(SCRATCH.nexus, SET_B, '_pageset.json'), [LINK_PROPS.fixture, LINK_PROPS.short])
   writeFileSync(join(SCRATCH.userData, 'pommora.json'), JSON.stringify({ lastNexusPath: SCRATCH.nexus, recentNexusPaths: [SCRATCH.nexus] }, null, 2))
   return { nexus: SCRATCH.nexus, userData: SCRATCH.userData, pages: Object.keys(PAGES) }
 }

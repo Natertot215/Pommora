@@ -126,8 +126,8 @@ export async function run(d) {
   // -- the Link value parents: the Table view (B-68) -----------------------------------
   await d.openSet('Collection A', 'Set Alpha')
   await d.settle(500)
-  const valueSel = '.data-row .cell-connection, .data-row .cell-link'
-  m = await d.nativeMenuOn(valueSel, null)
+  const valueSel = '.data-row .cell-text-host [data-link], .data-row .cell-link'
+  m = await d.nativeMenuOn(valueSel, 'Alpha§Setup')
   d.check('Table: a Link value lists Preview, New Tab | Rename, Edit Title | Copy Link, Copy Path | Clear, and no Format or Remove', has(m, 'Rename', 'Edit Title', 'Copy Link', 'Copy Path', 'Clear') && lacks(m, 'Format', 'Remove', 'Remove Link', 'Delete'), { rows: labels(m) })
   const rowCount = await d.count('.data-row:not(.ghost-row)')
   const lastRow = await d.rect('.data-row:not(.ghost-row)', rowCount - 1)
@@ -137,7 +137,7 @@ export async function run(d) {
     await d.mouse('mouseMoved', lastRow.cx, lastRow.cy + lastRow.h * 0.3)
     await d.settle(300)
     await d.armNativeMenu({ pick: null, holdMs: 3000 })
-    await d.contextMenuOn(valueSel, null)
+    await d.contextMenuOn(valueSel, 'Alpha§Setup')
     await d.settle(1800)
     const ghostWhileOpen = await d.count('.ghost-row')
     await d.settle(1500)
@@ -159,14 +159,14 @@ export async function run(d) {
   await d.eval(() => $$('.window-actions-flow button[title="Side Pane"]')[0].click())
   await d.waitFor(() => $$('.window-pane-scroll .value-seat').length > 0, { label: 'the side pane', timeout: 6000 })
   await d.settle(400)
-  const panelSel = '.window-pane-scroll .cell-connection, .window-pane-scroll .cell-link'
+  const panelSel = '.window-pane-scroll .cell-text-host [data-link], .window-pane-scroll .cell-link'
   const seats = await d.count(panelSel)
   if (seats > 0) {
-    m = await d.nativeMenuOn(panelSel, 'Alpha', 'Remove')
+    m = await d.nativeMenuOn(panelSel, 'Alpha§Setup', 'Remove')
     d.check('Panel: a Link value lists Rename, Edit Title, Copy Link, Copy Path, Clear, Remove', has(m, 'Rename', 'Edit Title', 'Copy Link', 'Copy Path', 'Clear', 'Remove'), { rows: labels(m) })
     await d.settle(600)
     const still = await d.eval(() => ({
-      seat: $$('.window-pane-scroll .cell-connection, .window-pane-scroll .cell-link').some((e) => e.textContent === 'Alpha'),
+      seat: $$('.window-pane-scroll .cell-text-host [data-link], .window-pane-scroll .cell-link').some((e) => e.textContent === 'Alpha§Setup'),
       row: $$('.window-pane-scroll *').some((e) => e.childElementCount === 0 && e.textContent?.trim() === 'Fixture Link'),
     }))
     d.check('Panel: Remove clears the value and hides the row', !still.seat && !still.row, still)

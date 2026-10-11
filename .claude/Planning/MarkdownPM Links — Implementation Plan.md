@@ -148,12 +148,12 @@ What a person sees: `[x](Page)` edits like `[[Page]]`; every link reads **Rename
   - [x] Task 7-2 — Paste inside a link retargets
   - [x] Task 7-3 — Rectangle paste and dropped addresses
   - [x] Review Checkpoint
-- [ ] **Phase 8** — Link Values
-  - [ ] Task 8-1 — A Link value renders through the shared stack
-  - [ ] Task 8-2 — Clicks
-  - [ ] Task 8-3 — The commit
-  - [ ] Task 8-4 — Panel Remove, the popover's alias, and the fallback menu
-  - [ ] Review Checkpoint
+- [x] **Phase 8** — Link Values
+  - [x] Task 8-1 — A Link value renders through the shared stack
+  - [x] Task 8-2 — Clicks
+  - [x] Task 8-3 — The commit
+  - [x] Task 8-4 — Panel Remove, the popover's alias, and the fallback menu
+  - [x] Review Checkpoint
 - [ ] **Phase 9** — MarkdownPM Table Cells at Rest
   - [ ] Task 9-1 — Every construct answers at rest
   - [ ] Task 9-2 — Commit at rest
@@ -3648,7 +3648,7 @@ Phase 9's resting Paste row reads `pastedCellText` too.
 
 **VERIFY**
 
-- [ ] `grep -rn "kind: 'open'\|urlClickTarget" Core --include='*.ts' --include='*.tsx'` is empty; `openWebLink` is imported only by `LinkCell.tsx`, `TextCell.tsx`, `WebTile.tsx`, and `editorHost.tsx`.
+- [ ] `grep -rn "kind: 'open'; url\|urlClickTarget" Core --include='*.ts' --include='*.tsx'` is empty; `openWebLink` is imported only by `LinkCell.tsx`, `TextCell.tsx`, `WebTile.tsx`, `editorHost.tsx`, and `useBridgeSubscriptions.ts` (guest popups).
 - [ ] Run the gates; `valueClick.test.ts:61-66` is rewritten.
 - [ ] In `~/Test`: clicking a Link value's padding opens the editor; clicking its text follows; an invalid value's text edits.
 - [ ] Check for unnecessary code or mistakes.
@@ -3743,7 +3743,7 @@ Phase 9's resting Paste row reads `pastedCellText` too.
 
 **VERIFY**
 
-- [ ] `grep -rn "resolveConnection\|linkResolve\|parsePastedLink\|ResolveTitle\|resolveTitle" Core --include='*.ts' --include='*.tsx'` is empty.
+- [ ] `grep -rnw "resolveConnection\|linkResolve\|parsePastedLink\|ResolveTitle\|resolveTitle" Core --include='*.ts' --include='*.tsx'` is empty.
 - [ ] Run the gates; `linkValue.test.ts:241,249,255-262` are rewritten to the rules above.
 - [ ] In `~/Test`: Edit Link on a Link value, type `[[#Setup]]` on a page with a Setup heading: it commits and draws `§Setup`; type `[[Dup]]` with two Dup pages: the field marks invalid; type `example.com`: it commits as `https://example.com`.
 - [ ] Check for unnecessary code or mistakes.
@@ -4784,6 +4784,8 @@ The anchor is pinned by a test for a filled and an unfilled label.
 - **The rectangle ⌘V under Page Title fills by stale coordinates:** the fill waits for the title and then writes to the cell the keydown named, so a row inserted or the cell edited meanwhile receives the link. A guard of its own would be a third copy of capture-and-compare; Phase 9's resting Paste row commits the same single-cell paste through `commitAtRest`, and the rectangle's single-cell case should ride it there.
 - **Paste As ▸ a link format inside a labeled link with Remove Title On Link Change off:** §5.8's "a link format sets the format" and its "the link keeps its own label" both apply, and the label wins today, so Full Link, Short Link, and Page Title all write `[x](url)` there (three rows, one outcome). Needs a ruling; if the format should win, it's one expression at the carve-out site (`keepTitle` false when a display was picked) plus a test. Noted by the Phase 7 adversarial review.
 - **A paste rule the chord leaves open (pre-existing):** a selection running from inside `[[P]]` past its end and pasted over with an address writes the link around the broken span; no ruling covers it and the plan never probed it. Noted by the Phase 7 checkpoint; not acted on.
+- **`sameTarget` compares written titles:** `[[#Setup]]` typed over `[[Holder#Setup|Mine]]` with Remove Title On Link Change on drops the alias, since `''` and `Holder` differ as titles though both name the same heading on the holder; comparing resolved pages would need the resolver inside `retarget`. Rare (retyping the explicit form as the bare one); noted by the Phase 8 correctness review, not acted on.
+- **Two markdown destination shapes the grammar and mdast read apart:** `[x](<Alpha Beta>)` and `[x](Alpha "title")` are a page to `readLinkText` and invalid to the draw, so a Link value holding one draws unresolved while the host readers would rename it as a page. The shared grammar's (Phase 2); noted by the Phase 8 correctness review, not acted on.
 - **A `[[#Heading]]` in a page body gets no link menu:** it resolves and follows, but `linkMenuTarget`'s `self` arm answers null (the plan's own test pins it), while the same link inside a Text value, converted to its holder's page, gets the full menu. §12's "no menu for unresolved links" was reasoned about phantoms; a `self` link is resolved. Noted by the Phase 6 adversarial review; not acted on.
 - **An embedded tile's connections (pre-existing):** `renderTile` seats `connections={connRef.current}` into the nested `PageTile`, and `EmbedTileWidget.eq` ignores connections, so a page created or renamed elsewhere doesn't re-resolve inside an open embed until the tile re-renders. The same shape as the Text pane's snapshot, which Phase 3's checkpoint fixed; this one is outside the plan's tasks and is noted for the same fix.
 
@@ -4821,4 +4823,9 @@ The anchor is pinned by a test for a filled and an unfilled label.
 - **Task 7-3, the rectangle under Page Title:** the AFTER awaits the title and then fills by the coordinates captured at keydown, so a row inserted or a cell edited during the fetch receives the link. A capture-and-compare guard was landed and then taken out again: it would have been a third spelling of the resting cell's `commitAtRest` and the widget menu's re-find, and the single-cell paste at rest is the same operation Phase 9's Paste row commits through `commitAtRest`, which is where one guard belongs (*§Open Items*). The handler keeps its early return for a decoded table payload.
 - **Task 7-1, Plain Text inside a destination:** the destination gate made Paste As ▸ Plain Text write the raw clipboard inside a markdown link's `( )`; the gate skips `plain`, whose write is text and never a link, so the address lands (§5.8). Found at the Phase 7 checkpoint.
 - **Task 7-2, three test expectations:** Paste As ▸ Connection with `[x](P2)` inside `[y](P1)` pins `[[P2|x]]` (the pasted alias wins, as §5.8's table says; the task's test line contradicted it); the `[[P1|a]]` → `[a](P2)` case runs with Remove Title On Link Change off; the `[[Foo|]]` case sets Default Link Format = Short Link.
+- **Task 8-1, the `TextCell` branch:** the AFTER sent a value to `TextCell` on `target.kind === 'page' || 'self'`, but `valueTarget` answers `{ kind: 'invalid' }` for a phantom and `{ kind: 'invalid', ambiguous: true }` for an ambiguous title, so both would have taken the URL half with `href="[[Nope]]"`. A value takes `TextCell` when `readLinkText(raw)` reads a link and the target isn't an address (the alias read the AFTER already makes serves the branch too); an address or non-link text keeps the URL half. The anchor's `preventDefault` stays ahead of the secondary-click return, since the anchor never navigates. `LinkEditContext` isn't exported (one reader).
+- **Task 8-3, a fourth editor mount:** the task counted three inline editors; the page and row menus' Properties ▸ pick mounts the same editor through `ValuePickPresenter` with a holder and no connections, so a page link typed there was refused once the live tree read went. The presenter passes `previewConnections`, as the Panel without a host does; pinned. Found at the Phase 8 checkpoint.
+- **Task 8-1, the address half's click:** the URL anchor armed the glance on pointer over but didn't drop the pending dwell on click, so a glance could bloom over the browser the click opened; it cancels before following, as the shared gesture's `dismiss` does for the page half. Found at the Phase 8 checkpoint.
+- **Task 8-4, the Panel's fallback menu:** the Panel popped `cellMenuModel({ kind: 'link', filled: true })` without `hideable`, so a value naming no page offered no Remove there where the Card's fallback and the Panel's own resolved-link menu do; one field, and the Panel test pins all four rows. Found by the implementer; folded at the checkpoint.
+- **Phase 8 VERIFY lines:** the `openWebLink` importer list omitted `useBridgeSubscriptions.ts` (guest popups, pre-existing), and the 8-3 grep matched the plan's own `linkResolver` as a substring; both lines corrected above. The simplification review's two declines: inlining `LinkEditContext` (a ratified Concepts name) and passing `null` for `own` in `LinkCell` because `valueTarget` has already folded the holder (correct, but a `null` there reads as wrong to a reader who hasn't traced `heldTarget`).
 - **Hand-checks:** driven headlessly by the orchestrator through the drive tool, with the screenshots read, at Nathan's instruction.
