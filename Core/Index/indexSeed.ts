@@ -37,12 +37,11 @@ import { readWatchScope } from '../Settings/settings'
 
 interface PageRead {
   entry: PageIndexEntry
-  outline: string[]
 }
 
 type ReadRow = PageIndexRow & PageRead
 
-const NO_ROWS: PageRead = { entry: { relations: [], headings: [], values: {} }, outline: [] }
+const NO_ROWS: PageRead = { entry: { relations: [], headings: [], values: {} } }
 
 function extractPageIndex(rel: string, content: string): PageRead {
   const { frontmatter: values, admission } = parsePage(content)
@@ -70,14 +69,7 @@ function extractPageIndex(rel: string, content: string): PageRead {
   for (const { target, qualifier } of frontmatterMentions(values, own))
     add('frontmatter', target, qualifier)
   for (const { target, qualifier } of spaceRelations(values)) add('space', target, qualifier)
-  return {
-    entry: {
-      relations: [...tally.values()],
-      headings: headings.map(({ text, level }) => ({ text, level })),
-      values,
-    },
-    outline,
-  }
+  return { entry: { relations: [...tally.values()], headings, values } }
 }
 
 // Every `<Title>` key counts, registered or not — the same latitude page_values gives an unregistered property name, so a Context created later finds its holders.
@@ -149,7 +141,7 @@ export async function indexWrittenPage(
 function reindex(rows: readonly ReadRow[]): HeadingRenameSeen[] {
   const held = readHeadings(rows.map(({ path }) => path)) ?? {}
   upsertPageIndexes(rows)
-  return rows.flatMap(({ path, entry, outline }) => {
+  return rows.flatMap(({ path, entry }) => {
     const before = headingKeys(held[path] ?? [])
     const after = headingKeys(entry.headings)
     if (after.length !== before.length) return []
@@ -161,8 +153,8 @@ function reindex(rows: readonly ReadRow[]): HeadingRenameSeen[] {
       before.indexOf(gone[0]) !== after.indexOf(fresh[0])
     )
       return []
-    const next = outline.find((text) => normalizeTitle(text) === fresh[0])
-    return next ? [{ title: titleFromPath(path), old: gone[0], next }] : []
+    const next = entry.headings.find((h) => normalizeTitle(h.text) === fresh[0])
+    return next ? [{ title: titleFromPath(path), old: gone[0], next: next.text }] : []
   })
 }
 

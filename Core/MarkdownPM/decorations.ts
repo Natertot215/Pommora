@@ -70,7 +70,6 @@ import {
   type MdTarget,
 } from './Links/connectionsApi'
 import type { LinkStatus } from '../Connections/connections'
-import type { PageHeadings } from '../Connections/pageIndex'
 import { editorHost, type EditorSettings, type OwnPage, ownPage, redrawNudge } from './api'
 import { checkMarkSvg, checkboxClass } from '@pommora/uix/Controls/Checkbox'
 import * as btn from '@pommora/uix/Buttons/button-base.css'
@@ -454,13 +453,11 @@ function atomicFor(
 function ownHeadings(
   own: OwnPage | null,
   conn: ConnectionsApi | undefined,
-  read: (doc: Text) => readonly string[],
-  held: (h: PageHeadings) => readonly string[],
-): readonly string[] | undefined {
+): { keys: readonly string[]; texts: readonly string[] } | undefined {
   if (!own) return undefined
-  if (own.kind !== 'held') return read(own.view.state.doc)
-  const h = conn?.headingsOf(own.page.path)
-  return h && held(h)
+  if (own.kind === 'held') return conn?.headingsOf(own.page.path)
+  const doc = own.view.state.doc
+  return { keys: docHeadingKeys(doc), texts: docSectionHeadings(doc) }
 }
 
 const drawsRawHtml = (scope: MarkdownScope, settings: EditorSettings): boolean =>
@@ -558,7 +555,8 @@ function build(view: EditorView, scope: MarkdownScope): Built {
     else ranges.push(Decoration.replace({ widget: widgetFor(it.spec) }).range(it.from, it.to))
   }
   const own = ownPage(view)
-  const ownKeys = ownHeadings(own, conn, docHeadingKeys, (h) => h.keys)
+  const headings = ownHeadings(own, conn)
+  const ownKeys = headings?.keys
   tokens.forEach((tk, i) => {
     if (tk.kind !== 'link') return
     const [open, close] = tk.markerRanges
@@ -669,7 +667,7 @@ function build(view: EditorView, scope: MarkdownScope): Built {
     })
   }
   if (settings.inPageHeadingResolution === 'automatic') {
-    const sectionHeadings = ownHeadings(own, conn, docSectionHeadings, (h) => h.texts) ?? []
+    const sectionHeadings = headings?.texts ?? []
     const sectionMark = Decoration.mark({ class: 'md-connection-resolved md-section-run' })
     for (const { from: a, to: b } of view.visibleRanges)
       for (const run of sectionRunsIn(
