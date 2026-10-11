@@ -16,9 +16,14 @@ export interface Relation {
   count: number
 }
 
+export interface PageHeading {
+  text: string
+  level: number
+}
+
 export interface PageIndexEntry {
   relations: Relation[]
-  headings: string[]
+  headings: PageHeading[]
   values: Record<string, unknown>
 }
 
@@ -54,7 +59,7 @@ export interface ContentIndexStore {
   renamePathPrefixIndex(oldDir: string, newDir: string): void
   queryMentions(normalizedTitle: string): string[]
   queryHeadingMentions(normalizedTitle: string, normalizedHeading: string): string[]
-  readHeadings(paths?: string[]): Record<string, string[]>
+  readHeadings(paths?: string[]): Record<string, PageHeading[]>
   /** Every page holding `key` in any casing. */
   queryKeyHolders(key: string): string[]
   /** Every page whose Context `key`, in any casing, names the Space of the normalized `title`. */

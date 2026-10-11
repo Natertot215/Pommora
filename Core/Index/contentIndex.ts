@@ -5,6 +5,7 @@ import {
   type ContentIndexStore,
   contentIndexStore,
   type IndexedStat,
+  type PageHeading,
   type PageRelations,
   type PageIndexRow,
 } from '../Platform/stores'
@@ -72,7 +73,7 @@ export function queryHeadingMentions(
   return queryPaths((db) => db.queryHeadingMentions(normalizedTitle, normalizedHeading))
 }
 
-export function readHeadings(paths?: string[]): Record<string, string[]> | null {
+export function readHeadings(paths?: string[]): Record<string, PageHeading[]> | null {
   return queried((db) => db.readHeadings(paths))
 }
 

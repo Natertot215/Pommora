@@ -14,6 +14,7 @@ import { applyDelta } from '../Nexus/treeDelta'
 import { stabilize } from '../Nexus/treeStabilize'
 import { applyPersonalization } from '../Settings/applyPersonalization'
 import { reconcileIndexOf } from '../Nexus/treeIndex'
+import { headingKeys, type PageHeadings } from '../Connections/pageIndex'
 import { flushAllTileDocs, tileBodyWriter } from '../Tiles/tileDocStore'
 import {
   cancelAllSaves,
@@ -35,7 +36,7 @@ export interface NexusSlice {
   version: number
   error?: PommoraError
   syncStatus: SyncStatus | null
-  headings: Record<string, string[]>
+  headings: Record<string, PageHeadings>
   /** Opens the bound Nexus into the window: its device preferences, its tree, then what the window restores from it. */
   load: () => Promise<void>
   /** Re-reads the bound Nexus's tree, for a root that moved under a Nexus the window already holds. */
@@ -153,7 +154,13 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       headingsInTurn(async () => {
         const res = await dialer().ask('index:headings', paths)
         if (!res.ok) return
-        set((s) => ({ headings: paths ? { ...s.headings, ...res.value } : res.value }))
+        const read = Object.fromEntries(
+          Object.entries(res.value).map(([path, outline]) => [
+            path,
+            { keys: headingKeys(outline), texts: outline.map((h) => h.text), outline },
+          ]),
+        )
+        set((s) => ({ headings: paths ? { ...s.headings, ...read } : read }))
       }),
 
     load: async () => {
