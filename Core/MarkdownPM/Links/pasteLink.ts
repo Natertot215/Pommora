@@ -16,14 +16,14 @@ import { matchesCommand } from '../../Actions/commands'
 import { isWebAddress } from '../../Paths/urlPath'
 import { isLinkDisplay, type LinkDisplay } from '../../Properties/properties'
 import { docScan } from '../docCache'
-import { inCodeNear, type DocScan } from '../Engine/docScan'
+import { inCodeNear, scanDoc, type DocScan } from '../Engine/docScan'
 import { linkTokenAt, tokenize, type LinkKind } from '../Engine/tokens'
 import { insertCitation } from '../Citations/citationActions'
 import { citationText } from '../Citations/citationEdits'
 import { embedSeatAt } from '../Embeds/embedInsert'
-import { writeLinkAt } from './pendingTitle'
+import { settledLinkText, writeLinkAt } from './pendingTitle'
 import { type EditorHost, editorHost } from '../api'
-import { lineEndAt, lineStartAt, trimmedRange } from '../Engine/markdownCode'
+import { lineEndAt, lineStartAt, trimmedRange, type TextEdit } from '../Engine/markdownCode'
 
 function clipboardTarget(text: string, how: PasteMode): LinkTarget | null {
   const target = readLinkText(text)
@@ -163,6 +163,20 @@ export async function pasteFromClipboard(view: EditorView, how: PasteMode): Prom
   if (text && view.dom.isConnected) paste(view, text, how)
 }
 
+export async function pastedCellText(
+  host: EditorHost,
+  built: string,
+  sel: { from: number; to: number },
+  text: string,
+  how: PasteMode,
+): Promise<TextEdit> {
+  const edit = pasteEdit(scanDoc(built), sel, text, how, pasteOptions(host))
+  if (!edit || edit.write.kind === 'line') return { ...sel, insert: text }
+  const insert =
+    edit.write.kind === 'text' ? edit.write.text : await settledLinkText(host, edit.write)
+  return { from: edit.from, to: edit.to, insert }
+}
+
 export const pasteLink = EditorView.domEventHandlers({
   paste(event, view) {
     // Null on CodeMirror's brokenClipboardAPI path, and in jsdom, which has no DataTransfer.
@@ -178,6 +192,19 @@ export const pasteLink = EditorView.domEventHandlers({
     if (view.state.readOnly) return false
     event.preventDefault()
     void pasteFromClipboard(view, 'inverse')
+    return true
+  },
+
+  drop(event, view) {
+    const text = event.dataTransfer?.types.includes('text/uri-list')
+      ? event.dataTransfer.getData('text/plain')
+      : ''
+    if (!text) return false
+    const pos = view.posAtCoords({ x: event.clientX, y: event.clientY })
+    if (pos === null) return false
+    view.dispatch({ selection: { anchor: pos } })
+    if (!paste(view, text, 'auto')) return false
+    event.preventDefault()
     return true
   },
 })
