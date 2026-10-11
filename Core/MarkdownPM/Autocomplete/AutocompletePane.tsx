@@ -32,16 +32,13 @@ export interface AutocompletePaneProps {
   index: number
   onPick: (row: AcRow) => void
   behind: AcRow[] | null
-  loading?: boolean
-  headingRows?: HeadingRow[]
-  collapsed?: ReadonlySet<string>
-  onToggleHeading?: (value: string) => void
-  onAside?: (row: AcRow) => void
-  onBack?: () => void
+  headingRows: HeadingRow[]
+  collapsed: ReadonlySet<string>
+  onToggleHeading: (value: string) => void
+  onAside: (row: AcRow) => void
+  onBack: () => void
   geometry?: RememberedSize
 }
-
-const NONE: ReadonlySet<string> = new Set()
 
 // KNOB — the pane fits its titles between the width floor and AC_FIT_MAX until it's first resized.
 const AC_BOUNDS: PaneBounds = {
@@ -67,12 +64,11 @@ export function AutocompletePane({
   index,
   onPick,
   behind,
-  loading = false,
-  headingRows = [],
-  collapsed = NONE,
-  onToggleHeading = () => {},
-  onAside = () => {},
-  onBack = () => {},
+  headingRows,
+  collapsed,
+  onToggleHeading,
+  onAside,
+  onBack,
   geometry,
 }: AutocompletePaneProps): React.JSX.Element {
   const resize = usePaneResize(open, AC_BOUNDS, geometry)
@@ -170,17 +166,13 @@ export function AutocompletePane({
   // The tree is shaped by every heading; a row hidden under a collapsed one is absent from the candidates and draws nothing.
   const nested = (): React.JSX.Element[] => {
     const at = new Map(v.candidates.map((r, i) => [r.value, i]))
-    const walk = (nodes: OutlineNode[]): React.JSX.Element[] =>
+    const walk = (nodes: OutlineNode<HeadingRow>[]): React.JSX.Element[] =>
       nodes.flatMap((n) => {
-        const i = at.get(n.text)
+        const i = at.get(n.value)
         if (i === undefined) return []
         return headingRow(v.candidates[i], i, n.children.length ? walk(n.children) : undefined)
       })
-    return walk(
-      outlineTree(
-        v.headingRows.map((r) => ({ from: 0, key: r.value, text: r.value, level: r.level })),
-      ),
-    )
+    return walk(outlineTree(v.headingRows))
   }
 
   const headingSlot = (rows: AcRow[]): React.JSX.Element => (
@@ -190,7 +182,7 @@ export function AutocompletePane({
         headingSlide ? <MenuTopRow label="Links" current={v.ac.title} onBack={onBack} /> : undefined
       }
     >
-      {loading ? null : v.ac.query !== '' ? rows.map((r, i) => headingRow(r, i)) : nested()}
+      {v.ac.query !== '' ? rows.map((r, i) => headingRow(r, i)) : nested()}
     </MenuScrollFrame>
   )
 

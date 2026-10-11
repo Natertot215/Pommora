@@ -19,10 +19,9 @@ import { readLinkText } from '../../Connections/linkValue'
 import { normalizeTitle } from '../../Paths/caseFold'
 import { restedOnLink } from '../Links/linkReveal'
 import { titleTarget } from '../Links/connectionsApi'
-import { headingTargetOf, pageHeadingTarget } from './headingTarget'
 import type { AutocompletePaneProps } from './AutocompletePane'
 import { acQuery, closeAcQuery } from './acQuery'
-import type { OutlineHeading } from '../Engine/headingScan'
+import type { PageHeading } from '../../Platform/stores'
 import { type EditorHost, ownPage } from '../api'
 import { caretGeometry, type CaretGeometry, type EditorPane, usePaneCtl } from '../Menus/caretPane'
 
@@ -58,7 +57,6 @@ export function useConnectionAutocomplete(
     const view = viewRef.current
     if (view?.state.field(field).query) view.dispatch({ effects: closeAcQuery.of('dismiss') })
   }
-  const [fetched, setFetched] = useState<OutlineHeading[] | null>(null)
   const [behind, setBehind] = useState<AcRow[] | null>(null)
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set())
   // The title the heading list slid back to: an exact title closes the page list, but Back must land on it open.
@@ -68,28 +66,22 @@ export function useConnectionAutocomplete(
   const title = ac?.title
   const closed = ac?.closed ?? true
   const heading = listsHeadings(form)
-  // Read in render so a warm outline answers in the same pass and an exact heading closes without a frame ever mounting.
-  const target = useMemo(() => {
-    if (!heading) return null
-    if (title) return headingTargetOf(host, host.connections(), title)
-    // The outline of the page a bare `#` answers to, never the editor's own document when that is a cell or a value.
-    const own = viewRef.current && ownPage(viewRef.current)
-    if (own?.kind === 'held') return pageHeadingTarget(host, own.page)
-    return { kind: 'warm' as const, outline: own ? docOutline(own.view.state.doc) : [] }
-  }, [heading, title])
-  const outline = target?.kind === 'warm' ? target.outline : fetched
-  // A freshly typed `#` shows the empty frame while a cold page's rows load; a typed prefix, or a caret placed in a finished link, waits for the rows so nothing flashes.
-  const loading = heading && outline === null && query === ''
-
-  useEffect(() => {
-    setFetched(null)
-    if (target?.kind !== 'cold') return
-    let live = true
-    void target.fetch().then((rows) => live && setFetched(rows))
-    return () => {
-      live = false
+  const page = useMemo(() => {
+    if (title) {
+      const named = titleTarget(host.connections(), title)
+      return named.kind === 'page' ? named.page : null
     }
-  }, [target])
+    if (!heading) return null
+    const own = viewRef.current && ownPage(viewRef.current)
+    return own?.kind === 'held' ? own.page : null
+  }, [heading, title])
+  const outline: readonly PageHeading[] = useMemo(() => {
+    if (!heading) return []
+    if (page) return host.connections()?.headingsOf(page.path)?.outline ?? []
+    if (title) return []
+    const own = viewRef.current && ownPage(viewRef.current)
+    return own?.kind === 'body' ? docOutline(own.view.state.doc) : []
+  }, [heading, page, title])
 
   useEffect(() => {
     if (heading) return
@@ -100,16 +92,13 @@ export function useConnectionAutocomplete(
   const [aliasEpoch, bumpAliases] = useReducer((n: number) => n + 1, 0)
   useEffect(() => host.aliases.subscribe(bumpAliases), [host])
   const allHeadingRows = useMemo(
-    () => (heading && query !== null ? headingRows(outline ?? [], query) : []),
+    () => (heading && query !== null ? headingRows(outline, query) : []),
     [heading, outline, query],
   )
   const lookup = (q: string): AcRow[] => {
     const conn = host.connections()
     if (!conn) return []
-    if (form === 'alias') {
-      const named = titleTarget(conn, title ?? '')
-      return aliasRows(host.aliases, named.kind === 'page' ? named.page.id : undefined, q)
-    }
+    if (form === 'alias') return aliasRows(host.aliases, page?.id, q)
     return conn.candidates(q, AC_MAX).map((p) => pageRow(p, conn))
   }
   // A query that names its one match exactly is a finished link, so the caret resting in one opens nothing; Back is the exception.
@@ -123,7 +112,7 @@ export function useConnectionAutocomplete(
     const exact = found.length === 1 && normalizeTitle(found[0].value) === normalizeTitle(query)
     if (exact && closed && normalizeTitle(query) !== normalizeTitle(backedTo ?? '')) return []
     return found
-  }, [query, closed, form, title, host, aliasEpoch, heading, allHeadingRows, collapsed, backedTo])
+  }, [query, closed, form, page, host, aliasEpoch, heading, allHeadingRows, collapsed, backedTo])
 
   useEffect(() => {
     if (ac === null) setBackedTo(null)
@@ -138,7 +127,7 @@ export function useConnectionAutocomplete(
       ac.form === 'link'
         ? readLinkText(view.state.sliceDoc(ac.from, ac.to) + (ac.closed ? '' : ']]'))
         : null
-    const pageId = row.kind === 'page' ? row.pageId : target?.pageId
+    const pageId = row.kind === 'page' ? row.pageId : page?.id
     // Only a page the picker offered can open an alias slot — an empty pipe with nothing behind it is a slot the user has to close.
     const openAlias =
       (ac.form === 'link' || ac.form === 'heading') &&
@@ -164,7 +153,7 @@ export function useConnectionAutocomplete(
 
   // A collapse reshapes the list, so the highlight starts over rather than landing on whatever the old index now names.
   const resetKey = heading ? `${query}\u0000${[...collapsed].join('\u0000')}` : query
-  const open = ac !== null && (candidates.length > 0 || loading)
+  const open = ac !== null && candidates.length > 0
   const { index, row, ctl } = usePaneCtl(candidates, resetKey, {
     open,
     pick: commit,
@@ -200,7 +189,6 @@ export function useConnectionAutocomplete(
       index: index ?? 0,
       onPick: commit,
       behind,
-      loading,
       headingRows: allHeadingRows,
       collapsed,
       onToggleHeading: (value) => setCollapsed((prev) => toggled(prev, value)),
