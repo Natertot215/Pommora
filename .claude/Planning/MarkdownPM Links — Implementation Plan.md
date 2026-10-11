@@ -109,13 +109,13 @@ What a person sees: `[x](Page)` edits like `[[Page]]`; every link reads **Rename
   - [x] Task 1-3 — The Format menu reads the fence
   - [x] Task 1-4 — The unclosed reader
   - [x] Review Checkpoint
-- [ ] **Phase 2** — Values, Writers, and the Clipboard Reader
-  - [ ] Task 2-1 — One reader for a whole link
-  - [ ] Task 2-2 — The host readers move together
-  - [ ] Task 2-3 — One writer per syntax and one expressibility rule
-  - [ ] Task 2-4 — `retarget`
-  - [ ] Task 2-5 — `isWebAddress`
-  - [ ] Review Checkpoint
+- [x] **Phase 2** — Values, Writers, and the Clipboard Reader
+  - [x] Task 2-1 — One reader for a whole link
+  - [x] Task 2-2 — The host readers move together
+  - [x] Task 2-3 — One writer per syntax and one expressibility rule
+  - [x] Task 2-4 — `retarget`
+  - [x] Task 2-5 — `isWebAddress`
+  - [x] Review Checkpoint
 - [ ] **Phase 3** — Seams
   - [ ] Task 3-1 — Connections ride the editor host (F-094)
   - [ ] Task 3-2 — The heading index carries text and level
@@ -1115,7 +1115,7 @@ The carve-out: `keepTitle` is Remove Title On Link Change read as "off" at each 
 
 **VERIFY**
 
-- [ ] `grep -rn "WEB_ADDRESS" Core Desktop --include='*.ts' --include='*.tsx' | grep -v test` lists `urlPath.ts` alone (and `linkClicks.ts` until Task 4-5).
+- [ ] `grep -rn "WEB_ADDRESS" Core Desktop --include='*.ts' --include='*.tsx' | grep -v test` lists `urlPath.ts`, the two path-or-URL reads in `Assets/adoptFile.ts` and `Assets/ImagePicker.tsx` (a written scheme is the right test for a path against an address), and `linkClicks.ts` until Task 4-5.
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
@@ -1749,7 +1749,7 @@ Every current caller (`pasteLink.ts:62`, `linkFormat.ts:85`, `cellStatic.tsx:474
 +   | { kind: 'url'; url: string }
 @@ resolveMdTarget @@
 -   if (target.kind !== 'invalid' || !isValidLink(rawTarget)) return target
-+   if (target.kind !== 'invalid' || target.ambiguous || !isValidLink(rawTarget)) return target
++   if (target.kind !== 'invalid' || target.ambiguous || targetNamesFile(rawTarget) || !isValidLink(rawTarget)) return target
 -   return { kind: 'external', url: rawTarget }
 +   return { kind: 'url', url: rawTarget }
 @@ linkMenuTarget @@
@@ -4749,3 +4749,7 @@ The anchor is pinned by a test for a filled and an unfilled label.
 - **Task 1-4, `isLiteralAt`:** the AFTER read `connectionAt(scan, c) ?? openConnectionAt(scan, c)`, and `connectionAt` counts a caret on a link's first bracket as inside it, so every typography replacement stood down with the caret directly before a `[[…]]` (`see -[[B]]` then `>` wrote nothing where the baseline wrote `→`). It reads `openConnectionAt` alone, which is non-null inside a closed or unclosed connection and null before its `[[`; pinned in `edits.test.ts`. Found at the Phase 1 checkpoint.
 - **Task 1-1, the embed-line tests:** the proven diff deleted `embedClaims.test.ts` whole, though eight of its cases pinned `blockEmbedLines` and the scan's embed lines, which survive and feed `buildTiles`; those eight moved unchanged into `detect.test.ts` at the checkpoint.
 - **Task 2-1, the whole-text grammars:** as drafted, a Link value or clipboard was read by `WHOLE_LINK`/`parseConnectionText` (stripping a trailing `\` unconditionally through `titleOf`) and an `MD_LINK` rebuilt from the empty-tolerant regex, while the editor and the index read `linkOccurrences`; the Phase 1 checkpoint showed the pair disagreeing with the walk (`[[A#Note\]]` named `Note` to a value and `Note\` to the index; `[](Page)` was a page to a value and text to the body, so it would have been stripped and parked but never renamed). The task now reads a whole text through the walk (`wholeLink`), and the three grammars go. Decided before Phase 2 was dispatched; it serves §5.2 (One Reader) and changes no ruling.
+- **Task 2-2 landed inside 2-1's commit:** deleting `readLink` took `goneEntry` and `frontmatterMentions` with it, and the four host readers move together (T-01), so 2-1's commit moved all four onto `readLinkText`; 2-2's commit carried `gonePageEntry` and the three notes.
+- **Task 2-1, a `.md` destination:** the resolver-free tiebreak read `[x](Notes.md)` as the address `https://Notes.md`, though `targetTitle` already strips `.md` as a page marker; `targetNamesFile` makes a destination written as a markdown file name the page in both of `readLinkText`'s arms, so a phantom one is refused at a commit rather than read as an address (NexusOS is an Obsidian vault, where `.md` destinations are ordinary). Task 4-1's `resolveMdTarget` takes the same clause. Found at the Phase 2 checkpoint; recorded in the Continuation's §5.2 and §12.
+- **Task 2-4, a page the wikilink grammar can't spell:** `nameError` never sees a title decoded from a markdown destination or a file named outside the app, so `retarget`'s wiki arm and Paste As's Connection row wrote `[[A|B|x]]` for `[x](A%7CB)`. `connectionSpells` (one predicate over `expressibleInLink`) sends such a page to the markdown spelling, as an address already was, and withholds the Connection row. Found at the Phase 2 checkpoint.
+- **Task 2-3, Embedded Link:** the Paste As gate reads `isHttpLink(target.url)` (the gate Task 5-1 gives Page Title) because `LinkTarget.url` is normalized and `isWebAddress` on it was true for every http target; a schemeless clipboard address now offers Embedded Link, since the embed line writes the normalized address and the tile grammar reads it.
