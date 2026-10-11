@@ -1,5 +1,5 @@
 import { expressibleInLink } from '../../Connections/connections'
-import { type LinkTarget, retarget, sameTarget } from '../../Connections/linkValue'
+import { keepsShown, type LinkTarget, retarget } from '../../Connections/linkValue'
 import { normalizeTitle } from '../../Paths/caseFold'
 import {
   decodeLinkTarget,
@@ -265,9 +265,8 @@ export function commitEdit(
   }
   const retitles =
     ac.form === 'target' &&
-    !opts.keepTitle &&
     container !== null &&
-    !sameTarget(container, { kind: 'page', syntax: 'markdown', title: value })
+    !keepsShown(container, { kind: 'page', syntax: 'markdown', title: value }, opts.keepTitle)
   const fill = ac.label && (ac.label.from === ac.label.to || retitles) ? ac.label : null
   const label = fill ? escapeAlias(value) : ''
   return {

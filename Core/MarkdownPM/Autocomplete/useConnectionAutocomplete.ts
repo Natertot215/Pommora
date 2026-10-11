@@ -15,7 +15,7 @@ import {
 import { toggled } from '@pommora/uix/Utilities/checkSet'
 import { docOutline } from '../docCache'
 import type { MarkdownScope } from '../Engine/detect'
-import { readLinkText, sameTarget } from '../../Connections/linkValue'
+import { keepsShown, readLinkText } from '../../Connections/linkValue'
 import { normalizeTitle } from '../../Paths/caseFold'
 import { restedOnLink } from '../Links/linkReveal'
 import { titleTarget } from '../Links/connectionsApi'
@@ -131,7 +131,7 @@ export function useConnectionAutocomplete(
     const keepsAlias =
       ac.form === 'link' &&
       !!container?.alias &&
-      (keepTitle || sameTarget(container, { kind: 'page', syntax: 'wiki', title: row.value }))
+      keepsShown(container, { kind: 'page', syntax: 'wiki', title: row.value }, keepTitle)
     const pageId = row.kind === 'page' ? row.pageId : page?.id
     // Only a page the picker offered can open an alias slot — an empty pipe with nothing behind it is a slot the user has to close.
     const openAlias =

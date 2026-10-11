@@ -150,11 +150,17 @@ export function linkPaste(url: string, display: LinkDisplay, title?: string): Li
 export const connectionSpells = (target: { title: string; heading?: string }): boolean =>
   expressibleInLink(target.title) && (!target.heading || expressibleInLink(target.heading))
 
-export const sameTarget = (a: LinkTarget, b: LinkTarget): boolean =>
+const sameTarget = (a: LinkTarget, b: LinkTarget): boolean =>
   a.kind === 'page' && b.kind === 'page'
     ? normalizeTitle(a.title) === normalizeTitle(b.title) &&
       normalizeTitle(a.heading ?? '') === normalizeTitle(b.heading ?? '')
     : a.kind === 'url' && b.kind === 'url' && a.url === b.url
+
+export const keepsShown = (
+  container: LinkTarget | null,
+  next: LinkTarget,
+  keepTitle: boolean,
+): boolean => container !== null && (keepTitle || sameTarget(container, next))
 
 export function retarget(
   syntax: 'wiki' | 'markdown',
@@ -163,8 +169,8 @@ export function retarget(
   keepTitle: boolean,
   into?: { format: LinkDisplay; title?: string },
 ): LinkPaste {
-  const kept = container && (keepTitle || sameTarget(container, next)) ? container.alias : undefined
-  const shown = next.alias ?? kept
+  const shown =
+    next.alias ?? (keepsShown(container, next, keepTitle) ? container?.alias : undefined)
   if (next.kind === 'page') {
     const text =
       syntax === 'wiki' && connectionSpells(next)
