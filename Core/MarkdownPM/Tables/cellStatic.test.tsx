@@ -204,7 +204,7 @@ describe('a resting cell draws a tag whole', () => {
   })
 })
 
-describe('a resting cell draws an unresolved markdown link as an unresolved connection', () => {
+describe('a resting cell draws an unresolved link as an unresolved connection, which the plain-syntax setting reaches', () => {
   it('dims `[` and `](Missing)` as phantom syntax around a phantom label', async () => {
     container = document.createElement('div')
     document.body.appendChild(container)
@@ -221,9 +221,9 @@ describe('a resting cell draws an unresolved markdown link as an unresolved conn
       el.textContent,
     ])
     expect(parts).toEqual([
-      ['md-phantom-syntax md-unresolved-fixed', '['],
-      ['md-connection-phantom md-unresolved-fixed', 'x'],
-      ['md-phantom-syntax md-unresolved-fixed', '](Missing)'],
+      ['md-phantom-syntax', '['],
+      ['md-connection-phantom', 'x'],
+      ['md-phantom-syntax', '](Missing)'],
     ])
   })
 })

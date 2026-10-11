@@ -237,12 +237,16 @@
 .md-phantom-syntax {
   color: var(--label-control);
 }
-:root.plain-unresolved .md-connection-phantom:not(.md-unresolved-fixed) {
+:root.plain-unresolved .md-connection-phantom {
   color: inherit;
   opacity: 1;
 }
-:root.plain-unresolved .md-phantom-syntax:not(.md-unresolved-fixed) {
+:root.plain-unresolved .md-phantom-syntax {
   color: inherit;
+}
+.md-block-query {
+  color: var(--label-primary);
+  opacity: var(--state-inactive);
 }
 .md-link-url {
   font-style: italic;

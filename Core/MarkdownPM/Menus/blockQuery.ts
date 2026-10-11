@@ -26,8 +26,8 @@ export interface OpenBlockQuery extends BlockQuery {
 
 export const closeBlockQuery = StateEffect.define<null>()
 
-const querySlash = Decoration.mark({ class: 'md-phantom-syntax' })
-const queryText = Decoration.mark({ class: 'md-connection-phantom' })
+const querySlash = Decoration.mark({ class: 'md-control' })
+const queryText = Decoration.mark({ class: 'md-block-query' })
 
 export const blockQuery = StateField.define<OpenBlockQuery | null>({
   create: () => null,

@@ -291,22 +291,24 @@ describe('the query is emphasized wherever it matched', () => {
   })
 })
 
-describe('the typed query reads as unresolved syntax', () => {
+describe('the typed query wears a look of its own', () => {
   const spans = (view: EditorView, cls: string): string[] =>
     [...view.contentDOM.querySelectorAll(`.${cls}`)].map((s) => s.textContent ?? '')
 
-  it('tones the slash as syntax and the query as a phantom', async () => {
+  it('tones the slash as syntax and the query as the block query, never as a phantom', async () => {
     const view = await open('')
     await type(view, '/hea')
-    expect(spans(view, 'md-phantom-syntax')).toEqual(['/'])
-    expect(spans(view, 'md-connection-phantom')).toEqual(['hea'])
+    expect(spans(view, 'md-control')).toEqual(['/'])
+    expect(spans(view, 'md-block-query')).toEqual(['hea'])
+    expect(spans(view, 'md-phantom-syntax')).toEqual([])
+    expect(spans(view, 'md-connection-phantom')).toEqual([])
   })
 
   it('leaves a line that never held a slash alone', async () => {
     const view = await open('')
     await type(view, 'hea')
-    expect(spans(view, 'md-phantom-syntax')).toEqual([])
-    expect(spans(view, 'md-connection-phantom')).toEqual([])
+    expect(spans(view, 'md-control')).toEqual([])
+    expect(spans(view, 'md-block-query')).toEqual([])
   })
 })
 
