@@ -186,6 +186,20 @@ describe('the inverse chord', () => {
     expect(view.state.doc.toString()).toBe(`read the [${URL}](${URL}) now`)
   })
 
+  it('writes the address as text over a selection inside a link', async () => {
+    clipboard = 'https://a.co'
+    for (const [body, anchor, head, out] of [
+      ['[[Foo]]', 2, 5, '[[https://a.co]]'],
+      ['[docs](https://b.co)', 1, 5, '[https://a.co](https://b.co)'],
+    ] as const) {
+      const view = await mountEditor({ initialBody: body })
+      view.dispatch({ selection: { anchor, head } })
+      await act(async () => chord(view))
+      expect(view.state.doc.toString(), body).toBe(out)
+      await cleanupEditor()
+    }
+  })
+
   it('writes a non-address as the text it is', async () => {
     clipboard = 'App.tsx'
     const view = await mountEditor({ initialBody: '' })
