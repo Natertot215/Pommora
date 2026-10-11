@@ -29,6 +29,7 @@ import { dialer } from '../Platform/dialer'
 import { inTurns } from '../Platform/inTurns'
 import { withOwnSettings } from './configSlice'
 import { emitter } from '@pommora/uix/Utilities/subscribable'
+import { relDirname, relJoin } from '../Paths/posix'
 
 export interface NexusSlice {
   status: 'idle' | 'loading' | 'ready' | 'error' | 'empty'
@@ -260,6 +261,8 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
         trashChanged.emit()
       // The host pushed what this write changed before it replied, so the tree already holds it.
       get().patchPagesFor(req)
+      if (req.op === 'rename' && req.kind === 'page')
+        void get().loadHeadings([relJoin(relDirname(req.path), `${req.newName}.md`)])
       return res.value
     },
   }
