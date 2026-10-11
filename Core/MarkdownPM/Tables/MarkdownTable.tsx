@@ -248,13 +248,11 @@ export function MarkdownTable({
         if (e.key === 'x') clear()
       } else if (mod && e.key === 'v') {
         claim(e)
-        const source = live.current.cellAt(rect.r0, rect.c0)
         void host.clipboard.read().then(async (text) => {
           if (!text) return
           const decoded = decodePayload(text)
           if (decoded) return onFill(rect.r0, rect.c0, decoded)
           const { insert } = await pastedCellText(host, '', { from: 0, to: 0 }, text, 'auto')
-          if (live.current.cellAt(rect.r0, rect.c0) !== source) return
           onFill(rect.r0, rect.c0, { kind: 'rect', grid: [[cellToSource(insert)]] })
         })
       }
