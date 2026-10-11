@@ -9,7 +9,7 @@ import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'
 import { resolveFollow } from '../../MarkdownPM/Links/linkClicks'
 import { lineOffsetsOf } from '../../MarkdownPM/Engine/markdownCode'
 import { type CellPage, linkGestures, renderCellContent } from '../../MarkdownPM/Tables/cellStatic'
-import { useSetting } from '../../Session/store'
+import { useSession, useSetting } from '../../Session/store'
 import { openWebLink } from '../../Web/openWebLink'
 
 /** A link inside the value follows, glances, and opens its menu as a body link does; a press on any link stops there, and a dead one does nothing. */
@@ -28,7 +28,7 @@ export function TextCell({
   const own = holder ? ({ kind: 'held', page: holder } as const) : null
   const headingLinkStyle = useSetting('headingLinkStyle')
   const automatic = useSetting('inPageHeadingResolution') === 'automatic'
-  const headings = holder && connections?.()?.headingsOf(holder.path)
+  const headings = useSession((s) => (holder ? s.headings[holder.path] : undefined))
   const around: CellPage | undefined = headings && {
     ordinalOf: () => null,
     ownKeys: headings.keys,

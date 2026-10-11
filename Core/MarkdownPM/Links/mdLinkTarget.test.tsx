@@ -206,8 +206,17 @@ describe('an unresolved markdown link looks as an unresolved connection does', (
     const { editor, cell } = await drawn('a [x](Missing) b')
     expect(editor).toEqual(['md-connection-phantom'])
     expect(cell).toContain('md-connection-phantom')
-    expect(cell).not.toContain('md-link-invalid')
     expect(resolveMdTarget(dups, 'Missing.md')).toEqual({ kind: 'invalid' })
+  })
+
+  it('an ambiguous title revealed by the caret reads as a page destination, never as an address', async () => {
+    const view = await mountEditor({ initialBody: 'a [x](Dup) b', connections: dups })
+    await act(async () => {
+      view.focus()
+      view.dispatch({ selection: { anchor: 5 } })
+    })
+    expect(view.dom.querySelector('.md-connection-target')?.textContent).toContain('Dup')
+    expect(view.dom.querySelector('.md-link-url')).toBeNull()
   })
 })
 

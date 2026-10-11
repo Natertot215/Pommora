@@ -182,7 +182,7 @@ describe('a page that changed outside the app', () => {
 })
 
 describe('a body save the app makes itself', () => {
-  it('reloads that page’s headings once it lands, and asks nothing for a refused one', async () => {
+  it('reloads that page’s headings once it lands, and asks nothing for a stale one', async () => {
     askHeadings.mockImplementation(async () => ok({ [PATH]: [{ text: 'Fresh', level: 2 }] }))
     await mount()
     await act(async () => pageIO.write(PATH, 'refused', 'h0'))

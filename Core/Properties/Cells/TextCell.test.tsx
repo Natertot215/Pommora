@@ -23,16 +23,17 @@ describe('a Text value draws against the page that holds it', () => {
   const open = vi.fn()
   const conn: ConnectionsApi = {
     ...buildPageIndex([holder]),
-    headingsOf: (path) =>
-      path === holder.path
-        ? { keys: ['setup'], texts: ['Setup'], outline: [{ text: 'Setup', level: 2 }] }
-        : undefined,
+    headingsOf: () => undefined,
     location: () => [],
     open,
   }
+  const headings = (text: string) => ({
+    [holder.path]: { keys: [text.toLowerCase()], texts: [text], outline: [{ text, level: 2 }] },
+  })
   const mount = async (): Promise<HTMLDivElement> => {
     useSession.setState({
       tree: makeTree({ personalization: { inPageHeadingResolution: 'automatic' } }),
+      headings: headings('Setup'),
     })
     host = document.createElement('div')
     document.body.appendChild(host)
@@ -58,5 +59,15 @@ describe('a Text value draws against the page that holds it', () => {
       run.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 }))
     })
     expect(open).toHaveBeenCalledWith(holder, 'Setup', false)
+  })
+
+  it('redraws when its holder’s headings change in the session', async () => {
+    const el = await mount()
+    expect(el.querySelector('.md-section-run')).not.toBeNull()
+    await act(async () => {
+      useSession.setState({ headings: headings('Fresh') })
+    })
+    expect(el.querySelector('.md-section-run')).toBeNull()
+    expect(el.querySelector('.md-connection-heading-missing')?.textContent).toBe('Nope')
   })
 })

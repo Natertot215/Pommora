@@ -7,6 +7,7 @@ import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
 import type { NexusTree } from '../Nexus/tree'
 import { deltaOf } from '../Nexus/treeDelta'
 import type { PageDetail } from '../Pages/pageDetail'
+import { movedHeadings } from './nexusSlice'
 import {
   type PageTarget,
   type SelectTarget,
@@ -1188,6 +1189,35 @@ describe('store — the headings map (Task 2.3)', () => {
     })
   })
 
+  it('a reload whose outline matches what the session holds keeps the entry and the map as they are', async () => {
+    channels['index:headings'] = vi.fn(async () => ({ ok: true, value: { 'A.md': h2('Setup') } }))
+    await useSession.getState().loadHeadings(['A.md'])
+    const before = useSession.getState().headings
+    await useSession.getState().loadHeadings(['A.md'])
+    expect(useSession.getState().headings).toBe(before)
+    channels['index:headings'] = vi.fn(async () => ({ ok: true, value: { 'A.md': h2('Fresh') } }))
+    await useSession.getState().loadHeadings(['A.md'])
+    expect(useSession.getState().headings).not.toBe(before)
+    expect(useSession.getState().headings['A.md']?.texts).toEqual(['Fresh'])
+  })
+
+  it('movedHeadings re-keys an entry from a page’s old path to its new one and keeps the map when nothing moved', () => {
+    const held = { 'Notes/A.md': read('Setup', 'setup'), 'Notes/B.md': read('Intro', 'intro') }
+    const before = new Map([
+      ['a', 'Notes/A.md'],
+      ['b', 'Notes/B.md'],
+    ])
+    const after = new Map([
+      ['a', { id: 'a', title: 'A', path: 'Archive/A.md' }],
+      ['b', { id: 'b', title: 'B', path: 'Notes/B.md' }],
+    ])
+    expect(movedHeadings(held, before, after)).toEqual({
+      'Archive/A.md': held['Notes/A.md'],
+      'Notes/B.md': held['Notes/B.md'],
+    })
+    expect(movedHeadings(held, new Map([['b', 'Notes/B.md']]), after)).toBe(held)
+  })
+
   it('a full load replaces the map; a partial load keeps unrelated keys', async () => {
     channels['index:headings'] = vi.fn(async () => ({
       ok: true,
@@ -1233,13 +1263,22 @@ describe('store — the headings map (Task 2.3)', () => {
 describe('store — the headings map follows the app’s own rename', () => {
   const outline = [{ text: 'Fresh', level: 2 }]
 
-  it('a page rename that lands reloads the headings under the new path', async () => {
-    useSession.setState({ tree: makeTree() })
-    channels['index:headings'] = vi.fn(async () => ok({ 'Notes/B.md': outline }))
+  it('a page rename that lands re-keys its headings to the new path without asking the host', async () => {
+    const entry = { keys: ['fresh'], texts: ['Fresh'], outline }
+    useSession.setState({ tree: makeTree(), headings: { 'Notes/Alpha.md': entry } })
+    channels['index:headings'] = vi.fn(async () => ok({}))
+    channels.mutate = vi.fn(async () => {
+      const tree = makeTree()
+      const page = tree.collections.flatMap((c) => c.pages ?? []).find((p) => p.id === 'p1')
+      if (page) page.path = 'Notes/Beta.md'
+      useSession.setState({ tree })
+      return ok({})
+    })
     await useSession
       .getState()
-      .mutate({ op: 'rename', path: 'Notes/A.md', kind: 'page', newName: 'B' })
-    expect(channels['index:headings']).toHaveBeenCalledWith(['Notes/B.md'])
+      .mutate({ op: 'rename', path: 'Notes/Alpha.md', kind: 'page', newName: 'Beta' })
+    expect(useSession.getState().headings).toEqual({ 'Notes/Beta.md': entry })
+    expect(channels['index:headings']).not.toHaveBeenCalled()
   })
 })
 

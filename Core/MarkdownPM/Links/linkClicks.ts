@@ -53,8 +53,7 @@ function linkUnder(
   // A connection acts as one only where connections resolve.
   const tk = drawnLinkAt<LinkKind>(view, pos, api ? undefined : 'link')
   if (!tk) return null
-  const named = tokenTarget(api, docString(view.state.doc), tk)
-  const target = heldTarget(named, ownPage(view))
+  const target = heldTarget(tokenTarget(api, docString(view.state.doc), tk), ownPage(view))
   const el = (event.target as HTMLElement).closest?.(
     '.md-connection-resolved, .md-connection-ambiguous, .md-heading-symbol, .md-link',
   )
@@ -63,7 +62,7 @@ function linkUnder(
     target,
     range: tk.range,
     onText: el != null && pos >= tk.contentRange[0] && pos <= tk.contentRange[1],
-    hidesSyntax: linkStatus(named) !== 'phantom',
+    hidesSyntax: linkStatus(target) !== 'phantom',
     pos,
   }
 }

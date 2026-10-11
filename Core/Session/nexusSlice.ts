@@ -13,8 +13,9 @@ import type { SyncStatus } from '../Sync/Contract/wire'
 import { applyDelta } from '../Nexus/treeDelta'
 import { stabilize } from '../Nexus/treeStabilize'
 import { applyPersonalization } from '../Settings/applyPersonalization'
-import { reconcileIndexOf } from '../Nexus/treeIndex'
+import { pagesByIdOf, reconcileIndexOf } from '../Nexus/treeIndex'
 import { headingKeys, type PageHeadings } from '../Connections/pageIndex'
+import type { PageHeading } from '../Platform/stores'
 import { flushAllTileDocs, tileBodyWriter } from '../Tiles/tileDocStore'
 import {
   cancelAllSaves,
@@ -29,7 +30,27 @@ import { dialer } from '../Platform/dialer'
 import { inTurns } from '../Platform/inTurns'
 import { withOwnSettings } from './configSlice'
 import { emitter } from '@pommora/uix/Utilities/subscribable'
-import { relDirname, relJoin } from '../Paths/posix'
+
+const sameOutline = (a: PageHeadings | undefined, b: readonly PageHeading[]): boolean =>
+  a !== undefined &&
+  a.outline.length === b.length &&
+  a.outline.every((h, i) => h.text === b[i].text && h.level === b[i].level)
+
+export function movedHeadings(
+  headings: Record<string, PageHeadings>,
+  before: ReadonlyMap<string, string>,
+  after: ReadonlyMap<string, { path: string }>,
+): Record<string, PageHeadings> {
+  let next = headings
+  for (const [id, was] of before) {
+    const now = after.get(id)?.path
+    if (now === undefined || now === was || !(was in headings)) continue
+    if (next === headings) next = { ...headings }
+    next[now] = headings[was]
+    delete next[was]
+  }
+  return next
+}
 
 export interface NexusSlice {
   status: 'idle' | 'loading' | 'ready' | 'error' | 'empty'
@@ -155,12 +176,17 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       headingsInTurn(async () => {
         const res = await dialer().ask('index:headings', paths)
         if (!res.ok) return
+        const held = get().headings
         const read = Object.fromEntries(
           Object.entries(res.value).map(([path, outline]) => [
             path,
-            { keys: headingKeys(outline), texts: outline.map((h) => h.text), outline },
+            sameOutline(held[path], outline)
+              ? held[path]
+              : { keys: headingKeys(outline), texts: outline.map((h) => h.text), outline },
           ]),
         )
+        const unchanged = Object.entries(read).every(([path, entry]) => held[path] === entry)
+        if (unchanged && (paths || Object.keys(held).length === Object.keys(read).length)) return
         set((s) => ({ headings: paths ? { ...s.headings, ...read } : read }))
       }),
 
@@ -229,6 +255,10 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
 
     mutate: async (req) => {
       const nexus = get().tree?.nexus.id
+      const held = get().tree
+      const moves = req.op === 'rename' || req.op === 'movePage' || req.op === 'moveSet'
+      const pathsBefore =
+        moves && held ? new Map([...pagesByIdOf(held)].map(([id, p]) => [id, p.path])) : null
       // A save queued for a path this op moves would land on the old path and be refused.
       switch (req.op) {
         case 'movePage':
@@ -261,8 +291,11 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
         trashChanged.emit()
       // The host pushed what this write changed before it replied, so the tree already holds it.
       get().patchPagesFor(req)
-      if (req.op === 'rename' && req.kind === 'page')
-        void get().loadHeadings([relJoin(relDirname(req.path), `${req.newName}.md`)])
+      const tree = get().tree
+      if (pathsBefore && tree) {
+        const moved = movedHeadings(get().headings, pathsBefore, pagesByIdOf(tree))
+        if (moved !== get().headings) set({ headings: moved })
+      }
       return res.value
     },
   }
