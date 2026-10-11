@@ -10,6 +10,7 @@ import { useDismissal } from '@pommora/uix/Interactions/dismissalStack'
 import { useSession, useSetting } from '../../Session/store'
 import { devicePref } from '../../Settings/devicePrefs'
 import { openWebLink } from '../../Web/openWebLink'
+import { useLinkTitle } from '../../Web/useLinkTitle'
 import { webGuestRetention } from './webRetention'
 import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
@@ -20,12 +21,7 @@ const CAPTURE_DEADLINE_MS = 200
 
 function useWebpageTitle(label: string, url: string): string {
   const display = useSession((s) => devicePref(s.devicePrefs, 'defaultLinkFormat'))
-  const title = useSession((s) => s.linkTitles[url])
-  const resolveLinkTitle = useSession((s) => s.resolveLinkTitle)
-  const wantsTitle = label === '' && display === 'link-title'
-  useEffect(() => {
-    if (wantsTitle && !title) resolveLinkTitle(url)
-  }, [wantsTitle, title, url, resolveLinkTitle])
+  const title = useLinkTitle(url, label === '' && display === 'link-title')
   return label !== '' ? label : linkDisplayText(url, display, title)
 }
 

@@ -1,4 +1,3 @@
-import { useEffect } from 'react'
 import { DEFAULT_LINK_DISPLAY, isLinkDisplay, type PropertyDefinition } from '../properties'
 import type { ColumnLook } from '../columnStyles'
 import { isHttpLink } from '../../Paths/urlPath'
@@ -10,6 +9,7 @@ import { linkDisplayText, readLinkText, type LinkTarget } from '../../Connection
 import { resolveConnection } from '../../Nexus/treeIndex'
 import { solidColorCss } from '@pommora/uix/Theme/ramp'
 import { openWebLink } from '../../Web/openWebLink'
+import { useLinkTitle } from '../../Web/useLinkTitle'
 import type { ConnPage } from '../../Connections/pageIndex'
 
 /** Opens through the sanctioned IPC — a raw <a> nav is denied by main's will-navigate hardening. Only the Page Title format fetches; the other two derive from the URL itself. */
@@ -31,11 +31,7 @@ export function LinkCell({
   const url = target === null ? raw.trim() : target.kind === 'url' ? target.url : ''
   const display = isLinkDisplay(look) ? look : (def?.link_display ?? DEFAULT_LINK_DISPLAY)
   const wantsTitle = display === 'link-title' && !target?.alias && isHttpLink(url)
-  const title = useSession((s) => (wantsTitle ? s.linkTitles[url] : undefined))
-  const resolveLinkTitle = useSession((s) => s.resolveLinkTitle)
-  useEffect(() => {
-    if (wantsTitle && !title) resolveLinkTitle(url)
-  }, [wantsTitle, title, url, resolveLinkTitle])
+  const title = useLinkTitle(url, wantsTitle)
 
   if (target?.kind === 'page')
     return <ConnectionCell target={target} showTitle={showFullLink === true} holder={holder} />
