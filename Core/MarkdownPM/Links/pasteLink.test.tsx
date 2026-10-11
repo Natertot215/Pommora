@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { act } from 'react'
 import type { EditorView } from '@codemirror/view'
 import type { EditorSettings } from '../api'
@@ -9,9 +9,10 @@ import {
   cleanupEditor,
   seedHost,
   settleTitle,
+  testHost,
 } from '../../Testing/editorHarness'
 import { pendingTitles } from './pendingTitle'
-import { paste, pasteFromClipboard } from './pasteLink'
+import { paste, pastedCellText, pasteFromClipboard } from './pasteLink'
 
 const URL = 'https://www.example.com/a/b'
 
@@ -347,5 +348,78 @@ describe('pasting inside a link', () => {
 
   it("retargets an embed's connection mid-line", async () => {
     expect(await pastedAt('see ![[Q]] x', 7, '[[P]]')).toBe('see ![[P]] x')
+  })
+})
+
+describe('pasting into a cell that holds no editor', () => {
+  const A = 'https://a.com'
+  const at0 = { from: 0, to: 0 }
+
+  it('formats an address in the Default Link Format', async () => {
+    const host = testHost({ settings: { defaultLinkFormat: 'link-short' } })
+    expect(await pastedCellText(host, '', at0, A, 'auto')).toEqual({
+      from: 0,
+      to: 0,
+      insert: `[a.com](${A})`,
+    })
+  })
+
+  it('awaits a Page Title, and writes the short form when the fetch fails', async () => {
+    const titled = (title: string | null) => ({
+      ...testHost({ settings: { defaultLinkFormat: 'link-title' } }),
+      linkTitles: { get: () => null, resolve: async () => title },
+    })
+    expect((await pastedCellText(titled('Hello'), '', at0, A, 'auto')).insert).toBe(`[Hello](${A})`)
+    expect((await pastedCellText(titled(null), '', at0, A, 'auto')).insert).toBe(`[a.com](${A})`)
+  })
+
+  it('lands plain text as typed', async () => {
+    expect(await pastedCellText(testHost(), '', at0, 'plain', 'auto')).toEqual({
+      from: 0,
+      to: 0,
+      insert: 'plain',
+    })
+  })
+
+  it('retargets the link the seat sits inside', async () => {
+    const seat = { from: 6, to: 6 }
+    expect(await pastedCellText(testHost(), 'see [[Nope]] x', seat, '[[P2]]', 'auto')).toEqual({
+      from: 4,
+      to: 12,
+      insert: '[[P2]]',
+    })
+  })
+
+  it('lands an address as typed inside code', async () => {
+    const seat = { from: 4, to: 4 }
+    expect(await pastedCellText(testHost(), '`npm i`', seat, A, 'auto')).toEqual({
+      ...seat,
+      insert: A,
+    })
+  })
+})
+
+describe('dropping into the editor', () => {
+  const drop = async (view: EditorView, data: Record<string, string>): Promise<void> => {
+    const event = new Event('drop', { bubbles: true, cancelable: true })
+    Object.defineProperty(event, 'dataTransfer', {
+      value: { types: Object.keys(data), files: [], getData: (t: string) => data[t] ?? '' },
+    })
+    await act(async () => view.contentDOM.dispatchEvent(event))
+  }
+
+  it('writes an address dragged in from outside as a formatted link at the drop point', async () => {
+    settings({ defaultLinkFormat: 'link-short' })
+    const view = await mountEditor({ initialBody: 'one two' })
+    vi.spyOn(view, 'posAtCoords').mockReturnValue(4)
+    await drop(view, { 'text/uri-list': URL, 'text/plain': URL })
+    expect(view.state.doc.toString()).toBe(`one [example.com](${URL})two`)
+  })
+
+  it('leaves a drop carrying text alone to CodeMirror', async () => {
+    const view = await mountEditor({ initialBody: 'one two' })
+    vi.spyOn(view, 'posAtCoords').mockReturnValue(4)
+    await drop(view, { 'text/plain': URL })
+    expect(view.state.doc.toString()).toBe('one two')
   })
 })

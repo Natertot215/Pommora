@@ -10,6 +10,7 @@ import type { Align, TableModel } from '../Engine/Tables/model'
 import type { TableMenuContext } from './tableMenu'
 import { CellEditor, type Seat } from './CellEditor'
 import { forwardTitles } from '../Links/pendingTitle'
+import { pastedCellText } from '../Links/pasteLink'
 import { type CellPage, StaticCell } from './cellStatic'
 import type { HeadingLinkStyle } from '../../Settings/personalization'
 import { cellToDisplay, cellToSource } from '../Engine/Tables/codec'
@@ -247,11 +248,17 @@ export function MarkdownTable({
         if (e.key === 'x') clear()
       } else if (mod && e.key === 'v') {
         claim(e)
-        void host.clipboard.read().then((text) => {
+        void host.clipboard.read().then(async (text) => {
           if (!text) return
           const payload: TablePayload = decodePayload(text) ?? {
             kind: 'rect',
-            grid: [[cellToSource(text)]],
+            grid: [
+              [
+                cellToSource(
+                  (await pastedCellText(host, '', { from: 0, to: 0 }, text, 'auto')).insert,
+                ),
+              ],
+            ],
           }
           onFill(rect.r0, rect.c0, payload)
         })

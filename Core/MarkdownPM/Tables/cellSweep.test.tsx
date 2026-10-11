@@ -193,6 +193,22 @@ describe('a swept cell rectangle', () => {
     expect(onFill).toHaveBeenCalledExactlyOnceWith(0, 0, { kind: 'rect', grid: [['x']] })
   })
 
+  it('formats an address pasted with ⌘V as a plain paste does', async () => {
+    const onFill = vi.fn()
+    const read = async (): Promise<string> => 'https://a.com'
+    await mount({
+      onFill,
+      host: testHost({ settings: { defaultLinkFormat: 'link-short' }, clipboard: { read } }),
+    })
+    await sweepDown()
+    await press(document.body, 'v', true)
+    await act(async () => {})
+    expect(onFill).toHaveBeenCalledExactlyOnceWith(0, 0, {
+      kind: 'rect',
+      grid: [['[a.com](https://a.com)']],
+    })
+  })
+
   it('leaves Delete, ⌘C, ⌘X, and ⌘V typed into an unrelated field to that field', async () => {
     const onClearCells = vi.fn()
     const write = vi.fn(async () => {})
