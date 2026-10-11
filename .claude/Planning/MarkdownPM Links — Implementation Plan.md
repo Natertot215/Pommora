@@ -165,9 +165,9 @@ What a person sees: `[x](Page)` edits like `[[Page]]`; every link reads **Rename
   - [x] Task 10-3 — Commit through `retarget`, one `behind`, the setting on the markdown arms
   - [x] Task 10-4 — Heading rows from the index
   - [x] Review Checkpoint
-- [ ] **Phase 11** — Names and Documentation
-  - [ ] Task 11-1 — Names
-  - [ ] Task 11-2 — Feature documentation and guidelines
+- [x] **Phase 11** — Names and Documentation
+  - [x] Task 11-1 — Names
+  - [x] Task 11-2 — Feature documentation and guidelines
 
 ---
 
@@ -3992,7 +3992,7 @@ Unchanged: `Core/Actions/cellMenu.ts`'s `link` arm.
         }}
 ```
 
-`restingAction` is Task 9-2's. On an `inert` host (`menus.format` undefined: a glance, a page's history) a resting right-click does nothing, where it used to enter a read-only cell; the link door still answers there.
+`restingAction` is Task 9-2's. On an `inert` host (`menus.format` undefined: a glance, a page's history) a resting right-click does nothing, where it used to enter a read-only cell; the inert bundle carries no menu, so the link door answers only on a read-only host that isn't inert (an embedded page at rest).
 
 **VERIFY**
 
@@ -4663,7 +4663,7 @@ The anchor is pinned by a test for a filled and an unfilled label.
 
 **VERIFY**
 
-- [ ] `grep -rn "LinkFormat\b\|escapeAlias\|unescapeAlias\|'Webpage'" Core Desktop --include='*.ts' --include='*.tsx'` is empty (`defaultLinkFormat` and `useWebpageTitle` are different names and stay).
+- [ ] `grep -rn "\bLinkFormat\b\|escapeAlias\|unescapeAlias\|'Webpage'" Core Desktop --include='*.ts' --include='*.tsx'` is empty (`DefaultLinkFormat`, `defaultLinkFormat`, and `useWebpageTitle` are different names and stay).
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
@@ -4846,4 +4846,6 @@ The anchor is pinned by a test for a filled and an unfilled label.
 - **Task 10-4, the pane's tree:** the AFTER handed the pane a `tree` built from the raw outline; the rows are deduped and `expressibleInLink`-filtered and the outline isn't, so a repeated heading would draw twice under one key. The pane builds `outlineTree(v.headingRows)` (the generic `outlineTree` needs no reshaping). One `page` memo serves the alias lookup, the heading outline, and the commit's page id; an unresolved `[[Nope#` lists nothing rather than the editor's own headings; `behind` resets when `ac` nulls or the form returns to link/target (resetting in the `heading` effect killed the alias slide). `docOutline` exists in `docCache.ts` as the AFTER wrote it.
 - **Task 10-2, the layout test:** "reads no layout as it moves within the link" counted every `coordsAtPos` on the view and raced the caret layer's own measure, which is why it flaked under load across the plan; it counts the hook's one-argument reads, and the field's query identity across caret moves is pinned in `acQuery.test.ts`.
 - **Phase 10 simplification pass:** `commitEdit`'s `opensAlias`/`opensHeading` restated the hook's own inputs and went; one `IDLE` field value; the no-change early return hoisted; `headingSlide` folded; one `closePicker`; `container` required on `commitEdit` (optional only for tests); the tests share one `typeInto` through the harness and one fixture set. The rule for whether a retarget keeps the shown text was spelled in `retarget`, the picker's markdown retitle, and its alias slot; one `keepsShown` in `linkValue.ts` serves all three. The AFTER text landed at −26; the label ruling's origin and the slot closers cost +23 net of the simplification pass, so the phase closes at −3 against the plan's −45.
+- **Task 11-1, the Embed ▸ label's reach:** the `/` menu filters rows by label, so `/web` no longer finds the Embed row and `/link` or `/ext` lists the Link and Embed External Link rows both (Enter still takes the Link row, which sorts first); four filter tests repinned. A consequence of the ratified label, not a rename.
+- **Task 11-2, the audit:** the ledger's own rule deletes a resolved finding's block rather than marking it (W6, F-035, F-041 as moot, F-042, F-043, F-054, F-062, F-094 went, with their cross-references and W21's opener following); the Readiness table's per-row counts were left. The review (one opus-medium pass, at the owner's instruction) found three overclaims, corrected in place: a glance pane and a page's history carry no link menu (the inert bundle has none, and its open rows would be dead there; §5.6's inert-host clause is amended to match), Page Title is a web address's format in the menu and Paste As, and only a value written as a link can name a page.
 - **Hand-checks:** driven headlessly by the orchestrator through the drive tool, with the screenshots read, at Nathan's instruction.
