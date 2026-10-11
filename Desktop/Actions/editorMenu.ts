@@ -9,7 +9,7 @@ import {
   type EditorMenuRequest,
   changeColorItems,
   editorContextItems,
-  PASTE_PLAIN_ACTION,
+  PASTE_LITERAL_ACTION,
 } from '@pommora/core/Actions/editorMenu'
 import type { ActionItem } from '@pommora/core/Actions/menuModel'
 import { PASTE_AS_PREFIX, pasteAsRows } from '@pommora/core/Actions/pasteAsMenu'
@@ -82,7 +82,7 @@ function systemItems(
     {
       label: 'Paste Without Formatting',
       enabled: f.canPaste,
-      click: editor ? () => editor.resolve(PASTE_PLAIN_ACTION) : () => wc.pasteAndMatchStyle(),
+      click: editor ? () => editor.resolve(PASTE_LITERAL_ACTION) : () => wc.pasteAndMatchStyle(),
     },
     { role: 'selectAll' },
     ...(editor ? editorRows(editor, changeColorItems(editor.req, heldCommands())) : []),

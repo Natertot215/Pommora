@@ -16,7 +16,7 @@ import {
 import { splitWithOffsets } from '../Engine/detect'
 import { citationText, deleteCitationChanges } from './citationEdits'
 import { foldedRegions } from '../folding'
-import { pasteAs } from '../Links/pasteLink'
+import { pasteFromClipboard } from '../Links/pasteLink'
 import { citationScan } from '../../Testing/markdownEngine'
 
 class ResizeObserverStub {
@@ -129,7 +129,7 @@ describe('the first footnote is never written above its own marker', () => {
     const view = await mountEditor({ initialBody: 'text\n\n' })
     await at(view, 6)
     await act(async () => {
-      await pasteAs(view, 'footnote')
+      await pasteFromClipboard(view, 'footnote')
     })
     const out = doc(view)
     expect(citationScan(splitWithOffsets(out), []).entries, out).toHaveLength(1)
@@ -232,7 +232,7 @@ describe('Paste As ▸ Footnote', () => {
     const view = await mountEditor({ initialBody: 'body here' })
     await at(view, 4)
     await act(async () => {
-      await pasteAs(view, 'footnote')
+      await pasteFromClipboard(view, 'footnote')
     })
     expect(doc(view)).toBe('body[^1] here\n\n[^1]: first para second para')
   })
@@ -242,7 +242,7 @@ describe('Paste As ▸ Footnote', () => {
     const view = await mountEditor({ initialBody: 'body' })
     await at(view, 4)
     await act(async () => {
-      await pasteAs(view, 'footnote')
+      await pasteFromClipboard(view, 'footnote')
     })
     expect(doc(view)).toBe('body[^1]\n\n[^1]: lead in - a list item > and a quote')
   })

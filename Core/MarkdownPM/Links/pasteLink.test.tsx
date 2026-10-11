@@ -11,12 +11,12 @@ import {
   settleTitle,
 } from '../../Testing/editorHarness'
 import { pendingTitles } from './pendingTitle'
-import { pasteAs } from './pasteLink'
+import { paste, pasteFromClipboard } from './pasteLink'
 
 const URL = 'https://www.example.com/a/b'
 
 // jsdom ships neither ClipboardEvent nor DataTransfer, so the event is fabricated with the one method the handler reads.
-function paste(view: EditorView, text: string | null): void {
+function pasteEvent(view: EditorView, text: string | null): void {
   const event = new Event('paste', { bubbles: true, cancelable: true })
   Object.defineProperty(event, 'clipboardData', {
     value: text === null ? null : { getData: () => text },
@@ -54,46 +54,46 @@ afterEach(async () => {
 describe('pasting an address into the editor', () => {
   it('writes a link', async () => {
     const view = await mountEditor({ initialBody: '' })
-    await act(async () => paste(view, URL))
+    await act(async () => pasteEvent(view, URL))
     expect(view.state.doc.toString()).toBe(`[${URL}](${URL})`)
   })
 
   it('writes the chosen form', async () => {
     settings({ defaultLinkFormat: 'link-short' })
     const view = await mountEditor({ initialBody: '' })
-    await act(async () => paste(view, URL))
+    await act(async () => pasteEvent(view, URL))
     expect(view.state.doc.toString()).toBe(`[example.com](${URL})`)
   })
 
   it('wraps a selection', async () => {
     const view = await mountEditor({ initialBody: 'read the docs now' })
     view.dispatch({ selection: { anchor: 9, head: 13 } })
-    await act(async () => paste(view, URL))
+    await act(async () => pasteEvent(view, URL))
     expect(view.state.doc.toString()).toBe(`read the [docs](${URL}) now`)
   })
 
   it('leaves a non-address alone', async () => {
     const view = await mountEditor({ initialBody: '' })
-    await act(async () => paste(view, 'App.tsx'))
+    await act(async () => pasteEvent(view, 'App.tsx'))
     expect(view.state.doc.toString()).toBe('App.tsx')
   })
 
   it('declines when the clipboard cannot be read', async () => {
     const view = await mountEditor({ initialBody: '' })
-    await act(async () => paste(view, null))
+    await act(async () => pasteEvent(view, null))
     expect(view.state.doc.toString()).toBe('')
   })
 
   it('leaves a read-only surface untouched', async () => {
     const view = await mountEditor({ initialBody: 'body', readOnly: true })
-    await act(async () => paste(view, URL))
+    await act(async () => pasteEvent(view, URL))
     expect(view.state.doc.toString()).toBe('body')
   })
 
   it('writes the domain in Page Title form, then swaps the title in when it lands', async () => {
     settings({ defaultLinkFormat: 'link-title' })
     const view = await mountEditor({ initialBody: '' })
-    await act(async () => paste(view, URL))
+    await act(async () => pasteEvent(view, URL))
     expect(view.state.doc.toString()).toBe(`[example.com](${URL})`)
 
     await settleTitle(URL, 'Example Domain')
@@ -103,7 +103,7 @@ describe('pasting an address into the editor', () => {
   it('leaves the label alone if it was retitled before the fetch landed', async () => {
     settings({ defaultLinkFormat: 'link-title' })
     const view = await mountEditor({ initialBody: '' })
-    await act(async () => paste(view, URL))
+    await act(async () => pasteEvent(view, URL))
     await act(async () => {
       view.dispatch({ changes: { from: 1, to: 12, insert: 'My Words' } })
     })
@@ -114,7 +114,7 @@ describe('pasting an address into the editor', () => {
   it('stops waiting even when the fetched title reads exactly as the domain did', async () => {
     settings({ defaultLinkFormat: 'link-title' })
     const view = await mountEditor({ initialBody: '' })
-    await act(async () => paste(view, URL))
+    await act(async () => pasteEvent(view, URL))
     expect(view.state.field(pendingTitles)).toHaveLength(1)
 
     await settleTitle(URL, 'example.com')
@@ -128,7 +128,7 @@ describe('pasting an address into the editor', () => {
       initialBody: '',
       host: { linkTitles: { [URL]: 'Example Domain' } },
     })
-    await act(async () => paste(view, URL))
+    await act(async () => pasteEvent(view, URL))
     expect(view.state.doc.toString()).toBe(`[Example Domain](${URL})`)
   })
 
@@ -137,20 +137,20 @@ describe('pasting an address into the editor', () => {
   it('lands literal inside a link destination', async () => {
     const view = await mountEditor({ initialBody: LINKED })
     view.dispatch({ selection: { anchor: 7 } })
-    await act(async () => paste(view, URL))
+    await act(async () => pasteEvent(view, URL))
     expect(view.state.doc.toString()).toBe(`[docs](${URL}) tail`)
   })
 
   it('formats outside a link destination on the same line', async () => {
     const view = await mountEditor({ initialBody: LINKED })
     view.dispatch({ selection: { anchor: LINKED.length } })
-    await act(async () => paste(view, URL))
+    await act(async () => pasteEvent(view, URL))
     expect(view.state.doc.toString()).toBe(`[docs]() tail[${URL}](${URL})`)
   })
 
   it('puts the caret after the link it wrote', async () => {
     const view = await mountEditor({ initialBody: '' })
-    await act(async () => paste(view, URL))
+    await act(async () => pasteEvent(view, URL))
     expect(view.state.selection.main.head).toBe(view.state.doc.length)
   })
 
@@ -158,7 +158,7 @@ describe('pasting an address into the editor', () => {
     const body = '```\ncurl \n```'
     const view = await mountEditor({ initialBody: body })
     view.dispatch({ selection: { anchor: 9 } })
-    await act(async () => paste(view, URL))
+    await act(async () => pasteEvent(view, URL))
     expect(view.state.doc.toString()).toBe(`\`\`\`\ncurl ${URL}\n\`\`\``)
   })
 
@@ -166,7 +166,7 @@ describe('pasting an address into the editor', () => {
     const body = '`fetch ` after'
     const view = await mountEditor({ initialBody: body })
     view.dispatch({ selection: { anchor: 7 } })
-    await act(async () => paste(view, URL))
+    await act(async () => pasteEvent(view, URL))
     expect(view.state.doc.toString()).toBe(`\`fetch ${URL}\` after`)
   })
 })
@@ -209,42 +209,143 @@ describe('pasting as an embed', () => {
   it('Plain Text writes the address a copied link points at, and Paste Without Formatting the clipboard as it is', async () => {
     clipboard = `[Home](${URL})`
     const plain = await seated('x ', 2)
-    await act(async () => await pasteAs(plain, 'plain'))
+    await act(async () => await pasteFromClipboard(plain, 'plain'))
     expect(plain.state.doc.toString()).toBe(`x ${URL}`)
     await cleanupEditor()
     const literal = await seated('x ', 2)
-    await act(async () => await pasteAs(literal, 'literal'))
+    await act(async () => await pasteFromClipboard(literal, 'literal'))
     expect(literal.state.doc.toString()).toBe(`x [Home](${URL})`)
   })
 
   it('writes a page embed onto the blank line the caret is on', async () => {
     clipboard = '[[Alpha]]'
     const view = await seated('intro\n\ntail', 6)
-    await act(async () => await pasteAs(view, 'embedPage'))
+    await act(async () => await pasteFromClipboard(view, 'embedPage'))
     expect(view.state.doc.toString()).toBe('intro\n![[Alpha]]\ntail')
   })
 
   it('writes a webpage embed onto the blank line the caret is on', async () => {
     const view = await seated('intro\n\ntail', 6)
-    await act(async () => await pasteAs(view, 'embedLink'))
+    await act(async () => await pasteFromClipboard(view, 'embedLink'))
     expect(view.state.doc.toString()).toBe(`intro\n![](${URL})\ntail`)
   })
 
   it('takes the whole line, not the caret', async () => {
     const view = await seated('intro\n   \ntail', 9)
-    await act(async () => await pasteAs(view, 'embedLink'))
+    await act(async () => await pasteFromClipboard(view, 'embedLink'))
     expect(view.state.doc.toString()).toBe(`intro\n![](${URL})\ntail`)
   })
 
   it("writes nothing where the line is not the embed's to take", async () => {
     const view = await seated('intro tail', 6)
-    await act(async () => await pasteAs(view, 'embedLink'))
+    await act(async () => await pasteFromClipboard(view, 'embedLink'))
     expect(view.state.doc.toString()).toBe('intro tail')
   })
 
   it('lands the address as plain text on a blank line inside a fence', async () => {
     const view = await seated('```\n\n```', 4)
-    await act(async () => await pasteAs(view, 'embedLink'))
+    await act(async () => await pasteFromClipboard(view, 'embedLink'))
     expect(view.state.doc.toString()).toBe(`\`\`\`\n${URL}\n\`\`\``)
+  })
+})
+
+describe('what a paste reads from the clipboard', () => {
+  it('formats a bare address only with its scheme written, unless a form was picked', async () => {
+    const view = await mountEditor({ initialBody: '' })
+    for (const text of ['3.14', 'App.tsx', 'example.com', 'www.example.com', 'mailto:a@b.co'])
+      expect(paste(view, text, 'auto'), text).toBe(false)
+    await act(async () => paste(view, 'example.com', 'link-short'))
+    expect(view.state.doc.toString()).toBe('[example.com](https://example.com)')
+  })
+
+  it('leaves a written link as written at a bare caret', async () => {
+    const view = await mountEditor({ initialBody: '' })
+    expect(paste(view, '[Docs](https://a.com)', 'auto')).toBe(false)
+  })
+
+  it('writes the clipboard as typed for a literal paste', async () => {
+    const view = await mountEditor({ initialBody: '' })
+    await act(async () => paste(view, '[x](u)', 'literal'))
+    expect(view.state.doc.toString()).toBe('[x](u)')
+  })
+})
+
+describe('pasting inside a link', () => {
+  const pastedAt = async (
+    body: string,
+    anchor: number,
+    text: string,
+    how: 'event' | Parameters<typeof paste>[2] = 'event',
+  ): Promise<string> => {
+    const view = await mountEditor({ initialBody: body })
+    view.dispatch({ selection: { anchor } })
+    clipboard = text
+    await act(async () => {
+      if (how === 'event') pasteEvent(view, text)
+      else if (how === 'inverse') chord(view)
+      else paste(view, text, how)
+    })
+    const out = view.state.doc.toString()
+    await cleanupEditor()
+    return out
+  }
+
+  const RETARGETS: [string, number[], string, string, string][] = [
+    ['[[Page1]]', [2, 4], '[x](Page2)', '[[Page2|x]]', '[[Page2|x]]'],
+    ['[[Page1#H]]', [4, 9], '[x](Page2)', '[[Page2|x]]', '[[Page2|x]]'],
+    ['[[Page1|Mine]]', [4, 10], '[[Page2]]', '[[Page2|Mine]]', '[[Page2]]'],
+    ['[y](Page1)', [1, 6], '[[Page2]]', '[y](Page2)', '[Page2](Page2)'],
+    ['[[Page1]]', [4], 'https://x.com', '[x.com](https://x.com)', '[x.com](https://x.com)'],
+  ]
+
+  for (const [container, carets, text, kept, removed] of RETARGETS)
+    it(`retargets ${container} with ${text} wherever the caret sits inside it`, async () => {
+      for (const keep of [true, false]) {
+        settings({ defaultLinkFormat: 'link-short', removeTitleOnLinkChange: !keep })
+        for (const at of carets)
+          expect(await pastedAt(`a ${container} b`, at + 2, text), `${at} ${keep}`).toBe(
+            `a ${keep ? kept : removed} b`,
+          )
+      }
+    })
+
+  it('writes the Default Link Format for an address pasted into an empty alias', async () => {
+    settings({ defaultLinkFormat: 'link-short' })
+    expect(await pastedAt('[[Foo|]]', 6, 'https://a.co')).toBe('[a.co](https://a.co)')
+  })
+
+  it("retargets a weblink's destination, keeping its label unless Remove Title On Link Change is on", async () => {
+    settings({ removeTitleOnLinkChange: false })
+    expect(await pastedAt('[x](https://b.co)', 8, 'https://c.co')).toBe('[x](https://c.co)')
+    settings({ defaultLinkFormat: 'link-short', removeTitleOnLinkChange: true })
+    expect(await pastedAt('[x](https://b.co)', 8, 'https://c.co')).toBe('[c.co](https://c.co)')
+  })
+
+  it('inserts text and a schemeless address as text', async () => {
+    expect(await pastedAt('[[P]]', 3, '3.14')).toBe('[[P3.14]]')
+    expect(await pastedAt('[[P]]', 2, 'hello')).toBe('[[helloP]]')
+  })
+
+  it('inserts the address as text under Plain Text and the inverse chord', async () => {
+    expect(await pastedAt('[[P1]]', 4, 'https://a.co', 'plain')).toBe('[[P1https://a.co]]')
+    expect(await pastedAt('[[P1]]', 4, 'https://a.co', 'inverse')).toBe('[[P1https://a.co]]')
+  })
+
+  it('writes the form a Paste As pick names', async () => {
+    settings({ removeTitleOnLinkChange: false })
+    expect(await pastedAt('[[P1|a]]', 3, '[[P2]]', 'markdown')).toBe('[a](P2)')
+    expect(await pastedAt('[y](P1)', 5, '[x](P2)', 'connection')).toBe('[[P2|x]]')
+    settings({ defaultLinkFormat: 'link-full' })
+    expect(await pastedAt('[x](https://b.co)', 8, 'https://c.co', 'link-short')).toBe(
+      '[c.co](https://c.co)',
+    )
+  })
+
+  it('appends at the resting seat after a link', async () => {
+    expect(await pastedAt('[[P]]', 5, '[[Q]]')).toBe('[[P]][[Q]]')
+  })
+
+  it("retargets an embed's connection mid-line", async () => {
+    expect(await pastedAt('see ![[Q]] x', 7, '[[P]]')).toBe('see ![[P]] x')
   })
 })

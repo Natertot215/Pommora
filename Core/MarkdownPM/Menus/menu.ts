@@ -1,12 +1,12 @@
 import { Prec, type Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
-import { INSERT_LINK_ACTION, PASTE_PLAIN_ACTION } from '../../Actions/editorMenu'
+import { INSERT_LINK_ACTION, PASTE_LITERAL_ACTION } from '../../Actions/editorMenu'
 import { isValidLink, normalizeLinkUrl } from '../../Paths/urlPath'
 import { serializeLink } from '../../Connections/linkValue'
 import { PASTE_AS_PREFIX, type PasteAsForm } from '../../Actions/pasteAsMenu'
 import { citationSeatAt, insertCitation } from '../Citations/citationActions'
 import { embedInsertAtCaret, embedSeatAt, webpageInsertAtCaret } from '../Embeds/embedInsert'
-import { pasteAs } from '../Links/pasteLink'
+import { pasteFromClipboard } from '../Links/pasteLink'
 import { readFormatState } from '../Input/formatState'
 import type { MarkdownScope } from '../Engine/detect'
 import { editorHost } from '../api'
@@ -37,12 +37,12 @@ export function applyEditorAction(view: EditorView, action: string): boolean {
   if (action === 'block:webpage') return webpageInsertAtCaret(view)
   if (action === INSERT_LINK_ACTION) return insertLinkOverSelection(view)
   if (action === 'block:citation') return insertCitation(view)
-  if (action === PASTE_PLAIN_ACTION) {
-    void pasteAs(view, 'literal')
+  if (action === PASTE_LITERAL_ACTION) {
+    void pasteFromClipboard(view, 'literal')
     return true
   }
   if (action.startsWith(PASTE_AS_PREFIX)) {
-    void pasteAs(view, action.slice(PASTE_AS_PREFIX.length) as PasteAsForm)
+    void pasteFromClipboard(view, action.slice(PASTE_AS_PREFIX.length) as PasteAsForm)
     return true
   }
   const sel = view.state.selection.main

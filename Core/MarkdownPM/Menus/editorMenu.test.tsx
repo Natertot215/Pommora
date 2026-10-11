@@ -109,7 +109,7 @@ describe('the editor’s native menu', () => {
 
   it('pastes plain text as a tagged paste, so a table payload is refused on a list line', async () => {
     clipboard = '| a |\n| --- |'
-    format.mockResolvedValue('paste:plain')
+    format.mockResolvedValue('paste:literal')
     const view = await mountEditor({ initialBody: '- item', host: host() })
     view.dispatch({ selection: { anchor: 6 } })
     await rightClick(view, 6)
@@ -166,7 +166,7 @@ describe('the editor’s native menu', () => {
 
   it('fills the cells with a table-shaped clipboard pasted plain into a cell', async () => {
     clipboard = '| a | b |\n| c | d |'
-    format.mockResolvedValue('paste:plain')
+    format.mockResolvedValue('paste:literal')
     const { page, cell } = await liveCell(TABLE)
     await rightClick(cell, 0)
     await act(async () => {})

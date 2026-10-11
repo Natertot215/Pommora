@@ -1,17 +1,28 @@
 import { describe, it, expect } from 'vitest'
 import { markdownLinkRegex } from '../Connections/links'
 import { readLinkText } from '../Connections/linkValue'
-import { pasteAsRows, pasteAsWrite, type PasteAsForm } from './pasteAsMenu'
+import { pasteAsRows, pasteAsWrite, type PasteAsForm, type PasteMode } from './pasteAsMenu'
 
 const URL = 'https://www.example.com/a/b'
+const A = 'https://a.com'
 
 const labels = (clipboard: string, seat = false, cite = false): string[] =>
   pasteAsRows(clipboard, seat, cite).map((r) => r.label)
 const forms = (clipboard: string, seat = false, cite = false): PasteAsForm[] =>
   pasteAsRows(clipboard, seat, cite).map((r) => r.form)
 
-const written = (clipboard: string, form: PasteAsForm, title?: string): string | undefined =>
-  pasteAsWrite(readLinkText(clipboard), form, title)?.text
+const over = (selection = '', title?: string) => ({
+  selection,
+  format: 'link-full' as const,
+  title,
+})
+
+const written = (
+  clipboard: string,
+  how: PasteMode,
+  title?: string,
+  selection = '',
+): string | undefined => pasteAsWrite(readLinkText(clipboard), how, over(selection, title))?.text
 
 describe('the footnote form answers to the clipboard alone', () => {
   it('is offered for a multi-paragraph clipboard, where no other form is', () => {
@@ -33,8 +44,8 @@ describe('the footnote form answers to the clipboard alone', () => {
   })
 
   it('writes nothing through the shared writer', () => {
-    expect(pasteAsWrite(readLinkText(URL), 'footnote')).toBeNull()
-    expect(pasteAsWrite(readLinkText('[[Alpha]]'), 'footnote')).toBeNull()
+    expect(pasteAsWrite(readLinkText(URL), 'footnote', over())).toBeNull()
+    expect(pasteAsWrite(readLinkText('[[Alpha]]'), 'footnote', over())).toBeNull()
   })
 })
 
@@ -107,7 +118,7 @@ describe('what each form writes', () => {
   })
 
   it('stands the domain in for a title it does not have yet, and says so', () => {
-    const w = pasteAsWrite(readLinkText(URL), 'link-title')
+    const w = pasteAsWrite(readLinkText(URL), 'link-title', over())
     expect(w).toEqual({
       kind: 'link',
       text: `[example.com](${URL})`,
@@ -144,15 +155,41 @@ describe('what each form writes', () => {
   it('writes each embed as the line its grammar reads', () => {
     expect(written('[[Alpha]]', 'embedPage')).toBe('![[Alpha]]')
     expect(written(URL, 'embedLink')).toBe(`![](${URL})`)
-    expect(pasteAsWrite(readLinkText('[[Alpha]]'), 'embedPage')?.kind).toBe('line')
+    expect(pasteAsWrite(readLinkText('[[Alpha]]'), 'embedPage', over())?.kind).toBe('line')
   })
 
   it('writes nothing for a form the clipboard cannot take', () => {
-    expect(pasteAsWrite(readLinkText(URL), 'embedPage')).toBeNull()
-    expect(pasteAsWrite(readLinkText('[[Alpha]]'), 'embedLink')).toBeNull()
-    expect(pasteAsWrite(readLinkText('[[T#H]]'), 'embedPage')).toBeNull()
-    expect(pasteAsWrite(readLinkText(URL), 'connection')).toBeNull()
-    expect(pasteAsWrite(readLinkText('[[Alpha]]'), 'link-short')).toBeNull()
-    expect(pasteAsWrite(null, 'plain')).toBeNull()
+    expect(written(URL, 'embedPage')).toBeUndefined()
+    expect(written('[[Alpha]]', 'embedLink')).toBeUndefined()
+    expect(written('[[T#H]]', 'embedPage')).toBeUndefined()
+    expect(written(URL, 'connection')).toBeUndefined()
+    expect(written('[[Alpha]]', 'link-short')).toBeUndefined()
+    expect(pasteAsWrite(null, 'plain', over())).toBeNull()
+  })
+})
+
+describe('what a plain paste writes', () => {
+  it('wraps a selection, and writes the Default Link Format at a caret', () => {
+    expect(written(A, 'auto', undefined, 'docs')).toBe(`[docs](${A})`)
+    expect(
+      pasteAsWrite(readLinkText(A), 'auto', { selection: '', format: 'link-short' })?.text,
+    ).toBe(`[a.com](${A})`)
+  })
+
+  it('escapes a wrapped selection, and leaves a multi-line selection unwrapped', () => {
+    expect(written(A, 'auto', undefined, 'Chapter [2]')).toBe(`[Chapter [2\\]](${A})`)
+    expect(written(A, 'auto', undefined, 'two\nlines')).toBe(`[${A}](${A})`)
+  })
+
+  it('flips to the format axis under the inverse chord over a selection, and to nothing at a caret', () => {
+    expect(written(A, 'inverse', undefined, 'docs')).toBe(`[${A}](${A})`)
+    expect(written(A, 'inverse')).toBeUndefined()
+  })
+
+  it('formats only a bare address', () => {
+    expect(written(A, 'plain')).toBe(A)
+    expect(written('[[Alpha]]', 'auto')).toBeUndefined()
+    expect(written(`[Docs](${A})`, 'auto')).toBeUndefined()
+    expect(written(A, 'literal')).toBeUndefined()
   })
 })

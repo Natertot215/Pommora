@@ -38,15 +38,15 @@ describe('the Edit menu rows the window answers', () => {
   it('Paste Without Formatting pastes literally into the innermost focused editor', () => {
     const page = new EditorView({ doc: 'page', parent: document.body })
     const cell = new EditorView({ doc: 'cell', parent: page.contentDOM })
-    runCommand('paste:plain', cell.contentDOM)
-    expect(applyEditorAction).toHaveBeenCalledWith(cell, 'paste:plain')
+    runCommand('paste:literal', cell.contentDOM)
+    expect(applyEditorAction).toHaveBeenCalledWith(cell, 'paste:literal')
     expect(tell).not.toHaveBeenCalled()
     page.destroy()
     cell.destroy()
   })
 
   it('Paste Without Formatting outside an editor pastes natively', () => {
-    runCommand('paste:plain', document.body)
+    runCommand('paste:literal', document.body)
     expect(tell).toHaveBeenCalledWith('edit:native', 'pasteAndMatchStyle')
   })
 })

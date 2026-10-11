@@ -7,7 +7,7 @@ import { applyEditorAction } from '../MarkdownPM/Menus/menu'
 import { editorAt } from '../MarkdownPM/api'
 import type { EditMenuAction, KeyedCommand, MenuCommand } from './commands'
 import { newPage } from './createActions'
-import { PASTE_PLAIN_ACTION } from './editorMenu'
+import { PASTE_LITERAL_ACTION } from './editorMenu'
 
 type RoutedCommand = KeyedCommand | MenuCommand | EditMenuAction
 
@@ -63,9 +63,9 @@ export function runCommand(id: RoutedCommand, target: EventTarget | null = null)
     case 'undo':
       if (!undoValue(target)) dialer().tell('edit:native', 'undo')
       return true
-    case PASTE_PLAIN_ACTION: {
+    case PASTE_LITERAL_ACTION: {
       const view = target instanceof Element ? editorAt(target) : null
-      if (view) applyEditorAction(view, PASTE_PLAIN_ACTION)
+      if (view) applyEditorAction(view, PASTE_LITERAL_ACTION)
       else dialer().tell('edit:native', 'pasteAndMatchStyle')
       return true
     }

@@ -1,55 +1,114 @@
 import { EditorView } from '@codemirror/view'
-import { decidePaste, pastedUrl } from './pasteDecision'
-import { readLinkText, type LinkPaste } from '../../Connections/linkValue'
-import { pasteAsWrite, type PasteAsForm } from '../../Actions/pasteAsMenu'
+import {
+  readLinkText,
+  retarget,
+  type LinkPaste,
+  type LinkTarget,
+} from '../../Connections/linkValue'
+import {
+  pasteAsWrite,
+  type LinePaste,
+  type PasteMode,
+  type TextPaste,
+} from '../../Actions/pasteAsMenu'
 import { linkDestinationStart } from '../../Connections/links'
 import { matchesCommand } from '../../Actions/commands'
-import { docScan, docString } from '../docCache'
-import { inCodeNear } from '../Engine/docScan'
+import { isWebAddress } from '../../Paths/urlPath'
+import { isLinkDisplay, type LinkDisplay } from '../../Properties/properties'
+import { docScan } from '../docCache'
+import { inCodeNear, type DocScan } from '../Engine/docScan'
+import { linkTokenAt, tokenize, type LinkKind } from '../Engine/tokens'
 import { insertCitation } from '../Citations/citationActions'
 import { citationText } from '../Citations/citationEdits'
 import { embedSeatAt } from '../Embeds/embedInsert'
 import { writeLinkAt } from './pendingTitle'
-import { editorHost } from '../api'
-import { trimmedRange } from '../Engine/markdownCode'
+import { type EditorHost, editorHost } from '../api'
+import { lineEndAt, lineStartAt, trimmedRange } from '../Engine/markdownCode'
 
-/** Deciding and writing are separate so a paste can be claimed on the decision alone — claiming after the write would leave the original text pasted alongside the link. */
-function linkFor(view: EditorView, text: string, inverse: boolean): LinkPaste | null {
-  // The read-only change filter drops a doc-changing transaction without a trace, so decline before dispatching.
-  if (view.state.readOnly) return null
+function clipboardTarget(text: string, how: PasteMode): LinkTarget | null {
+  const target = readLinkText(text)
+  if (target?.syntax === 'bare' && (how === 'auto' || how === 'inverse') && !isWebAddress(text))
+    return null
+  return target
+}
 
-  const url = pastedUrl(text)
-  if (!url) return null
+function linkContainerAt(
+  scan: DocScan,
+  sel: { from: number; to: number },
+): { kind: LinkKind; range: [number, number]; text: string } | null {
+  const ls = lineStartAt(scan.text, sel.from)
+  const line = scan.text.slice(ls, lineEndAt(scan.text, sel.from))
+  const tk = linkTokenAt(tokenize(line), sel.from - ls)
+  if (!tk || tk.range[0] >= sel.from - ls || sel.to - ls >= tk.range[1]) return null
+  return {
+    kind: tk.kind,
+    range: [ls + tk.range[0], ls + tk.range[1]],
+    text: line.slice(tk.range[0], tk.range[1]),
+  }
+}
 
-  const sel = view.state.selection.main
-  if (literalAt(view, sel.from)) return null
+export interface PasteEdit {
+  from: number
+  to: number
+  write: LinkPaste | TextPaste | LinePaste
+}
 
-  const host = view.state.facet(editorHost)
-  const settings = host.settings()
-  const decision = decidePaste({
-    clipboard: text,
-    selectionText: view.state.sliceDoc(
-      ...trimmedRange(docString(view.state.doc), sel.from, sel.to),
-    ),
-    inverse,
-    format: settings.defaultLinkFormat,
-    title: host.linkTitles.get(url) ?? undefined,
+export interface PasteOptions {
+  format: LinkDisplay
+  keepTitle: boolean
+  title: (url: string) => string | undefined
+}
+
+export const pasteOptions = (host: EditorHost): PasteOptions => {
+  const { defaultLinkFormat, removeTitleOnLinkChange } = host.settings()
+  return {
+    format: defaultLinkFormat,
+    keepTitle: !removeTitleOnLinkChange,
+    title: (url) => host.linkTitles.get(url) ?? undefined,
+  }
+}
+
+export function pasteEdit(
+  scan: DocScan,
+  sel: { from: number; to: number },
+  text: string,
+  how: PasteMode,
+  opts: PasteOptions,
+): PasteEdit | null {
+  if (how === 'literal' || inCodeNear(scan, sel.from)) return null
+  const target = clipboardTarget(text, how)
+  if (!target) return null
+  const title = target.kind === 'url' ? opts.title(target.url) : undefined
+  const within = how === 'plain' || how === 'inverse' ? null : linkContainerAt(scan, sel)
+  if (within) {
+    const syntax =
+      how === 'markdown'
+        ? 'markdown'
+        : how === 'connection'
+          ? 'wiki'
+          : within.kind === 'wikiLink'
+            ? 'wiki'
+            : 'markdown'
+    const format = isLinkDisplay(how) ? how : opts.format
+    const write = retarget(syntax, readLinkText(within.text), target, opts.keepTitle, {
+      format,
+      title,
+    })
+    return { from: within.range[0], to: within.range[1], write }
+  }
+  const ls = lineStartAt(scan.text, sel.from)
+  if (
+    linkDestinationStart(scan.text.slice(ls, lineEndAt(scan.text, sel.from)), sel.from - ls) !==
+    null
+  )
+    return null
+  const [from, to] = trimmedRange(scan.text, sel.from, sel.to)
+  const write = pasteAsWrite(target, how, {
+    selection: scan.text.slice(from, to),
+    format: opts.format,
+    title,
   })
-  return decision.kind === 'literal' ? null : decision
-}
-
-/** Code and another link's destination take the clipboard as written. An insertion at a code span's exclusive end still lands inside, so the position behind the caret answers too, except at the line's start, where it would read the fence above. */
-function literalAt(view: EditorView, pos: number): boolean {
-  const line = view.state.doc.lineAt(pos)
-  if (linkDestinationStart(line.text, pos - line.from) !== null) return true
-  const scan = docScan(view.state.doc)
-  return inCodeNear(scan, pos)
-}
-
-function writeLink(view: EditorView, link: LinkPaste): void {
-  const sel = view.state.selection.main
-  const [from, to] = trimmedRange(docString(view.state.doc), sel.from, sel.to)
-  writeLinkAt(view, from, to, link, 'input.paste')
+  return write && { from, to, write }
 }
 
 /** Re-read here rather than trusted from the menu: the document may have moved while it stood open. */
@@ -72,41 +131,44 @@ function writePlain(view: EditorView, text: string): void {
   })
 }
 
-/** `'literal'` is the menu's Paste Without Formatting: the clipboard as typed, whatever it holds. */
-export async function pasteAs(view: EditorView, form: PasteAsForm | 'literal'): Promise<void> {
-  const host = view.state.facet(editorHost)
-  const text = await host.clipboard.read()
-  // The menu can be held open indefinitely — a table cell's editor is destroyed the moment its cell deactivates.
-  if (!text || !view.dom.isConnected || view.state.readOnly) return
-  // The explicit pick overrides the settings, never the syntax, or the picked form would nest a link inside the one being authored.
-  if (form === 'literal' || literalAt(view, view.state.selection.main.from)) {
-    writePlain(view, text)
-    view.focus()
-    return
-  }
-  if (form === 'footnote') {
+export function paste(view: EditorView, text: string, how: PasteMode): boolean {
+  // The read-only change filter drops a doc-changing transaction without a trace, so decline before dispatching.
+  if (view.state.readOnly) return false
+  if (how === 'footnote') {
     insertCitation(view, citationText(text))
-    return
+    return true
   }
-  const target = readLinkText(text)
-  const cached = target?.kind === 'url' ? (host.linkTitles.get(target.url) ?? undefined) : undefined
-  const write = pasteAsWrite(target, form, cached)
-  if (!write) return
-  if (write.kind === 'link') writeLink(view, write)
-  else if (write.kind === 'line') writeLine(view, write.text)
-  else writePlain(view, write.text)
+  const host = view.state.facet(editorHost)
+  const edit = pasteEdit(
+    docScan(view.state.doc),
+    view.state.selection.main,
+    text,
+    how,
+    pasteOptions(host),
+  )
+  if (!edit) {
+    if (how === 'auto') return false
+    writePlain(view, text)
+  } else if (edit.write.kind === 'link')
+    writeLinkAt(view, edit.from, edit.to, edit.write, 'input.paste')
+  else if (edit.write.kind === 'line') writeLine(view, edit.write.text)
+  else writePlain(view, edit.write.text)
   view.focus()
+  return true
+}
+
+export async function pasteFromClipboard(view: EditorView, how: PasteMode): Promise<void> {
+  const text = await view.state.facet(editorHost).clipboard.read()
+  // The clipboard read is a round trip through main, so the view this was aimed at may be gone.
+  if (text && view.dom.isConnected) paste(view, text, how)
 }
 
 export const pasteLink = EditorView.domEventHandlers({
   paste(event, view) {
     // Null on CodeMirror's brokenClipboardAPI path, and in jsdom, which has no DataTransfer.
     const text = event.clipboardData?.getData('text/plain')
-    if (!text) return false
-    const link = linkFor(view, text, false)
-    if (!link) return false
+    if (!text || !paste(view, text, 'auto')) return false
     event.preventDefault()
-    writeLink(view, link)
     return true
   },
 
@@ -115,13 +177,7 @@ export const pasteLink = EditorView.domEventHandlers({
     if (!matchesCommand(host.settings().commands['paste-inverse'], event)) return false
     if (view.state.readOnly) return false
     event.preventDefault()
-    void host.clipboard.read().then((text) => {
-      // The clipboard read is a round trip through main, so the view this was aimed at may be gone.
-      if (!text || !view.dom.isConnected) return
-      const link = linkFor(view, text, true)
-      if (link) writeLink(view, link)
-      else writePlain(view, text)
-    })
+    void pasteFromClipboard(view, 'inverse')
     return true
   },
 })

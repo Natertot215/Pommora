@@ -130,7 +130,7 @@ describe('the window’s right-click', () => {
     const asked = askEditorMenu(req(10, 10))
     rightClick({})
     pick(row('Paste Without Formatting'))
-    await expect(asked).resolves.toBe('paste:plain')
+    await expect(asked).resolves.toBe('paste:literal')
     rightClick({})
     pick(row('Paste Without Formatting'))
     expect(pasteAndMatchStyle).toHaveBeenCalledOnce()
