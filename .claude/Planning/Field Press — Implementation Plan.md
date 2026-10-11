@@ -507,7 +507,7 @@ Drive each with `Input.dispatchMouseEvent`: a `mousePressed` inside an editing f
 
 - [ ] Phase review (opus-high): Phase 1 · Phase 2
 - [ ] Simplification lens → adversarial lens (opus-high) over `{baseline}..HEAD`
-- [ ] Neutral verification (opus-high) over `{baseline}..HEAD`
+- [ ] Neutral verification (opus-extra) over `{baseline}..HEAD`
 - [ ] Own pass: gates · diff · deviations · criteria
 - [ ] Reconciliation walked
 - [ ] Report delivered
