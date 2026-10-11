@@ -4,6 +4,7 @@ import { act } from 'react'
 import { EditorView } from '@codemirror/view'
 import { matchText } from '@pommora/uix/Menus/menu-row.css'
 import type { ConnectionsApi } from '../Links/connectionsApi'
+import type { EditorSettings } from '../api'
 import { buildPageIndex } from '../../Connections/pageIndex'
 import {
   cleanupEditor,
@@ -33,6 +34,31 @@ const conn: ConnectionsApi = {
   open: () => {},
 }
 const coords = { left: 10, right: 10, top: 10, bottom: 20 }
+
+const typed = async (view: EditorView, text: string): Promise<void> => {
+  for (const ch of text)
+    await act(async () => {
+      const at = view.state.selection.main.head
+      const insert = () =>
+        view.state.update({
+          changes: { from: at, insert: ch },
+          selection: { anchor: at + 1 },
+          userEvent: 'input.type',
+        })
+      const handled = view.state
+        .facet(EditorView.inputHandler)
+        .some((h) => h(view, at, at, ch, insert))
+      if (!handled) view.dispatch(insert())
+    })
+}
+
+const press = async (view: EditorView, key: string): Promise<void> => {
+  await act(async () => {
+    view.contentDOM.dispatchEvent(
+      new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }),
+    )
+  })
+}
 
 async function pickFirst(body: string, caret: number): Promise<{ doc: string; head: number }> {
   const view = await mountEditor({ initialBody: body, connections: conn })
@@ -208,31 +234,6 @@ describe('an unclosed opener with Pair Brackets off', () => {
     open: () => {},
   }
 
-  const typed = async (view: EditorView, text: string): Promise<void> => {
-    for (const ch of text)
-      await act(async () => {
-        const at = view.state.selection.main.head
-        const insert = () =>
-          view.state.update({
-            changes: { from: at, insert: ch },
-            selection: { anchor: at + 1 },
-            userEvent: 'input.type',
-          })
-        const handled = view.state
-          .facet(EditorView.inputHandler)
-          .some((h) => h(view, at, at, ch, insert))
-        if (!handled) view.dispatch(insert())
-      })
-  }
-
-  const press = async (view: EditorView, key: string): Promise<void> => {
-    await act(async () => {
-      view.contentDOM.dispatchEvent(
-        new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }),
-      )
-    })
-  }
-
   const typedOpener = async (): Promise<EditorView> => {
     const view = await mountEditor({
       initialBody: '',
@@ -307,17 +308,67 @@ describe('the alias list slides in only when a pick opened its slot', () => {
   })
 })
 
-describe('retargeting an aliased connection obeys the strip setting', () => {
-  it('drops the alias by default — the old words describe the old page', async () => {
-    seedHost({})
-    const { doc } = await pickFirst('[[Alp|the one]]', 4)
-    expect(doc).toBe('[[Alpha]]')
+describe('a pick retargets the link the picker opened on', () => {
+  const pages: ConnectionsApi = {
+    ...buildPageIndex([
+      { id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' },
+      { id: 'pOld', title: 'Old', path: 'Old.md' },
+      { id: 'pOlder', title: 'Older', path: 'Older.md' },
+      { id: 'pGamma', title: 'Gamma', path: 'Gamma.md' },
+    ]),
+    headingsOf: () => undefined,
+    location: () => [],
+    open: () => {},
+  }
+
+  const mounted = async (body: string, settings: Partial<EditorSettings> = {}) => {
+    const view = await mountEditor({ initialBody: body, connections: pages, host: { settings } })
+    vi.spyOn(view, 'coordsAtPos').mockReturnValue(coords)
+    await act(async () => view.focus())
+    return view
+  }
+
+  it('a label typed while the link is written stays, with Pair Brackets on', async () => {
+    const view = await mounted('[x]')
+    await act(async () => {
+      view.dispatch({ selection: { anchor: 3 } })
+    })
+    await typed(view, '(Al')
+    expect(view.state.doc.toString()).toBe('[x](Al)')
+    await press(view, 'Enter')
+    expect(view.state.doc.toString()).toBe('[x](Alpha)')
   })
 
-  it('carries the alias across when the setting is off', async () => {
-    seedHost({ settings: { removeTitleOnLinkChange: false } })
-    const { doc } = await pickFirst('[[Alp|the one]]', 4)
-    expect(doc).toBe('[[Alpha|the one]]')
+  it('and with Pair Brackets off', async () => {
+    const view = await mounted('', { pairBrackets: false })
+    await typed(view, '[x](Al')
+    expect(view.state.doc.toString()).toBe('[x](Al')
+    await press(view, 'Enter')
+    expect(view.state.doc.toString()).toBe('[x](Alpha)')
+  })
+
+  it.each([
+    ['[Mine](Old) x', 7, 10, 'Gam', true, '[Gamma](Gamma) x'],
+    ['[Mine](Old) x', 7, 10, 'Gam', false, '[Mine](Gamma) x'],
+    ['[[Old|Mine]] x', 2, 5, 'Gam', true, '[[Gamma]] x'],
+    ['[[Old|Mine]] x', 2, 5, 'Gam', false, '[[Gamma|Mine]] x'],
+    ['[[Old|Mine]] x', 2, 5, 'Ol', true, '[[Old|Mine]] x'],
+    ['[[Nope|Mine]] x', 2, 6, 'Gam', true, '[[Gamma|Mine]] x'],
+  ] as const)('%s, %i to %i retyped as %s, dropping titles: %s, writes %s', async (...row) => {
+    const [body, from, to, insert, removeTitleOnLinkChange, written] = row
+    const view = await mounted(body, { removeTitleOnLinkChange })
+    await act(async () => {
+      view.dispatch({ selection: { anchor: to } })
+    })
+    await act(async () => {
+      view.dispatch({
+        changes: { from, to, insert },
+        selection: { anchor: from + insert.length },
+        userEvent: 'input.type',
+      })
+    })
+    await press(view, 'Enter')
+    expect(view.state.doc.toString()).toBe(written)
   })
 })
 
@@ -506,14 +557,14 @@ describe('the chevron slides in a page’s headings', () => {
         new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }),
       )
     })
-    expect(view.state.doc.toString()).toBe('[Notes](Notes#)')
+    expect(view.state.doc.toString()).toBe('[x](Notes#)')
     expect(document.querySelector('.mdpm-ac')?.textContent).toContain('Setup')
     await act(async () => {
       view.contentDOM.dispatchEvent(
         new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }),
       )
     })
-    expect(view.state.doc.toString()).toBe('[Notes](Notes#Setup)')
+    expect(view.state.doc.toString()).toBe('[x](Notes#Setup)')
     expect(view.state.selection.main.head).toBe(view.state.doc.length)
   })
 

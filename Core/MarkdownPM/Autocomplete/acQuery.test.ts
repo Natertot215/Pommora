@@ -57,6 +57,42 @@ describe('the picker’s query as editor state', () => {
   })
 })
 
+describe('the link the picker opened on', () => {
+  const typed = (state: EditorState, at: number, text: string) =>
+    state.update({
+      changes: { from: at, insert: text },
+      selection: { anchor: at + text.length },
+      userEvent: 'input.type',
+    }).state
+
+  it('keeps the text it first read while the query continues', () => {
+    const { field, state } = stateOf('[x](', 4)
+    const opened = typed(state, 4, 'A')
+    expect(opened.field(field).origin).toBe('[x](A)')
+    expect(typed(opened, 5, 'l').field(field).origin).toBe('[x](A)')
+  })
+
+  it('reads a closed link the caret is placed in, and keeps it through a retype', () => {
+    const { field, state } = stateOf('[Mine](Old) x', 0)
+    const placed = state.update({ selection: { anchor: 10 } }).state
+    expect(placed.field(field).origin).toBe('[Mine](Old)')
+    const retyped = placed.update({
+      changes: { from: 7, to: 10, insert: 'Gam' },
+      selection: { anchor: 10 },
+      userEvent: 'input.type',
+    }).state
+    expect(retyped.field(field).query).toMatchObject({ query: 'Gam' })
+    expect(retyped.field(field).origin).toBe('[Mine](Old)')
+  })
+
+  it('a query at another link replaces it', () => {
+    const { field, state } = stateOf('[[Old|Mine]] [[New]]', 4)
+    const first = state.update({ selection: { anchor: 3 } }).state
+    expect(first.field(field).origin).toBe('[[Old|Mine]]')
+    expect(first.update({ selection: { anchor: 16 } }).state.field(field).origin).toBe('[[New]]')
+  })
+})
+
 describe('the § arm', () => {
   const automatic = { inPageHeadingResolution: 'automatic' as const }
   const type = (state: EditorState, spec: TransactionSpec) =>

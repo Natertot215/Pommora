@@ -123,10 +123,12 @@ export function useConnectionAutocomplete(
     const view = viewRef.current
     if (!view || !ac || !ctl.current.open) return
     const settings = host.settings()
-    const container =
-      ac.form === 'link'
-        ? readLinkText(view.state.sliceDoc(ac.from, ac.to) + (ac.closed ? '' : ']]'))
-        : null
+    const conn = host.connections()
+    const origin = view.state.field(field).origin
+    const container = origin === null ? null : readLinkText(origin)
+    const pointed =
+      container?.kind === 'url' ||
+      (container?.kind === 'page' && conn?.resolve(container.title).status === 'resolved')
     const pageId = row.kind === 'page' ? row.pageId : page?.id
     // Only a page the picker offered can open an alias slot — an empty pipe with nothing behind it is a slot the user has to close.
     const openAlias =
@@ -136,7 +138,7 @@ export function useConnectionAutocomplete(
       host.aliases.list(pageId ?? '').length > 0
     const { changes, anchor, opensAlias, opensHeading } = commitEdit(ac, row.value, {
       container,
-      keepTitle: !settings.removeTitleOnLinkChange,
+      keepTitle: !settings.removeTitleOnLinkChange || !pointed,
       openAlias,
       openHeading: opts.openHeading,
     })

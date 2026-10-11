@@ -277,41 +277,52 @@ describe('the ( ) form', () => {
 })
 
 describe('a pick retargets under Remove Title On Link Change', () => {
-  const pick = (doc: string, at: string, value: string, keepTitle: boolean) => {
-    const ac = autocompleteQuery(doc, doc.indexOf(at) + 1)!
-    const container = ac.form === 'link' ? readLinkText(doc.slice(ac.from, ac.to)) : null
-    const edit = commitEdit(ac, value, { container, keepTitle })
+  const pick = (
+    link: string,
+    at: string,
+    value: string,
+    keepTitle: boolean,
+    container = readLinkText(link),
+  ) => {
+    const doc = `${link} x`
+    const edit = commitEdit(autocompleteQuery(doc, doc.indexOf(at) + 1)!, value, {
+      container,
+      keepTitle,
+    })
     return { text: landed(doc, edit), after: landed(doc, edit).slice(edit.anchor) }
   }
 
   it('a connection’s alias drops with the setting on and rides with it off', () => {
-    expect(pick('[[Old|Mine]] x', 'Old', 'New', false).text).toBe('[[New]] x')
-    expect(pick('[[Old|Mine]] x', 'Old', 'New', true).text).toBe('[[New|Mine]] x')
+    expect(pick('[[Old|Mine]]', 'Old', 'New', false).text).toBe('[[New]] x')
+    expect(pick('[[Old|Mine]]', 'Old', 'New', true).text).toBe('[[New|Mine]] x')
   })
 
   it('re-picking the same page keeps the alias either way', () => {
-    expect(pick('[[Old|Mine]] x', 'Old', 'Old', false).text).toBe('[[Old|Mine]] x')
-    expect(pick('[[Old|Mine]] x', 'Old', 'Old', true).text).toBe('[[Old|Mine]] x')
+    expect(pick('[[Old|Mine]]', 'Old', 'Old', false).text).toBe('[[Old|Mine]] x')
+    expect(pick('[[Old|Mine]]', 'Old', 'Old', true).text).toBe('[[Old|Mine]] x')
   })
 
   it('a markdown label takes the new title with the setting on, and rests past the link', () => {
-    expect(pick('[Notes](Old) x', 'Old', 'New', false)).toEqual({
+    expect(pick('[Notes](Old)', 'Old', 'New', false)).toEqual({
       text: '[New](New) x',
       after: ' x',
     })
-    expect(pick('[Notes](Old) x', 'Old', 'New', true)).toEqual({
+    expect(pick('[Notes](Old)', 'Old', 'New', true)).toEqual({
       text: '[Notes](New) x',
       after: ' x',
     })
   })
 
-  it('re-picking the same page keeps the label', () => {
-    expect(pick('[Notes](Old) x', 'Old', 'Old', false).text).toBe('[Notes](Old) x')
+  it('the old target is the container’s, not the text typed since', () => {
+    const was = readLinkText('[Notes](Old)')
+    expect(pick('[Notes](Ol)', 'Ol', 'Old', false, was).text).toBe('[Notes](Old) x')
+    expect(pick('[Notes](Ol)', 'Ol', 'New', false, was).text).toBe('[New](New) x')
   })
 
-  it('a link still being written has no old target, so its label stays', () => {
-    expect(pick('[Notes](O', 'O', 'New', false).text).toBe('[Notes](New)')
-    expect(pick('[Notes]() x', '(', 'New', false).text).toBe('[Notes](New) x')
+  it('a link with no container keeps its label, closed or not', () => {
+    expect(pick('[Notes](Ne)', 'Ne', 'New', false, null).text).toBe('[Notes](New) x')
+    expect(pick('[Notes](O', 'O', 'New', false, null).text).toBe('[Notes](New) x')
+    expect(pick('[Notes]()', '(', 'New', false, null).text).toBe('[Notes](New) x')
   })
 })
 

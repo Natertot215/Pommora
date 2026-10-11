@@ -198,7 +198,7 @@ export function aliasRows(
     )
 }
 
-const closerOf = (form: ConnectionForm): string =>
+export const closerOf = (form: ConnectionForm): string =>
   form === 'target' || form === 'fragment' ? ')' : form === 'section' ? '' : ']]'
 
 interface CommitEdit {
@@ -246,10 +246,11 @@ export function commitEdit(
     }
   }
   const closer = ac.closed ? '' : closerOf(ac.form)
+  const container = opts.container ?? null
   if (ac.form === 'link') {
     const { text } = retarget(
       'wiki',
-      opts.container ?? null,
+      container,
       { kind: 'page', syntax: 'wiki', title: value },
       opts.keepTitle,
     )
@@ -275,10 +276,9 @@ export function commitEdit(
   }
   const retitles =
     ac.form === 'target' &&
-    ac.closed &&
-    ac.query !== '' &&
     !opts.keepTitle &&
-    normalizeTitle(ac.query) !== normalizeTitle(value)
+    container !== null &&
+    normalizeTitle(container.kind === 'page' ? container.title : '') !== normalizeTitle(value)
   const fill = ac.label && (ac.label.from === ac.label.to || retitles) ? ac.label : null
   const label = fill ? escapeAlias(value) : ''
   return {
