@@ -9,7 +9,6 @@ import {
   type LinkMenuAction,
   connectionMenuModel,
 } from '../../Actions/connectionMenu'
-import { INSERT_LINK_ACTION } from '../../Actions/editorMenu'
 import type { ConnectionsApi } from './connectionsApi'
 import { buildPageIndex } from '../../Connections/pageIndex'
 import { showConnectionMenu } from '../../Interface/Menus/connectionMenuActions'
@@ -478,7 +477,7 @@ describe('Insert Link over a selected address', () => {
     const view = await mountEditor({ initialBody: body })
     view.dispatch({ selection: { anchor: from, head: to } })
     await act(async () => {
-      applyEditorAction(view, INSERT_LINK_ACTION)
+      applyEditorAction(view, 'link:insert')
     })
     return view
   }

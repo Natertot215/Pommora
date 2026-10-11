@@ -38,7 +38,6 @@ export const editorMenuRequest = z.object({
 })
 export type EditorMenuRequest = z.infer<typeof editorMenuRequest>
 
-export const INSERT_LINK_ACTION = 'link:insert' as const
 export const PASTE_LITERAL_ACTION = 'paste:literal' as const
 export const RESTING_EDITS = { cut: 'edit:cut', copy: 'edit:copy', paste: 'edit:paste' } as const
 
@@ -48,7 +47,7 @@ type EditorMenuAction =
   | BlockMenuAction
   | FormatChordAction
   | 'heading:0'
-  | typeof INSERT_LINK_ACTION
+  | 'link:insert'
   | `highlight:${HighlightColor}`
 
 type FormatFlag = Exclude<FormatChordAction extends `format:${infer F}` ? F : never, 'highlight'>
@@ -113,7 +112,7 @@ export function editorContextItems(
     items.map((r) => ({ ...r, checked: checkedIn(s, r.action) }))
   // Offered only when the selection IS an address, which keeps it apart from Format ▸ External Link.
   const insertLink: ActionItem<EditorMenuAction>[] = isValidLink(selection)
-    ? [{ label: 'Insert Link', action: INSERT_LINK_ACTION }]
+    ? [{ label: 'Insert Link', action: 'link:insert' }]
     : []
   const insert = { label: 'Insert', submenu: rows(insertRows(s.citeSeat)) }
   const formatRows = (items: readonly LeafItem<FormatChordAction>[]) =>
