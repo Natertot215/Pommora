@@ -22,6 +22,7 @@ class ResizeObserverStub {
 
 stubEditorBridge()
 afterEach(async () => {
+  seedHost({})
   await cleanupEditor()
 })
 
@@ -326,17 +327,15 @@ describe('the chevron slides in a page’s headings', () => {
       { id: 'pNotes', title: 'Notes', path: 'Notes.md' },
       { id: 'pBlank', title: 'Blank', path: 'Blank.md' },
     ]),
-    headingsOf: () => undefined,
+    headingsOf: (path) =>
+      path === 'Notes.md'
+        ? { keys: ['setup'], texts: ['Setup'], outline: [{ text: 'Setup', level: 2 }] }
+        : { keys: [], texts: [], outline: [] },
     location: () => [],
     open: () => {},
   }
 
-  const seatReady = (id: string, body: string): void => {
-    seedHost({ bodies: { [id]: body } })
-  }
-
   it('the arrow-right chevron opens the fragment and lists the page’s headings', async () => {
-    seatReady('pNotes', '## Setup\n\nbody')
     const view = await mountEditor({ initialBody: '[[Not]]', connections: headingConn })
     vi.spyOn(view, 'coordsAtPos').mockReturnValue(coords)
     await act(async () => {
@@ -354,7 +353,6 @@ describe('the chevron slides in a page’s headings', () => {
   })
 
   it('Return on a heading row finishes the link past the closer', async () => {
-    seatReady('pNotes', '## Setup\n\nbody')
     const view = await mountEditor({ initialBody: '[[Not]]', connections: headingConn })
     vi.spyOn(view, 'coordsAtPos').mockReturnValue(coords)
     await act(async () => {
@@ -375,8 +373,7 @@ describe('the chevron slides in a page’s headings', () => {
   })
 
   it('the alias slide follows a heading commit when the page has aliases', async () => {
-    seatReady('pNotes', '## Setup\n\nbody')
-    seedHost({ bodies: { pNotes: '## Setup\n\nbody' }, aliases: { pNotes: ['the notes'] } })
+    seedHost({ aliases: { pNotes: ['the notes'] } })
     const view = await mountEditor({ initialBody: '[[Not]]', connections: headingConn })
     vi.spyOn(view, 'coordsAtPos').mockReturnValue(coords)
     await act(async () => {
@@ -394,7 +391,6 @@ describe('the chevron slides in a page’s headings', () => {
   })
 
   it('an abandoned heading slot drops its # when the caret leaves', async () => {
-    seatReady('pNotes', '## Setup\n\nbody')
     const view = await mountEditor({ initialBody: '[[Not]] tail', connections: headingConn })
     vi.spyOn(view, 'coordsAtPos').mockReturnValue(coords)
     await act(async () => {
@@ -415,7 +411,6 @@ describe('the chevron slides in a page’s headings', () => {
   })
 
   it('arrow-left backs the fragment out again', async () => {
-    seatReady('pNotes', '## Setup\n\nbody')
     const view = await mountEditor({ initialBody: '[[Not]]', connections: headingConn })
     vi.spyOn(view, 'coordsAtPos').mockReturnValue(coords)
     await act(async () => {
@@ -447,8 +442,47 @@ describe('the chevron slides in a page’s headings', () => {
     expect(document.querySelector('.mdpm-ac')?.textContent).toContain('Setup')
   })
 
+  it('a page’s headings list from the index, nested by level and each once', async () => {
+    const outline = [
+      { text: 'Intro', level: 1 },
+      { text: 'Setup', level: 2 },
+      { text: 'Usage', level: 1 },
+      { text: 'Setup', level: 2 },
+    ]
+    const nested: ConnectionsApi = {
+      ...headingConn,
+      headingsOf: () => ({
+        keys: ['intro', 'setup', 'usage'],
+        texts: outline.map((h) => h.text),
+        outline,
+      }),
+    }
+    const body = '[[Notes#]]'
+    const view = await mountEditor({ initialBody: body, connections: nested })
+    vi.spyOn(view, 'coordsAtPos').mockReturnValue(coords)
+    await act(async () => {
+      view.focus()
+      view.dispatch({ selection: { anchor: body.indexOf('#') + 1 } })
+    })
+    const pane = document.querySelector('.mdpm-ac') as HTMLElement
+    expect(pane.textContent).toBe('IntroSetupUsage')
+    expect(pane.querySelectorAll('[data-drop-outline]')).toHaveLength(1)
+  })
+
+  it('a bare # lists a heading typed moments ago', async () => {
+    const view = await mountEditor({ initialBody: '[[#]]', connections: headingConn })
+    vi.spyOn(view, 'coordsAtPos').mockReturnValue(coords)
+    await act(async () => {
+      view.focus()
+      view.dispatch({ changes: { from: 0, insert: '## Fresh\n\n' }, selection: { anchor: 0 } })
+    })
+    await act(async () => {
+      view.dispatch({ selection: { anchor: view.state.doc.length - 2 } })
+    })
+    expect(document.querySelector('.mdpm-ac')?.textContent).toContain('Fresh')
+  })
+
   it('a heading fragment on a page with none closes the pane', async () => {
-    seatReady('pBlank', 'no headings here')
     const body = '[[Blank#]]'
     const view = await mountEditor({ initialBody: body, connections: headingConn })
     vi.spyOn(view, 'coordsAtPos').mockReturnValue(coords)
@@ -461,7 +495,6 @@ describe('the chevron slides in a page’s headings', () => {
 
   // The same slide, written into a markdown link's destination.
   it('the chevron in ( ) writes the page and its #, lists its headings, and Return finishes past the )', async () => {
-    seatReady('pNotes', '## Setup\n\nbody')
     const view = await mountEditor({ initialBody: '[x](Not)', connections: headingConn })
     vi.spyOn(view, 'coordsAtPos').mockReturnValue(coords)
     await act(async () => {
@@ -516,7 +549,6 @@ describe('the chevron slides in a page’s headings', () => {
   })
 
   it('ArrowRight on a page row in an empty ( ) opens its headings', async () => {
-    seatReady('pNotes', '## Setup\n\nbody')
     const view = await mountEditor({ initialBody: 'a [sel]() b', connections: headingConn })
     vi.spyOn(view, 'coordsAtPos').mockReturnValue(coords)
     await act(async () => {

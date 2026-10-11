@@ -16,7 +16,6 @@ type EditorProps = Parameters<typeof MarkdownEditor>[0]
 interface HarnessHost {
   settings?: Partial<EditorSettings>
   aliases?: Record<string, string[]>
-  bodies?: Record<string, string>
   linkTitles?: Record<string, string>
   clipboard?: Partial<EditorHost['clipboard']>
   menus?: Partial<EditorHost['menus']>
@@ -51,7 +50,6 @@ interface HarnessState {
   settings: EditorSettings
   connections: ConnectionsApi | undefined
   aliases: Record<string, string[]>
-  bodies: Record<string, string>
   linkTitles: Record<string, string>
   pendingTitles: Map<
     string,
@@ -78,7 +76,6 @@ function harnessHost(
     settings: { ...editorSettingsOf({}, {}, DEFAULT_COMMANDS), ...spec.settings },
     connections: undefined,
     aliases: { ...spec.aliases },
-    bodies: { ...spec.bodies },
     linkTitles: { ...spec.linkTitles },
     pendingTitles: new Map(),
     aliasWatchers: new Set<() => void>(),
@@ -135,8 +132,6 @@ function harnessHost(
     renderTile: () => null,
     pickTree: () => spec.pickTree ?? [],
     openLink: spec.openLink ?? (() => {}),
-    warmBody: (page) => state.bodies[page.id] ?? null,
-    fetchBody: async (page) => state.bodies[page.id] ?? null,
     pageTitle: () => spec.pageTitle ?? null,
     pageSurface: spec.pageSurface,
     prefs: spec.prefs,

@@ -13,7 +13,7 @@ import { type DocScan, inCodeAt } from '../Engine/docScan'
 import { connectionAt, inBracket, openConnectionAt } from '../Input/edits'
 import { lineIndexAt, type TextEdit } from '../Engine/markdownCode'
 import type { ConnPage } from '../../Connections/pageIndex'
-import type { OutlineHeading } from '../Engine/headingScan'
+import type { PageHeading } from '../../Platform/stores'
 import type { EditorHost } from '../api'
 import type { ConnectionsApi } from '../Links/connectionsApi'
 
@@ -150,7 +150,7 @@ export const pageRow = (p: ConnPage, conn: ConnectionsApi): AcRow => ({
   location: conn.location(p.id),
 })
 
-export function headingRows(outline: readonly OutlineHeading[], query: string): HeadingRow[] {
+export function headingRows(outline: readonly PageHeading[], query: string): HeadingRow[] {
   const q = normalizeTitle(query)
   const seen = new Set<string>()
   return outline

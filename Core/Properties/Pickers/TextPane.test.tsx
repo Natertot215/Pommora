@@ -21,6 +21,9 @@ if (!('ResizeObserver' in globalThis)) {
 }
 
 const ALPHA = { id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' }
+const ALPHA_HEADINGS = {
+  [ALPHA.path]: { keys: ['setup'], texts: ['Setup'], outline: [{ text: 'Setup', level: 2 }] },
+}
 let answerTitle: (v: unknown) => void = () => {}
 stubEditorBridge({
   'linkTitles:fetch': () => new Promise((r) => (answerTitle = r)),
@@ -249,6 +252,7 @@ describe('TextPane', () => {
   })
 
   it('offers the holding page’s headings for a bare `#`, never a `#` line of the value', async () => {
+    useSession.setState({ headings: ALPHA_HEADINGS })
     render(text('# Foo\n[[#]]'), ALPHA)
     vi.spyOn(view(), 'coordsAtPos').mockReturnValue({ left: 10, right: 10, top: 10, bottom: 20 })
     await act(async () => view().dispatch({ selection: { anchor: 9 } }))
@@ -261,6 +265,7 @@ describe('TextPane', () => {
   it('under Automatic, a typed § lists the holding page’s headings as a page does', async () => {
     useSession.setState({
       tree: makeTree({ personalization: { inPageHeadingResolution: 'automatic' } }),
+      headings: ALPHA_HEADINGS,
     })
     render(text('see '), ALPHA)
     vi.spyOn(view(), 'coordsAtPos').mockReturnValue({ left: 10, right: 10, top: 10, bottom: 20 })

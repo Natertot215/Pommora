@@ -11,7 +11,7 @@ import type { WarmSeam } from '../MarkdownPM/warmSeam'
 import { citationsVisible, pageMetaOf, useSession } from '../Session/store'
 import { commandsOf, personalizationOf } from '../Session/configSlice'
 import { pagesByIdOf } from '../Nexus/treeIndex'
-import { fetchPageDetail, knownBody } from '../Session/pageDetailCache'
+import { knownBody } from '../Session/pageDetailCache'
 import { warmSeamOf } from '../Session/warmCache'
 import { dialer } from '../Platform/dialer'
 import { popMenu } from '../Actions/menuActions'
@@ -133,11 +133,6 @@ function buildEditorHost(
       return s.tree ? pagePickTree(s.tree, personalizationOf(s).defaultIcons, (p) => p.title) : []
     },
     openLink: openWebLink,
-    warmBody: (page) => {
-      const slot = state().pages[page.id]
-      return slot?.status === 'ready' ? slot.body : null
-    },
-    fetchBody: (page) => fetchPageDetail(page.path).then((d) => d?.body ?? null),
     pageTitle: () => {
       const tree = state().tree
       return (pageId && tree && pagesByIdOf(tree).get(pageId)?.title) ?? null

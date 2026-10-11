@@ -98,6 +98,11 @@ describe('the forget × is inert until it is revealed', () => {
           index={0}
           onPick={onPick}
           behind={null}
+          headingRows={[]}
+          collapsed={new Set()}
+          onToggleHeading={() => {}}
+          onAside={() => {}}
+          onBack={() => {}}
         />,
       )
     })
@@ -187,6 +192,11 @@ describe('the heading slide’s top row marks how it arrived', () => {
           index={0}
           onPick={() => {}}
           behind={slid ? [] : null}
+          headingRows={rows}
+          collapsed={new Set()}
+          onToggleHeading={() => {}}
+          onAside={() => {}}
+          onBack={() => {}}
         />,
       )
     })

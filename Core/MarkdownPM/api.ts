@@ -189,9 +189,6 @@ export interface EditorHost {
   renderTile(tile: TileMount): ReactNode
   pickTree(): PickItem<string>[]
   openLink(url: string): void
-  // A page's body as the session holds it: the open tab's live text when warm, else read from disk.
-  warmBody(page: ConnPage): string | null
-  fetchBody(page: ConnPage): Promise<string | null>
   // The live tree's title for the surface's own page, read fresh rather than from a capped cache; null off a page identity.
   pageTitle(): string | null
   // The one surface whose web guests run live; nested and secondary editors show their faces.
