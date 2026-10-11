@@ -6,7 +6,6 @@ import { connectionAt, inAliasAt } from '../Input/edits'
 import { scanDoc } from '../Engine/docScan'
 import { aliasRows, type HeadingRow } from './autocomplete'
 import { AutocompletePane } from './AutocompletePane'
-import { buildPageIndex } from '../../Connections/pageIndex'
 import type { EditorHost } from '../api'
 
 class ResizeObserverStub {
@@ -16,15 +15,6 @@ class ResizeObserverStub {
 }
 ;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = ResizeObserverStub
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
-
-const index = buildPageIndex([
-  { id: 'p1', title: 'Q3 Plan', path: 'Notes/Q3 Plan.md' },
-  { id: 'p2', title: 'Other', path: 'Notes/Other.md' },
-])
-const duplicated = buildPageIndex([
-  { id: 'b1', title: 'Beta', path: 'One/Beta.md' },
-  { id: 'b2', title: 'Beta', path: 'Two/Beta.md' },
-])
 
 let remembered: Record<string, string[]> = {}
 const aliases: EditorHost['aliases'] = {
@@ -42,34 +32,30 @@ beforeEach(() => {
 
 describe('the picker offers what a page has been called before', () => {
   it('offers every remembered alias on an empty query, most recent first', () => {
-    expect(aliasRows(index, aliases, 'Q3 Plan', '').map((r) => r.value)).toEqual([
-      'the plan',
-      'Q3 doc',
-    ])
+    expect(aliasRows(aliases, 'p1', '').map((r) => r.value)).toEqual(['the plan', 'Q3 doc'])
   })
 
   it('filters by what has been typed', () => {
-    expect(aliasRows(index, aliases, 'Q3 Plan', 'the').map((r) => r.value)).toEqual(['the plan'])
-    expect(aliasRows(index, aliases, 'Q3 Plan', 'zzz')).toEqual([])
+    expect(aliasRows(aliases, 'p1', 'the').map((r) => r.value)).toEqual(['the plan'])
+    expect(aliasRows(aliases, 'p1', 'zzz')).toEqual([])
   })
 
   it('a row inserts its own words rather than a link', () => {
-    const [row] = aliasRows(index, aliases, 'Q3 Plan', '')
+    const [row] = aliasRows(aliases, 'p1', '')
     expect(row.value).toBe('the plan')
     expect(row.kind).toBe('alias')
   })
 
   it('a page with nothing remembered offers nothing', () => {
-    expect(aliasRows(index, aliases, 'Other', '')).toEqual([])
+    expect(aliasRows(aliases, 'p2', '')).toEqual([])
   })
 
-  it('a phantom or ambiguous title offers nothing', () => {
-    expect(aliasRows(index, aliases, 'No Such Page', '')).toEqual([])
-    expect(aliasRows(duplicated, aliases, 'Beta', '')).toEqual([])
+  it('no page offers nothing', () => {
+    expect(aliasRows(aliases, undefined, '')).toEqual([])
   })
 
   it('a row forgets itself, and the rest survive', () => {
-    const [row] = aliasRows(index, aliases, 'Q3 Plan', '')
+    const [row] = aliasRows(aliases, 'p1', '')
     if (row.kind === 'alias') row.forget()
     expect(remembered.p1).toEqual(['Q3 doc'])
   })
@@ -111,6 +97,7 @@ describe('the forget × is inert until it is revealed', () => {
           candidates={[{ kind: 'alias', value: 'the plan', forget }]}
           index={0}
           onPick={onPick}
+          behind={null}
         />,
       )
     })
@@ -187,7 +174,7 @@ describe('the heading slide’s top row marks how it arrived', () => {
   }
   const rows: HeadingRow[] = [{ kind: 'heading', value: 'Setup', level: 1 }]
 
-  const mount = async (viaChevron: boolean): Promise<void> => {
+  const mount = async (slid: boolean): Promise<void> => {
     host = document.createElement('div')
     document.body.appendChild(host)
     root = createRoot(host)
@@ -199,7 +186,7 @@ describe('the heading slide’s top row marks how it arrived', () => {
           candidates={rows}
           index={0}
           onPick={() => {}}
-          viaChevron={viaChevron}
+          behind={slid ? [] : null}
         />,
       )
     })

@@ -268,6 +268,44 @@ describe('an unclosed opener with Pair Brackets off', () => {
   })
 })
 
+describe('the alias list slides in only when a pick opened its slot', () => {
+  const props = { connections: conn, host: { aliases: { p1: ['one'] } } }
+  const pageRowShown = (): boolean =>
+    document.querySelector('.mdpm-ac')?.textContent?.includes('Alpha') ?? false
+
+  it('slides in after a pick, behind the page rows', async () => {
+    const view = await mountEditor({ initialBody: '[[Alp]]', ...props })
+    vi.spyOn(view, 'coordsAtPos').mockReturnValue(coords)
+    await act(async () => {
+      view.focus()
+      view.dispatch({ selection: { anchor: 4 } })
+    })
+    await act(async () => {
+      view.contentDOM.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }),
+      )
+    })
+    expect(view.state.doc.toString()).toBe('[[Alpha|]]')
+    expect(document.querySelector('.mdpm-ac')?.textContent).toContain('one')
+    expect(pageRowShown()).toBe(true)
+  })
+
+  it('stays put when the caret walks into a typed |, even from an open page list', async () => {
+    const view = await mountEditor({ initialBody: '[[Alpha|]] [[Alp]]', ...props })
+    vi.spyOn(view, 'coordsAtPos').mockReturnValue(coords)
+    await act(async () => {
+      view.focus()
+      view.dispatch({ selection: { anchor: 15 } })
+    })
+    expect(pageRowShown()).toBe(true)
+    await act(async () => {
+      view.dispatch({ selection: { anchor: 8 } })
+    })
+    expect(document.querySelector('.mdpm-ac')?.textContent).toContain('one')
+    expect(pageRowShown()).toBe(false)
+  })
+})
+
 describe('retargeting an aliased connection obeys the strip setting', () => {
   it('drops the alias by default — the old words describe the old page', async () => {
     seedHost({})
@@ -435,14 +473,14 @@ describe('the chevron slides in a page’s headings', () => {
         new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }),
       )
     })
-    expect(view.state.doc.toString()).toBe('[x](Notes#)')
+    expect(view.state.doc.toString()).toBe('[Notes](Notes#)')
     expect(document.querySelector('.mdpm-ac')?.textContent).toContain('Setup')
     await act(async () => {
       view.contentDOM.dispatchEvent(
         new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }),
       )
     })
-    expect(view.state.doc.toString()).toBe('[x](Notes#Setup)')
+    expect(view.state.doc.toString()).toBe('[Notes](Notes#Setup)')
     expect(view.state.selection.main.head).toBe(view.state.doc.length)
   })
 
@@ -477,8 +515,8 @@ describe('the chevron slides in a page’s headings', () => {
     expect(document.querySelector('.mdpm-ac')?.textContent).toContain('Setup')
   })
 
-  // Arrowing out of ( ) with nothing typed is a caret move, not a pick of whichever page happens to be first.
-  it('ArrowRight in an empty ( ) writes no page', async () => {
+  it('ArrowRight on a page row in an empty ( ) opens its headings', async () => {
+    seatReady('pNotes', '## Setup\n\nbody')
     const view = await mountEditor({ initialBody: 'a [sel]() b', connections: headingConn })
     vi.spyOn(view, 'coordsAtPos').mockReturnValue(coords)
     await act(async () => {
@@ -490,7 +528,7 @@ describe('the chevron slides in a page’s headings', () => {
         new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }),
       )
     })
-    expect(view.state.doc.toString()).toBe('a [sel]() b')
+    expect(view.state.doc.toString()).toBe('a [sel](Blank#) b')
   })
 
   // Unlike `[[Page#]]`, an empty fragment means something to every Markdown reader: the top of the page.

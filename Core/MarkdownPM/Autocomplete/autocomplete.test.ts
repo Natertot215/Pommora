@@ -7,6 +7,7 @@ import {
   type HeadingRow,
 } from './autocomplete'
 import { tokenize } from '../Engine/tokens'
+import { readLinkText } from '../../Connections/linkValue'
 import { scanDoc } from '../Engine/docScan'
 
 const autocompleteQuery = (doc: string, caret: number, armed?: number) =>
@@ -272,6 +273,45 @@ describe('the ( ) form', () => {
     const doc = '[x](Atom)'
     const edit = commitEdit(autocompleteQuery(doc, 5)!, 'Atomic Habits (Book)', KEEP)
     expect(landed(doc, edit)).toBe('[x](Atomic%20Habits%20%28Book%29)')
+  })
+})
+
+describe('a pick retargets under Remove Title On Link Change', () => {
+  const pick = (doc: string, at: string, value: string, keepTitle: boolean) => {
+    const ac = autocompleteQuery(doc, doc.indexOf(at) + 1)!
+    const container = ac.form === 'link' ? readLinkText(doc.slice(ac.from, ac.to)) : null
+    const edit = commitEdit(ac, value, { container, keepTitle })
+    return { text: landed(doc, edit), after: landed(doc, edit).slice(edit.anchor) }
+  }
+
+  it('a connection’s alias drops with the setting on and rides with it off', () => {
+    expect(pick('[[Old|Mine]] x', 'Old', 'New', false).text).toBe('[[New]] x')
+    expect(pick('[[Old|Mine]] x', 'Old', 'New', true).text).toBe('[[New|Mine]] x')
+  })
+
+  it('re-picking the same page keeps the alias either way', () => {
+    expect(pick('[[Old|Mine]] x', 'Old', 'Old', false).text).toBe('[[Old|Mine]] x')
+    expect(pick('[[Old|Mine]] x', 'Old', 'Old', true).text).toBe('[[Old|Mine]] x')
+  })
+
+  it('a markdown label takes the new title with the setting on, and rests past the link', () => {
+    expect(pick('[Notes](Old) x', 'Old', 'New', false)).toEqual({
+      text: '[New](New) x',
+      after: ' x',
+    })
+    expect(pick('[Notes](Old) x', 'Old', 'New', true)).toEqual({
+      text: '[Notes](New) x',
+      after: ' x',
+    })
+  })
+
+  it('re-picking the same page keeps the label', () => {
+    expect(pick('[Notes](Old) x', 'Old', 'Old', false).text).toBe('[Notes](Old) x')
+  })
+
+  it('a link still being written has no old target, so its label stays', () => {
+    expect(pick('[Notes](O', 'O', 'New', false).text).toBe('[Notes](New)')
+    expect(pick('[Notes]() x', '(', 'New', false).text).toBe('[Notes](New) x')
   })
 })
 

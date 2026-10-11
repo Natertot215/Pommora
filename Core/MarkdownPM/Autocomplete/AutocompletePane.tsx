@@ -1,4 +1,3 @@
-import { useEffect, useRef } from 'react'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { EntityIcon } from '../../Assets/EntityIcon'
 import { Icon } from '@pommora/uix/Symbols'
@@ -32,7 +31,7 @@ export interface AutocompletePaneProps {
   candidates: AcRow[]
   index: number
   onPick: (row: AcRow) => void
-  viaChevron?: boolean
+  behind: AcRow[] | null
   loading?: boolean
   headingRows?: HeadingRow[]
   collapsed?: ReadonlySet<string>
@@ -67,7 +66,7 @@ export function AutocompletePane({
   candidates,
   index,
   onPick,
-  viaChevron = false,
+  behind,
   loading = false,
   headingRows = [],
   collapsed = NONE,
@@ -78,23 +77,14 @@ export function AutocompletePane({
 }: AutocompletePaneProps): React.JSX.Element {
   const resize = usePaneResize(open, AC_BOUNDS, geometry)
   const { w, h } = resize.size
-  const v = useHeld(
-    { ac: ac ?? CLOSED, candidates, index, viaChevron, headingRows, collapsed },
-    open,
-  )
+  const v = useHeld({ ac: ac ?? CLOSED, candidates, index, behind, headingRows, collapsed }, open)
   const matchLen = v.ac.query.length
   const keepInView = useKeepInView(v.index)
 
-  const cameFrom = useRef<AcRow[]>([])
-  // Only a link's page rows open a heading slot, so only they carry the chevron and stay behind the slide.
   const linksPages = v.ac.form === 'link' || v.ac.form === 'target'
-  if (open && linksPages) cameFrom.current = v.candidates
-  useEffect(() => {
-    if (ac === null) cameFrom.current = []
-  }, [ac])
   const headingForm = listsHeadings(v.ac.form)
-  const headingSlide = headingForm && v.viaChevron
-  const sliding = (v.ac.form === 'alias' && cameFrom.current.length > 0) || headingSlide
+  const sliding = v.behind !== null
+  const headingSlide = headingForm && sliding
 
   const slot = (rows: AcRow[], active: boolean): React.JSX.Element => (
     <MenuScrollFrame maxHeight={h}>
@@ -212,9 +202,7 @@ export function AutocompletePane({
         open={sliding}
         minWidth={w ?? AC_BOUNDS.min.w}
         maxWidth={w ?? AC_FIT_MAX}
-        root={
-          sliding ? slot(cameFrom.current, false) : headingForm ? headingSlot(v.candidates) : shown
-        }
+        root={v.behind ? slot(v.behind, false) : headingForm ? headingSlot(v.candidates) : shown}
         detail={sliding ? (headingSlide ? headingSlot(v.candidates) : shown) : null}
       />
     </CaretPane>

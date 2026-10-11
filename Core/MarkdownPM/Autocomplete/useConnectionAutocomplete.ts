@@ -18,6 +18,7 @@ import type { MarkdownScope } from '../Engine/detect'
 import { readLinkText } from '../../Connections/linkValue'
 import { normalizeTitle } from '../../Paths/caseFold'
 import { restedOnLink } from '../Links/linkReveal'
+import { titleTarget } from '../Links/connectionsApi'
 import { headingTargetOf, pageHeadingTarget } from './headingTarget'
 import type { AutocompletePaneProps } from './AutocompletePane'
 import { acQuery, closeAcQuery } from './acQuery'
@@ -58,7 +59,7 @@ export function useConnectionAutocomplete(
     if (view?.state.field(field).query) view.dispatch({ effects: closeAcQuery.of('dismiss') })
   }
   const [fetched, setFetched] = useState<OutlineHeading[] | null>(null)
-  const [viaChevron, setViaChevron] = useState(false)
+  const [behind, setBehind] = useState<AcRow[] | null>(null)
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set())
   // The title the heading list slid back to: an exact title closes the page list, but Back must land on it open.
   const [backedTo, setBackedTo] = useState<string | null>(null)
@@ -92,7 +93,6 @@ export function useConnectionAutocomplete(
 
   useEffect(() => {
     if (heading) return
-    setViaChevron(false)
     setCollapsed(new Set())
   }, [heading])
 
@@ -106,7 +106,10 @@ export function useConnectionAutocomplete(
   const lookup = (q: string): AcRow[] => {
     const conn = host.connections()
     if (!conn) return []
-    if (form === 'alias') return aliasRows(conn, host.aliases, title, q)
+    if (form === 'alias') {
+      const named = titleTarget(conn, title ?? '')
+      return aliasRows(host.aliases, named.kind === 'page' ? named.page.id : undefined, q)
+    }
     return conn.candidates(q, AC_MAX).map((p) => pageRow(p, conn))
   }
   // A query that names its one match exactly is a finished link, so the caret resting in one opens nothing; Back is the exception.
@@ -124,6 +127,7 @@ export function useConnectionAutocomplete(
 
   useEffect(() => {
     if (ac === null) setBackedTo(null)
+    if (ac === null || ac.form === 'link' || ac.form === 'target') setBehind(null)
   }, [ac])
 
   const commit = (row: AcRow, opts: { openHeading?: boolean } = {}): void => {
@@ -147,7 +151,7 @@ export function useConnectionAutocomplete(
       openAlias,
       openHeading: opts.openHeading,
     })
-    if (opensHeading) setViaChevron(true)
+    if (opensAlias || opensHeading) setBehind(candidates)
     view.dispatch({
       changes,
       selection: { anchor },
@@ -168,12 +172,12 @@ export function useConnectionAutocomplete(
     aside: (dir) => {
       const view = viewRef.current
       if (!view || !ac) return false
-      if (dir === 1 && (ac.form === 'link' || (ac.form === 'target' && ac.query !== ''))) {
+      if (dir === 1 && (ac.form === 'link' || ac.form === 'target')) {
         if (row?.kind !== 'page') return false
         commit(row, { openHeading: true })
         return true
       }
-      if (dir === -1 && heading && viaChevron) {
+      if (dir === -1 && heading && behind) {
         setBackedTo(ac.title ?? '')
         view.dispatch({
           changes: { from: ac.from - 1, to: ac.to, insert: '' },
@@ -195,7 +199,7 @@ export function useConnectionAutocomplete(
       candidates,
       index: index ?? 0,
       onPick: commit,
-      viaChevron,
+      behind,
       loading,
       headingRows: allHeadingRows,
       collapsed,
