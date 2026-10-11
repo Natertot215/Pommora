@@ -236,6 +236,9 @@ describe('a link’s menu in a resting cell', () => {
     await pick('link:remove')
     expect(view.state.doc.toString()).toBe(table('the plan'))
     expect(liveCell()).toBeNull()
+    expect(editorContainer().querySelector('tbody .mdpm-tbl-cell-static')?.textContent).toBe(
+      'the plan',
+    )
   })
 
   it('Rename on a bare connection commits an open alias and enters with the caret after the pipe', async () => {

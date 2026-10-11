@@ -27,6 +27,10 @@ describe('what a Link value points to', () => {
     expect(valueTarget(api, '[[#H]]', holder)).toEqual({ kind: 'page', page: holder, heading: 'H' })
   })
 
+  it('a heading connection carries its heading', () => {
+    expect(valueTarget(api, '[[Old#Setup]]')).toEqual({ kind: 'page', page: old, heading: 'Setup' })
+  })
+
   it('a title two pages share is ambiguous in either syntax, never an address', () => {
     expect(valueTarget(api, '[[Dup]]')).toEqual({ kind: 'invalid', ambiguous: true })
     expect(valueTarget(api, '[x](dup.io)')).toEqual({ kind: 'invalid', ambiguous: true })
