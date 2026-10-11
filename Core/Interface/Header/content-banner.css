@@ -87,6 +87,11 @@
 }
 
 .banner-empty.is-surface {
+  padding-right: 0;
+}
+
+/* Over a table the divider meets the heading's full-bleed fill, pane edge to pane edge. */
+.detail-scroll:has(.table-view) > .banner-empty {
   margin-inline: var(--sidebar-clearance) var(--side-pane-clearance);
   padding-inline: var(--content-edge);
 }
