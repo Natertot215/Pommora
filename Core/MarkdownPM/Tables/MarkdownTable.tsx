@@ -146,7 +146,7 @@ export function MarkdownTable({
   // A mid-drag re-measure must reach this; a state binding would freeze at the pointerdown render (the cfg-ref discipline).
   const geomRef = useLatest(geom)
   // A resting cell's memo keeps the callbacks it first rendered with, so it commits and reads through these to reach the table where it sits now.
-  const live = useLatest({ onCellCommit, onSettled, cellAt })
+  const live = useLatest({ onCellCommit, onSettled, onFill, cellAt })
   const mounted = useRef(true)
   useEffect(
     () => () => {
@@ -469,6 +469,7 @@ export function MarkdownTable({
           setActive({ row, col })
         }}
         onCommit={commitResting}
+        onFill={(payload) => live.current.onFill(row, col, payload)}
       />
     )
   }

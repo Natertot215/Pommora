@@ -7,6 +7,10 @@ import { MarkdownTable } from './MarkdownTable'
 import { cellToSource } from '../Engine/Tables/codec'
 import { tableStubs, testHost } from '../../Testing/editorHarness'
 import type { EditorMenuRequest } from '../../Actions/editorMenu'
+import type { TablePayload } from '../Engine/Tables/clipboard'
+import type { ConnectionsApi } from '../Links/connectionsApi'
+import { buildPageIndex } from '../../Connections/pageIndex'
+import type { EditorSettings } from '../api'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 if (!('ResizeObserver' in globalThis)) {
@@ -20,6 +24,9 @@ if (!('ResizeObserver' in globalThis)) {
 let reply: (action: string | null) => void = () => {}
 const format = vi.fn<(req: EditorMenuRequest) => Promise<string | null>>()
 const committed = vi.fn<(row: number, col: number, text: string) => void>()
+const filled = vi.fn<(row: number, col: number, payload: TablePayload) => void>()
+const written = vi.fn<(text: string) => Promise<void>>()
+let clipboard = ''
 let readOnly = false
 
 let container: HTMLDivElement
@@ -35,7 +42,12 @@ beforeEach(() => {
       }),
   )
   committed.mockReset()
+  filled.mockReset()
+  written.mockReset()
+  written.mockResolvedValue(undefined)
+  clipboard = ''
   readOnly = false
+  host = hostWith()
 })
 
 afterEach(async () => {
@@ -45,7 +57,26 @@ afterEach(async () => {
   delete (document as { caretPositionFromPoint?: unknown }).caretPositionFromPoint
 })
 
-const host = testHost({ menus: { format } })
+const conn: ConnectionsApi = {
+  ...buildPageIndex([{ id: 'p1', title: 'Quarterly Plan', path: 'N/Quarterly Plan.md' }]),
+  location: () => [],
+  open: () => {},
+  headingsOf: () => undefined,
+}
+
+const hostWith = (
+  settings: Partial<EditorSettings> = {},
+  linkTitles: Record<string, string> = {},
+) => ({
+  ...testHost({
+    menus: { format },
+    clipboard: { read: async () => clipboard, write: written },
+    settings,
+    linkTitles,
+  }),
+  connections: () => conn,
+})
+let host = hostWith()
 
 const table = (): React.ReactElement =>
   createElement(MarkdownTable, {
@@ -63,6 +94,7 @@ const table = (): React.ReactElement =>
       cellText = text
     },
     onSettled: () => root.render(table()),
+    onFill: filled,
   })
 
 function draw(): Promise<void> {
@@ -251,5 +283,88 @@ describe('a row chosen at rest', () => {
     await choose('format:bold')
     expect(committed).not.toHaveBeenCalled()
     expect(entered()).toBe(false)
+  })
+})
+
+describe('a system row chosen at rest', () => {
+  it('copies the source a selection covers, not the text it draws', async () => {
+    await mount('x [[Quarterly Plan|the plan]] y')
+    select('x ', 0, ' y', 2)
+    await rightClick(' y', 1)
+    await choose('edit:copy')
+    expect(written).toHaveBeenCalledWith('x [[Quarterly Plan|the plan]] y')
+    expect(committed).not.toHaveBeenCalled()
+  })
+
+  it('cuts by copying the source, then committing its removal', async () => {
+    await mount('ab cd')
+    select('ab cd', 2, 'ab cd', 5)
+    await rightClick('ab cd', 3)
+    await choose('edit:cut')
+    expect(written).toHaveBeenCalledWith(' cd')
+    expect(committed).toHaveBeenLastCalledWith(1, 0, 'ab')
+    expect(entered()).toBe(false)
+  })
+
+  it('pastes an address at a point in the Default Link Format', async () => {
+    clipboard = 'https://a.com'
+    await mount('ab ')
+    await rightClick('ab ', 3)
+    await choose('edit:paste')
+    expect(committed).toHaveBeenLastCalledWith(1, 0, 'ab [https://a.com](https://a.com)')
+    expect(entered()).toBe(false)
+  })
+
+  it('pastes an address in Page Title once its title is settled', async () => {
+    clipboard = 'https://a.com'
+    host = hostWith({ defaultLinkFormat: 'link-title' }, { 'https://a.com': 'A Site' })
+    await mount('ab ')
+    await rightClick('ab ', 3)
+    await choose('edit:paste')
+    expect(committed).toHaveBeenLastCalledWith(1, 0, 'ab [A Site](https://a.com)')
+  })
+
+  it('wraps a selection in the address pasted over it', async () => {
+    clipboard = 'https://a.com'
+    await mount('ab cd')
+    select('ab cd', 3, 'ab cd', 5)
+    await rightClick('ab cd', 4)
+    await choose('edit:paste')
+    expect(committed).toHaveBeenLastCalledWith(1, 0, 'ab [cd](https://a.com)')
+  })
+
+  it('fills cells from a table-shaped clipboard, as a live paste does', async () => {
+    clipboard = '| a | b |\n| - | - |'
+    await mount('ab')
+    await rightClick('ab', 1)
+    await choose('edit:paste')
+    expect(filled).toHaveBeenLastCalledWith(1, 0, { kind: 'table' })
+    clipboard = '| p | q |\n| r | s |'
+    await rightClick('ab', 1)
+    await choose('edit:paste')
+    expect(filled).toHaveBeenLastCalledWith(1, 0, {
+      kind: 'rect',
+      grid: [
+        ['p', 'q'],
+        ['r', 's'],
+      ],
+    })
+    expect(committed).not.toHaveBeenCalled()
+  })
+
+  it('pastes in the form Paste As picks', async () => {
+    clipboard = '[[P]]'
+    await mount('ab ')
+    await rightClick('ab ', 3)
+    await choose('pasteAs:connection')
+    expect(committed).toHaveBeenLastCalledWith(1, 0, 'ab [[P]]')
+  })
+
+  it('pastes the clipboard as it is for Paste Without Formatting', async () => {
+    clipboard = 'https://a.com'
+    await mount('ab ')
+    await rightClick('ab ', 3)
+    await choose('paste:literal')
+    expect(committed).toHaveBeenLastCalledWith(1, 0, 'ab https://a.com')
   })
 })
