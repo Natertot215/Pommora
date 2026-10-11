@@ -44,6 +44,10 @@ describe('what the clipboard offers to become', () => {
     expect(forms(URL)).toEqual(['link-full', 'link-short', 'link-title', 'plain'])
   })
 
+  it('offers a non-web address no Page Title', () => {
+    expect(labels('mailto:a@b.co')).toEqual(['Full Link', 'Short Link', 'Plain Text'])
+  })
+
   it('offers a copied connection the two ways of naming a page', () => {
     expect(labels('[[Alpha]]')).toEqual(['Connection', 'Markdown Link'])
   })
