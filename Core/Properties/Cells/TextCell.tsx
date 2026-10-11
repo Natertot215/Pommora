@@ -8,7 +8,8 @@ import { glanceHost } from '../../Interface/Glance/glanceAction'
 import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'
 import { resolveFollow } from '../../MarkdownPM/Links/linkClicks'
 import { lineOffsetsOf } from '../../MarkdownPM/Engine/markdownCode'
-import { linkGestures, renderCellContent } from '../../MarkdownPM/Tables/cellStatic'
+import { type CellPage, linkGestures, renderCellContent } from '../../MarkdownPM/Tables/cellStatic'
+import { useSetting } from '../../Session/store'
 import { openWebLink } from '../../Web/openWebLink'
 
 /** A link inside the value follows, glances, and opens its menu as a body link does; a press on any link stops there, and a dead one does nothing. */
@@ -25,6 +26,14 @@ export function TextCell({
 }): React.JSX.Element {
   const hostRef = useRef<HTMLDivElement>(null)
   const own = holder ? ({ kind: 'held', page: holder } as const) : null
+  const headingLinkStyle = useSetting('headingLinkStyle')
+  const automatic = useSetting('inPageHeadingResolution') === 'automatic'
+  const headings = holder && connections?.()?.headingsOf(holder.path)
+  const around: CellPage | undefined = headings && {
+    ordinalOf: () => null,
+    ownKeys: headings.keys,
+    sectionHeadings: automatic ? headings.texts : [],
+  }
   const { linkAt, dismiss, onContextMenu, onPointerOver, onPointerOut } = linkGestures(
     text,
     connections,
@@ -62,7 +71,7 @@ export function TextCell({
         <div className={cx('cell-text', overScrollEllipsis)}>
           {lines.map((line, i) => (
             <span key={starts[i]} className="cell-text-line">
-              {renderCellContent(line, connections, { base: starts[i] })}
+              {renderCellContent(line, connections, { base: starts[i], around, headingLinkStyle })}
               {line === '' && '\u200b'}
             </span>
           ))}

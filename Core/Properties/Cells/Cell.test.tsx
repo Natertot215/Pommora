@@ -275,6 +275,7 @@ describe('a text value', () => {
       candidates: () => [],
       open: () => {},
       menu,
+      headingsOf: () => undefined,
     }) as unknown as ConnectionsApi
 
   it('renders every line of the value, each on its own; the one-line clip is the class, not a slice', () => {
