@@ -137,7 +137,8 @@ export function WindowBase({
     min: bounds.min,
     onChange: (next, phase, grip) => {
       setGeo(next)
-      if (phase === 'drop' && grip !== 'move') onSizeChange?.({ w: next.w, h: next.h })
+      if (phase === 'drop' && grip !== 'move')
+        onSizeChange?.({ w: Math.round(next.w), h: Math.round(next.h) })
     },
   })
   // Window-move is reserved to the bare surfaces — anything else owns its pointer, so row/reorder captures aren't stolen mid-press.

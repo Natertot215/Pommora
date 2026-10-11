@@ -121,14 +121,19 @@ describe('gesture skeleton hardening', () => {
     expect(onAbort).toHaveBeenCalledTimes(2)
   })
 
-  it('a move with no buttons held aborts — the release was missed', () => {
+  it('a move with no buttons held drops an active drag, and its trailing release is not a click', () => {
     const onAbort = vi.fn()
     const onDrop = vi.fn()
     gesture.beginPointerGesture(spec({ onAbort, onDrop }))
     move(20, 20)
     move(30, 30, { buttons: 0 })
-    expect(onAbort).toHaveBeenCalledOnce()
-    expect(onDrop).not.toHaveBeenCalled()
+    expect(onDrop).toHaveBeenCalledOnce()
+    expect(onAbort).not.toHaveBeenCalled()
+    firePointer(el, 'pointerup')
+    const click = new MouseEvent('click', { bubbles: true, cancelable: true })
+    el.dispatchEvent(click)
+    expect(click.defaultPrevented).toBe(true)
+    expect(onDrop).toHaveBeenCalledOnce()
   })
 
   it('onWindowScroll fires only while active and never after teardown', () => {

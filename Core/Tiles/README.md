@@ -80,7 +80,7 @@ These are load-bearing; the comments at each site say why. Summarized:
   the layout commits on `transitionend` with the engine's fallback timer, outside any React
   state updater.
 - **Both drags run on `Interactions/gesture.ts`**, the app's one pointer engine: Escape while
-  active, `pointercancel`, blur, and a lost release all abort, never zombie. The grid keeps its
+  active, `pointercancel`, and blur all abort, never zombie. The grid keeps its
   own tree geometry because a tile edge is a boundary negotiated with its neighbors, not a
   box; the `useResizable` hook sizes boxes.
 - **PommoraDND is the interaction vocabulary**: the shared `ACTIVATION` threshold,
