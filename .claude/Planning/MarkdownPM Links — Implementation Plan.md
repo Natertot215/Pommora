@@ -93,7 +93,7 @@ What a person sees: `[x](Page)` edits like `[[Page]]`; every link reads **Rename
 
 #### Constraints
 
-- **Agents:** Every implementation phase runs on opus-high (from Phase 5; Phases 2 and 3 ran on opus-medium). Each phase closes with an opus-high correctness review and an opus-high simplification review of its range, the findings of both closed before the next phase opens; Phases 6, 7, and 9 add an opus-high adversarial review after the simplification review, aimed at simplification and cohesion, every finding naming a mechanism; the three closing reviews run on fable-extra. Reviews judge correction, completion, cohesiveness, maintainability, and fit with the whole plan, not breakage for its own sake; a plan reviewed four times before ratification isn't redesigned at a checkpoint, and a finding changes code only when it names a defect, an incompleteness against the task text, or a departure from the simplification mandate. Live checks run headlessly through `.claude/Planning/MarkdownPM Links/drive/` (one process, a scratch instance, per-phase scenario files); Nathan's hand-checks are driven there too, with the screenshots read.
+- **Agents:** Every implementation phase runs on opus-high (from Phase 5; Phases 2 and 3 ran on opus-medium). Each phase closes with an opus-high correctness review and an opus-high simplification review of its range, the findings of both closed before the next phase opens; Phases 6, 7, and 9 add an opus-high adversarial review after the simplification review, aimed at simplification and cohesion, every finding naming a mechanism; the three closing reviews run on fable-extra. Reviews judge correction, completion, cohesiveness, maintainability, and fit with the whole plan, not breakage for its own sake; a plan reviewed four times before ratification isn't redesigned at a checkpoint, and a finding changes code only when it cleanly prevents an issue and adheres to the principles (one way, reuse of what exists, nothing beyond the task's own promise); anything else is churn, recorded and left. Live checks run headlessly through `.claude/Planning/MarkdownPM Links/drive/` (one process, a scratch instance, per-phase scenario files); Nathan's hand-checks are driven there too, with the screenshots read.
 - **Gates:** `npm run typecheck` (the only type gate), `npm run test` (vitest; the **BASELINE** count is the floor, with the files this plan deletes accounted for), and `npm run lint` (`biome check .`, clean), all from the repo root. In a worktree, lint is `npx biome check Core UIX Desktop Sync`. Biome formats every TS/CSS/JSON write, so an Edit that fails on whitespace means it reformatted: re-read and retry. "Run the gates" means these three.
 - **Frozen:** The persisted keys `link_display` and every settings key (`frames.ts`); the `'wikiLink'` token kind's name; `Relation.qualifier`'s name and width; the channel set in `Core/Contract/bridge.ts` (fields may widen, no channel is added or removed); `pendingTitles`' exact-text match; the 255 and 2048 caps in the link grammars; `pageIndex.ts`'s lazy alphabetical sort; `linkEntry`'s YAML unwrap; the `input.paste` tag on every paste write; a written scheme before a pasted bare address formats or retargets (`isWebAddress`); one tile per page per document, first-per-page; `resolveFollow`'s own `heldTarget`; `EditorHost.openLink`; the explicit browser picks (`link:window`, `link:browser`, the browser window's title button) calling their arm directly; `drawnLast`; the two tokenizer memos (`drawnLast(tokenizeChunk)` for CodeMirror, `perText(tokenize)` for React).
 - **Hard Rules:** Core reaches the machine only through `Core/Platform`; the host-run half of Core imports no React (`engineGraph.test.ts`, `hostGraph.test.ts`); `Core/Connections` imports `MarkdownPM/Engine` and never `MarkdownPM/Links`; finite states are unions + switch; no O(N), allocating, or layout-reading work on a keystroke, caret move, or pointer move; read-write separation.
@@ -143,11 +143,11 @@ What a person sees: `[x](Page)` edits like `[[Page]]`; every link reads **Rename
   - [x] Task 6-5 — The body, the resting cell's link door, and the Text value read the builder
   - [x] Task 6-6 — The three value parents read the builder
   - [x] Review Checkpoint
-- [ ] **Phase 7** — Paste
-  - [ ] Task 7-1 — One pipeline
-  - [ ] Task 7-2 — Paste inside a link retargets
-  - [ ] Task 7-3 — Rectangle paste and dropped addresses
-  - [ ] Review Checkpoint
+- [x] **Phase 7** — Paste
+  - [x] Task 7-1 — One pipeline
+  - [x] Task 7-2 — Paste inside a link retargets
+  - [x] Task 7-3 — Rectangle paste and dropped addresses
+  - [x] Review Checkpoint
 - [ ] **Phase 8** — Link Values
   - [ ] Task 8-1 — A Link value renders through the shared stack
   - [ ] Task 8-2 — Clicks
@@ -3480,8 +3480,8 @@ Phase 9's resting Paste row reads `pastedCellText` too.
     holder?: ConnPage
 +   connections?: () => ConnectionsApi | undefined
   }): React.JSX.Element | null {
--   const target = readLink(raw)
--   const url = target.kind === 'url' ? target.url : ''
+-   const target = readLinkText(raw)
+-   const url = target === null ? raw.trim() : target.kind === 'url' ? target.url : ''
 +   // One classifier for the value: the index decides page against address where it has an answer, as every editor link does.
 +   const api = connections?.()
 +   const target = valueTarget(api, raw, holder)
@@ -3620,7 +3620,7 @@ Phase 9's resting Paste row reads `pastedCellText` too.
 -       const raw = value.kind === 'link' ? value.value : ''
 -       const url = urlClickTarget(raw)
 -       if (url) return { kind: 'open', url }
--       return readLink(raw).kind === 'page' ? null : { kind: 'edit' }
+-       return readLinkText(raw)?.kind === 'page' ? null : { kind: 'edit' }
 -     }
 ```
 
@@ -3676,9 +3676,9 @@ Phase 9's resting Paste row reads `pastedCellText` too.
 -   const pasted = parsePastedLink(trimmed, resolve)
 -   if (pasted !== null) return { kind: 'link', value: pasted }
 -   if (!isValidLink(trimmed)) return undefined
--   const cur = current ? readLink(current) : undefined
+-   const cur = current ? readLinkText(current) : null
 -   const alias = cur?.kind === 'url' ? cur.alias : undefined
--   return { kind: 'link', value: serializeLink({ url: normalizeLinkUrl(trimmed), alias }) }
+-   return { kind: 'link', value: serializeLink(normalizeLinkUrl(trimmed), alias) }
 - }
 + /** `null` clears, `undefined` refuses the commit. The typed text names a resolved page or a valid address, or it's refused; the value's alias follows the one retarget rule, and a page is stored as a connection whatever syntax the typed text or the old value used. */
 + export function linkValueFromEdit(
@@ -3782,7 +3782,7 @@ Unchanged: `Core/Actions/cellMenu.ts`'s `link` arm.
 
 **TASK:** A resting cell claims every right press, consults `readOnly()` once, and for a non-link right-click asks the editor menu through `host.menus.format` with `resting: { selection }` carrying the source text under the click; a pointer-to-offset mapper reads the `data-src` spans the renderer draws; main pops the menu for a resting request with renderer-resolved Cut, Copy, and Paste and without Undo, Redo, and Select All.
 
-**NOW:** `cellStatic.tsx:354-357` opens the link door or focuses the cell (R-02), so no non-link construct has a menu at rest; `onMouseDown` claims a right press only over a link (`:384-386`); `readOnly()` is consulted at four sites. Main's `context-menu` handler returns before `systemItems` when `!params.isEditable` (`Desktop/Actions/editorMenu.ts:128`), which Chromium reports for the static cell (`WidgetTile` sets `contentEditable="false"`; confirmed over CDP against the running instance); `editorContextItems` reads `params.selectionText`, which at rest is the drawn text (an alias, not `[[Page|alias]]`), so Insert Link's gate and Cut/Copy's enablement need the source selection. The role rows act on whatever has focus, which at rest is the page body's caret or nothing (R-19).
+**NOW:** `cellStatic.tsx:354-357` opens the link door or focuses the cell (R-02), so no non-link construct has a menu at rest; `onMouseDown` claims a right press only over a link (`:386-390`, reading `closest('[data-link]')`); `readOnly()` is consulted at five sites (the fifth is `editable: () => !readOnly()` in the `linkGestures` call). Main's `context-menu` handler returns before `systemItems` when `!params.isEditable` (`Desktop/Actions/editorMenu.ts:128`), which Chromium reports for the static cell (`WidgetTile` sets `contentEditable="false"`; confirmed over CDP against the running instance); `editorContextItems` reads `params.selectionText`, which at rest is the drawn text (an alias, not `[[Page|alias]]`), so Insert Link's gate and Cut/Copy's enablement need the source selection. The role rows act on whatever has focus, which at rest is the page body's caret or nothing (R-19).
 
 **CHANGE**
 
@@ -3983,7 +3983,7 @@ Unchanged: `Core/Actions/cellMenu.ts`'s `link` arm.
         onMouseDown={(e) => {
 -         // Claiming a right press here is what stops the browser selecting the word under the pointer before the menu opens.
 -         if (e.button === 2) {
--           if (linkSpanAt(e.target)) e.preventDefault()
+-           if ((e.target as HTMLElement | null)?.closest?.('[data-link]')) e.preventDefault()
 -           return
 -         }
 +         // Claiming every right press is what stops the browser seating the word under the pointer before the menu reads the selection.
@@ -4101,15 +4101,15 @@ Unchanged: `Core/Actions/cellMenu.ts`'s `link` arm.
 ```
 
 ```Core/MarkdownPM/Tables/MarkdownTable.tsx diff
--   const live = useLatest({ onCellCommit, onSettled, model })
-+   const live = useLatest({ onCellCommit, onSettled, onFill, model })
+-   const live = useLatest({ onCellCommit, onSettled, cellAt })
++   const live = useLatest({ onCellCommit, onSettled, onFill, cellAt })
     …
         <StaticCell
           …
 +         onFill={(payload) => live.current.onFill(row, col, payload)}
 ```
 
-A `table`-kind payload still falls to the widget's `fill`, which returns early for it. The clipboard is read a second time here after main read it to build the rows, as the live `pasteAs` does.
+A `table`-kind payload still falls to the widget's `fill`, which returns early for it. The clipboard is read a second time here after main read it to build the rows, as the live `pasteFromClipboard` does.
 
 **VERIFY**
 
@@ -4781,6 +4781,9 @@ The anchor is pinned by a test for a filled and an unfilled label.
 - **A page body or a Text value's pane closing with a title pending:** a MarkdownPM table cell forwards a pending Page Title swap on close (Task 5-3); the page body has no close-time commit path, and a Text value's pane is remounted on every open so nothing holds its value after close (the Phase 5 checkpoint), so either closed before the title answers keeps the short form, as it does today. A table scrolled out of view before the title answers keeps it too.
 - **A Text value's pane and a rename in another window:** With connections read from the host (Task 3-1), an open TextPane reads the index as of its last render, so a rename made in another window while the pane is open can trail by one render (the audit's F-094 note).
 - **The headings map and the app's own writes:** closed by Task 4-6. As found: the session's `headings` map is loaded at start and on `pages:changed`, which the host pushes only for watched (outside) edits and cascades; an app save is `origin: 'own'`, so adding `## New` to page A in the app leaves `[[A#New]]` marked missing until a restart or an outside edit, and a rename leaves the new path absent. At baseline only the missing mark read the map; Task 4-4 (a Text value's headings) and Task 10-4 (the picker's heading rows, replacing the fresh body fetch) read it too, so the gap has to close before 10-4 lands. The channel set is frozen, so the fix rides an existing channel or the renderer's own save.
+- **The rectangle ⌘V under Page Title fills by stale coordinates:** the fill waits for the title and then writes to the cell the keydown named, so a row inserted or the cell edited meanwhile receives the link. A guard of its own would be a third copy of capture-and-compare; Phase 9's resting Paste row commits the same single-cell paste through `commitAtRest`, and the rectangle's single-cell case should ride it there.
+- **Paste As ▸ a link format inside a labeled link with Remove Title On Link Change off:** §5.8's "a link format sets the format" and its "the link keeps its own label" both apply, and the label wins today, so Full Link, Short Link, and Page Title all write `[x](url)` there (three rows, one outcome). Needs a ruling; if the format should win, it's one expression at the carve-out site (`keepTitle` false when a display was picked) plus a test. Noted by the Phase 7 adversarial review.
+- **A paste rule the chord leaves open (pre-existing):** a selection running from inside `[[P]]` past its end and pasted over with an address writes the link around the broken span; no ruling covers it and the plan never probed it. Noted by the Phase 7 checkpoint; not acted on.
 - **A `[[#Heading]]` in a page body gets no link menu:** it resolves and follows, but `linkMenuTarget`'s `self` arm answers null (the plan's own test pins it), while the same link inside a Text value, converted to its holder's page, gets the full menu. §12's "no menu for unresolved links" was reasoned about phantoms; a `self` link is resolved. Noted by the Phase 6 adversarial review; not acted on.
 - **An embedded tile's connections (pre-existing):** `renderTile` seats `connections={connRef.current}` into the nested `PageTile`, and `EmbedTileWidget.eq` ignores connections, so a page created or renamed elsewhere doesn't re-resolve inside an open embed until the tile re-renders. The same shape as the Text pane's snapshot, which Phase 3's checkpoint fixed; this one is outside the plan's tasks and is noted for the same fix.
 
@@ -4813,4 +4816,9 @@ The anchor is pinned by a test for a filled and an unfilled label.
 - **Task 6-3, Rename's pipe slot:** an unaliased connection's alias opens just inside the closing `]]` (`tk.range[1] - 2`) rather than after the title or heading span, so `[[P#]]` (an emptied heading, reachable only in pasted or external text) becomes `[[P#|]]` rather than `[[P|#]]`; one span read instead of two. Found at the Phase 6 checkpoint.
 - **Phase 6 checkpoint cleanups:** the three `format:*` action names derive from `LINK_DISPLAYS`, as `FORMAT_ROW` already did, and `LinkEditAction` is no longer exported (nothing read it). The simplification review's seven removals (folding `LinkAction` into `CellMenuAction`, spreading whole targets into the menu context, `value: undefined` for the conditional spread, the sweep seat's temporary, the `copies` annotation, `onActivate(edit)`, `focusRange`'s default) were declined as trading type precision or the ratified shapes for a line each.
 - **Live checks through native menus:** link menus are main's native menus, so the drive hooks the main process through its inspector (`--inspect`) to record each popped menu's rows and answer it with the armed pick, or hold it pending, without showing it; B-68 is driven as the app sees it (a hover arms the dwell, then the menu opens over it), since a native menu is modal and the renderer sees no pointer while it's open.
+- **Phase 7, the estimate:** the plan's +5 counted its AFTER blocks as unformatted one-liners; landed verbatim and formatted at 100 columns they measured +89, which the checkpoint's simplification pass (the options object folded into the host argument `pasteEdit` already needs, a four-line syntax read, one-line calls, an early return for the rectangle, four exports nothing read) brought to +55 with the three fixes below.
+- **Task 7-2, the inverse chord inside a link:** the AFTER skipped the container read for `inverse`, so ⌘⇧V over a selection inside a link nested a link (the E-20 form the phase exists to end); the chord reads the container as every mode but Plain Text does and declines there, so the clipboard lands as text. Found at the Phase 7 checkpoint.
+- **Task 7-3, the rectangle under Page Title:** the AFTER awaits the title and then fills by the coordinates captured at keydown, so a row inserted or a cell edited during the fetch receives the link. A capture-and-compare guard was landed and then taken out again: it would have been a third spelling of the resting cell's `commitAtRest` and the widget menu's re-find, and the single-cell paste at rest is the same operation Phase 9's Paste row commits through `commitAtRest`, which is where one guard belongs (*§Open Items*). The handler keeps its early return for a decoded table payload.
+- **Task 7-1, Plain Text inside a destination:** the destination gate made Paste As ▸ Plain Text write the raw clipboard inside a markdown link's `( )`; the gate skips `plain`, whose write is text and never a link, so the address lands (§5.8). Found at the Phase 7 checkpoint.
+- **Task 7-2, three test expectations:** Paste As ▸ Connection with `[x](P2)` inside `[y](P1)` pins `[[P2|x]]` (the pasted alias wins, as §5.8's table says; the task's test line contradicted it); the `[[P1|a]]` → `[a](P2)` case runs with Remove Title On Link Change off; the `[[Foo|]]` case sets Default Link Format = Short Link.
 - **Hand-checks:** driven headlessly by the orchestrator through the drive tool, with the screenshots read, at Nathan's instruction.

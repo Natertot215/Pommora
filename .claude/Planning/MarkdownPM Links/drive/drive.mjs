@@ -545,6 +545,16 @@ class Driver {
   lastNativeMenu() {
     return this.evalMain('JSON.stringify(globalThis.__drive?.last ?? null)').then((v) => JSON.parse(v))
   }
+  /** Waits for the armed native menu to pop (main's context-menu can trail a real right-click by a beat) and returns its rows, or null on timeout. */
+  async waitNativeMenu(timeout = 3000) {
+    const until = Date.now() + timeout
+    while (Date.now() < until) {
+      const rows = await this.lastNativeMenu()
+      if (rows) return rows
+      await sleep(80)
+    }
+    return null
+  }
   /** Fire a contextmenu on the element matching `selector` whose text is `text` (null: the first match; `within`: a selector an ancestor must match). The renderer's own doors answer it: links, resting cells, value seats. */
   contextMenuOn(selector, text, within = null) {
     return this.eval(
@@ -567,8 +577,9 @@ class Driver {
     await this.armNativeMenu(pick)
     const hit = await this.contextMenuOn(selector, text, within)
     if (!hit) return null
-    await this.settle(400)
-    return this.lastNativeMenu()
+    const rows = await this.waitNativeMenu()
+    await this.settle(250)
+    return rows
   }
 
   // -- native menus (main's context menus) ----------------------------------
