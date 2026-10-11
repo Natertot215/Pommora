@@ -1,16 +1,6 @@
 import { EditorView } from '@codemirror/view'
-import {
-  readLinkText,
-  retarget,
-  type LinkPaste,
-  type LinkTarget,
-} from '../../Connections/linkValue'
-import {
-  pasteAsWrite,
-  type LinePaste,
-  type PasteMode,
-  type TextPaste,
-} from '../../Actions/pasteAsMenu'
+import { readLinkText, retarget, type LinkTarget } from '../../Connections/linkValue'
+import { pasteAsWrite, type PasteMode, type PasteWrite } from '../../Actions/pasteAsMenu'
 import { linkDestinationStart } from '../../Connections/links'
 import { matchesCommand } from '../../Actions/commands'
 import { isWebAddress } from '../../Paths/urlPath'
@@ -33,11 +23,10 @@ function clipboardTarget(text: string, how: PasteMode): LinkTarget | null {
 }
 
 function linkContainerAt(
-  scan: DocScan,
+  line: string,
+  ls: number,
   sel: { from: number; to: number },
 ): { kind: LinkKind; range: [number, number]; text: string } | null {
-  const ls = lineStartAt(scan.text, sel.from)
-  const line = scan.text.slice(ls, lineEndAt(scan.text, sel.from))
   const tk = linkTokenAt(tokenize(line), sel.from - ls)
   if (!tk || tk.range[0] >= sel.from - ls || sel.to - ls >= tk.range[1]) return null
   const [start, end] = tk.range
@@ -47,7 +36,7 @@ function linkContainerAt(
 interface PasteEdit {
   from: number
   to: number
-  write: LinkPaste | TextPaste | LinePaste
+  write: PasteWrite
 }
 
 function pasteEdit(
@@ -62,7 +51,9 @@ function pasteEdit(
   if (!target) return null
   const { defaultLinkFormat: format, removeTitleOnLinkChange } = host.settings()
   const title = target.kind === 'url' ? (host.linkTitles.get(target.url) ?? undefined) : undefined
-  const within = how === 'plain' ? null : linkContainerAt(scan, sel)
+  const ls = lineStartAt(scan.text, sel.from)
+  const line = scan.text.slice(ls, lineEndAt(scan.text, sel.from))
+  const within = how === 'plain' ? null : linkContainerAt(line, ls, sel)
   if (how === 'inverse' && within) return null
   if (within) {
     const syntax =
@@ -79,8 +70,6 @@ function pasteEdit(
     )
     return { from: within.range[0], to: within.range[1], write }
   }
-  const ls = lineStartAt(scan.text, sel.from)
-  const line = scan.text.slice(ls, lineEndAt(scan.text, sel.from))
   if (how !== 'plain' && linkDestinationStart(line, sel.from - ls) !== null) return null
   const [from, to] = trimmedRange(scan.text, sel.from, sel.to)
   const write = pasteAsWrite(target, how, { selection: scan.text.slice(from, to), format, title })
