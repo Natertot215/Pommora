@@ -16,6 +16,7 @@ import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { seedScratch, SCRATCH } from './seed.mjs'
 
+const MAIN_INSPECT_PORT = 9346
 const HERE = dirname(fileURLToPath(import.meta.url))
 const REPO = resolve(HERE, '../../../..')
 const DEFAULT_PORT = 9345
@@ -122,7 +123,7 @@ export async function launch({ port = DEFAULT_PORT, build, reseed = true, log = 
       execFileSync('npm', ['run', 'build', '-w', 'Desktop'], { cwd: REPO, stdio: 'inherit', env: electronEnv(port) })
     }
     log(`[drive] borrowing the dev renderer on :5173; launching a scratch instance on CDP :${port}`)
-    child = spawn(join(REPO, 'node_modules/.bin/electron'), ['.'], {
+    child = spawn(join(REPO, 'node_modules/.bin/electron'), [`--inspect=${MAIN_INSPECT_PORT}`, '.'], {
       cwd: join(REPO, 'Desktop'),
       env: { ...electronEnv(port), ELECTRON_RENDERER_URL: 'http://localhost:5173' },
       detached: true,
@@ -172,6 +173,7 @@ const MAC_KEY_CODES = { Escape: 53, Enter: 36, ArrowDown: 125, ArrowUp: 126, Arr
 // ---------------------------------------------------------------- the driver
 
 export async function attach(port = DEFAULT_PORT, pid = null) {
+  if (pid === null && existsSync(PID_FILE)) pid = Number(readFileSync(PID_FILE, 'utf8'))
   const list = await waitForCdp(port, 5000)
   const d = new Driver(port, pid)
   await d.useWindow(0, list)
@@ -492,6 +494,83 @@ class Driver {
     return ed
   }
 
+  // -- main process (Node inspector) and native menus -------------------------
+  /** Evaluate in the main process through its inspector (`--inspect`); the drive launches the scratch instance with it. */
+  async evalMain(expression) {
+    if (!this.mainCdp) {
+      const list = await (await fetch(`http://127.0.0.1:${MAIN_INSPECT_PORT}/json`)).json()
+      this.mainCdp = await Cdp.connect(list[0].webSocketDebuggerUrl)
+      await this.mainCdp.send('Runtime.enable')
+    }
+    const r = await this.mainCdp.send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true, includeCommandLineAPI: true })
+    if (r.exceptionDetails) throw new Error(r.exceptionDetails.exception?.description ?? r.exceptionDetails.text)
+    return r.result.value
+  }
+  /** Hook main's Menu so a popped native menu is recorded (rows, submenus) and answered by the armed pick instead of shown. */
+  async hookNativeMenus() {
+    if (this.nativeHooked) return
+    await this.evalMain(`(() => {
+      if (globalThis.__drive) return 'hooked'
+      const req = typeof require === 'function' ? require : process.mainModule.require
+      const { Menu } = req('electron')
+      const state = { last: null, pick: undefined, popped: 0 }
+      globalThis.__drive = state
+      const rows = (menu) => menu.items.map((i) => ({ label: i.label, type: i.type, role: i.role ?? null, enabled: i.enabled, visible: i.visible, accelerator: i.accelerator ?? null, submenu: i.submenu ? rows(i.submenu) : undefined }))
+      const find = (menu, path) => { const [head, ...rest] = path; const item = menu.items.find((i) => i.label === head); return !item ? null : rest.length ? (item.submenu ? find(item.submenu, rest) : null) : item }
+      const popup = Menu.prototype.popup
+      Menu.prototype.popup = function (opts = {}) {
+        if (state.pick === undefined) return popup.call(this, opts)
+        state.last = rows(this)
+        state.popped++
+        const armed = state.pick
+        state.pick = undefined
+        const want = armed && typeof armed === 'object' && !Array.isArray(armed) ? armed.pick : armed
+        const hold = armed && typeof armed === 'object' && !Array.isArray(armed) ? (armed.holdMs ?? 0) : 0
+        setTimeout(() => {
+          const item = want === null || want === undefined ? null : find(this, Array.isArray(want) ? want : [want])
+          if (!item) return opts.callback?.()
+          item.click(undefined, opts.window, opts.window?.webContents)
+        }, hold)
+      }
+      return 'installed'
+    })()`)
+    this.nativeHooked = true
+  }
+  /** The next native menu is answered with `pick` (a row label, a [submenu, row] path, or `{ pick, holdMs }` to keep it pending first; null dismisses) instead of being shown, and its rows are kept for `lastNativeMenu()`. */
+  async armNativeMenu(pick = null) {
+    await this.hookNativeMenus()
+    await this.evalMain(`(globalThis.__drive.pick = ${JSON.stringify(pick)}, globalThis.__drive.last = null, true)`)
+  }
+  /** The rows of the last native menu the hook answered: [{ label, type, role, enabled, submenu? }], or null if none popped since arming. */
+  lastNativeMenu() {
+    return this.evalMain('JSON.stringify(globalThis.__drive?.last ?? null)').then((v) => JSON.parse(v))
+  }
+  /** Fire a contextmenu on the element matching `selector` whose text is `text` (null: the first match; `within`: a selector an ancestor must match). The renderer's own doors answer it: links, resting cells, value seats. */
+  contextMenuOn(selector, text, within = null) {
+    return this.eval(
+      (sel, text, within) => {
+        const pool = $$(sel).filter((e) => !within || e.closest(within))
+        const el = text === null ? pool[0] : (pool.find((e) => e.textContent === text) ?? pool.find((e) => e.textContent?.includes(text)))
+        if (!el) return false
+        el.scrollIntoView({ block: 'nearest' })
+        const b = el.getBoundingClientRect()
+        el.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: b.x + b.width / 2, clientY: b.y + b.height / 2, button: 2 }))
+        return true
+      },
+      selector,
+      text,
+      within,
+    )
+  }
+  /** Pop the native menu a contextmenu on (selector, text) raises, answer it with `pick`, and return its rows. */
+  async nativeMenuOn(selector, text, pick = null, within = null) {
+    await this.armNativeMenu(pick)
+    const hit = await this.contextMenuOn(selector, text, within)
+    if (!hit) return null
+    await this.settle(400)
+    return this.lastNativeMenu()
+  }
+
   // -- native menus (main's context menus) ----------------------------------
   /** Navigate the native menu that is open: each step is Down, Up, Right, Left, Enter, or Escape. */
   async menu(...steps) {
@@ -526,6 +605,20 @@ class Driver {
   }
   menuRows() {
     return this.eval(() => $$('[role="menu"] [role="menuitem"], [role="listbox"] [role="option"]').map((e) => e.textContent?.trim()))
+  }
+  /** The in-renderer menu the store holds open (the link menu, value menus): its rows as { label, action, submenu? }, or null. */
+  rendererMenu() {
+    return this.store((s) => {
+      const m = s.pendingMenu
+      if (!m) return null
+      const flat = (items) => items.map((i) => ({ label: i.label, action: i.action ?? null, submenu: i.submenu ? flat(i.submenu) : undefined }))
+      return flat(m.items)
+    })
+  }
+  /** Settle the open in-renderer menu with an action (or null to dismiss), as a click on its row would. */
+  async settleMenu(action = null) {
+    await this.store((s, a) => s.pendingMenu?.settle(a), action)
+    await this.settle(250)
   }
 
   // -- screenshots & checks -------------------------------------------------

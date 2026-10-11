@@ -135,14 +135,14 @@ What a person sees: `[x](Page)` edits like `[[Page]]`; every link reads **Rename
   - [x] Task 5-2 — One title hook
   - [x] Task 5-3 — Pending titles settle through the promise
   - [x] Review Checkpoint
-- [ ] **Phase 6** — Menus and Actions
-  - [ ] Task 6-1 — The link menu answers
-  - [ ] Task 6-2 — One builder and one target type
-  - [ ] Task 6-3 — One pure edit and one live applier
-  - [ ] Task 6-4 — The resting cell's seat and guarded commit
-  - [ ] Task 6-5 — The body, the resting cell's link door, and the Text value read the builder
-  - [ ] Task 6-6 — The three value parents read the builder
-  - [ ] Review Checkpoint
+- [x] **Phase 6** — Menus and Actions
+  - [x] Task 6-1 — The link menu answers
+  - [x] Task 6-2 — One builder and one target type
+  - [x] Task 6-3 — One pure edit and one live applier
+  - [x] Task 6-4 — The resting cell's seat and guarded commit
+  - [x] Task 6-5 — The body, the resting cell's link door, and the Text value read the builder
+  - [x] Task 6-6 — The three value parents read the builder
+  - [x] Review Checkpoint
 - [ ] **Phase 7** — Paste
   - [ ] Task 7-1 — One pipeline
   - [ ] Task 7-2 — Paste inside a link retargets
@@ -4781,6 +4781,7 @@ The anchor is pinned by a test for a filled and an unfilled label.
 - **A page body or a Text value's pane closing with a title pending:** a MarkdownPM table cell forwards a pending Page Title swap on close (Task 5-3); the page body has no close-time commit path, and a Text value's pane is remounted on every open so nothing holds its value after close (the Phase 5 checkpoint), so either closed before the title answers keeps the short form, as it does today. A table scrolled out of view before the title answers keeps it too.
 - **A Text value's pane and a rename in another window:** With connections read from the host (Task 3-1), an open TextPane reads the index as of its last render, so a rename made in another window while the pane is open can trail by one render (the audit's F-094 note).
 - **The headings map and the app's own writes:** closed by Task 4-6. As found: the session's `headings` map is loaded at start and on `pages:changed`, which the host pushes only for watched (outside) edits and cascades; an app save is `origin: 'own'`, so adding `## New` to page A in the app leaves `[[A#New]]` marked missing until a restart or an outside edit, and a rename leaves the new path absent. At baseline only the missing mark read the map; Task 4-4 (a Text value's headings) and Task 10-4 (the picker's heading rows, replacing the fresh body fetch) read it too, so the gap has to close before 10-4 lands. The channel set is frozen, so the fix rides an existing channel or the renderer's own save.
+- **A `[[#Heading]]` in a page body gets no link menu:** it resolves and follows, but `linkMenuTarget`'s `self` arm answers null (the plan's own test pins it), while the same link inside a Text value, converted to its holder's page, gets the full menu. §12's "no menu for unresolved links" was reasoned about phantoms; a `self` link is resolved. Noted by the Phase 6 adversarial review; not acted on.
 - **An embedded tile's connections (pre-existing):** `renderTile` seats `connections={connRef.current}` into the nested `PageTile`, and `EmbedTileWidget.eq` ignores connections, so a page created or renamed elsewhere doesn't re-resolve inside an open embed until the tile re-renders. The same shape as the Text pane's snapshot, which Phase 3's checkpoint fixed; this one is outside the plan's tasks and is noted for the same fix.
 
 #### Deviations
@@ -4805,4 +4806,11 @@ The anchor is pinned by a test for a filled and an unfilled label.
 - **Task 5-3, the announce is checked:** the field appends an `awaitTitle` entry only when its range reads as its text, since a transaction filter (`citationGuard` moving an insert past a citation label) can move the written link away from the announced range and the settle would then overwrite the wrong text. Found at the Phase 5 checkpoint.
 - **Task 5-3, the TextPane forward went:** the AFTER's close-time forward read `committed`, a ref owned by one `TextPaneEditor`, and every holder remounts the pane per open, so a title landing after the user reopened and edited the value would have committed the stale text with the title over the edit. A live reader would need a store read keyed by holder and property through seven callers; the forward was removed instead and a Text value's pane keeps the short form on close, as the page body does (*§Open Items*; Continuation §5.10). A MarkdownPM table cell still forwards, and its forward stands down once the table unmounts, since a frozen model and a commit by table index could otherwise write the titled cell into a table inserted above. Found at the Phase 5 checkpoint; the table's resting commit is one function.
 - **Task 5-1, the mailto half of the live check:** `window.nexus` is frozen by the context bridge, so the drive can't intercept `link:open`, and a driven `mailto:` click would open Mail; that branch is pinned by `openWebLink.test.ts` and not driven. The in-app half is driven.
+- **Task 6-3, focus before the write:** `applyLinkAction` focuses the view before `writeLinkAt`, not after: on an unfocused view the later `focusRange` dispatch read as leaving the alias slot the write had just opened, and `aliasOnLeave` collapsed the pipe, so Rename on `[[P]]` wrote nothing. `Span` is spelled `[number, number]` (`tokens.ts` exports no `Span`).
+- **Task 6-4, the checkbox guard tests:** `claimCheckbox` commits in the same synchronous click that reads the cell's text and `checkboxToggleChange` always changes it, so the two named `cellStatic.test.tsx` cases can't be written as stated; both guards are pinned through the resting menu in `cellLinks.test.tsx`.
+- **Tasks 6-1, 6-2, 6-3, 6-5, 6-6 landed in one commit** (after 6-4's own): 6-1 deletes `linkValueMenuTarget`, which the three value parents import, so splitting them meant transitional code.
+- **Task 6-5, the resting pick reads the document:** the AFTER's `commitAtRest` compared `live.current`, a ref inside `StaticCellImpl`, with the text the gesture read; a Page Title pick awaits its title, and if the user entered the cell and typed meanwhile the resting cell had unmounted with its ref frozen, so the landing title overwrote the typing. The widget's `model` is frozen the same way while a cell is being edited (it rebuilds only when the cell closes), so the guard reads the cell's current text from the document through one `cellAt(row, col)` reader the table widget supplies, shared with the closed cell's title forward (which read the frozen model until now) and declining both the select and the write arm of `applyAtRest` on a moved cell (the baseline's `still()` declined a select too). Found at the Phase 6 checkpoint; `live = useLatest(text)` went with it.
+- **Task 6-3, Rename's pipe slot:** an unaliased connection's alias opens just inside the closing `]]` (`tk.range[1] - 2`) rather than after the title or heading span, so `[[P#]]` (an emptied heading, reachable only in pasted or external text) becomes `[[P#|]]` rather than `[[P|#]]`; one span read instead of two. Found at the Phase 6 checkpoint.
+- **Phase 6 checkpoint cleanups:** the three `format:*` action names derive from `LINK_DISPLAYS`, as `FORMAT_ROW` already did, and `LinkEditAction` is no longer exported (nothing read it). The simplification review's seven removals (folding `LinkAction` into `CellMenuAction`, spreading whole targets into the menu context, `value: undefined` for the conditional spread, the sweep seat's temporary, the `copies` annotation, `onActivate(edit)`, `focusRange`'s default) were declined as trading type precision or the ratified shapes for a line each.
+- **Live checks through native menus:** link menus are main's native menus, so the drive hooks the main process through its inspector (`--inspect`) to record each popped menu's rows and answer it with the armed pick, or hold it pending, without showing it; B-68 is driven as the app sees it (a hover arms the dwell, then the menu opens over it), since a native menu is modal and the renderer sees no pointer while it's open.
 - **Hand-checks:** driven headlessly by the orchestrator through the drive tool, with the screenshots read, at Nathan's instruction.
