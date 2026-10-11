@@ -160,7 +160,7 @@ type TileMount =
 
 export interface EditorHost {
   settings(): EditorSettings
-  connections(): ConnectionsApi | undefined
+  connections: () => ConnectionsApi | undefined
   aliases: {
     list(id: string): string[]
     remember(id: string, alias: string): void

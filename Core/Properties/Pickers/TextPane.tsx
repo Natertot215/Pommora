@@ -15,6 +15,7 @@ import { AutocompletePane } from '../../MarkdownPM/Autocomplete/AutocompletePane
 import { useEditorHost } from '../../Pages/editorHost'
 import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'
 import { previewConnections } from '../../Session/pageConnections'
+import { useSession } from '../../Session/store'
 import type { PropertyValue } from '../propertyValue'
 import './text-pane.css'
 
@@ -40,7 +41,7 @@ export function TextPane({
   onCommit: (value: PropertyValue | null) => void
   onDismiss: () => void
 }): React.JSX.Element {
-  const host = useEditorHost({ connections: connections() })
+  const host = useEditorHost({ connections: useSession(() => connections()) })
   const saveRef = useRef<() => void>(() => {})
   const close = (): void => {
     saveRef.current()
