@@ -62,13 +62,7 @@ import {
   spanAt,
 } from './Engine/docScan'
 import { lineEndOf, lineIndexAt } from './Engine/markdownCode'
-import {
-  headingMissing,
-  tokenTarget,
-  wikiLinkView,
-  type ConnectionsApi,
-  type MdTarget,
-} from './Links/connectionsApi'
+import { linkClass, linkLook, type ConnectionsApi } from './Links/connectionsApi'
 import type { LinkStatus } from '../Connections/connections'
 import { editorHost, type EditorSettings, type OwnPage, ownPage, redrawNudge } from './api'
 import { checkMarkSvg, checkboxClass } from '@pommora/uix/Controls/Checkbox'
@@ -77,27 +71,6 @@ import { buttonClass, segmentDivider } from '@pommora/uix/Buttons/Button'
 import * as trail from '@pommora/uix/Elements/nav-trail.css'
 import { svgFrame } from '@pommora/uix/Symbols/svgFrame'
 import { cx } from '@pommora/uix/Utilities/cx'
-
-export const MD_LINK_CLASS = 'md-link'
-
-export function mdLinkClass(
-  conn: ConnectionsApi | undefined,
-  target: MdTarget,
-  ownKeys: readonly string[] | undefined,
-): string {
-  switch (target.kind) {
-    case 'page':
-    case 'self':
-      return cx(
-        'md-connection-resolved',
-        headingMissing(conn, target, ownKeys) && 'md-connection-heading-missing',
-      )
-    case 'external':
-      return MD_LINK_CLASS
-    case 'invalid':
-      return 'md-link-invalid'
-  }
-}
 
 // WidgetType.ignoreEvent defaults to true, which would swallow the pointerdown the editor's own gestures act on, like listDrag on a bullet.
 export abstract class GlyphWidget extends WidgetType {
@@ -479,6 +452,7 @@ function build(view: EditorView, scope: MarkdownScope): Built {
   const focused = view.hasFocus
   const sel = view.state.selection.main
   const settings = host.settings()
+  const { headingLinkStyle } = settings
   const inline = visibleInline(view, scan)
   // A cell's text parses alone, where a leading tag reads as a block the table never holds.
   const raw = drawsRawHtml(scope, settings) ? inline.html : []
@@ -561,17 +535,17 @@ function build(view: EditorView, scope: MarkdownScope): Built {
     if (tk.kind !== 'link') return
     const [open, close] = tk.markerRanges
     const bracketEnd = close[0] + 1
-    const target = tokenTarget(conn, text, tk)
-    const valid = target.kind !== 'invalid'
-    const internal = target.kind === 'page' || target.kind === 'self'
+    const look = linkLook(conn, text, tk, ownKeys, headingLinkStyle)
+    const shown = look.status !== 'phantom'
+    const internal = look.target.kind === 'page' || look.target.kind === 'self'
     const isActive = active.has(i)
     ranges.push(
       Decoration.mark({
-        class: cx(mdLinkClass(conn, target, ownKeys), internal && isActive && 'md-connection-open'),
+        class: cx(linkClass(look), internal && isActive && 'md-connection-open'),
       }).range(tk.contentRange[0], tk.contentRange[1]),
     )
-    const dim = Decoration.mark({ class: valid ? 'md-control' : 'md-unresolved-syntax' })
-    if (!valid || isActive) {
+    const dim = Decoration.mark({ class: shown ? 'md-control' : 'md-phantom-syntax' })
+    if (!shown || isActive) {
       ranges.push(dim.range(open[0], open[1]))
       ranges.push(dim.range(close[0], bracketEnd))
     } else {
@@ -581,7 +555,7 @@ function build(view: EditorView, scope: MarkdownScope): Built {
     if (isActive) {
       ranges.push(
         Decoration.mark({
-          class: internal ? 'md-connection-target' : valid ? 'md-link-url' : 'md-unresolved-syntax',
+          class: internal ? 'md-connection-target' : shown ? 'md-link-url' : 'md-phantom-syntax',
         }).range(bracketEnd, close[1]),
       )
       if (internal) ranges.push(connGlyph('resolved', bracketEnd + 1))
@@ -589,83 +563,76 @@ function build(view: EditorView, scope: MarkdownScope): Built {
       ranges.push(hideMarker.range(bracketEnd, close[1]))
     }
   })
-  if (conn) {
-    const { headingLinkStyle } = settings
-    tokens.forEach((tk, i) => {
-      if (tk.kind !== 'wikiLink') return
-      const alias = aliasedToken(tk)
-      const [rs, re] = tk.resolveRange
-      const { status, bare, missing } = wikiLinkView(conn, text, tk, ownKeys)
-      const open = active.has(i)
-      // `[[#]]` is a link being written: nothing to mark, only its syntax to dim.
-      if (tk.contentRange[0] === tk.contentRange[1]) {
-        const dim = Decoration.mark({ class: 'md-phantom-syntax' })
-        for (const [s, e] of tk.markerRanges) if (e > s) ranges.push(dim.range(s, e))
-        return
-      }
-      // Revealed, an alias shows its whole target, page and heading both.
-      const pipe: [number, number] | undefined = alias
-        ? [rs, tk.heading?.[1] ?? re]
-        : text[tk.contentRange[1]] === '|'
-          ? tk.contentRange
-          : undefined
-      // Follows the PIPE, not a title that happens to match: an alias for a page that doesn't exist yet still reads as a link.
-      if (open && (pipe || status === 'resolved')) {
-        ranges.push(connGlyph(status, tk.range[0] + 2))
-        if (pipe)
-          ranges.push(Decoration.mark({ class: 'md-connection-target' }).range(pipe[0], pipe[1]))
-      }
-      if (tk.heading && !open && !alias && status === 'resolved') {
-        const [hs, he] = tk.heading
-        const showPage = headingLinkStyle !== 'heading-only' && !bare
-        if (!bare)
-          ranges.push(
-            (showPage ? Decoration.mark({ class: 'md-connection-resolved' }) : hideMarker).range(
-              rs,
-              re,
-            ),
-          )
+  tokens.forEach((tk, i) => {
+    if (tk.kind !== 'wikiLink' || !conn) return
+    const alias = aliasedToken(tk)
+    const [rs, re] = tk.resolveRange
+    const look = linkLook(conn, text, tk, ownKeys, headingLinkStyle)
+    const { status, bare, missing, join } = look
+    const open = active.has(i)
+    // `[[#]]` is a link being written: nothing to mark, only its syntax to dim.
+    if (tk.contentRange[0] === tk.contentRange[1]) {
+      const dim = Decoration.mark({ class: 'md-phantom-syntax' })
+      for (const [s, e] of tk.markerRanges) if (e > s) ranges.push(dim.range(s, e))
+      return
+    }
+    // Revealed, an alias shows its whole target, page and heading both.
+    const pipe: [number, number] | undefined = alias
+      ? [rs, tk.heading?.[1] ?? re]
+      : text[tk.contentRange[1]] === '|'
+        ? tk.contentRange
+        : undefined
+    // Follows the PIPE, not a title that happens to match: an alias for a page that doesn't exist yet still reads as a link.
+    if (open && (pipe || status === 'resolved')) {
+      ranges.push(connGlyph(status, tk.range[0] + 2))
+      if (pipe)
+        ranges.push(Decoration.mark({ class: 'md-connection-target' }).range(pipe[0], pipe[1]))
+    }
+    if (join && !open) {
+      const [hs, he] = join.heading
+      if (!bare)
         ranges.push(
-          Decoration.replace({ widget: new HeadingJoinWidget(showPage) }).range(hs - 1, hs),
+          (join.showPage ? Decoration.mark({ class: 'md-connection-resolved' }) : hideMarker).range(
+            rs,
+            re,
+          ),
         )
-        ranges.push(
-          Decoration.mark({
-            class: cx(
-              'md-connection-resolved md-connection-heading',
-              missing && 'md-connection-heading-missing',
-            ),
-          }).range(hs, he),
-        )
-        for (const [s, e] of tk.markerRanges) ranges.push(hideMarker.range(s, e))
-        return
-      }
-      if (status === 'phantom') {
-        // Typing is what earns the connection color, not the caret's position, so the field tracks the gesture.
-        const writing = typing === tk.range[0]
-        ranges.push(
-          Decoration.mark({
-            class: writing ? 'md-connection-typing' : 'md-connection-phantom',
-          }).range(tk.contentRange[0], tk.contentRange[1]),
-        )
-        const bracket = Decoration.mark({
-          class: open && (writing || pipe) ? 'md-bracket' : 'md-phantom-syntax',
-        })
-        for (const [ms, me] of tk.markerRanges) ranges.push(bracket.range(ms, me))
-        return
-      }
+      ranges.push(
+        Decoration.replace({ widget: new HeadingJoinWidget(join.showPage) }).range(hs - 1, hs),
+      )
       ranges.push(
         Decoration.mark({
           class: cx(
-            `md-connection-${status}`,
-            open && 'md-connection-open',
-            alias && missing && 'md-connection-heading-missing',
+            'md-connection-resolved md-connection-heading',
+            missing && 'md-connection-heading-missing',
           ),
+        }).range(hs, he),
+      )
+      for (const [s, e] of tk.markerRanges) ranges.push(hideMarker.range(s, e))
+      return
+    }
+    if (status === 'phantom') {
+      // Typing is what earns the connection color, not the caret's position, so the field tracks the gesture.
+      const writing = typing === tk.range[0]
+      ranges.push(
+        Decoration.mark({
+          class: writing ? 'md-connection-typing' : 'md-connection-phantom',
         }).range(tk.contentRange[0], tk.contentRange[1]),
       )
-      const bracket = open ? Decoration.mark({ class: 'md-bracket' }) : hideMarker
-      for (const [s, e] of tk.markerRanges) ranges.push(bracket.range(s, e))
-    })
-  }
+      const bracket = Decoration.mark({
+        class: open && (writing || pipe) ? 'md-bracket' : 'md-phantom-syntax',
+      })
+      for (const [ms, me] of tk.markerRanges) ranges.push(bracket.range(ms, me))
+      return
+    }
+    ranges.push(
+      Decoration.mark({
+        class: cx(linkClass(look), open && 'md-connection-open'),
+      }).range(tk.contentRange[0], tk.contentRange[1]),
+    )
+    const bracket = open ? Decoration.mark({ class: 'md-bracket' }) : hideMarker
+    for (const [s, e] of tk.markerRanges) ranges.push(bracket.range(s, e))
+  })
   if (settings.inPageHeadingResolution === 'automatic') {
     const sectionHeadings = headings?.texts ?? []
     const sectionMark = Decoration.mark({ class: 'md-connection-resolved md-section-run' })

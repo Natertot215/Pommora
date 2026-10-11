@@ -1,6 +1,5 @@
 import { Fragment, memo } from 'react'
 import {
-  aliasedToken,
   holdsTokens,
   linkAddress,
   linkTokenAt,
@@ -8,7 +7,6 @@ import {
   tokenize,
   type TokenOf,
 } from '../Engine/tokens'
-import { MD_LINK_CLASS, mdLinkClass } from '../decorations'
 import {
   contentClass,
   listGlyphOf,
@@ -23,7 +21,8 @@ import { parseListMarker, type ListMarker } from '../Engine/detect'
 import { checkboxToggleChange } from '../Engine/listDragModel'
 import { applyEdits, lineOffsetsOf } from '../Engine/markdownCode'
 import {
-  wikiLinkView,
+  linkClass,
+  linkLook,
   linkMenuTarget,
   tokenMenuTarget,
   tokenTarget,
@@ -58,7 +57,7 @@ export function renderCellContent(
   getConn?: () => ConnectionsApi | undefined,
   {
     around,
-    headingLinkStyle,
+    headingLinkStyle = 'page-heading',
     base = 0,
   }: { around?: CellPage; headingLinkStyle?: HeadingLinkStyle; base?: number } = {},
 ): React.ReactNode {
@@ -75,11 +74,11 @@ export function renderCellContent(
     if (s < pos) continue
     if (s > pos) out.push(text.slice(pos, s))
     const content = text.slice(tk.contentRange[0], tk.contentRange[1])
-    if (tk.kind === 'wikiLink') {
-      const [rs, re] = tk.resolveRange
-      const view = conn && wikiLinkView(conn, text, tk, around?.ownKeys)
-      if (!view) out.push(text.slice(s, e))
-      else if (view.status === 'phantom')
+    if (tk.kind === 'wikiLink' || tk.kind === 'link') {
+      const look =
+        (tk.kind === 'link' || conn) && linkLook(conn, text, tk, around?.ownKeys, headingLinkStyle)
+      if (!look) out.push(text.slice(s, e))
+      else if (look.status === 'phantom')
         out.push(
           <Fragment key={key++}>
             <span className="md-phantom-syntax md-unresolved-fixed">
@@ -92,32 +91,24 @@ export function renderCellContent(
           </Fragment>,
         )
       else {
-        // An alias overrides both halves, so only an unaliased link draws its page and heading.
-        const alias = aliasedToken(tk)
-        const frag = view.status === 'resolved' && !alias ? tk.heading : undefined
-        const showPage = headingLinkStyle !== 'heading-only' && !view.bare
+        const { join } = look
         out.push(
-          <span
-            key={key++}
-            className={cx(
-              `md-connection-${view.status}`,
-              alias && view.missing && 'md-connection-heading-missing',
-            )}
-            data-link-span={`${base + s},${base + e}`}
-          >
-            {frag ? (
+          <span key={key++} className={linkClass(look)} data-link-span={`${base + s},${base + e}`}>
+            {join && tk.kind === 'wikiLink' ? (
               <>
-                {showPage && text.slice(rs, re)}
-                <span className={cx('md-heading-symbol', showPage && 'md-heading-symbol-spaced')}>
+                {join.showPage && text.slice(tk.resolveRange[0], tk.resolveRange[1])}
+                <span
+                  className={cx('md-heading-symbol', join.showPage && 'md-heading-symbol-spaced')}
+                >
                   §
                 </span>
                 <span
                   className={cx(
                     'md-connection-heading',
-                    view.missing && 'md-connection-heading-missing',
+                    look.missing && 'md-connection-heading-missing',
                   )}
                 >
-                  {text.slice(frag[0], frag[1])}
+                  {text.slice(join.heading[0], join.heading[1])}
                 </span>
               </>
             ) : (
@@ -126,21 +117,6 @@ export function renderCellContent(
           </span>,
         )
       }
-    } else if (tk.kind === 'link') {
-      // Without the shared resolver a cell would call an encoded internal target broken and color the same link two ways.
-      const target = tokenTarget(conn, text, tk)
-      out.push(
-        <span
-          key={key++}
-          className={cx(
-            mdLinkClass(conn, target, around?.ownKeys),
-            target.kind === 'invalid' && 'md-unresolved-fixed',
-          )}
-          data-link-span={`${base + s},${base + e}`}
-        >
-          {content}
-        </span>,
-      )
     } else if (tk.kind === 'htmlTag') {
       const [open, close] = tk.markerRanges
       out.push(
@@ -253,7 +229,7 @@ function renderCellBody(
   })
 }
 
-const LINK_SELECTOR = `.${MD_LINK_CLASS}, .md-connection-resolved, [data-link-span]`
+const LINK_SELECTOR = '.md-link, .md-connection-resolved, [data-link-span]'
 
 function linkSpanAt(target: EventTarget | null): [number, number] | null {
   const el = (target as HTMLElement | null)?.closest?.(LINK_SELECTOR)
