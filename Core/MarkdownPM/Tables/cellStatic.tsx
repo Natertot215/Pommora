@@ -21,6 +21,7 @@ import { parseListMarker, type ListMarker } from '../Engine/detect'
 import { checkboxToggleChange } from '../Engine/listDragModel'
 import { scanDoc } from '../Engine/docScan'
 import { readFormatState } from '../Input/formatState'
+import { editFor } from '../Input/format'
 import { applyEdits, codeMask, lineOffsetsOf, type TextEdit } from '../Engine/markdownCode'
 import { sectionRunsIn } from '../../Connections/scan'
 import {
@@ -439,6 +440,21 @@ function StaticCellImpl({
     return () => commitAtRest(text, [change])
   }
 
+  const restingAction = async (
+    action: string,
+    built: string,
+    from: number,
+    to: number,
+  ): Promise<void> => {
+    const edit = editFor(action, scanDoc(built), from, to)
+    if (!edit || !commitAtRest(built, edit.changes)) return
+    const slot =
+      /^(format|highlight):/.test(action) &&
+      (from === to || action === 'format:link' || action === 'format:linkText')
+    if (slot && edit.selection !== undefined)
+      onActivate({ kind: 'select', range: [edit.selection, edit.selection] })
+  }
+
   const restingMenu = (e: React.MouseEvent<HTMLElement>): void => {
     const ask = host.menus.format
     if (!ask) return
@@ -452,6 +468,8 @@ function StaticCellImpl({
       embedSeat: false,
       citeSeat: false,
       resting: { selection: built.slice(from, to) },
+    }).then((action) => {
+      if (action) void restingAction(action, built, from, to)
     })
   }
 

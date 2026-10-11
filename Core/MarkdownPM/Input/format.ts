@@ -23,6 +23,8 @@ import { emptyTable } from '../Engine/Tables/model'
 import { type HighlightColor, writtenMark } from '../Engine/highlightColors'
 import { serialize } from '../Engine/Tables/codec'
 import { type DocScan, inFenceAt } from '../Engine/docScan'
+import { isValidLink, normalizeLinkUrl } from '../../Paths/urlPath'
+import { serializeLink } from '../../Connections/linkValue'
 
 export type InlineFormat = keyof typeof WRAP | LinkFormat
 
@@ -124,6 +126,8 @@ export function editFor(
 ): FormatEdit | null {
   const [group, value] = action.split(':')
   switch (group) {
+    case 'link':
+      return value === 'insert' ? insertLinkEdit(scan.text, from, to) : null
     case 'format':
       return toggleInline(scan, from, to, value as InlineFormat)
     case 'highlight':
@@ -137,6 +141,14 @@ export function editFor(
     default:
       return null
   }
+}
+
+function insertLinkEdit(doc: string, selFrom: number, selTo: number): FormatEdit | null {
+  const [from, to] = trimmedRange(doc, selFrom, selTo)
+  const text = doc.slice(from, to)
+  if (!text.trim() || !isValidLink(text)) return null
+  const insert = serializeLink(normalizeLinkUrl(text), text)
+  return { changes: [{ from, to, insert }], selection: from + insert.length }
 }
 
 function toggleWrap(
