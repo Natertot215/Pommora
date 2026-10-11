@@ -1,5 +1,12 @@
 import { connectionText, parseConnectionText, wholeLink } from './connections'
-import { escapeAlias, markdownPageLink, targetFragment, targetTitle, unescapeAlias } from './links'
+import {
+  escapeAlias,
+  markdownPageLink,
+  targetFragment,
+  targetNamesFile,
+  targetTitle,
+  unescapeAlias,
+} from './links'
 import { isHttpLink, isValidLink, linkDomain, normalizeLinkUrl } from '../Paths/urlPath'
 import { normalizeTitle } from '../Paths/caseFold'
 import type { LinkDisplay } from '../Properties/properties'
@@ -58,7 +65,10 @@ export function readLinkText(text: string, resolve?: PageIndex['resolve']): Link
   const dest = md ? s.slice(md.destination[0], md.destination[1]).trim() : s
   const title = md ? targetTitle(dest) : null
   const res = title === null ? undefined : resolve?.(title)
-  if (title !== null && (res ? res.status !== 'phantom' : !isValidLink(dest)))
+  if (
+    title !== null &&
+    (res ? res.status !== 'phantom' : targetNamesFile(dest) || !isValidLink(dest))
+  )
     return pageTarget('markdown', title, targetFragment(dest) || undefined, alias, res)
   if (!isValidLink(dest)) return null
   return { kind: 'url', syntax: md ? 'markdown' : 'bare', url: normalizeLinkUrl(dest), alias }
