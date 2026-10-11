@@ -7,6 +7,7 @@ import type { ConnPage } from '../../Connections/pageIndex'
 import { glanceHost } from '../../Interface/Glance/glanceAction'
 import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'
 import { resolveFollow } from '../../MarkdownPM/Links/linkClicks'
+import { heldBy } from '../../MarkdownPM/api'
 import { lineOffsetsOf } from '../../MarkdownPM/Engine/markdownCode'
 import { type CellPage, linkGestures, renderCellContent } from '../../MarkdownPM/Tables/cellStatic'
 import { useSession, useSetting } from '../../Session/store'
@@ -27,14 +28,14 @@ export function TextCell({
   menu?: boolean
 }): React.JSX.Element {
   const hostRef = useRef<HTMLDivElement>(null)
-  const own = holder ? ({ kind: 'held', page: holder } as const) : null
+  const own = heldBy(holder)
   const headingLinkStyle = useSetting('headingLinkStyle')
   const automatic = useSetting('inPageHeadingResolution') === 'automatic'
   const headings = useSession((s) => (holder ? s.headings[holder.path] : undefined))
   const around: CellPage | undefined = headings && {
     ordinalOf: () => null,
-    ownKeys: headings.keys,
-    sectionHeadings: automatic ? headings.texts : [],
+    keys: headings.keys,
+    texts: automatic ? headings.texts : [],
   }
   const { linkAt, dismiss, onContextMenu, onPointerOver, onPointerOut } = linkGestures(
     text,

@@ -13,7 +13,7 @@ import {
   restingEditItems,
 } from '@pommora/core/Actions/editorMenu'
 import type { ActionItem } from '@pommora/core/Actions/menuModel'
-import { PASTE_AS_PREFIX, pasteAsRows } from '@pommora/core/Actions/pasteAsMenu'
+import { pasteAsRows } from '@pommora/core/Actions/pasteAsMenu'
 import { heldCommands } from '@pommora/core/Settings/settings'
 import { rowTemplate } from './menu'
 
@@ -110,16 +110,7 @@ function speechShareItems(params: ContextMenuParams): MenuItemConstructorOptions
 // The clipboard is read here, in the same turn as the right-click, not sent with the request.
 function pasteAsItems(editor: EditorMenu): MenuItemConstructorOptions[] {
   const rows = pasteAsRows(clipboard.readText(), editor.req.embedSeat, editor.req.citeSeat)
-  if (rows.length === 0) return []
-  return [
-    {
-      label: 'Paste As',
-      submenu: rows.map((r) => ({
-        label: r.label,
-        click: () => editor.resolve(PASTE_AS_PREFIX + r.form),
-      })),
-    },
-  ]
+  return rows.length === 0 ? [] : editorRows(editor, [{ label: 'Paste As', submenu: rows }])
 }
 
 function editorRows(

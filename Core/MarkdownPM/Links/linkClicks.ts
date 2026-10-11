@@ -7,7 +7,6 @@ import { docString } from '../docCache'
 import {
   linkMenuTarget,
   linkStatus,
-  titleTarget,
   tokenTarget,
   type ConnectionsApi,
   type MdTarget,
@@ -31,7 +30,7 @@ function sectionRunAt(view: EditorView, event: MouseEvent, pos: number): LinkHit
   const text = span.textContent ?? ''
   const from = view.posAtDOM(span)
   return {
-    target: titleTarget(undefined, '', text.slice(1)),
+    target: { kind: 'self', heading: text.slice(1) },
     range: [from, from + text.length],
     onText: true,
     hidesSyntax: true,
@@ -130,7 +129,7 @@ const apiOf = (view: EditorView): ConnectionsApi | undefined =>
 
 export function linkPointer(): Extension {
   return pointerHandlers<LinkHit>({
-    // Both gates are required: external links wear the link class, not the connection one.
+    // Both gates are required: weblinks wear the link class, not the connection one.
     hoverGate: '.md-connection-resolved, .md-link',
     hitAt: (view, event) => linkUnder(view, apiOf(view), event),
     follow: (hit, view, event) =>

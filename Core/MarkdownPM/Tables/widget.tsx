@@ -43,7 +43,7 @@ import {
 import { blockDeleteSpan } from '../Menus/gripMenu'
 import { tableMergeGuard, tablePasteGuard } from '../Guards/tableGuard'
 import type { TableModel } from '../Engine/Tables/model'
-import { type CellPage, linksOwnHeadings } from './cellStatic'
+import { type CellPage, readsOwnHeadings } from './cellStatic'
 import type { TableMenuAction, TableMenuContext } from './tableMenu'
 import { editorHost, persistPref, redrawNudge } from '../api'
 import type { HeadingLinkStyle } from '../../Settings/personalization'
@@ -500,16 +500,16 @@ const automaticIn = (state: EditorState): boolean =>
 
 /** What a cell draws from the page around it and its own text never holds: the footnote numbering, the headings a same-page link is judged against when the table holds one, and the outline texts a `§` run reads. */
 function cellPage(doc: Text, text: string, automatic: boolean): CellPage {
-  const linksHeadings = linksOwnHeadings(text)
+  const readsHeadings = readsOwnHeadings(text)
   const runs = automatic && text.includes('§')
-  const key = linksHeadings ? `${citeKey(doc)}\n${headingKey(doc)}\n${runs}` : citeKey(doc)
+  const key = readsHeadings ? `${citeKey(doc)}\n${headingKey(doc)}\n${runs}` : citeKey(doc)
   let page = cellPages.get(key)
   if (!page) {
     const numbers = ordinals(doc)
     page = {
       ordinalOf: (label) => numbers.get(foldLabel(label)) ?? null,
-      ownKeys: linksHeadings ? docHeadingKeys(doc) : [],
-      sectionHeadings: runs ? docSectionHeadings(doc) : [],
+      keys: readsHeadings ? docHeadingKeys(doc) : [],
+      texts: runs ? docSectionHeadings(doc) : [],
     }
     capSet(cellPages, key, page, 16)
   }

@@ -147,13 +147,6 @@ export function MarkdownTable({
   const geomRef = useLatest(geom)
   // A resting cell's memo keeps the callbacks it first rendered with, so it commits and reads through these to reach the table where it sits now.
   const live = useLatest({ onCellCommit, onSettled, onFill, cellAt })
-  const mounted = useRef(true)
-  useEffect(
-    () => () => {
-      mounted.current = false
-    },
-    [],
-  )
   const [drag, setDrag] = useState<Drag | null>(null)
   const [resize, setResize] = useState<Resize | null>(null)
   const [active, setActive] = useState<{ row: number; col: number } | null>(null)
@@ -428,7 +421,7 @@ export function MarkdownTable({
   const cell = (row: number, col: number, text: string): React.JSX.Element => {
     const display = cellToDisplay(text)
     const current = (): string | null => {
-      const source = mounted.current ? live.current.cellAt(row, col) : null
+      const source = wrapRef.current?.isConnected ? live.current.cellAt(row, col) : null
       return source === null ? null : cellToDisplay(source)
     }
     const commitResting = (t: string): void => {

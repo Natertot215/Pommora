@@ -6,7 +6,7 @@ import { lineIndexAt, type TextEdit } from '../Engine/markdownCode'
 import { isSequenced, parseListMarkerPrefixed, type MarkdownScope } from '../Engine/detect'
 
 /** The user event of an edit that writes list markers: Enter continuing a list, Tab and Shift+Tab, and the Lists menu. */
-export const RELIST = 'input.list'
+const RELIST = 'input.list'
 
 export const editEvent = (edit: { relist?: boolean }): string => (edit.relist ? RELIST : 'input')
 

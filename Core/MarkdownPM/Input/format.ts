@@ -127,7 +127,9 @@ export function editFor(
   const [group, value] = action.split(':')
   switch (group) {
     case 'link':
-      return value === 'insert' ? insertLinkEdit(scan.text, from, to) : null
+      return value === 'insert' && !inFenceAt(scan, from)
+        ? insertLinkEdit(scan.text, from, to)
+        : null
     case 'format':
       return toggleInline(scan, from, to, value as InlineFormat)
     case 'highlight':

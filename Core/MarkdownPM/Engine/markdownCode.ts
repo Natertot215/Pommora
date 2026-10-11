@@ -182,6 +182,9 @@ export const lineEndAt = (doc: string, pos: number): number => {
   return i === -1 ? doc.length : i
 }
 
+export const overlaps = (a: readonly [number, number], b: readonly [number, number]): boolean =>
+  a[0] < b[1] && b[0] < a[1]
+
 export const trimmedRange = (doc: string, from: number, to: number): [number, number] => {
   let f = from
   let t = to

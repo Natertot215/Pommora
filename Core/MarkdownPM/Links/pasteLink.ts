@@ -130,10 +130,8 @@ export async function pastedCellText(
   how: PasteMode,
 ): Promise<TextEdit> {
   const edit = pasteEdit(scanDoc(doc), sel, text, how, host)
-  if (!edit || edit.write.kind === 'line') return { ...sel, insert: text }
-  const insert =
-    edit.write.kind === 'text' ? edit.write.text : await settledLinkText(host, edit.write)
-  return { from: edit.from, to: edit.to, insert }
+  if (!edit) return { ...sel, insert: text }
+  return { from: edit.from, to: edit.to, insert: await settledLinkText(host, edit.write) }
 }
 
 export const pasteLink = EditorView.domEventHandlers({

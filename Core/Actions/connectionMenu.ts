@@ -16,11 +16,11 @@ export type LinkMenuContext = { editable: boolean; value?: { hideable: boolean }
 export type ConnEditAction = 'rename' | 'editLink'
 const CELL_ACTIONS = ['cell:clear', 'cell:hide'] as const
 export type ConnCellAction = (typeof CELL_ACTIONS)[number]
-type ConnCopyAction = Extract<PageMetaAction, 'title:copylink' | 'title:copypath'>
+type LinkCopyAction = Extract<PageMetaAction, 'title:copylink' | 'title:copypath'>
 
-type ConnSiteAction = 'link:window' | 'link:browser'
+type UrlOpenAction = 'link:window' | 'link:browser'
 
-const CONN_SITE_ROWS: readonly LeafItem<ConnSiteAction>[] = [
+const URL_OPEN_ROWS: readonly LeafItem<UrlOpenAction>[] = [
   { label: 'Preview', action: 'link:window' },
   { label: 'Open In Browser', action: 'link:browser' },
 ]
@@ -36,7 +36,7 @@ type LinkEditAction = (typeof LINK_EDIT_ACTIONS)[number]
 const LINK_ACTIONS = [...LINK_EDIT_ACTIONS, ...CELL_ACTIONS] as const
 export type LinkAction = (typeof LINK_ACTIONS)[number]
 
-const CONN_UNLINK_ROWS: readonly ActionItem<LinkEditAction>[] = [
+const UNLINK_ROWS: readonly ActionItem<LinkEditAction>[] = [
   { label: 'Remove Link', action: 'link:remove' },
   { label: 'Delete', action: 'link:delete' },
 ]
@@ -49,7 +49,7 @@ const FORMAT_ROW = (web: boolean): ActionItem<LinkEditAction> => ({
   })),
 })
 
-export type LinkMenuAction = PageOpenAction | ConnSiteAction | ConnCopyAction | LinkAction
+export type LinkMenuAction = PageOpenAction | UrlOpenAction | LinkCopyAction | LinkAction
 
 export const isLinkAction = (action: LinkMenuAction): action is LinkAction =>
   (LINK_ACTIONS as readonly string[]).includes(action)
@@ -73,7 +73,7 @@ export function connectionMenuModel(ctx: LinkMenuContext): ActionItem<LinkMenuAc
           window: !ctx.windowed,
           newTab: ctx.open !== 'detail',
         })
-      : CONN_SITE_ROWS.filter((r) => r.action !== 'link:window' || ctx.web)
+      : URL_OPEN_ROWS.filter((r) => r.action !== 'link:window' || ctx.web)
   const authoring: ActionItem<LinkMenuAction>[] = ctx.editable
     ? [
         { label: 'Rename', action: 'rename' },
@@ -86,7 +86,7 @@ export function connectionMenuModel(ctx: LinkMenuContext): ActionItem<LinkMenuAc
   const closing = ctx.value
     ? cellClosingRows(true, ctx.value.hideable)
     : ctx.editable
-      ? CONN_UNLINK_ROWS
+      ? UNLINK_ROWS
       : []
   return joinGroups([opens, authoring, [...copies, ...format], closing])
 }

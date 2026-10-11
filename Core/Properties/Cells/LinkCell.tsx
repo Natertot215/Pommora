@@ -10,6 +10,7 @@ import { solidColorCss } from '@pommora/uix/Theme/ramp'
 import { glanceHost } from '../../Interface/Glance/glanceAction'
 import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'
 import { dwellTarget, resolveFollow } from '../../MarkdownPM/Links/linkClicks'
+import { heldBy } from '../../MarkdownPM/api'
 import { openWebLink } from '../../Web/openWebLink'
 import { useLinkTitle } from '../../Web/useLinkTitle'
 import type { ConnPage } from '../../Connections/pageIndex'
@@ -53,7 +54,6 @@ export function LinkCell({
       />
     )
   if (!url) return null
-  const own = holder ? ({ kind: 'held', page: holder } as const) : null
   return (
     <OverScroll className="cell-text-scroll">
       <a
@@ -65,8 +65,8 @@ export function LinkCell({
         onClick={(e) => {
           e.preventDefault()
           if (isSecondaryClick(e)) return
-          glanceHost.cancel()
-          const go = resolveFollow(target, own, api, e, openWebLink)
+          if (!glanceHost.contains(e.currentTarget)) glanceHost.close()
+          const go = resolveFollow(target, heldBy(holder), api, e, openWebLink)
           if (!go) return
           e.stopPropagation()
           go()

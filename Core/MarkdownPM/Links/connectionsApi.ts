@@ -9,9 +9,6 @@ import type { TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { cx } from '@pommora/uix/Utilities/cx'
 import type { HeadingLinkStyle } from '../../Settings/personalization'
 
-export type LinkMenuTarget = Pick<LinkMenuContext, 'editable' | 'value'> &
-  ({ kind: 'page'; page: ConnPage; heading?: string } | { kind: 'url'; url: string })
-
 export interface ConnectionsApi extends PageIndex {
   open: (page: ConnPage, heading?: string, newTab?: boolean) => void
   menu?: (target: LinkMenuTarget) => Promise<LinkAction | null>
@@ -24,6 +21,9 @@ export type MdTarget =
   | { kind: 'self'; heading: string }
   | { kind: 'url'; url: string }
   | { kind: 'invalid'; ambiguous?: true }
+
+export type LinkMenuTarget = Pick<LinkMenuContext, 'editable' | 'value'> &
+  Extract<MdTarget, { kind: 'page' | 'url' }>
 
 export function titleTarget(
   index: PageIndex | undefined,
@@ -64,15 +64,8 @@ export function linkMenuTarget(
   editable: boolean,
   value?: LinkMenuContext['value'],
 ): LinkMenuTarget | null {
-  const base = { editable, ...(value ? { value } : {}) }
-  switch (target.kind) {
-    case 'page':
-      return { ...base, kind: 'page', page: target.page, heading: target.heading }
-    case 'url':
-      return { ...base, kind: 'url', url: target.url }
-    default:
-      return null
-  }
+  if (target.kind !== 'page' && target.kind !== 'url') return null
+  return { ...target, editable, ...(value ? { value } : {}) }
 }
 
 // A fragment is missing only when the named page's heading keys are known and lack it; a page absent from the map reads as present. A bare fragment reads the document's own keys, which a surface without page identity leaves undefined.

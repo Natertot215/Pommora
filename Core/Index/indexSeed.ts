@@ -35,15 +35,9 @@ import { headingKeys } from '../Connections/pageIndex'
 
 import { readWatchScope } from '../Settings/settings'
 
-interface PageRead {
-  entry: PageIndexEntry
-}
+const NO_ROWS: PageIndexEntry = { relations: [], headings: [], values: {} }
 
-type ReadRow = PageIndexRow & PageRead
-
-const NO_ROWS: PageRead = { entry: { relations: [], headings: [], values: {} } }
-
-function extractPageIndex(rel: string, content: string): PageRead {
+function extractPageIndex(rel: string, content: string): PageIndexEntry {
   const { frontmatter: values, admission } = parsePage(content)
   if (admission.state === 'unknown') return NO_ROWS
   const own = titleFromPath(rel)
@@ -69,7 +63,7 @@ function extractPageIndex(rel: string, content: string): PageRead {
   for (const { target, qualifier } of frontmatterMentions(values, own))
     add('frontmatter', target, qualifier)
   for (const { target, qualifier } of spaceRelations(values)) add('space', target, qualifier)
-  return { entry: { relations: [...tally.values()], headings, values } }
+  return { relations: [...tally.values()], headings, values }
 }
 
 // Every `<Title>` key counts, registered or not — the same latitude page_values gives an unregistered property name, so a Context created later finds its holders.
@@ -134,11 +128,11 @@ export async function indexWrittenPage(
   const content = text ?? (await readTextOrNull(abs))
   if (content === null) return []
   const stat = { mtimeMs: st.mtimeMs, size: st.size }
-  return reindex([{ path: rel, ...extractPageIndex(rel, content), stat }])
+  return reindex([{ path: rel, entry: extractPageIndex(rel, content), stat }])
 }
 
 // Writes each page's rows and reports the heading renames they show against the rows they replace: one heading gone and one fresh heading at its ordinal, the outline otherwise unchanged. Anything murkier is left to the muted heading.
-function reindex(rows: readonly ReadRow[]): HeadingRenameSeen[] {
+function reindex(rows: readonly PageIndexRow[]): HeadingRenameSeen[] {
   const held = readHeadings(rows.map(({ path }) => path)) ?? {}
   upsertPageIndexes(rows)
   return rows.flatMap(({ path, entry }) => {
@@ -200,7 +194,7 @@ export async function seedContentIndex(root: string): Promise<SeedReread> {
   const db0 = contentIndexStore()
   const reread: string[] = []
   const renames: HeadingRenameSeen[] = []
-  const queued: ReadRow[] = []
+  const queued: PageIndexRow[] = []
   const flush = (): void => {
     const rows = queued.splice(0).filter(({ path }) => {
       // A maintaining writer that landed while this file's read was in flight left a fresher row than the snapshot knew — keep theirs; this read predates their write.
@@ -230,7 +224,7 @@ export async function seedContentIndex(root: string): Promise<SeedReread> {
       if (contentIndexStore() !== db0) return NO_REREAD
       queued.push({
         path: rel,
-        ...extractPageIndex(rel, content),
+        entry: extractPageIndex(rel, content),
         stat: { mtimeMs: st.mtimeMs, size: st.size },
       })
       if (queued.length === SEED_BATCH) flush()
