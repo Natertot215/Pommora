@@ -11,7 +11,7 @@ import {
   quotePrefixWidth,
   type CodeMask,
 } from './markdownCode'
-import { emptyTolerantLinkRegex, unescapeAlias } from '../../Connections/links'
+import { emptyTolerantLinkRegex, unescapeLabel } from '../../Connections/links'
 import { pageLinkPattern } from '../../Connections/connections'
 import { isWebAddress } from '../../Paths/urlPath'
 import type { ListKind } from '../../Actions/gripMenu'
@@ -414,7 +414,7 @@ export function loneWebpageEmbed(lineText: string): { label: string; url: string
   if (m.index !== 1 || m.index + m[0].length !== line.length) return null
   const url = m[2]
   if (!isWebAddress(url)) return null
-  return { label: unescapeAlias(m[1]), url }
+  return { label: unescapeLabel(m[1]), url }
 }
 
 /** What Edit Link selects, so a tile's address is retyped the way every other link's is. */

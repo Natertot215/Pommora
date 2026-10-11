@@ -35,7 +35,7 @@ describe('the editor’s right-click block', () => {
       'Horizontal Rule',
       'Footnote',
     ])
-    expect(branch('Embed').map((r) => r.label)).toEqual(['Internal Page', 'Webpage'])
+    expect(branch('Embed').map((r) => r.label)).toEqual(['Internal Page', 'External Link'])
     expect(
       branch('Format')
         .map((r) => r.label)

@@ -13,17 +13,17 @@ export const markdownLinkRegex = (): RegExp =>
 export const emptyTolerantLinkRegex = (): RegExp =>
   new RegExp(`\\[${LINK_LABEL(0)}\\]\\(${LINK_DEST(0)}\\)`, 'dg')
 
-export function escapeAlias(alias: string): string {
-  return alias.replace(/[\\\]]/g, '\\$&')
+export function escapeLabel(label: string): string {
+  return label.replace(/[\\\]]/g, '\\$&')
 }
 
-export function unescapeAlias(alias: string): string {
-  return alias.replace(/\\(.)/g, '$1')
+export function unescapeLabel(label: string): string {
+  return label.replace(/\\(.)/g, '$1')
 }
 
 /** The ONLY assembly path: `serializeLink` emits no bang and collapses an empty alias to the bare URL, so composing through it would write a line the detector refuses. */
 export function composeWebpageEmbedLine(label: string, url: string): string {
-  return `![${escapeAlias(label)}](${url})`
+  return `![${escapeLabel(label)}](${url})`
 }
 
 // Only the half before the first `#` decides: a scheme or a path separator there addresses something outside the Nexus, while a fragment is a heading's own text.
@@ -72,7 +72,7 @@ export function encodeLinkTarget(target: string): string {
 
 export function markdownPageLink(title: string, heading?: string, label?: string): string {
   const dest = encodeLinkTarget(title) + (heading ? `#${encodeLinkTarget(heading)}` : '')
-  return `[${escapeAlias(label ?? (title || heading || ''))}](${dest})`
+  return `[${escapeLabel(label ?? (title || heading || ''))}](${dest})`
 }
 
 // `decodeURIComponent` throws on a lone `%`, and CodeMirror deactivates a throwing ViewPlugin.

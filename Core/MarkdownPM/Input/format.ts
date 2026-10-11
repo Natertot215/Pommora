@@ -18,7 +18,7 @@ import {
   trimmedRange,
 } from '../Engine/markdownCode'
 import type { HeadingLevel, ListKind } from '../../Actions/gripMenu'
-import type { BlockFormat, LinkFormat } from '../../Actions/blockMenu'
+import type { BlockFormat, LinkWrapKind } from '../../Actions/blockMenu'
 import { emptyTable } from '../Engine/Tables/model'
 import { type HighlightColor, writtenMark } from '../Engine/highlightColors'
 import { serialize } from '../Engine/Tables/codec'
@@ -26,7 +26,7 @@ import { type DocScan, inFenceAt } from '../Engine/docScan'
 import { isValidLink, normalizeLinkUrl } from '../../Paths/urlPath'
 import { serializeLink } from '../../Connections/linkValue'
 
-export type InlineFormat = keyof typeof WRAP | LinkFormat
+export type InlineFormat = keyof typeof WRAP | LinkWrapKind
 
 export interface FormatEdit {
   changes: TextEdit[]
@@ -55,7 +55,7 @@ interface LinkWrap {
 }
 
 /** Where the caret rests after wrapping: `link` inside the empty `()`, `linkText` at the label's start, `connection` at the title's end. */
-const LINKS: Record<LinkFormat, LinkWrap> = {
+const LINKS: Record<LinkWrapKind, LinkWrap> = {
   link: { kind: 'link', open: '[', close: ']()', caret: (_, t) => t + 3 },
   linkText: { kind: 'link', open: '[', close: ']()', caret: (f) => f + 1 },
   connection: { kind: 'wikiLink', open: '[[', close: ']]', caret: (_, t) => t + 2 },
@@ -75,7 +75,7 @@ export function toggleInline(
   if (inFenceAt(scan, selFrom)) return null
   const doc = scan.text
   const [from, to] = trimmedRange(doc, selFrom, selTo)
-  if (fmt in LINKS) return toggleWrap(doc, from, to, LINKS[fmt as LinkFormat])
+  if (fmt in LINKS) return toggleWrap(doc, from, to, LINKS[fmt as LinkWrapKind])
   const kind = fmt as keyof typeof WRAP & TokenKind
   const w = WRAP[kind]
   const mark = color ? writtenMark(color) : ''

@@ -35,7 +35,7 @@ describe('the block menu catalog', () => {
       'Horizontal Rule',
       'Footnote',
     ])
-    expect(seated[4].rows.map((r) => r.label)).toEqual(['Internal Page', 'Webpage'])
+    expect(seated[4].rows.map((r) => r.label)).toEqual(['Internal Page', 'External Link'])
   })
 
   it('offers Footnote only where a marker can bind', () => {
@@ -79,20 +79,22 @@ describe('the block menu filter', () => {
 
   it('keeps a whole section whose title matches', () => {
     const link = filterBlockMenu(seated, 'link')
-    expect(link.map((s) => s.title)).toEqual(['Link'])
+    expect(link.map((s) => s.title)).toEqual(['Link', 'Embed'])
     expect(link[0].at).toBe(0)
     expect(link[0].rows.map((r) => [r.label, r.at])).toEqual([
       ['Connection', null],
       ['Markdown Link', 9],
       ['External Link', 9],
     ])
+    expect(link[1].at).toBeNull()
+    expect(link[1].rows.map((r) => [r.label, r.at])).toEqual([['External Link', 9]])
 
     const embed = filterBlockMenu(seated, 'embed')
     expect(embed.map((s) => s.title)).toEqual(['Embed'])
     expect(embed[0].at).toBe(0)
     expect(embed[0].rows.map((r) => [r.label, r.at])).toEqual([
       ['Internal Page', null],
-      ['Webpage', null],
+      ['External Link', null],
     ])
   })
 

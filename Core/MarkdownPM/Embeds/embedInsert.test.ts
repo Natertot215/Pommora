@@ -53,7 +53,7 @@ describe('embedInsertAfter', () => {
     expect(doc.slice(0, c.from) + c.insert + doc.slice(c.to)).toBe('![[]]\n\nfoo')
   })
 
-  it('the Embed ▸ Webpage pair seats the caret between the parens', () => {
+  it('the Embed ▸ External Link pair seats the caret between the parens', () => {
     const doc = 'para\nnext'
     const c = embedInsertAfter(doc, 4, '![]()')
     const next = doc.slice(0, c.from) + c.insert + doc.slice(c.to)

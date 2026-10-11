@@ -96,15 +96,20 @@ describe('the block menu opens on the slash and narrows as it is typed', () => {
     await type(view, '/embed')
     const text = pane()?.textContent ?? ''
     expect(text).toContain('Embed')
-    for (const title of ['Headings', 'Lists', 'Link', 'Insert']) expect(text).not.toContain(title)
-    expect(rows()).toHaveLength(2)
+    for (const title of ['Headings', 'Lists', 'Insert']) expect(text).not.toContain(title)
+    expect([...rows()].map((r) => r.textContent)).toEqual(['Internal Page', 'External Link'])
   })
 
   it('keeps all three link rows where only the title carries the query', async () => {
     const view = await open('')
     await type(view, '/link')
     expect(pane()?.textContent ?? '').toContain('Link')
-    expect(rows()).toHaveLength(3)
+    expect([...rows()].map((r) => r.textContent)).toEqual([
+      'Connection',
+      'Markdown Link',
+      'External Link',
+      'External Link',
+    ])
   })
 
   it('closes on a space, which no query may hold', async () => {
@@ -184,7 +189,7 @@ describe('picking a row writes the block and leaves one undo step', () => {
   it('seats an external link at its url', async () => {
     const view = await open('')
     await type(view, '/ext')
-    expect(rows()).toHaveLength(1)
+    expect(rows()).toHaveLength(2)
     await press(view, 'Enter')
     expect(view.state.doc.toString()).toBe('[]()')
     expect(view.state.selection.main.head).toBe(3)
@@ -346,7 +351,7 @@ describe('the block menu opens with no row highlighted', () => {
     const view = await open('')
     await type(view, '/')
     await press(view, 'ArrowUp')
-    expect(highlighted().map((r) => r.textContent)).toEqual(['Webpage'])
+    expect(highlighted().map((r) => r.textContent)).toEqual(['External Link'])
   })
 })
 

@@ -1,11 +1,11 @@
 import { connectionText, expressibleInLink, parseConnectionText, wholeLink } from './connections'
 import {
-  escapeAlias,
+  escapeLabel,
   markdownPageLink,
   targetFragment,
   targetNamesFile,
   targetTitle,
-  unescapeAlias,
+  unescapeLabel,
 } from './links'
 import { isHttpLink, isValidLink, linkDomain, normalizeLinkUrl } from '../Paths/urlPath'
 import { normalizeTitle } from '../Paths/caseFold'
@@ -58,7 +58,7 @@ export function readLinkText(text: string, resolve?: PageIndex['resolve']): Link
   const whole = wholeLink(s)
   const md = whole?.syntax === 'markdown' ? whole : null
   const alias = md
-    ? unescapeAlias(s.slice(md.label[0], md.label[1])).trim() || undefined
+    ? unescapeLabel(s.slice(md.label[0], md.label[1])).trim() || undefined
     : undefined
   const dest = md ? s.slice(md.destination[0], md.destination[1]).trim() : s
   const title = md ? targetTitle(dest) : null
@@ -73,7 +73,7 @@ export function readLinkText(text: string, resolve?: PageIndex['resolve']): Link
 }
 
 export function serializeLink(url: string, label?: string): string {
-  return label ? `[${escapeAlias(label)}](${url})` : url
+  return label ? `[${escapeLabel(label)}](${url})` : url
 }
 
 export function linkEditText(raw: string): string {

@@ -4,7 +4,7 @@ import { normalizeTitle } from '../../Paths/caseFold'
 import {
   decodeLinkTarget,
   encodeLinkTarget,
-  escapeAlias,
+  escapeLabel,
   markdownDestinationAt,
   targetTitle,
 } from '../../Connections/links'
@@ -268,7 +268,7 @@ export function commitEdit(
     container !== null &&
     !keepsShown(container, { kind: 'page', syntax: 'markdown', title: value }, opts.keepTitle)
   const fill = ac.label && (ac.label.from === ac.label.to || retitles) ? ac.label : null
-  const label = fill ? escapeAlias(value) : ''
+  const label = fill ? escapeLabel(value) : ''
   return {
     changes: fill ? [{ from: fill.from, to: fill.to, insert: label }, dest] : [dest],
     anchor: ac.from + label.length - (fill ? fill.to - fill.from : 0) + encoded.length + 1,

@@ -2,7 +2,7 @@ import { EditorView, type ViewUpdate } from '@codemirror/view'
 import { EditorSelection, type EditorState, type Extension, type Line } from '@codemirror/state'
 import type { LinkSpans } from '../../Connections/connections'
 import type { LinkAction } from '../../Actions/connectionMenu'
-import { unescapeAlias } from '../../Connections/links'
+import { unescapeLabel } from '../../Connections/links'
 import { linkPaste } from '../../Connections/linkValue'
 import type { LinkDisplay } from '../../Properties/properties'
 import { titleTarget, type ConnectionsApi } from './connectionsApi'
@@ -57,7 +57,7 @@ export function linkEdit(
         kind: 'write',
         from: s,
         to: e,
-        text: tk.kind === 'link' ? unescapeAlias(text.slice(cs, ce)) : shownConnection(text, tk),
+        text: tk.kind === 'link' ? unescapeLabel(text.slice(cs, ce)) : shownConnection(text, tk),
       }
     case 'link:delete':
       return { kind: 'write', from: s, to: e, text: '' }

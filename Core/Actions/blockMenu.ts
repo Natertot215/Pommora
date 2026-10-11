@@ -1,13 +1,13 @@
 import type { LeafItem } from './menuModel'
 import { HEADING_LEVELS, LIST_KINDS, type HeadingLevel, type ListKind } from './gripMenu'
 
-export type LinkFormat = 'link' | 'linkText' | 'connection'
+export type LinkWrapKind = 'link' | 'linkText' | 'connection'
 export type BlockFormat = 'quote' | 'code' | 'hr' | 'callout' | 'table'
 
 export type BlockMenuAction =
   | `heading:${Exclude<HeadingLevel, 0>}`
   | `list:${ListKind}`
-  | `format:${LinkFormat}`
+  | `format:${LinkWrapKind}`
   | `block:${BlockFormat}`
   | 'block:citation'
   | 'block:page'
@@ -72,7 +72,7 @@ export const insertRows = (citeSeat: boolean): readonly LeafItem<BlockMenuAction
 
 export const EMBED_ROWS: readonly LeafItem<BlockMenuAction>[] = [
   { label: 'Internal Page', action: 'block:page', icon: 'file-text' },
-  { label: 'Webpage', action: 'block:webpage', icon: 'globe' },
+  { label: 'External Link', action: 'block:webpage', icon: 'globe' },
 ]
 
 export const BLOCK_MENU_SECTIONS: readonly BlockMenuSection[] = [
