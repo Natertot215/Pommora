@@ -116,12 +116,12 @@ What a person sees: `[x](Page)` edits like `[[Page]]`; every link reads **Rename
   - [x] Task 2-4 — `retarget`
   - [x] Task 2-5 — `isWebAddress`
   - [x] Review Checkpoint
-- [ ] **Phase 3** — Seams
-  - [ ] Task 3-1 — Connections ride the editor host (F-094)
-  - [ ] Task 3-2 — The heading index carries text and level
-  - [ ] Task 3-3 — The connections bundle settles its shape
-  - [ ] Task 3-4 — Title fetches answer with a promise
-  - [ ] Review Checkpoint
+- [x] **Phase 3** — Seams
+  - [x] Task 3-1 — Connections ride the editor host (F-094)
+  - [x] Task 3-2 — The heading index carries text and level
+  - [x] Task 3-3 — The connections bundle settles its shape
+  - [x] Task 3-4 — Title fetches answer with a promise
+  - [x] Review Checkpoint
 - [ ] **Phase 4** — Looks and Resolution
   - [ ] Task 4-1 — One look rule and one unresolved treatment
   - [ ] Task 4-2 — Plain syntax everywhere, and the slash menu's own look
@@ -1362,7 +1362,7 @@ The carve-out: `keepTitle` is Remove Title On Link Change read as "off" at each 
 
 **VERIFY**
 
-- [ ] `grep -rn "() => ConnectionsApi | undefined\|getConn\|ConnGetter\|tableConnections\|connectionsRef" Core --include='*.ts' --include='*.tsx' | grep -v test` lists only `TextCell.tsx`, `linkGestures`' parameter in `cellStatic.tsx`, `TextPane.tsx`'s source prop, `valueContext.ts`, and `PropertyValueInput.tsx` (the surfaces outside an editor).
+- [ ] `grep -rn "() => ConnectionsApi | undefined\|getConn\|ConnGetter\|tableConnections\|connectionsRef" Core --include='*.ts' --include='*.tsx' | grep -v test` lists only `TextCell.tsx`, `linkGestures`' and `renderCellContent`/`renderCellBody`'s getter parameters in `cellStatic.tsx` (a Text value renders outside any editor), `TextPane.tsx`'s source prop, `valueContext.ts`, and `PropertyValueInput.tsx` (the surfaces outside an editor).
 - [ ] Run the gates; `Core/Contract/engineGraph.test.ts` and `Desktop/hostGraph.test.ts` pass.
 - [ ] In `~/Test`: a page body, a table cell, and a Text value's pane each draw `[[Alpha]]` resolved and open it; renaming Alpha in another window redraws the open page's links.
 - [ ] Check for unnecessary code or mistakes.
@@ -2120,7 +2120,7 @@ Every `cellPage(doc, text)` call passes `state.facet(editorHost).settings().inPa
 
 **CHANGE**
 
-- [ ] Write the tests: a `TextCell` with `holder` and a `connections` whose `headingsOf` answers `{ keys: ['setup'], texts: ['Setup'], outline: [...] }` draws `[[#Nope]]` with `md-connection-heading-missing` and, with Automatic on, draws `§Setup` as a run; clicking the run calls `open(holder, 'Setup')`. Watch them fail.
+- [ ] Write the tests: a `TextCell` with `holder` and a `connections` whose `headingsOf` answers `{ keys: ['setup'], texts: ['Setup'], outline: [...] }` draws `[[#Nope]]` with `md-connection-heading-missing` and, with Automatic on, draws `§Setup` as a run; clicking the run calls `open(holder, 'Setup', false)` (a plain click passes `false` as `resolveFollow` does). Watch them fail.
 - [ ] `TextCell` builds `around` from the holder; `cellLinkTarget` gains the run arm (Task 4-5 writes the hit shape; land both in one commit).
 
 **AFTER**
@@ -4742,6 +4742,8 @@ The anchor is pinned by a test for a filled and an unfilled label.
 - **⌘C over a DOM selection in a resting cell:** The keyboard copies the drawn text (an alias, not its syntax); the resting menu's Copy copies the source. Making the chord match means a key handler on the resting cell and isn't this plan's.
 - **A page body closing with a title pending:** a cell and a TextPane forward a pending Page Title swap on close (Task 5-3); the page body has no close-time commit path, so a tab closed before the title answers keeps the short form, as it does today.
 - **A Text value's pane and a rename in another window:** With connections read from the host (Task 3-1), an open TextPane reads the index as of its last render, so a rename made in another window while the pane is open can trail by one render (the audit's F-094 note).
+- **The headings map and the app's own writes (pre-existing, load-bearing from Task 4-4 and 10-4):** the session's `headings` map is loaded at start and on `pages:changed`, which the host pushes only for watched (outside) edits and cascades; an app save is `origin: 'own'`, so adding `## New` to page A in the app leaves `[[A#New]]` marked missing until a restart or an outside edit, and a rename leaves the new path absent. At baseline only the missing mark read the map; Task 4-4 (a Text value's headings) and Task 10-4 (the picker's heading rows, replacing the fresh body fetch) read it too, so the gap has to close before 10-4 lands. The channel set is frozen, so the fix rides an existing channel or the renderer's own save.
+- **An embedded tile's connections (pre-existing):** `renderTile` seats `connections={connRef.current}` into the nested `PageTile`, and `EmbedTileWidget.eq` ignores connections, so a page created or renamed elsewhere doesn't re-resolve inside an open embed until the tile re-renders. The same shape as the Text pane's snapshot, which Phase 3's checkpoint fixed; this one is outside the plan's tasks and is noted for the same fix.
 
 #### Deviations
 
@@ -4753,3 +4755,7 @@ The anchor is pinned by a test for a filled and an unfilled label.
 - **Task 2-1, a `.md` destination:** the resolver-free tiebreak read `[x](Notes.md)` as the address `https://Notes.md`, though `targetTitle` already strips `.md` as a page marker; `targetNamesFile` makes a destination written as a markdown file name the page in both of `readLinkText`'s arms, so a phantom one is refused at a commit rather than read as an address (NexusOS is an Obsidian vault, where `.md` destinations are ordinary). Task 4-1's `resolveMdTarget` takes the same clause. Found at the Phase 2 checkpoint; recorded in the Continuation's §5.2 and §12.
 - **Task 2-4, a page the wikilink grammar can't spell:** `nameError` never sees a title decoded from a markdown destination or a file named outside the app, so `retarget`'s wiki arm and Paste As's Connection row wrote `[[A|B|x]]` for `[x](A%7CB)`. `connectionSpells` (one predicate over `expressibleInLink`) sends such a page to the markdown spelling, as an address already was, and withholds the Connection row. Found at the Phase 2 checkpoint.
 - **Task 2-3, Embedded Link:** the Paste As gate reads `isHttpLink(target.url)` (the gate Task 5-1 gives Page Title) because `LinkTarget.url` is normalized and `isWebAddress` on it was true for every http target; a schemeless clipboard address now offers Embedded Link, since the embed line writes the normalized address and the tile grammar reads it.
+- **Task 3-1, `linkPointer` and `citationPointer`:** the AFTER made them `export const` extensions; they stayed zero-argument functions, because `pointerHandlers` keeps per-call state (`editingOnPress`, `actedOnLink`) and one module-level instance would share it between a cell editor and the page editor around it, since a `mousedown` bubbles to both.
+- **Task 3-1, a fifth mount:** `PageHistoryWindow.tsx` also passed `connections=` to `MarkdownEditor`; the prop left it with the four the plan named.
+- **Task 3-1, the Text value's pane:** the AFTER's `useEditorHost({ connections: connections() })` took the bundle as a render-time snapshot where the baseline read it live, so a page created in another window stayed phantom in an open pane; it reads `useSession(() => connections())`, which re-renders only when the bundle is rebuilt. Found at the Phase 3 checkpoint.
+- **Task 3-2, the shape:** `ownHeadings` answers `{ keys, texts }` once in place of two calls with picker lambdas; the index entry's `headings` is the filtered outline itself, so `PageRead.outline` and the `{ text, level }` re-mapping went and `reindex` reads the entry. The checkpoint's weight pass; about −8 against 3-2's +37.
