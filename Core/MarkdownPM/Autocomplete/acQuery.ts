@@ -20,6 +20,8 @@ interface LinkOrigin {
   text: string
 }
 
+const IDLE: AcField = { query: null, armed: null, dismissed: null, origin: null }
+
 export const closeAcQuery = StateEffect.define<'dismiss' | 'blur'>()
 
 const sameQuery = (a: AutocompleteQuery, b: AutocompleteQuery | null): boolean =>
@@ -72,16 +74,11 @@ function armedBy(tr: Transaction): number | null {
 
 export const acQuery = (scope: MarkdownScope) =>
   StateField.define<AcField>({
-    create: () => ({ query: null, armed: null, dismissed: null, origin: null }),
+    create: () => IDLE,
     update(value, tr) {
       const close = tr.effects.find((e) => e.is(closeAcQuery))
-      if (close)
-        return {
-          query: null,
-          armed: null,
-          dismissed: close.value === 'dismiss' ? value.query : null,
-          origin: null,
-        }
+      if (close) return { ...IDLE, dismissed: close.value === 'dismiss' ? value.query : null }
+      if (!tr.docChanged && !tr.selection) return value
       let armed = armedBy(tr) ?? (value.armed === null ? null : tr.changes.mapPos(value.armed))
       const head = tr.newSelection.main.head
       if (
@@ -90,18 +87,12 @@ export const acQuery = (scope: MarkdownScope) =>
           tr.newDoc.lineAt(armed).number !== tr.newDoc.lineAt(head).number)
       )
         armed = null
-      if (!tr.docChanged && !tr.selection)
-        return armed === value.armed ? value : { ...value, armed }
       const q =
         tr.newSelection.main.empty && !tr.state.readOnly && !inRawHtml(tr.state, head, scope)
           ? autocompleteQuery(docScan(tr.newDoc), head, armed ?? undefined)
           : null
       const dismissed = q && sameQuery(q, value.dismissed) ? value.dismissed : null
-      const query = dismissed
-        ? null
-        : q && value.query && sameQuery(q, value.query)
-          ? value.query
-          : q
+      const query = dismissed ? null : q && sameQuery(q, value.query) ? value.query : q
       const origin = originAfter(value.origin, query, tr)
       return query === value.query &&
         armed === value.armed &&

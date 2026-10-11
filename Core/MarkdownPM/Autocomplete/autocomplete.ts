@@ -201,23 +201,16 @@ export function aliasRows(
 export const closerOf = (form: ConnectionForm): string =>
   form === 'target' || form === 'fragment' ? ')' : form === 'section' ? '' : ']]'
 
-interface CommitEdit {
-  changes: TextEdit[]
-  opensAlias?: boolean
-  opensHeading?: boolean
-  anchor: number
-}
-
 export function commitEdit(
   ac: AutocompleteQuery,
   value: string,
   opts: {
-    container?: LinkTarget | null
+    container: LinkTarget | null
     keepTitle: boolean
     openAlias?: boolean
     openHeading?: boolean
   },
-): CommitEdit {
+): { changes: TextEdit[]; anchor: number } {
   const closer = ac.closed ? '' : closerOf(ac.form)
   // Opening the heading slot writes an empty fragment and slides the pane in, rather than finishing the link.
   if (ac.form === 'link' && opts.openHeading) {
@@ -225,7 +218,6 @@ export function commitEdit(
     return {
       changes: [{ from: ac.from, to: ac.to, insert: text }],
       anchor: ac.from + text.length - 2,
-      opensHeading: true,
     }
   }
   // Opening the alias slot rather than finishing the link lets the picker hand those names straight back. Governed by `aliasPickerOnCommit`.
@@ -234,7 +226,6 @@ export function commitEdit(
     return {
       changes: [{ from: ac.from, to: ac.to, insert: text }],
       anchor: ac.from + text.length - 2,
-      opensAlias: true,
     }
   }
   // The heading span is the only text the query owns, so the slot opens by appending the pipe to the heading.
@@ -242,10 +233,9 @@ export function commitEdit(
     return {
       changes: [{ from: ac.from, to: ac.to, insert: `${value}|${closer}` }],
       anchor: ac.from + value.length + 1,
-      opensAlias: true,
     }
   }
-  const container = opts.container ?? null
+  const { container } = opts
   if (ac.form === 'link') {
     const { text } = retarget(
       'wiki',
@@ -283,7 +273,6 @@ export function commitEdit(
   return {
     changes: fill ? [{ from: fill.from, to: fill.to, insert: label }, dest] : [dest],
     anchor: ac.from + label.length - (fill ? fill.to - fill.from : 0) + encoded.length + 1,
-    opensHeading: opts.openHeading,
   }
 }
 

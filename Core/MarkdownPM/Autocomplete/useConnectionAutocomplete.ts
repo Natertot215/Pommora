@@ -38,6 +38,9 @@ export function useConnectionAutocomplete(
 ): ConnectionAutocomplete {
   const [ac, setAc] = useState<AcState | null>(null)
   const [field] = useState(() => acQuery(scope))
+  const closePicker = (view: EditorView | null, why: 'dismiss' | 'blur'): void => {
+    if (view?.state.field(field).query) view.dispatch({ effects: closeAcQuery.of(why) })
+  }
   const [extension] = useState<Extension>(() => [
     field,
     EditorView.updateListener.of((u) => {
@@ -48,15 +51,11 @@ export function useConnectionAutocomplete(
     }),
     EditorView.domEventHandlers({
       blur: (_, view) => {
-        if (view.state.field(field).query) view.dispatch({ effects: closeAcQuery.of('blur') })
+        closePicker(view, 'blur')
         return false
       },
     }),
   ])
-  const close = (): void => {
-    const view = viewRef.current
-    if (view?.state.field(field).query) view.dispatch({ effects: closeAcQuery.of('dismiss') })
-  }
   const [behind, setBehind] = useState<AcRow[] | null>(null)
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set())
   // The title the heading list slid back to: an exact title closes the page list, but Back must land on it open.
@@ -84,8 +83,7 @@ export function useConnectionAutocomplete(
   }, [heading, page, title])
 
   useEffect(() => {
-    if (heading) return
-    setCollapsed(new Set())
+    if (!heading) setCollapsed(new Set())
   }, [heading])
 
   // A forgotten alias bumps the epoch, which is what shrinks the list under an unchanged query.
@@ -142,17 +140,18 @@ export function useConnectionAutocomplete(
       !keepsAlias &&
       settings.aliasPickerOnCommit &&
       host.aliases.list(pageId ?? '').length > 0
-    const { changes, anchor, opensAlias, opensHeading } = commitEdit(ac, row.value, {
+    const opensSlot = openAlias || opts.openHeading
+    const { changes, anchor } = commitEdit(ac, row.value, {
       container,
       keepTitle,
       openAlias,
       openHeading: opts.openHeading,
     })
-    if (opensAlias || opensHeading) setBehind(candidates)
+    if (opensSlot) setBehind(candidates)
     view.dispatch({
       changes,
       selection: { anchor },
-      ...(opensAlias || opensHeading ? {} : { effects: restedOnLink.of(anchor) }),
+      ...(opensSlot ? {} : { effects: restedOnLink.of(anchor) }),
       userEvent: 'input',
     })
     // NOT cleared here: the query listener runs on this dispatch, and closing afterwards would wipe the alias picker it just earned.
@@ -165,7 +164,7 @@ export function useConnectionAutocomplete(
   const { index, row, ctl } = usePaneCtl(candidates, resetKey, {
     open,
     pick: commit,
-    close,
+    close: () => closePicker(viewRef.current, 'dismiss'),
     aside: (dir) => {
       const view = viewRef.current
       if (!view || !ac) return false
