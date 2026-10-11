@@ -26,7 +26,7 @@ describe('what a citation leads to, when it leads anywhere', () => {
 
   it('a lone markdown link is followed', () => {
     expect(target('[label](https://example.com)')).toEqual({
-      kind: 'external',
+      kind: 'url',
       url: 'https://example.com',
     })
   })

@@ -77,7 +77,7 @@ describe('an external link opens from its label and nowhere else', () => {
 describe('a link whose target names nothing is text, not a link', () => {
   const BROKEN = 'a [Home](not a url) b'
   const brokenLabel = (view: EditorView): HTMLElement =>
-    view.dom.querySelector('.md-link-invalid') as HTMLElement
+    view.dom.querySelector('.md-connection-phantom') as HTMLElement
 
   it('a click on its label opens nothing', async () => {
     const view = await mountEditor({ initialBody: BROKEN })

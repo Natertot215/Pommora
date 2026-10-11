@@ -14,10 +14,12 @@ import type {
   ConnSurface,
   ConnUrlAction,
 } from '../../Actions/connectionMenu'
-import { targetFragment, targetTitle } from '../../Connections/links'
+import { targetFragment, targetNamesFile, targetTitle } from '../../Connections/links'
 import { isValidLink } from '../../Paths/urlPath'
 import type { ConnPage, PageHeadings, PageIndex } from '../../Connections/pageIndex'
 import type { TrailSegment } from '@pommora/uix/Elements/NavTrail'
+import { cx } from '@pommora/uix/Utilities/cx'
+import type { HeadingLinkStyle } from '../../Settings/personalization'
 
 /** `apply` closes over the span it was built for, so no caller can aim an action at a link the menu wasn't popped on; its absence marks a display-only surface. */
 export type ConnMenuTarget = {
@@ -52,7 +54,7 @@ export interface ConnectionsApi extends PageIndex {
 export type MdTarget =
   | { kind: 'page'; page: ConnPage; heading?: string }
   | { kind: 'self'; heading: string }
-  | { kind: 'external'; url: string }
+  | { kind: 'url'; url: string }
   | { kind: 'invalid'; ambiguous?: true }
 
 export function titleTarget(
@@ -69,8 +71,14 @@ export function titleTarget(
 /** Page resolution is tried FIRST and deliberately: `isValidLink` accepts any dotted host, so `Notes.md` would read as a website and the page it names would be unreachable through this syntax. */
 export function resolveMdTarget(index: PageIndex | undefined, rawTarget: string): MdTarget {
   const target = titleTarget(index, targetTitle(rawTarget) ?? '', targetFragment(rawTarget))
-  if (target.kind !== 'invalid' || !isValidLink(rawTarget)) return target
-  return { kind: 'external', url: rawTarget }
+  if (
+    target.kind !== 'invalid' ||
+    target.ambiguous ||
+    targetNamesFile(rawTarget) ||
+    !isValidLink(rawTarget)
+  )
+    return target
+  return { kind: 'url', url: rawTarget }
 }
 
 export function tokenTarget(
@@ -96,7 +104,7 @@ export function linkMenuTarget(
         editable: false,
         hasAlias: false,
       }
-    case 'external':
+    case 'url':
       return { kind: 'url', url: target.url, apply }
     default:
       return null
@@ -121,12 +129,6 @@ export function tokenMenuTarget(
   return linkMenuTarget(target, edit?.url)
 }
 
-interface WikiLinkView {
-  status: LinkStatus
-  bare: boolean
-  missing: boolean
-}
-
 // A fragment is missing only when the named page's heading keys are known and lack it; a page absent from the map reads as present. A bare fragment reads the document's own keys, which a surface without page identity leaves undefined.
 export function headingMissing(
   conn: ConnectionsApi | undefined,
@@ -138,21 +140,38 @@ export function headingMissing(
   return known !== undefined && !known.includes(normalizeTitle(target.heading))
 }
 
-function linkStatus(target: MdTarget): LinkStatus {
+export function linkStatus(target: MdTarget): LinkStatus {
   if (target.kind !== 'invalid') return 'resolved'
   return target.ambiguous ? 'ambiguous' : 'phantom'
 }
 
-export function wikiLinkView(
-  conn: ConnectionsApi,
+export interface LinkLook {
+  target: MdTarget
+  status: LinkStatus
+  missing: boolean
+  bare: boolean
+  join: { showPage: boolean; heading: [number, number] } | null
+}
+
+export function linkLook(
+  conn: ConnectionsApi | undefined,
   text: string,
-  tk: TokenOf<'wikiLink'>,
+  tk: TokenOf<LinkKind>,
   ownKeys: readonly string[] | undefined,
-): WikiLinkView {
+  headingLinkStyle: HeadingLinkStyle,
+): LinkLook {
   const target = tokenTarget(conn, text, tk)
-  return {
-    status: linkStatus(target),
-    bare: target.kind === 'self',
-    missing: headingMissing(conn, target, ownKeys),
-  }
+  const status = linkStatus(target)
+  const bare = target.kind === 'self'
+  const join =
+    tk.kind === 'wikiLink' && tk.heading && status === 'resolved' && !aliasedToken(tk)
+      ? { showPage: headingLinkStyle !== 'heading-only' && !bare, heading: tk.heading }
+      : null
+  return { target, status, missing: headingMissing(conn, target, ownKeys), bare, join }
+}
+
+export function linkClass(look: LinkLook): string {
+  if (look.status !== 'resolved') return `md-connection-${look.status}`
+  if (look.target.kind === 'url') return 'md-link'
+  return cx('md-connection-resolved', look.missing && !look.join && 'md-connection-heading-missing')
 }

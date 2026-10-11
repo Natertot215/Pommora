@@ -7,6 +7,7 @@ import { type CellPage, renderCellContent } from './cellStatic'
 import { tableStubs, testHost } from '../../Testing/editorHarness'
 import type { TableModel } from '../Engine/Tables/model'
 import { followCitation } from '../Citations/citationPointer'
+import { buildPageIndex } from '../../Connections/pageIndex'
 
 vi.mock('../Citations/citationPointer', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../Citations/citationPointer')>()),
@@ -200,5 +201,29 @@ describe('a resting cell draws a tag whole', () => {
     expect(container.textContent).toBe('y <b>x</b>')
     const tags = [...container.querySelectorAll('.md-html-tag')].map((el) => el.textContent)
     expect(tags).toEqual(['b', 'b'])
+  })
+})
+
+describe('a resting cell draws an unresolved markdown link as an unresolved connection', () => {
+  it('dims `[` and `](Missing)` as phantom syntax around a phantom label', async () => {
+    container = document.createElement('div')
+    document.body.appendChild(container)
+    root = createRoot(container)
+    const conn = {
+      ...buildPageIndex([]),
+      headingsOf: () => undefined,
+      location: () => [],
+      open: () => {},
+    }
+    await act(async () => root.render(renderCellContent('a [x](Missing) b', () => conn)))
+    const parts = [...container.querySelectorAll('span')].map((el) => [
+      el.className,
+      el.textContent,
+    ])
+    expect(parts).toEqual([
+      ['md-phantom-syntax md-unresolved-fixed', '['],
+      ['md-connection-phantom md-unresolved-fixed', 'x'],
+      ['md-phantom-syntax md-unresolved-fixed', '](Missing)'],
+    ])
   })
 })

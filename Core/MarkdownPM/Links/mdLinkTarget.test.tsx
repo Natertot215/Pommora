@@ -5,7 +5,6 @@ import { createRoot, type Root } from 'react-dom/client'
 import { encodeLinkTarget } from '../../Connections/links'
 import { autocompleteQuery, commitEdit } from '../Autocomplete/autocomplete'
 import { activeTokenIndices, tokenize } from '../Engine/tokens'
-import { MD_LINK_CLASS } from '../decorations'
 import { resolveMdTarget, type ConnectionsApi } from './connectionsApi'
 import { buildPageIndex, type ConnPage } from '../../Connections/pageIndex'
 import { renderCellContent } from '../Tables/cellStatic'
@@ -77,8 +76,8 @@ describe('what a markdown link’s target names', () => {
   })
 
   it('a real URL stays external, and a page by its last path segment does not exist', () => {
-    expect(resolveMdTarget(conn, 'https://example.com').kind).toBe('external')
-    expect(resolveMdTarget(conn, 'https://example.com/Work%20Notes').kind).toBe('external')
+    expect(resolveMdTarget(conn, 'https://example.com').kind).toBe('url')
+    expect(resolveMdTarget(conn, 'https://example.com/Work%20Notes').kind).toBe('url')
   })
 
   it('neither a page nor a URL is invalid, exactly as before', () => {
@@ -152,7 +151,7 @@ describe('both syntaxes and both renderers agree', () => {
     expect(view.dom.querySelector('.md-link')?.textContent).toBe('site')
   })
 
-  it('each keeps its own extra class: the editor’s open link, the cell’s fixed invalid one', async () => {
+  it('the editor marks the link the caret is in as open', async () => {
     const view = await mountEditor({
       initialBody: `see [the notes](${target}) end`,
       connections: conn,
@@ -162,10 +161,53 @@ describe('both syntaxes and both renderers agree', () => {
       view.dispatch({ selection: { anchor: 6 } })
     })
     expect(view.dom.querySelector('.md-connection-open')?.textContent).toBe('the notes')
-    const container = await renderCell('a [Home](not a url) b')
-    expect(
-      container.querySelector('.md-link-invalid')?.classList.contains('md-unresolved-fixed'),
-    ).toBe(true)
+  })
+})
+
+describe('an unresolved markdown link looks as an unresolved connection does', () => {
+  const dups: ConnectionsApi = {
+    ...buildPageIndex([
+      { id: 'd1', title: 'Dup', path: 'A/Dup.md' },
+      { id: 'd2', title: 'Dup', path: 'B/Dup.md' },
+      { id: 'd3', title: 'dup.io', path: 'A/dup.io.md' },
+      { id: 'd4', title: 'dup.io', path: 'B/dup.io.md' },
+    ]),
+    headingsOf: () => undefined,
+    location: () => [],
+    open: () => {},
+  }
+  const drawn = async (body: string): Promise<{ editor: string[]; cell: string[] }> => {
+    const view = await mountEditor({ initialBody: body, connections: dups })
+    cellHost = document.createElement('div')
+    document.body.appendChild(cellHost)
+    cellRoot = createRoot(cellHost)
+    await act(async () => cellRoot?.render(renderCellContent(body, () => dups)))
+    const label = (root: Element): string[] => {
+      const el = [...root.querySelectorAll('span')].find((s) => s.textContent === 'x')
+      return el ? [...el.classList] : []
+    }
+    return { editor: label(view.dom), cell: label(cellHost) }
+  }
+
+  it('a title two pages share draws ambiguous, as [[Dup]] does', async () => {
+    const { editor, cell } = await drawn('a [x](Dup) b')
+    expect(editor).toContain('md-connection-ambiguous')
+    expect(cell).toContain('md-connection-ambiguous')
+  })
+
+  it('an ambiguous title is never an address, though it reads as one', async () => {
+    expect(resolveMdTarget(dups, 'dup.io')).toEqual({ kind: 'invalid', ambiguous: true })
+    const { editor, cell } = await drawn('a [x](dup.io) b')
+    expect(editor).toContain('md-connection-ambiguous')
+    expect(cell).toContain('md-connection-ambiguous')
+  })
+
+  it('a title no page has draws phantom, with no broken-link class of its own', async () => {
+    const { editor, cell } = await drawn('a [x](Missing) b')
+    expect(editor).toEqual(['md-connection-phantom'])
+    expect(cell).toContain('md-connection-phantom')
+    expect(cell).not.toContain('md-link-invalid')
+    expect(resolveMdTarget(dups, 'Missing.md')).toEqual({ kind: 'invalid' })
   })
 })
 
@@ -358,7 +400,7 @@ describe('a website link previews live', () => {
       initialBody: 'see [GitHub](https://github.com) end',
       connections: conn,
     })
-    const span = view.dom.querySelector(`.${MD_LINK_CLASS}`) as HTMLElement
+    const span = view.dom.querySelector('.md-link') as HTMLElement
     expect(span).not.toBeNull()
     expect(span.textContent).toBe('GitHub')
   })
@@ -373,9 +415,9 @@ describe('a website link previews live', () => {
     await act(async () => view.focus())
     view.dispatch({ selection: { anchor: 0 } })
     vi.spyOn(view, 'posAtCoords').mockReturnValue(6)
-    const span = view.dom.querySelector(`.${MD_LINK_CLASS}`) as HTMLElement
+    const span = view.dom.querySelector('.md-link') as HTMLElement
     span.dispatchEvent(new PointerEvent('pointerover', { bubbles: true }))
     expect(glance).toHaveBeenCalledTimes(1)
-    expect(glance).toHaveBeenCalledWith({ kind: 'site', url: 'https://github.com' }, span)
+    expect(glance).toHaveBeenCalledWith({ kind: 'url', url: 'https://github.com' }, span)
   })
 })

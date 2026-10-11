@@ -230,19 +230,13 @@
   text-decoration: underline;
   cursor: pointer;
 }
-.md-link-invalid,
 .md-connection-phantom {
   color: var(--label-primary);
   opacity: var(--state-inactive);
 }
-.md-link-invalid {
-  text-decoration: underline;
-}
-.md-unresolved-syntax,
 .md-phantom-syntax {
   color: var(--label-control);
 }
-:root.plain-unresolved .md-link-invalid:not(.md-unresolved-fixed),
 :root.plain-unresolved .md-connection-phantom:not(.md-unresolved-fixed) {
   color: inherit;
   opacity: 1;

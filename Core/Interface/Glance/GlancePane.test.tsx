@@ -143,7 +143,7 @@ describe('the presenter', () => {
     setGlancePresenter(spy)
     vi.useFakeTimers()
     try {
-      armPreview({ kind: 'site', url: 'https://example.com' }, inside, 'link')
+      armPreview({ kind: 'url', url: 'https://example.com' }, inside, 'link')
       vi.runAllTimers()
     } finally {
       vi.useRealTimers()
@@ -463,7 +463,7 @@ describe('pinned panes (Task 10)', () => {
   })
 
   it('shows no lock on a website live card', () => {
-    present(link(), { kind: 'site', url: 'https://example.com' })
+    present(link(), { kind: 'url', url: 'https://example.com' })
     expect(paneOpen()).toBe(true)
     expect(document.querySelector('.glance-lock')).toBeNull()
   })

@@ -94,8 +94,8 @@ export function GlancePane(): React.JSX.Element {
       const cur = shownRef.current
       if (cur && keyOf(next) === keyOf(cur) && next.el === cur.el) return
       const freshGuest =
-        next.target.kind === 'site' &&
-        !(cur?.target.kind === 'site' && cur.target.url === next.target.url)
+        next.target.kind === 'url' &&
+        !(cur?.target.kind === 'url' && cur.target.url === next.target.url)
       if (cur) {
         setShownState(null)
         retargetRaf.current = requestAnimationFrame(() => {
@@ -121,7 +121,7 @@ export function GlancePane(): React.JSX.Element {
         return
       if (!next.el.isConnected) return
       const token = ++pendingFetch.current
-      if (next.target.kind === 'site' || readPageDetail(next.target.path)) {
+      if (next.target.kind === 'url' || readPageDetail(next.target.path)) {
         show(next)
         return
       }
@@ -199,7 +199,7 @@ export function GlancePane(): React.JSX.Element {
   }, [shown])
 
   useEffect(() => {
-    if (shown?.target.kind !== 'site' || siteReady) return
+    if (shown?.target.kind !== 'url' || siteReady) return
     const deadline = setTimeout(dismiss, LINK_RESOLVE_TIMEOUT_MS)
     return () => clearTimeout(deadline)
   }, [shown, siteReady, dismiss])
@@ -270,7 +270,7 @@ export function GlancePane(): React.JSX.Element {
   }, [shown, graceMs, dismiss, dismissOnPointer])
 
   const page = held?.target.kind === 'page' ? held.target : null
-  const siteShown = shown?.target.kind === 'site'
+  const siteShown = shown?.target.kind === 'url'
 
   const pinnedGlances = useSession((s) => s.pinnedGlances)
   const pinGlance = useSession((s) => s.pinGlance)
@@ -371,7 +371,7 @@ export function GlancePane(): React.JSX.Element {
           onClick={onFoldClick}
         >
           {page && renderPageTile(page, glanceWarmSeam(page.id, page.path))}
-          {held?.target.kind === 'site' && (
+          {held?.target.kind === 'url' && (
             <>
               {/* Heard only while shown: a failure during the exit would otherwise dismiss again and void a page glance's fetch in flight. */}
               <WebGuest

@@ -5,13 +5,14 @@ import { normalizeLinkUrl, WEB_ADDRESS } from '../../Paths/urlPath'
 import type { LinkKind, Token } from '../Engine/tokens'
 import { docString } from '../docCache'
 import {
+  linkStatus,
   titleTarget,
   tokenMenuTarget,
   tokenTarget,
   type ConnectionsApi,
   type MdTarget,
 } from './connectionsApi'
-import { drawnLinkAt, MD_LINK_CLASS } from '../decorations'
+import { drawnLinkAt } from '../decorations'
 import { applyLinkAction } from './linkEdit'
 import { applyUrlLinkAction } from './linkFormat'
 import { pointerHandlers, type PointerTarget } from '../Gestures/pointerPath'
@@ -52,16 +53,17 @@ function linkUnder(
   // A connection acts as one only where connections resolve.
   const tk = drawnLinkAt<LinkKind>(view, pos, api ? undefined : 'link')
   if (!tk) return null
-  const target = heldTarget(tokenTarget(api, docString(view.state.doc), tk), ownPage(view))
+  const named = tokenTarget(api, docString(view.state.doc), tk)
+  const target = heldTarget(named, ownPage(view))
   const el = (event.target as HTMLElement).closest?.(
-    `.md-connection-resolved, .md-connection-ambiguous, .md-heading-symbol, .${MD_LINK_CLASS}, .md-link-invalid`,
+    '.md-connection-resolved, .md-connection-ambiguous, .md-heading-symbol, .md-link',
   )
   return {
     tk,
     target,
     range: tk.range,
     onText: el != null && pos >= tk.contentRange[0] && pos <= tk.contentRange[1],
-    hidesSyntax: target.kind !== 'invalid' || (tk.kind === 'wikiLink' && target.ambiguous === true),
+    hidesSyntax: linkStatus(named) !== 'phantom',
     pos,
   }
 }
@@ -104,7 +106,7 @@ export function resolveFollow(
         : null
     case 'page':
       return api ? () => api.open(named.page, named.heading, isCmd(event)) : null
-    case 'external':
+    case 'url':
       return () => openLink(named.url)
     case 'invalid':
       return null
@@ -121,9 +123,9 @@ export function dwellTarget(
     const { id, path } = target.page
     return () => glance.arm({ kind: 'page', id, path, heading: target.heading }, el)
   }
-  if (target.kind !== 'external') return null
+  if (target.kind !== 'url') return null
   const web = normalizeLinkUrl(target.url)
-  return WEB_ADDRESS.test(web) ? () => glance.arm({ kind: 'site', url: web }, el) : null
+  return WEB_ADDRESS.test(web) ? () => glance.arm({ kind: 'url', url: web }, el) : null
 }
 
 const apiOf = (view: EditorView): ConnectionsApi | undefined =>
@@ -132,7 +134,7 @@ const apiOf = (view: EditorView): ConnectionsApi | undefined =>
 export function linkPointer(): Extension {
   return pointerHandlers<LinkHit>({
     // Both gates are required: external links wear the link class, not the connection one.
-    hoverGate: `.md-connection-resolved, .${MD_LINK_CLASS}`,
+    hoverGate: '.md-connection-resolved, .md-link',
     hitAt: (view, event) => linkUnder(view, apiOf(view), event),
     follow: (hit, view, event) =>
       hit.onText ? followTarget(hit.target, apiOf(view), event) : null,

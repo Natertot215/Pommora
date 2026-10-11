@@ -73,7 +73,7 @@ export function mirrorBody(view: EditorView, body: string, { echo = false } = {}
 
 export type GlanceTarget =
   | { kind: 'page'; id: string; path: string; heading?: string }
-  | { kind: 'site'; url: string }
+  | { kind: 'url'; url: string }
 
 const EDITOR_SETTING_KEYS = [
   'codeblockLineCount',
