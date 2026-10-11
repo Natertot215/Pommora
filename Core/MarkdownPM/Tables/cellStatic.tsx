@@ -81,13 +81,9 @@ export function renderCellContent(
       else if (look.status === 'phantom')
         out.push(
           <Fragment key={key++}>
-            <span className="md-phantom-syntax md-unresolved-fixed">
-              {text.slice(s, tk.contentRange[0])}
-            </span>
-            <span className="md-connection-phantom md-unresolved-fixed">{content}</span>
-            <span className="md-phantom-syntax md-unresolved-fixed">
-              {text.slice(tk.contentRange[1], e)}
-            </span>
+            <span className="md-phantom-syntax">{text.slice(s, tk.contentRange[0])}</span>
+            <span className="md-connection-phantom">{content}</span>
+            <span className="md-phantom-syntax">{text.slice(tk.contentRange[1], e)}</span>
           </Fragment>,
         )
       else {
