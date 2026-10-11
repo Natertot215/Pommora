@@ -84,7 +84,8 @@ describe('what the clipboard offers to become', () => {
     expect(labels('mailto:someone@example.com', true)).not.toContain('Embedded Link')
     expect(labels('example.com', true)).toContain('Embedded Link')
     expect(labels('[x](Notes.md)', true)).toEqual(['Connection', 'Markdown Link'])
-    expect(labels('[x](Draft%5D)', true)).not.toContain('Embedded Page')
+    expect(labels('[x](Draft%5D)', true)).toEqual(['Markdown Link'])
+    expect(labels('[x](A%7CB)', true)).toEqual(['Markdown Link'])
     expect(labels('[[Notes [WIP] final]]', true)).toContain('Embedded Page')
   })
 

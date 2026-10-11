@@ -26,7 +26,8 @@ import { linkDefs, readKeptRegistry } from '../Properties/propertiesRegistry'
 import { readLiveSetting } from '../Settings/settings'
 import { rewriteTileConnections, tilesLinkHeading } from '../Tiles/tilesFile'
 import type { TilesChanged } from '../Tiles/tiles'
-import { linkEntry, wholeValueLink } from '../Connections/linkValue'
+import { linkEntry } from '../Connections/linkValue'
+import { gonePageEntry } from '../Properties/propertyValue'
 import { frontmatterMentions, valueLinks } from '../Connections/scan'
 import { liveIdIndex, livePathOf, titleHeldOutside } from './heldPages'
 import { ID_KEY } from './identityMark'
@@ -91,12 +92,8 @@ export async function deleteCascade(
     const rels = hits.includes(null)
       ? await nexusCorpus(root)
       : [...new Set(hits.flatMap((h) => h ?? []))]
-    const goneEntry = (value: unknown): string | null => {
-      const link = wholeValueLink(value)
-      return link?.kind === 'page' && gone.has(normalizeTitle(link.title))
-        ? linkEntry(value, 2)
-        : null
-    }
+    const goneEntry = (value: unknown): string | null =>
+      gonePageEntry(value, { holds: (t) => !gone.has(normalizeTitle(t)) })
     const named = (raw: Record<string, unknown>) =>
       Object.entries(raw).flatMap(([key, held]) => {
         const def = defs.get(foldKey(key))

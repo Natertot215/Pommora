@@ -119,6 +119,7 @@ describe('readLinkText with a resolver', () => {
       alias: 'x',
     })
     expect(readLinkText('[x](Nope)', r)).toBeNull()
+    expect(readLinkText('[x](Nope.md)', r)).toBeNull()
   })
   it('refuses an ambiguous title, address-shaped or not', () => {
     expect(readLinkText('[[Dup]]', ambiguous)).toBeNull()
@@ -358,6 +359,19 @@ describe('retarget — the one rule for a link whose target changes', () => {
   })
   const urlOf = (url: string): LinkTarget => ({ kind: 'url', syntax: 'bare', url })
   const text = (...args: Parameters<typeof retarget>): string => retarget(...args).text
+
+  it('writes a page the wikilink grammar cannot carry as a markdown link, whatever the container', () => {
+    expect(text('wiki', pageOf('Page1'), pageOf('A|B'), false)).toBe('[A|B](A%7CB)')
+    expect(text('wiki', null, pageOf('Draft]', 'x'), false)).toBe('[x](Draft%5D)')
+    expect(
+      text(
+        'wiki',
+        pageOf('Page1'),
+        { kind: 'page', syntax: 'wiki', title: 'P', heading: 'H]' },
+        false,
+      ),
+    ).toBe('[P](P#H%5D)')
+  })
 
   it('takes the next target, and the next link’s own alias', () => {
     expect(text('wiki', pageOf('Page1'), pageOf('Page2'), false)).toBe('[[Page2]]')

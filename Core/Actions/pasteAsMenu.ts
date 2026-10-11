@@ -1,7 +1,13 @@
 import { expressibleInLink, pageEmbedText, connectionText } from '../Connections/connections'
 import { composeWebpageEmbedLine, markdownPageLink } from '../Connections/links'
 import { isHttpLink } from '../Paths/urlPath'
-import { linkPaste, readLinkText, type LinkPaste, type LinkTarget } from '../Connections/linkValue'
+import {
+  connectionSpells,
+  linkPaste,
+  readLinkText,
+  type LinkPaste,
+  type LinkTarget,
+} from '../Connections/linkValue'
 import { LINK_DISPLAY_LABELS, LINK_DISPLAYS, type LinkDisplay } from '../Properties/properties'
 
 export type PasteAsForm =
@@ -50,7 +56,9 @@ export function pasteAsRows(
   if (!target) return footnote
   const page = target.kind === 'page'
   const embed = embedSeat && embeddableTarget(target)
-  const rows = page ? PAGE_ROWS : URL_ROWS
+  const rows = page
+    ? PAGE_ROWS.filter((r) => r.form !== 'connection' || connectionSpells(target))
+    : URL_ROWS
   const embedRow = page ? PAGE_EMBED_ROW : URL_EMBED_ROW
   return [...footnote, ...rows, ...(embed ? [embedRow] : [])]
 }

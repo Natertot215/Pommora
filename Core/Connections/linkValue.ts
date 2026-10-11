@@ -1,4 +1,4 @@
-import { connectionText, parseConnectionText, wholeLink } from './connections'
+import { connectionText, expressibleInLink, parseConnectionText, wholeLink } from './connections'
 import {
   escapeAlias,
   markdownPageLink,
@@ -67,7 +67,7 @@ export function readLinkText(text: string, resolve?: PageIndex['resolve']): Link
   const res = title === null ? undefined : resolve?.(title)
   if (
     title !== null &&
-    (res ? res.status !== 'phantom' : targetNamesFile(dest) || !isValidLink(dest))
+    (targetNamesFile(dest) || (res ? res.status !== 'phantom' : !isValidLink(dest)))
   )
     return pageTarget('markdown', title, targetFragment(dest) || undefined, alias, res)
   if (!isValidLink(dest)) return null
@@ -109,7 +109,6 @@ export function linkEditText(raw: string): string {
     : target.url
 }
 
-// `null` clears, `undefined` refuses the commit. Only an address carries its alias through an edit: its field shows the bare URL, so an alias left off the typed text was never on screen.
 export function linkValueFromEdit(
   raw: string,
   current: string | undefined,
@@ -174,6 +173,9 @@ export function linkPaste(url: string, display: LinkDisplay, title?: string): Li
   return awaits ? { kind: 'link', text, awaits: url } : { kind: 'link', text }
 }
 
+export const connectionSpells = (target: { title: string; heading?: string }): boolean =>
+  expressibleInLink(target.title) && (!target.heading || expressibleInLink(target.heading))
+
 const sameTarget = (a: LinkTarget, b: LinkTarget): boolean =>
   a.kind === 'page' && b.kind === 'page'
     ? normalizeTitle(a.title) === normalizeTitle(b.title) &&
@@ -191,7 +193,7 @@ export function retarget(
   const shown = next.alias ?? kept
   if (next.kind === 'page') {
     const text =
-      syntax === 'wiki'
+      syntax === 'wiki' && connectionSpells(next)
         ? connectionText(next.title, shown, next.heading)
         : markdownPageLink(next.title, next.heading, shown)
     return { kind: 'link', text }
