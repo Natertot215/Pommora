@@ -128,6 +128,7 @@ What a person sees: `[x](Page)` edits like `[[Page]]`; every link reads **Rename
   - [ ] Task 4-3 — The resting renderer nests, draws every span, and draws `§` runs
   - [ ] Task 4-4 — A Text value draws against its page and follows a `§` run
   - [ ] Task 4-5 — The value's resolved target and one hit shape
+  - [ ] Task 4-6 — The headings map follows the app's own writes
   - [ ] Review Checkpoint
 - [ ] **Phase 5** — Opening and Titles
   - [ ] Task 5-1 — Addresses that open and titles that fetch
@@ -1687,7 +1688,7 @@ Every current caller (`pasteLink.ts:62`, `linkFormat.ts:85`, `cellStatic.tsx:474
 
 ### Phase 4 — Looks and Resolution
 
-**GOAL:** One function decides how a link looks, and both renderers draw from it: unresolved links share one treatment whichever syntax wrote them, an ambiguous markdown link draws in the ambiguous tone, **Display Unresolved Links As Plain Syntax** reaches every surface, the resting renderer nests tokens so a link inside emphasis draws and acts, `§` runs draw and follow at rest, a Text value draws against its page's headings, and a Link value's target is resolved through the editor's own chain. The resting hit carries its target once. These are the pieces the menus and the Link value read, so they land before them.
+**GOAL:** One function decides how a link looks, and both renderers draw from it: unresolved links share one treatment whichever syntax wrote them, an ambiguous markdown link draws in the ambiguous tone, **Display Unresolved Links As Plain Syntax** reaches every surface, the resting renderer nests tokens so a link inside emphasis draws and acts, `§` runs draw and follow at rest, a Text value draws against its page's headings, and a Link value's target is resolved through the editor's own chain. The resting hit carries its target once. These are the pieces the menus and the Link value read, so they land before them. Task 4-4 is the first new reader of the session's headings map, so the map learns of the app's own writes in this phase too (Task 4-6), before the picker reads it in Phase 10.
 
 #### Task 4-1 — One look rule and one unresolved treatment
 
@@ -2276,6 +2277,44 @@ A `§` run is prose that follows: it draws and a click travels, but it carries n
 
 - [ ] `grep -rn "heldTarget(" Core --include='*.ts' --include='*.tsx' | grep -v test` lists `linkClicks.ts` (`linkUnder`, `resolveFollow`), `cellStatic.tsx` (`cellLinkTarget`), and `valueTarget.ts` only.
 - [ ] Run the gates.
+- [ ] Check for unnecessary code or mistakes.
+
+#### Task 4-6 — The headings map follows the app's own writes
+
+**TASK:** After the app saves a page body and after it renames a page, the session reloads that page's headings, so the missing mark, a Text value's `§` runs (Task 4-4), and the picker's heading rows (Task 10-4) read headings the app itself just wrote. No channel is added; the fix rides `index:headings`.
+
+**NOW:** `loadHeadings(paths)` (`nexusSlice.ts`) runs at load and on `pages:changed`, which the host pushes only for watched (outside) edits and cascades (`fileEvents.ts:388`, `settle.ts:156`). An app save is `origin: 'own'` (`atomicWrite.ts`): the host indexes it inside the write, before `page:updateBody` replies (`fileEvents.ts:280`), but announces nothing, so adding `## New` to page A in the app leaves `[[A#New]]` marked missing until a restart or an outside edit. A rename moves the index rows (`moveIndexPaths`, `fileEvents.ts:270`) and the session's map keeps the old path, so `[[New Title#Missing]]` loses its mark. Pushing `pages:changed` for own writes isn't the fix: its consumer (`useBridgeSubscriptions.ts:81`) reloads the body too.
+
+**CHANGE**
+
+- [ ] Write the tests (`store.test.tsx` or `saveScheduler.test.ts`): after `pageIO.write(path, body, hash)` resolves ok, `index:headings` is asked for `[path]` and the map holds the reply; a refused write asks nothing; after `mutate({ op: 'rename', kind: 'page', … })` resolves ok, `index:headings` is asked for the new path. Watch them fail.
+- [ ] After the body write's ok reply (`pageIO.write`, `saveScheduler.ts:133`) and after a page rename's ok reply (`nexusSlice.ts`'s `mutate`, where `patchPagesFor(req)` already knows the new path), call `loadHeadings([path])` once. Read the store at call time, not at module init, so no import cycle forms (`saveScheduler.ts` is imported by the slices); if `pageIO` can't reach the store cleanly, give `BodyIO` a `written(path)` hook the store seats, as `stale` already is, and say which you chose.
+
+**AFTER**
+
+```Core/Session/saveScheduler.ts diff
+@@ pageIO @@
+-   write: (path, body, baseHash) => dialer().ask('page:updateBody', path, body, baseHash),
++   write: async (path, body, baseHash) => {
++     const res = await dialer().ask('page:updateBody', path, body, baseHash)
++     if (res.ok) void useSession.getState().loadHeadings([path])
++     return res
++   },
+```
+
+```Core/Session/nexusSlice.ts diff
+@@ mutate @@
+      get().patchPagesFor(req)
++     if (req.op === 'rename' && req.kind === 'page') void get().loadHeadings([renamedPath])
+      return res.value
+```
+
+(`renamedPath` is however `patchPagesFor` spells the new path; read it there and reuse it rather than re-deriving.)
+
+**VERIFY**
+
+- [ ] Run the gates.
+- [ ] In `~/Test`: type `## Fresh` into page Alpha, save, then write `[[Alpha#Fresh]]` in page Beta: no missing mark; rename Alpha to Alpha Two: `[[Alpha Two#Fresh]]` draws without the mark and `[[Alpha Two#Nope]]` with it.
 - [ ] Check for unnecessary code or mistakes.
 
 #### Review Checkpoint
@@ -4742,7 +4781,7 @@ The anchor is pinned by a test for a filled and an unfilled label.
 - **⌘C over a DOM selection in a resting cell:** The keyboard copies the drawn text (an alias, not its syntax); the resting menu's Copy copies the source. Making the chord match means a key handler on the resting cell and isn't this plan's.
 - **A page body closing with a title pending:** a cell and a TextPane forward a pending Page Title swap on close (Task 5-3); the page body has no close-time commit path, so a tab closed before the title answers keeps the short form, as it does today.
 - **A Text value's pane and a rename in another window:** With connections read from the host (Task 3-1), an open TextPane reads the index as of its last render, so a rename made in another window while the pane is open can trail by one render (the audit's F-094 note).
-- **The headings map and the app's own writes (pre-existing, load-bearing from Task 4-4 and 10-4):** the session's `headings` map is loaded at start and on `pages:changed`, which the host pushes only for watched (outside) edits and cascades; an app save is `origin: 'own'`, so adding `## New` to page A in the app leaves `[[A#New]]` marked missing until a restart or an outside edit, and a rename leaves the new path absent. At baseline only the missing mark read the map; Task 4-4 (a Text value's headings) and Task 10-4 (the picker's heading rows, replacing the fresh body fetch) read it too, so the gap has to close before 10-4 lands. The channel set is frozen, so the fix rides an existing channel or the renderer's own save.
+- **The headings map and the app's own writes:** closed by Task 4-6. As found: the session's `headings` map is loaded at start and on `pages:changed`, which the host pushes only for watched (outside) edits and cascades; an app save is `origin: 'own'`, so adding `## New` to page A in the app leaves `[[A#New]]` marked missing until a restart or an outside edit, and a rename leaves the new path absent. At baseline only the missing mark read the map; Task 4-4 (a Text value's headings) and Task 10-4 (the picker's heading rows, replacing the fresh body fetch) read it too, so the gap has to close before 10-4 lands. The channel set is frozen, so the fix rides an existing channel or the renderer's own save.
 - **An embedded tile's connections (pre-existing):** `renderTile` seats `connections={connRef.current}` into the nested `PageTile`, and `EmbedTileWidget.eq` ignores connections, so a page created or renamed elsewhere doesn't re-resolve inside an open embed until the tile re-renders. The same shape as the Text pane's snapshot, which Phase 3's checkpoint fixed; this one is outside the plan's tasks and is noted for the same fix.
 
 #### Deviations
