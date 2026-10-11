@@ -9,7 +9,7 @@ export function readFormatState(
   scan: DocScan,
   from: number,
   to: number,
-): Omit<EditorMenuRequest, 'scope' | 'x' | 'y' | 'embedSeat' | 'citeSeat'> {
+): Omit<EditorMenuRequest, 'scope' | 'x' | 'y' | 'embedSeat' | 'citeSeat' | 'resting'> {
   const doc = scan.text
   // Inline marks are line-local, so only the caret's line is tokenized, in line-relative coords. A cross-line selection can't sit inside one inline token anyway.
   const ls = lineStartAt(doc, from)

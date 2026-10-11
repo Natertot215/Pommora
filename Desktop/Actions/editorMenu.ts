@@ -10,6 +10,7 @@ import {
   changeColorItems,
   editorContextItems,
   PASTE_LITERAL_ACTION,
+  RESTING_EDITS,
 } from '@pommora/core/Actions/editorMenu'
 import type { ActionItem } from '@pommora/core/Actions/menuModel'
 import { PASTE_AS_PREFIX, pasteAsRows } from '@pommora/core/Actions/pasteAsMenu'
@@ -70,24 +71,61 @@ function systemItems(
     )
   }
 
+  const resting = editor?.req.resting
+  const canPaste = resting ? clipboard.readText() !== '' : f.canPaste
   items.push(
-    { role: 'undo', enabled: f.canUndo },
-    { role: 'redo', enabled: f.canRedo },
-    { type: 'separator' },
-    { role: 'cut', enabled: f.canCut },
-    { role: 'copy', enabled: f.canCopy },
-    { role: 'paste', enabled: f.canPaste },
+    ...(resting && editor
+      ? restingEditItems(editor, resting.selection !== '', canPaste)
+      : ([
+          { role: 'undo', enabled: f.canUndo },
+          { role: 'redo', enabled: f.canRedo },
+          { type: 'separator' },
+          { role: 'cut', enabled: f.canCut },
+          { role: 'copy', enabled: f.canCopy },
+          { role: 'paste', enabled: f.canPaste },
+        ] satisfies MenuItemConstructorOptions[])),
     ...(editor ? pasteAsItems(editor) : []),
     // The `pasteAndMatchStyle` role would take back ⌘⇧V, which belongs to the inverse paste command.
     {
       label: 'Paste Without Formatting',
-      enabled: f.canPaste,
+      enabled: canPaste,
       click: editor ? () => editor.resolve(PASTE_LITERAL_ACTION) : () => wc.pasteAndMatchStyle(),
     },
-    { role: 'selectAll' },
+    ...(resting ? [] : [{ role: 'selectAll' } as const]),
     ...(editor ? editorRows(editor, changeColorItems(editor.req, heldCommands())) : []),
   )
   return items
+}
+
+function restingEditItems(
+  editor: EditorMenu,
+  selected: boolean,
+  canPaste: boolean,
+): MenuItemConstructorOptions[] {
+  const answer = (action: string) => () => editor.resolve(action)
+  return [
+    {
+      label: 'Cut',
+      enabled: selected,
+      accelerator: 'CmdOrCtrl+X',
+      registerAccelerator: false,
+      click: answer(RESTING_EDITS.cut),
+    },
+    {
+      label: 'Copy',
+      enabled: selected,
+      accelerator: 'CmdOrCtrl+C',
+      registerAccelerator: false,
+      click: answer(RESTING_EDITS.copy),
+    },
+    {
+      label: 'Paste',
+      enabled: canPaste,
+      accelerator: 'CmdOrCtrl+V',
+      registerAccelerator: false,
+      click: answer(RESTING_EDITS.paste),
+    },
+  ]
 }
 
 // Last, so the Pommora formatting block sits directly under the edit items.
@@ -125,13 +163,15 @@ function editorRows(
 export function installEditorContextMenu(win: BrowserWindow): void {
   win.webContents.on('context-menu', (_e, params) => {
     const editor = takeEditorMenu(win, params)
-    if (!params.isEditable) return editor?.resolve(null) // the sidebar keeps its own menus
+    if (!params.isEditable && !editor?.req.resting) return editor?.resolve(null)
     const items = systemItems(win.webContents, params, editor)
-    if (editor)
+    if (editor) {
+      const selection = editor.req.resting?.selection ?? params.selectionText
       items.push(
         { type: 'separator' },
-        ...editorRows(editor, editorContextItems(editor.req, heldCommands(), params.selectionText)),
+        ...editorRows(editor, editorContextItems(editor.req, heldCommands(), selection)),
       )
+    }
     items.push(...speechShareItems(params))
     Menu.buildFromTemplate(items).popup({ window: win, callback: () => editor?.resolve(null) })
   })

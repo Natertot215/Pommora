@@ -34,11 +34,13 @@ export const editorMenuRequest = z.object({
   block: z.literal('quote').nullable(),
   embedSeat: z.boolean(),
   citeSeat: z.boolean(),
+  resting: z.object({ selection: z.string() }).nullable(),
 })
 export type EditorMenuRequest = z.infer<typeof editorMenuRequest>
 
 export const INSERT_LINK_ACTION = 'link:insert' as const
 export const PASTE_LITERAL_ACTION = 'paste:literal' as const
+export const RESTING_EDITS = { cut: 'edit:cut', copy: 'edit:copy', paste: 'edit:paste' } as const
 
 export type FormatChordAction = Extract<CommandId, `format:${string}`>
 

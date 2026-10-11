@@ -71,6 +71,7 @@ export const editorMenu = (scope: MarkdownScope): Extension =>
           y: event.clientY,
           embedSeat: page && embedSeatAt(view.state, from),
           citeSeat: page && citationSeatAt(view.state, to),
+          resting: null,
         }).then((action) => {
           if (action && view.dom.isConnected) applyEditorAction(view, action)
         })
