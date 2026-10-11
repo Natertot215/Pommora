@@ -2,7 +2,12 @@ import type { PropertyValue } from './propertyValue'
 import type { PropertyType } from './properties'
 import { linkEditText, linkValueFromEdit } from '../Connections/linkValue'
 import { numberFrom } from '@pommora/uix/Utilities/numberUnit'
-import { resolveTitle } from './Cells/linkResolve'
+import type { PageIndex } from '../Connections/pageIndex'
+
+interface LinkEditContext {
+  resolve: PageIndex['resolve']
+  keepTitle: boolean
+}
 
 export function editorText(value?: PropertyValue | null): string {
   if (value?.kind === 'number') return String(value.value)
@@ -26,17 +31,19 @@ export function parseEditorValue(
   type: PropertyType | 'title' | undefined,
   raw: string,
   current?: PropertyValue | null,
+  link?: LinkEditContext,
 ): PropertyValue | null | undefined {
   if (type === 'number') {
     if (raw.trim() === '') return null
     const n = numberFrom(raw)
     return n === undefined ? undefined : { kind: 'number', value: n }
   }
-  if (type === 'link')
+  if (type === 'link' && link)
     return linkValueFromEdit(
       raw,
       current?.kind === 'link' ? current.value : undefined,
-      resolveTitle,
+      link.resolve,
+      link.keepTitle,
     )
   if (type === 'text') return textFromEdit(raw, current)
   return undefined

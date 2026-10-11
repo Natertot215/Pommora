@@ -409,6 +409,8 @@ export function PropertyPanel({
                 <PropertyValueInput
                   def={def}
                   current={current}
+                  holder={holderOf(row, ctx)}
+                  connections={ctx.connections}
                   onCommit={(next) => commit(id, next)}
                   onClose={() => setEditing(null)}
                 />

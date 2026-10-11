@@ -280,13 +280,6 @@ export function navKeysOf(tree: NexusTree): string[] {
   return ix.navKeys
 }
 
-/** Null when no page answers the title, or more than one does. Behind both a Link property's paste gate and the connection a Link cell draws, so a cell can't show a link the index wouldn't reach. */
-export function resolveConnection(tree: NexusTree | null, rawTitle: string): ConnPage | null {
-  if (!tree) return null
-  const res = pageIndexOf(tree).resolve(rawTitle)
-  return res.status === 'resolved' && res.page ? res.page : null
-}
-
 /** `icon` is raw and unvalidated; NavView is excluded because its banner is treated separately. */
 export interface BannerOwner {
   path: string

@@ -4,13 +4,23 @@ import { EditableInput } from '@pommora/uix/Fields/EditableInput'
 import { fillInput } from '@pommora/uix/Fields/fields.css'
 import { TextPicker } from '@pommora/uix/Pickers/TextPicker'
 import { solidColorCss } from '@pommora/uix/Theme/ramp'
-import type { ConnPage } from '../../Connections/pageIndex'
+import type { ConnPage, PageIndex } from '../../Connections/pageIndex'
 import type { PropertyDefinition } from '../properties'
 import type { PropertyValue } from '../propertyValue'
 import { linkValueFromRename, readLinkText } from '../../Connections/linkValue'
 import { editorText, parseEditorValue } from '../parseEditorValue'
 import { NumberValuePicker } from './NumberValuePicker'
 import { TextPane } from './TextPane'
+import { useSetting } from '../../Session/store'
+
+const linkResolver =
+  (api: ConnectionsApi | undefined, holder: ConnPage | undefined): PageIndex['resolve'] =>
+  (title) =>
+    title === ''
+      ? holder
+        ? { status: 'resolved', page: holder }
+        : { status: 'phantom' }
+      : (api?.resolve(title) ?? { status: 'phantom' })
 
 export function PropertyValueInput({
   def,
@@ -31,6 +41,7 @@ export function PropertyValueInput({
   onCommit: (next: PropertyValue | null) => void
   onClose: () => void
 }): React.JSX.Element {
+  const keepTitle = !useSetting('removeTitleOnLinkChange')
   if (popover && def.type === 'number')
     return (
       <NumberValuePicker
@@ -55,7 +66,12 @@ export function PropertyValueInput({
   const raw = current?.kind === 'link' ? current.value : ''
   const initial = alias ? (readLinkText(raw)?.alias ?? '') : editorText(current)
   const parse = (text: string): PropertyValue | null | undefined =>
-    alias ? linkValueFromRename(text, raw) : parseEditorValue(def.type, text, current)
+    alias
+      ? linkValueFromRename(text, raw)
+      : parseEditorValue(def.type, text, current, {
+          resolve: linkResolver(connections?.(), holder),
+          keepTitle,
+        })
   const invalid = (text: string): boolean => parse(text) === undefined
   const commit = (text: string): void => {
     onClose()
