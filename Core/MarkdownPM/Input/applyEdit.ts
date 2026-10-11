@@ -1,7 +1,7 @@
 import type { EditorView } from '@codemirror/view'
 import type { Edit } from './edits'
 import type { FormatEdit } from './format'
-import { RELIST } from './listRenumber'
+import { editEvent } from './listRenumber'
 
 export function applyEdit(
   view: EditorView,
@@ -23,7 +23,7 @@ export function applyEdit(
     changes,
     selection,
     scrollIntoView: opts.scrollIntoView,
-    userEvent: opts.userEvent ?? (edit.relist ? RELIST : 'input'),
+    userEvent: opts.userEvent ?? editEvent(edit),
   })
   return true
 }
