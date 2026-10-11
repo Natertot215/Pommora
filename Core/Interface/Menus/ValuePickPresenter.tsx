@@ -4,6 +4,7 @@ import { useHeld } from '@pommora/uix/Animations/useExitPresence'
 import type { PropertyValue } from '../../Properties/propertyValue'
 import { PropertyValueInput } from '../../Properties/Pickers/PropertyValueInput'
 import { PropertyPicker } from '../../Properties/Pickers/PropertyPicker'
+import { previewConnections } from '../../Session/pageConnections'
 import { useSession } from '../../Session/store'
 
 export function ValuePickPresenter(): React.JSX.Element | null {
@@ -40,6 +41,7 @@ export function ValuePickPresenter(): React.JSX.Element | null {
       def={def}
       current={current}
       holder={shown.holder}
+      connections={previewConnections}
       onCommit={commit}
       onClose={dismiss}
     />

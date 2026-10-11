@@ -15,12 +15,10 @@ import { useSetting } from '../../Session/store'
 
 const linkResolver =
   (api: ConnectionsApi | undefined, holder: ConnPage | undefined): PageIndex['resolve'] =>
-  (title) =>
-    title === ''
-      ? holder
-        ? { status: 'resolved', page: holder }
-        : { status: 'phantom' }
-      : (api?.resolve(title) ?? { status: 'phantom' })
+  (title) => {
+    if (title !== '') return api?.resolve(title) ?? { status: 'phantom' }
+    return holder ? { status: 'resolved', page: holder } : { status: 'phantom' }
+  }
 
 export function PropertyValueInput({
   def,
