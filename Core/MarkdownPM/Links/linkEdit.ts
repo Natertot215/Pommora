@@ -24,7 +24,7 @@ import { drawnLinkAt, inRawHtml } from '../decorations'
 import { writeLinkAt } from './pendingTitle'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 
-export type LinkEdit =
+type LinkEdit =
   | { kind: 'select'; range: [number, number] }
   | { kind: 'write'; from: number; to: number; text: string; awaits?: string; select?: number }
 

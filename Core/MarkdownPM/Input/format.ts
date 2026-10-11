@@ -26,7 +26,7 @@ import { type DocScan, inFenceAt } from '../Engine/docScan'
 import { isValidLink, normalizeLinkUrl } from '../../Paths/urlPath'
 import { serializeLink } from '../../Connections/linkValue'
 
-export type InlineFormat = keyof typeof WRAP | LinkWrapKind
+type InlineFormat = keyof typeof WRAP | LinkWrapKind
 
 export interface FormatEdit {
   changes: TextEdit[]
