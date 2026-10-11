@@ -12,7 +12,7 @@ import type { TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { type DocScan, inCodeAt } from '../Engine/docScan'
 import { connectionAt, inBracket, openConnectionAt } from '../Input/edits'
 import { lineIndexAt, type TextEdit } from '../Engine/markdownCode'
-import type { ConnPage, PageIndex } from '../../Connections/pageIndex'
+import type { ConnPage } from '../../Connections/pageIndex'
 import type { OutlineHeading } from '../Engine/headingScan'
 import type { EditorHost } from '../api'
 import type { ConnectionsApi } from '../Links/connectionsApi'
@@ -179,25 +179,21 @@ export function openHeadingRows(
 }
 
 export function aliasRows(
-  conn: PageIndex,
   aliases: EditorHost['aliases'],
-  title: string | undefined,
+  pageId: string | undefined,
   query: string,
 ): AcRow[] {
-  if (!title) return []
-  const res = conn.resolve(title)
-  const page = res.status === 'resolved' ? res.page : null
-  if (!page) return []
+  if (!pageId) return []
   const q = normalizeTitle(query)
   return aliases
-    .list(page.id)
+    .list(pageId)
     .filter((a) => normalizeTitle(a).startsWith(q))
     .slice(0, AC_MAX)
     .map(
       (a): AcRow => ({
         kind: 'alias',
         value: a,
-        forget: () => aliases.forget(page.id, a),
+        forget: () => aliases.forget(pageId, a),
       }),
     )
 }
@@ -277,11 +273,17 @@ export function commitEdit(
     to: ac.to,
     insert: opts.openHeading ? `${encoded}#` : encoded + closer,
   }
-  const fill = ac.label && ac.label.from === ac.label.to ? ac.label : null
+  const retitles =
+    ac.form === 'target' &&
+    ac.closed &&
+    ac.query !== '' &&
+    !opts.keepTitle &&
+    normalizeTitle(ac.query) !== normalizeTitle(value)
+  const fill = ac.label && (ac.label.from === ac.label.to || retitles) ? ac.label : null
   const label = fill ? escapeAlias(value) : ''
   return {
     changes: fill ? [{ from: fill.from, to: fill.to, insert: label }, dest] : [dest],
-    anchor: ac.from + label.length + encoded.length + 1,
+    anchor: ac.from + label.length - (fill ? fill.to - fill.from : 0) + encoded.length + 1,
     opensHeading: opts.openHeading,
   }
 }
