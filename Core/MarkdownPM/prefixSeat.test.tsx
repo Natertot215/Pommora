@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
-import { EditorView, runScopeHandlers } from '@codemirror/view'
+import { type EditorView, runScopeHandlers } from '@codemirror/view'
 import type { TransactionSpec } from '@codemirror/state'
-import { cleanupEditor, mountEditor, stubEditorBridge } from '../Testing/editorHarness'
+import { cleanupEditor, mountEditor, stubEditorBridge, typeInto } from '../Testing/editorHarness'
 
 stubEditorBridge()
 afterEach(async () => {
@@ -14,21 +14,6 @@ async function press(view: EditorView, key: string, mods: KeyboardEventInit = {}
   await act(async () => {
     runScopeHandlers(view, new KeyboardEvent('keydown', { key, ...mods }), 'editor')
   })
-}
-
-async function type(view: EditorView, text: string): Promise<void> {
-  for (const ch of text)
-    await act(async () => {
-      const at = view.state.selection.main.head
-      const insert = () =>
-        view.state.update({
-          changes: { from: at, insert: ch },
-          selection: { anchor: at + 1 },
-          userEvent: 'input.type',
-        })
-      if (!view.state.facet(EditorView.inputHandler).some((h) => h(view, at, at, ch, insert)))
-        view.dispatch(insert())
-    })
 }
 
 async function open(doc: string, caret: number): Promise<EditorView> {
@@ -67,7 +52,7 @@ describe('the caret never rests in a hidden line prefix', () => {
       await act(async () => {
         view.dispatch({ selection: { anchor: lineStart + 1 } })
       })
-      await type(view, 'X')
+      await typeInto(view, 'X')
       expect(view.state.doc.toString()).toBe(`${doc.slice(0, visible)}X${doc.slice(visible)}`)
     })
 
@@ -82,9 +67,9 @@ describe('the caret never rests in a hidden line prefix', () => {
 describe('a quote continued with Enter', () => {
   it('writes the next line inside the quote with nothing hidden or doubled', async () => {
     const view = await open('', 0)
-    await type(view, '> hello')
+    await typeInto(view, '> hello')
     await press(view, 'Enter')
-    await type(view, 'world')
+    await typeInto(view, 'world')
     expect(view.state.doc.toString()).toBe('> hello\n> world')
     expect(view.state.selection.main.head).toBe(view.state.doc.length)
   })
@@ -95,7 +80,7 @@ describe('the rule holds where a widget draws over the prefix, and for every way
     for (const doc of ['intro\n> - item', 'intro\n> [!note] Head\n> - item']) {
       const view = await open(doc, doc.length)
       await press(view, 'Home')
-      await type(view, 'Z')
+      await typeInto(view, 'Z')
       expect(view.state.doc.toString()).toBe(doc.replace(/> - item$/, '> Z- item'))
       await cleanupEditor()
     }
@@ -109,7 +94,7 @@ describe('the rule holds where a widget draws over the prefix, and for every way
 
   it('an edit that leaves the caret inside a prefix seats it at the visible start', async () => {
     const view = await open('a[^1]\n\n[^1] one', 'a[^1]\n\n[^1]'.length)
-    await type(view, ':')
+    await typeInto(view, ':')
     expect(view.state.doc.toString()).toBe('a[^1]\n\n[^1]: one')
     expect(view.state.selection.main.head).toBe('a[^1]\n\n[^1]: '.length)
   })

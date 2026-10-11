@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
-import { EditorView } from '@codemirror/view'
+import type { EditorView } from '@codemirror/view'
 import { matchText } from '@pommora/uix/Menus/menu-row.css'
 import type { ConnectionsApi } from '../Links/connectionsApi'
 import type { EditorSettings } from '../api'
@@ -12,6 +12,7 @@ import {
   mountEditor,
   seedHost,
   stubEditorBridge,
+  typeInto,
 } from '../../Testing/editorHarness'
 
 class ResizeObserverStub {
@@ -28,29 +29,18 @@ afterEach(async () => {
 })
 
 const conn: ConnectionsApi = {
-  ...buildPageIndex([{ id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' }]),
+  ...buildPageIndex([
+    { id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' },
+    { id: 'pOld', title: 'Old', path: 'Old.md' },
+    { id: 'pOlder', title: 'Older', path: 'Older.md' },
+    { id: 'pGamma', title: 'Gamma', path: 'Gamma.md' },
+    { id: 'p2', title: 'Project', path: 'Project.md' },
+  ]),
   headingsOf: () => undefined,
   location: () => [],
   open: () => {},
 }
 const coords = { left: 10, right: 10, top: 10, bottom: 20 }
-
-const typed = async (view: EditorView, text: string): Promise<void> => {
-  for (const ch of text)
-    await act(async () => {
-      const at = view.state.selection.main.head
-      const insert = () =>
-        view.state.update({
-          changes: { from: at, insert: ch },
-          selection: { anchor: at + 1 },
-          userEvent: 'input.type',
-        })
-      const handled = view.state
-        .facet(EditorView.inputHandler)
-        .some((h) => h(view, at, at, ch, insert))
-      if (!handled) view.dispatch(insert())
-    })
-}
 
 const press = async (view: EditorView, key: string): Promise<void> => {
   await act(async () => {
@@ -58,6 +48,13 @@ const press = async (view: EditorView, key: string): Promise<void> => {
       new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }),
     )
   })
+}
+
+const mounted = async (body: string, settings: Partial<EditorSettings> = {}) => {
+  const view = await mountEditor({ initialBody: body, connections: conn, host: { settings } })
+  vi.spyOn(view, 'coordsAtPos').mockReturnValue(coords)
+  await act(async () => view.focus())
+  return view
 }
 
 async function pickFirst(body: string, caret: number): Promise<{ doc: string; head: number }> {
@@ -68,11 +65,7 @@ async function pickFirst(body: string, caret: number): Promise<{ doc: string; he
     view.dispatch({ selection: { anchor: caret } })
   })
   expect(document.querySelector('.mdpm-ac')).toBeTruthy()
-  await act(async () => {
-    view.contentDOM.dispatchEvent(
-      new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }),
-    )
-  })
+  await press(view, 'Enter')
   return { doc: view.state.doc.toString(), head: view.state.selection.main.head }
 }
 
@@ -143,11 +136,7 @@ describe('Tab with the picker open', () => {
       view.dispatch({ selection: { anchor: 6 } })
     })
     expect(document.querySelector('.mdpm-ac')).toBeTruthy()
-    await act(async () => {
-      view.contentDOM.dispatchEvent(
-        new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }),
-      )
-    })
+    await press(view, 'Tab')
     expect(view.state.doc.toString()).toBe('- [[Alpha]]')
   })
 })
@@ -228,27 +217,9 @@ describe('the picker stands down when it has nothing to add', () => {
 })
 
 describe('an unclosed opener with Pair Brackets off', () => {
-  const projects: ConnectionsApi = {
-    ...buildPageIndex([{ id: 'p2', title: 'Project', path: 'Project.md' }]),
-    headingsOf: () => undefined,
-    location: () => [],
-    open: () => {},
-  }
-
-  const typedOpener = async (): Promise<EditorView> => {
-    const view = await mountEditor({
-      initialBody: '',
-      connections: projects,
-      host: { settings: { pairBrackets: false } },
-    })
-    vi.spyOn(view, 'coordsAtPos').mockReturnValue(coords)
-    await act(async () => view.focus())
-    await typed(view, '[[Pro')
-    return view
-  }
-
   it('opens the pane, and Enter writes the closer with the caret after it', async () => {
-    const view = await typedOpener()
+    const view = await mounted('', { pairBrackets: false })
+    await typeInto(view, '[[Pro')
     expect(view.state.doc.toString()).toBe('[[Pro')
     expect(document.querySelector('.mdpm-ac')).toBeTruthy()
     await press(view, 'Enter')
@@ -257,15 +228,17 @@ describe('an unclosed opener with Pair Brackets off', () => {
   })
 
   it('a title typed in full still finishes on Enter', async () => {
-    const view = await typedOpener()
-    await typed(view, 'ject')
+    const view = await mounted('', { pairBrackets: false })
+    await typeInto(view, '[[Pro')
+    await typeInto(view, 'ject')
     expect(document.querySelector('.mdpm-ac')).toBeTruthy()
     await press(view, 'Enter')
     expect(view.state.doc.toString()).toBe('[[Project]]')
   })
 
   it('Escape leaves the typed text', async () => {
-    const view = await typedOpener()
+    const view = await mounted('', { pairBrackets: false })
+    await typeInto(view, '[[Pro')
     await press(view, 'Escape')
     expect(view.state.doc.toString()).toBe('[[Pro')
   })
@@ -283,11 +256,7 @@ describe('the alias list slides in only when a pick opened its slot', () => {
       view.focus()
       view.dispatch({ selection: { anchor: 4 } })
     })
-    await act(async () => {
-      view.contentDOM.dispatchEvent(
-        new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }),
-      )
-    })
+    await press(view, 'Enter')
     expect(view.state.doc.toString()).toBe('[[Alpha|]]')
     expect(document.querySelector('.mdpm-ac')?.textContent).toContain('one')
     expect(pageRowShown()).toBe(true)
@@ -310,31 +279,12 @@ describe('the alias list slides in only when a pick opened its slot', () => {
 })
 
 describe('a pick retargets the link the picker opened on', () => {
-  const pages: ConnectionsApi = {
-    ...buildPageIndex([
-      { id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' },
-      { id: 'pOld', title: 'Old', path: 'Old.md' },
-      { id: 'pOlder', title: 'Older', path: 'Older.md' },
-      { id: 'pGamma', title: 'Gamma', path: 'Gamma.md' },
-    ]),
-    headingsOf: () => undefined,
-    location: () => [],
-    open: () => {},
-  }
-
-  const mounted = async (body: string, settings: Partial<EditorSettings> = {}) => {
-    const view = await mountEditor({ initialBody: body, connections: pages, host: { settings } })
-    vi.spyOn(view, 'coordsAtPos').mockReturnValue(coords)
-    await act(async () => view.focus())
-    return view
-  }
-
   it('a label typed while the link is written stays, with Pair Brackets on', async () => {
     const view = await mounted('[x]')
     await act(async () => {
       view.dispatch({ selection: { anchor: 3 } })
     })
-    await typed(view, '(Al')
+    await typeInto(view, '(Al')
     expect(view.state.doc.toString()).toBe('[x](Al)')
     await press(view, 'Enter')
     expect(view.state.doc.toString()).toBe('[x](Alpha)')
@@ -342,7 +292,7 @@ describe('a pick retargets the link the picker opened on', () => {
 
   it('and with Pair Brackets off', async () => {
     const view = await mounted('', { pairBrackets: false })
-    await typed(view, '[x](Al')
+    await typeInto(view, '[x](Al')
     expect(view.state.doc.toString()).toBe('[x](Al')
     await press(view, 'Enter')
     expect(view.state.doc.toString()).toBe('[x](Alpha)')
@@ -397,11 +347,7 @@ describe('the chevron slides in a page’s headings', () => {
       view.dispatch({ selection: { anchor: 5 } })
     })
     expect(document.querySelector('.mdpm-ac')).toBeTruthy()
-    await act(async () => {
-      view.contentDOM.dispatchEvent(
-        new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }),
-      )
-    })
+    await press(view, 'ArrowRight')
     expect(view.state.doc.toString()).toBe('[[Notes#]]')
     expect(document.querySelector('.mdpm-ac')?.textContent).toContain('Setup')
   })
@@ -413,16 +359,8 @@ describe('the chevron slides in a page’s headings', () => {
       view.focus()
       view.dispatch({ selection: { anchor: 5 } })
     })
-    await act(async () => {
-      view.contentDOM.dispatchEvent(
-        new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }),
-      )
-    })
-    await act(async () => {
-      view.contentDOM.dispatchEvent(
-        new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }),
-      )
-    })
+    await press(view, 'ArrowRight')
+    await press(view, 'Enter')
     expect(view.state.doc.toString()).toBe('[[Notes#Setup]]')
   })
 
@@ -434,12 +372,7 @@ describe('the chevron slides in a page’s headings', () => {
       view.focus()
       view.dispatch({ selection: { anchor: 5 } })
     })
-    for (const key of ['ArrowRight', 'Enter'])
-      await act(async () => {
-        view.contentDOM.dispatchEvent(
-          new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }),
-        )
-      })
+    for (const key of ['ArrowRight', 'Enter']) await press(view, key)
     expect(view.state.doc.toString()).toBe('[[Notes#Setup|]]')
     expect(document.querySelector('.mdpm-ac')?.textContent).toContain('the notes')
   })
@@ -451,11 +384,7 @@ describe('the chevron slides in a page’s headings', () => {
       view.focus()
       view.dispatch({ selection: { anchor: 5 } })
     })
-    await act(async () => {
-      view.contentDOM.dispatchEvent(
-        new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }),
-      )
-    })
+    await press(view, 'ArrowRight')
     expect(view.state.doc.toString()).toBe('[[Notes#]] tail')
     await act(async () => {
       view.dispatch({ selection: { anchor: view.state.doc.length } })
@@ -471,17 +400,9 @@ describe('the chevron slides in a page’s headings', () => {
       view.focus()
       view.dispatch({ selection: { anchor: 5 } })
     })
-    await act(async () => {
-      view.contentDOM.dispatchEvent(
-        new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }),
-      )
-    })
+    await press(view, 'ArrowRight')
     expect(view.state.doc.toString()).toBe('[[Notes#]]')
-    await act(async () => {
-      view.contentDOM.dispatchEvent(
-        new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true, cancelable: true }),
-      )
-    })
+    await press(view, 'ArrowLeft')
     expect(view.state.doc.toString()).toBe('[[Notes]]')
   })
 
@@ -555,18 +476,10 @@ describe('the chevron slides in a page’s headings', () => {
       view.focus()
       view.dispatch({ selection: { anchor: 5 } })
     })
-    await act(async () => {
-      view.contentDOM.dispatchEvent(
-        new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }),
-      )
-    })
+    await press(view, 'ArrowRight')
     expect(view.state.doc.toString()).toBe('[x](Notes#)')
     expect(document.querySelector('.mdpm-ac')?.textContent).toContain('Setup')
-    await act(async () => {
-      view.contentDOM.dispatchEvent(
-        new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }),
-      )
-    })
+    await press(view, 'Enter')
     expect(view.state.doc.toString()).toBe('[x](Notes#Setup)')
     expect(view.state.selection.main.head).toBe(view.state.doc.length)
   })
@@ -609,11 +522,7 @@ describe('the chevron slides in a page’s headings', () => {
       view.focus()
       view.dispatch({ selection: { anchor: 8 } })
     })
-    await act(async () => {
-      view.contentDOM.dispatchEvent(
-        new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }),
-      )
-    })
+    await press(view, 'ArrowRight')
     expect(view.state.doc.toString()).toBe('a [sel](Blank#) b')
   })
 

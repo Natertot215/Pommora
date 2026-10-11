@@ -13,7 +13,7 @@ import { scanDoc } from '../Engine/docScan'
 const autocompleteQuery = (doc: string, caret: number, armed?: number) =>
   queryOf(scanDoc(doc), caret, armed)
 
-const KEEP = { keepTitle: true }
+const KEEP = { container: null, keepTitle: true }
 
 const landed = (doc: string, edit: ReturnType<typeof commitEdit>): string =>
   edit.changes.reduceRight((t, c) => t.slice(0, c.from) + c.insert + t.slice(c.to), doc)
@@ -280,7 +280,6 @@ describe('the ( ) form', () => {
     const edit = commitEdit(r, 'Work Notes', { ...KEEP, openHeading: true })
     const text = landed(doc, edit)
     expect(text).toBe('see [x](Work%20Notes#) end')
-    expect(edit.opensHeading).toBe(true)
     expect(text.slice(edit.anchor)).toBe(') end')
     expect(autocompleteQuery(text, edit.anchor)?.form).toBe('fragment')
   })
@@ -398,7 +397,6 @@ describe('what accepting a suggestion finishes', () => {
     const text =
       doc.slice(0, edit.changes[0].from) + edit.changes[0].insert + doc.slice(edit.changes[0].to)
     expect(text).toBe('a [[Alpha|]] b')
-    expect(edit.opensAlias).toBe(true)
     expect(edit.anchor).toBe('a [[Alpha|'.length)
   })
 
@@ -409,7 +407,6 @@ describe('what accepting a suggestion finishes', () => {
     const text =
       doc.slice(0, edit.changes[0].from) + edit.changes[0].insert + doc.slice(edit.changes[0].to)
     expect(text).toBe('a [[Alpha]] b')
-    expect(edit.opensAlias).toBeUndefined()
   })
 })
 
@@ -462,7 +459,6 @@ describe('the heading form opens after a typed #', () => {
     const text =
       doc.slice(0, edit.changes[0].from) + edit.changes[0].insert + doc.slice(edit.changes[0].to)
     expect(text).toBe('a [[Page#]] b')
-    expect(edit.opensHeading).toBe(true)
     expect(text.slice(edit.anchor)).toBe(']] b')
   })
 

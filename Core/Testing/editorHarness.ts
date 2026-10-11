@@ -274,3 +274,18 @@ export async function cleanupEditor(): Promise<void> {
   container?.remove()
   container = null
 }
+
+export async function typeInto(view: EditorView, text: string): Promise<void> {
+  for (const ch of text)
+    await act(async () => {
+      const at = view.state.selection.main.head
+      const insert = () =>
+        view.state.update({
+          changes: { from: at, insert: ch },
+          selection: { anchor: at + 1 },
+          userEvent: 'input.type',
+        })
+      if (!view.state.facet(EditorView.inputHandler).some((h) => h(view, at, at, ch, insert)))
+        view.dispatch(insert())
+    })
+}

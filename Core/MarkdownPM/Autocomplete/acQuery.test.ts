@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { EditorState, type TransactionSpec } from '@codemirror/state'
+import { EditorState } from '@codemirror/state'
 import { editorHost, type EditorSettings } from '../api'
 import { testHost } from '../../Testing/editorHarness'
 import { acQuery, closeAcQuery } from './acQuery'
@@ -19,17 +19,20 @@ const stateOf = (
   return { field, state }
 }
 
+const typed = (state: EditorState, at: number, text: string) =>
+  state.update({
+    changes: { from: at, insert: text },
+    selection: { anchor: at + text.length },
+    userEvent: 'input.type',
+  }).state
+
 describe('the picker’s query as editor state', () => {
   it('answers a typed query and keeps its object across a selection that changes nothing', () => {
     const { field, state } = stateOf('[[Pr', 4)
-    const typed = state.update({
-      changes: { from: 4, insert: 'o' },
-      selection: { anchor: 5 },
-      userEvent: 'input.type',
-    }).state
-    const q = typed.field(field).query
+    const next = typed(state, 4, 'o')
+    const q = next.field(field).query
     expect(q).toMatchObject({ query: 'Pro', form: 'link', closed: false })
-    expect(typed.update({ selection: { anchor: 5 } }).state.field(field).query).toBe(q)
+    expect(next.update({ selection: { anchor: 5 } }).state.field(field).query).toBe(q)
   })
 
   it('keeps its query object as the caret moves within the link', () => {
@@ -51,11 +54,7 @@ describe('the picker’s query as editor state', () => {
     expect(closed.field(field).query).toBeNull()
     const again = closed.update({ selection: { anchor: 4 } }).state
     expect(again.field(field).query).toBeNull()
-    const moved = again.update({
-      changes: { from: 5, insert: 'j' },
-      selection: { anchor: 6 },
-      userEvent: 'input.type',
-    }).state
+    const moved = typed(again, 5, 'j')
     expect(moved.field(field).query).toMatchObject({ query: 'Proj' })
   })
 
@@ -69,13 +68,6 @@ describe('the picker’s query as editor state', () => {
 })
 
 describe('the link the picker opened on', () => {
-  const typed = (state: EditorState, at: number, text: string) =>
-    state.update({
-      changes: { from: at, insert: text },
-      selection: { anchor: at + text.length },
-      userEvent: 'input.type',
-    }).state
-
   it('keeps the text it first read while the query continues', () => {
     const { field, state } = stateOf('[x](', 4)
     const opened = typed(state, 4, 'A')
@@ -109,11 +101,7 @@ describe('the link the picker opened on', () => {
     const { field, state } = stateOf('[x]()', 0)
     const placed = state.update({ selection: { anchor: 4 } }).state
     expect(placed.field(field).origin?.text).toBe('[x]()')
-    const sliding = placed.update({
-      changes: { from: 4, insert: 'Alpha#' },
-      selection: { anchor: 10 },
-      userEvent: 'input',
-    }).state
+    const sliding = typed(placed, 4, 'Alpha#')
     expect(sliding.field(field).query).toMatchObject({ form: 'fragment' })
     const back = sliding.update({
       changes: { from: 9, to: 10 },
@@ -143,14 +131,12 @@ describe('the link the picker opened on', () => {
 
 describe('the § arm', () => {
   const automatic = { inPageHeadingResolution: 'automatic' as const }
-  const type = (state: EditorState, spec: TransactionSpec) =>
-    state.update({ userEvent: 'input.type', ...spec }).state
 
   it('a typed § arms at its position, maps through an insert before it, and lapses off its line', () => {
     const { field, state } = stateOf('see \nnext', 4, automatic)
-    const armed = type(state, { changes: { from: 4, insert: '§' }, selection: { anchor: 5 } })
+    const armed = typed(state, 4, '§')
     expect(armed.field(field).armed).toBe(4)
-    const shifted = type(armed, { changes: { from: 0, insert: 'I ' }, selection: { anchor: 7 } })
+    const shifted = typed(armed, 0, 'I ')
     expect(shifted.field(field).armed).toBe(6)
     expect(
       shifted.update({ selection: { anchor: shifted.doc.length } }).state.field(field).armed,
@@ -159,13 +145,13 @@ describe('the § arm', () => {
 
   it('a deleted § disarms, so the text typed after it opens nothing', () => {
     const { field, state } = stateOf('see ', 4, automatic)
-    const armed = type(state, { changes: { from: 4, insert: '§' }, selection: { anchor: 5 } })
+    const armed = typed(state, 4, '§')
     const deleted = armed.update({
       changes: { from: 4, to: 5 },
       selection: { anchor: 4 },
       userEvent: 'delete.backward',
     }).state
-    const after = type(deleted, { changes: { from: 4, insert: 'x' }, selection: { anchor: 5 } })
+    const after = typed(deleted, 4, 'x')
     expect(after.field(field).armed).toBeNull()
     expect(after.field(field).query).toBeNull()
   })
@@ -187,13 +173,7 @@ describe('the raw-HTML stand-down', () => {
     const doc = '<div>\n[[Pr\n</div>'
     const typedIn = (settings: Partial<EditorSettings>) => {
       const { field, state } = stateOf(doc, 10, settings)
-      return state
-        .update({
-          changes: { from: 10, insert: 'o' },
-          selection: { anchor: 11 },
-          userEvent: 'input.type',
-        })
-        .state.field(field).query
+      return typed(state, 10, 'o').field(field).query
     }
     expect(typedIn({ htmlFormatting: true })).toBeNull()
     expect(typedIn({ htmlFormatting: false })).toMatchObject({ query: 'Pro' })

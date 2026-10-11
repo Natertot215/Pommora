@@ -80,7 +80,6 @@ export function AutocompletePane({
   const linksPages = v.ac.form === 'link' || v.ac.form === 'target'
   const headingForm = listsHeadings(v.ac.form)
   const sliding = v.behind !== null
-  const headingSlide = headingForm && sliding
 
   const slot = (rows: AcRow[], active: boolean): React.JSX.Element => (
     <MenuScrollFrame maxHeight={h}>
@@ -175,18 +174,18 @@ export function AutocompletePane({
     return walk(outlineTree(v.headingRows))
   }
 
-  const headingSlot = (rows: AcRow[]): React.JSX.Element => (
+  const headingSlot = (): React.JSX.Element => (
     <MenuScrollFrame
       maxHeight={h}
       header={
-        headingSlide ? <MenuTopRow label="Links" current={v.ac.title} onBack={onBack} /> : undefined
+        sliding ? <MenuTopRow label="Links" current={v.ac.title} onBack={onBack} /> : undefined
       }
     >
-      {v.ac.query !== '' ? rows.map((r, i) => headingRow(r, i)) : nested()}
+      {v.ac.query !== '' ? v.candidates.map((r, i) => headingRow(r, i)) : nested()}
     </MenuScrollFrame>
   )
 
-  const shown = slot(v.candidates, true)
+  const shown = headingForm ? headingSlot() : slot(v.candidates, true)
 
   return (
     <CaretPane open={open} at={v.ac} className="mdpm-ac" resize={resize}>
@@ -194,8 +193,8 @@ export function AutocompletePane({
         open={sliding}
         minWidth={w ?? AC_BOUNDS.min.w}
         maxWidth={w ?? AC_FIT_MAX}
-        root={v.behind ? slot(v.behind, false) : headingForm ? headingSlot(v.candidates) : shown}
-        detail={sliding ? (headingSlide ? headingSlot(v.candidates) : shown) : null}
+        root={v.behind ? slot(v.behind, false) : shown}
+        detail={sliding ? shown : null}
       />
     </CaretPane>
   )
