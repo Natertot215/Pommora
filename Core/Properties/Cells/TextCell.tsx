@@ -52,6 +52,11 @@ export function TextCell({
       onContextMenu={onContextMenu}
       onPointerOver={onPointerOver}
       onPointerOut={onPointerOut}
+      onPointerEnter={(e) => {
+        const line = e.currentTarget.querySelector('.cell-text')
+        if (line)
+          e.currentTarget.toggleAttribute('data-overflowing', line.scrollWidth > line.clientWidth)
+      }}
     >
       <div className="cell-text-clip">
         <div className={cx('cell-text', overScrollEllipsis)}>
