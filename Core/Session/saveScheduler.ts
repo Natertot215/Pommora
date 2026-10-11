@@ -113,6 +113,12 @@ export function setStaleSaveSink(fn: ((path: string, body: string) => void) | nu
   staleSink = fn
 }
 
+let writtenSink: ((path: string) => void) | null = null
+
+export function setWrittenSaveSink(fn: ((path: string) => void) | null): void {
+  writtenSink = fn
+}
+
 /** Where one body reads, writes, and keeps the text it loses: a page through its own channels, a markdown tile through its host's. */
 export interface BodyIO {
   writer: BodyWriter
@@ -130,7 +136,11 @@ export const pageIO: BodyIO = {
       r.ok ? ok({ body: r.value.body, hash: r.value.bodyHash }) : r,
     )
   },
-  write: (path, body, baseHash) => dialer().ask('page:updateBody', path, body, baseHash),
+  write: async (path, body, baseHash) => {
+    const res = await dialer().ask('page:updateBody', path, body, baseHash)
+    if (res.ok && !res.value.stale) writtenSink?.(path)
+    return res
+  },
   capture: (path, text) =>
     void persist('the conflicting version', dialer().ask('sync:captureLocal', path, text)),
   stale: (path, body) => staleSink?.(path, body),

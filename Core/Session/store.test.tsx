@@ -1230,6 +1230,19 @@ describe('store — the headings map (Task 2.3)', () => {
   })
 })
 
+describe('store — the headings map follows the app’s own rename', () => {
+  const outline = [{ text: 'Fresh', level: 2 }]
+
+  it('a page rename that lands reloads the headings under the new path', async () => {
+    useSession.setState({ tree: makeTree() })
+    channels['index:headings'] = vi.fn(async () => ok({ 'Notes/B.md': outline }))
+    await useSession
+      .getState()
+      .mutate({ op: 'rename', path: 'Notes/A.md', kind: 'page', newName: 'B' })
+    expect(channels['index:headings']).toHaveBeenCalledWith(['Notes/B.md'])
+  })
+})
+
 describe('store — a link title fetch answers with a promise', () => {
   it('resolves with the fetched title, and a second call before it lands shares the fetch', async () => {
     let answer!: (v: unknown) => void

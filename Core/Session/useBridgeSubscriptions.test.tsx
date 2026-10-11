@@ -35,6 +35,8 @@ let pushValues: (changes: ValueChange[]) => void
 let pushStatus: (status: SyncStatus) => void
 let replaceBody: ReturnType<typeof vi.fn<(path: string) => Promise<boolean>>>
 let captured: ReturnType<typeof vi.fn<(path: string, text: string) => unknown>>
+let updateBody: ReturnType<typeof vi.fn<(path: string, body: string) => Promise<unknown>>>
+let askHeadings: ReturnType<typeof vi.fn<(paths: string[]) => Promise<unknown>>>
 
 const showInSlot = (): void => {
   const target = { kind: 'page' as const, id: 'p1', path: PATH }
@@ -53,6 +55,8 @@ beforeEach(() => {
   clearCache()
   replaceBody = vi.fn(async (_path: string) => true)
   captured = vi.fn((_path: string, _text: string) => ok(null))
+  updateBody = vi.fn(async (_path: string, _body: string) => ok({ stale: true }))
+  askHeadings = vi.fn(async (_paths: string[]) => ok({}))
   useSession.setState({ replaceBody, syncStatus: null, pages: {} })
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
     'host:platform': async () => ok('posix'),
@@ -65,9 +69,9 @@ beforeEach(() => {
       landed = cb
       return () => undefined
     },
-    'page:updateBody': async () => ok({ stale: true }),
+    'page:updateBody': updateBody,
     'page:open': async (path: string) => ok(detail({ path })),
-    'index:headings': async () => ok({}),
+    'index:headings': askHeadings,
     'sync:captureLocal': captured,
     'sync:changed': (cb: (status: SyncStatus) => void) => {
       pushStatus = cb
@@ -174,6 +178,19 @@ describe('a page that changed outside the app', () => {
     scheduleBodySave(PATH, 'typed again', pageIO)
     await pageWriter.flush(PATH)
     expect(replaceBody).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('a body save the app makes itself', () => {
+  it('reloads that page’s headings once it lands, and asks nothing for a refused one', async () => {
+    askHeadings.mockImplementation(async () => ok({ [PATH]: [{ text: 'Fresh', level: 2 }] }))
+    await mount()
+    await act(async () => pageIO.write(PATH, 'refused', 'h0'))
+    expect(askHeadings).not.toHaveBeenCalled()
+    updateBody.mockImplementation(async () => ok({ stale: false, hash: 'h' }))
+    await act(async () => pageIO.write(PATH, '## Fresh', 'h0'))
+    expect(askHeadings).toHaveBeenCalledExactlyOnceWith([PATH])
+    expect(useSession.getState().headings[PATH]?.texts).toEqual(['Fresh'])
   })
 })
 
