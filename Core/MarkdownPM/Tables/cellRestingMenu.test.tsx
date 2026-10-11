@@ -2,7 +2,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, createElement } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
+import { EditorView } from '@codemirror/view'
 import { MarkdownTable } from './MarkdownTable'
+import { cellToSource } from '../Engine/Tables/codec'
 import { tableStubs, testHost } from '../../Testing/editorHarness'
 import type { EditorMenuRequest } from '../../Actions/editorMenu'
 
@@ -15,7 +17,9 @@ if (!('ResizeObserver' in globalThis)) {
   }
 }
 
+let reply: (action: string | null) => void = () => {}
 const format = vi.fn<(req: EditorMenuRequest) => Promise<string | null>>()
+const committed = vi.fn<(row: number, col: number, text: string) => void>()
 let readOnly = false
 
 let container: HTMLDivElement
@@ -24,7 +28,13 @@ let cellText = ''
 
 beforeEach(() => {
   format.mockReset()
-  format.mockResolvedValue(null)
+  format.mockImplementation(
+    () =>
+      new Promise((resolve) => {
+        reply = resolve
+      }),
+  )
+  committed.mockReset()
   readOnly = false
 })
 
@@ -37,17 +47,26 @@ afterEach(async () => {
 
 const host = testHost({ menus: { format } })
 
+const table = (): React.ReactElement =>
+  createElement(MarkdownTable, {
+    ...tableStubs,
+    host,
+    model: {
+      columns: [{ align: null, dashes: 3 }],
+      header: ['A'],
+      rows: [[cellToSource(cellText)]],
+    },
+    readOnly: () => readOnly,
+    cellAt: () => cellToSource(cellText),
+    onCellCommit: (row, col, text) => {
+      committed(row, col, text)
+      cellText = text
+    },
+    onSettled: () => root.render(table()),
+  })
+
 function draw(): Promise<void> {
-  return act(async () =>
-    root.render(
-      createElement(MarkdownTable, {
-        ...tableStubs,
-        host,
-        model: { columns: [{ align: null, dashes: 3 }], header: ['A'], rows: [[cellText]] },
-        readOnly: () => readOnly,
-      }),
-    ),
-  )
+  return act(async () => root.render(table()))
 }
 
 async function mount(text: string): Promise<void> {
@@ -96,6 +115,18 @@ function select(drawnFrom: string, from: number, drawnTo: string, to: number): v
 }
 
 const entered = (): boolean => container.querySelector('.cm-editor') !== null
+
+async function choose(action: string | null): Promise<void> {
+  await act(async () => {
+    reply(action)
+    await new Promise((r) => setTimeout(r, 0))
+  })
+}
+
+function liveCell(): EditorView | null {
+  const dom = container.querySelector('.mdpm-tbl-cell-editor .cm-content')
+  return dom && EditorView.findFromDOM(dom as HTMLElement)
+}
 
 describe('a right-click on a resting cell', () => {
   it('asks the editor menu at rest, at the click, and leaves the cell resting', async () => {
@@ -153,6 +184,72 @@ describe('a right-click on a resting cell', () => {
     await mount('**a** bc')
     await rightClick('a', 1)
     expect(format).not.toHaveBeenCalled()
+    expect(entered()).toBe(false)
+  })
+})
+
+describe('a row chosen at rest', () => {
+  it('commits Bold over a selection without entering the cell', async () => {
+    await mount('ab cd')
+    select('ab cd', 3, 'ab cd', 5)
+    await rightClick('ab cd', 4)
+    await choose('format:bold')
+    expect(committed).toHaveBeenLastCalledWith(1, 0, 'ab **cd**')
+    expect(entered()).toBe(false)
+  })
+
+  it('enters the cell with the caret in the slot Bold writes at a point', async () => {
+    await mount('ab cd')
+    await rightClick('ab cd', 3)
+    await choose('format:bold')
+    expect(committed).toHaveBeenLastCalledWith(1, 0, 'ab ****cd')
+    expect(liveCell()?.state.doc.toString()).toBe('ab ****cd')
+    expect(liveCell()?.state.selection.main.head).toBe(5)
+  })
+
+  it('commits Lists ▸ Bulleted at a point and stays at rest', async () => {
+    await mount('ab')
+    await rightClick('ab', 1)
+    await choose('list:bullet')
+    expect(committed).toHaveBeenLastCalledWith(1, 0, '- ab')
+    expect(entered()).toBe(false)
+  })
+
+  it('enters with the caret inside the empty address External Link writes over a selection', async () => {
+    await mount('ab cd')
+    select('ab cd', 3, 'ab cd', 5)
+    await rightClick('ab cd', 4)
+    await choose('format:link')
+    expect(committed).toHaveBeenLastCalledWith(1, 0, 'ab [cd]()')
+    expect(liveCell()?.state.doc.toString()).toBe('ab [cd]()')
+    expect(liveCell()?.state.selection.main.head).toBe(8)
+  })
+
+  it('commits Connection over a selection and stays at rest', async () => {
+    await mount('ab cd')
+    select('ab cd', 3, 'ab cd', 5)
+    await rightClick('ab cd', 4)
+    await choose('format:connection')
+    expect(committed).toHaveBeenLastCalledWith(1, 0, 'ab [[cd]]')
+    expect(entered()).toBe(false)
+  })
+
+  it('commits Insert Link over an address, its target given the scheme', async () => {
+    await mount('see example.com')
+    select('see example.com', 4, 'see example.com', 15)
+    await rightClick('see example.com', 6)
+    await choose('link:insert')
+    expect(committed).toHaveBeenLastCalledWith(1, 0, 'see [example.com](https://example.com)')
+    expect(entered()).toBe(false)
+  })
+
+  it('stands down when the cell moved while the menu stood open', async () => {
+    await mount('ab cd')
+    await rightClick('ab cd', 3)
+    cellText = 'moved'
+    await draw()
+    await choose('format:bold')
+    expect(committed).not.toHaveBeenCalled()
     expect(entered()).toBe(false)
   })
 })

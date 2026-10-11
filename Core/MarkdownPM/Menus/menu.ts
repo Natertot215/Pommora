@@ -1,8 +1,6 @@
 import { Prec, type Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
-import { INSERT_LINK_ACTION, PASTE_LITERAL_ACTION } from '../../Actions/editorMenu'
-import { isValidLink, normalizeLinkUrl } from '../../Paths/urlPath'
-import { serializeLink } from '../../Connections/linkValue'
+import { PASTE_LITERAL_ACTION } from '../../Actions/editorMenu'
 import { PASTE_AS_PREFIX, type PasteAsForm } from '../../Actions/pasteAsMenu'
 import { citationSeatAt, insertCitation } from '../Citations/citationActions'
 import { embedInsertAtCaret, embedSeatAt, webpageInsertAtCaret } from '../Embeds/embedInsert'
@@ -11,31 +9,13 @@ import { readFormatState } from '../Input/formatState'
 import type { MarkdownScope } from '../Engine/detect'
 import { editorHost } from '../api'
 import { applyEdit } from '../Input/applyEdit'
-import { docScan, docString } from '../docCache'
+import { docScan } from '../docCache'
 import { editFor } from '../Input/format'
-import { trimmedRange } from '../Engine/markdownCode'
-
-/** The selected words stay the label, so a schemeless address keeps its bare form while its target gains the scheme. */
-function insertLinkOverSelection(view: EditorView): boolean {
-  const sel = view.state.selection.main
-  const [from, to] = trimmedRange(docString(view.state.doc), sel.from, sel.to)
-  const text = view.state.sliceDoc(from, to)
-  if (!text.trim() || !isValidLink(text)) return false
-  const insert = serializeLink(normalizeLinkUrl(text), text)
-  view.dispatch({
-    changes: { from, to, insert },
-    selection: { anchor: from + insert.length },
-    userEvent: 'input',
-  })
-  view.focus()
-  return true
-}
 
 /** Runs the menu's, the block pane's, or a chord's action on the view handed in. */
 export function applyEditorAction(view: EditorView, action: string): boolean {
   if (action === 'block:page') return embedInsertAtCaret(view)
   if (action === 'block:webpage') return webpageInsertAtCaret(view)
-  if (action === INSERT_LINK_ACTION) return insertLinkOverSelection(view)
   if (action === 'block:citation') return insertCitation(view)
   if (action === PASTE_LITERAL_ACTION) {
     void pasteFromClipboard(view, 'literal')
