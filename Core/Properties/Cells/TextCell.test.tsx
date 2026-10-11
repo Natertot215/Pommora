@@ -87,6 +87,44 @@ describe('a Text value draws against the page that holds it', () => {
     expect(bubbled).toHaveBeenCalledOnce()
   })
 
+  it('declines the link menu when told to, leaving the right-click to the value', async () => {
+    const menu = vi.fn(async () => null)
+    const parent = vi.fn()
+    const mountWith = async (props: { menu?: boolean }): Promise<HTMLElement> => {
+      host = document.createElement('div')
+      document.body.appendChild(host)
+      root = createRoot(host)
+      await act(async () =>
+        root?.render(
+          createElement(
+            'div',
+            { onContextMenu: parent },
+            createElement(TextCell, {
+              text: '[[Holder]]',
+              connections: () => ({ ...conn, menu }),
+              ...props,
+            }),
+          ),
+        ),
+      )
+      return host.querySelector('[data-link]') as HTMLElement
+    }
+    const rightClick = (el: HTMLElement) =>
+      act(async () => {
+        el.dispatchEvent(
+          new MouseEvent('contextmenu', { bubbles: true, cancelable: true, button: 2 }),
+        )
+      })
+    await rightClick(await mountWith({ menu: false }))
+    expect(menu).not.toHaveBeenCalled()
+    expect(parent).toHaveBeenCalledOnce()
+    act(() => root?.unmount())
+    root = null
+    await rightClick(await mountWith({}))
+    expect(menu).toHaveBeenCalledOnce()
+    expect(parent).toHaveBeenCalledOnce()
+  })
+
   it('redraws when its holder’s headings change in the session', async () => {
     const el = await mount()
     expect(el.querySelector('.md-section-run')).not.toBeNull()

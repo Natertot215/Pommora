@@ -8,7 +8,10 @@ import { buildPageIndex } from '../../Connections/pageIndex'
 import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'
 import { glanceHost } from '../../Interface/Glance/glanceAction'
 import { solidColorCss } from '@pommora/uix/Theme/ramp'
+import { openWebLink } from '../../Web/openWebLink'
 import { LinkCell } from './LinkCell'
+
+vi.mock('../../Web/openWebLink', () => ({ openWebLink: vi.fn() }))
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 if (!('ResizeObserver' in globalThis)) {
   ;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = class {
@@ -110,8 +113,9 @@ describe('a Link value naming a page draws and follows as every link does', () =
 })
 
 describe('a Link value holding an address or plain text keeps the property’s own look', () => {
-  it('an address draws in the property color and arms the glance on pointer over', async () => {
+  it('an address draws in the property color, arms the glance on pointer over, and a click drops the dwell', async () => {
     const arm = vi.spyOn(glanceHost, 'arm').mockImplementation(() => {})
+    const cancel = vi.spyOn(glanceHost, 'cancel').mockImplementation(() => {})
     const el = await mount('https://a.com')
     const link = el.querySelector('a.cell-link') as HTMLAnchorElement
     expect(link.textContent).toBe('https://a.com')
@@ -120,6 +124,9 @@ describe('a Link value holding an address or plain text keeps the property’s o
       link.dispatchEvent(new MouseEvent('pointerover', { bubbles: true }))
     })
     expect(arm).toHaveBeenCalledWith({ kind: 'url', url: 'https://a.com' }, link)
+    await click(link)
+    expect(cancel).toHaveBeenCalledOnce()
+    expect(openWebLink).toHaveBeenCalledWith('https://a.com')
   })
 
   it('text that names nothing draws as the address half and lets a click bubble', async () => {

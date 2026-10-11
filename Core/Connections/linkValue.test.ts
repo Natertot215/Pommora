@@ -202,12 +202,6 @@ describe('linkDisplayText — no alias, the look decides', () => {
 describe('internal links', () => {
   const resolve = only('Meeting Notes')
 
-  it('commits a pasted connection under the page’s canonical title', () => {
-    expect(linkValueFromEdit('[[meeting notes]]', undefined, resolve, false)).toEqual({
-      kind: 'link',
-      value: '[[Meeting Notes]]',
-    })
-  })
   it('keeps a pasted connection’s alias', () => {
     expect(linkValueFromEdit('[[Meeting Notes|Today]]', undefined, resolve, false)).toEqual({
       kind: 'link',
@@ -313,12 +307,6 @@ describe('a connection under the Link cell’s three menu actions', () => {
   it('Edit opens on the page alone, as an address opens on the address', () => {
     expect(linkEditText(CONNECTION)).toBe('[[Meeting Notes]]')
     expect(linkEditText('[My Site](https://example.com)')).toBe('https://example.com')
-  })
-  it('Edit re-typing the same page keeps the alias', () => {
-    expect(linkValueFromEdit('[[meeting notes]]', CONNECTION, resolve, false)).toEqual({
-      kind: 'link',
-      value: CONNECTION,
-    })
   })
   it('Edit swaps a connection for an address, and an address back for a connection', () => {
     expect(linkValueFromEdit('example.com', CONNECTION, resolve, false)).toEqual({

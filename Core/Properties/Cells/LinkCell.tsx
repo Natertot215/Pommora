@@ -65,6 +65,7 @@ export function LinkCell({
         onClick={(e) => {
           e.preventDefault()
           if (isSecondaryClick(e)) return
+          glanceHost.cancel()
           const go = resolveFollow(target, own, api, e, openWebLink)
           if (!go) return
           e.stopPropagation()
