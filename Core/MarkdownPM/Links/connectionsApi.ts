@@ -16,7 +16,7 @@ import type {
 } from '../../Actions/connectionMenu'
 import { targetFragment, targetTitle } from '../../Connections/links'
 import { isValidLink } from '../../Paths/urlPath'
-import type { ConnPage, PageIndex } from '../../Connections/pageIndex'
+import type { ConnPage, PageHeadings, PageIndex } from '../../Connections/pageIndex'
 import type { TrailSegment } from '@pommora/uix/Elements/NavTrail'
 
 /** `apply` closes over the span it was built for, so no caller can aim an action at a link the menu wasn't popped on; its absence marks a display-only surface. */
@@ -46,7 +46,7 @@ export interface ConnectionsApi extends PageIndex {
   open: (page: ConnPage, heading?: string) => void
   menu?: (target: ConnMenuTarget) => void
   bypass?: (page: ConnPage, heading?: string) => void
-  headingsOf?: (path: string) => string[] | undefined
+  headingsOf?: (path: string) => PageHeadings | undefined
   location?: (pageId: string) => TrailSegment[]
 }
 
@@ -135,7 +135,7 @@ export function headingMissing(
   ownKeys: readonly string[] | undefined,
 ): boolean {
   if ((target.kind !== 'page' && target.kind !== 'self') || !target.heading) return false
-  const known = target.kind === 'self' ? ownKeys : conn?.headingsOf?.(target.page.path)
+  const known = target.kind === 'self' ? ownKeys : conn?.headingsOf?.(target.page.path)?.keys
   return known !== undefined && !known.includes(normalizeTitle(target.heading))
 }
 

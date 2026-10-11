@@ -5,6 +5,7 @@ import type {
   CaptureStore,
   ContentIndexStore,
   KeyValueStore,
+  PageHeading,
   PageIndexEntry,
   RelationKind,
   Relation,
@@ -52,6 +53,11 @@ export function describeKeyValueStore(name: string, make: () => KeyValueStore): 
     })
   })
 }
+
+const OUTLINE: PageHeading[] = [
+  { text: 'Setup', level: 2 },
+  { text: 'Intro', level: 3 },
+]
 
 export function describeContentIndexStore(name: string, make: () => ContentIndexStore): void {
   describe(name, () => {
@@ -152,14 +158,14 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
     it('round-trips headings and heading mentions, then carries them across a rename', () => {
       upsert('Notes/A.md', {
         relations: [body('beta', 'setup')],
-        headings: ['setup', 'intro'],
+        headings: OUTLINE,
         values: {},
       })
-      expect(store.readHeadings()).toEqual({ 'Notes/A.md': ['setup', 'intro'] })
-      expect(store.readHeadings(['Notes/A.md'])).toEqual({ 'Notes/A.md': ['setup', 'intro'] })
+      expect(store.readHeadings()).toEqual({ 'Notes/A.md': OUTLINE })
+      expect(store.readHeadings(['Notes/A.md'])).toEqual({ 'Notes/A.md': OUTLINE })
       expect(store.queryHeadingMentions('beta', 'setup')).toEqual(['Notes/A.md'])
       store.renamePathIndex('Notes/A.md', 'Notes/Alpha.md')
-      expect(store.readHeadings()).toEqual({ 'Notes/Alpha.md': ['setup', 'intro'] })
+      expect(store.readHeadings()).toEqual({ 'Notes/Alpha.md': OUTLINE })
       expect(store.queryHeadingMentions('beta', 'setup')).toEqual(['Notes/Alpha.md'])
     })
 

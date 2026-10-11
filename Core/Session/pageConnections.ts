@@ -5,6 +5,7 @@ import { useSession } from './store'
 import { personalizationOf } from './configSlice'
 import { settingOf } from '../Settings/personalization'
 import { pageIndexOf, recordsByIdOf } from '../Nexus/treeIndex'
+import type { PageHeadings } from '../Connections/pageIndex'
 
 type Mode = 'preview' | 'window' | 'inert'
 type Session = ReturnType<typeof useSession.getState>
@@ -28,7 +29,7 @@ function connectionsOf(s: Session, mode: Mode): ConnectionsApi | undefined {
   function build(): ConnectionsApi | undefined {
     if (!tree) return undefined
     const index = pageIndexOf(tree)
-    const headingsOf = (path: string): string[] | undefined => headings[path]
+    const headingsOf = (path: string): PageHeadings | undefined => headings[path]
     const location = (id: string): TrailSegment[] =>
       recordsByIdOf(tree).get(id)?.parents ?? NO_TRAIL
     if (mode === 'inert') return { ...index, open: () => {}, headingsOf, location }

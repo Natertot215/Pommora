@@ -6,6 +6,7 @@ import type {
   ContentIndexStore,
   IndexedStat,
   KeyValueStore,
+  PageHeading,
   PageRelationRow,
   PageRelations,
   RelationRow,
@@ -18,7 +19,7 @@ import type {
 
 interface MemoryIndex {
   relations: Map<string, RelationRow>
-  headings: Map<string, { path: string; heading: string; ordinal: number }>
+  headings: Map<string, { path: string; text: string; level: number; ordinal: number }>
   values: Map<string, { path: string; key: string; value: string }>
   stats: Map<string, IndexedStat>
 }
@@ -68,7 +69,7 @@ const tableOf = <R extends { path: string }>(
 const contentIndex = (index: MemoryIndex): ContentIndexStore => {
   const tables: IndexTable[] = [
     tableOf(index.relations, (r) => [r.kind, r.target, r.qualifier]),
-    tableOf(index.headings, (r) => [r.heading]),
+    tableOf(index.headings, (r) => [String(r.ordinal)]),
     tableOf(index.values, (r) => [r.key]),
   ]
   const clearPath = (path: string): void => {
@@ -86,8 +87,8 @@ const contentIndex = (index: MemoryIndex): ContentIndexStore => {
             path,
             ...relation,
           })
-        entry.headings.forEach((heading, ordinal) => {
-          index.headings.set(k(path, heading), { path, heading, ordinal })
+        entry.headings.forEach(({ text, level }, ordinal) => {
+          index.headings.set(k(path, String(ordinal)), { path, text, level, ordinal })
         })
         for (const [key, value] of Object.entries(entry.values))
           index.values.set(k(path, key), { path, key, value: JSON.stringify(value) ?? 'null' })
@@ -143,13 +144,13 @@ const contentIndex = (index: MemoryIndex): ContentIndexStore => {
       )
     },
     readHeadings(paths) {
-      const out: Record<string, string[]> = {}
+      const out: Record<string, PageHeading[]> = {}
       for (const p of paths ?? index.stats.keys()) out[p] = []
       const rows = [...index.headings.values()].sort((a, b) => a.ordinal - b.ordinal)
-      for (const { path, heading } of rows) {
+      for (const { path, text, level } of rows) {
         if (paths && !paths.includes(path)) continue
         out[path] ??= []
-        out[path].push(heading)
+        out[path].push({ text, level })
       }
       return out
     },

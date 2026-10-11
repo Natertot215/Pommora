@@ -510,7 +510,15 @@ describe('matrixRuntime', () => {
     attach()
     flush()
     const passed = passes.count
-    useSession.setState({ headings: { 'Notes/Alpha.md': ['intro'] } })
+    useSession.setState({
+      headings: {
+        'Notes/Alpha.md': {
+          keys: ['intro'],
+          texts: ['Intro'],
+          outline: [{ text: 'Intro', level: 2 }],
+        },
+      },
+    })
     expect(passes.count).toBe(passed)
   })
 

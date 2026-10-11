@@ -30,15 +30,17 @@ async function mountBundles(mode: 'preview' | 'window' | 'inert'): Promise<Conne
   return bundles
 }
 
+const SETUP = { keys: ['setup'], texts: ['Setup'], outline: [{ text: 'Setup', level: 2 }] }
+
 describe('one hook builds every connections bundle', () => {
   it('an inert bundle re-resolves when a page’s headings change', async () => {
     useSession.setState({ tree: makeTree(), headings: {} })
     const bundles = await mountBundles('inert')
-    act(() => useSession.setState({ headings: { 'Notes/Alpha.md': ['setup'] } }))
+    act(() => useSession.setState({ headings: { 'Notes/Alpha.md': SETUP } }))
     const first = bundles[0]
     const last = bundles[bundles.length - 1]
     expect(last).not.toBe(first)
-    expect(last.headingsOf?.('Notes/Alpha.md')).toEqual(['setup'])
+    expect(last.headingsOf?.('Notes/Alpha.md')).toBe(SETUP)
     expect(last.menu).toBeUndefined()
   })
 

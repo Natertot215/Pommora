@@ -105,7 +105,14 @@ describe('both syntaxes and both renderers agree', () => {
   })
 
   it('the cell renderer reads an alias over a heading, and reads it missing as the editor does', async () => {
-    const missing = { ...conn, headingsOf: () => ['setup'] }
+    const missing = {
+      ...conn,
+      headingsOf: () => ({
+        keys: ['setup'],
+        texts: ['Setup'],
+        outline: [{ text: 'Setup', level: 2 }],
+      }),
+    }
     cellHost = document.createElement('div')
     document.body.appendChild(cellHost)
     cellRoot = createRoot(cellHost)

@@ -20,7 +20,7 @@ afterEach(async () => {
 const conn: ConnectionsApi = {
   ...buildPageIndex([{ id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' }]),
   open: () => {},
-  headingsOf: () => ['setup'],
+  headingsOf: () => ({ keys: ['setup'], texts: ['Setup'], outline: [{ text: 'Setup', level: 2 }] }),
 }
 
 describe('an aliased connection reads as its alias', () => {

@@ -23,7 +23,10 @@ if (!('ResizeObserver' in globalThis)) {
 const conn: ConnectionsApi = {
   ...buildPageIndex([{ id: 'p1', title: 'Quarterly Plan', path: 'N/Quarterly Plan.md' }]),
   open: () => {},
-  headingsOf: (path) => (path === 'N/Quarterly Plan.md' ? ['setup'] : undefined),
+  headingsOf: (path) =>
+    path === 'N/Quarterly Plan.md'
+      ? { keys: ['setup'], texts: ['Setup'], outline: [{ text: 'Setup', level: 2 }] }
+      : undefined,
 }
 
 const model: TableModel = {

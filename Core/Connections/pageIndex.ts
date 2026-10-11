@@ -1,5 +1,6 @@
 import type { LinkStatus } from './connections'
 import { compareTitles, normalizeTitle } from '../Paths/caseFold'
+import type { PageHeading } from '../Platform/stores'
 
 export interface ConnPage {
   id: string
@@ -12,6 +13,16 @@ export interface ConnResolution {
   status: LinkStatus
   page?: ConnPage
 }
+
+export interface PageHeadings {
+  keys: string[]
+  texts: string[]
+  outline: PageHeading[]
+}
+
+export const headingKeys = (headings: readonly PageHeading[]): string[] => [
+  ...new Set(headings.map((h) => normalizeTitle(h.text))),
+]
 
 export interface PageIndex {
   resolve: (rawTitle: string) => ConnResolution

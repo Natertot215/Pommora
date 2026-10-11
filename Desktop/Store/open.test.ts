@@ -124,6 +124,28 @@ describe('openNexusDb', () => {
     second.close()
   })
 
+  it('a generation-11 index drops its key-only headings table and recreates it with text and level', () => {
+    expect(INDEX_GENERATION).toBe(12)
+    const first = opened()
+    first.exec(
+      'DROP TABLE headings; CREATE TABLE headings (path TEXT NOT NULL, heading TEXT NOT NULL, ordinal INTEGER NOT NULL, PRIMARY KEY (path, heading));',
+    )
+    first.prepare("INSERT INTO headings (path, heading, ordinal) VALUES ('a.md', 'setup', 0)").run()
+    first
+      .prepare("INSERT OR REPLACE INTO meta (key, value) VALUES ('index_generation', '11')")
+      .run()
+    first.close()
+
+    const second = opened()
+    const columns = (second.prepare('PRAGMA table_info(headings)').all() as { name: string }[]).map(
+      (c) => c.name,
+    )
+    expect(columns).toEqual(['path', 'text', 'level', 'ordinal'])
+    for (const table of INDEX_TABLES) expect(count(second, table)).toBe(0)
+    expect(readMeta(second, 'index_generation')).toBe('12')
+    second.close()
+  })
+
   it('an index of another generation whose page_values has no fold column rebuilds into the current shape', () => {
     const first = opened()
     first.exec(

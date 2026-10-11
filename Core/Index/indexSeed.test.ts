@@ -143,13 +143,18 @@ describe('seedContentIndex', () => {
     expect(queryMembers('<Areas>', 'pommora')).toEqual([])
   })
 
-  it('records a page’s heading keys and its heading links to another page', async () => {
+  it('records a page’s headings as text and level, and its heading links to another page', async () => {
     await writeFile(
       abs('Notes', 'A.md'),
-      `---\nID: ${ULID_A}\n---\n\n## Setup\n\nlinks [[B#Intro]]\n`,
+      `---\nID: ${ULID_A}\n---\n\n## Setup\n### Notes\n\nlinks [[B#Intro]]\n`,
     )
     await seedContentIndex(root)
-    expect(readHeadings()).toMatchObject({ 'Notes/A.md': ['setup'] })
+    expect(readHeadings()).toMatchObject({
+      'Notes/A.md': [
+        { text: 'Setup', level: 2 },
+        { text: 'Notes', level: 3 },
+      ],
+    })
     expect(queryHeadingMentions('b', 'intro')).toEqual(['Notes/A.md'])
   })
 

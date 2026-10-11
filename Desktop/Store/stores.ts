@@ -4,6 +4,7 @@ import type {
   ContentIndexStore,
   IndexedStat,
   KeyValueStore,
+  PageHeading,
   PageRelations,
   PageRelationRow,
   SyncStore,
@@ -52,7 +53,7 @@ export const contentIndexStore = (db: Db): ContentIndexStore => ({
       'INSERT OR REPLACE INTO relations (path, kind, target, qualifier, count) VALUES (?, ?, ?, ?, ?)',
     )
     const insHeading = db.prepare(
-      'INSERT OR REPLACE INTO headings (path, heading, ordinal) VALUES (?, ?, ?)',
+      'INSERT OR REPLACE INTO headings (path, text, level, ordinal) VALUES (?, ?, ?, ?)',
     )
     const insValue = db.prepare(
       'INSERT OR REPLACE INTO page_values (path, key, fold, value) VALUES (?, ?, ?, ?)',
@@ -65,8 +66,8 @@ export const contentIndexStore = (db: Db): ContentIndexStore => ({
         clearPath(db, path)
         for (const { kind, target, qualifier, count } of entry.relations)
           insRelation.run(path, kind, target, qualifier, count)
-        entry.headings.forEach((heading, ordinal) => {
-          insHeading.run(path, heading, ordinal)
+        entry.headings.forEach(({ text, level }, ordinal) => {
+          insHeading.run(path, text, level, ordinal)
         })
         for (const [key, value] of Object.entries(entry.values))
           insValue.run(path, key, foldKey(key), JSON.stringify(value) ?? 'null')
@@ -116,16 +117,16 @@ export const contentIndexStore = (db: Db): ContentIndexStore => ({
       only
         ? db
             .prepare(
-              `SELECT path, heading FROM headings WHERE path IN ${PATHS_OF} ORDER BY path, ordinal`,
+              `SELECT path, text, level FROM headings WHERE path IN ${PATHS_OF} ORDER BY path, ordinal`,
             )
             .all(JSON.stringify(only))
-        : db.prepare('SELECT path, heading FROM headings ORDER BY path, ordinal').all()
-    ) as { path: string; heading: string }[]
-    const out: Record<string, string[]> = {}
+        : db.prepare('SELECT path, text, level FROM headings ORDER BY path, ordinal').all()
+    ) as { path: string; text: string; level: number }[]
+    const out: Record<string, PageHeading[]> = {}
     for (const p of only ?? paths(db, 'SELECT path FROM indexed_files')) out[p] = []
-    for (const { path, heading } of rows) {
+    for (const { path, text, level } of rows) {
       out[path] ??= []
-      out[path].push(heading)
+      out[path].push({ text, level })
     }
     return out
   },

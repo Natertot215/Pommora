@@ -31,6 +31,7 @@ import { machine } from '../Platform/machine'
 import { readTextOrNull } from '../Files/atomicWrite'
 import { corpusFiles, corpusFilesUnder } from '../Files/walk'
 import { outsideContent } from '../Paths/exclusion'
+import { headingKeys } from '../Connections/pageIndex'
 
 import { readWatchScope } from '../Settings/settings'
 
@@ -49,7 +50,8 @@ function extractPageIndex(rel: string, content: string): PageRead {
   const own = titleFromPath(rel)
   const { body } = splitEnvelope(content)
   const scan = scanDoc(body)
-  const outline = headingOutlineOf(scan).map((h) => h.text)
+  const headings = headingOutlineOf(scan).filter((h) => normalizeTitle(h.text) !== '')
+  const outline = headings.map((h) => h.text)
   const tally = new Map<string, Relation>()
   // A NUL separator: no normalized title or Context key can hold one, so the three parts never blur.
   const add = (kind: RelationKind, target: string, qualifier: string): void => {
@@ -68,8 +70,14 @@ function extractPageIndex(rel: string, content: string): PageRead {
   for (const { target, qualifier } of frontmatterMentions(values, own))
     add('frontmatter', target, qualifier)
   for (const { target, qualifier } of spaceRelations(values)) add('space', target, qualifier)
-  const headings = [...new Set(outline.map(normalizeTitle))].filter(Boolean)
-  return { entry: { relations: [...tally.values()], headings, values }, outline }
+  return {
+    entry: {
+      relations: [...tally.values()],
+      headings: headings.map(({ text, level }) => ({ text, level })),
+      values,
+    },
+    outline,
+  }
 }
 
 // Every `<Title>` key counts, registered or not — the same latitude page_values gives an unregistered property name, so a Context created later finds its holders.
@@ -142,8 +150,8 @@ function reindex(rows: readonly ReadRow[]): HeadingRenameSeen[] {
   const held = readHeadings(rows.map(({ path }) => path)) ?? {}
   upsertPageIndexes(rows)
   return rows.flatMap(({ path, entry, outline }) => {
-    const before = held[path] ?? []
-    const after = entry.headings
+    const before = headingKeys(held[path] ?? [])
+    const after = headingKeys(entry.headings)
     if (after.length !== before.length) return []
     const gone = before.filter((k) => !after.includes(k))
     const fresh = after.filter((k) => !before.includes(k))

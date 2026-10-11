@@ -64,12 +64,12 @@ describe('the content index over SQLite', () => {
     store.upsertPageIndexes([
       {
         path: 'Notes/A.md',
-        entry: { relations: [], headings: ['setup'], values: {} },
+        entry: { relations: [], headings: [{ text: 'Setup', level: 2 }], values: {} },
         stat: { mtimeMs: 1, size: 1 },
       },
     ])
     const only = ['Notes/A.md', ...Array.from({ length: 40_000 }, (_, i) => `Notes/${i}.md`)]
-    expect(store.readHeadings(only)['Notes/A.md']).toEqual(['setup'])
+    expect(store.readHeadings(only)['Notes/A.md']).toEqual([{ text: 'Setup', level: 2 }])
     expect(Object.keys(store.readPageRelations(only).pages)).toEqual(['Notes/A.md'])
   })
 
@@ -78,7 +78,11 @@ describe('the content index over SQLite', () => {
     const stat = { mtimeMs: 1, size: 1 }
     expect(() =>
       store.upsertPageIndexes([
-        { path: 'Notes/A.md', entry: { relations: [], headings: ['a'], values: {} }, stat },
+        {
+          path: 'Notes/A.md',
+          entry: { relations: [], headings: [{ text: 'A', level: 1 }], values: {} },
+          stat,
+        },
         {
           path: 'Notes/B.md',
           entry: { relations: [], headings: [], values: { Count: BigInt(1) } },

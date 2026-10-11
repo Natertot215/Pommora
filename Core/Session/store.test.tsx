@@ -1174,44 +1174,58 @@ describe('store — a Nexus switch lands every owed save first', () => {
 })
 
 describe('store — the headings map (Task 2.3)', () => {
+  const h2 = (text: string) => [{ text, level: 2 }]
+  const read = (text: string, key: string) => ({ keys: [key], texts: [text], outline: h2(text) })
+
+  it('a reply lands as the keys, texts, and outline the session reads', async () => {
+    channels['index:headings'] = vi.fn(async () => ({
+      ok: true,
+      value: { 'A.md': [{ text: 'Setup', level: 2 }] },
+    }))
+    await useSession.getState().loadHeadings()
+    expect(useSession.getState().headings).toEqual({
+      'A.md': { keys: ['setup'], texts: ['Setup'], outline: [{ text: 'Setup', level: 2 }] },
+    })
+  })
+
   it('a full load replaces the map; a partial load keeps unrelated keys', async () => {
     channels['index:headings'] = vi.fn(async () => ({
       ok: true,
-      value: { 'Notes/A.md': ['setup'] },
+      value: { 'Notes/A.md': h2('Setup') },
     }))
     await useSession.getState().loadHeadings()
-    expect(useSession.getState().headings).toEqual({ 'Notes/A.md': ['setup'] })
+    expect(useSession.getState().headings).toEqual({ 'Notes/A.md': read('Setup', 'setup') })
 
     channels['index:headings'] = vi.fn(async () => ({
       ok: true,
-      value: { 'Notes/B.md': ['intro'] },
+      value: { 'Notes/B.md': h2('Intro') },
     }))
     await useSession.getState().loadHeadings(['Notes/B.md'])
     expect(useSession.getState().headings).toEqual({
-      'Notes/A.md': ['setup'],
-      'Notes/B.md': ['intro'],
+      'Notes/A.md': read('Setup', 'setup'),
+      'Notes/B.md': read('Intro', 'intro'),
     })
 
-    channels['index:headings'] = vi.fn(async () => ({ ok: true, value: { 'Notes/C.md': ['x'] } }))
+    channels['index:headings'] = vi.fn(async () => ({ ok: true, value: { 'Notes/C.md': h2('X') } }))
     await useSession.getState().loadHeadings()
-    expect(useSession.getState().headings).toEqual({ 'Notes/C.md': ['x'] })
+    expect(useSession.getState().headings).toEqual({ 'Notes/C.md': read('X', 'x') })
   })
 
   it('a partial load asked after a full one lands after it, so the full answer never overwrites it', async () => {
     let answerFull!: (v: unknown) => void
     channels['index:headings'] = vi.fn((paths?: string[]) =>
       paths
-        ? Promise.resolve({ ok: true, value: { 'Notes/A.md': ['fresh'] } })
+        ? Promise.resolve({ ok: true, value: { 'Notes/A.md': h2('Fresh') } })
         : new Promise((r) => (answerFull = r)),
     )
     const full = useSession.getState().loadHeadings()
     const partial = useSession.getState().loadHeadings(['Notes/A.md'])
     await vi.waitFor(() => expect(answerFull).toBeTypeOf('function'))
-    answerFull({ ok: true, value: { 'Notes/A.md': ['stale'], 'Notes/B.md': ['intro'] } })
+    answerFull({ ok: true, value: { 'Notes/A.md': h2('Stale'), 'Notes/B.md': h2('Intro') } })
     await Promise.all([full, partial])
     expect(useSession.getState().headings).toEqual({
-      'Notes/A.md': ['fresh'],
-      'Notes/B.md': ['intro'],
+      'Notes/A.md': read('Fresh', 'fresh'),
+      'Notes/B.md': read('Intro', 'intro'),
     })
   })
 })

@@ -26,7 +26,10 @@ const conn: ConnectionsApi = {
   ...buildPageIndex([holder]),
   open: () => {},
   menu: vi.fn(),
-  headingsOf: (path) => (path === holder.path ? ['setup'] : undefined),
+  headingsOf: (path) =>
+    path === holder.path
+      ? { keys: ['setup'], texts: ['Setup'], outline: [{ text: 'Setup', level: 2 }] }
+      : undefined,
 }
 
 let views: EditorView[] = []
