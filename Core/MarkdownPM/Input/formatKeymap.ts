@@ -18,7 +18,10 @@ export const formatKeymap = (commands: Commands): Extension =>
     FORMAT_ACTIONS.map(
       (action): KeyBinding => ({
         key: toKeyBinding(commands[action]),
-        run: (view) => applyEditorAction(view, action),
+        run: (view) => {
+          applyEditorAction(view, action)
+          return true
+        },
       }),
     ),
   )

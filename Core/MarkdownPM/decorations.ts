@@ -559,7 +559,7 @@ function build(view: EditorView, scope: MarkdownScope): Built {
           class: internal ? 'md-connection-target' : shown ? 'md-link-url' : 'md-phantom-syntax',
         }).range(bracketEnd, close[1]),
       )
-      if (internal) ranges.push(connGlyph('resolved', bracketEnd + 1))
+      if (internal) ranges.push(connGlyph(look.status, bracketEnd + 1))
     } else {
       ranges.push(hideMarker.range(bracketEnd, close[1]))
     }

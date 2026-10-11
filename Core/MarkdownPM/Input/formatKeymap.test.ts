@@ -1,6 +1,7 @@
+// @vitest-environment jsdom
 import { describe, expect, it } from 'vitest'
 import { Compartment, EditorState } from '@codemirror/state'
-import { keymap } from '@codemirror/view'
+import { EditorView, keymap } from '@codemirror/view'
 import { DEFAULT_COMMANDS, toKeyBinding } from '../../Actions/commands'
 import { FORMAT_ACTIONS, formatKeymap } from './formatKeymap'
 
@@ -30,5 +31,24 @@ describe('the format keymap', () => {
     }).state
     expect(boundKeys(rebound)).toContain('Mod-Shift-b')
     expect(boundKeys(rebound)).not.toContain('Mod-b')
+  })
+
+  it('claims its chord on a fenced line, where the edit stands down, so the default binding underneath never runs', () => {
+    const doc = '```\nsite\n```'
+    const view = new EditorView({
+      state: EditorState.create({
+        doc,
+        selection: { anchor: 5 },
+        extensions: formatKeymap(DEFAULT_COMMANDS),
+      }),
+    })
+    const key = toKeyBinding(DEFAULT_COMMANDS['format:connection'])
+    const run = view.state
+      .facet(keymap)
+      .flat()
+      .find((b) => b.key === key)?.run
+    expect(run?.(view)).toBe(true)
+    expect(view.state.doc.toString()).toBe(doc)
+    view.destroy()
   })
 })

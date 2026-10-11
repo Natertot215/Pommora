@@ -195,6 +195,16 @@ describe('an unresolved markdown link looks as an unresolved connection does', (
     expect(cell).toContain('md-connection-ambiguous')
   })
 
+  it('revealed, its glyph reports the ambiguity as a connection glyph does', async () => {
+    const view = await mountEditor({ initialBody: 'a [x](Dup) b', connections: dups })
+    await act(async () => {
+      view.focus()
+      view.dispatch({ selection: { anchor: 3 } })
+    })
+    expect(view.dom.querySelector('.md-connection-glyph-ambiguous')).not.toBeNull()
+    expect(view.dom.querySelector('.md-connection-glyph-resolved')).toBeNull()
+  })
+
   it('an ambiguous title is never an address, though it reads as one', async () => {
     expect(resolveMdTarget(dups, 'dup.io')).toEqual({ kind: 'invalid', ambiguous: true })
     const { editor, cell } = await drawn('a [x](dup.io) b')
