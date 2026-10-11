@@ -26,6 +26,7 @@ import {
   linkClass,
   linkLook,
   linkMenuTarget,
+  titleTarget,
   tokenMenuTarget,
   tokenTarget,
   type ConnectionsApi,
@@ -51,7 +52,7 @@ export interface CellPage {
 export const linksOwnHeadings = (text: string): boolean => /\[\[#|\]\(\s*#|§/.test(text)
 
 // KNOB — distinct cell texts remembered; a table scrolling back in re-reads its cells from here.
-const cellTokens = perText(tokenize, 4096)
+export const cellTokens = perText(tokenize, 4096)
 
 type Drawn = Token | { kind: 'section'; range: [number, number]; contentRange: [number, number] }
 
@@ -261,17 +262,17 @@ function renderCellBody(
   })
 }
 
-const LINK_SELECTOR = '[data-link]'
-
 export function srcOf(el: Element): [number, number] | null {
   const raw = (el as HTMLElement).dataset.src?.split(',')
   if (raw?.length !== 2) return null
   return [Number(raw[0]), Number(raw[1])]
 }
 
-function linkSpanAt(target: EventTarget | null): [number, number] | null {
-  const el = (target as HTMLElement | null)?.closest?.(LINK_SELECTOR)
-  return el ? srcOf(el) : null
+export interface RestingHit {
+  el: Element
+  span: [number, number]
+  target: MdTarget
+  tk?: TokenOf<LinkKind>
 }
 
 function StaticCellImpl({
@@ -296,11 +297,12 @@ function StaticCellImpl({
   // What the cell reads NOW: a native menu can be held open while an undo moves the cell underneath it.
   const live = useLatest(text)
 
-  const menuAt = (e: React.MouseEvent, api: ConnectionsApi): ConnMenuTarget | null => {
-    const span = linkSpanAt(e.target)
-    const found = span && linkTokenAt(cellTokens(text), span[0])
-    if (!found) return null
-    return menuTarget(
+  const menuAt = (
+    found: TokenOf<LinkKind>,
+    span: [number, number],
+    api: ConnectionsApi,
+  ): ConnMenuTarget | null =>
+    menuTarget(
       () => {
         const now = linkTokenAt(cellTokens(live.current), span[0])
         return now && live.current.slice(...now.range) === text.slice(...found.range)
@@ -314,7 +316,6 @@ function StaticCellImpl({
       onCommit,
       onSelect,
     )
-  }
   const { linkAt, dismiss, onContextMenu, onPointerOver, onPointerOut } = linkGestures(
     text,
     host.connections,
@@ -393,7 +394,7 @@ function StaticCellImpl({
       onMouseDown={(e) => {
         // Claiming a right press here is what stops the browser selecting the word under the pointer before the menu opens.
         if (e.button === 2) {
-          if (linkSpanAt(e.target)) e.preventDefault()
+          if ((e.target as HTMLElement | null)?.closest?.('[data-link]')) e.preventDefault()
           return
         }
         if (e.button === 0) claimCheckbox(e) ?? claimCite(e) ?? claimLink(e)
@@ -410,16 +411,16 @@ export function linkGestures(
   connections: (() => ConnectionsApi | undefined) | undefined,
   glance: EditorHost['glance'],
   own: OwnPage | null = null,
-  menuAt?: (e: React.MouseEvent, api: ConnectionsApi) => ConnMenuTarget | null,
+  menuAt?: (
+    tk: TokenOf<LinkKind>,
+    span: [number, number],
+    api: ConnectionsApi,
+  ) => ConnMenuTarget | null,
 ) {
-  const linkAt = (e: React.SyntheticEvent): ReturnType<typeof cellLinkTarget> =>
-    cellLinkTarget(text, e.target, connections?.())
+  const linkAt = (e: React.SyntheticEvent): RestingHit | null =>
+    cellLinkTarget(text, e.target, connections?.(), own)
   const dismiss = (e: React.SyntheticEvent): void => {
     if (!glance?.contains(e.currentTarget)) glance?.close()
-  }
-  const readOnlyMenu = (e: React.MouseEvent): ConnMenuTarget | null => {
-    const found = linkAt(e)
-    return found && linkMenuTarget(heldTarget(found.target, own))
   }
   return {
     linkAt,
@@ -429,7 +430,9 @@ export function linkGestures(
       dismiss(e)
       const api = connections?.()
       if (!api?.menu) return false
-      const target = menuAt ? menuAt(e, api) : readOnlyMenu(e)
+      const found = linkAt(e)
+      if (!found?.tk) return false
+      const target = menuAt ? menuAt(found.tk, found.span, api) : linkMenuTarget(found.target)
       if (!target) return false
       e.preventDefault()
       e.stopPropagation()
@@ -437,8 +440,9 @@ export function linkGestures(
       return true
     },
     onPointerOver: (e: React.PointerEvent): void => {
-      const found = glance && linkAt(e)
-      if (found) dwellTarget(heldTarget(found.target, own), glance, found.el)?.()
+      if (!glance) return
+      const found = linkAt(e)
+      if (found?.tk) dwellTarget(found.target, glance, found.el)?.()
     },
     onPointerOut: (): void => glance?.cancel(),
   }
@@ -448,12 +452,19 @@ function cellLinkTarget(
   text: string,
   eventTarget: EventTarget | null,
   api: ConnectionsApi | undefined,
-): { el: Element; target: MdTarget } | null {
-  const el = (eventTarget as HTMLElement | null)?.closest?.(LINK_SELECTOR)
-  if (!el || !api) return null
-  const span = linkSpanAt(eventTarget)
-  const tk = span && linkTokenAt(cellTokens(text), span[0])
-  return tk ? { el, target: tokenTarget(api, text, tk) } : null
+  own: OwnPage | null,
+): RestingHit | null {
+  const el = (eventTarget as HTMLElement | null)?.closest?.('[data-link]')
+  const span = el && srcOf(el)
+  if (!el || !span || !api) return null
+  if (el.classList.contains('md-section-run'))
+    return {
+      el,
+      span,
+      target: heldTarget(titleTarget(undefined, '', (el.textContent ?? '').slice(1)), own),
+    }
+  const tk = linkTokenAt(cellTokens(text), span[0])
+  return tk ? { el, span, tk, target: heldTarget(tokenTarget(api, text, tk), own) } : null
 }
 
 /** `still` re-reads the link when the action is chosen; `tk` and `text` are what the menu was built from. */

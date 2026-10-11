@@ -47,6 +47,17 @@ export type Token =
 
 export type TokenOf<K extends TokenKind> = Extract<Token, { kind: K }>
 
+export const wholeLinkToken = (
+  tokens: readonly Token[],
+  text: string,
+): TokenOf<LinkKind> | undefined =>
+  tokens.find(
+    (t): t is TokenOf<LinkKind> =>
+      (t.kind === 'link' || t.kind === 'wikiLink') &&
+      t.range[0] === 0 &&
+      t.range[1] === text.length,
+  )
+
 // A connection's title half, which alone resolves; it starts the shown text unless an alias replaces it.
 export const aliasedToken = (tk: Token): boolean =>
   tk.kind === 'wikiLink' && tk.contentRange[0] !== tk.resolveRange[0]

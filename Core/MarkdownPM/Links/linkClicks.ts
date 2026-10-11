@@ -1,7 +1,7 @@
 import type { Extension } from '@codemirror/state'
 import { isCmd } from '@pommora/uix/Interactions/chords'
 import type { EditorView } from '@codemirror/view'
-import { normalizeLinkUrl, WEB_ADDRESS } from '../../Paths/urlPath'
+import { isHttpLink, normalizeLinkUrl } from '../../Paths/urlPath'
 import type { LinkKind, Token } from '../Engine/tokens'
 import { docString } from '../docCache'
 import {
@@ -123,9 +123,8 @@ export function dwellTarget(
     const { id, path } = target.page
     return () => glance.arm({ kind: 'page', id, path, heading: target.heading }, el)
   }
-  if (target.kind !== 'url') return null
-  const web = normalizeLinkUrl(target.url)
-  return WEB_ADDRESS.test(web) ? () => glance.arm({ kind: 'url', url: web }, el) : null
+  if (target.kind !== 'url' || !isHttpLink(target.url)) return null
+  return () => glance.arm({ kind: 'url', url: normalizeLinkUrl(target.url) }, el)
 }
 
 const apiOf = (view: EditorView): ConnectionsApi | undefined =>
