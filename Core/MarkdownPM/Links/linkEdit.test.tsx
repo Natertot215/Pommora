@@ -361,6 +361,10 @@ describe('a pick turns into a selection or a write, for both syntaxes', () => {
     expect(edit('[[P|]]', 'rename')).toEqual({ kind: 'select', range: [4, 4] })
   })
 
+  it('Rename on an emptied heading opens the alias after the hash', () => {
+    expect(written('[[P#]]', 'rename')).toBe('[[P#|]]')
+  })
+
   it('on a heading connection, Edit Title selects the page and Rename seats after the heading', () => {
     expect(selected('[[P#H]]', 'editLink')).toBe('P')
     expect(edit('[[P#H]]', 'rename')).toEqual({

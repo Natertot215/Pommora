@@ -156,6 +156,7 @@ export const tableStubs: Omit<Parameters<typeof MarkdownTable>[0], 'host' | 'mod
   around: { ordinalOf: () => null, ownKeys: [], sectionHeadings: [] },
   headingColumn: false,
   onCellCommit: () => {},
+  cellAt: () => null,
   onSettled: () => {},
   onExit: () => {},
   onReorder: () => false,

@@ -234,6 +234,10 @@ class TableWidget extends ReactWidget {
       const change = cellCommitChange(docScan(view.state.doc), this.tableIndex, row, col, text)
       if (change) view.dispatch({ changes: change, annotations: tableSelfEdit.of(true) })
     }
+    const cellAt = (row: number, col: number): string | null => {
+      const cells = docScan(view.state.doc).tables[this.tableIndex]?.rows[row]?.cells
+      return cells ? (cells[col] ?? '') : null
+    }
     // The widget replaces exactly the table's lines, so its own edges draw the caret in the gutter; the exit lands one line past the edge, making that line when the table bounds the document.
     const exit = (dir: 'before' | 'after'): void => {
       const region = docScan(view.state.doc).tables[this.tableIndex]
@@ -326,6 +330,7 @@ class TableWidget extends ReactWidget {
         around={this.around}
         headingColumn={this.headingColumn}
         onCellCommit={commit}
+        cellAt={cellAt}
         onSettled={() => view.dispatch({ effects: refreshTableEffect.of(this.tableIndex) })}
         onExit={exit}
         onReorder={reorder}

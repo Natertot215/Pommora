@@ -280,6 +280,24 @@ describe('a link’s menu in a resting cell', () => {
     expect(view.state.doc.toString()).toBe(table(`[x](${URL})`))
   })
 
+  it('Page Title leaves what was typed in the cell while its title was pending', async () => {
+    const view = await open(`[x](${URL})`)
+    await pick('format:link-title')
+    const cell = editorContainer().querySelector('tbody .mdpm-tbl-cell-static') as HTMLElement
+    await act(async () => {
+      cell.dispatchEvent(
+        new MouseEvent('click', { bubbles: true, cancelable: true, button: 0, detail: 1 }),
+      )
+    })
+    await act(async () => {
+      liveCell()?.dispatch({ changes: { from: 0, insert: 'y ' }, userEvent: 'input.type' })
+    })
+    expect(view.state.doc.toString()).toBe(table(`y [x](${URL})`))
+    await settleTitle(URL, 'A Site')
+    expect(view.state.doc.toString()).toBe(table(`y [x](${URL})`))
+    expect(liveCell()?.state.doc.toString()).toBe(`y [x](${URL})`)
+  })
+
   it('a markdown link naming a page authors as a connection does', async () => {
     await open('[x](Roadmap)')
     expect(popped).toMatchObject({ kind: 'page', editable: true })
@@ -287,14 +305,18 @@ describe('a link’s menu in a resting cell', () => {
     expect(liveSelection()).toBe('Roadmap')
   })
 
-  it('declines the pick once the cell was edited while its menu stood open', async () => {
+  it.each([
+    'link:delete',
+    'editLink',
+  ] as const)('declines %s once the cell was edited while its menu stood open', async (action) => {
     const view = await open(`[x](${URL})`)
     const at = view.state.doc.toString().indexOf('[x]')
     await act(async () => {
       view.dispatch({ changes: { from: at, insert: 'y ' } })
     })
-    await pick('link:delete')
+    await pick(action)
     expect(view.state.doc.toString()).toBe(table(`y [x](${URL})`))
+    expect(liveCell()).toBeNull()
   })
 
   it('a format that leaves the text as it was commits nothing', async () => {

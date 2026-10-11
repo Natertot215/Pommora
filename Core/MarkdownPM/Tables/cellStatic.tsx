@@ -40,7 +40,6 @@ import type { Seat } from './CellEditor'
 import type { HeadingLinkStyle } from '../../Settings/personalization'
 import { CheckMark, checkboxClass } from '@pommora/uix/Controls/Checkbox'
 import { cx } from '@pommora/uix/Utilities/cx'
-import { useLatest } from '@pommora/uix/Utilities/stableApi'
 
 export interface CellPage {
   ordinalOf: (label: string) => number | null
@@ -271,6 +270,7 @@ interface RestingHit {
 function StaticCellImpl({
   host,
   text,
+  current,
   around,
   readOnly,
   linkStyle,
@@ -279,17 +279,15 @@ function StaticCellImpl({
 }: {
   host: EditorHost
   text: string
+  current: () => string | null
   around: CellPage
   linkStyle: HeadingLinkStyle
   readOnly: () => boolean
   onActivate: (seat: Seat) => void
   onCommit: (text: string) => void
 }): React.JSX.Element {
-  // What the cell reads NOW: a native menu can be held open while an undo moves the cell underneath it.
-  const live = useLatest(text)
-
   const commitAtRest = (built: string, edits: readonly TextEdit[]): boolean => {
-    if (live.current !== built) return false
+    if (current() !== built) return false
     const next = applyEdits(built, edits)
     if (next === built) return false
     onCommit(next)
@@ -297,6 +295,7 @@ function StaticCellImpl({
   }
 
   const applyAtRest = async (tk: TokenOf<LinkKind>, action: LinkAction): Promise<void> => {
+    if (current() !== text) return
     const edit = linkEdit(text, tk, action, host.linkTitles)
     if (!edit) return
     if (edit.kind === 'select') return onActivate({ kind: 'select', range: edit.range })
@@ -329,12 +328,11 @@ function StaticCellImpl({
     const row = seat?.closest('[data-cell-line]') as HTMLElement | null
     const index = row?.dataset.cellLine
     if (index === undefined) return null
-    const doc = live.current
-    const change = checkboxToggleChange(doc, lineOffsetsOf(doc.split('\n'))[Number(index)])
+    const change = checkboxToggleChange(text, lineOffsetsOf(text.split('\n'))[Number(index)])
     if (!change) return null
     e.preventDefault()
     e.stopPropagation()
-    return () => commitAtRest(doc, [change])
+    return () => commitAtRest(text, [change])
   }
 
   const claimCite = (e: React.MouseEvent): (() => void) | null => {

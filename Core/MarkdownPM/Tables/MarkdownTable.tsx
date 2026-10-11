@@ -100,6 +100,7 @@ export function MarkdownTable({
   around,
   headingColumn,
   onCellCommit,
+  cellAt,
   onSettled,
   onExit,
   onReorder,
@@ -118,6 +119,7 @@ export function MarkdownTable({
   around: CellPage
   headingColumn: boolean
   onCellCommit: (row: number, col: number, text: string) => void
+  cellAt: (row: number, col: number) => string | null
   onSettled: () => void
   onExit: (dir: 'before' | 'after') => void
   onReorder: (axis: Axis, from: number, to: number) => boolean
@@ -142,8 +144,8 @@ export function MarkdownTable({
   const [geom, setGeom] = useState<Geom>({ cols: [], rows: [] })
   // A mid-drag re-measure must reach this; a state binding would freeze at the pointerdown render (the cfg-ref discipline).
   const geomRef = useLatest(geom)
-  // A resting cell's memo keeps the callbacks it first rendered with, so it commits through these to reach the table where it sits now; a closed cell's pending title reads the model here too.
-  const live = useLatest({ onCellCommit, onSettled, model })
+  // A resting cell's memo keeps the callbacks it first rendered with, so it commits and reads through these to reach the table where it sits now.
+  const live = useLatest({ onCellCommit, onSettled, cellAt })
   const mounted = useRef(true)
   useEffect(
     () => () => {
@@ -425,6 +427,10 @@ export function MarkdownTable({
 
   const cell = (row: number, col: number, text: string): React.JSX.Element => {
     const display = cellToDisplay(text)
+    const current = (): string | null => {
+      const source = mounted.current ? live.current.cellAt(row, col) : null
+      return source === null ? null : cellToDisplay(source)
+    }
     const commitResting = (t: string): void => {
       live.current.onCellCommit(row, col, t)
       // A resting cell never had an editor to demote, so without this the widget keeps drawing the pre-edit text.
@@ -445,18 +451,7 @@ export function MarkdownTable({
           onTablePaste={(payload) => onFill(row, col, payload)}
           onUndo={onUndo}
           onRedo={onRedo}
-          onClose={(pending) =>
-            forwardTitles(
-              host,
-              pending,
-              () => {
-                if (!mounted.current) return null
-                const { header, rows } = live.current.model
-                return cellToDisplay((row === 0 ? header[col] : rows[row - 1]?.[col]) ?? '')
-              },
-              commitResting,
-            )
-          }
+          onClose={(pending) => forwardTitles(host, pending, current, commitResting)}
         />
       )
     }
@@ -464,6 +459,7 @@ export function MarkdownTable({
       <StaticCell
         host={host}
         text={display}
+        current={current}
         around={around}
         readOnly={readOnly}
         linkStyle={linkStyle}
