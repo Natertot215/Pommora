@@ -311,7 +311,7 @@ describe('a text value', () => {
       ),
     )
     const at = value.indexOf('[[')
-    expect(host.querySelector('[data-link-span]')?.getAttribute('data-link-span')).toBe(
+    expect(host.querySelector('[data-link]')?.getAttribute('data-src')).toBe(
       `${at},${value.length}`,
     )
   })

@@ -156,7 +156,7 @@ export const testHost = (spec: HarnessHost = {}): EditorHost =>
 
 /** Every `MarkdownTable` prop but its host and model, as a table on a page with no footnotes or headings that writes nowhere. */
 export const tableStubs: Omit<Parameters<typeof MarkdownTable>[0], 'host' | 'model'> = {
-  around: { ordinalOf: () => null, ownKeys: [] },
+  around: { ordinalOf: () => null, ownKeys: [], sectionHeadings: [] },
   headingColumn: false,
   onCellCommit: () => {},
   onSettled: () => {},

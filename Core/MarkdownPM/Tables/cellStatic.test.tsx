@@ -33,6 +33,7 @@ const model: TableModel = {
 const numbering = (n: number): CellPage => ({
   ordinalOf: (label) => (label === 'note' ? n : null),
   ownKeys: [],
+  sectionHeadings: [],
 })
 
 let container: HTMLDivElement
@@ -225,5 +226,56 @@ describe('a resting cell draws an unresolved link as an unresolved connection, w
       ['md-connection-phantom', 'x'],
       ['md-phantom-syntax', '](Missing)'],
     ])
+  })
+})
+
+describe('a resting cell draws every token as a span, through the tokens inside it', () => {
+  const conn = {
+    ...buildPageIndex([{ id: 'p', title: 'P', path: 'P.md' }]),
+    headingsOf: () => undefined,
+    location: () => [],
+    open: () => {},
+  }
+  const draw = async (text: string, around?: CellPage): Promise<void> => {
+    container = document.createElement('div')
+    document.body.appendChild(container)
+    root = createRoot(container)
+    await act(async () => root.render(renderCellContent(text, () => conn, { around })))
+  }
+
+  it('a connection inside bold draws inside the bold span, and both name their source', async () => {
+    await draw('**a [[P]] b**')
+    const bold = container.querySelector('.md-bold') as HTMLElement
+    expect(bold.dataset.src).toBe('0,13')
+    const link = bold.querySelector('.md-connection-resolved') as HTMLElement
+    expect(link.textContent).toBe('P')
+    expect(link.hasAttribute('data-link')).toBe(true)
+    expect(link.dataset.src).toBe('4,9')
+  })
+
+  it('bold inside a link label draws inside the link span', async () => {
+    await draw('[x **b**](https://a.com)')
+    const link = container.querySelector('.md-link') as HTMLElement
+    expect(link.hasAttribute('data-link')).toBe(true)
+    expect(link.querySelector('.md-bold')?.textContent).toBe('b')
+  })
+
+  it('a § run over a heading of the page draws as a link', async () => {
+    await draw('see §Setup', { ordinalOf: () => null, ownKeys: [], sectionHeadings: ['Setup'] })
+    const run = container.querySelector('.md-section-run') as HTMLElement
+    expect(run.textContent).toBe('§Setup')
+    expect(run.hasAttribute('data-link')).toBe(true)
+    expect(run.dataset.src).toBe('4,10')
+  })
+
+  it('every token kind draws a span naming its source', async () => {
+    await draw('*a*')
+    const italic = container.querySelector('.md-italic') as HTMLElement
+    expect(italic.dataset.src).toBe('0,3')
+    expect(italic.hasAttribute('data-link')).toBe(false)
+  })
+
+  it('text holding no token is the bare string', () => {
+    expect(renderCellContent('plain text', () => conn)).toBe('plain text')
   })
 })

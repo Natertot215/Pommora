@@ -274,8 +274,8 @@ describe('the list vocabulary inside a table cell', () => {
     const display = '- see [go](https://example.com)'
     await mountEditor({ initialBody: table(display) })
     const cell = (await tableEl()).querySelector('tbody')!.children[0].children[0]
-    const marked = cell.querySelector('[data-link-span]') as HTMLElement
-    const from = Number(marked.dataset.linkSpan!.split(',')[0])
+    const marked = cell.querySelector('[data-link]') as HTMLElement
+    const from = Number(marked.dataset.src!.split(',')[0])
     expect(linkTokenAt(tokenize(display), from)).toBeTruthy()
   })
 
