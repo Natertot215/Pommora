@@ -1,4 +1,4 @@
-import { StateEffect, StateField, type Extension } from '@codemirror/state'
+import { StateEffect, StateField } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
 import { linkMarkdown } from '../../Connections/linkValue'
 import { type EditorHost, editorHost } from '../api'
@@ -32,14 +32,13 @@ export const pendingTitles = StateField.define<readonly PendingTitle[]>({
         .filter((p) => p.to > p.from && tr.state.sliceDoc(p.from, p.to) === p.text)
     }
     for (const e of tr.effects) {
-      if (e.is(awaitTitle)) next = [...next, e.value]
-      else if (e.is(titleSettled)) next = next.filter((p) => p !== e.value)
+      if (e.is(awaitTitle)) {
+        if (tr.state.sliceDoc(e.value.from, e.value.to) === e.value.text) next = [...next, e.value]
+      } else if (e.is(titleSettled)) next = next.filter((p) => p !== e.value)
     }
     return next
   },
 })
-
-export const pendingTitle: Extension = pendingTitles
 
 export function writeLinkAt(
   view: EditorView,

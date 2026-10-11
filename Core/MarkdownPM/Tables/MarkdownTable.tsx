@@ -142,8 +142,15 @@ export function MarkdownTable({
   const [geom, setGeom] = useState<Geom>({ cols: [], rows: [] })
   // A mid-drag re-measure must reach this; a state binding would freeze at the pointerdown render (the cfg-ref discipline).
   const geomRef = useLatest(geom)
-  // A resting cell's memo keeps the callbacks it first rendered with, so it commits through these to reach the table where it sits now.
+  // A resting cell's memo keeps the callbacks it first rendered with, so it commits through these to reach the table where it sits now; a closed cell's pending title reads the model here too.
   const live = useLatest({ onCellCommit, onSettled, model })
+  const mounted = useRef(true)
+  useEffect(
+    () => () => {
+      mounted.current = false
+    },
+    [],
+  )
   const [drag, setDrag] = useState<Drag | null>(null)
   const [resize, setResize] = useState<Resize | null>(null)
   const [active, setActive] = useState<{ row: number; col: number } | null>(null)
@@ -422,6 +429,11 @@ export function MarkdownTable({
 
   const cell = (row: number, col: number, text: string): React.JSX.Element => {
     const display = cellToDisplay(text)
+    const commitResting = (t: string): void => {
+      live.current.onCellCommit(row, col, t)
+      // A resting cell never had an editor to demote, so without this the widget keeps drawing the pre-edit text.
+      live.current.onSettled()
+    }
     if (active?.row === row && active.col === col) {
       return (
         <CellEditor
@@ -444,13 +456,11 @@ export function MarkdownTable({
               host,
               pending,
               () => {
+                if (!mounted.current) return null
                 const { header, rows } = live.current.model
                 return cellToDisplay((row === 0 ? header[col] : rows[row - 1]?.[col]) ?? '')
               },
-              (next) => {
-                live.current.onCellCommit(row, col, next)
-                live.current.onSettled()
-              },
+              commitResting,
             )
           }
         />
@@ -470,11 +480,7 @@ export function MarkdownTable({
           sweepFrom.current = sweep ?? null
           setActive({ row, col })
         }}
-        onCommit={(t) => {
-          live.current.onCellCommit(row, col, t)
-          // A resting cell never had an editor to demote, so without this the widget keeps drawing the pre-edit text.
-          live.current.onSettled()
-        }}
+        onCommit={commitResting}
         onSelect={(range) => {
           host.glance?.close()
           caretCoords.current = null
