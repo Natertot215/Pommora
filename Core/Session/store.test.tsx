@@ -1230,6 +1230,37 @@ describe('store — the headings map (Task 2.3)', () => {
   })
 })
 
+describe('store — a link title fetch answers with a promise', () => {
+  it('resolves with the fetched title, and a second call before it lands shares the fetch', async () => {
+    let answer!: (v: unknown) => void
+    channels['linkTitles:fetch'] = vi.fn(() => new Promise((r) => (answer = r)))
+    const url = 'https://hello.example.com'
+    const first = useSession.getState().resolveLinkTitle(url)
+    const second = useSession.getState().resolveLinkTitle(url)
+    expect(second).toBe(first)
+    answer({ ok: true, value: { title: 'Hello' } })
+    expect(await first).toBe('Hello')
+    expect(await second).toBe('Hello')
+    expect(channels['linkTitles:fetch']).toHaveBeenCalledTimes(1)
+  })
+
+  it('resolves null for a failed fetch, and a later call resolves null without asking', async () => {
+    channels['linkTitles:fetch'] = vi.fn(async () => ({ ok: true, value: { title: null } }))
+    const url = 'https://untitled.example.com'
+    expect(await useSession.getState().resolveLinkTitle(url)).toBeNull()
+    expect(await useSession.getState().resolveLinkTitle(url)).toBeNull()
+    expect(channels['linkTitles:fetch']).toHaveBeenCalledTimes(1)
+  })
+
+  it('resolves a cached title without asking', async () => {
+    channels['linkTitles:fetch'] = vi.fn()
+    const url = 'https://cached.example.com'
+    useSession.setState({ linkTitles: { [url]: 'Cached' } })
+    expect(await useSession.getState().resolveLinkTitle(url)).toBe('Cached')
+    expect(channels['linkTitles:fetch']).not.toHaveBeenCalled()
+  })
+})
+
 describe('store — pending travel', () => {
   it('a heading handed to select parks a travel for the tab; clearPendingTravel nulls it', async () => {
     await useSession
