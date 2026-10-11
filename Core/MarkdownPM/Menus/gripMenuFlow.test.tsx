@@ -23,7 +23,12 @@ const treeOf = (collectionPages: { title: string }[]): PickItem<string>[] => [
   { label: 'Notes', submenu: collectionPages.map((p) => ({ label: p.title, pick: p.title })) },
 ]
 
-const conn: ConnectionsApi = { ...buildPageIndex(pages), open: () => {} }
+const conn: ConnectionsApi = {
+  ...buildPageIndex(pages),
+  open: () => {},
+  headingsOf: () => undefined,
+  location: () => [],
+}
 
 const seed = (collectionPages: { title: string }[]): void =>
   seedHost({

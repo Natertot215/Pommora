@@ -29,6 +29,8 @@ const conn: ConnectionsApi = {
     { id: 'p2', title: 'Beta', path: 'Notes/Beta.md' },
     { id: 'p3', title: 'Beta', path: 'Archive/Beta.md' },
   ]),
+  headingsOf: () => undefined,
+  location: () => [],
   open: (p: ConnPage) => opened(p.id),
 }
 

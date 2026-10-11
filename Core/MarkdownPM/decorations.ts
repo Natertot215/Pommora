@@ -459,7 +459,7 @@ function ownHeadings(
 ): readonly string[] | undefined {
   if (!own) return undefined
   if (own.kind !== 'held') return read(own.view.state.doc)
-  const h = conn?.headingsOf?.(own.page.path)
+  const h = conn?.headingsOf(own.page.path)
   return h && held(h)
 }
 

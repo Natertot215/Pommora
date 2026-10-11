@@ -29,6 +29,8 @@ afterEach(async () => {
 
 const headingConn: ConnectionsApi = {
   ...buildPageIndex([{ id: 'pNotes', title: 'Notes', path: 'Notes.md' }]),
+  headingsOf: () => undefined,
+  location: () => [],
   open: () => {},
 }
 const coords = { left: 10, right: 10, top: 10, bottom: 20 }

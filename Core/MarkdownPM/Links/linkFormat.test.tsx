@@ -37,6 +37,8 @@ const BODY = `a [Home](${URL}) b`
 
 const conn: ConnectionsApi = {
   ...buildPageIndex([]),
+  headingsOf: () => undefined,
+  location: () => [],
   open: () => {},
   menu: showConnectionMenu,
 }

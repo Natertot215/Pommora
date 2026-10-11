@@ -26,6 +26,8 @@ afterEach(async () => {
 
 const conn: ConnectionsApi = {
   ...buildPageIndex([{ id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' }]),
+  headingsOf: () => undefined,
+  location: () => [],
   open: () => {},
 }
 const coords = { left: 10, right: 10, top: 10, bottom: 20 }
@@ -216,6 +218,8 @@ describe('the chevron slides in a page’s headings', () => {
       { id: 'pNotes', title: 'Notes', path: 'Notes.md' },
       { id: 'pBlank', title: 'Blank', path: 'Blank.md' },
     ]),
+    headingsOf: () => undefined,
+    location: () => [],
     open: () => {},
   }
 

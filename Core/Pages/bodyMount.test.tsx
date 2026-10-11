@@ -38,6 +38,8 @@ const connections: ConnectionsApi = {
     { id: '2', title: 'Beta', path: 'Notes/Beta.md' },
     { id: '3', title: 'B', path: PATH },
   ]),
+  headingsOf: () => undefined,
+  location: () => [],
   open: () => {},
 }
 

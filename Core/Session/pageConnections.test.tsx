@@ -40,7 +40,7 @@ describe('one hook builds every connections bundle', () => {
     const first = bundles[0]
     const last = bundles[bundles.length - 1]
     expect(last).not.toBe(first)
-    expect(last.headingsOf?.('Notes/Alpha.md')).toBe(SETUP)
+    expect(last.headingsOf('Notes/Alpha.md')).toBe(SETUP)
     expect(last.menu).toBeUndefined()
   })
 
@@ -52,11 +52,24 @@ describe('one hook builds every connections bundle', () => {
     expect(openWindowTab).toHaveBeenCalledWith(ref, { heading: 'Setup' })
   })
 
-  it('a preview bundle’s ⌘-click opens a new tab at the heading', async () => {
+  it('a window bundle’s ⌘-click opens a new tab at the heading', async () => {
     const select = vi.fn(async () => {})
-    useSession.setState({ tree: makeTree(), select })
-    const bundles = await mountBundles('preview')
-    bundles[bundles.length - 1].bypass?.(page, 'Setup')
+    const openWindowTab = vi.fn()
+    useSession.setState({ tree: makeTree(), select, openWindowTab })
+    const bundles = await mountBundles('window')
+    bundles[bundles.length - 1].open(page, 'Setup', true)
     expect(select).toHaveBeenCalledWith(ref, { newTab: true, heading: 'Setup' })
+    expect(openWindowTab).not.toHaveBeenCalled()
+  })
+
+  it('a preview bundle with Open Connections In Preview off leaves the tab to Tab Open Behavior', async () => {
+    const select = vi.fn(async () => {})
+    useSession.setState({
+      tree: makeTree({ personalization: { connectionsOpenInPreview: false } }),
+      select,
+    })
+    const bundles = await mountBundles('preview')
+    bundles[bundles.length - 1].open(page)
+    expect(select).toHaveBeenCalledWith(ref, { newTab: undefined, heading: undefined })
   })
 })

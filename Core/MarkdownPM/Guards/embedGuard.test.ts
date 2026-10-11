@@ -9,6 +9,8 @@ import { testHost } from '../../Testing/editorHarness'
 
 const conn: ConnectionsApi = {
   ...buildPageIndex([{ id: '1', title: 'Alpha', path: 'Notes/Alpha.md' }]),
+  headingsOf: () => undefined,
+  location: () => [],
   open: () => {},
 }
 
@@ -27,6 +29,8 @@ const conn2: ConnectionsApi = {
     { id: '1', title: 'Alpha', path: 'Notes/Alpha.md' },
     { id: '2', title: 'Beta', path: 'Notes/Beta.md' },
   ]),
+  headingsOf: () => undefined,
+  location: () => [],
   open: () => {},
 }
 const mk2 = (doc: string): EditorState =>

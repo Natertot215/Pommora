@@ -38,6 +38,8 @@ afterEach(async () => {
 
 const conn: ConnectionsApi = {
   ...buildPageIndex([{ id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' }]),
+  headingsOf: () => undefined,
+  location: () => [],
   open: () => {},
   menu: showConnectionMenu,
 }

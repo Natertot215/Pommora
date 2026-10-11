@@ -33,6 +33,8 @@ afterEach(async () => {
 const opened = vi.fn()
 const conn: ConnectionsApi = {
   ...buildPageIndex([{ id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' }]),
+  headingsOf: () => undefined,
+  location: () => [],
   open: (p: ConnPage, heading?: string) => opened(p.id, heading),
 }
 
@@ -162,6 +164,8 @@ describe('a link that leads nowhere still takes the caret where it was pressed',
       { id: 'b1', title: 'Beta', path: 'Notes/Beta.md' },
       { id: 'b2', title: 'Beta', path: 'Other/Beta.md' },
     ]),
+    headingsOf: () => undefined,
+    location: () => [],
     open: (p: ConnPage, heading?: string) => opened(p.id, heading),
   }
 

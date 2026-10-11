@@ -7,7 +7,7 @@ import {
   markdownDestinationAt,
   targetTitle,
 } from '../../Connections/links'
-import { NO_TRAIL, type TrailSegment } from '@pommora/uix/Elements/NavTrail'
+import type { TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { type DocScan, inCodeAt } from '../Engine/docScan'
 import { connectionAt, inBracket } from '../Input/edits'
 import { lineIndexAt, type TextEdit } from '../Engine/markdownCode'
@@ -138,7 +138,7 @@ export const pageRow = (p: ConnPage, conn: ConnectionsApi): AcRow => ({
   kind: 'page',
   value: p.title,
   pageId: p.id,
-  location: conn.location?.(p.id) ?? NO_TRAIL,
+  location: conn.location(p.id),
 })
 
 export function headingRows(outline: readonly OutlineHeading[], query: string): HeadingRow[] {

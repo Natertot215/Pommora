@@ -91,6 +91,8 @@ describe('the editor’s native menu', () => {
   it('leaves a connection’s right-click to the connection menu', async () => {
     const conn: ConnectionsApi = {
       ...buildPageIndex([{ id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' }]),
+      headingsOf: () => undefined,
+      location: () => [],
       open: () => {},
       menu: showConnectionMenu,
     }

@@ -20,6 +20,8 @@ if (!('ResizeObserver' in globalThis)) {
 
 const conn: ConnectionsApi = {
   ...buildPageIndex([{ id: 'p1', title: 'Quarterly Plan', path: 'N/Quarterly Plan.md' }]),
+  headingsOf: () => undefined,
+  location: () => [],
   open: () => {},
 }
 const CELL = '[[Quarterly Plan|the plan]]'

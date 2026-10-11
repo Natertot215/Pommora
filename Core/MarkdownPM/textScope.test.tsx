@@ -24,6 +24,7 @@ if (!('ResizeObserver' in globalThis)) {
 const holder = { id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' }
 const conn: ConnectionsApi = {
   ...buildPageIndex([holder]),
+  location: () => [],
   open: () => {},
   menu: vi.fn(),
   headingsOf: (path) =>
