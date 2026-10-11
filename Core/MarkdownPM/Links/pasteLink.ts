@@ -14,7 +14,7 @@ import {
 import { linkDestinationStart } from '../../Connections/links'
 import { matchesCommand } from '../../Actions/commands'
 import { isWebAddress } from '../../Paths/urlPath'
-import { isLinkDisplay, type LinkDisplay } from '../../Properties/properties'
+import { isLinkDisplay } from '../../Properties/properties'
 import { docScan } from '../docCache'
 import { inCodeNear, scanDoc, type DocScan } from '../Engine/docScan'
 import { linkTokenAt, tokenize, type LinkKind } from '../Engine/tokens'
@@ -40,76 +40,50 @@ function linkContainerAt(
   const line = scan.text.slice(ls, lineEndAt(scan.text, sel.from))
   const tk = linkTokenAt(tokenize(line), sel.from - ls)
   if (!tk || tk.range[0] >= sel.from - ls || sel.to - ls >= tk.range[1]) return null
-  return {
-    kind: tk.kind,
-    range: [ls + tk.range[0], ls + tk.range[1]],
-    text: line.slice(tk.range[0], tk.range[1]),
-  }
+  const [start, end] = tk.range
+  return { kind: tk.kind, range: [ls + start, ls + end], text: line.slice(start, end) }
 }
 
-export interface PasteEdit {
+interface PasteEdit {
   from: number
   to: number
   write: LinkPaste | TextPaste | LinePaste
 }
 
-export interface PasteOptions {
-  format: LinkDisplay
-  keepTitle: boolean
-  title: (url: string) => string | undefined
-}
-
-export const pasteOptions = (host: EditorHost): PasteOptions => {
-  const { defaultLinkFormat, removeTitleOnLinkChange } = host.settings()
-  return {
-    format: defaultLinkFormat,
-    keepTitle: !removeTitleOnLinkChange,
-    title: (url) => host.linkTitles.get(url) ?? undefined,
-  }
-}
-
-export function pasteEdit(
+function pasteEdit(
   scan: DocScan,
   sel: { from: number; to: number },
   text: string,
   how: PasteMode,
-  opts: PasteOptions,
+  host: EditorHost,
 ): PasteEdit | null {
   if (how === 'literal' || inCodeNear(scan, sel.from)) return null
   const target = clipboardTarget(text, how)
   if (!target) return null
-  const title = target.kind === 'url' ? opts.title(target.url) : undefined
+  const { defaultLinkFormat: format, removeTitleOnLinkChange } = host.settings()
+  const title = target.kind === 'url' ? (host.linkTitles.get(target.url) ?? undefined) : undefined
   const within = how === 'plain' ? null : linkContainerAt(scan, sel)
   if (how === 'inverse' && within) return null
   if (within) {
     const syntax =
-      how === 'markdown'
-        ? 'markdown'
-        : how === 'connection'
-          ? 'wiki'
-          : within.kind === 'wikiLink'
-            ? 'wiki'
-            : 'markdown'
-    const format = isLinkDisplay(how) ? how : opts.format
-    const write = retarget(syntax, readLinkText(within.text), target, opts.keepTitle, {
-      format,
-      title,
-    })
+      how === 'connection' || (how !== 'markdown' && within.kind === 'wikiLink')
+        ? 'wiki'
+        : 'markdown'
+    const into = { format: isLinkDisplay(how) ? how : format, title }
+    const write = retarget(
+      syntax,
+      readLinkText(within.text),
+      target,
+      !removeTitleOnLinkChange,
+      into,
+    )
     return { from: within.range[0], to: within.range[1], write }
   }
   const ls = lineStartAt(scan.text, sel.from)
-  if (
-    how !== 'plain' &&
-    linkDestinationStart(scan.text.slice(ls, lineEndAt(scan.text, sel.from)), sel.from - ls) !==
-      null
-  )
-    return null
+  const line = scan.text.slice(ls, lineEndAt(scan.text, sel.from))
+  if (how !== 'plain' && linkDestinationStart(line, sel.from - ls) !== null) return null
   const [from, to] = trimmedRange(scan.text, sel.from, sel.to)
-  const write = pasteAsWrite(target, how, {
-    selection: scan.text.slice(from, to),
-    format: opts.format,
-    title,
-  })
+  const write = pasteAsWrite(target, how, { selection: scan.text.slice(from, to), format, title })
   return write && { from, to, write }
 }
 
@@ -141,13 +115,7 @@ export function paste(view: EditorView, text: string, how: PasteMode): boolean {
     return true
   }
   const host = view.state.facet(editorHost)
-  const edit = pasteEdit(
-    docScan(view.state.doc),
-    view.state.selection.main,
-    text,
-    how,
-    pasteOptions(host),
-  )
+  const edit = pasteEdit(docScan(view.state.doc), view.state.selection.main, text, how, host)
   if (!edit) {
     if (how === 'auto') return false
     writePlain(view, text)
@@ -172,7 +140,7 @@ export async function pastedCellText(
   text: string,
   how: PasteMode,
 ): Promise<TextEdit> {
-  const edit = pasteEdit(scanDoc(built), sel, text, how, pasteOptions(host))
+  const edit = pasteEdit(scanDoc(built), sel, text, how, host)
   if (!edit || edit.write.kind === 'line') return { ...sel, insert: text }
   const insert =
     edit.write.kind === 'text' ? edit.write.text : await settledLinkText(host, edit.write)
@@ -198,9 +166,8 @@ export const pasteLink = EditorView.domEventHandlers({
   },
 
   drop(event, view) {
-    const text = event.dataTransfer?.types.includes('text/uri-list')
-      ? event.dataTransfer.getData('text/plain')
-      : ''
+    if (!event.dataTransfer?.types.includes('text/uri-list')) return false
+    const text = event.dataTransfer.getData('text/plain')
     if (!text) return false
     const pos = view.posAtCoords({ x: event.clientX, y: event.clientY })
     if (pos === null) return false
