@@ -416,7 +416,8 @@ class Driver {
   /** Press a named key (Enter, Escape, ArrowLeft, …) or a single character, with modifiers; editing commands (Paste, Copy, Cut, SelectAll) ride `commands`. */
   async press(key, { meta = false, shift = false, alt = false, ctrl = false, commands } = {}) {
     const mods = (meta ? MOD.meta : 0) | (shift ? MOD.shift : 0) | (alt ? MOD.alt : 0) | (ctrl ? MOD.ctrl : 0)
-    const k = KEYS[key] ?? { key, code: `Key${key.toUpperCase()}`, vk: key.toUpperCase().charCodeAt(0), text: key }
+    // a printable character outside the table rides its text alone: a punctuation code point read as a virtual key is another key (`(` is ArrowDown, `#` is End, `.` is Delete)
+    const k = KEYS[key] ?? { key, code: /^[a-z0-9]$/i.test(key) ? `Key${key.toUpperCase()}` : '', vk: /^[a-z0-9]$/i.test(key) ? key.toUpperCase().charCodeAt(0) : 0, text: key }
     const base = { modifiers: mods, key: k.key, code: k.code, windowsVirtualKeyCode: k.vk, nativeVirtualKeyCode: k.vk }
     await this.cdp.send('Input.dispatchKeyEvent', { type: k.text && !meta && !ctrl ? 'keyDown' : 'rawKeyDown', ...base, ...(k.text && !meta && !ctrl ? { text: k.text, unmodifiedText: k.text } : {}), ...(commands ? { commands } : {}) })
     await this.cdp.send('Input.dispatchKeyEvent', { type: 'keyUp', ...base })
