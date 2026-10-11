@@ -124,12 +124,12 @@ export async function pasteFromClipboard(view: EditorView, how: PasteMode): Prom
 
 export async function pastedCellText(
   host: EditorHost,
-  built: string,
+  doc: string,
   sel: { from: number; to: number },
   text: string,
   how: PasteMode,
 ): Promise<TextEdit> {
-  const edit = pasteEdit(scanDoc(built), sel, text, how, host)
+  const edit = pasteEdit(scanDoc(doc), sel, text, how, host)
   if (!edit || edit.write.kind === 'line') return { ...sel, insert: text }
   const insert =
     edit.write.kind === 'text' ? edit.write.text : await settledLinkText(host, edit.write)

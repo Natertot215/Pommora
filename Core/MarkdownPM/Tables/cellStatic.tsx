@@ -64,7 +64,7 @@ type Drawn = Token | { kind: 'section'; range: [number, number]; contentRange: [
 
 export function renderCellContent(
   text: string,
-  getConn?: () => ConnectionsApi | undefined,
+  connections?: () => ConnectionsApi | undefined,
   {
     around,
     headingLinkStyle = 'page-heading',
@@ -90,7 +90,7 @@ export function renderCellContent(
         ),
       ].sort((a, b) => a.range[0] - b.range[0])
     : held
-  const conn = getConn?.()
+  const conn = connections?.()
   let key = 0
   const src = (s: number, e: number): { 'data-src': string } => ({
     'data-src': `${base + s},${base + e}`,
@@ -243,7 +243,7 @@ function MarkerGlyph({
 // A cell holding a list draws one block per line, so the indent, the glyph and the rails have something to sit on; a cell holding none stays a single flow, which is what pre-wrap already renders correctly.
 function renderCellBody(
   text: string,
-  getConn: () => ConnectionsApi | undefined,
+  connections: () => ConnectionsApi | undefined,
   around: CellPage,
   headingLinkStyle: HeadingLinkStyle,
 ): React.ReactNode {
@@ -255,7 +255,7 @@ function renderCellBody(
     return lm && glyph ? { lm, glyph } : null
   })
   if (items.every((it) => it === null))
-    return renderCellContent(text, getConn, { around, headingLinkStyle })
+    return renderCellContent(text, connections, { around, headingLinkStyle })
   const starts = lineOffsetsOf(lines)
   const rails = railIntents(
     starts,
@@ -265,7 +265,7 @@ function renderCellBody(
   return lines.map((line, i) => {
     const it = items[i]
     const content = it ? line.slice(it.lm.contentStart) : line
-    const rendered = renderCellContent(content, getConn, {
+    const rendered = renderCellContent(content, connections, {
       around,
       headingLinkStyle,
       base: starts[i] + (it?.lm.contentStart ?? 0),

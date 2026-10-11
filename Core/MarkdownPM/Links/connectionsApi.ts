@@ -1,7 +1,7 @@
 import type { LinkStatus } from '../../Connections/connections'
 import { normalizeTitle } from '../../Paths/caseFold'
 import { aliasedToken, headingOf, type LinkKind, linkTarget, type TokenOf } from '../Engine/tokens'
-import type { LinkAction } from '../../Actions/connectionMenu'
+import type { LinkAction, LinkMenuContext } from '../../Actions/connectionMenu'
 import { targetFragment, targetNamesFile, targetTitle } from '../../Connections/links'
 import { isValidLink } from '../../Paths/urlPath'
 import type { ConnPage, PageHeadings, PageIndex } from '../../Connections/pageIndex'
@@ -9,10 +9,8 @@ import type { TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { cx } from '@pommora/uix/Utilities/cx'
 import type { HeadingLinkStyle } from '../../Settings/personalization'
 
-export type LinkMenuTarget = { editable: boolean; value?: { hideable: boolean } } & (
-  | { kind: 'page'; page: ConnPage; heading?: string }
-  | { kind: 'url'; url: string }
-)
+export type LinkMenuTarget = Pick<LinkMenuContext, 'editable' | 'value'> &
+  ({ kind: 'page'; page: ConnPage; heading?: string } | { kind: 'url'; url: string })
 
 export interface ConnectionsApi extends PageIndex {
   open: (page: ConnPage, heading?: string, newTab?: boolean) => void
@@ -64,7 +62,7 @@ export function tokenTarget(
 export function linkMenuTarget(
   target: MdTarget,
   editable: boolean,
-  value?: { hideable: boolean },
+  value?: LinkMenuContext['value'],
 ): LinkMenuTarget | null {
   const base = { editable, ...(value ? { value } : {}) }
   switch (target.kind) {

@@ -7,7 +7,7 @@ import { editorHost } from '../api'
 import type { MarkdownScope } from '../Engine/detect'
 import { type AutocompleteQuery, autocompleteQuery, closerOf } from './autocomplete'
 
-export interface AcField {
+interface AcField {
   query: AutocompleteQuery | null
   armed: number | null
   dismissed: AutocompleteQuery | null

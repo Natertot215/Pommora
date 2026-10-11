@@ -102,15 +102,8 @@ export function linkValueFromRename(alias: string, current: string): PropertyVal
   const named = alias.trim() || undefined
   const target = readLinkText(current)
   if (!target) return { kind: 'link', value: current }
-  return {
-    kind: 'link',
-    value:
-      target.kind === 'url'
-        ? serializeLink(target.url, named)
-        : target.syntax === 'wiki'
-          ? connectionText(target.title, named, target.heading)
-          : markdownPageLink(target.title, target.heading, named),
-  }
+  const syntax = target.syntax === 'wiki' ? 'wiki' : 'markdown'
+  return { kind: 'link', value: retarget(syntax, null, { ...target, alias: named }, false).text }
 }
 
 // No display means the raw URL: sort and filter must not move when a property's look changes.
