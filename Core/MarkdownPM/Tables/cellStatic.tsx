@@ -25,8 +25,8 @@ import { editFor } from '../Input/format'
 import { editEvent, landEdit } from '../Input/listRenumber'
 import { decodePayload, type TablePayload } from '../Engine/Tables/clipboard'
 import { pastedCellText } from '../Links/pasteLink'
-import { PASTE_LITERAL_ACTION, RESTING_EDITS } from '../../Actions/editorMenu'
-import { PASTE_AS_PREFIX, type PasteAsForm, type PasteMode } from '../../Actions/pasteAsMenu'
+import { RESTING_EDITS } from '../../Actions/editorMenu'
+import { pasteModeOf, type PasteMode } from '../../Actions/pasteAsMenu'
 import { codeMask, lineOffsetsOf, type TextEdit } from '../Engine/markdownCode'
 import { sectionRunsIn } from '../../Connections/scan'
 import {
@@ -361,7 +361,7 @@ export function cellOffsetAt(
 }
 
 function restingRange(cell: HTMLElement, x: number, y: number, length: number): [number, number] {
-  const caret = document.caretPositionFromPoint?.(x, y)
+  const caret = document.caretPositionFromPoint(x, y)
   const at =
     caret && cell.contains(caret.offsetNode)
       ? cellOffsetAt(cell, caret.offsetNode, caret.offset)
@@ -470,13 +470,9 @@ function StaticCellImpl({
         if (commitAtRest([{ from, to, insert: '' }], 'delete'))
           void host.clipboard.write(text.slice(from, to))
         return
-      case RESTING_EDITS.paste:
-        return pasteAtRest(from, to, 'auto')
-      case PASTE_LITERAL_ACTION:
-        return pasteAtRest(from, to, 'literal')
     }
-    if (action.startsWith(PASTE_AS_PREFIX))
-      return pasteAtRest(from, to, action.slice(PASTE_AS_PREFIX.length) as PasteAsForm)
+    const how = pasteModeOf(action)
+    if (how) return pasteAtRest(from, to, how)
     const edit = editFor(action, scanDoc(text), from, to)
     if (!edit || !commitAtRest(edit.changes, editEvent(edit))) return
     const slot = /^(format|highlight):/.test(action) && (from === to || action === 'format:link')

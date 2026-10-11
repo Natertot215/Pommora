@@ -123,7 +123,7 @@ export function CellEditor({
   initial,
   onCommit,
   onNavigate,
-  onTablePaste,
+  onFill,
   onUndo,
   onRedo,
   seat,
@@ -134,7 +134,7 @@ export function CellEditor({
   initial: string
   onCommit: (text: string) => void
   onNavigate: (dir: NavDir) => void
-  onTablePaste: (payload: TablePayload) => void
+  onFill: (payload: TablePayload) => void
   onUndo: () => void
   onRedo: () => void
   seat: Seat | null
@@ -149,7 +149,7 @@ export function CellEditor({
   const onRedoRef = useLatest(onRedo)
   // The numbering is a whole-document fact and the extensions bake at mount, so it is read live.
   const ordinalOfRef = useLatest(ordinalOf)
-  const onTablePasteRef = useLatest(onTablePaste)
+  const onFillRef = useLatest(onFill)
   const onCloseRef = useLatest(onClose)
   const ac = useConnectionAutocomplete(viewRef, host, 'cell')
   const formatExt = useReconfigured(viewRef, host.settings().commands, formatKeymap)
@@ -176,7 +176,7 @@ export function CellEditor({
             })
             const payload = decodePayload(text)
             if (!payload) return tr
-            queueMicrotask(() => onTablePasteRef.current(payload))
+            queueMicrotask(() => onFillRef.current(payload))
             return []
           }),
           Prec.highest(

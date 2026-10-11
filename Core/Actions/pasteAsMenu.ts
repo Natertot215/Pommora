@@ -10,6 +10,7 @@ import {
   type LinkTarget,
 } from '../Connections/linkValue'
 import { LINK_DISPLAY_LABELS, LINK_DISPLAYS, type LinkDisplay } from '../Properties/properties'
+import { PASTE_LITERAL_ACTION, RESTING_EDITS } from './editorMenu'
 
 export type PasteAsForm =
   | LinkDisplay
@@ -23,6 +24,14 @@ export type PasteAsForm =
 export type PasteMode = PasteAsForm | 'auto' | 'inverse' | 'literal'
 
 export const PASTE_AS_PREFIX = 'pasteAs:'
+
+export const pasteModeOf = (action: string): PasteMode | null => {
+  if (action === PASTE_LITERAL_ACTION) return 'literal'
+  if (action === RESTING_EDITS.paste) return 'auto'
+  return action.startsWith(PASTE_AS_PREFIX)
+    ? (action.slice(PASTE_AS_PREFIX.length) as PasteAsForm)
+    : null
+}
 
 interface PasteAsRow {
   label: string

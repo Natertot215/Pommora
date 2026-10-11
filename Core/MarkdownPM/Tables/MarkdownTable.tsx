@@ -448,7 +448,7 @@ export function MarkdownTable({
             onCellCommit(row, col, t)
           }}
           onNavigate={(dir) => navigate(row, col, dir)}
-          onTablePaste={(payload) => onFill(row, col, payload)}
+          onFill={(payload) => onFill(row, col, payload)}
           onUndo={onUndo}
           onRedo={onRedo}
           onClose={(pending) => forwardTitles(host, pending, current, commitResting)}

@@ -1,7 +1,6 @@
 import { Prec, type Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
-import { PASTE_LITERAL_ACTION } from '../../Actions/editorMenu'
-import { PASTE_AS_PREFIX, type PasteAsForm } from '../../Actions/pasteAsMenu'
+import { pasteModeOf } from '../../Actions/pasteAsMenu'
 import { citationSeatAt, insertCitation } from '../Citations/citationActions'
 import { embedInsertAtCaret, embedSeatAt, webpageInsertAtCaret } from '../Embeds/embedInsert'
 import { pasteFromClipboard } from '../Links/pasteLink'
@@ -17,12 +16,9 @@ export function applyEditorAction(view: EditorView, action: string): boolean {
   if (action === 'block:page') return embedInsertAtCaret(view)
   if (action === 'block:webpage') return webpageInsertAtCaret(view)
   if (action === 'block:citation') return insertCitation(view)
-  if (action === PASTE_LITERAL_ACTION) {
-    void pasteFromClipboard(view, 'literal')
-    return true
-  }
-  if (action.startsWith(PASTE_AS_PREFIX)) {
-    void pasteFromClipboard(view, action.slice(PASTE_AS_PREFIX.length) as PasteAsForm)
+  const how = pasteModeOf(action)
+  if (how) {
+    void pasteFromClipboard(view, how)
     return true
   }
   const sel = view.state.selection.main
