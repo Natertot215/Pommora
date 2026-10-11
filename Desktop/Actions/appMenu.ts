@@ -12,7 +12,7 @@ import {
   toAccelerator,
 } from '@pommora/core/Actions/commands'
 import type { Pushes } from '@pommora/core/Contract/bridge'
-import { PASTE_PLAIN_ACTION } from '@pommora/core/Actions/editorMenu'
+import { PASTE_LITERAL_ACTION } from '@pommora/core/Actions/editorMenu'
 import { resetHostZoom, stepHostZoom } from '../Web/webGuests'
 import { isWindows, nativePath, posixPath } from '../Platform/hostPath'
 
@@ -125,7 +125,7 @@ export async function installAppMenu(
         { role: 'paste' },
         {
           label: 'Paste Without Formatting',
-          click: routedEdit(PASTE_PLAIN_ACTION, 'pasteAndMatchStyle'),
+          click: routedEdit(PASTE_LITERAL_ACTION, 'pasteAndMatchStyle'),
         },
         { role: 'delete' },
         { role: 'selectAll' },

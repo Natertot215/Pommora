@@ -5,6 +5,7 @@ import {
   connectionSpells,
   linkPaste,
   readLinkText,
+  serializeLink,
   type LinkPaste,
   type LinkTarget,
 } from '../Connections/linkValue'
@@ -18,6 +19,8 @@ export type PasteAsForm =
   | 'embedPage'
   | 'embedLink'
   | 'footnote'
+
+export type PasteMode = PasteAsForm | 'auto' | 'inverse' | 'literal'
 
 export const PASTE_AS_PREFIX = 'pasteAs:'
 
@@ -63,34 +66,54 @@ export function pasteAsRows(
   return [...footnote, ...rows, ...(embed ? [embedRow] : [])]
 }
 
-interface TextPaste {
+export interface TextPaste {
   kind: 'text'
   text: string
 }
 
-interface LinePaste {
+export interface LinePaste {
   kind: 'line'
   text: string
 }
 
 export function pasteAsWrite(
   target: LinkTarget | null,
-  form: PasteAsForm,
-  title?: string,
+  how: PasteMode,
+  over: { selection: string; format: LinkDisplay; title?: string },
 ): LinkPaste | TextPaste | LinePaste | null {
   // A footnote writes two disjoint sites, so the caller forks ahead of this single-range writer.
-  if (!target || form === 'footnote') return null
-  if ((form === 'embedPage' || form === 'embedLink') && !embeddableTarget(target)) return null
+  if (!target || how === 'footnote' || how === 'literal') return null
+  if ((how === 'embedPage' || how === 'embedLink') && !embeddableTarget(target)) return null
   if (target.kind === 'page') {
-    if (form === 'connection')
-      return { kind: 'text', text: connectionText(target.title, target.alias, target.heading) }
-    if (form === 'embedPage') return { kind: 'line', text: pageEmbedText(target.title) }
-    if (form === 'markdown')
-      return { kind: 'text', text: markdownPageLink(target.title, target.heading, target.alias) }
-    return null
+    switch (how) {
+      case 'connection':
+        return { kind: 'text', text: connectionText(target.title, target.alias, target.heading) }
+      case 'markdown':
+        return { kind: 'text', text: markdownPageLink(target.title, target.heading, target.alias) }
+      case 'embedPage':
+        return { kind: 'line', text: pageEmbedText(target.title) }
+      default:
+        return null
+    }
   }
-  if (form === 'plain') return { kind: 'text', text: target.url }
-  if (form === 'embedLink') return { kind: 'line', text: composeWebpageEmbedLine('', target.url) }
-  if (form === 'connection' || form === 'markdown' || form === 'embedPage') return null
-  return linkPaste(target.url, form, title)
+  if ((how === 'auto' || how === 'inverse') && target.syntax !== 'bare') return null
+  const wrappable = over.selection !== '' && !/[\r\n]/.test(over.selection)
+  switch (how) {
+    case 'plain':
+      return { kind: 'text', text: target.url }
+    case 'embedLink':
+      return { kind: 'line', text: composeWebpageEmbedLine('', target.url) }
+    case 'connection':
+    case 'markdown':
+    case 'embedPage':
+      return null
+    case 'auto':
+      return wrappable
+        ? { kind: 'link', text: serializeLink(target.url, over.selection) }
+        : linkPaste(target.url, over.format, over.title)
+    case 'inverse':
+      return wrappable ? linkPaste(target.url, over.format, over.title) : null
+    default:
+      return linkPaste(target.url, how, over.title)
+  }
 }

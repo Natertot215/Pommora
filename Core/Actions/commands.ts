@@ -1,5 +1,5 @@
 import { commandIsCtrl } from '@pommora/uix/Interactions/chords'
-import type { PASTE_PLAIN_ACTION } from './editorMenu'
+import type { PASTE_LITERAL_ACTION } from './editorMenu'
 
 /** The `commands` object in `.nexus/settings.json`; an absent id falls back to its default here. */
 export const DEFAULT_COMMANDS = {
@@ -43,8 +43,8 @@ export const MENU_COMMANDS = [
 
 export type MenuCommand = (typeof MENU_COMMANDS)[number]
 
-/** The Edit menu's rows the window answers first, so the app's own undo and plain paste take their turn before the native edit. */
-export type EditMenuAction = 'undo' | typeof PASTE_PLAIN_ACTION
+/** The Edit menu's rows the window answers first, so the app's own undo and literal paste take their turn before the native edit. */
+export type EditMenuAction = 'undo' | typeof PASTE_LITERAL_ACTION
 
 export type NativeEdit = 'undo' | 'pasteAndMatchStyle'
 

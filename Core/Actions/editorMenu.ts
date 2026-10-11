@@ -38,7 +38,7 @@ export const editorMenuRequest = z.object({
 export type EditorMenuRequest = z.infer<typeof editorMenuRequest>
 
 export const INSERT_LINK_ACTION = 'link:insert' as const
-export const PASTE_PLAIN_ACTION = 'paste:plain' as const
+export const PASTE_LITERAL_ACTION = 'paste:literal' as const
 
 export type FormatChordAction = Extract<CommandId, `format:${string}`>
 
