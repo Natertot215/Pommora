@@ -424,7 +424,7 @@ describe('a right-press on a link keeps the caret out, so its own menu opens', (
   }
 
   it('claims the press, leaves the caret where it was, and pops the link menu', async () => {
-    const menu = vi.fn()
+    const menu = vi.fn(async () => null)
     const view = await mountEditor({ initialBody: 'a [[Alpha]] b', connections: { ...conn, menu } })
     view.focus()
     view.dispatch({ selection: { anchor: 0 } })
@@ -432,9 +432,7 @@ describe('a right-press on a link keeps the caret out, so its own menu opens', (
     expect(press(linkSpan(view)).defaultPrevented).toBe(true)
     expect(view.state.selection.main.head).toBe(0)
     linkSpan(view).dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }))
-    expect(menu).toHaveBeenCalledWith(
-      expect.objectContaining({ kind: 'page', editable: true, hasAlias: false }),
-    )
+    expect(menu).toHaveBeenCalledWith(expect.objectContaining({ kind: 'page', editable: true }))
   })
 
   it('leaves a right-press on plain text to the browser', async () => {

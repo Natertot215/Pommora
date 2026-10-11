@@ -11,10 +11,9 @@ import { text } from '@pommora/uix/Theme/typography.css'
 import { columnType, resolveFieldValue } from '../../Properties/value'
 import { GhostSuppress } from '@pommora/uix/Interactions/ghostCreate'
 import { Cell } from '../../Properties/Cells/Cell'
-import {
-  linkValueMenuTarget,
-  showConnectionMenu,
-} from '../../Interface/Menus/connectionMenuActions'
+import { showConnectionMenu } from '../../Interface/Menus/connectionMenuActions'
+import { valueMenuTarget } from '../../Properties/Cells/valueTarget'
+import type { LinkAction } from '../../Actions/connectionMenu'
 import { PropertyValueInput } from '../../Properties/Pickers/PropertyValueInput'
 import type { ValueContext } from '../../Properties/valueContext'
 import { numberBarCapable } from '../../Properties/formatValue'
@@ -95,7 +94,7 @@ export function CardValue({
       hide: () => onHide(column.id),
     })
   }
-  const runMenuIntent = (action: CellMenuAction): boolean =>
+  const runMenuIntent = (action: CellMenuAction | LinkAction): boolean =>
     runIntent(valueMenuIntent(action), null)
 
   const onClick = (e: React.MouseEvent): void => {
@@ -112,9 +111,10 @@ export function CardValue({
     // Portal events bubble the component tree: a right-click inside an open picker arrives here too — swallow it, never pop a mis-targeted menu.
     if (!e.currentTarget.contains(e.target as Node)) return
     if (t === 'link') {
-      const target = linkValueMenuTarget(v.kind === 'link' ? v.value : '', runMenuIntent, true)
+      const target = valueMenuTarget(ctx, row, v.kind === 'link' ? v.value : '', true)
       if (target) {
-        await holdGhost(async () => showConnectionMenu(target))
+        const action = await holdGhost(() => showConnectionMenu(target))
+        if (action) runMenuIntent(action)
         return
       }
     }

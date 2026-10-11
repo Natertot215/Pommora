@@ -1,14 +1,24 @@
 // @vitest-environment jsdom
-import { describe, it, expect, afterEach, vi } from 'vitest'
+import { describe, it, expect, afterEach } from 'vitest'
 import { createElement, act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { MarkdownTable } from './MarkdownTable'
-import { tableStubs, testHost } from '../../Testing/editorHarness'
 import type { TableModel } from '../Engine/Tables/model'
+import { cellToSource } from '../Engine/Tables/codec'
 import { EditorView } from '@codemirror/view'
-import type { ConnUrlAction } from '../../Actions/connectionMenu'
-import type { ConnectionsApi, ConnMenuTarget } from '../Links/connectionsApi'
+import { undo, undoDepth } from '@codemirror/commands'
+import type { LinkAction } from '../../Actions/connectionMenu'
+import type { ConnectionsApi, LinkMenuTarget } from '../Links/connectionsApi'
 import { buildPageIndex } from '../../Connections/pageIndex'
+import {
+  cleanupEditor,
+  editorContainer,
+  mountEditor,
+  settleTitle,
+  stubEditorBridge,
+  tableStubs,
+  testHost,
+} from '../../Testing/editorHarness'
 import { pushDismissal } from '@pommora/uix/Interactions/dismissalStack'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -49,6 +59,7 @@ async function mount(): Promise<void> {
 }
 
 afterEach(async () => {
+  if (!container?.isConnected) return
   await act(async () => root.unmount())
   container.remove()
 })
@@ -156,170 +167,141 @@ describe('the picker survives being clicked', () => {
 })
 
 describe('a link’s menu in a resting cell', () => {
-  const URL = 'https://www.example.com/a/b'
-  const committed = vi.fn()
-  const settled = vi.fn()
+  const URL = 'https://a.com'
+  const table = (cell: string): string => `| A |\n| --- |\n| ${cellToSource(cell)} |`
+  let popped: LinkMenuTarget | null = null
+  let answer: (action: LinkAction | null) => void = () => {}
 
-  async function mountLink(action: ConnUrlAction): Promise<void> {
-    committed.mockReset()
-    settled.mockReset()
-    container = document.createElement('div')
-    document.body.appendChild(container)
-    root = createRoot(container)
-    const linked: ConnectionsApi = {
-      ...conn,
-      menu: (t) => {
-        if (t.kind === 'url') t.apply?.(action)
-      },
-    }
-    await act(async () =>
-      root.render(
-        createElement(MarkdownTable, {
-          ...props,
-          model: { ...model, rows: [[`a [Home](${URL}) b`]] },
-          host: { ...testHost(), connections: () => linked },
-          onCellCommit: (_r: number, _c: number, text: string) => committed(text),
-          onSettled: settled,
-        }),
-      ),
-    )
+  const menuConn: ConnectionsApi = {
+    ...buildPageIndex([
+      { id: 'p1', title: 'Quarterly Plan', path: 'N/Quarterly Plan.md' },
+      { id: 'p2', title: 'Roadmap', path: 'N/Roadmap.md' },
+    ]),
+    location: () => [],
+    open: () => {},
+    headingsOf: () => undefined,
+    menu: (t) => {
+      popped = t
+      return new Promise((r) => {
+        answer = r
+      })
+    },
   }
 
-  const rightClick = async (): Promise<void> => {
-    const link = container.querySelector('.md-link') as HTMLElement
+  async function restingCell(): Promise<HTMLElement> {
+    let el = editorContainer().querySelector('tbody .mdpm-tbl-cell-static [data-link]')
+    for (let i = 0; !el && i < 50; i++) {
+      await act(() => new Promise((r) => setTimeout(r, 20)))
+      el = editorContainer().querySelector('tbody .mdpm-tbl-cell-static [data-link]')
+    }
+    if (!el) throw new Error('the resting link never rendered')
+    return el as HTMLElement
+  }
+
+  async function open(cell: string, readOnly = false): Promise<EditorView> {
+    stubEditorBridge()
+    popped = null
+    const view = await mountEditor({ initialBody: table(cell), connections: menuConn, readOnly })
+    const link = await restingCell()
     await act(async () => {
       link.dispatchEvent(
         new MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 2 }),
       )
       link.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }))
     })
+    return view
   }
 
-  it('rewrites the cell in place, without entering it', async () => {
-    await mountLink('format:link-short')
-    await rightClick()
-    expect(committed).toHaveBeenCalledWith(`a [example.com](${URL}) b`)
-    expect(container.querySelectorAll('.cm-editor')).toHaveLength(0)
-  })
-
-  it('settles the table, so the edit is drawn rather than waiting on a visit', async () => {
-    await mountLink('link:delete')
-    await rightClick()
-    expect(settled).toHaveBeenCalled()
-  })
-
-  it('declines once the cell no longer holds the link the menu was popped on', async () => {
-    committed.mockReset()
-    container = document.createElement('div')
-    document.body.appendChild(container)
-    root = createRoot(container)
-    let popped: ConnMenuTarget | null = null
-    const linked: ConnectionsApi = {
-      ...conn,
-      menu: (t) => {
-        popped = t
-      },
-    }
-    const render = (rows: string[][]): Promise<void> =>
-      act(async () =>
-        root.render(
-          createElement(MarkdownTable, {
-            ...props,
-            model: { ...model, rows },
-            host: { ...testHost(), connections: () => linked },
-            onCellCommit: (_r: number, _c: number, text: string) => committed(text),
-          }),
-        ),
-      )
-    await render([[`a [Home](${URL}) b`]])
-    const link = container.querySelector('.md-link') as HTMLElement
-    await act(async () => {
-      link.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }))
+  const pick = (action: LinkAction | null): Promise<void> =>
+    act(async () => {
+      answer(action)
+      await new Promise((r) => setTimeout(r, 0))
     })
-    await render([['something else entirely']])
-    const target = popped as ConnMenuTarget | null
-    if (target?.kind === 'url') await act(async () => target.apply?.('link:delete'))
-    expect(committed).not.toHaveBeenCalled()
-  })
 
-  it('leaves the label as prose on Remove Link', async () => {
-    await mountLink('link:remove')
-    await rightClick()
-    expect(committed).toHaveBeenCalledWith('a Home b')
-  })
-
-  it('takes the whole link on Delete', async () => {
-    await mountLink('link:delete')
-    await rightClick()
-    expect(committed).toHaveBeenCalledWith('a  b')
-  })
-
-  it('enters the cell with the label selected on Rename', async () => {
-    await mountLink('rename')
-    await rightClick()
-    expect(committed).not.toHaveBeenCalled()
-    const view = EditorView.findFromDOM(container.querySelector('.cm-editor') as HTMLElement)
-    const sel = view?.state.selection.main
-    expect(view && sel && view.state.sliceDoc(sel.from, sel.to)).toBe('Home')
-  })
-
-  it('enters the cell with the address selected on Edit Link', async () => {
-    await mountLink('editLink')
-    await rightClick()
-    const view = EditorView.findFromDOM(container.querySelector('.cm-editor') as HTMLElement)
-    const sel = view?.state.selection.main
-    expect(view && sel && view.state.sliceDoc(sel.from, sel.to)).toBe(URL)
-  })
-})
-
-describe('a connection’s menu in a resting cell', () => {
-  let target: ConnMenuTarget | null = null
-
-  async function mountConn(body: string): Promise<void> {
-    target = null
-    container = document.createElement('div')
-    document.body.appendChild(container)
-    root = createRoot(container)
-    const linked: ConnectionsApi = {
-      ...conn,
-      menu: (t) => {
-        target = t
-      },
-    }
-    await act(async () =>
-      root.render(
-        createElement(MarkdownTable, {
-          ...props,
-          model: { ...model, rows: [[body]] },
-          host: { ...testHost(), connections: () => linked },
-        }),
-      ),
-    )
-    const link = container.querySelector('.md-connection-resolved') as HTMLElement
-    await act(async () => {
-      link.dispatchEvent(
-        new MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 2 }),
-      )
-      link.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }))
-    })
+  const liveCell = (): EditorView | null => {
+    const dom = editorContainer().querySelector('.mdpm-tbl-cell-editor .cm-content')
+    return dom && EditorView.findFromDOM(dom as HTMLElement)
   }
 
-  it('offers the page menu, knowing it already wears a title', async () => {
-    await mountConn('[[Quarterly Plan|the plan]]')
-    expect(target).toMatchObject({ kind: 'page', editable: true, hasAlias: true })
+  const liveSelection = (): string | null => {
+    const cell = liveCell()
+    const sel = cell?.state.selection.main
+    return cell && sel ? cell.state.sliceDoc(sel.from, sel.to) : null
+  }
+
+  afterEach(cleanupEditor)
+
+  it('Remove Link commits the shown text without entering', async () => {
+    const view = await open('[[Quarterly Plan|the plan]]')
+    await pick('link:remove')
+    expect(view.state.doc.toString()).toBe(table('the plan'))
+    expect(liveCell()).toBeNull()
   })
 
-  it('Rename enters the cell with the alias selected', async () => {
-    await mountConn('[[Quarterly Plan|the plan]]')
-    const popped = target as ConnMenuTarget | null
-    if (popped?.kind === 'page') await act(async () => popped.apply?.('rename'))
-    const view = EditorView.findFromDOM(container.querySelector('.cm-editor') as HTMLElement)
-    const sel = view?.state.selection.main
-    expect(view && sel && view.state.sliceDoc(sel.from, sel.to)).toBe('the plan')
+  it('Rename on a bare connection commits an open alias and enters with the caret after the pipe', async () => {
+    const view = await open('[[Quarterly Plan]]')
+    await pick('rename')
+    expect(view.state.doc.toString()).toBe(table('[[Quarterly Plan|]]'))
+    expect(liveCell()?.state.doc.toString()).toBe('[[Quarterly Plan|]]')
+    expect(liveCell()?.state.selection.main.head).toBe(17)
   })
 
-  it('a markdown link naming a page gets the page menu without the authoring pair', async () => {
-    await mountConn('[the plan](Quarterly%20Plan)')
-    expect(target).toMatchObject({ kind: 'page', editable: false, hasAlias: false })
+  it('Edit Title enters with the title selected and writes nothing', async () => {
+    const view = await open('[[Quarterly Plan|the plan]]')
+    await pick('editLink')
+    expect(view.state.doc.toString()).toBe(table('[[Quarterly Plan|the plan]]'))
+    expect(liveSelection()).toBe('Quarterly Plan')
+  })
+
+  it('Page Title keeps the cell as it was until the title lands, then commits the titled form once', async () => {
+    const view = await open(`[x](${URL})`)
+    await pick('format:link-title')
+    expect(view.state.doc.toString()).toBe(table(`[x](${URL})`))
+    await settleTitle(URL, 'A Site')
+    expect(view.state.doc.toString()).toBe(table(`[A Site](${URL})`))
+    await act(async () => {
+      undo(view)
+    })
+    expect(view.state.doc.toString()).toBe(table(`[x](${URL})`))
+    expect(liveCell()).toBeNull()
+  })
+
+  it('Page Title commits the short form once when the title fails', async () => {
+    const view = await open(`[x](${URL})`)
+    await pick('format:link-title')
+    await settleTitle(URL, null)
+    expect(view.state.doc.toString()).toBe(table(`[a.com](${URL})`))
+    await act(async () => {
+      undo(view)
+    })
+    expect(view.state.doc.toString()).toBe(table(`[x](${URL})`))
+  })
+
+  it('a markdown link naming a page authors as a connection does', async () => {
+    await open('[x](Roadmap)')
+    expect(popped).toMatchObject({ kind: 'page', editable: true })
+    await pick('editLink')
+    expect(liveSelection()).toBe('Roadmap')
+  })
+
+  it('declines the pick once the cell was edited while its menu stood open', async () => {
+    const view = await open(`[x](${URL})`)
+    const at = view.state.doc.toString().indexOf('[x]')
+    await act(async () => {
+      view.dispatch({ changes: { from: at, insert: 'y ' } })
+    })
+    await pick('link:delete')
+    expect(view.state.doc.toString()).toBe(table(`y [x](${URL})`))
+  })
+
+  it('a format that leaves the text as it was commits nothing', async () => {
+    const view = await open(`[a.com](${URL})`)
+    await pick('format:link-short')
+    expect(undoDepth(view.state)).toBe(0)
+  })
+
+  it('a read-only cell offers no authoring rows', async () => {
+    await open('[[Quarterly Plan]]', true)
+    expect(popped).toMatchObject({ kind: 'page', editable: false })
   })
 })

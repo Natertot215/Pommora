@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ok } from '../../Contract/result'
 import { act } from 'react'
 import type { EditorView } from '@codemirror/view'
-import { type ConnMenuAction, connectionMenuModel } from '../../Actions/connectionMenu'
+import { type LinkMenuAction, connectionMenuModel } from '../../Actions/connectionMenu'
 import type { ConnectionsApi } from './connectionsApi'
 import { buildPageIndex } from '../../Connections/pageIndex'
 import { showConnectionMenu } from '../../Interface/Menus/connectionMenuActions'
@@ -17,7 +17,7 @@ class ResizeObserverStub {
 ;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = ResizeObserverStub
 
 const openExternal = vi.fn()
-const connMenu = vi.fn<(req: unknown) => Promise<ConnMenuAction | null>>()
+const connMenu = vi.fn<(req: unknown) => Promise<LinkMenuAction | null>>()
 const writeClipboard = vi.fn()
 const copyPath = vi.fn()
 stubEditorBridge({
@@ -125,29 +125,18 @@ describe('a markdown link’s menu follows what its target names', () => {
     const view = await mountEditor({ initialBody: BODY, connections: conn })
     await rightClick(view, 5, '.md-link')
     expect(connMenu).toHaveBeenCalledWith({
-      items: connectionMenuModel({
-        surface: 'editor',
-        editable: true,
-        hasAlias: false,
-        external: true,
-      }),
+      items: connectionMenuModel({ kind: 'url', web: true, editable: true }),
       anchor: undefined,
     })
     expect(writeClipboard).toHaveBeenCalledWith('https://x.test')
   })
 
-  it('a target naming a page is offered the page menu, path included', async () => {
+  it('a target naming a page is offered the page menu an editable connection gets, path included', async () => {
     connMenu.mockResolvedValue('title:copypath')
     const view = await mountEditor({ initialBody: 'a [Alpha](Alpha) b', connections: conn })
     await rightClick(view, 5, '.md-connection-resolved')
     expect(connMenu).toHaveBeenCalledWith({
-      items: connectionMenuModel({
-        surface: 'editor',
-        editable: false,
-        hasAlias: false,
-        open: 'closed',
-        windowed: false,
-      }),
+      items: connectionMenuModel({ kind: 'page', open: 'closed', windowed: false, editable: true }),
       anchor: undefined,
     })
     expect(copyPath).toHaveBeenCalledWith('Notes/Alpha.md')

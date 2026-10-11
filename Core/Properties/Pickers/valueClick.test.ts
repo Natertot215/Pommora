@@ -77,6 +77,7 @@ describe('valueMenuIntent', () => {
     expect(valueMenuIntent('cell:clear')).toEqual({ kind: 'commit', value: null })
     expect(valueMenuIntent('cell:hide')).toEqual({ kind: 'hide' })
     expect(valueMenuIntent('style:look:bar')).toBeNull()
+    expect(valueMenuIntent('format:link-full')).toBeNull()
   })
 })
 

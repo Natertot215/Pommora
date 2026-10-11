@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { EditorView } from '@codemirror/view'
 import { ok } from '../../Contract/result'
-import type { ConnMenuAction } from '../../Actions/connectionMenu'
+import type { LinkMenuAction } from '../../Actions/connectionMenu'
 import type { EditorMenuRequest } from '../../Actions/editorMenu'
 import { buildPageIndex } from '../../Connections/pageIndex'
 import { showConnectionMenu } from '../../Interface/Menus/connectionMenuActions'
@@ -23,7 +23,7 @@ if (!('ResizeObserver' in globalThis)) {
   }
 }
 
-const connMenu = vi.fn<(req: unknown) => Promise<ConnMenuAction | null>>()
+const connMenu = vi.fn<(req: unknown) => Promise<LinkMenuAction | null>>()
 stubEditorBridge({ menu: async (req: unknown) => ok(await connMenu(req)) })
 
 const format = vi.fn<(req: EditorMenuRequest) => Promise<string | null>>()

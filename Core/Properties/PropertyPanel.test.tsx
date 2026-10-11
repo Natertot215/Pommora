@@ -164,6 +164,43 @@ describe('PropertyPanel', () => {
     expect(text()).not.toContain('Stage')
   })
 
+  it('Remove on a Link value’s menu clears the value and hides its row', async () => {
+    const siteDef: PropertyDefinition = { id: 'prop_site', name: 'Site', type: 'link' }
+    setTree()
+    const tree = useSession.getState().tree as unknown as {
+      config: { registry: PropertyDefinition[] }
+      collections: { properties: PropertyDefinition[] }[]
+    }
+    tree.config.registry.push(siteDef)
+    tree.collections[0].properties.push(siteDef)
+    ask = vi.fn(async (channel: string) => ({
+      ok: true,
+      value: channel === 'menu' ? 'cell:hide' : null,
+    }))
+    ;(window as unknown as { nexus: unknown }).nexus = {
+      ask,
+      tell: vi.fn(),
+      on: vi.fn(() => () => {}),
+    }
+    cachePageDetail(detail({ path: 'Col/Page.md', frontmatter: { Site: 'https://a.com' } }))
+    await renderPanel(<PropertyPanel subject={PAGE} host="dropdown" />)
+    expect(text()).toContain('Site')
+    await act(async () => {
+      host
+        .querySelector('[data-property-row="prop_site"]')
+        ?.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
+    })
+    await act(async () => {})
+    const menu = ask.mock.calls.find((c) => c[0] === 'menu')?.[1] as {
+      items: { action?: string }[]
+    }
+    expect(menu.items.map((i) => i.action)).toContain('cell:hide')
+    expect(useSession.getState().mutate).toHaveBeenCalledWith(
+      expect.objectContaining({ propertyId: 'prop_site', value: null }),
+    )
+    expect(text()).not.toContain('Site')
+  })
+
   it('a push naming the page or a property rename re-reads it, and a sibling’s push does not', async () => {
     useSession.setState({ valuesEpoch: null })
     cachePageDetail(detail({ path: 'Col/Page.md', frontmatter: { Stage: 'Alpha' } }))

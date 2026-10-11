@@ -1,61 +1,71 @@
 import { describe, expect, it } from 'vitest'
-import { connectionMenuModel, type ConnMenuContext } from './connectionMenu'
+import { connectionMenuModel, type LinkMenuContext } from './connectionMenu'
 
-const rows = (ctx: Partial<ConnMenuContext> = {}): [string, string | undefined][] =>
-  connectionMenuModel({ surface: 'editor', editable: true, hasAlias: false, ...ctx }).map((i) => [
-    i.label,
-    i.action,
-  ])
+const rows = (ctx: LinkMenuContext): [string, string | undefined][] =>
+  connectionMenuModel(ctx).map((i) => [i.label, i.action])
+
+const page: Omit<Extract<LinkMenuContext, { kind: 'page' }>, 'editable'> = {
+  kind: 'page',
+  open: 'closed',
+  windowed: false,
+}
+const web = { kind: 'url', web: true } as const
 
 describe('a link naming a page', () => {
-  it('offers the same actions in the editor and in a property cell, the ending aside', () => {
-    expect(rows()).toEqual([
+  it('an editor lists the opens, the authoring pair, both copies, and what unlinks it', () => {
+    expect(rows({ ...page, editable: true })).toEqual([
       ['Preview', 'title:window'],
       ['New Tab', 'title:newtab'],
-      ['Add Title', 'rename'],
-      ['Edit Link', 'editLink'],
+      ['Rename', 'rename'],
+      ['Edit Title', 'editLink'],
+      ['Copy Link', 'title:copylink'],
+      ['Copy Path', 'title:copypath'],
+      ['Remove Link', 'link:remove'],
+      ['Delete', 'link:delete'],
+    ])
+  })
+
+  it('a read-only surface lists the opens and the copies alone', () => {
+    expect(rows({ ...page, editable: false })).toEqual([
+      ['Preview', 'title:window'],
+      ['New Tab', 'title:newtab'],
       ['Copy Link', 'title:copylink'],
       ['Copy Path', 'title:copypath'],
     ])
-    expect(rows({ surface: 'cell' })).toEqual([...rows(), ['Clear', 'cell:clear']])
   })
 
-  it('names editing the title once one exists', () => {
-    expect(rows({ hasAlias: true })).toContainEqual(['Edit Title', 'rename'])
-  })
-
-  it('withholds the authoring pair from a surface that cannot take the edit', () => {
-    expect(rows({ editable: false }).map(([, a]) => a)).not.toContain('rename')
+  it('a value closes with Clear, and Remove where its surface hides values', () => {
+    expect(rows({ ...page, editable: true, value: { hideable: false } }).slice(-1)).toEqual([
+      ['Clear', 'cell:clear'],
+    ])
+    expect(rows({ ...page, editable: true, value: { hideable: true } }).slice(-2)).toEqual([
+      ['Clear', 'cell:clear'],
+      ['Remove', 'cell:hide'],
+    ])
   })
 
   it('names focusing a page that already holds a tab', () => {
-    expect(rows({ open: 'tab' })).toContainEqual(['Open', 'title:newtab'])
+    expect(rows({ ...page, editable: true, open: 'tab' })).toContainEqual(['Open', 'title:newtab'])
   })
 
   it('drops each open item where that surface already shows the page', () => {
-    const actions = (ctx: Partial<ConnMenuContext>): (string | undefined)[] =>
-      rows(ctx).map(([, a]) => a)
+    const actions = (ctx: Partial<typeof page>): (string | undefined)[] =>
+      rows({ ...page, ...ctx, editable: true }).map(([, a]) => a)
     expect(actions({ open: 'detail' })).not.toContain('title:newtab')
     expect(actions({ open: 'detail' })).toContain('title:window')
     expect(actions({ windowed: true })).not.toContain('title:window')
     expect(actions({ windowed: true })).toContain('title:newtab')
-    const both = actions({ open: 'detail', windowed: true })
-    expect(both).not.toContain('title:window')
-    expect(both).not.toContain('title:newtab')
-    expect(both[0]).toBe('rename')
+    expect(actions({ open: 'detail', windowed: true })[0]).toBe('rename')
   })
 
-  it('a card ends with the Remove every card value offers', () => {
-    expect(rows({ surface: 'cell', hideable: true }).at(-1)).toEqual(['Remove', 'cell:hide'])
+  it("never offers a page's history", () => {
+    expect(rows({ ...page, editable: true }).map(([, a]) => a)).not.toContain('title:history')
   })
 })
 
 describe('a link naming an address', () => {
-  const ext = (ctx: Partial<ConnMenuContext> = {}): [string, string | undefined][] =>
-    rows({ external: true, ...ctx })
-
-  it('the editor keeps the address among the items that rewrite the link', () => {
-    expect(ext()).toEqual([
+  it('an editor lists the opens, the authoring pair, the copy with Format, and what unlinks it', () => {
+    expect(rows({ ...web, editable: true })).toEqual([
       ['Preview', 'link:window'],
       ['Open In Browser', 'link:browser'],
       ['Rename', 'rename'],
@@ -67,37 +77,28 @@ describe('a link naming an address', () => {
     ])
   })
 
-  it('a cell copies the address alongside the opens, and can only empty its value', () => {
-    expect(ext({ surface: 'cell' })).toEqual([
+  it('a value lists the same opens and authoring, then the copy and its closing rows, with no Format', () => {
+    expect(rows({ ...web, editable: true, value: { hideable: true } })).toEqual([
       ['Preview', 'link:window'],
       ['Open In Browser', 'link:browser'],
-      ['Copy Link', 'title:copylink'],
       ['Rename', 'rename'],
       ['Edit Link', 'editLink'],
+      ['Copy Link', 'title:copylink'],
       ['Clear', 'cell:clear'],
+      ['Remove', 'cell:hide'],
     ])
   })
 
-  it('an address is never offered what needs a page behind it', () => {
-    for (const surface of ['editor', 'cell'] as const)
-      expect(ext({ surface }).map(([, a]) => a)).not.toContain('title:copypath')
-  })
-
-  it('a read-only surface is offered the address and nothing that rewrites the link', () => {
-    expect(ext({ editable: false })).toEqual([
+  it('a read-only surface is offered the opens and the copy', () => {
+    expect(rows({ ...web, editable: false })).toEqual([
       ['Preview', 'link:window'],
       ['Open In Browser', 'link:browser'],
       ['Copy Link', 'title:copylink'],
     ])
   })
 
-  it('Format lists the three link forms as its branch', () => {
-    const format = connectionMenuModel({
-      surface: 'editor',
-      editable: true,
-      hasAlias: false,
-      external: true,
-    }).find((i) => i.label === 'Format')
+  it('Format lists the three link forms for a web address', () => {
+    const format = connectionMenuModel({ ...web, editable: true }).find((i) => i.label === 'Format')
     expect(format?.submenu?.map((r) => r.action)).toEqual([
       'format:link-full',
       'format:link-short',
@@ -105,14 +106,17 @@ describe('a link naming an address', () => {
     ])
   })
 
-  it("never offers a page's history — the link menu points, it does not keep", () => {
-    const model = connectionMenuModel({
-      surface: 'editor',
-      editable: true,
-      hasAlias: false,
-      open: 'closed',
-      windowed: false,
-    })
-    expect(model.map((r) => r.action)).not.toContain('title:history')
+  it('a non-web address opens in the browser alone and has no Page Title to format to', () => {
+    const model = connectionMenuModel({ kind: 'url', web: false, editable: true })
+    expect(model.map((i) => i.action).slice(0, 2)).toEqual(['link:browser', 'rename'])
+    expect(model[1].separatorBefore).toBe(true)
+    expect(model.find((i) => i.label === 'Format')?.submenu?.map((r) => r.label)).toEqual([
+      'Full Link',
+      'Short Link',
+    ])
+  })
+
+  it('never offers what needs a page behind it', () => {
+    expect(rows({ ...web, editable: true }).map(([, a]) => a)).not.toContain('title:copypath')
   })
 })

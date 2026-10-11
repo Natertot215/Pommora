@@ -168,3 +168,42 @@ describe('the card menu', () => {
     expect(mutateSpy).toHaveBeenCalledWith(expect.objectContaining({ op: 'createPage' }))
   })
 })
+
+describe('a card’s link value', () => {
+  const siteDef: PropertyDefinition = { id: 'prop_site', name: 'Site', type: 'link' }
+
+  it('pops the link menu, which closes with Clear and Remove', async () => {
+    const base = source()
+    const withSite = {
+      ...base,
+      properties: [STATUS_DEF, numberDef, siteDef],
+      views: base.views?.map((v) => ({
+        ...v,
+        property_order: ['_title', 'prop_status', 'prop_site'],
+      })),
+    } as CollectionNode
+    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+      'view:loadValues': async () =>
+        valuesReply({
+          p1: { [ID_KEY]: 'p1', ...propsAtRoot({ prop_site: 'https://a.com' }, [siteDef]) },
+          p2: { [ID_KEY]: 'p2' },
+        }),
+      menu: menuSpy,
+    })
+    await renderView(root, withSite)
+    const value = [...card('p1').querySelectorAll<HTMLElement>('.card-value')].at(-1) as HTMLElement
+    await act(async () => {
+      value.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
+    })
+    const items = menuSpy.mock.calls[0][0].items as { action?: string }[]
+    expect(items.map((i) => i.action)).toEqual([
+      'link:window',
+      'link:browser',
+      'rename',
+      'editLink',
+      'title:copylink',
+      'cell:clear',
+      'cell:hide',
+    ])
+  })
+})

@@ -399,6 +399,26 @@ describe('menu-entered editing', () => {
     })
   })
 
+  it('a link value’s menu is the link menu, closing with Clear and no Remove', async () => {
+    await mountTable(sourceWith())
+    channels.menu = vi.fn(async () => ok(null))
+    const linkCell = host.querySelectorAll<HTMLElement>('.data-cell')[4]
+    await act(async () => {
+      linkCell.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
+    })
+    const items = (channels.menu as ReturnType<typeof vi.fn>).mock.calls[0][0].items as {
+      action?: string
+    }[]
+    expect(items.map((i) => i.action)).toEqual([
+      'link:window',
+      'link:browser',
+      'rename',
+      'editLink',
+      'title:copylink',
+      'cell:clear',
+    ])
+  })
+
   it('title Rename commits a rename op', async () => {
     await mountTable(sourceWith())
     channels.menu = vi.fn(async () => ok('title:rename'))

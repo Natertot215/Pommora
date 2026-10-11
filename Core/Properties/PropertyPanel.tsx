@@ -59,7 +59,9 @@ import type { ConnectionsApi } from '../MarkdownPM/Links/connectionsApi'
 import { dateDefaults } from './columnStyles'
 import { fetchPageDetail, readPageDetail } from '../Session/pageDetailCache'
 import { popMenu } from '../Actions/menuActions'
-import { linkValueMenuTarget, showConnectionMenu } from '../Interface/Menus/connectionMenuActions'
+import { showConnectionMenu } from '../Interface/Menus/connectionMenuActions'
+import { valueMenuTarget } from './Cells/valueTarget'
+import type { LinkAction } from '../Actions/connectionMenu'
 import * as s from './property-panel.css'
 import { heldKey } from '../Files/heldKeys'
 import { normalizeTitle } from '../Paths/caseFold'
@@ -301,7 +303,7 @@ export function PropertyPanel({
       rename: editAs('popover'),
       open: ({ url }) => openWebLink(url),
       popover: editAs('popover'),
-      hide: null,
+      hide: () => emptyRow(def.id, false),
     })
   }
   const editRow = (
@@ -339,11 +341,11 @@ export function PropertyPanel({
       return true
     }
     if (!def || value.kind !== 'link') return false
-    const run = (action: CellMenuAction | null): void => {
+    const run = (action: CellMenuAction | LinkAction | null): void => {
       if (action) runIntent(def, value, valueMenuIntent(action), null)
     }
-    const link = linkValueMenuTarget(value.value, run)
-    if (link) showConnectionMenu(link)
+    const link = row && ctx && valueMenuTarget(ctx, row, value.value, true)
+    if (link) void showConnectionMenu(link).then(run)
     else void popMenu(cellMenuModel({ kind: 'link', filled: true })).then(run)
     return true
   }

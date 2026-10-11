@@ -1,28 +1,44 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ok } from '../../Contract/result'
-import type { ConnMenuAction } from '../../Actions/connectionMenu'
+import type { LinkMenuAction } from '../../Actions/connectionMenu'
 import { useSession } from '../../Session/store'
 import { stubDialer } from '../../vitest.setup'
-import { makeTree } from '../../Testing/testTree'
-import { linkValueMenuTarget, showConnectionMenu } from './connectionMenuActions'
+import { showConnectionMenu } from './connectionMenuActions'
 
-const connMenu = vi.fn<(req: unknown) => Promise<ConnMenuAction | null>>()
+const connMenu = vi.fn<(req: unknown) => Promise<LinkMenuAction | null>>()
+const writeClipboard = vi.fn()
 ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
   menu: async (req: unknown) => ok(await connMenu(req)),
+  'clipboard:write': async (text: unknown) => ok(writeClipboard(text)),
 })
 
 const page = { id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' }
-const target = { kind: 'page', page, editable: false, hasAlias: false } as const
+const target = { kind: 'page', page, editable: false } as const
 
 const settle = (): Promise<void> => new Promise((r) => setTimeout(r, 0))
 
 beforeEach(() => {
   connMenu.mockReset()
+  writeClipboard.mockReset()
 })
 
 afterEach(() => {
   useSession.setState({ windowSlot: null, selection: { kind: 'none' }, pages: {} })
+})
+
+describe('the link menu answers with the row its caller applies', () => {
+  it('hands back an authoring pick', async () => {
+    connMenu.mockResolvedValue('rename')
+    await expect(showConnectionMenu({ ...target, editable: true })).resolves.toBe('rename')
+  })
+
+  it('runs a copy itself and hands back nothing', async () => {
+    connMenu.mockResolvedValue('title:copylink')
+    const url = 'https://a.com'
+    await expect(showConnectionMenu({ kind: 'url', url, editable: true })).resolves.toBeNull()
+    expect(writeClipboard).toHaveBeenCalledWith(url)
+  })
 })
 
 describe('a connection opens its page the two ways every page menu offers', () => {
@@ -30,8 +46,7 @@ describe('a connection opens its page the two ways every page menu offers', () =
     const select = vi.fn(async () => {})
     useSession.setState({ select })
     connMenu.mockResolvedValue('title:newtab')
-    showConnectionMenu(target)
-    await settle()
+    await expect(showConnectionMenu(target)).resolves.toBeNull()
     expect(select).toHaveBeenCalledWith(
       { kind: 'page', id: 'p1', path: 'Notes/Alpha.md' },
       { newTab: true },
@@ -42,8 +57,7 @@ describe('a connection opens its page the two ways every page menu offers', () =
     const openWindowTab = vi.fn()
     useSession.setState({ openWindowTab })
     connMenu.mockResolvedValue('title:window')
-    showConnectionMenu(target)
-    await settle()
+    await showConnectionMenu(target)
     expect(openWindowTab).toHaveBeenCalledWith(
       {
         kind: 'page',
@@ -63,8 +77,7 @@ describe('a heading link opens at its heading', () => {
     const openWindowTab = vi.fn()
     useSession.setState({ openWindowTab })
     connMenu.mockResolvedValue('title:window')
-    showConnectionMenu(atSetup)
-    await settle()
+    await showConnectionMenu(atSetup)
     expect(openWindowTab).toHaveBeenCalledWith(ref, { heading: 'Setup' })
   })
 
@@ -72,14 +85,13 @@ describe('a heading link opens at its heading', () => {
     const select = vi.fn(async () => {})
     useSession.setState({ select })
     connMenu.mockResolvedValue('title:newtab')
-    showConnectionMenu(atSetup)
-    await settle()
+    await showConnectionMenu(atSetup)
     expect(select).toHaveBeenCalledWith(ref, { newTab: true, heading: 'Setup' })
   })
 
   const offered = async (): Promise<(string | undefined)[]> => {
     connMenu.mockResolvedValue(null)
-    showConnectionMenu(atSetup)
+    await showConnectionMenu(atSetup)
     await settle()
     return (connMenu.mock.calls[0][0] as { items: { action?: string }[] }).items.map(
       (i) => i.action,
@@ -99,11 +111,5 @@ describe('a heading link opens at its heading', () => {
       pages: { p1: { status: 'ready', detail: { ...page, frontmatter: {} }, body: '' } } as never,
     })
     expect(await offered()).toContain('title:newtab')
-  })
-
-  it('a Link value carries its heading onto the menu', () => {
-    useSession.setState({ tree: makeTree() })
-    const menu = linkValueMenuTarget('[[Alpha#Setup]]', () => {})
-    expect(menu).toMatchObject({ kind: 'page', heading: 'Setup' })
   })
 })

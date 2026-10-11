@@ -1,7 +1,6 @@
 import { Fragment, memo } from 'react'
 import {
   holdsTokens,
-  linkAddress,
   linkTokenAt,
   type LinkKind,
   type Token,
@@ -27,14 +26,13 @@ import {
   linkLook,
   linkMenuTarget,
   titleTarget,
-  tokenMenuTarget,
   tokenTarget,
   type ConnectionsApi,
-  type ConnMenuTarget,
   type MdTarget,
 } from '../Links/connectionsApi'
-import { linkActionText } from '../Links/linkFormat'
-import { wikiAuthorTarget } from '../Links/linkEdit'
+import { linkEdit } from '../Links/linkEdit'
+import { settledLinkText } from '../Links/pendingTitle'
+import type { LinkAction } from '../../Actions/connectionMenu'
 import { dwellTarget, followTarget, heldTarget } from '../Links/linkClicks'
 import { CITE_GLYPH, followCitation } from '../Citations/citationPointer'
 import type { EditorHost, OwnPage } from '../api'
@@ -298,27 +296,20 @@ function StaticCellImpl({
     return true
   }
 
-  const menuAt = (found: TokenOf<LinkKind>, api: ConnectionsApi): ConnMenuTarget | null =>
-    menuTarget(
-      () => {
-        const now = linkTokenAt(cellTokens(live.current), found.range[0])
-        return now && live.current.slice(...now.range) === text.slice(...found.range)
-          ? { text: live.current, tk: now }
-          : null
-      },
-      found,
-      text,
-      api,
-      host,
-      onCommit,
-      onActivate,
-    )
+  const applyAtRest = async (tk: TokenOf<LinkKind>, action: LinkAction): Promise<void> => {
+    const edit = linkEdit(text, tk, action, host.linkTitles)
+    if (!edit) return
+    if (edit.kind === 'select') return onActivate({ kind: 'select', range: edit.range })
+    const insert = await settledLinkText(host, edit)
+    if (!commitAtRest(text, [{ from: edit.from, to: edit.to, insert }])) return
+    if (edit.select !== undefined) onActivate({ kind: 'select', range: [edit.select, edit.select] })
+  }
   const { linkAt, dismiss, onContextMenu, onPointerOver, onPointerOut } = linkGestures(
     text,
     host.connections,
     host.glance,
     null,
-    menuAt,
+    { editable: () => !readOnly(), apply: applyAtRest },
   )
 
   // Following waits for the click so a drag that starts on a link selects instead.
@@ -407,13 +398,16 @@ function StaticCellImpl({
   )
 }
 
-/** The link gestures a resting surface shares: a press outside the glance closes it, a link dwells into one, and a right-click on a link opens the menu `menuAt` builds — read-only by default, with `own` naming the page a bare `#Heading` answers to. */
+/** The link gestures a resting surface shares: a press outside the glance closes it, a link dwells into one, and a right-click on a link opens its menu — read-only unless `authoring` applies the pick, with `own` naming the page a bare `#Heading` answers to. */
 export function linkGestures(
   text: string,
   connections: (() => ConnectionsApi | undefined) | undefined,
   glance: EditorHost['glance'],
   own: OwnPage | null = null,
-  menuAt?: (tk: TokenOf<LinkKind>, api: ConnectionsApi) => ConnMenuTarget | null,
+  authoring?: {
+    editable: () => boolean
+    apply: (tk: TokenOf<LinkKind>, action: LinkAction) => void
+  },
 ) {
   const linkAt = (e: React.SyntheticEvent): RestingHit | null =>
     cellLinkTarget(text, e.target, connections?.(), own)
@@ -430,11 +424,12 @@ export function linkGestures(
       if (!api?.menu) return false
       const found = linkAt(e)
       if (!found?.tk) return false
-      const target = menuAt ? menuAt(found.tk, api) : linkMenuTarget(found.target)
+      const tk = found.tk
+      const target = linkMenuTarget(found.target, authoring?.editable() ?? false)
       if (!target) return false
       e.preventDefault()
       e.stopPropagation()
-      api.menu(target)
+      void api.menu(target).then((action) => action && authoring?.apply(tk, action))
       return true
     },
     onPointerOver: (e: React.PointerEvent): void => {
@@ -462,40 +457,6 @@ function cellLinkTarget(
     }
   const tk = linkTokenAt(cellTokens(text), span[0])
   return tk ? { el, tk, target: heldTarget(tokenTarget(api, text, tk), own) } : null
-}
-
-/** `still` re-reads the link when the action is chosen; `tk` and `text` are what the menu was built from. */
-function menuTarget(
-  still: () => { text: string; tk: TokenOf<LinkKind> } | null,
-  tk: TokenOf<LinkKind>,
-  text: string,
-  api: ConnectionsApi,
-  host: EditorHost,
-  onCommit: (text: string) => void,
-  onActivate: (seat: Seat) => void,
-): ConnMenuTarget | null {
-  return tokenMenuTarget(tk, tokenTarget(api, text, tk), {
-    wiki: (action) => {
-      const now = still()
-      if (now?.tk.kind !== 'wikiLink') return
-      const { pipeAt, select } = wikiAuthorTarget(now.text, now.tk, action)
-      if (pipeAt !== undefined) onCommit(`${now.text.slice(0, pipeAt)}|${now.text.slice(pipeAt)}`)
-      onActivate({ kind: 'select', range: select })
-    },
-    url: (action) => {
-      const now = still()
-      if (!now) return
-      if (action === 'rename' || action === 'editLink')
-        return onActivate({
-          kind: 'select',
-          range: action === 'rename' ? now.tk.contentRange : linkAddress(now.tk),
-        })
-      const edit = linkActionText(now.text, now.tk, action, host.linkTitles)
-      if (!edit) return
-      onCommit(now.text.slice(0, now.tk.range[0]) + edit.insert + now.text.slice(now.tk.range[1]))
-      if (edit.wantsTitle) host.linkTitles.resolve(edit.url)
-    },
-  })
 }
 
 /** Comparing text and the page around it rather than every prop keeps one cell's keystroke off every other cell. */

@@ -317,7 +317,7 @@ describe('a text value', () => {
     )
   })
   it('opens the link menu on a right-click over a link it holds, and leaves the rest to the cell menu', () => {
-    const menu = vi.fn()
+    const menu = vi.fn(async () => null)
     act(() =>
       root.render(
         <Cell
