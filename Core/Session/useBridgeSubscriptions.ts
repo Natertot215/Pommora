@@ -8,7 +8,7 @@ import { pagesByIdOf } from '../Nexus/treeIndex'
 import { bodyHead, dropCacheDetail, readBodyBase, readPageDetail } from './pageDetailCache'
 import { absorbLanding } from '../Pages/bodyMount'
 import { flushAllSaves } from './nexusSlice'
-import { pageIO, pageWriter, setStaleSaveSink, setWrittenSaveSink } from './saveScheduler'
+import { pageIO, pageWriter, setSaveSinks } from './saveScheduler'
 import { useSession } from './store'
 import { openWebLink } from '../Web/openWebLink'
 import { dialer } from '../Platform/dialer'
@@ -77,8 +77,10 @@ export function useBridgeSubscriptions(): void {
       if (unsaved !== readBodyBase(path)?.text) pageIO.capture(path, unsaved)
       void replaceBody(path)
     }
-    setStaleSaveSink(absorb)
-    setWrittenSaveSink((path) => void useSession.getState().loadHeadings([path]))
+    setSaveSinks({
+      stale: absorb,
+      written: (path) => void useSession.getState().loadHeadings([path]),
+    })
     const off = dialer().on('pages:changed', (paths) => {
       for (const path of paths) absorb(path)
       void useSession.getState().loadHeadings(paths)
@@ -86,8 +88,7 @@ export function useBridgeSubscriptions(): void {
     })
     return () => {
       off()
-      setStaleSaveSink(null)
-      setWrittenSaveSink(null)
+      setSaveSinks(null)
     }
   }, [replaceBody])
 

@@ -21,7 +21,7 @@ import {
   dropPageDetail,
 } from '../Session/pageDetailCache'
 import { readWarm } from '../Session/warmCache'
-import { pageWriter, setStaleSaveSink } from '../Session/saveScheduler'
+import { pageWriter, setSaveSinks } from '../Session/saveScheduler'
 import { absorbLanding } from './bodyMount'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -59,7 +59,7 @@ beforeEach(() => {
 })
 
 afterEach(async () => {
-  setStaleSaveSink(null)
+  setSaveSinks(null)
   clearCache()
   vi.useRealTimers()
   await act(async () => root.unmount())
@@ -216,7 +216,7 @@ describe('a landing under the open page', () => {
 
   it('routes a stale save through the same merge', async () => {
     const view = await mount()
-    setStaleSaveSink((path) => void absorbLanding(path))
+    setSaveSinks({ stale: (path) => void absorbLanding(path), written: vi.fn() })
     onDisk = `${BASE}\ndelta`
     updateReply = { ok: true, value: { stale: true } }
     await act(async () => {
