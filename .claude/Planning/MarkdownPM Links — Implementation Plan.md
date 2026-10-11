@@ -130,11 +130,11 @@ What a person sees: `[x](Page)` edits like `[[Page]]`; every link reads **Rename
   - [x] Task 4-5 — The value's resolved target and one hit shape
   - [x] Task 4-6 — The headings map follows the app's own writes
   - [x] Review Checkpoint
-- [ ] **Phase 5** — Opening and Titles
-  - [ ] Task 5-1 — Addresses that open and titles that fetch
-  - [ ] Task 5-2 — One title hook
-  - [ ] Task 5-3 — Pending titles settle through the promise
-  - [ ] Review Checkpoint
+- [x] **Phase 5** — Opening and Titles
+  - [x] Task 5-1 — Addresses that open and titles that fetch
+  - [x] Task 5-2 — One title hook
+  - [x] Task 5-3 — Pending titles settle through the promise
+  - [x] Review Checkpoint
 - [ ] **Phase 6** — Menus and Actions
   - [ ] Task 6-1 — The link menu answers
   - [ ] Task 6-2 — One builder and one target type
@@ -2843,7 +2843,7 @@ The url arm carries no `windowed`: no producer ever set it (the filter at `conne
 +   const edit = linkEdit(docString(view.state.doc), tk, action, view.state.facet(editorHost).linkTitles)
 +   if (!edit) return
 +   if (edit.kind === 'select') return focusRange(view, edit.range[0], edit.range[1])
-+   if (view.state.sliceDoc(edit.from, edit.to) !== edit.text) writeLinkAt(view, edit.from, edit.to, edit, 'input')
++   writeLinkAt(view, edit.from, edit.to, edit, 'input')
 +   if (edit.select !== undefined) focusRange(view, edit.select, edit.select)
 +   else view.focus()
 + }
@@ -4778,7 +4778,7 @@ The anchor is pinned by a test for a filled and an unfilled label.
 - **Word count (M11-08):** `subfieldStats.ts` zeroes every lone `![[…]]` line, including lone embeds that draw as links; it belongs to the audit's deferred counter rework.
 - **Deferred audit findings:** F-093, F-095, and F-097 stay deferred; F-093 and F-095 rewrite the mounts Task 3-1 rewrites, so those mounts are touched again when they land.
 - **⌘C over a DOM selection in a resting cell:** The keyboard copies the drawn text (an alias, not its syntax); the resting menu's Copy copies the source. Making the chord match means a key handler on the resting cell and isn't this plan's.
-- **A page body closing with a title pending:** a cell and a TextPane forward a pending Page Title swap on close (Task 5-3); the page body has no close-time commit path, so a tab closed before the title answers keeps the short form, as it does today.
+- **A page body or a Text value's pane closing with a title pending:** a MarkdownPM table cell forwards a pending Page Title swap on close (Task 5-3); the page body has no close-time commit path, and a Text value's pane is remounted on every open so nothing holds its value after close (the Phase 5 checkpoint), so either closed before the title answers keeps the short form, as it does today. A table scrolled out of view before the title answers keeps it too.
 - **A Text value's pane and a rename in another window:** With connections read from the host (Task 3-1), an open TextPane reads the index as of its last render, so a rename made in another window while the pane is open can trail by one render (the audit's F-094 note).
 - **The headings map and the app's own writes:** closed by Task 4-6. As found: the session's `headings` map is loaded at start and on `pages:changed`, which the host pushes only for watched (outside) edits and cascades; an app save is `origin: 'own'`, so adding `## New` to page A in the app leaves `[[A#New]]` marked missing until a restart or an outside edit, and a rename leaves the new path absent. At baseline only the missing mark read the map; Task 4-4 (a Text value's headings) and Task 10-4 (the picker's heading rows, replacing the fresh body fetch) read it too, so the gap has to close before 10-4 lands. The channel set is frozen, so the fix rides an existing channel or the renderer's own save.
 - **An embedded tile's connections (pre-existing):** `renderTile` seats `connections={connRef.current}` into the nested `PageTile`, and `EmbedTileWidget.eq` ignores connections, so a page created or renamed elsewhere doesn't re-resolve inside an open embed until the tile re-renders. The same shape as the Text pane's snapshot, which Phase 3's checkpoint fixed; this one is outside the plan's tasks and is noted for the same fix.
@@ -4801,4 +4801,8 @@ The anchor is pinned by a test for a filled and an unfilled label.
 - **Task 4-6, the seat:** `pageIO.write` reaches `loadHeadings` through a sink the bridge subscriptions seat (one `setSaveSinks` beside the stale sink after the simplification pass), because `saveScheduler.ts` is imported by five slices and importing the store would close the cycle `sliceGraph.test.ts` guards. The checkpoint then replaced the rename arm's `index:headings` ask with one rule for every path-moving op (`rename`, `movePage`, `moveSet`): `movedHeadings` re-keys the session's map from the tree the host already pushed, which a rename alone had left stale for a moved page or a renamed set; `loadHeadings` keeps an entry and the map's identity when the outline it reads matches, so a save that touches no heading no longer re-identifies every editor host and redraws every editor; a resting Text value subscribes to its holder's entry rather than reading the unsubscribed getter.
 - **Task 4-1, a revealed ambiguous markdown title:** the AFTER's `internal` (page or self) gave `(Dup)` the address look when revealed; it reads `target.kind !== 'url' && status !== 'phantom'`, so an ambiguous title is a page destination in both syntaxes (§5.4).
 - **Phase 4 simplification pass:** `RestingHit.span` (its reader keys on `tk.range[0]`), the heading half's missing mark decided once in `linkLook` as `join.className`, the `/` query's CSS block merged into the phantom rule it duplicated, one `setSaveSinks` for the two save sinks, four dead `export`s, and the cell's `htmlTag` class read from `contentClass`.
+- **Task 5-3, the identical-text guard:** the tree's `applyUrlLinkAction` skipped a write whose range already read as the text; the AFTER's `writeLinkAt` dispatched it unconditionally. The guard lives in the one writer (the change is skipped; the selection, event tag, and announce still dispatch), so Task 6-3's `applyLinkAction` calls `writeLinkAt` without its own `sliceDoc` check (reconciled above). `applyUrlLinkAction` carries `userEvent: 'input'` and seats the caret after the link, as the writer does.
+- **Task 5-3, the announce is checked:** the field appends an `awaitTitle` entry only when its range reads as its text, since a transaction filter (`citationGuard` moving an insert past a citation label) can move the written link away from the announced range and the settle would then overwrite the wrong text. Found at the Phase 5 checkpoint.
+- **Task 5-3, the TextPane forward went:** the AFTER's close-time forward read `committed`, a ref owned by one `TextPaneEditor`, and every holder remounts the pane per open, so a title landing after the user reopened and edited the value would have committed the stale text with the title over the edit. A live reader would need a store read keyed by holder and property through seven callers; the forward was removed instead and a Text value's pane keeps the short form on close, as the page body does (*§Open Items*; Continuation §5.10). A MarkdownPM table cell still forwards, and its forward stands down once the table unmounts, since a frozen model and a commit by table index could otherwise write the titled cell into a table inserted above. Found at the Phase 5 checkpoint; the table's resting commit is one function.
+- **Task 5-1, the mailto half of the live check:** `window.nexus` is frozen by the context bridge, so the drive can't intercept `link:open`, and a driven `mailto:` click would open Mail; that branch is pinned by `openWebLink.test.ts` and not driven. The in-app half is driven.
 - **Hand-checks:** driven headlessly by the orchestrator through the drive tool, with the screenshots read, at Nathan's instruction.
