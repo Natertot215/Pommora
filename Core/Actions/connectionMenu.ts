@@ -28,13 +28,11 @@ const CONN_SITE_ROWS: readonly LeafItem<ConnSiteAction>[] = [
 const LINK_EDIT_ACTIONS = [
   'rename',
   'editLink',
-  'format:link-full',
-  'format:link-short',
-  'format:link-title',
+  ...LINK_DISPLAYS.map((d) => `format:${d}` as const),
   'link:remove',
   'link:delete',
 ] as const
-export type LinkEditAction = (typeof LINK_EDIT_ACTIONS)[number]
+type LinkEditAction = (typeof LINK_EDIT_ACTIONS)[number]
 const LINK_ACTIONS = [...LINK_EDIT_ACTIONS, ...CELL_ACTIONS] as const
 export type LinkAction = (typeof LINK_ACTIONS)[number]
 
