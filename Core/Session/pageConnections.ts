@@ -35,12 +35,10 @@ function connectionsOf(s: Session, mode: Mode): ConnectionsApi | undefined {
     if (mode === 'inert') return { ...index, open: () => {}, headingsOf, location }
     return {
       ...index,
-      open: ({ id, path }, heading) => {
-        if (inWindow) openWindowTab({ kind: 'page', id, path }, { heading })
-        else void select({ kind: 'page', id, path }, { heading })
+      open: ({ id, path }, heading, newTab) => {
+        if (inWindow && !newTab) openWindowTab({ kind: 'page', id, path }, { heading })
+        else void select({ kind: 'page', id, path }, { newTab: newTab || undefined, heading })
       },
-      bypass: ({ id, path }, heading) =>
-        void select({ kind: 'page', id, path }, { newTab: true, heading }),
       menu: showConnectionMenu,
       headingsOf,
       location,

@@ -43,11 +43,10 @@ export type ConnMenuTarget = {
 )
 
 export interface ConnectionsApi extends PageIndex {
-  open: (page: ConnPage, heading?: string) => void
+  open: (page: ConnPage, heading?: string, newTab?: boolean) => void
   menu?: (target: ConnMenuTarget) => void
-  bypass?: (page: ConnPage, heading?: string) => void
-  headingsOf?: (path: string) => PageHeadings | undefined
-  location?: (pageId: string) => TrailSegment[]
+  headingsOf: (path: string) => PageHeadings | undefined
+  location: (pageId: string) => TrailSegment[]
 }
 
 export type MdTarget =
@@ -135,7 +134,7 @@ export function headingMissing(
   ownKeys: readonly string[] | undefined,
 ): boolean {
   if ((target.kind !== 'page' && target.kind !== 'self') || !target.heading) return false
-  const known = target.kind === 'self' ? ownKeys : conn?.headingsOf?.(target.page.path)?.keys
+  const known = target.kind === 'self' ? ownKeys : conn?.headingsOf(target.page.path)?.keys
   return known !== undefined && !known.includes(normalizeTitle(target.heading))
 }
 
@@ -156,14 +155,4 @@ export function wikiLinkView(
     bare: target.kind === 'self',
     missing: headingMissing(conn, target, ownKeys),
   }
-}
-
-export function openPage(
-  api: ConnectionsApi,
-  page: ConnPage,
-  bypass: boolean,
-  heading?: string,
-): void {
-  if (bypass && api.bypass) api.bypass(page, heading)
-  else api.open(page, heading)
 }

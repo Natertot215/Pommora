@@ -5,7 +5,6 @@ import { normalizeLinkUrl, WEB_ADDRESS } from '../../Paths/urlPath'
 import type { LinkKind, Token } from '../Engine/tokens'
 import { docString } from '../docCache'
 import {
-  openPage,
   titleTarget,
   tokenMenuTarget,
   tokenTarget,
@@ -104,7 +103,7 @@ export function resolveFollow(
         ? () => travelToHeading(own.view, named.heading, own.view.posAtDOM(own.seat))
         : null
     case 'page':
-      return api ? () => openPage(api, named.page, isCmd(event), named.heading) : null
+      return api ? () => api.open(named.page, named.heading, isCmd(event)) : null
     case 'external':
       return () => openLink(named.url)
     case 'invalid':

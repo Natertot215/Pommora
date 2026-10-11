@@ -2,7 +2,7 @@ import { EditorView, type ViewUpdate } from '@codemirror/view'
 import { EditorSelection, type EditorState, type Extension, type Line } from '@codemirror/state'
 import type { LinkSpans } from '../../Connections/connections'
 import type { ConnEditAction } from '../../Actions/connectionMenu'
-import type { ConnectionsApi } from './connectionsApi'
+import { titleTarget, type ConnectionsApi } from './connectionsApi'
 import type { MarkdownScope } from '../Engine/detect'
 import { aliasedToken, type TokenOf } from '../Engine/tokens'
 import { docScan, docString } from '../docCache'
@@ -76,10 +76,9 @@ function rememberAlias(
 ): void {
   const alias = s.alias && line.text.slice(s.alias[0], s.alias[1])
   if (!api || !alias?.trim()) return
-  const res = api.resolve(line.text.slice(s.title[0], s.title[1]))
+  const target = titleTarget(api, line.text.slice(s.title[0], s.title[1]))
   // A phantom or ambiguous title names no single page, and the memory is keyed by page id.
-  if (res.status === 'resolved' && res.page)
-    view.state.facet(editorHost).aliases.remember(res.page.id, alias)
+  if (target.kind === 'page') view.state.facet(editorHost).aliases.remember(target.page.id, alias)
 }
 
 function collapseAt(view: EditorView, at: number): void {
