@@ -32,7 +32,7 @@ const model: TableModel = {
   rows: [['[[Quarterly Plan|the plan]]']],
 }
 
-const props = { ...tableStubs, host: testHost(), model, connections: () => conn }
+const props = { ...tableStubs, host: { ...testHost(), connections: () => conn }, model }
 
 let container: HTMLDivElement
 let root: Root
@@ -173,7 +173,7 @@ describe('a link’s menu in a resting cell', () => {
         createElement(MarkdownTable, {
           ...props,
           model: { ...model, rows: [[`a [Home](${URL}) b`]] },
-          connections: () => linked,
+          host: { ...testHost(), connections: () => linked },
           onCellCommit: (_r: number, _c: number, text: string) => committed(text),
           onSettled: settled,
         }),
@@ -222,7 +222,7 @@ describe('a link’s menu in a resting cell', () => {
           createElement(MarkdownTable, {
             ...props,
             model: { ...model, rows },
-            connections: () => linked,
+            host: { ...testHost(), connections: () => linked },
             onCellCommit: (_r: number, _c: number, text: string) => committed(text),
           }),
         ),
@@ -287,7 +287,7 @@ describe('a connection’s menu in a resting cell', () => {
         createElement(MarkdownTable, {
           ...props,
           model: { ...model, rows: [[body]] },
-          connections: () => linked,
+          host: { ...testHost(), connections: () => linked },
         }),
       ),
     )

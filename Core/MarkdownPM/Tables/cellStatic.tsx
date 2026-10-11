@@ -266,7 +266,6 @@ function StaticCellImpl({
   host,
   text,
   around,
-  connections,
   readOnly,
   linkStyle,
   onActivate,
@@ -276,7 +275,6 @@ function StaticCellImpl({
   host: EditorHost
   text: string
   around: CellPage
-  connections: () => ConnectionsApi | undefined
   linkStyle: HeadingLinkStyle
   readOnly: () => boolean
   onActivate: (coords: { x: number; y: number }, sweep?: 'start' | 'end') => void
@@ -307,7 +305,7 @@ function StaticCellImpl({
   }
   const { linkAt, dismiss, onContextMenu, onPointerOver, onPointerOut } = linkGestures(
     text,
-    connections,
+    host.connections,
     host.glance,
     null,
     menuAt,
@@ -316,7 +314,7 @@ function StaticCellImpl({
   // Following waits for the click so a drag that starts on a link selects instead.
   const claimLink = (e: React.MouseEvent): (() => void) | null => {
     const found = linkAt(e)
-    const go = found && followTarget(found.target, connections(), e)
+    const go = found && followTarget(found.target, host.connections(), e)
     if (!go) return null
     e.preventDefault()
     e.stopPropagation()
@@ -344,7 +342,7 @@ function StaticCellImpl({
     if (!label) return null
     e.preventDefault()
     e.stopPropagation()
-    return () => followCitation(label, connections(), e)
+    return () => followCitation(label, host.connections(), e)
   }
 
   return (
@@ -389,7 +387,7 @@ function StaticCellImpl({
         if (e.button === 0) claimCheckbox(e) ?? claimCite(e) ?? claimLink(e)
       }}
     >
-      {renderCellBody(text, connections, around, linkStyle)}
+      {renderCellBody(text, host.connections, around, linkStyle)}
     </div>
   )
 }

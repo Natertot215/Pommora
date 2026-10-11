@@ -158,7 +158,7 @@ describe('docCache — every version steps from the last', () => {
       }
       let state = EditorState.create({
         doc: BODY,
-        extensions: markdownDecorations(() => undefined, scope),
+        extensions: markdownDecorations(scope),
       })
       docAtomics(state.doc, scope)
       for (let step = 0; step < 600; step++) {

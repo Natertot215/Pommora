@@ -46,8 +46,10 @@ function Mount({ name, seed }: { name: string; seed: string }): React.JSX.Elemen
   const seat = useBodyMount(PATH)
   return createElement(MarkdownEditor, {
     initialBody: seed,
-    host: testHost({ pageTitle: 'B', settings: { inPageHeadingResolution: 'automatic' } }),
-    connections,
+    host: {
+      ...testHost({ pageTitle: 'B', settings: { inPageHeadingResolution: 'automatic' } }),
+      connections: () => connections,
+    },
     onChange: (body: string) => {
       changes[name] = (changes[name] ?? 0) + 1
       seat.save(body)

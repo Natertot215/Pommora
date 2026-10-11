@@ -50,7 +50,7 @@ function openTwoTables(onChange: (indices: number[]) => void): EditorView {
             prefs: prefsOf({}, (scope, value) => scope === 'headingCols' && onChange(value)),
           }),
         ),
-        tableWidgetExtension(() => undefined),
+        tableWidgetExtension(),
       ],
     }),
   })

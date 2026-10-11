@@ -4,7 +4,6 @@ import { docHeadingKeys, docScan, perDoc } from '../docCache'
 import { type CitationEntry, foldLabel } from '../Engine/detect'
 import { focusAt } from '../caretPlacement'
 import {
-  Facet,
   StateField,
   StateEffect,
   type EditorState,
@@ -44,16 +43,12 @@ import {
 import { blockDeleteSpan } from '../Menus/gripMenu'
 import { tableMergeGuard, tablePasteGuard } from '../Guards/tableGuard'
 import type { TableModel } from '../Engine/Tables/model'
-import type { ConnectionsApi } from '../Links/connectionsApi'
 import { type CellPage, linksOwnHeadings } from './cellStatic'
 import type { TableMenuAction, TableMenuContext } from './tableMenu'
 import { editorHost, persistPref, redrawNudge } from '../api'
 import type { HeadingLinkStyle } from '../../Settings/personalization'
 import { sameSet } from '@pommora/uix/Utilities/same'
 import { capSet } from '@pommora/uix/Utilities/capMap'
-
-type ConnGetter = () => ConnectionsApi | undefined
-const tableConnections = Facet.define<ConnGetter, ConnGetter>({ combine: (vals) => vals[0] })
 
 // A Pommora-only visual with no GFM equivalent, kept per machine (`local_state` rows) rather than in the file.
 const setHeadingColsEffect = StateEffect.define<number[]>()
@@ -342,7 +337,6 @@ class TableWidget extends ReactWidget {
         onTableDrag={tableDrag}
         onUndo={() => undo(view)}
         onRedo={() => redo(view)}
-        connections={view.state.facet(tableConnections)}
         readOnly={() => view.state.readOnly}
         linkStyle={this.linkStyle}
       />,
@@ -557,7 +551,7 @@ const widgetField = StateField.define<DecorationSet>({
   provide: (f) => EditorView.decorations.from(f),
 })
 
-export function tableWidgetExtension(connections: ConnGetter): Extension {
+export function tableWidgetExtension(): Extension {
   // Loaded ahead so the first table to scroll in draws with its frame rather than after an import.
   if (!MarkdownTableComp) void loadTable()
   // headingColField precedes widgetField so the widget reads the up-to-date set; atomicRanges makes the caret skip a table as one unit.
@@ -567,7 +561,6 @@ export function tableWidgetExtension(connections: ConnGetter): Extension {
     tableMergeGuard,
     tablePasteGuard,
     EditorView.atomicRanges.of((view) => view.state.field(widgetField)),
-    tableConnections.of(connections),
     // A remap correcting stale ordinals is written back too, so a reload can't re-apply them.
     persistPref(
       (s) => s.field(headingColField),

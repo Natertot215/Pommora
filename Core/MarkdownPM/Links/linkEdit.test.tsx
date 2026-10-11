@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ok } from '../../Contract/result'
-import { act } from 'react'
+import { act, createElement } from 'react'
+import { createRoot } from 'react-dom/client'
 import type { EditorView } from '@codemirror/view'
 import { type ConnMenuAction, connectionMenuModel } from '../../Actions/connectionMenu'
 import type { ConnectionsApi } from './connectionsApi'
@@ -12,7 +13,9 @@ import {
   harnessState,
   mountEditor,
   stubEditorBridge,
+  testHost,
 } from '../../Testing/editorHarness'
+import { MarkdownEditor } from '../MarkdownEditor'
 import { commitAliasOnEnter } from './linkEdit'
 
 class ResizeObserverStub {
@@ -213,6 +216,17 @@ describe('the alias memory hears only what was authored', () => {
   })
 })
 
+describe('an alias left in raw HTML stays as written', () => {
+  it('keeps an empty slot’s pipe when the caret leaves it', async () => {
+    const initialBody = '<div>\na [[Alpha|]] b\n</div>'
+    const view = await mountEditor({ initialBody, connections: conn })
+    await act(async () => view.focus())
+    await caretTo(view, 16)
+    await caretTo(view, 0)
+    expect(view.state.doc.toString()).toBe(initialBody)
+  })
+})
+
 describe('an alias left in code stays as written', () => {
   it('keeps an empty slot’s pipe or hash', async () => {
     for (const [initialBody, anchor] of [
@@ -320,5 +334,25 @@ describe('Rename and Edit Link land the caret where their names imply', () => {
     await rightClick(view, 12)
     expect(view.state.selection.main.head).toBe(9)
     expect(view.state.doc.toString()).toBe('a [[Alpha|the one]] b')
+  })
+})
+
+describe('an editor reads its connections from its host', () => {
+  it('draws a resolved connection with the index on the host and none on the component', async () => {
+    const parent = document.createElement('div')
+    document.body.appendChild(parent)
+    const root = createRoot(parent)
+    await act(async () => {
+      root.render(
+        createElement(MarkdownEditor, {
+          initialBody: '[[Alpha]]',
+          onChange: () => {},
+          host: { ...testHost(), connections: () => conn },
+        }),
+      )
+    })
+    expect(parent.querySelector('.md-connection-resolved')?.textContent).toBe('Alpha')
+    await act(async () => root.unmount())
+    parent.remove()
   })
 })

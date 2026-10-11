@@ -4,11 +4,13 @@ import { EditorView } from '@codemirror/view'
 import type { ConnectionsApi } from '../Links/connectionsApi'
 import { buildPageIndex } from '../../Connections/pageIndex'
 import { embedTiles } from './embedWidget'
+import { editorHost } from '../api'
 import {
   cleanupEditor,
   editorContainer,
   mountEditor,
   stubEditorBridge,
+  testHost,
 } from '../../Testing/editorHarness'
 
 stubEditorBridge()
@@ -41,7 +43,7 @@ describe('a press inside a tile', () => {
     const nested = new EditorView({
       doc: 'inner',
       parent: tile,
-      extensions: embedTiles({ getConn: () => undefined, ancestors: ['Notes/Alpha.md'] }),
+      extensions: [editorHost.of(testHost()), embedTiles({ ancestors: ['Notes/Alpha.md'] })],
     })
     nested.focus()
     nested.contentDOM.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }))

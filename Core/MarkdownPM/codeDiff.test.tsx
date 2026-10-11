@@ -157,7 +157,7 @@ describe('a diff fence’s caret', () => {
 
   it('belongs to the page alone, so a cell keeps the side it was given', () => {
     const side = (scope: 'page' | 'cell') =>
-      EditorState.create({ doc, extensions: markdownDecorations(() => undefined, scope) }).update({
+      EditorState.create({ doc, extensions: markdownDecorations(scope) }).update({
         selection: EditorSelection.create([EditorSelection.cursor(seat, -1)]),
         userEvent: 'select',
       }).state.selection.main.assoc

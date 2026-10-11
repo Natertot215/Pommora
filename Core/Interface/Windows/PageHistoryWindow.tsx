@@ -247,7 +247,6 @@ function PageHistoryBody({
               onChange={() => {}}
               host={editorHost}
               readOnly
-              connections={resolveOnly}
               embedAncestors={[HISTORY_ANCESTOR, livePath]}
               edgeFade
             />

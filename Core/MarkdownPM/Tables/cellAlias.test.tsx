@@ -44,9 +44,8 @@ async function cellEditor(text = CELL): Promise<EditorView> {
     root.render(
       createElement(MarkdownTable, {
         ...tableStubs,
-        host: testHost(),
+        host: { ...testHost(), connections: () => conn },
         model: modelOf(text),
-        connections: () => conn,
       }),
     ),
   )

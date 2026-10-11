@@ -14,7 +14,7 @@ const cellCommitChange = (
 ): ReturnType<typeof cellCommitIn> => cellCommitIn(scanDoc(doc), ...rest)
 import type { TableModel } from '../Engine/Tables/model'
 
-const tables = [editorHost.of(testHost()), tableWidgetExtension(() => undefined)]
+const tables = [editorHost.of(testHost()), tableWidgetExtension()]
 
 const make = (doc: string): number =>
   buildWidgetDecorations(EditorState.create({ doc, extensions: tables })).size

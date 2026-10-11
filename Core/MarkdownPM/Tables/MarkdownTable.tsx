@@ -16,7 +16,6 @@ import { decodePayload, encodeRect, rectGrid, type TablePayload } from '../Engin
 import { GLYPH_CLASS, GRIP_LINE } from '../Engine/intents'
 import { gutterLineAt } from '../lineDom'
 import { nextCell, type NavDir } from '../Engine/Tables/navigate'
-import type { ConnectionsApi } from '../Links/connectionsApi'
 import type { EditorHost } from '../api'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 import { useDismissal } from '@pommora/uix/Interactions/dismissalStack'
@@ -111,7 +110,6 @@ export function MarkdownTable({
   onTableDrag,
   onUndo,
   onRedo,
-  connections,
   readOnly,
 }: {
   host: EditorHost
@@ -130,7 +128,6 @@ export function MarkdownTable({
   onTableDrag: (e: PointerEvent) => void
   onUndo: () => void
   onRedo: () => void
-  connections: () => ConnectionsApi | undefined
   readOnly: () => boolean
   linkStyle: HeadingLinkStyle
 }): React.JSX.Element {
@@ -429,7 +426,6 @@ export function MarkdownTable({
         <CellEditor
           host={host}
           initial={display}
-          connections={connections}
           ordinalOf={around.ordinalOf}
           caretCoords={caretCoords.current}
           initialSelect={initialSelect.current}
@@ -450,7 +446,6 @@ export function MarkdownTable({
         host={host}
         text={display}
         around={around}
-        connections={connections}
         readOnly={readOnly}
         linkStyle={linkStyle}
         onActivate={(coords, sweep) => {

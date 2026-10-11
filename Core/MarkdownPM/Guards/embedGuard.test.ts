@@ -16,8 +16,8 @@ const mk = (doc: string): EditorState =>
   EditorState.create({
     doc,
     extensions: [
-      editorHost.of(testHost()),
-      embedTiles({ getConn: () => conn, ancestors: ['Host.md'] }),
+      editorHost.of({ ...testHost(), connections: () => conn }),
+      embedTiles({ ancestors: ['Host.md'] }),
       embedGuard,
     ],
   })
@@ -32,7 +32,11 @@ const conn2: ConnectionsApi = {
 const mk2 = (doc: string): EditorState =>
   EditorState.create({
     doc,
-    extensions: [embedTiles({ getConn: () => conn2, ancestors: ['Host.md'] }), embedGuard],
+    extensions: [
+      editorHost.of({ ...testHost(), connections: () => conn2 }),
+      embedTiles({ ancestors: ['Host.md'] }),
+      embedGuard,
+    ],
   })
 
 const apply = (state: EditorState, spec: TransactionSpec): string =>

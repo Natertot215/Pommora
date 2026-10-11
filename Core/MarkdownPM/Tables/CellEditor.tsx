@@ -20,7 +20,6 @@ import type { DocScan } from '../Engine/docScan'
 import { listGlyphOf, seatPastMarker } from '../Engine/intents'
 import { useConnectionAutocomplete } from '../Autocomplete/useConnectionAutocomplete'
 import { AutocompletePane } from '../Autocomplete/AutocompletePane'
-import type { ConnectionsApi } from '../Links/connectionsApi'
 import type { NavDir } from '../Engine/Tables/navigate'
 import { type EditorHost, mirrorBody, mirrored, redrawNudge } from '../api'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
@@ -108,7 +107,6 @@ export function CellEditor({
   caretCoords,
   initialSelect,
   sweepFrom,
-  connections,
   ordinalOf,
 }: {
   host: EditorHost
@@ -121,7 +119,6 @@ export function CellEditor({
   caretCoords: { x: number; y: number } | null
   initialSelect: [number, number] | null
   sweepFrom: 'start' | 'end' | null
-  connections: () => ConnectionsApi | undefined
   ordinalOf: (label: string) => number | null
 }): React.JSX.Element {
   const mountRef = useRef<HTMLDivElement>(null)
@@ -133,7 +130,7 @@ export function CellEditor({
   // The numbering is a whole-document fact and the extensions bake at mount, so it is read live.
   const ordinalOfRef = useLatest(ordinalOf)
   const onTablePasteRef = useLatest(onTablePaste)
-  const ac = useConnectionAutocomplete(viewRef, host, connections, 'cell')
+  const ac = useConnectionAutocomplete(viewRef, host, 'cell')
   const formatExt = useReconfigured(viewRef, host.settings().commands, formatKeymap)
 
   useEffect(() => {
@@ -144,7 +141,6 @@ export function CellEditor({
         extensions: [
           editorBase({
             host,
-            getConn: connections,
             scope: 'cell',
             panes: [ac],
             formatExt,

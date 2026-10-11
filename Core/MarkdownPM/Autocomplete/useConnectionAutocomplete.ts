@@ -23,11 +23,9 @@ import { inBracket } from '../Input/edits'
 import { restedOnLink } from '../Links/linkReveal'
 import { headingTargetOf, pageHeadingTarget } from './headingTarget'
 import type { AutocompletePaneProps } from './AutocompletePane'
-import type { ConnectionsApi } from '../Links/connectionsApi'
 import { embeddable, embedExclusions } from '../Embeds/embedWidget'
 import type { OutlineHeading } from '../Engine/headingScan'
 import { type EditorHost, editorHost, ownPage } from '../api'
-import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import { caretGeometry, type CaretGeometry, type EditorPane, usePaneCtl } from '../Menus/caretPane'
 
 export interface AcState extends AutocompleteQuery, CaretGeometry {}
@@ -39,7 +37,6 @@ interface ConnectionAutocomplete extends EditorPane {
 export function useConnectionAutocomplete(
   viewRef: RefObject<EditorView | null>,
   host: EditorHost,
-  getConn: () => ConnectionsApi | undefined,
   scope: MarkdownScope,
 ): ConnectionAutocomplete {
   const [ac, setAc] = useState<AcState | null>(null)
@@ -85,7 +82,6 @@ export function useConnectionAutocomplete(
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set())
   // The title the heading list slid back to: an exact title closes the page list, but Back must land on it open.
   const [backedTo, setBackedTo] = useState<string | null>(null)
-  const getConnRef = useLatest(getConn)
   const query = ac?.query ?? null
   const form = ac?.form ?? 'link'
   const title = ac?.title
@@ -93,7 +89,7 @@ export function useConnectionAutocomplete(
   // Read in render so a warm outline answers in the same pass and an exact heading closes without a frame ever mounting.
   const target = useMemo(() => {
     if (!heading) return null
-    if (title) return headingTargetOf(host, getConnRef.current(), title)
+    if (title) return headingTargetOf(host, host.connections(), title)
     // The outline of the page a bare `#` answers to, never the editor's own document when that is a cell or a value.
     const own = viewRef.current && ownPage(viewRef.current)
     if (own?.kind === 'held') return pageHeadingTarget(host, own.page)
@@ -127,7 +123,7 @@ export function useConnectionAutocomplete(
     [heading, outline, query],
   )
   const lookup = (q: string): AcRow[] => {
-    const conn = getConnRef.current()
+    const conn = host.connections()
     if (!conn) return []
     if (form === 'alias') return aliasRows(conn, host.aliases, title, q)
     const embed = form === 'embed'

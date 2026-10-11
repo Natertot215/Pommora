@@ -40,7 +40,7 @@ export function TextPane({
   onCommit: (value: PropertyValue | null) => void
   onDismiss: () => void
 }): React.JSX.Element {
-  const host = useEditorHost({})
+  const host = useEditorHost({ connections: connections() })
   const saveRef = useRef<() => void>(() => {})
   const close = (): void => {
     saveRef.current()
@@ -58,7 +58,6 @@ export function TextPane({
       <TextPaneEditor
         text={current?.kind === 'text' ? current.value : ''}
         holder={holder}
-        connections={connections}
         host={host}
         saveRef={saveRef}
         onCommit={onCommit}
@@ -78,7 +77,6 @@ export function TextPane({
 function TextPaneEditor({
   text,
   holder,
-  connections,
   host,
   saveRef,
   onCommit,
@@ -86,7 +84,6 @@ function TextPaneEditor({
 }: {
   text: string
   holder: ConnPage | undefined
-  connections: () => ConnectionsApi | undefined
   host: EditorHost
   saveRef: RefObject<() => void>
   onCommit: (value: PropertyValue | null) => void
@@ -97,7 +94,7 @@ function TextPaneEditor({
   const viewRef = useRef<EditorView | null>(null)
   const committed = useRef(text)
   const onCommitRef = useLatest(onCommit)
-  const ac = useConnectionAutocomplete(viewRef, host, connections, 'text')
+  const ac = useConnectionAutocomplete(viewRef, host, 'text')
   const formatExt = useReconfigured(viewRef, host.settings().commands, formatKeymap)
 
   const save = (): void => {
@@ -116,7 +113,6 @@ function TextPaneEditor({
         extensions: [
           editorBase({
             host,
-            getConn: connections,
             scope: 'text',
             panes: [ac],
             formatExt,

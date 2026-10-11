@@ -23,8 +23,8 @@ const mk = (doc: string): EditorState =>
   EditorState.create({
     doc,
     extensions: [
-      editorHost.of(testHost()),
-      embedTiles({ getConn: () => conn, ancestors: ['Host.md'] }),
+      editorHost.of({ ...testHost(), connections: () => conn }),
+      embedTiles({ ancestors: ['Host.md'] }),
     ],
   })
 
@@ -121,7 +121,10 @@ describe('a page is excluded from embedding itself', () => {
   const self = (doc: string, title?: string): EditorState =>
     EditorState.create({
       doc,
-      extensions: [embedTiles({ getConn: () => conn, ancestors: title ? [`${title}.md`] : [] })],
+      extensions: [
+        editorHost.of({ ...testHost(), connections: () => conn }),
+        embedTiles({ ancestors: title ? [`${title}.md`] : [] }),
+      ],
     })
 
   it('the host title is excluded with no chain above it', () => {
@@ -146,8 +149,8 @@ describe('a tile re-aimed where it stands keeps its height and Scale', () => {
     EditorState.create({
       doc,
       extensions: [
-        editorHost.of(testHost()),
-        embedTiles({ getConn: () => two, ancestors: ['Host.md'] }),
+        editorHost.of({ ...testHost(), connections: () => two }),
+        embedTiles({ ancestors: ['Host.md'] }),
       ],
     }).update({ effects: [setEmbedHeights.of(heights), setEmbedZooms.of({ ...heights })] }).state
   const memory = (state: EditorState) => {

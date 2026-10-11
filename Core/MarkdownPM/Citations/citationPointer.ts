@@ -54,11 +54,12 @@ function citeHitAt(view: EditorView, event: MouseEvent): CiteHit | null {
   return { range: [marker.from, marker.to], onText: true, hidesSyntax: true, pos, marker }
 }
 
-export function citationPointer(getApi: () => ConnectionsApi | undefined): Extension {
+export function citationPointer(): Extension {
   return pointerHandlers<CiteHit>({
     hoverGate: CITE_GLYPH,
     hitAt: citeHitAt,
-    follow: (hit, _, event) => () => followCitation(hit.marker.label, getApi(), event),
+    follow: (hit, view, event) => () =>
+      followCitation(hit.marker.label, view.state.facet(editorHost).connections(), event),
     dwell: () => null,
     menu: (hit, view) =>
       hit.marker.ordinal === null

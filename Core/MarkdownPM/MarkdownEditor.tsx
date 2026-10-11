@@ -27,7 +27,6 @@ import { useConnectionAutocomplete } from './Autocomplete/useConnectionAutocompl
 import { AutocompletePane } from './Autocomplete/AutocompletePane'
 import { BlockMenuPane } from './Menus/BlockMenuPane'
 import { useBlockMenu } from './Menus/useBlockMenu'
-import type { ConnectionsApi } from './Links/connectionsApi'
 import type { WarmSeam } from './warmSeam'
 import { type EditorHost, mirrored, redrawNudge } from './api'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
@@ -44,7 +43,6 @@ interface Props {
   onChange: (body: string) => void
   host: EditorHost
   header?: ReactNode
-  connections?: ConnectionsApi
   embedAncestors?: readonly string[]
   autoFocus?: boolean
   readOnly?: boolean
@@ -65,7 +63,6 @@ export function MarkdownEditor({
   onChange,
   host,
   header,
-  connections,
   embedAncestors,
   autoFocus = false,
   readOnly = false,
@@ -88,7 +85,6 @@ export function MarkdownEditor({
   const onSelectionRef = useLatest(onSelection)
   const lastRangeRef = useRef<{ from: number; to: number } | null>(null)
   const hostRef = useLatest(host)
-  const connectionsRef = useLatest(connections)
   const embedAncestorsRef = useLatest<readonly string[]>(embedAncestors ?? [])
   const activeRef = useLatest(active)
   const registerRef = useLatest(register)
@@ -100,7 +96,7 @@ export function MarkdownEditor({
   // Decorations rebuild only on editor updates, so a real tree or settings change dispatches an empty transaction.
   useEffect(() => {
     viewRef.current?.dispatch({ effects: redrawNudge.of(null) })
-  }, [connections, settings])
+  }, [host, settings])
 
   useEffect(() => {
     viewRef.current?.requestMeasure()
@@ -124,7 +120,7 @@ export function MarkdownEditor({
     if (view) applyCitationsVisibility(view, citesShown)
   }, [citesShown])
 
-  const ac = useConnectionAutocomplete(viewRef, host, () => connectionsRef.current, 'page')
+  const ac = useConnectionAutocomplete(viewRef, host, 'page')
   const formatExt = useReconfigured(viewRef, settings.commands, formatKeymap)
   const htmlExt = useReconfigured(viewRef, settings.htmlShortcuts, htmlShortcuts)
   const block = useBlockMenu(viewRef)
@@ -151,7 +147,6 @@ export function MarkdownEditor({
       codeScroll,
       editorBase({
         host: hostRef.current,
-        getConn: () => connectionsRef.current,
         scope: 'page',
         panes: [ac, block],
         formatExt,
@@ -160,9 +155,8 @@ export function MarkdownEditor({
       keymap.of(historyKeymap),
       citationRowPointer(),
       citationRowMenu(),
-      tableWidgetExtension(() => connectionsRef.current),
+      tableWidgetExtension(),
       embedTiles({
-        getConn: () => connectionsRef.current,
         ancestors: embedAncestorsRef.current,
         tabActive: () => activeRef.current,
       }),

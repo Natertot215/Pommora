@@ -5,6 +5,7 @@ import { EditorView } from '@codemirror/view'
 import type { PickItem } from '../Actions/menuModel'
 import { MarkdownEditor } from '../MarkdownPM/MarkdownEditor'
 import type { MarkdownTable } from '../MarkdownPM/Tables/MarkdownTable'
+import type { ConnectionsApi } from '../MarkdownPM/Links/connectionsApi'
 import { DEFAULT_COMMANDS } from '../Actions/commands'
 import { type EditorHost, type EditorSettings, editorSettingsOf } from '../MarkdownPM/api'
 import type { EditorPrefs } from '../Contract/bridge'
@@ -41,12 +42,14 @@ export const prefsOf = (
 
 type HarnessProps = Partial<Omit<EditorProps, 'host'>> & {
   initialBody: string
+  connections?: ConnectionsApi
   citationsShown?: boolean
   host?: HarnessHost
 }
 
 interface HarnessState {
   settings: EditorSettings
+  connections: ConnectionsApi | undefined
   aliases: Record<string, string[]>
   bodies: Record<string, string>
   linkTitles: Record<string, string>
@@ -70,6 +73,7 @@ function harnessHost(
 ): HarnessState {
   const state = {
     settings: { ...editorSettingsOf({}, {}, DEFAULT_COMMANDS), ...spec.settings },
+    connections: undefined,
     aliases: { ...spec.aliases },
     bodies: { ...spec.bodies },
     linkTitles: { ...spec.linkTitles },
@@ -79,6 +83,7 @@ function harnessHost(
   } as HarnessState
   state.host = {
     settings: () => state.settings,
+    connections: () => state.connections,
     aliases: {
       list: (id) => state.aliases[id] ?? [],
       remember: (id, alias) => {
@@ -152,7 +157,6 @@ export const tableStubs: Omit<Parameters<typeof MarkdownTable>[0], 'host' | 'mod
   onTableDrag: () => {},
   onUndo: () => {},
   onRedo: () => {},
-  connections: () => undefined,
   readOnly: () => false,
   linkStyle: 'page-heading',
 }
@@ -187,7 +191,12 @@ export function stubEditorBridge(extra: Record<string, unknown> = {}): void {
   })
 }
 
-function Harnessed({ citationsShown, host: spec, ...props }: HarnessProps): React.JSX.Element {
+function Harnessed({
+  citationsShown,
+  connections,
+  host: spec,
+  ...props
+}: HarnessProps): React.JSX.Element {
   const [shown, setShown] = useState(citationsShown ?? false)
   const seen = useRef(citationsShown)
   if (citationsShown !== seen.current) {
@@ -201,6 +210,7 @@ function Harnessed({ citationsShown, host: spec, ...props }: HarnessProps): Reac
     stateSlot?.(held.current)
   }
   held.current.citationsShown = shown
+  held.current.connections = connections
   return createElement(MarkdownEditor, {
     onChange: () => {},
     ...props,

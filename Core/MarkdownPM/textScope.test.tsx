@@ -40,7 +40,11 @@ const mount = (doc: string, ...extensions: Extension[]): EditorView => {
     state: EditorState.create({
       doc,
       selection: { anchor: doc.length },
-      extensions: [editorHost.of(testHost()), inlineSurface(() => conn, 'text'), ...extensions],
+      extensions: [
+        editorHost.of({ ...testHost(), connections: () => conn }),
+        inlineSurface('text'),
+        ...extensions,
+      ],
     }),
   })
   views.push(view)
@@ -117,7 +121,7 @@ describe('a bare heading in a Text value', () => {
     const view = mount(
       '[[#Setup]] x',
       heldPage.of(holder),
-      Prec.highest(editorHost.of(testHost({ glance }))),
+      Prec.highest(editorHost.of({ ...testHost({ glance }), connections: () => conn })),
     )
     vi.spyOn(view, 'posAtCoords').mockReturnValue(5)
     const heading = view.dom.querySelector('.md-connection-heading') as HTMLElement

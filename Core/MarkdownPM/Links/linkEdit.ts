@@ -3,14 +3,14 @@ import { EditorSelection, type EditorState, type Extension, type Line } from '@c
 import type { LinkSpans } from '../../Connections/connections'
 import type { ConnEditAction } from '../../Actions/connectionMenu'
 import type { ConnectionsApi } from './connectionsApi'
+import type { MarkdownScope } from '../Engine/detect'
 import { aliasedToken, type TokenOf } from '../Engine/tokens'
 import { docScan, docString } from '../docCache'
-import { spanAt } from '../Engine/docScan'
 import { connectionAt } from '../Input/edits'
 import { focusRange } from '../caretPlacement'
 import { restedOnLink } from './linkReveal'
 import { editorHost } from '../api'
-import { drawnLinkAt } from '../decorations'
+import { drawnLinkAt, inRawHtml } from '../decorations'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 
 /** Pure of any editor, because a connection in a resting table cell has none. Reads the token's spans, since a displayed alias hides where the title is. */
@@ -48,12 +48,9 @@ export function commitAliasOnEnter(view: EditorView): boolean {
   if (!sel.empty) return false
   const line = view.state.doc.lineAt(sel.head)
   const rel = sel.head - line.from
-  const scan = docScan(view.state.doc)
-  const link = connectionAt(scan, sel.head)
+  const link = connectionAt(docScan(view.state.doc), sel.head)
   if (!link?.alias || rel < link.alias[0] || rel > link.alias[1]) return false
-  // An HTML block HTML Formatting draws raw holds no live link.
-  if (view.state.facet(editorHost).settings().htmlFormatting && spanAt(scan.html, sel.head))
-    return false
+  if (inRawHtml(view.state, sel.head, 'page')) return false
   const end = line.from + link.full[1]
   view.dispatch({
     selection: EditorSelection.cursor(end, 1),
@@ -97,8 +94,9 @@ interface Slot {
   kind: 'alias' | 'heading'
 }
 
-function slotNear(state: EditorState, at: number): Slot | null {
+function slotNear(state: EditorState, at: number, scope: MarkdownScope): Slot | null {
   const { line, rel } = lineNear(state, at)
+  if (inRawHtml(state, line.from + rel, scope)) return null
   const s = connectionAt(docScan(state.doc), line.from + rel)
   for (const kind of ['alias', 'heading'] as const) {
     const span = s?.[kind]
@@ -130,17 +128,18 @@ function leaveSlot(
 }
 
 /** Both fire on LEAVING the alias, never as it changes: clearing one to retype would pull the pipe from under the caret. Blur is handled on the event rather than the update listener, whose macrotask the editor's own teardown outruns. */
-export function aliasOnLeave(getApi: () => ConnectionsApi | undefined): Extension {
+export function aliasOnLeave(scope: MarkdownScope): Extension {
   let authored: number | null = null
   const leave = (view: EditorView, at: number, slot: Slot, defer: boolean): void => {
-    leaveSlot(view, authored === slot.start ? getApi() : undefined, at, slot.kind, defer)
+    const api = authored === slot.start ? view.state.facet(editorHost).connections() : undefined
+    leaveSlot(view, api, at, slot.kind, defer)
     authored = null
   }
   return [
     EditorView.domEventHandlers({
       blur(_event, view) {
         const at = view.state.selection.main.head
-        const slot = slotNear(view.state, at)
+        const slot = slotNear(view.state, at, scope)
         if (slot) leave(view, at, slot, false)
         return false
       },
@@ -149,11 +148,14 @@ export function aliasOnLeave(getApi: () => ConnectionsApi | undefined): Extensio
       if (!u.docChanged && !u.selectionSet) return
       // The NEW document at the OLD caret, mapped forward — reading the old offset against the new text makes typing look like leaving.
       const was = u.changes.mapPos(u.startState.selection.main.head)
-      const left = slotNear(u.state, was)
+      const left = slotNear(u.state, was, scope)
       if (authored !== null) authored = u.changes.mapPos(authored)
       if (left?.kind === 'alias' && typedInto(u, left)) authored = left.start
       if (!u.selectionSet || left === null) return
-      if (u.view.hasFocus && slotNear(u.state, u.state.selection.main.head)?.start === left.start)
+      if (
+        u.view.hasFocus &&
+        slotNear(u.state, u.state.selection.main.head, scope)?.start === left.start
+      )
         return
       leave(u.view, was, left, true)
     }),
