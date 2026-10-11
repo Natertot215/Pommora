@@ -537,7 +537,7 @@ function build(view: EditorView, scope: MarkdownScope): Built {
     const bracketEnd = close[0] + 1
     const look = linkLook(conn, text, tk, ownKeys, headingLinkStyle)
     const shown = look.status !== 'phantom'
-    const internal = look.target.kind === 'page' || look.target.kind === 'self'
+    const internal = look.target.kind !== 'url' && look.status !== 'phantom'
     const isActive = active.has(i)
     ranges.push(
       Decoration.mark({
