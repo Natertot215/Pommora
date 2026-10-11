@@ -1,10 +1,9 @@
 import { describe, it, expect } from 'vitest'
 import { EditorState } from '@codemirror/state'
-import { listRenumber } from './listRenumber'
+import { editEvent, landEdit, listRenumber } from './listRenumber'
 import { scanDoc } from '../Engine/docScan'
 import { continueListOnEnter, indentListOnTab, outdentListOnShiftTab, type Edit } from './edits'
 import { setList } from './format'
-import { landEdit } from '../../Testing/markdownEngine'
 
 const del = (doc: string, from: number, to: number, userEvent = 'delete'): string =>
   EditorState.create({ doc, extensions: [listRenumber('page')] })
@@ -54,7 +53,8 @@ describe('a line deletion closes the gap', () => {
   })
 })
 
-const land = (doc: string, e: Edit | null): string => landEdit(doc, e ? [e] : [], e?.relist)
+const land = (doc: string, e: Edit | null): string =>
+  landEdit(doc, e ? [e] : [], editEvent(e ?? {}), 'page')
 const at = (doc: string, pos: number, t: typeof indentListOnTab): string =>
   land(doc, t(scanDoc(doc), pos, pos))
 
@@ -93,7 +93,7 @@ describe('Enter recounts the run it splits', () => {
 describe('Lists ▸ continues the run a line joins', () => {
   const listed = (doc: string, from: number, to = from): string => {
     const e = setList(doc, from, to, 'ordered')
-    return landEdit(doc, e.changes, e.relist)
+    return landEdit(doc, e.changes, editEvent(e), 'page')
   }
   it('a paragraph between two items takes its place, and the run below counts on', () => {
     expect(listed('1. a\n2. b\nc\n3. d', 10)).toBe('1. a\n2. b\n3. c\n4. d')
@@ -126,10 +126,14 @@ describe('Lists ▸ continues the run a line joins', () => {
   })
   it('a list-writing edit inside display math counts nothing', () => {
     const doc = '$$\n1. a\n$$'
-    expect(landEdit(doc, [{ from: 8, to: 8, insert: '5. b\n' }], true)).toBe('$$\n1. a\n5. b\n$$')
+    expect(
+      landEdit(doc, [{ from: 8, to: 8, insert: '5. b\n' }], editEvent({ relist: true }), 'page'),
+    ).toBe('$$\n1. a\n5. b\n$$')
   })
   it('a list-writing edit inside a code block counts nothing', () => {
     const doc = '```\n1. a\n```'
-    expect(landEdit(doc, [{ from: 9, to: 9, insert: '5. b\n' }], true)).toBe('```\n1. a\n5. b\n```')
+    expect(
+      landEdit(doc, [{ from: 9, to: 9, insert: '5. b\n' }], editEvent({ relist: true }), 'page'),
+    ).toBe('```\n1. a\n5. b\n```')
   })
 })

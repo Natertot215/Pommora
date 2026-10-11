@@ -15,8 +15,7 @@ import {
   lineIntentsInto,
   tokenIntents,
 } from '../MarkdownPM/Engine/intents'
-import { codeMask, type TextEdit } from '../MarkdownPM/Engine/markdownCode'
-import { editEvent, landEdit as land } from '../MarkdownPM/Input/listRenumber'
+import { codeMask } from '../MarkdownPM/Engine/markdownCode'
 import type { Token } from '../MarkdownPM/Engine/tokens'
 
 // The independent parse `modelFromRegion` is pinned against — a second derivation from the same source.
@@ -65,6 +64,3 @@ export function citationScan(d: DocLines, excluded: [number, number][]): Citatio
     d.lines.map((line, i) => lineRefs(line, d.lineStarts[i], inCode)),
   )
 }
-
-export const landEdit = (doc: string, changes: readonly TextEdit[], relist = false): string =>
-  land(doc, changes, editEvent({ relist }), 'page')

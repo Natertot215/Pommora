@@ -10,7 +10,7 @@ import {
   changeColorItems,
   editorContextItems,
   PASTE_LITERAL_ACTION,
-  RESTING_EDITS,
+  restingEditItems,
 } from '@pommora/core/Actions/editorMenu'
 import type { ActionItem } from '@pommora/core/Actions/menuModel'
 import { PASTE_AS_PREFIX, pasteAsRows } from '@pommora/core/Actions/pasteAsMenu'
@@ -75,7 +75,7 @@ function systemItems(
   const canPaste = resting ? clipboard.readText() !== '' : f.canPaste
   items.push(
     ...(resting && editor
-      ? restingEditItems(editor, resting.selection !== '', canPaste)
+      ? editorRows(editor, restingEditItems(resting.selection !== '', canPaste))
       : ([
           { role: 'undo', enabled: f.canUndo },
           { role: 'redo', enabled: f.canRedo },
@@ -95,18 +95,6 @@ function systemItems(
     ...(editor ? editorRows(editor, changeColorItems(editor.req, heldCommands())) : []),
   )
   return items
-}
-
-function restingEditItems(
-  editor: EditorMenu,
-  selected: boolean,
-  canPaste: boolean,
-): MenuItemConstructorOptions[] {
-  return editorRows(editor, [
-    { label: 'Cut', action: RESTING_EDITS.cut, chord: 'cmd+x', disabled: !selected },
-    { label: 'Copy', action: RESTING_EDITS.copy, chord: 'cmd+c', disabled: !selected },
-    { label: 'Paste', action: RESTING_EDITS.paste, chord: 'cmd+v', disabled: !canPaste },
-  ])
 }
 
 // Last, so the Pommora formatting block sits directly under the edit items.

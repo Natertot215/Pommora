@@ -8,12 +8,12 @@ import {
   setBlock,
   type FormatEdit,
 } from './format'
-import { landEdit } from '../../Testing/markdownEngine'
+import { editEvent, landEdit } from './listRenumber'
 import { scanDoc } from '../Engine/docScan'
 
 const apply = (doc: string, edit: FormatEdit | null): string => {
   if (!edit) throw new Error('no edit')
-  return landEdit(doc, edit.changes, edit.relist)
+  return landEdit(doc, edit.changes, editEvent(edit), 'page')
 }
 
 describe('toggleInline', () => {

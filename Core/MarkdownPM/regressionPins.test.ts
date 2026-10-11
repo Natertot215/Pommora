@@ -12,7 +12,7 @@ import {
   outdentListOnShiftTab,
 } from './Input/edits'
 import { setHeading, setList } from './Input/format'
-import { landEdit } from '../Testing/markdownEngine'
+import { editEvent, landEdit } from './Input/listRenumber'
 import { renumberRuns } from './Engine/listDragModel'
 import { calloutDeleteVerdict } from './Guards/calloutGuard'
 import type { GuardVerdict } from './Guards/verdictFilter'
@@ -150,7 +150,7 @@ describe('continueListOnEnter — nested runs + empty-item continuation', () => 
   it('renumbers past a nested sublist instead of duplicating numbers', () => {
     const doc = '1. a\n\t1. child\n2. b'
     const edit = continueListOnEnter(scanDoc(doc), 4, 4)!
-    expect(landEdit(doc, [edit], edit.relist)).toBe('1. a\n2. \n\t1. child\n3. b')
+    expect(landEdit(doc, [edit], editEvent(edit), 'page')).toBe('1. a\n2. \n\t1. child\n3. b')
   })
   it('continues on an empty item instead of exiting (no auto-exit)', () => {
     const edit = continueListOnEnter(scanDoc('- '), 2, 2)

@@ -41,6 +41,14 @@ export type EditorMenuRequest = z.infer<typeof editorMenuRequest>
 export const PASTE_LITERAL_ACTION = 'paste:literal' as const
 export const RESTING_EDITS = { cut: 'edit:cut', copy: 'edit:copy', paste: 'edit:paste' } as const
 
+export function restingEditItems(selected: boolean, canPaste: boolean): ActionItem<string>[] {
+  return [
+    { label: 'Cut', action: RESTING_EDITS.cut, chord: 'cmd+x', disabled: !selected },
+    { label: 'Copy', action: RESTING_EDITS.copy, chord: 'cmd+c', disabled: !selected },
+    { label: 'Paste', action: RESTING_EDITS.paste, chord: 'cmd+v', disabled: !canPaste },
+  ]
+}
+
 export type FormatChordAction = Extract<CommandId, `format:${string}`>
 
 type EditorMenuAction =

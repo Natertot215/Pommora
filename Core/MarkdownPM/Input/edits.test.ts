@@ -27,9 +27,9 @@ import {
   wrapSelection,
   type Edit,
 } from './edits'
-import { landEdit } from '../../Testing/markdownEngine'
+import { editEvent, landEdit } from './listRenumber'
 
-const apply = (doc: string, e: Edit): string => landEdit(doc, [e], e.relist)
+const apply = (doc: string, e: Edit): string => landEdit(doc, [e], editEvent(e), 'page')
 
 describe('list continuation (Enter)', () => {
   it('continues a bullet, preserving indent', () => {
