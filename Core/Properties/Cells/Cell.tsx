@@ -134,6 +134,7 @@ export function Cell({
           look={style.look}
           showFullLink={showFullLink}
           holder={holder}
+          connections={ctx.connections}
         />
       )
     case 'text':

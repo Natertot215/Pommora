@@ -4,6 +4,10 @@ import { act, createElement } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { makeTree } from '../../Testing/testTree'
 import { useSession } from '../../Session/store'
+import { buildPageIndex } from '../../Connections/pageIndex'
+import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'
+import { glanceHost } from '../../Interface/Glance/glanceAction'
+import { solidColorCss } from '@pommora/uix/Theme/ramp'
 import { LinkCell } from './LinkCell'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 if (!('ResizeObserver' in globalThis)) {
@@ -15,58 +19,115 @@ if (!('ResizeObserver' in globalThis)) {
 }
 
 let root: Root | null = null
+let host: HTMLDivElement | null = null
 afterEach(() => {
   const r = root
   root = null
   if (r) act(() => r.unmount())
+  host?.remove()
+  vi.restoreAllMocks()
 })
 
-describe('a Link cell naming a page', () => {
-  it('a Link cell naming a heading opens the page at it', async () => {
-    const select = vi.fn(async () => {})
-    useSession.setState({ tree: makeTree(), select })
-    const container = document.createElement('div')
-    root = createRoot(container)
-    await act(async () =>
-      root?.render(createElement(LinkCell, { raw: '[[Alpha#Setup]]', def: undefined })),
-    )
-    const link = container.querySelector('.cell-connection') as HTMLElement
-    await act(async () => {
-      link.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 }))
-    })
-    expect(select).toHaveBeenCalledWith(
-      { kind: 'page', id: 'p1', path: 'Notes/Alpha.md' },
-      { newTab: false, heading: 'Setup' },
-    )
+const alpha = { id: 'a', title: 'Alpha', path: 'Notes/Alpha.md' }
+const holder = { id: 'h', title: 'Holder', path: 'X/Holder.md' }
+const open = vi.fn()
+const conn: ConnectionsApi = {
+  ...buildPageIndex([
+    alpha,
+    holder,
+    { id: 'd1', title: 'Dup', path: 'A/Dup.md' },
+    { id: 'd2', title: 'Dup', path: 'B/Dup.md' },
+  ]),
+  headingsOf: () => undefined,
+  location: () => [],
+  open,
+}
+
+const def = { id: 'prop_l', name: 'Site', type: 'link', link_color: 'blue' } as const
+const bubbled = vi.fn()
+
+const mount = async (raw: string, withHolder = false): Promise<HTMLDivElement> => {
+  useSession.setState({ tree: makeTree() })
+  const el = document.createElement('div')
+  host = el
+  document.body.appendChild(el)
+  root = createRoot(el)
+  await act(async () =>
+    root?.render(
+      createElement(
+        'div',
+        { onClick: bubbled },
+        createElement(LinkCell, {
+          raw,
+          def,
+          connections: () => conn,
+          ...(withHolder ? { holder } : {}),
+        }),
+      ),
+    ),
+  )
+  return el
+}
+
+const click = async (el: Element, init: MouseEventInit = {}): Promise<void> =>
+  act(async () => {
+    el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, ...init }))
   })
-  it('a bare `[[#Heading]]` names the page it sits on and opens it at the heading', async () => {
-    const select = vi.fn(async () => {})
-    useSession.setState({ tree: makeTree(), select })
-    const holder = { id: 'p1', title: 'Page', path: 'X/Page.md' }
-    const press = async (props: { holder?: typeof holder }): Promise<HTMLElement> => {
-      const container = document.createElement('div')
-      root = createRoot(container)
-      await act(async () =>
-        root?.render(createElement(LinkCell, { raw: '[[#Setup]]', def: undefined, ...props })),
-      )
-      const link = container.querySelector('.cell-connection') as HTMLElement
-      await act(async () => {
-        link.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 }))
-      })
-      act(() => root?.unmount())
-      root = null
-      return link
-    }
-    const held = await press({ holder })
-    expect(held.textContent).toBe('#Setup')
-    expect(held.getAttribute('href')).toBe('X/Page.md')
-    expect(select).toHaveBeenCalledWith(
-      { kind: 'page', id: 'p1', path: 'X/Page.md' },
-      { newTab: false, heading: 'Setup' },
-    )
-    select.mockClear()
-    const bare = await press({})
-    expect(bare.textContent).toBe('#Setup')
-    expect(select).not.toHaveBeenCalled()
+
+describe('a Link value naming a page draws and follows as every link does', () => {
+  it('a heading link draws its page and heading joined by § in the resolved tone', async () => {
+    const el = await mount('[[Alpha#Setup]]')
+    const link = el.querySelector('.md-connection-resolved')
+    expect(link?.textContent).toBe('Alpha§Setup')
+    expect(link?.hasAttribute('data-link')).toBe(true)
+  })
+
+  it('a missing page draws phantom and a shared title ambiguous', async () => {
+    expect((await mount('[[Nope]]')).querySelector('.md-connection-phantom')).not.toBeNull()
+    act(() => root?.unmount())
+    root = null
+    expect((await mount('[[Dup]]')).querySelector('.md-connection-ambiguous')).not.toBeNull()
+  })
+
+  it('a hand-written markdown link to a page, and a bare heading on its holder, resolve', async () => {
+    expect((await mount('[x](Alpha)')).querySelector('.md-connection-resolved')).not.toBeNull()
+    act(() => root?.unmount())
+    root = null
+    expect(
+      (await mount('[[#Setup]]', true)).querySelector('.md-connection-resolved'),
+    ).not.toBeNull()
+  })
+
+  it('a click on the text opens through the connections, ⌘ in a new tab', async () => {
+    open.mockClear()
+    const el = await mount('[[Alpha#Setup]]')
+    const link = el.querySelector('[data-link]') as HTMLElement
+    await click(link)
+    expect(open).toHaveBeenLastCalledWith(alpha, 'Setup', false)
+    await click(link, { metaKey: true })
+    expect(open).toHaveBeenLastCalledWith(alpha, 'Setup', true)
+  })
+})
+
+describe('a Link value holding an address or plain text keeps the property’s own look', () => {
+  it('an address draws in the property color and arms the glance on pointer over', async () => {
+    const arm = vi.spyOn(glanceHost, 'arm').mockImplementation(() => {})
+    const el = await mount('https://a.com')
+    const link = el.querySelector('a.cell-link') as HTMLAnchorElement
+    expect(link.textContent).toBe('https://a.com')
+    expect(link.style.color).toBe(solidColorCss('blue'))
+    act(() => {
+      link.dispatchEvent(new MouseEvent('pointerover', { bubbles: true }))
+    })
+    expect(arm).toHaveBeenCalledWith({ kind: 'url', url: 'https://a.com' }, link)
+  })
+
+  it('text that names nothing draws as the address half and lets a click bubble', async () => {
+    bubbled.mockClear()
+    const el = await mount('foo')
+    const link = el.querySelector('a.cell-link') as HTMLAnchorElement
+    expect(link.textContent).toBe('foo')
+    await click(link)
+    expect(bubbled).toHaveBeenCalledOnce()
   })
 })

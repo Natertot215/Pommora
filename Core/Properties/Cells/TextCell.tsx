@@ -18,11 +18,13 @@ export function TextCell({
   connections,
   holder,
   onPane,
+  menu = true,
 }: {
   text: string
   connections?: () => ConnectionsApi | undefined
   holder?: ConnPage
   onPane?: (anchor: HTMLElement) => void
+  menu?: boolean
 }): React.JSX.Element {
   const hostRef = useRef<HTMLDivElement>(null)
   const own = holder ? ({ kind: 'held', page: holder } as const) : null
@@ -58,7 +60,7 @@ export function TextCell({
       className="cell-text-host"
       data-reveal-host=""
       onClick={follow}
-      onContextMenu={onContextMenu}
+      onContextMenu={menu ? onContextMenu : undefined}
       onPointerOver={onPointerOver}
       onPointerOut={onPointerOut}
       onPointerEnter={(e) => {
