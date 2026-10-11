@@ -1,45 +1,116 @@
 import { EditorView, type ViewUpdate } from '@codemirror/view'
 import { EditorSelection, type EditorState, type Extension, type Line } from '@codemirror/state'
 import type { LinkSpans } from '../../Connections/connections'
-import type { ConnEditAction } from '../../Actions/connectionMenu'
+import type { LinkAction } from '../../Actions/connectionMenu'
+import { unescapeAlias } from '../../Connections/links'
+import { linkPaste } from '../../Connections/linkValue'
+import type { LinkDisplay } from '../../Properties/properties'
 import { titleTarget, type ConnectionsApi } from './connectionsApi'
 import type { MarkdownScope } from '../Engine/detect'
-import { aliasedToken, type TokenOf } from '../Engine/tokens'
+import {
+  aliasedToken,
+  headingOf,
+  type LinkKind,
+  linkAddress,
+  linkTarget,
+  type TokenOf,
+} from '../Engine/tokens'
 import { docScan, docString } from '../docCache'
 import { connectionAt } from '../Input/edits'
 import { focusRange } from '../caretPlacement'
 import { restedOnLink } from './linkReveal'
-import { editorHost } from '../api'
+import { type EditorHost, editorHost } from '../api'
 import { drawnLinkAt, inRawHtml } from '../decorations'
+import { writeLinkAt } from './pendingTitle'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 
-/** Pure of any editor, because a connection in a resting table cell has none. Reads the token's spans, since a displayed alias hides where the title is. */
-export function wikiAuthorTarget(
+export type LinkEdit =
+  | { kind: 'select'; range: [number, number] }
+  | { kind: 'write'; from: number; to: number; text: string; awaits?: string; select?: number }
+
+function shownConnection(text: string, tk: TokenOf<'wikiLink'>): string {
+  const heading = aliasedToken(tk) ? undefined : headingOf(text, tk)
+  if (!heading) return text.slice(tk.contentRange[0], tk.contentRange[1])
+  const title = text.slice(tk.resolveRange[0], tk.resolveRange[1])
+  return title ? `${title} § ${heading}` : heading
+}
+
+export function linkEdit(
   text: string,
-  tk: TokenOf<'wikiLink'>,
-  action: ConnEditAction,
-): { pipeAt?: number; select: [number, number] } {
-  if (action === 'editLink') {
-    const [, titleEnd] = tk.resolveRange
-    return { select: [titleEnd, titleEnd] }
+  tk: TokenOf<LinkKind>,
+  action: LinkAction,
+  titles: Pick<EditorHost['linkTitles'], 'get'>,
+): LinkEdit | null {
+  const [s, e] = tk.range
+  const [cs, ce] = tk.contentRange
+  switch (action) {
+    case 'rename': {
+      if (tk.kind === 'link' || aliasedToken(tk)) return { kind: 'select', range: [cs, ce] }
+      const afterTitle = (tk.heading ?? tk.resolveRange)[1]
+      if (text[afterTitle] === '|')
+        return { kind: 'select', range: [afterTitle + 1, afterTitle + 1] }
+      return { kind: 'write', from: afterTitle, to: afterTitle, text: '|', select: afterTitle + 1 }
+    }
+    case 'editLink':
+      return { kind: 'select', range: tk.kind === 'link' ? linkAddress(tk) : tk.resolveRange }
+    case 'link:remove':
+      return {
+        kind: 'write',
+        from: s,
+        to: e,
+        text: tk.kind === 'link' ? unescapeAlias(text.slice(cs, ce)) : shownConnection(text, tk),
+      }
+    case 'link:delete':
+      return { kind: 'write', from: s, to: e, text: '' }
+    case 'format:link-full':
+      return tk.kind === 'link' ? formatted(text, tk, 'link-full', titles) : null
+    case 'format:link-short':
+      return tk.kind === 'link' ? formatted(text, tk, 'link-short', titles) : null
+    case 'format:link-title':
+      return tk.kind === 'link' ? formatted(text, tk, 'link-title', titles) : null
+    default:
+      return null
   }
-  if (aliasedToken(tk)) return { select: [tk.contentRange[0], tk.contentRange[1]] }
-  // A pipe already sitting there is an Add Title that was abandoned — reuse it rather than stacking a second.
-  const afterTitle = tk.contentRange[1]
-  const seat: [number, number] = [afterTitle + 1, afterTitle + 1]
-  return text[afterTitle] === '|' ? { select: seat } : { pipeAt: afterTitle, select: seat }
+}
+
+function formatted(
+  text: string,
+  tk: TokenOf<'link'>,
+  display: LinkDisplay,
+  titles: Pick<EditorHost['linkTitles'], 'get'>,
+): LinkEdit {
+  const url = linkTarget(text, tk)
+  const write = linkPaste(url, display, titles.get(url) ?? undefined)
+  return {
+    kind: 'write',
+    from: tk.range[0],
+    to: tk.range[1],
+    text: write.text,
+    awaits: write.awaits,
+  }
 }
 
 export function applyLinkAction(
   view: EditorView,
-  action: ConnEditAction,
+  action: LinkAction,
   range: [number, number],
 ): void {
-  const tk = drawnLinkAt(view, range[0], 'wikiLink')
+  const tk = drawnLinkAt(view, range[0])
   if (!tk || tk.range[0] !== range[0]) return
-  const { pipeAt, select } = wikiAuthorTarget(docString(view.state.doc), tk, action)
-  if (pipeAt !== undefined) view.dispatch({ changes: { from: pipeAt, to: pipeAt, insert: '|' } })
-  focusRange(view, select[0], select[1])
+  const edit = linkEdit(
+    docString(view.state.doc),
+    tk,
+    action,
+    view.state.facet(editorHost).linkTitles,
+  )
+  if (!edit) return
+  if (edit.kind === 'select') {
+    focusRange(view, edit.range[0], edit.range[1])
+    return
+  }
+  view.focus()
+  writeLinkAt(view, edit.from, edit.to, edit, 'input')
+  if (edit.select !== undefined) focusRange(view, edit.select, edit.select)
 }
 
 /** The caret lands on the closer with no separating space, since the closer is the one caret position that doesn't reveal the syntax. */

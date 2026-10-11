@@ -3,6 +3,7 @@
 import type { PropertyValue } from '../propertyValue'
 import type { ColumnLook } from '../columnStyles'
 import type { CellMenuAction } from '../../Actions/cellMenu'
+import type { LinkAction } from '../../Actions/connectionMenu'
 import { readLinkText, urlClickTarget } from '../../Connections/linkValue'
 import { type NumberConfig, type PropertyType, specOf } from '../properties'
 import { barDivisor } from '../formatValue'
@@ -53,7 +54,7 @@ export function valueClickIntent(
   }
 }
 
-const MENU_INTENTS: Partial<Record<CellMenuAction, ValueIntent>> = {
+const MENU_INTENTS: Partial<Record<CellMenuAction | LinkAction, ValueIntent>> = {
   editLink: { kind: 'edit' },
   'cell:edit': { kind: 'edit' },
   rename: { kind: 'rename' },
@@ -61,7 +62,7 @@ const MENU_INTENTS: Partial<Record<CellMenuAction, ValueIntent>> = {
   'cell:hide': { kind: 'hide' },
 }
 
-export const valueMenuIntent = (action: CellMenuAction): ValueIntent | null =>
+export const valueMenuIntent = (action: CellMenuAction | LinkAction): ValueIntent | null =>
   MENU_INTENTS[action] ?? null
 
 export type ValueIntentHandlers = {

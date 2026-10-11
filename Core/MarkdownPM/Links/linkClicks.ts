@@ -5,16 +5,15 @@ import { isHttpLink, normalizeLinkUrl } from '../../Paths/urlPath'
 import type { LinkKind, Token } from '../Engine/tokens'
 import { docString } from '../docCache'
 import {
+  linkMenuTarget,
   linkStatus,
   titleTarget,
-  tokenMenuTarget,
   tokenTarget,
   type ConnectionsApi,
   type MdTarget,
 } from './connectionsApi'
 import { drawnLinkAt } from '../decorations'
 import { applyLinkAction } from './linkEdit'
-import { applyUrlLinkAction } from './linkFormat'
 import { pointerHandlers, type PointerTarget } from '../Gestures/pointerPath'
 import { travelToHeading } from '../travel'
 import { type EditorHost, editorHost, type OwnPage, ownPage, pageEditorAt } from '../api'
@@ -139,19 +138,11 @@ export function linkPointer(): Extension {
     dwell: (hit, el, glance) => (hit.onText ? dwellTarget(hit.target, glance, el) : null),
     menu: (hit, view) => {
       const menu = apiOf(view)?.menu
-      const target =
-        hit.onText &&
-        tokenMenuTarget(
-          hit.tk,
-          hit.target,
-          view.state.readOnly
-            ? undefined
-            : {
-                wiki: (action) => applyLinkAction(view, action, hit.range),
-                url: (action) => applyUrlLinkAction(view, action, hit.range),
-              },
-        )
-      return menu && target ? () => menu(target) : null
+      const target = hit.onText && linkMenuTarget(hit.target, !view.state.readOnly)
+      return menu && target
+        ? () =>
+            void menu(target).then((action) => action && applyLinkAction(view, action, hit.range))
+        : null
     },
   })
 }

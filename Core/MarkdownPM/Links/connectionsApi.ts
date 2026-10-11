@@ -1,19 +1,7 @@
 import type { LinkStatus } from '../../Connections/connections'
 import { normalizeTitle } from '../../Paths/caseFold'
-import {
-  aliasedToken,
-  headingOf,
-  type LinkKind,
-  linkTarget,
-  type Token,
-  type TokenOf,
-} from '../Engine/tokens'
-import type {
-  ConnCellApply,
-  ConnEditAction,
-  ConnSurface,
-  ConnUrlAction,
-} from '../../Actions/connectionMenu'
+import { aliasedToken, headingOf, type LinkKind, linkTarget, type TokenOf } from '../Engine/tokens'
+import type { LinkAction } from '../../Actions/connectionMenu'
 import { targetFragment, targetNamesFile, targetTitle } from '../../Connections/links'
 import { isValidLink } from '../../Paths/urlPath'
 import type { ConnPage, PageHeadings, PageIndex } from '../../Connections/pageIndex'
@@ -21,32 +9,14 @@ import type { TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { cx } from '@pommora/uix/Utilities/cx'
 import type { HeadingLinkStyle } from '../../Settings/personalization'
 
-/** `apply` closes over the span it was built for, so no caller can aim an action at a link the menu wasn't popped on; its absence marks a display-only surface. */
-export type ConnMenuTarget = {
-  surface?: ConnSurface
-  hideable?: boolean
-  onCell?: ConnCellApply
-} & (
-  | {
-      kind: 'page'
-      page: ConnPage
-      heading?: string
-      editable: boolean
-      hasAlias: boolean
-      apply?: (action: ConnEditAction) => void
-    }
-  | {
-      kind: 'url'
-      url: string
-      editable?: boolean
-      hasAlias?: boolean
-      apply?: (action: ConnUrlAction) => void
-    }
+export type LinkMenuTarget = { editable: boolean; value?: { hideable: boolean } } & (
+  | { kind: 'page'; page: ConnPage; heading?: string }
+  | { kind: 'url'; url: string }
 )
 
 export interface ConnectionsApi extends PageIndex {
   open: (page: ConnPage, heading?: string, newTab?: boolean) => void
-  menu?: (target: ConnMenuTarget) => void
+  menu?: (target: LinkMenuTarget) => Promise<LinkAction | null>
   headingsOf: (path: string) => PageHeadings | undefined
   location: (pageId: string) => TrailSegment[]
 }
@@ -93,40 +63,18 @@ export function tokenTarget(
 
 export function linkMenuTarget(
   target: MdTarget,
-  apply?: (action: ConnUrlAction) => void,
-): ConnMenuTarget | null {
+  editable: boolean,
+  value?: { hideable: boolean },
+): LinkMenuTarget | null {
+  const base = { editable, ...(value ? { value } : {}) }
   switch (target.kind) {
     case 'page':
-      return {
-        kind: 'page',
-        page: target.page,
-        heading: target.heading,
-        editable: false,
-        hasAlias: false,
-      }
+      return { ...base, kind: 'page', page: target.page, heading: target.heading }
     case 'url':
-      return { kind: 'url', url: target.url, apply }
+      return { ...base, kind: 'url', url: target.url }
     default:
       return null
   }
-}
-
-/** A connection naming a page is authored in place, and every other link is a page or an address. */
-export function tokenMenuTarget(
-  tk: Token | undefined,
-  target: MdTarget,
-  edit?: { wiki: (action: ConnEditAction) => void; url: (action: ConnUrlAction) => void },
-): ConnMenuTarget | null {
-  if (tk?.kind === 'wikiLink' && target.kind === 'page')
-    return {
-      kind: 'page',
-      page: target.page,
-      heading: target.heading,
-      editable: edit !== undefined,
-      hasAlias: aliasedToken(tk),
-      apply: edit?.wiki,
-    }
-  return linkMenuTarget(target, edit?.url)
 }
 
 // A fragment is missing only when the named page's heading keys are known and lack it; a page absent from the map reads as present. A bare fragment reads the document's own keys, which a surface without page identity leaves undefined.

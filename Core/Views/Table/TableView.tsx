@@ -50,10 +50,9 @@ import type { GhostAnchor } from '@pommora/uix/Interactions/ghostCreate'
 import { useCellSweep } from './cellSweep'
 import { LineGroup, LineZone, useLineRow } from '@pommora/uix/Interactions/drag'
 import { openWebLink } from '../../Web/openWebLink'
-import {
-  linkValueMenuTarget,
-  showConnectionMenu,
-} from '../../Interface/Menus/connectionMenuActions'
+import { showConnectionMenu } from '../../Interface/Menus/connectionMenuActions'
+import { valueMenuTarget } from '../../Properties/Cells/valueTarget'
+import type { LinkAction } from '../../Actions/connectionMenu'
 import { popMenu } from '../../Actions/menuActions'
 
 export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
@@ -279,15 +278,16 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     const value = resolveFieldValue(row, col.id, schema)
     const def = schema.find((d) => d.id === col.id)
     const dt = columnType(col, schema)
-    const runMenuIntent = (action: CellMenuAction): boolean => {
+    const runMenuIntent = (action: CellMenuAction | LinkAction): boolean => {
       const intent = valueMenuIntent(action)
       if (intent) triggerElRef.current = cellEl
       return runIntent(row, col, intent, null)
     }
     if (dt === 'link') {
-      const target = linkValueMenuTarget(value.kind === 'link' ? value.value : '', runMenuIntent)
+      const target = valueMenuTarget(ctx, row, value.kind === 'link' ? value.value : '', false)
       if (target) {
-        await interactions.holdGhost(async () => showConnectionMenu(target))
+        const action = await interactions.holdGhost(() => showConnectionMenu(target))
+        if (action) runMenuIntent(action)
         return
       }
     }
@@ -297,9 +297,9 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       onChip: chip !== null,
     })
     if (!base) return
-    const ctx: CellMenuContext =
+    const menuCtx: CellMenuContext =
       base.kind === 'title' ? { ...base, ...interactions.titleMenuContext(row) } : base
-    const action = await interactions.holdGhost(() => popMenu(cellMenuModel(ctx)))
+    const action = await interactions.holdGhost(() => popMenu(cellMenuModel(menuCtx)))
     if (!action) return
     const glyph = cellEl.querySelector<HTMLElement>('.cell-title > :first-child') ?? cellEl
     if (interactions.runTitleAction(action, row, glyph)) return

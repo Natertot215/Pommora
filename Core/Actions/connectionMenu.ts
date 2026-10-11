@@ -8,20 +8,14 @@ import {
 } from './pageMenu'
 import { LINK_DISPLAYS, LINK_DISPLAY_LABELS } from '../Properties/properties'
 
-export interface ConnMenuContext {
-  surface: ConnSurface
-  editable: boolean
-  hasAlias: boolean
-  external?: boolean
-  open?: 'closed' | 'tab' | 'detail'
-  windowed?: boolean
-  hideable?: boolean
-}
+export type LinkMenuContext = { editable: boolean; value?: { hideable: boolean } } & (
+  | { kind: 'page'; open: 'closed' | 'tab' | 'detail'; windowed: boolean }
+  | { kind: 'url'; web: boolean }
+)
 
-export type ConnSurface = 'editor' | 'cell'
 export type ConnEditAction = 'rename' | 'editLink'
-export type ConnCellAction = 'cell:clear' | 'cell:hide'
-export type ConnCellApply = (action: ConnCellAction) => void
+const CELL_ACTIONS = ['cell:clear', 'cell:hide'] as const
+export type ConnCellAction = (typeof CELL_ACTIONS)[number]
 type ConnCopyAction = Extract<PageMetaAction, 'title:copylink' | 'title:copypath'>
 
 type ConnSiteAction = 'link:window' | 'link:browser'
@@ -31,7 +25,7 @@ const CONN_SITE_ROWS: readonly LeafItem<ConnSiteAction>[] = [
   { label: 'Open In Browser', action: 'link:browser' },
 ]
 
-const CONN_URL_ACTIONS = [
+const LINK_EDIT_ACTIONS = [
   'rename',
   'editLink',
   'format:link-full',
@@ -40,31 +34,27 @@ const CONN_URL_ACTIONS = [
   'link:remove',
   'link:delete',
 ] as const
-export type ConnUrlAction = (typeof CONN_URL_ACTIONS)[number]
+export type LinkEditAction = (typeof LINK_EDIT_ACTIONS)[number]
+const LINK_ACTIONS = [...LINK_EDIT_ACTIONS, ...CELL_ACTIONS] as const
+export type LinkAction = (typeof LINK_ACTIONS)[number]
 
-const CONN_UNLINK_ROWS: readonly ActionItem<ConnUrlAction>[] = [
+const CONN_UNLINK_ROWS: readonly ActionItem<LinkEditAction>[] = [
   { label: 'Remove Link', action: 'link:remove' },
   { label: 'Delete', action: 'link:delete' },
 ]
 
-export type ConnMenuAction =
-  | PageOpenAction
-  | ConnSiteAction
-  | ConnEditAction
-  | ConnCellAction
-  | ConnCopyAction
-  | ConnUrlAction
+const FORMAT_ROW = (web: boolean): ActionItem<LinkEditAction> => ({
+  label: 'Format',
+  submenu: LINK_DISPLAYS.filter((d) => d !== 'link-title' || web).map((d) => ({
+    label: LINK_DISPLAY_LABELS[d],
+    action: `format:${d}` as const,
+  })),
+})
 
-export const isConnUrlAction = (action: ConnMenuAction): action is ConnUrlAction =>
-  (CONN_URL_ACTIONS as readonly string[]).includes(action)
+export type LinkMenuAction = PageOpenAction | ConnSiteAction | ConnCopyAction | LinkAction
 
-export const isConnCellAction = (action: ConnMenuAction): action is ConnCellAction =>
-  action === 'cell:clear' || action === 'cell:hide'
-
-function closingRows(ctx: ConnMenuContext): readonly ActionItem<ConnMenuAction>[] {
-  if (ctx.surface === 'editor') return ctx.external && ctx.editable ? CONN_UNLINK_ROWS : []
-  return cellClosingRows(true, ctx.hideable)
-}
+export const isLinkAction = (action: LinkMenuAction): action is LinkAction =>
+  (LINK_ACTIONS as readonly string[]).includes(action)
 
 export function cellClosingRows(
   clearable: boolean,
@@ -77,46 +67,28 @@ export function cellClosingRows(
   ]
 }
 
-export function connectionMenuModel(ctx: ConnMenuContext): ActionItem<ConnMenuAction>[] {
-  const authoring: ActionItem<ConnMenuAction>[] = ctx.editable
+export function connectionMenuModel(ctx: LinkMenuContext): ActionItem<LinkMenuAction>[] {
+  const opens: readonly ActionItem<LinkMenuAction>[] =
+    ctx.kind === 'page'
+      ? pageOpenRows({
+          alreadyOpen: ctx.open === 'tab',
+          window: !ctx.windowed,
+          newTab: ctx.open !== 'detail',
+        })
+      : CONN_SITE_ROWS.filter((r) => r.action !== 'link:window' || ctx.web)
+  const authoring: ActionItem<LinkMenuAction>[] = ctx.editable
     ? [
-        {
-          label: ctx.external ? 'Rename' : ctx.hasAlias ? 'Edit Title' : 'Add Title',
-          action: 'rename',
-        },
-        { label: 'Edit Link', action: 'editLink' },
+        { label: 'Rename', action: 'rename' },
+        { label: ctx.kind === 'page' ? 'Edit Title' : 'Edit Link', action: 'editLink' },
       ]
     : []
-
-  if (ctx.external) {
-    const opens = CONN_SITE_ROWS.filter((r) => !(r.action === 'link:window' && ctx.windowed))
-    if (ctx.surface === 'cell' || !ctx.editable)
-      return joinGroups([[...opens, COPY_LINK_ROW], authoring, closingRows(ctx)])
-    return joinGroups<ConnMenuAction>([
-      opens,
-      [
-        ...authoring,
-        COPY_LINK_ROW,
-        {
-          label: 'Format',
-          submenu: LINK_DISPLAYS.map((d) => ({
-            label: LINK_DISPLAY_LABELS[d],
-            action: `format:${d}` as const,
-          })),
-        },
-      ],
-      closingRows(ctx),
-    ])
-  }
-
-  return joinGroups<ConnMenuAction>([
-    pageOpenRows({
-      alreadyOpen: ctx.open === 'tab',
-      window: !ctx.windowed,
-      newTab: ctx.open !== 'detail',
-    }),
-    authoring,
-    [COPY_LINK_ROW, COPY_PATH_ROW],
-    closingRows(ctx),
-  ])
+  const copies: ActionItem<LinkMenuAction>[] =
+    ctx.kind === 'page' ? [COPY_LINK_ROW, COPY_PATH_ROW] : [COPY_LINK_ROW]
+  const format = ctx.kind === 'url' && ctx.editable && !ctx.value ? [FORMAT_ROW(ctx.web)] : []
+  const closing = ctx.value
+    ? cellClosingRows(true, ctx.value.hideable)
+    : ctx.editable
+      ? CONN_UNLINK_ROWS
+      : []
+  return joinGroups([opens, authoring, [...copies, ...format], closing])
 }
