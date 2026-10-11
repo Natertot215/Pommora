@@ -62,7 +62,6 @@ export function MarkdownTile({
         onChange={seat.save}
         register={seat.register}
         host={editorHost}
-        connections={connections}
         readOnly={!editing}
         autoFocus
         edgeFade

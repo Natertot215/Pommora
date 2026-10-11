@@ -177,7 +177,6 @@ export function PageTile({
         }}
         register={seat.register}
         host={host}
-        connections={connections}
         onSelection={publishSelection}
         readOnly={!editing}
         autoFocus

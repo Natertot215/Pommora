@@ -1,7 +1,6 @@
 import { EditorView, keymap } from '@codemirror/view'
 import { type Extension, Prec } from '@codemirror/state'
 import type { MarkdownScope } from './Engine/detect'
-import type { ConnectionsApi } from './Links/connectionsApi'
 import { markdownDecorations } from './decorations'
 import { listDragExtension } from './Gestures/listDrag'
 import { blockDragExtension } from './Gestures/blockDrag'
@@ -40,19 +39,16 @@ function blockGestures(scope: MarkdownScope): Extension {
 }
 
 /** Everything a page body, a table cell, and a Text value share: inline rendering, the block gestures their scope holds, link and footnote pointers, the paste and alias rules, typing, and the right-click menu. The surfaces differ only in what wraps this. */
-export const inlineSurface = (
-  getConn: () => ConnectionsApi | undefined,
-  scope: MarkdownScope,
-): Extension => [
-  markdownDecorations(getConn, scope),
+export const inlineSurface = (scope: MarkdownScope): Extension => [
+  markdownDecorations(scope),
   blockGestures(scope),
   customCaret,
   customSelection,
-  linkPointer(getConn),
-  citationPointer(getConn),
+  linkPointer(),
+  citationPointer(),
   pasteLink,
   pendingTitle,
-  aliasOnLeave(getConn),
+  aliasOnLeave(scope),
   linkRest,
   linkTyping,
   EditorView.lineWrapping,
@@ -72,19 +68,17 @@ export const inlineSurface = (
 /** What every editor holds beside its surface: its panes, with Enter and Tab picking the open one's row, the marker- and pair-aware Backspace, and the format chords. Each mount adds only what it alone holds. */
 export const editorBase = ({
   host,
-  getConn,
   scope,
   panes,
   formatExt,
 }: {
   host: EditorHost
-  getConn: () => ConnectionsApi | undefined
   scope: MarkdownScope
   panes: readonly EditorPane[]
   formatExt: Extension
 }): Extension => [
   editorHost.of(host),
-  inlineSurface(getConn, scope),
+  inlineSurface(scope),
   Prec.highest(
     keymap.of([
       ...paneKeys(panes.map((p) => p.ctl)),

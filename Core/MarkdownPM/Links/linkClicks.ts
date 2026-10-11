@@ -19,8 +19,6 @@ import { pointerHandlers, type PointerTarget } from '../Gestures/pointerPath'
 import { travelToHeading } from '../travel'
 import { type EditorHost, editorHost, type OwnPage, ownPage, pageEditorAt } from '../api'
 
-type GetApi = () => ConnectionsApi | undefined
-
 interface LinkHit extends PointerTarget {
   target: MdTarget
   /** Absent on a bare `§Heading` run, which no token holds. */
@@ -129,15 +127,19 @@ export function dwellTarget(
   return WEB_ADDRESS.test(web) ? () => glance.arm({ kind: 'site', url: web }, el) : null
 }
 
-export function linkPointer(getApi: GetApi): Extension {
+const apiOf = (view: EditorView): ConnectionsApi | undefined =>
+  view.state.facet(editorHost).connections()
+
+export function linkPointer(): Extension {
   return pointerHandlers<LinkHit>({
     // Both gates are required: external links wear the link class, not the connection one.
     hoverGate: `.md-connection-resolved, .${MD_LINK_CLASS}`,
-    hitAt: (view, event) => linkUnder(view, getApi(), event),
-    follow: (hit, _, event) => (hit.onText ? followTarget(hit.target, getApi(), event) : null),
+    hitAt: (view, event) => linkUnder(view, apiOf(view), event),
+    follow: (hit, view, event) =>
+      hit.onText ? followTarget(hit.target, apiOf(view), event) : null,
     dwell: (hit, el, glance) => (hit.onText ? dwellTarget(hit.target, glance, el) : null),
     menu: (hit, view) => {
-      const menu = getApi()?.menu
+      const menu = apiOf(view)?.menu
       const target =
         hit.onText &&
         tokenMenuTarget(

@@ -23,6 +23,7 @@ import type { GripMenuAction, GripMenuContext } from '../Actions/gripMenu'
 import type { PickItem } from '../Actions/menuModel'
 import type { TableMenuAction, TableMenuContext } from './Tables/tableMenu'
 import type { CitationMenuAction, CitationMenuContext } from './Citations/citationMenu'
+import type { ConnectionsApi } from './Links/connectionsApi'
 
 export const mirrored = Annotation.define<boolean>()
 
@@ -159,6 +160,7 @@ type TileMount =
 
 export interface EditorHost {
   settings(): EditorSettings
+  connections(): ConnectionsApi | undefined
   aliases: {
     list(id: string): string[]
     remember(id: string, alias: string): void

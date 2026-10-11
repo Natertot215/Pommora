@@ -70,7 +70,7 @@ import {
   type MdTarget,
 } from './Links/connectionsApi'
 import type { LinkStatus } from '../Connections/connections'
-import { editorHost, type OwnPage, ownPage, redrawNudge } from './api'
+import { editorHost, type EditorSettings, type OwnPage, ownPage, redrawNudge } from './api'
 import { checkMarkSvg, checkboxClass } from '@pommora/uix/Controls/Checkbox'
 import * as btn from '@pommora/uix/Buttons/button-base.css'
 import { buttonClass, segmentDivider } from '@pommora/uix/Buttons/Button'
@@ -460,16 +460,28 @@ function ownHeadings(
   return own.kind === 'held' ? conn?.headingsOf?.(own.page.path) : read(own.view.state.doc)
 }
 
-function build(view: EditorView, conn: ConnectionsApi | undefined, scope: MarkdownScope): Built {
+const drawsRawHtml = (scope: MarkdownScope, settings: EditorSettings): boolean =>
+  scope === 'page' && settings.htmlFormatting
+
+export function inRawHtml(state: EditorState, at: number, scope: MarkdownScope): boolean {
+  return (
+    drawsRawHtml(scope, state.facet(editorHost).settings()) &&
+    spanAt(docScan(state.doc).html, at) !== undefined
+  )
+}
+
+function build(view: EditorView, scope: MarkdownScope): Built {
+  const host = view.state.facet(editorHost)
+  const conn = host.connections()
   // One derivation per doc VERSION (docCache) — a caret move re-derives only its own lines, never an O(doc) walk.
   const scan = docScan(view.state.doc)
   const { text } = scan
   const focused = view.hasFocus
   const sel = view.state.selection.main
-  const settings = view.state.facet(editorHost).settings()
+  const settings = host.settings()
   const inline = visibleInline(view, scan)
   // A cell's text parses alone, where a leading tag reads as a block the table never holds.
-  const raw = scope === 'page' && settings.htmlFormatting ? inline.html : []
+  const raw = drawsRawHtml(scope, settings) ? inline.html : []
   const tokens = raw.length > 0 ? inline.tokens.filter((tk) => !tk.inHtml) : inline.tokens
   drawnTokens.set(view, tokens)
   const active = focused
@@ -808,22 +820,16 @@ const stepDocs = (scope: MarkdownScope): Extension =>
     return null
   })
 
-export function markdownDecorations(
-  getConn: () => ConnectionsApi | undefined,
-  scope: MarkdownScope = 'page',
-): Extension {
-  return [stepDocs(scope), decorationPlugin(getConn, scope), caretSeat(scope)]
+export function markdownDecorations(scope: MarkdownScope = 'page'): Extension {
+  return [stepDocs(scope), decorationPlugin(scope), caretSeat(scope)]
 }
 
-function decorationPlugin(
-  getConn: () => ConnectionsApi | undefined,
-  scope: MarkdownScope,
-): Extension {
+function decorationPlugin(scope: MarkdownScope): Extension {
   return ViewPlugin.fromClass(
     class {
       built: Built
       constructor(view: EditorView) {
-        this.built = build(view, getConn(), scope)
+        this.built = build(view, scope)
       }
       update(u: ViewUpdate): void {
         // Inline tokens are viewport-scoped, so scroll must rebuild too; line-level chrome spans the whole doc.
@@ -834,7 +840,7 @@ function decorationPlugin(
           u.viewportChanged ||
           u.transactions.some((tr) => tr.effects.some((e) => e.is(redrawNudge)))
         )
-          this.built = build(u.view, getConn(), scope)
+          this.built = build(u.view, scope)
       }
     },
     {

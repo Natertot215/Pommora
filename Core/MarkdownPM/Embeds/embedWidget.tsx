@@ -33,18 +33,16 @@ import { docScan } from '../docCache'
 import { expressibleInLink } from '../../Connections/connections'
 import { ownElements } from '../lineDom'
 import { healTileScrolls } from './scrollHeal'
-import type { ConnectionsApi } from '../Links/connectionsApi'
 import { editorHost, persistPref, redrawNudge } from '../api'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 
 interface EmbedHost {
-  getConn: () => ConnectionsApi | undefined
   ancestors: readonly string[]
   tabActive?: () => boolean
 }
 
 const embedHost = Facet.define<EmbedHost, EmbedHost>({
-  combine: (v) => v[0] ?? { getConn: () => undefined, ancestors: [] },
+  combine: (v) => v[0] ?? { ancestors: [] },
 })
 
 const setEmbedEditing = StateEffect.define<string | null>()
@@ -387,7 +385,7 @@ function buildTiles(
   prior: readonly Prior[] = [],
 ): EmbedTiles {
   const host = state.facet(embedHost)
-  const conn = host.getConn()
+  const conn = state.facet(editorHost).connections()
   const scan = docScan(state.doc)
   const interactive = host.ancestors.length <= 1
   let unformed = 0

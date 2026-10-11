@@ -97,7 +97,6 @@ export function PageView({
         settle.push([pageDetail.path, body])
         seat.save(body)
       }}
-      connections={connections}
       onSelection={publishSelection}
       onHeadingRename={(heading, to) =>
         void useSession

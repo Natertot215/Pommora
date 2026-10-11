@@ -57,6 +57,7 @@ function buildEditorHost(
       const s = state()
       return editorSettingsOf(personalizationOf(s), s.devicePrefs, commandsOf(s))
     },
+    connections: () => connRef.current,
     aliases: {
       list: worn,
       remember: (id, alias) => wear(id, rememberAlias(worn(id), alias)),
