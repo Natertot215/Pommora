@@ -9,6 +9,7 @@ import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
 import type { Align, TableModel } from '../Engine/Tables/model'
 import type { TableMenuContext } from './tableMenu'
 import { CellEditor } from './CellEditor'
+import { forwardTitles } from '../Links/pendingTitle'
 import { type CellPage, StaticCell } from './cellStatic'
 import type { HeadingLinkStyle } from '../../Settings/personalization'
 import { cellToDisplay, cellToSource } from '../Engine/Tables/codec'
@@ -142,7 +143,7 @@ export function MarkdownTable({
   // A mid-drag re-measure must reach this; a state binding would freeze at the pointerdown render (the cfg-ref discipline).
   const geomRef = useLatest(geom)
   // A resting cell's memo keeps the callbacks it first rendered with, so it commits through these to reach the table where it sits now.
-  const live = useLatest({ onCellCommit, onSettled })
+  const live = useLatest({ onCellCommit, onSettled, model })
   const [drag, setDrag] = useState<Drag | null>(null)
   const [resize, setResize] = useState<Resize | null>(null)
   const [active, setActive] = useState<{ row: number; col: number } | null>(null)
@@ -438,6 +439,20 @@ export function MarkdownTable({
           onTablePaste={(payload) => onFill(row, col, payload)}
           onUndo={onUndo}
           onRedo={onRedo}
+          onClose={(pending) =>
+            forwardTitles(
+              host,
+              pending,
+              () => {
+                const { header, rows } = live.current.model
+                return cellToDisplay((row === 0 ? header[col] : rows[row - 1]?.[col]) ?? '')
+              },
+              (next) => {
+                live.current.onCellCommit(row, col, next)
+                live.current.onSettled()
+              },
+            )
+          }
         />
       )
     }

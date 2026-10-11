@@ -10,6 +10,7 @@ import { useSession } from '../../Session/store'
 import type { ConnPage } from '../../Connections/pageIndex'
 import type { PropertyValue } from '../propertyValue'
 import { TextPane } from './TextPane'
+import { writeLinkAt } from '../../MarkdownPM/Links/pendingTitle'
 
 if (!('ResizeObserver' in globalThis)) {
   ;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = class {
@@ -20,7 +21,9 @@ if (!('ResizeObserver' in globalThis)) {
 }
 
 const ALPHA = { id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' }
+let answerTitle: (v: unknown) => void = () => {}
 stubEditorBridge({
+  'linkTitles:fetch': () => new Promise((r) => (answerTitle = r)),
   'editor:menu': async () => ({ ok: true, value: null }),
   'page:open': async () => ({
     ok: true,
@@ -223,6 +226,18 @@ describe('TextPane', () => {
     expect(doc()).toBe('[]')
     press('Backspace')
     expect(doc()).toBe('')
+  })
+
+  it('closing with a title pending commits the titled value once it lands', async () => {
+    const url = 'https://pane.example.com'
+    const short = `[pane.example.com](${url})`
+    render(text(short))
+    act(() => writeLinkAt(view(), 0, short.length, { text: short, awaits: url }, 'input.paste'))
+    press('Escape')
+    await exited()
+    expect(onCommit).not.toHaveBeenCalled()
+    await act(async () => answerTitle({ ok: true, value: { title: 'Pane' } }))
+    expect(onCommit).toHaveBeenCalledExactlyOnceWith(text(`[Pane](${url})`))
   })
 
   it('a blank pane over an empty value commits nothing', async () => {

@@ -1,6 +1,16 @@
-import { describe, it, expect } from 'vitest'
+// @vitest-environment jsdom
+import { describe, it, expect, afterEach, vi } from 'vitest'
+import { act } from 'react'
 import { EditorState } from '@codemirror/state'
-import { awaitTitle, pendingTitles, type PendingTitle } from './pendingTitle'
+import { EditorView } from '@codemirror/view'
+import {
+  cleanupEditor,
+  editorContainer,
+  mountEditor,
+  settleTitle,
+  stubEditorBridge,
+} from '../../Testing/editorHarness'
+import { awaitTitle, pendingTitles, writeLinkAt, type PendingTitle } from './pendingTitle'
 
 const URL = 'https://www.example.com/a/b'
 const LINK = `[example.com](${URL})`
@@ -80,5 +90,78 @@ describe('the pending-title anchor', () => {
     const after = armedTwice().update({ changes: { from: 1, to: 12, insert: 'Mine' } }).state
     expect(anchors(after)).toHaveLength(1)
     expect(after.sliceDoc(anchors(after)[0].from, anchors(after)[0].to)).toBe(LINK)
+  })
+})
+
+if (!('ResizeObserver' in globalThis)) {
+  ;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = class {
+    observe(): void {}
+    unobserve(): void {}
+    disconnect(): void {}
+  }
+}
+
+stubEditorBridge()
+afterEach(cleanupEditor)
+
+const TITLED = `[Example Domain](${URL})`
+const waiting = { text: LINK, awaits: URL }
+
+describe('writeLinkAt', () => {
+  it('announces the link and swaps the title in once when it lands', async () => {
+    const onChange = vi.fn()
+    const view = await mountEditor({ initialBody: '', onChange })
+    act(() => writeLinkAt(view, 0, 0, waiting, 'input.paste'))
+    expect(view.state.doc.toString()).toBe(LINK)
+    expect(view.state.field(pendingTitles)).toHaveLength(1)
+    onChange.mockClear()
+    await settleTitle(URL, 'Example Domain')
+    expect(view.state.doc.toString()).toBe(TITLED)
+    expect(view.state.field(pendingTitles)).toHaveLength(0)
+    expect(onChange).toHaveBeenCalledOnce()
+  })
+
+  it('swaps both when the same address is written twice', async () => {
+    const view = await mountEditor({ initialBody: '\n' })
+    act(() => writeLinkAt(view, 0, 0, waiting, 'input.paste'))
+    const second = view.state.doc.length
+    act(() => writeLinkAt(view, second, second, waiting, 'input.paste'))
+    await settleTitle(URL, 'Example Domain')
+    expect(view.state.doc.toString()).toBe(`${TITLED}\n${TITLED}`)
+    expect(view.state.field(pendingTitles)).toHaveLength(0)
+  })
+
+  it('stops waiting on a failed fetch and leaves the short form', async () => {
+    const view = await mountEditor({ initialBody: '' })
+    act(() => writeLinkAt(view, 0, 0, waiting, 'input.paste'))
+    await settleTitle(URL, null)
+    expect(view.state.doc.toString()).toBe(LINK)
+    expect(view.state.field(pendingTitles)).toHaveLength(0)
+  })
+
+  it('a table cell closing with a title pending hands it to the resting cell', async () => {
+    const view = await mountEditor({ initialBody: '| A |\n| --- |\n| x |' })
+    let table = editorContainer().querySelector('table.mdpm-tbl')
+    for (let i = 0; !table && i < 50; i++) {
+      await act(() => new Promise((r) => setTimeout(r, 20)))
+      table = editorContainer().querySelector('table.mdpm-tbl')
+    }
+    const cell = table!.querySelector('tbody .mdpm-tbl-cell-static') as HTMLElement
+    const at = { bubbles: true, cancelable: true, button: 0, clientX: 4, clientY: 4 }
+    await act(async () => {
+      cell.dispatchEvent(new MouseEvent('pointerdown', at))
+      cell.dispatchEvent(new MouseEvent('mousedown', at))
+      cell.dispatchEvent(new MouseEvent('click', { ...at, detail: 1 }))
+    })
+    const content = table!.querySelector('tbody .cm-content') as HTMLElement
+    const cellView = EditorView.findFromDOM(content)!
+    act(() => writeLinkAt(cellView, 0, cellView.state.doc.length, waiting, 'input.paste'))
+    expect(view.state.doc.toString()).toBe(`| A |\n| --- |\n| ${LINK} |`)
+    await act(async () => {
+      document.body.dispatchEvent(new MouseEvent('pointerdown', at))
+    })
+    expect(editorContainer().querySelectorAll('tbody .cm-editor')).toHaveLength(0)
+    await settleTitle(URL, 'Example Domain')
+    expect(view.state.doc.toString()).toBe(`| A |\n| --- |\n| ${TITLED} |`)
   })
 })

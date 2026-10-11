@@ -53,8 +53,10 @@ interface HarnessState {
   aliases: Record<string, string[]>
   bodies: Record<string, string>
   linkTitles: Record<string, string>
-  titleWatchers: Set<() => void>
-  pendingTitles: Map<string, { promise: Promise<string | null>; settle: (title: string) => void }>
+  pendingTitles: Map<
+    string,
+    { promise: Promise<string | null>; settle: (title: string | null) => void }
+  >
   aliasWatchers: Set<() => void>
   citationsShown: boolean
   host: EditorHost
@@ -78,7 +80,6 @@ function harnessHost(
     aliases: { ...spec.aliases },
     bodies: { ...spec.bodies },
     linkTitles: { ...spec.linkTitles },
-    titleWatchers: new Set<() => void>(),
     pendingTitles: new Map(),
     aliasWatchers: new Set<() => void>(),
     citationsShown: false,
@@ -108,16 +109,12 @@ function harnessHost(
         if (held) return Promise.resolve(held)
         const pending = state.pendingTitles.get(url)
         if (pending) return pending.promise
-        let settle!: (title: string) => void
+        let settle!: (title: string | null) => void
         const promise = new Promise<string | null>((r) => {
           settle = r
         })
         state.pendingTitles.set(url, { promise, settle })
         return promise
-      },
-      subscribe: (cb) => {
-        state.titleWatchers.add(cb)
-        return () => state.titleWatchers.delete(cb)
       },
     },
     citations: {
@@ -253,13 +250,12 @@ export function harnessState(): HarnessState {
   return mounted
 }
 
-export async function settleTitle(url: string, title: string): Promise<void> {
+export async function settleTitle(url: string, title: string | null): Promise<void> {
   const s = harnessState()
-  s.linkTitles[url] = title
+  if (title !== null) s.linkTitles[url] = title
   await act(async () => {
     s.pendingTitles.get(url)?.settle(title)
     s.pendingTitles.delete(url)
-    for (const cb of s.titleWatchers) cb()
   })
 }
 

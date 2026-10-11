@@ -7,7 +7,7 @@ import { linkAddress, linkTarget, type Token } from '../Engine/tokens'
 import { docString } from '../docCache'
 import { drawnLinkAt } from '../decorations'
 import { focusRange } from '../caretPlacement'
-import { awaitTitle } from './pendingTitle'
+import { writeLinkAt } from './pendingTitle'
 import { type EditorHost, editorHost } from '../api'
 
 interface LinkActionText {
@@ -70,17 +70,14 @@ export function applyUrlLinkAction(
   const titles = view.state.facet(editorHost).linkTitles
   const edit = linkActionText(docString(view.state.doc), tk, action, titles)
   if (!edit) return
-  const span = { from: tk.range[0], to: tk.range[1] }
-  const to = span.from + edit.insert.length
-  view.dispatch({
-    changes:
-      view.state.sliceDoc(span.from, span.to) === edit.insert
-        ? undefined
-        : { ...span, insert: edit.insert },
-    // Announces the same anchor the paste path does, so the fetch lands through one mechanism however the link came to be waiting.
-    effects: edit.wantsTitle
-      ? awaitTitle.of({ from: span.from, to, url: edit.url, text: edit.insert })
-      : undefined,
-  })
-  if (edit.wantsTitle) titles.resolve(edit.url)
+  writeLinkAt(
+    view,
+    tk.range[0],
+    tk.range[1],
+    {
+      text: edit.insert,
+      awaits: edit.wantsTitle ? edit.url : undefined,
+    },
+    'input',
+  )
 }

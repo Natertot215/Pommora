@@ -9,7 +9,7 @@ import { inCodeNear } from '../Engine/docScan'
 import { insertCitation } from '../Citations/citationActions'
 import { citationText } from '../Citations/citationEdits'
 import { embedSeatAt } from '../Embeds/embedInsert'
-import { awaitTitle } from './pendingTitle'
+import { writeLinkAt } from './pendingTitle'
 import { editorHost } from '../api'
 import { trimmedRange } from '../Engine/markdownCode'
 
@@ -48,18 +48,8 @@ function literalAt(view: EditorView, pos: number): boolean {
 
 function writeLink(view: EditorView, link: LinkPaste): void {
   const sel = view.state.selection.main
-  const [from, selTo] = trimmedRange(docString(view.state.doc), sel.from, sel.to)
-  const to = from + link.text.length
-  view.dispatch({
-    changes: { from, to: selTo, insert: link.text },
-    selection: { anchor: to },
-    userEvent: 'input.paste',
-    effects: link.awaits
-      ? awaitTitle.of({ from, to, url: link.awaits, text: link.text })
-      : undefined,
-  })
-  // Fire-and-forget: the anchor effect above picks the answer back up.
-  if (link.awaits) view.state.facet(editorHost).linkTitles.resolve(link.awaits)
+  const [from, to] = trimmedRange(docString(view.state.doc), sel.from, sel.to)
+  writeLinkAt(view, from, to, link, 'input.paste')
 }
 
 /** Re-read here rather than trusted from the menu: the document may have moved while it stood open. */
