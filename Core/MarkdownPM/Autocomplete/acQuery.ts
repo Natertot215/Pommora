@@ -1,16 +1,17 @@
-import { StateEffect, StateField, type Transaction } from '@codemirror/state'
+import { StateEffect, StateField, type Text, type Transaction } from '@codemirror/state'
 import { docScan } from '../docCache'
 import { inCodeAt } from '../Engine/docScan'
 import { inBracket } from '../Input/edits'
 import { inRawHtml } from '../decorations'
 import { editorHost } from '../api'
 import type { MarkdownScope } from '../Engine/detect'
-import { type AutocompleteQuery, autocompleteQuery } from './autocomplete'
+import { type AutocompleteQuery, autocompleteQuery, closerOf } from './autocomplete'
 
 export interface AcField {
   query: AutocompleteQuery | null
   armed: number | null
   dismissed: AutocompleteQuery | null
+  origin: string | null
 }
 
 export const closeAcQuery = StateEffect.define<'dismiss' | 'blur'>()
@@ -23,6 +24,11 @@ const sameQuery = (a: AutocompleteQuery, b: AutocompleteQuery | null): boolean =
   a.closed === b.closed &&
   a.query === b.query &&
   a.title === b.title
+
+const linkText = (doc: Text, q: AutocompleteQuery): string =>
+  q.label
+    ? doc.sliceString(q.label.from - 1, q.to) + closerOf(q.form)
+    : doc.sliceString(q.from, q.to) + (q.closed ? '' : closerOf(q.form))
 
 function armedBy(tr: Transaction): number | null {
   if (
@@ -43,7 +49,7 @@ function armedBy(tr: Transaction): number | null {
 
 export const acQuery = (scope: MarkdownScope) =>
   StateField.define<AcField>({
-    create: () => ({ query: null, armed: null, dismissed: null }),
+    create: () => ({ query: null, armed: null, dismissed: null, origin: null }),
     update(value, tr) {
       const close = tr.effects.find((e) => e.is(closeAcQuery))
       if (close)
@@ -51,6 +57,7 @@ export const acQuery = (scope: MarkdownScope) =>
           query: null,
           armed: null,
           dismissed: close.value === 'dismiss' ? value.query : null,
+          origin: null,
         }
       let armed = armedBy(tr) ?? (value.armed === null ? null : tr.changes.mapPos(value.armed))
       const head = tr.newSelection.main.head
@@ -68,8 +75,17 @@ export const acQuery = (scope: MarkdownScope) =>
         : q && value.query && sameQuery(q, value.query)
           ? value.query
           : q
-      return query === value.query && armed === value.armed && dismissed === value.dismissed
+      const origin =
+        query === null
+          ? null
+          : value.query !== null && tr.changes.mapPos(value.query.from) === query.from
+            ? value.origin
+            : linkText(tr.newDoc, query)
+      return query === value.query &&
+        armed === value.armed &&
+        dismissed === value.dismissed &&
+        origin === value.origin
         ? value
-        : { query, armed, dismissed }
+        : { query, armed, dismissed, origin }
     },
   })
