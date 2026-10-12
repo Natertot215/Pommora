@@ -49,12 +49,12 @@ import {
   clearCache,
   dropPageDetail,
   dropCacheDetail,
-  cachePageDetail,
   fetchPageDetail,
   fetchPageResult,
+  readPageDetail,
   setBodyBase,
 } from './pageDetailCache'
-import { dropWarmOwner, readWarm } from './warmCache'
+import { dropWarmOwner } from './warmCache'
 import { dropAllTileDocs } from '../Tiles/tileDocStore'
 import { pageWriter, sessionWriter } from './saveScheduler'
 import { crumbDepthFor } from '../Interface/Subfield/crumbs'
@@ -321,9 +321,8 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
       set({ selection: target })
       return true
     }
-    const cached = readWarm(get().activeTabId, navKey(target))?.pageDetail
-    if (cached && cached.path === target.path) {
-      cachePageDetail(cached)
+    const cached = readPageDetail(target.path)
+    if (cached) {
       land(readySlot(target, cached))
       return true
     }

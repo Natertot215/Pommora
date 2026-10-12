@@ -6,7 +6,7 @@ import { createRoot, type Root } from 'react-dom/client'
 import { cachePageDetail, clearCache } from '../../Session/pageDetailCache'
 import { useSession } from '../../Session/store'
 import { useWindowWarm, windowSeam } from './useWindowWarm'
-import { captureBodyScroll, clearWindowCache, WINDOW_OWNER } from './windowCache'
+import { captureBodyScroll, clearWindowCache, readBodyScroll, WINDOW_OWNER } from './windowCache'
 import { captureWarm, readWarm } from '../../Session/warmCache'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -14,9 +14,9 @@ import { captureWarm, readWarm } from '../../Session/warmCache'
 let container: HTMLDivElement
 let root: Root
 
-function ScrollProbe({ el, ready }: { el: HTMLElement; ready: boolean }): null {
+function ScrollProbe({ el, spaceReady }: { el: HTMLElement; spaceReady: boolean }): null {
   const ref = useRef<HTMLElement | null>(el)
-  useWindowWarm(ref, ready)
+  useWindowWarm(ref, spaceReady)
   return null
 }
 
@@ -79,31 +79,23 @@ describe('useWindowWarm', () => {
     captureBodyScroll('tab1', 240)
     const el = scroller()
     await act(async () => {
-      root.render(createElement(ScrollProbe, { el, ready: true }))
+      root.render(createElement(ScrollProbe, { el, spaceReady: true }))
     })
     await twoFrames()
     expect(el.scrollTop).toBe(240)
   })
 
-  it('restores a scroller once, so a parked page returning, or a heading arrival on it, keeps its place', async () => {
+  it("leaves a Page tab's scroll to its editor", async () => {
     captureBodyScroll('tab1', 240)
     const el = scroller()
     await act(async () => {
-      root.render(createElement(ScrollProbe, { el, ready: true }))
+      root.render(createElement(ScrollProbe, { el, spaceReady: false }))
     })
     await twoFrames()
-    expect(el.scrollTop).toBe(240)
+    expect(el.scrollTop).toBe(0)
     el.scrollTop = 500
-    const activate = (activeTabId: string): Promise<void> =>
-      act(async () => {
-        useSession.setState((s) => ({
-          windowSlot: s.windowSlot && { ...s.windowSlot, activeTabId },
-        }))
-      })
-    await activate('tab2')
-    await activate('tab1')
-    await twoFrames()
-    expect(el.scrollTop).toBe(500)
+    el.dispatchEvent(new Event('scroll'))
+    expect(readBodyScroll('tab1')).toBe(240)
   })
 
   it('holds the restore until the tab is ready, then lands it', async () => {
@@ -111,12 +103,12 @@ describe('useWindowWarm', () => {
     captureBodyScroll('tab1', 240)
     const el = scroller()
     await act(async () => {
-      root.render(createElement(ScrollProbe, { el, ready: false }))
+      root.render(createElement(ScrollProbe, { el, spaceReady: false }))
     })
     await twoFrames()
     expect(el.scrollTop).toBe(0)
     await act(async () => {
-      root.render(createElement(ScrollProbe, { el, ready: true }))
+      root.render(createElement(ScrollProbe, { el, spaceReady: true }))
     })
     await twoFrames()
     expect(el.scrollTop).toBe(240)

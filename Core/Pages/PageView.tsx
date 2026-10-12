@@ -1,16 +1,15 @@
 import { useEffect, useRef } from 'react'
 import type { EditorView } from '@codemirror/view'
-import { useSession } from '../Session/store'
+import { tabOf, useSession } from '../Session/store'
 import { usePublishSelection } from '../Interface/Subfield/publish'
 import { MarkdownEditor } from '../MarkdownPM/MarkdownEditor'
 import { useConnections } from '../Session/pageConnections'
 import { navKey } from '../Navigation/navRef'
-import { readPageDetail, useBodyEpoch } from '../Session/pageDetailCache'
-import { warmGeneration, captureWarm, readWarm } from '../Session/warmCache'
-import { fenceWarm } from '../MarkdownPM/warmSeam'
+import { useBodyEpoch } from '../Session/pageDetailCache'
+import { warmSeamOf } from '../Session/warmCache'
 import { registerPageEditor } from './pageEditor'
 import { PageHeader } from './PageHeader'
-import { useEditorHost } from './editorHost'
+import { renameHeadingIn, useEditorHost } from './editorHost'
 import { useBodyMount } from './bodyMount'
 import { useSettledBody } from '../Interface/Subfield/subfieldPage'
 import { coverOf } from './pageDetail'
@@ -27,13 +26,8 @@ export function PageView({
   parked?: boolean
 }): React.JSX.Element {
   const slot = useSession((s) => s.pages[pageId])
-  // The capture at teardown reads the slot/tab id of that moment through here, and stays silent after a clear.
-  const live = useLatest({ slot, tabId })
-  // Re-armed per commit: a clear tearing this surface down runs its cleanup before the survivors' effects, so the stale generation is seen exactly by the captures a clear caused.
-  const mountedGen = useRef(warmGeneration())
-  useEffect(() => {
-    mountedGen.current = warmGeneration()
-  })
+  // Hosts are keyed by page, so a pin or a re-show hands a mounted editor to another tab; its capture belongs to the tab of that moment.
+  const owner = useLatest(tabId)
   const pendingTravel = useSession((s) => s.pendingTravel)
   const clearPendingTravel = useSession((s) => s.clearPendingTravel)
   const reloadPage = useSession((s) => s.reloadPage)
@@ -76,7 +70,6 @@ export function PageView({
       </div>
     )
   const pageDetail = slot.detail
-  const warmKey = navKey(slot.target)
   return (
     <MarkdownEditor
       key={`${pageDetail.path}:${bodyEpoch}`}
@@ -98,37 +91,19 @@ export function PageView({
         seat.save(body)
       }}
       onSelection={publishSelection}
-      onHeadingRename={(heading, to) =>
-        void useSession
-          .getState()
-          .mutate({ op: 'renameHeading', path: pageDetail.path, heading, to })
-      }
+      onHeadingRename={renameHeadingIn(pageDetail.path)}
       embedAncestors={[pageDetail.path]}
       register={(view) => {
         editorRef.current = view
         seat.register(view)
         if (!parked) registerPageEditor(view)
       }}
-      // A warm entry whose captured path diverges from the mounting page's mounts cold — id-keyed warmth must never revive a stale-path doc.
-      warm={{
-        restore: () => {
-          const entry = readWarm(tabId, warmKey)
-          return entry?.pageDetail?.path === pageDetail.path
-            ? fenceWarm(entry, slot.body)
-            : undefined
-        },
-        capture: (state) => {
-          if (warmGeneration() !== mountedGen.current) return
-          const { slot: now, tabId: owner } = live.current
-          if (now?.status !== 'ready') return captureWarm(owner, warmKey, state)
-          const cached = readPageDetail(now.detail.path)
-          captureWarm(
-            owner,
-            warmKey,
-            cached ? { ...state, pageDetail: { ...cached, body: now.body } } : state,
-          )
-        },
-      }}
+      warm={warmSeamOf(
+        () => owner.current,
+        navKey(slot.target),
+        () => slot.body,
+        () => tabOf(useSession.getState(), owner.current) !== undefined,
+      )}
       active={!parked}
       arrive={arrive}
       onArrived={clearPendingTravel}

@@ -48,10 +48,9 @@ const armSave = (openPage: () => Promise<unknown>) => {
 }
 
 describe('replaceBody', () => {
-  it('drops every warm detail, refetches, patches the slot, and bumps the epoch', async () => {
+  it('refetches, patches the slot, and bumps the epoch, keeping editor state and scroll warm', async () => {
     const stale = { ...opened, body: 'stale' }
-    captureWarm('t1', 'page:a', { editorState: { doc: 'stale' }, scrollTop: 4, pageDetail: stale })
-    captureWarm('t2', 'page:a', { pageDetail: stale })
+    captureWarm('t1', 'page:a', { editorState: { doc: 'stale' }, scrollTop: 4 })
     useSession.setState({
       pages: {
         a: {
@@ -66,7 +65,6 @@ describe('replaceBody', () => {
     const before = epoch()
     await act(() => useSession.getState().replaceBody('Notes/a.md'))
     expect(readWarm('t1', 'page:a')).toEqual({ editorState: { doc: 'stale' }, scrollTop: 4 })
-    expect(readWarm('t2', 'page:a')?.pageDetail).toBeUndefined()
     expect(readPageDetail('Notes/a.md')?.body).toBe('restored')
     const slot = useSession.getState().pages.a
     expect(slot?.status === 'ready' && slot.body).toBe('restored')

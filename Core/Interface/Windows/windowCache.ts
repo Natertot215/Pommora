@@ -1,6 +1,6 @@
 import { dropWarmEntry, dropWarmOwner } from '../../Session/warmCache'
 
-// Module state, never render state: tab ids re-mint at every summon/restore, so the map lives and dies with the open window. A tab's editor state lives in the shared warm store under WINDOW_OWNER; only the window body's own scroll is kept here.
+// Module state, never render state: tab ids re-mint at every summon/restore, so the map lives and dies with the open window. A tab's editor state and a Page tab's scroll live in the shared warm store under WINDOW_OWNER; only a Space tab's body scroll is kept here.
 export const WINDOW_OWNER = 'window'
 
 const bodyScroll = new Map<string, number>()

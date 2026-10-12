@@ -166,7 +166,11 @@ describe('warmSeamOf', () => {
   const state = { editorState: { doc: 'hi' }, scrollTop: 3 }
 
   it('one clear reaches every owner, and a capture trailing it stores nothing', () => {
-    const seam = warmSeamOf('embed', 'a', () => 'hi')
+    const seam = warmSeamOf(
+      () => 'embed',
+      'a',
+      () => 'hi',
+    )
     seam.capture(state)
     expect(seam.restore()).toEqual(state)
     clearCache()
@@ -176,11 +180,25 @@ describe('warmSeamOf', () => {
 
   it('refuses a capture its owner no longer holds', () => {
     warmSeamOf(
-      'window',
+      () => 'window',
       'gone',
       () => 'hi',
       () => false,
     ).capture(state)
     expect(readWarm('window', 'gone')).toBeUndefined()
+  })
+
+  it('captures under the owner holding the surface at capture', () => {
+    let owner = 't1'
+    const seam = warmSeamOf(
+      () => owner,
+      'page:a',
+      () => 'hi',
+    )
+    seam.restore()
+    owner = 't2'
+    seam.capture(state)
+    expect(readWarm('t2', 'page:a')).toEqual(state)
+    expect(readWarm('t1', 'page:a')).toBeUndefined()
   })
 })

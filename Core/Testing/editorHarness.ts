@@ -131,6 +131,7 @@ function harnessHost(spec: HarnessHost, rerender: () => void = () => {}): Harnes
     pageTitle: () => spec.pageTitle ?? null,
     pageSurface: spec.pageSurface,
     prefs: spec.prefs,
+    paneGeometry: () => ({ onSizeChange: () => {} }),
   }
   return state
 }
@@ -210,9 +211,13 @@ function Harnessed({
   })
 }
 
-export async function mountEditor(props: HarnessProps): Promise<EditorView> {
+/** `parent` seats the editor where a surface would, such as inside a window body. */
+export async function mountEditor(
+  props: HarnessProps,
+  parent: HTMLElement = document.body,
+): Promise<EditorView> {
   container = document.createElement('div')
-  document.body.appendChild(container)
+  parent.appendChild(container)
   root = createRoot(container)
   await rerenderEditor(props)
   const dom = container.querySelector('.cm-editor')

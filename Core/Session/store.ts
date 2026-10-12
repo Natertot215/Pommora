@@ -21,6 +21,7 @@ export {
   readyPageIds,
   shownDetail,
   shownPage,
+  tabOf,
 } from './navigationSlice'
 export { windowTargetOf } from './windowSlice'
 export { citationsVisible } from './configSlice'

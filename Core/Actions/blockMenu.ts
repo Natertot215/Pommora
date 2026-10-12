@@ -22,7 +22,6 @@ type BlockMenuRow = LeafItem<BlockMenuAction> & { at: number | null }
 
 export interface BlockMenuMatch {
   title: string
-  at: number | null
   rows: readonly BlockMenuRow[]
 }
 
@@ -101,7 +100,7 @@ export function filterBlockMenu(
       const at = matchAt(row.label, q)
       if (titleAt !== null || at !== null) rows.push({ ...row, at })
     }
-    if (rows.length > 0) out.push({ title: s.title, at: titleAt, rows })
+    if (rows.length > 0) out.push({ title: s.title, rows })
   }
   return out
 }

@@ -14,12 +14,7 @@ import { PageView } from './PageView'
 import { stubDialer } from '../vitest.setup'
 import { undo } from '@codemirror/commands'
 import { machine } from '../Platform/machine'
-import {
-  cachePageDetail,
-  clearCache,
-  dropCacheDetail,
-  dropPageDetail,
-} from '../Session/pageDetailCache'
+import { cachePageDetail, clearCache, dropPageDetail } from '../Session/pageDetailCache'
 import { readWarm } from '../Session/warmCache'
 import { pageWriter, setSaveSinks } from '../Session/saveScheduler'
 import { absorbLanding } from './bodyMount'
@@ -107,25 +102,30 @@ describe('PageView seeds its editor from the slot', () => {
   })
 })
 
-describe('a warm capture takes its page detail from the detail cache', () => {
-  const unmountAfter = async (drop: boolean): Promise<void> => {
-    cachePageDetail(detail({ id: 'a', path: PATH, body: 'live' }))
+describe('a warm capture belongs to the tab holding the page when it unmounts', () => {
+  const target = { kind: 'page' as const, id: 'a', path: PATH }
+  const tab = (id: string) => ({ id, target, navStack: [target], navIndex: 0 })
+  const mountUnder = async (tabId: string): Promise<void> => {
     useSession.setState({ tree: null, pages: slot('live', 'live') })
     await act(async () => {
-      root.render(createElement(PageView, { tabId: 't1', pageId: 'a' }))
+      root.render(createElement(PageView, { tabId, pageId: 'a' }))
     })
-    if (drop) dropCacheDetail(PATH)
-    await act(async () => root.render(null))
   }
 
-  it('so a page a value change dropped returns without the slot’s stale values', async () => {
-    await unmountAfter(true)
-    expect(readWarm('t1', 'page:a')?.pageDetail).toBeUndefined()
+  it('lands under the tab a pin handed the mounted page to', async () => {
+    useSession.setState({ tabs: [], pinnedTabs: [tab('pin')] })
+    await mountUnder('t1')
+    await mountUnder('pin')
+    await act(async () => root.render(null))
+    expect(readWarm('pin', 'page:a')).toBeDefined()
+    expect(readWarm('t1', 'page:a')).toBeUndefined()
   })
 
-  it('and a page still cached returns warm with its live body', async () => {
-    await unmountAfter(false)
-    expect(readWarm('t1', 'page:a')?.pageDetail).toMatchObject({ path: PATH, body: 'live' })
+  it('leaves nothing under a tab closed before the page unmounts', async () => {
+    useSession.setState({ tabs: [], pinnedTabs: [] })
+    await mountUnder('t1')
+    await act(async () => root.render(null))
+    expect(readWarm('t1', 'page:a')).toBeUndefined()
   })
 })
 

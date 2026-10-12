@@ -4,7 +4,7 @@ import { emitter } from '@pommora/uix/Utilities/subscribable'
 import { capSet } from '@pommora/uix/Utilities/capMap'
 import type { PageDetail } from '../Pages/pageDetail'
 import { type Result, valueOr } from '../Contract/result'
-import { clearWarm, dropWarmDetail } from './warmCache'
+import { clearWarm } from './warmCache'
 import { dialer } from '../Platform/dialer'
 
 const DETAIL_CAP = 50
@@ -132,9 +132,8 @@ export function dropPageDetail(path: string): void {
   inFlight.delete(path)
 }
 
-/** A warm return would resurrect the pre-write value. Editor state and scroll stay warm; only the detail refetches. */
+/** A returning reader would otherwise see the pre-write value. Editor state and scroll stay warm; only the detail refetches. */
 export function dropCacheDetail(path: string): void {
-  dropWarmDetail(path)
   detailByPath.delete(path)
   slots.delete(path)
   inFlight.delete(path)

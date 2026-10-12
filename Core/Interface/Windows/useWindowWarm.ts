@@ -1,4 +1,4 @@
-import { useEffect, useRef, type RefObject } from 'react'
+import { useEffect, type RefObject } from 'react'
 import type { WarmSeam } from '../../MarkdownPM/warmSeam'
 import { useSession } from '../../Session/store'
 import { knownBody } from '../../Session/pageDetailCache'
@@ -12,46 +12,43 @@ const isLive = (tabId: string): boolean =>
 /** One window tab's editor seam, fenced against the body known for its path. */
 export const windowSeam = (tabId: string, path: string): WarmSeam =>
   warmSeamOf(
-    WINDOW_OWNER,
+    () => WINDOW_OWNER,
     tabId,
     () => knownBody(path),
     () => isLive(tabId),
   )
 
+/** A Space tab's body scroll; a Page tab's scroll is its editor's, kept in the warm store. */
 export function useWindowWarm(
   scrollerRef: RefObject<HTMLElement | null>,
-  /** Whether the tab's body can hold a scroll yet — `true` for a Page tab, a Space tab's board readiness otherwise. */
-  ready: boolean,
+  /** Whether the shown tab is a Space tab whose board has landed. */
+  spaceReady: boolean,
 ): void {
   const activeTabId = useSession((s) => s.windowSlot?.activeTabId)
-  const restored = useRef(new WeakSet<HTMLElement>())
 
   useEffect(() => {
     const el = scrollerRef.current
-    if (!el || !activeTabId) return
+    if (!el || !activeTabId || !spaceReady) return
     const onScroll = (): void => {
       if (isLive(activeTabId)) captureBodyScroll(activeTabId, el.scrollTop)
     }
     el.addEventListener('scroll', onScroll, { passive: true })
     return () => el.removeEventListener('scroll', onScroll)
-  }, [activeTabId, scrollerRef])
+  }, [activeTabId, spaceReady, scrollerRef])
 
-  // CM6 builds the embed's height ASYNC after mount — an immediate set clamps to 0, and double-rAF lands after its first measure/layout pass. A Space tab's board is read over IPC on its first activation, so `ready` is the second thing worth waiting for. A parked page keeps its own scroll, so only a scroller not restored before takes the saved one.
+  // A Space tab's board is read over IPC on its first activation, so the restore waits for readiness; even then an immediate set lands before the board's tiles lay out and clamps to 0, so double-rAF lands after their first layout pass.
   useEffect(() => {
-    if (!activeTabId || !ready) return
+    if (!activeTabId || !spaceReady) return
     const saved = readBodyScroll(activeTabId)
     let inner = 0
     const outer = requestAnimationFrame(() => {
       inner = requestAnimationFrame(() => {
-        const el = scrollerRef.current
-        if (!el || restored.current.has(el)) return
-        restored.current.add(el)
-        el.scrollTop = saved
+        if (scrollerRef.current) scrollerRef.current.scrollTop = saved
       })
     })
     return () => {
       cancelAnimationFrame(outer)
       cancelAnimationFrame(inner)
     }
-  }, [activeTabId, ready])
+  }, [activeTabId, spaceReady])
 }

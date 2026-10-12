@@ -26,11 +26,13 @@ import {
 import { newTabTab, pinTabId } from '../Navigation/tabsModel'
 import { captureWarm, readWarm } from './warmCache'
 import {
+  cachePageDetail,
   clearCache,
   dropPageDetail,
   readBodyBase,
   readPageDetail,
   setBodyBase,
+  writeThroughBody,
 } from './pageDetailCache'
 import { flushAllWriters, pageIO, scheduleBodySave, sessionWriter } from './saveScheduler'
 import { makeTree } from '../Testing/testTree'
@@ -231,7 +233,7 @@ describe('store — warm tabs (B-2/B-3)', () => {
     expect(openPage()).not.toHaveBeenCalled()
   })
 
-  it('a renamed entity misses the loaded slot and the warm detail (path check) and falls through to the cold fetch', async () => {
+  it('a renamed entity misses the loaded slot and the detail cache and falls through to the cold fetch', async () => {
     seed({
       tabs: [uTab('t1', pg('a'), [pg('a')], 0)],
       activeTabId: 't1',
@@ -243,6 +245,16 @@ describe('store — warm tabs (B-2/B-3)', () => {
       .getState()
       .select({ kind: 'page', id: 'a', path: '/a-renamed' }, { record: false })
     expect(openPage()).toHaveBeenCalledWith('/a-renamed')
+  })
+
+  it('a page returned to lands at once on the newest body the detail cache holds', async () => {
+    seed({ tabs: [uTab('t1', pg('a'), [pg('a')], 0)], activeTabId: 't1' })
+    cachePageDetail(detail('a'))
+    writeThroughBody(pg('a').path, 'typed elsewhere')
+    await useSession.getState().select(pg('a'), { record: false })
+    expect(shownPage(useSession.getState())).toMatchObject({ body: 'typed elsewhere' })
+    expect(readPageDetail(pg('a').path)?.body).toBe('typed elsewhere')
+    expect(openPage()).not.toHaveBeenCalled()
   })
 
   it('a cold page fetch seeds the shared detail cache, so a panel on that path reads without a fetch', async () => {
@@ -441,7 +453,7 @@ describe('store — page slots', () => {
     seedLinkerAndParked()
     channels.mutate = vi.fn(async () => ok({ cascade: { pages: [], hosts: [], warning: 'W' } }))
     const { a, b } = useSession.getState().pages
-    captureWarm('t2', navKey(pg('b')), { pageDetail: detail('b', 'Notes/b.md') })
+    captureWarm('t2', navKey(pg('b')), { scrollTop: 40 })
     const warm = readWarm('t2', navKey(pg('b')))
     await useSession
       .getState()
