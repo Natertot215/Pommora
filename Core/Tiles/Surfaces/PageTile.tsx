@@ -4,7 +4,7 @@ import { coverOf, type PageDetail } from '../../Pages/pageDetail'
 import { MarkdownEditor } from '../../MarkdownPM/MarkdownEditor'
 import type { WarmSeam } from '../../MarkdownPM/warmSeam'
 import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'
-import { useEditorHost } from '../../Pages/editorHost'
+import { renameHeadingIn, useEditorHost } from '../../Pages/editorHost'
 import { PageHeader } from '../../Pages/PageHeader'
 import { pageWriter } from '../../Session/saveScheduler'
 import { useBodyMount } from '../../Pages/bodyMount'
@@ -185,9 +185,7 @@ export function PageTile({
         embedAncestors={[...(ancestors ?? []), path]}
         arrive={arrive}
         onArrived={onArrived}
-        onHeadingRename={(heading, to) =>
-          void useSession.getState().mutate({ op: 'renameHeading', path, heading, to })
-        }
+        onHeadingRename={renameHeadingIn(path)}
       />
     </div>
   )

@@ -34,7 +34,11 @@ interface EditorHostOptions {
 
 // The outer editor tears a tile's DOM down whenever it leaves the viewport; this holds the nested editor's doc, selection, history and scroll, keyed by the full host chain.
 function tileWarmSeam(chain: readonly string[]): WarmSeam {
-  return warmSeamOf('embed', chain.join('\n'), () => knownBody(chain[chain.length - 1]))
+  return warmSeamOf(
+    () => 'embed',
+    chain.join('\n'),
+    () => knownBody(chain[chain.length - 1]),
+  )
 }
 
 /** Every member reads the store when called, so one host serves an editor for its whole mount; the editor seats the host once, so the tile reads the ref rather than a mount-time capture. */
@@ -139,6 +143,11 @@ function buildEditorHost(
     },
   }
 }
+
+export const renameHeadingIn =
+  (path: string) =>
+  (heading: string, to: string): void =>
+    void useSession.getState().mutate({ op: 'renameHeading', path, heading, to })
 
 /** Re-identified on the store facts the editor renders from, so its effects follow a toggle made anywhere. */
 export function useEditorHost({

@@ -44,7 +44,11 @@ const GLANCE_ANCESTORS = ['glance'] as const
 const NOOP = (): void => {}
 
 export function glanceWarmSeam(id: string, path: string): WarmSeam {
-  return warmSeamOf('glance', id, () => knownBody(path))
+  return warmSeamOf(
+    () => 'glance',
+    id,
+    () => knownBody(path),
+  )
 }
 
 const keyOf = (r: GlanceRequest): string =>

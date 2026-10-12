@@ -9,7 +9,7 @@ import { FOLD_SETTLE_MS, expandFoldsAt } from './folding'
 const REVEAL_MARGIN = 12
 
 // A window's page grows to its content, so the window body scrolls it rather than the editor; a page embedded in it keeps its own scroller.
-const scrollerOf = (view: EditorView): HTMLElement => {
+export const scrollerOf = (view: EditorView): HTMLElement => {
   const body = view.dom.closest('.page-tile')?.parentElement
   return body?.classList.contains('page-tile-grows') ? body : view.scrollDOM
 }

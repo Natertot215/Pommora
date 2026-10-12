@@ -201,7 +201,7 @@ export interface EditorHost {
     save(...write: EditorPrefWrite): void
   }
   /** A picker pane's remembered size, machine-local. */
-  paneGeometry?: (id: 'autocomplete' | 'block-menu') => RememberedSize
+  paneGeometry: (id: 'autocomplete' | 'block-menu') => RememberedSize
 }
 
 export const editorHost = Facet.define<EditorHost, EditorHost>({ combine: (v) => v[0] })

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { docScan, docString } from './docCache'
-import { travelToHeading } from './travel'
+import { scrollerOf, travelToHeading } from './travel'
 import { EditorView, keymap, placeholder } from '@codemirror/view'
 import { Compartment, EditorState } from '@codemirror/state'
 import { history, historyField, historyKeymap } from '@codemirror/commands'
@@ -201,17 +201,19 @@ export function MarkdownEditor({
     viewRef.current = view
     setScroller(view.scrollDOM)
     registerRef.current?.(view)
+    const pageScroller = scrollerOf(view)
     // At cleanup time React may have already detached the DOM, where reading scrollTop yields 0 and would wipe the saved position.
     let lastScrollTop = saved?.scrollTop ?? 0
     const onWarmScroll = (): void => {
-      lastScrollTop = view.scrollDOM.scrollTop
+      lastScrollTop = pageScroller.scrollTop
     }
     let unregisterHeal: (() => void) | null = null
     if (warm) {
-      view.scrollDOM.addEventListener('scroll', onWarmScroll, { passive: true })
-      unregisterHeal = registerScrollHeal(() => {
-        if (view.scrollDOM.scrollTop === 0 && lastScrollTop > 0)
-          view.scrollDOM.scrollTop = lastScrollTop
+      pageScroller.addEventListener('scroll', onWarmScroll, { passive: true })
+      unregisterHeal = registerScrollHeal((root) => {
+        if (root === view.dom || !root.contains(view.dom)) return
+        if (pageScroller.scrollTop === 0 && lastScrollTop > 0)
+          pageScroller.scrollTop = lastScrollTop
       })
     }
     if (edgeFade) view.scrollDOM.classList.add('scroll-fade', 'scroll-fade-gated')
@@ -220,7 +222,7 @@ export function MarkdownEditor({
     // The warm scroll restores AFTER folds settle: folding changes content height, so restoring first lands on a pre-fold offset.
     const land = (): void => {
       // != null, not truthy — a saved top-of-page (0) must still override CM's own restore scroll.
-      if (saved?.scrollTop != null) view.scrollDOM.scrollTop = saved.scrollTop
+      if (saved?.scrollTop != null) pageScroller.scrollTop = saved.scrollTop
       const a = arriveRef.current
       if (a) {
         travelToHeading(view, a, saved?.scrollTop != null ? undefined : 0)
@@ -246,7 +248,7 @@ export function MarkdownEditor({
       }
       if (warm) {
         unregisterHeal?.()
-        view.scrollDOM.removeEventListener('scroll', onWarmScroll)
+        pageScroller.removeEventListener('scroll', onWarmScroll)
         warm.capture({
           editorState: view.state.toJSON(WARM_FIELDS),
           scrollTop: lastScrollTop,
@@ -294,7 +296,7 @@ export function MarkdownEditor({
         state={block.state}
         selected={block.selected}
         onPick={block.pick}
-        geometry={host.paneGeometry?.('block-menu')}
+        geometry={host.paneGeometry('block-menu')}
       />
     </div>
   )

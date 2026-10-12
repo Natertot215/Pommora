@@ -1,12 +1,10 @@
 // Module state, not store state: it survives React remounts while dying with the session.
 import { capSet } from '@pommora/uix/Utilities/capMap'
-import type { PageDetail } from '../Pages/pageDetail'
 import { fenceWarm, type WarmSeam } from '../MarkdownPM/warmSeam'
 
 interface WarmEntry {
   editorState?: unknown
   scrollTop?: number
-  pageDetail?: PageDetail
 }
 
 const WARM_CAP_PER_OWNER = 50
@@ -32,16 +30,8 @@ export function dropWarmEntry(owner: string, entity: string): void {
   cache.get(owner)?.delete(entity)
 }
 
-/** A warm return would otherwise resurrect the pre-write value; editor state and scroll stay warm. */
-export function dropWarmDetail(path: string): void {
-  for (const entries of cache.values())
-    for (const entry of entries.values())
-      if (entry.pageDetail?.path === path) delete entry.pageDetail
-}
-
 // A surface unmounting because of a clear captures after it — the generation lets it tell.
 let generation = 0
-export const warmGeneration = (): number => generation
 
 export function clearWarm(): void {
   cache.clear()
@@ -50,7 +40,8 @@ export function clearWarm(): void {
 
 /** A seam over one owner's entry, fenced against the body `known` names; `live` refuses a capture that trails its owner's close, and a clear since the restore refuses it too. */
 export function warmSeamOf(
-  owner: string,
+  /** Read at each use, since a main tab's page can change tabs while its editor stays mounted. */
+  owner: () => string,
   entity: string,
   known: () => string | undefined,
   live: () => boolean = () => true,
@@ -59,13 +50,13 @@ export function warmSeamOf(
   return {
     restore: () => {
       restoredAt = generation
-      const entry = readWarm(owner, entity)
+      const entry = readWarm(owner(), entity)
       const kept = fenceWarm(entry, known())
-      if (entry && !kept) dropWarmEntry(owner, entity)
+      if (entry && !kept) dropWarmEntry(owner(), entity)
       return kept
     },
     capture: (state) => {
-      if (restoredAt === generation && live()) captureWarm(owner, entity, state)
+      if (restoredAt === generation && live()) captureWarm(owner(), entity, state)
     },
   }
 }

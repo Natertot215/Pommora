@@ -679,12 +679,15 @@ const embedClickSeat = EditorView.domEventHandlers({
   },
 })
 
-// A detach zeroes every scroller inside the tile with no event and, on full reuse, no widget callback.
-const healMeasure = { read: healTileScrolls, key: healTileScrolls }
+// A detach zeroes every scroller inside the tile with no event and, on full reuse, no widget callback. A re-slot follows only a viewport change or a tile rebuild, and every document change maps the tiles to a new set.
+const healMeasure = { read: (view: EditorView) => healTileScrolls(view.dom), key: healTileScrolls }
 const reslotHeal = ViewPlugin.fromClass(
   class {
     update(u: ViewUpdate): void {
-      if (u.state.field(embedField).ranges.length > 0) u.view.requestMeasure(healMeasure)
+      const tiles = u.state.field(embedField)
+      if (tiles.ranges.length === 0) return
+      if (u.viewportChanged || tiles.deco !== u.startState.field(embedField).deco)
+        u.view.requestMeasure(healMeasure)
     }
   },
 )

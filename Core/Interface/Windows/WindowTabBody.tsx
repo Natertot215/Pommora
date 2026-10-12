@@ -153,10 +153,8 @@ export function useWindowTabBody(target: WindowTarget | null): WindowTabBodySlot
   }
 
   const bodyRef = useRef<HTMLDivElement>(null)
-  // A Space tab's scroll restore waits for its board's first read; a Page tab has no board to wait on.
   const { ready } = useDocState(spaceTarget)
-  const boardReady = spaceTarget === null || ready
-  useWindowWarm(bodyRef, boardReady)
+  useWindowWarm(bodyRef, spaceTarget !== null && ready)
   const connections = useConnections('window')
   const { page, onBody } = useSubfieldPage(pageTarget)
 
