@@ -1,5 +1,5 @@
 // jsdom mounting for MarkdownPM's component suites: the host is an in-memory stand-in a suite overrides piecewise, so nothing a test types can reach a store, a bridge, or a real file. A claimed embed line mounts a real tile whose PageTile fetches through the bridge, so that one read channel is stubbed here. Every rect measures zero — geometry truth stays with the CDP passes.
-import { act, createElement, useRef, useState } from 'react'
+import { act, createElement, useReducer, useRef, useState } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { EditorView } from '@codemirror/view'
 import type { PickItem } from '../Actions/menuModel'
@@ -7,6 +7,7 @@ import { MarkdownEditor } from '../MarkdownPM/MarkdownEditor'
 import type { MarkdownTable } from '../MarkdownPM/Tables/MarkdownTable'
 import type { ConnectionsApi } from '../MarkdownPM/Links/connectionsApi'
 import { DEFAULT_COMMANDS } from '../Actions/commands'
+import { forgetAlias, rememberAlias } from '../Connections/aliasMemory'
 import { type EditorHost, type EditorSettings, editorSettingsOf } from '../MarkdownPM/api'
 import type { EditorPrefs } from '../Contract/bridge'
 import { stubDialer } from '../vitest.setup'
@@ -55,7 +56,6 @@ interface HarnessState {
     string,
     { promise: Promise<string | null>; settle: (title: string | null) => void }
   >
-  aliasWatchers: Set<() => void>
   citationsShown: boolean
   host: EditorHost
 }
@@ -67,36 +67,32 @@ const NO_GLANCE = {
   contains: (el: Element): boolean => el.closest('[data-glance]') !== null,
 }
 
-function harnessHost(
-  spec: HarnessHost,
-  setShown: (v: boolean) => void = () => {},
-  bump: () => void = () => {},
-): HarnessState {
+function harnessHost(spec: HarnessHost, rerender: () => void = () => {}): HarnessState {
   const state = {
     settings: { ...editorSettingsOf({}, {}, DEFAULT_COMMANDS), ...spec.settings },
     connections: undefined,
     aliases: { ...spec.aliases },
     linkTitles: { ...spec.linkTitles },
     titleFetches: new Map(),
-    aliasWatchers: new Set<() => void>(),
     citationsShown: false,
   } as HarnessState
+  const watchers = new Set<() => void>()
+  const worn = (id: string): string[] => state.aliases[id] ?? []
+  const wear = (id: string, next: string[] | null): void => {
+    if (!next) return
+    state.aliases[id] = next
+    for (const cb of watchers) cb()
+  }
   state.host = {
     settings: () => state.settings,
     connections: () => state.connections,
     aliases: {
-      list: (id) => state.aliases[id] ?? [],
-      remember: (id, alias) => {
-        state.aliases[id] = [alias, ...(state.aliases[id] ?? []).filter((a) => a !== alias)]
-        bump()
-      },
-      forget: (id, alias) => {
-        state.aliases[id] = (state.aliases[id] ?? []).filter((a) => a !== alias)
-        bump()
-      },
+      list: worn,
+      remember: (id, alias) => wear(id, rememberAlias(worn(id), alias)),
+      forget: (id, alias) => wear(id, forgetAlias(worn(id), alias)),
       subscribe: (cb) => {
-        state.aliasWatchers.add(cb)
-        return () => state.aliasWatchers.delete(cb)
+        watchers.add(cb)
+        return () => watchers.delete(cb)
       },
     },
     linkTitles: {
@@ -118,7 +114,7 @@ function harnessHost(
       shown: () => state.citationsShown,
       set: (v) => {
         state.citationsShown = v
-        setShown(v)
+        rerender()
       },
     },
     clipboard: { read: async () => '', write: async () => {}, ...spec.clipboard },
@@ -165,7 +161,6 @@ export const tableStubs: Omit<Parameters<typeof MarkdownTable>[0], 'host' | 'mod
 let container: HTMLDivElement | null = null
 let root: Root | null = null
 let mounted: HarnessState | null = null
-let stateSlot: ((s: HarnessState) => void) | null = null
 let seeded: HarnessHost = {}
 
 export function seedHost(spec: HarnessHost): void {
@@ -198,25 +193,20 @@ function Harnessed({
   host: spec,
   ...props
 }: HarnessProps): React.JSX.Element {
-  const [shown, setShown] = useState(citationsShown ?? false)
-  const seen = useRef(citationsShown)
+  const [, rerender] = useReducer((n: number) => n + 1, 0)
+  const [state] = useState(() => harnessHost(layered(seeded, spec ?? {}), rerender))
+  const seen = useRef<boolean | undefined>(undefined)
   if (citationsShown !== seen.current) {
     seen.current = citationsShown
-    if (citationsShown !== undefined) setShown(citationsShown)
+    if (citationsShown !== undefined) state.citationsShown = citationsShown
   }
-  const [, setTick] = useState(0)
-  const held = useRef<HarnessState | null>(null)
-  if (!held.current) {
-    held.current = harnessHost(layered(seeded, spec ?? {}), setShown, () => setTick((t) => t + 1))
-    stateSlot?.(held.current)
-  }
-  held.current.citationsShown = shown
-  held.current.connections = connections
+  state.connections = connections
+  mounted = state
   return createElement(MarkdownEditor, {
     onChange: () => {},
     ...props,
     // A fresh object per render, the way a store-backed host re-identifies on its facts.
-    host: { ...held.current.host },
+    host: { ...state.host },
   })
 }
 
@@ -224,12 +214,7 @@ export async function mountEditor(props: HarnessProps): Promise<EditorView> {
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
-  stateSlot = (s) => {
-    mounted = s
-  }
-  await act(async () => {
-    root?.render(createElement(Harnessed, props))
-  })
+  await rerenderEditor(props)
   const dom = container.querySelector('.cm-editor')
   const view = dom && EditorView.findFromDOM(dom as HTMLElement)
   if (!view) throw new Error('no EditorView')
@@ -273,14 +258,14 @@ export async function cleanupEditor(): Promise<void> {
 export async function typeInto(view: EditorView, text: string): Promise<void> {
   for (const ch of text)
     await act(async () => {
-      const at = view.state.selection.main.head
+      const { from, to } = view.state.selection.main
       const insert = () =>
         view.state.update({
-          changes: { from: at, insert: ch },
-          selection: { anchor: at + 1 },
+          changes: { from, to, insert: ch },
+          selection: { anchor: from + ch.length },
           userEvent: 'input.type',
         })
-      if (!view.state.facet(EditorView.inputHandler).some((h) => h(view, at, at, ch, insert)))
+      if (!view.state.facet(EditorView.inputHandler).some((h) => h(view, from, to, ch, insert)))
         view.dispatch(insert())
     })
 }

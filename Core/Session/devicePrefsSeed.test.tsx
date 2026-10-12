@@ -63,8 +63,8 @@ async function freshStore(
   }
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer(channels)
   const { useSession } = await import('./store')
-  const { flushAllSessionSaves } = await import('./saveScheduler')
-  return { useSession, prefsLoad, prefsSave, flushed: flushAllSessionSaves }
+  const { flushAllWriters } = await import('./saveScheduler')
+  return { useSession, prefsLoad, prefsSave, flushed: flushAllWriters }
 }
 
 const withPrefs = (prefs: DevicePrefs) => async (): Promise<unknown> => ok(prefs)

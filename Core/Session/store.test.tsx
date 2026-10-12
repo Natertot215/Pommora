@@ -14,7 +14,6 @@ import {
   type Tab,
   navKey,
   toNavRef,
-  type StoredTabSet,
 } from '../Navigation/navRef'
 import {
   frozenOf,
@@ -33,7 +32,7 @@ import {
   readPageDetail,
   setBodyBase,
 } from './pageDetailCache'
-import { flushAllSessionSaves, pageIO, scheduleBodySave, scheduleTabsSave } from './saveScheduler'
+import { flushAllWriters, pageIO, scheduleBodySave, sessionWriter } from './saveScheduler'
 import { makeTree } from '../Testing/testTree'
 import { tileBodyWriter } from '../Tiles/tileDocStore'
 import { dialer } from '../Platform/dialer'
@@ -182,12 +181,12 @@ describe('store — tab wiring (Phase 0)', () => {
     expect(order()).toEqual(['t3', 't1', 't2'])
     useSession.getState().reorderTabs('t3', null)
     expect(order()).toEqual(['t1', 't2', 't3'])
-    await flushAllSessionSaves()
+    await flushAllWriters()
     channels['tabs:save'].mockClear()
     useSession.getState().reorderTabs('t3', null)
     useSession.getState().reorderTabs('t2', 't3')
     useSession.getState().reorderTabs('missing', 't1')
-    await flushAllSessionSaves()
+    await flushAllWriters()
     expect(order()).toEqual(['t1', 't2', 't3'])
     expect(channels['tabs:save']).not.toHaveBeenCalled()
   })
@@ -914,7 +913,7 @@ describe('glance pin lifecycle wiring (Task 10)', () => {
     })
     useSession.getState().applyNavChanged({ pinned: [], banner: undefined })
     expect(useSession.getState().activeTabId).toBe('t3')
-    await flushAllSessionSaves()
+    await flushAllWriters()
     expect(channels['tabs:save']).toHaveBeenLastCalledWith(
       expect.objectContaining({ activeTabId: 't3' }),
     )
@@ -1024,7 +1023,7 @@ describe('store — the mutate rail', () => {
     useSession.getState().applyChange({ version: 0, delta: { set: treeWith([]) } })
   })
 
-  it('a page rename lands the pending save on the old path first', async () => {
+  it('a page rename lands every pending save first, its own on the old path', async () => {
     const order: string[] = []
     channels['page:updateBody'] = vi.fn(async (path: string) => {
       order.push(`save ${path}`)
@@ -1035,10 +1034,11 @@ describe('store — the mutate rail', () => {
       return ok({})
     })
     scheduleBodySave('Notes/A.md', 'typed', pageIO)
+    scheduleBodySave('Notes/C.md', 'typed', pageIO)
     await useSession
       .getState()
       .mutate({ op: 'rename', path: 'Notes/A.md', kind: 'page', newName: 'B' })
-    expect(order).toEqual(['save Notes/A.md', 'mutate'])
+    expect(order).toEqual(['save Notes/A.md', 'save Notes/C.md', 'mutate'])
   })
 
   it('a heading rename lands pending tile saves first', async () => {
@@ -1107,7 +1107,7 @@ describe('store — a Nexus switch lands every owed save first', () => {
     tileBodyWriter.schedule('t1', () =>
       dialer().ask('tiles:writeMarkdown', { kind: 'homepage' }, 't1', 'x', ''),
     )
-    scheduleTabsSave({ tabs: [], activeTabId: '' } as unknown as StoredTabSet)
+    sessionWriter.schedule('tabs', () => dialer().ask('tabs:save', { tabs: [], activeTabId: '' }))
     await useSession.getState().choose()
     expect(order.slice(0, 3).sort()).toEqual(['page', 'tabs', 'tile'])
     expect(order[3]).toBe('choose')
@@ -1124,7 +1124,9 @@ describe('store — a Nexus switch lands every owed save first', () => {
     for (const switched of [true, false]) {
       tabs.mockClear()
       channels['nexus:choose'] = vi.fn(async () => {
-        scheduleTabsSave({ tabs: [], activeTabId: '' } as unknown as StoredTabSet)
+        sessionWriter.schedule('tabs', () =>
+          dialer().ask('tabs:save', { tabs: [], activeTabId: '' }),
+        )
         await vi.advanceTimersByTimeAsync(1000)
         expect(tabs).not.toHaveBeenCalled()
         return ok(switched)

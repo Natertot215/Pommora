@@ -1,7 +1,5 @@
 // One debounced writer PER KEY — a page's path or a markdown tile's id — shared by every host that edits that body, so the newest edit from ANY host owns the file's single pending write rather than hosts racing private debounces to last-writer-wins.
 
-import type { WindowsFile } from '../Interface/Windows/windowRecord'
-import type { StoredTabSet } from '../Navigation/navRef'
 import type { BodyWrite } from '../Pages/pageDetail'
 import { ok, type Result } from '../Contract/result'
 import { persist } from '../Interface/Notifications/notifications'
@@ -31,6 +29,8 @@ interface BodyWriter {
   cancelAll: () => void
 }
 
+const writers: BodyWriter[] = []
+
 /** A refused save is dropped, never retried: the next edit schedules the whole body again. */
 export function createBodyWriter(what: string, quiet = false): BodyWriter {
   const pending = new Map<string, { save: Save; timer: ReturnType<typeof setTimeout> }>()
@@ -45,9 +45,7 @@ export function createBodyWriter(what: string, quiet = false): BodyWriter {
     if (!p) return Promise.resolve()
     clearTimeout(p.timer)
     pending.delete(key)
-    const run = persist(what, p.save(), quiet).finally(() => {
-      if (inFlight.get(key) === run) inFlight.delete(key)
-    })
+    const run = persist(what, p.save(), quiet).finally(() => inFlight.delete(key))
     inFlight.set(key, run)
     return run
   }
@@ -69,20 +67,13 @@ export function createBodyWriter(what: string, quiet = false): BodyWriter {
   }
 
   const flushAll = (): Promise<void> =>
-    Promise.all([...new Set([...pending.keys(), ...inFlight.keys()])].map(flush)).then(
-      () => undefined,
-    )
-
-  // beforeunload can't await, but the IPC send gets out before teardown.
-  if (typeof window !== 'undefined') {
-    window.addEventListener('beforeunload', () => {
-      for (const key of pending.keys()) void flush(key)
-    })
-  }
+    Promise.all([...pending.keys(), ...inFlight.keys()].map(flush)).then(() => undefined)
 
   const settled = (key: string): Promise<void> => inFlight.get(key) ?? Promise.resolve()
 
-  return { schedule, flush, settled, flushAll, cancel, cancelAll }
+  const writer = { schedule, flush, settled, flushAll, cancel, cancelAll }
+  writers.push(writer)
+  return writer
 }
 
 /** Everything owed is already landed when a switch holds. Holds nest, so a second switch started mid-switch keeps the first's owed saves waiting until both are done. */
@@ -100,9 +91,8 @@ export function holdSaves(): void {
 
 export function releaseSaves(): void {
   if (!hold || --hold.depth > 0) return
-  const { release } = hold
+  hold.release()
   hold = null
-  release()
 }
 
 export const pageWriter = createBodyWriter('the page')
@@ -159,14 +149,6 @@ export function scheduleBodySave(key: string, body: string, io: BodyIO): void {
 // Tab and window sets, tile layouts, and the Matrix lens each write whole on every change, and the Matrix positions send every row not yet sent; one debounced write per key coalesces a burst into the last state.
 export const sessionWriter = createBodyWriter('the session', true)
 
-export function scheduleTabsSave(set: StoredTabSet): void {
-  sessionWriter.schedule('tabs', () => dialer().ask('tabs:save', set))
-}
-
-export function scheduleWindowsSave(file: WindowsFile): void {
-  sessionWriter.schedule('windows', () => dialer().ask('windows:save', file))
-}
-
 // Sent at once unless a switch holds it, and read from the store when it goes, so a change made mid-switch lands in whichever Nexus stays open.
 const devicePrefsWriter = createBodyWriter('the setting')
 
@@ -175,13 +157,15 @@ export function saveDevicePrefs(save: Save): void {
   void devicePrefsWriter.flush('devicePrefs')
 }
 
-export function flushAllSessionSaves(): Promise<void> {
-  return Promise.all([sessionWriter.flushAll(), devicePrefsWriter.flushAll()]).then(() => undefined)
+export function flushAllWriters(): Promise<void> {
+  return Promise.all(writers.map((w) => w.flushAll())).then(() => undefined)
 }
 
+// beforeunload can't await, but the IPC send gets out before teardown.
+if (typeof window !== 'undefined')
+  window.addEventListener('beforeunload', () => void flushAllWriters())
+
 /** Once the root has flipped, anything the old Nexus still owed would land in the new one. */
-export function cancelAllSaves(): void {
-  pageWriter.cancelAll()
-  sessionWriter.cancelAll()
-  devicePrefsWriter.cancelAll()
+export function cancelAllWriters(): void {
+  for (const w of writers) w.cancelAll()
 }

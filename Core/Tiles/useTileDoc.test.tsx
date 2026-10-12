@@ -8,7 +8,7 @@ import { tileId } from '../Testing/tileLayouts'
 import { insertBand } from './Layout/ops'
 import { tileIds, type TileLayout } from './Layout/model'
 import { dropAllTileDocs, patchTileEntry, readTileDoc, setTileDocLock } from './tileDocStore'
-import { cancelAllSaves } from '../Session/saveScheduler'
+import { cancelAllWriters } from '../Session/saveScheduler'
 import { knownBody, setBodyBase, writeThroughBody } from '../Session/pageDetailCache'
 import { flushAllSaves } from '../Session/nexusSlice'
 import { useDocState, useTileDoc } from './useTileDoc'
@@ -68,7 +68,7 @@ const append = (cur: TileLayout, id: string): TileLayout =>
 
 beforeEach(async () => {
   disk = docWith('a')
-  cancelAllSaves()
+  cancelAllWriters()
   seats.clear()
   dropAllTileDocs()
   save.mockClear()

@@ -267,21 +267,80 @@ describe('pasting as an embed', () => {
 describe('what a paste reads from the clipboard', () => {
   it('formats a bare address only with its scheme written, unless a form was picked', async () => {
     const view = await mountEditor({ initialBody: '' })
-    for (const text of ['3.14', 'App.tsx', 'example.com', 'www.example.com', 'mailto:a@b.co'])
-      expect(paste(view, text, 'auto'), text).toBe(false)
+    for (const text of ['3.14', 'App.tsx', 'example.com', 'www.example.com', 'mailto:a@b.co']) {
+      view.dispatch({ changes: { from: 0, to: view.state.doc.length } })
+      await act(async () => paste(view, text, 'auto'))
+      expect(view.state.doc.toString(), text).toBe(text)
+    }
+    view.dispatch({ changes: { from: 0, to: view.state.doc.length } })
     await act(async () => paste(view, 'example.com', 'link-short'))
     expect(view.state.doc.toString()).toBe('[example.com](https://example.com)')
   })
 
   it('leaves a written link as written at a bare caret', async () => {
     const view = await mountEditor({ initialBody: '' })
-    expect(paste(view, '[Docs](https://a.com)', 'auto')).toBe(false)
+    await act(async () => paste(view, '[Docs](https://a.com)', 'auto'))
+    expect(view.state.doc.toString()).toBe('[Docs](https://a.com)')
   })
 
   it('writes the clipboard as typed for a literal paste', async () => {
     const view = await mountEditor({ initialBody: '' })
     await act(async () => paste(view, '[x](u)', 'literal'))
     expect(view.state.doc.toString()).toBe('[x](u)')
+  })
+})
+
+describe('the edges a paste leaves out', () => {
+  const CASES: [string, string, [number, number], string, Parameters<typeof paste>[2], string][] = [
+    ['the copied edges', 'ab', [1, 1], ' x ', 'auto', 'axb'],
+    ['the selected edges', 'read the old now', [8, 13], 'docs', 'auto', 'read the docs now'],
+    ['a selected line break', 'one\ntwo', [0, 4], 'x', 'auto', 'x\ntwo'],
+    [
+      'nothing of a multi-line paste',
+      'read the old now',
+      [8, 13],
+      'a\n  b',
+      'auto',
+      'read thea\n  bnow',
+    ],
+    ['nothing of a literal paste', 'ab', [1, 1], ' x ', 'literal', 'a x b'],
+    ['nothing of a clipboard that is only whitespace', 'ab', [1, 1], '\t', 'auto', 'a\tb'],
+    [
+      'the line break a copied address ends on',
+      'see foo now',
+      [4, 7],
+      'https://a.com\n',
+      'auto',
+      'see [foo](https://a.com) now',
+    ],
+    [
+      'the line break a copied connection ends on',
+      '',
+      [0, 0],
+      '[[Alpha]]\n',
+      'connection',
+      '[[Alpha]]',
+    ],
+    [
+      'the selected edges for a picked form',
+      'read the old now',
+      [8, 13],
+      '[[Alpha]]',
+      'connection',
+      'read the [[Alpha]] now',
+    ],
+  ]
+
+  it.each(CASES)('leaves out %s, in a body and a cell alike', async (_, body, [
+    from,
+    to,
+  ], text, how, out) => {
+    const view = await mountEditor({ initialBody: body })
+    view.dispatch({ selection: { anchor: from, head: to } })
+    await act(async () => paste(view, text, how))
+    expect(view.state.doc.toString()).toBe(out)
+    const cell = await pastedCellText(testHost(), body, { from, to }, text, how)
+    expect(body.slice(0, cell.from) + cell.insert + body.slice(cell.to)).toBe(out)
   })
 })
 

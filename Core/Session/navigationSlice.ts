@@ -56,7 +56,7 @@ import {
 } from './pageDetailCache'
 import { dropWarmOwner, readWarm } from './warmCache'
 import { dropAllTileDocs } from '../Tiles/tileDocStore'
-import { pageWriter, scheduleTabsSave } from './saveScheduler'
+import { pageWriter, sessionWriter } from './saveScheduler'
 import { crumbDepthFor } from '../Interface/Subfield/crumbs'
 import type { SessionState, Slice } from './sessionState'
 import { personalizationOf } from './configSlice'
@@ -218,7 +218,9 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
       navStack: t.navStack.map(toNavRef),
       navIndex: t.navIndex,
     }))
-    scheduleTabsSave({ tabs, activeTabId: s.activeTabId })
+    sessionWriter.schedule('tabs', () =>
+      dialer().ask('tabs:save', { tabs, activeTabId: s.activeTabId }),
+    )
   }
 
   // Silent when nothing goes: a fresh record would re-identify every page surface's host.

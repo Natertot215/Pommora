@@ -2,9 +2,15 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { act } from 'react'
 import { undo } from '@codemirror/commands'
-import { EditorView } from '@codemirror/view'
+import type { EditorView } from '@codemirror/view'
 import type { Personalization } from '../../Settings/personalization'
-import { stubEditorBridge, mountEditor, cleanupEditor, seedHost } from '../../Testing/editorHarness'
+import {
+  stubEditorBridge,
+  mountEditor,
+  cleanupEditor,
+  seedHost,
+  typeInto,
+} from '../../Testing/editorHarness'
 import type { ConnectionsApi } from '../Links/connectionsApi'
 import { buildPageIndex } from '../../Connections/pageIndex'
 import {
@@ -254,38 +260,19 @@ describe('Paste As ▸ Footnote', () => {
 })
 
 describe('typing a label seeds its citation', () => {
-  const key = async (view: EditorView, ch: string): Promise<void> => {
-    await act(async () => {
-      const { from, to } = view.state.selection.main
-      if (!view.dispatch || !type(view, from, to, ch))
-        view.dispatch({
-          changes: { from, to, insert: ch },
-          selection: { anchor: from + ch.length },
-        })
-    })
-  }
-  const type = (view: EditorView, from: number, to: number, ch: string): boolean =>
-    view.state
-      .facet(EditorView.inputHandler)
-      .some((h) => h(view, from, to, ch, () => null as never))
-
-  const write = async (view: EditorView, text: string): Promise<void> => {
-    for (const ch of text) await key(view, ch)
-  }
-
   beforeEach(() => settings({ jumpToCitation: false }))
 
   it('a fresh label writes its own empty citation', async () => {
     const view = await mountEditor({ initialBody: 'see' })
     await at(view, 3)
-    await write(view, '[^a]')
+    await typeInto(view, '[^a]')
     expect(doc(view)).toBe('see[^a]\n\n[^a]: ')
   })
 
   it('and takes the bracket the opener auto-paired rather than doubling it', async () => {
     const view = await mountEditor({ initialBody: 'see ' })
     await at(view, 4)
-    await write(view, '[^a]')
+    await typeInto(view, '[^a]')
     expect(doc(view)).toBe('see [^a]\n\n[^a]: ')
   })
 
@@ -293,35 +280,35 @@ describe('typing a label seeds its citation', () => {
     const body = 'one[^a] two'
     const view = await mountEditor({ initialBody: `${body}\n\n[^a]: shared` })
     await at(view, body.length)
-    await write(view, '[^a]')
+    await typeInto(view, '[^a]')
     expect(doc(view)).toBe('one[^a] two[^a]\n\n[^a]: shared')
   })
 
   it('an escaped marker seeds nothing and stays as written', async () => {
     const view = await mountEditor({ initialBody: 'see' })
     await at(view, 3)
-    await write(view, '\\[^a]')
+    await typeInto(view, '\\[^a]')
     expect(doc(view)).toBe('see\\[^a]')
   })
 
   it('a shape GFM will not read as a label seeds nothing', async () => {
     const view = await mountEditor({ initialBody: 'see' })
     await at(view, 3)
-    await write(view, '[^my note]')
+    await typeInto(view, '[^my note]')
     expect(doc(view)).toBe('see[^my note]')
   })
 
   it('an ordinary bracket seeds nothing', async () => {
     const view = await mountEditor({ initialBody: 'see' })
     await at(view, 3)
-    await write(view, '[label]')
+    await typeInto(view, '[label]')
     expect(doc(view)).toBe('see[label]')
   })
 
   it('a seed reverts whole on one undo', async () => {
     const view = await mountEditor({ initialBody: 'see' })
     await at(view, 3)
-    await write(view, '[^a]')
+    await typeInto(view, '[^a]')
     await act(async () => {
       undo(view)
     })
@@ -332,7 +319,7 @@ describe('typing a label seeds its citation', () => {
     const body = 'tail[^1]'
     const view = await mountEditor({ initialBody: `${body}\n\n[^1]: one` })
     await at(view, 0)
-    await write(view, '[^b]')
+    await typeInto(view, '[^b]')
     expect(doc(view)).toBe('[^b]tail[^2]\n\n[^b]: \n[^2]: one')
   })
 
@@ -340,7 +327,7 @@ describe('typing a label seeds its citation', () => {
     settings({})
     const view = await mountEditor({ initialBody: 'see' })
     await at(view, 3)
-    await write(view, '[^a]')
+    await typeInto(view, '[^a]')
     expect(doc(view)).toBe('see[^a]\n\n[^a]: ')
     expect(view.state.selection.main.from).toBe(doc(view).length)
     expect(hidden(view)).toBe(false)
@@ -350,7 +337,7 @@ describe('typing a label seeds its citation', () => {
     const body = 'x[^1]\n\n[^1]: one'
     const view = await mountEditor({ initialBody: body, citationsShown: true })
     await at(view, body.length)
-    await write(view, '[^b]')
+    await typeInto(view, '[^b]')
     expect(doc(view)).toBe('x[^1]\n\n[^1]: one[^b]')
   })
 })

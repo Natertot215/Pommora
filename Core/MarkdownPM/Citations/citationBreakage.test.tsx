@@ -1,9 +1,15 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { act } from 'react'
-import { EditorView } from '@codemirror/view'
+import type { EditorView } from '@codemirror/view'
 import { undo } from '@codemirror/commands'
-import { stubEditorBridge, mountEditor, cleanupEditor, seedHost } from '../../Testing/editorHarness'
+import {
+  stubEditorBridge,
+  mountEditor,
+  cleanupEditor,
+  seedHost,
+  typeInto,
+} from '../../Testing/editorHarness'
 import { splitWithOffsets } from '../Engine/detect'
 import { citationSeatAt } from './citationActions'
 import { citationScan } from '../../Testing/markdownEngine'
@@ -44,17 +50,6 @@ async function press(view: EditorView, key: string, mods: Partial<KeyboardEventI
   })
 }
 
-async function type(view: EditorView, ch: string): Promise<void> {
-  await act(async () => {
-    const { from, to } = view.state.selection.main
-    const claimed = view.state
-      .facet(EditorView.inputHandler)
-      .some((h) => h(view, from, to, ch, () => null as never))
-    if (!claimed)
-      view.dispatch({ changes: { from, to, insert: ch }, selection: { anchor: from + ch.length } })
-  })
-}
-
 async function seat(view: EditorView, at: number, to = at): Promise<void> {
   await act(async () => {
     view.dispatch({ selection: { anchor: at, head: to } })
@@ -82,7 +77,7 @@ describe('no keystroke, at any seat, strands a citation', () => {
       for (const at of seats) {
         const view = await mountEditor({ initialBody: DOC, citationsShown: true })
         await seat(view, at)
-        await type(view, ch)
+        await typeInto(view, ch)
         expect(intact(view), `${JSON.stringify(ch)} at ${at}`).toEqual([])
         await cleanupEditor()
       }
@@ -109,7 +104,7 @@ describe('no selection sweep strands a citation', () => {
     it(`typing over ${name}`, async () => {
       const view = await mountEditor({ initialBody: DOC, citationsShown: true })
       await seat(view, a, b)
-      await type(view, '-')
+      await typeInto(view, '-')
       expect(intact(view)).toEqual([])
     })
   }
@@ -120,7 +115,7 @@ describe('a section survives being written at while it is hidden', () => {
     for (const ch of ['-', '>', '#', '1', '|', '`']) {
       const view = await mountEditor({ initialBody: DOC })
       await seat(view, DOC.length)
-      await type(view, ch)
+      await typeInto(view, ch)
       expect(intact(view), ch).toEqual([])
       await cleanupEditor()
     }
@@ -130,9 +125,9 @@ describe('a section survives being written at while it is hidden', () => {
     const view = await mountEditor({ initialBody: DOC })
     await seat(view, DOC.length)
     await press(view, 'Enter')
-    await type(view, '-')
-    await type(view, ' ')
-    await type(view, 'x')
+    await typeInto(view, '-')
+    await typeInto(view, ' ')
+    await typeInto(view, 'x')
     expect(intact(view)).toEqual([])
     expect(citationScan(splitWithOffsets(view.state.doc.toString()), []).entries).toHaveLength(3)
   })
@@ -227,7 +222,7 @@ describe('the degenerate documents', () => {
       for (const ch of ['-', 'x', '#']) {
         const view = await mountEditor({ initialBody: body, citationsShown: true })
         await seat(view, body.length)
-        await type(view, ch)
+        await typeInto(view, ch)
         expect(intact(view), `${name} / ${ch}`).toEqual(stranded(body))
         await cleanupEditor()
       }

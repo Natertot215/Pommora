@@ -5,7 +5,7 @@ import type { NexusTree } from '../Nexus/tree'
 import { makeTree } from '../Testing/testTree'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { stubDialer } from '../vitest.setup'
-import { cancelAllSaves } from './saveScheduler'
+import { cancelAllWriters } from './saveScheduler'
 import { useSession } from './store'
 
 const link = (path: string, pageId: string, target: string): MatrixLink => ({
@@ -59,7 +59,7 @@ beforeEach(() => {
 })
 
 afterEach(() => {
-  cancelAllSaves()
+  cancelAllWriters()
   useSession.getState().resetMatrix()
   useSession.setState({ tree: null })
   vi.useRealTimers()

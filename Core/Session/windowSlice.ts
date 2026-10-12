@@ -17,7 +17,8 @@ import {
 import { clearWindowCache, dropWindowCache } from '../Interface/Windows/windowCache'
 import { stashWindowMorph } from '../Interface/Windows/windowMorph'
 import type { SessionState, Slice } from './sessionState'
-import { scheduleWindowsSave } from './saveScheduler'
+import { sessionWriter } from './saveScheduler'
+import { dialer } from '../Platform/dialer'
 import { normalizeLinkUrl } from '../Paths/urlPath'
 
 export interface WindowSlice {
@@ -131,7 +132,8 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
         ? { sets: { ...file.sets, [next.kind]: toWindowRecord(next) } }
         : file)
     set({ windowSlot: next, ...extra, windowsFile })
-    if (windowsFile !== file) scheduleWindowsSave(windowsFile)
+    if (windowsFile !== file)
+      sessionWriter.schedule('windows', () => dialer().ask('windows:save', windowsFile))
   }
 
   return {

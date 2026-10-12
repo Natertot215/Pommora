@@ -105,10 +105,7 @@ describe('the alias picker', () => {
   it('drops a row the host stops remembering, under the same query', async () => {
     await openPicker()
     expect(rows()).toBe(2)
-    harnessState().aliases.p1 = ['one']
-    await act(async () => {
-      for (const cb of harnessState().aliasWatchers) cb()
-    })
+    await act(async () => harnessState().host.aliases.forget('p1', 'two'))
     expect(rows()).toBe(1)
   })
 

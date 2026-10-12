@@ -45,16 +45,20 @@ function pasteEdit(
   text: string,
   how: PasteMode,
   host: EditorHost,
-): PasteEdit | null {
-  if (how === 'literal' || inCodeNear(scan, sel.from)) return null
-  const target = clipboardTarget(text, how)
-  if (!target) return null
+): PasteEdit {
+  const pasted = text.trim()
+  if (how === 'literal' || !pasted || /[\r\n]/.test(pasted) || inCodeNear(scan, sel.from))
+    return { from: sel.from, to: sel.to, write: { kind: 'text', text } }
+  const [from, to] = trimmedRange(scan.text, sel.from, sel.to)
+  const plain: PasteEdit = { from, to, write: { kind: 'text', text: pasted } }
+  const target = clipboardTarget(pasted, how)
+  if (!target) return plain
   const { defaultLinkFormat: format, removeTitleOnLinkChange } = host.settings()
   const title = target.kind === 'url' ? (host.linkTitles.get(target.url) ?? undefined) : undefined
   const ls = lineStartAt(scan.text, sel.from)
   const line = scan.text.slice(ls, lineEndAt(scan.text, sel.from))
   const within = how === 'plain' ? null : linkContainerAt(line, ls, sel)
-  if (how === 'inverse' && within) return null
+  if (how === 'inverse' && within) return plain
   if (within) {
     const syntax =
       how === 'connection' || (how !== 'markdown' && within.kind === 'wikiLink')
@@ -66,12 +70,11 @@ function pasteEdit(
           format,
           title,
         })
-    return write && { from: within.range[0], to: within.range[1], write }
+    return write ? { from: within.range[0], to: within.range[1], write } : plain
   }
-  if (how !== 'plain' && linkDestinationStart(line, sel.from - ls) !== null) return null
-  const [from, to] = trimmedRange(scan.text, sel.from, sel.to)
+  if (how !== 'plain' && linkDestinationStart(line, sel.from - ls) !== null) return plain
   const write = pasteAsWrite(target, how, { selection: scan.text.slice(from, to), format, title })
-  return write && { from, to, write }
+  return write ? { from, to, write } : plain
 }
 
 /** Re-read here rather than trusted from the menu: the document may have moved while it stood open. */
@@ -86,9 +89,11 @@ function writeLine(view: EditorView, text: string): void {
 }
 
 /** Literal text, tagged as a paste so every paste guard reads it as one. */
-function writePlain(view: EditorView, text: string): void {
+function writePlain(view: EditorView, from: number, to: number, text: string): void {
+  const insert = view.state.toText(text)
   view.dispatch({
-    ...view.state.replaceSelection(text),
+    changes: { from, to, insert },
+    selection: { anchor: from + insert.length },
     userEvent: 'input.paste',
     scrollIntoView: true,
   })
@@ -102,14 +107,16 @@ export function paste(view: EditorView, text: string, how: PasteMode): boolean {
     return true
   }
   const host = view.state.facet(editorHost)
-  const edit = pasteEdit(docScan(view.state.doc), view.state.selection.main, text, how, host)
-  if (!edit) {
-    if (how === 'auto') return false
-    writePlain(view, text)
-  } else if (edit.write.kind === 'link')
-    writeLinkAt(view, edit.from, edit.to, edit.write, 'input.paste')
-  else if (edit.write.kind === 'line') writeLine(view, edit.write.text)
-  else writePlain(view, edit.write.text)
+  const { from, to, write } = pasteEdit(
+    docScan(view.state.doc),
+    view.state.selection.main,
+    text,
+    how,
+    host,
+  )
+  if (write.kind === 'link') writeLinkAt(view, from, to, write, 'input.paste')
+  else if (write.kind === 'line') writeLine(view, write.text)
+  else writePlain(view, from, to, write.text)
   view.focus()
   return true
 }
@@ -127,9 +134,8 @@ export async function pastedCellText(
   text: string,
   how: PasteMode,
 ): Promise<TextEdit> {
-  const edit = pasteEdit(scanDoc(doc), sel, text, how, host)
-  if (!edit) return { ...sel, insert: text }
-  return { from: edit.from, to: edit.to, insert: await settledLinkText(host, edit.write) }
+  const { from, to, write } = pasteEdit(scanDoc(doc), sel, text, how, host)
+  return { from, to, insert: await settledLinkText(host, write) }
 }
 
 export const pasteLink = EditorView.domEventHandlers({
