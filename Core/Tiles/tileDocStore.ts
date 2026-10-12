@@ -333,20 +333,15 @@ export function setTileDocLock(host: TileHostRef, locked: boolean): void {
   void land(doc, save(doc, { locked }))
 }
 
-// The Nexus-adopt path awaits this while the OLD root is still bound — a write after the flip would bind the new Nexus and overwrite a same-relative-path file. Layouts land through the session writer's own flush.
-export function flushAllTileDocs(): Promise<void> {
-  return Promise.all([
-    ...[...docs.values()].map((doc) => doc.lastSave),
-    tileBodyWriter.flushAll(),
-  ]).then(() => undefined)
+export function tileDocsSettled(): Promise<void> {
+  return Promise.all([...docs.values()].map((doc) => doc.lastSave)).then(() => undefined)
 }
 
-// Drops without writing: the root has flipped, so anything still owed would land in the new Nexus, and a lingering mount's `retire` flushes what it finds — the session writer's pending layouts were cancelled before this, and queued updates are discarded here.
+// Drops without writing: the root has flipped, so anything still owed would land in the new Nexus, and a lingering mount's `retire` flushes what it finds — the pending layout and body saves were cancelled before this, and queued updates are discarded here.
 export function dropAllTileDocs(): void {
   const live = [...docs.values()]
   docs.clear()
   removing.clear()
-  tileBodyWriter.cancelAll()
   for (const doc of live) {
     doc.queued = []
     doc.off()

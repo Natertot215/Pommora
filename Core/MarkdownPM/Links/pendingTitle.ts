@@ -54,6 +54,7 @@ export function writeLinkAt(
       view.state.sliceDoc(from, to) === write.text ? undefined : { from, to, insert: write.text },
     selection: { anchor: end },
     userEvent,
+    scrollIntoView: true,
     effects: entry ? awaitTitle.of(entry) : undefined,
   })
   if (!entry) return

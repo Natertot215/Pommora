@@ -1,10 +1,11 @@
-import { expressibleInLink, pageEmbedText, connectionText } from '../Connections/connections'
-import { composeWebpageEmbedLine, markdownPageLink } from '../Connections/links'
+import { expressibleInLink, pageEmbedText } from '../Connections/connections'
+import { composeWebpageEmbedLine } from '../Connections/links'
 import { isHttpLink } from '../Paths/urlPath'
 import {
   connectionSpells,
   linkPaste,
   readLinkText,
+  retarget,
   serializeLink,
   type LinkPaste,
   type LinkTarget,
@@ -34,28 +35,9 @@ export const pasteModeOf = (action: string): PasteMode | null => {
     : null
 }
 
-interface PasteAsRow {
-  label: string
-  form: PasteAsForm
-}
-
-const PAGE_ROWS: readonly PasteAsRow[] = [
-  { label: 'Connection', form: 'connection' },
-  { label: 'Markdown Link', form: 'markdown' },
-]
-
-const URL_ROWS: readonly PasteAsRow[] = [
-  ...LINK_DISPLAYS.map((form) => ({ label: LINK_DISPLAY_LABELS[form], form })),
-  { label: 'Plain Text', form: 'plain' },
-]
-
-const FOOTNOTE_ROW: PasteAsRow = { label: 'Footnote', form: 'footnote' }
-const PAGE_EMBED_ROW: PasteAsRow = { label: 'Embedded Page', form: 'embedPage' }
-const URL_EMBED_ROW: PasteAsRow = { label: 'Embedded Link', form: 'embedLink' }
-
-const asAction = (r: PasteAsRow): LeafItem<string> => ({
-  label: r.label,
-  action: PASTE_AS_PREFIX + r.form,
+const row = (label: string, form: PasteAsForm): LeafItem<string> => ({
+  label,
+  action: PASTE_AS_PREFIX + form,
 })
 
 function embeddableTarget(target: LinkTarget): boolean {
@@ -69,16 +51,26 @@ export function pasteAsRows(
   embedSeat: boolean,
   citeSeat: boolean,
 ): LeafItem<string>[] {
-  const footnote = citeSeat && clipboard.trim() !== '' ? [FOOTNOTE_ROW] : []
+  const footnote = citeSeat && clipboard.trim() !== '' ? [row('Footnote', 'footnote')] : []
   const target = readLinkText(clipboard)
-  if (!target) return footnote.map(asAction)
-  const page = target.kind === 'page'
+  if (!target) return footnote
   const embed = embedSeat && embeddableTarget(target)
-  const rows = page
-    ? PAGE_ROWS.filter((r) => r.form !== 'connection' || connectionSpells(target))
-    : URL_ROWS.filter((r) => r.form !== 'link-title' || isHttpLink(target.url))
-  const embedRow = page ? PAGE_EMBED_ROW : URL_EMBED_ROW
-  return [...footnote, ...rows, ...(embed ? [embedRow] : [])].map(asAction)
+  if (target.kind === 'page')
+    return [
+      ...footnote,
+      ...(connectionSpells(target) ? [row('Connection', 'connection')] : []),
+      row('Markdown Link', 'markdown'),
+      ...(embed ? [row('Embedded Page', 'embedPage')] : []),
+    ]
+  const web = isHttpLink(target.url)
+  return [
+    ...footnote,
+    ...LINK_DISPLAYS.filter((d) => d !== 'link-title' || web).map((d) =>
+      row(LINK_DISPLAY_LABELS[d], d),
+    ),
+    row('Plain Text', 'plain'),
+    ...(embed ? [row('Embedded Link', 'embedLink')] : []),
+  ]
 }
 
 interface TextPaste {
@@ -99,9 +91,8 @@ export function pasteAsWrite(
   if (target.kind === 'page') {
     switch (how) {
       case 'connection':
-        return { kind: 'text', text: connectionText(target.title, target.alias, target.heading) }
       case 'markdown':
-        return { kind: 'text', text: markdownPageLink(target.title, target.heading, target.alias) }
+        return retarget(how === 'connection' ? 'wiki' : 'markdown', null, target, false)
       case 'embedPage':
         return { kind: 'line', text: pageEmbedText(target.title) }
       default:

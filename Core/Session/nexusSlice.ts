@@ -15,14 +15,8 @@ import { stabilize } from '../Nexus/treeStabilize'
 import { applyPersonalization } from '../Settings/applyPersonalization'
 import { pagesByIdOf, reconcileIndexOf } from '../Nexus/treeIndex'
 import { headingKeys, type PageHeadings } from '../Connections/pageIndex'
-import { flushAllTileDocs, tileBodyWriter } from '../Tiles/tileDocStore'
-import {
-  cancelAllSaves,
-  flushAllSessionSaves,
-  holdSaves,
-  pageWriter,
-  releaseSaves,
-} from './saveScheduler'
+import { tileDocsSettled } from '../Tiles/tileDocStore'
+import { cancelAllWriters, flushAllWriters, holdSaves, releaseSaves } from './saveScheduler'
 import type { Slice } from './sessionState'
 import { resetUndo } from './undo'
 import { dialer } from '../Platform/dialer'
@@ -66,10 +60,9 @@ export interface NexusSlice {
   mutate: (req: MutateRequest) => Promise<MutateOutcome | null>
 }
 
-/** Every save the window still owes, landed: awaited while the OLD root is bound before a switch, and before the host closes its stores on quit. */
+/** Every save the window still owes, landed ahead of a switch, a quit, or a write that moves, renames, or deletes: a page write after a switch's root flip would overwrite a same-relative-path file in the new Nexus. */
 export async function flushAllSaves(): Promise<void> {
-  // A page write after the flip would bind the new Nexus and overwrite a same-relative-path file (data loss).
-  await Promise.all([pageWriter.flushAll(), flushAllTileDocs(), flushAllSessionSaves()])
+  await Promise.all([flushAllWriters(), tileDocsSettled()])
 }
 
 /** A delete, restore, or emptied bundle landed, so an open Trash list reads again. */
@@ -79,7 +72,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
   // One headings ask at a time, so an answer never lands over one asked after it.
   const headingsInTurn = inTurns()
   const resetNexusSession = (): void => {
-    cancelAllSaves()
+    cancelAllWriters()
     // Device preferences are per machine PER NEXUS, so nothing of the old one's stays on screen while this one's is read, or after a refused read.
     set({ headings: {}, devicePrefs: {}, devicePrefsLive: false })
     const s = get()
@@ -175,7 +168,10 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
             { keys: headingKeys(outline), texts: outline.map((h) => h.text), outline },
           ]),
         )
-        set((s) => ({ headings: stabilize(paths ? { ...s.headings, ...read } : read, s.headings) }))
+        const held = get().headings
+        if (paths && Object.entries(read).every(([p, h]) => stabilize(h, held[p]) === held[p]))
+          return
+        set({ headings: stabilize(paths ? { ...held, ...read } : read, held) })
       }),
 
     load: async () => {
@@ -215,13 +211,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       }
     },
 
-    refetch: async () => {
-      try {
-        await readTree()
-      } catch (e) {
-        set({ status: 'error', error: caught(e) })
-      }
-    },
+    refetch: () => readTree().then(() => undefined),
 
     // A difference that doesn't follow the tree held, or doesn't fit it, asks for the whole tree.
     applyChange: ({ version, delta }) => {
@@ -244,26 +234,8 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
     mutate: async (req) => {
       const held = get().tree
       const moves = req.op === 'rename' || req.op === 'movePage' || req.op === 'moveSet'
-      // A save queued for a path this op moves would land on the old path and be refused.
-      switch (req.op) {
-        case 'movePage':
-          await pageWriter.flush(req.path)
-          break
-        case 'rename':
-          // A page rename's cascade rewrites links inside tile files, so their pending saves land first.
-          if (req.kind === 'page' && !req.fromCreate) await tileBodyWriter.flushAll()
-          await (req.kind === 'page' ? pageWriter.flush(req.path) : pageWriter.flushAll())
-          break
-        case 'renameHeading':
-          await tileBodyWriter.flushAll()
-          break
-        case 'delete':
-          await (req.kind === 'page' ? pageWriter.flush(req.path) : pageWriter.flushAll())
-          break
-        case 'moveSet':
-          await pageWriter.flushAll()
-          break
-      }
+      // A save queued for a file this op moves or rewrites would land on the old path or go stale.
+      if (moves || req.op === 'renameHeading' || req.op === 'delete') await flushAllSaves()
       // A flush held by a Nexus switch resumes after it, when the path this op names belongs to the Nexus it left.
       if (get().tree?.nexus.id !== held?.nexus.id) return null
       const res = await dialer().ask('mutate', req)
