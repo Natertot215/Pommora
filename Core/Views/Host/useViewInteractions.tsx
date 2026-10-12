@@ -46,8 +46,6 @@ interface ViewInteractionPolicy {
   rename: (target: { id: string; path: string }, fromCreate: boolean) => void
 }
 
-export const ROW_END = 'end'
-
 export type TitleMenuContext = PageMenuContext & { alreadyOpen: boolean }
 
 function pageTarget(row: ViewRow): PageTarget {
@@ -340,7 +338,6 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
         boxes: vacantHeads,
         locked: dragDisabled,
         accepts: (slot, id) => folderSlot(slot.lane, slot.index, id) !== null,
-        end: ROW_END,
         commit: (id, slot) => onDrop(id, slot.lane, slot.before),
         line: (slot, s) => {
           const node = bands.byKey.get(slot.lane)!

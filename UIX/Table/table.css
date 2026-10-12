@@ -83,14 +83,11 @@
 .cell-rename > svg {
   color: var(--label-secondary);
 }
-/* A single-column table reads as a plain list — no trailing line to bound. */
+/* The last column reaches the table's edge, so only the lines between columns draw. */
 .data-cell:not(:last-child) {
   border-right: var(--table-border);
 }
-.table-grid.single-column .data-cell {
-  border-right: none;
-}
-.table-grid.single-column .col-header::after,
+/* A single-column table reads as a plain list, without the heading's leading segment. */
 .table-grid.single-column .col-header::before {
   content: none;
 }

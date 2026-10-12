@@ -172,7 +172,7 @@ export function useColumns(host: ViewHostApi) {
   const [dragWidth, setDragWidth] = useState<{ id: string; width: number } | null>(null)
   const [collapsing, setCollapsing] = useState<string | null>(null)
   const [sliding, setSliding] = useState<ReadonlySet<string>>(() => new Set())
-  const [colDrag, setColDrag] = useState<{ from: number; to: number; id: string } | null>(null)
+  const [colDrag, setColDrag] = useState<(DragShift & { id: string }) | null>(null)
   const [resizing, setResizing] = useState(false)
   const [overflowing, setOverflowing] = useState(false)
 
@@ -224,14 +224,17 @@ export function useColumns(host: ViewHostApi) {
     // A watcher or pane write can reshape `columns` mid-drag — a vanished source column ends the shift rather than painting a neighbor.
     const src = columns[colDrag.from]
     return src && src.id === colDrag.id
-      ? { from: colDrag.from, to: colDrag.to, width: colWidth(colDrag.from) }
+      ? { from: colDrag.from, to: colDrag.to, width: colDrag.width }
       : null
-  }, [colDrag, columns, widthByCol, collapsing])
+  }, [colDrag, columns])
 
   const reflowWidth = columns.reduce((sum, _c, i) => sum + colWidth(i), 0)
   // The column sum, read from here rather than scrollWidth: scrollWidth floors at clientWidth, so an is-content-bigger comparison built on it latches.
   const reflowRef = useLatest(reflowWidth)
-  const cols = `${columns.map((_c, i) => `${colWidth(i)}px`).join(' ')} 1fr`
+  // Title is always present and takes the slack, so its width is a floor rather than a size.
+  const cols = columns
+    .map((c, i) => (c.kind === 'title' ? `minmax(${colWidth(i)}px, 1fr)` : `${colWidth(i)}px`))
+    .join(' ')
 
   useEffect(() => {
     const el = host.viewRootRef.current
@@ -343,7 +346,7 @@ export function useColumns(host: ViewHostApi) {
     let widths: number[] = []
     let lefts: number[] = []
     const dragId = columns[from].id
-    let current: { from: number; to: number; id: string } | null = null
+    let current: (DragShift & { id: string }) | null = null
     let lastX = e.clientX
     const resolve = (): void => {
       const projected = startCenter + (lastX - startX)
@@ -368,7 +371,7 @@ export function useColumns(host: ViewHostApi) {
         `${(projected - (gridLeft + lefts[from] + widths[from] / 2)) / zoom}px`,
       )
       if (!current || current.to !== to) {
-        current = { from, to, id: dragId }
+        current = { from, to, id: dragId, width: widths[from] / zoom }
         setColDrag(current)
       }
     }
@@ -384,7 +387,8 @@ export function useColumns(host: ViewHostApi) {
         startX = ev.clientX
         lastX = ev.clientX
         gridLeft = grid.getBoundingClientRect().left
-        widths = columns.map((_c, i) => colWidth(i) * zoom)
+        // Measured, not summed from stored widths: Title renders wider than its floor.
+        widths = Array.from(header.parentElement!.children, (c) => c.getBoundingClientRect().width)
         lefts = new Array(columns.length)
         let acc = 0
         for (let i = 0; i < columns.length; i++) {
@@ -428,7 +432,6 @@ export function useColumns(host: ViewHostApi) {
     iconsShown,
     alignByCol,
     styleByCol,
-    widthByCol,
     colStyle,
     dragShift,
     cols,
