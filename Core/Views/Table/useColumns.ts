@@ -152,6 +152,7 @@ export function reorderColumns(
 // ── The painted shift ───────────────────────────────────────────────────────
 
 export type DragShift = { from: number; to: number; width: number }
+type ColumnDrag = DragShift & { id: string }
 
 export function gapShift(d: DragShift | null, ci: number): string | undefined {
   if (!d) return undefined
@@ -172,7 +173,7 @@ export function useColumns(host: ViewHostApi) {
   const [dragWidth, setDragWidth] = useState<{ id: string; width: number } | null>(null)
   const [collapsing, setCollapsing] = useState<string | null>(null)
   const [sliding, setSliding] = useState<ReadonlySet<string>>(() => new Set())
-  const [colDrag, setColDrag] = useState<(DragShift & { id: string }) | null>(null)
+  const [colDrag, setColDrag] = useState<ColumnDrag | null>(null)
   const [resizing, setResizing] = useState(false)
   const [overflowing, setOverflowing] = useState(false)
 
@@ -219,14 +220,9 @@ export function useColumns(host: ViewHostApi) {
     })
     if (widened.length) setSliding((s) => new Set([...s, ...widened]))
   }
-  const dragShift = useMemo(() => {
-    if (!colDrag) return null
-    // A watcher or pane write can reshape `columns` mid-drag — a vanished source column ends the shift rather than painting a neighbor.
-    const src = columns[colDrag.from]
-    return src && src.id === colDrag.id
-      ? { from: colDrag.from, to: colDrag.to, width: colDrag.width }
-      : null
-  }, [colDrag, columns])
+  // A watcher or pane write can reshape `columns` mid-drag — a vanished source column ends the shift rather than painting a neighbor.
+  const dragShift: DragShift | null =
+    colDrag && columns[colDrag.from]?.id === colDrag.id ? colDrag : null
 
   const reflowWidth = columns.reduce((sum, _c, i) => sum + colWidth(i), 0)
   // The column sum, read from here rather than scrollWidth: scrollWidth floors at clientWidth, so an is-content-bigger comparison built on it latches.
@@ -346,7 +342,7 @@ export function useColumns(host: ViewHostApi) {
     let widths: number[] = []
     let lefts: number[] = []
     const dragId = columns[from].id
-    let current: (DragShift & { id: string }) | null = null
+    let current: ColumnDrag | null = null
     let lastX = e.clientX
     const resolve = (): void => {
       const projected = startCenter + (lastX - startX)
