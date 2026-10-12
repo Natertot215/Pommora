@@ -10,7 +10,7 @@ function tailHolds(after: string, at: number): boolean {
   return citationEntries(splitWithOffsets(after.slice(at)), () => false)[0]?.line === 0
 }
 
-/** Three repairs, nothing else: an insertion at a citation line's first offset is clamped past its `[^label]:`, a change from the body that joins the section's first standing head onto its line ends with a newline, and any other change leaving the tail no longer reading as a run has its text relocated to the body above the section. */
+/** Three repairs, nothing else: an insertion of part of a line at a citation line's first offset is clamped past its `[^label]:`, a change from the body that joins the section's first standing head onto its line ends with a newline, and any other change leaving the tail no longer reading as a run has its text relocated to the body above the section. */
 export function citationTailVerdict(
   doc: string,
   fromA: number,
@@ -22,7 +22,7 @@ export function citationTailVerdict(
   if (c.firstLine >= lines.length) return { kind: 'ok' }
   const tailStart = lineStarts[c.firstLine]
 
-  const head = fromA === toA && inserted.length > 0
+  const head = fromA === toA && inserted.length > 0 && !inserted.endsWith('\n')
   const entry = head ? c.entries.find((e) => lineStarts[e.line] === fromA) : undefined
   const from = entry ? entry.contentStart : fromA
   const to = entry ? entry.contentStart : toA

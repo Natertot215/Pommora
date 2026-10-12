@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { type ChangeSpec, EditorState, type Extension } from '@codemirror/state'
+import { moveLineDown, moveLineUp } from '@codemirror/commands'
 import { citationGuard } from './citationGuard'
 import { scanDoc } from '../Engine/docScan'
 import { deleteMarkerChanges } from '../Citations/citationEdits'
@@ -75,6 +76,21 @@ describe('an insertion at a citation head’s first offset is clamped past it', 
   it('every citation in the section carries the same clamp, not just the first', () => {
     const at = DOC.indexOf('[^b]:')
     expect(type(DOC, at, 'X')).toContain('[^b]: Xanother')
+  })
+
+  it('a row moved past its neighbor goes through as the move it is, either way', () => {
+    const SWAPPED = '# Notes\nbody[^a] here\n\n[^b]: another\n[^a]: the citation'
+    const move = (command: typeof moveLineDown, at: string): string => {
+      let state = EditorState.create({
+        doc: DOC,
+        selection: { anchor: DOC.indexOf(at) },
+        extensions: citationGuard,
+      })
+      command({ state, dispatch: (tr) => (state = tr.state) })
+      return state.doc.toString()
+    }
+    expect(move(moveLineDown, '[^a]:')).toBe(SWAPPED)
+    expect(move(moveLineUp, '[^b]:')).toBe(SWAPPED)
   })
 })
 
