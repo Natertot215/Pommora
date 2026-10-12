@@ -1,6 +1,6 @@
 ## Pommora Codebase Audit
 
-**Pinned:** `f6511401d` (09-23-2026) · **Reconciled:** `6634abd94` (10-11-2026) · **Findings:** 83/627
+**Pinned:** `f6511401d` (09-23-2026) · **Reconciled:** `ae854f089` (10-11-2026) · **Findings:** 81/627
 
 Thirty-four Opus investigators read every production file in `Core`, `UIX`, `Desktop`, and `Sync` in full, sliced by folder and by the jobs the code performs. Two mergers combined their 857 candidates by root cause, and twenty-one reviewers who hadn't raised them re-read every citation, reproduced the High ones against real modules, and killed 63. This document is the current state: findings that were fixed, withdrawn, or ruled moot are removed rather than annotated, and rulings are written into the findings they settle. The readiness and pace sections are the orchestrator's judgment, drawn from the evidence below them. A system audit of MarkdownPM (10-08-2026) read the editor in full at `70fc6063c`, and its findings are folded in here.
 
@@ -584,19 +584,19 @@ Waits at its measured cost, most of which is following the setting on both sides
 
 #### W12 · Residue
 
-The editor carries a type nothing reads, a field only tests read, a host member typed optional though every production builder supplies it, and one mutation spelled inline in two components. Landing these leaves nothing kept alive for tests alone and one spelling of the heading rename, with nothing a person sees changing.
+The editor carries a field only tests read, a host member typed optional though every production builder supplies it, and one mutation spelled inline in two components. Landing these leaves nothing kept alive for tests alone and one spelling of the heading rename, with nothing a person sees changing.
 
-##### F-069 · An unused type, a field only tests read, a needlessly optional host member, and one line copied in two components.
+##### F-069 · A field only tests read, a needlessly optional host member, and one line copied in two components.
 
-> **Area:** MarkdownPM · **Lens:** Dead Weight · **Weight:** Low · **Size:** S · **Net:** −6 · **Origin:** Residue
+> **Area:** MarkdownPM · **Lens:** Dead Weight · **Weight:** Low · **Size:** S · **Net:** −5 · **Origin:** Residue
 
 **Finding**
 
-Four leftovers cost a reader time and a person nothing. `AcQuery` in `Autocomplete/autocomplete.ts` is defined and read nowhere in the repository. The section-level `at` on `BlockMenuMatch` (`Core/Actions/blockMenu.ts`) is written by `filterBlockMenu` and read only by `blockMenu.test.ts`; `BlockMenuPane` reads each row's `at` and never the section's. `EditorHost.paneGeometry` is optional though the one production builder in `Core/Pages/editorHost.tsx` supplies it and only the test harness omits it, so both readers call it through `?.`. `PageView.tsx` and `PageTile.tsx` each spell the same `renameHeading` mutation inline for `onHeadingRename`. Confirmed by reading and a repository-wide search, and typed on a scratch worktree.[^69]
+Three leftovers cost a reader time and a person nothing. The section-level `at` on `BlockMenuMatch` (`Core/Actions/blockMenu.ts`) is written by `filterBlockMenu` and read only by `blockMenu.test.ts`; `BlockMenuPane` reads each row's `at` and never the section's. `EditorHost.paneGeometry` is optional though the one production builder in `Core/Pages/editorHost.tsx` supplies it and only the test harness omits it, so both readers call it through `?.`. `PageView.tsx` and `PageTile.tsx` each spell the same `renameHeading` mutation inline for `onHeadingRename`. Confirmed by reading and a repository-wide search, and typed on a scratch worktree.[^69]
 
 **Fix | Literal**
 
-`AcQuery` and the section `at` are deleted; `blockMenu.test.ts` loses its four section-`at` lines and the one test that asserted only a section's null `at`, whose remaining title check `:62-65` already pins, while every row-level `at` pin stays. `paneGeometry` becomes required, its two `?.` calls in `MarkdownEditor.tsx` and `useConnectionAutocomplete.ts` become plain calls, and `harnessHost` supplies a no-op stub; the type check is the pin, since a host builder that omits it no longer compiles. One `renameHeadingIn(path)` in `Core/Pages/editorHost.tsx`, which both callers already import, replaces the two inline closures. Nothing a person sees changes.
+The section `at` is deleted; `blockMenu.test.ts` loses its six section-`at` lines and the one test that asserted only a section's null `at`, whose remaining title check `:65` already pins, while every row-level `at` pin stays. `paneGeometry` becomes required, its two `?.` calls in `MarkdownEditor.tsx` and `useConnectionAutocomplete.ts` become plain calls, and `harnessHost` supplies a no-op stub; the type check is the pin, since a host builder that omits it no longer compiles. One `renameHeadingIn(path)` in `Core/Pages/editorHost.tsx`, which both callers already import, replaces the two inline closures. Nothing a person sees changes.
 
 #### W13 · Documentation
 
@@ -618,19 +618,19 @@ Each sentence takes the most surgical correction. In `MarkdownPM.md`: `Guards/` 
 
 #### W14 · Tests
 
-The 92 MarkdownPM test files hold 1,696 tests on 15,436 lines; about 140 of them pin nothing a sibling doesn't, assert a vacuous shape, or exercise a state production never produces, beside 236 lines of setup the shared setup already installs. Landing these leaves each behavior pinned once, by an exact expectation, in the file that owns it, at about 830 fewer test lines. Each test file is opened once, after the last finding that edits it; the per-row list is *§Appendix: MarkdownPM Test Dispositions*.
+The 94 MarkdownPM test files hold 1,892 tests on 19,438 lines; about 140 of them pin nothing a sibling doesn't, assert a vacuous shape, or exercise a state production never produces. Landing these leaves each behavior pinned once, by an exact expectation, in the file that owns it, at about 555 fewer test lines. Each test file is opened once, after the last finding that edits it; the per-row list is *§Appendix: MarkdownPM Test Dispositions*.
 
 ##### F-072 · About 85 tests repeat a sibling or a library, and 13 more repeat a sibling except for one assertion.
 
-> **Area:** MarkdownPM · **Lens:** Duplication · **Weight:** Low · **Size:** M · **Net:** 0 production (≈ −548 test lines, F-073's rows included) · **Origin:** Parallel Build
+> **Area:** MarkdownPM · **Lens:** Duplication · **Weight:** Low · **Size:** M · **Net:** 0 production (≈ −525 test lines, F-073's rows included) · **Origin:** Parallel Build
 
 **Finding**
 
-A change to one behavior means editing several tests that pin it the same way. About 85 tests carry the same input and assertion as a named sibling, check a library behavior (`parser.test.ts` checking that `gfm()` parses, which every table test already needs), or check something true by construction; the largest holders are `regressionPins.test.ts`, `Menus/blockMenuFlow.test.tsx`, `Autocomplete/aliasPicker.test.tsx`, `Guards/citationGuard.test.ts`, and `Menus/gripMenuFlow.test.tsx`. Thirteen more repeat a sibling except for one assertion, among them the five "…and without the guard…" cases in `citationGuard.test.ts`, which run with no guard mounted and are each the precondition of a guarded sibling. Every row was re-found by test name at `70fc6063c` and re-judged against its cited survivor. Two tests that look like repeats stay, since each is the only pin of a line: `Core/Pages/editorHost.test.ts:50` of `warmCache.ts:64`'s drop on a failed fence, and `cellAlias.test.tsx:79-86` of the `]`-only refusal at `typedInput`'s call site.[^72]
+A change to one behavior means editing several tests that pin it the same way. About 85 tests carry the same input and assertion as a named sibling, check a library behavior (`parser.test.ts` checking that `gfm()` parses, which every table test already needs), or check something true by construction; the largest holders are `regressionPins.test.ts`, `Menus/blockMenuFlow.test.tsx`, `Autocomplete/aliasPicker.test.tsx`, `Guards/citationGuard.test.ts`, and `Menus/gripMenuFlow.test.tsx`. Thirteen more repeat a sibling except for one assertion, among them the five "…and without the guard…" cases in `citationGuard.test.ts`, which run with no guard mounted and are each the precondition of a guarded sibling. Every row was re-found by test name at `70fc6063c` and re-judged against its cited survivor. Two tests that look like repeats stay, since each is the only pin of a line: `Core/Pages/editorHost.test.ts:50` of `warmCache.ts:64`'s drop on a failed fence, and `cellAlias.test.tsx:73-80` of the `]`-only refusal at `typedInput`'s call site.[^72]
 
 **Fix | Literal**
 
-Delete the repeats and fold each one-assertion copy into its sibling as the appendix lists, typed on scratch worktrees with every touched file green. Three folds turned out to be plain deletions, since mutation showed the sibling already covers them: `dragOrigin.test.tsx:93-112` (its sibling is retitled for the re-resolve it also pins), `gripMenuFlow.test.tsx:185-191`, and `connectionCommit.test.tsx:50-54`. Imports that lose their last user go with the tests, and the `autocomplete.test.ts` test that then leads its describe is retitled. The `line bounds` test left alone in `parser.test.ts` moves to `detect.test.ts`, which already pins `markdownCode.ts`'s other helpers, and the file goes. In `citationGuard.test.ts` and `citationCreate.test.tsx` it applies before F-075, whose rewrites there fall inside its deletions.
+Delete the repeats and fold each one-assertion copy into its sibling as the appendix lists, typed on scratch worktrees with every touched file green. Three folds turned out to be plain deletions, since mutation showed the sibling already covers them: `dragOrigin.test.tsx:93-112` (its sibling is retitled for the re-resolve it also pins), `gripMenuFlow.test.tsx:185-191`, and `connectionCommit.test.tsx:66-70`. Imports that lose their last user go with the tests, and the `autocomplete.test.ts` test that then leads its describe is retitled. The `line bounds` test left alone in `parser.test.ts` moves to `detect.test.ts`, which already pins `markdownCode.ts`'s other helpers, and the file goes. In `citationGuard.test.ts` and `citationCreate.test.tsx` it applies before F-075, whose rewrites there fall inside its deletions.
 
 ##### F-073 · About 30 tests pass whether or not the bug they name is present, and 8 pin the right thing in the wrong file.
 
@@ -638,35 +638,23 @@ Delete the repeats and fold each one-assertion copy into its sibling as the appe
 
 **Finding**
 
-About 30 tests are too loose to fail on the regression they name: `not.toBeNull` or `?.insert).not.toBe('')` where an exact edit is the pin (`edits.test.ts`, which passes on `null`), `toContain` on a document that also contains the corrupted form, a `some(...)` that survives a first/last swap (`intents.test.ts`), a mount without `connections` so the menu is null for every link (`externalLink.test.tsx`, `linkEdges.test.tsx`), and a uniform table where an average can't be told from a constant (`operations.test.ts`). Where mutation was run, the tightened form goes red where the original stayed green; six `edits.test.ts` tests fail on an off-by-one `autoPair` selection where one did before. Eight sound tests pin a function their file doesn't own: `cellLists.test.tsx`'s "what a GFM cell can hold" pins `restoreTrailingItem`, which `codec.test.ts` leaves unpinned; `embedInsert.test.ts`'s pair hands off to `autocompleteQuery`; `citationCreate.test.tsx:387-392` and `indexSeed.test.ts:327-331` pin scan ordering and a table cell shaped like a footnote head; and `codec.test.ts:44-47`'s pipe-in-code case is a region question. Two tests that look loose stay as they are: `intents.test.ts:613` is the only pin that an escaped `\[^1]` counts as a word and an unbound `[^9]` as none, and `connectionCommit.test.tsx:118-135` already fails when the closing-animation refusal is removed.[^73]
+About 30 tests are too loose to fail on the regression they name: `not.toBeNull` or `?.insert).not.toBe('')` where an exact edit is the pin (`edits.test.ts`, which passes on `null`), `toContain` on a document that also contains the corrupted form, a `some(...)` that survives a first/last swap (`intents.test.ts`), a mount without `connections` so the menu is null for every link (`externalLink.test.tsx`, `linkEdges.test.tsx`), and a uniform table where an average can't be told from a constant (`operations.test.ts`). Where mutation was run, the tightened form goes red where the original stayed green; six `edits.test.ts` tests fail on an off-by-one `autoPair` selection where one did before. Eight sound tests pin a function their file doesn't own: `cellLists.test.tsx`'s "what a GFM cell can hold" pins `restoreTrailingItem`, which `codec.test.ts` leaves unpinned; `embedInsert.test.ts`'s pair hands off to `autocompleteQuery`; `citationCreate.test.tsx:367-372` and `indexSeed.test.ts:327-331` pin scan ordering and a table cell shaped like a footnote head; and `codec.test.ts:44-47`'s pipe-in-code case is a region question. Two tests that look loose stay as they are: `intents.test.ts:613` is the only pin that an escaped `\[^1]` counts as a word and an unbound `[^9]` as none, and `connectionCommit.test.tsx:145-162` already fails when the closing-animation refusal is removed.[^73]
 
 **Fix | Literal**
 
 Tighten each to the exact expectation the appendix gives, every value captured by running the call at `70fc6063c`: the callout's `lineClasses` hold five entries, the list item's own included; `regressionPins.test.ts:143` tightens to its exact selection, since it's the only pin of `'` in `CLOSERS`; `edits.test.ts` uses `toMatchObject({ insert, selection })` where a full `toEqual` would wrap to six lines, since every `autoPair` branch there returns `from = to = c`; and `prefixSeat.test.tsx:155` pins the exact joined document a forward Delete at a footnote row's end leaves, which is ordinary editing. Move the eight to the files that own them; the `codec.test.ts:44-47` case lands in `regions.test.ts` titled for what it pins, that a pipe inside inline code still splits a cell under GFM, so an over-split header is no table. Its `subfieldStats.test.ts` tightenings land after F-044, which adds its own tests to that file.
 
-##### F-074 · About 400 lines of per-file test setup install what the shared setup already installs.
+##### F-075 · The shared test builders read footnotes differently from the app, and the scan's random generator never types a `~` diff line.
 
-> **Area:** MarkdownPM · **Lens:** Dead Weight · **Weight:** Low · **Size:** S · **Net:** 0 production (≈ −406 test lines) · **Origin:** Residue
-
-**Finding**
-
-Thirty-two test files repeat setup that never takes effect. `UIX/vitest.setup.ts` installs a no-op `ResizeObserver` for every Core suite through `Core/vitest.setup.ts`. Nine table tests carry a guarded seven-line copy that never runs, two more carry guarded blocks, nineteen files carry an unconditional six-line `ResizeObserverStub` that overwrites the shared stub with an identical one, and `embedResize.test.tsx`'s `Watcher` is the same no-op. Four of the table tests also set `IS_REACT_ACT_ENVIRONMENT = true` after their module-level `stubEditorBridge()` already has, and `readOnlySelection.test.tsx` hand-rolls the 32 lines that `mountEditor`, `cleanupEditor`, and `stubEditorBridge` provide. Deleting every stub and running all touched files through the root config passed, which proves the chain. Twenty-five test files outside the editor carry the same no-op stub through the same chain, since `UIX/vitest.config.ts` runs the same setup file: seventeen unconditional copies across Properties, Matrix, Glance, and the UIX menus and pickers, four guarded copies (`LinkCell`, `PropertyValueInput`, `TextPane`, `Slider`), two `??=` copies (`PageView`, `pendingTravel`), and two `vi.stubGlobal` copies (`AssetImage`, `ImagePicker`), about 170 lines; deleting one of each form, in Properties, Session, Assets, and two UIX suites, passed the same way.[^74]
-
-**Fix | Literal**
-
-Delete the stubs, `embedResize.test.tsx`'s `Watcher` with its `vi.stubGlobal` and `vi.unstubAllGlobals` lines, and the four flags; `cellNavigation.test.tsx:10`'s comment, which explained only the stub, goes, and `headingColRemap.test.ts:12`'s is reworded to the host it still explains. The twenty-five copies outside the editor go in the same change. The stubs in `dragOrigin.test.tsx`, `cellSweep.test.tsx`, `TileGrid.test.tsx`, `TileHost.test.tsx`, `MatrixView.test.tsx`, and `Scrollbar.test.tsx` stay, since they capture the observer's callbacks and fire them by hand. `readOnlySelection.test.tsx` is rewritten on `mountEditor`; it keeps the `contenteditable="true"` expectation and stays the pin that a read-only mount stays editable (red when `editable` follows `readOnly`, or when the change filter admits every change).
-
-##### F-075 · The shared test builders read footnotes and alias memory differently from the app, and the scan's random generator never types a `~` diff line.
-
-> **Area:** MarkdownPM · **Lens:** Duplication · **Weight:** Low · **Size:** S · **Net:** 0 production (≈ −49 test lines) · **Origin:** Parallel Build
+> **Area:** MarkdownPM · **Lens:** Duplication · **Weight:** Low · **Size:** S · **Net:** 0 production (≈ −30 test lines) · **Origin:** Parallel Build
 
 **Finding**
 
-The tests built on these helpers check rules the app never runs. `citationScan(d, excluded)` in `Core/Testing/markdownEngine.ts` rebuilds footnotes through `codeMask` and a caller-supplied exclusion list; all 17 callers pass `[]`, while production's `scanDoc` seals fences, maths, and tables through `inSealedLine`, and the two `scanOf` helpers in `citationGuard.test.ts` and `citationEdits.test.ts` assemble exactly a `DocScan` by hand; `citationBreakage.test.tsx` and `citationEdits.test.ts` each define the same `stranded` helper over `citationScan`. The harness's alias memory (`aliases.remember` and `forget` in `editorHarness.ts`) skips production's trim, empty, and unchanged-first guards and bumps a re-render counter instead of firing `aliasWatchers`, which forces `connectionCommit.test.tsx` to fire watchers by hand. The scan's randomized property generator in `Engine/docScan.test.ts` holds no `~`-signed line in `LINES` and neither `~` nor `+` in `CHARS`, though the scan reads `~` as a modified diff line (`'mod'`), against the rule that a construct the scan learns joins the generator's alphabet in the same change; the risk is small, since diff kinds derive per whole fence. Confirmed by reading and typed on a scratch worktree.[^75]
+The tests built on these helpers check rules the app never runs. `citationScan(d, excluded)` in `Core/Testing/markdownEngine.ts` rebuilds footnotes through `codeMask` and a caller-supplied exclusion list; all 17 callers pass `[]`, while production's `scanDoc` seals fences, maths, and tables through `inSealedLine`, and the two `scanOf` helpers in `citationGuard.test.ts` and `citationEdits.test.ts` assemble exactly a `DocScan` by hand; `citationBreakage.test.tsx` and `citationEdits.test.ts` each define the same `stranded` helper over `citationScan`. The scan's randomized property generator in `Engine/docScan.test.ts` holds no `~`-signed line in `LINES` and neither `~` nor `+` in `CHARS`, though the scan reads `~` as a modified diff line (`'mod'`), against the rule that a construct the scan learns joins the generator's alphabet in the same change; the risk is small, since diff kinds derive per whole fence. Confirmed by reading and typed on a scratch worktree.[^75]
 
 **Fix | Literal**
 
-Every caller reads `scanDoc(text).citations`, or `scanDoc(text)` where it built a scan, so `citationScan` and both `scanOf` helpers are deleted, and one `stranded` over `scanDoc` joins `Core/Testing/markdownEngine.ts` for the two citation files; no expectation changes except a self-comparison in `citationGuard.test.ts`'s sequence test, which F-072 deletes. The harness alias memory takes production's shape: it calls `rememberAlias` or `forgetAlias` on the current list, stores the answer and fires `aliasWatchers` when it isn't `null`, and does nothing when it is, as production writes nothing then; `bump` and its `setTick` state go, matching production, where an alias change re-renders nothing, and `connectionCommit.test.tsx`'s hand-fired loop becomes one `forget` call through the host. `'~changed'` joins `LINES`, and `~` and `+` join `CHARS`, written as a spread string so the literal stays one line; the three properties pass at their default seeds. In `citationGuard.test.ts` and `citationCreate.test.tsx` this lands after F-072, whose deletions take two of its rewrites. Its `editorHarness.ts` change lands beside F-069's `paneGeometry` stub.
+Every caller reads `scanDoc(text).citations`, or `scanDoc(text)` where it built a scan, so `citationScan` and both `scanOf` helpers are deleted, and one `stranded` over `scanDoc` joins `Core/Testing/markdownEngine.ts` for the two citation files; no expectation changes except a self-comparison in `citationGuard.test.ts`'s sequence test, which F-072 deletes. `'~changed'` joins `LINES`, and `~` and `+` join `CHARS`, written as a spread string so the literal stays one line; the three properties pass at their default seeds. In `citationGuard.test.ts` and `citationCreate.test.tsx` this lands after F-072, whose deletions take two of its rewrites.
 
 #### W15 · Focus and Closing Animations
 
@@ -990,7 +978,7 @@ Normalize both to objects and delete `fromOf`, `toOf`, and the tuple arm in the 
 
 **Finding**
 
-About thirty `export` keywords in MarkdownPM have a test as their only outside reader (`indentLevel`, `computeStats`, `buildWidgetDecorations`, `refreshTableEffect`, `connectionInsert`, `pendingTitles`, `foldedRegions`, `regionsOf`, `EMPTY_PAGE_TEXT`, and the rest). Each function lives in its file and does real work, so removing the keyword removes no line, and `lineIntentsInto` is the cached-assembly property's reference derivation. Several leave through F-072.[^99]
+About thirty `export` keywords in MarkdownPM have a test as their only outside reader (`indentLevel`, `computeStats`, `buildWidgetDecorations`, `refreshTableEffect`, `connectionInsert`, `foldedRegions`, `regionsOf`, `EMPTY_PAGE_TEXT`, and the rest). Each function lives in its file and does real work, so removing the keyword removes no line, and `lineIntentsInto` is the cached-assembly property's reference derivation. Several leave through F-072.[^99]
 
 **Fix | Literal**
 
@@ -1184,23 +1172,11 @@ Code that runs in Desktop's main process can't answer "which page is this title"
 
 Split the title index (titles, ids, paths, resolution) from the icon and trail decoration, so the host imports the first and the window the second; Paste As can then classify with a resolver in main.
 
-##### F-115 · A store guard against a page move landing in the wrong Nexus holds only by microtask order.
-
-> **Area:** Nexus · **Lens:** Integrity · **Weight:** Low · **Size:** S · **Net:** TBD · **Origin:** Shortcut
-
-**Finding**
-
-`Session/store.test.tsx`'s 'drops a page move whose flush waited out a switch, since its path named the Nexus it left' passes only because `nexusSlice.load` reaches `readTree` without an intervening await: any await added before it reddens the test. The guard it pins, a `movePage` comparing the Nexus id after its flush, therefore depends on scheduling that real IPC doesn't promise. Found while typing an alternative that read the footnote overrides before the tree.[^115]
-
-**Fix | TBD**
-
-Key the pending move to the Nexus it was issued in and compare that identity at landing, so the guard holds whatever the load's await order; the test then pins the identity check rather than the ordering.
-
 ---
 
 ### Appendix: MarkdownPM Test Dispositions
 
-Every row was re-found by test name at `70fc6063c` and re-judged against its cited survivor; line numbers are at that commit. Paths are relative to `Core/MarkdownPM/` unless they start with `Core/`. Kinds: **BC** by construction · **TL** too loose · **UP** unproduced state · **RP** re-pin · **RT** retired.
+Every row was re-found by test name at `70fc6063c` and re-judged against its cited survivor; its line numbers are re-anchored whenever a reconcile touches its file, and the test's name settles any drift. Paths are relative to `Core/MarkdownPM/` unless they start with `Core/`. Kinds: **BC** by construction · **TL** too loose · **UP** unproduced state · **RP** re-pin · **RT** retired.
 
 | File | Lines | Kind | Disposition | Lines |
 | --- | --- | --- | --- | --- |
@@ -1213,8 +1189,7 @@ Every row was re-found by test name at `70fc6063c` and re-judged against its cit
 | `regressionPins.test.ts` | :155 | RP | merge into `edits.test.ts:71` as `expect(e.selection).toBe(5)` | 4 |
 | `regressionPins.test.ts` | :133 | RP, TL | delete (`edits.test.ts:520`) | 3 |
 | `regressionPins.test.ts` | :188 | RP | delete (`edits.test.ts:92`) | 3 |
-| `Tables/cellLinks.test.tsx` | :207-239 | TL | tighten: `expect(target?.kind).toBe('url')` before the apply | 33 |
-| `Tables/cellLinks.test.tsx` | :131-151 | RP | delete (`cellNavigation.test.tsx:119-127`) | 21 |
+| `Tables/cellLinks.test.tsx` | :139-159 | RP | delete (`cellNavigation.test.tsx:112-120`) | 21 |
 | `Menus/blockMenuFlow.test.tsx` | :85-92 | RP | delete (`Core/Actions/blockMenu.test.ts:54-61`) | 8 |
 | `Menus/blockMenuFlow.test.tsx` | :94-101 | RP | delete (`blockMenu.test.ts:90-96`) | 8 |
 | `Menus/blockMenuFlow.test.tsx` | :202-209 | RP | delete (:219-231, :135-148, :321-326) | 8 |
@@ -1222,9 +1197,9 @@ Every row was re-found by test name at `70fc6063c` and re-judged against its cit
 | `Menus/blockMenuFlow.test.tsx` | :110-115 | RP | delete (`blockQuery.test.ts:23-25`) | 6 |
 | `Menus/blockMenuFlow.test.tsx` | :127-131 | RP | delete (`blockQuery.test.ts:49-51`) | 5 |
 | `Menus/blockMenuFlow.test.tsx` | :280-284 | RP | delete (`blockMenu.test.ts:59`, :273-278) | 5 |
-| `Autocomplete/connectionCommit.test.tsx` | :338-348 | TL | tighten to `expect(document.querySelector('.mdpm-ac')).toBeNull()` | 11 |
-| `Autocomplete/connectionCommit.test.tsx` | :188-196 | RP | delete (`pickFirst` at :40, :143) | 9 |
-| `Autocomplete/connectionCommit.test.tsx` | :50-54 | RP | delete (:56-60) | 5 |
+| `Autocomplete/connectionCommit.test.tsx` | :450-459 | TL | tighten to `expect(document.querySelector('.mdpm-ac')).toBeNull()` | 10 |
+| `Autocomplete/connectionCommit.test.tsx` | :198-206 | RP | delete (`pickFirst` at :60, :152) | 9 |
+| `Autocomplete/connectionCommit.test.tsx` | :66-70 | RP | delete (:72-76) | 5 |
 | `Guards/citationGuard.test.ts` | :35-38, :46-48, :88-90, :129-131, :266-268 | BC | merge each as a one-line precondition into :28, :40, :81, :121, :260 | 16 (~11 net) |
 | `Guards/citationGuard.test.ts` | :100-114 | TL, RP | delete (:54-62) | 15 |
 | `Guards/citationGuard.test.ts` | :203-208 | RP | merge `toContain('the citation')` into :28, delete | 6 |
@@ -1236,10 +1211,9 @@ Every row was re-found by test name at `70fc6063c` and re-judged against its cit
 | `Engine/intents.test.ts` | :636-638 | RP | merge into :632-635 | 3 |
 | `Engine/intents.test.ts` | :445-447 | RP | delete (:459-470) | 3 |
 | `Engine/intents.test.ts` | :70-72 | RP | merge into :74-76 | 3 |
-| `readOnlySelection.test.tsx` | :9-40 | setup | rewrite on `mountEditor` | 32 (33 net) |
-| `readOnlySelection.test.tsx` | :50 | TL | delete | 5 |
-| `Menus/editorMenu.test.tsx` | :108-130 | TL | tighten: clipboard `'x'` on `- item` at 6 → `'- itemx'` for menu and chord | 23 |
-| `Menus/editorMenu.test.tsx` | :165-176 | TL | tighten to `toBe(<full resulting table>)` | 12 |
+| `readOnlySelection.test.tsx` | :19 | TL | delete | 5 |
+| `Menus/editorMenu.test.tsx` | :102-124 | TL | tighten: clipboard `'x'` on `- item` at 6 → `'- itemx'` for menu and chord | 23 |
+| `Menus/editorMenu.test.tsx` | :159-170 | TL | tighten to `toBe(<full resulting table>)` | 12 |
 | `Menus/gripMenuFlow.test.tsx` | :185-191 | RP | delete (:177-183, `gripMenu.test.ts:26-29`) | 7 |
 | `Menus/gripMenuFlow.test.tsx` | :85-90 | RP | delete (`format.test.ts:191-193`, `blockModel.test.ts:61-66`) | 6 |
 | `Menus/gripMenuFlow.test.tsx` | :102-107 | RP | delete (`format.test.ts:195-197`, `blockModel.test.ts:157-163`) | 6 |
@@ -1252,17 +1226,14 @@ Every row was re-found by test name at `70fc6063c` and re-judged against its cit
 | `Autocomplete/autocomplete.test.ts` | :244-247 | RP | delete (:138-144) | 4 |
 | `Autocomplete/autocomplete.test.ts` | :159-162 | TL | tighten to `toBeNull()` | 4 |
 | `Autocomplete/autocomplete.test.ts` | :188-191 | TL | tighten to `toMatchObject({ form: 'fragment', title: '' })`, the current page's headings | 0 |
-| `Links/externalLink.test.tsx` | :121-135 | RP | delete (`linkFormat.test.tsx:72-84`, `:100-103`) | 15 |
-| `Links/externalLink.test.tsx` | :90-102 | TL | tighten: mount with the :106-110 `conn`, assert `connMenu` not called | 13 |
+| `Links/externalLink.test.tsx` | :83-95 | TL | tighten: mount with the :98-104 `conn`, assert `connMenu` not called | 13 |
 | `Core/Pages/editorHost.test.ts` | :183 | BC | tighten: drop :193-196, keep the `mutate` pin, retitle | 4 |
-| `Autocomplete/aliasPicker.test.tsx` | :139-145 | RP | delete (:147-154) | 7 |
-| `Autocomplete/aliasPicker.test.tsx` | :55-59 | TL, RP | delete | 5 |
-| `Autocomplete/aliasPicker.test.tsx` | :125-129 | TL | tighten: leading side span holds `square-split-horizontal` | 5 |
-| `Autocomplete/aliasPicker.test.tsx` | :245-249 | RP | move :247-248 into `connections.test.ts:68`, with :233-238 | 5 |
-| `Autocomplete/aliasPicker.test.tsx` | :240-243 | RP | delete (`Core/Connections/connections.test.ts:10-25`) | 4 |
-| `Tables/cellLists.test.tsx` | :391-408 | misplaced | move to `Engine/Tables/codec.test.ts` | 18 |
-| `Tables/cellLists.test.tsx` | :96-100 | BC | delete (`intents.test.ts:80-85`) | 5 |
-| `Tables/cellLists.test.tsx` | :410-412 | RP | delete (`codec.test.ts:65`) | 3 |
+| `Autocomplete/aliasPicker.test.tsx` | :127-133 | RP | delete (:135-142) | 7 |
+| `Autocomplete/aliasPicker.test.tsx` | :37-41 | TL, RP | delete | 5 |
+| `Autocomplete/aliasPicker.test.tsx` | :113-117 | TL | tighten: leading side span holds `square-split-horizontal` | 5 |
+| `Tables/cellLists.test.tsx` | :382-399 | misplaced | move to `Engine/Tables/codec.test.ts` | 18 |
+| `Tables/cellLists.test.tsx` | :87-91 | BC | delete (`intents.test.ts:80-85`) | 5 |
+| `Tables/cellLists.test.tsx` | :401-403 | RP | delete (`codec.test.ts:65`) | 3 |
 | `Input/edits.test.ts` | :298-302 | TL | tighten :299, :300 to exact edits, :301 to `toBeNull()` | 5 |
 | `Input/edits.test.ts` | :225-229 | TL | tighten :227 `{insert:'__',selection:5}`, :228 `{insert:'``',selection:1}` | 5 |
 | `Input/edits.test.ts` | :230-234 | TL | tighten :231 to `{from:2,to:2,insert:'**',selection:3}` | 5 |
@@ -1272,24 +1243,24 @@ Every row was re-found by test name at `70fc6063c` and re-judged against its cit
 | `Engine/detect.test.ts` | :144-148 | RP | delete (`links.test.ts:34-39`, `tokens.test.ts:69-73`) | 5 |
 | `Engine/detect.test.ts` | :140-143 | RP | delete (`rewrite.test.ts:103-110`, `tokens.test.ts:58-62`) | 4 |
 | `Engine/detect.test.ts` | :28-30 | RP | delete (:22) | 3 |
-| `Core/Interface/Glance/GlancePane.test.tsx` | :736 | RP | delete (`pageDetailCache.test.ts:38`) | 9 |
-| `Core/Interface/Glance/GlancePane.test.tsx` | :728 | RP | delete (`pageDetailCache.test.ts:152`) | 7 |
-| `Core/Interface/Glance/GlancePane.test.tsx` | :746 | RP | delete (`pageDetailCache.test.ts:155`) | 5 |
+| `Core/Interface/Glance/GlancePane.test.tsx` | :729 | RP | delete (`pageDetailCache.test.ts:38`) | 9 |
+| `Core/Interface/Glance/GlancePane.test.tsx` | :721 | RP | delete (`pageDetailCache.test.ts:152`) | 7 |
+| `Core/Interface/Glance/GlancePane.test.tsx` | :739 | RP | delete (`pageDetailCache.test.ts:155`) | 5 |
 | `Tables/dragOrigin.test.tsx` | :93-112 | RP | delete (:121-137); retitle :121 for the re-resolve it also pins | 20 |
 | `Engine/parser.test.ts` | :24-29 | RP | delete (`regressionPins.test.ts:28-32`, `:36`) | 6 |
 | `Engine/parser.test.ts` | :6-10 | TL | delete | 5 |
 | `Engine/parser.test.ts` | :12-15 | RP | delete (`regions.test.ts:11-17`) | 4 |
 | `Engine/parser.test.ts` | :17-20 | RP | delete (`tokens.test.ts:15-20`) | 4 |
-| `foldState.test.tsx` | :401 | UP | delete | 8 |
-| `Links/mdLinkTarget.test.tsx` | :347-355 | RP | delete (:136-144, :357-371) | 9 |
-| `Links/mdLinkTarget.test.tsx` | :101-105 | RP | delete (:66-69) | 5 |
-| `Links/mdLinkTarget.test.tsx` | :92-94 | TL, RP | delete (`links.test.ts:81-83`) | 3 |
+| `foldState.test.tsx` | :395 | UP | delete | 8 |
+| `Links/mdLinkTarget.test.tsx` | :410-418 | RP | delete (:137-145, :420-434) | 9 |
+| `Links/mdLinkTarget.test.tsx` | :95-99 | RP | delete (:60-63) | 5 |
+| `Links/mdLinkTarget.test.tsx` | :86-88 | TL, RP | delete (`Core/Connections/links.test.ts:75-78`) | 3 |
 | `Embeds/embedInsert.test.ts` | :65-73 | RP | move to `autocomplete.test.ts` as an `autocompleteQuery('![[]]', 3, true)` pin | 9 |
 | `Embeds/embedInsert.test.ts` | :56-63 | BC, RP | delete | 8 |
 | `Guards/calloutGuard.test.ts` | :12-14, :15-17, :18-20, :25-27, :28-30 | RP, TL | delete all five (:48-62) | 15 |
-| `Links/pasteLink.test.tsx` | :81-85 | TL, BC | delete | 5 |
-| `Links/pasteLink.test.tsx` | :87-91 | BC | delete; the `pasteLink.ts:19` guard stays | 5 |
-| `Links/pasteLink.test.tsx` | :195-199 | BC | delete; the `pasteLink.ts:126` guard stays | 5 |
+| `Links/pasteLink.test.tsx` | :82-86 | TL, BC | delete | 5 |
+| `Links/pasteLink.test.tsx` | :88-92 | BC | delete; the `pasteLink.ts:104` guard stays | 5 |
+| `Links/pasteLink.test.tsx` | :210-214 | BC | delete; the `pasteLink.ts:153` guard stays | 5 |
 | `Engine/subfieldStats.test.ts` | :55-58 | TL | tighten to `characters === 4` and `=== 9` | 4 |
 | `Engine/subfieldStats.test.ts` | :51-53 | TL | tighten to `toMatchObject({ words: 3, characters: 13 })` | 3 |
 | `Engine/subfieldStats.test.ts` | :115-117 | TL | tighten to `characters === 9` | 3 |
@@ -1313,29 +1284,22 @@ Every row was re-found by test name at `70fc6063c` and re-judged against its cit
 | `Links/pasteDecision.test.ts` | :125-131 | BC | delete | 6 |
 | `Links/pasteDecision.test.ts` | :91-93 | RP | delete (:58) | 3 |
 | `Citations/citationMenu.test.ts` | :38-46 | RP | merge one line into :28 | 9 |
-| `Links/pendingTitle.test.ts` | :64-68 | RP | delete (:45-50) | 5 |
-| `Links/pendingTitle.test.ts` | :33-35 | RP | delete (:37-50) | 3 |
-| `Links/linkEdges.test.tsx` | :405-412 | TL | tighten: mount with `{ ...conn, menu: vi.fn() }`, assert `menu` not called | 8 |
+| `Links/pendingTitle.test.ts` | :74-78 | RP | delete (:55-60) | 5 |
+| `Links/pendingTitle.test.ts` | :43-45 | RP | delete (:47-60) | 3 |
+| `Links/linkEdges.test.tsx` | :402-409 | TL | tighten: mount with `{ ...conn, menu: vi.fn() }`, assert `menu` not called | 8 |
 | `Engine/embedClaims.test.ts` | :72-75 | RP | delete (:69) | 4 |
 | `Engine/embedClaims.test.ts` | :77-79 | BC | delete | 3 |
 | `Core/Pages/bodyMount.test.tsx` | :236 | TL | tighten: after `flush()`, assert `page:updateBody` not called | 7 |
 | `prefixSeat.test.tsx` | :156 | TL | tighten :160 to `toBe('a[^1] [^2]\n\n[^1]: one[^2]: two')`, the document a forward Delete at a footnote row's end leaves | 6 |
-| `Citations/citationCreate.test.tsx` | :387-392 | BC | move to `Engine/citations.test.ts` as a `scan(body).markers` ordinal test | 6 |
+| `Citations/citationCreate.test.tsx` | :367-372 | BC | move to `Engine/citations.test.ts` as a `scan(body).markers` ordinal test | 6 |
 | `Core/Index/indexSeed.test.ts` | :318 | RP | delete the one line (`Engine/citations.test.ts:56`) | 1 |
 | `Core/Index/indexSeed.test.ts` | :327-331 | misplaced | move to `Engine/citations.test.ts`, keep the row assertion | ~4 |
-| `Gestures/listDragTap.test.tsx` | :51-55 | RP, TL | delete (:60-79) | 5 |
-| `Links/linkFormat.test.tsx` | :130-133 | RP, BC | delete (:112-115) | 4 |
+| `Gestures/listDragTap.test.tsx` | :44-48 | RP, TL | delete (:53-72) | 5 |
 | `Engine/citations.test.ts` | :175-178 | RP | delete; keep :169-173 | 4 |
 | `Engine/codeLangs.test.ts` | :14-17 | BC | delete | 4 |
 | `Tables/widget.test.ts` | :64-66 | RP | merge into :71 with `expect(set.size).toBe(1)` | 3 |
 | `Engine/outlineTree.test.ts` | :23-25 | BC | delete (`folding.test.ts:10`) | 3 |
 | `Menus/blockQuery.test.ts` | :53-55 | RP | delete (:49-51) | 3 |
-| Guarded `ResizeObserver` stubs | `headingColRemap:14-20`, `cellHeadings:16-22`, `tableExit:13-19`, `cellNavigation:12-18` (+ :10), `tableGripMenu:17-23`, `cellStatic:17-23`, `cellLinks:15-21`, `cellLists:17-23`, `cellAlias:13-19` | setup | delete (`UIX/vitest.setup.ts:13-19` installs it) | 64 |
-| `IS_REACT_ACT_ENVIRONMENT = true` | `cellHeadings:15`, `tableExit:12`, `tableGripMenu:16`, `cellLists:16` | setup | delete (`stubEditorBridge()` sets it) | 4 |
-| Unconditional `ResizeObserverStub` | `emptyPage`, `docCache`, `travel`, `codeDiff`, `headingRename`, `aliasSites`, `foldState`, `connectionCommit`, `aliasPicker`, `linkEdges`, `aliasRender`, `mdLinkTarget`, `connectionHover`, `linkFormat`, `externalLink`, `linkEdit`, `listDragTap`, `citationBreakage`, `citationCreate`; guarded blocks at `textScope:16-22`, `editorMenu:18-24` | setup | delete; `dragOrigin` and `cellSweep` stay, since they fire the captured callbacks by hand | 128 |
-| `Embeds/embedResize.test.tsx` | :66-72, :77 | setup | delete the no-op `Watcher` with its `vi.stubGlobal` and `vi.unstubAllGlobals` lines | 8 |
-
-Harness (F-075): `Core/Testing/editorHarness.ts:83-90` calls `rememberAlias` or `forgetAlias` on the current list, stores the answer and fires `aliasWatchers` when it isn't `null`, and does nothing when it is; `bump` and its `setTick` state go.
 
 [^1]: **F-001:** `Core/Sync/Client/pull.ts:39-59` (`landChange`), `Core/Sync/Arrival/land.ts:83-144`, `Core/Sync/Client/push.ts:257-309` (`resolveStale`), `Core/Sync/Client/reconcile.ts:99-108`, `Core/Paths/exclusion.ts:44-61` (`manifestAdmits`), `Sync/Routes/items.ts:10-17` (`itemPath`), `Desktop/Platform/hostPath.ts:5` (`nativePath`)
 [^2]: **F-002:** `Desktop/Sync/transport.ts:24-38` (`transport`), `Core/Sync/Client/call.ts:89-91`, `Sync/wire.ts:40-55` (`BLOB_CAP`)
@@ -1369,19 +1333,18 @@ Harness (F-075): `Core/Testing/editorHarness.ts:83-90` calls `rememberAlias` or 
 [^56]: **F-056:** `Core/MarkdownPM/Embeds/embedWidget.tsx:565-573` (`embedAtomic`), `:495-500` (`mapRanges`), `.claude/Guidelines/Editor-Internals.md:11`
 [^57]: **F-057:** `Core/MarkdownPM/Menus/blockHandles.ts:70-77,107-110` (`TagReveal`), `Core/MarkdownPM/Engine/intents.ts:256` (the code tag widget)
 [^58]: **F-058:** `Core/MarkdownPM/decorations.ts:677-680` (`build`)
-[^59]: **F-059:** `Core/MarkdownPM/folding.ts:195-210` (`foldField`), `:133-149` (`collapseEffect`), `:336-342` (`editAcrossCitations`), `Core/MarkdownPM/api.ts:63-71` (`mirrorBody`), `Core/Session/saveScheduler.ts:142-143` (`followBody`), `Core/Pages/bodyMount.ts:44` (`follow`), `.claude/Guidelines/Editor-Internals.md:30`
+[^59]: **F-059:** `Core/MarkdownPM/folding.ts:195-210` (`foldField`), `:133-149` (`collapseEffect`), `:336-342` (`editAcrossCitations`), `Core/MarkdownPM/api.ts:67-75` (`mirrorBody`), `Core/Session/saveScheduler.ts:136` (`followBody`), `Core/Pages/bodyMount.ts:39` (`follow`), `.claude/Guidelines/Editor-Internals.md:30`
 [^61]: **F-061:** `Core/Tiles/Surfaces/MarkdownTile.tsx:27` (`useEditorHost`), `Core/Pages/editorHost.tsx:77-82` (`citations`), `Core/MarkdownPM/folding.ts:406-415` (`dividerPress`), `Core/MarkdownPM/Citations/citationActions.ts:31,74` (`travelToCitation`, the marker press's reveal)
 [^63]: **F-063:** `Core/MarkdownPM/Embeds/scrollHeal.ts:1-8` (`healTileScrolls`), `Core/MarkdownPM/Embeds/embedWidget.tsx:688-696` (`reslotHeal`), `Core/MarkdownPM/MarkdownEditor.tsx:215-222`
 [^64]: **F-064:** `Core/Tiles/tile-base.css:78-92`, `Core/Interface/Windows/WindowTabBody.tsx:84,155-159` (`useWindowTabBody`), `Core/MarkdownPM/MarkdownEditor.tsx:210-229,255`, `Core/Interface/Windows/windowCache.ts:3-12` (`bodyScroll`), `Core/Interface/Windows/useWindowWarm.ts:21-57` (`useWindowWarm`), `Core/MarkdownPM/travel.ts:12-15` (`scrollerOf`)
-[^65]: **F-065:** `Core/Pages/PageView.tsx:31-36,114-132` (`warm`), `Core/Session/warmCache.ts:36-40` (`dropWarmDetail`), `:52-71` (`warmSeamOf`), `Core/Session/navigationSlice.ts:322`
+[^65]: **F-065:** `Core/Pages/PageView.tsx:31-36,113-131` (`warm`), `Core/Session/warmCache.ts:36-40` (`dropWarmDetail`), `:52-71` (`warmSeamOf`), `Core/Session/navigationSlice.ts:324`
 [^66]: **F-066:** `Core/MarkdownPM/Engine/detect.ts:176-204` (`htmlBlocks`), `Core/MarkdownPM/Engine/docScan.ts:103-112,131-163,275-277` (`quietAt`, `loneAbove`, `pairsBelow`, `chunksOver`), `Core/MarkdownPM/Engine/parser.ts:17-36` (`parse`), `Core/MarkdownPM/Links/linkEdit.ts:51,60` (`commitAliasOnEnter`), `Core/MarkdownPM/Engine/markdownCode.ts` (the fence grammar), `.claude/Guidelines/Editor-Internals.md:5` (the CommonMark divergences).
 [^67]: **F-067:** `Core/MarkdownPM/Engine/headingScan.ts:24-25` (`scanHeadings`), `Core/MarkdownPM/Engine/docScan.ts:38-58,93-99,365-372` (`withCitations`, `scanDoc`, `inSealedLine`), `Core/MarkdownPM/Engine/detect.ts:176-204` (`htmlBlocks`), `Core/MarkdownPM/Engine/blockModel.ts:81` (`kindAt`), `Core/MarkdownPM/Engine/intents.ts:588` (`pushConstruct`), `Core/MarkdownPM/decorations.ts:471`, `Core/MarkdownPM/Links/linkEdit.ts:51,60` (`commitAliasOnEnter`), `Core/MarkdownPM/docCache.ts:15-34,64-67` (`perDoc`, `docScan`), `Core/MarkdownPM/Input/htmlShortcuts.ts:3,9`, `Core/Settings/personalization.ts:150` (`htmlFormatting`), `Core/Index/indexSeed.ts:46-52` (`extractPageIndex`), `Core/Nexus/cascade.ts:186`, `.claude/Features/MarkdownPM.md:28`.
-[^69]: **F-069:** `Core/MarkdownPM/Autocomplete/autocomplete.ts:30` (`AcQuery`), `Core/Actions/blockMenu.ts:21-27,98-104` (`BlockMenuMatch`, `filterBlockMenu`), `Core/Actions/blockMenu.test.ts:57,83,92,102,112-116,121`, `Core/MarkdownPM/Menus/BlockMenuPane.tsx:46`, `Core/MarkdownPM/api.ts:201-202` (`EditorHost.paneGeometry`), `Core/Pages/editorHost.tsx:93`, `Core/MarkdownPM/MarkdownEditor.tsx:303`, `Core/MarkdownPM/Autocomplete/useConnectionAutocomplete.ts:237`, `Core/Testing/editorHarness.ts:101-128` (`harnessHost`), `Core/Pages/PageView.tsx:102-106`, `Core/Tiles/Surfaces/PageTile.tsx:189-191`
-[^71]: **F-071:** `.claude/Features/MarkdownPM.md:8,10,12,24,57,70,77,87,107,171`, `.claude/Features/PropertiesPM.md:83`, `.claude/Features/ConnectionsPM.md:12`, `.claude/Guidelines/Editor-Internals.md:5,18,30`, `Core/MarkdownPM/Guards/headingRenameSettle.ts:2,6`, `Core/Actions/gripMenu.ts`, `Core/Actions/blockMenu.ts:73-76,83` (`EMBED_ROWS`, `BLOCK_MENU_SECTIONS`), `Core/MarkdownPM/Engine/tokens.ts:258-264` (`tokenizeChunk`), `Core/MarkdownPM/Tables/cellLists.test.tsx:91-93`, `Core/MarkdownPM/Engine/listDragModel.ts:201-204` (`renumberRuns`), `Core/MarkdownPM/Input/listRenumber.test.ts:62`, `Core/MarkdownPM/Input/format.ts:268-273` (`setListKind`), `Core/MarkdownPM/Citations/citationPointer.ts:93-105` (`citationRowPointer`), `Core/MarkdownPM/Citations/citationActions.ts:147-149`, `Core/MarkdownPM/Menus/gripMenu.ts:50-69` (`contextFor`), `Core/MarkdownPM/Menus/blockHandles.ts:15-23` (`GRIP_KINDS`), `Core/MarkdownPM/codeGlyphs.ts:14-59` (`CODE_TAGS`)
+[^69]: **F-069:** `Core/Actions/blockMenu.ts:23-27,91-107` (`BlockMenuMatch`, `filterBlockMenu`), `Core/Actions/blockMenu.test.ts:57,83,89,94,104,114-118,123`, `Core/MarkdownPM/Menus/BlockMenuPane.tsx:46`, `Core/MarkdownPM/api.ts:203-204` (`EditorHost.paneGeometry`), `Core/Pages/editorHost.tsx:90`, `Core/MarkdownPM/MarkdownEditor.tsx:297`, `Core/MarkdownPM/Autocomplete/useConnectionAutocomplete.ts:204`, `Core/Testing/editorHarness.ts:70-136` (`harnessHost`), `Core/Pages/PageView.tsx:101-105`, `Core/Tiles/Surfaces/PageTile.tsx:188-190`
+[^71]: **F-071:** `.claude/Features/MarkdownPM.md:8,10,12,24,57,70,77,87,107,171`, `.claude/Features/PropertiesPM.md:83`, `.claude/Features/ConnectionsPM.md:12`, `.claude/Guidelines/Editor-Internals.md:5,18,30`, `Core/MarkdownPM/Guards/headingRenameSettle.ts:2,6`, `Core/Actions/gripMenu.ts`, `Core/Actions/blockMenu.ts:73-76,83` (`EMBED_ROWS`, `BLOCK_MENU_SECTIONS`), `Core/MarkdownPM/Engine/tokens.ts:258-264` (`tokenizeChunk`), `Core/MarkdownPM/Tables/cellLists.test.tsx:82-84`, `Core/MarkdownPM/Engine/listDragModel.ts:201-204` (`renumberRuns`), `Core/MarkdownPM/Input/listRenumber.test.ts:62`, `Core/MarkdownPM/Input/format.ts:268-273` (`setListKind`), `Core/MarkdownPM/Citations/citationPointer.ts:93-105` (`citationRowPointer`), `Core/MarkdownPM/Citations/citationActions.ts:147-149`, `Core/MarkdownPM/Menus/gripMenu.ts:50-69` (`contextFor`), `Core/MarkdownPM/Menus/blockHandles.ts:15-23` (`GRIP_KINDS`), `Core/MarkdownPM/codeGlyphs.ts:14-59` (`CODE_TAGS`)
 [^72]: **F-072:** the delete and merge rows of *§Appendix: MarkdownPM Test Dispositions*; `Core/Session/warmCache.ts:64`, `Core/MarkdownPM/Input/markdownInput.ts:249` (`typedInput`), `Core/MarkdownPM/Guards/citationGuard.test.ts:35-38,46-48,88-90,129-131,266-268`
 [^73]: **F-073:** the tighten and move rows of *§Appendix: MarkdownPM Test Dispositions*; `Core/MarkdownPM/Engine/Tables/codec.ts:17-26` (`restoreTrailingItem`), `Core/MarkdownPM/Input/edits.ts:493` (`CLOSERS`), `Core/MarkdownPM/Autocomplete/useConnectionAutocomplete.ts:163`, `Core/MarkdownPM/Engine/subfieldStats.test.ts:128-133`
-[^74]: **F-074:** `vitest.config.ts:4`, `Core/vitest.config.ts:8`, `Core/vitest.setup.ts:1`, `UIX/vitest.setup.ts:13-19`, `Core/Testing/editorHarness.ts:179-180` (`stubEditorBridge`), `Core/MarkdownPM/Embeds/embedResize.test.tsx:66-77`, `Core/MarkdownPM/Tables/dragOrigin.test.tsx:13-23`, `Core/MarkdownPM/Tables/cellSweep.test.tsx:13-23`, `Core/MarkdownPM/readOnlySelection.test.tsx:9-40`, `Core/Interface/Glance/GlancePane.test.tsx:22-27`, `Core/Properties/PropertyPanel.test.tsx:16-21`, `Core/Assets/ImagePicker.test.tsx:54-61`, `UIX/vitest.config.ts:8`, and the setup rows of *§Appendix: MarkdownPM Test Dispositions*
-[^75]: **F-075:** `Core/Testing/markdownEngine.ts:4-10,19,61-68` (`citationScan`), `Core/MarkdownPM/Engine/docScan.ts:94` (`scanDoc`), `Core/MarkdownPM/Guards/citationGuard.test.ts:12-15` (`scanOf`), `Core/MarkdownPM/Citations/citationEdits.test.ts:16-19,298-302` (`scanOf`, `stranded`), `Core/MarkdownPM/Citations/citationBreakage.test.tsx:29-33` (`stranded`), `Core/Testing/editorHarness.ts:66-70,84-91,132-137,197,200` (`harnessHost`, `testHost`), `Core/Pages/editorHost.tsx:46-54,60-68` (`wear`), `Core/Connections/aliasMemory.ts:1-9` (`rememberAlias`, `forgetAlias`), `Core/MarkdownPM/Autocomplete/connectionCommit.test.tsx:85-88`, `Core/MarkdownPM/Engine/detect.ts:45-46`, `Core/MarkdownPM/Engine/docScan.test.ts:58-60,96` (`LINES`, `CHARS`)
+[^75]: **F-075:** `Core/Testing/markdownEngine.ts:4-10,18,59-66` (`citationScan`), `Core/MarkdownPM/Engine/docScan.ts:99` (`scanDoc`), `Core/MarkdownPM/Guards/citationGuard.test.ts:12-15` (`scanOf`), `Core/MarkdownPM/Citations/citationEdits.test.ts:16-19,298-302` (`scanOf`, `stranded`), `Core/MarkdownPM/Citations/citationBreakage.test.tsx:28-32` (`stranded`), `Core/MarkdownPM/Engine/detect.ts:46-47`, `Core/MarkdownPM/Engine/docScan.test.ts:58-60,96` (`LINES`, `CHARS`)
 [^76]: **F-076:** `UIX/Buttons/button-base.css.ts:68-93` (`button`), `UIX/Buttons/Button.tsx:54-77`, `UIX/Menus/menu-row.css.ts:24-37` (`rowFocus`, `rowShell`), `UIX/Fields/fieldRing.ts:11,19-33` (`fieldRing`)
 [^77]: **F-077:** `UIX/Interactions/dismissalStack.ts:60-75` (`onPointerDown`), `UIX/Interactions/dismissalStack.ts:114` (`shields`), `UIX/Pickers/PickerMenu.tsx:113-121,292,307` (`PickerMenu`), `UIX/Animations/useExitPresence.ts:8-24` (`useExitPresence`), `UIX/Pickers/PickerControl.tsx:91-114,144-148` (`PickerControl`), `Core/Actions/menuActions.ts:20-23` (`popMenu`), `Core/Session/chromeSlice.ts:62-70` (`presentMenu`), `Core/Interface/Menus/MenuPresenter.tsx:84-103` (`MenuPresenter`), `Core/Tiles/Surfaces/ViewTile.tsx:652-660`, `Core/Interface/Toolbar/Toolbar.tsx:29-33`, `Core/Views/Settings/GroupFrame.tsx:235`, `UIX/Interactions/shared.ts:26-34` (`suppressReleaseClick`)
 [^78]: **F-078:** `Core/Contract/bridge.ts:61-255` (`Asks`), `Core/Nexus/mutateRequest.ts:51-108` (`mutateRequest`), `Core/Nexus/mutate.ts:109-143` (`setProfileImage`, `setProfileIcon`, `setDisclosureLock`, `setActiveView`), `Core/Nexus/mutate.ts:164` (`reorderTop`), `Core/Nexus/reorder.ts:26-55`, `Core/Views/handlers.ts:26-62`, `Core/Properties/assignment.ts:113-171` (`assignInner`, `reorderAssignment`), `Core/Settings/handlers.ts:19-51`, `Core/Assets/handlers.ts:42` (`assets:setDir`), `Core/Assets/handlers.ts:74` (`assets:adopt`), `Core/Assets/assetMigrate.ts:113`, `Core/Pages/setBanner.ts:44`, `Core/Nexus/configReach.ts:372,380`, `Core/Nexus/cascade.ts:219`, `Core/Navigation/handlers.ts:18` (`nav:write`), `Core/Matrix/handlers.ts:14` (`matrix:write`), `Core/Pages/handlers.ts:26` (`page:updateBody`), `Core/Pages/handlers.ts:45-47` (`history:restore`), `Core/Pages/fileHistory.ts:169-180`, `Core/Nexus/handlers.ts:150` (`nexus:rename`), `Core/Nexus/liveTree.ts:80` (`mutableTarget`), `Core/Tiles/handlers.ts:60-113`, `Core/Properties/handlers.ts:121-124` (`defEditOp`), `Core/Properties/handlers.ts:165-176`, `Core/Contract/handlers.ts:98-110` (`withWriteRoot`), `Desktop/FileWatch/watcher.ts:69-92,114-117` (`pushConfig`)
@@ -1401,22 +1364,21 @@ Harness (F-075): `Core/Testing/editorHarness.ts:83-90` calls `rememberAlias` or 
 [^92]: **F-092:** `Core/Interface/Notifications/notifications.ts` (`reportRefusal`, `persist`, `notifyReport`), `Core/Contract/result.ts` (`ErrorCode`), `Core/Sync/Contract/wire.ts` (`SyncStatus`), `.claude/Planning/Error Surfaces — Brainstorm Brief.md`
 [^93]: **F-093:** compares at `Core/MarkdownPM/Engine/intents.ts:341,446,536,588,664`, `Input/edits.ts:48,58,186,216`, `Menus/blockHandles.ts:44,49,174,189`, `decorations.ts:471,704`, `Engine/subfieldStats.ts:40`, `Gestures/listDrag.ts:52`, `Input/listRenumber.ts:39`, `Input/markdownInput.ts:237`, `Menus/menu.ts:94`; defaults at `Input/edits.ts:47,71,154,166,208,261`, `Engine/intents.ts:418,495,532`, `decorations.ts:823`, `Menus/blockHandles.ts:43,148`, `Core/Testing/markdownEngine.ts:51`; switches at `Engine/detect.ts:498-508` (`readsLists`), `surface.ts:25-40`, `docCache.ts:84`; the enum at `Core/Actions/editorMenu.ts:19`; unscoped readers at `Input/edits.ts:652-660` (`lineBodyBefore`, `opensLine`), `Gestures/listDrag.ts:3`, `Input/listRenumber.ts:30`, `Engine/listDragModel.ts` (`renumberRuns`, `dropChanges`), `Gestures/blockDrag.ts:31`; `.claude/Features/MarkdownPM.md:57`.
 [^95]: **F-095:** `Core/Pages/editorHost.tsx:26-33,41-44,83-111,152-167` (`EditorHostOptions`, `buildEditorHost`, `useEditorHost`), `Core/Session/pageConnections.ts:9`, `Core/Interface/Windows/PageHistoryWindow.tsx:34-35,117-118,245-252` (`HISTORY_ANCESTOR`), `Core/Interface/Glance/GlancePane.tsx:42-43,284-295` (`GLANCE_ANCESTORS`), `Core/MarkdownPM/Embeds/embedWidget.tsx:398`, `Core/MarkdownPM/api.ts:198-199` (`pageSurface`), `Core/MarkdownPM/markdown-pm.css:67-69`.
-[^96]: **F-096:** `Core/MarkdownPM/api.ts` (`EditorHost.menus`), `Core/Pages/editorHost.tsx:100-103`, `Core/Testing/editorHarness.ts:113`.
+[^96]: **F-096:** `Core/MarkdownPM/api.ts` (`EditorHost.menus`), `Core/Pages/editorHost.tsx:97-100`, `Core/Testing/editorHarness.ts:121-126`.
 [^97]: **F-097:** `Core/MarkdownPM/Menus/gripMenu.ts:50-70,131-165` (`contextFor`, the action chain), `Core/MarkdownPM/Menus/blockHandles.ts:15-26,44` (`GRIP_KINDS`, `blockHandles`), `Core/MarkdownPM/Engine/blockModel.ts:209-210` (`blockStarts`), `Core/Actions/gripMenu.ts:16-24` (`GripMenuAction`).
 [^98]: **F-098:** `Core/MarkdownPM/Engine/docScan.ts:47,50` (`maths`, `html`), `Core/MarkdownPM/Engine/docScan.ts:59` (`Span`), `Core/MarkdownPM/Engine/docScan.ts:227-228` (`fromOf`, `toOf`), `Core/MarkdownPM/Engine/blockModel.ts:66`.
-[^99]: **F-099:** `Core/MarkdownPM/Engine/detect.ts:513` (`indentLevel`), `Core/MarkdownPM/Engine/subfieldStats.ts:125` (`computeStats`), `Core/MarkdownPM/Tables/widget.tsx:395,446` (`buildWidgetDecorations`, `refreshTableEffect`), `Core/MarkdownPM/Autocomplete/autocomplete.ts:214` (`connectionInsert`), `Core/MarkdownPM/Links/pendingTitle.ts:20` (`pendingTitles`), `Core/MarkdownPM/folding.ts:65,281` (`regionsOf`, `foldedRegions`), `Core/MarkdownPM/MarkdownEditor.tsx:38` (`EMPTY_PAGE_TEXT`), `Core/MarkdownPM/Engine/intents.ts:329` (`lineIntentsInto`).
+[^99]: **F-099:** `Core/MarkdownPM/Engine/detect.ts:513` (`indentLevel`), `Core/MarkdownPM/Engine/subfieldStats.ts:125` (`computeStats`), `Core/MarkdownPM/Tables/widget.tsx:395,446` (`buildWidgetDecorations`, `refreshTableEffect`), `Core/MarkdownPM/Autocomplete/autocomplete.ts:214` (`connectionInsert`), `Core/MarkdownPM/folding.ts:65,281` (`regionsOf`, `foldedRegions`), `Core/MarkdownPM/MarkdownEditor.tsx:38` (`EMPTY_PAGE_TEXT`), `Core/MarkdownPM/Engine/intents.ts:329` (`lineIntentsInto`).
 [^100]: **F-100:** `Core/MarkdownPM/Engine/parser.ts:17-36` (`parse`), `Core/MarkdownPM/Engine/tokens.ts:258-328` (`tokenizeChunk`, `tokenize`), `node_modules/mdast-util-gfm-task-list-item/lib/index.js:11` (`devlop`'s `ok`), `node_modules/devlop/package.json` (the `development` condition)
 [^102]: **F-102:** `Core/MarkdownPM/Engine/Tables/regions.ts:57` (`tableRegions`)
-[^103]: **F-103:** `UIX/Pickers/PickerMenu.tsx:179-272` (`measure`), `UIX/Pickers/PickerMenu.test.tsx:390-481`
+[^103]: **F-103:** `UIX/Pickers/PickerMenu.tsx:179-272` (`measure`), `UIX/Pickers/PickerMenu.test.tsx:383-452`
 [^104]: **F-104:** `UIX/Animations/motion.ts:19` (`exitWait`), `UIX/Interactions/shared.ts:43` (`SETTLE_FALLBACK`), `UIX/Animations/useExitPresence.ts:29` (`useSettleFallback`), `UIX/Interactions/dragDisclose.ts:5` (`SETTLE_MS`), `UIX/Theme/nativeCaret.ts:335` (`SETTLE_DEADLINE_MS`), `Core/MarkdownPM/folding.ts:20` (`FOLD_SETTLE_MS`)
 [^105]: **F-105:** `Core/Navigation/tab-base.css:8-10` (`.tab`), `Core/Navigation/tab-base.css:29-32` (`.tab:last-child`), `Core/Navigation/tab-base.css:143-155` (`.tabs-standard`, `.tabs-compact`), `Core/Settings/personalization.ts:45-48` (`TAB_MAX_WIDTH`), `Core/Settings/applyPersonalization.ts:50`, `.claude/Features/ConfigurationPM.md:66`
-[^106]: **F-106:** `Core/Views/Host/useViewCreation.ts:151-177` (`createPageIn`), `Core/Views/Host/useViewInteractions.tsx:46,135` (`rename`), `Core/Views/Cards/CardsView.tsx:196` (`beginRename`), `Core/Views/Table/TableView.tsx:122-130`, `Core/Session/editSlice.ts:16,31,108` (`beginRename`, `renamingPath`), `Core/Session/nexusSlice.ts:220-258` (`mutate`), `Core/Nexus/mutateRequest.ts:125-128` (`minted`)
+[^106]: **F-106:** `Core/Views/Host/useViewCreation.ts:151-177` (`createPageIn`), `Core/Views/Host/useViewInteractions.tsx:46,135` (`rename`), `Core/Views/Cards/CardsView.tsx:196` (`beginRename`), `Core/Views/Table/TableView.tsx:122-130`, `Core/Session/editSlice.ts:16,31,108` (`beginRename`, `renamingPath`), `Core/Session/nexusSlice.ts:234-255` (`mutate`), `Core/Nexus/mutateRequest.ts:125-128` (`minted`)
 [^107]: **F-107:** `Core/Views/Bands/bandRouter.ts:74-109` (`routeSet`), `Core/Views/Bands/bandRouter.ts:134-146` (`runBandEffect`), `Core/Views/Host/pendingView.ts:172-186` (`mutateAhead`), `Core/Views/Host/pendingView.ts:109-121` (`stageView`, `unstageView`), `Core/Views/Host/useViewCreation.ts:151-177` (`createPageIn`), `Core/Views/Host/useViewInteractions.tsx:196-203`
 [^108]: **F-108:** `Core/Views/Host/useViewCreation.ts:125-139` (`orderPatch`), `Core/Views/Host/useViewCreation.ts:151-177` (`createPageIn`), `Core/Views/Host/pendingView.ts:116-121` (`unstageView`), `Core/Views/views.ts:337-345` (`slotsOf`)
 [^109]: **F-109:** `Core/Matrix/MatrixCanvas.tsx:129-145`, `Core/Matrix/MatrixCanvas.tsx:176-197`, `Core/Matrix/matrix.css.ts:39-46`
-[^110]: **F-110:** `Core/Tiles/Layout/codec.ts:26-31`, `Core/Tiles/tileDocStore.ts:143-153` (`adopt`), `Core/Tiles/TileHost.tsx:283-295`, `Core/Tiles/tilesFile.ts:136-145,192,235-242,253,277`, `Core/Tiles/tileDoc.ts:20-23` (`readTileDocAt`), `Core/Files/atomicWrite.ts:215` (`setAside`)
+[^110]: **F-110:** `Core/Tiles/Layout/codec.ts:26-31`, `Core/Tiles/tileDocStore.ts:148-158` (`adopt`), `Core/Tiles/TileHost.tsx:283-295`, `Core/Tiles/tilesFile.ts:136-145,192,235-242,253,277`, `Core/Tiles/tileDoc.ts:20-23` (`readTileDocAt`), `Core/Files/atomicWrite.ts:215` (`setAside`)
 [^111]: **F-111:** `Core/Tiles/TileGrid.tsx:207-226` (`TileShell`'s comparator)
 [^112]: **F-112:** `Core/Tiles/tileHosts.ts:16-37` (`TILE_HOSTS`), `Core/Nexus/migrateConfig.ts:45-53` (`normalizeSavedViews`), `Core/Nexus/identity.ts:58-62` (`ensureConfigLayout`), `Core/Nexus/remint.ts:110`
-[^113]: **F-113:** `Core/Files/atomicWrite.ts:202-203` (`readAppFile`), `Core/Files/atomicWrite.ts:178-193` (`readLast`), `Core/Files/atomicWrite.ts:207-212` (`readAppFileKnown`), `Core/Files/atomicWrite.ts:144-161` (`rmwLocked`), `Core/Files/atomicWrite.ts:225-236` (`updateNexusFile`), `Core/Files/atomicWrite.ts:265-271` (`updateNexusConfig`), `Core/Nexus/readNexus.ts:68` (`readOrder`), `Core/Nexus/readNexus.ts:113` (`readConfig`), `Core/Nexus/readNexus.ts:287` (`readNexusConfig`), `Core/Navigation/navigationFile.ts:33-41` (`readNavigationFile`), `Core/Matrix/matrixFile.ts:11` (`readMatrixFile`), `Core/Nexus/fileEvents.ts:543-562,633-634` (`applyOrder`), `Core/Session/navigationSlice.ts:268` (`writeNav`), `Core/Session/matrixSlice.ts:186` (`patchMatrix`), `Core/Interface/Notifications/notifications.ts` (`persist`, `reportRefusal`), `Core/Assets/assetMigrate.ts:85-114,166,175` (`collectRefs`, `migrateAssets`), `Core/Tiles/tileDoc.ts:20` (`readTileDocAt`)
+[^113]: **F-113:** `Core/Files/atomicWrite.ts:202-203` (`readAppFile`), `Core/Files/atomicWrite.ts:178-193` (`readLast`), `Core/Files/atomicWrite.ts:207-212` (`readAppFileKnown`), `Core/Files/atomicWrite.ts:144-161` (`rmwLocked`), `Core/Files/atomicWrite.ts:225-236` (`updateNexusFile`), `Core/Files/atomicWrite.ts:265-271` (`updateNexusConfig`), `Core/Nexus/readNexus.ts:68` (`readOrder`), `Core/Nexus/readNexus.ts:113` (`readConfig`), `Core/Nexus/readNexus.ts:287` (`readNexusConfig`), `Core/Navigation/navigationFile.ts:33-41` (`readNavigationFile`), `Core/Matrix/matrixFile.ts:11` (`readMatrixFile`), `Core/Nexus/fileEvents.ts:543-562,633-634` (`applyOrder`), `Core/Session/navigationSlice.ts:270-271` (`writeNav`), `Core/Session/matrixSlice.ts:171` (`patchMatrix`), `Core/Interface/Notifications/notifications.ts` (`persist`, `reportRefusal`), `Core/Assets/assetMigrate.ts:85-114,166,175` (`collectRefs`, `migrateAssets`), `Core/Tiles/tileDoc.ts:20` (`readTileDocAt`)
 [^114]: **F-114:** `Core/Nexus/treeIndex.ts` (`pageIndexOf`), `Desktop/Actions/editorMenu.ts:103-116` (`pasteAsItems`), `Desktop/tsconfig.node.json`
-[^115]: **F-115:** `Core/Session/store.test.tsx` ('drops a page move whose flush waited out a switch'), `Core/Session/nexusSlice.ts:174-190` (`load`)
