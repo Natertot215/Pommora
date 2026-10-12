@@ -61,10 +61,6 @@ function widgetSpan(state: EditorState): [number, number] {
 }
 
 describe('table widget decorations', () => {
-  it('emits one block-replace per valid table', () => {
-    expect(make('| a | b |\n| --- | --- |\n| 1 | 2 |')).toBe(1)
-  })
-
   it('emits none for a non-table document', () => {
     expect(make('just a paragraph\nand another line')).toBe(0)
   })
@@ -84,6 +80,7 @@ describe('table widget decorations', () => {
       to = t
     })
     expect(doc.slice(from, to)).toBe('| a | b |\n| --- | --- |\n| 1 | 2 |')
+    expect(set.size).toBe(1)
   })
 
   it('leaves the widget alone on a cell self-edit', () => {

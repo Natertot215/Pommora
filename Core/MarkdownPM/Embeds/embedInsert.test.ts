@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import { embedInsertAfter } from './embedInsert'
-import { autocompleteQuery } from '../Autocomplete/autocomplete'
-import { scanDoc } from '../Engine/docScan'
 
 describe('embedInsertAfter', () => {
   it('fences below a block with content following', () => {
@@ -51,24 +49,5 @@ describe('embedInsertAfter', () => {
     const c = embedInsertAfter(doc, 0, '![[]]')
     expect(c).toMatchObject({ from: 0, to: 0, insert: '![[]]\n' })
     expect(doc.slice(0, c.from) + c.insert + doc.slice(c.to)).toBe('![[]]\n\nfoo')
-  })
-
-  it('the Embed ▸ External Link pair seats the caret between the parens', () => {
-    const doc = 'para\nnext'
-    const c = embedInsertAfter(doc, 4, '![]()')
-    const next = doc.slice(0, c.from) + c.insert + doc.slice(c.to)
-    expect(next).toBe('para\n\n![]()\n\nnext')
-    expect(next[c.caret - 1]).toBe(')')
-    expect(next[c.caret - 2]).toBe('(')
-  })
-
-  it('the Embed ▸ Internal Page pair opens the picker’s browse on its empty connection', () => {
-    const doc = 'para\nnext'
-    const c = embedInsertAfter(doc, 4, '![[]]')
-    const next = doc.slice(0, c.from) + c.insert + doc.slice(c.to)
-    expect(next).toBe('para\n\n![[]]\n\nnext')
-    const q = autocompleteQuery(scanDoc(next), c.caret - 2)
-    expect(q).toMatchObject({ form: 'link', query: '', closed: true })
-    expect(next.slice(q?.from, q?.to)).toBe('[[]]')
   })
 })

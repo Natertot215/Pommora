@@ -1,18 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { emptyTable, normalize } from './model'
+import { normalize } from './model'
 
 describe('model', () => {
-  it('emptyTable builds an N×M rectangular model with equal default dashes', () => {
-    const m = emptyTable(3, 3)
-    expect(m.columns.map((c) => c.dashes)).toEqual([6, 6, 6])
-    expect(m.columns.every((c) => c.align === null)).toBe(true)
-    expect(m.header).toEqual(['', '', ''])
-    expect(m.rows).toEqual([
-      ['', '', ''],
-      ['', '', ''],
-    ])
-  })
-
   it('normalize pads short rows and truncates long rows to column count', () => {
     const m = normalize({
       columns: [

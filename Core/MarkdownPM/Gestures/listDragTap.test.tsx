@@ -40,12 +40,6 @@ describe('a list glyph press is a click or a drag, never both', () => {
     await pressGlyph(view, 40)
     expect(view.state.doc.toString()).toBe('- [ ] task')
   })
-
-  it('the grab cursor does not outlive the drag', async () => {
-    const view = await mountEditor({ initialBody: '- [ ] task' })
-    await pressGlyph(view, 40)
-    expect(document.querySelector('[data-grabbing]')).toBeNull()
-  })
 })
 
 // A page runs several editors at once, each mounting the cleanup plugin: a sibling unmounting mid-drag must leave the drag in progress alone.

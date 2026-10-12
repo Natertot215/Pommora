@@ -1,18 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { type ChangeSpec, EditorState, type Extension } from '@codemirror/state'
-import { citationGuard, citationTailVerdict } from './citationGuard'
-import { splitWithOffsets } from '../Engine/detect'
+import { citationGuard } from './citationGuard'
+import { scanDoc } from '../Engine/docScan'
 import { deleteMarkerChanges } from '../Citations/citationEdits'
 import { citationOrder } from '../Citations/citationActions'
-import { docScan } from '../docCache'
-import { citationScan } from '../../Testing/markdownEngine'
+import { typeKeys } from '../../Testing/markdownEngine'
 
 const DOC = '# Notes\nbody[^a] here\n\n[^a]: the citation\n[^b]: another'
-
-const scanOf = (doc: string): Parameters<typeof citationTailVerdict>[4] => {
-  const d = splitWithOffsets(doc)
-  return { ...d, citations: citationScan(d, []) }
-}
 
 function type(doc: string, at: number, text: string, guarded = true, to = at): string {
   const state = EditorState.create({
@@ -22,29 +16,21 @@ function type(doc: string, at: number, text: string, guarded = true, to = at): s
   return state.update({ changes: { from: at, to, insert: text } }).state.doc.toString()
 }
 
-const sectionOf = (doc: string): number => citationScan(splitWithOffsets(doc), []).entries.length
+const sectionOf = (doc: string): number => scanDoc(doc).citations.entries.length
 
 describe('the tail guard keeps the section the document’s tail', () => {
   it('a paste below the section lands in the body instead of stranding after it', () => {
-    const out = type(DOC, DOC.length, '\n\npasted prose')
-    expect(sectionOf(out)).toBe(2)
-    expect(out).toContain('pasted prose')
-    expect(out.trimEnd().endsWith('[^b]: another')).toBe(true)
-  })
-
-  it('and without the guard the same paste literalizes the whole section', () => {
-    const out = type(DOC, DOC.length, '\n\npasted prose', false)
-    expect(sectionOf(out)).toBe(0)
+    expect(sectionOf(type(DOC, DOC.length, '\n\npasted prose', false))).toBe(0)
+    expect(type(DOC, DOC.length, '\n\npasted prose')).toBe(
+      '# Notes\nbody[^a] here\npasted prose\n\n[^a]: the citation\n[^b]: another',
+    )
   })
 
   it('a list marker typed at the end of the section is relocated rather than breaking it', () => {
+    expect(sectionOf(type(DOC, DOC.length, '\n- item', false))).toBe(0)
     const out = type(DOC, DOC.length, '\n- item')
     expect(sectionOf(out)).toBe(2)
     expect(out).toContain('- item')
-  })
-
-  it('and without the guard it ends the run', () => {
-    expect(sectionOf(type(DOC, DOC.length, '\n- item', false))).toBe(0)
   })
 
   it('a heading typed at the end of the section is relocated too', () => {
@@ -80,13 +66,10 @@ describe('the tail guard keeps the section the document’s tail', () => {
 describe('an insertion at a citation head’s first offset is clamped past it', () => {
   it('the keystroke lands in the citation’s text, not ahead of its label', () => {
     const at = DOC.indexOf('[^a]:')
+    expect(sectionOf(type(DOC, at, 'X', false))).toBe(1)
     const out = type(DOC, at, 'X')
     expect(out).toContain('[^a]: Xthe citation')
     expect(sectionOf(out)).toBe(2)
-  })
-
-  it('and without the clamp it writes ahead of the head and drops that citation from the run', () => {
-    expect(sectionOf(type(DOC, DOC.indexOf('[^a]:'), 'X', false))).toBe(1)
   })
 
   it('every citation in the section carries the same clamp, not just the first', () => {
@@ -95,39 +78,17 @@ describe('an insertion at a citation head’s first offset is clamped past it', 
   })
 })
 
-describe('the verdict and the decoration pass agree on the boundary', () => {
-  // Two derivations of "where does the section start" would eventually disagree; the guard reads the same cached scan.
-  it('after every edit in a sequence, both read the same first line', () => {
-    let doc = DOC
-    for (const [at, text] of [
-      [DOC.length, '\nmore'],
-      [0, 'lead\n'],
-      [5, 'X'],
-    ] as const) {
-      doc = type(doc, at, text)
-      const state = EditorState.create({ doc })
-      expect(docScan(state.doc).citations.firstLine).toBe(
-        citationScan(splitWithOffsets(doc), []).firstLine,
-      )
-      expect(citationTailVerdict(doc, doc.length, doc.length, '', scanOf(doc)).kind).toBe('ok')
-    }
-  })
-})
-
 // A paste is the same shape as the head-start repair's keystroke, so the repair has to answer for what it relocates: text carrying a blank line ends the run and literalizes every citation in the section.
 describe('the head-start repair answers for what it moves, not only where', () => {
   const PASTE = 'New paragraph one.\n\nNew paragraph two.'
 
   it('a multi-paragraph paste at a citation head goes to the body, not into the citation', () => {
+    expect(sectionOf(type(DOC, DOC.indexOf('[^b]:'), PASTE, false))).toBe(0)
     const out = type(DOC, DOC.indexOf('[^b]:'), PASTE)
     expect(sectionOf(out)).toBe(2)
     expect(out).toContain('New paragraph one.')
     expect(out).toContain('New paragraph two.')
     expect(out.trimEnd().endsWith('[^b]: another')).toBe(true)
-  })
-
-  it('and without the guard the same paste literalizes the whole section', () => {
-    expect(sectionOf(type(DOC, DOC.indexOf('[^b]:'), PASTE, false))).toBe(0)
   })
 
   it('a paste with no blank line still lands in the citation it was aimed at', () => {
@@ -153,7 +114,7 @@ describe('the guard passes a renormalization through untouched', () => {
 
   it('a deletion and the renumber that follows it land as one change', () => {
     const doc = 'x[^1] y[^2]\n\n[^1]: one\n[^2]: two'
-    const s = scanOf(doc)
+    const s = scanDoc(doc)
     expect(through(doc, deleteMarkerChanges(s, s.citations.markers[0]))).toBe(
       'x y[^1]\n\n[^1]: two',
     )
@@ -199,13 +160,6 @@ describe('a replacement that cannot survive is moved whole, not half', () => {
     const out = replace(DOC, from, to, 'Z')
     expect(out).toBe(`${DOC.slice(0, from)}Z${DOC.slice(to)}`)
   })
-
-  it('and a pure insertion still relocates without deleting anything', () => {
-    const out = type(DOC, DOC.length, '\n\npasted prose')
-    expect(out).toContain('pasted prose')
-    expect(sectionOf(out)).toBe(2)
-    expect(out).toContain('the citation')
-  })
 })
 
 // A file authored elsewhere puts its citations under the last line of prose, and text relocated to the start of that line lands above the paragraph it was written below.
@@ -241,9 +195,7 @@ describe('whitespace alone is refused rather than rescued', () => {
   })
 
   it('and a whitespace-only paste below the section needs no repair', () => {
-    const out = type(DOC, DOC.length, '\n   \n  ')
-    expect(out.startsWith(DOC)).toBe(true)
-    expect(sectionOf(out)).toBe(2)
+    expect(type(DOC, DOC.length, '\n   \n  ')).toBe(`${DOC}\n   \n  `)
   })
 
   it('while text that breaks the run still lands in the body', () => {
@@ -258,13 +210,10 @@ describe('a change from the body never joins the section onto its line', () => {
   const TWO = 'body[^a] and[^b]\n\n[^a]: first\n[^b]: second'
 
   it('typing over the blank line keeps the text and gives the section its line back', () => {
+    expect(sectionOf(type(GAP, 5, 'x', false, 6))).toBe(0)
     const out = type(GAP, 5, 'x', true, 6)
     expect(out).toBe('body\nx\n[^a]: first')
     expect(sectionOf(out)).toBe(1)
-  })
-
-  it('and without the guard the same keystroke literalizes the section', () => {
-    expect(sectionOf(type(GAP, 5, 'x', false, 6))).toBe(0)
   })
 
   it('typing over the body line\u2019s end and the blank line keeps both lines apart', () => {
@@ -284,5 +233,24 @@ describe('a change from the body never joins the section onto its line', () => {
     const out = type(TWO, 4, 'Z', true, to)
     expect(out).toBe('bodyZ\n[^b]: second')
     expect(sectionOf(out)).toBe(1)
+  })
+})
+
+describe('the caret follows the text a repair moves', () => {
+  const keys = (doc: string, anchor: number, head: number, text: string): string =>
+    typeKeys(
+      EditorState.create({ doc, selection: { anchor, head }, extensions: citationGuard }),
+      text,
+    )
+
+  it('typing on a blank line below the section keeps one body line', () => {
+    const below = `${DOC}\n\n`
+    expect(keys(below, below.length, below.length, 'ab cd')).toBe(
+      '# Notes\nbody[^a] here\nab cd\n\n[^a]: the citation\n[^b]: another\n\n',
+    )
+  })
+
+  it('typing over the blank line above the section keeps every character', () => {
+    expect(keys('body\n\n[^a]: first', 5, 6, 'xy')).toBe('body\nxy\n[^a]: first')
   })
 })

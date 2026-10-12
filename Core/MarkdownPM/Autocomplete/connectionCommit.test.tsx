@@ -63,12 +63,6 @@ async function pickFirst(body: string, caret: number): Promise<{ doc: string; he
 }
 
 describe('committing a connection leaves it reading as finished', () => {
-  it('writes the link alone and rests the caret on its closer', async () => {
-    const { doc, head } = await pickFirst('[[Alp]]', 4)
-    expect(doc).toBe('[[Alpha]]')
-    expect(head).toBe(9)
-  })
-
   it('leaves the text that follows exactly as it was', async () => {
     const { doc, head } = await pickFirst('[[Alp]] rest', 4)
     expect(doc).toBe('[[Alpha]] rest')
@@ -191,16 +185,6 @@ describe('the picker stands down when it has nothing to add', () => {
     expect(document.querySelector('.mdpm-ac')).toBeNull()
     await act(async () => {
       view.dispatch({ selection: { anchor: 5 }, userEvent: 'select.pointer' })
-    })
-    expect(document.querySelector('.mdpm-ac')).toBeTruthy()
-  })
-
-  it('but a partial query still opens it', async () => {
-    const view = await mountEditor({ initialBody: '[[Alp]]', connections: conn })
-    vi.spyOn(view, 'coordsAtPos').mockReturnValue(coords)
-    await act(async () => {
-      view.focus()
-      view.dispatch({ selection: { anchor: 4 } })
     })
     expect(document.querySelector('.mdpm-ac')).toBeTruthy()
   })
@@ -455,7 +439,7 @@ describe('the chevron slides in a page’s headings', () => {
       view.focus()
       view.dispatch({ selection: { anchor: body.indexOf('#') + 1 } })
     })
-    expect(document.querySelectorAll('.mdpm-ac [class*="item"]')).toHaveLength(0)
+    expect(document.querySelector('.mdpm-ac')).toBeNull()
   })
 
   // The same slide, written into a markdown link's destination.

@@ -11,10 +11,6 @@ describe('the code-language roster', () => {
     const names: string[] = CODE_LANGS.map((l) => l.name)
     expect(Object.keys(CODE_TAGS).filter((n) => !names.includes(n))).toEqual([])
   })
-  it('labels the tags that override their name', () => {
-    expect(CODE_TAGS.Shell?.label).toBe('Command')
-    expect(CODE_TAGS.Python?.label).toBeUndefined()
-  })
 
   // A word two languages both claim resolves to whichever sits earlier, so the other becomes a language the roster offers and no fence can reach.
   it('lets no word name two languages', () => {

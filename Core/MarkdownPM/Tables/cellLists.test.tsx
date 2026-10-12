@@ -8,7 +8,6 @@ import {
   mountEditor,
   stubEditorBridge,
 } from '../../Testing/editorHarness'
-import { cellToDisplay, cellToSource } from '../Engine/Tables/codec'
 import { linkTokenAt, tokenize } from '../Engine/tokens'
 import { decorationsFor } from '../../Testing/markdownEngine'
 import { GRIP_LINE } from '../Engine/intents'
@@ -82,12 +81,6 @@ describe('the list vocabulary inside a table cell', () => {
     const prose = '# h\n---\n> q\n```\nx\n```'
     expect(decorationsFor(prose, [], new Set(), -1, undefined, 'cell')).toHaveLength(0)
     expect(decorationsFor(prose, [], new Set(), -1).length).toBeGreaterThan(0)
-  })
-
-  it('keeps the inline vocabulary a cell already had', () => {
-    const text = '- **a** [[B]]'
-    const out = decorationsFor(text, tokenize(text), new Set(), -1, undefined, 'cell')
-    expect(out.some((i) => i.kind === 'class' && i.className === 'md-bold')).toBe(true)
   })
 
   it('renders a resting list as glyphs, not as markers', async () => {
@@ -375,30 +368,5 @@ describe('the list vocabulary inside a table cell', () => {
     await mountEditor({ initialBody: table('==hi==') })
     const cell = (await tableEl()).querySelector('tbody')!.children[0].children[0]
     expect(cell.querySelector('.md-highlight')?.textContent).toBe('hi')
-  })
-})
-
-describe('what a GFM cell can hold', () => {
-  it('round-trips the empty item Enter makes, which a cell trim would return as prose', () => {
-    const trip = (display: string): string => cellToDisplay(cellToSource(display).trim())
-    expect(trip('- a\n- ')).toBe('- a\n- ')
-    expect(trip('- a\n- [ ] ')).toBe('- a\n- [ ] ')
-    expect(trip('1. a\n2. ')).toBe('1. a\n2. ')
-  })
-
-  it('restores an empty task box wherever it sits, since that shape belongs to nothing else', () => {
-    const trip = (display: string): string => cellToDisplay(cellToSource(display).trim())
-    expect(trip('- [ ] ')).toBe('- [ ] ')
-    expect(trip('- [x] ')).toBe('- [x] ')
-    expect(cellToDisplay('- [ ]')).toBe('- [ ] ')
-  })
-
-  it('leaves a bare marker alone where no list stands above it', () => {
-    expect(cellToDisplay('-')).toBe('-')
-    expect(cellToDisplay('n/a<br>-')).toBe('n/a\n-')
-  })
-
-  it('round-trips a nested item as a line break with its indent', () => {
-    expect(cellToSource('- a\n\t- b')).toBe('- a<br>\t- b')
   })
 })

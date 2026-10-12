@@ -100,27 +100,35 @@ describe('the editor’s native menu', () => {
   })
 
   it('pastes plain text as a tagged paste, so a table payload is refused on a list line', async () => {
-    clipboard = '| a |\n| --- |'
     format.mockResolvedValue('paste:literal')
     const view = await mountEditor({ initialBody: '- item', host: host() })
-    view.dispatch({ selection: { anchor: 6 } })
-    await rightClick(view, 6)
-    await act(async () => {})
-    expect(view.state.doc.toString()).toBe('- item')
-
-    await act(async () => {
-      view.contentDOM.dispatchEvent(
-        new KeyboardEvent('keydown', {
-          key: 'v',
-          metaKey: true,
-          shiftKey: true,
-          bubbles: true,
-          cancelable: true,
-        }),
-      )
-    })
-    await act(async () => {})
-    expect(view.state.doc.toString()).toBe('- item')
+    const menu = () => rightClick(view, 6)
+    const chord = () =>
+      act(async () => {
+        view.contentDOM.dispatchEvent(
+          new KeyboardEvent('keydown', {
+            key: 'v',
+            metaKey: true,
+            shiftKey: true,
+            bubbles: true,
+            cancelable: true,
+          }),
+        )
+      })
+    const paste = async (via: () => Promise<unknown>, text: string): Promise<string> => {
+      clipboard = text
+      view.dispatch({
+        changes: { from: 0, to: view.state.doc.length, insert: '- item' },
+        selection: { anchor: 6 },
+      })
+      await via()
+      await act(async () => {})
+      return view.state.doc.toString()
+    }
+    for (const via of [menu, chord]) {
+      expect(await paste(via, '| a |\n| --- |')).toBe('- item')
+      expect(await paste(via, 'x')).toBe('- itemx')
+    }
   })
 
   const TABLE = '| A | B |\n| --- | --- |\n| x | z |'
@@ -163,9 +171,6 @@ describe('the editor’s native menu', () => {
     await rightClick(cell, 0)
     await act(async () => {})
     await act(async () => {})
-    const doc = page.state.doc.toString()
-    expect(doc).toContain('| a | b |')
-    expect(doc).toContain('| c | d |')
-    expect(doc).not.toContain('\\|')
+    expect(page.state.doc.toString()).toBe('| A | B |\n| --- | --- |\n| a | b |\n| c | d |')
   })
 })

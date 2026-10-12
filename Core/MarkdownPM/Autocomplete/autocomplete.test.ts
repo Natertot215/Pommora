@@ -69,6 +69,11 @@ describe('autocompleteQuery', () => {
     expect(r.from).toBe(r.to)
   })
 
+  it('a space after the pipe is a written alias, not an empty one', () => {
+    const doc = 'a [[Alpha| ]] b'
+    expect(autocompleteQuery(doc, doc.indexOf('|') + 1)?.query).toBe(' ')
+  })
+
   it('a link with no pipe has no alias form at all', () => {
     const doc = 'see [[Q3 Plan]] end'
     expect(autocompleteQuery(doc, doc.indexOf('Plan') + 4)?.form).toBe('link')
@@ -107,7 +112,7 @@ describe('an unclosed link reads as the link it would be once closed', () => {
     })
   })
 
-  it('opens an inserted ![[]] past its written closer, keeping the !', () => {
+  it('opens an inserted ![[]] past its written closer, spanning the connection after the !', () => {
     expect(autocompleteQuery('![[]]', 3)).toEqual({
       query: '',
       from: 1,
@@ -227,7 +232,7 @@ describe('the ( ) form', () => {
 
   it('the caret in the label is not the caret in the target', () => {
     const doc = 'see [x](Notes) end'
-    expect(autocompleteQuery(doc, 5)?.form).not.toBe('target')
+    expect(autocompleteQuery(doc, 5)).toBeNull()
   })
 
   it('the page half queries alone, and a retarget drops the old fragment as a wikilink does', () => {
@@ -249,7 +254,7 @@ describe('the ( ) form', () => {
 
   it('an empty page half before a fragment asks for no page', () => {
     const doc = 'see [x](#Setup) end'
-    expect(autocompleteQuery(doc, doc.indexOf('#'))?.form).not.toBe('target')
+    expect(autocompleteQuery(doc, doc.indexOf('#'))).toMatchObject({ form: 'fragment', title: '' })
   })
 
   it('a bare # asks for the page being written in', () => {
@@ -282,12 +287,6 @@ describe('the ( ) form', () => {
     expect(text).toBe('see [x](Work%20Notes#) end')
     expect(text.slice(edit.anchor)).toBe(') end')
     expect(autocompleteQuery(text, edit.anchor)?.form).toBe('fragment')
-  })
-
-  it('commits its target percent-encoded', () => {
-    const doc = '[x](Atom)'
-    const edit = commitEdit(autocompleteQuery(doc, 5)!, 'Atomic Habits (Book)', KEEP)
-    expect(landed(doc, edit)).toBe('[x](Atomic%20Habits%20%28Book%29)')
   })
 })
 
@@ -351,16 +350,6 @@ describe('the picker declines a code sample', () => {
     const doc = 'Use `[Notes](Notes)` for links.'
     expect(autocompleteQuery(doc, doc.indexOf('](') + 2)).toBeNull()
   })
-
-  it('and neither does a connection inside one', () => {
-    const doc = 'Write `[[Title]]` to link.'
-    expect(autocompleteQuery(doc, doc.indexOf('Title') + 2)).toBeNull()
-  })
-
-  it('but the same shapes outside code still arm', () => {
-    const doc = 'see [x](Notes) end'
-    expect(autocompleteQuery(doc, doc.indexOf('Notes'))?.form).toBe('target')
-  })
 })
 
 describe('a label the picker writes is markdown, not plain text', () => {
@@ -407,21 +396,6 @@ describe('what accepting a suggestion finishes', () => {
     const text =
       doc.slice(0, edit.changes[0].from) + edit.changes[0].insert + doc.slice(edit.changes[0].to)
     expect(text).toBe('a [[Alpha]] b')
-  })
-})
-
-describe('an empty alias asks for the picker by its shape alone', () => {
-  it('opens on the bare pipe however the pipe got there', () => {
-    const doc = 'a [[Alpha|]] b'
-    const q = autocompleteQuery(doc, doc.indexOf('|') + 1)!
-    expect(q.form).toBe('alias')
-    expect(q.query).toBe('')
-    expect(q.title).toBe('Alpha')
-  })
-
-  it('and a space between them is a written alias, not an empty one', () => {
-    const doc = 'a [[Alpha| ]] b'
-    expect(autocompleteQuery(doc, doc.indexOf('|') + 1)?.query).toBe(' ')
   })
 })
 

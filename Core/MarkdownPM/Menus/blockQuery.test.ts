@@ -50,10 +50,6 @@ describe('the block menu refuses the constructs a lone-line insert refuses', () 
     expect(at('```\n/\n```', 5)).toBeNull()
   })
 
-  it('refuses a line inside a code block', () => {
-    expect(at('```\n/\n```', 5)).toBeNull()
-  })
-
   it('refuses a line inside a math block', () => {
     expect(at('$$\n/\n$$', 4)).toBeNull()
   })

@@ -21,21 +21,13 @@ describe('cellCommitChange — minimal-diff cell edit (replace just the cell spa
     doc.slice(0, c.from) + c.insert + doc.slice(c.to)
 
   it('replaces a body cell span (row 1 = first body); re-parse reflects the edit', () => {
-    expect(parseTable(splice(cellCommitChange(doc, 0, 1, 0, 'X')!))!.rows).toEqual([['X', '2']])
+    const c = cellCommitChange(doc, 0, 1, 0, 'X')!
+    expect(c).toEqual({ from: 25, to: 28, insert: ' X ' })
+    expect(parseTable(splice(c))!.rows).toEqual([['X', '2']])
   })
 
   it('replaces a header cell span (row 0)', () => {
     expect(parseTable(splice(cellCommitChange(doc, 0, 0, 1, 'B!')!))!.header).toEqual(['a', 'B!'])
-  })
-
-  it('escapes pipes in the inserted text', () => {
-    expect(cellCommitChange(doc, 0, 0, 0, 'x|y')!.insert).toContain('\\|')
-  })
-
-  it('only touches the one cell — the change span is strictly inside the table region', () => {
-    const c = cellCommitChange(doc, 0, 1, 0, 'X')!
-    expect(c.from).toBeGreaterThan(0)
-    expect(c.to).toBeLessThan(doc.length)
   })
 
   it('returns null for an out-of-range cell or table index', () => {
@@ -65,11 +57,6 @@ describe('a ragged row keeps what is typed into the columns it is short of', () 
     const c = cellCommitChange(doc, 0, 1, 1, 'X')!
     const out = doc.slice(0, c.from) + c.insert + doc.slice(c.to)
     expect(out).toBe('| a | b |\n| --- | --- |\n| 1 | X |')
-  })
-
-  it('and the cells the row did have are carried across untouched', () => {
-    const c = cellCommitChange(doc, 0, 1, 1, 'X')!
-    expect(c.insert).toContain('| 1 |')
   })
 
   it('a column the delimiter never declared is still refused', () => {

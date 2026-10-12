@@ -20,7 +20,4 @@ describe('outlineTree — nesting by level', () => {
   it('a deeper heading followed by a shallower one closes the run', () => {
     expect(outlineOf('## A\n#### B\n# C\n')).toEqual([{ A: ['B'] }, 'C'])
   })
-  it('no headings is an empty tree, not a throw', () => {
-    expect(outlineOf('just prose\n')).toEqual([])
-  })
 })

@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import { ChangeSet, EditorState, Text } from '@codemirror/state'
 import type { ChangeSpec } from '@codemirror/state'
 import { scanDoc } from '../Engine/docScan'
-import { splitWithOffsets } from '../Engine/detect'
 import type { CitationSlice } from './citationEdits'
 import {
   citationDeleteIntent,
@@ -10,13 +9,8 @@ import {
   deleteMarkerChanges,
   normalizeCitations,
 } from './citationEdits'
-import { citationScan } from '../../Testing/markdownEngine'
+import { stranded } from '../../Testing/markdownEngine'
 import { citationOrder } from './citationActions'
-
-const scanOf = (doc: string): CitationSlice => {
-  const d = splitWithOffsets(doc)
-  return { ...d, citations: citationScan(d, []) }
-}
 
 const apply = (doc: string, changes: ChangeSpec[]): string =>
   ChangeSet.of(changes, doc.length)
@@ -32,21 +26,21 @@ const PAIR = 'x[^a] y[^b]\n\n[^a]: first\n[^b]: second'
 
 describe('deleting a marker', () => {
   it('takes its citation with it when it was the last reference', () => {
-    const s = scanOf(ONE)
+    const s = scanDoc(ONE)
     const out = apply(ONE, deleteMarkerChanges(s, s.citations.markers[0]))
     expect(out).toBe('body here\n')
-    expect(citationScan(splitWithOffsets(out), []).entries).toEqual([])
+    expect(scanDoc(out).citations.entries).toEqual([])
   })
 
   it('leaves the citation standing while another marker still points at it', () => {
-    const s = scanOf(TWICE)
+    const s = scanDoc(TWICE)
     const out = apply(TWICE, deleteMarkerChanges(s, s.citations.markers[0]))
     expect(out).toBe('one and two[^a]\n\n[^a]: shared')
-    expect(citationScan(splitWithOffsets(out), []).entries).toHaveLength(1)
+    expect(scanDoc(out).citations.entries).toHaveLength(1)
   })
 
   it('takes only its own citation, never a neighbour', () => {
-    const s = scanOf(PAIR)
+    const s = scanDoc(PAIR)
     const out = apply(PAIR, deleteMarkerChanges(s, s.citations.markers[0]))
     expect(out).toContain('[^b]: second')
     expect(out).not.toContain('[^a]: first')
@@ -55,13 +49,13 @@ describe('deleting a marker', () => {
 
 describe('deleting a citation', () => {
   it('takes every marker bound to it, in one transaction', () => {
-    const s = scanOf(TWICE)
+    const s = scanDoc(TWICE)
     const out = apply(TWICE, deleteCitationChanges(s, s.citations.entries[0]))
     expect(out).toBe('one and two\n')
   })
 
   it('leaves the other footnote and its marker alone', () => {
-    const s = scanOf(PAIR)
+    const s = scanDoc(PAIR)
     const out = apply(PAIR, deleteCitationChanges(s, s.citations.entries[0]))
     expect(out).toContain('[^b]')
     expect(out).not.toContain('[^a]')
@@ -69,7 +63,7 @@ describe('deleting a citation', () => {
 
   it('takes a citation’s continuation lines with it', () => {
     const doc = 'x[^a]\n\n[^a]: first\nand its continuation'
-    const s = scanOf(doc)
+    const s = scanDoc(doc)
     const out = apply(doc, deleteCitationChanges(s, s.citations.entries[0]))
     expect(out).not.toContain('continuation')
   })
@@ -77,7 +71,7 @@ describe('deleting a citation', () => {
 
 describe('cascades are keyed to the range, never to the gesture', () => {
   const intent = (doc: string, from: number, to = from): string | null => {
-    const s = scanOf(doc)
+    const s = scanDoc(doc)
     const ch = citationDeleteIntent(s, from, to)
     return ch === null ? null : apply(doc, ch)
   }
@@ -92,24 +86,24 @@ describe('cascades are keyed to the range, never to the gesture', () => {
   })
 
   it('backspace against a marker’s trailing edge removes the marker and cascades', () => {
-    const s = scanOf(ONE)
+    const s = scanDoc(ONE)
     expect(intent(ONE, s.citations.markers[0].to)).toBe('body here\n')
   })
 
   it('a selection of exactly the marker cascades the same way', () => {
-    const s = scanOf(ONE)
+    const s = scanDoc(ONE)
     const m = s.citations.markers[0]
     expect(intent(ONE, m.from, m.to)).toBe('body here\n')
   })
 
   it('a sweep covering two whole citations cascades both', () => {
-    const s = scanOf(PAIR)
+    const s = scanDoc(PAIR)
     const from = s.lineStarts[s.citations.entries[0].line]
     expect(intent(PAIR, from, PAIR.length)).toBe('x y\n')
   })
 
   it('a marker swept with the words beside it takes only the swept text', () => {
-    const s = scanOf(ONE)
+    const s = scanDoc(ONE)
     expect(intent(ONE, s.citations.markers[0].from - 1, ONE.indexOf(' here'))).toBeNull()
   })
 
@@ -118,7 +112,7 @@ describe('cascades are keyed to the range, never to the gesture', () => {
   })
 
   it('half a citation line is not a citation', () => {
-    const s = scanOf(ONE)
+    const s = scanDoc(ONE)
     const line = s.lineStarts[s.citations.entries[0].line]
     expect(intent(ONE, line + 3, ONE.length)).toBeNull()
   })
@@ -133,7 +127,7 @@ describe('cascades are keyed to the range, never to the gesture', () => {
 })
 
 describe('normalizing the section', () => {
-  const normalized = (doc: string): string => apply(doc, normalizeCitations(scanOf(doc)))
+  const normalized = (doc: string): string => apply(doc, normalizeCitations(scanDoc(doc)))
 
   it('never rewrites a citation-shaped line inside a code fence', () => {
     const doc = 'x[^2] y[^1]\n\n```\n[^9]: code\n```\n\n[^1]: one\n[^2]: two'
@@ -153,7 +147,7 @@ describe('normalizing the section', () => {
   })
 
   it('emits nothing at all when the section is already canonical', () => {
-    expect(normalizeCitations(scanOf('a[^1] b[^2]\n\n[^1]: one\n[^2]: two'))).toEqual([])
+    expect(normalizeCitations(scanDoc('a[^1] b[^2]\n\n[^1]: one\n[^2]: two'))).toEqual([])
   })
 
   it('collects an orphan below the resolved rows without renumbering it', () => {
@@ -164,7 +158,7 @@ describe('normalizing the section', () => {
   it('never renames two rows onto one label', () => {
     const doc = 'x[^2] y[^3]\n\n[^1]: orphan\n[^2]: two\n[^3]: three'
     expect(normalized(doc)).toBe('x[^2] y[^3]\n\n[^2]: two\n[^3]: three\n[^1]: orphan')
-    const c = citationScan(splitWithOffsets(normalized(doc)), [])
+    const c = scanDoc(normalized(doc)).citations
     expect(c.entries.map((e) => e.label)).toEqual(['2', '3', '1'])
   })
 
@@ -204,12 +198,12 @@ describe('normalizing the section', () => {
   })
 
   it('is a no-op on a document with no section', () => {
-    expect(normalizeCitations(scanOf('just prose, and a stray [^1] marker'))).toEqual([])
+    expect(normalizeCitations(scanDoc('just prose, and a stray [^1] marker'))).toEqual([])
   })
 
   it('leaves every numeric label equal to the ordinal the scan gives it', () => {
     const out = normalized('p[^zed] q[^8] r[^one] s[^3]\n\n[^3]: c\n[^8]: b\n[^one]: d\n[^zed]: a')
-    const c = citationScan(splitWithOffsets(out), [])
+    const c = scanDoc(out).citations
     for (const e of c.entries)
       if (/^\d+$/.test(e.label) && e.ordinal !== null) expect(e.label).toBe(String(e.ordinal))
     expect(c.entries.map((e) => e.ordinal)).toEqual([1, 2, 3, 4])
@@ -219,7 +213,7 @@ describe('normalizing the section', () => {
 describe('a deletion carries its renumbering in the same transaction', () => {
   it('renumbers what is left after a deletion, in the same change set', () => {
     const doc = 'x[^1] y[^2]\n\n[^1]: one\n[^2]: two'
-    const s = scanOf(doc)
+    const s = scanDoc(doc)
     expect(committed(doc, deleteMarkerChanges(s, s.citations.markers[0]))).toBe(
       'x y[^1]\n\n[^1]: two',
     )
@@ -227,7 +221,7 @@ describe('a deletion carries its renumbering in the same transaction', () => {
 
   it('renumbers what is left after a citation-side deletion too', () => {
     const doc = 'x[^1] y[^2]\n\n[^1]: one\n[^2]: two'
-    const s = scanOf(doc)
+    const s = scanDoc(doc)
     expect(committed(doc, deleteCitationChanges(s, s.citations.entries[0]))).toBe(
       'x y[^1]\n\n[^1]: two',
     )
@@ -235,7 +229,7 @@ describe('a deletion carries its renumbering in the same transaction', () => {
 
   it('renumbers what is left once an unbound marker is deleted', () => {
     const doc = 'x[^1] y[^2]\n\n[^2]: two'
-    const s = scanOf(doc)
+    const s = scanDoc(doc)
     expect(committed(doc, deleteMarkerChanges(s, s.citations.markers[0]))).toBe(
       'x y[^1]\n\n[^1]: two',
     )
@@ -244,10 +238,10 @@ describe('a deletion carries its renumbering in the same transaction', () => {
 
 describe('the last reference takes its footnote in every shape the document can hold', () => {
   const gesture = (doc: string, pick: (s: CitationSlice) => ChangeSpec[]): string =>
-    committed(doc, pick(scanOf(doc)))
+    committed(doc, pick(scanDoc(doc)))
   const heads = (doc: string): string[] =>
     doc.split('\n').filter((l) => /^ {0,3}\[\^[^\]\s]+\]:/.test(l))
-  const live = (doc: string): number => citationScan(splitWithOffsets(doc), []).entries.length
+  const live = (doc: string): number => scanDoc(doc).citations.entries.length
 
   it('a duplicate row travels with the row it duplicates', () => {
     const doc = 'body[^a] here\n\n[^a]: the winner\n[^a]: the loser'
@@ -295,12 +289,6 @@ describe('the last reference takes its footnote in every shape the document can 
   })
 })
 
-const stranded = (doc: string): string[] => {
-  const d = splitWithOffsets(doc)
-  const owned = new Set(citationScan(d, []).entries.map((e) => e.line))
-  return d.lines.filter((l, i) => /^ {0,3}\[\^[^\]\s]+\]:/.test(l) && !owned.has(i))
-}
-
 const bodies = ['x[^a] y[^b] z[^c]', 'x[^a] y[^b]', 'x[^a]']
 const orders = [
   ['a', 'b', 'a', 'c'],
@@ -320,7 +308,7 @@ describe('an interleaved duplicate survives every gesture at every range', () =>
     for (const body of bodies)
       for (const order of orders) {
         const doc = `${body}\n\n${order.map((l, i) => `[^${l}]: row ${i}`).join('\n')}`
-        const s = scanOf(doc)
+        const s = scanDoc(doc)
         const run = (
           name: string,
           changes: ReturnType<typeof deleteCitationChanges> | null,

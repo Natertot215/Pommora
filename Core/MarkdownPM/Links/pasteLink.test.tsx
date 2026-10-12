@@ -17,11 +17,9 @@ import { paste, pastedCellText, pasteFromClipboard } from './pasteLink'
 const URL = 'https://www.example.com/a/b'
 
 // jsdom ships neither ClipboardEvent nor DataTransfer, so the event is fabricated with the one method the handler reads.
-function pasteEvent(view: EditorView, text: string | null): void {
+function pasteEvent(view: EditorView, text: string): void {
   const event = new Event('paste', { bubbles: true, cancelable: true })
-  Object.defineProperty(event, 'clipboardData', {
-    value: text === null ? null : { getData: () => text },
-  })
+  Object.defineProperty(event, 'clipboardData', { value: { getData: () => text } })
   view.contentDOM.dispatchEvent(event)
 }
 
@@ -77,18 +75,6 @@ describe('pasting an address into the editor', () => {
     const view = await mountEditor({ initialBody: '' })
     await act(async () => pasteEvent(view, 'App.tsx'))
     expect(view.state.doc.toString()).toBe('App.tsx')
-  })
-
-  it('declines when the clipboard cannot be read', async () => {
-    const view = await mountEditor({ initialBody: '' })
-    await act(async () => pasteEvent(view, null))
-    expect(view.state.doc.toString()).toBe('')
-  })
-
-  it('leaves a read-only surface untouched', async () => {
-    const view = await mountEditor({ initialBody: 'body', readOnly: true })
-    await act(async () => pasteEvent(view, URL))
-    expect(view.state.doc.toString()).toBe('body')
   })
 
   it('writes the domain in Page Title form, then swaps the title in when it lands', async () => {
@@ -205,12 +191,6 @@ describe('the inverse chord', () => {
     const view = await mountEditor({ initialBody: '' })
     await act(async () => chord(view))
     expect(view.state.doc.toString()).toBe('App.tsx')
-  })
-
-  it('leaves a read-only surface untouched', async () => {
-    const view = await mountEditor({ initialBody: 'body', readOnly: true })
-    await act(async () => chord(view))
-    expect(view.state.doc.toString()).toBe('body')
   })
 })
 

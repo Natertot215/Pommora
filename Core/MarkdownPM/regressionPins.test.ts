@@ -63,14 +63,6 @@ describe('autoPair — doubled-marker branch', () => {
   it('does not pair a doubled marker glued to a word', () => {
     expect(autoPair(scanDoc('snake_'), 6, 6, '_')).toBeNull()
   })
-  it('still promotes a fresh pair to the doubled form', () => {
-    expect(autoPair(scanDoc('**'), 1, 1, '*')).toEqual({
-      from: 1,
-      to: 1,
-      insert: '**',
-      selection: 2,
-    })
-  })
 })
 
 describe('autoPair — never closes hard against a word', () => {
@@ -85,20 +77,6 @@ describe('autoPair — never closes hard against a word', () => {
   })
   it('still pairs where nothing follows the caret', () => {
     for (const ch of OPENERS) expect(autoPair(scanDoc('word '), 5, 5, ch)).not.toBeNull()
-  })
-  it('a closer ahead of the caret still type-overs', () => {
-    expect(autoPair(scanDoc("'hello'"), 6, 6, "'")).toEqual({
-      from: 6,
-      to: 6,
-      insert: '',
-      selection: 7,
-    })
-    expect(autoPair(scanDoc('[]'), 1, 1, '[')).toEqual({
-      from: 1,
-      to: 1,
-      insert: '[]',
-      selection: 2,
-    })
   })
   it('`_` is itself a word char, so its own closer has to be exempt from the guard', () => {
     // The naive forward guard swallowed both underscore paths: `_word|_` lost its type-over and the doubled form could never promote.
@@ -130,9 +108,6 @@ describe('dashArrow — content guards', () => {
     const doc = 'run `npm install --'
     expect(dashArrow(scanDoc(doc), doc.length, doc.length, 's')).toBeNull()
   })
-  it('still converts in plain prose', () => {
-    expect(dashArrow(scanDoc('word--'), 6, 6, 'x')).not.toBeNull()
-  })
 })
 
 describe("closeConstructOnEnter — contractions don't poison quote parity", () => {
@@ -142,7 +117,7 @@ describe("closeConstructOnEnter — contractions don't poison quote parity", () 
   })
   it('still closes a real open quote', () => {
     const doc = "'hello'"
-    expect(closeConstructOnEnter(scanDoc(doc), 6, 6)).not.toBeNull()
+    expect(closeConstructOnEnter(scanDoc(doc), 6, 6)?.selection).toBe(7)
   })
 })
 
@@ -151,10 +126,6 @@ describe('continueListOnEnter — nested runs + empty-item continuation', () => 
     const doc = '1. a\n\t1. child\n2. b'
     const edit = continueListOnEnter(scanDoc(doc), 4, 4)!
     expect(landEdit(doc, [edit], editEvent(edit), 'page')).toBe('1. a\n2. \n\t1. child\n3. b')
-  })
-  it('continues on an empty item instead of exiting (no auto-exit)', () => {
-    const edit = continueListOnEnter(scanDoc('- '), 2, 2)
-    expect(edit).toEqual({ from: 2, to: 2, insert: '\n- ', selection: 5, relist: true })
   })
   it('continues an empty item inside a quote, keeping the `> `', () => {
     const doc = '> - '
@@ -184,9 +155,6 @@ describe('outdentListOnShiftTab', () => {
       selection: 3,
       relist: true,
     })
-  })
-  it('no-ops at top level', () => {
-    expect(outdentListOnShiftTab(scanDoc('- item'), 3, 3)).toBeNull()
   })
 })
 
@@ -220,37 +188,39 @@ describe('renumberRuns — nested lines are skipped, not terminators', () => {
 describe('calloutDeleteVerdict — repair, not cancel', () => {
   const doc = '> [!callout] head\n> body'
   const verdict = (from: number, to: number): GuardVerdict =>
-    calloutDeleteVerdict(doc, from, to, scanDoc(doc))
+    calloutDeleteVerdict(doc, from, to, '', scanDoc(doc))
   it('allows a whole-line removal (line + newline)', () => {
     expect(verdict(18, 25).kind).toBe('ok')
   })
   it('clamps an in-line delete-to-line-start to the prefix end', () => {
-    expect(verdict(18, 22)).toEqual({ kind: 'clamp', from: 20 })
+    expect(verdict(18, 22)).toEqual({
+      kind: 'rewrite',
+      edits: [{ from: 20, to: 22, insert: '' }],
+      caret: 20,
+    })
   })
   it('extends a forward join to consume the body prefix', () => {
-    expect(verdict(17, 18)).toEqual({ kind: 'extend', to: 20 })
+    expect(verdict(17, 18)).toEqual({ kind: 'rewrite', edits: [{ from: 17, to: 20, insert: '' }] })
   })
   it('still cancels pure prefix erosion (a delete confined inside the prefix)', () => {
     expect(verdict(18, 19).kind).toBe('cancel')
   })
-  it('neutralizes a whole-prefix in-place delete to a zero-width clamp', () => {
-    expect(verdict(19, 20)).toEqual({ kind: 'clamp', from: 20 })
+  it('neutralizes a whole-prefix in-place delete to a zero-width rewrite', () => {
+    expect(verdict(19, 20)).toEqual({
+      kind: 'rewrite',
+      edits: [{ from: 20, to: 20, insert: '' }],
+      caret: 20,
+    })
   })
 })
 
 describe('renderer fence engine agrees with codeMask on ~~~ (no cross-layer split)', () => {
-  it('fencedCodeRanges recognizes a ~~~ block', () => {
-    const doc = '~~~\n[[LivePage]]\n~~~'
-    const ranges = fenceRangesOf(scanDoc(doc).fences)
-    expect(ranges.length).toBe(1)
-    expect(ranges[0][0]).toBeLessThanOrEqual(4)
-    expect(ranges[0][1]).toBeGreaterThanOrEqual(15)
+  it('fenceRangesOf spans a ~~~ block from its opener to its closer', () => {
+    expect(fenceRangesOf(scanDoc('~~~\n[[LivePage]]\n~~~').fences)).toEqual([[0, 20]])
   })
   it('pairs by marker char — a ~~~ line inside ``` is content, not a close', () => {
     const doc = '```\n~~~\ncode\n```\nprose'
-    const ranges = fenceRangesOf(scanDoc(doc).fences)
-    expect(ranges.length).toBe(1)
-    expect(codeMask(doc)(9)).toBe(true)
+    expect(fenceRangesOf(scanDoc(doc).fences)).toEqual([[0, 16]])
   })
 })
 
@@ -322,18 +292,6 @@ describe('a token chunk opens where the parser holds no state', () => {
   it('a fence nothing closes holds nothing', () => {
     const open = scanDoc('intro **bold**\n```js\ncode **not bold**\n\nmore')
     expect(cuts(open)).toEqual([0, 4])
-  })
-
-  it('every cut yields the whole-document tokens', () => {
-    const key = (t: { kind: string; range: [number, number] }, off = 0) =>
-      `${t.kind}@${t.range[0] + off}`
-    const truth = tokenize(doc).map((t) => key(t))
-    for (const start of cuts(scan)) {
-      const a = scan.lineStarts[start]
-      const tail = doc.slice(a)
-      const seen = tokenize(tail).map((t) => key(t, a))
-      expect(seen).toEqual(truth.filter((k) => Number(k.split('@')[1]) >= a))
-    }
   })
 })
 

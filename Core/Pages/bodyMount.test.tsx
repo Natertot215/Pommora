@@ -31,6 +31,7 @@ let container: HTMLDivElement
 let views: Record<string, EditorView>
 let changes: Record<string, number>
 let renames: string[]
+let updateBody: ReturnType<typeof vi.fn>
 
 const connections: ConnectionsApi = {
   ...buildPageIndex([
@@ -90,11 +91,12 @@ beforeEach(() => {
   views = {}
   changes = {}
   renames = []
+  updateBody = vi.fn(async (_p: string, body: string) => {
+    disk = body
+    return { ok: true, value: { hash: `h:${body}`, stale: false } }
+  })
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
-    'page:updateBody': vi.fn(async (_p: string, body: string) => {
-      disk = body
-      return { ok: true, value: { hash: `h:${body}`, stale: false } }
-    }),
+    'page:updateBody': updateBody,
     'sync:captureLocal': vi.fn(async () => ({ ok: true, value: null })),
     'page:open': async (path: string) => ({
       ok: true,
@@ -237,11 +239,13 @@ describe('one head per page path', () => {
     expect(captured).not.toHaveBeenCalled()
   })
 
-  it('a cascade’s rewrite of a held page reaches every editor holding it', async () => {
+  it('a cascade’s rewrite of a held page reaches every editor holding it and saves nothing back', async () => {
     const { a, b } = await mountTwo('see [[Old]]\n')
     disk = 'see [[New]]\n'
     await act(() => absorbLanding(PATH))
     expect(a.state.doc.toString()).toBe('see [[New]]\n')
     expect(b.state.doc.toString()).toBe('see [[New]]\n')
+    await flush()
+    expect(updateBody).not.toHaveBeenCalled()
   })
 })

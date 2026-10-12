@@ -33,15 +33,6 @@ describe('the rows group themselves', () => {
     expect(dividers({ subject: 'marker', editable: true })).toEqual(['Delete'])
     expect(dividers({ subject: 'citation', editable: true })).toEqual([])
     expect(dividers({ subject: 'marker', editable: false })).toEqual([])
-  })
-
-  it('no menu opens on a separator — a divider at the top separates nothing', () => {
-    for (const ctx of [
-      { subject: 'marker', editable: true },
-      { subject: 'marker', editable: false },
-      { subject: 'citation', editable: true },
-      { subject: 'citation', editable: false },
-    ] as const)
-      expect(citationMenuModel(ctx)[0]?.separatorBefore ?? false, JSON.stringify(ctx)).toBe(false)
+    expect(dividers({ subject: 'citation', editable: false })).toEqual([])
   })
 })

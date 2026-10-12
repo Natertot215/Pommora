@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import { composeWebpageEmbedLine, markdownLinkRegex } from '../../Connections/links'
+import { composeWebpageEmbedLine } from '../../Connections/links'
 import { tokenize } from './tokens'
 import { scanDoc } from './docScan'
-import { isBlockquoteLine, quoteDepthOf } from './markdownCode'
+import { isBlockquoteLine, lineStartAt, quoteDepthOf } from './markdownCode'
 import {
   blockEmbedLines,
   loneWebpageEmbed,
@@ -25,9 +25,6 @@ describe('thematic break (HR)', () => {
     expect(isThematicBreakLine('___')).toBe(true)
     expect(isThematicBreakLine('--')).toBe(false)
     expect(isThematicBreakLine('- a')).toBe(false)
-  })
-  it('--- is always HR (no setext interpretation)', () => {
-    expect(isThematicBreakLine('---')).toBe(true)
   })
 })
 
@@ -137,12 +134,15 @@ describe('blockquote', () => {
   })
 })
 
-describe('inline matchers (verbatim regexes)', () => {
-  it('markdown link [t](u)', () => {
-    const m = markdownLinkRegex().exec('[t](http://u)')
-    expect(m?.[1]).toBe('t')
-    expect(m?.[2]).toBe('http://u')
+describe('line bounds', () => {
+  it('starts the first line at 0 even where the document opens on a newline', () => {
+    expect(lineStartAt('\ntext', 0)).toBe(0)
+    expect(lineStartAt('\ntext', 1)).toBe(1)
+    expect(lineStartAt('a\nb', 3)).toBe(2)
   })
+})
+
+describe('inline matchers (verbatim regexes)', () => {
   it('wikilink detection reuses Core/Connections, and a `!` before it is text', () => {
     expect([...'[[Page]]'.matchAll(pageLinkPattern())].map((m) => m[1])).toEqual(['Page'])
     expect([...'![[img]]'.matchAll(pageLinkPattern())].map((m) => m.index)).toEqual([1])

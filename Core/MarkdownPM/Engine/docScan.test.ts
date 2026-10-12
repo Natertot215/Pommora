@@ -92,8 +92,9 @@ const LINES = [
   '?>',
   'crlf line\r',
   '```\r',
+  '~changed',
 ]
-const CHARS = ['`', '$', '|', '>', '[', '^', ':', '\n', '-', '#', ' ', 'x', '<', '!', '*', '\t']
+const CHARS = [...'`$|>[^:\n-# x<!*\t~+']
 
 const pick = <T>(r: () => number, xs: readonly T[]): T => xs[Math.floor(r() * xs.length)]
 

@@ -20,9 +20,9 @@ import type { TableModel } from './model'
 
 const base: TableModel = {
   columns: [
-    { align: null, dashes: 10 },
-    { align: null, dashes: 10 },
-    { align: null, dashes: 10 },
+    { align: null, dashes: 2 },
+    { align: null, dashes: 4 },
+    { align: null, dashes: 9 },
   ],
   header: ['a', 'b', 'c'],
   rows: [['1', '2', '3']],
@@ -31,7 +31,7 @@ const base: TableModel = {
 describe('operations', () => {
   it('insertColumn adds avg-dash column, keeps existing dashes, widens every row', () => {
     const m = insertColumn(base, 1, 'right')
-    expect(m.columns.map((c) => c.dashes)).toEqual([10, 10, 10, 10])
+    expect(m.columns.map((c) => c.dashes)).toEqual([2, 4, 5, 9])
     expect(m.header).toEqual(['a', 'b', '', 'c'])
     expect(m.rows[0]).toEqual(['1', '2', '', '3'])
   })
@@ -58,6 +58,7 @@ describe('operations', () => {
   it('deleteColumn removes the cell from every row', () => {
     const m = deleteColumn(base, 1)
     expect(m.columns.length).toBe(2)
+    expect(m.header).toEqual(['a', 'c'])
     expect(m.rows[0]).toEqual(['1', '3'])
   })
 

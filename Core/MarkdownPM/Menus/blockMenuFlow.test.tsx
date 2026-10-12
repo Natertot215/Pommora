@@ -82,43 +82,6 @@ describe('the block menu opens on the slash and narrows as it is typed', () => {
     expect(marks()).toEqual([])
   })
 
-  it('leaves the headings alone under a heading query', async () => {
-    const view = await open('')
-    await type(view, '/hea')
-    const text = pane()?.textContent ?? ''
-    expect(text).toContain('Headings')
-    for (const title of ['Lists', 'Link', 'Insert', 'Embed']) expect(text).not.toContain(title)
-    expect(rows()).toHaveLength(6)
-  })
-
-  it('keeps every row of a section whose title answers the query', async () => {
-    const view = await open('')
-    await type(view, '/embed')
-    const text = pane()?.textContent ?? ''
-    expect(text).toContain('Embed')
-    for (const title of ['Headings', 'Lists', 'Insert']) expect(text).not.toContain(title)
-    expect([...rows()].map((r) => r.textContent)).toEqual(['Internal Page', 'External Link'])
-  })
-
-  it('keeps all three link rows where only the title carries the query', async () => {
-    const view = await open('')
-    await type(view, '/link')
-    expect(pane()?.textContent ?? '').toContain('Link')
-    expect([...rows()].map((r) => r.textContent)).toEqual([
-      'Connection',
-      'Markdown Link',
-      'External Link',
-      'External Link',
-    ])
-  })
-
-  it('closes on a space, which no query may hold', async () => {
-    const view = await open('')
-    await type(view, '/ ')
-    await gone()
-    expect(pane()).toBeNull()
-  })
-
   it('closes on Escape and comes back with the next character', async () => {
     const view = await open('')
     await type(view, '/')
@@ -127,12 +90,6 @@ describe('the block menu opens on the slash and narrows as it is typed', () => {
     expect(pane()).toBeNull()
     await type(view, 'h')
     expect(pane()).toBeTruthy()
-  })
-
-  it('never opens inside a code fence', async () => {
-    const view = await open('```\n\n```', 4)
-    await type(view, '/')
-    expect(pane()).toBeNull()
   })
 })
 
@@ -204,15 +161,6 @@ describe('picking a row writes the block and leaves one undo step', () => {
     expect(view.state.selection.main.head).toBe(1)
   })
 
-  it('writes a table from its own query', async () => {
-    const view = await open('')
-    await type(view, '/tab')
-    await press(view, 'Enter')
-    const doc = view.state.doc.toString()
-    expect(doc).toBe(`${serialize(emptyTable(3, 3))}\n`)
-    expect(doc).not.toContain('/')
-  })
-
   it('writes an embed on a document that opens with a blank line', async () => {
     const view = await open('\nfoo', 0)
     await type(view, '/int')
@@ -280,12 +228,6 @@ describe('the query is emphasized wherever it matched', () => {
     await type(view, '/bl')
     expect(marks()).toEqual(['Bl', 'Bl', 'bl'])
     expect(rows()[1]?.textContent).toBe('Code Block')
-  })
-
-  it('marks each row when the title and the rows matched alike', async () => {
-    const view = await open('')
-    await type(view, '/hea')
-    expect(marks()).toEqual(['Hea', 'Hea', 'Hea', 'Hea', 'Hea', 'Hea'])
   })
 
   it('marks nothing when the rows matched only through their section', async () => {

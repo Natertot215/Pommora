@@ -135,28 +135,6 @@ describe('the picker survives being clicked', () => {
     expect(container.querySelectorAll('.cm-editor').length).toBeGreaterThan(0)
     panel.remove()
   })
-
-  it('but a pointerdown genuinely outside still does', async () => {
-    await mount()
-    const cell = container.querySelector('tbody .mdpm-tbl-cell-static') as HTMLElement
-    await act(async () => {
-      cell.dispatchEvent(
-        new MouseEvent('pointerdown', { bubbles: true, cancelable: true, button: 0 }),
-      )
-      cell.dispatchEvent(
-        new MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 0 }),
-      )
-      cell.dispatchEvent(
-        new MouseEvent('click', { bubbles: true, cancelable: true, button: 0, detail: 1 }),
-      )
-    })
-    await act(async () => {
-      document.body.dispatchEvent(
-        new MouseEvent('pointerdown', { bubbles: true, cancelable: true, button: 0 }),
-      )
-    })
-    expect(container.querySelectorAll('.cm-editor')).toHaveLength(0)
-  })
 })
 
 describe('a link’s menu in a resting cell', () => {

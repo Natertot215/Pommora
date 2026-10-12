@@ -72,6 +72,7 @@ describe('list continuation (Enter)', () => {
     const doc = '- '
     const e = continueListOnEnter(scanDoc(doc), doc.length, doc.length)!
     expect(apply(doc, e)).toBe('- \n- ')
+    expect(e.selection).toBe(5)
   })
   it('does not fire on a non-list line', () => {
     expect(continueListOnEnter(scanDoc('plain'), 5, 5)).toBeNull()
@@ -176,7 +177,7 @@ describe('auto-pair + auto-delete', () => {
     })
   }
   it('single [ pairs at line start, not after a word char', () => {
-    expect(autoPair(scanDoc(''), 0, 0, '[')).not.toBeNull()
+    expect(autoPair(scanDoc(''), 0, 0, '[')).toEqual({ from: 0, to: 0, insert: '[]', selection: 1 })
     expect(autoPair(scanDoc('-'), 1, 1, '[')).toBeNull()
   })
   it('[ never pairs inside an alias, where its ] would truncate the link', () => {
@@ -206,8 +207,8 @@ describe('auto-pair + auto-delete', () => {
     expect(e.selection).toBe(2)
   })
   it('quotes pair at line start / after whitespace', () => {
-    expect(autoPair(scanDoc(''), 0, 0, '"')).not.toBeNull()
-    expect(autoPair(scanDoc('say '), 4, 4, "'")).not.toBeNull()
+    expect(autoPair(scanDoc(''), 0, 0, '"')).toMatchObject({ insert: '""', selection: 1 })
+    expect(autoPair(scanDoc('say '), 4, 4, "'")).toMatchObject({ insert: "''", selection: 5 })
   })
   it('a quote right after a word char stays literal (apostrophes / units)', () => {
     expect(autoPair(scanDoc('don'), 3, 3, "'")).toBeNull()
@@ -224,11 +225,16 @@ describe('auto-pair + auto-delete', () => {
   })
   it('single emphasis * / _ / ` pair when not after a word char', () => {
     expect(apply('', autoPair(scanDoc(''), 0, 0, '*')!)).toBe('**')
-    expect(autoPair(scanDoc('say '), 4, 4, '_')).not.toBeNull()
-    expect(autoPair(scanDoc(''), 0, 0, '`')).not.toBeNull()
+    expect(autoPair(scanDoc('say '), 4, 4, '_')).toMatchObject({ insert: '__', selection: 5 })
+    expect(autoPair(scanDoc(''), 0, 0, '`')).toMatchObject({ insert: '``', selection: 1 })
   })
   it('emphasis stays literal after a word char (2 * 3, snake_case)', () => {
-    expect(autoPair(scanDoc('2 '), 2, 2, '*')).not.toBeNull()
+    expect(autoPair(scanDoc('2 '), 2, 2, '*')).toEqual({
+      from: 2,
+      to: 2,
+      insert: '**',
+      selection: 3,
+    })
     expect(autoPair(scanDoc('x'), 1, 1, '*')).toBeNull()
     expect(autoPair(scanDoc('foo'), 3, 3, '_')).toBeNull()
   })
@@ -296,9 +302,9 @@ describe('auto-pair + auto-delete', () => {
     }
   })
   it('a marker typed before an existing opener never steps into it', () => {
-    expect(autoPair(scanDoc('a **b**'), 2, 2, '*')?.insert).not.toBe('')
-    expect(autoPair(scanDoc('a "b"'), 2, 2, '"')?.insert).not.toBe('')
-    expect(autoPair(scanDoc('*a**b**'), 2, 2, '*')?.insert).not.toBe('')
+    expect(autoPair(scanDoc('a **b**'), 2, 2, '*')).toMatchObject({ insert: '**', selection: 3 })
+    expect(autoPair(scanDoc('a "b"'), 2, 2, '"')).toMatchObject({ insert: '""', selection: 3 })
+    expect(autoPair(scanDoc('*a**b**'), 2, 2, '*')).toBeNull()
   })
   it('Wrap Selections wraps a selection and keeps it selected, so a second marker doubles', () => {
     const on = { wrapSelections: true }
@@ -358,7 +364,13 @@ describe('auto-pair + auto-delete', () => {
     expect(wrapSelection(scanDoc('a word'), 2, 6, 'x', { wrapSelections: true })).toBeNull()
     expect(wrapSelection(scanDoc('`a word`'), 3, 7, '*', { wrapSelections: true })).toBeNull()
     expect(wrapSelection(scanDoc('one\ntwo'), 0, 7, '*', { wrapSelections: true })).toBeNull()
-    expect(wrapSelection(scanDoc('one\ntwo'), 0, 7, '(', { wrapSelections: true })).not.toBeNull()
+    expect(wrapSelection(scanDoc('one\ntwo'), 0, 7, '(', { wrapSelections: true })).toEqual({
+      from: 0,
+      to: 7,
+      insert: '(one\ntwo)',
+      selection: 1,
+      head: 8,
+    })
   })
   it('a closer steps over even after an earlier spaced marker on the line', () => {
     const e = autoPair(scanDoc('5 * 3 is *fif*'), 13, 13, '*')!
@@ -379,7 +391,10 @@ describe('auto-pair + auto-delete', () => {
     expect(autoPair(scanDoc(''), 0, 0, '(', { pairBrackets: false })).toBeNull()
     expect(autoPair(scanDoc(''), 0, 0, '*', { pairMarkers: false })).toBeNull()
     expect(autoPair(scanDoc(''), 0, 0, '"', { pairQuotes: false })).toBeNull()
-    expect(autoPair(scanDoc(''), 0, 0, '"', { pairBrackets: false })).not.toBeNull()
+    expect(autoPair(scanDoc(''), 0, 0, '"', { pairBrackets: false })).toMatchObject({
+      insert: '""',
+      selection: 1,
+    })
     expect(autoDelete(scanDoc('[]'), 1, 1, { deletePairsTogether: false })).toBeNull()
   })
 })
@@ -522,8 +537,13 @@ describe('dash + arrow auto-format', () => {
     expect(dashArrow(scanDoc('[[A --]]'), 6, 6, 'b')).toBeNull()
   })
   it('a caret resting directly before a connection is outside it, so the dash before it converts', () => {
-    expect(dashArrow(scanDoc('see -[[B]]'), 5, 5, '>')).not.toBeNull()
-    expect(dashArrow(scanDoc('see -![[B]]'), 5, 5, '>')).not.toBeNull()
+    for (const doc of ['see -[[B]]', 'see -![[B]]'])
+      expect(dashArrow(scanDoc(doc), 5, 5, '>')).toEqual({
+        from: 4,
+        to: 5,
+        insert: '→',
+        selection: 5,
+      })
   })
   it('-- then a letter → em-dash', () => {
     const doc = '--'

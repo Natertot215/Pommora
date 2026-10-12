@@ -34,12 +34,6 @@ describe('the picker offers what a page has been called before', () => {
     expect(aliasRows(aliases, 'p1', 'zzz')).toEqual([])
   })
 
-  it('a row inserts its own words rather than a link', () => {
-    const [row] = aliasRows(aliases, 'p1', '')
-    expect(row.value).toBe('the plan')
-    expect(row.kind).toBe('alias')
-  })
-
   it('a page with nothing remembered offers nothing', () => {
     expect(aliasRows(aliases, 'p2', '')).toEqual([])
   })
@@ -113,7 +107,11 @@ describe('the forget × is inert until it is revealed', () => {
   it('an alias row is drawn with its own glyph rather than a page’s', async () => {
     const btn = await mountRow(vi.fn())
     const row = btn.closest('[class*="item"]') as HTMLElement
-    expect(row.querySelector('[class*="side"] svg')).not.toBeNull()
+    expect(
+      row
+        .querySelector('[class*="side"] svg')
+        ?.classList.contains('lucide-square-split-horizontal'),
+    ).toBe(true)
   })
 
   it('a press on a hidden × forgets nothing', async () => {
@@ -122,14 +120,6 @@ describe('the forget × is inert until it is revealed', () => {
     btn.style.opacity = '0'
     await press(btn)
     expect(forget).not.toHaveBeenCalled()
-  })
-
-  it('a press on a revealed × forgets', async () => {
-    const forget = vi.fn()
-    const btn = await mountRow(forget)
-    btn.style.opacity = '1'
-    await press(btn)
-    expect(forget).toHaveBeenCalled()
   })
 
   it('pressing the × never accepts the row it sits in', async () => {

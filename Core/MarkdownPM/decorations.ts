@@ -629,21 +629,20 @@ function build(view: EditorView, scope: MarkdownScope): Built {
     const bracket = open ? Decoration.mark({ class: 'md-bracket' }) : hideMarker
     for (const [s, e] of tk.markerRanges) ranges.push(bracket.range(s, e))
   })
-  if (settings.inPageHeadingResolution === 'automatic') {
-    const sectionHeadings = headings?.texts ?? []
-    const sectionMark = Decoration.mark({ class: 'md-connection-resolved md-section-run' })
-    for (const { from: a, to: b } of view.visibleRanges)
+  const sectionMark = Decoration.mark({ class: 'md-connection-resolved md-section-run' })
+  const bidir = Decoration.mark({ class: 'dual-direction-arrow' })
+  for (const { from: a, to: b } of view.visibleRanges) {
+    const visible = text.slice(a, b)
+    if (settings.inPageHeadingResolution === 'automatic')
       for (const run of sectionRunsIn(
-        text.slice(a, b),
-        sectionHeadings,
+        visible,
+        headings?.texts ?? [],
         (o) => inCodeAt(scan, a + o) || spanAt(raw, a + o) !== undefined,
       ))
         ranges.push(sectionMark.range(a + run.from, a + run.to))
+    for (let i = visible.indexOf('↔'); i >= 0; i = visible.indexOf('↔', i + 1))
+      ranges.push(bidir.range(a + i, a + i + 1))
   }
-  const bidir = Decoration.mark({ class: 'dual-direction-arrow' })
-  for (const { from, to } of view.visibleRanges)
-    for (let i = text.indexOf('↔', from); i >= 0 && i < to; i = text.indexOf('↔', i + 1))
-      ranges.push(bidir.range(i, i + 1))
   const atomic = atomicFor(view.state.doc, caretLine, caretAtomics, scope)
   return { deco: Decoration.set(ranges, true), atomic }
 }

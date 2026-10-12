@@ -41,11 +41,6 @@ describe('codec', () => {
     ])
   })
 
-  it('parseTable returns null on a non-table and on a code-broken pipe', () => {
-    expect(parseTable('not a table')).toBeNull()
-    expect(parseTable('| `a|b` | c |\n|---|---|')).toBeNull()
-  })
-
   it('escapeCell / unescapeCell are inverse for backslashes and pipes', () => {
     for (const s of ['a|b', 'a\\b', 'a\\|b', 'plain', '|||', '\\\\', 'C:\\path']) {
       expect(unescapeCell(escapeCell(s))).toBe(s)
@@ -65,14 +60,8 @@ describe('codec', () => {
     expect(cellToSource('a\nb')).toBe('a<br>b')
     expect(cellToSource('a|b\nc')).toBe('a\\|b<br>c')
     expect(cellToDisplay('a<br>b')).toBe('a\nb')
-    for (const s of ['a\nb', 'a|b', 'line1\nline2|x', 'plain', 'a\nb\nc'])
+    for (const s of ['a\nb', 'a|b', 'line1\nline2|x', 'plain', 'a\nb\nc', '- a\n\t- b'])
       expect(cellToDisplay(cellToSource(s))).toBe(s)
-  })
-
-  it('parseTable keeps raw escaped cell text; unescapeCell renders the literal for display', () => {
-    const m = parseTable('| a\\|b | c |\n| --- | --- |')!
-    expect(m.header[0]).toBe('a\\|b')
-    expect(unescapeCell(m.header[0])).toBe('a|b')
   })
 
   it('round-trips canonical GFM with widths + alignment', () => {
@@ -85,5 +74,26 @@ describe('codec', () => {
     expect(m.header).toEqual(['a', 'b'])
     expect(m.rows).toEqual([['1', '2']])
     expect(serialize(m)).toBe(src)
+  })
+})
+
+describe('what a GFM cell can hold', () => {
+  it('round-trips the empty item Enter makes, which a cell trim would return as prose', () => {
+    const trip = (display: string): string => cellToDisplay(cellToSource(display).trim())
+    expect(trip('- a\n- ')).toBe('- a\n- ')
+    expect(trip('- a\n- [ ] ')).toBe('- a\n- [ ] ')
+    expect(trip('1. a\n2. ')).toBe('1. a\n2. ')
+  })
+
+  it('restores an empty task box wherever it sits, since that shape belongs to nothing else', () => {
+    const trip = (display: string): string => cellToDisplay(cellToSource(display).trim())
+    expect(trip('- [ ] ')).toBe('- [ ] ')
+    expect(trip('- [x] ')).toBe('- [x] ')
+    expect(cellToDisplay('- [ ]')).toBe('- [ ] ')
+  })
+
+  it('leaves a bare marker alone where no list stands above it', () => {
+    expect(cellToDisplay('-')).toBe('-')
+    expect(cellToDisplay('n/a<br>-')).toBe('n/a\n-')
   })
 })

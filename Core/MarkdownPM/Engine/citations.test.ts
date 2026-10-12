@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { parse } from './parser'
-import { foldLabel, markerRegex, type CitationScan } from './detect'
+import { markerRegex, type CitationScan } from './detect'
 import { scanDoc } from './docScan'
 
 const scan = (text: string): CitationScan => scanDoc(text).citations
@@ -72,6 +72,11 @@ describe('citationScan — the boundary', () => {
   it('admits neither a blockquoted head nor one inside a list item', () => {
     expect(scan('a[^1]\n\n> [^1]: one').entries).toEqual([])
     expect(scan('a[^1]\n\n- [^1]: one').entries).toEqual([])
+  })
+
+  it('admits no head inside a table cell', () => {
+    const s = scan('links\n\n| Note | Ref |\n| --- | --- |\n| [^1]: see [[Omega]] | x |\n')
+    expect(s.entries).toEqual([])
   })
 
   it('answers a document that is nothing but citations', () => {
@@ -153,6 +158,13 @@ describe('citationScan — binding and ordinals', () => {
     expect(s.markers.map((m) => m.ordinal)).toEqual([1])
   })
 
+  it('numbers markers in a callout, a quote and a table in reading order alongside the body', () => {
+    const s = scan(
+      'plain[^p]\n\n> [!note] callout[^c]\n\n> quote[^q]\n\n| h |\n| --- |\n| cell[^t] |\n\n[^p]: one\n[^c]: two\n[^q]: three\n[^t]: four',
+    )
+    expect(s.markers.map((m) => m.ordinal)).toEqual([1, 2, 3, 4])
+  })
+
   it('reads no marker inside the citations section', () => {
     const s = scan('a[^1]\n\n[^1]: see [^1]')
     expect(s.markers.map((m) => m.line)).toEqual([0])
@@ -165,16 +177,11 @@ describe('citationScan — binding and ordinals', () => {
   })
 })
 
-describe('markerRegex and foldLabel', () => {
+describe('markerRegex', () => {
   it('hands out a fresh regex per call', () => {
     const re = markerRegex()
     re.exec('a [^1]')
     expect(markerRegex().lastIndex).toBe(0)
-  })
-
-  it('folds case the way the parser binds', () => {
-    expect(foldLabel('Note')).toBe(foldLabel('note'))
-    expect(foldLabel('a')).not.toBe(foldLabel('b'))
   })
 })
 

@@ -140,12 +140,6 @@ describe('blockAt', () => {
     expect(blockAt(doc, 2)).toBeNull()
   })
 
-  it('to is exclusive of the trailing newline', () => {
-    const doc = 'para\n\nnext'
-    const b = blockAt(doc, 0)
-    expect(doc[b!.to]).toBe('\n')
-  })
-
   it('a table region is one block', () => {
     // A pipe-less line glued directly to a table is a GFM 1-cell row, so a real table sits before a blank.
     const doc = 'p\n\n| a | b |\n| - | - |\n| 1 | 2 |\n\nafter'
@@ -311,11 +305,6 @@ describe('blockAt', () => {
   })
 
   // A code/table block on the first line looks its previous line up off the top edge — that lookup must not crash the editor's initial parse.
-  it('a doc starting with a code fence does not crash and starts a code block at 0', () => {
-    const doc = '```js\nconst x = 1\n```\npara'
-    expect(() => blockStarts(doc)).not.toThrow()
-    expect(blockStarts(doc)[0]).toEqual({ from: 0, kind: 'code' })
-  })
   it('a doc starting with a table does not crash and starts a table block at 0', () => {
     const doc = '| a | b |\n| - | - |\n| 1 | 2 |\npara'
     expect(() => blockStarts(doc)).not.toThrow()

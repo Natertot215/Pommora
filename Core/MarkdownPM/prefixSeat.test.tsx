@@ -142,7 +142,7 @@ describe('Delete at a line end joins the next line by its visible text', () => {
     const doc = 'a[^1] [^2]\n\n[^1]: one\n[^2]: two'
     const view = await open(doc, doc.indexOf('one') + 3)
     await press(view, 'Delete')
-    expect(view.state.doc.toString()).not.toBe('a[^1] [^2]\n\n[^1]: onetwo')
+    expect(view.state.doc.toString()).toBe('a[^1] [^2]\n\n[^1]: one[^2]: two')
   })
 })
 

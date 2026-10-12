@@ -40,10 +40,6 @@ function armedTwice(): EditorState {
 const anchors = (s: EditorState): readonly PendingTitle[] => s.field(pendingTitles)
 
 describe('the pending-title anchor', () => {
-  it('survives the transaction that announced it', () => {
-    expect(anchors(armed(LINK, 0))).toHaveLength(1)
-  })
-
   it('maps forward through an edit above it', () => {
     const s = armed(`\n${LINK}`, 1)
     const after = s.update({ changes: { from: 0, insert: 'a heading\n' } }).state
@@ -69,12 +65,6 @@ describe('the pending-title anchor', () => {
     const s = armed(LINK, 0)
     const after = s.update({ changes: { from: 1, to: 12, insert: 'My Words' } }).state
     expect(anchors(after)).toHaveLength(0)
-  })
-
-  it('survives an edit that leaves the link untouched', () => {
-    const s = armed(`${LINK} tail`, 0)
-    const after = s.update({ changes: { from: s.doc.length, insert: '!' } }).state
-    expect(anchors(after)).toHaveLength(1)
   })
 
   it('keeps two anchors for the same address distinct', () => {

@@ -1,13 +1,8 @@
+import type { EditorState } from '@codemirror/state'
 import { parse } from '../MarkdownPM/Engine/parser'
 import { parseDelimiter, splitRow } from '../MarkdownPM/Engine/Tables/codec'
 import { normalize, type TableModel } from '../MarkdownPM/Engine/Tables/model'
-import {
-  assembleCitations,
-  type CitationScan,
-  type DocLines,
-  lineRefs,
-  type MarkdownScope,
-} from '../MarkdownPM/Engine/detect'
+import type { MarkdownScope } from '../MarkdownPM/Engine/detect'
 import { type DocScan, scanDoc } from '../MarkdownPM/Engine/docScan'
 import {
   type DecoIntent,
@@ -15,7 +10,6 @@ import {
   lineIntentsInto,
   tokenIntents,
 } from '../MarkdownPM/Engine/intents'
-import { codeMask } from '../MarkdownPM/Engine/markdownCode'
 import type { Token } from '../MarkdownPM/Engine/tokens'
 
 // The independent parse `modelFromRegion` is pinned against — a second derivation from the same source.
@@ -56,11 +50,17 @@ export function decorationsFor(
   return intents
 }
 
-export function citationScan(d: DocLines, excluded: [number, number][]): CitationScan {
-  const inCode = codeMask(d.text)
-  return assembleCitations(
-    d,
-    (k) => excluded.some(([f, t]) => d.lineStarts[k] >= f && d.lineStarts[k] <= t),
-    d.lines.map((line, i) => lineRefs(line, d.lineStarts[i], inCode)),
-  )
+export function stranded(doc: string): string[] {
+  const s = scanDoc(doc)
+  const owned = new Set(s.citations.entries.map((e) => e.line))
+  return s.lines.filter((l, i) => /^ {0,3}\[\^[^\]\s]+\]:/.test(l) && !owned.has(i))
+}
+
+export function typeKeys(state: EditorState, keys: string): string {
+  let s = state
+  for (const key of keys) {
+    const { from, to } = s.selection.main
+    s = s.update({ changes: { from, to, insert: key }, selection: { anchor: from + 1 } }).state
+  }
+  return s.doc.toString()
 }

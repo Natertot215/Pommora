@@ -19,11 +19,10 @@ import {
   commitCitation,
   insertCitation,
 } from './citationActions'
-import { splitWithOffsets } from '../Engine/detect'
+import { scanDoc } from '../Engine/docScan'
 import { citationText, deleteCitationChanges } from './citationEdits'
 import { foldedRegions } from '../folding'
 import { pasteFromClipboard } from '../Links/pasteLink'
-import { citationScan } from '../../Testing/markdownEngine'
 
 let clipboard = ''
 const settings = (p: Partial<Personalization>): void => {
@@ -114,7 +113,7 @@ describe('the first footnote is never written above its own marker', () => {
       await at(view, body.length)
       expect(await insert(view)).toBe(true)
       const out = doc(view)
-      const scan = citationScan(splitWithOffsets(out), [])
+      const scan = scanDoc(out).citations
       expect(scan.entries, out).toHaveLength(1)
       expect(scan.markers, out).toHaveLength(1)
       expect(scan.markers[0].ordinal, out).toBe(1)
@@ -131,7 +130,7 @@ describe('the first footnote is never written above its own marker', () => {
       await pasteFromClipboard(view, 'footnote')
     })
     const out = doc(view)
-    expect(citationScan(splitWithOffsets(out), []).entries, out).toHaveLength(1)
+    expect(scanDoc(out).citations.entries, out).toHaveLength(1)
     expect(out.indexOf('[^1]'), out).toBeLessThan(out.indexOf('[^1]:'))
   })
 })
@@ -336,9 +335,6 @@ describe('typing a label seeds its citation', () => {
 })
 
 describe('the cycle closes inside a callout, a blockquote and a table', () => {
-  const ordinalsOf = (view: EditorView): (number | null)[] =>
-    citationScan(splitWithOffsets(doc(view)), []).markers.map((m) => m.ordinal)
-
   it('a caret inside a callout is a seat, and the pair lands whole', async () => {
     const body = '> [!note] the callout body'
     const view = await mountEditor({ initialBody: body })
@@ -364,23 +360,12 @@ describe('the cycle closes inside a callout, a blockquote and a table', () => {
     expect(doc(view)).toBe('| h |\n| --- |\n| cell[^1] |\n\n[^1]: ')
   })
 
-  it('markers in all three number in reading order alongside the body', async () => {
-    const body =
-      'plain[^p]\n\n> [!note] callout[^c]\n\n> quote[^q]\n\n| h |\n| --- |\n| cell[^t] |\n\n[^p]: one\n[^c]: two\n[^q]: three\n[^t]: four'
-    const view = await mountEditor({ initialBody: body })
-    expect(ordinalsOf(view)).toEqual([1, 2, 3, 4])
-  })
-
   it('and a citation deleted from any of them takes every marker with it', async () => {
     const body = '> [!note] a[^x]\n\n> b[^x]\n\n| h |\n| --- |\n| c[^x] |\n\n[^x]: shared'
     const view = await mountEditor({ initialBody: body })
-    const scan = citationScan(splitWithOffsets(doc(view)), [])
+    const scan = scanDoc(doc(view))
     await act(async () => {
-      commitCitation(
-        view,
-        deleteCitationChanges({ ...splitWithOffsets(doc(view)), citations: scan }, scan.entries[0]),
-        'delete',
-      )
+      commitCitation(view, deleteCitationChanges(scan, scan.citations.entries[0]), 'delete')
     })
     expect(doc(view)).not.toContain('[^x]')
     expect(doc(view)).toContain('> [!note] a')

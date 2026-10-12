@@ -90,28 +90,7 @@ const scrollWrapTo = async (wrapTop: number): Promise<void> => {
 }
 
 describe('GFM table drag under an editor scroll', () => {
-  it('re-bases its origin, so the slot follows the moved table', async () => {
-    const onReorder = vi.fn(() => false)
-    await mount(onReorder)
-    stubGeometry(0)
-    const grip = await measureAndGrip()
-    await act(async () => {
-      firePointer(grip, 'pointerdown', { x: 210, y: 30 })
-    })
-    await act(async () => {
-      firePointer(window, 'pointermove', { x: 210, y: 36 })
-    })
-    await scrollWrapTo(-24)
-    await act(async () => {
-      firePointer(window, 'pointermove', { x: 210, y: 36 })
-    })
-    await act(async () => {
-      firePointer(window, 'pointerup')
-    })
-    expect(onReorder).toHaveBeenCalledExactlyOnceWith('row', 1, 2)
-  })
-
-  it('a scroll with the pointer held still re-resolves, so a release without moving commits fresh', async () => {
+  it('re-bases its origin and re-resolves on a scroll, so a release without moving commits the slot the moved table puts under the pointer', async () => {
     const onReorder = vi.fn(() => false)
     await mount(onReorder)
     stubGeometry(0)

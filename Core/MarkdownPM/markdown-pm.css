@@ -575,7 +575,7 @@
   --box-head-pad: calc(var(--box-gap) + var(--box-pad));
   padding-top: var(--box-head-pad);
 }
-.mdpm-editor .cm-line:is(.md-blockquote-last, .md-callout-last, .codeblock-last) {
+.mdpm-editor .cm-line:is(.md-blockquote-last, .codeblock-last) {
   padding-bottom: calc(var(--box-gap) + var(--box-pad));
 }
 .mdpm-editor
@@ -665,17 +665,11 @@
   border-top-left-radius: var(--callout-radius);
   border-top-right-radius: var(--callout-radius);
 }
-.mdpm-editor .cm-line.md-callout-last {
-  margin-bottom: var(--callout-gap);
-}
 .mdpm-editor .cm-line.md-callout-last::before {
   bottom: var(--callout-gap);
   border-bottom: var(--callout-bw) solid var(--callout-border);
   border-bottom-left-radius: var(--callout-radius);
   border-bottom-right-radius: var(--callout-radius);
-}
-.mdpm-editor .cm-line.md-callout.md-callout-first {
-  padding-top: calc(var(--callout-gap) + var(--callout-inner-pad));
 }
 .mdpm-editor .cm-line.md-callout.md-callout-last {
   padding-bottom: calc(var(--callout-gap) + var(--callout-inner-pad));

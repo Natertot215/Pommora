@@ -25,6 +25,10 @@ describe('regions', () => {
     expect(tableRegions('| a | b |\nnot a delimiter')).toEqual([])
   })
 
+  it('a pipe inside inline code still splits a cell under GFM, so an over-split header is no table', () => {
+    expect(tableRegions('| `a|b` | c |\n|---|---|')).toEqual([])
+  })
+
   it('modelFromRegion equals parseTable on the same slice (the widget skips the second parse)', () => {
     for (const table of [
       '| a | b |\n|---|---|\n| 1 | 2 |',

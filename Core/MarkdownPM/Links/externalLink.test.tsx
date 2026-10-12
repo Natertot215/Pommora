@@ -41,6 +41,14 @@ const press = (view: EditorView, pos: number, target: HTMLElement): void => {
 
 const label = (view: EditorView): HTMLElement => view.dom.querySelector('.md-link') as HTMLElement
 
+const conn: ConnectionsApi = {
+  ...buildPageIndex([{ id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' }]),
+  headingsOf: () => undefined,
+  location: () => [],
+  open: () => {},
+  menu: showConnectionMenu,
+}
+
 describe('an external link opens from its label and nowhere else', () => {
   it('a click on the label opens it', async () => {
     const view = await mountEditor({ initialBody: BODY })
@@ -81,7 +89,8 @@ describe('a link whose target names nothing is text, not a link', () => {
   })
 
   it('a right press over it offers no link menu', async () => {
-    const view = await mountEditor({ initialBody: BROKEN })
+    const menu = vi.fn(async () => null)
+    const view = await mountEditor({ initialBody: BROKEN, connections: { ...conn, menu } })
     await act(async () => view.focus())
     view.dispatch({ selection: { anchor: 0 } })
     vi.spyOn(view, 'posAtCoords').mockReturnValue(5)
@@ -91,19 +100,11 @@ describe('a link whose target names nothing is text, not a link', () => {
       )
       await Promise.resolve()
     })
-    expect(connMenu).not.toHaveBeenCalled()
+    expect(menu).not.toHaveBeenCalled()
   })
 })
 
 describe('a markdown link’s menu follows what its target names', () => {
-  const conn: ConnectionsApi = {
-    ...buildPageIndex([{ id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' }]),
-    headingsOf: () => undefined,
-    location: () => [],
-    open: () => {},
-    menu: showConnectionMenu,
-  }
-
   const rightClick = async (view: EditorView, pos: number, selector: string): Promise<void> => {
     vi.spyOn(view, 'posAtCoords').mockReturnValue(pos)
     const el = view.dom.querySelector(selector) as HTMLElement

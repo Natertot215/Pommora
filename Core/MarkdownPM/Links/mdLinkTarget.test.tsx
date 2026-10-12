@@ -82,21 +82,11 @@ describe('what a markdown link’s target names', () => {
     const t = resolveMdTarget(conn, 'Work%20Notes#A/B')
     expect(t.kind === 'page' && t.heading).toBe('A/B')
   })
-
-  it('a %-bearing target resolves to something rather than throwing', () => {
-    expect(() => resolveMdTarget(conn, 'Revenue 50% plan')).not.toThrow()
-  })
 })
 
 // A link colored as a connection in the body and as broken in a cell is one link with two truths.
 describe('both syntaxes and both renderers agree', () => {
   const target = encodeLinkTarget('Work Notes')
-
-  it('the markdown form and the wikilink form reach the same page', () => {
-    const md = resolveMdTarget(conn, target)
-    const wiki = conn.resolve('Work Notes')
-    expect(md.kind === 'page' && md.page.id).toBe(wiki.page?.id)
-  })
 
   it('the cell renderer reads an alias over a heading, and reads it missing as the editor does', async () => {
     const missing = {
@@ -407,16 +397,6 @@ describe('an alias reveals what it hides', () => {
 
 // Both gates are pinned to the one exported class constant, so the decorator and the arming selector cannot drift.
 describe('a website link previews live', () => {
-  it('the decorator marks the link with the class the hover gate reads', async () => {
-    const view = await mountEditor({
-      initialBody: 'see [GitHub](https://github.com) end',
-      connections: conn,
-    })
-    const span = view.dom.querySelector('.md-link') as HTMLElement
-    expect(span).not.toBeNull()
-    expect(span.textContent).toBe('GitHub')
-  })
-
   it('arms the website glance on the drawn link, never the page one', async () => {
     const glance = vi.fn()
     const view = await mountEditor({

@@ -87,12 +87,6 @@ describe('a list marker holds no seats the reader cannot see', () => {
     expect(stepLeft(view, 8)).toBe(5)
     expect(stepRight(view, 5)).toBe(8)
   })
-
-  it('keeps the slot whole while the editor is unfocused, where nothing reveals', async () => {
-    const view = await mount('- foo')
-    view.dispatch({ selection: EditorSelection.cursor(0) })
-    expect(stepRight(view, 0)).toBe(2)
-  })
 })
 
 // A footnote marker is a widget over source the reader never sees, so the same rule holds. The unbound marker is the other half of the control — nothing draws over it, so every one of its positions is real.
@@ -120,12 +114,11 @@ describe('a footnote marker holds no seats the reader cannot see', () => {
   })
 
   it('draws the positional number, not the label beneath it', async () => {
-    const view = await mount('x[^7] y[^1]\n\n[^1]: one\n[^7]: seven')
+    await mount('x[^7] y[^1]\n\n[^1]: one\n[^7]: seven')
     const glyphs = [...editorContainer().querySelectorAll('.md-citation-reference')].map(
       (el) => el.textContent,
     )
     expect(glyphs).toEqual(['1', '2'])
-    expect(view.state.doc.toString()).toContain('[^7]')
   })
 
   it('draws nothing in a fence, in inline code, or on citation syntax that is prose', async () => {

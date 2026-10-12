@@ -33,7 +33,9 @@ describe('emphasis tokens (marker geometry)', () => {
     const t = '***a***'
     const tokens = tokenize(t)
     expect(slice(t, byKind(tokens, 'bold')[0].contentRange)).toBe('a')
-    expect(slice(t, byKind(tokens, 'italic')[0].contentRange)).toContain('a')
+    const [italic] = byKind(tokens, 'italic')
+    expect(slice(t, italic.contentRange)).toBe('**a**')
+    expect(italic.markerRanges.map((m) => slice(t, m))).toEqual(['*', '*'])
   })
 
   it('**a *b* c** → one bold span + nested italic on "b"', () => {
@@ -51,13 +53,6 @@ describe('emphasis tokens (marker geometry)', () => {
 })
 
 describe('inline regex tokens + overlap rules', () => {
-  it('wikilink [[Page]] (title-only content)', () => {
-    const t = '[[Page]]'
-    const w = byKind(tokenize(t), 'wikiLink')[0]
-    expect(slice(t, w.contentRange)).toBe('Page')
-    expect(w.markerRanges.map((m) => slice(t, m))).toEqual(['[[', ']]'])
-  })
-
   it('![[pic]] is a literal `!` and the connection after it', () => {
     const tokens = tokenize('![[pic]]')
     expect(tokens.map((tk) => [tk.kind, tk.range])).toEqual([['wikiLink', [1, 8]]])

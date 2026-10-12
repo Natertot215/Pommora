@@ -27,7 +27,6 @@ import { WEB_GUEST_CLASS } from '../Web/guest'
 import { headingSections } from './Engine/headingScan'
 import { scanDoc } from './Engine/docScan'
 import { splitWithOffsets } from './Engine/detect'
-import { citationScan } from '../Testing/markdownEngine'
 
 stubEditorBridge()
 
@@ -333,7 +332,7 @@ describe('a heading stops where the citations section starts', () => {
 
   it('the region and the scan agree on the boundary', async () => {
     const view = await mountEditor({ initialBody: NESTED })
-    const scan = citationScan(splitWithOffsets(NESTED), [])
+    const scan = scanDoc(NESTED).citations
     const r = citeRegion(view)
     expect(scan.firstLine).toBe(6)
     expect(r?.anchor).toBe(startOf(NESTED, scan.firstLine))
@@ -390,15 +389,6 @@ describe('a fold chevron and a heading gesture stop sharing one class', () => {
   it('the section right-press falls through to the ordinary editor menu', async () => {
     const view = await mountEditor({ initialBody: CITED, citationsShown: true })
     expect(rightPress(lineEls(view)[2])).toBe(false)
-  })
-
-  it('the chevron class alone no longer confers the gesture, and the gesture class alone still does', async () => {
-    const view = await mountEditor({ initialBody: CITED, citationsShown: true })
-    const divider = lineEls(view)[2]
-    divider.classList.add('md-foldable')
-    expect(rightPress(divider)).toBe(false)
-    divider.classList.add(HEADING_FOLD_CLASS)
-    expect(rightPress(divider)).toBe(true)
   })
 })
 

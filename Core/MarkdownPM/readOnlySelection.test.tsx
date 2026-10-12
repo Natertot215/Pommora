@@ -15,11 +15,6 @@ describe('read-only portal keeps its content selectable', () => {
     const view = await mount(true)
     expect(view.contentDOM.getAttribute('contenteditable')).toBe('true')
   })
-
-  it('an editing embed is likewise contenteditable', async () => {
-    const view = await mount(false)
-    expect(view.contentDOM.getAttribute('contenteditable')).toBe('true')
-  })
 })
 
 // EditorState.readOnly is ADVISORY — it doesn't block a programmatic view.dispatch({changes}), and with editable=true the DOM no longer blocks them either, so a changeFilter must drop doc changes while read-only or Cmd+B would edit + autosave a read-only surface.

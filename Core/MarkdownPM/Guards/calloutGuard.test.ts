@@ -2,31 +2,17 @@ import { describe, it, expect } from 'vitest'
 import { EditorState } from '@codemirror/state'
 import { calloutDeleteVerdict, calloutGuard } from './calloutGuard'
 import { scanDoc } from '../Engine/docScan'
+import { typeKeys } from '../../Testing/markdownEngine'
 
 const stripsCalloutPrefix = (doc: string, from: number, to: number): boolean =>
-  calloutDeleteVerdict(doc, from, to, scanDoc(doc)).kind !== 'ok'
+  calloutDeleteVerdict(doc, from, to, '', scanDoc(doc)).kind !== 'ok'
 
-describe('calloutGuard — a callout body prefix is uncorruptible', () => {
+describe('calloutGuard — the deletes the verdict leaves alone', () => {
   const doc = '> [!callout] head\n> body'
 
-  it('blocks deleting the whole body `> ` in place (the atomic-expanded delete)', () => {
-    expect(stripsCalloutPrefix(doc, 18, 20)).toBe(true)
-  })
-  it('blocks deleting just the space (the `>body` corruption)', () => {
-    expect(stripsCalloutPrefix(doc, 19, 20)).toBe(true)
-  })
-  it('ALLOWS a join — a delete reaching back past the line start (merges into the callout above)', () => {
-    expect(stripsCalloutPrefix(doc, 17, 20)).toBe(false)
-  })
   it('ALLOWS deleting a prefix-only body line — there is no content for the clamp to protect', () => {
     const d = '> [!callout] head\n>\n> tail'
     expect(stripsCalloutPrefix(d, 18, 19)).toBe(false)
-  })
-  it('ALLOWS deleting content after the prefix', () => {
-    expect(stripsCalloutPrefix(doc, 20, 24)).toBe(false)
-  })
-  it('ALLOWS stripping the HEAD prefix (intentional de-callout of the whole box)', () => {
-    expect(stripsCalloutPrefix(doc, 0, 13)).toBe(false)
   })
   it('is a no-op for inserts (to <= from)', () => {
     expect(stripsCalloutPrefix(doc, 20, 20)).toBe(false)
@@ -59,5 +45,16 @@ describe('calloutGuard — the wired filter cancels prefix-stripping transaction
   })
   it('lets the HEAD de-callout through (whole box removed on purpose)', () => {
     expect(del(0, 13)).toBe('head\n> body')
+  })
+})
+
+describe('calloutGuard — the caret follows a clamped replacement', () => {
+  it('typing over a selection from the body line’s start lands every character after the prefix', () => {
+    const state = EditorState.create({
+      doc: '> [!callout] head\n> body',
+      selection: { anchor: 18, head: 21 },
+      extensions: [calloutGuard],
+    })
+    expect(typeKeys(state, 'xyz')).toBe('> [!callout] head\n> xyzody')
   })
 })

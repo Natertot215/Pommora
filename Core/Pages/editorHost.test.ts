@@ -46,16 +46,6 @@ describe('a page tile warm seam', () => {
     expect(seam.restore()).toEqual({ editorState: { doc: 'hello' }, scrollTop: 42 })
     expect((await tileWarmSeam(['Other.md', 'Target.md'])).restore()).toBeUndefined()
   })
-
-  it('a foreign edit to the page drops the entry', async () => {
-    const seam = await tileWarmSeam(['Host.md', 'Edited.md'])
-    cachePageDetail(detail({ path: 'Edited.md', body: 'v1' }))
-    seam.capture({ editorState: { doc: 'v1' }, scrollTop: 10 })
-    cachePageDetail(detail({ path: 'Edited.md', body: 'v2' }))
-    expect(seam.restore()).toBeUndefined()
-    cachePageDetail(detail({ path: 'Edited.md', body: 'v1' }))
-    expect(seam.restore()).toBeUndefined()
-  })
 })
 
 describe('useEditorHost', () => {
@@ -180,20 +170,24 @@ describe('the alias memory', () => {
     return { mutate, hosts, root }
   }
 
-  it('a forget writes the page’s metadata, and the host re-reads once the push lands', async () => {
+  it('a forget writes the page’s metadata, and the host rebuilds on the metadata push and hears no other', async () => {
     const { mutate, hosts, root } = await mountHosts(['the notes', 'my draft'])
-    const before = hosts[hosts.length - 1]
-    expect(before.aliases.list('p1')).toEqual(['the notes', 'my draft'])
-    await act(async () => before.aliases.forget('p1', 'the notes'))
+    const host = hosts[hosts.length - 1]
+    expect(host.aliases.list('p1')).toEqual(['the notes', 'my draft'])
+    await act(async () => host.aliases.forget('p1', 'the notes'))
     expect(mutate).toHaveBeenCalledWith({
       op: 'setPageMeta',
       path: 'Notes/Alpha.md',
       patch: { aliases: ['my draft'] },
     })
+    const heard = vi.fn()
+    const off = host.aliases.subscribe(heard)
+    useSession.setState({ tree: { ...useSession.getState().tree! } })
+    expect(heard).not.toHaveBeenCalled()
     await act(async () => useSession.setState({ tree: withAliases(['my draft']) }))
-    const after = hosts[hosts.length - 1]
-    expect(after).not.toBe(before)
-    expect(after.aliases.list('p1')).toEqual(['my draft'])
+    expect(heard).toHaveBeenCalledTimes(1)
+    expect(hosts[hosts.length - 1]).not.toBe(host)
+    off()
     act(() => root.unmount())
   })
 

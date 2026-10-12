@@ -369,10 +369,10 @@ describe('a heading link in a table cell travels in the page around the table', 
 describe('a bare §Heading run carries no menu and no glance, just travel', () => {
   const arm = vi.fn()
 
-  const mountAutomatic = () =>
+  const mountAutomatic = (connections = conn) =>
     mountEditor({
       initialBody: '## Setup\nsee §Setup.',
-      connections: conn,
+      connections,
       host: {
         settings: { inPageHeadingResolution: 'automatic' },
         glance: { arm, cancel: () => {}, close: () => {}, contains: () => false },
@@ -400,12 +400,14 @@ describe('a bare §Heading run carries no menu and no glance, just travel', () =
   })
 
   it('right-click on the run falls through to the native editor menu', async () => {
-    const view = await mountAutomatic()
+    const menu = vi.fn(async () => null)
+    const view = await mountAutomatic({ ...conn, menu })
     const span = view.dom.querySelector('.md-section-run') as HTMLElement
     vi.spyOn(view, 'posAtCoords').mockReturnValue(14)
     const event = new MouseEvent('contextmenu', { bubbles: true, cancelable: true })
     span.dispatchEvent(event)
     expect(event.defaultPrevented).toBe(false)
+    expect(menu).not.toHaveBeenCalled()
   })
 })
 

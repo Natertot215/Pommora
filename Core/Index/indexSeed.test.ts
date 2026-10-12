@@ -14,7 +14,6 @@ import {
   readIndexedStats,
 } from './contentIndex'
 import { corpusFiles } from '../Files/walk'
-import { scanDoc } from '../MarkdownPM/Engine/docScan'
 import { sweepParse, splitEnvelope } from '../Files/pageFile'
 import { indexWrittenPage, moveIndexPaths, seedContentIndex } from './indexSeed'
 import { renameCascade } from '../Nexus/cascade'
@@ -319,7 +318,6 @@ describe('the relations a page yields', () => {
   it('a `[^1]:` line inside a fenced block opens no footnote block', async () => {
     const body = 'links [[Zeta]]\n\n```\n[^1]: see [[Omega]]\n```\n'
     await page(body)
-    expect(scanDoc(body).citations.entries).toEqual([])
     expect(rowsOf('Notes/A.md')).toEqual([
       { kind: 'body', target: 'zeta', qualifier: '', count: 1 },
     ])
@@ -328,11 +326,6 @@ describe('the relations a page yields', () => {
   it('a `[^1]:` cell inside a table opens no footnote block', async () => {
     const body = 'links [[Zeta]]\n\n| Note | Ref |\n| --- | --- |\n| [^1]: see [[Omega]] | x |\n'
     await page(body)
-    const scan = scanDoc(body)
-    expect(scan.tables).toHaveLength(1)
-    // The cell's line lies inside the table region, and the head pattern admits no leading pipe, so no block opens.
-    expect(scan.tables[0].to).toBeGreaterThan(scan.lineStarts[4])
-    expect(scan.citations.entries).toEqual([])
     expect(rowsOf('Notes/A.md')).toEqual([
       { kind: 'body', target: 'omega', qualifier: '', count: 1 },
       { kind: 'body', target: 'zeta', qualifier: '', count: 1 },

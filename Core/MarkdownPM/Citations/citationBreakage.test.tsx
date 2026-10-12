@@ -10,9 +10,9 @@ import {
   seedHost,
   typeInto,
 } from '../../Testing/editorHarness'
-import { splitWithOffsets } from '../Engine/detect'
 import { citationSeatAt } from './citationActions'
-import { citationScan } from '../../Testing/markdownEngine'
+import { stranded } from '../../Testing/markdownEngine'
+import { scanDoc } from '../Engine/docScan'
 
 beforeEach(() => {
   stubEditorBridge()
@@ -24,12 +24,6 @@ afterEach(async () => {
 
 const BODY = '# Notes\n\nprose[^1] and more[^two] here\n\n| a | b |\n| --- | --- |\n| c[^1] | d |\n'
 const DOC = `${BODY}\n[^1]: the first citation\n[^two]: the second\n[^orphan]: nothing points here`
-
-function stranded(doc: string): string[] {
-  const d = splitWithOffsets(doc)
-  const owned = new Set(citationScan(d, []).entries.map((e) => e.line))
-  return d.lines.filter((l, i) => /^ {0,3}\[\^[^\]\s]+\]:/.test(l) && !owned.has(i))
-}
 
 const intact = (view: EditorView): string[] => stranded(view.state.doc.toString())
 
@@ -122,7 +116,7 @@ describe('a section survives being written at while it is hidden', () => {
     await typeInto(view, ' ')
     await typeInto(view, 'x')
     expect(intact(view)).toEqual([])
-    expect(citationScan(splitWithOffsets(view.state.doc.toString()), []).entries).toHaveLength(3)
+    expect(scanDoc(view.state.doc.toString()).citations.entries).toHaveLength(3)
   })
 })
 

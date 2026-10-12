@@ -67,11 +67,8 @@ describe('list marker reveal', () => {
     ).length
   }
 
-  it('a resting caret on the marker reveals its source', () => {
+  it("a resting caret on the marker reveals its source, and a range's head keeps the checkbox glyph", () => {
     expect(widgets(false)).toBe(0)
-  })
-
-  it("a range's head on the marker keeps the checkbox glyph", () => {
     expect(widgets(true)).toBe(1)
   })
 })
@@ -188,8 +185,6 @@ describe('decoration intents', () => {
       false,
     )
     expect(intents.some((d) => d.kind === 'widget')).toBe(false)
-    const out = decorationsFor('- b', tokenize('- b'), new Set(), 99)
-    expect(out.some((d) => d.kind === 'widget' && d.spec.type === 'bullet')).toBe(true)
   })
 
   it('dash bullet, caret off the line → • widget takes the whole marker slot through the gap', () => {
@@ -442,9 +437,6 @@ describe('decoration intents', () => {
       expect(prefixEndAt(cached, scan, t.indexOf(' const'))).toBe(t.indexOf(' const') + 1)
       expect(prefixEndAt(cached, scan, t.indexOf('@@'))).toBe(t.indexOf('@@'))
     })
-    it('trades the bar for the raw sign on the caret’s own line', () => {
-      expect(hidden(at(t.indexOf('let b')))).not.toContain('-')
-    })
     it('hands its tag the fence’s totals and no language name', () => {
       const [tag] = of(at(NO_CARET), 'codeTag')
       expect(tag.name).toBeUndefined()
@@ -612,14 +604,6 @@ describe('citation rows', () => {
     expect(drawn).toHaveLength(1)
     expect(computeStats(t).words).toBe(5)
   })
-
-  it('leaves the section out of the list and rail machinery', () => {
-    const t = 'a[^1]\n\n[^1]: one'
-    expect(rows(t).some((d) => d.kind === 'rail')).toBe(false)
-    expect(rows(t).some((d) => d.kind === 'line' && d.className.includes('md-list-item'))).toBe(
-      false,
-    )
-  })
 })
 
 describe('callout box chrome + nested constructs', () => {
@@ -629,12 +613,14 @@ describe('callout box chrome + nested constructs', () => {
     .filter((d): d is Extract<typeof d, { kind: 'line' }> => d.kind === 'line')
     .map((d) => d.className)
 
-  it('every line gets the box line-class (first/last)', () => {
-    expect(lineClasses.some((c) => c.includes('md-callout-first'))).toBe(true)
-    expect(lineClasses.some((c) => c.includes('md-callout-last'))).toBe(true)
-  })
-  it('a bullet inside the box still composes md-list-item with the box', () => {
-    expect(lineClasses).toContain('md-list-item')
+  it('every line gets the box line-class, and a bullet inside still composes md-list-item', () => {
+    expect(lineClasses).toEqual([
+      'md-callout md-callout-first',
+      'md-callout',
+      'md-list-item',
+      'md-callout',
+      'md-callout md-callout-last',
+    ])
   })
   it('the bullet widget absorbs the prefix (starts at line start, not touching a separate hide)', () => {
     const lineStart = doc.indexOf('> - item')
@@ -748,13 +734,7 @@ describe('outliner rails', () => {
   })
 })
 
-describe('a lone embed line and an HTML tag', () => {
-  it('a lone-line embed matches no line construct — no gate needed, pinned so one arriving would show', () => {
-    const scan = scanDoc('- item\n![[Foo]]\n# Head')
-    const { perLine } = docLineIntents(scan)
-    expect(perLine[1]).toEqual([])
-  })
-
+describe('an HTML tag', () => {
   it('an HTML tag wears its color on the name and the bracket color on its brackets, caret or not', () => {
     const tokens = tokenize('<b>')
     const drawn = (active: Set<number>) =>

@@ -126,14 +126,6 @@ describe('ordered list renumbers after a move', () => {
   })
 })
 
-describe('checkbox state preserved across a move', () => {
-  it('keeps [x] / [ ] verbatim when reordering', () => {
-    const doc = '- [x] done\n- [ ] todo\n- [x] also'
-    const out = drop(doc, lineStart(doc, 'done'), doc.length)
-    expect(out).toBe('- [ ] todo\n- [x] also\n- [x] done')
-  })
-})
-
 describe('nested sub-block moves as a unit', () => {
   it('carries descendants with the parent', () => {
     const doc = '- a\n\t- a1\n\t- a2\n- b'
@@ -175,9 +167,7 @@ describe('click (no drag past threshold) toggles a checkbox, never reorders', ()
 
 describe('renumberRuns', () => {
   it('produces minimal digit rewrites', () => {
-    const doc = '3. a\n4. b\n5. c'
-    const changes = renumberRuns(doc, [0])
-    expect(applyEdits(doc, changes)).toBe('3. a\n4. b\n5. c')
+    expect(renumberRuns('3. a\n4. b\n5. c', [0])).toEqual([])
   })
   it('fixes a broken run', () => {
     const doc = '1. a\n1. b\n1. c'

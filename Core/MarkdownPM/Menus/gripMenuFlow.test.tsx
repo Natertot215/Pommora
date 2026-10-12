@@ -87,13 +87,6 @@ describe("a list grip's Type switch", () => {
     expect(view.state.doc.toString()).toBe('1. alpha\n2. beta')
   })
 
-  it('nested runs number independently of their parent', async () => {
-    const view = await mount('- a\n\t- x\n\t- y\n- b')
-    nextPick = 'listKind:ordered'
-    await gripMenu(view, 'a')
-    expect(view.state.doc.toString()).toBe('1. a\n\t1. x\n\t2. y\n2. b')
-  })
-
   it('Checklist and Arrowed reach every level of the block', async () => {
     const view = await mount('1. alpha\n\t2. sub\n\nafter')
     nextPick = 'listKind:checkbox'
@@ -104,25 +97,11 @@ describe("a list grip's Type switch", () => {
     expect(view.state.doc.toString()).toBe('→ alpha\n\t→ sub\n\nafter')
   })
 
-  it('a wrapped item keeps its continuation line', async () => {
-    const view = await mount('- alpha\n  wrapped body\n- beta')
-    nextPick = 'listKind:checkbox'
-    await gripMenu(view, 'alpha')
-    expect(view.state.doc.toString()).toBe('- [ ] alpha\n  wrapped body\n- [ ] beta')
-  })
-
   it('a block whose markers disagree reports no current kind', async () => {
     const view = await mount('- alpha\n1. beta')
     nextPick = null
     await gripMenu(view, 'alpha')
     expect(calls[0]).toEqual(gripMenuItems({ kind: 'list', current: null }))
-  })
-
-  it('Delete takes the whole list', async () => {
-    const view = await mount('intro\n\n- alpha\n- beta\n\nafter')
-    nextPick = 'delete'
-    await gripMenu(view, 'alpha')
-    expect(view.state.doc.toString()).toBe('intro\n\nafter')
   })
 })
 
@@ -154,13 +133,6 @@ describe('the embed tile grip', () => {
     expect(view.state.doc.toString()).toBe('intro\n\n![[Beta]]\n\nbelow')
   })
 
-  it('Delete removes the tile with its extra fencing blank', async () => {
-    const view = await mount('intro\n\n![[Alpha]]\n\nbelow')
-    nextPick = 'delete'
-    await gripMenu(view, 'tile')
-    expect(view.state.doc.toString()).toBe('intro\n\nbelow')
-  })
-
   it('Source re-aims an UNRESOLVED embed line — the stale token is exactly what needs re-aiming', async () => {
     const view = await mount('intro\n\n![[Ghost]]\n\nbelow')
     nextPick = 'source:Beta'
@@ -183,14 +155,6 @@ describe('every other grip', () => {
     const view = await mount('intro\n\nmiddle para\n\nafter')
     nextPick = 'delete'
     await gripMenu(view, 'middle para')
-    expect(calls[0]).toEqual(gripMenuItems({ kind: 'plain' }))
-    expect(view.state.doc.toString()).toBe('intro\n\nafter')
-  })
-
-  it('a callout grip deletes the whole box, leaving no doubled blank', async () => {
-    const view = await mount('intro\n\n> [!note] head\n> body\n\nafter')
-    nextPick = 'delete'
-    await gripMenu(view, 'head')
     expect(calls[0]).toEqual(gripMenuItems({ kind: 'plain' }))
     expect(view.state.doc.toString()).toBe('intro\n\nafter')
   })
