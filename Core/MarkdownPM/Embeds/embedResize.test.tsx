@@ -65,18 +65,10 @@ describe('persisted tile heights', () => {
   })
 
   it('a web tile takes the handle on the page surface alone', async () => {
-    const Watcher = class {
-      observe(): void {}
-      unobserve(): void {}
-      disconnect(): void {}
-    }
-    vi.stubGlobal('IntersectionObserver', Watcher)
-    vi.stubGlobal('ResizeObserver', Watcher)
     const web = { initialBody: '![](https://www.example.com/a)' }
     expect((await mount(web)).dom.querySelector('.resize-edge-s')).toBeNull()
     const live = await mount({ ...web, host: { pageSurface: true } })
     expect(live.dom.querySelector('.resize-edge-s')).not.toBeNull()
-    vi.unstubAllGlobals()
   })
 
   it('a drag on the handle sizes the tile from its measured height and persists one integer', async () => {
