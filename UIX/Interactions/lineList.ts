@@ -19,7 +19,6 @@ type LineListSpec = Omit<LineSpec<LaneSlot, LaneSnap>, 'snap' | 'resolve'> & {
   boxes?: (g: Geometry) => ReadonlyMap<string, Row>
   locked?: boolean
   accepts?: (slot: LaneSlot, id: string) => boolean
-  end?: string
 }
 
 export function lineList({
@@ -28,7 +27,6 @@ export function lineList({
   boxes,
   locked = false,
   accepts,
-  end,
   ...spec
 }: LineListSpec): LineSpec<LaneSlot, LaneSnap> {
   return {
@@ -37,7 +35,7 @@ export function lineList({
       const own = g.rows.find((r) => r.id === id)
       if (!own) return null
       const left = own.left + DROP_LINE_INSET
-      const right = ((end ? g.groups.get(end)?.left : undefined) ?? own.right) - DROP_LINE_INSET
+      const right = own.right - DROP_LINE_INSET
       return { ...buildLanes(g.rows, id, laneOf?.(id), boxes?.(g)), left, width: right - left }
     },
     resolve: (id, p, s) => {

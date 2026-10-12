@@ -817,6 +817,9 @@ describe('band header — the sidebar interaction model', () => {
 describe('column width', () => {
   const resize = async (by: number): Promise<void> => {
     const grip = host.querySelectorAll('.col-resizer')[1]
+    vi.spyOn(grip.parentElement!, 'getBoundingClientRect').mockReturnValue({
+      width: 120,
+    } as DOMRect)
     await act(async () => firePointer(grip, 'pointerdown', { x: 100, y: 5 }))
     await act(async () => firePointer(window, 'pointermove', { x: 100 + by, y: 5 }))
     await drop()
@@ -826,13 +829,13 @@ describe('column width', () => {
 
   it("a resized column's staged width drops once the stored view carries it", async () => {
     await mountTable(structuralSource())
-    expect(cols()).toBe('280px 120px 1fr')
+    expect(cols()).toBe('minmax(280px, 1fr) 120px')
     await resize(40)
     expect(lastSavedView().column_widths).toEqual({ prop_status: 160 })
-    expect(cols()).toBe('280px 160px 1fr')
+    expect(cols()).toBe('minmax(280px, 1fr) 160px')
     await mountTable(structuralSource({ column_widths: { prop_status: 160 } }))
     await mountTable(structuralSource())
-    expect(cols()).toBe('280px 120px 1fr')
+    expect(cols()).toBe('minmax(280px, 1fr) 120px')
   })
 
   it('a width the walker cleared is not written back by the next persist', async () => {

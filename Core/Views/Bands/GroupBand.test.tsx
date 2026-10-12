@@ -10,7 +10,6 @@ import type { ResolvedGroup } from '../viewRow'
 import type { SavedView, SubGroupConfig } from '../views'
 import { groupedLine, type LineSpec, lineList, rowLine } from '@pommora/uix/Interactions/drag'
 import type { Geometry, Row } from '@pommora/uix/Interactions/reorderModel'
-import { ROW_END } from '../Host/useViewInteractions'
 import { mountEachTest } from '../../Testing/viewHarness'
 import { BandGlyph, bandSpec, GroupBand } from './GroupBand'
 import { bandModelOf, headContextOf } from './bandModel'
@@ -230,7 +229,7 @@ describe('band and row lines grouped in one zone', () => {
     })
     const g: Geometry = {
       rows: [row('r1', 0), row('headB', 30), row('r2', 60), row('r3', 80)],
-      groups: new Map([[ROW_END, row(ROW_END, 0)]]),
+      groups: new Map(),
       bottom: 200,
     }
     const bandOf = new Map([
@@ -241,7 +240,6 @@ describe('band and row lines grouped in one zone', () => {
     const rows = lineList({
       laneOf: () => (id) => bandOf.get(id),
       across: true,
-      end: ROW_END,
       commit: vi.fn(),
       line: (slot, s) => rowLine(slot, s, '0px'),
       label: () => 'row',

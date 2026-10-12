@@ -24,7 +24,7 @@ import {
   valueMenuIntent,
 } from '../../Properties/Pickers/valueClick'
 import type { ViewHostApi } from '../Host/useViewHost'
-import { ROW_END, rowHover, useViewInteractions } from '../Host/useViewInteractions'
+import { rowHover, useViewInteractions } from '../Host/useViewInteractions'
 import { fileChipIndex, pickFileInto, runFileMenuAction } from '../../Properties/Pickers/filePick'
 import { useSession } from '../../Session/store'
 import { glanceShown } from '../../Interface/Glance/glanceAction'
@@ -48,7 +48,7 @@ import { ColumnHeader } from './ColumnHeader'
 import './table-view.css'
 import type { GhostAnchor } from '@pommora/uix/Interactions/ghostCreate'
 import { useCellSweep } from './cellSweep'
-import { LineGroup, LineZone, useLineRow } from '@pommora/uix/Interactions/drag'
+import { LineZone, useLineRow } from '@pommora/uix/Interactions/drag'
 import { showConnectionMenu } from '../../Interface/Menus/connectionMenuActions'
 import { valueMenuTarget } from '../../Properties/Cells/valueTarget'
 import type { LinkAction } from '../../Actions/connectionMenu'
@@ -74,7 +74,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     iconsShown,
     alignByCol,
     styleByCol,
-    widthByCol,
     colStyle,
     dragShift,
     cols,
@@ -524,7 +523,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
                 id={c.id}
                 label={columnLabel(c.id, schema, ctx.contexts)}
                 icon={headerIcon(c.id)}
-                width={widthByCol[i]}
                 align={alignByCol[i]}
                 transform={gapShift(dragShift, i)}
                 dragging={dragShift?.from === i}
@@ -537,8 +535,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
                 onContextMenu={(e) => void openHeaderMenu(c.id, c.kind === 'title', e)}
               />
             ))}
-            {/* The :last-child anchor that keeps the last real column's right divider (table.css). */}
-            <LineGroup id={ROW_END} className="cell-filler" aria-hidden="true" />
           </div>
           {groups.flatMap((g) => renderRows(g, 0, true))}
           {interactions.ghostStanding && (
@@ -611,7 +607,6 @@ function GhostRow({
             )}
           </div>
         ))}
-        <div className="cell-filler" aria-hidden="true" />
       </div>
     </Reveal>
   )
@@ -728,7 +723,6 @@ const DataRow = memo(function DataRow({
           </div>
         )
       })}
-      <div className="cell-filler" aria-hidden="true" />
     </div>
   )
 })

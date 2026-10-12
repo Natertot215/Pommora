@@ -11,9 +11,9 @@ const row = (id: string, top: number, left = 0, right = 200): Row => ({
   left,
   right,
 })
-const geo = (rows: Row[], groups: Row[] = []): Geometry => ({
+const geo = (rows: Row[]): Geometry => ({
   rows,
-  groups: new Map(groups.map((r) => [r.id, r])),
+  groups: new Map(),
   bottom: 200,
 })
 const bands = new Map([
@@ -23,7 +23,6 @@ const bands = new Map([
 ])
 const rows = [row('r1', 0), row('r2', 20), row('r3', 40)]
 const NONE = (): boolean => false
-const END = 'end'
 const snapOf = (
   g: Geometry,
   id: string,
@@ -34,7 +33,6 @@ const snapOf = (
     laneOf: () => (x) => bandOf.get(x),
     boxes: (geo) =>
       new Map(geo.rows.filter((r) => vacant(r.id)).map((r) => [r.id, { ...r, top: r.bottom }])),
-    end: END,
     commit: () => {},
     label: () => '',
     watch: [],
@@ -53,14 +51,8 @@ describe('lineList', () => {
     expect(laneSlot(snap, 35, false)).toMatchObject({ lane: 'a', index: 1, before: 'r3' })
   })
 
-  it("the line runs from the dragged row's left to the end filler, inset both sides and indented to its lane's depth", () => {
-    const filler = row(END, 0, 180, 200)
-    const snap = snapOf(
-      geo([row('r1', 0, 10, 180), ...rows.slice(1)], [filler]),
-      'r1',
-      bands,
-      NONE,
-    )!
+  it("the line spans the dragged row, inset both sides and indented to its lane's depth", () => {
+    const snap = snapOf(geo([row('r1', 0, 10, 180), ...rows.slice(1)]), 'r1', bands, NONE)!
     const slot = laneSlot(snap, 35, false)!
     const left = 10 + DROP_LINE_INSET
     const width = 180 - DROP_LINE_INSET - left

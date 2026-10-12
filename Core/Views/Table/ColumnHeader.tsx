@@ -8,7 +8,6 @@ export function ColumnHeader({
   id,
   label,
   icon,
-  width,
   align,
   transform,
   dragging,
@@ -23,7 +22,6 @@ export function ColumnHeader({
   id: string
   label: string
   icon: React.ReactNode
-  width: number
   align: ColumnAlign
   transform: string | undefined
   dragging: boolean
@@ -44,6 +42,8 @@ export function ColumnHeader({
     const grid = grip.closest('.table-grid')
     const zoom = grid ? currentZoom(grid) : 1
     const startX = e.clientX
+    // The rendered width, so a Title stretched past its floor resizes from where its edge sits.
+    const width = (grip.parentElement as HTMLElement).getBoundingClientRect().width / zoom
     let last = width
     beginGesture({
       el: grip,
