@@ -362,6 +362,20 @@ describe('pasting inside a link', () => {
     )
   })
 
+  it('writes a picked link format over the label a link or the clipboard carried, as outside a link', async () => {
+    settings({ removeTitleOnLinkChange: false })
+    expect(await pastedAt('[x](https://b.co)', 8, 'https://c.co', 'link-short')).toBe(
+      '[c.co](https://c.co)',
+    )
+    expect(await pastedAt('[x](https://b.co)', 8, 'https://c.co', 'link-full')).toBe(
+      '[https://c.co](https://c.co)',
+    )
+    expect(await pastedAt('[x](https://b.co)', 8, '[y](https://c.co)', 'link-short')).toBe(
+      '[c.co](https://c.co)',
+    )
+    expect(await pastedAt('[x](https://b.co)', 8, 'https://c.co')).toBe('[x](https://c.co)')
+  })
+
   it('appends at the resting seat after a link', async () => {
     expect(await pastedAt('[[P]]', 5, '[[Q]]')).toBe('[[P]][[Q]]')
   })

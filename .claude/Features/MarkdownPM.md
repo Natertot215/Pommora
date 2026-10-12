@@ -104,7 +104,7 @@ Right-clicking text in the editor opens the operating system's own menu rather t
 - **Heading ▸** — Paragraph and H1–H6. **Lists ▸** — Bullet List, Numbered List, Alphabetical List, Task List, Arrowed List.
 - **Paste As ▸** — What the clipboard could become rather than what a plain paste would make of it.
 
-An address offers the link forms (Page Title for a web address), Plain Text, and Embedded Link on a blank line; a copied connection, headed or not, or a markdown link naming a page offers Connection and Markdown Link, and Embedded Page where a tile can form; any text offers Footnote wherever a marker can bind.
+An address offers the link forms (Page Title for a web address), Plain Text, and Embedded Link on a blank line; a copied connection, headed or not, or a markdown link naming a page offers Connection and Markdown Link, and Embedded Page where a tile can form; any text offers Footnote wherever a marker can bind. Picked inside a link, a form retargets it, and a link form writes its own label over the one the link wore.
 
 Keyboard shortcuts are the Format marks' ⌘ chords and the inverse paste on ⌘⇧V, bound from the one command table every reader derives from, so a rebinding in `settings.json` reaches them. Two sets sit outside that table: ⌘8, ⌘', ⌘9 and ⌘[ wrap a one-line selection in their pair, and ⌘/ comments the line while **HTML Shortcuts** is on.
 
