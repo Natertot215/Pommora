@@ -79,7 +79,7 @@ export function useBridgeSubscriptions(): void {
     }
     setSaveSinks({
       stale: absorb,
-      written: (path) => void useSession.getState().loadHeadings([path]),
+      landed: (path) => void useSession.getState().loadHeadings([path]),
     })
     const off = dialer().on('pages:changed', (paths) => {
       for (const path of paths) absorb(path)

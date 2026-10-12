@@ -216,7 +216,7 @@ describe('a landing under the open page', () => {
 
   it('routes a stale save through the same merge', async () => {
     const view = await mount()
-    setSaveSinks({ stale: (path) => void absorbLanding(path), written: vi.fn() })
+    setSaveSinks({ stale: (path) => void absorbLanding(path), landed: vi.fn() })
     onDisk = `${BASE}\ndelta`
     updateReply = { ok: true, value: { stale: true } }
     await act(async () => {

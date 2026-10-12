@@ -1204,8 +1204,8 @@ describe('store — the headings map (Task 2.3)', () => {
   it('movedHeadings re-keys an entry from a page’s old path to its new one and keeps the map when nothing moved', () => {
     const held = { 'Notes/A.md': read('Setup', 'setup'), 'Notes/B.md': read('Intro', 'intro') }
     const before = new Map([
-      ['a', 'Notes/A.md'],
-      ['b', 'Notes/B.md'],
+      ['a', { path: 'Notes/A.md' }],
+      ['b', { path: 'Notes/B.md' }],
     ])
     const after = new Map([
       ['a', { id: 'a', title: 'A', path: 'Archive/A.md' }],
@@ -1215,7 +1215,7 @@ describe('store — the headings map (Task 2.3)', () => {
       'Archive/A.md': held['Notes/A.md'],
       'Notes/B.md': held['Notes/B.md'],
     })
-    expect(movedHeadings(held, new Map([['b', 'Notes/B.md']]), after)).toBe(held)
+    expect(movedHeadings(held, new Map([['b', { path: 'Notes/B.md' }]]), after)).toBe(held)
   })
 
   it('a full load replaces the map; a partial load keeps unrelated keys', async () => {

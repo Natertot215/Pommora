@@ -32,11 +32,11 @@ import { emitter } from '@pommora/uix/Utilities/subscribable'
 
 export function movedHeadings(
   headings: Record<string, PageHeadings>,
-  before: ReadonlyMap<string, string>,
+  before: ReadonlyMap<string, { path: string }>,
   after: ReadonlyMap<string, { path: string }>,
 ): Record<string, PageHeadings> {
   let next = headings
-  for (const [id, was] of before) {
+  for (const [id, { path: was }] of before) {
     const now = after.get(id)?.path
     if (now === undefined || now === was || !(was in headings)) continue
     if (next === headings) next = { ...headings }
@@ -80,9 +80,8 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
   const headingsInTurn = inTurns()
   const resetNexusSession = (): void => {
     cancelAllSaves()
-    set({ headings: {} })
-    // Every key here is per machine PER NEXUS, so nothing of the old one stays on screen while this one's is read, or after a refused read.
-    set({ devicePrefs: {}, devicePrefsLive: false })
+    // Device preferences are per machine PER NEXUS, so nothing of the old one's stays on screen while this one's is read, or after a refused read.
+    set({ headings: {}, devicePrefs: {}, devicePrefsLive: false })
     const s = get()
     s.resetNavigation()
     s.resetWindow()
@@ -243,11 +242,8 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
     openDropped: (file) => openVia(() => dialer().openDropped(file)),
 
     mutate: async (req) => {
-      const nexus = get().tree?.nexus.id
       const held = get().tree
       const moves = req.op === 'rename' || req.op === 'movePage' || req.op === 'moveSet'
-      const pathsBefore =
-        moves && held ? new Map([...pagesByIdOf(held)].map(([id, p]) => [id, p.path])) : null
       // A save queued for a path this op moves would land on the old path and be refused.
       switch (req.op) {
         case 'movePage':
@@ -269,7 +265,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
           break
       }
       // A flush held by a Nexus switch resumes after it, when the path this op names belongs to the Nexus it left.
-      if (get().tree?.nexus.id !== nexus) return null
+      if (get().tree?.nexus.id !== held?.nexus.id) return null
       const res = await dialer().ask('mutate', req)
       if (!reportRefusal(res)) return null
       if (res.value.unrestored) notifyReport(unrestoredLine(res.value.unrestored), true)
@@ -281,10 +277,8 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       // The host pushed what this write changed before it replied, so the tree already holds it.
       get().patchPagesFor(req)
       const tree = get().tree
-      if (pathsBefore && tree) {
-        const moved = movedHeadings(get().headings, pathsBefore, pagesByIdOf(tree))
-        if (moved !== get().headings) set({ headings: moved })
-      }
+      if (moves && held && tree)
+        set((s) => ({ headings: movedHeadings(s.headings, pagesByIdOf(held), pagesByIdOf(tree)) }))
       return res.value
     },
   }

@@ -107,7 +107,7 @@ export function releaseSaves(): void {
 
 export const pageWriter = createBodyWriter('the page')
 
-let sinks: { stale: (path: string, body: string) => void; written: (path: string) => void } | null =
+let sinks: { stale: (path: string, body: string) => void; landed: (path: string) => void } | null =
   null
 
 export function setSaveSinks(next: typeof sinks): void {
@@ -121,6 +121,7 @@ export interface BodyIO {
   write: (key: string, body: string, baseHash: string) => Promise<Result<BodyWrite>>
   capture: (key: string, text: string) => void
   stale: (key: string, body: string) => void
+  landed?: (key: string) => void
 }
 
 export const pageIO: BodyIO = {
@@ -131,14 +132,11 @@ export const pageIO: BodyIO = {
       r.ok ? ok({ body: r.value.body, hash: r.value.bodyHash }) : r,
     )
   },
-  write: async (path, body, baseHash) => {
-    const res = await dialer().ask('page:updateBody', path, body, baseHash)
-    if (res.ok && !res.value.stale) sinks?.written(path)
-    return res
-  },
+  write: (path, body, baseHash) => dialer().ask('page:updateBody', path, body, baseHash),
   capture: (path, text) =>
     void persist('the conflicting version', dialer().ask('sync:captureLocal', path, text)),
   stale: (path, body) => sinks?.stale(path, body),
+  landed: (path) => sinks?.landed(path),
 }
 
 export function scheduleBodySave(key: string, body: string, io: BodyIO): void {
@@ -152,6 +150,7 @@ export function scheduleBodySave(key: string, body: string, io: BodyIO): void {
     if (r.ok && !r.value.stale) {
       if ((readBodyBase(key)?.hash ?? '') === sent)
         setBodyBase(key, { text: body, hash: r.value.hash })
+      io.landed?.(key)
     } else if (r.ok) io.stale(key, body)
     return r
   })

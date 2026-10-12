@@ -82,16 +82,11 @@ export function pasteAsRows(
 }
 
 interface TextPaste {
-  kind: 'text'
+  kind: 'text' | 'line'
   text: string
 }
 
-interface LinePaste {
-  kind: 'line'
-  text: string
-}
-
-export type PasteWrite = LinkPaste | TextPaste | LinePaste
+export type PasteWrite = LinkPaste | TextPaste
 
 export function pasteAsWrite(
   target: LinkTarget,

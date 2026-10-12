@@ -42,7 +42,7 @@ describe('scheduleBodySave', () => {
     stub({ ok: true, value: { stale: true } })
     cachePageDetail(disk)
     const stale = vi.fn()
-    setSaveSinks({ stale, written: vi.fn() })
+    setSaveSinks({ stale, landed: vi.fn() })
     scheduleBodySave(PATH, 'typed', pageIO)
     await pageWriter.flush(PATH)
     await vi.advanceTimersByTimeAsync(2000)
@@ -67,7 +67,7 @@ describe('scheduleBodySave', () => {
   it('answers stale when no base is held', async () => {
     stub({ ok: true, value: { stale: true } })
     const stale = vi.fn()
-    setSaveSinks({ stale, written: vi.fn() })
+    setSaveSinks({ stale, landed: vi.fn() })
     scheduleBodySave(PATH, 'typed', pageIO)
     await pageWriter.flush(PATH)
     expect(updateBody).toHaveBeenCalledWith(PATH, 'typed', '')

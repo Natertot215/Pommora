@@ -69,8 +69,8 @@ const NO_GLANCE = {
 
 function harnessHost(
   spec: HarnessHost,
-  setShown: (v: boolean) => void,
-  bump: () => void,
+  setShown: (v: boolean) => void = () => {},
+  bump: () => void = () => {},
 ): HarnessState {
   const state = {
     settings: { ...editorSettingsOf({}, {}, DEFAULT_COMMANDS), ...spec.settings },
@@ -139,12 +139,7 @@ function harnessHost(
   return state
 }
 
-export const testHost = (spec: HarnessHost = {}): EditorHost =>
-  harnessHost(
-    spec,
-    () => {},
-    () => {},
-  ).host
+export const testHost = (spec: HarnessHost = {}): EditorHost => harnessHost(spec).host
 
 /** Every `MarkdownTable` prop but its host and model, as a table on a page with no footnotes or headings that writes nowhere. */
 export const tableStubs: Omit<Parameters<typeof MarkdownTable>[0], 'host' | 'model'> = {
