@@ -21,11 +21,6 @@ let container: HTMLDivElement
 let root: Root
 
 beforeEach(() => {
-  ;(globalThis as { ResizeObserver?: unknown }).ResizeObserver ??= class {
-    observe(): void {}
-    unobserve(): void {}
-    disconnect(): void {}
-  }
   clearCache()
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
     'page:open': vi.fn(async () => ok(detail({ id: 'a', path: A.path, body: '## Setup\ntext' }))),

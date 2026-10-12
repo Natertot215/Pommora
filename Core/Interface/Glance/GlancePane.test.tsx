@@ -19,13 +19,6 @@ import { stubDialer } from '../../vitest.setup'
 import { NO_PREFS } from '../../Testing/editorHarness'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
-class ResizeObserverStub {
-  observe(): void {}
-  unobserve(): void {}
-  disconnect(): void {}
-}
-;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = ResizeObserverStub
-
 const page = { kind: 'page', id: 'p1', path: 'Notes/Alpha.md' } as const
 const alpha = detail({ title: 'Alpha', path: 'Notes/Alpha.md', body: 'hi' })
 

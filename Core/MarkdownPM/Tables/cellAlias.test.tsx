@@ -10,13 +10,6 @@ import { buildPageIndex } from '../../Connections/pageIndex'
 import type { TableModel } from '../Engine/Tables/model'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
-if (!('ResizeObserver' in globalThis)) {
-  ;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = class {
-    observe(): void {}
-    unobserve(): void {}
-    disconnect(): void {}
-  }
-}
 
 const conn: ConnectionsApi = {
   ...buildPageIndex([{ id: 'p1', title: 'Quarterly Plan', path: 'N/Quarterly Plan.md' }]),

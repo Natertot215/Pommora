@@ -38,14 +38,6 @@ let root: Root
 beforeEach(() => {
   images = []
   vi.stubGlobal('Image', MockImage)
-  vi.stubGlobal(
-    'ResizeObserver',
-    class {
-      observe(): void {}
-      disconnect(): void {}
-      unobserve(): void {}
-    },
-  )
   vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
     cb(0)
     return 0

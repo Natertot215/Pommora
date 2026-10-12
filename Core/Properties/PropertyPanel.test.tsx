@@ -13,12 +13,6 @@ import { REVEAL_DWELL_MS } from '@pommora/uix/Interactions/hoverReveal'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
-class ResizeObserverStub {
-  observe(): void {}
-  unobserve(): void {}
-  disconnect(): void {}
-}
-;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = ResizeObserverStub
 stubPointerCapture()
 
 const stageDef: PropertyDefinition = {

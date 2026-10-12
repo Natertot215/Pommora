@@ -30,13 +30,6 @@ vi.mock('@pommora/uix/Fields/RenamableLabel', async (actual) => {
   }
 })
 
-class ResizeObserverStub {
-  observe(): void {}
-  unobserve(): void {}
-  disconnect(): void {}
-}
-;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = ResizeObserverStub
-
 const defs: PropertyDefinition[] = [
   { id: 'prop_status', name: 'Status', type: 'status', status_groups: defaultStatusSeed() },
   { id: 'prop_n', name: 'Count', type: 'number' },

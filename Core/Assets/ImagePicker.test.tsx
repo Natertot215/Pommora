@@ -51,14 +51,6 @@ beforeEach(() => {
   HTMLCanvasElement.prototype.getContext = (() =>
     ctx2d) as unknown as typeof HTMLCanvasElement.prototype.getContext
   vi.stubGlobal('Image', MockImage)
-  vi.stubGlobal(
-    'ResizeObserver',
-    class {
-      observe(): void {}
-      disconnect(): void {}
-      unobserve(): void {}
-    },
-  )
   vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
     cb(0)
     return 0

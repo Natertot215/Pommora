@@ -5,13 +5,6 @@ import { createRoot, type Root } from 'react-dom/client'
 import { CheckboxEditor, type CheckboxLook } from './CheckboxEditor'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
-class ResizeObserverStub {
-  observe(): void {}
-  unobserve(): void {}
-  disconnect(): void {}
-}
-;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = ResizeObserverStub
-
 let host: HTMLDivElement
 let root: Root
 beforeEach(() => {

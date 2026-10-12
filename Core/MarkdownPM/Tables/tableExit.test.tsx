@@ -9,15 +9,6 @@ import {
   stubEditorBridge,
 } from '../../Testing/editorHarness'
 
-;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
-if (!('ResizeObserver' in globalThis)) {
-  ;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = class {
-    observe(): void {}
-    unobserve(): void {}
-    disconnect(): void {}
-  }
-}
-
 stubEditorBridge()
 afterEach(cleanupEditor)
 

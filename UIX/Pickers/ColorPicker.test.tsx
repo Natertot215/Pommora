@@ -5,13 +5,6 @@ import { createRoot, type Root } from 'react-dom/client'
 import { ColorPicker } from './ColorPicker'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
-class ResizeObserverStub {
-  observe(): void {}
-  unobserve(): void {}
-  disconnect(): void {}
-}
-globalThis.ResizeObserver = ResizeObserverStub as unknown as typeof ResizeObserver
-
 let host: HTMLDivElement
 let root: Root
 

@@ -6,13 +6,6 @@ import type { EditorView } from '@codemirror/view'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '../../Testing/editorHarness'
 import { firePointer, stubPointerCapture } from '@pommora/uix/Utilities/pointerHarness'
 
-class ResizeObserverStub {
-  observe(): void {}
-  unobserve(): void {}
-  disconnect(): void {}
-}
-;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = ResizeObserverStub
-
 stubPointerCapture()
 stubEditorBridge()
 

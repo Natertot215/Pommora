@@ -9,15 +9,8 @@ import { docScan } from '../docCache'
 import { editorHost } from '../api'
 import { prefsOf, testHost } from '../../Testing/editorHarness'
 
-// The widget lazy-imports MarkdownTable and renders it; a host and a ResizeObserver keep a synchronous render (if the import has resolved from a prior test) from throwing.
+// The widget lazy-imports MarkdownTable and renders it; a host keeps a synchronous render (if the import has resolved from a prior test) from throwing.
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
-if (!('ResizeObserver' in globalThis)) {
-  ;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = class {
-    observe(): void {}
-    unobserve(): void {}
-    disconnect(): void {}
-  }
-}
 
 const A = '| a | b |\n| --- | --- |\n| 1 | 2 |'
 const B = '| x | y |\n| --- | --- |\n| 9 | 8 |'

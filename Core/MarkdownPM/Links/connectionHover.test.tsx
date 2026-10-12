@@ -7,13 +7,6 @@ import { buildPageIndex } from '../../Connections/pageIndex'
 import type { EditorHost } from '../api'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '../../Testing/editorHarness'
 
-class ResizeObserverStub {
-  observe(): void {}
-  unobserve(): void {}
-  disconnect(): void {}
-}
-;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = ResizeObserverStub
-
 stubEditorBridge()
 const arm = vi.fn()
 const cancel = vi.fn()

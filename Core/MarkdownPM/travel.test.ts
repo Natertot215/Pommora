@@ -11,12 +11,6 @@ import {
 import { nearestHeading, travelTo } from './travel'
 import { foldedRegions, toggleFoldAt } from './folding'
 
-class ResizeObserverStub {
-  observe(): void {}
-  unobserve(): void {}
-  disconnect(): void {}
-}
-;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = ResizeObserverStub
 stubEditorBridge()
 
 vi.mock('@pommora/uix/Interactions/autoscroll', async (orig) => ({

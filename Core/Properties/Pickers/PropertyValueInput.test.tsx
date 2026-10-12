@@ -74,12 +74,6 @@ describe('PropertyValueInput', () => {
 })
 
 describe('the popover routes', () => {
-  if (!('ResizeObserver' in globalThis))
-    (globalThis as { ResizeObserver?: unknown }).ResizeObserver = class {
-      observe(): void {}
-      unobserve(): void {}
-      disconnect(): void {}
-    }
   stubEditorBridge()
 
   const popoverFor = (type: PropertyType): Element => {

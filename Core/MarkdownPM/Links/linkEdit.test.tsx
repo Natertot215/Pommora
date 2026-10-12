@@ -25,13 +25,6 @@ import { applyEditorAction } from '../Menus/menu'
 import { type LinkKind, linkTokenAt, tokenize } from '../Engine/tokens'
 import { commitAliasOnEnter, linkEdit } from './linkEdit'
 
-class ResizeObserverStub {
-  observe(): void {}
-  unobserve(): void {}
-  disconnect(): void {}
-}
-;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = ResizeObserverStub
-
 const connMenu = vi.fn<(req: unknown) => Promise<LinkMenuAction | null>>()
 const writeClipboard = vi.fn()
 stubEditorBridge({

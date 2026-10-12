@@ -102,14 +102,6 @@ describe('the pending-title anchor', () => {
   })
 })
 
-if (!('ResizeObserver' in globalThis)) {
-  ;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = class {
-    observe(): void {}
-    unobserve(): void {}
-    disconnect(): void {}
-  }
-}
-
 stubEditorBridge()
 afterEach(cleanupEditor)
 

@@ -10,12 +10,6 @@ import {
 } from '../Testing/editorHarness'
 import { EMPTY_PAGE_TEXT } from './MarkdownEditor'
 
-class ResizeObserverStub {
-  observe(): void {}
-  unobserve(): void {}
-  disconnect(): void {}
-}
-;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = ResizeObserverStub
 stubEditorBridge()
 
 afterEach(async () => {

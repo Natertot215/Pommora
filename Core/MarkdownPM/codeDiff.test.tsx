@@ -7,12 +7,6 @@ import { cleanupEditor, mountEditor, stubEditorBridge } from '../Testing/editorH
 import { codeLanguage } from './codeHighlight'
 import { markdownDecorations } from './decorations'
 
-class ResizeObserverStub {
-  observe(): void {}
-  unobserve(): void {}
-  disconnect(): void {}
-}
-;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = ResizeObserverStub
 stubEditorBridge()
 afterEach(async () => {
   await cleanupEditor()

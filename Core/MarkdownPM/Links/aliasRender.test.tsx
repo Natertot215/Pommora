@@ -5,13 +5,6 @@ import type { ConnectionsApi } from './connectionsApi'
 import { buildPageIndex } from '../../Connections/pageIndex'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '../../Testing/editorHarness'
 
-class ResizeObserverStub {
-  observe(): void {}
-  unobserve(): void {}
-  disconnect(): void {}
-}
-;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = ResizeObserverStub
-
 stubEditorBridge()
 afterEach(async () => {
   await cleanupEditor()

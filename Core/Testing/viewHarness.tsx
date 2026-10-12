@@ -1,4 +1,4 @@
-// The jsdom seat every view suite mounts through: the act environment, the ResizeObserver jsdom lacks, pointer capture, and one render-and-flush of the real ViewHost.
+// The jsdom seat every view suite mounts through: the act environment, pointer capture, and one render-and-flush of the real ViewHost.
 
 import { act, type ReactNode } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
@@ -10,16 +10,9 @@ import { stubPointerCapture } from '@pommora/uix/Utilities/pointerHarness'
 import { ViewHost } from '../Views/Host/ViewHost'
 import { useSession } from '../Session/store'
 
-class ResizeObserverStub {
-  observe(): void {}
-  unobserve(): void {}
-  disconnect(): void {}
-}
-
 /** Once per suite, at module scope: the jsdom seat, then a fresh host and root before every test, unmounted and removed after it. jsdom ships no `CSS.escape`, which the ghost's id-scoped queries call. */
 export function mountEachTest(onMount: (host: HTMLDivElement, root: Root) => void): void {
   ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
-  ;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = ResizeObserverStub
   ;(globalThis as { CSS?: unknown }).CSS ??= { escape: (s: string) => s }
   stubPointerCapture()
   let host: HTMLDivElement

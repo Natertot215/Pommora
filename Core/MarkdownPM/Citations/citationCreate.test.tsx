@@ -25,13 +25,6 @@ import { foldedRegions } from '../folding'
 import { pasteFromClipboard } from '../Links/pasteLink'
 import { citationScan } from '../../Testing/markdownEngine'
 
-class ResizeObserverStub {
-  observe(): void {}
-  unobserve(): void {}
-  disconnect(): void {}
-}
-;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = ResizeObserverStub
-
 let clipboard = ''
 const settings = (p: Partial<Personalization>): void => {
   seedHost({ settings: p, clipboard: { read: async () => clipboard } })

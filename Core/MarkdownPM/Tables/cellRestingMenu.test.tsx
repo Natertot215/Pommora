@@ -13,13 +13,6 @@ import { buildPageIndex } from '../../Connections/pageIndex'
 import type { EditorSettings } from '../api'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
-if (!('ResizeObserver' in globalThis)) {
-  ;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = class {
-    observe(): void {}
-    unobserve(): void {}
-    disconnect(): void {}
-  }
-}
 
 let reply: (action: string | null) => void = () => {}
 const format = vi.fn<(req: EditorMenuRequest) => Promise<string | null>>()

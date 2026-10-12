@@ -5,13 +5,6 @@ import { createRoot, type Root } from 'react-dom/client'
 import { type MenuDoor, PickerControl, setMenuDoor } from './PickerControl'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
-class ResizeObserverStub {
-  observe(): void {}
-  unobserve(): void {}
-  disconnect(): void {}
-}
-;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = ResizeObserverStub
-
 const OPTIONS = [
   { value: '0.5', label: '50%' },
   { value: '1', label: '100%' },

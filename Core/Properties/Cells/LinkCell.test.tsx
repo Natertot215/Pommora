@@ -13,13 +13,6 @@ import { LinkCell } from './LinkCell'
 
 vi.mock('../../Web/openWebLink', () => ({ openWebLink: vi.fn() }))
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
-if (!('ResizeObserver' in globalThis)) {
-  ;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = class {
-    observe(): void {}
-    unobserve(): void {}
-    disconnect(): void {}
-  }
-}
 
 let root: Root | null = null
 let host: HTMLDivElement | null = null

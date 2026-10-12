@@ -15,14 +15,6 @@ import {
   stubEditorBridge,
 } from '../../Testing/editorHarness'
 
-if (!('ResizeObserver' in globalThis)) {
-  ;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = class {
-    observe(): void {}
-    unobserve(): void {}
-    disconnect(): void {}
-  }
-}
-
 const connMenu = vi.fn<(req: unknown) => Promise<LinkMenuAction | null>>()
 stubEditorBridge({ menu: async (req: unknown) => ok(await connMenu(req)) })
 

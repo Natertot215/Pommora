@@ -15,14 +15,6 @@ import { propsAtRoot } from '../../Testing/pageValues'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
-// The DualSwitch's GlassControl (liquid glass) measures itself; jsdom has no ResizeObserver.
-class ResizeObserverStub {
-  observe(): void {}
-  unobserve(): void {}
-  disconnect(): void {}
-}
-;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = ResizeObserverStub
-
 const schema: PropertyDefinition[] = [
   {
     id: 'prop_status',

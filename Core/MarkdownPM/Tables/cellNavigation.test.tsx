@@ -7,15 +7,8 @@ import { MarkdownTable } from './MarkdownTable'
 import { tableStubs, testHost } from '../../Testing/editorHarness'
 import type { TableModel } from '../Engine/Tables/model'
 
-// jsdom lacks ResizeObserver (MarkdownTable measures cell geometry with it); a no-op stub is enough. The flag enables React's act() in this env.
+// The flag enables React's act() in this env.
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
-if (!('ResizeObserver' in globalThis)) {
-  ;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = class {
-    observe(): void {}
-    unobserve(): void {}
-    disconnect(): void {}
-  }
-}
 
 const model: TableModel = {
   columns: [

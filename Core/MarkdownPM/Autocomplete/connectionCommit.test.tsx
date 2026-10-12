@@ -15,13 +15,6 @@ import {
   typeInto,
 } from '../../Testing/editorHarness'
 
-class ResizeObserverStub {
-  observe(): void {}
-  unobserve(): void {}
-  disconnect(): void {}
-}
-;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = ResizeObserverStub
-
 stubEditorBridge()
 afterEach(async () => {
   seedHost({})

@@ -13,13 +13,6 @@ import { MenuDoorHost } from '../../Testing/MenuDoorHost'
 
 stubPointerCapture()
 
-class ResizeObserverStub {
-  observe(): void {}
-  unobserve(): void {}
-  disconnect(): void {}
-}
-;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = ResizeObserverStub
-
 const dateDef: PropertyDefinition = { id: 'prop_due', name: 'Due', type: 'dateTime' }
 const source = { id: 'col1', kind: 'collection', path: 'Col', title: 'Col', views: [] } as never
 

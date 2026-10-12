@@ -14,13 +14,6 @@ import { splitWithOffsets } from '../Engine/detect'
 import { citationSeatAt } from './citationActions'
 import { citationScan } from '../../Testing/markdownEngine'
 
-class ResizeObserverStub {
-  observe(): void {}
-  unobserve(): void {}
-  disconnect(): void {}
-}
-;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = ResizeObserverStub
-
 beforeEach(() => {
   stubEditorBridge()
   seedHost({ settings: { jumpToCitation: false } })

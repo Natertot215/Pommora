@@ -13,14 +13,6 @@ import { buildPageIndex } from '../Connections/pageIndex'
 import type { ConnectionsApi } from './Links/connectionsApi'
 import { followTarget } from './Links/linkClicks'
 
-if (!('ResizeObserver' in globalThis)) {
-  ;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = class {
-    observe(): void {}
-    unobserve(): void {}
-    disconnect(): void {}
-  }
-}
-
 const holder = { id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' }
 const conn: ConnectionsApi = {
   ...buildPageIndex([holder]),

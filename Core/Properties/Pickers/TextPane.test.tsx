@@ -12,14 +12,6 @@ import type { PropertyValue } from '../propertyValue'
 import { TextPane } from './TextPane'
 import { writeLinkAt } from '../../MarkdownPM/Links/pendingTitle'
 
-if (!('ResizeObserver' in globalThis)) {
-  ;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = class {
-    observe(): void {}
-    unobserve(): void {}
-    disconnect(): void {}
-  }
-}
-
 const ALPHA = { id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' }
 const ALPHA_HEADINGS = {
   [ALPHA.path]: { keys: ['setup'], texts: ['Setup'], outline: [{ text: 'Setup', level: 2 }] },

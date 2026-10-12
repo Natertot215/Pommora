@@ -6,13 +6,6 @@ import { stubEditorBridge } from '../../Testing/editorHarness'
 import { makeTree } from '../../Testing/testTree'
 import { useSession } from '../../Session/store'
 import { ValuePickPresenter } from './ValuePickPresenter'
-;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
-if (!('ResizeObserver' in globalThis))
-  (globalThis as { ResizeObserver?: unknown }).ResizeObserver = class {
-    observe(): void {}
-    unobserve(): void {}
-    disconnect(): void {}
-  }
 stubEditorBridge()
 
 let host: HTMLDivElement

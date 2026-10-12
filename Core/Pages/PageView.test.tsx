@@ -30,12 +30,6 @@ let container: HTMLDivElement
 let root: Root
 
 beforeEach(() => {
-  class RO {
-    observe(): void {}
-    unobserve(): void {}
-    disconnect(): void {}
-  }
-  ;(globalThis as { ResizeObserver?: unknown }).ResizeObserver ??= RO
   clearCache()
   onDisk = 'live'
   updateReply = { ok: true, value: { hash: machine().sha256Hex('live'), stale: false } }

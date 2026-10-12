@@ -13,15 +13,6 @@ import {
 import { docScan } from '../docCache'
 import { modelFromRegion } from '../Engine/Tables/regions'
 
-;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
-if (!('ResizeObserver' in globalThis)) {
-  ;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = class {
-    observe(): void {}
-    unobserve(): void {}
-    disconnect(): void {}
-  }
-}
-
 stubEditorBridge()
 const table = vi.fn<(ctx: TableMenuContext) => Promise<TableMenuAction | null>>()
 const write = vi.fn(async (_text: string) => {})

@@ -6,14 +6,6 @@ import type { NumberConfig } from '../properties'
 import { NumberEditor } from './NumberEditor'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
-// The DualSwitch's GlassControl measures itself; jsdom has no ResizeObserver.
-class ResizeObserverStub {
-  observe(): void {}
-  unobserve(): void {}
-  disconnect(): void {}
-}
-;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = ResizeObserverStub
-
 let host: HTMLDivElement
 let root: Root
 beforeEach(() => {

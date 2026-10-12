@@ -11,13 +11,6 @@ import { renderCellContent } from '../Tables/cellStatic'
 import { cleanupEditor, mountEditor, seedHost, stubEditorBridge } from '../../Testing/editorHarness'
 import { scanDoc } from '../Engine/docScan'
 
-class ResizeObserverStub {
-  observe(): void {}
-  unobserve(): void {}
-  disconnect(): void {}
-}
-;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = ResizeObserverStub
-
 const opened = vi.fn()
 const openExternal = vi.fn()
 stubEditorBridge()
