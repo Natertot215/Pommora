@@ -11,6 +11,7 @@ export function calloutDeleteVerdict(
   doc: string,
   from: number,
   to: number,
+  insert: string,
   s: CalloutScan,
 ): GuardVerdict {
   if (to <= from) return { kind: 'ok' }
@@ -18,26 +19,25 @@ export function calloutDeleteVerdict(
   const off = s.lineStarts[i]
   const co = s.callouts[i]
   // Body prefixes only — the head's whole-prefix delete is intentional, and the atomic range blocks partial head corruption.
-  if (!co || co.first || co.prefixEnd === 0 || from >= off + co.prefixEnd) {
-    // A join that leaves the body's `> ` intact splices a literal `>` into content, so extend it to consume the prefix.
-    const ext = joinExtension(s, from, to)
-    return ext === null ? { kind: 'ok' } : { kind: 'extend', to: ext }
-  }
+  if (!co || co.first || co.prefixEnd === 0 || from >= off + co.prefixEnd)
+    return joinVerdict(s, from, to, insert)
   if (to >= lineEndOf(s, i) + 1 || to >= doc.length) return { kind: 'ok' }
   if (co.prefixEnd >= s.lines[i].length) return { kind: 'ok' }
-  if (to >= off + co.prefixEnd) return { kind: 'clamp', from: off + co.prefixEnd }
-  return { kind: 'cancel' }
+  const seat = off + co.prefixEnd
+  if (to < seat) return { kind: 'cancel' }
+  return { kind: 'rewrite', edits: [{ from: seat, to, insert }], caret: seat + insert.length }
 }
 
-function joinExtension(s: CalloutScan, from: number, to: number): number | null {
+/** A join that leaves the body's `> ` intact splices a literal `>` into content, so it's extended to consume the prefix. */
+function joinVerdict(s: CalloutScan, from: number, to: number, insert: string): GuardVerdict {
   const i = lineIndexAt(s, to)
   const off = s.lineStarts[i]
   const co = s.callouts[i]
   return co && !co.first && co.prefixEnd > 0 && from < off && to < off + co.prefixEnd
-    ? off + co.prefixEnd
-    : null
+    ? { kind: 'rewrite', edits: [{ from, to: off + co.prefixEnd, insert }] }
+    : { kind: 'ok' }
 }
 
-export const calloutGuard: Extension = verdictFilter((doc, fromA, toA, _inserted, state) =>
-  calloutDeleteVerdict(doc, fromA, toA, docScan(state.doc)),
+export const calloutGuard: Extension = verdictFilter((doc, fromA, toA, inserted, state) =>
+  calloutDeleteVerdict(doc, fromA, toA, inserted, docScan(state.doc)),
 )

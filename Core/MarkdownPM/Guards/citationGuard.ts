@@ -10,7 +10,7 @@ function tailHolds(after: string, at: number): boolean {
   return citationEntries(splitWithOffsets(after.slice(at)), () => false)[0]?.line === 0
 }
 
-/** Three repairs, nothing else: an insertion at a citation line's first offset is clamped past its `[^label]:` (atomic skipping relocates only strictly-interior positions, so that seat stays reachable and invisible), a change from the body that joins the section's first standing head onto its line ends with a newline, and any other change leaving the tail no longer reading as a run has its text relocated to the body above the section. */
+/** Three repairs, nothing else: an insertion at a citation line's first offset is clamped past its `[^label]:`, a change from the body that joins the section's first standing head onto its line ends with a newline, and any other change leaving the tail no longer reading as a run has its text relocated to the body above the section. */
 export function citationTailVerdict(
   doc: string,
   fromA: number,
@@ -44,7 +44,11 @@ export function citationTailVerdict(
     c.anchorLine < 0 ? 0 : prose ? lineEndOf(scan, c.anchorLine) : lineStarts[c.anchorLine]
   // A sweep that began at or above the seat keeps its replacement where it was aimed; what broke the run is the head it joined, so the head gets its line back.
   if (fromA <= seat)
-    return { kind: 'rewrite', edits: [{ from: fromA, to: toA, insert: `${inserted}\n` }] }
+    return {
+      kind: 'rewrite',
+      edits: [{ from: fromA, to: toA, insert: `${inserted}\n` }],
+      caret: fromA + inserted.length,
+    }
   // Whitespace alone isn't text to rescue (the space that turns a typed `-` into a list marker), so it is refused.
   const body = inserted.trim() === '' ? '' : inserted.replace(/^\n+|\n+$/g, '')
   if (body === '') return { kind: 'rewrite', edits: [{ from: fromA, to: toA, insert: '' }] }
@@ -54,6 +58,7 @@ export function citationTailVerdict(
       ...(fromA < toA ? [{ from: fromA, to: toA, insert: '' }] : []),
       { from: seat, to: seat, insert: prose ? `\n${body}` : `${body}\n` },
     ],
+    caret: seat + (prose ? 1 : 0) + body.length,
   }
 }
 

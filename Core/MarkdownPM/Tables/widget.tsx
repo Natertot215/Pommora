@@ -549,6 +549,7 @@ const widgetField = StateField.define<DecorationSet>({
     if (refreshed) return refreshedSet
     if (!tr.docChanged) return deco
     if (editAffectsTables(deco, tr)) return buildWidgetDecorations(tr.state, { deco, tr })
+    if (deco.size === 0) return deco
     const { doc } = tr.state
     let next = deco.map(tr.changes)
     const was = tr.startState.doc
