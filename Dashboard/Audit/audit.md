@@ -1,6 +1,6 @@
 ## Pommora Codebase Audit
 
-**Pinned:** `f6511401d` (09-23-2026) · **Reconciled:** `7d9afc8e4` (10-12-2026) · **Findings:** 77/627
+**Pinned:** `f6511401d` (09-23-2026) · **Reconciled:** `6df5b11e2` (10-12-2026) · **Findings:** 71/627
 
 Thirty-four Opus investigators read every production file in `Core`, `UIX`, `Desktop`, and `Sync` in full, sliced by folder and by the jobs the code performs. Two mergers combined their 857 candidates by root cause, and twenty-one reviewers who hadn't raised them re-read every citation, reproduced the High ones against real modules, and killed 63. This document is the current state: findings that were fixed, withdrawn, or ruled moot are removed rather than annotated, and rulings are written into the findings they settle. The readiness and pace sections are the orchestrator's judgment, drawn from the evidence below them. A system audit of MarkdownPM (10-08-2026) read the editor in full at `70fc6063c`, and its findings are folded in here.
 
@@ -24,7 +24,7 @@ Thirty-four Opus investigators read every production file in `Core`, `UIX`, `Des
 | Area | State | High | Medium |
 | ------------ | ----------------------------------------------------- | ------- | ---------------------------- |
 | Sync | Changes from another device are written to whatever path the hub names, including outside the Nexus and into `.git/` or `.obsidian/` (F-001). A rebuilt or restored hub never gets unchanged files re-uploaded, so new devices receive a partial Nexus (F-003). A list two devices both edited keeps one device's items, so a Context rename can revert and hide its Spaces (F-006). Trashing a Collection or Set uploads the contents of its excluded folders (F-007). | 3 | 4 |
-| Page editor | Past about 8,000 lines, the footer's figures re-tokenize the whole page on every typing pause, freezing the editor for up to a second (F-044). | 1 | 10 |
+| Page editor | Past about 8,000 lines, the footer's figures re-tokenize the whole page on every typing pause, freezing the editor for up to a second (F-044). | 1 | 8 |
 | Menus and pickers | The kit's buttons show no keyboard focus, so a Tab walk through a menu or toolbar loses its place on every button (F-076). | 0 | 1 |
 | Identity | An ID lost or damaged outside the app is replaced rather than recovered on every path but a held page's own event, so tabs, pins, metadata, and a Nexus's device store lose what they were keyed to (F-089). | 0 | 1 |
 
@@ -244,7 +244,7 @@ Carry `historyDays` on the `ring` route body, or as an owner-gated field on `inf
 
 #### W3 · Tables and Cells
 
-The table widget, its React grid, and the cell editor parse a whole table on every keystroke, redraw the whole grid on every drag move, and repeat two small pieces of per-keystroke work. Landing this bounds a table's typing and dragging cost to the edit.
+The table widget, its React grid, and the cell editor parse a whole table on every keystroke, redraw the whole grid on every drag move, and repeat a small piece of per-keystroke work. Landing this bounds a table's typing and dragging cost to the edit.
 
 ##### F-015 · Typing in a table cell re-reads the whole table as Markdown on every keystroke, and big tables lag.
 
@@ -256,7 +256,7 @@ Every character typed into a table cell makes the editor re-check the entire tab
 
 **Fix | Literal**
 
-`regions.ts` keeps the two-line `isTable` parse that confirms header plus delimiter, then extends the body line by line through `endsBody`: a blank line ends it, and a line that passes the lexical prefilter `MAY_OPEN` (a superset of every block opener's first characters) ends it when `opensBlock`, one parse of `| a |\n| - |\n<line>` remembered per line through `perText` at a cap of 4096, yields more than one block. The whole-block confirm and the shrink loop are deleted. This is the prefilter-then-cached-parse pattern `isHeadingLine` and `isThematicBreakLine` already follow; per-line facts the scan holds can't answer it, since `tableRegions` runs before the scan derives headings, quotes, breaks, and references, and the facts it derives later differ from the table extension for an unpaired fence, a `*` item, a bare `-` or `1.`, a `<span>`-led row, a footnote definition, and indented code. Table extents don't change. The `rescan` window still spans the table, so what remains per keystroke is the linear line scan with no micromark parse: 0.3 ms at 200 rows and about 2 ms at 1,000, and a cold open of a 1,000-row table whose every row is digit-led and unique, the worst case, costs about 80 ms once. HEAD's whole-table parse also throws under the development export condition (a `devlop` assertion in `mdast-util-gfm-task-list-item`) on a body holding an empty list item followed by a `[ ] task` line, which crashes `scanDoc` in `npm run dev`; the new path never parses two body lines together. A seeded property in `Engine/Tables/regions.test.ts`, `a table body runs exactly as far as the whole-table parse reads it`, checks over 2,000 seeds that each region's text parses as one table and that the region plus its next non-blank line doesn't; reverting `endsBody` to blank-only, or dropping any opener class from `MAY_OPEN`, turns it red within 69 seeds. The halves of `codec.test.ts` and `parser.test.ts` that *§Appendix: MarkdownPM Test Dispositions* moves or deletes land in the `regions.test.ts` this extends. The property's seeded `stream` generator is the one `Engine/docScan.test.ts` already holds, shared from a test helper rather than copied.
+`regions.ts` keeps the two-line `isTable` parse that confirms header plus delimiter, then extends the body line by line through `endsBody`: a blank line ends it, and a line that passes the lexical prefilter `MAY_OPEN` (a superset of every block opener's first characters) ends it when `opensBlock`, one parse of `| a |\n| - |\n<line>` remembered per line through `perText` at a cap of 4096, yields more than one block. The whole-block confirm and the shrink loop are deleted. This is the prefilter-then-cached-parse pattern `isHeadingLine` and `isThematicBreakLine` already follow; per-line facts the scan holds can't answer it, since `tableRegions` runs before the scan derives headings, quotes, breaks, and references, and the facts it derives later differ from the table extension for an unpaired fence, a `*` item, a bare `-` or `1.`, a `<span>`-led row, a footnote definition, and indented code. Table extents don't change. The `rescan` window still spans the table, so what remains per keystroke is the linear line scan with no micromark parse: 0.3 ms at 200 rows and about 2 ms at 1,000, and a cold open of a 1,000-row table whose every row is digit-led and unique, the worst case, costs about 80 ms once. HEAD's whole-table parse also throws under the development export condition (a `devlop` assertion in `mdast-util-gfm-task-list-item`) on a body holding an empty list item followed by a `[ ] task` line, which crashes `scanDoc` in `npm run dev`; the new path never parses two body lines together. A seeded property in `Engine/Tables/regions.test.ts`, `a table body runs exactly as far as the whole-table parse reads it`, checks over 2,000 seeds that each region's text parses as one table and that the region plus its next non-blank line doesn't; reverting `endsBody` to blank-only, or dropping any opener class from `MAY_OPEN`, turns it red within 69 seeds. The property's seeded `stream` generator is the one `Engine/docScan.test.ts` already holds, shared from a test helper rather than copied.
 
 ##### F-016 · Dragging a table row, column, or column edge redraws the whole table on every mouse movement.
 
@@ -281,34 +281,6 @@ Every keystroke in a cell runs the full Markdown parse of that cell twice: once 
 **Fix | Literal**
 
 `marks` returns `Decoration.none` when the cell's text holds no `[^`. Behavior is unchanged, and the two `cellStatic.test.tsx` cases that number a marker inside an open cell keep the positive path pinned.
-
-##### F-022 · On every page edit, the table widget field rebuilds its page-context keys even when the page has no tables.
-
-> **Area:** MarkdownPM · **Lens:** Hot Path · **Weight:** Low · **Size:** S · **Net:** +1 · **Origin:** Shortcut
-
-**Finding**
-
-With no table on the page, every keystroke still joins the footnote and heading keys, only to iterate an empty decoration set. The outline itself is already derived every version by the decoration build through `docHeadingKeys`, so the widget adds two string joins per keystroke, not a heading walk.[^22]
-
-**Fix | Literal**
-
-`widgetField.update` returns `deco` when it is empty, right after `editAffectsTables` declines and before the set is mapped. `editAffectsTables` returns true whenever a delimiter sits within a line of the edit, which is the only way a table appears on a page that had none, so nothing past the guard can produce a widget. Behavior is unchanged, and `widget.test.ts` passes as it stands.
-
-#### W4 · Footnotes and Guards
-
-The citations section and a callout's hidden prefix are each held by a guard that repairs a keystroke rather than refusing it, and the repair leaves the caret where the keystroke was aimed. Landing this makes typing near either construct follow what the person did.
-
-##### F-025 · When a guard repairs a keystroke the caret is left behind, so text typed below the footnotes section breaks into one-character lines, and typing over a callout line's start replaces each character with the next.
-
-> **Area:** MarkdownPM · **Lens:** Defect · **Weight:** Medium · **Size:** S · **Net:** +11 · **Origin:** Shortcut
-
-**Finding**
-
-On a blank line below the footnotes section, typing `ab cd` lands in the body as four separate lines, `a`, `b`, `c`, `d`. If a selection on a callout body line starts at the line's beginning and is typed over, every key replaces the character before it, so `xyz` leaves only `z`. Typing over the blank line just above the section loses characters too: `xy` becomes `body\ny\n[^a]: first`. All three come from one cause: `verdictFilter` rebuilds a repaired transaction from its changes, effects, scroll flag, and user event, but not its selection, so CodeMirror maps the old selection through the new changes. A relocated character lands in the body while the caret stays below the section, so the next key is relocated again as its own line; a clamped replace keeps the old anchor at the line start, so the new selection covers the hidden `> ` and the typed character; and in `citationTailVerdict`'s `fromA <= seat` branch the mapped selection covers the typed character and the appended newline, so the next key replaces it. The footnotes case was reproduced through the full page stack; whether a selection's anchor can be seated at a callout line's start by hand is rated Likely. The parenthetical at `citationGuard.ts:13` saying the head seat "stays reachable" is false, since the caret-seat filter moves any cursor off it.[^25]
-
-**Fix | Literal**
-
-The `rewrite` verdict gains an optional `caret`, where typing resumes in the repaired document. `verdictFilter` passes a cursor whenever the incoming transaction set a selection: at the verdict's caret for a rewrite, or at the repaired change's end for a clamp or extend. `citationTailVerdict` sets the caret after the relocated text and, in the `fromA <= seat` branch, after the typed character, so the following keys join that line; the head-start clamp and the whitespace refusal set no caret and keep today's mapping. The false parenthetical at `citationGuard.ts:13` is removed. A repaired transaction that carried several selection ranges now collapses to one cursor; typed input is always one change, which the caret's coordinates assume. Pure state tests type with the selection set: `citationGuard.test.ts` gains "the caret follows the text a repair moves" (typing below the section keeps one body line; typing over the blank line above it keeps both characters), and `calloutGuard.test.ts` gains "the caret follows a clamped replacement" (`xyz` lands whole after the prefix); all three are red without the `selection` line. The tightened `prefixSeat.test.tsx:155` value in *§Appendix: MarkdownPM Test Dispositions* is captured after this lands.
 
 #### W7 · Subfield Figures
 
@@ -440,19 +412,7 @@ Deferred until a long-page benchmark is part of the gates. Cached line intents w
 
 #### W9 · Decorations, Embeds, and Folding
 
-The editor's drawing layer redoes on every caret move work that only an edit can change, and leaves a few drawn states wrong: a doubled gap under callouts and text landing outside a fold. Landing this gives each drawn state one owner and ties each cost to the edits that can change it.
-
-##### F-055 · The gap below a callout is twice the gap above it, from a line margin the editor's layout rules forbid.
-
-> **Area:** MarkdownPM · **Lens:** Defect · **Weight:** Medium · **Size:** S · **Net:** −3 · **Origin:** Residue
-
-**Finding**
-
-Callouts get extra space below them from a rule Editor-Internals forbids for box constructs, because a CodeMirror line margin throws off where clicks and the caret land. `.cm-line.md-callout-last` carries `margin-bottom: var(--callout-gap)` beside the sanctioned `padding-bottom: calc(var(--callout-gap) + var(--callout-inner-pad))` and the `::before { bottom: var(--callout-gap) }` that already provide the gap, so the gap below a callout is double the gap above, while quotes and code blocks carry no margin. The other `md-callout-last` rules are padding and pseudo-elements, and `intents.test.ts` pins only that the class is emitted; the height-model effect and the visual change are confirmed by reading.[^55]
-
-**Fix | Literal**
-
-Delete the three-line margin rule; Editor-Internals' "never a line margin" then holds for callouts with no documentation edit. The check is visual and live: on a `~/Test` page with a paragraph, a two-line `> [!note]` callout, and a paragraph, the gap from the callout border's bottom to the next line's top equals `--callout-gap` and matches the gap above (twice that without the fix), and a click 2px below the border lands the caret on the line under the pointer.
+The editor's drawing layer redoes on every caret move work that only an edit can change, and leaves a few drawn states wrong, among them text landing outside a fold. Landing this gives each drawn state one owner and ties each cost to the edits that can change it.
 
 ##### F-056 · Every caret move rebuilds the ranges that let the caret step over an embedded tile.
 
@@ -477,18 +437,6 @@ While the pointer rests over the editor, every caret move re-measures every visi
 **Fix | Literal**
 
 `TagReveal.update` re-measures on a selection change only when the caret's line changes, and keeps `docChanged`, `viewportChanged`, `geometryChanged`, and `focusChanged`, which is rare; dropping `selectionSet` and `focusChanged` outright would strand a tag that appears when the caret leaves an opening line, so the copy reveal wouldn't show until the pointer left. Moves along one line stop measuring. `blockHandles.test.ts`'s 'measures again on a caret move only when the caret changes lines' asserts no measure after a same-line move and one after a cross-line move, red (two measures where one is expected) when `selectionSet` re-measures unconditionally. Keystrokes still re-measure through `docChanged` while the pointer rests over the editor; that cost stays.
-
-##### F-058 · Every redraw searches from the visible area to the end of the page for `↔` arrows.
-
-> **Area:** MarkdownPM · **Lens:** Hot Path · **Weight:** Low · **Size:** S · **Net:** +2 · **Origin:** Shortcut
-
-**Finding**
-
-Highlighting `↔` arrows searches from the top of the visible area to the end of the document on every redraw (every caret move and keystroke) whenever no arrow sits below the viewport: `build` runs `text.indexOf('↔', from)` over the whole `scan.text` per visible range and stops only at a hit at or past `to`. Confirmed by reading.[^58]
-
-**Fix | Literal**
-
-Search the visible slice (`text.slice(from, to)`) and offset each hit by `from`. The output is unchanged, so no test goes red without the fix; a test mounting `'a ↔ b\n↔'` and asserting the two `.dual-direction-arrow` spans' text and positions pins the offset arithmetic.
 
 ##### F-059 · Text that arrives from another copy of a page at the end of a folded section shows up below the fold.
 
@@ -558,47 +506,23 @@ The taken fixes turn two more sentences false. F-066 adds a fourth intentional d
 
 **Fix | Literal**
 
-Each sentence takes the most surgical correction. In `MarkdownPM.md`: `Guards/` reads "the transaction filters that refuse or repair an edit that would corrupt a construct, and the settle that carries a heading rename to the links naming it"; `Menus/` reads "the block handles, the editor's side of its menus, and the pane controls its pickers share, over the menu models in `Core/Actions/`"; the scope sentence ends "with a fence pair read as code in all three"; "on disk; there is no intermediate model"; both list clauses count "from 1 or A"; the cell list entry reads "Headings, quotes and rules stay literal text, and a pair of fences shows as typed while the lines between them read as code, their marks and connections left literal"; the citation number "leads back to its first marker, or, where no marker binds it, copies its `[^label]` reference"; the Plain row reads "(paragraph, quote, callout, code, rule, math)"; and "eleven languages carry a mark". In `Editor-Internals.md`, the fence entry's list reads "Four divergences … and a raw-HTML block whose closer never arrives ends at the next blank line rather than at the end — the parser is handed both readings, the fence's marker masked and the unclosed opener handed over as a block the blank line ends"; the cell-model entry drops fences from what a cell renders literally ("a fence pair reads as code in a cell as on a page") and from its list of cell-side readers; and the fold entry adds "A body landing from another mount takes each fold's end from the live section instead." Four `Editor-Internals.md` sentences already untrue at the pin need no edit, since F-056, F-055, F-050, and F-075 bring the code to them: the atomic set held once per version, box constructs with no line margin, the one fence-aware heading scan, and the generator alphabet. This lands last, after F-066 and F-059, the code its new sentences describe.
+Each sentence takes the most surgical correction. In `MarkdownPM.md`: `Guards/` reads "the transaction filters that refuse or repair an edit that would corrupt a construct, and the settle that carries a heading rename to the links naming it"; `Menus/` reads "the block handles, the editor's side of its menus, and the pane controls its pickers share, over the menu models in `Core/Actions/`"; the scope sentence ends "with a fence pair read as code in all three"; "on disk; there is no intermediate model"; both list clauses count "from 1 or A"; the cell list entry reads "Headings, quotes and rules stay literal text, and a pair of fences shows as typed while the lines between them read as code, their marks and connections left literal"; the citation number "leads back to its first marker, or, where no marker binds it, copies its `[^label]` reference"; the Plain row reads "(paragraph, quote, callout, code, rule, math)"; and "eleven languages carry a mark". In `Editor-Internals.md`, the fence entry's list reads "Four divergences … and a raw-HTML block whose closer never arrives ends at the next blank line rather than at the end — the parser is handed both readings, the fence's marker masked and the unclosed opener handed over as a block the blank line ends"; the cell-model entry drops fences from what a cell renders literally ("a fence pair reads as code in a cell as on a page") and from its list of cell-side readers; and the fold entry adds "A body landing from another mount takes each fold's end from the live section instead." Two `Editor-Internals.md` sentences still untrue need no edit, since F-056 and F-050 bring the code to them: the atomic set held once per version and the one fence-aware heading scan. This lands last, after F-066 and F-059, the code its new sentences describe.
 
 #### W14 · Tests
 
-The 94 MarkdownPM test files hold 1,892 tests on 19,438 lines; about 140 of them pin nothing a sibling doesn't, assert a vacuous shape, or exercise a state production never produces. Landing these leaves each behavior pinned once, by an exact expectation, in the file that owns it, at about 555 fewer test lines. Each test file is opened once, after the last finding that edits it; the per-row list is *§Appendix: MarkdownPM Test Dispositions*.
+Four word-count tests still assert a loose shape where the footer's exact figure is the pin. Landing this pins each figure exactly, after F-044 reshapes their file; the rows are in *§Appendix: MarkdownPM Test Dispositions*.
 
-##### F-072 · About 85 tests repeat a sibling or a library, and 13 more repeat a sibling except for one assertion.
+##### F-073 · Four word-count tests pass whether or not the character figures they name are right.
 
-> **Area:** MarkdownPM · **Lens:** Duplication · **Weight:** Low · **Size:** M · **Net:** 0 production (≈ −525 test lines, F-073's rows included) · **Origin:** Parallel Build
-
-**Finding**
-
-A change to one behavior means editing several tests that pin it the same way. About 85 tests carry the same input and assertion as a named sibling, check a library behavior (`parser.test.ts` checking that `gfm()` parses, which every table test already needs), or check something true by construction; the largest holders are `regressionPins.test.ts`, `Menus/blockMenuFlow.test.tsx`, `Autocomplete/aliasPicker.test.tsx`, `Guards/citationGuard.test.ts`, and `Menus/gripMenuFlow.test.tsx`. Thirteen more repeat a sibling except for one assertion, among them the five "…and without the guard…" cases in `citationGuard.test.ts`, which run with no guard mounted and are each the precondition of a guarded sibling. Every row was re-found by test name at `70fc6063c` and re-judged against its cited survivor. Two tests that look like repeats stay, since each is the only pin of a line: `Core/Pages/editorHost.test.ts:50` of `warmCache.ts:55`'s drop on a failed fence, and `cellAlias.test.tsx:73-80` of the `]`-only refusal at `typedInput`'s call site.[^72]
-
-**Fix | Literal**
-
-Delete the repeats and fold each one-assertion copy into its sibling as the appendix lists, typed on scratch worktrees with every touched file green. Three folds turned out to be plain deletions, since mutation showed the sibling already covers them: `dragOrigin.test.tsx:93-112` (its sibling is retitled for the re-resolve it also pins), `gripMenuFlow.test.tsx:185-191`, and `connectionCommit.test.tsx:66-70`. Imports that lose their last user go with the tests, and the `autocomplete.test.ts` test that then leads its describe is retitled. The `line bounds` test left alone in `parser.test.ts` moves to `detect.test.ts`, which already pins `markdownCode.ts`'s other helpers, and the file goes. In `citationGuard.test.ts` and `citationCreate.test.tsx` it applies before F-075, whose rewrites there fall inside its deletions.
-
-##### F-073 · About 30 tests pass whether or not the bug they name is present, and 8 pin the right thing in the wrong file.
-
-> **Area:** MarkdownPM · **Lens:** Coverage Gap · **Weight:** Low · **Size:** M · **Net:** 0 production (counted in F-072) · **Origin:** Shortcut
+> **Area:** MarkdownPM · **Lens:** Coverage Gap · **Weight:** Low · **Size:** S · **Net:** 0 production · **Origin:** Shortcut
 
 **Finding**
 
-About 30 tests are too loose to fail on the regression they name: `not.toBeNull` or `?.insert).not.toBe('')` where an exact edit is the pin (`edits.test.ts`, which passes on `null`), `toContain` on a document that also contains the corrupted form, a `some(...)` that survives a first/last swap (`intents.test.ts`), a mount without `connections` so the menu is null for every link (`externalLink.test.tsx`, `linkEdges.test.tsx`), and a uniform table where an average can't be told from a constant (`operations.test.ts`). Where mutation was run, the tightened form goes red where the original stayed green; six `edits.test.ts` tests fail on an off-by-one `autoPair` selection where one did before. Eight sound tests pin a function their file doesn't own: `cellLists.test.tsx`'s "what a GFM cell can hold" pins `restoreTrailingItem`, which `codec.test.ts` leaves unpinned; `embedInsert.test.ts`'s pair hands off to `autocompleteQuery`; `citationCreate.test.tsx:367-372` and `indexSeed.test.ts:327-331` pin scan ordering and a table cell shaped like a footnote head; and `codec.test.ts:44-47`'s pipe-in-code case is a region question. Two tests that look loose stay as they are: `intents.test.ts:613` is the only pin that an escaped `\[^1]` counts as a word and an unbound `[^9]` as none, and `connectionCommit.test.tsx:145-162` already fails when the closing-animation refusal is removed.[^73]
+The tests for an inline page embed, a connection and its alias, a markdown link's label, and a link beside a connection each pin a word count and leave the character count the footer shows unchecked, so a regression in how a construct's shown text is counted passes them. The inline embed's figure moved since the first capture: an inline `![[Page]]` reads as a literal `!` beside the connection, so its line counts 14 characters, not 13.[^73]
 
 **Fix | Literal**
 
-Tighten each to the exact expectation the appendix gives, every value captured by running the call at `70fc6063c`: the callout's `lineClasses` hold five entries, the list item's own included; `regressionPins.test.ts:143` tightens to its exact selection, since it's the only pin of `'` in `CLOSERS`; `edits.test.ts` uses `toMatchObject({ insert, selection })` where a full `toEqual` would wrap to six lines, since every `autoPair` branch there returns `from = to = c`; and `prefixSeat.test.tsx:155` pins the exact joined document a forward Delete at a footnote row's end leaves, which is ordinary editing. Move the eight to the files that own them; the `codec.test.ts:44-47` case lands in `regions.test.ts` titled for what it pins, that a pipe inside inline code still splits a cell under GFM, so an over-split header is no table. Its `subfieldStats.test.ts` tightenings land after F-044, which adds its own tests to that file.
-
-##### F-075 · The shared test builders read footnotes differently from the app, and the scan's random generator never types a `~` diff line.
-
-> **Area:** MarkdownPM · **Lens:** Duplication · **Weight:** Low · **Size:** S · **Net:** 0 production (≈ −30 test lines) · **Origin:** Parallel Build
-
-**Finding**
-
-The tests built on these helpers check rules the app never runs. `citationScan(d, excluded)` in `Core/Testing/markdownEngine.ts` rebuilds footnotes through `codeMask` and a caller-supplied exclusion list; all 17 callers pass `[]`, while production's `scanDoc` seals fences, maths, and tables through `inSealedLine`, and the two `scanOf` helpers in `citationGuard.test.ts` and `citationEdits.test.ts` assemble exactly a `DocScan` by hand; `citationBreakage.test.tsx` and `citationEdits.test.ts` each define the same `stranded` helper over `citationScan`. The scan's randomized property generator in `Engine/docScan.test.ts` holds no `~`-signed line in `LINES` and neither `~` nor `+` in `CHARS`, though the scan reads `~` as a modified diff line (`'mod'`), against the rule that a construct the scan learns joins the generator's alphabet in the same change; the risk is small, since diff kinds derive per whole fence. Confirmed by reading and typed on a scratch worktree.[^75]
-
-**Fix | Literal**
-
-Every caller reads `scanDoc(text).citations`, or `scanDoc(text)` where it built a scan, so `citationScan` and both `scanOf` helpers are deleted, and one `stranded` over `scanDoc` joins `Core/Testing/markdownEngine.ts` for the two citation files; no expectation changes except a self-comparison in `citationGuard.test.ts`'s sequence test, which F-072 deletes. `'~changed'` joins `LINES`, and `~` and `+` join `CHARS`, written as a spread string so the literal stays one line; the three properties pass at their default seeds. In `citationGuard.test.ts` and `citationCreate.test.tsx` this lands after F-072, whose deletions take two of its rewrites.
+Tighten each to the exact figures the appendix gives, captured by running `computeStats` at `6df5b11e2`, after F-044, which adds its own tests to `subfieldStats.test.ts` and may move these.
 
 #### W15 · Focus and Closing Animations
 
@@ -922,7 +846,7 @@ Normalize both to objects and delete `fromOf`, `toOf`, and the tuple arm in the 
 
 **Finding**
 
-About thirty `export` keywords in MarkdownPM have a test as their only outside reader (`indentLevel`, `computeStats`, `buildWidgetDecorations`, `refreshTableEffect`, `connectionInsert`, `foldedRegions`, `regionsOf`, `EMPTY_PAGE_TEXT`, and the rest). Each function lives in its file and does real work, so removing the keyword removes no line, and `lineIntentsInto` is the cached-assembly property's reference derivation. Several leave through F-072.[^99]
+About thirty `export` keywords in MarkdownPM have a test as their only outside reader (`indentLevel`, `computeStats`, `buildWidgetDecorations`, `refreshTableEffect`, `foldedRegions`, `regionsOf`, `EMPTY_PAGE_TEXT`, and the rest). Each function lives in its file and does real work, so removing the keyword removes no line, and `lineIntentsInto` is the cached-assembly property's reference derivation.[^99]
 
 **Fix | Literal**
 
@@ -1120,130 +1044,14 @@ Split the title index (titles, ids, paths, resolution) from the icon and trail d
 
 ### Appendix: MarkdownPM Test Dispositions
 
-Every row was re-found by test name at `70fc6063c` and re-judged against its cited survivor; its line numbers are re-anchored whenever a reconcile touches its file, and the test's name settles any drift. Paths are relative to `Core/MarkdownPM/` unless they start with `Core/`. Kinds: **BC** by construction · **TL** too loose · **UP** unproduced state · **RP** re-pin · **RT** retired.
+Every row was re-checked at `6df5b11e2`; its line numbers are re-anchored whenever a reconcile touches its file, and the test's name settles any drift. Paths are relative to `Core/MarkdownPM/`. Kind: **TL** too loose.
 
 | File | Lines | Kind | Disposition | Lines |
 | --- | --- | --- | --- | --- |
-| `regressionPins.test.ts` | :89 | RP | delete (`edits.test.ts:198`, `:373`, `:216`) | 14 |
-| `regressionPins.test.ts` | :327 | RP | delete (`docScan.test.ts:265`); keep :318, :322 | 11 |
-| `regressionPins.test.ts` | :66 | RP | delete (`edits.test.ts:235`) | 8 |
-| `regressionPins.test.ts` | :242 | TL, RT | tighten to `toEqual([[0, 20]])`, rename after `fenceRangesOf` | 7 |
-| `regressionPins.test.ts` | :249 | TL, RP | tighten to `toEqual([[0, 16]])`, drop :253 | 6 |
-| `regressionPins.test.ts` | :143 | TL | tighten :145 to `expect(closeConstructOnEnter(scanDoc(doc), 6, 6)?.selection).toBe(7)`; the only pin of `'` in `CLOSERS` | 4 |
-| `regressionPins.test.ts` | :155 | RP | merge into `edits.test.ts:71` as `expect(e.selection).toBe(5)` | 4 |
-| `regressionPins.test.ts` | :133 | RP, TL | delete (`edits.test.ts:520`) | 3 |
-| `regressionPins.test.ts` | :188 | RP | delete (`edits.test.ts:92`) | 3 |
-| `Tables/cellLinks.test.tsx` | :139-159 | RP | delete (`cellNavigation.test.tsx:112-120`) | 21 |
-| `Menus/blockMenuFlow.test.tsx` | :85-92 | RP | delete (`Core/Actions/blockMenu.test.ts:54-60`) | 8 |
-| `Menus/blockMenuFlow.test.tsx` | :94-101 | RP | delete (`blockMenu.test.ts:87-92`) | 8 |
-| `Menus/blockMenuFlow.test.tsx` | :202-209 | RP | delete (:219-231, :135-148, :321-326) | 8 |
-| `Menus/blockMenuFlow.test.tsx` | :103-108 | RP | delete (`blockMenu.test.ts:79-86`) | 6 |
-| `Menus/blockMenuFlow.test.tsx` | :110-115 | RP | delete (`blockQuery.test.ts:23-25`) | 6 |
-| `Menus/blockMenuFlow.test.tsx` | :127-131 | RP | delete (`blockQuery.test.ts:49-51`) | 5 |
-| `Menus/blockMenuFlow.test.tsx` | :280-284 | RP | delete (`blockMenu.test.ts:58`, :273-278) | 5 |
-| `Autocomplete/connectionCommit.test.tsx` | :450-459 | TL | tighten to `expect(document.querySelector('.mdpm-ac')).toBeNull()` | 10 |
-| `Autocomplete/connectionCommit.test.tsx` | :198-206 | RP | delete (`pickFirst` at :60, :152) | 9 |
-| `Autocomplete/connectionCommit.test.tsx` | :66-70 | RP | delete (:72-76) | 5 |
-| `Guards/citationGuard.test.ts` | :35-38, :46-48, :88-90, :129-131, :266-268 | BC | merge each as a one-line precondition into :28, :40, :81, :121, :260 | 16 (~11 net) |
-| `Guards/citationGuard.test.ts` | :100-114 | TL, RP | delete (:54-62) | 15 |
-| `Guards/citationGuard.test.ts` | :203-208 | RP | merge `toContain('the citation')` into :28, delete | 6 |
-| `Guards/citationGuard.test.ts` | :243-247 | TL | tighten to `toBe(\`${DOC}\n   \n  \`)` | 5 |
-| `Engine/intents.test.ts` | :616-622 | UP | delete | 7 |
-| `Engine/intents.test.ts` | :752-756 | UP, RP | delete (:155-159) | 5 |
-| `Engine/intents.test.ts` | :191-192 | RP | tighten: drop two lines (:195-206) | 2 |
-| `Engine/intents.test.ts` | :632-635 | TL | tighten to exact `toEqual` on the five `lineClasses`, the list item's own included | 4 |
-| `Engine/intents.test.ts` | :636-638 | RP | merge into :632-635 | 3 |
-| `Engine/intents.test.ts` | :445-447 | RP | delete (:459-470) | 3 |
-| `Engine/intents.test.ts` | :70-72 | RP | merge into :74-76 | 3 |
-| `readOnlySelection.test.tsx` | :19 | TL | delete | 5 |
-| `Menus/editorMenu.test.tsx` | :102-124 | TL | tighten: clipboard `'x'` on `- item` at 6 → `'- itemx'` for menu and chord | 23 |
-| `Menus/editorMenu.test.tsx` | :159-170 | TL | tighten to `toBe(<full resulting table>)` | 12 |
-| `Menus/gripMenuFlow.test.tsx` | :185-191 | RP | delete (:177-183, `gripMenu.test.ts:26-29`) | 7 |
-| `Menus/gripMenuFlow.test.tsx` | :85-90 | RP | delete (`format.test.ts:191-193`, `blockModel.test.ts:61-66`) | 6 |
-| `Menus/gripMenuFlow.test.tsx` | :102-107 | RP | delete (`format.test.ts:195-197`, `blockModel.test.ts:157-163`) | 6 |
-| `Menus/gripMenuFlow.test.tsx` | :116-121 | RP | delete (:177-183, `gripMenu.test.ts:11-14`) | 6 |
-| `Menus/gripMenuFlow.test.tsx` | :152-157 | RP | delete (:143-150, :177-183) | 6 |
-| `Autocomplete/autocomplete.test.ts` | :300-306 | RP | delete (:48-55); retitle the :308 test that then leads its describe | 7 |
-| `Autocomplete/autocomplete.test.ts` | :74-80 | RP | delete (:123-125) | 5 |
-| `Autocomplete/autocomplete.test.ts` | :226-230 | RP | delete (`Core/Connections/links.test.ts:77`) | 5 |
-| `Autocomplete/autocomplete.test.ts` | :239-242 | RP | delete (:35-38) | 4 |
-| `Autocomplete/autocomplete.test.ts` | :244-247 | RP | delete (:138-144) | 4 |
-| `Autocomplete/autocomplete.test.ts` | :159-162 | TL | tighten to `toBeNull()` | 4 |
-| `Autocomplete/autocomplete.test.ts` | :188-191 | TL | tighten to `toMatchObject({ form: 'fragment', title: '' })`, the current page's headings | 0 |
-| `Links/externalLink.test.tsx` | :83-95 | TL | tighten: mount with the :98-104 `conn`, assert `connMenu` not called | 13 |
-| `Core/Pages/editorHost.test.ts` | :183 | BC | tighten: drop :193-196, keep the `mutate` pin, retitle | 4 |
-| `Autocomplete/aliasPicker.test.tsx` | :127-133 | RP | delete (:135-142) | 7 |
-| `Autocomplete/aliasPicker.test.tsx` | :37-41 | TL, RP | delete | 5 |
-| `Autocomplete/aliasPicker.test.tsx` | :113-117 | TL | tighten: leading side span holds `square-split-horizontal` | 5 |
-| `Tables/cellLists.test.tsx` | :382-399 | misplaced | move to `Engine/Tables/codec.test.ts` | 18 |
-| `Tables/cellLists.test.tsx` | :87-91 | BC | delete (`intents.test.ts:80-85`) | 5 |
-| `Tables/cellLists.test.tsx` | :401-403 | RP | delete (`codec.test.ts:65`) | 3 |
-| `Input/edits.test.ts` | :298-302 | TL | tighten :299, :300 to exact edits, :301 to `toBeNull()` | 5 |
-| `Input/edits.test.ts` | :225-229 | TL | tighten :227 `{insert:'__',selection:5}`, :228 `{insert:'``',selection:1}` | 5 |
-| `Input/edits.test.ts` | :230-234 | TL | tighten :231 to `{from:2,to:2,insert:'**',selection:3}` | 5 |
-| `Input/edits.test.ts` | :178-181 | TL | tighten :179 to `{from:0,to:0,insert:'[]',selection:1}` | 4 |
-| `Input/edits.test.ts` | :208-211 | TL | tighten :209, :210 to exact edits | 4 |
-| `Input/edits.test.ts` | :361, :382 | TL | tighten to exact edits | 2 |
-| `Engine/detect.test.ts` | :144-148 | RP | delete (`links.test.ts:34-39`, `tokens.test.ts:69-73`) | 5 |
-| `Engine/detect.test.ts` | :140-143 | RP | delete (`rewrite.test.ts:103-110`, `tokens.test.ts:58-62`) | 4 |
-| `Engine/detect.test.ts` | :28-30 | RP | delete (:22) | 3 |
-| `Core/Interface/Glance/GlancePane.test.tsx` | :729 | RP | delete (`pageDetailCache.test.ts:38`) | 9 |
-| `Core/Interface/Glance/GlancePane.test.tsx` | :721 | RP | delete (`pageDetailCache.test.ts:152`) | 7 |
-| `Core/Interface/Glance/GlancePane.test.tsx` | :739 | RP | delete (`pageDetailCache.test.ts:155`) | 5 |
-| `Tables/dragOrigin.test.tsx` | :93-112 | RP | delete (:121-137); retitle :121 for the re-resolve it also pins | 20 |
-| `Engine/parser.test.ts` | :24-29 | RP | delete (`regressionPins.test.ts:28-32`, `:36`) | 6 |
-| `Engine/parser.test.ts` | :6-10 | TL | delete | 5 |
-| `Engine/parser.test.ts` | :12-15 | RP | delete (`regions.test.ts:11-17`) | 4 |
-| `Engine/parser.test.ts` | :17-20 | RP | delete (`tokens.test.ts:15-20`) | 4 |
-| `foldState.test.tsx` | :395 | UP | delete | 8 |
-| `Links/mdLinkTarget.test.tsx` | :410-418 | RP | delete (:137-145, :420-434) | 9 |
-| `Links/mdLinkTarget.test.tsx` | :95-99 | RP | delete (:60-63) | 5 |
-| `Links/mdLinkTarget.test.tsx` | :86-88 | TL, RP | delete (`Core/Connections/links.test.ts:75-78`) | 3 |
-| `Embeds/embedInsert.test.ts` | :65-73 | RP | move to `autocomplete.test.ts` as an `autocompleteQuery('![[]]', 3, true)` pin | 9 |
-| `Embeds/embedInsert.test.ts` | :56-63 | BC, RP | delete | 8 |
-| `Guards/calloutGuard.test.ts` | :12-14, :15-17, :18-20, :25-27, :28-30 | RP, TL | delete all five (:48-62) | 15 |
-| `Links/pasteLink.test.tsx` | :82-86 | TL, BC | delete | 5 |
-| `Links/pasteLink.test.tsx` | :88-92 | BC | delete; the `pasteLink.ts:104` guard stays | 5 |
-| `Links/pasteLink.test.tsx` | :210-214 | BC | delete; the `pasteLink.ts:153` guard stays | 5 |
 | `Engine/subfieldStats.test.ts` | :55-58 | TL | tighten to `characters === 4` and `=== 9` | 4 |
-| `Engine/subfieldStats.test.ts` | :51-53 | TL | tighten to `toMatchObject({ words: 3, characters: 13 })` | 3 |
+| `Engine/subfieldStats.test.ts` | :51-53 | TL | tighten to `toMatchObject({ words: 3, characters: 14 })` | 3 |
 | `Engine/subfieldStats.test.ts` | :115-117 | TL | tighten to `characters === 9` | 3 |
 | `Engine/subfieldStats.test.ts` | :269-271 | TL | tighten to `toMatchObject({ words: 4, characters: 19 })` | 3 |
-| `Engine/listMarkerSeats.test.tsx` | :128 | BC | tighten: drop the line | 1 |
-| `Engine/listMarkerSeats.test.tsx` | :91-95 | RP | delete (:31-34) | 5 |
-| `Tables/sync.test.ts` | :35-39 | TL | merge into :23 as `toEqual({ from: 25, to: 28, insert: ' X ' })` | 5 |
-| `Tables/sync.test.ts` | :70-73 | RP | delete (:64-68) | 4 |
-| `Tables/sync.test.ts` | :31-33 | TL | delete (:46-50, :52-58, `codec.test.ts:53`) | 3 |
-| `Engine/listDragModel.test.ts` | :129-135 | BC, RP | delete (:84-88) | 7 |
-| `Engine/listDragModel.test.ts` | :177-181 | TL | tighten to `expect(renumberRuns(doc, [0])).toEqual([])` | 5 |
-| `Engine/tokens.test.ts` | :51-56 | RP | delete (:121-127) | 6 |
-| `Engine/tokens.test.ts` | :29-34 | TL | tighten :33 to `.toBe('**a**')` and italic markers `toEqual(['*','*'])` | 6 |
-| `Engine/Tables/operations.test.ts` | :32-37 | TL | tighten: `base` dashes `[2, 4, 9]`, expect `5` | 6 |
-| `Engine/Tables/operations.test.ts` | :58-62 | TL | tighten: add `expect(m.header).toEqual(['a', 'c'])` | 5 |
-| `Engine/blockModel.test.ts` | :143-147 | RP | delete (:126-131) | 5 |
-| `Engine/blockModel.test.ts` | :314-318 | RP | delete (:271-275); keep the :313 comment | 5 |
-| `Engine/Tables/model.test.ts` | :5-14 | RP | delete (`format.test.ts:276-280`) | 10 |
-| `Engine/Tables/codec.test.ts` | :72-76 | RP | delete (:14-17, :49-55) | 5 |
-| `Engine/Tables/codec.test.ts` | :44-47 | UP | move the pipe-in-code half to `regions.test.ts` as "a pipe inside inline code still splits a cell, so an over-split header is no table"; drop the non-table half | 4 |
-| `Links/pasteDecision.test.ts` | :125-131 | BC | delete | 6 |
-| `Links/pasteDecision.test.ts` | :91-93 | RP | delete (:58) | 3 |
-| `Citations/citationMenu.test.ts` | :38-46 | RP | merge one line into :28 | 9 |
-| `Links/pendingTitle.test.ts` | :74-78 | RP | delete (:55-60) | 5 |
-| `Links/pendingTitle.test.ts` | :43-45 | RP | delete (:47-60) | 3 |
-| `Links/linkEdges.test.tsx` | :402-409 | TL | tighten: mount with `{ ...conn, menu: vi.fn() }`, assert `menu` not called | 8 |
-| `Engine/embedClaims.test.ts` | :72-75 | RP | delete (:69) | 4 |
-| `Engine/embedClaims.test.ts` | :77-79 | BC | delete | 3 |
-| `Core/Pages/bodyMount.test.tsx` | :236 | TL | tighten: after `flush()`, assert `page:updateBody` not called | 7 |
-| `prefixSeat.test.tsx` | :156 | TL | tighten :160 to `toBe('a[^1] [^2]\n\n[^1]: one[^2]: two')`, the document a forward Delete at a footnote row's end leaves | 6 |
-| `Citations/citationCreate.test.tsx` | :367-372 | BC | move to `Engine/citations.test.ts` as a `scan(body).markers` ordinal test | 6 |
-| `Core/Index/indexSeed.test.ts` | :318 | RP | delete the one line (`Engine/citations.test.ts:56`) | 1 |
-| `Core/Index/indexSeed.test.ts` | :327-331 | misplaced | move to `Engine/citations.test.ts`, keep the row assertion | ~4 |
-| `Gestures/listDragTap.test.tsx` | :44-48 | RP, TL | delete (:53-72) | 5 |
-| `Engine/citations.test.ts` | :175-178 | RP | delete; keep :169-173 | 4 |
-| `Engine/codeLangs.test.ts` | :14-17 | BC | delete | 4 |
-| `Tables/widget.test.ts` | :64-66 | RP | merge into :71 with `expect(set.size).toBe(1)` | 3 |
-| `Engine/outlineTree.test.ts` | :23-25 | BC | delete (`folding.test.ts:10`) | 3 |
-| `Menus/blockQuery.test.ts` | :53-55 | RP | delete (:49-51) | 3 |
 
 [^1]: **F-001:** `Core/Sync/Client/pull.ts:39-59` (`landChange`), `Core/Sync/Arrival/land.ts:83-144`, `Core/Sync/Client/push.ts:257-309` (`resolveStale`), `Core/Sync/Client/reconcile.ts:99-108`, `Core/Paths/exclusion.ts:44-61` (`manifestAdmits`), `Sync/Routes/items.ts:10-17` (`itemPath`), `Desktop/Platform/hostPath.ts:5` (`nativePath`)
 [^2]: **F-002:** `Desktop/Sync/transport.ts:24-38` (`transport`), `Core/Sync/Client/call.ts:89-91`, `Sync/wire.ts:40-55` (`BLOB_CAP`)
@@ -1261,30 +1069,24 @@ Every row was re-found by test name at `70fc6063c` and re-judged against its cit
 [^15]: **F-015:** `Core/MarkdownPM/Engine/Tables/regions.ts:23-27` (`isTable`), `Core/MarkdownPM/Engine/Tables/regions.ts:55-58` (`tableRegions`), `Core/MarkdownPM/Engine/docScan.ts:67` (`scanLines`), `Core/MarkdownPM/Engine/docScan.ts:105-113` (`quietAt`), `Core/MarkdownPM/Engine/docScan.ts:119` (`rescan`), `Core/MarkdownPM/Engine/detect.ts:628-645` (`isHeadingLine`, `isThematicBreakLine`), `Core/MarkdownPM/Tables/CellEditor.tsx:236-238`; `micromark-extension-gfm-table` 2.1.1 `lib/syntax.js:480-519`
 [^16]: **F-016:** `Core/MarkdownPM/Tables/MarkdownTable.tsx:36-42` (`Drag`), `Core/MarkdownPM/Tables/MarkdownTable.tsx:68-82` (`Resize`, `shift`), `Core/MarkdownPM/Tables/MarkdownTable.tsx:144-158`, `Core/MarkdownPM/Tables/MarkdownTable.tsx:262-265` (`trackHover`), `Core/MarkdownPM/Tables/MarkdownTable.tsx:322-370` (`startDrag`, `resolve`), `Core/MarkdownPM/Tables/MarkdownTable.tsx:371-410` (`startResize`), `Core/MarkdownPM/Tables/MarkdownTable.tsx:485-516` (`colWidth`), `Core/MarkdownPM/Tables/MarkdownTable.tsx:568-606` (the grips' reveal), `Core/MarkdownPM/Tables/markdown-tables.css:97-109`, `Core/Views/Table/useColumns.ts:332-373` (`startColumnDrag`)
 [^21]: **F-021:** `Core/MarkdownPM/Tables/cellCitations.ts:16-27` (`marks`), `Core/MarkdownPM/Tables/CellEditor.tsx:152`
-[^22]: **F-022:** `Core/MarkdownPM/Tables/widget.tsx:426-444` (`editAffectsTables`), `Core/MarkdownPM/Tables/widget.tsx:545-556` (`widgetField.update`), `Core/MarkdownPM/decorations.ts:556`
-[^25]: **F-025:** `Core/MarkdownPM/Guards/verdictFilter.ts:26-50` (`verdictFilter`), `Core/MarkdownPM/Guards/citationGuard.ts:13,46-57` (`citationTailVerdict`), `Core/MarkdownPM/Guards/calloutGuard.ts:28` (`calloutDeleteVerdict`), `Core/MarkdownPM/decorations.ts:783-801` (the caret-seat filter)
 [^44]: **F-044:** `Core/MarkdownPM/Engine/subfieldStats.ts:54-69` (`pageHidden`, `cellHidden`, `hiddenIn`), `Core/MarkdownPM/Engine/subfieldStats.ts:93` (`CHUNK_LINES`), `Core/MarkdownPM/Engine/subfieldStats.ts:125-134` (`computeStats`, `pageStats`, `rangeStats`), `Core/MarkdownPM/Engine/perText.ts:4-13` (`perText`), `UIX/Utilities/capMap.ts:9-16` (`capSet`), `Core/MarkdownPM/docCache.ts:40-52` (`drawnLast`), `Core/MarkdownPM/MarkdownEditor.tsx:182-192`, `Core/Pages/PageView.tsx:35`, `Core/Interface/Subfield/subfieldItems.tsx:27`, `Core/Interface/Subfield/CitationsToggle.tsx:10`
 [^45]: **F-045:** `Core/MarkdownPM/Engine/subfieldStats.ts:96` (`proseRuns`), `Core/MarkdownPM/Engine/subfieldStats.ts:111-122,140` (`tableProse`), `Core/MarkdownPM/MarkdownEditor.tsx:182-192`, `Core/Interface/Subfield/publish.ts:18-21` (`usePublishSelection`), `Core/Session/chromeSlice.ts:83-88` (`setEditorSelection`)
 [^46]: **F-046:** `Core/MarkdownPM/Engine/subfieldStats.ts:28-34` (`proseStart`), `Core/MarkdownPM/Engine/subfieldStats.ts:39-52` (`hiddenOf`), `Core/MarkdownPM/Engine/subfieldStats.ts:93,125-131` (`CHUNK_LINES`, `computeStats`, `pageStats`), `Core/MarkdownPM/Engine/intents.ts:135-155` (`tokenIntents`), `Core/MarkdownPM/docCache.ts:40-52` (`drawnLast`), `Core/Interface/Subfield/subfieldPage.ts:6-7,56-61`, `Core/Interface/Subfield/subfieldItems.tsx:8-11,24-27`, `Core/Interface/Subfield/CitationsToggle.tsx:8-13`, `Core/Interface/ContentView.tsx:210-215`, `Core/Pages/bodyMount.ts:33,39-41,51-57`, `Core/Session/pageDetailCache.ts:45-56` (`BodyMount`), `Core/MarkdownPM/MarkdownEditor.tsx:182-192`
-[^47]: **F-047:** `Core/MarkdownPM/Menus/blockHandles.ts:45-53` (`blockHandles`), `Core/MarkdownPM/Engine/blockModel.ts:32-46` (`blockContext`), `Core/MarkdownPM/Engine/blockModel.ts:91-99` (`blockContextOf`), `Core/MarkdownPM/Engine/blockModel.ts:177` (`blockStarts`), `Core/MarkdownPM/Engine/docScan.ts:38-55` (`DocScan`, no `markers` field), `Core/MarkdownPM/Engine/docScan.ts:63` (`scanLines`), `Core/MarkdownPM/Engine/docScan.ts:159-223` (`splice`), `Core/MarkdownPM/Input/listRenumber.ts:30,33` (`listRenumber`), `Core/MarkdownPM/Engine/docScan.test.ts:146` (the `rescan ≡ scanDoc` property).
+[^47]: **F-047:** `Core/MarkdownPM/Menus/blockHandles.ts:45-53` (`blockHandles`), `Core/MarkdownPM/Engine/blockModel.ts:32-46` (`blockContext`), `Core/MarkdownPM/Engine/blockModel.ts:91-99` (`blockContextOf`), `Core/MarkdownPM/Engine/blockModel.ts:177` (`blockStarts`), `Core/MarkdownPM/Engine/docScan.ts:38-55` (`DocScan`, no `markers` field), `Core/MarkdownPM/Engine/docScan.ts:63` (`scanLines`), `Core/MarkdownPM/Engine/docScan.ts:159-223` (`splice`), `Core/MarkdownPM/Input/listRenumber.ts:30,33` (`listRenumber`), `Core/MarkdownPM/Engine/docScan.test.ts:147` (the `rescan ≡ scanDoc` property).
 [^48]: **F-048:** `Core/MarkdownPM/Engine/intents.ts:356-383` (`railIntents`), `Core/MarkdownPM/Engine/intents.ts:414-416` (`withRails`), `Core/MarkdownPM/Tables/cellStatic.tsx:202-222` (`renderCellBody`), `Core/MarkdownPM/Engine/intents.test.ts` ('outliner rails').
 [^49]: **F-049:** `Core/MarkdownPM/Engine/detect.ts:647-661` (`headingParts`), `Core/MarkdownPM/Engine/headingScan.ts:28` (`scanHeadings`), `Core/MarkdownPM/Guards/headingRenameSettle.ts:26-27` (`headingRenameOf`), `Core/MarkdownPM/Guards/headingRenameSettle.ts:43` (`headingRenameSettle`), `Core/MarkdownPM/Menus/gripMenu.ts:79,92` (`popHeadingMenu`), `Core/MarkdownPM/folding.ts:65` (`regionsOf`), `Core/Index/indexSeed.ts:52`, `Core/Nexus/cascade.ts:186`.
-[^50]: **F-050:** `Core/MarkdownPM/Engine/headingScan.ts:20-34` (`scanHeadings`), `Core/MarkdownPM/Engine/headingScan.ts:44-51` (`headingOutlineOf`), `Core/MarkdownPM/Engine/headingScan.ts:61-83` (`sectionCache`, `headingSections`), `Core/MarkdownPM/Engine/blockModel.ts:90-99` (`blockContextOf`), `Core/MarkdownPM/docCache.ts:95-99` (`docOutline`, `docHeadingKeys`, `docSectionHeadings`), `Core/MarkdownPM/folding.ts:65` (`regionsOf`), `Core/MarkdownPM/decorations.ts:556,667`, `.claude/Guidelines/Editor-Internals.md:26`.
+[^50]: **F-050:** `Core/MarkdownPM/Engine/headingScan.ts:20-34` (`scanHeadings`), `Core/MarkdownPM/Engine/headingScan.ts:44-51` (`headingOutlineOf`), `Core/MarkdownPM/Engine/headingScan.ts:61-83` (`sectionCache`, `headingSections`), `Core/MarkdownPM/Engine/blockModel.ts:90-99` (`blockContextOf`), `Core/MarkdownPM/docCache.ts:95-99` (`docOutline`, `docHeadingKeys`, `docSectionHeadings`), `Core/MarkdownPM/folding.ts:65` (`regionsOf`), `Core/MarkdownPM/decorations.ts:434,533`, `.claude/Guidelines/Editor-Internals.md:26`.
 [^51]: **F-051:** `Core/MarkdownPM/Engine/detect.ts:520-530` (`ListMarker`), `Core/MarkdownPM/Engine/detect.ts:538-544` (`isSequenced`, `ordinalOf`), `Core/MarkdownPM/Engine/detect.ts:553-611` (`parseListMarker`), `Core/MarkdownPM/Engine/detect.ts:613-626` (`parseListMarkerPrefixed`), `Core/MarkdownPM/Engine/intents.ts:109,603,617`, `Core/MarkdownPM/Engine/listDragModel.ts:28,207`, `Core/MarkdownPM/Input/edits.ts:83-84` (`continueListOnEnter`), `Core/MarkdownPM/Tables/cellStatic.tsx:190`.
-[^52]: **F-052:** `Core/MarkdownPM/Engine/tokens.ts:61-73` (`shiftToken`), `Core/MarkdownPM/Engine/tokens.ts:268` (`tokenizeChunk`), `Core/MarkdownPM/decorations.ts:387` (`visibleInline`), `Core/MarkdownPM/Engine/tokens.test.ts:135-149`.
-[^53]: **F-053:** `Core/MarkdownPM/Engine/intents.ts:425-426` (`moveIntent`), `Core/MarkdownPM/Engine/intents.ts:428-449` (`stepLineIntents`), `Core/MarkdownPM/Engine/intents.ts:507-534` (`assembleLineIntents`, `prefixEndAt`, `seatPastMarker`), `Core/MarkdownPM/Engine/docScan.ts:198,204` (`splice`), `Core/MarkdownPM/Engine/docScan.ts:229-241` (`moveRange`, `moveLine`, `moveTable`), `Core/MarkdownPM/docCache.ts:92`, `Core/MarkdownPM/decorations.ts:400` (`atomicsOn`), `Core/MarkdownPM/Engine/detect.ts:93-105`.
-[^55]: **F-055:** `Core/MarkdownPM/markdown-pm.css:678-680` (the margin rule), `:681-692` (the `::before` inset and padding), `:588`, `Core/MarkdownPM/Engine/intents.ts:179` (`pageChrome`), `.claude/Guidelines/Editor-Internals.md:21` ("Box constructs float with an outer gap, never a line margin")
+[^52]: **F-052:** `Core/MarkdownPM/Engine/tokens.ts:61-73` (`shiftToken`), `Core/MarkdownPM/Engine/tokens.ts:268` (`tokenizeChunk`), `Core/MarkdownPM/decorations.ts:352` (`visibleInline`), `Core/MarkdownPM/Engine/tokens.test.ts:130-144`.
+[^53]: **F-053:** `Core/MarkdownPM/Engine/intents.ts:425-426` (`moveIntent`), `Core/MarkdownPM/Engine/intents.ts:428-449` (`stepLineIntents`), `Core/MarkdownPM/Engine/intents.ts:507-534` (`assembleLineIntents`, `prefixEndAt`, `seatPastMarker`), `Core/MarkdownPM/Engine/docScan.ts:198,204` (`splice`), `Core/MarkdownPM/Engine/docScan.ts:229-241` (`moveRange`, `moveLine`, `moveTable`), `Core/MarkdownPM/docCache.ts:92`, `Core/MarkdownPM/decorations.ts:375` (`atomicsOn`), `Core/MarkdownPM/Engine/detect.ts:93-105`.
 [^56]: **F-056:** `Core/MarkdownPM/Embeds/embedWidget.tsx:565-573` (`embedAtomic`), `:495-500` (`mapRanges`), `.claude/Guidelines/Editor-Internals.md:11`
 [^57]: **F-057:** `Core/MarkdownPM/Menus/blockHandles.ts:70-77,107-110` (`TagReveal`), `Core/MarkdownPM/Engine/intents.ts:256` (the code tag widget)
-[^58]: **F-058:** `Core/MarkdownPM/decorations.ts:677-680` (`build`)
 [^59]: **F-059:** `Core/MarkdownPM/folding.ts:195-210` (`foldField`), `:133-149` (`collapseEffect`), `:336-342` (`editAcrossCitations`), `Core/MarkdownPM/api.ts:67-75` (`mirrorBody`), `Core/Session/saveScheduler.ts:136` (`followBody`), `Core/Pages/bodyMount.ts:39` (`follow`), `.claude/Guidelines/Editor-Internals.md:30`
 [^61]: **F-061:** `Core/Tiles/Surfaces/MarkdownTile.tsx:27` (`useEditorHost`), `Core/Pages/editorHost.tsx:81-86` (`citations`), `Core/MarkdownPM/folding.ts:406-415` (`dividerPress`), `Core/MarkdownPM/Citations/citationActions.ts:31,74` (`travelToCitation`, the marker press's reveal)
 [^66]: **F-066:** `Core/MarkdownPM/Engine/detect.ts:176-204` (`htmlBlocks`), `Core/MarkdownPM/Engine/docScan.ts:103-112,131-163,275-277` (`quietAt`, `loneAbove`, `pairsBelow`, `chunksOver`), `Core/MarkdownPM/Engine/parser.ts:17-36` (`parse`), `Core/MarkdownPM/Links/linkEdit.ts:51,60` (`commitAliasOnEnter`), `Core/MarkdownPM/Engine/markdownCode.ts` (the fence grammar), `.claude/Guidelines/Editor-Internals.md:5` (the CommonMark divergences).
-[^67]: **F-067:** `Core/MarkdownPM/Engine/headingScan.ts:24-25` (`scanHeadings`), `Core/MarkdownPM/Engine/docScan.ts:38-58,93-99,365-372` (`withCitations`, `scanDoc`, `inSealedLine`), `Core/MarkdownPM/Engine/detect.ts:176-204` (`htmlBlocks`), `Core/MarkdownPM/Engine/blockModel.ts:81` (`kindAt`), `Core/MarkdownPM/Engine/intents.ts:588` (`pushConstruct`), `Core/MarkdownPM/decorations.ts:471`, `Core/MarkdownPM/Links/linkEdit.ts:51,60` (`commitAliasOnEnter`), `Core/MarkdownPM/docCache.ts:15-34,64-67` (`perDoc`, `docScan`), `Core/MarkdownPM/Input/htmlShortcuts.ts:3,9`, `Core/Settings/personalization.ts:150` (`htmlFormatting`), `Core/Index/indexSeed.ts:46-52` (`extractPageIndex`), `Core/Nexus/cascade.ts:186`, `.claude/Features/MarkdownPM.md:28`.
-[^71]: **F-071:** `.claude/Features/MarkdownPM.md:8,10,12,24,57,70,77,87,107,171`, `.claude/Features/PropertiesPM.md:83`, `.claude/Features/ConnectionsPM.md:12`, `.claude/Guidelines/Editor-Internals.md:5,18,30`, `Core/MarkdownPM/Guards/headingRenameSettle.ts:2,6`, `Core/Actions/gripMenu.ts`, `Core/Actions/blockMenu.ts:72-75,82` (`EMBED_ROWS`, `BLOCK_MENU_SECTIONS`), `Core/MarkdownPM/Engine/tokens.ts:258-264` (`tokenizeChunk`), `Core/MarkdownPM/Tables/cellLists.test.tsx:82-84`, `Core/MarkdownPM/Engine/listDragModel.ts:201-204` (`renumberRuns`), `Core/MarkdownPM/Input/listRenumber.test.ts:62`, `Core/MarkdownPM/Input/format.ts:268-273` (`setListKind`), `Core/MarkdownPM/Citations/citationPointer.ts:93-105` (`citationRowPointer`), `Core/MarkdownPM/Citations/citationActions.ts:147-149`, `Core/MarkdownPM/Menus/gripMenu.ts:50-69` (`contextFor`), `Core/MarkdownPM/Menus/blockHandles.ts:15-23` (`GRIP_KINDS`), `Core/MarkdownPM/codeGlyphs.ts:14-59` (`CODE_TAGS`)
-[^72]: **F-072:** the delete and merge rows of *§Appendix: MarkdownPM Test Dispositions*; `Core/Session/warmCache.ts:55`, `Core/MarkdownPM/Input/markdownInput.ts:249` (`typedInput`), `Core/MarkdownPM/Guards/citationGuard.test.ts:35-38,46-48,88-90,129-131,266-268`
-[^73]: **F-073:** the tighten and move rows of *§Appendix: MarkdownPM Test Dispositions*; `Core/MarkdownPM/Engine/Tables/codec.ts:17-26` (`restoreTrailingItem`), `Core/MarkdownPM/Input/edits.ts:493` (`CLOSERS`), `Core/MarkdownPM/Autocomplete/useConnectionAutocomplete.ts:163`, `Core/MarkdownPM/Engine/subfieldStats.test.ts:128-133`
-[^75]: **F-075:** `Core/Testing/markdownEngine.ts:4-10,18,59-66` (`citationScan`), `Core/MarkdownPM/Engine/docScan.ts:99` (`scanDoc`), `Core/MarkdownPM/Guards/citationGuard.test.ts:12-15` (`scanOf`), `Core/MarkdownPM/Citations/citationEdits.test.ts:16-19,298-302` (`scanOf`, `stranded`), `Core/MarkdownPM/Citations/citationBreakage.test.tsx:28-32` (`stranded`), `Core/MarkdownPM/Engine/detect.ts:46-47`, `Core/MarkdownPM/Engine/docScan.test.ts:58-60,96` (`LINES`, `CHARS`)
+[^67]: **F-067:** `Core/MarkdownPM/Engine/headingScan.ts:24-25` (`scanHeadings`), `Core/MarkdownPM/Engine/docScan.ts:38-58,93-99,365-372` (`withCitations`, `scanDoc`, `inSealedLine`), `Core/MarkdownPM/Engine/detect.ts:176-204` (`htmlBlocks`), `Core/MarkdownPM/Engine/blockModel.ts:81` (`kindAt`), `Core/MarkdownPM/Engine/intents.ts:588` (`pushConstruct`), `Core/MarkdownPM/decorations.ts:438`, `Core/MarkdownPM/Links/linkEdit.ts:51,60` (`commitAliasOnEnter`), `Core/MarkdownPM/docCache.ts:15-34,64-67` (`perDoc`, `docScan`), `Core/MarkdownPM/Input/htmlShortcuts.ts:3,9`, `Core/Settings/personalization.ts:150` (`htmlFormatting`), `Core/Index/indexSeed.ts:46-52` (`extractPageIndex`), `Core/Nexus/cascade.ts:186`, `.claude/Features/MarkdownPM.md:28`.
+[^71]: **F-071:** `.claude/Features/MarkdownPM.md:8,10,12,24,57,70,77,87,107,171`, `.claude/Features/PropertiesPM.md:83`, `.claude/Features/ConnectionsPM.md:12`, `.claude/Guidelines/Editor-Internals.md:5,18,30`, `Core/MarkdownPM/Guards/headingRenameSettle.ts:2,6`, `Core/Actions/gripMenu.ts`, `Core/Actions/blockMenu.ts:72-75,82` (`EMBED_ROWS`, `BLOCK_MENU_SECTIONS`), `Core/MarkdownPM/Engine/tokens.ts:258-264` (`tokenizeChunk`), `Core/MarkdownPM/Tables/cellLists.test.tsx:81-83`, `Core/MarkdownPM/Engine/listDragModel.ts:201-204` (`renumberRuns`), `Core/MarkdownPM/Input/listRenumber.test.ts:62`, `Core/MarkdownPM/Input/format.ts:268-273` (`setListKind`), `Core/MarkdownPM/Citations/citationPointer.ts:93-105` (`citationRowPointer`), `Core/MarkdownPM/Citations/citationActions.ts:147-149`, `Core/MarkdownPM/Menus/gripMenu.ts:50-69` (`contextFor`), `Core/MarkdownPM/Menus/blockHandles.ts:15-23` (`GRIP_KINDS`), `Core/MarkdownPM/codeGlyphs.ts:14-59` (`CODE_TAGS`)
+[^73]: **F-073:** the rows of *§Appendix: MarkdownPM Test Dispositions*; `Core/MarkdownPM/Engine/subfieldStats.test.ts:51-58,115-117,269-271`, `Core/MarkdownPM/Engine/subfieldStats.ts:125` (`computeStats`), `Core/MarkdownPM/Engine/tokens.test.ts:56-59`
 [^76]: **F-076:** `UIX/Buttons/button-base.css.ts:68-93` (`button`), `UIX/Buttons/Button.tsx:54-77`, `UIX/Menus/menu-row.css.ts:24-37` (`rowFocus`, `rowShell`), `UIX/Fields/fieldRing.ts:11,19-33` (`fieldRing`)
 [^77]: **F-077:** `UIX/Interactions/dismissalStack.ts:60-75` (`onPointerDown`), `UIX/Interactions/dismissalStack.ts:114` (`shields`), `UIX/Pickers/PickerMenu.tsx:113-121,292,307` (`PickerMenu`), `UIX/Animations/useExitPresence.ts:8-24` (`useExitPresence`), `UIX/Pickers/PickerControl.tsx:91-114,144-148` (`PickerControl`), `Core/Actions/menuActions.ts:20-23` (`popMenu`), `Core/Session/chromeSlice.ts:62-70` (`presentMenu`), `Core/Interface/Menus/MenuPresenter.tsx:84-103` (`MenuPresenter`), `Core/Tiles/Surfaces/ViewTile.tsx:652-660`, `Core/Interface/Toolbar/Toolbar.tsx:29-33`, `Core/Views/Settings/GroupFrame.tsx:235`, `UIX/Interactions/shared.ts:26-34` (`suppressReleaseClick`)
 [^78]: **F-078:** `Core/Contract/bridge.ts:61-255` (`Asks`), `Core/Nexus/mutateRequest.ts:51-108` (`mutateRequest`), `Core/Nexus/mutate.ts:109-143` (`setProfileImage`, `setProfileIcon`, `setDisclosureLock`, `setActiveView`), `Core/Nexus/mutate.ts:164` (`reorderTop`), `Core/Nexus/reorder.ts:26-55`, `Core/Views/handlers.ts:26-62`, `Core/Properties/assignment.ts:113-171` (`assignInner`, `reorderAssignment`), `Core/Settings/handlers.ts:19-51`, `Core/Assets/handlers.ts:42` (`assets:setDir`), `Core/Assets/handlers.ts:74` (`assets:adopt`), `Core/Assets/assetMigrate.ts:113`, `Core/Pages/setBanner.ts:44`, `Core/Nexus/configReach.ts:372,380`, `Core/Nexus/cascade.ts:219`, `Core/Navigation/handlers.ts:18` (`nav:write`), `Core/Matrix/handlers.ts:14` (`matrix:write`), `Core/Pages/handlers.ts:26` (`page:updateBody`), `Core/Pages/handlers.ts:45-47` (`history:restore`), `Core/Pages/fileHistory.ts:169-180`, `Core/Nexus/handlers.ts:150` (`nexus:rename`), `Core/Nexus/liveTree.ts:80` (`mutableTarget`), `Core/Tiles/handlers.ts:60-113`, `Core/Properties/handlers.ts:121-124` (`defEditOp`), `Core/Properties/handlers.ts:165-176`, `Core/Contract/handlers.ts:98-110` (`withWriteRoot`), `Desktop/FileWatch/watcher.ts:69-92,114-117` (`pushConfig`)
@@ -1302,12 +1104,12 @@ Every row was re-found by test name at `70fc6063c` and re-judged against its cit
 [^90]: **F-090:** `Desktop/hostGraph.test.ts:31-46`, `Core/Interface/handlers.ts:39-84` (`interfaceHandlers`), `Core/Settings/handlers.ts:50`, `Core/Interface/chrome.ts:1-8`, `Core/Interface/Windows/windowTabs.ts`, `Core/Interface/Windows/windowRecord.ts`, `Core/Interface/Windows/windowState.ts`, `Core/Interface/Windows/windowCache.ts`, `Core/Interface/Windows/windowMorph.ts`, `Core/Properties/governedSweep.ts`, `Core/Properties/governedWrite.ts`, `Core/Properties/journalSlot.ts`, `Core/Properties/keyHolders.ts`, `Core/Views/filterModel.ts`, `Core/Views/visibilityModel.ts`, `Core/Views/creationOrder.ts`
 [^91]: **F-091:** `Core/MarkdownPM/codeHighlight.ts:151` (`blockTrees`), `Core/MarkdownPM/codeHighlight.ts:155-183` (`paint`), `Core/MarkdownPM/codeHighlight.ts:185-218` (`colors`), `Core/MarkdownPM/docCache.ts:40-52` (`drawnLast`)
 [^92]: **F-092:** `Core/Interface/Notifications/notifications.ts` (`reportRefusal`, `persist`, `notifyReport`), `Core/Contract/result.ts` (`ErrorCode`), `Core/Sync/Contract/wire.ts` (`SyncStatus`), `.claude/Planning/Error Surfaces — Brainstorm Brief.md`
-[^93]: **F-093:** compares at `Core/MarkdownPM/Engine/intents.ts:341,446,536,588,664`, `Input/edits.ts:48,58,186,216`, `Menus/blockHandles.ts:44,49,174,189`, `decorations.ts:471,704`, `Engine/subfieldStats.ts:40`, `Gestures/listDrag.ts:52`, `Input/listRenumber.ts:39`, `Input/markdownInput.ts:237`, `Menus/menu.ts:94`; defaults at `Input/edits.ts:47,71,154,166,208,261`, `Engine/intents.ts:418,495,532`, `decorations.ts:823`, `Menus/blockHandles.ts:43,148`, `Core/Testing/markdownEngine.ts:51`; switches at `Engine/detect.ts:498-508` (`readsLists`), `surface.ts:25-40`, `docCache.ts:84`; the enum at `Core/Actions/editorMenu.ts:19`; unscoped readers at `Input/edits.ts:652-660` (`lineBodyBefore`, `opensLine`), `Gestures/listDrag.ts:3`, `Input/listRenumber.ts:30`, `Engine/listDragModel.ts` (`renumberRuns`, `dropChanges`), `Gestures/blockDrag.ts:31`; `.claude/Features/MarkdownPM.md:57`.
+[^93]: **F-093:** compares at `Core/MarkdownPM/Engine/intents.ts:341,446,536,588,664`, `Input/edits.ts:48,58,186,216`, `Menus/blockHandles.ts:44,49,174,189`, `decorations.ts:438,669`, `Engine/subfieldStats.ts:40`, `Gestures/listDrag.ts:52`, `Input/listRenumber.ts:39`, `Input/markdownInput.ts:237`, `Menus/menu.ts:94`; defaults at `Input/edits.ts:47,71,154,166,208,261`, `Engine/intents.ts:418,495,532`, `decorations.ts:786`, `Menus/blockHandles.ts:43,148`, `Core/Testing/markdownEngine.ts:43`; switches at `Engine/detect.ts:498-508` (`readsLists`), `surface.ts:25-40`, `docCache.ts:84`; the enum at `Core/Actions/editorMenu.ts:19`; unscoped readers at `Input/edits.ts:652-660` (`lineBodyBefore`, `opensLine`), `Gestures/listDrag.ts:3`, `Input/listRenumber.ts:30`, `Engine/listDragModel.ts` (`renumberRuns`, `dropChanges`), `Gestures/blockDrag.ts:31`; `.claude/Features/MarkdownPM.md:57`.
 [^95]: **F-095:** `Core/Pages/editorHost.tsx:26-33,45-48,87-115,161-176` (`EditorHostOptions`, `buildEditorHost`, `useEditorHost`), `Core/Session/pageConnections.ts:9`, `Core/Interface/Windows/PageHistoryWindow.tsx:34-35,117-118,245-252` (`HISTORY_ANCESTOR`), `Core/Interface/Glance/GlancePane.tsx:42-43,288-299` (`GLANCE_ANCESTORS`), `Core/MarkdownPM/Embeds/embedWidget.tsx:398`, `Core/MarkdownPM/api.ts:198-199` (`pageSurface`), `Core/MarkdownPM/markdown-pm.css:67-69`.
 [^96]: **F-096:** `Core/MarkdownPM/api.ts` (`EditorHost.menus`), `Core/Pages/editorHost.tsx:101-104`, `Core/Testing/editorHarness.ts:121-126`.
 [^97]: **F-097:** `Core/MarkdownPM/Menus/gripMenu.ts:50-70,131-165` (`contextFor`, the action chain), `Core/MarkdownPM/Menus/blockHandles.ts:15-26,44` (`GRIP_KINDS`, `blockHandles`), `Core/MarkdownPM/Engine/blockModel.ts:209-210` (`blockStarts`), `Core/Actions/gripMenu.ts:16-24` (`GripMenuAction`).
 [^98]: **F-098:** `Core/MarkdownPM/Engine/docScan.ts:47,50` (`maths`, `html`), `Core/MarkdownPM/Engine/docScan.ts:59` (`Span`), `Core/MarkdownPM/Engine/docScan.ts:227-228` (`fromOf`, `toOf`), `Core/MarkdownPM/Engine/blockModel.ts:66`.
-[^99]: **F-099:** `Core/MarkdownPM/Engine/detect.ts:513` (`indentLevel`), `Core/MarkdownPM/Engine/subfieldStats.ts:125` (`computeStats`), `Core/MarkdownPM/Tables/widget.tsx:395,446` (`buildWidgetDecorations`, `refreshTableEffect`), `Core/MarkdownPM/Autocomplete/autocomplete.ts:214` (`connectionInsert`), `Core/MarkdownPM/folding.ts:65,281` (`regionsOf`, `foldedRegions`), `Core/MarkdownPM/MarkdownEditor.tsx:38` (`EMPTY_PAGE_TEXT`), `Core/MarkdownPM/Engine/intents.ts:329` (`lineIntentsInto`).
+[^99]: **F-099:** `Core/MarkdownPM/Engine/detect.ts:513` (`indentLevel`), `Core/MarkdownPM/Engine/subfieldStats.ts:125` (`computeStats`), `Core/MarkdownPM/Tables/widget.tsx:394,446` (`buildWidgetDecorations`, `refreshTableEffect`), `Core/MarkdownPM/folding.ts:65,281` (`regionsOf`, `foldedRegions`), `Core/MarkdownPM/MarkdownEditor.tsx:38` (`EMPTY_PAGE_TEXT`), `Core/MarkdownPM/Engine/intents.ts:329` (`lineIntentsInto`).
 [^100]: **F-100:** `Core/MarkdownPM/Engine/parser.ts:17-36` (`parse`), `Core/MarkdownPM/Engine/tokens.ts:258-328` (`tokenizeChunk`, `tokenize`), `node_modules/mdast-util-gfm-task-list-item/lib/index.js:11` (`devlop`'s `ok`), `node_modules/devlop/package.json` (the `development` condition)
 [^102]: **F-102:** `Core/MarkdownPM/Engine/Tables/regions.ts:57` (`tableRegions`)
 [^103]: **F-103:** `UIX/Pickers/PickerMenu.tsx:179-272` (`measure`), `UIX/Pickers/PickerMenu.test.tsx:383-452`
