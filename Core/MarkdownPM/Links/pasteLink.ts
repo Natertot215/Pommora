@@ -60,15 +60,13 @@ function pasteEdit(
       how === 'connection' || (how !== 'markdown' && within.kind === 'wikiLink')
         ? 'wiki'
         : 'markdown'
-    const into = { format: isLinkDisplay(how) ? how : format, title }
-    const write = retarget(
-      syntax,
-      readLinkText(within.text),
-      target,
-      !removeTitleOnLinkChange,
-      into,
-    )
-    return { from: within.range[0], to: within.range[1], write }
+    const write = isLinkDisplay(how)
+      ? pasteAsWrite(target, how, { selection: '', format, title })
+      : retarget(syntax, readLinkText(within.text), target, !removeTitleOnLinkChange, {
+          format,
+          title,
+        })
+    return write && { from: within.range[0], to: within.range[1], write }
   }
   if (how !== 'plain' && linkDestinationStart(line, sel.from - ls) !== null) return null
   const [from, to] = trimmedRange(scan.text, sel.from, sel.to)
