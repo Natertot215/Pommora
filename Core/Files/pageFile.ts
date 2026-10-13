@@ -120,7 +120,7 @@ function isWholeLink(n: unknown): boolean {
   return isSeq(only) && only.items.length === 1 && isScalar(only.items[0])
 }
 
-/** `value` as a node spelled as the `held` spellings of its key are, the first the one it lands on: a list keeps that one's flow or block style unless it's a whole unquoted `[[x]]`, whose brackets spell a link rather than a style, and a list nested in it, or a whole `[[x]]`, is written flow; each single-line string, the value itself or a list's member, keeps the quotes of the held string equal to it, else a string yaml quotes unasked takes the quotes of the first quoted held string, and any other those of the first held string quoted where yaml wouldn't; anything else is spelled as yaml spells it. */
+/** `value` as a node spelled as the `held` spellings of its key are, the first the one it lands on: a list keeps that one's flow or block style unless it's a whole unquoted `[[x]]`, whose brackets spell a link rather than a style, and a list nested in it, or a whole `[[x]]`, is written flow; each single-line string, the value itself or a list's member, keeps the quotes of the held string equal to it, else takes those of the first held string quoted where yaml wouldn't, and a string yaml quotes unasked, where the file chose none, those of the first quoted held string; anything else is spelled as yaml spells it. */
 function nodeSpelledAs(doc: Document, value: unknown, held: unknown[]): Node {
   const node = doc.createNode(value)
   const [lands] = held
@@ -134,7 +134,8 @@ function nodeSpelledAs(doc: Document, value: unknown, held: unknown[]): Node {
     else if (isScalar(member) && typeof member.value === 'string' && !member.value.includes('\n'))
       member.type = (
         heldScalars.find((n) => n.value === member.value) ??
-        (quotesUnasked(member.value) ? quoted[0] : chosen)
+        chosen ??
+        (quotesUnasked(member.value) ? quoted[0] : undefined)
       )?.type
   }
   return node
