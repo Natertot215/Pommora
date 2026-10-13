@@ -27,6 +27,7 @@ describe('the engine graph from serve.ts', () => {
       'UIX/Utilities/capMap.ts',
       'UIX/Utilities/capitalize.ts',
       'UIX/Utilities/clamp.ts',
+      'UIX/Utilities/escapeRegExp.ts',
       'UIX/Utilities/moveItem.ts',
       'UIX/Utilities/numberUnit.ts',
       'UIX/Utilities/pad.ts',

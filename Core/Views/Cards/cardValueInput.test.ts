@@ -16,6 +16,7 @@ describe('parseEditorValue', () => {
   it('number: parses a finite value, trims, clears on empty, rejects garbage', () => {
     expect(parseEditorValue('number', '42')).toEqual({ kind: 'number', value: 42 })
     expect(parseEditorValue('number', '  3.5 ')).toEqual({ kind: 'number', value: 3.5 })
+    expect(parseEditorValue('number', '$1,200')).toEqual({ kind: 'number', value: 1200 })
     expect(parseEditorValue('number', '')).toBeNull()
     expect(parseEditorValue('number', 'abc')).toBeUndefined()
   })

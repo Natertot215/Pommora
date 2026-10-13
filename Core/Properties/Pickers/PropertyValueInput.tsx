@@ -9,7 +9,7 @@ import type { PropertyDefinition } from '../properties'
 import type { PropertyValue } from '../propertyValue'
 import { linkValueFromRename, readLinkText } from '../../Connections/linkValue'
 import { editorText, parseEditorValue } from '../parseEditorValue'
-import { NumberValuePicker } from './NumberValuePicker'
+import { fractionDenominator, numberFormatGlyph } from '../formatValue'
 import { TextPane } from './TextPane'
 import { useSetting } from '../../Session/store'
 
@@ -40,16 +40,6 @@ export function PropertyValueInput({
   onClose: () => void
 }): React.JSX.Element {
   const keepTitle = !useSetting('removeTitleOnLinkChange')
-  if (popover && def.type === 'number')
-    return (
-      <NumberValuePicker
-        {...popover}
-        def={def}
-        current={current}
-        onCommit={onCommit}
-        onDismiss={onClose}
-      />
-    )
   if (popover && def.type === 'text')
     return (
       <TextPane
@@ -77,17 +67,22 @@ export function PropertyValueInput({
     if (next !== undefined) onCommit(next)
   }
   const accent = def.type === 'link' ? solidColorCss(def.link_color) : undefined
-  if (popover)
+  if (popover) {
+    const number = def.type === 'number'
+    const denominator = number ? fractionDenominator(def) : undefined
     return (
       <TextPicker
         {...popover}
         value={initial}
         accent={accent}
+        leading={number ? numberFormatGlyph(def) : undefined}
+        trailing={denominator === undefined ? undefined : `/ ${denominator}`}
         invalid={invalid}
         onCommit={commit}
         onDismiss={onClose}
       />
     )
+  }
   const field = (
     <EditableInput
       initial={initial}

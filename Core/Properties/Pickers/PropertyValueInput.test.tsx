@@ -98,6 +98,15 @@ describe('the popover routes', () => {
     act(() => root.render(null))
     expect(popoverFor('link').querySelector('input')).not.toBeNull()
   })
+
+  it('a Number popover commits nothing when its text is unchanged', () => {
+    const blank = popoverFor('number').querySelector('input')!
+    act(() => {
+      blank.focus()
+      blank.blur()
+    })
+    expect(onCommit).not.toHaveBeenCalled()
+  })
 })
 
 describe('Edit Link reads the index at the gesture', () => {

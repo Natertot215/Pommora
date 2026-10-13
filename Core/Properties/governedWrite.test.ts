@@ -165,6 +165,7 @@ describe('setGovernedRootKey with a world — the three precedence rules', () =>
 describe('setGovernedRootKey — spellings', () => {
   const tags: PropertyDefinition = { id: 'prop_tags', name: 'Tags', type: 'multiSelect' }
   const done: PropertyDefinition = { id: 'prop_done', name: 'Done', type: 'checkbox' }
+  const price: PropertyDefinition = { id: 'prop_price', name: 'Price', type: 'number' }
   const status: PropertyDefinition = {
     id: 'prop_status',
     name: 'Status',
@@ -173,7 +174,7 @@ describe('setGovernedRootKey — spellings', () => {
   }
   const world: GovernedWorld = {
     contexts: contextWorldOf([]),
-    defs: byFoldedName([tags, done, status]),
+    defs: byFoldedName([tags, done, status, price]),
   }
   const seeded = async (keys: string): Promise<void> =>
     writeFile(page, `---\nid: p1\n${keys}\nfoo: bar\n---\nbody\n`)
@@ -197,6 +198,15 @@ describe('setGovernedRootKey — spellings', () => {
     await seeded('Done: No')
     await setGovernedRootKey(page, 'Done', true, world)
     expect(splitFrontmatter(await readFile(page, 'utf8')).Done).toBe('Yes')
+  })
+
+  it('a number lands in the spelling the file holds: quoted stays quoted, formatted stays formatted', async () => {
+    await seeded(`Price: '30'`)
+    await setGovernedRootKey(page, 'Price', 31, world)
+    expect(await lines()).toContain(`Price: '31'`)
+    await seeded('Price: $1,200')
+    await setGovernedRootKey(page, 'Price', 1300, world)
+    expect(await lines()).toContain('Price: $1,300')
   })
 
   it('collapses two spellings of a scalar under the registered spelling, where the first sat', async () => {

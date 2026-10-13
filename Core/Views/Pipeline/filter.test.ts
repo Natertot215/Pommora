@@ -188,6 +188,12 @@ describe('applyFilter — per type', () => {
     expect(
       ids(rows, { match: 'all', rules: [{ property_id: 'prop_num', op: 'is_empty' }] }),
     ).toEqual(['c'])
+    expect(
+      ids(rows, {
+        match: 'all',
+        rules: [{ property_id: 'prop_num', op: 'greater_than', value: '$3' }],
+      }),
+    ).toEqual(['a'])
   })
 
   it('date: a comparison excludes a row with no date — only is_empty selects absence', () => {

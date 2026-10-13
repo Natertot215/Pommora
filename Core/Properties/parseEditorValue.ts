@@ -1,7 +1,7 @@
 import type { PropertyValue } from './propertyValue'
 import type { PropertyType } from './properties'
 import { linkEditText, linkValueFromEdit } from '../Connections/linkValue'
-import { numberFrom } from '@pommora/uix/Utilities/numberUnit'
+import { readNumber } from './formatValue'
 import type { PageIndex } from '../Connections/pageIndex'
 
 interface LinkEditContext {
@@ -35,7 +35,7 @@ export function parseEditorValue(
 ): PropertyValue | null | undefined {
   if (type === 'number') {
     if (raw.trim() === '') return null
-    const n = numberFrom(raw)
+    const n = readNumber(raw)
     return n === undefined ? undefined : { kind: 'number', value: n }
   }
   if (type === 'link' && link)

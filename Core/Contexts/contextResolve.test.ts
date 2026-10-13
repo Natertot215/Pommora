@@ -228,16 +228,18 @@ describe('reconcileGovernedRoot — the property arm', () => {
   })
 })
 
-describe('reconcileGovernedRoot — option and checkbox casing (the crossing)', () => {
+describe('reconcileGovernedRoot — option, checkbox, and number spellings (the crossing)', () => {
   const doneDef: PropertyDefinition = { id: 'prop_done', name: 'Done', type: 'checkbox' }
-  const casing: GovernedWorld = { ...world, defs: byFoldedName([stageDef, doneDef]) }
-  const input = { Stage: ['done'], Done: 'Yes' }
+  const priceDef: PropertyDefinition = { id: 'prop_price', name: 'Price', type: 'number' }
+  const casing: GovernedWorld = { ...world, defs: byFoldedName([stageDef, doneDef, priceDef]) }
+  const input = { Stage: ['done'], Done: 'Yes', Price: '$1,200.00' }
 
   it('keeps each value as the file spells it, reading it as registered', () => {
     const { root } = reconcileGovernedRoot(input, casing)
     expect(root).toEqual(input)
     expect(decodeValue(stageDef, root.Stage)).toEqual({ kind: 'select', value: 'Done' })
     expect(decodeValue(doneDef, root.Done)).toEqual({ kind: 'checkbox', value: true })
+    expect(decodeValue(priceDef, root.Price)).toEqual({ kind: 'number', value: 1200 })
   })
 
   it('writes a Multi-Select holding two casings of one option as that option once', () => {
