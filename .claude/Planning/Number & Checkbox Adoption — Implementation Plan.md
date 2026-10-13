@@ -33,6 +33,7 @@ Every reader of a checkbox word — the filter, the creation seed, the filter pa
 | `currencySymbol` • Function | The symbol Intl gives a currency, by default as a cell shows it or narrow as the picker leads with it; `numberFormatGlyph` and the reader's symbol list both read it. | `Core/Properties/formatValue.ts` |
 | `escapeRegExp` • Function | Text with every RegExp syntax character escaped; the reader's symbol alternation and `webGuests.ts`'s app-name match both read it. | `UIX/Utilities/escapeRegExp.ts` |
 | `nodeSpelledAs` • Function | A changed value as a node spelled as the held one: a list keeps its flow or block style, each single-line string keeps its own held quotes or takes those the file chose, and a kept unquoted wikilink, whole or a member, keeps its flow spelling. `mergeInto` and `renameFrontmatterKey` write through it. | `Core/Files/pageFile.ts` |
+| `isWholeLink` • Function | Whether a node is a whole unquoted `[[x]]`, a list of one list of one scalar; `nodeSpelledAs` writes one flow, and reads a held one as no list style. | `Core/Files/pageFile.ts` |
 | `quotedByChoice` • Function | Whether a held string's quotes are the file's choice rather than the ones yaml gives that string unasked; `nodeSpelledAs` reads it. | `Core/Files/pageFile.ts` |
 | `checkboxWord` • Function | What a checkbox value says in any casing: true, false, or null. Read by `decodeValue`, the filter, the group-key decode, and the filter pane. | `Core/Properties/propertyValue.ts` |
 | `checkedSpelling` • Function | A checked value as a held value spells one; `writtenSpelling`'s checkbox arm. | `Core/Properties/propertyValue.ts` |
@@ -68,8 +69,9 @@ Every reader of a checkbox word — the filter, the creation seed, the filter pa
 - The write-back decision is noted on its line as a one-line comment.
 - A changed value keeps the file's quote formatting, for every type and every list member, through one helper both frontmatter writers share (`nodeSpelledAs`), reversing the Text-era fresh-node write (`b80a7b12a`). Keys and values match without regard to case or quoting; an unchanged member keeps its spelling, its own quotes included (`2024`, a bare `b` beside `"a"`, `[[a.png]]`), and a list keeps its flow or block style. A quote yaml needed — a numeral's `"2024"`, `'"Q3"'` — isn't the file's choice, so it spreads to no other value, and a Space, like every type, is bare by default. A string YAML can only spell quoted — a changed `[[Page]]`, or `43` over a bare `42` — takes yaml's double quotes. PropertiesPM states the write rule as one of its primary rules. `ID` follows the same rule as every key.
 - A Context value names Spaces through its scalar members only, as every option list already reads; a wikilink member is an unknown value like any other.
+- Link and File join the same rule if they come free, and they do: `linkEntry` reads a quoted or unquoted connection alike, both writers are type-agnostic, and a page rename's frontmatter rewrite lands through `nodeSpelledAs`. A whole unquoted `[[x]]` that gains a sibling becomes a block list of quoted members, the spelling yaml gives a string link.
 - Documentation stays overview-level: nothing the code shows plainly, no exhaustive detail.
-- Plan reviews before ratification run as Opus at extra-high effort; every code review during and after execution runs as Opus at high effort.
+- Plan reviews before ratification run as Opus at extra-high effort; every code review during and after execution runs as Opus at high effort, and the final neutral verification as Opus at extra-high effort.
 - Execution is dispatched to Opus at low effort, phase by phase. Alongside it, one Haiku agent at extra-high effort applies the same plan in a parallel worktree, as a comparison of whether Opus earns its cost on code the plan already writes; *§Execution Comparison* records the outcome.
 
 #### Process Overview
@@ -392,14 +394,19 @@ The edited fixture pins a hand-written word; `twoRules` still pins the pane's ow
 +  (n.type === 'QUOTE_DOUBLE' || n.type === 'QUOTE_SINGLE') &&
 +  yamlInline(n.value)[0] !== QUOTE_MARK[n.type]
 +
-+/** `value` as a node spelled as `held` is: a list keeps the held list's flow or block style, and a list nested in it, or a whole unquoted `[[x]]`, is written flow; each single-line string, the value itself or a list's member, keeps the quotes of the held string equal to it, else takes those of the first held string quoted by choice; anything else is spelled as yaml spells it. */
++/** Whether `n` is a whole unquoted `[[x]]`: a list of one list of one scalar. */
++function isWholeLink(n: unknown): boolean {
++  const only = isSeq(n) && n.items.length === 1 ? n.items[0] : null
++  return isSeq(only) && only.items.length === 1 && isScalar(only.items[0])
++}
++
++/** `value` as a node spelled as `held` is: a list keeps the flow or block style of a held list other than a whole unquoted `[[x]]`, whose brackets spell a link rather than a style, and a list nested in it, or a whole `[[x]]`, is written flow; each single-line string, the value itself or a list's member, keeps the quotes of the held string equal to it, else takes those of the first held string quoted by choice; anything else is spelled as yaml spells it. */
 +function nodeSpelledAs(doc: Document, value: unknown, held: unknown): Node {
 +  const node = doc.createNode(value)
 +  const spellings = (isSeq(held) ? held.items : [held]).filter(isScalar)
 +  const model = spellings.find(quotedByChoice)
-+  const only = isSeq(node) && node.items.length === 1 ? node.items[0] : null
-+  const wholeLink = isSeq(only) && only.items.length === 1 && isScalar(only.items[0])
-+  if (isSeq(node) && ((isSeq(held) && held.flow) || wholeLink)) node.flow = true
++  const flowHeld = isSeq(held) && held.flow && !isWholeLink(held)
++  if (isSeq(node) && (flowHeld || isWholeLink(node))) node.flow = true
 +  for (const member of isSeq(node) ? node.items : [node]) {
 +    if (isSeq(member)) member.flow = true
 +    else if (isScalar(member) && typeof member.value === 'string' && !member.value.includes('\n'))
@@ -464,16 +471,16 @@ yaml's own in-place replacement — `doc.set(key, rawValue)` over a scalar keeps
 -      '---\nN: |-\n  a\n  b\n---\nBody',
 -    )
 -  })
-+  it('a changed value keeps the file’s spelling: a list its flow or block style, each string the quotes the file held for it or else the quotes the file chose, never a quote yaml needed, and a kept wikilink, whole or a member, its flow spelling; a block or multi-line value is spelled as yaml spells it', () => {
++  it('a changed value keeps the file’s spelling: a list its flow or block style, each string the quotes the file held for it or else the quotes the file chose, never a quote yaml needed, and a kept wikilink, whole or a member, its flow spelling, while a whole wikilink that grows is a block list; a block or multi-line value is spelled as yaml spells it', () => {
 +    expect(
 +      mergeFrontmatter(
-+        `---\nN: "42"\nS: 'x'\nL: ["a", b]\nF:\n  - [[a.png]]\nB: |-\n  old\n  l2\nM: "x"\nY:\n  - "2024"\n---\nBody`,
-+        { N: 'hello', S: 'y', L: ['a', 'b', 'c'], F: [[['a.png']], '[[b.png]]'], B: 'x', M: 'a\nb', R: [['Page']], Y: ['2024', 'x'] },
-+        ['N', 'S', 'L', 'F', 'B', 'M', 'R', 'Y'],
++        `---\nN: "42"\nS: 'x'\nL: ["a", b]\nF:\n  - [[a.png]]\nG: [[a.png]]\nB: |-\n  old\n  l2\nM: "x"\nY:\n  - "2024"\n---\nBody`,
++        { N: 'hello', S: 'y', L: ['a', 'b', 'c'], F: [[['a.png']], '[[b.png]]'], G: ['[[a.png]]', '[[c.png]]'], B: 'x', M: 'a\nb', R: [['Page']], Y: ['2024', 'x'] },
++        ['N', 'S', 'L', 'F', 'G', 'B', 'M', 'R', 'Y'],
 +        'Body',
 +      ),
 +    ).toBe(
-+      `---\nN: hello\nS: 'y'\nL: ["a", b, "c"]\nF:\n  - [[a.png]]\n  - "[[b.png]]"\nB: x\nM: |-\n  a\n  b\nY:\n  - "2024"\n  - x\nR: [[Page]]\n---\nBody`,
++      `---\nN: hello\nS: 'y'\nL: ["a", b, "c"]\nF:\n  - [[a.png]]\n  - "[[b.png]]"\nG:\n  - "[[a.png]]"\n  - "[[c.png]]"\nB: x\nM: |-\n  a\n  b\nY:\n  - "2024"\n  - x\nR: [[Page]]\n---\nBody`,
 +    )
 +  })
 
@@ -1263,7 +1270,8 @@ The rows keep the file's column padding; `…` stands for unchanged text.
 
 - [ ] Phase review (Opus, high effort): Phase 1 · Phase 2 · Phase 3 · Phase 4
 - [ ] Simplification lens → adversarial lens (Opus, high effort) over `<BASELINE>..HEAD`
-- [ ] Neutral verification (Opus, high effort) over `<BASELINE>..HEAD`
+- [ ] Fold review, simplification and adversarial (Opus, high effort): the quote-rule, scalar-member, and whole-link commits
+- [ ] Neutral verification (Opus, extra-high effort) over `<BASELINE>..HEAD`
 - [ ] Own pass: gates · diff · deviations · criteria · the drive's reads
 - [ ] Reconciliation walked
 - [ ] Execution comparison measured and recorded; the comparison worktree removed
@@ -1296,5 +1304,5 @@ The plan is executed twice from the same **BASELINE** head, so the difference be
 
 #### Deviations
 
-- **The quote rule's mechanics (`0a12a86e3`):** `nodeSpelledAs` first carried only the quotes of a list's first quoted member onto every changed string. Final review showed that re-quoting untouched bare members of a mixed list, flattening a flow list to block, and spreading quotes yaml itself needed (Pommora's own `"2024"`) to new values, against "an unchanged member keeps its spelling" and Nathan's "bare by default". It now keeps each member's own quotes and a list's flow or block style, and counts only quotes the file chose.
+- **The quote rule's mechanics (`0a12a86e3`):** `nodeSpelledAs` first carried only the quotes of a list's first quoted member onto every changed string. Final review showed that re-quoting untouched bare members of a mixed list, flattening a flow list to block, and spreading quotes yaml itself needed (Pommora's own `"2024"`) to new values, against "an unchanged member keeps its spelling" and Nathan's "bare by default". It now keeps each member's own quotes and a list's flow or block style, a whole unquoted `[[x]]` counting as no style, and counts only quotes the file chose.
 
