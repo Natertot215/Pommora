@@ -256,9 +256,10 @@ interface NumberShape {
   grouped: boolean
 }
 
-/** A number as text spells it, the inverse of a cell's own formatting: digits as `numberFrom` reads them, commas only as thousands, and a currency symbol before, or a `%` or a symbol after, never both. */
-function numberShape(text: string): NumberShape | null {
-  const m = NUMBER_SHAPE.exec(text.trim())
+/** The number a string spells, the inverse of a cell's own formatting: digits as `numberFrom` reads them, commas only as thousands, and a currency symbol before, or a `%` or a symbol after, never both. */
+function numberShape(raw: unknown): NumberShape | null {
+  if (typeof raw !== 'string') return null
+  const m = NUMBER_SHAPE.exec(raw.trim())
   if (!m || (m[2] && m[4])) return null
   const [, sign, lead = '', body, tail = ''] = m
   const grouped = GROUPED.test(body)
@@ -268,11 +269,11 @@ function numberShape(text: string): NumberShape | null {
 
 /** The one reading of a stored or typed number: a YAML number as itself, or a string that spells one. */
 export const readNumber = (raw: unknown): number | undefined =>
-  typeof raw === 'number' ? raw : typeof raw === 'string' ? numberShape(raw)?.value : undefined
+  typeof raw === 'number' ? raw : numberShape(raw)?.value
 
 /** `next` as `raw` spells a number: an unchanged value keeps `raw` as written, and over anything but a string spelling a number it lands bare. */
 export function spelledNumber(next: number, raw: unknown): unknown {
-  const shape = typeof raw === 'string' ? numberShape(raw) : null
+  const shape = numberShape(raw)
   if (!shape) return next
   if (shape.value === next) return raw
   // A changed value keeps the file's currency symbol, percent sign, and grouping; its digits are the typed value's.

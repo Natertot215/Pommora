@@ -25,7 +25,7 @@ import { editList, namesValue, stripList } from '../Properties/pageValue'
 import { contextWorldOf } from './contextResolve'
 import { oweWalk } from '../Nexus/fileEvents'
 import { liveTreeOf } from '../Nexus/liveTree'
-import { isScalar, listOf } from '../Contract/validators'
+import { scalarMembers } from '../Contract/validators'
 import { queryMembers } from '../Index/contentIndex'
 import { nexusCorpus } from '../Index/indexSeed'
 import { nameError } from '../Paths/names'
@@ -139,10 +139,7 @@ export async function unlinkContextKey(
   const strip: Rewrite = (raw, file) => {
     const keys = heldKeys(raw, key)
     if (!keys.length) return null
-    const values = keys
-      .flatMap((k) => listOf(raw[k]))
-      .filter(isScalar)
-      .map(String)
+    const values = keys.flatMap((k) => scalarMembers(raw[k]))
     captured.push(captureRoot(raw, file, values))
     return stripKeys(raw, keys)
   }

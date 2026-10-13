@@ -1,8 +1,7 @@
 // Option lists are edited IN PLACE, never decode-to-strings→re-encode — a holder may carry foreign or non-string elements, and an op must touch only its target.
 
-import { isScalar } from '../Contract/validators'
 import type { Rewrite } from './governedSweep'
-import { editHeldList } from '../Files/heldKeys'
+import { editHeldList, memberKey } from '../Files/heldKeys'
 import { holdsList, type PropertyDefinition } from './properties'
 import { normalizeTitle } from '../Paths/caseFold'
 
@@ -11,7 +10,7 @@ export type Matcher = (el: unknown) => boolean
 
 export const namesValue = (value: string): Matcher => {
   const want = normalizeTitle(value)
-  return (el) => isScalar(el) && normalizeTitle(el) === want
+  return (el) => memberKey(el) === want
 }
 
 export const stripList = (xs: readonly unknown[], matches: Matcher): unknown[] | null =>
