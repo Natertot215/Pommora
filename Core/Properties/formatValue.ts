@@ -280,7 +280,7 @@ export function spelledNumber(next: number, raw: unknown): unknown {
   if (shape.value === next) return raw
   // A changed value keeps the file's currency symbol, percent sign, grouping, and decimal places; its digits are the typed value's.
   const digits = numFmt({
-    minimumFractionDigits: shape.places,
+    minimumFractionDigits: Math.min(shape.places, 20),
     maximumFractionDigits: 20,
     useGrouping: shape.grouped,
   }).format(Math.abs(next))

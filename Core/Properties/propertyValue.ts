@@ -36,6 +36,9 @@ export type ValueKind = Exclude<PropertyValue['kind'], 'null'>
 
 export const NULL_VALUE: PropertyValue = { kind: 'null' }
 
+/** A held value as text: a string as itself, an unquoted `[[x]]` as the connection it spells, anything else as the yaml that spells it. */
+const asText = (raw: unknown): string => linkEntry(raw, 2) ?? yamlInline(raw)
+
 // An outside `- 2024` parses as a number and must still name the option "2024".
 const optionList = (raw: unknown): string[] =>
   scalarMembers(raw).filter((x) => normalizeTitle(x) !== '')
@@ -93,10 +96,8 @@ export function decodeValue(def: PropertyDefinition, raw: unknown): PropertyValu
     }
     case 'dateTime':
       return typeof raw === 'string' ? { kind, value: raw } : NULL_VALUE
-    // Free text reads whatever the file holds: a string as itself, any other shape as the yaml that spells it.
     case 'text':
-      if (isBlankRaw(raw)) return NULL_VALUE
-      return { kind, value: typeof raw === 'string' ? raw : yamlInline(raw) }
+      return isBlankRaw(raw) ? NULL_VALUE : { kind, value: asText(raw) }
     case 'select': {
       // The one rule for an externally written option list: the newest registered element wins.
       const value = optionList(raw)
@@ -176,12 +177,13 @@ export function writtenSpelling(next: unknown, raw: unknown): unknown {
   if (next === true) return checkedSpelling(raw)
   if (typeof next === 'number') return spelledNumber(next, raw)
   if (typeof next === 'string')
-    return raw != null && typeof raw !== 'string' && yamlInline(raw) === next ? raw : next
+    return raw != null && typeof raw !== 'string' && asText(raw) === next ? raw : next
   if (!Array.isArray(next)) return next
   if (next.length === 1 && Array.isArray(raw) && linkEntry(raw, 2) === next[0]) return raw
   const held = listOf(raw)
   return next.map((v) => {
-    const named = held.filter(namesValue(v))
+    const names = namesValue(v)
+    const named = held.filter((w) => names(linkEntry(w, 2) ?? w))
     return named.length === 1 ? named[0] : v
   })
 }

@@ -4,7 +4,6 @@ import { setOrDrop } from './atomicWrite'
 import type { Json } from './stableJson'
 import { foldKey, spellings, normalizeTitle } from '../Paths/caseFold'
 import { isScalar, listOf } from '../Contract/validators'
-import { linkEntry } from '../Connections/linkValue'
 
 export const heldKeys = (root: object, name: string): string[] => spellings(Object.keys(root), name)
 
@@ -48,11 +47,8 @@ export function landValue(root: Json, { key, govern }: WriteTarget, value: unkno
   return next
 }
 
-/** What a member matches by: the folded title of a scalar or an unquoted wikilink, or the member itself. */
-export const memberKey = (v: unknown): unknown => {
-  const title = isScalar(v) ? v : linkEntry(v, 2)
-  return title === null ? v : normalizeTitle(title)
-}
+/** What a member matches by: a scalar's folded title, or the member itself. */
+export const memberKey = (v: unknown): unknown => (isScalar(v) ? normalizeTitle(v) : v)
 
 /** Two values as one list: `keep`'s members, then each of `from`'s that matches none of them by `memberKey`; a single value reads as a list of one. Every join of two spellings, and a `'merge'` rename, uses it. */
 export function joinValues(keep: unknown, from: unknown): unknown[] {
