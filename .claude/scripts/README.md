@@ -71,7 +71,18 @@ way it saves, and style parity with the page body). It takes the groups to run a
 a channel's reply. It seeds `Collection A/Set Alpha` with its properties, views, and `Drive …` pages
 on debug port 9353.
 
-Both drives share `drive-harness.mjs`, which builds the app, backs up `~/Test`, launches the build
+`Metadata Spelling Drive/live-drive.mjs` drives how every value type reads and writes the spellings
+other applications leave, one page per case: each checkbox word pair in three casings and three quote
+styles, each number shape (quoted, grouped, percent, every currency symbol before or after, signed,
+decimal, and the shapes the grammar refuses), and Select, Status, Multi-Select, Text, Link, File, and
+Space values held bare, single-quoted, double-quoted, in another casing, or as flow and block lists.
+It reads each value as the table draws it, asserts that registering the properties leaves every page
+byte-identical, writes each case and asserts the exact bytes it leaves, unticks every checkbox, and
+runs the page, option, Space, and property renames over held spellings. It seeds `Collection A/Set
+Alpha` with its properties, a table view, and `Mx …` pages on debug port 9363, and exits non-zero on
+any failed check.
+
+The drives share `drive-harness.mjs`, which builds the app, backs up `~/Test`, launches the build
 with its own userData and the drive's debug port, writes a screenshot of each state to
 `$POMMORA_DRIVE_SHOTS` (a per-drive folder in the system temp directory otherwise), and restores
 `~/Test` when the run ends or is interrupted; it chooses native menus with System Events
