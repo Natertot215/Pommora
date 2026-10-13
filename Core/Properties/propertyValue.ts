@@ -11,6 +11,7 @@ import { normalizeTitle } from '../Paths/caseFold'
 import { heldValue, landValue, writeTarget } from '../Files/heldKeys'
 import { yamlInline } from '../Files/pageFile'
 import { linkEntry, wholeValueLink } from '../Connections/linkValue'
+import { capitalize } from '@pommora/uix/Utilities/capitalize'
 
 const strings = z.array(z.string())
 export const propertyValue = z.discriminatedUnion('kind', [
@@ -56,9 +57,26 @@ function optionsByFold(def: PropertyDefinition): Map<string, string> {
 const registeredOption = (def: PropertyDefinition, written: string): string | undefined =>
   optionsByFold(def).get(normalizeTitle(written))
 
-/** Checked as a file spells it: `true`, or the word `true` or `yes` in any casing. */
-const isCheckedRaw = (raw: unknown): boolean =>
-  raw === true || (typeof raw === 'string' && ['true', 'yes'].includes(normalizeTitle(raw)))
+const CHECKBOX_WORDS = [
+  ['true', 'false'],
+  ['yes', 'no'],
+  ['on', 'off'],
+  ['y', 'n'],
+] as const
+const CHECKED_WORD = new Map(
+  CHECKBOX_WORDS.flatMap(([on, off]): [string, string][] => [
+    [on, on],
+    [off, on],
+  ]),
+)
+
+/** What a checkbox value says as a file spells it, in any casing: true for a pair's checked word, false for its partner, null for anything else. */
+export function checkboxWord(raw: unknown): boolean | null {
+  if (typeof raw === 'boolean') return raw
+  const word = typeof raw === 'string' ? normalizeTitle(raw) : ''
+  const checked = CHECKED_WORD.get(word)
+  return checked === undefined ? null : checked === word
+}
 
 export function decodeValue(def: PropertyDefinition, raw: unknown): PropertyValue {
   if (raw === null || raw === undefined) return NULL_VALUE
@@ -67,7 +85,7 @@ export function decodeValue(def: PropertyDefinition, raw: unknown): PropertyValu
     case 'number':
       return typeof raw === 'number' ? { kind, value: raw } : NULL_VALUE
     case 'checkbox':
-      return isCheckedRaw(raw) ? { kind, value: true } : NULL_VALUE
+      return checkboxWord(raw) ? { kind, value: true } : NULL_VALUE
     case 'link': {
       const entry = linkEntry(raw, 2)
       return entry === null ? NULL_VALUE : { kind, value: entry }
@@ -142,9 +160,19 @@ export function reconcilePropertyValue(
   return kept.length ? { kind: 'multiSelect', value: kept } : NULL_VALUE
 }
 
-/** `next` spelled as `raw` already spells it: a checked `true` keeps `raw`'s checked word, a string keeps a `raw` of any other shape whose inline yaml reads as that string, and each member takes the one member of `raw` its title folds to. A member `raw` names more than once keeps the spelling `next` gives it, the registered one. */
+/** A checked value as `raw` spells one: its checked word as written, or its unchecked word's partner in the same casing (`no` → `yes`, `OFF` → `ON`), else `true`. */
+function checkedSpelling(raw: unknown): unknown {
+  if (checkboxWord(raw) === true) return raw
+  const word = typeof raw === 'string' ? raw.trim() : ''
+  const partner = CHECKED_WORD.get(normalizeTitle(word))
+  if (partner === undefined) return true
+  if (word === word.toUpperCase()) return partner.toUpperCase()
+  return word[0] === word[0].toUpperCase() ? capitalize(partner) : partner
+}
+
+/** `next` spelled as `raw` already spells it: a checked `true` takes `raw`'s checkbox word as `checkedSpelling` does, a string keeps a `raw` of any other shape whose inline yaml reads as that string, and each member takes the one member of `raw` its title folds to. A member `raw` names more than once keeps the spelling `next` gives it, the registered one. */
 export function writtenSpelling(next: unknown, raw: unknown): unknown {
-  if (next === true) return isCheckedRaw(raw) ? raw : next
+  if (next === true) return checkedSpelling(raw)
   if (typeof next === 'string')
     return raw != null && typeof raw !== 'string' && yamlInline(raw) === next ? raw : next
   if (!Array.isArray(next)) return next

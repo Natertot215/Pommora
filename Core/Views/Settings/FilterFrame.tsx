@@ -33,6 +33,7 @@ import { useSetting } from '../../Session/store'
 import { formatDate, readDate } from '../../Properties/formatValue'
 import { contextOptionsFor } from '../../Contexts/contextOptions'
 import { declaredType } from '../../Properties/value'
+import { checkboxWord } from '../../Properties/propertyValue'
 import {
   PropertyOptionRows,
   pickShape,
@@ -538,7 +539,8 @@ export function FilterFrame({
     const current = ops.find(
       (o) =>
         o.op === row.rule.op &&
-        (o.impliedValue === undefined || o.impliedValue === ruleOperands(row.rule)[0]),
+        (o.impliedValue === undefined ||
+          checkboxWord(o.impliedValue) === checkboxWord(ruleOperands(row.rule)[0])),
     )
     const target = targetById.get(row.rule.property_id)
     const isCheckbox = declaredType(row.rule.property_id, schema, contextIds) === 'checkbox'
