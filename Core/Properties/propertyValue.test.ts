@@ -91,6 +91,7 @@ describe('decodeValue — the declared type decides, never the shape', () => {
       kind: 'link',
       value: '[[2024]]',
     })
+    expect(decodeValue(def({ type: 'link' }), [[1.1]])).toEqual({ kind: 'null' })
     expect(decodeValue(def({ type: 'link' }), 42)).toEqual({ kind: 'null' })
     // A one-item list is a list, as the index reads it, not a link.
     expect(decodeValue(def({ type: 'link' }), ['Page'])).toEqual({ kind: 'null' })

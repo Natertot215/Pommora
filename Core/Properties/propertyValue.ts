@@ -181,8 +181,7 @@ export function writtenSpelling(next: unknown, raw: unknown): unknown {
   if (next.length === 1 && Array.isArray(raw) && linkEntry(raw, 2) === next[0]) return raw
   const held = listOf(raw)
   return next.map((v) => {
-    const names = namesValue(v)
-    const named = held.filter((w) => names(linkEntry(w, 2) ?? w))
+    const named = held.filter(namesValue(v))
     return named.length === 1 ? named[0] : v
   })
 }

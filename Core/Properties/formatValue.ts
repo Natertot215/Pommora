@@ -254,6 +254,7 @@ interface NumberShape {
   lead: string
   tail: string
   grouped: boolean
+  places: number
 }
 
 /** The number a string spells, the inverse of a cell's own formatting: digits as `numberFrom` reads them, commas only as thousands, and a currency symbol before, or a `%` or a symbol after, never both. */
@@ -264,7 +265,8 @@ function numberShape(raw: unknown): NumberShape | null {
   const [, sign, lead = '', body, tail = ''] = m
   const grouped = GROUPED.test(body)
   const value = numberFrom(sign + (grouped ? body.replaceAll(',', '') : body))
-  return value === undefined ? null : { value, lead, tail, grouped }
+  const places = /\.(\d+)$/.exec(body)?.[1].length ?? 0
+  return value === undefined ? null : { value, lead, tail, grouped, places }
 }
 
 /** The one reading of a stored or typed number: a YAML number as itself, or a string that spells one. */
@@ -276,10 +278,12 @@ export function spelledNumber(next: number, raw: unknown): unknown {
   const shape = numberShape(raw)
   if (!shape) return next
   if (shape.value === next) return raw
-  // A changed value keeps the file's currency symbol, percent sign, and grouping; its digits are the typed value's.
-  const digits = numFmt({ maximumFractionDigits: 20, useGrouping: shape.grouped }).format(
-    Math.abs(next),
-  )
+  // A changed value keeps the file's currency symbol, percent sign, grouping, and decimal places; its digits are the typed value's.
+  const digits = numFmt({
+    minimumFractionDigits: shape.places,
+    maximumFractionDigits: 20,
+    useGrouping: shape.grouped,
+  }).format(Math.abs(next))
   const spelled = `${next < 0 ? '-' : ''}${shape.lead}${digits}${shape.tail}`
   return readNumber(spelled) === next ? spelled : next
 }

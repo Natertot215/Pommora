@@ -301,8 +301,9 @@ describe('spelledNumber', () => {
     expect(spelledNumber(1200, '$1,200.00')).toBe('$1,200.00')
   })
 
-  it('a changed value keeps the string shape, symbol, percent sign, spacing, and grouping, its digits typed', () => {
-    expect(spelledNumber(1300, '$1,200.00')).toBe('$1,300')
+  it('a changed value keeps the string shape, symbol, percent sign, spacing, grouping, and decimal places, its digits typed', () => {
+    expect(spelledNumber(1300, '$1,200.00')).toBe('$1,300.00')
+    expect(spelledNumber(45.125, '30.50%')).toBe('45.125%')
     expect(spelledNumber(1234567, '1,200')).toBe('1,234,567')
     expect(spelledNumber(1234, '1200')).toBe('1234')
     expect(spelledNumber(45, '30%')).toBe('45%')
