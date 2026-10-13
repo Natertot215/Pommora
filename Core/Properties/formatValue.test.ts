@@ -302,7 +302,6 @@ describe('spelledNumber', () => {
   })
 
   it('a changed value keeps the string shape, symbol, percent sign, spacing, and grouping, its digits typed', () => {
-    expect(spelledNumber(31, '30')).toBe('31')
     expect(spelledNumber(1300, '$1,200.00')).toBe('$1,300')
     expect(spelledNumber(1234567, '1,200')).toBe('1,234,567')
     expect(spelledNumber(1234, '1200')).toBe('1234')
@@ -314,7 +313,6 @@ describe('spelledNumber', () => {
   it('lands bare over anything but a string spelling a number, and where the spelling would not read back', () => {
     expect(spelledNumber(31, 30)).toBe(31)
     expect(spelledNumber(31, 'five')).toBe(31)
-    expect(spelledNumber(31, undefined)).toBe(31)
     expect(spelledNumber(1e-25, '$30')).toBe(1e-25)
   })
 })

@@ -64,7 +64,7 @@ A Text property holds one free-typed string. It edits single-line wherever a val
 
 #### Number
 
-A bare number with a **property-wide format** and a **per-view look**. The format — a family (Number, Percent, Currency), a currency code, thousands separators, decimal places, and a Fraction toggle rendering "N out of denominator" — is set once in the Number editor and applies everywhere. Percent stores the literal value and appends the sign, keeping the file legible. The look is **Number** (formatted text) or **Bar**, a progress bar filling against a muted track.
+A number with a **property-wide format** and a **per-view look**. The format — a family (Number, Percent, Currency), a currency code, thousands separators, decimal places, and a Fraction toggle rendering "N out of denominator" — is set once in the Number editor and applies everywhere. Percent stores the literal value and appends the sign, keeping the file legible. The look is **Number** (formatted text) or **Bar**, a progress bar filling against a muted track.
 
 #### Date & Time
 

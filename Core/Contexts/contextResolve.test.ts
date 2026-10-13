@@ -236,11 +236,11 @@ describe('reconcileGovernedRoot — the property arm', () => {
 describe('reconcileGovernedRoot — option, checkbox, and number spellings (the crossing)', () => {
   const doneDef: PropertyDefinition = { id: 'prop_done', name: 'Done', type: 'checkbox' }
   const priceDef: PropertyDefinition = { id: 'prop_price', name: 'Price', type: 'number' }
-  const casing: GovernedWorld = { ...world, defs: byFoldedName([stageDef, doneDef, priceDef]) }
+  const spelled: GovernedWorld = { ...world, defs: byFoldedName([stageDef, doneDef, priceDef]) }
   const input = { Stage: ['done'], Done: 'Yes', Price: '$1,200.00' }
 
   it('keeps each value as the file spells it, reading it as registered', () => {
-    const { root } = reconcileGovernedRoot(input, casing)
+    const { root } = reconcileGovernedRoot(input, spelled)
     expect(root).toEqual(input)
     expect(decodeValue(stageDef, root.Stage)).toEqual({ kind: 'select', value: 'Done' })
     expect(decodeValue(doneDef, root.Done)).toEqual({ kind: 'checkbox', value: true })
@@ -249,7 +249,7 @@ describe('reconcileGovernedRoot — option, checkbox, and number spellings (the 
 
   it('writes a Multi-Select holding two casings of one option as that option once', () => {
     const labels: PropertyDefinition = { ...tagsDef, select_options: [{ value: 'Done' }] }
-    const held = { ...casing, defs: byFoldedName([labels]) }
+    const held = { ...spelled, defs: byFoldedName([labels]) }
     const twice = { Tags: ['done', 'Done', 'x'] }
     expect(reconcileGovernedRoot(twice, held).root).toEqual({ Tags: ['Done', 'x'] })
   })

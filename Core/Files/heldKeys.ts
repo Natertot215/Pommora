@@ -47,7 +47,7 @@ export function landValue(root: Json, { key, govern }: WriteTarget, value: unkno
   return next
 }
 
-/** What a member matches by: a scalar's folded title, or the member itself, so a member of any other shape matches only itself. */
+/** What a member matches by: a scalar's folded title, or the member itself. */
 export const memberKey = (v: unknown): unknown => (isScalar(v) ? normalizeTitle(v) : v)
 
 /** Two values as one list: `keep`'s members, then each of `from`'s that matches none of them by `memberKey`; a single value reads as a list of one. Every join of two spellings, and a `'merge'` rename, uses it. */

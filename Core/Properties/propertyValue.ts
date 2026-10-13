@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { isScalar, listOf } from '../Contract/validators'
+import { listOf, scalarMembers } from '../Contract/validators'
 import {
   firstPerTitle,
   holdsList,
@@ -38,10 +38,7 @@ export const NULL_VALUE: PropertyValue = { kind: 'null' }
 
 // An outside `- 2024` parses as a number and must still name the option "2024".
 const optionList = (raw: unknown): string[] =>
-  listOf(raw)
-    .filter(isScalar)
-    .map(String)
-    .filter((x) => normalizeTitle(x) !== '')
+  scalarMembers(raw).filter((x) => normalizeTitle(x) !== '')
 
 const foldedOptions = new WeakMap<PropertyDefinition, Map<string, string>>()
 

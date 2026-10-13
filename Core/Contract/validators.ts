@@ -8,6 +8,7 @@ export const listOf = (raw: unknown): unknown[] => (Array.isArray(raw) ? raw : [
 export const isString = (v: unknown): v is string => typeof v === 'string'
 export const isScalar = (v: unknown): v is string | number | boolean =>
   isString(v) || typeof v === 'number' || typeof v === 'boolean'
+export const scalarMembers = (raw: unknown): string[] => listOf(raw).filter(isScalar).map(String)
 export const isStringArray = (v: unknown): v is string[] => Array.isArray(v) && v.every(isString)
 export const isFiniteNumber = (v: unknown): v is number =>
   typeof v === 'number' && Number.isFinite(v)
