@@ -32,11 +32,13 @@ Every reader of a checkbox word — the filter, the creation seed, the filter pa
 | `spelledNumber` • Function | A number written in the spelling a held string uses; `writtenSpelling`'s number arm. | `Core/Properties/formatValue.ts` |
 | `currencySymbol` • Function | The symbol Intl gives a currency, by default as a cell shows it or narrow as the picker leads with it; `numberFormatGlyph` and the reader's symbol list both read it. | `Core/Properties/formatValue.ts` |
 | `escapeRegExp` • Function | Text with every RegExp syntax character escaped; the reader's symbol alternation and `webGuests.ts`'s app-name match both read it. | `UIX/Utilities/escapeRegExp.ts` |
-| `nodeSpelledAs` • Function | A changed value as a node spelled as the held one: each single-line string, scalar or list member, takes the held quotes, and a kept unquoted wikilink, whole or a member, keeps its flow spelling. `mergeInto` and `renameFrontmatterKey` write through it. | `Core/Files/pageFile.ts` |
+| `nodeSpelledAs` • Function | A changed value as a node spelled as the held one: a list keeps its flow or block style, each single-line string keeps its own held quotes or takes those the file chose, and a kept unquoted wikilink, whole or a member, keeps its flow spelling. `mergeInto` and `renameFrontmatterKey` write through it. | `Core/Files/pageFile.ts` |
+| `quotedByChoice` • Function | Whether a held string's quotes are the file's choice rather than the ones yaml gives that string unasked; `nodeSpelledAs` reads it. | `Core/Files/pageFile.ts` |
 | `checkboxWord` • Function | What a checkbox value says in any casing: true, false, or null. Read by `decodeValue`, the filter, the group-key decode, and the filter pane. | `Core/Properties/propertyValue.ts` |
 | `checkedSpelling` • Function | A checked value as a held value spells one; `writtenSpelling`'s checkbox arm. | `Core/Properties/propertyValue.ts` |
 | `contextTitles` • Function | The folded titles a Context value names, its scalar members only; Context resolution, the live reconcile, and the index's Space relations read it. | `Core/Contexts/contexts.ts` |
-| `memberKey` • Function | What a held member matches by: a scalar's folded title, or the member itself; `joinValues` and the reconcile's no-shrink `memberCount` read it. | `Core/Files/heldKeys.ts` |
+| `scalarMembers` • Function | A held value's scalar members as strings; `optionList`, `contextTitles`, and a Context unlink read it. | `Core/Contract/validators.ts` |
+| `memberKey` • Function | What a held member matches by: a scalar's folded title, or the member itself; `joinValues`, `namesValue`, and the reconcile's no-shrink `memberCount` read it. | `Core/Files/heldKeys.ts` |
 
 **REMOVED**
 
@@ -50,7 +52,7 @@ Every reader of a checkbox word — the filter, the creation seed, the filter pa
 
 - **Gates:** `npm run typecheck` · `npm run test` · `npm run lint`, from the repo root, chained with `&&`, each exiting 0; lint prints no `Found N warnings` line. Biome formats every TS write, so an Edit failing on whitespace means it reformatted — re-read and retry.
 - **Commits:** `git add <new files>` and `git rm <removed files>` first, then `git commit --only -m "…" -- <paths>`; messages past-tense and short, ending with the Co-Authored-By line. The pre-commit hook adds `Dashboard/Ledger/loc-history.json`.
-- **Frozen:** The value union (`checkbox: z.literal(true)`, `number: z.number()`); `encodeValue`; UIX `numberFrom` and its UIX callers; `applyValueAtRoot` (the renderer's optimistic copy lands the bare encoded value, and both copies decode alike); the watcher, settle, index, and `registerHeldOptions`; "No value, no key" — an untick and an emptied number remove the key.
+- **Frozen:** The value union (`checkbox: z.literal(true)`, `number: z.number()`); `encodeValue`; UIX `numberFrom` and its UIX callers; `applyValueAtRoot` (the renderer's optimistic copy lands the bare encoded value, and both copies decode alike); the watcher, settle, and `registerHeldOptions`; "No value, no key" — an untick and an emptied number remove the key.
 - **Reuse:** Nothing is built that the codebase already provides, and nothing diverges from how it already does a thing. Plan review found six places a first draft hand-rolled an existing mechanism, and the plan now reuses each: the number reader lives in `formatValue.ts` beside `readDate` (the one reading of a stored date) and formats digits through its memoized en-US `numFmt`; the currency symbol comes from one `currencySymbol` that `numberFormatGlyph` shares; the casing transfer uses UIX `capitalize`; the regex escape `Desktop/Web/webGuests.ts` hand-wrote becomes one UIX `escapeRegExp` both read; `writtenSpelling`'s member arm matches through `namesValue`, the folded member matcher every option sweep already uses; the two frontmatter writers share one `nodeSpelledAs`; and the Number popover is `PropertyValueInput`'s shared one, whose unchanged-text guard already exists, rather than a second guard in a second component. Execution keeps looking outward the same way: before writing any helper, search for the existing one, and record any new instance under *§Deviations*. A future audit finding a duplicate here is a defect of this plan.
 - **Conventions:** No comments beyond the doc comments the plan writes and the one decision comment in `spelledNumber`. No user-facing copy. No test churn: a behavior an existing test already exercises is pinned by extending that test, a new test exists only for behavior nothing pins, nothing repeats a sibling, and every added assertion fails without its change. A grammar case is pinned once, in the reader's tests; each consumer pins only its wiring.
 - **Shape (fix):** Every consumer of the old behavior is named in a task: `isCheckedRaw`'s two callers; `parseBool`'s one; the literal-`'true'` readers of a rule operand (`reassign.ts`, `FilterFrame.tsx`'s operator label); `numberFrom`'s two Core value callers (`parseEditorValue`, `filter.ts`); `NumberValuePicker`'s one caller; both frontmatter writers (`mergeInto`, `renameFrontmatterKey`); the three readers of a Context value's members (`resolveContextKeys`, `reconcileGovernedRoot`, `indexSeed.ts`'s `spaceRelations`); and the two member folds that dedupe or count (`joinValues`, `memberCount`). Sync's arrival writes incoming bytes as they are and isn't a value writer. `NumberEditor.tsx`'s `numberFrom` calls read format configuration and stay; `filterModel.ts`'s `impliedValue` and `FilterFrame.tsx`'s `checkboxBox` reading it, `propertyMenuActions.ts`'s `CHECKBOX_OPTIONS`, and `group.ts`'s `'true'` key are the app's own canonical values and stay.
@@ -64,7 +66,7 @@ Every reader of a checkbox word — the filter, the creation seed, the filter pa
 - The grammar: commas only as thousands in groups of three (`1,5` reads as nothing), a trailing `%`, and the currency symbols of `CURRENCY_CODES` (`$ € £ A$ CA$ ¥`) before or after — symbols only, no ISO codes. The property's own format alone decides display.
 - The field and filter operands read typed text by the same grammar. `1`/`0` stop counting as checkbox operands.
 - The write-back decision is noted on its line as a one-line comment.
-- A changed value keeps the file's quote formatting, for every type and every list member, through one helper both frontmatter writers share (`nodeSpelledAs`), reversing the Text-era fresh-node write (`b80a7b12a`). Keys and values match without regard to case or quoting, and an unchanged member keeps its spelling (`2024`, `[[a.png]]`). A string YAML can only spell quoted — a changed `[[Page]]`, or `43` over a bare `42` — takes yaml's double quotes. PropertiesPM states the write rule as one of its primary rules. `ID` follows the same rule as every key.
+- A changed value keeps the file's quote formatting, for every type and every list member, through one helper both frontmatter writers share (`nodeSpelledAs`), reversing the Text-era fresh-node write (`b80a7b12a`). Keys and values match without regard to case or quoting; an unchanged member keeps its spelling, its own quotes included (`2024`, a bare `b` beside `"a"`, `[[a.png]]`), and a list keeps its flow or block style. A quote yaml needed — a numeral's `"2024"`, `'"Q3"'` — isn't the file's choice, so it spreads to no other value, and a Space, like every type, is bare by default. A string YAML can only spell quoted — a changed `[[Page]]`, or `43` over a bare `42` — takes yaml's double quotes. PropertiesPM states the write rule as one of its primary rules. `ID` follows the same rule as every key.
 - A Context value names Spaces through its scalar members only, as every option list already reads; a wikilink member is an unknown value like any other.
 - Documentation stays overview-level: nothing the code shows plainly, no exhaustive detail.
 - Plan reviews before ratification run as Opus at extra-high effort; every code review during and after execution runs as Opus at high effort.
@@ -360,7 +362,7 @@ The edited fixture pins a hand-written word; `twoRules` still pins the pane's ow
 
 - [x] Write the tests below and watch them fail.
 - [x] The source changes.
-- [x] Commit Phase 2: `git commit --only -m "…" -- Core/Files/pageFile.ts Core/Files/pageFile.test.ts Core/Properties/propertyValue.ts Core/Properties/propertyValue.test.ts Core/Contexts/contextResolve.test.ts Core/Trash/restoreScrub.test.ts`.
+- [x] Commit Phase 2: `git commit --only -m "…" -- Core/Files/pageFile.ts Core/Files/pageFile.test.ts Core/Properties/propertyValue.ts Core/Properties/propertyValue.test.ts Core/Properties/repairSweep.test.ts Core/Contexts/contextResolve.test.ts Core/Trash/restoreScrub.test.ts`.
 
 **AFTER**
 
@@ -373,6 +375,7 @@ The edited fixture pins a hand-written word; `twoRules` still pins the pane's ow
 +  type Node,
 +  type Pair,
 +  type ParsedNode,
++  type Scalar,
 +  parseDocument,
 +  isMap,
 +  isScalar,
@@ -382,19 +385,25 @@ The edited fixture pins a hand-written word; `twoRules` still pins the pane's ow
 
 @@ above mergeInto @@
 
-+/** `value` as a node spelled as `held` is, the value itself and each member of a list alike: a single-line string takes the quotes of the held string or of the held list's first quoted member, a kept unquoted `[[x]]` keeps its flow spelling, and anything else is spelled as yaml spells it. */
++const QUOTE_MARK = { QUOTE_DOUBLE: '"', QUOTE_SINGLE: "'" } as const
++
++/** Whether a held string's quotes are the file's choice: quoted, and not as yaml quotes that string unasked (a numeral's `"2024"`, `'"Q3"'`). */
++const quotedByChoice = (n: Scalar): boolean =>
++  (n.type === 'QUOTE_DOUBLE' || n.type === 'QUOTE_SINGLE') &&
++  yamlInline(n.value)[0] !== QUOTE_MARK[n.type]
++
++/** `value` as a node spelled as `held` is: a list keeps the held list's flow or block style, and a list nested in it, or a whole unquoted `[[x]]`, is written flow; each single-line string, the value itself or a list's member, keeps the quotes of the held string equal to it, else takes those of the first held string quoted by choice; anything else is spelled as yaml spells it. */
 +function nodeSpelledAs(doc: Document, value: unknown, held: unknown): Node {
 +  const node = doc.createNode(value)
++  const spellings = (isSeq(held) ? held.items : [held]).filter(isScalar)
++  const model = spellings.find(quotedByChoice)
 +  const only = isSeq(node) && node.items.length === 1 ? node.items[0] : null
-+  if (isSeq(node) && isSeq(only) && only.items.length === 1 && isScalar(only.items[0]))
-+    node.flow = true
-+  const model = (isSeq(held) ? held.items : [held]).find(
-+    (n) => isScalar(n) && (n.type === 'QUOTE_DOUBLE' || n.type === 'QUOTE_SINGLE'),
-+  )
++  const wholeLink = isSeq(only) && only.items.length === 1 && isScalar(only.items[0])
++  if (isSeq(node) && ((isSeq(held) && held.flow) || wholeLink)) node.flow = true
 +  for (const member of isSeq(node) ? node.items : [node]) {
 +    if (isSeq(member)) member.flow = true
-+    else if (isScalar(model) && isScalar(member) && typeof member.value === 'string' && !member.value.includes('\n'))
-+      member.type = model.type
++    else if (isScalar(member) && typeof member.value === 'string' && !member.value.includes('\n'))
++      member.type = (spellings.find((n) => n.value === member.value) ?? model)?.type
 +  }
 +  return node
 +}
@@ -413,7 +422,7 @@ The edited fixture pins a hand-written word; `twoRules` still pins the pane's ow
 +      doc.set(String(pair.key), nodeSpelledAs(doc, value, pair.value))
 ```
 
-yaml's own in-place replacement — `doc.set(key, rawValue)` over a scalar keeps that node's style — is what `b80a7b12a` bypassed, and it doesn't fit: it keeps a `|-` block on a one-line value, folds a multi-line value under a plain node into broken lines, and replaces lists wholesale. So the helper builds a fresh node and carries only the quotes. A multi-line string keeps yaml's `|-` block. A quoted value replaced by a number, boolean, or list of non-strings lands as yaml spells it. A string YAML can only spell quoted — a changed `[[Page]]`, or `43` over a bare `42` — takes yaml's double quotes. A join takes the quotes of the spelling it lands on. Escaping round-trips under both styles, and yaml falls back to double quotes where single can't hold the content (checked against yaml 2.9.0 across every writer: governed writes, the page and heading rename cascades, every sweep, undo, the Trash restore, asset migration, and ID stamping). An unquoted `[[a.png]]` parses as a nested list, so without the flow spelling a changed list would write a kept member `- - - a.png`, and a whole value kept into a fresh key (a property refill) `- - a.png`.
+yaml's own in-place replacement — `doc.set(key, rawValue)` over a scalar keeps that node's style — is what `b80a7b12a` bypassed, and it doesn't fit: it keeps a `|-` block on a one-line value, folds a multi-line value under a plain node into broken lines, and replaces lists wholesale. So the helper builds a fresh node and carries the spelling over: the list's flow or block style, each unchanged member's own quotes, and for a changed string the quotes the file chose. A quote yaml would give that string unasked — the double quotes on a numeral string Pommora itself wrote, or the single quotes around a `"` — is no choice, so it stays on its own value and spreads to none. A multi-line string keeps yaml's `|-` block. A quoted value replaced by a number, boolean, or list of non-strings lands as yaml spells it. A string YAML can only spell quoted — a changed `[[Page]]`, or `43` over a bare `42` — takes yaml's double quotes. A join takes the quotes of the spelling it lands on. Escaping round-trips under both styles, and yaml falls back to double quotes where single can't hold the content (checked against yaml 2.9.0 across every writer: governed writes, the page and heading rename cascades, every sweep, undo, the Trash restore, asset migration, and ID stamping). An unquoted `[[a.png]]` parses as a nested list, so without the flow spelling a changed list would write a kept member `- - - a.png`, and a whole value kept into a fresh key (a property refill) `- - a.png`.
 
 ```Core/Properties/propertyValue.ts diff
 @@ imports @@
@@ -455,16 +464,16 @@ yaml's own in-place replacement — `doc.set(key, rawValue)` over a scalar keeps
 -      '---\nN: |-\n  a\n  b\n---\nBody',
 -    )
 -  })
-+  it('a changed value keeps the quotes the file held, on a scalar and on each list member, and a kept wikilink, whole or a member, its flow spelling; a block or multi-line value is spelled as yaml spells it', () => {
++  it('a changed value keeps the file’s spelling: a list its flow or block style, each string the quotes the file held for it or else the quotes the file chose, never a quote yaml needed, and a kept wikilink, whole or a member, its flow spelling; a block or multi-line value is spelled as yaml spells it', () => {
 +    expect(
 +      mergeFrontmatter(
-+        `---\nN: "42"\nS: 'x'\nL: ["a", b]\nF:\n  - [[a.png]]\nB: |-\n  old\n  l2\nM: "x"\n---\nBody`,
-+        { N: 'hello', S: 'y', L: ['a', 'b', 'c'], F: [[['a.png']], '[[b.png]]'], B: 'x', M: 'a\nb', R: [['Page']] },
-+        ['N', 'S', 'L', 'F', 'B', 'M', 'R'],
++        `---\nN: "42"\nS: 'x'\nL: ["a", b]\nF:\n  - [[a.png]]\nB: |-\n  old\n  l2\nM: "x"\nY:\n  - "2024"\n---\nBody`,
++        { N: 'hello', S: 'y', L: ['a', 'b', 'c'], F: [[['a.png']], '[[b.png]]'], B: 'x', M: 'a\nb', R: [['Page']], Y: ['2024', 'x'] },
++        ['N', 'S', 'L', 'F', 'B', 'M', 'R', 'Y'],
 +        'Body',
 +      ),
 +    ).toBe(
-+      `---\nN: "hello"\nS: 'y'\nL:\n  - "a"\n  - "b"\n  - "c"\nF:\n  - [[a.png]]\n  - "[[b.png]]"\nB: x\nM: |-\n  a\n  b\nR: [[Page]]\n---\nBody`,
++      `---\nN: hello\nS: 'y'\nL: ["a", b, "c"]\nF:\n  - [[a.png]]\n  - "[[b.png]]"\nB: x\nM: |-\n  a\n  b\nY:\n  - "2024"\n  - x\nR: [[Page]]\n---\nBody`,
 +    )
 +  })
 
@@ -479,8 +488,17 @@ yaml's own in-place replacement — `doc.set(key, rawValue)` over a scalar keeps
        ['Labels', ['b', 'a']],
        ['z', 2],
      ])
-+    expect(out).toContain('Labels:\n  - "b"\n  - "a"')
++    expect(out).toContain('Labels: ["b", "a"]')
 ```
+
+```Core/Properties/repairSweep.test.ts diff
+@@ "joins a re-read page’s two spellings of a list under the registered one, on the first’s line" @@
+
+-    expect(out.split('\n')[line]).toBe('Tags:')
++    expect(out.split('\n')[line]).toBe('Tags: [alpha, beta]')
+```
+
+A join lands in the style of the spelling it takes the place of, here the first's flow `[alpha]`.
 
 ```Core/Properties/propertyValue.test.ts diff
 @@ writtenSpelling @@
@@ -585,9 +603,10 @@ yaml's own in-place replacement — `doc.set(key, rawValue)` over a scalar keeps
 +  grouped: boolean
 +}
 +
-+/** A number as text spells it, the inverse of a cell's own formatting: digits as `numberFrom` reads them, commas only as thousands, and a currency symbol before, or a `%` or a symbol after, never both. */
-+function numberShape(text: string): NumberShape | null {
-+  const m = NUMBER_SHAPE.exec(text.trim())
++/** The number a string spells, the inverse of a cell's own formatting: digits as `numberFrom` reads them, commas only as thousands, and a currency symbol before, or a `%` or a symbol after, never both. */
++function numberShape(raw: unknown): NumberShape | null {
++  if (typeof raw !== 'string') return null
++  const m = NUMBER_SHAPE.exec(raw.trim())
 +  if (!m || (m[2] && m[4])) return null
 +  const [, sign, lead = '', body, tail = ''] = m
 +  const grouped = GROUPED.test(body)
@@ -597,11 +616,11 @@ yaml's own in-place replacement — `doc.set(key, rawValue)` over a scalar keeps
 +
 +/** The one reading of a stored or typed number: a YAML number as itself, or a string that spells one. */
 +export const readNumber = (raw: unknown): number | undefined =>
-+  typeof raw === 'number' ? raw : typeof raw === 'string' ? numberShape(raw)?.value : undefined
++  typeof raw === 'number' ? raw : numberShape(raw)?.value
 +
 +/** `next` as `raw` spells a number: an unchanged value keeps `raw` as written, and over anything but a string spelling a number it lands bare. */
 +export function spelledNumber(next: number, raw: unknown): unknown {
-+  const shape = typeof raw === 'string' ? numberShape(raw) : null
++  const shape = numberShape(raw)
 +  if (!shape) return next
 +  if (shape.value === next) return raw
 +  // A changed value keeps the file's currency symbol, percent sign, and grouping; its digits are the typed value's.
@@ -730,7 +749,6 @@ yaml's own in-place replacement — `doc.set(key, rawValue)` over a scalar keeps
 +  })
 +
 +  it('a changed value keeps the string shape, symbol, percent sign, spacing, and grouping, its digits typed', () => {
-+    expect(spelledNumber(31, '30')).toBe('31')
 +    expect(spelledNumber(1300, '$1,200.00')).toBe('$1,300')
 +    expect(spelledNumber(1234567, '1,200')).toBe('1,234,567')
 +    expect(spelledNumber(1234, '1200')).toBe('1234')
@@ -742,7 +760,6 @@ yaml's own in-place replacement — `doc.set(key, rawValue)` over a scalar keeps
 +  it('lands bare over anything but a string spelling a number, and where the spelling would not read back', () => {
 +    expect(spelledNumber(31, 30)).toBe(31)
 +    expect(spelledNumber(31, 'five')).toBe(31)
-+    expect(spelledNumber(31, undefined)).toBe(31)
 +    expect(spelledNumber(1e-25, '$30')).toBe(1e-25)
 +  })
 +})
@@ -780,11 +797,12 @@ The grammar is pinned here alone; the consumers below pin only their wiring — 
 +  const priceDef: PropertyDefinition = { id: 'prop_price', name: 'Price', type: 'number' }
 -  const casing: GovernedWorld = { ...world, defs: byFoldedName([stageDef, doneDef]) }
 -  const input = { Stage: ['done'], Done: 'Yes' }
-+  const casing: GovernedWorld = { ...world, defs: byFoldedName([stageDef, doneDef, priceDef]) }
++  const spelled: GovernedWorld = { ...world, defs: byFoldedName([stageDef, doneDef, priceDef]) }
 +  const input = { Stage: ['done'], Done: 'Yes', Price: '$1,200.00' }
 
    it('keeps each value as the file spells it, reading it as registered', () => {
-     const { root } = reconcileGovernedRoot(input, casing)
+-    const { root } = reconcileGovernedRoot(input, casing)
++    const { root } = reconcileGovernedRoot(input, spelled)
      expect(root).toEqual(input)
      expect(decodeValue(stageDef, root.Stage)).toEqual({ kind: 'select', value: 'Done' })
      expect(decodeValue(doneDef, root.Done)).toEqual({ kind: 'checkbox', value: true })
@@ -895,30 +913,80 @@ The grammar is pinned here alone; the consumers below pin only their wiring — 
 
 #### Task 3-3
 
-**TASK:** One `contextTitles` reads what a Context value names, its scalar members only, for Context resolution, the live reconcile, and the index's Space relations; one `memberKey` matches a non-scalar member only by itself wherever members dedupe or count — `joinValues` and the reconcile's no-shrink `memberCount`.
+**TASK:** One `contextTitles` reads what a Context value names, its scalar members only, for Context resolution, the live reconcile, and the index's Space relations; one `memberKey` matches a non-scalar member only by itself wherever members dedupe, match, or count — `joinValues`, `namesValue`, and the reconcile's no-shrink `memberCount`; one `scalarMembers` reads a value's scalar members for `optionList`, `contextTitles`, and a Context unlink; and the index generation moves to 13, since the Space rows it records change.
 
-**NOW:** Three loops fold a Context value's members through `normalizeTitle`, which reads any value through `String()`: `resolveContextKeys` (`contextResolve.ts:79-82`), `reconcileGovernedRoot`'s Context arm (`:136-139`), and `spaceRelations` (`indexSeed.ts:75-79`). So an unquoted `- [[Personal]]`, a nested list, resolves to the Space "Personal" and `- [[a, b]]` to one titled "a,b", while a quoted `- "[[Personal]]"` resolves nothing; the reconcile then rewrites the unquoted one to `- Personal`. `memberCount` (`:110`) and `joinValues` (`heldKeys.ts:51-54`) fold the same way, so the no-shrink rule takes a nested member beside its own title for that title, and joining two spellings of a key (`<Projects>: ["pommora"]` beside `<projects>: [[Pommora]]`) drops the wikilink member before any reader sees it — through every spelling join, a `'merge'` rename, and the Trash re-apply. Every option list already reads scalars only (`optionList`, `namesValue`), and ContextsPM matches a value through "scalar drift".
+**NOW:** Three loops fold a Context value's members through `normalizeTitle`, which reads any value through `String()`: `resolveContextKeys` (`contextResolve.ts:79-82`), `reconcileGovernedRoot`'s Context arm (`:136-139`), and `spaceRelations` (`indexSeed.ts:75-79`). So an unquoted `- [[Personal]]`, a nested list, resolves to the Space "Personal" and `- [[a, b]]` to one titled "a,b", while a quoted `- "[[Personal]]"` resolves nothing; the reconcile then rewrites the unquoted one to `- Personal`. `memberCount` (`:110`) and `joinValues` (`heldKeys.ts:51-54`) fold the same way, so the no-shrink rule takes a nested member beside its own title for that title, and joining two spellings of a key (`<Projects>: ["pommora"]` beside `<projects>: [[Pommora]]`) drops the wikilink member before any reader sees it — through every spelling join, a `'merge'` rename, and the Trash re-apply. Every option list already reads scalars only (`optionList`, `namesValue`), and `unlinkContextKey` (`contextCascade.ts:141-144`) spells the same reading a third way; ContextsPM matches a value through "scalar drift". CorePM: "the index carries its own generation, so a change to what it records drops the index alone" (`INDEX_GENERATION`, `Desktop/Store/ddl.ts:3`, at 12).
 
 **CHANGE**
 
 - [x] Write the tests below and watch them fail.
 - [x] The source changes.
-- [x] Commit: `git commit --only -m "…" -- Core/Contexts/contexts.ts Core/Contexts/contextResolve.ts Core/Contexts/contextResolve.test.ts Core/Files/heldKeys.ts Core/Files/heldKeys.test.ts Core/Index/indexSeed.ts Core/Index/indexSeed.test.ts`.
+- [x] Commit: `git commit --only -m "…" -- Core/Contract/validators.ts Core/Contexts/contexts.ts Core/Contexts/contextResolve.ts Core/Contexts/contextResolve.test.ts Core/Contexts/contextCascade.ts Core/Files/heldKeys.ts Core/Files/heldKeys.test.ts Core/Properties/pageValue.ts Core/Properties/propertyValue.ts Core/Index/indexSeed.ts Core/Index/indexSeed.test.ts Desktop/Store/ddl.ts Desktop/Store/open.test.ts`.
 
 **AFTER**
+
+```Core/Contract/validators.ts diff
+@@ below isScalar @@
+
++export const scalarMembers = (raw: unknown): string[] => listOf(raw).filter(isScalar).map(String)
+```
 
 ```Core/Contexts/contexts.ts diff
 @@ imports @@
 
  import { holdsName } from '../Paths/names'
-+import { isScalar, listOf } from '../Contract/validators'
++import { scalarMembers } from '../Contract/validators'
 +import { normalizeTitle } from '../Paths/caseFold'
 
 @@ below parseContextKey @@
 
 +/** The folded titles a Context value names: each scalar member's, a lone scalar read as a list of one. A member of any other shape names nothing. */
 +export const contextTitles = (raw: unknown): string[] =>
-+  listOf(raw).filter(isScalar).map(normalizeTitle).filter(Boolean)
++  scalarMembers(raw).map(normalizeTitle).filter(Boolean)
+```
+
+```Core/Properties/propertyValue.ts diff
+@@ imports @@
+
+-import { isScalar, listOf } from '../Contract/validators'
++import { listOf, scalarMembers } from '../Contract/validators'
+
+@@ optionList @@
+
+ const optionList = (raw: unknown): string[] =>
+-  listOf(raw)
+-    .filter(isScalar)
+-    .map(String)
+-    .filter((x) => normalizeTitle(x) !== '')
++  scalarMembers(raw).filter((x) => normalizeTitle(x) !== '')
+```
+
+```Core/Contexts/contextCascade.ts diff
+@@ imports @@
+
+-import { isScalar, listOf } from '../Contract/validators'
++import { scalarMembers } from '../Contract/validators'
+
+@@ unlinkContextKey @@
+
+-    const values = keys
+-      .flatMap((k) => listOf(raw[k]))
+-      .filter(isScalar)
+-      .map(String)
++    const values = keys.flatMap((k) => scalarMembers(raw[k]))
+```
+
+```Core/Properties/pageValue.ts diff
+@@ imports @@
+
+-import { isScalar } from '../Contract/validators'
+-import { editHeldList } from '../Files/heldKeys'
++import { editHeldList, memberKey } from '../Files/heldKeys'
+
+@@ namesValue @@
+
+-  return (el) => isScalar(el) && normalizeTitle(el) === want
++  return (el) => memberKey(el) === want
 ```
 
 ```Core/Contexts/contextResolve.ts diff
@@ -983,7 +1051,7 @@ The grammar is pinned here alone; the consumers below pin only their wiring — 
 @@ joinValues @@
 
 -/** Two values as one list: `keep`'s members, then each of `from`'s whose title folds to none of them; a single value reads as a list of one. … */
-+/** What a member matches by: a scalar's folded title, or the member itself, so a member of any other shape matches only itself. */
++/** What a member matches by: a scalar's folded title, or the member itself. */
 +export const memberKey = (v: unknown): unknown => (isScalar(v) ? normalizeTitle(v) : v)
 +
 +/** Two values as one list: `keep`'s members, then each of `from`'s that matches none of them by `memberKey`; a single value reads as a list of one. … */
@@ -996,7 +1064,24 @@ The grammar is pinned here alone; the consumers below pin only their wiring — 
  }
 ```
 
-A lone `- [[Personal]]` now names nothing, so the live reconcile leaves it as written; beside other members, or joined from another spelling, `memberKey` keeps it as its own unresolved member and the no-shrink rule keeps the whole value. `spaceRelations`' `raw == null` guard goes, since `contextTitles` reads nothing from a null value. `memberKey` lives beside `joinValues` in Files, so neither layer imports Properties.
+A lone `- [[Personal]]` now names nothing, so the live reconcile leaves it as written; beside other members, or joined from another spelling, `memberKey` keeps it as its own unresolved member and the no-shrink rule keeps the whole value. `spaceRelations`' `raw == null` guard goes, since `contextTitles` reads nothing from a null value. `memberKey` lives beside `joinValues` in Files, so neither layer imports Properties, and `scalarMembers` beside `listOf` and `isScalar`, which all three readers already import.
+
+```Desktop/Store/ddl.ts diff
+-export const INDEX_GENERATION = 12
++export const INDEX_GENERATION = 13
+```
+
+```Desktop/Store/open.test.ts diff
+@@ "a generation-11 index drops its key-only headings table…" @@
+
+-    expect(INDEX_GENERATION).toBe(12)
++    expect(INDEX_GENERATION).toBe(13)
+ …
+-    expect(readMeta(second, 'index_generation')).toBe('12')
++    expect(readMeta(second, 'index_generation')).toBe(String(INDEX_GENERATION))
+```
+
+A Nexus indexed before holds Space rows for nested members, which the mtime-gated reseed would keep until each page is edited; the generation drops the index once instead.
 
 ```Core/Contexts/contextResolve.test.ts diff
 @@ "matches values through coercion + NFC…", extended @@
@@ -1054,14 +1139,14 @@ A lone `- [[Personal]]` now names nothing, so the live reconcile leaves it as wr
 
 #### Task 4-1
 
-**TASK:** Surgical edits to PropertiesPM: the catalog's opening sentence, the Text and Checkbox table rows, the decode paragraph, the Checkbox paragraph's toggle clause, and the Text paragraph's on-disk sentence, which the decode paragraph's reading rule and the write rule now state once.
+**TASK:** Surgical edits to PropertiesPM: the catalog's opening sentence, the Text and Checkbox table rows, the decode paragraph, the Number paragraph's opener, the Checkbox paragraph's toggle clause, and the Text paragraph's on-disk sentence, which the decode paragraph's reading rule and the write rule now state once; and ContextsPM's matching sentence names Spaces as quote-insensitive.
 
 **NOW:** Line 8 reads "the on-disk value is bare and natively typed"; line 12 "A free-typed string, plain and unquoted wherever YAML allows"; line 14 reads "`true`, or the key absent; `true` and `yes` in any casing read as checked"; line 29's checkbox clause "while a checkbox is written as `true` or left absent — `true` and `yes` in any casing read as checked, and any other value, a `false` written by another application included, reads as no value"; line 29 also reads "A key matches a name without regard to case. A write lands on the spelling a file already holds and keeps how each value it holds is spelled, and a file without the key takes the registered spelling."; line 59 "toggling on writes `true` and toggling off strips the key"; line 63 "On disk the value is plain and unquoted wherever YAML allows". The Number row ("Bare number") and the Number paragraph still read true and stay.
 
 **CHANGE**
 
 - [x] The edits, as below.
-- [x] Commit: `git commit --only -m "…" -- .claude/Features/PropertiesPM.md`.
+- [x] Commit: `git commit --only -m "…" -- .claude/Features/PropertiesPM.md .claude/Features/ContextsPM.md`.
 
 **AFTER**
 
@@ -1084,7 +1169,12 @@ A lone `- [[Personal]]` now names nothing, so the live reconcile leaves it as wr
 +… and a type is never inferred from a value's shape. Each type reads what other applications write: a Multi-Select reads members its definition doesn't list, a Text reads any value as text, a Number reads a quoted or formatted number, and a Checkbox reads `true`/`false`, `yes`/`no`, `on`/`off`, and `y`/`n` in any casing. Three rules follow. **No value, no key** — … number `0` is a real value and stays, and unchecking a checkbox removes its key. **A key …
 
 -… A key matches a name without regard to case. A write lands on the spelling a file already holds and keeps how each value it holds is spelled, and a file without the key takes the registered spelling. …
-+… Keys and scalar values match without regard to case or quoting. **A write keeps the file's spelling** — it lands on the key spelling the file holds, leaves each unchanged value as written, and gives a changed string the file's quotes; a file without the key takes the registered spelling. …
++… Keys and scalar values match without regard to case or quoting. **A write keeps the file's spelling** — it lands on the key spelling the file holds, keeps a list's flow or block style and each unchanged value as written, and gives a changed string the quotes the file chose, never ones YAML needed; a file without the key takes the registered spelling. …
+
+@@ Number paragraph @@
+
+-A bare number with a **property-wide format** and a **per-view look**. …
++A number with a **property-wide format** and a **per-view look**. …
 
 @@ Checkbox paragraph @@
 
@@ -1095,6 +1185,13 @@ A lone `- [[Personal]]` now names nothing, so the live reconcile leaves it as wr
 
 -… On disk the value is plain and unquoted wherever YAML allows, and a number, list, or map another application wrote under its key reads as its text and stays as written until it is edited. …
 +… …
+```
+
+```.claude/Features/ContextsPM.md diff
+@@ Validation is registry membership at read @@
+
+-… a value matches through one normalizer (`normalizeTitle`) that folds case, whitespace, composition, and scalar drift …
++… a value matches, quoted or bare, through one normalizer (`normalizeTitle`) that folds case, whitespace, composition, and scalar drift …
 ```
 
 The rows keep the file's column padding; `…` stands for unchanged text.
@@ -1180,7 +1277,10 @@ The rows keep the file's column padding; `…` stands for unchanged text.
 - `Core/Properties/governedWrite.test.ts:196` — "a checked box the file spells otherwise lands as true" — Task 1-1
 - `Core/Files/pageFile.ts:124` — "A fresh node, so a changed value takes the spelling yaml gives it rather than the old node's quoting or block style" — Task 2-1
 - `Core/Files/pageFile.test.ts:88` — "a changed value takes a fresh spelling…"; `Core/Properties/propertyValue.test.ts` — "takes only string members"; `Core/Contexts/contextResolve.test.ts:120` — "repairs scalar-typed values to their canonical string titles"; `Core/Trash/restoreScrub.test.ts:216` — `['2024']` — Task 2-1
-- `.claude/Features/PropertiesPM.md:8, 12, 14, 29, 59, 63` — "bare and natively typed", the Text and Checkbox rows, the decode paragraph's checkbox clause and its matching and spelling sentences, the toggle clause, the Text paragraph's on-disk sentence — Task 4-1
+- `.claude/Features/PropertiesPM.md:8, 12, 14, 29, 59, 63, 67` — "bare and natively typed", the Text and Checkbox rows, the decode paragraph's checkbox clause and its matching and spelling sentences, the toggle clause, the Text paragraph's on-disk sentence, the Number paragraph's "A bare number" — Task 4-1
+- `.claude/Features/ContextsPM.md:12` — "a value matches through one normalizer" — Task 4-1
+- `Core/Properties/repairSweep.test.ts:185` — a join's first line `Tags:` — Task 2-1
+- `Desktop/Store/open.test.ts:128, 145` — the generation pinned at 12 — Task 3-3
 
 #### Execution Comparison
 
@@ -1195,4 +1295,6 @@ The plan is executed twice from the same **BASELINE** head, so the difference be
 
 
 #### Deviations
+
+- **The quote rule's mechanics (`0a12a86e3`):** `nodeSpelledAs` first carried only the quotes of a list's first quoted member onto every changed string. Final review showed that re-quoting untouched bare members of a mixed list, flattening a flow list to block, and spreading quotes yaml itself needed (Pommora's own `"2024"`) to new values, against "an unchanged member keeps its spelling" and Nathan's "bare by default". It now keeps each member's own quotes and a list's flow or block style, and counts only quotes the file chose.
 
