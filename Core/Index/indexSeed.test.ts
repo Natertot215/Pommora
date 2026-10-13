@@ -128,10 +128,10 @@ describe('seedContentIndex', () => {
     expect(queryKeyHolders('ID')).toEqual(['Notes/A.md'])
   })
 
-  it('records every `<Title>` key as a space row, one normalized row per value, scalar or list', async () => {
+  it('records every `<Title>` key as a space row, one normalized row per value, scalar or list; a member of any other shape names nothing', async () => {
     await writeFile(
       abs('Notes', 'A.md'),
-      `---\nID: ${ULID_A}\n<Projects>:\n  - Pommora\n  - pommora\n<Areas>: 2024\n---\n\nbody\n`,
+      `---\nID: ${ULID_A}\n<Projects>:\n  - Pommora\n  - pommora\n<Areas>: 2024\n<Topics>:\n  - [[Pommora]]\n---\n\nbody\n`,
     )
     await writeFile(abs('Loose', 'Note.md'), '---\n<Projects>: Sapphire\n---\n\nun-adopted\n')
     await seedContentIndex(root)
@@ -140,6 +140,7 @@ describe('seedContentIndex', () => {
     expect(queryMembers('<Projects>')?.sort()).toEqual(['Loose/Note.md', 'Notes/A.md'])
     expect(queryMembers('<Areas>', '2024')).toEqual(['Notes/A.md'])
     expect(queryMembers('<Areas>', 'pommora')).toEqual([])
+    expect(queryMembers('<Topics>', 'pommora')).toEqual([])
   })
 
   it('records a page’s headings as text and level, and its heading links to another page', async () => {

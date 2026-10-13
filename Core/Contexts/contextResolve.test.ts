@@ -44,13 +44,16 @@ describe('resolveContextKeys', () => {
     expect(links.size).toBe(0)
   })
 
-  it('matches values through coercion + NFC (scalars, case, whitespace)', () => {
+  it('matches values through coercion + NFC (scalars, case, whitespace), and only a scalar names a Space', () => {
     const links = resolveContextKeys(
       { '<Classes>': [2024, true], '<Projects>': [' pommora '] },
       contexts,
     )
     expect(links.get('ctxA')).toEqual(['sp3', 'sp4'])
     expect(links.get('ctx_projects')).toEqual(['sp1'])
+    expect(
+      resolveContextKeys({ '<Projects>': [[['Pommora']]] }, contexts).has('ctx_projects'),
+    ).toBe(false)
   })
 
   it('drops only the unmatched values, keeping valid siblings', () => {
@@ -110,11 +113,13 @@ describe('reconcileGovernedRoot — the context arm', () => {
     expect(changed).toEqual(['<Projects>'])
   })
 
-  it('a live reconcile leaves a list naming an unknown Space as written', () => {
+  it('a live reconcile leaves a list naming an unknown Space, or holding a wikilink, as written', () => {
     const input = { '<Projects>': ['pommora', 'Pomora', 'CS 161'] }
     const { root, changed } = reconcileGovernedRoot(input, world)
     expect(root).toEqual(input)
     expect(changed).toEqual([])
+    const linked = { '<Projects>': ['pommora', [['Pommora']]] }
+    expect(reconcileGovernedRoot(linked, world).root).toEqual(linked)
   })
 
   it('keeps a scalar-typed member as the file spells it', () => {

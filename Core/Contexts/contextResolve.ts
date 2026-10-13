@@ -1,6 +1,6 @@
 import { foldKey, normalizeTitle } from '../Paths/caseFold'
 import { heldKey, heldValue, writeTarget } from '../Files/heldKeys'
-import { contextKey, parseContextKey } from './contexts'
+import { contextKey, contextTitles, parseContextKey } from './contexts'
 import { byFoldedName, holdsList, type PropertyDefinition } from '../Properties/properties'
 import {
   type Frozen,
@@ -10,7 +10,7 @@ import {
   reconcilePropertyValue,
 } from '../Properties/propertyValue'
 import type { ContextGroup, NexusTree, SpaceNode } from '../Nexus/tree'
-import { listOf } from '../Contract/validators'
+import { isScalar, listOf } from '../Contract/validators'
 
 type ResolvedLinks = Map<string, string[]>
 
@@ -75,11 +75,9 @@ export function resolveContextKeys(
     const name = contextKey(group.def.title)
     if (heldKey(root, name) !== key) continue
     const byTitle = world.spacesByTitle.get(group.def.id)
-    const ids: string[] = []
-    for (const value of listOf(heldValue(root, name, true) ?? [])) {
-      const match = byTitle?.get(normalizeTitle(value))
-      if (match) ids.push(match.id)
-    }
+    const ids = contextTitles(heldValue(root, name, true)).flatMap(
+      (title) => byTitle?.get(title)?.id ?? [],
+    )
     if (ids.length) links.set(group.def.id, ids)
   }
   return links
@@ -107,7 +105,8 @@ export function joinsSpellings(name: string, world: GovernedWorld): boolean {
   return governor !== undefined && joins(governor)
 }
 
-const memberCount = (v: unknown): number => new Set(listOf(v).map(normalizeTitle)).size
+const memberCount = (v: unknown): number =>
+  new Set(listOf(v).map((m) => (isScalar(m) ? normalizeTitle(m) : m))).size
 
 // A governed name reconciles once, under the key `heldKey` reads: a list's spellings join it under the registered spelling and leave once that key is written, while a scalar's other spellings pass through as foreign, for a write to settle. A key in `skip` passes through verbatim.
 export function reconcileGovernedRoot(
@@ -133,10 +132,7 @@ export function reconcileGovernedRoot(
       if (!isBlankValue(reconciled)) next = encodeValue(reconciled)
     } else {
       const byTitle = world.contexts.spacesByTitle.get(governor.group.def.id)
-      const titles = listOf(held ?? []).flatMap((value) => {
-        const space = byTitle?.get(normalizeTitle(value))
-        return space ? [space.title] : []
-      })
+      const titles = contextTitles(held).flatMap((title) => byTitle?.get(title)?.title ?? [])
       if (titles.length) next = [...new Set(titles)]
     }
     // A live reconcile never shrinks or blanks a value: one holding a member it can't resolve, or reading as nothing, stays as written, every spelling of it, for the user to settle.

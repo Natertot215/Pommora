@@ -1,11 +1,10 @@
 import { join, relative, isMarkdownFile, titleFromPath } from '../Paths/posix'
 import { escapes } from '../Paths/pathSafety'
 import { errText } from '../Contract/result'
-import { listOf } from '../Contract/validators'
 import { frontmatterMentions, linksIn, valueLinks } from '../Connections/scan'
 import { headingOutlineOf } from '../MarkdownPM/Engine/headingScan'
 import { inCodeAt, scanDoc } from '../MarkdownPM/Engine/docScan'
-import { parseContextKey } from '../Contexts/contexts'
+import { contextTitles, parseContextKey } from '../Contexts/contexts'
 import { foldKey, normalizeTitle } from '../Paths/caseFold'
 import { parsePage, splitEnvelope } from '../Files/pageFile'
 import {
@@ -72,12 +71,7 @@ function* spaceRelations(
 ): Generator<{ target: string; qualifier: string }> {
   for (const [key, raw] of Object.entries(values)) {
     if (parseContextKey(key) === null || raw == null) continue
-    const titles = new Set<string>()
-    for (const value of listOf(raw)) {
-      const title = normalizeTitle(value)
-      if (title) titles.add(title)
-    }
-    for (const target of titles) yield { target, qualifier: foldKey(key) }
+    for (const target of new Set(contextTitles(raw))) yield { target, qualifier: foldKey(key) }
   }
 }
 
