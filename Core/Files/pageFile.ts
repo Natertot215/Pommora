@@ -119,14 +119,19 @@ const quotedByChoice = (n: Scalar): boolean =>
   (n.type === 'QUOTE_DOUBLE' || n.type === 'QUOTE_SINGLE') &&
   yamlInline(n.value)[0] !== QUOTE_MARK[n.type]
 
-/** `value` as a node spelled as `held` is: a list keeps the held list's flow or block style, and a list nested in it, or a whole unquoted `[[x]]`, is written flow; each single-line string, the value itself or a list's member, keeps the quotes of the held string equal to it, else takes those of the first held string quoted by choice; anything else is spelled as yaml spells it. */
+/** Whether `n` is a whole unquoted `[[x]]`: a list of one list of one scalar. */
+function isWholeLink(n: unknown): boolean {
+  const only = isSeq(n) && n.items.length === 1 ? n.items[0] : null
+  return isSeq(only) && only.items.length === 1 && isScalar(only.items[0])
+}
+
+/** `value` as a node spelled as `held` is: a list keeps the flow or block style of a held list other than a whole unquoted `[[x]]`, whose brackets spell a link rather than a style, and a list nested in it, or a whole `[[x]]`, is written flow; each single-line string, the value itself or a list's member, keeps the quotes of the held string equal to it, else takes those of the first held string quoted by choice; anything else is spelled as yaml spells it. */
 function nodeSpelledAs(doc: Document, value: unknown, held: unknown): Node {
   const node = doc.createNode(value)
   const spellings = (isSeq(held) ? held.items : [held]).filter(isScalar)
   const model = spellings.find(quotedByChoice)
-  const only = isSeq(node) && node.items.length === 1 ? node.items[0] : null
-  const wholeLink = isSeq(only) && only.items.length === 1 && isScalar(only.items[0])
-  if (isSeq(node) && ((isSeq(held) && held.flow) || wholeLink)) node.flow = true
+  const flowHeld = isSeq(held) && held.flow && !isWholeLink(held)
+  if (isSeq(node) && (flowHeld || isWholeLink(node))) node.flow = true
   for (const member of isSeq(node) ? node.items : [node]) {
     if (isSeq(member)) member.flow = true
     else if (isScalar(member) && typeof member.value === 'string' && !member.value.includes('\n'))

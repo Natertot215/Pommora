@@ -85,25 +85,26 @@ describe('mergeFrontmatter — an empty or absent block', () => {
     )
   })
 
-  it('a changed value keeps the file’s spelling: a list its flow or block style, each string the quotes the file held for it or else the quotes the file chose, never a quote yaml needed, and a kept wikilink, whole or a member, its flow spelling; a block or multi-line value is spelled as yaml spells it', () => {
+  it('a changed value keeps the file’s spelling: a list its flow or block style, each string the quotes the file held for it or else the quotes the file chose, never a quote yaml needed, and a kept wikilink, whole or a member, its flow spelling, while a whole wikilink that grows is a block list; a block or multi-line value is spelled as yaml spells it', () => {
     expect(
       mergeFrontmatter(
-        `---\nN: "42"\nS: 'x'\nL: ["a", b]\nF:\n  - [[a.png]]\nB: |-\n  old\n  l2\nM: "x"\nY:\n  - "2024"\n---\nBody`,
+        `---\nN: "42"\nS: 'x'\nL: ["a", b]\nF:\n  - [[a.png]]\nG: [[a.png]]\nB: |-\n  old\n  l2\nM: "x"\nY:\n  - "2024"\n---\nBody`,
         {
           N: 'hello',
           S: 'y',
           L: ['a', 'b', 'c'],
           F: [[['a.png']], '[[b.png]]'],
+          G: ['[[a.png]]', '[[c.png]]'],
           B: 'x',
           M: 'a\nb',
           R: [['Page']],
           Y: ['2024', 'x'],
         },
-        ['N', 'S', 'L', 'F', 'B', 'M', 'R', 'Y'],
+        ['N', 'S', 'L', 'F', 'G', 'B', 'M', 'R', 'Y'],
         'Body',
       ),
     ).toBe(
-      `---\nN: hello\nS: 'y'\nL: ["a", b, "c"]\nF:\n  - [[a.png]]\n  - "[[b.png]]"\nB: x\nM: |-\n  a\n  b\nY:\n  - "2024"\n  - x\nR: [[Page]]\n---\nBody`,
+      `---\nN: hello\nS: 'y'\nL: ["a", b, "c"]\nF:\n  - [[a.png]]\n  - "[[b.png]]"\nG:\n  - "[[a.png]]"\n  - "[[c.png]]"\nB: x\nM: |-\n  a\n  b\nY:\n  - "2024"\n  - x\nR: [[Page]]\n---\nBody`,
     )
   })
 
