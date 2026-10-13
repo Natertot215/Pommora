@@ -6,14 +6,7 @@ import { idTime } from '../Nexus/ids'
 import { readPageRecord } from '../Nexus/readNexus'
 import { folderCorpus } from '../Index/indexSeed'
 import { livePathOf } from '../Nexus/heldPages'
-import { localDayKey, pad } from '@pommora/uix/Utilities/pad'
-
-// Local-clock form, the same shape the date picker writes.
-export function iso(ms: number | null): string | null {
-  if (ms === null) return null
-  const d = new Date(ms)
-  return `${localDayKey(d)}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
-}
+import { localIso } from '@pommora/uix/Utilities/pad'
 
 export function pageValuesOf(
   id: string,
@@ -22,8 +15,8 @@ export function pageValuesOf(
 ): PageValues {
   return {
     frontmatter: pageFrontmatter.parse({ ...fm, [ID_KEY]: id }),
-    createdAt: iso(idTime(id)),
-    modifiedAt: iso(mtimeMs),
+    createdAt: localIso(idTime(id)),
+    modifiedAt: localIso(mtimeMs),
   }
 }
 

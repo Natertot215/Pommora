@@ -3,7 +3,7 @@ import { markIndexReady } from '../Index/contentIndex'
 import { idTime } from '../Nexus/ids'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
-import { iso } from '../Views/loadValues'
+import { localIso } from '@pommora/uix/Utilities/pad'
 import { readMatrixGraph } from './matrixGraph'
 
 const A = '01KVGMT8BFP350FZZXAMG1QDRN'
@@ -56,15 +56,15 @@ afterEach(() => {
 })
 
 describe('readMatrixGraph', () => {
-  it('keys values by page id and stamps both dates through iso', () => {
+  it('keys values by page id and stamps both dates through localIso', () => {
     const values = readMatrixGraph(true)!.values!
     expect(Object.keys(values).sort()).toEqual([A, B])
     expect(values[A]).toEqual({
       frontmatter: { ID: A, Status: ['Open'] },
-      createdAt: iso(idTime(A)),
-      modifiedAt: iso(1000),
+      createdAt: localIso(idTime(A)),
+      modifiedAt: localIso(1000),
     })
-    expect(values[B].modifiedAt).toBe(iso(2000))
+    expect(values[B].modifiedAt).toBe(localIso(2000))
   })
 
   it('drops an id-less markdown file, its rows included', () => {

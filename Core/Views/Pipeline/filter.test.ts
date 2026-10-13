@@ -3,7 +3,7 @@ import { ID_KEY } from '../../Nexus/identityMark'
 import type { ViewRow } from '../viewRow'
 import { FILTER_OPS, type FilterGroup } from '../filterRules'
 import type { PropertyDefinition } from '../../Properties/properties'
-import { applyFilter } from './filter'
+import { applyFilter, prepareGroup } from './filter'
 import { propsAtRoot } from '../../Testing/pageValues'
 
 const schema: PropertyDefinition[] = [
@@ -236,7 +236,7 @@ describe('applyFilter — per type', () => {
     expect(match('ends_on_or_before', '2026-06-20T10:00:00')).toEqual(['single'])
   })
 
-  it('text: is is exact, contains folds', () => {
+  it('text: is, is_not, and contains all fold case', () => {
     const rows = [
       row('a', { props: { prop_notes: 'Buy milk\nand eggs' } }),
       row('b', { props: { prop_notes: 'bread' } }),
@@ -246,13 +246,32 @@ describe('applyFilter — per type', () => {
     ).toEqual(['b'])
     expect(
       ids(rows, { match: 'all', rules: [{ property_id: 'prop_notes', op: 'is', value: 'Bread' }] }),
-    ).toEqual([])
+    ).toEqual(['b'])
+    expect(
+      ids(rows, {
+        match: 'all',
+        rules: [{ property_id: 'prop_notes', op: 'is_not', value: 'Bread' }],
+      }),
+    ).toEqual(['a'])
     expect(
       ids(rows, {
         match: 'all',
         rules: [{ property_id: 'prop_notes', op: 'contains', value: 'MILK' }],
       }),
     ).toEqual(['a'])
+  })
+
+  it('select and title: is / is_not fold case', () => {
+    const rows = [
+      row('Bread', { props: { prop_sel: 'alpha' } }),
+      row('Milk', { props: { prop_sel: 'beta' } }),
+    ]
+    const run = (property_id: string, op: string, value: string): string[] =>
+      ids(rows, { match: 'all', rules: [{ property_id, op, value }] })
+    expect(run('prop_sel', 'is', 'ALPHA')).toEqual(['Bread'])
+    expect(run('prop_sel', 'is_not', 'ALPHA')).toEqual(['Milk'])
+    expect(run('_title', 'is', 'bread')).toEqual(['Bread'])
+    expect(run('_title', 'is_not', 'bread')).toEqual(['Milk'])
   })
 
   it('select (text): is / contains / does_not_contain', () => {
@@ -490,7 +509,7 @@ describe('applyFilter — negation + registry', () => {
         rows,
         { match: 'any', rules: [rule, { property_id: 'prop_sel', op: 'is', value: 'zzz' }] },
         schema,
-        [{ id: 'set_a', children: [] }],
+        [{ id: 'set_a', title: 'A' }],
       ).map((r) => r.id)
     expect(any({ property_id: 'prop_done', op: 'is_not_empty' })).toEqual(['r1', 'r2'])
     expect(any({ property_id: '_location', op: 'contains', value: 'set_a' })).toEqual([])
@@ -513,7 +532,7 @@ describe('applyFilter — location presence', () => {
   // parentSetId isn't part of the shared row() helper — it's set by the container walk, not frontmatter.
   const rows: ViewRow[] = [row('root'), { ...row('filed'), parentSetId: 'set_a' }]
   const ids2 = (f: FilterGroup): string[] =>
-    applyFilter(rows, f, [], [{ id: 'set_a', children: [] }]).map((r) => r.id)
+    applyFilter(rows, f, [], [{ id: 'set_a', title: 'A' }]).map((r) => r.id)
 
   it('Is over several Sets keeps rows parented by ANY of them', () => {
     const many: ViewRow[] = [
@@ -527,9 +546,9 @@ describe('applyFilter — location presence', () => {
         { match: 'all', rules: [{ property_id: '_location', op, values: ['set_a', 'set_b'] }] },
         [],
         [
-          { id: 'set_a', children: [] },
-          { id: 'set_b', children: [] },
-          { id: 'set_c', children: [] },
+          { id: 'set_a', title: 'A' },
+          { id: 'set_b', title: 'B' },
+          { id: 'set_c', title: 'C' },
         ],
       ).map((r) => r.id)
     expect(run('is')).toEqual(['a', 'b'])
@@ -539,7 +558,7 @@ describe('applyFilter — location presence', () => {
   // Is/Isn't are the EXACT parent; Contains is any-depth — that distinction is the whole reason both exist.
   it('Is matches only the immediate parent Set, Contains matches any depth', () => {
     const deep: ViewRow[] = [{ ...row('deep'), parentSetId: 'set_child' }]
-    const tree = [{ id: 'set_a', children: [{ id: 'set_child', children: [] }] }]
+    const tree = [{ id: 'set_a', title: 'A', sets: [{ id: 'set_child', title: 'Child' }] }]
     const run = (op: string): string[] =>
       applyFilter(
         deep,
@@ -751,8 +770,8 @@ describe('applyFilter — multi-operand values[]', () => {
 
 describe('applyFilter — title, context membership, location', () => {
   const tree = [
-    { id: 'set_a', children: [{ id: 'set_a1', children: [] }] },
-    { id: 'set_b', children: [] },
+    { id: 'set_a', title: 'A', sets: [{ id: 'set_a1', title: 'A1' }] },
+    { id: 'set_b', title: 'B' },
   ]
   const inA1 = { ...row('inA1'), parentSetId: 'set_a1' }
   const inB = { ...row('inB'), parentSetId: 'set_b' }
@@ -785,5 +804,54 @@ describe('applyFilter — title, context membership, location', () => {
 
   it('a dead set id is a no-op pass', () => {
     expect(loc([inA1, inB], 'is_inside', 'set_ghost')).toEqual(['inA1', 'inB'])
+  })
+})
+
+describe('applyFilter — location by folder name', () => {
+  const tree = [
+    { id: 'x', title: 'X', sets: [{ id: 'x_docs', title: 'Docs' }] },
+    { id: 'lower', title: 'docs', sets: [{ id: 'lower_sub', title: 'Sub' }] },
+    { id: 'mine', title: 'My Docs' },
+    { id: 'other', title: 'Other' },
+  ]
+  const rows: ViewRow[] = [
+    { ...row('inXDocs'), parentSetId: 'x_docs' },
+    { ...row('inLowerSub'), parentSetId: 'lower_sub' },
+    { ...row('inMine'), parentSetId: 'mine' },
+    { ...row('inOther'), parentSetId: 'other' },
+    row('atRoot'),
+  ]
+  const run = (op: string, values: string[]): string[] =>
+    applyFilter(
+      rows,
+      { match: 'all', rules: [{ property_id: '_location', op, values }] },
+      schema,
+      tree,
+    ).map((r) => r.id)
+
+  it('Contains matches a folder by whole name, case-insensitive, at any depth', () => {
+    expect(run('is_inside', ['Docs'])).toEqual(['inXDocs', 'inLowerSub'])
+  })
+
+  it("Doesn't Contain inverts the name match", () => {
+    expect(run('is_not_inside', ['Docs'])).toEqual(['inMine', 'inOther', 'atRoot'])
+  })
+
+  it('a picked id beside a name is any-of', () => {
+    expect(run('is_inside', ['other', 'Docs'])).toEqual(['inXDocs', 'inLowerSub', 'inOther'])
+  })
+
+  it('a name matching no folder abstains like a dead id', () => {
+    expect(run('is_inside', ['Nowhere'])).toEqual(rows.map((r) => r.id))
+  })
+
+  it('Is stays id-only', () => {
+    expect(run('is', ['Docs'])).toEqual([])
+  })
+})
+
+describe('prepareGroup', () => {
+  it('returns undefined for a group with no rules', () => {
+    expect(prepareGroup({ match: 'any', rules: [] }, schema, [], [])).toBeUndefined()
   })
 })
