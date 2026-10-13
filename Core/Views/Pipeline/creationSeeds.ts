@@ -1,4 +1,4 @@
-// A rule stamps only when it names one value it can be satisfied by: an Is rule on a Select, Status, or Checkbox, or an Is Any, Is All, or Contains rule on a Multi-Select or a Context, where two such rules on one property take both values. Metadata is never changed to satisfy a filter, and a page those exclude simply creates and stays filtered out.
+// A rule stamps only when it names one value it can be satisfied by: an Is rule on a Select, Status, or Checkbox, or an Is Any or Is All rule on a Multi-Select or a Context, where two such rules on one property take both values. An Any group seeds from its first rule that can. Metadata is never changed to satisfy a filter, and a page those exclude simply creates and stays filtered out.
 
 import { type PropertyDefinition, specOf } from '../../Properties/properties'
 import type { PropertyValue } from '../../Properties/propertyValue'
@@ -48,21 +48,26 @@ export function filterSeeds(
 ): Record<string, PropertyValue> {
   const seeds: Record<string, PropertyValue> = {}
   if (!filter || !enabled) return seeds
-  const walk = (group: FilterGroup): void => {
-    if (group.match !== 'all' && group.rules.length > 1) return
+  const seed = (rule: FilterRule): boolean => {
+    const value = ruleSeed(rule, schema, contextIds)
+    if (value === null) return false
+    const prior = seeds[rule.property_id]
+    seeds[rule.property_id] =
+      (value.kind === 'context' || value.kind === 'multiSelect') && prior?.kind === value.kind
+        ? { ...value, value: [...new Set([...prior.value, ...value.value])] }
+        : value
+    return true
+  }
+  // Meeting one rule meets an Any group, so it seeds from its first rule that can.
+  const walk = (group: FilterGroup): boolean => {
+    const first = group.match === 'any'
+    let seeded = false
     for (const entry of group.rules) {
-      if (isGroup(entry)) {
-        walk(entry)
-        continue
-      }
-      const value = ruleSeed(entry, schema, contextIds)
-      if (value === null) continue
-      const prior = seeds[entry.property_id]
-      seeds[entry.property_id] =
-        (value.kind === 'context' || value.kind === 'multiSelect') && prior?.kind === value.kind
-          ? { ...value, value: [...new Set([...prior.value, ...value.value])] }
-          : value
+      const hit = isGroup(entry) ? walk(entry) : seed(entry)
+      seeded ||= hit
+      if (hit && first) break
     }
+    return seeded
   }
   walk(filter)
   return seeds
