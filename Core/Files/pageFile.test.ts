@@ -103,15 +103,23 @@ describe('mergeFrontmatter — an empty or absent block', () => {
     )
   })
 
-  it('a changed string keeps the quotes the file held for it, else takes the quotes the file chose, never ones yaml needed, and a string yaml quotes unasked takes the style of the held quotes', () => {
+  it('a changed string keeps the quotes the file held for it, else takes the quotes the file chose, never ones yaml needed, and a string yaml quotes unasked takes the chosen style, else the held one', () => {
     expect(
       mergeFrontmatter(
-        `---\nN: "42"\nS: 'x'\nL: ["a", b]\nY:\n  - '2024'\n---\nBody`,
-        { N: 'hello', S: 'y', L: ['a', 'b', 'c'], Y: ['2024', 'x', '2025'] },
-        ['N', 'S', 'L', 'Y'],
+        `---\nN: "42"\nS: 'x'\nL: ["a", b]\nY:\n  - '2024'\nZ: ["2024", 'a']\n---\nBody`,
+        {
+          N: 'hello',
+          S: 'y',
+          L: ['a', 'b', 'c'],
+          Y: ['2024', 'x', '2025'],
+          Z: ['2024', 'a', '2025'],
+        },
+        ['N', 'S', 'L', 'Y', 'Z'],
         'Body',
       ),
-    ).toBe(`---\nN: hello\nS: 'y'\nL: ["a", b, "c"]\nY:\n  - '2024'\n  - x\n  - '2025'\n---\nBody`)
+    ).toBe(
+      `---\nN: hello\nS: 'y'\nL: ["a", b, "c"]\nY:\n  - '2024'\n  - x\n  - '2025'\nZ: ["2024", 'a', '2025']\n---\nBody`,
+    )
   })
 
   it('a changed block or multi-line value is spelled as yaml spells it', () => {
