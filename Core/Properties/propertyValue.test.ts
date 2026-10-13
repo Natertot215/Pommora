@@ -404,9 +404,14 @@ describe('writtenSpelling', () => {
     expect(writtenSpelling(['Done', 'Active'], 'done')).toEqual(['done', 'Active'])
   })
 
-  it('a member keeps the held member that names it, of any scalar shape or as an unquoted wikilink', () => {
+  it('a member keeps the held member that names it, of any scalar shape or as an unquoted wikilink, and a whole unquoted wikilink stays whole', () => {
     expect(writtenSpelling(['2024'], [2024])).toEqual([2024])
-    expect(writtenSpelling(['[[a.png]]'], [[['a.png']]])).toEqual([[['a.png']]])
+    expect(writtenSpelling(['[[A.png]]'], [[['a.png']]])).toEqual([[['a.png']]])
+    expect(writtenSpelling(['[[a.png]]'], [['a.png']])).toEqual([['a.png']])
+    expect(writtenSpelling(['[[a.png]]', '[[b.png]]'], [['a.png']])).toEqual([
+      '[[a.png]]',
+      '[[b.png]]',
+    ])
   })
 
   it('a checked value keeps the checked word the file holds, and takes its unchecked word’s partner in the same casing', () => {

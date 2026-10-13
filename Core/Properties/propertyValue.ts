@@ -171,16 +171,17 @@ function checkedSpelling(raw: unknown): unknown {
   return word[0] === word[0].toUpperCase() ? capitalize(partner) : partner
 }
 
-/** `next` spelled as `raw` already spells it: a checked `true` takes `raw`'s checkbox word as `checkedSpelling` does, a string keeps a `raw` of any other shape whose inline yaml reads as that string, and each member takes the one member of `raw` that names it — of any scalar shape its title folds to, or the unquoted wikilink that spells it. A member `raw` names more than once keeps the spelling `next` gives it, the registered one. */
+/** `next` spelled as `raw` already spells it: a checked `true` takes `raw`'s checkbox word as `checkedSpelling` does, a string keeps a `raw` of any other shape whose inline yaml reads as that string, a one-member list keeps a whole unquoted wikilink `raw` that spells its member, and each member takes the one member of `raw` whose title folds to its own — a scalar of any shape, or an unquoted wikilink. A member `raw` names more than once keeps the spelling `next` gives it, the registered one. */
 export function writtenSpelling(next: unknown, raw: unknown): unknown {
   if (next === true) return checkedSpelling(raw)
   if (typeof next === 'string')
     return raw != null && typeof raw !== 'string' && yamlInline(raw) === next ? raw : next
   if (!Array.isArray(next)) return next
+  if (next.length === 1 && Array.isArray(raw) && linkEntry(raw, 2) === next[0]) return raw
   const held = listOf(raw)
   return next.map((v) => {
     const names = namesValue(v)
-    const named = held.filter((w) => names(w) || linkEntry(w) === v)
+    const named = held.filter((w) => names(linkEntry(w, 2) ?? w))
     return named.length === 1 ? named[0] : v
   })
 }

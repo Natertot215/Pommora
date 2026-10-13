@@ -111,9 +111,12 @@ export function assembleEnvelope(frontmatterYaml: string, body: string): string 
 const envelope = (fenced: boolean, fm: string, body: string): string =>
   fenced || fm !== '' ? assembleEnvelope(fm, body) : body
 
-/** `value` as a node spelled as `held` is: each single-line string — the value itself, or a list's member — takes the quotes of the held string or of the held list's first quoted member, and a member that is itself a list, a kept unquoted `[[x]]`, keeps its flow spelling; anything else is spelled as yaml spells it. */
+/** `value` as a node spelled as `held` is, the value itself and each member of a list alike: a single-line string takes the quotes of the held string or of the held list's first quoted member, a kept unquoted `[[x]]` keeps its flow spelling, and anything else is spelled as yaml spells it. */
 function nodeSpelledAs(doc: Document, value: unknown, held: unknown): Node {
   const node = doc.createNode(value)
+  const only = isSeq(node) && node.items.length === 1 ? node.items[0] : null
+  if (isSeq(node) && isSeq(only) && only.items.length === 1 && isScalar(only.items[0]))
+    node.flow = true
   const model = (isSeq(held) ? held.items : [held]).find(
     (n) => isScalar(n) && (n.type === 'QUOTE_DOUBLE' || n.type === 'QUOTE_SINGLE'),
   )
