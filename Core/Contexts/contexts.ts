@@ -1,5 +1,7 @@
 import { z } from 'zod'
 import { holdsName } from '../Paths/names'
+import { isScalar, listOf } from '../Contract/validators'
+import { normalizeTitle } from '../Paths/caseFold'
 
 const SIGIL = ['<', '>'] as const
 
@@ -31,6 +33,10 @@ export function parseContextKey(key: string): string | null {
     ? key.slice(open.length, -close.length)
     : null
 }
+
+/** The folded titles a Context value names: each scalar member's, a lone scalar read as a list of one. A member of any other shape names nothing. */
+export const contextTitles = (raw: unknown): string[] =>
+  listOf(raw).filter(isScalar).map(normalizeTitle).filter(Boolean)
 
 export function seededRegistry(mintId: () => string): ContextsRegistry {
   return {
