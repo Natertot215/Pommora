@@ -85,27 +85,44 @@ describe('mergeFrontmatter — an empty or absent block', () => {
     )
   })
 
-  it('a changed value keeps the file’s spelling: a list its flow or block style, each string the quotes the file held for it or else the quotes the file chose, never a quote yaml needed, and a kept wikilink, whole or a member, its flow spelling, while a whole wikilink that grows is a block list; a block or multi-line value is spelled as yaml spells it', () => {
+  it('a changed list keeps its flow or block style and a kept wikilink, whole or a member, its flow spelling, while a whole wikilink that grows is a block list', () => {
     expect(
       mergeFrontmatter(
-        `---\nN: "42"\nS: 'x'\nL: ["a", b]\nF:\n  - [[a.png]]\nG: [[a.png]]\nB: |-\n  old\n  l2\nM: "x"\nY:\n  - "2024"\n---\nBody`,
+        `---\nL: [a]\nF:\n  - [[a.png]]\nG: [[a.png]]\n---\nBody`,
         {
-          N: 'hello',
-          S: 'y',
-          L: ['a', 'b', 'c'],
+          L: ['a', 'b'],
           F: [[['a.png']], '[[b.png]]'],
           G: ['[[a.png]]', '[[c.png]]'],
-          B: 'x',
-          M: 'a\nb',
           R: [['Page']],
-          Y: ['2024', 'x'],
         },
-        ['N', 'S', 'L', 'F', 'G', 'B', 'M', 'R', 'Y'],
+        ['L', 'F', 'G', 'R'],
         'Body',
       ),
     ).toBe(
-      `---\nN: hello\nS: 'y'\nL: ["a", b, "c"]\nF:\n  - [[a.png]]\n  - "[[b.png]]"\nG:\n  - "[[a.png]]"\n  - "[[c.png]]"\nB: x\nM: |-\n  a\n  b\nY:\n  - "2024"\n  - x\nR: [[Page]]\n---\nBody`,
+      `---\nL: [a, b]\nF:\n  - [[a.png]]\n  - "[[b.png]]"\nG:\n  - "[[a.png]]"\n  - "[[c.png]]"\nR: [[Page]]\n---\nBody`,
     )
+  })
+
+  it('a changed string keeps the quotes the file held for it, else takes the quotes the file chose, never ones yaml needed, and a string yaml quotes unasked takes the style of the held quotes', () => {
+    expect(
+      mergeFrontmatter(
+        `---\nN: "42"\nS: 'x'\nL: ["a", b]\nY:\n  - '2024'\n---\nBody`,
+        { N: 'hello', S: 'y', L: ['a', 'b', 'c'], Y: ['2024', 'x', '2025'] },
+        ['N', 'S', 'L', 'Y'],
+        'Body',
+      ),
+    ).toBe(`---\nN: hello\nS: 'y'\nL: ["a", b, "c"]\nY:\n  - '2024'\n  - x\n  - '2025'\n---\nBody`)
+  })
+
+  it('a changed block or multi-line value is spelled as yaml spells it', () => {
+    expect(
+      mergeFrontmatter(
+        `---\nB: |-\n  old\n  l2\nM: "x"\n---\nBody`,
+        { B: 'x', M: 'a\nb' },
+        ['B', 'M'],
+        'Body',
+      ),
+    ).toBe(`---\nB: x\nM: |-\n  a\n  b\n---\nBody`)
   })
 
   it('a comment-only block keeps its comment when an absent key is removed', () => {
@@ -254,7 +271,7 @@ describe('renameFrontmatterKey — every spelling of the old name', () => {
   const held = (out: string | null): [string, unknown][] =>
     Object.entries(splitFrontmatter(out ?? ''))
 
-  it('joins the old spellings at the first one’s line with `join`', () => {
+  it('joins the old spellings at the first one’s line with `join`, each member keeping its own quotes', () => {
     const out = renameFrontmatterKey(
       page('a: 1\nTags: ["b"]\ntags: [a, B]\nz: 2'),
       'Tags',
@@ -267,7 +284,7 @@ describe('renameFrontmatterKey — every spelling of the old name', () => {
       ['Labels', ['b', 'a']],
       ['z', 2],
     ])
-    expect(out).toContain('Labels: ["b", "a"]')
+    expect(out).toContain('Labels: ["b", a]')
   })
 
   it('keeps the first spelling’s value and drops the rest without `join`', () => {
@@ -330,15 +347,15 @@ describe('mergeFrontmatter — a key moved to another spelling keeps its place',
     ).toBe('---\na: 1\nTags:\n  - x\nb: 2\n---\nbody')
   })
 
-  it('takes the first dropped spelling’s place when two are dropped', () => {
+  it('takes the first dropped spelling’s place when two are dropped, each member keeping its own quotes', () => {
     expect(
       mergeFrontmatter(
-        '---\na: 1\ntags:\n  - x\nb: 2\nTAGS:\n  - y\n---\nbody',
+        '---\na: 1\ntags:\n  - x\nb: 2\nTAGS:\n  - "y"\n---\nbody',
         { Tags: ['x', 'y'] },
         ['tags', 'TAGS', 'Tags'],
         'body',
       ),
-    ).toBe('---\na: 1\nTags:\n  - x\n  - y\nb: 2\n---\nbody')
+    ).toBe('---\na: 1\nTags:\n  - x\n  - "y"\nb: 2\n---\nbody')
   })
 
   it('a moved key whose value is unchanged keeps its node, comments included', () => {

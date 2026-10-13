@@ -3,7 +3,6 @@ import {
   type Node,
   type Pair,
   type ParsedNode,
-  type Scalar,
   parseDocument,
   isMap,
   isScalar,
@@ -112,12 +111,8 @@ export function assembleEnvelope(frontmatterYaml: string, body: string): string 
 const envelope = (fenced: boolean, fm: string, body: string): string =>
   fenced || fm !== '' ? assembleEnvelope(fm, body) : body
 
-const QUOTE_MARK = { QUOTE_DOUBLE: '"', QUOTE_SINGLE: "'" } as const
-
-/** Whether a held string's quotes are the file's choice: quoted, and not as yaml quotes that string unasked (a numeral's `"2024"`, `'"Q3"'`). */
-const quotedByChoice = (n: Scalar): boolean =>
-  (n.type === 'QUOTE_DOUBLE' || n.type === 'QUOTE_SINGLE') &&
-  yamlInline(n.value)[0] !== QUOTE_MARK[n.type]
+/** Whether yaml quotes `value` unasked, as it does a numeral's `"2024"`, a `'"Q3"'`, or a `[[Page]]`. */
+const quotesUnasked = (value: unknown): boolean => /^["']/.test(yamlInline(value))
 
 /** Whether `n` is a whole unquoted `[[x]]`: a list of one list of one scalar. */
 function isWholeLink(n: unknown): boolean {
@@ -125,17 +120,22 @@ function isWholeLink(n: unknown): boolean {
   return isSeq(only) && only.items.length === 1 && isScalar(only.items[0])
 }
 
-/** `value` as a node spelled as `held` is: a list keeps the flow or block style of a held list other than a whole unquoted `[[x]]`, whose brackets spell a link rather than a style, and a list nested in it, or a whole `[[x]]`, is written flow; each single-line string, the value itself or a list's member, keeps the quotes of the held string equal to it, else takes those of the first held string quoted by choice; anything else is spelled as yaml spells it. */
-function nodeSpelledAs(doc: Document, value: unknown, held: unknown): Node {
+/** `value` as a node spelled as the `held` spellings of its key are, the first the one it lands on: a list keeps that one's flow or block style unless it's a whole unquoted `[[x]]`, whose brackets spell a link rather than a style, and a list nested in it, or a whole `[[x]]`, is written flow; each single-line string, the value itself or a list's member, keeps the quotes of the held string equal to it, else a string yaml quotes unasked takes the quotes of the first quoted held string, and any other those of the first held string quoted where yaml wouldn't; anything else is spelled as yaml spells it. */
+function nodeSpelledAs(doc: Document, value: unknown, held: unknown[]): Node {
   const node = doc.createNode(value)
-  const spellings = (isSeq(held) ? held.items : [held]).filter(isScalar)
-  const model = spellings.find(quotedByChoice)
-  const flowHeld = isSeq(held) && held.flow && !isWholeLink(held)
+  const [lands] = held
+  const heldScalars = held.flatMap((h) => (isSeq(h) ? h.items : [h])).filter(isScalar)
+  const quoted = heldScalars.filter((n) => n.type === 'QUOTE_DOUBLE' || n.type === 'QUOTE_SINGLE')
+  const chosen = quoted.find((n) => !quotesUnasked(n.value))
+  const flowHeld = isSeq(lands) && lands.flow && !isWholeLink(lands)
   if (isSeq(node) && (flowHeld || isWholeLink(node))) node.flow = true
   for (const member of isSeq(node) ? node.items : [node]) {
     if (isSeq(member)) member.flow = true
     else if (isScalar(member) && typeof member.value === 'string' && !member.value.includes('\n'))
-      member.type = (spellings.find((n) => n.value === member.value) ?? model)?.type
+      member.type = (
+        heldScalars.find((n) => n.value === member.value) ??
+        (quotesUnasked(member.value) ? quoted[0] : chosen)
+      )?.type
   }
   return node
 }
@@ -156,12 +156,12 @@ function mergeInto(
       if (pair) (pair.key as { value: string }).value = key
     }
     const held = valuesOf(doc)
-    for (const key of modeledKeys) {
-      if (!written(key)) {
-        if (doc.has(key)) doc.delete(key)
-      } else if (JSON.stringify(held[key]) !== JSON.stringify(modeled[key]))
-        doc.set(key, nodeSpelledAs(doc, modeled[key], doc.get(key, true)))
+    for (const key of modeledKeys.filter(written)) {
+      if (JSON.stringify(held[key]) === JSON.stringify(modeled[key])) continue
+      const spelled = [key, ...spellings(dropped, key)].map((k) => doc.get(k, true))
+      doc.set(key, nodeSpelledAs(doc, modeled[key], spelled))
     }
+    for (const key of dropped) doc.delete(key)
     const out = serialized(doc)
     if (out !== null) return out
   }
@@ -211,9 +211,11 @@ export function renameFrontmatterKey(
   } else {
     const moved = heldValue(values, oldName, join)
     const value = rival ? joinValues(values[String(rival.key)], moved) : moved
+    const joined = [...variants, ...(rival ? [rival] : [])]
+    const spelled = [pair, ...joined].map((p) => p.value)
     if (value !== values[String(pair.key)])
-      doc.set(String(pair.key), nodeSpelledAs(doc, value, pair.value))
-    for (const p of [...variants, ...(rival ? [rival] : [])]) drop(p)
+      doc.set(String(pair.key), nodeSpelledAs(doc, value, spelled))
+    for (const p of joined) drop(p)
     ;(pair.key as { value: string }).value = newName
   }
   const out = serialized(doc)

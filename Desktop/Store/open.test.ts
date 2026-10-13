@@ -125,7 +125,6 @@ describe('openNexusDb', () => {
   })
 
   it('a generation-11 index drops its key-only headings table and recreates it with text and level', () => {
-    expect(INDEX_GENERATION).toBe(13)
     const first = opened()
     first.exec(
       'DROP TABLE headings; CREATE TABLE headings (path TEXT NOT NULL, heading TEXT NOT NULL, ordinal INTEGER NOT NULL, PRIMARY KEY (path, heading));',

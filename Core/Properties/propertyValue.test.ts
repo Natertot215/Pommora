@@ -82,10 +82,14 @@ describe('decodeValue — the declared type decides, never the shape', () => {
       kind: 'link',
       value: 'https://acme.io',
     })
-    // An unquoted `[[Page]]` is a nested one-element list to yaml, and reads as the link it spells.
+    // An unquoted `[[Page]]` is a nested one-element list to yaml, and reads as the link it spells, whatever scalar yaml reads its title as.
     expect(decodeValue(def({ type: 'link' }), [['Page']])).toEqual({
       kind: 'link',
       value: '[[Page]]',
+    })
+    expect(decodeValue(def({ type: 'link' }), [[2024]])).toEqual({
+      kind: 'link',
+      value: '[[2024]]',
     })
     expect(decodeValue(def({ type: 'link' }), 42)).toEqual({ kind: 'null' })
     // A one-item list is a list, as the index reads it, not a link.
