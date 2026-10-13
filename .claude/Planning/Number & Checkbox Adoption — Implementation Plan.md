@@ -1,24 +1,24 @@
 ## Number & Checkbox Adoption — Implementation Plan
 
 **DATE:** 10-12-2026
-**STATUS:** Draft
+**STATUS:** Ratified 10-12-2026
 **SOURCE:** This session's conversation of 10-12-2026 with Nathan; its rulings are listed under *§Constraints › Settled Decisions*.
 
 **BASELINE**
 
 | Head | Tests | Start | End |
 |------|-------|-------|-----|
-| `0d0b7f3f4` | {count} | {MM-DD-YYYY h:mm AM/PM} | {MM-DD-YYYY h:mm AM/PM} |
+| `faadbae37` | 7,666 passed · 2 skipped | 10-12-2026 8:44 PM | {MM-DD-YYYY h:mm AM/PM} |
 
 ### Context
 
-A frontmatter key the registry doesn't name is foreign: kept as written, and live the moment a definition names it. Key matching is already type-agnostic — a key matches a name in any casing, a write lands on the spelling the file holds (an empty `Price:` included), and a rename onto held keys adopts them for every type. What differs per type is two arms in `Core/Properties/propertyValue.ts`: `decodeValue` decides which held shapes read as a value, and `writtenSpelling` decides what spelling a write keeps. Text reads any shape and keeps it; a Multi-Select keeps unregistered members (which the settle registers as options) and each member's casing. Number reads only a YAML number, so a held `"30"` or `$1,200` reads as nothing; Checkbox reads only `true`/`yes` as checked, and a tick over `no` writes `true`.
+A frontmatter key the registry doesn't name is foreign: kept as written, and live the moment a definition names it. Key matching is already type-agnostic — a key matches a name in any casing, a write lands on the spelling the file holds (an empty `Price:` included), and a rename onto held keys adopts them for every type. What differs per type is two arms in `Core/Properties/propertyValue.ts`: `decodeValue` decides which held shapes read as a value, and `writtenSpelling` decides what spelling a write keeps. Text reads any shape and keeps it; a Multi-Select keeps unregistered members (which the settle registers as options) and each member's casing. Number reads only a YAML number, so a held `"30"` or `$1,200` reads as nothing; Checkbox reads only `true`/`yes` as checked, and a tick over `no` writes `true`. Reading ignores quote marks already, since every reader works on parsed YAML, and Select, Status, Multi-Select, Context, and Text fold a scalar by its text whatever YAML type quoting gave it; writing doesn't, since `mergeInto` writes each changed value as a fresh node that drops the file's quotes.
 
-The content index stores every key's raw value untyped, and the watcher, walk, and settle chain (`oweNamedKeys`, `registerHeldOptions`) exists only to register Multi-Select options, which Number and Checkbox don't have — so none of it changes. Three adjacent findings join the work. `NumberValuePicker` is a second copy of the popover `PropertyValueInput` already renders for every other type, minus its unchanged-text guard, so dismissing it over a value it shows blank deletes that value. And two readers still match the literal `'true'` where a hand-written checkbox rule may name `yes`: the creation seed (through `reassign.ts`) and the filter pane's operator label.
+The content index stores every key's raw value untyped, and the watcher, walk, and settle chain (`oweNamedKeys`, `registerHeldOptions`) exists only to register Multi-Select options, which Number and Checkbox don't have — so none of it changes. Adjacent findings join the work. `NumberValuePicker` is a second copy of the popover `PropertyValueInput` already renders for every other type, minus its unchanged-text guard, so dismissing it over a value it shows blank deletes that value. And two readers still match the literal `'true'` where a hand-written checkbox rule may name `yes`: the creation seed (through `reassign.ts`) and the filter pane's operator label.
 
 ### Overview
 
-Number and Checkbox gain the same two arms Text and Multi-Select have. A Checkbox reads one vocabulary of word pairs in any casing — `true`/`false`, `yes`/`no`, `on`/`off`, `y`/`n` — and a tick over an unchecked word writes its partner in the same casing (`No` → `Yes`, `OFF` → `ON`), while an untick still removes the key. A Number reads a quoted number, or one written with comma thousands, a trailing `%`, or a currency symbol before or after it — the inverse of what a cell itself shows — through one reader in `formatValue.ts` beside `readDate`, which the inline field, the popover, and Number filter operands share. A write keeps the file's quoting, symbol, percent sign, spacing, and grouping, and an unchanged value leaves the file byte-identical. Display stays governed by the property's own format.
+Number and Checkbox gain the same two arms Text and Multi-Select have. A Checkbox reads one vocabulary of word pairs in any casing — `true`/`false`, `yes`/`no`, `on`/`off`, `y`/`n` — and a tick over an unchecked word writes its partner in the same casing (`No` → `Yes`, `OFF` → `ON`), while an untick still removes the key. A Number reads a quoted number, or one written with comma thousands, a trailing `%`, or a currency symbol before or after it — the inverse of what a cell itself shows — through one reader in `formatValue.ts` beside `readDate`, which the inline field, the popover, and Number filter operands share. A write keeps the file's symbol, percent sign, spacing, and grouping, and an unchanged value leaves the file byte-identical. Display stays governed by the property's own format. Beneath both, a changed string of any type keeps the file's quote formatting — a scalar's own quotes, or a list's on each member — and an unchanged member keeps its spelling, a bare `2024` or `[[a.png]]` included, so keys and scalar values match and write back without regard to case or quoting.
 
 Every reader of a checkbox word — the filter, the creation seed, the filter pane's label — reads the shared vocabulary, so `1`/`0` stop meaning anything. `NumberValuePicker` goes, and the Number popover becomes the shared one with its format glyph. PropertiesPM states the reading rule once, naming Multi-Select, Text, Number, and Checkbox together. A live drive on `~/Test` reads the bytes each gesture leaves.
 
@@ -31,8 +31,9 @@ Every reader of a checkbox word — the filter, the creation seed, the filter pa
 | `readNumber` • Function | The one reading of a stored or typed number: a YAML number as itself, or a string spelling one. Read by `decodeValue`, `parseEditorValue`, and the Number filter. | `Core/Properties/formatValue.ts` |
 | `spelledNumber` • Function | A number written in the spelling a held string uses; `writtenSpelling`'s number arm. | `Core/Properties/formatValue.ts` |
 | `currencySymbol` • Function | The symbol Intl gives a currency, by default as a cell shows it or narrow as the picker leads with it; `numberFormatGlyph` and the reader's symbol list both read it. | `Core/Properties/formatValue.ts` |
+| `escapeRegExp` • Function | Text with every RegExp syntax character escaped; the reader's symbol alternation and `webGuests.ts`'s app-name match both read it. | `UIX/Utilities/escapeRegExp.ts` |
+| `nodeSpelledAs` • Function | A changed value as a node spelled as the held one: each single-line string, scalar or list member, takes the held quotes, and a kept wikilink member keeps its flow spelling. `mergeInto` and `renameFrontmatterKey` write through it. | `Core/Files/pageFile.ts` |
 | `checkboxWord` • Function | What a checkbox value says in any casing: true, false, or null. Read by `decodeValue`, the filter, the group-key decode, and the filter pane. | `Core/Properties/propertyValue.ts` |
-| `CHECKBOX_WORDS` • Constant | The four word pairs, checked word first. | `Core/Properties/propertyValue.ts` |
 | `checkedSpelling` • Function | A checked value as a held value spells one; `writtenSpelling`'s checkbox arm. | `Core/Properties/propertyValue.ts` |
 
 **REMOVED**
@@ -48,9 +49,9 @@ Every reader of a checkbox word — the filter, the creation seed, the filter pa
 - **Gates:** `npm run typecheck` · `npm run test` · `npm run lint`, from the repo root, chained with `&&`, each exiting 0; lint prints no `Found N warnings` line. Biome formats every TS write, so an Edit failing on whitespace means it reformatted — re-read and retry.
 - **Commits:** `git add <new files>` and `git rm <removed files>` first, then `git commit --only -m "…" -- <paths>`; messages past-tense and short, ending with the Co-Authored-By line. The pre-commit hook adds `Dashboard/Ledger/loc-history.json`.
 - **Frozen:** The value union (`checkbox: z.literal(true)`, `number: z.number()`); `encodeValue`; UIX `numberFrom` and its UIX callers; `applyValueAtRoot` (the renderer's optimistic copy lands the bare encoded value, and both copies decode alike); the watcher, settle, index, and `registerHeldOptions`; "No value, no key" — an untick and an emptied number remove the key.
-- **Reuse:** Nothing is built that the codebase already provides, and nothing diverges from how it already does a thing. Plan review found four places a first draft hand-rolled an existing mechanism, and the plan now reuses each: the number reader lives in `formatValue.ts` beside `readDate` (the one reading of a stored date) and formats digits through its memoized en-US `numFmt`; the currency symbol comes from one `currencySymbol` that `numberFormatGlyph` shares; the casing transfer uses UIX `capitalize`; and the Number popover is `PropertyValueInput`'s shared one, whose unchanged-text guard already exists, rather than a second guard in a second component. Execution keeps looking outward the same way: before writing any helper, search for the existing one, and record any new instance under *§Deviations*. A future audit finding a duplicate here is a defect of this plan.
-- **Conventions:** No comments beyond the doc comments the plan writes and the one decision comment in `spelledNumber`. No user-facing copy. Every test added fails without its change, and a grammar case is pinned once, in the reader's tests; each consumer's test pins only its wiring.
-- **Shape (fix):** Every consumer of the old behavior is named in a task: `isCheckedRaw`'s two callers; `parseBool`'s one; the two literal-`'true'` readers (`reassign.ts`, `FilterFrame.tsx`'s operator label); `numberFrom`'s two Core value callers (`parseEditorValue`, `filter.ts`); and `NumberValuePicker`'s one caller. `NumberEditor.tsx`'s `numberFrom` calls read format configuration and stay; `filterModel.ts`'s `impliedValue`, `propertyMenuActions.ts`'s `CHECKBOX_OPTIONS`, and `group.ts`'s `'true'` key are the app's own canonical writes and stay.
+- **Reuse:** Nothing is built that the codebase already provides, and nothing diverges from how it already does a thing. Plan review found six places a first draft hand-rolled an existing mechanism, and the plan now reuses each: the number reader lives in `formatValue.ts` beside `readDate` (the one reading of a stored date) and formats digits through its memoized en-US `numFmt`; the currency symbol comes from one `currencySymbol` that `numberFormatGlyph` shares; the casing transfer uses UIX `capitalize`; the regex escape `Desktop/Web/webGuests.ts` hand-wrote becomes one UIX `escapeRegExp` both read; `writtenSpelling`'s member arm matches through `namesValue`, the folded member matcher every option sweep already uses; the two frontmatter writers share one `nodeSpelledAs`; and the Number popover is `PropertyValueInput`'s shared one, whose unchanged-text guard already exists, rather than a second guard in a second component. Execution keeps looking outward the same way: before writing any helper, search for the existing one, and record any new instance under *§Deviations*. A future audit finding a duplicate here is a defect of this plan.
+- **Conventions:** No comments beyond the doc comments the plan writes and the one decision comment in `spelledNumber`. No user-facing copy. No test churn: a behavior an existing test already exercises is pinned by extending that test, a new test exists only for behavior nothing pins, nothing repeats a sibling, and every added assertion fails without its change. A grammar case is pinned once, in the reader's tests; each consumer pins only its wiring.
+- **Shape (fix):** Every consumer of the old behavior is named in a task: `isCheckedRaw`'s two callers; `parseBool`'s one; the literal-`'true'` readers of a rule operand (`reassign.ts`, `FilterFrame.tsx`'s operator label); `numberFrom`'s two Core value callers (`parseEditorValue`, `filter.ts`); `NumberValuePicker`'s one caller; and both frontmatter writers (`mergeInto`, `renameFrontmatterKey`). Sync's arrival writes incoming bytes as they are and isn't a value writer. `NumberEditor.tsx`'s `numberFrom` calls read format configuration and stay; `filterModel.ts`'s `impliedValue` and `FilterFrame.tsx`'s `checkboxBox` reading it, `propertyMenuActions.ts`'s `CHECKBOX_OPTIONS`, and `group.ts`'s `'true'` key are the app's own canonical values and stay.
 - **Shape (one commit):** The Number decode and its spelling arm land in one commit. A decode alone would let the live reconcile (`reconcileGovernedRoot`, `runRepairSweep`) rewrite every quoted or formatted number in a Nexus to a bare one.
 
 **Settled Decisions** — Nathan, 10-12-2026:
@@ -61,22 +62,28 @@ Every reader of a checkbox word — the filter, the creation seed, the filter pa
 - The grammar: commas only as thousands in groups of three (`1,5` reads as nothing), a trailing `%`, and the currency symbols of `CURRENCY_CODES` (`$ € £ A$ CA$ ¥`) before or after — symbols only, no ISO codes. The property's own format alone decides display.
 - The field and filter operands read typed text by the same grammar. `1`/`0` stop counting as checkbox operands.
 - The write-back decision is noted on its line as a one-line comment.
+- A changed value keeps the file's quote formatting, for every type and every list member, through one helper both frontmatter writers share (`nodeSpelledAs`), reversing the Text-era fresh-node write (`b80a7b12a`). Keys and values match without regard to case or quoting, and an unchanged member keeps its spelling (`2024`, `[[a.png]]`). A string YAML can only spell quoted — a changed `[[Page]]`, or `43` over a bare `42` — takes yaml's double quotes. PropertiesPM states the write rule as one of its primary rules. `ID` follows the same rule as every key.
 - Documentation stays overview-level: nothing the code shows plainly, no exhaustive detail.
 - Plan reviews before ratification run as Opus at extra-high effort; every code review during and after execution runs as Opus at high effort.
+- Execution is dispatched to Opus at low effort, phase by phase. Alongside it, one Haiku agent at extra-high effort applies the same plan in a parallel worktree, as a comparison of whether Opus earns its cost on code the plan already writes; *§Execution Comparison* records the outcome.
 
 #### Process Overview
 
 - [ ] **Phase 1** — Checkbox Word Pairs
   - [ ] Task 1-1
   - [ ] Task 1-2
-- [ ] **Phase 2** — Number Reading And Spelling
+- [ ] **Phase 2** — Quote Formatting
   - [ ] Task 2-1
-  - [ ] Task 2-2
   - [ ] Review Checkpoint
-- [ ] **Phase 3** — Documentation
+- [ ] **Phase 3** — Number Reading And Spelling
   - [ ] Task 3-1
-- [ ] **Phase 4** — Live Drive
+  - [ ] Task 3-2
+  - [ ] Review Checkpoint
+- [ ] **Phase 4** — Documentation
   - [ ] Task 4-1
+- [ ] **Phase 5** — Live Drive
+  - [ ] Task 5-1
+- [ ] `[Parallel: the Haiku comparison run, dispatched with Phase 1 — see §Execution Comparison]`
 
 ---
 
@@ -86,7 +93,7 @@ Every reader of a checkbox word — the filter, the creation seed, the filter pa
 
 #### Task 1-1
 
-**TASK:** Replace `isCheckedRaw` with `CHECKBOX_WORDS` and `checkboxWord`, and give `writtenSpelling` the `checkedSpelling` arm.
+**TASK:** Replace `isCheckedRaw` with `checkboxWord` over one table of word pairs, and give `writtenSpelling` the `checkedSpelling` arm.
 
 **NOW:** `isCheckedRaw` (`propertyValue.ts:59-61`) reads `true` or the string `true`/`yes` in any casing; `decodeValue` and `writtenSpelling` call it, the latter keeping a checked word and otherwise writing `true`. `governedWrite.test.ts:196` pins `Done: No` → `true`.
 
@@ -115,19 +122,19 @@ Every reader of a checkbox word — the filter, the creation seed, the filter pa
 +  ['on', 'off'],
 +  ['y', 'n'],
 +] as const
-+const PARTNER = new Map(
++const CHECKED_WORD = new Map(
 +  CHECKBOX_WORDS.flatMap(([on, off]): [string, string][] => [
-+    [on, off],
++    [on, on],
 +    [off, on],
 +  ]),
 +)
-+const CHECKED = new Set<string>(CHECKBOX_WORDS.map(([on]) => on))
 +
 +/** What a checkbox value says as a file spells it, in any casing: true for a pair's checked word, false for its partner, null for anything else. */
 +export function checkboxWord(raw: unknown): boolean | null {
 +  if (typeof raw === 'boolean') return raw
 +  const word = typeof raw === 'string' ? normalizeTitle(raw) : ''
-+  return PARTNER.has(word) ? CHECKED.has(word) : null
++  const checked = CHECKED_WORD.get(word)
++  return checked === undefined ? null : checked === word
 +}
 
 @@ decodeValue @@
@@ -142,7 +149,7 @@ Every reader of a checkbox word — the filter, the creation seed, the filter pa
 +function checkedSpelling(raw: unknown): unknown {
 +  if (checkboxWord(raw) === true) return raw
 +  const word = typeof raw === 'string' ? raw.trim() : ''
-+  const partner = PARTNER.get(normalizeTitle(word))
++  const partner = CHECKED_WORD.get(normalizeTitle(word))
 +  if (partner === undefined) return true
 +  if (word === word.toUpperCase()) return partner.toUpperCase()
 +  return word[0] === word[0].toUpperCase() ? capitalize(partner) : partner
@@ -164,29 +171,17 @@ The doc comment's `…` stands for its unchanged remainder.
 -    expect(decodeValue(def({ type: 'checkbox' }), false)).toEqual({ kind: 'null' })
 -  })
 
-@@ writtenSpelling — replaces the two checked-value tests @@
+@@ writtenSpelling — the checked-word test, extended @@
 
 -  it('a checked value keeps the checked word the file holds', () => {
--    expect(writtenSpelling(true, 'Yes')).toBe('Yes')
--  })
--
--  it('a checked value the file never held stays true', () => {
--    expect(writtenSpelling(true, undefined)).toBe(true)
--  })
 +  it('a checked value keeps the checked word the file holds, and takes its unchecked word’s partner in the same casing', () => {
-+    expect(writtenSpelling(true, 'Yes')).toBe('Yes')
+     expect(writtenSpelling(true, 'Yes')).toBe('Yes')
 +    expect(writtenSpelling(true, 'no')).toBe('yes')
 +    expect(writtenSpelling(true, 'No')).toBe('Yes')
 +    expect(writtenSpelling(true, 'OFF')).toBe('ON')
 +    expect(writtenSpelling(true, 'N')).toBe('Y')
 +    expect(writtenSpelling(true, 'false')).toBe('true')
-+  })
-+
-+  it('a checked value over no checkbox word, or a YAML false, is true', () => {
-+    expect(writtenSpelling(true, undefined)).toBe(true)
-+    expect(writtenSpelling(true, false)).toBe(true)
-+    expect(writtenSpelling(true, 'maybe')).toBe(true)
-+  })
+   })
 
 @@ options and checkboxes decode without regard to case @@
 
@@ -303,72 +298,238 @@ The doc comment's `…` stands for its unchanged remainder.
 ```
 
 ```Core/Views/Pipeline/filter.test.ts diff
-@@ applyFilter — per type, after the checkbox test @@
+@@ applyFilter — per type: the checkbox test, extended @@
 
-+  it('checkbox: an operand reads as a checkbox word in any casing; one that is none abstains', () => {
-+    const rows = [
-+      row('t', { props: { prop_done: 'Yes' } }),
-+      row('f', { props: { prop_done: 'off' } }),
-+      row('n', { props: {} }),
-+    ]
-+    const is = (value: string): FilterGroup => ({
-+      match: 'all',
-+      rules: [{ property_id: 'prop_done', op: 'is', value }],
-+    })
-+    expect(ids(rows, is('on'))).toEqual(['t'])
-+    expect(ids(rows, is('N'))).toEqual(['f', 'n'])
-+    expect(ids(rows, is('1'))).toEqual(['t', 'f', 'n'])
-+  })
+     expect(
+       ids(rows, { match: 'all', rules: [{ property_id: 'prop_done', op: 'is', value: 'true' }] }),
+     ).toEqual(['t'])
++    expect(
++      ids(rows, { match: 'all', rules: [{ property_id: 'prop_done', op: 'is', value: 'On' }] }),
++    ).toEqual(['t'])
++    expect(
++      ids(rows, { match: 'all', rules: [{ property_id: 'prop_done', op: 'is', value: 'N' }] }),
++    ).toEqual(['f', 'n'])
++    expect(
++      ids(rows, { match: 'all', rules: [{ property_id: 'prop_done', op: 'is', value: '1' }] }),
++    ).toEqual(['t', 'f', 'n'])
 ```
 
 ```Core/Views/Pipeline/creationSeeds.test.ts diff
-@@ filterSeeds, after "derives nothing from Isn't Checked" @@
+@@ filterSeeds — "derives positive Is rules…", extended @@
 
-+  it('seeds a checked box from an Is rule naming any checked word', () => {
-+    const filter: FilterGroup = {
-+      match: 'all',
-+      rules: [{ property_id: 'p_check', op: 'is', value: 'Yes' }],
-+    }
-+    expect(filterSeeds(filter, true, schema)).toEqual({ p_check: { kind: 'checkbox', value: true } })
-+  })
+     expect(filterSeeds(filter, true, schema)).toEqual({
+       p_status: { kind: 'select', value: 'doing' },
+       p_check: { kind: 'checkbox', value: true },
+     })
++    const word: FilterGroup = { match: 'all', rules: [{ property_id: 'p_check', op: 'is', value: 'Yes' }] }
++    expect(filterSeeds(word, true, schema)).toEqual({ p_check: { kind: 'checkbox', value: true } })
 ```
 
 ```Core/Views/Settings/FilterFrame.test.tsx diff
-@@ FilterFrame value editors, after "a checkbox rule renders no value editor…" @@
+@@ FilterFrame value editors — "a checkbox rule renders no value editor…" @@
 
-+  it('a checkbox rule naming any checked word carries its clause', async () => {
-+    await mount(
-+      view({
-+        filter: { match: 'all', rules: [{ property_id: 'prop_check', op: 'is', value: 'Yes' }] },
-+      }),
-+    )
-+    expect(texts()).toContain('Is Checked')
-+  })
+-        filter: { match: 'all', rules: [{ property_id: 'prop_check', op: 'is', value: 'false' }] },
++        filter: { match: 'all', rules: [{ property_id: 'prop_check', op: 'is', value: 'no' }] },
 ```
+
+The edited fixture pins a hand-written word; `twoRules` still pins the pane's own `'true'`.
 
 **VERIFY**
 
-- [ ] With the tests alone, the filter test fails on `is('on')` and `is('1')`, the seed test on `{}`, and the pane test on its missing clause; green after.
-- [ ] `grep -rn "parseBool" Core` → none; `grep -rn "=== 'true'" Core --include='*.ts' --include='*.tsx' | grep -v test` → only `FilterFrame.tsx`'s `checkboxBox` (an operator's own `impliedValue`).
+- [ ] With the tests alone, the filter test fails on `'On'`, `'N'`, and `'1'`, the seed test on `{}`, and the pane test on its missing clause; green after.
+- [ ] `grep -rn "parseBool" Core` → none; `grep -rn "=== 'true'" Core --include='*.ts' --include='*.tsx' | grep -v test` → `propertyMenuActions.ts` (the menu's own `CHECKBOX_OPTIONS` values) and `FilterFrame.tsx`'s `checkboxBox` (an operator's own `impliedValue`).
 - [ ] Run the gates.
 
 ---
 
-### Phase 2 — Number Reading And Spelling
+### Phase 2 — Quote Formatting
 
-**GOAL:** A Number reads a quoted or formatted number held in a file or typed in a field, and a write keeps the spelling the file uses. Decode and spelling are one commit (*§Constraints › Shape*); the popover's consolidation is its own task because it touches a component, not the codec.
+**GOAL:** A changed string keeps the file's quote formatting on every type, a scalar or each member of a list, through one helper both frontmatter writers share; and an unchanged list member keeps the spelling the file gave it — a bare `2024` beside quoted strings, or an unquoted `[[a.png]]` in a File list. Its own phase because it changes the writer every property type shares, and Phase 3's number spelling leans on it.
 
 #### Task 2-1
 
-**TASK:** Add `readNumber`, `spelledNumber`, and the shared `currencySymbol` to `formatValue.ts`; `decodeValue`, `writtenSpelling`, `parseEditorValue`, and the Number filter read them.
+**TASK:** `nodeSpelledAs` gives a changed value the held value's quotes, and `mergeInto` and `renameFrontmatterKey` both write through it; `writtenSpelling`'s member arm matches held members through the shared `namesValue`, and an unquoted wikilink through `linkEntry`.
 
-**NOW:** `decodeValue` reads `typeof raw === 'number'` alone (`propertyValue.ts:67-68`); `writtenSpelling` returns a number `next` as is; `parseEditorValue` (`:36-39`) and `evaluateNumber` (`filter.ts:169`) read typed text through UIX `numberFrom`, which takes `Number(text)` when finite. `formatValue.ts` holds `readDate` (`:88-97`, "the one reading of a stored date"), the memoized en-US `numFmt` (`:21`), and `numberFormatGlyph` (`:233-243`), which extracts a currency's narrow symbol through `formatToParts`. A cell shows a currency with the default `'symbol'` display (`formatScalar`, `:197`): `$ € £ A$ CA$ ¥` for `CURRENCY_CODES`, where narrow collapses AUD and CAD to `$`. `formatValue.ts` joining the host graph adds no external and no UIX leaf outside `engineGraph.test.ts`'s list (`numberUnit` and `pad` are already on it).
+**NOW:** Reading ignores quote marks by construction: every reader works on parsed YAML, so `- "Ideas"` and `- Ideas` are the same string. Where quoting changes a scalar's YAML type (`2024` and `"2024"`, `true` and `"true"`), Select, Status, Multi-Select, Context, and Text fold it by its text — `normalizeTitle`, and `namesValue` (`Core/Properties/pageValue.ts:12-15`, the folded member matcher every option sweep uses) — and Phases 1 and 3 bring Checkbox and Number in; `linkEntry` reads `[[Page]]` and `"[[Page]]"` alike for Link and File. Writing doesn't: `mergeInto` (`Core/Files/pageFile.ts:122-125`) writes a changed value as a fresh node, so its quotes go — the Text-era choice in `b80a7b12a` — and `pageFile.test.ts:88` pins that. `renameFrontmatterKey` (`:176`) writes a joined list with `doc.set(String(pair.key), value)`, outside `mergeInto`. `writtenSpelling`'s member arm (`propertyValue.ts:150-155`) matches held members only when they're strings, so the live reconcile rewrites a held bare `- 2024` to `- "2024"` and an unquoted `- [[a.png]]` to `- "[[a.png]]"` on any sibling write; `propertyValue.test.ts` ("takes only string members"), `contextResolve.test.ts:120`, and `restoreScrub.test.ts:216` pin the string coercion, against ContextsPM's "a drifted-but-resolvable value … keeps its spelling". Sapphire double-quotes every string it writes, list members included, so today a Pommora write to a key Sapphire wrote strips its quotes and Sapphire's next write restores them.
+
+**CHANGE**
+
+- [ ] Write the tests below and watch them fail.
+- [ ] The source changes.
+- [ ] Commit Phase 2: `git commit --only -m "…" -- Core/Files/pageFile.ts Core/Files/pageFile.test.ts Core/Properties/propertyValue.ts Core/Properties/propertyValue.test.ts Core/Contexts/contextResolve.test.ts Core/Trash/restoreScrub.test.ts`.
+
+**AFTER**
+
+```Core/Files/pageFile.ts diff
+@@ imports @@
+
+-import { type Document, type Pair, type ParsedNode, parseDocument, isMap, stringify } from 'yaml'
++import {
++  type Document,
++  type Node,
++  type Pair,
++  type ParsedNode,
++  parseDocument,
++  isMap,
++  isScalar,
++  isSeq,
++  stringify,
++} from 'yaml'
+
+@@ above mergeInto @@
+
++/** `value` as a node spelled as `held` is: each single-line string — the value itself, or a list's member — takes the quotes of the held string or of the held list's first quoted member, and a member that is itself a list, a kept unquoted `[[x]]`, keeps its flow spelling; anything else is spelled as yaml spells it. */
++function nodeSpelledAs(doc: Document, value: unknown, held: unknown): Node {
++  const node = doc.createNode(value)
++  const model = (isSeq(held) ? held.items : [held]).find(
++    (n) => isScalar(n) && (n.type === 'QUOTE_DOUBLE' || n.type === 'QUOTE_SINGLE'),
++  )
++  for (const member of isSeq(node) ? node.items : [node]) {
++    if (isSeq(member)) member.flow = true
++    else if (isScalar(model) && isScalar(member) && typeof member.value === 'string' && !member.value.includes('\n'))
++      member.type = model.type
++  }
++  return node
++}
+
+@@ mergeInto @@
+
+       } else if (JSON.stringify(held[key]) !== JSON.stringify(modeled[key]))
+-        // A fresh node, so a changed value takes the spelling yaml gives it rather than the old node's quoting or block style.
+-        doc.set(key, doc.createNode(modeled[key]))
++        doc.set(key, nodeSpelledAs(doc, modeled[key], doc.get(key, true)))
+
+@@ renameFrontmatterKey @@
+
+-    if (value !== values[String(pair.key)]) doc.set(String(pair.key), value)
++    if (value !== values[String(pair.key)])
++      doc.set(String(pair.key), nodeSpelledAs(doc, value, pair.value))
+```
+
+yaml's own in-place replacement — `doc.set(key, rawValue)` over a scalar keeps that node's style — is what `b80a7b12a` bypassed, and it doesn't fit: it keeps a `|-` block on a one-line value, folds a multi-line value under a plain node into broken lines, and replaces lists wholesale. So the helper builds a fresh node and carries only the quotes. A multi-line string keeps yaml's `|-` block. A quoted value replaced by a number, boolean, or list of non-strings lands as yaml spells it. A string YAML can only spell quoted — a changed `[[Page]]`, or `43` over a bare `42` — takes yaml's double quotes. A join takes the quotes of the spelling it lands on. Escaping round-trips under both styles, and yaml falls back to double quotes where single can't hold the content (checked against yaml 2.9.0 across every writer: governed writes, the page and heading rename cascades, every sweep, undo, the Trash restore, asset migration, and ID stamping). An unquoted `[[a.png]]` member parses as a nested list, so without the flow spelling a changed list would write it `- - - a.png`.
+
+```Core/Properties/propertyValue.ts diff
+@@ imports @@
+
++import { namesValue } from './pageValue'
+
+@@ writtenSpelling @@
+
+-/** `next` spelled as `raw` already spells it: … and each member takes the one member of `raw` its title folds to. … */
++/** `next` spelled as `raw` already spells it: … and each member takes the one member of `raw` that names it — of any scalar shape its title folds to, or the unquoted wikilink that spells it. … */
+ …
+   if (!Array.isArray(next)) return next
+-  const written = listOf(raw).filter((w): w is string => typeof w === 'string')
++  const held = listOf(raw)
+   return next.map((v) => {
+-    const named = written.filter((w) => normalizeTitle(w) === normalizeTitle(v))
++    const names = namesValue(v)
++    const named = held.filter((w) => names(w) || linkEntry(w) === v)
+     return named.length === 1 ? named[0] : v
+   })
+```
+
+`…` stands for the doc comment's unchanged text. `linkEntry` is already imported and is the File decoder's own member reading. `pageValue.ts` imports `propertyValue.ts` nowhere, so the new edge makes no cycle.
+
+```Core/Files/pageFile.test.ts diff
+@@ replaces "a changed value takes a fresh spelling…" @@
+
+-  it('a changed value takes a fresh spelling: a quoted or block scalar does not hold the new value to its old style', () => {
+-    expect(
+-      mergeFrontmatter(
+-        '---\nN: "42"\nB: |-\n  old\n  l2\n---\nBody',
+-        { N: 'hello', B: 'x' },
+-        ['N', 'B'],
+-        'Body',
+-      ),
+-    ).toBe('---\nN: hello\nB: x\n---\nBody')
+-    expect(mergeFrontmatter('---\nN: plain\n---\nBody', { N: 'a\nb' }, ['N'], 'Body')).toBe(
+-      '---\nN: |-\n  a\n  b\n---\nBody',
+-    )
+-  })
++  it('a changed value keeps the quotes the file held, on a scalar and on each list member, and a kept wikilink member its flow spelling; a block or multi-line value is spelled as yaml spells it', () => {
++    expect(
++      mergeFrontmatter(
++        `---\nN: "42"\nS: 'x'\nL: ["a", b]\nF:\n  - [[a.png]]\nB: |-\n  old\n  l2\nM: "x"\n---\nBody`,
++        { N: 'hello', S: 'y', L: ['a', 'b', 'c'], F: [[['a.png']], '[[b.png]]'], B: 'x', M: 'a\nb' },
++        ['N', 'S', 'L', 'F', 'B', 'M'],
++        'Body',
++      ),
++    ).toBe(
++      `---\nN: "hello"\nS: 'y'\nL:\n  - "a"\n  - "b"\n  - "c"\nF:\n  - [[a.png]]\n  - "[[b.png]]"\nB: x\nM: |-\n  a\n  b\n---\nBody`,
++    )
++  })
+
+@@ renameFrontmatterKey — every spelling of the old name: "joins the old spellings…", extended @@
+
+     const out = renameFrontmatterKey(
+-      page('a: 1\nTags: [b]\ntags: [a, B]\nz: 2'),
++      page('a: 1\nTags: ["b"]\ntags: [a, B]\nz: 2'),
+ …
+     expect(held(out)).toEqual([
+       ['a', 1],
+       ['Labels', ['b', 'a']],
+       ['z', 2],
+     ])
++    expect(out).toContain('Labels:\n  - "b"\n  - "a"')
+```
+
+```Core/Properties/propertyValue.test.ts diff
+@@ writtenSpelling @@
+
+-  it('takes only string members', () => {
+-    expect(writtenSpelling(['2024'], [2024])).toEqual(['2024'])
++  it('a member keeps the held member that names it, of any scalar shape or as an unquoted wikilink', () => {
++    expect(writtenSpelling(['2024'], [2024])).toEqual([2024])
++    expect(writtenSpelling(['[[a.png]]'], [[['a.png']]])).toEqual([[['a.png']]])
+   })
+```
+
+```Core/Contexts/contextResolve.test.ts diff
+@@ reconcileGovernedRoot @@
+
+-  it('repairs scalar-typed values to their canonical string titles', () => {
++  it('keeps a scalar-typed member as the file spells it', () => {
+     const { root } = reconcileGovernedRoot({ '<Classes>': [2024, true] }, world)
+-    expect(root['<Classes>']).toEqual(['2024', 'true'])
++    expect(root['<Classes>']).toEqual([2024, true])
+   })
+```
+
+```Core/Trash/restoreScrub.test.ts diff
+@@ "a value an outside write left as a number still names its Space" @@
+
+-    expect((await fm('Notes/Alpha.md'))['<Projects>']).toEqual(['2024'])
++    expect((await fm('Notes/Alpha.md'))['<Projects>']).toEqual([2024])
+```
+
+**VERIFY**
+
+- [ ] With the tests alone, `npx vitest run Core/Files/pageFile.test.ts Core/Properties/propertyValue.test.ts Core/Contexts/contextResolve.test.ts Core/Trash/restoreScrub.test.ts` fails on the quote and flow cases, the rename's quotes, the two members, and the two scalar-member flips; green after.
+- [ ] `grep -n "doc.createNode\|doc.set(" Core/Files/pageFile.ts` → only `nodeSpelledAs`'s `createNode` and the two writes through it.
+- [ ] Run the gates.
+
+#### Review Checkpoint
+
+- [ ] Phase 2 reviewed (simplification and correctness, Opus at high effort) against *§Constraints*, its Reuse bullet first: every frontmatter writer reaches `nodeSpelledAs`; the display surfaces read parsed values, so no quote mark reaches a cell, chip, picker, option, panel, card, Matrix label, filter, or link title; every finding closed.
+
+---
+
+### Phase 3 — Number Reading And Spelling
+
+**GOAL:** A Number reads a quoted or formatted number held in a file or typed in a field, and a write keeps the spelling the file uses. Decode and spelling are one commit (*§Constraints › Shape*); the popover's consolidation is its own task because it touches a component, not the codec.
+
+#### Task 3-1
+
+**TASK:** Add `readNumber`, `spelledNumber`, and the shared `currencySymbol` to `formatValue.ts`, and hoist `webGuests.ts`'s regex escape into UIX `escapeRegExp`; `decodeValue`, `writtenSpelling`, `parseEditorValue`, and the Number filter read the reader.
+
+**NOW:** `decodeValue` reads `typeof raw === 'number'` alone (`propertyValue.ts:67-68`); `writtenSpelling` returns a number `next` as is; `parseEditorValue` (`:36-39`) and `evaluateNumber` (`filter.ts:169`) read typed text through UIX `numberFrom`, which takes `Number(text)` when finite. `formatValue.ts` holds `readDate` (`:88-97`, "the one reading of a stored date"), the memoized en-US `numFmt` (`:21`), and `numberFormatGlyph` (`:233-243`), which extracts a currency's narrow symbol through `formatToParts`. A cell shows a currency with the default `'symbol'` display (`formatScalar`, `:197`): `$ € £ A$ CA$ ¥` for `CURRENCY_CODES`, where narrow collapses AUD and CAD to `$`. `formatValue.ts` joining the host graph adds no external; its UIX imports `numberUnit` and `pad` are already on `engineGraph.test.ts`'s exact leaf list, and the new `escapeRegExp` joins it. Core and UIX hold no regex escape; `Desktop/Web/webGuests.ts:22` hand-writes one for the app-name match, and already imports `@pommora/uix`.
 
 **CHANGE**
 
 - [ ] Write the tests below; watch them fail.
 - [ ] The source changes.
-- [ ] Commit with Task 2-2.
+- [ ] Commit with Task 3-2.
 
 **AFTER**
 
@@ -379,6 +540,7 @@ The doc comment's `…` stands for its unchanged remainder.
 +import { CURRENCY_CODES, DEFAULT_CURRENCY, type NumberConfig } from './properties'
  import { pad } from '@pommora/uix/Utilities/pad'
 +import { numberFrom } from '@pommora/uix/Utilities/numberUnit'
++import { escapeRegExp } from '@pommora/uix/Utilities/escapeRegExp'
 
 @@ numberFormatGlyph @@
 
@@ -401,7 +563,7 @@ The doc comment's `…` stands for its unchanged remainder.
 +  return currencySymbol(cfg.number_currency ?? DEFAULT_CURRENCY, 'narrowSymbol')
  }
 +
-+const SYMBOL = CURRENCY_CODES.map((c) => currencySymbol(c).replace(/[\\^$.*+?()[\]{}|]/g, '\\$&')).join('|')
++const SYMBOL = CURRENCY_CODES.map((c) => escapeRegExp(currencySymbol(c))).join('|')
 +const NUMBER_SHAPE = new RegExp(`^(-?)((?:${SYMBOL})\\s*)?(.*?)(\\s*(?:%|${SYMBOL}))?$`)
 +const GROUPED = /^[+-]?\d{1,3}(?:,\d{3})+(?:\.\d+)?$/
 +
@@ -431,14 +593,38 @@ The doc comment's `…` stands for its unchanged remainder.
 +  const shape = typeof raw === 'string' ? numberShape(raw) : null
 +  if (!shape) return next
 +  if (shape.value === next) return raw
-+  // A changed value keeps the file's quoting, currency symbol, percent sign, and grouping; its digits are the typed value's.
++  // A changed value keeps the file's currency symbol, percent sign, and grouping; its digits are the typed value's.
 +  const digits = numFmt({ maximumFractionDigits: 20, useGrouping: shape.grouped }).format(Math.abs(next))
 +  const spelled = `${next < 0 ? '-' : ''}${shape.lead}${digits}${shape.tail}`
 +  return readNumber(spelled) === next ? spelled : next
 +}
 ```
 
-`SYMBOL` is built after `currencySymbol` and `numFmt` in file order. A plain numeral string such as `"31"` is quoted by yaml's `createNode` on write, which is how quoted stays quoted (yaml 2.9.0 through `mergeFrontmatter`: `"31"` emits `"31"`; `$1,300`, `45%`, `31 €`, `-$40`, and `1,234,567` emit plain). The closing read-back lands bare a value the spelling can't carry — `1e-25` formats to `0` at twenty fraction digits.
+`SYMBOL` is built after `currencySymbol` and `numFmt` in file order. A held quoted number keeps its quotes through Phase 2's `nodeSpelledAs`; over a plain held value, a numeral string such as `31` is still quoted by yaml, since unquoted it would read as a number, while `$1,300`, `45%`, `31 €`, `-$40`, and `1,234,567` emit plain. Grouping follows what the held text shows, so `$999` → 1500 lands `$1500`. The closing read-back lands bare a value the spelling can't carry — `1e-25` formats to `0` at twenty fraction digits.
+
+```UIX/Utilities/escapeRegExp.ts diff
++/** `text` with every RegExp syntax character escaped, so a pattern built from it matches only itself. */
++export const escapeRegExp = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+```
+
+```Desktop/Web/webGuests.ts diff
+@@ imports @@
+
++import { escapeRegExp } from '@pommora/uix/Utilities/escapeRegExp'
+
+@@ cleanedUA @@
+
+-  const name = app.getName().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
++  const name = escapeRegExp(app.getName())
+```
+
+```Core/Contract/engineGraph.test.ts diff
+@@ reaches exactly the pure UIX leaves @@
+
+       'UIX/Utilities/clamp.ts',
++      'UIX/Utilities/escapeRegExp.ts',
+       'UIX/Utilities/moveItem.ts',
+```
 
 ```Core/Properties/propertyValue.ts diff
 @@ imports @@
@@ -531,7 +717,7 @@ The doc comment's `…` stands for its unchanged remainder.
 +    expect(spelledNumber(1200, '$1,200.00')).toBe('$1,200.00')
 +  })
 +
-+  it('a changed value keeps the quoting, symbol, percent sign, spacing, and grouping, its digits typed', () => {
++  it('a changed value keeps the string shape, symbol, percent sign, spacing, and grouping, its digits typed', () => {
 +    expect(spelledNumber(31, '30')).toBe('31')
 +    expect(spelledNumber(1300, '$1,200.00')).toBe('$1,300')
 +    expect(spelledNumber(1234567, '1,200')).toBe('1,234,567')
@@ -550,21 +736,7 @@ The doc comment's `…` stands for its unchanged remainder.
 +})
 ```
 
-The grammar is pinned here alone; each consumer test below pins only that it reads through `readNumber` or `spelledNumber`.
-
-```Core/Properties/propertyValue.test.ts diff
-@@ decodeValue, after "a value whose shape contradicts its type reads as null…" @@
-
-+  it('a Number reads a formatted number as the number it spells', () => {
-+    expect(decodeValue(def({ type: 'number' }), '$1,200')).toEqual({ kind: 'number', value: 1200 })
-+  })
-
-@@ writtenSpelling, after the checkbox tests @@
-
-+  it('a number keeps the spelling of the number the file holds', () => {
-+    expect(writtenSpelling(1300, '$1,200')).toBe('$1,300')
-+  })
-```
+The grammar is pinned here alone; the consumers below pin only their wiring — decode and the unchanged spelling through the crossing test, a changed spelling through the governed write, the field, and a filter operand.
 
 ```Core/Properties/governedWrite.test.ts diff
 @@ setGovernedRootKey — spellings: fixtures @@
@@ -578,9 +750,9 @@ The grammar is pinned here alone; each consumer test below pins only that it rea
 @@ setGovernedRootKey — spellings, after the checked-box test @@
 
 +  it('a number lands in the spelling the file holds: quoted stays quoted, formatted stays formatted', async () => {
-+    await seeded('Price: "30"')
++    await seeded(`Price: '30'`)
 +    await setGovernedRootKey(page, 'Price', 31, world)
-+    expect(await lines()).toContain('Price: "31"')
++    expect(await lines()).toContain(`Price: '31'`)
 +    await seeded('Price: $1,200')
 +    await setGovernedRootKey(page, 'Price', 1300, world)
 +    expect(await lines()).toContain('Price: $1,300')
@@ -606,10 +778,7 @@ The grammar is pinned here alone; each consumer test below pins only that it rea
      expect(decodeValue(doneDef, root.Done)).toEqual({ kind: 'checkbox', value: true })
 +    expect(decodeValue(priceDef, root.Price)).toEqual({ kind: 'number', value: 1200 })
    })
-+
-+  it('a restore keeps a formatted number as written', () => {
-+    expect(reconcileGovernedRoot(input, casing, {}).root.Price).toBe('$1,200.00')
-+  })
+
 ```
 
 ```Core/Views/Cards/cardValueInput.test.ts diff
@@ -620,26 +789,24 @@ The grammar is pinned here alone; each consumer test below pins only that it rea
 ```
 
 ```Core/Views/Pipeline/filter.test.ts diff
-@@ applyFilter — per type, after the number test @@
+@@ applyFilter — per type: the number test, extended @@
 
-+  it('number: a formatted value and operand read as the numbers they spell', () => {
-+    const rows = [row('a', { props: { prop_num: '$1,200' } }), row('b', { props: { prop_num: 30 } })]
+     expect(
+       ids(rows, { match: 'all', rules: [{ property_id: 'prop_num', op: 'is_empty' }] }),
+     ).toEqual(['c'])
++    const formatted = [row('d', { props: { prop_num: '$1,200' } })]
 +    expect(
-+      ids(rows, {
-+        match: 'all',
-+        rules: [{ property_id: 'prop_num', op: 'greater_than', value: '$1,000' }],
-+      }),
-+    ).toEqual(['a'])
-+  })
++      ids(formatted, { match: 'all', rules: [{ property_id: 'prop_num', op: 'greater_than', value: '$1,000' }] }),
++    ).toEqual(['d'])
 ```
 
 **VERIFY**
 
-- [ ] With the tests alone, `npx vitest run Core/Properties Core/Contexts/contextResolve.test.ts Core/Views` fails on the new number cases: the reader tests on their missing exports, each consumer's wiring case, and the restore case (today a restore drops a number it can't read).
-- [ ] Green after; `formatValue.test.ts`'s existing `numberFormatGlyph` test (`['$','€','£','$','$','¥']`) still passes through `currencySymbol`.
-- [ ] `grep -rn "numberFrom" Core --include='*.ts' --include='*.tsx' | grep -v test` → `formatValue.ts` and `Schema/NumberEditor.tsx` only.
+- [ ] With the tests alone, `npx vitest run Core/Properties Core/Contexts/contextResolve.test.ts Core/Views` fails on the new number cases: each `readNumber` and `spelledNumber` test with `readNumber is not a function`, and each consumer's wiring case.
+- [ ] Green after, `formatValue.test.ts`'s existing `numberFormatGlyph` test (`['$','€','£','$','$','¥']`) still passes through `currencySymbol`.
+- [ ] `grep -rn "numberFrom" Core --include='*.ts' --include='*.tsx' | grep -v test` → `formatValue.ts` and `Schema/NumberEditor.tsx` only; `grep -rnF '$&' Core Desktop UIX --include='*.ts' --include='*.tsx' | grep -v test` → `escapeRegExp.ts` and `Core/Connections/links.ts` (a link label's own `\` and `]` escape, not RegExp text).
 
-#### Task 2-2
+#### Task 3-2
 
 **TASK:** Delete `NumberValuePicker`; the Number popover becomes `PropertyValueInput`'s shared `TextPicker`, carrying the format glyph and the fraction suffix.
 
@@ -649,7 +816,7 @@ The grammar is pinned here alone; each consumer test below pins only that it rea
 
 - [ ] Write the test and watch it fail.
 - [ ] `git rm Core/Properties/Pickers/NumberValuePicker.tsx`; the `PropertyValueInput` changes.
-- [ ] Commit Phase 2: `git commit --only -m "…" -- Core/Properties/formatValue.ts Core/Properties/formatValue.test.ts Core/Properties/propertyValue.ts Core/Properties/propertyValue.test.ts Core/Properties/parseEditorValue.ts Core/Properties/governedWrite.test.ts Core/Contexts/contextResolve.test.ts Core/Views/Cards/cardValueInput.test.ts Core/Views/Pipeline/filter.ts Core/Views/Pipeline/filter.test.ts Core/Properties/Pickers/NumberValuePicker.tsx Core/Properties/Pickers/PropertyValueInput.tsx Core/Properties/Pickers/PropertyValueInput.test.tsx`.
+- [ ] Commit Phase 3: `git add UIX/Utilities/escapeRegExp.ts && git commit --only -m "…" -- UIX/Utilities/escapeRegExp.ts Desktop/Web/webGuests.ts Core/Contract/engineGraph.test.ts Core/Properties/formatValue.ts Core/Properties/formatValue.test.ts Core/Properties/propertyValue.ts Core/Properties/parseEditorValue.ts Core/Properties/governedWrite.test.ts Core/Contexts/contextResolve.test.ts Core/Views/Cards/cardValueInput.test.ts Core/Views/Pipeline/filter.ts Core/Views/Pipeline/filter.test.ts Core/Properties/Pickers/NumberValuePicker.tsx Core/Properties/Pickers/PropertyValueInput.tsx Core/Properties/Pickers/PropertyValueInput.test.tsx`.
 
 **AFTER**
 
@@ -677,44 +844,35 @@ The grammar is pinned here alone; each consumer test below pins only that it rea
    if (popover && def.type === 'text')
  …
    const accent = def.type === 'link' ? solidColorCss(def.link_color) : undefined
-+  const denominator = fractionDenominator(def)
-   if (popover)
+-  if (popover)
++  if (popover) {
++    const number = def.type === 'number'
++    const denominator = number ? fractionDenominator(def) : undefined
      return (
        <TextPicker
          {...popover}
          value={initial}
          accent={accent}
-+        leading={def.type === 'number' ? numberFormatGlyph(def) : undefined}
++        leading={number ? numberFormatGlyph(def) : undefined}
 +        trailing={denominator === undefined ? undefined : `/ ${denominator}`}
          invalid={invalid}
          onCommit={commit}
          onDismiss={onClose}
        />
      )
++  }
 ```
-
-`fractionDenominator` answers `undefined` for any definition without a fraction configured, so only a Number with one shows a suffix.
 
 ```Core/Properties/Pickers/PropertyValueInput.test.tsx diff
 @@ the popover routes, after "opens TextPane for a Text value…" @@
 
-+  it('a Number popover commits nothing when its text is unchanged, and changed text as the number it spells', () => {
-+    const field = (): HTMLInputElement => popoverFor('number').querySelector('input')!
-+    const blank = field()
++  it('a Number popover commits nothing when its text is unchanged', () => {
++    const blank = popoverFor('number').querySelector('input')!
 +    act(() => {
 +      blank.focus()
 +      blank.blur()
 +    })
 +    expect(onCommit).not.toHaveBeenCalled()
-+    act(() => root.render(null))
-+    const typed = field()
-+    act(() => {
-+      typed.focus()
-+      typed.value = '$1,300'
-+      typed.dispatchEvent(new Event('input', { bubbles: true }))
-+    })
-+    act(() => typed.blur())
-+    expect(onCommit).toHaveBeenCalledWith({ kind: 'number', value: 1300 })
 +  })
 ```
 
@@ -726,59 +884,74 @@ The grammar is pinned here alone; each consumer test below pins only that it rea
 
 #### Review Checkpoint
 
-- [ ] Phases 1 and 2 reviewed (simplification and correctness, Opus at high effort) against *§Constraints*, its Reuse bullet first, and the settled decisions; every finding closed.
+- [ ] Phase 3 reviewed (simplification and correctness, Opus at high effort) against *§Constraints*, its Reuse bullet first, and the settled decisions; every finding closed.
 - [ ] No live path rewrites an unchanged quoted or formatted number: the crossing test passes, and `runRepairSweep` reaches values only through `reconcileGovernedRoot`.
 
 ---
 
-### Phase 3 — Documentation
+### Phase 4 — Documentation
 
-**GOAL:** PropertiesPM states the reading rule once, naming Multi-Select, Text, Number, and Checkbox together, and drops the checkbox claims the change makes false.
+**GOAL:** PropertiesPM states the reading rule once, naming Multi-Select, Text, Number, and Checkbox together, makes the write rule one of its primary rules, and drops the claims the change makes false.
 
-#### Task 3-1
+#### Task 4-1
 
-**TASK:** Three surgical edits to PropertiesPM: the Checkbox table row, the decode paragraph, and the Checkbox paragraph's toggle clause.
+**TASK:** Surgical edits to PropertiesPM: the catalog's opening sentence, the Text and Checkbox table rows, the decode paragraph, the Checkbox paragraph's toggle clause, and the Text paragraph's on-disk sentence, which the decode paragraph's reading rule and the write rule now state once.
 
-**NOW:** Line 14 reads "`true`, or the key absent; `true` and `yes` in any casing read as checked"; line 29's checkbox clause "while a checkbox is written as `true` or left absent — `true` and `yes` in any casing read as checked, and any other value, a `false` written by another application included, reads as no value"; line 59 "toggling on writes `true` and toggling off strips the key". The Number row ("Bare number") and the Number paragraph still read true and stay.
+**NOW:** Line 8 reads "the on-disk value is bare and natively typed"; line 12 "A free-typed string, plain and unquoted wherever YAML allows"; line 14 reads "`true`, or the key absent; `true` and `yes` in any casing read as checked"; line 29's checkbox clause "while a checkbox is written as `true` or left absent — `true` and `yes` in any casing read as checked, and any other value, a `false` written by another application included, reads as no value"; line 29 also reads "A key matches a name without regard to case. A write lands on the spelling a file already holds and keeps how each value it holds is spelled, and a file without the key takes the registered spelling."; line 59 "toggling on writes `true` and toggling off strips the key"; line 63 "On disk the value is plain and unquoted wherever YAML allows". The Number row ("Bare number") and the Number paragraph still read true and stay.
 
 **CHANGE**
 
-- [ ] The three edits, as below.
+- [ ] The edits, as below.
 - [ ] Commit: `git commit --only -m "…" -- .claude/Features/PropertiesPM.md`.
 
 **AFTER**
 
 ```.claude/Features/PropertiesPM.md diff
+@@ The Type Catalog @@
+
+-… the on-disk value is bare and natively typed, legible to any YAML tool. …
++… a value Pommora writes fresh is bare and natively typed, legible to any YAML tool. …
+
 @@ type table @@
 
+-| **Text**          | `Notes: opus`, or `Notes: \|-` over indented lines | A free-typed string, plain and unquoted wherever YAML allows |
++| **Text**          | `Notes: opus`, or `Notes: \|-` over indented lines | A free-typed string |
 -| **Checkbox**      | `Done: true` | `true`, or the key absent; `true` and `yes` in any casing read as checked |
 +| **Checkbox**      | `Done: true` | `true`, or the key absent |
 
 @@ decode paragraph @@
 
 -… and nothing is inferred from a value's shape. Two rules follow. **No value, no key** — … number `0` is a real value and stays, while a checkbox is written as `true` or left absent — `true` and `yes` in any casing read as checked, and any other value, a `false` written by another application included, reads as no value. **A key …
-+… and nothing is inferred from a value's shape. Each type reads what other applications write: a Multi-Select keeps members it doesn't register, a Text reads any value as text, a Number reads a quoted or formatted number, and a Checkbox reads `true`/`false`, `yes`/`no`, `on`/`off`, and `y`/`n` in any casing. Two rules follow. **No value, no key** — … number `0` is a real value and stays, and unchecking a checkbox removes its key. **A key …
++… and a type is never inferred from a value's shape. Each type reads what other applications write: a Multi-Select reads members its definition doesn't list, a Text reads any value as text, a Number reads a quoted or formatted number, and a Checkbox reads `true`/`false`, `yes`/`no`, `on`/`off`, and `y`/`n` in any casing. Three rules follow. **No value, no key** — … number `0` is a real value and stays, and unchecking a checkbox removes its key. **A key …
+
+-… A key matches a name without regard to case. A write lands on the spelling a file already holds and keeps how each value it holds is spelled, and a file without the key takes the registered spelling. …
++… Keys and scalar values match without regard to case or quoting. **A write keeps the file's spelling** — it lands on the key spelling the file holds, leaves each unchanged value as written, and gives a changed string the file's quotes; a file without the key takes the registered spelling. …
 
 @@ Checkbox paragraph @@
 
 -… toggling on writes `true` and toggling off strips the key. …
 +… toggling on writes `true`, or the checked word of the pair the file holds, and toggling off strips the key. …
+
+@@ Text paragraph @@
+
+-… On disk the value is plain and unquoted wherever YAML allows, and a number, list, or map another application wrote under its key reads as its text and stays as written until it is edited. …
++… …
 ```
 
-The row keeps the file's column padding; `…` stands for unchanged text. The paragraph's existing "keeps how each value it holds is spelled" already covers a number's and a checkbox word's spelling.
+The rows keep the file's column padding; `…` stands for unchanged text.
 
 **VERIFY**
 
-- [ ] `grep -n "\`true\` and \`yes\` in any casing" .claude/Features/PropertiesPM.md` → none.
+- [ ] `grep -n "\`true\` and \`yes\` in any casing\|plain and unquoted" .claude/Features/PropertiesPM.md` → none.
 - [ ] Each edited paragraph reads without contradiction.
 
 ---
 
-### Phase 4 — Live Drive
+### Phase 5 — Live Drive
 
 **GOAL:** The built app, on a throwaway copy of `~/Test`, leaves exactly the bytes the plan claims after registering, ticking, unticking, and editing over held values.
 
-#### Task 4-1
+#### Task 5-1
 
 **TASK:** A scratchpad script on `.claude/scripts/drive-harness.mjs`'s `launch` and `restore` seeds one page, registers the properties over it, drives each gesture through `mutate`, and reads the page file after each.
 
@@ -786,9 +959,9 @@ The row keeps the file's column padding; `…` stands for unchanged text. The pa
 
 **CHANGE**
 
-- [ ] Seed `Collection A/Set Alpha/Drive Adopt.md` with a minted page ID (`mintPageId`) and frontmatter `done: No`, `Price: $1,200.00`, `Count: "30"`, `Pinned: OFF`.
-- [ ] `schema:add` into `Collection A`: Done (checkbox), Price (number), Count (number), Pinned (checkbox). Read the file: byte-identical to the seed.
-- [ ] `mutate setProperty` Done → `{ kind: 'checkbox', value: true }`: the file holds `done: Yes`. Pinned → checked: `Pinned: ON`. Price → 1300: `Price: $1,300`. Count → 31: `Count: "31"`.
+- [ ] Seed `Collection A/Set Alpha/Drive Adopt.md` with a minted page ID (`mintPageId`) and frontmatter `done: No`, `Price: $1,200.00`, `Count: "30"`, `Pinned: 'OFF'`, `Brand: ["Acme", 2024]`.
+- [ ] `schema:add` into `Collection A`: Done (checkbox), Price (number), Count (number), Pinned (checkbox), Brand (multiSelect). Read the file: byte-identical to the seed.
+- [ ] `mutate setProperty` Done → `{ kind: 'checkbox', value: true }`: the file holds `done: Yes`. Pinned → checked: `Pinned: 'ON'`. Price → 1300: `Price: $1,300`. Count → 31: `Count: "31"`. Brand → `['Acme', '2024', 'Drive']`: `Brand:` over `- "Acme"`, `- 2024`, `- "Drive"`.
 - [ ] Done → `null`: the `done` line is gone, every other line unchanged.
 - [ ] `restore()`; delete the script.
 
@@ -803,17 +976,18 @@ The row keeps the file's column padding; `…` stands for unchanged text. The pa
 
 **Conformance**
 
-- [ ] Nothing changed outside the files the tasks name, `Dashboard/Ledger/loc-history.json`, and this plan.
-- [ ] One reader of number text in Core (`formatValue.ts`, beside `readDate`), one currency-symbol lookup, one checkbox vocabulary (`propertyValue.ts`), and one value popover (`PropertyValueInput`); no second list of words or symbols and no helper the codebase already had.
+- [ ] This plan's commits change nothing outside the files the tasks name, `Dashboard/Ledger/loc-history.json`, and this plan; other sessions' commits to `active` inside `<BASELINE>..HEAD` are left out of every check and review.
+- [ ] One reader of number text in Core (`formatValue.ts`, beside `readDate`), one currency-symbol lookup, one checkbox vocabulary (`propertyValue.ts`), one value popover (`PropertyValueInput`), and one quote rule both frontmatter writers share (`nodeSpelledAs`); no second list of words or symbols and no helper the codebase already had.
 
 **Correctness**
 
 - [ ] A quoted, comma-grouped, percent, or currency number under a Number key reads as its number on every surface; a held unchecked word reads unchecked and a tick writes its partner; an untick removes the key.
-- [ ] The live drive's bytes match Task 4-1.
+- [ ] A changed string of every type keeps the file's quotes, scalar or list member; an unchanged member keeps its spelling; no quote mark shows in any displayed value.
+- [ ] The live drive's bytes match Task 5-1.
 
 **Completeness**
 
-- [ ] Every task ticked; no scaffolding, debug output, or TODO in `0d0b7f3f4..HEAD`.
+- [ ] Every task ticked; no scaffolding, debug output, or TODO in `<BASELINE>..HEAD`.
 
 **Confirmation**
 
@@ -825,18 +999,19 @@ The row keeps the file's column padding; `…` stands for unchanged text. The pa
 
 **Confidence**
 
-- [ ] Gates green from clean across `0d0b7f3f4..HEAD`; the production diff is roughly +55/−50 lines, comments, tests, and docs excluded — growth past it reported.
+- [ ] Gates green from clean across `<BASELINE>..HEAD`; the production diff is roughly +140/−95 lines, comments, tests, and docs excluded — growth past it reported.
 
 #### Final Verification
 
 **THE STANDARD:** The work is finished when a later review of it finds nothing to correct. Not just doing the chores — doing the laundry, folding it, picking up what fell out of the hamper, emptying the lint trap, leaving no trace that anything went wrong. Nothing is carried as a concern, nothing is deferred where the fix is known, and nothing is declared that wasn't watched happen. Where something genuinely couldn't get there, the report names which and why, and everything else is still finished. Ambiguity met during execution took the simplest reading and was recorded; it didn't stop the run.
 
-- [ ] Phase review (Opus, high effort): Phase 1 · Phase 2 · Phase 3
-- [ ] Simplification lens → adversarial lens (Opus, high effort) over `0d0b7f3f4..HEAD`
-- [ ] Neutral verification (Opus, high effort) over `0d0b7f3f4..HEAD`
+- [ ] Phase review (Opus, high effort): Phase 1 · Phase 2 · Phase 3 · Phase 4
+- [ ] Simplification lens → adversarial lens (Opus, high effort) over `<BASELINE>..HEAD`
+- [ ] Neutral verification (Opus, high effort) over `<BASELINE>..HEAD`
 - [ ] Own pass: gates · diff · deviations · criteria · the drive's reads
 - [ ] Reconciliation walked
-- [ ] Report delivered
+- [ ] Execution comparison measured and recorded; the comparison worktree removed
+- [ ] Report delivered, with the comparison as its own section
 
 #### Reconciliation
 
@@ -844,11 +1019,22 @@ The row keeps the file's column padding; `…` stands for unchanged text. The pa
 - `Core/Properties/Pickers/valueClick.ts:1` — "a checkbox is true-or-absent on disk, never a stored false" — Task 1-2
 - `Core/Properties/propertyValue.test.ts` — "a checkbox is true or absent — false written from outside reads as no value"; "a checkbox reads true, or the word true or yes in any casing, as checked"; the two checked-value `writtenSpelling` tests — Task 1-1
 - `Core/Properties/governedWrite.test.ts:196` — "a checked box the file spells otherwise lands as true" — Task 1-1
-- `.claude/Features/PropertiesPM.md:14, 29, 59` — the Checkbox row, the decode paragraph's checkbox clause, the toggle clause — Task 3-1
+- `Core/Files/pageFile.ts:124` — "A fresh node, so a changed value takes the spelling yaml gives it rather than the old node's quoting or block style" — Task 2-1
+- `Core/Files/pageFile.test.ts:88` — "a changed value takes a fresh spelling…"; `Core/Properties/propertyValue.test.ts` — "takes only string members"; `Core/Contexts/contextResolve.test.ts:120` — "repairs scalar-typed values to their canonical string titles"; `Core/Trash/restoreScrub.test.ts:216` — `['2024']` — Task 2-1
+- `.claude/Features/PropertiesPM.md:8, 12, 14, 29, 59, 63` — "bare and natively typed", the Text and Checkbox rows, the decode paragraph's checkbox clause and its matching and spelling sentences, the toggle clause, the Text paragraph's on-disk sentence — Task 4-1
+
+#### Execution Comparison
+
+The plan is executed twice from the same **BASELINE** head, so the difference between a strong and a light model applying code the plan already writes is measured rather than assumed.
+
+- **Primary:** Opus at low effort (`opus-low`), one agent per phase in the main tree, committing as each phase's CHANGE says, reviewed and verified as *§Final Verification* sets out. This is the run that ships.
+- **Comparison:** one Haiku agent at extra-high effort (`model: haiku`, `effort: xhigh`), dispatched with Phase 1 in an isolated worktree (`isolation: worktree`), given this plan file and told to apply Phases 1–4 task by task as written: tests first, then source, then the gates. It never commits or pushes — the post-commit hook pushes `active` — so its work stays an uncommitted diff in the worktree. Its `node_modules` is a symlink to the main tree's. It gets no review, fix, or help from the orchestrator beyond its brief, so its result is its own; Phase 5's live drive is the primary run's alone.
+- **Measured for each:** wall-clock time and tokens from each agent's completion usage (`duration_ms`, `subagent_tokens`, `tool_uses`), summed across the primary run's phase agents and excluding the reviews both would need alike; the gates' results on its own tree (typecheck, lint, test count against **BASELINE**); the production line delta; tasks it left incomplete or applied differently from the AFTER blocks; and `git diff` between the two trees' production files, with each difference judged correct, equivalent, or wrong.
+- **Recorded:** in the report's *Execution Comparison* section — a table of time, tokens, gate results, and delta per run; the substantive differences; and a stance on whether Opus was worth its cost here and for which kinds of task. Cost is given in tokens per model, with a dollar estimate only where current pricing is known. The worktree is removed with `git worktree remove` once recorded.
 
 #### Open Items
 
-- None.
+- **Contexts and wikilinks (outside this plan):** under a Context key, an unquoted `- [[Personal]]` resolves to its Space through the text of the nested list, while a quoted `- "[[Personal]]"` doesn't, and the reconcile rewrites the unquoted one to `- Personal`. Contexts hold bare titles by design (ContextsPM); whether a wikilink-spelled member should resolve is a Contexts decision for Nathan.
 
 #### Deviations
 
