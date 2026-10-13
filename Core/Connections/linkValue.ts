@@ -8,6 +8,7 @@ import {
   unescapeLabel,
 } from './links'
 import { isHttpLink, isValidLink, linkDomain, normalizeLinkUrl } from '../Paths/urlPath'
+import { isScalar } from '../Contract/validators'
 import { normalizeTitle } from '../Paths/caseFold'
 import type { LinkDisplay } from '../Properties/properties'
 import type { PropertyValue } from '../Properties/propertyValue'
@@ -17,13 +18,13 @@ export type LinkTarget =
   | { kind: 'page'; syntax: 'wiki' | 'markdown'; title: string; heading?: string; alias?: string }
   | { kind: 'url'; syntax: 'markdown' | 'bare'; url: string; alias?: string }
 
-/** A `[[Page]]` or `[[Name.ext]]` written unquoted is a nested flow sequence to yaml, not a string; unwrapping single-element arrays reads the connection the author spelled, so a hand-edit never nulls the value. A reader blind to the key's type asks for `nesting` 2, yaml's least for `[[Page]]`, so a one-item list stays a list. */
+/** A `[[Page]]` or `[[Name.ext]]` written unquoted is a nested flow sequence to yaml, not a string; unwrapping single-element arrays reads the connection the author spelled, a title yaml reads as a number or boolean included, so a hand-edit never nulls the value. A reader blind to the key's type asks for `nesting` 2, yaml's least for `[[Page]]`, so a one-item list stays a list. */
 export function linkEntry(v: unknown, nesting = 1): string | null {
   if (typeof v === 'string') return v
   let inner: unknown = v
   let depth = 0
   for (; Array.isArray(inner) && inner.length === 1; depth++) inner = inner[0]
-  return typeof inner === 'string' && depth >= nesting ? `[[${inner}]]` : null
+  return isScalar(inner) && depth >= nesting ? `[[${inner}]]` : null
 }
 
 /** The link a whole key value spells — a string, or an unquoted `[[Page]]` — or `null` for any other shape. */
