@@ -2,13 +2,13 @@ import type { Lens } from '../Matrix/Engine/viewport'
 import {
   applyPatch,
   DEFAULT_MATRIX_CONFIG,
-  filtering,
   type MatrixConfig,
   type MatrixPatch,
 } from '../Matrix/matrixConfig'
 import type { MatrixGraphReply, MatrixLink } from '../Matrix/matrixGraph'
 import type { PositionRows, Positions } from '../Matrix/matrixLayout'
 import type { NexusTree } from '../Nexus/tree'
+import { filtering } from '../Views/filterRules'
 import { pagesByIdOf, pagesOf, recordsByIdOf } from '../Nexus/treeIndex'
 import { stabilize } from '../Nexus/treeStabilize'
 import { persist } from '../Interface/Notifications/notifications'

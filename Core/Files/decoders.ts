@@ -10,6 +10,8 @@ export const eachOf = <T extends z.ZodType>(item: T) =>
     }),
   )
 
+export const idArray = eachOf(z.string()).catch([])
+
 // Only a stored number takes the range; anything else fails the decode.
 export const numberCheck = ({ min, max }: NumberRange, round = false) =>
   z.number().transform((n) => clamp(round ? Math.round(n) : n, min, max))

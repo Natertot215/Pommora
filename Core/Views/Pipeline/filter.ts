@@ -7,7 +7,7 @@ import {
   answerable,
   isGroup,
   ruleOperands,
-} from '../views'
+} from '../filterRules'
 import type { ViewRow } from '../viewRow'
 import {
   PROPERTY_TYPES,

@@ -2,7 +2,13 @@
 
 import { type PropertyDefinition, RESERVED_PROPERTY_ID, specOf } from '../Properties/properties'
 import type { ValueKind } from '../Properties/propertyValue'
-import { FILTER_OPS, type FilterGroup, type FilterRule, isGroup, type MatchMode } from './views'
+import {
+  FILTER_OPS,
+  type FilterGroup,
+  type FilterRule,
+  isGroup,
+  type MatchMode,
+} from './filterRules'
 import type { NexusTree } from '../Nexus/tree'
 import { contextIdsOf } from '../Contexts/contextIdentity'
 import { declaredType } from '../Properties/value'

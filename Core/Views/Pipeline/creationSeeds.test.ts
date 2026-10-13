@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { PropertyDefinition } from '../../Properties/properties'
-import type { FilterGroup } from '../views'
+import type { FilterGroup } from '../filterRules'
 import { filterSeeds } from './creationSeeds'
 
 const schema: PropertyDefinition[] = [

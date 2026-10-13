@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { ID_KEY } from '../../Nexus/identityMark'
 import type { ViewRow } from '../viewRow'
-import { FILTER_OPS, type FilterGroup } from '../views'
+import { FILTER_OPS, type FilterGroup } from '../filterRules'
 import type { PropertyDefinition } from '../../Properties/properties'
 import { applyFilter } from './filter'
 import { propsAtRoot } from '../../Testing/pageValues'

@@ -9,9 +9,9 @@ import { declaredType } from '../Properties/value'
 import { applyFilter } from '../Views/Pipeline/filter'
 import { buildSetTree, toRow } from '../Views/Pipeline/group'
 import type { ViewRow } from '../Views/viewRow'
-import { type FilterRule, mapRules, OPERANDLESS_OPS } from '../Views/views'
+import { type FilterRule, filtering, mapRules, OPERANDLESS_OPS } from '../Views/filterRules'
 import type { GraphInput } from './Engine/graph'
-import { filtering, type MatrixConfig } from './matrixConfig'
+import type { MatrixConfig } from './matrixConfig'
 import type { MatrixGraphReply } from './matrixGraph'
 
 const spaceIdsOf = (values: Record<string, string[]> | undefined): string[] =>

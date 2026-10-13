@@ -1,5 +1,5 @@
 import { isPlainObject } from '../Contract/validators'
-import { type FilterGroup, filterGroup } from '../Views/views'
+import { NO_FILTER, type StandaloneFilter, standaloneFilter } from '../Views/filterRules'
 import { numberCheck } from '../Files/decoders'
 import { type SteppedRange, steppedRange } from '@pommora/uix/Utilities/clamp'
 import type { Forces } from './Engine/forces'
@@ -7,7 +7,7 @@ import type { GroupMode } from './Engine/graph'
 
 export type MatrixConfig = {
   group: { mode: GroupMode }
-  filter: { rules: FilterGroup | null; enabled: boolean }
+  filter: StandaloneFilter
   forces: Record<GroupMode, Forces>
   display: { unlinked: boolean; hideIcon: boolean; hidePath: boolean; locked: boolean }
 }
@@ -43,16 +43,12 @@ const DEFAULT_FORCES: Record<GroupMode, Forces> = {
 
 export const DEFAULT_MATRIX_CONFIG: MatrixConfig = {
   group: { mode: 'connection' },
-  filter: { rules: null, enabled: true },
+  filter: NO_FILTER,
   forces: DEFAULT_FORCES,
   display: { unlinked: true, hideIcon: false, hidePath: false, locked: false },
 }
 
 const GROUP_MODES = Object.keys(DEFAULT_FORCES) as GroupMode[]
-
-export const filtering = (
-  filter: MatrixConfig['filter'],
-): filter is { rules: FilterGroup; enabled: true } => filter.enabled && filter.rules !== null
 
 const section = (raw: unknown, key: string): Record<string, unknown> =>
   isPlainObject(raw) && isPlainObject(raw[key]) ? raw[key] : {}
@@ -63,7 +59,6 @@ const force = (v: unknown, key: keyof Forces, fallback: number): number =>
 export function parseMatrixConfig(raw: unknown): MatrixConfig {
   const d = DEFAULT_MATRIX_CONFIG
   const group = section(raw, 'group')
-  const filter = section(raw, 'filter')
   const forces = section(raw, 'forces')
   const display = section(raw, 'display')
   const mode = GROUP_MODES.find((m) => m === group.mode) ?? d.group.mode
@@ -79,10 +74,7 @@ export function parseMatrixConfig(raw: unknown): MatrixConfig {
   }
   return {
     group: { mode },
-    filter: {
-      rules: filterGroup.safeParse(filter.rules).data ?? null,
-      enabled: bool(filter.enabled, d.filter.enabled),
-    },
+    filter: standaloneFilter.parse(section(raw, 'filter')),
     forces: {
       connection: forcesFor('connection'),
       location: forcesFor('location'),

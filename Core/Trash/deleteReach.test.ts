@@ -17,7 +17,7 @@ import type { HeldKind } from '../Nexus/entities'
 import { contextsDir, contextsRegistryFile, nexusConfig, sidecarPath } from '../Paths/paths'
 import { NEXUS_CONFIG_FILES, SIDECAR_FILENAME } from '../Paths/nexusPaths'
 import { unsweptLine } from '../Properties/governedSweep'
-import type { FilterGroup } from '../Views/views'
+import type { FilterGroup } from '../Views/filterRules'
 import { filterSeeds } from '../Views/Pipeline/creationSeeds'
 import type { TrashDeps } from './bundle'
 

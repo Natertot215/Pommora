@@ -1,18 +1,20 @@
 import {
-  answerable,
   clearHiddenBuckets,
   editHiddenBucket,
-  type FilterGroup,
-  type FilterRule,
   groupsOn,
-  mapRules,
   mapTiles,
   mapViews,
-  OPERANDLESS_OPS,
   type SavedView,
-  SUBSTRING_OPS,
   savedView,
 } from '../Views/views'
+import {
+  answerable,
+  type FilterGroup,
+  type FilterRule,
+  mapRules,
+  OPERANDLESS_OPS,
+  SUBSTRING_OPS,
+} from '../Views/filterRules'
 import { editCacheBlocks } from '../Properties/propertyCache'
 import {
   PROPERTY_TYPES,

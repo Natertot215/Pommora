@@ -11,16 +11,14 @@ import {
   mintDefaultView,
   mintNewView,
   pickViewState,
-  mapRules,
   mapTiles,
   mapViews,
   editHiddenBucket,
   clearHiddenBuckets,
   type GroupedView,
-  type FilterGroup,
-  type FilterRule,
   type SavedView,
 } from './views'
+import { mapRules, type FilterGroup, type FilterRule } from './filterRules'
 import { RESERVED_PROPERTY_ID } from '../Properties/properties'
 
 describe('SavedView decode', () => {
