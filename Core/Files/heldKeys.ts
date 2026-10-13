@@ -3,7 +3,7 @@
 import { setOrDrop } from './atomicWrite'
 import type { Json } from './stableJson'
 import { foldKey, spellings, normalizeTitle } from '../Paths/caseFold'
-import { listOf } from '../Contract/validators'
+import { isScalar, listOf } from '../Contract/validators'
 
 export const heldKeys = (root: object, name: string): string[] => spellings(Object.keys(root), name)
 
@@ -47,11 +47,14 @@ export function landValue(root: Json, { key, govern }: WriteTarget, value: unkno
   return next
 }
 
-/** Two values as one list: `keep`'s members, then each of `from`'s whose title folds to none of them; a single value reads as a list of one. Every join of two spellings, and a `'merge'` rename, uses it. */
+/** What a member matches by: a scalar's folded title, or the member itself, so a member of any other shape matches only itself. */
+export const memberKey = (v: unknown): unknown => (isScalar(v) ? normalizeTitle(v) : v)
+
+/** Two values as one list: `keep`'s members, then each of `from`'s that matches none of them by `memberKey`; a single value reads as a list of one. Every join of two spellings, and a `'merge'` rename, uses it. */
 export function joinValues(keep: unknown, from: unknown): unknown[] {
   const kept = listOf(keep ?? [])
-  const seen = new Set(kept.map(normalizeTitle))
-  return [...kept, ...listOf(from ?? []).filter((v) => !seen.has(normalizeTitle(v)))]
+  const seen = new Set(kept.map(memberKey))
+  return [...kept, ...listOf(from ?? []).filter((v) => !seen.has(memberKey(v)))]
 }
 
 /** Edits what `name` holds as a list; null when nothing changed. With `join`, every spelling is edited as one list landing where `writeTarget` places it; otherwise each spelling is edited where it sits. A list the edit empties drops its key. */

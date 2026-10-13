@@ -238,7 +238,7 @@ const currencySymbol = (currency: string, currencyDisplay?: 'narrowSymbol'): str
     .formatToParts(0)
     .find((p) => p.type === 'currency')?.value ?? currency
 
-/** The number picker's leading glyph; a currency shows its narrow symbol, where a cell spells out the ambiguous ones (A$, CA$). */
+/** The number picker's leading glyph. */
 export function numberFormatGlyph(cfg: NumberConfig): string {
   if (cfg.number_family === 'percent') return '%'
   if (cfg.number_family !== 'currency') return '#'
@@ -246,7 +246,7 @@ export function numberFormatGlyph(cfg: NumberConfig): string {
 }
 
 const SYMBOL = CURRENCY_CODES.map((c) => escapeRegExp(currencySymbol(c))).join('|')
-const NUMBER_SHAPE = new RegExp(`^(-?)((?:${SYMBOL})\\s*)?(.*?)(\\s*(?:%|${SYMBOL}))?$`)
+const NUMBER_SHAPE = new RegExp(`^([+-]?)((?:${SYMBOL})\\s*)?(.*?)(\\s*(?:%|${SYMBOL}))?$`)
 const GROUPED = /^[+-]?\d{1,3}(?:,\d{3})+(?:\.\d+)?$/
 
 interface NumberShape {
