@@ -32,9 +32,11 @@ Every reader of a checkbox word — the filter, the creation seed, the filter pa
 | `spelledNumber` • Function | A number written in the spelling a held string uses; `writtenSpelling`'s number arm. | `Core/Properties/formatValue.ts` |
 | `currencySymbol` • Function | The symbol Intl gives a currency, by default as a cell shows it or narrow as the picker leads with it; `numberFormatGlyph` and the reader's symbol list both read it. | `Core/Properties/formatValue.ts` |
 | `escapeRegExp` • Function | Text with every RegExp syntax character escaped; the reader's symbol alternation and `webGuests.ts`'s app-name match both read it. | `UIX/Utilities/escapeRegExp.ts` |
-| `nodeSpelledAs` • Function | A changed value as a node spelled as the held one: each single-line string, scalar or list member, takes the held quotes, and a kept wikilink member keeps its flow spelling. `mergeInto` and `renameFrontmatterKey` write through it. | `Core/Files/pageFile.ts` |
+| `nodeSpelledAs` • Function | A changed value as a node spelled as the held one: each single-line string, scalar or list member, takes the held quotes, and a kept unquoted wikilink, whole or a member, keeps its flow spelling. `mergeInto` and `renameFrontmatterKey` write through it. | `Core/Files/pageFile.ts` |
 | `checkboxWord` • Function | What a checkbox value says in any casing: true, false, or null. Read by `decodeValue`, the filter, the group-key decode, and the filter pane. | `Core/Properties/propertyValue.ts` |
 | `checkedSpelling` • Function | A checked value as a held value spells one; `writtenSpelling`'s checkbox arm. | `Core/Properties/propertyValue.ts` |
+| `contextTitles` • Function | The folded titles a Context value names, its scalar members only; Context resolution, the live reconcile, and the index's Space relations read it. | `Core/Contexts/contexts.ts` |
+| `memberKey` • Function | What a held member matches by: a scalar's folded title, or the member itself; `joinValues` and the reconcile's no-shrink `memberCount` read it. | `Core/Files/heldKeys.ts` |
 
 **REMOVED**
 
@@ -51,7 +53,7 @@ Every reader of a checkbox word — the filter, the creation seed, the filter pa
 - **Frozen:** The value union (`checkbox: z.literal(true)`, `number: z.number()`); `encodeValue`; UIX `numberFrom` and its UIX callers; `applyValueAtRoot` (the renderer's optimistic copy lands the bare encoded value, and both copies decode alike); the watcher, settle, index, and `registerHeldOptions`; "No value, no key" — an untick and an emptied number remove the key.
 - **Reuse:** Nothing is built that the codebase already provides, and nothing diverges from how it already does a thing. Plan review found six places a first draft hand-rolled an existing mechanism, and the plan now reuses each: the number reader lives in `formatValue.ts` beside `readDate` (the one reading of a stored date) and formats digits through its memoized en-US `numFmt`; the currency symbol comes from one `currencySymbol` that `numberFormatGlyph` shares; the casing transfer uses UIX `capitalize`; the regex escape `Desktop/Web/webGuests.ts` hand-wrote becomes one UIX `escapeRegExp` both read; `writtenSpelling`'s member arm matches through `namesValue`, the folded member matcher every option sweep already uses; the two frontmatter writers share one `nodeSpelledAs`; and the Number popover is `PropertyValueInput`'s shared one, whose unchanged-text guard already exists, rather than a second guard in a second component. Execution keeps looking outward the same way: before writing any helper, search for the existing one, and record any new instance under *§Deviations*. A future audit finding a duplicate here is a defect of this plan.
 - **Conventions:** No comments beyond the doc comments the plan writes and the one decision comment in `spelledNumber`. No user-facing copy. No test churn: a behavior an existing test already exercises is pinned by extending that test, a new test exists only for behavior nothing pins, nothing repeats a sibling, and every added assertion fails without its change. A grammar case is pinned once, in the reader's tests; each consumer pins only its wiring.
-- **Shape (fix):** Every consumer of the old behavior is named in a task: `isCheckedRaw`'s two callers; `parseBool`'s one; the literal-`'true'` readers of a rule operand (`reassign.ts`, `FilterFrame.tsx`'s operator label); `numberFrom`'s two Core value callers (`parseEditorValue`, `filter.ts`); `NumberValuePicker`'s one caller; and both frontmatter writers (`mergeInto`, `renameFrontmatterKey`). Sync's arrival writes incoming bytes as they are and isn't a value writer. `NumberEditor.tsx`'s `numberFrom` calls read format configuration and stay; `filterModel.ts`'s `impliedValue` and `FilterFrame.tsx`'s `checkboxBox` reading it, `propertyMenuActions.ts`'s `CHECKBOX_OPTIONS`, and `group.ts`'s `'true'` key are the app's own canonical values and stay.
+- **Shape (fix):** Every consumer of the old behavior is named in a task: `isCheckedRaw`'s two callers; `parseBool`'s one; the literal-`'true'` readers of a rule operand (`reassign.ts`, `FilterFrame.tsx`'s operator label); `numberFrom`'s two Core value callers (`parseEditorValue`, `filter.ts`); `NumberValuePicker`'s one caller; both frontmatter writers (`mergeInto`, `renameFrontmatterKey`); the three readers of a Context value's members (`resolveContextKeys`, `reconcileGovernedRoot`, `indexSeed.ts`'s `spaceRelations`); and the two member folds that dedupe or count (`joinValues`, `memberCount`). Sync's arrival writes incoming bytes as they are and isn't a value writer. `NumberEditor.tsx`'s `numberFrom` calls read format configuration and stay; `filterModel.ts`'s `impliedValue` and `FilterFrame.tsx`'s `checkboxBox` reading it, `propertyMenuActions.ts`'s `CHECKBOX_OPTIONS`, and `group.ts`'s `'true'` key are the app's own canonical values and stay.
 - **Shape (one commit):** The Number decode and its spelling arm land in one commit. A decode alone would let the live reconcile (`reconcileGovernedRoot`, `runRepairSweep`) rewrite every quoted or formatted number in a Nexus to a bare one.
 
 **Settled Decisions** — Nathan, 10-12-2026:
@@ -63,27 +65,29 @@ Every reader of a checkbox word — the filter, the creation seed, the filter pa
 - The field and filter operands read typed text by the same grammar. `1`/`0` stop counting as checkbox operands.
 - The write-back decision is noted on its line as a one-line comment.
 - A changed value keeps the file's quote formatting, for every type and every list member, through one helper both frontmatter writers share (`nodeSpelledAs`), reversing the Text-era fresh-node write (`b80a7b12a`). Keys and values match without regard to case or quoting, and an unchanged member keeps its spelling (`2024`, `[[a.png]]`). A string YAML can only spell quoted — a changed `[[Page]]`, or `43` over a bare `42` — takes yaml's double quotes. PropertiesPM states the write rule as one of its primary rules. `ID` follows the same rule as every key.
+- A Context value names Spaces through its scalar members only, as every option list already reads; a wikilink member is an unknown value like any other.
 - Documentation stays overview-level: nothing the code shows plainly, no exhaustive detail.
 - Plan reviews before ratification run as Opus at extra-high effort; every code review during and after execution runs as Opus at high effort.
 - Execution is dispatched to Opus at low effort, phase by phase. Alongside it, one Haiku agent at extra-high effort applies the same plan in a parallel worktree, as a comparison of whether Opus earns its cost on code the plan already writes; *§Execution Comparison* records the outcome.
 
 #### Process Overview
 
-- [ ] **Phase 1** — Checkbox Word Pairs
-  - [ ] Task 1-1
-  - [ ] Task 1-2
-- [ ] **Phase 2** — Quote Formatting
-  - [ ] Task 2-1
-  - [ ] Review Checkpoint
-- [ ] **Phase 3** — Number Reading And Spelling
-  - [ ] Task 3-1
-  - [ ] Task 3-2
-  - [ ] Review Checkpoint
-- [ ] **Phase 4** — Documentation
-  - [ ] Task 4-1
-- [ ] **Phase 5** — Live Drive
-  - [ ] Task 5-1
-- [ ] `[Parallel: the Haiku comparison run, dispatched with Phase 1 — see §Execution Comparison]`
+- [x] **Phase 1** — Checkbox Word Pairs
+  - [x] Task 1-1
+  - [x] Task 1-2
+- [x] **Phase 2** — Quote Formatting
+  - [x] Task 2-1
+  - [x] Review Checkpoint
+- [x] **Phase 3** — Number Reading And Spelling
+  - [x] Task 3-1
+  - [x] Task 3-2
+  - [x] Task 3-3
+  - [x] Review Checkpoint
+- [x] **Phase 4** — Documentation
+  - [x] Task 4-1
+- [x] **Phase 5** — Live Drive
+  - [x] Task 5-1
+- [x] `[Parallel: the Haiku comparison run, dispatched with Phase 1 — see §Execution Comparison]`
 
 ---
 
@@ -99,9 +103,9 @@ Every reader of a checkbox word — the filter, the creation seed, the filter pa
 
 **CHANGE**
 
-- [ ] Write the tests below and watch the decode, partner, and governed-write cases fail.
-- [ ] Delete the test `a checkbox is true or absent — false written from outside reads as no value`; the rewritten casing test covers a YAML `false`.
-- [ ] The source changes.
+- [x] Write the tests below and watch the decode, partner, and governed-write cases fail.
+- [x] Delete the test `a checkbox is true or absent — false written from outside reads as no value`; the rewritten casing test covers a YAML `false`.
+- [x] The source changes.
 
 **AFTER**
 
@@ -210,8 +214,8 @@ The doc comment's `…` stands for its unchanged remainder.
 
 **VERIFY**
 
-- [ ] With the tests alone, `npx vitest run Core/Properties/propertyValue.test.ts Core/Properties/governedWrite.test.ts` fails on the `'on'` decode, the `'no'` partner, and `'Yes'`; green after the change.
-- [ ] `grep -rn "isCheckedRaw" Core` → none.
+- [x] With the tests alone, `npx vitest run Core/Properties/propertyValue.test.ts Core/Properties/governedWrite.test.ts` fails on the `'on'` decode, the `'no'` partner, and `'Yes'`; green after the change.
+- [x] `grep -rn "isCheckedRaw" Core` → none.
 
 #### Task 1-2
 
@@ -221,9 +225,9 @@ The doc comment's `…` stands for its unchanged remainder.
 
 **CHANGE**
 
-- [ ] Write the filter, seed, and pane tests and watch them fail.
-- [ ] The source changes.
-- [ ] Commit Phase 1: `git commit --only -m "…" -- Core/Properties/propertyValue.ts Core/Properties/propertyValue.test.ts Core/Properties/governedWrite.test.ts Core/Views/Pipeline/filter.ts Core/Views/Pipeline/filter.test.ts Core/Views/reassign.ts Core/Views/Pipeline/creationSeeds.test.ts Core/Views/Settings/FilterFrame.tsx Core/Views/Settings/FilterFrame.test.tsx Core/Properties/Pickers/valueClick.ts`.
+- [x] Write the filter, seed, and pane tests and watch them fail.
+- [x] The source changes.
+- [x] Commit Phase 1: `git commit --only -m "…" -- Core/Properties/propertyValue.ts Core/Properties/propertyValue.test.ts Core/Properties/governedWrite.test.ts Core/Views/Pipeline/filter.ts Core/Views/Pipeline/filter.test.ts Core/Views/reassign.ts Core/Views/Pipeline/creationSeeds.test.ts Core/Views/Settings/FilterFrame.tsx Core/Views/Settings/FilterFrame.test.tsx Core/Properties/Pickers/valueClick.ts`.
 
 **AFTER**
 
@@ -336,9 +340,9 @@ The edited fixture pins a hand-written word; `twoRules` still pins the pane's ow
 
 **VERIFY**
 
-- [ ] With the tests alone, the filter test fails on `'On'`, `'N'`, and `'1'`, the seed test on `{}`, and the pane test on its missing clause; green after.
-- [ ] `grep -rn "parseBool" Core` → none; `grep -rn "=== 'true'" Core --include='*.ts' --include='*.tsx' | grep -v test` → `propertyMenuActions.ts` (the menu's own `CHECKBOX_OPTIONS` values) and `FilterFrame.tsx`'s `checkboxBox` (an operator's own `impliedValue`).
-- [ ] Run the gates.
+- [x] With the tests alone, the filter test fails on `'On'`, `'N'`, and `'1'`, the seed test on `{}`, and the pane test on its missing clause; green after.
+- [x] `grep -rn "parseBool" Core` → none; `grep -rn "=== 'true'" Core --include='*.ts' --include='*.tsx' | grep -v test` → `propertyMenuActions.ts` (the menu's own `CHECKBOX_OPTIONS` values) and `FilterFrame.tsx`'s `checkboxBox` (an operator's own `impliedValue`).
+- [x] Run the gates.
 
 ---
 
@@ -348,15 +352,15 @@ The edited fixture pins a hand-written word; `twoRules` still pins the pane's ow
 
 #### Task 2-1
 
-**TASK:** `nodeSpelledAs` gives a changed value the held value's quotes, and `mergeInto` and `renameFrontmatterKey` both write through it; `writtenSpelling`'s member arm matches held members through the shared `namesValue`, and an unquoted wikilink through `linkEntry`.
+**TASK:** `nodeSpelledAs` gives a changed value the held value's quotes, and `mergeInto` and `renameFrontmatterKey` both write through it; `writtenSpelling`'s member arm matches held members through the shared `namesValue`, reading an unquoted wikilink member through `linkEntry`, and a whole unquoted wikilink stays whole.
 
 **NOW:** Reading ignores quote marks by construction: every reader works on parsed YAML, so `- "Ideas"` and `- Ideas` are the same string. Where quoting changes a scalar's YAML type (`2024` and `"2024"`, `true` and `"true"`), Select, Status, Multi-Select, Context, and Text fold it by its text — `normalizeTitle`, and `namesValue` (`Core/Properties/pageValue.ts:12-15`, the folded member matcher every option sweep uses) — and Phases 1 and 3 bring Checkbox and Number in; `linkEntry` reads `[[Page]]` and `"[[Page]]"` alike for Link and File. Writing doesn't: `mergeInto` (`Core/Files/pageFile.ts:122-125`) writes a changed value as a fresh node, so its quotes go — the Text-era choice in `b80a7b12a` — and `pageFile.test.ts:88` pins that. `renameFrontmatterKey` (`:176`) writes a joined list with `doc.set(String(pair.key), value)`, outside `mergeInto`. `writtenSpelling`'s member arm (`propertyValue.ts:150-155`) matches held members only when they're strings, so the live reconcile rewrites a held bare `- 2024` to `- "2024"` and an unquoted `- [[a.png]]` to `- "[[a.png]]"` on any sibling write; `propertyValue.test.ts` ("takes only string members"), `contextResolve.test.ts:120`, and `restoreScrub.test.ts:216` pin the string coercion, against ContextsPM's "a drifted-but-resolvable value … keeps its spelling". Sapphire double-quotes every string it writes, list members included, so today a Pommora write to a key Sapphire wrote strips its quotes and Sapphire's next write restores them.
 
 **CHANGE**
 
-- [ ] Write the tests below and watch them fail.
-- [ ] The source changes.
-- [ ] Commit Phase 2: `git commit --only -m "…" -- Core/Files/pageFile.ts Core/Files/pageFile.test.ts Core/Properties/propertyValue.ts Core/Properties/propertyValue.test.ts Core/Contexts/contextResolve.test.ts Core/Trash/restoreScrub.test.ts`.
+- [x] Write the tests below and watch them fail.
+- [x] The source changes.
+- [x] Commit Phase 2: `git commit --only -m "…" -- Core/Files/pageFile.ts Core/Files/pageFile.test.ts Core/Properties/propertyValue.ts Core/Properties/propertyValue.test.ts Core/Contexts/contextResolve.test.ts Core/Trash/restoreScrub.test.ts`.
 
 **AFTER**
 
@@ -378,9 +382,12 @@ The edited fixture pins a hand-written word; `twoRules` still pins the pane's ow
 
 @@ above mergeInto @@
 
-+/** `value` as a node spelled as `held` is: each single-line string — the value itself, or a list's member — takes the quotes of the held string or of the held list's first quoted member, and a member that is itself a list, a kept unquoted `[[x]]`, keeps its flow spelling; anything else is spelled as yaml spells it. */
++/** `value` as a node spelled as `held` is, the value itself and each member of a list alike: a single-line string takes the quotes of the held string or of the held list's first quoted member, a kept unquoted `[[x]]` keeps its flow spelling, and anything else is spelled as yaml spells it. */
 +function nodeSpelledAs(doc: Document, value: unknown, held: unknown): Node {
 +  const node = doc.createNode(value)
++  const only = isSeq(node) && node.items.length === 1 ? node.items[0] : null
++  if (isSeq(node) && isSeq(only) && only.items.length === 1 && isScalar(only.items[0]))
++    node.flow = true
 +  const model = (isSeq(held) ? held.items : [held]).find(
 +    (n) => isScalar(n) && (n.type === 'QUOTE_DOUBLE' || n.type === 'QUOTE_SINGLE'),
 +  )
@@ -406,7 +413,7 @@ The edited fixture pins a hand-written word; `twoRules` still pins the pane's ow
 +      doc.set(String(pair.key), nodeSpelledAs(doc, value, pair.value))
 ```
 
-yaml's own in-place replacement — `doc.set(key, rawValue)` over a scalar keeps that node's style — is what `b80a7b12a` bypassed, and it doesn't fit: it keeps a `|-` block on a one-line value, folds a multi-line value under a plain node into broken lines, and replaces lists wholesale. So the helper builds a fresh node and carries only the quotes. A multi-line string keeps yaml's `|-` block. A quoted value replaced by a number, boolean, or list of non-strings lands as yaml spells it. A string YAML can only spell quoted — a changed `[[Page]]`, or `43` over a bare `42` — takes yaml's double quotes. A join takes the quotes of the spelling it lands on. Escaping round-trips under both styles, and yaml falls back to double quotes where single can't hold the content (checked against yaml 2.9.0 across every writer: governed writes, the page and heading rename cascades, every sweep, undo, the Trash restore, asset migration, and ID stamping). An unquoted `[[a.png]]` member parses as a nested list, so without the flow spelling a changed list would write it `- - - a.png`.
+yaml's own in-place replacement — `doc.set(key, rawValue)` over a scalar keeps that node's style — is what `b80a7b12a` bypassed, and it doesn't fit: it keeps a `|-` block on a one-line value, folds a multi-line value under a plain node into broken lines, and replaces lists wholesale. So the helper builds a fresh node and carries only the quotes. A multi-line string keeps yaml's `|-` block. A quoted value replaced by a number, boolean, or list of non-strings lands as yaml spells it. A string YAML can only spell quoted — a changed `[[Page]]`, or `43` over a bare `42` — takes yaml's double quotes. A join takes the quotes of the spelling it lands on. Escaping round-trips under both styles, and yaml falls back to double quotes where single can't hold the content (checked against yaml 2.9.0 across every writer: governed writes, the page and heading rename cascades, every sweep, undo, the Trash restore, asset migration, and ID stamping). An unquoted `[[a.png]]` parses as a nested list, so without the flow spelling a changed list would write a kept member `- - - a.png`, and a whole value kept into a fresh key (a property refill) `- - a.png`.
 
 ```Core/Properties/propertyValue.ts diff
 @@ imports @@
@@ -416,20 +423,21 @@ yaml's own in-place replacement — `doc.set(key, rawValue)` over a scalar keeps
 @@ writtenSpelling @@
 
 -/** `next` spelled as `raw` already spells it: … and each member takes the one member of `raw` its title folds to. … */
-+/** `next` spelled as `raw` already spells it: … and each member takes the one member of `raw` that names it — of any scalar shape its title folds to, or the unquoted wikilink that spells it. … */
++/** `next` spelled as `raw` already spells it: …, a one-member list keeps a whole unquoted wikilink `raw` that spells its member, and each member takes the one member of `raw` whose title folds to its own — a scalar of any shape, or an unquoted wikilink. … */
  …
    if (!Array.isArray(next)) return next
 -  const written = listOf(raw).filter((w): w is string => typeof w === 'string')
++  if (next.length === 1 && Array.isArray(raw) && linkEntry(raw, 2) === next[0]) return raw
 +  const held = listOf(raw)
    return next.map((v) => {
 -    const named = written.filter((w) => normalizeTitle(w) === normalizeTitle(v))
 +    const names = namesValue(v)
-+    const named = held.filter((w) => names(w) || linkEntry(w) === v)
++    const named = held.filter((w) => names(linkEntry(w, 2) ?? w))
      return named.length === 1 ? named[0] : v
    })
 ```
 
-`…` stands for the doc comment's unchanged text. `linkEntry` is already imported and is the File decoder's own member reading. `pageValue.ts` imports `propertyValue.ts` nowhere, so the new edge makes no cycle.
+`…` stands for the doc comment's unchanged text. `linkEntry` is already imported; at nesting 2 it reads a member spelling a wikilink, so a whole-key `Cover: [[a.png]]`, whose one-deep inner list spells a link only as the whole value, isn't kept as a member (written `- [a.png]`, no wikilink to another reader), and the one-member keep returns that whole value as written, the list arm's twin of the string arm's. `pageValue.ts` imports `propertyValue.ts` nowhere, so the new edge makes no cycle.
 
 ```Core/Files/pageFile.test.ts diff
 @@ replaces "a changed value takes a fresh spelling…" @@
@@ -447,16 +455,16 @@ yaml's own in-place replacement — `doc.set(key, rawValue)` over a scalar keeps
 -      '---\nN: |-\n  a\n  b\n---\nBody',
 -    )
 -  })
-+  it('a changed value keeps the quotes the file held, on a scalar and on each list member, and a kept wikilink member its flow spelling; a block or multi-line value is spelled as yaml spells it', () => {
++  it('a changed value keeps the quotes the file held, on a scalar and on each list member, and a kept wikilink, whole or a member, its flow spelling; a block or multi-line value is spelled as yaml spells it', () => {
 +    expect(
 +      mergeFrontmatter(
 +        `---\nN: "42"\nS: 'x'\nL: ["a", b]\nF:\n  - [[a.png]]\nB: |-\n  old\n  l2\nM: "x"\n---\nBody`,
-+        { N: 'hello', S: 'y', L: ['a', 'b', 'c'], F: [[['a.png']], '[[b.png]]'], B: 'x', M: 'a\nb' },
-+        ['N', 'S', 'L', 'F', 'B', 'M'],
++        { N: 'hello', S: 'y', L: ['a', 'b', 'c'], F: [[['a.png']], '[[b.png]]'], B: 'x', M: 'a\nb', R: [['Page']] },
++        ['N', 'S', 'L', 'F', 'B', 'M', 'R'],
 +        'Body',
 +      ),
 +    ).toBe(
-+      `---\nN: "hello"\nS: 'y'\nL:\n  - "a"\n  - "b"\n  - "c"\nF:\n  - [[a.png]]\n  - "[[b.png]]"\nB: x\nM: |-\n  a\n  b\n---\nBody`,
++      `---\nN: "hello"\nS: 'y'\nL:\n  - "a"\n  - "b"\n  - "c"\nF:\n  - [[a.png]]\n  - "[[b.png]]"\nB: x\nM: |-\n  a\n  b\nR: [[Page]]\n---\nBody`,
 +    )
 +  })
 
@@ -479,9 +487,11 @@ yaml's own in-place replacement — `doc.set(key, rawValue)` over a scalar keeps
 
 -  it('takes only string members', () => {
 -    expect(writtenSpelling(['2024'], [2024])).toEqual(['2024'])
-+  it('a member keeps the held member that names it, of any scalar shape or as an unquoted wikilink', () => {
++  it('a member keeps the held member that names it, of any scalar shape or as an unquoted wikilink, and a whole unquoted wikilink stays whole', () => {
 +    expect(writtenSpelling(['2024'], [2024])).toEqual([2024])
-+    expect(writtenSpelling(['[[a.png]]'], [[['a.png']]])).toEqual([[['a.png']]])
++    expect(writtenSpelling(['[[A.png]]'], [[['a.png']]])).toEqual([[['a.png']]])
++    expect(writtenSpelling(['[[a.png]]'], [['a.png']])).toEqual([['a.png']])
++    expect(writtenSpelling(['[[a.png]]', '[[b.png]]'], [['a.png']])).toEqual(['[[a.png]]', '[[b.png]]'])
    })
 ```
 
@@ -505,13 +515,13 @@ yaml's own in-place replacement — `doc.set(key, rawValue)` over a scalar keeps
 
 **VERIFY**
 
-- [ ] With the tests alone, `npx vitest run Core/Files/pageFile.test.ts Core/Properties/propertyValue.test.ts Core/Contexts/contextResolve.test.ts Core/Trash/restoreScrub.test.ts` fails on the quote and flow cases, the rename's quotes, the two members, and the two scalar-member flips; green after.
-- [ ] `grep -n "doc.createNode\|doc.set(" Core/Files/pageFile.ts` → only `nodeSpelledAs`'s `createNode` and the two writes through it.
-- [ ] Run the gates.
+- [x] With the tests alone, `npx vitest run Core/Files/pageFile.test.ts Core/Properties/propertyValue.test.ts Core/Contexts/contextResolve.test.ts Core/Trash/restoreScrub.test.ts` fails on the quote and flow cases, the rename's quotes, the member cases, and the two scalar-member flips; green after.
+- [x] `grep -n "doc.createNode\|doc.set(" Core/Files/pageFile.ts` → only `nodeSpelledAs`'s `createNode` and the two writes through it.
+- [x] Run the gates.
 
 #### Review Checkpoint
 
-- [ ] Phase 2 reviewed (simplification and correctness, Opus at high effort) against *§Constraints*, its Reuse bullet first: every frontmatter writer reaches `nodeSpelledAs`; the display surfaces read parsed values, so no quote mark reaches a cell, chip, picker, option, panel, card, Matrix label, filter, or link title; every finding closed.
+- [x] Phase 2 reviewed (simplification and correctness, Opus at high effort) against *§Constraints*, its Reuse bullet first: every frontmatter writer reaches `nodeSpelledAs`; the display surfaces read parsed values, so no quote mark reaches a cell, chip, picker, option, panel, card, Matrix label, filter, or link title; every finding closed.
 
 ---
 
@@ -527,9 +537,9 @@ yaml's own in-place replacement — `doc.set(key, rawValue)` over a scalar keeps
 
 **CHANGE**
 
-- [ ] Write the tests below; watch them fail.
-- [ ] The source changes.
-- [ ] Commit with Task 3-2.
+- [x] Write the tests below; watch them fail.
+- [x] The source changes.
+- [x] Commit with Task 3-2.
 
 **AFTER**
 
@@ -550,7 +560,8 @@ yaml's own in-place replacement — `doc.set(key, rawValue)` over a scalar keeps
 +    .formatToParts(0)
 +    .find((p) => p.type === 'currency')?.value ?? currency
 +
- /** The number picker's leading glyph; a currency shows its narrow symbol, where a cell spells out the ambiguous ones (A$, CA$). */
+-/** The number picker's leading glyph; a currency shows its narrow symbol, where a cell spells out the ambiguous ones (A$, CA$). */
++/** The number picker's leading glyph. */
  export function numberFormatGlyph(cfg: NumberConfig): string {
    if (cfg.number_family === 'percent') return '%'
    if (cfg.number_family !== 'currency') return '#'
@@ -564,7 +575,7 @@ yaml's own in-place replacement — `doc.set(key, rawValue)` over a scalar keeps
  }
 +
 +const SYMBOL = CURRENCY_CODES.map((c) => escapeRegExp(currencySymbol(c))).join('|')
-+const NUMBER_SHAPE = new RegExp(`^(-?)((?:${SYMBOL})\\s*)?(.*?)(\\s*(?:%|${SYMBOL}))?$`)
++const NUMBER_SHAPE = new RegExp(`^([+-]?)((?:${SYMBOL})\\s*)?(.*?)(\\s*(?:%|${SYMBOL}))?$`)
 +const GROUPED = /^[+-]?\d{1,3}(?:,\d{3})+(?:\.\d+)?$/
 +
 +interface NumberShape {
@@ -698,6 +709,7 @@ yaml's own in-place replacement — `doc.set(key, rawValue)` over a scalar keeps
 +    expect(readNumber('30 %')).toBe(30)
 +    expect(readNumber('$1,200')).toBe(1200)
 +    expect(readNumber('-$30')).toBe(-30)
++    expect(readNumber('+$5')).toBe(5)
 +    expect(readNumber('CA$1,300.5')).toBe(1300.5)
 +    expect(readNumber('5A$')).toBe(5)
 +    expect(readNumber('30 €')).toBe(30)
@@ -794,17 +806,16 @@ The grammar is pinned here alone; the consumers below pin only their wiring — 
      expect(
        ids(rows, { match: 'all', rules: [{ property_id: 'prop_num', op: 'is_empty' }] }),
      ).toEqual(['c'])
-+    const formatted = [row('d', { props: { prop_num: '$1,200' } })]
 +    expect(
-+      ids(formatted, { match: 'all', rules: [{ property_id: 'prop_num', op: 'greater_than', value: '$1,000' }] }),
-+    ).toEqual(['d'])
++      ids(rows, { match: 'all', rules: [{ property_id: 'prop_num', op: 'greater_than', value: '$3' }] }),
++    ).toEqual(['a'])
 ```
 
 **VERIFY**
 
-- [ ] With the tests alone, `npx vitest run Core/Properties Core/Contexts/contextResolve.test.ts Core/Views` fails on the new number cases: each `readNumber` and `spelledNumber` test with `readNumber is not a function`, and each consumer's wiring case.
-- [ ] Green after, `formatValue.test.ts`'s existing `numberFormatGlyph` test (`['$','€','£','$','$','¥']`) still passes through `currencySymbol`.
-- [ ] `grep -rn "numberFrom" Core --include='*.ts' --include='*.tsx' | grep -v test` → `formatValue.ts` and `Schema/NumberEditor.tsx` only; `grep -rnF '$&' Core Desktop UIX --include='*.ts' --include='*.tsx' | grep -v test` → `escapeRegExp.ts` and `Core/Connections/links.ts` (a link label's own `\` and `]` escape, not RegExp text).
+- [x] With the tests alone, `npx vitest run Core/Properties Core/Contexts/contextResolve.test.ts Core/Views` fails on the new number cases: each `readNumber` and `spelledNumber` test with `readNumber is not a function`, and each consumer's wiring case.
+- [x] Green after, `formatValue.test.ts`'s existing `numberFormatGlyph` test (`['$','€','£','$','$','¥']`) still passes through `currencySymbol`.
+- [x] `grep -rn "numberFrom" Core --include='*.ts' --include='*.tsx' | grep -v test` → `formatValue.ts` and `Schema/NumberEditor.tsx` only; `grep -rnF '$&' Core Desktop UIX --include='*.ts' --include='*.tsx' | grep -v test` → `escapeRegExp.ts` and `Core/Connections/links.ts` (a link label's own `\` and `]` escape, not RegExp text).
 
 #### Task 3-2
 
@@ -814,9 +825,9 @@ The grammar is pinned here alone; the consumers below pin only their wiring — 
 
 **CHANGE**
 
-- [ ] Write the test and watch it fail.
-- [ ] `git rm Core/Properties/Pickers/NumberValuePicker.tsx`; the `PropertyValueInput` changes.
-- [ ] Commit Phase 3: `git add UIX/Utilities/escapeRegExp.ts && git commit --only -m "…" -- UIX/Utilities/escapeRegExp.ts Desktop/Web/webGuests.ts Core/Contract/engineGraph.test.ts Core/Properties/formatValue.ts Core/Properties/formatValue.test.ts Core/Properties/propertyValue.ts Core/Properties/parseEditorValue.ts Core/Properties/governedWrite.test.ts Core/Contexts/contextResolve.test.ts Core/Views/Cards/cardValueInput.test.ts Core/Views/Pipeline/filter.ts Core/Views/Pipeline/filter.test.ts Core/Properties/Pickers/NumberValuePicker.tsx Core/Properties/Pickers/PropertyValueInput.tsx Core/Properties/Pickers/PropertyValueInput.test.tsx`.
+- [x] Write the test and watch it fail.
+- [x] `git rm Core/Properties/Pickers/NumberValuePicker.tsx`; the `PropertyValueInput` changes.
+- [x] Commit Phase 3: `git add UIX/Utilities/escapeRegExp.ts && git commit --only -m "…" -- UIX/Utilities/escapeRegExp.ts Desktop/Web/webGuests.ts Core/Contract/engineGraph.test.ts Core/Properties/formatValue.ts Core/Properties/formatValue.test.ts Core/Properties/propertyValue.ts Core/Properties/parseEditorValue.ts Core/Properties/governedWrite.test.ts Core/Contexts/contextResolve.test.ts Core/Views/Cards/cardValueInput.test.ts Core/Views/Pipeline/filter.ts Core/Views/Pipeline/filter.test.ts Core/Properties/Pickers/NumberValuePicker.tsx Core/Properties/Pickers/PropertyValueInput.tsx Core/Properties/Pickers/PropertyValueInput.test.tsx`.
 
 **AFTER**
 
@@ -878,14 +889,162 @@ The grammar is pinned here alone; the consumers below pin only their wiring — 
 
 **VERIFY**
 
-- [ ] With the test alone, it fails on `onCommit` called with `null` (the deletion); green after.
-- [ ] `grep -rn "NumberValuePicker" Core` → none.
-- [ ] Run the gates.
+- [x] With the test alone, it fails on `onCommit` called with `null` (the deletion); green after.
+- [x] `grep -rn "NumberValuePicker" Core` → none.
+- [x] Run the gates.
+
+#### Task 3-3
+
+**TASK:** One `contextTitles` reads what a Context value names, its scalar members only, for Context resolution, the live reconcile, and the index's Space relations; one `memberKey` matches a non-scalar member only by itself wherever members dedupe or count — `joinValues` and the reconcile's no-shrink `memberCount`.
+
+**NOW:** Three loops fold a Context value's members through `normalizeTitle`, which reads any value through `String()`: `resolveContextKeys` (`contextResolve.ts:79-82`), `reconcileGovernedRoot`'s Context arm (`:136-139`), and `spaceRelations` (`indexSeed.ts:75-79`). So an unquoted `- [[Personal]]`, a nested list, resolves to the Space "Personal" and `- [[a, b]]` to one titled "a,b", while a quoted `- "[[Personal]]"` resolves nothing; the reconcile then rewrites the unquoted one to `- Personal`. `memberCount` (`:110`) and `joinValues` (`heldKeys.ts:51-54`) fold the same way, so the no-shrink rule takes a nested member beside its own title for that title, and joining two spellings of a key (`<Projects>: ["pommora"]` beside `<projects>: [[Pommora]]`) drops the wikilink member before any reader sees it — through every spelling join, a `'merge'` rename, and the Trash re-apply. Every option list already reads scalars only (`optionList`, `namesValue`), and ContextsPM matches a value through "scalar drift".
+
+**CHANGE**
+
+- [x] Write the tests below and watch them fail.
+- [x] The source changes.
+- [x] Commit: `git commit --only -m "…" -- Core/Contexts/contexts.ts Core/Contexts/contextResolve.ts Core/Contexts/contextResolve.test.ts Core/Files/heldKeys.ts Core/Files/heldKeys.test.ts Core/Index/indexSeed.ts Core/Index/indexSeed.test.ts`.
+
+**AFTER**
+
+```Core/Contexts/contexts.ts diff
+@@ imports @@
+
+ import { holdsName } from '../Paths/names'
++import { isScalar, listOf } from '../Contract/validators'
++import { normalizeTitle } from '../Paths/caseFold'
+
+@@ below parseContextKey @@
+
++/** The folded titles a Context value names: each scalar member's, a lone scalar read as a list of one. A member of any other shape names nothing. */
++export const contextTitles = (raw: unknown): string[] =>
++  listOf(raw).filter(isScalar).map(normalizeTitle).filter(Boolean)
+```
+
+```Core/Contexts/contextResolve.ts diff
+@@ imports @@
+
+-import { contextKey, parseContextKey } from './contexts'
++import { contextKey, contextTitles, parseContextKey } from './contexts'
+-import { heldKey, heldValue, writeTarget } from '../Files/heldKeys'
++import { heldKey, heldValue, memberKey, writeTarget } from '../Files/heldKeys'
+
+@@ resolveContextKeys @@
+
+-    const ids: string[] = []
+-    for (const value of listOf(heldValue(root, name, true) ?? [])) {
+-      const match = byTitle?.get(normalizeTitle(value))
+-      if (match) ids.push(match.id)
+-    }
++    const ids = contextTitles(heldValue(root, name, true)).flatMap(
++      (title) => byTitle?.get(title)?.id ?? [],
++    )
+
+@@ memberCount @@
+
+-const memberCount = (v: unknown): number => new Set(listOf(v).map(normalizeTitle)).size
++const memberCount = (v: unknown): number => new Set(listOf(v).map(memberKey)).size
+
+@@ reconcileGovernedRoot — the Context arm @@
+
+-      const titles = listOf(held ?? []).flatMap((value) => {
+-        const space = byTitle?.get(normalizeTitle(value))
+-        return space ? [space.title] : []
+-      })
++      const titles = contextTitles(held).flatMap((title) => byTitle?.get(title)?.title ?? [])
+```
+
+```Core/Index/indexSeed.ts diff
+@@ imports @@
+
+-import { listOf } from '../Contract/validators'
+-import { parseContextKey } from '../Contexts/contexts'
++import { contextTitles, parseContextKey } from '../Contexts/contexts'
+
+@@ spaceRelations @@
+
+-    if (parseContextKey(key) === null || raw == null) continue
++    if (parseContextKey(key) === null) continue
+-    const titles = new Set<string>()
+-    for (const value of listOf(raw)) {
+-      const title = normalizeTitle(value)
+-      if (title) titles.add(title)
+-    }
+-    for (const target of titles) yield { target, qualifier: foldKey(key) }
++    for (const target of new Set(contextTitles(raw))) yield { target, qualifier: foldKey(key) }
+```
+
+```Core/Files/heldKeys.ts diff
+@@ imports @@
+
+-import { listOf } from '../Contract/validators'
++import { isScalar, listOf } from '../Contract/validators'
+
+@@ joinValues @@
+
+-/** Two values as one list: `keep`'s members, then each of `from`'s whose title folds to none of them; a single value reads as a list of one. … */
++/** What a member matches by: a scalar's folded title, or the member itself, so a member of any other shape matches only itself. */
++export const memberKey = (v: unknown): unknown => (isScalar(v) ? normalizeTitle(v) : v)
++
++/** Two values as one list: `keep`'s members, then each of `from`'s that matches none of them by `memberKey`; a single value reads as a list of one. … */
+ export function joinValues(keep: unknown, from: unknown): unknown[] {
+   const kept = listOf(keep ?? [])
+-  const seen = new Set(kept.map(normalizeTitle))
+-  return [...kept, ...listOf(from ?? []).filter((v) => !seen.has(normalizeTitle(v)))]
++  const seen = new Set(kept.map(memberKey))
++  return [...kept, ...listOf(from ?? []).filter((v) => !seen.has(memberKey(v)))]
+ }
+```
+
+A lone `- [[Personal]]` now names nothing, so the live reconcile leaves it as written; beside other members, or joined from another spelling, `memberKey` keeps it as its own unresolved member and the no-shrink rule keeps the whole value. `spaceRelations`' `raw == null` guard goes, since `contextTitles` reads nothing from a null value. `memberKey` lives beside `joinValues` in Files, so neither layer imports Properties.
+
+```Core/Contexts/contextResolve.test.ts diff
+@@ "matches values through coercion + NFC…", extended @@
+
+-  it('matches values through coercion + NFC (scalars, case, whitespace)', () => {
++  it('matches values through coercion + NFC (scalars, case, whitespace), and only a scalar names a Space', () => {
+ …
++    expect(resolveContextKeys({ '<Projects>': [[['Pommora']]] }, contexts).has('ctx_projects')).toBe(false)
+
+@@ "a live reconcile leaves a list naming an unknown Space as written", extended @@
+
+-  it('a live reconcile leaves a list naming an unknown Space as written', () => {
++  it('a live reconcile leaves a list naming an unknown Space, or holding a wikilink, as written', () => {
+ …
++    const linked = { '<Projects>': ['pommora', [['Pommora']]] }
++    expect(reconcileGovernedRoot(linked, world).root).toEqual(linked)
+```
+
+```Core/Files/heldKeys.test.ts diff
+@@ joinValues, extended @@
+
+-  it('keeps the first value and adds each member of the second whose title folds to none of it', () => {
++  it('keeps the first value and adds each member of the second that matches none of it: a scalar by its folded title, any other member only by itself', () => {
+     expect(joinValues(['b'], ['a', 'B'])).toEqual(['b', 'a'])
++    expect(joinValues(['Pommora'], [[['Pommora']]])).toEqual(['Pommora', [['Pommora']]])
+```
+
+```Core/Index/indexSeed.test.ts diff
+@@ "records every `<Title>` key as a space row…", extended @@
+
+-  it('records every `<Title>` key as a space row, one normalized row per value, scalar or list', async () => {
++  it('records every `<Title>` key as a space row, one normalized row per value, scalar or list; a member of any other shape names nothing', async () => {
+-      `---\nID: ${ULID_A}\n<Projects>:\n  - Pommora\n  - pommora\n<Areas>: 2024\n---\n\nbody\n`,
++      `---\nID: ${ULID_A}\n<Projects>:\n  - Pommora\n  - pommora\n<Areas>: 2024\n<Topics>:\n  - [[Pommora]]\n---\n\nbody\n`,
+ …
++    expect(queryMembers('<Topics>', 'pommora')).toEqual([])
+```
+
+**VERIFY**
+
+- [x] With the tests alone, the four extended tests fail; green after.
+- [x] `grep -rn "normalizeTitle(value)" Core/Contexts Core/Index` → none.
+- [x] Run the gates.
 
 #### Review Checkpoint
 
-- [ ] Phase 3 reviewed (simplification and correctness, Opus at high effort) against *§Constraints*, its Reuse bullet first, and the settled decisions; every finding closed.
-- [ ] No live path rewrites an unchanged quoted or formatted number: the crossing test passes, and `runRepairSweep` reaches values only through `reconcileGovernedRoot`.
+- [x] Phase 3 reviewed (simplification and correctness, Opus at high effort) against *§Constraints*, its Reuse bullet first, and the settled decisions; every finding closed.
+- [x] No live path rewrites an unchanged quoted or formatted number: the crossing test passes, and `runRepairSweep` reaches values only through `reconcileGovernedRoot`.
 
 ---
 
@@ -901,8 +1060,8 @@ The grammar is pinned here alone; the consumers below pin only their wiring — 
 
 **CHANGE**
 
-- [ ] The edits, as below.
-- [ ] Commit: `git commit --only -m "…" -- .claude/Features/PropertiesPM.md`.
+- [x] The edits, as below.
+- [x] Commit: `git commit --only -m "…" -- .claude/Features/PropertiesPM.md`.
 
 **AFTER**
 
@@ -942,8 +1101,8 @@ The rows keep the file's column padding; `…` stands for unchanged text.
 
 **VERIFY**
 
-- [ ] `grep -n "\`true\` and \`yes\` in any casing\|plain and unquoted" .claude/Features/PropertiesPM.md` → none.
-- [ ] Each edited paragraph reads without contradiction.
+- [x] `grep -n "\`true\` and \`yes\` in any casing\|plain and unquoted" .claude/Features/PropertiesPM.md` → none.
+- [x] Each edited paragraph reads without contradiction.
 
 ---
 
@@ -959,16 +1118,16 @@ The rows keep the file's column padding; `…` stands for unchanged text.
 
 **CHANGE**
 
-- [ ] Seed `Collection A/Set Alpha/Drive Adopt.md` with a minted page ID (`mintPageId`) and frontmatter `done: No`, `Price: $1,200.00`, `Count: "30"`, `Pinned: 'OFF'`, `Brand: ["Acme", 2024]`.
-- [ ] `schema:add` into `Collection A`: Done (checkbox), Price (number), Count (number), Pinned (checkbox), Brand (multiSelect). Read the file: byte-identical to the seed.
-- [ ] `mutate setProperty` Done → `{ kind: 'checkbox', value: true }`: the file holds `done: Yes`. Pinned → checked: `Pinned: 'ON'`. Price → 1300: `Price: $1,300`. Count → 31: `Count: "31"`. Brand → `['Acme', '2024', 'Drive']`: `Brand:` over `- "Acme"`, `- 2024`, `- "Drive"`.
-- [ ] Done → `null`: the `done` line is gone, every other line unchanged.
-- [ ] `restore()`; delete the script.
+- [x] Seed `Collection A/Set Alpha/Drive Adopt.md` with a minted page ID (`mintPageId`) and frontmatter `done: No`, `Price: $1,200.00`, `Count: "30"`, `Pinned: 'OFF'`, `Brand: ["Acme", 2024]`.
+- [x] `schema:add` into `Collection A`: Done (checkbox), Price (number), Count (number), Pinned (checkbox), Brand (multiSelect). Read the file: byte-identical to the seed.
+- [x] `mutate setProperty` Done → `{ kind: 'checkbox', value: true }`: the file holds `done: Yes`. Pinned → checked: `Pinned: 'ON'`. Price → 1300: `Price: $1,300`. Count → 31: `Count: "31"`. Brand → `['Acme', '2024', 'Drive']`: `Brand:` over `- "Acme"`, `- 2024`, `- "Drive"`.
+- [x] Done → `null`: the `done` line is gone, every other line unchanged.
+- [x] `restore()`; delete the script.
 
 **VERIFY**
 
-- [ ] Each read printed and matched, pasted into *§Final Verification*'s own pass.
-- [ ] `~/Test` restored (the harness's backup), no instance left running.
+- [x] Each read printed and matched, pasted into *§Final Verification*'s own pass.
+- [x] `~/Test` restored (the harness's backup), no instance left running.
 
 ---
 
@@ -1034,7 +1193,6 @@ The plan is executed twice from the same **BASELINE** head, so the difference be
 
 #### Open Items
 
-- **Contexts and wikilinks (outside this plan):** under a Context key, an unquoted `- [[Personal]]` resolves to its Space through the text of the nested list, while a quoted `- "[[Personal]]"` doesn't, and the reconcile rewrites the unquoted one to `- Personal`. Contexts hold bare titles by design (ContextsPM); whether a wikilink-spelled member should resolve is a Contexts decision for Nathan.
 
 #### Deviations
 
