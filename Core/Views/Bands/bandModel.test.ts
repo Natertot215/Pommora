@@ -1,11 +1,17 @@
 import { describe, expect, it } from 'vitest'
 import type { Geometry, Row } from '@pommora/uix/Interactions/reorderModel'
+import type { CollectionNode, SetNode } from '../../Nexus/tree'
+import type { ResolvedGroup } from '../viewRow'
+import type { SavedView } from '../views'
+import { setIndexOf } from '../Pipeline/setIndex'
 import {
   type BandModel,
   type BandNode,
   bandBox,
+  bandModelOf,
   bandSlot,
   bandSnap,
+  headContextOf,
   shownHeads,
   springsInto,
 } from './bandModel'
@@ -179,5 +185,53 @@ describe('the model', () => {
     expect(springsInto(model, 'B', nodes[1], true)).toBe(true)
     expect(springsInto(model, 'A', nodes[1], true)).toBe(false)
     expect(springsInto(model, 'B', nodes[1], false)).toBe(false)
+  })
+})
+
+describe('which Set bands open', () => {
+  const sub = { kind: 'set', id: 'A1', title: 'A1', path: 'Col/A/A1', sets: [], pages: [] }
+  const top = { kind: 'set', id: 'A', title: 'A', path: 'Col/A', sets: [sub], pages: [] }
+  const collection = { kind: 'collection', id: 'c', path: 'Col', sets: [top], pages: [] }
+  const band = (key: string, children?: ResolvedGroup[]): ResolvedGroup => ({
+    key,
+    kind: 'set',
+    items: [],
+    ...(children ? { children } : {}),
+  })
+  const opensOf = (
+    source: CollectionNode | SetNode,
+    groups: ResolvedGroup[],
+    foldersOpen: boolean,
+  ): [string, boolean][] =>
+    bandModelOf(
+      groups,
+      headContextOf(
+        source,
+        setIndexOf(source),
+        undefined,
+        [],
+        {} as SavedView,
+        () => ({}) as never,
+        foldersOpen,
+      ),
+    ).nodes.flatMap((n) => (n.kind === 'set' ? [[n.key, n.opens] as [string, boolean]] : []))
+
+  it("a Collection's Sets open and its Sub-Sets don't while folders stay closed", () => {
+    expect(opensOf(collection as never, [band('A', [band('A1')])], false)).toEqual([
+      ['A', true],
+      ['A1', false],
+    ])
+  })
+
+  it("a Set's Sub-Sets don't open while folders stay closed", () => {
+    expect(opensOf(top as never, [band('A1')], false)).toEqual([['A1', false]])
+  })
+
+  it('every Sub-Set opens once folders open', () => {
+    expect(opensOf(collection as never, [band('A', [band('A1')])], true)).toEqual([
+      ['A', true],
+      ['A1', true],
+    ])
+    expect(opensOf(top as never, [band('A1')], true)).toEqual([['A1', true]])
   })
 })

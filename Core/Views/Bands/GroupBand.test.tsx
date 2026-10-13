@@ -70,6 +70,7 @@ const heads = (sub?: SubGroupConfig, date_format: ColumnStyle['date_format'] = '
     schema,
     view,
     () => ({ date_format }) as ColumnStyle,
+    false,
   )
 const group = (kind: 'set' | 'tail' | 'bucket', key: string, value = key): ResolvedGroup =>
   kind === 'bucket' ? { key, kind, value, items: [] } : { key, kind, items: [] }

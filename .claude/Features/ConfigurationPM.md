@@ -57,6 +57,7 @@ The heading reads the unbound state and three binding states. Unbound shows the 
 | Setting | Key | Description | Options |
 | --- | --- | --- | --- |
 | Close Navigation On Select | `navCloseOnSelect` | Picking an entity dismisses the Navigation window. | **On** · Off |
+| Open Folders In Main View On Title Click | `openFoldersOnTitleClick` | A Sub-Set opens its view as a Collection and a Set do: from its sidebar title, its breadcrumb segment, and a double-click of its band. | On · **Off** |
 | Open Connections In Preview | `connectionsOpenInPreview` | A connection click opens the Page Window instead of navigating; ⌘-click takes the other route. | On · **Off** |
 | Hover Previews | `previewPersistence` | Whether a preview raises at all, and how long it lingers after hovering off. | Off · **1 Second** · 5 Seconds · 10 Seconds · Until Closed |
 | Dismiss Preview On Pointer Actions | `dismissPreviewOnPointer` | A click outside the live preview dismisses it; a locked preview stays. | On · **Off** |

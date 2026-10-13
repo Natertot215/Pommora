@@ -746,12 +746,23 @@ describe('band header — the sidebar interaction model', () => {
     await act(async () => {
       glyphOf('A').dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))
     })
-    expect(selectSpy).toHaveBeenCalledWith({ kind: 'set', id: 'sA', path: 'Col/A' })
+    expect(selectSpy).toHaveBeenCalledWith({ kind: 'set', id: 'sA', path: 'Col/A' }, undefined)
     selectSpy.mockClear()
     await act(async () => {
       glyphOf('A1').dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))
     })
     expect(selectSpy).not.toHaveBeenCalled()
+  })
+
+  it('⌘-double-clicking an openable Set band opens it in a new tab', async () => {
+    await mountTable(structuralSource())
+    await act(async () => {
+      glyphOf('A').dispatchEvent(new MouseEvent('dblclick', { bubbles: true, metaKey: true }))
+    })
+    expect(selectSpy).toHaveBeenCalledWith(
+      { kind: 'set', id: 'sA', path: 'Col/A' },
+      { newTab: true },
+    )
   })
 
   it('a double click on an openable Set’s title opens it and never toggles its disclosure', async () => {
@@ -762,7 +773,7 @@ describe('band header — the sidebar interaction model', () => {
       glyphOf('A').dispatchEvent(new MouseEvent('dblclick', { bubbles: true, detail: 2 }))
     })
     expect(saveSpy).not.toHaveBeenCalled()
-    expect(selectSpy).toHaveBeenCalledWith({ kind: 'set', id: 'sA', path: 'Col/A' })
+    expect(selectSpy).toHaveBeenCalledWith({ kind: 'set', id: 'sA', path: 'Col/A' }, undefined)
   })
 
   it('Enter on a focused row opens its page, as a click on its title does', async () => {

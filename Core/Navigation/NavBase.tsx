@@ -2,12 +2,13 @@ import { type Ref, useMemo, useState } from 'react'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { text } from '@pommora/uix/Theme'
 import { SearchField } from '@pommora/uix/Fields/SearchField'
+import { isCmd } from '@pommora/uix/Interactions/chords'
 import { moveBefore } from '@pommora/uix/Utilities/moveItem'
 import type { NavRef } from './navRef'
 import { useSession } from '../Session/store'
 import type { ResolvedNav } from './navResolve'
 import { NavGallery } from './NavGallery'
-import { NavList } from './NavList'
+import { NavList, type NavOpen } from './NavList'
 
 const NO_PINS: ResolvedNav[] = []
 
@@ -41,6 +42,7 @@ export function useNavBase({
     onReordered?.(next)
     setRecentsOrder(next.map((r) => r.key))
   }
+  const open: NavOpen = (target, e) => (e && isCmd(e) ? onOpenNewTab : onSelect)(target)
   const shown = results
     ? { pins: NO_PINS, items: results }
     : { pins, items: recents, onReorderRecent }
@@ -54,9 +56,9 @@ export function useNavBase({
       />
     ),
     body: gallery ? (
-      <NavGallery {...shown} onSelect={onSelect} onOpenNewTab={onOpenNewTab} />
+      <NavGallery {...shown} onSelect={open} onOpenNewTab={onOpenNewTab} />
     ) : (
-      <NavList {...shown} onSelect={onSelect} onOpenNewTab={onOpenNewTab} />
+      <NavList {...shown} onSelect={open} onOpenNewTab={onOpenNewTab} />
     ),
     count: shown.pins.length + shown.items.length,
   }

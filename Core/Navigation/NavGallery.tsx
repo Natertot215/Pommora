@@ -21,7 +21,7 @@ import { TAB_FAMILY } from './tabRows'
 import { useSession } from '../Session/store'
 import { pageTargetFromNav, type ResolvedNav, windowTargetFromNav } from './navResolve'
 import { EntityIcon } from '../Assets/EntityIcon'
-import { NavPinButton, showNavRowMenu } from './NavList'
+import { type NavOpen, NavPinButton, showNavRowMenu } from './NavList'
 import { hoverGlance, leaveGlance } from '../Interface/Glance/glanceAction'
 import { useThumb } from '../Assets/useThumb'
 import './nav-list.css'
@@ -36,7 +36,7 @@ export function NavGallery({
   pins: ResolvedNav[]
   items: ResolvedNav[]
   onReorderRecent?: (key: string, beforeKey: string | null) => void
-  onSelect: (target: NavRef) => void
+  onSelect: NavOpen
   onOpenNewTab?: (target: NavRef) => void
 }): React.JSX.Element {
   const reorderPin = useSession((s) => s.reorderPin)
@@ -99,7 +99,7 @@ export function NavGallery({
 function DraggableCard(props: {
   it: ResolvedNav
   nexusId: string
-  onSelect: (t: NavRef) => void
+  onSelect: NavOpen
   onMenu: (it: ResolvedNav, e: React.MouseEvent) => void
 }): React.JSX.Element {
   const drag = useDragItem(props.it.key, { open: () => props.onSelect(props.it.target) })
@@ -115,7 +115,7 @@ function GalleryCard({
 }: {
   it: ResolvedNav
   nexusId: string
-  onSelect: (t: NavRef) => void
+  onSelect: NavOpen
   onMenu: (it: ResolvedNav, e: React.MouseEvent) => void
   drag?: DragItem
 }): React.JSX.Element {
@@ -128,7 +128,7 @@ function GalleryCard({
       active={active}
       locked
       data-reveal-host=""
-      onClick={() => onSelect(it.target)}
+      onClick={(e) => onSelect(it.target, e)}
       onPointerEnter={(e) => {
         const t = pageTargetFromNav(it, useSession.getState().tree)
         if (t) hoverGlance(t, e.currentTarget, 'location', e.shiftKey)

@@ -132,11 +132,13 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     bandBucket: valueAt,
     rename: (target) => policy.rename(target, true),
   }))
+  const openSet = (set: SetNode, newTab: boolean): void =>
+    void select(selectTargetOf(set), newTab ? { newTab: true } : undefined)
   const bandView: BandView = {
     collapsed,
     toggle: toggleCollapse,
     add: creation.bandAdd,
-    open: (set) => void select(selectTargetOf(set)),
+    open: openSet,
     springs: (dragged: string, node: BandNode) =>
       bands.byKey.has(dragged)
         ? springsInto(bands, dragged, node, nests)
@@ -477,6 +479,7 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     carry,
     folderSlot,
     openPage,
+    openSet,
     titleMenuContext,
     runTitleAction,
     iconPicker,

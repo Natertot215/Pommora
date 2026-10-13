@@ -92,7 +92,7 @@ export interface NavigationSlice {
   goBack: () => void
   goForward: () => void
   crumbDepth: SelectTarget | null
-  navigateCrumb: (target: SelectTarget, dir: 'back' | 'forward') => void
+  navigateCrumb: (target: SelectTarget, dir: 'back' | 'forward', newTab: boolean) => void
   navSlide: NavSlide | null
   recents: NavRef[]
   pinned: NavRef[]
@@ -392,9 +392,9 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
     thumbVersions: {},
     goBack: () => stepActiveHistory(-1),
     goForward: () => stepActiveHistory(1),
-    navigateCrumb: (target, dir) => {
-      void get().select(target, { newTab: false })
-      if (dir === 'back') {
+    navigateCrumb: (target, dir, newTab) => {
+      void get().select(target, { newTab })
+      if (!newTab && dir === 'back') {
         const ns = get().navSlide
         if (ns) set({ navSlide: { ...ns, dir: 'back' } })
       }

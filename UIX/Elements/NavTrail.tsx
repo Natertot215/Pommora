@@ -10,7 +10,7 @@ export interface TrailSegment {
   title: string
   icon?: string
   ghost?: boolean
-  onSelect?: () => void
+  onSelect?: (e: React.MouseEvent) => void
 }
 
 export const NO_TRAIL: TrailSegment[] = []

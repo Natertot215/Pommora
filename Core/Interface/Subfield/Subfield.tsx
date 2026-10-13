@@ -2,7 +2,7 @@ import { text } from '@pommora/uix/Theme'
 import { cx } from '@pommora/uix/Utilities/cx'
 import type { SelectionState } from '../../Navigation/navRef'
 import { BoardLock } from '../../Tiles/BoardLock'
-import { useSession } from '../../Session/store'
+import { useSession, useSetting } from '../../Session/store'
 import { subfieldCrumbs } from './crumbs'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
 import { overScrollEllipsis } from '@pommora/uix/Interactions/OverScroll'
@@ -30,9 +30,16 @@ export function Subfield({
   const tree = useSession((s) => s.tree)
   const navigateCrumb = useSession((s) => s.navigateCrumb)
   const crumbDepth = useSession((s) => s.crumbDepth)
+  const foldersOpen = useSetting('openFoldersOnTitleClick')
 
   const crumbSelection = override ?? page?.target ?? selection
-  const rawCrumbs = subfieldCrumbs(tree, crumbSelection, inert ? null : crumbDepth, navigateCrumb)
+  const rawCrumbs = subfieldCrumbs(
+    tree,
+    crumbSelection,
+    inert ? null : crumbDepth,
+    navigateCrumb,
+    foldersOpen,
+  )
   const crumbs = inert ? rawCrumbs.map((c) => ({ ...c, onSelect: undefined })) : rawCrumbs
   const items = DEFAULT_ITEMS[crumbSelection.kind]
 

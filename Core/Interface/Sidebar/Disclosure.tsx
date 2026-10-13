@@ -48,7 +48,7 @@ export function Disclosure({
   defaultOpen: boolean
   persistKey: string
   selected?: boolean
-  onSelect?: () => void
+  onSelect?: (e?: React.MouseEvent) => void
   onContextMenu?: () => void
   rename?: RenameTarget
   dragId: string
@@ -68,14 +68,14 @@ export function Disclosure({
         settleClick.current = useSession.getState().renamingPath === rename.path
       }
     : undefined
-  const toggle = (): void => {
+  const toggle = (e?: React.MouseEvent): void => {
     if (settleClick.current) {
       settleClick.current = false
       return
     }
     // Locked + open still folds normally — the lock only engages on the next fold, not this one.
     if (locked && !open) {
-      onSelect?.()
+      onSelect?.(e)
       return
     }
     setOpen(!open)
@@ -139,7 +139,7 @@ export function Disclosure({
   const openView = onSelect
     ? (e: React.MouseEvent): void => {
         e.stopPropagation()
-        onSelect()
+        onSelect(e)
       }
     : undefined
   const lockToggle =
