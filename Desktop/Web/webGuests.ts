@@ -8,6 +8,7 @@ import { readInterfaceScale } from '@pommora/core/Settings/devicePrefs'
 import { type KeyedCommand, type KeyPress, matchesCommand } from '@pommora/core/Actions/commands'
 import { heldCommands } from '@pommora/core/Settings/settings'
 import { clamp } from '@pommora/uix/Utilities/clamp'
+import { escapeRegExp } from '@pommora/uix/Utilities/escapeRegExp'
 import { push } from '../Bridge/ipc'
 import { isWindows } from '../Platform/hostPath'
 
@@ -19,7 +20,7 @@ const FRAME_CONTENT = /^(?:blob|data):/i
 
 // Best-effort by decision: the detection is server-side policy, not a UA sniff.
 function cleanedUA(): string {
-  const name = app.getName().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const name = escapeRegExp(app.getName())
   return app.userAgentFallback
     .replace(/\sElectron\/\S+/, '')
     .replace(new RegExp(`\\s${name}\\/\\S+`, 'i'), '')

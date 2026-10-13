@@ -23,9 +23,8 @@ import {
 import { declaredType, resolveFieldValue } from '../../Properties/value'
 import type { SetTreeNode } from './group'
 import { linkDisplayText } from '../../Connections/linkValue'
-import { dayMs, readDate } from '../../Properties/formatValue'
+import { dayMs, readDate, readNumber } from '../../Properties/formatValue'
 import { foldKey } from '../../Paths/caseFold'
-import { numberFrom } from '@pommora/uix/Utilities/numberUnit'
 
 const FILTER_OP_SET = new Set<string>(Object.values(FILTER_OPS))
 
@@ -156,7 +155,7 @@ function evaluateNumber(v: PropertyValue, op: string, want: string[]): boolean {
     case FILTER_OPS.isNotEmpty:
       return n !== null
   }
-  const e = numberFrom(want[0])
+  const e = readNumber(want[0])
   if (e === undefined) return true
   switch (op) {
     case FILTER_OPS.is:

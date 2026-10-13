@@ -11,6 +11,7 @@ import { normalizeTitle } from '../Paths/caseFold'
 import { heldValue, landValue, writeTarget } from '../Files/heldKeys'
 import { yamlInline } from '../Files/pageFile'
 import { linkEntry, wholeValueLink } from '../Connections/linkValue'
+import { readNumber, spelledNumber } from './formatValue'
 import { capitalize } from '@pommora/uix/Utilities/capitalize'
 import { namesValue } from './pageValue'
 
@@ -83,8 +84,10 @@ export function decodeValue(def: PropertyDefinition, raw: unknown): PropertyValu
   if (raw === null || raw === undefined) return NULL_VALUE
   const kind = PROPERTY_TYPES[def.type].kind
   switch (kind) {
-    case 'number':
-      return typeof raw === 'number' ? { kind, value: raw } : NULL_VALUE
+    case 'number': {
+      const value = readNumber(raw)
+      return value === undefined ? NULL_VALUE : { kind, value }
+    }
     case 'checkbox':
       return checkboxWord(raw) ? { kind, value: true } : NULL_VALUE
     case 'link': {
@@ -171,9 +174,10 @@ function checkedSpelling(raw: unknown): unknown {
   return word[0] === word[0].toUpperCase() ? capitalize(partner) : partner
 }
 
-/** `next` spelled as `raw` already spells it: a checked `true` takes `raw`'s checkbox word as `checkedSpelling` does, a string keeps a `raw` of any other shape whose inline yaml reads as that string, a one-member list keeps a whole unquoted wikilink `raw` that spells its member, and each member takes the one member of `raw` whose title folds to its own — a scalar of any shape, or an unquoted wikilink. A member `raw` names more than once keeps the spelling `next` gives it, the registered one. */
+/** `next` spelled as `raw` already spells it: a checked `true` takes `raw`'s checkbox word as `checkedSpelling` does, a number keeps `raw`'s spelling as `spelledNumber` does, a string keeps a `raw` of any other shape whose inline yaml reads as that string, a one-member list keeps a whole unquoted wikilink `raw` that spells its member, and each member takes the one member of `raw` whose title folds to its own — a scalar of any shape, or an unquoted wikilink. A member `raw` names more than once keeps the spelling `next` gives it, the registered one. */
 export function writtenSpelling(next: unknown, raw: unknown): unknown {
   if (next === true) return checkedSpelling(raw)
+  if (typeof next === 'number') return spelledNumber(next, raw)
   if (typeof next === 'string')
     return raw != null && typeof raw !== 'string' && yamlInline(raw) === next ? raw : next
   if (!Array.isArray(next)) return next

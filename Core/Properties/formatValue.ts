@@ -2,8 +2,10 @@
 
 import type { DateFormat, TimeFormat, WeekdayFormat } from './columnStyles'
 import type { DateGranularity, DateSeparator } from '../Views/views'
-import { DEFAULT_CURRENCY, type NumberConfig } from './properties'
+import { CURRENCY_CODES, DEFAULT_CURRENCY, type NumberConfig } from './properties'
 import { pad } from '@pommora/uix/Utilities/pad'
+import { numberFrom } from '@pommora/uix/Utilities/numberUnit'
+import { escapeRegExp } from '@pommora/uix/Utilities/escapeRegExp'
 
 // Intl formatter construction is pricey and the card grid formats per-cell, so formatters cache by options tuple; en-US is pinned everywhere, so the key is the options alone.
 const memoFmt = <O, F>(make: (opts: O) => F): ((opts: O) => F) => {
@@ -230,14 +232,53 @@ export const numberBarCapable = (cfg: NumberConfig | undefined): boolean =>
 export const barDivisor = (look: string | undefined, cfg: NumberConfig | undefined) =>
   look === 'bar' ? numberDivisor(cfg) : undefined
 
+/** The symbol Intl gives `currency`: by default the one a cell shows (`A$`, `CA$`), or the narrow one the picker leads with. */
+const currencySymbol = (currency: string, currencyDisplay?: 'narrowSymbol'): string =>
+  numFmt({ style: 'currency', currency, currencyDisplay })
+    .formatToParts(0)
+    .find((p) => p.type === 'currency')?.value ?? currency
+
 /** The number picker's leading glyph; a currency shows its narrow symbol, where a cell spells out the ambiguous ones (A$, CA$). */
 export function numberFormatGlyph(cfg: NumberConfig): string {
   if (cfg.number_family === 'percent') return '%'
   if (cfg.number_family !== 'currency') return '#'
-  const currency = cfg.number_currency ?? DEFAULT_CURRENCY
-  return (
-    numFmt({ style: 'currency', currency, currencyDisplay: 'narrowSymbol' })
-      .formatToParts(0)
-      .find((p) => p.type === 'currency')?.value ?? currency
+  return currencySymbol(cfg.number_currency ?? DEFAULT_CURRENCY, 'narrowSymbol')
+}
+
+const SYMBOL = CURRENCY_CODES.map((c) => escapeRegExp(currencySymbol(c))).join('|')
+const NUMBER_SHAPE = new RegExp(`^(-?)((?:${SYMBOL})\\s*)?(.*?)(\\s*(?:%|${SYMBOL}))?$`)
+const GROUPED = /^[+-]?\d{1,3}(?:,\d{3})+(?:\.\d+)?$/
+
+interface NumberShape {
+  value: number
+  lead: string
+  tail: string
+  grouped: boolean
+}
+
+/** A number as text spells it, the inverse of a cell's own formatting: digits as `numberFrom` reads them, commas only as thousands, and a currency symbol before, or a `%` or a symbol after, never both. */
+function numberShape(text: string): NumberShape | null {
+  const m = NUMBER_SHAPE.exec(text.trim())
+  if (!m || (m[2] && m[4])) return null
+  const [, sign, lead = '', body, tail = ''] = m
+  const grouped = GROUPED.test(body)
+  const value = numberFrom(sign + (grouped ? body.replaceAll(',', '') : body))
+  return value === undefined ? null : { value, lead, tail, grouped }
+}
+
+/** The one reading of a stored or typed number: a YAML number as itself, or a string that spells one. */
+export const readNumber = (raw: unknown): number | undefined =>
+  typeof raw === 'number' ? raw : typeof raw === 'string' ? numberShape(raw)?.value : undefined
+
+/** `next` as `raw` spells a number: an unchanged value keeps `raw` as written, and over anything but a string spelling a number it lands bare. */
+export function spelledNumber(next: number, raw: unknown): unknown {
+  const shape = typeof raw === 'string' ? numberShape(raw) : null
+  if (!shape) return next
+  if (shape.value === next) return raw
+  // A changed value keeps the file's currency symbol, percent sign, and grouping; its digits are the typed value's.
+  const digits = numFmt({ maximumFractionDigits: 20, useGrouping: shape.grouped }).format(
+    Math.abs(next),
   )
+  const spelled = `${next < 0 ? '-' : ''}${shape.lead}${digits}${shape.tail}`
+  return readNumber(spelled) === next ? spelled : next
 }
