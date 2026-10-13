@@ -1,3 +1,4 @@
+import { isCmd } from '@pommora/uix/Interactions/chords'
 import type { NexusTree } from '../../Nexus/tree'
 import { type ContainerKind, isContainer } from '../../Nexus/entities'
 import type { SelectionState, SelectTarget } from '../../Navigation/navRef'
@@ -42,7 +43,8 @@ export function subfieldCrumbs(
   tree: NexusTree | null,
   selection: SelectionState,
   depth: SelectTarget | null,
-  navigate: (target: SelectTarget, dir: 'back' | 'forward') => void,
+  navigate: (target: SelectTarget, dir: 'back' | 'forward', newTab: boolean) => void,
+  foldersOpen: boolean,
 ): TrailSegment[] {
   if (!tree) return []
   switch (selection.kind) {
@@ -71,13 +73,15 @@ export function subfieldCrumbs(
           : currentChain
       return spine.map((node, i) => {
         const forwardCrumb = i > currentPos
-        // Up the spine only the collection (0) and depth-1 set (1) open a detail surface.
-        const navigable = forwardCrumb || (i < currentPos && (i === 0 || i === 1))
+        // Up the spine the collection (0) and depth-1 set (1) open a detail surface; deeper Sets open only when folders do.
+        const navigable = forwardCrumb || (i < currentPos && (i <= 1 || foldersOpen))
         const target = navigable ? targetOf(node) : null
         return {
           title: node.title,
           ghost: forwardCrumb || undefined,
-          onSelect: target ? () => navigate(target, forwardCrumb ? 'forward' : 'back') : undefined,
+          onSelect: target
+            ? (e: React.MouseEvent) => navigate(target, forwardCrumb ? 'forward' : 'back', isCmd(e))
+            : undefined,
         }
       })
     }

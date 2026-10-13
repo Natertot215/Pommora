@@ -90,16 +90,18 @@ export function NavPinButton({
   )
 }
 
+export type NavOpen = (t: NavRef, e?: React.MouseEvent) => void
+
 function NavRow({
   it,
   onSelect,
   onMenu,
 }: {
   it: ResolvedNav
-  onSelect: (t: NavRef) => void
+  onSelect: NavOpen
   onMenu: (it: ResolvedNav) => void
 }): React.JSX.Element {
-  const select = (): void => onSelect(it.target)
+  const select = (e?: React.MouseEvent): void => onSelect(it.target, e)
   return (
     <LineRow id={it.key} open={select}>
       <MenuItem
@@ -134,7 +136,7 @@ export function NavList({
   items: ResolvedNav[]
   pins: ResolvedNav[]
   onReorderRecent?: (key: string, beforeKey: string | null) => void
-  onSelect: (target: NavRef) => void
+  onSelect: NavOpen
   onOpenNewTab?: (target: NavRef) => void
 }): React.JSX.Element | null {
   const reorderPin = useSession((s) => s.reorderPin)

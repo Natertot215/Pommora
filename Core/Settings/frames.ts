@@ -353,6 +353,12 @@ export const FRAMES = roster([
           },
           {
             kind: 'toggle',
+            key: 'openFoldersOnTitleClick',
+            label: 'Open Folders In Main View On Title Click',
+            hint: 'A nested folder opens from its sidebar title, its breadcrumb, or a double-click on its band, as Collections and top-level Sets do.',
+          },
+          {
+            kind: 'toggle',
             key: 'connectionsOpenInPreview',
             label: 'Open Connections In Preview',
             hint: 'A [[Connection]] click opens the preview window instead of navigating.',

@@ -3,6 +3,7 @@ import type { SetNode } from '../../Nexus/tree'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { Button } from '@pommora/uix/Buttons/Button'
 import { base } from '@pommora/uix/Fields/fields.css'
+import { isCmd } from '@pommora/uix/Interactions/chords'
 import { LineRow, type LineSpec, useLineGroup, useLineSpring } from '@pommora/uix/Interactions/drag'
 import { DropOutline } from '@pommora/uix/Menus'
 import { Icon } from '@pommora/uix/Symbols'
@@ -35,7 +36,7 @@ export interface BandView {
   collapsed: ReadonlySet<string>
   toggle: (key: string) => void
   add: (key: string) => void
-  open: (set: SetNode) => void
+  open: (set: SetNode, newTab: boolean) => void
   springs: (dragged: string, node: BandNode) => boolean
 }
 
@@ -191,7 +192,7 @@ function HeadedBand({
             onDoubleClick={
               set?.opens
                 ? (e) => {
-                    if (outsideRename(e)) bands.open(set.set)
+                    if (outsideRename(e)) bands.open(set.set, isCmd(e))
                   }
                 : undefined
             }

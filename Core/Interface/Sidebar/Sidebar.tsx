@@ -38,7 +38,7 @@ import { SidebarDnd } from './sidebarDnd'
 import { buildIndex, type Index } from './sidebarDndModel'
 import { AgendaMode } from './AgendaMode'
 import { sidebarModeOf } from '../../Settings/experimental'
-import { pageMetaOf, useSession } from '../../Session/store'
+import { pageMetaOf, useSession, useSetting } from '../../Session/store'
 import { personalizationOf } from '../../Session/configSlice'
 import { glanceShown, hoverGlance, leaveGlance } from '../Glance/glanceAction'
 import { pageMoveContext } from '../Menus/pageMenuActions'
@@ -97,12 +97,13 @@ function showContextFor(
 function selectRow(node: { kind: NodeKind; id: string; path: string }, e?: React.MouseEvent): void {
   const s = useSession.getState()
   const target = selectTargetOf(node)
-  if (target.kind === 'page' && owningCollection(s.tree, target.path)?.openIn === 'page-preview') {
-    if (e && isCmd(e)) void s.select(target, { newTab: true })
-    else s.openWindowTab(target)
-    return
-  }
-  void s.select(target)
+  if (e && isCmd(e)) void s.select(target, { newTab: true })
+  else if (
+    target.kind === 'page' &&
+    owningCollection(s.tree, target.path)?.openIn === 'page-preview'
+  )
+    s.openWindowTab(target)
+  else void s.select(target)
 }
 
 const LeafRow = memo(function LeafRow({
@@ -209,15 +210,8 @@ function GhostLeaf({
 
 // An arrow rather than a named function, so the recursion inside renders the memoized row.
 const ContainerRow = memo(
-  ({
-    node,
-    depth,
-    selectable,
-  }: {
-    node: CollectionNode | SetNode
-    depth: number
-    selectable: boolean
-  }): React.JSX.Element => {
+  ({ node, depth }: { node: CollectionNode | SetNode; depth: number }): React.JSX.Element => {
+    const selectable = useSetting('openFoldersOnTitleClick') || depth <= 1
     const defaultIcons = useSession((s) => personalizationOf(s).defaultIcons)
     const mutate = useSession((s) => s.mutate)
     const placement = useSession((s) => placementOf(personalizationOf(s), node.kind))
@@ -227,9 +221,7 @@ const ContainerRow = memo(
     const sets = node.sets ?? []
     const icon = entityIcon(node.kind, node.icon, defaultIcons)
     const openIcon: IconName | undefined = icon === 'folder-closed' ? 'folder-open' : undefined
-    const folders = sets.map((s) => (
-      <ContainerRow key={s.id} node={s} depth={depth + 1} selectable={node.kind === 'collection'} />
-    ))
+    const folders = sets.map((s) => <ContainerRow key={s.id} node={s} depth={depth + 1} />)
     const pages = node.pages.map((p) => (
       <LeafRow key={p.id} node={p} depth={depth + 1} ghostLabel="New Page" />
     ))
@@ -243,7 +235,7 @@ const ContainerRow = memo(
         depth={depth}
         defaultOpen={false}
         selected={selected}
-        onSelect={selectable ? () => selectRow(node) : undefined}
+        onSelect={selectable ? (e) => selectRow(node, e) : undefined}
         onContextMenu={() => showContextFor(node)}
         rename={{ path: node.path, kind: node.kind }}
         selfPath={node.path}
@@ -392,7 +384,7 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
       case 'collections':
         return {
           layer: dndLayer(
-            tree.collections.map((c) => <ContainerRow key={c.id} node={c} depth={0} selectable />),
+            tree.collections.map((c) => <ContainerRow key={c.id} node={c} depth={0} />),
           ),
           creator: NEW_COLLECTION,
         }

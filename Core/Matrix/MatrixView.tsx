@@ -3,6 +3,7 @@ import { flushSync } from 'react-dom'
 import { useHeldPresence } from '@pommora/uix/Animations/useExitPresence'
 import { carries, LineZone } from '@pommora/uix/Interactions/drag'
 import { usePointerGesture } from '@pommora/uix/Interactions/gesture'
+import { isCmd } from '@pommora/uix/Interactions/chords'
 import { EntityIcon } from '../Assets/EntityIcon'
 import { showEntityMenu } from '../Interface/Menus/entityMenuActions'
 import { pageMoveContext } from '../Interface/Menus/pageMenuActions'
@@ -53,9 +54,9 @@ export function MatrixView(): React.JSX.Element {
   const mine = acting === null || acting === surfaceId
 
   // Read when the gesture lands, not when it began: a rename mid-press moves the path the tap opens.
-  const open = (id: string): void => {
+  const open = (id: string, newTab: boolean): void => {
     const rec = recordOf(useSession.getState().tree, id)
-    if (rec) void select(selectTargetOf(rec))
+    if (rec) void select(selectTargetOf(rec), newTab ? { newTab: true } : undefined)
   }
 
   const menu = async (id: string): Promise<void> => {
@@ -85,6 +86,7 @@ export function MatrixView(): React.JSX.Element {
   const nodeDown = (e: React.PointerEvent, id: string): void => {
     const canvas = canvasRef.current
     if (!canvas) return
+    const newTab = isCmd(e)
     begin({
       el: e.currentTarget as HTMLElement,
       event: e,
@@ -98,7 +100,7 @@ export function MatrixView(): React.JSX.Element {
       },
       onDrop: () => matrixRuntime.endDrag(),
       onAbort: () => matrixRuntime.endDrag(),
-      onTap: () => open(id),
+      onTap: () => open(id, newTab),
     })
   }
 
@@ -162,8 +164,8 @@ export function MatrixView(): React.JSX.Element {
           onPointerDown={(e) => {
             if (labelId !== null) nodeDown(e, labelId)
           }}
-          onOpen={() => {
-            if (labelId !== null) open(labelId)
+          onOpen={(e) => {
+            if (labelId !== null) open(labelId, e !== undefined && isCmd(e))
           }}
           onContextMenu={(e) => {
             e.preventDefault()

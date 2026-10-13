@@ -37,6 +37,7 @@ export interface BandModel {
 interface HeadContext {
   sets: SetIndex
   opensTop: boolean
+  foldersOpen: boolean
   bucket: (value: string) => Pick<BucketBand, 'label' | 'face'>
 }
 
@@ -57,6 +58,7 @@ export function headContextOf(
   schema: PropertyDefinition[],
   view: SavedView,
   styleOf: (columnId: string) => ColumnStyle,
+  foldersOpen: boolean,
 ): HeadContext {
   const def = grouping && schema.find((d) => d.id === grouping.property_id)
   const date =
@@ -67,6 +69,7 @@ export function headContextOf(
   return {
     sets,
     opensTop: source.kind === 'collection',
+    foldersOpen,
     bucket: (value) =>
       date
         ? { label: date(value), face: { kind: 'date', icon } }
@@ -95,7 +98,7 @@ function bandNodeOf(
     case 'set': {
       const set = heads.sets.node.get(key)
       if (!set) return null
-      const opens = heads.opensTop && parentKey === null
+      const opens = heads.foldersOpen || (heads.opensTop && parentKey === null)
       return { kind: 'set', key, depth, parentKey, set, opens, empty: isEmptyBand(group) }
     }
     case 'bucket':

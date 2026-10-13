@@ -150,6 +150,7 @@ const SETTINGS = {
   htmlShortcuts: flag(false),
   htmlFormatting: flag(true),
   navCloseOnSelect: flag(true),
+  openFoldersOnTitleClick: flag(false),
   removeTitleOnLinkChange: flag(true),
   aliasPickerOnCommit: flag(true),
   defaultIcons: iconsByKind(),

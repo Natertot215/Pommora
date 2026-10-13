@@ -151,7 +151,6 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     revealProperty,
     commitValue,
     pickTarget,
-    select,
     tree,
   } = host
   const nexusId = useSession((s) => s.tree?.nexus.id ?? '')
@@ -298,9 +297,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     titleMenuContext: interactions.titleMenuContext,
     titleAction: interactions.runTitleAction,
     addableFor: (row) => addEntriesFor(row, view, ctx, columns, tree),
-    openSet: (set, newTab) => {
-      void select(selectTargetOf(set), newTab ? { newTab: true } : undefined)
-    },
+    openSet: interactions.openSet,
     banner: setBannerRequest,
   })
   const trailHeld = useRef<Record<string, TrailSegment[]>>({})

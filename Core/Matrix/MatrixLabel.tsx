@@ -49,7 +49,7 @@ export function MatrixLabel({
   picking: 'icon' | 'color' | null
   anchorRef: React.RefObject<HTMLDivElement | null>
   onPointerDown: (e: React.PointerEvent) => void
-  onOpen: () => void
+  onOpen: (e?: React.MouseEvent) => void
   onContextMenu: (e: React.MouseEvent) => void
 }): React.JSX.Element | null {
   const tree = useSession((st) => st.tree)
