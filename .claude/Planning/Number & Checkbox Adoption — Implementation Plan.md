@@ -397,7 +397,7 @@ The edited fixture pins a hand-written word; `twoRules` still pins the pane's ow
 +  return isSeq(only) && only.items.length === 1 && isScalar(only.items[0])
 +}
 +
-+/** `value` as a node spelled as the `held` spellings of its key are, the first the one it lands on: a list keeps that one's flow or block style unless it's a whole unquoted `[[x]]`, whose brackets spell a link rather than a style, and a list nested in it, or a whole `[[x]]`, is written flow; each single-line string, the value itself or a list's member, keeps the quotes of the held string equal to it, else a string yaml quotes unasked takes the quotes of the first quoted held string, and any other those of the first held string quoted where yaml wouldn't; anything else is spelled as yaml spells it. */
++/** `value` as a node spelled as the `held` spellings of its key are, the first the one it lands on: a list keeps that one's flow or block style unless it's a whole unquoted `[[x]]`, whose brackets spell a link rather than a style, and a list nested in it, or a whole `[[x]]`, is written flow; each single-line string, the value itself or a list's member, keeps the quotes of the held string equal to it, else takes those of the first held string quoted where yaml wouldn't, and a string yaml quotes unasked, where the file chose none, those of the first quoted held string; anything else is spelled as yaml spells it. */
 +function nodeSpelledAs(doc: Document, value: unknown, held: unknown[]): Node {
 +  const node = doc.createNode(value)
 +  const [lands] = held
@@ -411,7 +411,8 @@ The edited fixture pins a hand-written word; `twoRules` still pins the pane's ow
 +    else if (isScalar(member) && typeof member.value === 'string' && !member.value.includes('\n'))
 +      member.type = (
 +        heldScalars.find((n) => n.value === member.value) ??
-+        (quotesUnasked(member.value) ? quoted[0] : chosen)
++        chosen ??
++        (quotesUnasked(member.value) ? quoted[0] : undefined)
 +      )?.type
 +  }
 +  return node
@@ -500,16 +501,16 @@ yaml's own in-place replacement — `doc.set(key, rawValue)` over a scalar keeps
 +    )
 +  })
 +
-+  it('a changed string keeps the quotes the file held for it, else takes the quotes the file chose, never ones yaml needed, and a string yaml quotes unasked takes the style of the held quotes', () => {
++  it('a changed string keeps the quotes the file held for it, else takes the quotes the file chose, never ones yaml needed, and a string yaml quotes unasked takes the chosen style, else the held one', () => {
 +    expect(
 +      mergeFrontmatter(
-+        `---\nN: "42"\nS: 'x'\nL: ["a", b]\nY:\n  - '2024'\n---\nBody`,
-+        { N: 'hello', S: 'y', L: ['a', 'b', 'c'], Y: ['2024', 'x', '2025'] },
-+        ['N', 'S', 'L', 'Y'],
++        `---\nN: "42"\nS: 'x'\nL: ["a", b]\nY:\n  - '2024'\nZ: ["2024", 'a']\n---\nBody`,
++        { N: 'hello', S: 'y', L: ['a', 'b', 'c'], Y: ['2024', 'x', '2025'], Z: ['2024', 'a', '2025'] },
++        ['N', 'S', 'L', 'Y', 'Z'],
 +        'Body',
 +      ),
 +    ).toBe(
-+      `---\nN: hello\nS: 'y'\nL: ["a", b, "c"]\nY:\n  - '2024'\n  - x\n  - '2025'\n---\nBody`,
++      `---\nN: hello\nS: 'y'\nL: ["a", b, "c"]\nY:\n  - '2024'\n  - x\n  - '2025'\nZ: ["2024", 'a', '2025']\n---\nBody`,
 +    )
 +  })
 +
@@ -1167,7 +1168,7 @@ The grammar is pinned here alone; the consumers below pin only their wiring — 
  }
 ```
 
-A lone `- [[Personal]]` now names nothing, so the live reconcile leaves it as written; beside other members, or joined from another spelling, `memberKey` keeps it as its own unresolved member and the no-shrink rule keeps the whole value. `spaceRelations`' `raw == null` guard goes, since `contextTitles` reads nothing from a null value. `memberKey` lives beside `joinValues` in Files, so neither layer imports Properties, and `scalarMembers` beside `listOf` and `isScalar`, which all three readers already import.
+A lone `- [[Personal]]` now names nothing, so the live reconcile leaves it as written; beside other members, or joined from another spelling, `memberKey` keeps it as its own unresolved member and the no-shrink rule keeps the whole value. `spaceRelations`' `raw == null` guard goes, since `contextTitles` reads nothing from a null value. `memberKey` lives beside `joinValues` in Files, so neither layer imports Properties, and reads a wikilink member through `linkEntry`, the one reading of an unquoted connection, so `"[[a.png]]"` and `[[a.png]]` are one member to every join, count, and sweep; `linkValue.ts` imports nothing from Files, so the new edge makes no cycle. `scalarMembers` lives beside `listOf` and `isScalar`, which all three readers already import.
 
 ```Desktop/Store/ddl.ts diff
 -export const INDEX_GENERATION = 12
