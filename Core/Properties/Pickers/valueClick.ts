@@ -1,4 +1,4 @@
-// One home for what a click or a value menu means on every surface: a checkbox is true-or-absent on disk, never a stored false; the option kinds open their picker; a Date opens the calendar; a stamp opens nothing. Each surface only maps the intent to its own widget.
+// One home for what a click or a value menu means on every surface: a checkbox toggles between checked and its key removed, never a stored unchecked word; the option kinds open their picker; a Date opens the calendar; a stamp opens nothing. Each surface only maps the intent to its own widget.
 
 import type { PropertyValue } from '../propertyValue'
 import type { ColumnLook } from '../columnStyles'

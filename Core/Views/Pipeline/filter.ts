@@ -14,7 +14,12 @@ import {
   type PropertyDefinition,
   RESERVED_PROPERTY_ID,
 } from '../../Properties/properties'
-import { isBlankValue, type PropertyValue, type ValueKind } from '../../Properties/propertyValue'
+import {
+  checkboxWord,
+  isBlankValue,
+  type PropertyValue,
+  type ValueKind,
+} from '../../Properties/propertyValue'
 import { declaredType, resolveFieldValue } from '../../Properties/value'
 import type { SetTreeNode } from './group'
 import { linkDisplayText } from '../../Connections/linkValue'
@@ -124,21 +129,6 @@ function evaluatorOf(kind: ValueKind): Evaluator {
   }
 }
 
-function parseBool(s: string): boolean | null {
-  switch (s.toLowerCase()) {
-    case 'true':
-    case '1':
-    case 'yes':
-      return true
-    case 'false':
-    case '0':
-    case 'no':
-      return false
-    default:
-      return null
-  }
-}
-
 function textValue(v: PropertyValue): string | null {
   switch (v.kind) {
     case 'select':
@@ -236,7 +226,7 @@ function evaluateCheckbox(v: PropertyValue, op: string, want: string[]): boolean
       return v.kind !== 'checkbox'
     case FILTER_OPS.is:
     case FILTER_OPS.isNot: {
-      const e = parseBool(want[0])
+      const e = checkboxWord(want[0])
       if (e === null) return true
       return op === FILTER_OPS.is ? b === e : b !== e
     }

@@ -193,10 +193,10 @@ describe('setGovernedRootKey — spellings', () => {
     expect(splitFrontmatter(await readFile(page, 'utf8')).tags).toEqual(['claude', 'docs', 'New'])
   })
 
-  it('a checked box the file spells otherwise lands as true', async () => {
+  it('a checked box over an unchecked word lands as its pair’s checked word, cased alike', async () => {
     await seeded('Done: No')
     await setGovernedRootKey(page, 'Done', true, world)
-    expect(splitFrontmatter(await readFile(page, 'utf8')).Done).toBe(true)
+    expect(splitFrontmatter(await readFile(page, 'utf8')).Done).toBe('Yes')
   })
 
   it('collapses two spellings of a scalar under the registered spelling, where the first sat', async () => {

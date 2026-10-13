@@ -298,6 +298,15 @@ describe('applyFilter — per type', () => {
       ids(rows, { match: 'all', rules: [{ property_id: 'prop_done', op: 'is', value: 'true' }] }),
     ).toEqual(['t'])
     expect(
+      ids(rows, { match: 'all', rules: [{ property_id: 'prop_done', op: 'is', value: 'On' }] }),
+    ).toEqual(['t'])
+    expect(
+      ids(rows, { match: 'all', rules: [{ property_id: 'prop_done', op: 'is', value: 'N' }] }),
+    ).toEqual(['f', 'n'])
+    expect(
+      ids(rows, { match: 'all', rules: [{ property_id: 'prop_done', op: 'is', value: '1' }] }),
+    ).toEqual(['t', 'f', 'n'])
+    expect(
       ids(rows, { match: 'all', rules: [{ property_id: 'prop_done', op: 'is_empty' }] }),
     ).toEqual(['f', 'n'])
     expect(

@@ -105,10 +105,6 @@ describe('decodeValue — the declared type decides, never the shape', () => {
     expect(decodeValue(def({ type: 'multiSelect' }), { a: 1 })).toEqual({ kind: 'null' })
   })
 
-  it('a checkbox is true or absent — false written from outside reads as no value', () => {
-    expect(decodeValue(def({ type: 'checkbox' }), false)).toEqual({ kind: 'null' })
-  })
-
   it('a YAML number or boolean names the option it spells — an outside `- 2024` is the option "2024"', () => {
     const year = def({ type: 'select', select_options: [{ value: '2024' }] })
     expect(decodeValue(year, [2024])).toEqual({ kind: 'select', value: '2024' })
@@ -412,8 +408,13 @@ describe('writtenSpelling', () => {
     expect(writtenSpelling(['2024'], [2024])).toEqual(['2024'])
   })
 
-  it('a checked value keeps the checked word the file holds', () => {
+  it('a checked value keeps the checked word the file holds, and takes its unchecked word’s partner in the same casing', () => {
     expect(writtenSpelling(true, 'Yes')).toBe('Yes')
+    expect(writtenSpelling(true, 'no')).toBe('yes')
+    expect(writtenSpelling(true, 'No')).toBe('Yes')
+    expect(writtenSpelling(true, 'OFF')).toBe('ON')
+    expect(writtenSpelling(true, 'N')).toBe('Y')
+    expect(writtenSpelling(true, 'false')).toBe('true')
   })
 
   it('a checked value the file never held stays true', () => {
@@ -449,10 +450,10 @@ describe('options and checkboxes decode without regard to case', () => {
     })
   })
 
-  it('a checkbox reads true, or the word true or yes in any casing, as checked', () => {
-    for (const raw of ['Yes', 'yes', 'TRUE', 'true', true])
+  it('a checkbox reads a pair’s checked word in any casing as checked, and its partner or any other value as no value', () => {
+    for (const raw of ['Yes', 'yes', 'TRUE', 'true', true, 'on', 'ON', 'y', 'Y'])
       expect(decodeValue(checkbox, raw)).toEqual({ kind: 'checkbox', value: true })
-    for (const raw of ['No', '1', false, 1])
+    for (const raw of ['No', 'off', 'n', 'false', '1', false, 1])
       expect(decodeValue(checkbox, raw)).toEqual({ kind: 'null' })
   })
 

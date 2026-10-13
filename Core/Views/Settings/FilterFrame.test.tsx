@@ -510,7 +510,7 @@ describe('FilterFrame value editors', () => {
   it('a checkbox rule renders no value editor and its operator carries the clause', async () => {
     await mount(
       view({
-        filter: { match: 'all', rules: [{ property_id: 'prop_check', op: 'is', value: 'false' }] },
+        filter: { match: 'all', rules: [{ property_id: 'prop_check', op: 'is', value: 'no' }] },
       }),
     )
     expect(texts()).toContain("Isn't Checked")

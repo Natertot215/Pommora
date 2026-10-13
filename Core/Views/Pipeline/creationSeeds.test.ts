@@ -25,6 +25,11 @@ describe('filterSeeds', () => {
       p_status: { kind: 'select', value: 'doing' },
       p_check: { kind: 'checkbox', value: true },
     })
+    const word: FilterGroup = {
+      match: 'all',
+      rules: [{ property_id: 'p_check', op: 'is', value: 'Yes' }],
+    }
+    expect(filterSeeds(word, true, schema)).toEqual({ p_check: { kind: 'checkbox', value: true } })
   })
 
   it('derives the one chip a Select or Status Is rule saves, and nothing from two', () => {
