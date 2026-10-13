@@ -1,14 +1,14 @@
 ## Number & Checkbox Adoption — Implementation Plan
 
 **DATE:** 10-12-2026
-**STATUS:** Ratified 10-12-2026
+**STATUS:** Complete 10-13-2026 — `faadbae37..6c39e4862`
 **SOURCE:** This session's conversation of 10-12-2026 with Nathan; its rulings are listed under *§Constraints › Settled Decisions*.
 
 **BASELINE**
 
 | Head | Tests | Start | End |
 |------|-------|-------|-----|
-| `faadbae37` | 7,666 passed · 2 skipped | 10-12-2026 8:44 PM | {MM-DD-YYYY h:mm AM/PM} |
+| `faadbae37` | 7,666 passed · 2 skipped | 10-12-2026 8:44 PM | 10-13-2026 12:25 AM |
 
 ### Context
 
@@ -40,6 +40,7 @@ Every reader of a checkbox word — the filter, the creation seed, the filter pa
 | `contextTitles` • Function | The folded titles a Context value names, its scalar members only; Context resolution, the live reconcile, and the index's Space relations read it. | `Core/Contexts/contexts.ts` |
 | `scalarMembers` • Function | A held value's scalar members as strings; `optionList`, `contextTitles`, and a Context unlink read it. | `Core/Contract/validators.ts` |
 | `memberKey` • Function | What a held member matches by: the folded title of a scalar or an unquoted wikilink, or the member itself; `joinValues`, `namesValue`, and the reconcile's no-shrink `memberCount` read it. | `Core/Files/heldKeys.ts` |
+| `Metadata Spelling Drive/live-drive.mjs` • Script | The live drive over every value type's reads, writes, and rename cascades across quote styles, casings, checkbox words, and number shapes, one page per case. | `.claude/scripts/Metadata Spelling Drive/live-drive.mjs` |
 
 **REMOVED**
 
@@ -91,6 +92,7 @@ Every reader of a checkbox word — the filter, the creation seed, the filter pa
   - [x] Task 4-1
 - [x] **Phase 5** — Live Drive
   - [x] Task 5-1
+  - [x] Task 5-2
 - [x] `[Parallel: the Haiku comparison run, dispatched with Phase 1 — see §Execution Comparison]`
 
 ---
@@ -1326,49 +1328,65 @@ The rows keep the file's column padding; `…` stands for unchanged text.
 - [x] Each read printed and matched, pasted into *§Final Verification*'s own pass.
 - [x] `~/Test` restored (the harness's backup), no instance left running.
 
+#### Task 5-2
+
+**TASK:** A kept drive, `.claude/scripts/Metadata Spelling Drive/live-drive.mjs` on the same harness, runs the whole matrix against the built app, one page per case, and the scripts README describes it beside the other drives.
+
+**CHANGE**
+
+- [x] Cases: each checkbox word pair in three casings and three quote styles, checked and unchecked; each number shape under each quote style, unchanged and changed, with the shapes the grammar refuses; Select, Status, Multi-Select, Text, Link, File, and Space values held bare, single-quoted, double-quoted, in another casing, and as flow and block lists; and the page, whole-number page, option, Space, and property renames over held spellings.
+- [x] Register the properties and assert every page byte-identical; read each value from the table as it draws it; write each case and assert its exact bytes; untick every checkbox; run each rename and assert every holder.
+- [x] Document it in `.claude/scripts/README.md`; commit the drive and the README.
+
+**VERIFY**
+
+- [x] `node ".claude/scripts/Metadata Spelling Drive/live-drive.mjs"` exits 0 with every check passing; `~/Test` restored, no instance left running.
+
 ---
 
 ### Completion Criteria
 
 **Conformance**
 
-- [ ] This plan's commits change nothing outside the files the tasks name, `Dashboard/Ledger/loc-history.json`, and this plan; other sessions' commits to `active` inside `<BASELINE>..HEAD` are left out of every check and review.
-- [ ] One reader of number text in Core (`formatValue.ts`, beside `readDate`), one currency-symbol lookup, one checkbox vocabulary (`propertyValue.ts`), one value popover (`PropertyValueInput`), and one quote rule both frontmatter writers share (`nodeSpelledAs`); no second list of words or symbols and no helper the codebase already had.
+- [x] This plan's commits change nothing outside the files the tasks name, `Dashboard/Ledger/loc-history.json`, and this plan; other sessions' commits to `active` inside `<BASELINE>..HEAD` are left out of every check and review.
+- [x] One reader of number text in Core (`formatValue.ts`, beside `readDate`), one currency-symbol lookup, one checkbox vocabulary (`propertyValue.ts`), one value popover (`PropertyValueInput`), and one quote rule both frontmatter writers share (`nodeSpelledAs`); no second list of words or symbols and no helper the codebase already had.
 
 **Correctness**
 
-- [ ] A quoted, comma-grouped, percent, or currency number under a Number key reads as its number on every surface; a held unchecked word reads unchecked and a tick writes its partner; an untick removes the key.
-- [ ] A changed string of every type keeps the file's quotes, scalar or list member; an unchanged member keeps its spelling; no quote mark shows in any displayed value.
-- [ ] The live drive's bytes match Task 5-1.
+- [x] A quoted, comma-grouped, percent, or currency number under a Number key reads as its number on every surface; a held unchecked word reads unchecked and a tick writes its partner; an untick removes the key.
+- [x] A changed string of every type keeps the file's quotes, scalar or list member; an unchanged member keeps its spelling; no quote mark shows in any displayed value.
+- [x] The live drives' bytes match Tasks 5-1 and 5-2.
 
 **Completeness**
 
-- [ ] Every task ticked; no scaffolding, debug output, or TODO in `<BASELINE>..HEAD`.
+- [x] Every task ticked; no scaffolding, debug output, or TODO in `<BASELINE>..HEAD`.
 
 **Confirmation**
 
-- [ ] Every new test goes red with its change reverted.
+- [x] Every new test goes red with its change reverted.
 
 **Continuity**
 
-- [ ] *§Reconciliation* walked; PropertiesPM reads true.
+- [x] *§Reconciliation* walked; PropertiesPM reads true.
 
 **Confidence**
 
-- [ ] Gates green from clean across `<BASELINE>..HEAD`; the production diff is roughly +140/−95 lines, comments, tests, and docs excluded — growth past it reported.
+- [x] Gates green from clean across `<BASELINE>..HEAD`; the production diff is roughly +140/−95 lines, comments, tests, and docs excluded — growth past it reported. Landed at +47 (+184/−137): the net as planned, both sides larger through the review folds.
 
 #### Final Verification
 
 **THE STANDARD:** The work is finished when a later review of it finds nothing to correct. Not just doing the chores — doing the laundry, folding it, picking up what fell out of the hamper, emptying the lint trap, leaving no trace that anything went wrong. Nothing is carried as a concern, nothing is deferred where the fix is known, and nothing is declared that wasn't watched happen. Where something genuinely couldn't get there, the report names which and why, and everything else is still finished. Ambiguity met during execution took the simplest reading and was recorded; it didn't stop the run.
 
-- [ ] Phase review (Opus, high effort): Phase 1 · Phase 2 · Phase 3 · Phase 4
-- [ ] Simplification lens → adversarial lens (Opus, high effort) over `<BASELINE>..HEAD`
-- [ ] Fold review, simplification and adversarial (Opus, high effort): the quote-rule, scalar-member, and whole-link commits
-- [ ] Neutral verification (Opus, extra-high effort) over `<BASELINE>..HEAD`
-- [ ] Own pass: gates · diff · deviations · criteria · the drive's reads
-- [ ] Reconciliation walked
-- [ ] Execution comparison measured and recorded; the comparison worktree removed
-- [ ] Report delivered, with the comparison as its own section
+- [x] Phase review (Opus, high effort): Phase 1 · Phase 2 · Phase 3 · Phase 4
+- [x] Simplification lens → adversarial lens (Opus, high effort) over `<BASELINE>..HEAD`
+- [x] Fold review, simplification and adversarial (Opus, high effort): the quote-rule, scalar-member, and whole-link commits
+- [x] Neutral verification (Opus, extra-high effort) over `<BASELINE>..HEAD`
+- [x] Own pass: gates · diff · deviations · criteria · the drive's reads
+  - Gates at `6c39e4862` from a clean tree: typecheck 0 · 7,674 passed · 2 skipped · lint clean.
+  - Task 5-2's drive: registering left all 198 pages byte-identical; 184 reads as the table draws them; writes kept the file's spelling in every case (Check 72 · Amount 52 · Choice 9 · Stage 4 · Labels 12 · Note 13 · Ref 8 · Files 6 · Areas 7); 72 unticks removed the key; the page, whole-number page, option, Space, and property renames rewrote 14 holders in their own quotes — 17/17 checks.
+- [x] Reconciliation walked
+- [x] Execution comparison measured and recorded; the comparison worktree removed
+- [x] Report delivered, with the comparison as its own section
 
 #### Reconciliation
 
