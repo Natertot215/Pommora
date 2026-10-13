@@ -1,4 +1,4 @@
-// The setTree is built from node.sets (the real folder walk), so empty Sets still appear as disclosure groups and a Collection and a Set container flow through the identical structural path.
+// The setTree is node.sets itself (the real folder walk), so empty Sets still appear as disclosure groups and a Collection and a Set container flow through the identical structural path.
 
 import type { CollectionNode, PageNode, SetNode } from '../../Nexus/tree'
 import {
@@ -34,9 +34,11 @@ import type { SetIndex } from './setIndex'
 export type PropertyGroup = Extract<GroupConfig, { kind: 'property' }>
 type Sorter = (rows: ViewRow[]) => ViewRow[]
 
+/** A Collection or Set as the tree already holds it — the filter and grouping read the nodes themselves, never a rebuilt copy. */
 export interface SetTreeNode {
   id: string
-  children: SetTreeNode[]
+  title: string
+  sets?: SetTreeNode[]
 }
 
 const applySort = (rows: ViewRow[], sorter: Sorter | null): ViewRow[] =>
@@ -65,18 +67,14 @@ function groupRows<K>(rows: ViewRow[], keyOf: (r: ViewRow) => K): Map<K, ViewRow
   return m
 }
 
-export function buildSetTree(sets: SetNode[] | undefined): SetTreeNode[] {
-  return (sets ?? []).map((s) => ({ id: s.id, children: buildSetTree(s.sets) }))
-}
-
 function subtreeIds(node: SetTreeNode): string[] {
-  return [node.id, ...node.children.flatMap(subtreeIds)]
+  return [node.id, ...(node.sets ?? []).flatMap(subtreeIds)]
 }
 
 /** Hidden-set prune, ahead of resolution: a hidden node leaves with its whole subtree, so every structural path excludes its pages by construction. */
 export function pruneHiddenSets(tree: SetTreeNode[], hidden: ReadonlySet<string>): SetTreeNode[] {
   return tree.flatMap((node) =>
-    hidden.has(node.id) ? [] : [{ id: node.id, children: pruneHiddenSets(node.children, hidden) }],
+    hidden.has(node.id) ? [] : [{ ...node, sets: pruneHiddenSets(node.sets ?? [], hidden) }],
   )
 }
 
@@ -138,7 +136,7 @@ export function flattenContainer(
     for (const child of container.sets ?? []) walk(child, child.id)
   }
   walk(node, undefined)
-  return { rows, setTree: buildSetTree(node.sets) }
+  return { rows, setTree: node.sets ?? [] }
 }
 
 /** UTC arithmetic, so adding days never crosses a DST boundary. A week belongs to the year of its Thursday; weeks start Monday. */
@@ -267,7 +265,7 @@ function structural(
   const bySet = groupRows(rows, (r) => r.parentSetId)
   const rootRows = bySet.get(undefined) ?? []
   const build = (node: SetTreeNode): ResolvedGroup => {
-    const children = node.children.map(build)
+    const children = (node.sets ?? []).map(build)
     return {
       key: node.id,
       kind: 'set',

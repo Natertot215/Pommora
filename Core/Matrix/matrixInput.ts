@@ -7,7 +7,7 @@ import { spaceRowOf } from '../Properties/pageRow'
 import { type PropertyDefinition, specOf } from '../Properties/properties'
 import { declaredType } from '../Properties/value'
 import { applyFilter } from '../Views/Pipeline/filter'
-import { buildSetTree, toRow } from '../Views/Pipeline/group'
+import { toRow } from '../Views/Pipeline/group'
 import type { ViewRow } from '../Views/viewRow'
 import { type FilterRule, filtering, mapRules, OPERANDLESS_OPS } from '../Views/filterRules'
 import type { GraphInput } from './Engine/graph'
@@ -100,8 +100,9 @@ export function matrixVisible(
   const contextIds = contextIdsOf(tree)
   const rows = seats.map((s) => toRow(s.page, s.folderId, values, tree.config.pageMetadata))
   // Collections are the roots, so a Location rule can name a Collection as well as a Set.
-  const setTree = tree.collections.map((c) => ({ id: c.id, children: buildSetTree(c.sets) }))
-  const ids = new Set(applyFilter(rows, rules, schema, setTree, contextIds).map((r) => r.id))
+  const ids = new Set(
+    applyFilter(rows, rules, schema, tree.collections, contextIds).map((r) => r.id),
+  )
   // Self-membership belongs to the filter and stays out of spaceRowOf, which the panel and the menus read.
   for (const g of tree.contexts)
     for (const s of g.spaces) {

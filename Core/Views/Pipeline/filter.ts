@@ -42,7 +42,8 @@ export function applyFilter(
   return test ? rows.filter(test) : rows
 }
 
-function prepareGroup(
+/** `undefined` when no rule applies — a caller asking "does this match" reads that as no. */
+export function prepareGroup(
   group: FilterGroup,
   schema: PropertyDefinition[],
   setTree: SetTreeNode[],
@@ -77,10 +78,11 @@ function prepareRule(
   if (t === undefined) return undefined
   // resolveFieldValue('_title') carries row.title as a select-kind string — the text evaluator reads it.
   const evaluate = t === 'title' ? evaluateText : evaluatorOf(PROPERTY_TYPES[t].kind)
-  return (row) => evaluate(resolveFieldValue(row, id, schema), op, want)
+  const operands = evaluate === evaluateText ? want.map(foldKey) : want
+  return (row) => evaluate(resolveFieldValue(row, id, schema), op, operands)
 }
 
-// Is/Isn't test the immediate parent, Contains/Doesn't any depth.
+// Is/Isn't test the immediate parent by id, Contains/Doesn't any depth by id or folder name.
 function prepareLocation(op: string, want: string[], setTree: SetTreeNode[]): RowTest | undefined {
   switch (op) {
     case FILTER_OPS.is:
@@ -90,11 +92,13 @@ function prepareLocation(op: string, want: string[], setTree: SetTreeNode[]): Ro
     case FILTER_OPS.isInside:
     case FILTER_OPS.isNotInside: {
       const inside = new Set<string>()
+      const names = new Set(want.map(foldKey))
+      const hit = (n: SetTreeNode): boolean => want.includes(n.id) || names.has(foldKey(n.title))
       const walk = (nodes: SetTreeNode[], within: boolean): void => {
         for (const n of nodes) {
-          const hit = within || want.includes(n.id)
-          if (hit) inside.add(n.id)
-          walk(n.children, hit)
+          const held = within || hit(n)
+          if (held) inside.add(n.id)
+          walk(n.sets ?? [], held)
         }
       }
       walk(setTree, false)
@@ -234,23 +238,25 @@ function evaluateCheckbox(v: PropertyValue, op: string, want: string[]): boolean
   }
 }
 
+// `want` arrives folded; the value folds once here.
 function evaluateText(v: PropertyValue, op: string, want: string[]): boolean {
   const s = textValue(v)
+  const f = s === null ? null : foldKey(s)
   switch (op) {
     case FILTER_OPS.isEmpty:
       return s === null || s === ''
     case FILTER_OPS.isNotEmpty:
       return !(s === null || s === '')
     case FILTER_OPS.is:
-      return s !== null && want.includes(s)
+      return f !== null && want.includes(f)
     case FILTER_OPS.isNot:
-      return s === null || !want.includes(s)
+      return f === null || !want.includes(f)
     case FILTER_OPS.contains:
-      return s !== null && foldKey(s).includes(foldKey(want[0]))
+      return f?.includes(want[0]) ?? false
     case FILTER_OPS.doesNotContain:
-      return s === null || !foldKey(s).includes(foldKey(want[0]))
+      return f === null || !f.includes(want[0])
     case FILTER_OPS.startsWith:
-      return s !== null && foldKey(s).startsWith(foldKey(want[0]))
+      return f?.startsWith(want[0]) ?? false
     default:
       return true
   }
