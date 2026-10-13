@@ -4,8 +4,9 @@ import { z } from 'zod'
 import { isPlainObject } from '../Contract/validators'
 import { newId } from '../Nexus/ids'
 import { columnStyle, holdsStyle } from '../Properties/columnStyles'
-import { eachOf, entriesOf, looseDecoder, numberCheck } from '../Files/decoders'
+import { eachOf, entriesOf, idArray, looseDecoder, numberCheck } from '../Files/decoders'
 import { TENTHS_SCALE, ZOOM } from '../Settings/personalization'
+import { filterGroup } from './filterRules'
 import { mergeKeys } from '../Files/jsonMerge'
 import type { Json } from '../Files/stableJson'
 import { type PropertyDefinition, RESERVED_PROPERTY_ID } from '../Properties/properties'
@@ -42,8 +43,6 @@ export const COLUMN_ALIGNS = ['left', 'center', 'right'] as const
 export type ColumnAlign = (typeof COLUMN_ALIGNS)[number]
 
 const SORT_DIRECTIONS = ['ascending', 'descending'] as const
-const MATCH_MODES = ['all', 'any'] as const
-export type MatchMode = (typeof MATCH_MODES)[number]
 
 const GROUP_ORDER_MODES = ['configured', 'reversed', 'manual'] as const
 export type GroupOrderMode = (typeof GROUP_ORDER_MODES)[number]
@@ -73,88 +72,12 @@ export type GroupConfig =
   | { kind: 'flat' }
   | ({ kind: 'property' } & SubGroupConfig)
 
-const idArray = eachOf(z.string()).catch([])
-
 const sortCriterion = z.object({
   property_id: z.string(),
   direction: z.enum(SORT_DIRECTIONS),
   order: idArray.optional(),
 })
 export type SortCriterion = z.infer<typeof sortCriterion>
-
-const filterRule = z.object({
-  property_id: z.string(),
-  op: z.string(),
-  value: z.string().optional(),
-  values: idArray.optional(),
-})
-export type FilterRule = z.infer<typeof filterRule>
-
-/** RECURSIVE: a child may itself be a FilterGroup, expressing mixed AND/OR. Whether the filter APPLIES is a separate axis (`filter_enabled`), so turning it off never costs it its authored mode. */
-export type FilterGroup = { match: MatchMode; rules: Array<FilterRule | FilterGroup> }
-
-// A rule this build can't read drops alone, and the rest still filter.
-export const filterGroup: z.ZodType<FilterGroup> = z.object({
-  match: z.enum(MATCH_MODES),
-  get rules() {
-    return eachOf(z.union([filterRule, filterGroup]))
-  },
-})
-
-export const FILTER_OPS = {
-  is: 'is',
-  isNot: 'is_not',
-  contains: 'contains',
-  doesNotContain: 'does_not_contain',
-  isEmpty: 'is_empty',
-  isNotEmpty: 'is_not_empty',
-  greaterThan: 'greater_than',
-  lessThan: 'less_than',
-  onOrAfter: 'on_or_after',
-  onOrBefore: 'on_or_before',
-  endsOnOrAfter: 'ends_on_or_after',
-  endsOnOrBefore: 'ends_on_or_before',
-  startsWith: 'starts_with',
-  containsAll: 'contains_all',
-  containsAny: 'contains_any',
-  isBefore: 'is_before',
-  isAfter: 'is_after',
-  greaterOrEqual: 'greater_or_equal',
-  lessOrEqual: 'less_or_equal',
-  isInside: 'is_inside',
-  isNotInside: 'is_not_inside',
-} as const
-
-/** The ops that are complete without an operand; everything else is unauthored until one arrives. */
-export const OPERANDLESS_OPS = new Set<string>([FILTER_OPS.isEmpty, FILTER_OPS.isNotEmpty])
-
-export const SUBSTRING_OPS = new Set<string>([
-  FILTER_OPS.contains,
-  FILTER_OPS.doesNotContain,
-  FILTER_OPS.startsWith,
-])
-
-/** A chip list wins over a single value, as the pane writes one or the other. */
-export const ruleOperands = (rule: FilterRule): string[] =>
-  rule.values?.length ? rule.values : rule.value != null ? [rule.value] : []
-
-export const answerable = (rule: FilterRule): boolean =>
-  OPERANDLESS_OPS.has(rule.op) || ruleOperands(rule).length > 0
-
-export const isGroup = (node: FilterRule | FilterGroup): node is FilterGroup =>
-  isPlainObject(node) && Array.isArray((node as { rules?: unknown }).rules)
-
-export function mapRules(
-  group: FilterGroup,
-  fn: (rule: FilterRule) => FilterRule | null,
-): FilterGroup {
-  return {
-    ...group,
-    rules: group.rules.flatMap<FilterRule | FilterGroup>((node) =>
-      isGroup(node) ? [mapRules(node, fn)] : isPlainObject(node) ? (fn(node) ?? []) : [node],
-    ),
-  }
-}
 
 function mapList<T>(xs: readonly T[], f: (x: T, i: number) => T | null): T[] | null {
   let found = false

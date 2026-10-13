@@ -2,7 +2,13 @@
 
 import { type PropertyDefinition, specOf } from '../../Properties/properties'
 import type { PropertyValue } from '../../Properties/propertyValue'
-import { FILTER_OPS, type FilterGroup, type FilterRule, isGroup, ruleOperands } from '../views'
+import {
+  FILTER_OPS,
+  type FilterGroup,
+  type FilterRule,
+  isGroup,
+  ruleOperands,
+} from '../filterRules'
 import { declaredType } from '../../Properties/value'
 import { groupKeyToValue } from '../reassign'
 
