@@ -3,6 +3,7 @@ import {
   type Node,
   type Pair,
   type ParsedNode,
+  type Scalar,
   parseDocument,
   isMap,
   isScalar,
@@ -111,24 +112,25 @@ export function assembleEnvelope(frontmatterYaml: string, body: string): string 
 const envelope = (fenced: boolean, fm: string, body: string): string =>
   fenced || fm !== '' ? assembleEnvelope(fm, body) : body
 
-/** `value` as a node spelled as `held` is, the value itself and each member of a list alike: a single-line string takes the quotes of the held string or of the held list's first quoted member, a kept unquoted `[[x]]` keeps its flow spelling, and anything else is spelled as yaml spells it. */
+const QUOTE_MARK = { QUOTE_DOUBLE: '"', QUOTE_SINGLE: "'" } as const
+
+/** Whether a held string's quotes are the file's choice: quoted, and not as yaml quotes that string unasked (a numeral's `"2024"`, `'"Q3"'`). */
+const quotedByChoice = (n: Scalar): boolean =>
+  (n.type === 'QUOTE_DOUBLE' || n.type === 'QUOTE_SINGLE') &&
+  yamlInline(n.value)[0] !== QUOTE_MARK[n.type]
+
+/** `value` as a node spelled as `held` is: a list keeps the held list's flow or block style, and a list nested in it, or a whole unquoted `[[x]]`, is written flow; each single-line string, the value itself or a list's member, keeps the quotes of the held string equal to it, else takes those of the first held string quoted by choice; anything else is spelled as yaml spells it. */
 function nodeSpelledAs(doc: Document, value: unknown, held: unknown): Node {
   const node = doc.createNode(value)
+  const spellings = (isSeq(held) ? held.items : [held]).filter(isScalar)
+  const model = spellings.find(quotedByChoice)
   const only = isSeq(node) && node.items.length === 1 ? node.items[0] : null
-  if (isSeq(node) && isSeq(only) && only.items.length === 1 && isScalar(only.items[0]))
-    node.flow = true
-  const model = (isSeq(held) ? held.items : [held]).find(
-    (n) => isScalar(n) && (n.type === 'QUOTE_DOUBLE' || n.type === 'QUOTE_SINGLE'),
-  )
+  const wholeLink = isSeq(only) && only.items.length === 1 && isScalar(only.items[0])
+  if (isSeq(node) && ((isSeq(held) && held.flow) || wholeLink)) node.flow = true
   for (const member of isSeq(node) ? node.items : [node]) {
     if (isSeq(member)) member.flow = true
-    else if (
-      isScalar(model) &&
-      isScalar(member) &&
-      typeof member.value === 'string' &&
-      !member.value.includes('\n')
-    )
-      member.type = model.type
+    else if (isScalar(member) && typeof member.value === 'string' && !member.value.includes('\n'))
+      member.type = (spellings.find((n) => n.value === member.value) ?? model)?.type
   }
   return node
 }
