@@ -2,7 +2,7 @@
 
 | Date                    | ID     | Entry                                                |
 | ----------------------- | ------ | ---------------------------------------------------- |
-| 10-12-2026 → 10-13      | PM-149 | Quote-Insensitive Metadata                           |
+| 10-12-2026              | PM-149 | Quote-Insensitive Metadata                           |
 | 10-08-2026              | PM-148 | Text Properties                                      |
 | 10-06-2026 → 10-07      | PM-147 | Codeblock Deltas                                     |
 | 09-29-2026              | PM-146 | Interface Scrollbars                                 |
@@ -154,12 +154,12 @@
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot                                 |
 
 #### PM-149 || Quote-Insensitive Metadata
-**DATE:** 10-12-2026 → 10-13
+**DATE:** 10-12-2026
 
-Number and Checkbox joined Multi-Select and Text in reading what other applications write: a Checkbox read `true`/`false`, `yes`/`no`, `on`/`off`, and `y`/`n` in any casing, and a tick over an unchecked word wrote its partner in the same casing, while a Number read a quoted value or one written with comma thousands, a trailing percent sign, or a currency symbol, and an edit kept the file's symbol, grouping, and decimal places around the new digits. Every metadata value — properties of every type, Space links, and the connections in Link and File values — came to match without regard to quoting, so `'Work'`, `"Work"`, and `Work` named the same option or Space. Writes began keeping the file's own spelling: each unchanged value stayed as written, a list kept its flow or block style, and a changed value took the quotes the file chose rather than quotes YAML had only needed elsewhere, leaving Pommora's own writes bare. The number popover became the shared value popover, which stopped a dismissed edit from erasing a value, and filters, checkbox rules, and new-page seeds read the same word pairs. A live drive covering every type, quote style, casing, checkbox word, number shape, and rename cascade was added to the project's scripts.
+Number and Checkbox joined Multi-Select and Text in reading what other applications write: a Checkbox read `true`/`false`, `yes`/`no`, `on`/`off`, and `y`/`n` in any casing, and a tick over an unchecked word wrote its partner in the same casing, while a Number read a quoted value or one written with comma thousands, a trailing percent sign, or a currency symbol, and an edit kept the file's symbol, grouping, and decimal places around the new digits. Every metadata value — all property types, Space links, and the connections within Link and File values — came to match without regard to quoting, so `'Work'`, `"Work"`, and `Work` reference the same option or Space. Writes began keeping the file's own spelling: each unchanged value stayed as written, a list kept its flow or block style, and a changed value took the quotes the file chose rather than quotes YAML had only needed elsewhere, leaving Pommora's own writes bare. The number popover became the shared value popover, which stopped a dismissed edit from erasing a value, and filters, checkbox rules, and new-page seeds read the same word pairs. A live drive covering every type, quote style, casing, checkbox word, number shape, and rename cascade was added to the project's scripts.
 
-- **Commits:** `4264df480^..6c39e4862`
-- **Diff:** Net +47 | +184 / −137
+- **Commits:** `4264df480^..c8b0f1070`
+- **Diff:** Net +61 | +202 / −141
 
 #### PM-148 || Text Properties
 **DATE:** 10-08-2026

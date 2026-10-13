@@ -1,14 +1,14 @@
 ## Number & Checkbox Adoption — Implementation Plan
 
 **DATE:** 10-12-2026
-**STATUS:** Complete 10-13-2026 — `faadbae37..6c39e4862`
+**STATUS:** Complete 10-13-2026 — `faadbae37..c8b0f1070`
 **SOURCE:** This session's conversation of 10-12-2026 with Nathan; its rulings are listed under *§Constraints › Settled Decisions*.
 
 **BASELINE**
 
 | Head | Tests | Start | End |
 |------|-------|-------|-----|
-| `faadbae37` | 7,666 passed · 2 skipped | 10-12-2026 8:44 PM | 10-13-2026 12:25 AM |
+| `faadbae37` | 7,666 passed · 2 skipped | 10-12-2026 8:44 PM | 10-13-2026 1:05 AM |
 
 ### Context
 
@@ -26,21 +26,23 @@ Every reader of a checkbox word — the filter, the creation seed, the filter pa
 
 **ADDED**
 
-| Concept | Description | Location |
-| ------- | ----------- | -------- |
-| `readNumber` • Function | The one reading of a stored or typed number: a YAML number as itself, or a string spelling one. Read by `decodeValue`, `parseEditorValue`, and the Number filter. | `Core/Properties/formatValue.ts` |
-| `spelledNumber` • Function | A number written in the spelling a held string uses; `writtenSpelling`'s number arm. | `Core/Properties/formatValue.ts` |
-| `currencySymbol` • Function | The symbol Intl gives a currency, by default as a cell shows it or narrow as the picker leads with it; `numberFormatGlyph` and the reader's symbol list both read it. | `Core/Properties/formatValue.ts` |
-| `escapeRegExp` • Function | Text with every RegExp syntax character escaped; the reader's symbol alternation and `webGuests.ts`'s app-name match both read it. | `UIX/Utilities/escapeRegExp.ts` |
-| `nodeSpelledAs` • Function | A changed value as a node spelled as the held spellings of its key: a list keeps the flow or block style of the one it lands on, each single-line string keeps its own held quotes from any spelling or takes those the file chose, and a kept unquoted wikilink, whole or a member, keeps its flow spelling. `mergeInto` and `renameFrontmatterKey` write through it. | `Core/Files/pageFile.ts` |
-| `isWholeLink` • Function | Whether a node is a whole unquoted `[[x]]`, a list of one list of one scalar; `nodeSpelledAs` writes one flow, and reads a held one as no list style. | `Core/Files/pageFile.ts` |
-| `quotesUnasked` • Function | Whether yaml quotes a string unasked, as it does a numeral or a `[[Page]]`; `nodeSpelledAs` reads it to tell the quotes a file chose from the ones yaml needed. | `Core/Files/pageFile.ts` |
-| `checkboxWord` • Function | What a checkbox value says in any casing: true, false, or null. Read by `decodeValue`, the filter, the group-key decode, and the filter pane. | `Core/Properties/propertyValue.ts` |
-| `checkedSpelling` • Function | A checked value as a held value spells one; `writtenSpelling`'s checkbox arm. | `Core/Properties/propertyValue.ts` |
-| `contextTitles` • Function | The folded titles a Context value names, its scalar members only; Context resolution, the live reconcile, and the index's Space relations read it. | `Core/Contexts/contexts.ts` |
-| `scalarMembers` • Function | A held value's scalar members as strings; `optionList`, `contextTitles`, and a Context unlink read it. | `Core/Contract/validators.ts` |
-| `memberKey` • Function | What a held member matches by: the folded title of a scalar or an unquoted wikilink, or the member itself; `joinValues`, `namesValue`, and the reconcile's no-shrink `memberCount` read it. | `Core/Files/heldKeys.ts` |
-| `Metadata Spelling Drive/live-drive.mjs` • Script | The live drive over every value type's reads, writes, and rename cascades across quote styles, casings, checkbox words, and number shapes, one page per case. | `.claude/scripts/Metadata Spelling Drive/live-drive.mjs` |
+| Concept                                           | Description                                                                                                                                                                                                                                                                                                                                                            | Location                                                 |
+| ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| `readNumber` • Function                           | The one reading of a stored or typed number: a YAML number as itself, or a string spelling one. Read by `decodeValue`, `parseEditorValue`, and the Number filter.                                                                                                                                                                                                      | `Core/Properties/formatValue.ts`                         |
+| `spelledNumber` • Function                        | A number written in the spelling a held string uses; `writtenSpelling`'s number arm.                                                                                                                                                                                                                                                                                   | `Core/Properties/formatValue.ts`                         |
+| `currencySymbol` • Function                       | The symbol Intl gives a currency, by default as a cell shows it or narrow as the picker leads with it; `numberFormatGlyph` and the reader's symbol list both read it.                                                                                                                                                                                                  | `Core/Properties/formatValue.ts`                         |
+| `escapeRegExp` • Function                         | Text with every RegExp syntax character escaped; the reader's symbol alternation and `webGuests.ts`'s app-name match both read it.                                                                                                                                                                                                                                     | `UIX/Utilities/escapeRegExp.ts`                          |
+| `nodeSpelledAs` • Function                        | A changed value as a node spelled as the held spellings of its key: a list keeps the flow or block style of the one it lands on, each single-line string keeps its own held quotes from any spelling or takes those the file chose, and a kept unquoted wikilink, whole or a member, keeps its flow spelling. `mergeInto` and `renameFrontmatterKey` write through it. | `Core/Files/pageFile.ts`                                 |
+| `wholeLinkTitle` • Function                       | The title node of a whole unquoted `[[x]]`, a list of one list of one scalar; `nodeSpelledAs` writes one flow and reads a held one as no list style, and `linkAsWritten` reads its title.                                                                                                                                                                              | `Core/Files/pageFile.ts`                                 |
+| `linkAsWritten` • Function                        | A whole unquoted `[[x]]` whose title yaml read as a number or boolean that prints otherwise, as its title was written; the frontmatter read substitutes it.                                                                                                                                                                                                            | `Core/Files/pageFile.ts`                                 |
+| `quotesUnasked` • Function                        | Whether yaml quotes a string unasked, as it does a numeral or a `[[Page]]`; `nodeSpelledAs` reads it to tell the quotes a file chose from the ones yaml needed.                                                                                                                                                                                                        | `Core/Files/pageFile.ts`                                 |
+| `checkboxWord` • Function                         | What a checkbox value says in any casing: true, false, or null. Read by `decodeValue`, the filter, the group-key decode, and the filter pane.                                                                                                                                                                                                                          | `Core/Properties/propertyValue.ts`                       |
+| `checkedSpelling` • Function                      | A checked value as a held value spells one; `writtenSpelling`'s checkbox arm.                                                                                                                                                                                                                                                                                          | `Core/Properties/propertyValue.ts`                       |
+| `asText` • Function                               | A held value as text: a string as itself, an unquoted `[[x]]` as the connection it spells, anything else as the yaml that spells it; the Text decode and `writtenSpelling`'s string arm read it.                                                                                                                                                                       | `Core/Properties/propertyValue.ts`                       |
+| `contextTitles` • Function                        | The folded titles a Context value names, its scalar members only; Context resolution, the live reconcile, and the index's Space relations read it.                                                                                                                                                                                                                     | `Core/Contexts/contexts.ts`                              |
+| `scalarMembers` • Function                        | A held value's scalar members as strings; `optionList`, `contextTitles`, and a Context unlink read it.                                                                                                                                                                                                                                                                 | `Core/Contract/validators.ts`                            |
+| `memberKey` • Function                            | What a held member matches by: a scalar's folded title, or the member itself; `joinValues`, `namesValue`, and the reconcile's no-shrink `memberCount` read it.                                                                                                                                                                                                         | `Core/Files/heldKeys.ts`                                 |
+| `Metadata Spelling Drive/live-drive.mjs` • Script | The live drive over every value type's reads, writes, and rename cascades across quote styles, casings, checkbox words, and number shapes, one page per case.                                                                                                                                                                                                          | `.claude/scripts/Metadata Spelling Drive/live-drive.mjs` |
 
 **REMOVED**
 
@@ -70,7 +72,7 @@ Every reader of a checkbox word — the filter, the creation seed, the filter pa
 - The write-back decision is noted on its line as a one-line comment.
 - A changed value keeps the file's quote formatting, for every type and every list member, through one helper both frontmatter writers share (`nodeSpelledAs`), reversing the Text-era fresh-node write (`b80a7b12a`). Keys and values match without regard to case or quoting; an unchanged member keeps its spelling, its own quotes included (`2024`, a bare `b` beside `"a"`, `[[a.png]]`), and a list keeps its flow or block style. A quote yaml needed — a numeral's `"2024"` or `'2024'`, `'"Q3"'` — isn't the file's choice, so it spreads to no value yaml would leave bare, a joined member keeps its own quotes from whichever spelling held it, and a Space, like every type, is bare by default. A string YAML can only spell quoted — a changed `[[Page]]`, or `43` over a bare `42` — takes yaml's double quotes. PropertiesPM states the write rule as one of its primary rules. `ID` follows the same rule as every key.
 - A Context value names Spaces through its scalar members only, as every option list already reads; a wikilink member is an unknown value like any other.
-- Link and File join the same rule if they come free, and they do: `linkEntry` reads a quoted or unquoted connection alike, a title yaml reads as a whole number included and a decimal, whose trailing zeros yaml has dropped, left unread, both writers are type-agnostic, and a page rename's frontmatter rewrite lands through `nodeSpelledAs`. A whole unquoted `[[x]]` that gains a sibling becomes a block list of quoted members, the spelling yaml gives a string link.
+- Link and File join the same rule if they come free, and they do: `linkEntry` reads a quoted or unquoted connection alike, a title yaml reads as a number or boolean read as written (`[[007]]`, `[[1.10]]`), both writers are type-agnostic, and a page rename's frontmatter rewrite lands through `nodeSpelledAs`. A whole unquoted `[[x]]` that gains a sibling becomes a block list of quoted members, the spelling yaml gives a string link.
 - Documentation stays overview-level: nothing the code shows plainly, no exhaustive detail.
 - Plan reviews before ratification run as Opus at extra-high effort; every code review during and after execution runs as Opus at high effort, and the final neutral verification as Opus at extra-high effort.
 - Execution is dispatched to Opus at low effort, phase by phase. Alongside it, one Haiku agent at extra-high effort applies the same plan in a parallel worktree, as a comparison of whether Opus earns its cost on code the plan already writes; *§Execution Comparison* records the outcome.
@@ -386,16 +388,43 @@ The edited fixture pins a hand-written word; `twoRules` still pins the pane's ow
 +  stringify,
 +} from 'yaml'
 
+@@ valuesOf @@
+
++/** The title of a whole unquoted `[[x]]`, a list of one list of one scalar; null for any other node. */
++function wholeLinkTitle(n: unknown): Scalar | null {
++  const only = isSeq(n) && n.items.length === 1 ? n.items[0] : null
++  const title = isSeq(only) && only.items.length === 1 ? only.items[0] : null
++  return isScalar(title) ? title : null
++}
++
++/** A whole unquoted `[[x]]` whose title yaml read as a number or boolean that prints otherwise (`[[007]]`, `[[1.10]]`, `[[True]]`), as its title was written; undefined for any other node. */
++function linkAsWritten(n: unknown): unknown[][] | undefined {
++  const title = wholeLinkTitle(n)
++  if (!title || typeof title.value === 'string' || title.source === undefined) return undefined
++  return title.source === String(title.value) ? undefined : [[title.source]]
++}
++
+~/** Anything that isn't a YAML map — an array, a scalar, unrecoverable YAML — reads as an empty map, and the file is still a valid page. A whole unquoted `[[x]]`, the value or a list's member, keeps its title as written, so a connection names the page its author typed. */
+ function valuesOf(doc: Document): Record<string, unknown> {
+   try {
+     const parsed: unknown = doc.toJSON()
+-    return isPlainObject(parsed) ? parsed : {}
++    if (!isPlainObject(parsed)) return {}
++    for (const { key, value } of isMap(doc.contents) ? doc.contents.items : []) {
++      const written = linkAsWritten(value)
++      if (written) parsed[String(key)] = written
++      else if (isSeq(value))
++        value.items.forEach((member, i) => {
++          const link = linkAsWritten(member)
++          if (link) (parsed[String(key)] as unknown[])[i] = link
++        })
++    }
++    return parsed
+
 @@ above mergeInto @@
 
 +/** Whether yaml quotes `value` unasked, as it does a numeral's `"2024"`, a `'"Q3"'`, or a `[[Page]]`. */
 +const quotesUnasked = (value: unknown): boolean => /^["']/.test(yamlInline(value))
-+
-+/** Whether `n` is a whole unquoted `[[x]]`: a list of one list of one scalar. */
-+function isWholeLink(n: unknown): boolean {
-+  const only = isSeq(n) && n.items.length === 1 ? n.items[0] : null
-+  return isSeq(only) && only.items.length === 1 && isScalar(only.items[0])
-+}
 +
 +/** `value` as a node spelled as the `held` spellings of its key are, the first the one it lands on: a list keeps that one's flow or block style unless it's a whole unquoted `[[x]]`, whose brackets spell a link rather than a style, and a list nested in it, or a whole `[[x]]`, is written flow; each single-line string, the value itself or a list's member, keeps the quotes of the held string equal to it, else takes those of the first held string quoted where yaml wouldn't, and a string yaml quotes unasked, where the file chose none, those of the first quoted held string; anything else is spelled as yaml spells it. */
 +function nodeSpelledAs(doc: Document, value: unknown, held: unknown[]): Node {
@@ -404,8 +433,8 @@ The edited fixture pins a hand-written word; `twoRules` still pins the pane's ow
 +  const heldScalars = held.flatMap((h) => (isSeq(h) ? h.items : [h])).filter(isScalar)
 +  const quoted = heldScalars.filter((n) => n.type === 'QUOTE_DOUBLE' || n.type === 'QUOTE_SINGLE')
 +  const chosen = quoted.find((n) => !quotesUnasked(n.value))
-+  const flowHeld = isSeq(lands) && lands.flow && !isWholeLink(lands)
-+  if (isSeq(node) && (flowHeld || isWholeLink(node))) node.flow = true
++  const flowHeld = isSeq(lands) && lands.flow && !wholeLinkTitle(lands)
++  if (isSeq(node) && (flowHeld || wholeLinkTitle(node))) node.flow = true
 +  for (const member of isSeq(node) ? node.items : [node]) {
 +    if (isSeq(member)) member.flow = true
 +    else if (isScalar(member) && typeof member.value === 'string' && !member.value.includes('\n'))
@@ -447,7 +476,7 @@ The edited fixture pins a hand-written word; `twoRules` still pins the pane's ow
 +    for (const p of joined) drop(p)
 ```
 
-yaml's own in-place replacement — `doc.set(key, rawValue)` over a scalar keeps that node's style — is what `b80a7b12a` bypassed, and it doesn't fit: it keeps a `|-` block on a one-line value, folds a multi-line value under a plain node into broken lines, and replaces lists wholesale. So the helper builds a fresh node and carries the spelling over: the list's flow or block style, each unchanged member's own quotes, and for a changed string the quotes the file chose. A quote yaml would give that string unasked — the quotes on a numeral string, in either style, or those around a `"` — is no choice, so it stays on its own value and spreads to none yaml would leave bare, while a new value yaml must quote takes the style the file held. The writes delete a dropped spelling only after the written key is spelled, so its members are among the held spellings. A multi-line string keeps yaml's `|-` block. A quoted value replaced by a number, boolean, or list of non-strings lands as yaml spells it. A string YAML can only spell quoted — a changed `[[Page]]`, or `43` over a bare `42` — takes yaml's double quotes. A joined member keeps its own quotes from whichever spelling held it, and the join takes the list style of the spelling it lands on. Escaping round-trips under both styles, and yaml falls back to double quotes where single can't hold the content (checked against yaml 2.9.0 across every writer: governed writes, the page and heading rename cascades, every sweep, undo, the Trash restore, asset migration, and ID stamping). An unquoted `[[a.png]]` parses as a nested list, so without the flow spelling a changed list would write a kept member `- - - a.png`, and a whole value kept into a fresh key (a property refill) `- - a.png`.
+yaml's own in-place replacement — `doc.set(key, rawValue)` over a scalar keeps that node's style — is what `b80a7b12a` bypassed, and it doesn't fit: it keeps a `|-` block on a one-line value, folds a multi-line value under a plain node into broken lines, and replaces lists wholesale. So the helper builds a fresh node and carries the spelling over: the list's flow or block style, each unchanged member's own quotes, and for a changed string the quotes the file chose. A quote yaml would give that string unasked — the quotes on a numeral string, in either style, or those around a `"` — is no choice, so it stays on its own value and spreads to none yaml would leave bare, while a new value yaml must quote takes the style the file held. The writes delete a dropped spelling only after the written key is spelled, so its members are among the held spellings. The frontmatter read hands a whole link's title over as written where yaml read it as a number or boolean that prints otherwise, patching the parsed values rather than the document a write serializes; a faithful title such as `[[2024]]` stays the number it is, so its unchanged spelling is never re-quoted. A multi-line string keeps yaml's `|-` block. A quoted value replaced by a number, boolean, or list of non-strings lands as yaml spells it. A string YAML can only spell quoted — a changed `[[Page]]`, or `43` over a bare `42` — takes yaml's double quotes. A joined member keeps its own quotes from whichever spelling held it, and the join takes the list style of the spelling it lands on. Escaping round-trips under both styles, and yaml falls back to double quotes where single can't hold the content (checked against yaml 2.9.0 across every writer: governed writes, the page and heading rename cascades, every sweep, undo, the Trash restore, asset migration, and ID stamping). An unquoted `[[a.png]]` parses as a nested list, so without the flow spelling a changed list would write a kept member `- - - a.png`, and a whole value kept into a fresh key (a property refill) `- - a.png`.
 
 ```Core/Properties/propertyValue.ts diff
 @@ imports @@
@@ -465,9 +494,24 @@ yaml's own in-place replacement — `doc.set(key, rawValue)` over a scalar keeps
 +  const held = listOf(raw)
    return next.map((v) => {
 -    const named = written.filter((w) => normalizeTitle(w) === normalizeTitle(v))
-+    const named = held.filter(namesValue(v))
++    const names = namesValue(v)
++    const named = held.filter((w) => names(linkEntry(w, 2) ?? w))
      return named.length === 1 ? named[0] : v
    })
+
+@@ above optionList; the Text decode; writtenSpelling's string arm @@
+
++/** A held value as text: a string as itself, an unquoted `[[x]]` as the connection it spells, anything else as the yaml that spells it. */
++const asText = (raw: unknown): string => linkEntry(raw, 2) ?? yamlInline(raw)
+ …
+-    // Free text reads whatever the file holds: a string as itself, any other shape as the yaml that spells it.
+     case 'text':
+-      if (isBlankRaw(raw)) return NULL_VALUE
+-      return { kind, value: typeof raw === 'string' ? raw : yamlInline(raw) }
++      return isBlankRaw(raw) ? NULL_VALUE : { kind, value: asText(raw) }
+ …
+-    return raw != null && typeof raw !== 'string' && yamlInline(raw) === next ? raw : next
++    return raw != null && typeof raw !== 'string' && asText(raw) === next ? raw : next
 ```
 
 `…` stands for the doc comment's unchanged text. `linkEntry` is already imported; at nesting 2 it reads a member spelling a wikilink, so a whole-key `Cover: [[a.png]]`, whose one-deep inner list spells a link only as the whole value, isn't kept as a member (written `- [a.png]`, no wikilink to another reader), and the one-member keep returns that whole value as written, the list arm's twin of the string arm's. `pageValue.ts` imports `propertyValue.ts` nowhere, so the new edge makes no cycle.
@@ -556,14 +600,13 @@ yaml's own in-place replacement — `doc.set(key, rawValue)` over a scalar keeps
 
 @@ linkEntry @@
 
-~/** … unwrapping single-element arrays reads the connection the author spelled, a title yaml reads as a boolean or a whole number included, so a hand-edit never nulls the value; a title yaml reads as a decimal names nothing, its digits no longer the ones written (`[[1.10]]` is 1.1). … */
+~/** … unwrapping single-element arrays reads the connection the author spelled, a title yaml reads as a number or boolean included, so a hand-edit never nulls the value. … */
  …
 -  return typeof inner === 'string' && depth >= nesting ? `[[${inner}]]` : null
-+  const titled = typeof inner === 'number' ? Number.isInteger(inner) : isScalar(inner)
-+  return titled && depth >= nesting ? `[[${inner}]]` : null
++  return isScalar(inner) && depth >= nesting ? `[[${inner}]]` : null
 ```
 
-An unquoted `[[2024]]` is a list of one list of the number 2024 to yaml, so a string-only unwrap read it as no value where `"[[2024]]"` read as the link; reading a string, boolean, or whole-number title makes Link and File match quoted or bare, and a page titled `2024` follows its renames from either spelling. A decimal stays unread: yaml has already dropped its trailing zeros, so `[[1.10]]` would name the page `1.1`, and a rename of that page would rewrite it.
+An unquoted `[[2024]]` is a list of one list of the number 2024 to yaml, so a string-only unwrap read it as no value where `"[[2024]]"` read as the link; reading any scalar title, which the frontmatter read hands over as written, makes Link and File match quoted or bare: `[[2024]]` names the page `2024`, `[[007]]` the page `007`, and `[[1.10]]` the page `1.10`, each following its renames from either spelling. A Text value reads an unquoted connection through the same unwrap, so `[[007]]` shows as written and an unchanged one keeps its bytes.
 
 ```Core/Properties/propertyValue.test.ts diff
 @@ decodeValue: "reads each declared type from its own bare shape" @@
@@ -577,7 +620,28 @@ An unquoted `[[2024]]` is a list of one list of the number 2024 to yaml, so a st
 +      kind: 'link',
 +      value: '[[2024]]',
 +    })
-+    expect(decodeValue(def({ type: 'link' }), [[1.1]])).toEqual({ kind: 'null' })
+
+@@ decodeValue: "free text reads a string as itself, an unquoted wikilink as the connection it spells, and any other shape as the yaml that spells it" @@
+
+     expect(decodeValue(text, [['Page']])).toEqual({ kind: 'text', value: '[[Page]]' })
++    expect(decodeValue(text, [['007']])).toEqual({ kind: 'text', value: '[[007]]' })
+
+@@ writtenSpelling: "a string keeps a number, a list, and an unquoted wikilink…" @@
+
+     expect(writtenSpelling('[[Page]]', [['Page']])).toEqual([['Page']])
++    expect(writtenSpelling('[[007]]', [['007']])).toEqual([['007']])
+```
+
+```Core/Files/pageFile.test.ts diff
+@@ above "mergeFrontmatter — an empty or absent block" @@
+
++describe('splitFrontmatter', () => {
++  it('reads a whole unquoted wikilink’s title as written where yaml read it as a number or boolean that prints otherwise', () => {
++    expect(
++      splitFrontmatter('---\nA: [[007]]\nB:\n  - [[1.10]]\n  - [[2024]]\nC: [[True]]\nD: 007\n---\nBody'),
++    ).toEqual({ A: [['007']], B: [[['1.10']], [[2024]]], C: [['True']], D: 7 })
++  })
++})
 ```
 
 ```Core/Properties/repairSweep.test.ts diff
@@ -716,7 +780,7 @@ A join lands in the style of the spelling it takes the place of, here the first'
 +  if (shape.value === next) return raw
 +  // A changed value keeps the file's currency symbol, percent sign, grouping, and decimal places; its digits are the typed value's.
 +  const digits = numFmt({
-+    minimumFractionDigits: shape.places,
++    minimumFractionDigits: Math.min(shape.places, 20),
 +    maximumFractionDigits: 20,
 +    useGrouping: shape.grouped,
 +  }).format(Math.abs(next))
@@ -846,6 +910,7 @@ A join lands in the style of the spelling it takes the place of, here the first'
 +  it('a changed value keeps the string shape, symbol, percent sign, spacing, grouping, and decimal places, its digits typed', () => {
 +    expect(spelledNumber(1300, '$1,200.00')).toBe('$1,300.00')
 +    expect(spelledNumber(45.125, '30.50%')).toBe('45.125%')
++    expect(spelledNumber(2, '1.000000000000000000001')).toBe('2.00000000000000000000')
 +    expect(spelledNumber(1234567, '1,200')).toBe('1,234,567')
 +    expect(spelledNumber(1234, '1200')).toBe('1234')
 +    expect(spelledNumber(45, '30%')).toBe('45%')
@@ -1147,16 +1212,12 @@ The grammar is pinned here alone; the consumers below pin only their wiring — 
 
 -import { listOf } from '../Contract/validators'
 +import { isScalar, listOf } from '../Contract/validators'
-+import { linkEntry } from '../Connections/linkValue'
 
 @@ joinValues @@
 
 -/** Two values as one list: `keep`'s members, then each of `from`'s whose title folds to none of them; a single value reads as a list of one. … */
-+/** What a member matches by: the folded title of a scalar or an unquoted wikilink, or the member itself. */
-+export const memberKey = (v: unknown): unknown => {
-+  const title = isScalar(v) ? v : linkEntry(v, 2)
-+  return title === null ? v : normalizeTitle(title)
-+}
++/** What a member matches by: a scalar's folded title, or the member itself. */
++export const memberKey = (v: unknown): unknown => (isScalar(v) ? normalizeTitle(v) : v)
 +
 +/** Two values as one list: `keep`'s members, then each of `from`'s that matches none of them by `memberKey`; a single value reads as a list of one. … */
  export function joinValues(keep: unknown, from: unknown): unknown[] {
@@ -1168,7 +1229,7 @@ The grammar is pinned here alone; the consumers below pin only their wiring — 
  }
 ```
 
-A lone `- [[Personal]]` now names nothing, so the live reconcile leaves it as written; beside other members, or joined from another spelling, `memberKey` keeps it as its own unresolved member and the no-shrink rule keeps the whole value. `spaceRelations`' `raw == null` guard goes, since `contextTitles` reads nothing from a null value. `memberKey` lives beside `joinValues` in Files, so neither layer imports Properties, and reads a wikilink member through `linkEntry`, the one reading of an unquoted connection, so `"[[a.png]]"` and `[[a.png]]` are one member to every join, count, and sweep; `linkValue.ts` imports nothing from Files, so the new edge makes no cycle. `scalarMembers` lives beside `listOf` and `isScalar`, which all three readers already import.
+A lone `- [[Personal]]` now names nothing, so the live reconcile leaves it as written; beside other members, or joined from another spelling, `memberKey` keeps it as its own unresolved member and the no-shrink rule keeps the whole value. `spaceRelations`' `raw == null` guard goes, since `contextTitles` reads nothing from a null value. `memberKey` lives beside `joinValues` in Files, so neither layer imports Properties, and folds scalars only: member identity for joins and counts stays scalar-folded, so a File list holding a repeated attachment, a designed case its chips reorder one by one, is never shrunk or re-spelled by the live reconcile, while `writtenSpelling` reads through a wikilink's quoting because its job is pairing a typed value with the spelling the file holds. `scalarMembers` lives beside `listOf` and `isScalar`, which all three readers already import.
 
 ```Desktop/Store/ddl.ts diff
 -export const INDEX_GENERATION = 12
@@ -1184,7 +1245,7 @@ A lone `- [[Personal]]` now names nothing, so the live reconcile leaves it as wr
 +    expect(readMeta(second, 'index_generation')).toBe(String(INDEX_GENERATION))
 ```
 
-A Nexus indexed before holds Space rows for nested members, which the mtime-gated reseed would keep until each page is edited; the generation drops the index once instead.
+A Nexus indexed before holds Space rows for nested members, which the mtime-gated reseed would keep until each page is edited; the generation drops the index once instead. The same generation covers Task 2-1's as-written link titles, since this range is unreleased and no index built inside it holds an unquoted wikilink whose title yaml reads as a number.
 
 ```Core/Contexts/contextResolve.test.ts diff
 @@ "matches values through coercion + NFC…", extended @@
@@ -1207,10 +1268,9 @@ A Nexus indexed before holds Space rows for nested members, which the mtime-gate
 @@ joinValues, extended @@
 
 -  it('keeps the first value and adds each member of the second whose title folds to none of it', () => {
-+  it('keeps the first value and adds each member of the second that matches none of it: a scalar or an unquoted wikilink by its folded title, any other member only by itself', () => {
++  it('keeps the first value and adds each member of the second that matches none of it: a scalar by its folded title, any other member only by itself', () => {
      expect(joinValues(['b'], ['a', 'B'])).toEqual(['b', 'a'])
 +    expect(joinValues(['Pommora'], [[['Pommora']]])).toEqual(['Pommora', [['Pommora']]])
-+    expect(joinValues(['[[a.png]]'], [[['a.png']]])).toEqual(['[[a.png]]'])
 ```
 
 ```Core/Index/indexSeed.test.ts diff
@@ -1372,7 +1432,7 @@ The rows keep the file's column padding; `…` stands for unchanged text.
 
 **Confidence**
 
-- [x] Gates green from clean across `<BASELINE>..HEAD`; the production diff is roughly +140/−95 lines, comments, tests, and docs excluded — growth past it reported. Landed at +47 (+184/−137): the net as planned, both sides larger through the review folds.
+- [x] Gates green from clean across `<BASELINE>..HEAD`; the production diff is roughly +140/−95 lines, comments, tests, and docs excluded — growth past it reported. Landed at +61 (+202/−141): both sides larger than planned through the review folds.
 
 #### Final Verification
 
@@ -1383,8 +1443,8 @@ The rows keep the file's column padding; `…` stands for unchanged text.
 - [x] Fold review, simplification and adversarial (Opus, high effort): the quote-rule, scalar-member, and whole-link commits
 - [x] Neutral verification (Opus, extra-high effort) over `<BASELINE>..HEAD`
 - [x] Own pass: gates · diff · deviations · criteria · the drive's reads
-  - Gates at `6c39e4862` from a clean tree: typecheck 0 · 7,674 passed · 2 skipped · lint clean.
-  - Task 5-2's drive: registering left all 198 pages byte-identical; 184 reads as the table draws them; writes kept the file's spelling in every case (Check 72 · Amount 52 · Choice 9 · Stage 4 · Labels 12 · Note 13 · Ref 8 · Files 6 · Areas 7); 72 unticks removed the key; the page, whole-number page, option, Space, and property renames rewrote 14 holders in their own quotes — 17/17 checks.
+  - Gates at `c8b0f1070` from a clean tree: typecheck 0 · 7,675 passed · 2 skipped · lint clean.
+  - Task 5-2's drive: registering left all 199 pages byte-identical; 185 reads as the table draws them; writes kept the file's spelling in every case (Check 72 · Amount 52 · Choice 9 · Stage 4 · Labels 12 · Note 13 · Ref 10 · Files 6 · Areas 7); 72 unticks removed the key; the page, whole-number page, option, Space, and property renames rewrote 14 holders in their own quotes — 17/17 checks.
 - [x] Reconciliation walked
 - [x] Execution comparison measured and recorded; the comparison worktree removed
 - [x] Report delivered, with the comparison as its own section
@@ -1417,4 +1477,3 @@ The plan is executed twice from the same **BASELINE** head, so the difference be
 #### Deviations
 
 - **The quote rule's mechanics (`0a12a86e3`):** `nodeSpelledAs` first carried only the quotes of a list's first quoted member onto every changed string. Final review showed that re-quoting untouched bare members of a mixed list, flattening a flow list to block, and spreading quotes yaml itself needed (Pommora's own `"2024"`) to new values, against "an unchanged member keeps its spelling" and Nathan's "bare by default". It now keeps each member's own quotes from any spelling of its key and a list's flow or block style, a whole unquoted `[[x]]` counting as no style, and counts only quotes the file chose, in either style.
-
