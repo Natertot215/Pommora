@@ -213,7 +213,7 @@ describe('a returning artifact is reconciled against the world it comes back to'
       `---\nID: ${PAGE_A}\n<Projects>:\n  - 2024\n---\nbody`,
     )
     await cycle('Notes/Alpha.md', 'page', async () => {})
-    expect((await fm('Notes/Alpha.md'))['<Projects>']).toEqual(['2024'])
+    expect((await fm('Notes/Alpha.md'))['<Projects>']).toEqual([2024])
   })
 
   const prunedTag = async (): Promise<void> => {

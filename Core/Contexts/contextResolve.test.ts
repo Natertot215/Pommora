@@ -117,9 +117,9 @@ describe('reconcileGovernedRoot — the context arm', () => {
     expect(changed).toEqual([])
   })
 
-  it('repairs scalar-typed values to their canonical string titles', () => {
+  it('keeps a scalar-typed member as the file spells it', () => {
     const { root } = reconcileGovernedRoot({ '<Classes>': [2024, true] }, world)
-    expect(root['<Classes>']).toEqual(['2024', 'true'])
+    expect(root['<Classes>']).toEqual([2024, true])
   })
 
   const withAreas = contextWorldOf([...groups, { def: { id: 'ctxB', title: 'Areas' }, spaces: [] }])

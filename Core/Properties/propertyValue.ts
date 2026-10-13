@@ -12,6 +12,7 @@ import { heldValue, landValue, writeTarget } from '../Files/heldKeys'
 import { yamlInline } from '../Files/pageFile'
 import { linkEntry, wholeValueLink } from '../Connections/linkValue'
 import { capitalize } from '@pommora/uix/Utilities/capitalize'
+import { namesValue } from './pageValue'
 
 const strings = z.array(z.string())
 export const propertyValue = z.discriminatedUnion('kind', [
@@ -170,15 +171,16 @@ function checkedSpelling(raw: unknown): unknown {
   return word[0] === word[0].toUpperCase() ? capitalize(partner) : partner
 }
 
-/** `next` spelled as `raw` already spells it: a checked `true` takes `raw`'s checkbox word as `checkedSpelling` does, a string keeps a `raw` of any other shape whose inline yaml reads as that string, and each member takes the one member of `raw` its title folds to. A member `raw` names more than once keeps the spelling `next` gives it, the registered one. */
+/** `next` spelled as `raw` already spells it: a checked `true` takes `raw`'s checkbox word as `checkedSpelling` does, a string keeps a `raw` of any other shape whose inline yaml reads as that string, and each member takes the one member of `raw` that names it — of any scalar shape its title folds to, or the unquoted wikilink that spells it. A member `raw` names more than once keeps the spelling `next` gives it, the registered one. */
 export function writtenSpelling(next: unknown, raw: unknown): unknown {
   if (next === true) return checkedSpelling(raw)
   if (typeof next === 'string')
     return raw != null && typeof raw !== 'string' && yamlInline(raw) === next ? raw : next
   if (!Array.isArray(next)) return next
-  const written = listOf(raw).filter((w): w is string => typeof w === 'string')
+  const held = listOf(raw)
   return next.map((v) => {
-    const named = written.filter((w) => normalizeTitle(w) === normalizeTitle(v))
+    const names = namesValue(v)
+    const named = held.filter((w) => names(w) || linkEntry(w) === v)
     return named.length === 1 ? named[0] : v
   })
 }

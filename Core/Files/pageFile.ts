@@ -1,4 +1,14 @@
-import { type Document, type Pair, type ParsedNode, parseDocument, isMap, stringify } from 'yaml'
+import {
+  type Document,
+  type Node,
+  type Pair,
+  type ParsedNode,
+  parseDocument,
+  isMap,
+  isScalar,
+  isSeq,
+  stringify,
+} from 'yaml'
 import { join, titleFromPath } from '../Paths/posix'
 import { type Admission, admitContentFile, ID_KEY } from '../Nexus/identityMark'
 import type { ContentKind } from '../Nexus/entities'
@@ -101,6 +111,25 @@ export function assembleEnvelope(frontmatterYaml: string, body: string): string 
 const envelope = (fenced: boolean, fm: string, body: string): string =>
   fenced || fm !== '' ? assembleEnvelope(fm, body) : body
 
+/** `value` as a node spelled as `held` is: each single-line string — the value itself, or a list's member — takes the quotes of the held string or of the held list's first quoted member, and a member that is itself a list, a kept unquoted `[[x]]`, keeps its flow spelling; anything else is spelled as yaml spells it. */
+function nodeSpelledAs(doc: Document, value: unknown, held: unknown): Node {
+  const node = doc.createNode(value)
+  const model = (isSeq(held) ? held.items : [held]).find(
+    (n) => isScalar(n) && (n.type === 'QUOTE_DOUBLE' || n.type === 'QUOTE_SINGLE'),
+  )
+  for (const member of isSeq(node) ? node.items : [node]) {
+    if (isSeq(member)) member.flow = true
+    else if (
+      isScalar(model) &&
+      isScalar(member) &&
+      typeof member.value === 'string' &&
+      !member.value.includes('\n')
+    )
+      member.type = model.type
+  }
+  return node
+}
+
 function mergeInto(
   doc: Document,
   modeled: Record<string, unknown>,
@@ -121,8 +150,7 @@ function mergeInto(
       if (!written(key)) {
         if (doc.has(key)) doc.delete(key)
       } else if (JSON.stringify(held[key]) !== JSON.stringify(modeled[key]))
-        // A fresh node, so a changed value takes the spelling yaml gives it rather than the old node's quoting or block style.
-        doc.set(key, doc.createNode(modeled[key]))
+        doc.set(key, nodeSpelledAs(doc, modeled[key], doc.get(key, true)))
     }
     const out = serialized(doc)
     if (out !== null) return out
@@ -173,7 +201,8 @@ export function renameFrontmatterKey(
   } else {
     const moved = heldValue(values, oldName, join)
     const value = rival ? joinValues(values[String(rival.key)], moved) : moved
-    if (value !== values[String(pair.key)]) doc.set(String(pair.key), value)
+    if (value !== values[String(pair.key)])
+      doc.set(String(pair.key), nodeSpelledAs(doc, value, pair.value))
     for (const p of [...variants, ...(rival ? [rival] : [])]) drop(p)
     ;(pair.key as { value: string }).value = newName
   }

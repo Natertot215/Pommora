@@ -404,8 +404,9 @@ describe('writtenSpelling', () => {
     expect(writtenSpelling(['Done', 'Active'], 'done')).toEqual(['done', 'Active'])
   })
 
-  it('takes only string members', () => {
-    expect(writtenSpelling(['2024'], [2024])).toEqual(['2024'])
+  it('a member keeps the held member that names it, of any scalar shape or as an unquoted wikilink', () => {
+    expect(writtenSpelling(['2024'], [2024])).toEqual([2024])
+    expect(writtenSpelling(['[[a.png]]'], [[['a.png']]])).toEqual([[['a.png']]])
   })
 
   it('a checked value keeps the checked word the file holds, and takes its unchecked word’s partner in the same casing', () => {
