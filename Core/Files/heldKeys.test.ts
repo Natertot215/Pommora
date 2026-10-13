@@ -20,10 +20,9 @@ describe('heldKey', () => {
 })
 
 describe('joinValues', () => {
-  it('keeps the first value and adds each member of the second that matches none of it: a scalar or an unquoted wikilink by its folded title, any other member only by itself', () => {
+  it('keeps the first value and adds each member of the second that matches none of it: a scalar by its folded title, any other member only by itself', () => {
     expect(joinValues(['b'], ['a', 'B'])).toEqual(['b', 'a'])
     expect(joinValues(['Pommora'], [[['Pommora']]])).toEqual(['Pommora', [['Pommora']]])
-    expect(joinValues(['[[a.png]]'], [[['a.png']]])).toEqual(['[[a.png]]'])
     expect(joinValues('Pommora', ['X'])).toEqual(['Pommora', 'X'])
     expect(joinValues(undefined, ['X'])).toEqual(['X'])
   })

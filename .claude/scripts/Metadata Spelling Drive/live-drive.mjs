@@ -30,7 +30,7 @@ const PROPS = {
   files: { name: 'Mx Files', type: 'file' },
 }
 const AREAS = '<Areas>'
-const TARGETS = ['Mx Target', 'Mx Other', '2024', '1.10']
+const TARGETS = ['Mx Target', 'Mx Other', '2024', '1.10', '007']
 
 const cases = []
 const add = (group, prop, held, read, act, want) =>
@@ -147,7 +147,7 @@ for (const [held, read, next, want] of [
 ])
   add('Note', 'note', `Mx Note: ${held}`, read, set('text', next), `Mx Note: ${want}`)
 
-// Link: a connection reads quoted or bare, a whole-number title included and a decimal one not; a changed
+// Link: a connection reads quoted or bare, a title yaml reads as a number included as it was written; a changed
 // connection is written quoted, single quotes carried, and an address keeps its quotes.
 for (const [held, read, next, want] of [
   ['"[[Mx Target]]"', 'Mx Target', '[[Mx Other]]', '"[[Mx Other]]"'],
@@ -158,9 +158,10 @@ for (const [held, read, next, want] of [
   ['"https://a.com"', 'a.com', 'https://b.com', '"https://b.com"'],
   ['[[2024]]', '2024', '[[2024]]', '[[2024]]'],
   ['"[[2024]]"', '2024', '[[2024]]', '"[[2024]]"'],
-  ['[[1.10]]', null, null, null],
+  ['[[1.10]]', '1.10', '[[1.10]]', '[[1.10]]'],
+  ['[[007]]', '007', '[[007]]', '[[007]]'],
 ])
-  add('Ref', 'ref', `Mx Ref: ${held}`, read, next === null ? null : set('link', next), want === null ? null : `Mx Ref: ${want}`)
+  add('Ref', 'ref', `Mx Ref: ${held}`, read, set('link', next), `Mx Ref: ${want}`)
 
 // File: each attachment keeps its own spelling and a new one takes the quotes the file chose; a single wikilink that
 // grows becomes a block list.
@@ -279,9 +280,8 @@ function checkReads(rows) {
   for (const c of cases) {
     const cell = rows[pageIds[c.title]]?.[COLUMNS.indexOf(c.prop)]
     const shown = c.prop === 'amount' && typeof cell === 'string' ? (cell === '' ? null : Number(cell.replace(/[^0-9.-]/g, ''))) : cell
-    const want = c.read === null ? (c.prop === 'amount' ? null : '') : c.read
-    const ok = c.prop === 'ref' || c.prop === 'files' ? (want === '' ? shown === '' : String(shown).includes(want)) : shown === want
-    if (!ok) wrong.push(`${c.title} ${c.held.replace(/\n/g, '⏎')} shows ${JSON.stringify(shown)}, expected ${JSON.stringify(want)}`)
+    const ok = c.prop === 'ref' || c.prop === 'files' ? String(shown).includes(c.read) : shown === c.read
+    if (!ok) wrong.push(`${c.title} ${c.held.replace(/\n/g, '⏎')} shows ${JSON.stringify(shown)}, expected ${JSON.stringify(c.read)}`)
   }
   check(`every value reads as its type reads it (${cases.length} cases)`, wrong.length === 0, wrong.join('\n      '))
 }
@@ -300,7 +300,7 @@ async function act(cdp, c) {
 async function checkWrites(cdp) {
   for (const group of [...new Set(cases.map((c) => c.group))]) {
     const wrong = []
-    const acted = cases.filter((c) => c.group === group && c.act)
+    const acted = cases.filter((c) => c.group === group)
     for (const c of acted) {
       await act(cdp, c)
       if (!(await settles(async () => block(c.title) === c.want, 3000)))

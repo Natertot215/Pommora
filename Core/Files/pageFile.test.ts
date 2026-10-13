@@ -57,6 +57,16 @@ describe('splitEnvelope / assembleEnvelope', () => {
   })
 })
 
+describe('splitFrontmatter', () => {
+  it('reads a whole unquoted wikilink’s title as written where yaml read it as a number or boolean that prints otherwise', () => {
+    expect(
+      splitFrontmatter(
+        '---\nA: [[007]]\nB:\n  - [[1.10]]\n  - [[2024]]\nC: [[True]]\nD: 007\n---\nBody',
+      ),
+    ).toEqual({ A: [['007']], B: [[['1.10']], [[2024]]], C: [['True']], D: 7 })
+  })
+})
+
 describe('mergeFrontmatter — an empty or absent block', () => {
   it('a body-only write keeps an empty block byte for byte', () => {
     expect(mergeFrontmatter('---\n---\nold', {}, [], 'new')).toBe('---\n---\nnew')

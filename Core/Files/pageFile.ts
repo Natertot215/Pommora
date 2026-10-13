@@ -3,6 +3,7 @@ import {
   type Node,
   type Pair,
   type ParsedNode,
+  type Scalar,
   parseDocument,
   isMap,
   isScalar,
@@ -37,11 +38,35 @@ export function splitEnvelope(content: string): PageEnvelope {
 export const bodyHash = (content: string): string =>
   machine().sha256Hex(splitEnvelope(content).body)
 
-/** Anything that isn't a YAML map — an array, a scalar, unrecoverable YAML — reads as an empty map, and the file is still a valid page. */
+/** The title of a whole unquoted `[[x]]`, a list of one list of one scalar; null for any other node. */
+function wholeLinkTitle(n: unknown): Scalar | null {
+  const only = isSeq(n) && n.items.length === 1 ? n.items[0] : null
+  const title = isSeq(only) && only.items.length === 1 ? only.items[0] : null
+  return isScalar(title) ? title : null
+}
+
+/** A whole unquoted `[[x]]` whose title yaml read as a number or boolean that prints otherwise (`[[007]]`, `[[1.10]]`, `[[True]]`), as its title was written; undefined for any other node. */
+function linkAsWritten(n: unknown): unknown[][] | undefined {
+  const title = wholeLinkTitle(n)
+  if (!title || typeof title.value === 'string' || title.source === undefined) return undefined
+  return title.source === String(title.value) ? undefined : [[title.source]]
+}
+
+/** Anything that isn't a YAML map — an array, a scalar, unrecoverable YAML — reads as an empty map, and the file is still a valid page. A whole unquoted `[[x]]`, the value or a list's member, keeps its title as written, so a connection names the page its author typed. */
 function valuesOf(doc: Document): Record<string, unknown> {
   try {
     const parsed: unknown = doc.toJSON()
-    return isPlainObject(parsed) ? parsed : {}
+    if (!isPlainObject(parsed)) return {}
+    for (const { key, value } of isMap(doc.contents) ? doc.contents.items : []) {
+      const written = linkAsWritten(value)
+      if (written) parsed[String(key)] = written
+      else if (isSeq(value))
+        value.items.forEach((member, i) => {
+          const link = linkAsWritten(member)
+          if (link) (parsed[String(key)] as unknown[])[i] = link
+        })
+    }
+    return parsed
   } catch {
     return {}
   }
@@ -114,12 +139,6 @@ const envelope = (fenced: boolean, fm: string, body: string): string =>
 /** Whether yaml quotes `value` unasked, as it does a numeral's `"2024"`, a `'"Q3"'`, or a `[[Page]]`. */
 const quotesUnasked = (value: unknown): boolean => /^["']/.test(yamlInline(value))
 
-/** Whether `n` is a whole unquoted `[[x]]`: a list of one list of one scalar. */
-function isWholeLink(n: unknown): boolean {
-  const only = isSeq(n) && n.items.length === 1 ? n.items[0] : null
-  return isSeq(only) && only.items.length === 1 && isScalar(only.items[0])
-}
-
 /** `value` as a node spelled as the `held` spellings of its key are, the first the one it lands on: a list keeps that one's flow or block style unless it's a whole unquoted `[[x]]`, whose brackets spell a link rather than a style, and a list nested in it, or a whole `[[x]]`, is written flow; each single-line string, the value itself or a list's member, keeps the quotes of the held string equal to it, else takes those of the first held string quoted where yaml wouldn't, and a string yaml quotes unasked, where the file chose none, those of the first quoted held string; anything else is spelled as yaml spells it. */
 function nodeSpelledAs(doc: Document, value: unknown, held: unknown[]): Node {
   const node = doc.createNode(value)
@@ -127,8 +146,8 @@ function nodeSpelledAs(doc: Document, value: unknown, held: unknown[]): Node {
   const heldScalars = held.flatMap((h) => (isSeq(h) ? h.items : [h])).filter(isScalar)
   const quoted = heldScalars.filter((n) => n.type === 'QUOTE_DOUBLE' || n.type === 'QUOTE_SINGLE')
   const chosen = quoted.find((n) => !quotesUnasked(n.value))
-  const flowHeld = isSeq(lands) && lands.flow && !isWholeLink(lands)
-  if (isSeq(node) && (flowHeld || isWholeLink(node))) node.flow = true
+  const flowHeld = isSeq(lands) && lands.flow && !wholeLinkTitle(lands)
+  if (isSeq(node) && (flowHeld || wholeLinkTitle(node))) node.flow = true
   for (const member of isSeq(node) ? node.items : [node]) {
     if (isSeq(member)) member.flow = true
     else if (isScalar(member) && typeof member.value === 'string' && !member.value.includes('\n'))

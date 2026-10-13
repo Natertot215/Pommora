@@ -36,7 +36,7 @@ const selectDef = def({
 })
 
 describe('decodeValue — the declared type decides, never the shape', () => {
-  it('free text reads a string as itself and any other shape as the yaml that spells it', () => {
+  it('free text reads a string as itself, an unquoted wikilink as the connection it spells, and any other shape as the yaml that spells it', () => {
     const text = def({ type: 'text' })
     expect(decodeValue(text, 'see [[Plan]] first')).toEqual({
       kind: 'text',
@@ -53,6 +53,7 @@ describe('decodeValue — the declared type decides, never the shape', () => {
     })
     expect(decodeValue(text, { x: 1 })).toEqual({ kind: 'text', value: '{x: 1}' })
     expect(decodeValue(text, [['Page']])).toEqual({ kind: 'text', value: '[[Page]]' })
+    expect(decodeValue(text, [['007']])).toEqual({ kind: 'text', value: '[[007]]' })
   })
 
   it('reads a status value as its bare label', () => {
@@ -91,7 +92,6 @@ describe('decodeValue — the declared type decides, never the shape', () => {
       kind: 'link',
       value: '[[2024]]',
     })
-    expect(decodeValue(def({ type: 'link' }), [[1.1]])).toEqual({ kind: 'null' })
     expect(decodeValue(def({ type: 'link' }), 42)).toEqual({ kind: 'null' })
     // A one-item list is a list, as the index reads it, not a link.
     expect(decodeValue(def({ type: 'link' }), ['Page'])).toEqual({ kind: 'null' })
@@ -397,6 +397,7 @@ describe('writtenSpelling', () => {
     expect(writtenSpelling('[milk, eggs]', ['milk', 'eggs'])).toEqual(['milk', 'eggs'])
     // The same link a Link key decodes an unquoted `[[Page]]` to, so re-saving it leaves the file alone; a different link lands as typed.
     expect(writtenSpelling('[[Page]]', [['Page']])).toEqual([['Page']])
+    expect(writtenSpelling('[[007]]', [['007']])).toEqual([['007']])
     expect(writtenSpelling('[[Other|Page]]', [['Page']])).toBe('[[Other|Page]]')
     expect(writtenSpelling('forty-two', 42)).toBe('forty-two')
     expect(writtenSpelling('note', 'note')).toBe('note')
