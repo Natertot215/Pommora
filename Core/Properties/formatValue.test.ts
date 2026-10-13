@@ -268,6 +268,7 @@ describe('readNumber', () => {
     expect(readNumber('30 %')).toBe(30)
     expect(readNumber('$1,200')).toBe(1200)
     expect(readNumber('-$30')).toBe(-30)
+    expect(readNumber('+$5')).toBe(5)
     expect(readNumber('CA$1,300.5')).toBe(1300.5)
     expect(readNumber('5A$')).toBe(5)
     expect(readNumber('30 €')).toBe(30)

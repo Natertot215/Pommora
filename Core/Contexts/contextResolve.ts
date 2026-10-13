@@ -1,5 +1,5 @@
 import { foldKey, normalizeTitle } from '../Paths/caseFold'
-import { heldKey, heldValue, writeTarget } from '../Files/heldKeys'
+import { heldKey, heldValue, memberKey, writeTarget } from '../Files/heldKeys'
 import { contextKey, contextTitles, parseContextKey } from './contexts'
 import { byFoldedName, holdsList, type PropertyDefinition } from '../Properties/properties'
 import {
@@ -10,7 +10,7 @@ import {
   reconcilePropertyValue,
 } from '../Properties/propertyValue'
 import type { ContextGroup, NexusTree, SpaceNode } from '../Nexus/tree'
-import { isScalar, listOf } from '../Contract/validators'
+import { listOf } from '../Contract/validators'
 
 type ResolvedLinks = Map<string, string[]>
 
@@ -105,8 +105,7 @@ export function joinsSpellings(name: string, world: GovernedWorld): boolean {
   return governor !== undefined && joins(governor)
 }
 
-const memberCount = (v: unknown): number =>
-  new Set(listOf(v).map((m) => (isScalar(m) ? normalizeTitle(m) : m))).size
+const memberCount = (v: unknown): number => new Set(listOf(v).map(memberKey)).size
 
 // A governed name reconciles once, under the key `heldKey` reads: a list's spellings join it under the registered spelling and leave once that key is written, while a scalar's other spellings pass through as foreign, for a write to settle. A key in `skip` passes through verbatim.
 export function reconcileGovernedRoot(

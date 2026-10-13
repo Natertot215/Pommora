@@ -70,7 +70,7 @@ function* spaceRelations(
   values: Record<string, unknown>,
 ): Generator<{ target: string; qualifier: string }> {
   for (const [key, raw] of Object.entries(values)) {
-    if (parseContextKey(key) === null || raw == null) continue
+    if (parseContextKey(key) === null) continue
     for (const target of new Set(contextTitles(raw))) yield { target, qualifier: foldKey(key) }
   }
 }
