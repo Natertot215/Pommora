@@ -61,7 +61,7 @@ describe('filterSeeds', () => {
     expect(filterSeeds(filter, true, schema)).toEqual({})
   })
 
-  it('derives nothing from Any-mode groups, negatives, presence ops, or non-derivable types', () => {
+  it('derives an Any group from its first seedable rule alone, and nothing from negatives, presence ops, or non-derivable types', () => {
     const any: FilterGroup = {
       match: 'any',
       rules: [
@@ -69,7 +69,9 @@ describe('filterSeeds', () => {
         { property_id: 'p_sel', op: 'is', value: 'note' },
       ],
     }
-    expect(filterSeeds(any, true, schema)).toEqual({})
+    expect(filterSeeds(any, true, schema)).toEqual({
+      p_status: { kind: 'select', value: 'doing' },
+    })
     expect(filterSeeds({ ...any, rules: any.rules.slice(0, 1) }, true, schema)).toEqual({
       p_status: { kind: 'select', value: 'doing' },
     })
@@ -86,7 +88,7 @@ describe('filterSeeds', () => {
     expect(filterSeeds(rest, true, schema)).toEqual({})
   })
 
-  it('an Any-group nested under All derives nothing while its All siblings still do', () => {
+  it('an Any-group nested under All seeds its first rule beside its All siblings', () => {
     const filter: FilterGroup = {
       match: 'all',
       rules: [
@@ -100,7 +102,46 @@ describe('filterSeeds', () => {
         },
       ],
     }
+    expect(filterSeeds(filter, true, schema)).toEqual({
+      p_sel: { kind: 'select', value: 'note' },
+      p_status: { kind: 'select', value: 'doing' },
+    })
+  })
+
+  it('an Any group of a Status Is and an Area Is Any seeds the Status alone', () => {
+    const filter: FilterGroup = {
+      match: 'any',
+      rules: [
+        { property_id: 'p_status', op: 'is', value: 'Done' },
+        { property_id: 'ctx_areas', op: 'contains_any', values: ['s_work'] },
+      ],
+    }
+    expect(filterSeeds(filter, true, schema, ['ctx_areas'])).toEqual({
+      p_status: { kind: 'select', value: 'Done' },
+    })
+  })
+
+  it('an Any group whose first rule cannot seed seeds from the next one that can', () => {
+    const filter: FilterGroup = {
+      match: 'any',
+      rules: [
+        { property_id: '_title', op: 'contains', value: 'x' },
+        { property_id: 'p_sel', op: 'is', value: 'note' },
+        { property_id: 'p_status', op: 'is', value: 'doing' },
+      ],
+    }
     expect(filterSeeds(filter, true, schema)).toEqual({ p_sel: { kind: 'select', value: 'note' } })
+  })
+
+  it('an Any group with no seedable rule seeds nothing', () => {
+    const filter: FilterGroup = {
+      match: 'any',
+      rules: [
+        { property_id: '_title', op: 'contains', value: 'x' },
+        { property_id: 'p_sel', op: 'is_not', value: 'note' },
+      ],
+    }
+    expect(filterSeeds(filter, true, schema)).toEqual({})
   })
 
   it('derives a one-option list from a one-chip Multi-Select Is Any or Is All rule', () => {
@@ -117,7 +158,7 @@ describe('filterSeeds', () => {
     expect(filterSeeds(one('does_not_contain'), true, schema)).toEqual({})
   })
 
-  it('derives a Space from a one-chip Context Contains rule, and nothing from two', () => {
+  it('derives a Space from a one-chip Context Is Any rule, and nothing from two', () => {
     const rule = (values: string[]): FilterGroup => ({
       match: 'all',
       rules: [{ property_id: 'ctx_areas', op: 'contains_any', values }],

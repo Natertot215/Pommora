@@ -85,8 +85,9 @@ export interface OperatorChoice {
   op: string
   label: string
   slot: ValueSlot
-  multi?: boolean
   impliedValue?: string
+  /** A typed folder name is an operand as well as a picked folder. */
+  names?: true
 }
 
 const EMPTIES: OperatorChoice[] = [
@@ -113,15 +114,9 @@ const DATE_OPS: OperatorChoice[] = [
 ]
 
 const SET_OPS: OperatorChoice[] = [
-  { op: FILTER_OPS.containsAny, label: 'Is Any', slot: 'chips', multi: true },
-  { op: FILTER_OPS.containsAll, label: 'Is All', slot: 'chips', multi: true },
-  { op: FILTER_OPS.doesNotContain, label: "Isn't", slot: 'chips', multi: true },
-  ...EMPTIES,
-]
-
-const CONTEXT_OPS: OperatorChoice[] = [
-  { op: FILTER_OPS.containsAny, label: 'Contains', slot: 'chips', multi: true },
-  { op: FILTER_OPS.doesNotContain, label: "Isn't", slot: 'chips', multi: true },
+  { op: FILTER_OPS.containsAny, label: 'Is Any', slot: 'chips' },
+  { op: FILTER_OPS.containsAll, label: 'Is All', slot: 'chips' },
+  { op: FILTER_OPS.doesNotContain, label: "Isn't", slot: 'chips' },
   ...EMPTIES,
 ]
 
@@ -137,8 +132,8 @@ const NUMBER_OPS: OperatorChoice[] = [
 
 /** Is/Isn't are chip pickers whose multi-chips mean any-of/none-of — never Is All, which is unsatisfiable on a one-value property. */
 const OPTION_OPS: OperatorChoice[] = [
-  { op: FILTER_OPS.is, label: 'Is', slot: 'chips', multi: true },
-  { op: FILTER_OPS.isNot, label: "Isn't", slot: 'chips', multi: true },
+  { op: FILTER_OPS.is, label: 'Is', slot: 'chips' },
+  { op: FILTER_OPS.isNot, label: "Isn't", slot: 'chips' },
   ...EMPTIES,
 ]
 
@@ -149,10 +144,10 @@ const CHECKBOX_OPS: OperatorChoice[] = [
 
 /** Location reads from the Set's side — you choose the Set, not the page, hence "Contains" over "Is Inside". */
 const LOCATION_OPS: OperatorChoice[] = [
-  { op: FILTER_OPS.is, label: 'Is', slot: 'set', multi: true },
-  { op: FILTER_OPS.isNot, label: "Isn't", slot: 'set', multi: true },
-  { op: FILTER_OPS.isInside, label: 'Contains', slot: 'set', multi: true },
-  { op: FILTER_OPS.isNotInside, label: "Doesn't Contain", slot: 'set', multi: true },
+  { op: FILTER_OPS.is, label: 'Is', slot: 'set' },
+  { op: FILTER_OPS.isNot, label: "Isn't", slot: 'set' },
+  { op: FILTER_OPS.isInside, label: 'Contains', slot: 'set', names: true },
+  { op: FILTER_OPS.isNotInside, label: "Doesn't Contain", slot: 'set', names: true },
 ]
 
 /** Title never offers empty ops — a title (the filename basename) is never empty. */
@@ -161,7 +156,7 @@ const TITLE_OPS: OperatorChoice[] = TEXT_OPS
 const KIND_OPS: Record<ValueKind, OperatorChoice[]> = {
   select: OPTION_OPS,
   multiSelect: SET_OPS,
-  context: CONTEXT_OPS,
+  context: SET_OPS,
   number: NUMBER_OPS,
   dateTime: DATE_OPS,
   checkbox: CHECKBOX_OPS,

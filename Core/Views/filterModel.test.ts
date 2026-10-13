@@ -137,7 +137,6 @@ describe('vocabulary', () => {
     const ops = operatorsFor('prop_sel', schema)
     expect(ops.map((o) => o.label)).toEqual(['Is', "Isn't", 'Is Empty', "Isn't Empty"])
     expect(ops[0].slot).toBe('chips')
-    expect(ops[0].multi).toBe(true)
     expect(ops[2].slot).toBe('none')
   })
 
@@ -181,18 +180,38 @@ describe('vocabulary', () => {
     expect(crew?.label).toBe('Crew')
     expect(operatorsFor('ctx-crew', schema, ['ctx-crew']).map((o) => o.op)).toEqual([
       'contains_any',
+      'contains_all',
       'does_not_contain',
       'is_empty',
       'is_not_empty',
     ])
   })
 
-  it("a Context reads Contains / Isn't + empties", () => {
+  it("a Context reads Is Any / Is All / Isn't + empties", () => {
     const ops = operatorsFor('ctx-crew', schema, ['ctx-crew'])
-    expect(ops.map((o) => o.label)).toEqual(['Contains', "Isn't", 'Is Empty', "Isn't Empty"])
-    expect(ops[0].op).toBe('contains_any')
+    expect(ops.map((o) => o.label)).toEqual([
+      'Is Any',
+      'Is All',
+      "Isn't",
+      'Is Empty',
+      "Isn't Empty",
+    ])
+    expect(ops.slice(0, 3).map((o) => o.op)).toEqual([
+      'contains_any',
+      'contains_all',
+      'does_not_contain',
+    ])
     expect(ops[0].slot).toBe('chips')
-    expect(ops[0].multi).toBe(true)
+  })
+
+  it("Location Contains and Doesn't Contain take folder names; Is and Isn't take ids alone", () => {
+    const ops = operatorsFor('_location', schema)
+    expect(ops.map((o) => [o.label, o.names])).toEqual([
+      ['Is', undefined],
+      ["Isn't", undefined],
+      ['Contains', true],
+      ["Doesn't Contain", true],
+    ])
   })
 
   it('offers no Context targets when there is no tree', () => {
