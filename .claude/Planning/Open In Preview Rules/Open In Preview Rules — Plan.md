@@ -1,14 +1,14 @@
 ## Open In Preview Rules — Implementation Plan
 
 **DATE:** 10-13-2026
-**STATUS:** Ratified
+**STATUS:** Complete 10-14-2026 — `39f3b59c9^..48d6dd75b`
 **SOURCE:** The 10-13-2026 conversation with Nathan (the request, its answers, and the ratified approach and folding options).
 
 **BASELINE**
 
 | Head | Tests | Start | End |
 |------|-------|-------|-----|
-| `84e26b529` | 7682 passed · 2 skipped · 529 files | — | — |
+| `84e26b529` | 7682 passed · 2 skipped · 529 files | `39f3b59c9` | `48d6dd75b` · 7764 passed · 2 skipped · 534 files |
 
 ### Context
 
@@ -102,11 +102,11 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
   - [x] Task 4-2
   - [x] Task 4-3
   - [x] Review Checkpoint
-- [ ] **Phase 5** — Migration & Reconciliation
-  - [ ] Task 5-1
+- [x] **Phase 5** — Migration & Reconciliation
+  - [x] Task 5-1
   - [x] Task 5-2
   - [x] Task 5-3
-- [ ] **Closing** — Final Verification, `save-delta`, the HistoryPM entry, the final commit, and the push to `main`
+- [x] **Closing** — Final Verification, `save-delta`, the HistoryPM entry, the final commit, and the push to `main`
 
 ---
 
@@ -122,10 +122,10 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 
 **CHANGE**
 
-- [ ] Move `idArray` into `Core/Files/decoders.ts` as an export; `views.ts` imports it.
-- [ ] Create `Core/Views/filterRules.ts` holding, verbatim, `MATCH_MODES`/`MatchMode`, `filterRule`/`FilterRule`, `FilterGroup`, `filterGroup`, `FILTER_OPS`, `OPERANDLESS_OPS`, `SUBSTRING_OPS`, `ruleOperands`, `answerable`, `isGroup`, `mapRules`, plus the standalone filter below. Delete them from `views.ts`; `views.ts` imports what its saved-view schema needs.
-- [ ] Repoint every importer (`git grep -lP "\b(FilterRule|FilterGroup|filterGroup|MatchMode|FILTER_OPS|OPERANDLESS_OPS|SUBSTRING_OPS|ruleOperands|answerable|isGroup|mapRules)\b" Core` — 12 files) at `filterRules`, including names inside multi-line import blocks; no re-export from `views.ts`.
-- [ ] `matrixConfig.ts`: `filter: StandaloneFilter`, default `NO_FILTER`, parse `standaloneFilter.parse(section(raw, 'filter'))`, delete its `filtering`; `matrixInput.ts` and `Core/Session/matrixSlice.ts` import `filtering` from `filterRules`.
+- [x] Move `idArray` into `Core/Files/decoders.ts` as an export; `views.ts` imports it.
+- [x] Create `Core/Views/filterRules.ts` holding, verbatim, `MATCH_MODES`/`MatchMode`, `filterRule`/`FilterRule`, `FilterGroup`, `filterGroup`, `FILTER_OPS`, `OPERANDLESS_OPS`, `SUBSTRING_OPS`, `ruleOperands`, `answerable`, `isGroup`, `mapRules`, plus the standalone filter below. Delete them from `views.ts`; `views.ts` imports what its saved-view schema needs.
+- [x] Repoint every importer (`git grep -lP "\b(FilterRule|FilterGroup|filterGroup|MatchMode|FILTER_OPS|OPERANDLESS_OPS|SUBSTRING_OPS|ruleOperands|answerable|isGroup|mapRules)\b" Core` — 12 files) at `filterRules`, including names inside multi-line import blocks; no re-export from `views.ts`.
+- [x] `matrixConfig.ts`: `filter: StandaloneFilter`, default `NO_FILTER`, parse `standaloneFilter.parse(section(raw, 'filter'))`, delete its `filtering`; `matrixInput.ts` and `Core/Session/matrixSlice.ts` import `filtering` from `filterRules`.
 
 **AFTER**
 
@@ -168,10 +168,10 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 
 **VERIFY**
 
-- [ ] Typecheck is green and no import block that names a moved symbol imports it from `views` (`git grep -nP "from '[./]*(Views/)?views'" Core` — read each hit's import block).
-- [ ] `matrixConfig.test.ts` passes unchanged (parse leniency is per field, as before).
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] Typecheck is green and no import block that names a moved symbol imports it from `views` (`git grep -nP "from '[./]*(Views/)?views'" Core` — read each hit's import block).
+- [x] `matrixConfig.test.ts` passes unchanged (parse leniency is per field, as before).
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 1-2
 
@@ -181,13 +181,13 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 
 **CHANGE**
 
-- [ ] Write the failing tests first in `filter.test.ts`: Title, Text, and Select Is/Isn't fold case (`'Bread'` matches `'bread'`; Isn't excludes it); Location Contains `['Docs']` matches a page under `X/Docs` and under a folder titled `docs`, not under `My Docs`; Doesn't Contain inverts; a mix of a picked id and a name is any-of; a name matching no folder matches nothing under Contains and everything under Doesn't Contain, while a dead id still abstains (`:805` stays true); `prepareGroup` returns `undefined` for `{ match: 'any', rules: [] }` and for a group whose every rule abstains. Rename `'text: is is exact, contains folds'` to what it now asserts.
-- [ ] Export `prepareGroup` unchanged in name, with a doc comment.
-- [ ] Fold text operands once in `prepareRule` when the evaluator is `evaluateText`; `evaluateText` folds the row value once and compares against the pre-folded operands for Is, Isn't, Contains, Doesn't Contain, Starts With. Select and Status values are canonicalized by fold at decode (`propertyValue.ts:49-60`), so their Is/Isn't read the same either way.
-- [ ] Redefine `SetTreeNode` as the shape the tree's Collection and Set nodes already have, `{ id: string; title: string; sets?: SetTreeNode[] }`, and delete `buildSetTree`. `flattenContainer` returns `setTree: node.sets ?? []`; `matrixVisible` passes `tree.collections` and drops its inline build and `buildSetTree` import; `pruneHiddenSets` returns `{ ...node, sets: … }`; `subtreeIds`, `structural`, and `prepareLocation` read `.sets ?? []` for `.children`. The `{ id, children }` literals in `filter.test.ts` (`:493, 516, 530-532, 542, 754-755`) become `{ id, title, sets }`.
-- [ ] `prepareLocation`'s inside walk hits a node when its id is an operand or its folded title is a folded operand. Is / Isn't stay id-only. With nothing inside, the rule abstains only when every operand is an id (`isUlidShaped`) — a deleted folder's id is stripped by `configReach`, while a typed name is a lasting pattern that matches nothing. Reword the `:83` comment to say Contains also matches by folder name.
-- [ ] Export `prepareRule` beside `prepareGroup`, for creation seeding to judge one rule.
-- [ ] Move `iso` from `loadValues.ts` to `UIX/Utilities/pad.ts` beside `localDayKey` as exported `localIso`; `pageValuesOf` and `matrixGraph.test.ts:6,64,65,67` use it.
+- [x] Write the failing tests first in `filter.test.ts`: Title, Text, and Select Is/Isn't fold case (`'Bread'` matches `'bread'`; Isn't excludes it); Location Contains `['Docs']` matches a page under `X/Docs` and under a folder titled `docs`, not under `My Docs`; Doesn't Contain inverts; a mix of a picked id and a name is any-of; a name matching no folder matches nothing under Contains and everything under Doesn't Contain, while a dead id still abstains (`:805` stays true); `prepareGroup` returns `undefined` for `{ match: 'any', rules: [] }` and for a group whose every rule abstains. Rename `'text: is is exact, contains folds'` to what it now asserts.
+- [x] Export `prepareGroup` unchanged in name, with a doc comment.
+- [x] Fold text operands once in `prepareRule` when the evaluator is `evaluateText`; `evaluateText` folds the row value once and compares against the pre-folded operands for Is, Isn't, Contains, Doesn't Contain, Starts With. Select and Status values are canonicalized by fold at decode (`propertyValue.ts:49-60`), so their Is/Isn't read the same either way.
+- [x] Redefine `SetTreeNode` as the shape the tree's Collection and Set nodes already have, `{ id: string; title: string; sets?: SetTreeNode[] }`, and delete `buildSetTree`. `flattenContainer` returns `setTree: node.sets ?? []`; `matrixVisible` passes `tree.collections` and drops its inline build and `buildSetTree` import; `pruneHiddenSets` returns `{ ...node, sets: … }`; `subtreeIds`, `structural`, and `prepareLocation` read `.sets ?? []` for `.children`. The `{ id, children }` literals in `filter.test.ts` (`:493, 516, 530-532, 542, 754-755`) become `{ id, title, sets }`.
+- [x] `prepareLocation`'s inside walk hits a node when its id is an operand or its folded title is a folded operand. Is / Isn't stay id-only. With nothing inside, the rule abstains only when every operand is an id (`isUlidShaped`) — a deleted folder's id is stripped by `configReach`, while a typed name is a lasting pattern that matches nothing. Reword the `:83` comment to say Contains also matches by folder name.
+- [x] Export `prepareRule` beside `prepareGroup`, for creation seeding to judge one rule.
+- [x] Move `iso` from `loadValues.ts` to `UIX/Utilities/pad.ts` beside `localDayKey` as exported `localIso`; `pageValuesOf` and `matrixGraph.test.ts:6,64,65,67` use it.
 
 **AFTER**
 
@@ -259,10 +259,10 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 
 **VERIFY**
 
-- [ ] The new `filter.test.ts` cases fail before the change and pass after.
-- [ ] `matrixInput.test.ts`, `matrixGraph.test.ts`, `group.test.ts`, `resolveView.test.ts` pass.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] The new `filter.test.ts` cases fail before the change and pass after.
+- [x] `matrixInput.test.ts`, `matrixGraph.test.ts`, `group.test.ts`, `resolveView.test.ts` pass.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 1-3
 
@@ -272,10 +272,10 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 
 **CHANGE**
 
-- [ ] Update `filterModel.test.ts` first: a Context reads Is Any / Is All / Isn't / Is Empty / Isn't Empty with `contains_any` / `contains_all` / `does_not_contain`; Location Contains and Doesn't Contain carry `names: true`, Is and Isn't don't; drop the two `multi` assertions.
-- [ ] Write the failing `creationSeeds.test.ts` cases first: an Any group of `[Status is Done, Area Is Any Work]` seeds Status alone; an Any group whose first rule can't seed (`Title contains x`) seeds from the next one that can; an Any group a blank page already meets seeds nothing — `[Status Isn't Done, Priority Is High]`, `[Created On Or After yesterday, Status Is Done]`, `[Status Is Empty, Priority Is High]`, `[Status Is Done, Status Isn't Done]`; `Any[All[Status Is Done, Title contains x], Priority Is High]` seeds Priority alone; an Any group with no seedable rule seeds nothing; All groups seed exactly as before. The two tests that assert an Any group derives nothing flip: `:64-75`'s two-rule Any seeds `p_status` alone, and `:89-104`'s Any nested under All seeds `p_status` beside `p_sel`.
-- [ ] Delete `CONTEXT_OPS`; `KIND_OPS.context = SET_OPS`. Delete `multi` from `OperatorChoice` and every entry. Add `names?: true`; set it on the two Location Contains entries.
-- [ ] `filterSeeds` judges the blank new page — a `ViewRow` with the create's title, its landing `parentSetId` (`flattenContainer`'s convention), `{ ID }` frontmatter, and `createdAt: localIso(Date.now())` — against the view's `setTree` with the evaluator's own `prepareRule` / `prepareGroup`. Each node returns its seeds and whether it's met: a leaf is met when the blank passes it (an abstaining rule passes) or it seeds; an All group merges its children's seeds, met when every child is; an Any group seeds nothing when the blank passes it (or every child abstains), else takes only the seeds of its first applying child that ends up met, else nothing. The caller passes the filter only while `filter_enabled` holds, as `resolveView` does. `useViewCreation`'s `impliedSeeds` builds the blank from where each gesture lands. Rewrite `creationSeeds.ts:1` so a Context reads Is Any / Is All and states the Any rule.
+- [x] Update `filterModel.test.ts` first: a Context reads Is Any / Is All / Isn't / Is Empty / Isn't Empty with `contains_any` / `contains_all` / `does_not_contain`; Location Contains and Doesn't Contain carry `names: true`, Is and Isn't don't; drop the two `multi` assertions.
+- [x] Write the failing `creationSeeds.test.ts` cases first: an Any group of `[Status is Done, Area Is Any Work]` seeds Status alone; an Any group whose first rule can't seed (`Title contains x`) seeds from the next one that can; an Any group a blank page already meets seeds nothing — `[Status Isn't Done, Priority Is High]`, `[Created On Or After yesterday, Status Is Done]`, `[Status Is Empty, Priority Is High]`, `[Status Is Done, Status Isn't Done]`; `Any[All[Status Is Done, Title contains x], Priority Is High]` seeds Priority alone; an Any group with no seedable rule seeds nothing; All groups seed exactly as before. The two tests that assert an Any group derives nothing flip: `:64-75`'s two-rule Any seeds `p_status` alone, and `:89-104`'s Any nested under All seeds `p_status` beside `p_sel`.
+- [x] Delete `CONTEXT_OPS`; `KIND_OPS.context = SET_OPS`. Delete `multi` from `OperatorChoice` and every entry. Add `names?: true`; set it on the two Location Contains entries.
+- [x] `filterSeeds` judges the blank new page — a `ViewRow` with the create's title, its landing `parentSetId` (`flattenContainer`'s convention), `{ ID }` frontmatter, and `createdAt: localIso(Date.now())` — against the view's `setTree` with the evaluator's own `prepareRule` / `prepareGroup`. Each node returns its seeds and whether it's met: a leaf is met when the blank passes it (an abstaining rule passes) or it seeds; an All group merges its children's seeds, met when every child is; an Any group seeds nothing when the blank passes it (or every child abstains), else takes only the seeds of its first applying child that ends up met, else nothing. The caller passes the filter only while `filter_enabled` holds, as `resolveView` does. `useViewCreation`'s `impliedSeeds` builds the blank from where each gesture lands. Rewrite `creationSeeds.ts:1` so a Context reads Is Any / Is All and states the Any rule.
 
 **AFTER**
 
@@ -308,15 +308,15 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 
 **VERIFY**
 
-- [ ] `filterModel.test.ts` passes; the new and flipped `creationSeeds.test.ts` cases fail before and pass after, and the rest pass unchanged; `git grep -nP "\bmulti\??:" Core/Views` is empty.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `filterModel.test.ts` passes; the new and flipped `creationSeeds.test.ts` cases fail before and pass after, and the rest pass unchanged; `git grep -nP "\bmulti\??:" Core/Views` is empty.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Review Checkpoint
 
-- [ ] One definition of each filter-model name, in `filterRules.ts`; no import cycle (`personalization.ts` can import `standaloneFilter`).
-- [ ] Every evaluator change is covered by a test that fails without it, including `prepareGroup` → `undefined` for an emptied group.
-- [ ] Gates green at the phase's end.
+- [x] One definition of each filter-model name, in `filterRules.ts`; no import cycle (`personalization.ts` can import `standaloneFilter`).
+- [x] Every evaluator change is covered by a test that fails without it, including `prepareGroup` → `undefined` for an emptied group.
+- [x] Gates green at the phase's end.
 
 ---
 
@@ -332,10 +332,10 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 
 **CHANGE**
 
-- [ ] Update the tests first. `filterModel.test.ts`: delete the `encodeFilter` describe and the connector round-trips (`:16-84`); an any-of-runs group and an any with an all-run inside decode `locked`; `decodeFilter(undefined)` is `{ kind: 'rows', mode: 'any', rules: [] }`. `FilterFrame.test.tsx`: delete the connector tests (`:197-231`, `:334-348`) and the `Toggle connector` assertion (`:145-149`); the empty-filter mode test expects a click to pick **All** and land `match: 'all'`; `:250-278` uses the Matches toggle as its second write; `:378-394` expects `match: 'any'`.
-- [ ] `filterModel.ts`: delete `Connector`, `FilterRow`, `isAllOfLeaves`, `connectorFor`, `encodeFilter`; `DecodedFilter` carries `rules`; rewrite `decodeFilter` and its doc comment as below.
-- [ ] `FilterFrame.tsx`: rows become `FilterRule[]`; `save` builds the flat group; `liveRows` returns rules; `pickMatch` saves the live rules under the pick or parks it; `removeRow` filters; `completeDraft` appends `mintRule(...)`; Reset calls `save(mode, [])`; `draft` becomes `drafting: boolean`; the locked fallback mode is `'any'`; delete `toggleConnector`, `ConnectorButton`, the `whatCell` wrapper, and their imports.
-- [ ] `filter-frame.css.ts`: delete `connector`, `whatCell`, and the `fieldBase` import.
+- [x] Update the tests first. `filterModel.test.ts`: delete the `encodeFilter` describe and the connector round-trips (`:16-84`); an any-of-runs group and an any with an all-run inside decode `locked`; `decodeFilter(undefined)` is `{ kind: 'rows', mode: 'any', rules: [] }`. `FilterFrame.test.tsx`: delete the connector tests (`:197-231`, `:334-348`) and the `Toggle connector` assertion (`:145-149`); the empty-filter mode test expects a click to pick **All** and land `match: 'all'`; `:250-278` uses the Matches toggle as its second write; `:378-394` expects `match: 'any'`.
+- [x] `filterModel.ts`: delete `Connector`, `FilterRow`, `isAllOfLeaves`, `connectorFor`, `encodeFilter`; `DecodedFilter` carries `rules`; rewrite `decodeFilter` and its doc comment as below.
+- [x] `FilterFrame.tsx`: rows become `FilterRule[]`; `save` builds the flat group; `liveRows` returns rules; `pickMatch` saves the live rules under the pick or parks it; `removeRow` filters; `completeDraft` appends `mintRule(...)`; Reset calls `save(mode, [])`; `draft` becomes `drafting: boolean`; the locked fallback mode is `'any'`; delete `toggleConnector`, `ConnectorButton`, the `whatCell` wrapper, and their imports.
+- [x] `filter-frame.css.ts`: delete `connector`, `whatCell`, and the `fieldBase` import.
 
 **AFTER**
 
@@ -389,9 +389,9 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 
 **VERIFY**
 
-- [ ] `filterModel.test.ts` and `FilterFrame.test.tsx` pass; `git grep -n "onnector" Core/Views` is empty.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `filterModel.test.ts` and `FilterFrame.test.tsx` pass; `git grep -n "onnector" Core/Views` is empty.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 2-2
 
@@ -401,8 +401,8 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 
 **CHANGE**
 
-- [ ] Replace both `RemoveButton` uses with `<AccessoryButton icon="x" size="control" ariaLabel="Remove filter" onClick={…} />` and the add button with `<FootingCreate ariaLabel="Add filter rule" onClick={…} />`; delete `RemoveButton`, `fp.removeButton`, `REMOVE_INSET`, and the now-unused `Button` / `accessoryButton` imports.
-- [ ] Delete `box` from `AccessoryButton`'s props and inline style, and from `FootingCreate`, `ViewFrame.tsx:113`, and `ViewItemMenu.tsx:35`; write `20px` where the four readers read `var(--accessory-box, 20px)`.
+- [x] Replace both `RemoveButton` uses with `<AccessoryButton icon="x" size="control" ariaLabel="Remove filter" onClick={…} />` and the add button with `<FootingCreate ariaLabel="Add filter rule" onClick={…} />`; delete `RemoveButton`, `fp.removeButton`, `REMOVE_INSET`, and the now-unused `Button` / `accessoryButton` imports.
+- [x] Delete `box` from `AccessoryButton`'s props and inline style, and from `FootingCreate`, `ViewFrame.tsx:113`, and `ViewItemMenu.tsx:35`; write `20px` where the four readers read `var(--accessory-box, 20px)`.
 
 **AFTER**
 
@@ -422,10 +422,10 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 
 **VERIFY**
 
-- [ ] `FilterFrame.test.tsx`'s `Remove filter` / `Add filter rule` queries pass unchanged.
-- [ ] `git grep -n "accessory-box" UIX Core` is empty, and no `AccessoryButton` / `FootingCreate` caller passes `box`.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `FilterFrame.test.tsx`'s `Remove filter` / `Add filter rule` queries pass unchanged.
+- [x] `git grep -n "accessory-box" UIX Core` is empty, and no `AccessoryButton` / `FootingCreate` caller passes `box`.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 2-3
 
@@ -435,9 +435,9 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 
 **CHANGE**
 
-- [ ] Replace `label` / `onBack` with `back?: { label: string; onBack: () => void }`; the header renders only when `back` is given. Add `targets?: PaneTarget[]`, defaulting to `filterTargets(schema, tree, locations.length > 0)`.
-- [ ] Export `filterViewOf(f: StandaloneFilter): FilterView` and `standalonePatch(p: FilterPatch): Partial<StandaloneFilter>` beside `FilterView` / `FilterPatch`.
-- [ ] `ViewLeaf` passes `back={{ label, onBack }}`; `MatrixMenu` passes `back`, uses `filterViewOf`, commits `patch({ filter: standalonePatch(next) })`, and drops its `FilterView` import; `FilterFrame.test.tsx`'s harness (`:66-74`) passes `back`.
+- [x] Replace `label` / `onBack` with `back?: { label: string; onBack: () => void }`; the header renders only when `back` is given. Add `targets?: PaneTarget[]`, defaulting to `filterTargets(schema, tree, locations.length > 0)`.
+- [x] Export `filterViewOf(f: StandaloneFilter): FilterView` and `standalonePatch(p: FilterPatch): Partial<StandaloneFilter>` beside `FilterView` / `FilterPatch`.
+- [x] `ViewLeaf` passes `back={{ label, onBack }}`; `MatrixMenu` passes `back`, uses `filterViewOf`, commits `patch({ filter: standalonePatch(next) })`, and drops its `FilterView` import; `FilterFrame.test.tsx`'s harness (`:66-74`) passes `back`.
 
 **AFTER**
 
@@ -466,9 +466,9 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 
 **VERIFY**
 
-- [ ] The View and Matrix filter panes render their back row as before (`FilterFrame.test.tsx`, Matrix menu tests).
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] The View and Matrix filter panes render their back row as before (`FilterFrame.test.tsx`, Matrix menu tests).
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 2-4
 
@@ -478,15 +478,15 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 
 **CHANGE**
 
-- [ ] Write the failing tests first. `UIX/Fields/TokenField.test.tsx`: typing reports the draft; Enter offers the trimmed draft and nothing when it's blank; Backspace on an empty caret runs the last entry's `onRemove`, and on a non-empty caret only edits; the placeholder shows only while there are no entries. `FilterFrame.test.tsx`: Tab into or a click on the Location field opens the picker unfiltered; typing narrows it to matching folders, each keeping its subfolders, with their ancestors open; a draft matching nothing hides the pane; Escape and blur close the picker and clear the draft, and a click on the caret reopens it; a chip's × removes it while the picker stays open; ArrowDown and Enter pick a folder under Is; the tree's expansion survives reopening; Enter under Contains adds the typed name as a chip and clears the draft, including a name equal to an existing folder's title; Enter under Is adds nothing; a name equal by fold to a shown one isn't added twice; a picked folder joins as today and clears the draft; switching Contains → Is keeps picked ids and drops names; `:411-448` (location picks) moves onto the field.
-- [ ] `InputField` takes an optional `ref` (React 19's ref prop) on its field element, so a picker can anchor to it, and passes `onMouseDown` / `onClick` through.
-- [ ] `focus="keep"` makes a `PickerMenu`'s trigger part of its pane: `DismissalEntry` gains `triggerInside`, which `holds()` reads as a press inside the layer, and a kept-focus pane draws no shield, so an outside press that closes it still lands. `usePaneCtl` and `useKeepInView` move from `Core/MarkdownPM/Menus/caretPane.tsx` into `UIX/Interactions/paneCtl.ts`, and MarkdownPM imports them from there.
-- [ ] Create `TokenField`: an `InputField` (its `editable` focus ring, the host's `chrome` and `className`) holding the `FieldRun` of `entries`, then a controlled caret in the `base` chrome. `FieldRun` is already the field's one scroll region with its trailing fade (`field-run.css.ts:11-19`), so the field isn't `capped` — a capped row would nest a second. The run keeps its natural width until it overflows into its fade, and the caret takes the rest of the row, never narrower than a few characters, so a press on the field's empty space lands in it. A press on the field past the caret (a chip's body, the padding) focuses the caret, and a press on a chip's × never takes focus from it; `onPress`, `onBlur`, and `onKeyDown` reach the host, whose prevented keys skip the field's own. Enter offers the trimmed draft to `onEnter`; Backspace on an empty caret runs the last entry's `onRemove`. The host owns the draft, its picker, and what Enter makes. `FieldRun` sizes its entries' icons itself.
-- [ ] `LocationField` takes `names` (from the current `OperatorChoice`) and renders a `TokenField` with `chrome="bordered"`, `className={fp.valueField}`, `placeholder="Value"`, `ariaLabel="Filter values"`, `ref` as the `PickerMenu`'s `triggerRef`; the caret's focus, a press, an arrow key, or editing the draft opens the picker (`focus="keep"`, so picking a row never blurs the caret); blur and Escape close it and clear the draft, the field taking Escape itself so it never reaches the surface beneath while the pane is hidden. ArrowUp / ArrowDown move `usePaneCtl`'s highlight through the shown rows (none at first, cleared by typing) and Enter picks it; with nothing highlighted, `onEnter` adds the draft as a name chip when `names` holds and no shown value folds equal to it, then clears the draft; an exact folder title stays a name. `pick` toggles a picked id and clears the draft. Both disclosure sets live in `LocationField`, so the tree's expansion survives reopening. `ValueFieldShell` stays with `ChipsField` alone.
-- [ ] `LocationTree` renders the picker body with the same `DisclosureRow` and `pickRuns`: an empty draft renders today's disclosure tree; a draft renders the tree narrowed to folders the app's search matcher accepts (`matchScore(foldKey(title), foldKey(draft)) !== null`, as Navigation, View Search, and Trash narrow), each with its whole subtree collapsed, plus their ancestors open; a flip made while narrowed holds for that draft. While a draft matches nothing the pane is hidden.
-- [ ] A value found in the node map renders as today; any other value renders `label: v` with the `folder-search` glyph and the same `onRemove`. Add `'folder-search': FolderSearch` to the curated `icons` map in `UIX/Symbols/index.tsx`.
-- [ ] `FilterFrame` builds `folderById` once per `locations`; `LocationField` reads it, and the operator menu, switching to a `set` operator without `names`, keeps only values it holds, omitting `values` when none remain.
-- [ ] The showcase's capped sketch (`FieldsLeaf.tsx:44-54`) becomes a live `TokenField` over its `draft` state; the caret's width rule is `tokenCaret` beside the other field chrome in `UIX/Fields/fields.css.ts`, sizing to its content as `draftInput` and `cellInput` do.
+- [x] Write the failing tests first. `UIX/Fields/TokenField.test.tsx`: typing reports the draft; Enter offers the trimmed draft and nothing when it's blank; Backspace on an empty caret runs the last entry's `onRemove`, and on a non-empty caret only edits; the placeholder shows only while there are no entries. `FilterFrame.test.tsx`: Tab into or a click on the Location field opens the picker unfiltered; typing narrows it to matching folders, each keeping its subfolders, with their ancestors open; a draft matching nothing hides the pane; Escape and blur close the picker and clear the draft, and a click on the caret reopens it; a chip's × removes it while the picker stays open; ArrowDown and Enter pick a folder under Is; the tree's expansion survives reopening; Enter under Contains adds the typed name as a chip and clears the draft, including a name equal to an existing folder's title; Enter under Is adds nothing; a name equal by fold to a shown one isn't added twice; a picked folder joins as today and clears the draft; switching Contains → Is keeps picked ids and drops names; `:411-448` (location picks) moves onto the field.
+- [x] `InputField` takes an optional `ref` (React 19's ref prop) on its field element, so a picker can anchor to it, and passes `onMouseDown` / `onClick` through.
+- [x] `focus="keep"` makes a `PickerMenu`'s trigger part of its pane: `DismissalEntry` gains `triggerInside`, which `holds()` reads as a press inside the layer, and a kept-focus pane draws no shield, so an outside press that closes it still lands. `usePaneCtl` and `useKeepInView` move from `Core/MarkdownPM/Menus/caretPane.tsx` into `UIX/Interactions/paneCtl.ts`, and MarkdownPM imports them from there.
+- [x] Create `TokenField`: an `InputField` (its `editable` focus ring, the host's `chrome` and `className`) holding the `FieldRun` of `entries`, then a controlled caret in the `base` chrome. `FieldRun` is already the field's one scroll region with its trailing fade (`field-run.css.ts:11-19`), so the field isn't `capped` — a capped row would nest a second. The run keeps its natural width until it overflows into its fade, and the caret takes the rest of the row, never narrower than a few characters, so a press on the field's empty space lands in it. A press on the field past the caret (a chip's body, the padding) focuses the caret, and a press on a chip's × never takes focus from it; `onPress`, `onBlur`, and `onKeyDown` reach the host, whose prevented keys skip the field's own. Enter offers the trimmed draft to `onEnter`; Backspace on an empty caret runs the last entry's `onRemove`. The host owns the draft, its picker, and what Enter makes. `FieldRun` sizes its entries' icons itself.
+- [x] `LocationField` takes `names` (from the current `OperatorChoice`) and renders a `TokenField` with `chrome="bordered"`, `className={fp.valueField}`, `placeholder="Value"`, `ariaLabel="Filter values"`, `ref` as the `PickerMenu`'s `triggerRef`; the caret's focus, a press, an arrow key, or editing the draft opens the picker (`focus="keep"`, so picking a row never blurs the caret); blur and Escape close it and clear the draft, the field taking Escape itself so it never reaches the surface beneath while the pane is hidden. ArrowUp / ArrowDown move `usePaneCtl`'s highlight through the shown rows (none at first, cleared by typing) and Enter picks it; with nothing highlighted, `onEnter` adds the draft as a name chip when `names` holds and no shown value folds equal to it, then clears the draft; an exact folder title stays a name. `pick` toggles a picked id and clears the draft. Both disclosure sets live in `LocationField`, so the tree's expansion survives reopening. `ValueFieldShell` stays with `ChipsField` alone.
+- [x] `LocationTree` renders the picker body with the same `DisclosureRow` and `pickRuns`: an empty draft renders today's disclosure tree; a draft renders the tree narrowed to folders the app's search matcher accepts (`matchScore(foldKey(title), foldKey(draft)) !== null`, as Navigation, View Search, and Trash narrow), each with its whole subtree collapsed, plus their ancestors open; a flip made while narrowed holds for that draft. While a draft matches nothing the pane is hidden.
+- [x] A value found in the node map renders as today; any other value renders `label: v` with the `folder-search` glyph and the same `onRemove`. Add `'folder-search': FolderSearch` to the curated `icons` map in `UIX/Symbols/index.tsx`.
+- [x] `FilterFrame` builds `folderById` once per `locations`; `LocationField` reads it, and the operator menu, switching to a `set` operator without `names`, keeps only values it holds, omitting `values` when none remain.
+- [x] The showcase's capped sketch (`FieldsLeaf.tsx:44-54`) becomes a live `TokenField` over its `draft` state; the caret's width rule is `tokenCaret` beside the other field chrome in `UIX/Fields/fields.css.ts`, sizing to its content as `draftInput` and `cellInput` do.
 
 **AFTER**
 
@@ -594,16 +594,16 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 
 **VERIFY**
 
-- [ ] The new tests fail before and pass after.
-- [ ] `grep -n "'folder-search'" UIX/Symbols/index.tsx` hits the curated map; the Studio dashboard's showcase build (`node_modules/.bin/vite build` from `~/The Studio/.claude/dashboard`) builds its live `TokenField`.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] The new tests fail before and pass after.
+- [x] `grep -n "'folder-search'" UIX/Symbols/index.tsx` hits the curated map; the Studio dashboard's showcase build (`node_modules/.bin/vite build` from `~/The Studio/.claude/dashboard`) builds its live `TokenField`.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Review Checkpoint
 
-- [ ] The editor reads as always flat — no connector residue in names, CSS, tests, or comments.
-- [ ] View and Matrix panes behave as before apart from the settled changes (default Any, folded Is, Context labels, typeable Location, folded buttons).
-- [ ] `LocationTree` reuses `DisclosureRow` and `pickRuns`; nothing hand-rolls a second tree row.
+- [x] The editor reads as always flat — no connector residue in names, CSS, tests, or comments.
+- [x] View and Matrix panes behave as before apart from the settled changes (default Any, folded Is, Context labels, typeable Location, folded buttons).
+- [x] `LocationTree` reuses `DisclosureRow` and `pickRuns`; nothing hand-rolls a second tree row.
 
 ---
 
@@ -619,9 +619,9 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 
 **CHANGE**
 
-- [ ] Write the failing tests first: `settingValue('openInPreview', junk)` reads as absent; a stored rule set reads back whole; `setPersonalization('openInPreview', NO_FILTER)` stores no key (configSlice level).
-- [ ] Add `openInPreview: setting(standaloneFilter, NO_FILTER)` directly under `connectionsOpenInPreview` in `SETTINGS`.
-- [ ] `configSlice.ts:66` compares with `same`, imported from `Core/Files/stableJson.ts`.
+- [x] Write the failing tests first: `settingValue('openInPreview', junk)` reads as absent; a stored rule set reads back whole; `setPersonalization('openInPreview', NO_FILTER)` stores no key (configSlice level).
+- [x] Add `openInPreview: setting(standaloneFilter, NO_FILTER)` directly under `connectionsOpenInPreview` in `SETTINGS`.
+- [x] `configSlice.ts:66` compares with `same`, imported from `Core/Files/stableJson.ts`.
 
 **AFTER**
 
@@ -637,9 +637,9 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 
 **VERIFY**
 
-- [ ] The new tests fail before and pass after; `personalization.test.ts` and `readNexus.test.ts` pass.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] The new tests fail before and pass after; `personalization.test.ts` and `readNexus.test.ts` pass.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 3-2
 
@@ -649,8 +649,8 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 
 **CHANGE**
 
-- [ ] Write `previewRules.test.ts` first, against a `Core/Testing` tree: no rules → false; disabled → false; an emptied group (`{ match: 'any', rules: [] }`) → false; Location Is a Collection for a page directly in it; Contains a Set for a page two levels down; Contains a typed name; Contains a name no folder holds → false; Title Contains folds; a Context Is Any; Created On Or After; a path that no longer holds the page → false.
-- [ ] Create `Core/Navigation/previewRules.ts`; the row is `toRow`'s, with Created derived from the id.
+- [x] Write `previewRules.test.ts` first, against a `Core/Testing` tree: no rules → false; disabled → false; an emptied group (`{ match: 'any', rules: [] }`) → false; Location Is a Collection for a page directly in it; Contains a Set for a page two levels down; Contains a typed name; Contains a name no folder holds → false; Title Contains folds; a Context Is Any; Created On Or After; a path that no longer holds the page → false.
+- [x] Create `Core/Navigation/previewRules.ts`; the row is `toRow`'s, with Created derived from the id.
 
 **AFTER**
 
@@ -680,10 +680,10 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 
 **VERIFY**
 
-- [ ] `previewRules.test.ts` passes; each case fails when its clause is removed.
-- [ ] `previewRules.ts` imports nothing host-side (`git grep -nP "loadValues|readNexus" Core/Navigation/previewRules.ts` is empty).
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `previewRules.test.ts` passes; each case fails when its clause is removed.
+- [x] `previewRules.ts` imports nothing host-side (`git grep -nP "loadValues|readNexus" Core/Navigation/previewRules.ts` is empty).
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 3-3
 
@@ -693,11 +693,11 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 
 **CHANGE**
 
-- [ ] Write the failing tests first: `openTarget` with `newTab` → `select(target, { newTab: true, heading: undefined })`; a matching page → `openWindowTab` and `'window'`; a non-matching page and a non-page → `select(target, { newTab: undefined, heading })` and `'tab'`; `pageConnections` 'preview' mode with the toggle off routes a matching page to `openWindowTab`; the NavWindow stays open when its row opens a matching page.
-- [ ] Update the store-`select` spies' expectations to the `(target, { newTab: undefined, heading: undefined })` shape: `cardGestures.test.tsx:115-116` (and its "No second argument" comment), `cellGestures.test.tsx:451`, `bandCommits.test.tsx:749,776,786`.
-- [ ] Add `openTarget` to `NavigationSlice` beside `select`.
-- [ ] Rewrite each call site as below; drop the `owningCollection` imports from `Sidebar.tsx` and `useViewInteractions.tsx`; drop the `select` subscriptions and deps in `MatrixView` (`:35`), `useNavData` (`:21`, `:57`), and `TileHost` (`:89`, `:262`) in favor of `openTarget`; swap the view host's `select` for `openTarget` (`useViewHost.ts:48,264`, `useViewInteractions.tsx:105`).
-- [ ] Reword `pageConnections.ts:15` (`preview` previews every connection under Open Connections In Preview and otherwise follows Open In Preview) and `:21` (`openTarget` and `openWindowTab` are the stable actions).
+- [x] Write the failing tests first: `openTarget` with `newTab` → `select(target, { newTab: true, heading: undefined })`; a matching page → `openWindowTab` and `'window'`; a non-matching page and a non-page → `select(target, { newTab: undefined, heading })` and `'tab'`; `pageConnections` 'preview' mode with the toggle off routes a matching page to `openWindowTab`; the NavWindow stays open when its row opens a matching page.
+- [x] Update the store-`select` spies' expectations to the `(target, { newTab: undefined, heading: undefined })` shape: `cardGestures.test.tsx:115-116` (and its "No second argument" comment), `cellGestures.test.tsx:451`, `bandCommits.test.tsx:749,776,786`.
+- [x] Add `openTarget` to `NavigationSlice` beside `select`.
+- [x] Rewrite each call site as below; drop the `owningCollection` imports from `Sidebar.tsx` and `useViewInteractions.tsx`; drop the `select` subscriptions and deps in `MatrixView` (`:35`), `useNavData` (`:21`, `:57`), and `TileHost` (`:89`, `:262`) in favor of `openTarget`; swap the view host's `select` for `openTarget` (`useViewHost.ts:48,264`, `useViewInteractions.tsx:105`).
+- [x] Reword `pageConnections.ts:15` (`preview` previews every connection under Open Connections In Preview and otherwise follows Open In Preview) and `:21` (`openTarget` and `openWindowTab` are the stable actions).
 
 **AFTER**
 
@@ -778,11 +778,11 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 
 **VERIFY**
 
-- [ ] The new tests fail before and pass after; the three updated gesture suites, `pageConnections.test.tsx`, `windowTabs.test.ts`, `connectionMenuActions.test.ts`, and the routed surfaces' existing coverage — `TileHost.test.tsx:694-721` (a tile's Open) and `MatrixView.test.tsx` (node taps) — pass.
-- [ ] `git grep -nP "newTab \? \{ newTab: true \} : undefined|isCmd\(e\)\) void s\.select" -- Core ':!Core/Session/windowSlice.ts'` is empty.
-- [ ] The store test suite boots (`navigationSlice` → `previewRules` adds no cycle).
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] The new tests fail before and pass after; the three updated gesture suites, `pageConnections.test.tsx`, `windowTabs.test.ts`, `connectionMenuActions.test.ts`, and the routed surfaces' existing coverage — `TileHost.test.tsx:694-721` (a tile's Open) and `MatrixView.test.tsx` (node taps) — pass.
+- [x] `git grep -nP "newTab \? \{ newTab: true \} : undefined|isCmd\(e\)\) void s\.select" -- Core ':!Core/Session/windowSlice.ts'` is empty.
+- [x] The store test suite boots (`navigationSlice` → `previewRules` adds no cycle).
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 3-4
 
@@ -792,8 +792,8 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 
 **CHANGE**
 
-- [ ] Extend `configReach.test.ts` first: seed `personalization.openInPreview` beside the Matrix seeds (`:135`, `:469`); a Collection delete strips its id and its Sets' ids; a Space delete strips its id; a Context delete drops its rules; a second run writes nothing (`:224`, `:529`); a folder-limited pass leaves the rules alone (`:381`); an unparseable `settings.json` counts one skip and keeps its bytes; an absent one isn't created. The delete path's end-to-end suite covers the key too: `seedConfigSurfaces` (`Core/Testing/configSurfaces.ts:11-16,57-67`) seeds `personalization.openInPreview` with the same filter and `ConfigViews` reads it back as `preview`; the four "every view, tile, and the Matrix" cases in `deleteReach.test.ts` (`:143, 193, 269, 382`) assert `v.preview` as well.
-- [ ] Hoist the Matrix block's edit into `editStandalone` and use it for both files.
+- [x] Extend `configReach.test.ts` first: seed `personalization.openInPreview` beside the Matrix seeds (`:135`, `:469`); a Collection delete strips its id and its Sets' ids; a Space delete strips its id; a Context delete drops its rules; a second run writes nothing (`:224`, `:529`); a folder-limited pass leaves the rules alone (`:381`); an unparseable `settings.json` counts one skip and keeps its bytes; an absent one isn't created. The delete path's end-to-end suite covers the key too: `seedConfigSurfaces` (`Core/Testing/configSurfaces.ts:11-16,57-67`) seeds `personalization.openInPreview` with the same filter and `ConfigViews` reads it back as `preview`; the four "every view, tile, and the Matrix" cases in `deleteReach.test.ts` (`:143, 193, 269, 382`) assert `v.preview` as well.
+- [x] Hoist the Matrix block's edit into `editStandalone` and use it for both files.
 
 **AFTER**
 
@@ -827,15 +827,15 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 
 **VERIFY**
 
-- [ ] The new `configReach.test.ts` cases fail before and pass after; the existing Matrix cases pass unchanged.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] The new `configReach.test.ts` cases fail before and pass after; the existing Matrix cases pass unchanged.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Review Checkpoint
 
-- [ ] Every routed surface calls `openTarget`; every frozen surface still calls `select` / `openWindowTab`.
-- [ ] A click compiles nothing: the test is memoized per rule change, and a click is one folder lookup and one test.
-- [ ] An emptied, disabled, or unreadable rule set opens nothing in the window.
+- [x] Every routed surface calls `openTarget`; every frozen surface still calls `select` / `openWindowTab`.
+- [x] A click compiles nothing: the test is memoized per rule change, and a click is one folder lookup and one test.
+- [x] An emptied, disabled, or unreadable rule set opens nothing in the window.
 
 ---
 
@@ -851,9 +851,9 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 
 **CHANGE**
 
-- [ ] Update `ExclusionRows.test.tsx` first: find the add button by `aria-label="Add exclusion"`; the remove button keeps `Remove exclusion`.
-- [ ] Create `ManageRow` (label, hint, count, style, children).
-- [ ] `ExcludedDirectoriesRow` renders `ManageRow` around an `ExclusionPane` that owns `drafting`, `busy`, and the rows; `dismiss` goes (the pane unmounts on close). Its × becomes `<AccessoryButton icon="x" size="control" ariaLabel="Remove exclusion" … />`; its add becomes `<FootingCreate ariaLabel="Add exclusion" disabled={drafting || busy} … />`. Delete `x.addRow` / `x.addButton`.
+- [x] Update `ExclusionRows.test.tsx` first: find the add button by `aria-label="Add exclusion"`; the remove button keeps `Remove exclusion`.
+- [x] Create `ManageRow` (label, hint, count, style, children).
+- [x] `ExcludedDirectoriesRow` renders `ManageRow` around an `ExclusionPane` that owns `drafting`, `busy`, and the rows; `dismiss` goes (the pane unmounts on close). Its × becomes `<AccessoryButton icon="x" size="control" ariaLabel="Remove exclusion" … />`; its add becomes `<FootingCreate ariaLabel="Add exclusion" disabled={drafting || busy} … />`. Delete `x.addRow` / `x.addButton`.
 
 **AFTER**
 
@@ -880,9 +880,9 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 
 **VERIFY**
 
-- [ ] `ExclusionRows.test.tsx` passes (count, Manage pressed state, outside-press and Escape dismissal, add, remove).
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `ExclusionRows.test.tsx` passes (count, Manage pressed state, outside-press and Escape dismissal, add, remove).
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 4-2
 
@@ -892,9 +892,9 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 
 **CHANGE**
 
-- [ ] Write `PreviewRulesRow.test.tsx` first: the count reads the rule count; adding a rule through the pane writes the key; turning the footer to Off keeps the rules and writes `enabled: false`; clearing the last rule with the filter on stores no key; the target list offers Title, Location, Created, and each Context, and not Last Modified or a user property.
-- [ ] Add `| (RowText & { kind: 'previewRules' })` to `Row`, the frames entry under **Open Connections In Preview**, and `case 'previewRules'` in `RowControl`.
-- [ ] Create `PreviewRulesRow`: reads `useSetting('openInPreview')` and the tree (rendering nothing without one), and renders `ManageRow` with `count={value.rules?.rules.length ?? 0}` and `style={{ minWidth: PANE_MIN_W }}`, holding `FilterFrame` with `locations={tree.collections}`, `schema={[]}`, `targets={filterTargets([], tree, tree.collections.length > 0).filter((t) => t.id !== RESERVED_PROPERTY_ID.modifiedAt)}`, `view={filterViewOf(value)}`, `read` from the live store, no `back`, and an `onCommit` that merges onto the live value rather than the render's: `const live = () => settingOf(personalizationOf(useSession.getState()), 'openInPreview')`, `read={() => filterViewOf(live())}`, `onCommit={(p) => setPersonalization('openInPreview', { ...live(), ...standalonePatch(p) })}`.
+- [x] Write `PreviewRulesRow.test.tsx` first: the count reads the rule count; adding a rule through the pane writes the key; turning the footer to Off keeps the rules and writes `enabled: false`; clearing the last rule with the filter on stores no key; the target list offers Title, Location, Created, and each Context, and not Last Modified or a user property.
+- [x] Add `| (RowText & { kind: 'previewRules' })` to `Row`, the frames entry under **Open Connections In Preview**, and `case 'previewRules'` in `RowControl`.
+- [x] Create `PreviewRulesRow`: reads `useSetting('openInPreview')` and the tree (rendering nothing without one), and renders `ManageRow` with `count={value.rules?.rules.length ?? 0}` and `style={{ minWidth: PANE_MIN_W }}`, holding `FilterFrame` with `locations={tree.collections}`, `schema={[]}`, `targets={filterTargets([], tree, tree.collections.length > 0).filter((t) => t.id !== RESERVED_PROPERTY_ID.modifiedAt)}`, `view={filterViewOf(value)}`, `read` from the live store, no `back`, and an `onCommit` that merges onto the live value rather than the render's: `const live = () => settingOf(personalizationOf(useSession.getState()), 'openInPreview')`, `read={() => filterViewOf(live())}`, `onCommit={(p) => setPersonalization('openInPreview', { ...live(), ...standalonePatch(p) })}`.
 
 **AFTER**
 
@@ -913,9 +913,9 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 
 **VERIFY**
 
-- [ ] `PreviewRulesRow.test.tsx` passes.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `PreviewRulesRow.test.tsx` passes.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 4-3
 
@@ -925,9 +925,9 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 
 **CHANGE**
 
-- [ ] Delete the `open_in` describe in `schemas.containerConfig.test.ts` and `viewWrite.test.tsx:202-209`; re-key the foreign-key stand-ins in `sidecar.test.ts:38,43` (drop `open_in`; `plugin` already proves the round trip) and `viewsFile.test.ts:218` (`plugin_mode: 'x'`).
-- [ ] Delete every listed definition and consumer. `SettingsFrame` maps `ENTRIES` directly and drops the imports only the leaf used (`reportRefusal`, `OpenIn`, `pickerRow`, `PickerOption`, `dialer`, `MenuRowView`, `MenuTopRow`).
-- [ ] `ContainerConfigPatch` becomes `{ view_button: ViewButton }`; `setContainerConfig` spreads it; the handler refuses a patch whose `view_button` doesn't coerce.
+- [x] Delete the `open_in` describe in `schemas.containerConfig.test.ts` and `viewWrite.test.tsx:202-209`; re-key the foreign-key stand-ins in `sidecar.test.ts:38,43` (drop `open_in`; `plugin` already proves the round trip) and `viewsFile.test.ts:218` (`plugin_mode: 'x'`).
+- [x] Delete every listed definition and consumer. `SettingsFrame` maps `ENTRIES` directly and drops the imports only the leaf used (`reportRefusal`, `OpenIn`, `pickerRow`, `PickerOption`, `dialer`, `MenuRowView`, `MenuTopRow`).
+- [x] `ContainerConfigPatch` becomes `{ view_button: ViewButton }`; `setContainerConfig` spreads it; the handler refuses a patch whose `view_button` doesn't coerce.
 
 **AFTER**
 
@@ -958,15 +958,15 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 
 **VERIFY**
 
-- [ ] `git grep -nP "open_in|(?<![A-Za-z])openIn\b|(?<![A-Za-z])OpenIn\b|(?<!MATRIX_)OPEN_INS|page-preview|full-page|coerceOpenIn|configurationLeaf" -- Core UIX Desktop Sync` and `git grep -n "'configuration'" -- Core/Views` are empty.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `git grep -nP "open_in|(?<![A-Za-z])openIn\b|(?<![A-Za-z])OpenIn\b|(?<!MATRIX_)OPEN_INS|page-preview|full-page|coerceOpenIn|configurationLeaf" -- Core UIX Desktop Sync` and `git grep -n "'configuration'" -- Core/Views` are empty.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Review Checkpoint
 
-- [ ] The Manage row is one component with two users; neither re-implements its shell.
-- [ ] The zero-trace greps are empty across code and tests; `view_button` still writes.
-- [ ] The app launches against `~/Test`, and the Open In Preview row opens its pane with the editor and no back row.
+- [x] The Manage row is one component with two users; neither re-implements its shell.
+- [x] The zero-trace greps are empty across code and tests; `view_button` still writes.
+- [x] The app launches against `~/Test`, and the Open In Preview row opens its pane with the editor and no back row.
 
 ---
 
@@ -982,14 +982,14 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 
 **CHANGE**
 
-- [ ] Write the script in the session scratchpad: copy every file it will write into a scratchpad backup folder first; delete `open_in` from every `_pagecollection.json` / `_pageset.json` under both Nexuses, rewriting with `JSON.stringify(obj, null, 2) + '\n'` in the file's existing key order.
-- [ ] Dry-run (print the diff), then run, then run again to prove it writes nothing.
-- [ ] In the running app on NexusOS, build the rule through Settings › Navigation › Open In Preview under Any, one row each: Location Contains Ideas, Location Contains Index, Location Contains "II. Sessions" — Ideas and Index typed to narrow the picker, then picked; "II. Sessions" entered as a name, matching both Studio Sets of that name.
+- [x] Write the script in the session scratchpad: copy every file it will write into a scratchpad backup folder first; delete `open_in` from every `_pagecollection.json` / `_pageset.json` under both Nexuses, rewriting with `JSON.stringify(obj, null, 2) + '\n'` in the file's existing key order.
+- [x] Dry-run (print the diff), then run, then run again to prove it writes nothing.
+- [x] In the running app on NexusOS, build the rule through Settings › Navigation › Open In Preview under Any, one row each: Location Contains Ideas, Location Contains Index, Location Contains "II. Sessions" — Ideas and Index typed to narrow the picker, then picked; "II. Sessions" entered as a name, matching both Studio Sets of that name.
 
 **VERIFY**
 
-- [ ] `grep -rl '"open_in"' ~/NexusOS ~/Test --include='_page*.json'` is empty; each rewritten sidecar's diff is the one removed line; `settings.json`'s diff is the added `openInPreview` key alone, written by the app.
-- [ ] In NexusOS, a sidebar click on an Ideas, Index, or "II. Sessions" page opens the Page Window, and a Resources page opens in the main view.
+- [x] `grep -rl '"open_in"' ~/NexusOS ~/Test --include='_page*.json'` is empty; each rewritten sidecar's diff is the one removed line; `settings.json`'s diff is the added `openInPreview` key alone, written by the app.
+- [x] In NexusOS, a sidebar click on an Ideas, Index, or "II. Sessions" page opens the Page Window, and a Resources page opens in the main view.
 
 #### Task 5-2
 
@@ -999,11 +999,11 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 
 **CHANGE**
 
-- [ ] The fixture reads Collection C's `id` from its sidecar and adds `personalization.openInPreview` (Location Contains that id) in its existing `settings.json` merge; reword `run.mjs:301`'s comment to name the rule.
+- [x] The fixture reads Collection C's `id` from its sidecar and adds `personalization.openInPreview` (Location Contains that id) in its existing `settings.json` merge; reword `run.mjs:301`'s comment to name the rule.
 
 **VERIFY**
 
-- [ ] `git grep -n "open_in" .claude/scripts` is empty.
+- [x] `git grep -n "open_in" .claude/scripts` is empty.
 
 #### Task 5-3
 
@@ -1011,11 +1011,11 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 
 **CHANGE**
 
-- [ ] Walk *§Reconciliation* entry by entry, reading `r/Studio-Documentation` first.
+- [x] Walk *§Reconciliation* entry by entry, reading `r/Studio-Documentation` first.
 
 **VERIFY**
 
-- [ ] `git grep -nP "open_in|Open In\b(?! (Preview|Browser|New Tab))|page-preview|Configuration (pane|leaf)|\| Configuration \|" -- .claude/Features .claude/Planning .claude/Guidelines .claude/ContextPM.md` returns only this plan and history records.
+- [x] `git grep -nP "open_in|Open In\b(?! (Preview|Browser|New Tab))|page-preview|Configuration (pane|leaf)|\| Configuration \|" -- .claude/Features .claude/Planning .claude/Guidelines .claude/ContextPM.md` returns only this plan and history records.
 
 ---
 
@@ -1032,17 +1032,17 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 
 **THE STANDARD:** The work is finished when a later review of it finds nothing to correct. Not just doing the chores — doing the laundry, folding it, picking up what fell out of the hamper, emptying the lint trap, leaving no trace that anything went wrong. Nothing is carried as a concern, nothing is deferred where the fix is known, and nothing is declared that wasn't watched happen. Where something genuinely couldn't get there, the report names which and why, and everything else is still finished. Ambiguity met during execution took the simplest reading and was recorded; it didn't stop the run.
 
-- [ ] Phase review (opus-high, simplification and adversarial in parallel): Phase 1 ✓ · Phase 2 ✓ · Phase 3 ✓ · Phase 4 ✓
-- [ ] Review-fix review (opus-high, one agent with the simplification and adversarial perspectives): the unplanned fix passes each checkpoint applied — Phase 2's `df12d3268 b2d3b64f5 fb12435b9 44bbeb262` above all, with Phase 1's `9972c4725 2a42728c4` and Phase 3's `9394c1a3e`, and Phase 4's `58b7aa6fa b9ecc3d5e` — judged as their own change and against the phase they amended
-- [ ] Final review (opus, xhigh) over `{baseline}..HEAD`: one agent inward at the change, one outward against the codebase; reconciled with an advisor
-- [ ] Neutral verification (opus, xhigh) over `{baseline}..HEAD`, given only the intention
-- [ ] Own pass: gates, plus `npm run build` and the Studio dashboard's showcase build (`node_modules/.bin/vite build` from `~/The Studio/.claude/dashboard`) · diff · deviations · criteria
-- [ ] Live drive on `~/Test` (CDP): each routed surface, the NavWindow staying open, the Settings row and pane, typing and Enter in the Location field; then reverted
+- [x] Phase review (opus-high, simplification and adversarial in parallel): Phase 1 ✓ · Phase 2 ✓ · Phase 3 ✓ · Phase 4 ✓
+- [x] Review-fix review (opus-high, one agent with the simplification and adversarial perspectives): the unplanned fix passes each checkpoint applied — Phase 2's `df12d3268 b2d3b64f5 fb12435b9 44bbeb262` above all, with Phase 1's `9972c4725 2a42728c4` and Phase 3's `9394c1a3e`, and Phase 4's `58b7aa6fa b9ecc3d5e` — judged as their own change and against the phase they amended
+- [x] Final review (opus, xhigh) over `{baseline}..HEAD`: one agent inward at the change, one outward against the codebase; reconciled with an advisor
+- [x] Neutral verification (opus, xhigh) over `{baseline}..HEAD`, given only the intention
+- [x] Own pass: gates, plus `npm run build` and the Studio dashboard's showcase build (`node_modules/.bin/vite build` from `~/The Studio/.claude/dashboard`) · diff · deviations · criteria
+- [x] Live drive on `~/Test` (CDP): each routed surface, the NavWindow staying open, the Settings row and pane, typing and Enter in the Location field; then reverted
 - [ ] Nathan's own pass: the Settings row and pane's size; the folded × and + in the filter pane and Excluded Directories; the Location `TokenField` — typing, Enter, Backspace, the `folder-search` name chip — and the pruned search tree
 - [x] Reconciliation walked
-- [ ] `.claude/HistoryPM.md` gains **Previews & Filtering Improvements** — an index row and an entry in PM-149's brief past-tense form, with its commit range and diff
-- [ ] `save-delta` published over `{baseline}..HEAD` once every code commit has landed; then the final commit (the HistoryPM entry, the Results document, and the plan) and `git push -f origin active:main` for the clean-main regeneration
-- [ ] Report delivered
+- [x] `.claude/HistoryPM.md` gains **Previews & Filtering Improvements** — an index row and an entry in PM-149's brief past-tense form, with its commit range and diff
+- [x] `save-delta` published over `{baseline}..HEAD` once every code commit has landed; then the final commit (the HistoryPM entry, the Results document, and the plan) and `git push -f origin active:main` for the clean-main regeneration
+- [x] Report delivered
 
 #### Reconciliation
 
@@ -1086,9 +1086,13 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 
 #### Open Items
 
+- **Nathan's Visual Pass:** the Settings row and its Manage pane — the pane overhangs the Settings window's right edge and stands tall over one rule — the folded × and +, and the Location `TokenField`.
+- **The Row's Count:** it counts kept rules while the switch is Off and an unfinished rule before its value; whether it dims or reads 0 is Nathan's call.
+- **A Dead Folder Chip:** a folder deleted outside the app shows its raw id beside the name glyph until a sweep; a distinct reading needs copy Nathan hasn't set.
+
 #### Deviations
 
-- **Task 5-1 — NexusOS's Rule:** The plan carried the four Preview Collections into the rule by script; Nathan set it instead to Ideas, Index, and "II. Sessions", built by hand in the live Settings pane so the run doubles as the pane's visual check.
+- **Task 5-1 — NexusOS's Rule:** The plan carried the four Preview Collections into the rule by script; at Nathan's direction the rule is instead Ideas, Index, and "II. Sessions", built by hand in the live Settings pane so the run doubles as the pane's visual check.
 
 - **Task 2-4 — Narrowing Keeps Subtrees:** The plan pruned a narrowed tree to matches plus ancestors, dropping a matched folder's subfolders; at Phase 2's review Nathan ruled a match keeps its subtree.
 
