@@ -36,6 +36,7 @@ export function ManageRow({
           onDismiss={() => setOpen(false)}
           triggerRef={triggerRef}
           bareSurface
+          contentClassName={x.managePane}
           style={style}
         >
           {children}
