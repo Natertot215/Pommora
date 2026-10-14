@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { eachOf, numberCheck } from '../Files/decoders'
 import { columnStyle, DATE_FORMATS, type TimeFormat } from '../Properties/columnStyles'
 import { HELD_KINDS, type HeldKind } from '../Nexus/entities'
+import { NO_FILTER, standaloneFilter } from '../Views/filterRules'
 import { type ColorSetting, isColorKey } from '@pommora/uix/Theme/colors'
 import { type NumberRange, type SteppedRange, steppedRange } from '@pommora/uix/Utilities/clamp'
 
@@ -177,6 +178,7 @@ const SETTINGS = {
   pauseMediaOnTabSwitch: flag(true),
   nativeHighlight: flag(false),
   connectionsOpenInPreview: flag(false),
+  openInPreview: setting(standaloneFilter, NO_FILTER),
   plainUnresolvedLinks: flag(false),
   headingLinkStyle: oneOf(HEADING_LINK_STYLES, 'page-heading'),
   inPageHeadingResolution: oneOf(IN_PAGE_HEADING_RESOLUTIONS, 'explicit'),
