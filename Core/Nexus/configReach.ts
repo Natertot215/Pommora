@@ -316,6 +316,12 @@ const cacheEdit = (e: OptionReach, cur: Raw): Raw | null =>
     return touched ? values : null
   })
 
+const editStandalone = (rule: (r: Raw) => Raw | null, held: unknown): unknown => {
+  if (!isPlainObject(held)) return held
+  const rules = editRules(held.rules, rule)
+  return same(rules, held.rules) ? held : { ...held, rules }
+}
+
 type Container = { kind: ContainerKind; id: string; dir: string }
 
 const reaches = (dir: string, under?: string): boolean => !under || isAtOrUnder(dir, under)
@@ -373,20 +379,14 @@ export async function reachConfig(
     if (wrote && host) reach.hosts.push({ host, ids: [] })
   }
   if (!under) {
-    // A standalone filter — the Matrix's, and the Open In Preview rules — loses what the edit removed.
-    const editStandalone = (held: unknown): unknown => {
-      if (!isPlainObject(held)) return held
-      const rules = editRules(held.rules, rule)
-      return same(rules, held.rules) ? held : { ...held, rules }
-    }
     const matrix = await updateNexusConfig(root, 'matrix', (cur) => {
-      const filter = editStandalone(cur.filter)
+      const filter = editStandalone(rule, cur.filter)
       return filter === cur.filter ? null : { ...cur, filter }
     })
     const settings = await updateNexusConfig(root, 'settings', (cur) => {
       const p = cur.personalization
       if (!isPlainObject(p)) return null
-      const openInPreview = editStandalone(p.openInPreview)
+      const openInPreview = editStandalone(rule, p.openInPreview)
       return openInPreview === p.openInPreview
         ? null
         : { ...cur, personalization: { ...p, openInPreview } }

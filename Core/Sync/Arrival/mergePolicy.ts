@@ -26,7 +26,7 @@ export function mergeDepthFor(rel: string): Depth {
   if (isMetadataShardRel(rel)) return { pages: 2 }
   switch (rel) {
     case nexusConfigRel('settings'):
-      return { personalization: 1 }
+      return { personalization: 2 }
     case nexusConfigRel('state'):
       return { order: 1, navigation: 1 }
     case nexusConfigRel('properties'):
