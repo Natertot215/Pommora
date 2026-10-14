@@ -2,7 +2,13 @@ import { useRef, useState } from 'react'
 import type { CollectionNode, NexusTree, SetNode } from '../../Nexus/tree'
 import type { PickOption, PropertyDefinition } from '../../Properties/properties'
 import { type SavedView, viewOption } from '../views'
-import { type FilterRule, type MatchMode, ruleOperands } from '../filterRules'
+import {
+  type FilterRule,
+  type MatchMode,
+  ruleOperands,
+  type StandaloneFilter,
+} from '../filterRules'
+import type { PaneTarget } from '../../Properties/Cells/PropertyTypes'
 import { Icon } from '@pommora/uix/Symbols'
 import { FieldRun } from '@pommora/uix/Fields/FieldRun'
 import * as fr from '@pommora/uix/Fields/field-run.css'
@@ -326,14 +332,21 @@ function flattenNodes(
 export type FilterView = Pick<SavedView, 'filter' | 'filter_enabled' | 'column_styles'>
 export type FilterPatch = { filter: SavedView['filter'] } | { filter_enabled: boolean }
 
+export const filterViewOf = (f: StandaloneFilter): FilterView => ({
+  filter: f.rules ?? undefined,
+  filter_enabled: f.enabled,
+})
+export const standalonePatch = (p: FilterPatch): Partial<StandaloneFilter> =>
+  'filter' in p ? { rules: p.filter ?? null } : { enabled: p.filter_enabled }
+
 export function FilterFrame({
   locations,
   view,
   read,
   schema,
   tree,
-  label,
-  onBack,
+  back,
+  targets: supplied,
   onCommit,
 }: {
   locations: (CollectionNode | SetNode)[]
@@ -341,8 +354,8 @@ export function FilterFrame({
   read: () => FilterView
   schema: PropertyDefinition[]
   tree: NexusTree | null
-  label: string
-  onBack: () => void
+  back?: { label: string; onBack: () => void }
+  targets?: PaneTarget[]
   onCommit: (patch: FilterPatch) => void
 }): React.JSX.Element {
   const styleFor = useStyleFor()
@@ -369,7 +382,7 @@ export function FilterFrame({
   const entering = useEntrance(rules, (_, i) => String(i))
 
   const contextIds = contextIdsOf(tree)
-  const targets = filterTargets(schema, tree, locations.length > 0)
+  const targets = supplied ?? filterTargets(schema, tree, locations.length > 0)
   const defById = new Map(schema.map((d) => [d.id, d]))
   const targetById = new Map(targets.map((t) => [t.id, t]))
 
@@ -607,7 +620,7 @@ export function FilterFrame({
   return (
     <MenuScrollFrame
       className={fp.frame}
-      header={<MenuTopRow label={label} current="Filtering" onBack={onBack} />}
+      header={back && <MenuTopRow label={back.label} current="Filtering" onBack={back.onBack} />}
       footer={
         <MenuFooting
           leading={

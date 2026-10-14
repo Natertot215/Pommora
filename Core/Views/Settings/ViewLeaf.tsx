@@ -43,8 +43,7 @@ export function ViewLeaf({
           read={() => readLiveView(source.id, view)}
           schema={schema}
           tree={tree}
-          label={label}
-          onBack={onBack}
+          back={{ label, onBack }}
           onCommit={(patch) => void saveView(view, patch)}
         />
       )

@@ -9,6 +9,7 @@ import { FilterFrame, type FilterView } from './FilterFrame'
 import { mountEachTest } from '../../Testing/viewHarness'
 import { linkedSpacesTree } from '../../Testing/testTree'
 import { itemPicked } from '@pommora/uix/Menus/menu-row.css'
+import { TITLE_TARGET } from '../../Properties/Cells/PropertyTypes'
 
 const statusDef: PropertyDefinition = {
   id: 'prop_status',
@@ -62,6 +63,7 @@ let saveSpy: ReturnType<typeof vi.fn<(next: FilterView) => void>>
 // The pane's backend: each commit lands on the held view and redraws, as the view store and the Matrix store both do.
 let current: SavedView
 let currentTree: NexusTree | null
+let seams: Pick<React.ComponentProps<typeof FilterFrame>, 'back' | 'targets'>
 const frame = (): React.JSX.Element => (
   <FilterFrame
     locations={source.sets}
@@ -69,8 +71,7 @@ const frame = (): React.JSX.Element => (
     read={() => current}
     schema={schema}
     tree={currentTree}
-    label="Settings"
-    onBack={() => {}}
+    {...seams}
     onCommit={(patch) => {
       current = { ...current, ...patch }
       saveSpy(current)
@@ -109,6 +110,7 @@ const optionWithText = (t: string): Element | undefined =>
 
 beforeEach(() => {
   saveSpy = vi.fn<(next: FilterView) => void>()
+  seams = { back: { label: 'Settings', onBack: () => {} } }
 })
 
 const lastSaved = (): FilterView => saveSpy.mock.calls.at(-1)?.[0] as FilterView
@@ -145,6 +147,29 @@ describe('FilterFrame', () => {
   it('parked rows stay live', async () => {
     await mount(view({ ...twoRules(), filter_enabled: false }))
     expect(byLabel('Matches')).toBeTruthy()
+  })
+
+  it('a back row leads the pane when given, and none stands without it', async () => {
+    const onBack = vi.fn()
+    seams = { back: { label: 'Settings', onBack } }
+    await mount(view())
+    expect(texts()).toContain('Filtering')
+    await click([...host.querySelectorAll('*')].find((el) => el.textContent === 'Settings'))
+    expect(onBack).toHaveBeenCalledOnce()
+    seams = {}
+    await mount(view())
+    expect(texts()).not.toContain('Filtering')
+  })
+
+  it('a supplied target list replaces the derived one', async () => {
+    seams = { targets: [TITLE_TARGET] }
+    await mount(view())
+    await click(byLabel('Filter property'))
+    const offered = [...document.querySelectorAll('[data-picker-portal] *')].map(
+      (el) => el.textContent,
+    )
+    expect(offered).toContain('Title')
+    expect(offered).not.toContain('Archived')
   })
 
   it('a hand-authored filter can still be parked, not just reset', async () => {
