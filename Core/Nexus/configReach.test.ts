@@ -99,6 +99,7 @@ const setFile = (): string => join(set(), SIDECAR_FILENAME.set)
 const spaceTiles = (): string => join(space(), TILE_DOC_FILENAME)
 const homeTiles = (): string => join(homepageDir(root), TILE_DOC_FILENAME)
 const matrixFile = (): string => nexusConfig(root, NEXUS_CONFIG_FILES.matrix)
+const settingsFile = (): string => nexusConfig(root, NEXUS_CONFIG_FILES.settings)
 
 const viewsOf = async (file: string): Promise<Raw[]> => (await readJsonAt(file)).views as Raw[]
 const tileViews = async (id: string): Promise<Raw[]> => {
@@ -107,6 +108,14 @@ const tileViews = async (id: string): Promise<Raw[]> => {
 }
 const matrixRules = async (): Promise<unknown> =>
   ((await readJsonAt(matrixFile())).filter as Raw).rules
+const previewRules = async (): Promise<unknown> =>
+  (((await readJsonAt(settingsFile())).personalization as Raw).openInPreview as Raw).rules
+const seedStandalone = async (rules: Raw): Promise<void> => {
+  await putJson(matrixFile(), { filter: { rules, enabled: true } })
+  await putJson(settingsFile(), {
+    personalization: { hideChevrons: true, openInPreview: { rules, enabled: true } },
+  })
+}
 
 beforeEach(async () => {
   root = tempRoot('pom-reach-')
@@ -132,11 +141,9 @@ beforeEach(async () => {
     ],
   })
   await putJson(homeTiles(), { tiles: [{ id: 'm', type: 'markdown' }] })
-  await putJson(matrixFile(), {
-    filter: {
-      rules: { match: 'all', rules: [{ property_id: 'prop_s', op: 'is', value: 'Done' }, null] },
-      enabled: true,
-    },
+  await seedStandalone({
+    match: 'all',
+    rules: [{ property_id: 'prop_s', op: 'is', value: 'Done' }, null],
   })
 })
 
@@ -221,7 +228,7 @@ describe('an option rename', () => {
 
   it('writes nothing on a second run', async () => {
     await reachConfig(root, rename)
-    const files = [colFile(), setFile(), spaceTiles(), homeTiles(), matrixFile()]
+    const files = [colFile(), setFile(), spaceTiles(), homeTiles(), matrixFile(), settingsFile()]
     const before = await Promise.all(files.map(async (f) => (await stat(f)).mtimeMs))
     expect(await reachConfig(root, rename)).toEqual({ skipped: 0, hosts: [] })
     expect(await Promise.all(files.map(async (f) => (await stat(f)).mtimeMs))).toEqual(before)
@@ -313,6 +320,23 @@ describe('what the pass skips', () => {
     await expect(stat(spaceTiles())).rejects.toThrow()
   })
 
+  it('leaves an absent settings.json uncreated', async () => {
+    await rm(settingsFile())
+    expect((await reachConfig(root, rename)).skipped).toBe(0)
+    await expect(stat(settingsFile())).rejects.toThrow()
+  })
+
+  it('counts an unparseable settings.json as one skip and leaves its bytes', async () => {
+    vi.mocked(liveTreeOf).mockResolvedValueOnce(await liveTreeOf(root))
+    await writeFile(settingsFile(), '{ not json')
+    expect((await reachConfig(root, rename)).skipped).toBe(1)
+    expect(await matrixRules()).toEqual({
+      match: 'all',
+      rules: [{ property_id: 'prop_s', op: 'is', value: 'Closed' }, null],
+    })
+    expect(await readFile(settingsFile(), 'utf8')).toBe('{ not json')
+  })
+
   it('rebuilds a corrupt matrix.json a delete reaches and sets the damaged copy aside', async () => {
     await writeFile(matrixFile(), '{ not json')
     const gone = { kind: 'gone' as const, propertyId: '_location', ids: ['set_deep'] }
@@ -388,10 +412,12 @@ describe('a pass scoped under one Collection', () => {
     expect((await viewsOf(setFile()))[0].group).toEqual({ kind: 'structural' })
     expect((await tileViews('t_deep'))[0].group).toEqual({ kind: 'structural' })
     expect((await tileViews('t_other'))[0]).toEqual(rich('tv_other'))
-    expect(await matrixRules()).toEqual({
+    const untouched = {
       match: 'all',
       rules: [{ property_id: 'prop_s', op: 'is', value: 'Done' }, null],
-    })
+    }
+    expect(await matrixRules()).toEqual(untouched)
+    expect(await previewRules()).toEqual(untouched)
   })
 
   it('edits only the views of a tile that source the Collection', async () => {
@@ -466,9 +492,7 @@ describe('a gone edit', () => {
         goneTile,
       ],
     })
-    await putJson(matrixFile(), {
-      filter: { rules: { match: 'all', rules: locatedRules }, enabled: true },
-    })
+    await seedStandalone({ match: 'all', rules: locatedRules })
   })
 
   it('strips the gone ids from Location rules and band keys on a Collection, a Set, a tile, and the Matrix', async () => {
@@ -488,6 +512,53 @@ describe('a gone edit', () => {
       expect(view.collapsed_groups).toEqual(['set_keep/_ungrouped', 'Done'])
     }
     expect(await matrixRules()).toEqual({ match: 'all', rules: strippedRules })
+    expect(await previewRules()).toEqual({ match: 'all', rules: strippedRules })
+    expect((await readJsonAt(settingsFile())).personalization).toMatchObject({ hideChevrons: true })
+  })
+
+  it('strips a deleted Collection and its Sets from the preview rules', async () => {
+    await seedStandalone({
+      match: 'any',
+      rules: [
+        {
+          property_id: '_location',
+          op: 'is_inside',
+          values: ['col_notes', 'set_deep', 'set_keep'],
+        },
+      ],
+    })
+    await reachConfig(root, {
+      kind: 'gone',
+      propertyId: '_location',
+      ids: ['col_notes', 'set_deep'],
+    })
+    expect(await previewRules()).toEqual({
+      match: 'any',
+      rules: [{ property_id: '_location', op: 'is_inside', values: ['set_keep'] }],
+    })
+  })
+
+  it('strips a deleted Space from the preview rules, and drops a deleted Context’s', async () => {
+    await seedStandalone({
+      match: 'any',
+      rules: [
+        { property_id: 'ctx_areas', op: 'contains_any', values: ['sp_work', 'sp_home'] },
+        { property_id: 'ctx_other', op: 'contains_any', values: ['sp_x'] },
+      ],
+    })
+    await reachConfig(root, { kind: 'gone', propertyId: 'ctx_areas', ids: ['sp_work'] })
+    expect(await previewRules()).toEqual({
+      match: 'any',
+      rules: [
+        { property_id: 'ctx_areas', op: 'contains_any', values: ['sp_home'] },
+        { property_id: 'ctx_other', op: 'contains_any', values: ['sp_x'] },
+      ],
+    })
+    await reachConfig(root, { kind: 'property', propertyId: 'ctx_other' })
+    expect(await previewRules()).toEqual({
+      match: 'any',
+      rules: [{ property_id: 'ctx_areas', op: 'contains_any', values: ['sp_home'] }],
+    })
   })
 
   it('strips a gone Space from the rules on its Context, dropping one it empties, and leaves another Context', async () => {
@@ -526,7 +597,7 @@ describe('a gone edit', () => {
 
   it('writes nothing on a second run', async () => {
     await reachConfig(root, setGone)
-    const files = [colFile(), setFile(), spaceTiles(), homeTiles(), matrixFile()]
+    const files = [colFile(), setFile(), spaceTiles(), homeTiles(), matrixFile(), settingsFile()]
     const before = await Promise.all(files.map(async (f) => (await stat(f)).mtimeMs))
     expect(await reachConfig(root, setGone)).toEqual({ skipped: 0, hosts: [] })
     expect(await Promise.all(files.map(async (f) => (await stat(f)).mtimeMs))).toEqual(before)

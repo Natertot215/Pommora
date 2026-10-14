@@ -13,6 +13,7 @@ interface ConfigViews {
   set: Raw
   tile: Raw
   matrix: unknown
+  preview: unknown
 }
 
 export interface ConfigSurfaces {
@@ -56,6 +57,15 @@ export async function seedConfigSurfaces(
   })
   const matrix = nexusConfig(root, NEXUS_CONFIG_FILES.matrix)
   await putJson(matrix, { filter: { rules: view.filter, enabled: true } })
+  const settings = nexusConfig(root, NEXUS_CONFIG_FILES.settings)
+  const held = (await pathExists(settings)) ? await readJsonAt(settings) : {}
+  await putJson(settings, {
+    ...held,
+    personalization: {
+      ...(held.personalization as Raw | undefined),
+      openInPreview: { rules: view.filter, enabled: true },
+    },
+  })
   const setFile = sidecarPath(set.value.path, 'set')
   return {
     set: set.value.path,
@@ -65,6 +75,7 @@ export async function seedConfigSurfaces(
       set: ((await readJsonAt(setFile)).views as Raw[])[0],
       tile: (((await readJsonAt(tiles)).tiles as Raw[])[0].views as Raw[])[0].config as Raw,
       matrix: ((await readJsonAt(matrix)).filter as Raw).rules,
+      preview: (((await readJsonAt(settings)).personalization as Raw).openInPreview as Raw).rules,
     }),
   }
 }

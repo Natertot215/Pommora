@@ -373,12 +373,25 @@ export async function reachConfig(
     if (wrote && host) reach.hosts.push({ host, ids: [] })
   }
   if (!under) {
-    const edited = await updateNexusConfig(root, 'matrix', (cur) => {
-      if (!isPlainObject(cur.filter)) return null
-      const rules = editRules(cur.filter.rules, rule)
-      return same(rules, cur.filter.rules) ? null : { ...cur, filter: { ...cur.filter, rules } }
+    // A standalone filter — the Matrix's, and the Open In Preview rules — loses what the edit removed.
+    const editStandalone = (held: unknown): unknown => {
+      if (!isPlainObject(held)) return held
+      const rules = editRules(held.rules, rule)
+      return same(rules, held.rules) ? held : { ...held, rules }
+    }
+    const matrix = await updateNexusConfig(root, 'matrix', (cur) => {
+      const filter = editStandalone(cur.filter)
+      return filter === cur.filter ? null : { ...cur, filter }
     })
-    if (!edited.ok) reach.skipped++
+    const settings = await updateNexusConfig(root, 'settings', (cur) => {
+      const p = cur.personalization
+      if (!isPlainObject(p)) return null
+      const openInPreview = editStandalone(p.openInPreview)
+      return openInPreview === p.openInPreview
+        ? null
+        : { ...cur, personalization: { ...p, openInPreview } }
+    })
+    reach.skipped += [matrix, settings].filter((r) => !r.ok).length
   }
   return reach
 }

@@ -141,7 +141,7 @@ describe('a page delete', () => {
 })
 
 describe('a Space delete', () => {
-  it('strips the Space from the rules on its Context in every view, tile, and the Matrix', async () => {
+  it('strips the Space from the rules on its Context in every view, tile, the Matrix, and the preview rules', async () => {
     const surfaces = await seedConfigSurfaces(
       root,
       notes,
@@ -162,7 +162,8 @@ describe('a Space delete', () => {
       rules: [{ property_id: 'ctx_areas', op: 'contains_any', values: ['sp_home'] }],
     }
     const v = await surfaces.read()
-    expect([v.collection.filter, v.set.filter, v.tile.filter, v.matrix]).toEqual([
+    expect([v.collection.filter, v.set.filter, v.tile.filter, v.matrix, v.preview]).toEqual([
+      kept,
       kept,
       kept,
       kept,
@@ -204,7 +205,7 @@ describe('a Space delete', () => {
 })
 
 describe('a Context delete', () => {
-  it('clears the Context from every view and tile, and its rule from the Matrix', async () => {
+  it('clears the Context from every view and tile, and its rule from the Matrix and the preview rules', async () => {
     const held = view([{ property_id: 'ctx_projects', op: 'contains_any', values: ['sp_x'] }], {
       property_order: ['_title', 'ctx_projects'],
       hidden_properties: ['ctx_projects'],
@@ -232,6 +233,7 @@ describe('a Context delete', () => {
     const v = await surfaces.read()
     expect([v.collection, v.set, v.tile]).toEqual([cleared, cleared, cleared])
     expect(v.matrix).toEqual({ match: 'all', rules: [] })
+    expect(v.preview).toEqual({ match: 'all', rules: [] })
   })
 })
 
@@ -289,6 +291,7 @@ describe('a Set delete', () => {
     const v = await surfaces.read()
     expect([v.collection, v.set, v.tile]).toEqual([stripped, stripped, stripped])
     expect(v.matrix).toEqual(stripped.filter)
+    expect(v.preview).toEqual(stripped.filter)
     expect(((await readJsonAt(surfaces.tiles)).tiles as Raw[])[1]).toEqual(goneTile)
   })
 
@@ -393,7 +396,7 @@ describe('a Set delete', () => {
 })
 
 describe('a Collection delete', () => {
-  it('strips it and its Sets from the Matrix and leaves the surviving Collection', async () => {
+  it('strips it and its Sets from the Matrix and the preview rules, and leaves the surviving Collection', async () => {
     const surfaces = await seedConfigSurfaces(root, notes, viewOn('prop_s', 'Done'))
     const deep = (await readJsonAt(sidecarPath(surfaces.set, 'set'))).id
     const old = await entity(root, 'collection', 'Old')
@@ -403,14 +406,21 @@ describe('a Collection delete', () => {
       match: 'all',
       rules: [{ property_id: '_location', op: 'is', values }],
     })
-    await putJson(matrix, {
-      filter: { rules: locatedRule([old.id, oldSet.id, deep]), enabled: true },
+    const filter = { rules: locatedRule([old.id, oldSet.id, deep]), enabled: true }
+    await putJson(matrix, { filter })
+    await putJson(nexusConfig(root, NEXUS_CONFIG_FILES.settings), {
+      personalization: { openInPreview: filter },
     })
     await refreshTree(root)
     const before = await surfaces.read()
     expect((await del('Old', 'collection')).ok).toBe(true)
     const after = await surfaces.read()
     expect(after.matrix).toEqual(locatedRule([deep]))
-    expect({ ...after, matrix: null }).toEqual({ ...before, matrix: null })
+    expect(after.preview).toEqual(locatedRule([deep]))
+    expect({ ...after, matrix: null, preview: null }).toEqual({
+      ...before,
+      matrix: null,
+      preview: null,
+    })
   })
 })
