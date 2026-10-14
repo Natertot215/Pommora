@@ -298,7 +298,7 @@ async function bottomToggles(host, trail, lead) {
 }
 
 const WINDOW = `document.querySelector('[role=dialog][aria-label="Page Preview"]')`
-// Collection C opens pages in a Page Window: two pages make a strip of two tabs.
+// The Open In Preview rule sends Collection C's pages to a Page Window: two pages make a strip of two tabs.
 const pageWindow = async () => {
   if (await ev(`!!${WINDOW}`)) return
   await ribbon('collections')

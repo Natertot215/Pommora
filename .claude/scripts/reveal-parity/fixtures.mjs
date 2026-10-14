@@ -20,9 +20,6 @@ const body = (rel, text) => {
 merge('Collection B/_pagecollection.json', (c) => {
   c.disclosure_locked = true
 })
-merge('Collection C/_pagecollection.json', (c) => {
-  c.open_in = 'page-preview'
-})
 for (const [n, name] of [
   [1, 'One'],
   [2, 'Two'],
@@ -81,8 +78,13 @@ merge('.nexus/interface/homepage/_tiles.json', (t) => {
     { node: { h: 240, id: 'hover-probe-untitled', kind: 'tile' } },
   )
 })
+const collectionC = JSON.parse(fs.readFileSync(at('Collection C/_pagecollection.json'), 'utf8')).id
 merge('.nexus/settings.json', (s) => {
   s.personalization.previewPersistence = 'always'
+  s.personalization.openInPreview = {
+    enabled: true,
+    rules: { match: 'any', rules: [{ op: 'is_inside', property_id: '_location', values: [collectionC] }] },
+  }
 })
 body(
   'Collection A/Set Beta/Sub-Set B/Beta 2.md',
