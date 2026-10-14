@@ -45,7 +45,7 @@ const NO_COLLAPSE = new Set<string>()
 export function useViewHost(source: CollectionNode | SetNode, nests: boolean) {
   const tree = useSession((s) => s.tree)
   const assetMap = useSession((s) => s.assetMap)
-  const select = useSession((s) => s.select)
+  const openTarget = useSession((s) => s.openTarget)
   const mutate = useSession((s) => s.mutate)
   const saveView = useSaveView(source)
   const tile = useViewTileScope()
@@ -261,7 +261,7 @@ export function useViewHost(source: CollectionNode | SetNode, nests: boolean) {
     pickTarget,
     styleOf,
     mutate,
-    select,
+    openTarget,
     tree,
     values,
     effectiveValues,

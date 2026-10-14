@@ -32,7 +32,6 @@ import { placementOf, type SidebarMode } from '../../Settings/personalization'
 import { DEFAULT_NEW_NAME, type MutateRequest } from '../../Nexus/mutateRequest'
 import type { NodeKind } from '../../Nexus/entities'
 import { type Creator, spaceCreator } from '../../Actions/createMenu'
-import { owningCollection } from '../../Nexus/treePatch'
 import { recordsByIdOf } from '../../Nexus/treeIndex'
 import { SidebarDnd } from './sidebarDnd'
 import { buildIndex, type Index } from './sidebarDndModel'
@@ -95,15 +94,7 @@ function showContextFor(
 }
 
 function selectRow(node: { kind: NodeKind; id: string; path: string }, e?: React.MouseEvent): void {
-  const s = useSession.getState()
-  const target = selectTargetOf(node)
-  if (e && isCmd(e)) void s.select(target, { newTab: true })
-  else if (
-    target.kind === 'page' &&
-    owningCollection(s.tree, target.path)?.openIn === 'page-preview'
-  )
-    s.openWindowTab(target)
-  else void s.select(target)
+  useSession.getState().openTarget(selectTargetOf(node), { newTab: e !== undefined && isCmd(e) })
 }
 
 const LeafRow = memo(function LeafRow({

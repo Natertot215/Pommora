@@ -15,6 +15,7 @@ import {
 } from '../Navigation/navRef'
 import type { PageDetail } from '../Pages/pageDetail'
 import { settingOf } from '../Settings/personalization'
+import { opensInPreview } from '../Navigation/previewRules'
 import {
   type ReconcileIndex,
   reconcileHeld,
@@ -78,6 +79,11 @@ export interface NavigationSlice {
     target: SelectTarget,
     opts?: { record?: boolean; newTab?: boolean; heading?: string },
   ) => Promise<void>
+  /** A plain click's open: ⌘ takes a new tab, a page the Open In Preview rules match takes the Page Window, anything else follows Default Opening Behavior. */
+  openTarget: (
+    target: SelectTarget,
+    opts?: { newTab?: boolean; heading?: string },
+  ) => 'tab' | 'window'
   reloadPage: () => Promise<void>
   tabs: Tab[]
   activeTabId: string
@@ -534,6 +540,16 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
       const next = s.recents.map((r) => (pos.has(navKey(r)) ? listed[i++] : r))
       if (sameItems(next, s.recents)) return
       commitRecents(next)
+    },
+
+    openTarget: (target, { newTab, heading } = {}) => {
+      const s = get()
+      if (!newTab && target.kind === 'page' && s.tree && opensInPreview(s.tree, target)) {
+        s.openWindowTab(target, { heading })
+        return 'window'
+      }
+      void s.select(target, { newTab: newTab || undefined, heading })
+      return 'tab'
     },
 
     select: async (target, opts) => {

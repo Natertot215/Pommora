@@ -86,7 +86,7 @@ export function TileHost({
   } = useTileDoc(host)
   const [editingId, setEditingId] = useState<string | null>(null)
   const tree = useSession((s) => s.tree)
-  const select = useSession((s) => s.select)
+  const openTarget = useSession((s) => s.openTarget)
 
   const entries = useMemo(() => {
     const map = new Map<string, TileEntry>()
@@ -236,7 +236,7 @@ export function TileHost({
         else if (action === 'tile:delete') confirmRemove(id)
         else if (action === 'tile:open' && page) {
           if (openRoute) openRoute(page)
-          else select({ kind: 'page', id: page.id, path: page.path })
+          else openTarget({ kind: 'page', id: page.id, path: page.path })
         }
       }
       setMenuOpenId(id)
@@ -259,7 +259,7 @@ export function TileHost({
       mutateEntry,
       duplicateTile,
       confirmRemove,
-      select,
+      openTarget,
       openRoute,
     ],
   )

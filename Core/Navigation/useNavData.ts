@@ -18,7 +18,7 @@ export function useNavData(): {
   const tree = useSession((s) => s.tree)
   const recents = useSession((s) => s.recents)
   const pinned = useSession((s) => s.pinned)
-  const select = useSession((s) => s.select)
+  const openTarget = useSession((s) => s.openTarget)
 
   const resolveIndex = tree ? resolveIndexOf(tree) : null
   const searchIndex = tree ? searchEntriesOf(tree) : NO_ENTRIES
@@ -51,10 +51,10 @@ export function useNavData(): {
       if (!tree) return
       const live = liveTarget(reconcileIndexOf(tree), target)
       if (!live) return
-      void select(live, opts?.newTab ? { newTab: true } : undefined)
-      onDone?.()
+      // A page the rules send to the window lands in it — closing the window behind it would close the page too.
+      if (openTarget(live, { newTab: opts?.newTab }) === 'tab') onDone?.()
     },
-    [select, tree],
+    [openTarget, tree],
   )
 
   return { resolvedRecents, resolvedPins, search, go }
