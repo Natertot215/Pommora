@@ -39,7 +39,7 @@ export const controlField = style([cellField, { flex: '0 0 auto' }])
 
 export const valueField = style([cellField, { flex: '1 1 auto' }])
 
-export const locationField = style([valueField, { cursor: 'text' }])
+export const locationField = style({ flex: '1 1 auto' })
 
 export { placeholder } from '@pommora/uix/Fields/fields.css'
 

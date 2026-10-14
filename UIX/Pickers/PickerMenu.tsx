@@ -103,7 +103,7 @@ export function PickerMenu({
   anchorHeight?: number
   bounds?: { left: number; right: number }
   bareSurface?: boolean
-  /** `trap` takes focus and holds Tab inside; `leave` takes none on open, though a field inside takes it when pressed; `keep` never takes it, so a press anywhere in the pane leaves focus with its owner. Under `keep` the trigger belongs to the pane, so pressing it never closes the pane, and the pane isn't modal, so it draws no shield and an outside press that closes it still lands. */
+  /** `trap` takes focus and holds Tab inside; `leave` takes none on open, though a field inside takes it when pressed; `keep` never takes it, so a press anywhere in the pane leaves focus with its owner. Under `keep` the trigger belongs to the pane, so pressing it never closes the pane, and the pane stays modal, Escape and outside presses closing it, but draws no shield, so an outside press that closes it also lands. */
   focus?: 'trap' | 'leave' | 'keep'
   /** A glance surface passes false and lets the app's own dismissals through. */
   modal?: boolean

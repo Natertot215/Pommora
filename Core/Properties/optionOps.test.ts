@@ -755,7 +755,7 @@ describe('option cascades reach saved views', () => {
     const held = viewOn(id, 'Done')
     const want = {
       ...held,
-      filter: { match: 'all', rules: [] },
+      filter: undefined,
       sort: [{ property_id: id, direction: 'ascending', order: [] }],
       group: { ...(held.group as object), order: [] },
       hidden_groups: [],
@@ -763,7 +763,7 @@ describe('option cascades reach saved views', () => {
     }
     const views = await surfaces.read()
     expect([views.collection, views.set, views.tile]).toEqual([want, want, want])
-    expect(views.matrix).toEqual(want.filter)
+    expect(views.matrix).toBeNull()
     expect(await readSchemaJournal(root)).toBeNull()
   })
 

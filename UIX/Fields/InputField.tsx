@@ -5,6 +5,8 @@ import { onActivateKey } from '../Interactions/activate'
 import { overScrollLabel } from '../Interactions/OverScroll'
 import { RenamableLabel } from './RenamableLabel'
 
+export type FieldChrome = 'boxed' | 'bordered'
+
 export interface FieldEdit {
   value: string
   onCommit: (next: string) => void
@@ -33,7 +35,7 @@ export function InputField({
   children: ReactNode
   className?: string
   capped?: boolean
-  chrome?: 'boxed' | 'bordered'
+  chrome?: FieldChrome
   edit?: FieldEdit
   leading?: ReactNode
   /** Outside the caret. */

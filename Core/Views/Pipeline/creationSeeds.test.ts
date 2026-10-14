@@ -26,7 +26,7 @@ const blank: ViewRow = {
 }
 
 const seedsOf = (filter: FilterGroup | undefined, contextIds: readonly string[] = []) =>
-  filterSeeds({ filter, blank, schema, contextIds })
+  filterSeeds({ filter, blank, schema, setTree: [], contextIds })
 
 describe('filterSeeds', () => {
   it('derives positive Is rules on status/select/checkbox under All-mode', () => {
@@ -216,7 +216,15 @@ describe('filterSeeds', () => {
         { property_id: 'p_status', op: 'is', value: 'Done' },
       ],
     }
-    expect(filterSeeds({ filter, blank: { ...blank, parentSetId: 'S' }, schema })).toEqual({})
+    expect(
+      filterSeeds({
+        filter,
+        blank: { ...blank, parentSetId: 'S' },
+        schema,
+        setTree: [],
+        contextIds: [],
+      }),
+    ).toEqual({})
     expect(seedsOf(filter)).toEqual({ p_status: { kind: 'select', value: 'Done' } })
   })
 

@@ -134,7 +134,7 @@ describe('the property channels', () => {
     const r = await propertiesHandlers['property:removeOption'](ctx, propId, 'Done')
     expect(r.ok && r.value.cascade.warning).toBe(unsweptLine(1))
     expect(r.ok && r.value.owed).toEqual({ op: 'option-remove', id: propId, value: 'Done' })
-    expect((liveViewAt(col) as { filter: unknown }).filter).toEqual({ match: 'all', rules: [] })
+    expect(liveViewAt(col)).not.toHaveProperty('filter')
     expect(tilePushes()).toEqual([HOME])
   })
 
@@ -157,7 +157,7 @@ describe('the property channels', () => {
       value: null,
     })
     const views = (await readJsonAt(setFile)).views as { filter: unknown }[]
-    expect(views[0].filter).toEqual({ match: 'all', rules: [] })
+    expect(views[0]).not.toHaveProperty('filter')
   })
 
   it('a delete’s record replayed after the property is restored leaves the restored property as it is', async () => {
@@ -235,10 +235,7 @@ describe('the property channels', () => {
     vi.mocked(mutateRegistry).mockResolvedValueOnce(fault('refused'))
     const r = await propertiesHandlers['property:removeOption'](ctx, propId, 'Done')
     expect(r.ok).toBe(false)
-    expect((liveViewAt(surfaces.set) as { filter: unknown }).filter).toEqual({
-      match: 'all',
-      rules: [],
-    })
+    expect(liveViewAt(surfaces.set)).not.toHaveProperty('filter')
   })
 })
 
@@ -357,7 +354,7 @@ describe('a Collection whose sidecar doesn’t parse', () => {
     await repaired(held)
     expect(await propertiesHandlers['property:replay'](ctx, record)).toEqual(ok(null))
     const views = (await readJsonAt(colFile())).views as { filter: unknown }[]
-    expect(views[0].filter).toEqual({ match: 'all', rules: [] })
+    expect(views[0]).not.toHaveProperty('filter')
     const options = (await readRegistry(root)).defs[propId].select_options?.map((o) => o.value)
     expect(options).toEqual(['Todo'])
   })

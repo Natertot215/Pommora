@@ -296,7 +296,7 @@ describe('a delete reaches saved views', () => {
     property_order: ['_title'],
     hidden_properties: [],
     column_widths: {},
-    filter: { match: 'all', rules: [] },
+    filter: undefined,
     sort: [],
     group: { kind: 'structural' },
     hidden_groups: [],
@@ -324,7 +324,8 @@ describe('a delete reaches saved views', () => {
   const expectCleared = async (surfaces: ConfigSurfaces): Promise<void> => {
     const views = await surfaces.read()
     expect([views.collection, views.set, views.tile]).toEqual([cleared, cleared, cleared])
-    expect(views.matrix).toEqual({ match: 'all', rules: [] })
+    expect(views.matrix).toBeNull()
+    expect(views.preview).toBeUndefined()
   }
 
   it('clears every field that names the property on the Collection, the Set, the tile, and the Matrix', async () => {

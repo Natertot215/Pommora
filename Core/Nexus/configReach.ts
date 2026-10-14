@@ -12,6 +12,7 @@ import {
   type FilterGroup,
   type FilterRule,
   mapRules,
+  NO_FILTER,
   OPERANDLESS_OPS,
   SUBSTRING_OPS,
 } from '../Views/filterRules'
@@ -99,10 +100,12 @@ type Raw = Record<string, unknown>
 type ViewEdit = (view: Raw) => Raw | null
 type Handler<E> = (e: E, held: unknown, view: SavedView) => unknown
 
-const editRules = (held: unknown, fn: (rule: Raw) => Raw | null): unknown =>
-  isPlainObject(held) && Array.isArray(held.rules)
-    ? mapRules(held as unknown as FilterGroup, (r) => fn(r as Raw) as FilterRule | null)
-    : held
+/** A group the edit leaves without a rule is absent, as the filter pane writes it. */
+function editRules(held: unknown, fn: (rule: Raw) => Raw | null): unknown {
+  if (!isPlainObject(held) || !Array.isArray(held.rules)) return held
+  const group = mapRules(held as unknown as FilterGroup, (r) => fn(r as Raw) as FilterRule | null)
+  return group.rules.length > 0 ? group : undefined
+}
 
 const onProperty = (id: string, holder: unknown): holder is Raw =>
   isPlainObject(holder) && holder.property_id === id
@@ -319,7 +322,7 @@ const cacheEdit = (e: OptionReach, cur: Raw): Raw | null =>
 const editStandalone = (rule: (r: Raw) => Raw | null, held: unknown): unknown => {
   if (!isPlainObject(held)) return held
   const rules = editRules(held.rules, rule)
-  return same(rules, held.rules) ? held : { ...held, rules }
+  return same(rules, held.rules) ? held : { ...held, rules: rules ?? null }
 }
 
 type Container = { kind: ContainerKind; id: string; dir: string }
@@ -386,10 +389,13 @@ export async function reachConfig(
     const settings = await updateNexusConfig(root, 'settings', (cur) => {
       const p = cur.personalization
       if (!isPlainObject(p)) return null
-      const openInPreview = editStandalone(rule, p.openInPreview)
-      return openInPreview === p.openInPreview
-        ? null
-        : { ...cur, personalization: { ...p, openInPreview } }
+      const { openInPreview: held, ...rest } = p
+      const openInPreview = editStandalone(rule, held)
+      if (openInPreview === held) return null
+      return {
+        ...cur,
+        personalization: same(openInPreview, NO_FILTER) ? rest : { ...p, openInPreview },
+      }
     })
     reach.skipped += [matrix, settings].filter((r) => !r.ok).length
   }

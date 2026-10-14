@@ -61,14 +61,14 @@ export function filterSeeds({
   filter,
   blank,
   schema,
-  setTree = [],
-  contextIds = [],
+  setTree,
+  contextIds,
 }: {
   filter: FilterGroup | undefined
   blank: ViewRow
   schema: PropertyDefinition[]
-  setTree?: SetTreeNode[]
-  contextIds?: readonly string[]
+  setTree: SetTreeNode[]
+  contextIds: readonly string[]
 }): Seeds {
   if (!filter) return {}
   // `passes` is the blank page against the node's compiled test, `undefined` when the node abstains.

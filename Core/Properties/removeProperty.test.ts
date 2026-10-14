@@ -196,7 +196,7 @@ describe('removeProperty reaches saved views (B-6)', () => {
     property_order: ['_title'],
     hidden_properties: [],
     column_widths: {},
-    filter: { match: 'all', rules: [] },
+    filter: undefined,
     sort: [],
     group: { kind: 'structural' },
     hidden_groups: [],

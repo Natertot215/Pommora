@@ -1,7 +1,7 @@
 import { type KeyboardEvent, type Ref, useRef } from 'react'
 import { cx } from '../Utilities/cx'
 import { FieldRun, type RunEntry } from './FieldRun'
-import { InputField } from './InputField'
+import { type FieldChrome, InputField } from './InputField'
 import * as s from './fields.css'
 
 /** Values standing in a field beside a bare caret: Enter offers the draft, and Backspace on an empty caret removes the last value. The host owns the draft and decides what Enter makes; a key its `onKeyDown` prevents is left to it. */
@@ -31,7 +31,7 @@ export function TokenField({
   onKeyDown?: (e: KeyboardEvent<HTMLInputElement>) => void
   placeholder?: string
   ariaLabel?: string
-  chrome?: 'boxed' | 'bordered'
+  chrome?: FieldChrome
   className?: string
   ref?: Ref<HTMLDivElement>
 }): React.JSX.Element {

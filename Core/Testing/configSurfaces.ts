@@ -70,7 +70,9 @@ export async function seedConfigSurfaces(
       set: ((await readJsonAt(setFile)).views as Raw[])[0],
       tile: (((await readJsonAt(tiles)).tiles as Raw[])[0].views as Raw[])[0].config as Raw,
       matrix: ((await readJsonAt(matrix)).filter as Raw).rules,
-      preview: (((await readJsonAt(settings)).personalization as Raw).openInPreview as Raw).rules,
+      preview: (
+        ((await readJsonAt(settings)).personalization as Raw).openInPreview as Raw | undefined
+      )?.rules,
     }),
   }
 }

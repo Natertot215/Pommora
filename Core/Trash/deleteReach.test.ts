@@ -193,6 +193,7 @@ describe('a Space delete', () => {
         modifiedAt: null,
       },
       schema: [],
+      setTree: [],
       contextIds: ['ctx_areas'],
     })
     const r = await settledMutate(
@@ -211,6 +212,7 @@ describe('a Context delete', () => {
       hidden_properties: ['ctx_projects'],
       column_widths: { ctx_projects: 90 },
       sort: [{ property_id: 'ctx_projects', direction: 'ascending' }],
+      filter_enabled: false,
     })
     const surfaces = await seedConfigSurfaces(root, notes, held)
     await putJson(contextsRegistryFile(root), {
@@ -227,13 +229,14 @@ describe('a Context delete', () => {
       property_order: ['_title'],
       hidden_properties: [],
       column_widths: {},
-      filter: { match: 'all', rules: [] },
+      filter: undefined,
       sort: [],
     }
     const v = await surfaces.read()
     expect([v.collection, v.set, v.tile]).toEqual([cleared, cleared, cleared])
-    expect(v.matrix).toEqual({ match: 'all', rules: [] })
-    expect(v.preview).toEqual({ match: 'all', rules: [] })
+    expect([v.collection, v.set, v.tile].some((c) => 'filter' in c)).toBe(false)
+    expect(v.matrix).toBeNull()
+    expect(v.preview).toBeUndefined()
   })
 })
 

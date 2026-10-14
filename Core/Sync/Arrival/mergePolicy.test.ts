@@ -166,6 +166,18 @@ describe('mergeKeys', () => {
     })
   })
 
+  it("keeps both devices' edits to different fields of one object-valued setting", () => {
+    const depth = mergeDepthFor('.nexus/settings.json')
+    const base = { personalization: { trashColumnStyle: { date_format: 'short' } } }
+    const local = { personalization: { trashColumnStyle: { date_format: 'full' } } }
+    const remote = {
+      personalization: { trashColumnStyle: { date_format: 'short', weekday: 'long' } },
+    }
+    expect(merge(base, local, remote, depth)).toEqual({
+      personalization: { trashColumnStyle: { date_format: 'full', weekday: 'long' } },
+    })
+  })
+
   it("merges two devices' moves to different forces of one grouping", () => {
     const depth = mergeDepthFor('.nexus/interface/matrix.json')
     const base = { forces: { connection: { gravity: 1.5 } } }

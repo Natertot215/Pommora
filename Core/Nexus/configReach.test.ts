@@ -109,7 +109,8 @@ const tileViews = async (id: string): Promise<Raw[]> => {
 const matrixRules = async (): Promise<unknown> =>
   ((await readJsonAt(matrixFile())).filter as Raw).rules
 const previewRules = async (): Promise<unknown> =>
-  (((await readJsonAt(settingsFile())).personalization as Raw).openInPreview as Raw).rules
+  (((await readJsonAt(settingsFile())).personalization as Raw).openInPreview as Raw | undefined)
+    ?.rules
 const seedStandalone = async (rules: Raw): Promise<void> => {
   await putJson(matrixFile(), { filter: { rules, enabled: true } })
   await putJson(settingsFile(), {
@@ -559,6 +560,16 @@ describe('a gone edit', () => {
       match: 'any',
       rules: [{ property_id: 'ctx_areas', op: 'contains_any', values: ['sp_home'] }],
     })
+  })
+
+  it('leaves no preview rules and a ruleless Matrix filter once a sweep strips the last rule', async () => {
+    await seedStandalone({
+      match: 'any',
+      rules: [{ property_id: 'ctx_areas', op: 'contains_any', values: ['sp_work'] }],
+    })
+    await reachConfig(root, { kind: 'property', propertyId: 'ctx_areas' })
+    expect(await matrixRules()).toBeNull()
+    expect((await readJsonAt(settingsFile())).personalization).toEqual({ hideChevrons: true })
   })
 
   it('strips a gone Space from the rules on its Context, dropping one it empties, and leaves another Context', async () => {
