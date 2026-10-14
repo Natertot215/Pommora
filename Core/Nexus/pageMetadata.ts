@@ -7,7 +7,8 @@ import { liveTreeOf, NOT_HELD } from './liveTree'
 import { metadataShardPath } from '../Paths/paths'
 import { METADATA_DIR_REL, SHARD_FILE_RE } from '../Paths/nexusPaths'
 import { basename, join } from '../Paths/posix'
-import { metadataShardFile, type PageMeta, type PageMetaPatch } from './schemas'
+import { type AliasEdit, applyAliasEdit } from '../Connections/aliasMemory'
+import { metadataShardFile, type PageMeta, type PageMetaPatch, pageMetaEntry } from './schemas'
 import { shardOf } from './ids'
 import { done, type MutateReply } from './mutateRequest'
 import { stabilize } from './treeStabilize'
@@ -93,7 +94,7 @@ function byShard(ids: readonly string[]): Map<string, string[]> {
 export async function updatePageMetadata(
   root: string,
   id: string,
-  patch: PageMetaPatch,
+  update: PageMetaPatch | ((had: PageMeta) => PageMetaPatch),
 ): Promise<Result<null>> {
   const shard = shardOf(id)
   if (shard === null) return NO_FILEABLE_ID
@@ -103,6 +104,7 @@ export async function updatePageMetadata(
       const pages = { ...rawPages(cur) }
       const raw = pages[id]
       const had = isPlainObject(raw) ? raw : undefined
+      const patch = typeof update === 'function' ? update(pageMetaEntry.parse(had ?? {})) : update
       const entry = patchedEntry(had, patch)
       if (stabilize(entry, had) === had) return null
       if (entry) pages[id] = entry
@@ -159,4 +161,18 @@ export async function writePageMeta(
 ): Promise<MutateReply> {
   const id = pageAt(await liveTreeOf(root), relPath)?.id
   return id ? done(await updatePageMetadata(root, id, patch)) : NOT_HELD
+}
+
+export async function editPageAliases(
+  root: string,
+  relPath: string,
+  e: AliasEdit,
+): Promise<MutateReply> {
+  const page = pageAt(await liveTreeOf(root), relPath)
+  if (!page) return NOT_HELD
+  const written = await updatePageMetadata(root, page.id, (had) => {
+    const next = applyAliasEdit(had.aliases ?? [], e, page.title)
+    return { aliases: next.length ? next : null }
+  })
+  return done(written)
 }

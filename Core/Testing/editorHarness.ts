@@ -7,7 +7,7 @@ import { MarkdownEditor } from '../MarkdownPM/MarkdownEditor'
 import type { MarkdownTable } from '../MarkdownPM/Tables/MarkdownTable'
 import type { ConnectionsApi } from '../MarkdownPM/Links/connectionsApi'
 import { DEFAULT_COMMANDS } from '../Actions/commands'
-import { forgetAlias, rememberAlias } from '../Connections/aliasMemory'
+import { type AliasEdit, applyAliasEdit } from '../Connections/aliasMemory'
 import { type EditorHost, type EditorSettings, editorSettingsOf } from '../MarkdownPM/api'
 import type { EditorPrefs } from '../Contract/bridge'
 import { stubDialer } from '../vitest.setup'
@@ -78,9 +78,9 @@ function harnessHost(spec: HarnessHost, rerender: () => void = () => {}): Harnes
   } as HarnessState
   const watchers = new Set<() => void>()
   const worn = (id: string): string[] => state.aliases[id] ?? []
-  const wear = (id: string, next: string[] | null): void => {
-    if (!next) return
-    state.aliases[id] = next
+  // A harness page has no title for an alias to fold to.
+  const wear = (id: string, edit: AliasEdit): void => {
+    state.aliases[id] = applyAliasEdit(worn(id), edit, '')
     for (const cb of watchers) cb()
   }
   state.host = {
@@ -88,8 +88,8 @@ function harnessHost(spec: HarnessHost, rerender: () => void = () => {}): Harnes
     connections: () => state.connections,
     aliases: {
       list: worn,
-      remember: (id, alias) => wear(id, rememberAlias(worn(id), alias)),
-      forget: (id, alias) => wear(id, forgetAlias(worn(id), alias)),
+      remember: (id, alias) => wear(id, { op: 'remember', alias }),
+      forget: (id, alias) => wear(id, { op: 'forget', alias }),
       subscribe: (cb) => {
         watchers.add(cb)
         return () => watchers.delete(cb)

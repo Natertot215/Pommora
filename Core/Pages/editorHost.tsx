@@ -1,4 +1,4 @@
-import { persist, reportRefusal } from '../Interface/Notifications/notifications'
+import { persist } from '../Interface/Notifications/notifications'
 import { useMemo } from 'react'
 import { gripMenuItems } from '../Actions/gripMenu'
 import { pagePickTree } from '../Actions/pickTree'
@@ -20,7 +20,7 @@ import { PageTile } from '../Tiles/Surfaces/PageTile'
 import { WebTile } from '../Tiles/Surfaces/WebTile'
 import { windowGeometry } from '../Interface/Windows/useWindowGeometry'
 import { openWebLink } from '../Web/openWebLink'
-import { forgetAlias, rememberAlias } from '../Connections/aliasMemory'
+import type { AliasEdit } from '../Connections/aliasMemory'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 
 interface EditorHostOptions {
@@ -47,14 +47,10 @@ function buildEditorHost(
   connRef: { readonly current: ConnectionsApi | undefined },
 ): EditorHost {
   const state = useSession.getState
-  const worn = (id: string): string[] => pageMetaOf(id)(state())?.aliases ?? []
-  const wear = (id: string, next: string[] | null): void => {
-    const tree = state().tree
-    const path = tree && pagesByIdOf(tree).get(id)?.path
-    if (next && path)
-      void dialer()
-        .ask('mutate', { op: 'setPageMeta', path, patch: { aliases: next.length ? next : null } })
-        .then(reportRefusal)
+  const editAliases = (id: string, edit: AliasEdit): void => {
+    const s = state()
+    const path = s.tree && pagesByIdOf(s.tree).get(id)?.path
+    if (path) void s.mutate({ op: 'editAliases', path, edit })
   }
   return {
     settings: () => {
@@ -63,9 +59,9 @@ function buildEditorHost(
     },
     connections: () => connRef.current,
     aliases: {
-      list: worn,
-      remember: (id, alias) => wear(id, rememberAlias(worn(id), alias)),
-      forget: (id, alias) => wear(id, forgetAlias(worn(id), alias)),
+      list: (id) => pageMetaOf(id)(state())?.aliases ?? [],
+      remember: (id, alias) => editAliases(id, { op: 'remember', alias }),
+      forget: (id, alias) => editAliases(id, { op: 'forget', alias }),
       subscribe: (cb) =>
         useSession.subscribe((s, prev) => {
           if (s.tree?.config.pageMetadata !== prev.tree?.config.pageMetadata) cb()

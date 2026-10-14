@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { op } from '../Files/decoders'
 import { optionAppearance, type StatusGroup, type StatusOption } from './properties'
 
 function mapOption(
@@ -60,19 +61,17 @@ export function moveOption(
   })
 }
 
-const edit = <K extends string, S extends z.ZodRawShape>(literal: K, fields: S) =>
-  z.object({ op: z.literal(literal), ...fields })
 const value = z.string()
 const groupId = z.string()
 const index = z.number().int().nonnegative()
 
 export const optionEdit = z.discriminatedUnion('op', [
-  edit('add', { groupId, title: z.string(), atIndex: index.optional() }),
-  edit('recolor', { value, color: z.string().optional() }),
-  edit('icon', { value, icon: z.string().optional() }),
-  edit('appearance', { value, appearance: optionAppearance }),
-  edit('move', { value, groupId, toIndex: index }),
-  edit('relabelGroup', { groupId, label: z.string() }),
+  op('add', { groupId, title: z.string(), atIndex: index.optional() }),
+  op('recolor', { value, color: z.string().optional() }),
+  op('icon', { value, icon: z.string().optional() }),
+  op('appearance', { value, appearance: optionAppearance }),
+  op('move', { value, groupId, toIndex: index }),
+  op('relabelGroup', { groupId, label: z.string() }),
 ])
 export type OptionEdit = z.infer<typeof optionEdit>
 

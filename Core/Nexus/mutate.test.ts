@@ -64,6 +64,7 @@ import { lockContention } from '../Testing/machines'
 import { listBundles } from '../Trash/holdings'
 import { fault, ok } from '../Contract/result'
 import { nexusHandlers } from './handlers'
+import { updatePageMetadata } from './pageMetadata'
 
 let root: string
 const nexusDeps: TrashDeps = { trashMode: 'nexus', trashToSystem: (p) => rm(p, { force: true }) }
@@ -811,6 +812,7 @@ describe('handleMutate — targets the tree doesn’t hold', () => {
     { op: 'setDisclosureLock', path: '.nexus/assets', kind: 'collection', locked: true },
     { op: 'setActiveView', path: 'Notes', kind: 'set', viewId: 'v' },
     { op: 'setPageMeta', path: '.trash/Alpha.md', patch: {} },
+    { op: 'editAliases', path: '.trash/Alpha.md', edit: { op: 'forget', alias: 'a' } },
     { op: 'setProperty', path: '', propertyId: 'p', value: null },
     { op: 'createPage', id: newContentId('page'), parentPath: '.nexus', name: 'X' },
     { op: 'createContainer', id: newId(), parentPath: '', kind: 'set', name: 'X' },
@@ -2903,6 +2905,68 @@ describe('handleMutate — setPageMeta', () => {
   })
 })
 
+describe('handleMutate — editAliases', () => {
+  const month = async (): Promise<unknown> => readJson(`.nexus/metadata/${shardOf(A_ID)}.json`)
+  const path = 'Notes/Daily/Alpha.md'
+
+  beforeEach(async () => {
+    await updatePageMetadata(root, A_ID, { aliases: ['A', 'B', 'C'] })
+  })
+
+  it('two forgets issued together both land', async () => {
+    const [first, second] = await Promise.all([
+      handleMutate(
+        root,
+        { op: 'editAliases', path, edit: { op: 'forget', alias: 'A' } },
+        nexusDeps,
+      ),
+      handleMutate(
+        root,
+        { op: 'editAliases', path, edit: { op: 'forget', alias: 'B' } },
+        nexusDeps,
+      ),
+    ])
+    await settleNow({ push: () => {}, watch: async () => {} }, root)
+    expect(first.ok && second.ok).toBe(true)
+    expect(await month()).toEqual({ pages: { [A_ID]: { aliases: ['C'] } } })
+  })
+
+  it('an add lands at the end, and a rename in place', async () => {
+    await settledMutate(
+      root,
+      { op: 'editAliases', path, edit: { op: 'add', alias: 'D' } },
+      nexusDeps,
+    )
+    await settledMutate(
+      root,
+      { op: 'editAliases', path, edit: { op: 'rename', from: 'B', to: 'B2' } },
+      nexusDeps,
+    )
+    expect(await month()).toEqual({ pages: { [A_ID]: { aliases: ['A', 'B2', 'C', 'D'] } } })
+  })
+
+  it('remembering the page’s own title leaves the month’s bytes as they were', async () => {
+    const before = await read(`.nexus/metadata/${shardOf(A_ID)}.json`)
+    const r = await settledMutate(
+      root,
+      { op: 'editAliases', path, edit: { op: 'remember', alias: 'alpha' } },
+      nexusDeps,
+    )
+    expect(r.ok).toBe(true)
+    expect(await read(`.nexus/metadata/${shardOf(A_ID)}.json`)).toBe(before)
+  })
+
+  it('forgetting the last alias leaves no entry for the page', async () => {
+    await updatePageMetadata(root, A_ID, { aliases: ['A'] })
+    await settledMutate(
+      root,
+      { op: 'editAliases', path, edit: { op: 'forget', alias: 'A' } },
+      nexusDeps,
+    )
+    expect(await month()).toEqual({ pages: {} })
+  })
+})
+
 describe('handleMutate — landings Settings keeps out', () => {
   beforeEach(async () => {
     await writeFile(
@@ -3212,7 +3276,11 @@ describe('each routine operation lands from its own events, with no walk', () =>
     ],
     [
       'a page meta write',
-      { op: 'setPageMeta', path: 'Notes/Daily/Alpha.md', patch: { aliases: ['a'] } },
+      { op: 'setPageMeta', path: 'Notes/Daily/Alpha.md', patch: { title_icon: true } },
+    ],
+    [
+      'an alias edit',
+      { op: 'editAliases', path: 'Notes/Daily/Alpha.md', edit: { op: 'remember', alias: 'a' } },
     ],
     ['a Set icon', { op: 'setIcon', path: 'Notes/Daily', kind: 'set', icon: 'star' }],
     ['a page icon', { op: 'setIcon', path: 'Notes/Daily/Alpha.md', kind: 'page', icon: 'star' }],

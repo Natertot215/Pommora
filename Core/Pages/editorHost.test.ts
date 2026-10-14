@@ -170,15 +170,15 @@ describe('the alias memory', () => {
     return { mutate, hosts, root }
   }
 
-  it('a forget writes the page’s metadata, and the host rebuilds on the metadata push and hears no other', async () => {
+  it('a forget sends its instruction, and the host rebuilds on the metadata push and hears no other', async () => {
     const { mutate, hosts, root } = await mountHosts(['the notes', 'my draft'])
     const host = hosts[hosts.length - 1]
     expect(host.aliases.list('p1')).toEqual(['the notes', 'my draft'])
     await act(async () => host.aliases.forget('p1', 'the notes'))
     expect(mutate).toHaveBeenCalledWith({
-      op: 'setPageMeta',
+      op: 'editAliases',
       path: 'Notes/Alpha.md',
-      patch: { aliases: ['my draft'] },
+      edit: { op: 'forget', alias: 'the notes' },
     })
     const heard = vi.fn()
     const off = host.aliases.subscribe(heard)
@@ -191,17 +191,13 @@ describe('the alias memory', () => {
     act(() => root.unmount())
   })
 
-  it('forgetting the last alias clears the field, and an unchanged gesture writes nothing', async () => {
+  it('a remember sends its instruction', async () => {
     const { mutate, hosts, root } = await mountHosts(['the notes'])
-    const host = hosts[hosts.length - 1]
-    await act(async () => host.aliases.remember('p1', 'the notes'))
-    await act(async () => host.aliases.forget('p1', 'never given'))
-    expect(mutate).not.toHaveBeenCalled()
-    await act(async () => host.aliases.forget('p1', 'the notes'))
+    await act(async () => hosts[hosts.length - 1].aliases.remember('p1', 'the plan'))
     expect(mutate).toHaveBeenCalledWith({
-      op: 'setPageMeta',
+      op: 'editAliases',
       path: 'Notes/Alpha.md',
-      patch: { aliases: null },
+      edit: { op: 'remember', alias: 'the plan' },
     })
     act(() => root.unmount())
   })

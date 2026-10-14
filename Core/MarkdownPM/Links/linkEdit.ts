@@ -137,7 +137,7 @@ function lineNear(state: EditorState, at: number): { line: Line; rel: number } {
   return { line, rel: pos - line.from }
 }
 
-/** Authoring is the only moment the memory is written: a body scan can't honor a real forget. */
+/** A body reaches the memory only where an alias is authored: a scan of bodies can't honor a real forget. */
 function rememberAlias(
   view: EditorView,
   api: ConnectionsApi | undefined,

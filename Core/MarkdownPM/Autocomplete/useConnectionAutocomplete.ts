@@ -87,7 +87,7 @@ export function useConnectionAutocomplete(
     if (!heading) setCollapsed(new Set())
   }, [heading])
 
-  // A forgotten alias bumps the epoch, which is what shrinks the list under an unchanged query.
+  // An edit to the remembered aliases bumps the epoch, which is what reshapes the list under an unchanged query.
   const [aliasEpoch, bumpAliases] = useReducer((n: number) => n + 1, 0)
   useEffect(() => host.aliases.subscribe(bumpAliases), [host])
   const allHeadingRows = useMemo(
