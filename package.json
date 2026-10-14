@@ -17,7 +17,7 @@
     "sync": "node Sync/hub.ts",
     "sync:cert": "sh Sync/scripts/cert.sh",
     "sync:image": "docker build -f Sync/Dockerfile -t pommora-hub .",
-    "typecheck": "tsc -p UIX && tsc -p Core && tsc -p Core/tsconfig.src.json && tsc -p Desktop/tsconfig.node.json && tsc -p Desktop/tsconfig.web.json && tsc -p Sync",
+    "typecheck": "tsc -p UIX && tsc -p Core && tsc -p Core/tsconfig.src.json && tsc -p Desktop/tsconfig.node.json && tsc -p Desktop/tsconfig.web.json && tsc -p Sync && tsc -p ../../.claude/dashboard",
     "test": "vitest run",
     "lint": "biome check . && node .claude/hooks/no-wrapped-comments.mjs --scan && node ../../.claude/hooks/no-name-mentions.mjs --scan",
     "format": "biome format --write .",
