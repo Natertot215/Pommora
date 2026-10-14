@@ -131,6 +131,11 @@ describe('a fence word', () => {
     expect(codeFence('{.python .numberLines}').path).toBeUndefined()
     expect(codeFence('ts\\diff').path).toBeUndefined()
   })
+  it('keeps a dotfile naming no language as a path, and a dotted language or diff word as a word', () => {
+    expect(codeFence('.env')).toEqual({ name: null, diff: false, path: '.env' })
+    expect(codeFence('.gitignore').path).toBe('.gitignore')
+    expect(codeFence('.diff')).toEqual({ name: null, diff: true })
+  })
 })
 
 describe('a code block’s colors', () => {

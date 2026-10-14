@@ -244,9 +244,9 @@ class CodeTagWidget extends WidgetType {
 
     const slot = el.appendChild(document.createElement('span'))
     slot.className = 'codeblock-mark-slot'
-    if (tag) slot.appendChild(mark(tag.glyph, 'codeblock-mark'))
-    if (this.path)
-      slot.appendChild(mark(pathGlyph(this.path), 'codeblock-mark codeblock-path-mark'))
+    const glyph = this.path ? pathGlyph(this.path) : tag?.glyph
+    if (glyph)
+      slot.appendChild(mark(glyph, cx('codeblock-mark', this.path && 'codeblock-path-mark')))
     slot.appendChild(mark(COPY_GLYPH, 'codeblock-copy'))
     slot.appendChild(mark(CHECK_GLYPH, 'codeblock-copied'))
     const name = el.appendChild(document.createElement('span'))

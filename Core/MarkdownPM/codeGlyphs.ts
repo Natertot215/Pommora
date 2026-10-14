@@ -80,7 +80,6 @@ export const CODE_TAGS: Readonly<Record<string, CodeTag>> = {
   },
 }
 
-/** A file whose language has no mark of its own draws its family's. */
 const FILE_FAMILIES: Readonly<Partial<Record<CodeLangName, string>>> = {
   JSON: FILE_BRACES,
   Protobuf: FILE_BRACES,
