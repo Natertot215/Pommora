@@ -159,8 +159,8 @@
 
 Where a page opens moved from each Collection to one rule list: an **Open In Preview** row in Settings › Navigation held per-user filter rules over Title, Location, Created, and Contexts, and every plain click that opens a page — the sidebar, view rows, cards, and tiles, the Matrix, the Navigation window, page tiles, and connections while Open Connections In Preview is off — sent a matching page to the Page Window, judged from the tree without reading a file, while ⌘-click kept opening a new tab and the Navigation window stayed open behind a page it previewed. The per-Collection Open In field and the view toolbar's Configuration pane were removed, and NexusOS's sidecars were stripped of it. The shared filter editor, serving views, the Matrix, and the new row alike, dropped its per-row And/Or connectors for one All/Any switch defaulting to Any, matched text without regard to case, gave Contexts Is Any and Is All, and folded its remove and add buttons into the shared accessory buttons, as Excluded Directories did in the count-and-Manage row both now share. Location's value became a typeable field whose search narrows the folder picker, whose arrows and Enter pick a folder, and whose typed name under Contains matches every folder of that name. A page created under a filter took values only when a blank page didn't already meet it, a deleted folder or Context left every filter it emptied as the pane leaves one, and the setting synced its switch and its rules apart.
 
-- **Commits:** `39f3b59c9^..48d6dd75b`
-- **Diff:** Net +261 | +1154 / −893
+- **Commits:** `39f3b59c9^..199854caf`
+- **Diff:** Net +263 | +1157 / −894
 
 #### PM-149 || Quote-Insensitive Metadata
 **DATE:** 10-12-2026

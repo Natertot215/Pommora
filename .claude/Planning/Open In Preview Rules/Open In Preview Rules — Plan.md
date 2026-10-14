@@ -1,14 +1,14 @@
 ## Open In Preview Rules — Implementation Plan
 
 **DATE:** 10-13-2026
-**STATUS:** Complete 10-14-2026 — `39f3b59c9^..48d6dd75b`
+**STATUS:** Complete 10-14-2026 — `39f3b59c9^..199854caf`
 **SOURCE:** The 10-13-2026 conversation with Nathan (the request, its answers, and the ratified approach and folding options).
 
 **BASELINE**
 
 | Head | Tests | Start | End |
 |------|-------|-------|-----|
-| `84e26b529` | 7682 passed · 2 skipped · 529 files | `39f3b59c9` | `48d6dd75b` · 7764 passed · 2 skipped · 534 files |
+| `84e26b529` | 7682 passed · 2 skipped · 529 files | `39f3b59c9` | `199854caf` · 7764 passed · 2 skipped · 534 files |
 
 ### Context
 
