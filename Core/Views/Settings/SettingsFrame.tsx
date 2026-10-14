@@ -1,7 +1,5 @@
-import { reportRefusal } from '../../Interface/Notifications/notifications'
 import { useRef, useState } from 'react'
 import { ZOOM } from '../../Settings/personalization'
-import type { OpenIn } from '../viewRow'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import { Icon } from '@pommora/uix/Symbols'
 import { entityIcon } from '../../Assets/entityIconPolicy'
@@ -24,33 +22,22 @@ import {
   FooterLockButton,
   MenuFooting,
   MenuIndex,
-  MenuRowView,
   MenuScrollFrame,
   MenuSeparator,
-  MenuTopRow,
-  pickerRow,
 } from '@pommora/uix/Menus'
-import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
 import { IconChoice } from '../../Assets/IconChoice'
 import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
 import { useViewTileScope } from '../ViewTileScope'
 import { useSaveView } from '../viewWrite'
 import { useActiveView } from '../Host/useActiveView'
 import { lockLabel } from '../../Actions/toggleLabels'
-import { dialer } from '../../Platform/dialer'
 
-type FrameId = 'configuration' | 'properties' | 'visibility' | ViewRowId
+type FrameId = 'properties' | 'visibility' | ViewRowId
 
 const ENTRIES: ViewRow<FrameId>[] = [
-  { id: 'configuration', label: 'Configuration', icon: 'sliders-horizontal' },
   { id: 'properties', label: 'Properties', icon: 'server' },
   { id: 'visibility', label: 'Visibility', icon: 'eye' },
   ...VIEW_ROWS,
-]
-
-const OPEN_IN_OPTIONS: PickerOption<OpenIn>[] = [
-  { value: 'full-page', label: 'Full Page' },
-  { value: 'page-preview', label: 'Preview' },
 ]
 
 export function SettingsFrame(): React.JSX.Element | null {
@@ -88,39 +75,16 @@ function ContainerSettings({
 
   const schema = schemaCollection.properties ?? []
   const view = useActiveView(node, schema)
-  const entries = scope ? ENTRIES.filter((e) => e.id !== 'configuration') : ENTRIES
   const configLocked = scope?.locked ?? false
   const frozen = (id: FrameId): boolean => configLocked && id !== 'properties'
 
   const back = (): void => setPane('root')
   const detailPane = pane === 'root' || frozen(pane) ? null : pane
 
-  const setOpenIn = (open_in: OpenIn): void => {
-    void dialer()
-      .ask('container:configure', schemaCollection.path, 'collection', { open_in })
-      .then(reportRefusal)
-  }
-
   const viewScale = view.view_scale ?? ZOOM.default
   const setViewScale = (f: number): void => {
     void saveView(view, { view_scale: f === ZOOM.default ? undefined : f })
   }
-
-  const configurationLeaf = (
-    <>
-      <MenuTopRow label="Settings" current="Configuration" onBack={back} />
-      <MenuRowView
-        row={pickerRow(
-          'layout-grid',
-          'Open In',
-          schemaCollection.openIn ?? 'full-page',
-          OPEN_IN_OPTIONS,
-          setOpenIn,
-          { iconSize: ICON.rootEntry },
-        )}
-      />
-    </>
-  )
 
   const root = (
     <>
@@ -142,7 +106,7 @@ function ContainerSettings({
       <MenuIndex
         sections={[
           {
-            rows: entries.map((e) => ({
+            rows: ENTRIES.map((e) => ({
               kind: 'item',
               icon: <Icon name={e.icon} size={ICON.rootEntry} />,
               label: e.label,
@@ -189,8 +153,6 @@ function ContainerSettings({
 
   const detailFor = (id: FrameId): React.JSX.Element => {
     switch (id) {
-      case 'configuration':
-        return configurationLeaf
       case 'properties':
         return (
           <PropertyFrame

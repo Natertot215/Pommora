@@ -3,7 +3,7 @@
 import type { CollectionNode, PageNode, SetNode } from './tree'
 import type { ContainerKind } from './entities'
 import { containerViewIds, savedView, type SavedView } from '../Views/views'
-import { coerceOpenIn, coerceViewButton } from './schemas'
+import { coerceViewButton } from './schemas'
 import type { PropertyDefinition } from '../Properties/properties'
 import type { PropertyRegistry } from '../Properties/propertiesRegistry'
 import { asString, asStringArray } from './coerce'
@@ -69,7 +69,6 @@ export function containerNodeFrom(
     kind,
     ...shared,
     properties: resolveAssignedSchema(meta.properties, registry),
-    openIn: coerceOpenIn(meta.open_in),
     cached: cachedIds(meta),
   }
 }
