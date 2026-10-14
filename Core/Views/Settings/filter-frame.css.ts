@@ -1,6 +1,6 @@
 import { style } from '@vanilla-extract/css'
 import { vars as colorVars } from '@pommora/uix/Theme/color.css'
-import { field as fieldBase, borderedField } from '@pommora/uix/Fields/fields.css'
+import { borderedField } from '@pommora/uix/Fields/fields.css'
 import { focusRing } from '@pommora/uix/Fields/fieldRing'
 import { growToContent } from '@pommora/uix/Menus/frameGrowth'
 import { rowBox } from '@pommora/uix/Menus/menu-row.css'
@@ -31,13 +31,6 @@ export const ruleList = style({
 
 export const ruleRow = style([rowBox, { gap: '6px', paddingLeft: 0 }])
 
-export const whatCell = style({
-  display: 'flex',
-  alignItems: 'center',
-  gap: '6px',
-  flex: '0 0 auto',
-})
-
 export const cellField = style([borderedField, { width: 'auto', cursor: 'default' }])
 
 export const fieldLabel = style({
@@ -48,19 +41,6 @@ export const fieldLabel = style({
 export const controlField = style([cellField, { flex: '0 0 auto' }])
 
 export const valueField = style([cellField, { flex: '1 1 auto' }])
-
-export const connector = style([
-  fieldBase,
-  {
-    width: 'auto',
-    flex: '0 0 auto',
-    padding: '0 var(--row-pad-standard)',
-    border: 'none',
-    cursor: 'default',
-    color: c.label.secondary,
-    vars: { '--field-ring': c.border.base },
-  },
-])
 
 export { placeholder } from '@pommora/uix/Fields/fields.css'
 
