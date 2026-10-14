@@ -92,7 +92,7 @@ const click = async (el: Element | null | undefined): Promise<void> => {
     ;(el as HTMLElement).click()
   })
 }
-/** Let a disclosure beat elapse — a removal animates before it writes, and a newly added row mounts collapsed for one frame, which jsdom does not flush inside act(). */
+/** Let a disclosure beat elapse — a closing picker animates out, and a newly added row mounts collapsed for one frame, which jsdom does not flush inside act(). */
 const settle = async (): Promise<void> => {
   await act(async () => {
     await new Promise((r) => setTimeout(r, 260))

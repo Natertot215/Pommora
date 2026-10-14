@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { ExcludedDirectoriesRow } from './ExcludedDirectoriesRow'
@@ -43,8 +43,6 @@ const addButton = (): HTMLElement | undefined => byLabel('Add exclusion')[0]
 const fieldButtons = (): HTMLElement[] => byLabel('Excluded folder')
 
 describe('ExcludedDirectoriesRow', () => {
-  beforeEach(() => {})
-
   it('shows the count of excluded folders', async () => {
     await render(['Archive', 'Vault A'])
     expect(host.textContent).toContain('2')

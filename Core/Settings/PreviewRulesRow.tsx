@@ -1,8 +1,7 @@
 import { PANE_MIN_W } from '@pommora/uix/Menus/frame-slide.css'
-import { RESERVED_PROPERTY_ID } from '../Properties/properties'
 import { personalizationOf } from '../Session/configSlice'
 import { useSession, useSetting } from '../Session/store'
-import { filterTargets } from '../Views/filterModel'
+import { previewTargets } from '../Navigation/previewRules'
 import { FilterFrame, filterViewOf, standalonePatch } from '../Views/Settings/FilterFrame'
 import { ManageRow } from './ManageRow'
 import { settingOf } from './personalization'
@@ -33,9 +32,7 @@ export function PreviewRulesRow({
         read={() => filterViewOf(live())}
         schema={[]}
         tree={tree}
-        targets={filterTargets([], tree, tree.collections.length > 0).filter(
-          (t) => t.id !== RESERVED_PROPERTY_ID.modifiedAt,
-        )}
+        targets={previewTargets(tree)}
         onCommit={(p) => setPersonalization('openInPreview', { ...live(), ...standalonePatch(p) })}
       />
     </ManageRow>

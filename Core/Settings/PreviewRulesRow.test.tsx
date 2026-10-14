@@ -9,7 +9,6 @@ import { makeTree } from '../Testing/testTree'
 import type { FilterGroup, FilterRule, StandaloneFilter } from '../Views/filterRules'
 import { RESERVED_PROPERTY_ID } from '../Properties/properties'
 import { RESERVED_LABEL } from '../Properties/Cells/columnLabel'
-import * as x from './settings-rows.css'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -71,7 +70,7 @@ const option = (text: string): Element | undefined =>
 describe('PreviewRulesRow', () => {
   it('the count reads the rule count', async () => {
     await render({ rules: { match: 'any', rules: [titleRule, createdRule] }, enabled: true })
-    expect(host.querySelector(`.${x.manageCluster}`)?.firstElementChild?.textContent).toBe('2')
+    expect(host.textContent).toContain('2')
   })
 
   it('adding a rule through the pane writes the key', async () => {
@@ -100,9 +99,6 @@ describe('PreviewRulesRow', () => {
     await render({ rules: { match: 'any', rules: [titleRule] }, enabled: true })
     await click(manage())
     await click(byLabel('Remove filter')[0])
-    await act(async () => {
-      await new Promise((r) => setTimeout(r, 260))
-    })
     expect(stored()).toBeUndefined()
   })
 

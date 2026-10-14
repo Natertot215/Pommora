@@ -67,6 +67,11 @@ export const TITLE_TARGET: PaneTarget = {
   label: TYPE_META.title.label,
   icon: TYPE_META.title.icon,
 }
+export const LOCATION_TARGET: PaneTarget = {
+  id: RESERVED_PROPERTY_ID.location,
+  label: 'Location',
+  icon: 'folder',
+}
 export const STAMP_TARGETS: PaneTarget[] = Object.entries(STAMP_TYPE).flatMap(([id, type]) =>
   type ? [{ id, label: propertyTypeLabel(type), icon: propertyTypeIconName(type) }] : [],
 )

@@ -14,6 +14,7 @@ import { contextIdsOf } from '../Contexts/contextIdentity'
 import { declaredType } from '../Properties/value'
 import {
   contextPaneTargets,
+  LOCATION_TARGET,
   type PaneTarget,
   STAMP_TARGETS,
   schemaTargets,
@@ -138,9 +139,7 @@ export function filterTargets(
   return [
     TITLE_TARGET,
     // Every Location operator needs a location to point at, so with none it's a target that can never complete.
-    ...(hasLocations
-      ? [{ id: RESERVED_PROPERTY_ID.location, label: 'Location', icon: 'folder' }]
-      : []),
+    ...(hasLocations ? [LOCATION_TARGET] : []),
     ...STAMP_TARGETS,
     ...contextPaneTargets(tree),
     ...schemaTargets(schema, (d) => operatorsFor(d.id, schema, contextIds).length > 0),
