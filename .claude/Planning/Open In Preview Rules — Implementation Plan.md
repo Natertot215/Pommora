@@ -102,10 +102,10 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
   - [x] Task 4-2
   - [x] Task 4-3
   - [x] Review Checkpoint
-- [ ] **Phase 5** — Migration & Reconciliation
-  - [ ] Task 5-1
-  - [ ] Task 5-2
-  - [ ] Task 5-3
+- [x] **Phase 5** — Migration & Reconciliation
+  - [x] Task 5-1
+  - [x] Task 5-2
+  - [x] Task 5-3
 - [ ] **Closing** — Final Verification, the HistoryPM entry, and `c/view-changes`
 
 ---
@@ -1052,13 +1052,13 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 **THE STANDARD:** The work is finished when a later review of it finds nothing to correct. Not just doing the chores — doing the laundry, folding it, picking up what fell out of the hamper, emptying the lint trap, leaving no trace that anything went wrong. Nothing is carried as a concern, nothing is deferred where the fix is known, and nothing is declared that wasn't watched happen. Where something genuinely couldn't get there, the report names which and why, and everything else is still finished. Ambiguity met during execution took the simplest reading and was recorded; it didn't stop the run.
 
 - [ ] Phase review (opus-high, simplification and adversarial in parallel): Phase 1 ✓ · Phase 2 ✓ · Phase 3 ✓ · Phase 4 ✓
-- [ ] Review-fix review (opus-high, one agent with the simplification and adversarial perspectives): the unplanned fix passes each checkpoint applied — Phase 2's `df12d3268 b2d3b64f5 fb12435b9 44bbeb262` above all, with Phase 1's `9972c4725 2a42728c4` and Phase 3's `9394c1a3e`, and Phase 4's `58b7aa6fa` — judged as their own change and against the phase they amended
+- [ ] Review-fix review (opus-high, one agent with the simplification and adversarial perspectives): the unplanned fix passes each checkpoint applied — Phase 2's `df12d3268 b2d3b64f5 fb12435b9 44bbeb262` above all, with Phase 1's `9972c4725 2a42728c4` and Phase 3's `9394c1a3e`, and Phase 4's `58b7aa6fa b9ecc3d5e` — judged as their own change and against the phase they amended
 - [ ] Final review (opus, xhigh) over `{baseline}..HEAD`: one agent inward at the change, one outward against the codebase; reconciled with an advisor
 - [ ] Neutral verification (opus, xhigh) over `{baseline}..HEAD`, given only the intention
 - [ ] Own pass: gates, plus `npm run build` and `npm run build:dashboard` (`.claude/Guidelines/Development-Environment.md:41`) · diff · deviations · criteria
 - [ ] Live drive on `~/Test` (CDP): each routed surface, the NavWindow staying open, the Settings row and pane, typing and Enter in the Location field; then reverted
 - [ ] Nathan's own pass: the Settings row and pane's size; the folded × and + in the filter pane and Excluded Directories; the Location `TokenField` — typing, Enter, Backspace, the `folder-search` name chip — and the pruned search tree
-- [ ] Reconciliation walked
+- [x] Reconciliation walked
 - [ ] `.claude/HistoryPM.md` gains **Previews & Filtering Improvements** — an index row and an entry in PM-149's brief past-tense form, with its commit range and diff
 - [ ] `c/view-changes` published over `{baseline}..HEAD` once the entry is written and the code is final
 - [ ] Report delivered
