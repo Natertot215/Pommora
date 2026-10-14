@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { useMemo, useState, type ReactNode, type Ref } from 'react'
 import { Icon } from '../Symbols'
 import { cx } from '../Utilities/cx'
 import { toggled } from '../Utilities/checkSet'
@@ -73,6 +73,7 @@ export function DisclosureRow({
   tabIndex,
   trailing,
   wrap,
+  ref,
   children,
 }: {
   title: ReactNode
@@ -89,10 +90,12 @@ export function DisclosureRow({
   trailing?: ReactNode
   /** Wraps the row ALONE, never the disclosed run — a drag rect must be the row's own height. */
   wrap?: (row: ReactNode) => ReactNode
+  ref?: Ref<HTMLDivElement>
   children?: ReactNode
 }): React.JSX.Element {
   const row = (
     <MenuItem
+      ref={ref}
       active={active}
       picked={picked}
       className={className}

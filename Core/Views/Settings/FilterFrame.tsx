@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import type { CollectionNode, NexusTree, SetNode } from '../../Nexus/tree'
 import type { PickOption, PropertyDefinition } from '../../Properties/properties'
 import { type SavedView, viewOption } from '../views'
@@ -12,7 +12,6 @@ import type { PaneTarget } from '../../Properties/Cells/PropertyTypes'
 import { Icon } from '@pommora/uix/Symbols'
 import { TokenField } from '@pommora/uix/Fields/TokenField'
 import { foldKey, matchScore } from '../../Paths/caseFold'
-import * as fr from '@pommora/uix/Fields/field-run.css'
 import { leading } from '@pommora/uix/Fields/fields.css'
 import { EntityIcon } from '../../Assets/EntityIcon'
 import { colorNameFor } from '@pommora/uix/Theme/ramp'
@@ -32,6 +31,7 @@ import {
 import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
 import { PICKER_MAX_HEIGHT, treePane } from '@pommora/uix/Pickers/picker-base.css'
 import { OverScroll } from '@pommora/uix/Interactions/OverScroll'
+import { useKeepInView, usePaneCtl } from '@pommora/uix/Interactions/paneCtl'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { useEntrance } from '@pommora/uix/Animations/useEntrance'
 import { CalendarPicker } from '@pommora/uix/Pickers/CalendarPicker'
@@ -180,44 +180,58 @@ function ValueFieldShell({
   )
 }
 
-function narrowed<N extends CollectionNode | SetNode>(nodes: N[], query: string): N[] {
-  return nodes.flatMap((n) => {
-    const sets = narrowed(n.sets ?? [], query)
-    return sets.length > 0 || matchScore(foldKey(n.title), query) !== null ? [{ ...n, sets }] : []
-  })
+type Folder = CollectionNode | SetNode
+
+/** Matches with their whole subtrees, under the ancestors that lead to them; `leads` names those ancestors, which open by default. */
+function narrowed(nodes: Folder[], query: string): { nodes: Folder[]; leads: Set<string> } {
+  const leads = new Set<string>()
+  const walk = <N extends Folder>(ns: N[]): N[] =>
+    ns.flatMap((n) => {
+      const sets = walk(n.sets ?? [])
+      if (sets.length > 0) leads.add(n.id)
+      if (matchScore(foldKey(n.title), query) !== null) return [n]
+      return sets.length > 0 ? [{ ...n, sets }] : []
+    })
+  return { nodes: walk(nodes), leads }
 }
+
+const shownRows = (nodes: Folder[], isOpen: (id: string) => boolean): Folder[] =>
+  nodes.flatMap((n) => [n, ...(isOpen(n.id) ? shownRows(n.sets ?? [], isOpen) : [])])
 
 function LocationTree({
   nodes,
   shown,
-  query,
+  disclosure,
+  activeId,
+  keepInView,
   onPick,
 }: {
-  nodes: (CollectionNode | SetNode)[]
+  nodes: Folder[]
   shown: string[]
-  query: string
+  disclosure: { has: (id: string) => boolean; toggle: (id: string) => void }
+  activeId: string | null
+  keepInView: (el: HTMLElement | null) => void
   onPick: (id: string) => void
 }): React.JSX.Element {
-  const expanded = useDisclosureSet()
-  const opened = useDisclosureSet(true)
-  const q = foldKey(query.trim())
-  const disclosure = q ? opened : expanded
-  const renderLevel = (ns: (CollectionNode | SetNode)[]): React.JSX.Element[] => {
+  const renderLevel = (ns: Folder[]): React.JSX.Element[] => {
     const runs = pickRuns(
       ns.map((n) => shown.includes(n.id)),
       ns.map((n) => disclosure.has(n.id) && (n.sets?.length ?? 0) > 0),
     )
     return ns.map((n, i) => {
       const kids = n.sets ?? []
+      const active = n.id === activeId
       return (
         <DisclosureRow
           key={n.id}
+          ref={active ? keepInView : undefined}
           title={n.title}
           icon={<EntityIcon kind={n.kind} icon={n.icon} size="body" />}
           dropOutline={kids.length > 0 ? 'chevron' : 'spacer'}
           open={disclosure.has(n.id)}
           onToggle={() => disclosure.toggle(n.id)}
           onClick={() => onPick(n.id)}
+          active={active}
           picked={runs[i]}
         >
           {kids.length > 0 ? renderLevel(kids) : undefined}
@@ -227,9 +241,7 @@ function LocationTree({
   }
   return (
     <MenuScrollFrame maxHeight={PICKER_MAX_HEIGHT}>
-      {nodes.length === 0
-        ? emptyPicker('No Sets in this collection.')
-        : renderLevel(q ? narrowed(nodes, q) : nodes)}
+      {nodes.length === 0 ? emptyPicker('No Sets in this collection.') : renderLevel(nodes)}
     </MenuScrollFrame>
   )
 }
@@ -237,11 +249,13 @@ function LocationTree({
 function LocationField({
   values,
   nodes,
+  folderById,
   names,
   onCommit,
 }: {
   values: string[]
-  nodes: (CollectionNode | SetNode)[]
+  nodes: Folder[]
+  folderById: ReadonlyMap<string, Folder>
   names: boolean
   onCommit: (next: string[]) => void
 }): React.JSX.Element {
@@ -249,7 +263,17 @@ function LocationField({
   const [draft, setDraft] = useState('')
   const ref = useRef<HTMLDivElement>(null)
   const { shown, toggle } = useMultiValue(values, onCommit)
-  const byId = new Map(flattenNodes(nodes).map((n) => [n.id, n]))
+  const expanded = useDisclosureSet()
+  const flipped = useDisclosureSet()
+  const q = foldKey(draft.trim())
+  const tree = useMemo(
+    () => (q ? narrowed(nodes, q) : { nodes, leads: new Set<string>() }),
+    [nodes, q],
+  )
+  const disclosure = q
+    ? { has: (id: string) => tree.leads.has(id) !== flipped.has(id), toggle: flipped.toggle }
+    : expanded
+  const rows = shownRows(tree.nodes, disclosure.has)
   const pick = (id: string): void => {
     toggle(id)
     setDraft('')
@@ -264,27 +288,29 @@ function LocationField({
     setOpen(false)
     setDraft('')
   }
+  const { row, ctl } = usePaneCtl(
+    rows,
+    open ? draft : null,
+    { open, pick: (n) => pick(n.id), close: dismiss },
+    null,
+  )
+  const keepInView = useKeepInView(row?.id)
 
   return (
     <>
       <TokenField
         ref={ref}
         chrome="bordered"
-        className={fp.valueField}
+        className={fp.locationField}
         entries={shown.map((v) => {
-          const node = byId.get(v)
+          const node = folderById.get(v)
           return {
             key: v,
             label: node?.title ?? v,
             icon: node ? (
-              <EntityIcon
-                kind={node.kind}
-                icon={node.icon}
-                size="body"
-                className={fr.runItemIcon}
-              />
+              <EntityIcon kind={node.kind} icon={node.icon} size="body" />
             ) : (
-              <Icon name="folder-search" size="body" className={fr.runItemIcon} />
+              <Icon name="folder-search" size="body" />
             ),
             onRemove: () => toggle(v),
           }
@@ -293,6 +319,18 @@ function LocationField({
         placeholder="Value"
         ariaLabel="Filter values"
         onFocus={() => setOpen(true)}
+        onBlur={dismiss}
+        onPress={() => setOpen(true)}
+        onKeyDown={(e) => {
+          if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            e.preventDefault()
+            if (open) ctl.current.move(e.key === 'ArrowDown' ? 1 : -1)
+            else setOpen(true)
+          } else if (e.key === 'Enter' && open && row) {
+            e.preventDefault()
+            ctl.current.pick()
+          }
+        }}
         onDraftChange={(d) => {
           setDraft(d)
           setOpen(true)
@@ -300,14 +338,23 @@ function LocationField({
         onEnter={enter}
       />
       <PickerMenu
-        open={open}
+        open={open && (!q || tree.nodes.length > 0)}
         onDismiss={dismiss}
         triggerRef={ref}
         origin="left"
         contentClassName={treePane}
         focus="keep"
       >
-        {open && <LocationTree nodes={nodes} shown={shown} query={draft} onPick={pick} />}
+        {open && (
+          <LocationTree
+            nodes={tree.nodes}
+            shown={shown}
+            disclosure={disclosure}
+            activeId={row?.id ?? null}
+            keepInView={keepInView}
+            onPick={pick}
+          />
+        )}
       </PickerMenu>
     </>
   )
@@ -374,9 +421,7 @@ function ChipsField({
   )
 }
 
-function flattenNodes(
-  nodes: (CollectionNode | SetNode)[] | undefined,
-): (CollectionNode | SetNode)[] {
+function flattenNodes(nodes: Folder[] | undefined): Folder[] {
   return (nodes ?? []).flatMap((n) => [n, ...flattenNodes(n.sets)])
 }
 
@@ -436,6 +481,10 @@ export function FilterFrame({
   const targets = supplied ?? filterTargets(schema, tree, locations.length > 0)
   const defById = new Map(schema.map((d) => [d.id, d]))
   const targetById = new Map(targets.map((t) => [t.id, t]))
+  const folderById = useMemo(
+    () => new Map(flattenNodes(locations).map((n) => [n.id, n])),
+    [locations],
+  )
 
   const pickMatch = (pick: MatchMode): void => {
     if (pick === mode) return
@@ -554,6 +603,7 @@ export function FilterFrame({
       <LocationField
         values={operands}
         nodes={locations}
+        folderById={folderById}
         names={op.names === true}
         onCommit={(values) => patch({ values })}
       />
@@ -605,11 +655,12 @@ export function FilterFrame({
             {...(isCheckbox && current ? { lead: checkboxBox(current) } : {})}
             placeholder="Condition"
           >
-            {(close) => {
-              const liveIds = new Set(flattenNodes(locations).map((n) => n.id))
-              const picked = rule.values?.filter((v) => liveIds.has(v))
-              return ops.map((o) => {
-                const values = o.slot === 'set' && !o.names ? picked : rule.values
+            {(close) =>
+              ops.map((o) => {
+                const values =
+                  o.slot === 'set' && !o.names
+                    ? rule.values?.filter((v) => folderById.has(v))
+                    : rule.values
                 return (
                   <MenuItem
                     key={o.label}
@@ -636,7 +687,7 @@ export function FilterFrame({
                   </MenuItem>
                 )
               })
-            }}
+            }
           </FieldPicker>
           {valueCell(rule, index, current)}
           <AccessoryButton

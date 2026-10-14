@@ -1,11 +1,10 @@
-import { useCallback, useEffect, useState, type ReactNode, type RefObject } from 'react'
+import type { ReactNode, RefObject } from 'react'
 import type { Extension } from '@codemirror/state'
 import type { EditorView, KeyBinding } from '@codemirror/view'
 import { scrollContainer } from '@pommora/uix/Interactions/autoscroll'
 import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
 import type { PaneResize } from '@pommora/uix/Pickers/usePaneResize'
-import { clamp } from '@pommora/uix/Utilities/clamp'
-import { useLatest } from '@pommora/uix/Utilities/stableApi'
+import type { PaneCtl } from '@pommora/uix/Interactions/paneCtl'
 
 export interface CaretGeometry {
   caretX: number
@@ -78,59 +77,10 @@ export function CaretPane({
   )
 }
 
-export function useKeepInView(active: unknown): (el: HTMLElement | null) => void {
-  return useCallback(
-    (el: HTMLElement | null) => el?.scrollIntoView({ inline: 'nearest', block: 'nearest' }),
-    [active],
-  )
-}
-
 /** A pane an editor mounts: what it adds to the editor, and the control its keys drive. */
 export interface EditorPane {
   extension: Extension
   ctl: RefObject<PaneCtl>
-}
-
-export interface PaneCtl {
-  open: boolean
-  pick: () => void
-  move: (d: number) => void
-  close: () => void
-  aside?: (dir: 1 | -1) => boolean
-}
-
-export function usePaneCtl<T>(
-  rows: readonly T[],
-  resetKey: unknown,
-  drive: {
-    open: boolean
-    pick: (row: T) => void
-    close: () => void
-    aside?: (dir: 1 | -1) => boolean
-  },
-  initial: number | null = 0,
-): { index: number | null; row: T | null; ctl: RefObject<PaneCtl> } {
-  const [index, setIndex] = useState<number | null>(initial)
-  const count = rows.length
-  const selected = index === null ? null : Math.min(index, Math.max(count - 1, 0))
-
-  const ctl = useLatest<PaneCtl>({
-    open: drive.open,
-    pick: () => {
-      const row = rows[selected ?? 0]
-      if (row !== undefined) drive.pick(row)
-    },
-    move: (d) =>
-      setIndex((i) =>
-        i === null ? (d > 0 ? 0 : count - 1) : clamp(Math.min(i, count - 1) + d, 0, count - 1),
-      ),
-    close: drive.close,
-    aside: drive.aside,
-  })
-
-  useEffect(() => setIndex(initial), [resetKey, initial])
-
-  return { index: selected, row: selected === null ? null : (rows[selected] ?? null), ctl }
 }
 
 export const whenPaneOpen =
