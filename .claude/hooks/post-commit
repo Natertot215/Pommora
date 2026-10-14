@@ -1,22 +1,2 @@
 #!/bin/sh
-# Git post-commit hook: realign the index with the ledger and audit the commit carried, then push
-# active, so every commit reaches GitHub and redeploys the Dashboard. Quiet during a rebase or merge
-# replay, which cycles many commits and pushes none of them.
-#
-# A `git commit --only` stages the pre-commit hook's refresh into a temporary index, so the real one
-# still holds the previous ledger until it is reset to the commit's.
-
-ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
-cd "$ROOT" || exit 0
-
-GIT_DIR=$(git rev-parse --git-dir 2>/dev/null)
-if [ -n "$GIT_DIR" ] && { [ -d "$GIT_DIR/rebase-merge" ] || [ -d "$GIT_DIR/rebase-apply" ] || [ -f "$GIT_DIR/MERGE_HEAD" ]; }; then
-  exit 0
-fi
-
-git reset -q -- Dashboard/Ledger/loc-history.json Dashboard/Audit/audit.md
-
-if [ "$(git branch --show-current)" = active ]; then
-  git push -q origin active || echo "push: active didn't reach origin" >&2
-fi
-exit 0
+exec node "$HOME/The Studio/.claude/dashboard/sync.mjs" pommora

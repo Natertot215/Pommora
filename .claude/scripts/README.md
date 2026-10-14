@@ -1,27 +1,5 @@
 ## Scripts
 
-`pommora-dashboard.mjs` writes the data the Dashboard imports at build time. Run bare, it copies the
-codebase audit into `Dashboard/Audit/audit.md` and folds the tree being committed into
-`Dashboard/Ledger/loc-history.json` — the line ledger, one sample per day, so a commit touches
-exactly one row. It reads the index rather than the working tree, so uncommitted work is never
-counted against a commit that doesn't contain it. `--rebuild` re-walks every day of the branch and
-rewrites the ledger from scratch, and a bare run does the same on its own when the area map has
-changed.
-
-The ledger counts the app's real code lines per area — TypeScript, TSX and CSS across the `Core`,
-`UIX`, `Desktop`, `Sync` and `Mobile` workspaces, with comments, blank lines, tests, type shims,
-build configuration and the `Dashboard` excluded — alongside a file census of per-area source files
-and the whole tree split into source, tests and config. Each day's sample holds six arrays per area:
-the source lines; three disjoint groups among them — the import and export lines, then the remaining
-lines of stylesheets (`.css` and `.css.ts`), then the bracket-only lines (`}`, `);`, `/>`, `</div>`
-and the like); the comment lines dropped beside them; and the code lines of the area's test files, so
-the dashboard folds each group in or out without re-measuring. A name carrying `.test.` or `.spec.`,
-or a path under a testing or fixtures folder, is a test; build and tooling files, the Vite and Vitest
-configuration and setup, and the `.d.ts` shims are config. The history credits every file to the area
-of the path it holds today, following the branch's renames back through each day, so the earlier
-samples stay comparable; each area's pre-monorepo prefixes only place the files deleted before the
-monorepo.
-
 `check-atlas.mjs` verifies the token ledger: every `**SOURCE:**`-tagged table in `// Features` must
 agree with the code files its SOURCE line names — each backticked token in a row's second column and
 each literal value in its third must appear in those files. `UIX/Theme`'s `theme-vars.css.ts`,
@@ -75,14 +53,12 @@ make — it runs it and prints every value that moved, polling until the Nexus i
 
 `make-benchmark-nexus.mjs` builds a deterministic benchmark Nexus at one of four sizes (`small`, `medium`, `large`, `xlarge`, default `medium`) into `~/Benchmark-<Size>`. Before building, it sweeps every earlier benchmark Nexus (each size and the legacy `~/Benchmark`) along with its index database under the Pommora userData folder, and it refuses to touch an existing folder that it didn't write. It uses only Node's built-in modules.
 
-`pommora-dashboard.mjs` and `check-atlas.mjs` run before every commit through the versioned git hook
-`../hooks/pre-commit`, which runs `pommora-dashboard.mjs`, stages the ledger and the audit into the
-commit, and runs `check-atlas.mjs`. Its partner
-`../hooks/post-commit` realigns the index with what the commit carried and pushes `active`, which
-deploys the Dashboard. Because they are native git hooks rather than tool-side ones, they see every
-commit — a terminal, an editor, or any agent — not only the ones made through a particular tool. Git
-looks for hooks under `.git/hooks` by default, so one command per clone points it at the versioned
-directory instead:
+`check-atlas.mjs` runs before every commit through the versioned git hook `../hooks/pre-commit`. Its
+partner `../hooks/post-commit` runs the Studio dashboard's `sync.mjs`, which folds the commit into
+Pommora's line ledger on the Studio dashboard and pushes `active`. Because they are native git hooks
+rather than tool-side ones, they see every commit — a terminal, an editor, or any agent — not only
+the ones made through a particular tool. Git looks for hooks under `.git/hooks` by default, so one
+command per clone points it at the versioned directory instead:
 
 ```
 git config core.hooksPath .claude/hooks

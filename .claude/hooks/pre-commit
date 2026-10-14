@@ -1,12 +1,8 @@
 #!/bin/sh
-# Git pre-commit hook: refresh the Dashboard's ledger and audit from the tree being committed, and
-# re-check the token atlas, so every commit ships the numbers measured from itself.
+# Git pre-commit hook: re-check the token atlas against the tree being committed.
 
 ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
 cd "$ROOT" || exit 0
-
-node .claude/scripts/pommora-dashboard.mjs || echo "line ledger: skipped (pommora-dashboard.mjs failed)" >&2
-git add Dashboard/Ledger/loc-history.json Dashboard/Audit/audit.md
 
 node .claude/scripts/check-atlas.mjs || echo "token ledger: drift above — the Features SOURCE tables disagree with the code" >&2
 exit 0

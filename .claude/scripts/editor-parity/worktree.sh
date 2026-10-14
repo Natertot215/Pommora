@@ -11,7 +11,7 @@ for e in "$REPO/node_modules/"* "$REPO/node_modules/.bin"; do
   [ "$n" = "@pommora" ] || ln -s "$e" "$DIR/node_modules/$n"
 done
 # The root's own @pommora links point at the main checkout; these point at the worktree, so the build compiles its code.
-for p in core:Core uix:UIX desktop:Desktop sync:Sync dashboard:Dashboard mobile:Mobile; do
+for p in core:Core uix:UIX desktop:Desktop sync:Sync mobile:Mobile; do
   ln -s "../../${p#*:}" "$DIR/node_modules/@pommora/${p%%:*}"
 done
 cd "$DIR" && npm run build >/dev/null && echo "built $COMMIT in $DIR"
