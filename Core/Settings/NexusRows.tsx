@@ -12,7 +12,7 @@ import { SettingsFieldRow } from './SettingsFieldRow'
 import { useTimedLabel } from './useTimedLabel'
 import { useSession, useSetting } from '../Session/store'
 import { useExperimental } from './experimental'
-import * as x from './settings-rows.css'
+import { trailingCluster, trailingFigure } from '@pommora/uix/Menus/menu-row.css'
 import { dialer } from '../Platform/dialer'
 
 const fingerprint = (id: string): string => id.slice(0, 12)
@@ -139,7 +139,7 @@ function NexusBody({ nexusId }: { nexusId: string }): React.JSX.Element | null {
         </SettingsFieldRow>
       )}
       <SettingsFieldRow label="Nexus ID">
-        <span className={x.count}>{nexusId}</span>
+        <span className={trailingFigure}>{nexusId}</span>
       </SettingsFieldRow>
       {needsPassword ? (
         <SettingsFieldRow label="Nexus Password">
@@ -169,7 +169,7 @@ function NexusBody({ nexusId }: { nexusId: string }): React.JSX.Element | null {
       {experimental && state && (
         <>
           <SettingsFieldRow label="Server" hint={binding ? captionFor(binding) : undefined}>
-            <span className={x.manageCluster}>
+            <span className={trailingCluster}>
               <InputField
                 label="Server address"
                 edit={{ value: address, onCommit: setDraft, renames: 'row', emptyCommits: true }}

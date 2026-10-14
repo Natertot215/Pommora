@@ -275,6 +275,7 @@ export function AccessoryButton({
   disabled = false,
   pressed,
   reveal,
+  onMouseDown,
   ref,
 }: {
   icon: IconName
@@ -286,6 +287,7 @@ export function AccessoryButton({
   disabled?: boolean
   pressed?: boolean
   reveal?: boolean
+  onMouseDown?: (e: React.MouseEvent<HTMLButtonElement>) => void
   ref?: Ref<HTMLButtonElement>
 }): React.JSX.Element {
   return (
@@ -301,6 +303,7 @@ export function AccessoryButton({
       className={cx(s.accessoryButton, className)}
       data-create={create || undefined}
       aria-label={ariaLabel}
+      onMouseDown={onMouseDown}
       onClick={(e) => {
         e.stopPropagation()
         onClick()

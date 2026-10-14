@@ -3,7 +3,7 @@ import { personalizationOf } from '../Session/configSlice'
 import { useSession, useSetting } from '../Session/store'
 import { previewTargets } from '../Navigation/previewRules'
 import { FilterFrame, filterViewOf, standalonePatch } from '../Views/Settings/FilterFrame'
-import { ManageRow } from './ManageRow'
+import { ManageRow } from '@pommora/uix/Menus/ManageRow'
 import { settingOf } from './personalization'
 
 const live = () => settingOf(personalizationOf(useSession.getState()), 'openInPreview')

@@ -1,16 +1,9 @@
 import { reportRefusal } from '../Interface/Notifications/notifications'
 import { useState } from 'react'
 import { PathField } from '@pommora/uix/Fields/PathField'
-import { AccessoryButton, FootingCreate } from '@pommora/uix/Menus/MenuRows'
-import { Reveal } from '@pommora/uix/Animations/Reveal'
-import { useEntrance } from '@pommora/uix/Animations/useEntrance'
+import { ManageList, ManageRow } from '@pommora/uix/Menus/ManageRow'
 import { useSession } from '../Session/store'
-import { ManageRow } from './ManageRow'
-import * as x from './settings-rows.css'
 import { dialer } from '../Platform/dialer'
-
-const EXCLUDED_MIN_W = 250
-const EXCLUDED_MAX_W = 500
 
 export function ExcludedDirectoriesRow({
   label,
@@ -21,12 +14,7 @@ export function ExcludedDirectoriesRow({
 }): React.JSX.Element {
   const count = useSession((s) => s.tree?.config.excluded.length ?? 0)
   return (
-    <ManageRow
-      label={label}
-      hint={hint}
-      count={count}
-      style={{ minWidth: EXCLUDED_MIN_W, maxWidth: EXCLUDED_MAX_W }}
-    >
+    <ManageRow label={label} hint={hint} count={count}>
       <ExclusionPane />
     </ManageRow>
   )
@@ -34,9 +22,7 @@ export function ExcludedDirectoriesRow({
 
 function ExclusionPane(): React.JSX.Element {
   const stored = useSession((s) => s.tree?.config.excluded ?? [])
-  const [drafting, setDrafting] = useState(false)
   const [busy, setBusy] = useState(false)
-  const entering = useEntrance(stored, (f) => f)
 
   // One write in flight at a time — the pane reads the list back through the tree, so a second edit on the stale list would undo the first.
   const commit = async (list: string[]): Promise<boolean> => {
@@ -48,13 +34,6 @@ function ExclusionPane(): React.JSX.Element {
       setBusy(false)
     }
   }
-  // Emptying a field is accepted, not a delete — the row stays; only the × removes.
-  const rename = (folder: string, next: string): void => {
-    if (next) void commit(stored.map((f) => (f === folder ? next : f)))
-  }
-  const commitDraft = async (next: string): Promise<void> => {
-    if (next && (await commit([...stored, next]))) setDrafting(false)
-  }
   const browse = (apply: (picked: string) => void): void => {
     void dialer()
       .ask('exclusions:choose')
@@ -63,14 +42,14 @@ function ExclusionPane(): React.JSX.Element {
       })
   }
 
-  const fieldRow = (
-    value: string,
-    onCommit: (n: string) => void,
-    onRemove: () => void,
-    key: string,
-  ) => (
-    <div className={x.paneRow} key={key}>
-      <span className={x.field}>
+  return (
+    <ManageList
+      values={stored}
+      noun="exclusion"
+      onAdd={(folder) => commit([...stored, folder])}
+      onRename={(from, to) => commit(stored.map((f) => (f === from ? to : f)))}
+      onRemove={(folder) => void commit(stored.filter((f) => f !== folder))}
+      field={({ value, onCommit }) => (
         <PathField
           label="Excluded folder"
           value={value}
@@ -78,38 +57,7 @@ function ExclusionPane(): React.JSX.Element {
           onCommit={onCommit}
           onBrowse={() => browse(onCommit)}
         />
-      </span>
-      <AccessoryButton icon="x" size="control" ariaLabel="Remove exclusion" onClick={onRemove} />
-    </div>
-  )
-
-  return (
-    <div className={x.paneList}>
-      {stored.map((folder) => (
-        <Reveal key={folder} open enterOnMount={entering(folder)} fill>
-          {fieldRow(
-            folder,
-            (next) => rename(folder, next),
-            () => void commit(stored.filter((f) => f !== folder)),
-            folder,
-          )}
-        </Reveal>
-      ))}
-      {drafting ? (
-        <Reveal open enterOnMount fill key="draft">
-          {fieldRow(
-            '',
-            (n) => void commitDraft(n),
-            () => setDrafting(false),
-            'draft',
-          )}
-        </Reveal>
-      ) : null}
-      <FootingCreate
-        ariaLabel="Add exclusion"
-        disabled={drafting || busy}
-        onClick={() => setDrafting(true)}
-      />
-    </div>
+      )}
+    />
   )
 }
