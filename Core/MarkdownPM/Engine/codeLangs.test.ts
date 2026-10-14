@@ -119,6 +119,19 @@ describe('a fence word', () => {
     expect(codeFence('src/diff/app.ts').diff).toBe(false)
     expect(codeFence('diff.ts').diff).toBe(false)
   })
+  it('reads a dashed filename beginning with a diff word by its extension', () => {
+    expect(codeFence('patch-notes.md')).toEqual({
+      name: 'Markdown',
+      diff: false,
+      path: 'patch-notes.md',
+    })
+    expect(codeFence('diff-app.ts')).toEqual({
+      name: 'TypeScript',
+      diff: false,
+      path: 'diff-app.ts',
+    })
+    expect(codeFence('diff-app.ts ts')).toMatchObject({ name: 'TypeScript', diff: false })
+  })
   it('reads a diff or patch file as a diff with no colors', () => {
     expect(codeFence('changes.diff')).toEqual({ name: null, diff: true, path: 'changes.diff' })
     expect(codeFence('src\\fix.patch')).toEqual({ name: null, diff: true, path: 'src\\fix.patch' })
