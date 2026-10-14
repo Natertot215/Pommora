@@ -12,6 +12,7 @@ The operational layer for running, driving, and committing to the app; the Featu
 - **Main Doesn't Hot-Reload:** `Desktop/main.ts` and `Desktop/Bridge` pick up changes only on a dev-process restart; a stale main answering a new renderer request looks like a regression.
 - **Stop by Exact PID:** `pkill -f` can match the session's own shell, and killing the launch PID orphans the real Electron child. Walk the tree with `ps -o pid,ppid,command -A`, kill the Electron PID first, then its wrappers.
 - **Worktree Electron:** A worktree's `node_modules` often lacks the Electron binary (`Error: Electron uninstall`); `./node_modules/.bin/electron --version` downloads it.
+- **Benchmark Nexus:** `node .claude/scripts/make-benchmark-nexus.mjs [small|medium|large|xlarge]` builds `~/Benchmark-<Size>` (default medium), sweeping every earlier benchmark Nexus and its index database first.
 
 ### Driving Over CDP
 

@@ -1,6 +1,6 @@
 // Builds a deterministic benchmark Nexus at one of four sizes into ~/Benchmark-<Size>, after sweeping every earlier benchmark
 // Nexus (each size, and the legacy ~/Benchmark) along with the index database Pommora keeps for it under userData/Nexuses.
-// Run: node .claude/Benchmarks/make-benchmark-nexus.mjs [small|medium|large|xlarge]   (default medium)
+// Run: node .claude/scripts/make-benchmark-nexus.mjs [small|medium|large|xlarge]   (default medium)
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
