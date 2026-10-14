@@ -84,6 +84,7 @@ import {
 import { useEffect, useSyncExternalStore } from 'react'
 import {
   CardsGrid,
+  Claude,
   ListRounded,
   LockFilled,
   LockOutline,
@@ -179,6 +180,7 @@ export const icons = {
   'text-align-start': TextAlignStart,
   'view-table': Grid3x2,
   pommora: Pommora,
+  claude: Claude,
   sapphire: Sapphire,
   'list-rounded': ListRounded,
   'cards-grid': CardsGrid,
