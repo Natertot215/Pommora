@@ -613,6 +613,18 @@ describe('FilterFrame location field', () => {
     expect(document.querySelector('[data-picker-portal]')).toBeNull()
   })
 
+  it('Escape over a draft that matches nothing closes the field, not the surface beneath', async () => {
+    await mount(locationRule('is_inside'))
+    await focusLocation()
+    await typeLocation('zzz')
+    const press = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true })
+    await act(async () => {
+      locationField().dispatchEvent(press)
+    })
+    expect(press.defaultPrevented).toBe(true)
+    expect(locationField().value).toBe('')
+  })
+
   it("the tree's expansion survives the picker reopening", async () => {
     await mount(locationRule('is_inside'))
     await focusLocation()

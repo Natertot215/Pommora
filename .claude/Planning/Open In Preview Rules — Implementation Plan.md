@@ -81,12 +81,12 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
   - [x] Task 1-2
   - [x] Task 1-3
   - [x] Review Checkpoint
-- [ ] **Phase 2** — The Shared Filter Editor
-  - [ ] Task 2-1
-  - [ ] Task 2-2
-  - [ ] Task 2-3
-  - [ ] Task 2-4
-  - [ ] Review Checkpoint
+- [x] **Phase 2** — The Shared Filter Editor
+  - [x] Task 2-1
+  - [x] Task 2-2
+  - [x] Task 2-3
+  - [x] Task 2-4
+  - [x] Review Checkpoint
 - [ ] **Phase 3** — The Setting & One Page-Open
   - [ ] Task 3-1
   - [ ] Task 3-2
@@ -474,43 +474,78 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 
 **CHANGE**
 
-- [ ] Write the failing tests first. `UIX/Fields/TokenField.test.tsx`: typing reports the draft; Enter offers the trimmed draft and nothing when it's blank; Backspace on an empty caret runs the last entry's `onRemove`, and on a non-empty caret only edits; the placeholder shows only while there are no entries. `FilterFrame.test.tsx`: Tab into the Location field opens the picker unfiltered; typing narrows it to matching folders with their ancestors open; Enter under Contains adds the typed name as a chip and clears the draft, including a name equal to an existing folder's title; Enter under Is adds nothing; a name equal by fold to a shown one isn't added twice; a picked folder joins as today and clears the draft; switching Contains → Is keeps picked ids and drops names; `:411-448` (location picks) moves onto the field.
-- [ ] `InputField` takes an optional `ref` (React 19's ref prop) on its field element, so a picker can anchor to it.
-- [ ] Create `TokenField`: an `InputField` (its `editable` focus ring, the host's `chrome` and `className`) holding the `FieldRun` of `entries`, then a controlled caret in the `base` chrome. `FieldRun` is already the field's one scroll region with its trailing fade (`field-run.css.ts:11-19`), so the field isn't `capped` — a capped row would nest a second. The run keeps its natural width until it overflows into its fade, and the caret takes the rest of the row, never narrower than a few characters, so a press on the field's empty space lands in it. Enter offers the trimmed draft to `onEnter`; Backspace on an empty caret runs the last entry's `onRemove`; Escape is left to the host's surface. The host owns the draft, its picker, and what Enter makes.
-- [ ] `LocationField` takes `names` (from the current `OperatorChoice`) and renders a `TokenField` with `chrome="bordered"`, `className={fp.valueField}`, `placeholder="Value"`, `ariaLabel="Filter values"`, `ref` as the `PickerMenu`'s `triggerRef`; the caret's focus opens the picker (`focus="keep"`, so picking a row never blurs the caret), and editing the draft opens it too. `onEnter` adds the draft as a name chip when `names` holds and no shown value folds equal to it, then clears the draft; an exact folder title stays a name. `pick` toggles a picked id and clears the draft; the picker's `onDismiss` closes it and clears the draft. `ValueFieldShell` stays with `ChipsField` alone.
-- [ ] `LocationTree` renders the picker body from `nodes`, `shown`, and the draft, owning the `useDisclosureSet` that moves out of `LocationField`: an empty draft renders today's disclosure tree; a draft renders the tree pruned to nodes the app's search matcher accepts (`matchScore(foldKey(title), foldKey(draft)) !== null`, as Navigation, View Search, and Trash narrow), plus their ancestors, all expanded, with the same `DisclosureRow` and `pickRuns`.
+- [ ] Write the failing tests first. `UIX/Fields/TokenField.test.tsx`: typing reports the draft; Enter offers the trimmed draft and nothing when it's blank; Backspace on an empty caret runs the last entry's `onRemove`, and on a non-empty caret only edits; the placeholder shows only while there are no entries. `FilterFrame.test.tsx`: Tab into or a click on the Location field opens the picker unfiltered; typing narrows it to matching folders, each keeping its subfolders, with their ancestors open; a draft matching nothing hides the pane; Escape and blur close the picker and clear the draft, and a click on the caret reopens it; a chip's × removes it while the picker stays open; ArrowDown and Enter pick a folder under Is; the tree's expansion survives reopening; Enter under Contains adds the typed name as a chip and clears the draft, including a name equal to an existing folder's title; Enter under Is adds nothing; a name equal by fold to a shown one isn't added twice; a picked folder joins as today and clears the draft; switching Contains → Is keeps picked ids and drops names; `:411-448` (location picks) moves onto the field.
+- [ ] `InputField` takes an optional `ref` (React 19's ref prop) on its field element, so a picker can anchor to it, and passes `onMouseDown` / `onClick` through.
+- [ ] `focus="keep"` makes a `PickerMenu`'s trigger part of its pane: `DismissalEntry` gains `triggerInside`, which `holds()` reads as a press inside the layer, and a kept-focus pane draws no shield, so an outside press that closes it still lands. `usePaneCtl` and `useKeepInView` move from `Core/MarkdownPM/Menus/caretPane.tsx` into `UIX/Interactions/paneCtl.ts`, and MarkdownPM imports them from there.
+- [ ] Create `TokenField`: an `InputField` (its `editable` focus ring, the host's `chrome` and `className`) holding the `FieldRun` of `entries`, then a controlled caret in the `base` chrome. `FieldRun` is already the field's one scroll region with its trailing fade (`field-run.css.ts:11-19`), so the field isn't `capped` — a capped row would nest a second. The run keeps its natural width until it overflows into its fade, and the caret takes the rest of the row, never narrower than a few characters, so a press on the field's empty space lands in it. A press on the field past the caret (a chip's body, the padding) focuses the caret, and a press on a chip's × never takes focus from it; `onPress`, `onBlur`, and `onKeyDown` reach the host, whose prevented keys skip the field's own. Enter offers the trimmed draft to `onEnter`; Backspace on an empty caret runs the last entry's `onRemove`. The host owns the draft, its picker, and what Enter makes. `FieldRun` sizes its entries' icons itself.
+- [ ] `LocationField` takes `names` (from the current `OperatorChoice`) and renders a `TokenField` with `chrome="bordered"`, `className={fp.valueField}`, `placeholder="Value"`, `ariaLabel="Filter values"`, `ref` as the `PickerMenu`'s `triggerRef`; the caret's focus, a press, an arrow key, or editing the draft opens the picker (`focus="keep"`, so picking a row never blurs the caret); blur and Escape close it and clear the draft, the field taking Escape itself so it never reaches the surface beneath while the pane is hidden. ArrowUp / ArrowDown move `usePaneCtl`'s highlight through the shown rows (none at first, cleared by typing) and Enter picks it; with nothing highlighted, `onEnter` adds the draft as a name chip when `names` holds and no shown value folds equal to it, then clears the draft; an exact folder title stays a name. `pick` toggles a picked id and clears the draft. Both disclosure sets live in `LocationField`, so the tree's expansion survives reopening. `ValueFieldShell` stays with `ChipsField` alone.
+- [ ] `LocationTree` renders the picker body with the same `DisclosureRow` and `pickRuns`: an empty draft renders today's disclosure tree; a draft renders the tree narrowed to folders the app's search matcher accepts (`matchScore(foldKey(title), foldKey(draft)) !== null`, as Navigation, View Search, and Trash narrow), each with its whole subtree collapsed, plus their ancestors open; a flip made while narrowed holds for that draft. While a draft matches nothing the pane is hidden.
 - [ ] A value found in the node map renders as today; any other value renders `label: v` with the `folder-search` glyph and the same `onRemove`. Add `'folder-search': FolderSearch` to the curated `icons` map in `UIX/Symbols/index.tsx`.
-- [ ] The operator menu, switching to a `set` operator without `names`, keeps only values in `liveIds` — `new Set(flattenNodes(locations).map((n) => n.id))`, computed once where the operator menu renders — omitting `values` when none remain.
-- [ ] The showcase's capped sketch (`FieldsLeaf.tsx:44-54`) becomes a live `TokenField` over its `draft` state; the caret's width rule is `tokenCaret` beside the other field chrome in `UIX/Fields/fields.css.ts`.
+- [ ] `FilterFrame` builds `folderById` once per `locations`; `LocationField` reads it, and the operator menu, switching to a `set` operator without `names`, keeps only values it holds, omitting `values` when none remain.
+- [ ] The showcase's capped sketch (`FieldsLeaf.tsx:44-54`) becomes a live `TokenField` over its `draft` state; the caret's width rule is `tokenCaret` beside the other field chrome in `UIX/Fields/fields.css.ts`, sizing to its content as `draftInput` and `cellInput` do.
 
 **AFTER**
 
 ```UIX/Fields/TokenField.tsx diff
-+/** Values standing in a field beside a bare caret: Enter offers the draft, and Backspace on an empty caret removes the last value. The host owns the draft and decides what Enter makes. */
-+export function TokenField({ entries, draft, onDraftChange, onEnter, onFocus, placeholder, ariaLabel, chrome, className, ref }: {
++/** Values standing in a field beside a bare caret: Enter offers the draft, and Backspace on an empty caret removes the last value. The host owns the draft and decides what Enter makes; a key its `onKeyDown` prevents is left to it. */
++export function TokenField({
++  entries,
++  draft,
++  onDraftChange,
++  onEnter,
++  onFocus,
++  onBlur,
++  onPress,
++  onKeyDown,
++  placeholder,
++  ariaLabel,
++  chrome,
++  className,
++  ref,
++}: {
 +  entries: RunEntry[]
 +  draft: string
 +  onDraftChange: (draft: string) => void
 +  onEnter: (draft: string) => void
 +  onFocus?: () => void
++  onBlur?: () => void
++  /** A click anywhere on the field, which an already-focused caret reports no focus for. */
++  onPress?: () => void
++  onKeyDown?: (e: KeyboardEvent<HTMLInputElement>) => void
 +  placeholder?: string
 +  ariaLabel?: string
 +  chrome?: 'boxed' | 'bordered'
 +  className?: string
 +  ref?: Ref<HTMLDivElement>
 +}): React.JSX.Element {
++  const caret = useRef<HTMLInputElement>(null)
 +  return (
-+    <InputField ref={ref} chrome={chrome} className={cx(s.editable, className)}>
++    <InputField
++      ref={ref}
++      chrome={chrome}
++      className={cx(s.editable, className)}
++      onMouseDown={(e) => {
++        const target = e.target as Element
++        if (target === caret.current) return
++        e.preventDefault()
++        if (!target.closest('button')) caret.current?.focus()
++      }}
++      onClick={onPress}
++    >
 +      {entries.length > 0 && <FieldRun entries={entries} />}
 +      <input
++        ref={caret}
 +        className={cx(s.base, s.tokenCaret)}
 +        value={draft}
 +        placeholder={entries.length > 0 ? undefined : placeholder}
 +        aria-label={ariaLabel}
 +        spellCheck={false}
 +        onFocus={onFocus}
++        onBlur={onBlur}
 +        onChange={(e) => onDraftChange(e.target.value)}
 +        onKeyDown={(e) => {
++          onKeyDown?.(e)
++          if (e.defaultPrevented) return
 +          if (e.key === 'Enter') {
 +            e.preventDefault()
 +            if (draft.trim()) onEnter(draft.trim())
@@ -1045,6 +1080,8 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 - `.claude/Features/ViewTypesPM.md:39` — Location: the value field is a `TokenField` whose typing narrows the picker; typed folder names under Contains / Doesn't Contain — Task 5-3
 - `.claude/ContextPM.md:33` — the TokenField backlog entry: the field exists with the Location filter as its consumer; what remains is file properties and Context assignment taking it — Task 5-3
 - `.claude/Features/PommoraUIX.md` *§Fields* table — add `TokenField`; `InputField` takes a `ref`; the Chrome row gains `tokenCaret` — Task 5-3
+- `.claude/Features/PommoraUIX.md` *§Interactions* and *§Pickers* — `paneCtl` (`usePaneCtl`, `useKeepInView`) joins Interactions; `PickerMenu`'s `keep` makes the trigger part of the pane with no shield — Task 5-3
+- `.claude/Features/MarkdownPM.md` — `usePaneCtl` lives in `UIX/Interactions/paneCtl.ts`, no longer `caretPane` — Task 5-3
 - `.claude/Features/ViewTypesPM.md:61` — SettingsFrame's **Configuration** entry — Task 5-3
 - `.claude/Features/SymbolsPM.md:24` — the Settings Frames table's `| Configuration | sliders-horizontal |` row — removed — Task 5-3
 - `.claude/Features/ViewTypesPM.md:64` — Filtering's `(connector)(what)…` row and run serialization; the Location `TokenField` — Task 5-3
@@ -1062,5 +1099,7 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 #### Open Items
 
 #### Deviations
+
+- **Task 2-4 — Narrowing Keeps Subtrees:** The plan pruned a narrowed tree to matches plus ancestors, dropping a matched folder's subfolders; at Phase 2's review Nathan ruled a match keeps its subtree.
 
 - **Task 1-2 — Unmatched Names:** The ratified plan had a typed folder name that matches no folder abstain like a dead id; Phase 1's review showed that silently widens an All group (or the Matrix, or the preview rules) to everything once a folder is renamed, since nothing strips names the way `configReach` strips dead ids. A name that matches nothing now matches nothing; dead ids still abstain.
