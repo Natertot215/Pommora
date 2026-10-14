@@ -4,167 +4,13 @@
 |------------|---------------|----------|---------------|-------|-------|
 | +263(+1157/-894) | +1570(+2790/-1220) | +15(+36/-21) | +4(+39/-35) | +1288(+1558/-270) | +15(+15/-0) |
 
-FILES: +278(+1193/-915)
-
-- **/.claude/scripts/reveal-parity/**
-  - fixtures.mjs (*§/.claude/scripts/reveal-parity/fixtures.mjs*)
-  - run.mjs (*§/.claude/scripts/reveal-parity/run.mjs*)
-- **/Core/**
-  - vitest.setup.ts (*§/Core/vitest.setup.ts*)
-- **/Core/Files/**
-  - decoders.ts (*§/Core/Files/decoders.ts*)
-- **/Core/Interface/Sidebar/**
-  - Sidebar.tsx (*§/Core/Interface/Sidebar/Sidebar.tsx*)
-- **/Core/MarkdownPM/Autocomplete/**
-  - AutocompletePane.tsx (*§/Core/MarkdownPM/Autocomplete/AutocompletePane.tsx*)
-  - useConnectionAutocomplete.ts (*§/Core/MarkdownPM/Autocomplete/useConnectionAutocomplete.ts*)
-- **/Core/MarkdownPM/Menus/**
-  - BlockMenuPane.tsx (*§/Core/MarkdownPM/Menus/BlockMenuPane.tsx*)
-  - caretPane.tsx (*§/Core/MarkdownPM/Menus/caretPane.tsx*)
-  - useBlockMenu.ts (*§/Core/MarkdownPM/Menus/useBlockMenu.ts*)
-- **/Core/Matrix/**
-  - MatrixMenu.tsx (*§/Core/Matrix/MatrixMenu.tsx*)
-  - MatrixView.tsx (*§/Core/Matrix/MatrixView.tsx*)
-  - matrixConfig.ts (*§/Core/Matrix/matrixConfig.ts*)
-  - matrixGraph.ts (*§/Core/Matrix/matrixGraph.ts*)
-  - matrixInput.ts (*§/Core/Matrix/matrixInput.ts*)
-- **/Core/Navigation/**
-  - previewRules.ts (*§/Core/Navigation/previewRules.ts*)
-  - useNavData.ts (*§/Core/Navigation/useNavData.ts*)
-- **/Core/Nexus/**
-  - configReach.ts (*§/Core/Nexus/configReach.ts*)
-  - containerFields.ts (*§/Core/Nexus/containerFields.ts*)
-  - schemas.ts (*§/Core/Nexus/schemas.ts*)
-  - tree.ts (*§/Core/Nexus/tree.ts*)
-- **/Core/Properties/Cells/**
-  - PropertyTypes.tsx (*§/Core/Properties/Cells/PropertyTypes.tsx*)
-- **/Core/Session/**
-  - configSlice.ts (*§/Core/Session/configSlice.ts*)
-  - matrixSlice.ts (*§/Core/Session/matrixSlice.ts*)
-  - navigationSlice.ts (*§/Core/Session/navigationSlice.ts*)
-  - pageConnections.ts (*§/Core/Session/pageConnections.ts*)
-- **/Core/Settings/**
-  - ExcludedDirectoriesRow.tsx (*§/Core/Settings/ExcludedDirectoriesRow.tsx*)
-  - ManageRow.tsx (*§/Core/Settings/ManageRow.tsx*)
-  - PreviewRulesRow.tsx (*§/Core/Settings/PreviewRulesRow.tsx*)
-  - SettingsWindow.tsx (*§/Core/Settings/SettingsWindow.tsx*)
-  - frames.ts (*§/Core/Settings/frames.ts*)
-  - personalization.ts (*§/Core/Settings/personalization.ts*)
-  - settings-rows.css.ts (*§/Core/Settings/settings-rows.css.ts*)
-- **/Core/Sync/Arrival/**
-  - mergePolicy.ts (*§/Core/Sync/Arrival/mergePolicy.ts*)
-- **/Core/Testing/**
-  - configSurfaces.ts (*§/Core/Testing/configSurfaces.ts*)
-- **/Core/Tiles/**
-  - TileHost.tsx (*§/Core/Tiles/TileHost.tsx*)
-- **/Core/Views/**
-  - containerConfig.ts (*§/Core/Views/containerConfig.ts*)
-  - filterModel.ts (*§/Core/Views/filterModel.ts*)
-  - filterRules.ts (*§/Core/Views/filterRules.ts*)
-  - handlers.ts (*§/Core/Views/handlers.ts*)
-  - loadValues.ts (*§/Core/Views/loadValues.ts*)
-  - pageValues.ts (*§/Core/Views/pageValues.ts*)
-  - viewRow.ts (*§/Core/Views/viewRow.ts*)
-  - views.ts (*§/Core/Views/views.ts*)
-- **/Core/Views/Host/**
-  - useViewCreation.ts (*§/Core/Views/Host/useViewCreation.ts*)
-  - useViewHost.ts (*§/Core/Views/Host/useViewHost.ts*)
-  - useViewInteractions.tsx (*§/Core/Views/Host/useViewInteractions.tsx*)
-- **/Core/Views/Pipeline/**
-  - creationSeeds.ts (*§/Core/Views/Pipeline/creationSeeds.ts*)
-  - filter.ts (*§/Core/Views/Pipeline/filter.ts*)
-  - group.ts (*§/Core/Views/Pipeline/group.ts*)
-- **/Core/Views/Settings/**
-  - FilterFrame.tsx (*§/Core/Views/Settings/FilterFrame.tsx*)
-  - LocationField.tsx (*§/Core/Views/Settings/LocationField.tsx*)
-  - SettingsFrame.tsx (*§/Core/Views/Settings/SettingsFrame.tsx*)
-  - ViewFrame.tsx (*§/Core/Views/Settings/ViewFrame.tsx*)
-  - ViewItemMenu.tsx (*§/Core/Views/Settings/ViewItemMenu.tsx*)
-  - ViewLeaf.tsx (*§/Core/Views/Settings/ViewLeaf.tsx*)
-  - filter-frame.css.ts (*§/Core/Views/Settings/filter-frame.css.ts*)
-  - valueField.tsx (*§/Core/Views/Settings/valueField.tsx*)
-- **/UIX/Fields/**
-  - FieldRun.tsx (*§/UIX/Fields/FieldRun.tsx*)
-  - InputField.tsx (*§/UIX/Fields/InputField.tsx*)
-  - TokenField.tsx (*§/UIX/Fields/TokenField.tsx*)
-  - field-run.css.ts (*§/UIX/Fields/field-run.css.ts*)
-  - fields.css.ts (*§/UIX/Fields/fields.css.ts*)
-- **/UIX/Interactions/**
-  - dismissalStack.ts (*§/UIX/Interactions/dismissalStack.ts*)
-  - paneCtl.ts (*§/UIX/Interactions/paneCtl.ts*)
-- **/UIX/Menus/**
-  - DisclosureRow.tsx (*§/UIX/Menus/DisclosureRow.tsx*)
-  - MenuRows.tsx (*§/UIX/Menus/MenuRows.tsx*)
-  - menu-row.css.ts (*§/UIX/Menus/menu-row.css.ts*)
-- **/UIX/Pickers/**
-  - PickerMenu.tsx (*§/UIX/Pickers/PickerMenu.tsx*)
-- **/UIX/Symbols/**
-  - index.tsx (*§/UIX/Symbols/index.tsx*)
-- **/UIX/Table/**
-  - table.css (*§/UIX/Table/table.css*)
-- **/UIX/Utilities/**
-  - pad.ts (*§/UIX/Utilities/pad.ts*)
-
-TESTS: +1288(+1558/-270)
-
-- sidecar.test.ts (*§/Core/Files/sidecar.test.ts*)
-- MatrixMenu.test.tsx (*§/Core/Matrix/MatrixMenu.test.tsx*)
-- matrixGraph.test.ts (*§/Core/Matrix/matrixGraph.test.ts*)
-- matrixInput.test.ts (*§/Core/Matrix/matrixInput.test.ts*)
-- previewRules.test.ts (*§/Core/Navigation/previewRules.test.ts*)
-- configReach.test.ts (*§/Core/Nexus/configReach.test.ts*)
-- schemas.containerConfig.test.ts (*§/Core/Nexus/schemas.containerConfig.test.ts*)
-- deleteProperty.test.ts (*§/Core/Properties/deleteProperty.test.ts*)
-- handlers.test.ts (*§/Core/Properties/handlers.test.ts*)
-- optionOps.test.ts (*§/Core/Properties/optionOps.test.ts*)
-- removeProperty.test.ts (*§/Core/Properties/removeProperty.test.ts*)
-- replaySchemaCascade.test.ts (*§/Core/Properties/replaySchemaCascade.test.ts*)
-- configSlice.test.ts (*§/Core/Session/configSlice.test.ts*)
-- openTarget.test.tsx (*§/Core/Session/openTarget.test.tsx*)
-- ExclusionRows.test.tsx (*§/Core/Settings/ExclusionRows.test.tsx*)
-- PreviewRulesRow.test.tsx (*§/Core/Settings/PreviewRulesRow.test.tsx*)
-- personalization.test.ts (*§/Core/Settings/personalization.test.ts*)
-- mergePolicy.test.ts (*§/Core/Sync/Arrival/mergePolicy.test.ts*)
-- deleteReach.test.ts (*§/Core/Trash/deleteReach.test.ts*)
-- filterModel.test.ts (*§/Core/Views/filterModel.test.ts*)
-- handlers.test.ts (*§/Core/Views/handlers.test.ts*)
-- viewWrite.test.tsx (*§/Core/Views/viewWrite.test.tsx*)
-- views.test.ts (*§/Core/Views/views.test.ts*)
-- viewsFile.test.ts (*§/Core/Views/viewsFile.test.ts*)
-- cardGestures.test.tsx (*§/Core/Views/Cards/cardGestures.test.tsx*)
-- useViewHost.test.tsx (*§/Core/Views/Host/useViewHost.test.tsx*)
-- creationSeeds.test.ts (*§/Core/Views/Pipeline/creationSeeds.test.ts*)
-- filter.test.ts (*§/Core/Views/Pipeline/filter.test.ts*)
-- FilterFrame.test.tsx (*§/Core/Views/Settings/FilterFrame.test.tsx*)
-- bandCommits.test.tsx (*§/Core/Views/Table/bandCommits.test.tsx*)
-- cellGestures.test.tsx (*§/Core/Views/Table/cellGestures.test.tsx*)
-- TokenField.test.tsx (*§/UIX/Fields/TokenField.test.tsx*)
-- dismissalStack.test.tsx (*§/UIX/Interactions/dismissalStack.test.tsx*)
-- paneCtl.test.tsx (*§/UIX/Interactions/paneCtl.test.tsx*)
-- PickerMenu.test.tsx (*§/UIX/Pickers/PickerMenu.test.tsx*)
-
-DOCS: +4(+39/-35)
-
-- ContextPM.md (*§/.claude/ContextPM.md*)
-- CollectionsPM.md (*§/.claude/Features/CollectionsPM.md*)
-- ConfigurationPM.md (*§/.claude/Features/ConfigurationPM.md*)
-- ConnectionsPM.md (*§/.claude/Features/ConnectionsPM.md*)
-- ContextsPM.md (*§/.claude/Features/ContextsPM.md*)
-- InterfacePM.md (*§/.claude/Features/InterfacePM.md*)
-- NavigationPM.md (*§/.claude/Features/NavigationPM.md*)
-- NexusSyncPM.md (*§/.claude/Features/NexusSyncPM.md*)
-- PagesPM.md (*§/.claude/Features/PagesPM.md*)
-- PommoraUIX.md (*§/.claude/Features/PommoraUIX.md*)
-- ViewTypesPM.md (*§/.claude/Features/ViewTypesPM.md*)
-- Cross-Device Mutation Checklist.md (*§/.claude/Planning/Cross-Device Mutation Checklist.md*)
-- Navigation Improvements — Design Specification.md (*§/.claude/Planning/Navigation Improvements — Design Specification.md*)
-- A — Model & Read Path.md (*§/.claude/Planning/Data Layer — Investigation Reports/A — Model & Read Path.md*)
+- **FILES:** +278(+1193/-915)
+- **TESTS:** +1288(+1558/-270)
+- **DOCS:** +4(+39/-35)
 
 ---
 
-##### /.claude/scripts/reveal-parity/fixtures.mjs
-
-**Delta:** +2(+5/-3)
+##### .claude/scripts/reveal-parity/fixtures.mjs
 
 ```/.claude/scripts/reveal-parity/fixtures.mjs diff
 @@ -20 +20 @@ const body = (rel, text) => {
@@ -193,11 +39,7 @@ DOCS: +4(+39/-35)
    'Collection A/Set Beta/Sub-Set B/Beta 2.md',
 ```
 
----
-
-##### /.claude/scripts/reveal-parity/run.mjs
-
-**Delta:** ±0(+2/-2)
+##### .claude/scripts/reveal-parity/run.mjs
 
 ```/.claude/scripts/reveal-parity/run.mjs diff
 @@ -53 +53 @@ const reset = async () => {
@@ -220,11 +62,7 @@ DOCS: +4(+39/-35)
    await ribbon('collections')
 ```
 
----
-
-##### /Core/vitest.setup.ts
-
-**Delta:** +2(+4/-2)
+##### Core/vitest.setup.ts
 
 ```/Core/vitest.setup.ts diff
 @@ -1 +1 @@
@@ -250,11 +88,7 @@ DOCS: +4(+39/-35)
    } as unknown as Dialer
 ```
 
----
-
-##### /Core/Files/decoders.ts
-
-**Delta:** +2(+2/-0)
+##### Core/Files/decoders.ts
 
 ```/Core/Files/decoders.ts diff
 @@ -10 +10 @@ export const eachOf = <T extends z.ZodType>(item: T) =>
@@ -268,11 +102,7 @@ DOCS: +4(+39/-35)
    z.number().transform((n) => clamp(round ? Math.round(n) : n, min, max))
 ```
 
----
-
-##### /Core/Interface/Sidebar/Sidebar.tsx
-
-**Delta:** -9(+1/-10)
+##### Core/Interface/Sidebar/Sidebar.tsx
 
 ```/Core/Interface/Sidebar/Sidebar.tsx diff
 @@ -32 +32 @@ import { placementOf, type SidebarMode } from '../../Settings/personalization'
@@ -302,11 +132,7 @@ DOCS: +4(+39/-35)
  const LeafRow = memo(function LeafRow({
 ```
 
----
-
-##### /Core/MarkdownPM/Autocomplete/AutocompletePane.tsx
-
-**Delta:** +1(+2/-1)
+##### Core/MarkdownPM/Autocomplete/AutocompletePane.tsx
 
 ```/Core/MarkdownPM/Autocomplete/AutocompletePane.tsx diff
 @@ -18 +18 @@ import { HoverRemove, hoverRemoveHost } from '@pommora/uix/Interactions/HoverRem
@@ -321,11 +147,7 @@ DOCS: +4(+39/-35)
  import { outlineTree, type OutlineNode } from '../Engine/outlineTree'
 ```
 
----
-
-##### /Core/MarkdownPM/Autocomplete/useConnectionAutocomplete.ts
-
-**Delta:** +1(+2/-1)
+##### Core/MarkdownPM/Autocomplete/useConnectionAutocomplete.ts
 
 ```/Core/MarkdownPM/Autocomplete/useConnectionAutocomplete.ts diff
 @@ -23 +23 @@ import type { AutocompletePaneProps } from './AutocompletePane'
@@ -340,11 +162,7 @@ DOCS: +4(+39/-35)
  
 ```
 
----
-
-##### /Core/MarkdownPM/Menus/BlockMenuPane.tsx
-
-**Delta:** +1(+2/-1)
+##### Core/MarkdownPM/Menus/BlockMenuPane.tsx
 
 ```/Core/MarkdownPM/Menus/BlockMenuPane.tsx diff
 @@ -6 +6 @@ import { type PaneBounds, usePaneResize } from '@pommora/uix/Pickers/usePaneResi
@@ -359,11 +177,7 @@ DOCS: +4(+39/-35)
  interface Props {
 ```
 
----
-
-##### /Core/MarkdownPM/Menus/caretPane.tsx
-
-**Delta:** -50(+2/-52)
+##### Core/MarkdownPM/Menus/caretPane.tsx
 
 ```/Core/MarkdownPM/Menus/caretPane.tsx diff
 @@ -1 +1 @@
@@ -444,11 +258,7 @@ DOCS: +4(+39/-35)
      const open = ctls.find((r) => r.current.open)?.current
 ```
 
----
-
-##### /Core/MarkdownPM/Menus/useBlockMenu.ts
-
-**Delta:** +1(+2/-1)
+##### Core/MarkdownPM/Menus/useBlockMenu.ts
 
 ```/Core/MarkdownPM/Menus/useBlockMenu.ts diff
 @@ -2 +2 @@ import { useState, type RefObject } from 'react'
@@ -463,11 +273,7 @@ DOCS: +4(+39/-35)
  
 ```
 
----
-
-##### /Core/Matrix/MatrixMenu.tsx
-
-**Delta:** -15(+5/-20)
+##### Core/Matrix/MatrixMenu.tsx
 
 ```/Core/Matrix/MatrixMenu.tsx diff
 @@ -1 +1 @@
@@ -532,11 +338,7 @@ DOCS: +4(+39/-35)
        }
 ```
 
----
-
-##### /Core/Matrix/MatrixView.tsx
-
-**Delta:** ±0(+2/-2)
+##### Core/Matrix/MatrixView.tsx
 
 ```/Core/Matrix/MatrixView.tsx diff
 @@ -32 +32 @@ export function MatrixView(): React.JSX.Element {
@@ -559,11 +361,7 @@ DOCS: +4(+39/-35)
    const menu = async (id: string): Promise<void> => {
 ```
 
----
-
-##### /Core/Matrix/matrixConfig.ts
-
-**Delta:** -8(+4/-12)
+##### Core/Matrix/matrixConfig.ts
 
 ```/Core/Matrix/matrixConfig.ts diff
 @@ -1 +1 @@
@@ -623,11 +421,7 @@ DOCS: +4(+39/-35)
        location: forcesFor('location'),
 ```
 
----
-
-##### /Core/Matrix/matrixGraph.ts
-
-**Delta:** ±0(+1/-1)
+##### Core/Matrix/matrixGraph.ts
 
 ```/Core/Matrix/matrixGraph.ts diff
 @@ -1 +1 @@
@@ -641,11 +435,7 @@ DOCS: +4(+39/-35)
  export interface MatrixLink extends Pick<PageRelationRow, 'path' | 'kind' | 'target'> {
 ```
 
----
-
-##### /Core/Matrix/matrixInput.ts
-
-**Delta:** +6(+12/-6)
+##### Core/Matrix/matrixInput.ts
 
 ```/Core/Matrix/matrixInput.ts diff
 @@ -7 +7 @@ import { spaceRowOf } from '../Properties/pageRow'
@@ -691,11 +481,7 @@ DOCS: +4(+39/-35)
      for (const s of g.spaces) {
 ```
 
----
-
-##### /Core/Navigation/previewRules.ts
-
-**Delta:** +51(+51/-0)
+##### Core/Navigation/previewRules.ts
 
 ```/Core/Navigation/previewRules.ts diff
 @@ -0 +1 @@
@@ -752,11 +538,7 @@ DOCS: +4(+39/-35)
 +}
 ```
 
----
-
-##### /Core/Navigation/useNavData.ts
-
-**Delta:** ±0(+4/-4)
+##### Core/Navigation/useNavData.ts
 
 ```/Core/Navigation/useNavData.ts diff
 @@ -18 +18 @@ export function useNavData(): {
@@ -784,11 +566,7 @@ DOCS: +4(+39/-35)
    return { resolvedRecents, resolvedPins, search, go }
 ```
 
----
-
-##### /Core/Nexus/configReach.ts
-
-**Delta:** +21(+36/-15)
+##### Core/Nexus/configReach.ts
 
 ```/Core/Nexus/configReach.ts diff
 @@ -1 +1 @@
@@ -879,11 +657,7 @@ DOCS: +4(+39/-35)
  }
 ```
 
----
-
-##### /Core/Nexus/containerFields.ts
-
-**Delta:** -1(+1/-2)
+##### Core/Nexus/containerFields.ts
 
 ```/Core/Nexus/containerFields.ts diff
 @@ -3 +3 @@
@@ -905,11 +679,7 @@ DOCS: +4(+39/-35)
  }
 ```
 
----
-
-##### /Core/Nexus/schemas.ts
-
-**Delta:** -2(+1/-3)
+##### Core/Nexus/schemas.ts
 
 ```/Core/Nexus/schemas.ts diff
 @@ -3 +3 @@
@@ -929,11 +699,7 @@ DOCS: +4(+39/-35)
  export const crop = z.object({
 ```
 
----
-
-##### /Core/Nexus/tree.ts
-
-**Delta:** -1(+1/-2)
+##### Core/Nexus/tree.ts
 
 ```/Core/Nexus/tree.ts diff
 @@ -1 +1 @@
@@ -955,11 +721,7 @@ DOCS: +4(+39/-35)
  }
 ```
 
----
-
-##### /Core/Properties/Cells/PropertyTypes.tsx
-
-**Delta:** +5(+5/-0)
+##### Core/Properties/Cells/PropertyTypes.tsx
 
 ```/Core/Properties/Cells/PropertyTypes.tsx diff
 @@ -67 +67 @@ export const TITLE_TARGET: PaneTarget = {
@@ -976,11 +738,7 @@ DOCS: +4(+39/-35)
  )
 ```
 
----
-
-##### /Core/Session/configSlice.ts
-
-**Delta:** +1(+2/-1)
+##### Core/Session/configSlice.ts
 
 ```/Core/Session/configSlice.ts diff
 @@ -13 +13 @@ import { dialer } from '../Platform/dialer'
@@ -1002,11 +760,7 @@ DOCS: +4(+39/-35)
          ? {
 ```
 
----
-
-##### /Core/Session/matrixSlice.ts
-
-**Delta:** ±0(+1/-1)
+##### Core/Session/matrixSlice.ts
 
 ```/Core/Session/matrixSlice.ts diff
 @@ -2 +2 @@ import type { Lens } from '../Matrix/Engine/viewport'
@@ -1026,11 +780,7 @@ DOCS: +4(+39/-35)
  import { persist } from '../Interface/Notifications/notifications'
 ```
 
----
-
-##### /Core/Session/navigationSlice.ts
-
-**Delta:** +16(+16/-0)
+##### Core/Session/navigationSlice.ts
 
 ```/Core/Session/navigationSlice.ts diff
 @@ -15 +15 @@ import {
@@ -1072,11 +822,7 @@ DOCS: +4(+39/-35)
        const newTab =
 ```
 
----
-
-##### /Core/Session/pageConnections.ts
-
-**Delta:** +1(+6/-5)
+##### Core/Session/pageConnections.ts
 
 ```/Core/Session/pageConnections.ts diff
 @@ -12 +12 @@ type Session = ReturnType<typeof useSession.getState>
@@ -1110,11 +856,7 @@ DOCS: +4(+39/-35)
        headingsOf,
 ```
 
----
-
-##### /Core/Settings/ExcludedDirectoriesRow.tsx
-
-**Delta:** -25(+45/-70)
+##### Core/Settings/ExcludedDirectoriesRow.tsx
 
 ```/Core/Settings/ExcludedDirectoriesRow.tsx diff
 @@ -1 +1 @@
@@ -1265,11 +1007,7 @@ DOCS: +4(+39/-35)
  }
 ```
 
----
-
-##### /Core/Settings/ManageRow.tsx
-
-**Delta:** +47(+47/-0)
+##### Core/Settings/ManageRow.tsx
 
 ```/Core/Settings/ManageRow.tsx diff
 @@ -0 +1 @@
@@ -1322,11 +1060,7 @@ DOCS: +4(+39/-35)
 +}
 ```
 
----
-
-##### /Core/Settings/PreviewRulesRow.tsx
-
-**Delta:** +40(+40/-0)
+##### Core/Settings/PreviewRulesRow.tsx
 
 ```/Core/Settings/PreviewRulesRow.tsx diff
 @@ -0 +1 @@
@@ -1372,11 +1106,7 @@ DOCS: +4(+39/-35)
 +}
 ```
 
----
-
-##### /Core/Settings/SettingsWindow.tsx
-
-**Delta:** +3(+3/-0)
+##### Core/Settings/SettingsWindow.tsx
 
 ```/Core/Settings/SettingsWindow.tsx diff
 @@ -27 +27 @@ import { DEVICE_DEFAULTS, DEVICE_RANGES, type DeviceDefaultKey, devicePref } fro
@@ -1398,11 +1128,7 @@ DOCS: +4(+39/-35)
      case 'color':
 ```
 
----
-
-##### /Core/Settings/frames.ts
-
-**Delta:** +14(+14/-0)
+##### Core/Settings/frames.ts
 
 ````/Core/Settings/frames.ts diff
 @@ -103 +103 @@ export type Row =
@@ -1442,11 +1168,7 @@ DOCS: +4(+39/-35)
        {
 ````
 
----
-
-##### /Core/Settings/personalization.ts
-
-**Delta:** +3(+3/-0)
+##### Core/Settings/personalization.ts
 
 ```/Core/Settings/personalization.ts diff
 @@ -2 +2 @@ import { z } from 'zod'
@@ -1475,11 +1197,7 @@ DOCS: +4(+39/-35)
    inPageHeadingResolution: oneOf(IN_PAGE_HEADING_RESOLUTIONS, 'explicit'),
 ```
 
----
-
-##### /Core/Settings/settings-rows.css.ts
-
-**Delta:** -6(+2/-8)
+##### Core/Settings/settings-rows.css.ts
 
 ```/Core/Settings/settings-rows.css.ts diff
 @@ -16 +16 @@ export const count = style([
@@ -1510,11 +1228,7 @@ DOCS: +4(+39/-35)
  globalStyle(`${paneRow} ${navTrailSegment}`, { color: c.label.control })
 ```
 
----
-
-##### /Core/Sync/Arrival/mergePolicy.ts
-
-**Delta:** ±0(+1/-1)
+##### Core/Sync/Arrival/mergePolicy.ts
 
 ```/Core/Sync/Arrival/mergePolicy.ts diff
 @@ -26 +26 @@ export function mergeDepthFor(rel: string): Depth {
@@ -1528,11 +1242,7 @@ DOCS: +4(+39/-35)
      case nexusConfigRel('properties'):
 ```
 
----
-
-##### /Core/Testing/configSurfaces.ts
-
-**Delta:** +8(+8/-0)
+##### Core/Testing/configSurfaces.ts
 
 ```/Core/Testing/configSurfaces.ts diff
 @@ -13 +13 @@ interface ConfigViews {
@@ -1566,11 +1276,7 @@ DOCS: +4(+39/-35)
  }
 ```
 
----
-
-##### /Core/Tiles/TileHost.tsx
-
-**Delta:** ±0(+3/-3)
+##### Core/Tiles/TileHost.tsx
 
 ```/Core/Tiles/TileHost.tsx diff
 @@ -86 +86 @@ export function TileHost({
@@ -1602,11 +1308,7 @@ DOCS: +4(+39/-35)
    )
 ```
 
----
-
-##### /Core/Views/containerConfig.ts
-
-**Delta:** -15(+4/-19)
+##### Core/Views/containerConfig.ts
 
 ```/Core/Views/containerConfig.ts diff
 @@ -1 +1 @@
@@ -1646,11 +1348,7 @@ DOCS: +4(+39/-35)
  }
 ```
 
----
-
-##### /Core/Views/filterModel.ts
-
-**Delta:** -47(+27/-74)
+##### Core/Views/filterModel.ts
 
 ```/Core/Views/filterModel.ts diff
 @@ -2 +2 @@
@@ -1821,11 +1519,7 @@ DOCS: +4(+39/-35)
      ...schemaTargets(schema, (d) => operatorsFor(d.id, schema, contextIds).length > 0),
 ```
 
----
-
-##### /Core/Views/filterRules.ts
-
-**Delta:** +93(+93/-0)
+##### Core/Views/filterRules.ts
 
 ```/Core/Views/filterRules.ts diff
 @@ -0 +1 @@
@@ -1924,11 +1618,7 @@ DOCS: +4(+39/-35)
 +  f.enabled && f.rules !== null
 ```
 
----
-
-##### /Core/Views/handlers.ts
-
-**Delta:** -4(+5/-9)
+##### Core/Views/handlers.ts
 
 ```/Core/Views/handlers.ts diff
 @@ -1 +1 @@
@@ -1961,11 +1651,7 @@ DOCS: +4(+39/-35)
      if (typeof containerPath !== 'string' || (pageIds !== undefined && !isStringArray(pageIds)))
 ```
 
----
-
-##### /Core/Views/loadValues.ts
-
-**Delta:** -22(+1/-23)
+##### Core/Views/loadValues.ts
 
 ```/Core/Views/loadValues.ts diff
 @@ -1 +1 @@
@@ -2003,11 +1689,7 @@ DOCS: +4(+39/-35)
    rootPath: string,
 ```
 
----
-
-##### /Core/Views/pageValues.ts
-
-**Delta:** +17(+17/-0)
+##### Core/Views/pageValues.ts
 
 ```/Core/Views/pageValues.ts diff
 @@ -0 +1 @@
@@ -2030,11 +1712,7 @@ DOCS: +4(+39/-35)
 +}
 ```
 
----
-
-##### /Core/Views/viewRow.ts
-
-**Delta:** -2(+0/-2)
+##### Core/Views/viewRow.ts
 
 ```/Core/Views/viewRow.ts diff
 @@ -1 +1 @@
@@ -2047,11 +1725,7 @@ DOCS: +4(+39/-35)
  export const VIEW_STYLES = ['dropdown', 'toolbar'] as const
 ```
 
----
-
-##### /Core/Views/views.ts
-
-**Delta:** -77(+2/-79)
+##### Core/Views/views.ts
 
 ```/Core/Views/views.ts diff
 @@ -4 +4 @@ import { z } from 'zod'
@@ -2166,11 +1840,7 @@ DOCS: +4(+39/-35)
    const next = xs.map((x, i) => {
 ```
 
----
-
-##### /Core/Views/Host/useViewCreation.ts
-
-**Delta:** +28(+56/-28)
+##### Core/Views/Host/useViewCreation.ts
 
 ```/Core/Views/Host/useViewCreation.ts diff
 @@ -9 +9 @@ import {
@@ -2342,11 +2012,7 @@ DOCS: +4(+39/-35)
    }
 ```
 
----
-
-##### /Core/Views/Host/useViewHost.ts
-
-**Delta:** ±0(+2/-2)
+##### Core/Views/Host/useViewHost.ts
 
 ```/Core/Views/Host/useViewHost.ts diff
 @@ -45 +45 @@ const NO_COLLAPSE = new Set<string>()
@@ -2369,11 +2035,7 @@ DOCS: +4(+39/-35)
      effectiveValues,
 ```
 
----
-
-##### /Core/Views/Host/useViewInteractions.tsx
-
-**Delta:** -11(+7/-18)
+##### Core/Views/Host/useViewInteractions.tsx
 
 ```/Core/Views/Host/useViewInteractions.tsx diff
 @@ -23 +23 @@ import { useSession } from '../../Session/store'
@@ -2431,11 +2093,7 @@ DOCS: +4(+39/-35)
    const [iconOpen, setIconOpen] = useState(false)
 ```
 
----
-
-##### /Core/Views/Pipeline/creationSeeds.ts
-
-**Delta:** +41(+66/-25)
+##### Core/Views/Pipeline/creationSeeds.ts
 
 ```/Core/Views/Pipeline/creationSeeds.ts diff
 @@ -1 +1 @@
@@ -2549,11 +2207,7 @@ DOCS: +4(+39/-35)
  }
 ```
 
----
-
-##### /Core/Views/Pipeline/filter.ts
-
-**Delta:** +10(+24/-14)
+##### Core/Views/Pipeline/filter.ts
 
 ```/Core/Views/Pipeline/filter.ts diff
 @@ -7 +7 @@ import {
@@ -2664,11 +2318,7 @@ DOCS: +4(+39/-35)
    }
 ```
 
----
-
-##### /Core/Views/Pipeline/group.ts
-
-**Delta:** -2(+8/-10)
+##### Core/Views/Pipeline/group.ts
 
 ```/Core/Views/Pipeline/group.ts diff
 @@ -1 +1 @@
@@ -2731,11 +2381,7 @@ DOCS: +4(+39/-35)
        kind: 'set',
 ```
 
----
-
-##### /Core/Views/Settings/FilterFrame.tsx
-
-**Delta:** -158(+125/-283)
+##### Core/Views/Settings/FilterFrame.tsx
 
 ```/Core/Views/Settings/FilterFrame.tsx diff
 @@ -1 +1 @@
@@ -3362,11 +3008,7 @@ DOCS: +4(+39/-35)
      </MenuScrollFrame>
 ```
 
----
-
-##### /Core/Views/Settings/LocationField.tsx
-
-**Delta:** +208(+208/-0)
+##### Core/Views/Settings/LocationField.tsx
 
 ```/Core/Views/Settings/LocationField.tsx diff
 @@ -0 +1 @@
@@ -3580,11 +3222,7 @@ DOCS: +4(+39/-35)
 +}
 ```
 
----
-
-##### /Core/Views/Settings/SettingsFrame.tsx
-
-**Delta:** -38(+2/-40)
+##### Core/Views/Settings/SettingsFrame.tsx
 
 ```/Core/Views/Settings/SettingsFrame.tsx diff
 @@ -1 +1 @@
@@ -3693,11 +3331,7 @@ DOCS: +4(+39/-35)
            <PropertyFrame
 ```
 
----
-
-##### /Core/Views/Settings/ViewFrame.tsx
-
-**Delta:** -1(+0/-1)
+##### Core/Views/Settings/ViewFrame.tsx
 
 ```/Core/Views/Settings/ViewFrame.tsx diff
 @@ -110 +110 @@ export function ViewFrame({
@@ -3710,11 +3344,7 @@ DOCS: +4(+39/-35)
                onClick={() => {}}
 ```
 
----
-
-##### /Core/Views/Settings/ViewItemMenu.tsx
-
-**Delta:** -1(+0/-1)
+##### Core/Views/Settings/ViewItemMenu.tsx
 
 ```/Core/Views/Settings/ViewItemMenu.tsx diff
 @@ -32 +32 @@ export function ViewItemMenu({
@@ -3727,11 +3357,7 @@ DOCS: +4(+39/-35)
        />
 ```
 
----
-
-##### /Core/Views/Settings/ViewLeaf.tsx
-
-**Delta:** -1(+1/-2)
+##### Core/Views/Settings/ViewLeaf.tsx
 
 ```/Core/Views/Settings/ViewLeaf.tsx diff
 @@ -43 +43 @@ export function ViewLeaf({
@@ -3746,11 +3372,7 @@ DOCS: +4(+39/-35)
        )
 ```
 
----
-
-##### /Core/Views/Settings/filter-frame.css.ts
-
-**Delta:** -35(+2/-37)
+##### Core/Views/Settings/filter-frame.css.ts
 
 ```/Core/Views/Settings/filter-frame.css.ts diff
 @@ -1 +1 @@
@@ -3828,11 +3450,7 @@ DOCS: +4(+39/-35)
    {
 ```
 
----
-
-##### /Core/Views/Settings/valueField.tsx
-
-**Delta:** +21(+21/-0)
+##### Core/Views/Settings/valueField.tsx
 
 ```/Core/Views/Settings/valueField.tsx diff
 @@ -0 +1 @@
@@ -3859,11 +3477,7 @@ DOCS: +4(+39/-35)
 +}
 ```
 
----
-
-##### /UIX/Fields/FieldRun.tsx
-
-**Delta:** ±0(+2/-2)
+##### UIX/Fields/FieldRun.tsx
 
 ```/UIX/Fields/FieldRun.tsx diff
 @@ -3 +3 @@ import { OverScroll } from '../Interactions/OverScroll'
@@ -3886,11 +3500,7 @@ DOCS: +4(+39/-35)
            </span>
 ```
 
----
-
-##### /UIX/Fields/InputField.tsx
-
-**Delta:** +8(+10/-2)
+##### UIX/Fields/InputField.tsx
 
 ```/UIX/Fields/InputField.tsx diff
 @@ -1 +1 @@
@@ -3947,11 +3557,7 @@ DOCS: +4(+39/-35)
      >
 ```
 
----
-
-##### /UIX/Fields/TokenField.tsx
-
-**Delta:** +76(+76/-0)
+##### UIX/Fields/TokenField.tsx
 
 ```/UIX/Fields/TokenField.tsx diff
 @@ -0 +1 @@
@@ -4033,11 +3639,7 @@ DOCS: +4(+39/-35)
 +}
 ```
 
----
-
-##### /UIX/Fields/field-run.css.ts
-
-**Delta:** ±0(+2/-2)
+##### UIX/Fields/field-run.css.ts
 
 ```/UIX/Fields/field-run.css.ts diff
 @@ -13 +13 @@ export const fieldRun = style({
@@ -4060,11 +3662,7 @@ DOCS: +4(+39/-35)
  export const runDivider = style([segment, { alignSelf: 'stretch', marginBlock: RUN_DIVIDER_INSET }])
 ```
 
----
-
-##### /UIX/Fields/fields.css.ts
-
-**Delta:** +9(+9/-0)
+##### UIX/Fields/fields.css.ts
 
 ```/UIX/Fields/fields.css.ts diff
 @@ -127 +127 @@ export const invalidInput = style({
@@ -4085,11 +3683,7 @@ DOCS: +4(+39/-35)
  
 ```
 
----
-
-##### /UIX/Interactions/dismissalStack.ts
-
-**Delta:** +7(+8/-1)
+##### UIX/Interactions/dismissalStack.ts
 
 ```/UIX/Interactions/dismissalStack.ts diff
 @@ -8 +8 @@ type DismissalEntry = {
@@ -4124,11 +3718,7 @@ DOCS: +4(+39/-35)
        },
 ```
 
----
-
-##### /UIX/Interactions/paneCtl.ts
-
-**Delta:** +53(+53/-0)
+##### UIX/Interactions/paneCtl.ts
 
 ```/UIX/Interactions/paneCtl.ts diff
 @@ -0 +1 @@
@@ -4187,11 +3777,7 @@ DOCS: +4(+39/-35)
 +}
 ```
 
----
-
-##### /UIX/Menus/DisclosureRow.tsx
-
-**Delta:** +3(+4/-1)
+##### UIX/Menus/DisclosureRow.tsx
 
 ```/UIX/Menus/DisclosureRow.tsx diff
 @@ -1 +1 @@
@@ -4223,11 +3809,7 @@ DOCS: +4(+39/-35)
        className={className}
 ```
 
----
-
-##### /UIX/Menus/MenuRows.tsx
-
-**Delta:** -4(+0/-4)
+##### UIX/Menus/MenuRows.tsx
 
 ```/UIX/Menus/MenuRows.tsx diff
 @@ -256 +256 @@ export function FootingCreate({
@@ -4264,11 +3846,7 @@ DOCS: +4(+39/-35)
          e.stopPropagation()
 ```
 
----
-
-##### /UIX/Menus/menu-row.css.ts
-
-**Delta:** ±0(+1/-1)
+##### UIX/Menus/menu-row.css.ts
 
 ```/UIX/Menus/menu-row.css.ts diff
 @@ -258 +258 @@ export const footingSymbol = style({ display: 'inline-flex', color: c.label.seco
@@ -4282,11 +3860,7 @@ DOCS: +4(+39/-35)
  })
 ```
 
----
-
-##### /UIX/Pickers/PickerMenu.tsx
-
-**Delta:** +1(+3/-2)
+##### UIX/Pickers/PickerMenu.tsx
 
 ```/UIX/Pickers/PickerMenu.tsx diff
 @@ -103 +103 @@ export function PickerMenu({
@@ -4311,11 +3885,7 @@ DOCS: +4(+39/-35)
    useEffect(
 ```
 
----
-
-##### /UIX/Symbols/index.tsx
-
-**Delta:** +6(+6/-0)
+##### UIX/Symbols/index.tsx
 
 ```/UIX/Symbols/index.tsx diff
 @@ -29 +29 @@ import {
@@ -4359,11 +3929,7 @@ DOCS: +4(+39/-35)
    'progress-check': ProgressCheck,
 ```
 
----
-
-##### /UIX/Table/table.css
-
-**Delta:** -1(+3/-4)
+##### UIX/Table/table.css
 
 ```/UIX/Table/table.css diff
 @@ -217 +217 @@
@@ -4389,11 +3955,7 @@ DOCS: +4(+39/-35)
  /* A row's value seat insets a plain value as a chip insets its label, so the two read on one edge. */
 ```
 
----
-
-##### /UIX/Utilities/pad.ts
-
-**Delta:** +7(+7/-0)
+##### UIX/Utilities/pad.ts
 
 ```/UIX/Utilities/pad.ts diff
 @@ -4 +4 @@ export const pad = (n: number, width = 2): string => String(n).padStart(width, '
@@ -4411,9 +3973,7 @@ DOCS: +4(+39/-35)
 
 ---
 
-##### /Core/Files/sidecar.test.ts
-
-**Delta:** -2(+2/-4)
+##### Core/Files/sidecar.test.ts
 
 ```/Core/Files/sidecar.test.ts diff
 @@ -35 +35 @@ describe('sidecarId', () => {
@@ -4434,11 +3994,7 @@ DOCS: +4(+39/-35)
    it('refuses a missing sidecar and one without an id, writing nothing', async () => {
 ```
 
----
-
-##### /Core/Matrix/MatrixMenu.test.tsx
-
-**Delta:** +23(+23/-0)
+##### Core/Matrix/MatrixMenu.test.tsx
 
 ```/Core/Matrix/MatrixMenu.test.tsx diff
 @@ -7 +7 @@ import { useSession } from '../Session/store'
@@ -4480,11 +4036,7 @@ DOCS: +4(+39/-35)
      click(control('Lock Layout'))
 ```
 
----
-
-##### /Core/Matrix/matrixGraph.test.ts
-
-**Delta:** ±0(+5/-5)
+##### Core/Matrix/matrixGraph.test.ts
 
 ```/Core/Matrix/matrixGraph.test.ts diff
 @@ -3 +3 @@ import { markIndexReady } from '../Index/contentIndex'
@@ -4518,11 +4070,7 @@ DOCS: +4(+39/-35)
    it('drops an id-less markdown file, its rows included', () => {
 ```
 
----
-
-##### /Core/Matrix/matrixInput.test.ts
-
-**Delta:** ±0(+2/-2)
+##### Core/Matrix/matrixInput.test.ts
 
 ```/Core/Matrix/matrixInput.test.ts diff
 @@ -2 +2 @@ import { describe, expect, it } from 'vitest'
@@ -4545,11 +4093,7 @@ DOCS: +4(+39/-35)
  })
 ```
 
----
-
-##### /Core/Navigation/previewRules.test.ts
-
-**Delta:** +118(+118/-0)
+##### Core/Navigation/previewRules.test.ts
 
 ```/Core/Navigation/previewRules.test.ts diff
 @@ -0 +1 @@
@@ -4673,11 +4217,7 @@ DOCS: +4(+39/-35)
 +})
 ```
 
----
-
-##### /Core/Nexus/configReach.test.ts
-
-**Delta:** +82(+94/-12)
+##### Core/Nexus/configReach.test.ts
 
 ```/Core/Nexus/configReach.test.ts diff
 @@ -99 +99 @@ const setFile = (): string => join(set(), SIDECAR_FILENAME.set)
@@ -4853,11 +4393,7 @@ DOCS: +4(+39/-35)
      expect(await Promise.all(files.map(async (f) => (await stat(f)).mtimeMs))).toEqual(before)
 ```
 
----
-
-##### /Core/Nexus/schemas.containerConfig.test.ts
-
-**Delta:** -9(+1/-10)
+##### Core/Nexus/schemas.containerConfig.test.ts
 
 ```/Core/Nexus/schemas.containerConfig.test.ts diff
 @@ -1 +1 @@
@@ -4878,11 +4414,7 @@ DOCS: +4(+39/-35)
    it('accepts valid values, drops junk', () => {
 ```
 
----
-
-##### /Core/Properties/deleteProperty.test.ts
-
-**Delta:** +1(+3/-2)
+##### Core/Properties/deleteProperty.test.ts
 
 ```/Core/Properties/deleteProperty.test.ts diff
 @@ -296 +296 @@ describe('a delete reaches saved views', () => {
@@ -4906,11 +4438,7 @@ DOCS: +4(+39/-35)
    it('clears every field that names the property on the Collection, the Set, the tile, and the Matrix', async () => {
 ```
 
----
-
-##### /Core/Properties/handlers.test.ts
-
-**Delta:** -3(+4/-7)
+##### Core/Properties/handlers.test.ts
 
 ```/Core/Properties/handlers.test.ts diff
 @@ -134 +134 @@ describe('the property channels', () => {
@@ -4954,11 +4482,7 @@ DOCS: +4(+39/-35)
    })
 ```
 
----
-
-##### /Core/Properties/optionOps.test.ts
-
-**Delta:** ±0(+2/-2)
+##### Core/Properties/optionOps.test.ts
 
 ```/Core/Properties/optionOps.test.ts diff
 @@ -755 +755 @@ describe('option cascades reach saved views', () => {
@@ -4981,11 +4505,7 @@ DOCS: +4(+39/-35)
  
 ```
 
----
-
-##### /Core/Properties/removeProperty.test.ts
-
-**Delta:** ±0(+1/-1)
+##### Core/Properties/removeProperty.test.ts
 
 ```/Core/Properties/removeProperty.test.ts diff
 @@ -196 +196 @@ describe('removeProperty reaches saved views (B-6)', () => {
@@ -4999,11 +4519,7 @@ DOCS: +4(+39/-35)
      hidden_groups: [],
 ```
 
----
-
-##### /Core/Properties/replaySchemaCascade.test.ts
-
-**Delta:** ±0(+2/-2)
+##### Core/Properties/replaySchemaCascade.test.ts
 
 ```/Core/Properties/replaySchemaCascade.test.ts diff
 @@ -403 +403 @@ describe('option replay reaches saved views', () => {
@@ -5020,11 +4536,7 @@ DOCS: +4(+39/-35)
    })
 ```
 
----
-
-##### /Core/Session/configSlice.test.ts
-
-**Delta:** +6(+6/-0)
+##### Core/Session/configSlice.test.ts
 
 ```/Core/Session/configSlice.test.ts diff
 @@ -36 +36 @@ describe('a setting at its fallback stores no key', () => {
@@ -5042,11 +4554,7 @@ DOCS: +4(+39/-35)
      expect(save).toHaveBeenLastCalledWith('tabMaxWidth', 174)
 ```
 
----
-
-##### /Core/Session/openTarget.test.tsx
-
-**Delta:** +104(+104/-0)
+##### Core/Session/openTarget.test.tsx
 
 ```/Core/Session/openTarget.test.tsx diff
 @@ -0 +1 @@
@@ -5156,11 +4664,7 @@ DOCS: +4(+39/-35)
 +})
 ```
 
----
-
-##### /Core/Settings/ExclusionRows.test.tsx
-
-**Delta:** -5(+3/-8)
+##### Core/Settings/ExclusionRows.test.tsx
 
 ```/Core/Settings/ExclusionRows.test.tsx diff
 @@ -1 +1 @@
@@ -5198,11 +4702,7 @@ DOCS: +4(+39/-35)
      expect(fieldButtons().length).toBe(1)
 ```
 
----
-
-##### /Core/Settings/PreviewRulesRow.test.tsx
-
-**Delta:** +116(+116/-0)
+##### Core/Settings/PreviewRulesRow.test.tsx
 
 ```/Core/Settings/PreviewRulesRow.test.tsx diff
 @@ -0 +1 @@
@@ -5324,11 +4824,7 @@ DOCS: +4(+39/-35)
 +})
 ```
 
----
-
-##### /Core/Settings/personalization.test.ts
-
-**Delta:** +16(+16/-0)
+##### Core/Settings/personalization.test.ts
 
 ```/Core/Settings/personalization.test.ts diff
 @@ -5 +5 @@ import {
@@ -5363,11 +4859,7 @@ DOCS: +4(+39/-35)
      const p = readPersonalization({ heading2Size: 2, heading6Size: 7, heading3Size: 'x' })
 ```
 
----
-
-##### /Core/Sync/Arrival/mergePolicy.test.ts
-
-**Delta:** +23(+24/-1)
+##### Core/Sync/Arrival/mergePolicy.test.ts
 
 ```/Core/Sync/Arrival/mergePolicy.test.ts diff
 @@ -102 +102 @@ describe('mergeKeys', () => {
@@ -5411,11 +4903,7 @@ DOCS: +4(+39/-35)
      const base = { forces: { connection: { gravity: 1.5 } } }
 ```
 
----
-
-##### /Core/Trash/deleteReach.test.ts
-
-**Delta:** +27(+39/-12)
+##### Core/Trash/deleteReach.test.ts
 
 ```/Core/Trash/deleteReach.test.ts diff
 @@ -3 +3 @@ import { settleNow } from '../Nexus/settle'
@@ -5557,11 +5045,7 @@ DOCS: +4(+39/-35)
  })
 ```
 
----
-
-##### /Core/Views/filterModel.test.ts
-
-**Delta:** -49(+43/-92)
+##### Core/Views/filterModel.test.ts
 
 ```/Core/Views/filterModel.test.ts diff
 @@ -1 +1 @@
@@ -5745,11 +5229,7 @@ DOCS: +4(+39/-35)
    it('offers no Context targets when there is no tree', () => {
 ```
 
----
-
-##### /Core/Views/handlers.test.ts
-
-**Delta:** +50(+50/-0)
+##### Core/Views/handlers.test.ts
 
 ```/Core/Views/handlers.test.ts diff
 @@ -0 +1 @@
@@ -5805,11 +5285,7 @@ DOCS: +4(+39/-35)
 +})
 ```
 
----
-
-##### /Core/Views/viewWrite.test.tsx
-
-**Delta:** -9(+0/-9)
+##### Core/Views/viewWrite.test.tsx
 
 ```/Core/Views/viewWrite.test.tsx diff
 @@ -198 +198 @@ describe('a locked view-embed scope', () => {
@@ -5830,11 +5306,7 @@ DOCS: +4(+39/-35)
  describe('saveViewIn — the write every settings frame routes through', () => {
 ```
 
----
-
-##### /Core/Views/views.test.ts
-
-**Delta:** -2(+1/-3)
+##### Core/Views/views.test.ts
 
 ```/Core/Views/views.test.ts diff
 @@ -11 +11 @@ import {
@@ -5857,11 +5329,7 @@ DOCS: +4(+39/-35)
  describe('SavedView decode', () => {
 ```
 
----
-
-##### /Core/Views/viewsFile.test.ts
-
-**Delta:** ±0(+1/-1)
+##### Core/Views/viewsFile.test.ts
 
 ```/Core/Views/viewsFile.test.ts diff
 @@ -215 +215 @@ describe('container writes keep what this build does not decode', () => {
@@ -5875,11 +5343,7 @@ DOCS: +4(+39/-35)
      const { setChildOrder } = await import('../Nexus/reorder')
 ```
 
----
-
-##### /Core/Views/Cards/cardGestures.test.tsx
-
-**Delta:** +3(+5/-2)
+##### Core/Views/Cards/cardGestures.test.tsx
 
 ```/Core/Views/Cards/cardGestures.test.tsx diff
 @@ -112 +112 @@ describe('opening a card', () => {
@@ -5898,11 +5362,7 @@ DOCS: +4(+39/-35)
      await clickTitle('p1', true)
 ```
 
----
-
-##### /Core/Views/Host/useViewHost.test.tsx
-
-**Delta:** +30(+30/-0)
+##### Core/Views/Host/useViewHost.test.tsx
 
 ```/Core/Views/Host/useViewHost.test.tsx diff
 @@ -819 +819 @@ describe('settleOrders — a create composes with the live order', () => {
@@ -5944,11 +5404,7 @@ DOCS: +4(+39/-35)
    const commits: { band?: string; order: string[] }[] = []
 ```
 
----
-
-##### /Core/Views/Pipeline/creationSeeds.test.ts
-
-**Delta:** +144(+188/-44)
+##### Core/Views/Pipeline/creationSeeds.test.ts
 
 ```/Core/Views/Pipeline/creationSeeds.test.ts diff
 @@ -1 +1 @@
@@ -6287,11 +5743,7 @@ DOCS: +4(+39/-35)
  })
 ```
 
----
-
-##### /Core/Views/Pipeline/filter.test.ts
-
-**Delta:** +82(+95/-13)
+##### Core/Views/Pipeline/filter.test.ts
 
 ```/Core/Views/Pipeline/filter.test.ts diff
 @@ -1 +1 @@
@@ -6481,11 +5933,7 @@ DOCS: +4(+39/-35)
  })
 ```
 
----
-
-##### /Core/Views/Settings/FilterFrame.test.tsx
-
-**Delta:** +269(+303/-34)
+##### Core/Views/Settings/FilterFrame.test.tsx
 
 ```/Core/Views/Settings/FilterFrame.test.tsx diff
 @@ -9 +9 @@ import { FilterFrame, type FilterView } from './FilterFrame'
@@ -6942,11 +6390,7 @@ DOCS: +4(+39/-35)
        expect.stringContaining(itemPicked.first),
 ```
 
----
-
-##### /Core/Views/Table/bandCommits.test.tsx
-
-**Delta:** +9(+12/-3)
+##### Core/Views/Table/bandCommits.test.tsx
 
 ```/Core/Views/Table/bandCommits.test.tsx diff
 @@ -746 +746 @@ describe('band header — the sidebar interaction model', () => {
@@ -6987,11 +6431,7 @@ DOCS: +4(+39/-35)
    it('right-clicking a Set band pops the set entity menu', async () => {
 ```
 
----
-
-##### /Core/Views/Table/cellGestures.test.tsx
-
-**Delta:** +3(+4/-1)
+##### Core/Views/Table/cellGestures.test.tsx
 
 ```/Core/Views/Table/cellGestures.test.tsx diff
 @@ -448 +448 @@ describe('open actions + row-click narrowing', () => {
@@ -7008,11 +6448,7 @@ DOCS: +4(+39/-35)
      const row = host.querySelector<HTMLElement>('.data-row')
 ```
 
----
-
-##### /UIX/Fields/TokenField.test.tsx
-
-**Delta:** +125(+125/-0)
+##### UIX/Fields/TokenField.test.tsx
 
 ```/UIX/Fields/TokenField.test.tsx diff
 @@ -0 +1 @@
@@ -7143,11 +6579,7 @@ DOCS: +4(+39/-35)
 +})
 ```
 
----
-
-##### /UIX/Interactions/dismissalStack.test.tsx
-
-**Delta:** +25(+25/-0)
+##### UIX/Interactions/dismissalStack.test.tsx
 
 ```/UIX/Interactions/dismissalStack.test.tsx diff
 @@ -150 +150 @@ describe('the stack', () => {
@@ -7184,11 +6616,7 @@ DOCS: +4(+39/-35)
      const trigger = document.createElement('button')
 ```
 
----
-
-##### /UIX/Interactions/paneCtl.test.tsx
-
-**Delta:** +64(+64/-0)
+##### UIX/Interactions/paneCtl.test.tsx
 
 ```/UIX/Interactions/paneCtl.test.tsx diff
 @@ -0 +1 @@
@@ -7258,11 +6686,7 @@ DOCS: +4(+39/-35)
 +})
 ```
 
----
-
-##### /UIX/Pickers/PickerMenu.test.tsx
-
-**Delta:** +47(+47/-0)
+##### UIX/Pickers/PickerMenu.test.tsx
 
 ```/UIX/Pickers/PickerMenu.test.tsx diff
 @@ -227 +227 @@ describe('PickerMenu focus contract', () => {
@@ -7330,9 +6754,7 @@ DOCS: +4(+39/-35)
 
 ---
 
-##### /.claude/ContextPM.md
-
-**Delta:** ±0(+1/-1)
+##### .claude/ContextPM.md
 
 ```/.claude/ContextPM.md diff
 @@ -30 +30 @@ Findings where the correct answer isn't established in the codebase — design a
@@ -7346,11 +6768,7 @@ DOCS: +4(+39/-35)
  ### Important Information
 ```
 
----
-
-##### /.claude/Features/CollectionsPM.md
-
-**Delta:** -4(+4/-8)
+##### .claude/Features/CollectionsPM.md
 
 ````/.claude/Features/CollectionsPM.md diff
 @@ -1 +1 @@
@@ -7401,11 +6819,7 @@ DOCS: +4(+39/-35)
  
 ````
 
----
-
-##### /.claude/Features/ConfigurationPM.md
-
-**Delta:** +3(+9/-6)
+##### .claude/Features/ConfigurationPM.md
 
 ```/.claude/Features/ConfigurationPM.md diff
 @@ -1 +1 @@
@@ -7464,11 +6878,7 @@ DOCS: +4(+39/-35)
  
 ```
 
----
-
-##### /.claude/Features/ConnectionsPM.md
-
-**Delta:** ±0(+1/-1)
+##### .claude/Features/ConnectionsPM.md
 
 ```/.claude/Features/ConnectionsPM.md diff
 @@ -33 +33 @@ Deleting a page strips the Link property values naming it from every page and Sp
@@ -7482,11 +6892,7 @@ DOCS: +4(+39/-35)
  
 ```
 
----
-
-##### /.claude/Features/ContextsPM.md
-
-**Delta:** ±0(+1/-1)
+##### .claude/Features/ContextsPM.md
 
 ```/.claude/Features/ContextsPM.md diff
 @@ -25 +25 @@ Every Context write runs through `Core/Contexts/contextWrite.ts` and `contextCas
@@ -7500,11 +6906,7 @@ DOCS: +4(+39/-35)
  ### Surfaces
 ```
 
----
-
-##### /.claude/Features/InterfacePM.md
-
-**Delta:** ±0(+1/-1)
+##### .claude/Features/InterfacePM.md
 
 ```/.claude/Features/InterfacePM.md diff
 @@ -65 +65 @@ The floating page window (`Core/Interface/Windows/PageWindow.tsx`): a movable, r
@@ -7518,11 +6920,7 @@ DOCS: +4(+39/-35)
  
 ```
 
----
-
-##### /.claude/Features/NavigationPM.md
-
-**Delta:** ±0(+2/-2)
+##### .claude/Features/NavigationPM.md
 
 ```/.claude/Features/NavigationPM.md diff
 @@ -17 +17 @@ Pins persist as an ordered array in the `navigation` section of `.nexus/state.js
@@ -7543,11 +6941,7 @@ DOCS: +4(+39/-35)
  - **Interaction** — within-zone drag reorders, pinned among pinned and unpinned among unpinned; a page or Space tab tugged off its row moves between the main bar and a floating window's strip at the pointed slot, and a gallery card, list row, sidebar row, Table row, page card, or Set card dropped on either row opens its page, Space, or Set there — a Set on the main row only — in each case without activating the seated tab, and a carried item brings a hidden tab bar or window strip into view while it's held; Ctrl+Tab cycles all tabs, or the Page Window's or NavWindow's tabs while it holds focus; a tab's right-click offers Pin or Unpin and Close, with Preview above them where the tab holds a page, a Space, or the Matrix and the page send rows between; a pinned tab, carrying no label, leads with Open. **Reveal Tab Bar On Hover** hides the bar when idle.
 ```
 
----
-
-##### /.claude/Features/NexusSyncPM.md
-
-**Delta:** ±0(+1/-1)
+##### .claude/Features/NexusSyncPM.md
 
 ```/.claude/Features/NexusSyncPM.md diff
 @@ -60 +60 @@ A landing pushes an unpushed edit first, and captures the local bytes, under the
@@ -7561,11 +6955,7 @@ DOCS: +4(+39/-35)
  
 ```
 
----
-
-##### /.claude/Features/PagesPM.md
-
-**Delta:** ±0(+1/-1)
+##### .claude/Features/PagesPM.md
 
 ```/.claude/Features/PagesPM.md diff
 @@ -17 +17 @@ Every creation surface — the sidebar, a table row, a card, the grid — runs o
@@ -7579,11 +6969,7 @@ DOCS: +4(+39/-35)
  
 ```
 
----
-
-##### /.claude/Features/PommoraUIX.md
-
-**Delta:** +2(+6/-4)
+##### .claude/Features/PommoraUIX.md
 
 ```/.claude/Features/PommoraUIX.md diff
 @@ -3 +3 @@
@@ -7628,11 +7014,7 @@ DOCS: +4(+39/-35)
  | IconPicker | `IconPicker` · `IconFavorites` | The searchable glyph grid with a reorderable icon-favorites strip; the app binds icon favorites through `UIX/Pickers/IconPicker`. |
 ```
 
----
-
-##### /.claude/Features/ViewTypesPM.md
-
-**Delta:** +2(+7/-5)
+##### .claude/Features/ViewTypesPM.md
 
 ```/.claude/Features/ViewTypesPM.md diff
 @@ -11 +11 @@ The **active view** is the container sidecar's `active_view` field, so the view
@@ -7682,11 +7064,7 @@ DOCS: +4(+39/-35)
  ### The View Host
 ```
 
----
-
-##### /.claude/Planning/Cross-Device Mutation Checklist.md
-
-**Delta:** +1(+2/-1)
+##### .claude/Planning/Cross-Device Mutation Checklist.md
 
 ```/.claude/Planning/Cross-Device Mutation Checklist.md diff
 @@ -65 +65 @@ Every typed value is written by `Core/Properties/setProperty.ts` `setPropertyOp`
@@ -7708,11 +7086,7 @@ DOCS: +4(+39/-35)
  | Set the profile icon | `Core/Nexus/mutate.ts` `setProfileIcon` → `Core/Settings/settings.ts` `updateSettings` | `.nexus/settings.json`, `profile_icon` | The icon renders | not measured |
 ```
 
----
-
-##### /.claude/Planning/Navigation Improvements — Design Specification.md
-
-**Delta:** ±0(+2/-2)
+##### .claude/Planning/Navigation Improvements — Design Specification.md
 
 ```/.claude/Planning/Navigation Improvements — Design Specification.md diff
 @@ -111 +111 @@ The NavWindow's window-local glue — frozen recents, the recents reorder, and t
@@ -7735,11 +7109,7 @@ DOCS: +4(+39/-35)
  - **G-5:** [INFERRED] The root row always shows its children and carries no disclosure or drag, so a collapsed or locked folder never opens the window onto a single row.
 ```
 
----
-
-##### /.claude/Planning/Data Layer — Investigation Reports/A — Model & Read Path.md
-
-**Delta:** ±0(+1/-1)
+##### .claude/Planning/Data Layer — Investigation Reports/A — Model & Read Path.md
 
 ```/.claude/Planning/Data Layer — Investigation Reports/A — Model & Read Path.md diff
 @@ -352 +352 @@ One reader serving all three callers produces: the admission result (member with
