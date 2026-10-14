@@ -1,5 +1,4 @@
 import { useRef, useState } from 'react'
-import { Button } from '@pommora/uix/Buttons/Button'
 import type { CollectionNode, NexusTree, SetNode } from '../../Nexus/tree'
 import type { PickOption, PropertyDefinition } from '../../Properties/properties'
 import { type SavedView, viewOption } from '../views'
@@ -11,17 +10,18 @@ import { leading } from '@pommora/uix/Fields/fields.css'
 import { EntityIcon } from '../../Assets/EntityIcon'
 import { colorNameFor } from '@pommora/uix/Theme/ramp'
 import {
+  AccessoryButton,
   DisclosureRow,
   MenuFooting,
   MenuCaption,
   MenuItem,
+  FootingCreate,
   FootingItem,
   MenuScrollFrame,
   MenuTopRow,
   pickRuns,
   useDisclosureSet,
 } from '@pommora/uix/Menus'
-import { accessoryButton } from '@pommora/uix/Menus/menu-row.css'
 import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
 import { PICKER_MAX_HEIGHT, treePane } from '@pommora/uix/Pickers/picker-base.css'
 import { OverScroll } from '@pommora/uix/Interactions/OverScroll'
@@ -317,14 +317,6 @@ function ChipsField({
   )
 }
 
-function RemoveButton({ onClick }: { onClick: () => void }): React.JSX.Element {
-  return (
-    <button type="button" className={fp.removeButton} aria-label="Remove filter" onClick={onClick}>
-      <Icon name="x" size="caption" />
-    </button>
-  )
-}
-
 function flattenNodes(
   nodes: (CollectionNode | SetNode)[] | undefined,
 ): (CollectionNode | SetNode)[] {
@@ -575,7 +567,12 @@ export function FilterFrame({
             }
           </FieldPicker>
           {valueCell(rule, index, current)}
-          <RemoveButton onClick={() => removeRow(index)} />
+          <AccessoryButton
+            icon="x"
+            size="control"
+            ariaLabel="Remove filter"
+            onClick={() => removeRow(index)}
+          />
         </div>
       </Reveal>
     )
@@ -595,7 +592,14 @@ export function FilterFrame({
         </FieldPicker>
         <span className={cx(fp.controlField, fp.blankNarrow)} />
         <span className={fp.valueField} />
-        {!lead && <RemoveButton onClick={() => setDrafting(false)} />}
+        {!lead && (
+          <AccessoryButton
+            icon="x"
+            size="control"
+            ariaLabel="Remove filter"
+            onClick={() => setDrafting(false)}
+          />
+        )}
       </div>
     </Reveal>
   )
@@ -636,16 +640,7 @@ export function FilterFrame({
         <div className={fp.ruleList}>
           {rules.map(ruleRow)}
           {draftRow}
-          <Button
-            size="button-inline"
-            paddingX="0"
-            icon="plus"
-            iconSize="body"
-            className={accessoryButton}
-            data-create
-            aria-label="Add filter rule"
-            onClick={() => setDrafting(true)}
-          />
+          <FootingCreate ariaLabel="Add filter rule" onClick={() => setDrafting(true)} />
         </div>
       )}
     </MenuScrollFrame>

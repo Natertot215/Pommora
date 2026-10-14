@@ -217,7 +217,7 @@
 }
 /* The room the pen takes while it shows: its box and one step. */
 .cell-text-host:has(> .cell-pen) {
-  --pen-room: calc(var(--reveal, 0) * (var(--accessory-box, 20px) + 4px));
+  --pen-room: calc(var(--reveal, 0) * (20px + 4px));
 }
 /* A margin, not padding: a scrolled line runs under its own padding. */
 .cell-text-host:has(> .cell-pen) .cell-text {
@@ -236,9 +236,8 @@
 .data-cell .cell-text-host:has(> .cell-pen) > .cell-text-clip {
   mask-image: linear-gradient(
     to right,
-    var(--system-black)
-      calc(100% - var(--reveal, 0) * (var(--accessory-box, 20px) + var(--fade-base))),
-    transparent calc(100% - var(--reveal, 0) * var(--accessory-box, 20px))
+    var(--system-black) calc(100% - var(--reveal, 0) * (20px + var(--fade-base))),
+    transparent calc(100% - var(--reveal, 0) * 20px)
   );
 }
 /* A row's value seat insets a plain value as a chip insets its label, so the two read on one edge. */

@@ -256,7 +256,6 @@ export function FootingCreate({
     <AccessoryButton
       icon="plus"
       size="control"
-      box={20}
       create
       ariaLabel={ariaLabel}
       disabled={disabled}
@@ -270,7 +269,6 @@ export function AccessoryButton({
   icon,
   size,
   ariaLabel,
-  box,
   onClick,
   className,
   create = false,
@@ -282,7 +280,6 @@ export function AccessoryButton({
   icon: IconName
   size: IconSize
   ariaLabel: string
-  box?: number
   onClick: () => void
   className?: string
   create?: boolean
@@ -303,7 +300,6 @@ export function AccessoryButton({
       reveal={reveal}
       className={cx(s.accessoryButton, className)}
       data-create={create || undefined}
-      style={box ? ({ '--accessory-box': `${box}px` } as CSSProperties) : undefined}
       aria-label={ariaLabel}
       onClick={(e) => {
         e.stopPropagation()
