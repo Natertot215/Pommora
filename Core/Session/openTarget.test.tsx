@@ -82,10 +82,7 @@ describe('openTarget', () => {
 
 describe('a Navigation row', () => {
   beforeEach(() => {
-    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
-      'page:open': async () => ({ ok: true, value: {} }),
-      'nav:write': async () => ({ ok: true, value: null }),
-    })
+    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({})
     useSession.setState({ tree: matchingAlpha, windowSlot: null, windowsFile: { sets: {} } })
   })
 
