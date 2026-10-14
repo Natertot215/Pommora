@@ -170,9 +170,10 @@ export async function editPageAliases(
 ): Promise<MutateReply> {
   const page = pageAt(await liveTreeOf(root), relPath)
   if (!page) return NOT_HELD
-  const written = await updatePageMetadata(root, page.id, (had) => {
-    const next = applyAliasEdit(had.aliases ?? [], e, page.title)
-    return { aliases: next.length ? next : null }
-  })
-  return done(written)
+  return done(
+    await updatePageMetadata(root, page.id, (had) => {
+      const next = applyAliasEdit(had.aliases ?? [], e, page.title)
+      return { aliases: next.length ? next : null }
+    }),
+  )
 }
