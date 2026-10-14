@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { useEntrance } from '@pommora/uix/Animations/useEntrance'
+import { useRenameKeys } from '@pommora/uix/Animations/useRenameKeys'
 import type { LaneSlot } from '@pommora/uix/Interactions/reorderModel'
 import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
 import { base } from '@pommora/uix/Fields/fields.css'
@@ -64,19 +65,14 @@ export function useOptionEdit({
   const [editing, setEditing] = useState<Editing | null>(null)
   const [draft, setDraft] = useState<Draft | null>(null)
   const anchor = useRef<HTMLElement | null>(null)
-  const alias = useRef(new Map<string, { key: string; seen: boolean }>())
-  const values = new Set(options.map((o) => o.value))
-  for (const [title, entry] of alias.current) {
-    if (values.has(title)) entry.seen = true
-    else if (entry.seen && title !== editing?.value) alias.current.delete(title)
-  }
+  const keys = useRenameKeys(
+    options.map((o) => o.value),
+    editing?.value,
+  )
+  const { keyOf } = keys
 
   const editOption = (edit: OptionEdit): Promise<void> =>
     write(dialer().ask('property:editOption', def.id, edit))
-  const keyOf = (value: string): string => {
-    const key = alias.current.get(value)?.key
-    return key !== undefined && !values.has(key) ? key : value
-  }
   const enteringKey = useEntrance(options, (o) => keyOf(o.value))
   const entering = (value: string): boolean => enteringKey(keyOf(value))
   const isOpen = (row: string): boolean => editing !== null && keyOf(row) === keyOf(editing.row)
@@ -90,10 +86,10 @@ export function useOptionEdit({
   const rename = async (title: string): Promise<void> => {
     if (!editing || title === editing.value) return
     const { row, value: from } = editing
-    alias.current.set(title, { key: keyOf(row), seen: false })
+    keys.rename(row, title)
     setEditing((e) => (e && e.value === from ? { row: e.row, value: title } : e))
     if (!(await warnOwed(dialer().ask('property:renameOption', def.id, from, title)))) {
-      alias.current.delete(title)
+      keys.revert(title)
       setEditing((e) => (e && e.value === title ? { row: e.row, value: from } : e))
     }
   }
