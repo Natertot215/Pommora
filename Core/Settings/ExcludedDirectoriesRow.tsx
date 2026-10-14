@@ -1,12 +1,11 @@
 import { reportRefusal } from '../Interface/Notifications/notifications'
-import { useRef, useState } from 'react'
-import { Button } from '@pommora/uix/Buttons/Button'
+import { useState } from 'react'
 import { PathField } from '@pommora/uix/Fields/PathField'
-import { SettingsFieldRow } from './SettingsFieldRow'
-import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
+import { AccessoryButton, FootingCreate } from '@pommora/uix/Menus/MenuRows'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { useEntrance } from '@pommora/uix/Animations/useEntrance'
 import { useSession } from '../Session/store'
+import { ManageRow } from './ManageRow'
 import * as x from './settings-rows.css'
 import { dialer } from '../Platform/dialer'
 
@@ -20,17 +19,24 @@ export function ExcludedDirectoriesRow({
   label: string
   hint?: string
 }): React.JSX.Element {
+  const count = useSession((s) => s.tree?.config.excluded.length ?? 0)
+  return (
+    <ManageRow
+      label={label}
+      hint={hint}
+      count={count}
+      style={{ minWidth: EXCLUDED_MIN_W, maxWidth: EXCLUDED_MAX_W }}
+    >
+      <ExclusionPane />
+    </ManageRow>
+  )
+}
+
+function ExclusionPane(): React.JSX.Element {
   const stored = useSession((s) => s.tree?.config.excluded ?? [])
-  const [open, setOpen] = useState(false)
   const [drafting, setDrafting] = useState(false)
   const [busy, setBusy] = useState(false)
-  const triggerRef = useRef<HTMLButtonElement>(null)
   const entering = useEntrance(stored, (f) => f)
-
-  const dismiss = (): void => {
-    setOpen(false)
-    setDrafting(false)
-  }
 
   // One write in flight at a time — the pane reads the list back through the tree, so a second edit on the stale list would undo the first.
   const commit = async (list: string[]): Promise<boolean> => {
@@ -73,68 +79,37 @@ export function ExcludedDirectoriesRow({
           onBrowse={() => browse(onCommit)}
         />
       </span>
-      <Button
-        type="base"
-        size="button-inline"
-        icon="x"
-        aria-label="Remove exclusion"
-        onClick={onRemove}
-      />
+      <AccessoryButton icon="x" size="control" ariaLabel="Remove exclusion" onClick={onRemove} />
     </div>
   )
 
   return (
-    <SettingsFieldRow label={label} hint={hint}>
-      <span className={x.manageCluster}>
-        <span className={x.count}>{stored.length}</span>
-        <Button
-          ref={triggerRef}
-          type="filled"
-          label="Manage"
-          pressed={open}
-          onClick={() => setOpen((o) => !o)}
-        />
-        <PickerMenu
-          open={open}
-          onDismiss={dismiss}
-          triggerRef={triggerRef}
-          bareSurface
-          style={{ minWidth: EXCLUDED_MIN_W, maxWidth: EXCLUDED_MAX_W }}
-        >
-          <div className={x.paneList}>
-            {stored.map((folder) => (
-              <Reveal key={folder} open enterOnMount={entering(folder)} fill>
-                {fieldRow(
-                  folder,
-                  (next) => rename(folder, next),
-                  () => void commit(stored.filter((f) => f !== folder)),
-                  folder,
-                )}
-              </Reveal>
-            ))}
-            {drafting ? (
-              <Reveal open enterOnMount fill key="draft">
-                {fieldRow(
-                  '',
-                  (n) => void commitDraft(n),
-                  () => setDrafting(false),
-                  'draft',
-                )}
-              </Reveal>
-            ) : null}
-            <div className={x.addRow}>
-              <Button
-                icon="plus"
-                label="Add Exclusion"
-                className={x.addButton}
-                paddingX="0"
-                disabled={drafting || busy}
-                onClick={() => setDrafting(true)}
-              />
-            </div>
-          </div>
-        </PickerMenu>
-      </span>
-    </SettingsFieldRow>
+    <div className={x.paneList}>
+      {stored.map((folder) => (
+        <Reveal key={folder} open enterOnMount={entering(folder)} fill>
+          {fieldRow(
+            folder,
+            (next) => rename(folder, next),
+            () => void commit(stored.filter((f) => f !== folder)),
+            folder,
+          )}
+        </Reveal>
+      ))}
+      {drafting ? (
+        <Reveal open enterOnMount fill key="draft">
+          {fieldRow(
+            '',
+            (n) => void commitDraft(n),
+            () => setDrafting(false),
+            'draft',
+          )}
+        </Reveal>
+      ) : null}
+      <FootingCreate
+        ariaLabel="Add exclusion"
+        disabled={drafting || busy}
+        onClick={() => setDrafting(true)}
+      />
+    </div>
   )
 }

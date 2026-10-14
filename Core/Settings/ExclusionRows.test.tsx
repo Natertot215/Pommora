@@ -39,10 +39,7 @@ const manageButton = (): HTMLButtonElement =>
   Array.from(document.querySelectorAll('button')).find(
     (b) => b.textContent === 'Manage',
   ) as HTMLButtonElement
-const addButton = (): HTMLButtonElement | undefined =>
-  Array.from(document.querySelectorAll('button')).find((b) =>
-    b.textContent?.includes('Add Exclusion'),
-  )
+const addButton = (): HTMLElement | undefined => byLabel('Add exclusion')[0]
 const fieldButtons = (): HTMLElement[] => byLabel('Excluded folder')
 
 describe('ExcludedDirectoriesRow', () => {
@@ -84,7 +81,7 @@ describe('ExcludedDirectoriesRow', () => {
     expect(manageButton().getAttribute('aria-pressed')).toBe('false')
   })
 
-  it('Add Exclusion appends a blank field row', async () => {
+  it('the add button appends a blank field row', async () => {
     await render(['Archive'])
     await act(async () => manageButton().click())
     expect(fieldButtons().length).toBe(1)
