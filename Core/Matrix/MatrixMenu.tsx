@@ -14,7 +14,7 @@ import { PANE_MIN_H, PANE_MIN_W } from '@pommora/uix/Menus/frame-slide.css'
 import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
 import { lockLabel } from '../Actions/toggleLabels'
 import { useSession } from '../Session/store'
-import { FilterFrame, type FilterView } from '../Views/Settings/FilterFrame'
+import { FilterFrame, filterViewOf, standalonePatch } from '../Views/Settings/FilterFrame'
 import type { Forces } from './Engine/forces'
 import type { GroupMode } from './Engine/graph'
 import { FORCE_RANGES, type MatrixConfig } from './matrixConfig'
@@ -39,11 +39,6 @@ const FORCES: Array<{ key: keyof Forces; label: string }> = [
   { key: 'strength', label: 'Strength' },
   { key: 'distance', label: 'Distance' },
 ]
-
-const filterViewOf = (filter: MatrixConfig['filter']): FilterView => ({
-  filter: filter.rules ?? undefined,
-  filter_enabled: filter.enabled,
-})
 
 export function MatrixMenu(): React.JSX.Element {
   const config = useSession((st) => st.matrixConfig)
@@ -131,16 +126,8 @@ export function MatrixMenu(): React.JSX.Element {
             read={() => filterViewOf(useSession.getState().matrixConfig.filter)}
             schema={tree.config.registry}
             tree={tree}
-            label={MATRIX_TITLE}
-            onBack={() => setFiltering(false)}
-            onCommit={(next) =>
-              patch({
-                filter:
-                  'filter' in next
-                    ? { rules: next.filter ?? null }
-                    : { enabled: next.filter_enabled },
-              })
-            }
+            back={{ label: MATRIX_TITLE, onBack: () => setFiltering(false) }}
+            onCommit={(next) => patch({ filter: standalonePatch(next) })}
           />
         )
       }
