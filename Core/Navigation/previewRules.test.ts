@@ -98,6 +98,20 @@ describe('opensInPreview', () => {
     expect(judge(any(rule), deep)).toBe(false)
   })
 
+  it('rejudges the same folders when the rules or the Contexts change', () => {
+    const context = { property_id: 'g1', op: 'contains_any', values: ['a1'] }
+    const on = treeWith(any(title, context))
+    const withRules = (openInPreview: StandaloneFilter): NexusTree => ({
+      ...on,
+      config: { ...on.config, personalization: { openInPreview } },
+    })
+    expect(opensInPreview(on, top)).toBe(true)
+    expect(opensInPreview(withRules({ ...any(title), enabled: false }), top)).toBe(false)
+    const byContext = withRules(any(context))
+    expect(opensInPreview(byContext, top)).toBe(true)
+    expect(opensInPreview({ ...byContext, contexts: [] }, top)).toBe(false)
+  })
+
   it('opens nothing for a path that no longer holds the page', () => {
     expect(judge(any(title), { ...top, path: 'Notes/Ideas/Alpha.md' })).toBe(false)
   })

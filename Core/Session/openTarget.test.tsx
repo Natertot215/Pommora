@@ -94,4 +94,11 @@ describe('a Navigation row', () => {
     expect(slot?.kind).toBe('nav')
     expect(slot?.tabs.map((t) => t.target)).toContainEqual(alpha)
   })
+
+  it('closes the NavWindow when it opens a page the rules miss into a tab', async () => {
+    const nav = await probe(useNavData)
+    useSession.getState().openNav()
+    act(() => nav().go({ kind: 'page', id: beta.id }, () => useSession.getState().closeWindow()))
+    expect(useSession.getState().windowSlot).toBeNull()
+  })
 })

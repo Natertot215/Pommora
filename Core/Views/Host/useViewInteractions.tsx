@@ -365,7 +365,7 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
   // ── Pages ─────────────────────────────────────────────────────────────────
 
   const openPage = (row: ViewRow, newTab: boolean): void => {
-    // A tile that states its own route owns every page it opens.
+    // A tile that states its own route owns every plain open.
     if (!newTab && tile?.openPage) tile.openPage({ id: row.id, title: row.title, path: row.path })
     else openTarget(pageTarget(row), { newTab })
   }

@@ -79,7 +79,7 @@ describe('openInPreview', () => {
 
   it('reads a stored rule set back whole', () => {
     const stored = {
-      rules: { match: 'any', rules: [{ property_id: 'title', op: 'contains', value: 'x' }] },
+      rules: { match: 'any', rules: [{ property_id: '_title', op: 'contains', value: 'x' }] },
       enabled: false,
     }
     expect(settingValue('openInPreview', stored)).toEqual(stored)

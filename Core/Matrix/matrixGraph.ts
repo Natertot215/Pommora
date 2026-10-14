@@ -1,7 +1,7 @@
 import { readPageRelations } from '../Index/contentIndex'
 import { ID_KEY } from '../Nexus/identityMark'
 import type { PageRelationRow } from '../Platform/stores'
-import { pageValuesOf } from '../Views/loadValues'
+import { pageValuesOf } from '../Views/pageValues'
 import type { PageValues } from '../Views/viewRow'
 
 export interface MatrixLink extends Pick<PageRelationRow, 'path' | 'kind' | 'target'> {

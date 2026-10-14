@@ -58,13 +58,8 @@ export async function seedConfigSurfaces(
   const matrix = nexusConfig(root, NEXUS_CONFIG_FILES.matrix)
   await putJson(matrix, { filter: { rules: view.filter, enabled: true } })
   const settings = nexusConfig(root, NEXUS_CONFIG_FILES.settings)
-  const held = (await pathExists(settings)) ? await readJsonAt(settings) : {}
   await putJson(settings, {
-    ...held,
-    personalization: {
-      ...(held.personalization as Raw | undefined),
-      openInPreview: { rules: view.filter, enabled: true },
-    },
+    personalization: { openInPreview: { rules: view.filter, enabled: true } },
   })
   const setFile = sidecarPath(set.value.path, 'set')
   return {

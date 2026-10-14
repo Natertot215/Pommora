@@ -1,24 +1,9 @@
 import { join, relative } from '../Paths/posix'
-import { ID_KEY } from '../Nexus/identityMark'
-import { pageFrontmatter } from '../Nexus/schemas'
 import type { PageValues } from './viewRow'
-import { idTime } from '../Nexus/ids'
+import { pageValuesOf } from './pageValues'
 import { readPageRecord } from '../Nexus/readNexus'
 import { folderCorpus } from '../Index/indexSeed'
 import { livePathOf } from '../Nexus/heldPages'
-import { localIso } from '@pommora/uix/Utilities/pad'
-
-export function pageValuesOf(
-  id: string,
-  fm: Record<string, unknown>,
-  mtimeMs: number | null,
-): PageValues {
-  return {
-    frontmatter: pageFrontmatter.parse({ ...fm, [ID_KEY]: id }),
-    createdAt: localIso(idTime(id)),
-    modifiedAt: localIso(mtimeMs),
-  }
-}
 
 async function corpus(
   rootPath: string,

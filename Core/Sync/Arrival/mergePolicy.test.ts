@@ -102,7 +102,7 @@ describe('mergeKeys', () => {
     expect(isMergedJson('.nexus/assets/data.json')).toBe(false)
     expect(isMergedJson('Notes/_list.json')).toBe(false)
 
-    expect(mergeDepthFor('.nexus/settings.json')).toEqual({ personalization: 1 })
+    expect(mergeDepthFor('.nexus/settings.json')).toEqual({ personalization: 2 })
     expect(mergeDepthFor('.nexus/state.json')).toEqual({ order: 1, navigation: 1 })
     expect(mergeDepthFor('.nexus/properties.json')).toEqual({ defs: 2 })
     expect(mergeDepthFor('.nexus/assets/crops.json')).toEqual({ byImage: 1 })
@@ -152,6 +152,17 @@ describe('mergeKeys', () => {
     expect(merge(base, local, remote, depth, takeRemote)).toEqual({
       forces: { gravity: 0.9, spread: 0.1 },
       filter: { rules: { match: 'any', rules: [{ key: 'Topic' }] } },
+    })
+  })
+
+  it("keeps one device's Open In Preview toggle and the other's rules", () => {
+    const depth = mergeDepthFor('.nexus/settings.json')
+    const rules = (key: string) => ({ match: 'all', rules: [{ key }] })
+    const base = { personalization: { openInPreview: { rules: rules('Status'), enabled: true } } }
+    const local = { personalization: { openInPreview: { rules: rules('Status'), enabled: false } } }
+    const remote = { personalization: { openInPreview: { rules: rules('Area'), enabled: true } } }
+    expect(merge(base, local, remote, depth)).toEqual({
+      personalization: { openInPreview: { rules: rules('Area'), enabled: false } },
     })
   })
 
