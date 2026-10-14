@@ -13,7 +13,6 @@
       "!**/release",
       "!**/graphify-out",
       "!**/.claude",
-      "!Dashboard/Ledger/loc-history.json",
       "!Desktop/build/Pommora.icon/Assets"
     ]
   },
