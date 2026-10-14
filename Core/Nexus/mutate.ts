@@ -30,7 +30,7 @@ import { setActiveView } from '../Views/viewsFile'
 import type { TrashDeps } from '../Trash/bundle'
 import { createContainerOp, createPageOp, createSpaceOp } from './create'
 import { movePageOp, moveSetOp } from './move'
-import { writePageMeta } from './pageMetadata'
+import { editPageAliases, writePageMeta } from './pageMetadata'
 import { renameOp } from './rename'
 import { renameCascade } from './cascade'
 import { setChildOrder, setCollectionOrder, setPanelContextOrder, setSpaceOrder } from './reorder'
@@ -149,6 +149,9 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
 
     case 'setPageMeta':
       return writePageMeta(root, req.path, req.patch)
+
+    case 'editAliases':
+      return editPageAliases(root, req.path, req.edit)
 
     case 'movePage':
       return movePageOp(ctx, req)

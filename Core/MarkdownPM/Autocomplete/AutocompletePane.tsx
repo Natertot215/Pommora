@@ -1,5 +1,6 @@
 import { cx } from '@pommora/uix/Utilities/cx'
 import { EntityIcon } from '../../Assets/EntityIcon'
+import { ALIAS_ICON } from '../../Assets/entityIconPolicy'
 import { Icon } from '@pommora/uix/Symbols'
 import type { RememberedSize } from '@pommora/uix/Interactions/useResizable'
 import { PICKER_MAX_HEIGHT } from '@pommora/uix/Pickers/picker-base.css'
@@ -102,7 +103,7 @@ export function AutocompletePane({
             row.kind === 'page' ? (
               <EntityIcon kind="page" size="body" />
             ) : (
-              <Icon name="square-split-horizontal" size="body" />
+              <Icon name={ALIAS_ICON} size="body" />
             )
           }
           trailing={

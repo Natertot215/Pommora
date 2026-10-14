@@ -1,4 +1,6 @@
 import { z } from 'zod'
+import { aliasEdit } from '../Connections/aliasMemory'
+import { op } from '../Files/decoders'
 import { ok, type Result } from '../Contract/result'
 import { propertyValue } from '../Properties/propertyValue'
 import { crop, type PageMetaPatch } from './schemas'
@@ -38,14 +40,10 @@ const childOrderKey = z.literal('set_order')
 export type ChildOrderKey = z.infer<typeof childOrderKey>
 const ids = z.array(z.string())
 const mintedId = z.string().refine(isUlidShaped)
-const pageMetaPatch: z.ZodType<Omit<PageMetaPatch, 'icon'>> = z.object({
-  aliases: z.array(z.string()).nullable().optional(),
+const pageMetaPatch: z.ZodType<Omit<PageMetaPatch, 'icon' | 'aliases'>> = z.object({
   title_icon: z.boolean().nullable().optional(),
   locked: z.literal(true).nullable().optional(),
-} satisfies { [K in Exclude<keyof PageMetaPatch, 'icon'>]: z.ZodType })
-
-const op = <K extends string, S extends z.ZodRawShape>(literal: K, fields: S) =>
-  z.object({ op: z.literal(literal), ...fields })
+} satisfies { [K in Exclude<keyof PageMetaPatch, 'icon' | 'aliases'>]: z.ZodType })
 
 // Every structural write enters through this one shape: a key it doesn't name is dropped, and a value off its type is refused before anything is written.
 export const mutateRequest = z.discriminatedUnion('op', [
@@ -84,6 +82,7 @@ export const mutateRequest = z.discriminatedUnion('op', [
   op('setActiveView', { path: z.string(), kind: containerKind, viewId: z.string() }),
   op('setProperty', { path: z.string(), propertyId: z.string(), value: propertyValue.nullable() }),
   op('setPageMeta', { path: z.string(), patch: pageMetaPatch }),
+  op('editAliases', { path: z.string(), edit: aliasEdit }),
   // Absent order = legacy append. Stale ids in a source container self-drop on the next read.
   op('movePage', { path: z.string(), newParentPath: z.string(), order: ids.optional() }),
   op('moveSet', { path: z.string(), newParentPath: z.string(), order: ids }),
