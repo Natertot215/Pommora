@@ -5,6 +5,7 @@ import {
   TAB_MIN_WIDTH,
   PREVIEW_LINGER_MS,
   SETTING_DEFAULTS,
+  settingValue,
 } from './personalization'
 
 describe('readPersonalization previewPersistence', () => {
@@ -67,6 +68,21 @@ describe('readPersonalization matrixOpenIn', () => {
     expect(readPersonalization({ matrixOpenIn: 'tab' }).matrixOpenIn).toBe('tab')
     expect(readPersonalization({ matrixOpenIn: 'garbage' }).matrixOpenIn).toBeUndefined()
     expect(readPersonalization({}).matrixOpenIn).toBeUndefined()
+  })
+})
+
+describe('openInPreview', () => {
+  it('reads junk as absent', () => {
+    expect(settingValue('openInPreview', 'junk')).toBeUndefined()
+    expect(settingValue('openInPreview', [1])).toBeUndefined()
+  })
+
+  it('reads a stored rule set back whole', () => {
+    const stored = {
+      rules: { match: 'any', rules: [{ property_id: 'title', op: 'contains', value: 'x' }] },
+      enabled: false,
+    }
+    expect(settingValue('openInPreview', stored)).toEqual(stored)
   })
 })
 

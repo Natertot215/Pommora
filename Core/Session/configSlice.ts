@@ -13,6 +13,7 @@ import { dialer } from '../Platform/dialer'
 import { saveDevicePrefs } from './saveScheduler'
 import type { NexusTree } from '../Nexus/tree'
 import { stabilize } from '../Nexus/treeStabilize'
+import { same } from '../Files/stableJson'
 
 export interface ConfigSlice {
   setPersonalization: <K extends keyof Personalization>(key: K, value: Personalization[K]) => void
@@ -63,7 +64,7 @@ export const citationsVisible = (
 export const createConfigSlice: Slice<ConfigSlice> = (set, get) => ({
   setPersonalization: (key, next) => {
     const settled = settingValue(key, next)
-    const value = settled === SETTING_DEFAULTS[key] ? undefined : settled
+    const value = same(settled, SETTING_DEFAULTS[key]) ? undefined : settled
     set(({ tree }) =>
       tree
         ? {

@@ -36,6 +36,12 @@ describe('a setting at its fallback stores no key', () => {
     expect(save).toHaveBeenLastCalledWith('tabOpenBehavior', undefined)
   })
 
+  it('drops an object setting set back to an equal default', () => {
+    useSession.getState().setPersonalization('openInPreview', { rules: null, enabled: true })
+    expect(save).toHaveBeenLastCalledWith('openInPreview', undefined)
+    expect(personalizationOf(useSession.getState()).openInPreview).toBeUndefined()
+  })
+
   it('holds a typed stepped value as the host writes it', () => {
     useSession.getState().setPersonalization('tabMaxWidth', 173.6)
     expect(save).toHaveBeenLastCalledWith('tabMaxWidth', 174)
