@@ -51,7 +51,8 @@ import {
   operatorsFor,
 } from '../filterModel'
 import * as fp from './filter-frame.css'
-import { emptyPicker, type Folder, LocationField, useMultiValue } from './LocationField'
+import { flattenNodes, LocationField } from './LocationField'
+import { emptyPicker, useMultiValue } from './valueField'
 import { NeutralChip } from '@pommora/uix/Labels/recipes'
 import { OptionChip } from '../../Properties/Cells/OptionChip'
 import { EditableInput } from '@pommora/uix/Fields/EditableInput'
@@ -197,10 +198,6 @@ function ChipsField({
       </PickerMenu>
     </>
   )
-}
-
-function flattenNodes(nodes: Folder[] | undefined): Folder[] {
-  return (nodes ?? []).flatMap((n) => [n, ...flattenNodes(n.sets)])
 }
 
 export type FilterView = Pick<SavedView, 'filter' | 'filter_enabled' | 'column_styles'>

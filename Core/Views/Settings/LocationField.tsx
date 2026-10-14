@@ -4,39 +4,19 @@ import { Icon } from '@pommora/uix/Symbols'
 import { TokenField } from '@pommora/uix/Fields/TokenField'
 import { foldKey, matchScore } from '../../Paths/caseFold'
 import { EntityIcon } from '../../Assets/EntityIcon'
-import {
-  DisclosureRow,
-  MenuCaption,
-  MenuScrollFrame,
-  pickRuns,
-  useDisclosureSet,
-} from '@pommora/uix/Menus'
+import { DisclosureRow, MenuScrollFrame, pickRuns, useDisclosureSet } from '@pommora/uix/Menus'
 import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
 import { PICKER_MAX_HEIGHT, treePane } from '@pommora/uix/Pickers/picker-base.css'
 import { useKeepInView, usePaneCtl } from '@pommora/uix/Interactions/paneCtl'
 import { toggled } from '@pommora/uix/Utilities/checkSet'
-import { sameItems } from '@pommora/uix/Utilities/same'
-import { toggleValue } from '../../Properties/Pickers/PropertyPicker'
 import * as fp from './filter-frame.css'
-
-export const emptyPicker = (label: string): React.JSX.Element => <MenuCaption>{label}</MenuCaption>
-
-export function useMultiValue(
-  values: string[],
-  onCommit: (next: string[]) => void,
-): { shown: string[]; toggle: (v: string) => void } {
-  const [local, setLocal] = useState<string[] | null>(null)
-  if (local && sameItems(local, values)) setLocal(null)
-  const shown = local ?? values
-  const toggle = (v: string): void => {
-    const next = toggleValue(shown, v)
-    setLocal(next)
-    onCommit(next)
-  }
-  return { shown, toggle }
-}
+import { emptyPicker, useMultiValue } from './valueField'
 
 export type Folder = CollectionNode | SetNode
+
+export function flattenNodes(nodes: Folder[] | undefined): Folder[] {
+  return (nodes ?? []).flatMap((n) => [n, ...flattenNodes(n.sets)])
+}
 
 /** Matches with their whole subtrees, under the ancestors that lead to them; `leads` names those ancestors, which open by default. */
 function narrowed(nodes: Folder[], query: string): { nodes: Folder[]; leads: Set<string> } {
