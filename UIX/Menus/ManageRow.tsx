@@ -3,6 +3,7 @@ import { Reveal } from '../Animations/Reveal'
 import { useEntrance } from '../Animations/useEntrance'
 import { useRenameKeys } from '../Animations/useRenameKeys'
 import { Button } from '../Buttons/Button'
+import { keepFocus } from '../Interactions/shared'
 import { PickerMenu } from '../Pickers/PickerMenu'
 import { Icon, type IconName } from '../Symbols'
 import { MenuRowView } from './MenuIndex'
@@ -76,9 +77,7 @@ export interface ManageFieldProps {
   onCancel?: () => void
 }
 
-const keepFocus = (e: { preventDefault: () => void }): void => e.preventDefault()
-
-/** A Manage pane's list: each value in its own field beside a × that removes it, and + drafting one more at the end, which closes once its value is written. An empty value is never written, so × is the only removal, and × keeps the focus, so it discards an edit in progress rather than committing it; a rename keeps its row. */
+/** A Manage pane's list: a field per value with a × beside it, and + drafting one more at the end, whose row the value keeps once written. × keeps the focus, so it discards an edit in progress, and an empty value is never written. */
 export function ManageList({
   values,
   noun,
@@ -94,48 +93,52 @@ export function ManageList({
   onRename: (from: string, to: string) => Promise<boolean>
   onRemove: (value: string) => void
 }): React.JSX.Element {
-  const [drafting, setDrafting] = useState(false)
+  const drafts = useRef(0)
+  const [draft, setDraft] = useState<string | null>(null)
   const keys = useRenameKeys(values)
   const entering = useEntrance(values, keys.keyOf)
-  const add = async (value: string): Promise<void> => {
-    if (value && (await onAdd(value))) setDrafting(false)
+  const close = (): void => setDraft(null)
+  const add = async (key: string, value: string): Promise<void> => {
+    if (!value) return
+    keys.rename(key, value)
+    if (await onAdd(value)) close()
+    else keys.revert(value)
   }
   const rename = (from: string, to: string): void => {
     if (!to) return
     keys.rename(from, to)
     void onRename(from, to).then((ok) => ok || keys.revert(to))
   }
-  const row = (props: ManageFieldProps, remove: () => void): React.JSX.Element => (
-    <div className={s.row}>
-      <span className={s.field}>{field(props)}</span>
-      <AccessoryButton
-        icon="x"
-        size="control"
-        ariaLabel={`Remove ${noun}`}
-        onMouseDown={keepFocus}
-        onClick={remove}
-      />
-    </div>
+  const row = (key: string, props: ManageFieldProps, remove: () => void): React.JSX.Element => (
+    <Reveal key={key} open enterOnMount={entering(key)} fill>
+      <div className={s.row}>
+        <span className={s.field}>{field(props)}</span>
+        <AccessoryButton
+          icon="x"
+          size="control"
+          ariaLabel={`Remove ${noun}`}
+          onMouseDown={keepFocus}
+          onClick={remove}
+        />
+      </div>
+    </Reveal>
   )
+  const rows = values.map((value) =>
+    row(keys.keyOf(value), { value, onCommit: (next) => rename(value, next) }, () =>
+      onRemove(value),
+    ),
+  )
+  if (draft !== null && !rows.some((r) => r.key === draft))
+    rows.push(
+      row(draft, { value: '', onCommit: (next) => void add(draft, next), onCancel: close }, close),
+    )
   return (
     <div className={s.list}>
-      {values.map((value) => (
-        <Reveal key={keys.keyOf(value)} open enterOnMount={entering(keys.keyOf(value))} fill>
-          {row({ value, onCommit: (next) => rename(value, next) }, () => onRemove(value))}
-        </Reveal>
-      ))}
-      {drafting && (
-        <Reveal open enterOnMount fill>
-          {row(
-            { value: '', onCommit: (next) => void add(next), onCancel: () => setDrafting(false) },
-            () => setDrafting(false),
-          )}
-        </Reveal>
-      )}
+      {rows}
       <FootingCreate
         ariaLabel={`Add ${noun}`}
-        disabled={drafting}
-        onClick={() => setDrafting(true)}
+        disabled={draft !== null}
+        onClick={() => setDraft(`\u0000${++drafts.current}`)}
       />
     </div>
   )

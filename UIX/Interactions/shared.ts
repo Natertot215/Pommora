@@ -13,6 +13,8 @@ export const ACTIVATION = 5 // px the pointer must travel before a drag starts
 // The CSS side reads this same token as `--drop-line-inset`.
 export { DROP_LINE_INSET } from '../Theme/theme-vars.css'
 export const EDITABLE_TARGETS = 'input, textarea, [contenteditable="true"]'
+/** A press that leaves the focus where it is, so a field it sits beside neither blurs nor commits. */
+export const keepFocus = (e: { preventDefault: () => void }): void => e.preventDefault()
 
 export function suppressNextClick(): void {
   const swallow = (e: MouseEvent): void => {

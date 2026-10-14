@@ -6,6 +6,7 @@ import * as s from './menu-row.css'
 import { cx } from '../Utilities/cx'
 import { overScrollEllipsis } from '../Interactions/OverScroll'
 import { onActivateClick } from '../Interactions/activate'
+import { keepFocus } from '../Interactions/shared'
 import type { PickRun } from './pickRuns'
 
 const BAR_GLYPH = 12 // KNOB
@@ -68,7 +69,7 @@ export function MenuTopRow({
         trailing={right}
         onClick={onBack}
         // The value panes commit-on-blur, so an unguarded mousedown commits before Back lands.
-        onPointerDown={(e) => e.preventDefault()}
+        onPointerDown={keepFocus}
       >
         <span className={s.topBarLeadingLabel}>{label}</span>
       </MenuItem>

@@ -15,6 +15,7 @@ import { GlassSurface } from '../Glass/GlassSurface'
 import { GlassWindow } from '../Glass/GlassWindow'
 import { SHIELD_ATTR, useDismissal } from '../Interactions/dismissalStack'
 import { useFocusScope } from '../Interactions/focusScope'
+import { keepFocus } from '../Interactions/shared'
 
 /** The portal layer a floating pane occupies. Containment reads against this rather than the pane's body, so the pane's own rim and resize edges are inside it. */
 export const PICKER_PORTAL_ATTR = 'data-picker-portal'
@@ -35,7 +36,6 @@ const stopContextBubble = (e: {
   e.stopPropagation()
   e.preventDefault()
 }
-const keepFocus = (e: { preventDefault: () => void }): void => e.preventDefault()
 
 export type PickerDirection = 'down' | 'up'
 

@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { EditableInput } from '../Fields/EditableInput'
+import { keepFocus } from '../Interactions/shared'
 import { clamp, type SteppedRange } from '../Utilities/clamp'
 import { cx } from '../Utilities/cx'
 import { Icon } from '../Symbols'
@@ -133,7 +134,7 @@ export function PickerControl<T extends string>({
             />
             {typeable.suffix && (
               // A press on the mark would otherwise pull focus out of the field and commit the edit.
-              <span aria-hidden onMouseDown={(e) => e.preventDefault()}>
+              <span aria-hidden onMouseDown={keepFocus}>
                 {typeable.suffix}
               </span>
             )}
