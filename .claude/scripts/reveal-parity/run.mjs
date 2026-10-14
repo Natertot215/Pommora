@@ -53,7 +53,7 @@ const reset = async () => {
 // ── Navigation ──
 const VIEW_EL = `__rv.q('.content-view .cm-content')?.cmTile?.root?.view`
 const VIEW = `__rv.q('.content-view .cm-content').cmTile.root.view`
-const ribbon = (name) => press(q(`button[aria-label="${name}"]`), `ribbon ${name}`)
+const ribbon = (name) => press(q(`button[aria-label="${name}" i]`), `ribbon ${name}`)
 const collection = async (name) => {
   await ribbon('collections')
   await press(byText('.row', name), `row ${name}`)
