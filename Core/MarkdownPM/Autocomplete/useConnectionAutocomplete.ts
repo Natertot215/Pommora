@@ -23,7 +23,8 @@ import type { AutocompletePaneProps } from './AutocompletePane'
 import { acQuery, closeAcQuery } from './acQuery'
 import type { PageHeading } from '../../Platform/stores'
 import { type EditorHost, ownPage } from '../api'
-import { caretGeometry, type CaretGeometry, type EditorPane, usePaneCtl } from '../Menus/caretPane'
+import { usePaneCtl } from '@pommora/uix/Interactions/paneCtl'
+import { caretGeometry, type CaretGeometry, type EditorPane } from '../Menus/caretPane'
 
 export interface AcState extends AutocompleteQuery, CaretGeometry {}
 

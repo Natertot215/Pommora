@@ -20,7 +20,7 @@ export function FieldRun({ entries }: { entries: RunEntry[] }): React.JSX.Elemen
           <span className={fr.runItem}>
             <PlainLabel
               text={e.label}
-              icon={e.icon}
+              icon={e.icon && <span className={fr.runItemIcon}>{e.icon}</span>}
               {...(e.onRemove ? { onRemove: e.onRemove } : {})}
             />
           </span>

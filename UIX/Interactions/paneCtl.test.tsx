@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { act, type RefObject } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { type PaneCtl, usePaneCtl } from './caretPane'
+import { type PaneCtl, usePaneCtl } from './paneCtl'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 let root: Root | null = null

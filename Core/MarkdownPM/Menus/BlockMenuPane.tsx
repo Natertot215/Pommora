@@ -6,7 +6,8 @@ import { type PaneBounds, usePaneResize } from '@pommora/uix/Pickers/usePaneResi
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
 import { emphasizeMatch, MenuItem, MenuRowView, MenuScrollFrame } from '@pommora/uix/Menus'
 import type { BlockMenuAction } from '../../Actions/blockMenu'
-import { CaretPane, CLOSED_GEOMETRY, useKeepInView } from './caretPane'
+import { useKeepInView } from '@pommora/uix/Interactions/paneCtl'
+import { CaretPane, CLOSED_GEOMETRY } from './caretPane'
 import type { BlockMenuState } from './useBlockMenu'
 
 interface Props {

@@ -395,7 +395,7 @@ describe('FilterFrame', () => {
     })
   })
 
-  it('removing the first of two rows promotes the second to the lead slot', async () => {
+  it('removing the first of two rows writes the remaining rule at once', async () => {
     await mount(twoRules())
     await click(
       [...host.querySelectorAll('button')]
@@ -432,6 +432,18 @@ const pressEnter = async (): Promise<void> => {
     )
   })
 }
+const pressKey = async (key: string): Promise<void> => {
+  await act(async () => {
+    locationField().dispatchEvent(
+      new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }),
+    )
+  })
+}
+const blurLocation = async (): Promise<void> => {
+  await act(async () => {
+    locationField().blur()
+  })
+}
 const pickerRows = (): string[] =>
   [...document.querySelectorAll('[data-picker-portal] [role="button"]')].map(
     (el) => el.textContent ?? '',
@@ -447,6 +459,7 @@ describe('FilterFrame location field', () => {
     pages: [],
   })
   beforeEach(() => {
+    Element.prototype.scrollIntoView = vi.fn()
     Object.assign(source, {
       sets: [
         folder('p1', 'Projects', [folder('d1', 'Docs'), folder('n1', 'Notes')]),
@@ -514,6 +527,106 @@ describe('FilterFrame location field', () => {
     expect(locationField().value).toBe('')
   })
 
+  it('clicking the field opens the picker', async () => {
+    await mount(locationRule('is_inside'))
+    await click(locationField())
+    expect(pickerRows()).toEqual(['Projects', 'Archive'])
+  })
+
+  it('Escape and blur each close the picker and clear the draft', async () => {
+    await mount(locationRule('is_inside'))
+    await focusLocation()
+    await typeLocation('doc')
+    await pressKey('Escape')
+    await settle()
+    expect(pickerRows()).toEqual([])
+    expect(locationField().value).toBe('')
+    await typeLocation('doc')
+    await blurLocation()
+    await settle()
+    expect(pickerRows()).toEqual([])
+    expect(locationField().value).toBe('')
+  })
+
+  it('a click on the caret reopens the picker after Escape', async () => {
+    await mount(locationRule('is_inside'))
+    await focusLocation()
+    await pressKey('Escape')
+    await settle()
+    await click(locationField())
+    expect(pickerRows()).toEqual(['Projects', 'Archive'])
+  })
+
+  it("a chip's × removes it while the picker stays open", async () => {
+    await mount(locationRule('is_inside', ['d1', 'Docs']))
+    await focusLocation()
+    const remove = host.querySelector('button[aria-label="Remove"]') as HTMLElement
+    const down = new MouseEvent('mousedown', { bubbles: true, cancelable: true })
+    await act(async () => {
+      remove.dispatchEvent(new PointerEvent('pointerdown', { button: 0, bubbles: true }))
+      remove.dispatchEvent(down)
+    })
+    await click(remove)
+    expect(down.defaultPrevented).toBe(true)
+    expect(savedValues()).toEqual(['Docs'])
+    expect(pickerRows()).toEqual(['Projects', 'Archive'])
+  })
+
+  it('ArrowDown then Enter picks the highlighted folder under Is', async () => {
+    await mount(locationRule('is'))
+    await focusLocation()
+    await pressKey('ArrowDown')
+    await pressKey('ArrowDown')
+    await pressEnter()
+    expect(savedValues()).toEqual(['a1'])
+  })
+
+  it('typing drops the highlight, so Enter under Contains adds the name', async () => {
+    await mount(locationRule('is_inside'))
+    await focusLocation()
+    await typeLocation('doc')
+    await pressKey('ArrowDown')
+    await typeLocation('docs')
+    await pressEnter()
+    expect(savedValues()).toEqual(['docs'])
+  })
+
+  it("narrowing keeps a matched folder's subfolders, collapsed until opened", async () => {
+    await mount(locationRule('is_inside'))
+    await focusLocation()
+    await typeLocation('proj')
+    expect(pickerRows()).toEqual(['Projects'])
+    await act(async () => {
+      document
+        .querySelector('[data-picker-portal] [data-drop-outline]')
+        ?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    })
+    expect(pickerRows()).toEqual(['Projects', 'Docs', 'Notes'])
+  })
+
+  it('a draft that matches nothing hides the picker', async () => {
+    await mount(locationRule('is_inside'))
+    await focusLocation()
+    await typeLocation('zzz')
+    await settle()
+    expect(document.querySelector('[data-picker-portal]')).toBeNull()
+  })
+
+  it("the tree's expansion survives the picker reopening", async () => {
+    await mount(locationRule('is_inside'))
+    await focusLocation()
+    await act(async () => {
+      document
+        .querySelector('[data-picker-portal] [data-drop-outline]')
+        ?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    })
+    expect(pickerRows()).toEqual(['Projects', 'Docs', 'Notes', 'Archive'])
+    await pressKey('Escape')
+    await settle()
+    await click(locationField())
+    expect(pickerRows()).toEqual(['Projects', 'Docs', 'Notes', 'Archive'])
+  })
+
   it('switching Contains to Is keeps picked folders and drops names', async () => {
     await mount(locationRule('is_inside', ['d1', 'Docs']))
     await click(byLabel('Filter operator'))
@@ -549,7 +662,7 @@ describe('FilterFrame value editors', () => {
         },
       }),
     )
-    await focusLocation()
+    await click(host.querySelector('[aria-label="Filter values"]'))
     const row = (t: string): string => optionWithText(t)?.className ?? ''
     expect([row('A'), row('B'), row('C')]).toEqual([
       expect.stringContaining(itemPicked.first),

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { PropertyDefinition } from '../Properties/properties'
 import type { NexusTree } from '../Nexus/tree'
+import type { FilterGroup } from './filterRules'
 import { decodeFilter, filterTargets, operatorsFor } from './filterModel'
 
 const r = (
@@ -22,33 +23,18 @@ describe('decodeFilter', () => {
     })
   })
 
-  it('locks an any of all-runs and an any with an all-run inside', () => {
-    expect(
-      decodeFilter({
-        match: 'any',
-        rules: [{ match: 'all', rules: [r('a'), r('b')] }, r('c')],
-      }).kind,
-    ).toBe('locked')
-    expect(
-      decodeFilter({ match: 'any', rules: [{ match: 'all', rules: [r('a')] }, r('b')] }).kind,
-    ).toBe('locked')
-  })
-
-  it('locks any group nested under an all root, which the frame never writes', () => {
-    for (const match of ['any', 'all'] as const) {
-      expect(
-        decodeFilter({ match: 'all', rules: [r('a'), { match, rules: [r('b'), r('c')] }] }).kind,
-      ).toBe('locked')
-    }
-  })
-
-  it('locks 3-deep nesting', () => {
-    expect(
-      decodeFilter({
+  it('any nested group locks, whatever its root or depth', () => {
+    const nested: FilterGroup[] = [
+      { match: 'any', rules: [{ match: 'all', rules: [r('a'), r('b')] }, r('c')] },
+      { match: 'any', rules: [{ match: 'all', rules: [r('a')] }, r('b')] },
+      { match: 'all', rules: [r('a'), { match: 'any', rules: [r('b'), r('c')] }] },
+      { match: 'all', rules: [r('a'), { match: 'all', rules: [r('b'), r('c')] }] },
+      {
         match: 'any',
         rules: [{ match: 'all', rules: [r('a'), { match: 'any', rules: [r('b')] }] }],
-      }).kind,
-    ).toBe('locked')
+      },
+    ]
+    for (const filter of nested) expect(decodeFilter(filter).kind).toBe('locked')
   })
 
   it('undefined → empty rows in the any mode', () => {

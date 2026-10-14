@@ -7,6 +7,7 @@ import { useSession } from '../Session/store'
 import { makeTree } from '../Testing/testTree'
 import { DEFAULT_MATRIX_CONFIG } from './matrixConfig'
 import { MatrixMenu } from './MatrixMenu'
+import { MATRIX_TITLE } from './matrixKind'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 let host: HTMLDivElement
@@ -98,6 +99,28 @@ describe('the Matrix menu', () => {
       field.blur()
     })
     expect(patch).toHaveBeenCalledWith({ forces: { connection: { gravity: 2 } } })
+  })
+
+  it('opens Filtering behind a back row, and an added rule patches the filter', () => {
+    mount()
+    const backRow = (): Element | undefined =>
+      [...host.querySelectorAll('[role="button"]')].find(
+        (el) => el.textContent === `${MATRIX_TITLE}Filtering`,
+      )
+    expect(backRow()).toBeUndefined()
+    click(
+      [...host.querySelectorAll('[role="button"]')].find(
+        (el) => el.textContent === 'Filter',
+      ) as Element,
+    )
+    expect(backRow()).toBeDefined()
+    click(control('Filter property'))
+    click(document.querySelector('[data-picker-portal] [role="button"]') as Element)
+    expect(patch).toHaveBeenCalledWith({
+      filter: {
+        rules: { match: 'any', rules: [expect.objectContaining({ op: expect.any(String) })] },
+      },
+    })
   })
 
   it('toggles the lock and holds Shuffle while it is on', () => {

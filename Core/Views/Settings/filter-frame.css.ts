@@ -39,6 +39,8 @@ export const controlField = style([cellField, { flex: '0 0 auto' }])
 
 export const valueField = style([cellField, { flex: '1 1 auto' }])
 
+export const locationField = style([valueField, { cursor: 'text' }])
+
 export { placeholder } from '@pommora/uix/Fields/fields.css'
 
 export const blankWide = style({ minWidth: '58px' })

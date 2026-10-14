@@ -28,7 +28,7 @@ export const runItem = style({
 })
 
 /** The gap beside the glyph is the label's own — a PlainLabel already spaces it. */
-export const runItemIcon = style({ flexShrink: 0 })
+export const runItemIcon = style({ display: 'inline-flex', flexShrink: 0 })
 
 /** Measured against the FIELD rather than given a fixed height, so it stays proportional if the field's type or padding moves. */
 export const runDivider = style([segment, { alignSelf: 'stretch', marginBlock: RUN_DIVIDER_INSET }])
