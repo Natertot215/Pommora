@@ -267,10 +267,7 @@ export const detail = style([text.footnote.emphasized, { flex: '0 1 auto', minWi
 
 export const trailingCluster = style({ display: 'inline-flex', alignItems: 'center', gap: '8px' })
 
-export const trailingFigure = style([
-  text.control.standard,
-  { color: c.label.secondary, fontVariantNumeric: 'tabular-nums' },
-])
+export const trailingFigure = style([text.control.standard, { fontVariantNumeric: 'tabular-nums' }])
 
 /* A trailing value reaches no further than the row's mark and the label keeps the rest: past it, a field gives way and clips its text inside its own chrome, as a cell value clips inside its cap. */
 globalStyle(`${titleWrap} + ${side}`, { maxWidth: 'var(--row-value-reach)' })
