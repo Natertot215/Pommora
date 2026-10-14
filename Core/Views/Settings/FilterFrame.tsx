@@ -271,7 +271,10 @@ function LocationField({
     [nodes, q],
   )
   const disclosure = q
-    ? { has: (id: string) => tree.leads.has(id) !== flipped.has(id), toggle: flipped.toggle }
+    ? {
+        has: (id: string) => tree.leads.has(id) !== flipped.has(`${q}\0${id}`),
+        toggle: (id: string) => flipped.toggle(`${q}\0${id}`),
+      }
     : expanded
   const rows = shownRows(tree.nodes, disclosure.has)
   const pick = (id: string): void => {
@@ -329,6 +332,10 @@ function LocationField({
           } else if (e.key === 'Enter' && open && row) {
             e.preventDefault()
             ctl.current.pick()
+          } else if (e.key === 'Escape' && open) {
+            // The pane hides while a draft matches nothing, so the field closes itself rather than letting Escape reach the surface beneath.
+            e.preventDefault()
+            dismiss()
           }
         }}
         onDraftChange={(d) => {
