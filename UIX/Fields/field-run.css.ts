@@ -13,7 +13,7 @@ export const fieldRun = style({
   display: 'inline-flex',
   alignItems: 'stretch',
   alignSelf: 'stretch',
-  flex: '1 1 auto',
+  flex: '0 1 auto',
   gap: RUN_GAP,
   // The FIELD is what runs out of room, so one fade sits at its trailing edge: per-item fades would read as several broken labels. `--label-max` is lifted for the same reason.
   vars: { '--scroll-fade': RUN_FADE, '--label-max': 'none' },

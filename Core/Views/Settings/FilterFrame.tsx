@@ -10,7 +10,8 @@ import {
 } from '../filterRules'
 import type { PaneTarget } from '../../Properties/Cells/PropertyTypes'
 import { Icon } from '@pommora/uix/Symbols'
-import { FieldRun } from '@pommora/uix/Fields/FieldRun'
+import { TokenField } from '@pommora/uix/Fields/TokenField'
+import { foldKey, matchScore } from '../../Paths/caseFold'
 import * as fr from '@pommora/uix/Fields/field-run.css'
 import { leading } from '@pommora/uix/Fields/fields.css'
 import { EntityIcon } from '../../Assets/EntityIcon'
@@ -179,24 +180,32 @@ function ValueFieldShell({
   )
 }
 
-function LocationField({
-  values,
+function narrowed<N extends CollectionNode | SetNode>(nodes: N[], query: string): N[] {
+  return nodes.flatMap((n) => {
+    const sets = narrowed(n.sets ?? [], query)
+    return sets.length > 0 || matchScore(foldKey(n.title), query) !== null ? [{ ...n, sets }] : []
+  })
+}
+
+function LocationTree({
   nodes,
-  onCommit,
+  shown,
+  query,
+  onPick,
 }: {
-  values: string[]
   nodes: (CollectionNode | SetNode)[]
-  onCommit: (next: string[]) => void
+  shown: string[]
+  query: string
+  onPick: (id: string) => void
 }): React.JSX.Element {
-  const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
   const expanded = useDisclosureSet()
-  const { shown, toggle } = useMultiValue(values, onCommit)
-  const byId = new Map(flattenNodes(nodes).map((n) => [n.id, n]))
+  const opened = useDisclosureSet(true)
+  const q = foldKey(query.trim())
+  const disclosure = q ? opened : expanded
   const renderLevel = (ns: (CollectionNode | SetNode)[]): React.JSX.Element[] => {
     const runs = pickRuns(
       ns.map((n) => shown.includes(n.id)),
-      ns.map((n) => expanded.has(n.id) && (n.sets?.length ?? 0) > 0),
+      ns.map((n) => disclosure.has(n.id) && (n.sets?.length ?? 0) > 0),
     )
     return ns.map((n, i) => {
       const kids = n.sets ?? []
@@ -206,9 +215,9 @@ function LocationField({
           title={n.title}
           icon={<EntityIcon kind={n.kind} icon={n.icon} size="body" />}
           dropOutline={kids.length > 0 ? 'chevron' : 'spacer'}
-          open={expanded.has(n.id)}
-          onToggle={() => expanded.toggle(n.id)}
-          onClick={() => toggle(n.id)}
+          open={disclosure.has(n.id)}
+          onToggle={() => disclosure.toggle(n.id)}
+          onClick={() => onPick(n.id)}
           picked={runs[i]}
         >
           {kids.length > 0 ? renderLevel(kids) : undefined}
@@ -216,47 +225,89 @@ function LocationField({
       )
     })
   }
+  return (
+    <MenuScrollFrame maxHeight={PICKER_MAX_HEIGHT}>
+      {nodes.length === 0
+        ? emptyPicker('No Sets in this collection.')
+        : renderLevel(q ? narrowed(nodes, q) : nodes)}
+    </MenuScrollFrame>
+  )
+}
+
+function LocationField({
+  values,
+  nodes,
+  names,
+  onCommit,
+}: {
+  values: string[]
+  nodes: (CollectionNode | SetNode)[]
+  names: boolean
+  onCommit: (next: string[]) => void
+}): React.JSX.Element {
+  const [open, setOpen] = useState(false)
+  const [draft, setDraft] = useState('')
+  const ref = useRef<HTMLDivElement>(null)
+  const { shown, toggle } = useMultiValue(values, onCommit)
+  const byId = new Map(flattenNodes(nodes).map((n) => [n.id, n]))
+  const pick = (id: string): void => {
+    toggle(id)
+    setDraft('')
+  }
+  const enter = (name: string): void => {
+    if (!names) return
+    const fold = foldKey(name)
+    if (!shown.some((v) => foldKey(v) === fold)) toggle(name)
+    setDraft('')
+  }
+  const dismiss = (): void => {
+    setOpen(false)
+    setDraft('')
+  }
 
   return (
     <>
-      <ValueFieldShell hostRef={ref} onOpen={() => setOpen(true)}>
-        {shown.length === 0 ? (
-          <span className={fp.placeholder}>Value</span>
-        ) : (
-          <FieldRun
-            entries={shown.map((v) => {
-              const node = byId.get(v)
-              return {
-                key: v,
-                label: node?.title ?? v,
-                icon: (
-                  <EntityIcon
-                    kind={node?.kind ?? 'set'}
-                    icon={node?.icon}
-                    size="body"
-                    className={fr.runItemIcon}
-                  />
-                ),
-                onRemove: () => toggle(v),
-              }
-            })}
-          />
-        )}
-      </ValueFieldShell>
+      <TokenField
+        ref={ref}
+        chrome="bordered"
+        className={fp.valueField}
+        entries={shown.map((v) => {
+          const node = byId.get(v)
+          return {
+            key: v,
+            label: node?.title ?? v,
+            icon: node ? (
+              <EntityIcon
+                kind={node.kind}
+                icon={node.icon}
+                size="body"
+                className={fr.runItemIcon}
+              />
+            ) : (
+              <Icon name="folder-search" size="body" className={fr.runItemIcon} />
+            ),
+            onRemove: () => toggle(v),
+          }
+        })}
+        draft={draft}
+        placeholder="Value"
+        ariaLabel="Filter values"
+        onFocus={() => setOpen(true)}
+        onDraftChange={(d) => {
+          setDraft(d)
+          setOpen(true)
+        }}
+        onEnter={enter}
+      />
       <PickerMenu
         open={open}
-        onDismiss={() => setOpen(false)}
+        onDismiss={dismiss}
         triggerRef={ref}
         origin="left"
         contentClassName={treePane}
+        focus="keep"
       >
-        <MenuScrollFrame maxHeight={PICKER_MAX_HEIGHT}>
-          {!open
-            ? null
-            : nodes.length === 0
-              ? emptyPicker('No Sets in this collection.')
-              : renderLevel(nodes)}
-        </MenuScrollFrame>
+        {open && <LocationTree nodes={nodes} shown={shown} query={draft} onPick={pick} />}
       </PickerMenu>
     </>
   )
@@ -500,7 +551,12 @@ export function FilterFrame({
       )
 
     return (
-      <LocationField values={operands} nodes={locations} onCommit={(values) => patch({ values })} />
+      <LocationField
+        values={operands}
+        nodes={locations}
+        names={op.names === true}
+        onCommit={(values) => patch({ values })}
+      />
     )
   }
 
@@ -549,8 +605,11 @@ export function FilterFrame({
             {...(isCheckbox && current ? { lead: checkboxBox(current) } : {})}
             placeholder="Condition"
           >
-            {(close) =>
-              ops.map((o) => {
+            {(close) => {
+              const liveIds = new Set(flattenNodes(locations).map((n) => n.id))
+              const picked = rule.values?.filter((v) => liveIds.has(v))
+              return ops.map((o) => {
+                const values = o.slot === 'set' && !o.names ? picked : rule.values
                 return (
                   <MenuItem
                     key={o.label}
@@ -567,7 +626,7 @@ export function FilterFrame({
                           : keep
                             ? {
                                 ...(rule.value !== undefined ? { value: rule.value } : {}),
-                                ...(rule.values ? { values: rule.values } : {}),
+                                ...(values?.length ? { values } : {}),
                               }
                             : {}),
                       })
@@ -577,7 +636,7 @@ export function FilterFrame({
                   </MenuItem>
                 )
               })
-            }
+            }}
           </FieldPicker>
           {valueCell(rule, index, current)}
           <AccessoryButton

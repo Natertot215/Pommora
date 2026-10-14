@@ -3,7 +3,7 @@ import { OverScroll } from '../Interactions/OverScroll'
 import * as fr from './field-run.css'
 import { PlainLabel } from '../Labels/recipes'
 
-interface RunEntry {
+export interface RunEntry {
   key: string
   label: string
   icon?: React.ReactNode
