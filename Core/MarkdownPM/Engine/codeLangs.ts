@@ -51,6 +51,10 @@ export type CodeLangName = (typeof CODE_LANGS)[number]['name']
 const DIFF_WORD =
   /^(?:(?:diff|patch)(?:(?:[-/|\\]|\s+)(\S+))?|(\S+?)(?:[-/|\\]|\s+)(?:diff|patch))(?:\s|$)/i
 
+/** A path's folders and file in order, past its separators and any `.` step. */
+export const pathTitles = (path: string): string[] =>
+  path.split(/[\\/]/).filter((title) => title && title !== '.')
+
 /** A path's file names its language by its extension, or by its whole name when it has none, as `Dockerfile` does. */
 function fileTerm(word: string): string {
   const file = word.slice(Math.max(word.lastIndexOf('/'), word.lastIndexOf('\\')) + 1)

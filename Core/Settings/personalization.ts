@@ -147,6 +147,7 @@ const SETTINGS = {
   titleIcon: flag(false),
   codeblockLineCount: flag(false),
   codeblockScroll: flag(false),
+  codeblockPathIcons: flag(false),
   htmlShortcuts: flag(false),
   htmlFormatting: flag(true),
   navCloseOnSelect: flag(true),

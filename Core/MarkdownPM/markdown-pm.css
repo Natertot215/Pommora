@@ -983,6 +983,9 @@
 .mdpm-editor .codeblock .codeblock-language .codeblock-mark {
   opacity: calc(1 - var(--reveal, 0));
 }
+:root:not(.codeblock-path-icons) .mdpm-editor .codeblock .codeblock-language .codeblock-path-mark {
+  display: none;
+}
 .mdpm-editor .codeblock .codeblock-language.is-copied .codeblock-mark,
 .mdpm-editor .codeblock .codeblock-language.is-copied .codeblock-copy {
   opacity: 0;
