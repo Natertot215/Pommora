@@ -104,16 +104,36 @@ describe('ExcludedDirectoriesRow', () => {
     const removes = byLabel('Remove exclusion')
     expect(removes.length).toBe(2)
     await act(async () => removes[0].click())
-    // Removal collapses first; the write fires when the fold's transition ends.
-    const reveal = document.querySelector<HTMLElement>('[data-reveal]')
-    await act(async () => {
-      reveal?.dispatchEvent(
-        Object.assign(new Event('transitionend', { bubbles: true }), {
-          propertyName: 'grid-template-rows',
-        }),
-      )
-    })
     expect(exclusionsSet).toHaveBeenCalledWith(['Vault A'])
+  })
+
+  it("a × press keeps the field's focus", async () => {
+    await render(['Archive'])
+    await act(async () => manageButton().click())
+    const press = new MouseEvent('mousedown', { bubbles: true, cancelable: true })
+    byLabel('Remove exclusion')[0].dispatchEvent(press)
+    expect(press.defaultPrevented).toBe(true)
+  })
+
+  it("renaming a folder keeps its row's node", async () => {
+    await render(['Archive', 'Vault A'])
+    await act(async () => manageButton().click())
+    const revealHolding = (text: string): HTMLElement | undefined =>
+      Array.from(document.querySelectorAll<HTMLElement>('[data-reveal]')).find((r) =>
+        r.textContent?.includes(text),
+      )
+    const before = revealHolding('Archive')
+    expect(before).toBeDefined()
+    await act(async () => fieldButtons()[0].click())
+    const input = document.querySelector('input') as HTMLInputElement
+    input.value = 'Renamed'
+    await act(async () => {
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+    })
+    await act(async () => {
+      useSession.setState({ tree: { config: { excluded: ['Renamed', 'Vault A'] } } as never })
+    })
+    expect(revealHolding('Renamed')).toBe(before)
   })
 
   it('committing a field writes the whole list with that entry replaced', async () => {
