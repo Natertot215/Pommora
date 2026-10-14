@@ -34,7 +34,7 @@ import type { SetIndex } from './setIndex'
 export type PropertyGroup = Extract<GroupConfig, { kind: 'property' }>
 type Sorter = (rows: ViewRow[]) => ViewRow[]
 
-/** A Collection or Set as the tree already holds it — the filter and grouping read the nodes themselves, never a rebuilt copy. */
+/** A Collection or Set as the tree holds it. */
 export interface SetTreeNode {
   id: string
   title: string
