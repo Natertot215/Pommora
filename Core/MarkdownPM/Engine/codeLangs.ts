@@ -49,7 +49,7 @@ export const CODE_LANGS = [
 export type CodeLangName = (typeof CODE_LANGS)[number]['name']
 
 const DIFF_WORD =
-  /^(?:(?:diff|patch)(?:(?:[-/|\\]|\s+)(\S+))?|(\S+?)(?:[-/|\\]|\s+)(?:diff|patch))(?:\s|$)/i
+  /^(?:(?:diff|patch)(?:(?:-(?=[^\s.]+(?:\s|$))|[/|\\]|\s+)(\S+))?|(\S+?)(?:[-/|\\]|\s+)(?:diff|patch))(?:\s|$)/i
 
 /** A path's folders and file in order, past its separators and any `.` step. */
 export const pathTitles = (path: string): string[] =>
@@ -61,7 +61,7 @@ function fileTerm(word: string): string {
   return file.slice(file.lastIndexOf('.') + 1)
 }
 
-/** The one reading of a fence's info string: the language its code colors as, and whether it draws as a diff — `diff` or `patch` alone, or joined to a language by `-`, `/`, `\`, `|`, or a space on either side. Past that, only the first word counts, and a path or filename there names its language by its extension, a `.diff` or `.patch` file drawing as a diff. A null name selects no parse. A word with a folder, a filename with a name before its extension, or a dotfile naming no language comes back as written in `path`, which the fence's tag shows in place of the language. */
+/** The one reading of a fence's info string: the language its code colors as, and whether it draws as a diff — `diff` or `patch` alone, or joined to a language by `-`, `/`, `\`, `|`, or a space on either side, though a dashed word with an extension is a filename. Past that, only the first word counts, and a path or filename there names its language by its extension, a `.diff` or `.patch` file drawing as a diff. A null name selects no parse. A word with a folder, a filename with a name before its extension, or a dotfile naming no language comes back as written in `path`, which the fence's tag shows in place of the language. */
 export function codeFence(info: string): {
   name: CodeLangName | null
   diff: boolean
