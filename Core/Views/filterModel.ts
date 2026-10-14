@@ -20,63 +20,16 @@ import {
   TITLE_TARGET,
 } from '../Properties/Cells/PropertyTypes'
 
-export type Connector = 'and' | 'or'
-
-export interface FilterRow {
-  connector: Connector | null
-  rule: FilterRule
-}
-
 export type DecodedFilter =
-  | { kind: 'rows'; mode: MatchMode; rows: FilterRow[] }
+  | { kind: 'rows'; mode: MatchMode; rules: FilterRule[] }
   | { kind: 'locked' }
 
-const isAllOfLeaves = (node: FilterRule | FilterGroup): node is FilterGroup =>
-  isGroup(node) && node.match === 'all' && !node.rules.some(isGroup)
-
-export const connectorFor = (mode: MatchMode): Connector => (mode === 'any' ? 'or' : 'and')
-
-/** Connectors derive the structure: the list splits into AND-runs at each 'or', and a split becomes an `any` of `all`-runs. The mode names only a lone rule's group. */
-export function encodeFilter(mode: MatchMode, rows: FilterRow[]): FilterGroup | undefined {
-  if (rows.length === 0) return undefined
-  const runs: FilterRule[][] = [[]]
-  for (const row of rows) {
-    if (row.connector === 'or' && runs[runs.length - 1].length > 0) runs.push([])
-    runs[runs.length - 1].push(row.rule)
-  }
-  if (runs.length === 1) return { match: rows.length === 1 ? mode : 'all', rules: runs[0] }
-  return {
-    match: 'any',
-    rules: runs.map((run) => (run.length === 1 ? run[0] : { match: 'all', rules: run })),
-  }
-}
-
-/** The frame writes two shapes: a flat group, or an `any` of rules and all-of runs, which reads as All with each Or a deviation once a run joins with And. */
+/** The pane writes one shape, a flat group under the footer's mode; anything nested was authored elsewhere and locks. */
 export function decodeFilter(filter: FilterGroup | undefined): DecodedFilter {
-  if (!filter) return { kind: 'rows', mode: 'all', rows: [] }
-
-  if (!filter.rules.some(isGroup)) {
-    const connector = connectorFor(filter.match)
-    return {
-      kind: 'rows',
-      mode: filter.match,
-      rows: (filter.rules as FilterRule[]).map((rule, i) => ({
-        connector: i === 0 ? null : connector,
-        rule,
-      })),
-    }
-  }
-
-  if (filter.match === 'all' || !filter.rules.every((n) => !isGroup(n) || isAllOfLeaves(n)))
-    return { kind: 'locked' }
-  const rows: FilterRow[] = []
-  for (const child of filter.rules) {
-    const run = isGroup(child) ? (child.rules as FilterRule[]) : [child]
-    run.forEach((rule, i) => {
-      rows.push({ connector: rows.length === 0 ? null : i === 0 ? 'or' : 'and', rule })
-    })
-  }
-  return { kind: 'rows', mode: rows.some((r) => r.connector === 'and') ? 'all' : 'any', rows }
+  if (!filter) return { kind: 'rows', mode: 'any', rules: [] }
+  return filter.rules.some(isGroup)
+    ? { kind: 'locked' }
+    : { kind: 'rows', mode: filter.match, rules: filter.rules as FilterRule[] }
 }
 
 type ValueSlot = 'none' | 'text' | 'number' | 'date' | 'chips' | 'set'

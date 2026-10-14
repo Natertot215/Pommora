@@ -46,13 +46,9 @@ import { onActivateKey } from '@pommora/uix/Interactions/activate'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { PickerControl, type PickerOption } from '@pommora/uix/Pickers/PickerControl'
 import {
-  type Connector,
   type DecodedFilter,
   type OperatorChoice,
-  type FilterRow,
   decodeFilter,
-  connectorFor,
-  encodeFilter,
   filterTargets,
   operatorsFor,
 } from '../filterModel'
@@ -321,15 +317,6 @@ function ChipsField({
   )
 }
 
-function ConnectorButton({ or, onClick }: { or: boolean; onClick: () => void }): React.JSX.Element {
-  return (
-    <button type="button" className={fp.connector} aria-label="Toggle connector" onClick={onClick}>
-      {or ? 'Or' : 'And'}
-      <Icon name="chevrons-up-down" size="control" className={fp.chevron} />
-    </button>
-  )
-}
-
 function RemoveButton({ onClick }: { onClick: () => void }): React.JSX.Element {
   return (
     <button type="button" className={fp.removeButton} aria-label="Remove filter" onClick={onClick}>
@@ -368,26 +355,26 @@ export function FilterFrame({
 }): React.JSX.Element {
   const styleFor = useStyleFor()
   const nexusClock = useSetting('timeFormat')
-  const [draft, setDraft] = useState<Connector | null | false>(false)
+  const [drafting, setDrafting] = useState(false)
 
   const [pendingMode, setPendingMode] = useState<MatchMode | null>(null)
 
   const decoded: DecodedFilter = decodeFilter(view.filter)
-  const rows: FilterRow[] = decoded.kind === 'rows' ? decoded.rows : []
-  const decodedMode: MatchMode = decoded.kind === 'rows' ? decoded.mode : 'all'
-  const mode: MatchMode = rows.length === 0 ? (pendingMode ?? decodedMode) : decodedMode
+  const rules: FilterRule[] = decoded.kind === 'rows' ? decoded.rules : []
+  const decodedMode: MatchMode = decoded.kind === 'rows' ? decoded.mode : 'any'
+  const mode: MatchMode = rules.length === 0 ? (pendingMode ?? decodedMode) : decodedMode
 
-  const save = (nextMode: MatchMode, nextRows: FilterRow[]): void =>
-    onCommit({ filter: encodeFilter(nextMode, nextRows) })
+  const save = (nextMode: MatchMode, next: FilterRule[]): void =>
+    onCommit({ filter: next.length ? { match: nextMode, rules: next } : undefined })
 
-  const liveRows = (): FilterRow[] => {
+  const liveRules = (): FilterRule[] => {
     const d = decodeFilter(read().filter)
-    return d.kind === 'rows' ? d.rows : []
+    return d.kind === 'rows' ? d.rules : []
   }
 
   const setEnabled = (next: boolean): void => onCommit({ filter_enabled: next })
 
-  const entering = useEntrance(rows, (_, i) => String(i))
+  const entering = useEntrance(rules, (_, i) => String(i))
 
   const contextIds = contextIdsOf(tree)
   const targets = filterTargets(schema, tree, locations.length > 0)
@@ -396,49 +383,27 @@ export function FilterFrame({
 
   const pickMatch = (pick: MatchMode): void => {
     if (pick === mode) return
-    const current = liveRows()
-    if (current.length === 0) {
-      setPendingMode(pick)
-      return
-    }
-    const bulk = connectorFor(pick)
-    save(
-      pick,
-      current.map((row, i) => ({ ...row, connector: i === 0 ? null : bulk })),
-    )
+    const current = liveRules()
+    if (current.length === 0) setPendingMode(pick)
+    else save(pick, current)
   }
 
   const replaceRule = (index: number, rule: FilterRule): void =>
     save(
       mode,
-      liveRows().map((row, i) => (i === index ? { ...row, rule } : row)),
+      liveRules().map((r, i) => (i === index ? rule : r)),
     )
 
-  const removeRow = (index: number): void => {
-    const next = liveRows().filter((_, i) => i !== index)
-    if (next.length > 0) next[0] = { ...next[0], connector: null }
-    save(mode, next)
-  }
-
-  const toggleConnector = (index: number): void =>
+  const removeRow = (index: number): void =>
     save(
       mode,
-      liveRows().map((row, i) =>
-        i === index ? { ...row, connector: row.connector === 'and' ? 'or' : 'and' } : row,
-      ),
+      liveRules().filter((_, i) => i !== index),
     )
 
   const completeDraft = (targetId: string): void => {
-    const current = liveRows()
-    setDraft(false)
+    setDrafting(false)
     setPendingMode(null)
-    save(mode, [
-      ...current,
-      {
-        connector: current.length === 0 || draft === false ? null : draft,
-        rule: mintRule(targetId, schema, contextIds),
-      },
-    ])
+    save(mode, [...liveRules(), mintRule(targetId, schema, contextIds)])
   }
 
   const targetOptions = (
@@ -461,12 +426,11 @@ export function FilterFrame({
     ))
 
   const valueCell = (
-    row: FilterRow,
+    rule: FilterRule,
     index: number,
     op: OperatorChoice | undefined,
   ): React.ReactNode => {
     if (!op || op.slot === 'none') return null
-    const rule = row.rule
     const operands = ruleOperands(rule)
     const operand = operands[0] ?? ''
     const def = defById.get(rule.property_id)
@@ -535,18 +499,18 @@ export function FilterFrame({
     )
   }
 
-  const ruleRow = (row: FilterRow, index: number): React.JSX.Element => {
-    const ops = operatorsFor(row.rule.property_id, schema, contextIds)
+  const ruleRow = (rule: FilterRule, index: number): React.JSX.Element => {
+    const ops = operatorsFor(rule.property_id, schema, contextIds)
     const current = ops.find(
       (o) =>
-        o.op === row.rule.op &&
+        o.op === rule.op &&
         (o.impliedValue === undefined ||
-          checkboxWord(o.impliedValue) === checkboxWord(ruleOperands(row.rule)[0])),
+          checkboxWord(o.impliedValue) === checkboxWord(ruleOperands(rule)[0])),
     )
-    const target = targetById.get(row.rule.property_id)
-    const isCheckbox = declaredType(row.rule.property_id, schema, contextIds) === 'checkbox'
-    const checkboxColor = defById.get(row.rule.property_id)?.checkbox_color
-    const checkboxLook = styleFor(row.rule.property_id, schema, view).look
+    const target = targetById.get(rule.property_id)
+    const isCheckbox = declaredType(rule.property_id, schema, contextIds) === 'checkbox'
+    const checkboxColor = defById.get(rule.property_id)?.checkbox_color
+    const checkboxLook = styleFor(rule.property_id, schema, view).look
     const checkboxBox = (o: OperatorChoice): React.JSX.Element => (
       <CheckboxGlyph
         checked={o.impliedValue === 'true'}
@@ -557,32 +521,26 @@ export function FilterFrame({
     return (
       <Reveal key={index} open enterOnMount={entering(String(index))} fill>
         <div className={fp.ruleRow}>
-          <span className={fp.whatCell}>
-            {row.connector !== null && (
-              <ConnectorButton or={row.connector === 'or'} onClick={() => toggleConnector(index)} />
-            )}
-            <FieldPicker
-              ariaLabel="Filter property"
-              display={target?.label ?? row.rule.property_id}
-              icon={target?.icon}
-              placeholder="Property"
-            >
-              {(close) =>
-                targetOptions(
-                  (id) =>
-                    id !== row.rule.property_id &&
-                    replaceRule(index, mintRule(id, schema, contextIds)),
-                  close,
-                  row.rule.property_id,
-                )
-              }
-            </FieldPicker>
-          </span>
+          <FieldPicker
+            ariaLabel="Filter property"
+            display={target?.label ?? rule.property_id}
+            icon={target?.icon}
+            placeholder="Property"
+          >
+            {(close) =>
+              targetOptions(
+                (id) =>
+                  id !== rule.property_id && replaceRule(index, mintRule(id, schema, contextIds)),
+                close,
+                rule.property_id,
+              )
+            }
+          </FieldPicker>
           <FieldPicker
             ariaLabel="Filter operator"
             chevron
             className={current?.slot === 'none' ? fp.controlFieldWide : fp.controlField}
-            display={current?.label ?? row.rule.op}
+            display={current?.label ?? rule.op}
             {...(isCheckbox && current ? { lead: checkboxBox(current) } : {})}
             placeholder="Condition"
           >
@@ -597,14 +555,14 @@ export function FilterFrame({
                       close()
                       const keep = o.slot === current?.slot
                       replaceRule(index, {
-                        property_id: row.rule.property_id,
+                        property_id: rule.property_id,
                         op: o.op,
                         ...(o.impliedValue !== undefined
                           ? { value: o.impliedValue }
                           : keep
                             ? {
-                                ...(row.rule.value !== undefined ? { value: row.rule.value } : {}),
-                                ...(row.rule.values ? { values: row.rule.values } : {}),
+                                ...(rule.value !== undefined ? { value: rule.value } : {}),
+                                ...(rule.values ? { values: rule.values } : {}),
                               }
                             : {}),
                       })
@@ -616,36 +574,28 @@ export function FilterFrame({
               })
             }
           </FieldPicker>
-          {valueCell(row, index, current)}
+          {valueCell(rule, index, current)}
           <RemoveButton onClick={() => removeRow(index)} />
         </div>
       </Reveal>
     )
   }
 
-  const lead = rows.length === 0
-  const draftRow = (draft !== false || lead) && (
+  const lead = rules.length === 0
+  const draftRow = (drafting || lead) && (
     <Reveal open enterOnMount={!lead} fill>
       <div className={fp.ruleRow}>
-        <span className={fp.whatCell}>
-          {!lead && (
-            <ConnectorButton
-              or={draft === 'or'}
-              onClick={() => setDraft(draft === 'or' ? 'and' : 'or')}
-            />
-          )}
-          <FieldPicker
-            ariaLabel="Filter property"
-            className={cx(fp.cellField, fp.blankWide)}
-            display={null}
-            placeholder={lead ? 'Where' : ''}
-          >
-            {(close) => targetOptions((id) => completeDraft(id), close)}
-          </FieldPicker>
-        </span>
+        <FieldPicker
+          ariaLabel="Filter property"
+          className={cx(fp.cellField, fp.blankWide)}
+          display={null}
+          placeholder={lead ? 'Where' : ''}
+        >
+          {(close) => targetOptions((id) => completeDraft(id), close)}
+        </FieldPicker>
         <span className={cx(fp.controlField, fp.blankNarrow)} />
         <span className={fp.valueField} />
-        {!lead && <RemoveButton onClick={() => setDraft(false)} />}
+        {!lead && <RemoveButton onClick={() => setDrafting(false)} />}
       </div>
     </Reveal>
   )
@@ -680,11 +630,11 @@ export function FilterFrame({
       {decoded.kind === 'locked' ? (
         <>
           <MenuCaption>Hand-authored filter — edited outside the pane.</MenuCaption>
-          <FootingItem icon="rotate-ccw" label="Reset Filter" onClick={() => save('all', [])} />
+          <FootingItem icon="rotate-ccw" label="Reset Filter" onClick={() => save(mode, [])} />
         </>
       ) : (
         <div className={fp.ruleList}>
-          {rows.map(ruleRow)}
+          {rules.map(ruleRow)}
           {draftRow}
           <Button
             size="button-inline"
@@ -694,9 +644,7 @@ export function FilterFrame({
             className={accessoryButton}
             data-create
             aria-label="Add filter rule"
-            onClick={() =>
-              draft === false && setDraft(rows.length === 0 ? null : connectorFor(mode))
-            }
+            onClick={() => setDrafting(true)}
           />
         </div>
       )}

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { PropertyDefinition } from '../Properties/properties'
 import type { NexusTree } from '../Nexus/tree'
-import { decodeFilter, encodeFilter, filterTargets, operatorsFor } from './filterModel'
+import { decodeFilter, filterTargets, operatorsFor } from './filterModel'
 
 const r = (
   id: string,
@@ -13,74 +13,25 @@ const r = (
   value,
 })
 
-describe('encodeFilter', () => {
-  it('all-and → flat all group', () => {
-    expect(
-      encodeFilter('all', [
-        { connector: null, rule: r('a') },
-        { connector: 'and', rule: r('b') },
-      ]),
-    ).toEqual({ match: 'all', rules: [r('a'), r('b')] })
-  })
-
-  it('A and B, or C → any of [all-run, leaf]', () => {
-    expect(
-      encodeFilter('all', [
-        { connector: null, rule: r('a') },
-        { connector: 'and', rule: r('b') },
-        { connector: 'or', rule: r('c') },
-      ]),
-    ).toEqual({ match: 'any', rules: [{ match: 'all', rules: [r('a'), r('b')] }, r('c')] })
-  })
-
-  it('an And under Any saves as an all group, not as the mode', () => {
-    expect(
-      encodeFilter('any', [
-        { connector: null, rule: r('a') },
-        { connector: 'and', rule: r('b') },
-      ]),
-    ).toEqual({ match: 'all', rules: [r('a'), r('b')] })
-    expect(encodeFilter('any', [{ connector: null, rule: r('a') }])).toEqual({
-      match: 'any',
-      rules: [r('a')],
-    })
-  })
-
-  it('no rows → undefined, whatever the mode', () => {
-    expect(encodeFilter('all', [])).toBeUndefined()
-    expect(encodeFilter('any', [])).toBeUndefined()
-  })
-})
-
 describe('decodeFilter', () => {
-  it('round-trips every editable shape bit-identically', () => {
-    const shapes = [
-      encodeFilter('all', [{ connector: null, rule: r('a') }]),
-      encodeFilter('any', [
-        { connector: null, rule: r('a') },
-        { connector: 'or', rule: r('b') },
-      ]),
-      encodeFilter('all', [
-        { connector: null, rule: r('a') },
-        { connector: 'and', rule: r('b') },
-        { connector: 'or', rule: r('c') },
-      ]),
-    ]
-    for (const tree of shapes) {
-      const d = decodeFilter(tree)
-      expect(d.kind).toBe('rows')
-      if (d.kind === 'rows') expect(encodeFilter(d.mode, d.rows)).toEqual(tree)
-    }
+  it('a flat group decodes as rows under its own mode', () => {
+    expect(decodeFilter({ match: 'any', rules: [r('a'), r('b')] })).toEqual({
+      kind: 'rows',
+      mode: 'any',
+      rules: [r('a'), r('b')],
+    })
   })
 
-  it('mixed connectors read mode all; pure or reads any (D-10)', () => {
-    const mixed = decodeFilter({
-      match: 'any',
-      rules: [{ match: 'all', rules: [r('a'), r('b')] }, r('c')],
-    })
-    expect(mixed.kind === 'rows' && mixed.mode).toBe('all')
-    const pureOr = decodeFilter({ match: 'any', rules: [r('a'), r('b')] })
-    expect(pureOr.kind === 'rows' && pureOr.mode).toBe('any')
+  it('locks an any of all-runs and an any with an all-run inside', () => {
+    expect(
+      decodeFilter({
+        match: 'any',
+        rules: [{ match: 'all', rules: [r('a'), r('b')] }, r('c')],
+      }).kind,
+    ).toBe('locked')
+    expect(
+      decodeFilter({ match: 'any', rules: [{ match: 'all', rules: [r('a')] }, r('b')] }).kind,
+    ).toBe('locked')
   })
 
   it('locks any group nested under an all root, which the frame never writes', () => {
@@ -100,13 +51,8 @@ describe('decodeFilter', () => {
     ).toBe('locked')
   })
 
-  it('an any whose runs are single rules reads as Any', () => {
-    const d = decodeFilter({ match: 'any', rules: [{ match: 'all', rules: [r('a')] }, r('b')] })
-    expect(d.kind === 'rows' && d.mode).toBe('any')
-  })
-
-  it('undefined → empty rows in the all mode', () => {
-    expect(decodeFilter(undefined)).toEqual({ kind: 'rows', mode: 'all', rows: [] })
+  it('undefined → empty rows in the any mode', () => {
+    expect(decodeFilter(undefined)).toEqual({ kind: 'rows', mode: 'any', rules: [] })
   })
 })
 

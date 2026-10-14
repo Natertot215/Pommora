@@ -145,7 +145,6 @@ describe('FilterFrame', () => {
   it('parked rows stay live', async () => {
     await mount(view({ ...twoRules(), filter_enabled: false }))
     expect(byLabel('Matches')).toBeTruthy()
-    expect(byLabel('Toggle connector')).toBeTruthy()
   })
 
   it('a hand-authored filter can still be parked, not just reset', async () => {
@@ -168,14 +167,14 @@ describe('FilterFrame', () => {
     await mount(view())
     await click(byLabel('Matches'))
     expect(saveSpy).not.toHaveBeenCalled()
-    expect(byLabel('Matches')?.textContent).toContain('Any')
+    expect(byLabel('Matches')?.textContent).toContain('All')
     await click(byLabel('Filter property'))
     await click(
       optionWithText('Archived') ??
         [...document.querySelectorAll('*')].filter((el) => el.textContent === 'Archived').at(-1),
     )
     expect(lastSaved().filter).toEqual({
-      match: 'any',
+      match: 'all',
       rules: [{ property_id: 'prop_check', op: 'is', value: 'true' }],
     })
   })
@@ -194,7 +193,7 @@ describe('FilterFrame', () => {
     expect(lastSaved().filter_enabled).toBe(false)
   })
 
-  it("the draft's connector toggles, and its Or splits the run on completion", async () => {
+  it('a drafted rule appends under the footer mode', async () => {
     await mount(
       view({
         filter: {
@@ -205,12 +204,6 @@ describe('FilterFrame', () => {
     )
     await click(byLabel('Add filter rule'))
     await settle()
-    const connectors = [...host.querySelectorAll('button')].filter(
-      (b) => b.getAttribute('aria-label') === 'Toggle connector',
-    )
-    expect(connectors.length).toBe(1)
-    await click(connectors.at(-1))
-    expect(saveSpy).not.toHaveBeenCalled()
     await click(
       [...host.querySelectorAll('button')]
         .filter((b) => b.getAttribute('aria-label') === 'Filter property')
@@ -221,7 +214,7 @@ describe('FilterFrame', () => {
         [...document.querySelectorAll('*')].filter((el) => el.textContent === 'Archived').at(-1),
     )
     expect(lastSaved().filter).toEqual({
-      match: 'any',
+      match: 'all',
       rules: [
         { property_id: 'prop_status', op: 'is', values: ['todo'] },
         { property_id: 'prop_check', op: 'is', value: 'true' },
@@ -267,7 +260,7 @@ describe('FilterFrame', () => {
         input.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))
       }
     })
-    await click(byLabel('Toggle connector'))
+    await click(byLabel('Matches'))
     expect(lastSaved().filter).toEqual({
       match: 'any',
       rules: [
@@ -331,22 +324,6 @@ describe('FilterFrame', () => {
     expect(host.querySelector('[class*="ruleRow"]')).not.toBeNull()
   })
 
-  it('toggling a connector And→Or re-serializes to any-of-runs', async () => {
-    await mount(twoRules())
-    await click(
-      [...host.querySelectorAll('button')].find(
-        (b) => b.getAttribute('aria-label') === 'Toggle connector',
-      ),
-    )
-    expect(lastSaved().filter).toEqual({
-      match: 'any',
-      rules: [
-        { property_id: 'prop_status', op: 'is', values: ['todo'] },
-        { property_id: 'prop_check', op: 'is', value: 'true' },
-      ],
-    })
-  })
-
   it('a locked tree renders Reset and no rule grid; Reset clears the slot', async () => {
     await mount(
       view({
@@ -388,7 +365,7 @@ describe('FilterFrame', () => {
         [...document.querySelectorAll('*')].filter((el) => el.textContent === 'Archived').at(-1),
     )
     expect(lastSaved().filter).toEqual({
-      match: 'all',
+      match: 'any',
       rules: [{ property_id: 'prop_check', op: 'is', value: 'true' }],
     })
   })
