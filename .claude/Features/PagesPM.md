@@ -17,7 +17,7 @@ Every creation surface — the sidebar, a table row, a card, the grid — runs o
 
 ### Opening Behavior
 
-Clicking a Page opens it in the active tab, replacing that tab's selection, and the editor auto-saves on a debounce. A Collection can instead route its Pages to the floating Page Window through its **Open In** setting; ⌘-click always opens a full page in a new tab. Additionally, hovering over a page's link within its body reveals a non-editable dropdown panel that serves as an in-body preview. Every body write offers the text it overwrites to the page's file history ([[CorePM]] › Persistence), and **View History** in the page menu opens it.
+Clicking a Page opens it in the active tab, replacing that tab's selection, and the editor auto-saves on a debounce. A Page matching the **Open In Preview** rules opens in the floating Page Window instead; ⌘-click always opens a full page in a new tab. Additionally, hovering over a page's link within its body reveals a non-editable dropdown panel that serves as an in-body preview. Every body write offers the text it overwrites to the page's file history ([[CorePM]] › Persistence), and **View History** in the page menu opens it.
 
 ### Outline
 

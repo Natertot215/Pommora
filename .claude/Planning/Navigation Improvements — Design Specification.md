@@ -111,7 +111,7 @@ The NavWindow's window-local glue — frozen recents, the recents reorder, and t
 - **F-1:** [CONFIRMED] `SearchWindow.tsx` in `Core/Interface/Windows/` is its own component rather than a scoped NavWindow: the NavWindow's map tab is its return path, and a SearchWindow has none.
 - **F-2:** [CONFIRMED] It is a fourth `WindowKind` on the singleton `pageWindow` slot; a summon overtakes any standing window, and any Page Window summon overtakes it.
 - **F-3:** [CONFIRMED] It keeps no tab set or window record and is not a tab type; its only state is the `scopeId` inside its window state.
-- **F-4:** [CONFIRMED] A Preview from it hands off to the NavWindow — the SearchWindow closes and the entity opens as a NavWindow tab. Recents rows, Location rows, and a rail page in a page-preview Collection all route to it.
+- **F-4:** [CONFIRMED] A Preview from it hands off to the NavWindow — the SearchWindow closes and the entity opens as a NavWindow tab. Recents rows, Location rows, and a rail page the Open In Preview rules match all route to it.
 - **F-5:** [CONFIRMED] The scan glyph opens the scope's view in the main pane and closes the SearchWindow, for a Collection, a Set, or a folder alike.
 - **F-6:** [CONFIRMED] A Collection, Set, or folder with a banner draws it across the main frame under **Show Banner In Navigation Window**, the setting that governs the NavWindow's own banner.
 - **F-7:** [INFERRED] The NavWindow's frozen-recents, recents-reorder, and query/recents glue hoists into a hook both windows use, and `NavBanner` is parameterized by value and owner.
@@ -120,7 +120,7 @@ The NavWindow's window-local glue — frozen recents, the recents reorder, and t
 #### G — Rail
 
 - **G-1:** [CONFIRMED] The rail mirrors the scope's hierarchy with the scope itself as its root row, pages included.
-- **G-2:** [CONFIRMED] A rail row click does what the same click does in the sidebar, except that a page in a page-preview Collection hands off per F-4; it never re-scopes the search.
+- **G-2:** [CONFIRMED] A rail row click does what the same click does in the sidebar, except that a page the Open In Preview rules match hands off per F-4; it never re-scopes the search.
 - **G-3:** [CONFIRMED] A reorder in the rail writes the real order the sidebar shows.
 - **G-4:** [CONFIRMED] Below the root, the rail's disclosure is the sidebar's per-entity disclosure state — no new store or cache.
 - **G-5:** [INFERRED] The root row always shows its children and carries no disclosure or drag, so a collapsed or locked folder never opens the window onto a single row.

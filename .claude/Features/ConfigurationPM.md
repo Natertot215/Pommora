@@ -1,7 +1,7 @@
 ## Configuration
 
 
-Configuration reads at three scopes. A **Nexus** is configured from the Settings window, whose knobs live in `.nexus/settings.json` and travel with the Nexus; a **Collection** from its own sidecar, governing how its pages open and how its views present themselves; a **Page** from its own frontmatter, its page metadata, and its per-machine chrome. Beneath all three sits a per-device layer: the app config beside the application, which is never part of a Nexus, and the machine-and-Nexus preferences in that Nexus's database under the app's userData directory. This document is the one roster of every knob; other documents name a setting by its label and point here.
+Configuration reads at three scopes. A **Nexus** is configured from the Settings window, whose knobs live in `.nexus/settings.json` and travel with the Nexus; a **Collection** from its own sidecar, governing how its views present themselves; a **Page** from its own frontmatter, its page metadata, and its per-machine chrome. Beneath all three sits a per-device layer: the app config beside the application, which is never part of a Nexus, and the machine-and-Nexus preferences in that Nexus's database under the app's userData directory. This document is the one roster of every knob; other documents name a setting by its label and point here.
 
 ### Settings
 
@@ -56,9 +56,10 @@ The heading reads the unbound state and three binding states. Unbound shows the 
 
 | Setting | Key | Description | Options |
 | --- | --- | --- | --- |
-| Close Navigation On Select | `navCloseOnSelect` | Picking an entity dismisses the Navigation window. | **On** · Off |
+| Close Navigation On Select | `navCloseOnSelect` | Picking an entity dismisses the Navigation window; a page the Open In Preview rules send to the Page Window keeps it open. | **On** · Off |
 | Open Folders In Main View On Title Click | `openFoldersOnTitleClick` | A Sub-Set opens its view as a Collection and a Set do: from its sidebar title, its breadcrumb segment, and a double-click of its band. | On · **Off** |
-| Open Connections In Preview | `connectionsOpenInPreview` | A connection click opens the Page Window instead of navigating; ⌘-click takes the other route. | On · **Off** |
+| Open Connections In Preview | `connectionsOpenInPreview` | A connection click opens the Page Window instead of navigating; ⌘-click takes the other route. Off, connection clicks follow Open In Preview. | On · **Off** |
+| Open In Preview | `openInPreview` | The rules a page must match to open in the Page Window from a plain click, edited from Manage beside their count. | Manage |
 | Hover Previews | `previewPersistence` | Whether a preview raises at all, and how long it lingers after hovering off. | Off · **1 Second** · 5 Seconds · 10 Seconds · Until Closed |
 | Dismiss Preview On Pointer Actions | `dismissPreviewOnPointer` | A click outside the live preview dismisses it; a locked preview stays. | On · **Off** |
 | Default Opening Behavior | `tabOpenBehavior` | What opening an entity does: overtake the active tab, or open a new one. | **Overtake** · New Tab |
@@ -128,6 +129,8 @@ Every setting here is a machine-level preference, stored in the device database 
 
 | Setting | Key | Description | Options |
 | --- | --- | --- | --- |
+| Excluded Directories | `excluded_folders` | The folders the app leaves unrecognized, stored at the settings root and edited from Manage beside their count; removing one re-indexes it. | Manage |
+| Clear Exclusion Cache | — | Removes the container files, identity keys, and Context keys Pommora wrote into the excluded folders. Confirms first. | Clear |
 
 #### Properties
 
@@ -219,12 +222,11 @@ The one frame that is a surface of its own, anchored below the rail's separator.
 
 ### Collections
 
-A Collection's own configuration, stored in its `_pagecollection.json` sidecar and set from the container's Configuration pane. A Set carries the same keys in `_pageset.json` at any depth, except `open_in`, which is Collection-owned and proxied by its Sets.
+A Collection's own configuration, stored in its `_pagecollection.json` sidecar. A Set carries the same keys in `_pageset.json` at any depth.
 
 | Setting | Key | Description | Options |
 | --- | --- | --- | --- |
-| Open In | `open_in` | How a page opens from its container. | **Full Page** · Page Preview |
-| Show Title | `view_button` | Whether the view menu button shows the view's name beside its glyph. | **Icon** · Labeled |
+| Show Title | `view_button` | Whether the view menu button shows the view's name beside its glyph; set from the button's right-click. | **Icon** · Labeled |
 
 The sidecar's remaining fields are structure rather than configuration: the entity's id and icon, its banner, its page and set ordering, its property assignment list, and its saved views.
 

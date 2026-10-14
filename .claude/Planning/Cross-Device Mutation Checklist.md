@@ -65,7 +65,7 @@ Every typed value is written by `Core/Properties/setProperty.ts` `setPropertyOp`
 | Reorder top-level Collections    | `Core/Nexus/reorder.ts` `setCollectionOrder`                                                          | `.nexus/state.json`, `order.collections`                                                               | The sidebar order matches                                  | 2762 ms      |
 | Lock a container's disclosure    | `Core/Nexus/mutate.ts` `setDisclosureLock` → `Core/Files/sidecar.ts` `patchSidecar`                   | The sidecar's `disclosure_locked`                                                                      | The container reads locked                                 | 2749 ms      |
 | Set a container's icon or banner | `Core/Pages/setIcon.ts` `setIconOp`, `Core/Pages/setBanner.ts` `setBannerOp`                          | The sidecar's `icon`, `banner`                                                                         | Both render                                                | not measured |
-| Set Open In or the view button   | `Core/Views/handlers.ts` `container:configure` → `Core/Views/containerConfig.ts` `setContainerConfig` | The sidecar's `open_in`, `view_button`                                                                 | The container opens the same way                           | not measured |
+| Set the view button              | `Core/Views/handlers.ts` `container:configure` → `Core/Views/containerConfig.ts` `setContainerConfig` | The sidecar's `view_button`                                                                            | The view button reads the same                             | not measured |
 
 #### Schema
 
@@ -165,6 +165,7 @@ Both land through the key-level merge, so two devices changing different keys wh
 | Mutation | Writer | On-Disk Effect | Expected On B | Measured |
 | --- | --- | --- | --- | --- |
 | Change any personalization setting | `Core/Settings/handlers.ts` `personalization:set` → `Core/Settings/settings.ts` `writePersonalization` | `.nexus/settings.json`, `personalization.<key>` | The setting reads the same, Interface Scale and Webpage Zoom included, by standing decision | 2755 ms |
+| Edit the Open In Preview rules | `Core/Settings/handlers.ts` `personalization:set` → `Core/Settings/settings.ts` `writePersonalization` | `.nexus/settings.json`, `personalization.openInPreview` | The same pages open in the Page Window | not measured |
 | Set excluded folders | `Core/Settings/handlers.ts` `exclusions:set` → `Core/Settings/settings.ts` `writeExcludedFolders` | `.nexus/settings.json`, `excluded_folders` | The same folders leave B's tree and the manifest on both devices | 2549 ms to B's settings file; 3063 ms to B's tree |
 | Rebind a command chord | No writer today; `Core/Settings/codec.ts` `readCommands` reads the key a hand edit supplies | `.nexus/settings.json`, `commands.<id>` | The same chord fires | not measured |
 | Set the profile icon | `Core/Nexus/mutate.ts` `setProfileIcon` → `Core/Settings/settings.ts` `updateSettings` | `.nexus/settings.json`, `profile_icon` | The icon renders | not measured |
