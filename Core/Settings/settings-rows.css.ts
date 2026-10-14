@@ -34,11 +34,4 @@ export const field = style({
   minWidth: 0,
 })
 
-export const addRow = style({
-  display: 'flex',
-  paddingTop: '4px',
-})
-
-export const addButton = style({ color: c.label.secondary })
-
 globalStyle(`${paneRow} ${navTrailSegment}`, { color: c.label.control })
