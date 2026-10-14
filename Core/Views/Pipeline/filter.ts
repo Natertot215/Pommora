@@ -25,7 +25,7 @@ import type { SetTreeNode } from './group'
 import { linkDisplayText } from '../../Connections/linkValue'
 import { dayMs, readDate, readNumber } from '../../Properties/formatValue'
 import { foldKey } from '../../Paths/caseFold'
-import { idTime } from '../../Nexus/ids'
+import { isUlidShaped } from '../../Nexus/identityMark'
 
 const FILTER_OP_SET = new Set<string>(Object.values(FILTER_OPS))
 
@@ -104,7 +104,7 @@ function prepareLocation(op: string, want: string[], setTree: SetTreeNode[]): Ro
         }
       }
       walk(setTree, false)
-      if (inside.size === 0 && want.every((v) => idTime(v) !== null)) return undefined
+      if (inside.size === 0 && want.every(isUlidShaped)) return undefined
       const keep = op === FILTER_OPS.isInside
       return ({ parentSetId: p }) => (p != null && inside.has(p)) === keep
     }
