@@ -104,6 +104,9 @@ export type Row =
       kind: 'exclusions'
     })
   | (RowText & {
+      kind: 'previewRules'
+    })
+  | (RowText & {
       kind: 'clear'
       clear: () => Promise<boolean>
     })
@@ -362,6 +365,11 @@ export const FRAMES = roster([
             key: 'connectionsOpenInPreview',
             label: 'Open Connections In Preview',
             hint: 'A [[Connection]] click opens the preview window instead of navigating.',
+          },
+          {
+            kind: 'previewRules',
+            label: 'Open In Preview',
+            hint: 'Pages matching these rules open within preview windows by default.',
           },
           {
             kind: 'picker',

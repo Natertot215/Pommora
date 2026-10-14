@@ -27,6 +27,7 @@ import { DEVICE_DEFAULTS, DEVICE_RANGES, type DeviceDefaultKey, devicePref } fro
 import { useExperimental } from './experimental'
 import { AssetDirectoryRow } from './AssetDirectoryRow'
 import { ExcludedDirectoriesRow } from './ExcludedDirectoriesRow'
+import { PreviewRulesRow } from './PreviewRulesRow'
 import { ClearActionRow } from './ClearActionRow'
 import { NexusRows } from './NexusRows'
 import { useWindowGeometry } from '../Interface/Windows/useWindowGeometry'
@@ -188,6 +189,8 @@ function RowControl({ row }: { row: Row }): React.JSX.Element {
       return <AssetDirectoryRow label={row.label} hint={row.hint} />
     case 'exclusions':
       return <ExcludedDirectoriesRow label={row.label} hint={row.hint} />
+    case 'previewRules':
+      return <PreviewRulesRow label={row.label} hint={row.hint} />
     case 'clear':
       return <ClearActionRow label={row.label} hint={row.hint} clear={row.clear} />
     case 'color':
