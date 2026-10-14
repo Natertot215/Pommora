@@ -32,7 +32,11 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 | `StandaloneFilter` / `standaloneFilter` • Type, Schema | `{ rules: FilterGroup \| null; enabled: boolean }`, the filter that isn't attached to a view; per-field lenient. | `Core/Views/filterRules.ts` |
 | `NO_FILTER` • Constant | `{ rules: null, enabled: true }`, the standalone filter's default. | `Core/Views/filterRules.ts` |
 | `localIso` • Function | The local-clock ISO stamp `pageValuesOf` writes, moved from `loadValues.ts` beside `localDayKey` so the renderer can derive Created. | `UIX/Utilities/pad.ts` |
-| `previewRules.ts` • File | `opensInPreview(tree, page)`, judging a page's `toRow` row against the memoized compiled rules. | `Core/Navigation/previewRules.ts` |
+| `previewRules.ts` • File | `opensInPreview(tree, page)`, judging a page's `toRow` row against the memoized compiled rules, and `previewTargets(tree)`, the targets those rules can judge. | `Core/Navigation/previewRules.ts` |
+| `pageValues.ts` • File | `pageValuesOf`, moved from host-side `loadValues.ts` so the renderer builds a page's values the same way. | `Core/Views/pageValues.ts` |
+| `LOCATION_TARGET` • Constant | The Location target, beside `TITLE_TARGET`, shared by `filterTargets` and `previewTargets`. | `Core/Properties/Cells/PropertyTypes.tsx` |
+| `triggerInside` • Dismissal Option | A press on the trigger counts as one inside the layer; `PickerMenu` sets it under `focus="keep"`, which also draws no shield. | `UIX/Interactions/dismissalStack.ts` |
+| `paneCtl.ts` • File | `usePaneCtl` and `useKeepInView`, the row highlight, hoisted from MarkdownPM's caret pane for the Location field to share. | `UIX/Interactions/paneCtl.ts` |
 | `openTarget` • Session Action | The one plain-click open: ⌘ → new tab, a matching page → Page Window, else `select`; returns `'tab' \| 'window'`. | `Core/Session/navigationSlice.ts` |
 | `openInPreview` • Personalization Key | The rule list, a `StandaloneFilter`. | `Core/Settings/personalization.ts` |
 | `filterViewOf` / `standalonePatch` • Functions | The adapters between a `StandaloneFilter` and the editor's `FilterView` / `FilterPatch`, hoisted from `MatrixMenu`. | `Core/Views/Settings/FilterFrame.tsx` |
@@ -93,11 +97,11 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
   - [x] Task 3-3
   - [x] Task 3-4
   - [x] Review Checkpoint
-- [ ] **Phase 4** — The Settings Row & `open_in` Removal
-  - [ ] Task 4-1
-  - [ ] Task 4-2
-  - [ ] Task 4-3
-  - [ ] Review Checkpoint
+- [x] **Phase 4** — The Settings Row & `open_in` Removal
+  - [x] Task 4-1
+  - [x] Task 4-2
+  - [x] Task 4-3
+  - [x] Review Checkpoint
 - [ ] **Phase 5** — Migration & Reconciliation
   - [ ] Task 5-1
   - [ ] Task 5-2
@@ -1047,8 +1051,8 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 
 **THE STANDARD:** The work is finished when a later review of it finds nothing to correct. Not just doing the chores — doing the laundry, folding it, picking up what fell out of the hamper, emptying the lint trap, leaving no trace that anything went wrong. Nothing is carried as a concern, nothing is deferred where the fix is known, and nothing is declared that wasn't watched happen. Where something genuinely couldn't get there, the report names which and why, and everything else is still finished. Ambiguity met during execution took the simplest reading and was recorded; it didn't stop the run.
 
-- [ ] Phase review (opus-high, simplification and adversarial in parallel): Phase 1 ✓ · Phase 2 ✓ · Phase 3 ✓ · Phase 4
-- [ ] Review-fix review (opus-high, one agent with the simplification and adversarial perspectives): the unplanned fix passes each checkpoint applied — Phase 2's `df12d3268 b2d3b64f5 fb12435b9 44bbeb262` above all, with Phase 1's `9972c4725 2a42728c4` and Phase 3's `9394c1a3e` — judged as their own change and against the phase they amended
+- [ ] Phase review (opus-high, simplification and adversarial in parallel): Phase 1 ✓ · Phase 2 ✓ · Phase 3 ✓ · Phase 4 ✓
+- [ ] Review-fix review (opus-high, one agent with the simplification and adversarial perspectives): the unplanned fix passes each checkpoint applied — Phase 2's `df12d3268 b2d3b64f5 fb12435b9 44bbeb262` above all, with Phase 1's `9972c4725 2a42728c4` and Phase 3's `9394c1a3e`, and Phase 4's `58b7aa6fa` — judged as their own change and against the phase they amended
 - [ ] Final review (opus, xhigh) over `{baseline}..HEAD`: one agent inward at the change, one outward against the codebase; reconciled with an advisor
 - [ ] Neutral verification (opus, xhigh) over `{baseline}..HEAD`, given only the intention
 - [ ] Own pass: gates, plus `npm run build` and `npm run build:dashboard` (`.claude/Guidelines/Development-Environment.md:41`) · diff · deviations · criteria
@@ -1064,6 +1068,8 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 - `.claude/Features/CollectionsPM.md:14` — the sidecar field list names `open_in` — Task 5-3
 - `.claude/Features/CollectionsPM.md:22-24` — the *§Open In* section — removed — Task 5-3
 - `.claude/Features/CollectionsPM.md:49` — the Collection/Set delete sweep list gains the Open In Preview rules — Task 5-3
+- `.claude/Features/ConfigurationPM.md:4` — the Collection scope "governing how its pages open" — Task 5-3
+- `.claude/Features/NexusSyncPM.md:63` — `settings.json` merges per setting and a level deeper within each, so the Open In Preview switch and its rules merge apart, as the Matrix filter's do — Task 5-3
 - `.claude/Features/ConfigurationPM.md:59` — Close Navigation On Select: a page the Open In Preview rules send to the Page Window keeps the window open — Task 5-3
 - `.claude/Features/ConfigurationPM.md:61` — Open Connections In Preview: add that, off, connection clicks follow Open In Preview — Task 5-3
 - `.claude/Features/ConfigurationPM.md` Navigation table — add the Open In Preview row (`openInPreview`, the rule list edited from Manage) — Task 5-3
