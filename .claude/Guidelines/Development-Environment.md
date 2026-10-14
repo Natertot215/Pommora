@@ -45,7 +45,7 @@ The operational layer for running, driving, and committing to the app; the Featu
 - **Store Slices:** A slice imports nothing that imports `store.ts`, or boot throws `create…Slice is not a function`; `Core/Session/sliceGraph.test.ts` catches the cycle.
 - **Commit With `--only`:** The index is shared across sessions, so commit with `git commit --only -m "…" -- <paths>`. `--only` skips untracked files silently, so `git add` a new file first.
 - **Shared Tree:** Commit as soon as the gates pass, stage explicit paths, and avoid whole-tree commands (`git stash`, `checkout .`, `clean`, `reset`); an agent needing a clean baseline uses a worktree. A surprise failure is likely another session's dirty files.
-- **Hooks and Branches:** The pre-commit hook re-checks the token atlas; the post-commit hook runs the Studio dashboard's sync, which folds the commit into Pommora's line ledger and pushes `active`. `git push -f origin active:main` regenerates `main` through `.github/workflows/clean-main.yml`. Push tags by name, since `pre-rebase-contexts-spaces` sits on pre-rewrite history.
+- **Hooks and Branches:** The pre-commit hook re-checks the token atlas; the post-commit hook runs the Studio dashboard's sync, which folds the commit into Pommora's line count and pushes `active`. `git push -f origin active:main` regenerates `main` through `.github/workflows/clean-main.yml`. Push tags by name, since `pre-rebase-contexts-spaces` sits on pre-rewrite history.
 
 ### Data-Layer Traps
 
