@@ -150,6 +150,31 @@ describe('the stack', () => {
     expect(log).toEqual(['b'])
   })
 
+  it('counts a press on the trigger as inside the layer when the trigger belongs to it', () => {
+    const log: string[] = []
+    const layers = { pane: layer(), picker: layer() }
+    const field = document.createElement('div')
+    const other = document.createElement('button')
+    layers.pane.append(field, other)
+    const clicked = vi.fn()
+    other.addEventListener('click', clicked)
+    stack(['pane'], log, layers)
+    handles.push(
+      pushDismissal({
+        layer: () => layers.picker,
+        trigger: () => field,
+        dismiss: () => log.push('picker'),
+        triggerInside: true,
+      }),
+    )
+    press(field)
+    expect(log).toEqual([])
+    press(other)
+    release(other)
+    expect(log).toEqual(['picker'])
+    expect(clicked).toHaveBeenCalledOnce()
+  })
+
   it('swallows the release that completes a trigger press, so the trigger cannot reopen', () => {
     const log: string[] = []
     const trigger = document.createElement('button')

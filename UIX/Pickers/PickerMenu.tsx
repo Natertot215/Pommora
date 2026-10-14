@@ -103,7 +103,7 @@ export function PickerMenu({
   anchorHeight?: number
   bounds?: { left: number; right: number }
   bareSurface?: boolean
-  /** `trap` takes focus and holds Tab inside; `leave` takes none on open, though a field inside takes it when pressed; `keep` never takes it, so a press anywhere in the pane leaves focus with its owner. */
+  /** `trap` takes focus and holds Tab inside; `leave` takes none on open, though a field inside takes it when pressed; `keep` never takes it, so a press anywhere in the pane leaves focus with its owner. Under `keep` the trigger belongs to the pane, so pressing it never closes the pane, and the pane isn't modal, so it draws no shield and an outside press that closes it still lands. */
   focus?: 'trap' | 'leave' | 'keep'
   /** A glance surface passes false and lets the app's own dismissals through. */
   modal?: boolean
@@ -118,8 +118,9 @@ export function PickerMenu({
   const drawsShield = useDismissal(mounted && modal, closing, {
     layer: () => paneRef.current,
     trigger: () => triggerRef?.current ?? markerRef.current?.parentElement ?? null,
+    triggerInside: focus === 'keep',
     dismiss: onDismiss,
-    shield: onDismiss !== undefined,
+    shield: onDismiss !== undefined && focus !== 'keep',
   })
   const liveRef = useLatest(open || closing)
   useEffect(

@@ -227,6 +227,48 @@ describe('PickerMenu focus contract', () => {
     expect(log).toEqual(['inner', 'press:last', 'inner', 'inner', 'outer'])
   })
 
+  it('a kept-focus pane takes its trigger as its own, so a press beneath it closes only it and lands', async () => {
+    const log: string[] = []
+    function Nested(): React.JSX.Element {
+      const outerRef = useRef<HTMLButtonElement>(null)
+      const fieldRef = useRef<HTMLDivElement>(null)
+      return (
+        <>
+          <button ref={outerRef} type="button" data-id="trigger">
+            Trigger
+          </button>
+          <PickerMenu open onDismiss={() => log.push('outer')} triggerRef={outerRef}>
+            <div ref={fieldRef} data-id="field" />
+            <button type="button" data-id="last" onPointerDown={() => log.push('press:last')}>
+              Last
+            </button>
+          </PickerMenu>
+          <PickerMenu open onDismiss={() => log.push('inner')} triggerRef={fieldRef} focus="keep">
+            <button type="button" data-id="nested">
+              Nested
+            </button>
+          </PickerMenu>
+        </>
+      )
+    }
+    const press = async (el: Element): Promise<void> => {
+      await act(async () => {
+        el.dispatchEvent(new PointerEvent('pointerdown', { button: 0, bubbles: true }))
+      })
+    }
+    await render(<Nested />)
+    await press(find('field'))
+    expect(log).toEqual([])
+    await act(async () => {
+      find('field').dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }),
+      )
+    })
+    expect(log).toEqual(['inner'])
+    await press(find('last'))
+    expect(log).toEqual(['inner', 'inner', 'press:last'])
+  })
+
   it('a pane nothing dismisses draws no shield', async () => {
     function Host(): React.JSX.Element {
       const ref = useRef<HTMLButtonElement>(null)
@@ -245,6 +287,11 @@ describe('PickerMenu focus contract', () => {
     }
     await render(<Host />)
     expect(document.querySelectorAll('[data-picker-portal]').length).toBe(1)
+  })
+
+  it('a kept-focus pane draws no shield', async () => {
+    await render(<Host open focus="keep" />)
+    expect(document.querySelector('[data-dismissal-shield]')).toBeNull()
   })
 
   it('only the base pane draws the shield', async () => {
