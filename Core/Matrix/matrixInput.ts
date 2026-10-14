@@ -9,9 +9,14 @@ import { declaredType } from '../Properties/value'
 import { applyFilter } from '../Views/Pipeline/filter'
 import { toRow } from '../Views/Pipeline/group'
 import type { ViewRow } from '../Views/viewRow'
-import { type FilterRule, filtering, mapRules, OPERANDLESS_OPS } from '../Views/filterRules'
+import {
+  type FilterRule,
+  filtering,
+  mapRules,
+  OPERANDLESS_OPS,
+  type StandaloneFilter,
+} from '../Views/filterRules'
 import type { GraphInput } from './Engine/graph'
-import type { MatrixConfig } from './matrixConfig'
 import type { MatrixGraphReply } from './matrixGraph'
 
 const spaceIdsOf = (values: Record<string, string[]> | undefined): string[] =>
@@ -91,7 +96,7 @@ function answers(
 export function matrixVisible(
   tree: NexusTree,
   values: MatrixGraphReply['values'],
-  filter: MatrixConfig['filter'],
+  filter: StandaloneFilter,
 ): ReadonlySet<string> | null {
   if (!values || !filtering(filter)) return null
   const { seats } = matrixTree(tree)

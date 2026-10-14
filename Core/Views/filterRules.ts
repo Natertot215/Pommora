@@ -1,3 +1,5 @@
+// The filter-rule schema, its operators and helpers, and the standalone filter.
+
 import { z } from 'zod'
 import { isPlainObject } from '../Contract/validators'
 import { eachOf, idArray } from '../Files/decoders'
@@ -13,7 +15,7 @@ const filterRule = z.object({
 })
 export type FilterRule = z.infer<typeof filterRule>
 
-/** RECURSIVE: a child may itself be a FilterGroup, expressing mixed AND/OR. Whether the filter APPLIES is a separate axis (`filter_enabled`), so turning it off never costs it its authored mode. */
+/** RECURSIVE: a child may itself be a FilterGroup, expressing mixed AND/OR. Whether the filter APPLIES is a separate axis (a view's `filter_enabled`, a standalone filter's `enabled`), so turning it off never costs it its authored mode. */
 export type FilterGroup = { match: MatchMode; rules: Array<FilterRule | FilterGroup> }
 
 // A rule this build can't read drops alone, and the rest still filter.

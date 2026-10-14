@@ -1,16 +1,32 @@
 import { describe, expect, it } from 'vitest'
+import { localDayKey, localIso } from '@pommora/uix/Utilities/pad'
+import { ID_KEY } from '../../Nexus/identityMark'
 import type { PropertyDefinition } from '../../Properties/properties'
 import type { FilterGroup } from '../filterRules'
+import type { ViewRow } from '../viewRow'
 import { filterSeeds } from './creationSeeds'
 
 const schema: PropertyDefinition[] = [
   { id: 'p_status', name: 'Status', type: 'status' },
   { id: 'p_sel', name: 'Kind', type: 'select' },
+  { id: 'p_pri', name: 'Priority', type: 'select' },
   { id: 'p_check', name: 'Done', type: 'checkbox' },
   { id: 'p_num', name: 'Count', type: 'number' },
   { id: 'p_tags', name: 'Tags', type: 'multiSelect' },
   { id: 'p_notes', name: 'Notes', type: 'text' },
 ]
+
+const blank: ViewRow = {
+  id: 'new',
+  title: 'Untitled',
+  path: 'Untitled.md',
+  frontmatter: { [ID_KEY]: 'new' },
+  createdAt: localIso(Date.now()),
+  modifiedAt: null,
+}
+
+const seedsOf = (filter: FilterGroup | undefined, contextIds: readonly string[] = []) =>
+  filterSeeds({ filter, blank, schema, contextIds })
 
 describe('filterSeeds', () => {
   it('derives positive Is rules on status/select/checkbox under All-mode', () => {
@@ -21,15 +37,18 @@ describe('filterSeeds', () => {
         { property_id: 'p_check', op: 'is', value: 'true' },
       ],
     }
-    expect(filterSeeds(filter, true, schema)).toEqual({
+    expect(seedsOf(filter)).toEqual({
       p_status: { kind: 'select', value: 'doing' },
       p_check: { kind: 'checkbox', value: true },
     })
+  })
+
+  it('reads a checkbox word as its value', () => {
     const word: FilterGroup = {
       match: 'all',
       rules: [{ property_id: 'p_check', op: 'is', value: 'Yes' }],
     }
-    expect(filterSeeds(word, true, schema)).toEqual({ p_check: { kind: 'checkbox', value: true } })
+    expect(seedsOf(word)).toEqual({ p_check: { kind: 'checkbox', value: true } })
   })
 
   it('derives the one chip a Select or Status Is rule saves, and nothing from two', () => {
@@ -40,9 +59,7 @@ describe('filterSeeds', () => {
         { property_id: 'p_sel', op: 'is', values: ['a', 'b'] },
       ],
     }
-    expect(filterSeeds(filter, true, schema)).toEqual({
-      p_status: { kind: 'select', value: 'Done' },
-    })
+    expect(seedsOf(filter)).toEqual({ p_status: { kind: 'select', value: 'Done' } })
   })
 
   it('reads a chip list over a leftover single value, as the filter does', () => {
@@ -50,7 +67,7 @@ describe('filterSeeds', () => {
       match: 'all',
       rules: [{ property_id: 'p_sel', op: 'is', value: 'stale', values: ['note'] }],
     }
-    expect(filterSeeds(filter, true, schema)).toEqual({ p_sel: { kind: 'select', value: 'note' } })
+    expect(seedsOf(filter)).toEqual({ p_sel: { kind: 'select', value: 'note' } })
   })
 
   it("derives nothing from Isn't Checked", () => {
@@ -58,23 +75,10 @@ describe('filterSeeds', () => {
       match: 'all',
       rules: [{ property_id: 'p_check', op: 'is', value: 'false' }],
     }
-    expect(filterSeeds(filter, true, schema)).toEqual({})
+    expect(seedsOf(filter)).toEqual({})
   })
 
-  it('derives an Any group from its first seedable rule alone, and nothing from negatives, presence ops, or non-derivable types', () => {
-    const any: FilterGroup = {
-      match: 'any',
-      rules: [
-        { property_id: 'p_status', op: 'is', value: 'doing' },
-        { property_id: 'p_sel', op: 'is', value: 'note' },
-      ],
-    }
-    expect(filterSeeds(any, true, schema)).toEqual({
-      p_status: { kind: 'select', value: 'doing' },
-    })
-    expect(filterSeeds({ ...any, rules: any.rules.slice(0, 1) }, true, schema)).toEqual({
-      p_status: { kind: 'select', value: 'doing' },
-    })
+  it('derives nothing from negatives, presence ops, or non-derivable types', () => {
     const rest: FilterGroup = {
       match: 'all',
       rules: [
@@ -85,10 +89,21 @@ describe('filterSeeds', () => {
         { property_id: 'p_gone', op: 'is', value: 'x' },
       ],
     }
-    expect(filterSeeds(rest, true, schema)).toEqual({})
+    expect(seedsOf(rest)).toEqual({})
   })
 
-  it('an Any-group nested under All seeds its first rule beside its All siblings', () => {
+  it('an Any group seeds from its first seedable rule alone', () => {
+    const any: FilterGroup = {
+      match: 'any',
+      rules: [
+        { property_id: 'p_status', op: 'is', value: 'doing' },
+        { property_id: 'p_sel', op: 'is', value: 'note' },
+      ],
+    }
+    expect(seedsOf(any)).toEqual({ p_status: { kind: 'select', value: 'doing' } })
+  })
+
+  it('an Any group nested under All seeds its first rule beside its All siblings', () => {
     const filter: FilterGroup = {
       match: 'all',
       rules: [
@@ -102,22 +117,9 @@ describe('filterSeeds', () => {
         },
       ],
     }
-    expect(filterSeeds(filter, true, schema)).toEqual({
+    expect(seedsOf(filter)).toEqual({
       p_sel: { kind: 'select', value: 'note' },
       p_status: { kind: 'select', value: 'doing' },
-    })
-  })
-
-  it('an Any group of a Status Is and an Area Is Any seeds the Status alone', () => {
-    const filter: FilterGroup = {
-      match: 'any',
-      rules: [
-        { property_id: 'p_status', op: 'is', value: 'Done' },
-        { property_id: 'ctx_areas', op: 'contains_any', values: ['s_work'] },
-      ],
-    }
-    expect(filterSeeds(filter, true, schema, ['ctx_areas'])).toEqual({
-      p_status: { kind: 'select', value: 'Done' },
     })
   })
 
@@ -130,7 +132,7 @@ describe('filterSeeds', () => {
         { property_id: 'p_status', op: 'is', value: 'doing' },
       ],
     }
-    expect(filterSeeds(filter, true, schema)).toEqual({ p_sel: { kind: 'select', value: 'note' } })
+    expect(seedsOf(filter)).toEqual({ p_sel: { kind: 'select', value: 'note' } })
   })
 
   it('an Any group with no seedable rule seeds nothing', () => {
@@ -138,10 +140,83 @@ describe('filterSeeds', () => {
       match: 'any',
       rules: [
         { property_id: '_title', op: 'contains', value: 'x' },
-        { property_id: 'p_sel', op: 'is_not', value: 'note' },
+        { property_id: 'p_num', op: 'is', value: '3' },
       ],
     }
-    expect(filterSeeds(filter, true, schema)).toEqual({})
+    expect(seedsOf(filter)).toEqual({})
+  })
+
+  it("an Any group a blank page meets through an Isn't rule seeds nothing", () => {
+    const filter: FilterGroup = {
+      match: 'any',
+      rules: [
+        { property_id: 'p_status', op: 'is_not', value: 'Done' },
+        { property_id: 'p_pri', op: 'is', value: 'High' },
+      ],
+    }
+    expect(seedsOf(filter)).toEqual({})
+  })
+
+  it('an Any group a blank page meets through its creation date seeds nothing', () => {
+    const yesterday = localDayKey(new Date(Date.now() - 86_400_000))
+    const filter: FilterGroup = {
+      match: 'any',
+      rules: [
+        { property_id: '_created_at', op: 'on_or_after', value: yesterday },
+        { property_id: 'p_status', op: 'is', value: 'Done' },
+      ],
+    }
+    expect(seedsOf(filter)).toEqual({})
+  })
+
+  it('an Any group a blank page meets through an Is Empty rule seeds nothing', () => {
+    const filter: FilterGroup = {
+      match: 'any',
+      rules: [
+        { property_id: 'p_status', op: 'is_empty' },
+        { property_id: 'p_pri', op: 'is', value: 'High' },
+      ],
+    }
+    expect(seedsOf(filter)).toEqual({})
+  })
+
+  it('an Any group skips a nested All that seeding leaves unmet, discarding its seeds', () => {
+    const filter: FilterGroup = {
+      match: 'any',
+      rules: [
+        {
+          match: 'all',
+          rules: [
+            { property_id: 'p_status', op: 'is', value: 'Done' },
+            { property_id: '_title', op: 'contains', value: 'x' },
+          ],
+        },
+        { property_id: 'p_pri', op: 'is', value: 'High' },
+      ],
+    }
+    expect(seedsOf(filter)).toEqual({ p_pri: { kind: 'select', value: 'High' } })
+  })
+
+  it('an Any group a blank page meets through a later rule seeds nothing from an earlier one', () => {
+    const filter: FilterGroup = {
+      match: 'any',
+      rules: [
+        { property_id: 'p_status', op: 'is', value: 'Done' },
+        { property_id: 'p_status', op: 'is_not', value: 'Done' },
+      ],
+    }
+    expect(seedsOf(filter)).toEqual({})
+  })
+
+  it('an Any group passes over a rule the filter ignores', () => {
+    const filter: FilterGroup = {
+      match: 'any',
+      rules: [
+        { property_id: 'p_sel', op: 'is' },
+        { property_id: 'p_pri', op: 'is', value: 'High' },
+      ],
+    }
+    expect(seedsOf(filter)).toEqual({ p_pri: { kind: 'select', value: 'High' } })
   })
 
   it('derives a one-option list from a one-chip Multi-Select Is Any or Is All rule', () => {
@@ -149,13 +224,13 @@ describe('filterSeeds', () => {
       match: 'all',
       rules: [{ property_id: 'p_tags', op, values: ['draft'] }],
     })
-    expect(filterSeeds(one('contains_any'), true, schema)).toEqual({
+    expect(seedsOf(one('contains_any'))).toEqual({
       p_tags: { kind: 'multiSelect', value: ['draft'] },
     })
-    expect(filterSeeds(one('contains_all'), true, schema)).toEqual({
+    expect(seedsOf(one('contains_all'))).toEqual({
       p_tags: { kind: 'multiSelect', value: ['draft'] },
     })
-    expect(filterSeeds(one('does_not_contain'), true, schema)).toEqual({})
+    expect(seedsOf(one('does_not_contain'))).toEqual({})
   })
 
   it('derives a Space from a one-chip Context Is Any rule, and nothing from two', () => {
@@ -163,10 +238,10 @@ describe('filterSeeds', () => {
       match: 'all',
       rules: [{ property_id: 'ctx_areas', op: 'contains_any', values }],
     })
-    expect(filterSeeds(rule(['s_work']), true, schema, ['ctx_areas'])).toEqual({
+    expect(seedsOf(rule(['s_work']), ['ctx_areas'])).toEqual({
       ctx_areas: { kind: 'context', value: ['s_work'] },
     })
-    expect(filterSeeds(rule(['s_work', 's_home']), true, schema, ['ctx_areas'])).toEqual({})
+    expect(seedsOf(rule(['s_work', 's_home']), ['ctx_areas'])).toEqual({})
   })
 
   it('takes both values when two one-chip rules name the same list property', () => {
@@ -178,27 +253,19 @@ describe('filterSeeds', () => {
         { property_id: 'p_tags', op: 'contains_any', values: ['draft'] },
       ],
     }
-    expect(filterSeeds(both, true, schema)).toEqual({
-      p_tags: { kind: 'multiSelect', value: ['draft', 'urgent'] },
-    })
+    expect(seedsOf(both)).toEqual({ p_tags: { kind: 'multiSelect', value: ['draft', 'urgent'] } })
   })
 
-  it('a disabled or absent filter derives nothing', () => {
-    const filter: FilterGroup = {
-      match: 'all',
-      rules: [{ property_id: 'p_status', op: 'is', value: 'doing' }],
-    }
-    expect(filterSeeds(filter, false, schema)).toEqual({})
-    expect(filterSeeds(undefined, true, schema)).toEqual({})
+  it('an absent filter derives nothing', () => {
+    expect(seedsOf(undefined)).toEqual({})
   })
 
   it('a stamp Is rule seeds nothing', () => {
     expect(
-      filterSeeds(
-        { match: 'all', rules: [{ property_id: '_modified_at', op: 'is', value: '2026-01-01' }] },
-        true,
-        schema,
-      ),
+      seedsOf({
+        match: 'all',
+        rules: [{ property_id: '_modified_at', op: 'is', value: '2026-01-01' }],
+      }),
     ).toEqual({})
   })
 })

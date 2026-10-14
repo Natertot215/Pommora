@@ -12,7 +12,9 @@ import {
 import { specOf } from '../../Properties/properties'
 import { type ViewPatch, viewOption } from '../views'
 import { type CreatePageRequest, DEFAULT_NEW_NAME, minted } from '../../Nexus/mutateRequest'
-import { relDirname } from '../../Paths/posix'
+import { relDirname, relJoin } from '../../Paths/posix'
+import { ID_KEY } from '../../Nexus/identityMark'
+import { localIso } from '@pommora/uix/Utilities/pad'
 import { findScroller, SEEK_GLIDE, scrollGlide } from '@pommora/uix/Interactions/autoscroll'
 import { useSession } from '../../Session/store'
 import { settingOf } from '../../Settings/personalization'
@@ -83,9 +85,26 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
   const getRef = useLatest(getCfg)
   const cfg = (): ViewCreationConfig => getRef.current()
 
-  const impliedSeeds = (): Record<string, PropertyValue> => {
+  const impliedSeeds = (
+    req: Pick<CreatePageRequest, 'id' | 'name' | 'parentPath'>,
+    parentSetId: string | undefined,
+  ): Record<string, PropertyValue> => {
     const c = cfg()
-    return filterSeeds(c.view.filter, viewOption(c.view, 'filter_enabled'), c.schema, c.contextIds)
+    return filterSeeds({
+      filter: viewOption(c.view, 'filter_enabled') ? c.view.filter : undefined,
+      blank: {
+        id: req.id,
+        title: req.name,
+        path: relJoin(req.parentPath, `${req.name}.md`),
+        ...(parentSetId !== undefined ? { parentSetId } : {}),
+        frontmatter: { [ID_KEY]: req.id },
+        createdAt: localIso(Date.now()),
+        modifiedAt: null,
+      },
+      schema: c.schema,
+      setTree: c.source.sets ?? [],
+      contextIds: c.contextIds,
+    })
   }
   // The created page's seeds reach the pipeline the way a band-drop's reassign does.
   const patchSeedValues = (
@@ -140,14 +159,13 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
   }
   const pageRequest = (
     parentPath: string,
-    seeds: Record<string, PropertyValue>,
-  ): CreatePageRequest =>
-    minted({
-      op: 'createPage',
-      parentPath,
-      name: DEFAULT_NEW_NAME,
-      ...(Object.keys(seeds).length ? { seeds } : {}),
-    })
+    parentSetId: string | undefined,
+    gestureSeeds: Record<string, PropertyValue> = {},
+  ): CreatePageRequest => {
+    const req = minted({ op: 'createPage', parentPath, name: DEFAULT_NEW_NAME })
+    const seeds = { ...impliedSeeds(req, parentSetId), ...gestureSeeds }
+    return Object.keys(seeds).length ? { ...req, seeds } : req
+  }
   // Seeds and slot are staged with the ask, so the push that mounts the newborn paints it in its band at its slot; the order is written once the page exists, and a refusal takes back both.
   const createPageIn = (
     req: CreatePageRequest,
@@ -178,11 +196,11 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
     return { id: req.id, path }
   }
 
-  const addIn = (parentPath: string): CreateFlight => {
+  const addIn = (parentPath: string, parentSetId: string | undefined): CreateFlight => {
     const s = useSession.getState()
     const slot = placementSlot(settingOf(personalizationOf(s), 'newPagePlacement'))
     const req = placeAt(
-      pageRequest(parentPath, impliedSeeds()),
+      pageRequest(parentPath, parentSetId),
       pageIdsIn(s.tree!, parentPath),
       null,
       slot,
@@ -199,14 +217,14 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
     const setPath = c.sets.node.get(setKey)?.path
     if (!setPath) return
     if (c.collapsed.has(setKey)) c.toggleCollapse(setKey)
-    addIn(setPath)
+    addIn(setPath, setKey)
   }
 
   // New Page Above / Below: the anchor's group value and sort-criteria values tie the newborn beside it, and the order write breaks the tie at the gesture slot.
   const createAdjacent = (row: ViewRow, where: 'above' | 'below'): CreateFlight => {
     const c = cfg()
     const parentPath = relDirname(row.path)
-    const seeds = impliedSeeds()
+    const seeds: Record<string, PropertyValue> = {}
     const gKey = c.rowBand.get(row.id)
     if (c.groupPropId && c.canReassign && gKey !== undefined) {
       const v = groupKeyToValue(c.bandBucket(gKey) ?? UNGROUPED, c.groupPropType)
@@ -220,7 +238,7 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
     }
     const siblings = pageIdsIn(useSession.getState().tree!, parentPath)
     return createPageIn(
-      placeAt(pageRequest(parentPath, seeds), siblings, row.id, where),
+      placeAt(pageRequest(parentPath, row.parentSetId, seeds), siblings, row.id, where),
       row.id,
       where,
     )
@@ -228,7 +246,7 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
 
   return {
     bandAdd,
-    createFirst: () => addIn(cfg().source.path),
+    createFirst: () => addIn(cfg().source.path, undefined),
     createAdjacent,
     createAfter: (row) => createAdjacent(row, 'below'),
   }

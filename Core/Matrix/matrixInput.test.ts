@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { NexusTree } from '../Nexus/tree'
 import type { PropertyDefinition } from '../Properties/properties'
 import { linkedSpacesTree, makeTree } from '../Testing/testTree'
-import type { FilterGroup } from '../Views/filterRules'
+import type { FilterGroup, StandaloneFilter } from '../Views/filterRules'
 import { DEFAULT_MATRIX_CONFIG, type MatrixConfig } from './matrixConfig'
 import type { MatrixGraphReply, MatrixLink } from './matrixGraph'
 import { matrixConnections, matrixTree, matrixVisible } from './matrixInput'
@@ -16,7 +16,7 @@ const link = (pageId: string, target: string): MatrixLink => ({
 
 const replyOf = (links: MatrixLink[]): MatrixGraphReply => ({ links, values: {} })
 
-const configWith = (filter: Partial<MatrixConfig['filter']>): MatrixConfig => ({
+const configWith = (filter: Partial<StandaloneFilter>): MatrixConfig => ({
   ...DEFAULT_MATRIX_CONFIG,
   filter: { ...DEFAULT_MATRIX_CONFIG.filter, ...filter },
 })

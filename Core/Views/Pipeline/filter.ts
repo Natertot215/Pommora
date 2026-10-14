@@ -25,6 +25,7 @@ import type { SetTreeNode } from './group'
 import { linkDisplayText } from '../../Connections/linkValue'
 import { dayMs, readDate, readNumber } from '../../Properties/formatValue'
 import { foldKey } from '../../Paths/caseFold'
+import { idTime } from '../../Nexus/ids'
 
 const FILTER_OP_SET = new Set<string>(Object.values(FILTER_OPS))
 
@@ -42,7 +43,7 @@ export function applyFilter(
   return test ? rows.filter(test) : rows
 }
 
-/** `undefined` when no rule applies — a caller asking "does this match" reads that as no. */
+/** `undefined` when no rule applies. */
 export function prepareGroup(
   group: FilterGroup,
   schema: PropertyDefinition[],
@@ -64,7 +65,8 @@ export function prepareGroup(
   }
 }
 
-function prepareRule(
+/** `undefined` when the rule abstains: an unknown op, an unauthored operand, a property the schema lacks, or a Location naming only dead ids. */
+export function prepareRule(
   rule: FilterRule,
   schema: PropertyDefinition[],
   setTree: SetTreeNode[],
@@ -82,7 +84,7 @@ function prepareRule(
   return (row) => evaluate(resolveFieldValue(row, id, schema), op, operands)
 }
 
-// Is/Isn't test the immediate parent by id, Contains/Doesn't any depth by id or folder name.
+// Is/Isn't test the immediate parent by id, Contains/Doesn't any depth by id or folder name. Ids naming no folder are dead and abstain; an unmatched name matches nothing.
 function prepareLocation(op: string, want: string[], setTree: SetTreeNode[]): RowTest | undefined {
   switch (op) {
     case FILTER_OPS.is:
@@ -102,7 +104,7 @@ function prepareLocation(op: string, want: string[], setTree: SetTreeNode[]): Ro
         }
       }
       walk(setTree, false)
-      if (inside.size === 0) return undefined
+      if (inside.size === 0 && want.every((v) => idTime(v) !== null)) return undefined
       const keep = op === FILTER_OPS.isInside
       return ({ parentSetId: p }) => (p != null && inside.has(p)) === keep
     }
@@ -241,12 +243,14 @@ function evaluateCheckbox(v: PropertyValue, op: string, want: string[]): boolean
 // `want` arrives folded; the value folds once here.
 function evaluateText(v: PropertyValue, op: string, want: string[]): boolean {
   const s = textValue(v)
-  const f = s === null ? null : foldKey(s)
   switch (op) {
     case FILTER_OPS.isEmpty:
       return s === null || s === ''
     case FILTER_OPS.isNotEmpty:
       return !(s === null || s === '')
+  }
+  const f = s === null ? null : foldKey(s)
+  switch (op) {
     case FILTER_OPS.is:
       return f !== null && want.includes(f)
     case FILTER_OPS.isNot:

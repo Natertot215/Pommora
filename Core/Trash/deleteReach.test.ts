@@ -3,6 +3,7 @@ import { settleNow } from '../Nexus/settle'
 import { chmod, copyFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { newContentId, newId } from '../Nexus/ids'
+import { ID_KEY } from '../Nexus/identityMark'
 import { join } from '../Paths/posix'
 import { noModeBits, putJson, readJsonAt, tempRoot } from '../Testing/hostFs'
 import { type ConfigSurfaces, seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
@@ -179,10 +180,23 @@ describe('a Space delete', () => {
     await refreshTree(root)
     expect((await del('.nexus/contexts/Areas/Work', 'space')).ok).toBe(true)
     const { collection } = await surfaces.read()
-    const seeds = filterSeeds(collection.filter as FilterGroup, true, [], ['ctx_areas'])
+    const id = newContentId('page')
+    const seeds = filterSeeds({
+      filter: collection.filter as FilterGroup,
+      blank: {
+        id,
+        title: 'Fresh',
+        path: 'Notes/Fresh.md',
+        frontmatter: { [ID_KEY]: id },
+        createdAt: null,
+        modifiedAt: null,
+      },
+      schema: [],
+      contextIds: ['ctx_areas'],
+    })
     const r = await settledMutate(
       root,
-      { op: 'createPage', id: newContentId('page'), parentPath: 'Notes', name: 'Fresh', seeds },
+      { op: 'createPage', id, parentPath: 'Notes', name: 'Fresh', seeds },
       nexusDeps,
     )
     expect(r.ok ? 'created' : r.error.message).toBe('created')

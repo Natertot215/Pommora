@@ -57,6 +57,8 @@ function row(
   }
 }
 
+const DEAD_ID = '01ARZ3NDEKTSV4RRFFQ69G5FAV'
+
 const ids = (rows: ViewRow[], filter: FilterGroup | undefined): string[] =>
   applyFilter(rows, filter, schema, [], ['ctx_areas']).map((r) => r.id)
 
@@ -803,7 +805,7 @@ describe('applyFilter — title, context membership, location', () => {
   })
 
   it('a dead set id is a no-op pass', () => {
-    expect(loc([inA1, inB], 'is_inside', 'set_ghost')).toEqual(['inA1', 'inB'])
+    expect(loc([inA1, inB], 'is_inside', DEAD_ID)).toEqual(['inA1', 'inB'])
   })
 })
 
@@ -841,8 +843,9 @@ describe('applyFilter — location by folder name', () => {
     expect(run('is_inside', ['other', 'Docs'])).toEqual(['inXDocs', 'inLowerSub', 'inOther'])
   })
 
-  it('a name matching no folder abstains like a dead id', () => {
-    expect(run('is_inside', ['Nowhere'])).toEqual(rows.map((r) => r.id))
+  it("a name matching no folder matches nothing under Contains and everything under Doesn't Contain", () => {
+    expect(run('is_inside', ['Nowhere'])).toEqual([])
+    expect(run('is_not_inside', ['Nowhere'])).toEqual(rows.map((r) => r.id))
   })
 
   it('Is stays id-only', () => {
@@ -853,5 +856,16 @@ describe('applyFilter — location by folder name', () => {
 describe('prepareGroup', () => {
   it('returns undefined for a group with no rules', () => {
     expect(prepareGroup({ match: 'any', rules: [] }, schema, [], [])).toBeUndefined()
+  })
+
+  it('returns undefined for a group whose every rule abstains', () => {
+    const group: FilterGroup = {
+      match: 'all',
+      rules: [
+        { property_id: '_location', op: 'is_inside', value: DEAD_ID },
+        { property_id: 'prop_sel', op: 'is' },
+      ],
+    }
+    expect(prepareGroup(group, schema, [{ id: 'set_a', title: 'A' }], [])).toBeUndefined()
   })
 })
