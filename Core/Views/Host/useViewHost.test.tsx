@@ -819,6 +819,36 @@ describe('settleOrders — a create composes with the live order', () => {
   })
 })
 
+describe('creation seeding', () => {
+  it("a create beside a row judges the filter with the gesture's seeds, so a Done-band sibling seeds no Priority", async () => {
+    const priorityDef: PropertyDefinition = { id: 'prop_pri', name: 'Priority', type: 'select' }
+    useSession.setState({
+      mutate: vi.fn(async (req: { id: string }) => ({
+        created: { path: `Col/${req.id}.md` },
+      })) as never,
+    })
+    await mount({
+      ...collection({
+        ...SORTED,
+        filter: {
+          match: 'any',
+          rules: [
+            { property_id: 'prop_pri', op: 'is', value: 'High' },
+            { property_id: 'prop_status', op: 'is', value: 'complete' },
+          ],
+        },
+      }),
+      properties: [statusDef, priorityDef],
+    } as CollectionNode)
+    const p1 = api?.rowById.get('p1')
+    await act(async () => void creation.createAdjacent(p1!, 'below'))
+    const mutate = useSession.getState().mutate as ReturnType<typeof vi.fn>
+    expect(mutate.mock.calls[0][0].seeds).toEqual({
+      prop_status: { kind: 'select', value: 'complete' },
+    })
+  })
+})
+
 describe('a create placed ahead of its reply', () => {
   const complete = propsAtRoot({ prop_status: 'complete' }, [threeStatus])
   const commits: { band?: string; order: string[] }[] = []

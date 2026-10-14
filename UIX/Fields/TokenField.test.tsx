@@ -45,6 +45,14 @@ const press = (key: string): void =>
     caret().dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }))
   })
 
+const mousedown = (el: Element): boolean => {
+  const e = new MouseEvent('mousedown', { bubbles: true, cancelable: true })
+  act(() => {
+    el.dispatchEvent(e)
+  })
+  return e.defaultPrevented
+}
+
 const entry = (key: string, onRemove = vi.fn()): RunEntry => ({ key, label: key, onRemove })
 
 describe('TokenField', () => {
@@ -83,26 +91,22 @@ describe('TokenField', () => {
 
   it('a press past the caret focuses it, and a press on a ×, focused or not, leaves focus where it is', () => {
     render({ entries: [entry('a')] })
-    const mousedown = (el: Element): boolean => {
-      const e = new MouseEvent('mousedown', { bubbles: true, cancelable: true })
-      act(() => {
-        el.dispatchEvent(e)
-      })
-      return e.defaultPrevented
-    }
-    const field = host.firstElementChild as HTMLElement
-    expect(mousedown(field)).toBe(true)
+    const remove = host.querySelector('button') as HTMLElement
+    expect(mousedown(remove)).toBe(true)
+    expect(document.activeElement).not.toBe(caret())
+    expect(mousedown(host.firstElementChild as HTMLElement)).toBe(true)
     expect(document.activeElement).toBe(caret())
-    expect(mousedown(host.querySelector('button') as HTMLElement)).toBe(true)
+    expect(mousedown(remove)).toBe(true)
     expect(document.activeElement).toBe(caret())
     expect(mousedown(caret())).toBe(false)
   })
 
-  it('reports a click anywhere on the field as a press', () => {
+  it("reports a press anywhere on the field but a chip's × as a press", () => {
     const onPress = vi.fn()
     render({ entries: [entry('a')], onPress })
-    act(() => (host.firstElementChild as HTMLElement).click())
-    act(() => caret().click())
+    mousedown(host.firstElementChild as HTMLElement)
+    mousedown(caret())
+    mousedown(host.querySelector('button') as HTMLElement)
     expect(onPress).toHaveBeenCalledTimes(2)
   })
 

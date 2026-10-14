@@ -51,6 +51,7 @@ import {
 import { CheckboxGlyph } from '../../Properties/Cells/CheckboxGlyph'
 import { onActivateKey } from '@pommora/uix/Interactions/activate'
 import { cx } from '@pommora/uix/Utilities/cx'
+import { toggled } from '@pommora/uix/Utilities/checkSet'
 import { PickerControl, type PickerOption } from '@pommora/uix/Pickers/PickerControl'
 import {
   type DecodedFilter,
@@ -246,6 +247,8 @@ function LocationTree({
   )
 }
 
+const NO_FLIPS: ReadonlySet<string> = new Set()
+
 function LocationField({
   values,
   nodes,
@@ -264,16 +267,18 @@ function LocationField({
   const ref = useRef<HTMLDivElement>(null)
   const { shown, toggle } = useMultiValue(values, onCommit)
   const expanded = useDisclosureSet()
-  const flipped = useDisclosureSet()
+  const [narrow, setNarrow] = useState({ q: '', ids: NO_FLIPS })
   const q = foldKey(draft.trim())
   const tree = useMemo(
     () => (q ? narrowed(nodes, q) : { nodes, leads: new Set<string>() }),
     [nodes, q],
   )
+  const flipped = narrow.q === q ? narrow.ids : NO_FLIPS
   const disclosure = q
     ? {
-        has: (id: string) => tree.leads.has(id) !== flipped.has(`${q}\0${id}`),
-        toggle: (id: string) => flipped.toggle(`${q}\0${id}`),
+        has: (id: string) => tree.leads.has(id) !== flipped.has(id),
+        toggle: (id: string) =>
+          setNarrow((prev) => ({ q, ids: toggled(prev.q === q ? prev.ids : NO_FLIPS, id) })),
       }
     : expanded
   const rows = shownRows(tree.nodes, disclosure.has)
@@ -333,9 +338,9 @@ function LocationField({
             e.preventDefault()
             ctl.current.pick()
           } else if (e.key === 'Escape' && open) {
-            // The pane hides while a draft matches nothing, so the field closes itself rather than letting Escape reach the surface beneath.
+            // The field drives its pane's keys, so Escape closes it whether the pane is shown or hidden.
             e.preventDefault()
-            dismiss()
+            ctl.current.close()
           }
         }}
         onDraftChange={(d) => {

@@ -9,6 +9,7 @@ import { makeTree } from '../Testing/testTree'
 import type { FilterGroup, FilterRule, StandaloneFilter } from '../Views/filterRules'
 import { RESERVED_PROPERTY_ID } from '../Properties/properties'
 import { RESERVED_LABEL } from '../Properties/Cells/columnLabel'
+import { count } from './settings-rows.css'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -70,7 +71,7 @@ const option = (text: string): Element | undefined =>
 describe('PreviewRulesRow', () => {
   it('the count reads the rule count', async () => {
     await render({ rules: { match: 'any', rules: [titleRule, createdRule] }, enabled: true })
-    expect(host.textContent).toContain('2')
+    expect(host.getElementsByClassName(count)[0]?.textContent).toBe('2')
   })
 
   it('adding a rule through the pane writes the key', async () => {

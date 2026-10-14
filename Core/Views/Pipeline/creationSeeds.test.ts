@@ -208,6 +208,34 @@ describe('filterSeeds', () => {
     expect(seedsOf(filter)).toEqual({})
   })
 
+  it('an Any group a blank page meets through its Location seeds nothing, and seeds Status where it misses', () => {
+    const filter: FilterGroup = {
+      match: 'any',
+      rules: [
+        { property_id: '_location', op: 'is', values: ['S'] },
+        { property_id: 'p_status', op: 'is', value: 'Done' },
+      ],
+    }
+    expect(filterSeeds({ filter, blank: { ...blank, parentSetId: 'S' }, schema })).toEqual({})
+    expect(seedsOf(filter)).toEqual({ p_status: { kind: 'select', value: 'Done' } })
+  })
+
+  it('a nested All that seeding meets seeds through an Any, its unseeded rule already met', () => {
+    const filter: FilterGroup = {
+      match: 'any',
+      rules: [
+        {
+          match: 'all',
+          rules: [
+            { property_id: 'p_status', op: 'is_not', value: 'Done' },
+            { property_id: 'p_pri', op: 'is', value: 'High' },
+          ],
+        },
+      ],
+    }
+    expect(seedsOf(filter)).toEqual({ p_pri: { kind: 'select', value: 'High' } })
+  })
+
   it('an Any group passes over a rule the filter ignores', () => {
     const filter: FilterGroup = {
       match: 'any',

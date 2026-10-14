@@ -28,7 +28,6 @@ export function InputField({
   trailing,
   label,
   onMouseDown,
-  onClick,
   ref,
 }: {
   children: ReactNode
@@ -41,8 +40,6 @@ export function InputField({
   trailing?: ReactNode
   label?: string
   onMouseDown?: (e: React.MouseEvent<HTMLDivElement>) => void
-  /** Ignored while `edit` claims the click. */
-  onClick?: (e: React.MouseEvent<HTMLDivElement>) => void
   ref?: Ref<HTMLDivElement>
 }): React.JSX.Element {
   const [ownEditing, setOwnEditing] = useState(false)
@@ -77,7 +74,7 @@ export function InputField({
       style={editing ? { minWidth: restWidth.current } : undefined}
       {...(activate ? { role: 'button', tabIndex: editing ? -1 : 0, 'aria-label': label } : {})}
       onMouseDown={onMouseDown}
-      onClick={activate ? (e) => activate(e.currentTarget) : onClick}
+      onClick={activate ? (e) => activate(e.currentTarget) : undefined}
       onKeyDown={activate ? onActivateKey(activate) : undefined}
     >
       {leading && <span className={s.leading}>{leading}</span>}

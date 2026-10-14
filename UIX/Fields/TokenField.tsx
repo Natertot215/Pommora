@@ -26,7 +26,7 @@ export function TokenField({
   onEnter: (draft: string) => void
   onFocus?: () => void
   onBlur?: () => void
-  /** A click anywhere on the field, which an already-focused caret reports no focus for. */
+  /** A press anywhere on the field but a chip's ×, which an already-focused caret reports no focus for. */
   onPress?: () => void
   onKeyDown?: (e: KeyboardEvent<HTMLInputElement>) => void
   placeholder?: string
@@ -43,11 +43,13 @@ export function TokenField({
       className={cx(s.editable, className)}
       onMouseDown={(e) => {
         const target = e.target as Element
-        if (target === caret.current) return
-        e.preventDefault()
-        if (!target.closest('button')) caret.current?.focus()
+        if (target.closest('button')) return e.preventDefault()
+        if (target !== caret.current) {
+          e.preventDefault()
+          caret.current?.focus()
+        }
+        onPress?.()
       }}
-      onClick={onPress}
     >
       {entries.length > 0 && <FieldRun entries={entries} />}
       <input
