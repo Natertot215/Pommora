@@ -9,12 +9,10 @@ import {
   type PropertyValue,
   type ValueKind,
 } from '../../Properties/propertyValue'
-import { specOf } from '../../Properties/properties'
+import { type PropertyDefinition, specOf } from '../../Properties/properties'
 import { type ViewPatch, viewOption } from '../views'
 import { type CreatePageRequest, DEFAULT_NEW_NAME, minted } from '../../Nexus/mutateRequest'
 import { relDirname, relJoin } from '../../Paths/posix'
-import { ID_KEY } from '../../Nexus/identityMark'
-import { localIso } from '@pommora/uix/Utilities/pad'
 import { findScroller, SEEK_GLIDE, scrollGlide } from '@pommora/uix/Interactions/autoscroll'
 import { useSession } from '../../Session/store'
 import { settingOf } from '../../Settings/personalization'
@@ -27,6 +25,7 @@ import { groupKeyToValue } from '../reassign'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import type { ViewHostApi } from './useViewHost'
 import { personalizationOf } from '../../Session/configSlice'
+import { pageValuesOf } from '../pageValues'
 import { stageView, unstageView } from './pendingView'
 
 // Sort criteria whose value a new page can inherit from its anchor — single-value user properties, a link and a text aside; under anything else the row simply lands where the sort puts it.
@@ -40,6 +39,21 @@ const SEEDS_FROM_SORT: Record<ValueKind, boolean> = {
   link: false,
   text: false,
   file: false,
+}
+
+function withSeeds(
+  schema: PropertyDefinition[],
+  frontmatter: Record<string, unknown>,
+  seeds: Record<string, PropertyValue>,
+): { frontmatter: PageFrontmatter; contexts?: Record<string, string[]> } {
+  let patched = frontmatter
+  let contexts: Record<string, string[]> | undefined
+  for (const [propId, value] of Object.entries(seeds)) {
+    const def = schema.find((d) => d.id === propId)
+    if (def) patched = applyValueAtRoot(patched, def, value)
+    else if (value.kind === 'context') contexts = { ...contexts, [propId]: value.value }
+  }
+  return { frontmatter: patched as PageFrontmatter, contexts }
 }
 
 export interface CreateFlight {
@@ -88,18 +102,21 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
   const impliedSeeds = (
     req: Pick<CreatePageRequest, 'id' | 'name' | 'parentPath'>,
     parentSetId: string | undefined,
+    gestureSeeds: Record<string, PropertyValue>,
   ): Record<string, PropertyValue> => {
     const c = cfg()
+    const values = pageValuesOf(req.id, {}, null)
+    const { frontmatter, contexts } = withSeeds(c.schema, values.frontmatter, gestureSeeds)
     return filterSeeds({
       filter: viewOption(c.view, 'filter_enabled') ? c.view.filter : undefined,
       blank: {
+        ...values,
         id: req.id,
         title: req.name,
         path: relJoin(req.parentPath, `${req.name}.md`),
         ...(parentSetId !== undefined ? { parentSetId } : {}),
-        frontmatter: { [ID_KEY]: req.id },
-        createdAt: localIso(Date.now()),
-        modifiedAt: null,
+        frontmatter,
+        ...(contexts ? { contextValues: contexts } : {}),
       },
       schema: c.schema,
       setTree: c.source.sets ?? [],
@@ -112,17 +129,10 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
     seeds: Record<string, PropertyValue>,
     landed: Promise<boolean>,
   ): void => {
+    if (Object.keys(seeds).length === 0) return
     const c = cfg()
-    const entries = Object.entries(seeds)
-    if (entries.length === 0) return
-    let patched = frontmatterOf(c.values, pageId) as Record<string, unknown>
-    let contexts: Record<string, string[]> | undefined
-    for (const [propId, value] of entries) {
-      const def = c.schema.find((d) => d.id === propId)
-      if (def) patched = applyValueAtRoot(patched, def, value)
-      else if (value.kind === 'context') contexts = { ...contexts, [propId]: value.value }
-    }
-    patchOverride(c.setValueOverride, pageId, patched as PageFrontmatter, landed, contexts)
+    const { frontmatter, contexts } = withSeeds(c.schema, frontmatterOf(c.values, pageId), seeds)
+    patchOverride(c.setValueOverride, pageId, frontmatter, landed, contexts)
   }
   const glideToRow = (pageId: string): void => {
     const viewEl = cfg().viewRootRef.current
@@ -163,7 +173,7 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
     gestureSeeds: Record<string, PropertyValue> = {},
   ): CreatePageRequest => {
     const req = minted({ op: 'createPage', parentPath, name: DEFAULT_NEW_NAME })
-    const seeds = { ...impliedSeeds(req, parentSetId), ...gestureSeeds }
+    const seeds = { ...impliedSeeds(req, parentSetId, gestureSeeds), ...gestureSeeds }
     return Object.keys(seeds).length ? { ...req, seeds } : req
   }
   // Seeds and slot are staged with the ask, so the push that mounts the newborn paints it in its band at its slot; the order is written once the page exists, and a refusal takes back both.
