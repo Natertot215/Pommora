@@ -39,7 +39,8 @@ import {
 } from './docCache'
 import type { DiffTally, MarkdownScope } from './Engine/detect'
 import { sectionRunsIn } from '../Connections/scan'
-import { CHECK_GLYPH, CODE_TAGS, COPY_GLYPH } from './codeGlyphs'
+import { CHECK_GLYPH, CODE_TAGS, COPY_GLYPH, pathGlyph } from './codeGlyphs'
+import { pathTitles } from './Engine/codeLangs'
 import { linkRest, linkTyping } from './Links/linkReveal'
 import {
   assembleLineIntents,
@@ -209,16 +210,13 @@ function tallyPill({ add, del }: DiffTally): HTMLElement {
 }
 
 function pathTrail(path: string): (Node | string)[] {
-  return path
-    .split(/[\\/]/)
-    .filter((title) => title && title !== '.')
-    .flatMap((title, i) => {
-      if (i === 0) return [title]
-      const chevron = document.createElement('span')
-      chevron.className = trail.chevron
-      chevron.textContent = '›'
-      return [chevron, title]
-    })
+  return pathTitles(path).flatMap((title, i) => {
+    if (i === 0) return [title]
+    const chevron = document.createElement('span')
+    chevron.className = trail.chevron
+    chevron.textContent = '›'
+    return [chevron, title]
+  })
 }
 
 class CodeTagWidget extends WidgetType {
@@ -247,6 +245,8 @@ class CodeTagWidget extends WidgetType {
     const slot = el.appendChild(document.createElement('span'))
     slot.className = 'codeblock-mark-slot'
     if (tag) slot.appendChild(mark(tag.glyph, 'codeblock-mark'))
+    if (this.path)
+      slot.appendChild(mark(pathGlyph(this.path), 'codeblock-mark codeblock-path-mark'))
     slot.appendChild(mark(COPY_GLYPH, 'codeblock-copy'))
     slot.appendChild(mark(CHECK_GLYPH, 'codeblock-copied'))
     const name = el.appendChild(document.createElement('span'))

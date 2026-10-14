@@ -25,7 +25,7 @@ The Nexus’ structure is based on relating **Content** ↔ **Content** through 
 **Pommora —** `Core` (the app), `UIX` (the design kit), and `Desktop` (the Electron host), with `Mobile` + `Sync` as near-term priorities. **Stack —** electron-vite • Electron 42 • React 19 • TypeScript 6 • Vite 7 + `@vitejs/plugin-react` 5 • Zustand • TanStack Virtual • YAML • vitest • `lucide-react` + `@tabler/icons-react` as a secondary source to pull from per icon. **MarkdownPM** — a CodeMirror 6 custom-built Markdown editor.
 
 - **Dependencies:** They're all placed behind thin replacement-enabling seams so they’re swappable without touching callers. Version numbers are compatibility pins, not endorsements.
-- **The [Figma Library](https://www.figma.com/file/EBJXShPFA50yUwmBti452p)** is where the design presentation happens beforehand. `Dashboard/` builds the Pommora Dashboard, a Vercel-hosted site holding the line ledger, the codebase audit, and the Showcase (the design system). The commit hooks keep it current; don’t emphasize it in-chat.
+- **The [Figma Library](https://www.figma.com/file/EBJXShPFA50yUwmBti452p)** is where the design presentation happens beforehand.
 - **Nathan Role:** Nathan *doesn’t* understand much of the architectural design, codebase complexities, or the app's inner workings — his familiarity and focus are primarily on the vision, design, features, and interaction. Most behind-the-scenes design *isn’t* Nathan’s own decision; don’t assume he’s always on the same page or understands what you’re talking about regarding these topics.
 
 ### Hard Rules
@@ -47,7 +47,7 @@ The Nexus’ structure is based on relating **Content** ↔ **Content** through 
 - **Test Nexus:** `~/Test` is pre-seeded with scratch collections, sets, pages, and contexts for live-drive testing.
 - **Iteration Scratchpad:** `Core/Interface/Windows/IterationWindow.tsx`, opened by ⌘⇧T, is for rapid iteration of an otherwise-scoped asset.
 - **Native Context Menus Over CDP:** a real right-click through `Input.dispatchMouseEvent` (`mousePressed` then `mouseReleased` at the target's box) reaches main's listener, where a JS-dispatched `contextmenu` event doesn't; `osascript -e 'tell application "System Events" to key code 53'` dismisses it.
-- **Benchmarks:** `node .claude/Benchmarks/make-benchmark-nexus.mjs small|medium|large|xlarge` builds `~/Benchmark-<Size>` (1k-50k pages; option types 1-10 per type x 10-50 options, other types 1-10) after sweeping earlier builds.
+- **Benchmarks:** `node .claude/scripts/make-benchmark-nexus.mjs small|medium|large|xlarge` builds `~/Benchmark-<Size>` (1k-50k pages; option types 1-10 per type x 10-50 options, other types 1-10) after sweeping earlier builds.
 
 ### Locked Decisions
 

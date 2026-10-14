@@ -45,7 +45,9 @@ describe('a fence’s path', () => {
   it('stands in for the language, its folders and file split by chevrons', async () => {
     const el = await tag('Core/app.ts')
     expect(el.querySelector('.codeblock-name')?.textContent).toBe('Core›app.ts')
-    expect(el.querySelector('.codeblock-mark')).toBeNull()
+    expect([...el.querySelectorAll('.codeblock-mark')].map((m) => m.getAttribute('class'))).toEqual(
+      ['codeblock-mark codeblock-path-mark'],
+    )
   })
 
   it('hides an info word that names no language, and drops a leading `./`', async () => {

@@ -80,7 +80,7 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
   - [x] Task 1-1
   - [x] Task 1-2
   - [x] Task 1-3
-  - [ ] Review Checkpoint
+  - [x] Review Checkpoint
 - [ ] **Phase 2** — The Shared Filter Editor
   - [ ] Task 2-1
   - [ ] Task 2-2

@@ -1,4 +1,5 @@
-// A CodeMirror widget building raw DOM, so it mounts an <svg> rather than a React icon. A language absent here draws its name alone, which is the intended look: the brand sets have no mark for a Ruby or a Haskell.
+// A CodeMirror widget building raw DOM, so it mounts an <svg> rather than a React icon. A language absent here draws its name alone, which is the intended look: no mark reads as a Ruby or a Haskell.
+import { type CodeLangName, codeFence, pathTitles } from './Engine/codeLangs'
 
 /** The glyph is the body of a 24×24 viewBox; `label` overrides the name shown, and an empty one leaves a glyph that already spells the name to stand alone. */
 interface CodeTag {
@@ -10,6 +11,18 @@ interface CodeTag {
 export const COPY_GLYPH =
   '<path d="M7 9.667a2.667 2.667 0 0 1 2.667 -2.667h8.666a2.667 2.667 0 0 1 2.667 2.667v8.666a2.667 2.667 0 0 1 -2.667 2.667h-8.666a2.667 2.667 0 0 1 -2.667 -2.667l0 -8.666"/><path d="M4.012 16.737a2.005 2.005 0 0 1 -1.012 -1.737v-10c0 -1.1 .9 -2 2 -2h10c.75 0 1.158 .385 1.5 1"/>'
 export const CHECK_GLYPH = '<path d="M5 12l5 5l10 -10"/>'
+
+const TERMINAL = '<path d="M5 7l5 5l-5 5"/><path d="M12 19l7 0"/>'
+const FOLDER =
+  '<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/><path d="M2 10h20"/>'
+const FILE_CODE =
+  '<path d="M4 12.15V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.706.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2h-3.35"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="m5 16-3 3 3 3"/><path d="m9 22 3-3-3-3"/>'
+const FILE_BRACES =
+  '<path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M10 12a1 1 0 0 0-1 1v1a1 1 0 0 1-1 1 1 1 0 0 1 1 1v1a1 1 0 0 0 1 1"/><path d="M14 18a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1 1 1 0 0 1-1-1v-1a1 1 0 0 0-1-1"/>'
+const FILE_COG =
+  '<path d="M15 8a1 1 0 0 1-1-1V2a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8z"/><path d="M20 8v12a2 2 0 0 1-2 2h-4.182"/><path d="m3.305 19.53.923-.382"/><path d="M4 10.592V4a2 2 0 0 1 2-2h8"/><path d="m4.228 16.852-.924-.383"/><path d="m5.852 15.228-.383-.923"/><path d="m5.852 20.772-.383.924"/><path d="m8.148 15.228.383-.923"/><path d="m8.53 21.696-.382-.924"/><path d="m9.773 16.852.922-.383"/><path d="m9.773 19.148.922.383"/><circle cx="7" cy="18" r="3"/>'
+const FILE_DIFF =
+  '<path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M9 10h6"/><path d="M12 13V7"/><path d="M9 17h6"/>'
 
 export const CODE_TAGS: Readonly<Record<string, CodeTag>> = {
   JavaScript: {
@@ -50,11 +63,39 @@ export const CODE_TAGS: Readonly<Record<string, CodeTag>> = {
       '<path d="M10.139 3.463c.473 -1.95 3.249 -1.95 3.722 0a1.916 1.916 0 0 0 2.859 1.185c1.714 -1.045 3.678 .918 2.633 2.633a1.916 1.916 0 0 0 1.184 2.858c1.95 .473 1.95 3.249 0 3.722a1.916 1.916 0 0 0 -1.185 2.859c1.045 1.714 -.918 3.678 -2.633 2.633a1.916 1.916 0 0 0 -2.858 1.184c-.473 1.95 -3.249 1.95 -3.722 0a1.916 1.916 0 0 0 -2.859 -1.185c-1.714 1.045 -3.678 -.918 -2.633 -2.633a1.916 1.916 0 0 0 -1.184 -2.858c-1.95 -.473 -1.95 -3.249 0 -3.722a1.916 1.916 0 0 0 1.185 -2.859c-1.045 -1.714 .918 -3.678 2.633 -2.633a1.914 1.914 0 0 0 2.858 -1.184"/><path d="M8 12h6a2 2 0 1 0 0 -4h-6v8v-4"/><path d="M19 16h-2a2 2 0 0 1 -2 -2a2 2 0 0 0 -2 -2h-1"/><path d="M9 8h-4"/><path d="M5 16h4"/>',
   },
   Shell: {
-    glyph: '<path d="M5 7l5 5l-5 5"/><path d="M12 19l7 0"/>',
+    glyph: TERMINAL,
     label: 'Command',
+  },
+  SQL: {
+    glyph:
+      '<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/>',
+  },
+  XML: {
+    glyph:
+      '<path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M10 12.5 8 15l2 2.5"/><path d="m14 12.5 2 2.5-2 2.5"/>',
   },
   Dockerfile: {
     glyph:
       '<path d="M22 12.54c-1.804 -.345 -2.701 -1.08 -3.523 -2.94c-.487 .696 -1.102 1.568 -.92 2.4c.028 .238 -.32 1 -.557 1h-14c0 5.208 3.164 7 6.196 7c4.124 .022 7.828 -1.376 9.854 -5c1.146 -.101 2.296 -1.505 2.95 -2.46"/><path d="M5 10h3v3h-3l0 -3"/><path d="M8 10h3v3h-3l0 -3"/><path d="M11 10h3v3h-3l0 -3"/><path d="M8 7h3v3h-3l0 -3"/><path d="M11 7h3v3h-3l0 -3"/><path d="M11 4h3v3h-3l0 -3"/><path d="M4.571 18c1.5 0 2.047 -.074 2.958 -.78"/><path d="M10 16l0 .01"/>',
   },
+}
+
+/** A file whose language has no mark of its own draws its family's. */
+const FILE_FAMILIES: Readonly<Partial<Record<CodeLangName, string>>> = {
+  JSON: FILE_BRACES,
+  Protobuf: FILE_BRACES,
+  YAML: FILE_COG,
+  TOML: FILE_COG,
+  Properties: FILE_COG,
+  Nginx: FILE_COG,
+  CMake: FILE_COG,
+  PowerShell: TERMINAL,
+}
+
+/** A path with folders draws the folder; a lone filename draws its language's mark, its family's, or plain code. */
+export function pathGlyph(path: string): string {
+  if (pathTitles(path).length > 1 || /[\\/]$/.test(path)) return FOLDER
+  const { name, diff } = codeFence(path)
+  if (name) return CODE_TAGS[name]?.glyph ?? FILE_FAMILIES[name] ?? FILE_CODE
+  return diff ? FILE_DIFF : FILE_CODE
 }

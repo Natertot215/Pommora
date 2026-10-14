@@ -783,6 +783,12 @@ export const FRAMES = roster([
             label: 'Scroll Long Lines In Code Blocks',
             hint: "Codeblocks become scrollable when lines extend beyond their width; they're wrapped when this is turned off.",
           },
+          {
+            kind: 'toggle',
+            key: 'codeblockPathIcons',
+            label: 'Show Path Icons',
+            hint: 'Display icons for paths and individual files within the label of a codeblock containing ```file/path declarations.',
+          },
         ],
       },
       {

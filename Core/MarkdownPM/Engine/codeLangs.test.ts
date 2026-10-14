@@ -4,7 +4,7 @@ import { EditorState } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { CODE_LANGS, codeFence } from './codeLangs'
 import { codeHighlight, codeLanguage } from '../codeHighlight'
-import { CODE_TAGS } from '../codeGlyphs'
+import { CODE_TAGS, pathGlyph } from '../codeGlyphs'
 
 describe('the code-language roster', () => {
   it('keys every tag to a language that exists', () => {
@@ -23,6 +23,30 @@ describe('the code-language roster', () => {
         owner.set(word, l.name)
       }
     expect(clashes).toEqual([])
+  })
+})
+
+describe('a path’s mark', () => {
+  const folder = pathGlyph('src/')
+
+  it('is the folder for any path with folders, whatever its file', () => {
+    for (const path of ['src/app.ts', 'C:\\src\\query.sql', 'docker/Dockerfile', '../app.ts'])
+      expect(pathGlyph(path)).toBe(folder)
+  })
+  it('is a lone file’s language mark, a leading root or `./` naming no folder', () => {
+    for (const path of ['app.ts', '/app.ts', './app.ts'])
+      expect(pathGlyph(path)).toBe(CODE_TAGS.TypeScript.glyph)
+    expect(pathGlyph('query.sql')).toBe(CODE_TAGS.SQL.glyph)
+  })
+  it('is its family’s mark for a language with none of its own', () => {
+    expect(pathGlyph('config.yml')).toBe(pathGlyph('Cargo.toml'))
+    expect(pathGlyph('data.json')).toBe(pathGlyph('api.proto'))
+    expect(pathGlyph('setup.ps1')).toBe(CODE_TAGS.Shell.glyph)
+  })
+  it('is plain code for a general language and an unrecognized file alike, and its own for a diff', () => {
+    const code = pathGlyph('notes.foo')
+    expect(pathGlyph('app.rb')).toBe(code)
+    expect(new Set([code, folder, pathGlyph('config.yml'), pathGlyph('fix.patch')]).size).toBe(4)
   })
 })
 

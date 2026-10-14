@@ -165,6 +165,7 @@ Every setting here is a machine-level preference, stored in the device database 
 | Code Color | `codeColor` | Inline code and the wash behind it. | Any ramp cell, greyscale included · **red** |
 | Show Line Count In Code Blocks | `codeblockLineCount` | Numbers a code block's content lines. | On · **Off** |
 | Scroll Long Lines In Code Blocks | `codeblockScroll` | A code block's long lines stay on one row and scroll sideways instead of wrapping. | On · **Off** |
+| Show Path Icons | `codeblockPathIcons` | A code block's path label carries a folder icon when the path has folders, or its file's icon when it's a lone filename. | On · **Off** |
 | HTML Tag Color | `htmlTagColor` | The text inside an inline HTML tag; its brackets take the syntax color. Cleared follows Code Color. | Any ramp cell, greyscale included · **Code Color** |
 | HTML Shortcuts | `htmlShortcuts` | Use ⌘/ to insert <!-- --> comments, and auto-close <div> tags. | On · **Off** |
 | HTML Formatting | `htmlFormatting` | Markdown inside an HTML block reads as written; off, it renders like the rest of the page. | **On** · Off |
