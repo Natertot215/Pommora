@@ -18,7 +18,7 @@ Filtering is already one system: Views and the Matrix share the rule model (`Cor
 
 ### Overview
 
-One Nexus-level rule list replaces the per-Collection field: an **Open In Preview** row in Settings › Navigation opens the shared filter editor in a Manage pane, and every plain-click page open asks one session action, `openTarget`, which sends a page matching the enabled rules to the Page Window, ⌘-click to a new tab, and everything else through `select`. The rules are judged synchronously from what the tree already holds — Title, Location, Created, Contexts — against a test compiled once per rule change, so routing a click costs no file read; widening the vocabulary later is additive.
+One Nexus-level rule list replaces the per-Collection field: an **Open In Preview** row in Settings › Navigation opens the shared filter editor in a Manage pane, and every plain-click page open asks one session action, `openTarget`, which sends a page matching the enabled rules to the Page Window, ⌘-click to a new tab, and everything else through `select`. The rules are judged synchronously from what the tree already holds — Title, Location, Created, Contexts — against a test compiled once per change to the rules or the folder tree, so routing a click costs no file read; widening the vocabulary later is additive.
 
 The shared filter editor changes for every surface it serves: per-row And/Or connectors go (the footer's All/Any is the only combinator, defaulting to Any), text Is/Isn't fold case, Contexts take multi-select's Is Any / Is All / Isn't, and the Location value field becomes the design kit's new `TokenField` — typing narrows the folder picker, and under Contains and Doesn't Contain, Enter adds a folder-name chip. Its hand-built remove and add buttons fold into the shared accessory buttons, as do Excluded Directories', and the count + Manage row becomes one component. `open_in` and the Configuration leaf leave no trace in code, docs, or Nathan's sidecars.
 
@@ -63,7 +63,7 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 
 #### Constraints
 
-- **Agents:** Implementation runs on opus-medium; phase and final reviews run on opus-high.
+- **Agents:** Implementation runs on opus-medium, phase reviews on opus-high, and the final review and neutral verification on opus at xhigh effort.
 - **Gates:** `npm run typecheck`, `npm run test`, `npm run lint` from the repo root; lint runs clean; typecheck covers tests. Biome formats every write — an Edit failing on whitespace means it reformatted; re-read and retry. Every task ends with the gates green.
 - **Greps:** Apple Git's `git grep -E` doesn't support `\b`; every word-boundary grep in this plan uses `git grep -P`.
 - **Settled Decisions (Nathan's):** Footer-only All/Any everywhere, default **Any** on every surface. Vocabulary is Title, Location, Created, Contexts. Name chips are whole-name, case-insensitive, any-of, added only under Contains / Doesn't Contain; typing in the Location field narrows the picker under all four Location operators. The Location field is `TokenField`, built on `InputField`; a typed name that equals an existing folder's title stays a name. Connections: toggle on → always preview; off → the rules. Storage in `personalization`. Hint copy: "Pages matching these rules open within preview windows by default." Both remove buttons and both add buttons are the shared, icon-only accessory buttons. The Matrix Window and the Page Window keep sharing one floating slot: a matching page opened from any surface while the Matrix stands in its window swaps it for the Page Window, as the Preview rows already do.
@@ -76,10 +76,10 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 
 #### Process Overview
 
-- [ ] **Phase 1** — Filter Model & Evaluator
-  - [ ] Task 1-1
-  - [ ] Task 1-2
-  - [ ] Task 1-3
+- [x] **Phase 1** — Filter Model & Evaluator
+  - [x] Task 1-1
+  - [x] Task 1-2
+  - [x] Task 1-3
   - [ ] Review Checkpoint
 - [ ] **Phase 2** — The Shared Filter Editor
   - [ ] Task 2-1
@@ -121,7 +121,7 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 - [ ] Move `idArray` into `Core/Files/decoders.ts` as an export; `views.ts` imports it.
 - [ ] Create `Core/Views/filterRules.ts` holding, verbatim, `MATCH_MODES`/`MatchMode`, `filterRule`/`FilterRule`, `FilterGroup`, `filterGroup`, `FILTER_OPS`, `OPERANDLESS_OPS`, `SUBSTRING_OPS`, `ruleOperands`, `answerable`, `isGroup`, `mapRules`, plus the standalone filter below. Delete them from `views.ts`; `views.ts` imports what its saved-view schema needs.
 - [ ] Repoint every importer (`git grep -lP "\b(FilterRule|FilterGroup|filterGroup|MatchMode|FILTER_OPS|OPERANDLESS_OPS|SUBSTRING_OPS|ruleOperands|answerable|isGroup|mapRules)\b" Core` — 12 files) at `filterRules`, including names inside multi-line import blocks; no re-export from `views.ts`.
-- [ ] `matrixConfig.ts`: `filter: StandaloneFilter`, default `NO_FILTER`, parse `standaloneFilter.parse(section(raw, 'filter'))`, delete its `filtering`; `matrixInput.ts` and `matrixSlice.ts` import `filtering` from `filterRules`.
+- [ ] `matrixConfig.ts`: `filter: StandaloneFilter`, default `NO_FILTER`, parse `standaloneFilter.parse(section(raw, 'filter'))`, delete its `filtering`; `matrixInput.ts` and `Core/Session/matrixSlice.ts` import `filtering` from `filterRules`.
 
 **AFTER**
 
@@ -177,11 +177,12 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 
 **CHANGE**
 
-- [ ] Write the failing tests first in `filter.test.ts`: Title, Text, and Select Is/Isn't fold case (`'Bread'` matches `'bread'`; Isn't excludes it); Location Contains `['Docs']` matches a page under `X/Docs` and under a folder titled `docs`, not under `My Docs`; Doesn't Contain inverts; a mix of a picked id and a name is any-of; a name matching nothing abstains like a dead id (`:787` stays true); `prepareGroup` returns `undefined` for `{ match: 'any', rules: [] }`. Rename `'text: is is exact, contains folds'` to what it now asserts.
+- [ ] Write the failing tests first in `filter.test.ts`: Title, Text, and Select Is/Isn't fold case (`'Bread'` matches `'bread'`; Isn't excludes it); Location Contains `['Docs']` matches a page under `X/Docs` and under a folder titled `docs`, not under `My Docs`; Doesn't Contain inverts; a mix of a picked id and a name is any-of; a name matching no folder matches nothing under Contains and everything under Doesn't Contain, while a dead id still abstains (`:805` stays true); `prepareGroup` returns `undefined` for `{ match: 'any', rules: [] }` and for a group whose every rule abstains. Rename `'text: is is exact, contains folds'` to what it now asserts.
 - [ ] Export `prepareGroup` unchanged in name, with a doc comment.
 - [ ] Fold text operands once in `prepareRule` when the evaluator is `evaluateText`; `evaluateText` folds the row value once and compares against the pre-folded operands for Is, Isn't, Contains, Doesn't Contain, Starts With. Select and Status values are canonicalized by fold at decode (`propertyValue.ts:49-60`), so their Is/Isn't read the same either way.
 - [ ] Redefine `SetTreeNode` as the shape the tree's Collection and Set nodes already have, `{ id: string; title: string; sets?: SetTreeNode[] }`, and delete `buildSetTree`. `flattenContainer` returns `setTree: node.sets ?? []`; `matrixVisible` passes `tree.collections` and drops its inline build and `buildSetTree` import; `pruneHiddenSets` returns `{ ...node, sets: … }`; `subtreeIds`, `structural`, and `prepareLocation` read `.sets ?? []` for `.children`. The `{ id, children }` literals in `filter.test.ts` (`:493, 516, 530-532, 542, 754-755`) become `{ id, title, sets }`.
-- [ ] `prepareLocation`'s inside walk hits a node when its id is an operand or its folded title is a folded operand. Is / Isn't stay id-only. Reword the `:83` comment to say Contains also matches by folder name.
+- [ ] `prepareLocation`'s inside walk hits a node when its id is an operand or its folded title is a folded operand. Is / Isn't stay id-only. With nothing inside, the rule abstains only when every operand is an id (`isUlidShaped`) — a deleted folder's id is stripped by `configReach`, while a typed name is a lasting pattern that matches nothing. Reword the `:83` comment to say Contains also matches by folder name.
+- [ ] Export `prepareRule` beside `prepareGroup`, for creation seeding to judge one rule.
 - [ ] Move `iso` from `loadValues.ts` to `UIX/Utilities/pad.ts` beside `localDayKey` as exported `localIso`; `pageValuesOf` and `matrixGraph.test.ts:6,64,65,67` use it.
 
 **AFTER**
@@ -191,7 +192,7 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 -  id: string
 -  children: SetTreeNode[]
 -}
-+/** A Collection or Set as the tree already holds it — the filter and grouping read the nodes themselves, never a rebuilt copy. */
++/** A Collection or Set as the tree holds it. */
 +export interface SetTreeNode {
 +  id: string
 +  title: string
@@ -218,7 +219,7 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 ```Core/Views/Pipeline/filter.ts diff
 @@ prepareGroup @@
 -function prepareGroup(
-+/** `undefined` when no rule applies — a caller asking "does this match" reads that as no. */
++/** `undefined` when no rule applies. */
 +export function prepareGroup(
 @@ prepareRule @@
    const evaluate = t === 'title' ? evaluateText : evaluatorOf(PROPERTY_TYPES[t].kind)
@@ -261,39 +262,28 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 
 #### Task 1-3
 
-**TASK:** Give Contexts multi-select's operators, mark which Location operators accept names, drop the `multi` flag nothing reads, and let an Any filter seed the pages created under it.
+**TASK:** Give Contexts multi-select's operators, mark which Location operators accept names, drop the `multi` flag nothing reads, and let an Any filter seed the pages created under it when a blank page doesn't already meet it.
 
 **NOW:** `CONTEXT_OPS` labels `contains_any` "Contains" (`filterModel.ts:116-120`); `LOCATION_OPS` has no name flag (`:146-151`); `OperatorChoice.multi` (`:82`) is set on 11 entries and read only by `filterModel.test.ts:140,195`. `filterSeeds` returns early from any non-All group of several rules (`creationSeeds.ts:46`), so under the Any default a page created in a filtered view takes no values and drops out of the view it was made in.
 
 **CHANGE**
 
 - [ ] Update `filterModel.test.ts` first: a Context reads Is Any / Is All / Isn't / Is Empty / Isn't Empty with `contains_any` / `contains_all` / `does_not_contain`; Location Contains and Doesn't Contain carry `names: true`, Is and Isn't don't; drop the two `multi` assertions.
-- [ ] Write the failing `creationSeeds.test.ts` cases first: an Any group of `[Status is Done, Area Is Any Work]` seeds Status alone; an Any group whose first rule can't seed (`Title contains x`) seeds from the next one that can; an Any group with no seedable rule seeds nothing; All groups seed exactly as before. The two tests that assert an Any group derives nothing flip: `:64-75`'s two-rule Any seeds `p_status` alone, and `:89-104`'s Any nested under All seeds `p_status` beside `p_sel`.
+- [ ] Write the failing `creationSeeds.test.ts` cases first: an Any group of `[Status is Done, Area Is Any Work]` seeds Status alone; an Any group whose first rule can't seed (`Title contains x`) seeds from the next one that can; an Any group a blank page already meets seeds nothing — `[Status Isn't Done, Priority Is High]`, `[Created On Or After yesterday, Status Is Done]`, `[Status Is Empty, Priority Is High]`, `[Status Is Done, Status Isn't Done]`; `Any[All[Status Is Done, Title contains x], Priority Is High]` seeds Priority alone; an Any group with no seedable rule seeds nothing; All groups seed exactly as before. The two tests that assert an Any group derives nothing flip: `:64-75`'s two-rule Any seeds `p_status` alone, and `:89-104`'s Any nested under All seeds `p_status` beside `p_sel`.
 - [ ] Delete `CONTEXT_OPS`; `KIND_OPS.context = SET_OPS`. Delete `multi` from `OperatorChoice` and every entry. Add `names?: true`; set it on the two Location Contains entries.
-- [ ] `filterSeeds`' walk returns whether it seeded; an Any group stops at the first child that seeds, since meeting one rule meets the group. `seed(rule)` is today's per-rule body — `ruleSeed`, the list merge into `seeds` — returning whether it wrote. Rewrite `creationSeeds.ts:1` so a Context reads Is Any / Is All and an Any group seeds from its first rule that can.
+- [ ] `filterSeeds` judges the blank new page — a `ViewRow` with the create's title, its landing `parentSetId` (`flattenContainer`'s convention), `{ ID }` frontmatter, and `createdAt: localIso(Date.now())` — against the view's `setTree` with the evaluator's own `prepareRule` / `prepareGroup`. Each node returns its seeds and whether it's met: a leaf is met when the blank passes it (an abstaining rule passes) or it seeds; an All group merges its children's seeds, met when every child is; an Any group seeds nothing when the blank passes it (or every child abstains), else takes only the seeds of its first applying child that ends up met, else nothing. The caller passes the filter only while `filter_enabled` holds, as `resolveView` does. `useViewCreation`'s `impliedSeeds` builds the blank from where each gesture lands. Rewrite `creationSeeds.ts:1` so a Context reads Is Any / Is All and states the Any rule.
 
 **AFTER**
 
 ```Core/Views/Pipeline/creationSeeds.ts diff
 -  const walk = (group: FilterGroup): void => {
 -    if (group.match !== 'all' && group.rules.length > 1) return
-+  // Meeting one rule meets an Any group, so it seeds from its first rule that can.
-+  const walk = (group: FilterGroup): boolean => {
-+    const first = group.match === 'any'
-+    let seeded = false
-     for (const entry of group.rules) {
--      if (isGroup(entry)) {
--        walk(entry)
--        continue
--      }
--      const value = ruleSeed(entry, schema, contextIds)
--      if (value === null) continue
-+      const hit = isGroup(entry) ? walk(entry) : seed(entry)
-+      seeded ||= hit
-+      if (hit && first) break
-+    }
-+    return seeded
-+  }
+-    …
++  // Each node answers with its seeds and whether the page, so seeded, meets it.
++  const judge = (node: FilterRule | FilterGroup): Judged => …
++    leaf: met when the blank passes its prepareRule test (abstaining passes) or ruleSeed seeds it
++    all:  merge every child's seeds; met when every child is met
++    any:  {} and met when the blank passes it; else the first applying, met child's seeds alone; else {} unmet
 ```
 
 ```Core/Views/filterModel.ts diff
@@ -614,13 +604,13 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 
 #### Task 3-2
 
-**TASK:** Add `opensInPreview`: the page judged from the tree against rules compiled once per rule change.
+**TASK:** Add `opensInPreview`: the page judged from the tree against rules compiled once per change to the rules or the folder tree.
 
 **NOW:** No surface judges a page against rules without loaded values. `toRow` (`group.ts:107-128`) already builds a filter row from a `PageNode` — title, path, its folder, `page.contextValues`, and the `{ ID }` frontmatter fallback (`:102-105`) — and the Matrix builds its rows the same way (`matrixInput.ts:101`). `containerAt` (`treePatch.ts:103`) finds a page's folder from its path.
 
 **CHANGE**
 
-- [ ] Write `previewRules.test.ts` first, against a `Core/Testing` tree: no rules → false; disabled → false; an emptied group (`{ match: 'any', rules: [] }`) → false; Location Is a Collection for a page directly in it; Contains a Set for a page two levels down; Contains a typed name; Title Contains folds; a Context Is Any; Created On Or After; a path that no longer holds the page → false.
+- [ ] Write `previewRules.test.ts` first, against a `Core/Testing` tree: no rules → false; disabled → false; an emptied group (`{ match: 'any', rules: [] }`) → false; Location Is a Collection for a page directly in it; Contains a Set for a page two levels down; Contains a typed name; Contains a name no folder holds → false; Title Contains folds; a Context Is Any; Created On Or After; a path that no longer holds the page → false.
 - [ ] Create `Core/Navigation/previewRules.ts`; the row is `toRow`'s, with Created derived from the id.
 
 **AFTER**
@@ -629,7 +619,7 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 +// The rules judge what the tree already holds, so routing a click costs no read; a rule on a page's own properties would load its values first.
 +
 +const previewTestOf = entityMemo(
-+  [(t) => t.config.personalization.openInPreview, (t) => t.contexts],
++  [(t) => t.config.personalization.openInPreview, (t) => t.contexts, (t) => t.collections],
 +  (tree) => {
 +    const rules = settingOf(tree.config.personalization, 'openInPreview')
 +    return filtering(rules)
@@ -1023,8 +1013,8 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 **THE STANDARD:** The work is finished when a later review of it finds nothing to correct. Not just doing the chores — doing the laundry, folding it, picking up what fell out of the hamper, emptying the lint trap, leaving no trace that anything went wrong. Nothing is carried as a concern, nothing is deferred where the fix is known, and nothing is declared that wasn't watched happen. Where something genuinely couldn't get there, the report names which and why, and everything else is still finished. Ambiguity met during execution took the simplest reading and was recorded; it didn't stop the run.
 
 - [ ] Phase review (opus-high, simplification and adversarial in parallel): Phase 1 · Phase 2 · Phase 3 · Phase 4
-- [ ] Final review (opus-high) over `{baseline}..HEAD`: one agent inward at the change, one outward against the codebase; reconciled with an advisor
-- [ ] Neutral verification (opus-high) over `{baseline}..HEAD`, given only the intention
+- [ ] Final review (opus, xhigh) over `{baseline}..HEAD`: one agent inward at the change, one outward against the codebase; reconciled with an advisor
+- [ ] Neutral verification (opus, xhigh) over `{baseline}..HEAD`, given only the intention
 - [ ] Own pass: gates, plus `npm run build` and `npm run build:dashboard` (`.claude/Guidelines/Development-Environment.md:41`) · diff · deviations · criteria
 - [ ] Live drive on `~/Test` (CDP): each routed surface, the NavWindow staying open, the Settings row and pane, typing and Enter in the Location field; then reverted
 - [ ] Nathan's own pass: the Settings row and pane's size; the folded × and + in the filter pane and Excluded Directories; the Location `TokenField` — typing, Enter, Backspace, the `folder-search` name chip — and the pruned search tree
@@ -1048,7 +1038,7 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 - `.claude/Features/ConnectionsPM.md:36` — connection routing "by default" — Task 5-3
 - `.claude/Features/ContextsPM.md:28` — the Space-delete sweep list gains the Open In Preview rules — Task 5-3
 - `.claude/Features/NavigationPM.md` — one sentence: a plain click on a page the Open In Preview rules match opens the Page Window — Task 5-3
-- `.claude/Features/ViewTypesPM.md:14` — creation seeding names "a Contains rule on a Context" and skips an Any group of several; it's Is Any or Is All, and an Any group seeds from its first rule that can — Task 5-3
+- `.claude/Features/ViewTypesPM.md:14` — creation seeding names "a Contains rule on a Context" and skips an Any group of several; it's Is Any or Is All, and an Any group seeds nothing when a blank page already meets it, else from its first rule or group that seeding meets — Task 5-3
 - `.claude/Features/ViewTypesPM.md:24` — the filter's mode: the pane writes flat groups under All/Any, default Any — Task 5-3
 - `.claude/Features/ViewTypesPM.md:30-31` — Is/Isn't fold case for Title, Text, Link, Select, and Status — Task 5-3
 - `.claude/Features/ViewTypesPM.md:37` — Context operators become Is Any · Is All · Isn't · Is Empty · Isn't Empty — Task 5-3
@@ -1072,3 +1062,5 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 #### Open Items
 
 #### Deviations
+
+- **Task 1-2 — Unmatched Names:** The ratified plan had a typed folder name that matches no folder abstain like a dead id; Phase 1's review showed that silently widens an All group (or the Matrix, or the preview rules) to everything once a folder is renamed, since nothing strips names the way `configReach` strips dead ids. A name that matches nothing now matches nothing; dead ids still abstain.
