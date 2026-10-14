@@ -569,6 +569,7 @@ describe('FilterFrame location field', () => {
     await click(remove)
     expect(down.defaultPrevented).toBe(true)
     expect(savedValues()).toEqual(['Docs'])
+    await settle()
     expect(pickerRows()).toEqual(['Projects', 'Archive'])
   })
 
