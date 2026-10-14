@@ -16,11 +16,12 @@ export const count = style([
   { color: c.label.secondary, fontVariantNumeric: 'tabular-nums' },
 ])
 
+export const managePane = style({ padding: 'var(--surface-inset)' })
+
 export const paneList = style({
   display: 'flex',
   flexDirection: 'column',
   gap: '6px',
-  padding: 'var(--surface-inset)',
 })
 
 export const paneRow = style({
