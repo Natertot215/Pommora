@@ -191,6 +191,12 @@ describe('the alias memory', () => {
     act(() => root.unmount())
   })
 
+  it('lists what the page holds under the rules', async () => {
+    const { hosts, root } = await mountHosts(['the notes', 'The Notes', 'alpha'])
+    expect(hosts[hosts.length - 1].aliases.list('p1')).toEqual(['the notes'])
+    act(() => root.unmount())
+  })
+
   it('a remember sends its instruction', async () => {
     const { mutate, hosts, root } = await mountHosts(['the notes'])
     await act(async () => hosts[hosts.length - 1].aliases.remember('p1', 'the plan'))

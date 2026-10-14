@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { type AliasEdit, applyAliasEdit } from './aliasMemory'
+import { type AliasEdit, applyAliasEdit, heldAliases } from './aliasMemory'
 
 const edit = (worn: string[], e: AliasEdit, title = 'Alpha') => applyAliasEdit(worn, e, title)
 
@@ -89,6 +89,10 @@ describe('forgetting an alias', () => {
 })
 
 describe('tidying', () => {
+  it('a page holds one spelling per name, the first standing, and none of its title', () => {
+    expect(heldAliases(['Plan', 'plan', 'Alpha', 'x'], 'alpha')).toEqual(['Plan', 'x'])
+  })
+
   it("any edit returns one spelling per name and none of the page's title", () => {
     expect(edit(['Plan', 'plan', 'Alpha'], { op: 'forget', alias: 'zzz' })).toEqual(['Plan'])
   })

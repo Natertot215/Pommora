@@ -12,13 +12,21 @@ export const aliasEdit = z.discriminatedUnion('op', [
 ])
 export type AliasEdit = z.infer<typeof aliasEdit>
 
-/** Authoring moves an alias to the front, an add puts it at the end, and a rename keeps its place. One alias is one name whatever its case, the newest spelling standing, and a page's own title is never one; a list breaking either rule is tidied by its next edit. */
+/** One alias is one name whatever its case, and a page's own title is never one; a list breaking either rule reads tidied, and its next edit stores it so. */
+export function heldAliases(worn: readonly string[], title: string): string[] {
+  const seen = new Set([normalizeTitle(title)])
+  return worn.filter((a) => {
+    const key = normalizeTitle(a)
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+}
+
+/** Authoring moves an alias to the front, an add puts it at the end, and a rename keeps its place, the newest spelling standing. */
 export function applyAliasEdit(worn: readonly string[], e: AliasEdit, title: string): string[] {
   const own = normalizeTitle(title)
-  const held = worn.filter((a, i) => {
-    const key = normalizeTitle(a)
-    return key !== own && worn.findIndex((b) => normalizeTitle(b) === key) === i
-  })
+  const held = heldAliases(worn, title)
   const named = (e.op === 'rename' ? e.to : e.alias).trim()
   const key = normalizeTitle(named)
   const others = held.filter((a) => normalizeTitle(a) !== key)

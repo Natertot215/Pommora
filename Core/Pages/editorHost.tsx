@@ -20,7 +20,7 @@ import { PageTile } from '../Tiles/Surfaces/PageTile'
 import { WebTile } from '../Tiles/Surfaces/WebTile'
 import { windowGeometry } from '../Interface/Windows/useWindowGeometry'
 import { openWebLink } from '../Web/openWebLink'
-import type { AliasEdit } from '../Connections/aliasMemory'
+import { type AliasEdit, heldAliases } from '../Connections/aliasMemory'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 
 interface EditorHostOptions {
@@ -47,10 +47,13 @@ function buildEditorHost(
   connRef: { readonly current: ConnectionsApi | undefined },
 ): EditorHost {
   const state = useSession.getState
+  const pageOf = (id: string) => {
+    const tree = state().tree
+    return tree ? pagesByIdOf(tree).get(id) : undefined
+  }
   const editAliases = (id: string, edit: AliasEdit): void => {
-    const s = state()
-    const path = s.tree && pagesByIdOf(s.tree).get(id)?.path
-    if (path) void s.mutate({ op: 'editAliases', path, edit })
+    const path = pageOf(id)?.path
+    if (path) void state().mutate({ op: 'editAliases', path, edit })
   }
   return {
     settings: () => {
@@ -59,7 +62,7 @@ function buildEditorHost(
     },
     connections: () => connRef.current,
     aliases: {
-      list: (id) => pageMetaOf(id)(state())?.aliases ?? [],
+      list: (id) => heldAliases(pageMetaOf(id)(state())?.aliases ?? [], pageOf(id)?.title ?? ''),
       remember: (id, alias) => editAliases(id, { op: 'remember', alias }),
       forget: (id, alias) => editAliases(id, { op: 'forget', alias }),
       subscribe: (cb) =>
@@ -133,10 +136,7 @@ function buildEditorHost(
       return s.tree ? pagePickTree(s.tree, personalizationOf(s).defaultIcons, (p) => p.title) : []
     },
     openLink: openWebLink,
-    pageTitle: () => {
-      const tree = state().tree
-      return (pageId && tree && pagesByIdOf(tree).get(pageId)?.title) ?? null
-    },
+    pageTitle: () => (pageId && pageOf(pageId)?.title) ?? null,
   }
 }
 

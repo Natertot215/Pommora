@@ -259,10 +259,19 @@ describe('a landed Link value remembers the alias it shows', () => {
     expect(remembered()).toEqual([])
   })
 
+  it('a new spelling of the alias it showed is remembered', async () => {
+    await assignValue(writer, row, column, link('[[Alpha|Old]]'))
+    expect(mutate).toHaveBeenLastCalledWith({
+      op: 'editAliases',
+      path: 'Notes/Alpha.md',
+      edit: { op: 'remember', alias: 'Old' },
+    })
+  })
+
   it.each([
     ['a phantom title', '[[Missing|x]]'],
     ['an unaliased link', '[[Alpha]]'],
-    ['a markdown label repeating the title', '[Alpha](Alpha.md)'],
+    ['the alias it already showed', '[[Alpha#Intro|old]]'],
   ])('%s remembers nothing', async (_, value) => {
     await assignValue(writer, row, column, link(value))
     await settled()
