@@ -5,7 +5,11 @@ import type { PropertyDefinition } from './properties'
 import { applyValueAtRoot, isBlankValue, type PropertyValue } from './propertyValue'
 import type { ResolvedColumn, ViewRow } from '../Views/viewRow'
 import { resolveFieldValue } from './value'
+import { readLinkText } from '../Connections/linkValue'
+import { pageIndexOf } from '../Nexus/treeIndex'
+import { normalizeTitle } from '../Paths/caseFold'
 import { pushUndo } from '../Session/undo'
+import { useSession } from '../Session/store'
 
 export interface ValueWriter {
   schema: PropertyDefinition[]
@@ -43,6 +47,19 @@ function write(
   return pending
 }
 
+// A landed Link value showing an alias for a page gives that page the alias, as authoring one in a body does; a markdown label that repeats the title shows none.
+function rememberedAlias(value: PropertyValue | null): MutateRequest | null {
+  const target = value?.kind === 'link' ? readLinkText(value.value) : null
+  if (target?.kind !== 'page' || !target.alias) return null
+  if (normalizeTitle(target.alias) === normalizeTitle(target.title)) return null
+  const tree = useSession.getState().tree
+  const named = tree ? pageIndexOf(tree).resolve(target.title) : null
+  const page = named?.status === 'resolved' ? named.page : undefined
+  return page
+    ? { op: 'editAliases', path: page.path, edit: { op: 'remember', alias: target.alias } }
+    : null
+}
+
 export function assignValue(
   writer: RefObject<ValueWriter | null>,
   row: ViewRow,
@@ -60,6 +77,8 @@ export function assignValue(
   let landed: boolean | null = null
   void pending.then((ok) => {
     landed = ok
+    const remember = ok && rememberedAlias(value)
+    if (remember) void w.mutate(remember)
   })
   const revert = (): boolean => {
     const live = writer.current
