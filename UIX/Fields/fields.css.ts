@@ -127,6 +127,11 @@ export const invalidInput = style({
   selectors: { '&[aria-invalid="true"]': { opacity: STATE_OPACITY.ghost } },
 })
 
+const TOKEN_CARET_MIN = '4ch' // KNOB — the narrowest the caret gets beside a long run
+
+/** The rest of the row, so a press on the field's empty space lands in the caret; the run beside it gives way into its fade first. */
+export const tokenCaret = style({ flex: '1 1 0', minWidth: TOKEN_CARET_MIN })
+
 export const placeholder = style({ color: c.label.tertiary })
 export const fieldTrail = style({ font: 'inherit' })
 

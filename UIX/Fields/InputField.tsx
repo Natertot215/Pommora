@@ -1,4 +1,4 @@
-import { type ReactNode, useRef, useState } from 'react'
+import { type ReactNode, type Ref, useRef, useState } from 'react'
 import * as s from './fields.css'
 import { cx } from '../Utilities/cx'
 import { onActivateKey } from '../Interactions/activate'
@@ -27,6 +27,7 @@ export function InputField({
   leading,
   trailing,
   label,
+  ref,
 }: {
   children: ReactNode
   className?: string
@@ -37,6 +38,7 @@ export function InputField({
   /** Outside the caret. */
   trailing?: ReactNode
   label?: string
+  ref?: Ref<HTMLDivElement>
 }): React.JSX.Element {
   const [ownEditing, setOwnEditing] = useState(false)
   const editing = edit !== undefined && (edit.editing ?? ownEditing)
@@ -61,6 +63,7 @@ export function InputField({
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: the button role is applied conditionally on the click handler, which a static parse cannot see
     <div
+      ref={ref}
       className={cx(
         chrome === 'bordered' ? s.borderedField : s.field,
         edit && s.editable,

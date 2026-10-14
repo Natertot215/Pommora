@@ -410,6 +410,126 @@ describe('FilterFrame', () => {
   })
 })
 
+const locationField = (): HTMLInputElement =>
+  host.querySelector('input[aria-label="Filter values"]') as HTMLInputElement
+const focusLocation = async (): Promise<void> => {
+  await act(async () => {
+    locationField().focus()
+  })
+}
+const typeLocation = async (text: string): Promise<void> => {
+  // React reads the value off its own tracker, so a bare assignment looks like no change at all.
+  const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set
+  await act(async () => {
+    setValue?.call(locationField(), text)
+    locationField().dispatchEvent(new Event('input', { bubbles: true }))
+  })
+}
+const pressEnter = async (): Promise<void> => {
+  await act(async () => {
+    locationField().dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }),
+    )
+  })
+}
+const pickerRows = (): string[] =>
+  [...document.querySelectorAll('[data-picker-portal] [role="button"]')].map(
+    (el) => el.textContent ?? '',
+  )
+
+describe('FilterFrame location field', () => {
+  const folder = (id: string, title: string, sets: unknown[] = []) => ({
+    kind: 'set',
+    id,
+    title,
+    path: title,
+    sets,
+    pages: [],
+  })
+  beforeEach(() => {
+    Object.assign(source, {
+      sets: [
+        folder('p1', 'Projects', [folder('d1', 'Docs'), folder('n1', 'Notes')]),
+        folder('a1', 'Archive'),
+      ],
+    })
+  })
+  afterEach(() => {
+    Object.assign(source, { sets: [] })
+  })
+  const locationRule = (op: string, values?: string[]): SavedView =>
+    view({
+      filter: {
+        match: 'any',
+        rules: [{ property_id: '_location', op, ...(values ? { values } : {}) }],
+      },
+    })
+  const savedValues = (): unknown =>
+    ((lastSaved().filter as { rules: unknown[] }).rules[0] as Record<string, unknown>).values
+
+  it('focusing the field opens the picker unfiltered', async () => {
+    await mount(locationRule('is_inside'))
+    await focusLocation()
+    expect(pickerRows()).toEqual(['Projects', 'Archive'])
+  })
+
+  it('typing narrows the picker to matching folders with their ancestors open', async () => {
+    await mount(locationRule('is_inside'))
+    await focusLocation()
+    await typeLocation('note')
+    expect(pickerRows()).toEqual(['Projects', 'Notes'])
+  })
+
+  it('Enter under Contains adds the typed name and clears the draft, even one naming a folder', async () => {
+    await mount(locationRule('is_inside'))
+    await focusLocation()
+    await typeLocation('Docs')
+    await pressEnter()
+    expect(savedValues()).toEqual(['Docs'])
+    expect(locationField().value).toBe('')
+  })
+
+  it('Enter under Is adds nothing', async () => {
+    await mount(locationRule('is'))
+    await focusLocation()
+    await typeLocation('Docs')
+    await pressEnter()
+    expect(saveSpy).not.toHaveBeenCalled()
+  })
+
+  it('a name equal by fold to a shown one is not added twice', async () => {
+    await mount(locationRule('is_inside', ['Docs']))
+    await focusLocation()
+    await typeLocation('docs')
+    await pressEnter()
+    expect(saveSpy).not.toHaveBeenCalled()
+  })
+
+  it('a picked folder joins the values and clears the draft', async () => {
+    await mount(locationRule('is_inside', ['Docs']))
+    await focusLocation()
+    await typeLocation('doc')
+    await click(optionWithText('Docs'))
+    expect(savedValues()).toEqual(['Docs', 'd1'])
+    expect(locationField().value).toBe('')
+  })
+
+  it('switching Contains to Is keeps picked folders and drops names', async () => {
+    await mount(locationRule('is_inside', ['d1', 'Docs']))
+    await click(byLabel('Filter operator'))
+    await click(optionWithText('Is'))
+    expect(lastSaved().filter?.rules[0]).toEqual({
+      property_id: '_location',
+      op: 'is',
+      values: ['d1'],
+    })
+    await mount(locationRule('is_inside', ['Docs']))
+    await click(byLabel('Filter operator'))
+    await click(optionWithText('Is'))
+    expect(lastSaved().filter?.rules[0]).toEqual({ property_id: '_location', op: 'is' })
+  })
+})
+
 describe('FilterFrame value editors', () => {
   it('location picks join into one ring across siblings, and an expanded parent ends the run', async () => {
     const set = (id: string, sets: unknown[] = []) => ({
@@ -429,7 +549,7 @@ describe('FilterFrame value editors', () => {
         },
       }),
     )
-    await click(host.querySelector('[aria-label="Filter values"]'))
+    await focusLocation()
     const row = (t: string): string => optionWithText(t)?.className ?? ''
     expect([row('A'), row('B'), row('C')]).toEqual([
       expect.stringContaining(itemPicked.first),

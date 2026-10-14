@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { InputField } from '@pommora/uix/Fields/InputField'
 import { SearchField } from '@pommora/uix/Fields/SearchField'
+import { TokenField } from '@pommora/uix/Fields/TokenField'
 import { base, field, borderedField, input } from '@pommora/uix/Fields/fields.css'
-import { PlainLabel } from '@pommora/uix/Labels/recipes'
 import { Button } from '@pommora/uix/Buttons/Button'
 import { NavTrail, pathSegments } from '@pommora/uix/Elements/NavTrail'
 import { Icon } from '@pommora/uix/Symbols'
@@ -12,6 +12,7 @@ export function FieldsLeaf(): React.JSX.Element {
   const [search, setSearch] = useState('')
   const [path, setPath] = useState('Projects/Pommora')
   const [draft, setDraft] = useState('')
+  const [tokens, setTokens] = useState(['Drafts', 'Archive/Old'])
   return (
     <section className="ds-section">
       <h2>Fields</h2>
@@ -41,16 +42,20 @@ export function FieldsLeaf(): React.JSX.Element {
         >
           <NavTrail segments={pathSegments(path)} variant="option" />
         </InputField>
-        <InputField capped>
-          <PlainLabel text="Drafts" />
-          <PlainLabel text="Archive/Old" />
-          <input
-            className={base}
-            value={draft}
-            placeholder="Type to add…"
-            onChange={(e) => setDraft(e.target.value)}
-          />
-        </InputField>
+        <TokenField
+          entries={tokens.map((t) => ({
+            key: t,
+            label: t,
+            onRemove: () => setTokens((all) => all.filter((x) => x !== t)),
+          }))}
+          draft={draft}
+          placeholder="Type to add…"
+          onDraftChange={setDraft}
+          onEnter={(t) => {
+            setTokens((all) => (all.includes(t) ? all : [...all, t]))
+            setDraft('')
+          }}
+        />
       </div>
     </section>
   )
