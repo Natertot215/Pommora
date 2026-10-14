@@ -102,11 +102,11 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
   - [x] Task 4-2
   - [x] Task 4-3
   - [x] Review Checkpoint
-- [x] **Phase 5** — Migration & Reconciliation
-  - [x] Task 5-1
+- [ ] **Phase 5** — Migration & Reconciliation
+  - [ ] Task 5-1
   - [x] Task 5-2
   - [x] Task 5-3
-- [ ] **Closing** — Final Verification, the HistoryPM entry, and `c/view-changes`
+- [ ] **Closing** — Final Verification, `save-delta`, the HistoryPM entry, the final commit, and the push to `main`
 
 ---
 
@@ -595,7 +595,7 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 **VERIFY**
 
 - [ ] The new tests fail before and pass after.
-- [ ] `grep -n "'folder-search'" UIX/Symbols/index.tsx` hits the curated map; `npm run build:dashboard` builds the showcase's live `TokenField`.
+- [ ] `grep -n "'folder-search'" UIX/Symbols/index.tsx` hits the curated map; the Studio dashboard's showcase build (`node_modules/.bin/vite build` from `~/The Studio/.claude/dashboard`) builds its live `TokenField`.
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
@@ -982,33 +982,14 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 
 **CHANGE**
 
-- [ ] Write the script in the session scratchpad: copy every file it will write into a scratchpad backup folder first; set NexusOS's `personalization.openInPreview` to the rule below unless already equal, writing `settings.json` with recursively sorted keys; delete `open_in` from every `_pagecollection.json` / `_pageset.json` under both Nexuses, rewriting with `JSON.stringify(obj, null, 2) + '\n'` in the file's existing key order.
+- [ ] Write the script in the session scratchpad: copy every file it will write into a scratchpad backup folder first; delete `open_in` from every `_pagecollection.json` / `_pageset.json` under both Nexuses, rewriting with `JSON.stringify(obj, null, 2) + '\n'` in the file's existing key order.
 - [ ] Dry-run (print the diff), then run, then run again to prove it writes nothing.
-
-**AFTER**
-
-```~/NexusOS/.nexus/settings.json diff
-   "personalization": {
-     …
-+    "openInPreview": {
-+      "enabled": true,
-+      "rules": {
-+        "match": "any",
-+        "rules": [
-+          {
-+            "op": "is_inside",
-+            "property_id": "_location",
-+            "values": ["01KVRMV34DRVXCDX4TWAC2VPQ0", "01KT098DR84WF1HDDDC4P2GAK8", "01KTS8ZYBZJHP3EJDGYQB0XKPA", "01M03W7Z1S8XST07GC5FHS591B"]
-+          }
-+        ]
-+      }
-+    },
-```
+- [ ] In the running app on NexusOS, build the rule through Settings › Navigation › Open In Preview under Any, one row each: Location Contains Ideas, Location Contains Index, Location Contains "II. Sessions" — Ideas and Index typed to narrow the picker, then picked; "II. Sessions" entered as a name, matching both Studio Sets of that name.
 
 **VERIFY**
 
-- [ ] `grep -rl '"open_in"' ~/NexusOS ~/Test --include='_page*.json'` is empty; each rewritten sidecar's diff is the one removed line; `settings.json`'s diff is the added key alone.
-- [ ] Opening NexusOS, a sidebar click on a Resources page opens the Page Window and a Studio page opens in the main view.
+- [ ] `grep -rl '"open_in"' ~/NexusOS ~/Test --include='_page*.json'` is empty; each rewritten sidecar's diff is the one removed line; `settings.json`'s diff is the added `openInPreview` key alone, written by the app.
+- [ ] In NexusOS, a sidebar click on an Ideas, Index, or "II. Sessions" page opens the Page Window, and a Resources page opens in the main view.
 
 #### Task 5-2
 
@@ -1055,12 +1036,12 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 - [ ] Review-fix review (opus-high, one agent with the simplification and adversarial perspectives): the unplanned fix passes each checkpoint applied — Phase 2's `df12d3268 b2d3b64f5 fb12435b9 44bbeb262` above all, with Phase 1's `9972c4725 2a42728c4` and Phase 3's `9394c1a3e`, and Phase 4's `58b7aa6fa b9ecc3d5e` — judged as their own change and against the phase they amended
 - [ ] Final review (opus, xhigh) over `{baseline}..HEAD`: one agent inward at the change, one outward against the codebase; reconciled with an advisor
 - [ ] Neutral verification (opus, xhigh) over `{baseline}..HEAD`, given only the intention
-- [ ] Own pass: gates, plus `npm run build` and `npm run build:dashboard` (`.claude/Guidelines/Development-Environment.md:41`) · diff · deviations · criteria
+- [ ] Own pass: gates, plus `npm run build` and the Studio dashboard's showcase build (`node_modules/.bin/vite build` from `~/The Studio/.claude/dashboard`) · diff · deviations · criteria
 - [ ] Live drive on `~/Test` (CDP): each routed surface, the NavWindow staying open, the Settings row and pane, typing and Enter in the Location field; then reverted
 - [ ] Nathan's own pass: the Settings row and pane's size; the folded × and + in the filter pane and Excluded Directories; the Location `TokenField` — typing, Enter, Backspace, the `folder-search` name chip — and the pruned search tree
 - [x] Reconciliation walked
 - [ ] `.claude/HistoryPM.md` gains **Previews & Filtering Improvements** — an index row and an entry in PM-149's brief past-tense form, with its commit range and diff
-- [ ] `c/view-changes` published over `{baseline}..HEAD` once the entry is written and the code is final
+- [ ] `save-delta` published over `{baseline}..HEAD` once every code commit has landed; then the final commit (the HistoryPM entry, the Results document, and the plan) and `git push -f origin active:main` for the clean-main regeneration
 - [ ] Report delivered
 
 #### Reconciliation
@@ -1106,6 +1087,8 @@ The shared filter editor changes for every surface it serves: per-row And/Or con
 #### Open Items
 
 #### Deviations
+
+- **Task 5-1 — NexusOS's Rule:** The plan carried the four Preview Collections into the rule by script; Nathan set it instead to Ideas, Index, and "II. Sessions", built by hand in the live Settings pane so the run doubles as the pane's visual check.
 
 - **Task 2-4 — Narrowing Keeps Subtrees:** The plan pruned a narrowed tree to matches plus ancestors, dropping a matched folder's subfolders; at Phase 2's review Nathan ruled a match keeps its subtree.
 
