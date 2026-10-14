@@ -13,6 +13,7 @@ export function RenamableLabel({
   boxed,
   ariaLabel,
   emptyCommits,
+  invalid,
   onBegin,
   onCommit,
   onCancel,
@@ -29,6 +30,7 @@ export function RenamableLabel({
   ariaLabel?: string
   /** A value field rather than a name: clearing it is a commit — the caller's unset — not a cancel. */
   emptyCommits?: boolean
+  invalid?: (text: string) => boolean
   onBegin?: () => void
   onCommit: (next: string) => void
   onCancel: () => void
@@ -53,6 +55,7 @@ export function RenamableLabel({
       ariaLabel={ariaLabel}
       caretAtEnd={renames === 'title'}
       required={!emptyCommits}
+      invalid={invalid}
       onCommit={(next) => (next !== value ? onCommit(next) : onCancel())}
       onCancel={onCancel}
     />
