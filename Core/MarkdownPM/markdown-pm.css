@@ -942,7 +942,7 @@
   display: inline-flex;
   align-items: center;
   line-height: 1;
-  gap: 0.3em;
+  gap: calc(4px * var(--glyph-scale));
   color: var(--label-control);
   font-family: var(--font-family);
   font-weight: var(--weight-emphasized);
@@ -982,6 +982,9 @@
 }
 .mdpm-editor .codeblock .codeblock-language .codeblock-mark {
   opacity: calc(1 - var(--reveal, 0));
+}
+.mdpm-editor .codeblock .codeblock-language .codeblock-path-mark {
+  color: var(--label-tertiary);
 }
 :root:not(.codeblock-path-icons) .mdpm-editor .codeblock .codeblock-language .codeblock-path-mark {
   display: none;
