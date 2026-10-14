@@ -89,6 +89,7 @@ import {
   LockOutline,
   Pommora,
   ProgressCheck,
+  Sapphire,
 } from './customGlyphs'
 import { fileTypeGlyphs } from './fileTypes'
 import { ICON_NAMES } from './iconNames'
@@ -178,6 +179,7 @@ export const icons = {
   'text-align-start': TextAlignStart,
   'view-table': Grid3x2,
   pommora: Pommora,
+  sapphire: Sapphire,
   'list-rounded': ListRounded,
   'cards-grid': CardsGrid,
   'progress-check': ProgressCheck,

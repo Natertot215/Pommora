@@ -107,3 +107,11 @@ export const Pommora = glyph(
   </g>,
   { box: MARK_BOX, stroked: false },
 )
+
+// The Sapphire plugin's own icon: Lucide's hexagon with a half-size hexagon inside it.
+export const Sapphire = glyph(
+  <>
+    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+    <path d="M16.5 14v-4a1 1 0 0 0-.5-.865l-3.5-2a1 1 0 0 0-1 0l-3.5 2A1 1 0 0 0 7.5 10v4a1 1 0 0 0 .5.865l3.5 2a1 1 0 0 0 1 0l3.5-2a1 1 0 0 0 .5-.865z" />
+  </>,
+)
