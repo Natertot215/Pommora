@@ -39,7 +39,7 @@ The operational layer for running, driving, and committing to the app; the Featu
 
 ### Gates & Commits
 
-- **Gates:** `npm run typecheck` covers all six tsconfig projects, alongside `npm run test`, `npm run lint`, and `npm run build`. Chain them with `&&` and confirm `✓ built in` on every build; a pipe to `tail` masks the exit code.
+- **Gates:** `npm run typecheck` covers all six tsconfig projects and the Studio dashboard, which builds on UIX, alongside `npm run test`, `npm run lint`, and `npm run build`. Chain them with `&&` and confirm `✓ built in` on every build; a pipe to `tail` masks the exit code.
 - **Formatting:** A PostToolUse hook formats every TS/CSS/JSON write with Biome; a shell-driven edit bypasses it, and `npm run format` repairs one.
 - **Relative Core Imports:** `Core/manifest.test.ts` fails on any `@pommora/core/…` import inside `Core`; the package name is for other packages.
 - **Store Slices:** A slice imports nothing that imports `store.ts`, or boot throws `create…Slice is not a function`; `Core/Session/sliceGraph.test.ts` catches the cycle.
