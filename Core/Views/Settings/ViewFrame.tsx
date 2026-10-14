@@ -110,7 +110,6 @@ export function ViewFrame({
             <AccessoryButton
               icon="dots"
               size="control"
-              box={20}
               ariaLabel="More"
               disabled
               onClick={() => {}}

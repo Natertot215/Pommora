@@ -14,9 +14,6 @@ const FILTER_MAX_WIDTH = '420px'
 /** KNOB — the trailing chevron's distance from its label. Tighter than the lead on purpose: the Operator cell is the row's compactness priority. */
 const TRAILING_GAP = '2px'
 
-/** KNOB — the clear-×'s breathing room off the row's trailing edge. */
-const REMOVE_INSET = '2px'
-
 export const frame = style({
   ...growToContent(FILTER_MAX_WIDTH),
   minHeight: `${PANE_MIN_H}px`,
@@ -51,20 +48,6 @@ export const chevron = style({
   color: c.label.secondary,
   marginLeft: TRAILING_GAP,
   flexShrink: 0,
-})
-
-export const removeButton = style({
-  flex: '0 0 auto',
-  marginRight: REMOVE_INSET,
-  border: 'none',
-  background: 'none',
-  padding: 0,
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  color: c.label.secondary,
-  cursor: 'default',
-  selectors: { '&:hover': { color: c.label.primary } },
 })
 
 export const cellInput = style([

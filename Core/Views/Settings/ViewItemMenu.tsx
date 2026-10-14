@@ -32,7 +32,6 @@ export function ViewItemMenu({
         ref={ref}
         icon="ellipsis-vertical"
         size="body"
-        box={20}
         ariaLabel="View menu"
         onClick={() => setOpen(true)}
       />

@@ -258,7 +258,7 @@ export const footingSymbol = style({ display: 'inline-flex', color: c.label.seco
 export const footingQuiet = style({ selectors: { '&&&': { color: c.label.tertiary } } })
 
 export const accessoryButton = style({
-  width: 'var(--accessory-box, 20px)',
+  width: '20px',
   color: c.label.tertiary,
   selectors: { '&&:disabled': { opacity: STATE_OPACITY.ghost } },
 })
