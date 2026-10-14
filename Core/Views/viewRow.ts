@@ -1,7 +1,5 @@
 import type { PageFrontmatter } from '../Nexus/schemas'
 
-export const OPEN_INS = ['full-page', 'page-preview'] as const
-export type OpenIn = (typeof OPEN_INS)[number]
 export const VIEW_BUTTONS = ['icon', 'labeled'] as const
 export type ViewButton = (typeof VIEW_BUTTONS)[number]
 export const VIEW_STYLES = ['dropdown', 'toolbar'] as const

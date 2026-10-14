@@ -1,7 +1,7 @@
 import { type Handlers, withRoot, withWriteRoot } from '../Contract/handlers'
 import { ok, type Result, fault } from '../Contract/result'
 import { isPlainObject, isStringArray, NEEDS_CONFIG_PATCH } from '../Contract/validators'
-import { coerceOpenIn, coerceViewButton } from '../Nexus/schemas'
+import { coerceViewButton } from '../Nexus/schemas'
 import { type ContainerKind, isContainerKind } from '../Nexus/entities'
 import { resolveUnderRoot } from '../Paths/pathSafety'
 import { mutableTarget } from '../Nexus/liveTree'
@@ -52,14 +52,10 @@ export const viewsHandlers = {
       : fault('A removed view is required.')
   }),
 
-  'container:configure': containerWrite(async (folder, kind, patch: unknown) =>
-    isPlainObject(patch)
-      ? setContainerConfig(folder, kind, {
-          open_in: coerceOpenIn(patch.open_in),
-          view_button: coerceViewButton(patch.view_button),
-        })
-      : NEEDS_CONFIG_PATCH,
-  ),
+  'container:configure': containerWrite(async (folder, kind, patch: unknown) => {
+    const view_button = isPlainObject(patch) ? coerceViewButton(patch.view_button) : undefined
+    return view_button ? setContainerConfig(folder, kind, { view_button }) : NEEDS_CONFIG_PATCH
+  }),
 
   'view:loadValues': withRoot(async (root, _ctx, containerPath: unknown, pageIds: unknown) => {
     if (typeof containerPath !== 'string' || (pageIds !== undefined && !isStringArray(pageIds)))

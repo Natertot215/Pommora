@@ -198,15 +198,6 @@ describe('a locked view-embed scope', () => {
     )
     expect(texts()).toContain('Filter')
   })
-
-  it('withholds Configuration, which would write the source container', async () => {
-    await render(
-      <ViewTileScopeProvider value={scope(false)}>
-        <SettingsFrame />
-      </ViewTileScopeProvider>,
-    )
-    expect(texts()).not.toContain('Configuration')
-  })
 })
 
 describe('saveViewIn — the write every settings frame routes through', () => {

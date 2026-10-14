@@ -3,13 +3,11 @@
 import { z } from 'zod'
 import { entriesOf, numberCheck } from '../Files/decoders'
 import { CROP_POINT, CROP_ZOOM } from '../Assets/cropGeometry'
-import { OPEN_INS, VIEW_BUTTONS, type OpenIn, type ViewButton } from '../Views/viewRow'
+import { VIEW_BUTTONS, type ViewButton } from '../Views/viewRow'
 import { ID_KEY } from './identityMark'
 
-const openInField = z.enum(OPEN_INS).optional().catch(undefined)
 const viewButtonField = z.enum(VIEW_BUTTONS).optional().catch(undefined)
 
-export const coerceOpenIn = (raw: unknown): OpenIn | undefined => openInField.parse(raw)
 export const coerceViewButton = (raw: unknown): ViewButton | undefined => viewButtonField.parse(raw)
 
 export const crop = z.object({

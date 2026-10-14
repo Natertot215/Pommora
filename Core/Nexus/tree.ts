@@ -1,7 +1,7 @@
 import type { ContextDef } from '../Contexts/contexts'
 import type { PropertyDefinition } from '../Properties/properties'
 import type { SettingsLeaves } from '../Settings/codec'
-import type { OpenIn, ViewButton } from '../Views/viewRow'
+import type { ViewButton } from '../Views/viewRow'
 import type { SavedView } from '../Views/views'
 import type { NodeKind } from './entities'
 import type { Crop, PageMeta } from './schemas'
@@ -62,7 +62,6 @@ export interface CollectionNode extends ContainerNode {
   kind: 'collection'
   sets: SetNode[]
   properties?: PropertyDefinition[]
-  openIn?: OpenIn
   /** The properties a Remove cached values for, so a Link cascade opens only the sidecars that could hold one. */
   cached?: string[]
 }

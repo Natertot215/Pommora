@@ -35,13 +35,11 @@ describe('sidecarId', () => {
 
 describe('patchSidecar', () => {
   it('edits one key and writes sorted, stable JSON with every other key as it was', async () => {
-    await seed({ id: 'T1', plugin: 'keep', open_in: 'side-peek' })
+    await seed({ id: 'T1', plugin: 'keep' })
     expect((await patchSidecar(dir, 'collection', (cur) => ({ ...cur, icon: 'box' }))).ok).toBe(
       true,
     )
-    expect(await raw()).toBe(
-      '{\n  "icon": "box",\n  "id": "T1",\n  "open_in": "side-peek",\n  "plugin": "keep"\n}\n',
-    )
+    expect(await raw()).toBe('{\n  "icon": "box",\n  "id": "T1",\n  "plugin": "keep"\n}\n')
   })
 
   it('refuses a missing sidecar and one without an id, writing nothing', async () => {

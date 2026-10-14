@@ -215,7 +215,7 @@ describe('container writes keep what this build does not decode', () => {
     property_order: [],
     hidden_properties: [],
   }
-  const raw = { open_in: 'side-peek', plugin_top: { keep: 1 } }
+  const raw = { plugin_mode: 'x', plugin_top: { keep: 1 } }
 
   it('a view save, a page reorder, and a property assign leave every other key as written', async () => {
     const { setChildOrder } = await import('../Nexus/reorder')
