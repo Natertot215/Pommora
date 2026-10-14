@@ -7,6 +7,7 @@ import type { PropertyDefinition } from './properties'
 import { assignValue, type ValueWriter } from './assignValue'
 import { groupUndo, resetUndo, undoValue } from '../Session/undo'
 import { useSession } from '../Session/store'
+import { makeTree } from '../Testing/testTree'
 
 const schema: PropertyDefinition[] = [
   {
@@ -217,5 +218,55 @@ describe('assignValue', () => {
     expect(undoValue(null)).toBe(true)
     expect(mutate).toHaveBeenCalledTimes(2)
     expect(undoValue(null)).toBe(false)
+  })
+})
+
+describe('a landed Link value remembers the alias it shows', () => {
+  const column = { id: 'prop_link', kind: 'property' } as const
+  const link = (value: string) => ({ kind: 'link', value }) as const
+  const remembered = () => mutate.mock.calls.filter(([req]) => req.op === 'editAliases')
+  const settled = () => new Promise((r) => setTimeout(r))
+
+  beforeEach(() => {
+    live.schema = [...schema, { id: 'prop_link', name: 'Link', type: 'link' }]
+    row = rowOf({ id: 'page1', Link: '[[Alpha|old]]' })
+    useSession.setState({ tree: makeTree() })
+  })
+
+  it('remembers the alias once the write lands', async () => {
+    await assignValue(writer, row, column, link('[[Alpha|the notes]]'))
+    expect(mutate.mock.calls.map(([req]) => req.op)).toEqual(['setProperty', 'editAliases'])
+    expect(mutate).toHaveBeenLastCalledWith({
+      op: 'editAliases',
+      path: 'Notes/Alpha.md',
+      edit: { op: 'remember', alias: 'the notes' },
+    })
+  })
+
+  it('a refused write remembers nothing', async () => {
+    mutate.mockResolvedValueOnce(null)
+    await assignValue(writer, row, column, link('[[Alpha|the notes]]'))
+    await settled()
+    expect(remembered()).toEqual([])
+  })
+
+  it('an undo of the commit remembers nothing', async () => {
+    await assignValue(writer, row, column, link('[[Alpha|the notes]]'))
+    mutate.mockClear()
+    expect(undoValue(null)).toBe(true)
+    await settled()
+    expect(mutate).toHaveBeenCalledTimes(1)
+    expect(remembered()).toEqual([])
+  })
+
+  it.each([
+    ['a phantom title', '[[Missing|x]]'],
+    ['an unaliased link', '[[Alpha]]'],
+    ['a markdown label repeating the title', '[Alpha](Alpha.md)'],
+  ])('%s remembers nothing', async (_, value) => {
+    await assignValue(writer, row, column, link(value))
+    await settled()
+    expect(mutate).toHaveBeenCalledTimes(1)
+    expect(remembered()).toEqual([])
   })
 })
