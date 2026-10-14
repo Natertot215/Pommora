@@ -12,13 +12,13 @@ type Session = ReturnType<typeof useSession.getState>
 
 const held = new Map<Mode, { read: unknown[]; value: ConnectionsApi | undefined }>()
 
-/** `preview` follows the Open in Preview preference, `window` lands in the window's own tab strip, and `inert` opens no page, for a glance or a page's history — its own headings and weblinks still follow. One bundle per mode, rebuilt only when what it reads changes, so a caller may read it at the moment it needs it rather than subscribe. */
+/** `preview` previews every connection under Open Connections In Preview and otherwise follows Open In Preview, `window` lands in the window's own tab strip, and `inert` opens no page, for a glance or a page's history — its own headings and weblinks still follow. One bundle per mode, rebuilt only when what it reads changes, so a caller may read it at the moment it needs it rather than subscribe. */
 function connectionsOf(s: Session, mode: Mode): ConnectionsApi | undefined {
-  const { tree, headings, select, openWindowTab } = s
+  const { tree, headings, openTarget, openWindowTab } = s
   const inWindow =
     mode === 'window' ||
     (mode === 'preview' && settingOf(personalizationOf(s), 'connectionsOpenInPreview'))
-  // `select` and `openWindowTab` are stable store actions.
+  // `openTarget` and `openWindowTab` are stable store actions.
   const read = [tree, inWindow, headings]
   const hit = held.get(mode)
   if (hit?.read.every((v, i) => v === read[i])) return hit.value
@@ -36,8 +36,9 @@ function connectionsOf(s: Session, mode: Mode): ConnectionsApi | undefined {
     return {
       ...index,
       open: ({ id, path }, heading, newTab) => {
-        if (inWindow && !newTab) openWindowTab({ kind: 'page', id, path }, { heading })
-        else void select({ kind: 'page', id, path }, { newTab: newTab || undefined, heading })
+        const target = { kind: 'page', id, path } as const
+        if (inWindow && !newTab) openWindowTab(target, { heading })
+        else openTarget(target, { newTab, heading })
       },
       menu: showConnectionMenu,
       headingsOf,

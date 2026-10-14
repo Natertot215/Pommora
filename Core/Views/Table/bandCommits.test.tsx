@@ -746,7 +746,10 @@ describe('band header — the sidebar interaction model', () => {
     await act(async () => {
       glyphOf('A').dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))
     })
-    expect(selectSpy).toHaveBeenCalledWith({ kind: 'set', id: 'sA', path: 'Col/A' }, undefined)
+    expect(selectSpy).toHaveBeenCalledWith(
+      { kind: 'set', id: 'sA', path: 'Col/A' },
+      { newTab: undefined, heading: undefined },
+    )
     selectSpy.mockClear()
     await act(async () => {
       glyphOf('A1').dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))
@@ -773,7 +776,10 @@ describe('band header — the sidebar interaction model', () => {
       glyphOf('A').dispatchEvent(new MouseEvent('dblclick', { bubbles: true, detail: 2 }))
     })
     expect(saveSpy).not.toHaveBeenCalled()
-    expect(selectSpy).toHaveBeenCalledWith({ kind: 'set', id: 'sA', path: 'Col/A' }, undefined)
+    expect(selectSpy).toHaveBeenCalledWith(
+      { kind: 'set', id: 'sA', path: 'Col/A' },
+      { newTab: undefined, heading: undefined },
+    )
   })
 
   it('Enter on a focused row opens its page, as a click on its title does', async () => {
@@ -783,7 +789,10 @@ describe('band header — the sidebar interaction model', () => {
       row.focus()
       row.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
     })
-    expect(selectSpy).toHaveBeenCalledWith({ kind: 'page', id: 'pA', path: 'Col/A/In A.md' })
+    expect(selectSpy).toHaveBeenCalledWith(
+      { kind: 'page', id: 'pA', path: 'Col/A/In A.md' },
+      { newTab: undefined, heading: undefined },
+    )
   })
 
   it('right-clicking a Set band pops the set entity menu', async () => {

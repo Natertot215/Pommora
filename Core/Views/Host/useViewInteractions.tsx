@@ -23,7 +23,6 @@ import { useSession } from '../../Session/store'
 import { hoverGlance, leaveGlance } from '../../Interface/Glance/glanceAction'
 import { pageMoveContext, runPageAction } from '../../Interface/Menus/pageMenuActions'
 import { propertyMenuBranches, runPropertyAction } from '../../Interface/Menus/propertyMenuActions'
-import { owningCollection } from '../../Nexus/treePatch'
 import { isOpenInTabs } from '../../Navigation/tabsModel'
 import { IconChoice } from '../../Assets/IconChoice'
 import { type BandNode, memberDepth, nodeLabel, springsInto } from '../Bands/bandModel'
@@ -102,7 +101,7 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     commitValue,
     commitGroupValue,
     mutate,
-    select,
+    openTarget,
     styleOf,
   } = host
 
@@ -132,8 +131,9 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     bandBucket: valueAt,
     rename: (target) => policy.rename(target, true),
   }))
-  const openSet = (set: SetNode, newTab: boolean): void =>
-    void select(selectTargetOf(set), newTab ? { newTab: true } : undefined)
+  const openSet = (set: SetNode, newTab: boolean): void => {
+    openTarget(selectTargetOf(set), { newTab })
+  }
   const bandView: BandView = {
     collapsed,
     toggle: toggleCollapse,
@@ -365,20 +365,9 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
   // ── Pages ─────────────────────────────────────────────────────────────────
 
   const openPage = (row: ViewRow, newTab: boolean): void => {
-    const target = pageTarget(row)
-    // A plain click passes NO option, so the tab-open preference still decides; forcing `false` would override it.
-    if (newTab) {
-      void select(target, { newTab: true })
-      return
-    }
-    // A tile that states its own route owns every page it opens; the container's Open In is the main pane's rule.
-    if (tile?.openPage) {
-      tile.openPage({ id: row.id, title: row.title, path: row.path })
-      return
-    }
-    if (owningCollection(tree, source)?.openIn === 'page-preview')
-      useSession.getState().openWindowTab(target)
-    else void select(target)
+    // A tile that states its own route owns every page it opens.
+    if (!newTab && tile?.openPage) tile.openPage({ id: row.id, title: row.title, path: row.path })
+    else openTarget(pageTarget(row), { newTab })
   }
 
   const [iconOpen, setIconOpen] = useState(false)

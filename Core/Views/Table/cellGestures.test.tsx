@@ -448,7 +448,10 @@ describe('open actions + row-click narrowing', () => {
     await act(async () => {
       cells[0].click()
     })
-    expect(selectSpy).toHaveBeenCalledWith({ kind: 'page', id: 'p1', path: 'Col/Page One.md' })
+    expect(selectSpy).toHaveBeenCalledWith(
+      { kind: 'page', id: 'p1', path: 'Col/Page One.md' },
+      { newTab: undefined, heading: undefined },
+    )
 
     selectSpy.mockClear()
     const row = host.querySelector<HTMLElement>('.data-row')

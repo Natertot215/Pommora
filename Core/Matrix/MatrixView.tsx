@@ -32,7 +32,7 @@ export function MatrixView(): React.JSX.Element {
   const content = useContentHost()
   const parked = content?.parked ?? false
   const tree = useSession((st) => st.tree)
-  const select = useSession((st) => st.select)
+  const openTarget = useSession((st) => st.openTarget)
   const renamingPath = useSession((st) => (st.renamingHost === 'matrix' ? st.renamingPath : null))
   const iconPath = useSession((st) => (st.iconHost === 'matrix' ? st.iconPath : null))
   const colorPath = useSession((st) => (st.colorHost === 'matrix' ? st.colorPath : null))
@@ -56,7 +56,7 @@ export function MatrixView(): React.JSX.Element {
   // Read when the gesture lands, not when it began: a rename mid-press moves the path the tap opens.
   const open = (id: string, newTab: boolean): void => {
     const rec = recordOf(useSession.getState().tree, id)
-    if (rec) void select(selectTargetOf(rec), newTab ? { newTab: true } : undefined)
+    if (rec) openTarget(selectTargetOf(rec), { newTab })
   }
 
   const menu = async (id: string): Promise<void> => {

@@ -112,8 +112,11 @@ describe('opening a card', () => {
   it('a title click selects the page; ⌘ sends it to a new tab', async () => {
     await renderView(root, source())
     await clickTitle('p1', false)
-    // No second argument: the tab-open preference decides where a plain click lands.
-    expect(selectSpy.mock.calls.at(-1)).toEqual([{ kind: 'page', id: 'p1', path: 'Col/One.md' }])
+    // An undefined newTab: the tab-open preference decides where a plain click lands.
+    expect(selectSpy.mock.calls.at(-1)).toEqual([
+      { kind: 'page', id: 'p1', path: 'Col/One.md' },
+      { newTab: undefined, heading: undefined },
+    ])
 
     selectSpy.mockClear()
     await clickTitle('p1', true)
