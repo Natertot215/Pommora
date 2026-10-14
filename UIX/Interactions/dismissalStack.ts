@@ -8,6 +8,8 @@ type DismissalEntry = {
   /** The element whose window decides whether Escape reaches this entry; the layer when absent. */
   scope?: () => Element | null
   trigger?: () => Element | null
+  /** A press on the trigger counts as one inside the layer rather than a toggle: the trigger is part of the pane, as a field is part of its dropdown. */
+  triggerInside?: boolean
   dismiss?: () => void
   shield?: boolean
   outsidePress?: boolean
@@ -40,7 +42,9 @@ const holds = (e: Live, target: Node): 'layer' | 'trigger' | null =>
   e.entry.layer()?.contains(target) === true
     ? 'layer'
     : e.entry.trigger?.()?.contains(target) === true
-      ? 'trigger'
+      ? e.entry.triggerInside
+        ? 'layer'
+        : 'trigger'
       : null
 const closes = (e: Live): boolean => dismissable(e) && e.entry.outsidePress !== false
 const exiting = (): boolean => entries.some((e) => e.closing)
@@ -130,6 +134,9 @@ export function useDismissal(active: boolean, closing: boolean, entry: Dismissal
       layer: () => entryRef.current.layer(),
       scope: () => entryRef.current.scope?.() ?? null,
       trigger: () => entryRef.current.trigger?.() ?? null,
+      get triggerInside() {
+        return entryRef.current.triggerInside
+      },
       get dismiss() {
         return entryRef.current.dismiss
       },
