@@ -39,12 +39,18 @@ interface DestinationSpans {
   fragment: [number, number] | null
 }
 
-/** The complete markdown link whose destination holds `col`, empty halves included (⌘K seats the caret inside `[]()`). `fragment` follows the `#` of a destination that names a page. */
-export function markdownDestinationAt(lineText: string, col: number): DestinationSpans | null {
+/** The complete markdown link whose label or destination holds `col`, empty halves included (⌘K seats the caret inside `[]()`). `fragment` follows the `#` of a destination that names a page. */
+export function markdownLinkAt(
+  lineText: string,
+  col: number,
+  half: 'label' | 'dest',
+): DestinationSpans | null {
   for (const m of lineText.matchAll(emptyTolerantLinkRegex())) {
     const [, label, dest] = m.indices ?? []
-    if (!label || !dest || dest[0] > col) break
-    if (col > dest[1]) continue
+    if (!label || !dest) break
+    const held = half === 'label' ? label : dest
+    if (held[0] > col) break
+    if (col > held[1]) continue
     const hash = lineText.slice(dest[0], dest[1]).indexOf('#')
     const named = hash !== -1 && namesPage(lineText.slice(dest[0], dest[0] + hash))
     return { label, dest, fragment: named ? [dest[0] + hash + 1, dest[1]] : null }
@@ -54,7 +60,7 @@ export function markdownDestinationAt(lineText: string, col: number): Destinatio
 
 /** Where the destination holding `col` begins: a complete link's, or one still open before the caret. */
 export function linkDestinationStart(lineText: string, col: number): number | null {
-  const complete = markdownDestinationAt(lineText, col)
+  const complete = markdownLinkAt(lineText, col, 'dest')
   if (complete) return complete.dest[0]
   const head = lineText.slice(0, col)
   const open = head.lastIndexOf('](')

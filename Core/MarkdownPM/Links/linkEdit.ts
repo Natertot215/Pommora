@@ -1,7 +1,7 @@
 import { EditorView, type ViewUpdate } from '@codemirror/view'
 import { EditorSelection, type EditorState, type Extension, type Line } from '@codemirror/state'
 import type { LinkAction } from '../../Actions/connectionMenu'
-import { unescapeLabel } from '../../Connections/links'
+import { markdownLinkAt, unescapeLabel } from '../../Connections/links'
 import { linkPaste, shownAlias } from '../../Connections/linkValue'
 import type { LinkDisplay } from '../../Properties/properties'
 import type { MarkdownScope } from '../Engine/detect'
@@ -14,6 +14,7 @@ import {
   type TokenOf,
 } from '../Engine/tokens'
 import { docScan, docString } from '../docCache'
+import { inCodeAt } from '../Engine/docScan'
 import { connectionAt, linkAt } from '../Input/edits'
 import { focusRange } from '../caretPlacement'
 import { restedOnLink } from './linkReveal'
@@ -111,16 +112,27 @@ export function applyLinkAction(
   if (edit.select !== undefined) focusRange(view, edit.select, edit.select)
 }
 
+/** Past the closer of the link whose alias or label holds `at`: a markdown label, empty or not, lies before its destination. */
+function shownEnd(state: EditorState, at: number): number | null {
+  const scan = docScan(state.doc)
+  if (inCodeAt(scan, at)) return null
+  const line = state.doc.lineAt(at)
+  const rel = at - line.from
+  const wiki = connectionAt(scan, at)
+  if (wiki)
+    return wiki.alias && rel >= wiki.alias[0] && rel <= wiki.alias[1]
+      ? line.from + wiki.full[1]
+      : null
+  const md = markdownLinkAt(line.text, rel, 'label')
+  return md ? line.from + md.dest[1] + 1 : null
+}
+
 /** The caret lands on the closer with no separating space, since the closer is the one caret position that doesn't reveal the syntax. */
 export function commitAliasOnEnter(view: EditorView): boolean {
   const sel = view.state.selection.main
-  if (!sel.empty) return false
-  const line = view.state.doc.lineAt(sel.head)
-  const rel = sel.head - line.from
-  const link = connectionAt(docScan(view.state.doc), sel.head)
-  if (!link?.alias || rel < link.alias[0] || rel > link.alias[1]) return false
-  if (inRawHtml(view.state, sel.head, 'page')) return false
-  const end = line.from + link.full[1]
+  if (!sel.empty || inRawHtml(view.state, sel.head, 'page')) return false
+  const end = shownEnd(view.state, sel.head)
+  if (end === null) return false
   view.dispatch({
     selection: EditorSelection.cursor(end, 1),
     effects: restedOnLink.of(end),
