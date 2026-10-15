@@ -15,6 +15,7 @@ import { stack } from '../Theme/stack'
 import { fieldRing } from '../Fields/fieldRing'
 import { revealDim } from '../Interactions/hover-reveal.css'
 import { tintAt } from '../Theme/colors'
+import { SIZE as LABEL } from '../Labels/label-base.css'
 const c = colorVars.color
 
 // KNOBS — the ViewFrame tunables.
@@ -120,20 +121,31 @@ export const optionRow = style([
   { justifyContent: 'space-between', borderRadius: `${ROW_RADIUS}px` },
 ])
 
+/** KNOB — a View settings pane's height ceiling; above MENU_MAX_HEIGHT so the middle region's rows sit beneath the tallest stack of controls. */
+export const VIEW_SETTINGS_MAX_HEIGHT = 440
+
 /** KNOB — a pane's middle list region shows this many rows before it scrolls; it never yields that room to the pane's controls. */
 const MIDDLE_ROWS = 8
+
+const LINE_ZONE_PAD = {
+  top: 'var(--drop-dot-overhang)',
+  bottom: 'calc(var(--drop-line-thickness) + var(--drop-dot-overhang))',
+}
 
 export const middleRegion = style({
   position: 'relative',
   flexShrink: 0,
-  maxHeight: `calc(${MIDDLE_ROWS} * (var(--row-line) + 2 * var(--row-pad-y)) + var(--drop-line-thickness) + 2 * var(--drop-dot-overhang))`,
+  maxHeight: `calc(${MIDDLE_ROWS} * (var(--middle-row-line, var(--row-line)) + 2 * var(--row-pad-y)) + ${LINE_ZONE_PAD.top} + ${LINE_ZONE_PAD.bottom})`,
   overflowY: 'auto',
   vars: { '--scroll-fade': 'var(--fade-base)' },
 })
 
+/** A middle region of option chips counts its rows by the chip's height, which is taller than the row's line. */
+export const chipRegion = style({ vars: { '--middle-row-line': LABEL.height } })
+
 globalStyle(`${scrollFrameBody} > .line-zone, ${middleRegion} > .line-zone`, {
-  paddingTop: 'var(--drop-dot-overhang)',
-  paddingBottom: 'calc(var(--drop-line-thickness) + var(--drop-dot-overhang))',
+  paddingTop: LINE_ZONE_PAD.top,
+  paddingBottom: LINE_ZONE_PAD.bottom,
 })
 
 export const optionLead = style({

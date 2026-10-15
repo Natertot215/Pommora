@@ -19,7 +19,7 @@ import {
   steppedRow,
   pickerRow,
 } from '@pommora/uix/Menus'
-import { ICON } from '@pommora/uix/Menus/frames.css'
+import { ICON, VIEW_SETTINGS_MAX_HEIGHT } from '@pommora/uix/Menus/frames.css'
 import { useSaveView } from '../viewWrite'
 import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
 import { VisibilityFrame } from './VisibilityFrame'
@@ -98,9 +98,6 @@ const FORMATS: PickerOption<ViewFormat>[] = [
 ]
 
 const CARD_ROW_LOOK = { iconSize: ICON.rootEntry, solid: true } as const
-
-// KNOB — LayoutFrame's own height ceiling (not the shared MENU_MAX_HEIGHT): the full door stacks the tallest content, so it earns more room.
-const VIEWSETTINGS_MAX_HEIGHT = 410
 
 export type ViewRowId = 'layout' | ViewLeafId
 export interface ViewRow<Id extends string = ViewRowId> {
@@ -201,7 +198,7 @@ export function LayoutFrame({
       return (
         <MenuScrollFrame
           header={<MenuTopRow label="Views" current="Layout" onBack={closeLeaf} />}
-          maxHeight={VIEWSETTINGS_MAX_HEIGHT}
+          maxHeight={VIEW_SETTINGS_MAX_HEIGHT}
         >
           <ViewSwitches source={source} view={view} switches={options.switches} />
         </MenuScrollFrame>
@@ -213,7 +210,7 @@ export function LayoutFrame({
         view={view}
         label="Views"
         current="Layout"
-        maxHeight={VIEWSETTINGS_MAX_HEIGHT}
+        maxHeight={VIEW_SETTINGS_MAX_HEIGHT}
         onBack={closeLeaf}
         footer={<ViewSwitches source={source} view={view} switches={options.switches} separated />}
       />
@@ -249,7 +246,7 @@ export function LayoutFrame({
     )
 
   const mainFrame = (
-    <MenuScrollFrame header={header} footer={cardsRows} maxHeight={VIEWSETTINGS_MAX_HEIGHT}>
+    <MenuScrollFrame header={header} footer={cardsRows} maxHeight={VIEW_SETTINGS_MAX_HEIGHT}>
       {door === 'full' && (
         <>
           {title}
