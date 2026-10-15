@@ -24,7 +24,16 @@ import { acQuery, closeAcQuery } from './acQuery'
 import type { PageHeading } from '../../Platform/stores'
 import { type EditorHost, ownPage } from '../api'
 import { usePaneCtl } from '@pommora/uix/Interactions/paneCtl'
-import { caretGeometry, type CaretGeometry, type EditorPane } from '../Menus/caretPane'
+import {
+  caretGeometry,
+  type CaretGeometry,
+  type EditorPane,
+  holdPane,
+  inCaretPane,
+  paneHeld,
+} from '../Menus/caretPane'
+import { EDITABLE_TARGETS } from '@pommora/uix/Interactions/shared'
+import type { AliasEdit } from '../../Connections/aliasMemory'
 
 export interface AcState extends AutocompleteQuery, CaretGeometry {}
 
@@ -44,6 +53,7 @@ export function useConnectionAutocomplete(
   }
   const [extension] = useState<Extension>(() => [
     field,
+    paneHeld,
     EditorView.updateListener.of((u) => {
       const q = u.state.field(field).query
       if (q === u.startState.field(field).query) return
@@ -51,8 +61,9 @@ export function useConnectionAutocomplete(
       setAc(q && g ? { ...q, ...g } : null)
     }),
     EditorView.domEventHandlers({
-      blur: (_, view) => {
-        closePicker(view, 'blur')
+      blur: (e, view) => {
+        if (inCaretPane(e.relatedTarget)) view.dispatch({ effects: holdPane.of(true) })
+        else closePicker(view, 'blur')
         return false
       },
     }),
@@ -187,6 +198,17 @@ export function useConnectionAutocomplete(
     },
   })
 
+  // An edit in the pane ends with the caret back in its slot when it ended there; one that ended by focus going elsewhere leaves as the editor's own blur would. Read a tick later, once focus has landed.
+  const endEdit = (stay: boolean): void =>
+    void window.setTimeout(() => {
+      const view = viewRef.current
+      const at = document.activeElement
+      if (!view || (inCaretPane(at) && at?.closest(EDITABLE_TARGETS))) return
+      view.dispatch({ effects: holdPane.of(false) })
+      if (stay || inCaretPane(at)) view.focus()
+      else if (!view.dom.contains(at)) view.contentDOM.dispatchEvent(new FocusEvent('blur'))
+    }, 0)
+
   return {
     extension,
     ctl,
@@ -203,6 +225,15 @@ export function useConnectionAutocomplete(
       onAside: (row) => commit(row, { openHeading: true }),
       onBack: () => ctl.current.aside?.(-1),
       geometry: host.paneGeometry('autocomplete'),
+      aliasHost:
+        form === 'alias' && page
+          ? {
+              title: page.title,
+              edit: (e: AliasEdit) => host.aliases.edit(page.id, e),
+              menu: host.menus.alias,
+              onEditEnd: endEdit,
+            }
+          : null,
     },
   }
 }

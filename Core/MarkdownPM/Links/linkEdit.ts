@@ -22,6 +22,7 @@ import { restedOnLink } from './linkReveal'
 import { type EditorHost, editorHost } from '../api'
 import { drawnLinkAt, inRawHtml } from '../decorations'
 import { writeLinkAt } from './pendingTitle'
+import { inCaretPane } from '../Menus/caretPane'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 
 type LinkEdit =
@@ -148,7 +149,8 @@ function rememberAlias(
   if (!api || !alias?.trim()) return
   const target = titleTarget(api, line.text.slice(s.title[0], s.title[1]))
   // A phantom or ambiguous title names no single page, and the memory is keyed by page id.
-  if (target.kind === 'page') view.state.facet(editorHost).aliases.remember(target.page.id, alias)
+  if (target.kind === 'page')
+    void view.state.facet(editorHost).aliases.edit(target.page.id, { op: 'remember', alias })
 }
 
 function collapseAt(view: EditorView, at: number): void {
@@ -206,7 +208,8 @@ export function aliasOnLeave(scope: MarkdownScope): Extension {
   }
   return [
     EditorView.domEventHandlers({
-      blur(_event, view) {
+      blur(event, view) {
+        if (inCaretPane(event.relatedTarget)) return false
         const at = view.state.selection.main.head
         const slot = slotNear(view.state, at, scope)
         if (slot) leave(view, at, slot, false)

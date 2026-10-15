@@ -15,13 +15,9 @@ export interface FieldEdit {
   renames?: 'title' | 'row'
   /** A value rather than a name: clearing the field commits the empty string. */
   emptyCommits?: boolean
-  /** Dims text that won't be kept as it's typed. */
-  invalid?: (text: string) => boolean
   /** Uncontrolled by default; a host with its own way in — a menu's Rename — drives it instead. */
   editing?: boolean
   onEditingChange?: (editing: boolean) => void
-  /** An edit left without a commit, apart from the close every exit reports. */
-  onCancel?: () => void
 }
 
 export function InputField({
@@ -94,15 +90,11 @@ export function InputField({
           boxed
           ariaLabel={label}
           emptyCommits={edit.emptyCommits}
-          invalid={edit.invalid}
           onCommit={(next) => {
             setEditing(false)
             edit.onCommit(next)
           }}
-          onCancel={() => {
-            setEditing(false)
-            edit.onCancel?.()
-          }}
+          onCancel={() => setEditing(false)}
         >
           {content}
         </RenamableLabel>
