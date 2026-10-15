@@ -17,7 +17,6 @@ import {
   smartBackspace,
   canonicalizeCheckbox,
   autoPair,
-  pairColorMark,
   autoDelete,
   closeConstructOnEnter,
   closeBlockOnEnter,
@@ -36,7 +35,6 @@ import {
   inAliasAt,
   type Edit,
 } from './edits'
-import { isColorMark } from '../Engine/highlightColors'
 import { applyEdit } from './applyEdit'
 import { fenceAt, lineEndOf, lineIndexAt, lineOffsetsOf } from '../Engine/markdownCode'
 import { commitAliasOnEnter } from '../Links/linkEdit'
@@ -239,7 +237,7 @@ export const typedInput = (scope: MarkdownScope): Extension =>
       apply(view, marginSign(scan, from, text))
       return true
     }
-    if (text.length !== 1 && !isColorMark(text)) return false
+    if (text.length !== 1) return false
     const settings = settingsOf(view)
     if (from !== to)
       return apply(
@@ -250,8 +248,7 @@ export const typedInput = (scope: MarkdownScope): Extension =>
     if (page && text === ']' && seedTypedCitation(view, from)) return true
     return apply(
       view,
-      pairColorMark(scan, from, text, settings) ??
-        headingHash(scan, from, from, text) ??
+      headingHash(scan, from, from, text) ??
         (page ? calloutShorthand(scan.text, from, from, text, settings) : null) ??
         canonicalizeCheckbox(scan.text, from, from, text, scope) ??
         autoPair(scan, from, from, text, settings) ??
