@@ -4,9 +4,8 @@ import { dialer } from '../Platform/dialer'
 import type { SchemaCascade, SchemaJournal } from './propertyJournal'
 
 // Every property write is the same round trip; only the channel and its arguments differ.
-export const write = async (res: Promise<Result<null>>): Promise<void> => {
+export const write = async (res: Promise<Result<null>>): Promise<boolean> =>
   reportRefusal(await res)
-}
 
 export const replay = (record: SchemaJournal) => (): void =>
   void dialer()

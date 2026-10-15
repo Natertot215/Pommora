@@ -29,7 +29,7 @@ export type OptionStyleControl = {
 export type OptionDef = Pick<PropertyDefinition, 'id' | 'type' | 'status_groups'>
 
 type Editing = { row: string; value: string }
-type Draft = { groupId: string; index?: number }
+type Draft = { key: string; groupId: string; index?: number }
 
 export type OptionEditApi = {
   keyOf: (value: string) => string
@@ -37,7 +37,7 @@ export type OptionEditApi = {
   isOpen: (row: string) => boolean
   toggle: (value: string, anchor: HTMLElement | undefined) => void
   openMenu: (value: string, row: HTMLElement) => Promise<void>
-  editOption: (edit: OptionEdit) => Promise<void>
+  editOption: (edit: OptionEdit) => Promise<boolean>
   moves: (groups: readonly { id: string; options: readonly { value: string }[] }[]) => {
     laneOf: () => (value: string) => string | undefined
     commit: (value: string, slot: LaneSlot) => void
@@ -71,10 +71,11 @@ export function useOptionEdit({
   )
   const { keyOf } = keys
 
-  const editOption = (edit: OptionEdit): Promise<void> =>
+  const editOption = (edit: OptionEdit): Promise<boolean> =>
     write(dialer().ask('property:editOption', def.id, edit))
   const enteringKey = useEntrance(options, (o) => keyOf(o.value))
-  const entering = (value: string): boolean => enteringKey(keyOf(value))
+  const entering = (value: string): boolean =>
+    keyOf(value) !== draft?.key && enteringKey(keyOf(value))
   const isOpen = (row: string): boolean => editing !== null && keyOf(row) === keyOf(editing.row)
   const open = (value: string, el: HTMLElement | undefined): void => {
     anchor.current = el ?? null
@@ -140,9 +141,12 @@ export function useOptionEdit({
 
   const commitDraft = (title: string): void => {
     if (!draft) return
-    setDraft(null)
-    void editOption({ op: 'add', groupId: draft.groupId, title, atIndex: draft.index })
+    keys.rename(draft.key, title)
+    void editOption({ op: 'add', groupId: draft.groupId, title, atIndex: draft.index }).then(
+      (ok) => (ok ? setDraft((d) => (d === draft ? null : d)) : keys.revert(title)),
+    )
   }
+  const drafted = draft && !options.some((o) => keyOf(o.value) === draft.key) ? draft : null
 
   const option = editing && options.find((o) => keyOf(o.value) === keyOf(editing.row))
   useEffect(() => {
@@ -175,8 +179,8 @@ export function useOptionEdit({
     openMenu,
     editOption,
     moves,
-    draft,
-    beginDraft: (groupId, index) => setDraft({ groupId, index }),
+    draft: drafted,
+    beginDraft: (groupId, index) => setDraft({ key: keys.mint(), groupId, index }),
     commitDraft,
     cancelDraft: () => setDraft(null),
     busy: editing !== null || draft !== null,

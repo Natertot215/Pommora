@@ -1,4 +1,5 @@
 import { type KeyboardEvent, type Ref, useRef } from 'react'
+import { keepFocus } from '../Interactions/shared'
 import { cx } from '../Utilities/cx'
 import { FieldRun, type RunEntry } from './FieldRun'
 import { type FieldChrome, InputField } from './InputField'
@@ -43,7 +44,7 @@ export function TokenField({
       className={cx(s.editable, className)}
       onMouseDown={(e) => {
         const target = e.target as Element
-        if (target.closest('button')) return e.preventDefault()
+        if (target.closest('button')) return keepFocus(e)
         if (target !== caret.current) {
           e.preventDefault()
           caret.current?.focus()

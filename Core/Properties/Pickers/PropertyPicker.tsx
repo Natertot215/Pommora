@@ -333,6 +333,7 @@ function EditableOptionRows({
                 leading={
                   <FootingCreate
                     ariaLabel="New Option"
+                    disabled={!!edit.draft}
                     onClick={() => edit.beginDraft(SELECT_GROUP)}
                   />
                 }

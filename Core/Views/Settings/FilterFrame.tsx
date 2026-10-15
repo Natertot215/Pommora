@@ -56,6 +56,7 @@ import { emptyPicker, useMultiValue } from './valueField'
 import { NeutralChip } from '@pommora/uix/Labels/recipes'
 import { OptionChip } from '../../Properties/Cells/OptionChip'
 import { EditableInput } from '@pommora/uix/Fields/EditableInput'
+import { keepFocus } from '@pommora/uix/Interactions/shared'
 
 const MATCH_OPTIONS: PickerOption<MatchMode>[] = [
   { value: 'all', label: 'All' },
@@ -233,12 +234,17 @@ export function FilterFrame({
 }): React.JSX.Element {
   const styleFor = useStyleFor()
   const nexusClock = useSetting('timeFormat')
-  const [drafting, setDrafting] = useState(false)
+  const [draft, setDraft] = useState<string | null>(null)
+  const minted = useRef(0)
+  const mint = (): string => String(++minted.current)
+  const ids = useRef<string[]>([])
 
   const [pendingMode, setPendingMode] = useState<MatchMode | null>(null)
 
   const decoded: DecodedFilter = decodeFilter(view.filter)
   const rules: FilterRule[] = decoded.kind === 'rows' ? decoded.rules : []
+  // A rule's row is its identity, not its place, so removing one leaves every other row and its field where they stand.
+  if (ids.current.length !== rules.length) ids.current = rules.map(mint)
   const decodedMode: MatchMode = decoded.kind === 'rows' ? decoded.mode : 'any'
   const mode: MatchMode = rules.length === 0 ? (pendingMode ?? decodedMode) : decodedMode
 
@@ -252,7 +258,7 @@ export function FilterFrame({
 
   const setEnabled = (next: boolean): void => onCommit({ filter_enabled: next })
 
-  const entering = useEntrance(rules, (_, i) => String(i))
+  const entering = useEntrance(ids.current, (id) => id)
 
   const contextIds = contextIdsOf(tree)
   const targets = supplied ?? filterTargets(schema, tree, locations.length > 0)
@@ -276,17 +282,30 @@ export function FilterFrame({
       liveRules().map((r, i) => (i === index ? rule : r)),
     )
 
-  const removeRow = (index: number): void =>
+  const removeRow = (index: number): void => {
+    ids.current.splice(index, 1)
     save(
       mode,
       liveRules().filter((_, i) => i !== index),
     )
+  }
 
   const completeDraft = (targetId: string): void => {
-    setDrafting(false)
+    ids.current.push(draft ?? 'lead')
+    setDraft(null)
     setPendingMode(null)
     save(mode, [...liveRules(), mintRule(targetId, schema, contextIds)])
   }
+
+  const removeButton = (onClick: () => void): React.JSX.Element => (
+    <AccessoryButton
+      icon="x"
+      size="control"
+      ariaLabel="Remove filter"
+      onMouseDown={keepFocus}
+      onClick={onClick}
+    />
+  )
 
   const targetOptions = (
     onPick: (id: string) => void,
@@ -406,8 +425,9 @@ export function FilterFrame({
         look={checkboxLook}
       />
     )
+    const id = ids.current[index]
     return (
-      <Reveal key={index} open enterOnMount={entering(String(index))} fill>
+      <Reveal key={id} open enterOnMount={entering(id)} fill>
         <div className={fp.ruleRow}>
           <FieldPicker
             ariaLabel="Filter property"
@@ -467,20 +487,15 @@ export function FilterFrame({
             }
           </FieldPicker>
           {valueCell(rule, index, current)}
-          <AccessoryButton
-            icon="x"
-            size="control"
-            ariaLabel="Remove filter"
-            onClick={() => removeRow(index)}
-          />
+          {removeButton(() => removeRow(index))}
         </div>
       </Reveal>
     )
   }
 
   const lead = rules.length === 0
-  const draftRow = (drafting || lead) && (
-    <Reveal open enterOnMount={!lead} fill>
+  const draftRow = (draft !== null || lead) && (
+    <Reveal key={draft ?? 'lead'} open enterOnMount={!lead} fill>
       <div className={fp.ruleRow}>
         <FieldPicker
           ariaLabel="Filter property"
@@ -492,14 +507,7 @@ export function FilterFrame({
         </FieldPicker>
         <span className={cx(fp.controlField, fp.blankNarrow)} />
         <span className={fp.valueField} />
-        {!lead && (
-          <AccessoryButton
-            icon="x"
-            size="control"
-            ariaLabel="Remove filter"
-            onClick={() => setDrafting(false)}
-          />
-        )}
+        {!lead && removeButton(() => setDraft(null))}
       </div>
     </Reveal>
   )
@@ -539,9 +547,8 @@ export function FilterFrame({
         </>
       ) : (
         <div className={fp.ruleList}>
-          {rules.map(ruleRow)}
-          {draftRow}
-          <FootingCreate ariaLabel="Add filter rule" onClick={() => setDrafting(true)} />
+          {[...rules.map(ruleRow), draftRow]}
+          <FootingCreate ariaLabel="Add filter rule" onClick={() => setDraft((d) => d ?? mint())} />
         </div>
       )}
     </MenuScrollFrame>

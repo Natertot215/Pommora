@@ -249,12 +249,12 @@ export function PropertyFrame({
   const remove = async (id: string): Promise<void> => {
     if (reportRefusal(await dialer().ask('schema:unassign', collectionPath, id))) backToList()
   }
-  const saveFileDirectory = (id: string, dir: string): Promise<void> =>
+  const saveFileDirectory = (id: string, dir: string): Promise<boolean> =>
     write(dialer().ask('property:setFileDirectory', id, { file_directory: dir }))
   const saveColumnStyle = async (propId: string, patch: Partial<ColumnStyle>): Promise<void> => {
     await saveView(activeView, columnStylePatch(activeView, schema, nexus, propId, patch))
   }
-  const handleDrop = (drop: PaneDrop): Promise<void> =>
+  const handleDrop = (drop: PaneDrop): Promise<boolean> =>
     write(
       drop.kind === 'reorder-assigned'
         ? dialer().ask('schema:reorder', collectionPath, drop.propId, drop.toIndex)
