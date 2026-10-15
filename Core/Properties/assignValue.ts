@@ -53,12 +53,18 @@ function rememberedAlias(
 ): MutateRequest | null {
   const target = value?.kind === 'link' ? readLinkText(value.value) : null
   if (target?.kind !== 'page' || target.syntax !== 'wiki' || !target.alias) return null
-  if (prior?.kind === 'link' && readLinkText(prior.value)?.alias === target.alias) return null
   const tree = useSession.getState().tree
-  const page = tree && pageIndexOf(tree).resolve(target.title).page
-  return page
-    ? { op: 'editAliases', path: page.path, edit: { op: 'add', alias: target.alias } }
-    : null
+  const index = tree && pageIndexOf(tree)
+  const page = index?.resolve(target.title).page
+  if (!index || !page) return null
+  const shown = prior?.kind === 'link' ? readLinkText(prior.value) : null
+  if (
+    shown?.kind === 'page' &&
+    shown.alias === target.alias &&
+    index.resolve(shown.title).page === page
+  )
+    return null
+  return { op: 'editAliases', path: page.path, edit: { op: 'add', alias: target.alias } }
 }
 
 export function assignValue(

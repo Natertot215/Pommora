@@ -36,12 +36,13 @@ export function useListEdit(
     cancel: () => setDraft(null),
     commit: (row, next) => {
       if (!next || next === row.value) return
-      keys.rename(row.draft ? row.key : row.value, next)
-      const landed = row.draft ? onAdd(next) : onRename(row.value, next)
-      void landed.then((ok) => {
-        if (!ok) keys.revert(next)
-        else if (row.draft) setDraft((d) => (d === row.key ? null : d))
-      })
+      const landed = keys.land(row.draft ? row.key : row.value, next, () =>
+        row.draft ? onAdd(next) : onRename(row.value, next),
+      )
+      if (row.draft)
+        void landed.then((ok) => {
+          if (ok) setDraft((d) => (d === row.key ? null : d))
+        })
       return landed
     },
   }
