@@ -37,6 +37,7 @@ export function PageHeader({
   const submitRename = useSession((s) => s.submitRename)
   const mutate = useSession((s) => s.mutate)
   const [iconPickerOpen, setIconPickerOpen] = useState(false)
+  const [renameSummon, setRenameSummon] = useState(0)
 
   const toggleTitleIcon = (): void => {
     const next = !shown
@@ -57,6 +58,7 @@ export function PageHeader({
       requestMenu={() => popMenu(titleMenuItems({ iconHidden: !shown }))}
       onEditIcon={() => setIconPickerOpen(true)}
       onToggleIcon={toggleTitleIcon}
+      renameSummon={renameSummon}
     />
   )
   const banner = (
@@ -66,6 +68,7 @@ export function PageHeader({
       value={cover}
       onDone={onBannerDone}
       chrome={chrome}
+      onRename={() => setRenameSummon((n) => n + 1)}
       titleClassName="banner-overlay"
       title={titleHeader}
       empty={(add) =>

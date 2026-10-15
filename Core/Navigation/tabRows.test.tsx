@@ -7,7 +7,7 @@ import { DEFAULT_FEEL } from '@pommora/uix/Animations/feel'
 import { SETTLE_FALLBACK } from '@pommora/uix/Interactions/shared'
 import { firePointer, stubPointerCapture, stubRect } from '@pommora/uix/Utilities/pointerHarness'
 import { isWindowTarget, type SelectTarget, type TabTarget } from './navRef'
-import { TAB_FAMILY, TabStripZone, useTabClose } from './tabRows'
+import { TAB_FAMILY, TabStripZone, type TabRename, useTabClose, useTabRename } from './tabRows'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 stubPointerCapture()
 
@@ -239,5 +239,35 @@ describe('the tab close', () => {
 
   it('keeps the separator after a leading tab that never closes', () => {
     expect(seamsAfterClose(['map', 'a', 'b'], 'a')).toEqual([null, true, false])
+  })
+})
+
+describe('the tab rename', () => {
+  let rename: TabRename
+  function Probe({ active, divert }: { active: string; divert?: () => boolean }): null {
+    rename = useTabRename(active, divert)
+    return null
+  }
+
+  it('opens the active page tab’s label and closes it once another tab takes over', async () => {
+    await act(async () => root.render(<Probe active="t1" />))
+    expect(rename.pageLabel(TARGETS.page)?.editing).toBe(false)
+    expect(rename.pageLabel(TARGETS.space)).toBeUndefined()
+    await act(async () => rename.begin())
+    expect(rename.pageLabel(TARGETS.page)).toMatchObject({ path: 'Notes/A.md', editing: true })
+    expect(rename.pageLabel(TARGETS.page, 't2')).toMatchObject({
+      editing: false,
+      onBegin: undefined,
+    })
+    await act(async () => root.render(<Probe active="t2" />))
+    expect(rename.pageLabel(TARGETS.page)?.editing).toBe(false)
+  })
+
+  it('leaves its label closed when another surface takes the rename', async () => {
+    const divert = vi.fn(() => true)
+    await act(async () => root.render(<Probe active="t1" divert={divert} />))
+    await act(async () => rename.begin())
+    expect(divert).toHaveBeenCalledWith('t1')
+    expect(rename.pageLabel(TARGETS.page)?.editing).toBe(false)
   })
 })

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { EditableInput } from './EditableInput'
 import { resting } from './fields.css'
 
@@ -32,16 +33,27 @@ export function RenamableLabel({
   emptyCommits?: boolean
   invalid?: (text: string) => boolean
   onBegin?: () => void
-  onCommit: (next: string) => void
+  /** A commit that returns its landing keeps the committed text shown until that settles. */
+  // biome-ignore lint/suspicious/noConfusingVoidType: a synchronous commit hands back nothing, and `undefined` in place of `void` breaks assignability for those handlers.
+  onCommit: (next: string) => void | Promise<unknown>
   onCancel: () => void
-  children?: React.ReactNode
+  children?: React.ReactNode | ((shown: string) => React.ReactNode)
 }): React.JSX.Element {
+  const [landing, setLanding] = useState<string | null>(null)
+  const commit = (next: string): void => {
+    const landed = onCommit(next)
+    if (!landed) return
+    setLanding(next)
+    void landed.finally(() => setLanding(null))
+  }
   if (!editing) {
-    if (!onBegin) return <>{children ?? value}</>
+    const shown = landing ?? value
+    const rest = typeof children === 'function' ? children(shown) : (children ?? shown)
+    if (!onBegin) return <>{rest}</>
     return (
       // biome-ignore lint/a11y/noStaticElementInteractions: a pointer shortcut; every title's menu carries Rename for the keyboard
       <span className={resting} onDoubleClick={onBegin}>
-        {children ?? value}
+        {rest}
       </span>
     )
   }
@@ -56,7 +68,7 @@ export function RenamableLabel({
       caretAtEnd={renames === 'title'}
       required={!emptyCommits}
       invalid={invalid}
-      onCommit={(next) => (next !== value ? onCommit(next) : onCancel())}
+      onCommit={(next) => (next !== value ? commit(next) : onCancel())}
       onCancel={onCancel}
     />
   )

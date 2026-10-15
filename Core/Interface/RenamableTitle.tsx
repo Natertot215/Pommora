@@ -3,6 +3,7 @@ import type { RenameHost } from '../Session/editSlice'
 import { useEffect, useState } from 'react'
 import { useSession } from '../Session/store'
 import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
+import { titleInput } from '@pommora/uix/Menus'
 
 /** The fence resolves one winner, so a path visible on two surfaces (a set's sidebar row and its table band) mounts exactly one field. */
 export function RenamableTitle({
@@ -52,8 +53,41 @@ export function RenamableTitle({
       className={className}
       autoSize={autoSize}
       onBegin={doubleClick ? () => beginRename(path, false, host) : undefined}
-      onCommit={(next) => void submitRename(path, kind, next)}
+      onCommit={(next) => submitRename(path, kind, next)}
       onCancel={cancelRename}
+    />
+  )
+}
+
+/** The surface that shows the label holds its editing state, so no fence picks among twins. */
+export interface PageNameRename {
+  path: string
+  editing: boolean
+  onBegin?: () => void
+  onEnd: () => void
+}
+
+export function RenamablePageName({
+  title,
+  rename,
+}: {
+  title: string
+  rename: PageNameRename
+}): React.JSX.Element {
+  const submitRename = useSession((s) => s.submitRename)
+  return (
+    <RenamableLabel
+      renames="row"
+      editing={rename.editing}
+      value={title}
+      className={titleInput}
+      autoSize
+      onBegin={rename.onBegin}
+      onCommit={(next) => {
+        rename.onEnd()
+        return submitRename(rename.path, 'page', next)
+      }}
+      onCancel={rename.onEnd}
     />
   )
 }

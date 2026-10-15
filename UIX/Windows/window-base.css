@@ -123,6 +123,8 @@
 
 .page-window-title {
   min-width: 0;
+  /* Over the banner and the strip's drag surface, yet click-through but for a name that opts in. */
+  z-index: 2;
   pointer-events: none;
   font-size: var(--text-caption-size);
   --page-window-morph-slide: -12px; /* KNOB — the title's collapse-left travel */

@@ -6,7 +6,7 @@ const shape = (items: ReturnType<typeof tabMenuItems>): string[] =>
   items.flatMap((i) => [...(i.separatorBefore ? ['—'] : []), i.label])
 
 describe('the tab menu', () => {
-  it('offers a page tab its window, the send block, Pin, and Close, each in its own group', () => {
+  it('offers a page tab its window, the send block with its history, Pin, and Close, each in its own group', () => {
     expect(
       shape(
         tabMenuItems({
@@ -16,18 +16,7 @@ describe('the tab menu', () => {
           moveTargets: [],
         }),
       ),
-    ).toEqual([
-      'Preview',
-      '—',
-      'Copy Link',
-      'Copy Path',
-      '—',
-      'View History',
-      '—',
-      'Pin',
-      '—',
-      'Close',
-    ])
+    ).toEqual(['Preview', '—', 'Copy Link', 'Copy Path', 'View History', '—', 'Pin', '—', 'Close'])
   })
 
   it('leads the send block with Move To once the tab is given destinations', () => {
@@ -99,7 +88,7 @@ describe('the tab menu', () => {
           moveTargets: [],
         }),
       ),
-    ).toEqual(['Open', 'Preview', '—', 'Copy Link', 'Copy Path', '—', 'View History', '—', 'Unpin'])
+    ).toEqual(['Open', 'Preview', '—', 'Copy Link', 'Copy Path', 'View History', '—', 'Unpin'])
   })
 
   it('the NavView tab can only close', () => {
@@ -110,11 +99,10 @@ describe('the tab menu', () => {
 describe('the window strip menu', () => {
   it('promotes, sends, and closes a Page tab, without Pin', () => {
     expect(shape(tabMenuItems({ row: 'window', kind: 'page', moveTargets: [] }))).toEqual([
-      'Open In New Tab',
+      'New Tab',
       '—',
       'Copy Link',
       'Copy Path',
-      '—',
       'View History',
       '—',
       'Close',
@@ -122,17 +110,38 @@ describe('the window strip menu', () => {
   })
 
   it('a Space tab promotes and closes, and nothing else', () => {
-    expect(shape(tabMenuItems({ row: 'window', kind: 'space' }))).toEqual([
-      'Open In New Tab',
+    expect(shape(tabMenuItems({ row: 'window', kind: 'space' }))).toEqual(['New Tab', '—', 'Close'])
+  })
+
+  it('seats the banner rows beside Rename, ahead of the send block', () => {
+    expect(
+      shape(tabMenuItems({ row: 'window', kind: 'space', banner: bannerMenuItems({ add: true }) })),
+    ).toEqual(['New Tab', '—', 'Add Banner', '—', 'Close'])
+    expect(
+      shape(
+        tabMenuItems({
+          row: 'window',
+          kind: 'page',
+          active: true,
+          moveTargets: [{ id: 'c', label: 'Notes', path: 'Notes' }],
+          banner: bannerMenuItems(),
+        }),
+      ),
+    ).toEqual([
+      'New Tab',
+      '—',
+      'Rename',
+      'Edit Banner',
+      'Change Banner',
+      'Remove Banner',
+      '—',
+      'Move To',
+      'Copy Link',
+      'Copy Path',
+      'View History',
       '—',
       'Close',
     ])
-  })
-
-  it('seats the banner group between the send block and Close', () => {
-    expect(
-      shape(tabMenuItems({ row: 'window', kind: 'space', banner: bannerMenuItems({ add: true }) })),
-    ).toEqual(['Open In New Tab', '—', 'Add Banner', '—', 'Close'])
   })
 
   it('a main-bar Space tab previews', () => {
@@ -143,5 +152,20 @@ describe('the window strip menu', () => {
       '—',
       'Close',
     ])
+  })
+
+  it('offers Rename to the active page tab alone, behind its way in', () => {
+    const main = (over: { pinned?: boolean; active?: boolean; kind?: 'page' | 'collection' }) =>
+      tabMenuItems({ row: 'main', kind: 'page', pinned: false, moveTargets: [], ...over })
+    expect(shape(main({ active: true })).slice(0, 4)).toEqual(['Preview', '—', 'Rename', '—'])
+    expect(main({}).some((i) => i.action === 'title:rename')).toBe(false)
+    expect(main({ active: true, pinned: true }).some((i) => i.action === 'title:rename')).toBe(
+      false,
+    )
+    expect(
+      main({ active: true, kind: 'collection' }).some((i) => i.action === 'title:rename'),
+    ).toBe(false)
+    const window = tabMenuItems({ row: 'window', kind: 'page', active: true, moveTargets: [] })
+    expect(shape(window).slice(0, 4)).toEqual(['New Tab', '—', 'Rename', '—'])
   })
 })

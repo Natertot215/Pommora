@@ -1,23 +1,23 @@
 import { Button } from '../Buttons/Button'
 
 export function WindowActions({
-  showSettings,
   sidePaneOpen,
+  onMenu,
   onToggleSidePane,
 }: {
-  showSettings: boolean
   sidePaneOpen: boolean
+  onMenu?: () => void
   onToggleSidePane?: () => void
 }): React.JSX.Element {
   return (
     <>
-      {showSettings && (
+      {onMenu && (
         <Button
           size="button-inline"
           icon="sliders-horizontal"
           iconSize="body"
           title="Settings"
-          disabled
+          onClick={onMenu}
         />
       )}
       {onToggleSidePane && (

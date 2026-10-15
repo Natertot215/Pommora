@@ -188,7 +188,8 @@
   opacity: 0;
   transition: opacity var(--duration-base) var(--ease-base);
 }
-.tab-bar.reveal-on-hover:hover {
+.tab-bar.reveal-on-hover:hover,
+.tab-bar.reveal-on-hover:focus-within {
   opacity: 1;
 }
 

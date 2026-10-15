@@ -15,25 +15,9 @@ import { IconChoice } from '../Assets/IconChoice'
 import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
 import { PropertyPanel } from '../Properties/PropertyPanel'
 import { ICON } from '@pommora/uix/Menus/frames.css'
-import {
-  COPY_LINK_ROW,
-  COPY_PATH_ROW,
-  DELETE_ROW,
-  HISTORY_ROW,
-  RENAME_ROW,
-  REVEAL_ROW,
-} from '../Actions/pageMenu'
-import { joinGroups } from '../Actions/menuModel'
-import { runPageAction } from '../Interface/Menus/pageMenuActions'
-import { popMenu } from '../Actions/menuActions'
+import { popPageActions } from '../Interface/Menus/pageMenuActions'
 import { lockLabel } from '../Actions/toggleLabels'
 import { useExperimental } from '../Settings/experimental'
-
-const FOOTER_ROWS = joinGroups([
-  [RENAME_ROW],
-  [COPY_LINK_ROW, COPY_PATH_ROW, HISTORY_ROW, REVEAL_ROW],
-  [DELETE_ROW],
-])
 
 export function PageMenu(): React.JSX.Element | null {
   const pageDetail = useSession(shownDetail)
@@ -49,12 +33,6 @@ export function PageMenu(): React.JSX.Element | null {
   const [locked, setLocked] = useState(false)
 
   if (!pageDetail) return null
-
-  const runFooterAction = async (): Promise<void> => {
-    const action = await popMenu(FOOTER_ROWS)
-    if (action === 'title:rename') setRenaming(true)
-    else if (action) runPageAction(action, pageDetail)
-  }
 
   return (
     <>
@@ -72,7 +50,7 @@ export function PageMenu(): React.JSX.Element | null {
               <FooterIconButton
                 icon="ellipsis"
                 ariaLabel="More actions"
-                onClick={() => void runFooterAction()}
+                onClick={() => void popPageActions(pageDetail, () => setRenaming(true))}
               />
             }
           />

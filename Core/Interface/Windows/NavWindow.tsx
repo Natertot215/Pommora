@@ -81,7 +81,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
   const setDevicePref = useSession((s) => s.setDevicePref)
 
   const target = useSession((s) => (s.windowSlot?.kind === 'nav' ? windowTargetOf(s) : null))
-  const { body, right, actions, footer, footerLead, closeSidePane, promote } =
+  const { body, right, actions, footer, footerLead, closeSidePane, promote, rename } =
     useWindowTabBody(target)
   const sidePaneOpen = right.open === true
   const contentRef = useRef<HTMLDivElement>(null)
@@ -115,7 +115,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
       className={cx('navwindow', target !== null && 'is-page-tab')}
       ariaLabel="Navigation"
       onScan={promote}
-      title={<WindowTabStrip index={resolveIndex} title={null} />}
+      title={<WindowTabStrip index={resolveIndex} title={null} rename={rename} />}
       actions={actions}
       left={{
         windowId: 'navwindow',

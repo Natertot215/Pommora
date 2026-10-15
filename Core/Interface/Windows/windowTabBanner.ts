@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { createContext, useContext, useEffect } from 'react'
 import type { BannerMenuAction } from '../../Actions/identityMenus'
 import type { WindowTarget } from '../../Navigation/navRef'
 import { resolveAssetUrl } from '../../Assets/assetUrl'
@@ -14,11 +14,15 @@ type BannerRun = (action: BannerMenuAction) => Promise<void>
 interface BannerSeat {
   tabId: string
   run: BannerRun
+  rename: () => boolean
 }
 
-// One tabbed window stands at a time and it mounts one tab body, so one seat stands. A row aimed at another tab waits here until that tab's header registers; any other registration drops it.
+// One tabbed window stands at a time and only its shown tab's header holds the seat; a parked tab's stays out. A row aimed at another tab waits here until that tab's header registers; any other registration drops it.
 let seat: BannerSeat | null = null
 let pending: { tabId: string; action: BannerMenuAction } | null = null
+
+/** The window tab a body belongs to, and whether it is the one on show. */
+export const WindowTabContext = createContext<{ tabId: string; shown: boolean } | null>(null)
 
 export const windowBannerShown = (p: Personalization, kind: WindowTarget['kind']): boolean =>
   settingOf(p, kind === 'space' ? 'windowSpaceBanners' : 'windowPageBanners')
@@ -44,12 +48,25 @@ export function runWindowBanner(tabId: string, action: BannerMenuAction): void {
   useSession.getState().activateWindowTab(tabId)
 }
 
-export function useWindowBannerSeat(active: boolean, run: BannerRun): void {
+// The title rides the banner, so a tab whose banner draws no title leaves its rename to the window's own label.
+export const renameWindowTitle = (tabId: string): boolean => seat?.tabId === tabId && seat.rename()
+
+export function useWindowBannerSeat(active: boolean, run: BannerRun, rename?: () => void): void {
   const held = useLatest(run)
-  const tabId = useSession((s) => (active ? s.windowSlot?.activeTabId : undefined))
+  const heldRename = useLatest(rename)
+  const tab = useContext(WindowTabContext)
+  const tabId = active && tab?.shown ? tab.tabId : undefined
   useEffect(() => {
     if (!tabId) return
-    const mine: BannerSeat = { tabId, run: (action) => held.current(action) }
+    const mine: BannerSeat = {
+      tabId,
+      run: (action) => held.current(action),
+      rename: () => {
+        const open = heldRename.current
+        open?.()
+        return open !== undefined
+      },
+    }
     seat = mine
     const due = pending?.tabId === tabId ? pending.action : null
     pending = null

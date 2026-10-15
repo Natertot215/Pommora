@@ -5,6 +5,7 @@ import {
   type PageSendAction,
   type PageMenuContext,
   pageSendGroups,
+  RENAME_ROW,
 } from './pageMenu'
 import { pinLabel } from './toggleLabels'
 import { isWindowTarget, type TabTarget, type WindowTarget } from '../Navigation/navRef'
@@ -20,6 +21,7 @@ interface TabMainContext extends PageMenuContext {
 interface TabWindowContext extends PageMenuContext {
   row: 'window'
   kind: WindowTarget['kind']
+  active?: boolean
   banner?: readonly ActionItem<BannerMenuAction>[]
 }
 
@@ -34,16 +36,20 @@ type TabMenuAction =
   | 'window'
   | 'promote'
   | BannerMenuAction
+  | typeof RENAME_ROW.action
   | PageSendAction
   | PageMoveAction
 
 export function tabMenuItems(ctx: TabMenuContext): ActionItem<TabMenuAction>[] {
-  const send = ctx.kind === 'page' ? pageSendGroups(ctx) : []
+  const send = ctx.kind === 'page' ? pageSendGroups(ctx).flat() : []
+  // Only the page on show renames, in the label it shows; a pinned tab draws none.
+  const rename =
+    ctx.kind === 'page' && ctx.active && !(ctx.row === 'main' && ctx.pinned) ? [RENAME_ROW] : []
   if (ctx.row === 'window')
     return joinGroups<TabMenuAction>([
-      [{ label: 'Open In New Tab', action: 'promote' }],
-      ...send,
-      ctx.banner ?? [],
+      [{ label: 'New Tab', action: 'promote' }],
+      [...rename, ...(ctx.banner ?? [])],
+      send,
       [{ label: 'Close', action: 'close' }],
     ])
   const open: ActionItem<TabMenuAction>[] = []
@@ -58,7 +64,8 @@ export function tabMenuItems(ctx: TabMenuContext): ActionItem<TabMenuAction>[] {
     })
   return joinGroups<TabMenuAction>([
     open,
-    ...send,
+    rename,
+    send,
     ctx.kind === 'newtab'
       ? []
       : [{ label: pinLabel(ctx.pinned), action: ctx.pinned ? 'unpin' : 'pin' }],

@@ -6,6 +6,8 @@ import { containerTargets } from '../../Actions/destinationTree'
 import { useSession } from '../../Session/store'
 import { dialer } from '../../Platform/dialer'
 import { confirmDelete } from '../Confirm/confirmations'
+import { popMenu } from '../../Actions/menuActions'
+import { PAGE_ACTION_ROWS } from '../../Actions/pageMenu'
 
 export function pageMoveContext(tree: NexusTree | null, path: string): PageMenuContext {
   return {
@@ -60,4 +62,13 @@ export function runPageAction(
     default:
       return false
   }
+}
+
+export async function popPageActions(
+  page: { id: string; path: string; title?: string },
+  rename: () => void,
+): Promise<void> {
+  const action = await popMenu(PAGE_ACTION_ROWS)
+  if (action === 'title:rename') rename()
+  else if (action) runPageAction(action, page)
 }

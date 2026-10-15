@@ -1,6 +1,12 @@
 import { describe, it, expect } from 'vitest'
 import type { ActionItem } from './menuModel'
-import { destinationRows, pageMetaMenuItems, pageOpenRows, pageSendGroups } from './pageMenu'
+import {
+  destinationRows,
+  PAGE_ACTION_ROWS,
+  pageMetaMenuItems,
+  pageOpenRows,
+  pageSendGroups,
+} from './pageMenu'
 
 const shape = (items: readonly ActionItem<string>[]): string[] =>
   items.flatMap((i) => [...(i.separatorBefore ? ['—'] : []), i.label])
@@ -73,6 +79,21 @@ describe('the page menu', () => {
     ).toBe(false)
     expect(destinationRows([{ id: 'a', label: 'A', path: 'A' }], (t) => t.id)).toEqual([
       { label: 'A', action: 'a' },
+    ])
+  })
+})
+
+describe('the page action rows', () => {
+  it('hold Rename, the send and locate rows as one group without Move To, and Delete', () => {
+    expect(shape(PAGE_ACTION_ROWS)).toEqual([
+      'Rename',
+      '—',
+      'Copy Link',
+      'Copy Path',
+      'View History',
+      'Reveal Location',
+      '—',
+      'Delete',
     ])
   })
 })

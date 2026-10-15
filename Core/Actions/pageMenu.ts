@@ -98,6 +98,12 @@ export function pageSendGroups(
   ]
 }
 
+export const PAGE_ACTION_ROWS = joinGroups([
+  [RENAME_ROW],
+  pageSendGroups({}, true).flat(),
+  [DELETE_ROW],
+])
+
 // 'single' takes the Below path, since a grid has no above.
 const NEW_PAGE_ROWS: Record<'pair' | 'single', readonly ActionItem<PageMetaAction>[]> = {
   pair: [

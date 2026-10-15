@@ -30,6 +30,7 @@ export function Banner({
   className,
   titleClassName = 'banner-title',
   onSearch,
+  onRename,
   onDone,
   noRemove,
 }: {
@@ -42,6 +43,7 @@ export function Banner({
   className?: string
   titleClassName?: string
   onSearch?: () => void
+  onRename?: () => void
   onDone?: () => void
   noRemove?: boolean
 }): ReactNode {
@@ -53,7 +55,7 @@ export function Banner({
     onDone,
     noRemove,
   })
-  useWindowBannerSeat(chrome === 'window', run)
+  useWindowBannerSeat(chrome === 'window', run, src ? onRename : undefined)
 
   if (!src) return empty(() => void addOrChange())
   return (

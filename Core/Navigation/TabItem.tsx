@@ -1,8 +1,9 @@
-import { Fragment } from 'react'
+import { Fragment, useRef } from 'react'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { overScrollEllipsis } from '@pommora/uix/Interactions/OverScroll'
 import { HoverRemove, hoverRemoveHost } from '@pommora/uix/Interactions/HoverRemove'
 import { useDragItem, type DragItem } from '@pommora/uix/Interactions/drag'
+import { EDITABLE_TARGETS } from '@pommora/uix/Interactions/shared'
 import { segment } from '@pommora/uix/Elements/segment.css'
 import { Icon } from '@pommora/uix/Symbols'
 import { text } from '@pommora/uix/Theme'
@@ -10,6 +11,7 @@ import type { TabTarget, WindowTabTarget } from './navRef'
 import { EntityIcon } from '../Assets/EntityIcon'
 import { hoverGlance, leaveGlance } from '../Interface/Glance/glanceAction'
 import type { ResolvedNav } from './navResolve'
+import { type PageNameRename, RenamablePageName } from '../Interface/RenamableTitle'
 
 // A page tab is a location: it raises its preview on Shift, never on plain hover. Non-page tabs carry no id/path, so they raise nothing.
 export const glanceHoverProps = (target: TabTarget | WindowTabTarget | undefined) => ({
@@ -36,6 +38,7 @@ export interface TabItemProps {
   iconOnly?: boolean
   slide?: { seq: number; className: string }
   glance?: TabTarget | WindowTabTarget
+  rename?: PageNameRename
   onActivate?: () => void
   onClose?: () => void
   onMenu?: (e: React.MouseEvent) => void
@@ -52,10 +55,13 @@ export function TabItem({
   iconOnly,
   slide,
   glance,
+  rename,
   onActivate,
   onClose,
   onMenu,
 }: TabItemProps): React.JSX.Element {
+  // A double-click's first press can be what activates the tab; only a tab already active at that press renames.
+  const pressedActive = useRef(active)
   const size = VARIANT[variant].icon
   const pinned = variant === 'pinned'
   const iconClass = cx('tab-icon', slide?.className)
@@ -80,8 +86,13 @@ export function TabItem({
       role="tab"
       aria-selected={active}
       tabIndex={active ? 0 : -1}
+      onMouseDownCapture={(e) => {
+        if (e.detail === 1) pressedActive.current = active
+      }}
       onClick={onActivate}
-      onContextMenu={onMenu}
+      onContextMenu={(e) => {
+        if (!(e.target as Element).closest(EDITABLE_TARGETS)) onMenu?.(e)
+      }}
     >
       <Fragment key={slide?.seq ?? 0}>
         {typeof icon === 'string' ? (
@@ -90,7 +101,19 @@ export function TabItem({
           <EntityIcon item={icon} size={size} className={iconClass} />
         )}
         {!iconOnly && !pinned && (
-          <span className={cx(overScrollEllipsis, 'tab-label', slide?.className)}>{label}</span>
+          <span className={cx(overScrollEllipsis, 'tab-label', slide?.className)}>
+            {rename ? (
+              <RenamablePageName
+                title={label}
+                rename={{
+                  ...rename,
+                  onBegin: rename.onBegin && (() => pressedActive.current && rename.onBegin?.()),
+                }}
+              />
+            ) : (
+              label
+            )}
+          </span>
         )}
       </Fragment>
       {onClose && (
