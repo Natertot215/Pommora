@@ -18,9 +18,9 @@ The settings window's `ManageRow` (`Core/Settings/ManageRow.tsx`) is a count, a 
 
 ### Overview
 
-A page gains an **Aliases** row — the alias glyph, "Aliases", its count, and Manage — below the Properties group under a divider, in the page dropdown and the PageWindow side pane alike. Manage opens a pane listing the aliases as the body picker does — the same rows, from one component: × deletes an alias, a double-click or the row menu's Rename renames it in place, the row menu's Delete deletes it, and + drafts a new one, which discloses in with its caret seated and joins the end of the list. The body picker gains the same edits; there a single click still inserts the alias, once the double-click window passes, and an edit in the picker returns the caret to the alias slot. A name that repeats the page's title dims as it's typed, since it won't be kept. Edits change the remembered list only; link text already written is never touched.
+A page gains an **Aliases** row — the alias glyph, "Aliases", its count, and Manage — below the Properties group under a divider, in the page dropdown and the PageWindow side pane alike. Manage opens a pane listing the aliases as the body picker does — the same rows, from one component: × deletes an alias, a double-click or the row menu's Rename renames it in place, the row menu's Delete deletes it, + drafts a new one, which discloses in with its caret seated and joins the end of the list, and a drag reorders the list. The body picker gains the same edits; there a single click still inserts the alias, once the double-click window passes, and an edit in the picker returns the caret to the alias slot. A name that repeats the page's title dims as it's typed, since it won't be kept. Edits change the remembered list only; link text already written is never touched.
 
-Every alias write becomes an instruction — remember, add, rename, or forget — sent as the `editAliases` mutate op and applied by the host to the stored list inside the metadata shard's locked read-modify-write, after `property:editOption`'s precedent, so no surface can overwrite a newer list; `setPageMeta` stops carrying aliases. One pure function, `applyAliasEdit`, owns the rules: one alias per name whatever its case, the newest spelling standing, and the page's own title never an alias. The editor host's one `edit`, the shared list, and `assignValue` — which now remembers the alias a landed Link value newly shows — each send the op, and every surface reads the list through `heldAliases`, so it shows what the rules keep. `ManageRow` moves into `UIX/Menus` with an optional icon and count and a menu pane, the list-edit mechanics — a draft at the end that keeps its row once written, a rename that keeps its row — become `useListEdit`, which `AliasList` and Excluded Directories' list share, and `useOptionEdit`'s rename-key map becomes the shared `useRenameKeys` beneath it.
+Every alias write becomes an instruction — add, rename, move, or forget — sent as the `editAliases` mutate op and applied by the host to the stored list inside the metadata shard's locked read-modify-write, after `property:editOption`'s precedent, so no surface can overwrite a newer list; `setPageMeta` stops carrying aliases. One pure function, `applyAliasEdit`, owns the rules: one alias per name whatever its case, the newest spelling standing, the page's own title and any name a link can't carry never an alias, and the order the user's — a used alias keeps its place and a new one joins the end. The editor host's one `edit`, the shared list, and `assignValue` — which now remembers the alias a landed Link value newly shows — each send the op, and every surface reads the list through `heldAliases`, so it shows what the rules keep. `ManageRow` moves into `UIX/Menus` with an optional icon and count and a menu pane, the list-edit mechanics — a draft at the end that keeps its row once written, a rename that keeps its row — become `useListEdit`, which `AliasList` and Excluded Directories' list share, and `useOptionEdit`'s rename-key map becomes the shared `useRenameKeys` beneath it.
 
 #### Concepts
 
@@ -29,7 +29,7 @@ Every alias write becomes an instruction — remember, add, rename, or forget �
 | Concept | Description | Location |
 | ------- | ----------- | -------- |
 | `op` • Function | One variant of an `op`-tagged zod union, shared by the mutate request, option edits, and alias edits. | `Core/Files/decoders.ts` |
-| `aliasEdit` / `AliasEdit` • Schema, Type | The four alias instructions: `remember`, `add`, `rename`, `forget`. | `Core/Connections/aliasMemory.ts` |
+| `aliasEdit` / `AliasEdit` • Schema, Type | The four alias instructions: `add`, `rename`, `move`, `forget`. | `Core/Connections/aliasMemory.ts` |
 | `heldAliases` • Function | A page's list as the rules hold it — one spelling per name, never its title — read by every surface and by `applyAliasEdit`. | `Core/Connections/aliasMemory.ts` |
 | `applyAliasEdit` • Function | A page's list after one instruction under the one rule set. | `Core/Connections/aliasMemory.ts` |
 | `ALIAS_ICON` • Constant | `'square-split-horizontal'`, the alias glyph, typed `IconName` beside `DEFAULT_NEXUS_ICON`. | `Core/Assets/entityIconPolicy.ts` |
@@ -51,6 +51,7 @@ Every alias write becomes an instruction — remember, add, rename, or forget �
 | `Alias Drive/live-drive.mjs` • File | The live drive of the alias lists, the body picker, Excluded Directories, the option editor, and Filter, asserting each gesture's writes and recording its cost. | `.claude/scripts/Alias Drive/` |
 | `aliasFits` • Function | Whether a link's alias slot can carry a name, read by `connectionText` and `keepsAlias`. | `Core/Connections/connections.ts` |
 | `keepsAlias` • Function | Whether a page can hold a name as an alias: one a link carries, never its title — the host's rule and the list's dim. | `Core/Connections/aliasMemory.ts` |
+| `index` • Schema | A position in a list, shared by the alias move, option edits, views, and trash records. | `Core/Files/decoders.ts` |
 | `ruleFrame` • Style | A pane of rule rows draws compact wherever it's hosted. | `UIX/Menus/frames.css.ts` |
 | `watch` / `measure` • Functions | A gesture's distinct file writes, its input-to-paint and input-to-disk latency, and its render cost, shared by every drive. | `.claude/scripts/drive-harness.mjs` |
 
@@ -1941,6 +1942,123 @@ The renderer's one alias write lives where the codebase keeps its renderer-side 
 - [x] In `FilterFrame.test.tsx`, the pane root carries `menuCompact` around its rule rows.
 - [x] `UIX/Menus/frames.css.ts` exports `ruleFrame = style([menuCompact])`, documented as the rule that a pane of rule rows draws compact wherever it's hosted; `filter-frame.css.ts`'s `frame` composes it.
 - [x] Live: the collection Filter pane, the Matrix filter, and Open In Preview each draw 36px rule rows at `--row-pad-y` 4px (`753c82398`).
+
+#### Task 3-8
+
+**TASK:** Let both alias lists reorder by drag through the shared line engine, written as a `move` instruction, and make the stored order the user's: an alias keeps its place when used, a new one joins the end, and `remember` folds into `add`.
+
+**NOW:**
+- No alias list reorders. The line engine (`LineZone` + `lineList` + `LineRow` + `menuDropLine`, `UIX/Interactions/drag`) reorders every other list; the option value picker (`PropertyPicker.tsx:345-373`, `useOptionEdit.moves`) is the closest precedent — a picker pane of `MenuItem` rows with a click pick, a row menu, React keys from `useRenameKeys`, engine ids from the values, and a `move` op carrying `toIndex` among the other rows.
+- `remember` moves an alias to the front on every authoring (`linkEdit.ts`'s `rememberAlias`, `assignValue.ts`'s `rememberedAlias`), and `add` moves a held alias to the end: either would undo a dragged order on the next use.
+- `z.number().int().nonnegative()` is hand-written in `optionModel.ts:66`, `views.ts:393`, and `Trash/record.ts:66`.
+
+**CHANGE**
+
+- [ ] In `aliasMemory.test.ts`, rewrite the `remember` cases as `add` and add, watching each fail: `add` of a held alias in another case respells it in place; a new alias joins the end; `move` sets an alias at an index among the others (front, middle, end, past the end appends), keeps its stored spelling, matches whatever its case, and leaves the list unchanged for an unknown, blank, or title name; the schema refuses a negative or fractional `toIndex`.
+- [ ] Repoint `linkEdit.test.tsx`'s and `connectionCommit.test.tsx`'s `remember` spies to `add`, and `aliasPicker.test.tsx`'s "most recent first" case to the stored order.
+- [ ] In `aliasPicker.test.tsx` (`stubRect` + `firePointer`, as `OptionOrderList.test.tsx:52-82`), add and watch fail: a drag sends `{ op: 'move', alias, toIndex }`, leaves the doc unchanged and the editor focused, and inserts nothing once `PICK_DELAY_MS` passes; a press under the activation distance still inserts; with a typed query or a rename open, a press lifts nothing.
+- [ ] In `AliasesRow.test.tsx`, add and watch fail: a pointer drag sends the move; a release on the row's own slot sends nothing; Space, ArrowUp, Space announces and sends the move; a draft open lifts nothing; × still deletes after a wobble under the button's slop.
+- [ ] Rename `useConnectionAutocomplete.ts`'s local `keepsAlias` (the commit keeping a link's written alias) to `keepsWritten`, so the exported `keepsAlias` holds one meaning; let the harness's `list` read through `heldAliases` as the host's does; and bound the Alias Drive's two `together` steps to one or two shard writes, since two locked writes can land inside one poll — their final list and `stays` checks prove both edits.
+- [ ] Apply the diffs below, then hoist the Option Picker Drive's `sweep`/`drag` into `drive-harness.mjs` (repointing that drive) and add the Alias Drive's reorder steps: a drag in the Manage pane writes the order once with the drop line and ghost drawn mid-drag; a release on its own slot writes nothing; the keyboard path; a drag while renaming writes nothing; a drag in the body picker writes the order with the editor still focused and the body unchanged; a filtered picker draws no drop line; a used alias keeps its place. Update the drive's group 1–3 expectations the fold changes, and run its groups 1–3.
+
+**AFTER**
+
+```Core/Files/decoders.ts diff
++/** A position in a list. */
++export const index = z.number().int().nonnegative()
+```
+
+`optionModel.ts`, `views.ts`, and `Trash/record.ts` read it in place of their own.
+
+```Core/Connections/aliasMemory.ts diff
+-import { op } from '../Files/decoders'
++import { index, op } from '../Files/decoders'
+ …
+ export const aliasEdit = z.discriminatedUnion('op', [
+-  op('remember', { alias }),
+   op('add', { alias }),
+   op('rename', { from: alias, to: alias }),
++  op('move', { alias, toIndex: index }),
+   op('forget', { alias }),
+ ])
+ …
+-/** Authoring moves an alias to the front, an add puts it at the end, and a rename keeps its place, the newest spelling standing. */
++/** The order is the user's: an add respells a held alias in place or puts a new one at the end, a rename keeps its place, and a move sets it among the others, the newest spelling standing. */
+ export function applyAliasEdit(worn: readonly string[], e: AliasEdit, title: string): string[] {
+ …
+   switch (e.op) {
+-    case 'remember':
+-      return [named, ...others]
+     case 'add':
+-      return [...others, named]
++      return others.length < held.length
++        ? held.map((a) => (normalizeTitle(a) === key ? named : a))
++        : [...held, named]
++    case 'move': {
++      const moved = held.find((a) => normalizeTitle(a) === key)
++      return moved === undefined
++        ? held
++        : [...others.slice(0, e.toIndex), moved, ...others.slice(e.toIndex)]
++    }
+```
+
+`move` reads `named` through the same `keepsAlias` gate as the others, so the title and an unlinkable name never move.
+
+```Core/MarkdownPM/Links/linkEdit.ts diff
+-    void view.state.facet(editorHost).aliases.edit(target.page.id, { op: 'remember', alias })
++    void view.state.facet(editorHost).aliases.edit(target.page.id, { op: 'add', alias })
+```
+
+```Core/Properties/assignValue.ts diff
+-    ? { op: 'editAliases', path: page.path, edit: { op: 'remember', alias: target.alias } }
++    ? { op: 'editAliases', path: page.path, edit: { op: 'add', alias: target.alias } }
+```
+
+```Core/MarkdownPM/Autocomplete/AliasList.tsx diff
++import { LineRow, LineZone, lineList } from '@pommora/uix/Interactions/drag'
+ …
+   MenuScrollFrame,
++  menuDropLine,
+ } from '@pommora/uix/Menus'
+ …
+-      <div ref={rows} onKeyDownCapture={…}>
+-        {list.rows.map((row, i) => (
+-          <Reveal key={row.key} open enterOnMount={row.draft} fill>
+-            <MenuItem …>…</MenuItem>
+-          </Reveal>
+-        ))}
+-      </div>
++      <LineZone
++        {...lineList({
++          disabled: match > 0 || renaming !== null || list.drafting,
++          commit: (alias, slot) => void host.edit({ op: 'move', alias, toIndex: slot.index }),
++          line: menuDropLine,
++          label: (alias) => alias,
++          glyph: () => <Icon name={ALIAS_ICON} />,
++          watch: [listed],
++        })}
++      >
++        <div ref={rows} onKeyDownCapture={…}>
++          {list.rows.map((row, i) => {
++            const item = <MenuItem …unchanged…>…</MenuItem>
++            return (
++              <Reveal key={row.key} open enterOnMount={row.draft} fill>
++                {row.draft ? item : <LineRow id={row.value}>{item}</LineRow>}
++              </Reveal>
++            )
++          })}
++        </div>
++      </LineZone>
+```
+
+A drop swallows its release click, so a drag never arms the click insert; a double-click has no travel and still renames; a press inside a field never lifts. The engine's id is the value and React's key the rename key, as the option picker's. A typed query shows a scattered subset whose slot index means nothing in the stored order, and an open field would rename the row a move names, so both disable the zone rather than lock it — a locked zone still activates and swallows a click that wandered. The draft isn't stored, so it isn't a line row. Under `focus="keep"` the pane's `keepFocus` still refuses the press's focus move while pointer events run the drag; keyboard reorder lives in the Manage pane, as the caret pane's keys belong to the editor.
+
+**VERIFY**
+
+- [ ] The new cases are green, each red without its change; `OptionEditor`, `PropertyPicker`, `PropertyPanel`, and the Trash and view decode tests stay green.
+- [ ] The Option Picker Drive's syntax check and the Alias Drive's groups 1–3, its reorder steps included, pass.
+- [ ] Run the gates, then commit.
+- [ ] Check for unnecessary code or mistakes.
 
 #### Review Checkpoint
 
