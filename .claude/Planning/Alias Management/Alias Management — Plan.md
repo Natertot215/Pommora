@@ -2,13 +2,13 @@
 
 **DATE:** 10-14-2026
 **STATUS:** Ratified 10-14-2026
-**SOURCE:** The 10-14-2026 conversation with Nathan — the request, his answers (Manage-pane style, the side pane, list-only edits, Link-property aliases feed the memory, an optional count that the Aliases row shows, the row below Properties under a divider, a pane add landing at the bottom, the draft using the add-row primitives with its caret seated), and the write path left to this plan.
+**SOURCE:** The 10-14-2026 conversation with Nathan — the request, his answers (Manage-pane style, the side pane, list-only edits, Link-property aliases feed the memory, an optional count that the Aliases row shows, the row below Properties under a divider, a pane add landing at the bottom, the draft using the add-row primitives with its caret seated), his redirect once the pane was built (the Aliases pane and the body picker share one alias list of menu rows — an always-visible ×, a double-click or right-click Rename, a right-click Delete, and + in both — with the body picker's single-click insert held for the double-click window and Excluded Directories keeping its path fields), and the write path left to this plan.
 
 **BASELINE**
 
 | Head | Tests | Start | End |
 |------|-------|-------|-----|
-| `56a15ac88` | 7764 passed · 2 skipped · 534 files | {MM-DD-YYYY h:mm AM/PM} | {MM-DD-YYYY h:mm AM/PM} |
+| `56a15ac88` | 7764 passed · 2 skipped · 534 files | 10-14-2026 6:13 PM | {MM-DD-YYYY h:mm AM/PM} |
 
 ### Context
 
@@ -18,9 +18,9 @@ The settings window's `ManageRow` (`Core/Settings/ManageRow.tsx`) is a count, a 
 
 ### Overview
 
-A page gains an **Aliases** row — the alias glyph, "Aliases", its count, and Manage — below the Properties group under a divider, in the page dropdown and the PageWindow side pane alike. Manage opens a pane listing each alias in its own field: click one to rename it in place, × to forget it, and + to draft a new one, which discloses in with its caret seated and joins the end of the list. A name that repeats the page's title dims as it's typed, since it won't be kept. Edits change the remembered list only; link text already written is never touched.
+A page gains an **Aliases** row — the alias glyph, "Aliases", its count, and Manage — below the Properties group under a divider, in the page dropdown and the PageWindow side pane alike. Manage opens a pane listing the aliases as the body picker does — the same rows, from one component: × deletes an alias, a double-click or the row menu's Rename renames it in place, the row menu's Delete deletes it, and + drafts a new one, which discloses in with its caret seated and joins the end of the list. The body picker gains the same edits; there a single click still inserts the alias, once the double-click window passes, and an edit in the picker returns the caret to the alias slot. A name that repeats the page's title dims as it's typed, since it won't be kept. Edits change the remembered list only; link text already written is never touched.
 
-Every alias write becomes an instruction — remember, add, rename, or forget — sent as the `editAliases` mutate op and applied by the host to the stored list inside the metadata shard's locked read-modify-write, after `property:editOption`'s precedent, so no surface can overwrite a newer list; `setPageMeta` stops carrying aliases. One pure function, `applyAliasEdit`, owns the rules: one alias per name whatever its case, the newest spelling standing, and the page's own title never an alias. The editor host, the new pane, and `assignValue` — which now remembers the alias a landed Link value shows — each send the op. `ManageRow` moves into `UIX/Menus` with an optional icon and count, Excluded Directories' list becomes the shared `ManageList` both panes render through, and `useOptionEdit`'s rename-key map becomes the shared `useRenameKeys` so a renamed row keeps its place in both.
+Every alias write becomes an instruction — remember, add, rename, or forget — sent as the `editAliases` mutate op and applied by the host to the stored list inside the metadata shard's locked read-modify-write, after `property:editOption`'s precedent, so no surface can overwrite a newer list; `setPageMeta` stops carrying aliases. One pure function, `applyAliasEdit`, owns the rules: one alias per name whatever its case, the newest spelling standing, and the page's own title never an alias. The editor host's one `edit`, the shared list, and `assignValue` — which now remembers the alias a landed Link value newly shows — each send the op, and every surface reads the list through `heldAliases`, so it shows what the rules keep. `ManageRow` moves into `UIX/Menus` with an optional icon and count and a menu pane, the list-edit mechanics — a draft at the end that keeps its row once written, a rename that keeps its row — become `useListEdit`, which `AliasList` and Excluded Directories' list share, and `useOptionEdit`'s rename-key map becomes the shared `useRenameKeys` beneath it.
 
 #### Concepts
 
@@ -30,15 +30,23 @@ Every alias write becomes an instruction — remember, add, rename, or forget �
 | ------- | ----------- | -------- |
 | `op` • Function | One variant of an `op`-tagged zod union, shared by the mutate request, option edits, and alias edits. | `Core/Files/decoders.ts` |
 | `aliasEdit` / `AliasEdit` • Schema, Type | The four alias instructions: `remember`, `add`, `rename`, `forget`. | `Core/Connections/aliasMemory.ts` |
+| `heldAliases` • Function | A page's list as the rules hold it — one spelling per name, never its title — read by every surface and by `applyAliasEdit`. | `Core/Connections/aliasMemory.ts` |
 | `applyAliasEdit` • Function | A page's list after one instruction under the one rule set. | `Core/Connections/aliasMemory.ts` |
 | `ALIAS_ICON` • Constant | `'square-split-horizontal'`, the alias glyph, typed `IconName` beside `DEFAULT_NEXUS_ICON`. | `Core/Assets/entityIconPolicy.ts` |
 | `editAliases` • Mutate Op | `{ path, edit: AliasEdit }`, applied by the host. | `Core/Nexus/mutateRequest.ts` |
 | `editPageAliases` • Function | The op's handler: resolves the page and applies the edit inside the shard's read-modify-write. | `Core/Nexus/pageMetadata.ts` |
 | `useRenameKeys` • Hook | The key a row renamed in place keeps, hoisted from `useOptionEdit`. | `UIX/Animations/useRenameKeys.ts` |
 | `trailingCluster` / `trailingFigure` • Styles | A trailing slot's control cluster and its secondary tabular figure, shared by `ManageRow` and the Nexus rows. | `UIX/Menus/menu-row.css.ts` |
-| `ManageRow.tsx` • File | `ManageRow` (moved, with `icon`, an optional `count`, and `solid`), `ManageList`, and `ManageFieldProps`. | `UIX/Menus/ManageRow.tsx` |
-| `manage-row.css.ts` • File | The pane inset and the list's column, row, and field. | `UIX/Menus/manage-row.css.ts` |
-| `AliasesRow.tsx` • File | `AliasesRow` and its `AliasField`. | `Core/Pages/AliasesRow.tsx` |
+| `ManageRow.tsx` • File | `ManageRow` (moved, with `icon`, an optional `count`, `solid`, and `menu`). | `UIX/Menus/ManageRow.tsx` |
+| `useListEdit` / `ListRow` • Hook, Type | A list edited in place: rows keyed through `useRenameKeys`, a draft at the end, await-before-close, and revert on refusal. | `UIX/Menus/useListEdit.ts` |
+| `manage-row.css.ts` • File | The Manage pane's bounds, and the inset of a pane that isn't menu rows. | `UIX/Menus/manage-row.css.ts` |
+| `excluded-directories.css.ts` • File | Excluded Directories' field list: its column, row, and field. | `Core/Settings/excluded-directories.css.ts` |
+| `keepFocus` • Function | A press that leaves the focus where it is unless it lands in a field, shared by every control that mustn't commit a field it sits beside. | `UIX/Interactions/shared.ts` |
+| `AliasList.tsx` • File | `AliasList`, the one alias list the body picker and the Aliases pane render, and `AliasHost`, what it edits through. | `Core/MarkdownPM/Autocomplete/AliasList.tsx` |
+| `ALIAS_ROW_MENU` / `AliasRowAction` • Constant, Type | An alias row's menu: Rename, then Delete. | `Core/Actions/aliasRowMenu.ts` |
+| `menus.alias` • Host Member | The editor's way to open an alias row's menu. | `Core/MarkdownPM/api.ts` |
+| `inCaretPane` / `paneHeld` / `holdPane` • Function, State | Whether focus sits in an editor's own caret pane, and the editor holding its place while an edit runs there. | `Core/MarkdownPM/Menus/caretPane.tsx` |
+| `AliasesRow.tsx` • File | `AliasesRow`, the page panel's row over `AliasList`. | `Core/Pages/AliasesRow.tsx` |
 | `AliasesRow.test.tsx` • File | The row and pane against a stubbed store. | `Core/Pages/AliasesRow.test.tsx` |
 
 **REMOVED**
@@ -50,41 +58,49 @@ Every alias write becomes an instruction — remember, add, rename, or forget �
 | `aliases` in `setPageMeta`'s patch | Aliases travel only as `editAliases`. | `Core/Nexus/mutateRequest.ts` |
 | `worn` / `wear` | The renderer-side list computation. | `Core/Pages/editorHost.tsx` |
 | `ManageRow.tsx` | Moved to `UIX/Menus`. | `Core/Settings/ManageRow.tsx` |
-| `settings-rows.css.ts` | Its styles moved to `menu-row.css.ts` and `manage-row.css.ts`. | `Core/Settings/settings-rows.css.ts` |
-| `EXCLUDED_MIN_W` / `EXCLUDED_MAX_W` | The list's own bounds in `manage-row.css.ts`. | `Core/Settings/ExcludedDirectoriesRow.tsx` |
+| `settings-rows.css.ts` | Its styles moved to `menu-row.css.ts`, `manage-row.css.ts`, and `excluded-directories.css.ts`. | `Core/Settings/settings-rows.css.ts` |
+| `EXCLUDED_MIN_W` / `EXCLUDED_MAX_W` | The Manage pane's bounds in `manage-row.css.ts`. | `Core/Settings/ExcludedDirectoriesRow.tsx` |
+| `ManageRow`'s `style` and Open In Preview's `minWidth` | The one set of Manage pane bounds. | `UIX/Menus/ManageRow.tsx`, `Core/Settings/PreviewRulesRow.tsx` |
+| The private `keepFocus` and its inline twins | The shared `keepFocus`. | `UIX/Pickers/PickerMenu.tsx`, `UIX/Pickers/PickerControl.tsx`, `UIX/Menus/MenuRows.tsx` |
+| The `navTrailSegment` tone rule | `PathField`'s `option` trail already sets the tone. | `Core/Settings/settings-rows.css.ts` |
 | The `alias` key map | Hoisted into `useRenameKeys`. | `Core/Properties/Schema/useOptionEdit.tsx` |
+| `remember` / `forget` on `EditorHost['aliases']` | Replaced by `edit(id, AliasEdit)`. | `Core/MarkdownPM/api.ts` |
+| An alias row's `forget` closure and hover `HoverRemove` | `AliasList`'s always-visible ×. | `Core/MarkdownPM/Autocomplete/autocomplete.ts`, `AutocompletePane.tsx` |
 
 #### Constraints
 
 - **Gates:** From the repo root, `npm run typecheck && npm run test && npm run lint && npm run build` — chained with `&&`, never piped; read `✓ built in` on every build and `Found N warnings` on lint, which runs clean (zero errors, warnings, infos, unformatted files). Biome formats every TS/CSS/JSON write; an Edit failing on whitespace means it reformatted — re-read and retry.
-- **Frozen:** `EditorHost['aliases']` (`list` · `remember` · `forget` · `subscribe`, `Core/MarkdownPM/api.ts`); the on-disk shape (`aliases: string[]` in a shard entry, `pageMetaEntry`); the TS `PageMetaPatch` type and `copyPageMetadata`; the sync merge (`Core/Sync/Arrival/mergePolicy.ts`); link-text rewriting (`Core/Connections/rewrite.ts`, `connectionText`); `SettingsFieldRow`, `PathField`, `FilterFrame`; removal is instant everywhere (ruled in `827d0e6cf`) — no collapse-on-remove.
+- **Frozen:** the on-disk shape (`aliases: string[]` in a shard entry, `pageMetaEntry`); the TS `PageMetaPatch` type and `copyPageMetadata`; the sync merge (`Core/Sync/Arrival/mergePolicy.ts`); link-text rewriting (`Core/Connections/rewrite.ts`, `connectionText`); `SettingsFieldRow`, `PathField`, `FilterFrame`; removal is instant everywhere (ruled in `827d0e6cf`) — no collapse-on-remove.
 - **Conventions:**
   - No comments unless they establish a constraint the code can't show; docstrings follow the files they sit beside.
   - Relative imports inside `Core`; `@pommora/uix/…` paths for UIX; UIX imports nothing outside itself; a `*.css.ts` exports only serializable values.
-  - Commit per task as soon as its gates pass, with `git commit --only -m "…" -- <paths>` (`git add` new files first), past-tense and one-to-four sentences. Tasks 1-1 through 1-3 share one commit: the contract they change spans all three, and none typechecks alone. The phases run in order in one tree.
-  - User-facing copy this plan adds: the row label **Aliases**; aria-labels **Alias**, **Add alias**, **Remove alias**. The alias field shows no placeholder.
-  - Out of scope everywhere: rewriting existing alias text; an add row in the body picker; `PageHeader.tsx`'s `title_icon` toggle (a scalar `setPageMeta` from the cache); Excluded Directories' write path; Excluded Directories' draft, which keeps resting until clicked, typed, or browsed (ruled 10-14-2026).
+  - Commit per task as soon as its gates pass, with `git commit --only -m "…" -- <paths>` (`git add` new files first), past-tense and one-to-four sentences. Tasks 1-1 through 1-3 share one commit, as do Tasks 3-1 through 3-3: the contract each group changes spans its tasks, and none typechecks alone. The phases run in order in one tree.
+  - User-facing copy this plan adds: the row label **Aliases**; the row menu's **Rename** and **Delete**; aria-labels **Alias**, **Add alias**, **Delete alias**. The alias field shows no placeholder.
+  - Out of scope everywhere: rewriting existing alias text; opening the body picker's alias stage for a page with no aliases yet; `PageHeader.tsx`'s `title_icon` toggle (a scalar `setPageMeta` from the cache); Excluded Directories' write path; Excluded Directories' draft, which keeps resting until clicked, typed, or browsed (ruled 10-14-2026).
 - **Shape:**
   - **Fix:** The race lives wherever a renderer composes the alias list; `editorHost.tsx` is the only whole-list alias writer (`setPageMeta` senders: `editorHost.tsx:56`, and `PageHeader.tsx:43` for `title_icon`), and after Phase 1 no renderer code computes an alias list.
-  - **Refactor:** `ManageRow`/`ManageList` and `useRenameKeys` are proven by `ExclusionRows.test.tsx`, `PreviewRulesRow.test.tsx`, and `OptionEditor.test.tsx` passing with no change beyond import repoints, the stale removal comment, and the cases this plan adds.
+  - **Refactor:** `ManageRow`, `useListEdit`, and `useRenameKeys` are proven by `ExclusionRows.test.tsx`, `PreviewRulesRow.test.tsx`, and `OptionEditor.test.tsx` passing with no change beyond import repoints, the stale removal comment, and the cases this plan adds.
+  - **Accepted:** a mouse click on a body-picker alias row inserts once the double-click window (`PICK_DELAY_MS`, 300ms) passes; keyboard picks stay immediate (ruled 10-14-2026). The body picker's list stays filtered by what's typed after the pipe, so an alias added or renamed there that doesn't match it lands on the page without showing in that list.
 
 #### Process Overview
 
-- [ ] **Phase 1** — Alias Edits
-  - [ ] Task 1-1
-  - [ ] Task 1-2
-  - [ ] Task 1-3
-  - [ ] Task 1-4
-  - [ ] Review Checkpoint
-- [ ] **Phase 2** — The Shared Manage Row
-  - [ ] Task 2-1
-  - [ ] Task 2-2
-  - [ ] Review Checkpoint
-- [ ] **Phase 3** — The Aliases Row
+- [x] **Phase 1** — Alias Edits
+  - [x] Task 1-1
+  - [x] Task 1-2
+  - [x] Task 1-3
+  - [x] Task 1-4
+  - [x] Review Checkpoint
+- [x] **Phase 2** — The Shared Manage Row
+  - [x] Task 2-1
+  - [x] Task 2-2
+  - [x] Review Checkpoint
+- [ ] **Phase 3** — The Shared Alias Picker
   - [ ] Task 3-1
   - [ ] Task 3-2
+  - [ ] Task 3-3
+  - [ ] Task 3-4
   - [ ] Review Checkpoint
-- [ ] `[Stop: Nathan's Visual Pass and Live Feel on the Aliases row and pane]`
+- [ ] `[Stop: Nathan's Visual Pass and Live Feel on the Aliases pane and the body picker]`
 - [ ] **Phase 4** — Documentation
   - [ ] Task 4-1
 
@@ -107,7 +123,7 @@ Every alias write becomes an instruction — remember, add, rename, or forget �
   - add: appends; `'Draft'` over `['draft', 'x']` → `['x', 'Draft']`; blank or `'ALPHA'` leaves the list.
   - rename: in place (`['a', 'b', 'c']`, `b → B2` → `['a', 'B2', 'c']`); into an existing alias, the renamed position stands (`c → A` → `['b', 'A']`); a case-only respell; an unknown `from`, a blank `to`, or a `to` folding to the title leaves the list.
   - forget: any spelling (`'THE NOTES'` forgets `'the notes'`); an unknown alias leaves the list.
-  - tidying: any edit returns one spelling per name and no title (`['Plan', 'plan', 'Alpha']`, forget `'zzz'` → `['Plan']`).
+  - tidying: `heldAliases(['Plan', 'plan', 'Alpha', 'x'], 'alpha')` → `['Plan', 'x']`; any edit returns one spelling per name and no title (`['Plan', 'plan', 'Alpha']`, forget `'zzz'` → `['Plan']`).
 - [ ] Add `op` to `decoders.ts`; delete the local helpers in `mutateRequest.ts` and `optionModel.ts`, importing `op` (in `optionModel.ts`, its six `edit(` calls become `op(`).
 - [ ] Write `aliasMemory.ts` as below.
 
@@ -162,13 +178,21 @@ Every alias write becomes an instruction — remember, add, rename, or forget �
 +])
 +export type AliasEdit = z.infer<typeof aliasEdit>
 +
-+/** Authoring moves an alias to the front, an add puts it at the end, and a rename keeps its place. One alias is one name whatever its case, the newest spelling standing, and a page's own title is never one; a list breaking either rule is tidied by its next edit. */
++/** One alias is one name whatever its case, and a page's own title is never one; a list breaking either rule reads tidied, and its next edit stores it so. */
++export function heldAliases(worn: readonly string[], title: string): string[] {
++  const seen = new Set([normalizeTitle(title)])
++  return worn.filter((a) => {
++    const key = normalizeTitle(a)
++    if (seen.has(key)) return false
++    seen.add(key)
++    return true
++  })
++}
++
++/** Authoring moves an alias to the front, an add puts it at the end, and a rename keeps its place, the newest spelling standing. */
 +export function applyAliasEdit(worn: readonly string[], e: AliasEdit, title: string): string[] {
 +  const own = normalizeTitle(title)
-+  const held = worn.filter((a, i) => {
-+    const key = normalizeTitle(a)
-+    return key !== own && worn.findIndex((b) => normalizeTitle(b) === key) === i
-+  })
++  const held = heldAliases(worn, title)
 +  const named = (e.op === 'rename' ? e.to : e.alias).trim()
 +  const key = normalizeTitle(named)
 +  const others = held.filter((a) => normalizeTitle(a) !== key)
@@ -257,11 +281,12 @@ Every alias write becomes an instruction — remember, add, rename, or forget �
 +): Promise<MutateReply> {
 +  const page = pageAt(await liveTreeOf(root), relPath)
 +  if (!page) return NOT_HELD
-+  const written = await updatePageMetadata(root, page.id, (had) => {
-+    const next = applyAliasEdit(had.aliases ?? [], e, page.title)
-+    return { aliases: next.length ? next : null }
-+  })
-+  return done(written)
++  return done(
++    await updatePageMetadata(root, page.id, (had) => {
++      const next = applyAliasEdit(had.aliases ?? [], e, page.title)
++      return { aliases: next.length ? next : null }
++    }),
++  )
 +}
 ```
 
@@ -290,7 +315,7 @@ Every alias write becomes an instruction — remember, add, rename, or forget �
 
 **CHANGE**
 
-- [ ] Rewrite `describe('the alias memory')` in `Core/Pages/editorHost.test.ts` and watch it fail: a forget sends `{ op: 'editAliases', path: 'Notes/Alpha.md', edit: { op: 'forget', alias: 'the notes' } }`, and a remember `{ op: 'remember', alias: 'the plan' }`; the subscribe assertions stay. "An unchanged gesture writes nothing" goes — the host decides that, and Task 1-2 proves it.
+- [ ] Rewrite `describe('the alias memory')` in `Core/Pages/editorHost.test.ts` and watch it fail: a forget sends `{ op: 'editAliases', path: 'Notes/Alpha.md', edit: { op: 'forget', alias: 'the notes' } }`, and a remember `{ op: 'remember', alias: 'the plan' }`; `list` over `['the notes', 'The Notes', 'alpha']` reads `['the notes']`; the subscribe assertions stay. "An unchanged gesture writes nothing" goes — the host decides that, and Task 1-2 proves it.
 - [ ] Apply the diffs below.
 
 **AFTER**
@@ -300,7 +325,7 @@ Every alias write becomes an instruction — remember, add, rename, or forget �
 +import { persist } from '../Interface/Notifications/notifications'
  …
 -import { forgetAlias, rememberAlias } from '../Connections/aliasMemory'
-+import type { AliasEdit } from '../Connections/aliasMemory'
++import { type AliasEdit, heldAliases } from '../Connections/aliasMemory'
  …
  @@ buildEditorHost @@
    const state = useSession.getState
@@ -313,10 +338,13 @@ Every alias write becomes an instruction — remember, add, rename, or forget �
 -        .ask('mutate', { op: 'setPageMeta', path, patch: { aliases: next.length ? next : null } })
 -        .then(reportRefusal)
 -  }
++  const pageOf = (id: string) => {
++    const tree = state().tree
++    return tree ? pagesByIdOf(tree).get(id) : undefined
++  }
 +  const editAliases = (id: string, edit: AliasEdit): void => {
-+    const s = state()
-+    const path = s.tree && pagesByIdOf(s.tree).get(id)?.path
-+    if (path) void s.mutate({ op: 'editAliases', path, edit })
++    const path = pageOf(id)?.path
++    if (path) void state().mutate({ op: 'editAliases', path, edit })
 +  }
    return {
  …
@@ -324,10 +352,16 @@ Every alias write becomes an instruction — remember, add, rename, or forget �
 -      list: worn,
 -      remember: (id, alias) => wear(id, rememberAlias(worn(id), alias)),
 -      forget: (id, alias) => wear(id, forgetAlias(worn(id), alias)),
-+      list: (id) => pageMetaOf(id)(state())?.aliases ?? [],
++      list: (id) => heldAliases(pageMetaOf(id)(state())?.aliases ?? [], pageOf(id)?.title ?? ''),
 +      remember: (id, alias) => editAliases(id, { op: 'remember', alias }),
 +      forget: (id, alias) => editAliases(id, { op: 'forget', alias }),
        subscribe: (cb) =>
+ …
+-    pageTitle: () => {
+-      const tree = state().tree
+-      return (pageId && tree && pagesByIdOf(tree).get(pageId)?.title) ?? null
+-    },
++    pageTitle: () => (pageId && pageOf(pageId)?.title) ?? null,
 ```
 
 ```Core/Testing/editorHarness.ts diff
@@ -376,21 +410,21 @@ Every alias write becomes an instruction — remember, add, rename, or forget �
 **VERIFY**
 
 - [ ] `editorHost.test.ts` is green; `connectionCommit.test.tsx`, `linkEdit.test.tsx`, and `aliasPicker.test.tsx` are green unchanged.
-- [ ] `editorHost.tsx` still imports `dialer` for its prefs, clipboard, and menu calls and `pagesByIdOf` for `pageTitle`, and holds nothing else alias-related.
+- [ ] `editorHost.tsx` still imports `dialer` for its prefs, clipboard, and menu calls, and holds nothing alias-related beyond `editAliases` and `list`.
 - [ ] Run the gates, then commit Tasks 1-1 through 1-3 together.
 - [ ] Check for unnecessary code or mistakes.
 
 #### Task 1-4
 
-**TASK:** Remember the alias a landed Link value shows, from `assignValue`.
+**TASK:** Remember the alias a landed Link value newly shows, from `assignValue`.
 
 **NOW:** `assignValue` (`Core/Properties/assignValue.ts`) is the one renderer constructor of `setProperty` — PropertyPanel, Table and Cards through `useViewHost`, and `entityMenuActions`, each writer's `mutate` being the store's — and undo's `revert` calls `write()` directly. `readLinkText` reads a markdown link's label as its alias, so `[Alpha](Alpha.md)` shows `Alpha` for `Alpha`. No Link-property path reaches the memory.
 
 **CHANGE**
 
 - [ ] In `Core/Properties/assignValue.test.ts`, add a describe and watch it fail, with a `link` definition in the schema and `useSession.setState({ tree: makeTree() })` (page `p1`, `Alpha`, at `Notes/Alpha.md`), asserting on the writer's `mutate` mock:
-  - committing `[[Alpha|the notes]]` sends `setProperty`, then `{ op: 'editAliases', path: 'Notes/Alpha.md', edit: { op: 'remember', alias: 'the notes' } }` once the write lands;
-  - a refused write (`mutate` resolving `null` for the `setProperty`), an undo of the commit, a phantom title (`[[Missing|x]]`), an unaliased `[[Alpha]]`, and a markdown `[Alpha](Alpha.md)` send no `editAliases`.
+  - over a prior `[[Alpha|old]]`, committing `[[Alpha|the notes]]` sends `setProperty`, then `{ op: 'editAliases', path: 'Notes/Alpha.md', edit: { op: 'remember', alias: 'the notes' } }` once the write lands, and `[[Alpha|Old]]` remembers `'Old'`;
+  - a refused write (`mutate` resolving `null` for the `setProperty`), an undo of the commit, a phantom title (`[[Missing|x]]`), an unaliased `[[Alpha]]`, and the alias the prior already showed (`[[Alpha#Intro|old]]`, as a retarget carries it) send no `editAliases`.
 - [ ] Apply the diff below.
 
 **AFTER**
@@ -398,18 +432,19 @@ Every alias write becomes an instruction — remember, add, rename, or forget �
 ```Core/Properties/assignValue.ts diff
 +import { readLinkText } from '../Connections/linkValue'
 +import { pageIndexOf } from '../Nexus/treeIndex'
-+import { normalizeTitle } from '../Paths/caseFold'
  import { pushUndo } from '../Session/undo'
 +import { useSession } from '../Session/store'
  …
-+// A landed Link value showing an alias for a page gives that page the alias, as authoring one in a body does; a markdown label that repeats the title shows none.
-+function rememberedAlias(value: PropertyValue | null): MutateRequest | null {
++// A landed Link value newly showing an alias for a page gives that page the alias, as authoring one in a body does.
++function rememberedAlias(
++  value: PropertyValue | null,
++  prior: PropertyValue | null,
++): MutateRequest | null {
 +  const target = value?.kind === 'link' ? readLinkText(value.value) : null
 +  if (target?.kind !== 'page' || !target.alias) return null
-+  if (normalizeTitle(target.alias) === normalizeTitle(target.title)) return null
++  if (prior?.kind === 'link' && readLinkText(prior.value)?.alias === target.alias) return null
 +  const tree = useSession.getState().tree
-+  const named = tree ? pageIndexOf(tree).resolve(target.title) : null
-+  const page = named?.status === 'resolved' ? named.page : undefined
++  const page = tree && pageIndexOf(tree).resolve(target.title).page
 +  return page
 +    ? { op: 'editAliases', path: page.path, edit: { op: 'remember', alias: target.alias } }
 +    : null
@@ -419,7 +454,7 @@ Every alias write becomes an instruction — remember, add, rename, or forget �
    let landed: boolean | null = null
    void pending.then((ok) => {
      landed = ok
-+    const remember = ok && rememberedAlias(value)
++    const remember = ok && rememberedAlias(value, prior)
 +    if (remember) void w.mutate(remember)
    })
 ```
@@ -436,7 +471,7 @@ Every alias write becomes an instruction — remember, add, rename, or forget �
 - [ ] `applyAliasEdit` is the only place the alias rules live, its branches read as one rule set (front / end / in place / every spelling), and no case refuses or tidies in a way the tests don't name.
 - [ ] Concurrent edits on one page both land, proven by the test rather than by argument.
 - [ ] No renderer file computes an alias list or sends `aliases`: `setPageMeta` accepts none, and `grep -rn "applyAliasEdit" Core` finds only `aliasMemory.ts`, `pageMetadata.ts`, `editorHarness.ts`, and tests.
-- [ ] The remember-on-commit rule fires only on a landed commit — never on undo or a refusal — and skips a markdown label repeating the title.
+- [ ] The remember-on-commit rule fires only on a landed commit newly showing its alias — never on undo, a refusal, or an alias the prior value already showed — and leaves the title rule to the host.
 - [ ] `EditorHost['aliases']` is unchanged, and the picker refreshes on any alias edit through `subscribe`.
 
 ### Phase 2 — The Shared Manage Row
@@ -521,13 +556,13 @@ Every alias write becomes an instruction — remember, add, rename, or forget �
 
 #### Task 2-2
 
-**TASK:** Move `ManageRow` into `UIX/Menus/ManageRow.tsx` beside the extracted `ManageList`, give `AccessoryButton` an `onMouseDown`, and repoint every consumer.
+**TASK:** Move `ManageRow` into `UIX/Menus/ManageRow.tsx` beside the extracted `ManageList`, give `AccessoryButton` an `onMouseDown`, share `keepFocus`, and repoint every consumer. A draft is keyed through `useRenameKeys` for the value it writes, so it keeps its row wherever the value lands before the reply, as a `mutate` push does; a reply landing first, as Excluded Directories' `exclusions:set` does, closes it as before.
 
-**NOW:** `ManageRow` wraps `SettingsFieldRow` with `settings-rows.css`'s `manageCluster`, `count`, and `managePane`; `ExclusionPane` hand-builds its list from `paneList`, `paneRow`, and `field`, with the `navTrailSegment` tone rule, and sizes its pane through `EXCLUDED_MIN_W`/`EXCLUDED_MAX_W`; `NexusRows.tsx` borrows `count` (the Nexus ID) and `manageCluster` (the Server row). A × pressed while its row's field is editing takes the focus first, so the field commits before the removal lands.
+**NOW:** `ManageRow` wraps `SettingsFieldRow` with `settings-rows.css`'s `manageCluster`, `count`, and `managePane`; `ExclusionPane` hand-builds its list from `paneList`, `paneRow`, and `field`, with the `navTrailSegment` tone rule, and sizes its pane through `EXCLUDED_MIN_W`/`EXCLUDED_MAX_W`; `NexusRows.tsx` borrows `count` (the Nexus ID) and `manageCluster` (the Server row). A × pressed while its row's field is editing takes the focus first, so the field commits before the removal lands. A written draft unmounts and its value arrives as a fresh row, so the bottom row drops out and re-expands. `PickerMenu` holds a private `keepFocus`, and `PickerControl` and `MenuRows`' back row write the same `preventDefault` inline.
 
 **CHANGE**
 
-- [ ] In `Core/Settings/ExclusionRows.test.tsx`, add and watch fail: "renaming a folder keeps its row's node" (the `[data-reveal]` holding `Archive` is the same element after the tree pushes `['Renamed', 'Vault A']`), and "a × press keeps the field's focus" (its `mousedown` is `defaultPrevented`). In "the remove control writes the list without that entry", drop the stale "Removal collapses first" comment and its `transitionend` dispatch.
+- [ ] In `Core/Settings/ExclusionRows.test.tsx`, add and watch fail: "renaming a folder keeps its row's node" (the `[data-reveal]` holding `Archive` is the same element after the tree pushes `['Renamed', 'Vault A']`) and "a × press keeps the field's focus" (its `mousedown` is `defaultPrevented`). In "the remove control writes the list without that entry", drop the stale "Removal collapses first" comment and its `transitionend` dispatch.
 - [ ] Apply the diffs below; delete `Core/Settings/ManageRow.tsx` and `Core/Settings/settings-rows.css.ts`.
 
 **AFTER**
@@ -535,32 +570,45 @@ Every alias write becomes an instruction — remember, add, rename, or forget �
 ```UIX/Menus/menu-row.css.ts diff
 +export const trailingCluster = style({ display: 'inline-flex', alignItems: 'center', gap: '8px' })
 +
-+export const trailingFigure = style([
-+  text.control.standard,
-+  { color: c.label.secondary, fontVariantNumeric: 'tabular-nums' },
-+])
++export const trailingFigure = style([text.control.standard, { fontVariantNumeric: 'tabular-nums' }])
 ```
 
 ```UIX/Menus/manage-row.css.ts diff
-+import { globalStyle, style } from '@vanilla-extract/css'
-+import { segment as navTrailSegment } from '../Elements/nav-trail.css'
-+import { vars as colorVars } from '../Theme/color.css'
++import { style } from '@vanilla-extract/css'
 +
-+export const pane = style({ padding: 'var(--surface-inset)' })
++export const pane = style({ padding: 'var(--surface-inset)', minWidth: '250px', maxWidth: '500px' })
 +
-+export const list = style({
-+  display: 'flex',
-+  flexDirection: 'column',
-+  gap: '6px',
-+  minWidth: 'calc(250px - 2 * var(--surface-inset))',
-+  maxWidth: 'calc(500px - 2 * var(--surface-inset))',
-+})
++export const list = style({ display: 'flex', flexDirection: 'column', gap: '6px' })
 +
 +export const row = style({ display: 'flex', alignItems: 'center', gap: '4px' })
 +
 +export const field = style({ flex: '1 1 auto', minWidth: 0 })
-+
-+globalStyle(`${row} ${navTrailSegment}`, { color: colorVars.color.label.control })
+```
+
+```UIX/Interactions/shared.ts diff
++/** A press that leaves the focus where it is, so a field it sits beside neither blurs nor commits. */
++export const keepFocus = (e: { preventDefault: () => void }): void => e.preventDefault()
+```
+
+```UIX/Pickers/PickerMenu.tsx diff
++import { keepFocus } from '../Interactions/shared'
+ …
+-const keepFocus = (e: { preventDefault: () => void }): void => e.preventDefault()
+```
+
+```UIX/Pickers/PickerControl.tsx diff
++import { keepFocus } from '../Interactions/shared'
+ …
+-              <span aria-hidden onMouseDown={(e) => e.preventDefault()}>
++              <span aria-hidden onMouseDown={keepFocus}>
+```
+
+```UIX/Menus/MenuRows.tsx diff
++import { keepFocus } from '../Interactions/shared'
+ …
+ @@ the pane's back row @@
+-        onPointerDown={(e) => e.preventDefault()}
++        onPointerDown={keepFocus}
 ```
 
 ```UIX/Menus/MenuRows.tsx diff
@@ -586,6 +634,7 @@ Every alias write becomes an instruction — remember, add, rename, or forget �
 +import { useEntrance } from '../Animations/useEntrance'
 +import { useRenameKeys } from '../Animations/useRenameKeys'
 +import { Button } from '../Buttons/Button'
++import { keepFocus } from '../Interactions/shared'
 +import { PickerMenu } from '../Pickers/PickerMenu'
 +import { Icon, type IconName } from '../Symbols'
 +import { MenuRowView } from './MenuIndex'
@@ -659,9 +708,7 @@ Every alias write becomes an instruction — remember, add, rename, or forget �
 +  onCancel?: () => void
 +}
 +
-+const keepFocus = (e: { preventDefault: () => void }): void => e.preventDefault()
-+
-+/** A Manage pane's list: each value in its own field beside a × that removes it, and + drafting one more at the end, which closes once its value is written. An empty value is never written, so × is the only removal, and × keeps the focus, so it discards an edit in progress rather than committing it; a rename keeps its row. */
++/** A Manage pane's list: a field per value with a × beside it, and + drafting one more at the end, whose row the value keeps once written. × keeps the focus, so it discards an edit in progress, and an empty value is never written. */
 +export function ManageList({
 +  values,
 +  noun,
@@ -677,48 +724,50 @@ Every alias write becomes an instruction — remember, add, rename, or forget �
 +  onRename: (from: string, to: string) => Promise<boolean>
 +  onRemove: (value: string) => void
 +}): React.JSX.Element {
-+  const [drafting, setDrafting] = useState(false)
++  const drafts = useRef(0)
++  const [draft, setDraft] = useState<string | null>(null)
 +  const keys = useRenameKeys(values)
 +  const entering = useEntrance(values, keys.keyOf)
-+  const add = async (value: string): Promise<void> => {
-+    if (value && (await onAdd(value))) setDrafting(false)
++  const close = (): void => setDraft(null)
++  const add = async (key: string, value: string): Promise<void> => {
++    if (!value) return
++    keys.rename(key, value)
++    if (await onAdd(value)) close()
++    else keys.revert(value)
 +  }
 +  const rename = (from: string, to: string): void => {
 +    if (!to) return
 +    keys.rename(from, to)
 +    void onRename(from, to).then((ok) => ok || keys.revert(to))
 +  }
-+  const row = (props: ManageFieldProps, remove: () => void): React.JSX.Element => (
-+    <div className={s.row}>
-+      <span className={s.field}>{field(props)}</span>
-+      <AccessoryButton
-+        icon="x"
-+        size="control"
-+        ariaLabel={`Remove ${noun}`}
-+        onMouseDown={keepFocus}
-+        onClick={remove}
-+      />
-+    </div>
++  const row = (key: string, props: ManageFieldProps, remove: () => void): React.JSX.Element => (
++    <Reveal key={key} open enterOnMount={entering(key)} fill>
++      <div className={s.row}>
++        <span className={s.field}>{field(props)}</span>
++        <AccessoryButton
++          icon="x"
++          size="control"
++          ariaLabel={`Remove ${noun}`}
++          onMouseDown={keepFocus}
++          onClick={remove}
++        />
++      </div>
++    </Reveal>
 +  )
++  const rows = values.map((value) =>
++    row(keys.keyOf(value), { value, onCommit: (next) => rename(value, next) }, () =>
++      onRemove(value),
++    ),
++  )
++  if (draft !== null && !rows.some((r) => r.key === draft))
++    rows.push(row(draft, { value: '', onCommit: (next) => void add(draft, next), onCancel: close }, close))
 +  return (
 +    <div className={s.list}>
-+      {values.map((value) => (
-+        <Reveal key={keys.keyOf(value)} open enterOnMount={entering(keys.keyOf(value))} fill>
-+          {row({ value, onCommit: (next) => rename(value, next) }, () => onRemove(value))}
-+        </Reveal>
-+      ))}
-+      {drafting && (
-+        <Reveal open enterOnMount fill>
-+          {row(
-+            { value: '', onCommit: (next) => void add(next), onCancel: () => setDrafting(false) },
-+            () => setDrafting(false),
-+          )}
-+        </Reveal>
-+      )}
++      {rows}
 +      <FootingCreate
 +        ariaLabel={`Add ${noun}`}
-+        disabled={drafting}
-+        onClick={() => setDrafting(true)}
++        disabled={draft !== null}
++        onClick={() => setDraft(`\u0000${++drafts.current}`)}
 +      />
 +    </div>
 +  )
@@ -818,7 +867,7 @@ Every alias write becomes an instruction — remember, add, rename, or forget �
 
 **VERIFY**
 
-- [ ] `ExclusionRows.test.tsx` (with its two new cases), `PreviewRulesRow.test.tsx`, and `NexusRows.test.tsx` are green.
+- [ ] `ExclusionRows.test.tsx` (with its two new cases), `PreviewRulesRow.test.tsx`, `NexusRows.test.tsx`, and the `PickerMenu`/`PickerControl` tests are green.
 - [ ] `grep -rn "settings-rows.css\|Settings/ManageRow" Core` finds nothing.
 - [ ] Run the gates; `npm run build` confirms the moved `*.css.ts` builds.
 - [ ] Check for unnecessary code or mistakes.
@@ -829,133 +878,713 @@ Every alias write becomes an instruction — remember, add, rename, or forget �
 - [ ] `ManageList` holds no Excluded-Directories behavior (browse, `emptyCommits`, the busy gate stay in `ExclusionPane`), and `ManageRow.tsx` imports nothing outside UIX.
 - [ ] `useRenameKeys` is the one rename-key map (`grep -rn "seen: boolean" Core UIX`), and `op` the one variant helper.
 
-### Phase 3 — The Aliases Row
+### Phase 3 — The Shared Alias Picker
 
-**GOAL:** The page panel shows the Aliases row below Properties under a divider, in the dropdown and the window side pane, and its pane adds, renames, and forgets through `editAliases` on Phase 2's list. This is the surface Nathan checks by hand.
+**GOAL:** One alias list serves the body picker's alias stage and the page panel's Aliases pane: menu rows with the alias glyph, the name, and an always-visible ×; a double-click or the row menu's Rename renames in place, the row menu's Delete or × deletes, and + drafts a new alias at the end. The body picker keeps its single-click insert, held for the double-click window, and hosts an edit as if the editor never left its slot. The panel mounts the row below Properties under a divider. This is the surface Nathan checks by hand. Tasks 3-1 through 3-3 share one commit: the host contract, the list, and the picker change together, and the tree typechecks only once all three land.
 
 #### Task 3-1
 
-**TASK:** Let `InputField` dim text that won't be kept, and build `Core/Pages/AliasesRow.tsx`.
+**TASK:** Give the editor host one `edit` and an alias row menu, hoist the list-edit mechanics into `useListEdit` and fold Excluded Directories' list back into its pane, let `keepFocus` yield to a field, give `ManageRow` a menu pane and its panes one width owner, and return `InputField` to its baseline.
 
-**NOW:** `EditableInput` takes `invalid` — "Dims text that won't commit" — but `RenamableLabel` and `InputField`'s `FieldEdit` don't pass it through. Nothing outside the body picker reads or edits a page's aliases.
+**NOW:** `EditorHost['aliases']` offers `remember` and `forget`, each void (`api.ts:167-172`); `editorHost.tsx` and `editorHarness.ts` implement them, `linkEdit.ts:151` remembers, `aliasRows` (`autocomplete.ts:181-198`) hands each alias row a `forget` closure, and `aliasPicker.test.tsx` and `connectionCommit.test.tsx` stub or spy on both. `EditorHost['menus']` (`api.ts:179-184`) carries the editor's native menus, `popMenu` behind each in `editorHost.tsx`. `ManageList` (`UIX/Menus/ManageRow.tsx`) holds the draft id, draft state, the `useRenameKeys` handoff, await-before-close, and revert inline; `ExclusionPane` and `AliasesRow` render it. `keepFocus` refuses every press, a press inside a text field included. `ManageRow` always opens a bare, inset, focus-trapping pane; `dcf1ab5e2` gave every Manage pane the 250–500 bounds, and its `style` prop survives only for Open In Preview's inline `minWidth: PANE_MIN_W`, which undercuts them. `InputField`'s `invalid` and `onCancel` (`048b2d7d7`) serve only `AliasesRow`'s `AliasField`.
 
 **CHANGE**
 
-- [ ] Write `Core/Pages/AliasesRow.test.tsx` and watch it fail, mounting `AliasesRow` for `{ id: 'p1', path: 'Notes/Alpha.md', title: 'Alpha' }` over `makeTree({ pageMetadata: { p1: { aliases: ['the plan', 'Q3 doc'] } } })`, with `window.nexus` stubbed to record `mutate`; query fields by `input[aria-label="Alias"]` while editing, since the wrapper and the input both carry the label then:
-  - the row reads "Aliases" and the count `2`;
-  - Manage opens a pane with one field per alias;
-  - + adds a row whose input is `document.activeElement`; typing `roadmap` and Enter sends `{ op: 'editAliases', path: 'Notes/Alpha.md', edit: { op: 'add', alias: 'roadmap' } }` and closes the draft;
-  - Escape on an empty draft closes it and sends nothing;
-  - typing `alpha` into the draft marks the input `aria-invalid="true"`;
-  - committing `the plan` → `The Plan` sends `{ op: 'rename', from: 'the plan', to: 'The Plan' }`;
-  - "Remove alias" on `Q3 doc` sends `{ op: 'forget', alias: 'Q3 doc' }`.
+- [ ] In `Core/Pages/editorHost.test.ts`, rewrite the alias cases and watch them fail: `edit('p1', { op: 'forget', alias: 'the notes' })` sends `{ op: 'editAliases', path: 'Notes/Alpha.md', edit: { op: 'forget', alias: 'the notes' } }` and resolves `true`; `edit` on an id the tree doesn't hold resolves `false` and sends nothing; the list and subscribe cases stay.
+- [ ] In `UIX/Pickers/PickerMenu`'s tests, add and watch fail: in a `focus="keep"` pane, a mousedown on a field inside isn't `defaultPrevented`, and one on a row is.
+- [ ] Repoint the host's alias callers in tests: `aliasPicker.test.tsx`'s host stub carries `edit` in place of `remember`/`forget`, its "a row forgets itself" case goes (Task 3-3 replaces the row), and its candidates drop `forget`; `connectionCommit.test.tsx:95` calls `edit('p1', { op: 'forget', alias: 'two' })` and `:100-111` spies on `edit` for `{ op: 'remember', … }`; `linkEdit.test.tsx`'s `remember` spies spy on `edit` the same way.
 - [ ] Apply the diffs below.
 
 **AFTER**
 
-```UIX/Fields/RenamableLabel.tsx diff
-   emptyCommits,
-+  invalid,
-   onBegin,
+```Core/Actions/aliasRowMenu.ts diff
++import type { ActionItem } from './menuModel'
++
++export type AliasRowAction = 'rename' | 'delete'
++
++export const ALIAS_ROW_MENU: ActionItem<AliasRowAction>[] = [
++  { label: 'Rename', action: 'rename' },
++  { label: 'Delete', action: 'delete', separatorBefore: true },
++]
+```
+
+```Core/MarkdownPM/api.ts diff
++import type { AliasRowAction } from '../Actions/aliasRowMenu'
++import type { AliasEdit } from '../Connections/aliasMemory'
  …
-   emptyCommits?: boolean
-+  invalid?: (text: string) => boolean
-   onBegin?: () => void
+   aliases: {
+     list(id: string): string[]
+-    remember(id: string, alias: string): void
+-    forget(id: string, alias: string): void
++    /** Resolves whether the host took the edit. */
++    edit(id: string, edit: AliasEdit): Promise<boolean>
+     subscribe(cb: () => void): () => void
+   }
  …
-       required={!emptyCommits}
-+      invalid={invalid}
-       onCommit={(next) => (next !== value ? onCommit(next) : onCancel())}
+   menus: {
+     grip(ctx: GripMenuContext): Promise<GripMenuAction | null>
+     table(ctx: TableMenuContext): Promise<TableMenuAction | null>
+     citation(ctx: CitationMenuContext): Promise<CitationMenuAction | null>
++    alias(): Promise<AliasRowAction | null>
+     format?: (req: EditorMenuRequest) => Promise<string | null>
+   }
+```
+
+```Core/Pages/editorHost.tsx diff
++import { ALIAS_ROW_MENU } from '../Actions/aliasRowMenu'
+ …
+-  const editAliases = (id: string, edit: AliasEdit): void => {
++  const editAliases = async (id: string, edit: AliasEdit): Promise<boolean> => {
+     const path = pageOf(id)?.path
+-    if (path) void state().mutate({ op: 'editAliases', path, edit })
++    return !!path && (await state().mutate({ op: 'editAliases', path, edit })) !== null
+   }
+ …
+       list: (id) => heldAliases(pageMetaOf(id)(state())?.aliases ?? [], pageOf(id)?.title ?? ''),
+-      remember: (id, alias) => editAliases(id, { op: 'remember', alias }),
+-      forget: (id, alias) => editAliases(id, { op: 'forget', alias }),
++      edit: editAliases,
+ …
+       citation: (ctx) => popMenu(citationMenuModel(ctx)),
++      alias: () => popMenu(ALIAS_ROW_MENU),
+```
+
+```Core/Testing/editorHarness.ts diff
+-      remember: (id, alias) => wear(id, { op: 'remember', alias }),
+-      forget: (id, alias) => wear(id, { op: 'forget', alias }),
++      edit: async (id, edit) => {
++        wear(id, edit)
++        return true
++      },
+ …
+       citation: async () => null,
++      alias: async () => null,
+```
+
+```Core/MarkdownPM/Links/linkEdit.ts diff
+ @@ rememberAlias @@
+-  if (target.kind === 'page') view.state.facet(editorHost).aliases.remember(target.page.id, alias)
++  if (target.kind === 'page')
++    void view.state.facet(editorHost).aliases.edit(target.page.id, { op: 'remember', alias })
+```
+
+```UIX/Menus/useListEdit.ts diff
++import { useRef, useState } from 'react'
++import { useRenameKeys } from '../Animations/useRenameKeys'
++
++export interface ListRow {
++  key: string
++  value: string
++  draft: boolean
++}
++
++/** A list edited in place: a rename keeps its row's key, and a draft at the end is keyed for the value it writes, so it keeps its row wherever the value lands before the reply. A refusal leaves the draft open. */
++export function useListEdit(
++  values: readonly string[],
++  {
++    onAdd,
++    onRename,
++  }: {
++    onAdd: (value: string) => Promise<boolean>
++    onRename: (from: string, to: string) => Promise<boolean>
++  },
++): {
++  rows: ListRow[]
++  drafting: boolean
++  begin: () => void
++  cancel: () => void
++  commit: (row: ListRow, next: string) => void
++} {
++  const drafts = useRef(0)
++  const [draft, setDraft] = useState<string | null>(null)
++  const keys = useRenameKeys(values)
++  const rows = values.map((value) => ({ key: keys.keyOf(value), value, draft: false }))
++  const drafting = draft !== null && !rows.some((r) => r.key === draft)
++  if (drafting) rows.push({ key: draft, value: '', draft: true })
++  return {
++    rows,
++    drafting,
++    begin: () => setDraft(`\u0000${++drafts.current}`),
++    cancel: () => setDraft(null),
++    commit: (row, next) => {
++      if (!next || next === row.value) return
++      keys.rename(row.draft ? row.key : row.value, next)
++      void (row.draft ? onAdd(next) : onRename(row.value, next)).then((ok) => {
++        if (!ok) keys.revert(next)
++        else if (row.draft) setDraft((d) => (d === row.key ? null : d))
++      })
++    },
++  }
++}
+```
+
+```UIX/Menus/ManageRow.tsx diff
+-import { type CSSProperties, type ReactNode, useRef, useState } from 'react'
++import { type ReactNode, useRef, useState } from 'react'
+-import { Reveal } from '../Animations/Reveal'
+-import { useEntrance } from '../Animations/useEntrance'
+-import { useRenameKeys } from '../Animations/useRenameKeys'
+ import { Button } from '../Buttons/Button'
+-import { keepFocus } from '../Interactions/shared'
+ import { PickerMenu } from '../Pickers/PickerMenu'
+ import { Icon, type IconName } from '../Symbols'
+ import { MenuRowView } from './MenuIndex'
+-import { AccessoryButton, FootingCreate } from './MenuRows'
+ …
+ @@ ManageRow @@
+   solid,
++  menu,
+-  style,
+ …
+   solid?: boolean
++  /** A pane of menu rows on the picker's own surface, taking no focus on open, rather than an inset one. */
++  menu?: boolean
+-  style?: CSSProperties
+ …
+                 solid={solid}
+-                bareSurface
+-                contentClassName={s.pane}
++                bareSurface={!menu}
++                focus={menu ? 'leave' : undefined}
++                contentClassName={menu ? s.bounds : s.pane}
+-                style={style}
+ …
+-export interface ManageFieldProps { … }
+-
+-/** A Manage pane's list: … */
+-export function ManageList({ … }) { … }
+```
+
+```UIX/Menus/manage-row.css.ts diff
+-export const pane = style({ padding: 'var(--surface-inset)', minWidth: '250px', maxWidth: '500px' })
+-
+-export const list = style({ display: 'flex', flexDirection: 'column', gap: '6px' })
+-
+-export const row = style({ display: 'flex', alignItems: 'center', gap: '4px' })
+-
+-export const field = style({ flex: '1 1 auto', minWidth: 0 })
++export const bounds = style({ minWidth: '250px', maxWidth: '500px' })
++
++export const pane = style([bounds, { padding: 'var(--surface-inset)' }])
+```
+
+```Core/Settings/PreviewRulesRow.tsx diff
+-import { PANE_MIN_W } from '@pommora/uix/Menus/frame-slide.css'
+ …
+-      style={{ minWidth: PANE_MIN_W }}
+```
+
+```Core/Settings/excluded-directories.css.ts diff
++import { style } from '@vanilla-extract/css'
++
++export const list = style({ display: 'flex', flexDirection: 'column', gap: '6px' })
++
++export const row = style({ display: 'flex', alignItems: 'center', gap: '4px' })
++
++export const field = style({ flex: '1 1 auto', minWidth: 0 })
+```
+
+```Core/Settings/ExcludedDirectoriesRow.tsx diff
+-import { ManageList, ManageRow } from '@pommora/uix/Menus/ManageRow'
++import { Reveal } from '@pommora/uix/Animations/Reveal'
++import { useEntrance } from '@pommora/uix/Animations/useEntrance'
++import { keepFocus } from '@pommora/uix/Interactions/shared'
++import { ManageRow } from '@pommora/uix/Menus/ManageRow'
++import { AccessoryButton, FootingCreate } from '@pommora/uix/Menus/MenuRows'
++import { useListEdit } from '@pommora/uix/Menus/useListEdit'
++import * as s from './excluded-directories.css'
+ …
+ @@ ExclusionPane @@
++  const list = useListEdit(stored, {
++    onAdd: (folder) => commit([...stored, folder]),
++    onRename: (from, to) => commit(stored.map((f) => (f === from ? to : f))),
++  })
++  const entering = useEntrance(list.rows, (r) => r.key)
+ …
+-  return (
+-    <ManageList
+-      values={stored}
+-      noun="exclusion"
+-      onAdd={(folder) => commit([...stored, folder])}
+-      onRename={(from, to) => commit(stored.map((f) => (f === from ? to : f)))}
+-      onRemove={(folder) => void commit(stored.filter((f) => f !== folder))}
+-      field={({ value, onCommit }) => (
+-        <PathField … />
+-      )}
+-    />
+-  )
++  return (
++    <div className={s.list}>
++      {list.rows.map((row) => {
++        const onCommit = (next: string): void => list.commit(row, next)
++        return (
++          <Reveal key={row.key} open enterOnMount={entering(row.key)} fill>
++            <div className={s.row}>
++              <span className={s.field}>
++                <PathField
++                  label="Excluded folder"
++                  value={row.value}
++                  empty="No folder"
++                  onCommit={onCommit}
++                  onBrowse={() => browse(onCommit)}
++                />
++              </span>
++              <AccessoryButton
++                icon="x"
++                size="control"
++                ariaLabel="Remove exclusion"
++                onMouseDown={keepFocus}
++                onClick={() =>
++                  row.draft ? list.cancel() : void commit(stored.filter((f) => f !== row.value))
++                }
++              />
++            </div>
++          </Reveal>
++        )
++      })}
++      <FootingCreate ariaLabel="Add exclusion" disabled={list.drafting} onClick={list.begin} />
++    </div>
++  )
+```
+
+```UIX/Interactions/shared.ts diff
+-/** A press that leaves the focus where it is, so a field it sits beside neither blurs nor commits. */
+-export const keepFocus = (e: { preventDefault: () => void }): void => e.preventDefault()
++/** A press that leaves the focus where it is, so a field it sits beside neither blurs nor commits; a press inside a field still reaches it. */
++export const keepFocus = (e: { target: EventTarget | null; preventDefault: () => void }): void => {
++  if (!(e.target instanceof Element && e.target.closest(EDITABLE_TARGETS))) e.preventDefault()
++}
+```
+
+```UIX/Pickers/PickerMenu.tsx diff
+ @@ focus @@
+-  /** `trap` takes focus and holds Tab inside; `leave` takes none on open, though a field inside takes it when pressed; `keep` never takes it, so a press anywhere in the pane leaves focus with its owner. …
++  /** `trap` takes focus and holds Tab inside; `leave` takes none on open, though a field inside takes it when pressed; `keep` takes none, so a press anywhere in the pane but inside a field leaves focus with its owner. …
 ```
 
 ```UIX/Fields/InputField.tsx diff
- @@ FieldEdit @@
    emptyCommits?: boolean
-+  /** Dims text that won't be kept as it's typed. */
-+  invalid?: (text: string) => boolean
+-  /** Dims text that won't be kept as it's typed. */
+-  invalid?: (text: string) => boolean
  …
-           emptyCommits={edit.emptyCommits}
-+          invalid={edit.invalid}
-```
-
-```Core/Pages/AliasesRow.tsx diff
-+import { useState } from 'react'
-+import { InputField } from '@pommora/uix/Fields/InputField'
-+import { type ManageFieldProps, ManageList, ManageRow } from '@pommora/uix/Menus/ManageRow'
-+import { Icon } from '@pommora/uix/Symbols'
-+import { ALIAS_ICON } from '../Assets/entityIconPolicy'
-+import type { AliasEdit } from '../Connections/aliasMemory'
-+import { normalizeTitle } from '../Paths/caseFold'
-+import { pageMetaOf, useSession } from '../Session/store'
-+
-+export function AliasesRow({
-+  page,
-+}: {
-+  page: { id: string; path: string; title: string }
-+}): React.JSX.Element {
-+  const aliases = useSession(pageMetaOf(page.id))?.aliases ?? []
-+  const mutate = useSession((s) => s.mutate)
-+  const edit = async (e: AliasEdit): Promise<boolean> =>
-+    (await mutate({ op: 'editAliases', path: page.path, edit: e })) !== null
-+  return (
-+    <ManageRow label="Aliases" icon={ALIAS_ICON} count={aliases.length} solid>
-+      <ManageList
-+        values={aliases}
-+        noun="alias"
-+        field={(props) => <AliasField {...props} title={page.title} />}
-+        onAdd={(alias) => edit({ op: 'add', alias })}
-+        onRename={(from, to) => edit({ op: 'rename', from, to })}
-+        onRemove={(alias) => void edit({ op: 'forget', alias })}
-+      />
-+    </ManageRow>
-+  )
-+}
-+
-+// A draft opens editing with its caret seated, and leaving it unwritten cancels it.
-+function AliasField({
-+  value,
-+  onCommit,
-+  onCancel,
-+  title,
-+}: ManageFieldProps & { title: string }): React.JSX.Element {
-+  const [editing, setEditing] = useState(onCancel !== undefined)
-+  return (
-+    <InputField
-+      chrome="bordered"
-+      label="Alias"
-+      leading={<Icon name={ALIAS_ICON} size="body" />}
-+      edit={{
-+        value,
-+        onCommit,
-+        renames: 'row',
-+        invalid: (text) => normalizeTitle(text) === normalizeTitle(title),
-+        editing,
-+        onEditingChange: (next) => {
-+          setEditing(next)
-+          if (!next) onCancel?.()
-+        },
-+      }}
-+    >
-+      {value}
-+    </InputField>
-+  )
-+}
+-  /** An edit left without a commit, apart from the close every exit reports. */
+-  onCancel?: () => void
+ …
+-          invalid={edit.invalid}
+ …
+-          onCancel={() => {
+-            setEditing(false)
+-            edit.onCancel?.()
+-          }}
++          onCancel={() => setEditing(false)}
 ```
 
 **VERIFY**
 
-- [ ] `AliasesRow.test.tsx` is green, and each case goes red with its handler removed; `InputField.test.tsx` and `EditableInput.test.tsx` are green unchanged.
-- [ ] Run the gates.
+- [ ] `editorHost.test.ts`, the `PickerMenu` tests, `ExclusionRows.test.tsx`, `PreviewRulesRow.test.tsx`, and `InputField.test.tsx` are green; `git diff 56a15ac88 -- UIX/Fields/InputField.tsx` is empty. The gates run after Task 3-3.
 - [ ] Check for unnecessary code or mistakes.
 
 #### Task 3-2
 
-**TASK:** Mount the row in `PropertyPanel` for page subjects, below the Properties group under a divider.
+**TASK:** Build `AliasList`, the one alias list, and render the Aliases row's pane through it.
 
-**NOW:** `PropertyPanel`'s rows column (`s.pageRows` in the dropdown, `s.panelRows`, the scroll region, in the side pane) holds the Contexts and Properties groups; a Space subject shares it. The panel's `title` is `subject.title ?? fetchedTitle`, loaded with the frontmatter before `body()` renders.
+**NOW:** `AliasesRow` renders `ManageList` with a bordered `AliasField` per alias. The body picker's alias rows are `slot` rows in `AutocompletePane.tsx`, which picks on mousedown. No alias row has a context menu.
 
 **CHANGE**
 
-- [ ] In `Core/Properties/PropertyPanel.test.tsx`, add "a page shows its Aliases row after the Properties group, and a Space shows none" — both page hosts, the row's text following the last group's in document order — and watch it fail.
+- [ ] Rewrite `Core/Pages/AliasesRow.test.tsx` and watch it fail, mounting `AliasesRow` for `{ id: 'p1', path: 'Notes/Alpha.md', title: 'Alpha' }` over `['the plan', 'Q3 doc']` with `window.nexus` stubbed to record `mutate` and answer the native menu; query the editing input by `input[aria-label="Alias"]`:
+  - the row reads "Aliases" and `2`; over `['the plan', 'The Plan', 'alpha']` it reads `1`;
+  - Manage opens a pane with one menu row per alias, each with a "Delete alias" ×, and focuses nothing;
+  - + adds a row whose input is `document.activeElement`; typing `roadmap` and Enter sends `{ op: 'add', alias: 'roadmap' }`; with the stub pushing `['the plan', 'Q3 doc', 'roadmap']` before it replies, the `[data-reveal]` that held the draft is the one holding `roadmap`, and no input remains;
+  - a refused add leaves the draft open with `roadmap` in it; Escape on an empty draft closes it and sends nothing; × on a draft closes it; typing `alpha` marks the input `aria-invalid="true"`;
+  - a single click on `the plan` opens no input and sends nothing; a double-click on its name opens it, and `The Plan` with Enter sends `{ op: 'rename', from: 'the plan', to: 'The Plan' }`;
+  - renaming `the plan` and then double-clicking `Q3 doc`'s name commits the first rename and leaves `Q3 doc`'s input open;
+  - "Delete alias" on `Q3 doc` sends `{ op: 'forget', alias: 'Q3 doc' }`, and on the row being renamed closes its input as well;
+  - with the menu answering `rename`, a right-click on `Q3 doc` opens its input; answering `delete`, it sends the forget.
+- [ ] Apply the diffs below.
+
+**AFTER**
+
+```Core/MarkdownPM/Autocomplete/AliasList.tsx diff
++import { useEffect, useRef, useState } from 'react'
++import { Reveal } from '@pommora/uix/Animations/Reveal'
++import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
++import { useKeepInView } from '@pommora/uix/Interactions/paneCtl'
++import { keepFocus } from '@pommora/uix/Interactions/shared'
++import {
++  AccessoryButton,
++  emphasizeMatch,
++  FootingCreate,
++  MenuFooting,
++  MenuItem,
++  MenuScrollFrame,
++} from '@pommora/uix/Menus'
++import { titleInput } from '@pommora/uix/Menus/menu-row.css'
++import { type ListRow, useListEdit } from '@pommora/uix/Menus/useListEdit'
++import { Icon } from '@pommora/uix/Symbols'
++import { useLatest } from '@pommora/uix/Utilities/stableApi'
++import type { AliasRowAction } from '../../Actions/aliasRowMenu'
++import { ALIAS_ICON } from '../../Assets/entityIconPolicy'
++import type { AliasEdit } from '../../Connections/aliasMemory'
++import { normalizeTitle } from '../../Paths/caseFold'
++
++// KNOB — how long a click on a picker row waits for a second click that makes it a rename.
++const PICK_DELAY_MS = 300
++
++/** What an alias list edits through: the page's title, its edits, its row menu, and, for a host that lends the list its focus, every edit's end — `stay` when it ended inside the list, by Enter, Escape, or a removal. */
++export interface AliasHost {
++  title: string
++  edit: (e: AliasEdit) => Promise<boolean>
++  menu: () => Promise<AliasRowAction | null>
++  onEditEnd?: (stay: boolean) => void
++}
++
++/** A page's aliases as menu rows: × or the row menu's Delete deletes one, a double-click on its name or the row menu's Rename renames it in place, and + drafts one more at the end. A picker passes `onPick`, which a single click calls once the double-click window passes, and its keyboard highlight. */
++export function AliasList({
++  aliases,
++  host,
++  active,
++  match = 0,
++  maxHeight,
++  onPick,
++}: {
++  aliases: readonly string[]
++  host: AliasHost
++  active?: number
++  match?: number
++  maxHeight?: number
++  onPick?: (alias: string) => void
++}): React.JSX.Element {
++  const list = useListEdit(aliases, {
++    onAdd: (alias) => host.edit({ op: 'add', alias }),
++    onRename: (from, to) => host.edit({ op: 'rename', from, to }),
++  })
++  const [renaming, setRenaming] = useState<string | null>(null)
++  const rows = useRef<HTMLDivElement>(null)
++  const keyed = useRef(false)
++  const pick = useRef<number | undefined>(undefined)
++  const picked = useLatest(onPick)
++  const keepInView = useKeepInView(active ?? -1)
++  useEffect(() => () => window.clearTimeout(pick.current), [])
++  const editing = (row: ListRow): boolean => row.draft || renaming === row.key
++  const byKey = (): boolean => {
++    const was = keyed.current
++    keyed.current = false
++    return was
++  }
++  const end = (key: string, stay: boolean): void => {
++    setRenaming((k) => (k === key ? null : k))
++    host.onEditEnd?.(stay)
++  }
++  // A row the tree dropped mid-rename took its focused field with it, which fires no blur.
++  const dropped = renaming !== null && !list.rows.some((r) => r.key === renaming)
++  useEffect(() => {
++    if (dropped && renaming !== null) end(renaming, true)
++  }, [dropped])
++  // A field already open commits by blur, as leaving it any other way would, before the next opens.
++  const rename = (row: ListRow): void => {
++    window.clearTimeout(pick.current)
++    const open = document.activeElement
++    if (open instanceof HTMLElement && rows.current?.contains(open)) open.blur()
++    setRenaming(row.key)
++  }
++  const remove = (row: ListRow): void => {
++    if (row.draft) list.cancel()
++    else void host.edit({ op: 'forget', alias: row.value })
++    if (editing(row)) end(row.key, true)
++  }
++  const rowMenu = async (row: ListRow, e: React.MouseEvent): Promise<void> => {
++    e.preventDefault()
++    switch (await host.menu()) {
++      case 'rename':
++        return rename(row)
++      case 'delete':
++        return remove(row)
++    }
++  }
++  return (
++    <MenuScrollFrame
++      maxHeight={maxHeight}
++      footer={
++        <MenuFooting
++          leading={
++            <FootingCreate ariaLabel="Add alias" disabled={list.drafting} onClick={list.begin} />
++          }
++        />
++      }
++    >
++      <div
++        ref={rows}
++        onKeyDownCapture={(e) => {
++          keyed.current = e.key === 'Enter' || e.key === 'Escape'
++        }}
++      >
++        {list.rows.map((row, i) => (
++          <Reveal key={row.key} open enterOnMount={row.draft} fill>
++            <MenuItem
++              ref={i === active ? keepInView : undefined}
++              active={i === active}
++              tabIndex={-1}
++              leading={<Icon name={ALIAS_ICON} size="body" />}
++              trailing={
++                <AccessoryButton
++                  icon="x"
++                  size="control"
++                  ariaLabel="Delete alias"
++                  onMouseDown={keepFocus}
++                  onClick={() => remove(row)}
++                />
++              }
++              onClick={
++                onPick && !row.draft
++                  ? (e) => {
++                      window.clearTimeout(pick.current)
++                      if (e.detail === 1)
++                        pick.current = window.setTimeout(
++                          () => picked.current?.(row.value),
++                          PICK_DELAY_MS,
++                        )
++                    }
++                  : undefined
++              }
++              onContextMenu={row.draft ? undefined : (e) => void rowMenu(row, e)}
++            >
++              <RenamableLabel
++                renames="title"
++                className={titleInput}
++                ariaLabel="Alias"
++                editing={editing(row)}
++                value={row.value}
++                invalid={(text) => normalizeTitle(text) === normalizeTitle(host.title)}
++                onBegin={row.draft ? undefined : () => rename(row)}
++                onCommit={(next) => {
++                  list.commit(row, next)
++                  end(row.key, byKey())
++                }}
++                onCancel={() => {
++                  if (row.draft) list.cancel()
++                  end(row.key, byKey())
++                }}
++              >
++                {emphasizeMatch(row.value, 0, match)}
++              </RenamableLabel>
++            </MenuItem>
++          </Reveal>
++        ))}
++      </div>
++    </MenuScrollFrame>
++  )
++}
+```
+
+A double-click on a name begins its rename through `RenamableLabel`'s `onBegin`, as every other rename-in-place list does; the row's click clears the pending pick on every press, so a double-click anywhere on a row never inserts. The keydown capture records whether the edit that ends next ended by key; a removal or a dropped row ends inside the list as well.
+
+```Core/Pages/AliasesRow.tsx diff
+-import { useMemo, useState } from 'react'
+-import { InputField } from '@pommora/uix/Fields/InputField'
+-import { type ManageFieldProps, ManageList, ManageRow } from '@pommora/uix/Menus/ManageRow'
+-import { Icon } from '@pommora/uix/Symbols'
++import { useMemo } from 'react'
++import { ManageRow } from '@pommora/uix/Menus/ManageRow'
++import { ALIAS_ROW_MENU } from '../Actions/aliasRowMenu'
++import { popMenu } from '../Actions/menuActions'
+ import { ALIAS_ICON } from '../Assets/entityIconPolicy'
+ import { type AliasEdit, heldAliases } from '../Connections/aliasMemory'
+-import { normalizeTitle } from '../Paths/caseFold'
++import { AliasList } from '../MarkdownPM/Autocomplete/AliasList'
+ import { pageMetaOf, useSession } from '../Session/store'
+ …
+-    <ManageRow label="Aliases" icon={ALIAS_ICON} count={aliases.length} solid>
+-      <ManageList … />
+-    </ManageRow>
++    <ManageRow label="Aliases" icon={ALIAS_ICON} count={aliases.length} solid menu>
++      <AliasList
++        aliases={aliases}
++        host={{ title: page.title, edit, menu: () => popMenu(ALIAS_ROW_MENU) }}
++      />
++    </ManageRow>
+ …
+-// A draft opens editing with its caret seated.
+-function AliasField(…) { … }
+```
+
+**VERIFY**
+
+- [ ] `AliasesRow.test.tsx` is green, and each case goes red with its handler removed.
+- [ ] Check for unnecessary code or mistakes. The gates run after Task 3-3.
+
+#### Task 3-3
+
+**TASK:** Render the body picker's alias stage through `AliasList`, and let the editor host an edit in its own caret pane as if it never left its slot.
+
+**NOW:** `AutocompletePane`'s `slot` renders alias rows with a hover `HoverRemove` and picks on mousedown (`AutocompletePane.tsx:86-137`); a heading row in `slot(v.behind)` takes the alias glyph. Focus moving into the pane blurs the editor: `useConnectionAutocomplete`'s blur handler closes the picker (`useConnectionAutocomplete.ts:53-58`), `aliasOnLeave`'s collapses an empty alias slot or remembers a typed one (`linkEdit.ts:208-213`), and the link decorations draw the slot as a resting link (`decorations.ts:453`). `CaretPane` keeps focus with its owner (`caretPane.tsx:48`).
+
+**CHANGE**
+
+- [ ] In `Core/MarkdownPM/Autocomplete/aliasPicker.test.tsx`, replace the "forget × is inert until it is revealed" suite and watch the new cases fail:
+  - each alias row shows its × at rest, and pressing it deletes without inserting;
+  - a single click (`detail: 1`) inserts once `PICK_DELAY_MS` passes (fake timers), and a double-click on the name instead opens the row's input and inserts nothing;
+  - + drafts an input inside the pane, the pane stays open, `[[Alpha|]]` keeps its pipe, and Enter sends the add and returns focus to the editor with the slot intact;
+  - Escape in a rename returns focus with the slot intact;
+  - focus leaving a pane field for an element outside the pane and the editor closes the picker and collapses the empty slot, as the editor's own blur does;
+  - with the harness's `menus.alias` answering `rename`, a right-click opens the row's input.
+- [ ] Repoint `connectionCommit.test.tsx:90`'s `.mdpm-ac-forget` count to the "Delete alias" buttons.
+- [ ] In `Core/MarkdownPM/Links/linkEdit.test.tsx`, add "focus moving into the caret pane neither collapses nor remembers" — an empty and a typed alias slot, blurred toward an element inside a `CaretPane`, keep their text and send no `edit` — and watch it fail.
+- [ ] Apply the diffs below.
+
+**AFTER**
+
+```Core/MarkdownPM/Menus/caretPane.tsx diff
++import { StateEffect, StateField } from '@codemirror/state'
++import { cx } from '@pommora/uix/Utilities/cx'
+ …
++const CARET_PANE = 'mdpm-caret-pane'
++
++/** Whether focus sits, or is moving, inside an editor's own caret pane. */
++export const inCaretPane = (el: EventTarget | null): boolean =>
++  el instanceof Element && el.closest(`.${CARET_PANE}`) !== null
++
++export const holdPane = StateEffect.define<boolean>()
++
++/** Set while an edit runs in the editor's caret pane, which holds the editor's place as its own focus would. */
++export const paneHeld = StateField.define<boolean>({
++  create: () => false,
++  update: (held, tr) => tr.effects.reduce((h, e) => (e.is(holdPane) ? e.value : h), held),
++})
++
+-// No `onDismiss`, and focus kept by contract: the editor's keymap owns arrows, Return and Escape, and no press in the pane moves the caret out of its query.
++// No `onDismiss`, and focus kept by contract: the editor's keymap owns arrows, Return and Escape, and only a field inside the pane takes focus, which the editor holds its place through.
+ …
+-      contentClassName={className}
++      contentClassName={cx(CARET_PANE, className)}
+```
+
+```Core/MarkdownPM/Autocomplete/useConnectionAutocomplete.ts diff
+   const [extension] = useState<Extension>(() => [
+     field,
++    paneHeld,
+ …
+     EditorView.domEventHandlers({
+-      blur: (_, view) => {
+-        closePicker(view, 'blur')
++      blur: (e, view) => {
++        if (inCaretPane(e.relatedTarget)) view.dispatch({ effects: holdPane.of(true) })
++        else closePicker(view, 'blur')
+         return false
+       },
+     }),
+ …
++  // An edit in the pane ends with the caret back in its slot when it ended there; one that ended by focus going elsewhere leaves as the editor's own blur would. Read a tick later, once focus has landed.
++  const endEdit = (stay: boolean): void =>
++    void window.setTimeout(() => {
++      const view = viewRef.current
++      const at = document.activeElement
++      if (!view || (inCaretPane(at) && at?.closest(EDITABLE_TARGETS))) return
++      view.dispatch({ effects: holdPane.of(false) })
++      if (stay || inCaretPane(at)) view.focus()
++      else if (!view.dom.contains(at)) view.contentDOM.dispatchEvent(new FocusEvent('blur'))
++    }, 0)
+ …
+ @@ the pane props @@
++    aliasHost:
++      form === 'alias' && page
++        ? {
++            title: page.title,
++            edit: (e: AliasEdit) => host.aliases.edit(page.id, e),
++            menu: host.menus.alias,
++            onEditEnd: endEdit,
++          }
++        : null,
+```
+
+```Core/MarkdownPM/Links/linkEdit.ts diff
+ @@ aliasOnLeave @@
+-      blur(_event, view) {
++      blur(event, view) {
++        if (inCaretPane(event.relatedTarget)) return false
+         const at = view.state.selection.main.head
+```
+
+```Core/MarkdownPM/decorations.ts diff
+ @@ build @@
+-  const focused = view.hasFocus
++  const focused = view.hasFocus || view.state.field(paneHeld, false) === true
+ …
+ @@ the plugin's update @@
+           u.focusChanged ||
++          u.startState.field(paneHeld, false) !== u.state.field(paneHeld, false) ||
+```
+
+```Core/MarkdownPM/Autocomplete/autocomplete.ts diff
+-  | { kind: 'alias'; forget: () => void }
++  | { kind: 'alias' }
+ …
+ @@ aliasRows @@
+-    .map(
+-      (a): AcRow => ({
+-        kind: 'alias',
+-        value: a,
+-        forget: () => aliases.forget(pageId, a),
+-      }),
+-    )
++    .map((a): AcRow => ({ kind: 'alias', value: a }))
+```
+
+```Core/MarkdownPM/Autocomplete/AutocompletePane.tsx diff
+-import { ALIAS_ICON } from '../../Assets/entityIconPolicy'
+-import { HoverRemove, hoverRemoveHost } from '@pommora/uix/Interactions/HoverRemove'
++import { overScrollHost } from '@pommora/uix/Interactions/OverScroll'
++import { AliasList, type AliasHost } from './AliasList'
+ …
+ export interface AutocompletePaneProps {
+ …
++  aliasHost: AliasHost | null
+ …
+ @@ slot @@ — page rows only, once alias rows render through AliasList:
+-          className={hoverRemoveHost}
++          className={overScrollHost}
+-          leading={ row.kind === 'page' ? <EntityIcon … /> : <Icon name={ALIAS_ICON} size="body" /> }
++          leading={<EntityIcon kind="page" size="body" />}
+-          trailing={ row.kind === 'alias' ? <HoverRemove … /> : row.kind === 'page' && linksPages ? … : undefined }
++          trailing={linksPages ? … : undefined}
+-            if ((e.target as HTMLElement).closest?.('.mdpm-ac-forget, .mdpm-ac-aside')) return
++            if ((e.target as HTMLElement).closest?.('.mdpm-ac-aside')) return
+ …
+-  const shown = headingForm ? headingSlot() : slot(v.candidates, true)
++  const shown = headingForm
++    ? headingSlot()
++    : v.aliasHost
++      ? (
++          <AliasList
++            aliases={v.candidates.map((r) => r.value)}
++            host={v.aliasHost}
++            active={v.index}
++            match={matchLen}
++            maxHeight={h}
++            onPick={(alias) => onPick({ kind: 'alias', value: alias })}
++          />
++        )
++      : slot(v.candidates, true)
+```
+
+`useHeld`'s snapshot gains `aliasHost`, so a closing pane keeps its alias list. `slot` now only ever receives page rows — an alias stage without an `aliasHost` has no candidates, and `behind` holds page rows — so `row.kind === 'page'` stays only where TypeScript needs `pageId` and `location` (the key and the sub-label), and the row takes `overScrollHost`, the half of `hoverRemoveHost` it used. The heading row's mousedown comment ("commits on mousedown, the way every autocomplete row does") reads that a heading row commits on mousedown as a page row does, an alias row's click waiting out the double-click window. The new imports are `inCaretPane`, `holdPane`, `paneHeld`, `EDITABLE_TARGETS`, and `AliasEdit` in the hook, `inCaretPane` in `linkEdit.ts`, and `paneHeld` in `decorations.ts`.
+
+**VERIFY**
+
+- [ ] `aliasPicker.test.tsx`, `linkEdit.test.tsx`, `connectionCommit.test.tsx`, `AliasesRow.test.tsx`, the table cell's autocomplete tests, and the decoration tests are green.
+- [ ] `grep -rn "mdpm-ac-forget\|HoverRemove\|aliases.remember\|aliases.forget\|ManageList\|ManageFieldProps" Core UIX` finds nothing.
+- [ ] Run the gates, then commit Tasks 3-1 through 3-3 together.
+- [ ] Check for unnecessary code or mistakes.
+
+#### Task 3-4
+
+**TASK:** Mount the row in `PropertyPanel` for page subjects, below the Properties group under a divider, and check both surfaces live.
+
+**NOW:** `PropertyPanel`'s rows column (`s.pageRows` in the dropdown, `s.panelRows`, the scroll region, in the side pane) holds the Contexts and Properties groups; a Space subject shares it. The panel's `title` is `subject.title ?? fetchedTitle`, loaded with the frontmatter before `body()` renders. The mount and its test sit uncommitted in the tree.
+
+**CHANGE**
+
+- [ ] In `Core/Properties/PropertyPanel.test.tsx`, "a page shows its Aliases row after the Properties group, and a Space shows none" — both page hosts, the row's text following the last group's in document order — fails without the mount.
 - [ ] Apply the diff below.
 
 **AFTER**
@@ -981,15 +1610,21 @@ Every alias write becomes an instruction — remember, add, rename, or forget �
 **VERIFY**
 
 - [ ] `PropertyPanel.test.tsx` is green, the new case included.
-- [ ] Live over CDP on `~/Test` (`env -u ELECTRON_RUN_AS_NODE POMMORA_DEBUG_PORT=9333 npm run dev`): the row shows in the page dropdown and the PageWindow side pane, scrolls with the groups in the side pane, and is absent from a Space's dropdown; add, rename, and forget each update the count, and the body picker offers the same list after each; × on a typed draft discards it; the draft opens downward without nudging the pane's scroll — if Chromium scrolls the `Reveal`'s clip to the focused input, `EditableInput` focuses with `{ preventScroll: true }` and the case is recorded. Screenshot both hosts for Nathan, then stop the instance by exact PID.
-- [ ] Run the gates.
+- [ ] Live over CDP on `~/Test` in a scratch instance — its own `POMMORA_USERDATA` and `POMMORA_DEBUG_PORT=9335`, borrowing the dev renderer per `Guidelines/Development-Environment.md`, never an instance already running:
+  - **Panel:** the row shows in the page dropdown and the PageWindow side pane, scrolls with the groups in the side pane, and is absent from a Space's dropdown; add, rename, and delete each update the count.
+  - **Manage pane:** its rows sit edge to edge on the picker's surface like the body picker's; opening it focuses nothing; × shows at rest; + drafts at the end with the caret seated, without nudging the pane's scroll (else `EditableInput` focuses with `{ preventScroll: true }`, recorded); Enter keeps the draft's row; a single click does nothing; a double-click on a name and the row menu's Rename rename in place; the row menu's Delete and × delete; typing the title dims.
+  - **Body picker:** after `[[Page A|`, the same rows; a single click inserts after the double-click window, and a double-click on a name renames instead; + adds without inserting, the pane staying open, the link under it staying raw, and the caret returning to the slot; Escape in a field returns the caret; a press on another field or on blank chrome mid-edit closes the picker and leaves the slot as a blur would; the row menu opens during a rename without closing the picker; the same in a table cell's editor and a Link property's text pane.
+  - **Excluded Directories and Open In Preview:** Excluded Directories' pane keeps its width, folder-trail tone, and look, and × on a field mid-edit sends one `exclusions:set` without the typed text; Open In Preview's pane opens at the shared 250 minimum (it was 225), screenshotted for Nathan.
+  - Revert every alias and exclusion the check made, screenshot the Manage pane and the body picker for Nathan, and stop the scratch instance by exact PID.
+- [ ] Run the gates, then commit.
 - [ ] Check for unnecessary code or mistakes.
 
 #### Review Checkpoint
 
-- [ ] The row and its pane read as the panel's own: one icon size with the property rows, a solid pane like the panel's pickers, and the same Manage, count, and list vocabulary as the settings window.
+- [ ] `AliasList` is the one alias list: the body picker and the Aliases pane render nothing alias-specific of their own, its row menu reaches the host through `EditorHost['menus']`, and `useListEdit` is the one home of the draft and rename mechanics, shared with Excluded Directories.
+- [ ] The editor holds its slot for an edit in its own caret pane — no close, no collapse, no remember, the link still raw — and every edit there ends with the caret back in the slot or with the editor's own leave; a single click inserts only once the double-click window passes, against the picker's state at that moment.
+- [ ] `InputField` matches the baseline, `ManageList` is gone, and nothing in the tree serves only the bordered-field design.
 - [ ] `PropertyPanel` gained only the mount; no alias logic lives in Properties beyond `assignValue`'s remember.
-- [ ] The draft discloses on `Reveal`'s arrival, seats its caret, and closes on Enter, Escape, or ×.
 
 ### Phase 4 — Documentation
 
@@ -1003,10 +1638,12 @@ Every alias write becomes an instruction — remember, add, rename, or forget �
 
 **CHANGE**
 
-- [ ] `ConnectionsPM.md` — rewrite the **Alias memory** paragraph to cover: the list written where an alias is authored (a body's alias slot, or a Link value that comes to show one) and managed from the page's Aliases row (an add joins the end, a rename keeps its place, × forgets, link text is never rewritten); authoring moves an alias to the front; one alias per name whatever its case, the newest spelling standing; the page's own title never one; every edit applied by the host to the stored list. Remove the **Alias management** prospect.
+- [ ] `ConnectionsPM.md` — rewrite the **Alias memory** paragraph to cover: the list written where an alias is authored (a body's alias slot, or a Link value that comes to show one) and managed from one alias list — the body picker's alias stage and the page's Aliases row show the same rows: × or the row menu's Delete deletes, a double-click or the row menu's Rename renames in place, + adds to the end, and in the body picker a single click inserts once the double-click window passes; link text is never rewritten; authoring moves an alias to the front; one alias per name whatever its case, the newest spelling standing; the page's own title never one; every edit applied by the host to the stored list. Rewrite the after-pipe paragraph's hover-× sentence (`:59`) to match, and remove the **Alias management** prospect.
 - [ ] `PropertiesPM.md` — **The Properties Panel:** a page's panel ends, past a divider, with the Aliases row (pointing to ConnectionsPM); a Space's has none. The Link-value paragraph gains that a landed value showing an alias for a page gives the page that alias.
 - [ ] `InterfacePM.md` — the Page Window's SidePane sentence gains the Aliases row below the two groups.
-- [ ] `PommoraUIX.md` — Menus: the file list names `ManageRow.tsx` and `manage-row.css.ts`; a **Manage** row lists `ManageRow` · `ManageList` · `ManageFieldProps`; the Row classes row gains `trailingCluster` · `trailingFigure`. Animations: an **Arrival** row lists `useEntrance` · `useRenameKeys`.
+- [ ] `PommoraUIX.md` — Menus: the file list names `ManageRow.tsx`, `manage-row.css.ts`, and `useListEdit.ts`; a **Manage** row lists `ManageRow`, and a **List editing** row lists `useListEdit` · `ListRow`; the Row classes row gains `trailingCluster` · `trailingFigure`. Animations: an **Arrival** row lists `useEntrance` · `useRenameKeys`.
+- [ ] `Guidelines/Editor-Internals.md:41` — **A caret pane never takes focus** becomes: a press in a caret pane leaves focus with the editor unless it lands in a field, and the editor holds its slot while that field is focused; the `mousedown`, never `pointerdown`, clause stays.
+- [ ] `InteractionPM.md:89` — Hover Remove answers to its row "inside a tab", its only remaining row host.
 - [ ] `ContextPM.md:50` — drop "the alias memory's `setPageMeta`" and set the count to the `void dialer().ask(` sites the tree holds.
 - [ ] `Planning/Cross-Device Mutation Checklist.md:41` — the route reads `Core/Nexus/mutate.ts` `editAliases` → `Core/Nexus/pageMetadata.ts` `editPageAliases`, and the row covers adding and renaming.
 
@@ -1023,12 +1660,12 @@ Each paragraph reads whole, in the document's existing voice, with no amendment 
 
 ### Completion Criteria
 
-- **Conformance:** The implementation follows *§Constraints*, CLAUDE.md's hard rules, and Nathan's rulings; `ManageRow`/`ManageList`, `useRenameKeys`, `op`, and `applyAliasEdit` are each the one definition of their concept; nothing outside the named files changed.
-- **Correctness:** In the running app, the Aliases row appears below Properties under a divider in the page dropdown and the PageWindow side pane and not for a Space; its pane adds (to the end, caret seated), renames in place, and forgets; the body picker offers the same list after each; a Link value committed with an alias adds it; two quick forgets both land.
+- **Conformance:** The implementation follows *§Constraints*, CLAUDE.md's hard rules, and Nathan's rulings; `ManageRow`, `AliasList`, `useListEdit`, `useRenameKeys`, `op`, and `applyAliasEdit` are each the one definition of their concept; nothing outside the named files changed.
+- **Correctness:** In the running app, the Aliases row appears below Properties under a divider in the page dropdown and the PageWindow side pane and not for a Space; its pane and the body picker render the same rows, and each adds (to the end, caret seated), renames in place by double-click or the row menu, and deletes by × or the row menu; the body picker still inserts on a single click and keeps its slot through an edit; a Link value committed with an alias adds it; two quick forgets both land.
 - **Completeness:** Every task is ticked; no TODOs, scaffolding, or debug output.
 - **Confirmation:** Every new test goes red without its change; Nathan's Visual Pass and Live Feel carry his word.
 - **Continuity:** *§Reconciliation* is walked and the documents read true.
-- **Confidence:** Gates green from a clean state over `{baseline}..HEAD`; the diff is near the plan's size (code roughly +220 / −120), growth past it reported.
+- **Confidence:** Gates green from a clean state over `{baseline}..HEAD`; the diff is near the plan's size (code roughly +600 / −300, net near +300, most of it the shared alias list and the editor holding its slot through a picker edit), growth past it reported.
 
 #### Final Verification
 
@@ -1059,9 +1696,22 @@ Each paragraph reads whole, in the document's existing voice, with no amendment 
 - `.claude/Features/PommoraUIX.md` Menus and Animations — no `ManageRow`, `ManageList`, trailing styles, `useEntrance`, or `useRenameKeys` — Task 4-1
 - `.claude/ContextPM.md:50` — "the alias memory's `setPageMeta`" among `void dialer().ask(…)` sites, and its count — Task 4-1
 - `.claude/Planning/Cross-Device Mutation Checklist.md:41` — the alias route through `setPageMeta` — Task 4-1
+- `UIX/Pickers/PickerMenu.tsx:106` — "`keep` never takes it, so a press anywhere in the pane leaves focus with its owner" — Task 3-1
+- `Core/MarkdownPM/Menus/caretPane.tsx:48` — "no press in the pane moves the caret out of its query" — Task 3-3
+- `Core/MarkdownPM/Autocomplete/AutocompletePane.tsx:150` — "commits on mousedown, the way every autocomplete row does" — Task 3-3
+- `Core/MarkdownPM/Autocomplete/aliasPicker.test.tsx` — the "forget × is inert until it is revealed" suite — Task 3-3
+- `Core/MarkdownPM/Autocomplete/connectionCommit.test.tsx:90` — rows counted by `.mdpm-ac-forget` — Task 3-3
+- `Core/MarkdownPM/Autocomplete/connectionCommit.test.tsx:95,100-111` and `aliasPicker.test.tsx:13-21,45-49,85` — the host's `remember`/`forget` and a row's `forget` closure — Task 3-1
+- `Core/Pages/editorHost.test.ts` and `Core/MarkdownPM/Links/linkEdit.test.tsx` — `remember`/`forget` on the host — Task 3-1
+- `.claude/Features/ConnectionsPM.md:59` — "Each row carries a hover-revealed × that forgets that alias" — Task 4-1
+- `.claude/Guidelines/Editor-Internals.md:41` — "A caret pane never takes focus … refuses the focus move on every press inside the pane" — Task 4-1
+- `.claude/Features/InteractionPM.md:89` — Hover Remove "inside a tab or a menu row" — Task 4-1
 
 #### Open Items
 
-- None.
+- `FilterFrame`'s × (`Core/Views/Settings/FilterFrame.tsx:468-473`, `:494-499`) commits a value cell's edit and then removes it, where the Manage panes' × discards one through `keepFocus`; `FilterFrame` is frozen here, so making it match is Nathan's scope call.
+- The option editor's draft (`useOptionEdit.tsx:141-145`) closes before its write and loses a refused title, where `useListEdit`'s draft keeps its row and stays open on refusal; its positioned, grouped draft isn't a twin of `useListEdit`, so this is a ruling, not a mechanical change.
 
 #### Deviations
+
+- Phase 2 extracted `ManageList` into `UIX/Menus` for Excluded Directories and the Aliases pane. Nathan's redirect gave the Aliases pane the body picker's rows (`AliasList`), leaving `ManageList` one consumer, so Task 3-1 folds it back into `ExclusionPane` and the shared mechanics live in `useListEdit`; Task 3-1 also returns `InputField` to its baseline, undoing `048b2d7d7`'s passthroughs for the bordered `AliasField` that Nathan's redirect replaced.
