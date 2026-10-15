@@ -502,6 +502,43 @@ describe('the chevron slides in a page’s headings', () => {
     expect(edit.mock.calls).toEqual([['pNotes', { op: 'add', alias: 'x' }]])
   })
 
+  it('the chevron leaves an empty label for the heading pick to fill, as a heading picked directly does', async () => {
+    const view = await mountEditor({ initialBody: '[](Not)', connections: headingConn })
+    vi.spyOn(view, 'coordsAtPos').mockReturnValue(coords)
+    await act(async () => {
+      view.focus()
+      view.dispatch({ selection: { anchor: 4 } })
+    })
+    await press(view, 'ArrowRight')
+    expect(view.state.doc.toString()).toBe('[](Notes#)')
+    await press(view, 'Enter')
+    expect(view.state.doc.toString()).toBe('[Setup](Notes#Setup)')
+  })
+
+  it('the chevron keeps an alias a retarget keeps, as a markdown link keeps its label', async () => {
+    const view = await mountEditor({
+      initialBody: '[[Nope|Mine]] x',
+      connections: headingConn,
+      host: { settings: { removeTitleOnLinkChange: false } },
+    })
+    vi.spyOn(view, 'coordsAtPos').mockReturnValue(coords)
+    await act(async () => {
+      view.focus()
+      view.dispatch({ selection: { anchor: 2, head: 6 } })
+    })
+    await act(async () => {
+      view.dispatch({
+        changes: { from: 2, to: 6, insert: 'Not' },
+        selection: { anchor: 5 },
+        userEvent: 'input.type',
+      })
+    })
+    await press(view, 'ArrowRight')
+    expect(view.state.doc.toString()).toBe('[[Notes#|Mine]] x')
+    await press(view, 'Enter')
+    expect(view.state.doc.toString()).toBe('[[Notes#Setup|Mine]] x')
+  })
+
   it('a bare # in ( ) lists the current document’s own headings', async () => {
     const body = '## Setup\n\n[x](#)'
     const view = await mountEditor({ initialBody: body, connections: headingConn })

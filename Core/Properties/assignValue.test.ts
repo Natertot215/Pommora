@@ -292,6 +292,8 @@ describe('a landed Link value remembers the alias it shows', () => {
     ['the alias it already showed', '[[Alpha#Intro|old]]'],
     ['the same alias in the other syntax', '[old](Alpha.md)'],
     ["a label naming the page's own title", '[Alpha](Alpha.md)'],
+    ['a label naming the heading', '[Intro](Alpha.md#Intro)'],
+    ['an alias naming the heading', '[[Alpha#Intro|intro]]'],
     ['a website label', '[my label](https://example.com)'],
     ['a phantom markdown target', '[my label](Missing.md)'],
   ])('%s remembers nothing', async (_, value) => {

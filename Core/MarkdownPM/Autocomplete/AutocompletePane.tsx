@@ -23,7 +23,7 @@ import { CaretPane, CLOSED_GEOMETRY } from '../Menus/caretPane'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
 import { text } from '@pommora/uix/Theme/typography.css'
 import { outlineTree, type OutlineNode } from '../Engine/outlineTree'
-import { type AcRow, type HeadingRow, listsHeadings } from './autocomplete'
+import { type AcRow, type HeadingRow, listsHeadings, listsPages } from './autocomplete'
 import type { AcState } from './useConnectionAutocomplete'
 import { AliasList, type AliasHost } from './AliasList'
 
@@ -84,7 +84,7 @@ export function AutocompletePane({
   const matchLen = v.ac.query.length
   const keepInView = useKeepInView(v.index)
 
-  const linksPages = v.ac.form === 'link' || v.ac.form === 'target'
+  const linksPages = listsPages(v.ac.form)
   const headingForm = listsHeadings(v.ac.form)
   const sliding = v.behind !== null
 

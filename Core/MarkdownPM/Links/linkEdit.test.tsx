@@ -63,6 +63,16 @@ async function rightClick(
   })
 }
 
+const emptyBefore = async (view: EditorView, at: number): Promise<void> => {
+  await act(async () => {
+    view.dispatch({
+      changes: { from: at - 1, to: at },
+      selection: { anchor: at - 1 },
+      userEvent: 'delete.backward',
+    })
+  })
+}
+
 const caretTo = async (view: EditorView, anchor: number): Promise<void> => {
   await act(async () => {
     view.dispatch({ selection: { anchor } })
@@ -122,27 +132,31 @@ describe('an alias opened and abandoned leaves nothing behind', () => {
     expect(view.state.selection.main.head).toBe(10)
   })
 
-  it('leaving an empty alias collapses its pipe', async () => {
-    const view = await mountEditor({ initialBody: 'a [[Alpha|]] b', connections: conn })
-    await act(async () => {
-      view.focus()
-      view.dispatch({ selection: { anchor: 10 } })
-    })
-    await act(async () => {
-      view.dispatch({ selection: { anchor: 0 } })
-      await new Promise((r) => setTimeout(r, 0))
-    })
+  it('leaving an emptied alias collapses its pipe', async () => {
+    const view = await mountEditor({ initialBody: 'a [[Alpha|x]] b', connections: conn })
+    await act(async () => view.focus())
+    await caretTo(view, 11)
+    await emptyBefore(view, 11)
+    await caretTo(view, 0)
     expect(view.state.doc.toString()).toBe('a [[Alpha]] b')
   })
 
   it('collapses on blur without waiting for a timer', async () => {
-    const view = await mountEditor({ initialBody: 'a [[Alpha|]] b', connections: conn })
-    await act(async () => {
-      view.focus()
-      view.dispatch({ selection: { anchor: 10 } })
-    })
+    const view = await mountEditor({ initialBody: 'a [[Alpha|x]] b', connections: conn })
+    await act(async () => view.focus())
+    await caretTo(view, 11)
+    await emptyBefore(view, 11)
     view.contentDOM.dispatchEvent(new FocusEvent('blur'))
     expect(view.state.doc.toString()).toBe('a [[Alpha]] b')
+  })
+
+  it('an empty alias the caret only passes through stays as written, so reading a note never rewrites it', async () => {
+    const view = await mountEditor({ initialBody: 'a [[Alpha|]] b', connections: conn })
+    await act(async () => view.focus())
+    await caretTo(view, 10)
+    await caretTo(view, 0)
+    view.contentDOM.dispatchEvent(new FocusEvent('blur'))
+    expect(view.state.doc.toString()).toBe('a [[Alpha|]] b')
   })
 
   it('a written alias is left alone', async () => {
@@ -222,29 +236,32 @@ describe('the alias memory hears only what was authored', () => {
     expect(edit.mock.calls).toEqual([['p1', { op: 'add', alias: 'x' }]])
   })
 
-  it.each([
-    ['a heading retyped behind an alias it already showed', 'a [n](Alpha#A) b', 13, 'B', false],
-    ['a typed alias undone', 'a [[Alpha|one]] b', 13, 'x', true],
-  ] as const)('%s remembers nothing', async (_, initialBody, at, insert, undone) => {
-    const view = await mountEditor({ initialBody, connections: conn })
-    const edit = vi.spyOn(harnessState().host.aliases, 'edit')
-    await act(async () => view.focus())
-    await caretTo(view, at)
-    await act(async () => {
+  const retype = (view: EditorView, at: number, insert: string, userEvent: string) =>
+    act(async () => {
       view.dispatch({
         changes: { from: at - 1, to: at, insert },
         selection: { anchor: at },
-        userEvent: 'input.type',
+        userEvent,
       })
     })
-    if (undone)
-      await act(async () => {
-        view.dispatch({
-          changes: { from: at - 1, to: at, insert: initialBody[at - 1] },
-          selection: { anchor: at },
-          userEvent: 'undo',
-        })
-      })
+
+  it('a heading retyped behind an alias it already showed remembers nothing', async () => {
+    const view = await mountEditor({ initialBody: 'a [n](Alpha#A) b', connections: conn })
+    const edit = vi.spyOn(harnessState().host.aliases, 'edit')
+    await act(async () => view.focus())
+    await caretTo(view, 13)
+    await retype(view, 13, 'B', 'input.type')
+    await caretTo(view, 0)
+    expect(edit).not.toHaveBeenCalled()
+  })
+
+  it('a typed alias undone remembers nothing', async () => {
+    const view = await mountEditor({ initialBody: 'a [[Alpha|one]] b', connections: conn })
+    const edit = vi.spyOn(harnessState().host.aliases, 'edit')
+    await act(async () => view.focus())
+    await caretTo(view, 13)
+    await retype(view, 13, 'x', 'input.type')
+    await retype(view, 13, 'e', 'undo')
     await caretTo(view, 0)
     expect(edit).not.toHaveBeenCalled()
   })
@@ -279,6 +296,70 @@ describe('the alias memory hears only what was authored', () => {
       expect(edit).not.toHaveBeenCalled()
       await cleanupEditor()
     }
+  })
+})
+
+describe('an emptied markdown label shows its target, as an emptied alias drops its pipe', () => {
+  it.each([
+    ['a [x](Alpha) b', 'a [Alpha](Alpha) b'],
+    ['a [x](Alpha#Intro) b', 'a [Intro](Alpha#Intro) b'],
+    ['a [x](https://example.com) b', 'a [](https://example.com) b'],
+    ['a ![x](Alpha) b', 'a ![](Alpha) b'],
+  ])('emptying and leaving %s gives %s', async (initialBody, written) => {
+    const view = await mountEditor({ initialBody, connections: conn })
+    const at = initialBody.indexOf('x') + 1
+    await act(async () => view.focus())
+    await caretTo(view, at)
+    await emptyBefore(view, at)
+    await caretTo(view, 0)
+    expect(view.state.doc.toString()).toBe(written)
+  })
+
+  it('fills on blur without waiting for a timer', async () => {
+    const view = await mountEditor({ initialBody: 'a [x](Alpha) b', connections: conn })
+    await act(async () => view.focus())
+    await caretTo(view, 4)
+    await emptyBefore(view, 4)
+    view.contentDOM.dispatchEvent(new FocusEvent('blur'))
+    expect(view.state.doc.toString()).toBe('a [Alpha](Alpha) b')
+  })
+
+  it('waits for the caret to leave the whole link, the gap between label and target included', async () => {
+    const view = await mountEditor({ initialBody: 'a [x](Alpha) b', connections: conn })
+    await act(async () => view.focus())
+    await caretTo(view, 4)
+    await emptyBefore(view, 4)
+    for (const at of [4, 5]) await caretTo(view, at)
+    expect(view.state.doc.toString()).toBe('a [](Alpha) b')
+    await caretTo(view, 0)
+    expect(view.state.doc.toString()).toBe('a [Alpha](Alpha) b')
+  })
+
+  it('an empty label the caret only passes through, or arrows across, stays as written', async () => {
+    const view = await mountEditor({ initialBody: 'a [](Alpha) b', connections: conn })
+    await act(async () => view.focus())
+    for (const at of [3, 4, 5, 0]) await caretTo(view, at)
+    view.contentDOM.dispatchEvent(new FocusEvent('blur'))
+    expect(view.state.doc.toString()).toBe('a [](Alpha) b')
+  })
+
+  it('a label typed empty with its page typed out in full is filled once the caret leaves', async () => {
+    const view = await mountEditor({ initialBody: '', connections: conn })
+    await act(async () => view.focus())
+    await typeInto(view, '[](Alpha')
+    await caretTo(view, view.state.doc.length)
+    await caretTo(view, 0)
+    expect(view.state.doc.toString()).toBe('[Alpha](Alpha)')
+  })
+})
+
+describe('a ] typed in a label is swallowed, as it is in an alias', () => {
+  it('leaves the link whole', async () => {
+    const view = await mountEditor({ initialBody: 'a [ab](Alpha) z', connections: conn })
+    await act(async () => view.focus())
+    await caretTo(view, 4)
+    await typeInto(view, ']')
+    expect(view.state.doc.toString()).toBe('a [ab](Alpha) z')
   })
 })
 
@@ -340,7 +421,10 @@ describe('Enter finishes an alias or label without writing anything', () => {
   })
 
   it('rests the caret past a markdown link from its label, empty or written', async () => {
-    for (const initialBody of ['a [the one](Alpha) b', 'a [](Alpha) b']) {
+    for (const [initialBody, written] of [
+      ['a [the one](Alpha) b', 'a [the one](Alpha) b'],
+      ['a [](Alpha) b', 'a [](Alpha) b'],
+    ]) {
       const view = await mountEditor({ initialBody, connections: conn })
       await act(async () => {
         view.focus()
@@ -348,9 +432,10 @@ describe('Enter finishes an alias or label without writing anything', () => {
       })
       await act(async () => {
         commitAliasOnEnter(view)
+        await new Promise((r) => setTimeout(r, 0))
       })
-      expect(view.state.doc.toString()).toBe(initialBody)
-      expect(view.state.selection.main.head).toBe(initialBody.indexOf(')') + 1)
+      expect(view.state.doc.toString()).toBe(written)
+      expect(view.state.selection.main.head).toBe(written.indexOf(')') + 1)
       await cleanupEditor()
     }
   })
@@ -373,6 +458,7 @@ describe('Enter finishes an alias or label without writing anything', () => {
       ['a `[[Alpha|the one]]` b', 14],
       ['a [[Alpha|x `c` y]] b', 10],
       ['a `[x](Alpha)` b', 4],
+      ['a [x `c` y](Alpha) b', 4],
     ] as const) {
       const view = await mountEditor({ initialBody, connections: conn })
       await act(async () => {

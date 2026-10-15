@@ -209,3 +209,17 @@ export function codeMask(text: string): CodeMask {
 function isInsideInlineCode(line: string, offset: number): boolean {
   return inlineSpans(line).some(([a, b]) => offset >= a && offset < b)
 }
+
+// Code touches a link when its start sits in code, or a closed inline code span, backticks included, overlaps it; such a link is text.
+export function codeTouches(
+  text: string,
+  inCode: CodeMask,
+  [from, to]: readonly [number, number],
+): boolean {
+  if (inCode(from)) return true
+  const start = lineStartAt(text, from)
+  const line = text.slice(start, lineEndAt(text, from))
+  return inlineSpans(line).some(
+    ([a, b, run]) => b <= line.length && overlaps([start + a - run, start + b + run], [from, to]),
+  )
+}

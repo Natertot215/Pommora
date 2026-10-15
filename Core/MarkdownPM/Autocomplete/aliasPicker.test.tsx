@@ -72,14 +72,18 @@ describe('the body picker’s alias list', () => {
   const openPicker = async (menus: Partial<EditorHost['menus']> = {}): Promise<EditorView> => {
     stubEditorBridge()
     const view = await mountEditor({
-      initialBody: '[[Alpha|]]',
+      initialBody: '[[Alpha]]',
       connections: conn,
       host: { aliases: { p1: ['the plan', 'Q3 doc'] }, menus },
     })
     vi.spyOn(view, 'coordsAtPos').mockReturnValue({ left: 10, right: 10, top: 10, bottom: 20 })
     await act(async () => {
       view.focus()
-      view.dispatch({ selection: { anchor: 8 } })
+      view.dispatch({
+        changes: { from: 7, insert: '|' },
+        selection: { anchor: 8 },
+        userEvent: 'input.type',
+      })
     })
     return view
   }

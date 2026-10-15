@@ -125,7 +125,7 @@ export function* linksIn(
     const qualifier = normalizeTitle(targetFragment(dest))
     if (!names(target, written, qualifier)) continue
     const [title, heading] = destinationHalves(body, o.destination)
-    yield { syntax: 'markdown', target, qualifier, at, title, heading, alias: null }
+    yield { syntax: 'markdown', target, qualifier, at, title, heading, alias: o.label }
   }
   if (!runs) return
   for (const { from, to, heading } of sectionRunsIn(body, outline, mask))

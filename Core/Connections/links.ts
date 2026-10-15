@@ -1,5 +1,6 @@
 import { HAS_SCHEME } from '../Paths/urlPath'
 import { isMarkdownFile, stripMarkdownExt } from '../Paths/posix'
+import { codeTouches } from '../MarkdownPM/Engine/markdownCode'
 
 // The label's cap is load-bearing: reading escapes makes it an alternation under a quantifier, which backtracks quadratically on a long run of unclosed `[`. A label may not open with `^` because GFM reads `[^1](url)` as a footnote reference. The target admits parentheses nested two deep, what cmark renders.
 const LINK_LABEL = (min: 0 | 1): string => `((?!\\^)(?:[^\\]\\\\\\r\\n]|\\\\.){${min},255})`
@@ -33,27 +34,31 @@ const namesPage = (pageHalf: string): boolean =>
 /** Whether a `#` written after `head`, a destination read up to that point, opens its fragment — rather than landing inside one, or inside an address. */
 export const opensFragment = (head: string): boolean => !head.includes('#') && namesPage(head)
 
-interface DestinationSpans {
+interface MarkdownLinkSpans {
+  full: [number, number]
   label: [number, number]
   dest: [number, number]
+  page: [number, number]
   fragment: [number, number] | null
 }
 
-/** The complete markdown link whose label or destination holds `col`, empty halves included (⌘K seats the caret inside `[]()`). `fragment` follows the `#` of a destination that names a page. */
+/** The complete markdown link whose label, destination, or whole span holds `col`, empty halves included (⌘K seats the caret inside `[]()`). `page` is the destination up to a `#` that opens `fragment`, the whole of it otherwise. */
 export function markdownLinkAt(
   lineText: string,
   col: number,
-  half: 'label' | 'dest',
-): DestinationSpans | null {
+  part: 'label' | 'dest' | 'full',
+): MarkdownLinkSpans | null {
+  if (!lineText.includes('](')) return null
   for (const m of lineText.matchAll(emptyTolerantLinkRegex())) {
-    const [, label, dest] = m.indices ?? []
-    if (!label || !dest) break
-    const held = half === 'label' ? label : dest
+    const [full, label, dest] = m.indices ?? []
+    if (!full || !label || !dest) break
+    const held = part === 'label' ? label : part === 'dest' ? dest : full
     if (held[0] > col) break
-    if (col > held[1]) continue
-    const hash = lineText.slice(dest[0], dest[1]).indexOf('#')
-    const named = hash !== -1 && namesPage(lineText.slice(dest[0], dest[0] + hash))
-    return { label, dest, fragment: named ? [dest[0] + hash + 1, dest[1]] : null }
+    if (col > held[1] || codeTouches(lineText, () => false, full)) continue
+    const hash = lineText.indexOf('#', dest[0])
+    return hash !== -1 && hash < dest[1] && namesPage(lineText.slice(dest[0], hash))
+      ? { full, label, dest, page: [dest[0], hash], fragment: [hash + 1, dest[1]] }
+      : { full, label, dest, page: dest, fragment: null }
   }
   return null
 }

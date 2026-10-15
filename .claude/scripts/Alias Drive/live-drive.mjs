@@ -534,6 +534,17 @@ async function group3(cdp, pid) {
   await shot(cdp, 'label-stage')
   await step(cdp, 'group 3: Enter in the label stage', () => pressKey(cdp, 'Enter'), { reflect: `${V}.state.doc.toString() === ${JSON.stringify(`[${list[0]}]${EMPTY.slice(2)}`)}`, writes })
   check('group 3: Enter picks the first alias into the label and rests past the link', (await cdp.evaluate(`${V}.state.selection.main.head === ${V}.state.doc.length`)) && same(aliasesOf(TARGET), list), JSON.stringify([await docOf(cdp, V), aliasesOf(TARGET)]))
+  await cdp.evaluate(`(() => { const v = ${V}; v.dispatch({ changes: { from: 0, to: v.state.doc.length, insert: ${JSON.stringify(`[x${EMPTY.slice(1)}`)} }, selection: { anchor: 2 } }) })()`)
+  await sleep(300)
+  await pressKey(cdp, 'Backspace')
+  const SHOWN = `[${TARGET}]${EMPTY.slice(2)}`
+  await step(cdp, 'group 3: leaving an emptied label', () => caret(0), { reflect: `${V}.state.doc.toString() === ${JSON.stringify(SHOWN)}`, writes })
+  check("group 3: an emptied label left behind shows its page's title and remembers nothing", (await docOf(cdp, V)) === SHOWN && same(aliasesOf(TARGET), list), JSON.stringify([await docOf(cdp, V), aliasesOf(TARGET)]))
+  await cdp.evaluate(`(() => { const v = ${V}; v.dispatch({ changes: { from: 0, to: v.state.doc.length, insert: ${JSON.stringify(EMPTY)} }, selection: { anchor: 1 } }) })()`)
+  await sleep(300)
+  await caret(0)
+  await sleep(300)
+  check('group 3: an empty label the caret only passes through stays as written', (await docOf(cdp, V)) === EMPTY, await docOf(cdp, V))
 
   // TextPane: the same stage inside a Text value's editor.
   await home(cdp)

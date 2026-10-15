@@ -26,6 +26,12 @@ describe('rewriteConnections', () => {
     expect(rewriteConnections('| [[Old\\|New]] |', 'Old', 'New')).toBe('| [[New]] |')
   })
 
+  it('renames an alias that only showed the old title, dropping it where it would repeat the new target', () => {
+    expect(rewriteConnections('[[Old|old]] [[Old#H|Old]]', 'Old', 'New')).toBe(
+      '[[New]] [[New#H|New]]',
+    )
+  })
+
   it('never gives a bare fragment a title: `[[#H]]` on the renamed page stays as written', () => {
     const body = '[[#H]] [x](#H) [[Old#H]] [[#H|Old]]'
     expect(rewriteConnections(body, 'Old', 'New')).toBe('[[#H]] [x](#H) [[New#H]] [[#H|Old]]')
@@ -128,6 +134,12 @@ describe('the markdown-link sweep', () => {
     )
   })
 
+  it('renames a label that only showed the old title, and keeps one giving a name', () => {
+    expect(
+      rewriteConnections('[Old Title](Old%20Title) [mine](Old%20Title)', 'Old Title', 'New'),
+    ).toBe('[New](New) [mine](New)')
+  })
+
   it('re-encodes a new title that needs it', () => {
     expect(rewriteConnections('[x](Old)', 'Old', 'Atomic Habits (Book)')).toBe(
       '[x](Atomic%20Habits%20%28Book%29)',
@@ -174,6 +186,17 @@ describe('a page rename inside a table cell', () => {
 })
 
 describe('rewriteHeadingConnections', () => {
+  it('renames an alias or label that only showed the old heading, and keeps one giving a name', () => {
+    expect(
+      rewriteHeadingConnections(
+        '[Old](P#Old) [x](P#Old) [[P#Old|old]] [[P#Old|y]]',
+        'P',
+        'Old',
+        'New',
+      ),
+    ).toBe('[New](P#New) [x](P#New) [[P#New|New]] [[P#New|y]]')
+  })
+
   it('rewrites a wikilink, an aliased wikilink, and a markdown link naming the heading', () => {
     expect(rewriteHeadingConnections('[[P#Old]]', 'P', 'Old', 'New')).toBe('[[P#New]]')
     expect(rewriteHeadingConnections('[[P#Old|a]]', 'P', 'Old', 'New')).toBe('[[P#New|a]]')
