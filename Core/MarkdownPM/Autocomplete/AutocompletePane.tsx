@@ -193,6 +193,12 @@ export function AutocompletePane({
   ) : (
     slot(v.candidates, true)
   )
+  const behindSlot = (rows: AcRow[]): React.JSX.Element =>
+    rows[0]?.kind === 'heading' ? (
+      <MenuScrollFrame maxHeight={h}>{rows.map((r) => headingRow(r, -1))}</MenuScrollFrame>
+    ) : (
+      slot(rows, false)
+    )
 
   return (
     <CaretPane open={open} at={v.ac} className="mdpm-ac" resize={resize}>
@@ -200,7 +206,7 @@ export function AutocompletePane({
         open={sliding}
         minWidth={w ?? AC_BOUNDS.min.w}
         maxWidth={w ?? AC_FIT_MAX}
-        root={v.behind ? slot(v.behind, false) : shown}
+        root={v.behind ? behindSlot(v.behind) : shown}
         detail={sliding ? shown : null}
       />
     </CaretPane>
