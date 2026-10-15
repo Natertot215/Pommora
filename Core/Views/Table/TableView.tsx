@@ -41,6 +41,7 @@ import { type DragShift, gapShift, useColumns } from './useColumns'
 import { numberBarCapable } from '../../Properties/formatValue'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
+import { overScrollLabel } from '@pommora/uix/Interactions/OverScroll'
 import { useStableApi } from '@pommora/uix/Utilities/stableApi'
 import { text } from '@pommora/uix/Theme'
 import { Icon } from '@pommora/uix/Symbols'
@@ -174,21 +175,20 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
 
   // ── The inline editor and the pickers ─────────────────────────────────────
 
-  const cellEditor = (row: ViewRow, col: ResolvedColumn): React.ReactNode => {
-    if (editing?.mode !== 'editor' || editing.rowId !== row.id || editing.colId !== col.id)
-      return null
-    if (col.kind === 'title') {
-      const fromCreate = editing.fromCreate
-      const field = (
+  const titleCell = (row: ViewRow, renaming: boolean, hideIcon: boolean): React.ReactNode => {
+    const fromCreate = renaming && editing?.fromCreate
+    return (
+      <span className={renaming ? 'cell-rename' : cx(overScrollLabel, 'cell-title')}>
+        {hideIcon ? null : <EntityIcon kind="page" icon={row.icon} size="body" />}
         <RenamableLabel
           renames="title"
-          editing
+          editing={renaming}
           emptyInitial={fromCreate}
           value={row.title}
           className={fillInput}
           onCommit={(newName) => {
             setEditing(null)
-            void mutate({
+            return mutate({
               op: 'rename',
               path: row.path,
               kind: 'page',
@@ -197,16 +197,16 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
             })
           }}
           onCancel={() => setEditing(null)}
-        />
-      )
-      if (viewOption(view, 'hide_page_icons')) return field
-      return (
-        <span className="cell-rename">
-          <EntityIcon kind="page" icon={row.icon} size="body" />
-          {field}
-        </span>
-      )
-    }
+        >
+          {(shown) => <span className="cell-title-text">{shown}</span>}
+        </RenamableLabel>
+      </span>
+    )
+  }
+
+  const cellEditor = (row: ViewRow, col: ResolvedColumn): React.ReactNode => {
+    if (editing?.mode !== 'editor' || editing.rowId !== row.id || editing.colId !== col.id)
+      return null
     const def = schema.find((d) => d.id === col.id)
     if (!def) return null
     return (
@@ -385,6 +385,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       triggerElRef.current = anchor.closest<HTMLElement>('.data-cell')
       runIntent(row, col, { kind: 'popover' }, null)
     },
+    title: titleCell,
     overlay: cellEditor,
     commit: commitValue,
     grip: (row, e) => {
@@ -553,6 +554,7 @@ type RowCellApi = {
   menu: (row: ViewRow, col: ResolvedColumn, e: React.MouseEvent) => void
   click: (row: ViewRow, col: ResolvedColumn, e: React.MouseEvent) => void
   pane: (row: ViewRow, col: ResolvedColumn, anchor: HTMLElement) => void
+  title: (row: ViewRow, renaming: boolean, hideIcon: boolean) => React.ReactNode
   overlay: (row: ViewRow, col: ResolvedColumn) => React.ReactNode
   commit: (row: ViewRow, col: ResolvedColumn, next: PropertyValue | null) => void
   grip: (row: ViewRow, e: React.MouseEvent) => void
@@ -664,19 +666,21 @@ const DataRow = memo(function DataRow({
         }
         if (i === 0 && alignByCol[i] === 'left') style.paddingLeft = padLeft
         const stateCx = activeCol === c.id && 'cell-active'
-        const editor = overlayCol === c.id ? api.overlay(row, c) : null
-        const content = editor ?? (
-          <Cell
-            row={row}
-            column={c}
-            ctx={ctx}
-            hideIcon={hideIcon}
-            style={styleByCol[i]}
-            showFullLink={popoverCol === c.id}
-            commit={(next) => api.commit(row, c, next)}
-            onPane={(anchor) => api.pane(row, c, anchor)}
-          />
-        )
+        const opened = overlayCol === c.id
+        const content =
+          c.kind === 'title'
+            ? api.title(row, opened, hideIcon)
+            : ((opened ? api.overlay(row, c) : null) ?? (
+                <Cell
+                  row={row}
+                  column={c}
+                  ctx={ctx}
+                  style={styleByCol[i]}
+                  showFullLink={popoverCol === c.id}
+                  commit={(next) => api.commit(row, c, next)}
+                  onPane={(anchor) => api.pane(row, c, anchor)}
+                />
+              ))
         return (
           // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix
           <div

@@ -154,7 +154,6 @@ export function CardValue({
           row={row}
           column={column}
           ctx={ctx}
-          hideIcon={false}
           style={style}
           empty={
             fillsBlank(t) ? (

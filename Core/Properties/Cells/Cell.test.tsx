@@ -88,7 +88,6 @@ const mount = (
         row={row}
         column={col(columnId)}
         ctx={ctx}
-        hideIcon={false}
         style={{ ...dateDefaults('full'), ...style }}
         {...edit}
       />,
@@ -282,7 +281,6 @@ describe('a text value', () => {
           row={rowWith({ prop_notes: 'see [[Target]] and [[Nowhere]]' })}
           column={col('prop_notes')}
           ctx={{ ...ctx, connections: connectionsWith() }}
-          hideIcon={false}
           style={dateDefaults('full')}
         />,
       ),
@@ -298,7 +296,6 @@ describe('a text value', () => {
           row={rowWith({ prop_notes: value })}
           column={col('prop_notes')}
           ctx={{ ...ctx, connections: connectionsWith() }}
-          hideIcon={false}
           style={dateDefaults('full')}
         />,
       ),
@@ -316,7 +313,6 @@ describe('a text value', () => {
           row={rowWith({ prop_notes: 'see [[Target]] first' })}
           column={col('prop_notes')}
           ctx={{ ...ctx, connections: connectionsWith(menu) }}
-          hideIcon={false}
           style={dateDefaults('full')}
         />,
       ),

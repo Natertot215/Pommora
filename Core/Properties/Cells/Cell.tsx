@@ -2,7 +2,6 @@ import { Fragment } from 'react'
 import type { ColumnStyle } from '../columnStyles'
 import { isBlankValue, type PropertyValue } from '../propertyValue'
 import type { ResolvedColumn, ViewRow } from '../../Views/viewRow'
-import { EntityIcon } from '../../Assets/EntityIcon'
 import { ProgressBar } from '@pommora/uix/Elements/ProgressBar'
 import { colorNameFor } from '@pommora/uix/Theme/ramp'
 import { OverScroll } from '@pommora/uix/Interactions/OverScroll'
@@ -24,7 +23,6 @@ export function Cell({
   row,
   column,
   ctx,
-  hideIcon,
   style,
   showFullLink,
   commit,
@@ -35,7 +33,6 @@ export function Cell({
   row: ViewRow
   column: ResolvedColumn
   ctx: ValueContext
-  hideIcon: boolean
   style: ColumnStyle
   showFullLink?: boolean
   commit?: (next: PropertyValue | null) => void
@@ -44,15 +41,6 @@ export function Cell({
   /** Opens the value's pane from its pen, anchored at the pen's host; absent, no pen is drawn. */
   onPane?: (anchor: HTMLElement) => void
 }): React.JSX.Element | null {
-  if (column.kind === 'title') {
-    return (
-      <OverScroll className="cell-title">
-        {hideIcon ? null : <EntityIcon kind="page" icon={row.icon} size="body" />}
-        <span className="cell-title-text">{row.title}</span>
-      </OverScroll>
-    )
-  }
-
   const v = resolveFieldValue(row, column.id, ctx.schema)
   const def = ctx.schema.find((d) => d.id === column.id)
   // A status value is a bare label on disk, indistinguishable from a select — the schema is the only thing that knows the declared type.
