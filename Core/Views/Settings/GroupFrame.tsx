@@ -64,7 +64,13 @@ import { cx } from '@pommora/uix/Utilities/cx'
 import { useSetting } from '../../Session/store'
 import { PickerControl, type PickerOption } from '@pommora/uix/Pickers/PickerControl'
 import { schemaTargets, targetOption } from '../../Properties/Cells/PropertyTypes'
-import { hiddenRow, middleRegion, optionRow } from '@pommora/uix/Menus/frames.css'
+import {
+  chipRegion,
+  hiddenRow,
+  middleRegion,
+  optionRow,
+  VIEW_SETTINGS_MAX_HEIGHT,
+} from '@pommora/uix/Menus/frames.css'
 import * as gp from './group-frame.css'
 import * as oo from './option-order.css'
 import { type HideControls, OptionOrderList, rowEye, SUB_LOOK } from './OptionOrderList'
@@ -226,7 +232,7 @@ export function GroupFrame({
     <MenuScrollFrame
       header={<MenuTopRow label={label} current="Grouping" onBack={onBack} />}
       footer={footings}
-      maxHeight="none"
+      maxHeight={VIEW_SETTINGS_MAX_HEIGHT}
     >
       <MenuRowView
         row={pickerRow('layers', 'Group By', groupByValue, groupByOptions, pickGroupBy)}
@@ -296,7 +302,13 @@ export function GroupFrame({
         </>
       )}
       <MenuSeparator flush />
-      <div className={`${middleRegion} scroll-fade`}>
+      <div
+        className={cx(
+          middleRegion,
+          plan.kind === 'property' && activeDef?.type !== 'dateTime' && chipRegion,
+          'scroll-fade',
+        )}
+      >
         {plan.kind === 'property' ? (
           activeDef?.type === 'dateTime' ? (
             <DateBucketList

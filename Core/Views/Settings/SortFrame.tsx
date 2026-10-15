@@ -13,7 +13,7 @@ import {
   TITLE_TARGET,
   targetOption,
 } from '../../Properties/Cells/PropertyTypes'
-import { middleRegion } from '@pommora/uix/Menus/frames.css'
+import { chipRegion, middleRegion } from '@pommora/uix/Menus/frames.css'
 
 type Direction = SortCriterion['direction']
 
@@ -208,7 +208,7 @@ export function SortFrame({
           {finiteDef && (
             <>
               <MenuSeparator flush />
-              <div className={`${middleRegion} scroll-fade`}>
+              <div className={`${middleRegion} ${chipRegion} scroll-fade`}>
                 <OptionOrderList
                   group={ordering}
                   def={finiteDef}
