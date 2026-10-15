@@ -170,11 +170,15 @@ describe('the alias memory', () => {
     return { mutate, hosts, root }
   }
 
-  it('a forget sends its instruction, and the host rebuilds on the metadata push and hears no other', async () => {
+  it('an edit sends its instruction and resolves taken, and the host rebuilds on the metadata push and hears no other', async () => {
     const { mutate, hosts, root } = await mountHosts(['the notes', 'my draft'])
     const host = hosts[hosts.length - 1]
     expect(host.aliases.list('p1')).toEqual(['the notes', 'my draft'])
-    await act(async () => host.aliases.forget('p1', 'the notes'))
+    let took: boolean | undefined
+    await act(async () => {
+      took = await host.aliases.edit('p1', { op: 'forget', alias: 'the notes' })
+    })
+    expect(took).toBe(true)
     expect(mutate).toHaveBeenCalledWith({
       op: 'editAliases',
       path: 'Notes/Alpha.md',
@@ -197,14 +201,14 @@ describe('the alias memory', () => {
     act(() => root.unmount())
   })
 
-  it('a remember sends its instruction', async () => {
+  it('an edit on a page the tree doesn’t hold resolves refused and sends nothing', async () => {
     const { mutate, hosts, root } = await mountHosts(['the notes'])
-    await act(async () => hosts[hosts.length - 1].aliases.remember('p1', 'the plan'))
-    expect(mutate).toHaveBeenCalledWith({
-      op: 'editAliases',
-      path: 'Notes/Alpha.md',
-      edit: { op: 'remember', alias: 'the plan' },
+    let took: boolean | undefined
+    await act(async () => {
+      took = await hosts[hosts.length - 1].aliases.edit('gone', { op: 'remember', alias: 'x' })
     })
+    expect(took).toBe(false)
+    expect(mutate).not.toHaveBeenCalled()
     act(() => root.unmount())
   })
 })

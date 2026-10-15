@@ -425,6 +425,22 @@ describe('PickerMenu focus contract', () => {
     await render(<Host open focus="keep" />)
     expect(press()).toBe(true)
   })
+
+  it('lets a press on a field inside a kept-focus pane through', async () => {
+    await render(
+      <PickerMenu open focus="keep">
+        <input data-id="field" aria-label="Field" />
+        <div data-id="row">Row</div>
+      </PickerMenu>,
+    )
+    const press = (id: string): boolean => {
+      const e = new MouseEvent('mousedown', { bubbles: true, cancelable: true })
+      find(id).dispatchEvent(e)
+      return e.defaultPrevented
+    }
+    expect(press('field')).toBe(false)
+    expect(press('row')).toBe(true)
+  })
 })
 
 // Whether a pane CENTERS is a decision, not a look — the pixels stay visual truth, but which of the two placements it takes has to hold.

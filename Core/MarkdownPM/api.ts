@@ -21,6 +21,8 @@ import type { Commands } from '../Actions/commands'
 import type { EditorMenuRequest } from '../Actions/editorMenu'
 import type { GripMenuAction, GripMenuContext } from '../Actions/gripMenu'
 import type { PickItem } from '../Actions/menuModel'
+import type { AliasRowAction } from '../Actions/aliasRowMenu'
+import type { AliasEdit } from '../Connections/aliasMemory'
 import type { TableMenuAction, TableMenuContext } from './Tables/tableMenu'
 import type { CitationMenuAction, CitationMenuContext } from './Citations/citationMenu'
 import type { ConnectionsApi } from './Links/connectionsApi'
@@ -166,8 +168,8 @@ export interface EditorHost {
   connections: () => ConnectionsApi | undefined
   aliases: {
     list(id: string): string[]
-    remember(id: string, alias: string): void
-    forget(id: string, alias: string): void
+    /** Resolves whether the host took the edit. */
+    edit(id: string, edit: AliasEdit): Promise<boolean>
     subscribe(cb: () => void): () => void
   }
   linkTitles: {
@@ -180,6 +182,7 @@ export interface EditorHost {
     grip(ctx: GripMenuContext): Promise<GripMenuAction | null>
     table(ctx: TableMenuContext): Promise<TableMenuAction | null>
     citation(ctx: CitationMenuContext): Promise<CitationMenuAction | null>
+    alias(): Promise<AliasRowAction | null>
     format?: (req: EditorMenuRequest) => Promise<string | null>
   }
   /** Absent on a surface that never glances (a read-only snapshot); `contains` answers whether an element sits inside an open glance. */

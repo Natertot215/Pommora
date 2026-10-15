@@ -87,18 +87,19 @@ describe('the alias picker', () => {
     return view
   }
 
-  const rows = (): number => document.querySelectorAll('.mdpm-ac .mdpm-ac-forget').length
+  const rows = (): number =>
+    document.querySelectorAll('.mdpm-ac [aria-label="Delete alias"]').length
 
   it('drops a row the host stops remembering, under the same query', async () => {
     await openPicker()
     expect(rows()).toBe(2)
-    await act(async () => harnessState().host.aliases.forget('p1', 'two'))
+    await act(async () => harnessState().host.aliases.edit('p1', { op: 'forget', alias: 'two' }))
     expect(rows()).toBe(1)
   })
 
   it('remembers the alias a pick writes', async () => {
     const view = await openPicker()
-    const remember = vi.spyOn(harnessState().host.aliases, 'remember')
+    const edit = vi.spyOn(harnessState().host.aliases, 'edit')
     await act(async () => {
       view.contentDOM.dispatchEvent(
         new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }),
@@ -106,8 +107,8 @@ describe('the alias picker', () => {
       await new Promise((r) => setTimeout(r, 0))
     })
     expect(view.state.doc.toString()).toBe('[[Alpha|one]]')
-    expect(remember).toHaveBeenCalledTimes(1)
-    expect(remember).toHaveBeenCalledWith('p1', 'one')
+    expect(edit).toHaveBeenCalledTimes(1)
+    expect(edit).toHaveBeenCalledWith('p1', { op: 'remember', alias: 'one' })
   })
 })
 

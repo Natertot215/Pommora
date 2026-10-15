@@ -1,5 +1,6 @@
 import { persist } from '../Interface/Notifications/notifications'
 import { useMemo } from 'react'
+import { ALIAS_ROW_MENU } from '../Actions/aliasRowMenu'
 import { gripMenuItems } from '../Actions/gripMenu'
 import { pagePickTree } from '../Actions/pickTree'
 import { valueOr } from '../Contract/result'
@@ -51,9 +52,9 @@ function buildEditorHost(
     const tree = state().tree
     return tree ? pagesByIdOf(tree).get(id) : undefined
   }
-  const editAliases = (id: string, edit: AliasEdit): void => {
+  const editAliases = async (id: string, edit: AliasEdit): Promise<boolean> => {
     const path = pageOf(id)?.path
-    if (path) void state().mutate({ op: 'editAliases', path, edit })
+    return !!path && (await state().mutate({ op: 'editAliases', path, edit })) !== null
   }
   return {
     settings: () => {
@@ -63,8 +64,7 @@ function buildEditorHost(
     connections: () => connRef.current,
     aliases: {
       list: (id) => heldAliases(pageMetaOf(id)(state())?.aliases ?? [], pageOf(id)?.title ?? ''),
-      remember: (id, alias) => editAliases(id, { op: 'remember', alias }),
-      forget: (id, alias) => editAliases(id, { op: 'forget', alias }),
+      edit: editAliases,
       subscribe: (cb) =>
         useSession.subscribe((s, prev) => {
           if (s.tree?.config.pageMetadata !== prev.tree?.config.pageMetadata) cb()
@@ -101,6 +101,7 @@ function buildEditorHost(
       grip: (ctx) => popMenu(gripMenuItems(ctx)),
       table: (ctx) => popMenu(tableMenuItems(ctx)),
       citation: (ctx) => popMenu(citationMenuModel(ctx)),
+      alias: () => popMenu(ALIAS_ROW_MENU),
       format: inert
         ? undefined
         : (req) =>

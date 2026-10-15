@@ -95,9 +95,9 @@ Every alias write becomes an instruction — remember, add, rename, or forget �
   - [x] Task 2-2
   - [x] Review Checkpoint
 - [ ] **Phase 3** — The Shared Alias Picker
-  - [ ] Task 3-1
-  - [ ] Task 3-2
-  - [ ] Task 3-3
+  - [x] Task 3-1
+  - [x] Task 3-2
+  - [x] Task 3-3
   - [ ] Task 3-4
   - [ ] Task 3-5
   - [ ] Review Checkpoint
@@ -891,11 +891,11 @@ Every alias write becomes an instruction — remember, add, rename, or forget �
 
 **CHANGE**
 
-- [ ] In `Core/Pages/editorHost.test.ts`, rewrite the alias cases and watch them fail: `edit('p1', { op: 'forget', alias: 'the notes' })` sends `{ op: 'editAliases', path: 'Notes/Alpha.md', edit: { op: 'forget', alias: 'the notes' } }` and resolves `true`; `edit` on an id the tree doesn't hold resolves `false` and sends nothing; the list and subscribe cases stay.
-- [ ] In `Core/Settings/ExclusionRows.test.tsx`, add and watch fail: drafting `Archive` over a list holding `Archive`, with the write refused, leaves the draft reading `Archive` and the held `Archive` row the same node.
-- [ ] In `UIX/Pickers/PickerMenu`'s tests, add and watch fail: in a `focus="keep"` pane, a mousedown on a field inside isn't `defaultPrevented`, and one on a row is.
-- [ ] Repoint the host's alias callers in tests: `aliasPicker.test.tsx`'s host stub carries `edit` in place of `remember`/`forget`, its "a row forgets itself" case goes (Task 3-3 replaces the row), and its candidates drop `forget`; `connectionCommit.test.tsx:95` calls `edit('p1', { op: 'forget', alias: 'two' })` and `:100-111` spies on `edit` for `{ op: 'remember', … }`; `linkEdit.test.tsx`'s `remember` spies spy on `edit` the same way.
-- [ ] Apply the diffs below.
+- [x] In `Core/Pages/editorHost.test.ts`, rewrite the alias cases and watch them fail: `edit('p1', { op: 'forget', alias: 'the notes' })` sends `{ op: 'editAliases', path: 'Notes/Alpha.md', edit: { op: 'forget', alias: 'the notes' } }` and resolves `true`; `edit` on an id the tree doesn't hold resolves `false` and sends nothing; the list and subscribe cases stay.
+- [x] In `Core/Settings/ExclusionRows.test.tsx`, add and watch fail: drafting `Archive` over a list holding `Archive`, with the write refused, leaves the draft reading `Archive` and the held `Archive` row the same node.
+- [x] In `UIX/Pickers/PickerMenu`'s tests, add and watch fail: in a `focus="keep"` pane, a mousedown on a field inside isn't `defaultPrevented`, and one on a row is.
+- [x] Repoint the host's alias callers in tests: `aliasPicker.test.tsx`'s host stub carries `edit` in place of `remember`/`forget`, its "a row forgets itself" case goes (Task 3-3 replaces the row), and its candidates drop `forget`; `connectionCommit.test.tsx:95` calls `edit('p1', { op: 'forget', alias: 'two' })` and `:100-111` spies on `edit` for `{ op: 'remember', … }`; `linkEdit.test.tsx`'s `remember` spies spy on `edit` the same way.
+- [x] Apply the diffs below.
 
 **AFTER**
 
@@ -1208,8 +1208,8 @@ Every alias write becomes an instruction — remember, add, rename, or forget �
 
 **VERIFY**
 
-- [ ] `editorHost.test.ts`, the `PickerMenu` tests, `ExclusionRows.test.tsx`, `PreviewRulesRow.test.tsx`, and `InputField.test.tsx` are green; `git diff 56a15ac88 -- UIX/Fields/InputField.tsx` is empty. The gates run after Task 3-3.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `editorHost.test.ts`, the `PickerMenu` tests, `ExclusionRows.test.tsx`, `PreviewRulesRow.test.tsx`, and `InputField.test.tsx` are green; `git diff 56a15ac88 -- UIX/Fields/InputField.tsx` is empty. The gates run after Task 3-3.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 3-2
 
@@ -1219,7 +1219,7 @@ Every alias write becomes an instruction — remember, add, rename, or forget �
 
 **CHANGE**
 
-- [ ] Rewrite `Core/Pages/AliasesRow.test.tsx` and watch it fail, mounting `AliasesRow` for `{ id: 'p1', path: 'Notes/Alpha.md', title: 'Alpha' }` over `['the plan', 'Q3 doc']` with `window.nexus` stubbed to record `mutate` and answer the native menu; query the editing input by `input[aria-label="Alias"]`:
+- [x] Rewrite `Core/Pages/AliasesRow.test.tsx` and watch it fail, mounting `AliasesRow` for `{ id: 'p1', path: 'Notes/Alpha.md', title: 'Alpha' }` over `['the plan', 'Q3 doc']` with `window.nexus` stubbed to record `mutate` and answer the native menu; query the editing input by `input[aria-label="Alias"]`:
   - the row reads "Aliases" and `2`; over `['the plan', 'The Plan', 'alpha']` it reads `1`;
   - Manage opens a pane with one menu row per alias, each with a "Delete alias" ×, and focuses nothing;
   - + adds a row whose input is `document.activeElement`; typing `roadmap` and Enter sends `{ op: 'add', alias: 'roadmap' }`; with the stub pushing `['the plan', 'Q3 doc', 'roadmap']` before it replies, the `[data-reveal]` that held the draft is the one holding `roadmap`, and no input remains;
@@ -1228,7 +1228,7 @@ Every alias write becomes an instruction — remember, add, rename, or forget �
   - renaming `the plan` and then double-clicking `Q3 doc`'s name commits the first rename and leaves `Q3 doc`'s input open;
   - "Delete alias" on `Q3 doc` sends `{ op: 'forget', alias: 'Q3 doc' }`, and on the row being renamed closes its input as well;
   - with the menu answering `rename`, a right-click on `Q3 doc` opens its input; answering `delete`, it sends the forget.
-- [ ] Apply the diffs below.
+- [x] Apply the diffs below.
 
 **AFTER**
 
@@ -1438,8 +1438,8 @@ A double-click on a name begins its rename through `RenamableLabel`'s `onBegin`,
 
 **VERIFY**
 
-- [ ] `AliasesRow.test.tsx` is green, and each case goes red with its handler removed.
-- [ ] Check for unnecessary code or mistakes. The gates run after Task 3-3.
+- [x] `AliasesRow.test.tsx` is green, and each case goes red with its handler removed.
+- [x] Check for unnecessary code or mistakes. The gates run after Task 3-3.
 
 #### Task 3-3
 
@@ -1449,16 +1449,16 @@ A double-click on a name begins its rename through `RenamableLabel`'s `onBegin`,
 
 **CHANGE**
 
-- [ ] In `Core/MarkdownPM/Autocomplete/aliasPicker.test.tsx`, replace the "forget × is inert until it is revealed" suite and watch the new cases fail:
+- [x] In `Core/MarkdownPM/Autocomplete/aliasPicker.test.tsx`, replace the "forget × is inert until it is revealed" suite and watch the new cases fail:
   - each alias row shows its × at rest, and pressing it deletes without inserting;
   - a single click (`detail: 1`) inserts once `PICK_DELAY_MS` passes (fake timers), and a double-click on the name instead opens the row's input and inserts nothing;
   - + drafts an input inside the pane, the pane stays open, `[[Alpha|]]` keeps its pipe, and Enter sends the add and returns focus to the editor with the slot intact;
   - Escape in a rename returns focus with the slot intact;
   - focus leaving a pane field for an element outside the pane and the editor closes the picker and collapses the empty slot, as the editor's own blur does;
   - with the harness's `menus.alias` answering `rename`, a right-click opens the row's input.
-- [ ] Repoint `connectionCommit.test.tsx:90`'s `.mdpm-ac-forget` count to the "Delete alias" buttons.
-- [ ] In `Core/MarkdownPM/Links/linkEdit.test.tsx`, add "focus moving into the caret pane neither collapses nor remembers" — an empty and a typed alias slot, blurred toward an element inside a `CaretPane`, keep their text and send no `edit` — and watch it fail.
-- [ ] Apply the diffs below.
+- [x] Repoint `connectionCommit.test.tsx:90`'s `.mdpm-ac-forget` count to the "Delete alias" buttons.
+- [x] In `Core/MarkdownPM/Links/linkEdit.test.tsx`, add "focus moving into the caret pane neither collapses nor remembers" — an empty and a typed alias slot, blurred toward an element inside a `CaretPane`, keep their text and send no `edit` — and watch it fail.
+- [x] Apply the diffs below.
 
 **AFTER**
 
@@ -1599,10 +1599,10 @@ A double-click on a name begins its rename through `RenamableLabel`'s `onBegin`,
 
 **VERIFY**
 
-- [ ] `aliasPicker.test.tsx`, `linkEdit.test.tsx`, `connectionCommit.test.tsx`, `AliasesRow.test.tsx`, the table cell's autocomplete tests, and the decoration tests are green.
-- [ ] `grep -rn "mdpm-ac-forget\|HoverRemove\|aliases.remember\|aliases.forget\|ManageList\|ManageFieldProps" Core UIX` finds nothing.
-- [ ] Run the gates, then commit Tasks 3-1 through 3-3 together.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `aliasPicker.test.tsx`, `linkEdit.test.tsx`, `connectionCommit.test.tsx`, `AliasesRow.test.tsx`, the table cell's autocomplete tests, and the decoration tests are green.
+- [x] `grep -rn "mdpm-ac-forget\|HoverRemove\|aliases.remember\|aliases.forget\|ManageList\|ManageFieldProps" Core UIX` finds nothing.
+- [x] Run the gates, then commit Tasks 3-1 through 3-3 together.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 3-4
 

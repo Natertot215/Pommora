@@ -63,6 +63,7 @@ import {
   spanAt,
 } from './Engine/docScan'
 import { lineEndOf, lineIndexAt } from './Engine/markdownCode'
+import { paneHeld } from './Menus/caretPane'
 import { linkClass, linkLook, type ConnectionsApi } from './Links/connectionsApi'
 import type { LinkStatus } from '../Connections/connections'
 import type { PageHeadings } from '../Connections/pageIndex'
@@ -450,7 +451,7 @@ function build(view: EditorView, scope: MarkdownScope): Built {
   // One derivation per doc VERSION (docCache) — a caret move re-derives only its own lines, never an O(doc) walk.
   const scan = docScan(view.state.doc)
   const { text } = scan
-  const focused = view.hasFocus
+  const focused = view.hasFocus || view.state.field(paneHeld, false) === true
   const sel = view.state.selection.main
   const settings = host.settings()
   const { headingLinkStyle } = settings
@@ -800,6 +801,7 @@ function decorationPlugin(scope: MarkdownScope): Extension {
           u.docChanged ||
           u.selectionSet ||
           u.focusChanged ||
+          u.startState.field(paneHeld, false) !== u.state.field(paneHeld, false) ||
           u.viewportChanged ||
           u.transactions.some((tr) => tr.effects.some((e) => e.is(redrawNudge)))
         )

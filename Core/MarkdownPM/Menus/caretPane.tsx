@@ -1,10 +1,11 @@
 import type { ReactNode, RefObject } from 'react'
-import type { Extension } from '@codemirror/state'
+import { type Extension, StateEffect, StateField } from '@codemirror/state'
 import type { EditorView, KeyBinding } from '@codemirror/view'
 import { scrollContainer } from '@pommora/uix/Interactions/autoscroll'
 import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
 import type { PaneResize } from '@pommora/uix/Pickers/usePaneResize'
 import type { PaneCtl } from '@pommora/uix/Interactions/paneCtl'
+import { cx } from '@pommora/uix/Utilities/cx'
 
 export interface CaretGeometry {
   caretX: number
@@ -45,7 +46,21 @@ export function caretGeometry(view: EditorView, pos: number): CaretGeometry | nu
   }
 }
 
-// No `onDismiss`, and focus kept by contract: the editor's keymap owns arrows, Return and Escape, and no press in the pane moves the caret out of its query.
+const CARET_PANE = 'mdpm-caret-pane'
+
+/** Whether focus sits, or is moving, inside an editor's own caret pane. */
+export const inCaretPane = (el: EventTarget | null): boolean =>
+  el instanceof Element && el.closest(`.${CARET_PANE}`) !== null
+
+export const holdPane = StateEffect.define<boolean>()
+
+/** Set while an edit runs in the editor's caret pane, which holds the editor's place as its own focus would. */
+export const paneHeld = StateField.define<boolean>({
+  create: () => false,
+  update: (held, tr) => tr.effects.reduce((h, e) => (e.is(holdPane) ? e.value : h), held),
+})
+
+// No `onDismiss`, and focus kept by contract: the editor's keymap owns arrows, Return and Escape, and only a field inside the pane takes focus, which the editor holds its place through.
 export function CaretPane({
   open,
   at,
@@ -69,7 +84,7 @@ export function CaretPane({
       bounds={at.bounds}
       origin="center"
       focus="keep"
-      contentClassName={className}
+      contentClassName={cx(CARET_PANE, className)}
       resize={resize}
     >
       {children}

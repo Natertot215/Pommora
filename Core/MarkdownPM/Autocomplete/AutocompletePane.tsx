@@ -1,6 +1,5 @@
 import { cx } from '@pommora/uix/Utilities/cx'
 import { EntityIcon } from '../../Assets/EntityIcon'
-import { ALIAS_ICON } from '../../Assets/entityIconPolicy'
 import { Icon } from '@pommora/uix/Symbols'
 import type { RememberedSize } from '@pommora/uix/Interactions/useResizable'
 import { PICKER_MAX_HEIGHT } from '@pommora/uix/Pickers/picker-base.css'
@@ -15,7 +14,7 @@ import {
 } from '@pommora/uix/Menus'
 import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
-import { HoverRemove, hoverRemoveHost } from '@pommora/uix/Interactions/HoverRemove'
+import { overScrollHost } from '@pommora/uix/Interactions/OverScroll'
 import { removeButton } from '@pommora/uix/Interactions/hover-remove.css'
 import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
 import { side } from '@pommora/uix/Menus/menu-row.css'
@@ -26,6 +25,7 @@ import { text } from '@pommora/uix/Theme/typography.css'
 import { outlineTree, type OutlineNode } from '../Engine/outlineTree'
 import { type AcRow, type HeadingRow, listsHeadings } from './autocomplete'
 import type { AcState } from './useConnectionAutocomplete'
+import { AliasList, type AliasHost } from './AliasList'
 
 export interface AutocompletePaneProps {
   open: boolean
@@ -40,6 +40,7 @@ export interface AutocompletePaneProps {
   onAside: (row: AcRow) => void
   onBack: () => void
   geometry?: RememberedSize
+  aliasHost: AliasHost | null
 }
 
 // KNOB — the pane fits its titles between the width floor and AC_FIT_MAX until it's first resized.
@@ -72,10 +73,14 @@ export function AutocompletePane({
   onAside,
   onBack,
   geometry,
+  aliasHost,
 }: AutocompletePaneProps): React.JSX.Element {
   const resize = usePaneResize(open, AC_BOUNDS, geometry)
   const { w, h } = resize.size
-  const v = useHeld({ ac: ac ?? CLOSED, candidates, index, behind, headingRows, collapsed }, open)
+  const v = useHeld(
+    { ac: ac ?? CLOSED, candidates, index, behind, headingRows, collapsed, aliasHost },
+    open,
+  )
   const matchLen = v.ac.query.length
   const keepInView = useKeepInView(v.index)
 
@@ -89,7 +94,7 @@ export function AutocompletePane({
         <MenuItem
           key={row.kind === 'page' ? row.pageId : row.value}
           ref={active && i === v.index ? keepInView : undefined}
-          className={hoverRemoveHost}
+          className={overScrollHost}
           active={active && i === v.index}
           subLabel={
             <NavTrail
@@ -99,22 +104,9 @@ export function AutocompletePane({
               className={text.subline.standard}
             />
           }
-          leading={
-            row.kind === 'page' ? (
-              <EntityIcon kind="page" size="body" />
-            ) : (
-              <Icon name={ALIAS_ICON} size="body" />
-            )
-          }
+          leading={<EntityIcon kind="page" size="body" />}
           trailing={
-            row.kind === 'alias' ? (
-              <HoverRemove
-                reveal="host"
-                className="mdpm-ac-forget"
-                label={`Forget ${row.value}`}
-                onRemove={row.forget}
-              />
-            ) : row.kind === 'page' && linksPages ? (
+            linksPages ? (
               <button
                 type="button"
                 className={cx(removeButton, revealTarget, side, 'mdpm-ac-aside')}
@@ -126,7 +118,7 @@ export function AutocompletePane({
             ) : undefined
           }
           onMouseDown={(e) => {
-            if ((e.target as HTMLElement).closest?.('.mdpm-ac-forget, .mdpm-ac-aside')) return
+            if ((e.target as HTMLElement).closest?.('.mdpm-ac-aside')) return
             onPick(row)
           }}
         >
@@ -147,7 +139,7 @@ export function AutocompletePane({
       onToggle={() => onToggleHeading(row.value)}
       active={i === v.index}
       wrap={(node) => (
-        // biome-ignore lint/a11y/noStaticElementInteractions: commits on mousedown, the way every autocomplete row does
+        // biome-ignore lint/a11y/noStaticElementInteractions: commits on mousedown as a page row does; an alias row's click waits out the double-click window
         <div
           ref={i === v.index ? keepInView : undefined}
           onMouseDown={(e) => {
@@ -187,7 +179,20 @@ export function AutocompletePane({
     </MenuScrollFrame>
   )
 
-  const shown = headingForm ? headingSlot() : slot(v.candidates, true)
+  const shown = headingForm ? (
+    headingSlot()
+  ) : v.aliasHost ? (
+    <AliasList
+      aliases={v.candidates.map((r) => r.value)}
+      host={v.aliasHost}
+      active={v.index}
+      match={matchLen}
+      maxHeight={h}
+      onPick={(alias) => onPick({ kind: 'alias', value: alias })}
+    />
+  ) : (
+    slot(v.candidates, true)
+  )
 
   return (
     <CaretPane open={open} at={v.ac} className="mdpm-ac" resize={resize}>

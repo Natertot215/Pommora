@@ -6,17 +6,27 @@ import { connectionAt, inAliasAt } from '../Input/edits'
 import { scanDoc } from '../Engine/docScan'
 import { aliasRows, type HeadingRow } from './autocomplete'
 import { AutocompletePane } from './AutocompletePane'
+import type { EditorView } from '@codemirror/view'
+import { resting } from '@pommora/uix/Fields/fields.css'
 import type { EditorHost } from '../api'
+import type { ConnectionsApi } from '../Links/connectionsApi'
+import { buildPageIndex } from '../../Connections/pageIndex'
+import {
+  cleanupEditor,
+  harnessState,
+  mountEditor,
+  stubEditorBridge,
+} from '../../Testing/editorHarness'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
+
+// The double-click window an alias row's single click waits out before it inserts.
+const PICK_WAIT = 300
 
 let remembered: Record<string, string[]> = {}
 const aliases: EditorHost['aliases'] = {
   list: (id) => remembered[id] ?? [],
-  remember: () => {},
-  forget: (id, alias) => {
-    remembered[id] = (remembered[id] ?? []).filter((a) => a !== alias)
-  },
+  edit: async () => true,
   subscribe: () => () => {},
 }
 
@@ -41,100 +51,153 @@ describe('the picker offers what a page has been called before', () => {
   it('no page offers nothing', () => {
     expect(aliasRows(aliases, undefined, '')).toEqual([])
   })
-
-  it('a row forgets itself, and the rest survive', () => {
-    const [row] = aliasRows(aliases, 'p1', '')
-    if (row.kind === 'alias') row.forget()
-    expect(remembered.p1).toEqual(['Q3 doc'])
-  })
 })
 
-describe('the forget × is inert until it is revealed', () => {
-  let host: HTMLDivElement | null = null
-  let root: Root | null = null
+describe('the body picker’s alias list', () => {
+  const conn: ConnectionsApi = {
+    ...buildPageIndex([{ id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' }]),
+    headingsOf: () => undefined,
+    location: () => [],
+    open: () => {},
+  }
 
   afterEach(async () => {
-    await act(async () => root?.unmount())
-    host?.remove()
-    root = null
-    host = null
+    vi.useRealTimers()
+    await cleanupEditor()
   })
 
-  const onPick = vi.fn()
-
-  const mountRow = async (forget: () => void): Promise<HTMLButtonElement> => {
-    onPick.mockReset()
-    host = document.createElement('div')
-    document.body.appendChild(host)
-    root = createRoot(host)
-    await act(async () => {
-      root?.render(
-        <AutocompletePane
-          open
-          ac={{
-            query: '',
-            from: 0,
-            to: 0,
-            form: 'alias',
-            closed: true,
-            caretX: 0,
-            caretTop: 0,
-            caretBottom: 16,
-            bounds: { left: 0, right: 1024 },
-          }}
-          candidates={[{ kind: 'alias', value: 'the plan', forget }]}
-          index={0}
-          onPick={onPick}
-          behind={null}
-          headingRows={[]}
-          collapsed={new Set()}
-          onToggleHeading={() => {}}
-          onAside={() => {}}
-          onBack={() => {}}
-        />,
-      )
+  const openPicker = async (menus: Partial<EditorHost['menus']> = {}): Promise<EditorView> => {
+    stubEditorBridge()
+    const view = await mountEditor({
+      initialBody: '[[Alpha|]]',
+      connections: conn,
+      host: { aliases: { p1: ['the plan', 'Q3 doc'] }, menus },
     })
-    return document.querySelector('.mdpm-ac-forget') as HTMLButtonElement
-  }
-
-  const press = async (el: HTMLElement): Promise<void> => {
+    vi.spyOn(view, 'coordsAtPos').mockReturnValue({ left: 10, right: 10, top: 10, bottom: 20 })
     await act(async () => {
-      el.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 0 }))
-      el.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0, detail: 1 }))
+      view.focus()
+      view.dispatch({ selection: { anchor: 8 } })
+    })
+    return view
+  }
+  const rowOf = (text: string): HTMLElement =>
+    [...document.querySelectorAll<HTMLElement>('.mdpm-ac [data-reveal]')].find(
+      (r) => r.textContent === text,
+    ) as HTMLElement
+  const nameOf = (text: string): HTMLElement =>
+    rowOf(text).querySelector(`.${resting}`) as HTMLElement
+  const itemOf = (text: string): HTMLElement =>
+    rowOf(text).querySelector('[role="button"]') as HTMLElement
+  const input = (): HTMLInputElement | null =>
+    document.querySelector<HTMLInputElement>('.mdpm-ac input[aria-label="Alias"]')
+  const click = async (el: HTMLElement, detail: number): Promise<void> => {
+    await act(async () => {
+      el.dispatchEvent(new MouseEvent('click', { bubbles: true, detail }))
     })
   }
+  const key = async (el: HTMLElement, k: string): Promise<void> => {
+    await act(async () => {
+      el.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }))
+    })
+  }
+  const settle = async (): Promise<void> => {
+    await act(async () => new Promise((r) => setTimeout(r, 0)))
+  }
 
-  it('an alias row is drawn with its own glyph rather than a page’s', async () => {
-    const btn = await mountRow(vi.fn())
-    const row = btn.closest('[class*="item"]') as HTMLElement
+  it('draws each row with the alias glyph and its × at rest, and × deletes without inserting', async () => {
+    const view = await openPicker()
+    const edit = vi.spyOn(harnessState().host.aliases, 'edit')
     expect(
-      row
+      itemOf('the plan')
         .querySelector('[class*="side"] svg')
         ?.classList.contains('lucide-square-split-horizontal'),
     ).toBe(true)
+    const x = rowOf('Q3 doc').querySelector('[aria-label="Delete alias"]') as HTMLElement
+    const down = new MouseEvent('mousedown', { bubbles: true, cancelable: true })
+    x.dispatchEvent(down)
+    expect(down.defaultPrevented).toBe(true)
+    await act(async () => x.click())
+    expect(edit).toHaveBeenCalledWith('p1', { op: 'forget', alias: 'Q3 doc' })
+    expect(view.state.doc.toString()).toBe('[[Alpha|]]')
   })
 
-  it('a press on a hidden × forgets nothing', async () => {
-    const forget = vi.fn()
-    const btn = await mountRow(forget)
-    btn.style.opacity = '0'
-    await press(btn)
-    expect(forget).not.toHaveBeenCalled()
+  it('a single click inserts once the double-click window passes, and a double-click renames instead', async () => {
+    const view = await openPicker()
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] })
+    await click(itemOf('Q3 doc'), 1)
+    await click(nameOf('Q3 doc'), 1)
+    await click(nameOf('Q3 doc'), 2)
+    await act(async () => {
+      nameOf('Q3 doc').dispatchEvent(new MouseEvent('dblclick', { bubbles: true, detail: 2 }))
+    })
+    expect(input()?.value).toBe('Q3 doc')
+    await act(async () => vi.advanceTimersByTime(PICK_WAIT))
+    expect(view.state.doc.toString()).toBe('[[Alpha|]]')
+    await key(input() as HTMLInputElement, 'Escape')
+    await act(async () => vi.advanceTimersByTime(0))
+    await click(itemOf('the plan'), 1)
+    await act(async () => vi.advanceTimersByTime(PICK_WAIT - 1))
+    expect(view.state.doc.toString()).toBe('[[Alpha|]]')
+    await act(async () => vi.advanceTimersByTime(1))
+    expect(view.state.doc.toString()).toBe('[[Alpha|the plan]]')
   })
 
-  it('pressing the × never accepts the row it sits in', async () => {
-    const forget = vi.fn()
-    const btn = await mountRow(forget)
-    btn.style.opacity = '1'
-    await press(btn)
-    expect(onPick).not.toHaveBeenCalled()
-    expect(forget).toHaveBeenCalled()
+  it('+ drafts inside the open pane, keeping the pipe, and Enter adds and returns to the slot', async () => {
+    const view = await openPicker()
+    const edit = vi.spyOn(harnessState().host.aliases, 'edit')
+    await act(async () =>
+      (document.querySelector('[aria-label="Add alias"]') as HTMLElement).click(),
+    )
+    const draft = input() as HTMLInputElement
+    expect(document.activeElement).toBe(draft)
+    expect(document.querySelector('.mdpm-ac')).toBeTruthy()
+    expect(view.state.doc.toString()).toBe('[[Alpha|]]')
+    draft.value = 'roadmap'
+    await key(draft, 'Enter')
+    await settle()
+    expect(edit).toHaveBeenCalledWith('p1', { op: 'add', alias: 'roadmap' })
+    expect(view.hasFocus).toBe(true)
+    expect(view.state.doc.toString()).toBe('[[Alpha|]]')
+    expect(view.state.selection.main.head).toBe(8)
   })
 
-  it('but pressing the row itself still accepts it', async () => {
-    const btn = await mountRow(vi.fn())
-    await press(btn.closest('[class*="item"]') as HTMLElement)
-    expect(onPick).toHaveBeenCalled()
+  it('Escape in a rename returns to the slot', async () => {
+    const view = await openPicker()
+    await act(async () => {
+      nameOf('the plan').dispatchEvent(new MouseEvent('dblclick', { bubbles: true, detail: 2 }))
+    })
+    expect(document.activeElement).toBe(input())
+    await key(input() as HTMLInputElement, 'Escape')
+    await settle()
+    expect(view.hasFocus).toBe(true)
+    expect(view.state.doc.toString()).toBe('[[Alpha|]]')
+    expect(view.state.selection.main.head).toBe(8)
+  })
+
+  it('focus leaving a pane field for elsewhere closes the picker and collapses the empty slot', async () => {
+    const view = await openPicker()
+    const elsewhere = document.createElement('button')
+    document.body.appendChild(elsewhere)
+    await act(async () =>
+      (document.querySelector('[aria-label="Add alias"]') as HTMLElement).click(),
+    )
+    expect(document.activeElement).toBe(input())
+    await act(async () => elsewhere.focus())
+    await settle()
+    expect(view.state.doc.toString()).toBe('[[Alpha]]')
+    expect(view.hasFocus).toBe(false)
+    expect(input()).toBeNull()
+    elsewhere.remove()
+  })
+
+  it('the row menu’s Rename opens the row’s input', async () => {
+    await openPicker({ alias: async () => 'rename' })
+    await act(async () => {
+      itemOf('Q3 doc').dispatchEvent(
+        new MouseEvent('contextmenu', { bubbles: true, cancelable: true }),
+      )
+    })
+    expect(input()?.value).toBe('Q3 doc')
   })
 })
 
@@ -181,6 +244,7 @@ describe('the heading slide’s top row marks how it arrived', () => {
           onToggleHeading={() => {}}
           onAside={() => {}}
           onBack={() => {}}
+          aliasHost={null}
         />,
       )
     })

@@ -32,7 +32,7 @@ export interface AutocompleteQuery {
 export type AcRow = { value: string } & (
   | { kind: 'page'; pageId: string; location: TrailSegment[] }
   | { kind: 'heading'; level: number }
-  | { kind: 'alias'; forget: () => void }
+  | { kind: 'alias' }
 )
 
 export type HeadingRow = Extract<AcRow, { kind: 'heading' }>
@@ -189,13 +189,7 @@ export function aliasRows(
     .list(pageId)
     .filter((a) => normalizeTitle(a).startsWith(q))
     .slice(0, AC_MAX)
-    .map(
-      (a): AcRow => ({
-        kind: 'alias',
-        value: a,
-        forget: () => aliases.forget(pageId, a),
-      }),
-    )
+    .map((a): AcRow => ({ kind: 'alias', value: a }))
 }
 
 export const closerOf = (form: ConnectionForm): string =>

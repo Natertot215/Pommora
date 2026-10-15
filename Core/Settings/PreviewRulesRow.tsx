@@ -1,4 +1,3 @@
-import { PANE_MIN_W } from '@pommora/uix/Menus/frame-slide.css'
 import { personalizationOf } from '../Session/configSlice'
 import { useSession, useSetting } from '../Session/store'
 import { previewTargets } from '../Navigation/previewRules'
@@ -20,12 +19,7 @@ export function PreviewRulesRow({
   const setPersonalization = useSession((s) => s.setPersonalization)
   if (!tree) return null
   return (
-    <ManageRow
-      label={label}
-      hint={hint}
-      count={value.rules?.rules.length ?? 0}
-      style={{ minWidth: PANE_MIN_W }}
-    >
+    <ManageRow label={label} hint={hint} count={value.rules?.rules.length ?? 0}>
       <FilterFrame
         locations={tree.collections}
         view={filterViewOf(value)}

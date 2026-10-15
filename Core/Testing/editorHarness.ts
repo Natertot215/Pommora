@@ -88,8 +88,10 @@ function harnessHost(spec: HarnessHost, rerender: () => void = () => {}): Harnes
     connections: () => state.connections,
     aliases: {
       list: worn,
-      remember: (id, alias) => wear(id, { op: 'remember', alias }),
-      forget: (id, alias) => wear(id, { op: 'forget', alias }),
+      edit: async (id, edit) => {
+        wear(id, edit)
+        return true
+      },
       subscribe: (cb) => {
         watchers.add(cb)
         return () => watchers.delete(cb)
@@ -122,6 +124,7 @@ function harnessHost(spec: HarnessHost, rerender: () => void = () => {}): Harnes
       grip: async () => null,
       table: async () => null,
       citation: async () => null,
+      alias: async () => null,
       ...spec.menus,
     },
     glance: spec.glance === false ? undefined : (spec.glance ?? NO_GLANCE),

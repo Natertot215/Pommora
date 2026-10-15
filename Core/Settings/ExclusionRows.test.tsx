@@ -136,6 +136,27 @@ describe('ExcludedDirectoriesRow', () => {
     expect(revealHolding('Renamed')).toBe(before)
   })
 
+  it('a refused draft naming a held folder keeps its row and leaves the held row alone', async () => {
+    await render(['Archive'])
+    exclusionsSet.mockResolvedValue({ ok: false, error: { kind: 'invalid', message: 'refused' } })
+    await act(async () => manageButton().click())
+    const revealHolding = (text: string): HTMLElement | undefined =>
+      Array.from(document.querySelectorAll<HTMLElement>('[data-reveal]')).find((r) =>
+        r.textContent?.includes(text),
+      )
+    const held = revealHolding('Archive')
+    await act(async () => addButton()?.click())
+    await act(async () => fieldButtons()[1].click())
+    const input = document.querySelector('input') as HTMLInputElement
+    input.value = 'Archive'
+    await act(async () => {
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+    })
+    expect(exclusionsSet).toHaveBeenCalledWith(['Archive', 'Archive'])
+    expect(revealHolding('Archive')).toBe(held)
+    expect(fieldButtons().length).toBe(2)
+  })
+
   it('committing a field writes the whole list with that entry replaced', async () => {
     await render(['Archive', 'Vault A'])
     await act(async () => manageButton().click())

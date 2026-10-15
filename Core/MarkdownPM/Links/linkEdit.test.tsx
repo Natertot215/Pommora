@@ -164,19 +164,19 @@ describe('the alias memory hears only what was authored', () => {
       initialBody: 'a [[Alpha|one]] [[Alpha|two]] b',
       connections: conn,
     })
-    const remember = vi.spyOn(harnessState().host.aliases, 'remember')
+    const edit = vi.spyOn(harnessState().host.aliases, 'edit')
     await act(async () => view.focus())
     await caretTo(view, 12)
     await caretTo(view, 26)
     await caretTo(view, 0)
     await caretTo(view, 12)
     view.contentDOM.dispatchEvent(new FocusEvent('blur'))
-    expect(remember).not.toHaveBeenCalled()
+    expect(edit).not.toHaveBeenCalled()
   })
 
   it('typing an alias and leaving remembers it once', async () => {
     const view = await mountEditor({ initialBody: 'a [[Alpha|]] b', connections: conn })
-    const remember = vi.spyOn(harnessState().host.aliases, 'remember')
+    const edit = vi.spyOn(harnessState().host.aliases, 'edit')
     await act(async () => view.focus())
     await caretTo(view, 10)
     await act(async () => {
@@ -189,8 +189,40 @@ describe('the alias memory hears only what was authored', () => {
     await caretTo(view, 0)
     await caretTo(view, 12)
     await caretTo(view, 0)
-    expect(remember).toHaveBeenCalledTimes(1)
-    expect(remember).toHaveBeenCalledWith('p1', 'new')
+    expect(edit).toHaveBeenCalledTimes(1)
+    expect(edit).toHaveBeenCalledWith('p1', { op: 'remember', alias: 'new' })
+  })
+
+  it('focus moving into the caret pane neither collapses nor remembers', async () => {
+    for (const [initialBody, typed] of [
+      ['a [[Alpha|]] b', ''],
+      ['a [[Alpha|]] b', 'on'],
+    ] as const) {
+      const view = await mountEditor({
+        initialBody,
+        connections: conn,
+        host: { aliases: { p1: ['one'] } },
+      })
+      vi.spyOn(view, 'coordsAtPos').mockReturnValue({ left: 10, right: 10, top: 10, bottom: 20 })
+      const edit = vi.spyOn(harnessState().host.aliases, 'edit')
+      await act(async () => view.focus())
+      await caretTo(view, 10)
+      if (typed)
+        await act(async () => {
+          view.dispatch({
+            changes: { from: 10, insert: typed },
+            selection: { anchor: 10 + typed.length },
+            userEvent: 'input.type',
+          })
+        })
+      const pane = document.querySelector('.mdpm-ac') as HTMLElement
+      await act(async () => {
+        view.contentDOM.dispatchEvent(new FocusEvent('blur', { relatedTarget: pane }))
+      })
+      expect(view.state.doc.toString()).toBe(`a [[Alpha|${typed}]] b`)
+      expect(edit).not.toHaveBeenCalled()
+      await cleanupEditor()
+    }
   })
 })
 
@@ -222,7 +254,7 @@ describe('an alias left in code stays as written', () => {
 
   it('remembers no alias typed there', async () => {
     const view = await mountEditor({ initialBody: '```\na [[Alpha|]] b\n```', connections: conn })
-    const remember = vi.spyOn(harnessState().host.aliases, 'remember')
+    const edit = vi.spyOn(harnessState().host.aliases, 'edit')
     await act(async () => view.focus())
     await caretTo(view, 14)
     await act(async () => {
@@ -233,7 +265,7 @@ describe('an alias left in code stays as written', () => {
       })
     })
     await caretTo(view, 0)
-    expect(remember).not.toHaveBeenCalled()
+    expect(edit).not.toHaveBeenCalled()
   })
 })
 
