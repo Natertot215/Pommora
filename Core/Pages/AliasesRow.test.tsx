@@ -164,6 +164,34 @@ describe('AliasesRow', () => {
     expect(draft.getAttribute('aria-invalid')).toBe('true')
   })
 
+  it('typing a name a link can’t carry marks the draft invalid', async () => {
+    await render()
+    await manage()
+    await add()
+    const draft = inputs()[0]
+    type(draft, 'a]b')
+    expect(draft.getAttribute('aria-invalid')).toBe('true')
+  })
+
+  it('a rename onto the title closes the field and sends nothing, the row reading its name throughout', async () => {
+    await render()
+    await manage()
+    await doubleClick(nameOf('the plan'))
+    const row = inputs()[0].closest('[data-reveal]') as HTMLElement
+    const seen: string[] = []
+    const watch = new MutationObserver(() => {
+      if (!row.querySelector('input')) seen.push(row.textContent ?? '')
+    })
+    watch.observe(row, { subtree: true, childList: true, characterData: true })
+    type(inputs()[0], 'ALPHA')
+    await press(inputs()[0], 'Enter')
+    watch.disconnect()
+    expect(mutate).not.toHaveBeenCalled()
+    expect(inputs().length).toBe(0)
+    expect(seen.every((t) => t === 'the plan')).toBe(true)
+    expect(reveals()[0].textContent).toBe('the plan')
+  })
+
   it('a single click opens nothing; a double-click renames in place, holding the new name until it lands', async () => {
     let answer!: (r: unknown) => void
     await render(['the plan', 'Q3 doc'], () => new Promise((r) => (answer = r)))

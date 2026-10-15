@@ -105,7 +105,7 @@ Every alias write becomes an instruction — remember, add, rename, or forget �
   - [x] Task 3-3
   - [x] Task 3-4
   - [x] Task 3-5
-  - [ ] Task 3-6
+  - [x] Task 3-6
   - [x] Task 3-7
   - [ ] Task 3-8
   - [ ] Review Checkpoint
@@ -1831,13 +1831,13 @@ The draft row hands its `Reveal` to the rule it picks, and removing the last rul
 
 **CHANGE**
 
-- [ ] In `UIX/Fields/EditableInput`'s tests, add and watch fail: with `invalid` marking the text, Enter restores the field and calls `onCancel`, not `onCommit`.
-- [ ] In `Core/Connections/aliasMemory.test.ts`, add and watch fail: `remember`, `add`, and `rename` onto `a]b` or a name carrying a line break leave the list unchanged; `heldAliases` drops such a stored name.
-- [ ] In `aliasPicker.test.tsx`, add and watch fail: a single click followed within `PICK_DELAY_MS` by a typed character inserts nothing once the window passes; the same click followed by the slot moving to another link inserts nothing; in a TextPane holding a page with aliases, a heading picked from `[[#` writes `[[#Setup]]` with no slot.
-- [ ] In `AliasesRow.test.tsx`, add and watch fail: renaming `the plan` onto the title closes the field and sends nothing, the row reading `the plan` throughout; typing `a]b` marks the field `aria-invalid`.
-- [ ] In `Core/Nexus/schemas`' or `pageMetadata`'s tests, add and watch fail: a shard entry holding `['keep me', 3, 'and me']` reads `['keep me', 'and me']`, and a `remember` on it keeps both.
-- [ ] In `Core/Properties/assignValue`'s tests, add and watch fail: a Link value `[my label](Alpha)` remembers nothing.
-- [ ] Apply the diffs below, then add the Alias Drive steps that prove the click-insert drop, the own-page heading, and the TextPane's Enter close with the caret in an authored slot, and run the drive's groups 1–3.
+- [x] In `UIX/Fields/EditableInput`'s tests, add and watch fail: with `invalid` marking the text, Enter restores the field and calls `onCancel`, not `onCommit`.
+- [x] In `Core/Connections/aliasMemory.test.ts`, add and watch fail: `remember`, `add`, and `rename` onto `a]b` or a name carrying a line break leave the list unchanged; `heldAliases` drops such a stored name.
+- [x] In `aliasPicker.test.tsx`, add and watch fail: a single click followed within `PICK_DELAY_MS` by a typed character inserts nothing once the window passes; the same click followed by the slot moving to another link inserts nothing; in a TextPane holding a page with aliases, a heading picked from `[[#` writes `[[#Setup]]` with no slot.
+- [x] In `AliasesRow.test.tsx`, add and watch fail: renaming `the plan` onto the title closes the field and sends nothing, the row reading `the plan` throughout; typing `a]b` marks the field `aria-invalid`.
+- [x] In `Core/Nexus/schemas`' or `pageMetadata`'s tests, add and watch fail: a shard entry holding `['keep me', 3, 'and me']` reads `['keep me', 'and me']`, and a `remember` on it keeps both.
+- [x] In `Core/Properties/assignValue`'s tests, add and watch fail: a Link value `[my label](Alpha)` remembers nothing.
+- [x] Apply the diffs below, then add the Alias Drive steps that prove the click-insert drop, the own-page heading, and the TextPane's Enter close with the caret in an authored slot, and run the drive's groups 1–3.
 
 **AFTER**
 
@@ -1925,10 +1925,10 @@ The renderer's one alias write lives where the codebase keeps its renderer-side 
 
 **VERIFY**
 
-- [ ] The new cases are green and each goes red without its change; `PropertyValueInput`'s and `TextPicker`'s tests stay green with their own `invalid` handling untouched.
-- [ ] The Alias Drive's groups 1–3, its new steps included, pass.
-- [ ] Run the gates, then commit.
-- [ ] Check for unnecessary code or mistakes.
+- [x] The new cases are green and each goes red without its change; `PropertyValueInput`'s and `TextPicker`'s tests stay green with their own `invalid` handling untouched.
+- [x] The Alias Drive's groups 1–3, its new steps included, pass.
+- [x] Run the gates, then commit.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 3-7
 

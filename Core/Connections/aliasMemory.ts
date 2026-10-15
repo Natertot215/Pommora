@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { op } from '../Files/decoders'
 import { normalizeTitle } from '../Paths/caseFold'
+import { aliasFits } from './connections'
 
 const alias = z.string()
 
@@ -12,12 +13,16 @@ export const aliasEdit = z.discriminatedUnion('op', [
 ])
 export type AliasEdit = z.infer<typeof aliasEdit>
 
-/** One alias is one name whatever its case, and a page's own title is never one; a list breaking either rule reads tidied, and its next edit stores it so. */
+/** A name a page can hold as an alias: one a link's alias slot carries, and never the page's own title. */
+export const keepsAlias = (name: string, title: string): boolean =>
+  aliasFits(name) && normalizeTitle(name) !== normalizeTitle(title)
+
+/** One alias is one name whatever its case, and a name `keepsAlias` refuses is never one; a list breaking either rule reads tidied, and its next edit stores it so. */
 export function heldAliases(worn: readonly string[], title: string): string[] {
-  const seen = new Set([normalizeTitle(title)])
+  const seen = new Set<string>()
   return worn.filter((a) => {
     const key = normalizeTitle(a)
-    if (seen.has(key)) return false
+    if (seen.has(key) || !keepsAlias(a, title)) return false
     seen.add(key)
     return true
   })
@@ -25,13 +30,12 @@ export function heldAliases(worn: readonly string[], title: string): string[] {
 
 /** Authoring moves an alias to the front, an add puts it at the end, and a rename keeps its place, the newest spelling standing. */
 export function applyAliasEdit(worn: readonly string[], e: AliasEdit, title: string): string[] {
-  const own = normalizeTitle(title)
   const held = heldAliases(worn, title)
   const named = (e.op === 'rename' ? e.to : e.alias).trim()
   const key = normalizeTitle(named)
   const others = held.filter((a) => normalizeTitle(a) !== key)
   if (e.op === 'forget') return others
-  if (!named || key === own) return held
+  if (!named || !keepsAlias(named, title)) return held
   switch (e.op) {
     case 'remember':
       return [named, ...others]

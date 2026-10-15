@@ -133,4 +133,26 @@ describe('EditableInput marking text that will not commit', () => {
     })
     expect(input.getAttribute('aria-invalid')).toBe('false')
   })
+
+  it('Enter on marked text restores the field and cancels', () => {
+    const onCommit = vi.fn()
+    const onCancel = vi.fn()
+    act(() =>
+      root.render(
+        <EditableInput
+          initial="12"
+          className="field"
+          invalid={notANumber}
+          onCommit={onCommit}
+          onCancel={onCancel}
+        />,
+      ),
+    )
+    const input = host.querySelector('input') as HTMLInputElement
+    input.value = 'x'
+    press(input, 'Enter')
+    expect(onCancel).toHaveBeenCalledTimes(1)
+    expect(onCommit).not.toHaveBeenCalled()
+    expect(input.value).toBe('12')
+  })
 })

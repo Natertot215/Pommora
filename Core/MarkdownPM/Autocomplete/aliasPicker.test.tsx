@@ -6,9 +6,10 @@ import { connectionAt, inAliasAt } from '../Input/edits'
 import { scanDoc } from '../Engine/docScan'
 import { aliasRows, type HeadingRow } from './autocomplete'
 import { AutocompletePane } from './AutocompletePane'
+import { StateEffect } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
 import { resting } from '@pommora/uix/Fields/fields.css'
-import type { EditorHost } from '../api'
+import { type EditorHost, heldPage } from '../api'
 import type { ConnectionsApi } from '../Links/connectionsApi'
 import { buildPageIndex } from '../../Connections/pageIndex'
 import {
@@ -140,6 +141,71 @@ describe('the body picker’s alias list', () => {
     expect(view.state.doc.toString()).toBe('[[Alpha|]]')
     await act(async () => vi.advanceTimersByTime(1))
     expect(view.state.doc.toString()).toBe('[[Alpha|the plan]]')
+  })
+
+  it('a click insert pending while a character is typed into the slot inserts nothing', async () => {
+    const view = await openPicker()
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] })
+    await click(itemOf('the plan'), 1)
+    await act(async () => {
+      view.dispatch({
+        changes: { from: 8, insert: 't' },
+        selection: { anchor: 9 },
+        userEvent: 'input.type',
+      })
+    })
+    await act(async () => vi.advanceTimersByTime(PICK_WAIT))
+    expect(view.state.doc.toString()).toBe('[[Alpha|t]]')
+  })
+
+  it('a click insert pending when the caret moves to another link’s slot inserts nothing there', async () => {
+    stubEditorBridge()
+    const view = await mountEditor({
+      initialBody: '[[Alpha|]] [[Alpha|]]',
+      connections: conn,
+      host: { aliases: { p1: ['the plan', 'Q3 doc'] } },
+    })
+    vi.spyOn(view, 'coordsAtPos').mockReturnValue({ left: 10, right: 10, top: 10, bottom: 20 })
+    await act(async () => {
+      view.focus()
+      view.dispatch({ selection: { anchor: 8 } })
+    })
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] })
+    await click(itemOf('the plan'), 1)
+    await act(async () => {
+      view.dispatch({ selection: { anchor: 19 } })
+    })
+    await act(async () => vi.advanceTimersByTime(PICK_WAIT))
+    expect(view.state.doc.toString()).not.toContain('the plan')
+  })
+
+  it('in a Text value held by a page with aliases, a heading picked from [[# opens no slot', async () => {
+    stubEditorBridge()
+    const view = await mountEditor({
+      initialBody: '[[#]]',
+      connections: {
+        ...conn,
+        headingsOf: () => ({
+          keys: ['setup'],
+          texts: ['Setup'],
+          outline: [{ text: 'Setup', level: 2 }],
+        }),
+      },
+      host: { aliases: { p1: ['the plan'] } },
+    })
+    vi.spyOn(view, 'coordsAtPos').mockReturnValue({ left: 10, right: 10, top: 10, bottom: 20 })
+    await act(async () => {
+      view.dispatch({
+        effects: StateEffect.appendConfig.of(
+          heldPage.of({ id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' }),
+        ),
+      })
+      view.focus()
+      view.dispatch({ selection: { anchor: 3 } })
+    })
+    expect((document.querySelector('.mdpm-ac') as HTMLElement).textContent).toContain('Setup')
+    await key(view.contentDOM, 'Enter')
+    expect(view.state.doc.toString()).toBe('[[#Setup]]')
   })
 
   it('+ drafts inside the open pane, keeping the pipe, and Enter adds and returns to the slot', async () => {

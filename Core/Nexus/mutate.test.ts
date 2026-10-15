@@ -2965,6 +2965,19 @@ describe('handleMutate — editAliases', () => {
     )
     expect(await month()).toEqual({ pages: {} })
   })
+
+  it('a remember on a list holding one element that isn’t a name keeps the rest', async () => {
+    await writeFile(
+      join(root, `.nexus/metadata/${shardOf(A_ID)}.json`),
+      JSON.stringify({ pages: { [A_ID]: { aliases: ['keep me', 3, 'and me'] } } }),
+    )
+    await settledMutate(
+      root,
+      { op: 'editAliases', path, edit: { op: 'remember', alias: 'new' } },
+      nexusDeps,
+    )
+    expect(await month()).toEqual({ pages: { [A_ID]: { aliases: ['new', 'keep me', 'and me'] } } })
+  })
 })
 
 describe('handleMutate — landings Settings keeps out', () => {

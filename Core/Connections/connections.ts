@@ -98,10 +98,13 @@ export function parseConnectionText(raw: string): ConnectionParts | null {
   return { title, ...(heading ? { heading } : {}), ...(alias ? { alias } : {}) }
 }
 
+/** Whether a link's alias slot can carry `alias`: the grammar ends the slot at `]` and the line. */
+export const aliasFits = (alias: string): boolean => !/[\]\r\n]/.test(alias)
+
 export function connectionText(title: string, alias?: string, heading?: string): string {
   const target = heading ? `${title}#${heading}` : title
   const named =
-    alias && !/[\]\r\n]/.test(alias) && normalizeTitle(alias) !== normalizeTitle(target)
+    alias && aliasFits(alias) && normalizeTitle(alias) !== normalizeTitle(target)
       ? alias
       : undefined
   return named ? `[[${target}|${named}]]` : `[[${target}]]`

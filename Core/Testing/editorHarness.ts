@@ -78,9 +78,8 @@ function harnessHost(spec: HarnessHost, rerender: () => void = () => {}): Harnes
   } as HarnessState
   const watchers = new Set<() => void>()
   const worn = (id: string): string[] => state.aliases[id] ?? []
-  // A harness page has no title for an alias to fold to.
   const wear = (id: string, edit: AliasEdit): void => {
-    state.aliases[id] = applyAliasEdit(worn(id), edit, '')
+    state.aliases[id] = applyAliasEdit(worn(id), edit, spec.pageTitle ?? '')
     for (const cb of watchers) cb()
   }
   state.host = {

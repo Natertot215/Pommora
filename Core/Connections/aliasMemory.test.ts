@@ -96,4 +96,20 @@ describe('tidying', () => {
   it("any edit returns one spelling per name and none of the page's title", () => {
     expect(edit(['Plan', 'plan', 'Alpha'], { op: 'forget', alias: 'zzz' })).toEqual(['Plan'])
   })
+
+  it('a page holds no name a link can’t carry', () => {
+    expect(heldAliases(['a]b', 'x', 'two\nlines'], 'Alpha')).toEqual(['x'])
+  })
+})
+
+describe('a name a link can’t carry', () => {
+  it.each([
+    'a]b',
+    'two\nlines',
+    'cr\rhere',
+  ])('%j is never remembered, added, or renamed to', (n) => {
+    expect(edit(['x'], { op: 'remember', alias: n })).toEqual(['x'])
+    expect(edit(['x'], { op: 'add', alias: n })).toEqual(['x'])
+    expect(edit(['x'], { op: 'rename', from: 'x', to: n })).toEqual(['x'])
+  })
 })

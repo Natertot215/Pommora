@@ -297,7 +297,7 @@ async function group2(cdp, pid) {
   await typeText(cdp, 'Drive Target')
   await step(cdp, 'group 2: a rename onto the title', () => pressKey(cdp, 'Enter'), { writes: aliasWrites(0) })
   const held = await cdp.evaluate('window.__texts')
-  check('group 2: a rename onto the title holds the typed name until the host answers, then reads Road Map again', same(held, ['Drive Target', 'Road Map']) && same(aliasesOf(TARGET), ['Q3 doc', 'Road Map', 'liftoff', 'LAUNCH']), JSON.stringify(held))
+  check('group 2: a rename onto the title closes the field unsent, the row reading Road Map throughout', same(held, ['Road Map']) && same(aliasesOf(TARGET), ['Q3 doc', 'Road Map', 'liftoff', 'LAUNCH']), JSON.stringify(held))
 
   await doubleClick(cdp, nameOf(MANAGE, 'Q3 doc'))
   await selectAll(cdp)
@@ -383,6 +383,22 @@ async function group3(cdp, pid) {
   }, { reflect: `${V}.state.doc.toString().includes('[[Drive Target|launch]]')`, writes })
   check('group 3: a single click inserts nothing at 150 ms and launch by 600 ms, after the double-click window', early === blank && click1.domMs !== null && click1.domMs >= 300 && click1.domMs < 600, JSON.stringify({ early, domMs: click1.domMs }))
   check("group 3: the inserted alias reaches Drive Host's file", await settles(async () => pageFile(HOST).includes('[[Drive Target|launch]]')))
+  await openStage(cdp, V)
+  await step(cdp, 'group 3: a single click, then a keystroke in the slot', async () => {
+    await mouseClick(cdp, rowOf(PICKER, 'launch'), { settle: 0 })
+    await typeText(cdp, 'q')
+    await sleep(600)
+  }, { writes })
+  check('group 3: a keystroke inside the double-click window drops the pending insert', (await docOf(cdp, V)) === `[[${TARGET}|q]]`, await docOf(cdp, V))
+  await prime(cdp, V)
+  await cdp.evaluate(`(() => { const v = ${V}; v.dispatch({ changes: { from: 0, to: v.state.doc.length, insert: ${JSON.stringify(`[[${TARGET}|]] [[${TARGET}|]]`)} }, selection: { anchor: ${TARGET.length + 3} } }) })()`)
+  await until('the first slot\'s alias stage', () => cdp.evaluate(`${rows(PICKER)}.length === 3`))
+  await step(cdp, "group 3: a single click, then the caret into another link's slot", async () => {
+    await mouseClick(cdp, rowOf(PICKER, 'launch'), { settle: 0 })
+    await cdp.evaluate(`(() => { const v = ${V}; v.dispatch({ selection: { anchor: v.state.doc.length - 2 } }) })()`)
+    await sleep(600)
+  }, { writes })
+  check("group 3: moving to another link's slot inside the double-click window inserts nothing in either", !(await docOf(cdp, V)).includes('launch'), await docOf(cdp, V))
 
   await openStage(cdp, V)
   await step(cdp, 'group 3: a double-click on liftoff', () => doubleClick(cdp, nameOf(PICKER, 'liftoff')), { reflect: `!!${inputOf(PICKER)}`, writes, window: 900 })
@@ -465,6 +481,28 @@ async function group3(cdp, pid) {
   await pressKey(cdp, 'Escape')
   await until('the TextPane closed', () => cdp.evaluate(`!document.querySelector('${PANE}')`))
   await must('Drive Host restored', ask(cdp, 'mutate', { op: 'setProperty', path: pagePath(HOST), propertyId: ids[NOTES], value: { kind: 'text', value: 'host notes' } }))
+
+  // TextPane: Enter closes the pane with the caret still in an authored slot.
+  await openPane(cdp, cell(HOST, NOTES))
+  await openStage(cdp, PANE_VIEW)
+  await typeText(cdp, 'zzq')
+  await settles(async () => !(await cdp.evaluate(`!!${PICKER}`)), 2000)
+  await step(cdp, 'group 3: TextPane: Enter with the caret in an authored slot', () => pressKey(cdp, 'Enter'), { reflect: `!document.querySelector('${PANE}')`, writes: writes1, window: 2000 })
+  check('group 3: TextPane: Enter closes the pane, the value lands, and the authored alias is remembered first', (await settles(async () => String(frontmatter(HOST)[NOTES]).includes(`[[${TARGET}|zzq]]`))) && same(aliasesOf(TARGET), ['zzq', ...list]), JSON.stringify([frontmatter(HOST)[NOTES], aliasesOf(TARGET)]))
+  await must('forget zzq', editAliases(cdp, TARGET, { op: 'forget', alias: 'zzq' }))
+  await must('Drive Host restored', ask(cdp, 'mutate', { op: 'setProperty', path: pagePath(HOST), propertyId: ids[NOTES], value: { kind: 'text', value: 'host notes' } }))
+
+  // TextPane: a heading of the page holding the value.
+  await must('Drive Target notes', ask(cdp, 'mutate', { op: 'setProperty', path: pagePath(TARGET), propertyId: ids[NOTES], value: { kind: 'text', value: 'target notes' } }))
+  await until("Drive Target's notes", () => cdp.evaluate(`(${cell(TARGET, NOTES)}).textContent.includes('target notes')`))
+  await openPane(cdp, cell(TARGET, NOTES))
+  await prime(cdp, PANE_VIEW, '#')
+  await until('the own-page heading list', () => cdp.evaluate(`!!(${PICKER})?.textContent.includes('Setup')`))
+  await step(cdp, 'group 3: TextPane: an own-page heading picked from [[#', () => pressKey(cdp, 'Enter'), { reflect: `${PANE_VIEW}.state.doc.toString() === '[[#Setup]]'`, writes: { [META_DIR]: 0 } })
+  check('group 3: TextPane: an own-page heading writes [[#Setup]] and opens no alias slot or stage', (await docOf(cdp, PANE_VIEW)) === '[[#Setup]]' && !(await cdp.evaluate(`!!(${PICKER})?.querySelector('[aria-label="Add alias"]')`)), await docOf(cdp, PANE_VIEW))
+  await pressKey(cdp, 'Escape')
+  await until('the TextPane closed', () => cdp.evaluate(`!document.querySelector('${PANE}')`))
+  await must('Drive Target restored', ask(cdp, 'mutate', { op: 'setProperty', path: pagePath(TARGET), propertyId: ids[NOTES], value: null }))
 
   // A table cell in the body: its own editor, the same stage.
   await openPage(cdp, GRID)

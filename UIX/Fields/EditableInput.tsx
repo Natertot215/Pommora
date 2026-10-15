@@ -32,7 +32,7 @@ export function EditableInput({
   ariaLabel?: string
   /** Off for a field that merely SITS in a pane: mounting must not steal the selection. */
   autoFocus?: boolean
-  /** Dims text that won't commit, marked on the node so a keystroke never renders. */
+  /** Dims text that won't commit, marked on the node so a keystroke never renders; leaving with it restores the field and cancels, as a blank name does. */
   invalid?: (text: string) => boolean
   /** A blank commit restores the field and cancels: a name, not a value. */
   required?: boolean
@@ -95,7 +95,7 @@ export function EditableInput({
         if (settled.current) return
         settled.current = true
         const next = e.currentTarget.value.trim()
-        if (required && !next) {
+        if ((required && !next) || invalid?.(next)) {
           e.currentTarget.value = initial
           return onCancel()
         }

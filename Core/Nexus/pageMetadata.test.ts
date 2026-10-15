@@ -59,6 +59,17 @@ describe('readShard', () => {
     })
   })
 
+  it('keeps every alias but the one element that isn’t a name', async () => {
+    await writeFile(
+      metadataShardPath(root, '09-2026'),
+      JSON.stringify({ pages: { [SEP_A]: { aliases: ['keep me', 3, 'and me'] } } }),
+    )
+    expect(await readShard(root, '09-2026')).toEqual({
+      kind: 'ok',
+      pages: { [SEP_A]: { aliases: ['keep me', 'and me'] } },
+    })
+  })
+
   it('reports a missing month absent and a corrupt one unreadable', async () => {
     expect(await readShard(root, '09-2026')).toEqual({ kind: 'absent' })
     await writeFile(metadataShardPath(root, '09-2026'), '{ bad json')

@@ -272,6 +272,7 @@ describe('a landed Link value remembers the alias it shows', () => {
     ['a phantom title', '[[Missing|x]]'],
     ['an unaliased link', '[[Alpha]]'],
     ['the alias it already showed', '[[Alpha#Intro|old]]'],
+    ['a markdown label', '[my label](Alpha)'],
   ])('%s remembers nothing', async (_, value) => {
     await assignValue(writer, row, column, link(value))
     await settled()
