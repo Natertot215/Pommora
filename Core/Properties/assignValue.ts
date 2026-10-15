@@ -5,7 +5,7 @@ import type { PropertyDefinition } from './properties'
 import { applyValueAtRoot, isBlankValue, type PropertyValue } from './propertyValue'
 import type { ResolvedColumn, ViewRow } from '../Views/viewRow'
 import { resolveFieldValue } from './value'
-import { readLinkText } from '../Connections/linkValue'
+import { shownAlias } from '../Connections/linkValue'
 import { pageIndexOf } from '../Nexus/treeIndex'
 import { pushUndo } from '../Session/undo'
 import { useSession } from '../Session/store'
@@ -51,20 +51,12 @@ function rememberedAlias(
   value: PropertyValue | null,
   prior: PropertyValue | null,
 ): MutateRequest | null {
-  const target = value?.kind === 'link' ? readLinkText(value.value) : null
-  if (target?.kind !== 'page' || target.syntax !== 'wiki' || !target.alias) return null
   const tree = useSession.getState().tree
-  const index = tree && pageIndexOf(tree)
-  const page = index?.resolve(target.title).page
-  if (!index || !page) return null
-  const shown = prior?.kind === 'link' ? readLinkText(prior.value) : null
-  if (
-    shown?.kind === 'page' &&
-    shown.alias === target.alias &&
-    index.resolve(shown.title).page === page
-  )
-    return null
-  return { op: 'editAliases', path: page.path, edit: { op: 'add', alias: target.alias } }
+  if (value?.kind !== 'link' || !tree) return null
+  const was = prior?.kind === 'link' ? prior.value : undefined
+  const shown = shownAlias(value.value, pageIndexOf(tree).resolve, was)
+  if (!shown) return null
+  return { op: 'editAliases', path: shown.page.path, edit: { op: 'add', alias: shown.alias } }
 }
 
 export function assignValue(

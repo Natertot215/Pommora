@@ -261,8 +261,11 @@ describe('a pick retargets the link the picker opened on', () => {
     })
     await typeInto(view, '(Al')
     expect(view.state.doc.toString()).toBe('[x](Al)')
+    const edit = vi.spyOn(harnessState().host.aliases, 'edit')
     await press(view, 'Enter')
     expect(view.state.doc.toString()).toBe('[x](Alpha)')
+    expect(edit).toHaveBeenCalledTimes(1)
+    expect(edit).toHaveBeenCalledWith('p1', { op: 'add', alias: 'x' })
   })
 
   it('and with Pair Brackets off', async () => {
@@ -274,16 +277,18 @@ describe('a pick retargets the link the picker opened on', () => {
   })
 
   it.each([
-    ['[Mine](Old) x', 7, 10, 'Gam', true, '[Gamma](Gamma) x'],
-    ['[Mine](Old) x', 7, 10, 'Gam', false, '[Mine](Gamma) x'],
-    ['[[Old|Mine]] x', 2, 5, 'Gam', true, '[[Gamma|]] x'],
-    ['[[Old|Mine]] x', 2, 5, 'Gam', false, '[[Gamma|Mine]] x'],
-    ['[[Old|Mine]] x', 2, 5, 'Ol', true, '[[Old|Mine]] x'],
-    ['[[Nope|Mine]] x', 2, 6, 'Gam', true, '[[Gamma|Mine]] x'],
-  ] as const)('%s, %i to %i selected and retyped as %s, dropping titles: %s, writes %s', async (...row) => {
-    const [body, from, to, insert, removeTitleOnLinkChange, written] = row
+    ['[Mine](Old) x', 7, 10, 'Gam', true, '[Gamma](Gamma) x', null],
+    ['[Mine](Old) x', 7, 10, 'Gam', false, '[Mine](Gamma) x', 'pGamma'],
+    ['[[Old|Mine]] x', 2, 5, 'Gam', true, '[[Gamma|]] x', null],
+    ['[[Old|Mine]] x', 2, 5, 'Gam', false, '[[Gamma|Mine]] x', 'pGamma'],
+    ['[[Old|Mine]] x', 2, 5, 'Ol', true, '[[Old|Mine]] x', null],
+    ['[[Nope|Mine]] x', 2, 6, 'Gam', true, '[[Gamma|Mine]] x', 'pGamma'],
+    ['[Old](Old) x', 6, 9, 'Gam', false, '[Old](Gamma) x', null],
+  ] as const)('%s, %i to %i selected and retyped as %s, dropping titles: %s, writes %s and gives Mine to %s', async (...row) => {
+    const [body, from, to, insert, removeTitleOnLinkChange, written, remembers] = row
     seedHost({ aliases: { pOld: ['Mine'], pGamma: ['Gee'] } })
     const view = await mounted(body, { removeTitleOnLinkChange })
+    const edit = vi.spyOn(harnessState().host.aliases, 'edit')
     for (const selection of [{ anchor: to }, { anchor: from, head: to }])
       await act(async () => {
         view.dispatch({ selection })
@@ -297,6 +302,7 @@ describe('a pick retargets the link the picker opened on', () => {
     })
     await press(view, 'Enter')
     expect(view.state.doc.toString()).toBe(written)
+    expect(edit.mock.calls).toEqual(remembers ? [[remembers, { op: 'add', alias: 'Mine' }]] : [])
   })
 })
 
@@ -444,9 +450,10 @@ describe('the chevron slides in a page’s headings', () => {
   })
 
   // The same slide, written into a markdown link's destination.
-  it('the chevron in ( ) writes the page and its #, lists its headings, and Return finishes past the )', async () => {
+  it('the chevron in ( ) writes the page and its #, lists its headings, and Return finishes past the ), giving the page its label', async () => {
     const view = await mountEditor({ initialBody: '[x](Not)', connections: headingConn })
     vi.spyOn(view, 'coordsAtPos').mockReturnValue(coords)
+    const edit = vi.spyOn(harnessState().host.aliases, 'edit')
     await act(async () => {
       view.focus()
       view.dispatch({ selection: { anchor: 5 } })
@@ -457,6 +464,7 @@ describe('the chevron slides in a page’s headings', () => {
     await press(view, 'Enter')
     expect(view.state.doc.toString()).toBe('[x](Notes#Setup)')
     expect(view.state.selection.main.head).toBe(view.state.doc.length)
+    expect(edit.mock.calls).toEqual([['pNotes', { op: 'add', alias: 'x' }]])
   })
 
   it('a bare # in ( ) lists the current document’s own headings', async () => {

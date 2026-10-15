@@ -2254,7 +2254,7 @@ Each paragraph reads whole, in the document's existing voice, with no amendment 
 #### Open Items
 
 - Nathan's Visual Pass and Live Feel, from the drive's screenshots.
-- Nathan's calls, each taken at its recommendation meanwhile: a markdown-form Link label isn't remembered; a Text value's plain inline field keeps no alias memory while its TextPane does; the order is the user's, with `remember` folded into `add`; `ruleFrame` stands as the named rule for compact rule rows.
+- Nathan's calls, each taken at its recommendation meanwhile: a Text value's plain inline field keeps no alias memory while its TextPane does; the order is the user's, with `remember` folded into `add`; `ruleFrame` stands as the named rule for compact rule rows.
 - Proposed as separate work: Excluded Directories' whole-list write on the instruction model; a picker row drawing its selection outline over the alias its link already shows; `SettingsFrame` reading compact in the View tile and standard in the toolbar dropdown.
 
 #### Deviations

@@ -277,11 +277,23 @@ describe('a landed Link value remembers the alias it shows', () => {
     })
   })
 
+  it('a markdown label is remembered as the alias it shows', async () => {
+    await assignValue(writer, row, column, link('[my label](Alpha.md)'))
+    expect(mutate).toHaveBeenLastCalledWith({
+      op: 'editAliases',
+      path: 'Notes/Alpha.md',
+      edit: { op: 'add', alias: 'my label' },
+    })
+  })
+
   it.each([
     ['a phantom title', '[[Missing|x]]'],
     ['an unaliased link', '[[Alpha]]'],
     ['the alias it already showed', '[[Alpha#Intro|old]]'],
-    ['a markdown label', '[my label](Alpha)'],
+    ['the same alias in the other syntax', '[old](Alpha.md)'],
+    ["a label naming the page's own title", '[Alpha](Alpha.md)'],
+    ['a website label', '[my label](https://example.com)'],
+    ['a phantom markdown target', '[my label](Missing.md)'],
   ])('%s remembers nothing', async (_, value) => {
     await assignValue(writer, row, column, link(value))
     await settled()

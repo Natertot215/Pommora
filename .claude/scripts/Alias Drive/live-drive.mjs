@@ -504,6 +504,29 @@ async function group3(cdp, pid) {
   list = [...list, 'fresh one']
   check('group 3: leaving an authored alias slot adds it at the end', same(aliasesOf(TARGET), list), JSON.stringify(aliasesOf(TARGET)))
 
+  // A markdown link's label is its alias: typed before the page is picked, or retyped in place.
+  const caret = (at) => cdp.evaluate(`(() => { const v = ${V}; v.dispatch({ selection: { anchor: ${at} } }) })()`)
+  await cdp.evaluate(`(() => { const v = ${V}; v.focus(); v.dispatch({ changes: { from: 0, to: v.state.doc.length, insert: '' }, selection: { anchor: 0 } }) })()`)
+  await sleep(300)
+  for (const ch of ['[', 'md label', ']', '(', 'Drive Tar']) await typeText(cdp, ch)
+  await sleep(500)
+  const MD = `[md label](${encodeURI(TARGET)})`
+  await step(cdp, 'group 3: a page picked behind a typed label', () => pressKey(cdp, 'Enter'), { reflect: `${V}.state.doc.toString() === ${JSON.stringify(MD)}`, writes: writes1 })
+  list = [...list, 'md label']
+  check('group 3: a page picked behind a typed label adds the label at the end', same(aliasesOf(TARGET), list) && (await docOf(cdp, V)) === MD, JSON.stringify([aliasesOf(TARGET), await docOf(cdp, V)]))
+  await step(cdp, 'group 3: walking the caret through a label', async () => { await caret(4); await caret(MD.length) }, { writes })
+  await caret('[md label'.length)
+  await typeText(cdp, ' 2')
+  await step(cdp, 'group 3: leaving a retyped label', () => caret(0), { writes: writes1 })
+  list = [...list, 'md label 2']
+  check('group 3: leaving a retyped label adds it at the end', same(aliasesOf(TARGET), list), JSON.stringify(aliasesOf(TARGET)))
+  await cdp.evaluate(`(() => { const v = ${V}; v.dispatch({ changes: { from: 0, to: v.state.doc.length, insert: '' }, selection: { anchor: 0 } }) })()`)
+  for (const ch of ['[', 'typed', ']', '(', encodeURI(TARGET)]) await typeText(cdp, ch)
+  await sleep(500)
+  await step(cdp, 'group 3: leaving a markdown link typed out in full', () => caret(0), { writes: writes1 })
+  list = [...list, 'typed']
+  check('group 3: leaving a markdown link typed out in full adds its label at the end', same(aliasesOf(TARGET), list) && (await docOf(cdp, V)) === `[typed](${encodeURI(TARGET)})`, JSON.stringify([aliasesOf(TARGET), await docOf(cdp, V)]))
+
   // TextPane: the same stage inside a Text value's editor.
   await home(cdp)
   await openPane(cdp, cell(HOST, NOTES))
