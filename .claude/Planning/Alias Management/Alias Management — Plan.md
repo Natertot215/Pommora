@@ -49,6 +49,9 @@ Every alias write becomes an instruction — remember, add, rename, or forget �
 | `AliasesRow.tsx` • File | `AliasesRow`, the page panel's row over `AliasList`. | `Core/Pages/AliasesRow.tsx` |
 | `AliasesRow.test.tsx` • File | The row and pane against a stubbed store. | `Core/Pages/AliasesRow.test.tsx` |
 | `Alias Drive/live-drive.mjs` • File | The live drive of the alias lists, the body picker, Excluded Directories, the option editor, and Filter, asserting each gesture's writes and recording its cost. | `.claude/scripts/Alias Drive/` |
+| `aliasFits` • Function | Whether a link's alias slot can carry a name, read by `connectionText` and `keepsAlias`. | `Core/Connections/connections.ts` |
+| `keepsAlias` • Function | Whether a page can hold a name as an alias: one a link carries, never its title — the host's rule and the list's dim. | `Core/Connections/aliasMemory.ts` |
+| `ruleFrame` • Style | A pane of rule rows draws compact wherever it's hosted. | `UIX/Menus/frames.css.ts` |
 | `watch` / `measure` • Functions | A gesture's distinct file writes, its input-to-paint and input-to-disk latency, and its render cost, shared by every drive. | `.claude/scripts/drive-harness.mjs` |
 
 **REMOVED**
@@ -102,6 +105,9 @@ Every alias write becomes an instruction — remember, add, rename, or forget �
   - [x] Task 3-3
   - [x] Task 3-4
   - [x] Task 3-5
+  - [ ] Task 3-6
+  - [x] Task 3-7
+  - [ ] Task 3-8
   - [ ] Review Checkpoint
 - [ ] `[Visual Pass: the drive's screenshots of the Aliases pane and the body picker go to Nathan, whose eyes are the one check awaiting]`
 - [ ] **Phase 4** — Documentation
@@ -1810,6 +1816,132 @@ The draft row hands its `Reveal` to the rule it picks, and removing the last rul
 - [x] Run the gates, then commit.
 - [x] Check for unnecessary code or mistakes.
 
+#### Task 3-6
+
+**TASK:** Close the alias edges the interaction review reproduced: a name the list can't keep never commits, a name a link can't carry is no alias, a pending click insert dies with the list it was clicked in, an own-page link never opens an alias slot, a stored list survives one bad element, Link values remember only wiki aliases as bodies do, and the renderer's alias write is written once.
+
+**NOW:**
+- `EditableInput` dims `invalid` text but commits it on blur (`UIX/Fields/EditableInput.tsx`), so `AliasList` sends a rename or add onto the title, which the host answers ok without a change: a rename flashes the title and reverts, and an add drops the typed draft. `PropertyValueInput` re-checks its own `invalid` in `commit` and drops the text instead.
+- The link grammar refuses `]`, CR, and LF in an alias (`pageLinkPattern`, `connectionText`'s inline `/[\]\r\n]/`), but `AliasList`'s `invalid` and `applyAliasEdit` both let such a name through, so picking `a]b` writes `[[Alpha|a]b]]`, which no longer reads as a link.
+- `AliasList`'s pick timer captures only the alias and clears only on unmount, a second click, or a rename. A click followed within 300ms by typing in the slot, or by moving the caret into another link's slot, lands the alias there; one timer order threw a `RangeError` at `useConnectionAutocomplete.ts:163`.
+- In a TextPane, a heading picked from `[[#` opens an empty alias slot: `commit` takes `pageId` from the held own page (`useConnectionAutocomplete.ts:147`), while bodies offer no own-page aliases.
+- `pageMetaEntry.aliases` decodes as `z.array(z.string()).optional().catch(undefined)` (`Core/Nexus/schemas.ts:27`), so one non-string element drops the whole list, and the next write stores only the new alias. `eachOf` (`Core/Files/decoders.ts`) is the codebase's element-by-element list decode.
+- `rememberedAlias` (`Core/Properties/assignValue.ts`) remembers a markdown-form Link value's label, while a body's markdown link remembers nothing (`connectionAt` reads wikilinks only).
+- `mutate({ op: 'editAliases', path, edit }) !== null` is written twice, in `editorHost.tsx`'s `editAliases` and `AliasesRow.tsx`'s `edit`.
+
+**CHANGE**
+
+- [ ] In `UIX/Fields/EditableInput`'s tests, add and watch fail: with `invalid` marking the text, Enter restores the field and calls `onCancel`, not `onCommit`.
+- [ ] In `Core/Connections/aliasMemory.test.ts`, add and watch fail: `remember`, `add`, and `rename` onto `a]b` or a name carrying a line break leave the list unchanged; `heldAliases` drops such a stored name.
+- [ ] In `aliasPicker.test.tsx`, add and watch fail: a single click followed within `PICK_DELAY_MS` by a typed character inserts nothing once the window passes; the same click followed by the slot moving to another link inserts nothing; in a TextPane holding a page with aliases, a heading picked from `[[#` writes `[[#Setup]]` with no slot.
+- [ ] In `AliasesRow.test.tsx`, add and watch fail: renaming `the plan` onto the title closes the field and sends nothing, the row reading `the plan` throughout; typing `a]b` marks the field `aria-invalid`.
+- [ ] In `Core/Nexus/schemas`' or `pageMetadata`'s tests, add and watch fail: a shard entry holding `['keep me', 3, 'and me']` reads `['keep me', 'and me']`, and a `remember` on it keeps both.
+- [ ] In `Core/Properties/assignValue`'s tests, add and watch fail: a Link value `[my label](Alpha)` remembers nothing.
+- [ ] Apply the diffs below, then add the Alias Drive steps that prove the click-insert drop, the own-page heading, and the TextPane's Enter close with the caret in an authored slot, and run the drive's groups 1–3.
+
+**AFTER**
+
+```UIX/Fields/EditableInput.tsx diff
+-  /** Dims text that won't commit, marked on the node so a keystroke never renders. */
++  /** Dims text that won't commit, marked on the node so a keystroke never renders; leaving with it restores the field and cancels, as a blank name does. */
+ …
+-        if (required && !next) {
++        if ((required && !next) || invalid?.(next)) {
+```
+
+```Core/Connections/connections.ts diff
++/** Whether a link's alias slot can carry `alias`: the grammar ends the slot at `]` and the line. */
++export const aliasFits = (alias: string): boolean => !/[\]\r\n]/.test(alias)
+ …
+   const named =
+-    alias && !/[\]\r\n]/.test(alias) && normalizeTitle(alias) !== normalizeTitle(target)
++    alias && aliasFits(alias) && normalizeTitle(alias) !== normalizeTitle(target)
+```
+
+```Core/Connections/aliasMemory.ts diff
++import { aliasFits } from './connections'
+ …
++/** A name a page can hold as an alias: one a link's alias slot carries, and never the page's own title. */
++export const keepsAlias = (name: string, title: string): boolean =>
++  aliasFits(name) && normalizeTitle(name) !== normalizeTitle(title)
++
+-/** One alias is one name whatever its case, and a page's own title is never one; a list breaking either rule reads tidied, and its next edit stores it so. */
++/** One alias is one name whatever its case, and a name `keepsAlias` refuses is never one; a list breaking either rule reads tidied, and its next edit stores it so. */
+ export function heldAliases(worn: readonly string[], title: string): string[] {
+-  const seen = new Set([normalizeTitle(title)])
++  const seen = new Set<string>()
+   return worn.filter((a) => {
+     const key = normalizeTitle(a)
+-    if (seen.has(key)) return false
++    if (seen.has(key) || !keepsAlias(a, title)) return false
+ …
+ export function applyAliasEdit(worn: readonly string[], e: AliasEdit, title: string): string[] {
+-  const own = normalizeTitle(title)
+   const held = heldAliases(worn, title)
+ …
+-  if (!named || key === own) return held
++  if (!named || !keepsAlias(named, title)) return held
+```
+
+```Core/MarkdownPM/Autocomplete/AliasList.tsx diff
+-import type { AliasEdit } from '../../Connections/aliasMemory'
+-import { normalizeTitle } from '../../Paths/caseFold'
++import { type AliasEdit, keepsAlias } from '../../Connections/aliasMemory'
+ …
+-  useEffect(() => () => window.clearTimeout(pick.current), [])
++  // A pending pick belongs to the list it was clicked in: typing in the slot or moving to another changes the list and drops it.
++  const listed = aliases.join('\u0000')
++  useEffect(() => () => window.clearTimeout(pick.current), [listed, match])
+ …
+-                invalid={(text) => normalizeTitle(text) === normalizeTitle(host.title)}
++                invalid={(text) => !keepsAlias(text, host.title)}
+```
+
+```Core/MarkdownPM/Autocomplete/AutocompletePane.tsx diff
+     <AliasList
++      key={v.ac.from}
+       aliases={v.candidates.map((r) => r.value)}
+```
+
+```Core/MarkdownPM/Autocomplete/useConnectionAutocomplete.ts diff
+-    const pageId = row.kind === 'page' ? row.pageId : page?.id
++    const pageId = row.kind === 'page' ? row.pageId : ac.title ? page?.id : undefined
+```
+
+```Core/Nexus/schemas.ts diff
+-import { entriesOf, numberCheck } from '../Files/decoders'
++import { eachOf, entriesOf, numberCheck } from '../Files/decoders'
+ …
+-  aliases: z.array(z.string()).optional().catch(undefined),
++  aliases: eachOf(z.string()).optional().catch(undefined),
+```
+
+```Core/Properties/assignValue.ts diff
+-  if (target?.kind !== 'page' || !target.alias) return null
++  if (target?.kind !== 'page' || target.syntax !== 'wiki' || !target.alias) return null
+```
+
+The renderer's one alias write lives where the codebase keeps its renderer-side `mutate` wrappers — find the precedent, else beside `editorHost.tsx`'s builder as an exported `editPageAliases(path, edit): Promise<boolean>` — and `editorHost.tsx` and `AliasesRow.tsx` both call it. The harness's `wear` folds against the harness page's title when the spec gives one, so a picker suite can exercise the title rule. Keying `AliasList` on the slot's start means a different link's slot is a different list: an open field there already committed by blur when the caret left for the editor.
+
+**VERIFY**
+
+- [ ] The new cases are green and each goes red without its change; `PropertyValueInput`'s and `TextPicker`'s tests stay green with their own `invalid` handling untouched.
+- [ ] The Alias Drive's groups 1–3, its new steps included, pass.
+- [ ] Run the gates, then commit.
+- [ ] Check for unnecessary code or mistakes.
+
+#### Task 3-7
+
+**TASK:** Draw every filter-like pane's rows compact through one source in `UIX/Menus`, so the collection Settings dropdown's Filter pane and the Matrix's filter match Open In Preview's.
+
+**NOW:** `menuCompact` (`UIX/Menus/menu-row.css.ts`) reaches a pane only through `picker-base.css.ts`'s `pane`, so `FilterFrame` drew compact inside a `PickerMenu` (Open In Preview, the View tile's settings) and standard inside the toolbar's `MenuSurface` (the collection Settings dropdown, the Matrix menu): 40px rule rows against 36px.
+
+**CHANGE**
+
+- [x] In `FilterFrame.test.tsx`, the pane root carries `menuCompact` around its rule rows.
+- [x] `UIX/Menus/frames.css.ts` exports `ruleFrame = style([menuCompact])`, documented as the rule that a pane of rule rows draws compact wherever it's hosted; `filter-frame.css.ts`'s `frame` composes it.
+- [x] Live: the collection Filter pane, the Matrix filter, and Open In Preview each draw 36px rule rows at `--row-pad-y` 4px (`753c82398`).
+
 #### Review Checkpoint
 
 - [ ] `AliasList` is the one alias list: the body picker and the Aliases pane render nothing alias-specific of their own, its row menu reaches the host through `EditorHost['menus']`, and `useListEdit` is the one home of the draft and rename mechanics, shared with Excluded Directories.
@@ -1817,6 +1949,8 @@ The draft row hands its `Reveal` to the rule it picks, and removing the last rul
 - [ ] `InputField` matches the baseline, `ManageList` is gone, and nothing in the tree serves only the bordered-field design.
 - [ ] Every list that drafts a named value — aliases, exclusions, options — closes its draft once the value lands and keeps it open on refusal, and every × beside a field that commits on blur discards an edit in progress, Filter's included; no list keeps its own variant.
 - [ ] `PropertyPanel` gained only the mount; no alias logic lives in Properties beyond `assignValue`'s remember.
+- [ ] `keepsAlias` is the one rule for what a page holds, read by the host's `applyAliasEdit` and the list's dim alike, and a name the list dims never reaches the host.
+- [ ] Compact rows reach a filter-like pane only through `ruleFrame` and a picker pane only through `picker-base`, both composing the one `menuCompact`; no pane sets row padding or type for compactness on its own.
 
 ### Phase 4 — Documentation
 
@@ -1903,8 +2037,10 @@ Each paragraph reads whole, in the document's existing voice, with no amendment 
 
 #### Open Items
 
-- None.
+- Nathan's calls on two parity questions, each taken at its recommendation meanwhile: a markdown-form Link value's label stops being remembered rather than bodies starting to remember labels (Task 3-6); a Text value's plain inline field stays raw text without alias memory, as it carries no link picker, while its TextPane remembers.
 
 #### Deviations
 
 - Phase 2 extracted `ManageList` into `UIX/Menus` for Excluded Directories and the Aliases pane. Nathan's redirect gave the Aliases pane the body picker's rows (`AliasList`), leaving `ManageList` one consumer, so Task 3-1 folds it back into `ExclusionPane` and the shared mechanics live in `useListEdit`; Task 3-1 also returns `InputField` to its baseline, undoing `048b2d7d7`'s passthroughs for the bordered `AliasField` that Nathan's redirect replaced.
+- Task 3-6 changes two frozen surfaces without changing what they keep: `pageMetaEntry`'s aliases decode element by element through `eachOf`, the on-disk shape unchanged, and `connectionText` reads the extracted `aliasFits`, its output unchanged.
+- Tasks 3-7 and 3-8 (compact filter rows, alias reorder) came from Nathan during the run.
