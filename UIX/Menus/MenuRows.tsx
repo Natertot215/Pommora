@@ -390,7 +390,7 @@ export function MenuScrollFrame({
 }: {
   header?: ReactNode
   footer?: ReactNode
-  maxHeight?: number
+  maxHeight?: number | 'none'
   className?: string
   children: ReactNode
 }): React.JSX.Element {
