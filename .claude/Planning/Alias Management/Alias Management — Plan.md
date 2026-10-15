@@ -70,7 +70,7 @@ Every alias write becomes an instruction — remember, add, rename, or forget �
 #### Constraints
 
 - **Gates:** From the repo root, `npm run typecheck && npm run test && npm run lint && npm run build` — chained with `&&`, never piped; read `✓ built in` on every build and `Found N warnings` on lint, which runs clean (zero errors, warnings, infos, unformatted files). Biome formats every TS/CSS/JSON write; an Edit failing on whitespace means it reformatted — re-read and retry.
-- **Frozen:** the on-disk shape (`aliases: string[]` in a shard entry, `pageMetaEntry`); the TS `PageMetaPatch` type and `copyPageMetadata`; the sync merge (`Core/Sync/Arrival/mergePolicy.ts`); link-text rewriting (`Core/Connections/rewrite.ts`, `connectionText`); `SettingsFieldRow`, `PathField`, `FilterFrame`; removal is instant everywhere (ruled in `827d0e6cf`) — no collapse-on-remove.
+- **Frozen:** the on-disk shape (`aliases: string[]` in a shard entry, `pageMetaEntry`); the TS `PageMetaPatch` type and `copyPageMetadata`; the sync merge (`Core/Sync/Arrival/mergePolicy.ts`); link-text rewriting (`Core/Connections/rewrite.ts`, `connectionText`); `SettingsFieldRow`, `PathField`; removal is instant everywhere (ruled in `827d0e6cf`) — no collapse-on-remove.
 - **Conventions:**
   - No comments unless they establish a constraint the code can't show; docstrings follow the files they sit beside.
   - Relative imports inside `Core`; `@pommora/uix/…` paths for UIX; UIX imports nothing outside itself; a `*.css.ts` exports only serializable values.
@@ -99,6 +99,7 @@ Every alias write becomes an instruction — remember, add, rename, or forget �
   - [ ] Task 3-2
   - [ ] Task 3-3
   - [ ] Task 3-4
+  - [ ] Task 3-5
   - [ ] Review Checkpoint
 - [ ] `[Stop: Nathan's Visual Pass and Live Feel on the Aliases pane and the body picker]`
 - [ ] **Phase 4** — Documentation
@@ -880,17 +881,18 @@ Every alias write becomes an instruction — remember, add, rename, or forget �
 
 ### Phase 3 — The Shared Alias Picker
 
-**GOAL:** One alias list serves the body picker's alias stage and the page panel's Aliases pane: menu rows with the alias glyph, the name, and an always-visible ×; a double-click or the row menu's Rename renames in place, the row menu's Delete or × deletes, and + drafts a new alias at the end. The body picker keeps its single-click insert, held for the double-click window, and hosts an edit as if the editor never left its slot. The panel mounts the row below Properties under a divider. This is the surface Nathan checks by hand. Tasks 3-1 through 3-3 share one commit: the host contract, the list, and the picker change together, and the tree typechecks only once all three land.
+**GOAL:** One alias list serves the body picker's alias stage and the page panel's Aliases pane: menu rows with the alias glyph, the name, and an always-visible ×; a double-click or the row menu's Rename renames in place, the row menu's Delete or × deletes, and + drafts a new alias at the end. The body picker keeps its single-click insert, held for the double-click window, and hosts an edit as if the editor never left its slot. The option editor's draft and Filter's × come into line with the same standards. The panel mounts the row below Properties under a divider. This is the surface Nathan checks by hand. Tasks 3-1 through 3-3 share one commit: the host contract, the list, and the picker change together, and the tree typechecks only once all three land.
 
 #### Task 3-1
 
-**TASK:** Give the editor host one `edit` and an alias row menu, hoist the list-edit mechanics into `useListEdit` and fold Excluded Directories' list back into its pane, let `keepFocus` yield to a field, give `ManageRow` a menu pane and its panes one width owner, and return `InputField` to its baseline.
+**TASK:** Give the editor host one `edit` and an alias row menu, let `useRenameKeys` leave a held name to its row and mint draft keys, hoist the list-edit mechanics into `useListEdit` and fold Excluded Directories' list back into its pane, let `keepFocus` yield to a field, give `ManageRow` a menu pane and its panes one width owner, and return `InputField` to its baseline.
 
-**NOW:** `EditorHost['aliases']` offers `remember` and `forget`, each void (`api.ts:167-172`); `editorHost.tsx` and `editorHarness.ts` implement them, `linkEdit.ts:151` remembers, `aliasRows` (`autocomplete.ts:181-198`) hands each alias row a `forget` closure, and `aliasPicker.test.tsx` and `connectionCommit.test.tsx` stub or spy on both. `EditorHost['menus']` (`api.ts:179-184`) carries the editor's native menus, `popMenu` behind each in `editorHost.tsx`. `ManageList` (`UIX/Menus/ManageRow.tsx`) holds the draft id, draft state, the `useRenameKeys` handoff, await-before-close, and revert inline; `ExclusionPane` and `AliasesRow` render it. `keepFocus` refuses every press, a press inside a text field included. `ManageRow` always opens a bare, inset, focus-trapping pane; `dcf1ab5e2` gave every Manage pane the 250–500 bounds, and its `style` prop survives only for Open In Preview's inline `minWidth: PANE_MIN_W`, which undercuts them. `InputField`'s `invalid` and `onCancel` (`048b2d7d7`) serve only `AliasesRow`'s `AliasField`.
+**NOW:** `EditorHost['aliases']` offers `remember` and `forget`, each void (`api.ts:167-172`); `editorHost.tsx` and `editorHarness.ts` implement them, `linkEdit.ts:151` remembers, `aliasRows` (`autocomplete.ts:181-198`) hands each alias row a `forget` closure, and `aliasPicker.test.tsx` and `connectionCommit.test.tsx` stub or spy on both. `EditorHost['menus']` (`api.ts:179-184`) carries the editor's native menus, `popMenu` behind each in `editorHost.tsx`. `ManageList` (`UIX/Menus/ManageRow.tsx`) holds the draft id, draft state, the `useRenameKeys` handoff, await-before-close, and revert inline; `ExclusionPane` and `AliasesRow` render it. A draft written as a name the list already holds — the most common refusal, a duplicate — makes `useRenameKeys` hand that name the draft's key: the held row remounts, the draft reads as landed and drops its typed text, and the refusal's `revert` brings back an empty draft. `keepFocus` refuses every press, a press inside a text field included. `ManageRow` always opens a bare, inset, focus-trapping pane; `dcf1ab5e2` gave every Manage pane the 250–500 bounds, and its `style` prop survives only for Open In Preview's inline `minWidth: PANE_MIN_W`, which undercuts them. `InputField`'s `invalid` and `onCancel` (`048b2d7d7`) serve only `AliasesRow`'s `AliasField`.
 
 **CHANGE**
 
 - [ ] In `Core/Pages/editorHost.test.ts`, rewrite the alias cases and watch them fail: `edit('p1', { op: 'forget', alias: 'the notes' })` sends `{ op: 'editAliases', path: 'Notes/Alpha.md', edit: { op: 'forget', alias: 'the notes' } }` and resolves `true`; `edit` on an id the tree doesn't hold resolves `false` and sends nothing; the list and subscribe cases stay.
+- [ ] In `Core/Settings/ExclusionRows.test.tsx`, add and watch fail: drafting `Archive` over a list holding `Archive`, with the write refused, leaves the draft reading `Archive` and the held `Archive` row the same node.
 - [ ] In `UIX/Pickers/PickerMenu`'s tests, add and watch fail: in a `focus="keep"` pane, a mousedown on a field inside isn't `defaultPrevented`, and one on a row is.
 - [ ] Repoint the host's alias callers in tests: `aliasPicker.test.tsx`'s host stub carries `edit` in place of `remember`/`forget`, its "a row forgets itself" case goes (Task 3-3 replaces the row), and its candidates drop `forget`; `connectionCommit.test.tsx:95` calls `edit('p1', { op: 'forget', alias: 'two' })` and `:100-111` spies on `edit` for `{ op: 'remember', … }`; `linkEdit.test.tsx`'s `remember` spies spy on `edit` the same way.
 - [ ] Apply the diffs below.
@@ -968,8 +970,32 @@ Every alias write becomes an instruction — remember, add, rename, or forget �
 +    void view.state.facet(editorHost).aliases.edit(target.page.id, { op: 'remember', alias })
 ```
 
+```UIX/Animations/useRenameKeys.ts diff
+-/** A value renamed in place keeps the key it had, so its row neither remounts nor arrives again; `holding` keeps a rename alive while the value is still being edited. */
++/** A value renamed in place keeps the key it had, so its row neither remounts nor arrives again; `holding` keeps a rename alive while the value is still being edited. A name another row already holds stays that row's, and `mint` gives a draft a key no value holds, which its value takes when it lands. */
+ …
+   revert: (to: string) => void
++  mint: () => string
+ } {
+   const renamed = useRef(new Map<string, { key: string; seen: boolean }>())
++  const minted = useRef(0)
+ …
+   return {
+     keyOf,
+-    rename: (from, to) => void renamed.current.set(to, { key: keyOf(from), seen: false }),
+-    revert: (to) => void renamed.current.delete(to),
++    rename: (from, to) => {
++      if (!present.has(to)) renamed.current.set(to, { key: keyOf(from), seen: false })
++    },
++    revert: (to) => {
++      if (!renamed.current.get(to)?.seen) renamed.current.delete(to)
++    },
++    mint: () => `\u0000${++minted.current}`,
+   }
+```
+
 ```UIX/Menus/useListEdit.ts diff
-+import { useRef, useState } from 'react'
++import { useState } from 'react'
 +import { useRenameKeys } from '../Animations/useRenameKeys'
 +
 +export interface ListRow {
@@ -995,7 +1021,6 @@ Every alias write becomes an instruction — remember, add, rename, or forget �
 +  cancel: () => void
 +  commit: (row: ListRow, next: string) => void
 +} {
-+  const drafts = useRef(0)
 +  const [draft, setDraft] = useState<string | null>(null)
 +  const keys = useRenameKeys(values)
 +  const rows = values.map((value) => ({ key: keys.keyOf(value), value, draft: false }))
@@ -1004,7 +1029,7 @@ Every alias write becomes an instruction — remember, add, rename, or forget �
 +  return {
 +    rows,
 +    drafting,
-+    begin: () => setDraft(`\u0000${++drafts.current}`),
++    begin: () => setDraft(keys.mint()),
 +    cancel: () => setDraft(null),
 +    commit: (row, next) => {
 +      if (!next || next === row.value) return
@@ -1578,6 +1603,154 @@ A double-click on a name begins its rename through `RenamableLabel`'s `onBegin`,
 
 #### Task 3-4
 
+**TASK:** Bring the two lists that edit the same way but behave otherwise into line: the option editor's draft closes once its add lands and stays open on refusal, and Filter's rule × discards an edit in progress, its rows keyed by identity rather than index. The property picker's + waits on its draft, and `TokenField`'s chip × keeps focus through `keepFocus`.
+
+**NOW:**
+- **Option draft:** `useOptionEdit`'s `commitDraft` (`Core/Properties/Schema/useOptionEdit.tsx:141-145`) clears the draft before `editOption` writes, so a refused add loses its title and a landed option grows in as the draft drops out; `write` (`Core/Properties/propertyWrite.ts`) reports a refusal and answers nothing. The property picker's `FootingCreate` (`PropertyPicker.tsx:334`) stays enabled while drafting and resets the draft. The host updates the window before it replies to `property:editOption` (`Core/Contract/handlers.ts:98-111`, `Core/Nexus/settle.ts:36-48`).
+- **Filter rows:** `FilterFrame`'s rows are `Reveal key={index}` with the value cell an `EditableInput key={operand}`; its rule × (`FilterFrame.tsx:468-473`) commits the value cell's edit on blur and then removes the rule, and the draft row's × (`:494-499`) repeats the same `AccessoryButton`. A `keepFocus` alone would carry a focused field across rows: a removed rule's input survives under a neighbour sharing its operand, and a neighbour's input unmounts without a blur. `FilterFrame` hosts Open In Preview (`PreviewRulesRow.tsx:29`), a view's filter (`ViewLeaf.tsx:39`), and the Matrix's (`MatrixMenu.tsx:121`).
+- **Chips:** `TokenField` (`UIX/Fields/TokenField.tsx:46`) writes `e.preventDefault()` by hand for a chip × press.
+
+**CHANGE**
+
+- [ ] In `Core/Properties/Schema/OptionEditor.test.tsx`, add and watch fail: a refused add leaves the draft reading `Fresh`; with `editOption` deferred, the draft stays open after its commit, and the groups re-rendering with `Fresh` before the reply removes it; drafting `Urgent` over a list holding `Urgent`, refused, leaves the draft reading `Urgent` and the held `Urgent` row the same node.
+- [ ] In `Core/Properties/Pickers/PropertyPicker.pane.test.tsx`, move the close-before-write assertion (`:290`, `expect(draft()).toBeNull()`) after the reply, add that a refused add keeps `Fresh` in the draft, and that + is disabled while drafting.
+- [ ] In `FilterFrame`'s tests, add and watch fail: a mousedown on either × is `defaultPrevented`; with two `''` text rules, typing `foo` into rule 2 and pressing rule 1's × leaves rule 2's input the same node, focused, reading `foo`, with only the removal saved; typing `foo` into rule 1 and pressing its × leaves the remaining input reading `''`; the `[data-reveal]` that held the draft row holds the rule it picked.
+- [ ] Apply the diffs below.
+
+**AFTER**
+
+```Core/Properties/propertyWrite.ts diff
+-export const write = async (res: Promise<Result<null>>): Promise<void> => {
+-  reportRefusal(await res)
+-}
++export const write = async (res: Promise<Result<null>>): Promise<boolean> =>
++  reportRefusal(await res)
+```
+
+```Core/Properties/Schema/PropertyFrame.tsx diff
+ @@ :252, :257 @@
+-… : Promise<void> …
++… : Promise<boolean> …
+```
+
+```Core/Properties/Schema/useOptionEdit.tsx diff
+-type Draft = { groupId: string; index?: number }
++type Draft = { key: string; groupId: string; index?: number }
+ …
+-  editOption: (edit: OptionEdit) => Promise<void>
++  editOption: (edit: OptionEdit) => Promise<boolean>
+ …
+-  const editOption = (edit: OptionEdit): Promise<void> =>
++  const editOption = (edit: OptionEdit): Promise<boolean> =>
+ …
+-  const entering = (value: string): boolean => enteringKey(keyOf(value))
++  const entering = (value: string): boolean =>
++    keyOf(value) !== draft?.key && enteringKey(keyOf(value))
+ …
+   const commitDraft = (title: string): void => {
+     if (!draft) return
+-    setDraft(null)
+-    void editOption({ op: 'add', groupId: draft.groupId, title, atIndex: draft.index })
++    keys.rename(draft.key, title)
++    void editOption({ op: 'add', groupId: draft.groupId, title, atIndex: draft.index }).then((ok) =>
++      ok ? setDraft((d) => (d === draft ? null : d)) : keys.revert(title),
++    )
+   }
++  const drafted = draft && !options.some((o) => keyOf(o.value) === draft.key) ? draft : null
+ …
+-    draft,
+-    beginDraft: (groupId, index) => setDraft({ groupId, index }),
++    draft: drafted,
++    beginDraft: (groupId, index) => setDraft({ key: keys.mint(), groupId, index }),
+```
+
+`busy` keeps reading the raw `draft`, so the editor stays busy until the reply. A landed option whose key is the draft's mounts open in the render that hides the draft, so the draft gives way to its option without the option growing in.
+
+```Core/Properties/Pickers/PropertyPicker.tsx diff
+                   <FootingCreate
+                     ariaLabel="New Option"
++                    disabled={!!edit.draft}
+                     onClick={() => edit.beginDraft(SELECT_GROUP)}
+                   />
+```
+
+```Core/Views/Settings/FilterFrame.tsx diff
++import { keepFocus } from '@pommora/uix/Interactions/shared'
+ …
+-  const [drafting, setDrafting] = useState(false)
++  const [draft, setDraft] = useState<string | null>(null)
++  const minted = useRef(0)
++  const mint = (): string => String(++minted.current)
++  const ids = useRef<string[]>([])
+   const rules: FilterRule[] = decoded.kind === 'rows' ? decoded.rules : []
++  // A rule's row is its identity, not its place, so removing one leaves every other row and its field where they stand.
++  if (ids.current.length !== rules.length) ids.current = rules.map(mint)
+-  const entering = useEntrance(rules, (_, i) => String(i))
++  const entering = useEntrance(ids.current, (id) => id)
+-  const removeRow = (index: number): void =>
+-    save(
+-      mode,
+-      liveRules().filter((_, i) => i !== index),
+-    )
++  const removeRow = (index: number): void => {
++    ids.current.splice(index, 1)
++    save(mode, liveRules().filter((_, i) => i !== index))
++  }
+   const completeDraft = (targetId: string): void => {
+-    setDrafting(false)
++    ids.current.push(draft ?? 'lead')
++    setDraft(null)
+     setPendingMode(null)
+     save(mode, [...liveRules(), mintRule(targetId, schema, contextIds)])
+   }
++
++  const removeButton = (onClick: () => void): React.JSX.Element => (
++    <AccessoryButton
++      icon="x"
++      size="control"
++      ariaLabel="Remove filter"
++      onMouseDown={keepFocus}
++      onClick={onClick}
++    />
++  )
+ @@ ruleRow @@
++    const id = ids.current[index]
+-      <Reveal key={index} open enterOnMount={entering(String(index))} fill>
++      <Reveal key={id} open enterOnMount={entering(id)} fill>
+ …
+-          <AccessoryButton icon="x" size="control" ariaLabel="Remove filter" onClick={() => removeRow(index)} />
++          {removeButton(() => removeRow(index))}
+ @@ draftRow @@
+-  const draftRow = (drafting || lead) && (
+-    <Reveal open enterOnMount={!lead} fill>
++  const draftRow = (draft !== null || lead) && (
++    <Reveal key={draft ?? 'lead'} open enterOnMount={!lead} fill>
+ …
+-        {!lead && ( <AccessoryButton … onClick={() => setDrafting(false)} /> )}
++        {!lead && removeButton(() => setDraft(null))}
+ @@ the list @@
+-          {rules.map(ruleRow)}
+-          {draftRow}
+-          <FootingCreate ariaLabel="Add filter rule" onClick={() => setDrafting(true)} />
++          {[...rules.map(ruleRow), draftRow]}
++          <FootingCreate ariaLabel="Add filter rule" onClick={() => setDraft((d) => d ?? mint())} />
+```
+
+The draft row hands its `Reveal` to the rule it picks, and removing the last rule hands its row back to the "Where" lead. A rule count changed from elsewhere — another window, a refused save unstaged — re-mints every id, so the rows remount once; only a field mid-edit in that same moment loses its text.
+
+```UIX/Fields/TokenField.tsx diff
+-        if (target.closest('button')) return e.preventDefault()
++        if (target.closest('button')) return keepFocus(e)
+```
+
+**VERIFY**
+
+- [ ] `OptionEditor.test.tsx`, `PropertyPicker.pane.test.tsx`, `PropertyFrame.test.tsx`, `FilterFrame`'s tests, `PreviewRulesRow.test.tsx`, the view and Matrix filter tests, and `TokenField`'s tests are green.
+- [ ] Run the gates, then commit.
+- [ ] Check for unnecessary code or mistakes.
+
+#### Task 3-5
+
 **TASK:** Mount the row in `PropertyPanel` for page subjects, below the Properties group under a divider, and check both surfaces live.
 
 **NOW:** `PropertyPanel`'s rows column (`s.pageRows` in the dropdown, `s.panelRows`, the scroll region, in the side pane) holds the Contexts and Properties groups; a Space subject shares it. The panel's `title` is `subject.title ?? fetchedTitle`, loaded with the frontmatter before `body()` renders. The mount and its test sit uncommitted in the tree.
@@ -1615,7 +1788,8 @@ A double-click on a name begins its rename through `RenamableLabel`'s `onBegin`,
   - **Manage pane:** its rows sit edge to edge on the picker's surface like the body picker's; opening it focuses nothing; × shows at rest; + drafts at the end with the caret seated, without nudging the pane's scroll (else `EditableInput` focuses with `{ preventScroll: true }`, recorded); Enter keeps the draft's row; a single click does nothing; a double-click on a name and the row menu's Rename rename in place; the row menu's Delete and × delete; typing the title dims.
   - **Body picker:** after `[[Page A|`, the same rows; a single click inserts after the double-click window, and a double-click on a name renames instead; + adds without inserting, the pane staying open, the link under it staying raw, and the caret returning to the slot; Escape in a field returns the caret; a press on another field or on blank chrome mid-edit closes the picker and leaves the slot as a blur would; the row menu opens during a rename without closing the picker; the same in a table cell's editor and a Link property's text pane.
   - **Excluded Directories and Open In Preview:** Excluded Directories' pane keeps its width, folder-trail tone, and look, and × on a field mid-edit sends one `exclusions:set` without the typed text; Open In Preview's pane opens at the shared 250 minimum (it was 225), screenshotted for Nathan.
-  - Revert every alias and exclusion the check made, screenshot the Manage pane and the body picker for Nathan, and stop the scratch instance by exact PID.
+  - **Option editor and filters:** a new option stays open until it lands and keeps its typed title on a refused duplicate; Filter's × discards a value cell's edit in progress, in Open In Preview and a view's filter pane.
+  - Revert every alias, exclusion, option, and filter rule the check made, screenshot the Manage pane and the body picker for Nathan, and stop the scratch instance by exact PID.
 - [ ] Run the gates, then commit.
 - [ ] Check for unnecessary code or mistakes.
 
@@ -1624,6 +1798,7 @@ A double-click on a name begins its rename through `RenamableLabel`'s `onBegin`,
 - [ ] `AliasList` is the one alias list: the body picker and the Aliases pane render nothing alias-specific of their own, its row menu reaches the host through `EditorHost['menus']`, and `useListEdit` is the one home of the draft and rename mechanics, shared with Excluded Directories.
 - [ ] The editor holds its slot for an edit in its own caret pane — no close, no collapse, no remember, the link still raw — and every edit there ends with the caret back in the slot or with the editor's own leave; a single click inserts only once the double-click window passes, against the picker's state at that moment.
 - [ ] `InputField` matches the baseline, `ManageList` is gone, and nothing in the tree serves only the bordered-field design.
+- [ ] Every list that drafts a named value — aliases, exclusions, options — closes its draft once the value lands and keeps it open on refusal, and every × beside a field that commits on blur discards an edit in progress, Filter's included; no list keeps its own variant.
 - [ ] `PropertyPanel` gained only the mount; no alias logic lives in Properties beyond `assignValue`'s remember.
 
 ### Phase 4 — Documentation
@@ -1644,6 +1819,7 @@ A double-click on a name begins its rename through `RenamableLabel`'s `onBegin`,
 - [ ] `PommoraUIX.md` — Menus: the file list names `ManageRow.tsx`, `manage-row.css.ts`, and `useListEdit.ts`; a **Manage** row lists `ManageRow`, and a **List editing** row lists `useListEdit` · `ListRow`; the Row classes row gains `trailingCluster` · `trailingFigure`. Animations: an **Arrival** row lists `useEntrance` · `useRenameKeys`.
 - [ ] `Guidelines/Editor-Internals.md:41` — **A caret pane never takes focus** becomes: a press in a caret pane leaves focus with the editor unless it lands in a field, and the editor holds its slot while that field is focused; the `mousedown`, never `pointerdown`, clause stays.
 - [ ] `InteractionPM.md:89` — Hover Remove answers to its row "inside a tab", its only remaining row host.
+- [ ] `InteractionPM.md` — beside **Entrance** (`:40`), a **Drafts** note: a list's draft is keyed for the value it writes (`useRenameKeys`' `mint`), closes once that value lands, and stays open on refusal — aliases, exclusions, options, and filter rules alike; a × beside a field that commits on blur keeps the focus (`keepFocus`), so it discards an edit in progress.
 - [ ] `ContextPM.md:50` — drop "the alias memory's `setPageMeta`" and set the count to the `void dialer().ask(` sites the tree holds.
 - [ ] `Planning/Cross-Device Mutation Checklist.md:41` — the route reads `Core/Nexus/mutate.ts` `editAliases` → `Core/Nexus/pageMetadata.ts` `editPageAliases`, and the row covers adding and renaming.
 
@@ -1665,7 +1841,7 @@ Each paragraph reads whole, in the document's existing voice, with no amendment 
 - **Completeness:** Every task is ticked; no TODOs, scaffolding, or debug output.
 - **Confirmation:** Every new test goes red without its change; Nathan's Visual Pass and Live Feel carry his word.
 - **Continuity:** *§Reconciliation* is walked and the documents read true.
-- **Confidence:** Gates green from a clean state over `{baseline}..HEAD`; the diff is near the plan's size (code roughly +600 / −300, net near +300, most of it the shared alias list and the editor holding its slot through a picker edit), growth past it reported.
+- **Confidence:** Gates green from a clean state over `{baseline}..HEAD`; the diff is near the plan's size (code roughly +650 / −340, net near +310, most of it the shared alias list and the editor holding its slot through a picker edit), growth past it reported.
 
 #### Final Verification
 
@@ -1706,11 +1882,11 @@ Each paragraph reads whole, in the document's existing voice, with no amendment 
 - `.claude/Features/ConnectionsPM.md:59` — "Each row carries a hover-revealed × that forgets that alias" — Task 4-1
 - `.claude/Guidelines/Editor-Internals.md:41` — "A caret pane never takes focus … refuses the focus move on every press inside the pane" — Task 4-1
 - `.claude/Features/InteractionPM.md:89` — Hover Remove "inside a tab or a menu row" — Task 4-1
+- `Core/Properties/Pickers/PropertyPicker.pane.test.tsx:290` — the option draft closing before its write — Task 3-4
 
 #### Open Items
 
-- `FilterFrame`'s × (`Core/Views/Settings/FilterFrame.tsx:468-473`, `:494-499`) commits a value cell's edit and then removes it, where the Manage panes' × discards one through `keepFocus`; `FilterFrame` is frozen here, so making it match is Nathan's scope call.
-- The option editor's draft (`useOptionEdit.tsx:141-145`) closes before its write and loses a refused title, where `useListEdit`'s draft keeps its row and stays open on refusal; its positioned, grouped draft isn't a twin of `useListEdit`, so this is a ruling, not a mechanical change.
+- None.
 
 #### Deviations
 
