@@ -17,8 +17,7 @@ import { Icon } from '@pommora/uix/Symbols'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import type { AliasRowAction } from '../../Actions/aliasRowMenu'
 import { ALIAS_ICON } from '../../Assets/entityIconPolicy'
-import type { AliasEdit } from '../../Connections/aliasMemory'
-import { normalizeTitle } from '../../Paths/caseFold'
+import { type AliasEdit, keepsAlias } from '../../Connections/aliasMemory'
 
 // KNOB — how long a click on a picker row waits for a second click that makes it a rename.
 const PICK_DELAY_MS = 300
@@ -57,7 +56,9 @@ export function AliasList({
   const pick = useRef<number | undefined>(undefined)
   const picked = useLatest(onPick)
   const keepInView = useKeepInView(active ?? -1)
-  useEffect(() => () => window.clearTimeout(pick.current), [])
+  // A pending pick belongs to the list it was clicked in: typing in the slot or moving to another changes the list and drops it.
+  const listed = aliases.join('\u0000')
+  useEffect(() => () => window.clearTimeout(pick.current), [listed, match])
   const editing = (row: ListRow): boolean => row.draft || renaming === row.key
   const byKey = (): boolean => {
     const was = keyed.current
@@ -147,7 +148,7 @@ export function AliasList({
                 ariaLabel="Alias"
                 editing={editing(row)}
                 value={row.value}
-                invalid={(text) => normalizeTitle(text) === normalizeTitle(host.title)}
+                invalid={(text) => !keepsAlias(text, host.title)}
                 onBegin={row.draft ? undefined : () => rename(row)}
                 onCommit={(next) => {
                   const landed = list.commit(row, next)

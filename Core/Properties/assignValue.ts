@@ -52,7 +52,7 @@ function rememberedAlias(
   prior: PropertyValue | null,
 ): MutateRequest | null {
   const target = value?.kind === 'link' ? readLinkText(value.value) : null
-  if (target?.kind !== 'page' || !target.alias) return null
+  if (target?.kind !== 'page' || target.syntax !== 'wiki' || !target.alias) return null
   if (prior?.kind === 'link' && readLinkText(prior.value)?.alias === target.alias) return null
   const tree = useSession.getState().tree
   const page = tree && pageIndexOf(tree).resolve(target.title).page

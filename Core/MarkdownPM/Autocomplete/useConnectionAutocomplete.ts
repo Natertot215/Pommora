@@ -144,7 +144,7 @@ export function useConnectionAutocomplete(
       ac.form === 'link' &&
       !!container?.alias &&
       keepsShown(container, { kind: 'page', syntax: 'wiki', title: row.value }, keepTitle)
-    const pageId = row.kind === 'page' ? row.pageId : page?.id
+    const pageId = row.kind === 'page' ? row.pageId : ac.title ? page?.id : undefined
     // Only a page the picker offered can open an alias slot — an empty pipe with nothing behind it is a slot the user has to close.
     const openAlias =
       (ac.form === 'link' || ac.form === 'heading') &&

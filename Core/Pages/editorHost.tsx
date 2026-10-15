@@ -52,10 +52,6 @@ function buildEditorHost(
     const tree = state().tree
     return tree ? pagesByIdOf(tree).get(id) : undefined
   }
-  const editAliases = async (id: string, edit: AliasEdit): Promise<boolean> => {
-    const path = pageOf(id)?.path
-    return !!path && (await state().mutate({ op: 'editAliases', path, edit })) !== null
-  }
   return {
     settings: () => {
       const s = state()
@@ -64,7 +60,10 @@ function buildEditorHost(
     connections: () => connRef.current,
     aliases: {
       list: (id) => heldAliases(pageMetaOf(id)(state())?.aliases ?? [], pageOf(id)?.title ?? ''),
-      edit: editAliases,
+      edit: async (id, edit) => {
+        const path = pageOf(id)?.path
+        return !!path && (await editAliasesIn(path)(edit))
+      },
       subscribe: (cb) =>
         useSession.subscribe((s, prev) => {
           if (s.tree?.config.pageMetadata !== prev.tree?.config.pageMetadata) cb()
@@ -145,6 +144,11 @@ export const renameHeadingIn =
   (path: string) =>
   (heading: string, to: string): void =>
     void useSession.getState().mutate({ op: 'renameHeading', path, heading, to })
+
+export const editAliasesIn =
+  (path: string) =>
+  async (edit: AliasEdit): Promise<boolean> =>
+    (await useSession.getState().mutate({ op: 'editAliases', path, edit })) !== null
 
 /** Re-identified on the store facts the editor renders from, so its effects follow a toggle made anywhere. */
 export function useEditorHost({

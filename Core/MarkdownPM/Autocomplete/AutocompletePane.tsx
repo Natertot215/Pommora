@@ -183,6 +183,7 @@ export function AutocompletePane({
     headingSlot()
   ) : v.aliasHost ? (
     <AliasList
+      key={v.ac.from}
       aliases={v.candidates.map((r) => r.value)}
       host={v.aliasHost}
       active={v.index}

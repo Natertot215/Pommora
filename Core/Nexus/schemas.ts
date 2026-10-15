@@ -1,7 +1,7 @@
 // `z.looseObject` ⇒ FOREIGN keys survive a rewrite — outside tools and agents can add keys to a `.nexus` file or a page’s frontmatter without Pommora erasing them.
 
 import { z } from 'zod'
-import { entriesOf, numberCheck } from '../Files/decoders'
+import { eachOf, entriesOf, numberCheck } from '../Files/decoders'
 import { CROP_POINT, CROP_ZOOM } from '../Assets/cropGeometry'
 import { VIEW_BUTTONS, type ViewButton } from '../Views/viewRow'
 import { ID_KEY } from './identityMark'
@@ -24,7 +24,7 @@ export const cropsFile = z.looseObject({
 
 export const pageMetaEntry = z.object({
   icon: z.string().optional().catch(undefined),
-  aliases: z.array(z.string()).optional().catch(undefined),
+  aliases: eachOf(z.string()).optional().catch(undefined),
   title_icon: z.boolean().optional().catch(undefined),
   locked: z.literal(true).optional().catch(undefined),
 })
