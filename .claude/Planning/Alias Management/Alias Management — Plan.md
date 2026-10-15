@@ -97,7 +97,7 @@ Every alias write becomes an instruction — remember, add, rename, or forget �
 - [ ] **Phase 3** — The Shared Alias Picker
   - [x] Task 3-1
   - [x] Task 3-2
-  - [ ] Task 3-3
+  - [x] Task 3-3
   - [ ] Task 3-4
   - [ ] Task 3-5
   - [ ] Review Checkpoint
@@ -1458,8 +1458,8 @@ A double-click on a name begins its rename through `RenamableLabel`'s `onBegin`,
   - with the harness's `menus.alias` answering `rename`, a right-click opens the row's input.
 - [x] Repoint `connectionCommit.test.tsx:90`'s `.mdpm-ac-forget` count to the "Delete alias" buttons.
 - [x] In `Core/MarkdownPM/Links/linkEdit.test.tsx`, add "focus moving into the caret pane neither collapses nor remembers" — an empty and a typed alias slot, blurred toward an element inside a `CaretPane`, keep their text and send no `edit` — and watch it fail.
-- [ ] In `aliasPicker.test.tsx`, add and watch fail: a heading committed into the alias stage leaves the sliding root drawing its heading rows as heading rows, with no page glyph.
-- [ ] In the decoration tests, add and watch fail: with focus moved into a pane field, the alias slot keeps its editing decoration while `paneHeld` holds, and rests once it clears.
+- [x] In `aliasPicker.test.tsx`, add and watch fail: a heading committed into the alias stage leaves the sliding root drawing its heading rows as heading rows, with no page glyph.
+- [x] In the decoration tests, add and watch fail: with focus moved into a pane field, the alias slot keeps its editing decoration while `paneHeld` holds, and rests once it clears.
 - [x] Apply the diffs below.
 
 **AFTER**

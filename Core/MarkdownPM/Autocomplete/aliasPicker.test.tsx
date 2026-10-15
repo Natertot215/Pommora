@@ -190,6 +190,32 @@ describe('the body picker’s alias list', () => {
     elsewhere.remove()
   })
 
+  it('a heading committed into the alias stage leaves its heading rows behind as heading rows', async () => {
+    stubEditorBridge()
+    const view = await mountEditor({
+      initialBody: '[[Alpha#]]',
+      connections: {
+        ...conn,
+        headingsOf: () => ({
+          keys: ['setup'],
+          texts: ['Setup'],
+          outline: [{ text: 'Setup', level: 2 }],
+        }),
+      },
+      host: { aliases: { p1: ['the plan'] } },
+    })
+    vi.spyOn(view, 'coordsAtPos').mockReturnValue({ left: 10, right: 10, top: 10, bottom: 20 })
+    await act(async () => {
+      view.focus()
+      view.dispatch({ selection: { anchor: 8 } })
+    })
+    await key(view.contentDOM, 'Enter')
+    expect(view.state.doc.toString()).toBe('[[Alpha#Setup|]]')
+    const pane = document.querySelector('.mdpm-ac') as HTMLElement
+    expect(pane.textContent).toContain('Setup')
+    expect(pane.querySelector('.lucide-file-text')).toBeNull()
+  })
+
   it('the row menu’s Rename opens the row’s input', async () => {
     await openPicker({ alias: async () => 'rename' })
     await act(async () => {
