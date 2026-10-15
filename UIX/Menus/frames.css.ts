@@ -120,12 +120,13 @@ export const optionRow = style([
   { justifyContent: 'space-between', borderRadius: `${ROW_RADIUS}px` },
 ])
 
-/** KNOB — a pane's middle list region's scroll ceiling. */
-const MIDDLE_MAX_HEIGHT = '280px'
+/** KNOB — a pane's middle list region shows this many rows before it scrolls; it never yields that room to the pane's controls. */
+const MIDDLE_ROWS = 8
 
 export const middleRegion = style({
   position: 'relative',
-  maxHeight: MIDDLE_MAX_HEIGHT,
+  flexShrink: 0,
+  maxHeight: `calc(${MIDDLE_ROWS} * (var(--row-line) + 2 * var(--row-pad-y)) + var(--drop-line-thickness) + 2 * var(--drop-dot-overhang))`,
   overflowY: 'auto',
   vars: { '--scroll-fade': 'var(--fade-base)' },
 })

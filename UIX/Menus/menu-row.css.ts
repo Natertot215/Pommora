@@ -106,17 +106,14 @@ export const headingCaps = style({ textTransform: 'uppercase', letterSpacing: '0
 
 export const item = style([rowBox, rowShell])
 
-export const rowCompact = style({
+export const menuCompact = style({
   vars: {
     '--row-pad-y': 'var(--row-pad-compact)',
     '--row-pad-x': 'var(--row-pad-compact)',
+    '--row-size': font.scale.control.size,
+    '--row-line': font.scale.control.line,
   },
 })
-
-export const menuCompact = style([
-  rowCompact,
-  { vars: { '--row-size': font.scale.control.size, '--row-line': font.scale.control.line } },
-])
 
 export const itemSelected = style({
   backgroundColor: c.state.selected,
@@ -260,8 +257,10 @@ export const footingLabel = style([
 export const footingSymbol = style({ display: 'inline-flex', color: c.label.secondary })
 export const footingQuiet = style({ selectors: { '&&&': { color: c.label.tertiary } } })
 
+/** A row's accessory overhangs into the row's padding rather than outgrowing its line, so an eye or × row stands as tall as a plain one. */
 export const accessoryButton = style({
   width: '20px',
+  marginBlock: 'max(calc(-1 * var(--row-pad-y)), calc((var(--row-line) - var(--btn-h)) / 2))',
   color: c.label.tertiary,
   selectors: { '&&:disabled': { opacity: STATE_OPACITY.ghost } },
 })
