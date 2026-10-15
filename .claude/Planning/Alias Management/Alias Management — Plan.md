@@ -2174,7 +2174,7 @@ A drop swallows its release click, so a drag never arms the click insert; a doub
 
 #### Task 4-1
 
-**TASK:** Reconcile every document *§Reconciliation* names, then recount `ContextPM.md:50`'s fire-and-forget sites.
+**TASK:** Reconcile every document *§Reconciliation* names.
 
 **NOW:** See *§Reconciliation*.
 
@@ -2187,7 +2187,7 @@ A drop swallows its release click, so a drag never arms the click insert; a doub
 - [x] `Guidelines/Editor-Internals.md:41` — **A caret pane never takes focus** becomes: a press in a caret pane leaves focus with the editor unless it lands in a field, and the editor holds its slot while that field is focused; the `mousedown`, never `pointerdown`, clause stays.
 - [x] `InteractionPM.md:89` — Hover Remove answers to its row "inside a tab", its only remaining row host.
 - [x] `InteractionPM.md` — beside **Entrance** (`:40`), a **Drafts** note: a list's draft is keyed for the value it writes (`useRenameKeys`' `mint`), closes once that value lands, and stays open on refusal — aliases, exclusions, options, and filter rules alike; a × beside a field that commits on blur keeps the focus (`RowRemove`), so it discards an edit in progress.
-- [x] `ContextPM.md:50` — drop "the alias memory's `setPageMeta`" and set the count to the `void dialer().ask(` sites the tree holds.
+- [x] `ContextPM.md:50` — the **Fire-and-forget writes have no seam** debt item goes: the persisted-chrome family reports through `persist()`, and every remaining `void dialer().ask(` write reports its refusal.
 - [x] `Planning/Cross-Device Mutation Checklist.md:41` — the route reads `Core/Nexus/mutate.ts` `editAliases` → `Core/Nexus/pageMetadata.ts` `editPageAliases`, and the row covers adding and renaming.
 
 **AFTER**
