@@ -1,7 +1,13 @@
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import { PROPERTY_TYPES, type PropertyDefinition, specOf } from '../../Properties/properties'
 import { LOCATION_SORT, type SavedView, type SortCriterion, VIEW_KINDS, viewOption } from '../views'
-import { MenuRowView, MenuTopRow, MenuSeparator, pickerRow } from '@pommora/uix/Menus'
+import {
+  MenuRowView,
+  MenuScrollFrame,
+  MenuTopRow,
+  MenuSeparator,
+  pickerRow,
+} from '@pommora/uix/Menus'
 import { useSaveView } from '../viewWrite'
 import { declaredType } from '../../Properties/value'
 import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
@@ -13,7 +19,7 @@ import {
   TITLE_TARGET,
   targetOption,
 } from '../../Properties/Cells/PropertyTypes'
-import { chipRegion, middleRegion } from '@pommora/uix/Menus/frames.css'
+import { chipRegion, middleRegion, VIEW_SETTINGS_MAX_HEIGHT } from '@pommora/uix/Menus/frames.css'
 
 type Direction = SortCriterion['direction']
 
@@ -141,8 +147,10 @@ export function SortFrame({
   ]
 
   return (
-    <>
-      <MenuTopRow label={label} current="Sorting" onBack={onBack} />
+    <MenuScrollFrame
+      header={<MenuTopRow label={label} current="Sorting" onBack={onBack} />}
+      maxHeight={VIEW_SETTINGS_MAX_HEIGHT}
+    >
       <MenuRowView
         row={pickerRow(
           'arrow-up-down',
@@ -219,6 +227,6 @@ export function SortFrame({
           )}
         </>
       )}
-    </>
+    </MenuScrollFrame>
   )
 }

@@ -11,6 +11,7 @@ import {
 } from '@pommora/uix/Menus'
 import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
 import { PANE_MIN_H, PANE_MIN_W } from '@pommora/uix/Menus/frame-slide.css'
+import { VIEW_SETTINGS_MAX_HEIGHT } from '@pommora/uix/Menus/frames.css'
 import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
 import { lockLabel } from '../Actions/toggleLabels'
 import { useSession } from '../Session/store'
@@ -125,6 +126,7 @@ export function MatrixMenu(): React.JSX.Element {
             schema={tree.config.registry}
             tree={tree}
             back={{ label: MATRIX_TITLE, onBack: () => setFiltering(false) }}
+            maxHeight={VIEW_SETTINGS_MAX_HEIGHT}
             onCommit={(next) => patch({ filter: standalonePatch(next) })}
           />
         )
