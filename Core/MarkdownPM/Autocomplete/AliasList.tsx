@@ -139,7 +139,8 @@ export function AliasList({
         <div
           ref={rows}
           onKeyDownCapture={(e) => {
-            keyed.current = e.key === 'Enter' || e.key === 'Escape'
+            keyed.current =
+              (e.key === 'Enter' || e.key === 'Escape') && e.target instanceof HTMLInputElement
           }}
         >
           {list.rows.map((row, i) => {

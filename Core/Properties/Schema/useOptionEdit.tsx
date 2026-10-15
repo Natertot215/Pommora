@@ -87,12 +87,11 @@ export function useOptionEdit({
   const rename = async (title: string): Promise<void> => {
     if (!editing || title === editing.value) return
     const { row, value: from } = editing
-    keys.rename(row, title)
     setEditing((e) => (e && e.value === from ? { row: e.row, value: title } : e))
-    if (!(await warnOwed(dialer().ask('property:renameOption', def.id, from, title)))) {
-      keys.revert(title)
+    const renamed = (): Promise<boolean> =>
+      warnOwed(dialer().ask('property:renameOption', def.id, from, title))
+    if (!(await keys.land(row, title, renamed)))
       setEditing((e) => (e && e.value === title ? { row: e.row, value: from } : e))
-    }
   }
 
   const openMenu = async (value: string, row: HTMLElement): Promise<void> => {
@@ -141,10 +140,11 @@ export function useOptionEdit({
 
   const commitDraft = (title: string): void => {
     if (!draft) return
-    keys.rename(draft.key, title)
-    void editOption({ op: 'add', groupId: draft.groupId, title, atIndex: draft.index }).then(
-      (ok) => (ok ? setDraft((d) => (d === draft ? null : d)) : keys.revert(title)),
-    )
+    const add = (): Promise<boolean> =>
+      editOption({ op: 'add', groupId: draft.groupId, title, atIndex: draft.index })
+    void keys.land(draft.key, title, add).then((ok) => {
+      if (ok) setDraft((d) => (d === draft ? null : d))
+    })
   }
   const drafted = draft && !options.some((o) => keyOf(o.value) === draft.key) ? draft : null
 

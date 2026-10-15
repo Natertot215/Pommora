@@ -268,6 +268,15 @@ describe('a landed Link value remembers the alias it shows', () => {
     })
   })
 
+  it('the alias it showed, retargeted to another page, is remembered by that page', async () => {
+    await assignValue(writer, row, column, link('[[Nested Beta|old]]'))
+    expect(mutate).toHaveBeenLastCalledWith({
+      op: 'editAliases',
+      path: 'Notes/Ideas/Beta.md',
+      edit: { op: 'add', alias: 'old' },
+    })
+  })
+
   it.each([
     ['a phantom title', '[[Missing|x]]'],
     ['an unaliased link', '[[Alpha]]'],
