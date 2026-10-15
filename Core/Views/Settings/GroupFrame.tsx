@@ -65,6 +65,7 @@ import { useSetting } from '../../Session/store'
 import { PickerControl, type PickerOption } from '@pommora/uix/Pickers/PickerControl'
 import { schemaTargets, targetOption } from '../../Properties/Cells/PropertyTypes'
 import { hiddenRow, middleRegion, optionRow } from '@pommora/uix/Menus/frames.css'
+import { rowCompact } from '@pommora/uix/Menus/menu-row.css'
 import * as gp from './group-frame.css'
 import * as oo from './option-order.css'
 import { type HideControls, OptionOrderList, rowEye, SUB_LOOK } from './OptionOrderList'
@@ -460,6 +461,7 @@ function LocationHierarchy({
 
   return (
     <LineZone
+      className={rowCompact}
       {...bandSpec({
         bands: model,
         collapsed,
