@@ -24,7 +24,6 @@ Markdown syntax in the editor is dynamic. A construct's markers — the asterisk
 - **Lists** — bullets (`-`, drawn as `•`), `+`, arrows (typed `->`, drawn `→`), numbered lists, alphabetical lists (`A.` through `Z.`, restarting at `A`), and GFM checklists all share one indent zone and one set of behaviors. Every edit that reshapes a numbered or lettered run recounts it in the same stroke: Enter continues the run and counts on below, deleting an item closes the gap, Tab or Shift+Tab recounts both runs an item moves between, and a line the **Lists ▸** menu turns into an item takes its place in the run it joins. A nested run counts from its first number or letter, a top-level run keeps the number it began at, and items a blank line apart count as one loose list. Dragging an item by its glyph moves it together with its nested block and renumbers as it lands. The grip menu's **Type ▸** switches a whole block between the five kinds, counting a numbered or lettered block from its first number or letter, and the context menu's **Lists ▸** turns each selected line into an item, removing the marker only when every selected line already has one.
 - **Outliner Rails** — An optional hairline guide down each nested list run, one per ancestor level, turned on with **Outliner Lines**. It covers dash bullets, checklists, and alphabetical lists.
 - **Inline Code** — Backticked text set in the mono family, in the code color over a tinted fill.
-- **Code-blocks** — A fenced block in the mono family over a neutral fill, opening once both of its fences exist. Its info word sets the language — by name, by alias, or as a file path or filename that names it through its extension (`src/app.ts`, `\src\app.ts`) — with any of the thirty-seven in the roster coloring the block's syntax and inheriting its indentation logic; bare fences use the raw-Markdown color. Code-blocks reading `diff` or `patch`, alone or joined to a language by `-`, `/`, `\`, `|`, `space`,`diff-ts`, `ts|diff`, `diff/app.ts` (while a dashed filename such as `patch-notes.md` reads by its extension) display their deltas through a margin typed with `+`, `-`, or `~`, which highlights the line in green, red, or light blue respectively over the language's existing syntax colors, and their tag becomes a tally of the green and red lines. Backticks always show, and when the caret is off the opening line, the info word gives way to a top-right tag naming the language, which also copies the block; an info word that's a path or filename puts that path in the language's place. Show Path Icons marks the path with a folder when it has folders, and a lone filename with its file's icon — the language's own mark, its family's for data, config, and shell files, a diff file's, or a plain code file. Code blocks offer per-user options to show line counts as margined glyphs (hidden by default) and to have long lines scroll during active editing or hovering rather than wrap.
 - **HTML** — An inline tag like `<div>` or `</span>` always shows, its brackets in the syntax color and the text between them in the **HTML Tag Color**, which follows the code color until set; a bare `<>` stays prose. With **HTML Formatting** on, Markdown inside an HTML block — one opened by a tag at a line's start and running to the next blank line — reads as written, as other Markdown readers show it; off, it renders like the rest of the page. Headings, lists, quotes, footnote markers, and embeds inside a block render either way, and a table cell holds no block. With **HTML Shortcuts** on, ⌘/ comments the line as `<!-- -->`, or in the block's own language inside code, and a typed tag like `<div>` closes itself; off, the editor writes neither.
 - **Blockquote** — An always-visible rounded card with an accent bar down its side. Other block constructs nest inside it at any depth. A `>` counts as a marker only when whitespace or the line's end follows it, at every depth, so `>a` stays ordinary prose.
 - **Callout** — A `> [!callout]` blockquote rendered as a bordered box spanning the gutter width, typed with the `||` shorthand. Each head is detected on its own, so adjacent or pasted callouts never merge, and an invalid tag falls back to a plain quote. The hidden head can't be reached by the caret, and Shift+Enter keeps you inside the box.
@@ -33,6 +32,54 @@ Markdown syntax in the editor is dynamic. A construct's markers — the asterisk
 - **Pasting** — A paste lands without the whitespace at its own edges or at the edges of the selection it replaces, in the body and a table cell alike; a paste spanning lines, a paste of whitespace alone, a paste inside code, and Paste Without Formatting land exactly as copied.
 - **Pasted Links** — An address with an explicit scheme, pasted anywhere in the editor, over a selection of table cells, or dropped onto the page, is written as a link rather than as bare text, in one of three forms: the whole address, its bare domain, or the site's page title. **Default Link Format** picks the form, and pasting over a one-line selection wraps that text as the link's label instead of replacing it. Pasted inside a link, an address or a copied link retargets that link, which keeps its shown text unless the paste brings its own or **Remove Title On Link Change** is on. Inside a code span, a fence, or a link's `( )` still being written, the address lands as the literal text those places are made of. ⌘⇧V does the opposite of whatever ⌘V would have done.
 - **The Caret** — A drawn caret with a smooth symmetric fade and a custom I-beam cursor, shared by every text surface in the app.
+
+#### Codeblocks
+
+A codeblock is a fenced block set in the mono family over a neutral fill, which opens once both of its fences exist. The info word after the opening fence sets its language by name, by alias, or through the extension of a file path or filename (`src/app.ts`, `\src\app.ts`), and a recognized language colors the block's syntax and inherits its indentation logic; a bare fence uses the raw Markdown color. Codeblocks also offer per-user options to show line counts as margined glyphs (hidden by default) and to have long lines scroll during active editing or hovering rather than wrap.
+
+- **Language Tags:** Backticks always show, and when the caret is off the opening line, the info word gives way to a tag in the block's top-right corner naming the language, which also copies the block; an info word that's a path or filename puts that path in the language's place. When a language tag and its filename share a mark, the table shows one icon; otherwise, it shows the tag's mark beside the filename's.
+- **Path Icons:** With **Show Path Icons** on, a path with folders is marked by a folder, and a lone filename by its file's icon — the language's own mark, its family's for data, config, and shell files, a diff file's, or a plain code file.
+- **Diffs:** An info word reading `diff` or `patch`, alone or joined to a language by `-`, `/`, `\`, `|`, or a space (`diff-ts`, `ts|diff`, `diff/app.ts`), draws the block as a diff, while a dashed filename such as `patch-notes.md` reads by its extension. These display their deltas through a margin typed with `+`, `-`, or `~`, which highlights the line in green, red, or light blue respectively over the language's existing syntax colors, and their tag becomes a tally of the green and red lines.
+
+| Language | Formatting | Icons |
+| --- | --- | --- |
+| JavaScript | `js` • `javascript` • `jsx` • `mjs` • `cjs` | `brand-javascript` |
+| TypeScript | `ts` • `typescript` • `tsx` • `mts` • `cts` | `brand-typescript` |
+| JSON | `json` • `jsonc` | `file-braces` |
+| YAML | `yaml` • `yml` | `file-cog` |
+| CSS | `css` | `brand-css3` |
+| HTML | `html` • `htm` | `brand-html5` |
+| Markdown | `markdown` • `md` | `file-text` |
+| Swift | `swift` | `brand-swift` |
+| Python | `python` • `py` | `brand-python` |
+| Go | `go` • `golang` | `brand-golang` |
+| Rust | `rust` • `rs` | `brand-rust` |
+| Ruby | `ruby` • `rb` | `file-code-corner` |
+| Java | `java` | `file-code-corner` |
+| Kotlin | `kotlin` • `kt` • `kts` | `file-code-corner` |
+| Scala | `scala` | — • `file-code-corner` |
+| C | `c` • `h` | — • `file-code-corner` |
+| C++ | `cpp` • `c++` • `cc` • `cxx` • `hpp` • `hh` | — • `file-code-corner` |
+| C# | `csharp` • `cs` • `c#` | `file-code-corner` |
+| Shell | `shell` • `sh` • `bash` • `zsh` | `terminal` |
+| PowerShell | `powershell` • `ps1` | `terminal` |
+| SQL | `sql` | `database` |
+| XML | `xml` • `svg` | `file-code` |
+| TOML | `toml` | `file-cog` |
+| Dockerfile | `dockerfile` • `docker` | `brand-docker` |
+| Lua | `lua` | — • `file-code-corner` |
+| Perl | `perl` • `pl` • `pm` | — • `file-code-corner` |
+| Haskell | `haskell` • `hs` | — • `file-code-corner` |
+| Clojure | `clojure` • `clj` • `cljs` • `cljc` • `edn` | — • `file-code-corner` |
+| Erlang | `erlang` • `erl` | — • `file-code-corner` |
+| Julia | `julia` • `jl` | — • `file-code-corner` |
+| R | `r` | — • `file-code-corner` |
+| Groovy | `groovy` • `gradle` | — • `file-code-corner` |
+| Sass | `sass` • `scss` | — • `file-code-corner` |
+| Nginx | `nginx` | — • `file-cog` |
+| Protobuf | `protobuf` • `proto` | — • `file-braces` |
+| CMake | `cmake` | — • `file-cog` |
+| Properties | `properties` • `ini` | — • `file-cog` |
 
 #### Typing Transforms
 
