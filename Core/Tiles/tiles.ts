@@ -3,7 +3,7 @@
 import { z } from 'zod'
 import { type Result, fault, ok } from '../Contract/result'
 import { isKeyOf, isPlainObject } from '../Contract/validators'
-import { looseDecoder } from '../Files/decoders'
+import { index, looseDecoder } from '../Files/decoders'
 import { isUlidShaped } from '../Nexus/identityMark'
 import { VIEW_BUTTONS, VIEW_STYLES } from '../Views/viewRow'
 import { mapViews, mintViewId } from '../Views/views'
@@ -64,7 +64,7 @@ const viewEntry = z.object({
   ...chassisFields,
   type: z.literal('view'),
   views: z.array(embeddedView).min(1),
-  active: z.number().int().nonnegative().optional().catch(undefined),
+  active: index.optional().catch(undefined),
   display_title: z.string().optional().catch(undefined),
   display_icon: z.string().optional().catch(undefined),
   title: boolField,

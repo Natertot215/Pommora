@@ -1,14 +1,14 @@
 import { z } from 'zod'
-import { op } from '../Files/decoders'
+import { index, op } from '../Files/decoders'
 import { normalizeTitle } from '../Paths/caseFold'
 import { aliasFits } from './connections'
 
 const alias = z.string()
 
 export const aliasEdit = z.discriminatedUnion('op', [
-  op('remember', { alias }),
   op('add', { alias }),
   op('rename', { from: alias, to: alias }),
+  op('move', { alias, toIndex: index }),
   op('forget', { alias }),
 ])
 export type AliasEdit = z.infer<typeof aliasEdit>
@@ -28,7 +28,7 @@ export function heldAliases(worn: readonly string[], title: string): string[] {
   })
 }
 
-/** Authoring moves an alias to the front, an add puts it at the end, and a rename keeps its place, the newest spelling standing. */
+/** The order is the user's: an add respells a held alias in place or puts a new one at the end, a rename keeps its place, and a move sets it among the others, the newest spelling standing. */
 export function applyAliasEdit(worn: readonly string[], e: AliasEdit, title: string): string[] {
   const held = heldAliases(worn, title)
   const named = (e.op === 'rename' ? e.to : e.alias).trim()
@@ -37,10 +37,16 @@ export function applyAliasEdit(worn: readonly string[], e: AliasEdit, title: str
   if (e.op === 'forget') return others
   if (!named || !keepsAlias(named, title)) return held
   switch (e.op) {
-    case 'remember':
-      return [named, ...others]
     case 'add':
-      return [...others, named]
+      return others.length < held.length
+        ? held.map((a) => (normalizeTitle(a) === key ? named : a))
+        : [...held, named]
+    case 'move': {
+      const moved = held.find((a) => normalizeTitle(a) === key)
+      return moved === undefined
+        ? held
+        : [...others.slice(0, e.toIndex), moved, ...others.slice(e.toIndex)]
+    }
     case 'rename': {
       const from = normalizeTitle(e.from)
       if (!held.some((a) => normalizeTitle(a) === from)) return held
