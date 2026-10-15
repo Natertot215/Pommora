@@ -465,6 +465,21 @@ describe('FilterFrame', () => {
       expect(saveSpy).toHaveBeenCalledTimes(1)
     })
 
+    it('a rule added from elsewhere leaves the rows already there and a field mid-edit standing', async () => {
+      await mount(textRules())
+      const second = host.querySelectorAll('input')[1]
+      await typeInto(second, 'foo')
+      const rules = textRules().filter?.rules ?? []
+      await mount(
+        view({
+          filter: { match: 'all', rules: [...rules, { property_id: '_title', op: 'is' }] },
+        }),
+      )
+      expect(host.querySelectorAll('input')).toHaveLength(3)
+      expect(host.querySelectorAll('input')[1]).toBe(second)
+      expect(second.value).toBe('foo')
+    })
+
     it('the draft row’s reveal holds the rule it picks', async () => {
       await mount(textRules())
       await click(byLabel('Add filter rule'))

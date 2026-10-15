@@ -2258,5 +2258,5 @@ Each paragraph reads whole, in the document's existing voice, with no amendment 
 #### Deviations
 
 - Phase 2 extracted `ManageList` into `UIX/Menus` for Excluded Directories and the Aliases pane. Nathan's redirect gave the Aliases pane the body picker's rows (`AliasList`), leaving `ManageList` one consumer, so Task 3-1 folds it back into `ExclusionPane` and the shared mechanics live in `useListEdit`; Task 3-1 also returns `InputField` to its baseline, undoing `048b2d7d7`'s passthroughs for the bordered `AliasField` that Nathan's redirect replaced.
-- Task 3-6 changes two frozen surfaces without changing what they keep: `pageMetaEntry`'s aliases decode element by element through `eachOf`, the on-disk shape unchanged, and `connectionText` reads the extracted `aliasFits`, its output unchanged.
+- Task 3-6 changes two frozen surfaces without changing what they keep: `pageMetaEntry`'s aliases decode element by element through `eachOf`, the on-disk shape unchanged, and `connectionText` reads `keepsAlias`, its reachable output unchanged: its one alias-carrying caller passes trimmed slices of a parsed link, already within the slot's 255 characters.
 - Tasks 3-7 and 3-8 (compact filter rows, alias reorder) came from Nathan during the run.

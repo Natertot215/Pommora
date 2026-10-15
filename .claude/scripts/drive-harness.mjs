@@ -378,7 +378,7 @@ const pct = (xs, p) => {
   return s.length ? s[Math.max(0, Math.ceil(p * s.length) - 1)] : null
 }
 /** Every gesture name once, with its runs' medians and the 95th percentile of its DOM latency. */
-export function summarize(list = metrics) {
+function summarize(list = metrics) {
   const by = new Map()
   for (const m of list) by.set(m.name, [...(by.get(m.name) ?? []), m])
   return [...by].map(([name, ms]) => {
