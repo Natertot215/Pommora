@@ -419,7 +419,6 @@ export function PropertyPanel({
                   row={row}
                   column={column}
                   ctx={ctx}
-                  hideIcon={false}
                   style={{ look: 'standard', ...dateDefaults(dateFormat) }}
                   commit={(next) => commit(id, next)}
                   empty={<EmptyValue className={cx('cell-empty', text.caption.standard)} />}
