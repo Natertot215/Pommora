@@ -15,6 +15,7 @@ import { HEADING_LINE, toggleFoldAt } from '../../MarkdownPM/folding'
 import type { WarmSeam } from '../../MarkdownPM/warmSeam'
 import type { Size } from '@pommora/uix/Interactions/useResizable'
 import { useEscape } from '@pommora/uix/Interactions/dismissalStack'
+import { keepFocus } from '@pommora/uix/Interactions/shared'
 import { WebGuest, type WebGuestHandle } from '../../Web/WebGuest'
 import type { PinnedGlance } from '../../Session/glanceSlice'
 import { useConnections } from '../../Session/pageConnections'
@@ -320,13 +321,13 @@ export function GlancePane(): React.JSX.Element {
     })
     dismiss()
   }
-  // The preventDefault holds the pane's never-take-focus contract — a focusable button would else steal focus the close path can't restore.
+  // `keepFocus` holds the pane's never-take-focus contract — a focusable button would else steal focus the close path can't restore.
   const lockBtn = page && (
     <button
       type="button"
       className={cx('glance-lock', iconToggle, revealTarget)}
       aria-label={lockLabel(false, 'Preview')}
-      onMouseDown={(e) => e.preventDefault()}
+      onMouseDown={keepFocus}
       onClick={onLock}
     >
       <Icon name="lock-outline" size="control" />
@@ -339,7 +340,7 @@ export function GlancePane(): React.JSX.Element {
       className={cx('glance-lock', iconToggle, revealTarget)}
       data-reveal-held={p.locked || undefined}
       aria-label={lockLabel(p.locked, 'Preview')}
-      onMouseDown={(e) => e.preventDefault()}
+      onMouseDown={keepFocus}
       onClick={() => setPinLocked(p.pinId, !p.locked)}
     >
       <LockGlyph locked={p.locked} />

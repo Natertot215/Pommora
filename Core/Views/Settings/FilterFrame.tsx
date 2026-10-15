@@ -242,8 +242,9 @@ export function FilterFrame({
 
   const decoded: DecodedFilter = decodeFilter(view.filter)
   const rules: FilterRule[] = decoded.kind === 'rows' ? decoded.rules : []
-  // A rule's row is its identity, not its place, so removing one leaves every other row and its field where they stand.
-  if (ids.current.length !== rules.length) ids.current = rules.map(mint)
+  // A rule's row is its identity, not its place: removing one leaves the others and their fields standing, and a count changed elsewhere keeps the rows already held.
+  if (ids.current.length !== rules.length)
+    ids.current = rules.map((_, i) => ids.current[i] ?? mint())
   const decodedMode: MatchMode = decoded.kind === 'rows' ? decoded.mode : 'any'
   const mode: MatchMode = rules.length === 0 ? (pendingMode ?? decodedMode) : decodedMode
 
