@@ -15,6 +15,9 @@
   padding-left: calc(20px * var(--page-detail-scale));
   padding-right: calc(14px * var(--page-detail-scale));
 }
+.page-window-rename {
+  pointer-events: auto;
+}
 
 .window-panel-column {
   display: flex;

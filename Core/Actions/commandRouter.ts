@@ -33,8 +33,11 @@ export function runCommand(id: RoutedCommand, target: EventTarget | null = null)
         win ? win.activeTabId : s.activeTabId,
         dir,
       )
-      if (!win) s.activateTab(next)
-      else if (next !== win.activeTabId) {
+      if (!win) {
+        // The switch unmounts a focused tab-label field without a blur, so its draft commits first.
+        ;(document.activeElement as HTMLElement | null)?.blur()
+        s.activateTab(next)
+      } else if (next !== win.activeTabId) {
         // The switch unmounts or parks the focused tab body; the window's root keeps the keyboard so the next chord still lands here.
         root?.focus()
         s.activateWindowTab(next)

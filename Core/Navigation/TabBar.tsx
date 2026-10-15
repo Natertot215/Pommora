@@ -5,7 +5,7 @@ import { segment } from '@pommora/uix/Elements/segment.css'
 import { SortableZone, useLooseItem } from '@pommora/uix/Interactions/drag'
 import { usePointerGesture } from '@pommora/uix/Interactions/gesture'
 import { isWindowTarget, type Tab, type TabTarget } from './navRef'
-import { TAB_FAMILY, TabStripZone, useActiveTabInView, useTabClose } from './tabRows'
+import { TAB_FAMILY, TabStripZone, useActiveTabInView, useTabClose, useTabRename } from './tabRows'
 import { useSession, useSetting } from '../Session/store'
 import { pageMoveContext, runPageAction } from '../Interface/Menus/pageMenuActions'
 import { resolveWith, type ResolvedNav, type ResolveIndex } from './navResolve'
@@ -91,6 +91,7 @@ function TabBarBody({
   }
 
   const stripRef = useActiveTabInView(activeTabId)
+  const rename = useTabRename(activeTabId)
 
   const runTabMenu =
     (tabId: string, pinned: boolean, target: TabTarget) =>
@@ -109,6 +110,7 @@ function TabBarBody({
         }),
       )
       if (action === 'open') activateTab(tabId)
+      else if (action === 'title:rename') rename.begin()
       else if (action === 'pin') pinTab(tabId)
       else if (action === 'unpin') unpinTab(tabId)
       else if (action === 'close') requestClose(tabId)
@@ -195,6 +197,7 @@ function TabBarBody({
                 entry={entry}
                 active={!ghost && entry.tab.id === activeTabId}
                 closing={ghost}
+                rename={rename.pageLabel(entry.tab.target, entry.tab.id)}
                 onActivate={() => activateTab(entry.tab.id)}
                 onClose={() => requestClose(entry.tab.id)}
                 onMenu={runTabMenu(entry.tab.id, false, entry.tab.target)}
@@ -228,7 +231,7 @@ function UnpinnedTab({
   dragged?: boolean
 } & Pick<
   TabItemProps,
-  'active' | 'closing' | 'onActivate' | 'onClose' | 'onMenu'
+  'active' | 'closing' | 'rename' | 'onActivate' | 'onClose' | 'onMenu'
 >): React.JSX.Element {
   // A navigation that swaps this tab's CONTENT slides the icon+label in; a tab SWITCH (`source === 'tab'`) leaves it motionless.
   const slide = useSession((s) =>

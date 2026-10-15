@@ -1,4 +1,4 @@
-import { Fragment, memo, useMemo, useRef, useState, type RefObject } from 'react'
+import { memo, useMemo, useRef, useState, type RefObject } from 'react'
 import type { PageTarget, SpaceTarget, WindowTarget } from '../../Navigation/navRef'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
 import { cx } from '@pommora/uix/Utilities/cx'
@@ -11,7 +11,7 @@ import { PropertyPanel } from '../../Properties/PropertyPanel'
 import { useConnections } from '../../Session/pageConnections'
 import { useSession, useSetting } from '../../Session/store'
 import { personalizationOf } from '../../Session/configSlice'
-import { useExperimental } from '../../Settings/experimental'
+import { popPageActions } from '../Menus/pageMenuActions'
 import { PageTile } from '../../Tiles/Surfaces/PageTile'
 import { TileHost } from '../../Tiles/TileHost'
 import { useDocState, useLoadedTileDocs } from '../../Tiles/useTileDoc'
@@ -20,7 +20,8 @@ import { CitationsToggle } from '../Subfield/CitationsToggle'
 import { Subfield } from '../Subfield/Subfield'
 import { useSubfieldPage } from '../Subfield/subfieldPage'
 import { useWindowWarm, windowSeam } from './useWindowWarm'
-import { windowBannerShown } from './windowTabBanner'
+import { renameWindowTitle, WindowTabContext, windowBannerShown } from './windowTabBanner'
+import { type TabRename, useTabRename } from '../../Navigation/tabRows'
 
 interface WindowTabBodySlots {
   body: React.ReactNode
@@ -31,6 +32,7 @@ interface WindowTabBodySlots {
   footerLead: React.ReactNode
   closeSidePane: () => void
   promote: () => void
+  rename: TabRename
 }
 
 function SpaceTabBody({
@@ -78,8 +80,9 @@ const WindowPage = memo(function WindowPage({
 }): React.JSX.Element {
   const [editingPath, setEditingPath] = useState<string | null>(null)
   if (editingPath !== null && !shown) setEditingPath(null)
+  const tab = useMemo(() => ({ tabId: id, shown }), [id, shown])
   return (
-    <>
+    <WindowTabContext.Provider value={tab}>
       <div
         className={cx('window-body', 'scroll-fade', 'page-tile-grows', !shown && 'is-parked')}
         inert={!shown}
@@ -99,7 +102,7 @@ const WindowPage = memo(function WindowPage({
         />
       </div>
       {shown && <Scrollbar page />}
-    </>
+    </WindowTabContext.Provider>
   )
 })
 
@@ -107,7 +110,6 @@ export function useWindowTabBody(target: WindowTarget | null): WindowTabBodySlot
   const tree = useSession((s) => s.tree)
   const pendingTravel = useSession((s) => s.pendingTravel)
   const clearPendingTravel = useSession((s) => s.clearPendingTravel)
-  const experimental = useExperimental()
   const pageBanner = useSession((s) => windowBannerShown(personalizationOf(s), 'page'))
   const spaceBanner = useSession((s) => windowBannerShown(personalizationOf(s), 'space'))
   const tabCache = useSetting('tabCache')
@@ -146,6 +148,12 @@ export function useWindowTabBody(target: WindowTarget | null): WindowTabBodySlot
     return [...recent.current].sort().map((id) => ({ id, page: pages.get(id)! }))
   }, [windowTabs, activeTabId, tabCache])
 
+  const rename = useTabRename(activeTabId, renameWindowTitle)
+  const spaceTab = useMemo(
+    () => (activeTabId ? { tabId: activeTabId, shown: true } : null),
+    [activeTabId],
+  )
+
   // It closes the TAB, not the window; the window dies by itself when that was its last, and only then does the engulf play.
   const promoteWindowTab = useSession((s) => s.promoteWindowTab)
   const promote = (): void => {
@@ -182,8 +190,8 @@ export function useWindowTabBody(target: WindowTarget | null): WindowTabBodySlot
           />
         )
       })}
-      {spaceTarget && spaceOwner && (
-        <Fragment key={spaceTarget.id}>
+      {spaceTarget && spaceOwner && spaceTab && (
+        <WindowTabContext.Provider key={spaceTarget.id} value={spaceTab}>
           <div className="window-body scroll-fade" ref={bodyRef}>
             <SpaceTabBody
               host={spaceTarget}
@@ -193,7 +201,7 @@ export function useWindowTabBody(target: WindowTarget | null): WindowTabBodySlot
             />
           </div>
           <Scrollbar />
-        </Fragment>
+        </WindowTabContext.Provider>
       )}
     </>
   )
@@ -221,9 +229,13 @@ export function useWindowTabBody(target: WindowTarget | null): WindowTabBodySlot
     },
     actions: (
       <WindowActions
-        showSettings={experimental}
         sidePaneOpen={paneOpen}
-        {...(pageTarget ? { onToggleSidePane: () => setSidePaneOpen((v) => !v) } : {})}
+        {...(pageTarget
+          ? {
+              onMenu: () => void popPageActions(pageTarget, rename.begin),
+              onToggleSidePane: () => setSidePaneOpen((v) => !v),
+            }
+          : {})}
       />
     ),
     footer: target && (
@@ -232,5 +244,6 @@ export function useWindowTabBody(target: WindowTarget | null): WindowTabBodySlot
     footerLead: <CitationsToggle page={page} />,
     closeSidePane,
     promote,
+    rename,
   }
 }

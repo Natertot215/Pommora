@@ -10,6 +10,7 @@ import { NavTrail } from '@pommora/uix/Elements/NavTrail'
 import { resolveIndexOf, trailOf } from '../../Nexus/treeIndex'
 import { useFold, windowTargetOf, useSession } from '../../Session/store'
 import { WindowTabStrip } from './WindowTabStrip'
+import { RenamablePageName } from '../RenamableTitle'
 import { useWindowTabBody } from './WindowTabBody'
 import { useWindowGeometry } from './useWindowGeometry'
 import { useWindowTabSlide } from './useWindowTabSlide'
@@ -42,12 +43,28 @@ function PageWindowBody({
   const rootRef = useRef<HTMLDivElement>(null)
   useEffect(() => publishChromePart('pageWindow')(rootRef.current), [])
 
-  const { body, bodyRef, right, actions, footer, footerLead, closeSidePane, promote } =
+  const { body, bodyRef, right, actions, footer, footerLead, closeSidePane, promote, rename } =
     useWindowTabBody(target)
   const sidePaneOpen = right.open === true
 
   const resolveIndex = tree ? resolveIndexOf(tree) : null
-  const trail = trailOf(tree, target)
+  const crumbs = trailOf(tree, target)
+  const leaf = crumbs.at(-1)
+  const leafRename = rename.pageLabel(target)
+  const trail =
+    leaf && leafRename
+      ? [
+          ...crumbs.slice(0, -1),
+          {
+            ...leaf,
+            label: (
+              <span className="page-window-rename">
+                <RenamablePageName title={leaf.title} rename={leafRename} />
+              </span>
+            ),
+          },
+        ]
+      : crumbs
 
   useWindowTabSlide(bodyRef, rootRef, sidePaneOpen)
 
@@ -83,6 +100,7 @@ function PageWindowBody({
         <WindowTabStrip
           index={resolveIndex}
           title={<NavTrail segments={trail} selected className="page-window-crumbs" />}
+          rename={rename}
         />
       }
       actions={actions}

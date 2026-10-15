@@ -5,9 +5,10 @@ import type { IconSize } from '../Theme/theme-vars.css'
 import { cx } from '../Utilities/cx'
 import * as s from './nav-trail.css'
 
-/** `ghost` dims a stop past the current one — backed out of, still there to re-descend into. */
+/** `ghost` dims a stop past the current one — backed out of, still there to re-descend into; `label` draws in the title's place. */
 export interface TrailSegment {
   title: string
+  label?: React.ReactNode
   icon?: string
   ghost?: boolean
   onSelect?: (e: React.MouseEvent) => void
@@ -55,7 +56,7 @@ export function NavTrail({
         const body = (
           <>
             {seg.icon && <Icon name={seg.icon} size={iconSize} className={s.glyph} />}
-            <span>{seg.title}</span>
+            <span>{seg.label ?? seg.title}</span>
           </>
         )
         return (

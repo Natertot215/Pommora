@@ -9,8 +9,39 @@ import {
 } from '@pommora/uix/Interactions/drag'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { isWindowTarget, type SelectTarget } from './navRef'
+import type { PageNameRename } from '../Interface/RenamableTitle'
 
 export const TAB_FAMILY: Family<SelectTarget> = { name: 'tabs' }
+
+export interface TabRename {
+  begin: () => void
+  /** A page tab's label, the active one's unless `tabId` names another; undefined for any tab that isn't a page. */
+  pageLabel: (target: { kind: string; path?: string }, tabId?: string) => PageNameRename | undefined
+}
+
+/** Only the active tab renames, in its own label; `divert` offers the rename to another surface first and reports whether one took it. */
+export function useTabRename(
+  activeTabId: string | undefined,
+  divert?: (tabId: string) => boolean,
+): TabRename {
+  const [renaming, setRenaming] = useState<string | null>(null)
+  if (renaming !== null && renaming !== activeTabId) setRenaming(null)
+  const begin = (): void => {
+    if (activeTabId && !divert?.(activeTabId)) setRenaming(activeTabId)
+  }
+  return {
+    begin,
+    pageLabel: (target, tabId = activeTabId) =>
+      target.kind === 'page' && target.path !== undefined
+        ? {
+            path: target.path,
+            editing: renaming !== null && renaming === tabId,
+            onBegin: tabId === activeTabId ? begin : undefined,
+            onEnd: () => setRenaming(null),
+          }
+        : undefined,
+  }
+}
 
 interface TabClose<E> {
   liveEntries: E[]

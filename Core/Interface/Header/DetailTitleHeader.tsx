@@ -37,6 +37,7 @@ interface Props {
   iconHidden?: boolean
   iconEditing?: boolean
   search?: TitleSearch
+  renameSummon?: number
 }
 
 export function DetailTitleHeader({
@@ -51,6 +52,7 @@ export function DetailTitleHeader({
   iconHidden,
   iconEditing,
   search,
+  renameSummon,
 }: Props): React.JSX.Element {
   const [editing, setEditing] = useState(false)
   const searching = search?.query != null
@@ -80,6 +82,12 @@ export function DetailTitleHeader({
     search?.change(null)
     setEditing(true)
   }
+  const seenRename = useRef(renameSummon)
+  useEffect(() => {
+    if (renameSummon === seenRename.current) return
+    seenRename.current = renameSummon
+    beginRename()
+  }, [renameSummon])
   // The search takes the title's place at once, so a double-click's second press lands wherever the title was.
   const openSearch = (): void => {
     search?.start()
@@ -104,7 +112,6 @@ export function DetailTitleHeader({
   }
 
   const label = (
-    // A refused rename needs no revert — the field unmounts on commit and the resting span shows the live title until the tree confirms.
     <RenamableLabel
       renames="title"
       editing={editing}
@@ -113,18 +120,20 @@ export function DetailTitleHeader({
       onBegin={beginRename}
       onCommit={(next) => {
         setEditing(false)
-        void onRename(next)
+        return onRename(next)
       }}
       onCancel={() => setEditing(false)}
     >
-      {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: the title is a right-click affordance and a pointer door to its search — the keyboard reaches the search through the Search command */}
-      <span
-        className="detail-title-text"
-        onContextMenu={openMenu}
-        onClick={search ? openSearch : undefined}
-      >
-        {title}
-      </span>
+      {(shown) => (
+        // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: the title is a right-click affordance and a pointer door to its search — the keyboard reaches the search through the Search command
+        <span
+          className="detail-title-text"
+          onContextMenu={openMenu}
+          onClick={search ? openSearch : undefined}
+        >
+          {shown}
+        </span>
+      )}
     </RenamableLabel>
   )
 

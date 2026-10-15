@@ -3,7 +3,13 @@ import { cx } from '@pommora/uix/Utilities/cx'
 import { useLooseItem } from '@pommora/uix/Interactions/drag'
 import { DEFAULT_ENTITY_ICONS } from '../../Assets/entityIconPolicy'
 import { resolveWith, type ResolveIndex, type ResolvedNav } from '../../Navigation/navResolve'
-import { TabStripZone, useActiveTabInView, useTabClose, TAB_FAMILY } from '../../Navigation/tabRows'
+import {
+  TabStripZone,
+  type TabRename,
+  useActiveTabInView,
+  useTabClose,
+  TAB_FAMILY,
+} from '../../Navigation/tabRows'
 import { popMenu } from '../../Actions/menuActions'
 import { tabMenuItems } from '../../Actions/tabMenu'
 import { bannerMenuItems } from '../../Actions/identityMenus'
@@ -49,9 +55,11 @@ const windowTabProps = (
 export function WindowTabStrip({
   index,
   title,
+  rename,
 }: {
   index: ResolveIndex | null
   title: React.ReactNode
+  rename: TabRename
 }): React.JSX.Element {
   const windowSlot = useSession((s) => s.windowSlot)
   const activateWindowTab = useSession((s) => s.activateWindowTab)
@@ -104,11 +112,13 @@ export function WindowTabStrip({
         tabMenuItems({
           row: 'window',
           kind: target.kind,
+          active: tab.id === activeTabId,
           banner,
           ...(isPage ? pageMoveContext(useSession.getState().tree, target.path) : {}),
         }),
       )
       if (action === 'promote') promoteWindowTab(tab.id, true)
+      else if (action === 'title:rename') rename.begin()
       else if (action === 'close') requestClose(tab.id)
       else if (action === 'change' || action === 'edit' || action === 'remove')
         runWindowBanner(tab.id, action)
@@ -168,6 +178,7 @@ export function WindowTabStrip({
                   <DraggableTabItem
                     {...windowTabProps(entry, navKind)}
                     active={!ghost && entry.tab.id === activeTabId}
+                    rename={rename.pageLabel(entry.tab.target, entry.tab.id)}
                     closing={ghost}
                     onActivate={() => activateWindowTab(entry.tab.id)}
                     onClose={() => requestClose(entry.tab.id)}
