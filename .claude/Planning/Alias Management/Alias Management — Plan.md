@@ -98,7 +98,7 @@ Every alias write becomes an instruction — remember, add, rename, or forget �
   - [x] Task 3-1
   - [x] Task 3-2
   - [x] Task 3-3
-  - [ ] Task 3-4
+  - [x] Task 3-4
   - [ ] Task 3-5
   - [ ] Review Checkpoint
 - [ ] `[Stop: Nathan's Visual Pass and Live Feel on the Aliases pane and the body picker]`
@@ -1626,10 +1626,10 @@ A double-click on a name begins its rename through `RenamableLabel`'s `onBegin`,
 
 **CHANGE**
 
-- [ ] In `Core/Properties/Schema/OptionEditor.test.tsx`, add and watch fail: a refused add leaves the draft reading `Fresh`; with `editOption` deferred, the draft stays open after its commit, and the groups re-rendering with `Fresh` before the reply removes it; drafting `Urgent` over a list holding `Urgent`, refused, leaves the draft reading `Urgent` and the held `Urgent` row the same node.
-- [ ] In `Core/Properties/Pickers/PropertyPicker.pane.test.tsx`, move the close-before-write assertion (`:290`, `expect(draft()).toBeNull()`) after the reply, add that a refused add keeps `Fresh` in the draft, and that + is disabled while drafting.
-- [ ] In `FilterFrame`'s tests, add and watch fail: a mousedown on either × is `defaultPrevented`; with two `''` text rules, typing `foo` into rule 2 and pressing rule 1's × leaves rule 2's input the same node, focused, reading `foo`, with only the removal saved; typing `foo` into rule 1 and pressing its × leaves the remaining input reading `''`; the `[data-reveal]` that held the draft row holds the rule it picked.
-- [ ] Apply the diffs below.
+- [x] In `Core/Properties/Schema/OptionEditor.test.tsx`, add and watch fail: a refused add leaves the draft reading `Fresh`; with `editOption` deferred, the draft stays open after its commit, and the groups re-rendering with `Fresh` before the reply removes it; drafting `Urgent` over a list holding `Urgent`, refused, leaves the draft reading `Urgent` and the held `Urgent` row the same node.
+- [x] In `Core/Properties/Pickers/PropertyPicker.pane.test.tsx`, move the close-before-write assertion (`:290`, `expect(draft()).toBeNull()`) after the reply, add that a refused add keeps `Fresh` in the draft, and that + is disabled while drafting.
+- [x] In `FilterFrame`'s tests, add and watch fail: a mousedown on either × is `defaultPrevented`; with two `''` text rules, typing `foo` into rule 2 and pressing rule 1's × leaves rule 2's input the same node, focused, reading `foo`, with only the removal saved; typing `foo` into rule 1 and pressing its × leaves the remaining input reading `''`; the `[data-reveal]` that held the draft row holds the rule it picked.
+- [x] Apply the diffs below.
 
 **AFTER**
 
@@ -1759,9 +1759,9 @@ The draft row hands its `Reveal` to the rule it picks, and removing the last rul
 
 **VERIFY**
 
-- [ ] `OptionEditor.test.tsx`, `PropertyPicker.pane.test.tsx`, `PropertyFrame.test.tsx`, `FilterFrame`'s tests, `PreviewRulesRow.test.tsx`, the view and Matrix filter tests, and `TokenField`'s tests are green.
-- [ ] Run the gates, then commit.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `OptionEditor.test.tsx`, `PropertyPicker.pane.test.tsx`, `PropertyFrame.test.tsx`, `FilterFrame`'s tests, `PreviewRulesRow.test.tsx`, the view and Matrix filter tests, and `TokenField`'s tests are green.
+- [x] Run the gates, then commit.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 3-5
 

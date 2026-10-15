@@ -395,6 +395,89 @@ describe('FilterFrame', () => {
     })
   })
 
+  describe('a rule’s ×', () => {
+    const textRules = (): SavedView =>
+      view({
+        filter: {
+          match: 'all',
+          rules: [
+            { property_id: '_title', op: 'is' },
+            { property_id: '_title', op: 'contains' },
+          ],
+        },
+      })
+    const removes = (): HTMLElement[] => [
+      ...host.querySelectorAll<HTMLElement>('[aria-label="Remove filter"]'),
+    ]
+    const typeInto = async (input: HTMLInputElement, text: string): Promise<void> => {
+      await act(async () => {
+        input.focus()
+        input.value = text
+      })
+    }
+    // A press the × doesn't prevent moves focus off the field, as a browser does before the click.
+    const press = async (el: HTMLElement): Promise<void> => {
+      const down = new MouseEvent('mousedown', { bubbles: true, cancelable: true })
+      await act(async () => {
+        el.dispatchEvent(down)
+        if (!down.defaultPrevented) (document.activeElement as HTMLElement | null)?.blur()
+      })
+      await click(el)
+    }
+
+    it('keeps focus where it is on a press, on a rule and on the draft', async () => {
+      await mount(textRules())
+      await click(byLabel('Add filter rule'))
+      await settle()
+      expect(removes()).toHaveLength(3)
+      for (const x of removes()) {
+        const down = new MouseEvent('mousedown', { bubbles: true, cancelable: true })
+        x.dispatchEvent(down)
+        expect(down.defaultPrevented).toBe(true)
+      }
+    })
+
+    it('removing one rule leaves a neighbour’s field mid-edit where it stands', async () => {
+      await mount(textRules())
+      const second = host.querySelectorAll('input')[1]
+      await typeInto(second, 'foo')
+      await press(removes()[0])
+      expect(host.querySelectorAll('input')[0]).toBe(second)
+      expect(document.activeElement).toBe(second)
+      expect(second.value).toBe('foo')
+      expect(saveSpy).toHaveBeenCalledTimes(1)
+      expect(lastSaved().filter?.rules).toEqual([{ property_id: '_title', op: 'contains' }])
+    })
+
+    it('removing a rule mid-edit discards its edit', async () => {
+      await mount(textRules())
+      await typeInto(host.querySelectorAll('input')[0], 'foo')
+      await press(removes()[0])
+      expect(host.querySelectorAll('input')).toHaveLength(1)
+      expect(host.querySelector('input')?.value).toBe('')
+      expect(saveSpy).toHaveBeenCalledTimes(1)
+    })
+
+    it('the draft row’s reveal holds the rule it picks', async () => {
+      await mount(textRules())
+      await click(byLabel('Add filter rule'))
+      await settle()
+      const drafted = [...host.querySelectorAll('[data-reveal]')].at(-1)
+      await click(
+        [...host.querySelectorAll('button')]
+          .filter((b) => b.getAttribute('aria-label') === 'Filter property')
+          .at(-1),
+      )
+      await click(
+        optionWithText('Archived') ??
+          [...document.querySelectorAll('*')].filter((el) => el.textContent === 'Archived').at(-1),
+      )
+      expect(lastSaved().filter?.rules).toHaveLength(3)
+      expect([...host.querySelectorAll('[data-reveal]')].at(-1)).toBe(drafted)
+      expect(drafted?.textContent).toContain('Archived')
+    })
+  })
+
   it('removing the first of two rows writes the remaining rule at once', async () => {
     await mount(twoRules())
     await click(

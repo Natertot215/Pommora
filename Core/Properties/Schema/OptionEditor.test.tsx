@@ -39,7 +39,7 @@ const select = [
 let host: HTMLDivElement
 let root: Root
 const menu = vi.fn(async () => ok<string | null>(null))
-const editOption = vi.fn(async () => ok(null))
+const editOption = vi.fn(async (): Promise<Result<null>> => ok(null))
 const renameOption = vi.fn(async (): Promise<Result<{ cascade: object }>> => ok({ cascade: {} }))
 const removeOption = vi.fn(async () => ok({ cascade: {} }))
 const clearOption = vi.fn(async () => ok(null))
@@ -180,6 +180,41 @@ describe('creating an option', () => {
       title: 'Fresh',
       atIndex: 2,
     })
+  })
+
+  it('a refused add leaves the draft reading its name', async () => {
+    editOption.mockResolvedValueOnce(refuse)
+    render('select', select)
+    plus()
+    await commit(host.querySelector('input'), 'Fresh')
+    await act(async () => {})
+    expect(host.querySelector('input')?.value).toBe('Fresh')
+  })
+
+  it('the draft stays open until its option lands, and gives way to it', async () => {
+    let reply: (r: Result<null>) => void = () => {}
+    editOption.mockImplementationOnce(() => new Promise((r) => (reply = r)))
+    render('select', select)
+    plus()
+    await commit(host.querySelector('input'), 'Fresh')
+    expect(host.querySelector('input')?.value).toBe('Fresh')
+    render('select', [
+      { ...select[0], options: [...select[0].options, { value: 'Fresh', group_id: 'select' }] },
+    ])
+    expect(host.querySelector('input')).toBeNull()
+    await act(async () => reply(ok(null)))
+  })
+
+  it('a refused draft repeating a held name keeps its name, and the held row stays put', async () => {
+    editOption.mockResolvedValueOnce(refuse)
+    render('select', select)
+    const urgent = span('Urgent')
+    plus()
+    await commit(host.querySelector('input'), 'Urgent')
+    await act(async () => {})
+    expect(host.querySelector('input')?.value).toBe('Urgent')
+    expect(span('Urgent')).toBe(urgent)
+    expect(urgent?.isConnected).toBe(true)
   })
 
   it('a blank name adds nothing', async () => {

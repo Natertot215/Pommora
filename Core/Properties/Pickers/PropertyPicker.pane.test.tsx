@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, useRef } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { ok } from '../../Contract/result'
+import { fail, ok, type Result } from '../../Contract/result'
 import { stubDialer } from '../../vitest.setup'
 import { dateDefaults } from '../columnStyles'
 import { defaultStatusSeed, type PropertyDefinition } from '../properties'
@@ -69,7 +69,7 @@ const rowButton = (name: string): HTMLElement | undefined =>
 let host: HTMLDivElement
 let root: Root
 const menu = vi.fn(async (_req: unknown) => ok(null))
-const editOption = vi.fn(async () => ok(null))
+const editOption = vi.fn(async (): Promise<Result<null>> => ok(null))
 beforeEach(() => {
   menu.mockClear()
   editOption.mockClear()
@@ -287,7 +287,24 @@ describe('editing options from the picker', () => {
       title: 'Fresh',
     })
     expect(onCommit).not.toHaveBeenCalled()
+    await act(async () => {})
     expect(draft()).toBeNull()
+  })
+
+  it('a refused add keeps its name in the draft', async () => {
+    editOption.mockResolvedValueOnce(fail('invalid-property', 'taken'))
+    await render({ target: optionsTarget() })
+    const input = await beginDraft()
+    input.value = 'Fresh'
+    key(input, 'Enter')
+    await act(async () => {})
+    expect(draft()?.value).toBe('Fresh')
+  })
+
+  it('New Option waits while a draft is open', async () => {
+    await render({ target: optionsTarget() })
+    await beginDraft()
+    expect(newOption()?.disabled).toBe(true)
   })
 
   it('a blank Enter and an Escape on the draft add nothing', async () => {
