@@ -218,6 +218,7 @@ export function FilterFrame({
   tree,
   back,
   targets: supplied,
+  maxHeight,
   onCommit,
 }: {
   locations: (CollectionNode | SetNode)[]
@@ -227,6 +228,7 @@ export function FilterFrame({
   tree: NexusTree | null
   back?: { label: string; onBack: () => void }
   targets?: PaneTarget[]
+  maxHeight?: number
   onCommit: (patch: FilterPatch) => void
 }): React.JSX.Element {
   const styleFor = useStyleFor()
@@ -505,6 +507,7 @@ export function FilterFrame({
   return (
     <MenuScrollFrame
       className={fp.frame}
+      maxHeight={maxHeight}
       header={back && <MenuTopRow label={back.label} current="Filtering" onBack={back.onBack} />}
       footer={
         <MenuFooting

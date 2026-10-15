@@ -7,6 +7,7 @@ import { readLiveView } from '../Host/pendingView'
 import { GroupFrame } from './GroupFrame'
 import { SortFrame } from './SortFrame'
 import { FilterFrame } from './FilterFrame'
+import { VIEW_SETTINGS_MAX_HEIGHT } from '@pommora/uix/Menus/frames.css'
 
 export type ViewLeafId = 'group' | 'filter' | 'sort'
 
@@ -44,6 +45,7 @@ export function ViewLeaf({
           schema={schema}
           tree={tree}
           back={{ label, onBack }}
+          maxHeight={VIEW_SETTINGS_MAX_HEIGHT}
           onCommit={(patch) => void saveView(view, patch)}
         />
       )
