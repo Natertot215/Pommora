@@ -97,7 +97,7 @@ Every alias write becomes an instruction — remember, add, rename, or forget �
 - [ ] **Phase 3** — The Shared Alias Picker
   - [x] Task 3-1
   - [x] Task 3-2
-  - [x] Task 3-3
+  - [ ] Task 3-3
   - [ ] Task 3-4
   - [ ] Task 3-5
   - [ ] Review Checkpoint
@@ -892,7 +892,7 @@ Every alias write becomes an instruction — remember, add, rename, or forget �
 **CHANGE**
 
 - [x] In `Core/Pages/editorHost.test.ts`, rewrite the alias cases and watch them fail: `edit('p1', { op: 'forget', alias: 'the notes' })` sends `{ op: 'editAliases', path: 'Notes/Alpha.md', edit: { op: 'forget', alias: 'the notes' } }` and resolves `true`; `edit` on an id the tree doesn't hold resolves `false` and sends nothing; the list and subscribe cases stay.
-- [x] In `Core/Settings/ExclusionRows.test.tsx`, add and watch fail: drafting `Archive` over a list holding `Archive`, with the write refused, leaves the draft reading `Archive` and the held `Archive` row the same node.
+- [x] In `Core/Settings/ExclusionRows.test.tsx`, add and watch fail: drafting `Archive` over a list holding `Archive`, with the write refused, leaves the draft row open and the held `Archive` row the same node.
 - [x] In `UIX/Pickers/PickerMenu`'s tests, add and watch fail: in a `focus="keep"` pane, a mousedown on a field inside isn't `defaultPrevented`, and one on a row is.
 - [x] Repoint the host's alias callers in tests: `aliasPicker.test.tsx`'s host stub carries `edit` in place of `remember`/`forget`, its "a row forgets itself" case goes (Task 3-3 replaces the row), and its candidates drop `forget`; `connectionCommit.test.tsx:95` calls `edit('p1', { op: 'forget', alias: 'two' })` and `:100-111` spies on `edit` for `{ op: 'remember', … }`; `linkEdit.test.tsx`'s `remember` spies spy on `edit` the same way.
 - [x] Apply the diffs below.
@@ -1458,6 +1458,8 @@ A double-click on a name begins its rename through `RenamableLabel`'s `onBegin`,
   - with the harness's `menus.alias` answering `rename`, a right-click opens the row's input.
 - [x] Repoint `connectionCommit.test.tsx:90`'s `.mdpm-ac-forget` count to the "Delete alias" buttons.
 - [x] In `Core/MarkdownPM/Links/linkEdit.test.tsx`, add "focus moving into the caret pane neither collapses nor remembers" — an empty and a typed alias slot, blurred toward an element inside a `CaretPane`, keep their text and send no `edit` — and watch it fail.
+- [ ] In `aliasPicker.test.tsx`, add and watch fail: a heading committed into the alias stage leaves the sliding root drawing its heading rows as heading rows, with no page glyph.
+- [ ] In the decoration tests, add and watch fail: with focus moved into a pane field, the alias slot keeps its editing decoration while `paneHeld` holds, and rests once it clears.
 - [x] Apply the diffs below.
 
 **AFTER**
@@ -1593,14 +1595,23 @@ A double-click on a name begins its rename through `RenamableLabel`'s `onBegin`,
 +          />
 +        )
 +      : slot(v.candidates, true)
++  const behindSlot = (rows: AcRow[]): React.JSX.Element =>
++    rows[0]?.kind === 'heading' ? (
++      <MenuScrollFrame maxHeight={h}>{rows.map((r) => headingRow(r, -1))}</MenuScrollFrame>
++    ) : (
++      slot(rows, false)
++    )
+ …
+-        root={v.behind ? slot(v.behind, false) : shown}
++        root={v.behind ? behindSlot(v.behind) : shown}
 ```
 
-`useHeld`'s snapshot gains `aliasHost`, so a closing pane keeps its alias list. `slot` now only ever receives page rows — an alias stage without an `aliasHost` has no candidates, and `behind` holds page rows — so `row.kind === 'page'` stays only where TypeScript needs `pageId` and `location` (the key and the sub-label), and the row takes `overScrollHost`, the half of `hoverRemoveHost` it used. The heading row's mousedown comment ("commits on mousedown, the way every autocomplete row does") reads that a heading row commits on mousedown as a page row does, an alias row's click waiting out the double-click window. The new imports are `inCaretPane`, `holdPane`, `paneHeld`, `EDITABLE_TARGETS`, and `AliasEdit` in the hook, `inCaretPane` in `linkEdit.ts`, and `paneHeld` in `decorations.ts`.
+`useHeld`'s snapshot gains `aliasHost`, so a closing pane keeps its alias list. `slot` now only ever receives page rows — an alias stage without an `aliasHost` has no candidates, and a `behind` left by a heading that opened the alias stage slides out through `headingRow` — so `row.kind === 'page'` stays only where TypeScript needs `pageId` and `location` (the key and the sub-label), and the row takes `overScrollHost`, the half of `hoverRemoveHost` it used. The heading row's mousedown comment ("commits on mousedown, the way every autocomplete row does") reads that a heading row commits on mousedown as a page row does, an alias row's click waiting out the double-click window. The new imports are `inCaretPane`, `holdPane`, `paneHeld`, `EDITABLE_TARGETS`, and `AliasEdit` in the hook, `inCaretPane` in `linkEdit.ts`, and `paneHeld` in `decorations.ts`.
 
 **VERIFY**
 
 - [x] `aliasPicker.test.tsx`, `linkEdit.test.tsx`, `connectionCommit.test.tsx`, `AliasesRow.test.tsx`, the table cell's autocomplete tests, and the decoration tests are green.
-- [x] `grep -rn "mdpm-ac-forget\|HoverRemove\|aliases.remember\|aliases.forget\|ManageList\|ManageFieldProps" Core UIX` finds nothing.
+- [x] `grep -rn "mdpm-ac-forget\|\.aliases\.remember\|\.aliases\.forget\|ManageList\|ManageFieldProps" Core UIX` and `grep -rn HoverRemove Core/MarkdownPM` find nothing.
 - [x] Run the gates, then commit Tasks 3-1 through 3-3 together.
 - [x] Check for unnecessary code or mistakes.
 
