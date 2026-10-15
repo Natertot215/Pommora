@@ -276,6 +276,31 @@ describe('PropertyPanel', () => {
     expect(text()).toContain('Alpha')
   })
 
+  it('a page shows its Aliases row after the Properties group, and a Space shows none', async () => {
+    const aliasesLabel = (): Element | undefined =>
+      Array.from(host.querySelectorAll('*')).find(
+        (el) => el.children.length === 0 && el.textContent === 'Aliases',
+      )
+    cachePageDetail(detail({ path: 'Col/Page.md', frontmatter: { Stage: 'Alpha' } }))
+    for (const panelHost of ['dropdown', 'side-pane'] as const) {
+      await renderPanel(<PropertyPanel key={panelHost} subject={PAGE} host={panelHost} />)
+      const lastGroup = Array.from(host.querySelectorAll('[data-reveal-host]')).find(
+        (g) => g.firstElementChild?.textContent === 'Properties',
+      ) as Element
+      expect(lastGroup.textContent).toContain('Stage')
+      const label = aliasesLabel()
+      expect(label).toBeDefined()
+      expect(
+        lastGroup.compareDocumentPosition(label as Element) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy()
+      expect(lastGroup.contains(label as Element)).toBe(false)
+    }
+    setTree({ Stage: 'Alpha' })
+    await renderPanel(<PropertyPanel subject={SPACE} host="dropdown" />)
+    expect(text()).toContain('Stage')
+    expect(aliasesLabel()).toBeUndefined()
+  })
+
   it('a Space subject reads the registry and its node’s own values', async () => {
     setTree({ Stage: 'Alpha' })
     await renderPanel(<PropertyPanel subject={SPACE} host="dropdown" />)

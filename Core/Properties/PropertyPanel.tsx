@@ -2,7 +2,7 @@ import { reportRefusal } from '../Interface/Notifications/notifications'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { EmptyValue } from '@pommora/uix/Elements/EmptyValue'
 import { Icon } from '@pommora/uix/Symbols'
-import { AccessoryButton, MenuItem, heading, menuDropLine } from '@pommora/uix/Menus'
+import { AccessoryButton, MenuItem, MenuSeparator, heading, menuDropLine } from '@pommora/uix/Menus'
 import { ICON } from '@pommora/uix/Menus/frames.css'
 import { ghostAnchorProps } from '@pommora/uix/Interactions/ghostCreate'
 import { LineRow, LineZone, lineList } from '@pommora/uix/Interactions/drag'
@@ -64,6 +64,7 @@ import type { LinkAction } from '../Actions/connectionMenu'
 import * as s from './property-panel.css'
 import { heldKey } from '../Files/heldKeys'
 import { normalizeTitle } from '../Paths/caseFold'
+import { AliasesRow } from '../Pages/AliasesRow'
 
 type Editing = { id: string; mode: 'picker' | 'editor' | 'popover' } | null
 type Field = PaneTarget & { def: PropertyDefinition | null }
@@ -529,6 +530,12 @@ export function PropertyPanel({
               </div>
             )
           })}
+          {subject.kind === 'page' && (
+            <>
+              <MenuSeparator />
+              <AliasesRow page={{ id: subject.id, path: subject.path, title }} />
+            </>
+          )}
         </div>
         {editing?.mode === 'popover' && editingDef && row && ctx && (
           <PropertyValueInput

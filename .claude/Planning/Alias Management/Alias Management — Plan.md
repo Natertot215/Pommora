@@ -48,6 +48,8 @@ Every alias write becomes an instruction — remember, add, rename, or forget �
 | `inCaretPane` / `paneHeld` / `holdPane` • Function, State | Whether focus sits in an editor's own caret pane, and the editor holding its place while an edit runs there. | `Core/MarkdownPM/Menus/caretPane.tsx` |
 | `AliasesRow.tsx` • File | `AliasesRow`, the page panel's row over `AliasList`. | `Core/Pages/AliasesRow.tsx` |
 | `AliasesRow.test.tsx` • File | The row and pane against a stubbed store. | `Core/Pages/AliasesRow.test.tsx` |
+| `Alias Drive/live-drive.mjs` • File | The live drive of the alias lists, the body picker, Excluded Directories, the option editor, and Filter, asserting each gesture's writes and recording its cost. | `.claude/scripts/Alias Drive/` |
+| `watch` / `measure` • Functions | A gesture's distinct file writes, its input-to-paint and input-to-disk latency, and its render cost, shared by every drive. | `.claude/scripts/drive-harness.mjs` |
 
 **REMOVED**
 
@@ -99,9 +101,9 @@ Every alias write becomes an instruction — remember, add, rename, or forget �
   - [x] Task 3-2
   - [x] Task 3-3
   - [x] Task 3-4
-  - [ ] Task 3-5
+  - [x] Task 3-5
   - [ ] Review Checkpoint
-- [ ] `[Stop: Nathan's Visual Pass and Live Feel on the Aliases pane and the body picker]`
+- [ ] `[Visual Pass: the drive's screenshots of the Aliases pane and the body picker go to Nathan, whose eyes are the one check awaiting]`
 - [ ] **Phase 4** — Documentation
   - [ ] Task 4-1
 
@@ -1771,8 +1773,8 @@ The draft row hands its `Reveal` to the rule it picks, and removing the last rul
 
 **CHANGE**
 
-- [ ] In `Core/Properties/PropertyPanel.test.tsx`, "a page shows its Aliases row after the Properties group, and a Space shows none" — both page hosts, the row's text following the last group's in document order — fails without the mount.
-- [ ] Apply the diff below.
+- [x] In `Core/Properties/PropertyPanel.test.tsx`, "a page shows its Aliases row after the Properties group, and a Space shows none" — both page hosts, the row's text following the last group's in document order — fails without the mount.
+- [x] Apply the diff below.
 
 **AFTER**
 
@@ -1796,16 +1798,17 @@ The draft row hands its `Reveal` to the rule it picks, and removing the last rul
 
 **VERIFY**
 
-- [ ] `PropertyPanel.test.tsx` is green, the new case included.
-- [ ] Live over CDP on `~/Test` in a scratch instance — its own `POMMORA_USERDATA` and `POMMORA_DEBUG_PORT=9335`, borrowing the dev renderer per `Guidelines/Development-Environment.md`, never an instance already running:
+- [x] `PropertyPanel.test.tsx` is green, the new case included.
+- [x] `node live-drive.mjs 1 2 3 4 5 6` from `.claude/scripts/Alias Drive/` passes every check — the harness builds the app, backs up and restores `~/Test`, and drives its own instance on port 9373 — asserting each gesture's writes to disk and recording its latency and render cost:
   - **Panel:** the row shows in the page dropdown and the PageWindow side pane, scrolls with the groups in the side pane, and is absent from a Space's dropdown; add, rename, and delete each update the count.
   - **Manage pane:** its rows sit edge to edge on the picker's surface like the body picker's; opening it focuses nothing; × shows at rest; + drafts at the end with the caret seated, without nudging the pane's scroll (else `EditableInput` focuses with `{ preventScroll: true }`, recorded); Enter keeps the draft's row; a single click does nothing; a double-click on a name and the row menu's Rename rename in place; the row menu's Delete and × delete; typing the title dims.
-  - **Body picker:** after `[[Page A|`, the same rows; a single click inserts after the double-click window, and a double-click on a name renames instead; + adds without inserting, the pane staying open, the link under it staying raw, and the caret returning to the slot; Escape in a field returns the caret; a press on another field or on blank chrome mid-edit closes the picker and leaves the slot as a blur would; the row menu opens during a rename without closing the picker; the same in a table cell's editor and a Link property's text pane.
+  - **Body picker:** after `[[Page A|`, the same rows; a single click inserts after the double-click window, and a double-click on a name renames instead; + adds without inserting, the pane staying open, the link under it staying raw, and the caret returning to the slot; Escape in a field returns the caret; a press on another field or on blank chrome mid-edit closes the picker and leaves the slot as a blur would; the row menu opens during a rename without closing the picker; the same in a table cell's editor and a Text property's TextPane.
   - **Excluded Directories and Open In Preview:** Excluded Directories' pane keeps its width, folder-trail tone, and look, and × on a field mid-edit sends one `exclusions:set` without the typed text; Open In Preview's pane opens at the shared 250 minimum (it was 225), screenshotted for Nathan.
   - **Option editor and filters:** a new option stays open until it lands and keeps its typed title on a refused duplicate; Filter's × discards a value cell's edit in progress, in Open In Preview and a view's filter pane.
-  - Revert every alias, exclusion, option, and filter rule the check made, screenshot the Manage pane and the body picker for Nathan, and stop the scratch instance by exact PID.
-- [ ] Run the gates, then commit.
-- [ ] Check for unnecessary code or mistakes.
+  - **Perf:** the alias stage's open, filter keystroke, and keyboard pick hold against a baseline build of the pre-Phase-3 head (`POMMORA_DRIVE_REPO`, `--against`), with the page stage as the in-run control.
+  - The drive's screenshots of the Manage pane, the body picker, Excluded Directories, and Open In Preview go to Nathan.
+- [x] Run the gates, then commit.
+- [x] Check for unnecessary code or mistakes.
 
 #### Review Checkpoint
 

@@ -37,12 +37,33 @@ runs the page, option, Space, and property renames over held spellings. It seeds
 Alpha` with its properties, a table view, and `Mx …` pages on debug port 9363, and exits non-zero on
 any failed check.
 
+`Alias Drive/live-drive.mjs` drives alias management end to end, in six groups: the host's alias
+edits over the `mutate` channel (remember, add, rename, and forget, case folding, the title refused,
+two edits fired together, and a Link value remembering the alias it newly shows); the page's Aliases
+row and its pane in the page dropdown and the PageWindow's side pane (the draft, renames by
+double-click and the row menu, × and the row menu's Delete); the body picker's alias stage in the
+page body, a TextPane, and a table cell (the single click held for the double-click window, keyboard
+picks, edits that return the caret to the slot, and leaving an authored slot); Excluded Directories
+and Open In Preview; the option editor's draft and Filter's ×; and the hot paths timed twenty times
+each beside the page stage of `[[` as a control. Every gesture is measured as well as asserted: how
+many contents each file it touches passes through, gesture to DOM and to disk, layout, style, script,
+and long-task cost, all written to `metrics.json` beside the screenshots and printed as a table.
+It takes the groups to run as arguments — `node live-drive.mjs 1 3` — and `--against <metrics.json>`
+prints each gesture's change from an earlier run; with `POMMORA_DRIVE_REPO` pointing at a worktree
+from `editor-parity/worktree.sh`, group 6 times that build instead, skipping the Aliases row a build
+before it lacks. It seeds `Collection A/Set Alpha` with its properties, a table view, and `Drive …`
+pages on debug port 9373.
+
 The drives share `drive-harness.mjs`, which builds the app, backs up `~/Test`, launches the build
 with its own userData and the drive's debug port, writes a screenshot of each state to
 `$POMMORA_DRIVE_SHOTS` (a per-drive folder in the system temp directory otherwise), and restores
 `~/Test` when the run ends or is interrupted; it chooses native menus with System Events
 keystrokes, so the terminal needs Accessibility permission, and it refuses to send a key unless the
-app is frontmost. Its `attach` connects to an instance already running on a debug port instead, with
+app is frontmost. `POMMORA_DRIVE_REPO` builds and launches another checkout in place of this one.
+Its `measure` runs one gesture under a watch: a worker thread polls the named files every 5 ms and
+counts their distinct contents, an in-page probe times the gesture's first input to the DOM change
+that shows it and the frame after, and the DevTools performance counters and long tasks give its
+render cost. Its `attach` connects to an instance already running on a debug port instead, with
 nothing to build, back up, or restore.
 
 `nexus-watch.mjs` attaches to an app already running with a debug port and reads a Nexus as data:

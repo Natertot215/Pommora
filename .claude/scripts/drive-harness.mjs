@@ -2,10 +2,12 @@ import { execFileSync, spawn } from 'node:child_process'
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { homedir, tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { Worker } from 'node:worker_threads'
 import { ulid } from 'ulidx'
 import { parse } from 'yaml'
 
-export const REPO = join(homedir(), 'The Studio/Projects/Project Pommora')
+// A baseline worktree (editor-parity/worktree.sh) builds and launches in place of the main checkout.
+export const REPO = process.env.POMMORA_DRIVE_REPO ?? join(homedir(), 'The Studio/Projects/Project Pommora')
 export const NEXUS = join(homedir(), 'Test')
 const ELECTRON = join(REPO, 'node_modules/electron/dist/Electron.app/Contents/MacOS/Electron')
 let port, shotsDir, backup, userData, child
@@ -76,17 +78,27 @@ export const sel = (css) => `document.querySelector(${JSON.stringify(css)})`
 export const textEl = (scope, text) =>
   `[...document.querySelectorAll(${JSON.stringify(scope)})].find((e) => e.children.length === 0 && e.textContent.trim() === ${JSON.stringify(text)})`
 
+// An element drawn as `display: contents` has no box of its own, so its contents' box stands in.
 export const boxOf = (cdp, expr) =>
-  cdp.evaluate(`(() => { const el = (${expr}); if (!el) throw new Error('no element for ' + ${JSON.stringify(expr)}); const b = el.getBoundingClientRect(); return { x: b.x + b.width / 2, y: b.y + b.height / 2, left: b.left, top: b.top, right: b.right, bottom: b.bottom } })()`)
+  cdp.evaluate(`(() => { const el = (${expr}); if (!el) throw new Error('no element for ' + ${JSON.stringify(expr)}); let b = el.getBoundingClientRect(); if (!b.width && !b.height) { const r = document.createRange(); r.selectNodeContents(el); b = r.getBoundingClientRect() } return { x: b.x + b.width / 2, y: b.y + b.height / 2, left: b.left, top: b.top, right: b.right, bottom: b.bottom } })()`)
 export const overlaps = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom
 
-export async function mouseAt(cdp, { x, y }, { button = 'left', modifiers = 0 } = {}) {
+export async function mouseAt(cdp, { x, y }, { button = 'left', modifiers = 0, settle = 500 } = {}) {
   await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y, button: 'none' })
   for (const type of ['mousePressed', 'mouseReleased'])
     await cdp.send('Input.dispatchMouseEvent', { type, x, y, button, buttons: type === 'mousePressed' ? (button === 'left' ? 1 : 2) : 0, clickCount: 1, modifiers })
-  await sleep(500)
+  await sleep(settle)
 }
 export const mouseClick = async (cdp, expr, opts) => mouseAt(cdp, await boxOf(cdp, expr), opts)
+// Two presses the second counted as such, so the element sees click (detail 1), click (detail 2), then dblclick.
+export async function doubleClick(cdp, expr, { settle = 500 } = {}) {
+  const { x, y } = await boxOf(cdp, expr)
+  await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y, button: 'none' })
+  for (const clickCount of [1, 2])
+    for (const type of ['mousePressed', 'mouseReleased'])
+      await cdp.send('Input.dispatchMouseEvent', { type, x, y, button: 'left', buttons: type === 'mousePressed' ? 1 : 0, clickCount })
+  await sleep(settle)
+}
 export const hover = async (cdp, expr, dwell = 600) => {
   const { x, y } = await boxOf(cdp, expr)
   await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: x + 20, y, button: 'none' })
@@ -128,7 +140,7 @@ export const nativeMenu = (pid) => {
 
 export const click = (cdp, expr) => cdp.evaluate(`(${expr}).click()`)
 
-const VK = { Enter: 13, Escape: 27, Tab: 9, Backspace: 8, b: 66 }
+const VK = { Enter: 13, Escape: 27, Tab: 9, Backspace: 8, b: 66, ArrowDown: 40, ArrowUp: 38 }
 export async function pressKey(cdp, name, modifiers = 0) {
   for (const type of ['rawKeyDown', 'keyUp'])
     await cdp.send('Input.dispatchKeyEvent', { type, key: name, code: name.length === 1 ? `Key${name.toUpperCase()}` : name, windowsVirtualKeyCode: VK[name], modifiers })
@@ -158,6 +170,243 @@ export const frontRaw = (title) => FM.exec(pageFile(title))?.[1] ?? ''
 export const frontmatter = (title) => parse(frontRaw(title)) ?? {}
 export const mintPageId = () => { const id = ulid(); return `${id.slice(0, 10)}P${id.slice(11)}` }
 export const portalOpen = (cdp) => cdp.evaluate(`!!document.querySelector('[data-picker-portal]')`)
+export function writeBody(title, body) {
+  const text = pageFile(title)
+  const m = FM.exec(text)
+  writeFileSync(join(NEXUS, pagePath(title)), `${m[0]}${body}`)
+}
+
+export const pageIds = {}
+export async function createPage(cdp, title, seeds = {}) {
+  const id = mintPageId()
+  await must(`createPage ${title}`, ask(cdp, 'mutate', { op: 'createPage', id, parentPath: SET, name: title, seeds }))
+  pageIds[title] = id
+}
+
+// ── Surfaces ────────────────────────────────────────────────────────────────
+
+export const SETTINGS_BUTTON = `document.querySelector('.toolbar-trio > :not([inert]) button[title="Settings"]')`
+export async function openCollection(cdp) {
+  await click(cdp, `[...document.querySelectorAll('.row span')].findLast((e) => e.textContent.trim() === 'Collection A')`)
+  await sleep(1200)
+}
+export const row = (title) => `document.querySelector('.data-row[data-rid="${pageIds[title]}"]')`
+export const field = `document.activeElement?.tagName === 'INPUT' ? document.activeElement : null`
+export const fieldValue = (cdp) => cdp.evaluate(`(${field})?.value ?? null`)
+export const activeTab = (cdp) => cdp.evaluate(`document.querySelector('[role=tab][aria-selected=true]')?.getAttribute('title') ?? null`)
+
+// A press on the value's first glyph, so a link inside it is never the target.
+export async function openField(cdp, expr) {
+  const text = await boxOf(cdp, `(${expr}).querySelector('.cell-text')`).catch(() => null)
+  if (text) await mouseAt(cdp, { x: text.left + 3, y: text.y })
+  else await mouseClick(cdp, expr)
+  await until('the inline field', () => cdp.evaluate(`!!(${field})`))
+}
+export async function openPage(cdp, title) {
+  await mouseClick(cdp, `${row(title)}.querySelector('.cell-title-text')`)
+  await until(`${title}'s tab`, async () => (await activeTab(cdp)) === title)
+  await sleep(800)
+}
+export async function openPanel(cdp) {
+  if (await cdp.evaluate(`!!document.querySelector('[aria-label="Add Property"]')`)) return
+  await mouseClick(cdp, SETTINGS_BUTTON)
+  await until('the Properties panel', () => cdp.evaluate(`!!document.querySelector('[aria-label="Add Property"]')`))
+  await sleep(500)
+}
+export async function closePanel(cdp) {
+  if (await cdp.evaluate(`!!document.querySelector('[aria-label="Add Property"]')`)) await mouseClick(cdp, SETTINGS_BUTTON)
+  await sleep(400)
+}
+export async function escapeAll(cdp) {
+  for (let i = 0; i < 4 && (await portalOpen(cdp)); i++) await pressKey(cdp, 'Escape')
+}
+
+export const PEN = '[aria-label="Open in TextPane"]'
+export const PANE = '.text-pane'
+export const PANE_VIEW = `document.querySelector('${PANE} .cm-content').cmTile.root.view`
+export const PAGE_VIEW = `[...document.querySelectorAll('.cm-content')].find((c) => !c.closest('${PANE}') && !c.closest('[inert]')).cmTile.root.view`
+export const paneDoc = (cdp) => cdp.evaluate(`${PANE_VIEW}.state.doc.toString()`)
+export async function openPane(cdp, scope) {
+  await hover(cdp, scope)
+  await mouseClick(cdp, `(${scope}).querySelector(${JSON.stringify(PEN)})`)
+  await until('the TextPane', () => cdp.evaluate(`!!document.querySelector('${PANE} .cm-editor')`))
+  await sleep(500)
+}
+
+// A refusal draws as the notification label's alert.
+export const refusal = (cdp) => cdp.evaluate(`document.querySelector('[role="alert"]:not([inert])')?.textContent.trim() ?? ''`)
+
+// ── Measurement ─────────────────────────────────────────────────────────────
+
+const clock = () => performance.timeOrigin + performance.now()
+const round = (ms) => Math.round(ms * 10) / 10
+
+// Its own thread, so a System Events call blocking this one never stalls the poll. A directory reads as its `.json` files together, which leaves an atomic write's temp file out.
+const WATCHER = `
+const { parentPort, workerData } = require('node:worker_threads')
+const { readdirSync, readFileSync, statSync } = require('node:fs')
+const { join } = require('node:path')
+const { paths, every, flag } = workerData
+const stop = new Int32Array(flag)
+const read = (p) => {
+  try {
+    if (!statSync(p).isDirectory()) return readFileSync(p, 'utf8')
+    return readdirSync(p).filter((n) => n.endsWith('.json')).sort().map((n) => n + '\\n' + readFileSync(join(p, n), 'utf8')).join('\\n')
+  } catch (e) {
+    return e.code === 'ENOENT' ? null : undefined
+  }
+}
+const last = paths.map(read)
+const transitions = []
+parentPort.postMessage('ready')
+while (Atomics.load(stop, 0) === 0) {
+  paths.forEach((p, i) => {
+    const now = read(p)
+    if (now === undefined || now === last[i]) return
+    last[i] = now
+    transitions.push({ at: performance.timeOrigin + performance.now(), file: i, content: now })
+  })
+  Atomics.wait(stop, 0, 0, every)
+}
+parentPort.postMessage({ transitions, final: last })
+`
+
+/** Polls each Nexus-relative path every `every` ms until `stop`, which answers how many distinct contents each passed through, each content in turn, and when the first landed. */
+export async function watch(rels, every = 5) {
+  const flag = new SharedArrayBuffer(4)
+  const worker = new Worker(WATCHER, { eval: true, workerData: { paths: rels.map((r) => join(NEXUS, r)), every, flag } })
+  const reply = () => new Promise((ok, fail) => { worker.once('message', ok); worker.once('error', fail) })
+  await reply()
+  return {
+    stop: async () => {
+      const done = reply()
+      const stop = new Int32Array(flag)
+      Atomics.store(stop, 0, 1)
+      Atomics.notify(stop, 0)
+      const { transitions, final } = await done
+      await worker.terminate()
+      const of = (i) => transitions.filter((t) => t.file === i)
+      return {
+        writes: Object.fromEntries(rels.map((r, i) => [r, of(i).length])),
+        states: Object.fromEntries(rels.map((r, i) => [r, of(i).map((t) => t.content)])),
+        firstAt: transitions[0]?.at ?? null,
+        final: Object.fromEntries(rels.map((r, i) => [r, final[i]])),
+      }
+    },
+  }
+}
+
+// Installed once: the first input since arming, the first mutation or focus move after which `reflect` holds, the frame after it, and every long task.
+const PROBE = `(() => {
+  if (window.__drive) return window.__drive
+  const d = { input: null, reflect: null, paint: null, armedAt: 0, longtasks: [], obs: null, hit: () => {} }
+  for (const type of ['pointerdown', 'keydown', 'contextmenu', 'beforeinput'])
+    window.addEventListener(type, () => { if (d.input === null) d.input = performance.now() }, true)
+  for (const type of ['focusin', 'focusout']) window.addEventListener(type, () => d.hit(), true)
+  try { new PerformanceObserver((list) => { for (const e of list.getEntries()) d.longtasks.push(e.startTime) }).observe({ type: 'longtask', buffered: true }) } catch {}
+  window.__drive = d
+  return d
+})()`
+const arm = (cdp, reflect) => cdp.evaluate(`(() => {
+  const d = ${PROBE}
+  d.obs?.disconnect()
+  d.input = null; d.reflect = null; d.paint = null; d.armedAt = performance.now()
+  const when = () => { try { return !!(${reflect}) } catch { return false } }
+  d.hit = () => {
+    if (d.reflect !== null || !when()) return
+    d.reflect = performance.now()
+    d.obs.disconnect()
+    requestAnimationFrame(() => { d.paint = performance.now() })
+  }
+  d.obs = new MutationObserver(() => d.hit())
+  d.obs.observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true })
+})()`)
+const probed = (cdp) => cdp.evaluate(`(() => {
+  const d = window.__drive
+  const from = d.input ?? d.armedAt
+  const since = (t) => (t === null ? null : Math.round((t - from) * 10) / 10)
+  return { domMs: since(d.reflect), paintMs: since(d.paint), longtasks: d.longtasks.filter((t) => t >= d.armedAt).length }
+})()`)
+
+const COST = ['LayoutCount', 'RecalcStyleCount', 'LayoutDuration', 'RecalcStyleDuration', 'ScriptDuration', 'TaskDuration']
+let costOn = false
+async function cost(cdp) {
+  if (!costOn) await cdp.send('Performance.enable')
+  costOn = true
+  const { metrics } = await cdp.send('Performance.getMetrics')
+  return Object.fromEntries(metrics.filter((m) => COST.includes(m.name)).map((m) => [m.name, m.value]))
+}
+
+export const metrics = []
+/** Runs one gesture and records its cost: `reflect` is an in-page expression that holds once the DOM shows the gesture, timed from the gesture's first input; `files` are watched for `window` ms from the gesture, timed to their first write; with no files the record closes at the frame after `reflect`, or after `window`. */
+export async function measure(cdp, name, act, { reflect = 'false', files = [], window = files.length ? 1500 : 3000 } = {}) {
+  await arm(cdp, reflect)
+  const before = await cost(cdp)
+  const watcher = files.length ? await watch(files) : null
+  const t0 = clock()
+  await act()
+  if (watcher) await sleep(Math.max(0, window - (clock() - t0)))
+  else await settles(() => cdp.evaluate('window.__drive.paint !== null'), window)
+  const disk = watcher ? await watcher.stop() : null
+  const after = await cost(cdp)
+  const m = {
+    name,
+    writes: disk?.writes ?? {},
+    diskMs: disk?.firstAt ? round(disk.firstAt - t0) : null,
+    ...(await probed(cdp)),
+    ...Object.fromEntries(COST.map((k) => [k, k.endsWith('Duration') ? round((after[k] - before[k]) * 1000) : after[k] - before[k]])),
+  }
+  metrics.push(m)
+  return { ...m, states: disk?.states ?? {}, final: disk?.final ?? {} }
+}
+
+const pct = (xs, p) => {
+  const s = xs.filter((x) => typeof x === 'number').sort((a, b) => a - b)
+  return s.length ? s[Math.max(0, Math.ceil(p * s.length) - 1)] : null
+}
+/** Every gesture name once, with its runs' medians and the 95th percentile of its DOM latency. */
+export function summarize(list = metrics) {
+  const by = new Map()
+  for (const m of list) by.set(m.name, [...(by.get(m.name) ?? []), m])
+  return [...by].map(([name, ms]) => {
+    const med = (k) => pct(ms.map((m) => m[k]), 0.5)
+    return {
+      name, n: ms.length, writes: Object.values(ms[0].writes).join('/') || '–',
+      diskMs: med('diskMs'), domMs: med('domMs'), domP95: pct(ms.map((m) => m.domMs), 0.95), paintMs: med('paintMs'),
+      layouts: med('LayoutCount'), styles: med('RecalcStyleCount'), layoutMs: med('LayoutDuration'), styleMs: med('RecalcStyleDuration'),
+      scriptMs: med('ScriptDuration'), taskMs: med('TaskDuration'), longtasks: med('longtasks'),
+    }
+  })
+}
+const COLUMNS = ['n', 'writes', 'diskMs', 'domMs', 'domP95', 'paintMs', 'layouts', 'styles', 'scriptMs', 'taskMs', 'longtasks']
+const cellOf = (v) => (v === null || v === undefined ? '—' : String(v))
+const table = (rows, cols) => {
+  const width = Math.min(64, Math.max(7, ...rows.map((r) => r.name.length)))
+  console.log(['gesture'.padEnd(width), ...cols.map((c) => c.padStart(9))].join(' '))
+  for (const r of rows) console.log([r.name.slice(0, width).padEnd(width), ...cols.map((c) => cellOf(r[c]).padStart(9))].join(' '))
+}
+export const printMetrics = (list = metrics) => table(summarize(list), COLUMNS)
+
+/** Writes every record to `metrics.json` beside the screenshots, answering its path. */
+export function writeMetrics() {
+  const path = join(shotsDir ?? tmpdir(), 'metrics.json')
+  writeFileSync(path, JSON.stringify({ repo: REPO, at: new Date().toISOString(), metrics }, null, 2))
+  return path
+}
+
+/** Prints each gesture's medians beside a baseline `metrics.json`'s, with the change; a gesture one side lacks reads —. */
+export function against(path) {
+  const base = new Map(summarize(JSON.parse(readFileSync(path, 'utf8')).metrics).map((r) => [r.name, r]))
+  const now = new Map(summarize().map((r) => [r.name, r]))
+  const keys = ['domMs', 'domP95', 'paintMs', 'layouts', 'styles', 'scriptMs', 'taskMs']
+  const delta = (a, b) => (typeof a === 'number' && typeof b === 'number' ? round(a - b) : null)
+  const rows = [...new Set([...base.keys(), ...now.keys()])].map((name) => ({
+    name,
+    ...Object.fromEntries(keys.flatMap((k) => [[k, now.get(name)?.[k]], [`Δ${k}`, delta(now.get(name)?.[k], base.get(name)?.[k])]])),
+  }))
+  console.log(`\nagainst ${path}`)
+  table(rows, keys.flatMap((k) => [k, `Δ${k}`]))
+}
 
 // ── The run ─────────────────────────────────────────────────────────────────
 

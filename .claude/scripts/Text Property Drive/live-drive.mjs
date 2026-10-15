@@ -2,9 +2,11 @@ import { statSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { stringify } from 'yaml'
 import {
-  activate, ask, boxOf, check, chooseNative, click, FM, frontmatter, frontRaw, hover, holds, key, KEY, launch, META,
-  mintPageId, mouseAt, mouseClick, must, nativeMenu, osa, NEXUS, overlaps, pageFile, pagePath, portalOpen, pressKey, read,
-  restore, results, screenShot, sel, SET, settles, SHIFT, shot, sleep, typeText, until,
+  activate, activeTab, ask, boxOf, check, chooseNative, click, closePanel, createPage, escapeAll, field, fieldValue, FM, frontmatter,
+  frontRaw, hover, holds, key, KEY, launch, META, mouseAt, mouseClick, must, nativeMenu, NEXUS, openCollection, openField,
+  openPage, openPane, openPanel, osa, overlaps, PAGE_VIEW, pageFile, pageIds, pagePath, PANE, PANE_VIEW, paneDoc, PEN,
+  portalOpen, pressKey, read, refusal, restore, results, row, screenShot, sel, SET, settles, SHIFT, shot, sleep, typeText,
+  until, writeBody,
 } from '../drive-harness.mjs'
 
 const PORT = 9353
@@ -32,11 +34,6 @@ function writeFrontLine(title, prop, line) {
   const kept = m[1].split('\n').filter((l) => !l.startsWith(`${prop}:`))
   writeFileSync(join(NEXUS, pagePath(title)), `---\n${[...kept, line].join('\n')}\n---\n${text.slice(m[0].length)}`)
 }
-function writeBody(title, body) {
-  const text = pageFile(title)
-  const m = FM.exec(text)
-  writeFileSync(join(NEXUS, pagePath(title)), `${m[0]}${body}`)
-}
 const inline = (raw) => (typeof raw === 'string' ? raw : stringify(raw, { collectionStyle: 'flow', flowCollectionPadding: false, lineWidth: 0 }).trimEnd())
 const collator = new Intl.Collator('en', { sensitivity: 'accent' })
 const sidecar = () => JSON.parse(read('Collection A/_pagecollection.json'))
@@ -57,17 +54,10 @@ const SHOWCASE = [
 const TARGET_NOTES = 'see [[#Setup]] first'
 const ITEMS = '- milk\n- eggs'
 const ids = {}
-const pageIds = {}
 const VIEWS = {
   'Drive Table': { id: 'view_01KZTEXTDRIVE00000000TABLE', type: 'table' },
   'Drive Cards': { id: 'view_01KZTEXTDRIVE00000000CARDS', type: 'cards', format: 'standard' },
   'Drive Compact': { id: 'view_01KZTEXTDRIVE0000000COMPCT', type: 'cards', format: 'compact' },
-}
-
-async function createPage(cdp, title, seeds = {}) {
-  const id = mintPageId()
-  await must(`createPage ${title}`, ask(cdp, 'mutate', { op: 'createPage', id, parentPath: SET, name: title, seeds }))
-  pageIds[title] = id
 }
 
 async function seed(cdp) {
@@ -108,18 +98,12 @@ async function seed(cdp) {
 
 // ── Surfaces ────────────────────────────────────────────────────────────────
 
-const SETTINGS_BUTTON = `document.querySelector('.toolbar-trio > :not([inert]) button[title="Settings"]')`
-async function openCollection(cdp) {
-  await click(cdp, `[...document.querySelectorAll('.row span')].findLast((e) => e.textContent.trim() === 'Collection A')`)
-  await sleep(1200)
-}
 async function showView(cdp, name) {
   await must(`show ${name}`, ask(cdp, 'mutate', { op: 'setActiveView', path: 'Collection A', kind: 'collection', viewId: VIEWS[name].id }))
   const probe = VIEWS[name].type === 'table' ? `.data-row[data-rid="${pageIds['Drive Prose']}"]` : `[data-rid="${pageIds['Drive Prose']}"] .card-props`
   await until(`${name} on screen`, () => cdp.evaluate(`!!document.querySelector(${JSON.stringify(probe)})`))
   await sleep(600)
 }
-const row = (title) => `document.querySelector('.data-row[data-rid="${pageIds[title]}"]')`
 const cell = (title, prop = NOTES) => `${row(title)}.querySelectorAll('.data-cell')[${[NOTES, LINK, BAR].indexOf(prop) + 1}]`
 const card = (title) => `document.querySelector('[data-rid="${pageIds[title]}"]')`
 const cardValue = (title, prop = NOTES) =>
@@ -130,23 +114,12 @@ const cellText = (cdp, expr) =>
 // The value's box stands one line tall whatever it holds.
 const oneLine = (cdp, expr) =>
   cdp.evaluate(`(() => { const t = (${expr})?.querySelector('.cell-text'); if (!t) return false; const lh = parseFloat(getComputedStyle(t).lineHeight) || parseFloat(getComputedStyle(t).fontSize) * 1.4; const h = t.getBoundingClientRect().height; const hidden = [...t.querySelectorAll('.cell-text-line')].slice(1).every((l) => l.getClientRects().length === 0); return h > 0 && h <= lh * 1.5 && hidden })()`)
-const field = `document.activeElement?.tagName === 'INPUT' ? document.activeElement : null`
-const fieldValue = (cdp) => cdp.evaluate(`(${field})?.value ?? null`)
 async function pickRow(cdp, label) {
   const row = `[...document.querySelectorAll('[data-picker-portal] *')].filter((e) => e.textContent.trim() === ${JSON.stringify(label)}).at(0)`
   const found = await settles(() => cdp.evaluate(`!!(${row})`), 3000)
   if (!found) throw new Error(`No picker row reads ${label}: ${await cdp.evaluate(`[...document.querySelectorAll('[data-picker-portal]')].map((p) => p.textContent).join(' | ')`)}`)
   await click(cdp, row)
   await sleep(600)
-}
-const activeTab = (cdp) => cdp.evaluate(`document.querySelector('[role=tab][aria-selected=true]')?.getAttribute('title') ?? null`)
-
-// A press on the value's first glyph, so a link inside it is never the target.
-async function openField(cdp, expr) {
-  const text = await boxOf(cdp, `(${expr}).querySelector('.cell-text')`).catch(() => null)
-  if (text) await mouseAt(cdp, { x: text.left + 3, y: text.y })
-  else await mouseClick(cdp, expr)
-  await until('the inline field', () => cdp.evaluate(`!!(${field})`))
 }
 async function commitField(cdp, expr, text) {
   await openField(cdp, expr)
@@ -156,11 +129,6 @@ async function commitField(cdp, expr, text) {
   await pressKey(cdp, 'Enter')
   await sleep(900)
 }
-async function openPage(cdp, title) {
-  await mouseClick(cdp, `${row(title)}.querySelector('.cell-title-text')`)
-  await until(`${title}'s tab`, async () => (await activeTab(cdp)) === title)
-  await sleep(800)
-}
 // A value's native menu reads its rows, and its Edit opens the inline field.
 async function menuEdits(cdp, pid, expr, rows, name) {
   let read = []
@@ -168,19 +136,6 @@ async function menuEdits(cdp, pid, expr, rows, name) {
   check(`group 1: ${name}'s menu reads ${rows.join(' · ')}`, JSON.stringify(read) === JSON.stringify(rows), JSON.stringify(read))
   check(`group 1: ${name}'s Edit opens the inline field`, await settles(() => cdp.evaluate(`!!(${field})`), 3000))
   await pressKey(cdp, 'Escape')
-}
-async function openPanel(cdp) {
-  if (await cdp.evaluate(`!!document.querySelector('[aria-label="Add Property"]')`)) return
-  await mouseClick(cdp, SETTINGS_BUTTON)
-  await until('the Properties panel', () => cdp.evaluate(`!!document.querySelector('[aria-label="Add Property"]')`))
-  await sleep(500)
-}
-async function closePanel(cdp) {
-  if (await cdp.evaluate(`!!document.querySelector('[aria-label="Add Property"]')`)) await mouseClick(cdp, SETTINGS_BUTTON)
-  await sleep(400)
-}
-async function escapeAll(cdp) {
-  for (let i = 0; i < 4 && (await portalOpen(cdp)); i++) await pressKey(cdp, 'Escape')
 }
 
 // ── Group 1 — the catalog and the field ─────────────────────────────────────
@@ -313,7 +268,6 @@ async function group1(cdp, pid) {
 
 const connection = (scope, kind, text) =>
   `[...(${scope}).querySelectorAll('.md-connection-${kind}')].find((e) => e.textContent.includes(${JSON.stringify(text)}))`
-const PEN = '[aria-label="Open in TextPane"]'
 const rectOf = (cdp, expr) =>
   cdp.evaluate(`(() => { const e = (${expr}); if (!e) return null; const b = e.getBoundingClientRect(); return { left: b.left, right: b.right, top: b.top, bottom: b.bottom, width: b.width, height: b.height } })()`)
 const styleOf = (cdp, expr, props) =>
@@ -525,17 +479,7 @@ async function group3(cdp) {
 
 // ── Group 4 — TextPane ──────────────────────────────────────────────────────
 
-const PANE = '.text-pane'
-const PANE_VIEW = `document.querySelector('${PANE} .cm-content').cmTile.root.view`
-const PAGE_VIEW = `[...document.querySelectorAll('.cm-content')].find((c) => !c.closest('${PANE}') && !c.closest('[inert]')).cmTile.root.view`
-const paneDoc = (cdp) => cdp.evaluate(`${PANE_VIEW}.state.doc.toString()`)
 const focusInPane = (cdp) => cdp.evaluate(`!!document.activeElement?.closest(${JSON.stringify(PANE)})`)
-async function openPane(cdp, scope) {
-  await hover(cdp, scope)
-  await mouseClick(cdp, `(${scope}).querySelector(${JSON.stringify(PEN)})`)
-  await until('the TextPane', () => cdp.evaluate(`!!document.querySelector('${PANE} .cm-editor')`))
-  await sleep(500)
-}
 const placeAt = (cdp, needle, end = true) =>
   cdp.evaluate(`(() => { const v = ${PANE_VIEW}; const d = v.state.doc.toString(); const i = d.indexOf(${JSON.stringify(needle)}); const at = ${end} ? v.state.doc.lineAt(i).to : i; v.focus(); v.dispatch({ selection: { anchor: at } }) })()`)
 const SNAP_OF = (view) => `(() => {
@@ -584,7 +528,6 @@ const SNAP_OF = (view) => `(() => {
   return { lines: out, caret: cs ? [cs.backgroundColor, px(cs.width), px(cs.height)] : null }
 })()`
 
-const refusal = (cdp) => cdp.evaluate(`document.querySelector('[role="status"][aria-live="assertive"]')?.textContent.trim() ?? ''`)
 // The row menu's sixth row is Properties ▸, which lists the collection's properties in schema order.
 const PROPERTIES_NOTES = () => ({ downs: 6, into: [sidecar().properties.indexOf(ids[NOTES])] })
 
