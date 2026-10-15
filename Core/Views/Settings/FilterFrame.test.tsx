@@ -8,7 +8,7 @@ import type { SavedView } from '../views'
 import { FilterFrame, type FilterView } from './FilterFrame'
 import { mountEachTest } from '../../Testing/viewHarness'
 import { linkedSpacesTree } from '../../Testing/testTree'
-import { itemPicked } from '@pommora/uix/Menus/menu-row.css'
+import { itemPicked, menuCompact } from '@pommora/uix/Menus/menu-row.css'
 import { TITLE_TARGET } from '../../Properties/Cells/PropertyTypes'
 
 const statusDef: PropertyDefinition = {
@@ -134,6 +134,13 @@ describe('FilterFrame', () => {
     expect(texts()).toContain('Status')
     expect(texts()).toContain('Archived')
     expect(texts()).toContain('Is Checked')
+  })
+
+  it('the pane carries the compact row rule itself, whatever hosts it', async () => {
+    await mount(twoRules())
+    const pane = host.firstElementChild
+    expect(pane?.classList.contains(menuCompact)).toBe(true)
+    expect(pane?.contains(byLabel('Filter property') ?? null)).toBe(true)
   })
 
   it('the footer switch parks the filter without touching its rules or mode', async () => {

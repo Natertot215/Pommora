@@ -5,6 +5,7 @@ import { focusRing } from '@pommora/uix/Fields/fieldRing'
 import { growToContent } from '@pommora/uix/Menus/frameGrowth'
 import { rowBox } from '@pommora/uix/Menus/menu-row.css'
 import { PANE_MIN_H } from '@pommora/uix/Menus/frame-slide.css'
+import { ruleFrame } from '@pommora/uix/Menus/frames.css'
 
 const c = colorVars.color
 
@@ -14,10 +15,10 @@ const FILTER_MAX_WIDTH = '420px'
 /** KNOB — the trailing chevron's distance from its label. Tighter than the lead on purpose: the Operator cell is the row's compactness priority. */
 const TRAILING_GAP = '2px'
 
-export const frame = style({
-  ...growToContent(FILTER_MAX_WIDTH),
-  minHeight: `${PANE_MIN_H}px`,
-})
+export const frame = style([
+  ruleFrame,
+  { ...growToContent(FILTER_MAX_WIDTH), minHeight: `${PANE_MIN_H}px` },
+])
 
 export const ruleList = style({
   display: 'flex',
