@@ -1,5 +1,5 @@
 import { type Personalization, settingOf } from '../../Settings/personalization'
-import { linkDestinationStart } from '../../Connections/links'
+import { linkDestinationStart, markdownLinkAt } from '../../Connections/links'
 import { type LinkOccurrence, type LinkSpans, linkOccurrences } from '../../Connections/connections'
 import {
   inCalloutAt,
@@ -359,11 +359,13 @@ export function openConnectionAt(scan: DocScan, at: number): LinkSpans | null {
   return null
 }
 
-/** In a written connection's alias, where a `]` would truncate the link. */
+/** In a written link's alias or label, where a `]` would truncate the link. */
 export function inAliasAt(scan: DocScan, at: number): boolean {
-  const alias = connectionAt(scan, at)?.alias
-  const rel = at - lineStartAt(scan.text, at)
-  return alias != null && rel >= alias[0] && rel <= alias[1]
+  const i = lineIndexAt(scan, at)
+  const rel = at - scan.lineStarts[i]
+  const wiki = connectionAt(scan, at)
+  const shown = wiki ? wiki.alias : markdownLinkAt(scan.lines[i], rel, 'label')?.label
+  return shown != null && !inCodeAt(scan, at) && rel >= shown[0] && rel <= shown[1]
 }
 
 export function autoPair(

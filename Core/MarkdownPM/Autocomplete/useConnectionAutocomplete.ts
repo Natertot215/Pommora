@@ -7,6 +7,7 @@ import {
   commitEdit,
   headingRows,
   listsAliases,
+  listsPages,
   listsHeadings,
   openHeadingRows,
   pageRow,
@@ -130,7 +131,7 @@ export function useConnectionAutocomplete(
 
   useEffect(() => {
     if (ac === null) setBackedTo(null)
-    if (ac === null || ac.form === 'link' || ac.form === 'target') setBehind(null)
+    if (ac === null || listsPages(ac.form)) setBehind(null)
   }, [ac])
 
   const commit = (row: AcRow, opts: { openHeading?: boolean } = {}): void => {
@@ -184,7 +185,7 @@ export function useConnectionAutocomplete(
     aside: (dir) => {
       const view = viewRef.current
       if (!view || !ac) return false
-      if (dir === 1 && (ac.form === 'link' || ac.form === 'target')) {
+      if (dir === 1 && listsPages(ac.form)) {
         if (row?.kind !== 'page') return false
         commit(row, { openHeading: true })
         return true

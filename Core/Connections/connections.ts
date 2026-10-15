@@ -1,12 +1,6 @@
 import { normalizeTitle } from '../Paths/caseFold'
 import { markdownLinkRegex } from './links'
-import {
-  type CodeMask,
-  inlineSpans,
-  lineEndAt,
-  lineStartAt,
-  overlaps,
-} from '../MarkdownPM/Engine/markdownCode'
+import { type CodeMask, codeTouches, overlaps } from '../MarkdownPM/Engine/markdownCode'
 
 // Fresh per call so callers never share `lastIndex`. `]` is content unless it closes the pair; the 255 cap is load-bearing, since an unbounded run backtracks quadratically on an unclosed `[`-run. The page half stops at the first `#`; the heading takes the rest up to the pipe.
 export function pageLinkPattern(): RegExp {
@@ -44,16 +38,6 @@ function linkSpans(m: RegExpMatchArray): LinkSpans | null {
     heading: heading === null ? null : unescaped(heading),
     alias,
   }
-}
-
-// Code touches a link when its start sits in code, or a closed inline code span, backticks included, overlaps it; such a link is text.
-function codeTouches(text: string, inCode: CodeMask, [from, to]: Span): boolean {
-  if (inCode(from)) return true
-  const start = lineStartAt(text, from)
-  const line = text.slice(start, lineEndAt(text, from))
-  return inlineSpans(line).some(
-    ([a, b, run]) => b <= line.length && overlaps([start + a - run, start + b + run], [from, to]),
-  )
 }
 
 /** Every connection and markdown link in `text` that code doesn't touch, with empty slots kept. A markdown link overlapping a connection yields to it, so `[[Title]](target)` stays a connection trailed by literal parens, as Obsidian reads it. */

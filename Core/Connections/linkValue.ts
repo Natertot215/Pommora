@@ -79,7 +79,16 @@ export function readLinkText(text: string, resolve?: PageIndex['resolve']): Link
   return { kind: 'url', syntax: md ? 'markdown' : 'bare', url: normalizeLinkUrl(dest), alias }
 }
 
-/** The alias a link of either syntax shows for the one page it names, where that page can hold it. Against `was`, how the link read before, neither the alias it already showed that page nor the title of the page it named counts: a label kept through a retarget is the old title, not a name given. */
+/** Whether a link's shown text only names what it targets — the page's title or the heading, as a picked link's default label does — rather than giving it a name. */
+export function showsTarget(shown: string, target: { title: string; heading?: string }): boolean {
+  const key = normalizeTitle(shown)
+  return (
+    key === normalizeTitle(target.title) ||
+    (!!target.heading && key === normalizeTitle(target.heading))
+  )
+}
+
+/** The alias a link of either syntax shows for the one page it names, where that page can hold it and it names more than the target. Against `was`, how the link read before, neither the alias it already showed that page nor the target it showed counts: a label kept through a retarget is the old target, not a name given. */
 export function shownAlias(
   text: string,
   resolve: PageIndex['resolve'],
@@ -89,10 +98,10 @@ export function shownAlias(
   if (target?.kind !== 'page' || !target.alias) return null
   const { alias } = target
   const page = resolve(target.title).page
-  if (!page || !keepsAlias(alias, page.title)) return null
+  if (!page || !keepsAlias(alias, page.title) || showsTarget(alias, target)) return null
   const before = was === undefined ? null : readLinkText(was)
   if (before?.kind === 'page') {
-    if (normalizeTitle(before.title) === normalizeTitle(alias)) return null
+    if (showsTarget(alias, before)) return null
     if (before.alias === alias && resolve(before.title).page?.id === page.id) return null
   }
   return { page, alias }

@@ -42,6 +42,9 @@ export type AcRow = { value: string } & (
 
 export type HeadingRow = Extract<AcRow, { kind: 'heading' }>
 
+/** The forms whose rows are pages: a wikilink's title and a markdown link's target. */
+export const listsPages = (form: ConnectionForm): boolean => form === 'link' || form === 'target'
+
 /** The forms whose rows are a page's headings: a wikilink's heading half, a markdown link's fragment, and a bare section run. */
 export const listsHeadings = (form: ConnectionForm): boolean =>
   form === 'heading' || form === 'fragment' || form === 'section'
@@ -122,29 +125,28 @@ export function autocompleteQuery(
   }
   const labelled = markdownLinkAt(line, rel, 'label')
   if (labelled) {
-    const { label, dest, fragment } = labelled
+    const { label, page, full } = labelled
     return {
       query: unescapeLabel(line.slice(label[0], label[1])),
       from: lineStart + label[0],
       to: lineStart + label[1],
       form: 'label',
       closed: true,
-      title: targetTitle(line.slice(dest[0], fragment ? fragment[0] - 1 : dest[1])) ?? '',
-      end: lineStart + dest[1] + 1,
+      title: targetTitle(line.slice(page[0], page[1])) ?? '',
+      end: lineStart + full[1],
     }
   }
-  // An in-progress link has an EMPTY target and the grammar above requires a character, so it can never answer for what ⌘K writes.
+  // A destination still being typed has no `)` yet, so it reads as though closed at the caret.
   const closedMd = markdownLinkAt(line, rel, 'dest')
   const md = closedMd ?? markdownLinkAt(`${line.slice(0, rel)})`, rel, 'dest')
   if (md) {
     const closed = closedMd !== null
-    const { dest, fragment } = md
+    const { dest, page, fragment } = md
     const label = { from: lineStart + md.label[0], to: lineStart + md.label[1] }
-    const pageEnd = fragment ? fragment[0] - 1 : dest[1]
     // As with a wikilink, the page half queries alone, an empty one before a fragment asks nothing, and a retarget replaces the fragment with the rest.
-    if (!fragment || (rel <= pageEnd && pageEnd > dest[0]))
+    if (!fragment || (rel <= page[1] && page[1] > page[0]))
       return {
-        query: decodeLinkTarget(line.slice(dest[0], pageEnd)),
+        query: decodeLinkTarget(line.slice(page[0], page[1])),
         from: lineStart + dest[0],
         to: lineStart + dest[1],
         form: 'target',
@@ -157,7 +159,7 @@ export function autocompleteQuery(
       to: lineStart + fragment[1],
       form: 'fragment',
       closed,
-      title: targetTitle(line.slice(dest[0], pageEnd)) ?? '',
+      title: targetTitle(line.slice(page[0], page[1])) ?? '',
       label,
     }
   }
@@ -213,12 +215,20 @@ export function aliasRows(
     .map((a): AcRow => ({ kind: 'alias', value: a }))
 }
 
-export const closerOf = (form: ConnectionForm): string =>
-  form === 'target' || form === 'label' || form === 'fragment'
-    ? ')'
-    : form === 'section'
-      ? ''
-      : ']]'
+export function closerOf(form: ConnectionForm): string {
+  switch (form) {
+    case 'link':
+    case 'alias':
+    case 'heading':
+      return ']]'
+    case 'target':
+    case 'label':
+    case 'fragment':
+      return ')'
+    case 'section':
+      return ''
+  }
+}
 
 export function commitEdit(
   ac: AutocompleteQuery,
@@ -232,11 +242,18 @@ export function commitEdit(
 ): { changes: TextEdit[]; anchor: number } {
   const closer = ac.closed ? '' : closerOf(ac.form)
   // Opening the heading slot writes an empty fragment and slides the pane in, rather than finishing the link.
+  // A kept alias stays behind the slot, as a markdown link's label stays before it.
   if (ac.form === 'link' && opts.openHeading) {
-    const text = `[[${value}#]]`
+    const { container } = opts
+    const kept =
+      container?.alias &&
+      keepsShown(container, { kind: 'page', syntax: 'wiki', title: value }, opts.keepTitle)
+        ? `|${container.alias}`
+        : ''
+    const head = `[[${value}#`
     return {
-      changes: [{ from: ac.from, to: ac.to, insert: text }],
-      anchor: ac.from + text.length - 2,
+      changes: [{ from: ac.from, to: ac.to, insert: `${head}${kept}]]` }],
+      anchor: ac.from + head.length,
     }
   }
   // Opening the alias slot rather than finishing the link lets the picker hand those names straight back. Governed by `aliasPickerOnCommit`.
@@ -294,7 +311,8 @@ export function commitEdit(
     container !== null &&
     !keepsShown(container, { kind: 'page', syntax: 'markdown', title: value }, opts.keepTitle)
   const fill = ac.label && (ac.label.from === ac.label.to || retitles) ? ac.label : null
-  const label = fill ? escapeLabel(value) : ''
+  // A pick opening the heading slot leaves the label for the heading pick to fill.
+  const label = fill && !opts.openHeading ? escapeLabel(value) : ''
   return {
     changes: fill ? [{ from: fill.from, to: fill.to, insert: label }, dest] : [dest],
     anchor: ac.from + label.length - (fill ? fill.to - fill.from : 0) + encoded.length + 1,
