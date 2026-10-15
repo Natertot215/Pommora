@@ -206,7 +206,7 @@ export function useConnectionAutocomplete(
     void window.setTimeout(() => {
       const view = viewRef.current
       const at = document.activeElement
-      if (!view || (inCaretPane(at) && at?.closest(EDITABLE_TARGETS))) return
+      if (!view?.state.field(paneHeld) || (inCaretPane(at) && at?.closest(EDITABLE_TARGETS))) return
       view.dispatch({ effects: holdPane.of(false) })
       if (stay || inCaretPane(at)) view.focus()
       else if (!view.dom.contains(at)) view.contentDOM.dispatchEvent(new FocusEvent('blur'))
