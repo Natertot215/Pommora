@@ -48,6 +48,3 @@ export const markAfter = (text: string, at: number): ColorMark | null =>
 
 export const markBefore = (text: string, at: number): ColorMark | null =>
   markOf(TRAILING.exec(text.slice(Math.max(0, at - MARK_WIDTH), at)))
-
-/** True when `text` is exactly one color mark, as a typed emoji arrives. */
-export const isColorMark = (text: string): boolean => markAfter(text, 0)?.length === text.length

@@ -84,8 +84,8 @@ The typed-pairing machinery for the trailing emoji is deleted. A span holds at m
 
 #### Process Overview
 
-- [ ] **Phase 1:** Retire Typed Mark Pairing
-  - [ ] Task 1-1
+- [x] **Phase 1:** Retire Typed Mark Pairing
+  - [x] Task 1-1
 - [ ] **Phase 2:** Paints in the Engine
   - [ ] Task 2-1
   - [ ] Task 2-2

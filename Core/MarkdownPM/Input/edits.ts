@@ -35,8 +35,6 @@ import {
   type MarkdownScope,
   readsLists,
 } from '../Engine/detect'
-import { isColorMark, markAfter, markBefore } from '../Engine/highlightColors'
-import { tokenize } from '../Engine/tokens'
 
 // A transform reading more than its own line takes the caller's whole-document scan (one per doc version): the string-form code and callout tests re-split and re-pair every fence per call.
 
@@ -407,35 +405,6 @@ export function autoPair(
   return { from: c, to: c, insert: inserted + pair.close, selection: c + 1 }
 }
 
-export function pairColorMark(
-  scan: DocScan,
-  c: number,
-  inserted: string,
-  settings: Personalization = {},
-): Edit | null {
-  if (!isColorMark(inserted) || !settingOf(settings, 'pairMarkers') || inCodeAt(scan, c))
-    return null
-  const doc = scan.text
-  if (doc.slice(c - 2, c) !== '==' || doc[c - 3] === '=') return null
-  const close = emptyPairAt(doc, c) ? c : highlightCloseAt(doc, c - 2)
-  if (close === null) return null
-  return {
-    from: c,
-    to: close,
-    insert: inserted + doc.slice(c, close) + inserted,
-    selection: c + inserted.length,
-  }
-}
-
-/** Where the uncolored highlight opening at `open` starts its closing `==`. */
-function highlightCloseAt(doc: string, open: number): number | null {
-  const ls = lineStartAt(doc, open)
-  const tk = tokenize(doc.slice(ls, lineEndAt(doc, open))).find(
-    (tk) => tk.kind === 'highlight' && !tk.color && tk.range[0] === open - ls,
-  )
-  return tk ? ls + tk.range[1] - 2 : null
-}
-
 // A wrap over a selection already wrapped by its own cycle steps to the next wrapper instead of compounding; '' unwraps, and a cycle without it loops.
 const WRAP_CYCLES: Record<string, string[]> = {
   '[': ['[', '[[', '{', '{{'],
@@ -495,14 +464,6 @@ export function autoDelete(
   if (!settingOf(settings, 'deletePairsTogether')) return null
   if (selStart !== selEnd || selStart === 0 || inCodeAt(scan, selStart)) return null
   const doc = scan.text
-  const before = markBefore(doc, selStart)
-  const after = markAfter(doc, selStart)
-  if (before && before.color === after?.color) {
-    const from = selStart - before.length
-    const to = selStart + after.length
-    if (doc.slice(from - 2, from) === '==' && highlightCloseAt(doc, from - 2) === to)
-      return { from, to, insert: '', selection: from }
-  }
   const close = PAIRS[doc[selStart - 1]]?.close
   if (close === undefined || doc[selStart] !== close) return null
   if (close === doc[selStart - 1] && !emptyPairAt(doc, selStart)) return null
@@ -532,29 +493,31 @@ const isWordCh = (ch: string | undefined): boolean => ch !== undefined && /\w/.t
 function closerEndAt(scan: DocScan, caret: number): number | null {
   if (inCodeAt(scan, caret)) return null
   const doc = scan.text
-  // A highlight's closing color mark is part of its closer.
-  const mark = markAfter(doc, caret)
-  const c = mark && doc.startsWith('==', caret + mark.length) ? caret + mark.length : caret
-  const before = doc.slice(lineStartAt(doc, c), c)
+  const before = doc.slice(lineStartAt(doc, caret), caret)
   // A single-char symmetric marker flanked by word chars is prose — contractions would poison the parity and teleport the caret.
   const count = (s: string): number => {
     if (s.length > 1) return before.split(s).length - 1
     let n = 0
     for (let i = before.indexOf(s); i !== -1; i = before.indexOf(s, i + 1)) {
-      if (!(isWordCh(before[i - 1]) && isWordCh(before[i + 1] ?? doc[c]))) n++
+      if (!(isWordCh(before[i - 1]) && isWordCh(before[i + 1] ?? doc[caret]))) n++
     }
     return n
   }
   for (const { close, open } of CLOSERS) {
-    if (!doc.startsWith(close, c)) continue
-    if (close.length === 1 && open === close && isWordCh(doc[c - 1]) && isWordCh(doc[c + 1]))
+    if (!doc.startsWith(close, caret)) continue
+    if (
+      close.length === 1 &&
+      open === close &&
+      isWordCh(doc[caret - 1]) &&
+      isWordCh(doc[caret + 1])
+    )
       continue
     // Symmetric markers count parity; asymmetric ones compare opens to closes, or `**a**|**b**` false-positives.
     const inside = open === close ? count(open) % 2 === 1 : count(open) > count(close)
     if (!inside) continue
     return open === close && PAIRS[open[0]].group === 'pairMarkers'
-      ? runEndAt(doc, c)
-      : c + close.length
+      ? runEndAt(doc, caret)
+      : caret + close.length
   }
   return null
 }
