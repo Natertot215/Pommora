@@ -5,6 +5,7 @@ import { duration, easing } from '../Animations/motion'
 import {
   accessoryButton,
   flushAffordance,
+  menuCompact,
   ROW_RADIUS,
   rowBox,
   scrollFrameBody,
@@ -120,6 +121,9 @@ export const optionRow = style([
   rowBox,
   { justifyContent: 'space-between', borderRadius: `${ROW_RADIUS}px` },
 ])
+
+/** A pane of filter-like rows — rules whose trailing side holds field, token, and operator controls — reads compact on every host. */
+export const ruleFrame = style([menuCompact])
 
 /** KNOB — a View settings pane's height ceiling; above MENU_MAX_HEIGHT so the middle region's rows sit beneath the tallest stack of controls. */
 export const VIEW_SETTINGS_MAX_HEIGHT = 440
