@@ -6,6 +6,7 @@ import {
   aliasRows,
   commitEdit,
   headingRows,
+  listsAliases,
   listsHeadings,
   openHeadingRows,
   pageRow,
@@ -35,7 +36,7 @@ import {
 import { EDITABLE_TARGETS } from '@pommora/uix/Interactions/shared'
 import type { AliasEdit } from '../../Connections/aliasMemory'
 
-export interface AcState extends AutocompleteQuery, CaretGeometry {}
+export type AcState = AutocompleteQuery & CaretGeometry
 
 interface ConnectionAutocomplete extends EditorPane {
   pane: AutocompletePaneProps
@@ -111,7 +112,7 @@ export function useConnectionAutocomplete(
   const lookup = (q: string): AcRow[] => {
     const conn = host.connections()
     if (!conn) return []
-    if (form === 'alias') return aliasRows(host.aliases, page?.id, q)
+    if (listsAliases(form)) return aliasRows(host.aliases, page?.id, q)
     return conn.candidates(q, AC_MAX).map((p) => pageRow(p, conn))
   }
   // A query that names its one match exactly is a finished link, so the caret resting in one opens nothing; Back is the exception.
@@ -229,7 +230,7 @@ export function useConnectionAutocomplete(
       onBack: () => ctl.current.aside?.(-1),
       geometry: host.paneGeometry('autocomplete'),
       aliasHost:
-        form === 'alias' && page
+        listsAliases(form) && page
           ? {
               title: page.title,
               edit: (e: AliasEdit) => host.aliases.edit(page.id, e),

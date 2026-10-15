@@ -167,6 +167,13 @@ describe('an unclosed link reads as the link it would be once closed', () => {
     expect(edit.anchor).toBe('see [[Project]]'.length)
   })
 
+  it('an alias picked into a label is escaped, and the caret rests past the link', () => {
+    const doc = 'see [o](Notes#Setup) end'
+    const edit = commitEdit(autocompleteQuery(doc, 6)!, 'a\\b', KEEP)
+    expect(landed(doc, edit)).toBe('see [a\\\\b](Notes#Setup) end')
+    expect(edit.anchor).toBe('see [a\\\\b](Notes#Setup)'.length)
+  })
+
   it('a heading pick in an unclosed link writes the closer after it', () => {
     const doc = '[[Page#He'
     const edit = commitEdit(autocompleteQuery(doc, 9)!, 'Heading', KEEP)
@@ -230,9 +237,17 @@ describe('the ( ) form', () => {
     expect(doc.slice(r.from, r.to)).toBe('Notes_(a)_b')
   })
 
-  it('the caret in the label is not the caret in the target', () => {
+  it('the caret in the label queries the aliases of the page the target names', () => {
     const doc = 'see [x](Notes) end'
-    expect(autocompleteQuery(doc, 5)).toBeNull()
+    expect(autocompleteQuery(doc, 5)).toEqual({
+      query: 'x',
+      from: 5,
+      to: 6,
+      form: 'label',
+      closed: true,
+      title: 'Notes',
+      end: doc.indexOf(')') + 1,
+    })
   })
 
   it('the page half queries alone, and a retarget drops the old fragment as a wikilink does', () => {
@@ -476,7 +491,7 @@ describe('a typed § arms the section form', () => {
   it('a § inside a bracket, a markdown link’s label included, is not armed', () => {
     for (const doc of ['see [§Set](x) end', 'see [§Set'] as const) {
       const armed = doc.indexOf('§')
-      expect(autocompleteQuery(doc, armed + 4, armed)).toBeNull()
+      expect(autocompleteQuery(doc, armed + 4, armed)?.form).not.toBe('section')
     }
   })
 })

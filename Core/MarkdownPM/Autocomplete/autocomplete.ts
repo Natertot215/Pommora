@@ -5,8 +5,9 @@ import {
   decodeLinkTarget,
   encodeLinkTarget,
   escapeLabel,
-  markdownDestinationAt,
+  markdownLinkAt,
   targetTitle,
+  unescapeLabel,
 } from '../../Connections/links'
 import type { TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { type DocScan, inCodeAt } from '../Engine/docScan'
@@ -17,17 +18,21 @@ import type { PageHeading } from '../../Platform/stores'
 import type { EditorHost } from '../api'
 import type { ConnectionsApi } from '../Links/connectionsApi'
 
-type ConnectionForm = 'link' | 'alias' | 'target' | 'heading' | 'fragment' | 'section'
+type ConnectionForm = 'link' | 'alias' | 'target' | 'label' | 'heading' | 'fragment' | 'section'
 
-export interface AutocompleteQuery {
+interface QueryBase {
   query: string
   from: number
   to: number
-  form: ConnectionForm
   closed: boolean
   title?: string
   label?: { from: number; to: number }
 }
+
+/** A markdown link's label lies before its destination, so its query carries the link's end, past the `)`, for a pick to rest on. */
+export type AutocompleteQuery =
+  | (QueryBase & { form: Exclude<ConnectionForm, 'label'> })
+  | (QueryBase & { form: 'label'; end: number })
 
 export type AcRow = { value: string } & (
   | { kind: 'page'; pageId: string; location: TrailSegment[] }
@@ -40,6 +45,9 @@ export type HeadingRow = Extract<AcRow, { kind: 'heading' }>
 /** The forms whose rows are a page's headings: a wikilink's heading half, a markdown link's fragment, and a bare section run. */
 export const listsHeadings = (form: ConnectionForm): boolean =>
   form === 'heading' || form === 'fragment' || form === 'section'
+
+/** The forms whose rows are a page's aliases: a wikilink's alias and a markdown link's label. */
+export const listsAliases = (form: ConnectionForm): boolean => form === 'alias' || form === 'label'
 
 export function autocompleteQuery(
   scan: DocScan,
@@ -112,9 +120,22 @@ export function autocompleteQuery(
         title,
       }
   }
+  const labelled = markdownLinkAt(line, rel, 'label')
+  if (labelled) {
+    const { label, dest, fragment } = labelled
+    return {
+      query: unescapeLabel(line.slice(label[0], label[1])),
+      from: lineStart + label[0],
+      to: lineStart + label[1],
+      form: 'label',
+      closed: true,
+      title: targetTitle(line.slice(dest[0], fragment ? fragment[0] - 1 : dest[1])) ?? '',
+      end: lineStart + dest[1] + 1,
+    }
+  }
   // An in-progress link has an EMPTY target and the grammar above requires a character, so it can never answer for what ⌘K writes.
-  const closedMd = markdownDestinationAt(line, rel)
-  const md = closedMd ?? markdownDestinationAt(`${line.slice(0, rel)})`, rel)
+  const closedMd = markdownLinkAt(line, rel, 'dest')
+  const md = closedMd ?? markdownLinkAt(`${line.slice(0, rel)})`, rel, 'dest')
   if (md) {
     const closed = closedMd !== null
     const { dest, fragment } = md
@@ -193,7 +214,11 @@ export function aliasRows(
 }
 
 export const closerOf = (form: ConnectionForm): string =>
-  form === 'target' || form === 'fragment' ? ')' : form === 'section' ? '' : ']]'
+  form === 'target' || form === 'label' || form === 'fragment'
+    ? ')'
+    : form === 'section'
+      ? ''
+      : ']]'
 
 export function commitEdit(
   ac: AutocompleteQuery,
@@ -245,6 +270,13 @@ export function commitEdit(
       changes: [{ from: ac.from, to: ac.to, insert: value }],
       anchor: ac.from + value.length,
     }
+  if (ac.form === 'label') {
+    const text = escapeLabel(value)
+    return {
+      changes: [{ from: ac.from, to: ac.to, insert: text }],
+      anchor: ac.end + text.length - (ac.to - ac.from),
+    }
+  }
   if (ac.form === 'alias' || ac.form === 'heading')
     return {
       changes: [{ from: ac.from, to: ac.to, insert: value + closer }],

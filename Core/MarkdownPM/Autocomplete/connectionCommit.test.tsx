@@ -112,6 +112,41 @@ describe('the alias picker', () => {
   })
 })
 
+describe('a markdown link’s label lists its page’s aliases', () => {
+  const host = { aliases: { p1: ['one', 'two'] } }
+  const inLabel = async (initialBody: string) => {
+    const view = await mountEditor({ initialBody, connections: conn, host })
+    vi.spyOn(view, 'coordsAtPos').mockReturnValue(coords)
+    await act(async () => {
+      view.focus()
+      view.dispatch({ selection: { anchor: 3 } })
+    })
+    return view
+  }
+  const listed = (): string[] =>
+    [...document.querySelectorAll('.mdpm-ac [aria-label="Delete alias"]')].map(
+      (x) => x.closest('[data-reveal]')?.textContent?.trim() ?? '',
+    )
+
+  it('an empty label lists them all, and a pick writes one and rests past the link', async () => {
+    const view = await inLabel('a [](Alpha) b')
+    expect(listed()).toEqual(['one', 'two'])
+    await press(view, 'Enter')
+    expect(view.state.doc.toString()).toBe('a [one](Alpha) b')
+    expect(view.state.selection.main.head).toBe('a [one](Alpha)'.length)
+  })
+
+  it('a written label filters them', async () => {
+    await inLabel('a [t](Alpha) b')
+    expect(listed()).toEqual(['two'])
+  })
+
+  it('a label naming a website lists nothing', async () => {
+    await inLabel('a [](https://example.com) b')
+    expect(document.querySelector('.mdpm-ac')).toBeNull()
+  })
+})
+
 describe('Tab with the picker open', () => {
   it('takes Tab as the pick, before a list line could nest', async () => {
     const view = await mountEditor({ initialBody: '- [[Alp]]', connections: conn })

@@ -526,6 +526,14 @@ async function group3(cdp, pid) {
   await step(cdp, 'group 3: leaving a markdown link typed out in full', () => caret(0), { writes: writes1 })
   list = [...list, 'typed']
   check('group 3: leaving a markdown link typed out in full adds its label at the end', same(aliasesOf(TARGET), list) && (await docOf(cdp, V)) === `[typed](${encodeURI(TARGET)})`, JSON.stringify([aliasesOf(TARGET), await docOf(cdp, V)]))
+  const EMPTY = `[](${encodeURI(TARGET)})`
+  await cdp.evaluate(`(() => { const v = ${V}; v.dispatch({ changes: { from: 0, to: v.state.doc.length, insert: ${JSON.stringify(EMPTY)} }, selection: { anchor: ${EMPTY.length} } }) })()`)
+  await sleep(300)
+  await step(cdp, 'group 3: the caret in an empty label', () => caret(1), { reflect: `${rows(PICKER)}.length === ${list.length}`, writes })
+  check('group 3: an empty label lists every alias in order', same(await shownIn(cdp, PICKER), list), JSON.stringify(await shownIn(cdp, PICKER)))
+  await shot(cdp, 'label-stage')
+  await step(cdp, 'group 3: Enter in the label stage', () => pressKey(cdp, 'Enter'), { reflect: `${V}.state.doc.toString() === ${JSON.stringify(`[${list[0]}]${EMPTY.slice(2)}`)}`, writes })
+  check('group 3: Enter picks the first alias into the label and rests past the link', (await cdp.evaluate(`${V}.state.selection.main.head === ${V}.state.doc.length`)) && same(aliasesOf(TARGET), list), JSON.stringify([await docOf(cdp, V), aliasesOf(TARGET)]))
 
   // TextPane: the same stage inside a Text value's editor.
   await home(cdp)

@@ -325,7 +325,7 @@ describe('an alias left in code stays as written', () => {
   })
 })
 
-describe('Enter finishes an alias without writing anything', () => {
+describe('Enter finishes an alias or label without writing anything', () => {
   it('rests the caret on the closer and leaves the text alone', async () => {
     const view = await mountEditor({ initialBody: 'a [[Alpha|the one]] b', connections: conn })
     await act(async () => {
@@ -337,6 +337,22 @@ describe('Enter finishes an alias without writing anything', () => {
     })
     expect(view.state.doc.toString()).toBe('a [[Alpha|the one]] b')
     expect(view.state.selection.main.head).toBe(19)
+  })
+
+  it('rests the caret past a markdown link from its label, empty or written', async () => {
+    for (const initialBody of ['a [the one](Alpha) b', 'a [](Alpha) b']) {
+      const view = await mountEditor({ initialBody, connections: conn })
+      await act(async () => {
+        view.focus()
+        view.dispatch({ selection: { anchor: 3 } })
+      })
+      await act(async () => {
+        commitAliasOnEnter(view)
+      })
+      expect(view.state.doc.toString()).toBe(initialBody)
+      expect(view.state.selection.main.head).toBe(initialBody.indexOf(')') + 1)
+      await cleanupEditor()
+    }
   })
 
   it('declines in an alias left as written in an HTML block, so Enter still breaks the line', async () => {
@@ -356,6 +372,7 @@ describe('Enter finishes an alias without writing anything', () => {
       ['```\na [[Alpha|the one]] b\n```', 17],
       ['a `[[Alpha|the one]]` b', 14],
       ['a [[Alpha|x `c` y]] b', 10],
+      ['a `[x](Alpha)` b', 4],
     ] as const) {
       const view = await mountEditor({ initialBody, connections: conn })
       await act(async () => {
