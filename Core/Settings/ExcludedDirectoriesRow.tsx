@@ -3,9 +3,8 @@ import { useState } from 'react'
 import { PathField } from '@pommora/uix/Fields/PathField'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { useEntrance } from '@pommora/uix/Animations/useEntrance'
-import { keepFocus } from '@pommora/uix/Interactions/shared'
 import { ManageRow } from '@pommora/uix/Menus/ManageRow'
-import { AccessoryButton, FootingCreate } from '@pommora/uix/Menus/MenuRows'
+import { FootingCreate, RowRemove } from '@pommora/uix/Menus/MenuRows'
 import { useListEdit } from '@pommora/uix/Menus/useListEdit'
 import * as s from './excluded-directories.css'
 import { useSession } from '../Session/store'
@@ -69,11 +68,8 @@ function ExclusionPane(): React.JSX.Element {
                   onBrowse={() => browse(onCommit)}
                 />
               </span>
-              <AccessoryButton
-                icon="x"
-                size="control"
+              <RowRemove
                 ariaLabel="Remove exclusion"
-                onMouseDown={keepFocus}
                 onClick={() =>
                   row.draft ? list.cancel() : void commit(stored.filter((f) => f !== row.value))
                 }

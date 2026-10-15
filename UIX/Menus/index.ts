@@ -6,6 +6,7 @@ export {
   Menu,
   AccessoryButton,
   FootingCreate,
+  RowRemove,
   FooterLockButton,
   FooterIconButton,
   MenuFooting,

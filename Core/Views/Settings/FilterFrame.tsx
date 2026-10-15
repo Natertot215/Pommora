@@ -13,7 +13,6 @@ import { Icon } from '@pommora/uix/Symbols'
 import { leading } from '@pommora/uix/Fields/fields.css'
 import { colorNameFor } from '@pommora/uix/Theme/ramp'
 import {
-  AccessoryButton,
   MenuFooting,
   MenuCaption,
   MenuItem,
@@ -21,6 +20,7 @@ import {
   FootingItem,
   MenuScrollFrame,
   MenuTopRow,
+  RowRemove,
 } from '@pommora/uix/Menus'
 import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
 import { OverScroll } from '@pommora/uix/Interactions/OverScroll'
@@ -56,7 +56,6 @@ import { emptyPicker, useMultiValue } from './valueField'
 import { NeutralChip } from '@pommora/uix/Labels/recipes'
 import { OptionChip } from '../../Properties/Cells/OptionChip'
 import { EditableInput } from '@pommora/uix/Fields/EditableInput'
-import { keepFocus } from '@pommora/uix/Interactions/shared'
 
 const MATCH_OPTIONS: PickerOption<MatchMode>[] = [
   { value: 'all', label: 'All' },
@@ -297,16 +296,6 @@ export function FilterFrame({
     save(mode, [...liveRules(), mintRule(targetId, schema, contextIds)])
   }
 
-  const removeButton = (onClick: () => void): React.JSX.Element => (
-    <AccessoryButton
-      icon="x"
-      size="control"
-      ariaLabel="Remove filter"
-      onMouseDown={keepFocus}
-      onClick={onClick}
-    />
-  )
-
   const targetOptions = (
     onPick: (id: string) => void,
     close: () => void,
@@ -487,7 +476,7 @@ export function FilterFrame({
             }
           </FieldPicker>
           {valueCell(rule, index, current)}
-          {removeButton(() => removeRow(index))}
+          <RowRemove ariaLabel="Remove filter" onClick={() => removeRow(index)} />
         </div>
       </Reveal>
     )
@@ -507,7 +496,7 @@ export function FilterFrame({
         </FieldPicker>
         <span className={cx(fp.controlField, fp.blankNarrow)} />
         <span className={fp.valueField} />
-        {!lead && removeButton(() => setDraft(null))}
+        {!lead && <RowRemove ariaLabel="Remove filter" onClick={() => setDraft(null)} />}
       </div>
     </Reveal>
   )

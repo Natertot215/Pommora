@@ -47,6 +47,7 @@ export function useConnectionAutocomplete(
   scope: MarkdownScope,
 ): ConnectionAutocomplete {
   const [ac, setAc] = useState<AcState | null>(null)
+  const [held, setHeld] = useState(false)
   const [field] = useState(() => acQuery(scope))
   const closePicker = (view: EditorView | null, why: 'dismiss' | 'blur'): void => {
     if (view?.state.field(field).query) view.dispatch({ effects: closeAcQuery.of(why) })
@@ -55,6 +56,8 @@ export function useConnectionAutocomplete(
     field,
     paneHeld,
     EditorView.updateListener.of((u) => {
+      const holds = u.state.field(paneHeld)
+      if (holds !== u.startState.field(paneHeld)) setHeld(holds)
       const q = u.state.field(field).query
       if (q === u.startState.field(field).query) return
       const g = q && caretGeometry(u.view, u.state.selection.main.head)
@@ -172,7 +175,7 @@ export function useConnectionAutocomplete(
 
   // A collapse reshapes the list, so the highlight starts over rather than landing on whatever the old index now names.
   const resetKey = heading ? `${query}\u0000${[...collapsed].join('\u0000')}` : query
-  const open = ac !== null && candidates.length > 0
+  const open = ac !== null && (candidates.length > 0 || held)
   const { index, row, ctl } = usePaneCtl(candidates, resetKey, {
     open,
     pick: commit,

@@ -1,7 +1,6 @@
 import { useMemo } from 'react'
 import { ManageRow } from '@pommora/uix/Menus/ManageRow'
-import { ALIAS_ROW_MENU } from '../Actions/aliasRowMenu'
-import { popMenu } from '../Actions/menuActions'
+import { popAliasRowMenu } from '../Actions/aliasRowMenu'
 import { ALIAS_ICON } from '../Assets/entityIconPolicy'
 import { heldAliases } from '../Connections/aliasMemory'
 import { AliasList } from '../MarkdownPM/Autocomplete/AliasList'
@@ -22,7 +21,7 @@ export function AliasesRow({
         host={{
           title: page.title,
           edit: editAliasesIn(page.path),
-          menu: () => popMenu(ALIAS_ROW_MENU),
+          menu: popAliasRowMenu,
         }}
       />
     </ManageRow>
