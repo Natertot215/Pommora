@@ -1,8 +1,8 @@
 ## Pommora Codebase Audit
 
-**Pinned:** `f6511401d` (09-23-2026) · **Reconciled:** `6df5b11e2` (10-12-2026) · **Findings:** 71/627
+**Pinned:** `f6511401d` (09-23-2026) · **Reconciled:** `5272eb82f` (10-15-2026) · **Findings:** 87/643
 
-Thirty-four Opus investigators read every production file in `Core`, `UIX`, `Desktop`, and `Sync` in full, sliced by folder and by the jobs the code performs. Two mergers combined their 857 candidates by root cause, and twenty-one reviewers who hadn't raised them re-read every citation, reproduced the High ones against real modules, and killed 63. This document is the current state: findings that were fixed, withdrawn, or ruled moot are removed rather than annotated, and rulings are written into the findings they settle. The readiness and pace sections are the orchestrator's judgment, drawn from the evidence below them. A system audit of MarkdownPM (10-08-2026) read the editor in full at `70fc6063c`, and its findings are folded in here.
+Thirty-four Opus investigators read every production file in `Core`, `UIX`, `Desktop`, and `Sync` in full, sliced by folder and by the jobs the code performs. Two mergers combined their 857 candidates by root cause, and twenty-one reviewers who hadn't raised them re-read every citation, reproduced the High ones against real modules, and killed 63. This document is the current state: findings that were fixed, withdrawn, or ruled moot are removed rather than annotated, and rulings are written into the findings they settle. The readiness and pace sections are the orchestrator's judgment, drawn from the evidence below them. A system audit of MarkdownPM (10-08-2026) read the editor in full at `70fc6063c`, and a workstream audit of Connections and Aliases (10-15-2026) read that surface at `5272eb82f`; the findings of both are folded in here.
 
 ### Verdict
 
@@ -17,7 +17,7 @@ Thirty-four Opus investigators read every production file in `Core`, `UIX`, `Des
   - The code the host runs imports no React: 205 files, verified by `engineGraph.test.ts` and `hostGraph.test.ts`.
   - UIX imports nothing from Core.
   - Every channel is declared once in `bridge.ts`, and one `catch` turns a thrown error into a `Result`.
-- **The pure models hold.** The view pipeline, the tile layout model, and the connections grammar produced no High findings. Their Medium findings are about cost and duplication, not wrong results.
+- **The pure models hold.** The view pipeline and the tile layout model produced no High findings, and their Medium findings are about cost and duplication, not wrong results. The connections layer produced no High findings either, though W22 finds most of its rules stated twice and a few small wrong results where the copies disagree.
 
 **What's broken, and where:**
 
@@ -27,6 +27,7 @@ Thirty-four Opus investigators read every production file in `Core`, `UIX`, `Des
 | Page editor | Past about 8,000 lines, the footer's figures re-tokenize the whole page on every typing pause, freezing the editor for up to a second (F-044). | 1 | 8 |
 | Menus and pickers | The kit's buttons show no keyboard focus, so a Tab walk through a menu or toolbar loses its place on every button (F-076). | 0 | 1 |
 | Identity | An ID lost or damaged outside the app is replaced rather than recovered on every path but a held page's own event, so tabs, pins, metadata, and a Nexus's device store lose what they were keyed to (F-089). | 0 | 1 |
+| Connections | A link is read by two markdown grammars, resolved by two readers, and edited through two trackers in one listener, so a heading renamed into something a wikilink can't spell strands its wikilinks (F-122), a heading picked into an aliased wikilink rests the caret inside the alias (F-120), and a lone `![Alias](Page)` line draws a graph edge (F-127). | 0 | 6 |
 
 **What extending costs today:**
 
@@ -36,6 +37,7 @@ Thirty-four Opus investigators read every production file in `Core`, `UIX`, `Des
 | A new property type | 4 plus its editor | 1 | Cheap: one record entry, and the compiler names each table that still needs the type |
 | A new editor construct | ~12 inline · ~18 block | 4 | Moderate: block rules are read from one place, and the word counter reads inline constructs from the tokenizer |
 | A new view renderer | 3–4 plus the renderer | 4 | Moderate |
+| A new link syntax or link surface | ~12 | 3 | Costly: two markdown grammars, two target readers, and the picker's seven form names each take it by hand; after W22, one grammar and one picker axis |
 | A new floating window | 3–5 | 1 | Cheap |
 | A new persisted setting | 2–3 synced · 2 per device | 4 | Cheap |
 | A new host channel | 2–5 | 5 | Cheap |
@@ -822,6 +824,230 @@ Adding a new kind of block (images are planned) would get the plain grip menu an
 
 Waits for the next block kind. `contextFor` and `blockStarts` switch over every `BlockKind` with the plain kinds listed, and `GRIP_KINDS` becomes a `Record<BlockKind, boolean>`; deleting one case or key at each site was confirmed to fail the typecheck. The action chain can't be made exhaustive, since its actions are template-literal strings the menu rows mint and its handler returns nothing, so a switch over them compiles with a case missing. Typed at +13. Lands with F-093, whose `gripKinds(scope)` is where the Record lives.
 
+#### W22 · Connections and Aliases
+
+A link is read by two markdown grammars, resolved by two readers into two shapes, and edited through two trackers sharing one listener, and most of the rules on top of them are stated two or three times, so the copies disagree in small ways: a heading renamed into something a wikilink can't spell leaves its wikilinks stale, a heading picked into an aliased wikilink rests the caret inside the alias, and a lone `![Alias](Page)` line draws a graph edge a lone `![[Page]]` doesn't. Most of it came in through the Alias Management work and the three commits that followed it to make a markdown label behave as an alias (`10fe6e38d`, `b565a7f37`, `5272eb82f`), each patching the gap the one before exposed. Landing W22 leaves one grammar, one resolver, one owner per rule, and one tracker for edits made inside a link. The data layer (`aliasMemory.ts`, the `editAliases` operation, and the metadata shard) stays as it stands, since it already follows the codebase's established paths.
+
+**Target:**
+
+- **Grammar:** `linkOccurrences` reads both syntaxes through one markdown pattern that keeps an empty label and refuses an empty destination, and every occurrence carries `title`, `heading`, and `shown` for both; the editor's caret readers stay in `Input/edits.ts` over it, with one reader for a half-typed link, and tokens keep their occurrence (F-116, F-117).
+- **Resolution:** one written shape (`LinkTarget`), one resolved union, and one `resolveLink` holding the page-before-address rule, the bare-heading rule, and the status (F-118); one tree walk, and one title index both processes import (F-114).
+- **Rules:** one `namesTarget`, one default label, and one remember rule (F-121); slot validity matching the grammar, with every writer falling back to the markdown form (F-122); one rule for which frontmatter keys hold links, and one embed question for the graph (F-127).
+- **Editing:** one `{ start, was }` tracker serving alias memory, emptied-part collapse, and the picker's baseline (F-119); one picker model keyed by syntax and part (F-120), which the Link field and the Text field's single line mount as one-line editors (F-129).
+- **Removed:** the second markdown walker and its span type, three half-typed readers, four resolver functions and the bare-heading patches, the host's second title map, two trackers and the picker's origin field, seven form names and three predicates, and the duplicate shown-text rules.
+- **Heading Aliases:** a body link or Link value that names a heading never adds the alias typed into it to the page's list; the picker still offers the page's existing aliases there, and the list's **+** still adds. A **Save Heading Aliases** setting that would remember them is proposed to the planning session.
+- **Open Architectural Call:** whether the resolver moves from `MarkdownPM/Links/connectionsApi.ts` into `Core/Connections/` is left to the planning session; the fixes hold either way. *Connections & Aliases Restructure — Architecture Brief* and *Connections & Aliases Restructure — Architecture Design* in `.claude/Planning/Connections & Aliases Restructure/` hold the behavior specification and the fresh-eyes design these findings were mapped against.
+
+**Sequencing:** F-114 waits on nothing and lands first. F-116 and F-117 land as one change, then F-118 on its shape, then F-119 re-typed on both, then F-120 on F-119. F-121 and F-122 land together after F-118, alongside F-128's writer collapse; F-123 to F-127 follow their prerequisites, F-129 lands after F-119 and F-120, F-130 lands last, and F-131's tests travel with each change. W22 crosses MarkdownPM, Connections, Nexus, Properties, and Index and waits on no other workstream; F-066 and F-067 read the raw-HTML spans F-116 asks about once, and F-049's heading names feed the heading half every finding here resolves.
+
+**Net:** Typed on scratch worktrees against `5272eb82f`, the six largest fixes removed 1,098 production lines and added 897, each measured alone. Sequenced and corrected by review (the typed F-119 rides readers F-116 deletes, F-120 carries a shim F-119 retires, and F-114 formats 18 lines longer), they come to about −220, and the untyped findings to about −10, so W22 lands near −230 before F-129's one-line field editors, which add about +15 to +45 untyped, for about −185 to −215 in all. That's at or just under the low end of the 200 to 500 lines the investigation set out to remove.
+
+**Neutral Gate:** Any session or plan that executes W22 ends with a `fable-high` neutral reviewer given only the pre-work commit, the post-work commit, and this intention, with no docs, plans, or history: *"Pommora's page-to-page links (wikilinks and markdown links) and the alternate names a page remembers (aliases) are parsed, resolved, edited, rewritten, and displayed across about sixty files. This work leaves that code smaller and plainer: one grammar and one link shape per layer, one resolver, one owner per rule, one tracker for edits made inside a link, one picker model, and one title index the host can import, with no logic stated twice and no behavior lost except where its findings name it."* The reviewer judges honestly whether the after version is better by its own definition (smaller, plainer, clearer about ownership, and deliberate throughout), and every phase of the work is written so that review passes.
+
+##### F-114 · The host can't resolve a page title from the tree it holds, so it keeps a second title index over a second walk of the tree.
+
+> **Area:** Nexus, Connections · **Lens:** Placement & Naming · **Weight:** Medium · **Size:** M · **Net:** −84 · **Origin:** Shortcut
+
+**Finding**
+
+Code that runs in Desktop's main process can't import the renderer's title index, because the tree walk it's built on, `walk` in `Nexus/treeIndex.ts`, imports UIX `.tsx` modules (`Symbols`, `NavTrail`) to bake icons and trails into every node, and type-only imports in `navResolve.ts`, `matrixKind.ts`, and `entityIconPolicy.ts` fail the host build the same way; `Connections/pageIndex.ts` itself compiles clean there. So the host keeps its own: `titlesOf` in `heldPages.ts` builds a second normalized-title map over `recordsOf`, a second UI-free walk of the same tree, and `titleHeldOutside` and `frozenWorld` answer from it what `resolve(title)` answers, for a delete, a rename, and a Trash restore, which makes ConnectionsPM's "main resolves no link" true only for link syntax. The renderer's walk memo keys on `pageMetadata` only to read each page's own icon, so every alias edit, lock toggle, or icon change rebuilds the walk and every projection over it, the title index included. The Paste As half of the earlier reading is narrower than it stated: the renderer's own paste reads without a resolver too, so the two resolve together or neither does. Confirmed by a `tsc` probe under `Desktop/tsconfig.node.json`.[^114]
+
+**Fix | Proposed**
+
+`recordsOf` becomes the only walk, its records gaining a parent key and the node's own icon; `pagesOf`, `pagesByIdOf`, and `pageIndexOf` move beside it as memos keyed on collections alone, and `PageIndex` gains `holders(title)`, from which `resolve` derives, so `titleHeldOutside` and `frozenWorld` read the one index and `titlesOf` goes. `walk` is rebuilt as one pass over `recordsOf`, and each renderer projection becomes its own `entityMemo` keyed on what it reads, which removes the `TreeIndex` and `Looks` interfaces and the empty-icon placeholder. `searchEntriesOf` and `navKeysOf`, which read no icon, stop keying on `pageMetadata`; the trails, the resolve index, and the nodes keep the key for their baked glyphs, so an alias edit still rebuilds those, and the win is the host's one index and the single walk. `projectBaseline` maps records to `{ id, kind, title, path }` so the persisted remint baseline keeps its shape, and `indicesOf`'s null-on-duplicate `byId` stays beside the renderer's last-wins `pagesByIdOf` with a one-line reason, since a host writer refuses an ambiguous ID the window still shows. Paste and Paste As stay resolver-free together. Typed at −84 (275 removed, 191 added once formatted): the memo key and the host's title lookups at +3, the walk rebuilt on `recordsOf` at −60, and the per-projection memos that makes possible at −45, about 24 of the lines import moves across eleven callers. A probe importing `record.ts` and `heldPages.ts` compiled under `Desktop/tsconfig.node.json`, and `treeIndex.test.ts`'s icon assertion becomes "a `pageMetadata`-only change keeps the same `pageIndexOf`". Lands first in W22.
+
+##### F-116 · Two markdown grammars force a second link-finder at every editor lookup, each adding its own code check.
+
+> **Area:** MarkdownPM, Connections · **Lens:** Duplication · **Weight:** Medium · **Size:** M · **Net:** ≈ −5 · **Origin:** Patch-Over
+
+**Finding**
+
+The one walk the tokenizer, the index, and the rename rewriter share, `linkOccurrences`, keeps a wikilink's empty slots but reads markdown links through `markdownLinkRegex`, whose label and destination each need a character, so `[](Page)` isn't a link to it. Every editor reader that has to see an empty or half-edited label runs a second walker, `markdownLinkAt`, with its own empty-tolerant regex, its own span type (`MarkdownLinkSpans`), its own split at `#`, and a code check that sees inline code but not fences, so each caller adds `inCodeAt` back: `inAliasAt`, `shownEnd`, `slotNear`, `emptied`, and `autocompleteQuery` each run "`connectionAt`, else `markdownLinkAt`". A destination is split at `#` four ways (`destinationHalves`, `markdownLinkAt`, and `pageTarget` with the target codec built on it), and the two syntaxes name their slots differently (`title`, `heading`, `alias` against `label`, `destination`), so the index remaps labels to aliases and every reader branches to find the shown text. The seams show: `isLiteralAt` covers wikilinks and destinations but not labels, so Equations turns `>=` into `≥` inside `[label](Page)` and the ellipsis and dash-arrow transforms fire there too; the raw-HTML check is asked by `slotNear` and `linkWithin` with the editor's scope, by `shownEnd` with `'page'` hard-coded, and not at all by `inAliasAt`, so inside a raw HTML block `]` is swallowed where Return breaks the line; `linkAt` takes the first link at a boundary where `linkTokenAt` takes the last; paste asks which link holds the caret by running the full tokenizer over the line (`linkContainerAt`); and an inline image's alt text is remembered as an alias by one path while `slotNear` refuses to fill it when emptied. The follow-up commits grew the second walker (a `half` mode, then `'full'`, page spans, and a code check) instead of letting the first carry markdown slots. Confirmed by probes and a typed fix.[^116]
+
+**Fix | Proposed**
+
+One markdown pattern keeps an empty label and still refuses an empty destination, as the wiki pattern keeps an empty alias and refuses `[[]]`, read by `linkOccurrences` and by the webpage-embed readers in `detect.ts`; every occurrence carries `full`, `title`, `heading`, and `shown` for both syntaxes, and the target codec decodes the `title` and `heading` spans directly, so `destinationHalves`, `pageTarget`, and the second split go with `markdownLinkAt`, `MarkdownLinkSpans`, and `emptyTolerantLinkRegex`. `linkToken` keeps the occurrence it builds from, so a token and the text answer from one shape. The caret readers stay in `Input/edits.ts`, where `DocScan` lives: `linkAt` picks the later-starting link at a boundary, `shownLinkAt` replaces `inAliasAt`, `isLiteralAt` reads the shown span, the five fallbacks and `linkContainerAt` read `linkAt`, and `connectionAt`'s one remaining caller inlines it. The raw-HTML question is asked once with the editor's scope: Return's binding moves into `typedInput(scope)` so `commitAliasOnEnter` gets the scope `shownEnd` hard-codes today, and `inRawHtml` moves beside `docScan` out of `decorations.ts`, whose state queries `linkEdit`, `acQuery`, and `markdownInput` import. The owner ruled that `[](Page)` is a real link, so the editor draws it showing its default label (about +15), and that a `!` beside an in-paragraph link changes nothing, so an alt text is an ordinary label and the `!` check in `slotNear` goes; `linkValue.test.ts:88` and `linkEdit.test.tsx:307` change with those rulings. The two decoration loops stay separate, since they draw different things per syntax. A typed checkpoint measured −12 (219 removed, 207 added), about −20 with the rejoin removed and the readers left in place; the typing also showed that moving the readers into `connections.ts` closes an import cycle through `docScan` and `detect.ts`, which is why they stay. Four behaviors move toward consistency with no test pinning the old ones: paste into a link respects fenced code, `foo](bar` stops counting as a destination, abutting links resolve to the later one, and the typing transforms stand down inside a label. Lands with F-117.
+
+##### F-117 · A half-typed link is read three ways.
+
+> **Area:** MarkdownPM, Connections · **Lens:** Duplication · **Weight:** Low · **Size:** S · **Net:** −43 · **Origin:** Parallel Build
+
+**Finding**
+
+"Read the unclosed link before the caret as the link it will be" is implemented three times: `openConnectionAt` appends `]]` and walks again, `autocompleteQuery` appends `)` and runs the second markdown walker, and `linkDestinationStart` takes the last `](` before the caret with no `[` required, so `foo](bar` counts as a destination for the URL-run check and for paste. `headingHash`, the rule that turns a `§` typed in a link's page half into `#`, calls both families plus `opensFragment` from a 27-line file of its own. Confirmed by a typed fix.[^117]
+
+**Fix | Proposed**
+
+One `openLinkAt` reads the line up to the caret with the syntax's closer appended, in one walk, and returns the same occurrence shape as a closed link; `openConnectionAt`, `linkDestinationStart`, and `opensFragment` go, and `headingHash` becomes "the caret is in the title slot" and folds into the other key rules in `Input/edits.ts`, keeping the `§`-to-`#` transform. Typed at −43 (82 removed, 39 added). Lands with F-116.
+
+##### F-118 · Two readers resolve the same link into two shapes, and the page-before-address rule and the bare-heading rule are each written more than once.
+
+> **Area:** Connections, MarkdownPM, Properties · **Lens:** Duplication · **Weight:** Medium · **Size:** M · **Net:** ≈ −15 · **Origin:** Parallel Build
+
+**Finding**
+
+A link string becomes a target either through `readLinkText`, producing `LinkTarget`, or through `tokenTarget`, `resolveMdTarget`, and `titleTarget`, producing `MdTarget`, and both state "a markdown destination is a page first, else an address, unless it names a `.md` file or isn't valid". The shapes disagree on the same states (ambiguity is `null` in one and `invalid` in the other, and an own-page heading is a page with an empty title in one and `self` in the other), `titleTarget` folds the status that `linkStatus` unfolds, and the readers answer `[[ #H]]` differently (a heading to `readLinkText`, invalid to `tokenTarget`, dropped by the index). `shownAlias` resolves three times for one answer, `LinkCell` reads one value three ways, and `valueTarget` runs the whole cell tokenizer to find one whole link. "A bare `#Heading` names the page holding it" lives in `heldTarget` (applied at three sites and again inside `resolveFollow`), in `linkResolver`, a patch over `readLinkText('[[#H]]', resolve)` returning null that `linkValue.test.ts:127` pins as the contract, and in the picker, and a `§Heading` run in a Text value or a cell opens on a click but gets none of the menu or glance `[[#Heading]]` gets there. The resolution layer sits in `MarkdownPM/Links/connectionsApi.ts` beside CSS class builders, `ConnectionsApi` extends `PageIndex` and carries `location`, trail decoration with one reader, and `assignValue` builds its own index from the store where every other non-hook reader uses `previewConnections()`. Confirmed by a probe and a typed fix.[^118]
+
+**Fix | Proposed**
+
+`readLinkText` reads the whole link once into `LinkTarget`, which stays the only written shape; a markdown destination a page could also hold rides on the url arm as `page?: { title, heading? }`, named for what it is rather than as loose optional fields under a `url` tag. One `resolveLink(written, index, own?)` returns `page | self | url | unresolved(status)` and alone holds the page-before-address rule, the bare-heading rule, and the status, so `titleTarget`, `resolveMdTarget`, `tokenTarget`, `linkStatus`, `heldTarget`, `linkResolver`, `valueTarget`'s tokenizer pass, `readLinkText`'s `resolve` parameter, and `resolveFollow`'s second application go, and `parseConnectionText`, a second whole-link wiki reader the asset references use, folds into `readLinkText` narrowed to a page. The owner ruled that a `§Heading` run and `[[#Heading]]` take one approach, so a run in a held value or cell resolves to its holder for the menu and glance as well as the click, with no guards for it and no stand-in wikilink. `ConnectionsApi` becomes `{ index, open, menu?, headingsOf }`, and `location` moves to `EditorHost`, since MarkdownPM holds no tree. Addresses resolve as written, as the owner ruled. Typed alone at +3 (196 removed, 199 added): the reader carries the undecided destination (about +20), the holder resolves where a hit is found because `resolveFollow` had been covering section runs (about +10), and `location` relocates; once F-116's tokens carry their occurrence, the token rebuild the typing needed (`tokenLink`, about 12 lines) goes, and the fix comes to about −15, so it lands after F-116. Two readings settle as one: `[[ #H]]` reads as a bare heading everywhere, and an ambiguous dotted markdown container no longer counts as having pointed somewhere when Remove Title On Link Change decides. Where the resolver lives, `Core/Connections/` or `MarkdownPM/Links/`, is the planning session's call.
+
+##### F-119 · Four hand-rolled "track an edit, act when the caret leaves" machines, two of them side by side in one listener, re-read the caret's line several times on every update.
+
+> **Area:** MarkdownPM · **Lens:** Complexity · **Weight:** Medium · **Size:** M · **Net:** ≈ −50 · **Origin:** Patch-Over
+
+**Finding**
+
+`aliasOnLeave` keeps two closure trackers in one update listener: `writing { start, was }`, which remembers an alias when the caret leaves a link it typed into, and `edited`, added by `5272eb82f`, which collapses an emptied part when the caret leaves that part, each with its own lookup (`linkWithin` against `slotNear`) and its own exclusions. `linkTyping` is a third tracker of the link a change landed in, the heading-rename settle a fourth, and the picker's `origin` field a fifth snapshot of the link as it read before. The two leave machines tear down oppositely: the heading settle exposes `flush()`, which `MarkdownEditor` calls on unmount, while `aliasOnLeave` relies on a DOM blur and has no flush. Tracking keys on the caret's old position, so an edit that lands in a label while the caret is elsewhere, such as a drop, remembers nothing (probed). The listener runs on every document and selection change, and on a 495-character line holding twenty links it re-reads the line three to four times, adding 122 µs to a 48 µs caret move (two and a half times the whole decoration rebuild) and 160 µs to a 627 µs keystroke, measured in jsdom. The heading settle sits in `Guards/` among transaction filters, which it isn't. Confirmed by a probe and a typed fix.[^119]
+
+**Fix | Proposed**
+
+One tracker in a state field, `{ start, was }`, is armed by the changed range of an input or delete (tested by overlap, so the picker's whole-link replacement arms it too), mapped through changes, and cleared on caret leave, on a blur whose `relatedTarget` isn't the caret pane, or on an unmount flush beside the heading settle's. On leave it remembers the shown text through the one remember rule and collapses or fills emptied parts through `emptied`, which collapses each empty slot at the marker before it (`span[0] − 1`), so an escaped `\|` survives where the typed version turned `[[A\|]]` into `[[A|]]`. `writing`, `edited`, `Slot`, `slotNear`, `collapseSlot`, `typedInto`, `Written`, and the per-slot loop go. The picker reads the same baseline from the field (`view.state.field`) instead of keeping `origin`, so `LinkOrigin`, `originOf`, `originAfter`, and `linkStart` go. The heading settle moves to `Links/` unchanged; a shared settle helper was typed with three callbacks and dropped, since the fix measured −10 with it and −28 without. `linkTyping` stays: folding it in breaks four pinned tests and would leave the typing color reading state one update stale, against about −10, though the owner was content with the color lasting until the caret leaves the link. Typed against `5272eb82f` at −49 (155 removed, 106 added, of which −21 is the `origin` fold), but it rides readers F-116 deletes, so it's re-typed after F-116 and F-118 at about −45 to −55, with a hook-level test of the picker's baseline replacing five `acQuery.test.ts` cases. Under the owner's rulings a wikilink's emptied alias waits for the caret to leave the whole link, as a markdown label already does, and an already-empty slot in a link typed into elsewhere tidies on leave too (`[[A|]]` with its title retyped becomes `[[A]]`); no test pinned the old timing. For a link no edit armed, such as one typed with Pair Brackets off, the picker's baseline is the text as it reads at the pick. CellEditor and TextPane mount the tracker with no unmount flush, before and after.
+
+##### F-120 · The picker spells seven forms and eight commit arms where two axes and four arms serve, rebuilds a markdown retarget by hand, and leaves the caret inside an alias after a heading pick.
+
+> **Area:** MarkdownPM · **Lens:** Growth Constraint · **Weight:** Medium · **Size:** M · **Net:** ≈ −22 · **Origin:** Patch-Over
+
+**Finding**
+
+`ConnectionForm` is seven flat names over two axes, syntax and part; `listsPages`, `listsHeadings`, `listsAliases`, and `closerOf` each re-list them, and `AutocompleteQuery` became a union so that one form could carry `end`. The alias and heading arm anchors the caret at `ac.from + value.length + 2`, assuming `]]` follows, so a heading picked into `[[Notes#|Mine]]` rests two characters into `|Mine` (unpinned; the test asserts only the text). The wiki page pick writes through `retarget`, while the markdown target pick rebuilds the same result by hand with a second `keepsShown` call, though paste already retargets markdown through `retarget`; the kept-alias test runs twice per pick, and the markdown query carries its label as a side span that `linkStart` undoes. The post-pick alias list opens only for wikilinks. `autocompleteQuery` runs on every caret move and allocates the line's head with a `)` appended before any check, on lines holding no link. Confirmed by a typed fix.[^120]
+
+**Fix | Proposed**
+
+The query is `{ syntax, part }` with the link's start and end on every query; the predicates read `part`, the closer is a record on `syntax`, and one anchor rule (the end, plus what was inserted, less what was replaced) serves section, heading, shown, and page picks, which fixes the caret. Page picks span the whole link in both syntaxes and write through `retarget`, with the shown text decided once from the label or alias span in the document, so `connectionCommit.test.tsx:292,306` (a label typed mid-link stays) hold, and the duplicate kept-alias computation and the side span go. The post-pick alias list follows `part` in both syntaxes, as the owner ruled, with the gate including `heading` as `connectionCommit.test.tsx:383` pins, and Return in a markdown link's destination, the moment an address is assigned, rests the caret in its label the same way, with an empty list for a URL, since aliases are kept per page. `autocompleteQuery` returns early on a line holding neither `[[` nor `](` with nothing armed. Typed at −16 (171 removed, 155 added), of which +10 is a `narrowed` shim keeping today's leave tracker in step with a whole-link rewrite, which F-119 retires, so it lands after F-119 at about −26, with the destination rule and the early return adding about 4. Two loose ends a reviewer would flag: the open-slot position splices `#` or `|` into `retarget`'s output by offset, which goes wrong when the writer falls back to markdown for a title holding `#` or `|` (as HEAD's hard-written `[[${value}#` already does), so the writer should learn to write an empty slot; and the source for `§` in prose reads better as a prose source than as a third syntax. Absorbs F-116's `autocompleteQuery` and F-118's `pageRow`.
+
+##### F-121 · Every rule about a link's shown text has its own copy, and the copies disagree.
+
+> **Area:** Connections, MarkdownPM, Properties · **Lens:** Divergence · **Weight:** Medium · **Size:** S · **Net:** ≈ −8 · **Origin:** Patch-Over
+
+**Finding**
+
+Whether an alias or label only names its target is decided three ways: `keepsAlias` and `connectionText` compare it to `title#heading`, `showsTarget` to the title or the heading, and the rewrite's private `shows` to the renamed key alone, beside an inline drop rule. So `connectionText('Page', 'Intro', 'Intro')` keeps an alias `showsTarget` says isn't one, which a Link value held as `[Intro](Page#Intro)` reaches when it's edited and written back as `[[Page#Intro|Intro]]`, and a rename leaves `[[Old#Intro|Old#Intro]]` as `[[New#Intro|Old#Intro]]`. The default markdown label has three rules: `markdownPageLink` writes the title first, `emptied` the heading first, and the picker whatever was picked, so `[](Alpha#Setup)` fills to `[Setup]` while a retarget writes `[Alpha]`. Remove Title On Link Change has three: the picker drops the shown text only when the link pointed somewhere as it read when opened, as ConnectionsPM states for both syntaxes, while paste over a link and the Link field apply the setting bare. `shownAlias` also re-checks `keepsAlias`, which `showsTarget` on the same line and the host's refusal already cover, and it remembers an alias typed into a link that names a heading, though the owner's intent is that those stay in the link. These came in with `10fe6e38d` and `5272eb82f`, one rule per side. Confirmed by probes.[^121]
+
+**Fix | Proposed**
+
+One `namesTarget(shown, { title, heading })`, true for the title, the heading, or both, read by both rewrite arms (the old target to carry, the new target to drop); `connectionText`'s drop rule stays its own question (would the link draw the same without the alias), and `showsTarget` and `shows` go. The remember rule, shared by the body tracker and a Link value's write, remembers only from a link naming the page itself, never one naming a heading, so its heading clause goes; the picker still offers a heading link the page's existing aliases, and the list's **+** still adds. One default label (`heading || title`) serves `markdownPageLink`, `emptied`, and the picker. Lands after F-118, which changes `shownAlias`'s signature, and with F-122. Not typed, so the net is an estimate. **Your call:** whether paste over a link and the Link field take the picker's "pointed somewhere" rule for Remove Title On Link Change (recommended, folding it into `keepsShown` so every retarget applies it); and the proposed **Save Heading Aliases** setting, carried to the planning session, which would let a heading link's typed alias be remembered.
+
+##### F-122 · A heading renamed into something a wikilink can't spell leaves its wikilinks stale, and an over-long heading is written as a link its reader can't read.
+
+> **Area:** Connections · **Lens:** Defect · **Weight:** Low · **Size:** S · **Net:** ≈ +4 · **Origin:** Shortcut
+
+**Finding**
+
+`expressibleInLink` judges a title and a heading alike and checks no length, while the wikilink pattern caps every slot at 255. Every other writer falls back to the markdown form when a wikilink can't spell its target (`retarget` through `connectionSpells`), but the heading rename skips such a wikilink (`rewrite.ts:64`, pinned by `rewrite.test.ts:232`), so renaming a heading to `C# Notes` moves its markdown links and strands its wikilinks, and `connectionText` writes a 300-character heading into a wikilink that `parseConnectionText` then reads as null (both probed). `nameError` refuses `|#§` before calling `expressibleInLink`, whose `|#` branch is unreachable there. The owner ruled that a wikilink heading holds no `#`, as Obsidian reads extra `#`s as a nested path, which makes the refusal correct and the skip the defect.[^122]
+
+**Fix | Proposed**
+
+`expressibleInLink` takes the slot (`'title' | 'heading'`) and caps a heading at 255, since a title is a filename and can't pass it; `keepsAlias` stays the alias slot's rule. The heading rename falls back to the markdown form through the one writer, as every other writer does, which needs the hit's whole-link span (`LinkHit` carries none today, about +5), and `nameError`'s unreachable branch goes. The owner left the reading side to this audit: the reader keeps taking everything after the first `#` as the heading, and nested heading paths aren't read, since that would be new machinery across the heading span, the index's qualifier, and travel that the fresh design left out on purpose. Lands with F-121 and F-128's writer collapse. Not typed.
+
+##### F-123 · The alias rename field's hand-off back to the editor sniffs keys from outside the field.
+
+> **Area:** MarkdownPM, UIX · **Lens:** Complexity · **Weight:** Low · **Size:** S · **Net:** ≈ −4 · **Origin:** Patch-Over
+
+**Finding**
+
+When an alias is renamed inside the body picker, `AliasList` learns whether the edit ended by Enter or Escape by capturing keydown around the field (`keyed`, `byKey`), though `EditableInput` handles those keys itself without saying which ended the edit. `endEdit` then waits a tick and reads `document.activeElement` to decide whether focus left, and dispatches a fabricated `FocusEvent('blur')` on the editor so its two blur handlers run. Three of `end()`'s four paths (an edit elsewhere dropping the row, the list unmounting, and a row action) have no blur event to read, so for them the tick and the fabricated blur are the only owner of "the editor was left", and the guard `348693c01` added for a write landing after unmount has no test.[^123]
+
+**Fix | Literal**
+
+`EditableInput`'s `onCommit` and `onCancel` pass `{ by: 'key' | 'blur' }` as an optional trailing argument, which `RenamableLabel` forwards, so the keydown sniff goes; the tick and the fabricated blur stay, each with its reason written where it sits, and a test pins the post-unmount path.
+
+##### F-124 · The one alias list still differs by surface, and its read is derived twice.
+
+> **Area:** MarkdownPM, Pages · **Lens:** Divergence · **Weight:** Low · **Size:** S · **Net:** ≈ 0 · **Origin:** Shortcut
+
+**Finding**
+
+`aliasRows` slices a page's aliases to `AC_MAX`, the twenty-row cap meant for Nexus-wide page search, so past twenty aliases the body picker hides rows the page panel's Aliases row shows, and those can't be picked, renamed, deleted, or dragged there. `AliasList` animates only drafts (`enterOnMount={row.draft}`), where Excluded Directories, the option editor, and FilterFrame drive the same `Reveal` with `useEntrance`, so an alias another window adds pops in. `heldAliases(pageMetaOf(id)…)` is derived in both `editorHost.tsx` and `AliasesRow.tsx`, and `AutocompletePane`'s `slot` branches on `row.kind === 'page'` though it only ever receives page rows.[^124]
+
+**Fix | Literal**
+
+Drop the slice for aliases; drive `Reveal` with `useEntrance`, off while the list is filtered; read the held aliases through one session selector; and type `slot`'s rows as page rows so the dead branches drop cleanly.
+
+##### F-125 · The Link field writes links three ways, and two of them can show a wikilink that reads back as another page.
+
+> **Area:** Properties · **Lens:** Defect · **Weight:** Low · **Size:** S · **Net:** ≈ −3 · **Origin:** Drift
+
+**Finding**
+
+Editing a Link value always writes a wikilink (`linkValueFromEdit` through `retarget('wiki', …)`), while Rename keeps the syntax the value holds (`linkValueFromRename`), and PropertiesPM states only the first. The field's edit text (`linkEditText`) and LinkCell's Show Full Link call `connectionText` directly, without the `connectionSpells` check `retarget` applies, so a markdown target whose heading, or whose externally named title, holds `|` or `#` shows as a wikilink that reads back as a different page (probed: `[x](Title#A%7CB)` shows `[[Title#A|B]]`).[^125]
+
+**Fix | Literal**
+
+Every Link-value write goes through `retarget`, and edit and Rename share the one rule the owner ruled for links held in frontmatter: a wikilink wherever it can be spelled, the markdown form otherwise. Lands after F-118 and F-121.
+
+##### F-126 · Link sort and filter read a shown text that loses headings.
+
+> **Area:** Views, Properties · **Lens:** Defect · **Weight:** Low · **Size:** S · **Net:** ≈ +2 · **Origin:** Drift
+
+**Finding**
+
+`linkDisplayText` returns a page link's title, which is empty for `[[#Heading]]` and the bare page for `[[Page#Heading]]`, so the Link filter's "is empty" matches a heading value and sort places it among the blanks; the comments at `filter.ts:143` and `sort.ts:61` claim the sort reads "the same parse Cell renders", which draws by Heading Link Style. A Text value sorts and filters on its raw syntax, so `[[Alpha|nice]] notes` sorts under `[`, where File values were fixed for exactly that.[^126]
+
+**Fix | Proposed**
+
+`linkDisplayText` returns a link's shown text (the alias, else the title with the heading by Heading Link Style, else the address), and the two comments are rewritten with it. Remove Link keeps writing `Title § Heading` as prose, as the owner ruled. **Your call:** whether a Text value sorts and filters on its shown text, with each connection replaced by what it shows (a behavior addition, about +8; recommended, since File values already work that way).
+
+##### F-127 · The graph's one embed question is asked only of wikilinks, and the index and the rename cascade disagree on which frontmatter keys hold links.
+
+> **Area:** Index, Connections · **Lens:** Divergence · **Weight:** Low · **Size:** S · **Net:** ≈ +2 · **Origin:** Drift
+
+**Finding**
+
+The owner ruled that an embed line, `![[Page]]` or `![Alias](Page)` alone on its own line with the `!` first, stays out of the graph and backlinks and is otherwise a link the cascade renames, and that a `!` beside an in-paragraph link changes nothing. The index asks this of wikilinks only: `scan.loneEmbed` re-runs `loneEmbedRe`, a second copy of the wikilink pattern anchored to a line, so a lone `![Alias](Page)` line is recorded as a body relation, which the graph's query reads, while a lone `![[Page]]` is recorded as an embed, which it skips. The editor's tile check gates on `expressibleInLink(e.title)`, a name-validity rule doing a parse's job. The index relates links in every frontmatter value, "under any key, registered or not", while the cascade rewrites only keys the registry types as Link or Text, so a `[[Page]]` under a key the registry doesn't know draws a graph edge and goes stale when Page is renamed.[^127]
+
+**Fix | Proposed**
+
+The index asks the embed question of both syntaxes on the occurrence it already holds (a `!` at the line's start before the link, nothing after it), so `scan.ts`'s use of `loneEmbedTitle` goes while its four editor consumers keep it, and the tile check names what it tests. One `holdsLinks` rule (a Link, Text, or unregistered key, never File), as the owner ruled, answers both the index and the cascade, so the cascade rewrites what the index relates and links stored inside registered non-link properties stop counting as graph edges. MarkdownPM.md's embed note states the rule. Lands after F-116.
+
+##### F-128 · Names and writers in the link layer collide or repeat.
+
+> **Area:** Connections · **Lens:** Placement & Naming · **Weight:** Low · **Size:** S · **Net:** ≈ −4 · **Origin:** Drift
+
+**Finding**
+
+`connectionText(title, alias?, heading?)` takes its arguments in the opposite order to its twin `markdownPageLink(title, heading?, label?)`, so four of its eight callers pass `undefined` to reach the heading. Three writers each spell `[${escapeLabel(label)}](${dest})`: `markdownPageLink`, `composeWebpageEmbedLine`, and `serializeLink`, the last stranded in the Link-value module. Two unrelated functions are named `pageTarget` and two unrelated types `LinkHit`, and `type Span = [number, number]` is declared three times beside a fourth, different `Span` in `docScan.ts`.[^128]
+
+**Fix | Proposed**
+
+`connectionText` takes `(title, heading?, alias?)`; one markdown writer in `links.ts` serves the three; one of each colliding name is renamed (F-116 retires `links.ts`'s `pageTarget`); and the tuple span is exported once under a name distinct from `docScan`'s. Lands after F-116 and F-118, carrying F-122's rename-fallback writer.
+
+##### F-129 · The Link field and the Text field's single line are the two places a connection is typed without the picker.
+
+> **Area:** Properties, MarkdownPM · **Lens:** Divergence · **Weight:** Low · **Size:** M · **Net:** ≈ +15 to +45 · **Origin:** Shortcut
+
+**Finding**
+
+A page body, a table cell, a markdown tile, and a Text value's pane all host the connection picker; the Link field and the Text value's single-line field are plain inputs (`TextPicker`, `EditableInput`), so typing `[[` there offers no pages, headings, or alias list, and the single-line field remembers no alias where its pane does. The picker's model already works on line text and returns plain edits (`autocompleteQuery`, `commitEdit`), but its driver, `useConnectionAutocomplete` with the `acQuery` state field and caret geometry, is bound to an editor view, which the Text pane already mounts in its `'text'` scope. The owner ruled that both fields gain the picker.[^129]
+
+**Fix | Proposed**
+
+Both fields become one-line instances of the editor the Text pane mounts while they're being edited, as the owner chose over a second picker driver for plain inputs (about +80 to +150 and two drivers for one picker): the picker, F-119's tracker and baseline, alias memory, and the Remove Title rule come unchanged, and a one-line mode commits on Return rather than breaking the line and carries the field's invalid state. At rest both fields draw as they do now. `linkResolver` and the field-only edit text go with F-118 and F-125. Lands after F-119 and F-120. Not typed, so the net is an estimate.
+
+##### F-130 · The connection and alias documents and comments say things the code doesn't do.
+
+> **Area:** Documentation · **Lens:** Divergence · **Weight:** Low · **Size:** S · **Net:** 0 · **Origin:** Drift
+
+**Finding**
+
+ConnectionsPM says stored aliases "use the same cascading mechanism" as links, though nothing cascades the memory, which is keyed by page ID and survives a rename untouched; that the post-pick alias list follows its setting, though it opens only for wikilinks; and that the "pointed somewhere" rule decides Remove Title On Link Change in both syntaxes, which paste and Link values don't apply. MarkdownPM says the picker opens on `[[` (it also opens in a label, a destination, a fragment, and on `§`), that Rename or Edit Link heads a page link's menu (it reads Edit Title), and that `![[file.png]]` renders nothing (it draws as a phantom connection). The comments at `filter.ts:143` and `sort.ts:61` claim sort reads what the cell renders, and `scan.ts:70` calls `LinkHit.alias` a connection's alias, though it has also held the markdown label since `5272eb82f`.[^130]
+
+**Fix | Literal**
+
+Each sentence takes the most surgical correction, landing last with the code it describes: the alias-cascade clause goes, the picker and alias-list sentences follow F-120 and F-121 (the heading-alias intent included), and the comments follow F-126 and F-116.
+
+##### F-131 · The connection and alias tests pin some behaviors twice, others loosely, and the newest ones not at all.
+
+> **Area:** Tests · **Lens:** Coverage Gap · **Weight:** Low · **Size:** S · **Net:** 0 production · **Origin:** Shortcut
+
+**Finding**
+
+About fifteen cases repeat another in the same layer: in `linkValue.test.ts`, `:239` and `:307`, `:242` and `:327`, `:30` and `:272`, `:211` and `:290`, `:370` against `:408` and `:425`, and `:258-284` re-pinning the rewrite functions `rewrite.test.ts` already pins; inside `rewrite.test.ts`, `:200` and `:267`, `:206` and `:280`, `:210` and `:281`, and `:12` and `:105`; `links.test.ts:84` and `:91`, and `:95` and `:146`; and `aliasAcceptance.test.ts:58` and `:72`. Several would survive a regression: `rewrite.test.ts:160-164` and `links.test.ts:150` assert only that nothing throws, `aliasAcceptance.test.ts:95` and `AliasesRow.test.tsx:112-121` match a substring, `LinkCell.test.tsx:82-94` checks classes and no alias text, and `scan.test.ts:39-81` and `:272` check membership or length. `scan.test.ts:7-36` tests local copies of helpers production retired. Unpinned: aliases surviving a page rename, an alias a rename turns into the title dropping from the list, `shownAlias`'s heading clause, markdown-held Link values, `linkClicks.ts`, the post-unmount alias-edit path, more than twenty aliases, and typing cost on a link-dense line.[^131]
+
+**Fix | Literal**
+
+Drop the duplicates, tighten the loose assertions to exact values, rewrite `scan.test.ts`'s retired-helper cases against `linksIn`, and pin each gap in the change that closes it; the tests each typed fix strands (a local `linkDestinationStart` shim, `headingHash.test.ts` left in `Links/`, a `describe('inAliasAt')` testing its replacement) move or go with it.
+
 ---
 
 ### Ride-Alongs
@@ -1026,20 +1252,6 @@ The three hand-authored files (`nexus.json`, `settings.json`, `properties.json`)
 
 Route the four readers (the walk's `readConfig`, `readNavigationFile`, `readMatrixFile`, and the file-event arms for `state.json`, `homepage.json`, and `crops.json`) through `readAppFileKnown`. When a file answers `undefined`, the open posts one notice, as the board does: its section shows defaults, and its changes won't save until it reads. `collectRefs` pushes a `skipped` entry for a store that answers `undefined`, so the sweep holds. Leave `persist`'s quiet flag alone, since the notice at open already tells the user. **Your call:** `state.json` alone. Either it holds the open, because it seeds the order every surface reads, or it opens with defaults and the notice. Matrix, Homepage and crops follow the board.
 
-#### Nexus
-
-##### F-114 · The host can't resolve a page title from the tree it holds, because the tree's title index imports the design kit's icons and trails.
-
-> **Area:** Nexus · **Lens:** Placement & Naming · **Weight:** Low · **Size:** M · **Net:** TBD · **Origin:** Shortcut
-
-**Finding**
-
-Code that runs in Desktop's main process can't answer "which page is this title", though the host holds the tree: the only title index over it, `pageIndexOf` in `Nexus/treeIndex.ts`, imports UIX `.tsx` modules (`Symbols`, `NavTrail`) for icons and trails, and importing it from main fails `tsc -p Desktop/tsconfig.node.json`. This is what keeps the Paste As classifier resolver-free, so a copied markdown link whose page title is also a valid address offers address rows. Confirmed by typing the import.[^114]
-
-**Fix | TBD**
-
-Split the title index (titles, ids, paths, resolution) from the icon and trail decoration, so the host imports the first and the window the second; Paste As can then classify with a resolver in main.
-
 ---
 
 ### Appendix: MarkdownPM Test Dispositions
@@ -1123,4 +1335,20 @@ Every row was re-checked at `6df5b11e2`; its line numbers are re-anchored whenev
 [^111]: **F-111:** `Core/Tiles/TileGrid.tsx:207-226` (`TileShell`'s comparator)
 [^112]: **F-112:** `Core/Tiles/tileHosts.ts:16-37` (`TILE_HOSTS`), `Core/Nexus/migrateConfig.ts:45-53` (`normalizeSavedViews`), `Core/Nexus/identity.ts:58-62` (`ensureConfigLayout`), `Core/Nexus/remint.ts:110`
 [^113]: **F-113:** `Core/Files/atomicWrite.ts:202-203` (`readAppFile`), `Core/Files/atomicWrite.ts:178-193` (`readLast`), `Core/Files/atomicWrite.ts:207-212` (`readAppFileKnown`), `Core/Files/atomicWrite.ts:144-161` (`rmwLocked`), `Core/Files/atomicWrite.ts:225-236` (`updateNexusFile`), `Core/Files/atomicWrite.ts:265-271` (`updateNexusConfig`), `Core/Nexus/readNexus.ts:68` (`readOrder`), `Core/Nexus/readNexus.ts:113` (`readConfig`), `Core/Nexus/readNexus.ts:287` (`readNexusConfig`), `Core/Navigation/navigationFile.ts:33-41` (`readNavigationFile`), `Core/Matrix/matrixFile.ts:11` (`readMatrixFile`), `Core/Nexus/fileEvents.ts:543-562,633-634` (`applyOrder`), `Core/Session/navigationSlice.ts:270-271` (`writeNav`), `Core/Session/matrixSlice.ts:171` (`patchMatrix`), `Core/Interface/Notifications/notifications.ts` (`persist`, `reportRefusal`), `Core/Assets/assetMigrate.ts:85-114,166,175` (`collectRefs`, `migrateAssets`), `Core/Tiles/tileDoc.ts:20` (`readTileDocAt`)
-[^114]: **F-114:** `Core/Nexus/treeIndex.ts` (`pageIndexOf`), `Desktop/Actions/editorMenu.ts:103-116` (`pasteAsItems`), `Desktop/tsconfig.node.json`
+[^114]: **F-114:** `Core/Nexus/treeIndex.ts:10,12` (the UIX imports), `Core/Nexus/treeIndex.ts:54,60,102,270` (the memo key, `walk`, `ownIcon`, `pageIndexOf`), `Core/Nexus/heldPages.ts:16,47-56,59-75` (`indicesOf`, `titlesOf`, `titleHeldOutside`, `frozenWorld`), `Core/Nexus/record.ts:15` (`recordsOf`), `Core/Navigation/navResolve.ts:5`, `Core/Matrix/matrixKind.ts:1`, `Core/Assets/entityIconPolicy.ts:1-2`, `Core/Nexus/cascade.ts:86`, `Core/Nexus/rename.ts:38`, `Core/Trash/restoreProperty.ts:59`, `Core/Trash/spend.ts:173`, `Core/Nexus/remintLedger.ts:17,87` (`projectBaseline`), `Core/MarkdownPM/Links/pasteLink.ts:19` (`clipboardTarget`), `Desktop/Actions/editorMenu.ts:111` (`pasteAsItems`), `.claude/Features/ConnectionsPM.md:22`
+[^116]: **F-116:** `Core/Connections/connections.ts:21-23,44-57` (`LinkOccurrence`, `linkOccurrences`), `Core/Connections/links.ts:10-16` (`markdownLinkRegex`, `emptyTolerantLinkRegex`), `Core/Connections/links.ts:37,46-64` (`MarkdownLinkSpans`, `markdownLinkAt`), `Core/Connections/links.ts:98-120` (`pageTarget`, `targetTitle`, `targetFragment`), `Core/Connections/scan.ts:87-96,127-128` (`destinationHalves`, the label remap), `Core/MarkdownPM/Input/edits.ts:330-368` (`linkAt`, `connectionAt`, `inAliasAt`), `Core/MarkdownPM/Input/edits.ts:651-655,685,747` (`isLiteralAt` and its transforms), `Core/MarkdownPM/Links/linkEdit.ts:128-141,169-199,222` (`shownEnd`, `slotNear`, `emptied`, `linkWithin`), `Core/MarkdownPM/Links/linkEdit.ts:184` (the alt-text check), `Core/MarkdownPM/Autocomplete/autocomplete.ts:126,140-141`, `Core/MarkdownPM/Engine/tokens.ts:243,327-338` (`linkToken`, `linkTokenAt`), `Core/MarkdownPM/Links/pasteLink.ts:25-34` (`linkContainerAt`), `Core/MarkdownPM/decorations.ts:438-446` (`inRawHtml`), `Core/MarkdownPM/Input/markdownInput.ts:249,267-271`, `Core/MarkdownPM/Engine/detect.ts:410-425` (`loneWebpageEmbed`, `webpageEmbedUrlSpan`), `Core/Connections/linkValue.test.ts:88`, `Core/MarkdownPM/Links/linkEdit.test.tsx:307`
+[^117]: **F-117:** `Core/MarkdownPM/Input/edits.ts:346-361` (`openConnectionAt`), `Core/MarkdownPM/Input/edits.ts:648` (`inUrlRun`), `Core/MarkdownPM/Autocomplete/autocomplete.ts:141`, `Core/Connections/links.ts:35,67-73` (`opensFragment`, `linkDestinationStart`), `Core/MarkdownPM/Links/headingHash.ts:7-24` (`headingHash`), `Core/MarkdownPM/Links/pasteLink.ts:75`, `Core/MarkdownPM/Input/markdownInput.ts:247,254`
+[^118]: **F-118:** `Core/Connections/linkValue.ts:23-27,42-80` (`LinkTarget`, `pageTarget`, `readLinkText`), `Core/Connections/linkValue.ts:92-108` (`shownAlias`), `Core/MarkdownPM/Links/connectionsApi.ts:12-16,19,28-60,82-85,95-121` (`ConnectionsApi`, `MdTarget`, `titleTarget`, `resolveMdTarget`, `tokenTarget`, `linkStatus`, `linkLook`), `Core/MarkdownPM/Links/linkClicks.ts:33,54,85-98` (`sectionRunAt`, `linkUnder`, `heldTarget`, `resolveFollow`), `Core/Properties/Pickers/PropertyValueInput.tsx:16-21` (`linkResolver`), `Core/Properties/Cells/valueTarget.ts:17-34` (`valueTarget`), `Core/Properties/Cells/LinkCell.tsx:38-39,77`, `Core/MarkdownPM/Autocomplete/useConnectionAutocomplete.ts:86-91`, `Core/MarkdownPM/Autocomplete/autocomplete.ts:173` (`pageRow`), `Core/MarkdownPM/Tables/cellStatic.tsx:611-614`, `Core/MarkdownPM/Citations/citationPointer.ts:42`, `Core/Properties/assignValue.ts:54-57`, `Core/Session/pageConnections.ts:16-51`, `Core/Connections/connections.ts:73-83` (`parseConnectionText`), `Core/Connections/scan.ts:118`, `Core/Connections/linkValue.test.ts:127`
+[^119]: **F-119:** `Core/MarkdownPM/Links/linkEdit.ts:163-213` (`Slot`, `slotNear`, `emptied`, `collapseSlot`), `Core/MarkdownPM/Links/linkEdit.ts:215-232` (`Written`, `linkWithin`), `Core/MarkdownPM/Links/linkEdit.ts:235-288` (`aliasOnLeave`, `typedInto`), `Core/MarkdownPM/Links/linkReveal.ts:18-25` (`linkTyping`), `Core/MarkdownPM/Guards/headingRenameSettle.ts:35` (`headingRenameSettle`), `Core/MarkdownPM/MarkdownEditor.tsx:165,244` (`flush`), `Core/MarkdownPM/Autocomplete/acQuery.ts:17-56` (`LinkOrigin`, `originOf`, `originAfter`, `linkStart`), `Core/MarkdownPM/surface.ts:51`, `Core/MarkdownPM/Links/linkReveal.test.ts:41-63`
+[^120]: **F-120:** `Core/MarkdownPM/Autocomplete/autocomplete.ts:21-53` (`ConnectionForm`, `AutocompleteQuery`, `listsPages`, `listsHeadings`, `listsAliases`), `Core/MarkdownPM/Autocomplete/autocomplete.ts:55-165` (`autocompleteQuery`), `Core/MarkdownPM/Autocomplete/autocomplete.ts:218-231` (`closerOf`), `Core/MarkdownPM/Autocomplete/autocomplete.ts:233-321` (`commitEdit`), `Core/MarkdownPM/Autocomplete/useConnectionAutocomplete.ts:142-160` (`keepsWritten`, `openAlias`), `Core/MarkdownPM/Autocomplete/acQuery.ts:36` (`linkStart`), `Core/MarkdownPM/Links/pasteLink.ts:69`, `Core/MarkdownPM/Autocomplete/connectionCommit.test.tsx:292,306,383,518-537`
+[^121]: **F-121:** `Core/Connections/connections.ts:86-94` (`keepsAlias`, `connectionText`), `Core/Connections/linkValue.ts:83-108` (`showsTarget`, `shownAlias`), `Core/Connections/rewrite.ts:10-42` (`rewriteConnections`, `shows`), `Core/Connections/links.ts:84-87` (`markdownPageLink`), `Core/MarkdownPM/Links/linkEdit.ts:195-196` (`emptied`), `Core/MarkdownPM/Autocomplete/autocomplete.ts:313-315`, `Core/MarkdownPM/Autocomplete/useConnectionAutocomplete.ts:144-147` (`pointed`, `keepTitle`), `Core/MarkdownPM/Links/pasteLink.ts:56,69`, `Core/Properties/Pickers/PropertyValueInput.tsx:42`, `Core/Connections/linkValue.ts:133,187-191` (`keepsShown`), `Core/Properties/assignValue.ts:50-60` (`rememberedAlias`), `Core/Connections/aliasMemory.ts:34`, `.claude/Features/ConnectionsPM.md:62`
+[^122]: **F-122:** `Core/Connections/connections.ts:6-8,98-100` (`pageLinkPattern`, `expressibleInLink`), `Core/Connections/rewrite.ts:44-64` (`rewriteHeadingConnections`), `Core/Connections/rewrite.test.ts:232`, `Core/Connections/linkValue.ts:178,193-206` (`connectionSpells`, `retarget`), `Core/Connections/scan.ts:71-79` (`LinkHit`), `Core/Paths/names.ts:28-29` (`nameError`)
+[^123]: **F-123:** `Core/MarkdownPM/Autocomplete/AliasList.tsx:57,65-69,75-86,141-144,178,183` (`keyed`, `byKey`, the `dropped` and unmount effects), `UIX/Fields/EditableInput.tsx:79-103`, `Core/MarkdownPM/Autocomplete/useConnectionAutocomplete.ts:207-215` (`endEdit`)
+[^124]: **F-124:** `Core/MarkdownPM/Autocomplete/autocomplete.ts:204-216,323` (`aliasRows`, `AC_MAX`), `Core/MarkdownPM/Autocomplete/AliasList.tsx:191`, `Core/Settings/ExcludedDirectoriesRow.tsx:53`, `Core/Properties/Schema/useOptionEdit.tsx:76`, `Core/Views/Settings/FilterFrame.tsx:261`, `Core/Pages/editorHost.tsx:62`, `Core/Pages/AliasesRow.tsx:16`, `Core/MarkdownPM/Autocomplete/AutocompletePane.tsx:95,101`
+[^125]: **F-125:** `Core/Connections/linkValue.ts:114-142` (`linkEditText`, `linkValueFromEdit`, `linkValueFromRename`), `Core/Connections/linkValue.ts:178,193-206` (`connectionSpells`, `retarget`), `Core/Properties/Cells/LinkCell.tsx:47-48`, `.claude/Features/PropertiesPM.md:82`
+[^126]: **F-126:** `Core/Connections/linkValue.ts:145-149` (`linkDisplayText`), `Core/Views/Pipeline/filter.ts:139-144,248`, `Core/Views/Pipeline/sort.ts:56-65`, `Core/MarkdownPM/Links/linkEdit.ts:43-48` (`shownConnection`)
+[^127]: **F-127:** `Core/Connections/scan.ts:81-84,117` (`loneEmbed`), `Core/MarkdownPM/Engine/detect.ts:401-406` (`loneEmbedRe`, `loneEmbedTitle`), `Desktop/Store/stores.ts:103,138` (the rename lookup, `readPageRelations`), `Core/MarkdownPM/Embeds/embedWidget.tsx:397`, `Core/Index/indexSeed.ts:55-63` (`extractPageIndex`), `Core/Connections/scan.ts:144-169` (`frontmatterMentions`, `valueLinks`), `Core/Nexus/cascade.ts:197-199` (`patchOf`), `.claude/Features/MarkdownPM.md:120`
+[^128]: **F-128:** `Core/Connections/connections.ts:12,92` (`Span`, `connectionText`), `Core/Connections/links.ts:26-28,84-87,98` (`composeWebpageEmbedLine`, `markdownPageLink`, `pageTarget`), `Core/Connections/linkValue.ts:42,110-112,118` (`pageTarget`, `serializeLink`), `Core/Interface/Menus/pageMenuActions.ts:54`, `Core/MarkdownPM/Menus/gripMenu.ts:92`, `Core/Properties/Cells/LinkCell.tsx:48`, `Core/Connections/scan.ts:16,71` (`Span`, `LinkHit`), `Core/MarkdownPM/Links/linkClicks.ts:20` (`LinkHit`), `Core/MarkdownPM/Engine/tokens.ts:29` (`Span`), `Core/MarkdownPM/Engine/docScan.ts:61` (`Span`)
+[^129]: **F-129:** `Core/Properties/Pickers/PropertyValueInput.tsx:59-94` (`PropertyValueInput`), `Core/MarkdownPM/Autocomplete/useConnectionAutocomplete.ts:46` (`useConnectionAutocomplete`), `Core/MarkdownPM/Autocomplete/acQuery.ts:75` (`acQuery`), `Core/Properties/Pickers/TextPane.tsx:26,98,117`, `.claude/Features/ConnectionsPM.md:55`
+[^130]: **F-130:** `.claude/Features/ConnectionsPM.md:26,59,62`, `.claude/Features/MarkdownPM.md:31,104,255`, `Core/Nexus/pageMetadata.ts:166-179` (`editPageAliases`), `Core/Nexus/cascade.ts:157-259` (`renameCascade`), `Core/MarkdownPM/Autocomplete/useConnectionAutocomplete.ts:154-155`, `Core/Actions/connectionMenu.ts:80`, `Core/MarkdownPM/Embeds/embedWidget.tsx:395-397`, `Core/Views/Pipeline/filter.ts:143`, `Core/Views/Pipeline/sort.ts:61`, `Core/Connections/scan.ts:70`
+[^131]: **F-131:** `Core/Connections/linkValue.test.ts:30,211,239,242,258-284,272,290,307,327,370,408,425`, `Core/Connections/rewrite.test.ts:12,105,160-164,200,206,210,267,280,281`, `Core/Connections/links.test.ts:84,91,95,146,150`, `Core/Nexus/aliasAcceptance.test.ts:58,72,95`, `Core/Pages/AliasesRow.test.tsx:112-121`, `Core/Properties/Cells/LinkCell.test.tsx:82-94`, `Core/Connections/scan.test.ts:7-36,39-81,272`, `Core/MarkdownPM/Links/linkClicks.ts`
