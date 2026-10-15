@@ -150,7 +150,7 @@ function rememberAlias(
   const target = titleTarget(api, line.text.slice(s.title[0], s.title[1]))
   // A phantom or ambiguous title names no single page, and the memory is keyed by page id.
   if (target.kind === 'page')
-    void view.state.facet(editorHost).aliases.edit(target.page.id, { op: 'remember', alias })
+    void view.state.facet(editorHost).aliases.edit(target.page.id, { op: 'add', alias })
 }
 
 function collapseAt(view: EditorView, at: number): void {

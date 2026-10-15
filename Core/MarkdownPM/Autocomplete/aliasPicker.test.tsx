@@ -9,6 +9,7 @@ import { AutocompletePane } from './AutocompletePane'
 import { StateEffect } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
 import { resting } from '@pommora/uix/Fields/fields.css'
+import { firePointer, stubRect } from '@pommora/uix/Utilities/pointerHarness'
 import { type EditorHost, heldPage } from '../api'
 import type { ConnectionsApi } from '../Links/connectionsApi'
 import { buildPageIndex } from '../../Connections/pageIndex'
@@ -36,7 +37,7 @@ beforeEach(() => {
 })
 
 describe('the picker offers what a page has been called before', () => {
-  it('offers every remembered alias on an empty query, most recent first', () => {
+  it('offers every remembered alias on an empty query, in the stored order', () => {
     expect(aliasRows(aliases, 'p1', '').map((r) => r.value)).toEqual(['the plan', 'Q3 doc'])
   })
 
@@ -290,6 +291,70 @@ describe('the body picker’s alias list', () => {
       )
     })
     expect(input()?.value).toBe('Q3 doc')
+  })
+
+  const lineRows = (): HTMLElement[] => [
+    ...document.querySelectorAll<HTMLElement>('.mdpm-ac [data-line-row]'),
+  ]
+  const lift = async (from: number, toY: number): Promise<void> => {
+    const zone = document.querySelector('.mdpm-ac .line-zone')
+    if (zone) stubRect(zone, { top: 0, bottom: lineRows().length * 30 })
+    for (const [i, el] of lineRows().entries()) stubRect(el, { top: i * 30, bottom: i * 30 + 30 })
+    await act(async () => {
+      firePointer(lineRows()[from], 'pointerdown', { x: 10, y: from * 30 + 15 })
+    })
+    await act(async () => {
+      firePointer(window, 'pointermove', { x: 10, y: toY })
+    })
+  }
+  const drop = async (row: HTMLElement): Promise<void> => {
+    await act(async () => {
+      firePointer(window, 'pointerup')
+      row.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 }))
+    })
+  }
+
+  it('a drag sends the move, leaving the body unchanged, the editor focused, and nothing inserted', async () => {
+    const view = await openPicker()
+    const edit = vi.spyOn(harnessState().host.aliases, 'edit')
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] })
+    await lift(1, 5)
+    await drop(itemOf('Q3 doc'))
+    expect(edit).toHaveBeenCalledExactlyOnceWith('p1', { op: 'move', alias: 'Q3 doc', toIndex: 0 })
+    await act(async () => vi.advanceTimersByTime(PICK_WAIT))
+    expect(view.state.doc.toString()).toBe('[[Alpha|]]')
+    expect(view.hasFocus).toBe(true)
+  })
+
+  it('a press under the activation distance still inserts', async () => {
+    const view = await openPicker()
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] })
+    await lift(0, 17)
+    await drop(itemOf('the plan'))
+    await act(async () => vi.advanceTimersByTime(PICK_WAIT))
+    expect(view.state.doc.toString()).toBe('[[Alpha|the plan]]')
+  })
+
+  it('with a typed query, a press lifts nothing', async () => {
+    const view = await openPicker()
+    await act(async () => {
+      view.dispatch({ changes: { from: 8, insert: 'Q' }, selection: { anchor: 9 } })
+    })
+    await lift(0, 100)
+    expect(document.querySelector('.mdpm-ac .drop-line')).toBeNull()
+    expect(lineRows()[0].hasAttribute('data-drag-source')).toBe(false)
+    await act(async () => firePointer(window, 'pointerup'))
+  })
+
+  it('with a rename open, a press lifts nothing', async () => {
+    await openPicker()
+    await act(async () => {
+      nameOf('the plan').dispatchEvent(new MouseEvent('dblclick', { bubbles: true, detail: 2 }))
+    })
+    await lift(1, 5)
+    expect(document.querySelector('.mdpm-ac .drop-line')).toBeNull()
+    expect(lineRows()[1].hasAttribute('data-drag-source')).toBe(false)
+    await act(async () => firePointer(window, 'pointerup'))
   })
 })
 

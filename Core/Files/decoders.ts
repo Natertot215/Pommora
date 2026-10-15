@@ -31,6 +31,9 @@ export const looseDecoder = <S extends z.ZodRawShape>(
   object: z.ZodObject<S>,
 ): z.ZodType<z.output<z.ZodObject<S>>> => object.loose()
 
+/** A position in a list. */
+export const index = z.number().int().nonnegative()
+
 /** One variant of an `op`-tagged union: its tag and the fields it carries. */
 export const op = <K extends string, S extends z.ZodRawShape>(literal: K, fields: S) =>
   z.object({ op: z.literal(literal), ...fields })

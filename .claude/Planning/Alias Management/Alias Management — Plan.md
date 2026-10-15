@@ -108,7 +108,7 @@ Every alias write becomes an instruction — add, rename, move, or forget — se
   - [x] Task 3-5
   - [x] Task 3-6
   - [x] Task 3-7
-  - [ ] Task 3-8
+  - [x] Task 3-8
   - [ ] Review Checkpoint
 - [ ] `[Visual Pass: the drive's screenshots of the Aliases pane and the body picker go to Nathan, whose eyes are the one check awaiting]`
 - [ ] **Phase 4** — Documentation
@@ -1954,12 +1954,12 @@ The renderer's one alias write lives where the codebase keeps its renderer-side 
 
 **CHANGE**
 
-- [ ] In `aliasMemory.test.ts`, rewrite the `remember` cases as `add` and add, watching each fail: `add` of a held alias in another case respells it in place; a new alias joins the end; `move` sets an alias at an index among the others (front, middle, end, past the end appends), keeps its stored spelling, matches whatever its case, and leaves the list unchanged for an unknown, blank, or title name; the schema refuses a negative or fractional `toIndex`.
-- [ ] Repoint `linkEdit.test.tsx`'s and `connectionCommit.test.tsx`'s `remember` spies to `add`, and `aliasPicker.test.tsx`'s "most recent first" case to the stored order.
-- [ ] In `aliasPicker.test.tsx` (`stubRect` + `firePointer`, as `OptionOrderList.test.tsx:52-82`), add and watch fail: a drag sends `{ op: 'move', alias, toIndex }`, leaves the doc unchanged and the editor focused, and inserts nothing once `PICK_DELAY_MS` passes; a press under the activation distance still inserts; with a typed query or a rename open, a press lifts nothing.
-- [ ] In `AliasesRow.test.tsx`, add and watch fail: a pointer drag sends the move; a release on the row's own slot sends nothing; Space, ArrowUp, Space announces and sends the move; a draft open lifts nothing; × still deletes after a wobble under the button's slop.
-- [ ] Rename `useConnectionAutocomplete.ts`'s local `keepsAlias` (the commit keeping a link's written alias) to `keepsWritten`, so the exported `keepsAlias` holds one meaning; let the harness's `list` read through `heldAliases` as the host's does; and bound the Alias Drive's two `together` steps to one or two shard writes, since two locked writes can land inside one poll — their final list and `stays` checks prove both edits.
-- [ ] Apply the diffs below, then hoist the Option Picker Drive's `sweep`/`drag` into `drive-harness.mjs` (repointing that drive) and add the Alias Drive's reorder steps: a drag in the Manage pane writes the order once with the drop line and ghost drawn mid-drag; a release on its own slot writes nothing; the keyboard path; a drag while renaming writes nothing; a drag in the body picker writes the order with the editor still focused and the body unchanged; a filtered picker draws no drop line; a used alias keeps its place. Update the drive's group 1–3 expectations the fold changes, and run its groups 1–3.
+- [x] In `aliasMemory.test.ts`, rewrite the `remember` cases as `add` and add, watching each fail: `add` of a held alias in another case respells it in place; a new alias joins the end; `move` sets an alias at an index among the others (front, middle, end, past the end appends), keeps its stored spelling, matches whatever its case, and leaves the list unchanged for an unknown, blank, or title name; the schema refuses a negative or fractional `toIndex`.
+- [x] Repoint `linkEdit.test.tsx`'s and `connectionCommit.test.tsx`'s `remember` spies to `add`, and `aliasPicker.test.tsx`'s "most recent first" case to the stored order.
+- [x] In `aliasPicker.test.tsx` (`stubRect` + `firePointer`, as `OptionOrderList.test.tsx:52-82`), add and watch fail: a drag sends `{ op: 'move', alias, toIndex }`, leaves the doc unchanged and the editor focused, and inserts nothing once `PICK_DELAY_MS` passes; a press under the activation distance still inserts; with a typed query or a rename open, a press lifts nothing.
+- [x] In `AliasesRow.test.tsx`, add and watch fail: a pointer drag sends the move; a release on the row's own slot sends nothing; Space, ArrowUp, Space announces and sends the move; a draft open lifts nothing; × still deletes after a wobble under the button's slop.
+- [x] Rename `useConnectionAutocomplete.ts`'s local `keepsAlias` (the commit keeping a link's written alias) to `keepsWritten`, so the exported `keepsAlias` holds one meaning; let the harness's `list` read through `heldAliases` as the host's does; and bound the Alias Drive's two `together` steps to one or two shard writes, since two locked writes can land inside one poll — their final list and `stays` checks prove both edits.
+- [x] Apply the diffs below, then hoist the Option Picker Drive's `sweep`/`drag` into `drive-harness.mjs` (repointing that drive) and add the Alias Drive's reorder steps: a drag in the Manage pane writes the order once with the drop line and ghost drawn mid-drag; a release on its own slot writes nothing; the keyboard path; a drag while renaming writes nothing; a drag in the body picker writes the order with the editor still focused and the body unchanged; a filtered picker draws no drop line; a used alias keeps its place. Update the drive's group 1–3 expectations the fold changes, and run its groups 1–3.
 
 **AFTER**
 
@@ -2055,10 +2055,10 @@ A drop swallows its release click, so a drag never arms the click insert; a doub
 
 **VERIFY**
 
-- [ ] The new cases are green, each red without its change; `OptionEditor`, `PropertyPicker`, `PropertyPanel`, and the Trash and view decode tests stay green.
-- [ ] The Option Picker Drive's syntax check and the Alias Drive's groups 1–3, its reorder steps included, pass.
-- [ ] Run the gates, then commit.
-- [ ] Check for unnecessary code or mistakes.
+- [x] The new cases are green, each red without its change; `OptionEditor`, `PropertyPicker`, `PropertyPanel`, and the Trash and view decode tests stay green.
+- [x] The Option Picker Drive's syntax check and the Alias Drive's groups 1–3, its reorder steps included, pass.
+- [x] Run the gates, then commit.
+- [x] Check for unnecessary code or mistakes.
 
 #### Review Checkpoint
 

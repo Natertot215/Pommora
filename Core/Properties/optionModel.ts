@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { op } from '../Files/decoders'
+import { index, op } from '../Files/decoders'
 import { optionAppearance, type StatusGroup, type StatusOption } from './properties'
 
 function mapOption(
@@ -63,7 +63,6 @@ export function moveOption(
 
 const value = z.string()
 const groupId = z.string()
-const index = z.number().int().nonnegative()
 
 export const optionEdit = z.discriminatedUnion('op', [
   op('add', { groupId, title: z.string(), atIndex: index.optional() }),

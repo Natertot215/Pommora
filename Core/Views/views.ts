@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { isPlainObject } from '../Contract/validators'
 import { newId } from '../Nexus/ids'
 import { columnStyle, holdsStyle } from '../Properties/columnStyles'
-import { eachOf, entriesOf, idArray, looseDecoder, numberCheck } from '../Files/decoders'
+import { eachOf, entriesOf, idArray, index, looseDecoder, numberCheck } from '../Files/decoders'
 import { TENTHS_SCALE, ZOOM } from '../Settings/personalization'
 import { filterGroup } from './filterRules'
 import { mergeKeys } from '../Files/jsonMerge'
@@ -390,7 +390,7 @@ const VIEW_ID_PREFIX = 'view_'
 
 export const removedView = z.object({
   view: z.record(z.string(), z.unknown()),
-  index: z.number().int().nonnegative(),
+  index,
   active: z.boolean(),
 })
 export type RemovedView = z.infer<typeof removedView>

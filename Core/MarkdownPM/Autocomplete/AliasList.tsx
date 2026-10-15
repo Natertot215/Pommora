@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
+import { LineRow, LineZone, lineList } from '@pommora/uix/Interactions/drag'
 import { useKeepInView } from '@pommora/uix/Interactions/paneCtl'
 import { keepFocus } from '@pommora/uix/Interactions/shared'
 import {
@@ -10,6 +11,7 @@ import {
   MenuFooting,
   MenuItem,
   MenuScrollFrame,
+  menuDropLine,
 } from '@pommora/uix/Menus'
 import { titleInput } from '@pommora/uix/Menus/menu-row.css'
 import { type ListRow, useListEdit } from '@pommora/uix/Menus/useListEdit'
@@ -30,7 +32,7 @@ export interface AliasHost {
   onEditEnd?: (stay: boolean) => void
 }
 
-/** A page's aliases as menu rows: × or the row menu's Delete deletes one, a double-click on its name or the row menu's Rename renames it in place, and + drafts one more at the end. A picker passes `onPick`, which a single click calls once the double-click window passes, and its keyboard highlight. */
+/** A page's aliases as menu rows: × or the row menu's Delete deletes one, a double-click on its name or the row menu's Rename renames it in place, + drafts one more at the end, and a drag reorders them. A picker passes `onPick`, which a single click calls once the double-click window passes, and its keyboard highlight. */
 export function AliasList({
   aliases,
   host,
@@ -106,66 +108,82 @@ export function AliasList({
         />
       }
     >
-      <div
-        ref={rows}
-        onKeyDownCapture={(e) => {
-          keyed.current = e.key === 'Enter' || e.key === 'Escape'
-        }}
+      <LineZone
+        {...lineList({
+          disabled: match > 0 || renaming !== null || list.drafting,
+          commit: (alias, slot) => void host.edit({ op: 'move', alias, toIndex: slot.index }),
+          line: menuDropLine,
+          label: (alias) => alias,
+          glyph: () => <Icon name={ALIAS_ICON} />,
+          watch: [listed],
+        })}
       >
-        {list.rows.map((row, i) => (
-          <Reveal key={row.key} open enterOnMount={row.draft} fill>
-            <MenuItem
-              ref={i === active ? keepInView : undefined}
-              active={i === active}
-              tabIndex={-1}
-              leading={<Icon name={ALIAS_ICON} size="body" />}
-              trailing={
-                <AccessoryButton
-                  icon="x"
-                  size="control"
-                  ariaLabel="Delete alias"
-                  onMouseDown={keepFocus}
-                  onClick={() => remove(row)}
-                />
-              }
-              onClick={
-                onPick && !row.draft
-                  ? (e) => {
-                      window.clearTimeout(pick.current)
-                      if (e.detail === 1)
-                        pick.current = window.setTimeout(
-                          () => picked.current?.(row.value),
-                          PICK_DELAY_MS,
-                        )
-                    }
-                  : undefined
-              }
-              onContextMenu={row.draft ? undefined : (e) => void rowMenu(row, e)}
-            >
-              <RenamableLabel
-                renames="title"
-                className={titleInput}
-                ariaLabel="Alias"
-                editing={editing(row)}
-                value={row.value}
-                invalid={(text) => !keepsAlias(text, host.title)}
-                onBegin={row.draft ? undefined : () => rename(row)}
-                onCommit={(next) => {
-                  const landed = list.commit(row, next)
-                  end(row.key, byKey())
-                  return landed
-                }}
-                onCancel={() => {
-                  if (row.draft) list.cancel()
-                  end(row.key, byKey())
-                }}
+        <div
+          ref={rows}
+          onKeyDownCapture={(e) => {
+            keyed.current = e.key === 'Enter' || e.key === 'Escape'
+          }}
+        >
+          {list.rows.map((row, i) => {
+            const item = (
+              <MenuItem
+                ref={i === active ? keepInView : undefined}
+                active={i === active}
+                tabIndex={-1}
+                leading={<Icon name={ALIAS_ICON} size="body" />}
+                trailing={
+                  <AccessoryButton
+                    icon="x"
+                    size="control"
+                    ariaLabel="Delete alias"
+                    onMouseDown={keepFocus}
+                    onClick={() => remove(row)}
+                  />
+                }
+                onClick={
+                  onPick && !row.draft
+                    ? (e) => {
+                        window.clearTimeout(pick.current)
+                        if (e.detail === 1)
+                          pick.current = window.setTimeout(
+                            () => picked.current?.(row.value),
+                            PICK_DELAY_MS,
+                          )
+                      }
+                    : undefined
+                }
+                onContextMenu={row.draft ? undefined : (e) => void rowMenu(row, e)}
               >
-                {(shown) => emphasizeMatch(shown, 0, match)}
-              </RenamableLabel>
-            </MenuItem>
-          </Reveal>
-        ))}
-      </div>
+                <RenamableLabel
+                  renames="title"
+                  className={titleInput}
+                  ariaLabel="Alias"
+                  editing={editing(row)}
+                  value={row.value}
+                  invalid={(text) => !keepsAlias(text, host.title)}
+                  onBegin={row.draft ? undefined : () => rename(row)}
+                  onCommit={(next) => {
+                    const landed = list.commit(row, next)
+                    end(row.key, byKey())
+                    return landed
+                  }}
+                  onCancel={() => {
+                    if (row.draft) list.cancel()
+                    end(row.key, byKey())
+                  }}
+                >
+                  {(shown) => emphasizeMatch(shown, 0, match)}
+                </RenamableLabel>
+              </MenuItem>
+            )
+            return (
+              <Reveal key={row.key} open enterOnMount={row.draft} fill>
+                {row.draft ? item : <LineRow id={row.value}>{item}</LineRow>}
+              </Reveal>
+            )
+          })}
+        </div>
+      </LineZone>
     </MenuScrollFrame>
   )
 }

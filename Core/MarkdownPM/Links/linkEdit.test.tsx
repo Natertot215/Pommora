@@ -190,7 +190,7 @@ describe('the alias memory hears only what was authored', () => {
     await caretTo(view, 12)
     await caretTo(view, 0)
     expect(edit).toHaveBeenCalledTimes(1)
-    expect(edit).toHaveBeenCalledWith('p1', { op: 'remember', alias: 'new' })
+    expect(edit).toHaveBeenCalledWith('p1', { op: 'add', alias: 'new' })
   })
 
   it('focus moving into the caret pane neither collapses nor remembers', async () => {

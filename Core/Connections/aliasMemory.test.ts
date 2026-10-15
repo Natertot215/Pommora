@@ -1,55 +1,63 @@
 import { describe, expect, it } from 'vitest'
-import { type AliasEdit, applyAliasEdit, heldAliases } from './aliasMemory'
+import { type AliasEdit, aliasEdit, applyAliasEdit, heldAliases } from './aliasMemory'
 
 const edit = (worn: string[], e: AliasEdit, title = 'Alpha') => applyAliasEdit(worn, e, title)
 
-describe('remembering an alias', () => {
-  it('remembers the trimmed words', () => {
-    expect(edit([], { op: 'remember', alias: '  the notes  ' })).toEqual(['the notes'])
-  })
-
-  it('a blank alias leaves the list', () => {
-    expect(edit(['the notes'], { op: 'remember', alias: '   ' })).toEqual(['the notes'])
-  })
-
-  it('a new alias goes first', () => {
-    expect(edit(['the notes'], { op: 'remember', alias: 'my draft' })).toEqual([
-      'my draft',
-      'the notes',
-    ])
-  })
-
-  it('an existing alias moves first', () => {
-    expect(edit(['my draft', 'the notes'], { op: 'remember', alias: 'the notes' })).toEqual([
-      'the notes',
-      'my draft',
-    ])
-  })
-
-  it('a new spelling of an existing alias replaces it at the front', () => {
-    expect(edit(['my draft', 'the notes'], { op: 'remember', alias: 'The Notes' })).toEqual([
-      'The Notes',
-      'my draft',
-    ])
-  })
-
-  it("the page's own title leaves the list", () => {
-    expect(edit(['my draft'], { op: 'remember', alias: 'alpha' })).toEqual(['my draft'])
-  })
-})
-
 describe('adding an alias', () => {
-  it('appends', () => {
-    expect(edit(['a'], { op: 'add', alias: 'b' })).toEqual(['a', 'b'])
+  it('adds the trimmed words', () => {
+    expect(edit([], { op: 'add', alias: '  the notes  ' })).toEqual(['the notes'])
   })
 
-  it('a new spelling of an existing alias moves to the end', () => {
-    expect(edit(['draft', 'x'], { op: 'add', alias: 'Draft' })).toEqual(['x', 'Draft'])
+  it('a new alias joins the end', () => {
+    expect(edit(['the notes', 'a'], { op: 'add', alias: 'my draft' })).toEqual([
+      'the notes',
+      'a',
+      'my draft',
+    ])
+  })
+
+  it('a held alias keeps its place', () => {
+    expect(edit(['my draft', 'the notes', 'x'], { op: 'add', alias: 'the notes' })).toEqual([
+      'my draft',
+      'the notes',
+      'x',
+    ])
+  })
+
+  it('a held alias in another case is respelled in place', () => {
+    expect(edit(['draft', 'x'], { op: 'add', alias: 'Draft' })).toEqual(['Draft', 'x'])
   })
 
   it("a blank alias or the page's own title leaves the list", () => {
     expect(edit(['a'], { op: 'add', alias: '  ' })).toEqual(['a'])
     expect(edit(['a'], { op: 'add', alias: 'ALPHA' })).toEqual(['a'])
+  })
+})
+
+describe('moving an alias', () => {
+  const list = ['a', 'b', 'c', 'd']
+
+  it.each([
+    [0, ['c', 'a', 'b', 'd']],
+    [1, ['a', 'c', 'b', 'd']],
+    [3, ['a', 'b', 'd', 'c']],
+    [9, ['a', 'b', 'd', 'c']],
+  ])('sets it at index %i among the others', (toIndex, after) => {
+    expect(edit(list, { op: 'move', alias: 'c', toIndex })).toEqual(after)
+  })
+
+  it('keeps its stored spelling, matched whatever its case', () => {
+    expect(edit(['Plan', 'x'], { op: 'move', alias: 'PLAN', toIndex: 1 })).toEqual(['x', 'Plan'])
+  })
+
+  it("an unknown alias, a blank name, or the page's own title leaves the list", () => {
+    expect(edit(list, { op: 'move', alias: 'z', toIndex: 0 })).toEqual(list)
+    expect(edit(list, { op: 'move', alias: '  ', toIndex: 0 })).toEqual(list)
+    expect(edit([...list, 'Alpha'], { op: 'move', alias: 'alpha', toIndex: 0 })).toEqual(list)
+  })
+
+  it.each([-1, 1.5])('the schema refuses toIndex %d', (toIndex) => {
+    expect(aliasEdit.safeParse({ op: 'move', alias: 'a', toIndex }).success).toBe(false)
   })
 })
 
@@ -103,12 +111,7 @@ describe('tidying', () => {
 })
 
 describe('a name a link can’t carry', () => {
-  it.each([
-    'a]b',
-    'two\nlines',
-    'cr\rhere',
-  ])('%j is never remembered, added, or renamed to', (n) => {
-    expect(edit(['x'], { op: 'remember', alias: n })).toEqual(['x'])
+  it.each(['a]b', 'two\nlines', 'cr\rhere'])('%j is never added or renamed to', (n) => {
     expect(edit(['x'], { op: 'add', alias: n })).toEqual(['x'])
     expect(edit(['x'], { op: 'rename', from: 'x', to: n })).toEqual(['x'])
   })

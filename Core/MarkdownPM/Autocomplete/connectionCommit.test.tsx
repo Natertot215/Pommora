@@ -108,7 +108,7 @@ describe('the alias picker', () => {
     })
     expect(view.state.doc.toString()).toBe('[[Alpha|one]]')
     expect(edit).toHaveBeenCalledTimes(1)
-    expect(edit).toHaveBeenCalledWith('p1', { op: 'remember', alias: 'one' })
+    expect(edit).toHaveBeenCalledWith('p1', { op: 'add', alias: 'one' })
   })
 })
 

@@ -239,7 +239,7 @@ describe('a landed Link value remembers the alias it shows', () => {
     expect(mutate).toHaveBeenLastCalledWith({
       op: 'editAliases',
       path: 'Notes/Alpha.md',
-      edit: { op: 'remember', alias: 'the notes' },
+      edit: { op: 'add', alias: 'the notes' },
     })
   })
 
@@ -264,7 +264,7 @@ describe('a landed Link value remembers the alias it shows', () => {
     expect(mutate).toHaveBeenLastCalledWith({
       op: 'editAliases',
       path: 'Notes/Alpha.md',
-      edit: { op: 'remember', alias: 'Old' },
+      edit: { op: 'add', alias: 'Old' },
     })
   })
 

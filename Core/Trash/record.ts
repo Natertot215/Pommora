@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { hiddenName, rootSegs } from '../Paths/exclusion'
 import { mintBundle } from './bundle'
 import { readJsonObject, rmwJsonStrict, writeJson } from '../Files/atomicWrite'
+import { index } from '../Files/decoders'
 import { listEntries } from '../Files/walk'
 import { contextEntry } from '../Contexts/contexts'
 import type { StrippedLink } from '../Nexus/cascade'
@@ -63,7 +64,7 @@ const recordFile = z.discriminatedUnion('entity', [
   z.object({
     entity: z.literal('context'),
     registry: contextEntry,
-    at: z.number().int().nonnegative().optional(),
+    at: index.optional(),
     membership: z.array(z.object({ root: memberRoot, spaces: z.array(spaceRef) })),
     partial: z.literal(true).optional(),
   }),

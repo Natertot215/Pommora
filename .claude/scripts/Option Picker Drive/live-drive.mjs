@@ -1,6 +1,6 @@
 import {
-  ask, boxOf, check, chooseNative, click, frontmatter, launch, mintPageId, mouseClick, portalOpen, pressKey, read,
-  restore, results, sel, shot, sleep, textEl, until,
+  ask, boxOf, check, chooseNative, click, drag, frontmatter, launch, mintPageId, mouseClick, portalOpen, pressKey, read,
+  restore, results, sel, shot, sleep, sweep, textEl, until,
 } from '../drive-harness.mjs'
 
 const PICKER_ROWS = '[data-picker-portal] [data-line-row]'
@@ -18,20 +18,6 @@ async function retitle(cdp, text) {
   else await cdp.evaluate(`(() => { const f = document.activeElement; f.value = '' })()`)
   await cdp.evaluate(`document.activeElement.blur()`)
   await sleep(800)
-}
-
-async function sweep(cdp, a, b, { steps, held }) {
-  await cdp.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: a.x, y: a.y, button: 'left', buttons: 1, clickCount: 1 })
-  for (let i = 1; i <= steps; i++)
-    await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: a.x, y: a.y + ((b.y - a.y) * i) / steps, button: 'left', buttons: 1 })
-  if (held) await held()
-  await cdp.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: b.x, y: b.y, button: 'left', buttons: 0, clickCount: 1 })
-  await sleep(800)
-}
-async function drag(cdp, from, to, held) {
-  const a = await boxOf(cdp, from)
-  const b = await boxOf(cdp, to)
-  await sweep(cdp, a, { x: b.x, y: b.y - 6 }, { steps: 8, held })
 }
 
 const registry = () => JSON.parse(read('.nexus/properties.json')).defs

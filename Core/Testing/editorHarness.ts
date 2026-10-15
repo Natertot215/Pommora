@@ -7,7 +7,7 @@ import { MarkdownEditor } from '../MarkdownPM/MarkdownEditor'
 import type { MarkdownTable } from '../MarkdownPM/Tables/MarkdownTable'
 import type { ConnectionsApi } from '../MarkdownPM/Links/connectionsApi'
 import { DEFAULT_COMMANDS } from '../Actions/commands'
-import { type AliasEdit, applyAliasEdit } from '../Connections/aliasMemory'
+import { type AliasEdit, applyAliasEdit, heldAliases } from '../Connections/aliasMemory'
 import { type EditorHost, type EditorSettings, editorSettingsOf } from '../MarkdownPM/api'
 import type { EditorPrefs } from '../Contract/bridge'
 import { stubDialer } from '../vitest.setup'
@@ -86,7 +86,7 @@ function harnessHost(spec: HarnessHost, rerender: () => void = () => {}): Harnes
     settings: () => state.settings,
     connections: () => state.connections,
     aliases: {
-      list: worn,
+      list: (id) => heldAliases(worn(id), spec.pageTitle ?? ''),
       edit: async (id, edit) => {
         wear(id, edit)
         return true

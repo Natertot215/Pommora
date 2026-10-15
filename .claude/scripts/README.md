@@ -38,12 +38,13 @@ Alpha` with its properties, a table view, and `Mx …` pages on debug port 9363,
 any failed check.
 
 `Alias Drive/live-drive.mjs` drives alias management end to end, in six groups: the host's alias
-edits over the `mutate` channel (remember, add, rename, and forget, case folding, the title refused,
+edits over the `mutate` channel (add, rename, move, and forget, case folding, the title refused,
 two edits fired together, and a Link value remembering the alias it newly shows); the page's Aliases
 row and its pane in the page dropdown and the PageWindow's side pane (the draft, renames by
-double-click and the row menu, × and the row menu's Delete); the body picker's alias stage in the
-page body, a TextPane, and a table cell (the single click held for the double-click window, keyboard
-picks, edits that return the caret to the slot, and leaving an authored slot); Excluded Directories
+double-click and the row menu, × and the row menu's Delete, and reorder by drag and keyboard); the
+body picker's alias stage in the page body, a TextPane, and a table cell (the single click held for
+the double-click window, keyboard picks, drag reorder, edits that return the caret to the slot, and
+leaving an authored slot); Excluded Directories
 and Open In Preview; the option editor's draft and Filter's ×; and the hot paths timed twenty times
 each beside the page stage of `[[` as a control. Every gesture is measured as well as asserted: how
 many contents each file it touches passes through, gesture to DOM and to disk, layout, style, script,

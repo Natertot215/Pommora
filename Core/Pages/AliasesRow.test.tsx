@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { resting } from '@pommora/uix/Fields/fields.css'
+import { firePointer, stubRect } from '@pommora/uix/Utilities/pointerHarness'
 import { AliasesRow } from './AliasesRow'
 import { useSession } from '../Session/store'
 import { stubDialer } from '../vitest.setup'
@@ -39,7 +40,7 @@ const render = async (
 
 afterEach(async () => {
   await act(async () => root.unmount())
-  document.body.innerHTML = ''
+  document.body.replaceChildren(...document.body.querySelectorAll(':scope > [aria-live]'))
   menuAnswer = null
 })
 
@@ -84,6 +85,28 @@ const rightClick = async (el: HTMLElement): Promise<void> => {
 const deleteOf = (text: string): HTMLElement =>
   revealHolding(text)?.querySelector('[aria-label="Delete alias"]') as HTMLElement
 const sent = (edit: unknown): unknown => ({ op: 'editAliases', path: PAGE.path, edit })
+const lineRows = (): HTMLElement[] => [...document.querySelectorAll<HTMLElement>('[data-line-row]')]
+const stubRows = (): void => {
+  const zone = document.querySelector('.line-zone')
+  if (zone) stubRect(zone, { top: 0, bottom: lineRows().length * 30 })
+  for (const [i, el] of lineRows().entries()) stubRect(el, { top: i * 30, bottom: i * 30 + 30 })
+}
+const lift = async (from: number, toY: number, target = lineRows()[from]): Promise<void> => {
+  stubRows()
+  await act(async () => {
+    firePointer(target, 'pointerdown', { x: 10, y: from * 30 + 15 })
+  })
+  await act(async () => {
+    firePointer(window, 'pointermove', { x: 10, y: toY })
+  })
+}
+const release = async (): Promise<void> => {
+  await act(async () => {
+    firePointer(window, 'pointerup')
+  })
+}
+const moves = (): unknown[] =>
+  mutate.mock.calls.filter(([req]) => (req as { edit: { op: string } }).edit.op === 'move')
 
 describe('AliasesRow', () => {
   it('reads Aliases with the count of held aliases', async () => {
@@ -230,6 +253,62 @@ describe('AliasesRow', () => {
     await act(async () => (x as HTMLElement).click())
     expect(mutate).toHaveBeenCalledWith(sent({ op: 'forget', alias: 'the plan' }))
     expect(inputs().length).toBe(0)
+  })
+
+  it('a pointer drag sends the move', async () => {
+    await render(['the plan', 'Q3 doc', 'launch'])
+    await manage()
+    await lift(2, 32)
+    await release()
+    expect(mutate).toHaveBeenCalledExactlyOnceWith(
+      sent({ op: 'move', alias: 'launch', toIndex: 1 }),
+    )
+  })
+
+  it('a release on the row’s own slot sends nothing', async () => {
+    await render(['the plan', 'Q3 doc', 'launch'])
+    await manage()
+    await lift(1, 40)
+    await release()
+    expect(mutate).not.toHaveBeenCalled()
+  })
+
+  it('Space, ArrowUp, Space announces and sends the move', async () => {
+    await render(['the plan', 'Q3 doc', 'launch'])
+    await manage()
+    stubRows()
+    const row = lineRows()[1]
+    await act(async () => row.focus())
+    for (const [el, k] of [
+      [row, ' '],
+      [document, 'ArrowUp'],
+      [document, ' '],
+    ] as const)
+      await act(async () => {
+        el.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }))
+      })
+    expect(document.querySelector('[role="status"]')?.textContent).toBe('Moved Q3 doc.')
+    expect(mutate).toHaveBeenCalledExactlyOnceWith(
+      sent({ op: 'move', alias: 'Q3 doc', toIndex: 0 }),
+    )
+  })
+
+  it('with a draft open, a press lifts nothing', async () => {
+    await render(['the plan', 'Q3 doc', 'launch'])
+    await manage()
+    await add()
+    await lift(2, 5)
+    await release()
+    expect(moves()).toEqual([])
+  })
+
+  it('× still deletes after a wobble under the button’s slop', async () => {
+    await render(['the plan', 'Q3 doc', 'launch'])
+    await manage()
+    await lift(1, 55, deleteOf('Q3 doc'))
+    await release()
+    await act(async () => deleteOf('Q3 doc').click())
+    expect(mutate).toHaveBeenCalledExactlyOnceWith(sent({ op: 'forget', alias: 'Q3 doc' }))
   })
 
   it('the row menu’s Rename opens the input, and its Delete forgets', async () => {

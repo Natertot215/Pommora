@@ -2945,11 +2945,11 @@ describe('handleMutate — editAliases', () => {
     expect(await month()).toEqual({ pages: { [A_ID]: { aliases: ['A', 'B2', 'C', 'D'] } } })
   })
 
-  it('remembering the page’s own title leaves the month’s bytes as they were', async () => {
+  it('adding the page’s own title leaves the month’s bytes as they were', async () => {
     const before = await read(`.nexus/metadata/${shardOf(A_ID)}.json`)
     const r = await settledMutate(
       root,
-      { op: 'editAliases', path, edit: { op: 'remember', alias: 'alpha' } },
+      { op: 'editAliases', path, edit: { op: 'add', alias: 'alpha' } },
       nexusDeps,
     )
     expect(r.ok).toBe(true)
@@ -2966,17 +2966,17 @@ describe('handleMutate — editAliases', () => {
     expect(await month()).toEqual({ pages: {} })
   })
 
-  it('a remember on a list holding one element that isn’t a name keeps the rest', async () => {
+  it('an add on a list holding one element that isn’t a name keeps the rest', async () => {
     await writeFile(
       join(root, `.nexus/metadata/${shardOf(A_ID)}.json`),
       JSON.stringify({ pages: { [A_ID]: { aliases: ['keep me', 3, 'and me'] } } }),
     )
     await settledMutate(
       root,
-      { op: 'editAliases', path, edit: { op: 'remember', alias: 'new' } },
+      { op: 'editAliases', path, edit: { op: 'add', alias: 'new' } },
       nexusDeps,
     )
-    expect(await month()).toEqual({ pages: { [A_ID]: { aliases: ['new', 'keep me', 'and me'] } } })
+    expect(await month()).toEqual({ pages: { [A_ID]: { aliases: ['keep me', 'and me', 'new'] } } })
   })
 })
 
@@ -3293,7 +3293,7 @@ describe('each routine operation lands from its own events, with no walk', () =>
     ],
     [
       'an alias edit',
-      { op: 'editAliases', path: 'Notes/Daily/Alpha.md', edit: { op: 'remember', alias: 'a' } },
+      { op: 'editAliases', path: 'Notes/Daily/Alpha.md', edit: { op: 'add', alias: 'a' } },
     ],
     ['a Set icon', { op: 'setIcon', path: 'Notes/Daily', kind: 'set', icon: 'star' }],
     ['a page icon', { op: 'setIcon', path: 'Notes/Daily/Alpha.md', kind: 'page', icon: 'star' }],

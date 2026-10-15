@@ -140,7 +140,7 @@ export function useConnectionAutocomplete(
       container?.kind === 'url' ||
       (container?.kind === 'page' && conn?.resolve(container.title).status === 'resolved')
     const keepTitle = !settings.removeTitleOnLinkChange || !pointed
-    const keepsAlias =
+    const keepsWritten =
       ac.form === 'link' &&
       !!container?.alias &&
       keepsShown(container, { kind: 'page', syntax: 'wiki', title: row.value }, keepTitle)
@@ -149,7 +149,7 @@ export function useConnectionAutocomplete(
     const openAlias =
       (ac.form === 'link' || ac.form === 'heading') &&
       !opts.openHeading &&
-      !keepsAlias &&
+      !keepsWritten &&
       settings.aliasPickerOnCommit &&
       host.aliases.list(pageId ?? '').length > 0
     const opensSlot = openAlias || opts.openHeading

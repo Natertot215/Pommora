@@ -205,7 +205,7 @@ describe('the alias memory', () => {
     const { mutate, hosts, root } = await mountHosts(['the notes'])
     let took: boolean | undefined
     await act(async () => {
-      took = await hosts[hosts.length - 1].aliases.edit('gone', { op: 'remember', alias: 'x' })
+      took = await hosts[hosts.length - 1].aliases.edit('gone', { op: 'add', alias: 'x' })
     })
     expect(took).toBe(false)
     expect(mutate).not.toHaveBeenCalled()

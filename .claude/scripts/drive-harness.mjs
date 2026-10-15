@@ -99,6 +99,19 @@ export async function doubleClick(cdp, expr, { settle = 500 } = {}) {
       await cdp.send('Input.dispatchMouseEvent', { type, x, y, button: 'left', buttons: type === 'mousePressed' ? 1 : 0, clickCount })
   await sleep(settle)
 }
+export async function sweep(cdp, a, b, { steps, held }) {
+  await cdp.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: a.x, y: a.y, button: 'left', buttons: 1, clickCount: 1 })
+  for (let i = 1; i <= steps; i++)
+    await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: a.x, y: a.y + ((b.y - a.y) * i) / steps, button: 'left', buttons: 1 })
+  if (held) await held()
+  await cdp.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: b.x, y: b.y, button: 'left', buttons: 0, clickCount: 1 })
+  await sleep(800)
+}
+export async function drag(cdp, from, to, held) {
+  const a = await boxOf(cdp, from)
+  const b = await boxOf(cdp, to)
+  await sweep(cdp, a, { x: b.x, y: b.y - 6 }, { steps: 8, held })
+}
 export const hover = async (cdp, expr, dwell = 600) => {
   const { x, y } = await boxOf(cdp, expr)
   await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: x + 20, y, button: 'none' })
@@ -140,10 +153,10 @@ export const nativeMenu = (pid) => {
 
 export const click = (cdp, expr) => cdp.evaluate(`(${expr}).click()`)
 
-const VK = { Enter: 13, Escape: 27, Tab: 9, Backspace: 8, b: 66, ArrowDown: 40, ArrowUp: 38 }
+const VK = { Enter: 13, Escape: 27, Tab: 9, Backspace: 8, b: 66, ArrowDown: 40, ArrowUp: 38, ' ': 32 }
 export async function pressKey(cdp, name, modifiers = 0) {
   for (const type of ['rawKeyDown', 'keyUp'])
-    await cdp.send('Input.dispatchKeyEvent', { type, key: name, code: name.length === 1 ? `Key${name.toUpperCase()}` : name, windowsVirtualKeyCode: VK[name], modifiers })
+    await cdp.send('Input.dispatchKeyEvent', { type, key: name, code: name === ' ' ? 'Space' : name.length === 1 ? `Key${name.toUpperCase()}` : name, windowsVirtualKeyCode: VK[name], modifiers })
   await sleep(300)
 }
 export const SHIFT = 8

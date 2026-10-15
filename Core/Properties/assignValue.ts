@@ -57,7 +57,7 @@ function rememberedAlias(
   const tree = useSession.getState().tree
   const page = tree && pageIndexOf(tree).resolve(target.title).page
   return page
-    ? { op: 'editAliases', path: page.path, edit: { op: 'remember', alias: target.alias } }
+    ? { op: 'editAliases', path: page.path, edit: { op: 'add', alias: target.alias } }
     : null
 }
 

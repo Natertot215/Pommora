@@ -1,10 +1,10 @@
 import { readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import {
-  activate, against, ask, boxOf, check, chooseNative, click, closePanel, createPage, doubleClick, escapeAll, field, frontmatter,
+  activate, against, ask, boxOf, check, chooseNative, click, closePanel, createPage, doubleClick, drag, escapeAll, field, frontmatter,
   launch, measure, metrics, mouseAt, mouseClick, must, nativeMenu, NEXUS, openCollection, openPage, openPane, openPanel,
   PAGE_VIEW, pageFile, pageIds, pagePath, PANE, PANE_VIEW, portalOpen, pressKey, printMetrics, read, refusal, restore, results,
-  row, sel, SETTINGS_BUTTON, settles, shot, sleep, typeText, until, writeBody, writeMetrics,
+  row, sel, SETTINGS_BUTTON, settles, shot, sleep, sweep, typeText, until, writeBody, writeMetrics,
 } from '../drive-harness.mjs'
 
 const PORT = 9373
@@ -44,11 +44,13 @@ async function resetAliases(cdp, title, list) {
   await sleep(400)
 }
 
-// One gesture, measured: `writes` maps each watched file to how many contents it must pass through.
+// One gesture, measured: `writes` maps each watched file to how many contents it must pass through, or a [least, most] bound.
 async function step(cdp, name, act, { reflect, writes = {}, window } = {}) {
   const m = await measure(cdp, name, act, { reflect, files: Object.keys(writes), window })
-  for (const [file, n] of Object.entries(writes))
-    check(`${name} — ${n} write${n === 1 ? '' : 's'} to ${fileName(file)}`, m.writes[file] === n, `saw ${m.writes[file]}`)
+  for (const [file, n] of Object.entries(writes)) {
+    const [lo, hi = lo] = [n].flat()
+    check(`${name} — ${[...new Set([lo, hi])].join('–')} write${hi === 1 ? '' : 's'} to ${fileName(file)}`, m.writes[file] >= lo && m.writes[file] <= hi, `saw ${m.writes[file]}`)
+  }
   return m
 }
 const aliasWrites = (n, title = TARGET) => ({ [META_DIR]: n, [pagePath(title)]: 0 })
@@ -120,6 +122,8 @@ const nameOf = (S, name) => `[...(${rowOf(S, name)}).querySelectorAll('*')].filt
 const xOf = (S, name) => `(${rowOf(S, name)}).querySelector('[aria-label="Delete alias"]')`
 const inputOf = (S) => `(${S})?.querySelector('input[aria-label="Alias"]')`
 const addOf = (S) => `(${S}).querySelector('[aria-label="Add alias"]')`
+const lineRowOf = (S, name) => `(${rowOf(S, name)}).querySelector('[data-line-row]')`
+const dragChrome = (cdp, S) => cdp.evaluate(`({ line: !!(${S})?.querySelector('.drop-line'), ghost: !!document.querySelector('.drag-ghost') })`)
 const shownIn = (cdp, S) => cdp.evaluate(`${rows(S)}.map((r) => r.querySelector('input')?.value ?? r.textContent.trim())`)
 const editingIn = (cdp, S) => cdp.evaluate(`(() => { const i = ${inputOf(S)}; return i ? { value: i.value, focused: document.activeElement === i } : null })()`)
 
@@ -161,24 +165,26 @@ async function group1(cdp) {
   await resetAliases(cdp, TARGET, [])
   const bodies = Object.fromEntries(Object.keys(pageIds).map((t) => [t, pageFile(t)]))
   for (const [name, edit, n, want] of [
-    ['remember launch on an empty list', { op: 'remember', alias: 'launch' }, 1, ['launch']],
+    ['add launch on an empty list', { op: 'add', alias: 'launch' }, 1, ['launch']],
     ['add liftoff at the end', { op: 'add', alias: 'liftoff' }, 1, ['launch', 'liftoff']],
-    ['remember Q3 doc at the front', { op: 'remember', alias: 'Q3 doc' }, 1, ['Q3 doc', 'launch', 'liftoff']],
-    ['remember a held alias moves it first', { op: 'remember', alias: 'liftoff' }, 1, ['liftoff', 'Q3 doc', 'launch']],
-    ['rename Q3 doc in place', { op: 'rename', from: 'Q3 doc', to: 'Q4 doc' }, 1, ['liftoff', 'Q4 doc', 'launch']],
-    ['rename into a held alias keeps the renamed place', { op: 'rename', from: 'launch', to: 'LIFTOFF' }, 1, ['Q4 doc', 'LIFTOFF']],
-    ['a case-only rename respells', { op: 'rename', from: 'LIFTOFF', to: 'Liftoff' }, 1, ['Q4 doc', 'Liftoff']],
-    ['remember in another case stands newest, first', { op: 'remember', alias: 'q4 DOC' }, 1, ['q4 DOC', 'Liftoff']],
-    ['add in another case stands newest, last', { op: 'add', alias: 'liftoff' }, 1, ['q4 DOC', 'liftoff']],
+    ['add Q3 doc at the end', { op: 'add', alias: 'Q3 doc' }, 1, ['launch', 'liftoff', 'Q3 doc']],
+    ['add a held alias keeps its place and writes nothing', { op: 'add', alias: 'liftoff' }, 0, ['launch', 'liftoff', 'Q3 doc']],
+    ['rename Q3 doc in place', { op: 'rename', from: 'Q3 doc', to: 'Q4 doc' }, 1, ['launch', 'liftoff', 'Q4 doc']],
+    ['rename into a held alias keeps the renamed place', { op: 'rename', from: 'launch', to: 'LIFTOFF' }, 1, ['LIFTOFF', 'Q4 doc']],
+    ['a case-only rename respells', { op: 'rename', from: 'LIFTOFF', to: 'liftoff' }, 1, ['liftoff', 'Q4 doc']],
+    ['add in another case respells in place', { op: 'add', alias: 'q4 DOC' }, 1, ['liftoff', 'q4 DOC']],
     ['forget by any spelling', { op: 'forget', alias: 'Q4 doc' }, 1, ['liftoff']],
-    ['remember trims', { op: 'remember', alias: '  spaced  ' }, 1, ['spaced', 'liftoff']],
-    ['forget an unknown alias writes nothing', { op: 'forget', alias: 'zzz' }, 0, ['spaced', 'liftoff']],
-    ['remember the title in any case writes nothing', { op: 'remember', alias: 'drive target' }, 0, ['spaced', 'liftoff']],
-    ['add the title writes nothing', { op: 'add', alias: 'DRIVE TARGET' }, 0, ['spaced', 'liftoff']],
-    ['rename onto the title writes nothing', { op: 'rename', from: 'liftoff', to: 'Drive Target' }, 0, ['spaced', 'liftoff']],
-    ['rename an unknown alias writes nothing', { op: 'rename', from: 'zzz', to: 'yyy' }, 0, ['spaced', 'liftoff']],
-    ['a blank remember writes nothing', { op: 'remember', alias: '   ' }, 0, ['spaced', 'liftoff']],
-    ['a blank rename writes nothing', { op: 'rename', from: 'liftoff', to: ' ' }, 0, ['spaced', 'liftoff']],
+    ['add trims', { op: 'add', alias: '  spaced  ' }, 1, ['liftoff', 'spaced']],
+    ['move spaced in another case to the front', { op: 'move', alias: 'SPACED', toIndex: 0 }, 1, ['spaced', 'liftoff']],
+    ['move past the end appends', { op: 'move', alias: 'spaced', toIndex: 9 }, 1, ['liftoff', 'spaced']],
+    ['move an unknown alias writes nothing', { op: 'move', alias: 'zzz', toIndex: 0 }, 0, ['liftoff', 'spaced']],
+    ['move to its own place writes nothing', { op: 'move', alias: 'spaced', toIndex: 1 }, 0, ['liftoff', 'spaced']],
+    ['forget an unknown alias writes nothing', { op: 'forget', alias: 'zzz' }, 0, ['liftoff', 'spaced']],
+    ['add the title in any case writes nothing', { op: 'add', alias: 'DRIVE TARGET' }, 0, ['liftoff', 'spaced']],
+    ['rename onto the title writes nothing', { op: 'rename', from: 'liftoff', to: 'Drive Target' }, 0, ['liftoff', 'spaced']],
+    ['rename an unknown alias writes nothing', { op: 'rename', from: 'zzz', to: 'yyy' }, 0, ['liftoff', 'spaced']],
+    ['a blank add writes nothing', { op: 'add', alias: '   ' }, 0, ['liftoff', 'spaced']],
+    ['a blank rename writes nothing', { op: 'rename', from: 'liftoff', to: ' ' }, 0, ['liftoff', 'spaced']],
     ['forget spaced', { op: 'forget', alias: 'spaced' }, 1, ['liftoff']],
   ]) {
     let reply = null
@@ -189,6 +195,7 @@ async function group1(cdp) {
   check('group 1: forgetting the last alias leaves no entry for the page', entryOf(TARGET) === undefined, JSON.stringify(entryOf(TARGET)))
 
   // Neither of two edits fired together may bring back what the other removed: a name, once gone from the shard, stays gone.
+  // Two locked writes can land inside one 5 ms poll, so the shard is seen once or twice; the final list and `stays` prove both edits.
   const together = (a, b) => cdp.evaluate(`Promise.all([${[a, b].map((edit) => `window.nexus.ask('mutate', ${JSON.stringify({ op: 'editAliases', path: pagePath(RACE), edit })})`).join(', ')}]).then((rs) => rs.every((r) => r.ok))`)
   const stays = (states, name) => {
     const held = states.map((s) => s.includes(JSON.stringify(name)))
@@ -196,9 +203,9 @@ async function group1(cdp) {
   }
   await resetAliases(cdp, RACE, ['race-a', 'race-b', 'race-c'])
   let ok = false
-  const forgets = await step(cdp, 'group 1: two forgets fired together', async () => { ok = await together({ op: 'forget', alias: 'race-a' }, { op: 'forget', alias: 'race-b' }) }, { writes: aliasWrites(2, RACE) })
+  const forgets = await step(cdp, 'group 1: two forgets fired together', async () => { ok = await together({ op: 'forget', alias: 'race-a' }, { op: 'forget', alias: 'race-b' }) }, { writes: aliasWrites([1, 2], RACE) })
   check('group 1: two forgets fired together both land, and neither resurrects the other', ok && same(aliasesOf(RACE), ['race-c']) && stays(forgets.states[META_DIR], 'race-a') && stays(forgets.states[META_DIR], 'race-b'), JSON.stringify(aliasesOf(RACE)))
-  const mixed = await step(cdp, 'group 1: an add and a forget fired together', async () => { ok = await together({ op: 'add', alias: 'race-d' }, { op: 'forget', alias: 'race-c' }) }, { writes: aliasWrites(2, RACE) })
+  const mixed = await step(cdp, 'group 1: an add and a forget fired together', async () => { ok = await together({ op: 'add', alias: 'race-d' }, { op: 'forget', alias: 'race-c' }) }, { writes: aliasWrites([1, 2], RACE) })
   check('group 1: an add and a forget fired together both land, and the forgotten name never returns', ok && same(aliasesOf(RACE), ['race-d']) && stays(mixed.states[META_DIR], 'race-c'), JSON.stringify(aliasesOf(RACE)))
   check('group 1: no alias edit touched a page file', Object.entries(bodies).every(([t, b]) => pageFile(t) === b))
 
@@ -214,13 +221,12 @@ async function group1(cdp) {
     await step(cdp, `group 1: ${name}`, () => pressKey(cdp, 'Enter'), { writes: { [pagePath(SOURCE)]: md, [META_DIR]: shard }, window: 2000 })
     check(`group 1: ${name} — Drive Link reads ${reads} and the aliases ${JSON.stringify(want)}`, frontmatter(SOURCE)[LINK] === reads && same(aliasesOf(TARGET), want), JSON.stringify([frontmatter(SOURCE)[LINK], aliasesOf(TARGET)]))
   }
-  await commitLink('a Link value [[Drive Target|launch]] remembers launch', '[[Drive Target|launch]]', [1, 1], ['launch', 'other'])
-  await commitLink('the same value committed again writes nothing', '[[Drive Target|launch]]', [0, 0], ['launch', 'other'])
-  await must('remember other', editAliases(cdp, TARGET, { op: 'remember', alias: 'other' }))
+  await commitLink('a Link value [[Drive Target|launch]] adds launch at the end', '[[Drive Target|launch]]', [1, 1], ['other', 'launch'])
+  await commitLink('the same value committed again writes nothing', '[[Drive Target|launch]]', [0, 0], ['other', 'launch'])
   await commitLink('a retarget still showing launch re-remembers nothing', '[[Drive Target#Setup|launch]]', [1, 0], ['other', 'launch'])
   await commitLink('an unaliased link remembers nothing', '[[Drive Target]]', [1, 0], ['other', 'launch'])
   await commitLink('a phantom page is refused and remembers nothing', '[[Nowhere|ghost]]', [0, 0], ['other', 'launch'], '[[Drive Target]]')
-  await commitLink('a respelled alias stands newest, first', '[[Drive Target|LAUNCH]]', [1, 1], ['LAUNCH', 'other'])
+  await commitLink('a respelled alias is respelled in place', '[[Drive Target|LAUNCH]]', [1, 1], ['other', 'LAUNCH'])
 }
 
 // ── Group 2 — the Aliases pane ──────────────────────────────────────────────
@@ -257,21 +263,20 @@ async function group2(cdp, pid) {
   await draft()
   await tag(cdp, rowOf(MANAGE, 'liftoff'), 'held')
   await typeText(cdp, 'liftoff')
-  await step(cdp, 'group 2: a draft naming a held alias', () => pressKey(cdp, 'Enter'), { reflect: `!${inputOf(MANAGE)}`, writes: aliasWrites(1) })
-  check('group 2: a draft naming a held alias moves it to the end in its own row and closes, with no refusal',
-    same(aliasesOf(TARGET), ['launch', 'Q3 doc', 'roadmap', 'liftoff']) && (await cdp.evaluate(`${tagged('held')}?.textContent.trim() === 'liftoff' && !${inputOf(MANAGE)}`)) && !(await refusal(cdp)), JSON.stringify(aliasesOf(TARGET)))
+  await step(cdp, 'group 2: a draft naming a held alias', () => pressKey(cdp, 'Enter'), { reflect: `!${inputOf(MANAGE)}`, writes: aliasWrites(0) })
+  check('group 2: a draft naming a held alias keeps it in its own row and place and closes, with no refusal',
+    same(aliasesOf(TARGET), ['launch', 'liftoff', 'Q3 doc', 'roadmap']) && same(await shownIn(cdp, MANAGE), ['launch', 'liftoff', 'Q3 doc', 'roadmap']) && (await cdp.evaluate(`${tagged('held')}?.textContent.trim() === 'liftoff' && !${inputOf(MANAGE)}`)) && !(await refusal(cdp)), JSON.stringify(aliasesOf(TARGET)))
   await draft()
-  await tag(cdp, `(${inputOf(MANAGE)}).closest('[data-reveal]')`, 'respelled')
   await typeText(cdp, 'LAUNCH')
   await step(cdp, 'group 2: a draft respelling a held alias', () => pressKey(cdp, 'Enter'), { reflect: `!!${rowOf(MANAGE, 'LAUNCH')}`, writes: aliasWrites(1) })
-  check("group 2: a draft respelling a held alias stands newest at the end, in the draft's row",
-    same(aliasesOf(TARGET), ['Q3 doc', 'roadmap', 'liftoff', 'LAUNCH']) && (await cdp.evaluate(`${tagged('respelled')}?.textContent.trim() === 'LAUNCH' && !${rowOf(MANAGE, 'launch')}`)), JSON.stringify(aliasesOf(TARGET)))
+  check("group 2: a draft respelling a held alias respells it in place, and the draft closes",
+    same(aliasesOf(TARGET), ['LAUNCH', 'liftoff', 'Q3 doc', 'roadmap']) && same(await shownIn(cdp, MANAGE), ['LAUNCH', 'liftoff', 'Q3 doc', 'roadmap']) && !(await cdp.evaluate(`!!${inputOf(MANAGE)}`)), JSON.stringify([aliasesOf(TARGET), await shownIn(cdp, MANAGE)]))
 
   await draft()
   await typeText(cdp, 'drive target')
   check('group 2: typing the title marks the field aria-invalid', (await cdp.evaluate(`(${inputOf(MANAGE)}).getAttribute('aria-invalid')`)) === 'true')
   await step(cdp, 'group 2: Enter on the title', () => pressKey(cdp, 'Enter'), { writes: aliasWrites(0) })
-  check('group 2: the title is kept nowhere and the draft closes', same(aliasesOf(TARGET), ['Q3 doc', 'roadmap', 'liftoff', 'LAUNCH']) && !(await cdp.evaluate(`!!${inputOf(MANAGE)}`)))
+  check('group 2: the title is kept nowhere and the draft closes', same(aliasesOf(TARGET), ['LAUNCH', 'liftoff', 'Q3 doc', 'roadmap']) && !(await cdp.evaluate(`!!${inputOf(MANAGE)}`)))
   await draft()
   await step(cdp, 'group 2: Escape on an empty draft', () => pressKey(cdp, 'Escape'), { reflect: `!${inputOf(MANAGE)}`, writes: aliasWrites(0) })
   check('group 2: Escape on an empty draft closes it and leaves the pane open', !(await cdp.evaluate(`!!${inputOf(MANAGE)}`)) && (await cdp.evaluate(`!!${MANAGE}`)))
@@ -290,32 +295,32 @@ async function group2(cdp, pid) {
   await typeText(cdp, 'Road Map')
   await step(cdp, 'group 2: Enter renames roadmap', () => pressKey(cdp, 'Enter'), { reflect: `!!${rowOf(MANAGE, 'Road Map')}`, writes: aliasWrites(1) })
   const texts = await cdp.evaluate('window.__texts')
-  check('group 2: the rename lands in place, the label reading Road Map from the commit on', same(aliasesOf(TARGET), ['Q3 doc', 'Road Map', 'liftoff', 'LAUNCH']) && same(texts, ['Road Map']), JSON.stringify([aliasesOf(TARGET), texts]))
+  check('group 2: the rename lands in place, the label reading Road Map from the commit on', same(aliasesOf(TARGET), ['LAUNCH', 'liftoff', 'Q3 doc', 'Road Map']) && same(texts, ['Road Map']), JSON.stringify([aliasesOf(TARGET), texts]))
   await doubleClick(cdp, nameOf(MANAGE, 'Road Map'))
   await recordTexts('kept')
   await selectAll(cdp)
   await typeText(cdp, 'Drive Target')
   await step(cdp, 'group 2: a rename onto the title', () => pressKey(cdp, 'Enter'), { writes: aliasWrites(0) })
   const held = await cdp.evaluate('window.__texts')
-  check('group 2: a rename onto the title closes the field unsent, the row reading Road Map throughout', same(held, ['Road Map']) && same(aliasesOf(TARGET), ['Q3 doc', 'Road Map', 'liftoff', 'LAUNCH']), JSON.stringify(held))
+  check('group 2: a rename onto the title closes the field unsent, the row reading Road Map throughout', same(held, ['Road Map']) && same(aliasesOf(TARGET), ['LAUNCH', 'liftoff', 'Q3 doc', 'Road Map']), JSON.stringify(held))
 
   await doubleClick(cdp, nameOf(MANAGE, 'Q3 doc'))
   await selectAll(cdp)
   await typeText(cdp, 'Q4 doc')
   await step(cdp, "group 2: a double-click on another name mid-rename", () => doubleClick(cdp, nameOf(MANAGE, 'LAUNCH')), { reflect: `(${inputOf(MANAGE)})?.value === 'LAUNCH'`, writes: aliasWrites(1) })
-  check('group 2: the first rename commits and the second field opens', same(aliasesOf(TARGET), ['Q4 doc', 'Road Map', 'liftoff', 'LAUNCH']) && same(await editingIn(cdp, MANAGE), { value: 'LAUNCH', focused: true }), JSON.stringify([aliasesOf(TARGET), await editingIn(cdp, MANAGE)]))
+  check('group 2: the first rename commits and the second field opens', same(aliasesOf(TARGET), ['LAUNCH', 'liftoff', 'Q4 doc', 'Road Map']) && same(await editingIn(cdp, MANAGE), { value: 'LAUNCH', focused: true }), JSON.stringify([aliasesOf(TARGET), await editingIn(cdp, MANAGE)]))
   await step(cdp, 'group 2: Escape in a rename', () => pressKey(cdp, 'Escape'), { reflect: `!${inputOf(MANAGE)}`, writes: aliasWrites(0) })
   check('group 2: Escape in a rename closes the field and keeps the pane', !(await editingIn(cdp, MANAGE)) && (await cdp.evaluate(`!!${MANAGE}`)))
 
   await watchLeaving(cdp, rowOf(MANAGE, 'Q4 doc'))
   await step(cdp, 'group 2: × on Q4 doc', () => mouseClick(cdp, xOf(MANAGE, 'Q4 doc')), { reflect: `!${tagged('leaving')}`, writes: aliasWrites(1) })
   const gone = await leftAtOnce(cdp)
-  check('group 2: × deletes Q4 doc with no collapse, and the count follows', same(aliasesOf(TARGET), ['Road Map', 'liftoff', 'LAUNCH']) && gone.gone && gone.changed === 0 && (await countOf(cdp, 'Aliases')) === '3', JSON.stringify([aliasesOf(TARGET), gone]))
+  check('group 2: × deletes Q4 doc with no collapse, and the count follows', same(aliasesOf(TARGET), ['LAUNCH', 'liftoff', 'Road Map']) && gone.gone && gone.changed === 0 && (await countOf(cdp, 'Aliases')) === '3', JSON.stringify([aliasesOf(TARGET), gone]))
   await doubleClick(cdp, nameOf(MANAGE, 'liftoff'))
   await selectAll(cdp)
   await typeText(cdp, 'discarded')
   await step(cdp, 'group 2: × on the row being renamed', () => mouseClick(cdp, `(${inputOf(MANAGE)}).closest('[data-reveal]').querySelector('[aria-label="Delete alias"]')`), { reflect: `!${inputOf(MANAGE)}`, writes: aliasWrites(1) })
-  check('group 2: × on the row being renamed deletes it, closes its field, and writes none of its text', same(aliasesOf(TARGET), ['Road Map', 'LAUNCH']) && !(await editingIn(cdp, MANAGE)), JSON.stringify(aliasesOf(TARGET)))
+  check('group 2: × on the row being renamed deletes it, closes its field, and writes none of its text', same(aliasesOf(TARGET), ['LAUNCH', 'Road Map']) && !(await editingIn(cdp, MANAGE)), JSON.stringify(aliasesOf(TARGET)))
 
   let menu = []
   await step(cdp, "group 2: the row menu's Rename", () => chooseNative(cdp, pid, rowOf(MANAGE, 'LAUNCH'), { downs: 1, seen: async () => { menu = menuRows(pid) } }), { reflect: `!!${inputOf(MANAGE)}`, writes: aliasWrites(0), window: 2500 })
@@ -324,6 +329,30 @@ async function group2(cdp, pid) {
   await pressKey(cdp, 'Escape')
   await step(cdp, "group 2: the row menu's Delete", () => chooseNative(cdp, pid, rowOf(MANAGE, 'Road Map'), { downs: 2 }), { reflect: `!${rowOf(MANAGE, 'Road Map')}`, writes: aliasWrites(1), window: 2500 })
   check("group 2: the row menu's Delete deletes Road Map, and the count reads 1", same(aliasesOf(TARGET), ['LAUNCH']) && (await countOf(cdp, 'Aliases')) === '1', JSON.stringify(aliasesOf(TARGET)))
+
+  // Reorder: a drag, a release on its own slot, the keyboard, and a press while a field is open.
+  await resetAliases(cdp, TARGET, ['launch', 'liftoff', 'Q3 doc', 'roadmap'])
+  await until('the reset pane', async () => same(await shownIn(cdp, MANAGE), ['launch', 'liftoff', 'Q3 doc', 'roadmap']))
+  let chrome = null
+  await step(cdp, 'group 2: a drag of roadmap above liftoff', () => drag(cdp, lineRowOf(MANAGE, 'roadmap'), lineRowOf(MANAGE, 'liftoff'), async () => {
+    chrome = await dragChrome(cdp, MANAGE)
+    await shot(cdp, 'aliases-pane-drag')
+  }), { reflect: `${rows(MANAGE)}[1]?.textContent.trim() === 'roadmap'`, writes: aliasWrites(1) })
+  check('group 2: the drag draws the drop line and ghost mid-drag, and writes the order once', chrome?.line && chrome?.ghost && same(aliasesOf(TARGET), ['launch', 'roadmap', 'liftoff', 'Q3 doc']) && same(await shownIn(cdp, MANAGE), ['launch', 'roadmap', 'liftoff', 'Q3 doc']), JSON.stringify([chrome, aliasesOf(TARGET), await shownIn(cdp, MANAGE)]))
+  const own = await boxOf(cdp, lineRowOf(MANAGE, 'liftoff'))
+  await step(cdp, 'group 2: a drag released on its own slot', () => sweep(cdp, own, { x: own.x, y: own.y + 8 }, { steps: 4 }), { writes: aliasWrites(0) })
+  check('group 2: a release on its own slot leaves the order', same(aliasesOf(TARGET), ['launch', 'roadmap', 'liftoff', 'Q3 doc']) && !(await editingIn(cdp, MANAGE)), JSON.stringify(aliasesOf(TARGET)))
+  await activate(cdp, pid)
+  await cdp.evaluate(`(${lineRowOf(MANAGE, 'Q3 doc')}).focus()`)
+  await step(cdp, 'group 2: Space, ArrowUp, Space on Q3 doc', async () => {
+    for (const k of [' ', 'ArrowUp', ' ']) await pressKey(cdp, k)
+  }, { reflect: `${rows(MANAGE)}[2]?.textContent.trim() === 'Q3 doc'`, writes: aliasWrites(1) })
+  const spoken = await cdp.evaluate(`document.querySelector('[role="status"][aria-live="assertive"]')?.textContent ?? null`)
+  check('group 2: the keyboard moves Q3 doc above liftoff and announces it', spoken === 'Moved Q3 doc.' && same(aliasesOf(TARGET), ['launch', 'roadmap', 'Q3 doc', 'liftoff']), JSON.stringify([spoken, aliasesOf(TARGET)]))
+  await doubleClick(cdp, nameOf(MANAGE, 'launch'))
+  chrome = null
+  await step(cdp, 'group 2: a drag while renaming', () => drag(cdp, lineRowOf(MANAGE, 'liftoff'), lineRowOf(MANAGE, 'roadmap'), async () => { chrome = await dragChrome(cdp, MANAGE) }), { writes: aliasWrites(0) })
+  check('group 2: a drag while renaming draws no drop line and writes nothing', chrome && !chrome.line && same(aliasesOf(TARGET), ['launch', 'roadmap', 'Q3 doc', 'liftoff']), JSON.stringify([chrome, aliasesOf(TARGET)]))
   await escapeAll(cdp)
   await closePanel(cdp)
 
@@ -413,28 +442,38 @@ async function group3(cdp, pid) {
   check('group 3: Escape in an alias field returns the caret to the slot with the picker open', (await cdp.evaluate(inSlot(V))) && !(await editingIn(cdp, PICKER)) && (await shownIn(cdp, PICKER)).length === 3)
 
   await openStage(cdp, V)
+  let chrome = null
+  await step(cdp, 'group 3: a drag of Q3 doc to the top of the picker', () => drag(cdp, lineRowOf(PICKER, 'Q3 doc'), lineRowOf(PICKER, 'launch'), async () => { chrome = await dragChrome(cdp, PICKER) }), { reflect: `${rows(PICKER)}[0]?.textContent.trim() === 'Q3 doc'`, writes: writes1 })
+  await sleep(400)
+  list = ['Q3 doc', 'launch', 'lift-off']
+  check('group 3: the picker drag writes the order, the editor keeps the caret in the slot, and the body is unchanged', chrome?.line && same(aliasesOf(TARGET), list) && same(await shownIn(cdp, PICKER), list) && (await cdp.evaluate(inSlot(V))) && (await docOf(cdp, V)) === blank, JSON.stringify([chrome, aliasesOf(TARGET), await docOf(cdp, V)]))
+  await openStage(cdp, V, TARGET, 'l')
+  chrome = null
+  await step(cdp, 'group 3: a drag in a filtered picker', () => drag(cdp, lineRowOf(PICKER, 'lift-off'), lineRowOf(PICKER, 'launch'), async () => { chrome = await dragChrome(cdp, PICKER) }), { writes })
+  check('group 3: a filtered picker draws no drop line, writes nothing, and inserts nothing', chrome && !chrome.line && same(aliasesOf(TARGET), list) && (await docOf(cdp, V)) === `[[${TARGET}|l]]`, JSON.stringify([chrome, aliasesOf(TARGET), await docOf(cdp, V)]))
+
+  await openStage(cdp, V)
   await pressKey(cdp, 'ArrowDown')
-  const pick = await step(cdp, 'group 3: Down then Enter', () => pressKey(cdp, 'Enter'), { reflect: `${V}.state.doc.toString().includes('[[Drive Target|lift-off]]')`, writes: writes1 })
-  list = ['lift-off', 'launch', 'Q3 doc']
-  check('group 3: a keyboard pick inserts the second alias at once, and authoring it moves it first', pick.domMs !== null && pick.domMs < 150 && same(aliasesOf(TARGET), list), JSON.stringify([pick.domMs, aliasesOf(TARGET)]))
+  const pick = await step(cdp, 'group 3: Down then Enter', () => pressKey(cdp, 'Enter'), { reflect: `${V}.state.doc.toString().includes('[[Drive Target|launch]]')`, writes })
+  check('group 3: a keyboard pick inserts the second alias at once, and the used alias keeps its place', pick.domMs !== null && pick.domMs < 150 && same(aliasesOf(TARGET), list), JSON.stringify([pick.domMs, aliasesOf(TARGET)]))
 
   await openStage(cdp, V)
   await watchLeaving(cdp, rowOf(PICKER, 'Q3 doc'))
   await step(cdp, 'group 3: × on Q3 doc in the picker', () => mouseClick(cdp, xOf(PICKER, 'Q3 doc')), { reflect: `!${tagged('leaving')}`, writes: writes1 })
-  list = ['lift-off', 'launch']
+  list = ['launch', 'lift-off']
   const gone = await leftAtOnce(cdp)
   check('group 3: × deletes Q3 doc with no collapse, inserts nothing, and the editor keeps the caret in the slot', same(aliasesOf(TARGET), list) && gone.gone && gone.changed === 0 && (await docOf(cdp, V)) === blank && (await cdp.evaluate(inSlot(V))), JSON.stringify([aliasesOf(TARGET), gone]))
   await step(cdp, "group 3: the picker's +", () => mouseClick(cdp, addOf(PICKER), { settle: 300 }), { reflect: `document.activeElement === ${inputOf(PICKER)}`, writes, window: 900 })
   check('group 3: + drafts a focused field in the picker, the picker stays, and the slot keeps its pipe', (await editingIn(cdp, PICKER))?.focused && (await docOf(cdp, V)) === blank)
   await typeText(cdp, 'zeta')
   await step(cdp, "group 3: Enter in the picker's draft", () => pressKey(cdp, 'Enter'), { reflect: inSlot(V), writes: writes1 })
-  list = ['lift-off', 'launch', 'zeta']
+  list = ['launch', 'lift-off', 'zeta']
   check('group 3: the add lands at the end without inserting, and the caret is back in the slot', same(aliasesOf(TARGET), list) && (await docOf(cdp, V)) === blank && (await cdp.evaluate(inSlot(V))) && same(await shownIn(cdp, PICKER), list), JSON.stringify([aliasesOf(TARGET), await shownIn(cdp, PICKER)]))
   await openStage(cdp, V, TARGET, 'l')
   await mouseClick(cdp, addOf(PICKER), { settle: 300 })
   await typeText(cdp, 'omega')
   await step(cdp, 'group 3: an add under the filter l', () => pressKey(cdp, 'Enter'), { reflect: inSlot(V, 'l'), writes: writes1 })
-  list = ['lift-off', 'launch', 'zeta', 'omega']
+  list = ['launch', 'lift-off', 'zeta', 'omega']
   check("group 3: an add the filter doesn't match lands without showing", same(aliasesOf(TARGET), list) && !(await shownIn(cdp, PICKER)).includes('omega') && (await cdp.evaluate(inSlot(V, 'l'))), JSON.stringify([aliasesOf(TARGET), await shownIn(cdp, PICKER)]))
 
   await openStage(cdp, V)
@@ -443,7 +482,7 @@ async function group3(cdp, pid) {
   check("group 3: the picker's row menu reads Rename · Delete, and Rename opens the field with the picker open", same(menu, ['Rename', 'Delete']) && (await editingIn(cdp, PICKER))?.value === 'launch', JSON.stringify(menu))
   await pressKey(cdp, 'Escape')
   await step(cdp, "group 3: the picker row menu's Delete", () => chooseNative(cdp, pid, rowOf(PICKER, 'zeta'), { downs: 2 }), { reflect: `!${rowOf(PICKER, 'zeta')}`, writes: writes1, window: 2500 })
-  list = ['lift-off', 'launch', 'omega']
+  list = ['launch', 'lift-off', 'omega']
   check("group 3: the picker row menu's Delete deletes zeta and inserts nothing", same(aliasesOf(TARGET), list) && (await docOf(cdp, V)) === blank, JSON.stringify(aliasesOf(TARGET)))
 
   await openStage(cdp, V)
@@ -462,8 +501,8 @@ async function group3(cdp, pid) {
   await typeText(cdp, 'fresh one')
   await settles(async () => !(await portalOpen(cdp)), 2000)
   await step(cdp, 'group 3: leaving an authored alias slot', () => cdp.evaluate(`(() => { const v = ${V}; v.dispatch({ selection: { anchor: v.state.doc.length } }) })()`), { writes: writes1 })
-  list = ['fresh one', ...list]
-  check('group 3: leaving an authored alias slot remembers it first', same(aliasesOf(TARGET), list), JSON.stringify(aliasesOf(TARGET)))
+  list = [...list, 'fresh one']
+  check('group 3: leaving an authored alias slot adds it at the end', same(aliasesOf(TARGET), list), JSON.stringify(aliasesOf(TARGET)))
 
   // TextPane: the same stage inside a Text value's editor.
   await home(cdp)
@@ -476,8 +515,8 @@ async function group3(cdp, pid) {
   check('group 3: TextPane: the add lands, the pane stays, and the caret is back in its slot', same(aliasesOf(TARGET), [...list, 'pane alias']) && (await cdp.evaluate(`!!document.querySelector('${PANE}') && ${inSlot(PANE_VIEW)}`)), JSON.stringify(aliasesOf(TARGET)))
   await step(cdp, 'group 3: TextPane: × deletes pane alias', () => mouseClick(cdp, xOf(PICKER, 'pane alias')), { reflect: `!${rowOf(PICKER, 'pane alias')}`, writes: writes1 })
   check('group 3: TextPane: × deletes it and the pane stays', same(aliasesOf(TARGET), list) && (await cdp.evaluate(`!!document.querySelector('${PANE}')`)))
-  await step(cdp, 'group 3: TextPane: Enter picks', () => pressKey(cdp, 'Enter'), { reflect: `${PANE_VIEW}.state.doc.toString().includes('[[Drive Target|fresh one]]')`, writes })
-  check('group 3: TextPane: Enter picks the first alias into the pane', (await docOf(cdp, PANE_VIEW)).includes('[[Drive Target|fresh one]]'))
+  await step(cdp, 'group 3: TextPane: Enter picks', () => pressKey(cdp, 'Enter'), { reflect: `${PANE_VIEW}.state.doc.toString().includes('[[Drive Target|launch]]')`, writes })
+  check('group 3: TextPane: Enter picks the first alias into the pane', (await docOf(cdp, PANE_VIEW)).includes('[[Drive Target|launch]]'))
   await pressKey(cdp, 'Escape')
   await until('the TextPane closed', () => cdp.evaluate(`!document.querySelector('${PANE}')`))
   await must('Drive Host restored', ask(cdp, 'mutate', { op: 'setProperty', path: pagePath(HOST), propertyId: ids[NOTES], value: { kind: 'text', value: 'host notes' } }))
@@ -488,7 +527,7 @@ async function group3(cdp, pid) {
   await typeText(cdp, 'zzq')
   await settles(async () => !(await cdp.evaluate(`!!${PICKER}`)), 2000)
   await step(cdp, 'group 3: TextPane: Enter with the caret in an authored slot', () => pressKey(cdp, 'Enter'), { reflect: `!document.querySelector('${PANE}')`, writes: writes1, window: 2000 })
-  check('group 3: TextPane: Enter closes the pane, the value lands, and the authored alias is remembered first', (await settles(async () => String(frontmatter(HOST)[NOTES]).includes(`[[${TARGET}|zzq]]`))) && same(aliasesOf(TARGET), ['zzq', ...list]), JSON.stringify([frontmatter(HOST)[NOTES], aliasesOf(TARGET)]))
+  check('group 3: TextPane: Enter closes the pane, the value lands, and the authored alias joins the end', (await settles(async () => String(frontmatter(HOST)[NOTES]).includes(`[[${TARGET}|zzq]]`))) && same(aliasesOf(TARGET), [...list, 'zzq']), JSON.stringify([frontmatter(HOST)[NOTES], aliasesOf(TARGET)]))
   await must('forget zzq', editAliases(cdp, TARGET, { op: 'forget', alias: 'zzq' }))
   await must('Drive Host restored', ask(cdp, 'mutate', { op: 'setProperty', path: pagePath(HOST), propertyId: ids[NOTES], value: { kind: 'text', value: 'host notes' } }))
 
@@ -514,8 +553,8 @@ async function group3(cdp, pid) {
   await typeText(cdp, 'cell alias')
   await step(cdp, 'group 3: table cell: + adds cell alias', () => pressKey(cdp, 'Enter'), { reflect: inSlot(CELL_VIEW), writes: writes1 })
   check("group 3: table cell: the add lands and the caret is back in the cell's slot", same(aliasesOf(TARGET), [...list, 'cell alias']) && (await cdp.evaluate(inSlot(CELL_VIEW))), JSON.stringify(aliasesOf(TARGET)))
-  await step(cdp, 'group 3: table cell: Enter picks', () => pressKey(cdp, 'Enter'), { reflect: `${CELL_VIEW}.state.doc.toString().includes('[[Drive Target|fresh one]]')`, writes })
-  check('group 3: table cell: Enter picks the first alias into the cell', (await docOf(cdp, CELL_VIEW)).includes('[[Drive Target|fresh one]]'))
+  await step(cdp, 'group 3: table cell: Enter picks', () => pressKey(cdp, 'Enter'), { reflect: `${CELL_VIEW}.state.doc.toString().includes('[[Drive Target|launch]]')`, writes })
+  check('group 3: table cell: Enter picks the first alias into the cell', (await docOf(cdp, CELL_VIEW)).includes('[[Drive Target|launch]]'))
   await pressKey(cdp, 'Escape')
 }
 
