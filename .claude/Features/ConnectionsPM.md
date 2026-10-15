@@ -56,12 +56,12 @@ One picker (`Core/MarkdownPM/Autocomplete/autocomplete.ts`, driven by `useConnec
 
 - **Inside `[[ ]]`** — Pages nexus-wide, matched by title prefix; an empty `[[` browses them alphabetically.
 - **After a `#` or a `§` in a title or a markdown link's target** — the headings of the page that title names, read from the content index and nested by level; `[[#` and `](#` list the headings of the page being written in. Headings can also be assigned via the initial connection autocomplete panel via the sliding secondary panel accessed from clicking a hovered pages trailing chevron.
-- **After a pipe** — the aliases this Page has been given before. Accepting a page whose aliases are worth offering opens the list without a keystroke when **Automatically Suggest Existing Aliases When Linking A Page** is on. Each row carries a hover-revealed × that forgets that alias, and an alias names no location of its own, so it wears no trail.
+- **After a pipe** — the aliases this Page has been given before. Accepting a page whose aliases are worth offering opens the list without a keystroke when **Automatically Suggest Existing Aliases When Linking A Page** is on. Each row carries a × that deletes that alias, and an alias names no location of its own, so it wears no trail.
 - **Inside a markdown link's `( )`** — Pages, matched by the target's page half; accepting one encodes the target, fills an empty label with the page's title, and rests the caret past the link. A heading accepted after the `#` is encoded the same way and fills an empty label with its own text.
 
 **Remove Title On Link Change** decides whether a pick that re-aims a link, in either syntax, drops the alias or label it was showing. The pick re-aims the link as it read when the picker opened on it, and the shown text drops only where that link pointed at a page or an address, so a label or alias typed while the link is being written stays.
 
-**Alias memory.** A Page remembers the aliases it has been given. The list is written when an alias is authored rather than derived by scanning bodies, so forgetting one sticks. It is keyed by page id, so it survives a rename, and lives in the page's metadata, so it travels with the Nexus — the alias itself is on the page in universal syntax, and losing the record costs a suggestion, never a link.
+**Alias memory.** A Page remembers the aliases it has been given. The list is written where an alias is authored — a body's alias slot, or a Link property value whose wikilink comes to show one — rather than derived by scanning bodies, and it is managed from one list: the body picker's alias stage and the page panel's Aliases row show the same rows. × or the row menu's Delete deletes an alias, a double-click or the row menu's Rename renames it in place, **+** adds one at the end, and in the body picker a single click inserts once the double-click window passes; link text is never rewritten. The order is the user's: a used alias keeps its place, a new one joins the end, and a drag in either list reorders it. An alias is one name whatever its case, the newest spelling standing, and the page's own title is never one. The host applies each edit to the stored list. It is keyed by page id, so it survives a rename, and lives in the page's metadata, so it travels with the Nexus — the alias itself is on the page in universal syntax, and losing the record costs a suggestion, never a link.
 
 ### In-Page Heading Resolution
 
@@ -77,5 +77,4 @@ One picker (`Core/MarkdownPM/Autocomplete/autocomplete.ts`, driven by `useConnec
 
 - **Duplicate disambiguation** — id-scoping so a connection to an ambiguous title can pick its target inline.
 - **Backlinks** — a surface listing every Page that links to the current one. The content index records each relationship with its kind — body link, citation, embed, or frontmatter value — and its occurrence count, so the surface is a read over those rows; the surface doesn't exist.
-- **Alias management** — curating a Page's remembered aliases in one place rather than forgetting them one at a time.
 - **Wider targets** — Tasks and Events, and block anchors (`#^`).
