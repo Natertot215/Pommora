@@ -98,15 +98,16 @@ export function parseConnectionText(raw: string): ConnectionParts | null {
   return { title, ...(heading ? { heading } : {}), ...(alias ? { alias } : {}) }
 }
 
-/** Whether a link's alias slot can carry `alias`: the grammar ends the slot at `]` and the line. */
-export const aliasFits = (alias: string): boolean => !/[\]\r\n]/.test(alias)
+/** A name a page can hold as an alias: one a link's alias slot carries — not blank, within the slot's 255 characters, without `]` or a line break — and never `target` itself. */
+export const keepsAlias = (name: string, target: string): boolean =>
+  name.trim() !== '' &&
+  name.length <= 255 &&
+  !/[\]\r\n]/.test(name) &&
+  normalizeTitle(name) !== normalizeTitle(target)
 
 export function connectionText(title: string, alias?: string, heading?: string): string {
   const target = heading ? `${title}#${heading}` : title
-  const named =
-    alias && aliasFits(alias) && normalizeTitle(alias) !== normalizeTitle(target)
-      ? alias
-      : undefined
+  const named = alias && keepsAlias(alias, target) ? alias : undefined
   return named ? `[[${target}|${named}]]` : `[[${target}]]`
 }
 

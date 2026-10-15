@@ -1,6 +1,6 @@
 import { persist } from '../Interface/Notifications/notifications'
 import { useMemo } from 'react'
-import { ALIAS_ROW_MENU } from '../Actions/aliasRowMenu'
+import { popAliasRowMenu } from '../Actions/aliasRowMenu'
 import { gripMenuItems } from '../Actions/gripMenu'
 import { pagePickTree } from '../Actions/pickTree'
 import { valueOr } from '../Contract/result'
@@ -100,7 +100,7 @@ function buildEditorHost(
       grip: (ctx) => popMenu(gripMenuItems(ctx)),
       table: (ctx) => popMenu(tableMenuItems(ctx)),
       citation: (ctx) => popMenu(citationMenuModel(ctx)),
-      alias: () => popMenu(ALIAS_ROW_MENU),
+      alias: popAliasRowMenu,
       format: inert
         ? undefined
         : (req) =>

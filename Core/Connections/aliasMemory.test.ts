@@ -108,6 +108,10 @@ describe('tidying', () => {
   it('a page holds no name a link can’t carry', () => {
     expect(heldAliases(['a]b', 'x', 'two\nlines'], 'Alpha')).toEqual(['x'])
   })
+
+  it('a page holds no blank name', () => {
+    expect(heldAliases(['', '  ', 'x'], 'Alpha')).toEqual(['x'])
+  })
 })
 
 describe('a name a link can’t carry', () => {

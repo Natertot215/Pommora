@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   connectionText,
   expressibleInLink,
+  keepsAlias,
   linkOccurrences,
   parseConnectionText,
 } from './connections'
@@ -92,5 +93,20 @@ describe('connectionText and expressibleInLink', () => {
     expect(expressibleInLink('x]')).toBe(false)
     expect(expressibleInLink('A]]B')).toBe(false)
     expect(expressibleInLink('A]B')).toBe(true)
+  })
+})
+
+describe('keepsAlias', () => {
+  it('refuses a blank name, one past the slot’s 255 characters, and the target', () => {
+    expect(keepsAlias('', 'Alpha')).toBe(false)
+    expect(keepsAlias('  ', 'Alpha')).toBe(false)
+    expect(keepsAlias('x'.repeat(256), 'Alpha')).toBe(false)
+    expect(keepsAlias('x'.repeat(255), 'Alpha')).toBe(true)
+    expect(keepsAlias('alpha', 'Alpha')).toBe(false)
+  })
+
+  it('connectionText drops an alias it refuses', () => {
+    expect(connectionText('Alpha', '   ')).toBe('[[Alpha]]')
+    expect(connectionText('Alpha', 'x'.repeat(256))).toBe('[[Alpha]]')
   })
 })

@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { index, op } from '../Files/decoders'
 import { normalizeTitle } from '../Paths/caseFold'
-import { aliasFits } from './connections'
+import { keepsAlias } from './connections'
 
 const alias = z.string()
 
@@ -12,10 +12,6 @@ export const aliasEdit = z.discriminatedUnion('op', [
   op('forget', { alias }),
 ])
 export type AliasEdit = z.infer<typeof aliasEdit>
-
-/** A name a page can hold as an alias: one a link's alias slot carries, and never the page's own title. */
-export const keepsAlias = (name: string, title: string): boolean =>
-  aliasFits(name) && normalizeTitle(name) !== normalizeTitle(title)
 
 /** One alias is one name whatever its case, and a name `keepsAlias` refuses is never one; a list breaking either rule reads tidied, and its next edit stores it so. */
 export function heldAliases(worn: readonly string[], title: string): string[] {
@@ -35,7 +31,7 @@ export function applyAliasEdit(worn: readonly string[], e: AliasEdit, title: str
   const key = normalizeTitle(named)
   const others = held.filter((a) => normalizeTitle(a) !== key)
   if (e.op === 'forget') return others
-  if (!named || !keepsAlias(named, title)) return held
+  if (!keepsAlias(named, title)) return held
   switch (e.op) {
     case 'add':
       return others.length < held.length

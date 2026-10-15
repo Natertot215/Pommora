@@ -139,7 +139,7 @@ export function AutocompletePane({
       onToggle={() => onToggleHeading(row.value)}
       active={i === v.index}
       wrap={(node) => (
-        // biome-ignore lint/a11y/noStaticElementInteractions: commits on mousedown as a page row does; an alias row's click waits out the double-click window
+        // biome-ignore lint/a11y/noStaticElementInteractions: commits on mousedown as a page row does
         <div
           ref={i === v.index ? keepInView : undefined}
           onMouseDown={(e) => {

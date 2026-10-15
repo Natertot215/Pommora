@@ -48,7 +48,7 @@ export function caretGeometry(view: EditorView, pos: number): CaretGeometry | nu
 
 const CARET_PANE = 'mdpm-caret-pane'
 
-/** Whether focus sits, or is moving, inside an editor's own caret pane. */
+/** Whether focus sits, or is moving, inside a caret pane. */
 export const inCaretPane = (el: EventTarget | null): boolean =>
   el instanceof Element && el.closest(`.${CARET_PANE}`) !== null
 

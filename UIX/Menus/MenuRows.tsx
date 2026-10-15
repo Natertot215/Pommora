@@ -266,6 +266,25 @@ export function FootingCreate({
   )
 }
 
+/** A row's ×: it keeps the focus where it is, so a field beside it that commits on blur drops its edit instead. */
+export function RowRemove({
+  ariaLabel,
+  onClick,
+}: {
+  ariaLabel: string
+  onClick: () => void
+}): React.JSX.Element {
+  return (
+    <AccessoryButton
+      icon="x"
+      size="control"
+      ariaLabel={ariaLabel}
+      onMouseDown={keepFocus}
+      onClick={onClick}
+    />
+  )
+}
+
 export function AccessoryButton({
   icon,
   size,

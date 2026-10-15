@@ -11,6 +11,7 @@ import type { EditorView } from '@codemirror/view'
 import { resting } from '@pommora/uix/Fields/fields.css'
 import { firePointer, stubRect } from '@pommora/uix/Utilities/pointerHarness'
 import { type EditorHost, heldPage } from '../api'
+import { paneHeld } from '../Menus/caretPane'
 import type { ConnectionsApi } from '../Links/connectionsApi'
 import { buildPageIndex } from '../../Connections/pageIndex'
 import {
@@ -291,6 +292,94 @@ describe('the body picker’s alias list', () => {
       )
     })
     expect(input()?.value).toBe('Q3 doc')
+  })
+
+  const openOne = async (body = '[[Alpha|]]'): Promise<EditorView> => {
+    stubEditorBridge()
+    const view = await mountEditor({
+      initialBody: body,
+      connections: conn,
+      host: { aliases: { p1: ['the plan'] } },
+    })
+    vi.spyOn(view, 'coordsAtPos').mockReturnValue({ left: 10, right: 10, top: 10, bottom: 20 })
+    await act(async () => {
+      view.focus()
+      view.dispatch({ selection: { anchor: 8 } })
+    })
+    return view
+  }
+  const plus = (): HTMLElement => document.querySelector('[aria-label="Add alias"]') as HTMLElement
+  const xOf = (text: string): HTMLElement =>
+    rowOf(text).querySelector('[aria-label="Delete alias"]') as HTMLElement
+
+  it('with a draft open, × on the only alias keeps the pane and the draft, and Enter adds it back in the slot', async () => {
+    const view = await openOne()
+    const edit = vi.spyOn(harnessState().host.aliases, 'edit')
+    await act(async () => plus().click())
+    const draft = input() as HTMLInputElement
+    draft.value = 'roadmap'
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] })
+    await act(async () => xOf('the plan').click())
+    await act(async () => vi.advanceTimersByTime(1000))
+    expect(edit).toHaveBeenCalledWith('p1', { op: 'forget', alias: 'the plan' })
+    expect(document.querySelector('.mdpm-ac')).toBeTruthy()
+    expect(input()).toBe(draft)
+    expect(draft.value).toBe('roadmap')
+    await key(draft, 'Enter')
+    await act(async () => vi.advanceTimersByTime(0))
+    expect(edit).toHaveBeenCalledWith('p1', { op: 'add', alias: 'roadmap' })
+    expect(view.hasFocus).toBe(true)
+    expect(view.state.field(paneHeld)).toBe(false)
+    expect(view.state.doc.toString()).toBe('[[Alpha|]]')
+    expect(view.state.selection.main.head).toBe(8)
+  })
+
+  it('with a rename open, an outside forget emptying the list ends the edit back in the slot', async () => {
+    const view = await openOne()
+    await act(async () => {
+      nameOf('the plan').dispatchEvent(new MouseEvent('dblclick', { bubbles: true, detail: 2 }))
+    })
+    expect(view.state.field(paneHeld)).toBe(true)
+    await act(async () => {
+      await harnessState().host.aliases.edit('p1', { op: 'forget', alias: 'the plan' })
+    })
+    await settle()
+    expect(input()).toBeNull()
+    expect(view.state.field(paneHeld)).toBe(false)
+    expect(view.hasFocus).toBe(true)
+    expect(view.state.doc.toString()).toBe('[[Alpha|]]')
+    expect(view.state.selection.main.head).toBe(8)
+  })
+
+  it('a remount of the list under an open field releases the hold', async () => {
+    const view = await openOne()
+    await act(async () => plus().click())
+    expect(view.state.field(paneHeld)).toBe(true)
+    await act(async () => {
+      view.dispatch({ changes: { from: 0, insert: 'x ' } })
+    })
+    await settle()
+    expect(view.state.field(paneHeld)).toBe(false)
+  })
+
+  it.each([
+    ['+', () => plus().click()],
+    [
+      'the row menu',
+      () =>
+        itemOf('Q3 doc').dispatchEvent(
+          new MouseEvent('contextmenu', { bubbles: true, cancelable: true }),
+        ),
+    ],
+    ['× on another row', () => xOf('Q3 doc').click()],
+  ])('a click insert pending when %s is pressed inserts nothing', async (_, press) => {
+    const view = await openPicker({ alias: async () => null })
+    vi.spyOn(harnessState().host.aliases, 'edit').mockResolvedValue(true)
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] })
+    await click(itemOf('the plan'), 1)
+    await act(async () => press())
+    await act(async () => vi.advanceTimersByTime(PICK_WAIT))
+    expect(view.state.doc.toString()).toBe('[[Alpha|]]')
   })
 
   const lineRows = (): HTMLElement[] => [

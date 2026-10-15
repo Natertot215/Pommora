@@ -110,7 +110,7 @@ Every alias write becomes an instruction — add, rename, move, or forget — se
   - [x] Task 3-6
   - [x] Task 3-7
   - [x] Task 3-8
-  - [ ] Task 3-9
+  - [x] Task 3-9
   - [ ] Review Checkpoint
 - [ ] `[Visual Pass: the drive's screenshots of the Aliases pane and the body picker go to Nathan, whose eyes are the one check awaiting]`
 - [ ] **Phase 4** — Documentation
@@ -2076,10 +2076,10 @@ A drop swallows its release click, so a drag never arms the click insert; a doub
 
 **CHANGE**
 
-- [ ] In `aliasPicker.test.tsx`, add and watch fail: with a draft open, × on the only alias keeps the pane open with the draft and its text, and Enter adds it with the caret back in the slot; with a rename open, an outside forget emptying the list ends the edit with the caret in the slot and `paneHeld` false; a remount of the list under an open field releases the hold; a single click followed within `PICK_DELAY_MS` by +, the row menu, or × on another row inserts nothing.
-- [ ] In `connections`' or `aliasMemory`'s tests, add and watch fail: `keepsAlias` refuses a blank or whitespace name and a 256-character name; `heldAliases(['', '  ', 'x'], 'Alpha')` reads `['x']`; `connectionText` drops such an alias.
-- [ ] Apply the diffs below, and repoint every importer of `aliasFits` and `keepsAlias`.
-- [ ] Run the Alias Drive's groups 1–3.
+- [x] In `aliasPicker.test.tsx`, add and watch fail: with a draft open, × on the only alias keeps the pane open with the draft and its text, and Enter adds it with the caret back in the slot; with a rename open, an outside forget emptying the list ends the edit with the caret in the slot and `paneHeld` false; a remount of the list under an open field releases the hold; a single click followed within `PICK_DELAY_MS` by +, the row menu, or × on another row inserts nothing.
+- [x] In `connections`' or `aliasMemory`'s tests, add and watch fail: `keepsAlias` refuses a blank or whitespace name and a 256-character name; `heldAliases(['', '  ', 'x'], 'Alpha')` reads `['x']`; `connectionText` drops such an alias.
+- [x] Apply the diffs below, and repoint every importer of `aliasFits` and `keepsAlias`.
+- [x] Run the Alias Drive's groups 1–3.
 
 **AFTER**
 
@@ -2154,10 +2154,10 @@ A drop swallows its release click, so a drag never arms the click insert; a doub
 
 **VERIFY**
 
-- [ ] The new cases are green, each red without its change; `PropertyPanel`, `OptionEditor`, `FilterFrame`, and `ExclusionRows` tests stay green.
-- [ ] The Alias Drive's groups 1–3 pass.
-- [ ] Run the gates, then commit.
-- [ ] Check for unnecessary code or mistakes.
+- [x] The new cases are green, each red without its change; `PropertyPanel`, `OptionEditor`, `FilterFrame`, and `ExclusionRows` tests stay green.
+- [x] The Alias Drive's groups 1–3 pass.
+- [x] Run the gates, then commit.
+- [x] Check for unnecessary code or mistakes.
 
 #### Review Checkpoint
 
