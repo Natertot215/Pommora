@@ -43,7 +43,7 @@ Every alias write becomes an instruction — add, rename, move, or forget — se
 | `excluded-directories.css.ts` • File | Excluded Directories' field list: its column, row, and field. | `Core/Settings/excluded-directories.css.ts` |
 | `keepFocus` • Function | A press that leaves the focus where it is unless it lands in a field, shared by every control that mustn't commit a field it sits beside. | `UIX/Interactions/shared.ts` |
 | `AliasList.tsx` • File | `AliasList`, the one alias list the body picker and the Aliases pane render, and `AliasHost`, what it edits through. | `Core/MarkdownPM/Autocomplete/AliasList.tsx` |
-| `ALIAS_ROW_MENU` / `AliasRowAction` • Constant, Type | An alias row's menu: Rename, then Delete. | `Core/Actions/aliasRowMenu.ts` |
+| `aliasRowMenu.ts` • File | An alias row's menu — Rename, then Delete — its `AliasRowAction`, and `popAliasRowMenu`, the one way to pop it. | `Core/Actions/aliasRowMenu.ts` |
 | `menus.alias` • Host Member | The editor's way to open an alias row's menu. | `Core/MarkdownPM/api.ts` |
 | `inCaretPane` / `paneHeld` / `holdPane` • Function, State | Whether focus sits in an editor's own caret pane, and the editor holding its place while an edit runs there. | `Core/MarkdownPM/Menus/caretPane.tsx` |
 | `AliasesRow.tsx` • File | `AliasesRow`, the page panel's row over `AliasList`. | `Core/Pages/AliasesRow.tsx` |
@@ -51,7 +51,6 @@ Every alias write becomes an instruction — add, rename, move, or forget — se
 | `Alias Drive/live-drive.mjs` • File | The live drive of the alias lists, the body picker, Excluded Directories, the option editor, and Filter, asserting each gesture's writes and recording its cost. | `.claude/scripts/Alias Drive/` |
 | `keepsAlias` • Function | Whether a page can hold a name as an alias: one a link's slot carries, never its title — read by `connectionText`, the host, and the list's dim. | `Core/Connections/connections.ts` |
 | `RowRemove` • Component | A row's × that keeps the focus, beside `FootingCreate`. | `UIX/Menus/MenuRows.tsx` |
-| `popAliasRowMenu` • Function | The alias row menu, popped for the editor host and the Aliases pane. | `Core/Actions/aliasRowMenu.ts` |
 | `index` • Schema | A position in a list, shared by the alias move, option edits, views, and trash records. | `Core/Files/decoders.ts` |
 | `ruleFrame` • Style | A pane of rule rows draws compact wherever it's hosted. | `UIX/Menus/frames.css.ts` |
 | `watch` / `measure` • Functions | A gesture's distinct file writes, its input-to-paint and input-to-disk latency, and its render cost, shared by every drive. | `.claude/scripts/drive-harness.mjs` |
@@ -101,7 +100,7 @@ Every alias write becomes an instruction — add, rename, move, or forget — se
   - [x] Task 2-1
   - [x] Task 2-2
   - [x] Review Checkpoint
-- [ ] **Phase 3** — The Shared Alias Picker
+- [x] **Phase 3** — The Shared Alias Picker
   - [x] Task 3-1
   - [x] Task 3-2
   - [x] Task 3-3
@@ -111,7 +110,7 @@ Every alias write becomes an instruction — add, rename, move, or forget — se
   - [x] Task 3-7
   - [x] Task 3-8
   - [x] Task 3-9
-  - [ ] Review Checkpoint
+  - [x] Review Checkpoint
 - [ ] `[Visual Pass: the drive's screenshots of the Aliases pane and the body picker go to Nathan, whose eyes are the one check awaiting]`
 - [ ] **Phase 4** — Documentation
   - [ ] Task 4-1
@@ -2136,7 +2135,7 @@ A drop swallows its release click, so a drag never arms the click insert; a doub
 +  const open = ac !== null && (candidates.length > 0 || held)
 ```
 
-`held` mirrors `paneHeld` through the hook's existing view listener, so the pane holds while an edit runs in it, and the edit's end closes it as before.
+`held` mirrors `paneHeld` through the hook's existing view listener, so the pane holds while an edit runs in it, and the edit's end closes it as before. `endEdit` releases only a held pane, so an edit that already ended — a draft left for elsewhere whose write lands after its list unmounted — never pulls the focus back.
 
 ```Core/MarkdownPM/Autocomplete/AliasList.tsx diff
 -  // A row the tree dropped mid-rename took its focused field with it, which fires no blur.
@@ -2161,13 +2160,13 @@ A drop swallows its release click, so a drag never arms the click insert; a doub
 
 #### Review Checkpoint
 
-- [ ] `AliasList` is the one alias list: the body picker and the Aliases pane render nothing alias-specific of their own, its row menu reaches the host through `EditorHost['menus']`, and `useListEdit` is the one home of the draft and rename mechanics, shared with Excluded Directories.
-- [ ] The editor holds its slot for an edit in its own caret pane — no close, no collapse, no remember, the link still raw — and every edit there ends with the caret back in the slot or with the editor's own leave; a single click inserts only once the double-click window passes, against the picker's state at that moment.
-- [ ] `InputField` matches the baseline, `ManageList` is gone, and nothing in the tree serves only the bordered-field design.
-- [ ] Every list that drafts a named value — aliases, exclusions, options — closes its draft once the value lands and keeps it open on a refusal (a name the field dims cancels on leaving, as a blank does), and every × beside a field that commits on blur discards an edit in progress, Filter's included; no list keeps its own variant.
-- [ ] `PropertyPanel` gained only the mount; no alias logic lives in Properties beyond `assignValue`'s remember.
-- [ ] `keepsAlias` is the one rule for what a page holds — read by `connectionText`, the host's `applyAliasEdit`, and the list's dim alike — and a name the list dims never reaches the host.
-- [ ] Compact rows reach a filter-like pane only through `ruleFrame` and a picker pane only through `picker-base`, both composing the one `menuCompact`; no pane sets row padding or type for compactness on its own.
+- [x] `AliasList` is the one alias list: the body picker and the Aliases pane render nothing alias-specific of their own, its row menu reaches the host through `EditorHost['menus']`, and `useListEdit` is the one home of the draft and rename mechanics, shared with Excluded Directories.
+- [x] The editor holds its slot for an edit in its own caret pane — no close, no collapse, no remember, the link still raw — and every edit there ends with the caret back in the slot or with the editor's own leave; a single click inserts only once the double-click window passes, against the picker's state at that moment.
+- [x] `InputField` matches the baseline, `ManageList` is gone, and nothing in the tree serves only the bordered-field design.
+- [x] Every list that drafts a named value — aliases, exclusions, options — closes its draft once the value lands and keeps it open on a refusal (a name the field dims cancels on leaving, as a blank does), and every × beside a field that commits on blur discards an edit in progress, Filter's included; no list keeps its own variant.
+- [x] `PropertyPanel` gained only the mount; no alias logic lives in Properties beyond `assignValue`'s remember.
+- [x] `keepsAlias` is the one rule for what a page holds — read by `connectionText`, the host's `applyAliasEdit`, and the list's dim alike — and a name the list dims never reaches the host.
+- [x] Compact rows reach a filter-like pane only through `ruleFrame` and a picker pane only through `picker-base`, both composing the one `menuCompact`; no pane sets row padding or type for compactness on its own.
 
 ### Phase 4 — Documentation
 
