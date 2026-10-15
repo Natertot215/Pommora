@@ -1,4 +1,10 @@
-import { connectionText, expressibleInLink, parseConnectionText, wholeLink } from './connections'
+import {
+  connectionText,
+  expressibleInLink,
+  keepsAlias,
+  parseConnectionText,
+  wholeLink,
+} from './connections'
 import {
   escapeLabel,
   markdownPageLink,
@@ -12,7 +18,7 @@ import { isScalar } from '../Contract/validators'
 import { normalizeTitle } from '../Paths/caseFold'
 import type { LinkDisplay } from '../Properties/properties'
 import type { PropertyValue } from '../Properties/propertyValue'
-import type { ConnResolution, PageIndex } from './pageIndex'
+import type { ConnPage, ConnResolution, PageIndex } from './pageIndex'
 
 export type LinkTarget =
   | { kind: 'page'; syntax: 'wiki' | 'markdown'; title: string; heading?: string; alias?: string }
@@ -71,6 +77,25 @@ export function readLinkText(text: string, resolve?: PageIndex['resolve']): Link
     return pageTarget('markdown', title, targetFragment(dest) || undefined, alias, res)
   if (!isValidLink(dest)) return null
   return { kind: 'url', syntax: md ? 'markdown' : 'bare', url: normalizeLinkUrl(dest), alias }
+}
+
+/** The alias a link of either syntax shows for the one page it names, where that page can hold it. Against `was`, how the link read before, neither the alias it already showed that page nor the title of the page it named counts: a label kept through a retarget is the old title, not a name given. */
+export function shownAlias(
+  text: string,
+  resolve: PageIndex['resolve'],
+  was?: string,
+): { page: ConnPage; alias: string } | null {
+  const target = readLinkText(text, resolve)
+  if (target?.kind !== 'page' || !target.alias) return null
+  const { alias } = target
+  const page = resolve(target.title).page
+  if (!page || !keepsAlias(alias, page.title)) return null
+  const before = was === undefined ? null : readLinkText(was)
+  if (before?.kind === 'page') {
+    if (normalizeTitle(before.title) === normalizeTitle(alias)) return null
+    if (before.alias === alias && resolve(before.title).page?.id === page.id) return null
+  }
+  return { page, alias }
 }
 
 export function serializeLink(url: string, label?: string): string {

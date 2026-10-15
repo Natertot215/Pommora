@@ -1,11 +1,9 @@
 import { EditorView, type ViewUpdate } from '@codemirror/view'
 import { EditorSelection, type EditorState, type Extension, type Line } from '@codemirror/state'
-import type { LinkSpans } from '../../Connections/connections'
 import type { LinkAction } from '../../Actions/connectionMenu'
 import { unescapeLabel } from '../../Connections/links'
-import { linkPaste } from '../../Connections/linkValue'
+import { linkPaste, shownAlias } from '../../Connections/linkValue'
 import type { LinkDisplay } from '../../Properties/properties'
-import { titleTarget, type ConnectionsApi } from './connectionsApi'
 import type { MarkdownScope } from '../Engine/detect'
 import {
   aliasedToken,
@@ -16,7 +14,7 @@ import {
   type TokenOf,
 } from '../Engine/tokens'
 import { docScan, docString } from '../docCache'
-import { connectionAt } from '../Input/edits'
+import { connectionAt, linkAt } from '../Input/edits'
 import { focusRange } from '../caretPlacement'
 import { restedOnLink } from './linkReveal'
 import { type EditorHost, editorHost } from '../api'
@@ -138,27 +136,12 @@ function lineNear(state: EditorState, at: number): { line: Line; rel: number } {
   return { line, rel: pos - line.from }
 }
 
-/** A body reaches the memory only where an alias is authored: a scan of bodies can't honor a real forget. */
-function rememberAlias(
-  view: EditorView,
-  api: ConnectionsApi | undefined,
-  line: Line,
-  s: LinkSpans,
-): void {
-  const alias = s.alias && line.text.slice(s.alias[0], s.alias[1])
-  if (!api || !alias?.trim()) return
-  const target = titleTarget(api, line.text.slice(s.title[0], s.title[1]))
-  // A phantom or ambiguous title names no single page, and the memory is keyed by page id.
-  if (target.kind === 'page')
-    void view.state.facet(editorHost).aliases.edit(target.page.id, { op: 'add', alias })
-}
-
 function collapseAt(view: EditorView, at: number): void {
   if (!/[|#]/.test(view.state.doc.sliceString(at, at + 1))) return
   view.dispatch({ changes: { from: at, to: at + 1 } })
 }
 
-// The slot the caret sits in, alias or heading, identified by its start: leaving one fires that slot's collapse or the alias memory, never the other slot's.
+// The slot the caret sits in, alias or heading, identified by its start: leaving one fires that slot's collapse, never the other slot's.
 interface Slot {
   start: number
   end: number
@@ -178,41 +161,56 @@ function slotNear(state: EditorState, at: number, scope: MarkdownScope): Slot | 
 }
 
 /** An empty alias takes its pipe with it, and an empty heading its hash, matching the nexus-wide rule that an emptied value drops its key. */
-function leaveSlot(
-  view: EditorView,
-  api: ConnectionsApi | undefined,
-  at: number,
-  kind: Slot['kind'],
-  defer: boolean,
-): void {
+function collapseSlot(view: EditorView, at: number, kind: Slot['kind'], defer: boolean): void {
   const { line, rel } = lineNear(view.state, at)
   const s = connectionAt(docScan(view.state.doc), line.from + rel)
   const span = s?.[kind]
-  if (!s || !span) return
-  if (span[0] !== span[1]) {
-    if (kind === 'alias') rememberAlias(view, api, line, s)
-    return
-  }
+  if (!s || !span || span[0] !== span[1]) return
   const slot = line.from + (kind === 'alias' ? (s.heading ?? s.title)[1] : span[0] - 1)
   if (defer) setTimeout(() => collapseAt(view, slot), 0)
   else collapseAt(view, slot)
 }
 
-/** Both fire on LEAVING the alias, never as it changes: clearing one to retype would pull the pipe from under the caret. Blur is handled on the event rather than the update listener, whose macrotask the editor's own teardown outruns. */
+interface Written {
+  start: number
+  end: number
+  text: string
+}
+
+/** The link of either syntax an offset sits strictly inside: past its closer is where a finished link rests. */
+function linkWithin(state: EditorState, at: number, scope: MarkdownScope): Written | null {
+  const { line, rel } = lineNear(state, at)
+  if (inRawHtml(state, line.from + rel, scope)) return null
+  const o = linkAt(docScan(state.doc), line.from + rel)
+  if (!o || rel <= o.full[0] || rel >= o.full[1]) return null
+  return {
+    start: line.from + o.full[0],
+    end: line.from + o.full[1],
+    text: line.text.slice(o.full[0], o.full[1]),
+  }
+}
+
+/** A body reaches the memory only where a link is written — typed into or picked, either syntax — and it remembers once the caret leaves that link, against how the link read before, since a scan of bodies can't honor a real forget. A slot collapses on LEAVING it, never as it changes: clearing one to retype would pull the pipe from under the caret. Blur is handled on the event rather than the update listener, whose macrotask the editor's own teardown outruns. */
 export function aliasOnLeave(scope: MarkdownScope): Extension {
-  let authored: number | null = null
-  const leave = (view: EditorView, at: number, slot: Slot, defer: boolean): void => {
-    const api = authored === slot.start ? view.state.facet(editorHost).connections() : undefined
-    leaveSlot(view, api, at, slot.kind, defer)
-    authored = null
+  let writing: { start: number; was: string } | null = null
+  const remember = (view: EditorView): void => {
+    const w = writing
+    writing = null
+    if (!w) return
+    const link = linkWithin(view.state, w.start + 1, scope)
+    const host = view.state.facet(editorHost)
+    const api = host.connections()
+    const shown = link?.start === w.start && api ? shownAlias(link.text, api.resolve, w.was) : null
+    if (shown) void host.aliases.edit(shown.page.id, { op: 'add', alias: shown.alias })
   }
   return [
     EditorView.domEventHandlers({
       blur(event, view) {
         if (inCaretPane(event.relatedTarget)) return false
+        remember(view)
         const at = view.state.selection.main.head
         const slot = slotNear(view.state, at, scope)
-        if (slot) leave(view, at, slot, false)
+        if (slot) collapseSlot(view, at, slot.kind, false)
         return false
       },
     }),
@@ -220,26 +218,32 @@ export function aliasOnLeave(scope: MarkdownScope): Extension {
       if (!u.docChanged && !u.selectionSet) return
       // The NEW document at the OLD caret, mapped forward — reading the old offset against the new text makes typing look like leaving.
       const was = u.changes.mapPos(u.startState.selection.main.head)
-      const left = slotNear(u.state, was, scope)
-      if (authored !== null) authored = u.changes.mapPos(authored)
-      if (left?.kind === 'alias' && typedInto(u, left)) authored = left.start
-      if (!u.selectionSet || left === null) return
+      if (writing) writing.start = u.changes.mapPos(writing.start, 1)
+      const link = linkWithin(u.state, was, scope)
+      if (link && link.start !== writing?.start && typedInto(u, link)) {
+        const before = linkWithin(u.startState, u.startState.selection.main.head, scope)
+        writing = { start: link.start, was: before?.text ?? '' }
+      }
+      if (!u.selectionSet) return
+      const head = u.state.selection.main.head
       if (
-        u.view.hasFocus &&
-        slotNear(u.state, u.state.selection.main.head, scope)?.start === left.start
+        writing &&
+        !(u.view.hasFocus && linkWithin(u.state, head, scope)?.start === writing.start)
       )
-        return
-      leave(u.view, was, left, true)
+        remember(u.view)
+      const left = slotNear(u.state, was, scope)
+      if (left && !(u.view.hasFocus && slotNear(u.state, head, scope)?.start === left.start))
+        collapseSlot(u.view, was, left.kind, true)
     }),
   ]
 }
 
-function typedInto(u: ViewUpdate, slot: Slot): boolean {
+function typedInto(u: ViewUpdate, span: { start: number; end: number }): boolean {
   if (!u.transactions.some((tr) => tr.isUserEvent('input') || tr.isUserEvent('delete')))
     return false
   let touched = false
   u.changes.iterChangedRanges((_fromA, _toA, fromB, toB) => {
-    if (fromB <= slot.end && toB >= slot.start) touched = true
+    if (fromB <= span.end && toB >= span.start) touched = true
   })
   return touched
 }

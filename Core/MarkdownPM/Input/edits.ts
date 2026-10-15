@@ -1,6 +1,6 @@
 import { type Personalization, settingOf } from '../../Settings/personalization'
 import { linkDestinationStart } from '../../Connections/links'
-import { type LinkSpans, linkOccurrences } from '../../Connections/connections'
+import { type LinkOccurrence, type LinkSpans, linkOccurrences } from '../../Connections/connections'
 import {
   inCalloutAt,
   inCodeAt,
@@ -326,15 +326,21 @@ const emptyPairAt = (doc: string, c: number): boolean => {
   )
 }
 
-/** The connection written around `at` as the editor draws it, so code touching it leaves none; its spans are relative to `at`'s line, empty slots kept. */
-export function connectionAt(scan: DocScan, at: number): LinkSpans | null {
+/** The link written around `at`, either syntax, as the editor draws it, so code touching it leaves none; its spans are relative to `at`'s line, empty slots kept. */
+export function linkAt(scan: DocScan, at: number): LinkOccurrence | null {
   const i = lineIndexAt(scan, at)
   const line = scan.lines[i]
-  if (!line.includes('[[')) return null
+  if (!line.includes('[[') && !line.includes('](')) return null
   const ls = scan.lineStarts[i]
   for (const o of linkOccurrences(line, (p) => inCodeAt(scan, ls + p)))
-    if (o.syntax === 'wiki' && at - ls >= o.full[0] && at - ls <= o.full[1]) return o
+    if (at - ls >= o.full[0] && at - ls <= o.full[1]) return o
   return null
+}
+
+export function connectionAt(scan: DocScan, at: number): LinkSpans | null {
+  if (!scan.lines[lineIndexAt(scan, at)].includes('[[')) return null
+  const o = linkAt(scan, at)
+  return o?.syntax === 'wiki' ? o : null
 }
 
 export function openConnectionAt(scan: DocScan, at: number): LinkSpans | null {
