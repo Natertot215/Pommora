@@ -80,7 +80,7 @@ export const textEl = (scope, text) =>
 
 // An element drawn as `display: contents` has no box of its own, so its contents' box stands in.
 export const boxOf = (cdp, expr) =>
-  cdp.evaluate(`(() => { const el = (${expr}); if (!el) throw new Error('no element for ' + ${JSON.stringify(expr)}); let b = el.getBoundingClientRect(); if (!b.width && !b.height) { const r = document.createRange(); r.selectNodeContents(el); b = r.getBoundingClientRect() } return { x: b.x + b.width / 2, y: b.y + b.height / 2, left: b.left, top: b.top, right: b.right, bottom: b.bottom } })()`)
+  cdp.evaluate(`(() => { const el = (${expr}); if (!el) throw new Error('no element for ' + ${JSON.stringify(expr)}); let b = el.getBoundingClientRect(); if (!b.width && !b.height && el instanceof Node) { const r = document.createRange(); r.selectNodeContents(el); b = r.getBoundingClientRect() } return { x: b.x + b.width / 2, y: b.y + b.height / 2, left: b.left, top: b.top, right: b.right, bottom: b.bottom } })()`)
 export const overlaps = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom
 
 export async function mouseAt(cdp, { x, y }, { button = 'left', modifiers = 0, settle = 500 } = {}) {
