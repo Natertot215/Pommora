@@ -106,14 +106,17 @@ export const headingCaps = style({ textTransform: 'uppercase', letterSpacing: '0
 
 export const item = style([rowBox, rowShell])
 
-export const menuCompact = style({
+export const rowCompact = style({
   vars: {
     '--row-pad-y': 'var(--row-pad-compact)',
     '--row-pad-x': 'var(--row-pad-compact)',
-    '--row-size': font.scale.control.size,
-    '--row-line': font.scale.control.line,
   },
 })
+
+export const menuCompact = style([
+  rowCompact,
+  { vars: { '--row-size': font.scale.control.size, '--row-line': font.scale.control.line } },
+])
 
 export const itemSelected = style({
   backgroundColor: c.state.selected,
