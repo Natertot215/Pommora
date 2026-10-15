@@ -2,6 +2,7 @@
 
 | Date                    | ID     | Entry                                                |
 | ----------------------- | ------ | ---------------------------------------------------- |
+| 10-14-2026              | PM-151 | Improved Alias Management                            |
 | 10-13-2026              | PM-150 | Previews & Filtering Improvements                    |
 | 10-12-2026              | PM-149 | Quote-Insensitive Metadata                           |
 | 10-08-2026              | PM-148 | Text Properties                                      |
@@ -153,6 +154,14 @@
 | 06-14-2026 → 06-15      | PM-002 | The Headless Data Layer                              |
 | 06-14-2026              | PM-001 | Genesis — The Walking Skeleton                       |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot                                 |
+
+#### PM-151 || Improved Alias Management
+**DATE:** 10-14-2026
+
+Alias changes became instructions the host applies to a page's stored list inside its locked metadata write, so two quick edits no longer undo each other, and one rule set kept a single alias per name whatever its case, never the page's title or a name a link can't carry, and the order the user's: a used alias keeps its place and a new one joins the end. A page's settings panel gained an **Aliases** row whose Manage pane and the body editor's `[[Page|` picker became one shared alias list, where × or the row menu deletes, a double-click or the row menu renames in place, + adds to the end, and a drag reorders, while in the picker a single click inserts once the double-click window passes and an edit keeps the caret's place in the link. A Link property value that came to show a wikilink alias remembered it for its page. The app's other editable lists came to the same standard — a draft closes once its value is saved and stays open on a refusal, and a × beside a field discards an edit in progress — across Excluded Directories, the option editor, and the filter pane, whose rows became keyed by identity and, with the Matrix's filter, compact through one Menus rule. A live drive of every alias gesture, asserting each one's writes to disk and timing the picker against a baseline build, was added to the project's scripts.
+
+- **Commits:** `967dde03a^..547875498`
+- **Delta:** +502 (+838 / -336)
 
 #### PM-150 || Previews & Filtering Improvements
 **DATE:** 10-13-2026

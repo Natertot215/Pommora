@@ -1,14 +1,14 @@
 ## Alias Management — Implementation Plan
 
 **DATE:** 10-14-2026
-**STATUS:** Ratified 10-14-2026
+**STATUS:** Complete 10-15-2026 — `56a15ac88..547875498`
 **SOURCE:** The 10-14-2026 conversation with Nathan — the request, his answers (Manage-pane style, the side pane, list-only edits, Link-property aliases feed the memory, an optional count that the Aliases row shows, the row below Properties under a divider, a pane add landing at the bottom, the draft using the add-row primitives with its caret seated), his redirect once the pane was built (the Aliases pane and the body picker share one alias list of menu rows — an always-visible ×, a double-click or right-click Rename, a right-click Delete, and + in both — with the body picker's single-click insert held for the double-click window and Excluded Directories keeping its path fields), and the write path left to this plan.
 
 **BASELINE**
 
 | Head | Tests | Start | End |
 |------|-------|-------|-----|
-| `56a15ac88` | 7764 passed · 2 skipped · 534 files | 10-14-2026 6:13 PM | {MM-DD-YYYY h:mm AM/PM} |
+| `56a15ac88` | 7764 passed · 2 skipped · 534 files | 10-14-2026 6:13 PM | 10-15-2026 1:56 AM |
 
 ### Context
 
@@ -2214,12 +2214,12 @@ Each paragraph reads whole, in the document's existing voice, with no amendment 
 
 **THE STANDARD:** The work is finished when a later review of it finds nothing to correct. Not just doing the chores — doing the laundry, folding it, picking up what fell out of the hamper, emptying the lint trap, leaving no trace that anything went wrong. Nothing is carried as a concern, nothing is deferred where the fix is known, and nothing is declared that wasn't watched happen. Where something genuinely couldn't get there, the report names which and why, and everything else is still finished. Ambiguity met during execution took the simplest reading and was recorded; it didn't stop the run.
 
-- [ ] Phase review (opus-high): Phase 1 · Phase 2 · Phase 3 · Phase 4
-- [ ] Simplification lens → adversarial lens (opus-high) over `{baseline}..HEAD`
-- [ ] Neutral verification (opus-high) over `{baseline}..HEAD`
-- [ ] Own pass: gates · diff · deviations · criteria
-- [ ] Reconciliation walked
-- [ ] Report delivered
+- [x] Phase review (opus-high): Phase 1 · Phase 2 · Phase 3 · Phase 4
+- [x] Simplification lens → adversarial lens (opus-high) over `{baseline}..HEAD`
+- [x] Neutral verification (fable-high) over `{baseline}..HEAD`
+- [x] Own pass: gates · diff · deviations · criteria
+- [x] Reconciliation walked
+- [x] Report delivered
 
 #### Reconciliation
 
@@ -2253,7 +2253,9 @@ Each paragraph reads whole, in the document's existing voice, with no amendment 
 
 #### Open Items
 
-- Nathan's calls on two parity questions, each taken at its recommendation meanwhile: a markdown-form Link value's label stops being remembered rather than bodies starting to remember labels (Task 3-6); a Text value's plain inline field stays raw text without alias memory, as it carries no link picker, while its TextPane remembers.
+- Nathan's Visual Pass and Live Feel, from the drive's screenshots.
+- Nathan's calls, each taken at its recommendation meanwhile: a markdown-form Link label isn't remembered; a Text value's plain inline field keeps no alias memory while its TextPane does; the order is the user's, with `remember` folded into `add`; `ruleFrame` stands as the named rule for compact rule rows.
+- Proposed as separate work: Excluded Directories' whole-list write on the instruction model; a picker row drawing its selection outline over the alias its link already shows; `SettingsFrame` reading compact in the View tile and standard in the toolbar dropdown.
 
 #### Deviations
 

@@ -24,9 +24,9 @@ Markdown syntax in the editor is dynamic. A construct's markers — the asterisk
 - **Lists** — bullets (`-`, drawn as `•`), `+`, arrows (typed `->`, drawn `→`), numbered lists, alphabetical lists (`A.` through `Z.`, restarting at `A`), and GFM checklists all share one indent zone and one set of behaviors. Every edit that reshapes a numbered or lettered run recounts it in the same stroke: Enter continues the run and counts on below, deleting an item closes the gap, Tab or Shift+Tab recounts both runs an item moves between, and a line the **Lists ▸** menu turns into an item takes its place in the run it joins. A nested run counts from its first number or letter, a top-level run keeps the number it began at, and items a blank line apart count as one loose list. Dragging an item by its glyph moves it together with its nested block and renumbers as it lands. The grip menu's **Type ▸** switches a whole block between the five kinds, counting a numbered or lettered block from its first number or letter, and the context menu's **Lists ▸** turns each selected line into an item, removing the marker only when every selected line already has one.
 - **Outliner Rails** — An optional hairline guide down each nested list run, one per ancestor level, turned on with **Outliner Lines**. It covers dash bullets, checklists, and alphabetical lists.
 - **Inline Code** — Backticked text set in the mono family, in the code color over a tinted fill.
-- **HTML** — An inline tag like `<div>` or `</span>` always shows, its brackets in the syntax color and the text between them in the **HTML Tag Color**, which follows the code color until set; a bare `<>` stays prose. With **HTML Formatting** on, Markdown inside an HTML block — one opened by a tag at a line's start and running to the next blank line — reads as written, as other Markdown readers show it; off, it renders like the rest of the page. Headings, lists, quotes, footnote markers, and embeds inside a block render either way, and a table cell holds no block. With **HTML Shortcuts** on, ⌘/ comments the line as `<!-- -->`, or in the block's own language inside code, and a typed tag like `<div>` closes itself; off, the editor writes neither.
+- **HTML** — An inline tag like `<div>` or `</span>` always shows its brackets in the syntax color and the text between them in the **HTML Tag Color**, which follows the code color until set; a bare `<>` stays prose. With **HTML Formatting** on, Markdown inside an HTML block — one opened by a tag at a line's start and running to the next blank line — reads as written, as other Markdown readers show it; off, it renders like the rest of the page. Headings, lists, quotes, footnote markers, and embeds inside a block render either way, and a table cell holds no block. With **HTML Shortcuts** on, ⌘/ comments the line as `<!-- -->`, or in the block's own language inside code, and a typed tag like `<div>` closes itself; off, the editor writes neither.
 - **Blockquote** — An always-visible rounded card with an accent bar down its side. Other block constructs nest inside it at any depth. A `>` counts as a marker only when whitespace or the line's end follows it, at every depth, so `>a` stays ordinary prose.
-- **Callout** — A `> [!callout]` blockquote rendered as a bordered box spanning the gutter width, typed with the `||` shorthand. Each head is detected on its own, so adjacent or pasted callouts never merge, and an invalid tag falls back to a plain quote. The hidden head can't be reached by the caret, and Shift+Enter keeps you inside the box.
+- **Callout** — A `> [!callout]` blockquote rendered as a bordered box spanning the gutter width, typed with the `||` shorthand. Each head is detected on its own, so adjacent or pasted callouts never merge, and an invalid tag falls back to a plain quote. The caret can't reach the hidden head, and Shift+Enter keeps you inside the box.
 - **Horizontal Lines** — `---`, or a spaced `- - -`, draws as a full-width rule whenever the caret is off its line. It is never read as a setext heading.
 - **Connections** — `[[Title]]`, `[[Title#Heading]]`, and `[Alias](Title)` render as colored inline text keyed to how their target resolves, with an autocomplete that opens on `[[` and a right-click menu of their own. With **In-Page Heading Resolution** set to Automatic, a bare `§Heading` in prose reaches a heading on the same page without link syntax. How they resolve, how they're styled, what the menu offers, and how renames cascade all belong to Connections.
 - **Pasting** — A paste lands without the whitespace at its own edges or at the edges of the selection it replaces, in the body and a table cell alike; a paste spanning lines, a paste of whitespace alone, a paste inside code, and Paste Without Formatting land exactly as copied.
@@ -57,9 +57,9 @@ A codeblock is a fenced block set in the mono family over a neutral fill, which 
 | Ruby | `ruby` • `rb` | `file-code-corner` |
 | Java | `java` | `file-code-corner` |
 | Kotlin | `kotlin` • `kt` • `kts` | `file-code-corner` |
-| Scala | `scala` | — • `file-code-corner` |
-| C | `c` • `h` | — • `file-code-corner` |
-| C++ | `cpp` • `c++` • `cc` • `cxx` • `hpp` • `hh` | — • `file-code-corner` |
+| Scala | `scala` | `file-code-corner` |
+| C | `c` • `h` | `file-code-corner` |
+| C++ | `cpp` • `c++` • `cc` • `cxx` • `hpp` • `hh` | `file-code-corner` |
 | C# | `csharp` • `cs` • `c#` | `file-code-corner` |
 | Shell | `shell` • `sh` • `bash` • `zsh` | `terminal` |
 | PowerShell | `powershell` • `ps1` | `terminal` |
@@ -67,19 +67,19 @@ A codeblock is a fenced block set in the mono family over a neutral fill, which 
 | XML | `xml` • `svg` | `file-code` |
 | TOML | `toml` | `file-cog` |
 | Dockerfile | `dockerfile` • `docker` | `brand-docker` |
-| Lua | `lua` | — • `file-code-corner` |
-| Perl | `perl` • `pl` • `pm` | — • `file-code-corner` |
-| Haskell | `haskell` • `hs` | — • `file-code-corner` |
-| Clojure | `clojure` • `clj` • `cljs` • `cljc` • `edn` | — • `file-code-corner` |
-| Erlang | `erlang` • `erl` | — • `file-code-corner` |
-| Julia | `julia` • `jl` | — • `file-code-corner` |
-| R | `r` | — • `file-code-corner` |
-| Groovy | `groovy` • `gradle` | — • `file-code-corner` |
-| Sass | `sass` • `scss` | — • `file-code-corner` |
-| Nginx | `nginx` | — • `file-cog` |
-| Protobuf | `protobuf` • `proto` | — • `file-braces` |
-| CMake | `cmake` | — • `file-cog` |
-| Properties | `properties` • `ini` | — • `file-cog` |
+| Lua | `lua` | `file-code-corner` |
+| Perl | `perl` • `pl` • `pm` | `file-code-corner` |
+| Haskell | `haskell` • `hs` | `file-code-corner` |
+| Clojure | `clojure` • `clj` • `cljs` • `cljc` • `edn` | `file-code-corner` |
+| Erlang | `erlang` • `erl` | `file-code-corner` |
+| Julia | `julia` • `jl` | `file-code-corner` |
+| R | `r` | `file-code-corner` |
+| Groovy | `groovy` • `gradle` | `file-code-corner` |
+| Sass | `sass` • `scss` | `file-code-corner` |
+| Nginx | `nginx` | `file-cog` |
+| Protobuf | `protobuf` • `proto` | `file-braces` |
+| CMake | `cmake` | `file-cog` |
+| Properties | `properties` • `ini` | `file-cog` |
 
 #### Typing Transforms
 
