@@ -1004,7 +1004,7 @@ Every alias write becomes an instruction â€” remember, add, rename, or forget â€
 +  draft: boolean
 +}
 +
-+/** A list edited in place: a rename keeps its row's key, and a draft at the end is keyed for the value it writes, so it keeps its row wherever the value lands before the reply. A refusal leaves the draft open. */
++/** A list edited in place: a rename keeps its row's key, and a draft at the end is keyed for the value it writes, so it keeps its row wherever the value lands before the reply. A refusal leaves the draft open, and a commit hands back its write, so a label holds the committed text until it lands. */
 +export function useListEdit(
 +  values: readonly string[],
 +  {
@@ -1019,7 +1019,7 @@ Every alias write becomes an instruction â€” remember, add, rename, or forget â€
 +  drafting: boolean
 +  begin: () => void
 +  cancel: () => void
-+  commit: (row: ListRow, next: string) => void
++  commit: (row: ListRow, next: string) => Promise<boolean> | undefined
 +} {
 +  const [draft, setDraft] = useState<string | null>(null)
 +  const keys = useRenameKeys(values)
@@ -1034,10 +1034,12 @@ Every alias write becomes an instruction â€” remember, add, rename, or forget â€
 +    commit: (row, next) => {
 +      if (!next || next === row.value) return
 +      keys.rename(row.draft ? row.key : row.value, next)
-+      void (row.draft ? onAdd(next) : onRename(row.value, next)).then((ok) => {
++      const landed = row.draft ? onAdd(next) : onRename(row.value, next)
++      void landed.then((ok) => {
 +        if (!ok) keys.revert(next)
 +        else if (row.draft) setDraft((d) => (d === row.key ? null : d))
 +      })
++      return landed
 +    },
 +  }
 +}
@@ -1141,7 +1143,7 @@ Every alias write becomes an instruction â€” remember, add, rename, or forget â€
 +  return (
 +    <div className={s.list}>
 +      {list.rows.map((row) => {
-+        const onCommit = (next: string): void => list.commit(row, next)
++        const onCommit = (next: string): void => void list.commit(row, next)
 +        return (
 +          <Reveal key={row.key} open enterOnMount={entering(row.key)} fill>
 +            <div className={s.row}>
@@ -1222,7 +1224,7 @@ Every alias write becomes an instruction â€” remember, add, rename, or forget â€
   - Manage opens a pane with one menu row per alias, each with a "Delete alias" Ã—, and focuses nothing;
   - + adds a row whose input is `document.activeElement`; typing `roadmap` and Enter sends `{ op: 'add', alias: 'roadmap' }`; with the stub pushing `['the plan', 'Q3 doc', 'roadmap']` before it replies, the `[data-reveal]` that held the draft is the one holding `roadmap`, and no input remains;
   - a refused add leaves the draft open with `roadmap` in it; Escape on an empty draft closes it and sends nothing; Ã— on a draft closes it; typing `alpha` marks the input `aria-invalid="true"`;
-  - a single click on `the plan` opens no input and sends nothing; a double-click on its name opens it, and `The Plan` with Enter sends `{ op: 'rename', from: 'the plan', to: 'The Plan' }`;
+  - a single click on `the plan` opens no input and sends nothing; a double-click on its name opens it, and `The Plan` with Enter sends `{ op: 'rename', from: 'the plan', to: 'The Plan' }`, the row reading `The Plan` before the stub replies and `the plan` again after a refusal;
   - renaming `the plan` and then double-clicking `Q3 doc`'s name commits the first rename and leaves `Q3 doc`'s input open;
   - "Delete alias" on `Q3 doc` sends `{ op: 'forget', alias: 'Q3 doc' }`, and on the row being renamed closes its input as well;
   - with the menu answering `rename`, a right-click on `Q3 doc` opens its input; answering `delete`, it sends the forget.
@@ -1383,15 +1385,16 @@ Every alias write becomes an instruction â€” remember, add, rename, or forget â€
 +                invalid={(text) => normalizeTitle(text) === normalizeTitle(host.title)}
 +                onBegin={row.draft ? undefined : () => rename(row)}
 +                onCommit={(next) => {
-+                  list.commit(row, next)
++                  const landed = list.commit(row, next)
 +                  end(row.key, byKey())
++                  return landed
 +                }}
 +                onCancel={() => {
 +                  if (row.draft) list.cancel()
 +                  end(row.key, byKey())
 +                }}
 +              >
-+                {emphasizeMatch(row.value, 0, match)}
++                {(shown) => emphasizeMatch(shown, 0, match)}
 +              </RenamableLabel>
 +            </MenuItem>
 +          </Reveal>
@@ -1402,7 +1405,7 @@ Every alias write becomes an instruction â€” remember, add, rename, or forget â€
 +}
 ```
 
-A double-click on a name begins its rename through `RenamableLabel`'s `onBegin`, as every other rename-in-place list does; the row's click clears the pending pick on every press, so a double-click anywhere on a row never inserts. The keydown capture records whether the edit that ends next ended by key; a removal or a dropped row ends inside the list as well.
+A double-click on a name begins its rename through `RenamableLabel`'s `onBegin`, as every other rename-in-place list does; the row's click clears the pending pick on every press, so a double-click anywhere on a row never inserts. The keydown capture records whether the edit that ends next ended by key; a removal or a dropped row ends inside the list as well. A commit hands its write back to `RenamableLabel`, which holds the committed name until it lands, as the Table's titles and the window's tabs do.
 
 ```Core/Pages/AliasesRow.tsx diff
 -import { useMemo, useState } from 'react'
