@@ -1165,11 +1165,12 @@ It runs in `~/The Studio/Projects/Sapphire` against Pommora's settled grammar, n
 +  color: Color;
 +}
 +
-+export function textColorRuns(text: string): TextColorRun[] {
++export function textColorRuns(text: string, base = 0): TextColorRun[] {
 +  const runs: TextColorRun[] = [];
 +  for (const m of text.matchAll(RUN)) {
-+    const to = m.index + m[0].length;
-+    runs.push({ from: m.index, open: m.index + 1 + m[1].length, close: to - 1, to, color: colorOf(m[1]) });
++    const from = base + m.index;
++    const to = from + m[0].length;
++    runs.push({ from, open: from + 1 + m[1].length, close: to - 1, to, color: colorOf(m[1]) });
 +  }
 +  return runs;
 +}
@@ -1261,18 +1262,17 @@ Tests:
 +import { Decoration, type DecorationSet, type EditorView, ViewPlugin, type ViewUpdate } from "@codemirror/view";
 +import { codeContext } from "./code/codeBlocks.ts";
 -import { wrapMarkdownToken, type Token } from "./markdownMode.ts";
-+import { livePreview, wrapMarkdownToken, type Token } from "./markdownMode.ts";
++import { livePreview, visibleLines, wrapMarkdownToken, type Token } from "./markdownMode.ts";
  …
 +const HIDE = Decoration.replace({});
 +const INK = Object.fromEntries(INKS.map((c) => [c, Decoration.mark({ class: `sapphire-ink-${c}` })])) as Record<Color, Decoration>;
 +
-+const ONE_COLOR = /highlight/;
 +const SELF_CONTAINED = /inline-code|(?:^|[-_])(?:link|url|math)(?:[-_]|$)/;
 +
 +// A span wears one color, so a run touching a highlight drops; code, a link, or math held wholly in its words keeps its own look inside the color, and one crossing it drops it.
 +export function dropsRun(run: TextColorRun, node: { from: number; to: number; name: string }): boolean {
 +  if (node.to <= run.from || node.from >= run.to) return false;
-+  return ONE_COLOR.test(node.name) || (SELF_CONTAINED.test(node.name) && (node.from < run.open || node.to > run.close));
++  return node.name.includes("highlight") || (SELF_CONTAINED.test(node.name) && (node.from < run.open || node.to > run.close));
 +}
 +
 +// Scanned on doc, viewport, or parse change; a selection, focus, or mode change only rebuilds.
@@ -1291,7 +1291,7 @@ Tests:
 +    if (rescan || u.selectionSet || u.focusChanged || livePreview(u.startState) !== livePreview(u.state)) this.decorations = this.build(u.view);
 +  }
 +
-+  // A run opening in a fence or frontmatter stays as written; a long line split across visible ranges is read once.
++  // A run opening in a fence or frontmatter stays as written.
 +  private scan(view: EditorView): void {
 +    const isCode = codeContext(view.state);
 +    const tree = syntaxTree(view.state);
@@ -1302,17 +1302,9 @@ Tests:
 +      return hit;
 +    };
 +    this.runs = [];
-+    let next = 0;
-+    for (const { from, to } of view.visibleRanges) {
-+      for (let pos = Math.max(from, next); pos <= to; pos = next) {
-+        const line = view.state.doc.lineAt(pos);
-+        for (const r of textColorRuns(line.text)) {
-+          const run = { ...r, from: line.from + r.from, open: line.from + r.open, close: line.from + r.close, to: line.from + r.to };
-+          if (!dropped(run)) this.runs.push(run);
-+        }
-+        next = line.to + 1;
-+      }
-+    }
++    visibleLines(view, (line) => {
++      for (const run of textColorRuns(line.text, line.from)) if (!dropped(run)) this.runs.push(run);
++    });
 +  }
 +
 +  private build(view: EditorView): DecorationSet {
@@ -1341,14 +1333,26 @@ Tests:
 -import type { App, Plugin } from "obsidian";
 +import { editorLivePreviewField, type App, type Plugin } from "obsidian";
 -import { Prec, RangeSetBuilder, StateField } from "@codemirror/state";
-+import { Prec, RangeSetBuilder, StateField, type EditorState } from "@codemirror/state";
++import { Prec, RangeSetBuilder, StateField, type EditorState, type Line } from "@codemirror/state";
  …
  export type Token<S> = StreamParser<S>["token"];
 +
 +export const livePreview = (state: EditorState): boolean => state.field(editorLivePreviewField, false) === true;
+ …
++// A long line split across visible ranges is read once.
++export function visibleLines(view: EditorView, fn: (line: Line) => void): void {
++  let next = 0;
++  for (const { from, to } of view.visibleRanges) {
++    for (let pos = Math.max(from, next); pos <= to; pos = next) {
++      const line = view.state.doc.lineAt(pos);
++      fn(line);
++      next = line.to + 1;
++    }
++  }
++}
 ```
 
-`listMarkers.ts` (`(v) => livePreview(v.state)` for its view-taking `livePreview`), `headingLinks.ts` (its local becomes `live`, and a Live Preview flip rescans, so its `§` links clear on the switch to Source mode), and `code/codeDiff.ts` (`revealedOf` and `update`) read Live Preview through `livePreview` too, and drop their `editorLivePreviewField` imports.
+`listMarkers.ts` (`(v) => livePreview(v.state)` for its view-taking `livePreview`), `headingLinks.ts` (its local becomes `live`, and a Live Preview flip rescans, so its `§` links clear on the switch to Source mode), and `code/codeDiff.ts` (`revealedOf` and `update`) read Live Preview through `livePreview` too, and drop their `editorLivePreviewField` imports. `headingLinks.ts` and `listMarkers.ts` walk their visible lines through `visibleLines` too.
 
 **VERIFY**
 
@@ -1387,7 +1391,6 @@ Tests:
 +
 +// A run reads within one element's own text, each inline child standing in as one character, so a link, code, or math inside keeps its own look; a child that is or holds a highlight stands in as a line break no run crosses, since a span wears one color. Text inside code, math, links, and highlights stays as written.
 +const VERBATIM = "a, code, pre, .math, mark";
-+const HIGHLIGHT = "mark";
 +
 +function paintTextColors(el: HTMLElement): void {
 +  const parents = new Set<Element>();
@@ -1400,7 +1403,7 @@ Tests:
 +}
 +
 +function paintRuns(parent: Element): void {
-+  const highlighted = (n: Node): boolean => n.nodeType === Node.ELEMENT_NODE && ((n as Element).matches(HIGHLIGHT) || !!(n as Element).querySelector(HIGHLIGHT));
++  const highlighted = (n: Node): boolean => n.nodeType === Node.ELEMENT_NODE && ((n as Element).matches("mark") || !!(n as Element).querySelector("mark"));
 +  const flat = Array.from(parent.childNodes, (n) => (isText(n) ? n.data : highlighted(n) ? "\n" : "\uFFFC")).join("");
 +  const point = (at: number): [Node, number] => {
 +    let start = 0;
@@ -1501,6 +1504,9 @@ The runs are applied last to first, so each run's mutations sit past every earli
 +.sapphire-ink-purple { color: var(--color-purple); }
 +.sapphire-ink-brown { color: var(--sapphire-color-brown); }
 +.cm-inline-code [class^="sapphire-ink-"] { color: inherit; }
++:is(.cm-hmd-internal-link, .cm-link, .cm-url) > [class^="sapphire-ink-"] { text-decoration-line: underline; }
++.markdown-source-view.mod-cm6 [class^="sapphire-ink-"] :is(.is-unresolved, .cm-underline) { color: inherit; text-decoration-color: currentColor; }
++.markdown-rendered [class^="sapphire-ink-"] :is(a.internal-link, a.external-link) { color: inherit; text-decoration-line: underline; text-decoration-color: currentColor; }
 ```
 
 **VERIFY**
