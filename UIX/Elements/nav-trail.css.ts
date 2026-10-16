@@ -40,6 +40,8 @@ export const segment = style({
   },
 })
 
+export const shrink = style({ flexShrink: 1, minWidth: 0 })
+
 export const glyph = style({
   flex: 'none',
   color: `var(--nav-trail-glyph, ${c.label.tertiary})`,

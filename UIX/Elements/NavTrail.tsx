@@ -1,5 +1,5 @@
 import { Fragment } from 'react'
-import { OverScroll } from '../Interactions/OverScroll'
+import { OverScroll, overScrollEllipsis } from '../Interactions/OverScroll'
 import { Icon } from '../Symbols'
 import type { IconSize } from '../Theme/theme-vars.css'
 import { cx } from '../Utilities/cx'
@@ -23,8 +23,8 @@ interface NavTrailProps {
   variant?: 'path' | 'option'
   selected?: boolean
   overScroll?: boolean
+  truncate?: boolean
   className?: string
-  segmentClassName?: string
 }
 
 export function NavTrail({
@@ -34,13 +34,14 @@ export function NavTrail({
   variant = 'path',
   selected = false,
   overScroll = true,
+  truncate = false,
   className,
-  segmentClassName,
 }: NavTrailProps): React.JSX.Element | null {
   if (segments.length === 0) return null
+  const tail = segments.length - 1
   let leafIndex = -1
   if (selected) {
-    leafIndex = segments.length - 1
+    leafIndex = tail
     while (leafIndex >= 0 && segments[leafIndex].ghost) leafIndex--
   }
   const Host = overScroll ? OverScroll : 'div'
@@ -51,12 +52,14 @@ export function NavTrail({
           s.segment,
           (seg.ghost || (selected && i !== leafIndex)) && s.ghost,
           i === leafIndex && s.option,
-          segmentClassName,
+          truncate && i === tail && s.shrink,
         )
         const body = (
           <>
             {seg.icon && <Icon name={seg.icon} size={iconSize} className={s.glyph} />}
-            <span>{seg.label ?? seg.title}</span>
+            <span className={truncate && i === tail ? overScrollEllipsis : undefined}>
+              {seg.label ?? seg.title}
+            </span>
           </>
         )
         return (

@@ -2,7 +2,7 @@
   height: var(--reveal-bar-h);
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 8px;
   /* The bar is the detail's width: a pane overlays it at full height, so the bar stops at each pane's edge rather than running beneath one and padding its contents clear. */
   margin-left: var(--sidebar-clearance);
   margin-right: var(--side-pane-clearance);
@@ -20,9 +20,6 @@
   overflow: hidden;
   font: inherit;
   color: inherit;
-}
-.subfield-crumb {
-  max-width: 220px;
 }
 
 .subfield-sep {
