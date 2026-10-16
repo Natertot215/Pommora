@@ -75,7 +75,7 @@ export const insideMark = (
   { range: [s, e], contentRange: [cs, ce], color }: Token,
   f: number,
   t: number,
-): boolean => (color ? s + e - ce : cs) <= f && t <= ce
+): boolean => (color ? s + (e - ce) : cs) <= f && t <= ce
 
 export function shiftToken(tk: Token, by: number): Token {
   const move = ([s, e]: Span): Span => [s + by, e + by]

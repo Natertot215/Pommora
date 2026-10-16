@@ -84,27 +84,20 @@ function colorRows(
   commands: Commands,
 ): ActionItem<EditorMenuAction>[] {
   const lit = s.painted?.paint === paint ? s.painted.color : null
-  const accent: LeafItem<EditorMenuAction>[] =
-    paint === 'highlight'
-      ? [
-          {
-            label: 'Accent',
-            action: 'format:highlight',
-            checked: lit === 'accent',
-            chord: commands['format:highlight'],
-          },
-        ]
-      : []
-  return joinGroups([
-    accent,
-    colorsOf(paint).map(
-      (color): LeafItem<EditorMenuAction> => ({
-        label: capitalize(color),
-        action: `${paint}:${color}`,
-        checked: lit === color,
-      }),
-    ),
-  ])
+  const colors = colorsOf(paint).map(
+    (color): LeafItem<EditorMenuAction> => ({
+      label: capitalize(color),
+      action: `${paint}:${color}`,
+      checked: lit === color,
+    }),
+  )
+  const accent: LeafItem<EditorMenuAction> = {
+    label: 'Accent',
+    action: 'format:highlight',
+    checked: lit === 'accent',
+    chord: commands['format:highlight'],
+  }
+  return paint === 'textColor' ? colors : joinGroups([[accent], colors])
 }
 
 /** Offered over a painted span, with its own paint's rows, seated with the edit items rather than in the formatting block. */

@@ -80,7 +80,7 @@ The typed-pairing machinery for the trailing emoji is deleted. A span holds at m
 - **Shape:**
   - **Removal Comes First:** Phase 1 deletes before Phase 2 adds. Never delete the bare-`==` behaviors: accent highlight, `==|==` pairing, empty-pair Backspace, and Enter past `==`.
   - **Refactor Baseline:** Every accent-highlight test passes unchanged through every phase. Only tests that assert the trailing mark or the `highlight` request field are rewritten, each named in its task.
-  - **Sweep of Old Consumers:** Every reader of `kind === 'highlight'`, `.color`, `wrappedSpan`, `HighlightColor`, or `s.highlight` is listed in a task below. The scouts found none outside them: `subfieldStats.ts`, `cellStatic.tsx`'s render, `TextCell.tsx`, and `Core/Testing/markdownEngine.ts` work generically through `markerRanges` and `contentClass`.
+  - **Sweep of Old Consumers:** Every reader of `kind === 'highlight'`, `.color`, `insideMark`, `HighlightColor`, or `s.highlight` is listed in a task below. The scouts found none outside them: `subfieldStats.ts`, `cellStatic.tsx`'s render, `TextCell.tsx`, and `Core/Testing/markdownEngine.ts` work generically through `markerRanges` and `contentClass`.
 
 #### Process Overview
 
@@ -335,7 +335,7 @@ The typed-pairing machinery for the trailing emoji is deleted. A span holds at m
 ```Core/MarkdownPM/Engine/intents.ts diff
  export const contentClass = (tk: TokenOf<ContentKind>): string =>
 -  tk.color ? `${CONTENT_CLASS.highlight} md-highlight-${tk.color}` : CONTENT_CLASS[tk.kind]
-+  tk.color ? `${CONTENT_CLASS[tk.kind]} md-paint-${tk.color}` : CONTENT_CLASS[tk.kind]
++  CONTENT_CLASS[tk.kind] + (tk.color ? ` md-paint-${tk.color}` : '')
 ```
 
 ```Core/MarkdownPM/markdown-pm.css diff
@@ -823,20 +823,37 @@ The typed-pairing machinery for the trailing emoji is deleted. A span holds at m
 +  { range: [s, e], contentRange: [cs, ce], color }: Token,
 +  f: number,
 +  t: number,
-+): boolean => (color ? s + e - ce : cs) <= f && t <= ce
++): boolean => (color ? s + (e - ce) : cs) <= f && t <= ce
 ```
 
 ```Core/MarkdownPM/Input/format.ts diff
  const MARKER_CHARS = '*_~=`'
 +
-+export function innerRange(line: string, from: number, to: number): [number, number] {
-+  let f = from
-+  let t = to
++/** Inline marks are line-local, so only the selection's line is tokenized, in line-relative coords; the marks covering it are read with the marker characters at its edges stripped, and a fenced line holds none. */
++export function underSelection(scan: DocScan, selFrom: number, selTo: number) {
++  const doc = scan.text
++  const [from, to] = trimmedRange(doc, selFrom, selTo)
++  const ls = lineStartAt(doc, from)
++  const line = doc.slice(ls, lineEndAt(doc, from))
++  const fenced = inFenceAt(scan, from)
++  const tokens = fenced ? [] : tokenize(line)
++  let f = from - ls
++  let t = to - ls
 +  while (f < t && MARKER_CHARS.includes(line[f])) f++
 +  while (t > f && MARKER_CHARS.includes(line[t - 1])) t--
-+  return [f, t]
++  const covering = tokens.filter((tk) => insideMark(tk, f, t))
++  return { fenced, from, to, ls, line, tokens, f, t, covering }
 +}
  …
+-  if (inFenceAt(scan, selFrom)) return null
++  const { fenced, from, to, ls, line, f, t, covering } = underSelection(scan, selFrom, selTo)
++  if (fenced) return null
+   const doc = scan.text
+-  const [from, to] = trimmedRange(doc, selFrom, selTo)
+ …
+-  // Inline marks are line-local, so only the caret's line is tokenized; the hit is shifted back to document coordinates.
+-  const ls = lineStartAt(doc, from)
+-  const line = doc.slice(ls, lineEndAt(doc, from))
 -  let f = from - ls
 -  let t = to - ls
 -  while (f < t && MARKER_CHARS.includes(line[f])) f++
@@ -845,27 +862,32 @@ The typed-pairing machinery for the trailing emoji is deleted. A span holds at m
 -    const [s, e] = wrappedSpan(tk)
 -    return s <= f && t <= e
 -  })
-+  const [f, t] = innerRange(line, from - ls, to - ls)
-+  const covering = tokenize(line).filter((tk) => insideMark(tk, f, t))
 ```
 
 ```Core/MarkdownPM/Input/formatState.ts diff
 -import { tokenize, wrappedSpan } from '../Engine/tokens'
-+import { insideMark, type TokenOf, tokenize } from '../Engine/tokens'
++import type { TokenOf } from '../Engine/tokens'
 +import { isPaint, type Paint } from '../Engine/paints'
 -import { isQuoteToggleable, splitPrefix } from './format'
-+import { innerRange, isQuoteToggleable, splitPrefix } from './format'
++import { isQuoteToggleable, splitPrefix, underSelection } from './format'
 -import { lineStartAt, lineEndAt } from '../Engine/markdownCode'
-+import { lineStartAt, lineEndAt, trimmedRange } from '../Engine/markdownCode'
+-import { type DocScan, inFenceAt } from '../Engine/docScan'
++import type { DocScan } from '../Engine/docScan'
  …
 -  from: number,
 -  to: number,
 +  selFrom: number,
 +  selTo: number,
  ): Omit<EditorMenuRequest, …> {
-   const doc = scan.text
-+  const [from, to] = trimmedRange(doc, selFrom, selTo)
- …
+-  const doc = scan.text
+-  // Inline marks are line-local, so only the caret's line is tokenized, in line-relative coords. A cross-line selection can't sit inside one inline token anyway.
+-  const ls = lineStartAt(doc, from)
+-  const le = lineEndAt(doc, from)
+-  const line = doc.slice(ls, le)
+-  const tokens = inFenceAt(scan, from) ? [] : tokenize(line)
++  const { from, to, ls, line, tokens, covering } = underSelection(scan, selFrom, selTo)
+   const f = from - ls
+   const t = to - ls
 -  const wrapping = (kind: string) =>
 -    tokens.find((tk) => {
 -      const [s, e] = wrappedSpan(tk)
@@ -873,12 +895,8 @@ The typed-pairing machinery for the trailing emoji is deleted. A span holds at m
 -    })
 -  const wraps = (kind: string): boolean => wrapping(kind) !== undefined
 -  const highlight = wrapping('highlight')
-+  const [mf, mt] = innerRange(line, f, t)
-+  const wraps = (kind: string): boolean =>
-+    tokens.some((tk) => tk.kind === kind && insideMark(tk, mf, mt))
-+  const painted = tokens.find(
-+    (tk): tk is TokenOf<Paint> => isPaint(tk.kind) && insideMark(tk, mf, mt),
-+  )
++  const wraps = (kind: string): boolean => covering.some((tk) => tk.kind === kind)
++  const painted = covering.find((tk): tk is TokenOf<Paint> => isPaint(tk.kind))
  …
 -    highlight: highlight ? (highlight.color ?? 'accent') : null,
 +    painted: painted ? { paint: painted.kind, color: painted.color ?? 'accent' } : null,
@@ -915,27 +933,20 @@ The typed-pairing machinery for the trailing emoji is deleted. A span holds at m
 +  commands: Commands,
 +): ActionItem<EditorMenuAction>[] {
 +  const lit = s.painted?.paint === paint ? s.painted.color : null
-+  const accent: LeafItem<EditorMenuAction>[] =
-+    paint === 'highlight'
-+      ? [
-+          {
-+            label: 'Accent',
-+            action: 'format:highlight',
-+            checked: lit === 'accent',
-+            chord: commands['format:highlight'],
-+          },
-+        ]
-+      : []
-+  return joinGroups([
-+    accent,
-+    colorsOf(paint).map(
-+      (color): LeafItem<EditorMenuAction> => ({
-+        label: capitalize(color),
-+        action: `${paint}:${color}`,
-+        checked: lit === color,
-+      }),
-+    ),
-+  ])
++  const colors = colorsOf(paint).map(
++    (color): LeafItem<EditorMenuAction> => ({
++      label: capitalize(color),
++      action: `${paint}:${color}`,
++      checked: lit === color,
++    }),
++  )
++  const accent: LeafItem<EditorMenuAction> = {
++    label: 'Accent',
++    action: 'format:highlight',
++    checked: lit === 'accent',
++    chord: commands['format:highlight'],
++  }
++  return paint === 'textColor' ? colors : joinGroups([[accent], colors])
 +}
 @@ changeColorItems @@
 -/** Offered only over a highlight, seated with the edit items rather than in the formatting block. */

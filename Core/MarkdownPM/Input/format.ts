@@ -65,12 +65,20 @@ const LINKS: Record<LinkWrapKind, LinkWrap> = {
 const SWAPS: Partial<Record<TokenKind, TokenKind>> = { bold: 'italic', italic: 'bold' }
 const MARKER_CHARS = '*_~=`'
 
-export function innerRange(line: string, from: number, to: number): [number, number] {
-  let f = from
-  let t = to
+/** Inline marks are line-local, so only the selection's line is tokenized, in line-relative coords; the marks covering it are read with the marker characters at its edges stripped, and a fenced line holds none. */
+export function underSelection(scan: DocScan, selFrom: number, selTo: number) {
+  const doc = scan.text
+  const [from, to] = trimmedRange(doc, selFrom, selTo)
+  const ls = lineStartAt(doc, from)
+  const line = doc.slice(ls, lineEndAt(doc, from))
+  const fenced = inFenceAt(scan, from)
+  const tokens = fenced ? [] : tokenize(line)
+  let f = from - ls
+  let t = to - ls
   while (f < t && MARKER_CHARS.includes(line[f])) f++
   while (t > f && MARKER_CHARS.includes(line[t - 1])) t--
-  return [f, t]
+  const covering = tokens.filter((tk) => insideMark(tk, f, t))
+  return { fenced, from, to, ls, line, tokens, f, t, covering }
 }
 
 /** A paint's `color` is null for the accent highlight. A span wears one color, so a paint picked anywhere in it recolors it, turns it into the other paint, or, in its own paint and color, removes it. */
@@ -81,18 +89,13 @@ export function toggleInline(
   fmt: InlineFormat,
   color: PaintColor | null = null,
 ): FormatEdit | null {
-  if (inFenceAt(scan, selFrom)) return null
+  const { fenced, from, to, ls, line, f, t, covering } = underSelection(scan, selFrom, selTo)
+  if (fenced) return null
   const doc = scan.text
-  const [from, to] = trimmedRange(doc, selFrom, selTo)
   if (fmt in LINKS) return toggleWrap(doc, from, to, LINKS[fmt as LinkWrapKind])
   const kind = fmt as keyof typeof WRAP & TokenKind
   const close = WRAP[kind]
   const open = color ? close + writtenMark(color) : close
-  // Inline marks are line-local, so only the caret's line is tokenized; the hit is shifted back to document coordinates.
-  const ls = lineStartAt(doc, from)
-  const line = doc.slice(ls, lineEndAt(doc, from))
-  const [f, t] = innerRange(line, from - ls, to - ls)
-  const covering = tokenize(line).filter((tk) => insideMark(tk, f, t))
   const found =
     covering.find((tk) => tk.kind === kind || (isPaint(kind) && isPaint(tk.kind))) ??
     covering.find(

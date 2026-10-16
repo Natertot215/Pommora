@@ -132,7 +132,7 @@ const CONTENT_CLASS: Record<ContentKind, string> = {
 }
 
 export const contentClass = (tk: TokenOf<ContentKind>): string =>
-  tk.color ? `${CONTENT_CLASS[tk.kind]} md-paint-${tk.color}` : CONTENT_CLASS[tk.kind]
+  CONTENT_CLASS[tk.kind] + (tk.color ? ` md-paint-${tk.color}` : '')
 
 export function tokenIntents(tokens: Token[], active: Set<number>): DecoIntent[] {
   const intents: DecoIntent[] = []
