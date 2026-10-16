@@ -225,7 +225,7 @@ export function aliasOnLeave(scope: MarkdownScope): Extension {
     const link = linkWithin(view.state, w.start + 1, scope)
     const host = view.state.facet(editorHost)
     const api = host.connections()
-    const shown = link?.start === w.start && api ? shownAlias(link.text, api.resolve, w.was) : null
+    const shown = link?.start === w.start && api ? shownAlias(link.text, api.index, w.was) : null
     if (shown) void host.aliases.edit(shown.page.id, { op: 'add', alias: shown.alias })
   }
   return [

@@ -1,6 +1,7 @@
 import type { Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
-import { tokenTarget, type ConnectionsApi } from '../Links/connectionsApi'
+import type { ConnectionsApi } from '../Links/connectionsApi'
+import { readOccurrence, resolveLink } from '../../Connections/linkValue'
 import { type MarkerRef, citationFor, markersFor } from '../Engine/detect'
 import { lineEndOf } from '../Engine/markdownCode'
 import { type LinkKind, tokenize, type TokenOf, wholeLinkToken } from '../Engine/tokens'
@@ -9,7 +10,7 @@ import { type FollowEvent, followTarget } from '../Links/linkClicks'
 import { applyCitationAction, travelToCitation } from './citationActions'
 import { travelTo } from '../travel'
 import { pointerHandlers, type PointerTarget } from '../Gestures/pointerPath'
-import { editorHost, pageEditorAt } from '../api'
+import { editorHost, heldOf, ownPage, pageEditorAt } from '../api'
 
 export const CITE_GLYPH = '.md-citation-reference'
 
@@ -39,7 +40,9 @@ export function followCitation(
   const lone =
     entry &&
     loneTarget(docString(view.state.doc).slice(entry.contentStart, lineEndOf(scan, entry.lastLine)))
-  const go = lone && followTarget(tokenTarget(api, lone.text, lone.tk), api, event)
+  const held = heldOf(ownPage(event.target as Element))
+  const target = lone && resolveLink(readOccurrence(lone.text, lone.tk.link), api?.index, held)
+  const go = target && followTarget(target, api, event)
   if (go) go()
   else travelToCitation(view, label)
 }

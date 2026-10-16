@@ -12,6 +12,8 @@ import type { WarmSeam } from '../MarkdownPM/warmSeam'
 import { citationsVisible, pageMetaOf, useSession } from '../Session/store'
 import { commandsOf, personalizationOf } from '../Session/configSlice'
 import { pagesByIdOf } from '../Nexus/record'
+import { nodesByIdOf } from '../Nexus/treeIndex'
+import { NO_TRAIL } from '@pommora/uix/Elements/NavTrail'
 import { knownBody } from '../Session/pageDetailCache'
 import { warmSeamOf } from '../Session/warmCache'
 import { dialer } from '../Platform/dialer'
@@ -134,6 +136,10 @@ function buildEditorHost(
     pickTree: () => {
       const s = state()
       return s.tree ? pagePickTree(s.tree, personalizationOf(s).defaultIcons, (p) => p.title) : []
+    },
+    location: (id) => {
+      const tree = state().tree
+      return (tree && nodesByIdOf(tree).get(id)?.parents) || NO_TRAIL
     },
     openLink: openWebLink,
     pageTitle: () => (pageId && pageOf(pageId)?.title) ?? null,

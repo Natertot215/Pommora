@@ -1,9 +1,9 @@
-import type { LinkMenuTarget } from '../../MarkdownPM/Links/connectionsApi'
 import {
   connectionMenuModel,
   isLinkAction,
   type LinkAction,
   type LinkMenuContext,
+  type LinkMenuTarget,
 } from '../../Actions/connectionMenu'
 import { isOpenInTabs } from '../../Navigation/tabsModel'
 import { shownDetail, useSession, windowTargetOf } from '../../Session/store'

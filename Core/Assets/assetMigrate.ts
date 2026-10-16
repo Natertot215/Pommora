@@ -1,6 +1,6 @@
 // Walks the STORES, not the directory: nothing cleans up `.nexus/assets/<id>/` when an entity is deleted, so a directory-driven copy would carry orphans into a folder shared with Obsidian.
 
-import { parseConnectionText } from '../Connections/connections'
+import { wikiTitle } from '../Connections/linkValue'
 import { ASSETS_DIR_REL, NEXUS_CONFIG_FILES, SIDECARS } from '../Paths/nexusPaths'
 import { basename, titleFromPath, dirname, extname, join, relative } from '../Paths/posix'
 import { assetsDir, nexusConfig } from '../Paths/paths'
@@ -54,7 +54,7 @@ interface Slot {
   entry?: string
 }
 
-const isConnection = (v: unknown): v is string => typeof v === 'string' && !!parseConnectionText(v)
+const isConnection = (v: unknown): v is string => typeof v === 'string' && wikiTitle(v) !== null
 
 // A banner may name its file by path; every other value names one only as a connection, alone or in a list.
 function slotsOf(fields: Record<string, unknown>): Slot[] {
@@ -175,8 +175,8 @@ export async function migrateAssets(root: string, deps: TrashDeps): Promise<Asse
   for (const ref of await collectRefs(root, result.skipped)) {
     const value = await ref.read()
     if (typeof value !== 'string' || !value.trim()) continue
-    const named = parseConnectionText(value)
-    const hit = named ? resolveAssetName(legacy, named.title) : value
+    const named = wikiTitle(value)
+    const hit = named !== null ? resolveAssetName(legacy, named) : value
     // Choosing between twins would move the wrong image and trash the other; reporting holds the sweep.
     if (hit === AMBIGUOUS) {
       result.skipped.push({ store: ref.store, why: `more than one file is named ${value}` })

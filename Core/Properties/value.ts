@@ -9,7 +9,7 @@ import {
   STAMP_TYPE,
 } from './properties'
 import { decodeValue, heldPropertyValue, NULL_VALUE, type PropertyValue } from './propertyValue'
-import { parseConnectionText } from '../Connections/connections'
+import { wikiTitle } from '../Connections/linkValue'
 
 export function declaredType(
   propertyId: string,
@@ -63,5 +63,4 @@ export function resolveFieldValue(
 // MEMOIZED per frontmatter object and definition: the decode was the measured grouped-view hot spot. A value write swaps the frontmatter and a definition edit mints a new definition, so entries self-expire.
 const resolvedByFm = new WeakMap<PageFrontmatter, WeakMap<PropertyDefinition, PropertyValue>>()
 
-export const fileName = (reference: string): string =>
-  parseConnectionText(reference)?.title ?? reference
+export const fileName = (reference: string): string => wikiTitle(reference) ?? reference

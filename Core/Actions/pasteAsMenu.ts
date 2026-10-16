@@ -1,6 +1,6 @@
 import { expressibleInLink, pageEmbedText } from '../Connections/connections'
 import { markdownLink } from '../Connections/links'
-import { isHttpLink } from '../Paths/urlPath'
+import { isHttpLink, normalizeLinkUrl } from '../Paths/urlPath'
 import {
   connectionSpells,
   linkPaste,
@@ -100,23 +100,24 @@ export function pasteAsWrite(
     }
   }
   if ((how === 'auto' || how === 'inverse') && target.syntax !== 'bare') return null
+  const url = normalizeLinkUrl(target.url)
   const wrappable = over.selection !== '' && !/[\r\n]/.test(over.selection)
   switch (how) {
     case 'plain':
-      return { kind: 'text', text: target.url }
+      return { kind: 'text', text: url }
     case 'embedLink':
-      return { kind: 'line', text: `!${markdownLink(target.url, '')}` }
+      return { kind: 'line', text: `!${markdownLink(url, '')}` }
     case 'connection':
     case 'markdown':
     case 'embedPage':
       return null
     case 'auto':
       return wrappable
-        ? { kind: 'link', text: serializeLink(target.url, over.selection) }
-        : linkPaste(target.url, over.format, over.title)
+        ? { kind: 'link', text: serializeLink(url, over.selection) }
+        : linkPaste(url, over.format, over.title)
     case 'inverse':
-      return wrappable ? linkPaste(target.url, over.format, over.title) : null
+      return wrappable ? linkPaste(url, over.format, over.title) : null
     default:
-      return linkPaste(target.url, how, over.title)
+      return linkPaste(url, how, over.title)
   }
 }

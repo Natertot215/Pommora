@@ -2,10 +2,11 @@ import type { PropertyValue } from './propertyValue'
 import type { PropertyType } from './properties'
 import { linkEditText, linkValueFromEdit } from '../Connections/linkValue'
 import { readNumber } from './formatValue'
-import type { PageIndex } from '../Connections/pageIndex'
+import type { ConnPage, PageIndex } from '../Connections/pageIndex'
 
 interface LinkEditContext {
-  resolve: PageIndex['resolve']
+  index: PageIndex | undefined
+  own: ConnPage | undefined
   keepTitle: boolean
 }
 
@@ -42,7 +43,8 @@ export function parseEditorValue(
     return linkValueFromEdit(
       raw,
       current?.kind === 'link' ? current.value : undefined,
-      link.resolve,
+      link.index,
+      link.own,
       link.keepTitle,
     )
   if (type === 'text') return textFromEdit(raw, current)

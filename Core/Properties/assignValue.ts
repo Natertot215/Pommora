@@ -54,7 +54,7 @@ function rememberedAlias(
   const tree = useSession.getState().tree
   if (value?.kind !== 'link' || !tree) return null
   const was = prior?.kind === 'link' ? prior.value : undefined
-  const shown = shownAlias(value.value, pageIndexOf(tree).resolve, was)
+  const shown = shownAlias(value.value, pageIndexOf(tree), was)
   if (!shown) return null
   return { op: 'editAliases', path: shown.page.path, edit: { op: 'add', alias: shown.alias } }
 }

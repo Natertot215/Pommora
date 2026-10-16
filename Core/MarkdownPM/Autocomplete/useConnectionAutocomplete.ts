@@ -17,14 +17,13 @@ import {
 import { toggled } from '@pommora/uix/Utilities/checkSet'
 import { docOutline } from '../docCache'
 import type { MarkdownScope } from '../Engine/detect'
-import { keepsShown, readLinkText } from '../../Connections/linkValue'
+import { keepsShown, readLinkText, resolveLink } from '../../Connections/linkValue'
 import { normalizeTitle } from '../../Paths/caseFold'
 import { restedOnLink } from '../Links/linkReveal'
-import { titleTarget } from '../Links/connectionsApi'
 import type { AutocompletePaneProps } from './AutocompletePane'
 import { acQuery, closeAcQuery } from './acQuery'
 import type { PageHeading } from '../../Platform/stores'
-import { type EditorHost, ownPage } from '../api'
+import { type EditorHost, heldOf, ownPage } from '../api'
 import { usePaneCtl } from '@pommora/uix/Interactions/paneCtl'
 import {
   caretGeometry,
@@ -83,13 +82,8 @@ export function useConnectionAutocomplete(
   const closed = ac?.closed ?? true
   const heading = listsHeadings(form)
   const page = useMemo(() => {
-    if (title) {
-      const named = titleTarget(host.connections(), title)
-      return named.kind === 'page' ? named.page : null
-    }
-    if (!heading) return null
-    const own = viewRef.current && ownPage(viewRef.current)
-    return own?.kind === 'held' ? own.page : null
+    if (title) return host.connections()?.index.resolve(title).page ?? null
+    return (heading && viewRef.current && heldOf(ownPage(viewRef.current))) || null
   }, [heading, title])
   const outline: readonly PageHeading[] = useMemo(() => {
     if (!heading) return []
@@ -114,7 +108,7 @@ export function useConnectionAutocomplete(
     const conn = host.connections()
     if (!conn) return []
     if (listsAliases(form)) return aliasRows(host.aliases, page?.id, q)
-    return conn.candidates(q, AC_MAX).map((p) => pageRow(p, conn))
+    return conn.index.candidates(q, AC_MAX).map((p) => pageRow(p, host))
   }
   // A query that names its one match exactly is a finished link, so the caret resting in one opens nothing; Back is the exception.
   const candidates = useMemo(() => {
@@ -141,9 +135,8 @@ export function useConnectionAutocomplete(
     const conn = host.connections()
     const origin = view.state.field(field).origin
     const container = origin === null ? null : readLinkText(origin.text)
-    const pointed =
-      container?.kind === 'url' ||
-      (container?.kind === 'page' && conn?.resolve(container.title).status === 'resolved')
+    const kind = resolveLink(container, conn?.index).kind
+    const pointed = kind === 'page' || kind === 'url'
     const keepTitle = !settings.removeTitleOnLinkChange || !pointed
     const keepsWritten =
       ac.form === 'link' &&

@@ -1,11 +1,9 @@
 import type { ConnectionsApi } from '../MarkdownPM/Links/connectionsApi'
-import { NO_TRAIL, type TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { showConnectionMenu } from '../Interface/Menus/connectionMenuActions'
 import { useSession } from './store'
 import { personalizationOf } from './configSlice'
 import { settingOf } from '../Settings/personalization'
 import { pageIndexOf } from '../Nexus/record'
-import { nodesByIdOf } from '../Nexus/treeIndex'
 import type { PageHeadings } from '../Connections/pageIndex'
 
 type Mode = 'preview' | 'window' | 'inert'
@@ -31,10 +29,9 @@ function connectionsOf(s: Session, mode: Mode): ConnectionsApi | undefined {
     if (!tree) return undefined
     const index = pageIndexOf(tree)
     const headingsOf = (path: string): PageHeadings | undefined => headings[path]
-    const location = (id: string): TrailSegment[] => nodesByIdOf(tree).get(id)?.parents ?? NO_TRAIL
-    if (mode === 'inert') return { ...index, open: () => {}, headingsOf, location }
+    if (mode === 'inert') return { index, open: () => {}, headingsOf }
     return {
-      ...index,
+      index,
       open: ({ id, path }, heading, newTab) => {
         const target = { kind: 'page', id, path } as const
         if (inWindow && !newTab) openWindowTab(target, { heading })
@@ -42,7 +39,6 @@ function connectionsOf(s: Session, mode: Mode): ConnectionsApi | undefined {
       },
       menu: showConnectionMenu,
       headingsOf,
-      location,
     }
   }
 }
