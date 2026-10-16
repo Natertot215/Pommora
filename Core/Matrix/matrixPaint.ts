@@ -7,7 +7,7 @@ import { solidColorCss } from '@pommora/uix/Theme/ramp'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 import { currentZoom } from '@pommora/uix/Utilities/zoom'
 import { spacesByIdOf } from '../Contexts/contextIdentity'
-import { recordsByIdOf } from '../Nexus/treeIndex'
+import { nodesByIdOf } from '../Nexus/treeIndex'
 import { useSession } from '../Session/store'
 import { BASE_RADIUS, LINK_GAP } from './Engine/forces'
 import { type Graph, type GraphLink, type GraphNode, isGroupingLink } from './Engine/graph'
@@ -204,7 +204,7 @@ export function createPainter(
     const graph = matrixRuntime.graph
     const { nodes, links } = graph
     const { tree, matrixConfig } = useSession.getState()
-    const records = tree ? recordsByIdOf(tree) : null
+    const records = tree ? nodesByIdOf(tree) : null
     const spaces = tree ? spacesByIdOf(tree) : null
     // A Space with no color of its own takes no tint: it paints as a Location does, rather than reading as a grey blob with a glyph lost inside it.
     const spacePaintOf = (n: GraphNode): SpacePaint | null => {

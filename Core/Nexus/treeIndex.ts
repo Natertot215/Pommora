@@ -1,4 +1,4 @@
-// The renderer's projections of the one walk in `record.ts`, each cached on the tree object; glyphs and trails resolve here, beside the design kit.
+// The interface's projections of the one walk in `record.ts`, each cached on the tree object and keyed on what it reads.
 
 import { type EntityRecord, recordsOf } from './record'
 import type { BannerOwnerKind } from './mutateRequest'
@@ -13,7 +13,7 @@ import { NO_TRAIL, type TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import type { NavCore, ResolveIndex } from '../Navigation/navResolve'
 import type { SearchEntry } from '../Navigation/navSearch'
 import { foldKey } from '../Paths/caseFold'
-import { dirname } from '../Paths/posix'
+import { relDirname } from '../Paths/posix'
 import { contextWorldOf } from '../Contexts/contextResolve'
 import type { ReconcileIndex } from '../Session/reconcileSelection'
 
@@ -31,61 +31,62 @@ export interface TrailNode extends Pick<EntityRecord, 'id' | 'title' | 'path'> {
   icon: string
 }
 
-const LOOKS = [
-  (t: NexusTree) => t.contexts,
-  (t: NexusTree) => t.nexus.name,
-  (t: NexusTree) => t.config.profileIcon,
-  (t: NexusTree) => t.config.pageMetadata,
-  (t: NexusTree) => t.config.personalization.defaultIcons,
-]
-
-export const nodesOf = entityMemo(LOOKS, (tree): readonly NodeRecord[] => {
-  const di = tree.config.personalization.defaultIcons
-  const nodes: NodeRecord[] = [
-    {
-      key: navKey({ kind: 'homepage' }),
-      kind: 'homepage',
-      id: '',
-      title: tree.nexus.name,
-      icon: iconNameOr(tree.config.profileIcon, DEFAULT_NEXUS_ICON),
-      path: '',
-      parents: [],
-    },
-    {
-      key: navKey({ kind: 'matrix' }),
-      kind: 'matrix',
-      id: '',
-      title: MATRIX_TITLE,
-      icon: MATRIX_ICON,
-      path: '',
-      parents: [],
-    },
-  ]
-  // A record's container is its path's directory: a page's or set's folder, a space's context folder, nothing for a collection; the walk lists containers before what they hold, so the chain is always there.
-  const chains = new Map<string, TrailNode[]>()
-  for (const { kind, id, title, path, icon: own } of recordsOf(tree)) {
-    const ownIcon = kind === 'page' ? tree.config.pageMetadata[id]?.icon : own
-    const icon = entityIcon(kind, ownIcon, di)
-    if (kind === 'context') {
-      chains.set(path, [{ kind, id, title, icon, path: '' }])
-      continue
+export const nodesOf = entityMemo(
+  [
+    (t) => t.contexts,
+    (t) => t.nexus.name,
+    (t) => t.config.profileIcon,
+    (t) => t.config.pageMetadata,
+    (t) => t.config.personalization.defaultIcons,
+  ],
+  (tree): readonly NodeRecord[] => {
+    const di = tree.config.personalization.defaultIcons
+    const nodes: NodeRecord[] = [
+      {
+        key: navKey({ kind: 'homepage' }),
+        kind: 'homepage',
+        id: '',
+        title: tree.nexus.name,
+        icon: iconNameOr(tree.config.profileIcon, DEFAULT_NEXUS_ICON),
+        path: '',
+        parents: [],
+      },
+      {
+        key: navKey({ kind: 'matrix' }),
+        kind: 'matrix',
+        id: '',
+        title: MATRIX_TITLE,
+        icon: MATRIX_ICON,
+        path: '',
+        parents: [],
+      },
+    ]
+    // A record's container is its path's directory: a page's or set's folder, a space's context folder, nothing for a collection; the walk lists containers before what they hold, so the chain is always there.
+    const chains = new Map<string, TrailNode[]>()
+    for (const { kind, id, title, path, icon: own } of recordsOf(tree)) {
+      const ownIcon = kind === 'page' ? tree.config.pageMetadata[id]?.icon : own
+      const icon = entityIcon(kind, ownIcon, di)
+      if (kind === 'context') {
+        chains.set(path, [{ kind, id, title, icon, path: '' }])
+        continue
+      }
+      const parents = chains.get(relDirname(path)) ?? []
+      const node: NodeRecord = {
+        key: navKey({ kind, id }),
+        kind,
+        id,
+        title,
+        icon,
+        ownIcon,
+        path,
+        parents,
+      }
+      nodes.push(node)
+      if (kind === 'collection' || kind === 'set') chains.set(path, [...parents, node])
     }
-    const parents = chains.get(dirname(path)) ?? []
-    const node: NodeRecord = {
-      key: navKey({ kind, id }),
-      kind,
-      id,
-      title,
-      icon,
-      ownIcon,
-      path,
-      parents,
-    }
-    nodes.push(node)
-    if (kind === 'collection' || kind === 'set') chains.set(path, [...parents, node])
-  }
-  return nodes
-})
+    return nodes
+  },
+)
 
 export const reconcileIndexOf = entityMemo(
   [(t) => t.contexts, (t) => t.unreadable],
@@ -118,7 +119,7 @@ export const reconcileIndexOf = entityMemo(
 )
 
 export const resolveIndexOf = entityMemo(
-  LOOKS,
+  [nodesOf],
   (tree): ResolveIndex =>
     new Map<string, NavCore>(
       nodesOf(tree).map((r) => [r.key, { icon: r.icon, title: r.title, path: r.parents }]),
@@ -129,7 +130,7 @@ export const trailOf = (tree: NexusTree | null, ref: NavRef | SelectTarget): Tra
   (tree && ancestryOf(tree, ref)) ?? NO_TRAIL
 
 const ancestries = entityMemo(
-  LOOKS,
+  [nodesOf],
   (tree): ReadonlyMap<string, TrailNode[]> =>
     new Map(nodesOf(tree).map((r) => [r.key, [...r.parents, r]])),
 )
@@ -169,8 +170,8 @@ export const searchEntriesOf = entityMemo(
   },
 )
 
-export const recordsByIdOf = entityMemo(
-  LOOKS,
+export const nodesByIdOf = entityMemo(
+  [nodesOf],
   (tree): ReadonlyMap<string, NodeRecord> =>
     new Map(
       nodesOf(tree)

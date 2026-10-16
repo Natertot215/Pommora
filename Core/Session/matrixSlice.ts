@@ -10,7 +10,7 @@ import type { PositionRows, Positions } from '../Matrix/matrixLayout'
 import type { NexusTree } from '../Nexus/tree'
 import { filtering } from '../Views/filterRules'
 import { pagesByIdOf, pagesOf } from '../Nexus/record'
-import { recordsByIdOf } from '../Nexus/treeIndex'
+import { nodesByIdOf } from '../Nexus/treeIndex'
 import { stabilize } from '../Nexus/treeStabilize'
 import { persist } from '../Interface/Notifications/notifications'
 import { dialer } from '../Platform/dialer'
@@ -163,7 +163,7 @@ export const createMatrixSlice: Slice<MatrixSlice> = (set, get) => {
         matrixLoad: { kind: 'loaded' },
       })
       // A node the tree has lost is let go once, as the layout loads.
-      const live = recordsByIdOf(tree)
+      const live = nodesByIdOf(tree)
       const lost = Object.keys(positions).filter((id) => !live.has(id))
       get().saveMatrixLayout(Object.fromEntries(lost.map((id) => [id, null])))
       void flush()

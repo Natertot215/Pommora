@@ -32,7 +32,7 @@ import { placementOf, type SidebarMode } from '../../Settings/personalization'
 import { DEFAULT_NEW_NAME, type MutateRequest } from '../../Nexus/mutateRequest'
 import type { NodeKind } from '../../Nexus/entities'
 import { type Creator, spaceCreator } from '../../Actions/createMenu'
-import { recordsByIdOf } from '../../Nexus/treeIndex'
+import { nodesByIdOf } from '../../Nexus/treeIndex'
 import { SidebarDnd } from './sidebarDnd'
 import { buildIndex, type Index } from './sidebarDndModel'
 import { AgendaMode } from './AgendaMode'
@@ -293,7 +293,7 @@ function SidebarIconChoice({ tree, index }: { tree: NexusTree; index: Index }): 
   const ownIcon =
     entry?.kind === 'contextGroup'
       ? contextWorldOf(tree.contexts).groupById.get(entry.id)?.def.icon
-      : entry && recordsByIdOf(tree).get(entry.id)?.ownIcon
+      : entry && nodesByIdOf(tree).get(entry.id)?.ownIcon
   return (
     <IconChoice
       open={entry !== undefined && trigger.current !== null}

@@ -13,7 +13,7 @@ import { IconChoice } from '../Assets/IconChoice'
 import { glanceShown, hoverGlance, leaveGlanceFrom } from '../Interface/Glance/glanceAction'
 import { RenamableTitle } from '../Interface/RenamableTitle'
 import type { NexusTree } from '../Nexus/tree'
-import { ancestryOf, recordsByIdOf } from '../Nexus/treeIndex'
+import { ancestryOf, nodesByIdOf } from '../Nexus/treeIndex'
 import { spaceIdentityOf } from '../Contexts/contextIdentity'
 import { useSession } from '../Session/store'
 import { toScreen } from './Engine/viewport'
@@ -25,7 +25,7 @@ import { matrixRuntime, type Surface } from './matrixRuntime'
 // Here rather than beside the record type: the tree index already imports that file for the Matrix's own kind.
 export function recordOf(tree: NexusTree | null, id: string | null): MatrixRecord | null {
   if (id === null || !tree) return null
-  const r = recordsByIdOf(tree).get(id)
+  const r = nodesByIdOf(tree).get(id)
   return r && r.kind !== 'homepage' && r.kind !== 'matrix'
     ? { kind: r.kind, id: r.id, path: r.path, title: r.title, icon: r.ownIcon }
     : null
