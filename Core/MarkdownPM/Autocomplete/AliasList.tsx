@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
+import { useEntrance } from '@pommora/uix/Animations/useEntrance'
 import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
 import { LineRow, LineZone, lineList } from '@pommora/uix/Interactions/drag'
 import { useKeepInView } from '@pommora/uix/Interactions/paneCtl'
@@ -52,6 +53,7 @@ export function AliasList({
     onAdd: (alias) => host.edit({ op: 'add', alias }),
     onRename: (from, to) => host.edit({ op: 'rename', from, to }),
   })
+  const entering = useEntrance(list.rows, (r) => r.key, match === 0)
   const [renaming, setRenaming] = useState<string | null>(null)
   const rows = useRef<HTMLDivElement>(null)
   const keyed = useRef(false)
@@ -188,7 +190,7 @@ export function AliasList({
               </MenuItem>
             )
             return (
-              <Reveal key={row.key} open enterOnMount={row.draft} fill>
+              <Reveal key={row.key} open enterOnMount={entering(row.key)} fill>
                 {row.draft ? item : <LineRow id={row.value}>{item}</LineRow>}
               </Reveal>
             )

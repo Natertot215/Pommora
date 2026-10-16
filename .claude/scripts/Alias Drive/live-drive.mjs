@@ -545,6 +545,17 @@ async function group3(cdp, pid) {
   await caret(0)
   await sleep(300)
   check('group 3: an empty label the caret only passes through stays as written', (await docOf(cdp, V)) === EMPTY, await docOf(cdp, V))
+  await cdp.evaluate(`(() => { const v = ${V}; v.dispatch({ changes: { from: 0, to: v.state.doc.length, insert: '' }, selection: { anchor: 0 } }) })()`)
+  for (const ch of ['[', ']', '(', 'Drive Tar']) await typeText(cdp, ch)
+  await sleep(500)
+  await step(cdp, 'group 3: a page picked behind an empty label', () => pressKey(cdp, 'Enter'), { reflect: `${V}.state.doc.toString() === ${JSON.stringify(EMPTY)} && ${rows(PICKER)}.length === ${list.length}`, writes })
+  check('group 3: a markdown pick opens the alias stage in its label, as a wikilink pick does', (await cdp.evaluate(`${V}.state.selection.main.head === 1`)) && same(await shownIn(cdp, PICKER), list), JSON.stringify([await docOf(cdp, V), await shownIn(cdp, PICKER)]))
+  await step(cdp, 'group 3: leaving the stage unpicked', () => caret(0), { reflect: `${V}.state.doc.toString() === ${JSON.stringify(SHOWN)}`, writes })
+  check("group 3: a stage left unpicked shows the page's title and remembers nothing", (await docOf(cdp, V)) === SHOWN && same(aliasesOf(TARGET), list), JSON.stringify([await docOf(cdp, V), aliasesOf(TARGET)]))
+  await cdp.evaluate(`(() => { const v = ${V}; v.dispatch({ changes: { from: 0, to: v.state.doc.length, insert: ${JSON.stringify(EMPTY)} }, selection: { anchor: ${EMPTY.length - 2} } }) })()`)
+  await sleep(300)
+  await step(cdp, 'group 3: Return in a markdown destination', () => pressKey(cdp, 'Enter'), { reflect: `${V}.state.selection.main.head === 1 && ${rows(PICKER)}.length === ${list.length}`, writes })
+  check('group 3: Return in a markdown destination rests in its label, which lists every alias', (await docOf(cdp, V)) === EMPTY && same(await shownIn(cdp, PICKER), list), JSON.stringify([await docOf(cdp, V), await shownIn(cdp, PICKER)]))
 
   // TextPane: the same stage inside a Text value's editor.
   await home(cdp)

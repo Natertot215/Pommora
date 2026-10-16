@@ -224,6 +224,37 @@ describe('Enter finishes an alias or label without writing anything', () => {
     }
   })
 
+  it('in a markdown destination, rests at the label’s end, where a URL’s picker lists nothing', async () => {
+    for (const initialBody of ['[x](Alpha)', '[x](https://example.com)']) {
+      const view = await mountEditor({ initialBody, connections: conn })
+      vi.spyOn(view, 'coordsAtPos').mockReturnValue({ left: 10, right: 10, top: 10, bottom: 20 })
+      await act(async () => {
+        view.focus()
+        view.dispatch({ selection: { anchor: 6 } })
+      })
+      await act(async () => {
+        expect(commitAliasOnEnter('page')(view)).toBe(true)
+      })
+      expect(view.state.doc.toString()).toBe(initialBody)
+      expect(view.state.selection.main.head).toBe(2)
+      if (initialBody.includes('https')) expect(document.querySelector('.mdpm-ac')).toBeNull()
+      await cleanupEditor()
+    }
+  })
+
+  it('in a markdown destination with Alias Picker On Commit off, declines so Enter breaks the line', async () => {
+    const view = await mountEditor({
+      initialBody: '[x](Alpha)',
+      connections: conn,
+      host: { settings: { aliasPickerOnCommit: false } },
+    })
+    await act(async () => {
+      view.focus()
+      view.dispatch({ selection: { anchor: 6 } })
+    })
+    expect(commitAliasOnEnter('page')(view)).toBe(false)
+  })
+
   it('declines outside an alias, so Enter still breaks the line', async () => {
     const view = await mountEditor({ initialBody: 'a [[Alpha]] b', connections: conn })
     await act(async () => {

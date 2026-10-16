@@ -199,7 +199,7 @@ describe('following one', () => {
 describe('picking a page inside the parens', () => {
   const applied = (doc: string, caret: number, kept?: string): { text: string; after: string } => {
     const ac = autocompleteQuery(scanDoc(doc), caret)!
-    expect(ac.form).toBe('target')
+    expect(ac).toMatchObject({ syntax: 'markdown', part: 'title' })
     const edit = commitEdit(ac, 'Work Notes', { kept })
     let text = doc
     for (const c of [...edit.changes].reverse()) {

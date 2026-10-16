@@ -22,22 +22,26 @@ describe('autocompleteQuery', () => {
     const doc = 'see [[Pro]] end'
     const r = autocompleteQuery(doc, 9)!
     expect(r.query).toBe('Pro')
-    expect(doc.slice(r.from, r.to)).toBe('[[Pro]]')
+    expect(doc.slice(r.start, r.end)).toBe('[[Pro]]')
   })
   it('browses from an empty placeholder, closed', () => {
     expect(autocompleteQuery('see [[]] end', 6)).toEqual({
+      syntax: 'wiki',
+      part: 'title',
+      start: 4,
+      end: 8,
+      from: 6,
+      to: 6,
       query: '',
-      from: 4,
-      to: 8,
-      form: 'link',
       closed: true,
     })
   })
   it('reads a closed ![[…]] as the connection after its `!`', () => {
     expect(autocompleteQuery('see ![[Pic]] end', 9)).toMatchObject({
-      from: 5,
-      to: 12,
-      form: 'link',
+      start: 5,
+      end: 12,
+      syntax: 'wiki',
+      part: 'title',
     })
   })
   it('never opens inside a fenced block, however plain the line reads', () => {
@@ -48,10 +52,10 @@ describe('autocompleteQuery', () => {
     const doc = 'see `[[Pro]]` end'
     expect(autocompleteQuery(doc, doc.indexOf('Pro') + 2)).toBeNull()
   })
-  it('opens the alias form from inside an alias, spanning only the alias', () => {
+  it('opens the alias slot from inside an alias, spanning only the alias', () => {
     const doc = 'see [[Q3 Plan|the plan]] end'
     const r = autocompleteQuery(doc, doc.indexOf('the plan') + 3)!
-    expect(r.form).toBe('alias')
+    expect(r).toMatchObject({ syntax: 'wiki', part: 'shown' })
     expect(r.query).toBe('the plan')
     expect(r.title).toBe('Q3 Plan')
     expect(doc.slice(r.from, r.to)).toBe('the plan')
@@ -60,7 +64,7 @@ describe('autocompleteQuery', () => {
   it('opens it on a bare pipe, where nothing has been written yet', () => {
     const doc = 'see [[Q3 Plan|]] end'
     const r = autocompleteQuery(doc, doc.indexOf('|') + 1)!
-    expect(r.form).toBe('alias')
+    expect(r).toMatchObject({ syntax: 'wiki', part: 'shown' })
     expect(r.query).toBe('')
     expect(r.title).toBe('Q3 Plan')
     expect(r.from).toBe(r.to)
@@ -71,16 +75,16 @@ describe('autocompleteQuery', () => {
     expect(autocompleteQuery(doc, doc.indexOf('|') + 1)?.query).toBe(' ')
   })
 
-  it('a link with no pipe has no alias form at all', () => {
+  it('a link with no pipe has no alias slot at all', () => {
     const doc = 'see [[Q3 Plan]] end'
-    expect(autocompleteQuery(doc, doc.indexOf('Plan') + 4)?.form).toBe('link')
+    expect(autocompleteQuery(doc, doc.indexOf('Plan') + 4)?.part).toBe('title')
   })
 
   it('still opens from inside an aliased link’s title', () => {
     const doc = 'see [[Q3 Plan|the plan]] end'
     const r = autocompleteQuery(doc, doc.indexOf('Plan') + 2)!
     expect(r.query).toBe('Q3 Plan')
-    expect(doc.slice(r.from, r.to)).toBe('[[Q3 Plan|the plan]]')
+    expect(doc.slice(r.start, r.end)).toBe('[[Q3 Plan|the plan]]')
   })
   it('returns null when the caret is outside any wikilink', () => {
     expect(autocompleteQuery('plain text', 5)).toBeNull()
@@ -91,53 +95,66 @@ describe('autocompleteQuery', () => {
 describe('an unclosed link reads as the link it would be once closed', () => {
   it('reads an unclosed [[ up to the caret', () => {
     expect(autocompleteQuery('see [[Pro', 9)).toEqual({
-      query: 'Pro',
-      from: 4,
+      syntax: 'wiki',
+      part: 'title',
+      start: 4,
+      end: 9,
+      from: 6,
       to: 9,
-      form: 'link',
+      query: 'Pro',
       closed: false,
     })
   })
 
   it('opens on a bare [[', () => {
     expect(autocompleteQuery('see [[', 6)).toEqual({
-      query: '',
-      from: 4,
+      syntax: 'wiki',
+      part: 'title',
+      start: 4,
+      end: 6,
+      from: 6,
       to: 6,
-      form: 'link',
+      query: '',
       closed: false,
     })
   })
 
   it('opens an inserted ![[]] past its written closer, spanning the connection after the !', () => {
     expect(autocompleteQuery('![[]]', 3)).toEqual({
+      syntax: 'wiki',
+      part: 'title',
+      start: 1,
+      end: 5,
+      from: 3,
+      to: 3,
       query: '',
-      from: 1,
-      to: 5,
-      form: 'link',
       closed: true,
     })
   })
 
   it('reads an unclosed ![[ as ! plus a connection', () => {
-    expect(autocompleteQuery('x ![[Pro', 8)).toMatchObject({ query: 'Pro', from: 3, to: 8 })
+    expect(autocompleteQuery('x ![[Pro', 8)).toMatchObject({ query: 'Pro', start: 3, end: 8 })
   })
 
   it('reads an unclosed heading half', () => {
     expect(autocompleteQuery('[[Page#He', 9)).toEqual({
-      query: 'He',
+      syntax: 'wiki',
+      part: 'heading',
+      start: 0,
+      end: 9,
       from: 7,
       to: 9,
-      form: 'heading',
+      query: 'He',
       closed: false,
       title: 'Page',
     })
   })
 
-  it('reads an unclosed bare # as the heading form', () => {
+  it('reads an unclosed bare # as the heading slot', () => {
     expect(autocompleteQuery('[[#Se', 5)).toMatchObject({
       query: 'Se',
-      form: 'heading',
+      syntax: 'wiki',
+      part: 'heading',
       closed: false,
       title: '',
     })
@@ -145,10 +162,13 @@ describe('an unclosed link reads as the link it would be once closed', () => {
 
   it('reads an unclosed markdown destination', () => {
     expect(autocompleteQuery('[label](Pa', 10)).toMatchObject({
-      query: 'Pa',
+      syntax: 'markdown',
+      part: 'title',
+      start: 0,
+      end: 10,
       from: 8,
       to: 10,
-      form: 'target',
+      query: 'Pa',
       closed: false,
     })
   })
@@ -156,8 +176,20 @@ describe('an unclosed link reads as the link it would be once closed', () => {
   it('reads an unclosed destination flush against a following link', () => {
     expect(autocompleteQuery('[x](Pa[[B]]', 6)).toMatchObject({
       query: 'Pa',
-      form: 'target',
+      syntax: 'markdown',
+      part: 'title',
       closed: false,
+    })
+  })
+
+  it('reads [[Pa[x](y) as the grammar does, a markdown link labeled [Pa[x', () => {
+    expect(autocompleteQuery('[[Pa[x](y)', 4)).toMatchObject({
+      syntax: 'markdown',
+      part: 'shown',
+      start: 0,
+      end: 10,
+      query: '[Pa[x',
+      title: 'y',
     })
   })
 
@@ -202,103 +234,103 @@ describe('an unclosed link reads as the link it would be once closed', () => {
     const text = landed(doc, edit)
     expect(text).toBe('[label](Alpha#)')
     expect(text.slice(edit.anchor)).toBe(')')
-    expect(autocompleteQuery(text, edit.anchor)?.form).toBe('fragment')
+    expect(autocompleteQuery(text, edit.anchor)?.part).toBe('heading')
   })
 
   it('a target pick in an unclosed destination writes the )', () => {
     const doc = '[label](Pa'
     const edit = commitEdit(autocompleteQuery(doc, 10)!, 'Page', { kept: 'label' })
-    expect(edit.changes).toEqual([{ from: 8, to: 10, insert: 'Page)' }])
     expect(landed(doc, edit)).toBe('[label](Page)')
     expect(edit.anchor).toBe('[label](Page)'.length)
   })
 })
 
-describe('the ( ) form', () => {
-  it('opens inside an empty target and reports the label slot', () => {
+describe('the ( ) slots', () => {
+  it('opens inside an empty target and spans the whole link', () => {
     const doc = 'see []() end'
     const r = autocompleteQuery(doc, doc.indexOf('(') + 1)!
-    expect(r.form).toBe('target')
-    expect(r.query).toBe('')
+    expect(r).toMatchObject({ syntax: 'markdown', part: 'title', query: '' })
     expect(r.from).toBe(r.to)
-    expect(r.label).toEqual({ from: 5, to: 5 })
+    expect(doc.slice(r.start, r.end)).toBe('[]()')
   })
 
   it('reads a target already typed, decoded', () => {
     const doc = 'see [x](Work%20Notes) end'
     const r = autocompleteQuery(doc, doc.indexOf('Work'))!
-    expect(r.form).toBe('target')
+    expect(r.part).toBe('title')
     expect(r.query).toBe('Work Notes')
     expect(doc.slice(r.from, r.to)).toBe('Work%20Notes')
   })
 
-  it('carries a written label so it can be left alone', () => {
+  it('spans a written label so it can be left alone', () => {
     const doc = 'see [the notes]() end'
     const r = autocompleteQuery(doc, doc.indexOf('(') + 1)!
-    expect(doc.slice(r.label!.from, r.label!.to)).toBe('the notes')
+    expect(doc.slice(r.start, r.end)).toBe('[the notes]()')
   })
 
   it('reads a target holding balanced parentheses to its real close', () => {
     const doc = 'see [w](Notes_(a)_b) end'
     const r = autocompleteQuery(doc, doc.indexOf('Notes') + 2)!
-    expect(r.form).toBe('target')
+    expect(r.part).toBe('title')
     expect(doc.slice(r.from, r.to)).toBe('Notes_(a)_b')
   })
 
   it('the caret in the label queries the aliases of the page the target names', () => {
     const doc = 'see [x](Notes) end'
     expect(autocompleteQuery(doc, 5)).toEqual({
-      query: 'x',
+      syntax: 'markdown',
+      part: 'shown',
+      start: 4,
+      end: doc.indexOf(')') + 1,
       from: 5,
       to: 6,
-      form: 'label',
+      query: 'x',
       closed: true,
       title: 'Notes',
-      end: doc.indexOf(')') + 1,
     })
   })
 
   it('the page half queries alone, and a retarget drops the old fragment as a wikilink does', () => {
     const doc = 'see [x](Work%20Notes#Setup) end'
     const r = autocompleteQuery(doc, doc.indexOf('Work') + 2)!
-    expect(r.form).toBe('target')
+    expect(r.part).toBe('title')
     expect(r.query).toBe('Work Notes')
     expect(landed(doc, commitEdit(r, 'Other', { kept: 'x' }))).toBe('see [x](Other) end')
   })
 
-  it('after the #, the fragment form asks for the named page’s headings', () => {
+  it('after the #, the heading slot asks for the named page’s headings', () => {
     const doc = 'see [x](Work%20Notes#Se) end'
     const r = autocompleteQuery(doc, doc.indexOf('#Se') + 2)!
-    expect(r.form).toBe('fragment')
+    expect(r).toMatchObject({ syntax: 'markdown', part: 'heading' })
     expect(r.title).toBe('Work Notes')
     expect(r.query).toBe('Se')
     expect(doc.slice(r.from, r.to)).toBe('Se')
   })
 
-  it('an empty page half before a fragment asks for no page', () => {
-    const doc = 'see [x](#Setup) end'
-    expect(autocompleteQuery(doc, doc.indexOf('#'))).toMatchObject({ form: 'fragment', title: '' })
+  it('the caret before the # of an empty page half sits in the title, as a wikilink’s does', () => {
+    for (const doc of ['see [x](#Setup) end', 'see [[#Setup]] end'])
+      expect(autocompleteQuery(doc, doc.indexOf('#'))).toMatchObject({ part: 'title', query: '' })
   })
 
   it('a bare # asks for the page being written in', () => {
     const doc = 'see [x](#) end'
     const r = autocompleteQuery(doc, doc.indexOf('#') + 1)!
-    expect(r.form).toBe('fragment')
+    expect(r).toMatchObject({ syntax: 'markdown', part: 'heading' })
     expect(r.title).toBe('')
     expect(r.query).toBe('')
   })
 
   it('a # inside an address is the address’s own', () => {
     const doc = 'see [x](https://a.com/#top) end'
-    expect(autocompleteQuery(doc, doc.indexOf('top'))?.form).toBe('target')
+    expect(autocompleteQuery(doc, doc.indexOf('top'))?.part).toBe('title')
   })
 
-  it('a heading commit encodes it, fills an empty label, and finishes past the )', () => {
+  it('a heading commit encodes it, leaves an empty label to its drawn default, and finishes past the )', () => {
     const doc = 'see [](Work%20Notes#Se) end'
     const r = autocompleteQuery(doc, doc.indexOf('#Se') + 2)!
     const edit = commitEdit(r, 'Getting Started', {})
     const text = landed(doc, edit)
-    expect(text).toBe('see [Getting Started](Work%20Notes#Getting%20Started) end')
+    expect(text).toBe('see [](Work%20Notes#Getting%20Started) end')
     expect(text.slice(edit.anchor)).toBe(' end')
   })
 
@@ -309,7 +341,7 @@ describe('the ( ) form', () => {
     const text = landed(doc, edit)
     expect(text).toBe('see [x](Work%20Notes#) end')
     expect(text.slice(edit.anchor)).toBe(') end')
-    expect(autocompleteQuery(text, edit.anchor)?.form).toBe('fragment')
+    expect(autocompleteQuery(text, edit.anchor)?.part).toBe('heading')
   })
 })
 
@@ -330,6 +362,59 @@ describe('a pick writes the shown text its caller kept', () => {
     expect(pick('[Notes](Old)', 'Old', 'New', 'Notes')).toEqual({
       text: '[Notes](New) x',
       after: ' x',
+    })
+  })
+})
+
+describe('wiki and markdown picks mirror each other', () => {
+  const pick = (doc: string, at: string, value: string, opts: Parameters<typeof commitEdit>[2]) => {
+    const edit = commitEdit(autocompleteQuery(doc, doc.indexOf(at) + at.length)!, value, opts)
+    const text = landed(doc, edit)
+    return { text, before: text.slice(0, edit.anchor) }
+  }
+
+  it('a pick opening the heading slot rests after its #', () => {
+    expect(pick('[[Gam]]', 'Ga', 'Gamma', { openHeading: true })).toEqual({
+      text: '[[Gamma#]]',
+      before: '[[Gamma#',
+    })
+    expect(pick('[](Gam)', 'Ga', 'Gamma', { openHeading: true })).toEqual({
+      text: '[](Gamma#)',
+      before: '[](Gamma#',
+    })
+  })
+
+  it('a pick opening the alias slot rests in it', () => {
+    expect(pick('[[Gam]]', 'Ga', 'Gamma', { openAlias: true })).toEqual({
+      text: '[[Gamma|]]',
+      before: '[[Gamma|',
+    })
+    expect(pick('[](Gam)', 'Ga', 'Gamma', { openAlias: true })).toEqual({
+      text: '[](Gamma)',
+      before: '[',
+    })
+  })
+
+  it('a heading pick opening the alias slot rewrites the link with that slot empty', () => {
+    expect(pick('[[Gamma#Se]]', '#S', 'Setup', { openAlias: true })).toEqual({
+      text: '[[Gamma#Setup|]]',
+      before: '[[Gamma#Setup|',
+    })
+    expect(pick('[](Gamma#Se)', '#S', 'Setup', { openAlias: true })).toEqual({
+      text: '[](Gamma#Setup)',
+      before: '[',
+    })
+  })
+
+  it('a closed heading pick rests past the closer', () => {
+    expect(pick('[[Notes#Se]]', '#S', 'Setup', {}).before).toHaveLength(15)
+    expect(pick('[x](Notes#Se)', '#S', 'Setup', {}).before).toHaveLength(16)
+  })
+
+  it('a heading pick behind a kept alias keeps it and rests past the closer', () => {
+    expect(pick('[[Notes#|Mine]]', '#', 'Setup', {})).toEqual({
+      text: '[[Notes#Setup|Mine]]',
+      before: '[[Notes#Setup|Mine]]',
     })
   })
 })
@@ -360,7 +445,7 @@ describe('what accepting a suggestion finishes', () => {
   it('accepting an alias steps past the whole link, not just the alias', () => {
     const doc = 'a [[Alpha|th]] b'
     const ac = autocompleteQuery(doc, doc.indexOf('th') + 1)!
-    expect(ac.form).toBe('alias')
+    expect(ac.part).toBe('shown')
     const edit = commitEdit(ac, 'the plan', {})
     const text =
       doc.slice(0, edit.changes[0].from) + edit.changes[0].insert + doc.slice(edit.changes[0].to)
@@ -388,11 +473,11 @@ describe('what accepting a suggestion finishes', () => {
   })
 })
 
-describe('the heading form opens after a typed #', () => {
+describe('the heading slot opens after a typed #', () => {
   it('an empty fragment after the page names it and asks nothing yet', () => {
     const doc = 'see [[Page#]] end'
     const r = autocompleteQuery(doc, doc.indexOf('#') + 1)!
-    expect(r.form).toBe('heading')
+    expect(r.part).toBe('heading')
     expect(r.title).toBe('Page')
     expect(r.query).toBe('')
   })
@@ -400,7 +485,7 @@ describe('the heading form opens after a typed #', () => {
   it('a bare fragment names no page at all', () => {
     const doc = 'see [[#Se]] end'
     const r = autocompleteQuery(doc, doc.indexOf('Se') + 1)!
-    expect(r.form).toBe('heading')
+    expect(r.part).toBe('heading')
     expect(r.title).toBe('')
     expect(r.query).toBe('Se')
   })
@@ -436,12 +521,12 @@ describe('the heading form opens after a typed #', () => {
   })
 })
 
-describe('a typed § arms the section form', () => {
-  it('returns form: section for an armed §, keyed from just past it', () => {
+describe('a typed § arms a prose heading query', () => {
+  it('returns a prose heading query for an armed §, keyed from just past it', () => {
     const doc = 'see §Set end'
     const armed = doc.indexOf('§')
     const r = autocompleteQuery(doc, armed + 4, armed)!
-    expect(r.form).toBe('section')
+    expect(r).toMatchObject({ syntax: 'prose', part: 'heading', start: armed, end: armed + 4 })
     expect(r.query).toBe('Set')
     expect(r.from).toBe(armed + 1)
   })
@@ -453,7 +538,7 @@ describe('a typed § arms the section form', () => {
   it('a space inside the query rides through, so a multi-word heading is reachable', () => {
     const doc = 'see §Getting S'
     const r = autocompleteQuery(doc, doc.length, 4)!
-    expect(r.form).toBe('section')
+    expect(r.syntax).toBe('prose')
     expect(r.query).toBe('Getting S')
   })
 
@@ -465,7 +550,7 @@ describe('a typed § arms the section form', () => {
   it('a § inside a bracket, a markdown link’s label included, is not armed', () => {
     for (const doc of ['see [§Set](x) end', 'see [§Set'] as const) {
       const armed = doc.indexOf('§')
-      expect(autocompleteQuery(doc, armed + 4, armed)?.form).not.toBe('section')
+      expect(autocompleteQuery(doc, armed + 4, armed)?.syntax).not.toBe('prose')
     }
   })
 })

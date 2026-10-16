@@ -4,12 +4,9 @@ import type { Extension } from '@codemirror/state'
 import {
   AC_MAX,
   aliasRows,
-  closerOf,
+  CLOSER,
   commitEdit,
   headingRows,
-  listsAliases,
-  listsPages,
-  listsHeadings,
   openHeadingRows,
   pageRow,
   type AcRow,
@@ -19,10 +16,10 @@ import { toggled } from '@pommora/uix/Utilities/checkSet'
 import { docOutline } from '../docCache'
 import type { MarkdownScope } from '../Engine/detect'
 import { keepsShown, readLinkText } from '../../Connections/linkValue'
-import { unescapeLabel } from '../../Connections/links'
 import { normalizeTitle } from '../../Paths/caseFold'
 import { restedOnLink } from '../Links/linkReveal'
 import { baselineAt } from '../Links/linkSettle'
+import { SLOT_HOLDER } from '../Input/edits'
 import type { AutocompletePaneProps } from './AutocompletePane'
 import { acQuery, closeAcQuery } from './acQuery'
 import type { PageHeading } from '../../Platform/stores'
@@ -80,10 +77,10 @@ export function useConnectionAutocomplete(
   // The title the heading list slid back to: an exact title closes the page list, but Back must land on it open.
   const [backedTo, setBackedTo] = useState<string | null>(null)
   const query = ac?.query ?? null
-  const form = ac?.form ?? 'link'
+  const part = ac?.part ?? 'title'
   const title = ac?.title
   const closed = ac?.closed ?? true
-  const heading = listsHeadings(form)
+  const heading = part === 'heading'
   const page = useMemo(() => {
     if (title) return host.connections()?.index.resolve(title).page ?? null
     return (heading && viewRef.current && heldOf(viewRef.current)) || null
@@ -110,7 +107,7 @@ export function useConnectionAutocomplete(
   const lookup = (q: string): AcRow[] => {
     const conn = host.connections()
     if (!conn) return []
-    if (listsAliases(form)) return aliasRows(host.aliases, page?.id, q)
+    if (part === 'shown') return aliasRows(host.aliases, page?.id, q)
     return conn.index.candidates(q, AC_MAX).map((p) => pageRow(p, host))
   }
   // A query that names its one match exactly is a finished link, so the caret resting in one opens nothing; Back is the exception.
@@ -124,11 +121,11 @@ export function useConnectionAutocomplete(
     const exact = found.length === 1 && normalizeTitle(found[0].value) === normalizeTitle(query)
     if (exact && closed && normalizeTitle(query) !== normalizeTitle(backedTo ?? '')) return []
     return found
-  }, [query, closed, form, page, host, aliasEpoch, heading, allHeadingRows, collapsed, backedTo])
+  }, [query, closed, part, page, host, aliasEpoch, heading, allHeadingRows, collapsed, backedTo])
 
   useEffect(() => {
     if (ac === null) setBackedTo(null)
-    if (ac === null || listsPages(ac.form)) setBehind(null)
+    if (ac === null || ac.part === 'title') setBehind(null)
   }, [ac])
 
   const commit = (row: AcRow, opts: { openHeading?: boolean } = {}): void => {
@@ -136,35 +133,36 @@ export function useConnectionAutocomplete(
     if (!view || !ac || !ctl.current.open) return
     const settings = host.settings()
     const conn = host.connections()
-    // Until Task 5-1 puts the link's span on every query, the picker reads the link here: `start` and the closer from the query, `reaims` from its form, and `shown` from the label's own span, restating the label rule because an empty destination reads as no link.
-    const start = ac.label ? ac.label.from - 1 : ac.from
+    const doc = view.state.doc
+    // An empty title holds the placeholder `openLinkAt` reads through, so a label before an empty destination still reads.
     const text =
-      view.state.sliceDoc(start, ac.to) + (ac.label || !ac.closed ? closerOf(ac.form) : '')
+      doc.sliceString(ac.start, ac.to) +
+      (ac.part === 'title' && ac.from === ac.to ? SLOT_HOLDER : '') +
+      doc.sliceString(ac.to, ac.end) +
+      (ac.closed ? '' : CLOSER[ac.syntax])
     const written = readLinkText(text)
     // How the link read before this edit began decides whether the shown text survives a re-aim; the link as it stands is where that shown text is read from.
-    const was = baselineAt(view.state, start, ac.closed ? text : null)
+    const was = baselineAt(view.state, ac.start, ac.closed ? text : null)
     const baseline = was === null ? null : readLinkText(was)
-    const reaims = ac.form === 'link' ? 'wiki' : ac.form === 'target' ? 'markdown' : null
-    const shown = ac.label
-      ? unescapeLabel(view.state.sliceDoc(ac.label.from, ac.label.to).trim())
-      : written?.alias
+    const shown = written?.alias
     const kept =
-      reaims &&
+      ac.part === 'title' &&
       shown &&
       keepsShown(
         baseline,
-        { kind: 'page', syntax: reaims, title: row.value },
+        { kind: 'page', syntax: ac.syntax === 'markdown' ? 'markdown' : 'wiki', title: row.value },
         settings.removeTitleOnLinkChange,
         conn?.index,
       )
         ? shown
         : undefined
     const pageId = row.kind === 'page' ? row.pageId : ac.title ? page?.id : undefined
-    // Only a page the picker offered can open an alias slot — an empty pipe with nothing behind it is a slot the user has to close.
+    // Only a page the picker offered can open an alias slot, and only a link not already showing one: a dropped alias opens it for the new page, a kept one stays.
     const openAlias =
-      (ac.form === 'link' || ac.form === 'heading') &&
+      (ac.part === 'title' || ac.part === 'heading') &&
+      ac.syntax !== 'prose' &&
       !opts.openHeading &&
-      kept === undefined &&
+      !(ac.part === 'title' ? kept : written?.alias) &&
       settings.aliasPickerOnCommit &&
       host.aliases.list(pageId ?? '').length > 0
     const opensSlot = openAlias || opts.openHeading
@@ -194,7 +192,7 @@ export function useConnectionAutocomplete(
     aside: (dir) => {
       const view = viewRef.current
       if (!view || !ac) return false
-      if (dir === 1 && listsPages(ac.form)) {
+      if (dir === 1 && ac.part === 'title') {
         if (row?.kind !== 'page') return false
         commit(row, { openHeading: true })
         return true
@@ -240,7 +238,7 @@ export function useConnectionAutocomplete(
       onBack: () => ctl.current.aside?.(-1),
       geometry: host.paneGeometry('autocomplete'),
       aliasHost:
-        listsAliases(form) && page
+        part === 'shown' && page
           ? {
               title: page.title,
               edit: (e: AliasEdit) => host.aliases.edit(page.id, e),

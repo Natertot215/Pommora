@@ -47,6 +47,11 @@ describe('the picker offers what a page has been called before', () => {
     expect(aliasRows(aliases, 'p1', 'zzz')).toEqual([])
   })
 
+  it('offers every alias, however many', () => {
+    remembered = { p1: Array.from({ length: 25 }, (_, i) => `alias ${i}`) }
+    expect(aliasRows(aliases, 'p1', '')).toHaveLength(25)
+  })
+
   it('a page with nothing remembered offers nothing', () => {
     expect(aliasRows(aliases, 'p2', '')).toEqual([])
   })
@@ -462,10 +467,13 @@ describe('the heading slide’s top row marks how it arrived', () => {
   })
 
   const headingAc = {
-    query: '',
+    syntax: 'wiki' as const,
+    part: 'heading' as const,
+    start: 0,
+    end: 0,
     from: 0,
     to: 0,
-    form: 'heading' as const,
+    query: '',
     closed: true,
     title: 'Notes',
     caretX: 0,

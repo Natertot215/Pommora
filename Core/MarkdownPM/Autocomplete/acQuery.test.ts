@@ -31,7 +31,7 @@ describe('the picker’s query as editor state', () => {
     const { field, state } = stateOf('[[Pr', 4)
     const next = typed(state, 4, 'o')
     const q = next.field(field).query
-    expect(q).toMatchObject({ query: 'Pro', form: 'link', closed: false })
+    expect(q).toMatchObject({ query: 'Pro', syntax: 'wiki', part: 'title', closed: false })
     expect(next.update({ selection: { anchor: 5 } }).state.field(field).query).toBe(q)
   })
 
@@ -102,7 +102,11 @@ describe('the § arm', () => {
       userEvent: 'input',
     }).state
     expect(converted.field(field).armed).toBe(4)
-    expect(converted.field(field).query).toMatchObject({ form: 'section', query: '' })
+    expect(converted.field(field).query).toMatchObject({
+      syntax: 'prose',
+      part: 'heading',
+      query: '',
+    })
   })
 })
 

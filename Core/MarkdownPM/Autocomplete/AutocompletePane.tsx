@@ -23,7 +23,7 @@ import { CaretPane, CLOSED_GEOMETRY } from '../Menus/caretPane'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
 import { text } from '@pommora/uix/Theme/typography.css'
 import { outlineTree, type OutlineNode } from '../Engine/outlineTree'
-import { type AcRow, type HeadingRow, listsHeadings, listsPages } from './autocomplete'
+import type { AcRow, HeadingRow } from './autocomplete'
 import type { AcState } from './useConnectionAutocomplete'
 import { AliasList, type AliasHost } from './AliasList'
 
@@ -52,10 +52,13 @@ const AC_BOUNDS: PaneBounds = {
 const AC_FIT_MAX = 320
 
 const CLOSED: AcState = {
-  query: '',
+  syntax: 'wiki',
+  part: 'title',
+  start: 0,
+  end: 0,
   from: 0,
   to: 0,
-  form: 'link',
+  query: '',
   closed: true,
   ...CLOSED_GEOMETRY,
 }
@@ -84,8 +87,8 @@ export function AutocompletePane({
   const matchLen = v.ac.query.length
   const keepInView = useKeepInView(v.index)
 
-  const linksPages = listsPages(v.ac.form)
-  const headingForm = listsHeadings(v.ac.form)
+  const linksPages = v.ac.part === 'title'
+  const headingForm = v.ac.part === 'heading'
   const sliding = v.behind !== null
 
   const slot = (rows: AcRow[], active: boolean): React.JSX.Element => (
