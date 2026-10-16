@@ -199,7 +199,8 @@ export function linkValueFromEdit(
           alias: written.alias,
         }
   const was = current ? readLinkText(current) : null
-  return { kind: 'link', value: retarget('wiki', was, next, !keepTitle, index).text }
+  const alias = next.alias ?? (keepsShown(was, next, !keepTitle, index) ? was?.alias : undefined)
+  return { kind: 'link', value: retarget('wiki', { ...next, alias }).text }
 }
 
 export function linkValueFromRename(alias: string, current: string): PropertyValue {
@@ -207,7 +208,7 @@ export function linkValueFromRename(alias: string, current: string): PropertyVal
   const target = readLinkText(current)
   if (!target) return { kind: 'link', value: current }
   const syntax = target.syntax === 'wiki' ? 'wiki' : 'markdown'
-  return { kind: 'link', value: retarget(syntax, null, { ...target, alias: named }, false).text }
+  return { kind: 'link', value: retarget(syntax, { ...target, alias: named }).text }
 }
 
 // No display means the raw URL: sort and filter must not move when a property's look changes.
@@ -269,24 +270,20 @@ export function keepsShown(
   return was.kind === 'unresolved' || sameTarget(was, resolveLink(next, index))
 }
 
+/** Writes a link to `next` in the syntax asked for, the markdown form where a wikilink can't spell it; whether an earlier alias rides along is `keepsShown`'s decision, folded into `next.alias` by the caller. */
 export function retarget(
   syntax: 'wiki' | 'markdown',
-  baseline: LinkTarget | null,
   next: LinkTarget,
-  removeTitle: boolean,
-  index?: PageIndex,
   into?: { format: LinkDisplay; title?: string },
 ): LinkPaste {
-  const shown =
-    next.alias ?? (keepsShown(baseline, next, removeTitle, index) ? baseline?.alias : undefined)
   if (next.kind === 'page') {
     const text =
       syntax === 'wiki' && connectionSpells(next)
-        ? connectionText(next.title, next.heading, shown)
-        : markdownPageLink(next.title, next.heading, shown)
+        ? connectionText(next.title, next.heading, next.alias)
+        : markdownPageLink(next.title, next.heading, next.alias)
     return { kind: 'link', text }
   }
   const url = normalizeLinkUrl(next.url)
-  if (shown) return { kind: 'link', text: serializeLink(url, shown) }
+  if (next.alias) return { kind: 'link', text: serializeLink(url, next.alias) }
   return into ? linkPaste(url, into.format, into.title) : { kind: 'link', text: url }
 }

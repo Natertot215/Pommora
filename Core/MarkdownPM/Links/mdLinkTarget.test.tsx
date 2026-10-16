@@ -248,6 +248,19 @@ describe('a connection takes its color as it is typed', () => {
     expect(view.dom.querySelector('.md-connection-typing')?.textContent).toBe('Wor')
   })
 
+  it('and so does an unresolved markdown link', async () => {
+    const view = await mountEditor({ initialBody: 'see [x](Wo) end', connections: conn })
+    await act(async () => {
+      view.focus()
+      view.dispatch({
+        changes: { from: 10, insert: 'r' },
+        selection: { anchor: 11 },
+        userEvent: 'input.type',
+      })
+    })
+    expect(view.dom.querySelector('.md-connection-typing')?.textContent).toBe('x')
+  })
+
   // Clicking into a link that names no page is inspecting an unresolved link. Only writing one earns the color.
   it('but merely clicking into one leaves it raw', async () => {
     const view = await mountEditor({ initialBody: 'see [[Wor]] end', connections: conn })

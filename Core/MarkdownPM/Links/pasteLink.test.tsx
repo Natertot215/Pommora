@@ -379,6 +379,20 @@ describe('pasting inside a link', () => {
     expect(await pastedAt('a [y](Page1) b', 3, '[[Page2]]')).toBe('a [y](Page2) b')
   })
 
+  it('drops the shown text of a link whose title was retyped before the paste, judging it by how it read before', async () => {
+    settings({ removeTitleOnLinkChange: true })
+    const view = await mountEditor({ initialBody: 'a [[Page1|x]] b', connections: held })
+    view.dispatch({
+      changes: { from: 8, to: 9, insert: 'X' },
+      selection: { anchor: 9 },
+      userEvent: 'input.type',
+    })
+    await act(async () => {
+      paste(view, '[[Page2]]', 'auto')
+    })
+    expect(view.state.doc.toString()).toBe('a [[Page2]] b')
+  })
+
   it('writes the Default Link Format for an address pasted into an empty alias', async () => {
     settings({ defaultLinkFormat: 'link-short' })
     expect(await pastedAt('[[Foo|]]', 6, 'https://a.co')).toBe('[a.co](https://a.co)')

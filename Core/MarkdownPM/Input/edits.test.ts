@@ -4,6 +4,7 @@ import {
   marginSign,
   openLinkAt,
   linkAt,
+  linkWithin,
   slotAt,
   continueListOnEnter,
   smartBackspace,
@@ -1058,6 +1059,12 @@ describe('linkAt', () => {
   it('holds the caret from past its opener through its closer, so the boundary between two abutting links belongs to the first', () => {
     expect(linkAt(scanDoc('[[A]][[B]]'), 5)?.full).toEqual([0, 5])
     expect(linkAt(scanDoc('x [[A]]'), 2)).toBeNull()
+  })
+})
+
+describe('linkWithin', () => {
+  it('finds a link lying wholly inside the range', () => {
+    expect(linkWithin(scanDoc('a [[B|C]] x'), 2, 11)).toEqual({ start: 2, text: '[[B|C]]' })
   })
 })
 

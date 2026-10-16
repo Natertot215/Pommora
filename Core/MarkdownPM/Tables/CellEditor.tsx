@@ -25,7 +25,7 @@ import { type EditorHost, mirrorBody, mirrored, redrawNudge } from '../api'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import { editorBase } from '../surface'
 import { type PendingTitle, pendingTitles } from '../Links/pendingTitle'
-import { linkSettle } from '../Links/linkEdit'
+import { linkSettle } from '../Links/linkSettle'
 
 const HISTORY_BINDINGS = historyKeymap.filter((b) => b.run === undo || b.run === redo)
 

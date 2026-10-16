@@ -65,9 +65,9 @@ describe('readLinkText', () => {
       syntax: 'bare',
       url: 'example.com',
     })
-    expect(
-      retarget('wiki', null, { kind: 'url', syntax: 'bare', url: 'example.com' }, false).text,
-    ).toBe('https://example.com')
+    expect(retarget('wiki', { kind: 'url', syntax: 'bare', url: 'example.com' }).text).toBe(
+      'https://example.com',
+    )
   })
   it('reads a bare heading as a page with an empty title', () => {
     expect(readLinkText('[x](#H)')).toEqual({
@@ -463,7 +463,7 @@ describe('keepsShown — Remove Title On Link Change over the link as it read be
   })
 })
 
-describe('retarget — the one rule for a link whose target changes', () => {
+describe('retarget — the one writer for a link whose target changes', () => {
   const pageOf = (title: string, alias?: string): LinkTarget => ({
     kind: 'page',
     syntax: 'wiki',
@@ -472,60 +472,31 @@ describe('retarget — the one rule for a link whose target changes', () => {
   })
   const urlOf = (url: string): LinkTarget => ({ kind: 'url', syntax: 'bare', url })
   const text = (...args: Parameters<typeof retarget>): string => retarget(...args).text
-  const index = buildPageIndex([
-    { id: '1', title: 'Page1', path: 'Page1.md' },
-    { id: '2', title: 'Page2', path: 'Page2.md' },
-  ])
 
-  it('writes a page the wikilink grammar cannot carry as a markdown link, whatever the container', () => {
-    expect(text('wiki', pageOf('Page1'), pageOf('A|B'), true, index)).toBe('[A|B](A%7CB)')
-    expect(text('wiki', null, pageOf('Draft]', 'x'), true, index)).toBe('[x](Draft%5D)')
-    expect(
-      text(
-        'wiki',
-        pageOf('Page1'),
-        { kind: 'page', syntax: 'wiki', title: 'P', heading: 'H]' },
-        true,
-        index,
-      ),
-    ).toBe('[H\\]](P#H%5D)')
-  })
-
-  it('takes the next target, and the next link’s own alias', () => {
-    expect(text('wiki', pageOf('Page1'), pageOf('Page2'), true, index)).toBe('[[Page2]]')
-    expect(text('wiki', pageOf('Page1'), pageOf('Page2', 'x'), true, index)).toBe('[[Page2|x]]')
-  })
-  it('keeps the container’s alias only where the setting keeps it', () => {
-    expect(text('wiki', pageOf('Page1', 'Mine'), pageOf('Page2'), true, index)).toBe('[[Page2]]')
-    expect(text('wiki', pageOf('Page1', 'Mine'), pageOf('Page2'), false, index)).toBe(
-      '[[Page2|Mine]]',
+  it('writes a page the wikilink grammar cannot carry as a markdown link', () => {
+    expect(text('wiki', pageOf('A|B'))).toBe('[A|B](A%7CB)')
+    expect(text('wiki', pageOf('Draft]', 'x'))).toBe('[x](Draft%5D)')
+    expect(text('wiki', { kind: 'page', syntax: 'wiki', title: 'P', heading: 'H]' })).toBe(
+      '[H\\]](P#H%5D)',
     )
   })
-  it('keeps a markdown container markdown', () => {
-    expect(text('markdown', pageOf('Page1', 'y'), pageOf('Page2'), true, index)).toBe(
-      '[Page2](Page2)',
-    )
-    expect(text('markdown', pageOf('Page1', 'y'), pageOf('Page2'), false, index)).toBe('[y](Page2)')
+  it('writes the next target with its alias, in the syntax asked for', () => {
+    expect(text('wiki', pageOf('Page2'))).toBe('[[Page2]]')
+    expect(text('wiki', pageOf('Page2', 'x'))).toBe('[[Page2|x]]')
+    expect(text('markdown', pageOf('Page2'))).toBe('[Page2](Page2)')
+    expect(text('markdown', pageOf('Page2', 'y'))).toBe('[y](Page2)')
   })
   it('writes an address in a connection as a weblink under the Default Link Format', () => {
-    expect(
-      retarget('wiki', pageOf('Page1'), urlOf('https://x.com'), true, index, {
-        format: 'link-short',
-      }),
-    ).toEqual({ kind: 'link', text: '[x.com](https://x.com)' })
-    expect(
-      retarget('wiki', pageOf('Page1'), urlOf('https://x.com'), true, index, {
-        format: 'link-title',
-      }).awaits,
-    ).toBe('https://x.com')
-  })
-  it('keeps the alias when the target is unchanged', () => {
-    expect(text('wiki', pageOf('Page1', 'Mine'), pageOf('page1'), true, index)).toBe(
-      '[[page1|Mine]]',
+    expect(retarget('wiki', urlOf('https://x.com'), { format: 'link-short' })).toEqual({
+      kind: 'link',
+      text: '[x.com](https://x.com)',
+    })
+    expect(retarget('wiki', urlOf('https://x.com'), { format: 'link-title' }).awaits).toBe(
+      'https://x.com',
     )
   })
   it('writes a Link value’s address bare, with no format label', () => {
-    expect(retarget('wiki', null, urlOf('https://x.com'), false)).toEqual({
+    expect(retarget('wiki', urlOf('https://x.com'))).toEqual({
       kind: 'link',
       text: 'https://x.com',
     })

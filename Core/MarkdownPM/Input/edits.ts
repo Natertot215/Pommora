@@ -343,6 +343,22 @@ export function linkAt(scan: DocScan, at: number): LinkOccurrence | null {
   return null
 }
 
+/** The first link of either syntax on the line at `from` that reaches strictly into `from`–`to`, so typing just past a closer never arms and a caret on a closer is outside. */
+export function linkWithin(
+  scan: DocScan,
+  from: number,
+  to = from,
+): { start: number; text: string } | null {
+  const i = lineIndexAt(scan, from)
+  const line = scan.lines[i]
+  if (!line.includes('[[') && !line.includes('](')) return null
+  const ls = scan.lineStarts[i]
+  for (const o of linkOccurrences(line, (p) => inCodeAt(scan, ls + p)))
+    if (ls + o.full[0] < to && ls + o.full[1] > from)
+      return { start: ls + o.full[0], text: line.slice(o.full[0], o.full[1]) }
+  return null
+}
+
 /** The link still being written before `at`, as it reads once closed; a placeholder at the caret keeps an empty slot readable, since both patterns refuse an empty title or destination. */
 export function openLinkAt(scan: DocScan, at: number): LinkOccurrence | null {
   const i = lineIndexAt(scan, at)
