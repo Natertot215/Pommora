@@ -1,6 +1,6 @@
 ## Pommora Codebase Audit
 
-**Pinned:** `f6511401d` (09-23-2026) · **Reconciled:** `5272eb82f` (10-15-2026) · **Findings:** 87/643
+**Pinned:** `f6511401d` (09-23-2026) · **Reconciled:** `5272eb82f` (10-15-2026) · **Findings:** 88/644
 
 Thirty-four Opus investigators read every production file in `Core`, `UIX`, `Desktop`, and `Sync` in full, sliced by folder and by the jobs the code performs. Two mergers combined their 857 candidates by root cause, and twenty-one reviewers who hadn't raised them re-read every citation, reproduced the High ones against real modules, and killed 63. This document is the current state: findings that were fixed, withdrawn, or ruled moot are removed rather than annotated, and rulings are written into the findings they settle. The readiness and pace sections are the orchestrator's judgment, drawn from the evidence below them. A system audit of MarkdownPM (10-08-2026) read the editor in full at `70fc6063c`, and a workstream audit of Connections and Aliases (10-15-2026) read that surface at `5272eb82f`; the findings of both are folded in here.
 
@@ -24,7 +24,7 @@ Thirty-four Opus investigators read every production file in `Core`, `UIX`, `Des
 | Area | State | High | Medium |
 | ------------ | ----------------------------------------------------- | ------- | ---------------------------- |
 | Sync | Changes from another device are written to whatever path the hub names, including outside the Nexus and into `.git/` or `.obsidian/` (F-001). A rebuilt or restored hub never gets unchanged files re-uploaded, so new devices receive a partial Nexus (F-003). A list two devices both edited keeps one device's items, so a Context rename can revert and hide its Spaces (F-006). Trashing a Collection or Set uploads the contents of its excluded folders (F-007). | 3 | 4 |
-| Page editor | Past about 8,000 lines, the footer's figures re-tokenize the whole page on every typing pause, freezing the editor for up to a second (F-044). | 1 | 8 |
+| Page editor | Past about 8,000 lines, the footer's figures re-tokenize the whole page on every typing pause, freezing the editor for up to a second (F-044). | 1 | 9 |
 | Menus and pickers | The kit's buttons show no keyboard focus, so a Tab walk through a menu or toolbar loses its place on every button (F-076). | 0 | 1 |
 | Identity | An ID lost or damaged outside the app is replaced rather than recovered on every path but a held page's own event, so tabs, pins, metadata, and a Nexus's device store lose what they were keyed to (F-089). | 0 | 1 |
 | Connections | A link is read by two markdown grammars, resolved by two readers, and edited through two trackers in one listener, so a heading renamed into something a wikilink can't spell strands its wikilinks (F-122), a heading picked into an aliased wikilink rests the caret inside the alias (F-120), and a lone `![Alias](Page)` line draws a graph edge (F-127). | 0 | 6 |
@@ -1102,6 +1102,18 @@ A table followed by a line containing only U+00A0 draws as a table that stops ab
 
 End the body on CommonMark's blank line (spaces and tabs only) rather than `trim()`, and add the line to the table property's alphabet. Lands with or after F-015, which rewrites the same loop.
 
+##### F-132 · Bold, italic, strikethrough, or code picked over part of a link writes its markers inside the link, which breaks a connection's title.
+
+> **Area:** MarkdownPM · **Lens:** Defect · **Weight:** Medium · **Size:** S · **Net:** TBD · **Origin:** Shortcut
+
+**Finding**
+
+`toggleInline` writes a mark's opener and closer at the selection's own edges, wherever they fall. ⌘B over `Ba` in `foo [[Bar]] baz` writes `foo [[**Ba**r]] baz`, whose connection now names `**Ba**r` and resolves to nothing. ⌘I and strikethrough do the same, and ⌘E turns the title into code. A selection reaching from prose into a link, such as `foo [[B` in the same line, writes `**foo [[B**ar]]`, splitting the link. The same edges land inside an alias (`[[Bar|**Ali**as]]`), a markdown label, and a markdown destination (`[label](https://**x.c**om)`, which drops the bold altogether). Paints refuse every one of these cases, because they're written only where they read back. The marks have no equivalent check. Reproduced in vite-node at `13539fda2`.[^132]
+
+**Fix | Proposed**
+
+An edge that falls inside a link, or a selection that straddles one, widens to that link's whole range, so the pair lands outside the link syntax and wraps it: `**[[Bar]]**`, which the tokenizer already reads as a bold connection. One widening in `toggleInline`, ahead of its writes. With it, paints wrap the link in the same way rather than refusing. **Your call:** whether ⌘E wraps the whole link in backticks, which turns the link into literal code, or is refused over a link.
+
 #### UIX
 
 ##### F-103 · Where a pop-up appears is worked out inside a 50-line block tangled with its screen updates.
@@ -1352,3 +1364,4 @@ Every row was re-checked at `6df5b11e2`; its line numbers are re-anchored whenev
 [^129]: **F-129:** `Core/Properties/Pickers/PropertyValueInput.tsx:59-94` (`PropertyValueInput`), `Core/MarkdownPM/Autocomplete/useConnectionAutocomplete.ts:46` (`useConnectionAutocomplete`), `Core/MarkdownPM/Autocomplete/acQuery.ts:75` (`acQuery`), `Core/Properties/Pickers/TextPane.tsx:26,98,117`, `.claude/Features/ConnectionsPM.md:55`
 [^130]: **F-130:** `.claude/Features/ConnectionsPM.md:26,59,62`, `.claude/Features/MarkdownPM.md:31,104,255`, `Core/Nexus/pageMetadata.ts:166-179` (`editPageAliases`), `Core/Nexus/cascade.ts:157-259` (`renameCascade`), `Core/MarkdownPM/Autocomplete/useConnectionAutocomplete.ts:154-155`, `Core/Actions/connectionMenu.ts:80`, `Core/MarkdownPM/Embeds/embedWidget.tsx:395-397`, `Core/Views/Pipeline/filter.ts:143`, `Core/Views/Pipeline/sort.ts:61`, `Core/Connections/scan.ts:70`
 [^131]: **F-131:** `Core/Connections/linkValue.test.ts:30,211,239,242,258-284,272,290,307,327,370,408,425`, `Core/Connections/rewrite.test.ts:12,105,160-164,200,206,210,267,280,281`, `Core/Connections/links.test.ts:84,91,95,146,150`, `Core/Nexus/aliasAcceptance.test.ts:58,72,95`, `Core/Pages/AliasesRow.test.tsx:112-121`, `Core/Properties/Cells/LinkCell.test.tsx:82-94`, `Core/Connections/scan.test.ts:7-36,39-81,272`, `Core/MarkdownPM/Links/linkClicks.ts`
+[^132]: **F-132:** `Core/MarkdownPM/Input/format.ts:70-82,86-145` (`underSelection`, `toggleInline`), `Core/MarkdownPM/Engine/tokens.ts` (`tokenizeChunk`)
