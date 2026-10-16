@@ -31,7 +31,7 @@ function sectionRunAt(view: EditorView, event: MouseEvent, pos: number): LinkHit
   const text = span.textContent ?? ''
   const from = view.posAtDOM(span)
   return {
-    target: bareHeading(text.slice(1), heldOf(ownPage(view))),
+    target: bareHeading(text.slice(1), heldOf(view)),
     range: [from, from + text.length],
     onText: true,
     hidesSyntax: true,
@@ -45,7 +45,10 @@ function linkUnder(
   api: ConnectionsApi | undefined,
   event: MouseEvent,
 ): LinkHit | null {
-  const pos = view.posAtCoords({ x: event.clientX, y: event.clientY })
+  const label = (event.target as HTMLElement).closest?.('.md-link-label')
+  const pos = label
+    ? view.posAtDOM(label)
+    : view.posAtCoords({ x: event.clientX, y: event.clientY })
   if (pos == null) return null
   const run = sectionRunAt(view, event, pos)
   if (run) return run
@@ -55,7 +58,7 @@ function linkUnder(
   const target = resolveLink(
     readOccurrence(docString(view.state.doc), tk.link),
     api?.index,
-    heldOf(ownPage(view)),
+    heldOf(view),
   )
   const el = (event.target as HTMLElement).closest?.(
     '.md-connection-resolved, .md-connection-ambiguous, .md-heading-symbol, .md-link',
@@ -83,20 +86,21 @@ export function followTarget(
   if (!view) return null
   const host = view.state.facet(editorHost)
   if (host.glance?.contains(el)) return null
-  return resolveFollow(target, ownPage(el), api, event, host.openLink)
+  const own = ownPage(el)
+  return resolveFollow(target, own?.kind === 'body' ? own : null, api, event, host.openLink)
 }
 
 /** What a follow does once the surface it starts on is known: `own` is the body a bare `#Heading` travels in. */
 export function resolveFollow(
   target: ResolvedLink,
-  own: OwnPage | null,
+  own: Extract<OwnPage, { kind: 'body' }> | null,
   api: ConnectionsApi | undefined,
   event: Pick<MouseEvent, 'metaKey' | 'ctrlKey'>,
   openLink: (url: string) => void,
 ): (() => void) | null {
   switch (target.kind) {
     case 'self':
-      return own?.kind === 'body'
+      return own
         ? () => travelToHeading(own.view, target.heading, own.view.posAtDOM(own.seat))
         : null
     case 'page':

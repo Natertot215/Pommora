@@ -59,8 +59,13 @@ export function linkLook(
           className: cx('md-connection-heading', missing && 'md-connection-heading-missing'),
         }
       : null
-  const label =
-    written?.kind === 'page' ? defaultLabel(written.title, written.heading) : (written?.url ?? '')
+  const named =
+    written?.kind !== 'url' ? written : target.kind === 'page' ? written.page : undefined
+  const label = named
+    ? defaultLabel(named.title, named.heading)
+    : written?.kind === 'url'
+      ? written.url
+      : ''
   return { label, target, status, missing, bare, join }
 }
 

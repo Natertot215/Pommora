@@ -10,7 +10,7 @@ import { type FollowEvent, followTarget } from '../Links/linkClicks'
 import { applyCitationAction, travelToCitation } from './citationActions'
 import { travelTo } from '../travel'
 import { pointerHandlers, type PointerTarget } from '../Gestures/pointerPath'
-import { editorHost, heldOf, ownPage, pageEditorAt } from '../api'
+import { editorHost, heldOf, pageEditorAt } from '../api'
 
 export const CITE_GLYPH = '.md-citation-reference'
 
@@ -40,8 +40,8 @@ export function followCitation(
   const lone =
     entry &&
     loneTarget(docString(view.state.doc).slice(entry.contentStart, lineEndOf(scan, entry.lastLine)))
-  const held = heldOf(ownPage(event.target as Element))
-  const target = lone && resolveLink(readOccurrence(lone.text, lone.tk.link), api?.index, held)
+  const target =
+    lone && resolveLink(readOccurrence(lone.text, lone.tk.link), api?.index, heldOf(view))
   const go = target && followTarget(target, api, event)
   if (go) go()
   else travelToCitation(view, label)

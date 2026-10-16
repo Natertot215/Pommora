@@ -7,7 +7,6 @@ import type { ConnPage } from '../../Connections/pageIndex'
 import { glanceHost } from '../../Interface/Glance/glanceAction'
 import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'
 import { resolveFollow } from '../../MarkdownPM/Links/linkClicks'
-import { heldBy } from '../../MarkdownPM/api'
 import { lineOffsetsOf } from '../../MarkdownPM/Engine/markdownCode'
 import {
   type CellPage,
@@ -33,7 +32,6 @@ export function TextCell({
   menu?: boolean
 }): React.JSX.Element {
   const hostRef = useRef<HTMLDivElement>(null)
-  const own = heldBy(holder)
   const headingLinkStyle = useSetting('headingLinkStyle')
   const automatic = useSetting('inPageHeadingResolution') === 'automatic'
   const ownPath = holder && readsOwnHeadings(text) ? holder.path : null
@@ -47,7 +45,7 @@ export function TextCell({
     text,
     connections,
     glanceHost,
-    own,
+    holder,
   )
   const follow = (e: React.MouseEvent): void => {
     if (isSecondaryClick(e)) return

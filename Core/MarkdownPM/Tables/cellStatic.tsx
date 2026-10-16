@@ -30,7 +30,7 @@ import { RESTING_EDITS } from '../../Actions/editorMenu'
 import { pasteModeOf, type PasteMode } from '../../Actions/pasteAsMenu'
 import { codeMask, lineOffsetsOf, type TextEdit } from '../Engine/markdownCode'
 import { sectionRunsIn } from '../../Connections/scan'
-import type { PageHeadings } from '../../Connections/pageIndex'
+import type { ConnPage, PageHeadings } from '../../Connections/pageIndex'
 import { linkClass, linkLook, type ConnectionsApi } from '../Links/connectionsApi'
 import { linkEdit } from '../Links/linkEdit'
 import { settledLinkText } from '../Links/pendingTitle'
@@ -43,7 +43,7 @@ import {
   resolveLink,
 } from '../../Connections/linkValue'
 import { CITE_GLYPH, followCitation } from '../Citations/citationPointer'
-import { type EditorHost, heldOf, type OwnPage } from '../api'
+import type { EditorHost } from '../api'
 import type { Seat } from './CellEditor'
 import type { HeadingLinkStyle } from '../../Settings/personalization'
 import { CheckMark, checkboxClass } from '@pommora/uix/Controls/Checkbox'
@@ -134,8 +134,11 @@ export function renderCellContent(
               <span className="md-phantom-syntax" {...verbatim(s, cs)}>
                 {text.slice(s, cs)}
               </span>
-              <span className="md-connection-phantom" {...verbatim(cs, ce)}>
-                {text.slice(cs, ce)}
+              <span
+                className={cx('md-connection-phantom', cs === ce && 'md-link-label')}
+                {...verbatim(cs, ce)}
+              >
+                {cs === ce ? look.label : text.slice(cs, ce)}
               </span>
               <span className="md-phantom-syntax" {...verbatim(ce, e)}>
                 {text.slice(ce, e)}
@@ -144,7 +147,11 @@ export function renderCellContent(
           )
         const join = tk.kind === 'wikiLink' && look.join
         return (
-          <span key={key++} className={linkClass(look)} {...linkSpan(s, e, join ? undefined : cs)}>
+          <span
+            key={key++}
+            className={cx(linkClass(look), cs === ce && 'md-link-label')}
+            {...linkSpan(s, e, join ? undefined : cs)}
+          >
             {join ? (
               <>
                 {join.showPage && text.slice(...tk.link.title)}
@@ -426,7 +433,7 @@ function StaticCellImpl({
     text,
     host.connections,
     host.glance,
-    null,
+    undefined,
     { editable: () => !readOnly(), apply: applyAtRest },
   )
 
@@ -556,19 +563,19 @@ function StaticCellImpl({
   )
 }
 
-/** The link gestures a resting surface shares: a press outside the glance closes it, a link dwells into one, and a right-click on a link opens its menu — read-only unless `authoring` applies the pick, with `own` naming the page a bare `#Heading` answers to. */
+/** The link gestures a resting surface shares: a press outside the glance closes it, a link dwells into one, and a right-click on a link opens its menu — read-only unless `authoring` applies the pick, with `held` naming the page holding a value, which a bare `#Heading` answers to. */
 export function linkGestures(
   text: string,
   connections: (() => ConnectionsApi | undefined) | undefined,
   glance: EditorHost['glance'],
-  own: OwnPage | null,
+  held?: ConnPage,
   authoring?: {
     editable: () => boolean
     apply: (tk: TokenOf<LinkKind>, action: LinkAction) => void
   },
 ) {
   const linkAt = (e: React.SyntheticEvent): RestingHit | null =>
-    cellLinkTarget(text, e.target, connections?.(), own)
+    cellLinkTarget(text, e.target, connections?.(), held)
   const dismiss = (e: React.SyntheticEvent): void => {
     if (!glance?.contains(e.currentTarget)) glance?.close()
   }
@@ -605,12 +612,11 @@ function cellLinkTarget(
   text: string,
   eventTarget: EventTarget | null,
   api: ConnectionsApi | undefined,
-  own: OwnPage | null,
+  held?: ConnPage,
 ): RestingHit | null {
   const el = (eventTarget as HTMLElement | null)?.closest?.('[data-link]')
   const span = el && srcOf(el)
   if (!el || !span || !api) return null
-  const held = heldOf(own)
   if (el.classList.contains('md-section-run'))
     return { el, target: bareHeading((el.textContent ?? '').slice(1), held) }
   const tk = linkTokenAt(cellTokens(text), span[0])
