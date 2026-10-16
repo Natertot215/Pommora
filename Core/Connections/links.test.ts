@@ -2,7 +2,10 @@ import { describe, it, expect } from 'vitest'
 import {
   decodeLinkTarget,
   encodeLinkTarget,
+  escapeLabel,
+  labelEscapes,
   markdownLinkRegex,
+  unescapeLabel,
   targetFragment,
   targetTitle,
 } from './links'
@@ -145,5 +148,14 @@ describe('the codec reads back everything it writes', () => {
 
   it('never throws, even on input encodeURI refuses', () => {
     expect(() => encodeLinkTarget('A\uD800B')).not.toThrow()
+  })
+
+  it('escapes a label the grammar would refuse or misread, and reads each back as itself', () => {
+    expect(escapeLabel('^x')).toBe('\\^x')
+    expect(markdownLinkRegex().exec('[\\^x](A)')?.[1]).toBe('\\^x')
+    for (const label of ['^x', 'a]b', 'back\\slash', '\\^y', 'mid^x'])
+      expect(unescapeLabel(escapeLabel(label))).toBe(label)
+    expect(labelEscapes(escapeLabel('a]b\\c^'))).toEqual([1, 4])
+    expect(labelEscapes('tail\\')).toEqual([])
   })
 })

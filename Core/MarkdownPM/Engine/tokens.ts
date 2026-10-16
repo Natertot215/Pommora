@@ -46,14 +46,6 @@ export type Token =
 
 export type TokenOf<K extends TokenKind> = Extract<Token, { kind: K }>
 
-export const wholeLinkToken = (
-  tokens: readonly Token[],
-  text: string,
-): TokenOf<LinkKind> | undefined => {
-  const tk = linkTokenAt(tokens, 0)
-  return tk?.range[1] === text.length ? tk : undefined
-}
-
 const filled = (s: Span | null): s is Span => s !== null && s[1] > s[0]
 
 /** A connection showing an alias rather than its title. */

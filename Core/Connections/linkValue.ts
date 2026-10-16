@@ -3,6 +3,7 @@ import {
   type LinkOccurrence,
   type LinkStatus,
   linkOccurrences,
+  mayHoldLink,
   namesTarget,
   type PageName,
   pageLinkText,
@@ -190,7 +191,7 @@ export function linkValueFromEdit(
   return { kind: 'link', value: retarget('wiki', resolvedTarget(written, index, own)).text }
 }
 
-/** What a written link shows: its alias, a markdown link's default label, a wikilink's title, heading, or `Title § Heading`, or an address under its display; no display means the raw address, so sort and filter never move when a property's look changes. */
+/** What a written link shows: its alias, a markdown link's default label, a wikilink's title, heading, or `Title § Heading`, or an address under its display; a markdown heading link shows the heading alone because its default label is what it draws, where a wikilink shows `Title § Heading`, the Heading Link Style's default, since display text carries no style; no display means the raw address, so sort and filter never move when a property's look changes. */
 export function linkDisplayText(raw: string, display?: LinkDisplay, title?: string): string {
   const target = readLinkText(raw)
   if (!target) return raw
@@ -212,7 +213,7 @@ export function linkDisplayText(raw: string, display?: LinkDisplay, title?: stri
 
 /** A text with each connection replaced by what it shows, so a Text value sorts and filters as it reads. */
 export function shownProse(text: string): string {
-  if (!text.includes('[[') && !text.includes('](')) return text
+  if (!mayHoldLink(text)) return text
   let out = ''
   let at = 0
   for (const o of linkOccurrences(text, codeMask(text))) {

@@ -83,8 +83,15 @@ describe('pageLinkText and the slot rules', () => {
       `[](P#${'x'.repeat(256)})`,
     )
   })
-  it('empties a markdown label the grammar refuses, overlong or opening as a footnote, so the link still reads', () => {
-    expect(pageLinkText({ title: '^foo' }, 'markdown')).toBe('[](%5Efoo)')
+  it('escapes a label opening as a footnote reference, and empties one the grammar refuses, so the link still reads', () => {
+    expect(pageLinkText({ title: '^foo' }, 'markdown')).toBe('[\\^foo](%5Efoo)')
+    expect(pageLinkText({ title: 'A', shown: '^x' }, 'markdown')).toBe('[\\^x](A)')
+    expect(readLinkText(pageLinkText({ title: 'A', shown: '^x' }, 'markdown'))).toMatchObject({
+      kind: 'page',
+      syntax: 'markdown',
+      title: 'A',
+      shown: '^x',
+    })
     expect(
       readLinkText(pageLinkText({ title: 'A', shown: 'x'.repeat(256) }, 'wiki')),
     ).toMatchObject({ kind: 'page', syntax: 'markdown', title: 'A' })

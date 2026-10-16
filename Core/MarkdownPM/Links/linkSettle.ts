@@ -8,7 +8,7 @@ import {
   StateField,
   type Transaction,
 } from '@codemirror/state'
-import { escapeLabel, labelSpells } from '../../Connections/links'
+import { escapeLabel, fitsSlot } from '../../Connections/links'
 import { type LinkOccurrence, targetSpan } from '../../Connections/connections'
 import {
   keepsShown,
@@ -121,7 +121,7 @@ function emptied(state: EditorState, start: number): ChangeSpec[] {
   const written = readOccurrence(line.text, o)
   const index = state.facet(editorHost).connections()?.index
   const label = pageLabel(written, resolveLink(written, index))
-  return label && labelSpells(label)
+  return label && fitsSlot(label)
     ? [{ from: line.from + o.shown[0], insert: escapeLabel(label) }]
     : []
 }

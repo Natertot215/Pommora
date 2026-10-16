@@ -6,6 +6,7 @@ import {
   linkOccurrences,
   type LinkPart,
   mapSpans,
+  mayHoldLink,
 } from '../../Connections/connections'
 import {
   inCalloutAt,
@@ -340,12 +341,12 @@ function linkLine(
 ): { ls: number; line: string; links: (text?: string) => LinkOccurrence[] } | null {
   const i = lineIndexAt(scan, at)
   const line = scan.lines[i]
-  if (!line.includes('[[') && !line.includes('](')) return null
+  if (!mayHoldLink(line)) return null
   const ls = scan.lineStarts[i]
   return { ls, line, links: (text = line) => linkOccurrences(text, (p) => inCodeAt(scan, ls + p)) }
 }
 
-/** The link holding `at`, from past its opener through its closer, either syntax, as the editor draws it, so code touching it leaves none; its spans are relative to `at`'s line, empty slots kept. */
+/** The link holding `at`, from past its first bracket through its closer, either syntax, as the editor draws it, so code touching it leaves none; its spans are relative to `at`'s line, empty slots kept. */
 export function linkAt(scan: DocScan, at: number): LinkOccurrence | null {
   const l = linkLine(scan, at)
   if (!l) return null

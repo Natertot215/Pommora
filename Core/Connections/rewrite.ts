@@ -1,4 +1,5 @@
 import {
+  mayNameHeading,
   namesTarget,
   type PageName,
   pageLinkText,
@@ -7,7 +8,7 @@ import {
   targetSpan,
 } from './connections'
 import { normalizeTitle } from '../Paths/caseFold'
-import { encodeLinkTarget, escapeLabel, labelSpells, unescapeLabel } from './links'
+import { encodeLinkTarget, escapeLabel, fitsSlot, unescapeLabel } from './links'
 import { applyEdits, type TextEdit } from '../MarkdownPM/Engine/markdownCode'
 import { escapeCell } from '../MarkdownPM/Engine/Tables/codec'
 import type { TableRegion } from '../MarkdownPM/Engine/Tables/regions'
@@ -66,14 +67,12 @@ function follower(body: string) {
         edits.push({
           from: hit.shown[0],
           to: hit.shown[1],
-          insert: esc(markdown ? escapeLabel(labelSpells(carried) ? carried : '') : carried),
+          insert: esc(markdown ? escapeLabel(fitsSlot(carried) ? carried : '') : carried),
         })
     }
     return edits
   }
 }
-
-const HEADING_REFERENCE = /\[\[[^\r\n]*#|\]\([^\r\n]*#|§/
 
 /** Rewrites every link and bare run that names `oldHeading` on the page titled `title`; a bare fragment counts only when `ownTitle` is that page, and a `§` run only when `outline` (the page's headings around the rename) is given, so a longer heading the run names keeps it. */
 export function rewriteHeadingConnections(
@@ -84,7 +83,7 @@ export function rewriteHeadingConnections(
   ownTitle = '',
   outline?: readonly string[],
 ): string {
-  if (!HEADING_REFERENCE.test(body)) return body
+  if (!mayNameHeading(body)) return body
   const titleKey = normalizeTitle(title)
   const oldKey = normalizeTitle(oldHeading)
   const rewrite = follower(body)

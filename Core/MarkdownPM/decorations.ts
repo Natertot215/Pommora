@@ -39,6 +39,7 @@ import {
 } from './docCache'
 import type { DiffTally, MarkdownScope } from './Engine/detect'
 import { sectionRunsIn } from '../Connections/scan'
+import { labelEscapes } from '../Connections/links'
 import { CHECK_GLYPH, CODE_TAGS, COPY_GLYPH, pathGlyph } from './codeGlyphs'
 import { pathTitles } from './Engine/codeLangs'
 import { linkRest } from './Links/linkReveal'
@@ -567,14 +568,15 @@ function build(view: EditorView, scope: MarkdownScope): Built {
         }).range(tk.contentRange[0], tk.contentRange[1]),
       )
     }
-    const dim = Decoration.mark({ class: shown ? 'md-control' : 'md-phantom-syntax' })
-    if (!shown || isActive) {
-      ranges.push(dim.range(open[0], open[1]))
-      ranges.push(dim.range(close[0], bracketEnd))
-    } else {
-      ranges.push(hideMarker.range(open[0], open[1]))
-      ranges.push(hideMarker.range(close[0], bracketEnd))
-    }
+    const syntax =
+      !shown || isActive
+        ? Decoration.mark({ class: shown ? 'md-control' : 'md-phantom-syntax' })
+        : hideMarker
+    ranges.push(syntax.range(open[0], open[1]))
+    ranges.push(syntax.range(close[0], bracketEnd))
+    const [cs, ce] = tk.contentRange
+    for (const at of labelEscapes(text.slice(cs, ce)))
+      ranges.push(syntax.range(cs + at, cs + at + 1))
     if (isActive) {
       ranges.push(
         Decoration.mark({

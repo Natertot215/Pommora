@@ -282,6 +282,23 @@ describe('a resting cell draws every token as a span, through the tokens inside 
     ).toEqual(['[', '](Nowhere)'])
   })
 
+  it('a label’s escaping backslash is not drawn, and the link seats at its edges as a join does', async () => {
+    await draw('[a\\]b](P)')
+    const link = container.querySelector('.md-connection-resolved') as HTMLElement
+    expect(link.textContent).toBe('a]b')
+    expect(container.textContent).toBe('a]b')
+    expect(link.dataset.at).toBeUndefined()
+    await act(async () => root.unmount())
+    container.remove()
+    await draw('[\\^x](P)')
+    expect(container.textContent).toBe('^x')
+    await act(async () => root.unmount())
+    container.remove()
+    await draw('[a **b\\]c**](P)')
+    expect(container.querySelector('.md-bold')?.textContent).toBe('b]c')
+    expect(container.textContent).toBe('a b]c')
+  })
+
   it('text holding no token is the bare string', () => {
     expect(renderCellContent('plain text', () => conn)).toBe('plain text')
   })

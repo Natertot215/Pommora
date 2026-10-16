@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { loneTarget } from './citationPointer'
-import { readOccurrence, resolveLink } from '../../Connections/linkValue'
+import { resolveLink } from '../../Connections/linkValue'
 import { buildPageIndex } from '../../Connections/pageIndex'
 
 const page = { id: 'p1', title: 'Some Page', path: 'Some Page.md' }
 const index = buildPageIndex([page])
 const target = (content: string) => {
   const lone = loneTarget(content)
-  return lone && resolveLink(readOccurrence(lone.text, lone.tk.link), index)
+  return lone && resolveLink(lone, index)
 }
 
 describe('what a citation leads to, when it leads anywhere', () => {

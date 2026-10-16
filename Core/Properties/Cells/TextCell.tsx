@@ -8,12 +8,8 @@ import { glanceHost } from '../../Interface/Glance/glanceAction'
 import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'
 import { resolveFollow } from '../../MarkdownPM/Links/linkClicks'
 import { lineOffsetsOf } from '../../MarkdownPM/Engine/markdownCode'
-import {
-  type CellPage,
-  linkGestures,
-  readsOwnHeadings,
-  renderCellContent,
-} from '../../MarkdownPM/Tables/cellStatic'
+import { type CellPage, linkGestures, renderCellContent } from '../../MarkdownPM/Tables/cellStatic'
+import { mayNameOwnHeading } from '../../Connections/connections'
 import { useSession, useSetting } from '../../Session/store'
 import { openWebLink } from '../../Web/openWebLink'
 
@@ -34,7 +30,7 @@ export function TextCell({
   const hostRef = useRef<HTMLDivElement>(null)
   const headingLinkStyle = useSetting('headingLinkStyle')
   const automatic = useSetting('inPageHeadingResolution') === 'automatic'
-  const ownPath = holder && readsOwnHeadings(text) ? holder.path : null
+  const ownPath = holder && mayNameOwnHeading(text) ? holder.path : null
   const headings = useSession((s) => (ownPath ? s.headings[ownPath] : undefined))
   const around: CellPage | undefined = headings && {
     ordinalOf: () => null,

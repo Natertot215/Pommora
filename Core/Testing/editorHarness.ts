@@ -10,6 +10,7 @@ import { DEFAULT_COMMANDS } from '../Actions/commands'
 import { type AliasEdit, applyAliasEdit, heldAliases } from '../Connections/aliasMemory'
 import { type EditorHost, type EditorSettings, editorSettingsOf } from '../MarkdownPM/api'
 import type { EditorPrefs } from '../Contract/bridge'
+import { normalizeLinkUrl } from '../Paths/urlPath'
 import { stubDialer } from '../vitest.setup'
 
 type EditorProps = Parameters<typeof MarkdownEditor>[0]
@@ -97,7 +98,7 @@ function harnessHost(spec: HarnessHost, rerender: () => void = () => {}): Harnes
       },
     },
     linkTitles: {
-      get: (url) => state.linkTitles[url] ?? null,
+      get: (url) => state.linkTitles[normalizeLinkUrl(url)] ?? null,
       resolve: (url) => {
         const held = state.linkTitles[url]
         if (held) return Promise.resolve(held)

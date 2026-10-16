@@ -1325,6 +1325,22 @@ describe('store — a link title fetch answers with a promise', () => {
     expect(await useSession.getState().resolveLinkTitle(url)).toBe('Cached')
     expect(channels['linkTitles:fetch']).not.toHaveBeenCalled()
   })
+
+  it('keys one address under its normalized spelling, so a scheme-less or padded spelling shares its entry', async () => {
+    channels['linkTitles:fetch'] = vi.fn(async () => ({ ok: true, value: { title: 'Shared' } }))
+    expect(await useSession.getState().resolveLinkTitle('shared.example.com')).toBe('Shared')
+    expect(await useSession.getState().resolveLinkTitle(' https://shared.example.com ')).toBe(
+      'Shared',
+    )
+    expect(channels['linkTitles:fetch']).toHaveBeenCalledExactlyOnceWith(
+      'https://shared.example.com',
+    )
+    expect(useSession.getState().linkTitles).toMatchObject({
+      'https://shared.example.com': 'Shared',
+    })
+    expect(useSession.getState().linkTitles).not.toHaveProperty('shared.example.com')
+    expect(useSession.getState().linkTitle('shared.example.com')).toBe('Shared')
+  })
 })
 
 describe('store — pending travel', () => {

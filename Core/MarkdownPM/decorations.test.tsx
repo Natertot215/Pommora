@@ -77,4 +77,23 @@ describe('a markdown link with an empty label', () => {
     expect(await drawn('[](notes.io#Intro)', 'md-connection-resolved')).toBe('Intro')
     expect(await drawn('[](Nowhere)', 'md-connection-phantom')).toBe('Nowhere')
   })
+
+  it('hides the escaping backslash in a label with the brackets, and reveals it with them once the caret is inside', async () => {
+    const view = await mountEditor({ initialBody: 'x [a\\]b](Alpha)', connections })
+    await act(async () => {
+      view.dispatch({ selection: { anchor: 0 } })
+    })
+    expect(view.dom.querySelector('.md-connection-resolved')?.textContent).toBe('a]b')
+    expect(view.dom.querySelector('.cm-line')?.textContent).toBe('x a]b')
+    await act(async () => {
+      view.focus()
+      view.dispatch({ selection: { anchor: 4 } })
+    })
+    expect(view.dom.querySelector('.cm-line')?.textContent).toBe('x [a\\]b](Alpha)')
+    expect([...view.dom.querySelectorAll('.md-control')].map((e) => e.textContent)).toEqual([
+      '[',
+      '\\',
+      ']',
+    ])
+  })
 })

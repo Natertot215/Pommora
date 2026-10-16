@@ -72,7 +72,7 @@ function buildEditorHost(
         }),
     },
     linkTitles: {
-      get: (url) => state().linkTitles[url] ?? null,
+      get: (url) => state().linkTitle(url),
       resolve: (url) => state().resolveLinkTitle(url),
     },
     citations: {

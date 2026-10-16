@@ -3,7 +3,6 @@ import {
   defaultLabel,
   encodeLinkTarget,
   fitsSlot,
-  labelSpells,
   markdownLink,
   markdownLinkRegex,
   namesPage,
@@ -20,6 +19,15 @@ import {
 export function pageLinkPattern(): RegExp {
   return /\[\[(?<page>(?:[^\]\r\n|#]|\](?!\])){0,255})(?:#(?<heading>(?:[^\]\r\n|]|\](?!\])){0,255}))?(?:\|(?<alias>[^\]\r\n]{0,255}))?\]\]/dg
 }
+
+/** Whether `text` could hold a link of either syntax, by its openers alone: the gate every reader stands behind, so a text without one costs no match. */
+export const mayHoldLink = (text: string): boolean => text.includes('[[') || text.includes('](')
+
+/** Whether `text` could name a heading: a `#` inside either syntax's destination, or a `§` run. */
+export const mayNameHeading = (text: string): boolean => /\[\[[^\r\n]*#|\]\([^\r\n]*#|§/.test(text)
+
+/** Whether `text` could name the document's own heading: a bare fragment in either syntax, or a `§` run. */
+export const mayNameOwnHeading = (text: string): boolean => /\[\[#|\]\(\s*#|§/.test(text)
 
 export type LinkStatus = 'resolved' | 'phantom' | 'ambiguous'
 
@@ -159,7 +167,7 @@ export function pageLinkText(
     const dest =
       encodeLinkTarget(title) + (heading === undefined ? '' : `#${encodeLinkTarget(heading)}`)
     const label = shown ?? defaultLabel(title, heading)
-    return markdownLink(dest, labelSpells(label) ? label : '')
+    return markdownLink(dest, fitsSlot(label) ? label : '')
   }
   const target = heading === undefined ? title : `${title}#${heading}`
   const named = shown !== undefined && (shown === '' || !repeatsTarget(shown, title, heading))

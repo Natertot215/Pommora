@@ -21,7 +21,7 @@ import { exclusionWriteRefusal, readLiveSetting, reseatExcludedFolders } from '.
 import { sweepRootsById } from '../Properties/governedSweep'
 import { heldValue, joinValues, landValue, writeTarget } from '../Files/heldKeys'
 import { rewriteConnections } from '../Connections/rewrite'
-import { linkDefs } from '../Properties/propertiesRegistry'
+import { linkDefsOf } from '../Properties/propertiesRegistry'
 import { refillValues } from '../Properties/assignment'
 import { BUNDLE_SUFFIX } from './bundle'
 import { pathExists, relocate, rmwJsonStrict } from '../Files/atomicWrite'
@@ -254,7 +254,7 @@ async function restoreArtifact(
     record.links &&
     (await readLiveSetting(root, 'restoreLinksOnDeletion'))
   ) {
-    const defs = await linkDefs(root)
+    const defs = linkDefsOf(tree.config.registry)
     const trashed: StrippedLink[] = []
     for (const def of defs) {
       const all = Object.fromEntries(
