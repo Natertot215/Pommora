@@ -30,6 +30,7 @@ const treeOf = (cols: CollectionNode[]): NexusTree =>
   ({
     nexus: {},
     config: { personalization: { defaultIcons: {} } },
+    contexts: [],
     collections: cols,
   }) as unknown as NexusTree
 

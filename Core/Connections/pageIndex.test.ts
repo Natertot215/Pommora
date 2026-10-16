@@ -26,6 +26,21 @@ describe('resolve', () => {
   })
 })
 
+describe('holders', () => {
+  const idx = buildPageIndex(pages)
+  it('returns every page whose normalized title matches, in tree order', () => {
+    expect(idx.holders(' atlas ').map((p) => p.id)).toEqual(['2', '3'])
+  })
+  it('returns nothing for a title no page holds', () => {
+    expect(idx.holders('nothing')).toEqual([])
+  })
+  it('resolve derives from it: one holder resolved, two ambiguous, none phantom', () => {
+    expect(idx.resolve('Notes')).toEqual({ status: 'resolved', page: idx.holders('Notes')[0] })
+    expect(idx.resolve('Atlas')).toEqual({ status: 'ambiguous' })
+    expect(idx.resolve('nothing')).toEqual({ status: 'phantom' })
+  })
+})
+
 describe('candidates (prefix, ranked exact → shortest → A–Z)', () => {
   const idx = buildPageIndex([
     { id: '1', title: 'Project Atlas', path: 'a' },

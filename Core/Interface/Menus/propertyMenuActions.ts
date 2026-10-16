@@ -1,6 +1,6 @@
 import { parsePropertyAction, type PropertyMenuRow } from '../../Actions/propertyRows'
 import type { NexusTree } from '../../Nexus/tree'
-import { pagesByIdOf } from '../../Nexus/treeIndex'
+import { pagesByIdOf } from '../../Nexus/record'
 import { pickKindOf, PROPERTY_TYPES, type PropertyDefinition } from '../../Properties/properties'
 import type { PropertyValue } from '../../Properties/propertyValue'
 import type { ColumnStyle } from '../../Properties/columnStyles'

@@ -1,4 +1,4 @@
-// Both askers read the tree index's one walk — the card's Move To ▸, which relocates a live page by path, and the trash's Restore ▸, which files a returning one by id — so the two menus can never disagree about what the nexus will hold.
+// Both askers read the one walk in `record.ts` — the card's Move To ▸, which relocates a live page by path, and the trash's Restore ▸, which files a returning one by id — so the two menus can never disagree about what the nexus will hold.
 
 import type { MoveTarget } from './pageMenu'
 import { contextDirRel } from '../Paths/nexusPaths'

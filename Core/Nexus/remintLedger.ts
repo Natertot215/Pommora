@@ -1,6 +1,6 @@
 import { join } from '../Paths/posix'
 import { machine } from '../Platform/machine'
-import { type EntityRecord, recordById, recordsOf } from './record'
+import { type EntityRecord, recordsOf } from './record'
 import { errText } from '../Contract/result'
 import type { NexusTree, Unreadable } from './tree'
 import { withheldIn } from './treePatch'
@@ -14,16 +14,22 @@ export interface Projection {
   duplicates: Record<string, EntityRecord[]>
 }
 
+// The persisted baseline keeps the four fields it always had; a record's icon is the renderer's.
+const plain = ({ id, kind, title, path }: EntityRecord): EntityRecord => ({ id, kind, title, path })
+
 export function projectBaseline(tree: NexusTree): Projection {
   const claimants: Record<string, EntityRecord[]> = {}
+  const entries: Record<string, EntityRecord> = {}
   for (const r of recordsOf(tree)) {
+    const p = plain(r)
     claimants[r.id] ??= []
-    claimants[r.id].push(r)
+    claimants[r.id].push(p)
+    entries[r.id] ??= p
   }
   const duplicates = Object.fromEntries(
     Object.entries(claimants).filter(([, claims]) => claims.length > 1),
   )
-  return { entries: recordById(tree), duplicates }
+  return { entries, duplicates }
 }
 
 export function latchBaseline(

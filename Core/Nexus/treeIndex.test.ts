@@ -5,17 +5,13 @@ import { reconcileWith } from '../Session/reconcileSelection'
 import {
   navKeysOf,
   nodesOf,
-  pageIndexOf,
-  pagesByIdOf,
-  pagesOf,
   reconcileIndexOf,
   recordsByIdOf,
   resolveIndexOf,
   searchEntriesOf,
   spaceLinksOf,
 } from './treeIndex'
-import { titlesOf } from './heldPages'
-import { recordById, recordsOf } from './record'
+import { pageIndexOf, pagesByIdOf, pagesOf, recordById, recordsOf } from './record'
 
 describe('the record walk', () => {
   it('caches every projection on the tree identity — same tree, same object', () => {
@@ -74,6 +70,7 @@ describe('resolveIndexOf', () => {
     expect(ix.get('homepage')?.title).toBe('TestNexus')
     expect(ix.get('matrix')?.title).toBe('Matrix')
     expect(ix.get('space:a1')?.path.map((c) => c.title)).toEqual(['Realms'])
+    expect(ix.get('page:p1')?.path.map((c) => c.title)).toEqual(['Notes'])
     expect(ix.get('page:p2')?.path.map((c) => c.title)).toEqual(['Notes', 'Ideas'])
     expect(ix.get('set:s1')?.path.map((c) => c.title)).toEqual(['Notes'])
     expect(ix.has('context:g1')).toBe(false)
@@ -105,16 +102,16 @@ describe('searchEntriesOf', () => {
 })
 
 describe('page icons', () => {
-  it('a page resolves its icon from pageMetadata, and a pageMetadata-only change yields a new index', () => {
+  it('a page resolves its icon from pageMetadata, and a pageMetadata-only change yields a new trail index but keeps the title index', () => {
     const t = makeTree()
     const iconed: NexusTree = {
       ...t,
       config: { ...t.config, pageMetadata: { p1: { icon: 'star' } } },
     }
     expect(resolveIndexOf(iconed).get('page:p1')?.icon).toBe('star')
-    expect(pagesByIdOf(iconed).get('p1')?.icon).toBe('star')
     expect(resolveIndexOf(iconed)).not.toBe(resolveIndexOf(t))
     expect(resolveIndexOf(t).get('page:p1')?.icon).not.toBe('star')
+    expect(pageIndexOf(iconed)).toBe(pageIndexOf(t))
   })
 })
 
@@ -203,19 +200,24 @@ describe('spaceLinksOf', () => {
 })
 
 describe('a configuration patch keeps every entity lookup', () => {
-  it('answers the same objects across a settings change, and rebuilds the index when unreadable moves', () => {
+  it('answers the same objects across a settings change, and rebuilds the reconcile index when unreadable moves', () => {
     const t = makeTree()
-    const held = [nodesOf(t), titlesOf(t), recordsOf(t)]
+    const held = [reconcileIndexOf(t), nodesOf(t), pageIndexOf(t), recordsOf(t)]
     const toggled: NexusTree = {
       ...t,
       config: { ...t.config, personalization: { hideChevrons: true }, crops: {} },
     }
-    const kept = [nodesOf(toggled), titlesOf(toggled), recordsOf(toggled)]
+    const kept = [
+      reconcileIndexOf(toggled),
+      nodesOf(toggled),
+      pageIndexOf(toggled),
+      recordsOf(toggled),
+    ]
     for (const [i, v] of kept.entries()) expect(v).toBe(held[i])
     const unreadable: NexusTree = {
       ...toggled,
       unreadable: [{ path: 'Notes/Bad.md', kind: 'page', reason: 'unparsed' }],
     }
-    expect(nodesOf(unreadable)).not.toBe(held[0])
+    expect(reconcileIndexOf(unreadable)).not.toBe(held[0])
   })
 })

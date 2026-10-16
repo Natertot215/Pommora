@@ -7,7 +7,8 @@ import {
   resolveWith,
   windowTargetFromNav,
 } from './navResolve'
-import { pagesByIdOf, resolveIndexOf } from '../Nexus/treeIndex'
+import { pagesByIdOf } from '../Nexus/record'
+import { resolveIndexOf } from '../Nexus/treeIndex'
 import { makeTree } from '../Testing/testTree'
 
 describe('resolveWith — single entry', () => {

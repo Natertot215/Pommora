@@ -1,7 +1,7 @@
 import { contextIdsOf } from '../Contexts/contextIdentity'
 import type { CollectionNode, NexusTree, PageNode, SetNode } from '../Nexus/tree'
 import { entityMemo } from '../Nexus/tree'
-import { pageIndexOf } from '../Nexus/treeIndex'
+import { pageIndexOf } from '../Nexus/record'
 import { heldKey } from '../Files/heldKeys'
 import { spaceRowOf } from '../Properties/pageRow'
 import { type PropertyDefinition, specOf } from '../Properties/properties'

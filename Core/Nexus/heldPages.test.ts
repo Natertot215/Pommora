@@ -1,7 +1,7 @@
 import { join } from '../Paths/posix'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { NexusTree } from './tree'
-import { liveIdIndex, liveIdOf, livePathOf } from './heldPages'
+import { frozenWorld, liveIdIndex, liveIdOf, livePathOf, titleHeldOutside } from './heldPages'
 
 const held = { tree: null as NexusTree | null }
 vi.mock('./liveTree', () => ({
@@ -17,12 +17,12 @@ const tree = (rootPath: string): NexusTree =>
       {
         kind: 'collection',
         path: 'Notes',
-        pages: [{ kind: 'page', id: 'pA', path: 'Notes/A.md' }],
+        pages: [{ kind: 'page', id: 'pA', title: 'A', path: 'Notes/A.md' }],
         sets: [
           {
             kind: 'set',
             path: 'Notes/Deep',
-            pages: [{ kind: 'page', id: 'pD', path: 'Notes/Deep/D.md' }],
+            pages: [{ kind: 'page', id: 'pD', title: 'D', path: 'Notes/Deep/D.md' }],
             sets: [],
           },
         ],
@@ -30,7 +30,7 @@ const tree = (rootPath: string): NexusTree =>
       {
         kind: 'collection',
         path: 'Ideas',
-        pages: [{ kind: 'page', id: 'pI', path: 'Ideas/I.md' }],
+        pages: [{ kind: 'page', id: 'pI', title: 'I', path: 'Ideas/I.md' }],
         sets: [],
       },
     ],
@@ -55,5 +55,29 @@ describe('the held tree’s pages', () => {
     held.tree = tree('/elsewhere')
     expect(liveIdOf(ROOT, join(ROOT, 'Notes/A.md'))).toBeUndefined()
     expect(livePathOf(ROOT, 'pA')).toBeNull()
+  })
+})
+
+describe('titles answer from the one index', () => {
+  const withAlpha = (...paths: string[]): NexusTree => {
+    const t = tree(ROOT)
+    t.collections[0].pages.push(
+      ...paths.map((path, i) => ({ kind: 'page' as const, id: `alpha${i}`, title: 'Alpha', path })),
+    )
+    return t
+  }
+
+  it('titleHeldOutside is false when only the leaving file holds the title, true when a second page does', () => {
+    held.tree = withAlpha('Notes/Alpha.md')
+    expect(titleHeldOutside(ROOT, 'Alpha', 'Notes/Alpha.md')).toBe(false)
+    held.tree = withAlpha('Notes/Alpha.md', 'Notes/Deep/Alpha.md')
+    expect(titleHeldOutside(ROOT, 'Alpha', 'Notes/Alpha.md')).toBe(true)
+  })
+
+  it('frozenWorld holds an arriving title and a held one, and nothing else', () => {
+    const world = frozenWorld(withAlpha('Notes/Alpha.md'), ['Landing'])
+    expect(world.holds?.('landing')).toBe(true)
+    expect(world.holds?.('alpha')).toBe(true)
+    expect(world.holds?.('ghost')).toBe(false)
   })
 })
