@@ -1,5 +1,5 @@
 import { cellToDisplay, delimCell, parseDelimiter, pipeRow, serialize, splitRow } from './codec'
-import { type Align, type TableModel, UNSIZED_DASHES } from './model'
+import type { Column, TableModel } from './model'
 
 // Shape carries the meaning: pipe rows alone are a rectangle, a delimiter line makes it a column (one wide) or a whole table (wider). Cells travel in source form, exactly as the model holds them; a lone cell travels as its display text, since one pipe cell decodes as text and a paste would keep the pipes.
 
@@ -13,10 +13,8 @@ export function encodeRect(grid: string[][]): string {
   return grid.map(pipeRow).join('\n')
 }
 
-export function encodeColumn(header: string, align: Align, body: string[]): string {
-  return [header, delimCell({ align, dashes: UNSIZED_DASHES }), ...body]
-    .map((c) => pipeRow([c]))
-    .join('\n')
+export function encodeColumn(header: string, column: Column, body: string[]): string {
+  return [header, delimCell(column), ...body].map((c) => pipeRow([c])).join('\n')
 }
 
 /** Null where the text isn't table-shaped, and for a lone pipe cell — one cell of text is a text paste, not a structural one. An all-empty payload (a copied outline) reads as inert `table`. */
