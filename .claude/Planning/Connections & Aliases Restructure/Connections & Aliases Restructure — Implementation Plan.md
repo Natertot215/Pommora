@@ -38,8 +38,8 @@ The work lands in nine phases, each the next layer of the system and each the la
 
 | | Functions, fields, plugins, components | Types | Files | Members, parameters, options | Total |
 |---|---|---|---|---|---|
-| **Removed** | 47 | 14 (ten named types and four local `Span` declarations) | 1 (`headingHash.ts`) | 22 | **84** |
-| **Added** | 38 (26 exported, 12 private) and 1 style rule | 5 | 1 (`ValueEditor.tsx`) | 27 | **72** |
+| **Removed** | 48 | 14 (ten named types and four local `Span` declarations) | 1 (`headingHash.ts`) | 22 | **85** |
+| **Added** | 38 (26 exported, 12 private) and 2 style rules | 5 | 1 (`ValueEditor.tsx`) | 27 | **73** |
 | **Moved** | 10 (and 2 made exported) | 1 | 1 moved, 1 renamed | | 12 |
 | **Net** | −8 | −9 | 0 | +5 | **−12 named things** |
 
@@ -97,7 +97,7 @@ Sixty ways of doing thirty things disappear; every row's "after" has one named o
 | `openLinkAt`, `slotAt` • functions, `partOf` • private until Task 5-1 | A link still being written, read through a placeholder at the caret; the link and the slot holding the caret; the one "which slot" rule. | `Core/MarkdownPM/Input/edits.ts` |
 | `targetSpan`, `mapSpans` • functions | The destination as written, title through heading, so no reader rebuilds it; the occurrence's spans mapped with its arm kept, so no reader casts. | `Core/Connections/connections.ts` |
 | `headingHash` • function (relocated) | The `§` transform, folded in as "the caret is in a page-naming title slot". | `Core/MarkdownPM/Input/edits.ts` |
-| `LabelWidget` • class, `LinkLook.written` • field | Draws an empty-label link's default label in the editor, from the written target the look already reads. | `Core/MarkdownPM/decorations.ts`, `Links/connectionsApi.ts` |
+| `LabelWidget` • class, `LinkLook.label` • field, `.md-link-label` • style rule | Draws an empty-label link's default label in the editor; the look decides the label once, from what the link resolved to; the plain-links setting hides a phantom's label so the raw syntax reads as plain text. | `Core/MarkdownPM/decorations.ts`, `Links/connectionsApi.ts`, `markdown-pm.css` |
 | `drawsRawHtml`, `inRawHtml` • functions (relocated) | The raw-HTML question, beside the host and its setting. | `Core/MarkdownPM/api.ts` |
 | `shownEnd` • function (exported, scoped) | The one shown-slot question Return, `]`, and `[` ask. | `Core/MarkdownPM/Links/linkEdit.ts` |
 | `EntityRecord.icon` • field | What the renderer's glyphs need from the one walk; its trails derive from paths. | `Core/Nexus/record.ts` |
@@ -106,7 +106,7 @@ Sixty ways of doing thirty things disappear; every row's "after" has one named o
 | `ResolvedLink` • type | `page | self | url | unresolved(status)`. | `Core/Connections/linkValue.ts` |
 | `LinkTarget.page?` • field (url arm) | A markdown destination a page could also hold. | `Core/Connections/linkValue.ts` |
 | `readOccurrence`, `resolveLink`, `bareHeading`, `wikiTitle` • functions | The one reader of an occurrence, the one resolver, the bare-heading rule's owner, and the wikilink title a file reference spells. | `Core/Connections/linkValue.ts` |
-| `heldOf` • function | The page a held value answers for, from its `OwnPage`, or nothing for a body; what `heldTarget` applied after resolution, now passed into it. | `Core/MarkdownPM/api.ts` |
+| `heldOf` • function | The page a held value answers for, read from the editor's held-page facet, or nothing for a body; what `heldTarget` applied after resolution, now passed into it. | `Core/MarkdownPM/api.ts` |
 | `EditorHost.location` • method | A page's trail for the picker's rows. | `Core/MarkdownPM/api.ts`, `Core/Pages/editorHost.tsx` |
 | `LinkMenuTarget`, `linkMenuTarget` • (relocated) | Beside `LinkMenuContext`, typed on `ResolvedLink`. | `Core/Actions/connectionMenu.ts` |
 | `linkWriting`, `linkSettled`, `linkWithin` • field, effect, function | The link an edit is being made inside and how it read before; what clears it; the strict-overlap reader. | `Core/MarkdownPM/Links/linkReveal.ts` |
@@ -146,6 +146,7 @@ Sixty ways of doing thirty things disappear; every row's "after" has one named o
 | `ConnPage.icon` | The field that forced the title index onto `pageMetadata`. | `Core/Connections/pageIndex.ts` |
 | `MdTarget`, `titleTarget`, `resolveMdTarget`, `tokenTarget`, `linkStatus`, `ConnectionsApi extends PageIndex`, `ConnectionsApi.location` | The second resolver and the host interface's spread index. | `Core/MarkdownPM/Links/connectionsApi.ts` |
 | `heldTarget` | The bare-heading rule applied after resolution. | `Core/MarkdownPM/Links/linkClicks.ts` |
+| `heldBy` • export | The holder wrapped as an `OwnPage` for a cell to unwrap; the cells take the holder itself, and `ownPage` is its one reader. | `Core/MarkdownPM/api.ts` |
 | `valueTarget`, `valueTarget.ts` • function and file name | A value's resolution through the cell tokenizer; the file becomes `valueMenuTarget.ts`, after the one function it keeps. | `Core/Properties/Cells/valueTarget.ts` |
 | `linkResolver`, `LinkEditContext.resolve`, `LinkEditContext.keepTitle`, `PropertyValueInput`'s `alias`-only field, `linkValueFromEdit`'s `current` and `keepTitle` | The Link field's resolver patch, its hidden-alias parse, and the re-applied hidden alias. | `Core/Properties/Pickers/PropertyValueInput.tsx`, `parseEditorValue.ts`, `Core/Connections/linkValue.ts` |
 | `AutocompleteQuery.form`, `commitEdit`'s `container` and `keepTitle` | The flat form name and the commit's own Remove Title inputs. | `Core/MarkdownPM/Autocomplete/autocomplete.ts` |
@@ -211,12 +212,12 @@ Sixty ways of doing thirty things disappear; every row's "after" has one named o
   - [x] Task 2-4 · The editor's three readers and the `§` fold
   - [x] Task 2-5 · One shown-slot question, and Return everywhere
   - [x] Review Checkpoint
-- [ ] **Phase 3** — One Written Shape, One Resolver `[Gates at Task 3-3 for Tasks 3-2 and 3-3]`
-  - [ ] Task 3-1 · `readLinkText`, `resolveLink`, `bareHeading`, and `wikiTitle`
-  - [ ] Task 3-2 · `ConnectionsApi` as `{ index, open, menu?, headingsOf }`
-  - [ ] Task 3-3 · Every consumer resolves through the one resolver
-  - [ ] Task 3-4 · `[](Page)` draws its default label
-  - [ ] Review Checkpoint
+- [x] **Phase 3** — One Written Shape, One Resolver `[Gates at Task 3-3 for Tasks 3-2 and 3-3]`
+  - [x] Task 3-1 · `readLinkText`, `resolveLink`, `bareHeading`, and `wikiTitle`
+  - [x] Task 3-2 · `ConnectionsApi` as `{ index, open, menu?, headingsOf }`
+  - [x] Task 3-3 · Every consumer resolves through the one resolver
+  - [x] Task 3-4 · `[](Page)` draws its default label
+  - [x] Review Checkpoint
 - [ ] `[Compaction Checkpoint 1: c/pre-compaction with the MANDATE and PRINCIPLES re-instilled; stop, and continue only when re-prompted]`
 - [ ] **Phase 4** — One Tracker, One Baseline
   - [ ] Task 4-1 · `linkWriting` replaces `linkTyping`
@@ -258,7 +259,7 @@ Sixty ways of doing thirty things disappear; every row's "after" has one named o
 |---|---|---|---|---|---|---|---|---|
 | 1 | −81 | −81 | −81 | typed (`c5`, formatted, with the baseline strip); landed 9 above it: lint refused the one-line claimant push, the formatter wrapped the record and memo lines, and the trail chain needs its own map | 261 | 189 | −72 | −72 |
 | 2 | ≈ −45 | ≈ −35 | −55 to −10 | no typed grammar diff survived; the AFTER count expands the long occurrence and reader lines; landed inside the band | 516 | 468 | −48 | −120 |
-| 3 | ≈ −28 | ≈ −20 | −35 to +5 | half typed (`c4` +3, corrected); the label task moved here from Phase 2 (+16) | | | | |
+| 3 | ≈ −28 | ≈ −20 | −35 to +5 | half typed (`c4` +3, corrected); the label task moved here from Phase 2 (+16); landed 2 above the band: the label widget with its phantom drawing, plain-setting rule, and exact click, the formatter wrapping the resolver, and `linkValueFromEdit` rebuilding a target from a resolution until Phase 6 | 344 | 351 | +7 | −113 |
 | 4 | ≈ −49 | ≈ −40 | −55 to −25 | re-typed design (`c11`, corrected); the settle's guard and flushes added | | | | |
 | 5 | ≈ −26 | ≈ −60 | −90 to −16 | typed `c8` −16 kept more structure than the three-arm commit and the one-return query (about 207 lines of `autocomplete.ts` leave against about 105 formatted arriving); unverified until typed | | | | |
 | 6 | ≈ −17 | ≈ +2 | −10 to +12 | the rules and `follower` add about what they remove; buys the three wrong results made right | | | | |
@@ -1682,8 +1683,8 @@ A held value's `[[#H]]` keeps drawing as `bare` because drawing calls `resolveLi
 **CHANGE**
 
 - [ ] Add a decoration test: `[](Alpha)` with Alpha held draws `Alpha`, `[](Alpha#Setup)` draws `Setup`, and a phantom `[](Nowhere)` draws `Nowhere` as phantom; a `cellStatic` test for the same three. Watch them fail.
-- [ ] In `decorations.ts`, when `tk.contentRange` is empty, place a `Decoration.widget` carrying a `LabelWidget` (a `GlyphWidget` subclass drawing one `span` with the link's class and the default label) at `tk.contentRange[0]`, `side: 1`; `linkLook` returns the written target beside the resolved one so the loop reads it once.
-- [ ] In `cellStatic.tsx`, the `wikiLink`/`link` case renders the same default label where `cs === ce`.
+- [ ] `linkLook` decides the label once, from what the link resolved to (a page reached through an address-shaped destination labels by the page, so `[](notes.io#Intro)` draws `Intro` as the emptied-label fill does); in `decorations.ts`, when `tk.contentRange` is empty, place a `Decoration.widget` carrying a `LabelWidget` (a `GlyphWidget` subclass drawing one `span` with the link's class, `md-link-label`, and `look.label`) at `tk.contentRange[0]`, `side: 1`; `linkUnder` reads a click on that span through `posAtDOM`, since `posAtCoords` resolves a point widget to a neighbour.
+- [ ] In `cellStatic.tsx`, the `wikiLink`/`link` case and its phantom branch render `look.label` where `cs === ce`, carrying `md-link-label`; `markdown-pm.css` hides `.md-connection-phantom.md-link-label` under `:root.plain-unresolved`, so a phantom empty label draws its label as a phantom in the editor and the cell alike and reads as its raw syntax under the plain-links setting (the owner's ruling, 10-16-2026).
 
 **AFTER**
 
@@ -1694,8 +1695,10 @@ A held value's `[[#H]]` keeps drawing as `bare` because drawing calls `resolveLi
 +  const target = resolveLink(written, conn?.index)
    const status = target.kind === 'unresolved' ? target.status : 'resolved'
    …
++  const named = written?.kind !== 'url' ? written : target.kind === 'page' ? written.page : undefined
++  const label = named ? defaultLabel(named.title, named.heading) : written?.kind === 'url' ? written.url : ''
 -  return { target, status, … }
-+  return { written, target, status, … }
++  return { label, target, status, … }
 ```
 
 ```Core/MarkdownPM/decorations.ts diff
@@ -1704,22 +1707,32 @@ A held value's `[[#H]]` keeps drawing as `bare` because drawing calls `resolveLi
 +class LabelWidget extends GlyphWidget {
 +  constructor(private readonly label: string, private readonly className: string) { super() }
 +  eq(other: LabelWidget): boolean { return other.label === this.label && other.className === this.className }
-+  toDOM(): HTMLElement { const el = document.createElement('span'); el.className = this.className; el.textContent = this.label; return el }
++  toDOM(): HTMLElement { const el = document.createElement('span'); el.className = cx(this.className, 'md-link-label'); el.textContent = this.label; return el }
 +}
 @@ markdown loop @@
      const look = linkLook(conn, text, tk, ownKeys, headingLinkStyle)
-+    if (tk.contentRange[0] === tk.contentRange[1]) {
-+      const label = look.written?.kind === 'page' ? defaultLabel(look.written.title, look.written.heading) : (look.written?.url ?? '')
-+      ranges.push(Decoration.widget({ widget: new LabelWidget(label, linkClass(look)), side: 1 }).range(tk.contentRange[0]))
-+    }
++    if (tk.contentRange[0] === tk.contentRange[1])
++      ranges.push(Decoration.widget({ widget: new LabelWidget(look.label, linkClass(look)), side: 1 }).range(tk.contentRange[0]))
++    else … the content mark as before …
 ```
 
 ```Core/MarkdownPM/Tables/cellStatic.tsx diff
 @@ the wikiLink/link case @@
              ) : (
 -              draw(cs, ce, inner)
-+              cs === ce ? (look.written?.kind === 'page' ? defaultLabel(look.written.title, look.written.heading) : (look.written?.url ?? '')) : draw(cs, ce, inner)
++              cs === ce ? look.label : draw(cs, ce, inner)
              )}
+@@ the phantom branch @@
+-              <span className="md-connection-phantom" {...verbatim(cs, ce)}>
+-                {text.slice(cs, ce)}
++              <span className={cx('md-connection-phantom', cs === ce && 'md-link-label')} {...verbatim(cs, ce)}>
++                {cs === ce ? look.label : text.slice(cs, ce)}
+```
+
+```Core/MarkdownPM/markdown-pm.css diff
++:root.plain-unresolved .md-connection-phantom.md-link-label {
++  display: none;
++}
 ```
 
 **VERIFY**
@@ -1730,11 +1743,11 @@ A held value's `[[#H]]` keeps drawing as `bare` because drawing calls `resolveLi
 
 #### Review Checkpoint
 
-- [ ] `grep -rn "resolve(" Core --include='*.ts' --include='*.tsx' | grep -v test` shows the page-before-address rule and the bare-heading rule in `linkValue.ts` only.
-- [ ] A hand-written `example.com` value, Copy Link, `href`, sort, filter, Full Link text, and a pasted bare address all behave as at BASELINE (the live drive's group 2).
-- [ ] `[](Page)` draws its default label in the editor and in a resting cell; no second default-label rule exists under `Core/`.
-- [ ] `hostGraph.test.ts` and `engineGraph.test.ts` green; `linkValue.ts` imports nothing from `MarkdownPM/` beyond `Engine/markdownCode`.
-- [ ] Net Ledger: Phase 3 measured.
+- [x] `grep -rn "resolve(" Core --include='*.ts' --include='*.tsx' | grep -v test` shows the page-before-address rule and the bare-heading rule in `linkValue.ts` only.
+- [ ] A hand-written `example.com` value, Copy Link, `href`, sort, filter, Full Link text, and a pasted bare address all behave as at BASELINE (probed at the checkpoint; the live drive's group 2 confirms it in Phase 8).
+- [x] `[](Page)` draws its default label in the editor and in a resting cell; no second default-label rule exists under `Core/`.
+- [x] `hostGraph.test.ts` and `engineGraph.test.ts` green; `linkValue.ts` imports nothing from `MarkdownPM/` beyond `Engine/markdownCode`.
+- [x] Net Ledger: Phase 3 measured.
 
 ---
 
@@ -1811,7 +1824,7 @@ The typing color now covers both syntaxes and lasts until the caret leaves the l
 
 #### Task 4-2
 
-**TASK:** `linkSettle`, one plugin mounted as `linkSettle.of({ scope, remembers })`, replaces `aliasOnLeave`; `emptied` collapses every empty part of the settled link, in both syntaxes, when the caret leaves the whole link; `MarkdownEditor`, `CellEditor`, and `TextPane` flush through `view.plugin(linkSettle)`.
+**TASK:** `linkSettle`, one plugin mounted as `linkSettle.of({ scope, remembers })`, replaces `aliasOnLeave`; `emptied` collapses every empty part of the settled link, in both syntaxes, when the caret leaves the whole link, filling an emptied label by the same rule the draw uses (`LinkLook.label`: by what the link resolved to, so an address-shaped destination a page holds fills with the page's default label); `MarkdownEditor`, `CellEditor`, and `TextPane` flush through `view.plugin(linkSettle)`.
 
 **NOW:** `aliasOnLeave` (`linkEdit.ts:162-290`) runs two machines in one listener: `writing` (remember on leaving the link) and `edited` with `slotNear` (collapse on leaving the slot), each re-reading the caret line, with a blur handler and no unmount flush; `collapseSlot` runs the deferred collapse against a stale offset (`:206-212`). `CellEditor` and `TextPane` destroy their editors in passive cleanup after React detached the node, where CodeMirror's `destroy()` fires no blur (`@codemirror/view` 6.43.1), and `TextPane`'s `save()` reads the document in `close()` before any settle, so an alias typed into a pane and left by Return, or into a cell left by Tab, is never remembered and never collapsed.
 
@@ -1922,7 +1935,7 @@ The typing color now covers both syntaxes and lasts until the caret leaves the l
 
 #### Task 4-3
 
-**TASK:** One Remove Title rule over one baseline: `keepsShown(baseline, next, removeTitle, index)` owns "pointed", the picker reads its baseline from `linkWriting` (null for a link that never closed) and the shown text it keeps from the link as it stands, paste reads the link under the paste as it read before dispatch, and the Link field passes its `current` through the same rule until Phase 8 retires its field-only path; `acQuery`'s `origin` goes.
+**TASK:** One Remove Title rule over one baseline: `keepsShown(baseline, next, removeTitle, index)` owns "pointed" (and `sameTarget` compares what each side resolves to, so a url arm carrying `page?` and the page it names are one target), the picker reads its baseline from `linkWriting` (null for a link that never closed) and the shown text it keeps from the link as it stands, paste reads the link under the paste as it read before dispatch, and the Link field passes its `current` through the same rule until Phase 8 retires its field-only path; `acQuery`'s `origin` goes.
 
 **NOW:** The picker snapshots `origin` at query birth (`acQuery.ts:17-56`) and decides `pointed` itself (`useConnectionAutocomplete.ts:144-147`); paste applies the setting bare (`pasteLink.ts:56,69`); the Link field applies it bare (`PropertyValueInput.tsx:42`, `parseEditorValue.ts:41-46`); `keepsShown` (`linkValue.ts:187-191`) takes a pre-folded `keepTitle`, and `commitEdit` reads it at `autocomplete.ts:250,276,312` through `opts.container` and `opts.keepTitle`. `pasteLink.test.tsx:350-351` mount with no connections, so `Page1` never pointed and the rows pin a drop the ruled rule refuses. A link that only closes during the current edit (`[x]` then `(Al`, `connectionCommit.test.tsx:290-302`) has no baseline, and its label `x` lives in the document alone.
 
@@ -2257,7 +2270,7 @@ The one finishing-anchor rule, `ac.end + delta + closer`, serves a closed and an
 
 #### Task 6-1
 
-**TASK:** The slot check, the drop, the carry, and `pageLinkText` as the one exported page-link writer, with `connectionText` private behind it; `connectionSpells`, `showsTarget`, and every writer bypassing the fallback go; `shownAlias` never remembers from a link naming a heading.
+**TASK:** The slot check, the drop, the carry, and `pageLinkText` as the one exported page-link writer, with `connectionText` private behind it; `connectionSpells`, `showsTarget`, and every writer bypassing the fallback go; `shownAlias` never remembers from a link naming a heading. The writers honour a url arm's `page?` through `resolveLink` (today `retarget`'s url arm normalizes `[x](notes.io)` into `[x](https://notes.io)` although a page holds `notes.io`, and `shownAlias`'s `before?.kind === 'page'` misses an address-shaped page), and `formatted`'s title lookup (`linkEdit.ts:89-90`) normalizes as every other writer does.
 
 **NOW:** `connectionSpells` (`linkValue.ts:178-179`) checks the title and heading only, and `connectionText` (`connections.ts:94`) silently drops an alias `keepsAlias` refuses, so `linkValueFromEdit('[a\]b](Page)')` lands as `[[Page]]` (probed). `showsTarget` (`linkValue.ts:83-89`) and `rewrite.ts`'s private `shows` restate "names the target" beside `keepsAlias`'s inline check. `shownAlias` (`:92-108`) remembers an alias typed into a link naming a heading (probed: `[[Page#H|nice]]` remembers `nice`). `pageMenuActions.ts:54` and `gripMenu.ts:92` write `connectionText` bare for Copy Link; `LinkCell.tsx:48`'s Show Full Link does the same; `expressibleInLink` (`connections.ts:98-100`) caps nothing, where `pageLinkPattern` caps both halves at 255; `headingRows` (`autocomplete.ts:182`) hides headings `expressibleInLink` refuses.
 
@@ -2620,7 +2633,7 @@ The other `EditableInput` and `RenamableLabel` users ignore the trailing argumen
 
 #### Task 7-1
 
-**TASK:** `valueLinks` yields every link in every frontmatter value with its key, `frontmatterMentions` folds into it, `Relation` gains `key`, `RelationKind`'s `frontmatter` becomes `value`, the `relations` table gains the column, and `holdsLinks` is written once.
+**TASK:** `valueLinks` yields every link in every frontmatter value with its key, `frontmatterMentions` folds into it, `Relation` gains `key`, `RelationKind`'s `frontmatter` becomes `value`, the `relations` table gains the column, and `holdsLinks` is written once. Weigh here, with the index in hand, whether `scan.ts`'s and `Trash/holdings.ts`'s "page or address" reads (today from the written kind alone, so a value `[x](notes.io)` naming a page is never indexed, stripped, or parked; Brief §113) should ask `resolveLink`, and state the call either way.
 
 **NOW:** `valueLinks` (`scan.ts:159-169`) walks string values under every key and yields body-shaped hits that `indexSeed.ts:61` records as `body` rows; `frontmatterMentions` (`:143-157`) records whole-value links as `frontmatter` rows; neither carries the key, so no reader can apply a keys rule later. `relations` has no key column (`ddl.ts:18-25`); `INDEX_GENERATION` is 13. `patchOf` (`cascade.ts:197-199`) rewrites Link and Text keys only and `spacesLinkHeading` (`:60-68`) reads every Space key with no gate.
 
