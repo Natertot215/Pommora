@@ -27,10 +27,10 @@ const abs = (...segs: string[]): string => join(root, ...segs)
 const rowsOf = (path: string): Relation[] =>
   [...mem.index.relations.values()]
     .filter((r) => r.path === path)
-    .map(({ kind, target, qualifier, count }) => ({ kind, target, qualifier, count }))
+    .map(({ kind, target, qualifier, key, count }) => ({ kind, target, qualifier, key, count }))
     .sort((a, b) =>
-      `${a.kind}\u0000${a.target}\u0000${a.qualifier}`.localeCompare(
-        `${b.kind}\u0000${b.target}\u0000${b.qualifier}`,
+      `${a.kind}\u0000${a.target}\u0000${a.qualifier}\u0000${a.key}`.localeCompare(
+        `${b.kind}\u0000${b.target}\u0000${b.qualifier}\u0000${b.key}`,
       ),
     )
 
@@ -227,55 +227,55 @@ describe('the relations a page yields', () => {
   it('a body link is one `body` row', async () => {
     await page('links [[Zeta]]\n')
     expect(rowsOf('Notes/A.md')).toEqual([
-      { kind: 'body', target: 'zeta', qualifier: '', count: 1 },
+      { kind: 'body', target: 'zeta', qualifier: '', key: '', count: 1 },
     ])
   })
 
   it('a lone embed is an `embed` row, never a `body` one', async () => {
     await page('![[Zeta]]\n')
     expect(rowsOf('Notes/A.md')).toEqual([
-      { kind: 'embed', target: 'zeta', qualifier: '', count: 1 },
+      { kind: 'embed', target: 'zeta', qualifier: '', key: '', count: 1 },
     ])
   })
 
   it('a mid-line embed is the connection after its `!`, a `body` row', async () => {
     await page('shows ![[Zeta]]\n')
     expect(rowsOf('Notes/A.md')).toEqual([
-      { kind: 'body', target: 'zeta', qualifier: '', count: 1 },
+      { kind: 'body', target: 'zeta', qualifier: '', key: '', count: 1 },
     ])
   })
 
   it('a lone markdown embed is an `embed` row, and an inline one a `body` row', async () => {
     await page('![Alias](Zeta)\n')
     expect(rowsOf('Notes/A.md')).toEqual([
-      { kind: 'embed', target: 'zeta', qualifier: '', count: 1 },
+      { kind: 'embed', target: 'zeta', qualifier: '', key: '', count: 1 },
     ])
     await page('shows ![Alias](Zeta)\n')
     expect(rowsOf('Notes/A.md')).toEqual([
-      { kind: 'body', target: 'zeta', qualifier: '', count: 1 },
+      { kind: 'body', target: 'zeta', qualifier: '', key: '', count: 1 },
     ])
   })
 
   it('a lone heading embed is an `embed` row qualified by the heading', async () => {
     await page('![[Zeta#Part]]\n')
     expect(rowsOf('Notes/A.md')).toEqual([
-      { kind: 'embed', target: 'zeta', qualifier: 'part', count: 1 },
+      { kind: 'embed', target: 'zeta', qualifier: 'part', key: '', count: 1 },
     ])
   })
 
-  it('a Link property is a `frontmatter` row', async () => {
+  it('a whole-value link is a `value` row under its key', async () => {
     await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\nRef: '[[Zeta]]'\n---\n\nbody\n`)
     await seedContentIndex(root)
     expect(rowsOf('Notes/A.md')).toEqual([
-      { kind: 'frontmatter', target: 'zeta', qualifier: '', count: 1 },
+      { kind: 'value', target: 'zeta', qualifier: '', key: 'Ref', count: 1 },
     ])
   })
 
-  it('a Link property aimed at a heading is a `frontmatter` row qualified by it', async () => {
+  it('a whole-value link aimed at a heading is a `value` row qualified by it', async () => {
     await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\nRef: '[[Zeta#Part]]'\n---\n\nbody\n`)
     await seedContentIndex(root)
     expect(rowsOf('Notes/A.md')).toEqual([
-      { kind: 'frontmatter', target: 'zeta', qualifier: 'part', count: 1 },
+      { kind: 'value', target: 'zeta', qualifier: 'part', key: 'Ref', count: 1 },
     ])
   })
 
@@ -286,7 +286,7 @@ describe('the relations a page yields', () => {
     )
     await seedContentIndex(root)
     expect(rowsOf('Notes/A.md')).toEqual([
-      { kind: 'space', target: 'pommora', qualifier: '<projects>', count: 1 },
+      { kind: 'space', target: 'pommora', qualifier: '<projects>', key: '', count: 1 },
     ])
   })
 
@@ -297,22 +297,22 @@ describe('the relations a page yields', () => {
     )
     await seedContentIndex(root)
     expect(rowsOf('Notes/A.md')).toEqual([
-      { kind: 'space', target: 'pommora', qualifier: '<projects>', count: 2 },
+      { kind: 'space', target: 'pommora', qualifier: '<projects>', key: '', count: 2 },
     ])
   })
 
   it('a link inside a footnote definition overlays a `citation` row on its `body` row', async () => {
     await page('intro\n\n[^1]: see [[Zeta]]\n')
     expect(rowsOf('Notes/A.md')).toEqual([
-      { kind: 'body', target: 'zeta', qualifier: '', count: 1 },
-      { kind: 'citation', target: 'zeta', qualifier: '', count: 1 },
+      { kind: 'body', target: 'zeta', qualifier: '', key: '', count: 1 },
+      { kind: 'citation', target: 'zeta', qualifier: '', key: '', count: 1 },
     ])
   })
 
   it('two occurrences of one target are one row counting two', async () => {
     await page('links [[Zeta]] and again [[Zeta]]\n')
     expect(rowsOf('Notes/A.md')).toEqual([
-      { kind: 'body', target: 'zeta', qualifier: '', count: 2 },
+      { kind: 'body', target: 'zeta', qualifier: '', key: '', count: 2 },
     ])
   })
 
@@ -322,8 +322,8 @@ describe('the relations a page yields', () => {
     const filler = Array.from({ length: 40 }, (_, i) => `filler line ${i}`).join('\n')
     await page(`${lead}\n${filler}\n\n[^1]: see [[Zeta]]\n`)
     expect(rowsOf('Notes/A.md')).toEqual([
-      { kind: 'body', target: 'zeta', qualifier: '', count: 2 },
-      { kind: 'citation', target: 'zeta', qualifier: '', count: 1 },
+      { kind: 'body', target: 'zeta', qualifier: '', key: '', count: 2 },
+      { kind: 'citation', target: 'zeta', qualifier: '', key: '', count: 1 },
     ])
   })
 
@@ -331,7 +331,7 @@ describe('the relations a page yields', () => {
     const body = 'links [[Zeta]]\n\n```\n[^1]: see [[Omega]]\n```\n'
     await page(body)
     expect(rowsOf('Notes/A.md')).toEqual([
-      { kind: 'body', target: 'zeta', qualifier: '', count: 1 },
+      { kind: 'body', target: 'zeta', qualifier: '', key: '', count: 1 },
     ])
   })
 
@@ -339,8 +339,8 @@ describe('the relations a page yields', () => {
     const body = 'links [[Zeta]]\n\n| Note | Ref |\n| --- | --- |\n| [^1]: see [[Omega]] | x |\n'
     await page(body)
     expect(rowsOf('Notes/A.md')).toEqual([
-      { kind: 'body', target: 'omega', qualifier: '', count: 1 },
-      { kind: 'body', target: 'zeta', qualifier: '', count: 1 },
+      { kind: 'body', target: 'omega', qualifier: '', key: '', count: 1 },
+      { kind: 'body', target: 'zeta', qualifier: '', key: '', count: 1 },
     ])
   })
 
@@ -349,26 +349,28 @@ describe('the relations a page yields', () => {
     expect(rowsOf('Notes/A.md')).toEqual([])
   })
 
-  it('a link inside a value is a `body` row under the page’s own title, whatever the key', async () => {
+  it('a link inside a value is a `value` row under its key, read under the page’s own title', async () => {
     await writeFile(
       abs('Notes', 'A.md'),
       `---\nID: ${ULID_A}\ndescription: see [[Zeta]] and [[#Part]]\n---\n\n## Part\n`,
     )
     await seedContentIndex(root)
     expect(rowsOf('Notes/A.md')).toEqual([
-      { kind: 'body', target: 'a', qualifier: 'part', count: 1 },
-      { kind: 'body', target: 'zeta', qualifier: '', count: 1 },
+      { kind: 'value', target: 'a', qualifier: 'part', key: 'description', count: 1 },
+      { kind: 'value', target: 'zeta', qualifier: '', key: 'description', count: 1 },
     ])
   })
 
-  it('a value’s link adds to the body’s count for the same target', async () => {
+  it('one target under two keys is a `value` row per key, beside the body’s own row', async () => {
     await writeFile(
       abs('Notes', 'A.md'),
-      `---\nID: ${ULID_A}\nDescription: see [[Zeta]]\n---\n\nalso [[Zeta]]\n`,
+      `---\nID: ${ULID_A}\nRef: '[[Zeta]]'\nNotes: see [[Zeta]] twice [[Zeta]]\n---\n\nalso [[Zeta]]\n`,
     )
     await seedContentIndex(root)
     expect(rowsOf('Notes/A.md')).toEqual([
-      { kind: 'body', target: 'zeta', qualifier: '', count: 2 },
+      { kind: 'body', target: 'zeta', qualifier: '', key: '', count: 1 },
+      { kind: 'value', target: 'zeta', qualifier: '', key: 'Notes', count: 2 },
+      { kind: 'value', target: 'zeta', qualifier: '', key: 'Ref', count: 1 },
     ])
   })
 })

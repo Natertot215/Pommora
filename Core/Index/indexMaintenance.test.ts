@@ -39,7 +39,7 @@ const byPath = <T extends { path: string }>(rows: T[], ...keys: (keyof T)[]): T[
   })
 
 const dump = (): unknown => ({
-  relations: byPath([...mem.index.relations.values()], 'kind', 'target', 'qualifier'),
+  relations: byPath([...mem.index.relations.values()], 'kind', 'target', 'qualifier', 'key'),
   values: byPath([...mem.index.values.values()], 'key'),
 })
 
@@ -228,7 +228,14 @@ describe('the writers maintain the rows', () => {
     expect(r.ok).toBe(true)
     const scratch = dump() as { relations: unknown[] }
     expect(scratch.relations).toEqual([
-      { path: 'Notes/Daily/Alpha.md', kind: 'body', target: 'beta', qualifier: '', count: 1 },
+      {
+        path: 'Notes/Daily/Alpha.md',
+        kind: 'body',
+        target: 'beta',
+        qualifier: '',
+        key: '',
+        count: 1,
+      },
     ])
     await expectMaintained()
   })

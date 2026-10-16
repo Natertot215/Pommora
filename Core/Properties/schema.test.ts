@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest'
-import { validateName, validateDefinition, validateOptionValues } from './schema'
+import {
+  holdsLinks,
+  linkKeysOf,
+  validateName,
+  validateDefinition,
+  validateOptionValues,
+} from './schema'
 import { KEY_REFUSAL, type PropertyDefinition } from './properties'
 
 const def = (
@@ -108,5 +114,26 @@ describe('validateOptionValues', () => {
   it('compares titles without regard to case', () => {
     expect(validateOptionValues([{ value: 'Done' }, { value: 'done' }]).ok).toBe(false)
     expect(validateOptionValues([{ value: 'done' }, { value: 'Open' }]).ok).toBe(true)
+  })
+})
+
+describe('holdsLinks', () => {
+  it('a Link or Text key holds links; a File, Number, or Select key never does', () => {
+    expect(holdsLinks('Source', 'link')).toBe(true)
+    expect(holdsLinks('Notes', 'text')).toBe(true)
+    for (const type of ['file', 'number', 'select'] as const)
+      expect(holdsLinks('Related', type)).toBe(false)
+  })
+
+  it('an unregistered key holds links unless Pommora keeps it', () => {
+    expect(holdsLinks('Related', undefined)).toBe(true)
+    for (const key of ['ID', 'banner', '<Areas>', '$icon'])
+      expect(holdsLinks(key, undefined)).toBe(false)
+  })
+
+  it('linkKeysOf asks the registry by folded name', () => {
+    const holds = linkKeysOf([def({ id: 'p1', name: 'Number', type: 'number' })])
+    expect(holds('number')).toBe(false)
+    expect(holds('Related')).toBe(true)
   })
 })

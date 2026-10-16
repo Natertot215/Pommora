@@ -68,7 +68,7 @@ const tableOf = <R extends { path: string }>(
 
 const contentIndex = (index: MemoryIndex): ContentIndexStore => {
   const tables: IndexTable[] = [
-    tableOf(index.relations, (r) => [r.kind, r.target, r.qualifier]),
+    tableOf(index.relations, (r) => [r.kind, r.target, r.qualifier, r.key]),
     tableOf(index.headings, (r) => [String(r.ordinal)]),
     tableOf(index.values, (r) => [r.key]),
   ]
@@ -83,10 +83,13 @@ const contentIndex = (index: MemoryIndex): ContentIndexStore => {
       for (const { path, entry, stat } of rows) {
         clearPath(path)
         for (const relation of entry.relations)
-          index.relations.set(k(path, relation.kind, relation.target, relation.qualifier), {
-            path,
-            ...relation,
-          })
+          index.relations.set(
+            k(path, relation.kind, relation.target, relation.qualifier, relation.key),
+            {
+              path,
+              ...relation,
+            },
+          )
         entry.headings.forEach(({ text, level }, ordinal) => {
           index.headings.set(k(path, String(ordinal)), { path, text, level, ordinal })
         })
@@ -159,8 +162,7 @@ const contentIndex = (index: MemoryIndex): ContentIndexStore => {
       const relations = relationRows()
         .filter(
           (r): r is PageRelationRow =>
-            (r.kind === 'body' || r.kind === 'citation' || r.kind === 'frontmatter') &&
-            held(r.path),
+            (r.kind === 'body' || r.kind === 'citation' || r.kind === 'value') && held(r.path),
         )
         .sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0))
       const pages: PageRelations['pages'] = {}

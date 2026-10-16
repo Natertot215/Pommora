@@ -13,6 +13,7 @@ const link = (path: string, pageId: string, target: string): MatrixLink => ({
   pageId,
   kind: 'body',
   target,
+  key: '',
 })
 
 const GRAPH: MatrixGraphReply = {

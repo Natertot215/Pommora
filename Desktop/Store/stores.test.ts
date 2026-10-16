@@ -115,7 +115,7 @@ describe('the content index over SQLite', () => {
         {
           path: 'Notes/A.md',
           entry: {
-            relations: [{ kind: 'body', target: 'x', qualifier: '', count: 1 }],
+            relations: [{ kind: 'body', target: 'x', qualifier: '', key: '', count: 1 }],
             headings: [],
             values: {},
           },

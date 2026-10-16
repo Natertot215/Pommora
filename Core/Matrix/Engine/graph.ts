@@ -1,8 +1,8 @@
 import { LINK_MULTIPLE, radiusOf } from './forces'
 
 export type GraphNodeKind = 'page' | 'folder' | 'space'
-export type LinkKind = 'body' | 'citation' | 'frontmatter' | 'space' | 'location'
-type ConnectionKind = Extract<LinkKind, 'body' | 'citation' | 'frontmatter'>
+export type LinkKind = 'body' | 'citation' | 'value' | 'space' | 'location'
+type ConnectionKind = Extract<LinkKind, 'body' | 'citation' | 'value'>
 export type GroupMode = 'connection' | 'location' | 'space'
 
 export interface GraphInput {

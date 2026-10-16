@@ -240,16 +240,27 @@ describe('renameCascade over frontmatter', () => {
     expect((await fmOf(b.value.path)).Notes).toBe('[[New Target]]')
   })
 
-  it('leaves a File value and a Select value that read as connections', async () => {
+  it('leaves a File, a Select, and a Number value that read as connections', async () => {
     await createProperty(root, { id: '', name: 'Stage', type: 'select' } as PropertyDefinition)
+    await createProperty(root, { id: '', name: 'Rank', type: 'number' } as PropertyDefinition)
     const a = await createTestPage(dir, 'Other', { body: 'no links here' })
     if (!a.ok) throw new Error('setup failed')
     await setValue(a.value.path, 'Files', '[[Target]]')
     await setValue(a.value.path, 'Stage', '[[Target]]')
+    await setValue(a.value.path, 'Rank', '[[Target]]')
     await renameCascade(root, 'Target', { title: 'New Target' })
     const fm = await fmOf(a.value.path)
     expect(fm.Files).toBe('[[Target]]')
     expect(fm.Stage).toBe('[[Target]]')
+    expect(fm.Rank).toBe('[[Target]]')
+  })
+
+  it('moves a whole-value link under a key the registry hasn’t typed', async () => {
+    const a = await createTestPage(dir, 'Untyped', { body: 'no links here' })
+    if (!a.ok) throw new Error('setup failed')
+    await setValue(a.value.path, 'Related', '[[Target]]')
+    await renameCascade(root, 'Target', { title: 'New Target' })
+    expect((await fmOf(a.value.path)).Related).toBe('[[New Target]]')
   })
 })
 
@@ -784,6 +795,13 @@ describe('the link cascades reach Spaces and caches', () => {
     await refreshTree(root)
     expect(spacesLinkHeading(root, 'Target', 'Setup')).toBe(true)
     await space({ Notes: 'see [[Target]] first' })
+    await refreshTree(root)
+    expect(spacesLinkHeading(root, 'Target', 'Setup')).toBe(false)
+  })
+
+  it('an outside heading rename passes a Space whose File value spells the heading', async () => {
+    await createProperty(root, { id: '', name: 'Files', type: 'file' } as PropertyDefinition)
+    await space({ Files: '[[Target#Setup]]' })
     await refreshTree(root)
     expect(spacesLinkHeading(root, 'Target', 'Setup')).toBe(false)
   })

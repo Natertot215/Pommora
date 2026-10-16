@@ -7,11 +7,17 @@ import { DEFAULT_MATRIX_CONFIG, type MatrixConfig } from './matrixConfig'
 import type { MatrixGraphReply, MatrixLink } from './matrixGraph'
 import { matrixConnections, matrixTree, matrixVisible } from './matrixInput'
 
-const link = (pageId: string, target: string): MatrixLink => ({
+const link = (
+  pageId: string,
+  target: string,
+  kind: MatrixLink['kind'] = 'body',
+  key = '',
+): MatrixLink => ({
   pageId,
   path: `${pageId}.md`,
-  kind: 'body',
+  kind,
   target,
+  key,
 })
 
 const replyOf = (links: MatrixLink[]): MatrixGraphReply => ({ links, values: {} })
@@ -62,6 +68,35 @@ describe('matrixInput', () => {
 
     const phantom = matrixInput(makeTree(), replyOf([link('p2', 'Nowhere')]), DEFAULT_MATRIX_CONFIG)
     expect(phantom.input.connections).toEqual([])
+  })
+
+  it('relates a value row only under a key that holds links, asked of the registry at hand', () => {
+    const tree = makeTree()
+    const number: PropertyDefinition = { id: 'prop_rank', name: 'Rank', type: 'number' }
+    tree.config.registry = [number]
+    const under = (key: string) => replyOf([link('p2', 'Alpha', 'value', key)]).links
+    expect(matrixConnections(tree, under('Rank'))).toEqual([])
+    expect(matrixConnections(tree, under('Related'))).toEqual([
+      { from: 'p2', to: 'p1', kind: 'value' },
+    ])
+    tree.config.registry = [{ ...number, name: 'Related' }]
+    expect(matrixConnections(tree, under('Related'))).toEqual([])
+  })
+
+  it('draws one connection for a target held under two keys, a Number key never shadowing a Link key', () => {
+    const tree = makeTree()
+    tree.config.registry = [
+      { id: 'prop_rank', name: 'Rank', type: 'number' },
+      { id: 'prop_source', name: 'Source', type: 'link' },
+      { id: 'prop_site', name: 'Site', type: 'link' },
+    ]
+    const rows = (...keys: string[]) => keys.map((key) => link('p2', 'Alpha', 'value', key))
+    expect(matrixConnections(tree, rows('Rank', 'Source'))).toEqual([
+      { from: 'p2', to: 'p1', kind: 'value' },
+    ])
+    expect(matrixConnections(tree, rows('Source', 'Site'))).toEqual([
+      { from: 'p2', to: 'p1', kind: 'value' },
+    ])
   })
 
   it('excludes a Collection at every depth and admits every page when the filter is off', () => {

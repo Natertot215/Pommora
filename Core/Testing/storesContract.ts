@@ -64,10 +64,11 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
     let store: ContentIndexStore
     const STAT = { mtimeMs: 1000, size: 10 }
     // Built rather than spelled: `space` takes (key, title) in `queryMembers` order, so the transposition onto (target, qualifier) reads on one line and a reversed binding reads wrong at the call site.
-    const relation = (kind: RelationKind, target: string, qualifier = ''): Relation => ({
+    const relation = (kind: RelationKind, target: string, qualifier = '', key = ''): Relation => ({
       kind,
       target,
       qualifier,
+      key,
       count: 1,
     })
     const body = (target: string, qualifier = ''): Relation => relation('body', target, qualifier)
@@ -202,6 +203,20 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
         'Notes/A.md': { values: { ID: 'idA' }, mtimeMs: 1000 },
         'Notes/B.md': { values: { ID: 'idB' }, mtimeMs: 2000 },
       })
+    })
+
+    it('one target under two keys is two `value` rows, each read back with its key', () => {
+      upsert('Notes/A.md', {
+        relations: [relation('value', 'beta', '', 'Ref'), relation('value', 'beta', '', 'Notes')],
+        headings: [],
+        values: {},
+      })
+      const rows = store.readPageRelations().relations
+      expect(rows.sort((a, b) => a.key.localeCompare(b.key))).toEqual([
+        { path: 'Notes/A.md', ...relation('value', 'beta', '', 'Notes') },
+        { path: 'Notes/A.md', ...relation('value', 'beta', '', 'Ref') },
+      ])
+      expect(store.queryMentions('beta')).toEqual(['Notes/A.md'])
     })
 
     it('a heading-naming link answers the bare title query', () => {

@@ -12,10 +12,11 @@ const C = '01KVGMT8BFP350FZZXAMG1QDRX'
 
 let stores: ReturnType<typeof memoryStores>
 
-const relation = (kind: 'body' | 'frontmatter', target: string) => ({
+const relation = (kind: 'body' | 'value', target: string, key = '') => ({
   kind,
   target,
   qualifier: '',
+  key,
   count: 1,
 })
 
@@ -38,7 +39,7 @@ beforeEach(() => {
   index.upsertPageIndexes([
     {
       path: 'Notes/B.md',
-      entry: { relations: [relation('frontmatter', 'alpha')], headings: [], values: { ID: B } },
+      entry: { relations: [relation('value', 'alpha', 'Ref')], headings: [], values: { ID: B } },
       stat: { mtimeMs: 2000, size: 20 },
     },
   ])
@@ -88,7 +89,9 @@ describe('readMatrixGraph', () => {
   it('narrows to the named paths', () => {
     const reply = readMatrixGraph(true, ['Notes/A.md'])!
     expect(Object.keys(reply.values!)).toEqual([A])
-    expect(reply.links).toEqual([{ path: 'Notes/A.md', kind: 'body', target: 'beta', pageId: A }])
+    expect(reply.links).toEqual([
+      { path: 'Notes/A.md', kind: 'body', target: 'beta', key: '', pageId: A },
+    ])
   })
 
   it('answers one link where a page names another and its headings', () => {
@@ -108,8 +111,23 @@ describe('readMatrixGraph', () => {
       },
     ])
     expect(readMatrixGraph(true, ['Notes/A.md'])!.links).toEqual([
-      { path: 'Notes/A.md', kind: 'body', target: 'beta', pageId: A },
+      { path: 'Notes/A.md', kind: 'body', target: 'beta', key: '', pageId: A },
     ])
+  })
+
+  it('answers one link per key where a value names a page under two, so each reaches the keys rule', () => {
+    stores.stores.contentIndex!.upsertPageIndexes([
+      {
+        path: 'Notes/B.md',
+        entry: {
+          relations: [relation('value', 'alpha', 'Ref'), relation('value', 'alpha', 'Rank')],
+          headings: [],
+          values: { ID: B },
+        },
+        stat: { mtimeMs: 2000, size: 20 },
+      },
+    ])
+    expect(readMatrixGraph(true, ['Notes/B.md'])!.links.map((l) => l.key)).toEqual(['Ref', 'Rank'])
   })
 
   it('reads no values when none are asked for', () => {

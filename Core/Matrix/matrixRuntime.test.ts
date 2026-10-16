@@ -33,6 +33,7 @@ const link = (pageId: string, target: string): MatrixLink => ({
   path: `${pageId}.md`,
   kind: 'body',
   target,
+  key: '',
 })
 
 const linked = (): MatrixGraphReply => ({ links: [link('p2', 'Alpha')], values: {} })

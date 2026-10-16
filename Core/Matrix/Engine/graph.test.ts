@@ -22,7 +22,7 @@ const input: GraphInput = {
   connections: [
     { from: 'a', to: 'b', kind: 'body' },
     { from: 'a', to: 'b', kind: 'citation' },
-    { from: 'b', to: 'c', kind: 'frontmatter' },
+    { from: 'b', to: 'c', kind: 'value' },
   ],
 }
 const paired: GraphInput = {
@@ -40,7 +40,7 @@ describe('buildGraph', () => {
   it('connection mode draws pages and their connections only', () => {
     const g = buildGraph(input, { ...all, mode: 'connection' })
     expect(g.nodes.map((n) => n.id)).toEqual(['a', 'b', 'c'])
-    expect(g.links.map((l) => l.kind)).toEqual(['body', 'citation', 'frontmatter'])
+    expect(g.links.map((l) => l.kind)).toEqual(['body', 'citation', 'value'])
     expect(g.nodes[1].degree).toBe(3)
   })
 
@@ -145,13 +145,13 @@ describe('the tone a link is drawn in', () => {
   it('every kind reads as the grouping under Connection, where connections are the grouping', () => {
     expect(isGroupingLink('connection', 'body')).toBe(true)
     expect(isGroupingLink('connection', 'citation')).toBe(true)
-    expect(isGroupingLink('connection', 'frontmatter')).toBe(true)
+    expect(isGroupingLink('connection', 'value')).toBe(true)
   })
 
   it('only containment reads as the grouping under Location', () => {
     expect(isGroupingLink('location', 'location')).toBe(true)
     expect(isGroupingLink('location', 'body')).toBe(false)
-    expect(isGroupingLink('location', 'frontmatter')).toBe(false)
+    expect(isGroupingLink('location', 'value')).toBe(false)
   })
 
   it('only membership reads as the grouping under Space', () => {

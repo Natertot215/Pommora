@@ -9,7 +9,7 @@ import {
   sweepGovernedRoots,
   unsweptLine,
 } from '../Properties/governedSweep'
-import { byFoldedName } from '../Properties/properties'
+import { byFoldedName, type PropertyType } from '../Properties/properties'
 import { editCaches } from '../Properties/propertyCache'
 import { heldTreeOf } from './liveTree'
 import type { NexusTree } from './tree'
@@ -23,12 +23,13 @@ import { headingOutline } from '../MarkdownPM/Engine/headingScan'
 import { queryHeadingMentions, queryMentions } from '../Index/contentIndex'
 import { nexusCorpus } from '../Index/indexSeed'
 import { linkDefs, readKeptRegistry } from '../Properties/propertiesRegistry'
+import { holdsLinks, linkKeysOf } from '../Properties/schema'
 import { readLiveSetting } from '../Settings/settings'
 import { rewriteTileConnections, tilesLinkHeading } from '../Tiles/tilesFile'
 import type { TilesChanged } from '../Tiles/tiles'
 import { linkEntry } from '../Connections/linkValue'
 import { gonePageEntry } from '../Properties/propertyValue'
-import { frontmatterMentions, valueLinks } from '../Connections/scan'
+import { valueLinks } from '../Connections/scan'
 import { liveIdIndex, livePathOf, titleHeldOutside } from './heldPages'
 import { ID_KEY } from './identityMark'
 import { asString } from './coerce'
@@ -56,13 +57,16 @@ const spaceArm = (tree: NexusTree | null, rewrite: Rewrite): { sidecars?: Rewrit
     ? { sidecars: rewrite }
     : {}
 
-/** Whether a Space the tree holds links `title#heading` — as a whole value or inside one — which no index names. */
+/** Whether a Space the tree holds links `title#heading` under a key that holds links, which no index names. */
 export function spacesLinkHeading(root: string, title: string, heading: string): boolean {
   const [page, section] = [normalizeTitle(title), normalizeTitle(heading)]
-  return (heldTreeOf(root)?.contexts ?? []).some((g) =>
+  const tree = heldTreeOf(root)
+  if (!tree) return false
+  const holds = linkKeysOf(tree.config.registry)
+  return tree.contexts.some((g) =>
     g.spaces.some(({ values = {} }) =>
-      [...frontmatterMentions(values), ...valueLinks(values)].some(
-        (h) => h.target === page && h.qualifier === section,
+      [...valueLinks(values)].some(
+        (h) => holds(h.key) && h.target === page && h.qualifier === section,
       ),
     ),
   )
@@ -186,17 +190,15 @@ export async function renameCascade(
     const defs = Object.values((await readKeptRegistry(root)).defs)
     const names = byFoldedName(defs)
     const byName = (key: string) => names.get(foldKey(key))?.type
-    // Every other type is left as written.
     const patchOf = (
       raw: Record<string, unknown>,
-      typeOf: (key: string) => string | undefined,
+      typeOf: (key: string) => PropertyType | undefined,
       own = '',
       outlineOf = '',
     ): Record<string, string> => {
       const patch: Record<string, string> = {}
       for (const [key, value] of Object.entries(raw)) {
-        const type = typeOf(key)
-        if (type !== 'text' && type !== 'link') continue
+        if (!holdsLinks(key, typeOf(key))) continue
         // A string, or a `[[Page]]` yaml read as a nested list; a foreign one-item list stays a list.
         const text = linkEntry(value, 2)
         const next = text === null ? null : rewrite(text, own, outlineOf)
