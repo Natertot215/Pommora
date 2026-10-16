@@ -143,6 +143,35 @@ describe('TextPane', () => {
     expect(onCommit).not.toHaveBeenCalled()
   })
 
+  it('an alias typed into a link and closed by Return is remembered, and an emptied alias saves collapsed', () => {
+    const mutate = vi.spyOn(useSession.getState(), 'mutate').mockResolvedValue(null)
+    const edit = (from: number, to: number, insert: string): void =>
+      act(() => {
+        view().dispatch({
+          changes: { from, to, insert },
+          selection: { anchor: from + insert.length },
+          userEvent: insert ? 'input.type' : 'delete.backward',
+        })
+      })
+    render(text('see [[Alpha|]] x'))
+    edit(12, 12, 'new')
+    act(() => view().dispatch({ selection: { anchor: 8 } }))
+    press('Enter')
+    expect(onCommit).toHaveBeenCalledExactlyOnceWith(text('see [[Alpha|new]] x'))
+    expect(mutate).toHaveBeenCalledWith(
+      expect.objectContaining({ op: 'editAliases', edit: { op: 'add', alias: 'new' } }),
+    )
+
+    onCommit.mockClear()
+    render(text('see [[Alpha|y]] x'))
+    act(() => reopen())
+    edit(12, 13, '')
+    act(() => view().dispatch({ selection: { anchor: 8 } }))
+    press('Enter')
+    expect(onCommit).toHaveBeenCalledExactlyOnceWith(text('see [[Alpha]] x'))
+    mutate.mockRestore()
+  })
+
   it('Escape commits the typed text once, then closes; a second close commits nothing', async () => {
     render(text('x'))
     typeAtEnd('y')

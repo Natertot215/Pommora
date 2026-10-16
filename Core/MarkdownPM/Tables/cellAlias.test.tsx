@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { act, createElement } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { EditorView } from '@codemirror/view'
@@ -30,7 +30,10 @@ afterEach(async () => {
   container.remove()
 })
 
-async function cellEditor(text = CELL): Promise<EditorView> {
+async function cellEditor(
+  text = CELL,
+  over: Partial<Parameters<typeof MarkdownTable>[0]> = {},
+): Promise<EditorView> {
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
@@ -40,6 +43,7 @@ async function cellEditor(text = CELL): Promise<EditorView> {
         ...tableStubs,
         host: { ...testHost(), connections: () => conn },
         model: modelOf(text),
+        ...over,
       }),
     ),
   )
@@ -126,5 +130,49 @@ describe('a cell types the page’s link shortcuts', () => {
       type(view, 1, '|')
     })
     expect(view.state.doc.toString()).toBe('||x')
+  })
+})
+
+describe('a cell left by Tab settles the link being written, as a page does on leave', () => {
+  const twoColumns = (cell: string): TableModel => ({
+    columns: [
+      { align: null, dashes: 3 },
+      { align: null, dashes: 3 },
+    ],
+    header: ['A', 'B'],
+    rows: [[cell, 'x']],
+  })
+  const tabOut = async (cell: string, from: number, to: number, insert: string) => {
+    const host = { ...testHost(), connections: () => conn }
+    const edit = vi.spyOn(host.aliases, 'edit')
+    const onCellCommit = vi.fn()
+    const view = await cellEditor(cell, { host, model: twoColumns(cell), onCellCommit })
+    await act(async () => {
+      view.dispatch({
+        changes: { from, to, insert },
+        selection: { anchor: from + insert.length },
+        userEvent: insert ? 'input.type' : 'delete.backward',
+      })
+    })
+    await act(async () => {
+      view.dispatch({ selection: { anchor: 5 } })
+    })
+    await act(async () => {
+      view.contentDOM.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }),
+      )
+    })
+    return { edit, committed: onCellCommit.mock.calls.at(-1)?.[2] }
+  }
+
+  it('remembers an alias typed there', async () => {
+    const { edit, committed } = await tabOut('[[Quarterly Plan|]]', 17, 17, 'new')
+    expect(committed).toBe('[[Quarterly Plan|new]]')
+    expect(edit.mock.calls).toEqual([['p1', { op: 'add', alias: 'new' }]])
+  })
+
+  it('collapses an alias emptied there', async () => {
+    const { committed } = await tabOut('[[Quarterly Plan|y]]', 17, 18, '')
+    expect(committed).toBe('[[Quarterly Plan]]')
   })
 })

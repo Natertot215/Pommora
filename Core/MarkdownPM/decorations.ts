@@ -41,7 +41,7 @@ import type { DiffTally, MarkdownScope } from './Engine/detect'
 import { sectionRunsIn } from '../Connections/scan'
 import { CHECK_GLYPH, CODE_TAGS, COPY_GLYPH, pathGlyph } from './codeGlyphs'
 import { pathTitles } from './Engine/codeLangs'
-import { linkRest, linkTyping } from './Links/linkReveal'
+import { linkRest, linkWriting } from './Links/linkReveal'
 import {
   assembleLineIntents,
   type DecoIntent,
@@ -472,7 +472,7 @@ function build(view: EditorView, scope: MarkdownScope): Built {
   const active = focused
     ? activeTokenIndices(tokens, sel.from, sel.to, view.state.field(linkRest, false) ?? null)
     : NO_ACTIVE
-  const typing = focused ? (view.state.field(linkTyping, false) ?? null) : null
+  const typing = focused ? view.state.field(linkWriting, false)?.start : undefined
   const head = focused ? sel.head : NO_CARET
   const intents = tokenIntents(tokens, active)
   // Loop, never spread — a spread into push throws past V8's argument ceiling, and CM deactivates a crashed plugin for good.
@@ -818,6 +818,7 @@ function decorationPlugin(scope: MarkdownScope): Extension {
           u.selectionSet ||
           u.focusChanged ||
           u.startState.field(paneHeld, false) !== u.state.field(paneHeld, false) ||
+          u.startState.field(linkWriting, false) !== u.state.field(linkWriting, false) ||
           u.viewportChanged ||
           u.transactions.some((tr) => tr.effects.some((e) => e.is(redrawNudge)))
         )

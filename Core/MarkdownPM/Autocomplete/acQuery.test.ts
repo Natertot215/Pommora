@@ -67,68 +67,6 @@ describe('the picker’s query as editor state', () => {
   })
 })
 
-describe('the link the picker opened on', () => {
-  it('keeps the text it first read while the query continues', () => {
-    const { field, state } = stateOf('[x](', 4)
-    const opened = typed(state, 4, 'A')
-    expect(opened.field(field).origin?.text).toBe('[x](A)')
-    expect(typed(opened, 5, 'l').field(field).origin?.text).toBe('[x](A)')
-  })
-
-  it('reads a closed link the caret is placed in, and keeps it through a retype', () => {
-    const { field, state } = stateOf('[Mine](Old) x', 0)
-    const placed = state.update({ selection: { anchor: 10 } }).state
-    expect(placed.field(field).origin?.text).toBe('[Mine](Old)')
-    const retyped = placed.update({
-      changes: { from: 7, to: 10, insert: 'Gam' },
-      selection: { anchor: 10 },
-      userEvent: 'input.type',
-    }).state
-    expect(retyped.field(field).query).toMatchObject({ query: 'Gam' })
-    expect(retyped.field(field).origin?.text).toBe('[Mine](Old)')
-  })
-
-  it('a query at another link replaces it', () => {
-    const { field, state } = stateOf('[[Old|Mine]] [[New]]', 4)
-    const first = state.update({ selection: { anchor: 3 } }).state
-    expect(first.field(field).origin?.text).toBe('[[Old|Mine]]')
-    expect(first.update({ selection: { anchor: 16 } }).state.field(field).origin?.text).toBe(
-      '[[New]]',
-    )
-  })
-
-  it('a heading slot opened and backed out of is the same link', () => {
-    const { field, state } = stateOf('[x]()', 0)
-    const placed = state.update({ selection: { anchor: 4 } }).state
-    expect(placed.field(field).origin?.text).toBe('[x]()')
-    const sliding = typed(placed, 4, 'Alpha#')
-    expect(sliding.field(field).query).toMatchObject({ form: 'fragment' })
-    const back = sliding.update({
-      changes: { from: 9, to: 10 },
-      selection: { anchor: 9 },
-      userEvent: 'delete',
-    }).state
-    expect(back.field(field).query).toMatchObject({ form: 'target', query: 'Alpha' })
-    expect(back.field(field).origin?.text).toBe('[x]()')
-  })
-
-  it('keeps the link through a selection inside it and the text typed over that, until the caret leaves', () => {
-    const { field, state } = stateOf('[[Old|Mine]] x', 0)
-    const placed = state.update({ selection: { anchor: 4 } }).state
-    const selected = placed.update({ selection: { anchor: 2, head: 5 } }).state
-    expect(selected.field(field).query).toBeNull()
-    const retyped = selected.update({
-      changes: { from: 2, to: 5, insert: 'G' },
-      selection: { anchor: 3 },
-      userEvent: 'input.type',
-    }).state
-    expect(retyped.field(field).query).toMatchObject({ query: 'G' })
-    expect(retyped.field(field).origin?.text).toBe('[[Old|Mine]]')
-    const left = retyped.update({ selection: { anchor: retyped.doc.length } }).state
-    expect(left.field(field).origin).toBeNull()
-  })
-})
-
 describe('the § arm', () => {
   const automatic = { inPageHeadingResolution: 'automatic' as const }
 

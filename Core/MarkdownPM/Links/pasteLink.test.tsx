@@ -13,6 +13,8 @@ import {
 } from '../../Testing/editorHarness'
 import { pendingTitles } from './pendingTitle'
 import { paste, pastedCellText, pasteFromClipboard } from './pasteLink'
+import type { ConnectionsApi } from './connectionsApi'
+import { buildPageIndex } from '../../Connections/pageIndex'
 
 const URL = 'https://www.example.com/a/b'
 
@@ -330,8 +332,9 @@ describe('pasting inside a link', () => {
     anchor: number,
     text: string,
     how: 'event' | Parameters<typeof paste>[2] = 'event',
+    connections?: ConnectionsApi,
   ): Promise<string> => {
-    const view = await mountEditor({ initialBody: body })
+    const view = await mountEditor({ initialBody: body, connections })
     view.dispatch({ selection: { anchor } })
     clipboard = text
     await act(async () => {
@@ -352,16 +355,29 @@ describe('pasting inside a link', () => {
     ['[[Page1]]', [4], 'https://x.com', '[x.com](https://x.com)', '[x.com](https://x.com)'],
   ]
 
+  const held: ConnectionsApi = {
+    index: buildPageIndex([{ id: 'p1', title: 'Page1', path: 'Page1.md' }]),
+    headingsOf: () => undefined,
+    open: () => {},
+  }
+
   for (const [container, carets, text, kept, removed] of RETARGETS)
     it(`retargets ${container} with ${text} wherever the caret sits inside it`, async () => {
       for (const keep of [true, false]) {
         settings({ defaultLinkFormat: 'link-short', removeTitleOnLinkChange: !keep })
         for (const at of carets)
-          expect(await pastedAt(`a ${container} b`, at + 2, text), `${at} ${keep}`).toBe(
-            `a ${keep ? kept : removed} b`,
-          )
+          expect(
+            await pastedAt(`a ${container} b`, at + 2, text, 'event', held),
+            `${at} ${keep}`,
+          ).toBe(`a ${keep ? kept : removed} b`)
       }
     })
+
+  it('keeps the shown text of a link that named no page, with Remove Title On Link Change on', async () => {
+    settings({ removeTitleOnLinkChange: true })
+    expect(await pastedAt('a [[Page1|Mine]] b', 6, '[[Page2]]')).toBe('a [[Page2|Mine]] b')
+    expect(await pastedAt('a [y](Page1) b', 3, '[[Page2]]')).toBe('a [y](Page2) b')
+  })
 
   it('writes the Default Link Format for an address pasted into an empty alias', async () => {
     settings({ defaultLinkFormat: 'link-short' })

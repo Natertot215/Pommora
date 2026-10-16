@@ -4,6 +4,7 @@ import { LINK_DISPLAYS } from '../Properties/properties'
 import { buildPageIndex } from './pageIndex'
 import type { LinkTarget } from './linkValue'
 import {
+  keepsShown,
   linkDisplayText,
   linkEditText,
   linkValueFromEdit,
@@ -417,8 +418,48 @@ describe('a Link value’s Edit commit', () => {
     expect(commit('https://b.com', '[x](https://a.com)', false)).toBe('https://b.com')
     expect(commit('[[beta]]', '[[Beta|Mine]]', false)).toBe('[[Beta|Mine]]')
   })
+  it('a new target keeps the old alias where the old value named no page', () => {
+    expect(commit('[[Alpha]]', '[[Nope|Mine]]', false)).toBe('[[Alpha|Mine]]')
+  })
   it('a page is stored as a connection whatever the old value was', () => {
     expect(commit('[[Alpha]]', '[x](https://a.com)')).toBe('[[Alpha]]')
+  })
+})
+
+describe('keepsShown — Remove Title On Link Change over the link as it read before', () => {
+  const index = buildPageIndex([
+    { id: 'a', title: 'Alpha', path: 'Alpha.md' },
+    { id: 'b', title: 'Beta', path: 'Beta.md' },
+    { id: 'n', title: 'notes.io', path: 'notes.io.md' },
+  ])
+  const was = (text: string): LinkTarget | null => readLinkText(text)
+  const page = (title: string): LinkTarget => ({ kind: 'page', syntax: 'wiki', title })
+  const url = (u: string): LinkTarget => ({ kind: 'url', syntax: 'bare', url: u })
+
+  it('keeps it with the setting off, and for a link that never closed', () => {
+    expect(keepsShown(was('[[Alpha|x]]'), page('Beta'), false, index)).toBe(true)
+    expect(keepsShown(null, page('Beta'), true, index)).toBe(true)
+  })
+  it('keeps it where the link pointed nowhere', () => {
+    expect(keepsShown(was('[[Nope|x]]'), page('Beta'), true, index)).toBe(true)
+    expect(keepsShown(was('[[Alpha|x]]'), page('Beta'), true)).toBe(true)
+  })
+  it('drops it where a resolved link is re-aimed, unless at the same target', () => {
+    expect(keepsShown(was('[[Alpha|x]]'), page('Beta'), true, index)).toBe(false)
+    expect(keepsShown(was('[[Alpha|x]]'), page('alpha'), true, index)).toBe(true)
+    expect(keepsShown(was('[x](Alpha#H)'), page('Alpha'), true, index)).toBe(false)
+  })
+  it('counts an address as pointed', () => {
+    expect(keepsShown(was('[x](https://a.com)'), url('https://b.com'), true, index)).toBe(false)
+    expect(keepsShown(was('[x](https://a.com)'), url('https://a.com'), true, index)).toBe(true)
+  })
+  it('counts this document’s own heading as pointed', () => {
+    expect(keepsShown(was('[[#Intro|x]]'), page('Beta'), true, index)).toBe(false)
+    expect(keepsShown(was('[[#Intro|x]]'), was('[[#intro]]') as LinkTarget, true, index)).toBe(true)
+  })
+  it('reads a destination a page holds as that page', () => {
+    expect(keepsShown(was('[x](notes.io)'), page('notes.io'), true, index)).toBe(true)
+    expect(keepsShown(was('[x](notes.io)'), page('Beta'), true, index)).toBe(false)
   })
 })
 
@@ -431,43 +472,57 @@ describe('retarget — the one rule for a link whose target changes', () => {
   })
   const urlOf = (url: string): LinkTarget => ({ kind: 'url', syntax: 'bare', url })
   const text = (...args: Parameters<typeof retarget>): string => retarget(...args).text
+  const index = buildPageIndex([
+    { id: '1', title: 'Page1', path: 'Page1.md' },
+    { id: '2', title: 'Page2', path: 'Page2.md' },
+  ])
 
   it('writes a page the wikilink grammar cannot carry as a markdown link, whatever the container', () => {
-    expect(text('wiki', pageOf('Page1'), pageOf('A|B'), false)).toBe('[A|B](A%7CB)')
-    expect(text('wiki', null, pageOf('Draft]', 'x'), false)).toBe('[x](Draft%5D)')
+    expect(text('wiki', pageOf('Page1'), pageOf('A|B'), true, index)).toBe('[A|B](A%7CB)')
+    expect(text('wiki', null, pageOf('Draft]', 'x'), true, index)).toBe('[x](Draft%5D)')
     expect(
       text(
         'wiki',
         pageOf('Page1'),
         { kind: 'page', syntax: 'wiki', title: 'P', heading: 'H]' },
-        false,
+        true,
+        index,
       ),
     ).toBe('[H\\]](P#H%5D)')
   })
 
   it('takes the next target, and the next link’s own alias', () => {
-    expect(text('wiki', pageOf('Page1'), pageOf('Page2'), false)).toBe('[[Page2]]')
-    expect(text('wiki', pageOf('Page1'), pageOf('Page2', 'x'), false)).toBe('[[Page2|x]]')
+    expect(text('wiki', pageOf('Page1'), pageOf('Page2'), true, index)).toBe('[[Page2]]')
+    expect(text('wiki', pageOf('Page1'), pageOf('Page2', 'x'), true, index)).toBe('[[Page2|x]]')
   })
   it('keeps the container’s alias only where the setting keeps it', () => {
-    expect(text('wiki', pageOf('Page1', 'Mine'), pageOf('Page2'), false)).toBe('[[Page2]]')
-    expect(text('wiki', pageOf('Page1', 'Mine'), pageOf('Page2'), true)).toBe('[[Page2|Mine]]')
+    expect(text('wiki', pageOf('Page1', 'Mine'), pageOf('Page2'), true, index)).toBe('[[Page2]]')
+    expect(text('wiki', pageOf('Page1', 'Mine'), pageOf('Page2'), false, index)).toBe(
+      '[[Page2|Mine]]',
+    )
   })
   it('keeps a markdown container markdown', () => {
-    expect(text('markdown', pageOf('Page1', 'y'), pageOf('Page2'), false)).toBe('[Page2](Page2)')
-    expect(text('markdown', pageOf('Page1', 'y'), pageOf('Page2'), true)).toBe('[y](Page2)')
+    expect(text('markdown', pageOf('Page1', 'y'), pageOf('Page2'), true, index)).toBe(
+      '[Page2](Page2)',
+    )
+    expect(text('markdown', pageOf('Page1', 'y'), pageOf('Page2'), false, index)).toBe('[y](Page2)')
   })
   it('writes an address in a connection as a weblink under the Default Link Format', () => {
     expect(
-      retarget('wiki', pageOf('Page1'), urlOf('https://x.com'), false, { format: 'link-short' }),
+      retarget('wiki', pageOf('Page1'), urlOf('https://x.com'), true, index, {
+        format: 'link-short',
+      }),
     ).toEqual({ kind: 'link', text: '[x.com](https://x.com)' })
     expect(
-      retarget('wiki', pageOf('Page1'), urlOf('https://x.com'), false, { format: 'link-title' })
-        .awaits,
+      retarget('wiki', pageOf('Page1'), urlOf('https://x.com'), true, index, {
+        format: 'link-title',
+      }).awaits,
     ).toBe('https://x.com')
   })
   it('keeps the alias when the target is unchanged', () => {
-    expect(text('wiki', pageOf('Page1', 'Mine'), pageOf('page1'), false)).toBe('[[page1|Mine]]')
+    expect(text('wiki', pageOf('Page1', 'Mine'), pageOf('page1'), true, index)).toBe(
+      '[[page1|Mine]]',
+    )
   })
   it('writes a Link value’s address bare, with no format label', () => {
     expect(retarget('wiki', null, urlOf('https://x.com'), false)).toEqual({

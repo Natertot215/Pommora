@@ -197,10 +197,10 @@ describe('following one', () => {
 
 // Asserted on the edit rather than by driving the panel: opening it needs coordsAtPos, and jsdom measures nothing, so a panel-driven version would only ever test the harness.
 describe('picking a page inside the parens', () => {
-  const applied = (doc: string, caret: number): { text: string; after: string } => {
+  const applied = (doc: string, caret: number, kept?: string): { text: string; after: string } => {
     const ac = autocompleteQuery(scanDoc(doc), caret)!
     expect(ac.form).toBe('target')
-    const edit = commitEdit(ac, 'Work Notes', { container: null, keepTitle: false })
+    const edit = commitEdit(ac, 'Work Notes', { kept })
     let text = doc
     for (const c of [...edit.changes].reverse()) {
       text = text.slice(0, c.from) + c.insert + text.slice(c.to)
@@ -218,7 +218,7 @@ describe('picking a page inside the parens', () => {
 
   it('leaves a written label alone and rests in the same place', () => {
     const doc = 'see [the notes]() end'
-    const { text, after } = applied(doc, doc.indexOf('(') + 1)
+    const { text, after } = applied(doc, doc.indexOf('(') + 1, 'the notes')
     expect(text).toBe('see [the notes](Work%20Notes) end')
     expect(after).toBe(' end')
   })
@@ -239,7 +239,11 @@ describe('a connection takes its color as it is typed', () => {
     const view = await mountEditor({ initialBody: 'see [[Wo]] end', connections: conn })
     await act(async () => {
       view.focus()
-      view.dispatch({ changes: { from: 8, insert: 'r' }, selection: { anchor: 9 } })
+      view.dispatch({
+        changes: { from: 8, insert: 'r' },
+        selection: { anchor: 9 },
+        userEvent: 'input.type',
+      })
     })
     expect(view.dom.querySelector('.md-connection-typing')?.textContent).toBe('Wor')
   })
@@ -267,7 +271,11 @@ describe('a connection takes its color as it is typed', () => {
     const view = await mountEditor({ initialBody: 'see [[Work Note]] end', connections: conn })
     await act(async () => {
       view.focus()
-      view.dispatch({ changes: { from: 15, insert: 's' }, selection: { anchor: 16 } })
+      view.dispatch({
+        changes: { from: 15, insert: 's' },
+        selection: { anchor: 16 },
+        userEvent: 'input.type',
+      })
     })
     expect(view.dom.querySelector('.md-connection-typing')).toBeNull()
     expect(view.dom.querySelector('.md-connection-resolved')).not.toBeNull()

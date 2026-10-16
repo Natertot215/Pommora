@@ -8,6 +8,7 @@ import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import type { ConnPage } from '../../Connections/pageIndex'
 import { type EditorHost, heldPage, mirrorBody } from '../../MarkdownPM/api'
 import { editorBase } from '../../MarkdownPM/surface'
+import { linkSettle } from '../../MarkdownPM/Links/linkEdit'
 import { formatKeymap } from '../../MarkdownPM/Input/formatKeymap'
 import { useReconfigured } from '../../MarkdownPM/Input/useReconfigured'
 import { useConnectionAutocomplete } from '../../MarkdownPM/Autocomplete/useConnectionAutocomplete'
@@ -99,6 +100,7 @@ function TextPaneEditor({
   const formatExt = useReconfigured(viewRef, host.settings().commands, formatKeymap)
 
   const save = (): void => {
+    viewRef.current?.plugin(linkSettle)?.flush()
     const doc = viewRef.current?.state.doc.toString()
     if (doc === undefined || settled(doc) === committed.current) return
     committed.current = settled(doc)

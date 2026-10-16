@@ -1,25 +1,18 @@
-import { StateEffect, StateField, type Text, type Transaction } from '@codemirror/state'
+import { StateEffect, StateField, type Transaction } from '@codemirror/state'
 import { docScan } from '../docCache'
 import { inCodeAt } from '../Engine/docScan'
 import { inBracket } from '../Input/edits'
 import { editorHost, inRawHtml } from '../api'
 import type { MarkdownScope } from '../Engine/detect'
-import { type AutocompleteQuery, autocompleteQuery, closerOf } from './autocomplete'
+import { type AutocompleteQuery, autocompleteQuery } from './autocomplete'
 
 interface AcField {
   query: AutocompleteQuery | null
   armed: number | null
   dismissed: AutocompleteQuery | null
-  origin: LinkOrigin | null
 }
 
-interface LinkOrigin {
-  from: number
-  to: number
-  text: string
-}
-
-const IDLE: AcField = { query: null, armed: null, dismissed: null, origin: null }
+const IDLE: AcField = { query: null, armed: null, dismissed: null }
 
 export const closeAcQuery = StateEffect.define<'dismiss' | 'blur'>()
 
@@ -31,28 +24,6 @@ const sameQuery = (a: AutocompleteQuery, b: AutocompleteQuery | null): boolean =
   a.closed === b.closed &&
   a.query === b.query &&
   a.title === b.title
-
-const linkStart = (q: AutocompleteQuery): number => (q.label ? q.label.from - 1 : q.from)
-
-const originOf = (doc: Text, q: AutocompleteQuery): LinkOrigin => ({
-  from: linkStart(q),
-  to: q.to,
-  text: doc.sliceString(linkStart(q), q.to) + (q.label || !q.closed ? closerOf(q.form) : ''),
-})
-
-function originAfter(
-  was: LinkOrigin | null,
-  query: AutocompleteQuery | null,
-  tr: Transaction,
-): LinkOrigin | null {
-  if (was === null) return query && originOf(tr.newDoc, query)
-  const from = tr.changes.mapPos(was.from, 1)
-  const to = tr.changes.mapPos(was.to, 1)
-  const head = tr.newSelection.main.head
-  if (query ? from !== linkStart(query) : head < from || head > to)
-    return query && originOf(tr.newDoc, query)
-  return from === was.from && to === was.to ? was : { from, to, text: was.text }
-}
 
 function armedBy(tr: Transaction): number | null {
   if (
@@ -92,12 +63,8 @@ export const acQuery = (scope: MarkdownScope) =>
           : null
       const dismissed = q && sameQuery(q, value.dismissed) ? value.dismissed : null
       const query = dismissed ? null : q && sameQuery(q, value.query) ? value.query : q
-      const origin = originAfter(value.origin, query, tr)
-      return query === value.query &&
-        armed === value.armed &&
-        dismissed === value.dismissed &&
-        origin === value.origin
+      return query === value.query && armed === value.armed && dismissed === value.dismissed
         ? value
-        : { query, armed, dismissed, origin }
+        : { query, armed, dismissed }
     },
   })

@@ -4,7 +4,7 @@ import type { MarkdownScope } from './Engine/detect'
 import { markdownDecorations } from './decorations'
 import { listDragExtension } from './Gestures/listDrag'
 import { blockDragExtension } from './Gestures/blockDrag'
-import { linkRest, linkTyping } from './Links/linkReveal'
+import { linkRest, linkWriting } from './Links/linkReveal'
 import { listRenumber } from './Input/listRenumber'
 import { smartDelete, typedInput, wrapChords } from './Input/markdownInput'
 import { blockHandles, pointerReveal } from './Menus/blockHandles'
@@ -16,7 +16,7 @@ import { linkPointer } from './Links/linkClicks'
 import { citationPointer } from './Citations/citationPointer'
 import { pasteLink } from './Links/pasteLink'
 import { pendingTitles } from './Links/pendingTitle'
-import { aliasOnLeave, commitAliasOnEnter } from './Links/linkEdit'
+import { commitAliasOnEnter, linkSettle } from './Links/linkEdit'
 import { type EditorHost, editorHost } from './api'
 import { editorKeymap } from './Input/formatKeymap'
 import { type EditorPane, paneKeys } from './Menus/caretPane'
@@ -48,9 +48,9 @@ export const inlineSurface = (scope: MarkdownScope): Extension => [
   citationPointer(),
   pasteLink,
   pendingTitles,
-  aliasOnLeave(scope),
+  linkSettle.of({ scope, remembers: true }),
   linkRest,
-  linkTyping,
+  linkWriting,
   EditorView.lineWrapping,
   // A cell's contentEditable=false widget host suppresses the inherited spellcheck; the rest are iOS keyboard hints.
   EditorView.contentAttributes.of({

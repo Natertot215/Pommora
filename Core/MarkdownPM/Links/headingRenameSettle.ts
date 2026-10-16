@@ -63,6 +63,7 @@ export const headingRenameSettle = ViewPlugin.define(
     }
     return {
       update(u) {
+        // Unlike the link settle, focus into the caret pane settles too: a heading mid-rename never holds an open picker, so leaving for the pane is leaving.
         if (!(u.docChanged || u.selectionSet || u.focusChanged)) return
         for (const tr of u.transactions) {
           if (pending && tr.docChanged) {

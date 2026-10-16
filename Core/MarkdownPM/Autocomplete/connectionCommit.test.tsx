@@ -310,6 +310,13 @@ describe('a pick retargets the link the picker opened on', () => {
     expect(view.state.doc.toString()).toBe('[x](Alpha)')
   })
 
+  it('a label typed before a destination that never closed stays with Remove Title on', async () => {
+    const view = await mounted('', { pairBrackets: false, removeTitleOnLinkChange: true })
+    await typeInto(view, '[Nice](Alpha')
+    await press(view, 'Enter')
+    expect(view.state.doc.toString()).toBe('[Nice](Alpha)')
+  })
+
   it.each([
     ['[Mine](Old) x', 7, 10, 'Gam', true, '[Gamma](Gamma) x', null],
     ['[Mine](Old) x', 7, 10, 'Gam', false, '[Mine](Gamma) x', 'pGamma'],

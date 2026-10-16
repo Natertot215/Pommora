@@ -1,5 +1,5 @@
 import { connectionText, expressibleInLink, targetSpan } from '../../Connections/connections'
-import { keepsShown, type LinkTarget, retarget } from '../../Connections/linkValue'
+import { retarget } from '../../Connections/linkValue'
 import { normalizeTitle } from '../../Paths/caseFold'
 import {
   decodeLinkTarget,
@@ -227,23 +227,13 @@ export function closerOf(form: ConnectionForm): string {
 export function commitEdit(
   ac: AutocompleteQuery,
   value: string,
-  opts: {
-    container: LinkTarget | null
-    keepTitle: boolean
-    openAlias?: boolean
-    openHeading?: boolean
-  },
+  opts: { kept?: string; openAlias?: boolean; openHeading?: boolean },
 ): { changes: TextEdit[]; anchor: number } {
   const closer = ac.closed ? '' : closerOf(ac.form)
   // Opening the heading slot writes an empty fragment and slides the pane in, rather than finishing the link.
   // A kept alias stays behind the slot, as a markdown link's label stays before it.
   if (ac.form === 'link' && opts.openHeading) {
-    const { container } = opts
-    const kept =
-      container?.alias &&
-      keepsShown(container, { kind: 'page', syntax: 'wiki', title: value }, opts.keepTitle)
-        ? `|${container.alias}`
-        : ''
+    const kept = opts.kept ? `|${opts.kept}` : ''
     const head = `[[${value}#`
     return {
       changes: [{ from: ac.from, to: ac.to, insert: `${head}${kept}]]` }],
@@ -265,13 +255,12 @@ export function commitEdit(
       anchor: ac.from + value.length + 1,
     }
   }
-  const { container } = opts
   if (ac.form === 'link') {
     const { text } = retarget(
       'wiki',
-      container,
-      { kind: 'page', syntax: 'wiki', title: value },
-      opts.keepTitle,
+      null,
+      { kind: 'page', syntax: 'wiki', title: value, alias: opts.kept },
+      false,
     )
     return { changes: [{ from: ac.from, to: ac.to, insert: text }], anchor: ac.from + text.length }
   }
@@ -300,10 +289,7 @@ export function commitEdit(
     to: ac.to,
     insert: encoded + (opts.openHeading ? '#' : '') + closer,
   }
-  const retitles =
-    ac.form === 'target' &&
-    container !== null &&
-    !keepsShown(container, { kind: 'page', syntax: 'markdown', title: value }, opts.keepTitle)
+  const retitles = ac.form === 'target' && opts.kept === undefined
   const fill = ac.label && (ac.label.from === ac.label.to || retitles) ? ac.label : null
   // A pick opening the heading slot leaves the label for the heading pick to fill.
   const label = fill && !opts.openHeading ? escapeLabel(value) : ''
