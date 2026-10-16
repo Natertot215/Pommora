@@ -1,31 +1,20 @@
-import { insideMark, type TokenOf, tokenize } from '../Engine/tokens'
+import type { TokenOf } from '../Engine/tokens'
 import { isPaint, type Paint } from '../Engine/paints'
 import { parseListMarker, headingParts } from '../Engine/detect'
-import { innerRange, isQuoteToggleable, splitPrefix } from './format'
+import { isQuoteToggleable, splitPrefix, underSelection } from './format'
 import type { EditorMenuRequest } from '../../Actions/editorMenu'
-import { lineStartAt, lineEndAt, trimmedRange } from '../Engine/markdownCode'
-import { type DocScan, inFenceAt } from '../Engine/docScan'
+import type { DocScan } from '../Engine/docScan'
 
 export function readFormatState(
   scan: DocScan,
   selFrom: number,
   selTo: number,
 ): Omit<EditorMenuRequest, 'scope' | 'x' | 'y' | 'embedSeat' | 'citeSeat' | 'resting'> {
-  const doc = scan.text
-  const [from, to] = trimmedRange(doc, selFrom, selTo)
-  // Inline marks are line-local, so only the caret's line is tokenized, in line-relative coords. A cross-line selection can't sit inside one inline token anyway.
-  const ls = lineStartAt(doc, from)
-  const le = lineEndAt(doc, from)
-  const line = doc.slice(ls, le)
-  const tokens = inFenceAt(scan, from) ? [] : tokenize(line)
+  const { from, to, ls, line, tokens, covering } = underSelection(scan, selFrom, selTo)
   const f = from - ls
   const t = to - ls
-  const [mf, mt] = innerRange(line, f, t)
-  const wraps = (kind: string): boolean =>
-    tokens.some((tk) => tk.kind === kind && insideMark(tk, mf, mt))
-  const painted = tokens.find(
-    (tk): tk is TokenOf<Paint> => isPaint(tk.kind) && insideMark(tk, mf, mt),
-  )
+  const wraps = (kind: string): boolean => covering.some((tk) => tk.kind === kind)
+  const painted = covering.find((tk): tk is TokenOf<Paint> => isPaint(tk.kind))
 
   // List/heading state reads the line's INNER body so a `> - item` reports as a list — the render layer shows the bullet behind the `>`, and the menu must agree with what the user sees.
   const { body } = splitPrefix(line)
