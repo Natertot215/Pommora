@@ -1,11 +1,11 @@
 import { cellToDisplay, delimCell, parseDelimiter, pipeRow, serialize, splitRow } from './codec'
-import type { Column, TableModel } from './model'
+import { type Align, type TableModel, UNSIZED_DASHES } from './model'
 
 // Shape carries the meaning: pipe rows alone are a rectangle, a delimiter line makes it a column (one wide) or a whole table (wider). Cells travel in source form, exactly as the model holds them; a lone cell travels as its display text, since one pipe cell decodes as text and a paste would keep the pipes.
 
 export type TablePayload =
   | { kind: 'rect'; grid: string[][] }
-  | { kind: 'column'; header: string; column: Column; body: string[] }
+  | { kind: 'column'; header: string; body: string[] }
   | { kind: 'table' }
 
 export function encodeRect(grid: string[][]): string {
@@ -13,8 +13,10 @@ export function encodeRect(grid: string[][]): string {
   return grid.map(pipeRow).join('\n')
 }
 
-export function encodeColumn(header: string, column: Column, body: string[]): string {
-  return [header, delimCell(column), ...body].map((c) => pipeRow([c])).join('\n')
+export function encodeColumn(header: string, align: Align, body: string[]): string {
+  return [header, delimCell({ align, dashes: UNSIZED_DASHES }), ...body]
+    .map((c) => pipeRow([c]))
+    .join('\n')
 }
 
 /** Null where the text isn't table-shaped, and for a lone pipe cell — one cell of text is a text paste, not a structural one. An all-empty payload (a copied outline) reads as inert `table`. */
@@ -31,7 +33,7 @@ export function decodePayload(text: string): TablePayload | null {
     const header = grid[0][0] ?? ''
     const body = grid.slice(2).map((r) => r[0] ?? '')
     if (header === '' && body.every((c) => c === '')) return { kind: 'table' }
-    return { kind: 'column', header, column: delim[0], body }
+    return { kind: 'column', header, body }
   }
   if (lines.some((l) => parseDelimiter(l))) return { kind: 'table' }
   if (grid.length === 1 && grid[0].length === 1) return null

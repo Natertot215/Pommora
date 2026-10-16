@@ -6,7 +6,7 @@ import { isCmd } from '@pommora/uix/Interactions/chords'
 import { Icon } from '@pommora/uix/Symbols'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
-import type { Align, TableModel } from '../Engine/Tables/model'
+import { type Align, type TableModel, WIDTH_DASHES, columnShares } from '../Engine/Tables/model'
 import type { TableMenuContext } from './tableMenu'
 import { CellEditor, type Seat } from './CellEditor'
 import { forwardTitles } from '../Links/pendingTitle'
@@ -135,7 +135,7 @@ export function MarkdownTable({
   readOnly: () => boolean
   linkStyle: HeadingLinkStyle
 }): React.JSX.Element {
-  const total = model.columns.reduce((sum, c) => sum + Math.max(1, c.dashes), 0)
+  const shares = columnShares(model.columns)
   const totalRows = model.rows.length + 1
   const cols = model.columns.length
 
@@ -371,13 +371,11 @@ export function MarkdownTable({
     e.preventDefault()
     const i = boundaryIndex
     const widths = geom.cols.map((c) => c.width)
-    const combinedDashes =
-      Math.max(1, model.columns[i].dashes) + Math.max(1, model.columns[i + 1].dashes)
     const startLeftPx = widths[i] ?? 0
     const startRightPx = widths[i + 1] ?? 0
     const combinedPx = startLeftPx + startRightPx
     if (combinedPx === 0) return
-    const oneDashPx = combinedPx / combinedDashes
+    const minPx = widths.reduce((sum, w) => sum + w, 0) / WIDTH_DASHES
     const startX = e.clientX
     let leftPx = startLeftPx
     beginGesture({
@@ -388,11 +386,7 @@ export function MarkdownTable({
         return undefined
       },
       onDragMove: (ev) => {
-        const delta = clamp(
-          ev.clientX - startX,
-          -(startLeftPx - oneDashPx),
-          startRightPx - oneDashPx,
-        )
+        const delta = clamp(ev.clientX - startX, -(startLeftPx - minPx), startRightPx - minPx)
         leftPx = startLeftPx + delta
         setResize({ boundaryIndex: i, leftPx, rightPx: combinedPx - leftPx })
       },
@@ -479,7 +473,7 @@ export function MarkdownTable({
       if (ci === resize.boundaryIndex + 1) return `${resize.rightPx}px`
       return `${colW(ci)}px`
     }
-    return `${(Math.max(1, model.columns[ci].dashes) / total) * 100}%`
+    return `${shares[ci]}%`
   }
 
   const tableTop = geom.rows[0]?.top ?? 0
