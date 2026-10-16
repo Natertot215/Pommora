@@ -106,19 +106,10 @@ const notOverlapping =
   (tk: Token): boolean =>
     !claimed.some((c) => overlaps(c.range, tk.range))
 
-const VERBATIM: ReadonlySet<TokenKind> = new Set([
-  'inlineCode',
-  'link',
-  'wikiLink',
-  'blockLatex',
-  'inlineLatex',
-])
-
 /** The text with its code, link, and math spans blanked in place, so a paint opens and closes only outside them. */
-export function outsideVerbatim(text: string, tokens: readonly Token[]): string {
+function outsideVerbatim(text: string, tokens: readonly Token[]): string {
   let out = text
   for (const tk of tokens) {
-    if (!VERBATIM.has(tk.kind)) continue
     const [s, e] = tk.range
     out = out.slice(0, s) + out.slice(s, e).replace(/[^\n]/g, ' ') + out.slice(e)
   }

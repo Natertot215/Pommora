@@ -1,11 +1,4 @@
-import {
-  insideMark,
-  type LinkKind,
-  outsideVerbatim,
-  shiftToken,
-  tokenize,
-  type TokenKind,
-} from '../Engine/tokens'
+import { insideMark, type LinkKind, shiftToken, tokenize, type TokenKind } from '../Engine/tokens'
 import {
   headingParts,
   calloutHeadPrefixLen,
@@ -89,13 +82,13 @@ export function underSelection(scan: DocScan, selFrom: number, selTo: number) {
   return { fenced, from, to, ls, line, tokens, f, t, covering }
 }
 
-/** A paint's `color` is null for the accent highlight. A span wears one color, so a paint picked anywhere in it recolors it, turns it into the other paint, or, in its own paint and color, removes it. */
+/** A paint's `color` is the highlight chord's when null, which writes the accent and removes any paint it lands in; `'accent'` is the uncolored highlight. A span wears one color, so a color picked anywhere in it recolors it, turns it into the other paint, or, in its own paint and color, removes it. A paint is written only where it reads back as itself. */
 export function toggleInline(
   scan: DocScan,
   selFrom: number,
   selTo: number,
   fmt: InlineFormat,
-  color: PaintColor | null = null,
+  color: PaintColor | 'accent' | null = null,
 ): FormatEdit | null {
   const { fenced, from, to, ls, line, tokens, f, t, covering } = underSelection(
     scan,
@@ -107,28 +100,34 @@ export function toggleInline(
   if (fmt in LINKS) return toggleWrap(doc, from, to, LINKS[fmt as LinkWrapKind])
   const kind = fmt as keyof typeof WRAP & TokenKind
   const close = WRAP[kind]
-  const open = color ? close + writtenMark(color) : close
+  const mark = color && color !== 'accent' ? color : undefined
+  const open = mark ? close + writtenMark(mark) : close
   const found =
-    covering.find((tk) => tk.kind === kind || (isPaint(kind) && isPaint(tk.kind))) ??
+    covering.find((tk) => (isPaint(kind) ? isPaint(tk.kind) : tk.kind === kind)) ??
     covering.find(
       (tk) =>
         tk.kind === SWAPS[kind] &&
         (from === to || (tk.contentRange[0] === f && tk.contentRange[1] === t)),
     )
   const sel: [number, number] = [from - ls, to - ls]
-  const [ws, we] = found ? found.contentRange : sel
-  if (kind === 'textColor' && outsideVerbatim(line, tokens).slice(ws, we).includes('=')) return null
-  if (
-    !found &&
-    isPaint(kind) &&
-    (doc[from - 1] === '=' ||
-      doc[to] === '=' ||
-      tokens.some((tk) => isPaint(tk.kind) && overlaps(tk.range, sel)))
-  )
-    return null
+  const off =
+    !!found && ((isPaint(kind) && color === null) || (found.kind === kind && found.color === mark))
+  if (isPaint(kind) && !off) {
+    if (!found && tokens.some((tk) => isPaint(tk.kind) && overlaps(tk.range, sel))) return null
+    const [a, b] = found ? found.range : sel
+    const words = (found ? line.slice(...found.contentRange) : line.slice(...sel)) || '\u0000'
+    const end = a + open.length + words.length + close.length
+    const written = line.slice(0, a) + open + words + close + line.slice(b)
+    if (
+      b > line.length ||
+      !tokenize(written).some(
+        (tk) => tk.kind === kind && tk.range[0] === a && tk.range[1] === end && tk.color === mark,
+      )
+    )
+      return null
+  }
   if (found) {
     const [m0, m1] = shiftToken(found, ls).markerRanges
-    const off = found.kind === kind && (found.color ?? null) === color
     return {
       changes: [
         { from: m0[0], to: m0[1], insert: off ? '' : open },
@@ -161,7 +160,7 @@ export function editFor(
       return toggleInline(scan, from, to, value as InlineFormat)
     case 'highlight':
     case 'textColor':
-      return toggleInline(scan, from, to, group as Paint, value as PaintColor)
+      return toggleInline(scan, from, to, group as Paint, value as PaintColor | 'accent')
     case 'heading':
       return setHeading(scan.text, from, to, Number(value) as HeadingLevel)
     case 'list':

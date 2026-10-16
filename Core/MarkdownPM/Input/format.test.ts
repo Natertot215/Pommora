@@ -11,6 +11,7 @@ import {
 } from './format'
 import { editEvent, landEdit } from './listRenumber'
 import { scanDoc } from '../Engine/docScan'
+import type { Paint, PaintColor } from '../Engine/paints'
 
 const apply = (doc: string, edit: FormatEdit | null): string => {
   if (!edit) throw new Error('no edit')
@@ -347,7 +348,9 @@ describe('highlight colors', () => {
     expect(apply('==🟥hi==', toggleInline(scanDoc('==🟥hi=='), 5, 5, 'highlight', 'green'))).toBe(
       '==🟢hi==',
     )
-    expect(apply('==🔴hi==', toggleInline(scanDoc('==🔴hi=='), 5, 5, 'highlight'))).toBe('==hi==')
+    expect(apply('==🔴hi==', toggleInline(scanDoc('==🔴hi=='), 5, 5, 'highlight', 'accent'))).toBe(
+      '==hi==',
+    )
   })
   it('removes a highlight already in the picked color', () => {
     expect(apply('==🔴hi==', toggleInline(scanDoc('==🔴hi=='), 5, 5, 'highlight', 'red'))).toBe(
@@ -357,12 +360,14 @@ describe('highlight colors', () => {
   })
   it('reaches a colored highlight from its revealed color mark', () => {
     const doc = 'a ==🔴text== b'
-    expect(apply(doc, toggleInline(scanDoc(doc), 4, 4, 'highlight'))).toBe('a ==text== b')
+    expect(apply(doc, toggleInline(scanDoc(doc), 4, 4, 'highlight', 'accent'))).toBe('a ==text== b')
     expect(apply(doc, toggleInline(scanDoc(doc), 10, 10, 'highlight', 'red'))).toBe('a text b')
     expect(apply(doc, toggleInline(scanDoc(doc), 2, 12, 'highlight', 'green'))).toBe(
       'a ==🟢text== b',
     )
-    expect(apply(doc, toggleInline(scanDoc(doc), 4, 10, 'highlight'))).toBe('a ==text== b')
+    expect(apply(doc, toggleInline(scanDoc(doc), 4, 10, 'highlight', 'accent'))).toBe(
+      'a ==text== b',
+    )
   })
 })
 
@@ -390,7 +395,9 @@ describe('text colors', () => {
     expect(apply('=🔴hi=', toggleInline(scanDoc('=🔴hi='), 4, 4, 'highlight', 'red'))).toBe(
       '==🔴hi==',
     )
-    expect(apply('=🔴hi=', toggleInline(scanDoc('=🔴hi='), 4, 4, 'highlight'))).toBe('==hi==')
+    expect(apply('=🔴hi=', toggleInline(scanDoc('=🔴hi='), 4, 4, 'highlight', 'accent'))).toBe(
+      '==hi==',
+    )
   })
   it('recolors a text color, and removes one already in the picked color', () => {
     expect(apply('=🔵hi=', toggleInline(scanDoc('=🔵hi='), 4, 4, 'textColor', 'green'))).toBe(
@@ -425,6 +432,21 @@ describe('text colors', () => {
     expect(toggleInline(scanDoc('a =🔴b= c'), 0, 9, 'highlight', 'green')).toBeNull()
     expect(toggleInline(scanDoc('a =🔴bc= d'), 0, 6, 'highlight', 'green')).toBeNull()
   })
+  it('refuses a paint that would not read back as written', () => {
+    const refused = (doc: string, from: number, to: number, paint: Paint, color?: PaintColor) =>
+      toggleInline(scanDoc(doc), from, to, paint, color)
+    expect(refused('a==b', 0, 4, 'highlight')).toBeNull()
+    expect(refused('a=', 0, 2, 'highlight')).toBeNull()
+    expect(refused('=a', 0, 2, 'highlight')).toBeNull()
+    expect(refused('x == y', 0, 6, 'highlight')).toBeNull()
+    expect(refused('ab\ncd', 0, 5, 'highlight', 'red')).toBeNull()
+    expect(refused('ab\ncd', 0, 5, 'textColor', 'red')).toBeNull()
+    expect(refused('run `npm test` now', 5, 8, 'highlight', 'red')).toBeNull()
+    expect(refused('a $x+y$ b', 3, 4, 'highlight', 'red')).toBeNull()
+    expect(refused('foo [[Bar]] baz', 6, 8, 'textColor', 'red')).toBeNull()
+    expect(refused('🔴 Urgent now', 0, 9, 'highlight')).toBeNull()
+    expect(toggleInline(scanDoc('🔴 Urgent now'), 0, 9, 'highlight', 'accent')).toBeNull()
+  })
   it('lets a text color hold an = inside code, a link, or math', () => {
     const doc = 'run `a = b` now'
     expect(apply(doc, toggleInline(scanDoc(doc), 0, 15, 'textColor', 'red'))).toBe(
@@ -434,5 +456,14 @@ describe('text colors', () => {
   it('routes each paint’s menu action', () => {
     expect(apply('hi', editFor('textColor:red', scanDoc('hi'), 0, 2))).toBe('=🔴hi=')
     expect(apply('hi', editFor('highlight:red', scanDoc('hi'), 0, 2))).toBe('==🔴hi==')
+  })
+  it('removes any paint under the highlight chord, where the Accent row recolors', () => {
+    const act = (doc: string, at: number, action: string) =>
+      apply(doc, editFor(action, scanDoc(doc), at, at))
+    expect(act('==🔴hi==', 5, 'format:highlight')).toBe('hi')
+    expect(act('=🔴hi=', 4, 'format:highlight')).toBe('hi')
+    expect(act('=🔴hi=', 4, 'highlight:accent')).toBe('==hi==')
+    expect(act('==🔴hi==', 5, 'highlight:accent')).toBe('==hi==')
+    expect(act('==hi==', 3, 'highlight:accent')).toBe('hi')
   })
 })

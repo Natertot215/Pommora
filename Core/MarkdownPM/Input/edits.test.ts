@@ -430,6 +430,9 @@ describe('close construct on Enter', () => {
     expect(closeConstructOnEnter(scanDoc('a=b'), 1, 1)).toBeNull()
     expect(closeConstructOnEnter(scanDoc('=🔴='), 3, 3)).toBeNull()
   })
+  it('steps past a highlight’s closing ==, read from its token, past a == inside code', () => {
+    expect(closeConstructOnEnter(scanDoc('a ==a `==` b== c'), 12, 12)!.selection).toBe(14)
+  })
 })
 
 describe('backticks pair once', () => {

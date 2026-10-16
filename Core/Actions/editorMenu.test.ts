@@ -108,7 +108,7 @@ describe('the color rows', () => {
 
   it('lead with the accent on the highlight chord, the colors set apart under it', () => {
     const rows = highlight(state)
-    expect(rows[0]).toMatchObject({ label: 'Accent', action: 'format:highlight', chord: 'cmd+l' })
+    expect(rows[0]).toMatchObject({ label: 'Accent', action: 'highlight:accent', chord: 'cmd+l' })
     expect(rows.map((r) => r.label).slice(1)).toEqual([
       'Red',
       'Orange',
@@ -160,7 +160,7 @@ describe('the color rows', () => {
 })
 
 describe('the request main accepts', () => {
-  it('takes a paint’s colors and refuses any other', () => {
+  it('takes a paint color and refuses any other', () => {
     const asked = (color: string) =>
       editorMenuRequest.safeParse({ ...state, painted: { paint: 'textColor', color } }).success
     expect(asked('green')).toBe(true)
