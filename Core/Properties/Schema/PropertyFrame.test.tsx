@@ -177,60 +177,23 @@ describe('the All Properties section (T5)', () => {
     expect(host.textContent).toContain('Checkbox')
   })
 
-  it('a create whose reply lands after the frame left begins no rename', async () => {
-    let land: (r: unknown) => void = () => {}
-    const pending = new Promise((r) => {
-      land = r
-    })
-    ;(window as unknown as { nexus: { ask: unknown } }).nexus = stubDialer({
-      'schema:add': vi.fn(() => pending),
-      'property:holders': vi.fn(async () => ok(3)),
-    })
-    await mountPane()
-    await act(async () => {
-      host.querySelector<HTMLButtonElement>('[aria-label="New Property"]')!.click()
-    })
-    await act(async () => {
-      ;[...host.querySelectorAll<HTMLElement>('[role="button"]')]
-        .find((el) => el.textContent === 'Text')!
-        .click()
-    })
-    await act(async () => root.unmount())
-    root = createRoot(host)
-    await act(async () => {
-      land({ ok: true, value: { id: 'prop_new' } })
-    })
-    expect(useSession.getState().renamingProperty).toBeNull()
-  })
-
-  it('creating a property lands back on the list with its row renaming, focused once the list slot is live; Enter commits the name', async () => {
-    const focusedWhileInert: boolean[] = []
-    const focus = HTMLInputElement.prototype.focus
-    vi.spyOn(HTMLInputElement.prototype, 'focus').mockImplementation(function (
-      this: HTMLInputElement,
-    ) {
-      focusedWhileInert.push(this.closest('[inert]') !== null)
-      focus.call(this)
-    })
+  it('creating a property opens its editor pane', async () => {
     await mountPane([...defs, { id: 'prop_new', name: 'New Text', type: 'text' }])
     await act(async () => {
       host.querySelector<HTMLButtonElement>('[aria-label="New Property"]')!.click()
-      await new Promise((r) => requestAnimationFrame(() => r(undefined)))
     })
     await act(async () => {
       ;[...host.querySelectorAll<HTMLElement>('[role="button"]')]
         .find((el) => el.textContent === 'Text')!
         .click()
+      await new Promise((r) => requestAnimationFrame(() => r(undefined)))
     })
-    const input = host.querySelector<HTMLInputElement>('.row-title-input')
-    expect(input?.value).toBe('New Text')
-    expect(focusedWhileInert).toEqual([false])
-    expect(document.activeElement).toBe(input)
-    await act(async () => {
-      commitTitle(input!, 'Tags')
-    })
-    expect(renameSpy).toHaveBeenCalledWith('prop_new', 'Tags')
-    expect(host.querySelector('.row-title-input')).toBeNull()
+    const editor = host.querySelector('[aria-label="Property Menu"]')!.closest('[inert]')
+    expect(editor).toBeNull()
+    expect(host.querySelector('[inert]')!.textContent).toContain('Count')
+    expect(host.querySelector('[aria-label="Edit icon"]')!.parentElement!.textContent).toBe(
+      'New Text',
+    )
   })
 
   it('the assigned group runs down to the All heading, so its lane owns the space between', async () => {
