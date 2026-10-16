@@ -29,7 +29,7 @@ The work lands in nine phases, each the next layer of the system and each the la
 - **One Tracker** (`Core/MarkdownPM/Links/linkSettle.ts`, beside `headingRenameSettle.ts`): `linkWriting`, a state field holding `{ start, was }` for the link an edit is being made inside, armed by a user input or delete reaching into a link, mapped through changes, dropped with its opener, and cleared by `linkSettled`; `linkSettle`, one plugin mounted as `linkSettle.of(scope)`, settles on the caret leaving the whole link, on a blur not into the caret pane, or on a host's flush through `view.plugin(linkSettle)`: it remembers through the one remember rule and collapses emptied parts. The typing color reads the same field, in both syntaxes. `baselineAt` answers how a link read before the edit inside it began, and the picker and paste decide Remove Title from it through one `keepsShown`, with `retarget` only writing.
 - **One Picker** (`Core/MarkdownPM/Autocomplete/`): the query is `{ syntax: 'wiki' | 'markdown' | 'prose', part: 'title' | 'heading' | 'shown', start, end, … }`; `commitEdit` switches on `part`, writes page picks through the writer with the shown text decided once, and reads an opened slot's caret back from the written text through the grammar. Markdown picks open the alias list as wikilink picks do; Return in a markdown destination rests in its label.
 - **Rules and the Writer** (`connections.ts`, `links.ts`, `linkValue.ts`, `rewrite.ts`): one slot check (`fitsSlot`, `expressibleInLink`, `aliasSpells`, `spellsAsWiki`); one `pageLinkText({ title, heading, shown }, prefer)` writing a wikilink only when every slot spells and the markdown form otherwise; `repeatsTarget` as the one drop rule, `namesTarget` as the one carry-and-never-remember rule; one `keepsShown(baseline, next, removeTitle, index)` deciding Remove Title for the picker and paste, and for the Link field through the picker inside it; one `follower` serving both rename arms, with the table codec's cell escape applied where a hit sits in a table; one `linkDisplayText` behind `shownProse`, serving Remove Link, sort, and filter for Link and Text values alike; one `resolvedTarget` writing a page-held address as that page for the Link field and paste; `fileLinkText` for a File value's reference, which never falls back.
-- **Index Facts and Readers' Rule** (`Core/Connections/scan.ts`, `Core/Index/indexSeed.ts`, `Desktop/Store/`, `Core/Matrix/`, `Core/Nexus/cascade.ts`, `Core/Properties/schema.ts`): every link in a frontmatter value becomes one `value` row carrying its key; `holdsLinks(key, type)` and its registry form `linkKeysOf(defs)` sit beside `keyRefusal`, and the graph and the rename cascade each apply them at the moment of use with the registry in memory, so nothing bakes a verdict that can go stale.
+- **Index Facts and Readers' Rule** (`Core/Connections/scan.ts`, `Core/Index/indexSeed.ts`, `Desktop/Store/`, `Core/Matrix/`, `Core/Nexus/cascade.ts`, `Core/Properties/schema.ts`): every link in a frontmatter value becomes one `value` row carrying its key; `linkKeysOf(defs)` sits beside `keyRefusal`, and the graph and the rename cascade each apply it at the moment of use with the registry in memory, so nothing bakes a verdict that can go stale.
 - **One Editor Surface** (`Core/Properties/Pickers/`): the Text pane's editor generalizes into one value editor with a one-line mode and an alias seat; the Link field, the Link value's Rename, and the single-line Text field mount it, keeping a plain field's feel and gaining the picker, the tracker, and alias memory (the Link instance leaves memory to the write layer, which already owns it).
 
 **The Number:** the Net Ledger carries two estimates per phase: the Investigation's (typed where a diff survived) and the plan's own, counted from the AFTER blocks with every elided removal measured at HEAD and every long line expanded as the formatter will. The two agree on Phases 1 and 4 and disagree on the rest, and the plan reports the honest band they span: about −160 with the AFTER count and about −200 with the Investigation's, inside a range of about −240 to −80. Three phases add lines or net nothing (the rules, the index facts, and the fields), each buying a wrong result made right or a ruled behavior, and the fields phase lands last, typed on a scratch worktree and measured before it's committed, so the −100 floor (the owner's ruling) is enforced by measurement rather than by estimate (*§Constraints · The Number*).
@@ -38,10 +38,10 @@ The work lands in nine phases, each the next layer of the system and each the la
 
 | | Functions, fields, plugins, components | Types | Files | Members, parameters, options | Total |
 |---|---|---|---|---|---|
-| **Removed** | 49 | 14 (ten named types and four local `Span` declarations) | 1 (`headingHash.ts`) | 25 | **89** |
-| **Added** | 43 (30 exported, 13 private) and 2 style rules | 6 | 2 (`linkSettle.ts`, `ValueEditor.tsx`) | 28 | **81** |
+| **Removed** | 50 | 14 (ten named types and four local `Span` declarations) | 1 (`headingHash.ts`) | 25 | **90** |
+| **Added** | 42 (29 exported, 13 private) and 2 style rules | 6 | 2 (`linkSettle.ts`, `ValueEditor.tsx`) | 28 | **80** |
 | **Moved** | 10 (and 2 made exported) | 1 | 1 moved, 1 renamed | | 12 |
-| **Net** | −6 | −8 | +1 | +3 | **−8 named things** |
+| **Net** | −8 | −8 | +1 | +3 | **−10 named things** |
 
 Every row of both tables in *§Concepts* is in that count; a reader can redo it from the tables alone. The named count understates the consolidation, because most of what arrives is the one owner that replaces several spellings. Counted as ways of doing one thing, before and after:
 
@@ -123,7 +123,7 @@ Sixty ways of doing thirty things disappear; every row's "after" has one named o
 | `carry`, `follower` • functions (private) | Where shown text naming the old target follows it to; one rewrite per hit for either rename arm, the hit's halves read as names. | `Core/Connections/rewrite.ts` |
 | `shownProse`, `resolvedTarget` • functions | A text with each connection replaced by what it shows (`linkDisplayText`, the one rule), for a Text value's sort and filter; a written link as the page it resolves to, which the Link field's edit and paste both write. | `Core/Connections/linkValue.ts` |
 | `keepsShown(…, index)` • signature | Owns "pointed somewhere" through `resolveLink`. | `Core/Connections/linkValue.ts` |
-| `holdsLinks`, `linkKeysOf` • functions | Which frontmatter keys hold links, beside `keyRefusal`; the same question asked of a registry. | `Core/Properties/schema.ts` |
+| `linkKeysOf` • function | Which frontmatter keys hold links, asked of a registry as one folded lookup, beside `keyRefusal`; the graph, the rename cascade's patch, and the Spaces' heading check read it. | `Core/Properties/schema.ts` |
 | `Relation.key`, `'value'` • field and kind | A link inside a frontmatter value, under its key; `frontmatter` renamed. | `Core/Platform/stores.ts`, `Desktop/Store/ddl.ts` (generation 14) |
 | `valueLinks(…).key` • yield | The one value reader yields each hit's key. | `Core/Connections/scan.ts` |
 | `ValueEditor` • component | The one value editor, the Text pane's and in `oneLine` mode a field's, with `seat: 'alias'` for the Link value's Rename. | `Core/Properties/Pickers/ValueEditor.tsx` |
@@ -139,7 +139,7 @@ Sixty ways of doing thirty things disappear; every row's "after" has one named o
 | ------- | ----------- | -------- |
 | `emptyTolerantLinkRegex`, `MarkdownLinkSpans`, `markdownLinkAt`, `linkDestinationStart`, `opensFragment`, `pageTarget`, `composeWebpageEmbedLine` | The second markdown grammar, its span type, two half-typed readers, the codec's second `#` split, and one of three templates. | `Core/Connections/links.ts` |
 | `LinkSpans`, the `LinkOccurrence` union, `parseConnectionText`, `ConnectionParts` | The two-armed occurrence and the asset readers' second whole-link reader. | `Core/Connections/connections.ts` |
-| `LinkSyntax` (`'embed'` as a syntax), `LinkHit.at`, `LinkHit.alias`, `destinationHalves`, `loneEmbed`, `frontmatterMentions` | The index's second split, its wikilink-only embed test, and its second value reader. | `Core/Connections/scan.ts` |
+| `LinkSyntax` (`'embed'` as a syntax), `LinkHit.at`, `LinkHit.alias`, `destinationHalves`, `loneEmbed`, `frontmatterMentions`, `wholeValueLink` | The index's second split, its wikilink-only embed test, its second value reader, and the whole-value reader whose last caller reads `linkEntry` once itself. | `Core/Connections/scan.ts`, `linkValue.ts` |
 | `Token.resolveRange`, `Token.heading`, `linkAddress`, `linkTarget` | Spans the occurrence carries, and the two readers that derived the destination from marker geometry. | `Core/MarkdownPM/Engine/tokens.ts` |
 | `connectionAt`, `openConnectionAt`, `inAliasAt`, `inUrlRun`'s destination arm | Three readers over the occurrence's shape. | `Core/MarkdownPM/Input/edits.ts` |
 | `Links/headingHash.ts` | The `§` transform's own file. | `Core/MarkdownPM/Links/` |
@@ -241,11 +241,11 @@ Sixty ways of doing thirty things disappear; every row's "after" has one named o
   - [x] Task 6-3 · One shown-text rule for Remove Link, sort, and filter
   - [x] Task 6-4 · The alias rename field reports how its edit ended
   - [x] Review Checkpoint
-- [ ] **Phase 7** — Index Facts, Readers' Rule `[Gates at Task 7-3 for Tasks 7-1 and 7-3]`
-  - [ ] Task 7-1 · The `value` row and `holdsLinks`
-  - [ ] Task 7-2 · The graph applies the rule
-  - [ ] Task 7-3 · The cascade applies the rule
-  - [ ] Review Checkpoint
+- [x] **Phase 7** — Index Facts, Readers' Rule `[Gates at Task 7-3 for Tasks 7-1 and 7-3]`
+  - [x] Task 7-1 · The `value` row and `linkKeysOf`
+  - [x] Task 7-2 · The graph applies the rule
+  - [x] Task 7-3 · The cascade applies the rule
+  - [x] Review Checkpoint
 - [ ] `[Phase 8's worktree measurement reported against the −100 floor; no stop (owner's ruling, 10-16-2026: the floor is the goal, not a gate; the closeout explains concretely what collapsed, reduced, or unified beside the count)]`
 - [ ] **Phase 8** — One Editor Surface in Every Field `[Typed on a scratch worktree and measured before commit]`
   - [ ] Task 8-1 · The value editor and its one-line mode
@@ -267,7 +267,7 @@ Sixty ways of doing thirty things disappear; every row's "after" has one named o
 | 4 | ≈ −49 | ≈ −40 | −55 to −25 | re-typed design (`c11`, corrected); the settle's guard and flushes added; landed at −36 (`ad220222a`), then the review's fix round (`1eaef8c88`, +38) ended it 27 above the band: the settle in its own file beside its sibling (an import block), the field dropping with its opener (a wrong remember and a wrong rewrite made right), paste reading the one baseline (the ruled parity), the typing color on both syntaxes, a pasted link arming, and the writer split from the decision | 450 | 452 | +2 | −111 |
 | 5 | ≈ −26 | ≈ −60 | −90 to −16 | typed `c8` −16 kept more structure than the three-arm commit and the one-return query (about 207 lines of `autocomplete.ts` leave against about 105 formatted arriving); unverified until typed; landed at −74 (`252809203`), then the review's fix round (`fd49d1189`, +36: the open-link reader reading an emptied slot, the query's shown text, the heading pick writing in place, the collapse carrying the rest) ended it inside the band | 292 | 254 | −38 | −149 |
 | 6 | ≈ −17 | ≈ +2 | −10 to +12 | the rules and `follower` add about what they remove; landed at +53 (`63f79adbc`), then the review's fix round (`af8522954`, −1) ended it 40 above the band: the AFTER count priced the rules block, the fallback writer, the table escape, `shownProse`, and the heading pick's fallback at about +2 where each one-line rule wraps to three under the formatter; buys the three wrong results made right, a heading that can't be spelled falling back instead of going stale or splitting a wikilink, and paste writing a page-held address as that page (a heading-pick carry in the picker was weighed at about 45 lines and reversed) | 251 | 303 | +52 | −97 |
-| 7 | ≈ 0 | ≈ +5 | 0 to +10 | `linkKeysOf`, the dedupe, and the `key` column; buys the staleness fix | | | | |
+| 7 | ≈ 0 | ≈ +5 | 0 to +10 | `linkKeysOf`, the dedupe, and the `key` column; landed at +26 (`6197494b4`; +9 outside `Core/Testing`, whose contract case and double the script counts as code), then the review's fix round (`9e84b9eb4`, −11: the cascade reading the one rule instead of rebuilding its lookup, the rule folded to one export, the one-caller whole-value reader inlined) ended it 5 above the band; buys the staleness fix and the post-rule dedupe that keeps a Number key from shadowing a Link key | 94 | 109 | +15 | −82 |
 | 8 | ≈ +24 | ≈ +50 | +35 to +65 | the one-line mode, seat, and commit lifecycle; buys the ruled one surface; measured on a worktree before commit | | | | |
 | 9 | 0 | 0 | 0 | docs | | | | |
 | **Total** | **≈ −222** | **≈ −179** | **−260 to −80** | | | | | |
@@ -2492,228 +2492,222 @@ The other `EditableInput` and `RenamableLabel` users ignore the trailing argumen
 
 ### Phase 7 — Index Facts, Readers' Rule
 
-**GOAL:** The index records where every link in a frontmatter value sits and under which key, as one `value` row, and never a verdict that depends on the registry; `holdsLinks(key, type)` lives beside `keyRefusal`, and the graph and the rename cascade each apply it at the moment of use with the registry already in memory. The two value readers fold into one, the `frontmatter` kind becomes `value`, and nothing can go stale when a property is created over a key pages already hold, renamed, or synced in. The embed question was already extended to both syntaxes in Task 2-2.
+**GOAL:** The index records facts and no verdict that can go stale: every link inside a frontmatter value is one `value` relation row carrying its key, read by the one value reader; which keys hold links is one rule, `linkKeysOf`, beside `keyRefusal`, asked of the registry in hand by the graph before it dedupes and by the rename cascade's patch and the Spaces' heading check, so creating, renaming, or syncing a property over a held key changes the graph on the next push with no re-index. The `frontmatter` kind and its second reader go; `relations` keys on the frontmatter key at generation 14. Landed as `6197494b4` and the review's fix round `9e84b9eb4`.
 
 #### Task 7-1
 
-**TASK:** `valueLinks` yields every link in every frontmatter value with its key, `frontmatterMentions` folds into it, `Relation` gains `key`, `RelationKind`'s `frontmatter` becomes `value`, the `relations` table gains the column, and `holdsLinks` is written once. Weigh here, with the index in hand, whether `scan.ts`'s and `Trash/holdings.ts`'s "page or address" reads (today from the written kind alone, so a value `[x](notes.io)` naming a page is never indexed, stripped, or parked; Brief §113) should ask `resolveLink`, and state the call either way. Weigh too how the index reads a table row: Phase 6's rename escapes what it writes inside a table region as the cell codec does, so a `§` run renamed to a heading holding `|` lands as `§A\|B`, which the cell editor draws as a run but `sectionRunsIn` can't match again; either the index reads rows through the codec, or a run in a cell renamed to an unspellable heading is ruled out of the graph, stated here.
+**TASK:** `valueLinks` yields every link in every frontmatter value with its key, `frontmatterMentions` folds into it, `Relation` gains `key`, `RelationKind`'s `frontmatter` becomes `value`, the `relations` table gains the column, and the keys rule is written once as `linkKeysOf`.
 
-**NOW:** `valueLinks` (`scan.ts:159-169`) walks string values under every key and yields body-shaped hits that `indexSeed.ts:61` records as `body` rows; `frontmatterMentions` (`:143-157`) records whole-value links as `frontmatter` rows; neither carries the key, so no reader can apply a keys rule later. `relations` has no key column (`ddl.ts:18-25`); `INDEX_GENERATION` is 13. `patchOf` (`cascade.ts:197-199`) rewrites Link and Text keys only and `spacesLinkHeading` (`:60-68`) reads every Space key with no gate.
+**NOW (at BASELINE):** `valueLinks` (`scan.ts:159-169`) walks string values under every key and yields body-shaped hits that `indexSeed.ts:61` records as `body` rows; `frontmatterMentions` (`:143-157`) records whole-value links as `frontmatter` rows; neither carries the key, so no reader can apply a keys rule later. `relations` has no key column (`ddl.ts:18-25`); `INDEX_GENERATION` is 13. `patchOf` (`cascade.ts:197-199`) rewrites Link and Text keys only and `spacesLinkHeading` (`:60-68`) reads every Space key with no gate.
 
 **CHANGE**
 
-- [ ] In `scan.test.ts:184-212`, rewrite the `frontmatterMentions` and `valueLinks` cases as `valueLinks` cases yielding `key` with each hit (a whole-value `[[Alpha]]` under `Related` yields `key: 'Related'`; an unquoted `[[Alpha]]` yaml read as a nested list yields once; a sentence with two links yields two); in `indexSeed.test.ts:255,263,341,353`, rows become `value` rows carrying their key, and `:341`'s "whatever the key" becomes "under its key"; add `holdsLinks` cases to `schema.test.ts`: Link and Text true, File, Number, Select false, an unregistered plain key true, `ID`, `banner`, `<Areas>`, and a `$`-prefixed key false; `linkKeysOf([numberDef])('number')` false and `('Related')` true. In `storesContract.ts:205-225` and `memoryStores.ts:162`, the doubles carry `key`. Watch them fail.
-- [ ] Write the reader, the rule, the row, the DDL, and the store as below.
+- [x] `scan.test.ts`: the `frontmatterMentions` and `valueLinks` cases are `valueLinks` cases yielding `key` with each hit (a whole-value `[[Alpha]]` under `Related` yields `key: 'Related'`; an unquoted `[[Alpha]]` yaml read as a nested list yields once; a sentence with two links yields two; `[x](notes.io)` yields under its title). `indexSeed.test.ts`: value rows are `value` rows carrying their key; one target under two keys is two rows beside the body's own; a `§` run escaped inside a table cell (`§A\|B`, the form the rename writes) yields no row where the same run in prose does, pinned as the ruled form. `schema.test.ts`: `linkKeysOf` with Link and Text true, File, Number, Select false, an unregistered plain key true, `ID`, `banner`, `<Areas>`, and a `$`-prefixed key false, and the folded-name lookup. `storesContract.ts` and `memoryStores.ts` carry `key`.
+- [x] The reader, the rule, the row, the DDL, and the store as below.
 
 **AFTER**
 
-```Core/Properties/schema.ts diff
-+import { byFoldedName, type PropertyDefinition } from './properties'
-+import { foldKey } from '../Paths/caseFold'
-+/** Which frontmatter keys hold links the graph relates and a rename rewrites: Link and Text, and a key the registry hasn't typed unless Pommora keeps it; never File, whose references name assets. */
-+export const holdsLinks = (key: string, type: string | undefined): boolean =>
-+  type === undefined ? keyRefusal(key) === null : type === 'link' || type === 'text'
-+/** The same question asked of a registry: one folded lookup, built once per reader. */
-+export const linkKeysOf = (defs: readonly PropertyDefinition[]): ((key: string) => boolean) => {
-+  const names = byFoldedName(defs)
-+  return (key) => holdsLinks(key, names.get(foldKey(key))?.type)
-+}
+```Core/Properties/schema.ts (landed)
+/** Which frontmatter keys hold links the graph relates and a rename rewrites, asked of a registry: Link and Text, and a key the registry hasn't typed unless Pommora keeps it; never File, whose references name assets. One folded lookup, built once per reader. */
+export const linkKeysOf = (defs: readonly PropertyDefinition[]): ((key: string) => boolean) => {
+  const names = byFoldedName(defs)
+  return (key) => {
+    const type = names.get(foldKey(key))?.type
+    return type === undefined ? keyRefusal(key) === null : type === 'link' || type === 'text'
+  }
+}
 ```
 
-```Core/Connections/scan.ts diff
--/** A Link property holds a connection as its whole value, so a rename reaching only bodies would leave it pointing at nothing. */
--export function frontmatterMentions(values, ownTitle = ''): { target; qualifier }[] { … }
--/** The links inside every string value that isn't one whole connection — a sentence under any key, registered or not, read as a body is; the whole-value ones are `frontmatterMentions`'. */
--export function* valueLinks(values, ownTitle = '', outline = []): Generator<LinkHit> {
--  for (const value of Object.values(values)) {
--    if (typeof value !== 'string' || readLinkText(value)?.kind === 'page') continue
--    yield* linksIn(value, ownTitle, outline)
--  }
--}
-+/** Every link inside every frontmatter value, each with the key it sits under, read as a small body is: a whole-value `[[Page]]` (an unquoted one yaml reads as a nested list included) and a sentence holding links alike. Which keys count is the reader's question, asked with the registry in hand. */
-+export function* valueLinks(values: Record<string, unknown>, ownTitle = '', outline: readonly string[] = []): Generator<LinkHit & { key: string }> {
-+  for (const [key, value] of Object.entries(values)) {
-+    const text = linkEntry(value, 2)
-+    if (text === null) continue
-+    for (const hit of linksIn(text, ownTitle, outline)) yield { ...hit, key }
-+  }
-+}
+```Core/Connections/scan.ts (landed)
+/** Every link inside every frontmatter value, each under the key it sits in, read as a small body is: a whole-value `[[Page]]` (an unquoted one yaml reads as a nested list included) and a sentence holding links alike. Which keys count is the reader's question, asked with the registry in hand. */
+export function* valueLinks(
+  values: Record<string, unknown>,
+  ownTitle = '',
+  outline: readonly string[] = [],
+): Generator<LinkHit & { key: string }> {
+  for (const [key, value] of Object.entries(values)) {
+    const text = linkEntry(value, 2)
+    if (text === null) continue
+    for (const hit of linksIn(text, ownTitle, outline)) yield { ...hit, key }
+  }
+}
 ```
 
-```Core/Platform/stores.ts diff
--// `citation` overlays rather than replaces: a link or embed inside a footnote definition emits its own syntax kind AND a `citation` row, …
--export type RelationKind = 'body' | 'citation' | 'frontmatter' | 'embed' | 'space'
-+// `citation` overlays rather than replaces: a link or embed inside a footnote definition emits its own kind AND a `citation` row, so a reader asking for body links sees it and a reader weighting footnotes sees it too. A `value` row is a link inside a frontmatter value, under `key`; every other kind carries `key` as ''.
-+export type RelationKind = 'body' | 'citation' | 'value' | 'embed' | 'space'
--/** `target` is a normalized title, never a path … `count` is occurrences, always 1 for `frontmatter`, whose producer yields each target and qualifier once. */
-+/** `target` is a normalized title, never a path, and resolution happens at read time. `qualifier` is a normalized heading key for a heading-naming link, a folded Context key for a `space` row, and '' otherwise. `count` is occurrences. */
- export interface Relation {
-   kind: RelationKind
-   target: string
-   qualifier: string
-+  key: string
-   count: number
- }
- export interface PageRelationRow extends RelationRow {
--  kind: Extract<RelationKind, 'body' | 'citation' | 'frontmatter'>
-+  kind: Extract<RelationKind, 'body' | 'citation' | 'value'>
- }
+```Core/Platform/stores.ts (landed)
+// `citation` overlays rather than replaces: a link or embed inside a footnote definition emits its own kind AND a `citation` row, so a reader asking for body links sees it and a reader weighting footnotes sees it too. A `value` row is a link inside a frontmatter value, under `key`; every other kind carries `key` as ''.
+export type RelationKind = 'body' | 'citation' | 'value' | 'embed' | 'space'
+
+/** `target` is a normalized title, never a path — resolution happens at read time. `qualifier` is a normalized heading key for a heading-naming link, a folded Context key for a `space` row, and '' otherwise. `count` is occurrences. */
+export interface Relation {
+  kind: RelationKind
+  target: string
+  qualifier: string
+  key: string
+  count: number
+}
+export interface PageRelationRow extends RelationRow {
+  kind: Extract<RelationKind, 'body' | 'citation' | 'value'>
+}
 ```
 
-```Core/Index/indexSeed.ts diff
--  const add = (kind: RelationKind, target: string, qualifier: string): void => {
--    const key = `${kind}\0${target}\0${qualifier}`
-+  const add = (kind: RelationKind, target: string, qualifier: string, key = ''): void => {
-+    const id = `${kind}\0${target}\0${qualifier}\0${key}`
-     …
--    else tally.set(key, { kind, target, qualifier, count: 1 })
-+    else tally.set(id, { kind, target, qualifier, key, count: 1 })
-   }
-   …
--  // A value's links are a small body's — under the page's own title and outline, never citations, and never a tile's.
--  for (const hit of valueLinks(values, own, outline)) add('body', hit.target, hit.qualifier)
--  for (const { target, qualifier } of frontmatterMentions(values, own)) add('frontmatter', target, qualifier)
-+  for (const hit of valueLinks(values, own, outline)) add('value', hit.target, hit.qualifier, hit.key)
+```Core/Index/indexSeed.ts (landed)
+  // A NUL separator: no normalized title, Context key, or frontmatter key can hold one, so the four parts never blur.
+  const add = (kind: RelationKind, target: string, qualifier: string, key = ''): void => {
+    const id = `${kind}\0${target}\0${qualifier}\0${key}`
+    …
+    else tally.set(id, { kind, target, qualifier, key, count: 1 })
+  }
+  …
+  for (const hit of valueLinks(values, own, outline))
+    add('value', hit.target, hit.qualifier, hit.key)
 ```
 
-```Desktop/Store/ddl.ts + stores.ts diff
--export const INDEX_GENERATION = 13
-+export const INDEX_GENERATION = 14
-   CREATE TABLE IF NOT EXISTS relations (
-     path TEXT NOT NULL,
-     kind TEXT NOT NULL,
-     target TEXT NOT NULL,
-     qualifier TEXT NOT NULL,
-+    key TEXT NOT NULL,
-     count INTEGER NOT NULL,
--    PRIMARY KEY (path, kind, target, qualifier)
-+    PRIMARY KEY (path, kind, target, qualifier, key)
-   );
- stores.ts upsertPageIndexes:   INSERT OR REPLACE INTO relations (path, kind, target, qualifier, key, count) VALUES (?, ?, ?, ?, ?, ?)
- stores.ts readPageRelations:   SELECT path, kind, target, qualifier, key, count FROM relations WHERE kind IN ('body','citation','value') …
- memoryStores.ts:162:           r.kind === 'body' || r.kind === 'citation' || r.kind === 'value'
+```Desktop/Store/ddl.ts + stores.ts (landed)
+export const INDEX_GENERATION = 14
+  CREATE TABLE IF NOT EXISTS relations (
+    path TEXT NOT NULL,
+    kind TEXT NOT NULL,
+    target TEXT NOT NULL,
+    qualifier TEXT NOT NULL,
+    key TEXT NOT NULL,
+    count INTEGER NOT NULL,
+    PRIMARY KEY (path, kind, target, qualifier, key)
+  );
+stores.ts upsertPageIndexes:   INSERT OR REPLACE INTO relations (path, kind, target, qualifier, key, count) VALUES (?, ?, ?, ?, ?, ?)
+stores.ts readPageRelations:   SELECT path, kind, target, qualifier, key, count FROM relations WHERE kind IN ('body','citation','value') …
+memoryStores.ts:               the map key and the kind filter carry `key` and read `value`
 ```
 
-`queryMentions` and `queryHeadingMentions` (`stores.ts:100-115`) keep reading every kind but `space`, so the cascade still finds every candidate file and then applies the rule itself (Task 7-3).
+`queryMentions` and `queryHeadingMentions` keep reading every kind but `space`, so the cascade still finds every candidate file and then applies the rule itself (Task 7-3); `ddl.ts` drops the four index tables on a generation mismatch, so a generation-13 database rebuilds on open. The index records `[x](notes.io)` under its title as a `value` row, as it recorded it as a `body` row before; `gonePageEntry` and `parkLinks` keep reading a value's written kind, so a hand-written address-shaped Link value is indexed and renamed as a page link but never stripped on delete or parked: a hand-written address stays a working address after the page it could name is deleted, which is the ruling that addresses keep today's raw resolution, and the Link field writes a wikilink wherever one spells, so only a hand-written value takes that form (the call Task 7-1 asked for, stated). A `§` run inside a table cell renamed to a heading holding `|` is ruled out of the graph: the rename writes `§A\|B`, which keeps the row and the cell editor's run; reading rows through the cell codec would need `sectionRunsIn` and the rewriter to share an offset map between escaped and unescaped text, heavier than the edge it buys.
 
 **VERIFY**
 
-- [ ] `scan.test.ts`, `indexSeed.test.ts`, `schema.test.ts`, and the store contract pass against both the memory and the SQLite doubles; the index rebuilds from generation 13 on open.
-- [ ] The gates run at Task 7-3, once `spacesLinkHeading` (`cascade.ts:64`) has left `frontmatterMentions`; Task 7-2 runs them on its own.
-- [ ] Check for unnecessary code or mistakes (`frontmatterMentions` and the `frontmatter` kind have no reader; `valueLinks` is the one value reader).
+- [x] `scan.test.ts`, `indexSeed.test.ts`, `schema.test.ts`, and the store contract pass against both the memory and the SQLite doubles; the index rebuilds from generation 13 on open.
+- [x] The gates ran at Task 7-3, once `spacesLinkHeading` had left `frontmatterMentions` (Task 7-2's own run folded into it, since `cascade.ts` imported the removed reader).
+- [x] Check for unnecessary code or mistakes (`frontmatterMentions`, the `frontmatter` kind, and `wholeValueLink` have no reader; `valueLinks` is the one value reader; the keys rule is spelled once).
 
 #### Task 7-2
 
 **TASK:** The graph applies `linkKeysOf` to `value` rows where it already resolves each link, with the registry from the tree, and dedupes a page's connections by target after the rule.
 
-**NOW:** `matrixConnections` (`matrixInput.ts:59-70`) resolves every link row against `pageIndexOf(tree)`; `readMatrixGraph` (`matrixGraph.ts:30-37`) dedupes by `path\0kind\0target`, so one target under two keys reaches the window once; `matrixRuntime.ts:140` reuses connections while `held` and `links` are unchanged, and its `judged` memo already checks `tree.config.registry` (`:146`); `Engine/graph.ts:4-5` and `forces.ts:7-20` name `frontmatter` and weight it below `body` (`LINK_STRENGTH` 0.8 against 1). `tree.config.registry` is the definitions list itself (`tree.ts:103`).
+**NOW (at BASELINE):** `matrixConnections` (`matrixInput.ts:59-70`) resolves every link row against `pageIndexOf(tree)`; `readMatrixGraph` (`matrixGraph.ts:30-37`) dedupes by `path\0kind\0target`, so one target under two keys reaches the window once; `matrixRuntime.ts:140` reuses connections while `held` and `links` are unchanged; `Engine/graph.ts:4-5` and `forces.ts:7-20` name `frontmatter` and weight it below `body` (`LINK_STRENGTH` 0.8 against 1).
 
 **CHANGE**
 
-- [ ] Add to `matrixInput`'s tests: a `value` row under a Number key yields no connection; under an unregistered key it does; the same rows with the registry changed to type that key Number lose the connection with no re-index; one target under a Link key and a Number key yields one connection; under two Link keys, one. Watch them fail.
-- [ ] Write the filter as below; rename `frontmatter` to `value` in `LinkKind`, `ConnectionKind`, `LINK_MULTIPLE`, and `LINK_STRENGTH`; `readMatrixGraph`'s dedupe key carries `key`, so both keys reach the rule; `matrixRuntime.ts:140`'s connections reuse adds `b.tree.config.registry === s.tree.config.registry`.
+- [x] `matrixInput.test.ts`: a `value` row under a Number key yields no connection; under an unregistered key it does; the same rows with the registry changed to type that key Number lose the connection with no re-index; one target under a Link key and a Number key yields one connection; under two Link keys, one. `matrixGraph.test.ts`: one link per key where a value names a page under two. `matrixRuntime.test.ts`: the registry typed to refuse the row's key recomputes the connections and drops the edge; an equal-content registry through `stabilize` reuses them.
+- [x] The filter as below; `frontmatter` renamed `value` in `LinkKind`, `ConnectionKind`, `LINK_MULTIPLE`, and `LINK_STRENGTH`; `readMatrixGraph`'s dedupe id carries `key`; `matrixRuntime.ts`'s connections reuse adds `b.tree.config.registry === s.tree.config.registry`.
 
 **AFTER**
 
-```Core/Matrix/matrixInput.ts diff
- export function matrixConnections(tree: NexusTree, links: MatrixGraphReply['links']): GraphInput['connections'] {
-   const resolve = pageIndexOf(tree).resolve
-+  // A value row relates only under a key that holds links; asked here, with the registry in hand, so a property created, renamed, or synced over a held key changes the graph without a re-index. The rule runs before the dedupe, so a Number key never shadows a Link key naming the same page.
-+  const holds = linkKeysOf(tree.config.registry)
-+  const seen = new Set<string>()
-   const connections: GraphInput['connections'] = []
-   for (const link of links) {
-+    if (link.kind === 'value' && !holds(link.key)) continue
-+    const id = `${link.pageId}\0${link.kind}\0${link.target}`
-+    if (seen.has(id)) continue
-+    seen.add(id)
-     const hit = resolve(link.target)
-     if (hit.status === 'resolved' && hit.page) connections.push({ from: link.pageId, to: hit.page.id, kind: link.kind })
-   }
-   return connections
- }
+```Core/Matrix/matrixInput.ts (landed)
+export function matrixConnections(
+  tree: NexusTree,
+  links: MatrixGraphReply['links'],
+): GraphInput['connections'] {
+  const resolve = pageIndexOf(tree).resolve
+  // A value row relates only under a key that holds links; asked here, with the registry in hand, so a property created, renamed, or synced over a held key changes the graph without a re-index. The rule runs before the dedupe, so a Number key never shadows a Link key naming the same page.
+  const holds = linkKeysOf(tree.config.registry)
+  const seen = new Set<string>()
+  const connections: GraphInput['connections'] = []
+  for (const link of links) {
+    if (link.kind === 'value' && !holds(link.key)) continue
+    const id = `${link.pageId}\0${link.kind}\0${link.target}`
+    if (seen.has(id)) continue
+    seen.add(id)
+    const hit = resolve(link.target)
+    if (hit.status === 'resolved' && hit.page)
+      connections.push({ from: link.pageId, to: hit.page.id, kind: link.kind })
+  }
+  return connections
+}
 ```
 
-**Behavior change:** a link inside a Text value's sentence relates as a `value` link rather than a `body` link, so it takes `value`'s force weight (today's `frontmatter` weights); the Matrix draws the same nodes with those edges slightly weaker, which is the weight a value relation already had.
-
-```Core/Matrix/matrixGraph.ts diff
--export interface MatrixLink extends Pick<PageRelationRow, 'path' | 'kind' | 'target'> {
-+export interface MatrixLink extends Pick<PageRelationRow, 'path' | 'kind' | 'target' | 'key'> {
--  for (const { path, kind, target } of rows.relations) {
-+  for (const { path, kind, target, key } of rows.relations) {
-     const pageId = idOf.get(path)
--    const key = `${path}\0${kind}\0${target}`
--    if (!pageId || seen.has(key)) continue
--    seen.add(key)
--    links.push({ path, kind, target, pageId })
-+    const id = `${path}\0${kind}\0${target}\0${key}`
-+    if (!pageId || seen.has(id)) continue
-+    seen.add(id)
-+    links.push({ path, kind, target, key, pageId })
+```Core/Matrix/matrixGraph.ts (landed)
+export interface MatrixLink extends Pick<PageRelationRow, 'path' | 'kind' | 'target' | 'key'> {
+  pageId: string
+}
+  // A link to a page and links to its headings are one row each in the index, and one link here; a value's link stays one per key, so each reaches the keys rule.
+  for (const { path, kind, target, key } of rows.relations) {
+    const pageId = idOf.get(path)
+    const id = `${path}\0${kind}\0${target}\0${key}`
+    if (!pageId || seen.has(id)) continue
+    seen.add(id)
+    links.push({ path, kind, target, key, pageId })
+  }
 ```
 
-The check is one map lookup per `value` row on a graph push or a registry change, never on a keystroke; the per-link resolve already there dominates it.
+**Behavior change:** a link inside a Text value's sentence relates as a `value` link rather than a `body` link, so it takes `value`'s force weight (the weight a value relation already had); the Matrix draws the same nodes with those edges slightly weaker. The check is one map lookup per `value` row on a graph push or a registry change, never on a keystroke; the per-link resolve already there dominates it. The host's dedupe by key and the renderer's by target are two stages, not two spellings: the host collapses heading-qualified rows before the wire, the renderer collapses keys after the rule.
 
 **VERIFY**
 
-- [ ] `matrixInput`, `matrixGraph`, and `matrixRuntime` tests pass; the `matrix:graph` channel's reply type changed through `MatrixGraphReply` alone (`bridge.ts` untouched).
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes (`frontmatter` appears nowhere under `Core/Matrix`).
+- [x] `matrixInput`, `matrixGraph`, and `matrixRuntime` tests pass; the `matrix:graph` channel's reply type changed through `MatrixGraphReply` alone (`bridge.ts` untouched).
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes (`frontmatter` appears nowhere under `Core/Matrix` as a kind).
 
 #### Task 7-3
 
-**TASK:** The rename cascade's `patchOf` applies `holdsLinks` to the type its callers already look up, and `spacesLinkHeading` applies `linkKeysOf` from the held tree's registry; the index-side exception for unregistered keys goes.
+**TASK:** The rename cascade's `patchOf` and `spacesLinkHeading` apply `linkKeysOf` from the registry each already reads; the index-side exception for unregistered keys goes.
 
-**NOW:** `patchOf` (`cascade.ts:190-205`) rewrites only `text` and `link` keys ("Every other type is left as written."), so a link under an unregistered key indexes but never renames; its three callers pass `byName` from the kept registry (`:186-188,211,215`) or the cached block's own type (`:245`, which `editCaches` (`propertyCache.ts:52-63`) only ever asks for Link and Text ids, so that path is unchanged under the rule); `spacesLinkHeading` (`:60-68`) reads `frontmatterMentions` and `valueLinks` with no gate; `deleteCascade` (`:89`) strips Link-defined keys, a different question that stays.
+**NOW (at BASELINE):** `patchOf` (`cascade.ts:190-205`) rewrites only `text` and `link` keys ("Every other type is left as written."), so a link under an unregistered key indexes but never renames; its three callers pass `byName` from the kept registry (`:186-188,211,215`) or the cached block's own type (`:245`); `spacesLinkHeading` (`:60-68`) reads `frontmatterMentions` and `valueLinks` with no gate; `deleteCascade` (`:89`) strips Link-defined keys, a different question that stays.
 
 **CHANGE**
 
-- [ ] In `cascade.test.ts`, add: a whole-value `[[Old]]` under an unregistered key moves on rename; `[[Old]]` under a registered Number key is left as written (`:243-254`'s File and Select cases hold); `spacesLinkHeading` ignores a File-typed Space key. Watch them fail.
-- [ ] Write the two gates as below.
+- [x] `cascade.test.ts`: a whole-value `[[Old]]` under an unregistered key moves on rename; `[[Old]]` under a registered Number key is left as written (the File and Select cases hold); `spacesLinkHeading` ignores a File-typed Space key and reads a sentence under a key the registry hasn't typed.
+- [x] The two gates as below.
 
 **AFTER**
 
-```Core/Nexus/cascade.ts diff
-@@ spacesLinkHeading @@
--/** Whether a Space the tree holds links `title#heading` — as a whole value or inside one — which no index names. */
-+/** Whether a Space the tree holds links `title#heading` under a key that holds links, which no index names. */
- export function spacesLinkHeading(root: string, title: string, heading: string): boolean {
-   const [page, section] = [normalizeTitle(title), normalizeTitle(heading)]
--  return (heldTreeOf(root)?.contexts ?? []).some((g) =>
--    g.spaces.some(({ values = {} }) =>
--      [...frontmatterMentions(values), ...valueLinks(values)].some((h) => h.target === page && h.qualifier === section),
--    ),
--  )
-+  const tree = heldTreeOf(root)
-+  if (!tree) return false
-+  const holds = linkKeysOf(tree.config.registry)
-+  return tree.contexts.some((g) =>
-+    g.spaces.some(({ values = {} }) =>
-+      [...valueLinks(values)].some((h) => holds(h.key) && h.target === page && h.qualifier === section),
-+    ),
-+  )
- }
-@@ patchOf @@
--    // Every other type is left as written.
-     const patchOf = (raw, typeOf, own = '', outlineOf = '') => {
-       const patch: Record<string, string> = {}
-       for (const [key, value] of Object.entries(raw)) {
--        const type = typeOf(key)
--        if (type !== 'text' && type !== 'link') continue
-+        if (!holdsLinks(key, typeOf(key))) continue
+```Core/Nexus/cascade.ts (landed)
+/** Whether a Space the tree holds links `title#heading` under a key that holds links, which no index names. */
+export function spacesLinkHeading(root: string, title: string, heading: string): boolean {
+  const [page, section] = [normalizeTitle(title), normalizeTitle(heading)]
+  const tree = heldTreeOf(root)
+  if (!tree) return false
+  const holds = linkKeysOf(tree.config.registry)
+  return tree.contexts.some((g) =>
+    g.spaces.some(({ values = {} }) =>
+      [...valueLinks(values)].some(
+        (h) => holds(h.key) && h.target === page && h.qualifier === section,
+      ),
+    ),
+  )
+}
+@@ renameCascade @@
+    const defs = Object.values((await readKeptRegistry(root)).defs)
+    const holds = linkKeysOf(defs)
+    const patchOf = (
+      raw: Record<string, unknown>,
+      holds: (key: string) => boolean,
+      own = '',
+      outlineOf = '',
+    ): Record<string, string> => {
+      const patch: Record<string, string> = {}
+      for (const [key, value] of Object.entries(raw)) {
+        if (!holds(key)) continue
+        …
+    const spaceMoved: Rewrite = (raw) => withPatch(raw, patchOf(raw, holds))
+    …
+      const patch = patchOf(splitFrontmatter(content), holds, own, body)
+    …
+    // A heading edit settles often and a cached Link still reaches its page, so only a title reaches the caches. A block holds one property's values, so every entry holds links when the property does.
+    const cachedIds = new Set(defs.filter((d) => holds(d.name)).map((d) => d.id))
+    const movedCache = (values: Record<string, unknown>): Record<string, unknown> | null =>
+      withPatch(values, patchOf(values, () => true))
 ```
+
+`spacesLinkHeading` reads the held tree's registry where the cascade reads the kept one on disk; both agree once a registry write has been taken into the tree, and no sequence was shown to produce a wrong result.
 
 **VERIFY**
 
-- [ ] `cascade.test.ts` and `fileEvents` tests pass.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes (the rule is read from `schema.ts` in both readers and spelled in neither).
+- [x] `cascade.test.ts` and `fileEvents` tests pass.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes (the rule is read from `schema.ts` in every reader and spelled in none; `cascade.ts` builds no folded lookup of its own).
 
 #### Review Checkpoint
 
-- [ ] One `holdsLinks`, two readers; the index stores no registry-dependent verdict; creating a property over a held key changes the graph on the next push with no re-index.
-- [ ] The embed line rule (Task 2-2) and the keys rule together leave the live drive's group 1 Link-value checks and group 5 holding.
-- [ ] Net Ledger: Phase 7 measured; the running total is reported with Phase 8's ceiling against the −100 floor before the stop.
+- [x] One `linkKeysOf`, three readers; the index stores no registry-dependent verdict; creating a property over a held key changes the graph on the next push with no re-index.
+- [x] The embed line rule (Task 2-2) and the keys rule together leave the live drive's group 1 Link-value checks and group 5 holding (run at Phase 8's live drive).
+- [x] Net Ledger: Phase 7 measured; the running total is reported with Phase 8's ceiling against the −100 floor.
 
 ---
 
@@ -3142,7 +3136,7 @@ The check is one map lookup per `value` row on a graph push or a registry change
 
 ### Completion Criteria
 
-- **Conformance:** every phase landed through `editorBase`, `linkOccurrences`, `pageLinkText`, `resolveLink`, `linkWriting`, and `holdsLinks` where those exist, with no mechanism beside them; nothing outside the files the tasks name changed; the Frozen list held.
+- **Conformance:** every phase landed through `editorBase`, `linkOccurrences`, `pageLinkText`, `resolveLink`, `linkWriting`, and `linkKeysOf` where those exist, with no mechanism beside them; nothing outside the files the tasks name changed; the Frozen list held.
 - **Correctness:** the Brief's behavior specification holds except where a task names a change; each named change is observed in its test and, for the editing and field behaviors, in the live drive on `~/Test`; the three probes that opened W22 hold (an alias with `]` falls back, `C# Notes` round-trips, `[[Old#Intro|Old#Intro]]` follows its alias to `New#Intro` and drops it as repeating the target); a held value's `§` run glances and opens Open and Copy; `[](Page)` reads, indexes, renames, and draws its default label; a lone `![Alias](Page)` line leaves the graph; a link naming a heading remembers nothing; Return inside a link rests past it in a cell, a pane, and a field; Remove Title keeps the shown text over a phantom container in the picker, paste, and the Link field; a Text value sorts under its shown text; creating a property over a held key changes the graph with no re-index.
 - **Completeness:** every task ticked; no transitional read, shim, or rename survives (the Phase 2 interims are gone by Phase 3, Phase 3's by Phase 4, Phase 4's by Phase 5, and the Link field's by Phase 8); `grep` finds no reader of any REMOVED concept.
 - **Confirmation:** every new test went red before its change; the live drive ran against a fresh instance and the instance was closed; the owner confirmed the one-line fields' feel.
@@ -3164,7 +3158,7 @@ The check is one map lookup per `value` row on a graph push or a registry change
 - `.claude/Features/ConnectionsPM.md:16,22,26,34,36,55,59,60,62,64` — the claims Task 9-1 lists — Task 9-1
 - `.claude/Features/MarkdownPM.md:8,10,31,33,90,104,118,120,156,255` — Task 9-1
 - `.claude/Features/PropertiesPM.md:62,80,82,117` — Task 9-1
-- `.claude/Features/CorePM.md:83`; `.claude/Features/PommoraUIX.md:287` — Task 9-1
+- `.claude/Features/CorePM.md:83,108` (the index records "a frontmatter Link value": every link under a key, judged at read); `.claude/Features/MatrixPM.md:7` ("body, citation, and frontmatter" link kinds: `value`); `.claude/Features/PommoraUIX.md:287` — Task 9-1
 - `Connections & Aliases Restructure — Architecture Design.md:21,32` — "A **Save Heading Aliases** setting … is proposed" — Task 9-2
 - `Pommora Codebase Audit.md` W22 (opener, F-114, F-116 to F-131, footnotes, header, Verdict rows) — Task 9-2
 - `Core/Nexus/treeIndex.ts:1`, `record.ts:1`, `heldPages.ts:1,46`, `pageIndex.ts:42`, `Actions/destinationTree.ts:1` — the one-walk and title comments — Tasks 1-1 to 1-3
