@@ -1,14 +1,14 @@
 ## Text Color — Implementation Plan
 
 **DATE:** 10-15-2026
-**STATUS:** Ratified 10-15-2026
+**STATUS:** Complete 10-15-2026 — `f94fc0af3..980a8f4e8` · Sapphire `9053a546..eabd7f22`
 **SOURCE:** The 10-15-2026 conversation with Nathan: the request (highlights written `==🔴text==` with one leading emoji, a new Text Color written `=🔴text=` above Highlight in Format ▸, sharing Change Color ▸ and the color registry, done as a consolidation where the paint differs and the spelling doesn't) and his answers. Text Color has no Accent, no chord, and no default. A span wears one color (Notion's model). Sapphire also displays both in Obsidian, display only. Text Color excludes black and white. Nathan takes the Pommora visual pass himself.
 
 **BASELINE** {Filled after ratification; end logged during final report}
 
 | Repo | Head | Tests | Start | End |
 |------|------|-------|-------|-----|
-| Pommora | `f94fc0af3` | 7,897 passed, 2 skipped (536 files) | 10-15-2026 07:15 PM | {MM-DD-YYYY hh:mm AM/PM} |
+| Pommora | `f94fc0af3` | 7,897 passed, 2 skipped (536 files) | 10-15-2026 07:15 PM | 10-15-2026 09:29 PM |
 | Sapphire | `9053a546` | 617 passed | — | — |
 
 ### Context
@@ -93,10 +93,10 @@ The typed-pairing machinery for the trailing emoji is deleted. A span holds at m
   - [x] Task 2-3
   - [x] Task 2-4
   - [x] Review Checkpoint
-- [ ] **Phase 3:** The Menus
+- [x] **Phase 3:** The Menus
   - [x] Task 3-1
   - [x] Review Checkpoint
-- [ ] `[Stop: Nathan's Pommora visual pass — Task 3-1's last VERIFY]`
+- [x] `[Stop: Nathan's Pommora visual pass — Task 3-1's last VERIFY]`
 - [x] **Phase 4:** Sapphire `[Parallel with Phases 1–3]`
   - [x] Task 4-1
   - [x] Task 4-2
@@ -1657,14 +1657,14 @@ The runs are applied last to first, so each run's mutations sit past every earli
 
 **THE STANDARD:** The work is finished when a later review of it finds nothing to correct. Not just doing the chores — doing the laundry, folding it, picking up what fell out of the hamper, emptying the lint trap, leaving no trace that anything went wrong. Nothing is carried as a concern, nothing is deferred where the fix is known, and nothing is declared that wasn't watched happen. Where something genuinely couldn't get there, the report names which and why, and everything else is still finished. Ambiguity met during execution took the simplest reading and was recorded; it didn't stop the run.
 
-- [ ] Phase review (opus-high): Phase 1 · Phase 2 · Phase 3 · Phase 4 · Phase 5
-- [ ] Simplification lens → adversarial lens (opus-high) over `{baseline}..HEAD` in each repo
-- [ ] Neutral verification (opus-high) over `{baseline}..HEAD` in each repo
-- [ ] Own pass: gates · diff · deviations · criteria
-- [ ] Reconciliation walked
-- [ ] `c/view-delta` over each repo's range, whose delta the report and the history entry carry
-- [ ] HistoryPM: PM-152 "Text Colors & Highlighting", written per `r/history-format` with a brief citation of PM-113
-- [ ] Report delivered
+- [x] Phase review (opus-high): Phase 1 · Phase 2 · Phase 3 · Phase 4 · Phase 5
+- [x] Simplification lens → adversarial lens (opus-high) over `{baseline}..HEAD` in each repo
+- [x] Neutral verification (opus-high) over `{baseline}..HEAD` in each repo
+- [x] Own pass: gates · diff · deviations · criteria
+- [x] Reconciliation walked
+- [x] `c/view-delta` over each repo's range, whose delta the report and the history entry carry
+- [x] HistoryPM: PM-152 "Text Colors & Highlighting", written per `r/history-format` with a brief citation of PM-113
+- [x] Report delivered
 
 #### Reconciliation
 
