@@ -100,10 +100,24 @@ const notOverlapping =
   (tk: Token): boolean =>
     !claimed.some((c) => overlaps(c.range, tk.range))
 
-const notCrossing =
-  (claimed: Token[]) =>
-  ({ range, contentRange: [cs, ce] }: Token): boolean =>
-    !claimed.some(({ range: [s, e] }) => overlaps([s, e], range) && (s < cs || e > ce))
+const VERBATIM: ReadonlySet<TokenKind> = new Set([
+  'inlineCode',
+  'link',
+  'wikiLink',
+  'blockLatex',
+  'inlineLatex',
+])
+
+/** The text with its code, link, and math spans blanked in place, so a paint opens and closes only outside them. */
+export function outsideVerbatim(text: string, tokens: readonly Token[]): string {
+  let out = text
+  for (const tk of tokens) {
+    if (!VERBATIM.has(tk.kind)) continue
+    const [s, e] = tk.range
+    out = out.slice(0, s) + out.slice(s, e).replace(/[^\n]/g, ' ') + out.slice(e)
+  }
+  return out
+}
 
 type MdNode = Root | RootContent | PhrasingContent
 
@@ -308,14 +322,14 @@ export function tokenizeChunk(text: string): { tokens: Token[]; html: Span[] } {
     accept: isInlineMathContent,
   }).filter(notOverlapping([...code, ...blockTex]))
   const verbatim = [...code, ...links, ...blockTex, ...inlineTex]
-  const painted = (spec: RegexSpec): Token[] => matches(spec).map((tk) => foldColor(text, tk))
-  const highlights = painted({ kind: 'highlight', re: highlightRegex(), open: 2, close: 2 }).filter(
-    notCrossing(verbatim),
-  )
+  const plain = outsideVerbatim(text, verbatim)
+  const painted = (spec: RegexSpec): Token[] =>
+    regexTokens(plain, spec, inCode).map((tk) => foldColor(text, tk))
+  const highlights = painted({ kind: 'highlight', re: highlightRegex(), open: 2, close: 2 })
   // A span wears one color, so a text color inside a highlight stays that highlight's words.
-  const textColors = painted({ kind: 'textColor', re: textColorRegex(), open: 1, close: 1 })
-    .filter(notCrossing(verbatim))
-    .filter(notOverlapping(highlights))
+  const textColors = painted({ kind: 'textColor', re: textColorRegex(), open: 1, close: 1 }).filter(
+    notOverlapping(highlights),
+  )
   const tags = matches({ kind: 'htmlTag', re: htmlTagRegex(), open: 1, close: 1 }).filter(
     notOverlapping(verbatim),
   )

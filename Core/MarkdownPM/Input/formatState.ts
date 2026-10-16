@@ -11,8 +11,8 @@ export function readFormatState(
   selTo: number,
 ): Omit<EditorMenuRequest, 'scope' | 'x' | 'y' | 'embedSeat' | 'citeSeat' | 'resting'> {
   const { from, to, ls, line, tokens, covering } = underSelection(scan, selFrom, selTo)
-  const f = from - ls
-  const t = to - ls
+  const lineFrom = from - ls
+  const lineTo = to - ls
   const wraps = (kind: string): boolean => covering.some((tk) => tk.kind === kind)
   const painted = covering.find((tk): tk is TokenOf<Paint> => isPaint(tk.kind))
 
@@ -27,8 +27,12 @@ export function readFormatState(
     strikethrough: wraps('strikethrough'),
     painted: painted ? { paint: painted.kind, color: painted.color ?? 'accent' } : null,
     inlineCode: wraps('inlineCode'),
-    link: tokens.some((tk) => tk.kind === 'link' && tk.range[0] <= f && t <= tk.range[1]),
-    connection: tokens.some((tk) => tk.kind === 'wikiLink' && tk.range[0] <= f && t <= tk.range[1]),
+    link: tokens.some(
+      (tk) => tk.kind === 'link' && tk.range[0] <= lineFrom && lineTo <= tk.range[1],
+    ),
+    connection: tokens.some(
+      (tk) => tk.kind === 'wikiLink' && tk.range[0] <= lineFrom && lineTo <= tk.range[1],
+    ),
     heading: hm ? hm.hashes.length : 0,
     list: lm?.kind ?? null,
     block: isQuoteToggleable(line) ? 'quote' : null,

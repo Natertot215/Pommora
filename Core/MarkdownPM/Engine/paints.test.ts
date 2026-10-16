@@ -122,10 +122,17 @@ describe('what a paint holds', () => {
     const text = '=🔴see [[Page]] now='
     expect(tokenize(text).map((tk) => tk.kind)).toEqual(['textColor', 'wikiLink'])
   })
+  it('closes outside them, so an = inside one stays its words', () => {
+    expect(inked('=🔴note `a=b` here=')).toEqual([{ content: 'note `a=b` here', color: 'red' }])
+    expect(inked('=🔴read [docs](https://x.com/?a=1) now=')).toEqual([
+      { content: 'read [docs](https://x.com/?a=1) now', color: 'red' },
+    ])
+    expect(inked('=🔴E $E=mc^2$ ok=')).toEqual([{ content: 'E $E=mc^2$ ok', color: 'red' }])
+    expect(colored('==a `x==y` b==')).toEqual([{ content: 'a `x==y` b', color: undefined }])
+  })
   it('drops when one of them crosses its edge', () => {
-    expect(inked('=🔴note `a=b` here=')).toEqual([])
-    expect(inked('=🔴read [docs](https://x.com/?a=1) now=')).toEqual([])
-    expect(inked('=🔴E $E=mc^2$ ok=')).toEqual([])
     expect(colored('$x==a==$')).toEqual([])
+    expect(colored('`==a` b==')).toEqual([])
+    expect(colored('==a [b== c](d)')).toEqual([])
   })
 })

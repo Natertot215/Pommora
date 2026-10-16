@@ -421,6 +421,16 @@ describe('text colors', () => {
     expect(toggleInline(scanDoc('a =🔴warm= b'), 10, 10, 'highlight', 'red')).toBeNull()
     expect(toggleInline(scanDoc('==a== b'), 5, 5, 'highlight')).toBeNull()
   })
+  it('refuses a fresh paint over part of another, which would drop the one inside', () => {
+    expect(toggleInline(scanDoc('a =🔴b= c'), 0, 9, 'highlight', 'green')).toBeNull()
+    expect(toggleInline(scanDoc('a =🔴bc= d'), 0, 6, 'highlight', 'green')).toBeNull()
+  })
+  it('lets a text color hold an = inside code, a link, or math', () => {
+    const doc = 'run `a = b` now'
+    expect(apply(doc, toggleInline(scanDoc(doc), 0, 15, 'textColor', 'red'))).toBe(
+      '=🔴run `a = b` now=',
+    )
+  })
   it('routes each paint’s menu action', () => {
     expect(apply('hi', editFor('textColor:red', scanDoc('hi'), 0, 2))).toBe('=🔴hi=')
     expect(apply('hi', editFor('highlight:red', scanDoc('hi'), 0, 2))).toBe('==🔴hi==')

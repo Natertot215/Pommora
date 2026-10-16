@@ -1,4 +1,11 @@
-import { insideMark, type LinkKind, shiftToken, tokenize, type TokenKind } from '../Engine/tokens'
+import {
+  insideMark,
+  type LinkKind,
+  outsideVerbatim,
+  shiftToken,
+  tokenize,
+  type TokenKind,
+} from '../Engine/tokens'
 import {
   headingParts,
   calloutHeadPrefixLen,
@@ -16,6 +23,7 @@ import {
   lineStartAt,
   lineEndAt,
   trimmedRange,
+  overlaps,
 } from '../Engine/markdownCode'
 import type { HeadingLevel, ListKind } from '../../Actions/gripMenu'
 import type { BlockFormat, LinkWrapKind } from '../../Actions/blockMenu'
@@ -89,7 +97,11 @@ export function toggleInline(
   fmt: InlineFormat,
   color: PaintColor | null = null,
 ): FormatEdit | null {
-  const { fenced, from, to, ls, line, f, t, covering } = underSelection(scan, selFrom, selTo)
+  const { fenced, from, to, ls, line, tokens, f, t, covering } = underSelection(
+    scan,
+    selFrom,
+    selTo,
+  )
   if (fenced) return null
   const doc = scan.text
   if (fmt in LINKS) return toggleWrap(doc, from, to, LINKS[fmt as LinkWrapKind])
@@ -103,9 +115,17 @@ export function toggleInline(
         tk.kind === SWAPS[kind] &&
         (from === to || (tk.contentRange[0] === f && tk.contentRange[1] === t)),
     )
-  const words = found ? line.slice(...found.contentRange) : doc.slice(from, to)
-  if (kind === 'textColor' && words.includes('=')) return null
-  if (!found && isPaint(kind) && (doc[from - 1] === '=' || doc[to] === '=')) return null
+  const sel: [number, number] = [from - ls, to - ls]
+  const [ws, we] = found ? found.contentRange : sel
+  if (kind === 'textColor' && outsideVerbatim(line, tokens).slice(ws, we).includes('=')) return null
+  if (
+    !found &&
+    isPaint(kind) &&
+    (doc[from - 1] === '=' ||
+      doc[to] === '=' ||
+      tokens.some((tk) => isPaint(tk.kind) && overlaps(tk.range, sel)))
+  )
+    return null
   if (found) {
     const [m0, m1] = shiftToken(found, ls).markerRanges
     const off = found.kind === kind && (found.color ?? null) === color

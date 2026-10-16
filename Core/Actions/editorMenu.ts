@@ -91,13 +91,18 @@ function colorRows(
       checked: lit === color,
     }),
   )
-  const accent: LeafItem<EditorMenuAction> = {
-    label: 'Accent',
-    action: 'format:highlight',
-    checked: lit === 'accent',
-    chord: commands['format:highlight'],
-  }
-  return paint === 'textColor' ? colors : joinGroups([[accent], colors])
+  if (paint === 'textColor') return colors
+  return joinGroups([
+    [
+      {
+        label: 'Accent',
+        action: 'format:highlight',
+        checked: lit === 'accent',
+        chord: commands['format:highlight'],
+      },
+    ],
+    colors,
+  ])
 }
 
 /** Offered over a painted span, with its own paint's rows, seated with the edit items rather than in the formatting block. */

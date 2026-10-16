@@ -34,10 +34,11 @@ The typed-pairing machinery for the trailing emoji is deleted. A span holds at m
 | `PAINTS` / `Paint` / `isPaint` • Const, Type, Function | The two paints, `highlight` and `textColor`, which are also their token kinds and menu action groups. | `paints.ts` |
 | `PAINT_COLORS` / `PaintColor` / `PAINT_COLOR_NAMES` • Const, Type, Const | The renamed color table. | `paints.ts` |
 | `colorsOf` • Function | The colors a paint takes: all nine for a highlight, seven for a text color, black and white only washing. | `paints.ts` |
-| `leadingMark` • Function | The regex source of a mark that opens a span of a paint. | `paints.ts` |
+| `leadingMark` • Function | The regex source of a mark in any of the given colors. | `paints.ts` |
 | `textColor` • Token kind | A span inked in a color: `=🔴words=`. | `Engine/tokens.ts` |
 | `textColorRegex` • Function | The text color's grammar: a lone `=` that opens only on a mark. | `Engine/detect.ts` |
 | `foldColor` • Function | Folds a leading color mark into the opener of either paint. | `Engine/tokens.ts` |
+| `outsideVerbatim` • Function | The text with its code, link, and math spans blanked, so a paint opens and closes only outside them. | `Engine/tokens.ts` |
 | `textColorEndAt` • Function | Where Enter steps to past a text color's closing `=`, read from its token. | `Input/edits.ts` |
 | `painted` • Request field | The one paint under a right-click, `{ paint, color } \| null`, replacing `highlight`. | `Core/Actions/editorMenu.ts` |
 | `colorRows` • Function | The rows of either paint's submenu and of Change Color. | `Core/Actions/editorMenu.ts` |
@@ -213,7 +214,7 @@ The typed-pairing machinery for the trailing emoji is deleted. A span holds at m
 
 **CHANGE**
 
-- [ ] Rewrite `highlight.test.ts`'s `describe('a colored highlight')` and `format.test.ts`'s `describe('highlight colors')` as below, and watch them fail.
+- [ ] Rewrite `paints.test.ts`'s `describe('a colored highlight')` and `format.test.ts`'s `describe('highlight colors')` as below, and watch them fail.
 - [ ] `git mv` `Engine/highlightColors.ts` to `Engine/paints.ts`, and `highlights.css.ts` to `paints.css.ts`. Write both as below and repoint every importer: `tokens.ts`, `format.ts`, `editorMenu.ts`, and `MarkdownEditor.tsx:35`.
 - [ ] In `tokens.ts`, replace `colorHighlight` with `foldColor` and rewrite `wrappedSpan`.
 - [ ] In `format.ts`, write the closer bare.
@@ -347,7 +348,7 @@ The typed-pairing machinery for the trailing emoji is deleted. A span holds at m
 
 `editorMenu.ts` renames only its import and the two type and const references (`HighlightColor` → `PaintColor`, `HIGHLIGHT_COLOR_NAMES` → `PAINT_COLOR_NAMES`). Phase 3 rewrites the rest.
 
-```Core/MarkdownPM/Engine/highlight.test.ts diff
+```Core/MarkdownPM/Engine/paints.test.ts diff
 @@ describe('a colored highlight') @@
 +  it('reads a color mark right after the opening == as its color, outside the content', () => {
 +    expect(colored('a ==🔴two words== b')).toEqual([{ content: 'two words', color: 'red' }])
@@ -418,7 +419,7 @@ The typed-pairing machinery for the trailing emoji is deleted. A span holds at m
 
 **CHANGE**
 
-- [ ] Add `describe('a text color')` to `highlight.test.ts` as below, and watch it fail.
+- [ ] Add `describe('a text color')` to `paints.test.ts` as below, and watch it fail.
 - [ ] Add `PAINTS`, `Paint`, `isPaint`, `colorsOf`, and `leadingMark` to `paints.ts`, keeping the order shown: `detect.ts` builds `TEXT_COLOR` at import time, so `VARIATION_SELECTOR` stays declared above `leadingMark` and `LEADING` below it.
 - [ ] Add `textColorRegex` to `detect.ts`.
 - [ ] Add `Paint` to `TokenKind` and the text-color pass to `tokenizeChunk`.
@@ -449,19 +450,19 @@ The typed-pairing machinery for the trailing emoji is deleted. A span holds at m
 -const MARK = `(?:${[...COLOR_OF.keys()].join('|')})${VARIATION_SELECTOR}?`
 -// A mark joined into a longer emoji (`❤️‍🔥`) belongs to that emoji.
 -const LEADING = new RegExp(`^${MARK}(?![${VARIATION_SELECTOR}‍])`, 'u')
-+/** The mark that opens a span of `paint`, as a regex source: one joined into a longer emoji (`❤️‍🔥`) belongs to that emoji. */
-+export const leadingMark = (paint: Paint): string =>
-+  `(?:${colorsOf(paint).flatMap((color) => PAINT_COLORS[color].marks).join('|')})${VARIATION_SELECTOR}?(?![${VARIATION_SELECTOR}‍])`
++/** A mark of one of `colors`, as a regex source: one joined into a longer emoji (`❤️‍🔥`) belongs to that emoji. */
++export const leadingMark = (colors: readonly PaintColor[]): string =>
++  `(?:${colors.flatMap((color) => PAINT_COLORS[color].marks).join('|')})${VARIATION_SELECTOR}?(?![${VARIATION_SELECTOR}‍])`
 +
-+const LEADING = new RegExp(`^${leadingMark('highlight')}`, 'u')
++const LEADING = new RegExp(`^${leadingMark(PAINT_COLOR_NAMES)}`, 'u')
 ```
 
 ```Core/MarkdownPM/Engine/detect.ts diff
-+import { leadingMark } from './paints'
++import { colorsOf, leadingMark } from './paints'
  …
  export const highlightRegex = (): RegExp => /(?<!=)==(?!=)((?:[^=\n]|=(?!=))+)==(?!=)/dg
-+/** A lone `=` opens a text color only on a color mark, since a bare `=…=` is prose; its words hold no `=`, which would close it. */
-+const TEXT_COLOR = `(?<!=)=(${leadingMark('textColor')}[^=\\n]+)=(?!=)`
++/** A lone `=` opens a text color only on a color mark, since a bare `=…=` is prose; its words hold no `=` outside code, links, and math, which would close it. */
++const TEXT_COLOR = `(?<!=)=(${leadingMark(colorsOf('textColor'))}[^=\\n]+)=(?!=)`
 +export const textColorRegex = (): RegExp => new RegExp(TEXT_COLOR, 'dgu')
 ```
 
@@ -478,10 +479,24 @@ The typed-pairing machinery for the trailing emoji is deleted. A span holds at m
 +  | Paint
    | 'blockLatex'
 @@ after notOverlapping @@
-+const notCrossing =
-+  (claimed: Token[]) =>
-+  ({ range, contentRange: [cs, ce] }: Token): boolean =>
-+    !claimed.some(({ range: [s, e] }) => overlaps([s, e], range) && (s < cs || e > ce))
++const VERBATIM: ReadonlySet<TokenKind> = new Set([
++  'inlineCode',
++  'link',
++  'wikiLink',
++  'blockLatex',
++  'inlineLatex',
++])
++
++/** The text with its code, link, and math spans blanked in place, so a paint opens and closes only outside them. */
++export function outsideVerbatim(text: string, tokens: readonly Token[]): string {
++  let out = text
++  for (const tk of tokens) {
++    if (!VERBATIM.has(tk.kind)) continue
++    const [s, e] = tk.range
++    out = out.slice(0, s) + out.slice(s, e).replace(/[^\n]/g, ' ') + out.slice(e)
++  }
++  return out
++}
 @@ tokenizeChunk @@
 -  const highlights = matches({
 -    kind: 'highlight',
@@ -494,14 +509,14 @@ The typed-pairing machinery for the trailing emoji is deleted. A span holds at m
    const blockTex = blockLatexTokens(text, scan.maths).filter(notOverlapping(code))
    const inlineTex = matches({ … }).filter(notOverlapping([...code, ...blockTex]))
 +  const verbatim = [...code, ...links, ...blockTex, ...inlineTex]
-+  const painted = (spec: RegexSpec): Token[] => matches(spec).map((tk) => foldColor(text, tk))
-+  const highlights = painted({ kind: 'highlight', re: highlightRegex(), open: 2, close: 2 }).filter(
-+    notCrossing(verbatim),
-+  )
++  const plain = outsideVerbatim(text, verbatim)
++  const painted = (spec: RegexSpec): Token[] =>
++    regexTokens(plain, spec, inCode).map((tk) => foldColor(text, tk))
++  const highlights = painted({ kind: 'highlight', re: highlightRegex(), open: 2, close: 2 })
 +  // A span wears one color, so a text color inside a highlight stays that highlight's words.
-+  const textColors = painted({ kind: 'textColor', re: textColorRegex(), open: 1, close: 1 })
-+    .filter(notCrossing(verbatim))
-+    .filter(notOverlapping(highlights))
++  const textColors = painted({ kind: 'textColor', re: textColorRegex(), open: 1, close: 1 }).filter(
++    notOverlapping(highlights),
++  )
    const tags = matches({ kind: 'htmlTag', re: htmlTagRegex(), open: 1, close: 1 }).filter(
 -    notOverlapping([...code, ...links, ...blockTex, ...inlineTex]),
 +    notOverlapping(verbatim),
@@ -531,7 +546,7 @@ The typed-pairing machinery for the trailing emoji is deleted. A span holds at m
  .md-code {
 ```
 
-```Core/MarkdownPM/Engine/highlight.test.ts diff
+```Core/MarkdownPM/Engine/paints.test.ts diff
 -const colored = (text: string) =>
 -  tokenize(text)
 -    .filter((tk) => tk.kind === 'highlight')
@@ -596,11 +611,16 @@ The typed-pairing machinery for the trailing emoji is deleted. A span holds at m
 +    const text = '=🔴see [[Page]] now='
 +    expect(tokenize(text).map((tk) => tk.kind)).toEqual(['textColor', 'wikiLink'])
 +  })
++  it('closes outside them, so an = inside one stays its words', () => {
++    expect(inked('=🔴note `a=b` here=')).toEqual([{ content: 'note `a=b` here', color: 'red' }])
++    expect(inked('=🔴read [docs](https://x.com/?a=1) now=')).toEqual([{ content: 'read [docs](https://x.com/?a=1) now', color: 'red' }])
++    expect(inked('=🔴E $E=mc^2$ ok=')).toEqual([{ content: 'E $E=mc^2$ ok', color: 'red' }])
++    expect(colored('==a `x==y` b==')).toEqual([{ content: 'a `x==y` b', color: undefined }])
++  })
 +  it('drops when one of them crosses its edge', () => {
-+    expect(inked('=🔴note `a=b` here=')).toEqual([])
-+    expect(inked('=🔴read [docs](https://x.com/?a=1) now=')).toEqual([])
-+    expect(inked('=🔴E $E=mc^2$ ok=')).toEqual([])
 +    expect(colored('$x==a==$')).toEqual([])
++    expect(colored('`==a` b==')).toEqual([])
++    expect(colored('==a [b== c](d)')).toEqual([])
 +  })
 +})
 ```
@@ -626,7 +646,7 @@ The typed-pairing machinery for the trailing emoji is deleted. A span holds at m
 **VERIFY**
 
 - [ ] `git grep -n "| 'highlight'" -- Core/MarkdownPM/Engine/tokens.ts` returns nothing. `TokenKind` names the paints only through `Paint`.
-- [ ] Run the gates. The accent `highlight.test.ts` describe and `tokens.test.ts` stay green unchanged.
+- [ ] Run the gates. The accent `paints.test.ts` describe and `tokens.test.ts` stay green unchanged.
 - [ ] Check for unnecessary code or mistakes.
 
 #### Task 2-3
@@ -664,9 +684,17 @@ The typed-pairing machinery for the trailing emoji is deleted. A span holds at m
 -    covering.find((tk) => tk.kind === kind) ??
 +    covering.find((tk) => tk.kind === kind || (isPaint(kind) && isPaint(tk.kind))) ??
      covering.find( … SWAPS rule unchanged … )
-+  const words = found ? line.slice(...found.contentRange) : doc.slice(from, to)
-+  if (kind === 'textColor' && words.includes('=')) return null
-+  if (!found && isPaint(kind) && (doc[from - 1] === '=' || doc[to] === '=')) return null
++  const sel: [number, number] = [from - ls, to - ls]
++  const [ws, we] = found ? found.contentRange : sel
++  if (kind === 'textColor' && outsideVerbatim(line, tokens).slice(ws, we).includes('=')) return null
++  if (
++    !found &&
++    isPaint(kind) &&
++    (doc[from - 1] === '=' ||
++      doc[to] === '=' ||
++      tokens.some((tk) => isPaint(tk.kind) && overlaps(tk.range, sel)))
++  )
++    return null
    if (found) {
 @@ editFor @@
 -    case 'highlight':
@@ -717,6 +745,14 @@ The typed-pairing machinery for the trailing emoji is deleted. A span holds at m
 +  it('refuses a fresh highlight beside an =, which would erase the span it touches', () => {
 +    expect(toggleInline(scanDoc('a =🔴warm= b'), 10, 10, 'highlight', 'red')).toBeNull()
 +    expect(toggleInline(scanDoc('==a== b'), 5, 5, 'highlight')).toBeNull()
++  })
++  it('refuses a fresh paint over part of another, which would drop the one inside', () => {
++    expect(toggleInline(scanDoc('a =🔴b= c'), 0, 9, 'highlight', 'green')).toBeNull()
++    expect(toggleInline(scanDoc('a =🔴bc= d'), 0, 6, 'highlight', 'green')).toBeNull()
++  })
++  it('lets a text color hold an = inside code, a link, or math', () => {
++    const doc = 'run `a = b` now'
++    expect(apply(doc, toggleInline(scanDoc(doc), 0, 15, 'textColor', 'red'))).toBe('=🔴run `a = b` now=')
 +  })
 +  it('routes each paint’s menu action', () => {
 +    expect(apply('hi', editFor('textColor:red', scanDoc('hi'), 0, 2))).toBe('=🔴hi=')
@@ -846,7 +882,7 @@ The typed-pairing machinery for the trailing emoji is deleted. A span holds at m
 +}
  …
 -  if (inFenceAt(scan, selFrom)) return null
-+  const { fenced, from, to, ls, line, f, t, covering } = underSelection(scan, selFrom, selTo)
++  const { fenced, from, to, ls, line, tokens, f, t, covering } = underSelection(scan, selFrom, selTo)
 +  if (fenced) return null
    const doc = scan.text
 -  const [from, to] = trimmedRange(doc, selFrom, selTo)
@@ -886,8 +922,10 @@ The typed-pairing machinery for the trailing emoji is deleted. A span holds at m
 -  const line = doc.slice(ls, le)
 -  const tokens = inFenceAt(scan, from) ? [] : tokenize(line)
 +  const { from, to, ls, line, tokens, covering } = underSelection(scan, selFrom, selTo)
-   const f = from - ls
-   const t = to - ls
+-  const f = from - ls
+-  const t = to - ls
++  const lineFrom = from - ls
++  const lineTo = to - ls
 -  const wrapping = (kind: string) =>
 -    tokens.find((tk) => {
 -      const [s, e] = wrappedSpan(tk)
@@ -940,13 +978,18 @@ The typed-pairing machinery for the trailing emoji is deleted. A span holds at m
 +      checked: lit === color,
 +    }),
 +  )
-+  const accent: LeafItem<EditorMenuAction> = {
-+    label: 'Accent',
-+    action: 'format:highlight',
-+    checked: lit === 'accent',
-+    chord: commands['format:highlight'],
-+  }
-+  return paint === 'textColor' ? colors : joinGroups([[accent], colors])
++  if (paint === 'textColor') return colors
++  return joinGroups([
++    [
++      {
++        label: 'Accent',
++        action: 'format:highlight',
++        checked: lit === 'accent',
++        chord: commands['format:highlight'],
++      },
++    ],
++    colors,
++  ])
 +}
 @@ changeColorItems @@
 -/** Offered only over a highlight, seated with the edit items rather than in the formatting block. */
@@ -1125,7 +1168,7 @@ It runs in `~/The Studio/Projects/Sapphire` against Pommora's settled grammar, n
 **AFTER**
 
 ```src/markdown/colorMarks.ts diff
-+// Pommora's colors, ported from its MarkdownPM so a note colors alike in both: a color emoji right after `==` colors a highlight, and one right after a lone `=` colors the words up to the next `=`. Every shape of a color reads the same, and black and white only highlight.
++// Pommora's colors, ported from its MarkdownPM so a note colors alike in both: a color emoji right after `==` colors a highlight, and one right after a lone `=` colors the words up to the next `=` outside a link, code, or math. Every shape of a color reads the same, and black and white only highlight.
 +
 +const MARKS = {
 +  red: ["🔴", "🟥", "❤"],
@@ -1142,7 +1185,8 @@ It runs in `~/The Studio/Projects/Sapphire` against Pommora's settled grammar, n
 +type Color = keyof typeof MARKS;
 +
 +const COLORS = Object.keys(MARKS) as Color[];
-+const INKS = COLORS.filter((c) => c !== "black" && c !== "white");
++type Ink = Exclude<Color, "black" | "white">;
++const INKS = COLORS.filter((c): c is Ink => c !== "black" && c !== "white");
 +const COLOR_OF = new Map<string, Color>(COLORS.flatMap((c) => MARKS[c].map((m) => [m, c] as const)));
 +
 +// A mark is at most a surrogate pair and its variation selector; one joined into a longer emoji (`❤️‍🔥`) belongs to that emoji.
@@ -1162,7 +1206,7 @@ It runs in `~/The Studio/Projects/Sapphire` against Pommora's settled grammar, n
 +  open: number;
 +  close: number;
 +  to: number;
-+  color: Color;
++  color: Ink;
 +}
 +
 +export function textColorRuns(text: string, base = 0): TextColorRun[] {
@@ -1170,7 +1214,7 @@ It runs in `~/The Studio/Projects/Sapphire` against Pommora's settled grammar, n
 +  for (const m of text.matchAll(RUN)) {
 +    const from = base + m.index;
 +    const to = from + m[0].length;
-+    runs.push({ from, open: from + 1 + m[1].length, close: to - 1, to, color: colorOf(m[1]) });
++    runs.push({ from, open: from + 1 + m[1].length, close: to - 1, to, color: colorOf(m[1]) as Ink });
 +  }
 +  return runs;
 +}
@@ -1186,7 +1230,7 @@ Tests (node:test, `assert.deepEqual`):
   - `==🔴b==`, `=b=`, `a=b=c`, `=⚫b=`, and `=🔴=` give none.
   - two runs on one line give two.
   - a U+FFFC inside a run keeps it whole.
-  - `dropsRun` keeps a run holding code, a link, or math wholly in its words, and drops one they cross or a highlight touches.
+  - `lineRuns` reads code, a link, or math as opaque, so a run holds them whole even with an `=` inside, opens in none, and drops when a highlight touches it.
 
 **VERIFY**
 
@@ -1265,14 +1309,17 @@ Tests:
 +import { livePreview, visibleLines, wrapMarkdownToken, type Token } from "./markdownMode.ts";
  …
 +const HIDE = Decoration.replace({});
-+const INK = Object.fromEntries(INKS.map((c) => [c, Decoration.mark({ class: `sapphire-ink-${c}` })])) as Record<Color, Decoration>;
++const INK = Object.fromEntries(INKS.map((c) => [c, Decoration.mark({ class: `sapphire-ink sapphire-ink-${c}` })])) as Record<Ink, Decoration>;
 +
 +const SELF_CONTAINED = /inline-code|(?:^|[-_])(?:link|url|math)(?:[-_]|$)/;
 +
-+// A span wears one color, so a run touching a highlight drops; code, a link, or math held wholly in its words keeps its own look inside the color, and one crossing it drops it.
-+export function dropsRun(run: TextColorRun, node: { from: number; to: number; name: string }): boolean {
-+  if (node.to <= run.from || node.from >= run.to) return false;
-+  return node.name.includes("highlight") || (SELF_CONTAINED.test(node.name) && (node.from < run.open || node.to > run.close));
++type TreeNode = { from: number; to: number; name: string };
++
++// Code, links, and math read as opaque filler, so an `=` inside them neither opens nor closes a run and they keep their own look inside its color; a span wears one color, so a run touching a highlight drops.
++export function lineRuns(text: string, base: number, nodes: TreeNode[]): TextColorRun[] {
++  let read = text;
++  for (const n of nodes) if (SELF_CONTAINED.test(n.name)) read = read.slice(0, n.from - base) + "\uFFFC".repeat(n.to - n.from) + read.slice(n.to - base);
++  return textColorRuns(read, base).filter((r) => !nodes.some((n) => n.name.includes("highlight") && n.to > r.from && n.from < r.to));
 +}
 +
 +// Scanned on doc, viewport, or parse change; a selection, focus, or mode change only rebuilds.
@@ -1295,15 +1342,12 @@ Tests:
 +  private scan(view: EditorView): void {
 +    const isCode = codeContext(view.state);
 +    const tree = syntaxTree(view.state);
-+    const dropped = (run: TextColorRun): boolean => {
-+      if (isCode(run.from)) return true;
-+      let hit = false;
-+      tree.iterate({ from: run.from, to: run.to, enter: (n) => void (hit ||= dropsRun(run, n)) });
-+      return hit;
-+    };
 +    this.runs = [];
 +    visibleLines(view, (line) => {
-+      for (const run of textColorRuns(line.text, line.from)) if (!dropped(run)) this.runs.push(run);
++      if (!line.text.includes("=")) return;
++      const nodes: TreeNode[] = [];
++      tree.iterate({ from: line.from, to: line.to, enter: (n) => void nodes.push({ from: n.from, to: n.to, name: n.name }) });
++      for (const run of lineRuns(line.text, line.from, nodes)) if (!isCode(run.from)) this.runs.push(run);
 +    });
 +  }
 +
@@ -1424,7 +1468,7 @@ Tests:
 +  for (const run of textColorRuns(flat).reverse()) {
 +    const [opener, words, closer] = [range(run.from, run.open), range(run.open, run.close), range(run.close, run.to)];
 +    closer.deleteContents();
-+    const ink = createSpan({ cls: `sapphire-ink-${run.color}` });
++    const ink = createSpan({ cls: `sapphire-ink sapphire-ink-${run.color}` });
 +    ink.append(words.extractContents());
 +    words.insertNode(ink);
 +    opener.deleteContents();
@@ -1496,17 +1540,18 @@ The runs are applied last to first, so each run's mutations sit past every earli
 +.markdown-rendered mark[data-highlight="white"] {
 +  --highlight-background: color-mix(in oklch, var(--sapphire-color-white) var(--highlight-opacity), transparent);
 +}
-+.sapphire-ink-red { color: var(--color-red); }
-+.sapphire-ink-orange { color: var(--color-orange); }
-+.sapphire-ink-yellow { color: var(--color-yellow); }
-+.sapphire-ink-green { color: var(--color-green); }
-+.sapphire-ink-blue { color: var(--color-blue); }
-+.sapphire-ink-purple { color: var(--color-purple); }
-+.sapphire-ink-brown { color: var(--sapphire-color-brown); }
-+.cm-inline-code [class^="sapphire-ink-"] { color: inherit; }
-+:is(.cm-hmd-internal-link, .cm-link, .cm-url) > [class^="sapphire-ink-"] { text-decoration-line: underline; }
-+.markdown-source-view.mod-cm6 [class^="sapphire-ink-"] :is(.is-unresolved, .cm-underline) { color: inherit; text-decoration-color: currentColor; }
-+.markdown-rendered [class^="sapphire-ink-"] :is(a.internal-link, a.external-link) { color: inherit; text-decoration-line: underline; text-decoration-color: currentColor; }
++.sapphire-ink { color: var(--sapphire-ink); }
++.sapphire-ink-red { --sapphire-ink: var(--color-red); }
++.sapphire-ink-orange { --sapphire-ink: var(--color-orange); }
++.sapphire-ink-yellow { --sapphire-ink: var(--color-yellow); }
++.sapphire-ink-green { --sapphire-ink: var(--color-green); }
++.sapphire-ink-blue { --sapphire-ink: var(--color-blue); }
++.sapphire-ink-purple { --sapphire-ink: var(--color-purple); }
++.sapphire-ink-brown { --sapphire-ink: var(--sapphire-color-brown); }
++.cm-inline-code .sapphire-ink { color: inherit; }
++:is(.cm-hmd-internal-link, .cm-link, .cm-url) > .sapphire-ink { text-decoration-line: underline; }
++.markdown-source-view.mod-cm6 .sapphire-ink :is(.is-unresolved, .cm-underline) { color: inherit; text-decoration-color: currentColor; }
++.markdown-rendered .sapphire-ink :is(a.internal-link, a.external-link) { color: inherit; text-decoration-line: underline; text-decoration-color: currentColor; }
 ```
 
 **VERIFY**
@@ -1642,7 +1687,7 @@ The runs are applied last to first, so each run's mutations sit past every earli
 
 | Test | Claim | Task |
 | --- | --- | --- |
-| `Engine/highlight.test.ts:39-63` | the both-sides reads | 2-1 |
+| `Engine/paints.test.ts:39-63` | the both-sides reads | 2-1 |
 | `Input/format.test.ts:337-367` | the both-sides writes | 2-1 |
 | `Input/edits.test.ts:927-959` | pairing, paired Backspace, and the closing-mark Enter | 1-1 |
 | `Input/formatState.test.ts:28-37` | the `highlight` field | 3-1 |
@@ -1679,3 +1724,4 @@ The runs are applied last to first, so each run's mutations sit past every earli
 #### Deviations
 
 - **Paints Contain Links, Code, and Math:** Nathan ruled at the Phase 2 checkpoint that a highlight or text color renders around connections, links, inline code, and math, and is dropped only when one crosses it. Highlights around a link, which showed as raw markup before, now render, and a highlight crossing inline math is dropped. Sapphire mirrors the rule, which retired the planned limitation of a text color around a link or code painting only in Obsidian.
+- **Paints Close Outside Links, Code, and Math:** Nathan ruled after the neutral review that a paint's closing marker is the first one outside links, code, and math, so an `=` inside one stays the paint's words, and a text color's words are refused only for an `=` outside them. A fresh paint over part of another is refused, since the one inside would drop.

@@ -15,10 +15,10 @@ import { emptyTolerantLinkRegex, unescapeLabel } from '../../Connections/links'
 import { pageLinkPattern } from '../../Connections/connections'
 import { isWebAddress } from '../../Paths/urlPath'
 import type { ListKind } from '../../Actions/gripMenu'
-import { leadingMark } from './paints'
+import { colorsOf, leadingMark } from './paints'
 export const highlightRegex = (): RegExp => /(?<!=)==(?!=)((?:[^=\n]|=(?!=))+)==(?!=)/dg
-/** A lone `=` opens a text color only on a color mark, since a bare `=…=` is prose; its words hold no `=`, which would close it. */
-const TEXT_COLOR = `(?<!=)=(${leadingMark('textColor')}[^=\\n]+)=(?!=)`
+/** A lone `=` opens a text color only on a color mark, since a bare `=…=` is prose; its words hold no `=` outside code, links, and math, which would close it. */
+const TEXT_COLOR = `(?<!=)=(${leadingMark(colorsOf('textColor'))}[^=\\n]+)=(?!=)`
 export const textColorRegex = (): RegExp => new RegExp(TEXT_COLOR, 'dgu')
 export const inlineLatexRegex = (): RegExp => /(?<!\$)\$(?!\$)([^$\n]+?)\$(?!\$)/dg
 export const htmlTagRegex = (): RegExp =>
