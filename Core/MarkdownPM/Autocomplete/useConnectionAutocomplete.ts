@@ -4,7 +4,6 @@ import type { Extension } from '@codemirror/state'
 import {
   AC_MAX,
   aliasRows,
-  CLOSER,
   commitEdit,
   headingRows,
   openHeadingRows,
@@ -19,7 +18,6 @@ import { keepsShown, readLinkText } from '../../Connections/linkValue'
 import { normalizeTitle } from '../../Paths/caseFold'
 import { restedOnLink } from '../Links/linkReveal'
 import { baselineAt } from '../Links/linkSettle'
-import { SLOT_HOLDER } from '../Input/edits'
 import type { AutocompletePaneProps } from './AutocompletePane'
 import { acQuery, closeAcQuery } from './acQuery'
 import type { PageHeading } from '../../Platform/stores'
@@ -133,38 +131,37 @@ export function useConnectionAutocomplete(
     if (!view || !ac || !ctl.current.open) return
     const settings = host.settings()
     const conn = host.connections()
-    const doc = view.state.doc
-    // An empty title holds the placeholder `openLinkAt` reads through, so a label before an empty destination still reads.
-    const text =
-      doc.sliceString(ac.start, ac.to) +
-      (ac.part === 'title' && ac.from === ac.to ? SLOT_HOLDER : '') +
-      doc.sliceString(ac.to, ac.end) +
-      (ac.closed ? '' : CLOSER[ac.syntax])
-    const written = readLinkText(text)
-    // How the link read before this edit began decides whether the shown text survives a re-aim; the link as it stands is where that shown text is read from.
-    const was = baselineAt(view.state, ac.start, ac.closed ? text : null)
+    // How the link read before this edit began decides whether its shown text survives a re-aim.
+    const was = baselineAt(
+      view.state,
+      ac.start,
+      ac.closed ? view.state.doc.sliceString(ac.start, ac.end) : null,
+    )
     const baseline = was === null ? null : readLinkText(was)
-    const shown = written?.alias
     const kept =
-      ac.part === 'title' &&
-      shown &&
-      keepsShown(
-        baseline,
-        { kind: 'page', syntax: ac.syntax === 'markdown' ? 'markdown' : 'wiki', title: row.value },
-        settings.removeTitleOnLinkChange,
-        conn?.index,
-      )
-        ? shown
+      ac.shown &&
+      (ac.part !== 'title' ||
+        keepsShown(
+          baseline,
+          {
+            kind: 'page',
+            syntax: ac.syntax === 'markdown' ? 'markdown' : 'wiki',
+            title: row.value,
+          },
+          settings.removeTitleOnLinkChange,
+          conn?.index,
+        ))
+        ? ac.shown
         : undefined
     const pageId = row.kind === 'page' ? row.pageId : ac.title ? page?.id : undefined
-    // Only a page the picker offered can open an alias slot, and only a link not already showing one: a dropped alias opens it for the new page, a kept one stays.
+    // A page or heading pick opens the alias stage on a link left showing nothing, for a page that remembers aliases.
     const openAlias =
-      (ac.part === 'title' || ac.part === 'heading') &&
-      ac.syntax !== 'prose' &&
+      ac.part !== 'shown' &&
       !opts.openHeading &&
-      !(ac.part === 'title' ? kept : written?.alias) &&
+      !kept &&
       settings.aliasPickerOnCommit &&
-      host.aliases.list(pageId ?? '').length > 0
+      pageId !== undefined &&
+      host.aliases.list(pageId).length > 0
     const opensSlot = openAlias || opts.openHeading
     const { changes, anchor } = commitEdit(ac, row.value, {
       kept,

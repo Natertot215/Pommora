@@ -87,8 +87,6 @@ export function AutocompletePane({
   const matchLen = v.ac.query.length
   const keepInView = useKeepInView(v.index)
 
-  const linksPages = v.ac.part === 'title'
-  const headingForm = v.ac.part === 'heading'
   const sliding = v.behind !== null
 
   const slot = (rows: AcRow[], active: boolean): React.JSX.Element => (
@@ -109,7 +107,7 @@ export function AutocompletePane({
           }
           leading={<EntityIcon kind="page" size="body" />}
           trailing={
-            linksPages ? (
+            v.ac.part === 'title' ? (
               <button
                 type="button"
                 className={cx(removeButton, revealTarget, side, 'mdpm-ac-aside')}
@@ -182,21 +180,22 @@ export function AutocompletePane({
     </MenuScrollFrame>
   )
 
-  const shown = headingForm ? (
-    headingSlot()
-  ) : v.aliasHost ? (
-    <AliasList
-      key={v.ac.from}
-      aliases={v.candidates.map((r) => r.value)}
-      host={v.aliasHost}
-      active={v.index}
-      match={matchLen}
-      maxHeight={h}
-      onPick={(alias) => onPick({ kind: 'alias', value: alias })}
-    />
-  ) : (
-    slot(v.candidates, true)
-  )
+  const shown =
+    v.ac.part === 'heading' ? (
+      headingSlot()
+    ) : v.aliasHost ? (
+      <AliasList
+        key={v.ac.from}
+        aliases={v.candidates.map((r) => r.value)}
+        host={v.aliasHost}
+        active={v.index}
+        match={matchLen}
+        maxHeight={h}
+        onPick={(alias) => onPick({ kind: 'alias', value: alias })}
+      />
+    ) : (
+      slot(v.candidates, true)
+    )
   const behindSlot = (rows: AcRow[]): React.JSX.Element =>
     rows[0]?.kind === 'heading' ? (
       <MenuScrollFrame maxHeight={h}>{rows.map((r) => headingRow(r, -1))}</MenuScrollFrame>

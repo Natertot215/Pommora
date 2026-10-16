@@ -360,13 +360,24 @@ export function linkWithin(
 }
 
 /** What stands in an empty slot so its link still reads, since both patterns refuse an empty title or destination. */
-export const SLOT_HOLDER = '\u0000'
+const SLOT_HOLDER = '\u0000'
 
-/** The link still being written before `at`, as it reads once closed, with `SLOT_HOLDER` at the caret. */
+/** The link the grammar can't read at `at` because its slot there is empty: a written link whose slot at the caret was emptied, read whole with that slot empty, else the link still being written before `at`, as it reads once closed, its slot cut back to the caret. */
 export function openLinkAt(scan: DocScan, at: number): LinkOccurrence | null {
   const i = lineIndexAt(scan, at)
+  const line = scan.lines[i]
+  if (!line.includes('[[') && !line.includes('](')) return null
   const ls = scan.lineStarts[i]
-  const head = scan.lines[i].slice(0, at - ls)
+  const rel = at - ls
+  const head = line.slice(0, rel)
+  const held = head + SLOT_HOLDER + line.slice(rel)
+  const emptied = linkOccurrences(held, (p) => inCodeAt(scan, ls + (p > rel ? p - 1 : p))).find(
+    (o) => {
+      const part = partOf(o, rel)
+      return part !== null && o[part]![0] === rel && o[part]![1] === rel + 1
+    },
+  )
+  if (emptied) return mapSpans(emptied, ([a, b]) => [a > rel ? a - 1 : a, b > rel ? b - 1 : b])
   const wiki = head.lastIndexOf('[[')
   const md = head.lastIndexOf('](')
   if (wiki === -1 && md === -1) return null
