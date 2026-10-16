@@ -104,9 +104,9 @@ function emptied(state: EditorState, start: number): ChangeSpec[] {
   return label ? [{ from: line.from + o.shown[0], insert: escapeLabel(label) }] : []
 }
 
-/** A body reaches the memory only where a link is written, typed into or picked, either syntax, and it remembers once the caret leaves that link, against how the link read before, since a scan of bodies can't honor a real forget. Its emptied parts collapse then too, so reading a note never rewrites it and clearing a slot to retype never pulls the pipe from under the caret: the collapse is deferred and stands down if the caret is back in the link when it runs. The field clears only when the collapse lands, so `settling` holds the link already being settled and a second leave of it before then settles nothing. Blur settles on the event and unmount through `flush`, since the editor's own teardown outruns a deferred dispatch. */
+/** A body reaches the memory only where a link is written, typed into or picked, either syntax, and it remembers once the caret leaves that link, against how the link read before, since a scan of bodies can't honor a real forget; a surface whose write layer remembers mounts with `remembers` off and settles everything else. Its emptied parts collapse then too, so reading a note never rewrites it and clearing a slot to retype never pulls the pipe from under the caret: the collapse is deferred and stands down if the caret is back in the link when it runs. The field clears only when the collapse lands, so `settling` holds the link already being settled and a second leave of it before then settles nothing. Blur settles on the event and unmount through `flush`, since the editor's own teardown outruns a deferred dispatch. */
 export const linkSettle = ViewPlugin.define(
-  (view: EditorView, scope: MarkdownScope) => {
+  (view: EditorView, { scope, remembers }: { scope: MarkdownScope; remembers: boolean }) => {
     let settling: number | null = null
     const holds = (start: number): boolean =>
       view.hasFocus &&
@@ -122,7 +122,7 @@ export const linkSettle = ViewPlugin.define(
     const settle = (w: Writing, defer: boolean): void => {
       if (settling === w.start && defer) return
       const html = inRawHtml(view.state, w.start, scope)
-      if (settling !== w.start && !html) remember(w)
+      if (settling !== w.start && !html && remembers) remember(w)
       settling = w.start
       const collapse = (): void => {
         if (settling === w.start) settling = null

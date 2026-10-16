@@ -26,3 +26,30 @@
   padding: 12px 32px 12px 14px;
   min-height: 96px; /* KNOB — room to see the placeholder */
 }
+/* The one-line field: the editor at its seat's text metrics, one line that scrolls past its edge, as the kit's fill input sits. */
+.value-field {
+  width: 100%;
+  min-width: 0; /* a flex item in the popover's field, so a long value scrolls inside it rather than widening it */
+}
+.value-field,
+.value-field .mdpm-editor,
+.value-field .mdpm-editor .cm-editor {
+  height: auto;
+}
+.value-field .mdpm-editor .cm-scroller {
+  line-height: inherit;
+}
+.value-field .mdpm-editor .cm-content {
+  padding: 0;
+  min-height: 0;
+  font: inherit;
+  color: inherit;
+}
+.value-field .mdpm-editor .cm-line {
+  padding: 0;
+}
+/* The field in a popover sits in the kit's field chrome, sized to its value between the text picker's bounds. */
+.value-popover {
+  min-width: 100px; /* KNOB */
+  max-width: 200px; /* KNOB */
+}

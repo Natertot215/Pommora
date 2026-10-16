@@ -1,9 +1,8 @@
-import type { CSSProperties, RefObject } from 'react'
+import type { RefObject } from 'react'
 import { EditableInput } from '../Fields/EditableInput'
 import { PickerMenu } from './PickerMenu'
 import * as s from './text-picker.css'
 
-/** `accent` scopes the pane's `--accent` so the focus stroke uses a caller's color. */
 export function TextPicker({
   open,
   onDismiss,
@@ -11,7 +10,6 @@ export function TextPicker({
   value,
   onCommit,
   invalid,
-  accent,
   leading,
   trailing,
 }: {
@@ -21,7 +19,6 @@ export function TextPicker({
   value: string
   onCommit: (next: string) => void
   invalid?: (text: string) => boolean
-  accent?: string
   leading?: React.ReactNode
   trailing?: React.ReactNode
 }): React.JSX.Element | null {
@@ -46,7 +43,6 @@ export function TextPicker({
       direction="down"
       origin="center"
       contentClassName={s.content}
-      style={accent ? ({ '--accent': accent } as CSSProperties) : undefined}
     >
       {hasAffix ? (
         <div className={s.suffixField}>
