@@ -109,6 +109,8 @@ describe('resolveLink', () => {
     { id: 'i2', title: 'dup.io', path: 'B/dup.io.md' },
   ])
   const withNotesIo = buildPageIndex([{ id: 'io', title: 'notes.io', path: 'notes.io.md' }])
+  const alpha = { id: 'a', title: 'Alpha', path: 'Alpha.md' }
+  const withAlpha = buildPageIndex([alpha, holder])
   const resolved = (text: string, own?: typeof holder) =>
     resolveLink(readLinkText(text), index, own)
 
@@ -116,6 +118,7 @@ describe('resolveLink', () => {
     const page = { id: 'mn', title: 'Meeting Notes', path: 'Meeting Notes.md' }
     expect(resolved('[[meeting notes]]')).toEqual({ kind: 'page', page })
     expect(resolved('[x](meeting%20notes#H)')).toEqual({ kind: 'page', page, heading: 'H' })
+    expect(resolved('[x](meeting%20notes#A/B)')).toEqual({ kind: 'page', page, heading: 'A/B' })
   })
   it('is unresolved and ambiguous where two pages hold the title, address-shaped or not', () => {
     expect(resolved('[[Dup]]')).toEqual({ kind: 'unresolved', status: 'ambiguous' })
@@ -130,6 +133,13 @@ describe('resolveLink', () => {
     expect(resolved('[[#H]]')).toEqual({ kind: 'self', heading: 'H' })
     expect(resolved('[[ #H]]')).toEqual({ kind: 'self', heading: 'H' })
   })
+  it('a titled link names its own page, not the page holding the value', () => {
+    expect(resolveLink(readLinkText('[[Alpha#H]]'), withAlpha, holder)).toEqual({
+      kind: 'page',
+      page: alpha,
+      heading: 'H',
+    })
+  })
   it('an address-shaped destination is the page that holds it, and the address as written otherwise', () => {
     expect(resolveLink(readLinkText('[x](notes.io)'), index)).toEqual({
       kind: 'url',
@@ -138,6 +148,13 @@ describe('resolveLink', () => {
     expect(resolveLink(readLinkText('[x](notes.io)'), withNotesIo)).toEqual({
       kind: 'page',
       page: { id: 'io', title: 'notes.io', path: 'notes.io.md' },
+    })
+  })
+  it('a dotted title is the page that holds it in a markdown link', () => {
+    const node = { id: 'nj', title: 'Node.js', path: 'Node.js.md' }
+    expect(resolveLink(readLinkText('[x](Node.js)'), buildPageIndex([node]))).toEqual({
+      kind: 'page',
+      page: node,
     })
   })
 })

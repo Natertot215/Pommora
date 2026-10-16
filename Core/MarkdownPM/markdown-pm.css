@@ -253,6 +253,9 @@
 :root.plain-unresolved .md-phantom-syntax {
   color: inherit;
 }
+:root.plain-unresolved .md-connection-phantom.md-link-label {
+  display: none;
+}
 .md-link-url {
   font-style: italic;
   text-decoration: underline;

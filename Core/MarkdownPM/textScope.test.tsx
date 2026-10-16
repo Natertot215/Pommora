@@ -7,7 +7,7 @@ import { testHost } from '../Testing/editorHarness'
 import { tokenize } from './Engine/tokens'
 import { scanDoc } from './Engine/docScan'
 import { canonicalizeCheckbox, smartBackspace } from './Input/edits'
-import { editorHost, heldOf, heldPage, ownPage } from './api'
+import { editorHost, heldOf, heldPage } from './api'
 import { inlineSurface } from './surface'
 import { buildPageIndex } from '../Connections/pageIndex'
 import type { ConnectionsApi } from './Links/connectionsApi'
@@ -104,7 +104,7 @@ describe('a bare heading in a Text value', () => {
     const opened = vi.fn()
     const view = mount('[[#Setup]] x', heldPage.of(holder))
     const go = followTarget(
-      resolveLink(readLinkText('[[#Setup]]'), conn.index, heldOf(ownPage(view))),
+      resolveLink(readLinkText('[[#Setup]]'), conn.index, heldOf(view)),
       { ...conn, open: (page, heading) => opened(page.id, heading) },
       { target: view.contentDOM, metaKey: false, ctrlKey: false },
     )

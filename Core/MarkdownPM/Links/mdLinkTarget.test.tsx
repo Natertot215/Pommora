@@ -18,10 +18,7 @@ stubEditorBridge()
 seedHost({ openLink: openExternal })
 
 const conn: ConnectionsApi = {
-  index: buildPageIndex([
-    { id: 'p1', title: 'Work Notes', path: 'Notes/Work Notes.md' },
-    { id: 'p2', title: 'Node.js', path: 'Notes/Node.js.md' },
-  ]),
+  index: buildPageIndex([{ id: 'p1', title: 'Work Notes', path: 'Notes/Work Notes.md' }]),
   headingsOf: () => undefined,
   open: (p: ConnPage) => opened(p.id),
 }
@@ -47,43 +44,6 @@ afterEach(async () => {
   cellRoot = null
   cellHost = null
   await cleanupEditor()
-})
-
-describe('what a markdown link’s target names', () => {
-  const resolved = (dest: string) => resolveLink(readLinkText(`[x](${dest})`), conn.index)
-
-  it('carries a heading fragment, and reads a bare fragment as the page itself', () => {
-    const t = resolved('Work%20Notes#Setup')
-    expect(t.kind === 'page' && t.page.id).toBe('p1')
-    expect(t.kind === 'page' && t.heading).toBe('Setup')
-    expect(resolved('#Setup')).toEqual({ kind: 'self', heading: 'Setup' })
-  })
-
-  it('reads an encoded page title as that page', () => {
-    const t = resolved(encodeLinkTarget('Work Notes'))
-    expect(t.kind === 'page' && t.page.id).toBe('p1')
-  })
-
-  // isValidLink accepts any dotted host, so resolution runs first or a page called Node.js becomes unreachable through this syntax.
-  it('a dotted title beats the URL gate', () => {
-    const t = resolved('Node.js')
-    expect(t.kind === 'page' && t.page.id).toBe('p2')
-  })
-
-  it('a real URL stays external, and a page by its last path segment does not exist', () => {
-    expect(resolved('https://example.com').kind).toBe('url')
-    expect(resolved('https://example.com/Work%20Notes').kind).toBe('url')
-  })
-
-  it('neither a page nor a URL is unresolved, exactly as before', () => {
-    expect(resolved('not a url')).toEqual({ kind: 'unresolved', status: 'phantom' })
-  })
-
-  // A fragment is the heading's own text, so a separator inside it doesn't make the target an address.
-  it('a heading holding a slash is still a heading', () => {
-    const t = resolved('Work%20Notes#A/B')
-    expect(t.kind === 'page' && t.heading).toBe('A/B')
-  })
 })
 
 // A link colored as a connection in the body and as broken in a cell is one link with two truths.

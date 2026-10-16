@@ -276,9 +276,10 @@ describe('a resting cell draws every token as a span, through the tokens inside 
     await act(async () => root.unmount())
     container.remove()
     await draw('[](Nowhere)')
-    expect(container.querySelector('.md-connection-phantom')?.parentElement?.textContent).toBe(
-      '[](Nowhere)',
-    )
+    expect(container.querySelector('.md-connection-phantom')?.textContent).toBe('Nowhere')
+    expect(
+      [...container.querySelectorAll('.md-phantom-syntax')].map((el) => el.textContent),
+    ).toEqual(['[', '](Nowhere)'])
   })
 
   it('text holding no token is the bare string', () => {

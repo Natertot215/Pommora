@@ -109,7 +109,7 @@ class LabelWidget extends GlyphWidget {
   }
   toDOM(): HTMLElement {
     const el = document.createElement('span')
-    el.className = this.className
+    el.className = cx(this.className, 'md-link-label')
     el.textContent = this.label
     return el
   }

@@ -83,7 +83,7 @@ export function useConnectionAutocomplete(
   const heading = listsHeadings(form)
   const page = useMemo(() => {
     if (title) return host.connections()?.index.resolve(title).page ?? null
-    return (heading && viewRef.current && heldOf(ownPage(viewRef.current))) || null
+    return (heading && viewRef.current && heldOf(viewRef.current)) || null
   }, [heading, title])
   const outline: readonly PageHeading[] = useMemo(() => {
     if (!heading) return []

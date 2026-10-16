@@ -76,9 +76,10 @@ export function readOccurrence(text: string, o: LinkOccurrence): LinkTarget | nu
   const title = targetTitle(titleHalf, o.heading !== null)
   const fragment = targetFragment(heading)
   const url = slice(targetSpan(o))
-  if (title !== null && (targetNamesFile(titleHalf) || !isValidLink(url)))
+  const address = isValidLink(url)
+  if (title !== null && (targetNamesFile(titleHalf) || !address))
     return writtenPage('markdown', title, fragment, alias)
-  if (!isValidLink(url)) return null
+  if (!address) return null
   return {
     kind: 'url',
     syntax: 'markdown',
@@ -99,7 +100,7 @@ export function readLinkText(text: string): LinkTarget | null {
 export const bareHeading = (heading: string, own?: ConnPage): ResolvedLink =>
   own ? { kind: 'page', page: own, heading } : { kind: 'self', heading }
 
-/** Page resolution comes first, deliberately: `isValidLink` accepts any dotted host, so `Notes.md` would read as a website and the page it names would be unreachable. */
+/** Page resolution comes first, deliberately: `isValidLink` accepts any dotted host, so a destination `notes.io` would read as a website and the page holding that title would be unreachable. */
 export function resolveLink(
   written: LinkTarget | null,
   index: PageIndex | undefined,
@@ -178,7 +179,7 @@ export function linkValueFromEdit(
   const target = resolveLink(written, index, own)
   if (!written || (target.kind !== 'page' && target.kind !== 'url')) return undefined
   // A resolved page is written by its own title; a value's bare heading keeps its empty title.
-  const bare = (written.kind === 'url' ? written.page : written)?.title === ''
+  const bare = written.kind === 'page' && written.title === ''
   const next: LinkTarget =
     target.kind === 'url'
       ? written

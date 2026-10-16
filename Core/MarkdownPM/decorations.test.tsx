@@ -56,7 +56,10 @@ describe('an edit in the caret pane', () => {
 
 describe('a markdown link with an empty label', () => {
   const connections = {
-    index: buildPageIndex([{ id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' }]),
+    index: buildPageIndex([
+      { id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' },
+      { id: 'p2', title: 'notes.io', path: 'Notes/notes.io.md' },
+    ]),
     headingsOf: () => undefined,
     open: () => {},
   }
@@ -71,6 +74,7 @@ describe('a markdown link with an empty label', () => {
   it('draws its target’s default label, as the link is drawn', async () => {
     expect(await drawn('[](Alpha)', 'md-connection-resolved')).toBe('Alpha')
     expect(await drawn('[](Alpha#Setup)', 'md-connection-resolved')).toBe('Setup')
+    expect(await drawn('[](notes.io#Intro)', 'md-connection-resolved')).toBe('Intro')
     expect(await drawn('[](Nowhere)', 'md-connection-phantom')).toBe('Nowhere')
   })
 })
