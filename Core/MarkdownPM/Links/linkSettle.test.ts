@@ -14,6 +14,7 @@ import {
 } from '../../Testing/editorHarness'
 import { linkSettle, linkSettled, linkWriting } from './linkSettle'
 import { paste } from './pasteLink'
+import { linkRest, restedOnLink } from './linkReveal'
 
 stubEditorBridge()
 afterEach(async () => {
@@ -453,6 +454,20 @@ describe('an emptied markdown label shows its target, as an emptied alias drops 
     await emptyBefore(view, at)
     await caretTo(view, 0)
     expect(view.state.doc.toString()).toBe(written)
+  })
+
+  it('keeps a rest at the link’s end, mapped past the label it fills', async () => {
+    const view = await mountEditor({ initialBody: 'a [x](Alpha) b', connections: conn })
+    await act(async () => view.focus())
+    await caretTo(view, 4)
+    await emptyBefore(view, 4)
+    const end = 'a [](Alpha)'.length
+    await act(async () => {
+      view.dispatch({ selection: { anchor: end }, effects: restedOnLink.of(end) })
+      await new Promise((r) => setTimeout(r, 0))
+    })
+    expect(view.state.doc.toString()).toBe('a [Alpha](Alpha) b')
+    expect(view.state.field(linkRest)).toBe('a [Alpha](Alpha)'.length)
   })
 
   it('fills on blur without waiting for a timer', async () => {

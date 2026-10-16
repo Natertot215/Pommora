@@ -17,6 +17,7 @@ import { docScan } from '../docCache'
 import { linkAt, linkWithin } from '../Input/edits'
 import { editorHost, inRawHtml } from '../api'
 import { inCaretPane } from '../Menus/caretPane'
+import { linkRest, restedOnLink } from './linkReveal'
 
 // The link an edit is being made inside, from the change that arms it to the settle that remembers its alias and collapses its emptied parts.
 
@@ -127,9 +128,14 @@ export const linkSettle = ViewPlugin.define(
         if (settling === w.start) settling = null
         if (defer && holds(w.start)) return
         const armed = view.state.field(linkWriting)?.start === w.start
+        const changes = view.state.changes(html ? [] : emptied(view.state, w.start))
+        const rest = view.state.field(linkRest)
         view.dispatch({
-          changes: html ? [] : emptied(view.state, w.start),
-          effects: armed ? linkSettled.of(null) : [],
+          changes,
+          effects: [
+            ...(armed ? [linkSettled.of(null)] : []),
+            ...(rest === null ? [] : [restedOnLink.of(changes.mapPos(rest, 1))]),
+          ],
         })
       }
       if (defer) setTimeout(collapse, 0)

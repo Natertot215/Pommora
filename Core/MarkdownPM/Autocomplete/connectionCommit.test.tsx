@@ -353,6 +353,39 @@ describe('a pick retargets the link the picker opened on', () => {
   })
 })
 
+describe('a pick into an emptied slot rewrites the whole link around it', () => {
+  it.each([
+    ['[[Old|Mine]] x', 2, 5, '[[Alpha|Mine]] x'],
+    ['[Mine](Old) x', 7, 10, '[Mine](Alpha) x'],
+  ] as const)('%s, %i to %i deleted and Alpha picked, writes %s', async (body, from, to, written) => {
+    const view = await mounted(body, { removeTitleOnLinkChange: false })
+    await act(async () => {
+      view.dispatch({ selection: { anchor: from, head: to } })
+    })
+    await act(async () => {
+      view.dispatch({
+        changes: { from, to },
+        selection: { anchor: from },
+        userEvent: 'delete.selection',
+      })
+    })
+    await press(view, 'Enter')
+    expect(view.state.doc.toString()).toBe(written)
+  })
+
+  it.each([
+    ['[sel](#Setup) x', 6, '[Alpha](Alpha) x'],
+    ['[[#Setup|sel]]', 2, '[[Alpha]]'],
+  ] as const)('%s, picked at %i with Remove Title on, drops the text this document’s own heading showed: %s', async (body, caret, written) => {
+    const view = await mounted(body, { removeTitleOnLinkChange: true })
+    await act(async () => {
+      view.dispatch({ selection: { anchor: caret } })
+    })
+    await press(view, 'Enter')
+    expect(view.state.doc.toString()).toBe(written)
+  })
+})
+
 describe('the chevron slides in a page’s headings', () => {
   const headingConn: ConnectionsApi = {
     index: buildPageIndex([

@@ -190,7 +190,7 @@ export function AliasList({
               </MenuItem>
             )
             return (
-              <Reveal key={row.key} open enterOnMount={entering(row.key)} fill>
+              <Reveal key={row.key} open enterOnMount={row.draft || entering(row.key)} fill>
                 {row.draft ? item : <LineRow id={row.value}>{item}</LineRow>}
               </Reveal>
             )

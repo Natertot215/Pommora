@@ -287,6 +287,7 @@ describe('the ( ) slots', () => {
       query: 'x',
       closed: true,
       title: 'Notes',
+      shown: 'x',
     })
   })
 
@@ -395,14 +396,29 @@ describe('wiki and markdown picks mirror each other', () => {
     })
   })
 
-  it('a heading pick opening the alias slot rewrites the link with that slot empty', () => {
+  it('a heading pick opening the alias slot writes in place, leaving the title as written and that slot empty', () => {
     expect(pick('[[Gamma#Se]]', '#S', 'Setup', { openAlias: true })).toEqual({
+      text: '[[Gamma#Setup|]]',
+      before: '[[Gamma#Setup|',
+    })
+    expect(pick('[[Gamma#|]]', '#', 'Setup', { openAlias: true })).toEqual({
       text: '[[Gamma#Setup|]]',
       before: '[[Gamma#Setup|',
     })
     expect(pick('[](Gamma#Se)', '#S', 'Setup', { openAlias: true })).toEqual({
       text: '[](Gamma#Setup)',
       before: '[',
+    })
+    expect(pick('[](Notes.md#Se)', '#S', 'Setup', { openAlias: true })).toEqual({
+      text: '[](Notes.md#Setup)',
+      before: '[',
+    })
+  })
+
+  it('a wikilink pick its syntax can’t spell opens its heading behind an empty label', () => {
+    expect(pick('[[Pa]]', 'Pa', 'A|B', { openHeading: true })).toEqual({
+      text: '[](A%7CB#)',
+      before: '[](A%7CB#',
     })
   })
 

@@ -26,7 +26,8 @@ const sameQuery = (a: AutocompleteQuery, b: AutocompleteQuery | null): boolean =
   a.to === b.to &&
   a.closed === b.closed &&
   a.query === b.query &&
-  a.title === b.title
+  a.title === b.title &&
+  a.shown === b.shown
 
 function armedBy(tr: Transaction): number | null {
   if (

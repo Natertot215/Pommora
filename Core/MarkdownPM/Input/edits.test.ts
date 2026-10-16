@@ -1039,10 +1039,33 @@ describe('openLinkAt', () => {
       title: [4, 4],
       shown: [1, 2],
     })
+  })
+
+  it('reads a written link whose slot at the caret was emptied whole, that slot empty', () => {
+    expect(openLinkAt(scanDoc('[[|Mine]] x'), 2)).toMatchObject({
+      syntax: 'wiki',
+      full: [0, 9],
+      title: [2, 2],
+      shown: [3, 7],
+    })
+    expect(openLinkAt(scanDoc('[x]() y'), 4)).toMatchObject({
+      syntax: 'markdown',
+      full: [0, 5],
+      title: [4, 4],
+      shown: [1, 2],
+    })
     expect(openLinkAt(scanDoc('[]()'), 3)).toMatchObject({
-      full: [0, 3],
+      full: [0, 4],
       title: [3, 3],
       shown: [1, 1],
+    })
+  })
+
+  it('reads a [[ typed before a written link on its line as the open link alone', () => {
+    expect(openLinkAt(scanDoc('x [[ y [[B]]'), 4)).toMatchObject({
+      syntax: 'wiki',
+      full: [2, 4],
+      title: [4, 4],
     })
   })
 
