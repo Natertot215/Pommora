@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { EditableInput } from './EditableInput'
+import { EditableInput, type EditEnd } from './EditableInput'
 import { resting } from './fields.css'
 
 /** A `title` opens with the caret at the end; a `row` label opens selected whole. */
@@ -35,13 +35,13 @@ export function RenamableLabel({
   onBegin?: () => void
   /** A commit that returns its landing keeps the committed text shown until that settles. */
   // biome-ignore lint/suspicious/noConfusingVoidType: a synchronous commit hands back nothing, and `undefined` in place of `void` breaks assignability for those handlers.
-  onCommit: (next: string) => void | Promise<unknown>
-  onCancel: () => void
+  onCommit: (next: string, how: EditEnd) => void | Promise<unknown>
+  onCancel: (how: EditEnd) => void
   children?: React.ReactNode | ((shown: string) => React.ReactNode)
 }): React.JSX.Element {
   const [landing, setLanding] = useState<string | null>(null)
-  const commit = (next: string): void => {
-    const landed = onCommit(next)
+  const commit = (next: string, how: EditEnd): void => {
+    const landed = onCommit(next, how)
     if (!landed) return
     setLanding(next)
     void landed.finally(() => setLanding(null))
@@ -68,7 +68,7 @@ export function RenamableLabel({
       caretAtEnd={renames === 'title'}
       required={!emptyCommits}
       invalid={invalid}
-      onCommit={(next) => (next !== value ? commit(next) : onCancel())}
+      onCommit={(next, how) => (next !== value ? commit(next, how) : onCancel(how))}
       onCancel={onCancel}
     />
   )

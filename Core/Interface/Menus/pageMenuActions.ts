@@ -1,4 +1,4 @@
-import { connectionText } from '../../Connections/connections'
+import { pageLinkText } from '../../Connections/connections'
 import type { PageMenuContext } from '../../Actions/pageMenu'
 import type { NexusTree } from '../../Nexus/tree'
 import { relDirname, titleFromPath } from '../../Paths/posix'
@@ -51,7 +51,7 @@ export function runPageAction(
       void s.select(ref, { newTab: true, heading: page.heading })
       return true
     case 'title:copylink':
-      void dialer().ask('clipboard:write', connectionText(title, page.heading))
+      void dialer().ask('clipboard:write', pageLinkText({ title, heading: page.heading }, 'wiki'))
       return true
     case 'title:history':
       s.openHistory(ref)

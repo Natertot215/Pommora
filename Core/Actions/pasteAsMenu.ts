@@ -1,8 +1,7 @@
-import { expressibleInLink, pageEmbedText } from '../Connections/connections'
+import { expressibleInLink, pageEmbedText, spellsAsWiki } from '../Connections/connections'
 import { markdownLink } from '../Connections/links'
 import { isHttpLink, normalizeLinkUrl } from '../Paths/urlPath'
 import {
-  connectionSpells,
   linkPaste,
   readLinkText,
   retarget,
@@ -58,7 +57,9 @@ export function pasteAsRows(
   if (target.kind === 'page')
     return [
       ...footnote,
-      ...(connectionSpells(target) ? [row('Connection', 'connection')] : []),
+      ...(spellsAsWiki({ title: target.title, heading: target.heading, shown: target.alias })
+        ? [row('Connection', 'connection')]
+        : []),
       row('Markdown Link', 'markdown'),
       ...(embed ? [row('Embedded Page', 'embedPage')] : []),
     ]

@@ -56,7 +56,6 @@ export function AliasList({
   const entering = useEntrance(list.rows, (r) => r.key, match === 0)
   const [renaming, setRenaming] = useState<string | null>(null)
   const rows = useRef<HTMLDivElement>(null)
-  const keyed = useRef(false)
   const pick = useRef<number | undefined>(undefined)
   const picked = useLatest(onPick)
   const keepInView = useKeepInView(active ?? -1)
@@ -64,11 +63,6 @@ export function AliasList({
   const listed = aliases.join('\u0000')
   useEffect(() => () => window.clearTimeout(pick.current), [listed, match])
   const editing = (row: ListRow): boolean => row.draft || renaming === row.key
-  const byKey = (): boolean => {
-    const was = keyed.current
-    keyed.current = false
-    return was
-  }
   const end = (key: string, stay: boolean): void => {
     setRenaming((k) => (k === key ? null : k))
     host.onEditEnd?.(stay)
@@ -138,13 +132,7 @@ export function AliasList({
           watch: [listed],
         })}
       >
-        <div
-          ref={rows}
-          onKeyDownCapture={(e) => {
-            keyed.current =
-              (e.key === 'Enter' || e.key === 'Escape') && e.target instanceof HTMLInputElement
-          }}
-        >
+        <div ref={rows}>
           {list.rows.map((row, i) => {
             const item = (
               <MenuItem
@@ -175,14 +163,14 @@ export function AliasList({
                   value={row.value}
                   invalid={(text) => !keepsAlias(text, host.title)}
                   onBegin={row.draft ? undefined : () => rename(row)}
-                  onCommit={(next) => {
+                  onCommit={(next, how) => {
                     const landed = list.commit(row, next)
-                    end(row.key, byKey())
+                    end(row.key, how.by === 'key')
                     return landed
                   }}
-                  onCancel={() => {
+                  onCancel={(how) => {
                     if (row.draft) list.cancel()
-                    end(row.key, byKey())
+                    end(row.key, how.by === 'key')
                   }}
                 >
                   {(shown) => emphasizeMatch(shown, 0, match)}

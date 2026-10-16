@@ -22,7 +22,7 @@ import {
 } from '../../Properties/propertyValue'
 import { declaredType, resolveFieldValue } from '../../Properties/value'
 import type { SetTreeNode } from './group'
-import { linkDisplayText } from '../../Connections/linkValue'
+import { linkDisplayText, shownProse } from '../../Connections/linkValue'
 import { dayMs, readDate, readNumber } from '../../Properties/formatValue'
 import { foldKey } from '../../Paths/caseFold'
 import { isUlidShaped } from '../../Nexus/identityMark'
@@ -137,10 +137,10 @@ function evaluatorOf(kind: ValueKind): Evaluator {
 function textValue(v: PropertyValue): string | null {
   switch (v.kind) {
     case 'select':
-    case 'text':
       return v.value
+    case 'text':
+      return shownProse(v.value)
     case 'link':
-      // Match the SHOWN text (alias, else URL) — the same parse Cell renders, so a `contains` on an aliased link tests the visible text, not its raw markdown.
       return linkDisplayText(v.value)
     case 'number':
     case 'checkbox':

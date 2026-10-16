@@ -59,9 +59,6 @@ const filled = (s: Span | null): s is Span => s !== null && s[1] > s[0]
 /** A connection showing an alias rather than its title. */
 export const aliasedToken = (tk: Token): boolean => tk.kind === 'wikiLink' && filled(tk.link.shown)
 
-export const headingOf = (text: string, tk: TokenOf<LinkKind>): string | undefined =>
-  tk.link.heading ? text.slice(tk.link.heading[0], tk.link.heading[1]) : undefined
-
 /** Whether a mark wraps `f`–`t`, seen from outside it: a color mark sits inside its opener, past a run as wide as the closer, so a caret on it is still inside the span. */
 export const insideMark = (
   { range: [s, e], contentRange: [cs, ce], color }: Token,

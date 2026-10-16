@@ -1,6 +1,6 @@
 import { basename, extname, join, relative } from '../Paths/posix'
 import { machine } from '../Platform/machine'
-import { connectionText } from '../Connections/connections'
+import { pageLinkText } from '../Connections/connections'
 import { ok, fail, type Result } from '../Contract/result'
 import { atomicWriteBinary, pathExists } from '../Files/atomicWrite'
 import { liveAssetMap, resolveAssetName } from './assetMap'
@@ -28,7 +28,7 @@ export async function writeAssetFile(
       if (await taken(stem)) return fail('exists', `${file} already exists.`)
       const abs = join(dir, file)
       await atomicWriteBinary(abs, bytes)
-      return ok(connectionText(file))
+      return ok(pageLinkText({ title: file }, 'wiki'))
     },
     taken,
   )
