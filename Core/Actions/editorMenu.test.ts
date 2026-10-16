@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_COMMANDS } from './commands'
-import { type EditorMenuRequest, changeColorItems, editorContextItems } from './editorMenu'
+import {
+  type EditorMenuRequest,
+  changeColorItems,
+  editorContextItems,
+  editorMenuRequest,
+} from './editorMenu'
 
 const state: EditorMenuRequest = {
   scope: 'page',
@@ -9,7 +14,7 @@ const state: EditorMenuRequest = {
   bold: true,
   italic: false,
   strikethrough: false,
-  highlight: null,
+  painted: null,
   inlineCode: false,
   link: false,
   connection: false,
@@ -36,11 +41,16 @@ describe('the editor’s right-click block', () => {
       'Footnote',
     ])
     expect(branch('Embed').map((r) => r.label)).toEqual(['Internal Page', 'External Link'])
-    expect(
-      branch('Format')
-        .map((r) => r.label)
-        .slice(-2),
-    ).toEqual(['Connection', 'External Link'])
+    expect(branch('Format').map((r) => r.label)).toEqual([
+      'Italic',
+      'Inline Code',
+      'Bold',
+      'Strikethrough',
+      'Text Color',
+      'Highlight',
+      'Connection',
+      'External Link',
+    ])
   })
 
   it('checks what the caret sits in, Paragraph included, and leaves command rows unchecked', () => {
@@ -86,11 +96,15 @@ describe('the editor’s right-click block', () => {
   })
 })
 
-describe('the highlight rows', () => {
-  const highlight = (s: EditorMenuRequest) =>
+describe('the color rows', () => {
+  const rowsOf = (label: string, s: EditorMenuRequest) =>
     editorContextItems(s, DEFAULT_COMMANDS, '')
       .find((i) => i.label === 'Format')
-      ?.submenu?.find((r) => r.label === 'Highlight')?.submenu ?? []
+      ?.submenu?.find((r) => r.label === label)?.submenu ?? []
+  const highlight = (s: EditorMenuRequest) => rowsOf('Highlight', s)
+  const textColor = (s: EditorMenuRequest) => rowsOf('Text Color', s)
+  const lit = { ...state, painted: { paint: 'highlight', color: 'red' } } as const
+  const inked = { ...state, painted: { paint: 'textColor', color: 'green' } } as const
 
   it('lead with the accent on the highlight chord, the colors set apart under it', () => {
     const rows = highlight(state)
@@ -110,17 +124,46 @@ describe('the highlight rows', () => {
     expect(rows.filter((r) => r.checked)).toEqual([])
   })
 
-  it('check the color the caret sits in', () => {
-    expect(highlight({ ...state, highlight: 'accent' }).find((r) => r.checked)?.label).toBe(
-      'Accent',
-    )
-    expect(highlight({ ...state, highlight: 'green' }).find((r) => r.checked)?.label).toBe('Green')
+  it('give Text Color the colors text takes, with no accent, chord, or divider', () => {
+    const rows = textColor(state)
+    expect(rows.map((r) => r.label)).toEqual([
+      'Red',
+      'Orange',
+      'Yellow',
+      'Green',
+      'Blue',
+      'Purple',
+      'Brown',
+    ])
+    expect(rows[0]).toMatchObject({ action: 'textColor:red' })
+    expect(rows.some((r) => 'chord' in r || r.separatorBefore)).toBe(false)
   })
 
-  it('offer Change Color over a highlight alone, with the same rows', () => {
+  it('check the color the caret sits in, under its own paint alone', () => {
+    expect(
+      highlight({ ...state, painted: { paint: 'highlight', color: 'accent' } }).find(
+        (r) => r.checked,
+      )?.label,
+    ).toBe('Accent')
+    expect(highlight(lit).find((r) => r.checked)?.label).toBe('Red')
+    expect(textColor(inked).find((r) => r.checked)?.label).toBe('Green')
+    expect(highlight(inked).filter((r) => r.checked)).toEqual([])
+  })
+
+  it('offer Change Color over a painted span, with its own paint’s rows', () => {
     expect(changeColorItems(state, DEFAULT_COMMANDS)).toEqual([])
-    const [row] = changeColorItems({ ...state, highlight: 'red' }, DEFAULT_COMMANDS)
+    const [row] = changeColorItems(lit, DEFAULT_COMMANDS)
     expect(row.label).toBe('Change Color')
-    expect(row.submenu).toEqual(highlight({ ...state, highlight: 'red' }))
+    expect(row.submenu).toEqual(highlight(lit))
+    expect(changeColorItems(inked, DEFAULT_COMMANDS)[0].submenu).toEqual(textColor(inked))
+  })
+})
+
+describe('the request main accepts', () => {
+  it('takes a paint’s colors and refuses any other', () => {
+    const asked = (color: string) =>
+      editorMenuRequest.safeParse({ ...state, painted: { paint: 'textColor', color } }).success
+    expect(asked('green')).toBe(true)
+    expect(asked('pink')).toBe(false)
   })
 })

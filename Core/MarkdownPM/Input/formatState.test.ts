@@ -25,14 +25,43 @@ describe('readFormatState', () => {
   })
 })
 
-describe('the highlight a right-click reads', () => {
-  it('names the color, the accent for a bare one, and none outside', () => {
-    const doc = 'a ==🔴warm🔴== ==plain== b'
-    expect(readFormatState(scanDoc(doc), 6, 6).highlight).toBe('red')
-    expect(readFormatState(scanDoc(doc), 4, 4).highlight).toBe('red')
-    expect(readFormatState(scanDoc(doc), 12, 12).highlight).toBe('red')
-    expect(readFormatState(scanDoc(doc), 18, 18).highlight).toBe('accent')
-    expect(readFormatState(scanDoc(doc), 0, 0).highlight).toBeNull()
+describe('the paint a right-click reads', () => {
+  it('names a highlight’s color, the accent for a bare one, and none outside', () => {
+    const doc = 'a ==🔴warm== ==plain== b'
+    const painted = (at: number) => readFormatState(scanDoc(doc), at, at).painted
+    expect(painted(6)).toEqual({ paint: 'highlight', color: 'red' })
+    expect(painted(4)).toEqual({ paint: 'highlight', color: 'red' })
+    expect(painted(10)).toEqual({ paint: 'highlight', color: 'red' })
+    expect(painted(16)).toEqual({ paint: 'highlight', color: 'accent' })
+    expect(painted(0)).toBeNull()
+  })
+
+  it('names a text color’s, from its mark through its words', () => {
+    const doc = 'a =🔴warm= b'
+    expect(readFormatState(scanDoc(doc), 3, 3).painted).toEqual({
+      paint: 'textColor',
+      color: 'red',
+    })
+    expect(readFormatState(scanDoc(doc), 5, 9).painted).toEqual({
+      paint: 'textColor',
+      color: 'red',
+    })
+  })
+})
+
+describe('the marks a whole selected span reads', () => {
+  it('reads the mark a selection over its markers covers', () => {
+    expect(readFormatState(scanDoc('**hi**'), 0, 6).bold).toBe(true)
+    expect(readFormatState(scanDoc('==🔴hi=='), 0, 8).painted).toEqual({
+      paint: 'highlight',
+      color: 'red',
+    })
+  })
+
+  it('reads a link inside a selected mark as the mark alone', () => {
+    const state = readFormatState(scanDoc('**[a](b)**'), 0, 10)
+    expect(state.bold).toBe(true)
+    expect(state.link).toBe(false)
   })
 })
 

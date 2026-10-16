@@ -20,6 +20,7 @@ import { perText } from '../Engine/perText'
 import { parseListMarker, type ListMarker } from '../Engine/detect'
 import { checkboxToggleChange } from '../Engine/listDragModel'
 import { scanDoc } from '../Engine/docScan'
+import { isPaint } from '../Engine/paints'
 import { readFormatState } from '../Input/formatState'
 import { editFor } from '../Input/format'
 import { editEvent, landEdit } from '../Input/listRenumber'
@@ -473,7 +474,8 @@ function StaticCellImpl({
     if (how) return pasteAtRest(from, to, how)
     const edit = editFor(action, scanDoc(text), from, to)
     if (!edit || !commitAtRest(edit.changes, editEvent(edit))) return
-    const slot = /^(format|highlight):/.test(action) && (from === to || action === 'format:link')
+    const [group] = action.split(':')
+    const slot = (group === 'format' || isPaint(group)) && (from === to || action === 'format:link')
     if (slot && edit.selection !== undefined)
       onActivate({ kind: 'select', range: [edit.selection, edit.selection] })
   }

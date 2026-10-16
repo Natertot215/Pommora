@@ -417,6 +417,10 @@ describe('text colors', () => {
     expect(toggleInline(scanDoc('==hi==x'), 6, 7, 'textColor', 'blue')).toBeNull()
     expect(toggleInline(scanDoc('a=b and ==c=='), 2, 3, 'textColor', 'red')).toBeNull()
   })
+  it('refuses a fresh highlight beside an =, which would erase the span it touches', () => {
+    expect(toggleInline(scanDoc('a =🔴warm= b'), 10, 10, 'highlight', 'red')).toBeNull()
+    expect(toggleInline(scanDoc('==a== b'), 5, 5, 'highlight')).toBeNull()
+  })
   it('routes each paint’s menu action', () => {
     expect(apply('hi', editFor('textColor:red', scanDoc('hi'), 0, 2))).toBe('=🔴hi=')
     expect(apply('hi', editFor('highlight:red', scanDoc('hi'), 0, 2))).toBe('==🔴hi==')

@@ -236,6 +236,14 @@ describe('a row chosen at rest', () => {
     expect(liveCell()?.state.selection.main.head).toBe(5)
   })
 
+  it('enters the cell with the caret in the slot Text Color writes at a point', async () => {
+    await mount('ab cd')
+    await rightClick('ab cd', 3)
+    await choose('textColor:red')
+    expect(committed).toHaveBeenLastCalledWith(1, 0, 'ab =🔴=cd')
+    expect(liveCell()?.state.selection.main.head).toBe(6)
+  })
+
   it('commits Lists ▸ Bulleted at a point and stays at rest', async () => {
     await mount('ab')
     await rightClick('ab', 1)

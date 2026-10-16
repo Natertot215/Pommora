@@ -28,7 +28,7 @@ const req = (x: number, y: number): EditorMenuRequest => ({
   bold: false,
   italic: false,
   strikethrough: false,
-  highlight: null,
+  painted: null,
   inlineCode: false,
   link: false,
   connection: false,
@@ -223,7 +223,10 @@ describe('the window’s right-click', () => {
   })
 
   it('seats Change Color under Select All, above the line over the editor block', async () => {
-    const asked = askEditorMenu({ ...req(10, 10), highlight: 'accent' })
+    const asked = askEditorMenu({
+      ...req(10, 10),
+      painted: { paint: 'highlight', color: 'accent' },
+    })
     rightClick({})
     const at = labels().indexOf('Change Color')
     expect(labels()[at - 1]).toBe('selectAll')

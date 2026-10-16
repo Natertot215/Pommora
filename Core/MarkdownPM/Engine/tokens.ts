@@ -70,9 +70,12 @@ export const linkTarget = (text: string, tk: Token): string => text.slice(...lin
 export const headingOf = (text: string, tk: TokenOf<'wikiLink'>): string | undefined =>
   tk.heading && text.slice(tk.heading[0], tk.heading[1])
 
-/** What a mark wraps, seen from outside it: a color mark sits inside its opener, past a run as wide as the closer, so a caret on it is still inside the span. */
-export const wrappedSpan = ({ range: [s, e], contentRange: [cs, ce], color }: Token): Span =>
-  color ? [s + e - ce, ce] : [cs, ce]
+/** Whether a mark wraps `f`–`t`, seen from outside it: a color mark sits inside its opener, past a run as wide as the closer, so a caret on it is still inside the span. */
+export const insideMark = (
+  { range: [s, e], contentRange: [cs, ce], color }: Token,
+  f: number,
+  t: number,
+): boolean => (color ? s + e - ce : cs) <= f && t <= ce
 
 export function shiftToken(tk: Token, by: number): Token {
   const move = ([s, e]: Span): Span => [s + by, e + by]

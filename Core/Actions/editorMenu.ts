@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { capitalize } from '@pommora/uix/Utilities/capitalize'
-import type { ActionItem, LeafItem } from './menuModel'
+import { type ActionItem, joinGroups, type LeafItem } from './menuModel'
 import { HEADING_LEVELS, LIST_KINDS, type ListKind } from './gripMenu'
 import type { CommandId, Commands } from './commands'
 import {
@@ -12,7 +12,13 @@ import {
   LIST_ROWS,
 } from './blockMenu'
 import { isValidLink } from '../Paths/urlPath'
-import { PAINT_COLOR_NAMES, type PaintColor } from '../MarkdownPM/Engine/paints'
+import {
+  colorsOf,
+  PAINT_COLOR_NAMES,
+  PAINTS,
+  type Paint,
+  type PaintColor,
+} from '../MarkdownPM/Engine/paints'
 
 /** What sits under a right-click, sent to the host as the menu is asked for; main cannot see CM6 state. */
 export const editorMenuRequest = z.object({
@@ -22,7 +28,12 @@ export const editorMenuRequest = z.object({
   bold: z.boolean(),
   italic: z.boolean(),
   strikethrough: z.boolean(),
-  highlight: z.enum(['accent', ...PAINT_COLOR_NAMES] as ['accent', ...PaintColor[]]).nullable(),
+  painted: z
+    .object({
+      paint: z.enum(PAINTS),
+      color: z.enum(['accent', ...PAINT_COLOR_NAMES] as ['accent', ...PaintColor[]]),
+    })
+    .nullable(),
   inlineCode: z.boolean(),
   link: z.boolean(),
   connection: z.boolean(),
@@ -54,7 +65,7 @@ type EditorMenuAction =
   | FormatChordAction
   | 'heading:0'
   | 'link:insert'
-  | `highlight:${PaintColor}`
+  | `${Paint}:${PaintColor}`
 
 type FormatFlag = Exclude<FormatChordAction extends `format:${infer F}` ? F : never, 'highlight'>
 
@@ -66,32 +77,44 @@ const MARK_ROWS: readonly LeafItem<FormatChordAction>[] = [
 ]
 const LINK_ROWS: readonly LeafItem<FormatChordAction>[] = [CONNECTION_ROW, EXTERNAL_LINK_ROW]
 
-/** The accent is the bare `==`, so it carries the highlight chord; a checked row clicked again removes the highlight. */
-function highlightRows(s: EditorMenuRequest, commands: Commands): LeafItem<EditorMenuAction>[] {
-  return [
-    {
-      label: 'Accent',
-      action: 'format:highlight',
-      checked: s.highlight === 'accent',
-      chord: commands['format:highlight'],
-    },
-    ...PAINT_COLOR_NAMES.map(
-      (color, i): LeafItem<EditorMenuAction> => ({
+/** Each paint's rows, and Change Color's: only a highlight has the accent, the bare `==` on its chord, set apart above the colors. */
+function colorRows(
+  paint: Paint,
+  s: EditorMenuRequest,
+  commands: Commands,
+): ActionItem<EditorMenuAction>[] {
+  const lit = s.painted?.paint === paint ? s.painted.color : null
+  const accent: LeafItem<EditorMenuAction>[] =
+    paint === 'highlight'
+      ? [
+          {
+            label: 'Accent',
+            action: 'format:highlight',
+            checked: lit === 'accent',
+            chord: commands['format:highlight'],
+          },
+        ]
+      : []
+  return joinGroups([
+    accent,
+    colorsOf(paint).map(
+      (color): LeafItem<EditorMenuAction> => ({
         label: capitalize(color),
-        action: `highlight:${color}`,
-        checked: s.highlight === color,
-        separatorBefore: i === 0,
+        action: `${paint}:${color}`,
+        checked: lit === color,
       }),
     ),
-  ]
+  ])
 }
 
-/** Offered only over a highlight, seated with the edit items rather than in the formatting block. */
+/** Offered over a painted span, with its own paint's rows, seated with the edit items rather than in the formatting block. */
 export function changeColorItems(
   s: EditorMenuRequest,
   commands: Commands,
 ): ActionItem<EditorMenuAction>[] {
-  return s.highlight ? [{ label: 'Change Color', submenu: highlightRows(s, commands) }] : []
+  return s.painted
+    ? [{ label: 'Change Color', submenu: colorRows(s.painted.paint, s, commands) }]
+    : []
 }
 
 function checkedIn(s: EditorMenuRequest, action: EditorMenuAction): boolean | undefined {
@@ -127,7 +150,8 @@ export function editorContextItems(
     label: 'Format',
     submenu: [
       ...formatRows(MARK_ROWS),
-      { label: 'Highlight', submenu: highlightRows(s, commands) },
+      { label: 'Text Color', submenu: colorRows('textColor', s, commands) },
+      { label: 'Highlight', submenu: colorRows('highlight', s, commands) },
       ...formatRows(LINK_ROWS),
     ],
   }
