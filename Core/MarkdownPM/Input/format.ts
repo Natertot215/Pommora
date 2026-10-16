@@ -1,4 +1,4 @@
-import { type LinkKind, shiftToken, tokenize, type TokenKind, wrappedSpan } from '../Engine/tokens'
+import { insideMark, type LinkKind, shiftToken, tokenize, type TokenKind } from '../Engine/tokens'
 import {
   headingParts,
   calloutHeadPrefixLen,
@@ -65,6 +65,14 @@ const LINKS: Record<LinkWrapKind, LinkWrap> = {
 const SWAPS: Partial<Record<TokenKind, TokenKind>> = { bold: 'italic', italic: 'bold' }
 const MARKER_CHARS = '*_~=`'
 
+export function innerRange(line: string, from: number, to: number): [number, number] {
+  let f = from
+  let t = to
+  while (f < t && MARKER_CHARS.includes(line[f])) f++
+  while (t > f && MARKER_CHARS.includes(line[t - 1])) t--
+  return [f, t]
+}
+
 /** A paint's `color` is null for the accent highlight. A span wears one color, so a paint picked anywhere in it recolors it, turns it into the other paint, or, in its own paint and color, removes it. */
 export function toggleInline(
   scan: DocScan,
@@ -83,14 +91,8 @@ export function toggleInline(
   // Inline marks are line-local, so only the caret's line is tokenized; the hit is shifted back to document coordinates.
   const ls = lineStartAt(doc, from)
   const line = doc.slice(ls, lineEndAt(doc, from))
-  let f = from - ls
-  let t = to - ls
-  while (f < t && MARKER_CHARS.includes(line[f])) f++
-  while (t > f && MARKER_CHARS.includes(line[t - 1])) t--
-  const covering = tokenize(line).filter((tk) => {
-    const [s, e] = wrappedSpan(tk)
-    return s <= f && t <= e
-  })
+  const [f, t] = innerRange(line, from - ls, to - ls)
+  const covering = tokenize(line).filter((tk) => insideMark(tk, f, t))
   const found =
     covering.find((tk) => tk.kind === kind || (isPaint(kind) && isPaint(tk.kind))) ??
     covering.find(
@@ -98,8 +100,9 @@ export function toggleInline(
         tk.kind === SWAPS[kind] &&
         (from === to || (tk.contentRange[0] === f && tk.contentRange[1] === t)),
     )
-  const reach = found ? line.slice(...found.contentRange) : doc.slice(Math.max(0, from - 1), to + 1)
-  if (kind === 'textColor' && reach.includes('=')) return null
+  const words = found ? line.slice(...found.contentRange) : doc.slice(from, to)
+  if (kind === 'textColor' && words.includes('=')) return null
+  if (!found && isPaint(kind) && (doc[from - 1] === '=' || doc[to] === '=')) return null
   if (found) {
     const [m0, m1] = shiftToken(found, ls).markerRanges
     const off = found.kind === kind && (found.color ?? null) === color
