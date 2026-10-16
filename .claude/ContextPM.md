@@ -2,7 +2,7 @@
 
 ### Current Focus
 
-The Pommora Codebase Audit is the sole focus. Its ledger, `// Planning`'s `Pommora Codebase Audit.md`, opened at `f6511401d` with 556 findings, and the batches reconciled through `f178fd768` have folded 263 of the 577 entered so far, leaving 314. Each session takes one workstream, or a coherent slice of one, in the Verdict's Readiness order, then reconciles the ledger and republishes the Dashboard at closeout.
+Pommora's open issues are the sole focus. `IssuesPM.md` indexes them by Area, each graded by Concern, Scale, and Origin and dated from the commit it was reported against. Each session takes one Area, or a coherent slice of one, gravest first, through `batch-issues`, then reconciles the index and republishes the Dashboard at closeout.
 
 ### Immediate Work
 
@@ -53,7 +53,7 @@ Known shortcuts, none broken today. Each is cheap on its own and best taken when
 
 ### Known Issues
 
-- [ ] **A second dropdown pressed inside a pop-up pane reopens the closing list there.** → See `Pommora Codebase Audit.md`, F-077.
+- [ ] **A second dropdown pressed inside a pop-up pane reopens the closing list there.** → See `IssuesPM.md`, F-077.
 
 ### Recent Work
 
