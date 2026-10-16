@@ -1,6 +1,6 @@
 // One walker answers for every link syntax; `embed` marks a link of either syntax alone on its line behind a `!`, a tile's relation that renames as a link and relates as nothing.
 
-import { type LinkOccurrence, linkOccurrences, type PageName } from './connections'
+import { type LinkOccurrence, linkOccurrences, mayHoldLink, type PageName } from './connections'
 import { normalizeTitle } from '../Paths/caseFold'
 import { linkEntry, namedPage, readOccurrence } from './linkValue'
 import {
@@ -86,7 +86,7 @@ export function* linksIn(
   inCode?: CodeMask,
 ): Generator<LinkHit> {
   const runs = outline.length > 0 && body.includes('§')
-  if (!body.includes('[[') && !body.includes('](') && !runs) return
+  if (!mayHoldLink(body) && !runs) return
   const mask = inCode ?? codeMask(body)
   const own = normalizeTitle(ownTitle)
   for (const o of linkOccurrences(body, mask)) {

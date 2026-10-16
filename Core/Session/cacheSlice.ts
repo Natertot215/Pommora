@@ -2,9 +2,12 @@ import { type AssetMap, EMPTY_ASSET_MAP, type ValueChange, type ValuesEpoch } fr
 import { stabilize } from '../Nexus/treeStabilize'
 import type { Slice } from './sessionState'
 import { dialer } from '../Platform/dialer'
+import { normalizeLinkUrl } from '../Paths/urlPath'
 
 export interface CacheSlice {
+  /** Fetched page titles by address, keyed under `normalizeLinkUrl` so every spelling of one address reads and writes one entry. */
   linkTitles: Record<string, string>
+  linkTitle: (url: string) => string | null
   resolveLinkTitle: (url: string) => Promise<string | null>
   assetMap: AssetMap
   applyAssetMap: (map: AssetMap) => void
@@ -20,7 +23,9 @@ const failedTitles = new Set<string>()
 
 export const createCacheSlice: Slice<CacheSlice> = (set, get) => ({
   linkTitles: {},
-  resolveLinkTitle: (url) => {
+  linkTitle: (url) => get().linkTitles[normalizeLinkUrl(url)] ?? null,
+  resolveLinkTitle: (raw) => {
+    const url = normalizeLinkUrl(raw)
     const cached = get().linkTitles[url]
     if (cached) return Promise.resolve(cached)
     if (failedTitles.has(url)) return Promise.resolve(null)

@@ -106,16 +106,15 @@ export const commitAliasOnEnter =
     const { state } = view
     const sel = state.selection.main
     if (!sel.empty) return false
-    const s = liveSlotAt(state, sel.head, scope)
-    if (s?.part === 'shown') {
-      const end = s.from + s.link.full[1]
+    const end = shownEnd(state, sel.head, scope)
+    if (end !== null) {
       view.dispatch({ selection: EditorSelection.cursor(end, 1), effects: restedOnLink.of(end) })
-    } else if (
-      s?.link.syntax === 'markdown' &&
-      state.facet(editorHost).settings().aliasPickerOnCommit
-    )
+    } else {
+      const s = liveSlotAt(state, sel.head, scope)
+      if (s?.link.syntax !== 'markdown' || !state.facet(editorHost).settings().aliasPickerOnCommit)
+        return false
       view.dispatch({ selection: EditorSelection.cursor(s.from + s.link.shown[1], 1) })
-    else return false
+    }
     view.focus()
     return true
   }

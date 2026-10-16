@@ -1,25 +1,30 @@
 import { HAS_SCHEME } from '../Paths/urlPath'
 import { isMarkdownFile, stripMarkdownExt } from '../Paths/posix'
 
-// The label's cap is load-bearing (an alternation under a quantifier backtracks quadratically on a long unclosed `[` run), it may be empty, and it may not open with `^`, which GFM reads as a footnote reference. The destination needs a character and admits parentheses nested two deep, what cmark renders.
+// The label's cap is load-bearing (an alternation under a quantifier backtracks quadratically on a long unclosed `[` run), it may be empty, and it may not open with a raw `^`, which GFM reads as a footnote reference; the writer escapes one. The destination needs a character and admits parentheses nested two deep, what cmark renders.
 const LINK_LABEL = '((?!\\^)(?:[^\\]\\\\\\r\\n]|\\\\.){0,255})'
 const LINK_DEST = '((?:[^()\\r\\n]|\\((?:[^()\\r\\n]|\\([^()\\r\\n]*\\))*\\)){1,2048})'
 
 export const markdownLinkRegex = (): RegExp =>
   new RegExp(`\\[${LINK_LABEL}\\]\\(${LINK_DEST}\\)`, 'dg')
 
-/** What a wikilink's slots and the markdown label can hold: the grammar's 255 characters and no line break. */
+/** The grammar's one cap for every slot, the markdown label included: 255 characters and no line break; the writer escapes whatever else the label grammar would refuse. */
 export const fitsSlot = (s: string): boolean => s.length <= 255 && !/[\r\n]/.test(s)
 
-/** What the markdown label can spell: a slot's worth that doesn't open as a footnote reference. */
-export const labelSpells = (label: string): boolean => fitsSlot(label) && !label.startsWith('^')
-
+/** `]` and `\` anywhere, and a `^` opening the label, which GFM would otherwise read as a footnote reference. */
 export function escapeLabel(label: string): string {
-  return label.replace(/[\\\]]/g, '\\$&')
+  return label.replace(/[\\\]]/g, '\\$&').replace(/^\^/, '\\^')
 }
 
 export function unescapeLabel(label: string): string {
   return label.replace(/\\(.)/g, '$1')
+}
+
+/** Where each escaping `\` sits in a label, by offset: what `unescapeLabel` strips, so a draw hides the same. */
+export function labelEscapes(label: string): number[] {
+  const at: number[] = []
+  for (let i = 0; i < label.length - 1; i++) if (label[i] === '\\') at.push(i++)
+  return at
 }
 
 /** The one markdown template every writer spells a link through. */

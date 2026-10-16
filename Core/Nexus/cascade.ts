@@ -64,11 +64,11 @@ export function spacesLinkHeading(root: string, title: string, heading: string):
   if (!tree) return false
   const holds = linkKeysOf(tree.config.registry)
   return tree.contexts.some((g) =>
-    g.spaces.some(({ values = {} }) =>
-      [...valueLinks(values)].some(
-        (h) => holds(h.key) && h.target === page && h.qualifier === section,
-      ),
-    ),
+    g.spaces.some(({ values = {} }) => {
+      for (const h of valueLinks(values))
+        if (holds(h.key) && h.target === page && h.qualifier === section) return true
+      return false
+    }),
   )
 }
 

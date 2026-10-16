@@ -71,9 +71,6 @@ export const registryOf = (defs: PropertyDefinition[]): PropertyRegistry =>
 export const linkDefsOf = (defs: readonly PropertyDefinition[]): PropertyDefinition[] =>
   defs.filter((d) => d.type === 'link')
 
-export const linkDefs = async (root: string): Promise<PropertyDefinition[]> =>
-  linkDefsOf(Object.values((await readKeptRegistry(root)).defs))
-
 const OPTION_KEYS = ['select_options', 'status_groups'] as const
 
 function rebuiltOptions(

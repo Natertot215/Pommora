@@ -1,10 +1,10 @@
 import type { Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import type { ConnectionsApi } from '../Links/connectionsApi'
-import { readOccurrence, resolveLink } from '../../Connections/linkValue'
+import { wholeLink } from '../../Connections/connections'
+import { type LinkTarget, readOccurrence, resolveLink } from '../../Connections/linkValue'
 import { type MarkerRef, citationFor, markersFor } from '../Engine/detect'
 import { lineEndOf } from '../Engine/markdownCode'
-import { type LinkKind, tokenize, type TokenOf, wholeLinkToken } from '../Engine/tokens'
 import { docScan, docString } from '../docCache'
 import { type FollowEvent, followTarget } from '../Links/linkClicks'
 import { applyCitationAction, travelToCitation } from './citationActions'
@@ -17,10 +17,11 @@ export const CITE_GLYPH = '.md-citation-reference'
 /** Drawn over hidden source rather than written, so it is the one element a press on the row can be aimed at. */
 const CITE_ROW_GLYPH = '.md-citation-number'
 
-export function loneTarget(content: string): { text: string; tk: TokenOf<LinkKind> } | null {
+/** What a citation's whole content writes as one link of either syntax, and nothing where any text surrounds it or none is written. */
+export function loneTarget(content: string): LinkTarget | null {
   const text = content.trim()
-  const tk = wholeLinkToken(tokenize(text), text)
-  return tk ? { text, tk } : null
+  const o = wholeLink(text)
+  return o && readOccurrence(text, o)
 }
 
 interface CiteHit extends PointerTarget {
@@ -40,8 +41,7 @@ export function followCitation(
   const lone =
     entry &&
     loneTarget(docString(view.state.doc).slice(entry.contentStart, lineEndOf(scan, entry.lastLine)))
-  const target =
-    lone && resolveLink(readOccurrence(lone.text, lone.tk.link), api?.index, heldOf(view))
+  const target = lone && resolveLink(lone, api?.index, heldOf(view))
   const go = target && followTarget(target, api, event)
   if (go) go()
   else travelToCitation(view, label)

@@ -30,6 +30,8 @@ import { RESTING_EDITS } from '../../Actions/editorMenu'
 import { pasteModeOf, type PasteMode } from '../../Actions/pasteAsMenu'
 import { codeMask, lineOffsetsOf, type TextEdit } from '../Engine/markdownCode'
 import { sectionRunsIn } from '../../Connections/scan'
+import { mayNameOwnHeading } from '../../Connections/connections'
+import { labelEscapes } from '../../Connections/links'
 import type { ConnPage, PageHeadings } from '../../Connections/pageIndex'
 import { linkClass, linkLook, type ConnectionsApi } from '../Links/connectionsApi'
 import { linkEdit } from '../Links/linkEdit'
@@ -52,8 +54,6 @@ import { cx } from '@pommora/uix/Utilities/cx'
 export type CellPage = Pick<PageHeadings, 'keys' | 'texts'> & {
   ordinalOf: (label: string) => number | null
 }
-
-export const readsOwnHeadings = (text: string): boolean => /\[\[#|\]\(\s*#|§/.test(text)
 
 // KNOB — distinct cell texts remembered; a table scrolling back in re-reads its cells from here.
 export const cellTokens = perText(tokenize, 4096)
@@ -99,22 +99,40 @@ export function renderCellContent(
     ...(at !== undefined && { 'data-at': base + at }),
   })
   const verbatim = (s: number, e: number, at = s) => ({ ...src(s, e), 'data-at': base + at })
-  const draw = (from: number, to: number, within: readonly Drawn[]): React.ReactNode[] => {
+  const draw = (
+    from: number,
+    to: number,
+    within: readonly Drawn[],
+    hidden: readonly number[] = [],
+  ): React.ReactNode[] => {
     const out: React.ReactNode[] = []
     let pos = from
+    const plain = (end: number): void => {
+      for (const h of hidden)
+        if (h >= pos && h < end) {
+          out.push(text.slice(pos, h))
+          pos = h + 1
+        }
+      out.push(text.slice(pos, end))
+      pos = end
+    }
     within.forEach((tk, i) => {
       const [s, e] = tk.range
       if (s < pos) return
-      if (s > pos) out.push(text.slice(pos, s))
+      if (s > pos) plain(s)
       const [cs, ce] = tk.contentRange
       const inner = within.slice(i + 1).filter((t) => t.range[0] >= cs && t.range[1] <= ce)
-      out.push(drawOne(tk, inner))
+      out.push(drawOne(tk, inner, hidden))
       pos = e
     })
-    if (pos < to) out.push(text.slice(pos, to))
+    if (pos < to) plain(to)
     return out
   }
-  const drawOne = (tk: Drawn, inner: readonly Drawn[]): React.ReactNode => {
+  const drawOne = (
+    tk: Drawn,
+    inner: readonly Drawn[],
+    hidden: readonly number[],
+  ): React.ReactNode => {
     const [s, e] = tk.range
     const [cs, ce] = tk.contentRange
     switch (tk.kind) {
@@ -146,11 +164,14 @@ export function renderCellContent(
             </Fragment>
           )
         const join = tk.kind === 'wikiLink' && look.join
+        // A resolved label hides its escapes by position, through every token inside it, as the live draw does; its text then no longer maps to its source, so the link seats at its edges, as a join does.
+        const escapes =
+          tk.kind === 'link' ? labelEscapes(text.slice(cs, ce)).map((at) => cs + at) : []
         return (
           <span
             key={key++}
             className={cx(linkClass(look), cs === ce && 'md-link-label')}
-            {...linkSpan(s, e, join ? undefined : cs)}
+            {...linkSpan(s, e, join || escapes.length ? undefined : cs)}
           >
             {join ? (
               <>
@@ -167,7 +188,7 @@ export function renderCellContent(
             ) : cs === ce ? (
               look.label
             ) : (
-              draw(cs, ce, inner)
+              draw(cs, ce, inner, escapes)
             )}
           </span>
         )
@@ -207,7 +228,7 @@ export function renderCellContent(
       default:
         return (
           <span key={key++} className={contentClass(tk)} {...verbatim(s, e, cs)}>
-            {draw(cs, ce, inner)}
+            {draw(cs, ce, inner, hidden)}
           </span>
         )
     }
@@ -629,5 +650,5 @@ export const StaticCell = memo(
   (a, b) =>
     a.text === b.text &&
     a.linkStyle === b.linkStyle &&
-    (a.around === b.around || !(readsOwnHeadings(a.text) || a.text.includes('[^'))),
+    (a.around === b.around || !(mayNameOwnHeading(a.text) || a.text.includes('[^'))),
 )
