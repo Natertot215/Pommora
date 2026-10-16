@@ -1,19 +1,19 @@
-// One walk per tree; every table below is a lazy projection of its records, cached on the tree object. A new lookup belongs here, never as its own walk. The record LIST is the source: duplicate ids stay listed so title resolution can still answer "ambiguous"; the keyed projections collapse them last-wins.
+// The renderer's projections of the one walk in `record.ts`, each cached on the tree object; glyphs and trails resolve here, beside the design kit.
 
-import type { EntityRecord } from './record'
+import { type EntityRecord, recordsOf } from './record'
 import type { BannerOwnerKind } from './mutateRequest'
 import { navKey, type NavRef, type SelectTarget, toNavRef } from '../Navigation/navRef'
 import { MATRIX_ICON, MATRIX_TITLE } from '../Matrix/matrixKind'
-import type { CollectionNode, NexusTree, PageNode, SetNode, SpaceNode } from './tree'
+import type { CollectionNode, NexusTree, SetNode, SpaceNode } from './tree'
 import { entityMemo } from './tree'
 import { findContainerWhere, withheldIn } from './treePatch'
 import { iconNameOr } from '@pommora/uix/Symbols'
 import { DEFAULT_NEXUS_ICON, entityIcon } from '../Assets/entityIconPolicy'
 import { NO_TRAIL, type TrailSegment } from '@pommora/uix/Elements/NavTrail'
-import { buildPageIndex, type ConnPage, type PageIndex } from '../Connections/pageIndex'
 import type { NavCore, ResolveIndex } from '../Navigation/navResolve'
 import type { SearchEntry } from '../Navigation/navSearch'
 import { foldKey } from '../Paths/caseFold'
+import { dirname } from '../Paths/posix'
 import { contextWorldOf } from '../Contexts/contextResolve'
 import type { ReconcileIndex } from '../Session/reconcileSelection'
 
@@ -31,136 +31,73 @@ export interface TrailNode extends Pick<EntityRecord, 'id' | 'title' | 'path'> {
   icon: string
 }
 
-interface TreeIndex {
-  nodes: NodeRecord[]
-  reconcile?: ReconcileIndex
-  resolve?: ResolveIndex
-  search?: SearchEntry[]
-  pages?: ConnPage[]
-  pagesById?: Map<string, ConnPage>
-  recordsById?: Map<string, NodeRecord>
-  pageIndex?: PageIndex
-  navKeys?: string[]
-  ancestry?: Map<string, TrailNode[]>
-  spaceLinks?: Map<string, Record<string, string[]>>
-}
+const LOOKS = [
+  (t: NexusTree) => t.contexts,
+  (t: NexusTree) => t.nexus.name,
+  (t: NexusTree) => t.config.profileIcon,
+  (t: NexusTree) => t.config.pageMetadata,
+  (t: NexusTree) => t.config.personalization.defaultIcons,
+]
 
-const indexFor = entityMemo(
-  [
-    (t) => t.contexts,
-    (t) => t.unreadable,
-    (t) => t.nexus.name,
-    (t) => t.config.profileIcon,
-    (t) => t.config.pageMetadata,
-    (t) => t.config.personalization.defaultIcons,
-  ],
-  (tree): TreeIndex => ({ nodes: walk(tree) }),
-)
-
-function walk(tree: NexusTree): NodeRecord[] {
-  const nodes: NodeRecord[] = []
+export const nodesOf = entityMemo(LOOKS, (tree): readonly NodeRecord[] => {
   const di = tree.config.personalization.defaultIcons
-  nodes.push({
-    key: navKey({ kind: 'homepage' }),
-    kind: 'homepage',
-    id: '',
-    title: tree.nexus.name,
-    icon: iconNameOr(tree.config.profileIcon, DEFAULT_NEXUS_ICON),
-    path: '',
-    parents: [],
-  })
-  nodes.push({
-    key: navKey({ kind: 'matrix' }),
-    kind: 'matrix',
-    id: '',
-    title: MATRIX_TITLE,
-    icon: MATRIX_ICON,
-    path: '',
-    parents: [],
-  })
-  for (const g of tree.contexts ?? []) {
-    const group: TrailNode = {
-      kind: 'context',
-      id: g.def.id,
-      title: g.def.title,
-      icon: entityIcon('context', g.def.icon, di),
+  const nodes: NodeRecord[] = [
+    {
+      key: navKey({ kind: 'homepage' }),
+      kind: 'homepage',
+      id: '',
+      title: tree.nexus.name,
+      icon: iconNameOr(tree.config.profileIcon, DEFAULT_NEXUS_ICON),
       path: '',
-    }
-    for (const s of g.spaces)
-      nodes.push({
-        key: navKey({ kind: 'space', id: s.id }),
-        kind: 'space',
-        id: s.id,
-        title: s.title,
-        icon: entityIcon('space', s.icon, di),
-        ownIcon: s.icon,
-        path: s.path,
-        parents: [group],
-      })
-  }
-  const addPage = (p: PageNode, parents: TrailNode[]): void => {
-    const ownIcon = tree.config.pageMetadata[p.id]?.icon
-    nodes.push({
-      key: navKey({ kind: 'page', id: p.id }),
-      kind: 'page',
-      id: p.id,
-      title: p.title,
-      icon: entityIcon('page', ownIcon, di),
-      ownIcon,
-      path: p.path,
-      parents,
-    })
-  }
-  const walkSets = (sets: SetNode[] | undefined, parents: TrailNode[]): void => {
-    for (const s of sets ?? []) {
-      const node: NodeRecord = {
-        key: navKey({ kind: 'set', id: s.id }),
-        kind: 'set',
-        id: s.id,
-        title: s.title,
-        icon: entityIcon('set', s.icon, di),
-        ownIcon: s.icon,
-        path: s.path,
-        parents,
-      }
-      nodes.push(node)
-      const chain = [...parents, node]
-      for (const p of s.pages) addPage(p, chain)
-      walkSets(s.sets, chain)
-    }
-  }
-  for (const col of tree.collections) {
-    const node: NodeRecord = {
-      key: navKey({ kind: 'collection', id: col.id }),
-      kind: 'collection',
-      id: col.id,
-      title: col.title,
-      icon: entityIcon('collection', col.icon, di),
-      ownIcon: col.icon,
-      path: col.path,
       parents: [],
+    },
+    {
+      key: navKey({ kind: 'matrix' }),
+      kind: 'matrix',
+      id: '',
+      title: MATRIX_TITLE,
+      icon: MATRIX_ICON,
+      path: '',
+      parents: [],
+    },
+  ]
+  // A record's container is its path's directory: a page's or set's folder, a space's context folder, nothing for a collection; the walk lists containers before what they hold, so the chain is always there.
+  const chains = new Map<string, TrailNode[]>()
+  for (const { kind, id, title, path, icon: own } of recordsOf(tree)) {
+    const ownIcon = kind === 'page' ? tree.config.pageMetadata[id]?.icon : own
+    const icon = entityIcon(kind, ownIcon, di)
+    if (kind === 'context') {
+      chains.set(path, [{ kind, id, title, icon, path: '' }])
+      continue
+    }
+    const parents = chains.get(dirname(path)) ?? []
+    const node: NodeRecord = {
+      key: navKey({ kind, id }),
+      kind,
+      id,
+      title,
+      icon,
+      ownIcon,
+      path,
+      parents,
     }
     nodes.push(node)
-    for (const p of col.pages) addPage(p, [node])
-    walkSets(col.sets, [node])
+    if (kind === 'collection' || kind === 'set') chains.set(path, [...parents, node])
   }
   return nodes
-}
+})
 
-export const nodesOf = (tree: NexusTree): readonly NodeRecord[] => indexFor(tree).nodes
-
-export function reconcileIndexOf(tree: NexusTree): ReconcileIndex {
-  const ix = indexFor(tree)
-  if (!ix.reconcile) {
+export const reconcileIndexOf = entityMemo(
+  [(t) => t.contexts, (t) => t.unreadable],
+  (tree): ReconcileIndex => {
     const spaces = new Set<string>()
     const collections = new Set<string>()
     const sets = new Map<string, string>()
     const pages = new Map<string, string>()
     const pagesByPath = new Map<string, string>()
-    for (const r of ix.nodes)
+    for (const r of recordsOf(tree))
       switch (r.kind) {
-        case 'homepage':
-        case 'matrix':
+        case 'context':
           break
         case 'space':
           spaces.add(r.id)
@@ -176,40 +113,35 @@ export function reconcileIndexOf(tree: NexusTree): ReconcileIndex {
           pagesByPath.set(r.path, r.id)
           break
       }
-    const withheld = withheldIn(tree.unreadable)
-    ix.reconcile = { spaces, collections, sets, pages, pagesByPath, withheld }
-  }
-  return ix.reconcile
-}
+    return { spaces, collections, sets, pages, pagesByPath, withheld: withheldIn(tree.unreadable) }
+  },
+)
 
-export function resolveIndexOf(tree: NexusTree): ResolveIndex {
-  const ix = indexFor(tree)
-  if (!ix.resolve) {
-    const m: ResolveIndex = new Map<string, NavCore>()
-    for (const r of ix.nodes) m.set(r.key, { icon: r.icon, title: r.title, path: r.parents })
-    ix.resolve = m
-  }
-  return ix.resolve
-}
+export const resolveIndexOf = entityMemo(
+  LOOKS,
+  (tree): ResolveIndex =>
+    new Map<string, NavCore>(
+      nodesOf(tree).map((r) => [r.key, { icon: r.icon, title: r.title, path: r.parents }]),
+    ),
+)
 
 export const trailOf = (tree: NexusTree | null, ref: NavRef | SelectTarget): TrailSegment[] =>
   (tree && ancestryOf(tree, ref)) ?? NO_TRAIL
 
+const ancestries = entityMemo(
+  LOOKS,
+  (tree): ReadonlyMap<string, TrailNode[]> =>
+    new Map(nodesOf(tree).map((r) => [r.key, [...r.parents, r]])),
+)
+
 /** The ancestry including the entity itself, outermost first; null when the ref no longer resolves. */
-export function ancestryOf(tree: NexusTree, ref: NavRef | SelectTarget): TrailNode[] | null {
-  const ix = indexFor(tree)
-  if (!ix.ancestry) {
-    const m = new Map<string, TrailNode[]>()
-    for (const r of ix.nodes) m.set(r.key, [...r.parents, r])
-    ix.ancestry = m
-  }
-  return ix.ancestry.get(navKey(toNavRef(ref))) ?? null
-}
+export const ancestryOf = (tree: NexusTree, ref: NavRef | SelectTarget): TrailNode[] | null =>
+  ancestries(tree).get(navKey(toNavRef(ref))) ?? null
 
 /** Grouped by kind so equal-scored ties keep a stable cross-kind order. */
-export function searchEntriesOf(tree: NexusTree): SearchEntry[] {
-  const ix = indexFor(tree)
-  if (!ix.search) {
+export const searchEntriesOf = entityMemo(
+  [(t) => t.contexts, (t) => t.nexus.name],
+  (tree): SearchEntry[] => {
     const byKind: Record<NodeRecord['kind'], SearchEntry[]> = {
       homepage: [],
       matrix: [],
@@ -218,7 +150,7 @@ export function searchEntriesOf(tree: NexusTree): SearchEntry[] {
       set: [],
       page: [],
     }
-    for (const r of ix.nodes) {
+    for (const r of nodesOf(tree)) {
       byKind[r.kind].push({
         key: r.key,
         target: toNavRef(r),
@@ -226,7 +158,7 @@ export function searchEntriesOf(tree: NexusTree): SearchEntry[] {
         folded: foldKey(r.title),
       })
     }
-    ix.search = [
+    return [
       ...byKind.homepage,
       ...byKind.matrix,
       ...byKind.space,
@@ -234,51 +166,23 @@ export function searchEntriesOf(tree: NexusTree): SearchEntry[] {
       ...byKind.set,
       ...byKind.page,
     ]
-  }
-  return ix.search
-}
+  },
+)
 
-export function pagesOf(tree: NexusTree): ConnPage[] {
-  const ix = indexFor(tree)
-  if (!ix.pages) {
-    const pages: ConnPage[] = []
-    for (const r of ix.nodes)
-      if (r.kind === 'page') pages.push({ id: r.id, title: r.title, path: r.path, icon: r.ownIcon })
-    ix.pages = pages
-  }
-  return ix.pages
-}
-
-export const livePagePath = (
-  tree: NexusTree | null,
-  target: { id: string; path: string },
-): string => (tree && pagesByIdOf(tree).get(target.id)?.path) ?? target.path
-
-export function pagesByIdOf(tree: NexusTree): ReadonlyMap<string, ConnPage> {
-  const ix = indexFor(tree)
-  if (!ix.pagesById) ix.pagesById = new Map(pagesOf(tree).map((p) => [p.id, p]))
-  return ix.pagesById
-}
-
-export function recordsByIdOf(tree: NexusTree): ReadonlyMap<string, NodeRecord> {
-  const ix = indexFor(tree)
-  if (!ix.recordsById)
-    ix.recordsById = new Map(ix.nodes.filter((r) => r.id !== '').map((r) => [r.id, r]))
-  return ix.recordsById
-}
-
-export function pageIndexOf(tree: NexusTree): PageIndex {
-  const ix = indexFor(tree)
-  if (!ix.pageIndex) ix.pageIndex = buildPageIndex(pagesOf(tree))
-  return ix.pageIndex
-}
+export const recordsByIdOf = entityMemo(
+  LOOKS,
+  (tree): ReadonlyMap<string, NodeRecord> =>
+    new Map(
+      nodesOf(tree)
+        .filter((r) => r.id !== '')
+        .map((r) => [r.id, r]),
+    ),
+)
 
 /** The closed set thumbnail eviction prunes against — nothing selects a Context group, so the records are the complete universe of capturable keys. */
-export function navKeysOf(tree: NexusTree): string[] {
-  const ix = indexFor(tree)
-  if (!ix.navKeys) ix.navKeys = ix.nodes.map((r) => r.key)
-  return ix.navKeys
-}
+export const navKeysOf = entityMemo([(t) => t.contexts], (tree): string[] =>
+  nodesOf(tree).map((r) => r.key),
+)
 
 /** `icon` is raw and unvalidated; NavView is excluded because its banner is treated separately. */
 export interface BannerOwner {
@@ -305,27 +209,27 @@ export function isSurfaceKind(kind: BannerOwnerKind): boolean {
   return kind === 'homepage' || kind === 'space'
 }
 
-export function spaceLinksOf(tree: NexusTree): ReadonlyMap<string, Record<string, string[]>> {
-  const ix = indexFor(tree)
-  if (ix.spaceLinks) return ix.spaceLinks
-  const out = new Map<string, Record<string, string[]>>()
-  const add = (spaceId: string, contextId: string, otherId: string): void => {
-    const links = out.get(spaceId) ?? {}
-    const ids = links[contextId] ?? []
-    if (!ids.includes(otherId)) ids.push(otherId)
-    links[contextId] = ids
-    out.set(spaceId, links)
-  }
-  for (const g of tree.contexts)
-    for (const s of g.spaces)
-      for (const [contextId, ids] of Object.entries(s.contextValues ?? {}))
-        for (const other of ids) {
-          add(s.id, contextId, other)
-          add(other, g.def.id, s.id)
-        }
-  ix.spaceLinks = out
-  return out
-}
+export const spaceLinksOf = entityMemo(
+  [(t) => t.contexts],
+  (tree): ReadonlyMap<string, Record<string, string[]>> => {
+    const out = new Map<string, Record<string, string[]>>()
+    const add = (spaceId: string, contextId: string, otherId: string): void => {
+      const links = out.get(spaceId) ?? {}
+      const ids = links[contextId] ?? []
+      if (!ids.includes(otherId)) ids.push(otherId)
+      links[contextId] = ids
+      out.set(spaceId, links)
+    }
+    for (const g of tree.contexts)
+      for (const s of g.spaces)
+        for (const [contextId, ids] of Object.entries(s.contextValues ?? {}))
+          for (const other of ids) {
+            add(s.id, contextId, other)
+            add(other, g.def.id, s.id)
+          }
+    return out
+  },
+)
 
 export const spaceNodeOf = (tree: NexusTree | null, id: string): SpaceNode | null =>
   (tree && contextWorldOf(tree.contexts).spaceById.get(id)) ?? null

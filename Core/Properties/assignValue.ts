@@ -6,7 +6,7 @@ import { applyValueAtRoot, isBlankValue, type PropertyValue } from './propertyVa
 import type { ResolvedColumn, ViewRow } from '../Views/viewRow'
 import { resolveFieldValue } from './value'
 import { shownAlias } from '../Connections/linkValue'
-import { pageIndexOf } from '../Nexus/treeIndex'
+import { pageIndexOf } from '../Nexus/record'
 import { pushUndo } from '../Session/undo'
 import { useSession } from '../Session/store'
 

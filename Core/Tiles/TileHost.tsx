@@ -10,7 +10,7 @@ import {
   type TilePick,
 } from './tiles'
 import type { ConnPage } from '../Connections/pageIndex'
-import { pagesByIdOf } from '../Nexus/treeIndex'
+import { pagesByIdOf } from '../Nexus/record'
 import type { ConnectionsApi } from '../MarkdownPM/Links/connectionsApi'
 import { useConnections } from '../Session/pageConnections'
 import { insertBand, removeLeaf } from './Layout/ops'
@@ -217,7 +217,7 @@ export function TileHost({
           pickTree,
           pageInfo: page && {
             title: page.title,
-            icon: entityIcon('page', page.icon, defaultIcons),
+            icon: entityIcon('page', tree.config.pageMetadata[page.id]?.icon, defaultIcons),
           },
           boardLocked: readTileDoc(host).locked,
         })

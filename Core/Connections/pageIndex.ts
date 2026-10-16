@@ -6,7 +6,6 @@ export interface ConnPage {
   id: string
   title: string
   path: string
-  icon?: string
 }
 
 export interface ConnResolution {
@@ -25,11 +24,12 @@ export const headingKeys = (headings: readonly PageHeading[]): string[] => [
 ]
 
 export interface PageIndex {
+  holders: (rawTitle: string) => readonly ConnPage[]
   resolve: (rawTitle: string) => ConnResolution
   candidates: (query: string, limit?: number) => ConnPage[]
 }
 
-export function buildPageIndex(pages: ConnPage[]): PageIndex {
+export function buildPageIndex(pages: readonly ConnPage[]): PageIndex {
   // Titles normalize ONCE at build — candidates() runs per autocomplete keystroke.
   const entries = pages.map((p) => ({ p, norm: normalizeTitle(p.title) }))
   const byTitle = new Map<string, ConnPage[]>()
@@ -41,10 +41,13 @@ export function buildPageIndex(pages: ConnPage[]): PageIndex {
   }
   // Sorted on the first autocomplete, not at build: the index rebuilds on every tree change, and most never reach a picker.
   let alphabetical: typeof entries | null = null
+  const holdersOf = (rawTitle: string): readonly ConnPage[] =>
+    byTitle.get(normalizeTitle(rawTitle)) ?? []
   return {
+    holders: holdersOf,
     resolve(rawTitle) {
-      const holders = byTitle.get(normalizeTitle(rawTitle))
-      if (!holders || holders.length === 0) return { status: 'phantom' }
+      const holders = holdersOf(rawTitle)
+      if (holders.length === 0) return { status: 'phantom' }
       if (holders.length > 1) return { status: 'ambiguous' }
       return { status: 'resolved', page: holders[0] }
     },

@@ -3,7 +3,7 @@
 import { navKey, type NavRef, type WindowTarget } from './navRef'
 import type { NexusTree } from '../Nexus/tree'
 import type { TrailSegment } from '@pommora/uix/Elements/NavTrail'
-import { pagesByIdOf } from '../Nexus/treeIndex'
+import { pagesByIdOf } from '../Nexus/record'
 
 export interface ResolvedNav {
   key: string
