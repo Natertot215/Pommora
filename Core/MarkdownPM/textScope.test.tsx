@@ -8,7 +8,7 @@ import { tokenize } from './Engine/tokens'
 import { scanDoc } from './Engine/docScan'
 import { canonicalizeCheckbox, smartBackspace } from './Input/edits'
 import { editorHost, heldOf, heldPage } from './api'
-import { inlineSurface } from './surface'
+import { editorBase } from './surface'
 import { buildPageIndex } from '../Connections/pageIndex'
 import type { ConnectionsApi } from './Links/connectionsApi'
 import { followTarget } from './Links/linkClicks'
@@ -37,8 +37,12 @@ const mount = (doc: string, ...extensions: Extension[]): EditorView => {
       doc,
       selection: { anchor: doc.length },
       extensions: [
-        editorHost.of({ ...testHost(), connections: () => conn }),
-        inlineSurface('text'),
+        editorBase({
+          host: { ...testHost(), connections: () => conn },
+          scope: 'text',
+          panes: [],
+          formatExt: [],
+        }),
         ...extensions,
       ],
     }),

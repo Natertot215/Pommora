@@ -51,6 +51,19 @@ describe('the held tree’s pages', () => {
     expect(livePathOf(ROOT, 'pI')).toBe('Ideas/I.md')
   })
 
+  it('an id two files claim answers no path to a writer', () => {
+    const t = tree(ROOT)
+    t.collections[0].pages.push({
+      kind: 'page',
+      id: 'pA',
+      title: 'A copy',
+      path: 'Notes/A copy.md',
+    })
+    held.tree = t
+    expect(livePathOf(ROOT, 'pA')).toBeNull()
+    expect(livePathOf(ROOT, 'pD')).toBe('Notes/Deep/D.md')
+  })
+
   it('a tree held for another root resolves nothing', () => {
     held.tree = tree('/elsewhere')
     expect(liveIdOf(ROOT, join(ROOT, 'Notes/A.md'))).toBeUndefined()

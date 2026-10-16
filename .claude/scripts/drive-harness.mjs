@@ -431,8 +431,18 @@ export function against(path) {
 
 // ── The run ─────────────────────────────────────────────────────────────────
 
+/** Kills every Electron a run left behind: the helpers carry the run's temp dir on their command line, and the main is a helper's parent. */
+function sweepStrays() {
+  const rows = execFileSync('ps', ['-A', '-o', 'pid=,ppid=,command='], { encoding: 'utf8' }).split('\n').filter((l) => l.includes('pommora-drive-'))
+  for (const row of rows) {
+    const [pid, ppid] = row.trim().split(/\s+/, 2).map(Number)
+    for (const p of ppid > 1 ? [pid, ppid] : [pid]) if (p !== process.pid) try { process.kill(p, 'SIGKILL') } catch {}
+  }
+}
+
 /** Builds the app, backs up `~/Test`, and launches the build with its own userData on `debugPort`, answering once the sidebar draws. */
 export async function launch(debugPort, shotsName) {
+  sweepStrays()
   port = debugPort
   shotsDir = process.env.POMMORA_DRIVE_SHOTS ?? join(tmpdir(), shotsName)
   execFileSync('npm', ['run', 'build'], { cwd: REPO, stdio: ['ignore', 'ignore', 'inherit'] })
@@ -465,8 +475,7 @@ export async function restore() {
     await Promise.race([new Promise((r) => child.once('exit', r)), sleep(8000)])
     if (child.exitCode === null) child.kill('SIGKILL')
   }
-  const strays = execFileSync('ps', ['-A', '-o', 'pid=,command='], { encoding: 'utf8' }).split('\n').filter((l) => l.includes(userData)).map((l) => Number.parseInt(l, 10))
-  for (const pid of strays) try { process.kill(pid, 'SIGKILL') } catch {}
+  sweepStrays()
   execFileSync('rsync', ['-a', '--delete', join(backup, 'Test') + '/', NEXUS + '/'])
   rmSync(backup, { recursive: true, force: true })
   console.log(`~/Test restored · screenshots in ${shotsDir}`)

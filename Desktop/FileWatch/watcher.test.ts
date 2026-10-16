@@ -203,33 +203,38 @@ describe('the watcher settle', () => {
     }
   })
 
-  it('a heading rename whose cascade throws still lands the rest of its batch', async () => {
-    vi.useRealTimers()
-    installStores(memoryStores().stores)
-    const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
-    try {
-      await mkdir(abs('Other'), { recursive: true })
-      await writeFile(abs('Other', '_pagecollection.json'), JSON.stringify({ id: 'c2' }))
-      await writeFile(abs('Other', 'B.md'), `---\nID: ${ULID_B}\n---\n\n[[A#Setup]]\n`)
-      await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\n---\n\n## Setup\n`)
-      await seedContentIndex(root)
-      await refreshTree(root)
-      forgetLastReads()
-      await writeFile(abs('.nexus', 'properties.json'), '{corrupt')
-      vi.useFakeTimers()
-      await startWatcher(root, win)
-      await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\n---\n\n## Intro\n`)
-      await writeFile(abs('Notes', 'C.md'), `---\nID: ${ULID_C}\n---\n\ngamma\n`)
-      emit('change', 'Notes', 'A.md')
-      emit('add', 'Notes', 'C.md')
-      await settleAll(() => pushMock.mock.calls.some((c) => c[1] === 'pages:changed'))
-      expect(pushMock.mock.calls.find((c) => c[1] === 'pages:changed')?.[2]).toContain('Notes/C.md')
-      expect(logged).toHaveBeenCalled()
-    } finally {
-      logged.mockRestore()
-      installStores(NO_STORES)
-    }
-  })
+  it.skipIf(noModeBits)(
+    'a heading rename whose cascade warns still lands the rest of its batch',
+    async () => {
+      vi.useRealTimers()
+      installStores(memoryStores().stores)
+      const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
+      try {
+        await mkdir(abs('Other'), { recursive: true })
+        await writeFile(abs('Other', '_pagecollection.json'), JSON.stringify({ id: 'c2' }))
+        await writeFile(abs('Other', 'B.md'), `---\nID: ${ULID_B}\n---\n\n[[A#Setup]]\n`)
+        await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\n---\n\n## Setup\n`)
+        await seedContentIndex(root)
+        await refreshTree(root)
+        await chmod(abs('Other'), 0o555)
+        vi.useFakeTimers()
+        await startWatcher(root, win)
+        await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\n---\n\n## Intro\n`)
+        await writeFile(abs('Notes', 'C.md'), `---\nID: ${ULID_C}\n---\n\ngamma\n`)
+        emit('change', 'Notes', 'A.md')
+        emit('add', 'Notes', 'C.md')
+        await settleAll(() => pushMock.mock.calls.some((c) => c[1] === 'pages:changed'))
+        expect(pushMock.mock.calls.find((c) => c[1] === 'pages:changed')?.[2]).toContain(
+          'Notes/C.md',
+        )
+        expect(logged).toHaveBeenCalled()
+      } finally {
+        await chmod(abs('Other'), 0o755)
+        logged.mockRestore()
+        installStores(NO_STORES)
+      }
+    },
+  )
 })
 
 describe('overlapping watcher starts', () => {

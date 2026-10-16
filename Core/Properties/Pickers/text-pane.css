@@ -9,18 +9,12 @@
   right: 6px;
   z-index: 1;
 }
-/* The body is also the editor's shell, which a page sizes to its host and clips. */
+/* The body is also the editor's shell. */
 .text-pane .text-pane-body {
-  height: auto;
   max-height: 320px; /* KNOB */
   overflow-y: auto;
 }
-/* A page's editor fills its host and clips, and pads for a rail neither the pane nor the field has; both size to their content. */
-:is(.text-pane, .value-field) .mdpm-editor,
-:is(.text-pane, .value-field) .mdpm-editor .cm-editor {
-  height: auto;
-  overflow: visible;
-}
+/* A page's editor pads for a rail neither the pane nor the field has. */
 .text-pane .mdpm-editor .cm-content {
   /* KNOB — the pane's interior inset; the right edge clears the × (its 6px inset, 20px box, and 6px of air) */
   padding: 12px 32px 12px 14px;
@@ -28,7 +22,6 @@
 }
 /* The one-line field: the editor at its seat's text metrics (a cell's, or the text picker's field), one line that scrolls past its edge, as the kit's fill input sits. */
 .value-field {
-  height: auto;
   width: 100%;
   min-width: 0; /* a flex item in the popover's field, so a long value scrolls inside it rather than widening it */
 }

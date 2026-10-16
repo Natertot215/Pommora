@@ -11,7 +11,7 @@ import {
 } from '../Properties/governedSweep'
 import { byFoldedName } from '../Properties/properties'
 import { editCaches } from '../Properties/propertyCache'
-import { heldTreeOf } from './liveTree'
+import { heldTreeOf, liveTreeOf } from './liveTree'
 import type { NexusTree } from './tree'
 import { withheldIn } from './treePatch'
 import {
@@ -22,7 +22,7 @@ import {
 import { headingOutline } from '../MarkdownPM/Engine/headingScan'
 import { queryHeadingMentions, queryMentions } from '../Index/contentIndex'
 import { nexusCorpus } from '../Index/indexSeed'
-import { linkDefs, readKeptRegistry } from '../Properties/propertiesRegistry'
+import { linkDefsOf } from '../Properties/propertiesRegistry'
 import { linkKeysOf } from '../Properties/schema'
 import { readLiveSetting } from '../Settings/settings'
 import { rewriteTileConnections, tilesLinkHeading } from '../Tiles/tilesFile'
@@ -89,8 +89,9 @@ export async function deleteCascade(
   const gone = new Set(
     titles.filter((t) => !titleHeldOutside(root, t, deleted)).map(normalizeTitle),
   )
+  const tree = heldTreeOf(root)
   try {
-    const defs = byFoldedName(await linkDefs(root))
+    const defs = byFoldedName(linkDefsOf(tree?.config.registry ?? []))
     if (!defs.size) return { cascade: { pages: [], hosts: [] }, links: [] }
     const hits = [...gone].map(queryMentions)
     const rels = hits.includes(null)
@@ -111,7 +112,7 @@ export async function deleteCascade(
       )
     // Tree pages, and the pages beneath a folder the tree withholds: a loose file outside every Collection shows in no view and no restore could reach it; dropping this filter strips them too.
     const held = liveIdIndex(root)
-    const withheld = withheldIn(heldTreeOf(root)?.unreadable)
+    const withheld = withheldIn(tree?.unreadable)
     const files = rels
       .filter((rel) => (held.has(rel) || withheld(rel)) && !inside(rel))
       .map((rel) => join(root, rel))
@@ -130,7 +131,7 @@ export async function deleteCascade(
         }
         return strip(raw, file)
       },
-      ...spaceArm(heldTreeOf(root), strip),
+      ...spaceArm(tree, strip),
     })
     const links: StrippedLink[] = []
     for (const [file, { before }] of swept.touched) {
@@ -187,7 +188,8 @@ export async function renameCascade(
               ? headingOutline(outlineOf).map((h) => h.text)
               : undefined,
           )
-    const defs = Object.values((await readKeptRegistry(root)).defs)
+    const tree = await liveTreeOf(root)
+    const defs = tree.config.registry
     const holds = linkKeysOf(defs)
     const patchOf = (
       raw: Record<string, unknown>,
@@ -221,7 +223,6 @@ export async function renameCascade(
         ? null
         : mergeFrontmatter(content, patch, keys, next)
     }
-    const tree = heldTreeOf(root)
     const files = [...new Set([...rels, ...(skipRel ? [skipRel] : [])])].map((rel) =>
       join(root, rel),
     )
@@ -241,9 +242,7 @@ export async function renameCascade(
         patchOf(values, () => true),
       )
     const uncached =
-      'title' in change && tree
-        ? await editCaches(root, tree.collections, cachedIds, movedCache)
-        : 0
+      'title' in change ? await editCaches(root, tree.collections, cachedIds, movedCache) : 0
     const unmoved = swept.skipped.length + tiles.failed + uncached
     return {
       pages: [...swept.touched.keys()].filter(isMarkdownFile).map((file) => relative(root, file)),

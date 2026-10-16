@@ -333,14 +333,23 @@ const emptyPairAt = (doc: string, c: number): boolean => {
   )
 }
 
-/** The link holding `at`, from past its opener through its closer, either syntax, as the editor draws it, so code touching it leaves none; its spans are relative to `at`'s line, empty slots kept. */
-export function linkAt(scan: DocScan, at: number): LinkOccurrence | null {
+/** The line at `at` where a link can be read, by its start and text, and the links of a text standing for it (the line itself, unless a reader walks it with a slot held open) under the scan's code mask; a line without an opener holds none. */
+function linkLine(
+  scan: DocScan,
+  at: number,
+): { ls: number; line: string; links: (text?: string) => LinkOccurrence[] } | null {
   const i = lineIndexAt(scan, at)
   const line = scan.lines[i]
   if (!line.includes('[[') && !line.includes('](')) return null
   const ls = scan.lineStarts[i]
-  for (const o of linkOccurrences(line, (p) => inCodeAt(scan, ls + p)))
-    if (at - ls > o.full[0] && at - ls <= o.full[1]) return o
+  return { ls, line, links: (text = line) => linkOccurrences(text, (p) => inCodeAt(scan, ls + p)) }
+}
+
+/** The link holding `at`, from past its opener through its closer, either syntax, as the editor draws it, so code touching it leaves none; its spans are relative to `at`'s line, empty slots kept. */
+export function linkAt(scan: DocScan, at: number): LinkOccurrence | null {
+  const l = linkLine(scan, at)
+  if (!l) return null
+  for (const o of l.links()) if (at - l.ls > o.full[0] && at - l.ls <= o.full[1]) return o
   return null
 }
 
@@ -350,13 +359,11 @@ export function linkWithin(
   from: number,
   to = from,
 ): { start: number; text: string } | null {
-  const i = lineIndexAt(scan, from)
-  const line = scan.lines[i]
-  if (!line.includes('[[') && !line.includes('](')) return null
-  const ls = scan.lineStarts[i]
-  for (const o of linkOccurrences(line, (p) => inCodeAt(scan, ls + p)))
-    if (ls + o.full[0] < to && ls + o.full[1] > from)
-      return { start: ls + o.full[0], text: line.slice(o.full[0], o.full[1]) }
+  const l = linkLine(scan, from)
+  if (!l) return null
+  for (const o of l.links())
+    if (l.ls + o.full[0] < to && l.ls + o.full[1] > from)
+      return { start: l.ls + o.full[0], text: l.line.slice(o.full[0], o.full[1]) }
   return null
 }
 
@@ -365,10 +372,9 @@ const SLOT_HOLDER = '\u0000'
 
 /** The link the grammar can't read at `at` because its slot there is empty: a written link whose slot at the caret was emptied, read whole with that slot empty, else the link still being written before `at`, as it reads once closed, its slot cut back to the caret. */
 export function openLinkAt(scan: DocScan, at: number): LinkOccurrence | null {
-  const i = lineIndexAt(scan, at)
-  const line = scan.lines[i]
-  if (!line.includes('[[') && !line.includes('](')) return null
-  const ls = scan.lineStarts[i]
+  const l = linkLine(scan, at)
+  if (!l) return null
+  const { ls, line } = l
   const rel = at - ls
   const head = line.slice(0, rel)
   const held = head + SLOT_HOLDER + line.slice(rel)
@@ -383,9 +389,7 @@ export function openLinkAt(scan: DocScan, at: number): LinkOccurrence | null {
   const md = head.lastIndexOf('](')
   if (wiki === -1 && md === -1) return null
   const text = `${head}${SLOT_HOLDER}${CLOSER[wiki > md ? 'wiki' : 'markdown']}`
-  const o = linkOccurrences(text, (p) => inCodeAt(scan, ls + p)).find(
-    (x) => x.full[1] === text.length,
-  )
+  const o = l.links(text).find((x) => x.full[1] === text.length)
   return o ? mapSpans(o, ([a, b]) => [a, Math.min(b, head.length)]) : null
 }
 

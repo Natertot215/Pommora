@@ -163,6 +163,16 @@ describe('duplicate ids — a copied .md carries its id in frontmatter', () => {
     expect(searchEntriesOf(t).filter((e) => e.target.kind === 'page')).toHaveLength(3)
   })
 
+  it('the first listed shows, in the page map and the reconcile index alike', () => {
+    const t = withPages([
+      { id: 'dup', title: 'Alpha', path: 'Notes/Alpha.md' },
+      { id: 'dup', title: 'Alpha copy', path: 'Notes/Alpha copy.md' },
+    ])
+    expect(pagesByIdOf(t).get('dup')?.path).toBe('Notes/Alpha.md')
+    expect(reconcileIndexOf(t).pages.get('dup')).toBe('Notes/Alpha.md')
+    expect(reconcileIndexOf(t).pagesByPath.get('Notes/Alpha copy.md')).toBe('dup')
+  })
+
   it('two same-titled copies stay ambiguous, never silently resolved to one', () => {
     const t = withPages([
       { id: 'dup', title: 'Alpha', path: 'Notes/Alpha.md' },

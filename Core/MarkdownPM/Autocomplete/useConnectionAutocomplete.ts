@@ -130,10 +130,10 @@ export function useConnectionAutocomplete(
     if (!view || !ac || !ctl.current.open) return
     const settings = host.settings()
     const conn = host.connections()
-    // How the link read before this edit began decides whether its shown text survives a re-aim.
+    // How the link read before this edit began decides whether its shown text survives a re-aim, of its title or its heading.
     const kept =
       ac.shown &&
-      (ac.part !== 'title' ||
+      (ac.part === 'shown' ||
         keptShown(
           view.state,
           ac.start,
@@ -141,7 +141,8 @@ export function useConnectionAutocomplete(
           {
             kind: 'page',
             syntax: ac.syntax === 'markdown' ? 'markdown' : 'wiki',
-            title: row.value,
+            title: ac.part === 'heading' ? (ac.title ?? '') : row.value,
+            heading: ac.part === 'heading' ? row.value : undefined,
           },
           settings.removeTitleOnLinkChange,
           conn?.index,

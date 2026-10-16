@@ -17,7 +17,6 @@ const relation = (kind: 'body' | 'value', target: string, key = '') => ({
   target,
   qualifier: '',
   key,
-  count: 1,
 })
 
 beforeEach(() => {

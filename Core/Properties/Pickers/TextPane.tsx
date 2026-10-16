@@ -25,6 +25,7 @@ export function TextPane({
   onDismiss: () => void
 }): React.JSX.Element {
   const saveRef = useRef<() => void>(() => {})
+  // Saved on the close itself, since `PickerMenu` holds the editor through its exit presence and the unmount's save would land after the fade.
   const close = (): void => {
     saveRef.current()
     onDismiss()

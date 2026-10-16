@@ -14,6 +14,9 @@ import {
 } from '@pommora/core/Actions/editorMenu'
 import type { ActionItem } from '@pommora/core/Actions/menuModel'
 import { pasteAsRows } from '@pommora/core/Actions/pasteAsMenu'
+import { heldTreeOf } from '@pommora/core/Nexus/liveTree'
+import { pageIndexOf } from '@pommora/core/Nexus/record'
+import { sessionRoot } from '@pommora/core/Nexus/session'
 import { heldCommands } from '@pommora/core/Settings/settings'
 import { rowTemplate } from './menu'
 
@@ -109,7 +112,14 @@ function speechShareItems(params: ContextMenuParams): MenuItemConstructorOptions
 
 // The clipboard is read here, in the same turn as the right-click, not sent with the request.
 function pasteAsItems(editor: EditorMenu): MenuItemConstructorOptions[] {
-  const rows = pasteAsRows(clipboard.readText(), editor.req.embedSeat, editor.req.citeSeat)
+  const root = sessionRoot()
+  const tree = root ? heldTreeOf(root) : null
+  const rows = pasteAsRows(
+    clipboard.readText(),
+    editor.req.embedSeat,
+    editor.req.citeSeat,
+    tree ? pageIndexOf(tree) : undefined,
+  )
   return rows.length === 0 ? [] : editorRows(editor, [{ label: 'Paste As', submenu: rows }])
 }
 

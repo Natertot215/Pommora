@@ -21,16 +21,21 @@
   --heading-symbol-shift: -0.06em; /* KNOB */
   position: relative;
   z-index: var(--z-content);
-  height: 100%;
-  overflow: hidden;
   timeline-scope: --mdpm-scroll;
 }
-.mdpm-editor {
+/* A page's shell fills its host and clips; the pane and the field size to their content. */
+.mdpm-fill {
   height: 100%;
+  overflow: hidden;
+}
+.mdpm-fill .mdpm-editor,
+.mdpm-fill .cm-editor {
+  height: 100%;
+}
+.mdpm-editor {
   --interface-inset-lead: calc(var(--content-inset) - var(--rail-inset));
 }
 .mdpm-editor .cm-editor {
-  height: 100%;
   background: transparent;
   --list-gap: 4px;
 }

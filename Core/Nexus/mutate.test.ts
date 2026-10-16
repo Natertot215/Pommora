@@ -41,7 +41,7 @@ import { stabilize } from './treeStabilize'
 import type { AssetMap, NexusTree, ValueChange } from './tree'
 import type { Pushes } from '../Contract/bridge'
 import { readNexus } from './readNexus'
-import { forgetLastReads, pathExists } from '../Files/atomicWrite'
+import { pathExists } from '../Files/atomicWrite'
 import { captureWriteTap } from '../Testing/writeTap'
 import { setWriteTap } from '../Files/writeEcho'
 import { readFileSync } from 'node:fs'
@@ -1168,19 +1168,6 @@ describe('handleMutate — review-round hardening', () => {
       }
     },
   )
-
-  it('keeps a page rename whose cascade can’t start, and warns', async () => {
-    await refreshTree(root)
-    forgetLastReads()
-    await writeFile(join(root, '.nexus', 'properties.json'), '{ not json')
-    const r = await handleMutate(
-      root,
-      { op: 'rename', path: 'Notes/Daily/Beta.md', kind: 'page', newName: 'Gamma' },
-      nexusDeps,
-    )
-    expect(r.ok && r.value.cascade?.warning).toMatch(/^Links to “Beta” weren't updated: /)
-    expect(await pathExists(join(root, 'Notes/Daily/Gamma.md'))).toBe(true)
-  })
 })
 
 describe('handleMutate — renameHeading', () => {

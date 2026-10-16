@@ -81,7 +81,7 @@ describe('openNexusDb', () => {
       .run()
     first
       .prepare(
-        "INSERT INTO relations (path, kind, target, qualifier, key, count) VALUES ('a.md', 'body', 'x', '', '', 1)",
+        "INSERT INTO relations (path, kind, target, qualifier, key) VALUES ('a.md', 'body', 'x', '', '')",
       )
       .run()
     first.prepare("INSERT INTO indexed_files (path, mtime_ms, size) VALUES ('a.md', 1, 1)").run()
@@ -111,7 +111,7 @@ describe('openNexusDb', () => {
     const first = opened()
     first
       .prepare(
-        "INSERT INTO relations (path, kind, target, qualifier, key, count) VALUES ('a.md', 'embed', 'x', '', '', 1)",
+        "INSERT INTO relations (path, kind, target, qualifier, key) VALUES ('a.md', 'embed', 'x', '', '')",
       )
       .run()
     first.prepare("INSERT INTO indexed_files (path, mtime_ms, size) VALUES ('a.md', 1, 1)").run()
@@ -285,7 +285,7 @@ describe('upgrade in place', () => {
       {
         path: 'Notes/A.md',
         entry: {
-          relations: [{ kind: 'body', target: 'beta', qualifier: '', key: '', count: 1 }],
+          relations: [{ kind: 'body', target: 'beta', qualifier: '', key: '' }],
           headings: [],
           values: {},
         },

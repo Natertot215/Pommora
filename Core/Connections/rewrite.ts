@@ -7,7 +7,7 @@ import {
   targetSpan,
 } from './connections'
 import { normalizeTitle } from '../Paths/caseFold'
-import { encodeLinkTarget, escapeLabel, unescapeLabel } from './links'
+import { encodeLinkTarget, escapeLabel, labelSpells, unescapeLabel } from './links'
 import { applyEdits, type TextEdit } from '../MarkdownPM/Engine/markdownCode'
 import { escapeCell } from '../MarkdownPM/Engine/Tables/codec'
 import type { TableRegion } from '../MarkdownPM/Engine/Tables/regions'
@@ -66,7 +66,7 @@ function follower(body: string) {
         edits.push({
           from: hit.shown[0],
           to: hit.shown[1],
-          insert: esc(markdown ? escapeLabel(carried) : carried),
+          insert: esc(markdown ? escapeLabel(labelSpells(carried) ? carried : '') : carried),
         })
     }
     return edits

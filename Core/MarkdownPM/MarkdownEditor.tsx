@@ -289,7 +289,7 @@ export function MarkdownEditor({
   }, [])
 
   return (
-    <div ref={shellRef} className="mdpm-shell">
+    <div ref={shellRef} className="mdpm-shell mdpm-fill">
       {header}
       <div ref={editorRef} className="mdpm-editor interface-inset" />
       <Scrollbar of={scroller} page timeline="--mdpm-scroll" />

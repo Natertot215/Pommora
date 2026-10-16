@@ -7,6 +7,7 @@ import { invalidInput } from '@pommora/uix/Fields/fields.css'
 import { buildPageIndex } from '../../Connections/pageIndex'
 import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'
 import { stubEditorBridge, testHost } from '../../Testing/editorHarness'
+import type { Remembers } from '../../MarkdownPM/Links/linkSettle'
 import { ValueEditor } from './ValueEditor'
 
 stubEditorBridge()
@@ -284,7 +285,7 @@ describe('ValueEditor seated in the alias slot', () => {
 })
 
 describe('ValueEditor and alias memory', () => {
-  const remembered = (remembers: boolean): ReturnType<typeof vi.spyOn> => {
+  const remembered = (remembers?: Remembers): ReturnType<typeof vi.spyOn> => {
     const edit = vi.spyOn(host.aliases, 'edit')
     const view = mount('[[Alpha|]]', { remembers })
     act(() => view.dispatch({ selection: { anchor: 8 } }))
@@ -297,10 +298,38 @@ describe('ValueEditor and alias memory', () => {
   afterEach(() => vi.restoreAllMocks())
 
   it('remembers a typed alias on leave by default', () => {
-    expect(remembered(true)).toHaveBeenCalledExactlyOnceWith('p1', { op: 'add', alias: 'nick' })
+    expect(remembered()).toHaveBeenCalledExactlyOnceWith('p1', { op: 'add', alias: 'nick' })
   })
 
   it('remembers nothing where the caller holds the memory', () => {
-    expect(remembered(false)).not.toHaveBeenCalled()
+    expect(remembered('never')).not.toHaveBeenCalled()
+  })
+
+  // The alias typed, and the caret moved out of its link, which is where `leave` memory would write.
+  const left = (): { view: EditorView; edit: ReturnType<typeof vi.spyOn> } => {
+    const edit = vi.spyOn(host.aliases, 'edit')
+    const view = mount('[[Alpha|]]', { remembers: 'flush' })
+    act(() => view.dispatch({ selection: { anchor: 8 } }))
+    type(view, 'nick')
+    act(() => view.dispatch({ selection: { anchor: doc(view).length } }))
+    expect(edit).not.toHaveBeenCalled()
+    return { view, edit }
+  }
+
+  it('under flush, remembers once the edit commits', () => {
+    const { view, edit } = left()
+    press(view, 'Enter')
+    expect(onCommit).toHaveBeenCalledExactlyOnceWith('[[Alpha|nick]]')
+    expect(edit).toHaveBeenCalledExactlyOnceWith('p1', { op: 'add', alias: 'nick' })
+  })
+
+  it('under flush, Escape remembers nothing, through the blur a removed editor fires included', () => {
+    const { view, edit } = left()
+    press(view, 'Escape')
+    blur(view)
+    act(() => root.unmount())
+    root = createRoot(container)
+    expect(onCommit).not.toHaveBeenCalled()
+    expect(edit).not.toHaveBeenCalled()
   })
 })

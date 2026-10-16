@@ -193,6 +193,13 @@ describe('rewriteHeadingConnections', () => {
     ).toBe('[New](P#New) [x](P#New) [[P#New|New]] [[P#New|y]]')
   })
 
+  it('a label following a heading past the slot empties rather than leaving a link the grammar refuses', () => {
+    const long = 'h'.repeat(256)
+    const out = rewriteHeadingConnections('[Old](A#Old)', 'A', 'Old', long)
+    expect(out).toBe(`[](A#${long})`)
+    expect([...linksIn(out)]).toHaveLength(1)
+  })
+
   it('rewrites a wikilink, an aliased wikilink, and a markdown link naming the heading', () => {
     expect(rewriteHeadingConnections('[[P#Old]]', 'P', 'Old', 'New')).toBe('[[P#New]]')
     expect(rewriteHeadingConnections('[[P#Old|a]]', 'P', 'Old', 'New')).toBe('[[P#New|a]]')

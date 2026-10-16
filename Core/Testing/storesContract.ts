@@ -69,7 +69,6 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
       target,
       qualifier,
       key,
-      count: 1,
     })
     const body = (target: string, qualifier = ''): Relation => relation('body', target, qualifier)
     const space = (key: string, title: string): Relation => relation('space', title, foldKey(key))

@@ -1,6 +1,6 @@
 // The interface's projections of the one walk in `record.ts`, each cached on the tree object and keyed on what it reads.
 
-import { type EntityRecord, recordsOf } from './record'
+import { type EntityRecord, pagesByIdOf, pagesByPathOf, recordsOf } from './record'
 import type { BannerOwnerKind } from './mutateRequest'
 import { navKey, type NavRef, type SelectTarget, toNavRef } from '../Navigation/navRef'
 import { MATRIX_ICON, MATRIX_TITLE } from '../Matrix/matrixKind'
@@ -94,11 +94,10 @@ export const reconcileIndexOf = entityMemo(
     const spaces = new Set<string>()
     const collections = new Set<string>()
     const sets = new Map<string, string>()
-    const pages = new Map<string, string>()
-    const pagesByPath = new Map<string, string>()
     for (const r of recordsOf(tree))
       switch (r.kind) {
         case 'context':
+        case 'page':
           break
         case 'space':
           spaces.add(r.id)
@@ -109,12 +108,16 @@ export const reconcileIndexOf = entityMemo(
         case 'set':
           sets.set(r.id, r.path)
           break
-        case 'page':
-          pages.set(r.id, r.path)
-          pagesByPath.set(r.path, r.id)
-          break
       }
-    return { spaces, collections, sets, pages, pagesByPath, withheld: withheldIn(tree.unreadable) }
+    const pages = new Map(Array.from(pagesByIdOf(tree), ([id, p]) => [id, p.path]))
+    return {
+      spaces,
+      collections,
+      sets,
+      pages,
+      pagesByPath: pagesByPathOf(tree),
+      withheld: withheldIn(tree.unreadable),
+    }
   },
 )
 

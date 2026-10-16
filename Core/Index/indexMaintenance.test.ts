@@ -234,7 +234,6 @@ describe('the writers maintain the rows', () => {
         target: 'beta',
         qualifier: '',
         key: '',
-        count: 1,
       },
     ])
     await expectMaintained()

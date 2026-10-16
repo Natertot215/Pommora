@@ -394,7 +394,14 @@ describe('the chevron slides in a page’s headings', () => {
     ]),
     headingsOf: (path) =>
       path === 'Notes.md'
-        ? { keys: ['setup'], texts: ['Setup'], outline: [{ text: 'Setup', level: 2 }] }
+        ? {
+            keys: ['setup', 'usage'],
+            texts: ['Setup', 'Usage'],
+            outline: [
+              { text: 'Setup', level: 2 },
+              { text: 'Usage', level: 2 },
+            ],
+          }
         : { keys: [], texts: [], outline: [] },
     open: () => {},
   }
@@ -589,6 +596,57 @@ describe('the chevron slides in a page’s headings', () => {
     await press(view, 'Enter')
     expect(view.state.doc.toString()).toBe('[[Notes#Setup|Mine]] x')
     expect(view.state.selection.main.head).toBe('[[Notes#Setup|Mine]]'.length)
+  })
+
+  it.each([
+    ['[[Notes#Setup|Mine]]', true, '[[Notes#Usage]]'],
+    ['[[Notes#Setup|Mine]]', false, '[[Notes#Usage|Mine]]'],
+    ['[Setup](Notes#Setup)', true, '[Usage](Notes#Usage)'],
+  ] as const)('%s re-picked to Usage, dropping titles: %s, writes %s', async (body, removeTitleOnLinkChange, written) => {
+    const view = await mountEditor({
+      initialBody: body,
+      connections: headingConn,
+      host: { settings: { removeTitleOnLinkChange } },
+    })
+    vi.spyOn(view, 'coordsAtPos').mockReturnValue(coords)
+    const from = body.indexOf('Setup', 3)
+    const to = from + 'Setup'.length
+    await act(async () => {
+      view.focus()
+      view.dispatch({ selection: { anchor: from, head: to } })
+    })
+    await act(async () => {
+      view.dispatch({
+        changes: { from, to, insert: 'Us' },
+        selection: { anchor: from + 2 },
+        userEvent: 'input.type',
+      })
+    })
+    await press(view, 'Enter')
+    expect(view.state.doc.toString()).toBe(written)
+  })
+
+  it('a heading picked into a link that pointed nowhere keeps its alias with Remove Title on', async () => {
+    const view = await mountEditor({
+      initialBody: '[[Nope|Mine]] x',
+      connections: headingConn,
+      host: { settings: { removeTitleOnLinkChange: true } },
+    })
+    vi.spyOn(view, 'coordsAtPos').mockReturnValue(coords)
+    await act(async () => {
+      view.focus()
+      view.dispatch({ selection: { anchor: 2, head: 6 } })
+    })
+    await act(async () => {
+      view.dispatch({
+        changes: { from: 2, to: 6, insert: 'Not' },
+        selection: { anchor: 5 },
+        userEvent: 'input.type',
+      })
+    })
+    await press(view, 'ArrowRight')
+    await press(view, 'Enter')
+    expect(view.state.doc.toString()).toBe('[[Notes#Setup|Mine]] x')
   })
 
   it('a bare # in ( ) lists the current document’s own headings', async () => {

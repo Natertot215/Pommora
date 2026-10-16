@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { markdownLinkRegex } from '../Connections/links'
 import { readLinkText, type LinkTarget } from '../Connections/linkValue'
+import { buildPageIndex } from '../Connections/pageIndex'
 import { PASTE_LITERAL_ACTION, RESTING_EDITS } from './editorMenu'
 import { pasteAsRows, pasteAsWrite, pasteModeOf, type PasteMode } from './pasteAsMenu'
 
@@ -69,6 +70,20 @@ describe('what the clipboard offers to become', () => {
   it('offers a copied connection the two ways of naming a page, the wikilink only where it spells every slot', () => {
     expect(labels('[[Alpha]]')).toEqual(['Connection', 'Markdown Link'])
     expect(labels('[a\\]b](Alpha)')).toEqual(['Markdown Link'])
+  })
+
+  it('an address a held page also answers offers the page’s rows', () => {
+    const index = buildPageIndex([{ id: 'p', title: 'notes.io', path: 'Notes/notes.io.md' }])
+    expect(labels('[notes](notes.io)', false, false)).toEqual([
+      'Full Link',
+      'Short Link',
+      'Page Title',
+      'Plain Text',
+    ])
+    expect(pasteAsRows('[notes](notes.io)', false, false, index).map((r) => r.label)).toEqual([
+      'Connection',
+      'Markdown Link',
+    ])
   })
 
   it('reads a markdown link through its target', () => {

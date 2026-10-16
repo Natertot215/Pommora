@@ -61,10 +61,20 @@ export const pagesOf = entityMemo([], (tree): readonly ConnPage[] =>
     .map(({ id, title, path }) => ({ id, title, path })),
 )
 
-/** Last-wins where two files claim one id: the window shows the page; the host's writers refuse it (`heldPages.ts`'s `indicesOf`). */
+/** Where two files claim one id, the first listed shows and refills a cache; the host's file writers refuse it (`heldPages.ts`). */
 export const pagesByIdOf = entityMemo(
   [],
-  (tree): ReadonlyMap<string, ConnPage> => new Map(pagesOf(tree).map((p) => [p.id, p])),
+  (tree): ReadonlyMap<string, ConnPage> =>
+    new Map(
+      Object.values(recordById(tree)).flatMap(({ id, kind, title, path }): [string, ConnPage][] =>
+        kind === 'page' ? [[id, { id, title, path }]] : [],
+      ),
+    ),
+)
+
+export const pagesByPathOf = entityMemo(
+  [],
+  (tree): ReadonlyMap<string, string> => new Map(pagesOf(tree).map((p) => [p.path, p.id])),
 )
 
 export const livePagePath = (

@@ -8,8 +8,8 @@ import {
   mountEditor,
   rerenderEditor,
   stubEditorBridge,
-} from '../Testing/editorHarness'
-import { mirrorBody } from './api'
+} from '../../Testing/editorHarness'
+import { mirrorBody } from '../api'
 
 stubEditorBridge()
 

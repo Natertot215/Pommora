@@ -443,13 +443,21 @@ describe('wiki and markdown picks mirror each other', () => {
 
   it('a closed heading pick rests past the closer', () => {
     expect(pick('[[Notes#Se]]', '#S', 'Setup', {}).before).toHaveLength(15)
-    expect(pick('[x](Notes#Se)', '#S', 'Setup', {}).before).toHaveLength(16)
+    expect(pick('[x](Notes#Se)', '#S', 'Setup', { kept: 'x' }).before).toHaveLength(16)
   })
 
-  it('a heading pick behind a kept alias keeps it and rests past the closer', () => {
-    expect(pick('[[Notes#|Mine]]', '#', 'Setup', {})).toEqual({
+  it('a heading pick behind a kept alias keeps it and rests past the closer; one not kept writes the link whole without it', () => {
+    expect(pick('[[Notes#|Mine]]', '#', 'Setup', { kept: 'Mine' })).toEqual({
       text: '[[Notes#Setup|Mine]]',
       before: '[[Notes#Setup|Mine]]',
+    })
+    expect(pick('[[Notes#Se|Mine]]', '#S', 'Setup', {})).toEqual({
+      text: '[[Notes#Setup]]',
+      before: '[[Notes#Setup]]',
+    })
+    expect(pick('[Mine](Notes#Se)', '#S', 'Setup', {})).toEqual({
+      text: '[Setup](Notes#Setup)',
+      before: '[Setup](Notes#Setup)',
     })
   })
 })

@@ -340,13 +340,16 @@ describe('the single-line Text field', () => {
     expect(onClose).toHaveBeenCalledOnce()
   })
 
-  it('Escape after typing writes nothing', () => {
+  it('Escape after typing writes nothing, the alias left in a link included', () => {
+    const mutate = vi.spyOn(useSession.getState(), 'mutate').mockResolvedValue(null)
     mount(NOTES, null)
     type('see [[Alpha|nick]]')
     press('Escape')
     act(() => root.render(null))
     expect(onCommit).not.toHaveBeenCalled()
     expect(onClose).toHaveBeenCalledOnce()
+    expect(mutate).not.toHaveBeenCalled()
+    mutate.mockRestore()
   })
 
   it('remembers an alias typed into a link on leave', () => {

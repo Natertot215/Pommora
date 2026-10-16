@@ -8,6 +8,12 @@ const LINK_DEST = '((?:[^()\\r\\n]|\\((?:[^()\\r\\n]|\\([^()\\r\\n]*\\))*\\)){1,
 export const markdownLinkRegex = (): RegExp =>
   new RegExp(`\\[${LINK_LABEL}\\]\\(${LINK_DEST}\\)`, 'dg')
 
+/** What a wikilink's slots and the markdown label can hold: the grammar's 255 characters and no line break. */
+export const fitsSlot = (s: string): boolean => s.length <= 255 && !/[\r\n]/.test(s)
+
+/** What the markdown label can spell: a slot's worth that doesn't open as a footnote reference. */
+export const labelSpells = (label: string): boolean => fitsSlot(label) && !label.startsWith('^')
+
 export function escapeLabel(label: string): string {
   return label.replace(/[\\\]]/g, '\\$&')
 }

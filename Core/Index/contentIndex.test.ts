@@ -24,8 +24,8 @@ afterEach(() => {
 const STAT = { mtimeMs: 1000, size: 10 }
 const TAGGED: PageIndexEntry = {
   relations: [
-    { kind: 'body', target: 'beta', qualifier: '', key: '', count: 1 },
-    { kind: 'space', target: 'pommora', qualifier: '<projects>', key: '', count: 1 },
+    { kind: 'body', target: 'beta', qualifier: '', key: '' },
+    { kind: 'space', target: 'pommora', qualifier: '<projects>', key: '' },
   ],
   headings: [],
   values: { Status: 'Open', '<Projects>': ['Pommora'] },
@@ -38,8 +38,8 @@ describe('the content index', () => {
         path: 'Notes/A.md',
         entry: {
           relations: [
-            { kind: 'body', target: 'beta', qualifier: '', key: '', count: 1 },
-            { kind: 'space', target: 'pommora', qualifier: '<projects>', key: '', count: 1 },
+            { kind: 'body', target: 'beta', qualifier: '', key: '' },
+            { kind: 'space', target: 'pommora', qualifier: '<projects>', key: '' },
           ],
           headings: [],
           values: { Status: 'Open', '<Projects>': ['Pommora'] },
@@ -52,10 +52,10 @@ describe('the content index', () => {
         path: 'Loose/B.md',
         entry: {
           relations: [
-            { kind: 'body', target: 'beta', qualifier: '', key: '', count: 1 },
-            { kind: 'body', target: 'gamma', qualifier: '', key: '', count: 1 },
-            { kind: 'space', target: 'pommora', qualifier: '<projects>', key: '', count: 1 },
-            { kind: 'space', target: 'sapphire', qualifier: '<projects>', key: '', count: 1 },
+            { kind: 'body', target: 'beta', qualifier: '', key: '' },
+            { kind: 'body', target: 'gamma', qualifier: '', key: '' },
+            { kind: 'space', target: 'pommora', qualifier: '<projects>', key: '' },
+            { kind: 'space', target: 'sapphire', qualifier: '<projects>', key: '' },
           ],
           headings: [],
           values: { '<Projects>': ['Pommora', 'Sapphire'] },
@@ -78,8 +78,8 @@ describe('the content index', () => {
         path: 'Notes/A.md',
         entry: {
           relations: [
-            { kind: 'body', target: 'beta', qualifier: '', key: '', count: 1 },
-            { kind: 'space', target: 'pommora', qualifier: '<projects>', key: '', count: 1 },
+            { kind: 'body', target: 'beta', qualifier: '', key: '' },
+            { kind: 'space', target: 'pommora', qualifier: '<projects>', key: '' },
           ],
           headings: [],
           values: { Status: 'Open' },
@@ -91,7 +91,7 @@ describe('the content index', () => {
       {
         path: 'Notes/A.md',
         entry: {
-          relations: [{ kind: 'body', target: 'gamma', qualifier: '', key: '', count: 1 }],
+          relations: [{ kind: 'body', target: 'gamma', qualifier: '', key: '' }],
           headings: [],
           values: {},
         },
@@ -124,7 +124,7 @@ describe('the content index', () => {
       {
         path: 'Notes/A.md',
         entry: {
-          relations: [{ kind: 'body', target: 'beta', qualifier: '', key: '', count: 1 }],
+          relations: [{ kind: 'body', target: 'beta', qualifier: '', key: '' }],
           headings: [],
           values: {},
         },
@@ -141,7 +141,7 @@ describe('the content index', () => {
       {
         path: 'Projects 🚀/A.md',
         entry: {
-          relations: [{ kind: 'body', target: 'beta', qualifier: '', key: '', count: 1 }],
+          relations: [{ kind: 'body', target: 'beta', qualifier: '', key: '' }],
           headings: [],
           values: {},
         },

@@ -11,6 +11,7 @@ import {
 } from './connections'
 import { codeMask } from '../MarkdownPM/Engine/markdownCode'
 import { targetTitle } from './links'
+import { readLinkText } from './linkValue'
 
 const walk = (text: string) => linkOccurrences(text, codeMask(text))
 
@@ -79,8 +80,14 @@ describe('pageLinkText and the slot rules', () => {
     expect(pageLinkText({ title: 'A', shown: 'a]b' }, 'wiki')).toBe('[a\\]b](A)')
     expect(pageLinkText({ title: 'A|B' }, 'wiki')).toBe('[A|B](A%7CB)')
     expect(pageLinkText({ title: 'P', heading: 'x'.repeat(256) }, 'wiki')).toBe(
-      `[${'x'.repeat(256)}](P#${'x'.repeat(256)})`,
+      `[](P#${'x'.repeat(256)})`,
     )
+  })
+  it('empties a markdown label the grammar refuses, overlong or opening as a footnote, so the link still reads', () => {
+    expect(pageLinkText({ title: '^foo' }, 'markdown')).toBe('[](%5Efoo)')
+    expect(
+      readLinkText(pageLinkText({ title: 'A', shown: 'x'.repeat(256) }, 'wiki')),
+    ).toMatchObject({ kind: 'page', syntax: 'markdown', title: 'A' })
   })
   it('labels a markdown link by its heading, else its title, where none is given', () => {
     expect(pageLinkText({ title: 'P' }, 'markdown')).toBe('[P](P)')
