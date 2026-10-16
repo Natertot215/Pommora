@@ -1,6 +1,7 @@
 import { type Personalization, settingOf } from '../../Settings/personalization'
 import { namesPage } from '../../Connections/links'
 import {
+  CLOSER,
   type LinkOccurrence,
   linkOccurrences,
   type LinkPart,
@@ -381,7 +382,7 @@ export function openLinkAt(scan: DocScan, at: number): LinkOccurrence | null {
   const wiki = head.lastIndexOf('[[')
   const md = head.lastIndexOf('](')
   if (wiki === -1 && md === -1) return null
-  const text = `${head}${SLOT_HOLDER}${wiki > md ? ']]' : ')'}`
+  const text = `${head}${SLOT_HOLDER}${CLOSER[wiki > md ? 'wiki' : 'markdown']}`
   const o = linkOccurrences(text, (p) => inCodeAt(scan, ls + p)).find(
     (x) => x.full[1] === text.length,
   )

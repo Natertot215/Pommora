@@ -3,7 +3,7 @@ import { cx } from '../Utilities/cx'
 import { autoSizeWrap, autoSizeMirror, autoSizeInput, invalidInput } from './fields.css'
 
 /** How an edit ended: by Enter or Escape, or by the focus leaving. */
-export type EditEnd = { by: 'key' | 'blur' }
+export type EditEnd = 'key' | 'blur'
 
 /** `settled` marks the edit over: the commit's blur or an Escape sets it, so Escape's own blur commits nothing, and focus clears it, so a field that stays mounted keeps saving. Enter commits through the blur it causes, and `how` tells the caller whether a key or the focus leaving ended the edit. */
 export function EditableInput({
@@ -93,13 +93,13 @@ export function EditableInput({
           e.currentTarget.value = initial
           // A focused field removed from the DOM fires no blur, stranding the drawn caret.
           e.currentTarget.blur()
-          onCancel({ by: 'key' })
+          onCancel('key')
         }
       }}
       onBlur={(e) => {
         if (settled.current) return
         settled.current = true
-        const how: EditEnd = { by: byKey.current ? 'key' : 'blur' }
+        const how: EditEnd = byKey.current ? 'key' : 'blur'
         byKey.current = false
         const next = e.currentTarget.value.trim()
         if ((required && !next) || invalid?.(next)) {

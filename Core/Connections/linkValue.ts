@@ -27,12 +27,12 @@ import type { ConnPage, PageIndex } from './pageIndex'
 
 /** What a link writes. A markdown destination a page could also hold rides the url arm as `page?`, since only resolution decides which it is. */
 export type LinkTarget =
-  | { kind: 'page'; syntax: 'wiki' | 'markdown'; title: string; heading?: string; alias?: string }
+  | { kind: 'page'; syntax: 'wiki' | 'markdown'; title: string; heading?: string; shown?: string }
   | {
       kind: 'url'
       syntax: 'markdown' | 'bare'
       url: string
-      alias?: string
+      shown?: string
       page?: PageName
     }
 
@@ -56,11 +56,11 @@ const writtenPage = (
   syntax: 'wiki' | 'markdown',
   title: string,
   heading: string,
-  alias?: string,
+  shown?: string,
 ): LinkTarget | null =>
   title === '' && !heading
     ? null
-    : { kind: 'page', syntax, title, ...(heading ? { heading } : {}), ...(alias ? { alias } : {}) }
+    : { kind: 'page', syntax, title, ...(heading ? { heading } : {}), ...(shown ? { shown } : {}) }
 
 /** The one reader of what a link occurrence in `text` writes; the address is kept as written. */
 export function readOccurrence(text: string, o: LinkOccurrence): LinkTarget | null {
@@ -68,20 +68,20 @@ export function readOccurrence(text: string, o: LinkOccurrence): LinkTarget | nu
   const heading = o.heading ? slice(o.heading) : ''
   if (o.syntax === 'wiki')
     return writtenPage('wiki', slice(o.title), heading, o.shown ? slice(o.shown) : undefined)
-  const alias = unescapeLabel(slice(o.shown)) || undefined
+  const shown = unescapeLabel(slice(o.shown)) || undefined
   const titleHalf = slice(o.title)
   const title = targetTitle(titleHalf, o.heading !== null)
   const fragment = targetFragment(heading)
   const url = slice(targetSpan(o))
   const address = isValidLink(url)
   if (title !== null && (targetNamesFile(titleHalf) || !address))
-    return writtenPage('markdown', title, fragment, alias)
+    return writtenPage('markdown', title, fragment, shown)
   if (!address) return null
   return {
     kind: 'url',
     syntax: 'markdown',
     url,
-    alias,
+    shown,
     ...(title === null ? {} : { page: { title, ...(fragment ? { heading: fragment } : {}) } }),
   }
 }
@@ -98,7 +98,7 @@ export const bareHeading = (heading: string, own?: ConnPage): ResolvedLink =>
   own ? { kind: 'page', page: own, heading } : { kind: 'self', heading }
 
 /** The page a written link names: a page link's own target, or the page an address-shaped destination could also hold. */
-const namedPage = (written: LinkTarget | null): PageName | undefined =>
+export const namedPage = (written: LinkTarget | null): PageName | undefined =>
   written?.kind === 'page' ? written : written?.page
 
 /** Page resolution comes first, deliberately: `isValidLink` accepts any dotted host, so a destination `notes.io` would read as a website and the page holding that title would be unreachable. */
@@ -141,7 +141,7 @@ export function shownAlias(
 ): { page: ConnPage; alias: string } | null {
   const written = readLinkText(text)
   const target = resolveLink(written, index)
-  const alias = written?.alias
+  const alias = written?.shown
   if (target.kind !== 'page' || target.heading || !alias || !keepsAlias(alias, target.page.title))
     return null
   const { page } = target
@@ -149,7 +149,7 @@ export function shownAlias(
   const named = namedPage(wasWritten)
   if (named && namesTarget(alias, named)) return null
   const before = resolveLink(wasWritten, index)
-  if (wasWritten?.alias === alias && before.kind === 'page' && before.page.id === page.id)
+  if (wasWritten?.shown === alias && before.kind === 'page' && before.page.id === page.id)
     return null
   return { page, alias }
 }
@@ -168,7 +168,7 @@ export function resolvedTarget(
     syntax: written.syntax === 'wiki' ? 'wiki' : 'markdown',
     title: named.title === '' ? '' : target.page.title,
     ...(target.heading ? { heading: target.heading } : {}),
-    ...(written.alias ? { alias: written.alias } : {}),
+    ...(written.shown ? { shown: written.shown } : {}),
   }
 }
 
@@ -194,7 +194,7 @@ export function linkValueFromEdit(
 export function linkDisplayText(raw: string, display?: LinkDisplay, title?: string): string {
   const target = readLinkText(raw)
   if (!target) return raw
-  if (target.alias) return target.alias
+  if (target.shown) return target.shown
   if (target.kind === 'page') {
     if (target.syntax === 'markdown') return defaultLabel(target.title, target.heading)
     if (!target.heading) return target.title
@@ -262,18 +262,14 @@ export function keepsShown(
   return was.kind === 'unresolved' || sameTarget(was, resolveLink(next, index))
 }
 
-/** Writes a link to `next` in the syntax asked for, through the one page writer; whether an earlier alias rides along is `keepsShown`'s decision, folded into `next.alias` by the caller. */
+/** Writes a link to `next` in the syntax asked for, through the one page writer; whether an earlier alias rides along is `keepsShown`'s decision, folded into `next.shown` by the caller. */
 export function retarget(
   syntax: 'wiki' | 'markdown',
   next: LinkTarget,
   into?: { format: LinkDisplay; title?: string },
 ): LinkPaste {
-  if (next.kind === 'page')
-    return {
-      kind: 'link',
-      text: pageLinkText({ title: next.title, heading: next.heading, shown: next.alias }, syntax),
-    }
+  if (next.kind === 'page') return { kind: 'link', text: pageLinkText(next, syntax) }
   const url = normalizeLinkUrl(next.url)
-  if (next.alias) return { kind: 'link', text: serializeLink(url, next.alias) }
+  if (next.shown) return { kind: 'link', text: serializeLink(url, next.shown) }
   return into ? linkPaste(url, into.format, into.title) : { kind: 'link', text: url }
 }

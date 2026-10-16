@@ -41,7 +41,7 @@ const row = (label: string, form: PasteAsForm): LeafItem<string> => ({
 
 function embeddableTarget(target: LinkTarget): boolean {
   return target.kind === 'page'
-    ? expressibleInLink(target.title) && !target.heading && !target.alias
+    ? expressibleInLink(target.title) && !target.heading && !target.shown
     : isHttpLink(target.url)
 }
 
@@ -57,9 +57,7 @@ export function pasteAsRows(
   if (target.kind === 'page')
     return [
       ...footnote,
-      ...(spellsAsWiki({ title: target.title, heading: target.heading, shown: target.alias })
-        ? [row('Connection', 'connection')]
-        : []),
+      ...(spellsAsWiki(target) ? [row('Connection', 'connection')] : []),
       row('Markdown Link', 'markdown'),
       ...(embed ? [row('Embedded Page', 'embedPage')] : []),
     ]

@@ -40,12 +40,6 @@ export function encodeLinkTarget(target: string): string {
   }
 }
 
-export function markdownPageLink(title: string, heading?: string, label?: string): string {
-  const dest =
-    encodeLinkTarget(title) + (heading === undefined ? '' : `#${encodeLinkTarget(heading)}`)
-  return markdownLink(dest, label ?? defaultLabel(title, heading))
-}
-
 // `decodeURIComponent` throws on a lone `%`, and CodeMirror deactivates a throwing ViewPlugin.
 export function decodeLinkTarget(target: string): string {
   try {

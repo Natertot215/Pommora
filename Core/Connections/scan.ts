@@ -1,9 +1,8 @@
 // One walker answers for every link syntax; `embed` marks a link of either syntax alone on its line behind a `!`, a tile's relation that renames as a link and relates as nothing.
 
-import { type LinkOccurrence, linkOccurrences } from './connections'
+import { type LinkOccurrence, linkOccurrences, type PageName } from './connections'
 import { normalizeTitle } from '../Paths/caseFold'
-import { targetFragment, targetTitle } from './links'
-import { linkEntry } from './linkValue'
+import { linkEntry, namedPage, readOccurrence } from './linkValue'
 import {
   codeMask,
   type CodeMask,
@@ -61,10 +60,11 @@ export function sectionRunsIn(
   return out
 }
 
-/** One occurrence the index and the rename rewriter share: the occurrence's spans under its names, `target` and `qualifier` as normalized keys (`qualifier` is '' when the link names no heading), `title` empty where the link names its own page by leaving it out, and `embed` for a link alone on its line behind a `!`. */
+/** One occurrence the index and the rename rewriter share: the occurrence's spans under its names, `named` the page as the link reads it, `target` and `qualifier` as normalized keys (`qualifier` is '' when the link names no heading), `title` empty where the link names its own page by leaving it out, and `embed` for a link alone on its line behind a `!`. */
 export interface LinkHit {
   syntax: LinkOccurrence['syntax'] | 'section'
   embed: boolean
+  named: PageName
   target: string
   qualifier: string
   full: Span
@@ -89,29 +89,20 @@ export function* linksIn(
   if (!body.includes('[[') && !body.includes('](') && !runs) return
   const mask = inCode ?? codeMask(body)
   const own = normalizeTitle(ownTitle)
-  const read = (s: Span): string => body.slice(s[0], s[1])
   for (const o of linkOccurrences(body, mask)) {
-    const embed = embedLine(body, o.full)
-    if (o.syntax === 'wiki') {
-      const written = read(o.title).trim()
-      const target = titleKey(written, own)
-      const qualifier = o.heading ? normalizeTitle(read(o.heading)) : ''
-      if (!names(target, written, qualifier)) continue
-      yield { ...o, embed, target, qualifier }
-      continue
-    }
-    const written = targetTitle(read(o.title), o.heading !== null)
-    if (written === null) continue
-    const target = titleKey(written, own)
-    const qualifier = normalizeTitle(o.heading ? targetFragment(read(o.heading)) : '')
-    if (!names(target, written, qualifier)) continue
-    yield { ...o, embed, target, qualifier }
+    const named = namedPage(readOccurrence(body, o))
+    if (!named) continue
+    const target = titleKey(named.title, own)
+    const qualifier = normalizeTitle(named.heading ?? '')
+    if (!names(target, named.title, qualifier)) continue
+    yield { ...o, embed: embedLine(body, o.full), named, target, qualifier }
   }
   if (!runs) return
   for (const { from, to, heading } of sectionRunsIn(body, outline, mask))
     yield {
       syntax: 'section',
       embed: false,
+      named: { title: '', heading },
       target: own,
       qualifier: normalizeTitle(heading),
       full: [from, to],

@@ -55,9 +55,6 @@ export type OwnPage =
   | { kind: 'body'; view: EditorView; seat: Element }
   | { kind: 'held'; page: ConnPage }
 
-const heldBy = (page: ConnPage | null | undefined): OwnPage | null =>
-  page ? { kind: 'held', page } : null
-
 /** The page a held value in `view` answers for, or nothing for a body. */
 export const heldOf = (view: EditorView): ConnPage | undefined =>
   view.state.facet(heldPage) ?? undefined
@@ -66,7 +63,7 @@ export const heldOf = (view: EditorView): ConnPage | undefined =>
 export function ownPage(at: EditorView | Element): OwnPage | null {
   const own = at instanceof EditorView ? at : editorAt(at)
   const held = own?.state.facet(heldPage)
-  if (held !== undefined) return heldBy(held)
+  if (held !== undefined) return held ? { kind: 'held', page: held } : null
   const { seat, view } = pageEditorAt(at instanceof EditorView ? at.dom : at)
   const body = view ?? own
   return body && { kind: 'body', view: body, seat }

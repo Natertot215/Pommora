@@ -37,7 +37,7 @@ export function LinkCell({
   const target = resolveLink(written, api?.index, holder)
   const url = target.kind === 'url' ? target.url : raw.trim()
   const display = isLinkDisplay(look) ? look : (def?.link_display ?? DEFAULT_LINK_DISPLAY)
-  const title = useLinkTitle(url, display === 'link-title' && !written?.alias && isHttpLink(url))
+  const title = useLinkTitle(url, display === 'link-title' && !written?.shown && isHttpLink(url))
   if (written && target.kind !== 'url')
     return (
       <TextCell
