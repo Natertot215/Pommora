@@ -38,14 +38,10 @@ describe('table clipboard', () => {
     expect(decodePayload('plain prose')).toBeNull()
   })
 
-  it('a column carries its header, alignment and width, and round-trips', () => {
-    const text = encodeColumn('b', base.columns[1], ['2', '4'])
-    expect(decodePayload(text)).toEqual({
-      kind: 'column',
-      header: 'b',
-      column: { align: 'center', dashes: 5 },
-      body: ['2', '4'],
-    })
+  it('a column carries its header and body, its delimiter only its alignment, and round-trips', () => {
+    const text = encodeColumn('b', 'center', ['2', '4'])
+    expect(text.split('\n')[1]).toBe('| :---: |')
+    expect(decodePayload(text)).toEqual({ kind: 'column', header: 'b', body: ['2', '4'] })
   })
 
   it('a payload wider than one column with a delimiter is a whole table — inert', () => {

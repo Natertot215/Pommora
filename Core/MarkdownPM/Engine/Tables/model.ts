@@ -11,11 +11,20 @@ export interface TableModel {
   rows: string[][]
 }
 
-const DEFAULT_DASHES = 6
+// A delimiter row whose dashes total exactly this is a width row — each column's dashes are its percent of the table. Any other total is a formatter's padding or a bare `---`, and the columns share the width equally.
+export const WIDTH_DASHES = 100
+// No multiple of three totals 100, so a row written at this width stays unsized.
+export const UNSIZED_DASHES = 3
+
+export const isSized = (columns: Column[]): boolean =>
+  columns.reduce((sum, c) => sum + c.dashes, 0) === WIDTH_DASHES
+
+export const columnShares = (columns: Column[]): number[] =>
+  isSized(columns) ? columns.map((c) => c.dashes) : columns.map(() => WIDTH_DASHES / columns.length)
 
 export function emptyTable(cols: number, rows: number): TableModel {
   return {
-    columns: Array.from({ length: cols }, () => ({ align: null, dashes: DEFAULT_DASHES })),
+    columns: Array.from({ length: cols }, () => ({ align: null, dashes: UNSIZED_DASHES })),
     header: Array.from({ length: cols }, () => ''),
     rows: Array.from({ length: Math.max(0, rows - 1) }, () =>
       Array.from({ length: cols }, () => ''),

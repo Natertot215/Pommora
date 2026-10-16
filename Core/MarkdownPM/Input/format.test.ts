@@ -305,13 +305,13 @@ describe('setBlock', () => {
     expect(apply('x = 1', setBlock('x = 1', 0, 5, 'code'))).toBe('```\nx = 1\n```')
   })
   it('inserts a 3×3 GFM table, blank-line separated as its own block', () => {
-    const t = '|  |  |  |\n| ------ | ------ | ------ |\n|  |  |  |\n|  |  |  |'
+    const t = '|  |  |  |\n| --- | --- | --- |\n|  |  |  |\n|  |  |  |'
     expect(apply('', setBlock('', 0, 0, 'table'))).toBe(`${t}\n`)
     expect(apply('hi', setBlock('hi', 2, 2, 'table'))).toBe(`hi\n\n${t}\n`)
   })
 
   it('seats the caret below the table on an empty document and on one ending in a newline', () => {
-    const t = '|  |  |  |\n| ------ | ------ | ------ |\n|  |  |  |\n|  |  |  |'
+    const t = '|  |  |  |\n| --- | --- | --- |\n|  |  |  |\n|  |  |  |'
     const empty = setBlock('', 0, 0, 'table')
     expect(apply('', empty)).toBe(`${t}\n`)
     expect(empty.selection).toBe(t.length + 1)
@@ -324,7 +324,7 @@ describe('setBlock', () => {
   })
 
   it('blank-line-fences the inserted table below too, so it never merges with an adjacent table', () => {
-    const t = '|  |  |  |\n| ------ | ------ | ------ |\n|  |  |  |\n|  |  |  |'
+    const t = '|  |  |  |\n| --- | --- | --- |\n|  |  |  |\n|  |  |  |'
     const below = '| A | B |\n| --- | --- |\n| 1 | 2 |'
     expect(apply(`text\n\n${below}`, setBlock(`text\n\n${below}`, 5, 5, 'table'))).toBe(
       `text\n\n${t}\n\n${below}`,

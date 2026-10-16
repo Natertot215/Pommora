@@ -29,30 +29,49 @@ const base: TableModel = {
 }
 
 describe('operations', () => {
-  it('insertColumn adds avg-dash column, keeps existing dashes, widens every row', () => {
+  it('insertColumn widens every row, writing an unsized row bare', () => {
     const m = insertColumn(base, 1, 'right')
-    expect(m.columns.map((c) => c.dashes)).toEqual([2, 4, 5, 9])
+    expect(m.columns.map((c) => c.dashes)).toEqual([3, 3, 3, 3])
     expect(m.header).toEqual(['a', 'b', '', 'c'])
     expect(m.rows[0]).toEqual(['1', '2', '', '3'])
   })
 
-  it('resizeColumns re-expresses every column as its share of the dash scale', () => {
-    // The dropped boundary moved a quarter of the row into the first column.
+  it('resizeColumns writes every column as its percent of the width row', () => {
     const m = resizeColumns(base, [500, 300, 200])
     expect(m.columns.map((c) => c.dashes)).toEqual([50, 30, 20])
   })
 
-  it('resizeColumns spends the same scale however narrow the source was written', () => {
+  it('resizeColumns writes a width row however narrow the source was written', () => {
     const narrow: TableModel = { ...base, columns: base.columns.map((c) => ({ ...c, dashes: 3 })) }
     expect(resizeColumns(narrow, [500, 300, 200]).columns.map((c) => c.dashes)).toEqual([
       50, 30, 20,
     ])
   })
 
-  it('resizeColumns floors a vanishing column at one dash', () => {
-    const m = resizeColumns(base, [1000, 1, 1])
-    expect(m.columns[1].dashes).toBe(1)
-    expect(m.columns[2].dashes).toBe(1)
+  it('resizeColumns floors a vanishing column at one dash, paid for by the widest', () => {
+    expect(resizeColumns(base, [1000, 1, 1]).columns.map((c) => c.dashes)).toEqual([98, 1, 1])
+  })
+
+  it('resizeColumns hands rounding leftovers to the largest remainders, totaling exactly 100', () => {
+    expect(resizeColumns(base, [1, 1, 1]).columns.map((c) => c.dashes)).toEqual([34, 33, 33])
+  })
+
+  it('a column inserted into a width row takes the average share and keeps the row at 100', () => {
+    const sized = resizeColumns(base, [500, 300, 200])
+    expect(insertColumn(sized, 1, 'right').columns.map((c) => c.dashes)).toEqual([38, 22, 25, 15])
+  })
+
+  it('a padded row whose inserted column would total 100 stays unsized', () => {
+    const padded: TableModel = {
+      ...base,
+      columns: [15, 39, 21].map((dashes) => ({ align: null, dashes })),
+    }
+    expect(insertColumn(padded, 2, 'right').columns.map((c) => c.dashes)).toEqual([3, 3, 3, 3])
+  })
+
+  it('a column deleted from a width row reshares the rest to 100', () => {
+    const sized = resizeColumns(base, [500, 300, 200])
+    expect(deleteColumn(sized, 1).columns.map((c) => c.dashes)).toEqual([71, 29])
   })
 
   it('deleteColumn removes the cell from every row', () => {

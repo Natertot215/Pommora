@@ -1,5 +1,12 @@
 import { moveItem } from '@pommora/uix/Utilities/moveItem'
-import type { Align, Column, TableModel } from './model'
+import {
+  type Align,
+  type Column,
+  type TableModel,
+  UNSIZED_DASHES,
+  WIDTH_DASHES,
+  isSized,
+} from './model'
 
 type RowWhere = 'above' | 'below'
 type ColWhere = 'left' | 'right'
@@ -22,10 +29,9 @@ export function deleteRow(m: TableModel, atBodyIndex: number): TableModel {
 
 export function insertColumn(m: TableModel, atIndex: number, where: ColWhere): TableModel {
   const pos = where === 'right' ? atIndex + 1 : atIndex
-  const avg = Math.round(m.columns.reduce((s, c) => s + c.dashes, 0) / m.columns.length)
-  const col: Column = { align: null, dashes: Math.max(1, avg) }
+  const col: Column = { align: null, dashes: WIDTH_DASHES / m.columns.length }
   return {
-    columns: spliceAt(m.columns, pos, 0, col),
+    columns: settled(m.columns, spliceAt(m.columns, pos, 0, col)),
     header: spliceAt(m.header, pos, 0, ''),
     rows: m.rows.map((r) => spliceAt(r, pos, 0, '')),
   }
@@ -33,7 +39,11 @@ export function insertColumn(m: TableModel, atIndex: number, where: ColWhere): T
 
 export function deleteColumn(m: TableModel, atIndex: number): TableModel {
   const drop = <T>(arr: T[]): T[] => arr.filter((_, i) => i !== atIndex)
-  return { columns: drop(m.columns), header: drop(m.header), rows: m.rows.map(drop) }
+  return {
+    columns: settled(m.columns, drop(m.columns)),
+    header: drop(m.header),
+    rows: m.rows.map(drop),
+  }
 }
 
 export function setAlign(m: TableModel, col: number, align: Align): TableModel {
@@ -119,19 +129,37 @@ export function fillColumn(
     : filled
 }
 
-// A column's width IS its dash count, so the dashes a resized row is written at ARE the resolution a
-// drop can land on — the three `| --- | --- |` carries leave six positions across the whole table.
-const DASH_SCALE = 100
+// Largest remainder, so a resized row totals exactly WIDTH_DASHES and reads back as a width row; a vanishing column keeps one dash, paid for by the widest.
+function reshared(columns: Column[], weights: number[]): Column[] {
+  const total = weights.reduce((sum, w) => sum + w, 0)
+  const exact = weights.map((w) => (w / total) * WIDTH_DASHES)
+  const dashes = exact.map((x) => Math.max(1, Math.floor(x)))
+  let left = WIDTH_DASHES - dashes.reduce((sum, d) => sum + d, 0)
+  const byRemainder = exact
+    .map((_, i) => i)
+    .sort((a, b) => exact[b] - dashes[b] - (exact[a] - dashes[a]))
+  for (let k = 0; left > 0; k++, left--) dashes[byRemainder[k]]++
+  for (; left < 0; left++) dashes[dashes.indexOf(Math.max(...dashes))]--
+  return columns.map((c, i) => ({ ...c, dashes: dashes[i] }))
+}
+
+// Adding or dropping a column breaks a width row's total, so it reshares to stay one; any other row is written bare, since its padding could otherwise land on 100 by chance.
+const settled = (before: Column[], after: Column[]): Column[] =>
+  isSized(before)
+    ? reshared(
+        after,
+        after.map((c) => c.dashes),
+      )
+    : after.map((c) => ({ ...c, dashes: UNSIZED_DASHES }))
 
 export function resizeColumns(m: TableModel, widths: number[]): TableModel {
-  const total = widths.reduce((sum, w) => sum + w, 0)
-  if (total <= 0) return m
+  if (widths.reduce((sum, w) => sum + w, 0) <= 0) return m
   return {
     ...m,
-    columns: m.columns.map((c, i) => ({
-      ...c,
-      dashes: Math.max(1, Math.round(((widths[i] ?? 0) / total) * DASH_SCALE)),
-    })),
+    columns: reshared(
+      m.columns,
+      m.columns.map((_, i) => widths[i] ?? 0),
+    ),
   }
 }
 
