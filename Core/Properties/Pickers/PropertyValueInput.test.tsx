@@ -4,7 +4,7 @@ import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { EditorView } from '@codemirror/view'
 import { solidColorCss } from '@pommora/uix/Theme/ramp'
-import * as textPicker from '@pommora/uix/Pickers/text-picker.css'
+import * as fieldPicker from '@pommora/uix/Pickers/field-picker.css'
 import { stubEditorBridge } from '../../Testing/editorHarness'
 import { makeTree } from '../../Testing/testTree'
 import { useSession } from '../../Session/store'
@@ -163,7 +163,7 @@ describe('the popover routes', () => {
       { kind: 'number', value: 2 },
       { popover },
     )
-    const chrome = `.${textPicker.field.split(' ')[0]}`
+    const chrome = `.${fieldPicker.field.split(' ')[0]}`
     const number = portal().querySelector(chrome)!
     expect(number.querySelector('input')).not.toBeNull()
     expect(number.textContent).toBe('#/ 5')

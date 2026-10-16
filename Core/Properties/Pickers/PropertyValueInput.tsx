@@ -2,7 +2,7 @@ import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'
 import type { CSSProperties, RefObject } from 'react'
 import { EditableInput } from '@pommora/uix/Fields/EditableInput'
 import { fillInput } from '@pommora/uix/Fields/fields.css'
-import { TextPicker } from '@pommora/uix/Pickers/TextPicker'
+import { FieldPicker } from '@pommora/uix/Pickers/FieldPicker'
 import { solidColorCss } from '@pommora/uix/Theme/ramp'
 import type { ConnPage } from '../../Connections/pageIndex'
 import type { PropertyDefinition } from '../properties'
@@ -52,7 +52,7 @@ export function PropertyValueInput({
     if (popover) {
       const denominator = fractionDenominator(def)
       return (
-        <TextPicker
+        <FieldPicker
           {...popover}
           value={initial}
           leading={numberFormatGlyph(def)}
@@ -108,9 +108,9 @@ export function PropertyValueInput({
     editor
   )
   return popover ? (
-    <TextPicker {...popover} onDismiss={onClose}>
+    <FieldPicker {...popover} onDismiss={onClose}>
       {tinted}
-    </TextPicker>
+    </FieldPicker>
   ) : (
     tinted
   )

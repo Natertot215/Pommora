@@ -4,7 +4,7 @@ import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { useEffect, useRef } from 'react'
 import { PickerMenu } from './PickerMenu'
-import { TextPicker } from './TextPicker'
+import { FieldPicker } from './FieldPicker'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 function Host({
@@ -353,7 +353,7 @@ describe('PickerMenu focus contract', () => {
     expect(document.activeElement).toBe(find('trigger'))
   })
 
-  it('keeps the TextPicker rename field’s caret', async () => {
+  it('keeps the FieldPicker rename field’s caret', async () => {
     function RenameHost({ open }: { open: boolean }): React.JSX.Element {
       const ref = useRef<HTMLButtonElement>(null)
       return (
@@ -361,7 +361,7 @@ describe('PickerMenu focus contract', () => {
           <button ref={ref} type="button" data-id="trigger">
             Trigger
           </button>
-          <TextPicker
+          <FieldPicker
             open={open}
             onDismiss={() => {}}
             triggerRef={ref}
@@ -387,7 +387,7 @@ describe('PickerMenu focus contract', () => {
           <button ref={ref} type="button" data-id="trigger">
             Trigger
           </button>
-          <TextPicker
+          <FieldPicker
             open={open}
             onDismiss={() => {}}
             triggerRef={ref}
