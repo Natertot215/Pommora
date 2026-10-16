@@ -108,12 +108,14 @@ export function shownEnd(state: EditorState, at: number, scope: MarkdownScope): 
   return s?.part === 'shown' ? s.from + s.link.full[1] : null
 }
 
-/** The caret lands on the closer with no separating space, since the closer is the one caret position that doesn't reveal the syntax. */
+/** From an alias or label, the caret lands on the closer with no separating space, since the closer is the one caret position that doesn't reveal the syntax. */
 export const commitAliasOnEnter =
   (scope: MarkdownScope) =>
   (view: EditorView): boolean => {
     const sel = view.state.selection.main
-    const end = sel.empty ? shownEnd(view.state, sel.head, scope) : null
+    const end = sel.empty
+      ? (shownEnd(view.state, sel.head, scope) ?? labelRest(view.state, sel.head, scope))
+      : null
     if (end === null) return false
     view.dispatch({
       selection: EditorSelection.cursor(end, 1),
@@ -122,3 +124,11 @@ export const commitAliasOnEnter =
     view.focus()
     return true
   }
+
+// Return in a markdown destination, the moment an address is assigned, moves on to its label, where the picker lists the page's aliases; a URL lists none.
+function labelRest(state: EditorState, at: number, scope: MarkdownScope): number | null {
+  if (!state.facet(editorHost).settings().aliasPickerOnCommit || inRawHtml(state, at, scope))
+    return null
+  const s = slotAt(docScan(state.doc), at)
+  return s?.link.syntax === 'markdown' && s.part !== 'shown' ? s.from + s.link.shown[1] : null
+}

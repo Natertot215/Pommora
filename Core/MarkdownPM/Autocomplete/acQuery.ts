@@ -18,7 +18,10 @@ export const closeAcQuery = StateEffect.define<'dismiss' | 'blur'>()
 
 const sameQuery = (a: AutocompleteQuery, b: AutocompleteQuery | null): boolean =>
   b !== null &&
-  a.form === b.form &&
+  a.syntax === b.syntax &&
+  a.part === b.part &&
+  a.start === b.start &&
+  a.end === b.end &&
   a.from === b.from &&
   a.to === b.to &&
   a.closed === b.closed &&

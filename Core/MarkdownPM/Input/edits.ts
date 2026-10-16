@@ -359,7 +359,10 @@ export function linkWithin(
   return null
 }
 
-/** The link still being written before `at`, as it reads once closed; a placeholder at the caret keeps an empty slot readable, since both patterns refuse an empty title or destination. */
+/** What stands in an empty slot so its link still reads, since both patterns refuse an empty title or destination. */
+export const SLOT_HOLDER = '\u0000'
+
+/** The link still being written before `at`, as it reads once closed, with `SLOT_HOLDER` at the caret. */
 export function openLinkAt(scan: DocScan, at: number): LinkOccurrence | null {
   const i = lineIndexAt(scan, at)
   const ls = scan.lineStarts[i]
@@ -367,7 +370,7 @@ export function openLinkAt(scan: DocScan, at: number): LinkOccurrence | null {
   const wiki = head.lastIndexOf('[[')
   const md = head.lastIndexOf('](')
   if (wiki === -1 && md === -1) return null
-  const text = `${head}\u0000${wiki > md ? ']]' : ')'}`
+  const text = `${head}${SLOT_HOLDER}${wiki > md ? ']]' : ')'}`
   const o = linkOccurrences(text, (p) => inCodeAt(scan, ls + p)).find(
     (x) => x.full[1] === text.length,
   )
@@ -375,7 +378,7 @@ export function openLinkAt(scan: DocScan, at: number): LinkOccurrence | null {
 }
 
 /** Which slot of `o` holds the line-relative `rel`, ends inclusive and in slot order: the one rule Return, `]`, `[`, the typing transforms, the `§` transform, and the picker ask. */
-function partOf(o: LinkOccurrence, rel: number): LinkPart | null {
+export function partOf(o: LinkOccurrence, rel: number): LinkPart | null {
   const within = (s: Span | null): boolean => s !== null && rel >= s[0] && rel <= s[1]
   return within(o.title)
     ? 'title'

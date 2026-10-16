@@ -1,5 +1,5 @@
-import { connectionText, expressibleInLink, targetSpan } from '../../Connections/connections'
-import { retarget } from '../../Connections/linkValue'
+import { expressibleInLink, type LinkPart, wholeLink } from '../../Connections/connections'
+import { type LinkTarget, retarget } from '../../Connections/linkValue'
 import { normalizeTitle } from '../../Paths/caseFold'
 import {
   decodeLinkTarget,
@@ -10,27 +10,28 @@ import {
 } from '../../Connections/links'
 import type { TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { type DocScan, inCodeAt } from '../Engine/docScan'
-import { inBracket, linkAt, openLinkAt } from '../Input/edits'
+import { inBracket, linkAt, openLinkAt, partOf } from '../Input/edits'
 import { lineIndexAt, type TextEdit } from '../Engine/markdownCode'
 import type { ConnPage } from '../../Connections/pageIndex'
 import type { PageHeading } from '../../Platform/stores'
 import type { EditorHost } from '../api'
 
-type ConnectionForm = 'link' | 'alias' | 'target' | 'label' | 'heading' | 'fragment' | 'section'
+export type QuerySyntax = 'wiki' | 'markdown' | 'prose'
 
-interface QueryBase {
-  query: string
+/** One query, two axes: which syntax holds the caret (`prose` for a bare `§` run, always in its heading) and which part, the grammar's `LinkPart`. `start`..`end` is the whole link, `from`..`to` the part's text, and `closed` whether the closer follows the caret. */
+export interface AutocompleteQuery {
+  syntax: QuerySyntax
+  part: LinkPart
+  start: number
+  end: number
   from: number
   to: number
+  query: string
   closed: boolean
   title?: string
-  label?: { from: number; to: number }
 }
 
-/** A markdown link's label lies before its destination, so its query carries the link's end, past the `)`, for a pick to rest on. */
-export type AutocompleteQuery =
-  | (QueryBase & { form: Exclude<ConnectionForm, 'label'> })
-  | (QueryBase & { form: 'label'; end: number })
+export const CLOSER: Record<QuerySyntax, string> = { wiki: ']]', markdown: ')', prose: '' }
 
 export type AcRow = { value: string } & (
   | { kind: 'page'; pageId: string; location: TrailSegment[] }
@@ -39,16 +40,6 @@ export type AcRow = { value: string } & (
 )
 
 export type HeadingRow = Extract<AcRow, { kind: 'heading' }>
-
-/** The forms whose rows are pages: a wikilink's title and a markdown link's target. */
-export const listsPages = (form: ConnectionForm): boolean => form === 'link' || form === 'target'
-
-/** The forms whose rows are a page's headings: a wikilink's heading half, a markdown link's fragment, and a bare section run. */
-export const listsHeadings = (form: ConnectionForm): boolean =>
-  form === 'heading' || form === 'fragment' || form === 'section'
-
-/** The forms whose rows are a page's aliases: a wikilink's alias and a markdown link's label. */
-export const listsAliases = (form: ConnectionForm): boolean => form === 'alias' || form === 'label'
 
 export function autocompleteQuery(
   scan: DocScan,
@@ -70,93 +61,40 @@ export function autocompleteQuery(
       !/^\s/.test(line.slice(armedRel + 1, rel))
     )
       return {
-        query: line.slice(armedRel + 1, rel),
+        syntax: 'prose',
+        part: 'heading',
+        start: armed,
+        end: caret,
         from: armed + 1,
         to: caret,
-        form: 'section',
+        query: line.slice(armedRel + 1, rel),
         closed: true,
         title: '',
       }
   }
+  if (!line.includes('[[') && !line.includes('](')) return null
   const closedLink = linkAt(scan, caret)
-  const s = closedLink ?? openLinkAt(scan, caret)
-  if (s?.syntax === 'wiki') {
-    const closed = closedLink !== null
-    if (!closed && !s.heading && s.title[0] === s.title[1]) {
-      const after = line.startsWith(']]', rel)
-      return {
-        query: '',
-        from: lineStart + s.full[0],
-        to: lineStart + rel + (after ? 2 : 0),
-        form: 'link',
-        closed: after,
-      }
-    }
-    const title = line.slice(s.title[0], s.title[1])
-    // Only the TITLE opens the page picker: accepting replaces the whole token, so a caret in the alias would arm a list keyed on the title and discard the alias on Enter.
-    if (rel >= s.title[0] && rel <= s.title[1])
-      return {
-        query: title,
-        from: lineStart + s.full[0],
-        to: lineStart + s.full[1],
-        form: 'link',
-        closed,
-      }
-    if (s.heading && rel >= s.heading[0] && rel <= s.heading[1])
-      return {
-        query: line.slice(s.heading[0], s.heading[1]),
-        from: lineStart + s.heading[0],
-        to: lineStart + s.heading[1],
-        form: 'heading',
-        closed,
-        title,
-      }
-    if (s.shown && rel >= s.shown[0] && rel <= s.shown[1])
-      return {
-        query: line.slice(s.shown[0], s.shown[1]),
-        from: lineStart + s.shown[0],
-        to: lineStart + s.shown[1],
-        form: 'alias',
-        closed,
-        title,
-      }
-  }
-  if (s?.syntax !== 'markdown') return null
-  const { shown, title: page, heading: fragment, full } = s
-  const pageTitle = targetTitle(line.slice(page[0], page[1]), fragment !== null) ?? ''
-  if (closedLink && rel >= shown[0] && rel <= shown[1])
-    return {
-      query: unescapeLabel(line.slice(shown[0], shown[1])),
-      from: lineStart + shown[0],
-      to: lineStart + shown[1],
-      form: 'label',
-      closed: true,
-      title: pageTitle,
-      end: lineStart + full[1],
-    }
-  const dest = targetSpan(s)
-  if (rel < dest[0] || rel > dest[1]) return null
-  // A destination still being typed reads as though closed at the caret; an empty one is closed when its `)` follows.
-  const closed = closedLink !== null || line[rel] === ')'
-  const label = { from: lineStart + shown[0], to: lineStart + shown[1] }
-  // As with a wikilink, the page half queries alone, an empty one before a fragment asks nothing, and a retarget replaces the fragment with the rest.
-  if (!fragment || (rel <= page[1] && page[1] > page[0]))
-    return {
-      query: decodeLinkTarget(line.slice(page[0], page[1])),
-      from: lineStart + dest[0],
-      to: lineStart + dest[1],
-      form: 'target',
-      closed,
-      label,
-    }
+  const o = closedLink ?? openLinkAt(scan, caret)
+  const part = o && partOf(o, rel)
+  if (!o || !part) return null
+  const closed = closedLink !== null || line.startsWith(CLOSER[o.syntax], rel)
+  const slot = part === 'title' ? o.title : part === 'heading' ? o.heading! : o.shown!
+  const raw = line.slice(slot[0], slot[1])
+  // A wikilink's slots read as written; a markdown destination decodes and its label unescapes. A heading or shown slot lists against the written title, and a markdown label lies before its destination, which is why every query carries the link's end.
+  const query =
+    o.syntax === 'wiki' ? raw : part === 'shown' ? unescapeLabel(raw) : decodeLinkTarget(raw)
+  const titleText = line.slice(o.title[0], o.title[1])
+  const title = o.syntax === 'wiki' ? titleText : (targetTitle(titleText, o.heading !== null) ?? '')
   return {
-    query: decodeLinkTarget(line.slice(fragment[0], fragment[1])),
-    from: lineStart + fragment[0],
-    to: lineStart + fragment[1],
-    form: 'fragment',
+    syntax: o.syntax,
+    part,
+    start: lineStart + o.full[0],
+    end: lineStart + o.full[1] + (!closedLink && closed ? CLOSER[o.syntax].length : 0),
+    from: lineStart + slot[0],
+    to: lineStart + slot[1],
+    query,
     closed,
-    title: pageTitle,
-    label,
+    ...(part === 'title' ? {} : { title }),
   }
 }
 
@@ -205,23 +143,7 @@ export function aliasRows(
   return aliases
     .list(pageId)
     .filter((a) => normalizeTitle(a).startsWith(q))
-    .slice(0, AC_MAX)
     .map((a): AcRow => ({ kind: 'alias', value: a }))
-}
-
-export function closerOf(form: ConnectionForm): string {
-  switch (form) {
-    case 'link':
-    case 'alias':
-    case 'heading':
-      return ']]'
-    case 'target':
-    case 'label':
-    case 'fragment':
-      return ')'
-    case 'section':
-      return ''
-  }
 }
 
 export function commitEdit(
@@ -229,73 +151,40 @@ export function commitEdit(
   value: string,
   opts: { kept?: string; openAlias?: boolean; openHeading?: boolean },
 ): { changes: TextEdit[]; anchor: number } {
-  const closer = ac.closed ? '' : closerOf(ac.form)
-  // Opening the heading slot writes an empty fragment and slides the pane in, rather than finishing the link.
-  // A kept alias stays behind the slot, as a markdown link's label stays before it.
-  if (ac.form === 'link' && opts.openHeading) {
-    const kept = opts.kept ? `|${opts.kept}` : ''
-    const head = `[[${value}#`
-    return {
-      changes: [{ from: ac.from, to: ac.to, insert: `${head}${kept}]]` }],
-      anchor: ac.from + head.length,
-    }
+  const syntax = ac.syntax === 'markdown' ? 'markdown' : 'wiki'
+  const closer = ac.closed ? '' : CLOSER[ac.syntax]
+  // A whole-link write rests past what it wrote, or inside the slot it opened, read back from the written text through the grammar, so a writer falling back to the other syntax still seats the caret right.
+  const whole = (next: LinkTarget, open?: 'heading' | 'shown') => {
+    const { text } = retarget(syntax, next)
+    const o = open && wholeLink(text)
+    const anchor = ac.start + (o ? (open === 'heading' ? o.heading! : o.shown!)[0] : text.length)
+    return { changes: [{ from: ac.start, to: ac.end, insert: text }], anchor }
   }
-  // Opening the alias slot rather than finishing the link lets the picker hand those names straight back. Governed by `aliasPickerOnCommit`.
-  if (ac.form === 'link' && opts.openAlias) {
-    const text = connectionText(value, undefined, '')
-    return {
-      changes: [{ from: ac.from, to: ac.to, insert: text }],
-      anchor: ac.from + text.length - 2,
+  const inserted = (written: string) => ({
+    changes: [{ from: ac.from, to: ac.to, insert: written + closer }],
+    anchor: ac.end + written.length - (ac.to - ac.from) + closer.length,
+  })
+  switch (ac.part) {
+    case 'title': {
+      const open = opts.openHeading ? 'heading' : opts.openAlias ? 'shown' : undefined
+      // Opening a slot writes it empty; a markdown link opening its heading keeps an empty label for the heading pick, since the label's default is drawn, not written.
+      const alias =
+        open === 'shown'
+          ? ''
+          : (opts.kept ?? (open === 'heading' && syntax === 'markdown' ? '' : undefined))
+      const heading = open === 'heading' ? '' : undefined
+      return whole({ kind: 'page', syntax, title: value, heading, alias }, open)
     }
-  }
-  // The heading span is the only text the query owns, so the slot opens by appending the pipe to the heading.
-  if (ac.form === 'heading' && opts.openAlias) {
-    return {
-      changes: [{ from: ac.from, to: ac.to, insert: `${value}|${closer}` }],
-      anchor: ac.from + value.length + 1,
-    }
-  }
-  if (ac.form === 'link') {
-    const { text } = retarget('wiki', {
-      kind: 'page',
-      syntax: 'wiki',
-      title: value,
-      alias: opts.kept,
-    })
-    return { changes: [{ from: ac.from, to: ac.to, insert: text }], anchor: ac.from + text.length }
-  }
-  // Bare text, no wrapping syntax to land inside of — the anchor sits right after the heading itself.
-  if (ac.form === 'section')
-    return {
-      changes: [{ from: ac.from, to: ac.to, insert: value }],
-      anchor: ac.from + value.length,
-    }
-  if (ac.form === 'label') {
-    const text = escapeLabel(value)
-    return {
-      changes: [{ from: ac.from, to: ac.to, insert: text }],
-      anchor: ac.end + text.length - (ac.to - ac.from),
-    }
-  }
-  if (ac.form === 'alias' || ac.form === 'heading')
-    return {
-      changes: [{ from: ac.from, to: ac.to, insert: value + closer }],
-      anchor: ac.from + value.length + 2,
-    }
-  // The anchor steps one past what was written: the `)` that finishes the link, or the `#` the heading slot opens behind.
-  const encoded = encodeLinkTarget(value)
-  const dest = {
-    from: ac.from,
-    to: ac.to,
-    insert: encoded + (opts.openHeading ? '#' : '') + closer,
-  }
-  const retitles = ac.form === 'target' && opts.kept === undefined
-  const fill = ac.label && (ac.label.from === ac.label.to || retitles) ? ac.label : null
-  // A pick opening the heading slot leaves the label for the heading pick to fill.
-  const label = fill && !opts.openHeading ? escapeLabel(value) : ''
-  return {
-    changes: fill ? [{ from: fill.from, to: fill.to, insert: label }, dest] : [dest],
-    anchor: ac.from + label.length - (fill ? fill.to - fill.from : 0) + encoded.length + 1,
+    case 'heading':
+      // A heading pick never re-aims the link, so Remove Title doesn't apply.
+      if (opts.openAlias)
+        return whole(
+          { kind: 'page', syntax, title: ac.title ?? '', heading: value, alias: '' },
+          'shown',
+        )
+      return inserted(ac.syntax === 'markdown' ? encodeLinkTarget(value) : value)
+    case 'shown':
+      return inserted(ac.syntax === 'markdown' ? escapeLabel(value) : value)
   }
 }
 
