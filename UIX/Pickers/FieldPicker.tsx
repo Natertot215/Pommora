@@ -1,7 +1,7 @@
 import type { ReactNode, RefObject } from 'react'
 import { EditableInput } from '../Fields/EditableInput'
 import { PickerMenu } from './PickerMenu'
-import * as s from './text-picker.css'
+import * as s from './field-picker.css'
 
 /** What the one chrome holds: the kit's input over a `value`, with its affixes, or a caller's own editor as `children`. */
 type Typed = {
@@ -22,7 +22,7 @@ type Hosted = {
 }
 
 /** A typed value's popover: one field wrapper owning the fill, stroke, focus ring, type, and width, around either the kit's input or an editor the caller mounts. */
-export function TextPicker({
+export function FieldPicker({
   open,
   onDismiss,
   triggerRef,
