@@ -26,7 +26,7 @@ The work lands in nine phases, each the next layer of the system and each the la
 - **Editor Readers** (`Core/MarkdownPM/Input/edits.ts`): `linkAt` (the later-starting link at a boundary), `openLinkAt` (a link still being written, read through a placeholder at the caret), and `slotAt` (the link and the slot holding the caret), with `partOf` the one "which slot holds the caret" rule that Return, `]`, `[`, the typing transforms, the `§` transform, and the picker all ask. Tokens carry their occurrence, so no reader rebuilds one. One `shownEnd(state, at, scope)` serves Return, the `]` swallow, and the `[` stand-down, and Return in a shown slot rests the caret past the link in every editor place.
 - **Written and Resolved** (`Core/Connections/linkValue.ts`): `readLinkText` reads a whole link once into `LinkTarget` (a url arm may carry `page?` for a destination a page could also hold); `resolveLink(written, index, own?)` returns `page | self | url | unresolved(status)` and alone holds the page-before-address rule, the bare-heading rule (`bareHeading`), and the status. Addresses resolve as written; the writers that store them normalize at their own entry. `ConnectionsApi` becomes `{ index, open, menu?, headingsOf }`, `location` moves to `EditorHost`, and `[](Page)` draws its default label from the written target the look already reads.
 - **One Walk** (`Core/Nexus/record.ts`, `treeIndex.ts`, `heldPages.ts`): `recordsOf` is the only tree walk; `pagesOf`, `pagesByIdOf`, and `pageIndexOf` sit beside it keyed on collections alone; `PageIndex.holders(title)` serves the host's delete, rename, and restore checks, and `titlesOf` goes.
-- **One Tracker** (`Core/MarkdownPM/Links/linkReveal.ts`, `linkEdit.ts`): `linkWriting`, a state field holding `{ start, was }` for the link an edit is being made inside, armed by a user input or delete overlapping a link, mapped through changes, and cleared by `linkSettled`; `linkSettle`, one plugin mounted as `linkSettle.of({ scope, remembers })`, settles on the caret leaving the whole link, on a blur not into the caret pane, or on a host's flush through `view.plugin(linkSettle)`: it remembers through the one remember rule and collapses emptied parts. The typing color reads the same field. The picker's Remove Title baseline is the field's `was`.
+- **One Tracker** (`Core/MarkdownPM/Links/linkSettle.ts`, beside `headingRenameSettle.ts`): `linkWriting`, a state field holding `{ start, was }` for the link an edit is being made inside, armed by a user input or delete reaching into a link, mapped through changes, dropped with its opener, and cleared by `linkSettled`; `linkSettle`, one plugin mounted as `linkSettle.of(scope)`, settles on the caret leaving the whole link, on a blur not into the caret pane, or on a host's flush through `view.plugin(linkSettle)`: it remembers through the one remember rule and collapses emptied parts. The typing color reads the same field, in both syntaxes. `baselineAt` answers how a link read before the edit inside it began, and the picker and paste decide Remove Title from it through one `keepsShown`, with `retarget` only writing.
 - **One Picker** (`Core/MarkdownPM/Autocomplete/`): the query is `{ syntax: 'wiki' | 'markdown' | 'prose', part: 'title' | 'heading' | 'shown', start, end, … }`; `commitEdit` switches on `part`, writes page picks through the writer with the shown text decided once, and reads an opened slot's caret back from the written text through the grammar. Markdown picks open the alias list as wikilink picks do; Return in a markdown destination rests in its label.
 - **Rules and the Writer** (`connections.ts`, `links.ts`, `linkValue.ts`, `rewrite.ts`): one slot check (`fitsSlot`, `expressibleInLink`, `aliasSpells`, `spellsAsWiki`); one `pageLinkText({ title, heading, shown }, prefer)` writing a wikilink only when every slot spells and the markdown form otherwise; `repeatsTarget` as the one drop rule, `namesTarget` as the one carry-and-never-remember rule; one `keepsShown(baseline, next, removeTitle, index)` deciding Remove Title for the picker and paste, and for the Link field through the picker inside it; one `follower` serving both rename arms, with the table codec's cell escape applied where a hit sits in a table; one `shownText` behind `linkDisplayText` and `shownProse`, serving Remove Link, sort, and filter for Link and Text values alike.
 - **Index Facts and Readers' Rule** (`Core/Connections/scan.ts`, `Core/Index/indexSeed.ts`, `Desktop/Store/`, `Core/Matrix/`, `Core/Nexus/cascade.ts`, `Core/Properties/schema.ts`): every link in a frontmatter value becomes one `value` row carrying its key; `holdsLinks(key, type)` and its registry form `linkKeysOf(defs)` sit beside `keyRefusal`, and the graph and the rename cascade each apply them at the moment of use with the registry in memory, so nothing bakes a verdict that can go stale.
@@ -38,10 +38,10 @@ The work lands in nine phases, each the next layer of the system and each the la
 
 | | Functions, fields, plugins, components | Types | Files | Members, parameters, options | Total |
 |---|---|---|---|---|---|
-| **Removed** | 48 | 14 (ten named types and four local `Span` declarations) | 1 (`headingHash.ts`) | 22 | **85** |
-| **Added** | 38 (26 exported, 12 private) and 2 style rules | 5 | 1 (`ValueEditor.tsx`) | 27 | **73** |
+| **Removed** | 48 | 14 (ten named types and four local `Span` declarations) | 1 (`headingHash.ts`) | 25 | **88** |
+| **Added** | 41 (28 exported, 13 private) and 2 style rules | 5 | 2 (`linkSettle.ts`, `ValueEditor.tsx`) | 27 | **77** |
 | **Moved** | 10 (and 2 made exported) | 1 | 1 moved, 1 renamed | | 12 |
-| **Net** | −8 | −9 | 0 | +5 | **−12 named things** |
+| **Net** | −7 | −9 | +1 | +2 | **−11 named things** |
 
 Every row of both tables in *§Concepts* is in that count; a reader can redo it from the tables alone. The named count understates the consolidation, because most of what arrives is the one owner that replaces several spellings. Counted as ways of doing one thing, before and after:
 
@@ -109,8 +109,11 @@ Sixty ways of doing thirty things disappear; every row's "after" has one named o
 | `heldOf` • function | The page a held value answers for, read from the editor's held-page facet, or nothing for a body; what `heldTarget` applied after resolution, now passed into it. | `Core/MarkdownPM/api.ts` |
 | `EditorHost.location` • method | A page's trail for the picker's rows. | `Core/MarkdownPM/api.ts`, `Core/Pages/editorHost.tsx` |
 | `LinkMenuTarget`, `linkMenuTarget` • (relocated) | Beside `LinkMenuContext`, typed on `ResolvedLink`. | `Core/Actions/connectionMenu.ts` |
-| `linkWriting`, `linkSettled`, `linkWithin` • field, effect, function | The link an edit is being made inside and how it read before; what clears it; the strict-overlap reader. | `Core/MarkdownPM/Links/linkReveal.ts` |
-| `linkSettle` • plugin | One instance, mounted as `linkSettle.of({ scope, remembers })`: settles the field, remembers, collapses emptied parts, flushes on unmount. | `Core/MarkdownPM/Links/linkEdit.ts` |
+| `Links/linkSettle.ts` • file | The link an edit is being made inside, from the change that arms it to the settle that remembers its alias and collapses its emptied parts; the counterpart of `headingRenameSettle.ts`. | `Core/MarkdownPM/Links/` |
+| `linkWriting`, `linkSettled`, `baselineAt` • field, effect, function | The link an edit is being made inside and how it read before; what clears it; how the link at a start read before the edit began, else as it reads now, which the picker and paste both ask. | `Core/MarkdownPM/Links/linkSettle.ts` |
+| `linkWithin` • function | The strict-reach reader, beside the other editor readers: the first link on a line that a range reaches into. | `Core/MarkdownPM/Input/edits.ts` |
+| `linkSettle` • plugin | One instance, mounted as `linkSettle.of(scope)` (Task 8-1 adds `remembers`): settles the field, remembers, collapses emptied parts, flushes on unmount. | `Core/MarkdownPM/Links/linkSettle.ts` |
+| `pageLabel` • function | The label a link shows for the page it names, by what it resolved to: what the draw shows for an empty label and what the settle fills an emptied label with. | `Core/Connections/linkValue.ts` |
 | `Links/headingRenameSettle.ts` • file (moved) | The heading-rename settle beside the link settle. | `Core/MarkdownPM/Links/` |
 | `QuerySyntax`, `CLOSER` • type and record | The picker's syntax axis (its part axis is the grammar's `LinkPart`) and its one closer table. | `Core/MarkdownPM/Autocomplete/autocomplete.ts` |
 | `AutocompleteQuery.syntax`, `.part`, `.start`, `.end` • fields | On every query. | `Core/MarkdownPM/Autocomplete/autocomplete.ts` |
@@ -128,7 +131,7 @@ Sixty ways of doing thirty things disappear; every row's "after" has one named o
 | `inlineSurface(scope, { oneLine, remembers })`, `editorBase({ …, oneLine, remembers })` • options | A field's surface and the Link field's memory exemption. | `Core/MarkdownPM/surface.ts` |
 | `EditableInput`/`RenamableLabel` `{ by }` • argument | How an edit ended, passed to `onCommit` and `onCancel`. | `UIX/Fields/EditableInput.tsx`, `RenamableLabel.tsx` |
 | `ConnectionsApi.index`, `LinkEditContext.index`, `LinkEditContext.own`, `commitEdit`'s `kept` • members and option | The host interface holds the index rather than spreading it; the Link field's parse carries the index and the holder; the picker's commit takes the one kept alias. | `Core/MarkdownPM/Links/connectionsApi.ts`, `Core/Properties/parseEditorValue.ts`, `Core/MarkdownPM/Autocomplete/autocomplete.ts` |
-| `fitsSlot`, `markdownSpans`, `embedLine`, `holdersOf`, `ancestries`, `plain`, `changedLink`, `labelRest` • private helpers | The grammar's slot cap; the markdown occurrence's split; the embed-line test for both syntaxes; the title index's holders map; the renderer's ancestry memo; the baseline's four-field strip; the tracker's changed-link read; Return's rest into a markdown label. | `connections.ts`, `scan.ts`, `pageIndex.ts`, `treeIndex.ts`, `remintLedger.ts`, `linkReveal.ts`, `linkEdit.ts` |
+| `fitsSlot`, `markdownSpans`, `embedLine`, `holdersOf`, `ancestries`, `plain`, `changedLink`, `linkStartingAt`, `labelRest` • private helpers | The grammar's slot cap; the markdown occurrence's split; the embed-line test for both syntaxes; the title index's holders map; the renderer's ancestry memo; the baseline's four-field strip; the tracker's changed-link read; the link starting exactly at an offset, which the remember and the collapse both ask; Return's rest into a markdown label. | `connections.ts`, `scan.ts`, `pageIndex.ts`, `treeIndex.ts`, `remintLedger.ts`, `linkSettle.ts`, `linkEdit.ts` |
 
 **REMOVED**
 
@@ -152,6 +155,7 @@ Sixty ways of doing thirty things disappear; every row's "after" has one named o
 | `AutocompleteQuery.form`, `commitEdit`'s `container` and `keepTitle` | The flat form name and the commit's own Remove Title inputs. | `Core/MarkdownPM/Autocomplete/autocomplete.ts` |
 | `readLinkText(…, resolve)` • parameter | Resolution inside a reader. | `Core/Connections/linkValue.ts` |
 | `linkTyping` | The typing-color tracker. | `Core/MarkdownPM/Links/linkReveal.ts` |
+| `retarget`'s `baseline`, `keepTitle`, and `index` • parameters | The writer no longer decides whether an alias rides along; `keepsShown` does, and each caller folds its answer into `next.alias`. | `Core/Connections/linkValue.ts` |
 | `aliasOnLeave`, `Slot`, `slotNear`, `collapseSlot`, `Written`, `typedInto` | The two closure trackers in one listener. | `Core/MarkdownPM/Links/linkEdit.ts` |
 | `LinkOrigin`, `originOf`, `originAfter`, `linkStart`, `AcField.origin` | The picker's own baseline. | `Core/MarkdownPM/Autocomplete/acQuery.ts` |
 | `ConnectionForm`, `listsPages`, `listsHeadings`, `listsAliases`, `closerOf`, `AutocompleteQuery.label` | Seven form names, three predicates, the closer switch, and the label side span. | `Core/MarkdownPM/Autocomplete/autocomplete.ts` |
@@ -218,13 +222,13 @@ Sixty ways of doing thirty things disappear; every row's "after" has one named o
   - [x] Task 3-3 · Every consumer resolves through the one resolver
   - [x] Task 3-4 · `[](Page)` draws its default label
   - [x] Review Checkpoint
-- [ ] `[Compaction Checkpoint 1: c/pre-compaction with the MANDATE and PRINCIPLES re-instilled; stop, and continue only when re-prompted]`
-- [ ] **Phase 4** — One Tracker, One Baseline
-  - [ ] Task 4-1 · `linkWriting` replaces `linkTyping`
-  - [ ] Task 4-2 · `linkSettle` replaces `aliasOnLeave`, and every host flushes
-  - [ ] Task 4-3 · One Remove Title rule over the one baseline
-  - [ ] Task 4-4 · The heading-rename settle lives in `Links/`
-  - [ ] Review Checkpoint
+- [x] `[Compaction Checkpoint 1: c/pre-compaction with the MANDATE and PRINCIPLES re-instilled; stop, and continue only when re-prompted]`
+- [x] **Phase 4** — One Tracker, One Baseline
+  - [x] Task 4-1 · `linkWriting` replaces `linkTyping`
+  - [x] Task 4-2 · `linkSettle` replaces `aliasOnLeave`, and every host flushes
+  - [x] Task 4-3 · One Remove Title rule over the one baseline
+  - [x] Task 4-4 · The heading-rename settle lives in `Links/`
+  - [x] Review Checkpoint
 - [ ] **Phase 5** — One Picker Model
   - [ ] Task 5-1 · The query is `{ syntax, part }` over the one reader set
   - [ ] Task 5-2 · `commitEdit` switches on `part` and writes through the writer
@@ -260,7 +264,7 @@ Sixty ways of doing thirty things disappear; every row's "after" has one named o
 | 1 | −81 | −81 | −81 | typed (`c5`, formatted, with the baseline strip); landed 9 above it: lint refused the one-line claimant push, the formatter wrapped the record and memo lines, and the trail chain needs its own map | 261 | 189 | −72 | −72 |
 | 2 | ≈ −45 | ≈ −35 | −55 to −10 | no typed grammar diff survived; the AFTER count expands the long occurrence and reader lines; landed inside the band | 516 | 468 | −48 | −120 |
 | 3 | ≈ −28 | ≈ −20 | −35 to +5 | half typed (`c4` +3, corrected); the label task moved here from Phase 2 (+16); landed 2 above the band: the label widget with its phantom drawing, plain-setting rule, and exact click, the formatter wrapping the resolver, and `linkValueFromEdit` rebuilding a target from a resolution until Phase 6 | 344 | 351 | +7 | −113 |
-| 4 | ≈ −49 | ≈ −40 | −55 to −25 | re-typed design (`c11`, corrected); the settle's guard and flushes added | | | | |
+| 4 | ≈ −49 | ≈ −40 | −55 to −25 | re-typed design (`c11`, corrected); the settle's guard and flushes added; landed at −36 (`ad220222a`), then the review's fix round (`1eaef8c88`, +38) ended it 27 above the band: the settle in its own file beside its sibling (an import block), the field dropping with its opener (a wrong remember and a wrong rewrite made right), paste reading the one baseline (the ruled parity), the typing color on both syntaxes, a pasted link arming, and the writer split from the decision | 450 | 452 | +2 | −111 |
 | 5 | ≈ −26 | ≈ −60 | −90 to −16 | typed `c8` −16 kept more structure than the three-arm commit and the one-return query (about 207 lines of `autocomplete.ts` leave against about 105 formatted arriving); unverified until typed | | | | |
 | 6 | ≈ −17 | ≈ +2 | −10 to +12 | the rules and `follower` add about what they remove; buys the three wrong results made right | | | | |
 | 7 | ≈ 0 | ≈ +5 | 0 to +10 | `linkKeysOf`, the dedupe, and the `key` column; buys the staleness fix | | | | |
@@ -1753,296 +1757,214 @@ A held value's `[[#H]]` keeps drawing as `bare` because drawing calls `resolveLi
 
 ### Phase 4 — One Tracker, One Baseline
 
-**GOAL:** One state field holds the link an edit is being made inside and how it read before, one plugin settles it when the caret leaves the whole link, on a blur not into the caret pane, or on a host's flush, and the typing color, alias memory, emptied-part collapse, and the picker's Remove Title baseline all read that one field. The two trackers in `aliasOnLeave`, `linkTyping`, and the picker's `origin` go; every host that can unmount its editor mid-edit flushes; Remove Title becomes one rule over one baseline for the picker, paste, and the Link field; and the heading-rename settle moves to `Links/`.
+**GOAL:** One state field holds the link an edit is being made inside and how it read before, one plugin settles it when the caret leaves the whole link, on a blur not into the caret pane, or on a host's flush, and the typing color, alias memory, emptied-part collapse, and the Remove Title baseline all read that one field. The two trackers in `aliasOnLeave`, `linkTyping`, and the picker's `origin` go; every host that can unmount its editor mid-edit flushes; Remove Title becomes one rule over one baseline for the picker, paste, and the Link field, with the writer only writing; and the heading-rename settle moves to `Links/`, beside the link settle's own file.
 
 #### Task 4-1
 
-**TASK:** `linkWriting` and `linkSettled` replace `linkTyping` in `linkReveal.ts`; decorations read the one field.
+**TASK:** `linkWriting` and `linkSettled` replace `linkTyping`; the field and its settle live in one file, `Links/linkSettle.ts`, beside `headingRenameSettle.ts`, and `linkReveal.ts` keeps the rest state alone; `linkWithin` sits beside the other editor readers in `Input/edits.ts`; decorations read the one field for both syntaxes.
 
-**NOW:** `linkTyping` (`linkReveal.ts:18-26`) marks a wikilink's start on any doc change and clears on a caret move, read by `decorations.ts:466,613-617`; `aliasOnLeave` keeps its own `writing` and `edited` closures (`linkEdit.ts:235-286`); `acQuery.ts:17-56` keeps a third copy as `origin`. Decorations read state fields synchronously inside `build`, so a field is never stale.
+**NOW (at BASELINE):** `linkTyping` (`linkReveal.ts:18-26`) marks a wikilink's start on any doc change and clears on a caret move, read by `decorations.ts:466,613-617` for wikilinks alone; `aliasOnLeave` keeps its own `writing` and `edited` closures (`linkEdit.ts:235-286`); `acQuery.ts:17-56` keeps a third copy as `origin`. Decorations read state fields synchronously inside `build`, so a field is never stale.
 
 **CHANGE**
 
-- [ ] In `linkReveal.test.ts:43-63`, dispatch each case with `userEvent: 'input'`, flip `:54-58` (a bare caret move no longer ends it; leaving the whole link does), and add: an edit landing in a markdown label arms the field; a drop (`userEvent: 'input.drop'` reads as input) landing in a link arms it; a change outside every link leaves it; a `linkSettled` effect clears it; the field maps through an insertion before the link. Watch them fail.
-- [ ] Write `linkReveal.ts` as below; `decorations.ts:466,613` read `view.state.field(linkWriting, false)?.start`; `surface.ts:53` mounts `linkWriting` where it mounted `linkTyping`.
+- [x] `linkSettle.test.ts` holds the field's cases: an edit landing in a link of either syntax arms it with how the link read before; a change outside every link leaves it; a bare caret move keeps it; a `linkSettled` effect clears it; the field maps through an insertion before the link and keeps its identity while the start stands; a paste retarget over the whole link keeps `was`; a link whose opener is deleted (Delete Link, undo of a typed link) clears it rather than handing its baseline to a neighbour starting at the same offset; a pasted `[[B|C]] x` arms it. `edits.test.ts` pins `linkWithin` reaching a link wholly inside a range.
+- [x] `linkSettle.ts` as below; `decorations.ts` reads `view.state.field(linkWriting, false)?.start` in both the wikilink and the markdown pass, and rebuilds when the field's identity changes (the clearing dispatch changes neither document nor selection); `surface.ts` mounts `linkWriting` where it mounted `linkTyping`.
 
 **AFTER**
 
-```Core/MarkdownPM/Links/linkReveal.ts diff
-@@ imports @@
--import { docScan } from '../docCache'
--import { linkAt } from '../Input/edits'
-+import { type ChangeDesc, StateEffect, StateField, type Transaction } from '@codemirror/state'
-+import { docScan } from '../docCache'
-+import { linkAt } from '../Input/edits'
-@@ linkTyping @@
--/** A connection takes its color from the first character, but that belongs to WRITING one — clicking into a link that names no page is inspecting it. */
--export const linkTyping = StateField.define<number | null>({ … })
-+export const linkSettled = StateEffect.define<null>()
-+
-+/** The link an edit is being made inside, as it read before the first edit: what the typing color, alias memory, emptied-part collapse, and the picker's Remove Title baseline all compare against. Armed by a typed or deleted change overlapping a link, mapped through changes, cleared when the settle lands. */
-+export const linkWriting = StateField.define<{ start: number; was: string } | null>({
-+  create: () => null,
-+  update(w, tr) {
-+    if (tr.effects.some((e) => e.is(linkSettled))) return null
-+    if (!tr.docChanged) return w
-+    const kept = w && { start: tr.changes.mapPos(w.start, 1), was: w.was }
-+    if (!tr.isUserEvent('input') && !tr.isUserEvent('delete')) return kept
-+    return changedLink(tr, kept) ?? kept
-+  },
-+})
-+
-+// The first changed range strictly overlapping a link in the new document. The link already armed keeps its baseline; only a change landing in another link reads the old document for how that link read.
-+function changedLink(tr: Transaction, kept: { start: number; was: string } | null): { start: number; was: string } | null {
-+  let found: { start: number; was: string } | null = null
-+  tr.changes.iterChangedRanges((fromA, toA, fromB, toB) => {
-+    if (found) return
-+    const after = linkWithin(tr.newDoc, fromB, toB)
-+    if (!after) return
-+    found = after.start === kept?.start ? kept : { start: after.start, was: linkWithin(tr.startState.doc, fromA, toA)?.text ?? '' }
-+  })
-+  return found
-+}
-+
-+/** The link of either syntax a range reaches strictly into (`full[0] < to && full[1] > from`), so typing just past a closer never arms. */
-+export function linkWithin(doc: Text, from: number, to = from): { start: number; text: string } | null {
-+  const scan = docScan(doc)
-+  const line = doc.lineAt(from)
-+  const o = linkAt(scan, from) ?? linkAt(scan, Math.min(to, line.to))
-+  if (!o || line.from + o.full[0] >= to || line.from + o.full[1] <= from) return null
-+  return { start: line.from + o.full[0], text: line.text.slice(o.full[0], o.full[1]) }
-+}
+```Core/MarkdownPM/Links/linkSettle.ts (landed)
+// The link an edit is being made inside, from the change that arms it to the settle that remembers its alias and collapses its emptied parts.
+
+export interface Writing { start: number; was: string }
+export const linkSettled = StateEffect.define<null>()
+
+/** … Armed by a typed or deleted change reaching into a link, mapped through changes, dropped with its opener, cleared when the settle lands. */
+export const linkWriting = StateField.define<Writing | null>({
+  create: () => null,
+  update(w, tr) {
+    if (tr.effects.some((e) => e.is(linkSettled))) return null
+    if (!tr.docChanged) return w
+    const edited = tr.isUserEvent('input') || tr.isUserEvent('delete')
+    if (!w) return edited ? changedLink(tr, null) : null
+    const start = tr.changes.mapPos(w.start, 1)
+    const kept = start === w.start ? w : { start, was: w.was }
+    const relinked = edited ? changedLink(tr, kept) : null
+    return relinked ?? (tr.changes.mapPos(w.start, 1, MapMode.TrackAfter) === null ? null : kept)
+  },
+})
+
+/** How the link at `start` read before the edit being made inside it began, else as it reads now; `now` is null for a link that never closed. */
+export function baselineAt<T extends string | null>(state: EditorState, start: number, now: T): string | T
+
+// The link already armed keeps its baseline, a replace over the whole of it included; only a change landing in another link reads the old document for how that link read.
+function changedLink(tr: Transaction, kept: Writing | null): Writing | null  // first changed range reaching into a link, through `linkWithin(docScan.after(tr), fromB, toB)`
 ```
 
-The typing color now covers both syntaxes and lasts until the caret leaves the link, which standing ruling 12 accepts; it lingers one macrotask on a link just left, until the deferred `linkSettled` lands. Cost: an unarmed caret move is one null check; an input is one changed-range lookup on the caret line, which `linkTyping` already paid, and the old document is read only when a change lands in a link other than the armed one.
+```Core/MarkdownPM/Input/edits.ts (landed, beside linkAt)
+/** The first link of either syntax on the line at `from` that reaches strictly into `from`–`to`, so typing just past a closer never arms and a caret on a closer is outside. */
+export function linkWithin(scan: DocScan, from: number, to = from): { start: number; text: string } | null
+  // one pass over linkOccurrences(line, inCode); ls + o.full[0] < to && ls + o.full[1] > from
+```
+
+The typing color covers both syntaxes and lasts until the settle lands (standing ruling 12). Cost: an unarmed caret move is two null field reads; an armed caret move is one caret-line pass; an input is one changed-range lookup on the caret line through the cached `docScan.after(tr)`, which `linkTyping` already paid, and the old document is read only when a change lands in a link other than the armed one. A keystroke inside the armed link keeps the field object, so nothing allocates.
 
 **VERIFY**
 
-- [ ] `linkReveal.test.ts` passes as rewritten; decoration tests pass with the color read from `linkWriting`.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `linkSettle.test.ts` passes; decoration tests pass with the color read from `linkWriting`; `mdLinkTarget.test.tsx` pins the color on a markdown link being typed.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 4-2
 
-**TASK:** `linkSettle`, one plugin mounted as `linkSettle.of({ scope, remembers })`, replaces `aliasOnLeave`; `emptied` collapses every empty part of the settled link, in both syntaxes, when the caret leaves the whole link, filling an emptied label by the same rule the draw uses (`LinkLook.label`: by what the link resolved to, so an address-shaped destination a page holds fills with the page's default label); `MarkdownEditor`, `CellEditor`, and `TextPane` flush through `view.plugin(linkSettle)`.
+**TASK:** `linkSettle`, one plugin mounted as `linkSettle.of(scope)` (Task 8-1 adds `remembers` when the Link field mounts the editor), replaces `aliasOnLeave`; `emptied` collapses every empty part of the settled link, in both syntaxes, when the caret leaves the whole link, filling an emptied label by the rule the draw uses (`pageLabel`, shared with `LinkLook.label`: by what the link resolved to, so an address-shaped destination a page holds fills with the page's default label); `MarkdownEditor`, `CellEditor`, and `TextPane` flush through `view.plugin(linkSettle)`.
 
-**NOW:** `aliasOnLeave` (`linkEdit.ts:162-290`) runs two machines in one listener: `writing` (remember on leaving the link) and `edited` with `slotNear` (collapse on leaving the slot), each re-reading the caret line, with a blur handler and no unmount flush; `collapseSlot` runs the deferred collapse against a stale offset (`:206-212`). `CellEditor` and `TextPane` destroy their editors in passive cleanup after React detached the node, where CodeMirror's `destroy()` fires no blur (`@codemirror/view` 6.43.1), and `TextPane`'s `save()` reads the document in `close()` before any settle, so an alias typed into a pane and left by Return, or into a cell left by Tab, is never remembered and never collapsed.
+**NOW (at BASELINE):** `aliasOnLeave` (`linkEdit.ts:162-290`) runs two machines in one listener: `writing` (remember on leaving the link) and `edited` with `slotNear` (collapse on leaving the slot), each re-reading the caret line, with a blur handler and no unmount flush; `collapseSlot` runs the deferred collapse against a stale offset (`:206-212`). `CellEditor` and `TextPane` destroy their editors in passive cleanup after React detached the node, where CodeMirror's `destroy()` fires no blur (`@codemirror/view` 6.43.1), and `TextPane`'s `save()` reads the document in `close()` before any settle, so an alias typed into a pane and left by Return, or into a cell left by Tab, is never remembered and never collapsed.
 
 **CHANGE**
 
-- [ ] In `linkEdit.test.tsx`, keep `:135,144` (collapse on leave and on blur), rewrite `:366-390` so each case types into the link (arming needs an edit) and still pins the raw-HTML and code gates, add: a wikilink's emptied alias stays `|` while the caret is still in the link's title and collapses when the caret leaves the whole link; `[[A|]]` with the title retyped tidies to `[[A]]` on leave; a caret that returns into the link before the deferred collapse runs keeps its empty slot; two caret moves outside the link before the collapse runs remember once; a flush after a deferred settle collapses at once and the timer then does nothing; the RETARGETS paste rows arm the tracker and an unmount flush remembers. In `TextPane.test.tsx`, add: an alias typed into a link and closed by Return is remembered and its emptied alias collapsed in the saved value; in `CellEditor`'s tests, the same for a Tab out. Watch them fail.
-- [ ] Write `linkSettle` and `emptied` as below; `aliasOnLeave`, `Slot`, `slotNear`, `collapseSlot`, `Written`, `typedInto`, and the old `linkWithin` go; `surface.ts:51` mounts `linkSettle.of({ scope, remembers: true })` (Task 8-1 threads `remembers`).
-- [ ] Flush in three hosts as below: `MarkdownEditor.tsx:244` beside the heading settle's; `CellEditor.tsx:273` before `onClose`; `TextPane.tsx:101` inside `save()` before it reads the document (a Return close runs `save()` twice; the second flush finds the field clear).
+- [x] `linkSettle.test.ts` holds the settle's cases (moved from `linkEdit.test.tsx`, which keeps the alias gestures): collapse on leaving the whole link and on blur; the raw-HTML and code gates, each typing into the link first; a wikilink's emptied alias stays `|` while the caret is still in the title and collapses on leaving the link; `[[A|]]` with the title retyped tidies to `[[A]]`; a caret back in the link before the deferred collapse keeps its empty slot; two leaves before the collapse remember once; a flush after a deferred settle collapses at once; the RETARGETS paste rows arm the tracker and an unmount flush remembers; the emptied markdown label rows (`[](Alpha)` fills, `[](https://x)` stays, `[](notes.io)` fills where a page holds it). `TextPane.test.tsx`: an alias typed and closed by Return is remembered and its emptied alias collapsed in the saved value; `cellAlias.test.tsx`: the same for a Tab out.
+- [x] `linkSettle` and `emptied` as below in `linkSettle.ts`; `aliasOnLeave`, `Slot`, `slotNear`, `collapseSlot`, `Written`, `typedInto`, `lineNear`, and the old `linkWithin` go; `surface.ts` mounts `linkSettle.of(scope)`.
+- [x] Flush in three hosts: `MarkdownEditor.tsx` beside the heading settle's; `CellEditor.tsx` before `onClose`; `TextPane.tsx` inside `save()` before it reads the document (a Return close runs `save()` twice; the second flush finds the field clear).
 
 **AFTER**
 
-```Core/MarkdownPM/Links/linkEdit.ts diff
-@@ imports @@
--import { EditorView, type ViewUpdate } from '@codemirror/view'
-+import { type EditorView, ViewPlugin, type ViewUpdate } from '@codemirror/view'
--import { connectionAt, linkAt } from '../Input/edits'
-+import { linkAt, slotAt } from '../Input/edits'
--import { restedOnLink } from './linkReveal'
-+import { linkSettled, linkWriting, linkWithin, restedOnLink } from './linkReveal'
-@@ emptied @@
--interface Slot { … }
--function slotNear(…) { … }
--/** An empty alias takes its pipe with it and an empty heading its hash … */
--function emptied(state: EditorState, at: number, kind: Slot['kind']): ChangeSpec | null { … }
--function collapseSlot(…) { … }
--interface Written { … }
--function linkWithin(…) { … }
-+/** Every empty part of the link at `start`, once the caret has left the whole link: an empty alias takes its pipe and an empty heading its hash, matching the nexus-wide rule that an emptied value drops its key; a markdown link can't drop its label, so an empty one shows its default label, as a picked one does; an emptied address label stays empty, since an address has none. */
-+function emptied(state: EditorState, start: number): ChangeSpec[] {
-+  const line = state.doc.lineAt(start)
-+  const o = linkAt(docScan(state.doc), start + 1)
-+  if (!o || line.from + o.full[0] !== start) return []
-+  const empty = (s: Span | null): s is Span => s !== null && s[0] === s[1]
-+  if (o.syntax === 'wiki')
-+    return [
-+      ...(empty(o.shown) ? [{ from: line.from + (o.heading ?? o.title)[1], to: line.from + o.shown[1] }] : []),
-+      ...(empty(o.heading) ? [{ from: line.from + o.heading[0] - 1, to: line.from + o.heading[1] }] : []),
-+    ]
-+  if (!empty(o.shown)) return []
-+  const written = readOccurrence(line.text, o)
-+  return written?.kind === 'page' ? [{ from: line.from + o.shown[0], insert: escapeLabel(defaultLabel(written.title, written.heading)) }] : []
-+}
-+
-+/** A body reaches the memory only where a link is written, typed into or picked, either syntax, and it remembers once the caret leaves that link, against how the link read before, since a scan of bodies can't honor a real forget. Its emptied parts collapse then too, so reading a note never rewrites it and clearing a slot to retype never pulls the pipe from under the caret: the collapse is deferred and stands down if the caret is back in the link when it runs. The field clears only when the collapse lands, so `settling` holds the link already being settled and a second leave of it before then settles nothing. Blur settles on the event and unmount through `flush`, since the editor's own teardown outruns a deferred dispatch; `remembers` is false for the Link field's instance, whose write layer owns its memory. */
-+export const linkSettle = ViewPlugin.define(
-+  (view, { scope, remembers }: { scope: MarkdownScope; remembers: boolean }) => {
-+    let settling: number | null = null
-+    const remember = (w: { start: number; was: string }): void => {
-+      if (!remembers || inRawHtml(view.state, w.start, scope)) return
-+      const link = linkWithin(view.state.doc, w.start + 1)
-+      const host = view.state.facet(editorHost)
-+      const api = host.connections()
-+      const shown = link?.start === w.start && api ? shownAlias(link.text, api.index, w.was) : null
-+      if (shown) void host.aliases.edit(shown.page.id, { op: 'add', alias: shown.alias })
-+    }
-+    const settle = (w: { start: number; was: string }, defer: boolean): void => {
-+      if (settling === w.start) {
-+        if (defer) return
-+      } else {
-+        settling = w.start
-+        remember(w)
-+      }
-+      const collapse = (): void => {
-+        if (settling === w.start) settling = null
-+        if (defer && view.hasFocus && linkWithin(view.state.doc, view.state.selection.main.head)?.start === w.start) return
-+        const armed = view.state.field(linkWriting)?.start === w.start
-+        view.dispatch({ changes: emptied(view.state, w.start), effects: armed ? linkSettled.of(null) : [] })
-+      }
-+      if (defer) setTimeout(collapse, 0)
-+      else collapse()
-+    }
-+    return {
-+      update(u: ViewUpdate) {
-+        const was = u.startState.field(linkWriting)
-+        const now = u.state.field(linkWriting)
-+        const moved = was && u.changes.mapPos(was.start, 1)
-+        if (was && now && now.start !== moved) settle({ start: moved!, was: was.was }, true)
-+        if (now && u.selectionSet && !(view.hasFocus && linkWithin(u.state.doc, u.state.selection.main.head)?.start === now.start)) settle(now, true)
-+      },
-+      flush() {
-+        const w = view.state.field(linkWriting)
-+        if (w) settle(w, false)
-+      },
-+    }
-+  },
-+  { eventHandlers: { blur(e) { if (!inCaretPane(e.relatedTarget)) this.flush(); return false } } },
-+)
+```Core/MarkdownPM/Links/linkSettle.ts (landed)
+/** The link starting exactly at `start`, with its line. */
+function linkStartingAt(state: EditorState, start: number): { line: Line; o: LinkOccurrence } | null
+
+/** Every empty part of the link at `start`: an empty alias takes its pipe and an empty heading its hash … a markdown link can't drop its label, so an empty one shows the label the draw gives it … an emptied address label stays empty. */
+function emptied(state: EditorState, start: number): ChangeSpec[]
+  // wiki: the emptied heading's `#`..end and the emptied alias's `|`..end, in document order
+  // markdown: pageLabel(written, resolveLink(written, state.facet(editorHost).connections()?.index)), escaped, or nothing
+
+export const linkSettle = ViewPlugin.define(
+  (view: EditorView, scope: MarkdownScope) => {
+    let settling: number | null = null
+    const holds = (start) => view.hasFocus && linkWithin(docScan(view.state.doc), view.state.selection.main.head)?.start === start
+    const remember = (w: Writing) => { … linkStartingAt(view.state, w.start) … shownAlias(text, api.index, w.was) … host.aliases.edit(page.id, { op: 'add', alias }) }
+    const settle = (w: Writing, defer: boolean) => {
+      if (settling === w.start && defer) return
+      const html = inRawHtml(view.state, w.start, scope)
+      if (settling !== w.start && !html) remember(w)
+      settling = w.start
+      const collapse = () => {
+        if (settling === w.start) settling = null
+        if (defer && holds(w.start)) return
+        const armed = view.state.field(linkWriting)?.start === w.start
+        view.dispatch({ changes: html ? [] : emptied(view.state, w.start), effects: armed ? linkSettled.of(null) : [] })
+      }
+      if (defer) setTimeout(collapse, 0)
+      else collapse()
+    }
+    return {
+      update(u) {
+        const was = u.startState.field(linkWriting)
+        const now = u.state.field(linkWriting)
+        if (was && now) { const start = u.changes.mapPos(was.start, 1); if (now.start !== start) settle({ start, was: was.was }, true) }
+        if (now && u.selectionSet && !holds(now.start)) settle(now, true)
+      },
+      flush() { const w = view.state.field(linkWriting); if (w) settle(w, false) },
+    }
+  },
+  { eventHandlers: { blur(e) { if (!inCaretPane(e.relatedTarget)) this.flush(); return false } } },
+)
 ```
 
-```Core/MarkdownPM/MarkdownEditor.tsx + Tables/CellEditor.tsx + Properties/Pickers/TextPane.tsx diff
- MarkdownEditor.tsx:244    view.plugin(headingRenameSettle)?.flush()
-+                          view.plugin(linkSettle)?.flush()
- CellEditor.tsx:273        return () => {
-+                            view.plugin(linkSettle)?.flush()
-                             onCloseRef.current(view.state.field(pendingTitles))
- TextPane.tsx:101          const save = (): void => {
-+                            viewRef.current?.plugin(linkSettle)?.flush()
-                             const doc = viewRef.current?.state.doc.toString()
-```
-
-`inRawHtml` is asked at settle time, where `scope` is closed over, so the field stays scope-free. One plugin with an argument, as `aliasOnLeave` is mounted today and as `headingRenameSettle` is flushed, so every host reaches it through `view.plugin(linkSettle)` with no accessor. A settle inside `update` dispatches only through the deferred path, as `headingRenameSettle` does; a flush after a deferred settle collapses at once, and the timer's run then finds nothing empty and the field already clear. The re-arm-elsewhere branch settles the link the field left, whose remember reads the new document at the old link's mapped start.
+`inRawHtml` is asked once at settle time, where `scope` is closed over, covering the remember and the collapse, so the field stays scope-free; `linkAt` already masks code, so no code gate is needed. One plugin with an argument, as `headingRenameSettle` is mounted and flushed, so every host reaches it through `view.plugin(linkSettle)`. A settle inside `update` dispatches only through the deferred path; a flush after a deferred settle collapses at once, and the timer's run then finds nothing empty and the field clear. The re-arm-elsewhere branch settles the link the field left, at its mapped start.
 
 **VERIFY**
 
-- [ ] `linkEdit.test.tsx`, `TextPane.test.tsx`, and the cell tests pass; `connectionCommit.test.tsx:100-111,292-304` still see one `edit` call per pick-and-leave.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes (no second line read per update; `slotNear`, `typedInto`, `collapseSlot` have no reader; `linkSettle` is the one instance every host flushes).
+- [x] `linkSettle.test.ts`, `linkEdit.test.tsx`, `TextPane.test.tsx`, and `cellAlias.test.tsx` pass; `connectionCommit.test.tsx` still sees one `edit` call per pick-and-leave.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes (no second line read per update; `slotNear`, `typedInto`, `collapseSlot` have no reader; `linkSettle` is the one instance every host flushes).
 
 #### Task 4-3
 
-**TASK:** One Remove Title rule over one baseline: `keepsShown(baseline, next, removeTitle, index)` owns "pointed" (and `sameTarget` compares what each side resolves to, so a url arm carrying `page?` and the page it names are one target), the picker reads its baseline from `linkWriting` (null for a link that never closed) and the shown text it keeps from the link as it stands, paste reads the link under the paste as it read before dispatch, and the Link field passes its `current` through the same rule until Phase 8 retires its field-only path; `acQuery`'s `origin` goes.
+**TASK:** One Remove Title rule over one baseline: `keepsShown(baseline, next, removeTitle, index)` owns "pointed" (any resolution, this document's own heading included) and `sameTarget` compares what each side resolves to (page id and heading, own heading, or address), so a url arm carrying `page?` and the page it names are one target; `retarget(syntax, next, into?)` only writes, every caller folding the alias decision into `next.alias`; the picker and paste read their baseline through `baselineAt` (the field's `was` when armed at this link, else the link as it stands, null for a link that never closed) and the shown text they keep from the link as it stands; the Link field passes its `current` as both until Task 8-2 retires its field-only path; `acQuery`'s `origin` goes.
 
-**NOW:** The picker snapshots `origin` at query birth (`acQuery.ts:17-56`) and decides `pointed` itself (`useConnectionAutocomplete.ts:144-147`); paste applies the setting bare (`pasteLink.ts:56,69`); the Link field applies it bare (`PropertyValueInput.tsx:42`, `parseEditorValue.ts:41-46`); `keepsShown` (`linkValue.ts:187-191`) takes a pre-folded `keepTitle`, and `commitEdit` reads it at `autocomplete.ts:250,276,312` through `opts.container` and `opts.keepTitle`. `pasteLink.test.tsx:350-351` mount with no connections, so `Page1` never pointed and the rows pin a drop the ruled rule refuses. A link that only closes during the current edit (`[x]` then `(Al`, `connectionCommit.test.tsx:290-302`) has no baseline, and its label `x` lives in the document alone.
+**NOW (at BASELINE):** The picker snapshots `origin` at query birth (`acQuery.ts:17-56`) and decides `pointed` itself (`useConnectionAutocomplete.ts:144-147`); paste applies the setting bare against the link as it stands (`pasteLink.ts:56,69`); the Link field applies it bare (`PropertyValueInput.tsx:42`, `parseEditorValue.ts:41-46`); `keepsShown` (`linkValue.ts:187-191`) takes a pre-folded `keepTitle`, `retarget` decides and writes in one, and `commitEdit` reads the decision at `autocomplete.ts:250,276,312` through `opts.container` and `opts.keepTitle`. `pasteLink.test.tsx:350-351` mount with no connections, so `Page1` never pointed and the rows pin a drop the ruled rule refuses.
 
 **CHANGE**
 
-- [ ] Rewrite `acQuery.test.ts:70-130` as `linkWriting` state cases (they moved in Task 4-1; delete what's now covered); in `linkValue.test.ts:381-427`, rewrite the `keepsShown`/`retarget` cases for the new signature and add: a null baseline keeps the shown text; a phantom baseline keeps it; a resolved baseline drops it unless `next` is the same target; a URL baseline counts as pointed. In `pasteLink.test.tsx:334-351`, seed `connections` with Page1 held so the two rows keep their meaning, and add phantom rows that keep the shown text. Add a hook-level case: `[Nice](Alpha` typed with Pair Brackets off, then a pick, keeps `Nice` with Remove Title on; `connectionCommit.test.tsx:290-302` holds. Watch them fail.
-- [ ] Write `keepsShown`, `retarget`, the hook's commit, and `commitEdit`'s three reads as below; sweep the other callers: `pasteLink.ts:56-72`, `Actions/pasteAsMenu.ts:95` (`false` stays `false`), `linkValue.ts:133` (`retarget('wiki', was, next, !keepTitle, index)`, the Link field's one line until Task 8-2), `parseEditorValue.ts` and `PropertyValueInput.tsx:42,61` (`index` joins `resolve`'s replacement from Task 3-3; `keepTitle` stays until Task 8-2).
-- [ ] Delete `LinkOrigin`, `originOf`, `originAfter`, `linkStart`, and the `origin` field from `acQuery.ts`, and its `closerOf` import.
+- [x] `acQuery.test.ts`'s `origin` cases moved to `linkSettle.test.ts` as field cases; `linkValue.test.ts` holds `keepsShown` (setting off or null baseline keeps; phantom keeps; a resolved re-aim drops unless the same target, heading included; an address counts as pointed; a destination a page holds is that page; this document's own heading counts as pointed) and `retarget` as a writer; `pasteLink.test.tsx` seeds Page1 held for the RETARGETS rows, adds phantom rows that keep the shown text, and pins that a title retyped by one character and then pasted over drops the shown text under Remove Title; `connectionCommit.test.tsx` pins `[Nice](Alpha` with Pair Brackets off, then a pick, keeping `Nice`.
+- [x] `keepsShown`, `sameTarget`, `retarget`, the hook's commit, `commitEdit`'s `{ kept? }`, and paste as below; `pasteAsMenu.ts:95` and `linkValueFromRename` call the writer bare; `linkValueFromEdit` folds `keepsShown(was, next, !keepTitle, index)` into `next.alias` (the Link field's one line until Task 8-2); `parseEditorValue.ts` and `PropertyValueInput.tsx` already carry `index` from Task 3-3.
+- [x] `LinkOrigin`, `originOf`, `originAfter`, `linkStart`, the `origin` field, and `acQuery.ts`'s `closerOf` import deleted.
 
 **AFTER**
 
-```Core/Connections/linkValue.ts diff
--export const keepsShown = (container: LinkTarget | null, next: LinkTarget, keepTitle: boolean): boolean =>
--  container !== null && (keepTitle || sameTarget(container, next))
-+/** Whether a retarget keeps the link's shown text: always with Remove Title On Link Change off, and otherwise only where the link pointed somewhere as it read before the edit (`baseline`, null for a link that never closed) and is being re-aimed elsewhere. */
-+export const keepsShown = (baseline: LinkTarget | null, next: LinkTarget, removeTitle: boolean, index?: PageIndex): boolean => {
-+  if (!removeTitle || baseline === null) return true
-+  const kind = resolveLink(baseline, index).kind
-+  return (kind !== 'page' && kind !== 'url') || sameTarget(baseline, next)
-+}
--export function retarget(syntax, container, next, keepTitle, into?) {
--  const shown = next.alias ?? (keepsShown(container, next, keepTitle) ? container?.alias : undefined)
-+export function retarget(syntax, baseline, next, removeTitle, index?, into?) {
-+  const shown = next.alias ?? (keepsShown(baseline, next, removeTitle, index) ? baseline?.alias : undefined)
+```Core/Connections/linkValue.ts (landed)
+const sameTarget = (a: ResolvedLink, b: ResolvedLink): boolean  // page id + normalized heading; self headings; normalized urls
+
+/** Whether a retarget keeps the link's shown text: always with Remove Title On Link Change off, and otherwise only where the link pointed somewhere as it read before the edit (`baseline`, null for a link that never closed) and is being re-aimed elsewhere. */
+export function keepsShown(baseline: LinkTarget | null, next: LinkTarget, removeTitle: boolean, index?: PageIndex): boolean {
+  if (!removeTitle || baseline === null) return true
+  const was = resolveLink(baseline, index)
+  return was.kind === 'unresolved' || sameTarget(was, resolveLink(next, index))
+}
+
+/** Writes a link to `next` in the syntax asked for, the markdown form where a wikilink can't spell it; whether an earlier alias rides along is `keepsShown`'s decision, folded into `next.alias` by the caller. */
+export function retarget(syntax: 'wiki' | 'markdown', next: LinkTarget, into?: { format: LinkDisplay; title?: string }): LinkPaste
 ```
 
-```Core/MarkdownPM/Autocomplete/useConnectionAutocomplete.ts diff
-@@ commit @@
--    const origin = view.state.field(field).origin
--    const container = origin === null ? null : readLinkText(origin.text)
--    const kind = resolveLink(container, conn?.index).kind
--    const pointed = kind === 'page' || kind === 'url'
--    const keepTitle = !settings.removeTitleOnLinkChange || !pointed
-+    // The link as `originOf` read it, until Task 5-1 puts the link's span on every query: from the label's start or the query's, through the closer.
-+    const start = ac.label ? ac.label.from - 1 : ac.from
-+    const written = readLinkText(view.state.sliceString(start, ac.to) + (ac.label || !ac.closed ? closerOf(ac.form) : ''))
-+    // How the link read before this edit began (null for one that never closed) decides whether the shown text survives a re-aim; the link as it stands is where that shown text is read from.
-+    const w = view.state.field(linkWriting)
-+    const baseline = w?.start === start ? readLinkText(w.was) : ac.closed ? written : null
-+    const reaims = ac.form === 'link' ? 'wiki' : ac.form === 'target' ? 'markdown' : null
-+    const kept =
-+      reaims && written?.alias && keepsShown(baseline, { kind: 'page', syntax: reaims, title: row.value }, settings.removeTitleOnLinkChange, conn?.index)
-+        ? written.alias
-+        : undefined
-     const keepsWritten =
--      ac.form === 'link' && !!container?.alias && keepsShown(container, { … }, keepTitle)
-+      kept !== undefined
-     …
--    const { changes, anchor } = commitEdit(ac, row.value, { container, keepTitle, openAlias, openHeading })
-+    const { changes, anchor } = commitEdit(ac, row.value, { kept, openAlias, openHeading })
+```Core/MarkdownPM/Autocomplete/useConnectionAutocomplete.ts (landed; the interim Task 5-1 retires)
+    // Until Task 5-1 puts the link's span on every query, the picker reads the link here: `start` and the closer from the query, `reaims` from its form, and `shown` from the label's own span, restating the label rule because an empty destination reads as no link.
+    const start = ac.label ? ac.label.from - 1 : ac.from
+    const text = view.state.sliceDoc(start, ac.to) + (ac.label || !ac.closed ? closerOf(ac.form) : '')
+    const written = readLinkText(text)
+    const was = baselineAt(view.state, start, ac.closed ? text : null)
+    const baseline = was === null ? null : readLinkText(was)
+    const reaims = ac.form === 'link' ? 'wiki' : ac.form === 'target' ? 'markdown' : null
+    const shown = ac.label ? unescapeLabel(view.state.sliceDoc(ac.label.from, ac.label.to).trim()) : written?.alias
+    const kept = reaims && shown && keepsShown(baseline, { kind: 'page', syntax: reaims, title: row.value }, settings.removeTitleOnLinkChange, conn?.index) ? shown : undefined
+    …
+    const { changes, anchor } = commitEdit(ac, row.value, { kept, openAlias, openHeading: opts.openHeading })
 ```
 
-```Core/MarkdownPM/Autocomplete/autocomplete.ts diff
-@@ commitEdit (the three reads; Task 5-2 rewrites the arms) @@
--  opts: { container: LinkTarget | null; keepTitle: boolean; openAlias?: boolean; openHeading?: boolean },
-+  opts: { kept?: string; openAlias?: boolean; openHeading?: boolean },
-   if (ac.form === 'link' && opts.openHeading) {
--    const { container } = opts
--    const kept = container?.alias && keepsShown(container, { kind: 'page', syntax: 'wiki', title: value }, opts.keepTitle) ? `|${container.alias}` : ''
-+    const kept = opts.kept ? `|${opts.kept}` : ''
-   if (ac.form === 'link') {
--    const { text } = retarget('wiki', container, { kind: 'page', syntax: 'wiki', title: value }, opts.keepTitle)
-+    const { text } = retarget('wiki', null, { kind: 'page', syntax: 'wiki', title: value, alias: opts.kept }, false)
--  const retitles = ac.form === 'target' && container !== null && !keepsShown(container, { kind: 'page', syntax: 'markdown', title: value }, opts.keepTitle)
-+  const retitles = ac.form === 'target' && opts.kept === undefined
+```Core/MarkdownPM/Autocomplete/autocomplete.ts (landed; Task 5-2 rewrites the arms)
+   opts: { kept?: string; openAlias?: boolean; openHeading?: boolean },
+   … openHeading arm: const kept = opts.kept ? `|${opts.kept}` : ''
+   … link arm: retarget('wiki', { kind: 'page', syntax: 'wiki', title: value, alias: opts.kept })
+   … const retitles = ac.form === 'target' && opts.kept === undefined
 ```
 
-```Core/MarkdownPM/Links/pasteLink.ts diff
--  const { defaultLinkFormat: format, removeTitleOnLinkChange } = host.settings()
-+  const { defaultLinkFormat: format, removeTitleOnLinkChange } = host.settings()
-+  const index = host.connections()?.index
-   …
--      : retarget(syntax, readLinkText(within.text), target, !removeTitleOnLinkChange, { format, title })
-+      : retarget(syntax, readLinkText(within.text), target, removeTitleOnLinkChange, index, { format, title })
+```Core/MarkdownPM/Links/pasteLink.ts (landed)
+    const now = scan.text.slice(start, end)
+    const was = readLinkText(state ? baselineAt(state, start, now) : now)
+    const alias = target.alias ?? (keepsShown(was, target, removeTitleOnLinkChange, index) ? readLinkText(now)?.alias : undefined)
+    const write = isLinkDisplay(how) ? pasteAsWrite(…) : retarget(syntax, { ...target, alias }, { format, title })
 ```
 
-The hook's `start`/`end` lines are the one interim here, retired by Task 5-1's `ac.start`/`ac.end`; the `target` arm's `retitles` keeps HEAD's meaning (an empty or dropped label fills with the title). Paste's baseline is the container as it read just before the paste, the only "before" a pure function over a `DocScan` can read, and the plan discloses that a paste into a link the user had just typed into compares against that typed text.
+`paste(view, …)` passes `view.state` down; the resting-cell path (`pastedCellText`) passes `null`, since a resting cell never has an edit in flight, and reads the link as it stands. Paste keeps its own strict-inside test beside `linkWithin`: it needs both edges of the selection inside the link and the link's syntax, where the field needs a change that reaches the link.
 
 **VERIFY**
 
-- [ ] `acQuery.test.ts`, `linkValue.test.ts`, `pasteLink.test.tsx`, `connectionCommit.test.tsx`, and `PropertyValueInput.test.tsx` pass unchanged for the field; `pasteLink.test.tsx:371-376` (a URL counts as pointed) holds.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes (`removeTitleOnLinkChange` is read in three places and folded in none; `origin` has no reader; `keepsShown` runs once per commit).
+- [x] `linkValue.test.ts`, `pasteLink.test.tsx`, `connectionCommit.test.tsx`, `autocomplete.test.ts`, and `PropertyValueInput.test.tsx` pass; a URL counts as pointed.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes (`removeTitleOnLinkChange` is read in three places and inverted only in the Link field's interim; `origin` has no reader; `keepsShown` runs once per commit; `retarget` decides nothing).
 
 #### Task 4-4
 
 **TASK:** `headingRenameSettle` moves from `Guards/` to `Links/` unchanged, with one line stating why it settles on any focus change where the link settle exempts the caret pane.
 
-**NOW:** `Guards/headingRenameSettle.ts` is imported once (`MarkdownEditor.tsx:17`); it settles on `focusChanged` (`:66`), focus into the alias rename field included, while the link settle exempts the caret pane.
+**NOW (at BASELINE):** `Guards/headingRenameSettle.ts` is imported once (`MarkdownEditor.tsx:17`); it settles on `focusChanged` (`:66`), focus into the alias rename field included, while the link settle exempts the caret pane. It has no test of its own.
 
 **CHANGE**
 
-- [ ] `git mv Core/MarkdownPM/Guards/headingRenameSettle.ts Core/MarkdownPM/Links/headingRenameSettle.ts` (and its test); update the import.
-- [ ] Add the reason beside `:66`: a heading mid-rename never holds an open picker, so focus leaving for the caret pane is leaving.
+- [x] `git mv Core/MarkdownPM/Guards/headingRenameSettle.ts Core/MarkdownPM/Links/headingRenameSettle.ts`; the import updated.
+- [x] The reason beside `:66`: unlike the link settle, focus into the caret pane settles too, since a heading mid-rename never holds an open picker, so leaving for the pane is leaving.
 
 **VERIFY**
 
-- [ ] `headingRenameSettle.test.ts` passes from its new path; `MarkdownPM.md:8`'s folder sentence is in Phase 9's reconciliation.
-- [ ] Run the gates.
+- [x] `MarkdownEditor` imports from the new path; `MarkdownPM.md:8`'s folder sentence is in Phase 9's reconciliation; the settle's lack of a direct test is carried to the final report.
+- [x] Run the gates.
 
 #### Review Checkpoint
 
-- [ ] One field and one plugin track an edit inside a link; `linkTyping`, `aliasOnLeave`'s two machines, and `acQuery`'s `origin` have no reader.
-- [ ] An alias typed in a cell and left by Tab, and in a Text pane and left by Return, is remembered and its emptied parts collapsed (the live drive's group 3 additions).
-- [ ] Remove Title On Link Change decides from one rule in the picker, paste, and the Link field; the phantom-container cases keep the shown text in all three.
-- [ ] Per-update cost on a link-dense line is at or below BASELINE's (one caret-line read per update per reader).
-- [ ] Net Ledger: Phase 4 measured.
+- [x] One field and one plugin track an edit inside a link; `linkTyping`, `aliasOnLeave`'s two machines, and `acQuery`'s `origin` have no reader.
+- [x] An alias typed in a cell and left by Tab, and in a Text pane and left by Return, is remembered and its emptied parts collapsed (the live drive's group 3 additions; the host tests pin both).
+- [x] Remove Title On Link Change decides from one rule in the picker, paste, and the Link field; the phantom-container cases keep the shown text in all three.
+- [x] Per-update cost on a link-dense line is at or below BASELINE's (one caret-line read per update per reader).
+- [x] Net Ledger: Phase 4 measured.
 
 ---
 
@@ -2059,7 +1981,7 @@ The hook's `start`/`end` lines are the one interim here, retired by Task 5-1's `
 **CHANGE**
 
 - [ ] Rewrite `autocomplete.test.ts`'s `form` assertions (`:35` to `:482`, `:494`) and `acQuery.test.ts:34,105,111,167`, `mdLinkTarget.test.tsx:235` to `{ syntax, part }`; every `toEqual` query object gains `start` and `end`; `:210-217,227-231` read `shown` for `label`; `:466`'s name follows. Add: a markdown label query carries `syntax: 'markdown', part: 'shown'`; a `§` run carries `syntax: 'prose', part: 'heading'`. Watch them fail.
-- [ ] Write the query and `autocompleteQuery` as below; replace the predicates inline (`ac.part === 'title'` and so on) at every consumer; `CLOSER: Record<Syntax, string>` replaces `closerOf`; `sameQuery` compares `syntax`, `part`, `start`, `end`, `from`, `to`, `closed`, `query`, `title`; the hook's commit reads `ac.start` and `ac.end` where Task 4-3 left `ac.label ? ac.label.from - 1 : ac.from` and `ac.to`.
+- [ ] Write the query and `autocompleteQuery` as below; replace the predicates inline (`ac.part === 'title'` and so on) at every consumer; `CLOSER: Record<Syntax, string>` replaces `closerOf`; `sameQuery` compares `syntax`, `part`, `start`, `end`, `from`, `to`, `closed`, `query`, `title`; the hook's commit reads `ac.start` and `ac.end` where Task 4-3 left `ac.label ? ac.label.from - 1 : ac.from` and `ac.to`, `ac.syntax` where it left `reaims`, and the shown text from the query's occurrence (`openLinkAt`'s placeholder keeps an empty destination readable) where it left the label-span read.
 
 **AFTER**
 
@@ -2159,7 +2081,7 @@ A wikilink's empty opener (`[[` just typed) reads through `openLinkAt`'s placeho
 +  const closer = ac.closed ? '' : CLOSER[ac.syntax]
 +  // A whole-link write rests past what it wrote, or inside the slot it opened, read back from the written text through the one grammar, so a writer falling back to the other syntax still seats the caret right.
 +  const whole = (next: LinkTarget & { kind: 'page' }, open?: 'heading' | 'shown'): { changes: TextEdit[]; anchor: number } => {
-+    const { text } = retarget(syntax, null, next, false)
++    const { text } = retarget(syntax, next)
 +    const o = open && linkOccurrences(text, () => false)[0]
 +    const anchor = ac.start + (o ? (open === 'heading' ? o.heading! : o.shown!)[0] : text.length)
 +    return { changes: [{ from: ac.start, to: ac.end, insert: text }], anchor }
@@ -2188,16 +2110,19 @@ A wikilink's empty opener (`[[` just typed) reads through `openLinkAt`'s placeho
 ```Core/MarkdownPM/Autocomplete/useConnectionAutocomplete.ts diff
 @@ commit (from Task 4-3's shape) @@
 -    const start = ac.label ? ac.label.from - 1 : ac.from
--    const written = readLinkText(view.state.sliceString(start, ac.to) + (ac.label || !ac.closed ? closerOf(ac.form) : ''))
-+    const written = readLinkText(view.state.sliceString(ac.start, ac.end) + (ac.closed ? '' : CLOSER[ac.syntax]))
-     const w = view.state.field(linkWriting)
--    const baseline = w?.start === start ? readLinkText(w.was) : ac.closed ? written : null
+-    const text = view.state.sliceDoc(start, ac.to) + (ac.label || !ac.closed ? closerOf(ac.form) : '')
++    const text = view.state.sliceDoc(ac.start, ac.end) + (ac.closed ? '' : CLOSER[ac.syntax])
+     const written = readLinkText(text)
+-    const was = baselineAt(view.state, start, ac.closed ? text : null)
++    const was = baselineAt(view.state, ac.start, ac.closed ? text : null)
+     const baseline = was === null ? null : readLinkText(was)
 -    const reaims = ac.form === 'link' ? 'wiki' : ac.form === 'target' ? 'markdown' : null
-+    const baseline = w?.start === ac.start ? readLinkText(w.was) : ac.closed ? written : null
+-    const shown = ac.label ? unescapeLabel(view.state.sliceDoc(ac.label.from, ac.label.to).trim()) : written?.alias
++    const shown = written?.alias
      const kept =
--      reaims && written?.alias && keepsShown(baseline, { kind: 'page', syntax: reaims, title: row.value }, settings.removeTitleOnLinkChange, conn?.index)
-+      ac.part === 'title' && written?.alias && keepsShown(baseline, { kind: 'page', syntax: ac.syntax === 'markdown' ? 'markdown' : 'wiki', title: row.value }, settings.removeTitleOnLinkChange, conn?.index)
-         ? written.alias
+-      reaims && shown && keepsShown(baseline, { kind: 'page', syntax: reaims, title: row.value }, settings.removeTitleOnLinkChange, conn?.index)
++      ac.part === 'title' && shown && keepsShown(baseline, { kind: 'page', syntax: ac.syntax === 'markdown' ? 'markdown' : 'wiki', title: row.value }, settings.removeTitleOnLinkChange, conn?.index)
+         ? shown
          : undefined
 -    const keepsWritten = kept !== undefined
      const pageId = row.kind === 'page' ? row.pageId : ac.title ? page?.id : undefined
@@ -2277,7 +2202,7 @@ The one finishing-anchor rule, `ac.end + delta + closer`, serves a closed and an
 **CHANGE**
 
 - [ ] In `linkValue.test.ts`, rewrite `:334-339` ("an alias that would break the grammar is refused rather than written") to expect `[Notes\] done](Meeting%20Notes)`, `:252-257` to expect Rename writing `[[Meeting Notes#H|Today]]`, `:391-401` to the default label `[H\]](P#H%5D)`; add `linkValueFromRename('a]b', '[[Page]]')` → `[a\]b](Page)`, a 256-character heading falling back, `[[Alpha#Intro|my notes]]` remembering nothing (`assignValue.test.ts:290-298` gains it; `:292` gets a page-only fixture `[[Alpha|old]]` to keep pinning "already showed"), and `pageLinkText({ title: 'Page', heading: 'Intro', shown: 'Intro' }, 'wiki')` keeping its alias (the drop asks `Page#Intro`). In `connections.test.ts:86-112`, the `connectionText` cases read `pageLinkText(…, 'wiki')`, since `connectionText` is private from here, and add `expressibleInLink('x'.repeat(256))` false and `pageLinkText({ title: 'A', shown: 'a]b' }, 'wiki')` → `[a\]b](A)`. In `connectionCommit.test.tsx:488,502`, `[x](Notes#Setup)` remembers nothing. Watch them fail.
-- [ ] Write the rules and the writer as below; sweep every `connectionText` caller to `pageLinkText`: `retarget`'s page arm → `pageLinkText({ ...next, shown }, syntax)`; `commitEdit`'s `whole` → `pageLinkText(next, syntax)` in place of `retarget(syntax, null, next, false)`, its parameter typed `PageName & { shown?: string }` and its callers passing `shown` where they passed `alias`; `pageMenuActions.ts:54`, `gripMenu.ts:92` (`linkable` becomes `title !== null`), `LinkCell.tsx:48`, and `linkEditText` (until Task 8-2 deletes it) → `pageLinkText({ title, heading }, 'wiki')`; `adoptFile.ts:53,64` and `assetWrite.ts:31` → `pageLinkText({ title }, 'wiki')` (a file title the wikilink grammar can't spell was a broken `[[…]]` today and is a readable markdown link now); `embeddableTarget` (`Actions/pasteAsMenu.ts:43-47`) keeps `expressibleInLink`, since it asks whether a bare title can embed, not which syntax to write; `headingRows` drops its `expressibleInLink` filter.
+- [ ] Write the rules and the writer as below; sweep every `connectionText` caller to `pageLinkText`: `retarget`'s page arm → `pageLinkText(next, syntax)`; `commitEdit`'s `whole` → `pageLinkText(next, syntax)` in place of `retarget(syntax, next)`, its parameter typed `PageName & { shown?: string }` and its callers passing `shown` where they passed `alias`; `pageMenuActions.ts:54`, `gripMenu.ts:92` (`linkable` becomes `title !== null`), `LinkCell.tsx:48`, and `linkEditText` (until Task 8-2 deletes it) → `pageLinkText({ title, heading }, 'wiki')`; `adoptFile.ts:53,64` and `assetWrite.ts:31` → `pageLinkText({ title }, 'wiki')` (a file title the wikilink grammar can't spell was a broken `[[…]]` today and is a readable markdown link now); `embeddableTarget` (`Actions/pasteAsMenu.ts:43-47`) keeps `expressibleInLink`, since it asks whether a bare title can embed, not which syntax to write; `headingRows` drops its `expressibleInLink` filter.
 
 **AFTER**
 
@@ -2355,9 +2280,9 @@ The one finishing-anchor rule, `ac.end + delta + closer`, serves a closed and an
    return { page, alias }
  }
 @@ retarget's page arm @@
--    const text = syntax === 'wiki' && connectionSpells(next) ? connectionText(next.title, next.heading, shown) : markdownPageLink(next.title, next.heading, shown)
+-    const text = syntax === 'wiki' && connectionSpells(next) ? connectionText(next.title, next.heading, next.alias) : markdownPageLink(next.title, next.heading, next.alias)
 -    return { kind: 'link', text }
-+    return { kind: 'link', text: pageLinkText({ title: next.title, heading: next.heading, shown }, syntax) }
++    return { kind: 'link', text: pageLinkText({ title: next.title, heading: next.heading, shown: next.alias }, syntax) }
 ```
 
 ```three bypassing writers diff
@@ -2533,8 +2458,8 @@ A lone `![[…]]` line keeps its `!`, which sits outside `full`, so an embed lin
 +}
 @@ linkValueFromRename @@
 -  const syntax = target.syntax === 'wiki' ? 'wiki' : 'markdown'
--  return { kind: 'link', value: retarget(syntax, null, { ...target, alias: named }, false).text }
-+  return { kind: 'link', value: retarget('wiki', null, { ...target, alias: named }, false).text }
+-  return { kind: 'link', value: retarget(syntax, { ...target, alias: named }).text }
++  return { kind: 'link', value: retarget('wiki', { ...target, alias: named }).text }
 ```
 
 ```Core/Views/Pipeline/sort.ts + filter.ts diff
@@ -2862,7 +2787,7 @@ The check is one map lookup per `value` row on a graph push or a registry change
 
 #### Task 8-1
 
-**TASK:** `TextPaneEditor` becomes `ValueEditor` with a `oneLine` mode and an optional alias seat; `inlineSurface` takes the mode; `editorBase` threads `oneLine` and `remembers`; `TextPane` keeps only its popover.
+**TASK:** `TextPaneEditor` becomes `ValueEditor` with a `oneLine` mode and an optional alias seat; `inlineSurface` takes the mode; `linkSettle` gains `remembers` and `editorBase` threads `oneLine` and `remembers`; `TextPane` keeps only its popover.
 
 **NOW:** `TextPaneEditor` (`TextPane.tsx:78-180`) mounts `editorBase` with `'text'` scope, its own history, placeholder, Enter-closes and Shift-Enter-breaks keys, and saves on every way out through `save()` and a module-level `settled(doc)` (`:24`) that blanks whitespace; `TextPane` builds its host through `useEditorHost` (`:44`). `inlineSurface` (`surface.ts:42-66`) forces `EditorView.lineWrapping` and `spellcheck: 'true'`; the Link field and the single-line Text field are an `EditableInput` (`PropertyValueInput.tsx:87-94`) or a `TextPicker` (`:74-83`) with Enter-commits, Escape-restores, blur-commits-unless-invalid, and `aria-invalid` recomputed on every input (`EditableInput.tsx:64,79-103`). `editorKeymap` keeps `defaultKeymap`'s Shift-Enter and Mod-Enter breaks (`formatKeymap.ts:12`, `surface.ts:91`).
 
@@ -2878,7 +2803,7 @@ The check is one map lookup per `value` row on a graph push or a registry change
 +/** `oneLine` is a value field's surface: it scrolls where a body wraps, and it spellchecks nothing, since a field often holds an address or a name. */
 +export const inlineSurface = (scope: MarkdownScope, { oneLine = false, remembers = true } = {}): Extension => [
    …
--  linkSettle.of({ scope, remembers: true }),
+-  linkSettle.of(scope),
 +  linkSettle.of({ scope, remembers }),
    …
 -  EditorView.lineWrapping,
@@ -2906,7 +2831,8 @@ The check is one map lookup per `value` row on a graph push or a registry change
 +import { type EditorHost, heldPage, mirrorBody } from '../../MarkdownPM/api'
 +import { editorBase } from '../../MarkdownPM/surface'
 +import { drawnLinkAt } from '../../MarkdownPM/decorations'
-+import { applyLinkAction, linkSettle } from '../../MarkdownPM/Links/linkEdit'
++import { applyLinkAction } from '../../MarkdownPM/Links/linkEdit'
++import { linkSettle } from '../../MarkdownPM/Links/linkSettle'
 +import { inCaretPane } from '../../MarkdownPM/Menus/caretPane'
 +import { formatKeymap } from '../../MarkdownPM/Input/formatKeymap'
 +import { useReconfigured } from '../../MarkdownPM/Input/useReconfigured'
@@ -3320,3 +3246,8 @@ The check is one map lookup per `value` row on a graph push or a registry change
 - F-071 and F-049 sequence against Phase 4's move (*§Constraints · Other Workstreams*).
 
 #### Deviations
+
+- Task 4-3 typed "pointed" as a page or address resolution, which left a link to this document's own heading (`[[#Intro|x]]`) keeping its alias under Remove Title on a re-aim; landed as any resolution, so an own-heading link drops its alias as every other resolved link does (`linkValue.test.ts` pins it).
+- Task 4-3 disclosed that paste compares against the link as it stands, so a title retyped by hand and then pasted over kept its alias where the picker dropped it; landed reading the field's `was` through `baselineAt`, since `paste(view, …)` holds the state, so the picker and paste decide from one baseline as the ruling says.
+- `retarget` decided and wrote in one, which forced paste to feed it one link for two questions (how it read before, what alias it shows now); landed as a writer alone, with `keepsShown`'s answer folded into `next.alias` by each caller, so the three writer-only callers pass no `null, false`.
+- The link settle lives in `Links/linkSettle.ts` beside `headingRenameSettle.ts` rather than across `linkReveal.ts` and `linkEdit.ts`, and `linkWithin` beside the other editor readers in `Input/edits.ts`; a reader finds each settle in one file. Phase 4's count ends 27 above its band for this and the fixes the ledger row names.
