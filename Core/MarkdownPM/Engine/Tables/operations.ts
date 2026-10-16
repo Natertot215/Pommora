@@ -129,34 +129,23 @@ export function fillColumn(
     : filled
 }
 
-// Largest remainder, so a resized row totals exactly WIDTH_DASHES and reads back as a width row; a vanishing column keeps one dash, paid for by the widest.
-function reshared(columns: Column[], weights: number[]): Column[] {
+// Each column's dashes are its percent of the table; rounding's leftover lands on the widest, so the row totals exactly WIDTH_DASHES.
+function asPercents(columns: Column[], weights = columns.map((c) => c.dashes)): Column[] {
   const total = weights.reduce((sum, w) => sum + w, 0)
-  const exact = weights.map((w) => (w / total) * WIDTH_DASHES)
-  const dashes = exact.map((x) => Math.max(1, Math.floor(x)))
-  let left = WIDTH_DASHES - dashes.reduce((sum, d) => sum + d, 0)
-  const byRemainder = exact
-    .map((_, i) => i)
-    .sort((a, b) => exact[b] - dashes[b] - (exact[a] - dashes[a]))
-  for (let k = 0; left > 0; k++, left--) dashes[byRemainder[k]]++
-  for (; left < 0; left++) dashes[dashes.indexOf(Math.max(...dashes))]--
+  const dashes = weights.map((w) => Math.max(1, Math.round((w / total) * WIDTH_DASHES)))
+  dashes[dashes.indexOf(Math.max(...dashes))] +=
+    WIDTH_DASHES - dashes.reduce((sum, d) => sum + d, 0)
   return columns.map((c, i) => ({ ...c, dashes: dashes[i] }))
 }
 
-// Adding or dropping a column breaks a width row's total, so it reshares to stay one; any other row is written bare, since its padding could otherwise land on 100 by chance.
+// Adding or dropping a column breaks a width row's total, so it reshares; any other row is written bare, so padding can't land on 100.
 const settled = (before: Column[], after: Column[]): Column[] =>
-  isSized(before)
-    ? reshared(
-        after,
-        after.map((c) => c.dashes),
-      )
-    : after.map((c) => ({ ...c, dashes: UNSIZED_DASHES }))
+  isSized(before) ? asPercents(after) : after.map((c) => ({ ...c, dashes: UNSIZED_DASHES }))
 
 export function resizeColumns(m: TableModel, widths: number[]): TableModel {
-  if (widths.reduce((sum, w) => sum + w, 0) <= 0) return m
   return {
     ...m,
-    columns: reshared(
+    columns: asPercents(
       m.columns,
       m.columns.map((_, i) => widths[i] ?? 0),
     ),

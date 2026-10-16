@@ -52,7 +52,7 @@ describe('operations', () => {
     expect(resizeColumns(base, [1000, 1, 1]).columns.map((c) => c.dashes)).toEqual([98, 1, 1])
   })
 
-  it('resizeColumns hands rounding leftovers to the largest remainders, totaling exactly 100', () => {
+  it('resizeColumns hands the rounding leftover to the widest, totaling exactly 100', () => {
     expect(resizeColumns(base, [1, 1, 1]).columns.map((c) => c.dashes)).toEqual([34, 33, 33])
   })
 

@@ -186,7 +186,7 @@ function copyTextFor(
     case 'col:copy':
       return encodeColumn(
         model.header[index] ?? '',
-        model.columns[index]?.align ?? null,
+        model.columns[index] ?? { align: null, dashes: 1 },
         model.rows.map((r) => r[index] ?? ''),
       )
     case 'table:copy-content':

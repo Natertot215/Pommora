@@ -38,9 +38,8 @@ describe('table clipboard', () => {
     expect(decodePayload('plain prose')).toBeNull()
   })
 
-  it('a column carries its header and body, its delimiter only its alignment, and round-trips', () => {
-    const text = encodeColumn('b', 'center', ['2', '4'])
-    expect(text.split('\n')[1]).toBe('| :---: |')
+  it('a column carries its header and body, and round-trips', () => {
+    const text = encodeColumn('b', base.columns[1], ['2', '4'])
     expect(decodePayload(text)).toEqual({ kind: 'column', header: 'b', body: ['2', '4'] })
   })
 

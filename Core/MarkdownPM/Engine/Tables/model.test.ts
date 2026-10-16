@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { columnShares, normalize } from './model'
+import { UNSIZED_DASHES, WIDTH_DASHES, columnShares, normalize } from './model'
 
 describe('model', () => {
   it('normalize pads short rows and truncates long rows to column count', () => {
@@ -18,6 +18,10 @@ describe('model', () => {
   it('columnShares reads a row totaling 100 dashes as percents', () => {
     const cols = [30, 70].map((dashes) => ({ align: null, dashes }))
     expect(columnShares(cols)).toEqual([30, 70])
+  })
+
+  it('no count of bare columns totals a width row', () => {
+    expect(WIDTH_DASHES % UNSIZED_DASHES).not.toBe(0)
   })
 
   it('columnShares splits any other total equally, however the padding fell', () => {
