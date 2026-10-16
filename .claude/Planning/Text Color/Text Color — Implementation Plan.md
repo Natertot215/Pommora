@@ -523,6 +523,11 @@ The typed-pairing machinery for the trailing emoji is deleted. A span holds at m
 +.md-text-color {
 +  color: var(--paint);
 +}
++.md-text-color
++  :is(.md-connection-resolved, .md-connection-ambiguous, .md-heading-symbol, .md-link) {
++  color: inherit;
++  text-decoration: underline;
++}
  .md-code {
 ```
 
@@ -1513,7 +1518,7 @@ The runs are applied last to first, so each run's mutations sit past every earli
 
 - [ ] `MarkdownPM.md:21`: add "text color" to the Inline Marks list after "highlight", and make its reach read "All of them are reachable from the context menu's Format submenu, and all but text color have a ⌘ shortcut and auto-pair as you type."
 - [ ] `MarkdownPM.md:22`: replace the Highlight Colors bullet with the following.
-  > - **Colors** — a highlight washes behind its words and a text color inks them, and both take a color from a color emoji right after the opener: `==🔴words==` highlights in red and `=🔴words=` colors the words red. A bare `==highlight==` paints in the accent, while a text color always names its color, since a bare `=…=` is prose. Every shape of a color reads the same (circle, square, diamond, or heart), and Pommora writes the circle. Red, orange, yellow, green, blue, purple, brown, black, and white each have one, held in `Core/MarkdownPM/Engine/paints.ts`; black and white only highlight, since on the dark theme one inks too dim to read and the other inks as plain text. A span wears one color, so a text color inside a highlight stays that highlight's words. Either paint can hold connections, links, code, and math, which keep their own look inside, while one cut through by them stays as written; words holding or touching an `=` can't take a text color, which would close at it. The emoji hides and reveals with the marker it follows, and Enter steps past either closer.
+  > - **Colors** — a highlight washes behind its words and a text color inks them, and both take a color from a color emoji right after the opener: `==🔴words==` highlights in red and `=🔴words=` colors the words red. A bare `==highlight==` paints in the accent, while a text color always names its color, since a bare `=…=` is prose. Every shape of a color reads the same (circle, square, diamond, or heart), and Pommora writes the circle. Red, orange, yellow, green, blue, purple, brown, black, and white each have one, held in `Core/MarkdownPM/Engine/paints.ts`; black and white only highlight, since on the dark theme one inks too dim to read and the other inks as plain text. A span wears one color, so a text color inside a highlight stays that highlight's words. Either paint can hold connections, links, code, and math, which keep their own look inside (a connection or link inside a text color takes its color, underlined), while one cut through by them stays as written; words holding or touching an `=` can't take a text color, which would close at it. The emoji hides and reveals with the marker it follows, and Enter steps past either closer.
 - [ ] `MarkdownPM.md:150`: replace the Change Color bullet with the following.
   > - **Change Color ▸** — Over a highlight or a text color, the same rows as its own Format submenu, seated under Select All above the Pommora items.
 - [ ] `MarkdownPM.md:151`: replace the Format bullet with the following.
