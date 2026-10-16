@@ -4,7 +4,7 @@ import { EditableInput } from '@pommora/uix/Fields/EditableInput'
 import { fillInput } from '@pommora/uix/Fields/fields.css'
 import { TextPicker } from '@pommora/uix/Pickers/TextPicker'
 import { solidColorCss } from '@pommora/uix/Theme/ramp'
-import type { ConnPage, PageIndex } from '../../Connections/pageIndex'
+import type { ConnPage } from '../../Connections/pageIndex'
 import type { PropertyDefinition } from '../properties'
 import type { PropertyValue } from '../propertyValue'
 import { linkValueFromRename, readLinkText } from '../../Connections/linkValue'
@@ -12,13 +12,6 @@ import { editorText, parseEditorValue } from '../parseEditorValue'
 import { fractionDenominator, numberFormatGlyph } from '../formatValue'
 import { TextPane } from './TextPane'
 import { useSetting } from '../../Session/store'
-
-const linkResolver =
-  (api: ConnectionsApi | undefined, holder: ConnPage | undefined): PageIndex['resolve'] =>
-  (title) => {
-    if (title !== '') return api?.resolve(title) ?? { status: 'phantom' }
-    return holder ? { status: 'resolved', page: holder } : { status: 'phantom' }
-  }
 
 export function PropertyValueInput({
   def,
@@ -57,7 +50,8 @@ export function PropertyValueInput({
     alias
       ? linkValueFromRename(text, raw)
       : parseEditorValue(def.type, text, current, {
-          resolve: linkResolver(connections?.(), holder),
+          index: connections?.()?.index,
+          own: holder,
           keepTitle,
         })
   const invalid = (text: string): boolean => parse(text) === undefined

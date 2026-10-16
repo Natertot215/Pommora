@@ -19,12 +19,11 @@ afterEach(async () => {
 })
 
 const headingConn: ConnectionsApi = {
-  ...buildPageIndex([{ id: 'pNotes', title: 'Notes', path: 'Notes.md' }]),
+  index: buildPageIndex([{ id: 'pNotes', title: 'Notes', path: 'Notes.md' }]),
   headingsOf: (path) =>
     path === 'Notes.md'
       ? { keys: ['setup'], texts: ['Setup'], outline: [{ text: 'Setup', level: 2 }] }
       : undefined,
-  location: () => [],
   open: () => {},
 }
 const coords = { left: 10, right: 10, top: 10, bottom: 20 }

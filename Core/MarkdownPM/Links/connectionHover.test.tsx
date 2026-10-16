@@ -25,8 +25,7 @@ afterEach(async () => {
 })
 
 const conn: ConnectionsApi = {
-  ...buildPageIndex([{ id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' }]),
-  location: () => [],
+  index: buildPageIndex([{ id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' }]),
   open: () => {},
   headingsOf: () => ({ keys: ['setup'], texts: ['Setup'], outline: [{ text: 'Setup', level: 2 }] }),
 }

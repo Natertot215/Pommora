@@ -8,9 +8,8 @@ import { embedGuard } from './embedGuard'
 import { testHost } from '../../Testing/editorHarness'
 
 const conn: ConnectionsApi = {
-  ...buildPageIndex([{ id: '1', title: 'Alpha', path: 'Notes/Alpha.md' }]),
+  index: buildPageIndex([{ id: '1', title: 'Alpha', path: 'Notes/Alpha.md' }]),
   headingsOf: () => undefined,
-  location: () => [],
   open: () => {},
 }
 
@@ -25,12 +24,11 @@ const mk = (doc: string): EditorState =>
   })
 
 const conn2: ConnectionsApi = {
-  ...buildPageIndex([
+  index: buildPageIndex([
     { id: '1', title: 'Alpha', path: 'Notes/Alpha.md' },
     { id: '2', title: 'Beta', path: 'Notes/Beta.md' },
   ]),
   headingsOf: () => undefined,
-  location: () => [],
   open: () => {},
 }
 const mk2 = (doc: string): EditorState =>

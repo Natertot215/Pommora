@@ -5,7 +5,8 @@ import { createRoot, type Root } from 'react-dom/client'
 import { encodeLinkTarget } from '../../Connections/links'
 import { autocompleteQuery, commitEdit } from '../Autocomplete/autocomplete'
 import { activeTokenIndices, tokenize } from '../Engine/tokens'
-import { resolveMdTarget, type ConnectionsApi } from './connectionsApi'
+import type { ConnectionsApi } from './connectionsApi'
+import { readLinkText, resolveLink } from '../../Connections/linkValue'
 import { buildPageIndex, type ConnPage } from '../../Connections/pageIndex'
 import { renderCellContent } from '../Tables/cellStatic'
 import { cleanupEditor, mountEditor, seedHost, stubEditorBridge } from '../../Testing/editorHarness'
@@ -17,12 +18,11 @@ stubEditorBridge()
 seedHost({ openLink: openExternal })
 
 const conn: ConnectionsApi = {
-  ...buildPageIndex([
+  index: buildPageIndex([
     { id: 'p1', title: 'Work Notes', path: 'Notes/Work Notes.md' },
     { id: 'p2', title: 'Node.js', path: 'Notes/Node.js.md' },
   ]),
   headingsOf: () => undefined,
-  location: () => [],
   open: (p: ConnPage) => opened(p.id),
 }
 
@@ -50,36 +50,38 @@ afterEach(async () => {
 })
 
 describe('what a markdown link’s target names', () => {
+  const resolved = (dest: string) => resolveLink(readLinkText(`[x](${dest})`), conn.index)
+
   it('carries a heading fragment, and reads a bare fragment as the page itself', () => {
-    const t = resolveMdTarget(conn, 'Work%20Notes', 'Setup')
+    const t = resolved('Work%20Notes#Setup')
     expect(t.kind === 'page' && t.page.id).toBe('p1')
     expect(t.kind === 'page' && t.heading).toBe('Setup')
-    expect(resolveMdTarget(conn, '', 'Setup')).toEqual({ kind: 'self', heading: 'Setup' })
+    expect(resolved('#Setup')).toEqual({ kind: 'self', heading: 'Setup' })
   })
 
   it('reads an encoded page title as that page', () => {
-    const t = resolveMdTarget(conn, encodeLinkTarget('Work Notes'), null)
+    const t = resolved(encodeLinkTarget('Work Notes'))
     expect(t.kind === 'page' && t.page.id).toBe('p1')
   })
 
   // isValidLink accepts any dotted host, so resolution runs first or a page called Node.js becomes unreachable through this syntax.
   it('a dotted title beats the URL gate', () => {
-    const t = resolveMdTarget(conn, 'Node.js', null)
+    const t = resolved('Node.js')
     expect(t.kind === 'page' && t.page.id).toBe('p2')
   })
 
   it('a real URL stays external, and a page by its last path segment does not exist', () => {
-    expect(resolveMdTarget(conn, 'https://example.com', null).kind).toBe('url')
-    expect(resolveMdTarget(conn, 'https://example.com/Work%20Notes', null).kind).toBe('url')
+    expect(resolved('https://example.com').kind).toBe('url')
+    expect(resolved('https://example.com/Work%20Notes').kind).toBe('url')
   })
 
-  it('neither a page nor a URL is invalid, exactly as before', () => {
-    expect(resolveMdTarget(conn, 'not a url', null).kind).toBe('invalid')
+  it('neither a page nor a URL is unresolved, exactly as before', () => {
+    expect(resolved('not a url')).toEqual({ kind: 'unresolved', status: 'phantom' })
   })
 
   // A fragment is the heading's own text, so a separator inside it doesn't make the target an address.
   it('a heading holding a slash is still a heading', () => {
-    const t = resolveMdTarget(conn, 'Work%20Notes', 'A/B')
+    const t = resolved('Work%20Notes#A/B')
     expect(t.kind === 'page' && t.heading).toBe('A/B')
   })
 })
@@ -149,14 +151,13 @@ describe('both syntaxes and both renderers agree', () => {
 
 describe('an unresolved markdown link looks as an unresolved connection does', () => {
   const dups: ConnectionsApi = {
-    ...buildPageIndex([
+    index: buildPageIndex([
       { id: 'd1', title: 'Dup', path: 'A/Dup.md' },
       { id: 'd2', title: 'Dup', path: 'B/Dup.md' },
       { id: 'd3', title: 'dup.io', path: 'A/dup.io.md' },
       { id: 'd4', title: 'dup.io', path: 'B/dup.io.md' },
     ]),
     headingsOf: () => undefined,
-    location: () => [],
     open: () => {},
   }
   const drawn = async (body: string): Promise<{ editor: string[]; cell: string[] }> => {
@@ -189,7 +190,10 @@ describe('an unresolved markdown link looks as an unresolved connection does', (
   })
 
   it('an ambiguous title is never an address, though it reads as one', async () => {
-    expect(resolveMdTarget(dups, 'dup.io', null)).toEqual({ kind: 'invalid', ambiguous: true })
+    expect(resolveLink(readLinkText('[x](dup.io)'), dups.index)).toEqual({
+      kind: 'unresolved',
+      status: 'ambiguous',
+    })
     const { editor, cell } = await drawn('a [x](dup.io) b')
     expect(editor).toContain('md-connection-ambiguous')
     expect(cell).toContain('md-connection-ambiguous')
@@ -199,7 +203,10 @@ describe('an unresolved markdown link looks as an unresolved connection does', (
     const { editor, cell } = await drawn('a [x](Missing) b')
     expect(editor).toEqual(['md-connection-phantom'])
     expect(cell).toContain('md-connection-phantom')
-    expect(resolveMdTarget(dups, 'Missing.md', null)).toEqual({ kind: 'invalid' })
+    expect(resolveLink(readLinkText('[x](Missing.md)'), dups.index)).toEqual({
+      kind: 'unresolved',
+      status: 'phantom',
+    })
   })
 
   it('an ambiguous title revealed by the caret reads as a page destination, never as an address', async () => {

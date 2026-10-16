@@ -106,24 +106,6 @@ export function wholeLink(text: string): LinkOccurrence | null {
   )
 }
 
-interface ConnectionParts {
-  title: string
-  heading?: string
-  alias?: string
-}
-
-export function parseConnectionText(raw: string): ConnectionParts | null {
-  const text = raw.trim()
-  const o = wholeLink(text)
-  if (o?.syntax !== 'wiki') return null
-  const slice = ([s, e]: Span): string => text.slice(s, e).trim()
-  const title = slice(o.title)
-  const heading = o.heading ? slice(o.heading) : ''
-  const alias = o.shown ? slice(o.shown) : ''
-  if (!title && !heading) return null
-  return { title, ...(heading ? { heading } : {}), ...(alias ? { alias } : {}) }
-}
-
 /** A name a page can hold as an alias: one a link's alias slot carries — not blank, within the slot's 255 characters, without `]` or a line break — and never `target` itself. */
 export const keepsAlias = (name: string, target: string): boolean =>
   name.trim() !== '' &&

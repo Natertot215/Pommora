@@ -12,9 +12,8 @@ import type { TableModel } from '../Engine/Tables/model'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 const conn: ConnectionsApi = {
-  ...buildPageIndex([{ id: 'p1', title: 'Quarterly Plan', path: 'N/Quarterly Plan.md' }]),
+  index: buildPageIndex([{ id: 'p1', title: 'Quarterly Plan', path: 'N/Quarterly Plan.md' }]),
   headingsOf: () => undefined,
-  location: () => [],
   open: () => {},
 }
 const CELL = '[[Quarterly Plan|the plan]]'

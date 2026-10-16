@@ -22,7 +22,7 @@ afterEach(async () => {
 })
 
 const conn: ConnectionsApi = {
-  ...buildPageIndex([
+  index: buildPageIndex([
     { id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' },
     { id: 'pOld', title: 'Old', path: 'Old.md' },
     { id: 'pOlder', title: 'Older', path: 'Older.md' },
@@ -30,7 +30,6 @@ const conn: ConnectionsApi = {
     { id: 'p2', title: 'Project', path: 'Project.md' },
   ]),
   headingsOf: () => undefined,
-  location: () => [],
   open: () => {},
 }
 const coords = { left: 10, right: 10, top: 10, bottom: 20 }
@@ -343,7 +342,7 @@ describe('a pick retargets the link the picker opened on', () => {
 
 describe('the chevron slides in a page’s headings', () => {
   const headingConn: ConnectionsApi = {
-    ...buildPageIndex([
+    index: buildPageIndex([
       { id: 'pNotes', title: 'Notes', path: 'Notes.md' },
       { id: 'pBlank', title: 'Blank', path: 'Blank.md' },
     ]),
@@ -351,7 +350,6 @@ describe('the chevron slides in a page’s headings', () => {
       path === 'Notes.md'
         ? { keys: ['setup'], texts: ['Setup'], outline: [{ text: 'Setup', level: 2 }] }
         : { keys: [], texts: [], outline: [] },
-    location: () => [],
     open: () => {},
   }
 

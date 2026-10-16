@@ -22,7 +22,7 @@ describe('parseEditorValue', () => {
   })
 
   it('link: normalizes + serializes a valid link, clears on empty, rejects invalid', () => {
-    const link = { resolve: () => ({ status: 'phantom' }) as const, keepTitle: false }
+    const link = { index: undefined, own: undefined, keepTitle: false }
     expect(parseEditorValue('link', 'example.com', null, link)).toEqual({
       kind: 'link',
       value: 'https://example.com',

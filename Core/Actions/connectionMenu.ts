@@ -7,11 +7,24 @@ import {
   pageOpenRows,
 } from './pageMenu'
 import { LINK_DISPLAYS, LINK_DISPLAY_LABELS } from '../Properties/properties'
+import type { ResolvedLink } from '../Connections/linkValue'
 
 export type LinkMenuContext = { editable: boolean; value?: { hideable: boolean } } & (
   | { kind: 'page'; open: 'closed' | 'tab' | 'detail'; windowed: boolean }
   | { kind: 'url'; web: boolean }
 )
+
+export type LinkMenuTarget = Pick<LinkMenuContext, 'editable' | 'value'> &
+  Extract<ResolvedLink, { kind: 'page' | 'url' }>
+
+export function linkMenuTarget(
+  target: ResolvedLink,
+  editable: boolean,
+  value?: LinkMenuContext['value'],
+): LinkMenuTarget | null {
+  if (target.kind !== 'page' && target.kind !== 'url') return null
+  return { ...target, editable, ...(value ? { value } : {}) }
+}
 
 export type ConnEditAction = 'rename' | 'editLink'
 const CELL_ACTIONS = ['cell:clear', 'cell:hide'] as const

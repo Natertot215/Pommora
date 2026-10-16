@@ -51,12 +51,11 @@ afterEach(async () => {
 })
 
 const conn: ConnectionsApi = {
-  ...buildPageIndex([
+  index: buildPageIndex([
     { id: 'p1', title: 'Quarterly Plan', path: 'N/Quarterly Plan.md' },
     { id: 'p2', title: 'Amb', path: 'N/Amb.md' },
     { id: 'p3', title: 'Amb', path: 'M/Amb.md' },
   ]),
-  location: () => [],
   open: () => {},
   headingsOf: () => undefined,
 }

@@ -11,6 +11,7 @@ import { EMPTY_ASSET_MAP } from '../../Nexus/tree'
 import { Cell } from './Cell'
 import type { ValueContext } from '../valueContext'
 import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'
+import { buildPageIndex } from '../../Connections/pageIndex'
 import { propsAtRoot } from '../../Testing/pageValues'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -259,15 +260,12 @@ describe('a chip list', () => {
 
 describe('a text value', () => {
   const page = { id: 'p9', title: 'Target', path: 'X/Target.md' }
-  const connectionsWith = (menu?: ConnectionsApi['menu']) => (): ConnectionsApi | undefined =>
-    ({
-      resolve: (title: string) =>
-        title === 'Target' ? { status: 'resolved', page } : { status: 'phantom', page: null },
-      candidates: () => [],
-      open: () => {},
-      menu,
-      headingsOf: () => undefined,
-    }) as unknown as ConnectionsApi
+  const connectionsWith = (menu?: ConnectionsApi['menu']) => (): ConnectionsApi | undefined => ({
+    index: buildPageIndex([page]),
+    open: () => {},
+    menu,
+    headingsOf: () => undefined,
+  })
 
   it('renders every line of the value, each on its own; the one-line clip is the class, not a slice', () => {
     mount(rowWith({ prop_notes: 'first line\nsecond line' }), 'prop_notes', {})

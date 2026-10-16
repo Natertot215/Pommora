@@ -34,13 +34,12 @@ let renames: string[]
 let updateBody: ReturnType<typeof vi.fn>
 
 const connections: ConnectionsApi = {
-  ...buildPageIndex([
+  index: buildPageIndex([
     { id: '1', title: 'Alpha', path: 'Notes/Alpha.md' },
     { id: '2', title: 'Beta', path: 'Notes/Beta.md' },
     { id: '3', title: 'B', path: PATH },
   ]),
   headingsOf: () => undefined,
-  location: () => [],
   open: () => {},
 }
 

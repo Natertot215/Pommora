@@ -51,7 +51,7 @@ import type { GhostAnchor } from '@pommora/uix/Interactions/ghostCreate'
 import { useCellSweep } from './cellSweep'
 import { LineZone, useLineRow } from '@pommora/uix/Interactions/drag'
 import { showConnectionMenu } from '../../Interface/Menus/connectionMenuActions'
-import { valueMenuTarget } from '../../Properties/Cells/valueTarget'
+import { valueMenuTarget } from '../../Properties/Cells/valueMenuTarget'
 import type { LinkAction } from '../../Actions/connectionMenu'
 import { popMenu } from '../../Actions/menuActions'
 

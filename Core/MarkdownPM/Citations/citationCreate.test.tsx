@@ -409,9 +409,8 @@ describe('copying an unbound citation', () => {
   it('leaves a connection inside a row to its own menu, read-only or not', async () => {
     const menu = vi.fn()
     const conn: ConnectionsApi = {
-      ...buildPageIndex([{ id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' }]),
+      index: buildPageIndex([{ id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' }]),
       headingsOf: () => undefined,
-      location: () => [],
       open: () => {},
       menu,
     }

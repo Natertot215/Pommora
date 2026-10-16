@@ -28,9 +28,8 @@ describe('an edit in the caret pane', () => {
     const view = await mountEditor({
       initialBody: '[[Alpha|]]',
       connections: {
-        ...buildPageIndex([{ id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' }]),
+        index: buildPageIndex([{ id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' }]),
         headingsOf: () => undefined,
-        location: () => [],
         open: () => {},
       },
       host: { aliases: { p1: ['one'] } },
@@ -52,5 +51,26 @@ describe('an edit in the caret pane', () => {
       view.dispatch({ effects: holdPane.of(false) })
     })
     expect(revealed()).toEqual([])
+  })
+})
+
+describe('a markdown link with an empty label', () => {
+  const connections = {
+    index: buildPageIndex([{ id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' }]),
+    headingsOf: () => undefined,
+    open: () => {},
+  }
+  const drawn = async (body: string, className: string): Promise<string | null> => {
+    const view = await mountEditor({ initialBody: `x ${body}`, connections })
+    await act(async () => {
+      view.dispatch({ selection: { anchor: 0 } })
+    })
+    return view.dom.querySelector(`.${className}`)?.textContent ?? null
+  }
+
+  it('draws its target’s default label, as the link is drawn', async () => {
+    expect(await drawn('[](Alpha)', 'md-connection-resolved')).toBe('Alpha')
+    expect(await drawn('[](Alpha#Setup)', 'md-connection-resolved')).toBe('Setup')
+    expect(await drawn('[](Nowhere)', 'md-connection-phantom')).toBe('Nowhere')
   })
 })

@@ -15,7 +15,6 @@ import { lineIndexAt, type TextEdit } from '../Engine/markdownCode'
 import type { ConnPage } from '../../Connections/pageIndex'
 import type { PageHeading } from '../../Platform/stores'
 import type { EditorHost } from '../api'
-import type { ConnectionsApi } from '../Links/connectionsApi'
 
 type ConnectionForm = 'link' | 'alias' | 'target' | 'label' | 'heading' | 'fragment' | 'section'
 
@@ -161,11 +160,11 @@ export function autocompleteQuery(
   }
 }
 
-export const pageRow = (p: ConnPage, conn: ConnectionsApi): AcRow => ({
+export const pageRow = (p: ConnPage, host: EditorHost): AcRow => ({
   kind: 'page',
   value: p.title,
   pageId: p.id,
-  location: conn.location(p.id),
+  location: host.location(p.id),
 })
 
 export function headingRows(outline: readonly PageHeading[], query: string): HeadingRow[] {

@@ -31,20 +31,19 @@ import { pasteModeOf, type PasteMode } from '../../Actions/pasteAsMenu'
 import { codeMask, lineOffsetsOf, type TextEdit } from '../Engine/markdownCode'
 import { sectionRunsIn } from '../../Connections/scan'
 import type { PageHeadings } from '../../Connections/pageIndex'
-import {
-  linkClass,
-  linkLook,
-  linkMenuTarget,
-  tokenTarget,
-  type ConnectionsApi,
-  type MdTarget,
-} from '../Links/connectionsApi'
+import { linkClass, linkLook, type ConnectionsApi } from '../Links/connectionsApi'
 import { linkEdit } from '../Links/linkEdit'
 import { settledLinkText } from '../Links/pendingTitle'
-import type { LinkAction } from '../../Actions/connectionMenu'
-import { dwellTarget, followTarget, heldTarget } from '../Links/linkClicks'
+import { type LinkAction, linkMenuTarget } from '../../Actions/connectionMenu'
+import { dwellTarget, followTarget } from '../Links/linkClicks'
+import {
+  bareHeading,
+  readOccurrence,
+  type ResolvedLink,
+  resolveLink,
+} from '../../Connections/linkValue'
 import { CITE_GLYPH, followCitation } from '../Citations/citationPointer'
-import type { EditorHost, OwnPage } from '../api'
+import { type EditorHost, heldOf, type OwnPage } from '../api'
 import type { Seat } from './CellEditor'
 import type { HeadingLinkStyle } from '../../Settings/personalization'
 import { CheckMark, checkboxClass } from '@pommora/uix/Controls/Checkbox'
@@ -158,6 +157,8 @@ export function renderCellContent(
                   {text.slice(join.heading[0], join.heading[1])}
                 </span>
               </>
+            ) : cs === ce ? (
+              look.label
             ) : (
               draw(cs, ce, inner)
             )}
@@ -379,7 +380,7 @@ function restingRange(cell: HTMLElement, x: number, y: number, length: number): 
 
 interface RestingHit {
   el: Element
-  target: MdTarget
+  target: ResolvedLink
   tk?: TokenOf<LinkKind>
 }
 
@@ -580,19 +581,21 @@ export function linkGestures(
       const api = connections?.()
       if (!api?.menu) return false
       const found = linkAt(e)
-      if (!found?.tk) return false
-      const tk = found.tk
-      const target = linkMenuTarget(found.target, authoring?.editable() ?? false)
+      if (!found) return false
+      // A run has no link text to rename or remove, so its menu offers what the target alone supports.
+      const target = linkMenuTarget(found.target, !!found.tk && (authoring?.editable() ?? false))
       if (!target) return false
       e.preventDefault()
       e.stopPropagation()
-      void api.menu(target).then((action) => action && authoring?.apply(tk, action))
+      void api
+        .menu(target)
+        .then((action) => action && found.tk && authoring?.apply(found.tk, action))
       return true
     },
     onPointerOver: (e: React.PointerEvent): void => {
       if (!glance) return
       const found = linkAt(e)
-      if (found?.tk) dwellTarget(found.target, glance, found.el)?.()
+      if (found) dwellTarget(found.target, glance, found.el)?.()
     },
     onPointerOut: (): void => glance?.cancel(),
   }
@@ -607,13 +610,11 @@ function cellLinkTarget(
   const el = (eventTarget as HTMLElement | null)?.closest?.('[data-link]')
   const span = el && srcOf(el)
   if (!el || !span || !api) return null
+  const held = heldOf(own)
   if (el.classList.contains('md-section-run'))
-    return {
-      el,
-      target: heldTarget({ kind: 'self', heading: (el.textContent ?? '').slice(1) }, own),
-    }
+    return { el, target: bareHeading((el.textContent ?? '').slice(1), held) }
   const tk = linkTokenAt(cellTokens(text), span[0])
-  return tk ? { el, tk, target: heldTarget(tokenTarget(api, text, tk), own) } : null
+  return tk ? { el, tk, target: resolveLink(readOccurrence(text, tk.link), api.index, held) } : null
 }
 
 /** Comparing text and the page around it rather than every prop keeps one cell's keystroke off every other cell. */

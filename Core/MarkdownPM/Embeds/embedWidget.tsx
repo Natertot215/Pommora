@@ -394,7 +394,7 @@ function buildTiles(
   const shown = new Set<string>()
   // A tile shows one whole page, once per document and never inside itself, so two tiles never edit one page; any other lone embed reads as the connection it is.
   for (const e of conn ? scan.embeds : []) {
-    const page = expressibleInLink(e.title) ? conn?.resolve(e.title).page : undefined
+    const page = expressibleInLink(e.title) ? conn?.index.resolve(e.title).page : undefined
     if (!page || shown.has(page.path) || host.ancestors.includes(page.path)) continue
     shown.add(page.path)
     tiles.push({

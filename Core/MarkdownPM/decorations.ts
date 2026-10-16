@@ -96,6 +96,25 @@ class ConnGlyphWidget extends GlyphWidget {
   }
 }
 
+/** A markdown link with an empty label still shows something: its target's default label, drawn as the link is. */
+class LabelWidget extends GlyphWidget {
+  constructor(
+    private readonly label: string,
+    private readonly className: string,
+  ) {
+    super()
+  }
+  eq(other: LabelWidget): boolean {
+    return other.label === this.label && other.className === this.className
+  }
+  toDOM(): HTMLElement {
+    const el = document.createElement('span')
+    el.className = this.className
+    el.textContent = this.label
+    return el
+  }
+}
+
 function connGlyph(status: LinkStatus, at: number): Range<Decoration> {
   return Decoration.widget({ widget: new ConnGlyphWidget(status), side: -1 }).range(at)
 }
@@ -531,7 +550,13 @@ function build(view: EditorView, scope: MarkdownScope): Built {
     const shown = look.status !== 'phantom'
     const internal = shown && look.target.kind !== 'url'
     const isActive = active.has(i)
-    if (tk.contentRange[1] > tk.contentRange[0])
+    if (tk.contentRange[0] === tk.contentRange[1]) {
+      ranges.push(
+        Decoration.widget({ widget: new LabelWidget(look.label, linkClass(look)), side: 1 }).range(
+          tk.contentRange[0],
+        ),
+      )
+    } else
       ranges.push(
         Decoration.mark({
           class: cx(linkClass(look), internal && isActive && 'md-connection-open'),

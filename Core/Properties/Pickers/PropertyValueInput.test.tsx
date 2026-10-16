@@ -112,13 +112,12 @@ describe('the popover routes', () => {
 describe('Edit Link reads the index at the gesture', () => {
   const holder = { id: 'h', title: 'Holder', path: 'Holder.md' }
   const conn: ConnectionsApi = {
-    ...buildPageIndex([
+    index: buildPageIndex([
       holder,
       { id: 'd1', title: 'Dup', path: 'A/Dup.md' },
       { id: 'd2', title: 'Dup', path: 'B/Dup.md' },
     ]),
     headingsOf: () => undefined,
-    location: () => [],
     open: () => {},
   }
   const mountLink = (onPage: boolean): void =>

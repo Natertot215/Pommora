@@ -2,7 +2,7 @@ import { EditorView } from '@codemirror/view'
 import { readLinkText, retarget, type LinkTarget } from '../../Connections/linkValue'
 import { pasteAsWrite, type PasteMode, type PasteWrite } from '../../Actions/pasteAsMenu'
 import { matchesCommand } from '../../Actions/commands'
-import { isWebAddress } from '../../Paths/urlPath'
+import { isWebAddress, normalizeLinkUrl } from '../../Paths/urlPath'
 import { isLinkDisplay } from '../../Properties/properties'
 import { docScan } from '../docCache'
 import { inCodeNear, scanDoc, type DocScan } from '../Engine/docScan'
@@ -42,7 +42,10 @@ function pasteEdit(
   const target = clipboardTarget(pasted, how)
   if (!target) return plain
   const { defaultLinkFormat: format, removeTitleOnLinkChange } = host.settings()
-  const title = target.kind === 'url' ? (host.linkTitles.get(target.url) ?? undefined) : undefined
+  const title =
+    target.kind === 'url'
+      ? (host.linkTitles.get(normalizeLinkUrl(target.url)) ?? undefined)
+      : undefined
   const ls = lineStartAt(scan.text, sel.from)
   const o = how === 'plain' ? null : linkAt(scan, sel.from)
   const within = o && o.full[0] < sel.from - ls && sel.to - ls < o.full[1] ? o : null

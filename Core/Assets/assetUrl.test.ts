@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseConnectionText } from '../Connections/connections'
+import { wikiTitle } from '../Connections/linkValue'
 import type { AssetMap } from '../Nexus/tree'
 import { resolveAssetUrl, resolveAssetValue, resolveFileValue } from './assetUrl'
 import { assetUrl } from '../Platform/assetScheme'
@@ -64,11 +64,11 @@ describe('resolveAssetValue', () => {
     expect(resolveAssetUrl(undefined, map)).toBeNull()
   })
 
-  it('agrees with parseConnectionText about what a whole-string wikilink is', () => {
+  it('agrees with wikiTitle about what a whole-string wikilink is', () => {
     for (const raw of ['[[Banner.png]]', '[[Banner.png|alias]]', '  [[Banner.png]]  '])
-      expect(parseConnectionText(raw) !== null).toBe(resolveAssetValue(raw, map).kind === 'asset')
+      expect(wikiTitle(raw) !== null).toBe(resolveAssetValue(raw, map).kind === 'asset')
     for (const raw of ['[[Banner.png', 'Banner.png]]', 'https://x.test/a.png', ''])
-      expect(parseConnectionText(raw)).toBeNull()
+      expect(wikiTitle(raw)).toBeNull()
   })
 })
 

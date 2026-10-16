@@ -24,10 +24,9 @@ const treeOf = (collectionPages: { title: string }[]): PickItem<string>[] => [
 ]
 
 const conn: ConnectionsApi = {
-  ...buildPageIndex(pages),
+  index: buildPageIndex(pages),
   open: () => {},
   headingsOf: () => undefined,
-  location: () => [],
 }
 
 const seed = (collectionPages: { title: string }[]): void =>

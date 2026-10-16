@@ -15,9 +15,8 @@ import { editorHost } from '../api'
 import { testHost } from '../../Testing/editorHarness'
 
 const conn: ConnectionsApi = {
-  ...buildPageIndex([{ id: '1', title: 'Alpha', path: 'Notes/Alpha.md' }]),
+  index: buildPageIndex([{ id: '1', title: 'Alpha', path: 'Notes/Alpha.md' }]),
   headingsOf: () => undefined,
-  location: () => [],
   open: () => {},
 }
 
@@ -140,12 +139,11 @@ describe('a page is excluded from embedding itself', () => {
 
 describe('a tile re-aimed where it stands keeps its height and Scale', () => {
   const two: ConnectionsApi = {
-    ...buildPageIndex([
+    index: buildPageIndex([
       { id: '1', title: 'Alpha', path: 'Notes/Alpha.md' },
       { id: '2', title: 'Beta', path: 'Notes/Beta.md' },
     ]),
     headingsOf: () => undefined,
-    location: () => [],
     open: () => {},
   }
   const URL2 = 'https://www.example.com/b'

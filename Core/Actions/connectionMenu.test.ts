@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { connectionMenuModel, type LinkMenuContext } from './connectionMenu'
+import { connectionMenuModel, type LinkMenuContext, linkMenuTarget } from './connectionMenu'
 
 const rows = (ctx: LinkMenuContext): [string, string | undefined][] =>
   connectionMenuModel(ctx).map((i) => [i.label, i.action])
@@ -118,5 +118,28 @@ describe('a link naming an address', () => {
 
   it('never offers what needs a page behind it', () => {
     expect(rows({ ...web, editable: true }).map(([, a]) => a)).not.toContain('title:copypath')
+  })
+})
+
+describe('the one builder of a link menu target', () => {
+  const alpha = { id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' }
+
+  it('a page carries whether the surface authors it', () => {
+    expect(linkMenuTarget({ kind: 'page', page: alpha }, true)).toEqual({
+      kind: 'page',
+      page: alpha,
+      editable: true,
+    })
+  })
+
+  it('a value carries whether its surface can remove it', () => {
+    expect(
+      linkMenuTarget({ kind: 'url', url: 'https://a.com' }, false, { hideable: true }),
+    ).toEqual({ kind: 'url', url: 'https://a.com', editable: false, value: { hideable: true } })
+  })
+
+  it('a link naming nothing, or a heading no page holds, has no menu of its own', () => {
+    expect(linkMenuTarget({ kind: 'unresolved', status: 'phantom' }, true)).toBeNull()
+    expect(linkMenuTarget({ kind: 'self', heading: 'H' }, true)).toBeNull()
   })
 })

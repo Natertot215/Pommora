@@ -204,9 +204,8 @@ describe('a resting cell draws an unresolved link as an unresolved connection, w
     document.body.appendChild(container)
     root = createRoot(container)
     const conn = {
-      ...buildPageIndex([]),
+      index: buildPageIndex([]),
       headingsOf: () => undefined,
-      location: () => [],
       open: () => {},
     }
     await act(async () => root.render(renderCellContent('a [x](Missing) b', () => conn)))
@@ -224,9 +223,8 @@ describe('a resting cell draws an unresolved link as an unresolved connection, w
 
 describe('a resting cell draws every token as a span, through the tokens inside it', () => {
   const conn = {
-    ...buildPageIndex([{ id: 'p', title: 'P', path: 'P.md' }]),
+    index: buildPageIndex([{ id: 'p', title: 'P', path: 'P.md' }]),
     headingsOf: () => undefined,
-    location: () => [],
     open: () => {},
   }
   const draw = async (text: string, around?: CellPage): Promise<void> => {
@@ -266,6 +264,21 @@ describe('a resting cell draws every token as a span, through the tokens inside 
     const italic = container.querySelector('.md-italic') as HTMLElement
     expect(italic.dataset.src).toBe('0,3')
     expect(italic.hasAttribute('data-link')).toBe(false)
+  })
+
+  it('a markdown link with an empty label draws its target’s default label', async () => {
+    await draw('[](P)')
+    expect(container.querySelector('.md-connection-resolved')?.textContent).toBe('P')
+    await act(async () => root.unmount())
+    container.remove()
+    await draw('[](P#Setup)')
+    expect(container.querySelector('.md-connection-resolved')?.textContent).toBe('Setup')
+    await act(async () => root.unmount())
+    container.remove()
+    await draw('[](Nowhere)')
+    expect(container.querySelector('.md-connection-phantom')?.parentElement?.textContent).toBe(
+      '[](Nowhere)',
+    )
   })
 
   it('text holding no token is the bare string', () => {

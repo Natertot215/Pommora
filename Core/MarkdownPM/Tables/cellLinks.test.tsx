@@ -8,7 +8,8 @@ import { cellToSource } from '../Engine/Tables/codec'
 import { EditorView } from '@codemirror/view'
 import { undo, undoDepth } from '@codemirror/commands'
 import type { LinkAction } from '../../Actions/connectionMenu'
-import type { ConnectionsApi, LinkMenuTarget } from '../Links/connectionsApi'
+import type { ConnectionsApi } from '../Links/connectionsApi'
+import type { LinkMenuTarget } from '../../Actions/connectionMenu'
 import { buildPageIndex } from '../../Connections/pageIndex'
 import {
   cleanupEditor,
@@ -24,8 +25,7 @@ import { pushDismissal } from '@pommora/uix/Interactions/dismissalStack'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 const conn: ConnectionsApi = {
-  ...buildPageIndex([{ id: 'p1', title: 'Quarterly Plan', path: 'N/Quarterly Plan.md' }]),
-  location: () => [],
+  index: buildPageIndex([{ id: 'p1', title: 'Quarterly Plan', path: 'N/Quarterly Plan.md' }]),
   open: () => {},
   headingsOf: (path) =>
     path === 'N/Quarterly Plan.md'
@@ -144,11 +144,10 @@ describe('a link’s menu in a resting cell', () => {
   let answer: (action: LinkAction | null) => void = () => {}
 
   const menuConn: ConnectionsApi = {
-    ...buildPageIndex([
+    index: buildPageIndex([
       { id: 'p1', title: 'Quarterly Plan', path: 'N/Quarterly Plan.md' },
       { id: 'p2', title: 'Roadmap', path: 'N/Roadmap.md' },
     ]),
-    location: () => [],
     open: () => {},
     headingsOf: () => undefined,
     menu: (t) => {

@@ -58,9 +58,8 @@ describe('the picker offers what a page has been called before', () => {
 
 describe('the body picker’s alias list', () => {
   const conn: ConnectionsApi = {
-    ...buildPageIndex([{ id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' }]),
+    index: buildPageIndex([{ id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' }]),
     headingsOf: () => undefined,
-    location: () => [],
     open: () => {},
   }
 

@@ -17,13 +17,12 @@ afterEach(async () => {
 const DOC = '[[Alpha|Beta]]'
 const opened = vi.fn()
 const conn: ConnectionsApi = {
-  ...buildPageIndex([
+  index: buildPageIndex([
     { id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' },
     { id: 'p2', title: 'Beta', path: 'Notes/Beta.md' },
     { id: 'p3', title: 'Beta', path: 'Archive/Beta.md' },
   ]),
   headingsOf: () => undefined,
-  location: () => [],
   open: (p: ConnPage) => opened(p.id),
 }
 

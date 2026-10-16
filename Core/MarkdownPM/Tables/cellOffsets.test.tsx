@@ -11,8 +11,7 @@ import { buildPageIndex } from '../../Connections/pageIndex'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 const conn: ConnectionsApi = {
-  ...buildPageIndex([{ id: 'p1', title: 'Quarterly Plan', path: 'N/Quarterly Plan.md' }]),
-  location: () => [],
+  index: buildPageIndex([{ id: 'p1', title: 'Quarterly Plan', path: 'N/Quarterly Plan.md' }]),
   open: () => {},
   headingsOf: (path) =>
     path === 'N/Quarterly Plan.md'

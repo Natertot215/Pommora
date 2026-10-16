@@ -1,5 +1,5 @@
 import { assetUrl } from '../Platform/assetScheme'
-import { parseConnectionText } from '../Connections/connections'
+import { wikiTitle } from '../Connections/linkValue'
 import { resolveAssetName } from './assetMap'
 import { HAS_SCHEME } from '../Paths/urlPath'
 import type { AssetMap } from '../Nexus/tree'
@@ -19,9 +19,9 @@ export function resolveAssetValue(value: string, map: AssetMap): AssetValue {
 }
 
 function namedAsset(raw: string, map: AssetMap): FileValue | null {
-  const link = parseConnectionText(raw)
-  if (!link) return null
-  const rel = resolveAssetName(map, link.title)
+  const link = wikiTitle(raw)
+  if (link === null) return null
+  const rel = resolveAssetName(map, link)
   return typeof rel === 'string' ? { kind: 'asset', rel } : { kind: 'unresolved' }
 }
 

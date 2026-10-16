@@ -28,14 +28,13 @@ const alpha = { id: 'a', title: 'Alpha', path: 'Notes/Alpha.md' }
 const holder = { id: 'h', title: 'Holder', path: 'X/Holder.md' }
 const open = vi.fn()
 const conn: ConnectionsApi = {
-  ...buildPageIndex([
+  index: buildPageIndex([
     alpha,
     holder,
     { id: 'd1', title: 'Dup', path: 'A/Dup.md' },
     { id: 'd2', title: 'Dup', path: 'B/Dup.md' },
   ]),
   headingsOf: () => undefined,
-  location: () => [],
   open,
 }
 

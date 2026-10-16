@@ -25,9 +25,8 @@ afterEach(async () => {
 
 const opened = vi.fn()
 const conn: ConnectionsApi = {
-  ...buildPageIndex([{ id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' }]),
+  index: buildPageIndex([{ id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' }]),
   headingsOf: () => undefined,
-  location: () => [],
   open: (p: ConnPage, heading?: string) => opened(p.id, heading),
 }
 
@@ -153,12 +152,11 @@ describe('a connection acts on its text, and leaves its edges to the caret', () 
 
 describe('a link that leads nowhere still takes the caret where it was pressed', () => {
   const ambiguous: ConnectionsApi = {
-    ...buildPageIndex([
+    index: buildPageIndex([
       { id: 'b1', title: 'Beta', path: 'Notes/Beta.md' },
       { id: 'b2', title: 'Beta', path: 'Other/Beta.md' },
     ]),
     headingsOf: () => undefined,
-    location: () => [],
     open: (p: ConnPage, heading?: string) => opened(p.id, heading),
   }
 

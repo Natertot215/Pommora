@@ -1,4 +1,4 @@
-import { parseConnectionText } from '../Connections/connections'
+import { wikiTitle } from '../Connections/linkValue'
 import { fail } from '../Contract/result'
 import { ASSETS_DIR_REL, assetSubRoot } from '../Paths/nexusPaths'
 import { foldKey } from '../Paths/caseFold'
@@ -19,18 +19,19 @@ export function underAssetRoot(rel: string, assetDir: string): boolean {
 
 export function isAssetPath(v: unknown, assetDir: string): v is string {
   if (typeof v !== 'string') return false
-  return parseConnectionText(v) !== null || underAssetRoot(v, assetDir)
+  return wikiTitle(v) !== null || underAssetRoot(v, assetDir)
 }
 
 /** A name several files answer to names none of them — rendering the wrong image is recoverable, acting on one is not. */
 export async function assetFilePath(root: string, value: unknown): Promise<string | null> {
   if (typeof value !== 'string' || !value.trim()) return null
-  const link = parseConnectionText(value)
-  const rel = link
-    ? resolveAssetName(await liveAssetMap(root), link.title)
-    : underAssetRoot(value, (await readWatchScope(root)).assetDir)
-      ? value
-      : null
+  const link = wikiTitle(value)
+  const rel =
+    link !== null
+      ? resolveAssetName(await liveAssetMap(root), link)
+      : underAssetRoot(value, (await readWatchScope(root)).assetDir)
+        ? value
+        : null
   return typeof rel === 'string' ? rel : null
 }
 

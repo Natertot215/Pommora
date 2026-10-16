@@ -129,6 +129,7 @@ function harnessHost(spec: HarnessHost, rerender: () => void = () => {}): Harnes
     glance: spec.glance === false ? undefined : (spec.glance ?? NO_GLANCE),
     renderTile: () => null,
     pickTree: () => spec.pickTree ?? [],
+    location: () => [],
     openLink: spec.openLink ?? (() => {}),
     pageTitle: () => spec.pageTitle ?? null,
     pageSurface: spec.pageSurface,

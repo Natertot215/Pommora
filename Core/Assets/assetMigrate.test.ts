@@ -9,7 +9,7 @@ import { writeAssetDirectory } from '../Settings/settings'
 import { pathExists } from '../Files/atomicWrite'
 import { migrateAssets } from './assetMigrate'
 import { liveAssetMap, resolveAssetName } from './assetMap'
-import { parseConnectionText } from '../Connections/connections'
+import { wikiTitle } from '../Connections/linkValue'
 import { splitFrontmatter } from '../Files/pageFile'
 import { contextsDir } from '../Paths/paths'
 import { SPACE_SIDECAR } from '../Paths/nexusPaths'
@@ -283,9 +283,9 @@ describe('migrateAssets', () => {
       (await readJson<{ banner: string }>('.nexus/interface/homepage/homepage.json')).banner,
       (await readJson<{ banner: string }>('Notes/_pagecollection.json')).banner,
     ]) {
-      const named = parseConnectionText(value)
+      const named = wikiTitle(value)
       expect(named).not.toBeNull()
-      const rel = resolveAssetName(map, named!.title)
+      const rel = resolveAssetName(map, named!)
       expect(rel).toBeTypeOf('string')
       expect(await pathExists(join(root, rel as string))).toBe(true)
     }

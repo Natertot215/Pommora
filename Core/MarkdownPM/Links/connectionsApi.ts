@@ -1,88 +1,26 @@
 import type { LinkStatus } from '../../Connections/connections'
+import { defaultLabel } from '../../Connections/links'
 import { normalizeTitle } from '../../Paths/caseFold'
-import { aliasedToken, headingOf, type LinkKind, type TokenOf } from '../Engine/tokens'
+import { aliasedToken, type LinkKind, type TokenOf } from '../Engine/tokens'
 import type { Span } from '../Engine/markdownCode'
-import type { LinkAction, LinkMenuContext } from '../../Actions/connectionMenu'
-import { targetFragment, targetNamesFile, targetTitle } from '../../Connections/links'
-import { isValidLink } from '../../Paths/urlPath'
+import type { LinkAction, LinkMenuTarget } from '../../Actions/connectionMenu'
+import { readOccurrence, type ResolvedLink, resolveLink } from '../../Connections/linkValue'
 import type { ConnPage, PageHeadings, PageIndex } from '../../Connections/pageIndex'
-import type { TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { cx } from '@pommora/uix/Utilities/cx'
 import type { HeadingLinkStyle } from '../../Settings/personalization'
 
-export interface ConnectionsApi extends PageIndex {
+/** What an editor needs of the page tree: the one title index, how to open a page, the connection menu where the surface has one, and a page's headings. */
+export interface ConnectionsApi {
+  index: PageIndex
   open: (page: ConnPage, heading?: string, newTab?: boolean) => void
   menu?: (target: LinkMenuTarget) => Promise<LinkAction | null>
   headingsOf: (path: string) => PageHeadings | undefined
-  location: (pageId: string) => TrailSegment[]
-}
-
-export type MdTarget =
-  | { kind: 'page'; page: ConnPage; heading?: string }
-  | { kind: 'self'; heading: string }
-  | { kind: 'url'; url: string }
-  | { kind: 'invalid'; ambiguous?: true }
-
-export type LinkMenuTarget = Pick<LinkMenuContext, 'editable' | 'value'> &
-  Extract<MdTarget, { kind: 'page' | 'url' }>
-
-export function titleTarget(
-  index: PageIndex | undefined,
-  title: string,
-  heading?: string,
-): MdTarget {
-  if (title === '') return heading ? { kind: 'self', heading } : { kind: 'invalid' }
-  const res = index?.resolve(title)
-  if (res?.page) return { kind: 'page', page: res.page, heading: heading || undefined }
-  return res?.status === 'ambiguous' ? { kind: 'invalid', ambiguous: true } : { kind: 'invalid' }
-}
-
-/** Page resolution is tried FIRST and deliberately: `isValidLink` accepts any dotted host, so `Notes.md` would read as a website and the page it names would be unreachable through this syntax. */
-export function resolveMdTarget(
-  index: PageIndex | undefined,
-  titleHalf: string,
-  headingHalf: string | null,
-): MdTarget {
-  const target = titleTarget(
-    index,
-    targetTitle(titleHalf, headingHalf !== null) ?? '',
-    headingHalf === null ? '' : targetFragment(headingHalf),
-  )
-  const raw = headingHalf === null ? titleHalf : `${titleHalf}#${headingHalf}`
-  if (
-    target.kind !== 'invalid' ||
-    target.ambiguous ||
-    targetNamesFile(titleHalf) ||
-    !isValidLink(raw)
-  )
-    return target
-  return { kind: 'url', url: raw }
-}
-
-export function tokenTarget(
-  index: PageIndex | undefined,
-  text: string,
-  tk: TokenOf<LinkKind>,
-): MdTarget {
-  const { title, heading } = tk.link
-  if (tk.kind === 'link')
-    return resolveMdTarget(index, text.slice(...title), heading && text.slice(...heading))
-  return titleTarget(index, text.slice(...title), headingOf(text, tk))
-}
-
-export function linkMenuTarget(
-  target: MdTarget,
-  editable: boolean,
-  value?: LinkMenuContext['value'],
-): LinkMenuTarget | null {
-  if (target.kind !== 'page' && target.kind !== 'url') return null
-  return { ...target, editable, ...(value ? { value } : {}) }
 }
 
 // A fragment is missing only when the named page's heading keys are known and lack it; a page absent from the map reads as present. A bare fragment reads the document's own keys, which a surface without page identity leaves undefined.
 function headingMissing(
   conn: ConnectionsApi | undefined,
-  target: MdTarget,
+  target: ResolvedLink,
   ownKeys: readonly string[] | undefined,
 ): boolean {
   if ((target.kind !== 'page' && target.kind !== 'self') || !target.heading) return false
@@ -90,13 +28,10 @@ function headingMissing(
   return known !== undefined && !known.includes(normalizeTitle(target.heading))
 }
 
-export function linkStatus(target: MdTarget): LinkStatus {
-  if (target.kind !== 'invalid') return 'resolved'
-  return target.ambiguous ? 'ambiguous' : 'phantom'
-}
-
 interface LinkLook {
-  target: MdTarget
+  /** What an empty label shows: the target's default label, or the address. */
+  label: string
+  target: ResolvedLink
   status: LinkStatus
   missing: boolean
   bare: boolean
@@ -110,8 +45,9 @@ export function linkLook(
   ownKeys: readonly string[] | undefined,
   headingLinkStyle: HeadingLinkStyle,
 ): LinkLook {
-  const target = tokenTarget(conn, text, tk)
-  const status = linkStatus(target)
+  const written = readOccurrence(text, tk.link)
+  const target = resolveLink(written, conn?.index)
+  const status = target.kind === 'unresolved' ? target.status : 'resolved'
   const bare = target.kind === 'self'
   const missing = headingMissing(conn, target, ownKeys)
   const h = tk.link.heading
@@ -123,7 +59,9 @@ export function linkLook(
           className: cx('md-connection-heading', missing && 'md-connection-heading-missing'),
         }
       : null
-  return { target, status, missing, bare, join }
+  const label =
+    written?.kind === 'page' ? defaultLabel(written.title, written.heading) : (written?.url ?? '')
+  return { label, target, status, missing, bare, join }
 }
 
 export function linkClass(look: LinkLook): string {

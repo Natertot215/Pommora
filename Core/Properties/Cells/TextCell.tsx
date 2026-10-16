@@ -53,7 +53,7 @@ export function TextCell({
     if (isSecondaryClick(e)) return
     dismiss(e)
     const found = linkAt(e)
-    const go = found && resolveFollow(found.target, own, connections?.(), e, openWebLink)
+    const go = found && resolveFollow(found.target, null, connections?.(), e, openWebLink)
     if (!go) return
     e.preventDefault()
     e.stopPropagation()

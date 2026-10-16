@@ -7,16 +7,16 @@ import { testHost } from '../Testing/editorHarness'
 import { tokenize } from './Engine/tokens'
 import { scanDoc } from './Engine/docScan'
 import { canonicalizeCheckbox, smartBackspace } from './Input/edits'
-import { editorHost, heldPage } from './api'
+import { editorHost, heldOf, heldPage, ownPage } from './api'
 import { inlineSurface } from './surface'
 import { buildPageIndex } from '../Connections/pageIndex'
 import type { ConnectionsApi } from './Links/connectionsApi'
 import { followTarget } from './Links/linkClicks'
+import { readLinkText, resolveLink } from '../Connections/linkValue'
 
 const holder = { id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' }
 const conn: ConnectionsApi = {
-  ...buildPageIndex([holder]),
-  location: () => [],
+  index: buildPageIndex([holder]),
   open: () => {},
   menu: vi.fn(),
   headingsOf: (path) =>
@@ -104,7 +104,7 @@ describe('a bare heading in a Text value', () => {
     const opened = vi.fn()
     const view = mount('[[#Setup]] x', heldPage.of(holder))
     const go = followTarget(
-      { kind: 'self', heading: 'Setup' },
+      resolveLink(readLinkText('[[#Setup]]'), conn.index, heldOf(ownPage(view))),
       { ...conn, open: (page, heading) => opened(page.id, heading) },
       { target: view.contentDOM, metaKey: false, ctrlKey: false },
     )

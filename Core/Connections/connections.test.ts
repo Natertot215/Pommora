@@ -1,11 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import {
-  connectionText,
-  expressibleInLink,
-  keepsAlias,
-  linkOccurrences,
-  parseConnectionText,
-} from './connections'
+import { connectionText, expressibleInLink, keepsAlias, linkOccurrences } from './connections'
 import { codeMask } from '../MarkdownPM/Engine/markdownCode'
 
 const walk = (text: string) => linkOccurrences(text, codeMask(text))
@@ -59,39 +53,6 @@ describe('linkOccurrences', () => {
 
   it('an unclosed backtick inside a link is not code', () => {
     expect(walk('[[A `b]]').map((o) => o.syntax)).toEqual(['wiki'])
-  })
-})
-
-describe('parseConnectionText', () => {
-  it('splits a page and heading', () => {
-    expect(parseConnectionText('[[Page#Heading]]')).toEqual({ title: 'Page', heading: 'Heading' })
-  })
-  it('names the containing page with an empty title', () => {
-    expect(parseConnectionText('[[#Heading]]')).toEqual({ title: '', heading: 'Heading' })
-  })
-  it('carries an alias alongside a heading', () => {
-    expect(parseConnectionText('[[Page#Heading|alias]]')).toEqual({
-      title: 'Page',
-      heading: 'Heading',
-      alias: 'alias',
-    })
-  })
-  it('reads an empty heading as absent', () => {
-    expect(parseConnectionText('[[Page#]]')).toEqual({ title: 'Page' })
-  })
-  it('reads a bare `#` as nothing, a link still being written', () => {
-    expect(parseConnectionText('[[#]]')).toBeNull()
-  })
-  it('is null with neither a title nor a heading', () => {
-    expect(parseConnectionText('[[]]')).toBeNull()
-    expect(parseConnectionText('[[|x]]')).toBeNull()
-  })
-  it('strips the cell escape from the heading, not the title, when both precede a pipe', () => {
-    expect(parseConnectionText('[[Page#Heading\\|alias]]')).toEqual({
-      title: 'Page',
-      heading: 'Heading',
-      alias: 'alias',
-    })
   })
 })
 

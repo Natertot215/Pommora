@@ -1,10 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { rewriteConnections, rewriteHeadingConnections } from './rewrite'
 import { LINK_DISPLAYS } from '../Properties/properties'
-import { parseConnectionText } from './connections'
-import { buildPageIndex, type ConnResolution, type PageIndex } from './pageIndex'
+import { buildPageIndex } from './pageIndex'
 import type { LinkTarget } from './linkValue'
-import { normalizeTitle } from '../Paths/caseFold'
 import {
   linkDisplayText,
   linkEditText,
@@ -12,21 +10,15 @@ import {
   linkValueFromRename,
   linkPaste,
   readLinkText,
+  resolveLink,
   retarget,
   serializeLink,
+  wikiTitle,
 } from './linkValue'
 
-const page = (title: string): ConnResolution => ({
-  status: 'resolved',
-  page: { id: title, title, path: `${title}.md` },
-})
-const only =
-  (title: string): PageIndex['resolve'] =>
-  (raw) =>
-    normalizeTitle(raw) === normalizeTitle(title) ? page(title) : { status: 'phantom' }
-const ambiguous: PageIndex['resolve'] = () => ({ status: 'ambiguous' })
+const notes = buildPageIndex([{ id: 'mn', title: 'Meeting Notes', path: 'Meeting Notes.md' }])
 
-describe('readLinkText without a resolver', () => {
+describe('readLinkText', () => {
   it('reads a connection with its heading and alias', () => {
     expect(readLinkText('[[T#H|a]]')).toEqual({
       kind: 'page',
@@ -59,18 +51,22 @@ describe('readLinkText without a resolver', () => {
       alias: 'x',
     })
   })
-  it('reads a valid address as a weblink under a scheme', () => {
+  it('reads a valid address as written, and writes it under a scheme', () => {
     expect(readLinkText('[x](example.com)')).toEqual({
       kind: 'url',
       syntax: 'markdown',
-      url: 'https://example.com',
+      url: 'example.com',
       alias: 'x',
+      page: { title: 'example.com' },
     })
     expect(readLinkText('example.com')).toEqual({
       kind: 'url',
       syntax: 'bare',
-      url: 'https://example.com',
+      url: 'example.com',
     })
+    expect(
+      retarget('wiki', null, { kind: 'url', syntax: 'bare', url: 'example.com' }, false).text,
+    ).toBe('https://example.com')
   })
   it('reads a bare heading as a page with an empty title', () => {
     expect(readLinkText('[x](#H)')).toEqual({
@@ -90,7 +86,6 @@ describe('readLinkText without a resolver', () => {
   it('keeps a backslash the cell escape did not put there', () => {
     expect(readLinkText('[[A\\]]')).toMatchObject({ kind: 'page', title: 'A\\' })
     expect(readLinkText('[[A#Note\\]]')).toMatchObject({ title: 'A', heading: 'Note\\' })
-    expect(parseConnectionText('[[T\\|a]]')).toEqual({ title: 'T', alias: 'a' })
   })
   it('keeps a URL that itself contains parens, and an escaped label', () => {
     expect(readLinkText('[Wiki](https://en.wikipedia.org/wiki/Foo_(bar))')).toMatchObject({
@@ -104,36 +99,66 @@ describe('readLinkText without a resolver', () => {
   })
 })
 
-describe('readLinkText with a resolver', () => {
-  const r = only('Meeting Notes')
-  it('names a resolved page under its own capitalization', () => {
-    expect(readLinkText('[[meeting notes]]', r)).toMatchObject({ title: 'Meeting Notes' })
-    expect(readLinkText('[x](meeting notes)', r)).toMatchObject({ title: 'Meeting Notes' })
+describe('resolveLink', () => {
+  const holder = { id: 'h', title: 'Holder', path: 'Holder.md' }
+  const index = buildPageIndex([
+    { id: 'mn', title: 'Meeting Notes', path: 'Meeting Notes.md' },
+    { id: 'd1', title: 'Dup', path: 'A/Dup.md' },
+    { id: 'd2', title: 'Dup', path: 'B/Dup.md' },
+    { id: 'i1', title: 'dup.io', path: 'A/dup.io.md' },
+    { id: 'i2', title: 'dup.io', path: 'B/dup.io.md' },
+  ])
+  const withNotesIo = buildPageIndex([{ id: 'io', title: 'notes.io', path: 'notes.io.md' }])
+  const resolved = (text: string, own?: typeof holder) =>
+    resolveLink(readLinkText(text), index, own)
+
+  it('names the page that holds a title, in either syntax', () => {
+    const page = { id: 'mn', title: 'Meeting Notes', path: 'Meeting Notes.md' }
+    expect(resolved('[[meeting notes]]')).toEqual({ kind: 'page', page })
+    expect(resolved('[x](meeting%20notes#H)')).toEqual({ kind: 'page', page, heading: 'H' })
   })
-  it('falls to the address arm when no page holds the title', () => {
-    expect(readLinkText('[x](example.com)', r)).toEqual({
+  it('is unresolved and ambiguous where two pages hold the title, address-shaped or not', () => {
+    expect(resolved('[[Dup]]')).toEqual({ kind: 'unresolved', status: 'ambiguous' })
+    expect(resolved('[x](dup.io)')).toEqual({ kind: 'unresolved', status: 'ambiguous' })
+  })
+  it('is unresolved and phantom where no page holds the title', () => {
+    expect(resolved('[[Nowhere]]')).toEqual({ kind: 'unresolved', status: 'phantom' })
+    expect(resolved('[x](Nope.md)')).toEqual({ kind: 'unresolved', status: 'phantom' })
+  })
+  it('a bare heading names the page holding the value, and otherwise this document', () => {
+    expect(resolved('[[#H]]', holder)).toEqual({ kind: 'page', page: holder, heading: 'H' })
+    expect(resolved('[[#H]]')).toEqual({ kind: 'self', heading: 'H' })
+    expect(resolved('[[ #H]]')).toEqual({ kind: 'self', heading: 'H' })
+  })
+  it('an address-shaped destination is the page that holds it, and the address as written otherwise', () => {
+    expect(resolveLink(readLinkText('[x](notes.io)'), index)).toEqual({
       kind: 'url',
-      syntax: 'markdown',
-      url: 'https://example.com',
-      alias: 'x',
+      url: 'notes.io',
     })
-    expect(readLinkText('[x](Nope)', r)).toBeNull()
-    expect(readLinkText('[x](Nope.md)', r)).toBeNull()
-  })
-  it('refuses an ambiguous title, address-shaped or not', () => {
-    expect(readLinkText('[[Dup]]', ambiguous)).toBeNull()
-    expect(readLinkText('[x](dup.io)', ambiguous)).toBeNull()
-  })
-  it('reads a bare heading only where the resolver answers the holder', () => {
-    expect(readLinkText('[[#H]]', r)).toBeNull()
-    expect(
-      readLinkText('[[#H]]', (t) => (t === '' ? page('Holder') : { status: 'phantom' })),
-    ).toEqual({
+    expect(resolveLink(readLinkText('[x](notes.io)'), withNotesIo)).toEqual({
       kind: 'page',
-      syntax: 'wiki',
-      title: '',
-      heading: 'H',
+      page: { id: 'io', title: 'notes.io', path: 'notes.io.md' },
     })
+  })
+})
+
+describe('wikiTitle', () => {
+  it('reads the title a wikilink names, its heading and alias aside', () => {
+    expect(wikiTitle('[[Page#Heading|alias]]')).toBe('Page')
+    expect(wikiTitle('  [[Banner.png]]  ')).toBe('Banner.png')
+  })
+  it('reads a bare heading as an empty title, and an empty heading as the title', () => {
+    expect(wikiTitle('[[#Heading]]')).toBe('')
+    expect(wikiTitle('[[Page#]]')).toBe('Page')
+  })
+  it('strips the cell escape before a pipe', () => {
+    expect(wikiTitle('[[T\\|a]]')).toBe('T')
+    expect(wikiTitle('[[Page#Heading\\|alias]]')).toBe('Page')
+  })
+  it('is null with neither a title nor a heading, or for a link still being written', () => {
+    expect(wikiTitle('[[#]]')).toBeNull()
+    expect(wikiTitle('[[]]')).toBeNull()
+    expect(wikiTitle('[[|x]]')).toBeNull()
   })
 })
 
@@ -200,33 +225,37 @@ describe('linkDisplayText — no alias, the look decides', () => {
 })
 
 describe('internal links', () => {
-  const resolve = only('Meeting Notes')
-
   it('keeps a pasted connection’s alias', () => {
-    expect(linkValueFromEdit('[[Meeting Notes|Today]]', undefined, resolve, false)).toEqual({
+    expect(
+      linkValueFromEdit('[[Meeting Notes|Today]]', undefined, notes, undefined, false),
+    ).toEqual({
       kind: 'link',
       value: '[[Meeting Notes|Today]]',
     })
   })
   it('reads a markdown link naming a page as a connection, label and all', () => {
-    expect(linkValueFromEdit('[Today](Meeting%20Notes)', undefined, resolve, false)).toEqual({
+    expect(
+      linkValueFromEdit('[Today](Meeting%20Notes)', undefined, notes, undefined, false),
+    ).toEqual({
       kind: 'link',
       value: '[[Meeting Notes|Today]]',
     })
   })
   it('drops an alias that merely repeats the title', () => {
-    expect(linkValueFromEdit('[[Meeting Notes|meeting notes]]', undefined, resolve, false)).toEqual(
-      {
-        kind: 'link',
-        value: '[[Meeting Notes]]',
-      },
-    )
+    expect(
+      linkValueFromEdit('[[Meeting Notes|meeting notes]]', undefined, notes, undefined, false),
+    ).toEqual({
+      kind: 'link',
+      value: '[[Meeting Notes]]',
+    })
   })
   it('refuses a title no page answers to', () => {
-    expect(linkValueFromEdit('[[Nowhere]]', undefined, resolve, false)).toBeUndefined()
+    expect(linkValueFromEdit('[[Nowhere]]', undefined, notes, undefined, false)).toBeUndefined()
   })
   it('reads a markdown link over an address as the aliased URL', () => {
-    expect(linkValueFromEdit('[My Site](https://example.com)', undefined, resolve, false)).toEqual({
+    expect(
+      linkValueFromEdit('[My Site](https://example.com)', undefined, notes, undefined, false),
+    ).toEqual({
       kind: 'link',
       value: '[My Site](https://example.com)',
     })
@@ -278,17 +307,18 @@ describe('internal links', () => {
     })
   })
   it('keeps the heading through a page rename, an edit, a typed commit, and an alias rename', () => {
-    const resolve = only('Meeting Notes')
     expect(rewriteConnections('[[Meeting Notes#Decisions]]', 'Meeting Notes', 'New Title')).toBe(
       '[[New Title#Decisions]]',
     )
     expect(linkEditText('[[Meeting Notes#Decisions]]')).toBe('[[Meeting Notes#Decisions]]')
-    expect(linkValueFromEdit('[[meeting notes#Decisions]]', undefined, resolve, false)).toEqual({
+    expect(
+      linkValueFromEdit('[[meeting notes#Decisions]]', undefined, notes, undefined, false),
+    ).toEqual({
       kind: 'link',
       value: '[[Meeting Notes#Decisions]]',
     })
     expect(
-      linkValueFromEdit('[Label](Meeting%20Notes#Decisions)', undefined, resolve, false),
+      linkValueFromEdit('[Label](Meeting%20Notes#Decisions)', undefined, notes, undefined, false),
     ).toEqual({
       kind: 'link',
       value: '[[Meeting Notes#Decisions|Label]]',
@@ -301,7 +331,6 @@ describe('internal links', () => {
 })
 
 describe('a connection under the Link cell’s three menu actions', () => {
-  const resolve = only('Meeting Notes')
   const CONNECTION = '[[Meeting Notes|Today]]'
 
   it('Edit opens on the page alone, as an address opens on the address', () => {
@@ -309,17 +338,17 @@ describe('a connection under the Link cell’s three menu actions', () => {
     expect(linkEditText('[My Site](https://example.com)')).toBe('https://example.com')
   })
   it('Edit swaps a connection for an address, and an address back for a connection', () => {
-    expect(linkValueFromEdit('example.com', CONNECTION, resolve, false)).toEqual({
+    expect(linkValueFromEdit('example.com', CONNECTION, notes, undefined, false)).toEqual({
       kind: 'link',
       value: 'https://example.com',
     })
     expect(
-      linkValueFromEdit('example.org', '[My Site](https://example.com)', resolve, true),
+      linkValueFromEdit('example.org', '[My Site](https://example.com)', notes, undefined, true),
     ).toEqual({
       kind: 'link',
       value: '[My Site](https://example.org)',
     })
-    expect(linkValueFromEdit(CONNECTION, 'https://example.com', resolve, false)).toEqual({
+    expect(linkValueFromEdit(CONNECTION, 'https://example.com', notes, undefined, false)).toEqual({
       kind: 'link',
       value: CONNECTION,
     })
@@ -347,10 +376,8 @@ describe('a Link value’s Edit commit', () => {
     { id: 'd1', title: 'Dup', path: 'A/Dup.md' },
     { id: 'd2', title: 'Dup', path: 'B/Dup.md' },
   ])
-  const held: PageIndex['resolve'] = (title) =>
-    title === '' ? { status: 'resolved', page: holder } : index.resolve(title)
-  const commit = (raw: string, current?: string, keepTitle = false, resolve = held) => {
-    const next = linkValueFromEdit(raw, current, resolve, keepTitle)
+  const commit = (raw: string, current?: string, keepTitle = false, held = true) => {
+    const next = linkValueFromEdit(raw, current, index, held ? holder : undefined, keepTitle)
     return next?.kind === 'link' ? next.value : next
   }
 
@@ -361,7 +388,7 @@ describe('a Link value’s Edit commit', () => {
   })
   it('a bare heading commits on a page, and is refused where nothing holds the value', () => {
     expect(commit('[[#Setup]]')).toBe('[[#Setup]]')
-    expect(commit('[[#Setup]]', undefined, false, index.resolve)).toBeUndefined()
+    expect(commit('[[#Setup]]', undefined, false, false)).toBeUndefined()
   })
   it('an address commits with a scheme, written in a link or bare', () => {
     expect(commit('[x](example.com)')).toBe('[x](https://example.com)')

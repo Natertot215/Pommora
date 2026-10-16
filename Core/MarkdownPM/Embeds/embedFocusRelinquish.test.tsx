@@ -17,9 +17,8 @@ stubEditorBridge()
 afterEach(cleanupEditor)
 
 const conn: ConnectionsApi = {
-  ...buildPageIndex([{ id: '1', title: 'Alpha', path: 'Notes/Alpha.md' }]),
+  index: buildPageIndex([{ id: '1', title: 'Alpha', path: 'Notes/Alpha.md' }]),
   headingsOf: () => undefined,
-  location: () => [],
   open: () => {},
 }
 

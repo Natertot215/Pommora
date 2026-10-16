@@ -42,9 +42,8 @@ const press = (view: EditorView, pos: number, target: HTMLElement): void => {
 const label = (view: EditorView): HTMLElement => view.dom.querySelector('.md-link') as HTMLElement
 
 const conn: ConnectionsApi = {
-  ...buildPageIndex([{ id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' }]),
+  index: buildPageIndex([{ id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' }]),
   headingsOf: () => undefined,
-  location: () => [],
   open: () => {},
   menu: showConnectionMenu,
 }
