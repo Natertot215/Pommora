@@ -38,8 +38,8 @@ The work lands in nine phases, each the next layer of the system and each the la
 
 | | Functions, fields, plugins, components | Types | Files | Members, parameters, options | Total |
 |---|---|---|---|---|---|
-| **Removed** | 50 | 14 (ten named types and four local `Span` declarations) | 1 (`headingHash.ts`) | 25 | **90** |
-| **Added** | 42 (29 exported, 13 private) and 2 style rules | 6 | 2 (`linkSettle.ts`, `ValueEditor.tsx`) | 28 | **80** |
+| **Removed** | 50 | 14 (ten named types and four local `Span` declarations) | 1 (`headingHash.ts`) | 26 | **91** |
+| **Added** | 42 (29 exported, 13 private) and 2 style rules | 6 | 2 (`linkSettle.ts`, `ValueEditor.tsx`) | 29 | **81** |
 | **Moved** | 10 (and 2 made exported) | 1 | 1 moved, 1 renamed | | 12 |
 | **Net** | −8 | −8 | +1 | +3 | **−10 named things** |
 
@@ -126,8 +126,8 @@ Sixty ways of doing thirty things disappear; every row's "after" has one named o
 | `linkKeysOf` • function | Which frontmatter keys hold links, asked of a registry as one folded lookup, beside `keyRefusal`; the graph, the rename cascade's patch, and the Spaces' heading check read it. | `Core/Properties/schema.ts` |
 | `Relation.key`, `'value'` • field and kind | A link inside a frontmatter value, under its key; `frontmatter` renamed. | `Core/Platform/stores.ts`, `Desktop/Store/ddl.ts` (generation 14) |
 | `valueLinks(…).key` • yield | The one value reader yields each hit's key. | `Core/Connections/scan.ts` |
-| `ValueEditor` • component | The one value editor, the Text pane's and in `oneLine` mode a field's, with `seat: 'alias'` for the Link value's Rename. | `Core/Properties/Pickers/ValueEditor.tsx` |
-| `.value-field` • style rule | The one-line editor's field metrics: one scrolling line at the design kit's input height. | `Core/Properties/Pickers/text-pane.css` |
+| `ValueEditor` • component | The one value editor, the Text pane's and in `oneLine` mode a field's, with `alias` seating the caret in the Link value's alias slot for Rename; a cancel ends the edit, so nothing after it writes. | `Core/Properties/Pickers/ValueEditor.tsx` |
+| `.value-field` • style rule, `FieldPicker` `Typed \| Hosted` • props, `field` • style | The one-line editor at its seat's text metrics, one scrolling line; the one popover chrome for a typed value, holding the kit's input over a `value` with its affixes (Number) or a caller's editor as `children` (Link and Text), with one field style owning the fill, stroke, ring, type, and width band. | `Core/Properties/Pickers/text-pane.css`, `UIX/Pickers/FieldPicker.tsx`, `field-picker.css.ts` |
 | `inlineSurface(scope, { oneLine, remembers })`, `editorBase({ …, oneLine, remembers })` • options | A field's surface and the Link field's memory exemption. | `Core/MarkdownPM/surface.ts` |
 | `EditEnd` • type, `EditableInput`/`RenamableLabel` `{ by }` • argument | How an edit ended, by a key or by the focus leaving, passed to `onCommit` and `onCancel`. | `UIX/Fields/EditableInput.tsx`, `RenamableLabel.tsx` |
 | `ConnectionsApi.index`, `LinkEditContext.index`, `LinkEditContext.own`, `commitEdit`'s `kept` • members and option | The host interface holds the index rather than spreading it; the Link field's parse carries the index and the holder; the picker's commit takes the one kept alias. | `Core/MarkdownPM/Links/connectionsApi.ts`, `Core/Properties/parseEditorValue.ts`, `Core/MarkdownPM/Autocomplete/autocomplete.ts` |
@@ -166,6 +166,7 @@ Sixty ways of doing thirty things disappear; every row's "after" has one named o
 | `keyed`, `byKey`, the capture handler | The alias list's key sniff. | `Core/MarkdownPM/Autocomplete/AliasList.tsx` |
 | `'frontmatter'` • relation kind | Renamed `value`, with its key. | `Core/Platform/stores.ts`, `Core/Matrix/Engine/graph.ts`, `forces.ts` |
 | `TextPaneEditor`, `TextPane`'s own `useEditorHost` and `settled` | Generalized into `ValueEditor`; the pane takes its host from its caller. | `Core/Properties/Pickers/TextPane.tsx` |
+| `TextPicker.accent`, its bare input arm (`input`, `suffixField` styles, `boxed`) | The picker's second form: the input owning its own ring and width; the one wrapper owns the chrome for whatever sits inside. | `UIX/Pickers/FieldPicker.tsx`, `field-picker.css.ts` |
 | `Guards/headingRenameSettle.ts` • path | Moved to `Links/`. | `Core/MarkdownPM/Guards/` |
 
 #### Constraints
@@ -246,12 +247,12 @@ Sixty ways of doing thirty things disappear; every row's "after" has one named o
   - [x] Task 7-2 · The graph applies the rule
   - [x] Task 7-3 · The cascade applies the rule
   - [x] Review Checkpoint
-- [ ] `[Phase 8's worktree measurement reported against the −100 floor; no stop (owner's ruling, 10-16-2026: the floor is the goal, not a gate; the closeout explains concretely what collapsed, reduced, or unified beside the count)]`
-- [ ] **Phase 8** — One Editor Surface in Every Field `[Typed on a scratch worktree and measured before commit]`
-  - [ ] Task 8-1 · The value editor and its one-line mode
-  - [ ] Task 8-2 · The Link field, Rename, and the single-line Text field mount it
-  - [ ] Task 8-3 · The live drive and the field tests follow
-  - [ ] Review Checkpoint
+- [x] `[Phase 8's worktree measurement reported against the −100 floor; no stop (owner's ruling, 10-16-2026: the floor is the goal, not a gate; the closeout explains concretely what collapsed, reduced, or unified beside the count)]`
+- [x] **Phase 8** — One Editor Surface in Every Field `[Typed on a scratch worktree and measured before commit]`
+  - [x] Task 8-1 · The value editor and its one-line mode
+  - [x] Task 8-2 · The Link field, Rename, and the single-line Text field mount it
+  - [x] Task 8-3 · The live drive and the field tests follow
+  - [x] Review Checkpoint
 - [ ] `[Compaction Checkpoint 3: c/pre-compaction with the MANDATE and PRINCIPLES re-instilled and the Phase 8 measurement in hand; stop, and continue only when re-prompted]`
 - [ ] **Phase 9** — Documentation and the Ledger
   - [ ] Task 9-1 · The feature documents read true
@@ -268,7 +269,7 @@ Sixty ways of doing thirty things disappear; every row's "after" has one named o
 | 5 | ≈ −26 | ≈ −60 | −90 to −16 | typed `c8` −16 kept more structure than the three-arm commit and the one-return query (about 207 lines of `autocomplete.ts` leave against about 105 formatted arriving); unverified until typed; landed at −74 (`252809203`), then the review's fix round (`fd49d1189`, +36: the open-link reader reading an emptied slot, the query's shown text, the heading pick writing in place, the collapse carrying the rest) ended it inside the band | 292 | 254 | −38 | −149 |
 | 6 | ≈ −17 | ≈ +2 | −10 to +12 | the rules and `follower` add about what they remove; landed at +53 (`63f79adbc`), then the review's fix round (`af8522954`, −1) ended it 40 above the band: the AFTER count priced the rules block, the fallback writer, the table escape, `shownProse`, and the heading pick's fallback at about +2 where each one-line rule wraps to three under the formatter; buys the three wrong results made right, a heading that can't be spelled falling back instead of going stale or splitting a wikilink, and paste writing a page-held address as that page (a heading-pick carry in the picker was weighed at about 45 lines and reversed) | 251 | 303 | +52 | −97 |
 | 7 | ≈ 0 | ≈ +5 | 0 to +10 | `linkKeysOf`, the dedupe, and the `key` column; landed at +26 (`6197494b4`; +9 outside `Core/Testing`, whose contract case and double the script counts as code), then the review's fix round (`9e84b9eb4`, −11: the cascade reading the one rule instead of rebuilding its lookup, the rule folded to one export, the one-caller whole-value reader inlined) ended it 5 above the band; buys the staleness fix and the post-rule dedupe that keeps a Number key from shadowing a Link key | 94 | 109 | +15 | −82 |
-| 8 | ≈ +24 | ≈ +50 | +35 to +65 | the one-line mode, seat, and commit lifecycle; buys the ruled one surface; measured on a worktree before commit | | | | |
+| 8 | ≈ +24 | ≈ +50 | +35 to +65 | the one-line mode, seat, and commit lifecycle; measured on the worktree at +107 before commit, landed at +112 (`b0a1d843c`; the AFTER priced the one-line lifecycle, the popover chrome, the two surface options, and the field rules at about +50 where they format to twice that), then the review's fix round (`df3e2e987`, −41: the Number picker and the Link and Text popover wearing one chrome, the cancel made terminal, the dedupe on what the field reopens on, the seat paths ending alike, the height chains folded) and the picker's rename with the drive's re-expectation (`ff337396d`) ended it 6 above the band; buys the ruled one surface in every field | 363 | 434 | +71 | −11 |
 | 9 | 0 | 0 | 0 | docs | | | | |
 | **Total** | **≈ −222** | **≈ −179** | **−260 to −80** | | | | | |
 
@@ -2715,387 +2716,280 @@ export function spacesLinkHeading(root: string, title: string, heading: string):
 
 ### Phase 8 — One Editor Surface in Every Field
 
-**GOAL:** The Text pane's editor generalizes into one value editor with a one-line mode, and the Link field, the Link value's Rename, and the single-line Text field mount it, so every place a connection is typed is the same surface with the picker, the tracker, Return in a shown slot, and alias memory, while keeping a plain field's feel (one line that scrolls, spellcheck off, typing transforms kept). `linkEditText`, `linkValueFromRename`, the alias-only field, and `linkValueFromEdit`'s `current` and `keepTitle` go; the Link instance leaves alias memory to the write layer, which already owns it. This is the one phase that adds lines, so it's typed on a scratch worktree and measured before it's committed.
+**GOAL:** The Text pane's editor generalizes into one value editor with a one-line mode, and the Link field, the Link value's Rename, and the single-line Text field mount it, so every place a connection is typed is the same surface with the picker, the tracker, Return in a shown slot, and alias memory, while keeping a plain field's feel (one line that scrolls, spellcheck off, typing transforms kept, Return commits, Escape cancels, blur commits unless invalid, Tab leaves). `linkEditText`, `linkValueFromRename`, the alias-only field, and `linkValueFromEdit`'s `current` and `keepTitle` go; the Link instance leaves alias memory to the write layer, which already owns it; the Number picker and the Link and Text popover wear one chrome. Typed on a scratch worktree and measured at +107 before it was committed; landed as `b0a1d843c`, the review's fix round `df3e2e987`, and the rename and drive re-expectation `ff337396d`.
 
 #### Task 8-1
 
-**TASK:** `TextPaneEditor` becomes `ValueEditor` with a `oneLine` mode and an optional alias seat; `inlineSurface` takes the mode; `linkSettle` gains `remembers` and `editorBase` threads `oneLine` and `remembers`; `TextPane` keeps only its popover.
+**TASK:** `TextPaneEditor` becomes `ValueEditor` with a `oneLine` mode and an `alias` seat; `inlineSurface` takes the mode and the memory flag; `linkSettle` gains `remembers` and `editorBase` threads both; `TextPane` keeps only its popover.
 
-**NOW:** `TextPaneEditor` (`TextPane.tsx:78-180`) mounts `editorBase` with `'text'` scope, its own history, placeholder, Enter-closes and Shift-Enter-breaks keys, and saves on every way out through `save()` and a module-level `settled(doc)` (`:24`) that blanks whitespace; `TextPane` builds its host through `useEditorHost` (`:44`). `inlineSurface` (`surface.ts:42-66`) forces `EditorView.lineWrapping` and `spellcheck: 'true'`; the Link field and the single-line Text field are an `EditableInput` (`PropertyValueInput.tsx:87-94`) or a `TextPicker` (`:74-83`) with Enter-commits, Escape-restores, blur-commits-unless-invalid, and `aria-invalid` recomputed on every input (`EditableInput.tsx:64,79-103`). `editorKeymap` keeps `defaultKeymap`'s Shift-Enter and Mod-Enter breaks (`formatKeymap.ts:12`, `surface.ts:91`).
+**NOW (at BASELINE):** `TextPaneEditor` (`TextPane.tsx:78-180`) mounts `editorBase` with `'text'` scope, its own history, placeholder, Enter-closes and Shift-Enter-breaks keys, and saves on every way out through `save()` and a module-level `settled(doc)` that blanks whitespace; `TextPane` builds its host through `useEditorHost`. `inlineSurface` (`surface.ts:42-66`) forces `EditorView.lineWrapping` and `spellcheck: 'true'`; the Link field and the single-line Text field are an `EditableInput` or a `TextPicker` with Enter-commits, Escape-restores, blur-commits-unless-invalid, and `aria-invalid` recomputed on every input.
 
 **CHANGE**
 
-- [ ] Add `ValueEditor` tests: in `oneLine` mode Return commits once (the shown-slot rest of Task 2-5 runs first, since `editorBase` precedes the mode's keymap in the extension list and both are `Prec.highest`), Shift-Enter and Mod-Enter insert nothing, a pasted two-line text lands with a space where the break was, Escape with the picker closed cancels without a commit (an open picker takes Escape through `paneKeys` first), blur commits unless `invalid(text)` holds and then cancels, `aria-invalid` on `view.dom` follows `invalid(text)` from mount and on every change, the surface neither wraps nor spellchecks, `[[` opens the picker, and `seat: 'alias'` on `[[Page|Alias]]` selects `Alias`, on `[[Page]]` writes `|` and seats the caret, and on `example.com` writes `[](example.com)` with the caret in the label. Watch them fail.
-- [ ] Write `ValueEditor` and the surface options as below; `TextPane` takes `host` from its caller, renders `<ValueEditor initial={text} holder={holder} host={host} saveRef={saveRef} onCommit={(text) => onCommit(text === '' ? null : { kind: 'text', value: text })} onClose={close} />` inside its `PickerMenu`, and drops `TextPaneEditor`, its `useEditorHost`, and `settled`; `TextPane.test.tsx` passes a harness host.
+- [x] `ValueEditor.test.tsx`: in `oneLine` mode Return commits once (the shown-slot rest runs first), Shift-Enter and Mod-Enter insert nothing, a pasted two-line text lands with a space where the break was, Escape with the picker closed cancels without a commit, blur commits unless `invalid(text)` holds and then cancels, `aria-invalid` and the kit's `invalidInput` class follow `invalid(text)` from mount and on every change, the surface neither wraps nor spellchecks, `[[` opens the picker, `alias` on `[[Page|Alias]]` selects `Alias`, on `[[Page]]` writes `|` and seats the caret, and on `example.com` writes `[](example.com)` with the caret in the label, each seat focusing the editor; Rename `[[Alpha|Mine]]` with the alias deleted then Escape writes nothing; Tab in a field is unclaimed and the blur it causes commits, where the pane swallows it; `remembers` on and off at the editor level.
+- [x] `ValueEditor` and the surface options as below; `TextPane` takes `host` from its caller, renders `ValueEditor` inside its `PickerMenu`, and drops `TextPaneEditor`, its `useEditorHost`, and `settled`; `TextPane.test.tsx` passes a harness host.
 
 **AFTER**
 
-```Core/MarkdownPM/surface.ts diff
--export const inlineSurface = (scope: MarkdownScope): Extension => [
-+/** `oneLine` is a value field's surface: it scrolls where a body wraps, and it spellchecks nothing, since a field often holds an address or a name. */
-+export const inlineSurface = (scope: MarkdownScope, { oneLine = false, remembers = true } = {}): Extension => [
-   …
--  linkSettle.of(scope),
-+  linkSettle.of({ scope, remembers }),
-   …
--  EditorView.lineWrapping,
-+  oneLine ? [] : EditorView.lineWrapping,
-   EditorView.contentAttributes.of({
-     autocapitalize: 'sentences',
-     autocorrect: 'off',
--    spellcheck: 'true',
-+    spellcheck: oneLine ? 'false' : 'true',
-     …
- export const editorBase = ({ host, scope, panes, formatExt, oneLine, remembers }: { …; oneLine?: boolean; remembers?: boolean }): Extension => [
-   editorHost.of(host),
--  inlineSurface(scope),
-+  inlineSurface(scope, { oneLine, remembers }),
+```Core/MarkdownPM/surface.ts (landed)
+/** … `oneLine` is a value field's surface: it scrolls where a body wraps, and it spellchecks nothing, since a field often holds an address or a name; `remembers` off leaves alias memory to the surface's write layer. */
+export const inlineSurface = (
+  scope: MarkdownScope,
+  { oneLine = false, remembers = true } = {},
+): Extension => [
+  …
+  linkSettle.of({ scope, remembers }),
+  …
+  oneLine ? [] : EditorView.lineWrapping,
+  EditorView.contentAttributes.of({
+    …
+    spellcheck: oneLine ? 'false' : 'true',
+    …
+export const editorBase = ({ host, scope, panes, formatExt, oneLine, remembers }: { …; oneLine?: boolean; remembers?: boolean }): Extension => [
+  editorHost.of(host),
+  inlineSurface(scope, { oneLine, remembers }),
 ```
 
-```Core/Properties/Pickers/ValueEditor.tsx (TextPane.tsx's TextPaneEditor, moved and generalized) diff
-+import { useEffect, useLayoutEffect, useRef, type RefObject } from 'react'
-+import { EditorView, keymap, placeholder } from '@codemirror/view'
-+import { EditorState, Prec } from '@codemirror/state'
-+import { history, historyKeymap, insertNewline } from '@codemirror/commands'
-+import { useLatest } from '@pommora/uix/Utilities/stableApi'
-+import type { ConnPage } from '../../Connections/pageIndex'
-+import { markdownLink } from '../../Connections/links'
-+import { type EditorHost, heldPage, mirrorBody } from '../../MarkdownPM/api'
-+import { editorBase } from '../../MarkdownPM/surface'
-+import { drawnLinkAt } from '../../MarkdownPM/decorations'
-+import { applyLinkAction } from '../../MarkdownPM/Links/linkEdit'
-+import { linkSettle } from '../../MarkdownPM/Links/linkSettle'
-+import { inCaretPane } from '../../MarkdownPM/Menus/caretPane'
-+import { formatKeymap } from '../../MarkdownPM/Input/formatKeymap'
-+import { useReconfigured } from '../../MarkdownPM/Input/useReconfigured'
-+import { useConnectionAutocomplete } from '../../MarkdownPM/Autocomplete/useConnectionAutocomplete'
-+import { AutocompletePane } from '../../MarkdownPM/Autocomplete/AutocompletePane'
-+
-+const stopBubble = (e: { stopPropagation: () => void }): void => e.stopPropagation()
-+const settled = (doc: string): string => (doc.trim() === '' ? '' : doc)
-+
-+/** The one editor every property value is typed in: the Text pane's, and in `oneLine` mode a field's, where Return commits, Escape cancels, blur commits unless the text is invalid, and the invalid state shows on the editor's own node. A commit settles the link under edit first, so what the leave would have written is what's read. */
-+export function ValueEditor({ initial, holder, host, oneLine = false, remembers = true, seat, invalid, saveRef, onCommit, onCancel, onClose }: {
-+  initial: string
-+  holder: ConnPage | undefined
-+  host: EditorHost
-+  oneLine?: boolean
-+  remembers?: boolean
-+  /** Once mounted, seat the caret in the value's alias slot: the Link value's Rename. */
-+  seat?: 'alias'
-+  invalid?: (text: string) => boolean
-+  saveRef?: RefObject<() => void>
-+  onCommit: (text: string) => void
-+  onCancel?: () => void
-+  onClose?: () => void
-+}): React.JSX.Element {
-+  const mountRef = useRef<HTMLDivElement>(null)
-+  const viewRef = useRef<EditorView | null>(null)
-+  const committed = useRef(settled(initial))
-+  const onCommitRef = useLatest(onCommit)
-+  const onCancelRef = useLatest(onCancel)
-+  const onCloseRef = useLatest(onClose)
-+  const invalidRef = useLatest(invalid)
-+  const ac = useConnectionAutocomplete(viewRef, host, 'text')
-+  const formatExt = useReconfigured(viewRef, host.settings().commands, formatKeymap)
-+
-+  const commit = (): void => {
-+    const view = viewRef.current
-+    if (!view) return
-+    view.plugin(linkSettle)?.flush()
-+    const text = settled(view.state.doc.toString())
-+    if (text === committed.current) return
-+    committed.current = text
-+    onCommitRef.current(text)
-+  }
-+  // What's in the editor is marked as already committed, so the unmount's save leaves it alone.
-+  const cancel = (): void => {
-+    const view = viewRef.current
-+    if (view) committed.current = settled(view.state.doc.toString())
-+    onCancelRef.current?.()
-+  }
-+  const leave = (): void => {
-+    const view = viewRef.current
-+    if (view && invalidRef.current?.(view.state.doc.toString())) cancel()
-+    else commit()
-+  }
-+  if (saveRef) saveRef.current = commit
-+
-+  useEffect(() => {
-+    const view = new EditorView({
-+      parent: mountRef.current!,
-+      state: EditorState.create({
-+        doc: initial,
-+        extensions: [
-+          editorBase({ host, scope: 'text', panes: [ac], formatExt, oneLine, remembers }),
-+          heldPage.of(holder ?? null),
-+          history(),
-+          oneLine ? [] : placeholder('Begin typing.'),
-+          oneLine
-+            ? [
-+                // A field holds one line: a typed or pasted break lands as a space.
-+                EditorState.transactionFilter.of((tr) => {
-+                  if (!tr.docChanged || tr.newDoc.lines === 1) return tr
-+                  const breaks = []
-+                  for (let i = 1; i < tr.newDoc.lines; i++) {
-+                    const { to } = tr.newDoc.line(i)
-+                    breaks.push({ from: to, to: to + 1, insert: ' ' })
-+                  }
-+                  return [tr, { changes: breaks, sequential: true }]
-+                }),
-+                EditorView.updateListener.of((u) => {
-+                  if (u.docChanged && invalidRef.current)
-+                    u.view.dom.setAttribute('aria-invalid', String(invalidRef.current(u.state.doc.toString())))
-+                }),
-+                EditorView.domEventHandlers({
-+                  blur: (e) => {
-+                    if (!inCaretPane(e.relatedTarget)) leave()
-+                    return false
-+                  },
-+                }),
-+              ]
-+            : [],
-+          // Shift-Tab stops short of the pane's focus trap, which would carry it to the ×.
-+          Prec.highest(
-+            keymap.of([
-+              oneLine
-+                ? [
-+                    { key: 'Enter', run: () => (leave(), true) },
-+                    { key: 'Shift-Enter', run: () => true },
-+                    { key: 'Mod-Enter', run: () => true },
-+                    { key: 'Escape', run: () => (cancel(), true) },
-+                  ]
-+                : [
-+                    { key: 'Enter', run: () => (onCloseRef.current?.(), true) },
-+                    { key: 'Shift-Enter', run: insertNewline },
-+                  ],
-+              { key: 'Tab', run: () => true },
-+              { key: 'Shift-Tab', run: () => true, stopPropagation: true },
-+            ].flat()),
-+          ),
-+          keymap.of(historyKeymap),
-+        ],
-+      }),
-+    })
-+    viewRef.current = view
-+    if (invalid) view.dom.setAttribute('aria-invalid', String(invalid(initial)))
-+    if (seat === 'alias') {
-+      const doc = view.state.doc.toString()
-+      // A bare address draws no link token, so Rename gives it the label a markdown link has.
-+      if (drawnLinkAt(view, 0)) applyLinkAction(view, 'rename', [0, doc.length])
-+      else view.dispatch({ changes: { from: 0, to: doc.length, insert: markdownLink(doc, '') }, selection: { anchor: 1 } })
-+    } else view.dispatch({ selection: { anchor: view.state.doc.length } })
-+    // The pane blooms in from a scale the caret was measured through, so the editor measures again once it settles.
-+    const shell = mountRef.current!.closest('.text-pane')
-+    const remeasure = (): void => view.requestMeasure()
-+    shell?.addEventListener('animationend', remeasure)
-+    return () => {
-+      shell?.removeEventListener('animationend', remeasure)
-+      view.destroy()
-+      viewRef.current = null
-+    }
-+  }, [])
-+  // Saved in the mutation phase: a seat unmounting with the pane retires its writer in its own passive cleanup first, so a passive save here would be dropped.
-+  useLayoutEffect(() => commit, [])
-+  // An outside write lands only in an editor that holds nothing unsaved; the editor's own close then writes last, as a page body's merge does.
-+  useEffect(() => {
-+    const view = viewRef.current
-+    if (view && settled(view.state.doc.toString()) === committed.current && initial !== committed.current) {
-+      committed.current = initial
-+      mirrorBody(view, initial)
-+    }
-+  }, [initial])
-+
-+  return (
-+    <>
-+      {/* The layer above cancels every right-click; the editor's own menu asks first, so its event stops here. */}
-+      {/* biome-ignore lint/a11y/noStaticElementInteractions: a bubble guard, not a control */}
-+      <div className={oneLine ? 'value-field mdpm-shell' : 'text-pane-body mdpm-shell'} onContextMenu={stopBubble}>
-+        <div ref={mountRef} className="mdpm-editor" />
-+      </div>
-+      <AutocompletePane {...ac.pane} />
-+    </>
-+  )
-+}
+```Core/MarkdownPM/Links/linkSettle.ts (landed)
+export const linkSettle = ViewPlugin.define(
+  (view: EditorView, { scope, remembers }: { scope: MarkdownScope; remembers: boolean }) => {
+    …
+      if (settling !== w.start && !html && remembers) remember(w)
 ```
 
-`.value-field` is one rule in `text-pane.css` beside `.text-pane-body`: the editor's line scrolls horizontally (`overflow-x: auto; white-space: nowrap` on `.cm-content`) at the field's height, the design kit's `fillInput` metrics. Cost on a keystroke in a field: the filter is one integer compare (`lines === 1`) and `invalid` is one `readLinkText` plus one index lookup over a short string, the same work `EditableInput` does on every input today; nothing runs per keystroke in the pane.
+```Core/Properties/Pickers/ValueEditor.tsx (landed; TextPane.tsx's TextPaneEditor, moved and generalized)
+const blanked = (doc: string): string => (doc.trim() === '' ? '' : doc)
+
+/** The one editor every property value is typed in: the Text pane's, and in `oneLine` mode a field's. Both save once on every way out; a field also ends its own edit, Return and blur committing unless the text is invalid, Escape cancelling, with the invalid state on the editor's own node. A commit settles the link under edit first, so what the leave would have written is what's read; a cancel ends the edit, so nothing after it, the unmount's save included, writes. */
+export function ValueEditor({ initial, holder, host, oneLine = false, remembers, alias, invalid, saveRef, onCommit, onClose }: {
+  initial: string
+  holder: ConnPage | undefined
+  host: EditorHost
+  oneLine?: boolean
+  remembers?: boolean
+  /** Once mounted, seat the caret in the value's alias slot: the Link value's Rename. */
+  alias?: boolean
+  invalid?: (text: string) => boolean
+  saveRef?: RefObject<() => void>
+  onCommit: (text: string) => void
+  onClose: () => void
+}): React.JSX.Element {
+  …
+  const committed = useRef(blanked(initial))
+  const ended = useRef(false)
+  …
+  const commit = (): void => {
+    const view = viewRef.current
+    if (!view || ended.current) return
+    view.plugin(linkSettle)?.flush()
+    const text = blanked(view.state.doc.toString())
+    if (text === committed.current) return
+    committed.current = text
+    onCommitRef.current(text)
+  }
+  const cancel = (): boolean => {
+    ended.current = true
+    onCloseRef.current()
+    return true
+  }
+  const leave = (): boolean => {
+    const view = viewRef.current
+    if (view && invalidRef.current?.(view.state.doc.toString())) return cancel()
+    commit()
+    onCloseRef.current()
+    return true
+  }
+  if (saveRef) saveRef.current = commit
+
+  useEffect(() => {
+    const view = new EditorView({
+      parent: mountRef.current!,
+      state: EditorState.create({
+        doc: initial,
+        extensions: [
+          editorBase({ host, scope: 'text', panes: [ac], formatExt, oneLine, remembers }),
+          heldPage.of(holder ?? null),
+          history(),
+          oneLine
+            ? [
+                EditorView.editorAttributes.of({ class: invalidInput }),
+                // A field holds one line: a typed or pasted break lands as a space.
+                EditorState.transactionFilter.of((tr) => { … }),
+                EditorView.updateListener.of((u) => { … aria-invalid … }),
+                EditorView.domEventHandlers({ blur: (e) => { if (!inCaretPane(e.relatedTarget)) leave(); return false } }),
+              ]
+            : placeholder('Begin typing.'),
+          Prec.highest(
+            keymap.of([
+              { key: 'Enter', run: leave },
+              { key: 'Shift-Enter', run: oneLine ? () => true : insertNewline },
+              ...(oneLine
+                ? [{ key: 'Mod-Enter', run: () => true }, { key: 'Escape', run: cancel }]
+                : [
+                    // A field lets Tab move the focus as a plain field does; the pane keeps it, and Shift-Tab stops short of its focus trap, which would carry it to the ×.
+                    { key: 'Tab', run: () => true },
+                    { key: 'Shift-Tab', run: () => true, stopPropagation: true },
+                  ]),
+            ]),
+          ),
+          keymap.of(historyKeymap),
+        ],
+      }),
+    })
+    viewRef.current = view
+    if (invalid) view.dom.setAttribute('aria-invalid', String(invalid(initial)))
+    const doc = view.state.doc.toString()
+    if (alias && drawnLinkAt(view, 0)) applyLinkAction(view, 'rename', [0, doc.length])
+    else if (alias) {
+      // A bare address draws no link token, so Rename gives it the label a markdown link has.
+      view.dispatch({ changes: { from: 0, to: doc.length, insert: markdownLink(doc, '') } })
+      focusRange(view, 1)
+    } else {
+      view.dispatch({ selection: { anchor: doc.length }, scrollIntoView: true })
+      view.focus()
+    }
+    // A popover blooms in from a scale the caret was measured through, so the editor measures again once it settles.
+    const portal = mountRef.current!.closest(`[${PICKER_PORTAL_ATTR}]`)
+    …
+  }, [])
+  // Saved in the mutation phase: a seat unmounting with the pane retires its writer in its own passive cleanup first, so a passive save here would be dropped.
+  useLayoutEffect(() => commit, [])
+  // An outside write lands only in an editor that holds nothing unsaved; the editor's own close then writes last, as a page body's merge does.
+  useEffect(() => { … mirrorBody(view, initial) … }, [initial])
+
+  return (
+    <>
+      <div className={oneLine ? 'value-field mdpm-shell' : 'text-pane-body mdpm-shell'} onClick={stopBubble} onContextMenu={stopBubble}>
+        <div ref={mountRef} className="mdpm-editor" />
+      </div>
+      <AutocompletePane {...ac.pane} />
+    </>
+  )
+}
+```
+
+`.value-field` in `text-pane.css` beside `.text-pane-body`: the editor at its seat's text metrics (`font: inherit`, `color: inherit`, zero padding, `height: auto` shared with the pane through one selector list, `min-width: 0`), one line that scrolls through CodeMirror's own scroller once wrapping is off. Cost on a keystroke in a field: the filter is one integer compare (`lines === 1`), and `invalid` is one `readLinkText` plus the resolver's lookups over a short string, the work `EditableInput` did on every input; nothing runs per keystroke in the pane.
 
 **VERIFY**
 
-- [ ] The `ValueEditor` cases and `TextPane.test.tsx` pass; a Text pane still saves on every way out and once per change.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes (one mount lifecycle serves the pane and the fields; `TextPaneEditor` and the pane's own `useEditorHost` have no reader).
+- [x] The `ValueEditor` cases and `TextPane.test.tsx` pass; a Text pane still saves on every way out and once per change.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes (one mount lifecycle serves the pane and the fields; `TextPaneEditor` and the pane's own `useEditorHost` have no reader).
 
 #### Task 8-2
 
-**TASK:** `PropertyValueInput` builds one host and mounts `ValueEditor` for the Link field (opening on the whole written value), the Link value's Rename (the same editor, seated in its alias slot), and the single-line Text field; `TextPicker` and `EditableInput` stay for Number; `linkEditText`, `linkValueFromRename`, `LinkEditContext.keepTitle`, and `linkValueFromEdit`'s `current` and `keepTitle` go; Show Full Link reads the whole value. The Rename seat decides which of a markdown-only value's two "no alias" spellings it writes when the alias is cleared: `linkValueFromRename('', '[x](Page#A%7CB)')` writes the default label explicitly (`[A|B](Page#A%7CB)`) where `[](Page#A%7CB)` draws the same; `linkDisplayText` and the settle read both alike, but the raw value differs.
+**TASK:** `PropertyValueInput` builds one host and mounts `ValueEditor` for the Link field (opening on the whole written value), the Link value's Rename (the same editor, seated in its alias slot), and the single-line Text field; Number keeps the kit's input; `linkEditText`, `linkValueFromRename`, `LinkEditContext.keepTitle`, and `linkValueFromEdit`'s `current` and `keepTitle` go; `FieldPicker` is the one popover chrome, holding the kit's input over a `value` (Number, with its affixes) or a caller's editor as `children` (Link and Text).
 
-**NOW:** `PropertyValueInput.tsx:54-96` builds `initial` from `linkEditText` (the target alone) or the alias alone (`alias` mode), parses through `linkValueFromRename` or `parseEditorValue` with `keepTitle`, tints a Link field with `def.link_color` (`:69,96`), and mounts `TextPicker` or `EditableInput`; four sites mount it: inline at `PropertyPanel.tsx:410`, `CardValue.tsx:144`, `TableView.tsx:213`, the full popover at `ValuePickPresenter.tsx:39`, and the Rename popover at `PropertyPanel.tsx:541`, `CardsView.tsx:487`, `TableView.tsx:251` (passing `alias` for a Link value). `linkValueFromEdit` (`linkValue.ts:122-134`) re-applies a hidden alias through `keepsShown` because the field hid it, so typing a new title into the field today drops the hidden alias when the old link pointed somewhere; Rename on a bare address writes `[alias](url)` through `linkValueFromRename` (`:136-143`).
+**NOW (at BASELINE):** `PropertyValueInput.tsx:54-96` builds `initial` from `linkEditText` (the target alone) or the alias alone (`alias` mode), parses through `linkValueFromRename` or `parseEditorValue` with `keepTitle`, tints a Link field with `def.link_color`, and mounts `TextPicker` or `EditableInput`; `linkValueFromEdit` re-applies a hidden alias through `keepsShown` because the field hid it, so typing a new title into the field dropped the hidden alias when the old link pointed somewhere; `TextPicker` had two arms, a bare input owning its own ring and width (the Link popover) and an affixed input in a fixed 140px field (Number).
 
 **CHANGE**
 
-- [ ] Rewrite `PropertyValueInput.test.tsx:41-50,94-100,138-152` to drive the editor through its `EditorView` (no `<input>` for Link or Text); keep the Number cases on the input; add: the Link field opens showing `[[Page|Alias]]` with the caret at the end and the Link accent on its wrapper; Rename opens the same editor with the alias selected (or an empty `|` slot seated when none, or `[](url)` with the caret in the label for a bare address); typing `[[` lists pages; a bare heading commits on a page and marks invalid on a Space; retyping the title of `[[Alpha|nice]]` to `Beta` by hand keeps `nice`, as a body does; the single-line Text field commits its first line and leaves the lines behind untouched; `linkValue.test.ts:239-241,285,307-310` (`linkEditText`) go. Watch them fail.
-- [ ] Write `PropertyValueInput` and the value helpers as below; `editorText` returns the raw value for a Link.
+- [x] `PropertyValueInput.test.tsx` drives the editor through its `EditorView` (no `<input>` for Link or Text; Number stays on the input): the Link field opens showing `[[Page|Alias]]` with the caret at the end and the Link accent on its wrapper (`color` and `--link`, `--connection` unset); Rename opens the same editor with the alias selected, an empty `|` slot seated when none, or `[](url)` with the caret in the label for a bare address; typing `[[` lists pages; a bare heading commits on a page and marks invalid on a Space; retyping the title of `[[Alpha|nice]]` to `Beta` by hand keeps `nice`; the single-line Text field commits its first line and leaves the lines behind untouched; the Link instance remembers nothing on leave and the Text instance remembers once; Rename on `https://example.com` then Return writes nothing, `[[alpha]]` retyped over `[[Alpha]]` writes nothing; the Number popover shows its affixes inside the one field class and the Link popover's editor sits in the same class. `linkValue.test.ts`'s `linkEditText` and `linkValueFromRename` cases go.
+- [x] `PropertyValueInput`, the value helpers, and `FieldPicker` as below; `editorText` returns the raw value for a Link.
 
 **AFTER**
 
-```Core/Properties/Pickers/PropertyValueInput.tsx diff
-@@ imports @@
--import { linkValueFromRename, readLinkText } from '../../Connections/linkValue'
-+import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
-+import { useEditorHost } from '../../Pages/editorHost'
-+import { ValueEditor } from './ValueEditor'
--import { useSetting } from '../../Session/store'
-+import { useSession } from '../../Session/store'
--const linkResolver = …   (gone since Task 3-3)
-@@ PropertyValueInput @@
--  const keepTitle = !useSetting('removeTitleOnLinkChange')
-+  const host = useEditorHost({ connections: useSession(() => connections?.()) })
-   if (popover && def.type === 'text')
-     return (
-       <TextPane
-         {...popover}
-         current={current}
-         holder={holder}
--        connections={connections}
-+        host={host}
-         onCommit={onCommit}
-         onDismiss={onClose}
-       />
-     )
--  const raw = current?.kind === 'link' ? current.value : ''
--  const initial = alias ? (readLinkText(raw)?.alias ?? '') : editorText(current)
--  const parse = (text: string): PropertyValue | null | undefined =>
--    alias
--      ? linkValueFromRename(text, raw)
--      : parseEditorValue(def.type, text, current, {
--          index: connections?.()?.index,
--          own: holder,
--          keepTitle,
--        })
-+  const initial = editorText(current)
-+  const parse = (text: string): PropertyValue | null | undefined =>
-+    parseEditorValue(def.type, text, current, { index: connections?.()?.index, own: holder })
-   const invalid = (text: string): boolean => parse(text) === undefined
-   const commit = (text: string): void => {
-     onClose()
-     const next = text === initial ? undefined : parse(text)
-     if (next !== undefined) onCommit(next)
-   }
-   const accent = def.type === 'link' ? solidColorCss(def.link_color) : undefined
-+  if (def.type !== 'number') {
-+    const editor = (
-+      <ValueEditor
-+        initial={initial}
-+        holder={holder}
-+        host={host}
-+        oneLine
-+        remembers={def.type !== 'link'}
-+        seat={alias ? 'alias' : undefined}
-+        invalid={invalid}
-+        onCommit={commit}
-+        onCancel={onClose}
-+      />
-+    )
-+    const tinted = accent ? <span style={{ color: accent, display: 'contents' }}>{editor}</span> : editor
-+    return popover ? (
-+      <PickerMenu open={popover.open} triggerRef={popover.triggerRef} onDismiss={onClose} direction="down" origin="center">
-+        {tinted}
-+      </PickerMenu>
-+    ) : (
-+      tinted
-+    )
-+  }
-   if (popover) {
--    const number = def.type === 'number'
--    const denominator = number ? fractionDenominator(def) : undefined
-+    const denominator = fractionDenominator(def)
-     return (
-       <TextPicker
-         {...popover}
-         value={initial}
--        accent={accent}
--        leading={number ? numberFormatGlyph(def) : undefined}
-+        leading={numberFormatGlyph(def)}
-         trailing={denominator === undefined ? undefined : `/ ${denominator}`}
-         invalid={invalid}
-         onCommit={commit}
-         onDismiss={onClose}
-       />
-     )
-   }
--  const field = (
-+  return (
-     <EditableInput
-       initial={initial}
-       className={fillInput}
-       caretAtEnd
-       invalid={invalid}
-       onCommit={commit}
-       onCancel={onClose}
-     />
-   )
--  return accent ? <span style={{ color: accent, display: 'contents' }}>{field}</span> : field
+```Core/Properties/Pickers/PropertyValueInput.tsx (landed)
+/** A value typed as text: a Number in the kit's input, a Text value's popover in its pane, and every other value in the one-line editor, which opens on the whole written value and, for the Link value's Rename, seats the caret in its alias slot. A Link value leaves alias memory to the write layer, which remembers once per landed value. */
+export function PropertyValueInput({ def, current, holder, connections, alias, popover, onCommit, onClose }: { … }): React.JSX.Element {
+  const host = useEditorHost({ connections: useSession(() => connections?.()) })
+  const initial = editorText(current)
+  const parse = (text: string): PropertyValue | null | undefined =>
+    parseEditorValue(def.type, text, current, { index: connections?.()?.index, own: holder })
+  const invalid = (text: string): boolean => parse(text) === undefined
+  // Deduped on what the field would reopen on, since a seat may have rewritten the text it holds.
+  const commit = (text: string): void => {
+    const next = parse(text)
+    if (next !== undefined && editorText(next) !== initial) onCommit(next)
+  }
+  if (def.type === 'number') {
+    const close = (text: string): void => { onClose(); commit(text) }
+    if (popover) { … <FieldPicker {...popover} value={initial} leading={numberFormatGlyph(def)} trailing={…} invalid={invalid} onCommit={close} onDismiss={onClose} /> }
+    return <EditableInput initial={initial} className={fillInput} caretAtEnd invalid={invalid} onCommit={close} onCancel={onClose} />
+  }
+  if (popover && def.type === 'text') return <TextPane {...popover} current={current} holder={holder} host={host} onCommit={onCommit} onDismiss={onClose} />
+  const editor = (
+    <ValueEditor initial={initial} holder={holder} host={host} oneLine remembers={def.type !== 'link'} alias={alias} invalid={invalid} onCommit={commit} onClose={onClose} />
+  )
+  // The property's link color tints an address and the text around it, as the resting cell's anchor is tinted; a page link keeps the app's connection color there too.
+  const accent = def.type === 'link' ? solidColorCss(def.link_color) : undefined
+  const tinted = accent ? <span style={{ color: accent, '--link': accent, display: 'contents' } as CSSProperties}>{editor}</span> : editor
+  return popover ? <FieldPicker {...popover} onDismiss={onClose}>{tinted}</FieldPicker> : tinted
+}
 ```
 
-```Core/Properties/parseEditorValue.ts + Core/Connections/linkValue.ts diff
- interface LinkEditContext {
-   index: PageIndex | undefined
-   own: ConnPage | undefined
--  keepTitle: boolean
- }
- export function parseEditorValue(type, raw, current?, link?) {
-   …
--    return linkValueFromEdit(raw, current?.kind === 'link' ? current.value : undefined, link.index, link.own, link.keepTitle)
-+    return linkValueFromEdit(raw, link.index, link.own)
-   if (type === 'text') return textFromEdit(raw, current)
- export function editorText(value?: PropertyValue | null): string {
-   if (value?.kind === 'number') return String(value.value)
--  if (value?.kind === 'link') return linkEditText(value.value)
-+  if (value?.kind === 'link') return value.value
-   …
--export function linkEditText(raw: string): string { … }
--export function linkValueFromEdit(raw, current, index, own, keepTitle) {
-+export function linkValueFromEdit(raw: string, index: PageIndex | undefined, own: ConnPage | undefined): PropertyValue | null | undefined {
-   …
--  const was = current ? readLinkText(current) : null
--  return { kind: 'link', value: retarget('wiki', was, next, !keepTitle, index).text }
-+  return { kind: 'link', value: retarget('wiki', null, next, false).text }
- }
--export function linkValueFromRename(alias: string, current: string): PropertyValue { … }
+```Core/Properties/parseEditorValue.ts + Core/Connections/linkValue.ts (landed)
+interface LinkEditContext {
+  index: PageIndex | undefined
+  own: ConnPage | undefined
+}
+export function editorText(value?: PropertyValue | null): string {
+  if (value?.kind === 'number') return String(value.value)
+  if (value?.kind === 'link') return value.value
+  …
+  if (type === 'link' && link) return linkValueFromEdit(raw, link.index, link.own)
+
+/** A Link value as the field wrote it: the page it resolves to, by title, as a wikilink wherever one spells; an address under its scheme; nothing a page or an address answers for is refused. */
+export function linkValueFromEdit(raw: string, index: PageIndex | undefined, own: ConnPage | undefined): PropertyValue | null | undefined {
+  const trimmed = raw.trim()
+  if (trimmed === '') return null
+  const written = readLinkText(trimmed)
+  const target = resolveLink(written, index, own)
+  if (!written || (target.kind !== 'page' && target.kind !== 'url')) return undefined
+  return { kind: 'link', value: retarget('wiki', resolvedTarget(written, index, own)).text }
+}
 ```
 
-**Behavior change:** Remove Title now reaches the Link field only through the picker inside it, as in a body: the field shows the whole link, so nothing is hidden for a parse to re-apply, and a title retyped by hand keeps its alias, where today's field dropped the hidden one. Rename on a bare address seats the caret in a `[](url)` label and commits `[alias](url)` as today. `parseEditorValue` keeps `current`, which `textFromEdit` (`parseEditorValue.ts:20-28`) reads to leave a Text value's lines behind its first untouched; `editorText` hands the field that first line, so the one-line editor's commit is that line and the merge is today's. `TextPicker` drops its `accent` prop (`UIX/Pickers/TextPicker.tsx:14,24,49`), whose only caller was the Link field.
+```UIX/Pickers/FieldPicker.tsx + field-picker.css.ts (landed)
+/** What the one chrome holds: the kit's input over a `value`, with its affixes, or a caller's own editor as `children`. */
+type Typed = { value: string; onCommit: (next: string) => void; invalid?; leading?; trailing?; children?: undefined }
+type Hosted = { children: ReactNode; value?: undefined; onCommit?: undefined; invalid?: undefined; leading?: undefined; trailing?: undefined }
+
+/** A typed value's popover: one field wrapper owning the fill, stroke, focus ring, type, and width, around either the kit's input or an editor the caller mounts. */
+export function FieldPicker({ open, onDismiss, triggerRef, ...inner }: { open; onDismiss; triggerRef } & (Typed | Hosted)) {
+  return (
+    <PickerMenu open={open} onDismiss={onDismiss} triggerRef={triggerRef} direction="down" origin="center" contentClassName={s.content}>
+      <div className={s.field}>
+        {inner.value === undefined ? inner.children : (<>{leading}<EditableInput initial={inner.value} className={s.suffixInput} caretAtEnd invalid={inner.invalid} onCommit={inner.onCommit} onCancel={onDismiss} />{trailing}</>)}
+      </div>
+    </PickerMenu>
+  )
+}
+
+/** The one chrome a typed value's popover wears: the fill, stroke, and focus ring, the control-size type, and a width that follows the content between its bounds; whatever sits inside owns no chrome of its own. */
+export const field = style([kitField, { gap: '6px', width: 'auto', minWidth: '100px', maxWidth: '200px', overflow: 'hidden', lineHeight: font.scale.control.line, fontSize: font.scale.control.size, fontWeight: font.weight.emphasized, ...focusRing('within') }])
+```
+
+**Behavior change:** Remove Title reaches the Link field only through the picker inside it, as in a body: the field shows the whole link, so nothing is hidden for a parse to re-apply, and a title retyped by hand keeps its alias, where the field dropped the hidden one. Rename on a bare address seats the caret in a `[](url)` label and commits `[alias](url)`; clearing a markdown-only value's label through Rename leaves the settle's one collapse rule to fill the default label, so the raw value is `[A|B](Page#A%7CB)` from one rule rather than a writer's second spelling. The Number popover's field follows its content between 100 and 200px where it was a fixed 140px, and the two popover forms differ in nothing but what sits inside (the owner's ruling, 10-16-2026: one set of styles, different behaviors of what each accepts). A Text field's alias is remembered the moment the caret leaves the link, as a body's is, even where Escape then discards the text; a cancel itself writes nothing.
 
 **VERIFY**
 
-- [ ] `PropertyValueInput.test.tsx`, `linkValue.test.ts`, `PropertyPanel`, `TableView`, `CardsView`, and `ValuePickPresenter` tests pass; Number fields are untouched; the picker pane opens unclipped from a field mounted inline in a table view cell, as it does from a table's cell editor today.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes (`linkEditText`, `linkValueFromRename`, `LinkEditContext.keepTitle`, `linkResolver`, `TextPicker.accent`, and `PropertyValueInput`'s `alias`-only branches have no reader).
+- [x] `PropertyValueInput.test.tsx`, `linkValue.test.ts`, `PropertyPanel`, `TableView`, `CardsView`, `ValuePickPresenter`, `cellGestures`, and `PickerMenu` tests pass; Number fields are untouched but for their popover's width.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes (`linkEditText`, `linkValueFromRename`, `LinkEditContext.keepTitle`, `linkResolver`, `FieldPicker.accent`, the bare input arm, and `PropertyValueInput`'s `alias`-only branches have no reader).
 
 #### Task 8-3
 
-**TASK:** The live drive's group 1 drives the one-line editor, and the field-level tests pin what the fields gained.
+**TASK:** The live drive's group 1 drives the one-line editor, the drive harness drives a field whether it is an input or the editor, and the field-level tests pin what the fields gained.
 
-**NOW:** `live-drive.mjs:212-230` drives the Link field through `field` (`drive-harness.mjs:207`), which requires an `INPUT`, and `selectAll` (`:102`) calls `.select()`; in a one-line editor `[[` opens the picker, so Enter picks rather than commits.
+**NOW (at BASELINE):** `live-drive.mjs:212-230` drives the Link field through `field` (`drive-harness.mjs:207`), which requires an `INPUT`, and `selectAll` (`:102`) calls `.select()`; the Text Property Drive reads the single-line Text field the same way; in a one-line editor `[[` opens the picker, so Enter picks rather than commits.
 
 **CHANGE**
 
-- [ ] Re-type group 1's Link-value block to drive the editor through its `EditorView` (type, close the picker with Escape where a pick isn't meant, Return to commit), and add: a new alias typed into a heading link in a Link value is never saved; the Text Property Drive's field helper, if it drives the single-line Text field, follows.
-- [ ] Add a field test that the Link instance remembers nothing on leave (the write layer does) and the Text instance remembers on leave.
+- [x] `drive-harness.mjs` exports `FIELD`, `FIELD_VIEW`, `field` (the focused `<input>` or the focused `.value-field .cm-content`), `fieldValue`, `selectField`, `blurField`, and `caretAtFieldEnd`; the Alias Drive's group 1 Link-value block drives the editor through them (type, Escape where a pick isn't meant, Return to commit) and adds "a new alias typed into a heading link is never saved"; the Text Property Drive's Text-field sites read the same helpers.
+- [x] `PropertyValueInput.test.tsx` pins that the Link instance remembers nothing on leave (the write layer does) and the Text instance remembers on leave; `ValueEditor.test.tsx` pins `remembers` at the editor level.
 
 **VERIFY**
 
-- [ ] The live drive's groups 1 to 6 pass on `~/Test` against a running instance (`env -u ELECTRON_RUN_AS_NODE POMMORA_DEBUG_PORT=9333 npm run dev`), with the Alias Drive's own harness; the instance is closed afterward and test writes reverted.
-- [ ] Run the gates.
+- [x] The live drive's groups 1 to 6 pass on `~/Test` (346 of 346 checks) with the Alias Drive's own harness, which builds and launches a scratch instance of its own on port 9373 with its own user data and restores `~/Test` from its snapshot afterward; one step was re-expected to the ruled two-Return shape in a Text pane (the first Return rests past the link and remembers the alias, the second closes the pane), which Phase 2 ruled and `TextPane.test.tsx` pins; the fields read through CDP as one scrolling line with no spellcheck and the picker opening on `[[`.
+- [x] Run the gates.
 
 #### Review Checkpoint
 
-- [ ] Every place a connection is typed mounts `editorBase`; `grep -rn "EditableInput\|TextPicker" Core/Properties` shows Number only.
-- [ ] A Link value's alias is remembered exactly once per write (the write layer), a Text value's single line once per leave (the tracker).
-- [ ] The fields scroll, don't wrap, and show no spellcheck; the owner confirms the feel live.
-- [ ] Net Ledger: Phase 8 measured on the worktree before commit and again after; the total holds the −100 floor or the owner ruled on it.
+- [x] Every place a connection is typed mounts `editorBase`; `grep -rn "EditableInput\|FieldPicker" Core/Properties` shows Number only (and `OptionEditPopup`'s option-name field, a name and not a value).
+- [x] A Link value's alias is remembered exactly once per write (the write layer), a Text value's single line once per leave (the tracker).
+- [ ] The fields scroll, don't wrap, and show no spellcheck; the owner confirms the feel live, with the Number popover's content-sized width, the Link popover in the same chrome, and a Link field's page link in the connection color.
+- [x] Net Ledger: Phase 8 measured on the worktree before commit (+107) and again after (+112, then −41 in the fix round); the total is reported against the −100 floor under the owner's ruling.
 
 ---
 
@@ -3158,7 +3052,7 @@ export function spacesLinkHeading(root: string, title: string, heading: string):
 - `.claude/Features/ConnectionsPM.md:16,22,26,34,36,55,59,60,62,64` — the claims Task 9-1 lists — Task 9-1
 - `.claude/Features/MarkdownPM.md:8,10,31,33,90,104,118,120,156,255` — Task 9-1
 - `.claude/Features/PropertiesPM.md:62,80,82,117` — Task 9-1
-- `.claude/Features/CorePM.md:83,108` (the index records "a frontmatter Link value": every link under a key, judged at read); `.claude/Features/MatrixPM.md:7` ("body, citation, and frontmatter" link kinds: `value`); `.claude/Features/PommoraUIX.md:287` — Task 9-1
+- `.claude/Features/CorePM.md:83,108` (the index records "a frontmatter Link value": every link under a key, judged at read); `.claude/Features/MatrixPM.md:7` ("body, citation, and frontmatter" link kinds: `value`); `.claude/Features/PommoraUIX.md:287,383` (the `TextPicker` row: now `FieldPicker`, one chrome holding the kit's input or a caller's editor) — Task 9-1
 - `Connections & Aliases Restructure — Architecture Design.md:21,32` — "A **Save Heading Aliases** setting … is proposed" — Task 9-2
 - `Pommora Codebase Audit.md` W22 (opener, F-114, F-116 to F-131, footnotes, header, Verdict rows) — Task 9-2
 - `Core/Nexus/treeIndex.ts:1`, `record.ts:1`, `heldPages.ts:1,46`, `pageIndex.ts:42`, `Actions/destinationTree.ts:1` — the one-walk and title comments — Tasks 1-1 to 1-3
@@ -3189,4 +3083,9 @@ export function spacesLinkHeading(root: string, title: string, heading: string):
 - Task 6-1's `shownAlias` asked whether shown text named the old target of the *resolved* old link, so a label that only named a page since deleted or never held (`[Draft](Draft)` re-picked to Alpha, `Draft` kept under Remove Title's phantom rule) was remembered as Alpha's alias; landed asking it of the link as it was written, resolving only for the same-alias-same-page check (`linkValue.test.ts` pins it).
 - Task 6-1 sent a File value's reference through `pageLinkText` claiming a readable markdown link where the wikilink grammar can't spell the file name; `wikiTitle` refuses the markdown form, so that reference would be read by nothing. Landed as `fileLinkText`, a writer with no fallback, beside `pageEmbedText`; `adoptFile`'s own gate still refuses the name first.
 - Task 6-1's sentence that the writers honour a url arm's `page?` through `resolveLink` reached only the remember rule; paste still wrote `[x](notes.io)` as `[x](https://notes.io)` where a page holds `notes.io`. Landed as `resolvedTarget`, the one "written as the page it resolves to" rule the Link field's edit already spelled inline, applied to paste's clipboard target once; a pasted `[[page1]]` now lands as `[[Page1]]`, one written shape, where it was written as pasted.
+- Task 8-1's AFTER marked a cancelled edit's text as already committed, so the unmount's save would leave it alone; the save flushes the link settle first, and a link part emptied under the caret collapses in that flush, so Rename on `[[Alpha|Mine]]` with the alias deleted and then Escape wrote `[[Alpha]]`. Landed with a cancel that ends the edit (`ended`), so nothing after it writes.
+- Task 8-2's AFTER deduped a field's commit on the raw text against `initial`; the Rename seat rewrites a bare address to `[](url)` before anything is typed, so Return wrote the unchanged value and an undo entry. Landed deduping on what the field would reopen on (`editorText(next) !== initial`).
+- Task 8-1's AFTER gave the editor `onCancel?` and `onClose?` and left closing to the caller's commit, which the editor's own change-guard would never reach on an unchanged value; landed with one `onClose` and `leave` owning commit-then-close, Escape `cancel`, so Return on an unchanged field closes it.
+- Task 8-2 kept `TextPicker` for Number beside a rebuilt chrome for the Link popover; the owner ruled (10-16-2026) that the two share one set of styles with different behaviors of what each accepts. Landed as `FieldPicker` (renamed from `TextPicker` at the owner's ask, since it is the one field chrome whatever sits inside) holding the kit's input over a `value` or a caller's editor as `children` inside one field style; the Number popover's width follows its content between 100 and 200px where it was a fixed 140px.
+- Task 8-1's AFTER swallowed Tab in the one-line field as the pane does; landed leaving Tab unclaimed there, so it moves the focus and the blur commits, a plain field's feel.
 - Phase 5's review observed that a heading re-pick keeps a label that named the old section (`[Setup](Notes#Setup)` re-picked to Usage keeps `Setup`) where a rename carries it. The picker sharing the rename's carry was typed and measured at about 45 Actionable lines (a shared in-place rewriter with adapter shapes, the query carrying its shown slot's position, a hook switch); reversed as weight that outruns its case. A heading pick keeps its shown text in both syntaxes, as Phase 5 landed.
