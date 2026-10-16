@@ -29,7 +29,7 @@ Every rule that answers a question about the opener then reads it from the gramm
 | Concept | Description | Location |
 | ------- | ----------- | -------- |
 | `OPENER` • Const | What opens a link's heading, `/[#§]/`, beside the wikilink pattern that spells the same pair; read by the markdown split, the title spelling rule, `openerOf`, and `nameError`. | `Core/Connections/connections.ts` |
-| `openerOf` • Function | The opener shown text spells a target with, `#` where it has none; read by `repeatsTarget` and `carry`. | `Core/Connections/connections.ts` |
+| `openerOf` • Function | The opener at which shown text repeats a title and heading; read by `repeatsTarget` and `carry`. | `Core/Connections/connections.ts` |
 | `UNSPELLABLE` • Const | Adoption's refusal of a file name no link can spell, shared with the asset writer. | `Core/Assets/assetWrite.ts` |
 | `spells` • Function | The slot tail every title and heading shares (the cap, no pipe, no closer), which the title rule and `spellsAsWiki`'s heading check each extend. | `Core/Connections/connections.ts` |
 | `literalOrBracketAt` • Function | Where a prose construct typed at `c` stays text: a literal spot or an unclosed bracket; `sectionSign`, `bullet`, and the prose `§` arm all ask it. | `Core/MarkdownPM/Input/edits.ts` |
@@ -53,12 +53,12 @@ Every rule that answers a question about the opener then reads it from the gramm
 
 #### Process Overview
 
-- [ ] **Phase 1** — The Grammar And Its Rules
-  - [ ] Task 1-1 — `§` opens the heading in both syntaxes
-  - [ ] Task 1-2 — The title spelling rule refuses both openers
-  - [ ] Task 1-3 — Shown text repeats a target at either opener
-  - [ ] Task 1-4 — The asset writer refuses an unspellable name
-  - [ ] Review Checkpoint
+- [x] **Phase 1** — The Grammar And Its Rules
+  - [x] Task 1-1 — `§` opens the heading in both syntaxes
+  - [x] Task 1-2 — The title spelling rule refuses both openers
+  - [x] Task 1-3 — Shown text repeats a target at either opener
+  - [x] Task 1-4 — The asset writer refuses an unspellable name
+  - [x] Review Checkpoint
 - [ ] **Phase 2** — Input, The Picker, And The Edges
   - [ ] Task 2-1 — The `§` transform fires wherever the `§` would open the heading
   - [ ] Task 2-2 — One predicate for prose constructs, and the arm stands down inside links
@@ -96,6 +96,8 @@ Every rule that answers a question about the opener then reads it from the gramm
 - [ ] Write the pins and watch them fail: in `connections.test.ts` *linkOccurrences*, `walk('[[Notes§Setup]]')`, `walk('[x](Notes§Setup)')`, `walk('[[§Setup]]')`, `walk('[](§Setup)')`, `walk('[[Notes§Setup|Mine]]')` read the same spans as their `#` twins; `[[A#B§C]]` and `[[A§B#C]]` split at the first opener; `[a](https://x.io/§Setup)` and `[a](dir/Pa§ge)` keep one undivided title; `[x](Notes%C2%A7Setup)` keeps its title whole. In `linkValue.test.ts` *readLinkText* and *resolveLink*, `[[Notes§Setup]]` reads `{ title: 'Notes', heading: 'Setup' }` and resolves to Notes › Setup, `[](§Setup)` and `[[§Setup]]` resolve to the own page's heading. In `scan.test.ts` *linksIn*, `[[Notes§Setup]]` and `[x](Notes§Setup)` yield `target` `notes`, `qualifier` `setup`. In `rewrite.test.ts`, `rewriteConnections('[[Notes§Setup]] [x](Notes§Setup)', 'Notes', 'Docs')` returns `[[Docs§Setup]] [x](Docs§Setup)` and `rewriteHeadingConnections('[[Notes§Setup]]', 'Notes', 'Setup', 'Start')` returns `[[Notes§Start]]`.
 - [ ] Write the surface pins beside them and watch them fail: in `aliasRender.test.tsx` *a heading link reads per the two heading settings*, `[[Alpha§Setup]]` draws as `[[Alpha#Setup]]` does (the `.md-heading-symbol-spaced` join and the `.md-connection-heading` text) and `[x](Alpha§Setup)` draws resolved; in `cellStatic.test.tsx` *a resting cell draws every token as a span*, `[[P§Setup]]` draws the resolved page, the join, and the heading, and `[](P§Setup)` draws `Setup`; in `TextCell.test.tsx`, a Text value `[[#Setup]] and [[§Setup]]` on a page holding Setup draws both as own-page heading links.
 - [ ] Add `OPENER`, widen the pattern, and split the markdown destination through `OPENER`.
+- [ ] Bump `INDEX_GENERATION` to 16 (`Desktop/Store/ddl.ts:3`), so files unchanged since the change re-index their `§` links and the rename cascades find them.
+- [ ] Pin the extension ruling in `linkValue.test.ts` *readLinkText*: `[[File§Text.md]]` and `[[File§Text.png]]` read heading `Text.md` and `Text.png`, and `[x](File.md§Setup)` reads `File` › `Setup`; an extension after the opener is heading text, and a link naming a heading carries its extension on the page half.
 
 **AFTER**
 
@@ -204,27 +206,31 @@ Every rule that answers a question about the opener then reads it from the gramm
 
 #### Task 1-3
 
-**TASK:** `repeatsTarget` accepts the target spelled with the shown text's own opener, and `carry` keeps that opener when shown text names both parts.
+**TASK:** `repeatsTarget` accepts the target spelled at either opener, and `carry` keeps the opener the shown text spelled it with when shown text names both parts.
 
 **NOW:** `repeatsTarget` (`connections.ts:145-146`) compares shown text to `` `${title}#${heading}` ``, so `[[Notes#Setup|Notes§Setup]]` keeps a stale alias through a heading rename that `|Notes#Setup` follows and drops. `carry` (`rewrite.ts:31-42`) writes `` `${to.title}#${to.heading}` `` for shown text that named both.
 
 **CHANGE**
 
 - [ ] Write the pins and watch them fail: in `connections.test.ts` *repeatsTarget and namesTarget*, `repeatsTarget('Notes§Setup', 'Notes', 'Setup')`, `repeatsTarget('§Setup', '', 'Setup')`, and `namesTarget('Notes§Setup', { title: 'Notes', heading: 'Setup' }) === 'both'` are true, while `repeatsTarget('Notes § Setup', 'Notes', 'Setup')` stays false, as `'Notes # Setup'` is today. In `rewrite.test.ts` *rewriteHeadingConnections*, `[[Notes#Setup|Notes§Setup]]` renamed Setup → Start becomes `[[Notes#Start]]`, and `[Notes§Setup](Notes#Setup)` becomes `[Notes§Start](Notes#Start)`.
-- [ ] Add `openerOf`, the shown text's first opener or `#`, and have `repeatsTarget` build the target and `carry`'s `'both'` arm write the carried text through it.
+- [ ] Pin a title holding an opener: `repeatsTarget('A§B#H', 'A§B', 'H')` and `repeatsTarget('C# Notes§H', 'C# Notes', 'H')` are true, and `rewriteConnections('[A§B#H](A%C2%A7B#H)', 'A§B', 'C')` carries the label to `[C#H](C#H)`, as it did at baseline.
+- [ ] Add `openerOf`, the opener at which shown text repeats `title` › `heading`, and have `repeatsTarget` and `carry`'s `'both'` arm read it.
 
 **AFTER**
 
 ```Core/Connections/connections.ts diff
 @@ repeatsTarget @@
 
-+export const openerOf = (shown: string): string => shown.match(OPENER)?.[0] ?? '#'
++/** The opener shown text spells `title` › `heading` with, where it only repeats that target. */
++export const openerOf = (shown: string, title: string, heading: string): string | undefined =>
++  ['#', '§'].find((o) => normalizeTitle(shown) === normalizeTitle(title + o + heading))
 +
- /** Whether shown text only repeats a target, `title` or `title#heading`, so the link draws the same without it: the one drop rule. */
+~/** Whether shown text only repeats a target, `title` or `title` and `heading` at either opener, so the link draws the same without it: the one drop rule. */
  export const repeatsTarget = (shown: string, title: string, heading?: string): boolean =>
 -  normalizeTitle(shown) === normalizeTitle(heading === undefined ? title : `${title}#${heading}`)
-+  normalizeTitle(shown) ===
-+  normalizeTitle(heading === undefined ? title : title + openerOf(shown) + heading)
++  heading === undefined
++    ? normalizeTitle(shown) === normalizeTitle(title)
++    : openerOf(shown, title, heading) !== undefined
 ```
 
 ```Core/Connections/rewrite.ts diff
@@ -240,7 +246,7 @@ Every rule that answers a question about the opener then reads it from the gramm
 
      case 'both':
 -      return `${to.title}#${to.heading}`
-+      return to.title + openerOf(shown) + to.heading
++      return to.title + openerOf(shown, from.title, from.heading!)! + to.heading
 ```
 
 **VERIFY**
@@ -276,8 +282,8 @@ Every rule that answers a question about the opener then reads it from the gramm
 +
  export async function writeAssetFile(
 @@
-   const dir = assetsDir(root, assetDir)
 +  if (!expressibleInLink(base)) return UNSPELLABLE
+   const dir = assetsDir(root, assetDir)
    if (reservedAssetLeaf(relative(root, join(dir, base))))
 ```
 
@@ -632,3 +638,9 @@ Every rule that answers a question about the opener then reads it from the gramm
 - A `§` typed into a markdown destination's surrounding whitespace (`[a]( Page)` with the caret before `Page`) sits in no slot, so it stays `§`; it still reads as the opener, so only the file's spelling differs. Left as is: the grammar trims that whitespace, and covering it would make `headingHash` re-derive the raw destination.
 
 #### Deviations
+
+- **Phase 1 — `openerOf`:** the plan's first shape took the first opener in the shown text, which misread a title holding an opener (`A§B#H` against `A§B` › `H`, true at baseline); `openerOf` now tests both spellings against the title and heading. Both reviewers found it.
+- **Phase 1 — `INDEX_GENERATION`:** bumped to 16, which the plan missed; the project bumps it whenever a reader change alters how unchanged files index.
+- **Phase 1 — Red-before:** five pins were already green at HEAD and stand as guards: the address and encoded `§` case, `[[A#B§C]]`, `spellsAsWiki({ title: 'A', heading: '§H' })`, `[[P#§Intro]]`, and the `Cover#1.png` adoption case.
+- **Phase 1 — File values:** a File value adopted before this change with `§` in its name (`[[Cover§1.png]]`) now reads as `Cover` › `1.png`, as `#` would; the owner ruled file references read like any wikilink. No such value exists in the owner's Nexuses.
+- **Phase 1 — Extensions:** the owner ruled that an extension after the opener is heading text (`[[File§Text.md]]` is `File` › `Text.md`) and a link naming a heading carries its extension on the page half (`[[File.md§Heading]]`); relayed to the Path Links session for its `.md` reading.

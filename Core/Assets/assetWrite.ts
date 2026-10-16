@@ -1,11 +1,13 @@
 import { basename, extname, join, relative } from '../Paths/posix'
 import { machine } from '../Platform/machine'
-import { fileLinkText } from '../Connections/connections'
-import { ok, fail, type Result } from '../Contract/result'
+import { expressibleInLink, fileLinkText } from '../Connections/connections'
+import { fault, ok, fail, type Result } from '../Contract/result'
 import { atomicWriteBinary, pathExists } from '../Files/atomicWrite'
 import { liveAssetMap, resolveAssetName } from './assetMap'
 import { createDisambiguated, reservedAssetLeaf } from '../Paths/names'
 import { assetsDir } from '../Paths/paths'
+
+export const UNSPELLABLE = fault('That file’s name can’t be written as a link.')
 
 export async function writeAssetFile(
   root: string,
@@ -13,6 +15,7 @@ export async function writeAssetFile(
   base: string,
   bytes: Uint8Array,
 ): Promise<Result<string>> {
+  if (!expressibleInLink(base)) return UNSPELLABLE
   const dir = assetsDir(root, assetDir)
   if (reservedAssetLeaf(relative(root, join(dir, base))))
     return fail('reserved', `${base} is a reserved name at the assets root.`)

@@ -426,7 +426,7 @@ export function webpageEmbedUrlSpan(lineText: string): Span | null {
   return webpageEmbedLink(lineText)?.title ?? null
 }
 
-// The line's markdown link past its `!`, its spans into the line; an address never splits at `#`, so its title is the whole trimmed destination.
+// The line's markdown link past its `!`, its spans into the line; an address never splits at an opener, so its title is the whole trimmed destination.
 function webpageEmbedLink(
   lineText: string,
 ): Extract<LinkOccurrence, { syntax: 'markdown' }> | null {

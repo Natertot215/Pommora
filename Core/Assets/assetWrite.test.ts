@@ -3,7 +3,8 @@ import { rm, mkdir, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
 import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
-import { writeAssetFile } from './assetWrite'
+import { pathExists } from '../Files/atomicWrite'
+import { UNSPELLABLE, writeAssetFile } from './assetWrite'
 
 let root: string
 const bytes = new TextEncoder().encode('image-bytes')
@@ -34,5 +35,12 @@ describe('writeAssetFile — the crops name is reserved at the assets root', () 
     const r = await writeAssetFile(root, 'file-assets', 'crops.json', bytes)
     expect(r.ok).toBe(true)
     if (r.ok) expect(r.value).toBe('[[crops.json]]')
+  })
+})
+
+describe('writeAssetFile — a name no link can spell', () => {
+  it('refuses foo§bar.png as adoption does and writes nothing', async () => {
+    expect(await writeAssetFile(root, ASSETS_DIR_REL, 'foo§bar.png', bytes)).toBe(UNSPELLABLE)
+    expect(await pathExists(join(root, ASSETS_DIR_REL, 'foo§bar.png'))).toBe(false)
   })
 })

@@ -251,6 +251,17 @@ describe('a resting cell draws every token as a span, through the tokens inside 
     expect(link.querySelector('.md-bold')?.textContent).toBe('b')
   })
 
+  it('a `§` opener draws the page, the join, and the heading, in both syntaxes', async () => {
+    await draw('[[P§Setup]]')
+    expect(container.querySelector('.md-connection-resolved')).not.toBeNull()
+    expect(container.querySelector('.md-heading-symbol')).not.toBeNull()
+    expect(container.querySelector('.md-connection-heading')?.textContent).toBe('Setup')
+    await act(async () => root.unmount())
+    container.remove()
+    await draw('[](P§Setup)')
+    expect(container.querySelector('.md-connection-resolved')?.textContent).toBe('Setup')
+  })
+
   it('a § run over a heading of the page draws as a link', async () => {
     await draw('see §Setup', { ordinalOf: () => null, keys: [], texts: ['Setup'] })
     const run = container.querySelector('.md-section-run') as HTMLElement

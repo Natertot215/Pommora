@@ -65,6 +65,28 @@ describe('linkOccurrences', () => {
   it('an unclosed backtick inside a link is not code', () => {
     expect(walk('[[A `b]]').map((o) => o.syntax)).toEqual(['wiki'])
   })
+
+  it('a `§` opens the heading as `#` does, in both syntaxes', () => {
+    for (const [sign, hash] of [
+      ['[[Notes§Setup]]', '[[Notes#Setup]]'],
+      ['[x](Notes§Setup)', '[x](Notes#Setup)'],
+      ['[[§Setup]]', '[[#Setup]]'],
+      ['[](§Setup)', '[](#Setup)'],
+      ['[[Notes§Setup|Mine]]', '[[Notes#Setup|Mine]]'],
+    ])
+      expect(walk(sign)).toEqual(walk(hash))
+  })
+
+  it('the first opener wins', () => {
+    expect(walk('[[A#B§C]]')[0]).toMatchObject({ title: [2, 3], heading: [4, 7] })
+    expect(walk('[[A§B#C]]')[0]).toMatchObject({ title: [2, 3], heading: [4, 7] })
+  })
+
+  it('an address or an encoded `§` keeps one undivided title', () => {
+    expect(walk('[a](https://x.io/§Setup)')[0]).toMatchObject({ title: [4, 23], heading: null })
+    expect(walk('[a](dir/Pa§ge)')[0]).toMatchObject({ title: [4, 13], heading: null })
+    expect(walk('[x](Notes%C2%A7Setup)')[0]).toMatchObject({ title: [4, 20], heading: null })
+  })
 })
 
 describe('pageLinkText and the slot rules', () => {
@@ -118,6 +140,7 @@ describe('pageLinkText and the slot rules', () => {
   it('refuses text that would end a link early or split it, or overflow the slot', () => {
     expect(expressibleInLink('a|b')).toBe(false)
     expect(expressibleInLink('C#')).toBe(false)
+    expect(expressibleInLink('A§B')).toBe(false)
     expect(expressibleInLink('x]')).toBe(false)
     expect(expressibleInLink('A]]B')).toBe(false)
     expect(expressibleInLink('A]B')).toBe(true)
@@ -127,6 +150,11 @@ describe('pageLinkText and the slot rules', () => {
     expect(spellsAsWiki({ title: 'A', heading: 'H', shown: 'x' })).toBe(true)
     expect(spellsAsWiki({ title: 'A', shown: 'x]' })).toBe(false)
     expect(spellsAsWiki({ title: 'A', heading: 'H|I' })).toBe(false)
+  })
+  it('a title refuses both openers, while a heading refuses only `#`', () => {
+    expect(spellsAsWiki({ title: 'A', heading: '§H' })).toBe(true)
+    expect(pageLinkText({ title: 'A§B' }, 'wiki')).toBe('[A§B](A%C2%A7B)')
+    expect(pageLinkText({ title: 'P', heading: '§Intro' }, 'wiki')).toBe('[[P#§Intro]]')
   })
 })
 
@@ -142,6 +170,15 @@ describe('repeatsTarget and namesTarget', () => {
     expect(namesTarget('Alpha#H', { title: 'Alpha', heading: 'H' })).toBe('both')
     expect(namesTarget('H', { title: 'Alpha' })).toBeNull()
     expect(namesTarget('Mine', { title: 'Alpha', heading: 'H' })).toBeNull()
+  })
+  it('repeats the target spelled at either opener, and only flush', () => {
+    expect(repeatsTarget('Notes§Setup', 'Notes', 'Setup')).toBe(true)
+    expect(repeatsTarget('§Setup', '', 'Setup')).toBe(true)
+    expect(namesTarget('Notes§Setup', { title: 'Notes', heading: 'Setup' })).toBe('both')
+    expect(repeatsTarget('A§B#H', 'A§B', 'H')).toBe(true)
+    expect(repeatsTarget('C# Notes§H', 'C# Notes', 'H')).toBe(true)
+    expect(repeatsTarget('Notes § Setup', 'Notes', 'Setup')).toBe(false)
+    expect(repeatsTarget('Notes # Setup', 'Notes', 'Setup')).toBe(false)
   })
 })
 

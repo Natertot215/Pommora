@@ -236,6 +236,11 @@ describe('linksIn', () => {
     expect(hits('[[Page]]')[0].qualifier).toBe('')
   })
 
+  it('reads the half after a `§` opener into the qualifier', () => {
+    expect(hits('[[Notes§Setup]]')[0]).toMatchObject({ target: 'notes', qualifier: 'setup' })
+    expect(hits('[x](Notes§Setup)')[0]).toMatchObject({ target: 'notes', qualifier: 'setup' })
+  })
+
   it('reads an embed’s heading as its qualifier', () => {
     expect(hits('![[Alpha#Part]]')[0]).toMatchObject({
       embed: true,

@@ -2018,6 +2018,14 @@ describe('adoptFile — the shared adoption seam', () => {
     expect(await readdir(join(root, 'file-assets'))).toEqual([])
   })
 
+  it('a name holding either heading opener is refused as one no link can spell', async () => {
+    for (const name of ['Cover#1.png', 'Cover§1.png'])
+      expect(await adoptFile(root, await pick(name), { allow: 'any' })).toMatchObject({
+        ok: false,
+        error: { message: 'That file’s name can’t be written as a link.' },
+      })
+  })
+
   it('a typed path that isn’t absolute, or names nothing, is refused as unreadable', async () => {
     for (const typed of ['~/Report.pdf', 'Report.pdf', join(root, 'nowhere.pdf')])
       expect(await adoptFile(root, typed, { allow: 'any' })).toMatchObject({

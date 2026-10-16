@@ -59,6 +59,14 @@ describe('a heading link reads per the two heading settings', () => {
     expect(heading?.textContent).toBe('Setup')
   })
 
+  it('[[Alpha§Setup]] renders as [[Alpha#Setup]] does, and [x](Alpha§Setup) resolves', async () => {
+    const view = await mountEditor({ initialBody: '[[Alpha§Setup]]', connections: conn })
+    expect(view.dom.querySelector('.md-heading-symbol-spaced')).not.toBeNull()
+    expect(view.dom.querySelector('.md-connection-heading')?.textContent).toBe('Setup')
+    const md = await mountEditor({ initialBody: '[x](Alpha§Setup)', connections: conn })
+    expect(md.dom.querySelector('.md-connection-resolved')).not.toBeNull()
+  })
+
   it('heading-only style drops the page text and the spacing', async () => {
     const view = await mountEditor({
       initialBody: '[[Alpha#Setup]]',
