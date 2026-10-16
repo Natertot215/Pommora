@@ -62,10 +62,10 @@ import {
   signSeatAt,
   spanAt,
 } from './Engine/docScan'
-import { lineEndOf, lineIndexAt } from './Engine/markdownCode'
+import { lineEndOf, lineIndexAt, type Span } from './Engine/markdownCode'
 import { paneHeld } from './Menus/caretPane'
 import { linkClass, linkLook, type ConnectionsApi } from './Links/connectionsApi'
-import type { LinkStatus } from '../Connections/connections'
+import { type LinkStatus, targetSpan } from '../Connections/connections'
 import type { PageHeadings } from '../Connections/pageIndex'
 import { drawsRawHtml, editorHost, type OwnPage, ownPage, redrawNudge } from './api'
 import { checkMarkSvg, checkboxClass } from '@pommora/uix/Controls/Checkbox'
@@ -570,9 +570,9 @@ function build(view: EditorView, scope: MarkdownScope): Built {
       return
     }
     // Revealed, an alias shows its whole target, page and heading both.
-    const pipe: [number, number] | undefined = alias
-      ? [rs, tk.link.heading?.[1] ?? re]
-      : text[tk.contentRange[1]] === '|'
+    const pipe: Span | undefined = alias
+      ? targetSpan(tk.link)
+      : tk.link.shown !== null
         ? tk.contentRange
         : undefined
     // Follows the PIPE, not a title that happens to match: an alias for a page that doesn't exist yet still reads as a link.

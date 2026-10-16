@@ -14,17 +14,12 @@ import {
   targetTitle,
   unescapeLabel,
 } from '../../Connections/links'
+import { targetSpan } from '../../Connections/connections'
 import { linkPaste, shownAlias } from '../../Connections/linkValue'
 import type { LinkDisplay } from '../../Properties/properties'
 import type { MarkdownScope } from '../Engine/detect'
-import {
-  aliasedToken,
-  headingOf,
-  type LinkKind,
-  linkAddress,
-  linkTarget,
-  type TokenOf,
-} from '../Engine/tokens'
+import { aliasedToken, headingOf, type LinkKind, type TokenOf } from '../Engine/tokens'
+import type { Span } from '../Engine/markdownCode'
 import { docScan, docString } from '../docCache'
 import { inCodeAt } from '../Engine/docScan'
 import { linkAt, slotAt } from '../Input/edits'
@@ -37,7 +32,7 @@ import { inCaretPane } from '../Menus/caretPane'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 
 type LinkEdit =
-  | { kind: 'select'; range: [number, number] }
+  | { kind: 'select'; range: Span }
   | { kind: 'write'; from: number; to: number; text: string; awaits?: string; select?: number }
 
 function shownConnection(text: string, tk: TokenOf<'wikiLink'>): string {
@@ -58,12 +53,13 @@ export function linkEdit(
   switch (action) {
     case 'rename': {
       if (tk.kind === 'link' || aliasedToken(tk)) return { kind: 'select', range: [cs, ce] }
-      const slot = tk.range[1] - 2
-      if (text[slot - 1] === '|') return { kind: 'select', range: [slot, slot] }
+      const { shown } = tk.link
+      if (shown !== null) return { kind: 'select', range: [shown[0], shown[0]] }
+      const slot = targetSpan(tk.link)[1]
       return { kind: 'write', from: slot, to: slot, text: '|', select: slot + 1 }
     }
     case 'editLink':
-      return { kind: 'select', range: tk.kind === 'link' ? linkAddress(tk) : tk.link.title }
+      return { kind: 'select', range: tk.kind === 'link' ? targetSpan(tk.link) : tk.link.title }
     case 'link:remove':
       return {
         kind: 'write',
@@ -90,7 +86,7 @@ function formatted(
   display: LinkDisplay,
   titles: Pick<EditorHost['linkTitles'], 'get'>,
 ): LinkEdit {
-  const url = linkTarget(text, tk)
+  const url = text.slice(...targetSpan(tk.link))
   const write = linkPaste(url, display, titles.get(url) ?? undefined)
   return {
     kind: 'write',
@@ -101,11 +97,7 @@ function formatted(
   }
 }
 
-export function applyLinkAction(
-  view: EditorView,
-  action: LinkAction,
-  range: [number, number],
-): void {
+export function applyLinkAction(view: EditorView, action: LinkAction, range: Span): void {
   const tk = drawnLinkAt(view, range[0])
   if (!tk || tk.range[0] !== range[0]) return
   const edit = linkEdit(
@@ -190,7 +182,7 @@ function emptied(state: EditorState, at: number, kind: Slot['kind']): ChangeSpec
   }
   const span = o?.syntax === 'wiki' ? (kind === 'alias' ? o.shown : o.heading) : null
   if (!o || !span || span[0] !== span[1]) return null
-  const slot = line.from + (kind === 'alias' ? (o.heading ?? o.title)[1] : span[0] - 1)
+  const slot = line.from + (kind === 'alias' ? targetSpan(o)[1] : span[0] - 1)
   return /[|#]/.test(state.doc.sliceString(slot, slot + 1)) ? { from: slot, to: slot + 1 } : null
 }
 

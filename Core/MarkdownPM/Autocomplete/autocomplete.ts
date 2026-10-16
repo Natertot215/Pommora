@@ -1,4 +1,4 @@
-import { expressibleInLink } from '../../Connections/connections'
+import { connectionText, expressibleInLink, targetSpan } from '../../Connections/connections'
 import { keepsShown, type LinkTarget, retarget } from '../../Connections/linkValue'
 import { normalizeTitle } from '../../Paths/caseFold'
 import {
@@ -135,7 +135,7 @@ export function autocompleteQuery(
       title: pageTitle,
       end: lineStart + full[1],
     }
-  const dest: [number, number] = [page[0], (fragment ?? page)[1]]
+  const dest = targetSpan(s)
   if (rel < dest[0] || rel > dest[1]) return null
   // A destination still being typed reads as though closed at the caret; an empty one is closed when its `)` follows.
   const closed = closedLink !== null || line[rel] === ')'
@@ -253,7 +253,7 @@ export function commitEdit(
   }
   // Opening the alias slot rather than finishing the link lets the picker hand those names straight back. Governed by `aliasPickerOnCommit`.
   if (ac.form === 'link' && opts.openAlias) {
-    const text = `[[${value}|]]`
+    const text = connectionText(value, undefined, '')
     return {
       changes: [{ from: ac.from, to: ac.to, insert: text }],
       anchor: ac.from + text.length - 2,

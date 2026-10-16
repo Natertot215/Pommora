@@ -10,9 +10,10 @@ import {
   quotePrefix,
   quotePrefixWidth,
   type CodeMask,
+  type Span,
 } from './markdownCode'
-import { markdownLinkRegex, unescapeLabel } from '../../Connections/links'
-import { pageLinkPattern } from '../../Connections/connections'
+import { unescapeLabel } from '../../Connections/links'
+import { type LinkOccurrence, pageLinkPattern, wholeLink } from '../../Connections/connections'
 import { isWebAddress } from '../../Paths/urlPath'
 import type { ListKind } from '../../Actions/gripMenu'
 import { colorsOf, leadingMark } from './paints'
@@ -411,21 +412,26 @@ export function loneEmbedTitle(line: string): string | null {
 
 /** Never indented: an indented line is list continuation, mirroring the page embed's anchor. A mid-typed prefix like `https://example.c` passes, which is why claims are formation-gated on the selection rather than on the grammar. */
 export function loneWebpageEmbed(lineText: string): { label: string; url: string } | null {
-  if (!lineText.startsWith('![')) return null
-  const line = lineText.replace(/\s+$/, '')
-  const m = markdownLinkRegex().exec(line)
-  if (!m) return null
-  if (m.index !== 1 || m.index + m[0].length !== line.length) return null
-  const url = m[2]
-  if (!isWebAddress(url)) return null
-  return { label: unescapeLabel(m[1]), url }
+  const o = webpageEmbedLink(lineText)
+  if (!o) return null
+  const read = ([s, e]: Span): string => lineText.slice(s + 1, e + 1)
+  return { label: unescapeLabel(read(o.shown)), url: read(o.title) }
 }
 
 /** What Edit Link selects, so a tile's address is retyped the way every other link's is. */
-export function webpageEmbedUrlSpan(lineText: string): [number, number] | null {
-  if (!loneWebpageEmbed(lineText)) return null
-  const span = markdownLinkRegex().exec(lineText.replace(/\s+$/, ''))?.indices?.[2]
-  return span ? [span[0], span[1]] : null
+export function webpageEmbedUrlSpan(lineText: string): Span | null {
+  const o = webpageEmbedLink(lineText)
+  return o && [o.title[0] + 1, o.title[1] + 1]
+}
+
+// The line's markdown link past its `!`, its spans read from there; an address never splits at `#`, so its title is the whole trimmed destination.
+function webpageEmbedLink(
+  lineText: string,
+): Extract<LinkOccurrence, { syntax: 'markdown' }> | null {
+  if (!lineText.startsWith('![')) return null
+  const link = lineText.replace(/\s+$/, '').slice(1)
+  const o = wholeLink(link)
+  return o?.syntax === 'markdown' && isWebAddress(link.slice(...o.title)) ? o : null
 }
 
 /** Trailing whitespace doesn't break lone-ness, but a leading indent does — an indented line is a list continuation. */

@@ -11,7 +11,7 @@ import {
   inlineLatexRegex,
   markerRegex,
 } from './detect'
-import { type LinkOccurrence, linkOccurrences } from '../../Connections/connections'
+import { type LinkOccurrence, linkOccurrences, mapSpans } from '../../Connections/connections'
 import { markAfter, type Paint, type PaintColor } from './paints'
 
 export type TokenKind =
@@ -54,18 +54,10 @@ export const wholeLinkToken = (
   return tk?.range[1] === text.length ? tk : undefined
 }
 
+const filled = (s: Span | null): s is Span => s !== null && s[1] > s[0]
+
 /** A connection showing an alias rather than its title. */
-export const aliasedToken = (tk: Token): boolean =>
-  tk.kind === 'wikiLink' && tk.link.shown !== null && tk.link.shown[1] > tk.link.shown[0]
-
-/** A markdown link's whole destination: its title half through its heading. */
-export const linkAddress = (tk: TokenOf<'link'>): Span => [
-  tk.link.title[0],
-  (tk.link.heading ?? tk.link.title)[1],
-]
-
-export const linkTarget = (text: string, tk: TokenOf<'link'>): string =>
-  text.slice(...linkAddress(tk))
+export const aliasedToken = (tk: Token): boolean => tk.kind === 'wikiLink' && filled(tk.link.shown)
 
 export const headingOf = (text: string, tk: TokenOf<LinkKind>): string | undefined =>
   tk.link.heading ? text.slice(tk.link.heading[0], tk.link.heading[1]) : undefined
@@ -87,18 +79,7 @@ export function shiftToken(tk: Token, by: number): Token {
     ...(tk.inHtml ? { inHtml: true } : {}),
   }
   if (tk.kind !== 'wikiLink' && tk.kind !== 'link') return { ...base, kind: tk.kind }
-  const { link } = tk
-  return {
-    ...base,
-    kind: tk.kind,
-    link: {
-      ...link,
-      full: move(link.full),
-      title: move(link.title),
-      heading: link.heading && move(link.heading),
-      shown: link.shown && move(link.shown),
-    } as LinkOccurrence,
-  }
+  return { ...base, kind: tk.kind, link: mapSpans(tk.link, move) }
 }
 
 const notOverlapping =
@@ -270,8 +251,8 @@ function linkToken(o: LinkOccurrence): Token {
       link: o,
     }
   // The leading marker swallows `[[Title|`. An opened-but-empty alias shows nothing, so it stays a plain link.
-  const alias = o.shown && o.shown[1] > o.shown[0] ? o.shown : null
-  const heading = o.heading && o.heading[1] > o.heading[0] ? o.heading : null
+  const alias = filled(o.shown) ? o.shown : null
+  const heading = filled(o.heading) ? o.heading : null
   const shown = alias ?? [o.title[0], heading ? heading[1] : o.title[1]]
   return {
     kind: 'wikiLink',

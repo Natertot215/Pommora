@@ -23,6 +23,30 @@ export type LinkOccurrence =
 /** The three slots a caret can sit in. */
 export type LinkPart = 'title' | 'heading' | 'shown'
 
+/** The destination as written, title through heading. */
+export const targetSpan = (o: Pick<LinkOccurrence, 'title' | 'heading'>): Span => [
+  o.title[0],
+  (o.heading ?? o.title)[1],
+]
+
+export function mapSpans(o: LinkOccurrence, f: (s: Span) => Span): LinkOccurrence {
+  if (o.syntax === 'markdown')
+    return {
+      ...o,
+      full: f(o.full),
+      title: f(o.title),
+      heading: o.heading && f(o.heading),
+      shown: f(o.shown),
+    }
+  return {
+    ...o,
+    full: f(o.full),
+    title: f(o.title),
+    heading: o.heading && f(o.heading),
+    shown: o.shown && f(o.shown),
+  }
+}
+
 function wikiSpans(m: RegExpMatchArray): LinkOccurrence | null {
   const at = m.index
   const g = m.indices?.groups
@@ -45,13 +69,14 @@ function wikiSpans(m: RegExpMatchArray): LinkOccurrence | null {
 // The destination splits at its first raw `#` only when the half before names a page, so an address keeps one undivided title; it splits before decoding, so `%23` stays inside the title.
 function markdownSpans(text: string, [full, label, dest]: [Span, Span, Span]): LinkOccurrence {
   const [from, to] = trimmedRange(text, dest[0], dest[1])
-  const hash = text.slice(from, to).indexOf('#')
-  const splits = hash !== -1 && namesPage(text.slice(from, from + hash))
+  let hash = from
+  while (hash < to && text[hash] !== '#') hash++
+  const splits = hash < to && namesPage(text.slice(from, hash))
   return {
     syntax: 'markdown',
     full,
-    title: splits ? [from, from + hash] : [from, to],
-    heading: splits ? [from + hash + 1, to] : null,
+    title: splits ? [from, hash] : [from, to],
+    heading: splits ? [hash + 1, to] : null,
     shown: label,
   }
 }

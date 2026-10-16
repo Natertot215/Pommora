@@ -1,6 +1,11 @@
 import { type Personalization, settingOf } from '../../Settings/personalization'
 import { namesPage } from '../../Connections/links'
-import { type LinkOccurrence, linkOccurrences, type LinkPart } from '../../Connections/connections'
+import {
+  type LinkOccurrence,
+  linkOccurrences,
+  type LinkPart,
+  mapSpans,
+} from '../../Connections/connections'
 import {
   inCalloutAt,
   inCodeAt,
@@ -327,16 +332,15 @@ const emptyPairAt = (doc: string, c: number): boolean => {
   )
 }
 
-/** The link written around `at`, either syntax, as the editor draws it, so code touching it leaves none; its spans are relative to `at`'s line, empty slots kept, and at a boundary the later-starting link wins, as `linkTokenAt` decides. */
+/** The link holding `at`, from past its opener through its closer, either syntax, as the editor draws it, so code touching it leaves none; its spans are relative to `at`'s line, empty slots kept. */
 export function linkAt(scan: DocScan, at: number): LinkOccurrence | null {
   const i = lineIndexAt(scan, at)
   const line = scan.lines[i]
   if (!line.includes('[[') && !line.includes('](')) return null
   const ls = scan.lineStarts[i]
-  let found: LinkOccurrence | null = null
   for (const o of linkOccurrences(line, (p) => inCodeAt(scan, ls + p)))
-    if (at - ls >= o.full[0] && at - ls <= o.full[1]) found = o
-  return found
+    if (at - ls > o.full[0] && at - ls <= o.full[1]) return o
+  return null
 }
 
 /** The link still being written before `at`, as it reads once closed; a placeholder at the caret keeps an empty slot readable, since both patterns refuse an empty title or destination. */
@@ -351,20 +355,11 @@ export function openLinkAt(scan: DocScan, at: number): LinkOccurrence | null {
   const o = linkOccurrences(text, (p) => inCodeAt(scan, ls + p)).find(
     (x) => x.full[1] === text.length,
   )
-  const cut = (s: Span | null): Span | null => (s && s[1] > head.length ? [s[0], head.length] : s)
-  return o
-    ? ({
-        ...o,
-        full: [o.full[0], head.length],
-        title: cut(o.title)!,
-        heading: cut(o.heading),
-        shown: cut(o.shown),
-      } as LinkOccurrence)
-    : null
+  return o ? mapSpans(o, ([a, b]) => [a, Math.min(b, head.length)]) : null
 }
 
 /** Which slot of `o` holds the line-relative `rel`, ends inclusive and in slot order: the one rule Return, `]`, `[`, the typing transforms, the `§` transform, and the picker ask. */
-export function partOf(o: LinkOccurrence, rel: number): LinkPart | null {
+function partOf(o: LinkOccurrence, rel: number): LinkPart | null {
   const within = (s: Span | null): boolean => s !== null && rel >= s[0] && rel <= s[1]
   return within(o.title)
     ? 'title'
@@ -380,7 +375,6 @@ export function slotAt(
   scan: DocScan,
   at: number,
 ): { link: LinkOccurrence; part: LinkPart; from: number } | null {
-  if (inCodeAt(scan, at)) return null
   const link = linkAt(scan, at)
   const from = scan.lineStarts[lineIndexAt(scan, at)]
   const part = link && partOf(link, at - from)

@@ -156,6 +156,14 @@ describe('an unclosed link reads as the link it would be once closed', () => {
     })
   })
 
+  it('reads an unclosed destination flush against a following link', () => {
+    expect(autocompleteQuery('[x](Pa[[B]]', 6)).toMatchObject({
+      query: 'Pa',
+      form: 'target',
+      closed: false,
+    })
+  })
+
   it('a written closer reads as closed', () => {
     expect(autocompleteQuery('[[Pro]]', 5)?.closed).toBe(true)
   })

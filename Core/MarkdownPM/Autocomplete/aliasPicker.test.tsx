@@ -528,8 +528,9 @@ describe('the heading slide’s top row marks how it arrived', () => {
 describe('linkAt is the one answer to which link holds an offset', () => {
   const scan = scanDoc('see [[Q3 Plan|the plan]] and [[Other]] end')
 
-  it('finds the connection an offset sits in, at either bracket edge', () => {
-    expect(linkAt(scan, 4)?.full).toEqual([4, 24])
+  it('finds the connection an offset sits in, from past its opener through its closer', () => {
+    expect(linkAt(scan, 4)).toBeNull()
+    expect(linkAt(scan, 5)?.full).toEqual([4, 24])
     expect(linkAt(scan, 24)?.full).toEqual([4, 24])
     expect(linkAt(scan, 30)?.full).toEqual([29, 38])
     expect(linkAt(scan, 26)).toBeNull()
