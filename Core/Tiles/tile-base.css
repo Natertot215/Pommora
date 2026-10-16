@@ -40,9 +40,6 @@
   height: 100%;
   overflow: hidden;
 }
-.markdown-tile .mdpm-shell {
-  height: 100%;
-}
 .markdown-tile .mdpm-editor .cm-content {
   padding: 16px 14px 16px var(--rail-inset);
 }

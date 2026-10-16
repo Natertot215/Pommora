@@ -8,13 +8,12 @@ export interface KeyValueStore {
 // `citation` overlays rather than replaces: a link or embed inside a footnote definition emits its own kind AND a `citation` row, so a reader asking for body links sees it and a reader weighting footnotes sees it too. A `value` row is a link inside a frontmatter value, under `key`; every other kind carries `key` as ''.
 export type RelationKind = 'body' | 'citation' | 'value' | 'embed' | 'space'
 
-/** `target` is a normalized title, never a path — resolution happens at read time. `qualifier` is a normalized heading key for a heading-naming link, a folded Context key for a `space` row, and '' otherwise. `count` is occurrences. */
+/** `target` is a normalized title, never a path — resolution happens at read time. `qualifier` is a normalized heading key for a heading-naming link, a folded Context key for a `space` row, and '' otherwise. */
 export interface Relation {
   kind: RelationKind
   target: string
   qualifier: string
   key: string
-  count: number
 }
 
 export interface PageHeading {

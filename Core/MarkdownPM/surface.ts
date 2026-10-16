@@ -5,7 +5,7 @@ import { markdownDecorations } from './decorations'
 import { listDragExtension } from './Gestures/listDrag'
 import { blockDragExtension } from './Gestures/blockDrag'
 import { linkRest } from './Links/linkReveal'
-import { linkSettle, linkWriting } from './Links/linkSettle'
+import { linkSettle, linkWriting, type Remembers } from './Links/linkSettle'
 import { listRenumber } from './Input/listRenumber'
 import { smartDelete, typedInput, wrapChords } from './Input/markdownInput'
 import { blockHandles, pointerReveal } from './Menus/blockHandles'
@@ -39,10 +39,10 @@ function blockGestures(scope: MarkdownScope): Extension {
   }
 }
 
-/** Everything a page body, a table cell, and a property value share: inline rendering, the block gestures their scope holds, link and footnote pointers, the paste and alias rules, typing, and the right-click menu. The surfaces differ only in what wraps this. `oneLine` is a value field's surface: it scrolls where a body wraps, and it spellchecks nothing, since a field often holds an address or a name; `remembers` off leaves alias memory to the surface's write layer. */
-export const inlineSurface = (
+/** Everything a page body, a table cell, and a property value share: inline rendering, the block gestures their scope holds, link and footnote pointers, the paste and alias rules, typing, and the right-click menu. The surfaces differ only in what wraps this. `oneLine` is a value field's surface: it scrolls where a body wraps, and it spellchecks nothing, since a field often holds an address or a name; `remembers` is when its alias memory writes. */
+const inlineSurface = (
   scope: MarkdownScope,
-  { oneLine = false, remembers = true } = {},
+  { oneLine = false, remembers = 'leave' as Remembers } = {},
 ): Extension => [
   markdownDecorations(scope),
   blockGestures(scope),
@@ -83,7 +83,7 @@ export const editorBase = ({
   panes: readonly EditorPane[]
   formatExt: Extension
   oneLine?: boolean
-  remembers?: boolean
+  remembers?: Remembers
 }): Extension => [
   editorHost.of(host),
   inlineSurface(scope, { oneLine, remembers }),

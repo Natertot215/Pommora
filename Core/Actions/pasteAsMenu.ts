@@ -4,11 +4,13 @@ import { isHttpLink, normalizeLinkUrl } from '../Paths/urlPath'
 import {
   linkPaste,
   readLinkText,
+  resolvedTarget,
   retarget,
   serializeLink,
   type LinkPaste,
   type LinkTarget,
 } from '../Connections/linkValue'
+import type { PageIndex } from '../Connections/pageIndex'
 import { LINK_DISPLAY_LABELS, LINK_DISPLAYS, type LinkDisplay } from '../Properties/properties'
 import { PASTE_LITERAL_ACTION, RESTING_EDITS } from './editorMenu'
 import type { LeafItem } from './menuModel'
@@ -49,10 +51,12 @@ export function pasteAsRows(
   clipboard: string,
   embedSeat: boolean,
   citeSeat: boolean,
+  index?: PageIndex,
 ): LeafItem<string>[] {
   const footnote = citeSeat && clipboard.trim() !== '' ? [row('Footnote', 'footnote')] : []
-  const target = readLinkText(clipboard)
-  if (!target) return footnote
+  const written = readLinkText(clipboard)
+  if (!written) return footnote
+  const target = resolvedTarget(written, index)
   const embed = embedSeat && embeddableTarget(target)
   if (target.kind === 'page')
     return [

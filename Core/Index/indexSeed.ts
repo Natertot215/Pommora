@@ -47,10 +47,7 @@ function extractPageIndex(rel: string, content: string): PageIndexEntry {
   const tally = new Map<string, Relation>()
   // A NUL separator: no normalized title, Context key, or frontmatter key can hold one, so the four parts never blur.
   const add = (kind: RelationKind, target: string, qualifier: string, key = ''): void => {
-    const id = `${kind}\0${target}\0${qualifier}\0${key}`
-    const held = tally.get(id)
-    if (held) held.count++
-    else tally.set(id, { kind, target, qualifier, key, count: 1 })
+    tally.set(`${kind}\0${target}\0${qualifier}\0${key}`, { kind, target, qualifier, key })
   }
   for (const hit of linksIn(body, own, outline, (p) => inCodeAt(scan, p))) {
     add(hit.embed ? 'embed' : 'body', hit.target, hit.qualifier)

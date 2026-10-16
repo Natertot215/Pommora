@@ -14,7 +14,7 @@ import { useSession } from '../../Session/store'
 import { TextPane } from './TextPane'
 import { ValueEditor } from './ValueEditor'
 
-/** A value typed as text: a Number in the kit's input, a Text value's popover in its pane, and every other value in the one-line editor, which opens on the whole written value and, for the Link value's Rename, seats the caret in its alias slot. A Link value leaves alias memory to the write layer, which remembers once per landed value. */
+/** A value typed as text: a Number in the kit's input, a Text value's popover in its pane, and every other value in the one-line editor, which opens on the whole written value and, for the Link value's Rename, seats the caret in its alias slot. A Link value leaves alias memory to the write layer, which remembers once per landed value; a one-line Text field remembers as its edit commits, so a cancelled one remembers nothing. */
 export function PropertyValueInput({
   def,
   current,
@@ -46,8 +46,8 @@ export function PropertyValueInput({
   }
   if (def.type === 'number') {
     const close = (text: string): void => {
-      onClose()
       commit(text)
+      onClose()
     }
     if (popover) {
       const denominator = fractionDenominator(def)
@@ -91,7 +91,7 @@ export function PropertyValueInput({
       holder={holder}
       host={host}
       oneLine
-      remembers={def.type !== 'link'}
+      remembers={def.type === 'link' ? 'never' : 'flush'}
       alias={alias}
       invalid={invalid}
       onCommit={commit}

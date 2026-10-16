@@ -68,8 +68,11 @@ export const orderedDefs = (reg: RegistryFile): PropertyDefinition[] =>
 export const registryOf = (defs: PropertyDefinition[]): PropertyRegistry =>
   Object.fromEntries(defs.map((d) => [d.id, d]))
 
+export const linkDefsOf = (defs: readonly PropertyDefinition[]): PropertyDefinition[] =>
+  defs.filter((d) => d.type === 'link')
+
 export const linkDefs = async (root: string): Promise<PropertyDefinition[]> =>
-  Object.values((await readKeptRegistry(root)).defs).filter((d) => d.type === 'link')
+  linkDefsOf(Object.values((await readKeptRegistry(root)).defs))
 
 const OPTION_KEYS = ['select_options', 'status_groups'] as const
 

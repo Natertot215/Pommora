@@ -1,5 +1,13 @@
 import { normalizeTitle } from '../Paths/caseFold'
-import { defaultLabel, encodeLinkTarget, markdownLink, markdownLinkRegex, namesPage } from './links'
+import {
+  defaultLabel,
+  encodeLinkTarget,
+  fitsSlot,
+  labelSpells,
+  markdownLink,
+  markdownLinkRegex,
+  namesPage,
+} from './links'
 import {
   type CodeMask,
   codeTouches,
@@ -112,9 +120,6 @@ export function wholeLink(text: string): LinkOccurrence | null {
 /** A page named by title, and by heading where the link names one: the shape every rule and writer below takes. */
 export type PageName = { title: string; heading?: string }
 
-/** What any slot of a wikilink can hold: the grammar's 255 characters and no line break. */
-const fitsSlot = (s: string): boolean => s.length <= 255 && !/[\r\n]/.test(s)
-
 /** What the title or heading slot can spell: `|` and `#` would open the next slot, and `]]` or a trailing `]` would close the link. */
 export const expressibleInLink = (text: string): boolean =>
   fitsSlot(text) && !/[|#]/.test(text) && !text.includes(']]') && !text.endsWith(']')
@@ -136,7 +141,7 @@ export const repeatsTarget = (shown: string, title: string, heading?: string): b
 export const keepsAlias = (name: string, title: string): boolean =>
   name.trim() !== '' && aliasSpells(name) && !repeatsTarget(name, title)
 
-/** Which part of its target shown text names, the title, the heading, or both, rather than giving it a name: what a rename carries along and what memory never keeps. */
+/** Which part of its target shown text names, the title, the heading, or both, rather than giving it a name: what a rename carries along and what memory never keeps. `H` names the heading of `A#H` without repeating `A#H`, which is `repeatsTarget`'s question. */
 export function namesTarget(shown: string, t: PageName): 'title' | 'heading' | 'both' | null {
   if (repeatsTarget(shown, t.title)) return 'title'
   if (t.heading === undefined) return null
@@ -144,7 +149,7 @@ export function namesTarget(shown: string, t: PageName): 'title' | 'heading' | '
   return repeatsTarget(shown, t.title, t.heading) ? 'both' : null
 }
 
-/** The one writer of a page link: a wikilink where every slot spells, the markdown form otherwise, so no writer leaves a slot unwritten, drops a name silently, or writes a link the grammar can't read back. A present-but-empty heading or alias spells its slot (`[[A#]]`, `[[A|]]`): the picker opens a slot by writing it. */
+/** The one writer of a page link: a wikilink where every slot spells, the markdown form otherwise, its label emptied where the grammar's label can't spell it so the draw gives it the default, so no writer leaves a slot unwritten or writes a link the grammar can't read back. A present-but-empty heading or alias spells its slot (`[[A#]]`, `[[A|]]`): the picker opens a slot by writing it. */
 export function pageLinkText(
   t: PageName & { shown?: string },
   prefer: 'wiki' | 'markdown',
@@ -153,7 +158,8 @@ export function pageLinkText(
   if (prefer !== 'wiki' || !spellsAsWiki(t)) {
     const dest =
       encodeLinkTarget(title) + (heading === undefined ? '' : `#${encodeLinkTarget(heading)}`)
-    return markdownLink(dest, shown ?? defaultLabel(title, heading))
+    const label = shown ?? defaultLabel(title, heading)
+    return markdownLink(dest, labelSpells(label) ? label : '')
   }
   const target = heading === undefined ? title : `${title}#${heading}`
   const named = shown !== undefined && (shown === '' || !repeatsTarget(shown, title, heading))

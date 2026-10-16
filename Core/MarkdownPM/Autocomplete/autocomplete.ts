@@ -179,10 +179,13 @@ export function commitEdit(
       return whole({ title: value, heading: open === 'heading' ? '' : undefined, shown }, open)
     }
     case 'heading': {
-      // A heading pick never re-aims the link, so it writes in place; one opening the alias slot finds it empty, since only a link showing nothing opens it, and a wikilink's lone empty pipe gives way to the one it writes. A wikilink that can't spell the heading is written whole, falling to the markdown form with its title as written.
+      // A heading pick writes in place; one opening the alias slot finds it empty, since only a link showing nothing opens it, and a wikilink's lone empty pipe gives way to the one it writes. One dropping the shown text it re-aims away from, or a wikilink that can't spell the heading, is written whole, falling to the markdown form with its title as written.
       const title = ac.title ?? ''
       const open = opts.openAlias ? 'shown' : undefined
-      if (ac.syntax === 'wiki' && !spellsAsWiki({ title, heading: value, shown: opts.kept }))
+      if (
+        (ac.shown && !opts.kept) ||
+        (ac.syntax === 'wiki' && !spellsAsWiki({ title, heading: value, shown: opts.kept }))
+      )
         return whole({ title, heading: value, shown: open ? '' : opts.kept }, open)
       const written = ac.syntax === 'markdown' ? encodeLinkTarget(value) : value
       if (!open) return inserted(written)

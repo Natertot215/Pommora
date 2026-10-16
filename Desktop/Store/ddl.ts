@@ -1,6 +1,6 @@
 import type { Db } from './driver'
 
-export const INDEX_GENERATION = 14
+export const INDEX_GENERATION = 15
 
 const META_DDL = `
   CREATE TABLE IF NOT EXISTS meta (
@@ -21,7 +21,6 @@ const DDL = `
     target TEXT NOT NULL,
     qualifier TEXT NOT NULL,
     key TEXT NOT NULL,
-    count INTEGER NOT NULL,
     PRIMARY KEY (path, kind, target, qualifier, key)
   );
   CREATE INDEX IF NOT EXISTS relations_by_target ON relations (target, qualifier, kind);

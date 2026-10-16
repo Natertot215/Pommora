@@ -50,7 +50,7 @@ const clearPath = (db: Db, path: string): void => {
 export const contentIndexStore = (db: Db): ContentIndexStore => ({
   upsertPageIndexes(rows) {
     const insRelation = db.prepare(
-      'INSERT OR REPLACE INTO relations (path, kind, target, qualifier, key, count) VALUES (?, ?, ?, ?, ?, ?)',
+      'INSERT OR REPLACE INTO relations (path, kind, target, qualifier, key) VALUES (?, ?, ?, ?, ?)',
     )
     const insHeading = db.prepare(
       'INSERT OR REPLACE INTO headings (path, text, level, ordinal) VALUES (?, ?, ?, ?)',
@@ -64,8 +64,8 @@ export const contentIndexStore = (db: Db): ContentIndexStore => ({
     inTransaction(db, () => {
       for (const { path, entry, stat } of rows) {
         clearPath(db, path)
-        for (const { kind, target, qualifier, key, count } of entry.relations)
-          insRelation.run(path, kind, target, qualifier, key, count)
+        for (const { kind, target, qualifier, key } of entry.relations)
+          insRelation.run(path, kind, target, qualifier, key)
         entry.headings.forEach(({ text, level }, ordinal) => {
           insHeading.run(path, text, level, ordinal)
         })
@@ -135,7 +135,7 @@ export const contentIndexStore = (db: Db): ContentIndexStore => ({
     const args = only ? [JSON.stringify(only)] : []
     const relations = db
       .prepare(
-        `SELECT path, kind, target, qualifier, key, count FROM relations WHERE kind IN ('body','citation','value')${inClause} ORDER BY path`,
+        `SELECT path, kind, target, qualifier, key FROM relations WHERE kind IN ('body','citation','value')${inClause} ORDER BY path`,
       )
       .all(...args) as unknown as PageRelationRow[]
     const stats = db

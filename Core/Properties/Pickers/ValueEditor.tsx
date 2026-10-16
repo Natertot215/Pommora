@@ -12,7 +12,7 @@ import { editorBase } from '../../MarkdownPM/surface'
 import { focusRange } from '../../MarkdownPM/caretPlacement'
 import { drawnLinkAt } from '../../MarkdownPM/decorations'
 import { applyLinkAction } from '../../MarkdownPM/Links/linkEdit'
-import { linkSettle } from '../../MarkdownPM/Links/linkSettle'
+import { linkSettle, type Remembers } from '../../MarkdownPM/Links/linkSettle'
 import { inCaretPane } from '../../MarkdownPM/Menus/caretPane'
 import { formatKeymap } from '../../MarkdownPM/Input/formatKeymap'
 import { useReconfigured } from '../../MarkdownPM/Input/useReconfigured'
@@ -41,7 +41,7 @@ export function ValueEditor({
   holder: ConnPage | undefined
   host: EditorHost
   oneLine?: boolean
-  remembers?: boolean
+  remembers?: Remembers
   /** Once mounted, seat the caret in the value's alias slot: the Link value's Rename. */
   alias?: boolean
   invalid?: (text: string) => boolean
