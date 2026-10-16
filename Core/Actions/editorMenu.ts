@@ -66,6 +66,7 @@ type EditorMenuAction =
   | 'heading:0'
   | 'link:insert'
   | `${Paint}:${PaintColor}`
+  | 'highlight:accent'
 
 type FormatFlag = Exclude<FormatChordAction extends `format:${infer F}` ? F : never, 'highlight'>
 
@@ -91,18 +92,13 @@ function colorRows(
       checked: lit === color,
     }),
   )
-  if (paint === 'textColor') return colors
-  return joinGroups([
-    [
-      {
-        label: 'Accent',
-        action: 'format:highlight',
-        checked: lit === 'accent',
-        chord: commands['format:highlight'],
-      },
-    ],
-    colors,
-  ])
+  const accent: LeafItem<EditorMenuAction> = {
+    label: 'Accent',
+    action: 'highlight:accent',
+    checked: lit === 'accent',
+    chord: commands['format:highlight'],
+  }
+  return joinGroups([paint === 'highlight' ? [accent] : [], colors])
 }
 
 /** Offered over a painted span, with its own paint's rows, seated with the edit items rather than in the formatting block. */
