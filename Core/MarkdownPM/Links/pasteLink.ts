@@ -1,36 +1,24 @@
 import { EditorView } from '@codemirror/view'
 import { readLinkText, retarget, type LinkTarget } from '../../Connections/linkValue'
 import { pasteAsWrite, type PasteMode, type PasteWrite } from '../../Actions/pasteAsMenu'
-import { linkDestinationStart } from '../../Connections/links'
 import { matchesCommand } from '../../Actions/commands'
 import { isWebAddress } from '../../Paths/urlPath'
 import { isLinkDisplay } from '../../Properties/properties'
 import { docScan } from '../docCache'
 import { inCodeNear, scanDoc, type DocScan } from '../Engine/docScan'
-import { linkTokenAt, tokenize, type LinkKind } from '../Engine/tokens'
+import { linkAt, openLinkAt } from '../Input/edits'
 import { insertCitation } from '../Citations/citationActions'
 import { citationText } from '../Citations/citationEdits'
 import { embedSeatAt } from '../Embeds/embedInsert'
 import { settledLinkText, writeLinkAt } from './pendingTitle'
 import { type EditorHost, editorHost } from '../api'
-import { lineEndAt, lineStartAt, trimmedRange, type TextEdit } from '../Engine/markdownCode'
+import { lineStartAt, trimmedRange, type TextEdit } from '../Engine/markdownCode'
 
 function clipboardTarget(text: string, how: PasteMode): LinkTarget | null {
   const target = readLinkText(text)
   if (target?.syntax === 'bare' && (how === 'auto' || how === 'inverse') && !isWebAddress(text))
     return null
   return target
-}
-
-function linkContainerAt(
-  line: string,
-  ls: number,
-  sel: { from: number; to: number },
-): { kind: LinkKind; range: [number, number]; text: string } | null {
-  const tk = linkTokenAt(tokenize(line), sel.from - ls)
-  if (!tk || tk.range[0] >= sel.from - ls || sel.to - ls >= tk.range[1]) return null
-  const [start, end] = tk.range
-  return { kind: tk.kind, range: [ls + start, ls + end], text: line.slice(start, end) }
 }
 
 interface PasteEdit {
@@ -56,23 +44,29 @@ function pasteEdit(
   const { defaultLinkFormat: format, removeTitleOnLinkChange } = host.settings()
   const title = target.kind === 'url' ? (host.linkTitles.get(target.url) ?? undefined) : undefined
   const ls = lineStartAt(scan.text, sel.from)
-  const line = scan.text.slice(ls, lineEndAt(scan.text, sel.from))
-  const within = how === 'plain' ? null : linkContainerAt(line, ls, sel)
+  const o = how === 'plain' ? null : linkAt(scan, sel.from)
+  const within = o && o.full[0] < sel.from - ls && sel.to - ls < o.full[1] ? o : null
   if (how === 'inverse' && within) return plain
   if (within) {
+    const [start, end] = [ls + within.full[0], ls + within.full[1]]
     const syntax =
-      how === 'connection' || (how !== 'markdown' && within.kind === 'wikiLink')
-        ? 'wiki'
-        : 'markdown'
+      how === 'connection' || (how !== 'markdown' && within.syntax === 'wiki') ? 'wiki' : 'markdown'
     const write = isLinkDisplay(how)
       ? pasteAsWrite(target, how, { selection: '', format, title })
-      : retarget(syntax, readLinkText(within.text), target, !removeTitleOnLinkChange, {
-          format,
-          title,
-        })
-    return write ? { from: within.range[0], to: within.range[1], write } : plain
+      : retarget(
+          syntax,
+          readLinkText(scan.text.slice(start, end)),
+          target,
+          !removeTitleOnLinkChange,
+          {
+            format,
+            title,
+          },
+        )
+    return write ? { from: start, to: end, write } : plain
   }
-  if (how !== 'plain' && linkDestinationStart(line, sel.from - ls) !== null) return plain
+  // A link still being written takes the paste as its own text, in either syntax.
+  if (how !== 'plain' && openLinkAt(scan, sel.from) !== null) return plain
   const write = pasteAsWrite(target, how, { selection: scan.text.slice(from, to), format, title })
   return write ? { from, to, write } : plain
 }

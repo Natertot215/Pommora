@@ -148,7 +148,7 @@ export function renderCellContent(
           <span key={key++} className={linkClass(look)} {...linkSpan(s, e, join ? undefined : cs)}>
             {join ? (
               <>
-                {join.showPage && text.slice(tk.resolveRange[0], tk.resolveRange[1])}
+                {join.showPage && text.slice(...tk.link.title)}
                 <span
                   className={cx('md-heading-symbol', join.showPage && 'md-heading-symbol-spaced')}
                 >

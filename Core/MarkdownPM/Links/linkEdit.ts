@@ -8,9 +8,9 @@ import {
 } from '@codemirror/state'
 import type { LinkAction } from '../../Actions/connectionMenu'
 import {
-  decodeLinkTarget,
+  defaultLabel,
   escapeLabel,
-  markdownLinkAt,
+  targetFragment,
   targetTitle,
   unescapeLabel,
 } from '../../Connections/links'
@@ -27,11 +27,11 @@ import {
 } from '../Engine/tokens'
 import { docScan, docString } from '../docCache'
 import { inCodeAt } from '../Engine/docScan'
-import { connectionAt, linkAt } from '../Input/edits'
+import { linkAt, slotAt } from '../Input/edits'
 import { focusRange } from '../caretPlacement'
 import { restedOnLink } from './linkReveal'
-import { type EditorHost, editorHost } from '../api'
-import { drawnLinkAt, inRawHtml } from '../decorations'
+import { type EditorHost, editorHost, inRawHtml } from '../api'
+import { drawnLinkAt } from '../decorations'
 import { writeLinkAt } from './pendingTitle'
 import { inCaretPane } from '../Menus/caretPane'
 import { clamp } from '@pommora/uix/Utilities/clamp'
@@ -43,7 +43,7 @@ type LinkEdit =
 function shownConnection(text: string, tk: TokenOf<'wikiLink'>): string {
   const heading = aliasedToken(tk) ? undefined : headingOf(text, tk)
   if (!heading) return text.slice(tk.contentRange[0], tk.contentRange[1])
-  const title = text.slice(tk.resolveRange[0], tk.resolveRange[1])
+  const title = text.slice(...tk.link.title)
   return title ? `${title} § ${heading}` : heading
 }
 
@@ -63,7 +63,7 @@ export function linkEdit(
       return { kind: 'write', from: slot, to: slot, text: '|', select: slot + 1 }
     }
     case 'editLink':
-      return { kind: 'select', range: tk.kind === 'link' ? linkAddress(tk) : tk.resolveRange }
+      return { kind: 'select', range: tk.kind === 'link' ? linkAddress(tk) : tk.link.title }
     case 'link:remove':
       return {
         kind: 'write',
@@ -124,33 +124,27 @@ export function applyLinkAction(
   if (edit.select !== undefined) focusRange(view, edit.select, edit.select)
 }
 
-/** Past the closer of the link whose alias or label holds `at`: a markdown label, empty or not, lies before its destination. */
-function shownEnd(state: EditorState, at: number): number | null {
-  const scan = docScan(state.doc)
-  if (inCodeAt(scan, at) || inRawHtml(state, at, 'page')) return null
-  const line = state.doc.lineAt(at)
-  const rel = at - line.from
-  const wiki = connectionAt(scan, at)
-  if (wiki)
-    return wiki.alias && rel >= wiki.alias[0] && rel <= wiki.alias[1]
-      ? line.from + wiki.full[1]
-      : null
-  const md = markdownLinkAt(line.text, rel, 'label')
-  return md ? line.from + md.full[1] : null
+/** Past the closer of the live link whose alias or label holds `at`: the one question Return, a typed `]`, and a typed `[` ask. */
+export function shownEnd(state: EditorState, at: number, scope: MarkdownScope): number | null {
+  if (inRawHtml(state, at, scope)) return null
+  const s = slotAt(docScan(state.doc), at)
+  return s?.part === 'shown' ? s.from + s.link.full[1] : null
 }
 
 /** The caret lands on the closer with no separating space, since the closer is the one caret position that doesn't reveal the syntax. */
-export function commitAliasOnEnter(view: EditorView): boolean {
-  const sel = view.state.selection.main
-  const end = sel.empty ? shownEnd(view.state, sel.head) : null
-  if (end === null) return false
-  view.dispatch({
-    selection: EditorSelection.cursor(end, 1),
-    effects: restedOnLink.of(end),
-  })
-  view.focus()
-  return true
-}
+export const commitAliasOnEnter =
+  (scope: MarkdownScope) =>
+  (view: EditorView): boolean => {
+    const sel = view.state.selection.main
+    const end = sel.empty ? shownEnd(view.state, sel.head, scope) : null
+    if (end === null) return false
+    view.dispatch({
+      selection: EditorSelection.cursor(end, 1),
+      effects: restedOnLink.of(end),
+    })
+    view.focus()
+    return true
+  }
 
 /** Every gesture below spends an offset computed a turn earlier, which the document may since have shrunk past. */
 function lineNear(state: EditorState, at: number): { line: Line; rel: number } {
@@ -170,36 +164,33 @@ function slotNear(state: EditorState, at: number, scope: MarkdownScope): Slot | 
   const { line, rel } = lineNear(state, at)
   const scan = docScan(state.doc)
   if (inRawHtml(state, line.from + rel, scope) || inCodeAt(scan, line.from + rel)) return null
-  const s = connectionAt(scan, line.from + rel)
-  if (s) {
+  const o = linkAt(scan, line.from + rel)
+  if (o?.syntax === 'wiki') {
     for (const kind of ['alias', 'heading'] as const) {
-      const span = s[kind]
+      const span = kind === 'alias' ? o.shown : o.heading
       if (span && rel >= span[0] && rel <= span[1])
         return { start: line.from + span[0], end: line.from + span[1], kind }
     }
     return null
   }
-  // An image's alt text is its own, and an empty one is meant.
-  const md = markdownLinkAt(line.text, rel, 'full')
-  if (!md || rel <= md.full[0] || rel >= md.full[1] || line.text[md.full[0] - 1] === '!')
-    return null
-  return { start: line.from + md.full[0], end: line.from + md.full[1], kind: 'label' }
+  if (!o || rel <= o.full[0] || rel >= o.full[1]) return null
+  return { start: line.from + o.full[0], end: line.from + o.full[1], kind: 'label' }
 }
 
 /** An empty alias takes its pipe with it and an empty heading its hash, matching the nexus-wide rule that an emptied value drops its key; a markdown link can't drop its label, so an empty one shows its target — the heading, else the title — as a picked one does. */
 function emptied(state: EditorState, at: number, kind: Slot['kind']): ChangeSpec | null {
   const { line, rel } = lineNear(state, at)
+  const o = linkAt(docScan(state.doc), line.from + rel)
   if (kind === 'label') {
-    const md = markdownLinkAt(line.text, rel, 'full')
-    if (!md || md.label[0] !== md.label[1]) return null
-    const heading = md.fragment && decodeLinkTarget(line.text.slice(md.fragment[0], md.fragment[1]))
-    const shown = heading || targetTitle(line.text.slice(md.page[0], md.page[1]))
-    return shown ? { from: line.from + md.label[0], insert: escapeLabel(shown) } : null
+    if (o?.syntax !== 'markdown' || o.shown[0] !== o.shown[1]) return null
+    const heading = o.heading ? targetFragment(line.text.slice(...o.heading)) : undefined
+    const title = targetTitle(line.text.slice(...o.title), o.heading !== null) ?? ''
+    const shown = defaultLabel(title, heading)
+    return shown ? { from: line.from + o.shown[0], insert: escapeLabel(shown) } : null
   }
-  const s = connectionAt(docScan(state.doc), line.from + rel)
-  const span = s?.[kind]
-  if (!s || !span || span[0] !== span[1]) return null
-  const slot = line.from + (kind === 'alias' ? (s.heading ?? s.title)[1] : span[0] - 1)
+  const span = o?.syntax === 'wiki' ? (kind === 'alias' ? o.shown : o.heading) : null
+  if (!o || !span || span[0] !== span[1]) return null
+  const slot = line.from + (kind === 'alias' ? (o.heading ?? o.title)[1] : span[0] - 1)
   return /[|#]/.test(state.doc.sliceString(slot, slot + 1)) ? { from: slot, to: slot + 1 } : null
 }
 

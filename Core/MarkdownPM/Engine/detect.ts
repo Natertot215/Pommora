@@ -11,7 +11,7 @@ import {
   quotePrefixWidth,
   type CodeMask,
 } from './markdownCode'
-import { emptyTolerantLinkRegex, unescapeLabel } from '../../Connections/links'
+import { markdownLinkRegex, unescapeLabel } from '../../Connections/links'
 import { pageLinkPattern } from '../../Connections/connections'
 import { isWebAddress } from '../../Paths/urlPath'
 import type { ListKind } from '../../Actions/gripMenu'
@@ -413,7 +413,7 @@ export function loneEmbedTitle(line: string): string | null {
 export function loneWebpageEmbed(lineText: string): { label: string; url: string } | null {
   if (!lineText.startsWith('![')) return null
   const line = lineText.replace(/\s+$/, '')
-  const m = emptyTolerantLinkRegex().exec(line)
+  const m = markdownLinkRegex().exec(line)
   if (!m) return null
   if (m.index !== 1 || m.index + m[0].length !== line.length) return null
   const url = m[2]
@@ -424,7 +424,7 @@ export function loneWebpageEmbed(lineText: string): { label: string; url: string
 /** What Edit Link selects, so a tile's address is retyped the way every other link's is. */
 export function webpageEmbedUrlSpan(lineText: string): [number, number] | null {
   if (!loneWebpageEmbed(lineText)) return null
-  const span = emptyTolerantLinkRegex().exec(lineText.replace(/\s+$/, ''))?.indices?.[2]
+  const span = markdownLinkRegex().exec(lineText.replace(/\s+$/, ''))?.indices?.[2]
   return span ? [span[0], span[1]] : null
 }
 

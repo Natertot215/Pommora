@@ -1,6 +1,6 @@
 // `to` is EXCLUSIVE of the trailing newline, matching BlockRange.to / headingSections.to / TableRegion.to, which the drag's self-drop guard relies on.
 import { parseListMarkerPrefixed, type CalloutLine } from './detect'
-import { type DocScan, inJoinedMath, type Span, fromOf, spanAt, toOf } from './docScan'
+import { type DocScan, inJoinedMath, type SpanLike, fromOf, spanAt, toOf } from './docScan'
 import { lineEndOf, lineIndexAt } from './markdownCode'
 import { headingSections } from './headingScan'
 
@@ -61,7 +61,7 @@ function blockContext(scan: DocScan): BlockContext {
   }
 
   const ranged = new Array<BlockKind | undefined>(n)
-  const hold = (kind: BlockKind, spans: readonly Span[]): void => {
+  const hold = (kind: BlockKind, spans: readonly SpanLike[]): void => {
     for (const s of spans)
       for (let k = lineIndexAt(scan, fromOf(s)); k < n && starts[k] <= toOf(s); k++)
         ranged[k] ??= kind

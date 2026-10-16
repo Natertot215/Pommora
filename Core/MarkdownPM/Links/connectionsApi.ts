@@ -1,6 +1,6 @@
 import type { LinkStatus } from '../../Connections/connections'
 import { normalizeTitle } from '../../Paths/caseFold'
-import { aliasedToken, headingOf, type LinkKind, linkTarget, type TokenOf } from '../Engine/tokens'
+import { aliasedToken, headingOf, type LinkKind, type TokenOf } from '../Engine/tokens'
 import type { LinkAction, LinkMenuContext } from '../../Actions/connectionMenu'
 import { targetFragment, targetNamesFile, targetTitle } from '../../Connections/links'
 import { isValidLink } from '../../Paths/urlPath'
@@ -37,16 +37,25 @@ export function titleTarget(
 }
 
 /** Page resolution is tried FIRST and deliberately: `isValidLink` accepts any dotted host, so `Notes.md` would read as a website and the page it names would be unreachable through this syntax. */
-export function resolveMdTarget(index: PageIndex | undefined, rawTarget: string): MdTarget {
-  const target = titleTarget(index, targetTitle(rawTarget) ?? '', targetFragment(rawTarget))
+export function resolveMdTarget(
+  index: PageIndex | undefined,
+  titleHalf: string,
+  headingHalf: string | null,
+): MdTarget {
+  const target = titleTarget(
+    index,
+    targetTitle(titleHalf, headingHalf !== null) ?? '',
+    headingHalf === null ? '' : targetFragment(headingHalf),
+  )
+  const raw = headingHalf === null ? titleHalf : `${titleHalf}#${headingHalf}`
   if (
     target.kind !== 'invalid' ||
     target.ambiguous ||
-    targetNamesFile(rawTarget) ||
-    !isValidLink(rawTarget)
+    targetNamesFile(titleHalf) ||
+    !isValidLink(raw)
   )
     return target
-  return { kind: 'url', url: rawTarget }
+  return { kind: 'url', url: raw }
 }
 
 export function tokenTarget(
@@ -54,9 +63,10 @@ export function tokenTarget(
   text: string,
   tk: TokenOf<LinkKind>,
 ): MdTarget {
-  if (tk.kind === 'link') return resolveMdTarget(index, linkTarget(text, tk))
-  const [rs, re] = tk.resolveRange
-  return titleTarget(index, text.slice(rs, re), headingOf(text, tk))
+  const { title, heading } = tk.link
+  if (tk.kind === 'link')
+    return resolveMdTarget(index, text.slice(...title), heading && text.slice(...heading))
+  return titleTarget(index, text.slice(...title), headingOf(text, tk))
 }
 
 export function linkMenuTarget(
@@ -104,10 +114,10 @@ export function linkLook(
   const bare = target.kind === 'self'
   const missing = headingMissing(conn, target, ownKeys)
   const join =
-    tk.kind === 'wikiLink' && tk.heading && status === 'resolved' && !aliasedToken(tk)
+    tk.kind === 'wikiLink' && headingOf(text, tk) && status === 'resolved' && !aliasedToken(tk)
       ? {
           showPage: headingLinkStyle !== 'heading-only' && !bare,
-          heading: tk.heading,
+          heading: tk.link.heading!,
           className: cx('md-connection-heading', missing && 'md-connection-heading-missing'),
         }
       : null

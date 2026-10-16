@@ -158,6 +158,8 @@ export function inlineSpans(line: string): [number, number, number][] {
 
 export type CodeMask = (offset: number) => boolean
 
+export type Span = [number, number]
+
 type LineTable = { readonly lines: readonly string[]; readonly lineStarts: readonly number[] }
 
 export function lineIndexAt(d: LineTable, pos: number): number {

@@ -2,7 +2,9 @@ import type { ConnPage } from '../Connections/pageIndex'
 import type { ReactNode } from 'react'
 import type { RememberedSize } from '@pommora/uix/Interactions/useResizable'
 import { changesTo } from '../Pages/merge3'
-import { docString } from './docCache'
+import { docScan, docString } from './docCache'
+import type { MarkdownScope } from './Engine/detect'
+import { spanAt } from './Engine/docScan'
 import {
   Annotation,
   type EditorState,
@@ -208,6 +210,17 @@ export interface EditorHost {
 }
 
 export const editorHost = Facet.define<EditorHost, EditorHost>({ combine: (v) => v[0] })
+
+export const drawsRawHtml = (scope: MarkdownScope, settings: EditorSettings): boolean =>
+  scope === 'page' && settings.htmlFormatting
+
+/** Inside an HTML block the editor draws raw, where link syntax is source text and no link rule applies. */
+export function inRawHtml(state: EditorState, at: number, scope: MarkdownScope): boolean {
+  return (
+    drawsRawHtml(scope, state.facet(editorHost).settings()) &&
+    spanAt(docScan(state.doc).html, at) !== undefined
+  )
+}
 
 // Remembered chrome writes itself back whenever its state changes, except on the load that seeded it, so a gesture changes the state and never saves it.
 export function persistPref<T>(

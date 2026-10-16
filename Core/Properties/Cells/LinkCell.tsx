@@ -45,7 +45,7 @@ export function LinkCell({
       <TextCell
         text={
           showFullLink && target.kind === 'page'
-            ? connectionText(target.page.title, undefined, target.heading)
+            ? connectionText(target.page.title, target.heading)
             : raw
         }
         connections={connections}
