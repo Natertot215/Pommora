@@ -42,6 +42,7 @@ function pasteEdit(
   const target = clipboardTarget(pasted, how)
   if (!target) return plain
   const { defaultLinkFormat: format, removeTitleOnLinkChange } = host.settings()
+  const index = host.connections()?.index
   const title =
     target.kind === 'url'
       ? (host.linkTitles.get(normalizeLinkUrl(target.url)) ?? undefined)
@@ -60,11 +61,9 @@ function pasteEdit(
           syntax,
           readLinkText(scan.text.slice(start, end)),
           target,
-          !removeTitleOnLinkChange,
-          {
-            format,
-            title,
-          },
+          removeTitleOnLinkChange,
+          index,
+          { format, title },
         )
     return write ? { from: start, to: end, write } : plain
   }

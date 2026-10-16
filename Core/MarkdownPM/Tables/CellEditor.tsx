@@ -25,6 +25,7 @@ import { type EditorHost, mirrorBody, mirrored, redrawNudge } from '../api'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import { editorBase } from '../surface'
 import { type PendingTitle, pendingTitles } from '../Links/pendingTitle'
+import { linkSettle } from '../Links/linkEdit'
 
 const HISTORY_BINDINGS = historyKeymap.filter((b) => b.run === undo || b.run === redo)
 
@@ -271,6 +272,7 @@ export function CellEditor({
     // The press that promoted this cell never reached CM, so the seat its own pointer filter would have given lands here.
     seatPastMarkerNow(view)
     return () => {
+      view.plugin(linkSettle)?.flush()
       onCloseRef.current(view.state.field(pendingTitles))
       view.destroy()
       viewRef.current = null

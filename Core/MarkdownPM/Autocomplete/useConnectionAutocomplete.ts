@@ -4,6 +4,7 @@ import type { Extension } from '@codemirror/state'
 import {
   AC_MAX,
   aliasRows,
+  closerOf,
   commitEdit,
   headingRows,
   listsAliases,
@@ -17,9 +18,10 @@ import {
 import { toggled } from '@pommora/uix/Utilities/checkSet'
 import { docOutline } from '../docCache'
 import type { MarkdownScope } from '../Engine/detect'
-import { keepsShown, readLinkText, resolveLink } from '../../Connections/linkValue'
+import { keepsShown, readLinkText } from '../../Connections/linkValue'
+import { unescapeLabel } from '../../Connections/links'
 import { normalizeTitle } from '../../Paths/caseFold'
-import { restedOnLink } from '../Links/linkReveal'
+import { linkWriting, restedOnLink } from '../Links/linkReveal'
 import type { AutocompletePaneProps } from './AutocompletePane'
 import { acQuery, closeAcQuery } from './acQuery'
 import type { PageHeading } from '../../Platform/stores'
@@ -133,27 +135,41 @@ export function useConnectionAutocomplete(
     if (!view || !ac || !ctl.current.open) return
     const settings = host.settings()
     const conn = host.connections()
-    const origin = view.state.field(field).origin
-    const container = origin === null ? null : readLinkText(origin.text)
-    const kind = resolveLink(container, conn?.index).kind
-    const pointed = kind === 'page' || kind === 'url'
-    const keepTitle = !settings.removeTitleOnLinkChange || !pointed
-    const keepsWritten =
-      ac.form === 'link' &&
-      !!container?.alias &&
-      keepsShown(container, { kind: 'page', syntax: 'wiki', title: row.value }, keepTitle)
+    // The link as the picker reads it, until Task 5-1 puts the link's span on every query: from the label's start or the query's, through the closer.
+    const start = ac.label ? ac.label.from - 1 : ac.from
+    const written = readLinkText(
+      view.state.sliceDoc(start, ac.to) + (ac.label || !ac.closed ? closerOf(ac.form) : ''),
+    )
+    // How the link read before this edit began (null for one that never closed) decides whether the shown text survives a re-aim; the link as it stands is where that shown text is read from.
+    const w = view.state.field(linkWriting)
+    const baseline = w?.start === start ? readLinkText(w.was) : ac.closed ? written : null
+    const reaims = ac.form === 'link' ? 'wiki' : ac.form === 'target' ? 'markdown' : null
+    // An empty destination reads as no link, so a markdown label is read from its own span.
+    const shown = ac.label
+      ? unescapeLabel(view.state.sliceDoc(ac.label.from, ac.label.to).trim())
+      : written?.alias
+    const kept =
+      reaims &&
+      shown &&
+      keepsShown(
+        baseline,
+        { kind: 'page', syntax: reaims, title: row.value },
+        settings.removeTitleOnLinkChange,
+        conn?.index,
+      )
+        ? shown
+        : undefined
     const pageId = row.kind === 'page' ? row.pageId : ac.title ? page?.id : undefined
     // Only a page the picker offered can open an alias slot — an empty pipe with nothing behind it is a slot the user has to close.
     const openAlias =
       (ac.form === 'link' || ac.form === 'heading') &&
       !opts.openHeading &&
-      !keepsWritten &&
+      kept === undefined &&
       settings.aliasPickerOnCommit &&
       host.aliases.list(pageId ?? '').length > 0
     const opensSlot = openAlias || opts.openHeading
     const { changes, anchor } = commitEdit(ac, row.value, {
-      container,
-      keepTitle,
+      kept,
       openAlias,
       openHeading: opts.openHeading,
     })

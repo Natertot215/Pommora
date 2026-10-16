@@ -1,10 +1,14 @@
 import type { LinkStatus } from '../../Connections/connections'
-import { defaultLabel } from '../../Connections/links'
 import { normalizeTitle } from '../../Paths/caseFold'
 import { aliasedToken, type LinkKind, type TokenOf } from '../Engine/tokens'
 import type { Span } from '../Engine/markdownCode'
 import type { LinkAction, LinkMenuTarget } from '../../Actions/connectionMenu'
-import { readOccurrence, type ResolvedLink, resolveLink } from '../../Connections/linkValue'
+import {
+  pageLabel,
+  readOccurrence,
+  type ResolvedLink,
+  resolveLink,
+} from '../../Connections/linkValue'
 import type { ConnPage, PageHeadings, PageIndex } from '../../Connections/pageIndex'
 import { cx } from '@pommora/uix/Utilities/cx'
 import type { HeadingLinkStyle } from '../../Settings/personalization'
@@ -59,13 +63,7 @@ export function linkLook(
           className: cx('md-connection-heading', missing && 'md-connection-heading-missing'),
         }
       : null
-  const named =
-    written?.kind !== 'url' ? written : target.kind === 'page' ? written.page : undefined
-  const label = named
-    ? defaultLabel(named.title, named.heading)
-    : written?.kind === 'url'
-      ? written.url
-      : ''
+  const label = pageLabel(written, target) ?? (written?.kind === 'url' ? written.url : '')
   return { label, target, status, missing, bare, join }
 }
 

@@ -14,7 +14,8 @@ import { codeScroll, codeScrolls } from './codeScroll'
 import { registerScrollHeal } from './Embeds/scrollHeal'
 import { calloutGuard } from './Guards/calloutGuard'
 import { embedGuard } from './Guards/embedGuard'
-import { headingRenameSettle } from './Guards/headingRenameSettle'
+import { headingRenameSettle } from './Links/headingRenameSettle'
+import { linkSettle } from './Links/linkEdit'
 import { citationGuard } from './Guards/citationGuard'
 import { citationOrder } from './Citations/citationActions'
 import { citationRowMenu, citationRowPointer } from './Citations/citationPointer'
@@ -242,6 +243,7 @@ export function MarkdownEditor({
     else requestAnimationFrame(land)
     return () => {
       view.plugin(headingRenameSettle)?.flush()
+      view.plugin(linkSettle)?.flush()
       if (lastRangeRef.current) {
         lastRangeRef.current = null
         onSelectionRef.current?.(null)

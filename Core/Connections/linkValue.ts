@@ -8,6 +8,7 @@ import {
   wholeLink,
 } from './connections'
 import {
+  defaultLabel,
   markdownLink,
   markdownPageLink,
   targetFragment,
@@ -120,6 +121,13 @@ export function resolveLink(
   return res?.status === 'ambiguous' ? { kind: 'unresolved', status: 'ambiguous' } : unpaged
 }
 
+/** The label a link shows for the page it names, by what it resolved to: a page link's own target, or the page an address-shaped destination resolved to; an address names none. */
+export function pageLabel(written: LinkTarget | null, target: ResolvedLink): string | null {
+  const named =
+    written?.kind === 'page' ? written : target.kind === 'page' ? written?.page : undefined
+  return named ? defaultLabel(named.title, named.heading) : null
+}
+
 /** The wikilink a File value or an asset reference spells, by its title alone; a markdown link to a page is never a file reference. */
 export const wikiTitle = (raw: string): string | null => {
   const t = readLinkText(raw)
@@ -191,7 +199,7 @@ export function linkValueFromEdit(
           alias: written.alias,
         }
   const was = current ? readLinkText(current) : null
-  return { kind: 'link', value: retarget('wiki', was, next, keepTitle).text }
+  return { kind: 'link', value: retarget('wiki', was, next, !keepTitle, index).text }
 }
 
 export function linkValueFromRename(alias: string, current: string): PropertyValue {
@@ -239,27 +247,38 @@ export function linkPaste(url: string, display: LinkDisplay, title?: string): Li
 export const connectionSpells = (target: { title: string; heading?: string }): boolean =>
   expressibleInLink(target.title) && (!target.heading || expressibleInLink(target.heading))
 
-const sameTarget = (a: LinkTarget, b: LinkTarget): boolean =>
-  a.kind === 'page' && b.kind === 'page'
-    ? normalizeTitle(a.title) === normalizeTitle(b.title) &&
-      normalizeTitle(a.heading ?? '') === normalizeTitle(b.heading ?? '')
-    : a.kind === 'url' && b.kind === 'url' && normalizeLinkUrl(a.url) === normalizeLinkUrl(b.url)
+const sameTarget = (a: ResolvedLink, b: ResolvedLink): boolean => {
+  if (a.kind === 'page' && b.kind === 'page')
+    return (
+      a.page.id === b.page.id && normalizeTitle(a.heading ?? '') === normalizeTitle(b.heading ?? '')
+    )
+  if (a.kind === 'self' && b.kind === 'self')
+    return normalizeTitle(a.heading) === normalizeTitle(b.heading)
+  return a.kind === 'url' && b.kind === 'url' && normalizeLinkUrl(a.url) === normalizeLinkUrl(b.url)
+}
 
-export const keepsShown = (
-  container: LinkTarget | null,
+/** Whether a retarget keeps the link's shown text: always with Remove Title On Link Change off, and otherwise only where the link pointed somewhere as it read before the edit (`baseline`, null for a link that never closed) and is being re-aimed elsewhere. */
+export function keepsShown(
+  baseline: LinkTarget | null,
   next: LinkTarget,
-  keepTitle: boolean,
-): boolean => container !== null && (keepTitle || sameTarget(container, next))
+  removeTitle: boolean,
+  index?: PageIndex,
+): boolean {
+  if (!removeTitle || baseline === null) return true
+  const was = resolveLink(baseline, index)
+  return was.kind === 'unresolved' || sameTarget(was, resolveLink(next, index))
+}
 
 export function retarget(
   syntax: 'wiki' | 'markdown',
-  container: LinkTarget | null,
+  baseline: LinkTarget | null,
   next: LinkTarget,
-  keepTitle: boolean,
+  removeTitle: boolean,
+  index?: PageIndex,
   into?: { format: LinkDisplay; title?: string },
 ): LinkPaste {
   const shown =
-    next.alias ?? (keepsShown(container, next, keepTitle) ? container?.alias : undefined)
+    next.alias ?? (keepsShown(baseline, next, removeTitle, index) ? baseline?.alias : undefined)
   if (next.kind === 'page') {
     const text =
       syntax === 'wiki' && connectionSpells(next)
