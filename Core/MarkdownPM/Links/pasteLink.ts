@@ -1,7 +1,6 @@
 import { EditorView } from '@codemirror/view'
 import type { EditorState } from '@codemirror/state'
 import {
-  keepsShown,
   readLinkText,
   resolvedTarget,
   retarget,
@@ -18,7 +17,7 @@ import { insertCitation } from '../Citations/citationActions'
 import { citationText } from '../Citations/citationEdits'
 import { embedSeatAt } from '../Embeds/embedInsert'
 import { settledLinkText, writeLinkAt } from './pendingTitle'
-import { baselineAt } from './linkSettle'
+import { keptShown } from './linkSettle'
 import { type EditorHost, editorHost } from '../api'
 import { lineStartAt, trimmedRange, type TextEdit } from '../Engine/markdownCode'
 
@@ -66,15 +65,14 @@ function pasteEdit(
     const syntax =
       how === 'connection' || (how !== 'markdown' && within.syntax === 'wiki') ? 'wiki' : 'markdown'
     const now = scan.text.slice(start, end)
-    const was = readLinkText(state ? baselineAt(state, start, now) : now)
-    const alias =
-      target.alias ??
-      (keepsShown(was, target, removeTitleOnLinkChange, index)
-        ? readLinkText(now)?.alias
+    const shown =
+      target.shown ??
+      (keptShown(state, start, now, target, removeTitleOnLinkChange, index)
+        ? readLinkText(now)?.shown
         : undefined)
     const write = isLinkDisplay(how)
       ? pasteAsWrite(target, how, { selection: '', format, title })
-      : retarget(syntax, { ...target, alias }, { format, title })
+      : retarget(syntax, { ...target, shown }, { format, title })
     return write ? { from: start, to: end, write } : plain
   }
   // A link still being written takes the paste as its own text, in either syntax.

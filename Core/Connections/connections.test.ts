@@ -10,6 +10,7 @@ import {
   spellsAsWiki,
 } from './connections'
 import { codeMask } from '../MarkdownPM/Engine/markdownCode'
+import { targetTitle } from './links'
 
 const walk = (text: string) => linkOccurrences(text, codeMask(text))
 
@@ -80,6 +81,16 @@ describe('pageLinkText and the slot rules', () => {
     expect(pageLinkText({ title: 'P', heading: 'x'.repeat(256) }, 'wiki')).toBe(
       `[${'x'.repeat(256)}](P#${'x'.repeat(256)})`,
     )
+  })
+  it('labels a markdown link by its heading, else its title, where none is given', () => {
+    expect(pageLinkText({ title: 'P' }, 'markdown')).toBe('[P](P)')
+    expect(pageLinkText({ title: 'P', heading: 'H' }, 'markdown')).toBe('[H](P#H)')
+    expect(pageLinkText({ title: '', heading: 'H' }, 'markdown')).toBe('[H](#H)')
+  })
+  it('a markdown title holding `#` reads back as itself', () => {
+    const text = pageLinkText({ title: 'C# Notes', heading: 'Intro' }, 'markdown')
+    const [o] = linkOccurrences(text, () => false)
+    expect(targetTitle(text.slice(...o.title), o.heading !== null)).toBe('C# Notes')
   })
   it('drops shown text that only repeats the target, asked of the title and heading together', () => {
     expect(pageLinkText({ title: 'Alpha', shown: 'alpha' }, 'wiki')).toBe('[[Alpha]]')

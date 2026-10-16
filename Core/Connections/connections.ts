@@ -1,5 +1,5 @@
 import { normalizeTitle } from '../Paths/caseFold'
-import { markdownLinkRegex, markdownPageLink, namesPage } from './links'
+import { defaultLabel, encodeLinkTarget, markdownLink, markdownLinkRegex, namesPage } from './links'
 import {
   type CodeMask,
   codeTouches,
@@ -22,6 +22,9 @@ export type LinkOccurrence =
 
 /** The three slots a caret can sit in. */
 export type LinkPart = 'title' | 'heading' | 'shown'
+
+/** What closes a link of each syntax. */
+export const CLOSER: Record<LinkOccurrence['syntax'], string> = { wiki: ']]', markdown: ')' }
 
 /** The destination as written, title through heading. */
 export const targetSpan = (o: Pick<LinkOccurrence, 'title' | 'heading'>): Span => [
@@ -147,7 +150,11 @@ export function pageLinkText(
   prefer: 'wiki' | 'markdown',
 ): string {
   const { title, heading, shown } = t
-  if (prefer !== 'wiki' || !spellsAsWiki(t)) return markdownPageLink(title, heading, shown)
+  if (prefer !== 'wiki' || !spellsAsWiki(t)) {
+    const dest =
+      encodeLinkTarget(title) + (heading === undefined ? '' : `#${encodeLinkTarget(heading)}`)
+    return markdownLink(dest, shown ?? defaultLabel(title, heading))
+  }
   const target = heading === undefined ? title : `${title}#${heading}`
   const named = shown !== undefined && (shown === '' || !repeatsTarget(shown, title, heading))
   return named ? `[[${target}|${shown}]]` : `[[${target}]]`

@@ -132,6 +132,10 @@ describe('the markdown-link sweep', () => {
     ).toBe('[New](New) [mine](New)')
   })
 
+  it('a label naming the page through its `.md` destination follows the rename', () => {
+    expect(rewriteConnections('[Notes](Notes.md)', 'Notes', 'Alpha')).toBe('[Alpha](Alpha)')
+  })
+
   it('re-encodes a new title that needs it', () => {
     expect(rewriteConnections('[x](Old)', 'Old', 'Atomic Habits (Book)')).toBe(
       '[x](Atomic%20Habits%20%28Book%29)',
@@ -243,6 +247,9 @@ describe('rewriteHeadingConnections', () => {
     expect(
       rewriteHeadingConnections('[Setup Notes](P#Setup%20Notes)', 'P', 'Setup Notes', 'Usage'),
     ).toBe('[Usage](P#Usage)')
+    expect(rewriteHeadingConnections('[Intro](Notes.md#Intro)', 'Notes', 'Intro', 'Setup')).toBe(
+      '[Setup](Notes.md#Setup)',
+    )
   })
 
   it('inside a table row, escapes a pipe the new heading carries and keeps the columns', () => {

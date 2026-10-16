@@ -10,7 +10,16 @@ import {
 } from '@codemirror/state'
 import { escapeLabel } from '../../Connections/links'
 import { type LinkOccurrence, targetSpan } from '../../Connections/connections'
-import { pageLabel, readOccurrence, resolveLink, shownAlias } from '../../Connections/linkValue'
+import {
+  keepsShown,
+  type LinkTarget,
+  pageLabel,
+  readLinkText,
+  readOccurrence,
+  resolveLink,
+  shownAlias,
+} from '../../Connections/linkValue'
+import type { PageIndex } from '../../Connections/pageIndex'
 import type { MarkdownScope } from '../Engine/detect'
 import type { Span } from '../Engine/markdownCode'
 import { docScan } from '../docCache'
@@ -21,7 +30,7 @@ import { linkRest, restedOnLink } from './linkReveal'
 
 // The link an edit is being made inside, from the change that arms it to the settle that remembers its alias and collapses its emptied parts.
 
-export interface Writing {
+interface Writing {
   start: number
   was: string
 }
@@ -44,13 +53,22 @@ export const linkWriting = StateField.define<Writing | null>({
 })
 
 /** How the link at `start` read before the edit being made inside it began, else as it reads now; `now` is null for a link that never closed. */
-export function baselineAt<T extends string | null>(
-  state: EditorState,
-  start: number,
-  now: T,
-): string | T {
+function baselineAt(state: EditorState, start: number, now: string | null): string | null {
   const w = state.field(linkWriting, false)
   return w?.start === start ? w.was : now
+}
+
+/** Whether re-aiming the link at `start` to `next` keeps its shown text: `keepsShown` asked against the link's baseline where `state` holds one, and against `now` for a surface without an editor state. */
+export function keptShown(
+  state: EditorState | null,
+  start: number,
+  now: string | null,
+  next: LinkTarget,
+  removeTitle: boolean,
+  index?: PageIndex,
+): boolean {
+  const was = state ? baselineAt(state, start, now) : now
+  return keepsShown(was === null ? null : readLinkText(was), next, removeTitle, index)
 }
 
 // The link already armed keeps its baseline, a replace over the whole of it included; only a change landing in another link reads the old document for how that link read.

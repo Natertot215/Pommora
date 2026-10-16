@@ -272,6 +272,7 @@ describe('linksIn', () => {
     expect(hits('see §Setup', 'Own', ['Setup'])).toEqual([
       {
         syntax: 'section',
+        named: { title: '', heading: 'Setup' },
         target: 'own',
         embed: false,
         qualifier: 'setup',

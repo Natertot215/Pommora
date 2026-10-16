@@ -7,8 +7,8 @@ import {
   targetSpan,
 } from './connections'
 import { normalizeTitle } from '../Paths/caseFold'
-import { decodeLinkTarget, encodeLinkTarget, escapeLabel, unescapeLabel } from './links'
-import { applyEdits, type Span, type TextEdit } from '../MarkdownPM/Engine/markdownCode'
+import { encodeLinkTarget, escapeLabel, unescapeLabel } from './links'
+import { applyEdits, type TextEdit } from '../MarkdownPM/Engine/markdownCode'
 import { escapeCell } from '../MarkdownPM/Engine/Tables/codec'
 import type { TableRegion } from '../MarkdownPM/Engine/Tables/regions'
 import { scanDoc, spanAt } from '../MarkdownPM/Engine/docScan'
@@ -40,18 +40,14 @@ function carry(shown: string, from: PageName, to: PageName): string {
   }
 }
 
-/** One rewrite per hit, for either arm, the hit's halves read as names (a markdown destination decodes, a wikilink reads as written, trimmed as the index reads them) and `part` replaced by `value`: the renamed part is edited in place (a table cell's `\|` rides through), shown text naming the old target follows it, shown text repeating the new target drops its pipe, and a wikilink whose new target it can't spell is rewritten whole through the one writer, which falls to the markdown form. Inside a table region every inserted text is escaped as the cell codec escapes, since a rename writes the row's source; the regions are read once, on the first hit. */
+/** One rewrite per hit, for either arm, the hit's name as the index reads it and `part` replaced by `value`: the renamed part is edited in place (a table cell's `\|` rides through), shown text naming the old target follows it, shown text repeating the new target drops its pipe, and a wikilink whose new target it can't spell is rewritten whole through the one writer, which falls to the markdown form. Inside a table region every inserted text is escaped as the cell codec escapes, since a rename writes the row's source; the regions are read once, on the first hit. */
 function follower(body: string) {
   let tables: TableRegion[] | undefined
   return (hit: LinkHit, part: 'title' | 'heading', value: string): TextEdit[] => {
     tables ??= scanDoc(body).tables
     const esc = spanAt(tables, hit.full[0]) ? escapeCell : (s: string) => s
     const markdown = hit.syntax === 'markdown'
-    const half = (span: Span): string => {
-      const written = body.slice(...span)
-      return (markdown ? decodeLinkTarget(written) : written).trim()
-    }
-    const from = { title: half(hit.title), heading: hit.heading ? half(hit.heading) : undefined }
+    const from = hit.named
     const to = { ...from, [part]: value }
     const shownRaw = hit.shown ? body.slice(...hit.shown) : undefined
     const shown = shownRaw === undefined ? undefined : markdown ? unescapeLabel(shownRaw) : shownRaw

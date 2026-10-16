@@ -89,10 +89,13 @@ export function applyLinkAction(view: EditorView, action: LinkAction, range: Spa
   if (edit.select !== undefined) focusRange(view, edit.select, edit.select)
 }
 
+/** The slot holding `at`, where it sits in live Markdown rather than raw HTML. */
+const liveSlotAt = (state: EditorState, at: number, scope: MarkdownScope) =>
+  inRawHtml(state, at, scope) ? null : slotAt(docScan(state.doc), at)
+
 /** Past the closer of the live link whose alias or label holds `at`: the one question Return, a typed `]`, and a typed `[` ask. */
 export function shownEnd(state: EditorState, at: number, scope: MarkdownScope): number | null {
-  if (inRawHtml(state, at, scope)) return null
-  const s = slotAt(docScan(state.doc), at)
+  const s = liveSlotAt(state, at, scope)
   return s?.part === 'shown' ? s.from + s.link.full[1] : null
 }
 
@@ -102,8 +105,8 @@ export const commitAliasOnEnter =
   (view: EditorView): boolean => {
     const { state } = view
     const sel = state.selection.main
-    if (!sel.empty || inRawHtml(state, sel.head, scope)) return false
-    const s = slotAt(docScan(state.doc), sel.head)
+    if (!sel.empty) return false
+    const s = liveSlotAt(state, sel.head, scope)
     if (s?.part === 'shown') {
       const end = s.from + s.link.full[1]
       view.dispatch({ selection: EditorSelection.cursor(end, 1), effects: restedOnLink.of(end) })

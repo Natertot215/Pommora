@@ -1,5 +1,5 @@
 import {
-  type LinkOccurrence,
+  CLOSER,
   type LinkPart,
   type PageName,
   pageLinkText,
@@ -11,9 +11,9 @@ import {
   decodeLinkTarget,
   encodeLinkTarget,
   escapeLabel,
-  targetTitle,
   unescapeLabel,
 } from '../../Connections/links'
+import { namedPage, readOccurrence } from '../../Connections/linkValue'
 import type { TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { type DocScan, inCodeAt } from '../Engine/docScan'
 import { inBracket, linkAt, openLinkAt, partOf } from '../Input/edits'
@@ -22,7 +22,7 @@ import type { ConnPage } from '../../Connections/pageIndex'
 import type { PageHeading } from '../../Platform/stores'
 import type { EditorHost } from '../api'
 
-export type QuerySyntax = 'wiki' | 'markdown' | 'prose'
+type QuerySyntax = 'wiki' | 'markdown' | 'prose'
 
 /** One query, two axes: which syntax holds the caret (`prose` for a bare `§` run, always in its heading) and which part, the grammar's `LinkPart`. `start`..`end` is the whole link, `from`..`to` the part's text, `closed` whether the closer follows the caret, and `shown` the link's alias or label, read as the query reads its slot, where one is written. */
 export interface AutocompleteQuery {
@@ -38,8 +38,6 @@ export interface AutocompleteQuery {
   shown?: string
 }
 
-const CLOSER: Record<QuerySyntax, string> = { wiki: ']]', markdown: ')', prose: '' }
-
 export type AcRow = { value: string } & (
   | { kind: 'page'; pageId: string; location: TrailSegment[] }
   | { kind: 'heading'; level: number }
@@ -47,12 +45,6 @@ export type AcRow = { value: string } & (
 )
 
 export type HeadingRow = Extract<AcRow, { kind: 'heading' }>
-
-/** The title a link's heading or shown slot lists against: a wikilink's as written, trimmed, a markdown destination's decoded. */
-function namedTitle(line: string, o: LinkOccurrence): string {
-  const written = line.slice(o.title[0], o.title[1])
-  return o.syntax === 'wiki' ? written.trim() : (targetTitle(written, o.heading !== null) ?? '')
-}
 
 export function autocompleteQuery(
   scan: DocScan,
@@ -104,7 +96,7 @@ export function autocompleteQuery(
     to: lineStart + slot[1],
     query,
     closed: closedLink !== null || o.full[1] > rel,
-    ...(part === 'title' ? {} : { title: namedTitle(line, o) }),
+    ...(part === 'title' ? {} : { title: namedPage(readOccurrence(line, o))?.title ?? '' }),
     ...(shown ? { shown: o.syntax === 'wiki' ? shown : unescapeLabel(shown) } : {}),
   }
 }
@@ -163,7 +155,7 @@ export function commitEdit(
   opts: { kept?: string; openAlias?: boolean; openHeading?: boolean },
 ): { changes: TextEdit[]; anchor: number } {
   const syntax = ac.syntax === 'markdown' ? 'markdown' : 'wiki'
-  const closer = ac.closed ? '' : CLOSER[ac.syntax]
+  const closer = ac.closed || ac.syntax === 'prose' ? '' : CLOSER[ac.syntax]
   // A whole-link write rests past what it wrote, or inside the slot it opened, read back from the written text through the grammar, so a writer falling back to the other syntax still seats the caret right.
   const whole = (name: PageName & { shown?: string }, open?: 'heading' | 'shown') => {
     const text = pageLinkText(name, syntax)
@@ -194,11 +186,7 @@ export function commitEdit(
         return whole({ title, heading: value, shown: open ? '' : opts.kept }, open)
       const written = ac.syntax === 'markdown' ? encodeLinkTarget(value) : value
       if (!open) return inserted(written)
-      if (ac.syntax === 'markdown')
-        return {
-          changes: [{ from: ac.from, to: ac.to, insert: written + closer }],
-          anchor: ac.start + 1,
-        }
+      if (ac.syntax === 'markdown') return { ...inserted(written), anchor: ac.start + 1 }
       return {
         changes: [
           {

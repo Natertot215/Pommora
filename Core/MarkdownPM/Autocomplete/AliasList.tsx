@@ -165,12 +165,12 @@ export function AliasList({
                   onBegin={row.draft ? undefined : () => rename(row)}
                   onCommit={(next, how) => {
                     const landed = list.commit(row, next)
-                    end(row.key, how.by === 'key')
+                    end(row.key, how === 'key')
                     return landed
                   }}
                   onCancel={(how) => {
                     if (row.draft) list.cancel()
-                    end(row.key, how.by === 'key')
+                    end(row.key, how === 'key')
                   }}
                 >
                   {(shown) => emphasizeMatch(shown, 0, match)}

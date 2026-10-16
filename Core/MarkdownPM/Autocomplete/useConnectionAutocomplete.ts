@@ -14,10 +14,9 @@ import {
 import { toggled } from '@pommora/uix/Utilities/checkSet'
 import { docOutline } from '../docCache'
 import type { MarkdownScope } from '../Engine/detect'
-import { keepsShown, readLinkText } from '../../Connections/linkValue'
 import { normalizeTitle } from '../../Paths/caseFold'
 import { restedOnLink } from '../Links/linkReveal'
-import { baselineAt } from '../Links/linkSettle'
+import { keptShown } from '../Links/linkSettle'
 import type { AutocompletePaneProps } from './AutocompletePane'
 import { acQuery, closeAcQuery } from './acQuery'
 import type { PageHeading } from '../../Platform/stores'
@@ -132,17 +131,13 @@ export function useConnectionAutocomplete(
     const settings = host.settings()
     const conn = host.connections()
     // How the link read before this edit began decides whether its shown text survives a re-aim.
-    const was = baselineAt(
-      view.state,
-      ac.start,
-      ac.closed ? view.state.doc.sliceString(ac.start, ac.end) : null,
-    )
-    const baseline = was === null ? null : readLinkText(was)
     const kept =
       ac.shown &&
       (ac.part !== 'title' ||
-        keepsShown(
-          baseline,
+        keptShown(
+          view.state,
+          ac.start,
+          ac.closed ? view.state.doc.sliceString(ac.start, ac.end) : null,
           {
             kind: 'page',
             syntax: ac.syntax === 'markdown' ? 'markdown' : 'wiki',

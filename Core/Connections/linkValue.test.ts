@@ -27,7 +27,7 @@ describe('readLinkText', () => {
       syntax: 'wiki',
       title: 'T',
       heading: 'H',
-      alias: 'a',
+      shown: 'a',
     })
   })
   it('reads a markdown link to a title-shaped target as a page', () => {
@@ -35,7 +35,7 @@ describe('readLinkText', () => {
       kind: 'page',
       syntax: 'markdown',
       title: 'Old',
-      alias: 'x',
+      shown: 'x',
     })
   })
   it('reads a destination written as a markdown file as the page it names, dotted or not', () => {
@@ -43,14 +43,14 @@ describe('readLinkText', () => {
       kind: 'page',
       syntax: 'markdown',
       title: 'Notes',
-      alias: 'x',
+      shown: 'x',
     })
     expect(readLinkText('[x](Notes.md#Setup)')).toEqual({
       kind: 'page',
       syntax: 'markdown',
       title: 'Notes',
       heading: 'Setup',
-      alias: 'x',
+      shown: 'x',
     })
   })
   it('reads a valid address as written, and writes it under a scheme', () => {
@@ -58,7 +58,7 @@ describe('readLinkText', () => {
       kind: 'url',
       syntax: 'markdown',
       url: 'example.com',
-      alias: 'x',
+      shown: 'x',
       page: { title: 'example.com' },
     })
     expect(readLinkText('example.com')).toEqual({
@@ -76,7 +76,7 @@ describe('readLinkText', () => {
       syntax: 'markdown',
       title: '',
       heading: 'H',
-      alias: 'x',
+      shown: 'x',
     })
   })
   it('reads nothing the editor would not draw as one whole link', () => {
@@ -92,11 +92,11 @@ describe('readLinkText', () => {
   it('keeps a URL that itself contains parens, and an escaped label', () => {
     expect(readLinkText('[Wiki](https://en.wikipedia.org/wiki/Foo_(bar))')).toMatchObject({
       url: 'https://en.wikipedia.org/wiki/Foo_(bar)',
-      alias: 'Wiki',
+      shown: 'Wiki',
     })
     expect(readLinkText(serializeLink('https://example.com', 'a](b \\ c'))).toMatchObject({
       url: 'https://example.com',
-      alias: 'a](b \\ c',
+      shown: 'a](b \\ c',
     })
   })
 })
@@ -417,13 +417,13 @@ describe('resolvedTarget — a written link as the page it resolves to', () => {
       syntax: 'wiki',
       title: 'Alpha',
       heading: 'H',
-      alias: 'x',
+      shown: 'x',
     })
     expect(resolvedTarget(readLinkText('[x](notes.io)')!, index)).toEqual({
       kind: 'page',
       syntax: 'markdown',
       title: 'notes.io',
-      alias: 'x',
+      shown: 'x',
     })
     const own = { id: 'h', title: 'Holder', path: 'Holder.md' }
     expect(resolvedTarget(readLinkText('[[#H]]')!, index, own)).toMatchObject({ title: '' })
@@ -472,11 +472,11 @@ describe('keepsShown — Remove Title On Link Change over the link as it read be
 })
 
 describe('retarget — the one writer for a link whose target changes', () => {
-  const pageOf = (title: string, alias?: string): LinkTarget => ({
+  const pageOf = (title: string, shown?: string): LinkTarget => ({
     kind: 'page',
     syntax: 'wiki',
     title,
-    ...(alias ? { alias } : {}),
+    ...(shown ? { shown } : {}),
   })
   const urlOf = (url: string): LinkTarget => ({ kind: 'url', syntax: 'bare', url })
   const text = (...args: Parameters<typeof retarget>): string => retarget(...args).text

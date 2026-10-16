@@ -3,11 +3,9 @@ import {
   decodeLinkTarget,
   encodeLinkTarget,
   markdownLinkRegex,
-  markdownPageLink,
   targetFragment,
   targetTitle,
 } from './links'
-import { linkOccurrences } from './connections'
 
 // CommonMark's link destination admits balanced parentheses. One grammar serves the editor tokenizer, `detect`, the rename scanner and the rename rewriter, so what this pins is what all four agree a link is.
 describe('markdownLinkRegex — the balanced-parens destination', () => {
@@ -147,21 +145,5 @@ describe('the codec reads back everything it writes', () => {
 
   it('never throws, even on input encodeURI refuses', () => {
     expect(() => encodeLinkTarget('A\uD800B')).not.toThrow()
-  })
-})
-
-describe('markdownPageLink', () => {
-  it('writes the title, heading, and label it is given', () => {
-    expect(markdownPageLink('Meeting Notes', 'H', 'x')).toBe('[x](Meeting%20Notes#H)')
-  })
-  it('labels a link by its heading, else its title', () => {
-    expect(markdownPageLink('P')).toBe('[P](P)')
-    expect(markdownPageLink('P', 'H')).toBe('[H](P#H)')
-    expect(markdownPageLink('', 'H')).toBe('[H](#H)')
-  })
-  it('a title holding `#` reads back as itself', () => {
-    const text = markdownPageLink('C# Notes', 'Intro')
-    const [o] = linkOccurrences(text, () => false)
-    expect(targetTitle(text.slice(...o.title), o.heading !== null)).toBe('C# Notes')
   })
 })
