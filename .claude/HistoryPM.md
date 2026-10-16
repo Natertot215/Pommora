@@ -159,10 +159,10 @@
 #### PM-152 || Text Colors & Highlighting
 **DATE:** 10-15-2026
 
-Highlight colors, introduced in PM-113 with an emoji on both sides of the words, came to be written with one leading emoji (`==🔴words==`), and the machinery that kept the two in step was removed. A text color (`=🔴words=`) joined highlights as a second paint over the same color registry, in seven colors, offered from a Text Color submenu above Highlight and through the shared Change Color menu; a span takes one color, and picking the other paint converts it. Either paint holds connections, links, code, and math, closing only on a marker outside them, and a link inside a text color takes its color, underlined. The right-click menu came to read a selection the same way a pick writes it, and a fresh paint beside an `=` or over part of another is refused. Sapphire extended Obsidian's own highlights to every Pommora color and shape and painted text color in both of its views.
+Highlight colors, introduced in PM-113 with an emoji on both sides of the words, came to be written with one leading emoji (`==🔴words==`), and the machinery that kept the two in step was removed. A text color (`=🔴words=`) joined highlights as a second paint over the same color registry, in seven colors, offered from a Text Color submenu above Highlight and through the shared Change Color menu; a span takes one color, and picking the other paint converts it. Either paint holds connections, links, code, and math, closing only on a marker outside them, and a link inside a text color takes its color, underlined. The right-click menu came to read a selection the same way a pick writes it, a paint is written only where it reads back as that paint, and the highlight chord removes either paint it lands in while the Accent row recolors. Sapphire extended Obsidian's own highlights to every Pommora color and shape and painted text color in both of its views.
 
-- **Commits:** `58d071508^..980a8f4e8` · Sapphire `6cd63474^..eabd7f22`
-- **Delta:** +273 (+642 / -369) · Sapphire +410 (+521 / -111)
+- **Commits:** `58d071508^..980a8f4e8`, `9849920ec`, `13539fda2` · Sapphire `6cd63474^..eabd7f22`
+- **Delta:** +298 (+746 / -448) · Sapphire +410 (+521 / -111)
 
 #### PM-151 || Improved Alias Management
 **DATE:** 10-14-2026
