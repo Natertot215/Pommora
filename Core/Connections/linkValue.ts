@@ -103,6 +103,10 @@ export function readLinkText(text: string): LinkTarget | null {
 export const bareHeading = (heading: string, own?: ConnPage): ResolvedLink =>
   own ? { kind: 'page', page: own, heading } : { kind: 'self', heading }
 
+/** The page a written link names: a page link's own target, or the page an address-shaped destination could also hold. */
+const namedPage = (written: LinkTarget | null): PageName | undefined =>
+  written?.kind === 'page' ? written : written?.page
+
 /** Page resolution comes first, deliberately: `isValidLink` accepts any dotted host, so a destination `notes.io` would read as a website and the page holding that title would be unreachable. */
 export function resolveLink(
   written: LinkTarget | null,
@@ -114,7 +118,7 @@ export function resolveLink(
     written.kind === 'url'
       ? { kind: 'url', url: written.url }
       : { kind: 'unresolved', status: 'phantom' }
-  const named = written.kind === 'url' ? written.page : written
+  const named = namedPage(written)
   if (!named) return unpaged
   const { title, heading } = named
   if (title === '') return heading ? bareHeading(heading, own) : unpaged
@@ -125,8 +129,7 @@ export function resolveLink(
 
 /** The label a link shows for the page it names, by what it resolved to: a page link's own target, or the page an address-shaped destination resolved to; an address names none. */
 export function pageLabel(written: LinkTarget | null, target: ResolvedLink): string | null {
-  const named =
-    written?.kind === 'page' ? written : target.kind === 'page' ? written?.page : undefined
+  const named = written?.kind === 'page' || target.kind === 'page' ? namedPage(written) : undefined
   return named ? defaultLabel(named.title, named.heading) : null
 }
 
@@ -149,12 +152,30 @@ export function shownAlias(
     return null
   const { page } = target
   const wasWritten = was === undefined ? null : readLinkText(was)
+  const named = namedPage(wasWritten)
+  if (named && namesTarget(alias, named)) return null
   const before = resolveLink(wasWritten, index)
-  if (before.kind === 'page') {
-    if (namesTarget(alias, { title: before.page.title, heading: before.heading })) return null
-    if (wasWritten?.alias === alias && before.page.id === page.id) return null
-  }
+  if (wasWritten?.alias === alias && before.kind === 'page' && before.page.id === page.id)
+    return null
   return { page, alias }
+}
+
+/** A written link as the page it resolves to, written by that page's own title in the syntax it came in (a value's bare heading keeps its empty title); anything else as written. */
+export function resolvedTarget(
+  written: LinkTarget,
+  index: PageIndex | undefined,
+  own?: ConnPage,
+): LinkTarget {
+  const target = resolveLink(written, index, own)
+  const named = namedPage(written)
+  if (target.kind !== 'page' || !named) return written
+  return {
+    kind: 'page',
+    syntax: written.syntax === 'wiki' ? 'wiki' : 'markdown',
+    title: named.title === '' ? '' : target.page.title,
+    ...(target.heading ? { heading: target.heading } : {}),
+    ...(written.alias ? { alias: written.alias } : {}),
+  }
 }
 
 export function serializeLink(url: string, label?: string): string {
@@ -181,18 +202,7 @@ export function linkValueFromEdit(
   const written = readLinkText(trimmed)
   const target = resolveLink(written, index, own)
   if (!written || (target.kind !== 'page' && target.kind !== 'url')) return undefined
-  // A resolved page is written by its own title; a value's bare heading keeps its empty title.
-  const bare = written.kind === 'page' && written.title === ''
-  const next: LinkTarget =
-    target.kind === 'url'
-      ? written
-      : {
-          kind: 'page',
-          syntax: 'wiki',
-          title: bare ? '' : target.page.title,
-          heading: target.heading,
-          alias: written.alias,
-        }
+  const next = resolvedTarget(written, index, own)
   const was = current ? readLinkText(current) : null
   const alias = next.alias ?? (keepsShown(was, next, !keepTitle, index) ? was?.alias : undefined)
   return { kind: 'link', value: retarget('wiki', { ...next, alias }).text }
@@ -205,17 +215,10 @@ export function linkValueFromRename(alias: string, current: string): PropertyVal
   return { kind: 'link', value: retarget('wiki', { ...target, alias: named }).text }
 }
 
-export function linkDisplayText(raw: string, display?: LinkDisplay, title?: string): string {
-  return shownText(readLinkText(raw), display, title) ?? raw
-}
-
 /** What a written link shows: its alias, a markdown link's default label, a wikilink's title, heading, or `Title § Heading`, or an address under its display; no display means the raw address, so sort and filter never move when a property's look changes. */
-function shownText(
-  target: LinkTarget | null,
-  display?: LinkDisplay,
-  title?: string,
-): string | null {
-  if (!target) return null
+export function linkDisplayText(raw: string, display?: LinkDisplay, title?: string): string {
+  const target = readLinkText(raw)
+  if (!target) return raw
   if (target.alias) return target.alias
   if (target.kind === 'page') {
     if (target.syntax === 'markdown') return defaultLabel(target.title, target.heading)
@@ -238,8 +241,7 @@ export function shownProse(text: string): string {
   let out = ''
   let at = 0
   for (const o of linkOccurrences(text, codeMask(text))) {
-    const shown = shownText(readOccurrence(text, o)) ?? text.slice(o.full[0], o.full[1])
-    out += text.slice(at, o.full[0]) + shown
+    out += text.slice(at, o.full[0]) + linkDisplayText(text.slice(o.full[0], o.full[1]))
     at = o.full[1]
   }
   return out + text.slice(at)

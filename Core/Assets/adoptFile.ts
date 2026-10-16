@@ -5,7 +5,7 @@ import { assetSubRoot } from '../Paths/nexusPaths'
 import { WEB_ADDRESS } from '../Paths/urlPath'
 import { neverWatched } from '../Paths/exclusion'
 import { readWatchScope } from '../Settings/settings'
-import { expressibleInLink, pageLinkText } from '../Connections/connections'
+import { expressibleInLink, fileLinkText } from '../Connections/connections'
 import { fault, ok, type Result } from '../Contract/result'
 import { ASSET_MIME } from './assetMime'
 import { AMBIGUOUS, indexable, liveAssetMap, resolveAssetName } from './assetMap'
@@ -49,8 +49,7 @@ export async function adoptFile(
     : null
   if (source === null) return fault(UNREADABLE)
   const srcRel = relative(await machine().realpath(root), source)
-  if (underAssetRoot(srcRel, assetDir) && indexable(srcRel, assetDir))
-    return ok(pageLinkText({ title: base }, 'wiki'))
+  if (underAssetRoot(srcRel, assetDir) && indexable(srcRel, assetDir)) return ok(fileLinkText(base))
 
   const bytes = await machine()
     .readBytes(absSource)
@@ -61,7 +60,7 @@ export async function adoptFile(
         .readBytes(join(root, hit))
         .catch(() => null)
     : null
-  if (held && sameItems(bytes, held)) return ok(pageLinkText({ title: base }, 'wiki'))
+  if (held && sameItems(bytes, held)) return ok(fileLinkText(base))
   return writeAssetFile(root, dir, base, bytes)
 }
 

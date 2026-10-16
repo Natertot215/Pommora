@@ -27,7 +27,7 @@ export function nameError(name: string, role: NameRole): string | null {
     return `"${name}" is a folder name the Nexus keeps hidden.`
   if (/[|#§]/.test(name)) return `"${name}" can't contain "|", "#", or "§".`
   if (role === 'page' && !expressibleInLink(name))
-    return `"${name}" can't end in "]" or contain "]]".`
+    return `"${name}" can't end in "]", contain "]]", or run past 255 characters.`
   if (role === 'page' && isMarkdownFile(name)) return `"${name}" can't end in ".md".`
   if (role === 'directory' && name.includes('.')) return `"${name}" can't contain a period.`
   return platformNameError(name)

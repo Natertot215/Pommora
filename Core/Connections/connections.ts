@@ -133,31 +133,29 @@ export const repeatsTarget = (shown: string, title: string, heading?: string): b
 export const keepsAlias = (name: string, title: string): boolean =>
   name.trim() !== '' && aliasSpells(name) && !repeatsTarget(name, title)
 
-/** Whether shown text names its target, the title, the heading, or both, rather than giving it a name: what a rename carries along and what memory never keeps. */
-export const namesTarget = (shown: string, t: PageName): boolean =>
-  repeatsTarget(shown, t.title) ||
-  (t.heading !== undefined &&
-    (repeatsTarget(shown, t.heading) || repeatsTarget(shown, t.title, t.heading)))
-
-/** A present-but-empty heading or alias spells its slot (`[[A#]]`, `[[A|]]`): the picker opens a slot by writing it. */
-function connectionText(title: string, heading?: string, alias?: string): string {
-  const target = heading === undefined ? title : `${title}#${heading}`
-  const named =
-    alias !== undefined && (alias === '' || !repeatsTarget(alias, title, heading))
-      ? alias
-      : undefined
-  return named === undefined ? `[[${target}]]` : `[[${target}|${named}]]`
+/** Which part of its target shown text names, the title, the heading, or both, rather than giving it a name: what a rename carries along and what memory never keeps. */
+export function namesTarget(shown: string, t: PageName): 'title' | 'heading' | 'both' | null {
+  if (repeatsTarget(shown, t.title)) return 'title'
+  if (t.heading === undefined) return null
+  if (repeatsTarget(shown, t.heading)) return 'heading'
+  return repeatsTarget(shown, t.title, t.heading) ? 'both' : null
 }
 
-/** The one writer of a page link: a wikilink where every slot spells, the markdown form otherwise, so no writer leaves a slot unwritten, drops a name silently, or writes a link the grammar can't read back. */
-export const pageLinkText = (
+/** The one writer of a page link: a wikilink where every slot spells, the markdown form otherwise, so no writer leaves a slot unwritten, drops a name silently, or writes a link the grammar can't read back. A present-but-empty heading or alias spells its slot (`[[A#]]`, `[[A|]]`): the picker opens a slot by writing it. */
+export function pageLinkText(
   t: PageName & { shown?: string },
   prefer: 'wiki' | 'markdown',
-): string =>
-  prefer === 'wiki' && spellsAsWiki(t)
-    ? connectionText(t.title, t.heading, t.shown)
-    : markdownPageLink(t.title, t.heading, t.shown)
+): string {
+  const { title, heading, shown } = t
+  if (prefer !== 'wiki' || !spellsAsWiki(t)) return markdownPageLink(title, heading, shown)
+  const target = heading === undefined ? title : `${title}#${heading}`
+  const named = shown !== undefined && (shown === '' || !repeatsTarget(shown, title, heading))
+  return named ? `[[${target}|${shown}]]` : `[[${target}]]`
+}
 
 export function pageEmbedText(title: string): string {
   return `![[${title}]]`
 }
+
+/** A File value's reference, by file name alone: `wikiTitle` reads it and refuses the markdown form, so it never falls back as a page link does. */
+export const fileLinkText = (name: string): string => `[[${name}]]`
