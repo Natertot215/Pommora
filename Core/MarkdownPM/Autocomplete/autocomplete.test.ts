@@ -415,6 +415,21 @@ describe('wiki and markdown picks mirror each other', () => {
     })
   })
 
+  it('a heading pick a wikilink can’t spell writes the whole link in the markdown form, the title as written', () => {
+    expect(pick('[[Notes.md#]]', '#', 'A|B', {})).toEqual({
+      text: '[A|B](Notes.md#A%7CB)',
+      before: '[A|B](Notes.md#A%7CB)',
+    })
+    expect(pick('[[Notes#Se|Mine]]', '#S', 'A|B', { kept: 'Mine' })).toEqual({
+      text: '[Mine](Notes#A%7CB)',
+      before: '[Mine](Notes#A%7CB)',
+    })
+    expect(pick('[[Notes#]]', '#', 'A|B', { openAlias: true })).toEqual({
+      text: '[](Notes#A%7CB)',
+      before: '[',
+    })
+  })
+
   it('a wikilink pick its syntax can’t spell opens its heading behind an empty label', () => {
     expect(pick('[[Pa]]', 'Pa', 'A|B', { openHeading: true })).toEqual({
       text: '[](A%7CB#)',

@@ -10,7 +10,7 @@ import {
   specOf,
 } from '../../Properties/properties'
 import { declaredType, fileName, resolveFieldValue } from '../../Properties/value'
-import { linkDisplayText } from '../../Connections/linkValue'
+import { linkDisplayText, shownProse } from '../../Connections/linkValue'
 import { readDate } from '../../Properties/formatValue'
 
 type SortKey = number | string
@@ -56,9 +56,8 @@ function sortText(row: ViewRow, propertyId: string, schema: PropertyDefinition[]
   const v = resolveFieldValue(row, propertyId, schema)
   switch (v.kind) {
     case 'text':
-      return v.value
+      return shownProse(v.value)
     case 'link':
-      // Sort by the SHOWN text (alias, else URL) — the same parse boundary Cell renders, so an aliased link never sorts by its raw markdown.
       return linkDisplayText(v.value)
     case 'multiSelect':
       return v.value.join(',')

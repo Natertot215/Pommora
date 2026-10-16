@@ -86,6 +86,23 @@ describe('makeSorter — type-aware single criterion', () => {
     expect(ids(sorter?.(rows) ?? rows)).toEqual(['r_apple', 'r_bare', 'r_zebra'])
   })
 
+  it('text sorts by what its connections show, and a Link value by its shown text, bare address normalized', () => {
+    const rows = [
+      makeRow('r_nice', { props: { prop_notes: '[[Alpha|nice]] notes' } }),
+      makeRow('r_apple', { props: { prop_notes: 'apple' } }),
+      makeRow('r_zebra', { props: { prop_notes: 'zebra' } }),
+    ]
+    const sorter = makeSorter([{ property_id: 'prop_notes', direction: 'ascending' }], schema)
+    expect(ids(sorter?.(rows) ?? rows)).toEqual(['r_apple', 'r_nice', 'r_zebra'])
+    const links = [
+      makeRow('r_setup', { props: { prop_link: '[[#Setup]]' } }),
+      makeRow('r_bare', { props: { prop_link: 'example.com' } }),
+      makeRow('r_alpha', { props: { prop_link: '[[Alpha]]' } }),
+    ]
+    const byLink = makeSorter([{ property_id: 'prop_link', direction: 'ascending' }], schema)
+    expect(ids(byLink?.(links) ?? links)).toEqual(['r_alpha', 'r_bare', 'r_setup'])
+  })
+
   it('text sorts A → Z by its text, case-insensitively', () => {
     const rows = [
       makeRow('r_zebra', { props: { prop_notes: 'Zebra crossing' } }),

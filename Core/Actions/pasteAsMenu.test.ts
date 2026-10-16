@@ -66,8 +66,9 @@ describe('what the clipboard offers to become', () => {
     expect(labels('mailto:a@b.co')).toEqual(['Full Link', 'Short Link', 'Plain Text'])
   })
 
-  it('offers a copied connection the two ways of naming a page', () => {
+  it('offers a copied connection the two ways of naming a page, the wikilink only where it spells every slot', () => {
     expect(labels('[[Alpha]]')).toEqual(['Connection', 'Markdown Link'])
+    expect(labels('[a\\]b](Alpha)')).toEqual(['Markdown Link'])
   })
 
   it('reads a markdown link through its target', () => {

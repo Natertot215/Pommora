@@ -289,7 +289,8 @@ describe('a landed Link value remembers the alias it shows', () => {
   it.each([
     ['a phantom title', '[[Missing|x]]'],
     ['an unaliased link', '[[Alpha]]'],
-    ['the alias it already showed', '[[Alpha#Intro|old]]'],
+    ['the alias it already showed', '[[Alpha|old]]'],
+    ['an alias on a link naming a heading', '[[Alpha#Intro|my notes]]'],
     ['the same alias in the other syntax', '[old](Alpha.md)'],
     ["a label naming the page's own title", '[Alpha](Alpha.md)'],
     ['a label naming the heading', '[Intro](Alpha.md#Intro)'],

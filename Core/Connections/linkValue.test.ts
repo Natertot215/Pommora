@@ -14,6 +14,7 @@ import {
   resolveLink,
   retarget,
   serializeLink,
+  shownProse,
   wikiTitle,
 } from './linkValue'
 
@@ -283,6 +284,19 @@ describe('internal links', () => {
       expect(linkDisplayText('[[Meeting Notes]]', display)).toBe('Meeting Notes')
     expect(linkDisplayText('[[Meeting Notes|Today]]', 'link-short')).toBe('Today')
   })
+  it('shows a heading link as the editor draws it, and a markdown link by its default label', () => {
+    expect(linkDisplayText('[[#H]]')).toBe('H')
+    expect(linkDisplayText('[[P#H]]')).toBe('P § H')
+    expect(linkDisplayText('[](P#H)')).toBe('H')
+    expect(linkDisplayText('[](P)')).toBe('P')
+    expect(linkDisplayText('[[P|nice]]')).toBe('nice')
+  })
+  it('shownProse replaces each connection in a text with what it shows', () => {
+    expect(shownProse('[[Alpha|nice]] notes')).toBe('nice notes')
+    expect(shownProse('[[P#H]] and [x](https://a.com)')).toBe('P § H and x')
+    expect(shownProse('plain text')).toBe('plain text')
+    expect(shownProse('`[[Alpha]]` stays')).toBe('`[[Alpha]]` stays')
+  })
   it('edits as itself', () => {
     expect(linkEditText('[[Meeting Notes|Today]]')).toBe('[[Meeting Notes]]')
   })
@@ -296,11 +310,12 @@ describe('internal links', () => {
       value: '[[Meeting Notes]]',
     })
   })
-  it('renames a markdown page link in its own syntax', () => {
+  it('renames a markdown page link as a wikilink, where one spells', () => {
     expect(linkValueFromRename('Today', '[x](Meeting%20Notes#H)')).toEqual({
       kind: 'link',
-      value: '[Today](Meeting%20Notes#H)',
+      value: '[[Meeting Notes#H|Today]]',
     })
+    expect(linkValueFromRename('a]b', '[[Page]]')).toEqual({ kind: 'link', value: '[a\\]b](Page)' })
   })
   it('a page rename rewrites a Link value naming the page in either syntax, and nothing else', () => {
     const rename = (value: string) => rewriteConnections(value, 'Meeting Notes', 'New Title')
@@ -314,7 +329,7 @@ describe('internal links', () => {
     expect(move('[[Meeting Notes#Decisions|D]]')).toBe('[[Meeting Notes#Outcomes|D]]')
     expect(move('[[Meeting Notes#Other]]')).toBe('[[Meeting Notes#Other]]')
     expect(move('[[Meeting Notes]]')).toBe('[[Meeting Notes]]')
-    expect(move('[[Meeting Notes#Decisions|D]]', 'A|B')).toBe('[[Meeting Notes#Decisions|D]]')
+    expect(move('[[Meeting Notes#Decisions|D]]', 'A|B')).toBe('[D](Meeting%20Notes#A%7CB)')
   })
   it('reads a heading link with its heading', () => {
     expect(readLinkText('[[Page#H]]')).toEqual({
@@ -378,10 +393,10 @@ describe('a connection under the Link cell’s three menu actions', () => {
       value: '[[Meeting Notes|Tomorrow]]',
     })
   })
-  it('an alias that would break the grammar is refused rather than written', () => {
+  it('an alias the wikilink grammar cannot spell is written in the markdown form', () => {
     expect(linkValueFromRename('Notes] done', '[[Meeting Notes]]')).toEqual({
       kind: 'link',
-      value: '[[Meeting Notes]]',
+      value: '[Notes\\] done](Meeting%20Notes)',
     })
   })
 })

@@ -263,6 +263,28 @@ describe('applyFilter — per type', () => {
     ).toEqual(['a'])
   })
 
+  it('text matches on what its connections show, and a Link value naming a heading is not empty', () => {
+    const rows = [
+      row('a', { props: { prop_notes: '[[Alpha|nice]] notes', prop_url: '[[#Setup]]' } }),
+      row('b', { props: { prop_notes: 'bread' } }),
+    ]
+    expect(
+      ids(rows, {
+        match: 'all',
+        rules: [{ property_id: 'prop_notes', op: 'contains', value: 'nice' }],
+      }),
+    ).toEqual(['a'])
+    expect(
+      ids(rows, {
+        match: 'all',
+        rules: [{ property_id: 'prop_notes', op: 'contains', value: 'Alpha' }],
+      }),
+    ).toEqual([])
+    expect(
+      ids(rows, { match: 'all', rules: [{ property_id: 'prop_url', op: 'is_empty' }] }),
+    ).toEqual(['b'])
+  })
+
   it('select and title: is / is_not fold case', () => {
     const rows = [
       row('Bread', { props: { prop_sel: 'alpha' } }),

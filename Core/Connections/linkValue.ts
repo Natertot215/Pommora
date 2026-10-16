@@ -1,16 +1,18 @@
 import {
-  connectionText,
-  expressibleInLink,
   keepsAlias,
   type LinkOccurrence,
   type LinkStatus,
+  linkOccurrences,
+  namesTarget,
+  type PageName,
+  pageLinkText,
   targetSpan,
   wholeLink,
 } from './connections'
+import { codeMask } from '../MarkdownPM/Engine/markdownCode'
 import {
   defaultLabel,
   markdownLink,
-  markdownPageLink,
   targetFragment,
   targetNamesFile,
   targetTitle,
@@ -31,7 +33,7 @@ export type LinkTarget =
       syntax: 'markdown' | 'bare'
       url: string
       alias?: string
-      page?: { title: string; heading?: string }
+      page?: PageName
     }
 
 /** What a written link resolves to, through the one index: a page, this document's own heading, an address, or nothing, with why. */
@@ -134,16 +136,7 @@ export const wikiTitle = (raw: string): string | null => {
   return t?.kind === 'page' && t.syntax === 'wiki' ? t.title : null
 }
 
-/** Whether a link's shown text only names what it targets — the page's title or the heading, as a picked link's default label does — rather than giving it a name. */
-export function showsTarget(shown: string, target: { title: string; heading?: string }): boolean {
-  const key = normalizeTitle(shown)
-  return (
-    key === normalizeTitle(target.title) ||
-    (!!target.heading && key === normalizeTitle(target.heading))
-  )
-}
-
-/** The alias a link of either syntax shows for the one page it names, where that page can hold it and it names more than the target. Against `was`, how the link read before, neither the alias it already showed that page nor the target it showed counts: a label kept through a retarget is the old target, not a name given. */
+/** The alias a link of either syntax shows for the one page it names, where that page can hold it and it names more than the target. A link naming a heading never remembers: its shown text names the section, not the page. Against `was`, how the link read before, neither the alias it already showed that page nor the target it showed counts: a label kept through a retarget is the old target, not a name given. */
 export function shownAlias(
   text: string,
   index: PageIndex,
@@ -152,14 +145,14 @@ export function shownAlias(
   const written = readLinkText(text)
   const target = resolveLink(written, index)
   const alias = written?.alias
-  if (target.kind !== 'page' || !alias) return null
-  const { page, heading } = target
-  if (!keepsAlias(alias, page.title) || showsTarget(alias, { title: page.title, heading }))
+  if (target.kind !== 'page' || target.heading || !alias || !keepsAlias(alias, target.page.title))
     return null
-  const before = was === undefined ? null : readLinkText(was)
-  if (before?.kind === 'page') {
-    if (showsTarget(alias, before)) return null
-    if (before.alias === alias && index.resolve(before.title).page?.id === page.id) return null
+  const { page } = target
+  const wasWritten = was === undefined ? null : readLinkText(was)
+  const before = resolveLink(wasWritten, index)
+  if (before.kind === 'page') {
+    if (namesTarget(alias, { title: before.page.title, heading: before.heading })) return null
+    if (wasWritten?.alias === alias && before.page.id === page.id) return null
   }
   return { page, alias }
 }
@@ -171,7 +164,9 @@ export function serializeLink(url: string, label?: string): string {
 export function linkEditText(raw: string): string {
   const target = readLinkText(raw)
   if (!target) return raw
-  return target.kind === 'page' ? connectionText(target.title, target.heading) : target.url
+  return target.kind === 'page'
+    ? pageLinkText({ title: target.title, heading: target.heading }, 'wiki')
+    : target.url
 }
 
 export function linkValueFromEdit(
@@ -207,16 +202,26 @@ export function linkValueFromRename(alias: string, current: string): PropertyVal
   const named = alias.trim() || undefined
   const target = readLinkText(current)
   if (!target) return { kind: 'link', value: current }
-  const syntax = target.syntax === 'wiki' ? 'wiki' : 'markdown'
-  return { kind: 'link', value: retarget(syntax, { ...target, alias: named }).text }
+  return { kind: 'link', value: retarget('wiki', { ...target, alias: named }).text }
 }
 
-// No display means the raw URL: sort and filter must not move when a property's look changes.
 export function linkDisplayText(raw: string, display?: LinkDisplay, title?: string): string {
-  const target = readLinkText(raw)
-  if (!target) return raw
+  return shownText(readLinkText(raw), display, title) ?? raw
+}
+
+/** What a written link shows: its alias, a markdown link's default label, a wikilink's title, heading, or `Title § Heading`, or an address under its display; no display means the raw address, so sort and filter never move when a property's look changes. */
+function shownText(
+  target: LinkTarget | null,
+  display?: LinkDisplay,
+  title?: string,
+): string | null {
+  if (!target) return null
   if (target.alias) return target.alias
-  if (target.kind === 'page') return target.title
+  if (target.kind === 'page') {
+    if (target.syntax === 'markdown') return defaultLabel(target.title, target.heading)
+    if (!target.heading) return target.title
+    return target.title ? `${target.title} § ${target.heading}` : target.heading
+  }
   switch (display) {
     case 'link-title':
       return title ?? linkDomain(target.url)
@@ -225,6 +230,19 @@ export function linkDisplayText(raw: string, display?: LinkDisplay, title?: stri
     default:
       return normalizeLinkUrl(target.url)
   }
+}
+
+/** A text with each connection replaced by what it shows, so a Text value sorts and filters as it reads. */
+export function shownProse(text: string): string {
+  if (!text.includes('[[') && !text.includes('](')) return text
+  let out = ''
+  let at = 0
+  for (const o of linkOccurrences(text, codeMask(text))) {
+    const shown = shownText(readOccurrence(text, o)) ?? text.slice(o.full[0], o.full[1])
+    out += text.slice(at, o.full[0]) + shown
+    at = o.full[1]
+  }
+  return out + text.slice(at)
 }
 
 export interface LinkPaste {
@@ -244,9 +262,6 @@ export function linkPaste(url: string, display: LinkDisplay, title?: string): Li
   const awaits = display === 'link-title' && title === undefined && isHttpLink(url)
   return awaits ? { kind: 'link', text, awaits: url } : { kind: 'link', text }
 }
-
-export const connectionSpells = (target: { title: string; heading?: string }): boolean =>
-  expressibleInLink(target.title) && (!target.heading || expressibleInLink(target.heading))
 
 const sameTarget = (a: ResolvedLink, b: ResolvedLink): boolean => {
   if (a.kind === 'page' && b.kind === 'page')
@@ -270,19 +285,17 @@ export function keepsShown(
   return was.kind === 'unresolved' || sameTarget(was, resolveLink(next, index))
 }
 
-/** Writes a link to `next` in the syntax asked for, the markdown form where a wikilink can't spell it; whether an earlier alias rides along is `keepsShown`'s decision, folded into `next.alias` by the caller. */
+/** Writes a link to `next` in the syntax asked for, through the one page writer; whether an earlier alias rides along is `keepsShown`'s decision, folded into `next.alias` by the caller. */
 export function retarget(
   syntax: 'wiki' | 'markdown',
   next: LinkTarget,
   into?: { format: LinkDisplay; title?: string },
 ): LinkPaste {
-  if (next.kind === 'page') {
-    const text =
-      syntax === 'wiki' && connectionSpells(next)
-        ? connectionText(next.title, next.heading, next.alias)
-        : markdownPageLink(next.title, next.heading, next.alias)
-    return { kind: 'link', text }
-  }
+  if (next.kind === 'page')
+    return {
+      kind: 'link',
+      text: pageLinkText({ title: next.title, heading: next.heading, shown: next.alias }, syntax),
+    }
   const url = normalizeLinkUrl(next.url)
   if (next.alias) return { kind: 'link', text: serializeLink(url, next.alias) }
   return into ? linkPaste(url, into.format, into.title) : { kind: 'link', text: url }

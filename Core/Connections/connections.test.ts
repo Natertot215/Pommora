@@ -1,5 +1,14 @@
 import { describe, it, expect } from 'vitest'
-import { connectionText, expressibleInLink, keepsAlias, linkOccurrences } from './connections'
+import {
+  aliasSpells,
+  expressibleInLink,
+  keepsAlias,
+  linkOccurrences,
+  namesTarget,
+  pageLinkText,
+  repeatsTarget,
+  spellsAsWiki,
+} from './connections'
 import { codeMask } from '../MarkdownPM/Engine/markdownCode'
 
 const walk = (text: string) => linkOccurrences(text, codeMask(text))
@@ -56,34 +65,68 @@ describe('linkOccurrences', () => {
   })
 })
 
-describe('connectionText and expressibleInLink', () => {
+describe('pageLinkText and the slot rules', () => {
   it('writes a bare-fragment target with an empty title', () => {
-    expect(connectionText('', 'H')).toBe('[[#H]]')
+    expect(pageLinkText({ title: '', heading: 'H' }, 'wiki')).toBe('[[#H]]')
   })
   it('writes the heading before the alias, and spells a present-but-empty slot', () => {
-    expect(connectionText('A', 'H', 'x')).toBe('[[A#H|x]]')
-    expect(connectionText('A', '', '')).toBe('[[A#|]]')
+    expect(pageLinkText({ title: 'A', heading: 'H', shown: 'x' }, 'wiki')).toBe('[[A#H|x]]')
+    expect(pageLinkText({ title: 'A', heading: '', shown: '' }, 'wiki')).toBe('[[A#|]]')
   })
-  it('refuses text that would end a link early or split it', () => {
+  it('writes the markdown form where asked, or where a wikilink cannot spell a slot', () => {
+    expect(pageLinkText({ title: 'A', heading: 'H', shown: 'x' }, 'markdown')).toBe('[x](A#H)')
+    expect(pageLinkText({ title: 'A', shown: 'a]b' }, 'wiki')).toBe('[a\\]b](A)')
+    expect(pageLinkText({ title: 'A|B' }, 'wiki')).toBe('[A|B](A%7CB)')
+    expect(pageLinkText({ title: 'P', heading: 'x'.repeat(256) }, 'wiki')).toBe(
+      `[${'x'.repeat(256)}](P#${'x'.repeat(256)})`,
+    )
+  })
+  it('drops shown text that only repeats the target, asked of the title and heading together', () => {
+    expect(pageLinkText({ title: 'Alpha', shown: 'alpha' }, 'wiki')).toBe('[[Alpha]]')
+    expect(pageLinkText({ title: 'Page', heading: 'Intro', shown: 'Intro' }, 'wiki')).toBe(
+      '[[Page#Intro|Intro]]',
+    )
+    expect(pageLinkText({ title: 'Page', heading: 'Intro', shown: 'page#intro' }, 'wiki')).toBe(
+      '[[Page#Intro]]',
+    )
+  })
+  it('refuses text that would end a link early or split it, or overflow the slot', () => {
     expect(expressibleInLink('a|b')).toBe(false)
     expect(expressibleInLink('C#')).toBe(false)
     expect(expressibleInLink('x]')).toBe(false)
     expect(expressibleInLink('A]]B')).toBe(false)
     expect(expressibleInLink('A]B')).toBe(true)
+    expect(expressibleInLink('x'.repeat(256))).toBe(false)
+    expect(aliasSpells('a]b')).toBe(false)
+    expect(aliasSpells('a#b|c')).toBe(true)
+    expect(spellsAsWiki({ title: 'A', heading: 'H', shown: 'x' })).toBe(true)
+    expect(spellsAsWiki({ title: 'A', shown: 'x]' })).toBe(false)
+    expect(spellsAsWiki({ title: 'A', heading: 'H|I' })).toBe(false)
+  })
+})
+
+describe('repeatsTarget and namesTarget', () => {
+  it('repeats the target as `title` or `title#heading`, case folded', () => {
+    expect(repeatsTarget('alpha', 'Alpha')).toBe(true)
+    expect(repeatsTarget('alpha', 'Alpha', 'H')).toBe(false)
+    expect(repeatsTarget('alpha#h', 'Alpha', 'H')).toBe(true)
+  })
+  it('names the target by its title, its heading, or both', () => {
+    expect(namesTarget('Alpha', { title: 'Alpha', heading: 'H' })).toBe(true)
+    expect(namesTarget('h', { title: 'Alpha', heading: 'H' })).toBe(true)
+    expect(namesTarget('Alpha#H', { title: 'Alpha', heading: 'H' })).toBe(true)
+    expect(namesTarget('H', { title: 'Alpha' })).toBe(false)
+    expect(namesTarget('Mine', { title: 'Alpha', heading: 'H' })).toBe(false)
   })
 })
 
 describe('keepsAlias', () => {
-  it('refuses a blank name, one past the slot’s 255 characters, and the target', () => {
+  it('refuses a blank name, one past the slot’s 255 characters, one holding `]`, and the title', () => {
     expect(keepsAlias('', 'Alpha')).toBe(false)
     expect(keepsAlias('  ', 'Alpha')).toBe(false)
     expect(keepsAlias('x'.repeat(256), 'Alpha')).toBe(false)
     expect(keepsAlias('x'.repeat(255), 'Alpha')).toBe(true)
+    expect(keepsAlias('a]b', 'Alpha')).toBe(false)
     expect(keepsAlias('alpha', 'Alpha')).toBe(false)
-  })
-
-  it('connectionText drops an alias it refuses', () => {
-    expect(connectionText('Alpha', undefined, '   ')).toBe('[[Alpha]]')
-    expect(connectionText('Alpha', undefined, 'x'.repeat(256))).toBe('[[Alpha]]')
   })
 })

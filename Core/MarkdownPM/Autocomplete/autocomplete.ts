@@ -1,10 +1,11 @@
 import {
-  expressibleInLink,
   type LinkOccurrence,
   type LinkPart,
+  type PageName,
+  pageLinkText,
+  spellsAsWiki,
   wholeLink,
 } from '../../Connections/connections'
-import { connectionSpells, retarget } from '../../Connections/linkValue'
 import { normalizeTitle } from '../../Paths/caseFold'
 import {
   decodeLinkTarget,
@@ -121,7 +122,7 @@ export function headingRows(outline: readonly PageHeading[], query: string): Hea
   return outline
     .filter((h) => {
       const key = normalizeTitle(h.text)
-      if (!key.startsWith(q) || seen.has(key) || !expressibleInLink(h.text)) return false
+      if (!key.startsWith(q) || seen.has(key)) return false
       seen.add(key)
       return true
     })
@@ -164,11 +165,8 @@ export function commitEdit(
   const syntax = ac.syntax === 'markdown' ? 'markdown' : 'wiki'
   const closer = ac.closed ? '' : CLOSER[ac.syntax]
   // A whole-link write rests past what it wrote, or inside the slot it opened, read back from the written text through the grammar, so a writer falling back to the other syntax still seats the caret right.
-  const whole = (
-    name: { title: string; heading?: string; alias?: string },
-    open?: 'heading' | 'shown',
-  ) => {
-    const { text } = retarget(syntax, { kind: 'page', syntax, ...name })
+  const whole = (name: PageName & { shown?: string }, open?: 'heading' | 'shown') => {
+    const text = pageLinkText(name, syntax)
     const slot = open && wholeLink(text)?.[open]
     return {
       changes: [{ from: ac.start, to: ac.end, insert: text }],
@@ -183,15 +181,19 @@ export function commitEdit(
     case 'title': {
       const open = opts.openHeading ? 'heading' : opts.openAlias ? 'shown' : undefined
       // Opening a slot writes it empty; a link written in markdown keeps an empty label when opening its heading, for the heading pick to fill, since the label's default is drawn, not written.
-      const asMarkdown = !(syntax === 'wiki' && connectionSpells({ title: value }))
-      const alias =
+      const asMarkdown = !(syntax === 'wiki' && spellsAsWiki({ title: value, shown: opts.kept }))
+      const shown =
         open === 'shown' ? '' : (opts.kept ?? (open === 'heading' && asMarkdown ? '' : undefined))
-      return whole({ title: value, heading: open === 'heading' ? '' : undefined, alias }, open)
+      return whole({ title: value, heading: open === 'heading' ? '' : undefined, shown }, open)
     }
     case 'heading': {
-      // A heading pick never re-aims the link, so it writes in place; one opening the alias slot finds it empty, since only a link showing nothing opens it, and a wikilink's lone empty pipe gives way to the one it writes.
+      // A heading pick never re-aims the link, so it writes in place; one opening the alias slot finds it empty, since only a link showing nothing opens it, and a wikilink's lone empty pipe gives way to the one it writes. A wikilink that can't spell the heading is written whole, falling to the markdown form with its title as written.
+      const title = ac.title ?? ''
+      const open = opts.openAlias ? 'shown' : undefined
+      if (ac.syntax === 'wiki' && !spellsAsWiki({ title, heading: value, shown: opts.kept }))
+        return whole({ title, heading: value, shown: open ? '' : opts.kept }, open)
       const written = ac.syntax === 'markdown' ? encodeLinkTarget(value) : value
-      if (!opts.openAlias) return inserted(written)
+      if (!open) return inserted(written)
       if (ac.syntax === 'markdown')
         return {
           changes: [{ from: ac.from, to: ac.to, insert: written + closer }],

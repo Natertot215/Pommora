@@ -360,6 +360,8 @@ describe('a pick turns into a selection or a write, for both syntaxes', () => {
     expect(written('[[P]]', 'link:remove')).toBe('P')
     expect(written('[[P#H]]', 'link:remove')).toBe('P § H')
     expect(written('[[#H]]', 'link:remove')).toBe('H')
+    expect(written('[](P#H)', 'link:remove')).toBe('H')
+    expect(written('[](https://a.com)', 'link:remove')).toBe('https://a.com')
   })
 
   it('Delete writes nothing in the link’s place', () => {

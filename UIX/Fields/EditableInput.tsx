@@ -2,7 +2,10 @@ import { useEffect, useRef } from 'react'
 import { cx } from '../Utilities/cx'
 import { autoSizeWrap, autoSizeMirror, autoSizeInput, invalidInput } from './fields.css'
 
-/** `settled` marks the edit over: the commit's blur or an Escape sets it, so Escape's own blur commits nothing, and focus clears it, so a field that stays mounted keeps saving. Enter commits through the blur it causes. */
+/** How an edit ended: by Enter or Escape, or by the focus leaving. */
+export type EditEnd = { by: 'key' | 'blur' }
+
+/** `settled` marks the edit over: the commit's blur or an Escape sets it, so Escape's own blur commits nothing, and focus clears it, so a field that stays mounted keeps saving. Enter commits through the blur it causes, and `how` tells the caller whether a key or the focus leaving ended the edit. */
 export function EditableInput({
   initial,
   className,
@@ -36,10 +39,11 @@ export function EditableInput({
   invalid?: (text: string) => boolean
   /** A blank commit restores the field and cancels: a name, not a value. */
   required?: boolean
-  onCommit: (next: string) => void
-  onCancel: () => void
+  onCommit: (next: string, how: EditEnd) => void
+  onCancel: (how: EditEnd) => void
 }): React.JSX.Element {
   const settled = useRef(false)
+  const byKey = useRef(false)
   const mirror = useRef<HTMLSpanElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   useEffect(() => {
@@ -80,6 +84,7 @@ export function EditableInput({
         if (e.key === 'Enter') {
           // Focus can restore to the trigger before the default action runs, reopening the picker on the same press.
           e.preventDefault()
+          byKey.current = true
           e.currentTarget.blur()
         } else if (e.key === 'Escape') {
           // Window-level closers stand down on a prevented press, so cancelling never also takes down the host surface.
@@ -88,18 +93,20 @@ export function EditableInput({
           e.currentTarget.value = initial
           // A focused field removed from the DOM fires no blur, stranding the drawn caret.
           e.currentTarget.blur()
-          onCancel()
+          onCancel({ by: 'key' })
         }
       }}
       onBlur={(e) => {
         if (settled.current) return
         settled.current = true
+        const how: EditEnd = { by: byKey.current ? 'key' : 'blur' }
+        byKey.current = false
         const next = e.currentTarget.value.trim()
         if ((required && !next) || invalid?.(next)) {
           e.currentTarget.value = initial
-          return onCancel()
+          return onCancel(how)
         }
-        onCommit(next)
+        onCommit(next, how)
       }}
     />
   )

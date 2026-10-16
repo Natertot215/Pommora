@@ -51,7 +51,10 @@ describe('EditableInput in a field that stays mounted', () => {
     act(() => input.focus())
     input.value = 'Beta'
     press(input, 'Enter')
-    expect(onCommit.mock.calls).toEqual([['Alpha'], ['Beta']])
+    expect(onCommit.mock.calls).toEqual([
+      ['Alpha', { by: 'blur' }],
+      ['Beta', { by: 'key' }],
+    ])
   })
 
   it('an Escape commits nothing, shows the stored text, and leaves later edits saving', () => {
@@ -61,13 +64,13 @@ describe('EditableInput in a field that stays mounted', () => {
     act(() => input.focus())
     input.value = 'Typed'
     press(input, 'Escape')
-    expect(onCancel).toHaveBeenCalledTimes(1)
+    expect(onCancel.mock.calls).toEqual([[{ by: 'key' }]])
     expect(onCommit).not.toHaveBeenCalled()
     expect(input.value).toBe('Alpha')
     act(() => input.focus())
     input.value = 'Gamma'
     act(() => input.blur())
-    expect(onCommit.mock.calls).toEqual([['Gamma']])
+    expect(onCommit.mock.calls).toEqual([['Gamma', { by: 'blur' }]])
   })
 })
 
@@ -90,7 +93,7 @@ describe('EditableInput naming something', () => {
     act(() => input.focus())
     input.value = ''
     act(() => input.blur())
-    expect(onCancel).toHaveBeenCalledTimes(1)
+    expect(onCancel.mock.calls).toEqual([[{ by: 'blur' }]])
     expect(onCommit).not.toHaveBeenCalled()
     expect(input.value).toBe('Gamma')
   })
@@ -151,7 +154,7 @@ describe('EditableInput marking text that will not commit', () => {
     const input = host.querySelector('input') as HTMLInputElement
     input.value = 'x'
     press(input, 'Enter')
-    expect(onCancel).toHaveBeenCalledTimes(1)
+    expect(onCancel.mock.calls).toEqual([[{ by: 'key' }]])
     expect(onCommit).not.toHaveBeenCalled()
     expect(input.value).toBe('12')
   })

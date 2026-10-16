@@ -1,12 +1,12 @@
 import type { EditorView } from '@codemirror/view'
 import { EditorSelection, type EditorState } from '@codemirror/state'
 import type { LinkAction } from '../../Actions/connectionMenu'
-import { unescapeLabel } from '../../Connections/links'
 import { targetSpan } from '../../Connections/connections'
-import { linkPaste } from '../../Connections/linkValue'
+import { linkDisplayText, linkPaste } from '../../Connections/linkValue'
+import { normalizeLinkUrl } from '../../Paths/urlPath'
 import type { LinkDisplay } from '../../Properties/properties'
 import type { MarkdownScope } from '../Engine/detect'
-import { aliasedToken, headingOf, type LinkKind, type TokenOf } from '../Engine/tokens'
+import { aliasedToken, type LinkKind, type TokenOf } from '../Engine/tokens'
 import type { Span } from '../Engine/markdownCode'
 import { docScan, docString } from '../docCache'
 import { slotAt } from '../Input/edits'
@@ -19,13 +19,6 @@ import { writeLinkAt } from './pendingTitle'
 type LinkEdit =
   | { kind: 'select'; range: Span }
   | { kind: 'write'; from: number; to: number; text: string; awaits?: string; select?: number }
-
-function shownConnection(text: string, tk: TokenOf<'wikiLink'>): string {
-  const heading = aliasedToken(tk) ? undefined : headingOf(text, tk)
-  if (!heading) return text.slice(tk.contentRange[0], tk.contentRange[1])
-  const title = text.slice(...tk.link.title)
-  return title ? `${title} § ${heading}` : heading
-}
 
 export function linkEdit(
   text: string,
@@ -46,12 +39,7 @@ export function linkEdit(
     case 'editLink':
       return { kind: 'select', range: tk.kind === 'link' ? targetSpan(tk.link) : tk.link.title }
     case 'link:remove':
-      return {
-        kind: 'write',
-        from: s,
-        to: e,
-        text: tk.kind === 'link' ? unescapeLabel(text.slice(cs, ce)) : shownConnection(text, tk),
-      }
+      return { kind: 'write', from: s, to: e, text: linkDisplayText(text.slice(s, e)) }
     case 'link:delete':
       return { kind: 'write', from: s, to: e, text: '' }
     case 'format:link-full':
@@ -72,7 +60,7 @@ function formatted(
   titles: Pick<EditorHost['linkTitles'], 'get'>,
 ): LinkEdit {
   const url = text.slice(...targetSpan(tk.link))
-  const write = linkPaste(url, display, titles.get(url) ?? undefined)
+  const write = linkPaste(url, display, titles.get(normalizeLinkUrl(url)) ?? undefined)
   return {
     kind: 'write',
     from: tk.range[0],

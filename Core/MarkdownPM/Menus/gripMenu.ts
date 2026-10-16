@@ -1,5 +1,5 @@
 import { EditorView } from '@codemirror/view'
-import { connectionText, expressibleInLink, pageEmbedText } from '../../Connections/connections'
+import { expressibleInLink, pageEmbedText, pageLinkText } from '../../Connections/connections'
 import type { GripMenuContext, HeadingLevel, ListKind } from '../../Actions/gripMenu'
 import type { PickItem } from '../../Actions/menuModel'
 import { COPY_LINK_ROW } from '../../Actions/pageMenu'
@@ -76,7 +76,7 @@ function popHeadingMenu(view: EditorView, headingEl: HTMLElement): void {
   const level = openedParts.hashes.length
   const host = view.state.facet(editorHost)
   const title = host.pageTitle()
-  const linkable = title !== null && expressibleInLink(openedParts.content.trim())
+  const linkable = title !== null
   void host.menus
     .grip({ kind: 'heading', level, linkable, editable: !view.state.readOnly })
     .then((action) => {
@@ -89,7 +89,9 @@ function popHeadingMenu(view: EditorView, headingEl: HTMLElement): void {
       const contentStart = line.from + parts.contentStart
       if (action === 'rename') focusRange(view, contentStart, line.to)
       else if (action === COPY_LINK_ROW.action && title !== null)
-        void host.clipboard.write(connectionText(title, parts.content.trim() || undefined))
+        void host.clipboard.write(
+          pageLinkText({ title, heading: parts.content.trim() || undefined }, 'wiki'),
+        )
       else if (action === 'delete') {
         const span = blockDeleteSpan(doc, { from: line.from, to: line.to })
         view.dispatch({

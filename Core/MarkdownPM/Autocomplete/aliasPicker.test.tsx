@@ -250,6 +250,17 @@ describe('the body picker’s alias list', () => {
     expect(view.state.selection.main.head).toBe(8)
   })
 
+  it('an editor torn down under an open rename ends the edit without a view to return to', async () => {
+    await openPicker()
+    await act(async () => {
+      nameOf('the plan').dispatchEvent(new MouseEvent('dblclick', { bubbles: true, detail: 2 }))
+    })
+    expect(document.activeElement).toBe(input())
+    await cleanupEditor()
+    await settle()
+    expect(input()).toBeNull()
+  })
+
   it('focus leaving a pane field for elsewhere closes the picker and collapses the empty slot', async () => {
     const view = await openPicker()
     const elsewhere = document.createElement('button')

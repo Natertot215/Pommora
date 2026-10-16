@@ -533,7 +533,7 @@ describe('the chevron slides in a page’s headings', () => {
   })
 
   // The same slide, written into a markdown link's destination.
-  it('the chevron in ( ) writes the page and its #, lists its headings, and Return finishes past the ), giving the page its label', async () => {
+  it('the chevron in ( ) writes the page and its #, lists its headings, and Return finishes past the ), remembering nothing from a link naming a heading', async () => {
     const view = await mountEditor({ initialBody: '[x](Not)', connections: headingConn })
     vi.spyOn(view, 'coordsAtPos').mockReturnValue(coords)
     const edit = vi.spyOn(harnessState().host.aliases, 'edit')
@@ -547,7 +547,7 @@ describe('the chevron slides in a page’s headings', () => {
     await press(view, 'Enter')
     expect(view.state.doc.toString()).toBe('[x](Notes#Setup)')
     expect(view.state.selection.main.head).toBe(view.state.doc.length)
-    expect(edit.mock.calls).toEqual([['pNotes', { op: 'add', alias: 'x' }]])
+    expect(edit.mock.calls).toEqual([])
   })
 
   it('the chevron leaves an empty label, which the heading fills once the pick rests past the link', async () => {

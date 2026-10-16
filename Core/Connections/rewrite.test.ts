@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { rewriteConnections, rewriteHeadingConnections } from './rewrite'
+import { linksIn } from './scan'
 
 describe('rewriteConnections', () => {
   it('rewrites a normalized-matching link to the new title', () => {
@@ -29,6 +30,7 @@ describe('rewriteConnections', () => {
     expect(rewriteConnections('[[Old|old]] [[Old#H|Old]]', 'Old', 'New')).toBe(
       '[[New]] [[New#H|New]]',
     )
+    expect(rewriteConnections('[[Old#Intro|Old#Intro]]', 'Old', 'New')).toBe('[[New#Intro]]')
   })
 
   it('never gives a bare fragment a title: `[[#H]]` on the renamed page stays as written', () => {
@@ -219,9 +221,44 @@ describe('rewriteHeadingConnections', () => {
     ).toBe('[[#§Start]] [[P#§Start]] §§Start')
   })
 
-  it('never writes a heading the link grammar cannot express', () => {
+  it('writes a heading the wikilink grammar cannot spell in the markdown form', () => {
     expect(rewriteHeadingConnections('[[#Old]] [x](#Old)', 'P', 'Old', 'A | B', 'P')).toBe(
-      '[[#Old]] [x](#A%20%7C%20B)',
+      '[A | B](#A%20%7C%20B) [x](#A%20%7C%20B)',
+    )
+    expect(rewriteHeadingConnections('[[P#Old|Mine]]', 'P', 'Old', 'A|B')).toBe('[Mine](P#A%7CB)')
+  })
+
+  it('a lone embed falling back stays an embed line in markdown form', () => {
+    expect(rewriteHeadingConnections('![[A#Old]]', 'A', 'Old', 'A|B')).toBe('![A|B](A#A%7CB)')
+    const hits = [...linksIn('![A|B](A#A%7CB)')]
+    expect(hits.map((h) => [h.syntax, h.embed, h.qualifier])).toEqual([['markdown', true, 'a|b']])
+  })
+
+  it('drops an alias that comes to repeat the renamed heading’s target', () => {
+    expect(rewriteHeadingConnections('[[P#Old|P#Old]]', 'P', 'Old', 'New')).toBe('[[P#New]]')
+    expect(rewriteHeadingConnections('[[P#Old|P#New]]', 'P', 'Old', 'New')).toBe('[[P#New]]')
+  })
+
+  it('carries a markdown label that named the heading, compared decoded', () => {
+    expect(
+      rewriteHeadingConnections('[Setup Notes](P#Setup%20Notes)', 'P', 'Setup Notes', 'Usage'),
+    ).toBe('[Usage](P#Usage)')
+  })
+
+  it('inside a table row, escapes a pipe the new heading carries and keeps the columns', () => {
+    const table = (row: string) => `| A | B | C |\n| --- | --- | --- |\n${row}`
+    expect(
+      rewriteHeadingConnections(
+        table('| [[P#Old]] | [x](P#Old) | §Old |'),
+        'P',
+        'Old',
+        'A|B',
+        'P',
+        ['Old'],
+      ),
+    ).toBe(table('| [A\\|B](P#A%7CB) | [x](P#A%7CB) | §A\\|B |'))
+    expect(rewriteHeadingConnections(table('| [[P#Old|Old]] |'), 'P', 'Old', 'New')).toBe(
+      table('| [[P#New|New]] |'),
     )
   })
 

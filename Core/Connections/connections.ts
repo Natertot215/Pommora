@@ -1,5 +1,5 @@
 import { normalizeTitle } from '../Paths/caseFold'
-import { markdownLinkRegex, namesPage } from './links'
+import { markdownLinkRegex, markdownPageLink, namesPage } from './links'
 import {
   type CodeMask,
   codeTouches,
@@ -106,24 +106,57 @@ export function wholeLink(text: string): LinkOccurrence | null {
   )
 }
 
-/** A name a page can hold as an alias: one a link's alias slot carries — not blank, within the slot's 255 characters, without `]` or a line break — and never `target` itself. */
-export const keepsAlias = (name: string, target: string): boolean =>
-  name.trim() !== '' &&
-  name.length <= 255 &&
-  !/[\]\r\n]/.test(name) &&
-  normalizeTitle(name) !== normalizeTitle(target)
+/** A page named by title, and by heading where the link names one: the shape every rule and writer below takes. */
+export type PageName = { title: string; heading?: string }
+
+/** What any slot of a wikilink can hold: the grammar's 255 characters and no line break. */
+const fitsSlot = (s: string): boolean => s.length <= 255 && !/[\r\n]/.test(s)
+
+/** What the title or heading slot can spell: `|` and `#` would open the next slot, and `]]` or a trailing `]` would close the link. */
+export const expressibleInLink = (text: string): boolean =>
+  fitsSlot(text) && !/[|#]/.test(text) && !text.includes(']]') && !text.endsWith(']')
+
+/** What the alias slot can spell: anything but `]`. */
+export const aliasSpells = (alias: string): boolean => fitsSlot(alias) && !alias.includes(']')
+
+/** Whether a wikilink can spell every slot of a page link; every writer falls back to the markdown form otherwise. */
+export const spellsAsWiki = (t: PageName & { shown?: string }): boolean =>
+  expressibleInLink(t.title) &&
+  (t.heading === undefined || expressibleInLink(t.heading)) &&
+  (t.shown === undefined || aliasSpells(t.shown))
+
+/** Whether shown text only repeats a target, `title` or `title#heading`, so the link draws the same without it: the one drop rule. */
+export const repeatsTarget = (shown: string, title: string, heading?: string): boolean =>
+  normalizeTitle(shown) === normalizeTitle(heading === undefined ? title : `${title}#${heading}`)
+
+/** A name a page can hold as an alias: one the alias slot spells, not blank, and never the page's title itself. */
+export const keepsAlias = (name: string, title: string): boolean =>
+  name.trim() !== '' && aliasSpells(name) && !repeatsTarget(name, title)
+
+/** Whether shown text names its target, the title, the heading, or both, rather than giving it a name: what a rename carries along and what memory never keeps. */
+export const namesTarget = (shown: string, t: PageName): boolean =>
+  repeatsTarget(shown, t.title) ||
+  (t.heading !== undefined &&
+    (repeatsTarget(shown, t.heading) || repeatsTarget(shown, t.title, t.heading)))
 
 /** A present-but-empty heading or alias spells its slot (`[[A#]]`, `[[A|]]`): the picker opens a slot by writing it. */
-export function connectionText(title: string, heading?: string, alias?: string): string {
+function connectionText(title: string, heading?: string, alias?: string): string {
   const target = heading === undefined ? title : `${title}#${heading}`
   const named =
-    alias !== undefined && (alias === '' || keepsAlias(alias, target)) ? alias : undefined
+    alias !== undefined && (alias === '' || !repeatsTarget(alias, title, heading))
+      ? alias
+      : undefined
   return named === undefined ? `[[${target}]]` : `[[${target}|${named}]]`
 }
 
-export function expressibleInLink(text: string): boolean {
-  return !/[|#\r\n]/.test(text) && !text.includes(']]') && !text.endsWith(']')
-}
+/** The one writer of a page link: a wikilink where every slot spells, the markdown form otherwise, so no writer leaves a slot unwritten, drops a name silently, or writes a link the grammar can't read back. */
+export const pageLinkText = (
+  t: PageName & { shown?: string },
+  prefer: 'wiki' | 'markdown',
+): string =>
+  prefer === 'wiki' && spellsAsWiki(t)
+    ? connectionText(t.title, t.heading, t.shown)
+    : markdownPageLink(t.title, t.heading, t.shown)
 
 export function pageEmbedText(title: string): string {
   return `![[${title}]]`
