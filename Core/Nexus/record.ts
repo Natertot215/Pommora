@@ -1,4 +1,4 @@
-// The tree's one walk, and the lookups both processes project from it.
+// The tree's entities as one list, and the lookups both processes project from it.
 
 import { buildPageIndex, type ConnPage, type PageIndex } from '../Connections/pageIndex'
 import { contextDirRel } from '../Paths/nexusPaths'
@@ -47,7 +47,7 @@ export const recordsOf = entityMemo([(t) => t.contexts], (tree): readonly Entity
 
 /** The first record listed under each id. */
 export const recordById = entityMemo(
-  [(t) => t.contexts],
+  [recordsOf],
   (tree): Readonly<Record<string, EntityRecord>> => {
     const byId: Record<string, EntityRecord> = {}
     for (const r of recordsOf(tree)) byId[r.id] ??= r

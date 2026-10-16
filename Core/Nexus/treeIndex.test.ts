@@ -6,7 +6,7 @@ import {
   navKeysOf,
   nodesOf,
   reconcileIndexOf,
-  recordsByIdOf,
+  nodesByIdOf,
   resolveIndexOf,
   searchEntriesOf,
   spaceLinksOf,
@@ -75,6 +75,19 @@ describe('resolveIndexOf', () => {
     expect(ix.get('set:s1')?.path.map((c) => c.title)).toEqual(['Notes'])
     expect(ix.has('context:g1')).toBe(false)
   })
+  it('a page in a set inside a set trails through both', () => {
+    const t = makeTree()
+    t.collections[0].sets?.[0].sets?.push({
+      kind: 'set',
+      id: 's2',
+      title: 'Deep',
+      path: 'Notes/Ideas/Deep',
+      pages: [{ kind: 'page', id: 'p3', title: 'Gamma', path: 'Notes/Ideas/Deep/Gamma.md' }],
+      sets: [],
+    })
+    const ix = resolveIndexOf(t)
+    expect(ix.get('page:p3')?.path.map((c) => c.title)).toEqual(['Notes', 'Ideas', 'Deep'])
+  })
 })
 
 describe('searchEntriesOf', () => {
@@ -112,6 +125,8 @@ describe('page icons', () => {
     expect(resolveIndexOf(iconed)).not.toBe(resolveIndexOf(t))
     expect(resolveIndexOf(t).get('page:p1')?.icon).not.toBe('star')
     expect(pageIndexOf(iconed)).toBe(pageIndexOf(t))
+    expect(searchEntriesOf(iconed)).toBe(searchEntriesOf(t))
+    expect(navKeysOf(iconed)).toBe(navKeysOf(t))
   })
 })
 
@@ -120,7 +135,7 @@ describe('the connections projections', () => {
     const t = makeTree()
     expect(pagesOf(t).map((p) => p.id)).toEqual(['p1', 'p2'])
     expect(pagesByIdOf(t).get('p2')?.path).toBe('Notes/Ideas/Beta.md')
-    expect(recordsByIdOf(t).get('p2')?.path).toBe('Notes/Ideas/Beta.md')
+    expect(nodesByIdOf(t).get('p2')?.path).toBe('Notes/Ideas/Beta.md')
   })
 
   it('pageIndexOf resolves and autocompletes over the projected pages', () => {

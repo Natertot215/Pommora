@@ -39,7 +39,7 @@ export function buildPageIndex(pages: readonly ConnPage[]): PageIndex {
     if (holders) holders.push(p)
     else byTitle.set(norm, [p])
   }
-  // Sorted on the first autocomplete, not at build: the index rebuilds on every tree change, and most never reach a picker.
+  // Sorted on the first autocomplete, not at build: the index rebuilds whenever the pages change, and most builds (the host's always) never reach a picker.
   let alphabetical: typeof entries | null = null
   const holdersOf = (rawTitle: string): readonly ConnPage[] =>
     byTitle.get(normalizeTitle(rawTitle)) ?? []
