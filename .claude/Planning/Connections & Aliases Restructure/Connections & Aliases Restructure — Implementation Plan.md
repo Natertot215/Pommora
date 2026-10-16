@@ -253,7 +253,7 @@ Sixty ways of doing thirty things disappear; every row's "after" has one named o
   - [x] Task 8-2 · The Link field, Rename, and the single-line Text field mount it
   - [x] Task 8-3 · The live drive and the field tests follow
   - [x] Review Checkpoint
-- [ ] `[Compaction Checkpoint 3: c/pre-compaction with the MANDATE and PRINCIPLES re-instilled and the Phase 8 measurement in hand; stop, and continue only when re-prompted]`
+- [x] `[Compaction Checkpoint 3: c/pre-compaction with the MANDATE and PRINCIPLES re-instilled and the Phase 8 measurement in hand; stop, and continue only when re-prompted]`
 - [ ] **Phase 9** — Documentation and the Ledger
   - [ ] Task 9-1 · The feature documents read true
   - [ ] Task 9-2 · The planning documents and W22 reconcile
@@ -289,13 +289,13 @@ The floor is −100 (the owner's ruling, 10-15-2026). Both estimates sit below i
 
 **CHANGE**
 
-- [ ] Write `Core/Connections/pageIndex.test.ts`'s `holders` cases and watch them fail: `holders('alpha')` returns every page whose normalized title matches, in tree order; `holders('nothing')` is `[]`; `resolve` derives from it (one holder resolved, two ambiguous, none phantom).
-- [ ] In `record.ts`, add `icon?` to `EntityRecord`, let `recordsOf`'s `add` carry it, and add `pagesOf`, `pagesByIdOf` (with its one-line reason), `livePagePath`, and `pageIndexOf` on `entityMemo([])`. A record's container is its path's directory (a page's or set's folder, a space's context folder, nothing for a collection), which the renderer derives with `relDirname` rather than the walk carrying it.
-- [ ] In `pageIndex.ts`, remove `ConnPage.icon`, add `holders` to the interface, and derive `resolve` from `holdersOf`.
-- [ ] Repoint `TileHost.tsx:220` to `tree.config.pageMetadata[page.id]?.icon`.
-- [ ] In `remintLedger.ts:17-27`, build `entries` and `claimants` in `projectBaseline`'s one pass through `plain`, so the persisted baseline keeps its four-field shape.
-- [ ] Move the eleven imports: `propertyMenuActions.ts:107`, `PageHistoryWindow.tsx:39,72` (`livePagePath` from `record`, `trailOf` stays on `treeIndex`), `matrixInput.ts:63`, `navResolve.ts:44` (and `navResolve.test.ts`), `editorHost.tsx:53`, `assignValue.ts:57`, `matrixSlice.ts:181,187` (`recordsByIdOf`, renamed `nodesByIdOf` beside `nodesOf`, stays on `treeIndex` with its five readers), `nexusSlice.ts:253`, `pageConnections.ts:31`, `useBridgeSubscriptions.ts:56`, `TileHost.tsx:100`.
-- [ ] `destinationTree.test.ts`'s `treeOf` fixture gains `contexts: []` (`recordsOf` reads it).
+- [x] Write `Core/Connections/pageIndex.test.ts`'s `holders` cases and watch them fail: `holders('alpha')` returns every page whose normalized title matches, in tree order; `holders('nothing')` is `[]`; `resolve` derives from it (one holder resolved, two ambiguous, none phantom).
+- [x] In `record.ts`, add `icon?` to `EntityRecord`, let `recordsOf`'s `add` carry it, and add `pagesOf`, `pagesByIdOf` (with its one-line reason), `livePagePath`, and `pageIndexOf` on `entityMemo([])`. A record's container is its path's directory (a page's or set's folder, a space's context folder, nothing for a collection), which the renderer derives with `relDirname` rather than the walk carrying it.
+- [x] In `pageIndex.ts`, remove `ConnPage.icon`, add `holders` to the interface, and derive `resolve` from `holdersOf`.
+- [x] Repoint `TileHost.tsx:220` to `tree.config.pageMetadata[page.id]?.icon`.
+- [x] In `remintLedger.ts:17-27`, build `entries` and `claimants` in `projectBaseline`'s one pass through `plain`, so the persisted baseline keeps its four-field shape.
+- [x] Move the eleven imports: `propertyMenuActions.ts:107`, `PageHistoryWindow.tsx:39,72` (`livePagePath` from `record`, `trailOf` stays on `treeIndex`), `matrixInput.ts:63`, `navResolve.ts:44` (and `navResolve.test.ts`), `editorHost.tsx:53`, `assignValue.ts:57`, `matrixSlice.ts:181,187` (`recordsByIdOf`, renamed `nodesByIdOf` beside `nodesOf`, stays on `treeIndex` with its five readers), `nexusSlice.ts:253`, `pageConnections.ts:31`, `useBridgeSubscriptions.ts:56`, `TileHost.tsx:100`.
+- [x] `destinationTree.test.ts`'s `treeOf` fixture gains `contexts: []` (`recordsOf` reads it).
 
 **AFTER**
 
@@ -398,10 +398,10 @@ The floor is −100 (the owner's ruling, 10-15-2026). Both estimates sit below i
 
 **VERIFY**
 
-- [ ] `remintLedger.test.ts:76-81,98-104,191-196` pass unchanged (the `c5` `parent` edits don't carry over).
-- [ ] `pageIndex.test.ts`'s new `holders` cases pass.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `remintLedger.test.ts:76-81,98-104,191-196` pass unchanged (the `c5` `parent` edits don't carry over).
+- [x] `pageIndex.test.ts`'s new `holders` cases pass.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 1-2
 
@@ -411,8 +411,8 @@ The floor is −100 (the owner's ruling, 10-15-2026). Both estimates sit below i
 
 **CHANGE**
 
-- [ ] Rewrite `treeIndex.test.ts`: `:5-16` import `pageIndexOf`, `pagesByIdOf`, `pagesOf`, `recordById`, `recordsOf` from `./record`; `:108-118` becomes "a page resolves its icon from pageMetadata, and a pageMetadata-only change yields a new trail index but keeps the title index" (`expect(pageIndexOf(iconed)).toBe(pageIndexOf(t))`); `:201-213` holds `reconcileIndexOf`, `nodesOf`, `pageIndexOf`, `recordsOf` across a settings change and rebuilds `reconcileIndexOf` when `unreadable` moves. Watch the title-index identity case fail first.
-- [ ] Write `treeIndex.ts` as below; `nodesOf` builds parents through a `chains` map keyed by path, looking each record's container up by `relDirname(path)` (`Paths/posix.ts:37`, the tree patcher's own spelling); `treeIndex.test.ts` pins a page in a set, a page in a collection, and a space under its context resolving the same trails as today.
+- [x] Rewrite `treeIndex.test.ts`: `:5-16` import `pageIndexOf`, `pagesByIdOf`, `pagesOf`, `recordById`, `recordsOf` from `./record`; `:108-118` becomes "a page resolves its icon from pageMetadata, and a pageMetadata-only change yields a new trail index but keeps the title index" (`expect(pageIndexOf(iconed)).toBe(pageIndexOf(t))`); `:201-213` holds `reconcileIndexOf`, `nodesOf`, `pageIndexOf`, `recordsOf` across a settings change and rebuilds `reconcileIndexOf` when `unreadable` moves. Watch the title-index identity case fail first.
+- [x] Write `treeIndex.ts` as below; `nodesOf` builds parents through a `chains` map keyed by path, looking each record's container up by `relDirname(path)` (`Paths/posix.ts:37`, the tree patcher's own spelling); `treeIndex.test.ts` pins a page in a set, a page in a collection, and a space under its context resolving the same trails as today.
 
 **AFTER**
 
@@ -495,9 +495,9 @@ The floor is −100 (the owner's ruling, 10-15-2026). Both estimates sit below i
 
 **VERIFY**
 
-- [ ] `treeIndex.test.ts` passes, the title-index identity case included; `navResolve.test.ts` and `destinationTree.test.ts` pass.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes (no projection re-walks the tree; every memo lists what it reads).
+- [x] `treeIndex.test.ts` passes, the title-index identity case included; `navResolve.test.ts` and `destinationTree.test.ts` pass.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes (no projection re-walks the tree; every memo lists what it reads).
 
 #### Task 1-3
 
@@ -507,8 +507,8 @@ The floor is −100 (the owner's ruling, 10-15-2026). Both estimates sit below i
 
 **CHANGE**
 
-- [ ] Write `Core/Nexus/heldPages.test.ts` and watch it fail: `titleHeldOutside(root, 'Alpha', 'Notes/Alpha.md')` is false when only that file holds the title and true when a second page does; `frozenWorld(tree, ['Landing']).holds('landing')` is true for an arriving title and for a held one, false otherwise.
-- [ ] Write `heldPages.ts` as below.
+- [x] Write `Core/Nexus/heldPages.test.ts` and watch it fail: `titleHeldOutside(root, 'Alpha', 'Notes/Alpha.md')` is false when only that file holds the title and true when a second page does; `frozenWorld(tree, ['Landing']).holds('landing')` is true for an arriving title and for a held one, false otherwise.
+- [x] Write `heldPages.ts` as below.
 
 **AFTER**
 
@@ -552,9 +552,9 @@ The floor is −100 (the owner's ruling, 10-15-2026). Both estimates sit below i
 
 **VERIFY**
 
-- [ ] `heldPages.test.ts`, `cascade.test.ts`, and the rename and restore tests pass; `Desktop/hostGraph.test.ts` and `engineGraph.test.ts` stay green (`record.ts` now imports `pageIndex.ts`, which is host-clean).
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `heldPages.test.ts`, `cascade.test.ts`, and the rename and restore tests pass; `Desktop/hostGraph.test.ts` and `engineGraph.test.ts` stay green (`record.ts` now imports `pageIndex.ts`, which is host-clean).
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Review Checkpoint
 
@@ -578,11 +578,11 @@ The floor is −100 (the owner's ruling, 10-15-2026). Both estimates sit below i
 
 **CHANGE**
 
-- [ ] Rewrite `connections.test.ts:15-30` for the one shape (`shown` for both syntaxes; a markdown occurrence yields `title`, `heading`, `shown`), add `[](Page)` as an occurrence with an empty `shown` and `[x]()` as none, add `[[A]] [b](B)` yielding in start order, rewrite `:88,108-111` for the `(title, heading?, alias?)` order, and watch them fail. In `links.test.ts`, drop `:154-209` (`linkDestinationStart`), rewrite `:81-118,138,145` for the half-decoders (`targetTitle('A%23B', false)` → `A#B`, `targetTitle('https://example.com', false)` → null, `targetFragment('Intro%20A')` → `Intro A`), and add `encodeLinkTarget('C# Notes')` → `C%23%20Notes`, `markdownPageLink('P', 'H')` → `[H](P#H)`, `markdownPageLink('C# Notes', 'Intro')` round-tripping through `linkOccurrences` to title `C# Notes`, and `connectionText('A', 'H', 'x')` → `[[A#H|x]]`, `connectionText('A', '', '')` → `[[A#|]]`.
-- [ ] Export `type Span = [number, number]` from `Engine/markdownCode.ts`; `connections.ts`, `scan.ts`, `tokens.ts`, and `links.ts` import it and drop their local declarations; `docScan.ts:61`'s union (which also admits `{ from, to }`) is renamed `SpanLike`, with its one importer `blockModel.ts:3`.
-- [ ] Write `links.ts` and `connections.ts` as below; `composeWebpageEmbedLine`'s two callers (`pasteAsMenu.ts:108`, `embedInsert.ts:62`) write `` `!${markdownLink(url, '')}` ``; `serializeLink` (`linkValue.ts:111`) becomes `label ? markdownLink(url, label) : url`; `detect.ts:416,427` read `markdownLinkRegex()`.
-- [ ] Reorder `connectionText` to `(title, heading?, alias?)` and let a present-but-empty heading or alias spell its slot (`[[A#]]`, `[[A|]]`), which Phase 5's slot-opening picks need. Sweep its eight callers: `linkValue.ts:118`, `LinkCell.tsx:48`, `pageMenuActions.ts:54`, `gripMenu.ts:92` drop their `undefined`; `linkValue.ts:205` swaps its arguments (`connectionText(next.title, next.heading, shown)`, which compiles either way); `adoptFile.ts:53,64` and `assetWrite.ts:31` pass a title only and are untouched; confirm no caller passes `''` for an absent heading (`pageTarget` builds `heading` only when non-empty; `PageTarget.heading` is optional and read with `?.`).
-- [ ] `connections.ts`'s `parseConnectionText` reads `o.shown` for the alias (it folds into `wikiTitle` in Phase 3); `linkValue.ts`'s `readLinkText` reads the markdown halves from the occurrence as below (Task 3-1 replaces the function).
+- [x] Rewrite `connections.test.ts:15-30` for the one shape (`shown` for both syntaxes; a markdown occurrence yields `title`, `heading`, `shown`), add `[](Page)` as an occurrence with an empty `shown` and `[x]()` as none, add `[[A]] [b](B)` yielding in start order, rewrite `:88,108-111` for the `(title, heading?, alias?)` order, and watch them fail. In `links.test.ts`, drop `:154-209` (`linkDestinationStart`), rewrite `:81-118,138,145` for the half-decoders (`targetTitle('A%23B', false)` → `A#B`, `targetTitle('https://example.com', false)` → null, `targetFragment('Intro%20A')` → `Intro A`), and add `encodeLinkTarget('C# Notes')` → `C%23%20Notes`, `markdownPageLink('P', 'H')` → `[H](P#H)`, `markdownPageLink('C# Notes', 'Intro')` round-tripping through `linkOccurrences` to title `C# Notes`, and `connectionText('A', 'H', 'x')` → `[[A#H|x]]`, `connectionText('A', '', '')` → `[[A#|]]`.
+- [x] Export `type Span = [number, number]` from `Engine/markdownCode.ts`; `connections.ts`, `scan.ts`, `tokens.ts`, and `links.ts` import it and drop their local declarations; `docScan.ts:61`'s union (which also admits `{ from, to }`) is renamed `SpanLike`, with its one importer `blockModel.ts:3`.
+- [x] Write `links.ts` and `connections.ts` as below; `composeWebpageEmbedLine`'s two callers (`pasteAsMenu.ts:108`, `embedInsert.ts:62`) write `` `!${markdownLink(url, '')}` ``; `serializeLink` (`linkValue.ts:111`) becomes `label ? markdownLink(url, label) : url`; `detect.ts:416,427` read `markdownLinkRegex()`.
+- [x] Reorder `connectionText` to `(title, heading?, alias?)` and let a present-but-empty heading or alias spell its slot (`[[A#]]`, `[[A|]]`), which Phase 5's slot-opening picks need. Sweep its eight callers: `linkValue.ts:118`, `LinkCell.tsx:48`, `pageMenuActions.ts:54`, `gripMenu.ts:92` drop their `undefined`; `linkValue.ts:205` swaps its arguments (`connectionText(next.title, next.heading, shown)`, which compiles either way); `adoptFile.ts:53,64` and `assetWrite.ts:31` pass a title only and are untouched; confirm no caller passes `''` for an absent heading (`pageTarget` builds `heading` only when non-empty; `PageTarget.heading` is optional and read with `?.`).
+- [x] `connections.ts`'s `parseConnectionText` reads `o.shown` for the alias (it folds into `wikiTitle` in Phase 3); `linkValue.ts`'s `readLinkText` reads the markdown halves from the occurrence as below (Task 3-1 replaces the function).
 
 **AFTER**
 
@@ -775,9 +775,9 @@ The floor is −100 (the owner's ruling, 10-15-2026). Both estimates sit below i
 
 **VERIFY**
 
-- [ ] `connections.test.ts` and `links.test.ts` pass as rewritten; `detect.test.ts` passes (`loneWebpageEmbed` with an empty label still refuses an empty address).
-- [ ] The gates run at Task 2-4, once every reader of the occurrence has moved.
-- [ ] Check for unnecessary code or mistakes (no second markdown pattern, no second `#` split, no second template anywhere under `Core/`).
+- [x] `connections.test.ts` and `links.test.ts` pass as rewritten; `detect.test.ts` passes (`loneWebpageEmbed` with an empty label still refuses an empty address).
+- [x] The gates run at Task 2-4, once every reader of the occurrence has moved.
+- [x] Check for unnecessary code or mistakes (no second markdown pattern, no second `#` split, no second template anywhere under `Core/`).
 
 #### Task 2-2
 
@@ -787,9 +787,9 @@ The floor is −100 (the owner's ruling, 10-15-2026). Both estimates sit below i
 
 **CHANGE**
 
-- [ ] In `scan.test.ts`, rewrite `:222,237` (`embed: true`), `:255-265` (the section hit: `full`, `shown: null`, `embed: false`, no `at`), and add: `[[ #H]]` yields target own and qualifier `h`; a lone `![Alias](Zeta)` line yields `embed: true` and an inline `![x](Zeta)` yields `embed: false`; `[](Page)` yields with an empty `shown`. Watch them fail.
-- [ ] Write `scan.ts`'s hit and walk as below; `indexSeed.ts:56-57` reads `hit.embed` and `hit.full[0]`; `rewrite.ts` renames `alias` to `shown` at its reads (one-line interim renames; Task 6-2 rewrites the file).
-- [ ] Add a test to `indexSeed.test.ts`: a lone `![Alias](Zeta)` line gives an `embed` row; an inline one gives a `body` row.
+- [x] In `scan.test.ts`, rewrite `:222,237` (`embed: true`), `:255-265` (the section hit: `full`, `shown: null`, `embed: false`, no `at`), and add: `[[ #H]]` yields target own and qualifier `h`; a lone `![Alias](Zeta)` line yields `embed: true` and an inline `![x](Zeta)` yields `embed: false`; `[](Page)` yields with an empty `shown`. Watch them fail.
+- [x] Write `scan.ts`'s hit and walk as below; `indexSeed.ts:56-57` reads `hit.embed` and `hit.full[0]`; `rewrite.ts` renames `alias` to `shown` at its reads (one-line interim renames; Task 6-2 rewrites the file).
+- [x] Add a test to `indexSeed.test.ts`: a lone `![Alias](Zeta)` line gives an `embed` row; an inline one gives a `body` row.
 
 **AFTER**
 
@@ -883,9 +883,9 @@ The floor is −100 (the owner's ruling, 10-15-2026). Both estimates sit below i
 
 **VERIFY**
 
-- [ ] `scan.test.ts`, `indexSeed.test.ts`, `rewrite.test.ts` (renamed field reads only), `cascade.test.ts`, and `tilesFile` tests pass.
-- [ ] The gates run at Task 2-4.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `scan.test.ts`, `indexSeed.test.ts`, `rewrite.test.ts` (renamed field reads only), `cascade.test.ts`, and `tilesFile` tests pass.
+- [x] The gates run at Task 2-4.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 2-3
 
@@ -895,8 +895,8 @@ The floor is −100 (the owner's ruling, 10-15-2026). Both estimates sit below i
 
 **CHANGE**
 
-- [ ] In `tokens.test.ts`, rewrite `:119,126,155-181` (`resolveRange` reads become `tk.link.title`; a weblink's `link.heading` is `null`) and tighten `:140-152` so a shifted token's `link` spans are asserted shifted, not merely present. Watch them fail.
-- [ ] Write the token shape, helpers, `shiftToken`, and `linkToken` as below; sweep the readers above to `tk.link.title`, `tk.link.heading`, `tk.link.shown`.
+- [x] In `tokens.test.ts`, rewrite `:119,126,155-181` (`resolveRange` reads become `tk.link.title`; a weblink's `link.heading` is `null`) and tighten `:140-152` so a shifted token's `link` spans are asserted shifted, not merely present. Watch them fail.
+- [x] Write the token shape, helpers, `shiftToken`, and `linkToken` as below; sweep the readers above to `tk.link.title`, `tk.link.heading`, `tk.link.shown`.
 
 **AFTER**
 
@@ -991,9 +991,9 @@ The floor is −100 (the owner's ruling, 10-15-2026). Both estimates sit below i
 
 **VERIFY**
 
-- [ ] `tokens.test.ts`, `decorations` tests, `cellStatic` tests, and `format` tests pass; a `tsc` probe shows `TokenOf<'link'>['link']` typed as `LinkOccurrence`.
-- [ ] The gates run at Task 2-4.
-- [ ] Check for unnecessary code or mistakes (no reader derives a span the occurrence holds).
+- [x] `tokens.test.ts`, `decorations` tests, `cellStatic` tests, and `format` tests pass; a `tsc` probe shows `TokenOf<'link'>['link']` typed as `LinkOccurrence`.
+- [x] The gates run at Task 2-4.
+- [x] Check for unnecessary code or mistakes (no reader derives a span the occurrence holds).
 
 #### Task 2-4
 
@@ -1003,11 +1003,11 @@ The floor is −100 (the owner's ruling, 10-15-2026). Both estimates sit below i
 
 **CHANGE**
 
-- [ ] In `edits.test.ts`, rewrite `:886-898` for `slotAt` (returns the occurrence, the part, and the line start for a caret in a title, a heading, an alias, and a label, with a boundary between two slots answering the earlier slot; null in code and just past a closer) and `:901-924` for `openLinkAt` (`[[` just typed, `[[Al`, `[x](`, `[]()` with the caret between the parens, `[[A#`, each with the slot holding the placeholder cut back to the caret; a backtick before the caret keeps the code mask honest), and add a `linkAt` boundary case (a link holds the caret from past its opener through its closer, so the boundary between two abutting links belongs to the first, and an open link typed flush against a following one still reads) and an `isLiteralAt` case (a dash typed just past a closer is transformed). `headingHash.test.ts` imports `headingHash` from `../Input/edits`; its empty cases (`[[]]`, `![[]]`, `[a]()`) hold through the placeholder. `aliasPicker.test.tsx:528-558`'s `connectionAt` describe becomes `linkAt`'s. Watch them fail.
-- [ ] Write `edits.ts`'s readers as below; delete `headingHash.ts`; `markdownInput.ts` imports `headingHash` from `../Input/edits`.
-- [ ] `autocomplete.ts:83-84` reads `linkAt(scan, caret) ?? openLinkAt(scan, caret)` and `:126-141` read the same occurrence's `shown`, `title`, `heading` (the branch structure stays; Task 5-1 rewrites the query); `linkEdit.ts`'s `slotNear`, `emptied`, `linkWithin` read `linkAt` and `o.shown`/`o.heading`/`o.title` in place of `markdownLinkAt`'s `label`/`fragment`/`page` (Task 4-2 rewrites them); `linkReveal.ts:23` reads `linkAt` behind its `[[` gate (Task 4-1 retires the field).
-- [ ] `pasteLink.ts`: `linkContainerAt` goes; `pasteEdit` reads `linkAt(scan, sel.from)` strictly inside (`o.full[0] < sel.from - ls && sel.to - ls < o.full[1]`) and `o.syntax` where it read `tk.kind`; `:75`'s "inside a half-typed destination" becomes `openLinkAt(scan, sel.from) !== null`, the same "a link still being written" rule for both syntaxes, so a URL pasted after `[[Pa` lands literally as one pasted after `[x](ht` does.
-- [ ] `emptied` fills an empty image alt text like any label (the `!` check at `linkEdit.ts:184` goes); `linkEdit.test.tsx:307`'s row expects `a ![Alpha](Alpha) b`.
+- [x] In `edits.test.ts`, rewrite `:886-898` for `slotAt` (returns the occurrence, the part, and the line start for a caret in a title, a heading, an alias, and a label, with a boundary between two slots answering the earlier slot; null in code and just past a closer) and `:901-924` for `openLinkAt` (`[[` just typed, `[[Al`, `[x](`, `[]()` with the caret between the parens, `[[A#`, each with the slot holding the placeholder cut back to the caret; a backtick before the caret keeps the code mask honest), and add a `linkAt` boundary case (a link holds the caret from past its opener through its closer, so the boundary between two abutting links belongs to the first, and an open link typed flush against a following one still reads) and an `isLiteralAt` case (a dash typed just past a closer is transformed). `headingHash.test.ts` imports `headingHash` from `../Input/edits`; its empty cases (`[[]]`, `![[]]`, `[a]()`) hold through the placeholder. `aliasPicker.test.tsx:528-558`'s `connectionAt` describe becomes `linkAt`'s. Watch them fail.
+- [x] Write `edits.ts`'s readers as below; delete `headingHash.ts`; `markdownInput.ts` imports `headingHash` from `../Input/edits`.
+- [x] `autocomplete.ts:83-84` reads `linkAt(scan, caret) ?? openLinkAt(scan, caret)` and `:126-141` read the same occurrence's `shown`, `title`, `heading` (the branch structure stays; Task 5-1 rewrites the query); `linkEdit.ts`'s `slotNear`, `emptied`, `linkWithin` read `linkAt` and `o.shown`/`o.heading`/`o.title` in place of `markdownLinkAt`'s `label`/`fragment`/`page` (Task 4-2 rewrites them); `linkReveal.ts:23` reads `linkAt` behind its `[[` gate (Task 4-1 retires the field).
+- [x] `pasteLink.ts`: `linkContainerAt` goes; `pasteEdit` reads `linkAt(scan, sel.from)` strictly inside (`o.full[0] < sel.from - ls && sel.to - ls < o.full[1]`) and `o.syntax` where it read `tk.kind`; `:75`'s "inside a half-typed destination" becomes `openLinkAt(scan, sel.from) !== null`, the same "a link still being written" rule for both syntaxes, so a URL pasted after `[[Pa` lands literally as one pasted after `[x](ht` does.
+- [x] `emptied` fills an empty image alt text like any label (the `!` check at `linkEdit.ts:184` goes); `linkEdit.test.tsx:307`'s row expects `a ![Alpha](Alpha) b`.
 
 **AFTER**
 
@@ -1124,9 +1124,9 @@ The placeholder is `\u0000`, legal in every wiki slot and in a destination; the 
 
 **VERIFY**
 
-- [ ] `edits.test.ts`, `headingHash.test.ts`, `aliasPicker.test.tsx`, `autocomplete.test.ts:210-217,227-231,371-380`, `connectionCommit.test.tsx:574`, `acQuery.test.ts:72,101`, `pasteLink.test.tsx:124,388` pass; `linkEdit.test.tsx:307` passes with its new expectation.
-- [ ] Run the gates, for Tasks 2-1 to 2-4 together.
-- [ ] Check for unnecessary code or mistakes (no caller of `markdownLinkAt`, `connectionAt`, `openConnectionAt`, `inAliasAt`, `linkDestinationStart`, `opensFragment`, or `linkContainerAt` remains; "which slot holds the caret" is spelled once, in `partOf`).
+- [x] `edits.test.ts`, `headingHash.test.ts`, `aliasPicker.test.tsx`, `autocomplete.test.ts:210-217,227-231,371-380`, `connectionCommit.test.tsx:574`, `acQuery.test.ts:72,101`, `pasteLink.test.tsx:124,388` pass; `linkEdit.test.tsx:307` passes with its new expectation.
+- [x] Run the gates, for Tasks 2-1 to 2-4 together.
+- [x] Check for unnecessary code or mistakes (no caller of `markdownLinkAt`, `connectionAt`, `openConnectionAt`, `inAliasAt`, `linkDestinationStart`, `opensFragment`, or `linkContainerAt` remains; "which slot holds the caret" is spelled once, in `partOf`).
 
 #### Task 2-5
 
@@ -1136,9 +1136,9 @@ The placeholder is `\u0000`, legal in every wiki slot and in a destination; the 
 
 **CHANGE**
 
-- [ ] In `linkEdit.test.tsx`, the five `commitAliasOnEnter(view)` calls (`:417,434,452,468,479`) become `commitAliasOnEnter('page')(view)`; add: Return with the caret in a markdown label inside a raw HTML block, HTML Formatting on, breaks the line (and so does `]` land plainly there); in `CellEditor`'s tests, Return in a wikilink's alias rests the caret past the closer and a second Return moves down; in `TextPane.test.tsx`, Return in an alias rests past the link and a second Return closes the pane. Watch them fail.
-- [ ] Move `drawsRawHtml` and `inRawHtml` to `api.ts` beside `editorHost`; `decorations.ts`, `linkEdit.ts`, and `acQuery.ts` import them from there.
-- [ ] Write `shownEnd` and `commitAliasOnEnter(scope)` as below; bind Return in `editorBase`'s `Prec.highest` keymap after `paneKeys`; remove the `markdownInput.ts:271` binding; `typedInput` asks `shownEnd` for `]` and `[`.
+- [x] In `linkEdit.test.tsx`, the five `commitAliasOnEnter(view)` calls (`:417,434,452,468,479`) become `commitAliasOnEnter('page')(view)`; add: Return with the caret in a markdown label inside a raw HTML block, HTML Formatting on, breaks the line (and so does `]` land plainly there); in `CellEditor`'s tests, Return in a wikilink's alias rests the caret past the closer and a second Return moves down; in `TextPane.test.tsx`, Return in an alias rests past the link and a second Return closes the pane. Watch them fail.
+- [x] Move `drawsRawHtml` and `inRawHtml` to `api.ts` beside `editorHost`; `decorations.ts`, `linkEdit.ts`, and `acQuery.ts` import them from there.
+- [x] Write `shownEnd` and `commitAliasOnEnter(scope)` as below; bind Return in `editorBase`'s `Prec.highest` keymap after `paneKeys`; remove the `markdownInput.ts:271` binding; `typedInput` asks `shownEnd` for `]` and `[`.
 
 **AFTER**
 
@@ -1210,9 +1210,9 @@ The placeholder is `\u0000`, legal in every wiki slot and in a destination; the 
 
 **VERIFY**
 
-- [ ] `linkEdit.test.tsx`, the cell and Text pane Return cases, and `acQuery.test.ts` pass; an open picker still takes Return (`connectionCommit.test.tsx`).
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes (`decorations.ts` no longer exports a raw-HTML question; `inAliasAt` has no reader).
+- [x] `linkEdit.test.tsx`, the cell and Text pane Return cases, and `acQuery.test.ts` pass; an open picker still takes Return (`connectionCommit.test.tsx`).
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes (`decorations.ts` no longer exports a raw-HTML question; `inAliasAt` has no reader).
 
 #### Review Checkpoint
 
@@ -1238,9 +1238,9 @@ The placeholder is `\u0000`, legal in every wiki slot and in a destination; the 
 
 **CHANGE**
 
-- [ ] In `linkValue.test.ts`, rewrite `:107-138` as `resolveLink` cases (a held title → `page`; two holders → `unresolved ambiguous`; none → `unresolved phantom`; `[[#H]]` with `own` → `page` on `own`, without → `self`; `[x](notes.io)` with no page named `notes.io` → `url`, with one → `page`; `[[ #H]]` → `self`), rewrite `:62-73` so `readLinkText('example.com').url` reads `example.com` and `retarget('wiki', null, { kind: 'url', syntax: 'bare', url: 'example.com' }, …).text` reads `https://example.com`, rewrite `:350-354`'s `commit` helper to `linkValueFromEdit(raw, current, index, own, keepTitle)` with `own = holder` where it passed `held` and `undefined` where it passed `index.resolve`, and move `:4,93` and `connections.test.ts:7,53-84` to `wikiTitle` (a bare heading reads `''`, an empty heading reads the title, the cell escape strips). Watch them fail.
-- [ ] Write `linkValue.ts` as below; `parseConnectionText` and `ConnectionParts` leave `connections.ts`; the six asset callers read `wikiTitle` and test `!== null` where they tested truthiness (`assetMigrate.ts:57`'s `isConnection`).
-- [ ] Normalize where HEAD's behavior depends on it: `retarget`'s url arm (`linkValue.ts:209-210`), `pasteAsWrite`'s url branch (`pasteAsMenu.ts:105`, one `const url = normalizeLinkUrl(target.url)` at the top of the branch serving `plain`, `embedLink`, `serializeLink`, and the three `linkPaste` calls), the paste title lookup (`pasteLink.ts:57`), `linkDisplayText`'s default arm (`linkValue.ts:156`), and `sameTarget`'s url compare (`:185`). `linkDomain`, `isHttpLink`, and the openers already normalize internally.
+- [x] In `linkValue.test.ts`, rewrite `:107-138` as `resolveLink` cases (a held title → `page`; two holders → `unresolved ambiguous`; none → `unresolved phantom`; `[[#H]]` with `own` → `page` on `own`, without → `self`; `[x](notes.io)` with no page named `notes.io` → `url`, with one → `page`; `[[ #H]]` → `self`), rewrite `:62-73` so `readLinkText('example.com').url` reads `example.com` and `retarget('wiki', null, { kind: 'url', syntax: 'bare', url: 'example.com' }, …).text` reads `https://example.com`, rewrite `:350-354`'s `commit` helper to `linkValueFromEdit(raw, current, index, own, keepTitle)` with `own = holder` where it passed `held` and `undefined` where it passed `index.resolve`, and move `:4,93` and `connections.test.ts:7,53-84` to `wikiTitle` (a bare heading reads `''`, an empty heading reads the title, the cell escape strips). Watch them fail.
+- [x] Write `linkValue.ts` as below; `parseConnectionText` and `ConnectionParts` leave `connections.ts`; the six asset callers read `wikiTitle` and test `!== null` where they tested truthiness (`assetMigrate.ts:57`'s `isConnection`).
+- [x] Normalize where HEAD's behavior depends on it: `retarget`'s url arm (`linkValue.ts:209-210`), `pasteAsWrite`'s url branch (`pasteAsMenu.ts:105`, one `const url = normalizeLinkUrl(target.url)` at the top of the branch serving `plain`, `embedLink`, `serializeLink`, and the three `linkPaste` calls), the paste title lookup (`pasteLink.ts:57`), `linkDisplayText`'s default arm (`linkValue.ts:156`), and `sameTarget`'s url compare (`:185`). `linkDomain`, `isHttpLink`, and the openers already normalize internally.
 
 **AFTER**
 
@@ -1373,10 +1373,10 @@ A held value's `[[#H]]` keeps drawing as `bare` because drawing calls `resolveLi
 
 **VERIFY**
 
-- [ ] `linkValue.test.ts` and `connections.test.ts` pass as rewritten; the asset and File tests pass through `wikiTitle`.
-- [ ] A hand-written `example.com` Link value still sorts, filters, and shows its Full Link text as `https://example.com`, and Copy Link and `href` read it as written.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes (no second normalize point in a reader; `readLinkText` takes one argument).
+- [x] `linkValue.test.ts` and `connections.test.ts` pass as rewritten; the asset and File tests pass through `wikiTitle`.
+- [x] A hand-written `example.com` Link value still sorts, filters, and shows its Full Link text as `https://example.com`, and Copy Link and `href` read it as written.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes (no second normalize point in a reader; `readLinkText` takes one argument).
 
 #### Task 3-2
 
@@ -1386,8 +1386,8 @@ A held value's `[[#H]]` keeps drawing as `bare` because drawing calls `resolveLi
 
 **CHANGE**
 
-- [ ] Rewrite `connectionsApi.test.ts:6-25` for `ResolvedLink` literals (`unresolved` for `invalid`); rewrite every `ConnectionsApi` fixture to the `{ index, … }` shape and give `location` to the harness host: `Core/Testing/editorHarness.ts:45,52,87,131`, `aliasPicker.test.tsx:60-65`, `connectionCommit.test.tsx:24-35,345-356,443`, `aliasRender.test.tsx:13-18`, `connectionHover.test.tsx:27-32`, `externalLink.test.tsx:44-48`, `linkEdges.test.tsx:27-31,155-162,404`, `linkEdit.test.tsx:45-51`, `mdLinkTarget.test.tsx:19-26,151-160`, `LinkCell.test.tsx:30-40`, `TextCell.test.tsx:23-28,64-69`, `PropertyValueInput.test.tsx:114-123`, `valueTarget.test.ts:7-18`, `Cell.test.tsx:262-270` (whose cast compiled and whose `:277-289,308-331` fail at runtime until it carries `index`). The harness already threads `connections` (`editorHarness.ts:45,52,87,195-206`); its host gains `location: () => []`, and no helper is added.
-- [ ] Write `connectionsApi.ts`, `api.ts`, `pageConnections.ts`, and `editorHost.tsx` as below; move `LinkMenuTarget` and `linkMenuTarget` into `Actions/connectionMenu.ts`.
+- [x] Rewrite `connectionsApi.test.ts:6-25` for `ResolvedLink` literals (`unresolved` for `invalid`); rewrite every `ConnectionsApi` fixture to the `{ index, … }` shape and give `location` to the harness host: `Core/Testing/editorHarness.ts:45,52,87,131`, `aliasPicker.test.tsx:60-65`, `connectionCommit.test.tsx:24-35,345-356,443`, `aliasRender.test.tsx:13-18`, `connectionHover.test.tsx:27-32`, `externalLink.test.tsx:44-48`, `linkEdges.test.tsx:27-31,155-162,404`, `linkEdit.test.tsx:45-51`, `mdLinkTarget.test.tsx:19-26,151-160`, `LinkCell.test.tsx:30-40`, `TextCell.test.tsx:23-28,64-69`, `PropertyValueInput.test.tsx:114-123`, `valueTarget.test.ts:7-18`, `Cell.test.tsx:262-270` (whose cast compiled and whose `:277-289,308-331` fail at runtime until it carries `index`). The harness already threads `connections` (`editorHarness.ts:45,52,87,195-206`); its host gains `location: () => []`, and no helper is added.
+- [x] Write `connectionsApi.ts`, `api.ts`, `pageConnections.ts`, and `editorHost.tsx` as below; move `LinkMenuTarget` and `linkMenuTarget` into `Actions/connectionMenu.ts`.
 
 **AFTER**
 
@@ -1460,9 +1460,9 @@ A held value's `[[#H]]` keeps drawing as `bare` because drawing calls `resolveLi
 
 **VERIFY**
 
-- [ ] `connectionsApi.test.ts` and every rewritten fixture compile and pass.
-- [ ] The gates run at Task 3-3, once its consumers have left `tokenTarget`, `MdTarget`, `titleTarget`, and `heldTarget` (`linkClicks.ts:45,53`, `cellStatic.tsx:45,613-616`, `valueTarget.ts`, `citationPointer.ts`, `useConnectionAutocomplete.ts:86`).
-- [ ] Check for unnecessary code or mistakes (`connectionsApi.ts` exports `ConnectionsApi`, `LinkLook`, `linkLook`, `linkClass`, and `headingMissing` only; nothing under `MarkdownPM/` imports `LinkMenuTarget` from it).
+- [x] `connectionsApi.test.ts` and every rewritten fixture compile and pass.
+- [x] The gates run at Task 3-3, once its consumers have left `tokenTarget`, `MdTarget`, `titleTarget`, and `heldTarget` (`linkClicks.ts:45,53`, `cellStatic.tsx:45,613-616`, `valueTarget.ts`, `citationPointer.ts`, `useConnectionAutocomplete.ts:86`).
+- [x] Check for unnecessary code or mistakes (`connectionsApi.ts` exports `ConnectionsApi`, `LinkLook`, `linkLook`, `linkClass`, and `headingMissing` only; nothing under `MarkdownPM/` imports `LinkMenuTarget` from it).
 
 #### Task 3-3
 
@@ -1472,8 +1472,8 @@ A held value's `[[#H]]` keeps drawing as `bare` because drawing calls `resolveLi
 
 **CHANGE**
 
-- [ ] Rewrite `mdLinkTarget.test.tsx:8,52-86,192,202` and `valueTarget.test.ts:21-46` (renamed with its file) as `resolveLink` cases; add to `TextCell.test.tsx` that a `§Setup` run in a held value opens a menu whose rows are Open and Copy (no Rename, no Remove) and glances; `PropertyValueInput.test.tsx:138-146` holds through `resolveLink`. Watch them fail.
-- [ ] Sweep the consumers as below; `git mv Core/Properties/Cells/valueTarget.ts Core/Properties/Cells/valueMenuTarget.ts` (and its test) and repoint its four importers.
+- [x] Rewrite `mdLinkTarget.test.tsx:8,52-86,192,202` and `valueTarget.test.ts:21-46` (renamed with its file) as `resolveLink` cases; add to `TextCell.test.tsx` that a `§Setup` run in a held value opens a menu whose rows are Open and Copy (no Rename, no Remove) and glances; `PropertyValueInput.test.tsx:138-146` holds through `resolveLink`. Watch them fail.
+- [x] Sweep the consumers as below; `git mv Core/Properties/Cells/valueTarget.ts Core/Properties/Cells/valueMenuTarget.ts` (and its test) and repoint its four importers.
 
 **AFTER**
 
@@ -1674,10 +1674,10 @@ A held value's `[[#H]]` keeps drawing as `bare` because drawing calls `resolveLi
 
 **VERIFY**
 
-- [ ] `linkClicks`, `cellStatic`, `citationPointer`, `LinkCell`, `TextCell`, `PropertyValueInput`, `useConnectionAutocomplete`, and `embedWidget` tests pass; `linkEdges.test.tsx:369-412` (a body's `§` run: no page, no menu) still passes, since a body passes no holder.
-- [ ] A held `[[#H]]` still draws bare in a Text pane (drawing passes no `own`).
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes (`heldTarget`, `valueTarget`, `linkResolver`, `tokenTarget`, `titleTarget`, `resolveMdTarget`, `linkStatus`, `MdTarget`, and `parseConnectionText` have no reader; the bare-heading rule is spelled once; no file is named after a function it no longer holds).
+- [x] `linkClicks`, `cellStatic`, `citationPointer`, `LinkCell`, `TextCell`, `PropertyValueInput`, `useConnectionAutocomplete`, and `embedWidget` tests pass; `linkEdges.test.tsx:369-412` (a body's `§` run: no page, no menu) still passes, since a body passes no holder.
+- [x] A held `[[#H]]` still draws bare in a Text pane (drawing passes no `own`).
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes (`heldTarget`, `valueTarget`, `linkResolver`, `tokenTarget`, `titleTarget`, `resolveMdTarget`, `linkStatus`, `MdTarget`, and `parseConnectionText` have no reader; the bare-heading rule is spelled once; no file is named after a function it no longer holds).
 
 #### Task 3-4
 
@@ -1687,9 +1687,9 @@ A held value's `[[#H]]` keeps drawing as `bare` because drawing calls `resolveLi
 
 **CHANGE**
 
-- [ ] Add a decoration test: `[](Alpha)` with Alpha held draws `Alpha`, `[](Alpha#Setup)` draws `Setup`, and a phantom `[](Nowhere)` draws `Nowhere` as phantom; a `cellStatic` test for the same three. Watch them fail.
-- [ ] `linkLook` decides the label once, from what the link resolved to (a page reached through an address-shaped destination labels by the page, so `[](notes.io#Intro)` draws `Intro` as the emptied-label fill does); in `decorations.ts`, when `tk.contentRange` is empty, place a `Decoration.widget` carrying a `LabelWidget` (a `GlyphWidget` subclass drawing one `span` with the link's class, `md-link-label`, and `look.label`) at `tk.contentRange[0]`, `side: 1`; `linkUnder` reads a click on that span through `posAtDOM`, since `posAtCoords` resolves a point widget to a neighbour.
-- [ ] In `cellStatic.tsx`, the `wikiLink`/`link` case and its phantom branch render `look.label` where `cs === ce`, carrying `md-link-label`; `markdown-pm.css` hides `.md-connection-phantom.md-link-label` under `:root.plain-unresolved`, so a phantom empty label draws its label as a phantom in the editor and the cell alike and reads as its raw syntax under the plain-links setting (the owner's ruling, 10-16-2026).
+- [x] Add a decoration test: `[](Alpha)` with Alpha held draws `Alpha`, `[](Alpha#Setup)` draws `Setup`, and a phantom `[](Nowhere)` draws `Nowhere` as phantom; a `cellStatic` test for the same three. Watch them fail.
+- [x] `linkLook` decides the label once, from what the link resolved to (a page reached through an address-shaped destination labels by the page, so `[](notes.io#Intro)` draws `Intro` as the emptied-label fill does); in `decorations.ts`, when `tk.contentRange` is empty, place a `Decoration.widget` carrying a `LabelWidget` (a `GlyphWidget` subclass drawing one `span` with the link's class, `md-link-label`, and `look.label`) at `tk.contentRange[0]`, `side: 1`; `linkUnder` reads a click on that span through `posAtDOM`, since `posAtCoords` resolves a point widget to a neighbour.
+- [x] In `cellStatic.tsx`, the `wikiLink`/`link` case and its phantom branch render `look.label` where `cs === ce`, carrying `md-link-label`; `markdown-pm.css` hides `.md-connection-phantom.md-link-label` under `:root.plain-unresolved`, so a phantom empty label draws its label as a phantom in the editor and the cell alike and reads as its raw syntax under the plain-links setting (the owner's ruling, 10-16-2026).
 
 **AFTER**
 
@@ -1742,14 +1742,14 @@ A held value's `[[#H]]` keeps drawing as `bare` because drawing calls `resolveLi
 
 **VERIFY**
 
-- [ ] The decoration and cell tests pass; `linkValue.test.ts:88` reads `[](Page)` as a page link.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes (the label is spelled only through `defaultLabel`; the occurrence is read once per token per build).
+- [x] The decoration and cell tests pass; `linkValue.test.ts:88` reads `[](Page)` as a page link.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes (the label is spelled only through `defaultLabel`; the occurrence is read once per token per build).
 
 #### Review Checkpoint
 
 - [x] `grep -rn "resolve(" Core --include='*.ts' --include='*.tsx' | grep -v test` shows the page-before-address rule and the bare-heading rule in `linkValue.ts` only.
-- [ ] A hand-written `example.com` value, Copy Link, `href`, sort, filter, Full Link text, and a pasted bare address all behave as at BASELINE (probed at the checkpoint; the live drive's group 2 confirms it in Phase 8).
+- [x] A hand-written `example.com` value, Copy Link, `href`, sort, filter, Full Link text, and a pasted bare address all behave as at BASELINE (probed at the checkpoint; the live drive's group 2 confirms it in Phase 8).
 - [x] `[](Page)` draws its default label in the editor and in a resting cell; no second default-label rule exists under `Core/`.
 - [x] `hostGraph.test.ts` and `engineGraph.test.ts` green; `linkValue.ts` imports nothing from `MarkdownPM/` beyond `Engine/markdownCode`.
 - [x] Net Ledger: Phase 3 measured.
@@ -2142,7 +2142,7 @@ export const commitAliasOnEnter = (scope: MarkdownScope) => (view: EditorView): 
 
 - [x] One query shape, one closer record, one commit switch; `AC_MAX` bounds the page list only.
 - [x] Wiki and markdown picks behave as mirrors in every row of `connectionCommit.test.tsx`'s tables.
-- [ ] The live drive's group 3 (`live-drive.mjs` re-expected, with the two additions: a page picked behind an empty label lists every alias and leaves showing the title; Return in a markdown destination lists every alias) passes at Phase 8's live drive.
+- [x] The live drive's group 3 (`live-drive.mjs` re-expected, with the two additions: a page picked behind an empty label lists every alias and leaves showing the title; Return in a markdown destination lists every alias) passes at Phase 8's live drive.
 - [x] Net Ledger: Phase 5 measured.
 
 ---

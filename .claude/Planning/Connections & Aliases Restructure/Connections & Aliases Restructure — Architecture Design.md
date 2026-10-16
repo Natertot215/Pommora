@@ -11,25 +11,21 @@ A workstream audit at `5272eb82f` read the whole surface: six scouts, a behavior
 
 ### Overview
 
-The target is one link grammar both syntaxes share, one shape per layer (span, written, resolved), one resolver holding the page-before-address rule, the bare-heading rule, and the status, one tree walk and title index both processes import, one tracker for edits made inside a link, and one picker model keyed by slot that every place a connection is typed mounts. The data layer (the alias edit operation, its host-side apply, and the metadata shard) stays as it is. Landed in sequence, W22 measures about −230 production lines, or about −185 to −215 with the one-line field editors. Where this design and W22 differ, W22's findings carry the measured reasoning: the editor's link readers stay beside the scan rather than behind a span cache, and the resolver's home is still open.
+The target is one link grammar both syntaxes share, one shape per layer (span, written, resolved), one resolver holding the page-before-address rule, the bare-heading rule, and the status, one tree walk and title index both processes import, one tracker for edits made inside a link, and one picker model keyed by slot that every place a connection is typed mounts. The data layer (the alias edit operation, its host-side apply, and the metadata shard) stays as it is. Landed in sequence, W22 measures about −230 production lines, or about −185 to −215 with the one-line field editors. Where this design and W22 differ, W22's findings carry the measured reasoning: the editor's link readers stay beside the scan rather than behind a span cache.
 
 **Settled Decisions:**
 
 - **Empty Parts:** `[](Page)` is a link, drawn showing its default label, indexed, and readable as a Link value; `[x]()` isn't a link. Both syntaxes tidy an emptied part when the caret leaves the whole link, and an already-empty part in a link that was edited tidies with it.
 - **Headings in Wikilinks:** a wikilink heading never holds `#`, since Obsidian reads extra `#`s as a nested path; every writer, the heading rename included, falls back to the markdown form when a wikilink can't spell a slot, and the reader takes everything after the first `#` as the heading without modelling nested paths.
 - **Embeds:** any link alone on its own line with `!` first, in either syntax, is an embed line that the graph, backlinks, and anything visualizing relationships leave out, while renames, recognition, and alias rules treat it as a link; whether it tiles is the editor's separate question. A `!` beside an in-paragraph link changes nothing, so an inline image's alt text is an ordinary label.
-- **Heading Aliases:** an alias typed into a link that names a heading, in a body or a Link value, stays in the link and isn't saved to the page's aliases; the picker still offers the page's existing aliases there, and the alias list's **+** still adds. A **Save Heading Aliases** setting that would remember them is proposed to the planning session.
+- **Heading Aliases:** an alias typed into a link that names a heading, in a body or a Link value, stays in the link and isn't saved to the page's aliases; the picker still offers the page's existing aliases there, and the alias list's **+** still adds.
 - **The Picker:** a markdown pick opens the alias list as a wikilink pick does, and Return in a markdown link's destination, the moment an address is assigned, rests the caret in its label (an empty list for a URL, since aliases are kept per page). A `§Heading` run and `[[#Heading]]` take one approach in property values and cells, menu and glance included. The Link field and the Text field's single line host the picker as one-line instances of the editor the Text pane already mounts.
 - **Link Values:** a Link value writes a wikilink wherever one can be spelled, on edit and Rename alike; one rule (Link, Text, or unregistered keys, never File) decides which frontmatter keys hold links, for the index and the rename cascade alike; addresses resolve as written.
+- **Remove Title On Link Change:** the shown text drops only when the link pointed somewhere as it read before the edit, in the picker, in paste over a link, and in the Link field through the picker inside it.
+- **Text Values in Views:** a Text value sorts and filters on its shown text.
+- **The Resolver's Home:** `Core/Connections/`.
 - **Kept As Is:** Remove Link's leftover text (`Title § Heading`); the typing color of a link being written.
 - **Placement:** the heading-rename settle moves from `Guards/` to `Links/`.
-
-**Open Calls:**
-
-- **Remove Title On Link Change:** whether paste over a link and the Link field take the picker's "pointed somewhere" rule (recommended).
-- **Text Values in Views:** whether a Text value sorts and filters on its shown text (recommended).
-- **The Resolver's Home:** `Core/Connections/` or `MarkdownPM/Links/`, an architectural call for the planning session.
-- **Save Heading Aliases:** whether the proposed setting exists, and its default.
 
 ### Principles
 

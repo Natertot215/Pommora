@@ -34,12 +34,12 @@ The Pommora design system — the code counterpart of the Figma library, which l
 
 #### Labels
 
-| Title            | Token                                     | Value               |
-| ---------------- | ----------------------------------------- | ------------------- |
-| Label Primary    | `label.primary` · `--label-primary`       | `system-white` @ 100% |
-| Label Control    | `label.control` · `--label-control`       | `system-white` @ 80% |
-| Label Secondary  | `label.secondary` · `--label-secondary`   | `system-white` @ 65% |
-| Label Tertiary   | `label.tertiary` · `--label-tertiary`     | `system-white` @ 35% |
+| Title           | Token                                   | Value                 |
+| --------------- | --------------------------------------- | --------------------- |
+| Label Primary   | `label.primary` · `--label-primary`     | `system-white` @ 100% |
+| Label Control   | `label.control` · `--label-control`     | `system-white` @ 80%  |
+| Label Secondary | `label.secondary` · `--label-secondary` | `system-white` @ 65%  |
+| Label Tertiary  | `label.tertiary` · `--label-tertiary`   | `system-white` @ 35%  |
 
 #### States
 
@@ -114,29 +114,29 @@ The scroll-fade edge-dissolve widths a scrollable surface names on `--scroll-fad
 
 Authored once, validated by main and renderer alike; the accent resolves from it (or the OS accent) at runtime. `DEFAULT_ACCENT` sits in `UIX/Theme/colors.ts`.
 
-| Title             | Token                                       | Value                                      |
-| ----------------- | ------------------------------------------- | ------------------------------------------ |
-| Red               | `SPECTRUM.red`                              | `#FF453A`                                  |
-| Orange            | `SPECTRUM.orange` · `--solid-orange`        | `#FF9F0A`                                  |
-| Yellow            | `SPECTRUM.yellow` · `--solid-yellow`        | `#FFD60A`                                  |
-| Green             | `SPECTRUM.green` · `--solid-green`          | `#32D74B`                                  |
-| Light Blue        | `SPECTRUM.lightBlue` · `--solid-light-blue` | `#7EC8E3`                                  |
-| Cyan              | `SPECTRUM.cyan` · `--solid-cyan`            | `#41959F`                                  |
-| Blue              | `SPECTRUM.blue`                             | `#0A84FF`                                  |
-| Purple            | `SPECTRUM.purple` · `--solid-purple`        | `#7852EE`                                  |
-| Lavender          | `SPECTRUM.lavender`    | `#A78BCC`                                  |
-| Pink              | `SPECTRUM.pink`                             | `#EF7697`                                  |
-| Brown             | `SPECTRUM.brown`                            | `#AC8E68`                                  |
-| Grey              | `SPECTRUM.grey`            | `#8E8E93`                                  |
-| Default           | `GREY_DEFAULT`                              | `#48484A`                                  |
-| Default Accent    | `DEFAULT_ACCENT`                            | `cyan`                                     |
-| Accent            | `--accent`                                  | `var(--system-accent)` · the Accent Color setting |
-| Accent Fill       | `--accent-fill`                             | accent @ 15%                               |
-| Accent Stroke     | `--accent-stroke` / `--accent-stroke-hot`   | accent @ 40% / accent @ 60%                |
-| Drop Slot         | `--drop-slot-fill`                          | accent @ 20%                               |
+| Title                         | Token                                       | Value                                                          |
+| ----------------------------- | ------------------------------------------- | -------------------------------------------------------------- |
+| Red                           | `SPECTRUM.red`                              | `#FF453A`                                                      |
+| Orange                        | `SPECTRUM.orange` · `--solid-orange`        | `#FF9F0A`                                                      |
+| Yellow                        | `SPECTRUM.yellow` · `--solid-yellow`        | `#FFD60A`                                                      |
+| Green                         | `SPECTRUM.green` · `--solid-green`          | `#32D74B`                                                      |
+| Light Blue                    | `SPECTRUM.lightBlue` · `--solid-light-blue` | `#7EC8E3`                                                      |
+| Cyan                          | `SPECTRUM.cyan` · `--solid-cyan`            | `#41959F`                                                      |
+| Blue                          | `SPECTRUM.blue`                             | `#0A84FF`                                                      |
+| Purple                        | `SPECTRUM.purple` · `--solid-purple`        | `#7852EE`                                                      |
+| Lavender                      | `SPECTRUM.lavender`                         | `#A78BCC`                                                      |
+| Pink                          | `SPECTRUM.pink`                             | `#EF7697`                                                      |
+| Brown                         | `SPECTRUM.brown`                            | `#AC8E68`                                                      |
+| Grey                          | `SPECTRUM.grey`                             | `#8E8E93`                                                      |
+| Default                       | `GREY_DEFAULT`                              | `#48484A`                                                      |
+| Default Accent                | `DEFAULT_ACCENT`                            | `cyan`                                                         |
+| Accent                        | `--accent`                                  | `var(--system-accent)` · the Accent Color setting              |
+| Accent Fill                   | `--accent-fill`                             | accent @ 15%                                                   |
+| Accent Stroke                 | `--accent-stroke` / `--accent-stroke-hot`   | accent @ 40% / accent @ 60%                                    |
+| Drop Slot                     | `--drop-slot-fill`                          | accent @ 20%                                                   |
 | Link / Connection / Highlight | `--link` / `--connection` / `--highlight`   | `var(--system-accent)` / → `var(--accent)` / → `var(--accent)` |
-| Error             | `--error`                                   | `SPECTRUM.red`                             |
-| Code              | `--code`                                    | `--solid-red` @ 85%                        |
+| Error                         | `--error`                                   | `SPECTRUM.red`                                                 |
+| Code                          | `--code`                                    | `--solid-red` @ 85%                                            |
 
 #### Ramp
 
@@ -284,7 +284,7 @@ The elements that draw and frame a stored image — `AssetImage`, `ImagePicker`,
 | Ring           | `fieldRing()` · `focusRing()` · `errorRing()` · `ROW_RING`                                                                                                                        | One inset-shadow channel, whose presets set its color, and `ROW_RING`, the weight of the ring a picked row or cell wears.                                                                                                                                                              |
 | Placeholder    | `placeholder`                                                                                                                                                                     | The ghost-text tone.                                                                                                                                                                                          |
 | SearchField    | `SearchField`                                                                                                                                                                     | The controlled filter input the list surfaces share, carrying the one "Search…" placeholder; Escape leaves the field with its query kept.                                                                     |
-| EditableInput  | `EditableInput`                                                                                                                                                                   | Enter and blur commit; Escape, or the field closing mid-edit, keeps the existing text; `invalid` dims text that won't commit.                                                                                  |
+| EditableInput  | `EditableInput`                                                                                                                                                                   | Enter and blur commit; Escape, or the field closing mid-edit, keeps the existing text; `onCommit` and `onCancel` carry how the edit ended, by a key or by the focus leaving; `invalid` dims text that won't commit.                                                                                  |
 | RenamableLabel | `RenamableLabel`                                                                                                                                                                  | The inline-rename swap.                                                                                                                                                                                       |
 
 ### Glass
@@ -380,7 +380,7 @@ The elements that draw and frame a stored image — `AssetImage`, `ImagePicker`,
 | CalendarPicker | `CalendarPicker` | Date and time selection, with an optional End Date span. |
 | ColorPicker | `ColorPicker` | The 9×8 ramp grid; clicking the selected cell clears. |
 | IconPicker | `IconPicker` · `IconFavorites` | The searchable glyph grid with a reorderable icon-favorites strip; the app binds icon favorites through `UIX/Pickers/IconPicker`. |
-| TextPicker | `TextPicker` | A typed-value picker in the shared pane. |
+| FieldPicker | `FieldPicker` | A typed value's popover in the shared pane: one field chrome around either the kit's input over a `value`, with its affixes, or an editor the caller mounts as `children`. |
 | PickerControl | `PickerControl` · `setMenuDoor` · `steppedPickerProps` · `PickerOption` · `NumberUnit` · `unitLabel` · `numberFrom` | The double-chevron picker: two options toggle in place; three or more open the list through the menu door the app registers with `setMenuDoor`; right-clicks write values into the field, and with no options a left press does too. `numberFrom` reads typed text as a number. `steppedPickerProps` builds a stepped number picker in any unit. |
 
 ### Symbols

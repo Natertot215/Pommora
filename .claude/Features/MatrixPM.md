@@ -4,7 +4,7 @@ The graph view. A Nexus's relationships live in an index that every other surfac
 
 ### Node Mechanics
 
-A node is a Page, a Folder, or a Space. A link is one of five kinds: body, citation, and frontmatter carry content ↔ content, space carries a Space relation, and location carries containment.
+A node is a Page, a Folder, or a Space. A link is one of five kinds: body, citation, and value carry content ↔ content, space carries a Space relation, and location carries containment.
 
 #### Groups
 
