@@ -38,8 +38,8 @@ The work lands in nine phases, each the next layer of the system and each the la
 
 | | Functions, fields, plugins, components | Types | Files | Members, parameters, options | Total |
 |---|---|---|---|---|---|
-| **Removed** | 45 | 14 (ten named types and four local `Span` declarations) | 1 (`headingHash.ts`) | 22 | **82** |
-| **Added** | 36 (24 exported, 12 private) and 1 style rule | 5 | 1 (`ValueEditor.tsx`) | 27 | **70** |
+| **Removed** | 47 | 14 (ten named types and four local `Span` declarations) | 1 (`headingHash.ts`) | 22 | **84** |
+| **Added** | 38 (26 exported, 12 private) and 1 style rule | 5 | 1 (`ValueEditor.tsx`) | 27 | **72** |
 | **Moved** | 10 (and 2 made exported) | 1 | 1 moved, 1 renamed | | 12 |
 | **Net** | −8 | −9 | 0 | +5 | **−12 named things** |
 
@@ -94,7 +94,8 @@ Sixty ways of doing thirty things disappear; every row's "after" has one named o
 | `LinkHit.embed`, `LinkHit.full`, `LinkHit.shown` • fields | The hit carries the occurrence's spans under the occurrence's names, plus the embed-line answer for both syntaxes. | `Core/Connections/scan.ts` |
 | `Token.link` • field | A link token carries the occurrence it was built from. | `Core/MarkdownPM/Engine/tokens.ts` |
 | `LinkPart` • type | The three slots a caret can sit in: `'title' \| 'heading' \| 'shown'`. | `Core/Connections/connections.ts` |
-| `openLinkAt`, `slotAt`, `partOf` • functions | A link still being written, read through a placeholder at the caret; the link and the slot holding the caret; the one "which slot" rule. | `Core/MarkdownPM/Input/edits.ts` |
+| `openLinkAt`, `slotAt` • functions, `partOf` • private until Task 5-1 | A link still being written, read through a placeholder at the caret; the link and the slot holding the caret; the one "which slot" rule. | `Core/MarkdownPM/Input/edits.ts` |
+| `targetSpan`, `mapSpans` • functions | The destination as written, title through heading, so no reader rebuilds it; the occurrence's spans mapped with its arm kept, so no reader casts. | `Core/Connections/connections.ts` |
 | `headingHash` • function (relocated) | The `§` transform, folded in as "the caret is in a page-naming title slot". | `Core/MarkdownPM/Input/edits.ts` |
 | `LabelWidget` • class, `LinkLook.written` • field | Draws an empty-label link's default label in the editor, from the written target the look already reads. | `Core/MarkdownPM/decorations.ts`, `Links/connectionsApi.ts` |
 | `drawsRawHtml`, `inRawHtml` • functions (relocated) | The raw-HTML question, beside the host and its setting. | `Core/MarkdownPM/api.ts` |
@@ -136,7 +137,7 @@ Sixty ways of doing thirty things disappear; every row's "after" has one named o
 | `emptyTolerantLinkRegex`, `MarkdownLinkSpans`, `markdownLinkAt`, `linkDestinationStart`, `opensFragment`, `pageTarget`, `composeWebpageEmbedLine` | The second markdown grammar, its span type, two half-typed readers, the codec's second `#` split, and one of three templates. | `Core/Connections/links.ts` |
 | `LinkSpans`, the `LinkOccurrence` union, `parseConnectionText`, `ConnectionParts` | The two-armed occurrence and the asset readers' second whole-link reader. | `Core/Connections/connections.ts` |
 | `LinkSyntax` (`'embed'` as a syntax), `LinkHit.at`, `LinkHit.alias`, `destinationHalves`, `loneEmbed`, `frontmatterMentions` | The index's second split, its wikilink-only embed test, and its second value reader. | `Core/Connections/scan.ts` |
-| `Token.resolveRange`, `Token.heading` | Spans the occurrence carries. | `Core/MarkdownPM/Engine/tokens.ts` |
+| `Token.resolveRange`, `Token.heading`, `linkAddress`, `linkTarget` | Spans the occurrence carries, and the two readers that derived the destination from marker geometry. | `Core/MarkdownPM/Engine/tokens.ts` |
 | `connectionAt`, `openConnectionAt`, `inAliasAt`, `inUrlRun`'s destination arm | Three readers over the occurrence's shape. | `Core/MarkdownPM/Input/edits.ts` |
 | `Links/headingHash.ts` | The `§` transform's own file. | `Core/MarkdownPM/Links/` |
 | `linkContainerAt` (tokenizing form) | Paste's full-tokenizer walk to find the link under the caret. | `Core/MarkdownPM/Links/pasteLink.ts` |
@@ -190,7 +191,7 @@ Sixty ways of doing thirty things disappear; every row's "after" has one named o
 - **The Number:** every phase's VERIFY runs `python3 ~/"The Studio/.claude/scripts/view-delta/view-delta.py" <BASELINE>..HEAD` and records the **Actionable** column (code minus comments; tests and docs excluded) in the Net Ledger beside the phase's two estimates, with removals and additions apart. Each estimate is a ceiling: a phase that lands above its honest band is reported in chat before the next phase opens, with what the increase buys. Phase 8 is typed on a scratch worktree and measured before it's committed; if the running measured total plus Phase 8's measured cost would end above −100, the orchestrator stops and brings the shortfall to the owner rather than tidying the count or thinning a ruled behavior. The final report states the measured total against the 200 to 500 the audit set out to remove.
 - **Shape:** this is a refactor with removals and fixes inside it. The behavioral baseline is the Brief's specification (§1 to §12), kept except where a task names a change, and proven by the tests each task rewrites or adds rather than asserted. Every removal task lists its consumers (the sibling sweep) and the never-delete list above holds throughout. Every fix task names what else consumed the old behavior.
 - **Conventions:** finite states are unions plus exhaustive switches; no O(N), allocating, or layout-reading work lands on a keystroke, a caret move, or a decoration build, and every task that touches one of those paths states its cost; host-run code imports no React or UIX, and `Desktop/hostGraph.test.ts` and `Core/Contract/engineGraph.test.ts` stay green; comments are added only where a reader meets an exception and needs its reason, and the comments the Investigation lists as false are rewritten or removed by the task that falsifies them; commit messages are past tense and one to four sentences; nothing temporary, transitional, or compatibility-kept remains at a phase's end, and a one-line interim that a later phase retires is named as such in the task that writes it.
-- **Execution:** the plan runs end to end autonomously, the owner reachable only at check-ins. Every review checkpoint dispatches its two agents to the `closeout-review` skill's standards (its four perspectives, correctness, simplification, cohesiveness, and consequences, and its core principles; its closing procedures, write-guards, and output format don't apply), and the orchestrator's own post-phase look weighs the landed work against the **Mandate** and **Principles** above before the next phase opens. An in-flight call is weighed against those and the plan's objectives, disclosed in chat, and recorded under *§Deviations* only where it changes an outcome. The three compaction checkpoints in *§Process Overview* each run `c/pre-compaction`, re-instill the Mandate and Principles in the handoff, and stop until the owner re-prompts.
+- **Execution:** the plan runs end to end autonomously, the owner reachable only at check-ins. Every review checkpoint dispatches its two agents to the `closeout-review` skill's standards (its four perspectives, correctness, simplification, cohesiveness, and consequences, and its core principles; its closing procedures, write-guards, and output format don't apply), and the orchestrator's own post-phase look weighs the landed work against the **Mandate** and **Principles** above before the next phase opens. An in-flight call is weighed against those and the plan's objectives, disclosed in chat, and recorded under *§Deviations* only where it changes an outcome. The three compaction checkpoints in *§Process Overview* sit before Phases 4, 6, and 9 (the owner's placement, 10-15-2026); each runs `c/pre-compaction`, re-instills the Mandate and Principles in the handoff exactly as the owner gave them, and stops until the owner re-prompts.
 - **Rulings (Not Re-Raised):** `[](Page)` is a link drawn with its default label and `[x]()` isn't; a wikilink heading never holds `#`, and every writer falls back to the markdown form when a wikilink can't spell a slot; any link alone on its line with `!` first is an embed line in either syntax, out of the graph and in every other rule; both syntaxes tidy an emptied part when the caret leaves the whole link; markdown picks open the alias list and Return in a markdown destination rests in the label; `§Heading` runs and `[[#Heading]]` take one approach in values and cells, menu and glance included, the run's menu offering Open and Copy only; a Link value writes a wikilink wherever one spells, on edit and Rename alike; an alias typed into a link naming a heading is never remembered, with no setting to the contrary; Remove Title On Link Change drops the shown text only when the link pointed somewhere as it read before the edit, in the picker and paste alike, and in the Link field through the picker inside it once the field is the editor (a title retyped by hand keeps its alias there as it does in a body); Text values sort and filter on their shown text through the one rule, style-free (`Title § Heading`); the resolver lives in `Core/Connections/`; Return inside a link's shown slot rests past the link everywhere; the Link field opens on the whole written link and Rename is that field seated in the alias slot; the one-line fields scroll rather than wrap, with spellcheck off and the typing transforms kept; addresses keep today's stored form and today's raw resolution.
 - **Neutral Gate:** the work ends with a `fable-high` neutral reviewer given only the BASELINE head, HEAD, and this intention, with no plan, log, or document: *"Pommora's page-to-page links (wikilinks and markdown links) and the alternate names a page remembers (aliases) are parsed, resolved, edited, rewritten, and displayed across about sixty files. This work leaves that code smaller and plainer: one grammar and one link shape per layer, one resolver, one owner per rule, one tracker for edits made inside a link, one picker model, and one title index the host can import, with no logic stated twice and no behavior lost except where its findings name it."* Every phase is written so that review passes.
 - **Other Workstreams:** the Text Color plan (`.claude/Planning/Text Color/`) landed on `active` through `980a8f4e8` while Phase 1 ran, touching `Engine/{tokens,detect,paints}.ts`, `Input/{edits,format,formatState,markdownInput}.ts`, `cellStatic.tsx`, and the MarkdownPM and PropertiesPM documents; Phase 2's citations are anchored on it (`tokenizeChunk` blanks links, code, and math through `outsideVerbatim` before a paint matches, `wrappedSpan` became `insideMark(tk, f, t)`, and `format.ts` exports `innerRange` and `underSelection`). Its `46441ea74` styles a link inside a text color in `markdown-pm.css` through the same class list `linkClicks.ts:56` uses for "a link" (`.md-connection-resolved, .md-connection-ambiguous, .md-heading-symbol, .md-link`); this plan keeps those classes and `linkClass`, so the selector stands, and any later change to the one "is a link" class set carries it along. F-071's MarkdownPM sentence placing the heading-rename settle under `Guards/` lands after Phase 4 moves it; F-049's heading-name change touches the file the settle moves from, so whichever lands second rebases; F-066 and F-067 read the raw-HTML spans Phase 2's one gate asks about.
@@ -203,20 +204,20 @@ Sixty ways of doing thirty things disappear; every row's "after" has one named o
   - [x] Task 1-2 · The renderer's projections, each its own memo
   - [x] Task 1-3 · The host's title checks read the one index
   - [x] Review Checkpoint
-- [ ] **Phase 2** — One Grammar, One Reader Set `[Gates at Task 2-4 for Tasks 2-1 to 2-4]`
-  - [ ] Task 2-1 · The one occurrence shape, the one template, and the one encoder
-  - [ ] Task 2-2 · The index's hit over the occurrence
-  - [ ] Task 2-3 · Tokens carry their occurrence
-  - [ ] Task 2-4 · The editor's three readers and the `§` fold
-  - [ ] Task 2-5 · One shown-slot question, and Return everywhere
-  - [ ] Review Checkpoint
-- [ ] `[Compaction Checkpoint 1: c/pre-compaction with the MANDATE and PRINCIPLES re-instilled; stop, and continue only when re-prompted]`
+- [x] **Phase 2** — One Grammar, One Reader Set `[Gates at Task 2-4 for Tasks 2-1 to 2-4]`
+  - [x] Task 2-1 · The one occurrence shape, the one template, and the one encoder
+  - [x] Task 2-2 · The index's hit over the occurrence
+  - [x] Task 2-3 · Tokens carry their occurrence
+  - [x] Task 2-4 · The editor's three readers and the `§` fold
+  - [x] Task 2-5 · One shown-slot question, and Return everywhere
+  - [x] Review Checkpoint
 - [ ] **Phase 3** — One Written Shape, One Resolver `[Gates at Task 3-3 for Tasks 3-2 and 3-3]`
   - [ ] Task 3-1 · `readLinkText`, `resolveLink`, `bareHeading`, and `wikiTitle`
   - [ ] Task 3-2 · `ConnectionsApi` as `{ index, open, menu?, headingsOf }`
   - [ ] Task 3-3 · Every consumer resolves through the one resolver
   - [ ] Task 3-4 · `[](Page)` draws its default label
   - [ ] Review Checkpoint
+- [ ] `[Compaction Checkpoint 1: c/pre-compaction with the MANDATE and PRINCIPLES re-instilled; stop, and continue only when re-prompted]`
 - [ ] **Phase 4** — One Tracker, One Baseline
   - [ ] Task 4-1 · `linkWriting` replaces `linkTyping`
   - [ ] Task 4-2 · `linkSettle` replaces `aliasOnLeave`, and every host flushes
@@ -240,13 +241,13 @@ Sixty ways of doing thirty things disappear; every row's "after" has one named o
   - [ ] Task 7-2 · The graph applies the rule
   - [ ] Task 7-3 · The cascade applies the rule
   - [ ] Review Checkpoint
-- [ ] `[Stop: the Net Ledger through Phase 7, measured, and Phase 8's worktree measurement against the −100 floor]`
-- [ ] `[Compaction Checkpoint 3: c/pre-compaction with the MANDATE and PRINCIPLES re-instilled and the Phase 8 measurement in hand; stop, and continue only when re-prompted]`
+- [ ] `[Stop only if the Net Ledger through Phase 7, measured, plus Phase 8's worktree measurement would end above the −100 floor]`
 - [ ] **Phase 8** — One Editor Surface in Every Field `[Typed on a scratch worktree and measured before commit]`
   - [ ] Task 8-1 · The value editor and its one-line mode
   - [ ] Task 8-2 · The Link field, Rename, and the single-line Text field mount it
   - [ ] Task 8-3 · The live drive and the field tests follow
   - [ ] Review Checkpoint
+- [ ] `[Compaction Checkpoint 3: c/pre-compaction with the MANDATE and PRINCIPLES re-instilled and the Phase 8 measurement in hand; stop, and continue only when re-prompted]`
 - [ ] **Phase 9** — Documentation and the Ledger
   - [ ] Task 9-1 · The feature documents read true
   - [ ] Task 9-2 · The planning documents and W22 reconcile
@@ -256,7 +257,7 @@ Sixty ways of doing thirty things disappear; every row's "after" has one named o
 | Phase | Investigation Net | AFTER-Count Net | Honest Band | Basis | Measured Removed | Measured Added | Measured Net | Running |
 |---|---|---|---|---|---|---|---|---|
 | 1 | −81 | −81 | −81 | typed (`c5`, formatted, with the baseline strip); landed 9 above it: lint refused the one-line claimant push, the formatter wrapped the record and memo lines, and the trail chain needs its own map | 261 | 189 | −72 | −72 |
-| 2 | ≈ −45 | ≈ −35 | −55 to −10 | no typed grammar diff survived; the AFTER count expands the long occurrence and reader lines | | | | |
+| 2 | ≈ −45 | ≈ −35 | −55 to −10 | no typed grammar diff survived; the AFTER count expands the long occurrence and reader lines; landed inside the band | 516 | 468 | −48 | −120 |
 | 3 | ≈ −28 | ≈ −20 | −35 to +5 | half typed (`c4` +3, corrected); the label task moved here from Phase 2 (+16) | | | | |
 | 4 | ≈ −49 | ≈ −40 | −55 to −25 | re-typed design (`c11`, corrected); the settle's guard and flushes added | | | | |
 | 5 | ≈ −26 | ≈ −60 | −90 to −16 | typed `c8` −16 kept more structure than the three-arm commit and the one-return query (about 207 lines of `autocomplete.ts` leave against about 105 formatted arriving); unverified until typed | | | | |
@@ -917,9 +918,6 @@ The floor is −100 (the owner's ruling, 10-15-2026). Both estimates sit below i
 +/** A connection showing an alias rather than its title. */
 +export const aliasedToken = (tk: Token): boolean =>
 +  tk.kind === 'wikiLink' && tk.link.shown !== null && tk.link.shown[1] > tk.link.shown[0]
-+/** A markdown link's whole destination: its title half through its heading. */
-+export const linkAddress = (tk: TokenOf<'link'>): Span => [tk.link.title[0], (tk.link.heading ?? tk.link.title)[1]]
-+export const linkTarget = (text: string, tk: TokenOf<'link'>): string => text.slice(...linkAddress(tk))
 +export const headingOf = (text: string, tk: TokenOf<LinkKind>): string | undefined =>
 +  tk.link.heading ? text.slice(tk.link.heading[0], tk.link.heading[1]) : undefined
 @@ shiftToken @@
@@ -974,7 +972,7 @@ The floor is −100 (the owner's ruling, 10-15-2026). Both estimates sit below i
 +  return { kind: 'url', url: raw }
  }
  export function tokenTarget(index: PageIndex | undefined, text: string, tk: TokenOf<LinkKind>): MdTarget {
--  if (tk.kind === 'link') return resolveMdTarget(index, linkTarget(text, tk))
+-  if (tk.kind === 'link') return resolveMdTarget(index, text.slice(...targetSpan(tk.link)))
 -  const [rs, re] = tk.resolveRange
 -  return titleTarget(index, text.slice(rs, re), headingOf(text, tk))
 +  const { title, heading } = tk.link
@@ -983,7 +981,7 @@ The floor is −100 (the owner's ruling, 10-15-2026). Both estimates sit below i
  }
 ```
 
-The one cost on a decoration build: `shiftToken` now moves four spans for a markdown token where it moved none, on visible links only, the same work a wikilink token already paid for `resolveRange` and `heading`. The token's `link` arm is a mapped type over `LinkKind`, so `TokenOf<'link'>` and `TokenOf<'wikiLink'>` keep narrowing through `Extract` (`tokens.ts:48`).
+`linkAddress` and `linkTarget` go with them: `targetSpan(o)` in `connections.ts` is the destination as written (title through heading), read by Edit Link, `formatted`, the revealed pipe, the picker's destination, and the rewriter, and `mapSpans(o, f)` maps the spans with the arm kept, so `shiftToken` and `openLinkAt` need no cast. The one cost on a decoration build: `shiftToken` now moves four spans for a markdown token where it moved none, on visible links only, the same work a wikilink token already paid for `resolveRange` and `heading`. The token's `link` arm is a mapped type over `LinkKind`, so `TokenOf<'link'>` and `TokenOf<'wikiLink'>` keep narrowing through `Extract` (`tokens.ts:48`).
 
 **VERIFY**
 
@@ -999,7 +997,7 @@ The one cost on a decoration build: `shiftToken` now moves four spans for a mark
 
 **CHANGE**
 
-- [ ] In `edits.test.ts`, rewrite `:886-898` for `slotAt` (returns the occurrence, the part, and the line start for a caret in a title, a heading, an alias, and a label, with a boundary between two slots answering the earlier slot; null in code and just past a closer) and `:901-924` for `openLinkAt` (`[[` just typed, `[[Al`, `[x](`, `[]()` with the caret between the parens, `[[A#`, each with the slot holding the placeholder cut back to the caret; a backtick before the caret keeps the code mask honest), and add a `linkAt` boundary case (two abutting links, the later wins) and an `isLiteralAt` case (a dash typed just past a closer is transformed). `headingHash.test.ts` imports `headingHash` from `../Input/edits`; its empty cases (`[[]]`, `![[]]`, `[a]()`) hold through the placeholder. `aliasPicker.test.tsx:528-558`'s `connectionAt` describe becomes `linkAt`'s. Watch them fail.
+- [ ] In `edits.test.ts`, rewrite `:886-898` for `slotAt` (returns the occurrence, the part, and the line start for a caret in a title, a heading, an alias, and a label, with a boundary between two slots answering the earlier slot; null in code and just past a closer) and `:901-924` for `openLinkAt` (`[[` just typed, `[[Al`, `[x](`, `[]()` with the caret between the parens, `[[A#`, each with the slot holding the placeholder cut back to the caret; a backtick before the caret keeps the code mask honest), and add a `linkAt` boundary case (a link holds the caret from past its opener through its closer, so the boundary between two abutting links belongs to the first, and an open link typed flush against a following one still reads) and an `isLiteralAt` case (a dash typed just past a closer is transformed). `headingHash.test.ts` imports `headingHash` from `../Input/edits`; its empty cases (`[[]]`, `![[]]`, `[a]()`) hold through the placeholder. `aliasPicker.test.tsx:528-558`'s `connectionAt` describe becomes `linkAt`'s. Watch them fail.
 - [ ] Write `edits.ts`'s readers as below; delete `headingHash.ts`; `markdownInput.ts` imports `headingHash` from `../Input/edits`.
 - [ ] `autocomplete.ts:83-84` reads `linkAt(scan, caret) ?? openLinkAt(scan, caret)` and `:126-141` read the same occurrence's `shown`, `title`, `heading` (the branch structure stays; Task 5-1 rewrites the query); `linkEdit.ts`'s `slotNear`, `emptied`, `linkWithin` read `linkAt` and `o.shown`/`o.heading`/`o.title` in place of `markdownLinkAt`'s `label`/`fragment`/`page` (Task 4-2 rewrites them); `linkReveal.ts:23` reads `linkAt` behind its `[[` gate (Task 4-1 retires the field).
 - [ ] `pasteLink.ts`: `linkContainerAt` goes; `pasteEdit` reads `linkAt(scan, sel.from)` strictly inside (`o.full[0] < sel.from - ls && sel.to - ls < o.full[1]`) and `o.syntax` where it read `tk.kind`; `:75`'s "inside a half-typed destination" becomes `openLinkAt(scan, sel.from) !== null`, the same "a link still being written" rule for both syntaxes, so a URL pasted after `[[Pa` lands literally as one pasted after `[x](ht` does.
@@ -1015,18 +1013,16 @@ The one cost on a decoration build: `shiftToken` now moves four spans for a mark
 +import { namesPage } from '../../Connections/links'
 @@ readers @@
 -/** The link written around `at`, either syntax, as the editor draws it, so code touching it leaves none; its spans are relative to `at`'s line, empty slots kept. */
-+/** The link written around `at`, either syntax, as the editor draws it, so code touching it leaves none; its spans are relative to `at`'s line, empty slots kept, and at a boundary the later-starting link wins, as `linkTokenAt` decides. */
++/** The link holding `at`, from past its opener through its closer, either syntax, as the editor draws it, so code touching it leaves none; its spans are relative to `at`'s line, empty slots kept. */
  export function linkAt(scan: DocScan, at: number): LinkOccurrence | null {
    const i = lineIndexAt(scan, at)
    const line = scan.lines[i]
    if (!line.includes('[[') && !line.includes('](')) return null
    const ls = scan.lineStarts[i]
-+  let found: LinkOccurrence | null = null
    for (const o of linkOccurrences(line, (p) => inCodeAt(scan, ls + p)))
 -    if (at - ls >= o.full[0] && at - ls <= o.full[1]) return o
--  return null
-+    if (at - ls >= o.full[0] && at - ls <= o.full[1]) found = o
-+  return found
++    if (at - ls > o.full[0] && at - ls <= o.full[1]) return o
+   return null
  }
 -export function connectionAt(scan: DocScan, at: number): LinkSpans | null { … }
 -export function openConnectionAt(scan: DocScan, at: number): LinkSpans | null { … }
@@ -1042,17 +1038,15 @@ The one cost on a decoration build: `shiftToken` now moves four spans for a mark
 +  if (wiki === -1 && md === -1) return null
 +  const text = `${head}\u0000${wiki > md ? ']]' : ')'}`
 +  const o = linkOccurrences(text, (p) => inCodeAt(scan, ls + p)).find((x) => x.full[1] === text.length)
-+  const cut = (s: Span | null): Span | null => (s && s[1] > head.length ? [s[0], head.length] : s)
-+  return o ? { ...o, full: [o.full[0], head.length], title: cut(o.title)!, heading: cut(o.heading), shown: cut(o.shown) } : null
++  return o ? mapSpans(o, ([a, b]) => [a, Math.min(b, head.length)]) : null
 +}
 +/** Which slot of `o` holds the line-relative `rel`, ends inclusive and in slot order: the one rule Return, `]`, `[`, the typing transforms, the `§` transform, and the picker ask. */
-+export function partOf(o: LinkOccurrence, rel: number): LinkPart | null {
++function partOf(o: LinkOccurrence, rel: number): LinkPart | null {
 +  const within = (s: Span | null): boolean => s !== null && rel >= s[0] && rel <= s[1]
 +  return within(o.title) ? 'title' : within(o.heading) ? 'heading' : within(o.shown) ? 'shown' : null
 +}
 +/** The written link whose slot holds `at`, outside code, with that slot and the line's start. */
 +export function slotAt(scan: DocScan, at: number): { link: LinkOccurrence; part: LinkPart; from: number } | null {
-+  if (inCodeAt(scan, at)) return null
 +  const link = linkAt(scan, at)
 +  const from = scan.lineStarts[lineIndexAt(scan, at)]
 +  const part = link && partOf(link, at - from)
@@ -1120,7 +1114,7 @@ The one cost on a decoration build: `shiftToken` now moves four spans for a mark
 +  if (how !== 'plain' && openLinkAt(scan, sel.from) !== null) return plain
 ```
 
-The placeholder is `\u0000`, legal in every wiki slot and in a destination; the code mask is the real document's, read through `ls + p`, so a synthetic closer never changes what code touches. `linkAt` keeps the `[[`/`](` line gate, and the readers cost one walk of the caret line each, as today's did; `isLiteralAt` runs two walks on the transform keys only.
+The placeholder is `\u0000`, legal in every wiki slot and in a destination; the code mask is the real document's, read through `ls + p`, so a synthetic closer never changes what code touches, and `slotAt` needs no code check of its own since the walk already drops every link code touches. `linkAt` keeps the `[[`/`](` line gate, and the readers cost one walk of the caret line each, as today's did; `isLiteralAt` runs two walks on the transform keys only.
 
 **VERIFY**
 
@@ -1206,7 +1200,7 @@ The placeholder is `\u0000`, legal in every wiki slot and in a destination; the 
 -      { key: 'Enter', run: commitAliasOnEnter },
 ```
 
-**Behavior change:** in a table cell, Return with the caret in a link's alias or label (picker closed, outside code) rests the caret just past the closer instead of moving to the cell below or continuing a list; in a Text pane it rests past the link instead of saving and closing; a second Return does the surface's own thing. Resting past the closer leaves the link, so the first Return now settles alias memory in a cell too (Phase 4). `[` inside a shown slot no longer pairs, consistent with `]`, since `typedInput` answers before `autoPair` runs. Raw HTML gates page scope with HTML Formatting on; cells and Text values never stand down for it. The binding wins because `CellEditor` (`:160-200`) and `TextPane` (`:112-140`) list `editorBase` before their own `Prec.highest` keymaps, and equal precedence falls to list order; Task 8-1's field keeps that order.
+**Behavior change:** in a table cell, Return with the caret in a link's alias or label (picker closed, outside code) rests the caret just past the closer instead of moving to the cell below or continuing a list; in a Text pane it rests past the link instead of saving and closing; a second Return does the surface's own thing. Resting past the closer leaves the link, so the first Return now settles alias memory in a cell too (Phase 4). `[` inside a shown slot no longer pairs, consistent with `]`, since `typedInput` answers before `autoPair` runs. Raw HTML gates page scope with HTML Formatting on; cells and Text values never stand down for it. The typing transforms (`--`, `->`, `...`) now hold inside a markdown label as they already did inside an alias, since `isLiteralAt` asks the one slot reader; and a destination with an unbalanced `(` before the caret is no longer read as a link being written, the grammar's own paren cap (in-app writers encode parens). The binding wins because `CellEditor` (`:160-200`) and `TextPane` (`:112-140`) list `editorBase` before their own `Prec.highest` keymaps, and equal precedence falls to list order; Task 8-1's field keeps that order.
 
 **VERIFY**
 
@@ -1216,13 +1210,13 @@ The placeholder is `\u0000`, legal in every wiki slot and in a destination; the 
 
 #### Review Checkpoint
 
-- [ ] No file under `Core/` holds a second markdown link pattern, a second `#` split, a second `[label](dest)` template, or a second "which slot holds the caret" rule.
-- [ ] `grep -rn "resolveRange\|markdownLinkAt\|connectionAt\|openConnectionAt\|inAliasAt\|linkDestinationStart\|opensFragment\|destinationHalves\|composeWebpageEmbedLine\|emptyTolerantLinkRegex" Core` finds nothing outside tests that were rewritten.
-- [ ] The six empty-destination picker tests pass through `openLinkAt`; `[x](https://…)` yields no index hit and no `page?` on its written target.
-- [ ] Return in a cell and a Text pane behaves as Task 2-5 states; an open picker still takes Return.
-- [ ] Typing on a link-dense line costs no more walks per keystroke than HEAD (`autocompleteQuery`, `linkTyping`, `aliasOnLeave` each read the caret line once).
-- [ ] The two interims this phase wrote (`readLinkText`'s markdown read, `resolveMdTarget`'s halves) are named in Tasks 3-1 and 3-2, which retire them.
-- [ ] Net Ledger: Phase 2 measured; every untyped estimate held or the increase was reported.
+- [x] No file under `Core/` holds a second markdown link pattern, a second `#` split, a second `[label](dest)` template, or a second "which slot holds the caret" rule outside the picker's branch structure (Task 5-1 rewrites it) and `slotNear` (Task 4-2 rewrites it).
+- [x] `grep -rn "resolveRange\|markdownLinkAt\|connectionAt\|openConnectionAt\|inAliasAt\|linkDestinationStart\|opensFragment\|destinationHalves\|composeWebpageEmbedLine\|emptyTolerantLinkRegex" Core` finds nothing outside tests that were rewritten.
+- [x] The six empty-destination picker tests pass through `openLinkAt`; `[x](https://…)` yields no index hit and no `page?` on its written target.
+- [x] Return in a cell and a Text pane behaves as Task 2-5 states; an open picker still takes Return.
+- [x] Typing on a link-dense line costs no more walks per keystroke than HEAD (`autocompleteQuery`, `linkTyping`, `aliasOnLeave` each read the caret line once).
+- [x] The two interims this phase wrote (`readLinkText`'s markdown read, `resolveMdTarget`'s halves) are named in Tasks 3-1 and 3-2, which retire them.
+- [x] Net Ledger: Phase 2 measured; every untyped estimate held or the increase was reported.
 
 ---
 
@@ -1393,7 +1387,7 @@ A held value's `[[#H]]` keeps drawing as `bare` because drawing calls `resolveLi
 
 ```Core/MarkdownPM/Links/connectionsApi.ts diff
 @@ imports and interface @@
--import { aliasedToken, headingOf, type LinkKind, linkTarget, type TokenOf } from '../Engine/tokens'
+-import { aliasedToken, headingOf, type LinkKind, type TokenOf } from '../Engine/tokens'
 -import type { LinkAction, LinkMenuContext } from '../../Actions/connectionMenu'
 -import { targetFragment, targetNamesFile, targetTitle } from '../../Connections/links'
 -import { isValidLink } from '../../Paths/urlPath'
@@ -1683,7 +1677,7 @@ A held value's `[[#H]]` keeps drawing as `bare` because drawing calls `resolveLi
 
 **TASK:** `[](Page)` draws its default label in the editor and in a resting cell, through `defaultLabel`, read from the token's occurrence.
 
-**NOW:** The editor's markdown loop (`decorations.ts:533-566`) marks an empty `contentRange` and hides both markers, so `[](Page)` draws as nothing; the resting cell (`cellStatic.tsx:161`) draws `draw(cs, ce, inner)`, also nothing. Both already resolve the link through `linkLook`, which since Task 3-2 reads `readOccurrence(text, tk.link)`.
+**NOW:** The editor's markdown loop (`decorations.ts:531-536`) pushes the content mark only when `contentRange` is non-empty (CodeMirror refuses an empty mark) and hides both markers, so `[](Page)` draws as nothing; that `if` becomes the widget branch. The resting cell (`cellStatic.tsx:161`) draws `draw(cs, ce, inner)`, also nothing. Both already resolve the link through `linkLook`, which since Task 3-2 reads `readOccurrence(text, tk.link)`.
 
 **CHANGE**
 
