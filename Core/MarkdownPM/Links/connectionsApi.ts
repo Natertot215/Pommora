@@ -1,6 +1,7 @@
 import type { LinkStatus } from '../../Connections/connections'
 import { normalizeTitle } from '../../Paths/caseFold'
 import { aliasedToken, headingOf, type LinkKind, type TokenOf } from '../Engine/tokens'
+import type { Span } from '../Engine/markdownCode'
 import type { LinkAction, LinkMenuContext } from '../../Actions/connectionMenu'
 import { targetFragment, targetNamesFile, targetTitle } from '../../Connections/links'
 import { isValidLink } from '../../Paths/urlPath'
@@ -99,7 +100,7 @@ interface LinkLook {
   status: LinkStatus
   missing: boolean
   bare: boolean
-  join: { showPage: boolean; heading: [number, number]; className: string } | null
+  join: { showPage: boolean; heading: Span; className: string } | null
 }
 
 export function linkLook(
@@ -113,11 +114,12 @@ export function linkLook(
   const status = linkStatus(target)
   const bare = target.kind === 'self'
   const missing = headingMissing(conn, target, ownKeys)
+  const h = tk.link.heading
   const join =
-    tk.kind === 'wikiLink' && headingOf(text, tk) && status === 'resolved' && !aliasedToken(tk)
+    tk.kind === 'wikiLink' && h && h[1] > h[0] && status === 'resolved' && !aliasedToken(tk)
       ? {
           showPage: headingLinkStyle !== 'heading-only' && !bare,
-          heading: tk.link.heading!,
+          heading: h,
           className: cx('md-connection-heading', missing && 'md-connection-heading-missing'),
         }
       : null

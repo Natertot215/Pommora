@@ -1,4 +1,4 @@
-import { expressibleInLink } from './connections'
+import { expressibleInLink, targetSpan } from './connections'
 import { normalizeTitle } from '../Paths/caseFold'
 import { encodeLinkTarget, escapeLabel, unescapeLabel } from './links'
 import { applyEdits, type TextEdit } from '../MarkdownPM/Engine/markdownCode'
@@ -6,11 +6,12 @@ import { type LinkHit, linksIn } from './scan'
 
 export type RenameChange = { title: string } | { heading: string; to: string }
 
-/** Code stays untouched — a page documenting `[[Old Title]]` in a fenced block is showing a sample. Only the written page name changes, so a heading, a table cell's escaped pipe, and an alias or label giving a name ride through, and a link naming its own page by leaving the name out stays as written; an alias or label that only showed the old title shows the new one, and an empty alias, or one that would repeat the new target, goes, as `connectionText` drops one. */
+/** Code stays untouched — a page documenting `[[Old Title]]` in a fenced block is showing a sample. Only the written page name changes, so a heading, a table cell's escaped pipe, and an alias or label giving a name ride through, and a link naming its own page by leaving the name out stays as written; an alias or label that only showed the old title shows the new one, and an empty alias, or one that would repeat the new target, goes. */
 export function rewriteConnections(body: string, oldTitle: string, newTitle: string): string {
   const oldKey = normalizeTitle(oldTitle)
   const edits: TextEdit[] = []
-  for (const { syntax, target, title, heading, shown } of linksIn(body)) {
+  for (const hit of linksIn(body)) {
+    const { syntax, target, title, heading, shown } = hit
     if (target !== oldKey) continue
     if (syntax === 'markdown') {
       edits.push({ from: title[0], to: title[1], insert: encodeLinkTarget(newTitle) })
@@ -24,7 +25,7 @@ export function rewriteConnections(body: string, oldTitle: string, newTitle: str
     const next = normalizeTitle(renamed ? newTitle : body.slice(shown[0], shown[1]))
     const named = heading ? `${newTitle}#${body.slice(heading[0], heading[1])}` : newTitle
     if (!next || next === normalizeTitle(named))
-      edits.push({ from: (heading ?? title)[1], to: shown[1], insert: '' })
+      edits.push({ from: targetSpan(hit)[1], to: shown[1], insert: '' })
     else if (renamed) edits.push({ from: shown[0], to: shown[1], insert: newTitle })
   }
   return applyEdits(body, edits)
