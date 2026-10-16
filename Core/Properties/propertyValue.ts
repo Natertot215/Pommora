@@ -10,7 +10,7 @@ import {
 import { normalizeTitle } from '../Paths/caseFold'
 import { heldValue, landValue, writeTarget } from '../Files/heldKeys'
 import { yamlInline } from '../Files/pageFile'
-import { linkEntry, wholeValueLink } from '../Connections/linkValue'
+import { linkEntry, readLinkText } from '../Connections/linkValue'
 import { readNumber, spelledNumber } from './formatValue'
 import { capitalize } from '@pommora/uix/Utilities/capitalize'
 import { namesValue } from './pageValue'
@@ -139,13 +139,14 @@ export interface Frozen {
 }
 
 export function gonePageEntry(raw: unknown, frozen: Frozen): string | null {
-  const link = wholeValueLink(raw)
+  const entry = linkEntry(raw, 2)
+  const link = entry === null ? null : readLinkText(entry)
   const gone =
     link?.kind === 'page' &&
     link.title !== '' &&
     frozen.holds !== undefined &&
     !frozen.holds(link.title)
-  return gone ? linkEntry(raw, 2) : null
+  return gone ? entry : null
 }
 
 // A restore of a frozen copy keeps only the options the definition still offers and the pages its world holds, so a deleted option or page never comes back through it.

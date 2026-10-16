@@ -6,7 +6,6 @@ import {
   optionGroupsOf,
   PROPERTY_TYPES,
   type PropertyDefinition,
-  type PropertyType,
   RESERVED_NAME_PREFIX,
   withOptionGroups,
 } from './properties'
@@ -27,14 +26,13 @@ export function keyRefusal(name: string): string | null {
   return RESERVED_KEY_NAMES.has(normalizeTitle(name)) ? KEY_REFUSAL.reserved(name) : null
 }
 
-/** Which frontmatter keys hold links the graph relates and a rename rewrites: Link and Text, and a key the registry hasn't typed unless Pommora keeps it; never File, whose references name assets. */
-export const holdsLinks = (key: string, type: PropertyType | undefined): boolean =>
-  type === undefined ? keyRefusal(key) === null : type === 'link' || type === 'text'
-
-/** The same question asked of a registry: one folded lookup, built once per reader. */
+/** Which frontmatter keys hold links the graph relates and a rename rewrites, asked of a registry: Link and Text, and a key the registry hasn't typed unless Pommora keeps it; never File, whose references name assets. One folded lookup, built once per reader. */
 export const linkKeysOf = (defs: readonly PropertyDefinition[]): ((key: string) => boolean) => {
   const names = byFoldedName(defs)
-  return (key) => holdsLinks(key, names.get(foldKey(key))?.type)
+  return (key) => {
+    const type = names.get(foldKey(key))?.type
+    return type === undefined ? keyRefusal(key) === null : type === 'link' || type === 'text'
+  }
 }
 
 /** The whole name gate: an admissible key, unique nexus-wide, compared case-folded because the name is the on-disk key. */
