@@ -1,6 +1,7 @@
 import {
   mayNameHeading,
   namesTarget,
+  openerOf,
   type PageName,
   pageLinkText,
   repeatsTarget,
@@ -35,7 +36,7 @@ function carry(shown: string, from: PageName, to: PageName): string {
     case 'heading':
       return to.heading!
     case 'both':
-      return `${to.title}#${to.heading}`
+      return to.title + openerOf(shown, from.title, from.heading!)! + to.heading
     case null:
       return shown
   }

@@ -10,7 +10,7 @@ import { fault, ok, type Result } from '../Contract/result'
 import { ASSET_MIME } from './assetMime'
 import { AMBIGUOUS, indexable, liveAssetMap, resolveAssetName } from './assetMap'
 import { NOT_A_PROPERTY_DIR, underAssetRoot, validPropertyDir } from './assetRoots'
-import { writeAssetFile } from './assetWrite'
+import { UNSPELLABLE, writeAssetFile } from './assetWrite'
 import { sameItems } from '@pommora/uix/Utilities/same'
 
 const UNREADABLE = 'That file could not be read.'
@@ -21,8 +21,7 @@ export async function adoptFile(
   opts: { allow: 'image' | 'any'; subfolder?: string },
 ): Promise<Result<string>> {
   const base = basename(absSource)
-  if (!base || !expressibleInLink(base) || neverWatched([base]))
-    return fault('That file’s name can’t be written as a link.')
+  if (!base || !expressibleInLink(base) || neverWatched([base])) return UNSPELLABLE
   if (opts.allow === 'image' && !(extname(base).toLowerCase() in ASSET_MIME))
     return fault('That file isn’t an image Pommora can show.')
   const { assetDir } = await readWatchScope(root)

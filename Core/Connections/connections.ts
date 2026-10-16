@@ -15,23 +15,25 @@ import {
   trimmedRange,
 } from '../MarkdownPM/Engine/markdownCode'
 
-// Fresh per call so callers never share `lastIndex`. `]` is content unless it closes the pair; the 255 cap is load-bearing, since an unbounded run backtracks quadratically on an unclosed `[`-run. The page half stops at the first `#`; the heading takes the rest up to the pipe.
+export const OPENER = /[#§]/
+
+// Fresh per call so callers never share `lastIndex`. `]` is content unless it closes the pair; the 255 cap is load-bearing, since an unbounded run backtracks quadratically on an unclosed `[`-run. The page half stops at the first opener; the heading takes the rest up to the pipe.
 export function pageLinkPattern(): RegExp {
-  return /\[\[(?<page>(?:[^\]\r\n|#]|\](?!\])){0,255})(?:#(?<heading>(?:[^\]\r\n|]|\](?!\])){0,255}))?(?:\|(?<alias>[^\]\r\n]{0,255}))?\]\]/dg
+  return /\[\[(?<page>(?:[^\]\r\n|#§]|\](?!\])){0,255})(?:[#§](?<heading>(?:[^\]\r\n|]|\](?!\])){0,255}))?(?:\|(?<alias>[^\]\r\n]{0,255}))?\]\]/dg
 }
 
 /** Whether `text` could hold a link of either syntax, by its openers alone: the gate every reader stands behind, so a text without one costs no match. */
 export const mayHoldLink = (text: string): boolean => text.includes('[[') || text.includes('](')
 
-/** Whether `text` could name a heading: a `#` inside either syntax's destination, or a `§` run. */
+/** Whether `text` could name a heading: a `#` inside either syntax's destination, or a `§`. */
 export const mayNameHeading = (text: string): boolean => /\[\[[^\r\n]*#|\]\([^\r\n]*#|§/.test(text)
 
-/** Whether `text` could name the document's own heading: a bare fragment in either syntax, or a `§` run. */
+/** Whether `text` could name the document's own heading: a bare fragment in either syntax, or a `§`. */
 export const mayNameOwnHeading = (text: string): boolean => /\[\[#|\]\(\s*#|§/.test(text)
 
 export type LinkStatus = 'resolved' | 'phantom' | 'ambiguous'
 
-/** One link of either syntax, its slots as spans into the text, the same fields in both arms: `title` is a wikilink's page half or a markdown destination up to a page-naming `#` (the whole destination otherwise, trimmed), `heading` what follows that `#`, and `shown` the alias or the label, which a markdown link always has. */
+/** One link of either syntax, its slots as spans into the text, the same fields in both arms: `title` is a wikilink's page half or a markdown destination up to a page-naming opener (the whole destination otherwise, trimmed), `heading` what follows that opener, and `shown` the alias or the label, which a markdown link always has. */
 export type LinkOccurrence =
   | { syntax: 'wiki'; full: Span; title: Span; heading: Span | null; shown: Span | null }
   | { syntax: 'markdown'; full: Span; title: Span; heading: Span | null; shown: Span }
@@ -85,11 +87,11 @@ function wikiSpans(m: RegExpMatchArray): LinkOccurrence | null {
   }
 }
 
-// The destination splits at its first raw `#` only when the half before names a page, so an address keeps one undivided title; it splits before decoding, so `%23` stays inside the title.
+// The destination splits at its first raw opener only when the half before names a page, so an address keeps one undivided title; it splits before decoding, so `%23` stays inside the title.
 function markdownSpans(text: string, [full, label, dest]: [Span, Span, Span]): LinkOccurrence {
   const [from, to] = trimmedRange(text, dest[0], dest[1])
   let hash = from
-  while (hash < to && text[hash] !== '#') hash++
+  while (hash < to && !OPENER.test(text[hash])) hash++
   const splits = hash < to && namesPage(text.slice(from, hash))
   return {
     syntax: 'markdown',
@@ -128,9 +130,11 @@ export function wholeLink(text: string): LinkOccurrence | null {
 /** A page named by title, and by heading where the link names one: the shape every rule and writer below takes. */
 export type PageName = { title: string; heading?: string }
 
-/** What the title or heading slot can spell: `|` and `#` would open the next slot, and `]]` or a trailing `]` would close the link. */
-export const expressibleInLink = (text: string): boolean =>
-  fitsSlot(text) && !/[|#]/.test(text) && !text.includes(']]') && !text.endsWith(']')
+const spells = (text: string): boolean =>
+  fitsSlot(text) && !text.includes('|') && !text.includes(']]') && !text.endsWith(']')
+
+/** What the title slot can spell: `|` or an opener would open the next slot, and `]]` or a trailing `]` would close the link. */
+export const expressibleInLink = (title: string): boolean => spells(title) && !OPENER.test(title)
 
 /** What the alias slot can spell: anything but `]`. */
 export const aliasSpells = (alias: string): boolean => fitsSlot(alias) && !alias.includes(']')
@@ -138,12 +142,18 @@ export const aliasSpells = (alias: string): boolean => fitsSlot(alias) && !alias
 /** Whether a wikilink can spell every slot of a page link; every writer falls back to the markdown form otherwise. */
 export const spellsAsWiki = (t: PageName & { shown?: string }): boolean =>
   expressibleInLink(t.title) &&
-  (t.heading === undefined || expressibleInLink(t.heading)) &&
+  (t.heading === undefined || (spells(t.heading) && !t.heading.includes('#'))) &&
   (t.shown === undefined || aliasSpells(t.shown))
 
-/** Whether shown text only repeats a target, `title` or `title#heading`, so the link draws the same without it: the one drop rule. */
+/** The opener shown text spells `title` › `heading` with, where it only repeats that target. */
+export const openerOf = (shown: string, title: string, heading: string): string | undefined =>
+  ['#', '§'].find((o) => normalizeTitle(shown) === normalizeTitle(title + o + heading))
+
+/** Whether shown text only repeats a target, `title` or `title` and `heading` at either opener, so the link draws the same without it: the one drop rule. */
 export const repeatsTarget = (shown: string, title: string, heading?: string): boolean =>
-  normalizeTitle(shown) === normalizeTitle(heading === undefined ? title : `${title}#${heading}`)
+  heading === undefined
+    ? normalizeTitle(shown) === normalizeTitle(title)
+    : openerOf(shown, title, heading) !== undefined
 
 /** A name a page can hold as an alias: one the alias slot spells, not blank, and never the page's title itself. */
 export const keepsAlias = (name: string, title: string): boolean =>
