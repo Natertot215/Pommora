@@ -21,35 +21,38 @@ export function rewriteConnections(body: string, oldTitle: string, newTitle: str
   const oldKey = normalizeTitle(oldTitle)
   const rewrite = follower(body)
   const edits: TextEdit[] = []
-  for (const hit of linksIn(body)) {
-    if (hit.target !== oldKey) continue
-    const heading = hit.heading ? half(body, hit, hit.heading) : undefined
-    edits.push(...rewrite(hit, 'title', { title: oldTitle, heading }, { title: newTitle, heading }))
-  }
+  for (const hit of linksIn(body))
+    if (hit.target === oldKey) edits.push(...rewrite(hit, 'title', newTitle))
   return applyEdits(body, edits)
-}
-
-/** A hit's half as a name: a markdown destination decodes, a wikilink reads as written, trimmed as the index reads it. */
-const half = (body: string, hit: LinkHit, span: Span): string => {
-  const written = body.slice(...span)
-  return (hit.syntax === 'markdown' ? decodeLinkTarget(written) : written).trim()
 }
 
 /** Shown text naming the old target follows it to the new one, by whichever part it named; anything else is a given name and stays. */
 function carry(shown: string, from: PageName, to: PageName): string {
-  if (!namesTarget(shown, from)) return shown
-  if (repeatsTarget(shown, from.title)) return to.title
-  if (from.heading !== undefined && repeatsTarget(shown, from.heading)) return to.heading!
-  return `${to.title}#${to.heading}`
+  switch (namesTarget(shown, from)) {
+    case 'title':
+      return to.title
+    case 'heading':
+      return to.heading!
+    case 'both':
+      return `${to.title}#${to.heading}`
+    case null:
+      return shown
+  }
 }
 
-/** One rewrite per hit, for either arm: the renamed part is edited in place (a table cell's `\|` rides through), shown text naming the old target follows it, shown text repeating the new target drops its pipe, and a wikilink whose new target it can't spell is rewritten whole through the one writer, which falls to the markdown form. Inside a table region every inserted text is escaped as the cell codec escapes, since a rename writes the row's source; the regions are read once, on the first hit. */
+/** One rewrite per hit, for either arm, the hit's halves read as names (a markdown destination decodes, a wikilink reads as written, trimmed as the index reads them) and `part` replaced by `value`: the renamed part is edited in place (a table cell's `\|` rides through), shown text naming the old target follows it, shown text repeating the new target drops its pipe, and a wikilink whose new target it can't spell is rewritten whole through the one writer, which falls to the markdown form. Inside a table region every inserted text is escaped as the cell codec escapes, since a rename writes the row's source; the regions are read once, on the first hit. */
 function follower(body: string) {
   let tables: TableRegion[] | undefined
-  return (hit: LinkHit, part: 'title' | 'heading', from: PageName, to: PageName): TextEdit[] => {
+  return (hit: LinkHit, part: 'title' | 'heading', value: string): TextEdit[] => {
     tables ??= scanDoc(body).tables
     const esc = spanAt(tables, hit.full[0]) ? escapeCell : (s: string) => s
     const markdown = hit.syntax === 'markdown'
+    const half = (span: Span): string => {
+      const written = body.slice(...span)
+      return (markdown ? decodeLinkTarget(written) : written).trim()
+    }
+    const from = { title: half(hit.title), heading: hit.heading ? half(hit.heading) : undefined }
+    const to = { ...from, [part]: value }
     const shownRaw = hit.shown ? body.slice(...hit.shown) : undefined
     const shown = shownRaw === undefined ? undefined : markdown ? unescapeLabel(shownRaw) : shownRaw
     const carried = shown === undefined ? undefined : carry(shown, from, to)
@@ -57,7 +60,6 @@ function follower(body: string) {
     if (hit.syntax === 'wiki' && !spellsAsWiki(next))
       return [{ from: hit.full[0], to: hit.full[1], insert: esc(pageLinkText(next, 'markdown')) }]
     const span = part === 'title' ? hit.title : hit.heading!
-    const value = part === 'title' ? to.title : to.heading!
     const edits: TextEdit[] = [
       { from: span[0], to: span[1], insert: esc(markdown ? encodeLinkTarget(value) : value) },
     ]
@@ -91,17 +93,8 @@ export function rewriteHeadingConnections(
   const oldKey = normalizeTitle(oldHeading)
   const rewrite = follower(body)
   const edits: TextEdit[] = []
-  for (const hit of linksIn(body, ownTitle, outline && [...outline, oldHeading])) {
-    if (hit.target !== titleKey || hit.qualifier !== oldKey || !hit.heading) continue
-    const written = half(body, hit, hit.title)
-    edits.push(
-      ...rewrite(
-        hit,
-        'heading',
-        { title: written, heading: oldHeading },
-        { title: written, heading: newHeading },
-      ),
-    )
-  }
+  for (const hit of linksIn(body, ownTitle, outline && [...outline, oldHeading]))
+    if (hit.target === titleKey && hit.qualifier === oldKey && hit.heading)
+      edits.push(...rewrite(hit, 'heading', newHeading))
   return applyEdits(body, edits)
 }

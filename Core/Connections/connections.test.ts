@@ -112,11 +112,11 @@ describe('repeatsTarget and namesTarget', () => {
     expect(repeatsTarget('alpha#h', 'Alpha', 'H')).toBe(true)
   })
   it('names the target by its title, its heading, or both', () => {
-    expect(namesTarget('Alpha', { title: 'Alpha', heading: 'H' })).toBe(true)
-    expect(namesTarget('h', { title: 'Alpha', heading: 'H' })).toBe(true)
-    expect(namesTarget('Alpha#H', { title: 'Alpha', heading: 'H' })).toBe(true)
-    expect(namesTarget('H', { title: 'Alpha' })).toBe(false)
-    expect(namesTarget('Mine', { title: 'Alpha', heading: 'H' })).toBe(false)
+    expect(namesTarget('Alpha', { title: 'Alpha', heading: 'H' })).toBe('title')
+    expect(namesTarget('h', { title: 'Alpha', heading: 'H' })).toBe('heading')
+    expect(namesTarget('Alpha#H', { title: 'Alpha', heading: 'H' })).toBe('both')
+    expect(namesTarget('H', { title: 'Alpha' })).toBeNull()
+    expect(namesTarget('Mine', { title: 'Alpha', heading: 'H' })).toBeNull()
   })
 })
 

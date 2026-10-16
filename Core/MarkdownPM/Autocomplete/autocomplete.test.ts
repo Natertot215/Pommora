@@ -420,6 +420,10 @@ describe('wiki and markdown picks mirror each other', () => {
       text: '[A|B](Notes.md#A%7CB)',
       before: '[A|B](Notes.md#A%7CB)',
     })
+    expect(pick('[[ Notes #Se]]', '#S', 'A|B', {})).toEqual({
+      text: '[A|B](Notes#A%7CB)',
+      before: '[A|B](Notes#A%7CB)',
+    })
     expect(pick('[[Notes#Se|Mine]]', '#S', 'A|B', { kept: 'Mine' })).toEqual({
       text: '[Mine](Notes#A%7CB)',
       before: '[Mine](Notes#A%7CB)',
@@ -529,6 +533,8 @@ describe('the heading slot opens after a typed #', () => {
     ]
     expect(headingRows(outline, 'Set').map((r) => r.value)).toEqual(['Setup', 'Setup 2'])
     expect(headingRows(outline, '').map((r) => r.value)).toEqual(['Setup', 'Setup 2', 'Other'])
+    const unspellable = [{ from: 0, level: 1, text: 'A|B', key: 'A|B' }]
+    expect(headingRows(unspellable, '').map((r) => r.value)).toEqual(['A|B'])
   })
 
   it('the chevron commit writes an empty fragment and anchors before the closer', () => {

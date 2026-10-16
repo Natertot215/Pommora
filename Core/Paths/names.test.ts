@@ -37,7 +37,9 @@ describe('nameError — shared rules', () => {
 
 describe('nameError — a page title the link grammar can carry', () => {
   it('refuses a page title ending in `]` or holding `]]`, and allows a lone `]` inside', () => {
-    expect(nameError('Draft]', 'page')).toBe(`"Draft]" can't end in "]" or contain "]]".`)
+    expect(nameError('Draft]', 'page')).toBe(
+      `"Draft]" can't end in "]", contain "]]", or run past 255 characters.`,
+    )
     expect(nameError('A]]B', 'page')).not.toBe(null)
     expect(nameError('A]B', 'page')).toBe(null)
     expect(nameError('Draft]', 'directory')).toBe(null)

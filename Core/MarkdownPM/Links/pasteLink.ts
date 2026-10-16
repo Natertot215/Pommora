@@ -1,6 +1,12 @@
 import { EditorView } from '@codemirror/view'
 import type { EditorState } from '@codemirror/state'
-import { keepsShown, readLinkText, retarget, type LinkTarget } from '../../Connections/linkValue'
+import {
+  keepsShown,
+  readLinkText,
+  resolvedTarget,
+  retarget,
+  type LinkTarget,
+} from '../../Connections/linkValue'
 import { pasteAsWrite, type PasteMode, type PasteWrite } from '../../Actions/pasteAsMenu'
 import { matchesCommand } from '../../Actions/commands'
 import { isWebAddress, normalizeLinkUrl } from '../../Paths/urlPath'
@@ -42,10 +48,11 @@ function pasteEdit(
     return { from: sel.from, to: sel.to, write: { kind: 'text', text } }
   const [from, to] = trimmedRange(scan.text, sel.from, sel.to)
   const plain: PasteEdit = { from, to, write: { kind: 'text', text: pasted } }
-  const target = clipboardTarget(pasted, how)
-  if (!target) return plain
+  const clipboard = clipboardTarget(pasted, how)
+  if (!clipboard) return plain
   const { defaultLinkFormat: format, removeTitleOnLinkChange } = host.settings()
   const index = host.connections()?.index
+  const target = resolvedTarget(clipboard, index)
   const title =
     target.kind === 'url'
       ? (host.linkTitles.get(normalizeLinkUrl(target.url)) ?? undefined)

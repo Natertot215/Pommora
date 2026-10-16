@@ -300,7 +300,7 @@ describe('Rename and Edit Title land the caret where their names imply', () => {
   })
 })
 
-const NO_TITLES = { get: (): string | null => null }
+const NO_TITLES: Parameters<typeof linkEdit>[3] = { get: () => null }
 
 const edit = (text: string, action: LinkAction, titles = NO_TITLES) => {
   const tk = linkTokenAt<LinkKind>(tokenize(text), 0)
@@ -381,6 +381,17 @@ describe('a pick turns into a selection or a write, for both syntaxes', () => {
     })
     const cached = { get: (): string | null => 'A Site' }
     expect(edit('[x](https://a.com)', 'format:link-title', cached)).toMatchObject({
+      text: '[A Site](https://a.com)',
+      awaits: undefined,
+    })
+  })
+
+  it('Format writes a bare-host destination with its scheme, as paste does, and looks its title up so', () => {
+    expect(written('[x](a.com)', 'format:link-full')).toBe('[https://a.com](https://a.com)')
+    const titles = {
+      get: (url: string): string | null => (url === 'https://a.com' ? 'A Site' : null),
+    }
+    expect(edit('[x](a.com)', 'format:link-title', titles)).toMatchObject({
       text: '[A Site](https://a.com)',
       awaits: undefined,
     })

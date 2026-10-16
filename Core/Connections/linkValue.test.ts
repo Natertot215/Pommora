@@ -12,8 +12,10 @@ import {
   linkPaste,
   readLinkText,
   resolveLink,
+  resolvedTarget,
   retarget,
   serializeLink,
+  shownAlias,
   shownProse,
   wikiTitle,
 } from './linkValue'
@@ -438,6 +440,56 @@ describe('a Link value’s Edit commit', () => {
   })
   it('a page is stored as a connection whatever the old value was', () => {
     expect(commit('[[Alpha]]', '[x](https://a.com)')).toBe('[[Alpha]]')
+  })
+})
+
+describe('shownAlias — what a landed link remembers, against how it read before', () => {
+  const index = buildPageIndex([
+    { id: 'a', title: 'Alpha', path: 'Alpha.md' },
+    { id: 'n', title: 'notes.io', path: 'notes.io.md' },
+  ])
+  it('never remembers a label that only named the old target, written as it was, resolved or not', () => {
+    expect(shownAlias('[Draft](Alpha)', index, '[Draft](Draft)')).toBeNull()
+    expect(shownAlias('[Draft](Alpha)', index, '[[Alpha|Draft]]')).toBeNull()
+    expect(shownAlias('[Draft](Alpha)', index, '[[Alpha|Old]]')).toEqual({
+      page: index.resolve('Alpha').page,
+      alias: 'Draft',
+    })
+  })
+  it('reads an address-shaped page the link named before as that page', () => {
+    expect(shownAlias('[[notes.io|x]]', index, '[x](notes.io)')).toBeNull()
+    expect(shownAlias('[[notes.io|y]]', index, '[x](notes.io)')).toEqual({
+      page: index.resolve('notes.io').page,
+      alias: 'y',
+    })
+  })
+})
+
+describe('resolvedTarget — a written link as the page it resolves to', () => {
+  const index = buildPageIndex([
+    { id: 'a', title: 'Alpha', path: 'Alpha.md' },
+    { id: 'n', title: 'notes.io', path: 'notes.io.md' },
+  ])
+  it('writes a resolved page by its own title in the syntax it was written, and keeps a bare heading bare', () => {
+    expect(resolvedTarget(readLinkText('[[alpha#H|x]]')!, index)).toEqual({
+      kind: 'page',
+      syntax: 'wiki',
+      title: 'Alpha',
+      heading: 'H',
+      alias: 'x',
+    })
+    expect(resolvedTarget(readLinkText('[x](notes.io)')!, index)).toEqual({
+      kind: 'page',
+      syntax: 'markdown',
+      title: 'notes.io',
+      alias: 'x',
+    })
+    const own = { id: 'h', title: 'Holder', path: 'Holder.md' }
+    expect(resolvedTarget(readLinkText('[[#H]]')!, index, own)).toMatchObject({ title: '' })
+  })
+  it('leaves an address no page holds, and a phantom, as written', () => {
+    for (const text of ['[x](https://a.com)', '[[Nowhere]]'])
+      expect(resolvedTarget(readLinkText(text)!, index)).toEqual(readLinkText(text))
   })
 })
 

@@ -48,10 +48,10 @@ export type AcRow = { value: string } & (
 
 export type HeadingRow = Extract<AcRow, { kind: 'heading' }>
 
-/** The title a link's heading or shown slot lists against: a wikilink's as written, a markdown destination's decoded. */
+/** The title a link's heading or shown slot lists against: a wikilink's as written, trimmed, a markdown destination's decoded. */
 function namedTitle(line: string, o: LinkOccurrence): string {
   const written = line.slice(o.title[0], o.title[1])
-  return o.syntax === 'wiki' ? written : (targetTitle(written, o.heading !== null) ?? '')
+  return o.syntax === 'wiki' ? written.trim() : (targetTitle(written, o.heading !== null) ?? '')
 }
 
 export function autocompleteQuery(

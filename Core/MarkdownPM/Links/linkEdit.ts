@@ -59,8 +59,8 @@ function formatted(
   display: LinkDisplay,
   titles: Pick<EditorHost['linkTitles'], 'get'>,
 ): LinkEdit {
-  const url = text.slice(...targetSpan(tk.link))
-  const write = linkPaste(url, display, titles.get(normalizeLinkUrl(url)) ?? undefined)
+  const url = normalizeLinkUrl(text.slice(...targetSpan(tk.link)))
+  const write = linkPaste(url, display, titles.get(url) ?? undefined)
   return {
     kind: 'write',
     from: tk.range[0],

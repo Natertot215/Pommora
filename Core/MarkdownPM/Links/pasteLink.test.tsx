@@ -373,6 +373,26 @@ describe('pasting inside a link', () => {
       }
     })
 
+  it('writes a pasted address a page holds as that page, in the syntax of the link it lands in', async () => {
+    const holding: ConnectionsApi = {
+      ...held,
+      index: buildPageIndex([
+        { id: 'p1', title: 'Page1', path: 'Page1.md' },
+        { id: 'n', title: 'notes.io', path: 'notes.io.md' },
+      ]),
+    }
+    settings({ removeTitleOnLinkChange: false })
+    expect(await pastedAt('a [[Page1]] b', 4, '[x](notes.io)', 'event', holding)).toBe(
+      'a [[notes.io|x]] b',
+    )
+    expect(await pastedAt('a [y](Page1) b', 3, '[x](notes.io)', 'event', holding)).toBe(
+      'a [x](notes.io) b',
+    )
+    expect(await pastedAt('a [[Page1]] b', 4, '[x](nowhere.io)', 'event', holding)).toBe(
+      'a [x](https://nowhere.io) b',
+    )
+  })
+
   it('keeps the shown text of a link that named no page, with Remove Title On Link Change on', async () => {
     settings({ removeTitleOnLinkChange: true })
     expect(await pastedAt('a [[Page1|Mine]] b', 6, '[[Page2]]')).toBe('a [[Page2|Mine]] b')
