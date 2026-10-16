@@ -93,19 +93,19 @@ The typed-pairing machinery for the trailing emoji is deleted. A span holds at m
   - [x] Task 2-4
   - [x] Review Checkpoint
 - [ ] **Phase 3:** The Menus
-  - [ ] Task 3-1
-  - [ ] Review Checkpoint
+  - [x] Task 3-1
+  - [x] Review Checkpoint
 - [ ] `[Stop: Nathan's Pommora visual pass — Task 3-1's last VERIFY]`
-- [ ] **Phase 4:** Sapphire `[Parallel with Phases 1–3]`
+- [x] **Phase 4:** Sapphire `[Parallel with Phases 1–3]`
   - [x] Task 4-1
   - [x] Task 4-2
   - [x] Task 4-3
   - [x] Task 4-4
   - [x] Task 4-5
-  - [ ] Review Checkpoint
-- [ ] **Phase 5:** Documentation
-  - [ ] Task 5-1
-  - [ ] Task 5-2
+  - [x] Review Checkpoint
+- [x] **Phase 5:** Documentation
+  - [x] Task 5-1
+  - [x] Task 5-2
 
 ---
 
@@ -282,7 +282,7 @@ The typed-pairing machinery for the trailing emoji is deleted. A span holds at m
 @@ TokenBase @@
 -  color?: HighlightColor
 +  color?: PaintColor
-@@ wrappedSpan @@
+@@ wrappedSpan → insideMark @@
 -/** What a mark wraps, seen from outside it: a highlight's color marks sit inside its `==`, so a caret on them is still inside the highlight. */
 -export const wrappedSpan = (tk: Token): [number, number] =>
 -  tk.kind === 'highlight' ? [tk.range[0] + 2, tk.range[1] - 2] : tk.contentRange
@@ -637,7 +637,7 @@ The typed-pairing machinery for the trailing emoji is deleted. A span holds at m
 - [ ] Add `describe('text colors')` to `format.test.ts` as below, and watch it fail.
 - [ ] Add `textColor: '='` to `WRAP`.
 - [ ] Let either paint answer a paint format wherever the selection sits in it.
-- [ ] Refuse a text color over words holding an `=`, or a fresh wrap with an `=` at either outer edge.
+- [ ] Refuse a fresh wrap of either paint with an `=` at either outer edge, and a text color over words holding an `=`.
 - [ ] Route both paints' actions through one `editFor` case.
 
 **AFTER**
@@ -659,8 +659,9 @@ The typed-pairing machinery for the trailing emoji is deleted. A span holds at m
 -    covering.find((tk) => tk.kind === kind) ??
 +    covering.find((tk) => tk.kind === kind || (isPaint(kind) && isPaint(tk.kind))) ??
      covering.find( … SWAPS rule unchanged … )
-+  const reach = found ? line.slice(...found.contentRange) : doc.slice(Math.max(0, from - 1), to + 1)
-+  if (kind === 'textColor' && reach.includes('=')) return null
++  const words = found ? line.slice(...found.contentRange) : doc.slice(from, to)
++  if (kind === 'textColor' && words.includes('=')) return null
++  if (!found && isPaint(kind) && (doc[from - 1] === '=' || doc[to] === '=')) return null
    if (found) {
 @@ editFor @@
 -    case 'highlight':
@@ -707,6 +708,10 @@ The typed-pairing machinery for the trailing emoji is deleted. A span holds at m
 +    expect(toggleInline(scanDoc('=🔴a=b'), 5, 6, 'textColor', 'blue')).toBeNull()
 +    expect(toggleInline(scanDoc('==hi==x'), 6, 7, 'textColor', 'blue')).toBeNull()
 +    expect(toggleInline(scanDoc('a=b and ==c=='), 2, 3, 'textColor', 'red')).toBeNull()
++  })
++  it('refuses a fresh highlight beside an =, which would erase the span it touches', () => {
++    expect(toggleInline(scanDoc('a =🔴warm= b'), 10, 10, 'highlight', 'red')).toBeNull()
++    expect(toggleInline(scanDoc('==a== b'), 5, 5, 'highlight')).toBeNull()
 +  })
 +  it('routes each paint’s menu action', () => {
 +    expect(apply('hi', editFor('textColor:red', scanDoc('hi'), 0, 2))).toBe('=🔴hi=')
@@ -797,17 +802,64 @@ The typed-pairing machinery for the trailing emoji is deleted. A span holds at m
 **CHANGE**
 
 - [ ] Rewrite the tests below, and watch them fail.
-- [ ] Rewrite `readFormatState`'s mark reads around one `covers`.
+- [ ] Read marks through `insideMark` over the trimmed, marker-stripped selection, and links and connections over the trimmed selection alone.
 - [ ] Rewrite the schema, `EditorMenuAction`, `colorRows`, `changeColorItems`, and the Format submenu.
 - [ ] Derive `cellStatic`'s slot check from `isPaint`.
 - [ ] Update both fixtures (`Core/Actions/editorMenu.test.ts:12` and `Desktop/Actions/editorMenu.test.ts:31`) to `painted: null`.
 
 **AFTER**
 
+```Core/MarkdownPM/Engine/tokens.ts diff
+-/** What a mark wraps, seen from outside it: … */
+-export const wrappedSpan = ({ range: [s, e], contentRange: [cs, ce], color }: Token): Span =>
+-  color ? [s + e - ce, ce] : [cs, ce]
++/** Whether a mark wraps `f`–`t`, seen from outside it: a color mark sits inside its opener, past a run as wide as the closer, so a caret on it is still inside the span. */
++export const insideMark = (
++  { range: [s, e], contentRange: [cs, ce], color }: Token,
++  f: number,
++  t: number,
++): boolean => (color ? s + e - ce : cs) <= f && t <= ce
+```
+
+```Core/MarkdownPM/Input/format.ts diff
+ const MARKER_CHARS = '*_~=`'
++
++export function innerRange(line: string, from: number, to: number): [number, number] {
++  let f = from
++  let t = to
++  while (f < t && MARKER_CHARS.includes(line[f])) f++
++  while (t > f && MARKER_CHARS.includes(line[t - 1])) t--
++  return [f, t]
++}
+ …
+-  let f = from - ls
+-  let t = to - ls
+-  while (f < t && MARKER_CHARS.includes(line[f])) f++
+-  while (t > f && MARKER_CHARS.includes(line[t - 1])) t--
+-  const covering = tokenize(line).filter((tk) => {
+-    const [s, e] = wrappedSpan(tk)
+-    return s <= f && t <= e
+-  })
++  const [f, t] = innerRange(line, from - ls, to - ls)
++  const covering = tokenize(line).filter((tk) => insideMark(tk, f, t))
+```
+
 ```Core/MarkdownPM/Input/formatState.ts diff
 -import { tokenize, wrappedSpan } from '../Engine/tokens'
-+import { type Token, type TokenOf, tokenize, wrappedSpan } from '../Engine/tokens'
++import { insideMark, type TokenOf, tokenize } from '../Engine/tokens'
 +import { isPaint, type Paint } from '../Engine/paints'
+-import { isQuoteToggleable, splitPrefix } from './format'
++import { innerRange, isQuoteToggleable, splitPrefix } from './format'
+-import { lineStartAt, lineEndAt } from '../Engine/markdownCode'
++import { lineStartAt, lineEndAt, trimmedRange } from '../Engine/markdownCode'
+ …
+-  from: number,
+-  to: number,
++  selFrom: number,
++  selTo: number,
+ ): Omit<EditorMenuRequest, …> {
+   const doc = scan.text
++  const [from, to] = trimmedRange(doc, selFrom, selTo)
  …
 -  const wrapping = (kind: string) =>
 -    tokens.find((tk) => {
@@ -816,12 +868,12 @@ The typed-pairing machinery for the trailing emoji is deleted. A span holds at m
 -    })
 -  const wraps = (kind: string): boolean => wrapping(kind) !== undefined
 -  const highlight = wrapping('highlight')
-+  const covers = (tk: Token): boolean => {
-+    const [s, e] = wrappedSpan(tk)
-+    return s <= f && t <= e
-+  }
-+  const wraps = (kind: string): boolean => tokens.some((tk) => tk.kind === kind && covers(tk))
-+  const painted = tokens.find((tk): tk is TokenOf<Paint> => isPaint(tk.kind) && covers(tk))
++  const [mf, mt] = innerRange(line, f, t)
++  const wraps = (kind: string): boolean =>
++    tokens.some((tk) => tk.kind === kind && insideMark(tk, mf, mt))
++  const painted = tokens.find(
++    (tk): tk is TokenOf<Paint> => isPaint(tk.kind) && insideMark(tk, mf, mt),
++  )
  …
 -    highlight: highlight ? (highlight.color ?? 'accent') : null,
 +    painted: painted ? { paint: painted.kind, color: painted.color ?? 'accent' } : null,
@@ -857,15 +909,14 @@ The typed-pairing machinery for the trailing emoji is deleted. A span holds at m
 +  s: EditorMenuRequest,
 +  commands: Commands,
 +): ActionItem<EditorMenuAction>[] {
-+  const checked = (color: 'accent' | PaintColor): boolean =>
-+    s.painted?.paint === paint && s.painted.color === color
++  const lit = s.painted?.paint === paint ? s.painted.color : null
 +  const accent: LeafItem<EditorMenuAction>[] =
 +    paint === 'highlight'
 +      ? [
 +          {
 +            label: 'Accent',
 +            action: 'format:highlight',
-+            checked: checked('accent'),
++            checked: lit === 'accent',
 +            chord: commands['format:highlight'],
 +          },
 +        ]
@@ -876,7 +927,7 @@ The typed-pairing machinery for the trailing emoji is deleted. A span holds at m
 +      (color): LeafItem<EditorMenuAction> => ({
 +        label: capitalize(color),
 +        action: `${paint}:${color}`,
-+        checked: checked(color),
++        checked: lit === color,
 +      }),
 +    ),
 +  ])
@@ -924,12 +975,37 @@ The typed-pairing machinery for the trailing emoji is deleted. A span holds at m
 +    expect(readFormatState(scanDoc(doc), 5, 9).painted).toEqual({ paint: 'textColor', color: 'red' })
 +  })
 +})
++
++describe('the marks a whole selected span reads', () => {
++  it('reads the mark a selection over its markers covers', () => {
++    expect(readFormatState(scanDoc('**hi**'), 0, 6).bold).toBe(true)
++    expect(readFormatState(scanDoc('==🔴hi=='), 0, 8).painted).toEqual({ paint: 'highlight', color: 'red' })
++  })
++  it('reads a link inside a selected mark as the mark alone', () => {
++    const state = readFormatState(scanDoc('**[a](b)**'), 0, 10)
++    expect(state.bold).toBe(true)
++    expect(state.link).toBe(false)
++  })
++})
 ```
 
 ```Core/Actions/editorMenu.test.ts diff
+@@ imports @@
+-import { type EditorMenuRequest, changeColorItems, editorContextItems } from './editorMenu'
++import {
++  type EditorMenuRequest,
++  changeColorItems,
++  editorContextItems,
++  editorMenuRequest,
++} from './editorMenu'
 @@ fixture @@
 -  highlight: null,
 +  painted: null,
+@@ it('words and orders its submenus as the block menu does') @@
+-    expect(branch('Format').map((r) => r.label).slice(-2)).toEqual(['Connection', 'External Link'])
++    expect(branch('Format').map((r) => r.label)).toEqual([
++      'Italic', 'Inline Code', 'Bold', 'Strikethrough', 'Text Color', 'Highlight', 'Connection', 'External Link',
++    ])
 @@ describe('the highlight rows') → describe('the color rows') @@
 +  const rowsOf = (label: string, s: EditorMenuRequest) =>
 +    editorContextItems(s, DEFAULT_COMMANDS, '')
@@ -939,12 +1015,6 @@ The typed-pairing machinery for the trailing emoji is deleted. A span holds at m
 +  const textColor = (s: EditorMenuRequest) => rowsOf('Text Color', s)
 +  const lit = { ...state, painted: { paint: 'highlight', color: 'red' } } as const
 +  const inked = { ...state, painted: { paint: 'textColor', color: 'green' } } as const
-+
-+  it('seat Text Color above Highlight in Format', () => {
-+    expect(branch('Format').map((r) => r.label)).toEqual([
-+      'Italic', 'Inline Code', 'Bold', 'Strikethrough', 'Text Color', 'Highlight', 'Connection', 'External Link',
-+    ])
-+  })
    it('lead with the accent on the highlight chord, the colors set apart under it', () => { … unchanged … })
 +  it('give Text Color the colors text takes, with no accent, chord, or divider', () => {
 +    const rows = textColor(state)
@@ -965,6 +1035,15 @@ The typed-pairing machinery for the trailing emoji is deleted. A span holds at m
 ~    expect(row.submenu).toEqual(highlight(lit))
 +    expect(changeColorItems(inked, DEFAULT_COMMANDS)[0].submenu).toEqual(textColor(inked))
    })
++
++describe('the request main accepts', () => {
++  it('takes a paint’s colors and refuses any other', () => {
++    const asked = (color: string) =>
++      editorMenuRequest.safeParse({ ...state, painted: { paint: 'textColor', color } }).success
++    expect(asked('green')).toBe(true)
++    expect(asked('pink')).toBe(false)
++  })
++})
 ```
 
 ```Desktop/Actions/editorMenu.test.ts diff

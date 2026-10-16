@@ -48,7 +48,7 @@ const BAR = 'Drive Bar'
 const SHOWCASE = [
   'see [[Drive Target]] and [[Drive Target#Setup]], then [[Nowhere]]',
   'milk with **bold** and _italic_',
-  'eggs with ==🔴a highlight🔴==',
+  'eggs with ==🔴a highlight==',
   'a third line, plain',
 ].join('\n')
 const TARGET_NOTES = 'see [[#Setup]] first'
@@ -543,7 +543,7 @@ async function group4(cdp, pid) {
 
   await placeAt(cdp, 'eggs with')
   await pressKey(cdp, 'Enter', SHIFT)
-  check('group 4: Shift-Enter at the end of a line writes a line break', (await paneDoc(cdp)).includes('🔴==\n\na third line'))
+  check('group 4: Shift-Enter at the end of a line writes a line break', (await paneDoc(cdp)).includes('highlight==\n\na third line'))
   await shot(cdp, 'pane-break')
   const beforeTab = await paneDoc(cdp)
   await pressKey(cdp, 'Tab')
@@ -557,7 +557,7 @@ async function group4(cdp, pid) {
   await shot(cdp, 'pane-autocomplete')
   // The row's title draws its match apart from the rest, so the row is the innermost element reading the whole title.
   await mouseClick(cdp, `[...document.querySelectorAll('.mdpm-ac *')].find((e) => e.textContent.trim() === 'Drive Target' && [...e.children].every((c) => c.textContent.trim() !== 'Drive Target'))`)
-  check('group 4: a press on its row inserts [[Drive Target]] and the pane stays', (await paneDoc(cdp)).includes('🔴==\n[[Drive Target]]') && (await cdp.evaluate(`!!document.querySelector('${PANE}')`)))
+  check('group 4: a press on its row inserts [[Drive Target]] and the pane stays', (await paneDoc(cdp)).includes('highlight==\n[[Drive Target]]') && (await cdp.evaluate(`!!document.querySelector('${PANE}')`)))
   await pressKey(cdp, 'Enter', SHIFT)
   for (const ch of ['[', '[', 'Dri']) await typeText(cdp, ch)
   await until('the autocomplete again', () => cdp.evaluate(`!!document.querySelector('.mdpm-ac')`), 4000).catch(() => {})
