@@ -3,6 +3,7 @@ import { tokenize, activeTokenIndices } from './tokens'
 import { computeStats } from './subfieldStats'
 import {
   assembleLineIntents,
+  contentClass,
   docLineIntents,
   GRIP_HOST,
   NO_CARET,
@@ -74,6 +75,13 @@ describe('list marker reveal', () => {
 })
 
 describe('decoration intents', () => {
+  it('classes a painted span by its paint and its color', () => {
+    const [ink] = tokenize('=🔴a=')
+    const [wash] = tokenize('==🔴a==')
+    expect(ink.kind === 'textColor' && contentClass(ink)).toBe('md-text-color md-paint-red')
+    expect(wash.kind === 'highlight' && contentClass(wash)).toBe('md-highlight md-paint-red')
+  })
+
   it('inactive bold → md-bold class on content + hidden markers', () => {
     const t = '**a** xxxxx'
     const tokens = tokenize(t)

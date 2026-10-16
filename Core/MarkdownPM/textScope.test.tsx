@@ -59,6 +59,7 @@ describe('the text scope', () => {
       _italic_: 'md-italic',
       '==mark==': 'md-highlight',
       '`code`': 'md-code',
+      '=🔴ink=': 'md-text-color md-paint-red',
     }
     for (const [line, className] of Object.entries(marks)) {
       const text = `- a ${line} b`

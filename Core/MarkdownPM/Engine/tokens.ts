@@ -7,18 +7,19 @@ import {
   htmlTagRegex,
   isInlineMathContent,
   highlightRegex,
+  textColorRegex,
   inlineLatexRegex,
   markerRegex,
 } from './detect'
 import { type LinkOccurrence, linkOccurrences } from '../../Connections/connections'
-import { type HighlightColor, markAfter, markBefore } from './highlightColors'
+import { markAfter, type Paint, type PaintColor } from './paints'
 
 export type TokenKind =
   | 'italic'
   | 'bold'
   | 'strikethrough'
   | 'inlineCode'
-  | 'highlight'
+  | Paint
   | 'blockLatex'
   | 'inlineLatex'
   | 'wikiLink'
@@ -32,7 +33,7 @@ interface TokenBase {
   range: Span
   contentRange: Span
   markerRanges: Span[]
-  color?: HighlightColor
+  color?: PaintColor
   /** Inside an HTML block, where HTML Formatting draws the source raw. */
   inHtml?: true
 }
@@ -69,9 +70,9 @@ export const linkTarget = (text: string, tk: Token): string => text.slice(...lin
 export const headingOf = (text: string, tk: TokenOf<'wikiLink'>): string | undefined =>
   tk.heading && text.slice(tk.heading[0], tk.heading[1])
 
-/** What a mark wraps, seen from outside it: a highlight's color marks sit inside its `==`, so a caret on them is still inside the highlight. */
-export const wrappedSpan = (tk: Token): [number, number] =>
-  tk.kind === 'highlight' ? [tk.range[0] + 2, tk.range[1] - 2] : tk.contentRange
+/** What a mark wraps, seen from outside it: a color mark sits inside its opener, past a run as wide as the closer, so a caret on it is still inside the span. */
+export const wrappedSpan = ({ range: [s, e], contentRange: [cs, ce], color }: Token): Span =>
+  color ? [s + e - ce, ce] : [cs, ce]
 
 export function shiftToken(tk: Token, by: number): Token {
   const move = ([s, e]: Span): Span => [s + by, e + by]
@@ -95,6 +96,11 @@ const notOverlapping =
   (claimed: Token[]) =>
   (tk: Token): boolean =>
     !claimed.some((c) => overlaps(c.range, tk.range))
+
+const notCrossing =
+  (claimed: Token[]) =>
+  ({ range, contentRange: [cs, ce] }: Token): boolean =>
+    !claimed.some(({ range: [s, e] }) => overlaps([s, e], range) && (s < cs || e > ce))
 
 type MdNode = Root | RootContent | PhrasingContent
 
@@ -183,21 +189,17 @@ function regexTokens(text: string, spec: RegexSpec, inCode: (offset: number) => 
   return tokens
 }
 
-/** A matching color mark inside each `==` joins the markers, so it hides and reveals with them; a lone or mismatched one stays text. */
-function colorHighlight(text: string, tk: Token): Token {
+/** A color mark right after the opener joins it, so it hides and reveals with the marker; one with no words after it stays text. */
+function foldColor(text: string, tk: Token): Token {
   const [cs, ce] = tk.contentRange
-  const open = markAfter(text, cs)
-  const close = markBefore(text, ce)
-  if (!open || open.color !== close?.color || open.length + close.length >= ce - cs) return tk
-  const content: Span = [cs + open.length, ce - close.length]
+  const mark = markAfter(text, cs)
+  if (!mark || mark.length >= ce - cs) return tk
+  const content: Span = [cs + mark.length, ce]
   return {
     ...tk,
     contentRange: content,
-    markerRanges: [
-      [tk.range[0], content[0]],
-      [content[1], tk.range[1]],
-    ],
-    color: open.color,
+    markerRanges: [[tk.range[0], content[0]], tk.markerRanges[1]],
+    color: mark.color,
   }
 }
 
@@ -294,14 +296,6 @@ export function tokenizeChunk(text: string): { tokens: Token[]; html: Span[] } {
   const cites = matches({ kind: 'citationRef', re: markerRegex(), open: 2, close: 1 }).filter(
     notOverlapping([...wikis, ...code]),
   )
-  const highlights = matches({
-    kind: 'highlight',
-    re: highlightRegex(),
-    open: 2,
-    close: 2,
-  })
-    .filter(notOverlapping([...code, ...links]))
-    .map((tk) => colorHighlight(text, tk))
   const blockTex = blockLatexTokens(text, scan.maths).filter(notOverlapping(code))
   const inlineTex = matches({
     kind: 'inlineLatex',
@@ -310,11 +304,20 @@ export function tokenizeChunk(text: string): { tokens: Token[]; html: Span[] } {
     close: 1,
     accept: isInlineMathContent,
   }).filter(notOverlapping([...code, ...blockTex]))
+  const verbatim = [...code, ...links, ...blockTex, ...inlineTex]
+  const painted = (spec: RegexSpec): Token[] => matches(spec).map((tk) => foldColor(text, tk))
+  const highlights = painted({ kind: 'highlight', re: highlightRegex(), open: 2, close: 2 }).filter(
+    notCrossing(verbatim),
+  )
+  // A span wears one color, so a text color inside a highlight stays that highlight's words.
+  const textColors = painted({ kind: 'textColor', re: textColorRegex(), open: 1, close: 1 })
+    .filter(notCrossing(verbatim))
+    .filter(notOverlapping(highlights))
   const tags = matches({ kind: 'htmlTag', re: htmlTagRegex(), open: 1, close: 1 }).filter(
-    notOverlapping([...code, ...links, ...blockTex, ...inlineTex]),
+    notOverlapping(verbatim),
   )
 
-  tokens.push(...links, ...code, ...cites, ...highlights, ...blockTex, ...inlineTex)
+  tokens.push(...links, ...code, ...cites, ...highlights, ...textColors, ...blockTex, ...inlineTex)
   for (const tk of tokens) if (blocks.some((b) => overlaps(b, tk.range))) tk.inHtml = true
   tokens.push(...tags)
   tokens.sort((a, b) => a.range[0] - b.range[0])

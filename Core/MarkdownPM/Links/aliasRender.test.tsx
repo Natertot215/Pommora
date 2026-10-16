@@ -172,3 +172,19 @@ describe('a bare §Heading in prose resolves under Automatic', () => {
     expect(view.dom.textContent).toContain('§Setups')
   })
 })
+
+describe('a connection inside a paint', () => {
+  it('keeps its own look inside the wash or the ink', async () => {
+    for (const [body, paint] of [
+      ['==🔴see [[Alpha]] now==', '.md-highlight'],
+      ['=🔴see [[Alpha]] now=', '.md-text-color'],
+    ]) {
+      const view = await mountEditor({ initialBody: body, connections: conn })
+      expect(
+        view.dom.querySelector(`${paint}.md-paint-red .md-connection-resolved`)?.textContent,
+      ).toBe('Alpha')
+      expect(view.dom.textContent).toBe('see Alpha now')
+      await cleanupEditor()
+    }
+  })
+})

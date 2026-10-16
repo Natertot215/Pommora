@@ -425,6 +425,13 @@ describe('close construct on Enter', () => {
     expect(closeConstructOnEnter(scanDoc('**a****b**'), 5, 5)).toBeNull()
     expect(closeConstructOnEnter(scanDoc('"a""b"'), 3, 3)).toBeNull()
   })
+  it('steps past a text color’s closing =, read from its token, and leaves a prose = alone', () => {
+    expect(closeConstructOnEnter(scanDoc('=🔴hi='), 5, 5)!.selection).toBe(6)
+    expect(closeConstructOnShiftEnter(scanDoc('=🔴hi='), 5, 5)).not.toBeNull()
+    expect(closeConstructOnEnter(scanDoc('x = 1, y = 2'), 9, 9)).toBeNull()
+    expect(closeConstructOnEnter(scanDoc('a=b'), 1, 1)).toBeNull()
+    expect(closeConstructOnEnter(scanDoc('=🔴='), 3, 3)).toBeNull()
+  })
 })
 
 describe('backticks pair once', () => {

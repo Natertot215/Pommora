@@ -335,35 +335,90 @@ describe('setBlock', () => {
 })
 
 describe('highlight colors', () => {
-  it('wraps in the written circle on both sides, caret after the content', () => {
+  it('wraps with the written circle after the opening ==, caret after the content', () => {
     const e = toggleInline(scanDoc('hi'), 0, 2, 'highlight', 'red')
-    expect(apply('hi', e)).toBe('==🔴hi🔴==')
+    expect(apply('hi', e)).toBe('==🔴hi==')
     expect(e?.selection).toBe(6)
   })
   it('recolors a highlight of another color, the accent included', () => {
     expect(apply('==hi==', toggleInline(scanDoc('==hi=='), 3, 3, 'highlight', 'blue'))).toBe(
-      '==🔵hi🔵==',
+      '==🔵hi==',
     )
-    expect(
-      apply('==🟥hi🟥==', toggleInline(scanDoc('==🟥hi🟥=='), 5, 5, 'highlight', 'green')),
-    ).toBe('==🟢hi🟢==')
-    expect(apply('==🔴hi🔴==', toggleInline(scanDoc('==🔴hi🔴=='), 5, 5, 'highlight'))).toBe(
-      '==hi==',
+    expect(apply('==🟥hi==', toggleInline(scanDoc('==🟥hi=='), 5, 5, 'highlight', 'green'))).toBe(
+      '==🟢hi==',
     )
+    expect(apply('==🔴hi==', toggleInline(scanDoc('==🔴hi=='), 5, 5, 'highlight'))).toBe('==hi==')
   })
   it('removes a highlight already in the picked color', () => {
-    expect(apply('==🔴hi🔴==', toggleInline(scanDoc('==🔴hi🔴=='), 5, 5, 'highlight', 'red'))).toBe(
+    expect(apply('==🔴hi==', toggleInline(scanDoc('==🔴hi=='), 5, 5, 'highlight', 'red'))).toBe(
       'hi',
     )
     expect(apply('==hi==', toggleInline(scanDoc('==hi=='), 3, 3, 'highlight'))).toBe('hi')
   })
-  it('reaches a colored highlight from its revealed color marks', () => {
-    const doc = 'a ==🔴text🔴== b'
+  it('reaches a colored highlight from its revealed color mark', () => {
+    const doc = 'a ==🔴text== b'
     expect(apply(doc, toggleInline(scanDoc(doc), 4, 4, 'highlight'))).toBe('a ==text== b')
-    expect(apply(doc, toggleInline(scanDoc(doc), 12, 12, 'highlight', 'red'))).toBe('a text b')
-    expect(apply(doc, toggleInline(scanDoc(doc), 2, 14, 'highlight', 'green'))).toBe(
-      'a ==🟢text🟢== b',
+    expect(apply(doc, toggleInline(scanDoc(doc), 10, 10, 'highlight', 'red'))).toBe('a text b')
+    expect(apply(doc, toggleInline(scanDoc(doc), 2, 12, 'highlight', 'green'))).toBe(
+      'a ==🟢text== b',
     )
-    expect(apply(doc, toggleInline(scanDoc(doc), 4, 12, 'highlight'))).toBe('a ==text== b')
+    expect(apply(doc, toggleInline(scanDoc(doc), 4, 10, 'highlight'))).toBe('a ==text== b')
+  })
+})
+
+describe('text colors', () => {
+  it('wraps with the written circle after a lone =, caret after the content', () => {
+    const e = toggleInline(scanDoc('hi'), 0, 2, 'textColor', 'red')
+    expect(apply('hi', e)).toBe('=🔴hi=')
+    expect(e?.selection).toBe(5)
+  })
+  it('wraps a bare caret, which reads as a text color once words follow its mark', () => {
+    const e = toggleInline(scanDoc('a  b'), 2, 2, 'textColor', 'red')!
+    expect(apply('a  b', e)).toBe('a =🔴= b')
+    expect(e.selection).toBe(5)
+  })
+  it('turns a highlight into a text color and back, the span keeping one color', () => {
+    expect(apply('==🔴hi==', toggleInline(scanDoc('==🔴hi=='), 5, 5, 'textColor', 'blue'))).toBe(
+      '=🔵hi=',
+    )
+    expect(apply('==hi==', toggleInline(scanDoc('==hi=='), 3, 3, 'textColor', 'red'))).toBe(
+      '=🔴hi=',
+    )
+    expect(apply('=🔴hi=', toggleInline(scanDoc('=🔴hi='), 4, 4, 'highlight', 'green'))).toBe(
+      '==🟢hi==',
+    )
+    expect(apply('=🔴hi=', toggleInline(scanDoc('=🔴hi='), 4, 4, 'highlight', 'red'))).toBe(
+      '==🔴hi==',
+    )
+    expect(apply('=🔴hi=', toggleInline(scanDoc('=🔴hi='), 4, 4, 'highlight'))).toBe('==hi==')
+  })
+  it('recolors a text color, and removes one already in the picked color', () => {
+    expect(apply('=🔵hi=', toggleInline(scanDoc('=🔵hi='), 4, 4, 'textColor', 'green'))).toBe(
+      '=🟢hi=',
+    )
+    expect(apply('=🔵hi=', toggleInline(scanDoc('=🔵hi='), 4, 4, 'textColor', 'blue'))).toBe('hi')
+  })
+  it('acts on the whole span from a selection inside it or a caret on its revealed mark', () => {
+    const doc = 'a ==🔴two words== b'
+    expect(apply(doc, toggleInline(scanDoc(doc), 6, 9, 'textColor', 'blue'))).toBe(
+      'a =🔵two words= b',
+    )
+    expect(apply('a =🔴x= b', toggleInline(scanDoc('a =🔴x= b'), 3, 3, 'textColor', 'red'))).toBe(
+      'a x b',
+    )
+  })
+  it('refuses words holding an =, which would close the text color early', () => {
+    expect(toggleInline(scanDoc('x=1'), 0, 3, 'textColor', 'red')).toBeNull()
+    expect(toggleInline(scanDoc('==a=b=='), 3, 3, 'textColor', 'red')).toBeNull()
+  })
+  it('refuses a fresh wrap beside an =, which would fuse its marker into a longer run', () => {
+    expect(toggleInline(scanDoc('=🔴hi='), 6, 6, 'textColor', 'red')).toBeNull()
+    expect(toggleInline(scanDoc('=🔴a=b'), 5, 6, 'textColor', 'blue')).toBeNull()
+    expect(toggleInline(scanDoc('==hi==x'), 6, 7, 'textColor', 'blue')).toBeNull()
+    expect(toggleInline(scanDoc('a=b and ==c=='), 2, 3, 'textColor', 'red')).toBeNull()
+  })
+  it('routes each paint’s menu action', () => {
+    expect(apply('hi', editFor('textColor:red', scanDoc('hi'), 0, 2))).toBe('=🔴hi=')
+    expect(apply('hi', editFor('highlight:red', scanDoc('hi'), 0, 2))).toBe('==🔴hi==')
   })
 })
