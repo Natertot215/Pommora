@@ -51,7 +51,7 @@ export function runPageAction(
       void s.select(ref, { newTab: true, heading: page.heading })
       return true
     case 'title:copylink':
-      void dialer().ask('clipboard:write', connectionText(title, undefined, page.heading))
+      void dialer().ask('clipboard:write', connectionText(title, page.heading))
       return true
     case 'title:history':
       s.openHistory(ref)

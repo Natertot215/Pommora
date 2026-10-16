@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { connectionAt, inAliasAt } from '../Input/edits'
+import { linkAt, slotAt } from '../Input/edits'
 import { scanDoc } from '../Engine/docScan'
 import { aliasRows, type HeadingRow } from './autocomplete'
 import { AutocompletePane } from './AutocompletePane'
@@ -525,34 +525,34 @@ describe('the heading slide’s top row marks how it arrived', () => {
   })
 })
 
-describe('connectionAt is the one answer to which connection holds an offset', () => {
+describe('linkAt is the one answer to which link holds an offset', () => {
   const scan = scanDoc('see [[Q3 Plan|the plan]] and [[Other]] end')
 
   it('finds the connection an offset sits in, at either bracket edge', () => {
-    expect(connectionAt(scan, 4)?.full).toEqual([4, 24])
-    expect(connectionAt(scan, 24)?.full).toEqual([4, 24])
-    expect(connectionAt(scan, 30)?.full).toEqual([29, 38])
-    expect(connectionAt(scan, 26)).toBeNull()
+    expect(linkAt(scan, 4)?.full).toEqual([4, 24])
+    expect(linkAt(scan, 24)?.full).toEqual([4, 24])
+    expect(linkAt(scan, 30)?.full).toEqual([29, 38])
+    expect(linkAt(scan, 26)).toBeNull()
   })
 
   it('reads spans relative to the offset’s own line', () => {
-    expect(connectionAt(scanDoc('intro\n[[Alpha]]'), 8)?.full).toEqual([0, 9])
+    expect(linkAt(scanDoc('intro\n[[Alpha]]'), 8)?.full).toEqual([0, 9])
   })
 
   it('the alias demands the caret be in the alias itself', () => {
-    expect(inAliasAt(scan, 6)).toBe(false)
-    expect(inAliasAt(scan, 16)).toBe(true)
+    expect(slotAt(scan, 6)?.part).toBe('title')
+    expect(slotAt(scan, 16)?.part).toBe('shown')
   })
 
   it('an opened-but-empty alias keeps its zero-width slot', () => {
-    expect(connectionAt(scanDoc('a [[Alpha|]] b'), 10)?.alias).toEqual([10, 10])
-    expect(connectionAt(scanDoc('a [[Alpha|x]] b'), 10)?.alias).toEqual([10, 11])
-    expect(connectionAt(scanDoc('a [[Alpha]] b'), 5)?.alias).toBeNull()
+    expect(linkAt(scanDoc('a [[Alpha|]] b'), 10)?.shown).toEqual([10, 10])
+    expect(linkAt(scanDoc('a [[Alpha|x]] b'), 10)?.shown).toEqual([10, 11])
+    expect(linkAt(scanDoc('a [[Alpha]] b'), 5)?.shown).toBeNull()
   })
 
   it('a connection code touches is text, as the editor draws it', () => {
-    expect(connectionAt(scanDoc('x `[[A`]] y'), 7)).toBeNull()
-    expect(connectionAt(scanDoc('```\n[[A]]\n```'), 6)).toBeNull()
-    expect(inAliasAt(scanDoc('x `[[A|b`]] y'), 9)).toBe(false)
+    expect(linkAt(scanDoc('x `[[A`]] y'), 7)).toBeNull()
+    expect(linkAt(scanDoc('```\n[[A]]\n```'), 6)).toBeNull()
+    expect(slotAt(scanDoc('x `[[A|b`]] y'), 9)).toBeNull()
   })
 })

@@ -1,5 +1,5 @@
 import { expressibleInLink, pageEmbedText } from '../Connections/connections'
-import { composeWebpageEmbedLine } from '../Connections/links'
+import { markdownLink } from '../Connections/links'
 import { isHttpLink } from '../Paths/urlPath'
 import {
   connectionSpells,
@@ -105,7 +105,7 @@ export function pasteAsWrite(
     case 'plain':
       return { kind: 'text', text: target.url }
     case 'embedLink':
-      return { kind: 'line', text: composeWebpageEmbedLine('', target.url) }
+      return { kind: 'line', text: `!${markdownLink(target.url, '')}` }
     case 'connection':
     case 'markdown':
     case 'embedPage':

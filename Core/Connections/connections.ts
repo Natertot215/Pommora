@@ -1,6 +1,12 @@
 import { normalizeTitle } from '../Paths/caseFold'
-import { markdownLinkRegex } from './links'
-import { type CodeMask, codeTouches, overlaps } from '../MarkdownPM/Engine/markdownCode'
+import { markdownLinkRegex, namesPage } from './links'
+import {
+  type CodeMask,
+  codeTouches,
+  overlaps,
+  type Span,
+  trimmedRange,
+} from '../MarkdownPM/Engine/markdownCode'
 
 // Fresh per call so callers never share `lastIndex`. `]` is content unless it closes the pair; the 255 cap is load-bearing, since an unbounded run backtracks quadratically on an unclosed `[`-run. The page half stops at the first `#`; the heading takes the rest up to the pipe.
 export function pageLinkPattern(): RegExp {
@@ -9,20 +15,15 @@ export function pageLinkPattern(): RegExp {
 
 export type LinkStatus = 'resolved' | 'phantom' | 'ambiguous'
 
-type Span = [number, number]
-
-export interface LinkSpans {
-  full: Span
-  title: Span
-  heading: Span | null
-  alias: Span | null
-}
-
+/** One link of either syntax, its slots as spans into the text, the same fields in both arms: `title` is a wikilink's page half or a markdown destination up to a page-naming `#` (the whole destination otherwise, trimmed), `heading` what follows that `#`, and `shown` the alias or the label, which a markdown link always has. */
 export type LinkOccurrence =
-  | ({ syntax: 'wiki' } & LinkSpans)
-  | { syntax: 'markdown'; full: Span; label: Span; destination: Span }
+  | { syntax: 'wiki'; full: Span; title: Span; heading: Span | null; shown: Span | null }
+  | { syntax: 'markdown'; full: Span; title: Span; heading: Span | null; shown: Span }
 
-function linkSpans(m: RegExpMatchArray): LinkSpans | null {
+/** The three slots a caret can sit in. */
+export type LinkPart = 'title' | 'heading' | 'shown'
+
+function wikiSpans(m: RegExpMatchArray): LinkOccurrence | null {
   const at = m.index
   const g = m.indices?.groups
   if (at == null || !g?.page) return null
@@ -33,27 +34,43 @@ function linkSpans(m: RegExpMatchArray): LinkSpans | null {
   const unescaped = (r: Span): Span =>
     alias !== null && m[0][r[1] - 1 - at] === '\\' ? [r[0], r[1] - 1] : r
   return {
+    syntax: 'wiki',
     full: [at, at + m[0].length],
     title: heading === null ? unescaped(page) : page,
     heading: heading === null ? null : unescaped(heading),
-    alias,
+    shown: alias,
   }
 }
 
-/** Every connection and markdown link in `text` that code doesn't touch, with empty slots kept. A markdown link overlapping a connection yields to it, so `[[Title]](target)` stays a connection trailed by literal parens, as Obsidian reads it. */
+// The destination splits at its first raw `#` only when the half before names a page, so an address keeps one undivided title; it splits before decoding, so `%23` stays inside the title.
+function markdownSpans(text: string, [full, label, dest]: [Span, Span, Span]): LinkOccurrence {
+  const [from, to] = trimmedRange(text, dest[0], dest[1])
+  const hash = text.slice(from, to).indexOf('#')
+  const splits = hash !== -1 && namesPage(text.slice(from, from + hash))
+  return {
+    syntax: 'markdown',
+    full,
+    title: splits ? [from, from + hash] : [from, to],
+    heading: splits ? [from + hash + 1, to] : null,
+    shown: label,
+  }
+}
+
+/** Every connection and markdown link in `text` that code doesn't touch, in start order, with empty slots kept. A markdown link overlapping a connection yields to it, so `[[Title]](target)` stays a connection trailed by literal parens, as Obsidian reads it. */
 export function linkOccurrences(text: string, inCode: CodeMask): LinkOccurrence[] {
   const out: LinkOccurrence[] = []
   for (const m of text.matchAll(pageLinkPattern())) {
-    const s = linkSpans(m)
-    if (s && !codeTouches(text, inCode, s.full)) out.push({ syntax: 'wiki', ...s })
+    const o = wikiSpans(m)
+    if (o && !codeTouches(text, inCode, o.full)) out.push(o)
   }
   for (const m of text.matchAll(markdownLinkRegex())) {
-    const [full, label, destination] = m.indices as [Span, Span, Span]
+    const spans = m.indices as [Span, Span, Span]
+    const [full] = spans
     if (codeTouches(text, inCode, full)) continue
     if (!out.some((o) => o.syntax === 'wiki' && overlaps(o.full, full)))
-      out.push({ syntax: 'markdown', full, label, destination })
+      out.push(markdownSpans(text, spans))
   }
-  return out
+  return out.sort((a, b) => a.full[0] - b.full[0])
 }
 
 const NO_CODE: CodeMask = () => false
@@ -77,7 +94,7 @@ export function parseConnectionText(raw: string): ConnectionParts | null {
   const slice = ([s, e]: Span): string => text.slice(s, e).trim()
   const title = slice(o.title)
   const heading = o.heading ? slice(o.heading) : ''
-  const alias = o.alias ? slice(o.alias) : ''
+  const alias = o.shown ? slice(o.shown) : ''
   if (!title && !heading) return null
   return { title, ...(heading ? { heading } : {}), ...(alias ? { alias } : {}) }
 }
@@ -89,10 +106,12 @@ export const keepsAlias = (name: string, target: string): boolean =>
   !/[\]\r\n]/.test(name) &&
   normalizeTitle(name) !== normalizeTitle(target)
 
-export function connectionText(title: string, alias?: string, heading?: string): string {
-  const target = heading ? `${title}#${heading}` : title
-  const named = alias && keepsAlias(alias, target) ? alias : undefined
-  return named ? `[[${target}|${named}]]` : `[[${target}]]`
+/** A present-but-empty heading or alias spells its slot (`[[A#]]`, `[[A|]]`): the picker opens a slot by writing it. */
+export function connectionText(title: string, heading?: string, alias?: string): string {
+  const target = heading === undefined ? title : `${title}#${heading}`
+  const named =
+    alias !== undefined && (alias === '' || keepsAlias(alias, target)) ? alias : undefined
+  return named === undefined ? `[[${target}]]` : `[[${target}|${named}]]`
 }
 
 export function expressibleInLink(text: string): boolean {

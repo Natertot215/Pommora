@@ -13,20 +13,32 @@ const walk = (text: string) => linkOccurrences(text, codeMask(text))
 describe('linkOccurrences', () => {
   it('reads a connection’s slots, empty ones kept, and the cell escape off the half before the pipe', () => {
     expect(walk('a [[P#H|al]]')).toEqual([
-      { syntax: 'wiki', full: [2, 12], title: [4, 5], heading: [6, 7], alias: [8, 10] },
+      { syntax: 'wiki', full: [2, 12], title: [4, 5], heading: [6, 7], shown: [8, 10] },
     ])
-    expect(walk('[[P|]] [[Q#]]').map((o) => o.syntax === 'wiki' && [o.alias, o.heading])).toEqual([
+    expect(walk('[[P|]] [[Q#]]').map((o) => [o.shown, o.heading])).toEqual([
       [[4, 4], null],
       [null, [11, 11]],
     ])
-    expect(walk('[[P\\|al]]')[0]).toMatchObject({ title: [2, 3], alias: [5, 7] })
+    expect(walk('[[P\\|al]]')[0]).toMatchObject({ title: [2, 3], shown: [5, 7] })
     expect(walk('[[]] [[|x]]')).toEqual([])
   })
 
-  it('reads a markdown link’s label and destination', () => {
+  it('reads a markdown link’s title, heading, and shown label', () => {
     expect(walk('[x](Page#H)')).toEqual([
-      { syntax: 'markdown', full: [0, 11], label: [1, 2], destination: [4, 10] },
+      { syntax: 'markdown', full: [0, 11], title: [4, 8], heading: [9, 10], shown: [1, 2] },
     ])
+  })
+
+  it('keeps an empty label and refuses an empty destination', () => {
+    expect(walk('[](Page)')).toEqual([
+      { syntax: 'markdown', full: [0, 8], title: [3, 7], heading: null, shown: [1, 1] },
+    ])
+    expect(walk('[x]()')).toEqual([])
+  })
+
+  it('yields both syntaxes in start order', () => {
+    expect(walk('[b](B) [[A]]').map((o) => o.syntax)).toEqual(['markdown', 'wiki'])
+    expect(walk('[[A]] [b](B)').map((o) => o.syntax)).toEqual(['wiki', 'markdown'])
   })
 
   it('a `!` before a connection is text', () => {
@@ -85,7 +97,11 @@ describe('parseConnectionText', () => {
 
 describe('connectionText and expressibleInLink', () => {
   it('writes a bare-fragment target with an empty title', () => {
-    expect(connectionText('', undefined, 'H')).toBe('[[#H]]')
+    expect(connectionText('', 'H')).toBe('[[#H]]')
+  })
+  it('writes the heading before the alias, and spells a present-but-empty slot', () => {
+    expect(connectionText('A', 'H', 'x')).toBe('[[A#H|x]]')
+    expect(connectionText('A', '', '')).toBe('[[A#|]]')
   })
   it('refuses text that would end a link early or split it', () => {
     expect(expressibleInLink('a|b')).toBe(false)
@@ -106,7 +122,7 @@ describe('keepsAlias', () => {
   })
 
   it('connectionText drops an alias it refuses', () => {
-    expect(connectionText('Alpha', '   ')).toBe('[[Alpha]]')
-    expect(connectionText('Alpha', 'x'.repeat(256))).toBe('[[Alpha]]')
+    expect(connectionText('Alpha', undefined, '   ')).toBe('[[Alpha]]')
+    expect(connectionText('Alpha', undefined, 'x'.repeat(256))).toBe('[[Alpha]]')
   })
 })

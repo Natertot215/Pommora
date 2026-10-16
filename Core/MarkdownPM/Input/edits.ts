@@ -1,6 +1,6 @@
 import { type Personalization, settingOf } from '../../Settings/personalization'
-import { linkDestinationStart, markdownLinkAt } from '../../Connections/links'
-import { type LinkOccurrence, type LinkSpans, linkOccurrences } from '../../Connections/connections'
+import { namesPage } from '../../Connections/links'
+import { type LinkOccurrence, linkOccurrences, type LinkPart } from '../../Connections/connections'
 import {
   inCalloutAt,
   inCodeAt,
@@ -18,6 +18,7 @@ import {
   lineEndAt,
   trimmedRange,
   quotePrefix,
+  type Span,
   type TextEdit,
 } from '../Engine/markdownCode'
 import {
@@ -325,46 +326,64 @@ const emptyPairAt = (doc: string, c: number): boolean => {
   )
 }
 
-/** The link written around `at`, either syntax, as the editor draws it, so code touching it leaves none; its spans are relative to `at`'s line, empty slots kept. */
+/** The link written around `at`, either syntax, as the editor draws it, so code touching it leaves none; its spans are relative to `at`'s line, empty slots kept, and at a boundary the later-starting link wins, as `linkTokenAt` decides. */
 export function linkAt(scan: DocScan, at: number): LinkOccurrence | null {
   const i = lineIndexAt(scan, at)
   const line = scan.lines[i]
   if (!line.includes('[[') && !line.includes('](')) return null
   const ls = scan.lineStarts[i]
+  let found: LinkOccurrence | null = null
   for (const o of linkOccurrences(line, (p) => inCodeAt(scan, ls + p)))
-    if (at - ls >= o.full[0] && at - ls <= o.full[1]) return o
-  return null
+    if (at - ls >= o.full[0] && at - ls <= o.full[1]) found = o
+  return found
 }
 
-export function connectionAt(scan: DocScan, at: number): LinkSpans | null {
-  if (!scan.lines[lineIndexAt(scan, at)].includes('[[')) return null
-  const o = linkAt(scan, at)
-  return o?.syntax === 'wiki' ? o : null
-}
-
-export function openConnectionAt(scan: DocScan, at: number): LinkSpans | null {
+/** The link still being written before `at`, as it reads once closed; a placeholder at the caret keeps an empty slot readable, since both patterns refuse an empty title or destination. */
+export function openLinkAt(scan: DocScan, at: number): LinkOccurrence | null {
   const i = lineIndexAt(scan, at)
   const ls = scan.lineStarts[i]
   const head = scan.lines[i].slice(0, at - ls)
-  if (!head.includes('[[')) return null
-  if (head.endsWith('[[')) {
-    const rel = head.length
-    return { full: [rel - 2, rel], title: [rel, rel], heading: null, alias: null }
-  }
-  const closed = `${head}]]`
-  for (const o of linkOccurrences(closed, (p) => inCodeAt(scan, ls + p)))
-    if (o.syntax === 'wiki' && o.full[1] === closed.length)
-      return { ...o, full: [o.full[0], head.length] }
-  return null
+  const wiki = head.lastIndexOf('[[')
+  const md = head.lastIndexOf('](')
+  if (wiki === -1 && md === -1) return null
+  const text = `${head}\u0000${wiki > md ? ']]' : ')'}`
+  const o = linkOccurrences(text, (p) => inCodeAt(scan, ls + p)).find(
+    (x) => x.full[1] === text.length,
+  )
+  const cut = (s: Span | null): Span | null => (s && s[1] > head.length ? [s[0], head.length] : s)
+  return o
+    ? ({
+        ...o,
+        full: [o.full[0], head.length],
+        title: cut(o.title)!,
+        heading: cut(o.heading),
+        shown: cut(o.shown),
+      } as LinkOccurrence)
+    : null
 }
 
-/** In a written link's alias or label, where a `]` would truncate the link. */
-export function inAliasAt(scan: DocScan, at: number): boolean {
-  const i = lineIndexAt(scan, at)
-  const rel = at - scan.lineStarts[i]
-  const wiki = connectionAt(scan, at)
-  const shown = wiki ? wiki.alias : markdownLinkAt(scan.lines[i], rel, 'label')?.label
-  return shown != null && !inCodeAt(scan, at) && rel >= shown[0] && rel <= shown[1]
+/** Which slot of `o` holds the line-relative `rel`, ends inclusive and in slot order: the one rule Return, `]`, `[`, the typing transforms, the `§` transform, and the picker ask. */
+export function partOf(o: LinkOccurrence, rel: number): LinkPart | null {
+  const within = (s: Span | null): boolean => s !== null && rel >= s[0] && rel <= s[1]
+  return within(o.title)
+    ? 'title'
+    : within(o.heading)
+      ? 'heading'
+      : within(o.shown)
+        ? 'shown'
+        : null
+}
+
+/** The written link whose slot holds `at`, outside code, with that slot and the line's start. */
+export function slotAt(
+  scan: DocScan,
+  at: number,
+): { link: LinkOccurrence; part: LinkPart; from: number } | null {
+  if (inCodeAt(scan, at)) return null
+  const link = linkAt(scan, at)
+  const from = scan.lineStarts[lineIndexAt(scan, at)]
+  const part = link && partOf(link, at - from)
+  return link && part ? { link, part, from } : null
 }
 
 export function autoPair(
@@ -402,8 +421,24 @@ export function autoPair(
     return { from: c, to: c, insert: '', selection: c + 1 }
   if (DOUBLED_ONLY.has(inserted)) return null
   if (!isPairEdge(prev, OPEN_MARKS) && !(inserted === '(' && prev === ']')) return null
-  if (inserted === '[' && inAliasAt(scan, c)) return null
   return { from: c, to: c, insert: inserted + pair.close, selection: c + 1 }
+}
+
+/** The one transform that fires only where a link names its page: a wikilink's title half, or a markdown destination's page half. An alias, a label, an address, and a heading are prose, and may hold the character. */
+export function headingHash(
+  scan: DocScan,
+  selStart: number,
+  selEnd: number,
+  inserted: string,
+): Edit | null {
+  if (inserted !== '§' || inCodeNear(scan, selStart)) return null
+  const li = lineIndexAt(scan, selStart)
+  const ls = scan.lineStarts[li]
+  const o = linkAt(scan, selStart) ?? openLinkAt(scan, selStart)
+  if (!o || partOf(o, selStart - ls) !== 'title' || selEnd - ls > o.title[1]) return null
+  if (o.syntax === 'markdown' && !namesPage(scan.lines[li].slice(o.title[0], o.title[1])))
+    return null
+  return { from: selStart, to: selEnd, insert: '#', selection: selStart + 1 }
 }
 
 // A wrap over a selection already wrapped by its own cycle steps to the next wrapper instead of compounding; '' unwraps, and a cycle without it loops.
@@ -613,19 +648,16 @@ export function closeConstructOnShiftEnter(
   return end === null ? null : shiftEnterEdit(scan, end, end)
 }
 
-// A URL-shaped run or a link address the caret sits in is link content: converting `--` → `—` would corrupt the path.
+// A URL-shaped run is link content: converting `--` → `—` would corrupt the path.
 const urlRunRe = /(?:^|[\s([{<"'])[a-z][a-z0-9+.-]*:\/\/\S*$/i
-const inUrlRun = (doc: string, c: number): boolean => {
-  const from = lineStartAt(doc, c)
-  return (
-    urlRunRe.test(doc.slice(from, c)) ||
-    linkDestinationStart(doc.slice(from, lineEndAt(doc, c)), c - from) !== null
-  )
-}
+const inUrlRun = (doc: string, c: number): boolean =>
+  urlRunRe.test(doc.slice(lineStartAt(doc, c), c))
+// Inside a link's slots or a link still being written; a transform typed just past `]]` is prose.
 const isLiteralAt = (scan: DocScan, c: number): boolean =>
   inCodeNear(scan, c) ||
   spanAt(scan.maths, c) !== undefined ||
-  openConnectionAt(scan, c) !== null ||
+  slotAt(scan, c) !== null ||
+  openLinkAt(scan, c) !== null ||
   inUrlRun(scan.text, c)
 
 // An unclosed `[` holds a citation's label or a link's text: a glyph written there lands inside the reference.

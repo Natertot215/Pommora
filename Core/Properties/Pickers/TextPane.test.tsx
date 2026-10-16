@@ -130,6 +130,19 @@ describe('TextPane', () => {
     expect(onCommit).toHaveBeenCalledOnce()
   })
 
+  it('Enter in an alias rests past the link, and a second Enter closes the pane', async () => {
+    render(text('see [[Alpha|al]] x'))
+    act(() => view().dispatch({ selection: { anchor: 13 } }))
+    press('Enter')
+    expect(view().state.selection.main.head).toBe(16)
+    await exited()
+    expect(pane()).not.toBeNull()
+    press('Enter')
+    await exited()
+    expect(pane()).toBeNull()
+    expect(onCommit).not.toHaveBeenCalled()
+  })
+
   it('Escape commits the typed text once, then closes; a second close commits nothing', async () => {
     render(text('x'))
     typeAtEnd('y')

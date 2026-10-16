@@ -53,8 +53,8 @@ function extractPageIndex(rel: string, content: string): PageIndexEntry {
     else tally.set(key, { kind, target, qualifier, count: 1 })
   }
   for (const hit of linksIn(body, own, outline, (p) => inCodeAt(scan, p))) {
-    add(hit.syntax === 'embed' ? 'embed' : 'body', hit.target, hit.qualifier)
-    if (hit.at >= scan.lineStarts[scan.citations.firstLine])
+    add(hit.embed ? 'embed' : 'body', hit.target, hit.qualifier)
+    if (hit.full[0] >= scan.lineStarts[scan.citations.firstLine])
       add('citation', hit.target, hit.qualifier)
   }
   // A value's links are a small body's — under the page's own title and outline, never citations, and never a tile's.

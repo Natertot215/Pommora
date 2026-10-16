@@ -32,13 +32,12 @@ import {
   indentListOnTab,
   outdentListOnShiftTab,
   wrapSelection,
-  inAliasAt,
+  headingHash,
   type Edit,
 } from './edits'
 import { applyEdit } from './applyEdit'
 import { fenceAt, lineEndOf, lineIndexAt, lineOffsetsOf } from '../Engine/markdownCode'
-import { commitAliasOnEnter } from '../Links/linkEdit'
-import { headingHash } from '../Links/headingHash'
+import { shownEnd } from '../Links/linkEdit'
 import { embedTileRanges } from '../Embeds/embedWidget'
 import { caretInMargin, type DocScan, signSeatAt } from '../Engine/docScan'
 import { type MarkdownScope, signedLine } from '../Engine/detect'
@@ -244,7 +243,9 @@ export const typedInput = (scope: MarkdownScope): Extension =>
         view,
         wrapSelection(scan, from, to, text, settings) ?? headingHash(scan, from, to, text),
       )
-    if (text === ']' && inAliasAt(scan, from)) return true
+    // In a live link's shown slot a `]` would truncate the link and a `[` would pair into one, so the first is swallowed and the second lands plainly.
+    if ((text === ']' || text === '[') && shownEnd(view.state, from, scope) !== null)
+      return text === ']'
     if (page && text === ']' && seedTypedCitation(view, from)) return true
     return apply(
       view,
@@ -265,7 +266,6 @@ export const markdownInput = [
   typedLine,
   Prec.high(
     keymap.of([
-      { key: 'Enter', run: commitAliasOnEnter },
       { key: 'Enter', run: diffBreak(insertNewlineAndIndent) },
       { key: 'Enter', run: onEnter },
       { key: 'Shift-Enter', run: onShiftEnter },

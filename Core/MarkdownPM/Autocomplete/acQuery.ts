@@ -2,7 +2,7 @@ import { StateEffect, StateField, type Text, type Transaction } from '@codemirro
 import { docScan } from '../docCache'
 import { inCodeAt } from '../Engine/docScan'
 import { inBracket } from '../Input/edits'
-import { inRawHtml } from '../decorations'
+import { inRawHtml } from '../api'
 import { editorHost } from '../api'
 import type { MarkdownScope } from '../Engine/detect'
 import { type AutocompleteQuery, autocompleteQuery, closerOf } from './autocomplete'

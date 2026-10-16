@@ -1,7 +1,7 @@
 // Emphasis is located on the mdast AST so `_`/`*` mixing/nesting is correct and code spans never emit emphasis.
 import type { Root, RootContent, PhrasingContent } from 'mdast'
 import { parse, parseThroughHtml } from './parser'
-import { inlineSpans, type CodeMask, overlaps } from './markdownCode'
+import { type CodeMask, inlineSpans, overlaps, type Span } from './markdownCode'
 import { inCodeAt, scanDoc } from './docScan'
 import {
   htmlTagRegex,
@@ -27,8 +27,6 @@ export type TokenKind =
   | 'citationRef'
   | 'htmlTag'
 
-type Span = [number, number]
-
 interface TokenBase {
   range: Span
   contentRange: Span
@@ -40,10 +38,10 @@ interface TokenBase {
 
 export type LinkKind = 'link' | 'wikiLink'
 
-type PlainKind = Exclude<TokenKind, 'wikiLink'>
+type PlainKind = Exclude<TokenKind, LinkKind>
 
 export type Token =
-  | (TokenBase & { kind: 'wikiLink'; resolveRange: Span; heading?: Span })
+  | { [K in LinkKind]: TokenBase & { kind: K; link: LinkOccurrence } }[LinkKind]
   | { [K in PlainKind]: TokenBase & { kind: K } }[PlainKind]
 
 export type TokenOf<K extends TokenKind> = Extract<Token, { kind: K }>
@@ -56,19 +54,21 @@ export const wholeLinkToken = (
   return tk?.range[1] === text.length ? tk : undefined
 }
 
-// A connection's title half, which alone resolves; it starts the shown text unless an alias replaces it.
+/** A connection showing an alias rather than its title. */
 export const aliasedToken = (tk: Token): boolean =>
-  tk.kind === 'wikiLink' && tk.contentRange[0] !== tk.resolveRange[0]
+  tk.kind === 'wikiLink' && tk.link.shown !== null && tk.link.shown[1] > tk.link.shown[0]
 
-export function linkAddress(tk: Token): [number, number] {
-  const [, close] = tk.markerRanges
-  return [close[0] + 2, close[1] - 1]
-}
+/** A markdown link's whole destination: its title half through its heading. */
+export const linkAddress = (tk: TokenOf<'link'>): Span => [
+  tk.link.title[0],
+  (tk.link.heading ?? tk.link.title)[1],
+]
 
-export const linkTarget = (text: string, tk: Token): string => text.slice(...linkAddress(tk))
+export const linkTarget = (text: string, tk: TokenOf<'link'>): string =>
+  text.slice(...linkAddress(tk))
 
-export const headingOf = (text: string, tk: TokenOf<'wikiLink'>): string | undefined =>
-  tk.heading && text.slice(tk.heading[0], tk.heading[1])
+export const headingOf = (text: string, tk: TokenOf<LinkKind>): string | undefined =>
+  tk.link.heading ? text.slice(tk.link.heading[0], tk.link.heading[1]) : undefined
 
 /** Whether a mark wraps `f`–`t`, seen from outside it: a color mark sits inside its opener, past a run as wide as the closer, so a caret on it is still inside the span. */
 export const insideMark = (
@@ -86,12 +86,18 @@ export function shiftToken(tk: Token, by: number): Token {
     ...(tk.color ? { color: tk.color } : {}),
     ...(tk.inHtml ? { inHtml: true } : {}),
   }
-  if (tk.kind !== 'wikiLink') return { ...base, kind: tk.kind }
+  if (tk.kind !== 'wikiLink' && tk.kind !== 'link') return { ...base, kind: tk.kind }
+  const { link } = tk
   return {
     ...base,
-    kind: 'wikiLink',
-    resolveRange: move(tk.resolveRange),
-    ...(tk.heading ? { heading: move(tk.heading) } : {}),
+    kind: tk.kind,
+    link: {
+      ...link,
+      full: move(link.full),
+      title: move(link.title),
+      heading: link.heading && move(link.heading),
+      shown: link.shown && move(link.shown),
+    } as LinkOccurrence,
   }
 }
 
@@ -265,22 +271,22 @@ function linkToken(o: LinkOccurrence): Token {
     return {
       kind: 'link',
       range: o.full,
-      contentRange: o.label,
+      contentRange: o.shown,
       markerRanges: [
-        [fs, o.label[0]],
-        [o.label[1], fe],
+        [fs, o.shown[0]],
+        [o.shown[1], fe],
       ],
+      link: o,
     }
   // The leading marker swallows `[[Title|`. An opened-but-empty alias shows nothing, so it stays a plain link.
-  const alias = o.alias && o.alias[1] > o.alias[0] ? o.alias : null
+  const alias = o.shown && o.shown[1] > o.shown[0] ? o.shown : null
   const heading = o.heading && o.heading[1] > o.heading[0] ? o.heading : null
   const shown = alias ?? [o.title[0], heading ? heading[1] : o.title[1]]
   return {
     kind: 'wikiLink',
     range: o.full,
     contentRange: shown,
-    resolveRange: o.title,
-    ...(heading ? { heading } : {}),
+    link: o,
     // The markers tile the whole token, so a renderer drawing only the content span can't disagree with one hiding markers.
     markerRanges: [
       [fs, shown[0]],

@@ -5,13 +5,12 @@ import {
   decodeLinkTarget,
   encodeLinkTarget,
   escapeLabel,
-  markdownLinkAt,
   targetTitle,
   unescapeLabel,
 } from '../../Connections/links'
 import type { TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { type DocScan, inCodeAt } from '../Engine/docScan'
-import { connectionAt, inBracket, openConnectionAt } from '../Input/edits'
+import { inBracket, linkAt, openLinkAt } from '../Input/edits'
 import { lineIndexAt, type TextEdit } from '../Engine/markdownCode'
 import type { ConnPage } from '../../Connections/pageIndex'
 import type { PageHeading } from '../../Platform/stores'
@@ -80,9 +79,9 @@ export function autocompleteQuery(
         title: '',
       }
   }
-  const closedLink = connectionAt(scan, caret)
-  const s = closedLink ?? openConnectionAt(scan, caret)
-  if (s) {
+  const closedLink = linkAt(scan, caret)
+  const s = closedLink ?? openLinkAt(scan, caret)
+  if (s?.syntax === 'wiki') {
     const closed = closedLink !== null
     if (!closed && !s.heading && s.title[0] === s.title[1]) {
       const after = line.startsWith(']]', rel)
@@ -113,57 +112,53 @@ export function autocompleteQuery(
         closed,
         title,
       }
-    if (s.alias && rel >= s.alias[0] && rel <= s.alias[1])
+    if (s.shown && rel >= s.shown[0] && rel <= s.shown[1])
       return {
-        query: line.slice(s.alias[0], s.alias[1]),
-        from: lineStart + s.alias[0],
-        to: lineStart + s.alias[1],
+        query: line.slice(s.shown[0], s.shown[1]),
+        from: lineStart + s.shown[0],
+        to: lineStart + s.shown[1],
         form: 'alias',
         closed,
         title,
       }
   }
-  const labelled = markdownLinkAt(line, rel, 'label')
-  if (labelled) {
-    const { label, page, full } = labelled
+  if (s?.syntax !== 'markdown') return null
+  const { shown, title: page, heading: fragment, full } = s
+  const pageTitle = targetTitle(line.slice(page[0], page[1]), fragment !== null) ?? ''
+  if (closedLink && rel >= shown[0] && rel <= shown[1])
     return {
-      query: unescapeLabel(line.slice(label[0], label[1])),
-      from: lineStart + label[0],
-      to: lineStart + label[1],
+      query: unescapeLabel(line.slice(shown[0], shown[1])),
+      from: lineStart + shown[0],
+      to: lineStart + shown[1],
       form: 'label',
       closed: true,
-      title: targetTitle(line.slice(page[0], page[1])) ?? '',
+      title: pageTitle,
       end: lineStart + full[1],
     }
-  }
-  // A destination still being typed has no `)` yet, so it reads as though closed at the caret.
-  const closedMd = markdownLinkAt(line, rel, 'dest')
-  const md = closedMd ?? markdownLinkAt(`${line.slice(0, rel)})`, rel, 'dest')
-  if (md) {
-    const closed = closedMd !== null
-    const { dest, page, fragment } = md
-    const label = { from: lineStart + md.label[0], to: lineStart + md.label[1] }
-    // As with a wikilink, the page half queries alone, an empty one before a fragment asks nothing, and a retarget replaces the fragment with the rest.
-    if (!fragment || (rel <= page[1] && page[1] > page[0]))
-      return {
-        query: decodeLinkTarget(line.slice(page[0], page[1])),
-        from: lineStart + dest[0],
-        to: lineStart + dest[1],
-        form: 'target',
-        closed,
-        label,
-      }
+  const dest: [number, number] = [page[0], (fragment ?? page)[1]]
+  if (rel < dest[0] || rel > dest[1]) return null
+  // A destination still being typed reads as though closed at the caret; an empty one is closed when its `)` follows.
+  const closed = closedLink !== null || line[rel] === ')'
+  const label = { from: lineStart + shown[0], to: lineStart + shown[1] }
+  // As with a wikilink, the page half queries alone, an empty one before a fragment asks nothing, and a retarget replaces the fragment with the rest.
+  if (!fragment || (rel <= page[1] && page[1] > page[0]))
     return {
-      query: decodeLinkTarget(line.slice(fragment[0], fragment[1])),
-      from: lineStart + fragment[0],
-      to: lineStart + fragment[1],
-      form: 'fragment',
+      query: decodeLinkTarget(line.slice(page[0], page[1])),
+      from: lineStart + dest[0],
+      to: lineStart + dest[1],
+      form: 'target',
       closed,
-      title: targetTitle(line.slice(page[0], page[1])) ?? '',
       label,
     }
+  return {
+    query: decodeLinkTarget(line.slice(fragment[0], fragment[1])),
+    from: lineStart + fragment[0],
+    to: lineStart + fragment[1],
+    form: 'fragment',
+    closed,
+    title: pageTitle,
+    label,
   }
-  return null
 }
 
 export const pageRow = (p: ConnPage, conn: ConnectionsApi): AcRow => ({

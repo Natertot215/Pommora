@@ -116,14 +116,14 @@ describe('an aliased wikilink separates what it shows from what it resolves', ()
     const t = '[[Q3 Plan|the plan]]'
     const w = byKind(tokenize(t), 'wikiLink')[0]
     expect(slice(t, w.contentRange)).toBe('the plan')
-    expect(slice(t, w.resolveRange)).toBe('Q3 Plan')
+    expect(slice(t, w.link.title)).toBe('Q3 Plan')
     expect(w.markerRanges.map((m) => slice(t, m))).toEqual(['[[Q3 Plan|', ']]'])
   })
 
   it('a bare [[Title]] resolves the span it shows', () => {
     const t = '[[Page]]'
     const w = byKind(tokenize(t), 'wikiLink')[0]
-    expect(w.resolveRange).toEqual(w.contentRange)
+    expect(w.link.title).toEqual(w.contentRange)
     expect(aliasedToken(w)).toBe(false)
     expect(slice(t, w.contentRange)).toBe('Page')
     expect(w.markerRanges.map((m) => slice(t, m))).toEqual(['[[', ']]'])
@@ -138,25 +138,32 @@ describe('an aliased wikilink separates what it shows from what it resolves', ()
 
   // The viewport projection rebuilds every token into a fresh literal, where a new span field is dropped with no type error and the editor silently resolves aliases. Field-set parity is what goes red for that.
   it('shifting a token carries every field the raw one has, offset alike', () => {
-    const raw = byKind(tokenize('[[Q3 Plan|the plan]]'), 'wikiLink')[0]
-    const moved = shiftToken(raw, 10)
-    expect(Object.keys(moved).sort()).toEqual(Object.keys(raw).sort())
-    expect(moved.range).toEqual([raw.range[0] + 10, raw.range[1] + 10])
-    expect(moved.contentRange).toEqual([raw.contentRange[0] + 10, raw.contentRange[1] + 10])
-    expect(moved).toHaveProperty('resolveRange', [
-      raw.resolveRange[0] + 10,
-      raw.resolveRange[1] + 10,
-    ])
-    expect(moved.markerRanges).toEqual(raw.markerRanges.map(([s, e]) => [s + 10, e + 10]))
+    const move = ([s, e]: [number, number]): [number, number] => [s + 10, e + 10]
+    for (const text of ['[[Q3 Plan#H|the plan]]', '[label](Page#H)']) {
+      const raw = tokenize(text)[0]
+      const moved = shiftToken(raw, 10)
+      expect(Object.keys(moved).sort()).toEqual(Object.keys(raw).sort())
+      expect(moved.range).toEqual(move(raw.range))
+      expect(moved.contentRange).toEqual(move(raw.contentRange))
+      expect(moved.markerRanges).toEqual(raw.markerRanges.map(move))
+      if (!('link' in raw) || !('link' in moved)) throw new Error('not a link token')
+      expect(moved.link).toEqual({
+        ...raw.link,
+        full: move(raw.link.full),
+        title: move(raw.link.title),
+        heading: move(raw.link.heading!),
+        shown: move(raw.link.shown!),
+      })
+    }
   })
 })
 
 describe('a heading link separates its page half, its heading, and what it resolves', () => {
-  it('[[Page#H]] carries resolveRange on the page, heading on the heading, and content across both', () => {
+  it('[[Page#H]] carries its title on the page, heading on the heading, and content across both', () => {
     const t = '[[Page#H]]'
     const w = byKind(tokenize(t), 'wikiLink')[0]
-    expect(slice(t, w.resolveRange)).toBe('Page')
-    expect(slice(t, w.heading as [number, number])).toBe('H')
+    expect(slice(t, w.link.title)).toBe('Page')
+    expect(slice(t, w.link.heading!)).toBe('H')
     expect(slice(t, w.contentRange)).toBe('Page#H')
     expect(aliasedToken(w)).toBe(false)
   })
@@ -164,33 +171,32 @@ describe('a heading link separates its page half, its heading, and what it resol
   it('[[#H]] resolves an empty page span and carries its heading', () => {
     const t = '[[#H]]'
     const w = byKind(tokenize(t), 'wikiLink')[0]
-    const [rs, re] = w.resolveRange
+    const [rs, re] = w.link.title
     expect(re - rs).toBe(0)
-    expect(slice(t, w.heading as [number, number])).toBe('H')
+    expect(slice(t, w.link.heading!)).toBe('H')
   })
 
   it('[[Page#H|a]] shows the alias, resolves the page, and still carries its heading', () => {
     const t = '[[Page#H|a]]'
     const w = byKind(tokenize(t), 'wikiLink')[0]
     expect(slice(t, w.contentRange)).toBe('a')
-    expect(slice(t, w.resolveRange)).toBe('Page')
-    expect(slice(t, w.heading as [number, number])).toBe('H')
+    expect(slice(t, w.link.title)).toBe('Page')
+    expect(slice(t, w.link.heading!)).toBe('H')
     expect(aliasedToken(w)).toBe(true)
   })
 
-  it('a wikiLink carries its title span as resolveRange and its heading span as heading, and a weblink carries no resolveRange', () => {
+  it('a link token carries its occurrence, and a weblink’s holds no heading', () => {
     expect(tokenize('[[Page#H|a]]')[0]).toMatchObject({
       kind: 'wikiLink',
-      resolveRange: [2, 6],
-      heading: [7, 8],
+      link: { title: [2, 6], heading: [7, 8], shown: [9, 10] },
     })
-    expect(tokenize('[x](u)')[0]).not.toHaveProperty('resolveRange')
+    expect(tokenize('[x](u)')[0]).toMatchObject({ kind: 'link', link: { heading: null } })
   })
 
-  it('[[Page#]] carries no heading and reads as the page alone', () => {
+  it('[[Page#]] keeps an empty heading slot and reads as the page alone', () => {
     const t = '[[Page#]]'
     const w = byKind(tokenize(t), 'wikiLink')[0]
-    expect(w.heading).toBeUndefined()
+    expect(w.link.heading).toEqual([7, 7])
     expect(slice(t, w.contentRange)).toBe('Page')
   })
 })

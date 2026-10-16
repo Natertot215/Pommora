@@ -80,6 +80,28 @@ describe('a `]` typed inside a cell alias is refused, as the page body refuses i
   })
 })
 
+describe('Return in a cell alias rests past the link, as it does in a page', () => {
+  it('rests the caret past the closer, and a second Return moves down', async () => {
+    const view = await cellEditor()
+    const at = CELL.indexOf('the plan') + 3
+    await act(async () => {
+      view.dispatch({ selection: { anchor: at } })
+    })
+    const press = (): Promise<void> =>
+      act(async () => {
+        view.contentDOM.dispatchEvent(
+          new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }),
+        )
+      })
+    await press()
+    expect(view.state.doc.toString()).toBe(CELL)
+    expect(view.state.selection.main.head).toBe(CELL.length)
+    expect(container.querySelector('.mdpm-tbl-cell-editor')).not.toBeNull()
+    await press()
+    expect(container.querySelector('.mdpm-tbl-cell-editor')).toBeNull()
+  })
+})
+
 describe('a cell types the page’s link shortcuts', () => {
   // The handler claims or passes; a passed character lands as the browser would insert it.
   const type = (view: EditorView, at: number, text: string): void => {

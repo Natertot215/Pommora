@@ -1,10 +1,11 @@
 import { describe, it, expect } from 'vitest'
-import { composeWebpageEmbedLine } from '../../Connections/links'
+import { markdownLink } from '../../Connections/links'
 import { tokenize } from './tokens'
 import { scanDoc } from './docScan'
 import { isBlockquoteLine, lineStartAt, quoteDepthOf } from './markdownCode'
 import {
   blockEmbedLines,
+  loneEmbedTitle,
   loneWebpageEmbed,
   isThematicBreakLine,
   isHeadingLine,
@@ -414,16 +415,16 @@ describe('loneWebpageEmbed — what a webpage-embed line is', () => {
   })
 })
 
-describe('composeWebpageEmbedLine — the ONE assembly path', () => {
+describe('markdownLink behind a bang — how a webpage embed line is written', () => {
   it('writes the line the detector reads back — brackets and backslashes included', () => {
     for (const label of ['', 'Docs', 'Notes [WIP]', 'a\\b', ']]', 'Chapter [2]']) {
-      const line = composeWebpageEmbedLine(label, URL)
+      const line = `!${markdownLink(URL, label)}`
       expect(loneWebpageEmbed(line), JSON.stringify(label)).toEqual({ label, url: URL })
     }
   })
 
   it('writes the bare form for an empty label', () => {
-    expect(composeWebpageEmbedLine('', URL)).toBe(`![](${URL})`)
+    expect(`!${markdownLink(URL, '')}`).toBe(`![](${URL})`)
   })
 })
 
@@ -469,5 +470,14 @@ describe("the document scan's embed lines", () => {
 
   it('a lone-line embed between blocks still claims', () => {
     expect(docEmbedLines('para\n\n![[Foo]]\n\n- item')).toEqual([{ from: 6, to: 14, title: 'Foo' }])
+  })
+})
+
+describe('one title grammar across the layers', () => {
+  const corpus = ['Plain', 'With Space', 'Dotted 3.5', 'ümlaut', 'a|pipe', 'brack]et', 'P#H', '']
+  it('a lone embed holds whatever the connection after its `!` holds', () => {
+    for (const t of corpus) expect(loneEmbedTitle(`![[${t}]] `)).toBe(t)
+    expect(loneEmbedTitle(' ![[Plain]]')).toBeNull()
+    expect(loneEmbedTitle('![[Plain]] x')).toBeNull()
   })
 })

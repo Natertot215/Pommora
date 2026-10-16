@@ -85,7 +85,7 @@ describe('readLinkText without a resolver', () => {
     expect(readLinkText('[^1](https://a.com)')).toBeNull()
     expect(readLinkText('[a](b) [c](d)')).toBeNull()
     expect(readLinkText('foo bar')).toBeNull()
-    expect(readLinkText('[](Page)')).toBeNull()
+    expect(readLinkText('[](Page)')).toEqual({ kind: 'page', syntax: 'markdown', title: 'Page' })
   })
   it('keeps a backslash the cell escape did not put there', () => {
     expect(readLinkText('[[A\\]]')).toMatchObject({ kind: 'page', title: 'A\\' })
@@ -398,7 +398,7 @@ describe('retarget — the one rule for a link whose target changes', () => {
         { kind: 'page', syntax: 'wiki', title: 'P', heading: 'H]' },
         false,
       ),
-    ).toBe('[P](P#H%5D)')
+    ).toBe('[H\\]](P#H%5D)')
   })
 
   it('takes the next target, and the next link’s own alias', () => {

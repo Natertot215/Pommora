@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest'
 import { rewriteConnections, rewriteHeadingConnections } from './rewrite'
-import { loneEmbedTitle } from '../MarkdownPM/Engine/detect'
 
 describe('rewriteConnections', () => {
   it('rewrites a normalized-matching link to the new title', () => {
@@ -115,15 +114,6 @@ describe('the embed sweep', () => {
     expect(rewriteConnections(body, 'Old', 'A Much Longer Title')).toBe(
       '[[A Much Longer Title]]\n![[A Much Longer Title]]\n```\n[[Old]]\n![[Old]]\n```\n![[A Much Longer Title]]',
     )
-  })
-})
-
-describe('one title grammar across the layers', () => {
-  const corpus = ['Plain', 'With Space', 'Dotted 3.5', 'ümlaut', 'a|pipe', 'brack]et', 'P#H', '']
-  it('a lone embed holds whatever the connection after its `!` holds', () => {
-    for (const t of corpus) expect(loneEmbedTitle(`![[${t}]] `)).toBe(t)
-    expect(loneEmbedTitle(' ![[Plain]]')).toBeNull()
-    expect(loneEmbedTitle('![[Plain]] x')).toBeNull()
   })
 })
 

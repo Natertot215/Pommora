@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { scanDoc } from '../Engine/docScan'
-import { headingHash } from './headingHash'
+import { headingHash } from './edits'
 
 describe('headingHash', () => {
   it("a § typed in a wikilink's title half writes #", () => {

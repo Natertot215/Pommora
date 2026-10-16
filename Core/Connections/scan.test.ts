@@ -219,7 +219,7 @@ describe('linksIn', () => {
 
   it('names the syntax each occurrence was written in', () => {
     expect(hits('a [[Alpha]] link').map((h) => h.syntax)).toEqual(['wiki'])
-    expect(hits('![[Alpha]] ').map((h) => h.syntax)).toEqual(['embed'])
+    expect(hits('![[Alpha]] ').map((h) => [h.syntax, h.embed])).toEqual([['wiki', true]])
     expect(hits('an ![[Alpha]] embed').map((h) => h.syntax)).toEqual(['wiki'])
     expect(hits('```\n![[Alpha]]\n```\n- ![[Alpha]]').map((h) => h.syntax)).toEqual(['wiki'])
     expect(hits('a [label](Alpha.md) link').map((h) => h.syntax)).toEqual(['markdown'])
@@ -234,17 +234,30 @@ describe('linksIn', () => {
 
   it('reads an embed’s heading as its qualifier', () => {
     expect(hits('![[Alpha#Part]]')[0]).toMatchObject({
-      syntax: 'embed',
+      embed: true,
       target: 'alpha',
       qualifier: 'part',
     })
   })
 
-  it('reports `at` as the offset the match begins at', () => {
+  it('reports `full` from the offset the match begins at', () => {
     const body = 'lead words [[Alpha]] trail'
-    expect(hits(body)[0].at).toBe(body.indexOf('[[Alpha]]'))
+    expect(hits(body)[0].full[0]).toBe(body.indexOf('[[Alpha]]'))
     const embed = '![[Alpha]]'
-    expect(hits(embed)[0].at).toBe(embed.indexOf('[[Alpha]]'))
+    expect(hits(embed)[0].full[0]).toBe(embed.indexOf('[[Alpha]]'))
+  })
+
+  it('reads a wikilink title trimmed, so a blank one before a heading names its own page', () => {
+    expect(hits('[[ #H]]', 'Own')[0]).toMatchObject({ target: 'own', qualifier: 'h' })
+  })
+
+  it('marks a markdown link alone on its line behind a `!` as an embed, and an inline one as not', () => {
+    expect(hits('![Alias](Zeta)')[0]).toMatchObject({ syntax: 'markdown', embed: true })
+    expect(hits('see ![x](Zeta)')[0]).toMatchObject({ syntax: 'markdown', embed: false })
+  })
+
+  it('yields `[](Page)` with an empty shown label', () => {
+    expect(hits('[](Page)')[0]).toMatchObject({ target: 'page', shown: [1, 1] })
   })
 
   it('stops the page half at the first `#`, a trailing backslash included', () => {
@@ -256,11 +269,12 @@ describe('linksIn', () => {
       {
         syntax: 'section',
         target: 'own',
+        embed: false,
         qualifier: 'setup',
-        at: 4,
+        full: [4, 10],
         title: [4, 4],
         heading: [5, 10],
-        alias: null,
+        shown: null,
       },
     ])
     expect(hits('see §Setup', 'Own', [])).toEqual([])

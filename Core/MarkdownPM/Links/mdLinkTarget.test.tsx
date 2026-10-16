@@ -51,35 +51,35 @@ afterEach(async () => {
 
 describe('what a markdown link’s target names', () => {
   it('carries a heading fragment, and reads a bare fragment as the page itself', () => {
-    const t = resolveMdTarget(conn, 'Work%20Notes#Setup')
+    const t = resolveMdTarget(conn, 'Work%20Notes', 'Setup')
     expect(t.kind === 'page' && t.page.id).toBe('p1')
     expect(t.kind === 'page' && t.heading).toBe('Setup')
-    expect(resolveMdTarget(conn, '#Setup')).toEqual({ kind: 'self', heading: 'Setup' })
+    expect(resolveMdTarget(conn, '', 'Setup')).toEqual({ kind: 'self', heading: 'Setup' })
   })
 
   it('reads an encoded page title as that page', () => {
-    const t = resolveMdTarget(conn, encodeLinkTarget('Work Notes'))
+    const t = resolveMdTarget(conn, encodeLinkTarget('Work Notes'), null)
     expect(t.kind === 'page' && t.page.id).toBe('p1')
   })
 
   // isValidLink accepts any dotted host, so resolution runs first or a page called Node.js becomes unreachable through this syntax.
   it('a dotted title beats the URL gate', () => {
-    const t = resolveMdTarget(conn, 'Node.js')
+    const t = resolveMdTarget(conn, 'Node.js', null)
     expect(t.kind === 'page' && t.page.id).toBe('p2')
   })
 
   it('a real URL stays external, and a page by its last path segment does not exist', () => {
-    expect(resolveMdTarget(conn, 'https://example.com').kind).toBe('url')
-    expect(resolveMdTarget(conn, 'https://example.com/Work%20Notes').kind).toBe('url')
+    expect(resolveMdTarget(conn, 'https://example.com', null).kind).toBe('url')
+    expect(resolveMdTarget(conn, 'https://example.com/Work%20Notes', null).kind).toBe('url')
   })
 
   it('neither a page nor a URL is invalid, exactly as before', () => {
-    expect(resolveMdTarget(conn, 'not a url').kind).toBe('invalid')
+    expect(resolveMdTarget(conn, 'not a url', null).kind).toBe('invalid')
   })
 
   // A fragment is the heading's own text, so a separator inside it doesn't make the target an address.
   it('a heading holding a slash is still a heading', () => {
-    const t = resolveMdTarget(conn, 'Work%20Notes#A/B')
+    const t = resolveMdTarget(conn, 'Work%20Notes', 'A/B')
     expect(t.kind === 'page' && t.heading).toBe('A/B')
   })
 })
@@ -189,7 +189,7 @@ describe('an unresolved markdown link looks as an unresolved connection does', (
   })
 
   it('an ambiguous title is never an address, though it reads as one', async () => {
-    expect(resolveMdTarget(dups, 'dup.io')).toEqual({ kind: 'invalid', ambiguous: true })
+    expect(resolveMdTarget(dups, 'dup.io', null)).toEqual({ kind: 'invalid', ambiguous: true })
     const { editor, cell } = await drawn('a [x](dup.io) b')
     expect(editor).toContain('md-connection-ambiguous')
     expect(cell).toContain('md-connection-ambiguous')
@@ -199,7 +199,7 @@ describe('an unresolved markdown link looks as an unresolved connection does', (
     const { editor, cell } = await drawn('a [x](Missing) b')
     expect(editor).toEqual(['md-connection-phantom'])
     expect(cell).toContain('md-connection-phantom')
-    expect(resolveMdTarget(dups, 'Missing.md')).toEqual({ kind: 'invalid' })
+    expect(resolveMdTarget(dups, 'Missing.md', null)).toEqual({ kind: 'invalid' })
   })
 
   it('an ambiguous title revealed by the caret reads as a page destination, never as an address', async () => {

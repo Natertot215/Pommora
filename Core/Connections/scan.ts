@@ -1,6 +1,6 @@
-// One walker answers for every link syntax, and `syntax` keeps them apart for a reader that cares: a connection alone on its line behind a `!` is an embed, a tile's relation rather than a body link.
+// One walker answers for every link syntax; `embed` marks a link of either syntax alone on its line behind a `!`, a tile's relation that renames as a link and relates as nothing.
 
-import { linkOccurrences } from './connections'
+import { type LinkOccurrence, linkOccurrences } from './connections'
 import { normalizeTitle } from '../Paths/caseFold'
 import { targetFragment, targetTitle } from './links'
 import { readLinkText, wholeValueLink } from './linkValue'
@@ -9,11 +9,9 @@ import {
   type CodeMask,
   lineEndAt,
   lineStartAt,
-  trimmedRange,
+  type Span,
 } from '../MarkdownPM/Engine/markdownCode'
-import { headingParts, loneEmbedTitle } from '../MarkdownPM/Engine/detect'
-
-type Span = [number, number]
+import { headingParts } from '../MarkdownPM/Engine/detect'
 
 interface SectionRun {
   from: number
@@ -36,9 +34,7 @@ export function sectionRunsIn(
   inCode: CodeMask,
 ): SectionRun[] {
   if (!text.includes('§') || headings.length === 0) return []
-  const links = linkOccurrences(text, inCode)
-    .map((o) => o.full)
-    .sort((a, b) => a[0] - b[0])
+  const links = linkOccurrences(text, inCode).map((o) => o.full)
   const byLength = new Map<number, Map<string, string>>()
   for (const heading of headings) {
     const keys = byLength.get(heading.length) ?? new Map<string, string>()
@@ -65,35 +61,22 @@ export function sectionRunsIn(
   return out
 }
 
-type LinkSyntax = 'wiki' | 'embed' | 'markdown' | 'section'
-
-/** One occurrence. `target` and `qualifier` are normalized keys; `qualifier` is '' when the link names no heading. `at` is the offset into `body`, which the indexer resolves to a line. `title` is the page name as written, empty where the link names its own page by leaving it out; `heading` and a connection's `alias` are as written. */
+/** One occurrence the index and the rename rewriter share: the occurrence's spans under its names, `target` and `qualifier` as normalized keys (`qualifier` is '' when the link names no heading), `title` empty where the link names its own page by leaving it out, and `embed` for a link alone on its line behind a `!`. */
 export interface LinkHit {
-  syntax: LinkSyntax
+  syntax: LinkOccurrence['syntax'] | 'section'
+  embed: boolean
   target: string
   qualifier: string
-  at: number
+  full: Span
   title: Span
   heading: Span | null
-  alias: Span | null
+  shown: Span | null
 }
 
-const loneEmbed = (body: string, at: number): boolean =>
-  body[at - 1] === '!' &&
-  lineStartAt(body, at) === at - 1 &&
-  loneEmbedTitle(body.slice(at - 1, lineEndAt(body, at))) !== null
-
-// A markdown destination's page half and fragment, trimmed: a rename edits them in place.
-function destinationHalves(body: string, [from, to]: Span): [Span, Span | null] {
-  const [start, end] = trimmedRange(body, from, to)
-  const hash = start + body.slice(start, end).indexOf('#')
-  return hash < start
-    ? [[start, end], null]
-    : [
-        [start, hash],
-        [hash + 1, end],
-      ]
-}
+const embedLine = (body: string, [from, to]: Span): boolean =>
+  body[from - 1] === '!' &&
+  lineStartAt(body, from) === from - 1 &&
+  !/\S/.test(body.slice(to, lineEndAt(body, to)))
 
 /** The gate in front is on SYNTAX rather than any title: a substring test would break the NFC invariant `normalizeTitle` exists for, and an NFD-composed body would be skipped silently. `inCode` is resolved inside the body, never as a default parameter: a generator binds its parameters at call time, so a default would build a whole-document mask even for the calls that return at the gate. */
 export function* linksIn(
@@ -108,35 +91,33 @@ export function* linksIn(
   const own = normalizeTitle(ownTitle)
   const read = (s: Span): string => body.slice(s[0], s[1])
   for (const o of linkOccurrences(body, mask)) {
-    const at = o.full[0]
+    const embed = embedLine(body, o.full)
     if (o.syntax === 'wiki') {
-      const written = read(o.title)
+      const written = read(o.title).trim()
       const target = titleKey(written, own)
       const qualifier = o.heading ? normalizeTitle(read(o.heading)) : ''
       if (!names(target, written, qualifier)) continue
-      const syntax = loneEmbed(body, at) ? 'embed' : 'wiki'
-      yield { syntax, target, qualifier, at, title: o.title, heading: o.heading, alias: o.alias }
+      yield { ...o, embed, target, qualifier }
       continue
     }
-    const dest = read(o.destination)
-    const written = targetTitle(dest)
+    const written = targetTitle(read(o.title), o.heading !== null)
     if (written === null) continue
     const target = titleKey(written, own)
-    const qualifier = normalizeTitle(targetFragment(dest))
+    const qualifier = normalizeTitle(o.heading ? targetFragment(read(o.heading)) : '')
     if (!names(target, written, qualifier)) continue
-    const [title, heading] = destinationHalves(body, o.destination)
-    yield { syntax: 'markdown', target, qualifier, at, title, heading, alias: o.label }
+    yield { ...o, embed, target, qualifier }
   }
   if (!runs) return
   for (const { from, to, heading } of sectionRunsIn(body, outline, mask))
     yield {
       syntax: 'section',
+      embed: false,
       target: own,
       qualifier: normalizeTitle(heading),
-      at: from,
+      full: [from, to],
       title: [from, from],
       heading: [from + 1, to],
-      alias: null,
+      shown: null,
     }
 }
 

@@ -10,22 +10,22 @@ export type RenameChange = { title: string } | { heading: string; to: string }
 export function rewriteConnections(body: string, oldTitle: string, newTitle: string): string {
   const oldKey = normalizeTitle(oldTitle)
   const edits: TextEdit[] = []
-  for (const { syntax, target, title, heading, alias } of linksIn(body)) {
+  for (const { syntax, target, title, heading, shown } of linksIn(body)) {
     if (target !== oldKey) continue
     if (syntax === 'markdown') {
       edits.push({ from: title[0], to: title[1], insert: encodeLinkTarget(newTitle) })
-      if (alias && shows(body, { syntax, alias }, oldKey))
-        edits.push({ from: alias[0], to: alias[1], insert: escapeLabel(newTitle) })
+      if (shown && shows(body, { syntax, shown }, oldKey))
+        edits.push({ from: shown[0], to: shown[1], insert: escapeLabel(newTitle) })
       continue
     }
     edits.push({ from: title[0], to: title[1], insert: newTitle })
-    if (!alias) continue
-    const renamed = shows(body, { syntax, alias }, oldKey)
-    const shown = normalizeTitle(renamed ? newTitle : body.slice(alias[0], alias[1]))
+    if (!shown) continue
+    const renamed = shows(body, { syntax, shown }, oldKey)
+    const next = normalizeTitle(renamed ? newTitle : body.slice(shown[0], shown[1]))
     const named = heading ? `${newTitle}#${body.slice(heading[0], heading[1])}` : newTitle
-    if (!shown || shown === normalizeTitle(named))
-      edits.push({ from: (heading ?? title)[1], to: alias[1], insert: '' })
-    else if (renamed) edits.push({ from: alias[0], to: alias[1], insert: newTitle })
+    if (!next || next === normalizeTitle(named))
+      edits.push({ from: (heading ?? title)[1], to: shown[1], insert: '' })
+    else if (renamed) edits.push({ from: shown[0], to: shown[1], insert: newTitle })
   }
   return applyEdits(body, edits)
 }
@@ -33,12 +33,12 @@ export function rewriteConnections(body: string, oldTitle: string, newTitle: str
 // Whether a link's shown text only named the target being renamed, as a picked link's default label does, so it is renamed with it.
 function shows(
   body: string,
-  { syntax, alias }: Pick<LinkHit, 'syntax' | 'alias'>,
+  { syntax, shown }: Pick<LinkHit, 'syntax' | 'shown'>,
   key: string,
 ): boolean {
-  if (!alias) return false
-  const shown = body.slice(alias[0], alias[1])
-  return normalizeTitle(syntax === 'markdown' ? unescapeLabel(shown) : shown) === key
+  if (!shown) return false
+  const text = body.slice(shown[0], shown[1])
+  return normalizeTitle(syntax === 'markdown' ? unescapeLabel(text) : text) === key
 }
 
 const HEADING_REFERENCE = /\[\[[^\r\n]*#|\]\([^\r\n]*#|§/
@@ -63,10 +63,10 @@ export function rewriteHeadingConnections(
     const markdown = hit.syntax === 'markdown'
     if (!markdown && hit.syntax !== 'section' && !wiki) continue
     edits.push({ from, to, insert: markdown ? encodeLinkTarget(newHeading) : newHeading })
-    if (hit.alias && shows(body, hit, oldKey))
+    if (hit.shown && shows(body, hit, oldKey))
       edits.push({
-        from: hit.alias[0],
-        to: hit.alias[1],
+        from: hit.shown[0],
+        to: hit.shown[1],
         insert: markdown ? escapeLabel(newHeading) : newHeading,
       })
   }

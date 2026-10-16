@@ -6,7 +6,7 @@ import {
   wholeLink,
 } from './connections'
 import {
-  escapeLabel,
+  markdownLink,
   markdownPageLink,
   targetFragment,
   targetNamesFile,
@@ -64,17 +64,24 @@ export function readLinkText(text: string, resolve?: PageIndex['resolve']): Link
   const s = text.trim()
   const whole = wholeLink(s)
   const md = whole?.syntax === 'markdown' ? whole : null
-  const alias = md
-    ? unescapeLabel(s.slice(md.label[0], md.label[1])).trim() || undefined
-    : undefined
-  const dest = md ? s.slice(md.destination[0], md.destination[1]).trim() : s
-  const title = md ? targetTitle(dest) : null
+  const alias = md ? unescapeLabel(s.slice(...md.shown)).trim() || undefined : undefined
+  // The halves come from the occurrence; the address is the destination whole.
+  const titleHalf = md ? s.slice(...md.title) : s
+  const headingHalf = md?.heading ? s.slice(...md.heading) : null
+  const dest = headingHalf === null ? titleHalf : `${titleHalf}#${headingHalf}`
+  const title = md ? targetTitle(titleHalf, headingHalf !== null) : null
   const res = title === null ? undefined : resolve?.(title)
   if (
     title !== null &&
-    (targetNamesFile(dest) || (res ? res.status !== 'phantom' : !isValidLink(dest)))
+    (targetNamesFile(titleHalf) || (res ? res.status !== 'phantom' : !isValidLink(dest)))
   )
-    return pageTarget('markdown', title, targetFragment(dest) || undefined, alias, res)
+    return pageTarget(
+      'markdown',
+      title,
+      (headingHalf && targetFragment(headingHalf)) || undefined,
+      alias,
+      res,
+    )
   if (!isValidLink(dest)) return null
   return { kind: 'url', syntax: md ? 'markdown' : 'bare', url: normalizeLinkUrl(dest), alias }
 }
@@ -108,15 +115,13 @@ export function shownAlias(
 }
 
 export function serializeLink(url: string, label?: string): string {
-  return label ? `[${escapeLabel(label)}](${url})` : url
+  return label ? markdownLink(url, label) : url
 }
 
 export function linkEditText(raw: string): string {
   const target = readLinkText(raw)
   if (!target) return raw
-  return target.kind === 'page'
-    ? connectionText(target.title, undefined, target.heading)
-    : target.url
+  return target.kind === 'page' ? connectionText(target.title, target.heading) : target.url
 }
 
 export function linkValueFromEdit(
@@ -202,7 +207,7 @@ export function retarget(
   if (next.kind === 'page') {
     const text =
       syntax === 'wiki' && connectionSpells(next)
-        ? connectionText(next.title, shown, next.heading)
+        ? connectionText(next.title, next.heading, shown)
         : markdownPageLink(next.title, next.heading, shown)
     return { kind: 'link', text }
   }

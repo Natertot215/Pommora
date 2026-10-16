@@ -16,7 +16,7 @@ import { linkPointer } from './Links/linkClicks'
 import { citationPointer } from './Citations/citationPointer'
 import { pasteLink } from './Links/pasteLink'
 import { pendingTitles } from './Links/pendingTitle'
-import { aliasOnLeave } from './Links/linkEdit'
+import { aliasOnLeave, commitAliasOnEnter } from './Links/linkEdit'
 import { type EditorHost, editorHost } from './api'
 import { editorKeymap } from './Input/formatKeymap'
 import { type EditorPane, paneKeys } from './Menus/caretPane'
@@ -82,6 +82,7 @@ export const editorBase = ({
   Prec.highest(
     keymap.of([
       ...paneKeys(panes.map((p) => p.ctl)),
+      { key: 'Enter', run: commitAliasOnEnter(scope) },
       { key: 'Backspace', run: smartDelete(scope) },
     ]),
   ),

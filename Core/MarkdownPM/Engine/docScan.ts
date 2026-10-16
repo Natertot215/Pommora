@@ -58,7 +58,7 @@ export interface DocScan extends DocLines {
 
 type LineScan = Omit<DocScan, 'citations'>
 
-export type Span = readonly [number, number] | { readonly from: number; readonly to: number }
+export type SpanLike = readonly [number, number] | { readonly from: number; readonly to: number }
 
 // ── Construction ────────────────────────────────────────────────────────
 
@@ -175,7 +175,7 @@ function splice(
         by ? fresh.map((v) => by(v, start)) : fresh,
         by ? old.slice(b).map((v) => by(v, shift)) : old.slice(b),
       )
-  const spans = <S extends Span>(
+  const spans = <S extends SpanLike>(
     old: readonly S[],
     fresh: readonly S[],
     by: (s: S, d: number) => S,
@@ -226,8 +226,8 @@ function splice(
   }
 }
 
-export const fromOf = (s: Span): number => ('from' in s ? s.from : s[0])
-export const toOf = (s: Span): number => ('to' in s ? s.to : s[1])
+export const fromOf = (s: SpanLike): number => ('from' in s ? s.from : s[0])
+export const toOf = (s: SpanLike): number => ('to' in s ? s.to : s[1])
 const moveRange = ([f, t]: [number, number], d: number): [number, number] => [f + d, t + d]
 const moveLine = <L extends { from: number; to: number }>(l: L, d: number): L => ({
   ...l,
@@ -306,7 +306,7 @@ export function chunksOver(
   return out
 }
 
-export function spanAt<S extends Span>(spans: readonly S[], pos: number): S | undefined {
+export function spanAt<S extends SpanLike>(spans: readonly S[], pos: number): S | undefined {
   let lo = 0
   let hi = spans.length - 1
   let hit = -1

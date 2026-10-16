@@ -67,7 +67,7 @@ import { paneHeld } from './Menus/caretPane'
 import { linkClass, linkLook, type ConnectionsApi } from './Links/connectionsApi'
 import type { LinkStatus } from '../Connections/connections'
 import type { PageHeadings } from '../Connections/pageIndex'
-import { editorHost, type EditorSettings, type OwnPage, ownPage, redrawNudge } from './api'
+import { drawsRawHtml, editorHost, type OwnPage, ownPage, redrawNudge } from './api'
 import { checkMarkSvg, checkboxClass } from '@pommora/uix/Controls/Checkbox'
 import * as btn from '@pommora/uix/Buttons/button-base.css'
 import { buttonClass, segmentDivider } from '@pommora/uix/Buttons/Button'
@@ -435,16 +435,6 @@ function ownHeadings(
   return { keys: docHeadingKeys(doc), texts: docSectionHeadings(doc) }
 }
 
-const drawsRawHtml = (scope: MarkdownScope, settings: EditorSettings): boolean =>
-  scope === 'page' && settings.htmlFormatting
-
-export function inRawHtml(state: EditorState, at: number, scope: MarkdownScope): boolean {
-  return (
-    drawsRawHtml(scope, state.facet(editorHost).settings()) &&
-    spanAt(docScan(state.doc).html, at) !== undefined
-  )
-}
-
 function build(view: EditorView, scope: MarkdownScope): Built {
   const host = view.state.facet(editorHost)
   const conn = host.connections()
@@ -541,11 +531,12 @@ function build(view: EditorView, scope: MarkdownScope): Built {
     const shown = look.status !== 'phantom'
     const internal = shown && look.target.kind !== 'url'
     const isActive = active.has(i)
-    ranges.push(
-      Decoration.mark({
-        class: cx(linkClass(look), internal && isActive && 'md-connection-open'),
-      }).range(tk.contentRange[0], tk.contentRange[1]),
-    )
+    if (tk.contentRange[1] > tk.contentRange[0])
+      ranges.push(
+        Decoration.mark({
+          class: cx(linkClass(look), internal && isActive && 'md-connection-open'),
+        }).range(tk.contentRange[0], tk.contentRange[1]),
+      )
     const dim = Decoration.mark({ class: shown ? 'md-control' : 'md-phantom-syntax' })
     if (!shown || isActive) {
       ranges.push(dim.range(open[0], open[1]))
@@ -568,7 +559,7 @@ function build(view: EditorView, scope: MarkdownScope): Built {
   tokens.forEach((tk, i) => {
     if (tk.kind !== 'wikiLink' || !conn) return
     const alias = aliasedToken(tk)
-    const [rs, re] = tk.resolveRange
+    const [rs, re] = tk.link.title
     const look = linkLook(conn, text, tk, ownKeys, headingLinkStyle)
     const { status, bare, join } = look
     const open = active.has(i)
@@ -580,7 +571,7 @@ function build(view: EditorView, scope: MarkdownScope): Built {
     }
     // Revealed, an alias shows its whole target, page and heading both.
     const pipe: [number, number] | undefined = alias
-      ? [rs, tk.heading?.[1] ?? re]
+      ? [rs, tk.link.heading?.[1] ?? re]
       : text[tk.contentRange[1]] === '|'
         ? tk.contentRange
         : undefined

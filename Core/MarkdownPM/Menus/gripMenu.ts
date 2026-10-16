@@ -89,7 +89,7 @@ function popHeadingMenu(view: EditorView, headingEl: HTMLElement): void {
       const contentStart = line.from + parts.contentStart
       if (action === 'rename') focusRange(view, contentStart, line.to)
       else if (action === COPY_LINK_ROW.action && title !== null)
-        void host.clipboard.write(connectionText(title, undefined, parts.content.trim()))
+        void host.clipboard.write(connectionText(title, parts.content.trim() || undefined))
       else if (action === 'delete') {
         const span = blockDeleteSpan(doc, { from: line.from, to: line.to })
         view.dispatch({

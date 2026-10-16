@@ -1,13 +1,13 @@
 import { describe, it, expect } from 'vitest'
 import {
   decodeLinkTarget,
-  linkDestinationStart,
   encodeLinkTarget,
   markdownLinkRegex,
   markdownPageLink,
   targetFragment,
   targetTitle,
 } from './links'
+import { linkOccurrences } from './connections'
 
 // CommonMark's link destination admits balanced parentheses. One grammar serves the editor tokenizer, `detect`, the rename scanner and the rename rewriter, so what this pins is what all four agree a link is.
 describe('markdownLinkRegex — the balanced-parens destination', () => {
@@ -80,40 +80,35 @@ describe('the page-target codec', () => {
 
 describe('targetTitle — what a markdown link names', () => {
   it('reads a bare title, with or without its extension', () => {
-    expect(targetTitle('Notes')).toBe('Notes')
-    expect(targetTitle('Notes.md')).toBe('Notes')
-    expect(targetTitle('Work%20Notes')).toBe('Work Notes')
+    expect(targetTitle('Notes', false)).toBe('Notes')
+    expect(targetTitle('Notes.md', false)).toBe('Notes')
+    expect(targetTitle('Work%20Notes', false)).toBe('Work Notes')
   })
 
   // isValidLink accepts any dotted host, so these two would open a browser and make the pages they name unreachable if resolution didn't run first.
   it('a dotted title is still a title', () => {
-    expect(targetTitle('Node.js')).toBe('Node.js')
-    expect(targetTitle('Notes.md')).toBe('Notes')
+    expect(targetTitle('Node.js', false)).toBe('Node.js')
+    expect(targetTitle('Notes.md', false)).toBe('Notes')
   })
 
   it('anything addressing the outside names no page', () => {
-    expect(targetTitle('https://example.com/Notes')).toBeNull()
-    expect(targetTitle('example.com/Notes')).toBeNull()
-    expect(targetTitle('mailto:a@b.com')).toBeNull()
-    expect(targetTitle('')).toBeNull()
+    expect(targetTitle('https://example.com/Notes', false)).toBeNull()
+    expect(targetTitle('example.com/Notes', false)).toBeNull()
+    expect(targetTitle('mailto:a@b.com', false)).toBeNull()
+    expect(targetTitle('', false)).toBeNull()
   })
 
-  it('splits the page from a heading fragment', () => {
-    expect(targetTitle('Page#Setup')).toBe('Page')
+  it('decodes the heading half on its own', () => {
+    expect(targetFragment('My%20Heading')).toBe('My Heading')
+    expect(targetFragment('Intro%20A')).toBe('Intro A')
   })
 
-  it('decodes the fragment half independently of the page', () => {
-    expect(targetFragment('Page#My%20Heading')).toBe('My Heading')
+  it('reads an empty title before a heading as the containing page', () => {
+    expect(targetTitle('', true)).toBe('')
   })
 
-  it('reads a bare fragment as the containing page', () => {
-    expect(targetTitle('#Setup')).toBe('')
-    expect(targetFragment('#Setup')).toBe('Setup')
-  })
-
-  it('splits at the first literal `#`, not an encoded one', () => {
-    expect(targetTitle('A%23B')).toBe('A#B')
-    expect(targetFragment('A%23B')).toBe('')
+  it('decodes an encoded `#` inside the title', () => {
+    expect(targetTitle('A%23B', false)).toBe('A#B')
   })
 })
 
@@ -135,15 +130,19 @@ describe('the codec reads back everything it writes', () => {
     for (const title of titles) {
       const encoded = encodeLinkTarget(title)
       expect(decodeLinkTarget(encoded)).toBe(title)
-      expect(targetTitle(encoded)).toBe(title)
+      expect(targetTitle(encoded, false)).toBe(title)
     }
   })
 
   // A colon is legal in a page name and is also how a target declares itself an address, so it is spelled out — otherwise `Meeting: Notes` encodes to something targetTitle refuses.
   it('spells out a colon so a title is never read as a scheme', () => {
     expect(encodeLinkTarget('Meeting: Notes')).toBe('Meeting%3A%20Notes')
-    expect(targetTitle('Meeting%3A%20Notes')).toBe('Meeting: Notes')
-    expect(targetTitle('https://example.com')).toBeNull()
+    expect(targetTitle('Meeting%3A%20Notes', false)).toBe('Meeting: Notes')
+    expect(targetTitle('https://example.com', false)).toBeNull()
+  })
+
+  it('spells out a `#` so the reader never splits a title at it', () => {
+    expect(encodeLinkTarget('C# Notes')).toBe('C%23%20Notes')
   })
 
   it('never throws, even on input encodeURI refuses', () => {
@@ -151,69 +150,18 @@ describe('the codec reads back everything it writes', () => {
   })
 })
 
-describe('linkDestinationStart — where the destination holding the caret begins', () => {
-  it('sees the empty embed pair the door seats the caret in', () => {
-    expect(linkDestinationStart('![]()', 4)).toBe(4)
-  })
-
-  it('sees an empty destination behind a written label', () => {
-    expect(linkDestinationStart('[label]()', 8)).toBe(8)
-  })
-
-  it('sees the inside of a full link, edges included', () => {
-    const line = '[docs](https://example.com) tail'
-    const open = line.indexOf('(')
-    const close = line.indexOf(')')
-    expect(linkDestinationStart(line, open + 1)).toBe(open + 1)
-    expect(linkDestinationStart(line, close)).toBe(open + 1)
-    expect(linkDestinationStart(line, open + 5)).toBe(open + 1)
-  })
-
-  it('says no everywhere else on the same line', () => {
-    const line = '[docs](https://example.com) tail'
-    expect(linkDestinationStart(line, 0)).toBeNull()
-    expect(linkDestinationStart(line, 2)).toBeNull()
-    expect(linkDestinationStart(line, line.indexOf('('))).toBeNull()
-    expect(linkDestinationStart(line, line.length)).toBeNull()
-  })
-
-  it('says no on a line with no link at all', () => {
-    expect(linkDestinationStart('plain prose with (parens)', 20)).toBeNull()
-  })
-
-  it('reads each link on a many-link line separately', () => {
-    const line = '[a](https://a.com) and [b](https://b.com)'
-    expect(linkDestinationStart(line, 5)).toBe(4)
-    expect(linkDestinationStart(line, 20)).toBeNull()
-    expect(linkDestinationStart(line, 30)).toBe(27)
-  })
-
-  it('sees a destination still open before the caret', () => {
-    // Mid-typing: `](` with no `)` yet — the shape the smart-dash guard also reads.
-    const line = '[docs](https://ex'
-    expect(linkDestinationStart(line, line.length)).toBe(7)
-    expect(linkDestinationStart('[docs](https://ex) after', 20)).toBeNull()
-  })
-
-  it('follows a destination through balanced parens', () => {
-    const line = '[w](https://en.wikipedia.org/wiki/A_(b)_c) tail'
-    expect(linkDestinationStart(line, line.indexOf('_c)'))).toBe(4)
-    expect(linkDestinationStart(line, line.length)).toBeNull()
-  })
-
-  it('reads the embed form through its bang', () => {
-    const line = '![label](https://example.com)'
-    expect(linkDestinationStart(line, 12)).toBe(9)
-    expect(linkDestinationStart(line, 4)).toBeNull()
-  })
-})
-
 describe('markdownPageLink', () => {
   it('writes the title, heading, and label it is given', () => {
     expect(markdownPageLink('Meeting Notes', 'H', 'x')).toBe('[x](Meeting%20Notes#H)')
   })
-  it('labels a link by its title, or a bare heading by the heading', () => {
+  it('labels a link by its heading, else its title', () => {
     expect(markdownPageLink('P')).toBe('[P](P)')
+    expect(markdownPageLink('P', 'H')).toBe('[H](P#H)')
     expect(markdownPageLink('', 'H')).toBe('[H](#H)')
+  })
+  it('a title holding `#` reads back as itself', () => {
+    const text = markdownPageLink('C# Notes', 'Intro')
+    const [o] = linkOccurrences(text, () => false)
+    expect(targetTitle(text.slice(...o.title), o.heading !== null)).toBe('C# Notes')
   })
 })

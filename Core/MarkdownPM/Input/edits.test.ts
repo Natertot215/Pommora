@@ -2,12 +2,13 @@ import { describe, it, expect } from 'vitest'
 import { scanDoc } from '../Engine/docScan'
 import {
   marginSign,
-  openConnectionAt,
+  openLinkAt,
+  linkAt,
+  slotAt,
   continueListOnEnter,
   smartBackspace,
   canonicalizeCheckbox,
   autoPair,
-  inAliasAt,
   autoDelete,
   closeConstructOnEnter,
   closeBlockOnEnter,
@@ -178,9 +179,6 @@ describe('auto-pair + auto-delete', () => {
   it('single [ pairs at line start, not after a word char', () => {
     expect(autoPair(scanDoc(''), 0, 0, '[')).toEqual({ from: 0, to: 0, insert: '[]', selection: 1 })
     expect(autoPair(scanDoc('-'), 1, 1, '[')).toBeNull()
-  })
-  it('[ never pairs inside an alias, where its ] would truncate the link', () => {
-    expect(autoPair(scanDoc('a [[Notes|My ]] b'), 13, 13, '[')).toBeNull()
   })
   it('backspace inside an empty pair deletes both halves', () => {
     const e = autoDelete(scanDoc('[]'), 1, 1)!
@@ -542,6 +540,14 @@ describe('dash + arrow auto-format', () => {
     expect(dashArrow(scanDoc('[[A --'), 6, 6, 'b')).toBeNull()
     expect(dashArrow(scanDoc('[[A --]]'), 6, 6, 'b')).toBeNull()
   })
+  it('a caret just past a closer is prose, so the dash before it converts', () => {
+    expect(dashArrow(scanDoc('[[A]]-'), 6, 6, '>')).toEqual({
+      from: 5,
+      to: 6,
+      insert: '→',
+      selection: 6,
+    })
+  })
   it('a caret resting directly before a connection is outside it, so the dash before it converts', () => {
     for (const doc of ['see -[[B]]', 'see -![[B]]'])
       expect(dashArrow(scanDoc(doc), 5, 5, '>')).toEqual({
@@ -889,44 +895,66 @@ describe('nested list behavior inside a callout', () => {
   })
 })
 
-describe('inAliasAt', () => {
-  it('reads the alias on the line the offset sits in', () => {
-    const doc = 'a first line long enough\na [[Notes|Q3]] b'
-    expect(inAliasAt(scanDoc(doc), doc.indexOf('Q3'))).toBe(true)
+describe('slotAt', () => {
+  const doc = 'intro\na [[Page#Head|al]] [x](Dest) b'
+  const scan = scanDoc(doc)
+  const at = (rel: number) => slotAt(scan, 6 + rel)
+
+  it('answers the link, the slot holding the caret, and the line start', () => {
+    expect(at(5)).toMatchObject({ part: 'title', from: 6, link: { full: [2, 18] } })
+    expect(at(10)?.part).toBe('heading')
+    expect(at(15)?.part).toBe('shown')
+    expect(at(20)).toMatchObject({ part: 'shown', link: { syntax: 'markdown' } })
+    expect(at(24)).toMatchObject({ part: 'title', link: { syntax: 'markdown' } })
   })
-  it('an alias written in code is code', () => {
-    for (const doc of ['```\na [[Alpha|al]] b\n```', 'a `[[Alpha|al]]` b'])
-      expect(inAliasAt(scanDoc(doc), doc.indexOf('al]'))).toBe(false)
+  it('a boundary between two slots answers the earlier slot', () => {
+    expect(at(8)?.part).toBe('title')
   })
-  it('a connection code touches is code, as the editor draws it', () => {
-    const doc = 'a [[Alpha|x `c` y]] b'
-    expect(inAliasAt(scanDoc(doc), doc.indexOf('y]'))).toBe(false)
+  it('answers nothing in code or just past a closer', () => {
+    expect(slotAt(scanDoc('a `[[A|b]]` c'), 7)).toBeNull()
+    expect(at(18)).toBeNull()
   })
 })
 
-describe('openConnectionAt', () => {
-  it('reads an unclosed [[ as the connection it would be once closed, ending at the caret', () => {
-    expect(openConnectionAt(scanDoc('see [[Pro'), 9)).toMatchObject({
-      full: [4, 9],
-      title: [6, 9],
-      heading: null,
-      alias: null,
-    })
-    expect(openConnectionAt(scanDoc('[[Page#He'), 9)?.heading).toEqual([7, 9])
-  })
-
+describe('openLinkAt', () => {
   it('reads a [[ just typed as the empty opener', () => {
-    expect(openConnectionAt(scanDoc('x [['), 4)).toMatchObject({
+    expect(openLinkAt(scanDoc('x [['), 4)).toMatchObject({
+      syntax: 'wiki',
       full: [2, 4],
       title: [4, 4],
       heading: null,
-      alias: null,
+      shown: null,
     })
   })
 
-  it('reads nothing past a closed connection or inside a closed fence', () => {
-    expect(openConnectionAt(scanDoc('[[A]] b'), 6)).toBeNull()
-    expect(openConnectionAt(scanDoc('```\n[[A\n```'), 7)).toBeNull()
+  it('reads an unclosed link as the link it would be once closed, its slot cut back to the caret', () => {
+    expect(openLinkAt(scanDoc('see [[Al'), 8)).toMatchObject({ full: [4, 8], title: [6, 8] })
+    expect(openLinkAt(scanDoc('[[A#'), 4)).toMatchObject({ title: [2, 3], heading: [4, 4] })
+    expect(openLinkAt(scanDoc('[x]('), 4)).toMatchObject({
+      syntax: 'markdown',
+      full: [0, 4],
+      title: [4, 4],
+      shown: [1, 2],
+    })
+    expect(openLinkAt(scanDoc('[]()'), 3)).toMatchObject({
+      full: [0, 3],
+      title: [3, 3],
+      shown: [1, 1],
+    })
+  })
+
+  it('reads nothing past a closed connection or where the document’s code holds the opener', () => {
+    expect(openLinkAt(scanDoc('[[A]] b'), 6)).toBeNull()
+    expect(openLinkAt(scanDoc('```\n[[A\n```'), 7)).toBeNull()
+    expect(openLinkAt(scanDoc('`[[Al` b'), 5)).toBeNull()
+    expect(openLinkAt(scanDoc('a ` [[Al'), 8)).toBeNull()
+    expect(openLinkAt(scanDoc('a `x` [[Al'), 10)).toMatchObject({ title: [8, 10] })
+  })
+})
+
+describe('linkAt', () => {
+  it('at the boundary between two abutting links, the later-starting one wins', () => {
+    expect(linkAt(scanDoc('[[A]][[B]]'), 5)?.full).toEqual([5, 10])
   })
 })
 

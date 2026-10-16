@@ -245,6 +245,17 @@ describe('the relations a page yields', () => {
     ])
   })
 
+  it('a lone markdown embed is an `embed` row, and an inline one a `body` row', async () => {
+    await page('![Alias](Zeta)\n')
+    expect(rowsOf('Notes/A.md')).toEqual([
+      { kind: 'embed', target: 'zeta', qualifier: '', count: 1 },
+    ])
+    await page('shows ![Alias](Zeta)\n')
+    expect(rowsOf('Notes/A.md')).toEqual([
+      { kind: 'body', target: 'zeta', qualifier: '', count: 1 },
+    ])
+  })
+
   it('a lone heading embed is an `embed` row qualified by the heading', async () => {
     await page('![[Zeta#Part]]\n')
     expect(rowsOf('Notes/A.md')).toEqual([
