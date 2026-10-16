@@ -39,9 +39,9 @@ The work lands in nine phases, each the next layer of the system and each the la
 | | Functions, fields, plugins, components | Types | Files | Members, parameters, options | Total |
 |---|---|---|---|---|---|
 | **Removed** | 45 | 14 (ten named types and four local `Span` declarations) | 1 (`headingHash.ts`) | 22 | **82** |
-| **Added** | 37 (24 exported, 13 private) and 1 style rule | 5 | 1 (`ValueEditor.tsx`) | 27 | **71** |
+| **Added** | 36 (24 exported, 12 private) and 1 style rule | 5 | 1 (`ValueEditor.tsx`) | 27 | **70** |
 | **Moved** | 10 (and 2 made exported) | 1 | 1 moved, 1 renamed | | 12 |
-| **Net** | −7 | −9 | 0 | +5 | **−11 named things** |
+| **Net** | −8 | −9 | 0 | +5 | **−12 named things** |
 
 Every row of both tables in *§Concepts* is in that count; a reader can redo it from the tables alone. The named count understates the consolidation, because most of what arrives is the one owner that replaces several spellings. Counted as ways of doing one thing, before and after:
 
@@ -127,7 +127,7 @@ Sixty ways of doing thirty things disappear; every row's "after" has one named o
 | `inlineSurface(scope, { oneLine, remembers })`, `editorBase({ …, oneLine, remembers })` • options | A field's surface and the Link field's memory exemption. | `Core/MarkdownPM/surface.ts` |
 | `EditableInput`/`RenamableLabel` `{ by }` • argument | How an edit ended, passed to `onCommit` and `onCancel`. | `UIX/Fields/EditableInput.tsx`, `RenamableLabel.tsx` |
 | `ConnectionsApi.index`, `LinkEditContext.index`, `LinkEditContext.own`, `commitEdit`'s `kept` • members and option | The host interface holds the index rather than spreading it; the Link field's parse carries the index and the holder; the picker's commit takes the one kept alias. | `Core/MarkdownPM/Links/connectionsApi.ts`, `Core/Properties/parseEditorValue.ts`, `Core/MarkdownPM/Autocomplete/autocomplete.ts` |
-| `fitsSlot`, `markdownSpans`, `embedLine`, `holdersOf`, `LOOKS`, `ancestries`, `plain`, `changedLink`, `labelRest` • private helpers | The grammar's slot cap; the markdown occurrence's split; the embed-line test for both syntaxes; the title index's holders map; the renderer's icon-reading memo key and its ancestry memo; the baseline's four-field strip; the tracker's changed-link read; Return's rest into a markdown label. | `connections.ts`, `scan.ts`, `pageIndex.ts`, `treeIndex.ts`, `remintLedger.ts`, `linkReveal.ts`, `linkEdit.ts` |
+| `fitsSlot`, `markdownSpans`, `embedLine`, `holdersOf`, `ancestries`, `plain`, `changedLink`, `labelRest` • private helpers | The grammar's slot cap; the markdown occurrence's split; the embed-line test for both syntaxes; the title index's holders map; the renderer's ancestry memo; the baseline's four-field strip; the tracker's changed-link read; Return's rest into a markdown label. | `connections.ts`, `scan.ts`, `pageIndex.ts`, `treeIndex.ts`, `remintLedger.ts`, `linkReveal.ts`, `linkEdit.ts` |
 
 **REMOVED**
 
@@ -193,16 +193,16 @@ Sixty ways of doing thirty things disappear; every row's "after" has one named o
 - **Execution:** the plan runs end to end autonomously, the owner reachable only at check-ins. Every review checkpoint dispatches its two agents to the `closeout-review` skill's standards (its four perspectives, correctness, simplification, cohesiveness, and consequences, and its core principles; its closing procedures, write-guards, and output format don't apply), and the orchestrator's own post-phase look weighs the landed work against the **Mandate** and **Principles** above before the next phase opens. An in-flight call is weighed against those and the plan's objectives, disclosed in chat, and recorded under *§Deviations* only where it changes an outcome. The three compaction checkpoints in *§Process Overview* each run `c/pre-compaction`, re-instill the Mandate and Principles in the handoff, and stop until the owner re-prompts.
 - **Rulings (Not Re-Raised):** `[](Page)` is a link drawn with its default label and `[x]()` isn't; a wikilink heading never holds `#`, and every writer falls back to the markdown form when a wikilink can't spell a slot; any link alone on its line with `!` first is an embed line in either syntax, out of the graph and in every other rule; both syntaxes tidy an emptied part when the caret leaves the whole link; markdown picks open the alias list and Return in a markdown destination rests in the label; `§Heading` runs and `[[#Heading]]` take one approach in values and cells, menu and glance included, the run's menu offering Open and Copy only; a Link value writes a wikilink wherever one spells, on edit and Rename alike; an alias typed into a link naming a heading is never remembered, with no setting to the contrary; Remove Title On Link Change drops the shown text only when the link pointed somewhere as it read before the edit, in the picker and paste alike, and in the Link field through the picker inside it once the field is the editor (a title retyped by hand keeps its alias there as it does in a body); Text values sort and filter on their shown text through the one rule, style-free (`Title § Heading`); the resolver lives in `Core/Connections/`; Return inside a link's shown slot rests past the link everywhere; the Link field opens on the whole written link and Rename is that field seated in the alias slot; the one-line fields scroll rather than wrap, with spellcheck off and the typing transforms kept; addresses keep today's stored form and today's raw resolution.
 - **Neutral Gate:** the work ends with a `fable-high` neutral reviewer given only the BASELINE head, HEAD, and this intention, with no plan, log, or document: *"Pommora's page-to-page links (wikilinks and markdown links) and the alternate names a page remembers (aliases) are parsed, resolved, edited, rewritten, and displayed across about sixty files. This work leaves that code smaller and plainer: one grammar and one link shape per layer, one resolver, one owner per rule, one tracker for edits made inside a link, one picker model, and one title index the host can import, with no logic stated twice and no behavior lost except where its findings name it."* Every phase is written so that review passes.
-- **Other Workstreams:** the Text Color plan (`.claude/Planning/Text Color/`) is executing on `active` as this plan is written and touches `Engine/{tokens,detect}.ts`, `Input/{edits,format,markdownInput}.ts`, `cellStatic.tsx`, and the MarkdownPM and PropertiesPM documents; its commits land first, and Phase 2 rebases on them before it opens (re-anchor the `tokens.ts`, `edits.ts`, and `markdownInput.ts` citations; `tokenizeChunk` now keeps links, code, and math inside a highlight or text color through `notCrossing`, `wrappedSpan` became `insideMark(tk, f, t)`, and `format.ts` exports `innerRange`). Its `46441ea74` styles a link inside a text color in `markdown-pm.css` through the same class list `linkClicks.ts:56` uses for "a link" (`.md-connection-resolved, .md-connection-ambiguous, .md-heading-symbol, .md-link`); this plan keeps those classes and `linkClass`, so the selector stands, and any later change to the one "is a link" class set carries it along. F-071's MarkdownPM sentence placing the heading-rename settle under `Guards/` lands after Phase 4 moves it; F-049's heading-name change touches the file the settle moves from, so whichever lands second rebases; F-066 and F-067 read the raw-HTML spans Phase 2's one gate asks about.
+- **Other Workstreams:** the Text Color plan (`.claude/Planning/Text Color/`) landed on `active` through `980a8f4e8` while Phase 1 ran, touching `Engine/{tokens,detect,paints}.ts`, `Input/{edits,format,formatState,markdownInput}.ts`, `cellStatic.tsx`, and the MarkdownPM and PropertiesPM documents; Phase 2's citations are anchored on it (`tokenizeChunk` blanks links, code, and math through `outsideVerbatim` before a paint matches, `wrappedSpan` became `insideMark(tk, f, t)`, and `format.ts` exports `innerRange` and `underSelection`). Its `46441ea74` styles a link inside a text color in `markdown-pm.css` through the same class list `linkClicks.ts:56` uses for "a link" (`.md-connection-resolved, .md-connection-ambiguous, .md-heading-symbol, .md-link`); this plan keeps those classes and `linkClass`, so the selector stands, and any later change to the one "is a link" class set carries it along. F-071's MarkdownPM sentence placing the heading-rename settle under `Guards/` lands after Phase 4 moves it; F-049's heading-name change touches the file the settle moves from, so whichever lands second rebases; F-066 and F-067 read the raw-HTML spans Phase 2's one gate asks about.
 - **Out of Scope Everywhere:** the data layer, address normalization's stored form, the Matrix's drawing, Project Sapphire, and any new setting.
 
 #### Process Overview
 
-- [ ] **Phase 1** — One Walk, One Title Index
-  - [ ] Task 1-1 · The one walk and the host-importable projections
-  - [ ] Task 1-2 · The renderer's projections, each its own memo
-  - [ ] Task 1-3 · The host's title checks read the one index
-  - [ ] Review Checkpoint
+- [x] **Phase 1** — One Walk, One Title Index
+  - [x] Task 1-1 · The one walk and the host-importable projections
+  - [x] Task 1-2 · The renderer's projections, each its own memo
+  - [x] Task 1-3 · The host's title checks read the one index
+  - [x] Review Checkpoint
 - [ ] **Phase 2** — One Grammar, One Reader Set `[Gates at Task 2-4 for Tasks 2-1 to 2-4]`
   - [ ] Task 2-1 · The one occurrence shape, the one template, and the one encoder
   - [ ] Task 2-2 · The index's hit over the occurrence
@@ -255,7 +255,7 @@ Sixty ways of doing thirty things disappear; every row's "after" has one named o
 
 | Phase | Investigation Net | AFTER-Count Net | Honest Band | Basis | Measured Removed | Measured Added | Measured Net | Running |
 |---|---|---|---|---|---|---|---|---|
-| 1 | −81 | −81 | −81 | typed (`c5`, formatted, with the baseline strip) | | | | |
+| 1 | −81 | −81 | −81 | typed (`c5`, formatted, with the baseline strip); landed 9 above it: lint refused the one-line claimant push, the formatter wrapped the record and memo lines, and the trail chain needs its own map | 261 | 189 | −72 | −72 |
 | 2 | ≈ −45 | ≈ −35 | −55 to −10 | no typed grammar diff survived; the AFTER count expands the long occurrence and reader lines | | | | |
 | 3 | ≈ −28 | ≈ −20 | −35 to +5 | half typed (`c4` +3, corrected); the label task moved here from Phase 2 (+16) | | | | |
 | 4 | ≈ −49 | ≈ −40 | −55 to −25 | re-typed design (`c11`, corrected); the settle's guard and flushes added | | | | |
@@ -283,11 +283,11 @@ The floor is −100 (the owner's ruling, 10-15-2026). Both estimates sit below i
 **CHANGE**
 
 - [ ] Write `Core/Connections/pageIndex.test.ts`'s `holders` cases and watch them fail: `holders('alpha')` returns every page whose normalized title matches, in tree order; `holders('nothing')` is `[]`; `resolve` derives from it (one holder resolved, two ambiguous, none phantom).
-- [ ] In `record.ts`, add `icon?` to `EntityRecord`, let `recordsOf`'s `add` carry it, and add `pagesOf`, `pagesByIdOf` (with its one-line reason), `livePagePath`, and `pageIndexOf` on `entityMemo([])`. A record's container is its path's directory (a page's or set's folder, a space's context folder, nothing for a collection), which the renderer derives with `dirname` rather than the walk carrying it.
+- [ ] In `record.ts`, add `icon?` to `EntityRecord`, let `recordsOf`'s `add` carry it, and add `pagesOf`, `pagesByIdOf` (with its one-line reason), `livePagePath`, and `pageIndexOf` on `entityMemo([])`. A record's container is its path's directory (a page's or set's folder, a space's context folder, nothing for a collection), which the renderer derives with `relDirname` rather than the walk carrying it.
 - [ ] In `pageIndex.ts`, remove `ConnPage.icon`, add `holders` to the interface, and derive `resolve` from `holdersOf`.
 - [ ] Repoint `TileHost.tsx:220` to `tree.config.pageMetadata[page.id]?.icon`.
 - [ ] In `remintLedger.ts:17-27`, build `entries` and `claimants` in `projectBaseline`'s one pass through `plain`, so the persisted baseline keeps its four-field shape.
-- [ ] Move the eleven imports: `propertyMenuActions.ts:107`, `PageHistoryWindow.tsx:39,72` (`livePagePath` from `record`, `trailOf` stays on `treeIndex`), `matrixInput.ts:63`, `navResolve.ts:44` (and `navResolve.test.ts`), `editorHost.tsx:53`, `assignValue.ts:57`, `matrixSlice.ts:181,187` (`recordsByIdOf` stays on `treeIndex`), `nexusSlice.ts:253`, `pageConnections.ts:31`, `useBridgeSubscriptions.ts:56`, `TileHost.tsx:100`.
+- [ ] Move the eleven imports: `propertyMenuActions.ts:107`, `PageHistoryWindow.tsx:39,72` (`livePagePath` from `record`, `trailOf` stays on `treeIndex`), `matrixInput.ts:63`, `navResolve.ts:44` (and `navResolve.test.ts`), `editorHost.tsx:53`, `assignValue.ts:57`, `matrixSlice.ts:181,187` (`recordsByIdOf`, renamed `nodesByIdOf` beside `nodesOf`, stays on `treeIndex` with its five readers), `nexusSlice.ts:253`, `pageConnections.ts:31`, `useBridgeSubscriptions.ts:56`, `TileHost.tsx:100`.
 - [ ] `destinationTree.test.ts`'s `treeOf` fixture gains `contexts: []` (`recordsOf` reads it).
 
 **AFTER**
@@ -405,7 +405,7 @@ The floor is −100 (the owner's ruling, 10-15-2026). Both estimates sit below i
 **CHANGE**
 
 - [ ] Rewrite `treeIndex.test.ts`: `:5-16` import `pageIndexOf`, `pagesByIdOf`, `pagesOf`, `recordById`, `recordsOf` from `./record`; `:108-118` becomes "a page resolves its icon from pageMetadata, and a pageMetadata-only change yields a new trail index but keeps the title index" (`expect(pageIndexOf(iconed)).toBe(pageIndexOf(t))`); `:201-213` holds `reconcileIndexOf`, `nodesOf`, `pageIndexOf`, `recordsOf` across a settings change and rebuilds `reconcileIndexOf` when `unreadable` moves. Watch the title-index identity case fail first.
-- [ ] Write `treeIndex.ts` as below; `nodesOf` builds parents through a `chains` map keyed by path, looking each record's container up by `dirname(path)` (`Paths/posix.ts:30`); `treeIndex.test.ts` pins a page in a set, a page in a collection, and a space under its context resolving the same trails as today.
+- [ ] Write `treeIndex.ts` as below; `nodesOf` builds parents through a `chains` map keyed by path, looking each record's container up by `relDirname(path)` (`Paths/posix.ts:37`, the tree patcher's own spelling); `treeIndex.test.ts` pins a page in a set, a page in a collection, and a space under its context resolving the same trails as today.
 
 **AFTER**
 
@@ -423,15 +423,9 @@ The floor is −100 (the owner's ruling, 10-15-2026). Both estimates sit below i
 -const indexFor = entityMemo([ … six inputs … ], (tree): TreeIndex => ({ nodes: walk(tree) }))
 -function walk(tree: NexusTree): NodeRecord[] { … 118 lines … }
 -export const nodesOf = (tree: NexusTree): readonly NodeRecord[] => indexFor(tree).nodes
-+const LOOKS = [
-+  (t: NexusTree) => t.contexts,
-+  (t: NexusTree) => t.nexus.name,
-+  (t: NexusTree) => t.config.profileIcon,
-+  (t: NexusTree) => t.config.pageMetadata,
-+  (t: NexusTree) => t.config.personalization.defaultIcons,
-+]
-+
-+export const nodesOf = entityMemo(LOOKS, (tree): readonly NodeRecord[] => {
++export const nodesOf = entityMemo(
++  [(t) => t.contexts, (t) => t.nexus.name, (t) => t.config.profileIcon, (t) => t.config.pageMetadata, (t) => t.config.personalization.defaultIcons],
++  (tree): readonly NodeRecord[] => {
 +  const di = tree.config.personalization.defaultIcons
 +  const nodes: NodeRecord[] = [
 +    { key: navKey({ kind: 'homepage' }), kind: 'homepage', id: '', title: tree.nexus.name, icon: iconNameOr(tree.config.profileIcon, DEFAULT_NEXUS_ICON), path: '', parents: [] },
@@ -446,10 +440,10 @@ The floor is −100 (the owner's ruling, 10-15-2026). Both estimates sit below i
 +      chains.set(path, [{ kind, id, title, icon, path: '' }])
 +      continue
 +    }
-+    const parents = chains.get(dirname(path)) ?? []
++    const parents = chains.get(relDirname(path)) ?? []
 +    const node: NodeRecord = { key: navKey({ kind, id }), kind, id, title, icon, ownIcon, path, parents }
 +    nodes.push(node)
-+    chains.set(path, [...parents, node])
++    if (kind === 'collection' || kind === 'set') chains.set(path, [...parents, node])
 +  }
 +  return nodes
 +})
@@ -468,11 +462,11 @@ The floor is −100 (the owner's ruling, 10-15-2026). Both estimates sit below i
 +    return { spaces, collections, sets, pages, pagesByPath, withheld: withheldIn(tree.unreadable) }
 +  },
 +)
-@@ resolveIndexOf, ancestryOf, searchEntriesOf, recordsByIdOf, navKeysOf, spaceLinksOf @@
-+export const resolveIndexOf = entityMemo(LOOKS, (tree): ResolveIndex =>
+@@ resolveIndexOf, ancestryOf, searchEntriesOf, nodesByIdOf, navKeysOf, spaceLinksOf @@
++export const resolveIndexOf = entityMemo([nodesOf], (tree): ResolveIndex =>
 +  new Map<string, NavCore>(nodesOf(tree).map((r) => [r.key, { icon: r.icon, title: r.title, path: r.parents }])),
 +)
-+const ancestries = entityMemo(LOOKS, (tree): ReadonlyMap<string, TrailNode[]> =>
++const ancestries = entityMemo([nodesOf], (tree): ReadonlyMap<string, TrailNode[]> =>
 +  new Map(nodesOf(tree).map((r) => [r.key, [...r.parents, r]])),
 +)
 +export const ancestryOf = (tree: NexusTree, ref: NavRef | SelectTarget): TrailNode[] | null =>
@@ -480,7 +474,7 @@ The floor is −100 (the owner's ruling, 10-15-2026). Both estimates sit below i
 +export const searchEntriesOf = entityMemo([(t) => t.contexts, (t) => t.nexus.name], (tree): SearchEntry[] => {
 +  … the byKind grouping unchanged, over nodesOf(tree) …
 +})
-+export const recordsByIdOf = entityMemo(LOOKS, (tree): ReadonlyMap<string, NodeRecord> =>
++export const nodesByIdOf = entityMemo([nodesOf], (tree): ReadonlyMap<string, NodeRecord> =>
 +  new Map(nodesOf(tree).filter((r) => r.id !== '').map((r) => [r.id, r])),
 +)
 +export const navKeysOf = entityMemo([(t) => t.contexts], (tree): string[] => nodesOf(tree).map((r) => r.key))
@@ -490,7 +484,7 @@ The floor is −100 (the owner's ruling, 10-15-2026). Both estimates sit below i
 -export function pagesOf … / export const livePagePath … / export function pagesByIdOf … / export function pageIndexOf …   (moved to record.ts in Task 1-1)
 ```
 
-`searchEntriesOf` and `navKeysOf` carry no icon, so they key on contexts (and the Nexus name for search), never on `pageMetadata`; `nodesOf`, `resolveIndexOf`, `ancestries`, and `recordsByIdOf` bake glyphs, so they keep `LOOKS` (`Sidebar.tsx:296` reads `ownIcon`). The elided bodies (`reconcileIndexOf`'s sets and cases, `searchEntriesOf`'s grouping, `spaceLinksOf`'s body) are today's lines moved under their memo unchanged; `Actions/destinationTree.ts:1`'s header reads "the tree index's one walk" and now names `record.ts`.
+`searchEntriesOf` and `navKeysOf` carry no icon, so they key on contexts (and the Nexus name for search), never on `pageMetadata`; `nodesOf` bakes glyphs, so it keys on every field it reads (`Sidebar.tsx:296` reads `ownIcon`), and `resolveIndexOf`, `ancestries`, and `nodesByIdOf` key on `nodesOf` itself, the one thing they read; `recordById` keys on `recordsOf` the same way. The elided bodies (`reconcileIndexOf`'s sets and cases, `searchEntriesOf`'s grouping, `spaceLinksOf`'s body) are today's lines moved under their memo unchanged; `Actions/destinationTree.ts:1`'s header reads "the tree index's one walk" and now names `record.ts`.
 
 **VERIFY**
 
@@ -557,11 +551,11 @@ The floor is −100 (the owner's ruling, 10-15-2026). Both estimates sit below i
 
 #### Review Checkpoint
 
-- [ ] The host graph admits no `.tsx` and no new external through `record.ts` → `pageIndex.ts`.
-- [ ] A `pageMetadata`-only tree change keeps `pageIndexOf`, `searchEntriesOf`, and `navKeysOf` by identity and rebuilds `resolveIndexOf`.
-- [ ] Trails derived from paths match today's walked trails for a page in a set, a page in a collection, and a space under its context (containment is path nesting, the Nexus's locked legibility).
-- [ ] The persisted remint baseline keeps `{ id, kind, title, path }`.
-- [ ] Net Ledger: Phase 1 measured.
+- [x] The host graph admits no `.tsx` and no new external through `record.ts` → `pageIndex.ts`.
+- [x] A `pageMetadata`-only tree change keeps `pageIndexOf`, `searchEntriesOf`, and `navKeysOf` by identity and rebuilds `resolveIndexOf`.
+- [x] Trails derived from paths match today's walked trails for a page in a set, a page in a collection, a page in a set inside a set, and a space under its context (containment is path nesting, the Nexus's locked legibility).
+- [x] The persisted remint baseline keeps `{ id, kind, title, path }`.
+- [x] Net Ledger: Phase 1 measured.
 
 ---
 
@@ -573,13 +567,13 @@ The floor is −100 (the owner's ruling, 10-15-2026). Both estimates sit below i
 
 **TASK:** One markdown pattern (an empty label kept, an empty destination refused), one `LinkOccurrence` for both syntaxes with the same fields in start order, one `namesPage`, one `markdownLink` template, one `defaultLabel`, `encodeLinkTarget` escaping `#`, the codec decoding halves, the tuple span exported once, and `readLinkText` reading the markdown halves from the occurrence until Task 3-1 rewrites it.
 
-**NOW:** `links.ts:6-15` holds two regexes (`markdownLinkRegex` at `min 1`, `emptyTolerantLinkRegex` at `min 0`), `markdownLinkAt` (`:46-64`) with its own `MarkdownLinkSpans` and `#` split, `linkDestinationStart` (`:67-73`), `opensFragment` (`:35`), and `pageTarget` (`:98-104`), which splits at `#` a second time for the codec. `connections.ts:21-23` is a union with `alias` on one arm and `label`/`destination` on the other, and `linkOccurrences` (`:44-57`) yields wikilinks then markdown links, unsorted. `encodeLinkTarget` (`:76-82`) leaves `#` raw (probed: `markdownPageLink('C# Notes', 'Intro')` reads back as a link to `C`). Three templates spell `[label](dest)`: `composeWebpageEmbedLine` (`links.ts:27`), `markdownPageLink` (`:86`), and `serializeLink` (`linkValue.ts:111`). `defaultLabel` is spelled title-first in `markdownPageLink` and heading-first in `emptied`. `connectionText(title, alias?, heading?)` takes the alias before the heading, so four callers pass `undefined` to reach the heading. `Span` is declared locally in `connections.ts:12`, `scan.ts:16`, `tokens.ts:29`, and as a wider union in `docScan.ts:61`.
+**NOW:** `links.ts:6-15` holds two regexes (`markdownLinkRegex` at `min 1`, `emptyTolerantLinkRegex` at `min 0`), `markdownLinkAt` (`:46-64`) with its own `MarkdownLinkSpans` and `#` split, `linkDestinationStart` (`:67-73`), `opensFragment` (`:35`), and `pageTarget` (`:98-104`), which splits at `#` a second time for the codec. `connections.ts:21-23` is a union with `alias` on one arm and `label`/`destination` on the other, and `linkOccurrences` (`:44-57`) yields wikilinks then markdown links, unsorted. `encodeLinkTarget` (`:76-82`) leaves `#` raw (probed: `markdownPageLink('C# Notes', 'Intro')` reads back as a link to `C`). Three templates spell `[label](dest)`: `composeWebpageEmbedLine` (`links.ts:27`), `markdownPageLink` (`:86`), and `serializeLink` (`linkValue.ts:111`). `defaultLabel` is spelled title-first in `markdownPageLink` and heading-first in `emptied`. `connectionText(title, alias?, heading?)` takes the alias before the heading, so four callers pass `undefined` to reach the heading. `Span` is declared locally in `connections.ts:12`, `scan.ts:16`, `tokens.ts:30`, and as a wider union in `docScan.ts:61`.
 
 **CHANGE**
 
 - [ ] Rewrite `connections.test.ts:15-30` for the one shape (`shown` for both syntaxes; a markdown occurrence yields `title`, `heading`, `shown`), add `[](Page)` as an occurrence with an empty `shown` and `[x]()` as none, add `[[A]] [b](B)` yielding in start order, rewrite `:88,108-111` for the `(title, heading?, alias?)` order, and watch them fail. In `links.test.ts`, drop `:154-209` (`linkDestinationStart`), rewrite `:81-118,138,145` for the half-decoders (`targetTitle('A%23B', false)` → `A#B`, `targetTitle('https://example.com', false)` → null, `targetFragment('Intro%20A')` → `Intro A`), and add `encodeLinkTarget('C# Notes')` → `C%23%20Notes`, `markdownPageLink('P', 'H')` → `[H](P#H)`, `markdownPageLink('C# Notes', 'Intro')` round-tripping through `linkOccurrences` to title `C# Notes`, and `connectionText('A', 'H', 'x')` → `[[A#H|x]]`, `connectionText('A', '', '')` → `[[A#|]]`.
 - [ ] Export `type Span = [number, number]` from `Engine/markdownCode.ts`; `connections.ts`, `scan.ts`, `tokens.ts`, and `links.ts` import it and drop their local declarations; `docScan.ts:61`'s union (which also admits `{ from, to }`) is renamed `SpanLike`, with its one importer `blockModel.ts:3`.
-- [ ] Write `links.ts` and `connections.ts` as below; `composeWebpageEmbedLine`'s two callers (`pasteAsMenu.ts:108`, `embedInsert.ts:62`) write `` `!${markdownLink(url, '')}` ``; `serializeLink` (`linkValue.ts:111`) becomes `label ? markdownLink(url, label) : url`; `detect.ts:412,423` read `markdownLinkRegex()`.
+- [ ] Write `links.ts` and `connections.ts` as below; `composeWebpageEmbedLine`'s two callers (`pasteAsMenu.ts:108`, `embedInsert.ts:62`) write `` `!${markdownLink(url, '')}` ``; `serializeLink` (`linkValue.ts:111`) becomes `label ? markdownLink(url, label) : url`; `detect.ts:416,427` read `markdownLinkRegex()`.
 - [ ] Reorder `connectionText` to `(title, heading?, alias?)` and let a present-but-empty heading or alias spell its slot (`[[A#]]`, `[[A|]]`), which Phase 5's slot-opening picks need. Sweep its eight callers: `linkValue.ts:118`, `LinkCell.tsx:48`, `pageMenuActions.ts:54`, `gripMenu.ts:92` drop their `undefined`; `linkValue.ts:205` swaps its arguments (`connectionText(next.title, next.heading, shown)`, which compiles either way); `adoptFile.ts:53,64` and `assetWrite.ts:31` pass a title only and are untouched; confirm no caller passes `''` for an absent heading (`pageTarget` builds `heading` only when non-empty; `PageTarget.heading` is optional and read with `?.`).
 - [ ] `connections.ts`'s `parseConnectionText` reads `o.shown` for the alias (it folds into `wikiTitle` in Phase 3); `linkValue.ts`'s `readLinkText` reads the markdown halves from the occurrence as below (Task 3-1 replaces the function).
 
@@ -890,7 +884,7 @@ The floor is −100 (the owner's ruling, 10-15-2026). Both estimates sit below i
 
 **TASK:** Link tokens carry their occurrence, so `resolveRange` and `heading` leave the wikilink token, the token helpers read `tk.link`, `shiftToken` shifts the occurrence for every caller, and `tokenTarget` hands `resolveMdTarget` the halves the occurrence holds until Task 3-2 retires both.
 
-**NOW:** `Token`'s wikilink arm carries `resolveRange` and `heading` (`tokens.ts:45`), and `aliasedToken`, `linkAddress`, `linkTarget`, `headingOf` (`:59-70`) derive what the occurrence already holds; `linkToken` (`:242-270`) builds the token from the occurrence and drops it; `shiftToken` (`:76-92`) has a wikilink branch for the two extra spans. Readers: `decorations.ts:570-579` (`aliasedToken`, `resolveRange`, `tk.heading`), `cellStatic.tsx:150` (`tk.resolveRange`), `linkEdit.ts:44-66,93`, `connectionsApi.ts:57-59,107`, `linkClicks.ts`, `citationPointer.ts:21`, `valueTarget.ts:23`; `shiftToken` callers `decorations.ts:363`, `format.ts:103,166`, and the tokenizer's HTML pass (`tokens.ts:286`).
+**NOW:** `Token`'s wikilink arm carries `resolveRange` and `heading` (`tokens.ts:46`), and `aliasedToken`, `linkAddress`, `linkTarget`, `headingOf` (`:60-71`) derive what the occurrence already holds; `linkToken` (`:262-290`) builds the token from the occurrence and drops it; `shiftToken` (`:80-96`) has a wikilink branch for the two extra spans. Readers: `decorations.ts:570-579` (`aliasedToken`, `resolveRange`, `tk.heading`), `cellStatic.tsx:150` (`tk.resolveRange`), `linkEdit.ts:44-66,93`, `connectionsApi.ts:57-59,107`, `linkClicks.ts`, `citationPointer.ts:21`, `valueTarget.ts:23`; `shiftToken` callers `decorations.ts:363`, `format.ts:130,194`, and the tokenizer's HTML pass (`tokens.ts:305`).
 
 **CHANGE**
 
@@ -989,7 +983,7 @@ The floor is −100 (the owner's ruling, 10-15-2026). Both estimates sit below i
  }
 ```
 
-The one cost on a decoration build: `shiftToken` now moves four spans for a markdown token where it moved none, on visible links only, the same work a wikilink token already paid for `resolveRange` and `heading`. The token's `link` arm is a mapped type over `LinkKind`, so `TokenOf<'link'>` and `TokenOf<'wikiLink'>` keep narrowing through `Extract` (`tokens.ts:47`).
+The one cost on a decoration build: `shiftToken` now moves four spans for a markdown token where it moved none, on visible links only, the same work a wikilink token already paid for `resolveRange` and `heading`. The token's `link` arm is a mapped type over `LinkKind`, so `TokenOf<'link'>` and `TokenOf<'wikiLink'>` keep narrowing through `Extract` (`tokens.ts:48`).
 
 **VERIFY**
 
@@ -1388,7 +1382,7 @@ A held value's `[[#H]]` keeps drawing as `bare` because drawing calls `resolveLi
 
 **TASK:** `ConnectionsApi` becomes `{ index, open, menu?, headingsOf }`, `location` moves to `EditorHost`, `heldOf` joins `api.ts`, and `connectionsApi.ts` keeps only the host interface, `headingMissing`, `linkLook`, and `linkClass`; `LinkMenuTarget` and `linkMenuTarget` move beside `LinkMenuContext`.
 
-**NOW:** `ConnectionsApi extends PageIndex` and carries `location` (`connectionsApi.ts:12-16`); `pageConnections.ts:33-46` builds it by spreading the index and reading `recordsByIdOf` for `location`; `pageRow` (`autocomplete.ts:169-174`) is `location`'s one reader. `connectionsApi.ts` also holds `MdTarget`, `titleTarget`, `resolveMdTarget`, `tokenTarget`, `linkStatus`, and `linkMenuTarget`.
+**NOW:** `ConnectionsApi extends PageIndex` and carries `location` (`connectionsApi.ts:12-16`); `pageConnections.ts:33-46` builds it by spreading the index and reading `nodesByIdOf` for `location`; `pageRow` (`autocomplete.ts:169-174`) is `location`'s one reader. `connectionsApi.ts` also holds `MdTarget`, `titleTarget`, `resolveMdTarget`, `tokenTarget`, `linkStatus`, and `linkMenuTarget`.
 
 **CHANGE**
 
@@ -1441,7 +1435,7 @@ A held value's `[[#H]]` keeps drawing as `bare` because drawing calls `resolveLi
 ```
 
 ```Core/Session/pageConnections.ts diff
--    const location = (id: string): TrailSegment[] => recordsByIdOf(tree).get(id)?.parents ?? NO_TRAIL
+-    const location = (id: string): TrailSegment[] => nodesByIdOf(tree).get(id)?.parents ?? NO_TRAIL
 -    if (mode === 'inert') return { ...index, open: () => {}, headingsOf, location }
 +    if (mode === 'inert') return { index, open: () => {}, headingsOf }
      return {
@@ -1455,7 +1449,7 @@ A held value's `[[#H]]` keeps drawing as `bare` because drawing calls `resolveLi
 @@ buildEditorHost @@
 +    location: (id) => {
 +      const tree = state().tree
-+      return (tree && recordsByIdOf(tree).get(id)?.parents) || NO_TRAIL
++      return (tree && nodesByIdOf(tree).get(id)?.parents) || NO_TRAIL
 +    },
 ```
 
