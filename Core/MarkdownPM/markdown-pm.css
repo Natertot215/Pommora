@@ -218,6 +218,11 @@
 .md-text-color {
   color: var(--paint);
 }
+.md-text-color
+  :is(.md-connection-resolved, .md-connection-ambiguous, .md-heading-symbol, .md-link) {
+  color: inherit;
+  text-decoration: underline;
+}
 .md-code {
   font-family: var(--font-mono);
   color: var(--code);
