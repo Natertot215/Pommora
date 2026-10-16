@@ -204,8 +204,16 @@ export async function openCollection(cdp) {
   await sleep(1200)
 }
 export const row = (title) => `document.querySelector('.data-row[data-rid="${pageIds[title]}"]')`
-export const field = `document.activeElement?.tagName === 'INPUT' ? document.activeElement : null`
-export const fieldValue = (cdp) => cdp.evaluate(`(${field})?.value ?? null`)
+// The inline field holding the focus: a Number's <input>, or the one-line editor's content, read and driven through whichever it is.
+export const FIELD = '.value-field'
+export const FIELD_VIEW = `document.querySelector('${FIELD} .cm-content').cmTile.root.view`
+export const field = `(document.activeElement?.tagName === 'INPUT' || document.activeElement?.matches?.('${FIELD} .cm-content')) ? document.activeElement : null`
+const fieldView = `(${field}).cmTile.root.view`
+export const fieldValue = (cdp) => cdp.evaluate(`(() => { const f = ${field}; return f ? (f.tagName === 'INPUT' ? f.value : f.cmTile.root.view.state.doc.toString()) : null })()`)
+export const selectField = (cdp) => cdp.evaluate(`(() => { const f = ${field}; if (f.tagName === 'INPUT') f.select(); else { const v = ${fieldView}; v.dispatch({ selection: { anchor: 0, head: v.state.doc.length } }) } })()`)
+export const blurField = (cdp) => cdp.evaluate(`(${field}).blur()`)
+// Whether the field's caret rests at its end, with nothing selected.
+export const caretAtFieldEnd = (cdp) => cdp.evaluate(`(() => { const f = ${field}; if (f.tagName === 'INPUT') return f.selectionStart === f.value.length && f.selectionEnd === f.value.length; const s = ${fieldView}.state.selection.main; return s.empty && s.head === ${fieldView}.state.doc.length })()`)
 export const activeTab = (cdp) => cdp.evaluate(`document.querySelector('[role=tab][aria-selected=true]')?.getAttribute('title') ?? null`)
 
 // A press on the value's first glyph, so a link inside it is never the target.

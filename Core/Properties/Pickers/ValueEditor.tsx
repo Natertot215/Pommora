@@ -3,11 +3,13 @@ import { EditorView, keymap, placeholder } from '@codemirror/view'
 import { EditorState, Prec } from '@codemirror/state'
 import { history, historyKeymap, insertNewline } from '@codemirror/commands'
 import { invalidInput } from '@pommora/uix/Fields/fields.css'
+import { PICKER_PORTAL_ATTR } from '@pommora/uix/Pickers/PickerMenu'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import type { ConnPage } from '../../Connections/pageIndex'
 import { markdownLink } from '../../Connections/links'
 import { type EditorHost, heldPage, mirrorBody } from '../../MarkdownPM/api'
 import { editorBase } from '../../MarkdownPM/surface'
+import { focusRange } from '../../MarkdownPM/caretPlacement'
 import { drawnLinkAt } from '../../MarkdownPM/decorations'
 import { applyLinkAction } from '../../MarkdownPM/Links/linkEdit'
 import { linkSettle } from '../../MarkdownPM/Links/linkSettle'
@@ -20,16 +22,16 @@ import './text-pane.css'
 
 const stopBubble = (e: { stopPropagation: () => void }): void => e.stopPropagation()
 
-const settled = (doc: string): string => (doc.trim() === '' ? '' : doc)
+const blanked = (doc: string): string => (doc.trim() === '' ? '' : doc)
 
-/** The one editor every property value is typed in: the Text pane's, and in `oneLine` mode a field's. Both save once on every way out; a field also ends its own edit, Return and blur committing unless the text is invalid, Escape cancelling, with the invalid state on the editor's own node. A commit settles the link under edit first, so what the leave would have written is what's read. */
+/** The one editor every property value is typed in: the Text pane's, and in `oneLine` mode a field's. Both save once on every way out; a field also ends its own edit, Return and blur committing unless the text is invalid, Escape cancelling, with the invalid state on the editor's own node. A commit settles the link under edit first, so what the leave would have written is what's read; a cancel ends the edit, so nothing after it, the unmount's save included, writes. */
 export function ValueEditor({
   initial,
   holder,
   host,
   oneLine = false,
-  remembers = true,
-  seat,
+  remembers,
+  alias,
   invalid,
   saveRef,
   onCommit,
@@ -41,7 +43,7 @@ export function ValueEditor({
   oneLine?: boolean
   remembers?: boolean
   /** Once mounted, seat the caret in the value's alias slot: the Link value's Rename. */
-  seat?: 'alias'
+  alias?: boolean
   invalid?: (text: string) => boolean
   saveRef?: RefObject<() => void>
   onCommit: (text: string) => void
@@ -49,7 +51,8 @@ export function ValueEditor({
 }): React.JSX.Element {
   const mountRef = useRef<HTMLDivElement>(null)
   const viewRef = useRef<EditorView | null>(null)
-  const committed = useRef(settled(initial))
+  const committed = useRef(blanked(initial))
+  const ended = useRef(false)
   const onCommitRef = useLatest(onCommit)
   const onCloseRef = useLatest(onClose)
   const invalidRef = useLatest(invalid)
@@ -58,17 +61,15 @@ export function ValueEditor({
 
   const commit = (): void => {
     const view = viewRef.current
-    if (!view) return
+    if (!view || ended.current) return
     view.plugin(linkSettle)?.flush()
-    const text = settled(view.state.doc.toString())
+    const text = blanked(view.state.doc.toString())
     if (text === committed.current) return
     committed.current = text
     onCommitRef.current(text)
   }
-  // What's in the editor is marked as already committed, so the unmount's save leaves it alone.
   const cancel = (): boolean => {
-    const view = viewRef.current
-    if (view) committed.current = settled(view.state.doc.toString())
+    ended.current = true
     onCloseRef.current()
     return true
   }
@@ -118,19 +119,20 @@ export function ValueEditor({
                 }),
               ]
             : placeholder('Begin typing.'),
-          // Shift-Tab stops short of the pane's focus trap, which would carry it to the ×.
           Prec.highest(
             keymap.of([
               { key: 'Enter', run: leave },
+              { key: 'Shift-Enter', run: oneLine ? () => true : insertNewline },
               ...(oneLine
                 ? [
-                    { key: 'Shift-Enter', run: () => true },
                     { key: 'Mod-Enter', run: () => true },
                     { key: 'Escape', run: cancel },
                   ]
-                : [{ key: 'Shift-Enter', run: insertNewline }]),
-              { key: 'Tab', run: () => true },
-              { key: 'Shift-Tab', run: () => true, stopPropagation: true },
+                : [
+                    // A field lets Tab move the focus as a plain field does; the pane keeps it, and Shift-Tab stops short of its focus trap, which would carry it to the ×.
+                    { key: 'Tab', run: () => true },
+                    { key: 'Shift-Tab', run: () => true, stopPropagation: true },
+                  ]),
             ]),
           ),
           keymap.of(historyKeymap),
@@ -139,25 +141,22 @@ export function ValueEditor({
     })
     viewRef.current = view
     if (invalid) view.dom.setAttribute('aria-invalid', String(invalid(initial)))
-    if (seat === 'alias') {
-      const doc = view.state.doc.toString()
+    const doc = view.state.doc.toString()
+    if (alias && drawnLinkAt(view, 0)) applyLinkAction(view, 'rename', [0, doc.length])
+    else if (alias) {
       // A bare address draws no link token, so Rename gives it the label a markdown link has.
-      if (drawnLinkAt(view, 0)) applyLinkAction(view, 'rename', [0, doc.length])
-      else
-        view.dispatch({
-          changes: { from: 0, to: doc.length, insert: markdownLink(doc, '') },
-          selection: { anchor: 1 },
-        })
+      view.dispatch({ changes: { from: 0, to: doc.length, insert: markdownLink(doc, '') } })
+      focusRange(view, 1)
     } else {
-      view.dispatch({ selection: { anchor: view.state.doc.length } })
+      view.dispatch({ selection: { anchor: doc.length }, scrollIntoView: true })
       view.focus()
     }
-    // The pane blooms in from a scale the caret was measured through, so the editor measures again once it settles.
-    const shell = mountRef.current!.closest('.text-pane')
+    // A popover blooms in from a scale the caret was measured through, so the editor measures again once it settles.
+    const portal = mountRef.current!.closest(`[${PICKER_PORTAL_ATTR}]`)
     const remeasure = (): void => view.requestMeasure()
-    shell?.addEventListener('animationend', remeasure)
+    portal?.addEventListener('animationend', remeasure)
     return () => {
-      shell?.removeEventListener('animationend', remeasure)
+      portal?.removeEventListener('animationend', remeasure)
       view.destroy()
       viewRef.current = null
     }
@@ -169,7 +168,7 @@ export function ValueEditor({
     const view = viewRef.current
     if (
       view &&
-      settled(view.state.doc.toString()) === committed.current &&
+      blanked(view.state.doc.toString()) === committed.current &&
       initial !== committed.current
     ) {
       committed.current = initial

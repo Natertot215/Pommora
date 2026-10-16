@@ -128,6 +128,19 @@ describe('ValueEditor in its one-line mode', () => {
     expect(onClose).not.toHaveBeenCalled()
   })
 
+  it('Tab is not the field’s, so the focus it moves commits through the blur; the pane keeps it', () => {
+    const view = mount('a')
+    type(view, 'b')
+    expect(press(view, 'Tab')).toBe(false)
+    blur(view)
+    expect(onCommit).toHaveBeenCalledExactlyOnceWith('ab')
+    act(() => root.unmount())
+    root = createRoot(container)
+    const pane = mount('a', { oneLine: false })
+    expect(press(pane, 'Tab')).toBe(true)
+    expect(press(pane, 'Tab', { shiftKey: true })).toBe(true)
+  })
+
   it('a pasted or typed break lands as a space', () => {
     const view = mount('a')
     type(view, 'b\nc\nd', 'input.paste')
@@ -230,26 +243,38 @@ describe('ValueEditor in its one-line mode', () => {
 
 describe('ValueEditor seated in the alias slot', () => {
   it('selects a written alias', () => {
-    const view = mount('[[Alpha|Mine]]', { seat: 'alias' })
+    const view = mount('[[Alpha|Mine]]', { alias: true })
     const { from, to } = view.state.selection.main
     expect(doc(view).slice(from, to)).toBe('Mine')
     expect(document.activeElement).toBe(view.contentDOM)
   })
 
   it('opens an empty slot after the pipe where none is written', () => {
-    const view = mount('[[Alpha]]', { seat: 'alias' })
+    const view = mount('[[Alpha]]', { alias: true })
     expect(doc(view)).toBe('[[Alpha|]]')
     expect(view.state.selection.main.head).toBe(8)
+    expect(document.activeElement).toBe(view.contentDOM)
   })
 
   it('gives a bare address a markdown label and seats the caret in it', () => {
-    const view = mount('https://example.com', { seat: 'alias' })
+    const view = mount('https://example.com', { alias: true })
     expect(doc(view)).toBe('[](https://example.com)')
     expect(view.state.selection.main.head).toBe(1)
+    expect(document.activeElement).toBe(view.contentDOM)
+  })
+
+  it('Escape after emptying the slot ends the edit, so the unmount writes no collapsed link', () => {
+    const view = mount('[[Alpha|Mine]]', { alias: true })
+    type(view, '', 'delete.backward')
+    press(view, 'Escape')
+    expect(onClose).toHaveBeenCalledOnce()
+    act(() => root.unmount())
+    root = createRoot(container)
+    expect(onCommit).not.toHaveBeenCalled()
   })
 
   it('an emptied slot collapses through the settle before the commit reads it', () => {
-    const view = mount('[[Alpha|Mine]]', { seat: 'alias' })
+    const view = mount('[[Alpha|Mine]]', { alias: true })
     type(view, '', 'delete.backward')
     expect(doc(view)).toBe('[[Alpha|]]')
     press(view, 'Enter')

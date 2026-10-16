@@ -4,6 +4,7 @@ import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { EditorView } from '@codemirror/view'
 import { solidColorCss } from '@pommora/uix/Theme/ramp'
+import * as textPicker from '@pommora/uix/Pickers/text-picker.css'
 import { stubEditorBridge } from '../../Testing/editorHarness'
 import { makeTree } from '../../Testing/testTree'
 import { useSession } from '../../Session/store'
@@ -156,6 +157,20 @@ describe('the popover routes', () => {
     expect(popoverFor('number').querySelector('input')).not.toBeNull()
   })
 
+  it('a Number popover shows its affixes around the input, and a Link popover its editor, in the one field', () => {
+    remount(
+      { id: 'prop_n', name: 'Count', type: 'number', number_fraction: true, number_denominator: 5 },
+      { kind: 'number', value: 2 },
+      { popover },
+    )
+    const chrome = `.${textPicker.field.split(' ')[0]}`
+    const number = portal().querySelector(chrome)!
+    expect(number.querySelector('input')).not.toBeNull()
+    expect(number.textContent).toBe('#/ 5')
+    remount({ id: 'prop_l', name: 'Site', type: 'link' }, null, { popover })
+    expect(portal().querySelector(`${chrome} .value-field .cm-editor`)).not.toBeNull()
+  })
+
   it('a Number popover commits nothing when its text is unchanged', () => {
     const blank = popoverFor('number').querySelector('input')!
     act(() => {
@@ -175,8 +190,9 @@ describe('the Link field', () => {
     expect(doc()).toBe('[[Alpha|nice]]')
     expect(view().state.selection.main.head).toBe(14)
     const wrapper = host.querySelector('span[style]') as HTMLElement
-    expect(wrapper.style.getPropertyValue('--connection')).toBe(solidColorCss('red'))
+    expect(wrapper.style.color).toBe(solidColorCss('red'))
     expect(wrapper.style.getPropertyValue('--link')).toBe(solidColorCss('red'))
+    expect(wrapper.style.getPropertyValue('--connection')).toBe('')
   })
 
   it('Rename opens the same editor seated in the alias slot', () => {
@@ -203,6 +219,28 @@ describe('the Link field', () => {
     press('Enter')
     press('Enter')
     expect(onCommit).toHaveBeenCalledExactlyOnceWith(link('[[Alpha]]'))
+  })
+
+  it('Rename emptied then escaped writes nothing, inline or in the popover', () => {
+    for (const props of [{ alias: true }, { alias: true, popover }]) {
+      remount(SITE, link('[[Alpha|nice]]'), props)
+      type('')
+      press('Escape')
+      act(() => root.render(null))
+    }
+    expect(onClose).toHaveBeenCalledTimes(2)
+    expect(onCommit).not.toHaveBeenCalled()
+  })
+
+  it('Rename on a bare address and a title respelled by the index both close without a commit', () => {
+    mount(SITE, link('https://example.com'), { alias: true, popover })
+    press('Enter')
+    press('Enter')
+    remount(SITE, link('[[Alpha]]'))
+    type('[[alpha]]', 0, 9)
+    press('Enter')
+    expect(onClose).toHaveBeenCalledTimes(2)
+    expect(onCommit).not.toHaveBeenCalled()
   })
 
   it('Rename clearing the label of a value only the markdown form spells writes its default label, through the settle', () => {
@@ -299,6 +337,15 @@ describe('the single-line Text field', () => {
     type(' more')
     press('Enter')
     expect(onCommit).toHaveBeenCalledExactlyOnceWith(text('first more\nsecond\n'))
+    expect(onClose).toHaveBeenCalledOnce()
+  })
+
+  it('Escape after typing writes nothing', () => {
+    mount(NOTES, null)
+    type('see [[Alpha|nick]]')
+    press('Escape')
+    act(() => root.render(null))
+    expect(onCommit).not.toHaveBeenCalled()
     expect(onClose).toHaveBeenCalledOnce()
   })
 

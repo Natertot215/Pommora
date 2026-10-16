@@ -1,11 +1,9 @@
 import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'
 import type { CSSProperties, RefObject } from 'react'
 import { EditableInput } from '@pommora/uix/Fields/EditableInput'
-import { editable, field, fillInput } from '@pommora/uix/Fields/fields.css'
-import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
+import { fillInput } from '@pommora/uix/Fields/fields.css'
 import { TextPicker } from '@pommora/uix/Pickers/TextPicker'
 import { solidColorCss } from '@pommora/uix/Theme/ramp'
-import { cx } from '@pommora/uix/Utilities/cx'
 import type { ConnPage } from '../../Connections/pageIndex'
 import type { PropertyDefinition } from '../properties'
 import type { PropertyValue } from '../propertyValue'
@@ -41,9 +39,10 @@ export function PropertyValueInput({
   const parse = (text: string): PropertyValue | null | undefined =>
     parseEditorValue(def.type, text, current, { index: connections?.()?.index, own: holder })
   const invalid = (text: string): boolean => parse(text) === undefined
+  // Deduped on what the field would reopen on, since a seat may have rewritten the text it holds.
   const commit = (text: string): void => {
-    const next = text.trim() === initial ? undefined : parse(text)
-    if (next !== undefined) onCommit(next)
+    const next = parse(text)
+    if (next !== undefined && editorText(next) !== initial) onCommit(next)
   }
   if (def.type === 'number') {
     const close = (text: string): void => {
@@ -93,41 +92,25 @@ export function PropertyValueInput({
       host={host}
       oneLine
       remembers={def.type !== 'link'}
-      seat={alias ? 'alias' : undefined}
+      alias={alias}
       invalid={invalid}
       onCommit={commit}
       onClose={onClose}
     />
   )
-  // The property's link color reaches the drawn link as the cell's does, and the text around it.
+  // The property's link color tints an address and the text around it, as the resting cell's anchor is tinted; a page link keeps the app's connection color there too.
   const accent = def.type === 'link' ? solidColorCss(def.link_color) : undefined
   const tinted = accent ? (
-    <span
-      style={
-        {
-          color: accent,
-          '--connection': accent,
-          '--link': accent,
-          display: 'contents',
-        } as CSSProperties
-      }
-    >
+    <span style={{ color: accent, '--link': accent, display: 'contents' } as CSSProperties}>
       {editor}
     </span>
   ) : (
     editor
   )
   return popover ? (
-    <PickerMenu
-      open={popover.open}
-      triggerRef={popover.triggerRef}
-      onDismiss={onClose}
-      direction="down"
-      origin="center"
-      contentClassName="value-popover"
-    >
-      <div className={cx(field, editable)}>{tinted}</div>
-    </PickerMenu>
+    <TextPicker {...popover} onDismiss={onClose}>
+      {tinted}
+    </TextPicker>
   ) : (
     tinted
   )

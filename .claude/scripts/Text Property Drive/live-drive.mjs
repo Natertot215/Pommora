@@ -2,10 +2,10 @@ import { statSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { stringify } from 'yaml'
 import {
-  activate, activeTab, ask, boxOf, check, chooseNative, click, closePanel, createPage, escapeAll, field, fieldValue, FM, frontmatter,
+  activate, activeTab, ask, blurField, boxOf, caretAtFieldEnd, check, chooseNative, click, closePanel, createPage, escapeAll, field, fieldValue, FM, frontmatter,
   frontRaw, hover, holds, key, KEY, launch, META, mouseAt, mouseClick, must, nativeMenu, NEXUS, openCollection, openField,
   openPage, openPane, openPanel, osa, overlaps, PAGE_VIEW, pageFile, pageIds, pagePath, PANE, PANE_VIEW, paneDoc, PEN,
-  portalOpen, pressKey, read, refusal, restore, results, row, screenShot, sel, SET, settles, SHIFT, shot, sleep, typeText,
+  portalOpen, pressKey, read, refusal, restore, results, row, screenShot, sel, selectField, SET, settles, SHIFT, shot, sleep, typeText,
   until, writeBody,
 } from '../drive-harness.mjs'
 
@@ -123,7 +123,7 @@ async function pickRow(cdp, label) {
 }
 async function commitField(cdp, expr, text) {
   await openField(cdp, expr)
-  await cdp.evaluate(`(${field}).select()`)
+  await selectField(cdp)
   if (text === '') await pressKey(cdp, 'Backspace')
   else await typeText(cdp, text)
   await pressKey(cdp, 'Enter')
@@ -163,7 +163,7 @@ async function group1(cdp, pid) {
   const rawStamp = mtime('Drive Raw')
   await openField(cdp, cell('Drive Raw'))
   const rawField = await fieldValue(cdp)
-  await cdp.evaluate(`(${field}).select()`)
+  await selectField(cdp)
   await typeText(cdp, '42')
   await pressKey(cdp, 'Enter')
   check("group 1: Drive Raw's field holds 42, and retyping it writes nothing",
@@ -175,10 +175,10 @@ async function group1(cdp, pid) {
   const bytes = pageFile('Drive Prose')
   const proseStamp = mtime('Drive Prose')
   await openField(cdp, cell('Drive Prose'))
-  const caret = await cdp.evaluate(`(() => { const f = ${field}; return f.selectionStart === f.value.length && f.selectionEnd === f.value.length })()`)
+  const caret = await caretAtFieldEnd(cdp)
   check("group 1: Drive Prose's field holds the first line, caret at its end", (await fieldValue(cdp)) === first && caret, await fieldValue(cdp))
   await shot(cdp, 'field-open')
-  await cdp.evaluate(`(${field}).blur()`)
+  await blurField(cdp)
   check("group 1: an untouched blur leaves Drive Prose's bytes unchanged", (await holds(async () => mtime('Drive Prose') === proseStamp)) && pageFile('Drive Prose') === bytes)
   await commitField(cdp, cell('Drive Prose'), 'a fresh first line')
   const behind = SHOWCASE.split('\n').slice(1).join('\n')

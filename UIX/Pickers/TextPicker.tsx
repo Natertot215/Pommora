@@ -1,40 +1,37 @@
-import type { RefObject } from 'react'
+import type { ReactNode, RefObject } from 'react'
 import { EditableInput } from '../Fields/EditableInput'
 import { PickerMenu } from './PickerMenu'
 import * as s from './text-picker.css'
 
+/** What the one chrome holds: the kit's input over a `value`, with its affixes, or a caller's own editor as `children`. */
+type Typed = {
+  value: string
+  onCommit: (next: string) => void
+  invalid?: (text: string) => boolean
+  leading?: ReactNode
+  trailing?: ReactNode
+  children?: undefined
+}
+type Hosted = {
+  children: ReactNode
+  value?: undefined
+  onCommit?: undefined
+  invalid?: undefined
+  leading?: undefined
+  trailing?: undefined
+}
+
+/** A typed value's popover: one field wrapper owning the fill, stroke, focus ring, type, and width, around either the kit's input or an editor the caller mounts. */
 export function TextPicker({
   open,
   onDismiss,
   triggerRef,
-  value,
-  onCommit,
-  invalid,
-  leading,
-  trailing,
+  ...inner
 }: {
   open: boolean
   onDismiss: () => void
   triggerRef: RefObject<HTMLElement | null>
-  value: string
-  onCommit: (next: string) => void
-  invalid?: (text: string) => boolean
-  leading?: React.ReactNode
-  trailing?: React.ReactNode
-}): React.JSX.Element | null {
-  const hasAffix = leading !== undefined || trailing !== undefined
-  const field = (
-    <EditableInput
-      initial={value}
-      className={hasAffix ? s.suffixInput : s.input}
-      // The bare variant takes the shared field chrome so it truncates rather than letting the eclipse dissolve its own box.
-      boxed={!hasAffix}
-      caretAtEnd
-      invalid={invalid}
-      onCommit={onCommit}
-      onCancel={onDismiss}
-    />
-  )
+} & (Typed | Hosted)): React.JSX.Element | null {
   return (
     <PickerMenu
       open={open}
@@ -44,15 +41,24 @@ export function TextPicker({
       origin="center"
       contentClassName={s.content}
     >
-      {hasAffix ? (
-        <div className={s.suffixField}>
-          {leading !== undefined && <span className={s.leading}>{leading}</span>}
-          {field}
-          {trailing !== undefined && <span className={s.trailing}>{trailing}</span>}
-        </div>
-      ) : (
-        field
-      )}
+      <div className={s.field}>
+        {inner.value === undefined ? (
+          inner.children
+        ) : (
+          <>
+            {inner.leading !== undefined && <span className={s.leading}>{inner.leading}</span>}
+            <EditableInput
+              initial={inner.value}
+              className={s.suffixInput}
+              caretAtEnd
+              invalid={inner.invalid}
+              onCommit={inner.onCommit}
+              onCancel={onDismiss}
+            />
+            {inner.trailing !== undefined && <span className={s.trailing}>{inner.trailing}</span>}
+          </>
+        )}
+      </div>
     </PickerMenu>
   )
 }

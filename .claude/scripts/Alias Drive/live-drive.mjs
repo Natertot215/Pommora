@@ -1,10 +1,10 @@
 import { readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import {
-  activate, against, ask, boxOf, check, chooseNative, click, closePanel, createPage, doubleClick, drag, escapeAll, frontmatter,
+  activate, against, ask, boxOf, check, chooseNative, click, closePanel, createPage, doubleClick, drag, escapeAll, field, frontmatter,
   launch, measure, metrics, mouseAt, mouseClick, must, nativeMenu, NEXUS, openCollection, openPage, openPane, openPanel,
   PAGE_VIEW, pageFile, pageIds, pagePath, PANE, PANE_VIEW, portalOpen, pressKey, printMetrics, read, refusal, restore, results,
-  row, sel, SETTINGS_BUTTON, settles, shot, sleep, sweep, typeText, until, writeBody, writeMetrics,
+  row, sel, selectField, SETTINGS_BUTTON, settles, shot, sleep, sweep, typeText, until, writeBody, writeMetrics,
 } from '../drive-harness.mjs'
 
 const PORT = 9373
@@ -138,8 +138,6 @@ const boundsOf = (cdp, S) =>
 
 // The editor a gesture types into, and where its alias slot stands.
 const CELL_VIEW = `document.querySelector('.mdpm-tbl-cell-editor .cm-content').cmTile.root.view`
-const FIELD = '.value-field'
-const FIELD_VIEW = `document.querySelector('${FIELD} .cm-content').cmTile.root.view`
 const docOf = (cdp, view) => cdp.evaluate(`${view}.state.doc.toString()`)
 const inSlot = (view, query = '') =>
   `(() => { const v = ${view}; const d = v.state.doc.toString(); const at = d.indexOf(${JSON.stringify(`[[${TARGET}|`)}); return document.activeElement === v.contentDOM && at >= 0 && v.state.selection.main.head === at + ${TARGET.length + 3 + query.length} })()`
@@ -217,8 +215,8 @@ async function group1(cdp) {
   const commitLink = async (name, text, [md, shard], want, reads = text) => {
     const box = await boxOf(cdp, cell(SOURCE, LINK))
     await mouseAt(cdp, { x: box.left + 4, y: box.y })
-    await until("Drive Source's Link field", () => cdp.evaluate(`!!document.querySelector('${FIELD} .cm-content')`))
-    await cdp.evaluate(`(() => { const v = ${FIELD_VIEW}; v.focus(); v.dispatch({ selection: { anchor: 0, head: v.state.doc.length } }) })()`)
+    await until("Drive Source's Link field", () => cdp.evaluate(`!!(${field})`))
+    await selectField(cdp)
     await typeText(cdp, text)
     await sleep(300)
     if (await cdp.evaluate(`!!${PICKER}`)) await pressKey(cdp, 'Escape')
