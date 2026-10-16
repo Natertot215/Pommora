@@ -433,6 +433,10 @@ describe('close construct on Enter', () => {
   it('steps past a highlight’s closing ==, read from its token, past a == inside code', () => {
     expect(closeConstructOnEnter(scanDoc('a ==a `==` b== c'), 12, 12)!.selection).toBe(14)
   })
+  it('steps past an empty highlight pair, as an empty bold pair does', () => {
+    expect(closeConstructOnEnter(scanDoc('===='), 2, 2)!.selection).toBe(4)
+    expect(closeConstructOnEnter(scanDoc('****'), 2, 2)!.selection).toBe(4)
+  })
 })
 
 describe('backticks pair once', () => {
