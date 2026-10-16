@@ -514,6 +514,7 @@ const CLOSERS: readonly { close: string; open: string }[] = [
   { close: '__', open: '__' },
   { close: '``', open: '``' },
   { close: '~~', open: '~~' },
+  { close: '==', open: '==' },
   { close: ']', open: '[' },
   { close: ')', open: '(' },
   { close: '}', open: '{' },
@@ -529,7 +530,8 @@ const isWordCh = (ch: string | undefined): boolean => ch !== undefined && /\w/.t
 function closerEndAt(scan: DocScan, caret: number): number | null {
   if (inCodeAt(scan, caret)) return null
   const doc = scan.text
-  if (doc[caret] === '=') return paintEndAt(doc, caret)
+  const paint = doc[caret] === '=' ? paintEndAt(doc, caret) : null
+  if (paint !== null) return paint
   const before = doc.slice(lineStartAt(doc, caret), caret)
   // A single-char symmetric marker flanked by word chars is prose — contractions would poison the parity and teleport the caret.
   const count = (s: string): number => {
@@ -559,7 +561,7 @@ function closerEndAt(scan: DocScan, caret: number): number | null {
   return null
 }
 
-/** Where the paint whose words end at `caret` ends, past its closer: an `=` is too often prose, and too often in code, for parity to read. */
+/** Where the paint whose words end at `caret` ends, past its closer: an `=` is too often prose, and too often in code, for parity alone to read. */
 function paintEndAt(doc: string, caret: number): number | null {
   const ls = lineStartAt(doc, caret)
   const tk = tokenize(doc.slice(ls, lineEndAt(doc, caret))).find(
