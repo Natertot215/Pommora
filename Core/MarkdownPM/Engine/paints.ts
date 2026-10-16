@@ -41,13 +41,13 @@ const COLOR_OF = new Map<string, PaintColor>(
 // A mark is at most a surrogate pair and its variation selector; one unit past it tells whether it joins a longer emoji.
 const VARIATION_SELECTOR = '\uFE0F'
 const MARK_WIDTH = 4
-/** The mark that opens a span of `paint`, as a regex source: one joined into a longer emoji (`❤️‍🔥`) belongs to that emoji. */
-export const leadingMark = (paint: Paint): string =>
-  `(?:${colorsOf(paint)
+/** A mark of one of `colors`, as a regex source: one joined into a longer emoji (`❤️‍🔥`) belongs to that emoji. */
+export const leadingMark = (colors: readonly PaintColor[]): string =>
+  `(?:${colors
     .flatMap((color) => PAINT_COLORS[color].marks)
     .join('|')})${VARIATION_SELECTOR}?(?![${VARIATION_SELECTOR}\u200D])`
 
-const LEADING = new RegExp(`^${leadingMark('highlight')}`, 'u')
+const LEADING = new RegExp(`^${leadingMark(PAINT_COLOR_NAMES)}`, 'u')
 
 export function markAfter(text: string, at: number): { color: PaintColor; length: number } | null {
   const m = LEADING.exec(text.slice(at, at + MARK_WIDTH))
