@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ok } from '../Contract/result'
 import { useSession } from '../Session/store'
 import { makeTree } from '../Testing/testTree'
+import { stabilize } from '../Nexus/treeStabilize'
 import { stubDialer } from '../vitest.setup'
 import type { Stage } from './Engine/viewport'
 import { applyPatch, DEFAULT_MATRIX_CONFIG, type MatrixConfig } from './matrixConfig'
@@ -28,12 +29,17 @@ const centreOf = (v: { x: number; y: number; zoom: number }, st: Stage): [number
   v.y + (st.y + st.height / 2) / v.zoom,
 ]
 
-const link = (pageId: string, target: string): MatrixLink => ({
+const link = (
+  pageId: string,
+  target: string,
+  kind: MatrixLink['kind'] = 'body',
+  key = '',
+): MatrixLink => ({
   pageId,
   path: `${pageId}.md`,
-  kind: 'body',
+  kind,
   target,
-  key: '',
+  key,
 })
 
 const linked = (): MatrixGraphReply => ({ links: [link('p2', 'Alpha')], values: {} })
@@ -677,6 +683,24 @@ describe('matrixRuntime', () => {
       },
     })
     expect(matrixRuntime.graph.index.has('p1')).toBe(false)
+  })
+
+  it('re-reads the connections when the registry changes, and keeps them for one that stabilizes to the same', () => {
+    const tree = makeTree()
+    seed({ tree, matrixGraph: { links: [link('p2', 'Alpha', 'value', 'Rank')], values: {} } })
+    attach()
+    flush()
+    const linked = () => matrixRuntime.graph.links.length
+    expect(linked()).toBe(1)
+    const registry = [{ id: 'prop_rank', name: 'Rank', type: 'number' as const }]
+    const typed = { ...tree, config: { ...tree.config, registry } }
+    useSession.setState({ tree: typed })
+    expect(linked()).toBe(0)
+    const graph = matrixRuntime.graph
+    const same = stabilize([{ ...registry[0] }], registry)
+    expect(same).toBe(registry)
+    useSession.setState({ tree: { ...typed, config: { ...typed.config, registry: same } } })
+    expect(matrixRuntime.graph).toBe(graph)
   })
 
   it('re-judges a Location filter when a page moves across it', () => {

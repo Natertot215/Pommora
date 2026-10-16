@@ -52,12 +52,6 @@ export function linkEntry(v: unknown, nesting = 1): string | null {
   return isScalar(inner) && depth >= nesting ? `[[${inner}]]` : null
 }
 
-/** The link a whole key value spells — a string, or an unquoted `[[Page]]` — or `null` for any other shape. */
-export function wholeValueLink(v: unknown): LinkTarget | null {
-  const entry = linkEntry(v, 2)
-  return entry === null ? null : readLinkText(entry)
-}
-
 const writtenPage = (
   syntax: 'wiki' | 'markdown',
   title: string,

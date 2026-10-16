@@ -790,7 +790,7 @@ describe('the link cascades reach Spaces and caches', () => {
     })
   })
 
-  it('an outside heading rename reaches a Space whose value names the heading in a sentence', async () => {
+  it('an outside heading rename reaches a Space whose value names the heading in a sentence, under a key the registry hasn’t typed', async () => {
     await space({ Notes: 'see [[Target#Setup]] first' })
     await refreshTree(root)
     expect(spacesLinkHeading(root, 'Target', 'Setup')).toBe(true)

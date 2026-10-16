@@ -1,11 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import {
-  holdsLinks,
-  linkKeysOf,
-  validateName,
-  validateDefinition,
-  validateOptionValues,
-} from './schema'
+import { linkKeysOf, validateName, validateDefinition, validateOptionValues } from './schema'
 import { KEY_REFUSAL, type PropertyDefinition } from './properties'
 
 const def = (
@@ -117,23 +111,27 @@ describe('validateOptionValues', () => {
   })
 })
 
-describe('holdsLinks', () => {
+describe('linkKeysOf', () => {
+  const typed = (name: string, type: PropertyDefinition['type']) =>
+    linkKeysOf([def({ id: 'p1', name, type })])(name)
+
   it('a Link or Text key holds links; a File, Number, or Select key never does', () => {
-    expect(holdsLinks('Source', 'link')).toBe(true)
-    expect(holdsLinks('Notes', 'text')).toBe(true)
-    for (const type of ['file', 'number', 'select'] as const)
-      expect(holdsLinks('Related', type)).toBe(false)
+    expect(typed('Source', 'link')).toBe(true)
+    expect(typed('Note', 'text')).toBe(true)
+    expect(typed('Files', 'file')).toBe(false)
+    expect(typed('Rank', 'number')).toBe(false)
+    expect(typed('Stage', 'select')).toBe(false)
   })
 
-  it('an unregistered key holds links unless Pommora keeps it', () => {
-    expect(holdsLinks('Related', undefined)).toBe(true)
-    for (const key of ['ID', 'banner', '<Areas>', '$icon'])
-      expect(holdsLinks(key, undefined)).toBe(false)
+  it('a key the registry hasn’t typed holds links unless Pommora keeps it', () => {
+    const holds = linkKeysOf([])
+    expect(holds('Related')).toBe(true)
+    for (const key of ['ID', 'banner', '<Areas>', '$x']) expect(holds(key)).toBe(false)
   })
 
-  it('linkKeysOf asks the registry by folded name', () => {
-    const holds = linkKeysOf([def({ id: 'p1', name: 'Number', type: 'number' })])
-    expect(holds('number')).toBe(false)
+  it('asks the registry by folded name', () => {
+    const holds = linkKeysOf([def({ id: 'p1', name: 'Rank', type: 'number' })])
+    expect(holds('rank')).toBe(false)
     expect(holds('Related')).toBe(true)
   })
 })

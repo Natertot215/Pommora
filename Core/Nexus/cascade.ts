@@ -9,7 +9,7 @@ import {
   sweepGovernedRoots,
   unsweptLine,
 } from '../Properties/governedSweep'
-import { byFoldedName, type PropertyType } from '../Properties/properties'
+import { byFoldedName } from '../Properties/properties'
 import { editCaches } from '../Properties/propertyCache'
 import { heldTreeOf } from './liveTree'
 import type { NexusTree } from './tree'
@@ -23,7 +23,7 @@ import { headingOutline } from '../MarkdownPM/Engine/headingScan'
 import { queryHeadingMentions, queryMentions } from '../Index/contentIndex'
 import { nexusCorpus } from '../Index/indexSeed'
 import { linkDefs, readKeptRegistry } from '../Properties/propertiesRegistry'
-import { holdsLinks, linkKeysOf } from '../Properties/schema'
+import { linkKeysOf } from '../Properties/schema'
 import { readLiveSetting } from '../Settings/settings'
 import { rewriteTileConnections, tilesLinkHeading } from '../Tiles/tilesFile'
 import type { TilesChanged } from '../Tiles/tiles'
@@ -188,17 +188,16 @@ export async function renameCascade(
               : undefined,
           )
     const defs = Object.values((await readKeptRegistry(root)).defs)
-    const names = byFoldedName(defs)
-    const byName = (key: string) => names.get(foldKey(key))?.type
+    const holds = linkKeysOf(defs)
     const patchOf = (
       raw: Record<string, unknown>,
-      typeOf: (key: string) => PropertyType | undefined,
+      holds: (key: string) => boolean,
       own = '',
       outlineOf = '',
     ): Record<string, string> => {
       const patch: Record<string, string> = {}
       for (const [key, value] of Object.entries(raw)) {
-        if (!holdsLinks(key, typeOf(key))) continue
+        if (!holds(key)) continue
         // A string, or a `[[Page]]` yaml read as a nested list; a foreign one-item list stays a list.
         const text = linkEntry(value, 2)
         const next = text === null ? null : rewrite(text, own, outlineOf)
@@ -210,11 +209,11 @@ export async function renameCascade(
       raw: Record<string, unknown>,
       patch: Record<string, string>,
     ): Record<string, unknown> | null => (Object.keys(patch).length ? { ...raw, ...patch } : null)
-    const spaceMoved: Rewrite = (raw) => withPatch(raw, patchOf(raw, byName))
+    const spaceMoved: Rewrite = (raw) => withPatch(raw, patchOf(raw, holds))
     const text = (content: string, file: string): string | null => {
       const { body } = splitEnvelope(content)
       const own = titleFromPath(file)
-      const patch = patchOf(splitFrontmatter(content), byName, own, body)
+      const patch = patchOf(splitFrontmatter(content), holds, own, body)
       const keys = Object.keys(patch)
       // The caller's editor already rewrote its own body; its frontmatter still takes the patch.
       const next = relative(root, file) === skipRel ? body : rewrite(body, own)
@@ -234,21 +233,16 @@ export async function renameCascade(
       'title' in change || (await tilesLinkHeading(root, titleKey, normalizeTitle(change.heading)))
         ? await rewriteTileConnections(root, rewrite)
         : { hosts: [], failed: 0 }
-    // A heading edit settles often and a cached Link still reaches its page, so only a title reaches the caches. A block is keyed by page id, so its type is its own definition's.
-    const cachedTypes = new Map(
-      defs.filter((d) => d.type === 'link' || d.type === 'text').map((d) => [d.id, d.type]),
-    )
-    const movedCache = (
-      values: Record<string, unknown>,
-      id: string,
-    ): Record<string, unknown> | null =>
+    // A heading edit settles often and a cached Link still reaches its page, so only a title reaches the caches. A block holds one property's values, so every entry holds links when the property does.
+    const cachedIds = new Set(defs.filter((d) => holds(d.name)).map((d) => d.id))
+    const movedCache = (values: Record<string, unknown>): Record<string, unknown> | null =>
       withPatch(
         values,
-        patchOf(values, () => cachedTypes.get(id)),
+        patchOf(values, () => true),
       )
     const uncached =
       'title' in change && tree
-        ? await editCaches(root, tree.collections, new Set(cachedTypes.keys()), movedCache)
+        ? await editCaches(root, tree.collections, cachedIds, movedCache)
         : 0
     const unmoved = swept.skipped.length + tiles.failed + uncached
     return {

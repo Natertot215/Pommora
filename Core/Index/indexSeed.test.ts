@@ -344,6 +344,16 @@ describe('the relations a page yields', () => {
     ])
   })
 
+  // The ruled form: a rename writes a `§` run inside a cell as the cell codec escapes it, and the index reads the row's source, so the run keeps the row and loses the edge; a codec-aware read would change this.
+  it('a `§` run escaped inside a table cell yields no row, where the same run in prose does', async () => {
+    await page('## A|B\n\n| h |\n|---|\n| §A\\|B |\n')
+    expect(rowsOf('Notes/A.md')).toEqual([])
+    await page('## A|B\n\n§A|B\n')
+    expect(rowsOf('Notes/A.md')).toEqual([
+      { kind: 'body', target: 'a', qualifier: 'a|b', key: '', count: 1 },
+    ])
+  })
+
   it('a wikilink inside an inline code span names nothing', async () => {
     await page('a sample `[[Zeta]]` here\n')
     expect(rowsOf('Notes/A.md')).toEqual([])
