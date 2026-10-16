@@ -28,7 +28,7 @@ The work lands in nine phases, each the next layer of the system and each the la
 - **One Walk** (`Core/Nexus/record.ts`, `treeIndex.ts`, `heldPages.ts`): `recordsOf` is the only tree walk; `pagesOf`, `pagesByIdOf`, and `pageIndexOf` sit beside it keyed on collections alone; `PageIndex.holders(title)` serves the host's delete, rename, and restore checks, and `titlesOf` goes.
 - **One Tracker** (`Core/MarkdownPM/Links/linkSettle.ts`, beside `headingRenameSettle.ts`): `linkWriting`, a state field holding `{ start, was }` for the link an edit is being made inside, armed by a user input or delete reaching into a link, mapped through changes, dropped with its opener, and cleared by `linkSettled`; `linkSettle`, one plugin mounted as `linkSettle.of(scope)`, settles on the caret leaving the whole link, on a blur not into the caret pane, or on a host's flush through `view.plugin(linkSettle)`: it remembers through the one remember rule and collapses emptied parts. The typing color reads the same field, in both syntaxes. `baselineAt` answers how a link read before the edit inside it began, and the picker and paste decide Remove Title from it through one `keepsShown`, with `retarget` only writing.
 - **One Picker** (`Core/MarkdownPM/Autocomplete/`): the query is `{ syntax: 'wiki' | 'markdown' | 'prose', part: 'title' | 'heading' | 'shown', start, end, … }`; `commitEdit` switches on `part`, writes page picks through the writer with the shown text decided once, and reads an opened slot's caret back from the written text through the grammar. Markdown picks open the alias list as wikilink picks do; Return in a markdown destination rests in its label.
-- **Rules and the Writer** (`connections.ts`, `links.ts`, `linkValue.ts`, `rewrite.ts`): one slot check (`fitsSlot`, `expressibleInLink`, `aliasSpells`, `spellsAsWiki`); one `pageLinkText({ title, heading, shown }, prefer)` writing a wikilink only when every slot spells and the markdown form otherwise; `repeatsTarget` as the one drop rule, `namesTarget` as the one carry-and-never-remember rule; one `keepsShown(baseline, next, removeTitle, index)` deciding Remove Title for the picker and paste, and for the Link field through the picker inside it; one `follower` serving both rename arms, with the table codec's cell escape applied where a hit sits in a table; one `shownText` behind `linkDisplayText` and `shownProse`, serving Remove Link, sort, and filter for Link and Text values alike.
+- **Rules and the Writer** (`connections.ts`, `links.ts`, `linkValue.ts`, `rewrite.ts`): one slot check (`fitsSlot`, `expressibleInLink`, `aliasSpells`, `spellsAsWiki`); one `pageLinkText({ title, heading, shown }, prefer)` writing a wikilink only when every slot spells and the markdown form otherwise; `repeatsTarget` as the one drop rule, `namesTarget` as the one carry-and-never-remember rule; one `keepsShown(baseline, next, removeTitle, index)` deciding Remove Title for the picker and paste, and for the Link field through the picker inside it; one `follower` serving both rename arms, with the table codec's cell escape applied where a hit sits in a table; one `linkDisplayText` behind `shownProse`, serving Remove Link, sort, and filter for Link and Text values alike; one `resolvedTarget` writing a page-held address as that page for the Link field and paste; `fileLinkText` for a File value's reference, which never falls back.
 - **Index Facts and Readers' Rule** (`Core/Connections/scan.ts`, `Core/Index/indexSeed.ts`, `Desktop/Store/`, `Core/Matrix/`, `Core/Nexus/cascade.ts`, `Core/Properties/schema.ts`): every link in a frontmatter value becomes one `value` row carrying its key; `holdsLinks(key, type)` and its registry form `linkKeysOf(defs)` sit beside `keyRefusal`, and the graph and the rename cascade each apply them at the moment of use with the registry in memory, so nothing bakes a verdict that can go stale.
 - **One Editor Surface** (`Core/Properties/Pickers/`): the Text pane's editor generalizes into one value editor with a one-line mode and an alias seat; the Link field, the Link value's Rename, and the single-line Text field mount it, keeping a plain field's feel and gaining the picker, the tracker, and alias memory (the Link instance leaves memory to the write layer, which already owns it).
 
@@ -38,10 +38,10 @@ The work lands in nine phases, each the next layer of the system and each the la
 
 | | Functions, fields, plugins, components | Types | Files | Members, parameters, options | Total |
 |---|---|---|---|---|---|
-| **Removed** | 48 | 14 (ten named types and four local `Span` declarations) | 1 (`headingHash.ts`) | 25 | **88** |
-| **Added** | 41 (28 exported, 13 private) and 2 style rules | 5 | 2 (`linkSettle.ts`, `ValueEditor.tsx`) | 28 | **78** |
+| **Removed** | 49 | 14 (ten named types and four local `Span` declarations) | 1 (`headingHash.ts`) | 25 | **89** |
+| **Added** | 43 (30 exported, 13 private) and 2 style rules | 6 | 2 (`linkSettle.ts`, `ValueEditor.tsx`) | 28 | **81** |
 | **Moved** | 10 (and 2 made exported) | 1 | 1 moved, 1 renamed | | 12 |
-| **Net** | −7 | −9 | +1 | +3 | **−10 named things** |
+| **Net** | −6 | −8 | +1 | +3 | **−8 named things** |
 
 Every row of both tables in *§Concepts* is in that count; a reader can redo it from the tables alone. The named count understates the consolidation, because most of what arrives is the one owner that replaces several spellings. Counted as ways of doing one thing, before and after:
 
@@ -118,10 +118,10 @@ Sixty ways of doing thirty things disappear; every row's "after" has one named o
 | `QuerySyntax`, `CLOSER` • type and record (private) | The picker's syntax axis (its part axis is the grammar's `LinkPart`) and its one closer table. | `Core/MarkdownPM/Autocomplete/autocomplete.ts` |
 | `AutocompleteQuery.syntax`, `.part`, `.start`, `.end`, `.shown` • fields | On every query; `shown` where the link writes an alias or label, read as its slot reads. | `Core/MarkdownPM/Autocomplete/autocomplete.ts` |
 | `PageName` • type | A page named by title and, where the link names one, heading: the shape every rule and writer takes. | `Core/Connections/connections.ts` |
-| `aliasSpells`, `spellsAsWiki`, `repeatsTarget`, `namesTarget` • functions | What the alias slot spells; whether a wikilink spells every slot; the one drop rule; the one carry-and-never-remember rule. | `Core/Connections/connections.ts` |
-| `pageLinkText` • function | The one exported page-link writer: a wikilink where every slot spells, the markdown form otherwise; `connectionText` becomes private behind it. | `Core/Connections/connections.ts` |
-| `carry`, `half` • functions (private) | Where shown text naming the old target follows it to; a hit's half read as a name. | `Core/Connections/rewrite.ts` |
-| `shownText`, `shownProse` • functions | What a written link shows, behind `linkDisplayText`; a text with each connection replaced by what it shows, for a Text value's sort and filter. | `Core/Connections/linkValue.ts` |
+| `aliasSpells`, `spellsAsWiki`, `repeatsTarget`, `namesTarget` • functions | What the alias slot spells; whether a wikilink spells every slot; the one drop rule; the one carry-and-never-remember rule, answering which part of the target shown text names. | `Core/Connections/connections.ts` |
+| `pageLinkText`, `fileLinkText` • functions | The one page-link writer: a wikilink where every slot spells, the markdown form otherwise, the wikilink spelling its own body; a File value's reference by file name, which `wikiTitle` reads and so never falls back. | `Core/Connections/connections.ts` |
+| `carry`, `follower` • functions (private) | Where shown text naming the old target follows it to; one rewrite per hit for either rename arm, the hit's halves read as names. | `Core/Connections/rewrite.ts` |
+| `shownProse`, `resolvedTarget` • functions | A text with each connection replaced by what it shows (`linkDisplayText`, the one rule), for a Text value's sort and filter; a written link as the page it resolves to, which the Link field's edit and paste both write. | `Core/Connections/linkValue.ts` |
 | `keepsShown(…, index)` • signature | Owns "pointed somewhere" through `resolveLink`. | `Core/Connections/linkValue.ts` |
 | `holdsLinks`, `linkKeysOf` • functions | Which frontmatter keys hold links, beside `keyRefusal`; the same question asked of a registry. | `Core/Properties/schema.ts` |
 | `Relation.key`, `'value'` • field and kind | A link inside a frontmatter value, under its key; `frontmatter` renamed. | `Core/Platform/stores.ts`, `Desktop/Store/ddl.ts` (generation 14) |
@@ -129,9 +129,9 @@ Sixty ways of doing thirty things disappear; every row's "after" has one named o
 | `ValueEditor` • component | The one value editor, the Text pane's and in `oneLine` mode a field's, with `seat: 'alias'` for the Link value's Rename. | `Core/Properties/Pickers/ValueEditor.tsx` |
 | `.value-field` • style rule | The one-line editor's field metrics: one scrolling line at the design kit's input height. | `Core/Properties/Pickers/text-pane.css` |
 | `inlineSurface(scope, { oneLine, remembers })`, `editorBase({ …, oneLine, remembers })` • options | A field's surface and the Link field's memory exemption. | `Core/MarkdownPM/surface.ts` |
-| `EditableInput`/`RenamableLabel` `{ by }` • argument | How an edit ended, passed to `onCommit` and `onCancel`. | `UIX/Fields/EditableInput.tsx`, `RenamableLabel.tsx` |
+| `EditEnd` • type, `EditableInput`/`RenamableLabel` `{ by }` • argument | How an edit ended, by a key or by the focus leaving, passed to `onCommit` and `onCancel`. | `UIX/Fields/EditableInput.tsx`, `RenamableLabel.tsx` |
 | `ConnectionsApi.index`, `LinkEditContext.index`, `LinkEditContext.own`, `commitEdit`'s `kept` • members and option | The host interface holds the index rather than spreading it; the Link field's parse carries the index and the holder; the picker's commit takes the one kept alias. | `Core/MarkdownPM/Links/connectionsApi.ts`, `Core/Properties/parseEditorValue.ts`, `Core/MarkdownPM/Autocomplete/autocomplete.ts` |
-| `fitsSlot`, `markdownSpans`, `embedLine`, `holdersOf`, `ancestries`, `plain`, `changedLink`, `linkStartingAt`, `namedTitle` • private helpers | The grammar's slot cap; the markdown occurrence's split; the embed-line test for both syntaxes; the title index's holders map; the renderer's ancestry memo; the baseline's four-field strip; the tracker's changed-link read; the link starting exactly at an offset, which the remember and the collapse both ask; the title a heading or shown query lists against. | `connections.ts`, `scan.ts`, `pageIndex.ts`, `treeIndex.ts`, `remintLedger.ts`, `linkSettle.ts`, `linkEdit.ts` |
+| `fitsSlot`, `namedPage`, `markdownSpans`, `embedLine`, `holdersOf`, `ancestries`, `plain`, `changedLink`, `linkStartingAt`, `namedTitle` • private helpers | The grammar's slot cap; the page a written link names, which the resolver, the label, the remember rule, and `resolvedTarget` read; the markdown occurrence's split; the embed-line test for both syntaxes; the title index's holders map; the renderer's ancestry memo; the baseline's four-field strip; the tracker's changed-link read; the link starting exactly at an offset, which the remember and the collapse both ask; the title a heading or shown query lists against. | `connections.ts`, `linkValue.ts`, `scan.ts`, `pageIndex.ts`, `treeIndex.ts`, `remintLedger.ts`, `linkSettle.ts`, `linkEdit.ts` |
 
 **REMOVED**
 
@@ -160,9 +160,9 @@ Sixty ways of doing thirty things disappear; every row's "after" has one named o
 | `LinkOrigin`, `originOf`, `originAfter`, `linkStart`, `AcField.origin` | The picker's own baseline. | `Core/MarkdownPM/Autocomplete/acQuery.ts` |
 | `ConnectionForm`, `listsPages`, `listsHeadings`, `listsAliases`, `closerOf`, `AutocompleteQuery.label` | Seven form names, three predicates, the closer switch, and the label side span. | `Core/MarkdownPM/Autocomplete/autocomplete.ts` |
 | `showsTarget`, `connectionSpells`, `linkEditText`, `linkValueFromRename` | Two of three "names the target" spellings, the title-and-heading-only slot check, the field-only edit text, and Rename's own writer. | `Core/Connections/linkValue.ts` |
-| `connectionText` • export | The bare wikilink writer leaves the public surface; `pageLinkText` is the one way to write a page link. | `Core/Connections/connections.ts` |
+| `connectionText` | The bare wikilink writer; its spelling is `pageLinkText`'s own body, the one way to write a page link. | `Core/Connections/connections.ts` |
 | `shows` | The rewrite's private carry test. | `Core/Connections/rewrite.ts` |
-| `shownConnection` | Remove Link's own shown-text spelling. | `Core/MarkdownPM/Links/linkEdit.ts` |
+| `shownConnection`, `headingOf` | Remove Link's own shown-text spelling, and the token heading reader it alone read. | `Core/MarkdownPM/Links/linkEdit.ts`, `Engine/tokens.ts` |
 | `keyed`, `byKey`, the capture handler | The alias list's key sniff. | `Core/MarkdownPM/Autocomplete/AliasList.tsx` |
 | `'frontmatter'` • relation kind | Renamed `value`, with its key. | `Core/Platform/stores.ts`, `Core/Matrix/Engine/graph.ts`, `forces.ts` |
 | `TextPaneEditor`, `TextPane`'s own `useEditorHost` and `settled` | Generalized into `ValueEditor`; the pane takes its host from its caller. | `Core/Properties/Pickers/TextPane.tsx` |
@@ -234,13 +234,13 @@ Sixty ways of doing thirty things disappear; every row's "after" has one named o
   - [x] Task 5-2 · `commitEdit` switches on `part` and writes through the writer
   - [x] Task 5-3 · Return in a markdown destination, and the alias list uncapped
   - [x] Review Checkpoint
-- [ ] `[Compaction Checkpoint 2: c/pre-compaction with the MANDATE and PRINCIPLES re-instilled; stop, and continue only when re-prompted]`
-- [ ] **Phase 6** — One Set of Rules, One Writer
-  - [ ] Task 6-1 · The slot check, the drop, the carry, and `pageLinkText`
-  - [ ] Task 6-2 · One `follow` for both rename arms, cell-aware
-  - [ ] Task 6-3 · One shown-text rule for Remove Link, sort, and filter
-  - [ ] Task 6-4 · The alias rename field reports how its edit ended
-  - [ ] Review Checkpoint
+- [x] `[Compaction Checkpoint 2: c/pre-compaction with the MANDATE and PRINCIPLES re-instilled; stop, and continue only when re-prompted]`
+- [x] **Phase 6** — One Set of Rules, One Writer
+  - [x] Task 6-1 · The slot check, the drop, the carry, and `pageLinkText`
+  - [x] Task 6-2 · One `follower` for both rename arms, cell-aware
+  - [x] Task 6-3 · One shown-text rule for Remove Link, sort, and filter
+  - [x] Task 6-4 · The alias rename field reports how its edit ended
+  - [x] Review Checkpoint
 - [ ] **Phase 7** — Index Facts, Readers' Rule `[Gates at Task 7-3 for Tasks 7-1 and 7-3]`
   - [ ] Task 7-1 · The `value` row and `holdsLinks`
   - [ ] Task 7-2 · The graph applies the rule
@@ -266,7 +266,7 @@ Sixty ways of doing thirty things disappear; every row's "after" has one named o
 | 3 | ≈ −28 | ≈ −20 | −35 to +5 | half typed (`c4` +3, corrected); the label task moved here from Phase 2 (+16); landed 2 above the band: the label widget with its phantom drawing, plain-setting rule, and exact click, the formatter wrapping the resolver, and `linkValueFromEdit` rebuilding a target from a resolution until Phase 6 | 344 | 351 | +7 | −113 |
 | 4 | ≈ −49 | ≈ −40 | −55 to −25 | re-typed design (`c11`, corrected); the settle's guard and flushes added; landed at −36 (`ad220222a`), then the review's fix round (`1eaef8c88`, +38) ended it 27 above the band: the settle in its own file beside its sibling (an import block), the field dropping with its opener (a wrong remember and a wrong rewrite made right), paste reading the one baseline (the ruled parity), the typing color on both syntaxes, a pasted link arming, and the writer split from the decision | 450 | 452 | +2 | −111 |
 | 5 | ≈ −26 | ≈ −60 | −90 to −16 | typed `c8` −16 kept more structure than the three-arm commit and the one-return query (about 207 lines of `autocomplete.ts` leave against about 105 formatted arriving); unverified until typed; landed at −74 (`252809203`), then the review's fix round (`fd49d1189`, +36: the open-link reader reading an emptied slot, the query's shown text, the heading pick writing in place, the collapse carrying the rest) ended it inside the band | 292 | 254 | −38 | −149 |
-| 6 | ≈ −17 | ≈ +2 | −10 to +12 | the rules and `follower` add about what they remove; buys the three wrong results made right | | | | |
+| 6 | ≈ −17 | ≈ +2 | −10 to +12 | the rules and `follower` add about what they remove; landed at +53 (`63f79adbc`), then the review's fix round (`af8522954`, −1) ended it 40 above the band: the AFTER count priced the rules block, the fallback writer, the table escape, `shownProse`, and the heading pick's fallback at about +2 where each one-line rule wraps to three under the formatter; buys the three wrong results made right, a heading that can't be spelled falling back instead of going stale or splitting a wikilink, and paste writing a page-held address as that page (a heading-pick carry in the picker was weighed at about 45 lines and reversed) | 251 | 303 | +52 | −97 |
 | 7 | ≈ 0 | ≈ +5 | 0 to +10 | `linkKeysOf`, the dedupe, and the `key` column; buys the staleness fix | | | | |
 | 8 | ≈ +24 | ≈ +50 | +35 to +65 | the one-line mode, seat, and commit lifecycle; buys the ruled one surface; measured on a worktree before commit | | | | |
 | 9 | 0 | 0 | 0 | docs | | | | |
@@ -2148,364 +2148,345 @@ export const commitAliasOnEnter = (scope: MarkdownScope) => (view: EditorView): 
 
 ### Phase 6 — One Set of Rules, One Writer
 
-**GOAL:** Every rule about a link's shown text has one owner: `fitsSlot`, `expressibleInLink`, and `aliasSpells` decide what a wikilink can spell; `pageLinkText` writes a wikilink only when every slot spells and the markdown form otherwise, and every writer of a page link goes through it; `repeatsTarget` is the one drop and `namesTarget` the one carry-and-never-remember rule; `shownAlias` remembers only from a link naming the page itself; one `follow` serves both rename arms, falling back to markdown and escaping what the table codec escapes where a hit sits in a table; `linkDisplayText` and `shownProse` serve Remove Link, sort, and filter for Link and Text values alike; and the alias rename field reports how its edit ended. An alias holding `]` stops vanishing, a page title holding `#` round-trips through a markdown link (Task 2-1's encoder), and a heading the wikilink grammar can't spell falls back instead of going stale.
+**GOAL:** Every rule about a link's shown text has one owner: `fitsSlot`, `expressibleInLink`, and `aliasSpells` decide what a wikilink can spell; `pageLinkText` writes a wikilink only when every slot spells and the markdown form otherwise, and every writer of a page link goes through it; `repeatsTarget` is the one drop and `namesTarget` the one carry-and-never-remember rule, answering which part of the target shown text names; `shownAlias` remembers only from a link naming the page itself; one `follower` serves both rename arms, falling back to markdown and escaping what the table codec escapes where a hit sits in a table; `linkDisplayText` and `shownProse` serve Remove Link, sort, and filter for Link and Text values alike; a File value's reference has its own writer, since it never falls back; paste and the Link field write a page-held address as that page through one `resolvedTarget`; and the alias rename field reports how its edit ended. An alias holding `]` stops vanishing, a page title holding `#` round-trips through a markdown link (Task 2-1's encoder), and a heading the wikilink grammar can't spell falls back instead of going stale. Landed as `63f79adbc` and the review's fix round `af8522954`.
 
 #### Task 6-1
 
-**TASK:** The slot check, the drop, the carry, and `pageLinkText` as the one exported page-link writer, with `connectionText` private behind it; `connectionSpells`, `showsTarget`, and every writer bypassing the fallback go; `shownAlias` never remembers from a link naming a heading. The writers honour a url arm's `page?` through `resolveLink` (today `retarget`'s url arm normalizes `[x](notes.io)` into `[x](https://notes.io)` although a page holds `notes.io`, and `shownAlias`'s `before?.kind === 'page'` misses an address-shaped page), and `formatted`'s title lookup (`linkEdit.ts:89-90`) normalizes as every other writer does.
+**TASK:** The slot check, the drop, the carry, and `pageLinkText` as the one exported page-link writer with the wikilink spelling as its own body; `connectionSpells`, `showsTarget`, and every page-link writer bypassing the fallback go; `shownAlias` never remembers from a link naming a heading, and asks whether shown text named the old target of the link as it was written. `fileLinkText` writes a File value's reference. `formatted` normalizes its address once, so its lookup, its write, and its `awaits` agree.
 
-**NOW:** `connectionSpells` (`linkValue.ts:178-179`) checks the title and heading only, and `connectionText` (`connections.ts:94`) silently drops an alias `keepsAlias` refuses, so `linkValueFromEdit('[a\]b](Page)')` lands as `[[Page]]` (probed). `showsTarget` (`linkValue.ts:83-89`) and `rewrite.ts`'s private `shows` restate "names the target" beside `keepsAlias`'s inline check. `shownAlias` (`:92-108`) remembers an alias typed into a link naming a heading (probed: `[[Page#H|nice]]` remembers `nice`). `pageMenuActions.ts:54` and `gripMenu.ts:92` write `connectionText` bare for Copy Link; `LinkCell.tsx:48`'s Show Full Link does the same; `expressibleInLink` (`connections.ts:98-100`) caps nothing, where `pageLinkPattern` caps both halves at 255; `headingRows` (`autocomplete.ts:182`) hides headings `expressibleInLink` refuses.
+**NOW (at BASELINE):** `connectionSpells` (`linkValue.ts:178-179`) checks the title and heading only, and `connectionText` (`connections.ts:94`) silently drops an alias `keepsAlias` refuses, so `linkValueFromEdit('[a\]b](Page)')` lands as `[[Page]]` (probed). `showsTarget` (`linkValue.ts:83-89`) and `rewrite.ts`'s private `shows` restate "names the target" beside `keepsAlias`'s inline check. `shownAlias` (`:92-108`) remembers an alias typed into a link naming a heading (probed: `[[Page#H|nice]]` remembers `nice`). `pageMenuActions.ts:54` and `gripMenu.ts:92` write `connectionText` bare for Copy Link; `LinkCell.tsx:48`'s Show Full Link does the same; `expressibleInLink` (`connections.ts:98-100`) caps nothing, where `pageLinkPattern` caps both halves at 255; `headingRows` (`autocomplete.ts:182`) hides headings `expressibleInLink` refuses.
 
 **CHANGE**
 
-- [ ] In `linkValue.test.ts`, rewrite `:334-339` ("an alias that would break the grammar is refused rather than written") to expect `[Notes\] done](Meeting%20Notes)`, `:252-257` to expect Rename writing `[[Meeting Notes#H|Today]]`, `:391-401` to the default label `[H\]](P#H%5D)`; add `linkValueFromRename('a]b', '[[Page]]')` → `[a\]b](Page)`, a 256-character heading falling back, `[[Alpha#Intro|my notes]]` remembering nothing (`assignValue.test.ts:290-298` gains it; `:292` gets a page-only fixture `[[Alpha|old]]` to keep pinning "already showed"), and `pageLinkText({ title: 'Page', heading: 'Intro', shown: 'Intro' }, 'wiki')` keeping its alias (the drop asks `Page#Intro`). In `connections.test.ts:86-112`, the `connectionText` cases read `pageLinkText(…, 'wiki')`, since `connectionText` is private from here, and add `expressibleInLink('x'.repeat(256))` false and `pageLinkText({ title: 'A', shown: 'a]b' }, 'wiki')` → `[a\]b](A)`. In `connectionCommit.test.tsx:488,502`, `[x](Notes#Setup)` remembers nothing. Watch them fail.
-- [ ] Write the rules and the writer as below; sweep every `connectionText` caller to `pageLinkText`: `retarget`'s page arm → `pageLinkText(next, syntax)`; `commitEdit`'s `whole` → `pageLinkText({ ...name, shown: name.alias }, syntax)` in place of `retarget(syntax, { kind: 'page', syntax, ...name })`, and its `asMarkdown` test asks `spellsAsWiki` where it asked `connectionSpells`, its parameter typed `PageName & { shown?: string }` and its callers passing `shown` where they passed `alias`; `pageMenuActions.ts:54`, `gripMenu.ts:92` (`linkable` becomes `title !== null`), `LinkCell.tsx:48`, and `linkEditText` (until Task 8-2 deletes it) → `pageLinkText({ title, heading }, 'wiki')`; `adoptFile.ts:53,64` and `assetWrite.ts:31` → `pageLinkText({ title }, 'wiki')` (a file title the wikilink grammar can't spell was a broken `[[…]]` today and is a readable markdown link now); `embeddableTarget` (`Actions/pasteAsMenu.ts:43-47`) keeps `expressibleInLink`, since it asks whether a bare title can embed, not which syntax to write; `headingRows` drops its `expressibleInLink` filter.
+- [x] `linkValue.test.ts`: Rename on the Link cell writes `[Notes\] done](Meeting%20Notes)`; `linkValueFromRename('a]b', '[[Page]]')` → `[a\]b](Page)`; a direct `shownAlias` describe pins `[Draft](Alpha)` with `was` `[Draft](Draft)` remembering nothing (a label that only named the old target, held or phantom), `[[Alpha|Old]]` with that `was` remembering `Draft`, and the address-shaped pair (`[[notes.io|x]]` with `was` `[x](notes.io)` → nothing; `[[notes.io|y]]` → `y`). `connections.test.ts`: `pageLinkText(…, 'wiki')` cases, the markdown fallback for `a]b`, `A|B`, and a 256-character heading, `pageLinkText({ title: 'Page', heading: 'Intro', shown: 'Intro' }, 'wiki')` keeping its alias (the drop asks `Page#Intro`), `expressibleInLink('x'.repeat(256))` false, `aliasSpells`, `spellsAsWiki`, `repeatsTarget`, and `namesTarget` answering the part. `assignValue.test.ts`'s remember table: the "already showed" fixture is page-only (`[[Alpha|old]]`), and `[[Alpha#Intro|my notes]]` remembers nothing. `connectionCommit.test.tsx`: `[x](Notes#Setup)` remembers nothing. `pasteAsMenu.test.ts`: `[a\]b](Alpha)` offers Markdown Link only. `autocomplete.test.ts`: `headingRows` lists `A|B`; a heading pick a wikilink can't spell writes the whole link in the markdown form with the title as written, trimmed (`[[Notes.md#]]` + `A|B` → `[A|B](Notes.md#A%7CB)`; `[[ Notes #Se]]` → `[A|B](Notes#A%7CB)`; with the alias stage → `[](Notes#A%7CB)`, caret in the label). `linkEdit.test.tsx`: Format on `[x](a.com)` writes `https://a.com` and reads its cached title under that key. `names.test.ts`: the page-name refusal's wording.
+- [x] The rules and the writer as below. Every `connectionText` caller writes through `pageLinkText({ title, heading }, 'wiki')` (`pageMenuActions.ts`, `gripMenu.ts` with `linkable = title !== null`, `LinkCell.tsx`, `linkEditText` until Task 8-2); `adoptFile.ts` and `assetWrite.ts` write `fileLinkText(name)`; `commitEdit`'s `whole` writes `pageLinkText(name, syntax)` with its parameter typed `PageName & { shown?: string }`, its `asMarkdown` asks `spellsAsWiki({ title: value, shown: opts.kept })`, and its heading arm writes a wikilink it can't spell whole through `whole` (the one in-place write that must not split the link at `|`); `pasteAsMenu`'s Connection row asks `spellsAsWiki` with the alias, so the row and the write agree; `embeddableTarget` and `embedPickTree` keep `expressibleInLink` (an embed has no fallback); `headingRows` drops its filter; `namedTitle` trims a wikilink's title; `formatted` normalizes its url once.
 
 **AFTER**
 
-```Core/Connections/connections.ts diff
-+/** A page named by title, and by heading where the link names one: the shape every rule and writer below takes. */
-+export type PageName = { title: string; heading?: string }
--/** A name a page can hold as an alias: … */
--export const keepsAlias = (name: string, target: string): boolean =>
--  name.trim() !== '' && name.length <= 255 && !/[\]\r\n]/.test(name) && normalizeTitle(name) !== normalizeTitle(target)
-+/** What any slot of a wikilink can hold: the grammar's 255 characters and no line break. */
-+const fitsSlot = (s: string): boolean => s.length <= 255 && !/[\r\n]/.test(s)
-+/** What the title or heading slot can spell: `|` and `#` would open the next slot, and `]]` or a trailing `]` would close the link. */
-+export const expressibleInLink = (text: string): boolean =>
-+  fitsSlot(text) && !/[|#]/.test(text) && !text.includes(']]') && !text.endsWith(']')
-+/** What the alias slot can spell: anything but `]`. */
-+export const aliasSpells = (alias: string): boolean => fitsSlot(alias) && !alias.includes(']')
-+/** Whether a wikilink can spell every slot of a page link; every writer falls back to the markdown form otherwise. */
-+export const spellsAsWiki = (t: PageName & { shown?: string }): boolean =>
-+  expressibleInLink(t.title) && (t.heading === undefined || expressibleInLink(t.heading)) && (t.shown === undefined || aliasSpells(t.shown))
-+/** Whether shown text only repeats a target, `title` or `title#heading`, so the link draws the same without it: the one drop rule. */
-+export const repeatsTarget = (shown: string, title: string, heading?: string): boolean =>
-+  normalizeTitle(shown) === normalizeTitle(heading === undefined ? title : `${title}#${heading}`)
-+/** A name a page can hold as an alias: one the alias slot spells, not blank, and never the page's title itself. */
-+export const keepsAlias = (name: string, title: string): boolean =>
-+  name.trim() !== '' && aliasSpells(name) && !repeatsTarget(name, title)
-+/** Whether shown text names its target, the title, the heading, or both, rather than giving it a name: what a rename carries along and what memory never keeps. */
-+export const namesTarget = (shown: string, t: PageName): boolean =>
-+  repeatsTarget(shown, t.title) || (t.heading !== undefined && (repeatsTarget(shown, t.heading) || repeatsTarget(shown, t.title, t.heading)))
--export function connectionText(title: string, heading?: string, alias?: string): string {
-+function connectionText(title: string, heading?: string, alias?: string): string {
-   const target = heading === undefined ? title : `${title}#${heading}`
--  const named = alias !== undefined && (alias === '' || keepsAlias(alias, target)) ? alias : undefined
-+  const named = alias !== undefined && (alias === '' || !repeatsTarget(alias, title, heading)) ? alias : undefined
-   return named === undefined ? `[[${target}]]` : `[[${target}|${named}]]`
- }
--export function expressibleInLink(text: string): boolean {
--  return !/[|#\r\n]/.test(text) && !text.includes(']]') && !text.endsWith(']')
--}
-+/** The one writer of a page link: a wikilink where every slot spells, the markdown form otherwise, so no writer leaves a slot unwritten, drops a name silently, or writes a link the grammar can't read back. */
-+export const pageLinkText = (t: PageName & { shown?: string }, prefer: 'wiki' | 'markdown'): string =>
-+  prefer === 'wiki' && spellsAsWiki(t) ? connectionText(t.title, t.heading, t.shown) : markdownPageLink(t.title, t.heading, t.shown)
+```Core/Connections/connections.ts (landed)
+/** A page named by title, and by heading where the link names one: the shape every rule and writer below takes. */
+export type PageName = { title: string; heading?: string }
+
+/** What any slot of a wikilink can hold: the grammar's 255 characters and no line break. */
+const fitsSlot = (s: string): boolean => s.length <= 255 && !/[\r\n]/.test(s)
+
+/** What the title or heading slot can spell: `|` and `#` would open the next slot, and `]]` or a trailing `]` would close the link. */
+export const expressibleInLink = (text: string): boolean =>
+  fitsSlot(text) && !/[|#]/.test(text) && !text.includes(']]') && !text.endsWith(']')
+
+/** What the alias slot can spell: anything but `]`. */
+export const aliasSpells = (alias: string): boolean => fitsSlot(alias) && !alias.includes(']')
+
+/** Whether a wikilink can spell every slot of a page link; every writer falls back to the markdown form otherwise. */
+export const spellsAsWiki = (t: PageName & { shown?: string }): boolean =>
+  expressibleInLink(t.title) &&
+  (t.heading === undefined || expressibleInLink(t.heading)) &&
+  (t.shown === undefined || aliasSpells(t.shown))
+
+/** Whether shown text only repeats a target, `title` or `title#heading`, so the link draws the same without it: the one drop rule. */
+export const repeatsTarget = (shown: string, title: string, heading?: string): boolean =>
+  normalizeTitle(shown) === normalizeTitle(heading === undefined ? title : `${title}#${heading}`)
+
+/** A name a page can hold as an alias: one the alias slot spells, not blank, and never the page's title itself. */
+export const keepsAlias = (name: string, title: string): boolean =>
+  name.trim() !== '' && aliasSpells(name) && !repeatsTarget(name, title)
+
+/** Which part of its target shown text names, the title, the heading, or both, rather than giving it a name: what a rename carries along and what memory never keeps. */
+export function namesTarget(shown: string, t: PageName): 'title' | 'heading' | 'both' | null {
+  if (repeatsTarget(shown, t.title)) return 'title'
+  if (t.heading === undefined) return null
+  if (repeatsTarget(shown, t.heading)) return 'heading'
+  return repeatsTarget(shown, t.title, t.heading) ? 'both' : null
+}
+
+/** The one writer of a page link: a wikilink where every slot spells, the markdown form otherwise, so no writer leaves a slot unwritten, drops a name silently, or writes a link the grammar can't read back. A present-but-empty heading or alias spells its slot (`[[A#]]`, `[[A|]]`): the picker opens a slot by writing it. */
+export function pageLinkText(
+  t: PageName & { shown?: string },
+  prefer: 'wiki' | 'markdown',
+): string {
+  const { title, heading, shown } = t
+  if (prefer !== 'wiki' || !spellsAsWiki(t)) return markdownPageLink(title, heading, shown)
+  const target = heading === undefined ? title : `${title}#${heading}`
+  const named = shown !== undefined && (shown === '' || !repeatsTarget(shown, title, heading))
+  return named ? `[[${target}|${shown}]]` : `[[${target}]]`
+}
+
+export function pageEmbedText(title: string): string {
+  return `![[${title}]]`
+}
+
+/** A File value's reference, by file name alone: `wikiTitle` reads it and refuses the markdown form, so it never falls back as a page link does. */
+export const fileLinkText = (name: string): string => `[[${name}]]`
 ```
 
-```Core/Connections/linkValue.ts diff
--/** Whether a link's shown text only names what it targets … */
--export function showsTarget(shown, target): boolean { … }
--export const connectionSpells = (target: { title: string; heading?: string }): boolean =>
--  expressibleInLink(target.title) && (!target.heading || expressibleInLink(target.heading))
-@@ LinkTarget @@
--  | { kind: 'url'; syntax: 'markdown' | 'bare'; url: string; alias?: string; page?: { title: string; heading?: string } }
-+  | { kind: 'url'; syntax: 'markdown' | 'bare'; url: string; alias?: string; page?: PageName }
+```Core/Connections/linkValue.ts (landed)
+/** The page a written link names: a page link's own target, or the page an address-shaped destination could also hold. */
+const namedPage = (written: LinkTarget | null): PageName | undefined =>
+  written?.kind === 'page' ? written : written?.page
+
 @@ shownAlias @@
--/** The alias a link of either syntax shows for the one page it names, where that page can hold it and it names more than the target. Against `was`, how the link read before, neither the alias it already showed that page nor the target it showed counts: a label kept through a retarget is the old target, not a name given. */
-+/** The alias a link of either syntax shows for the one page it names, where that page can hold it and it names more than the target. A link naming a heading never remembers: its shown text names the section, not the page. Against `was`, how the link read before, neither the alias it already showed that page nor the target it showed counts: a label kept through a retarget is the old target, not a name given. */
- export function shownAlias(text: string, index: PageIndex, was?: string): { page: ConnPage; alias: string } | null {
-   const written = readLinkText(text)
-   const target = resolveLink(written, index)
-   const alias = written?.alias
--  if (target.kind !== 'page' || !alias) return null
--  const { page, heading } = target
--  if (!keepsAlias(alias, page.title) || showsTarget(alias, { title: page.title, heading })) return null
--  const before = was === undefined ? null : readLinkText(was)
--  if (before?.kind === 'page') {
--    if (showsTarget(alias, before)) return null
--    if (before.alias === alias && index.resolve(before.title).page?.id === page.id) return null
--  }
-+  if (target.kind !== 'page' || target.heading || !alias || !keepsAlias(alias, target.page.title)) return null
-+  const { page } = target
-+  const before = was === undefined ? null : resolveLink(readLinkText(was), index)
-+  const wasAlias = was === undefined ? undefined : readLinkText(was)?.alias
-+  if (before?.kind === 'page') {
-+    if (namesTarget(alias, { title: before.page.title, heading: before.heading })) return null
-+    if (wasAlias === alias && before.page.id === page.id) return null
-+  }
-   return { page, alias }
- }
+  if (target.kind !== 'page' || target.heading || !alias || !keepsAlias(alias, target.page.title))
+    return null
+  const { page } = target
+  const wasWritten = was === undefined ? null : readLinkText(was)
+  const named = namedPage(wasWritten)
+  if (named && namesTarget(alias, named)) return null
+  const before = resolveLink(wasWritten, index)
+  if (wasWritten?.alias === alias && before.kind === 'page' && before.page.id === page.id)
+    return null
+  return { page, alias }
+
 @@ retarget's page arm @@
--    const text = syntax === 'wiki' && connectionSpells(next) ? connectionText(next.title, next.heading, next.alias) : markdownPageLink(next.title, next.heading, next.alias)
--    return { kind: 'link', text }
-+    return { kind: 'link', text: pageLinkText({ title: next.title, heading: next.heading, shown: next.alias }, syntax) }
+  if (next.kind === 'page')
+    return {
+      kind: 'link',
+      text: pageLinkText({ title: next.title, heading: next.heading, shown: next.alias }, syntax),
+    }
 ```
 
-```three bypassing writers diff
- pageMenuActions.ts:54   connectionText(title, page.heading)            →  pageLinkText({ title, heading: page.heading }, 'wiki')
- gripMenu.ts:79,92       linkable = title !== null && expressibleInLink(…)  →  linkable = title !== null
-                         connectionText(title, parts.content.trim())     →  pageLinkText({ title, heading: parts.content.trim() }, 'wiki')
- LinkCell.tsx:48         connectionText(target.page.title, target.heading) →  pageLinkText({ title: target.page.title, heading: target.heading }, 'wiki')
-```
-
-`keepsAlias` stays the alias list's rule (`aliasMemory.ts:21,34`, `AliasList.tsx:174`), now composed from `aliasSpells` and `repeatsTarget`, so "repeats the target" is spelled once; `names.ts:29`'s call stays, since it still refuses `]]`, a trailing `]`, and line breaks. `connectionText` is private to `connections.ts`: the only way to write a page link is through `pageLinkText`, which falls back where a slot can't spell. `markdownPageLink` stays exported for `pageLinkText` alone; the Phase 6 checkpoint greps it. `pageEmbedText` (`connections.ts`, read by Paste As) stays its own writer: an embed line is a tile's relation, not a page link, and it has no alias or heading slot to fall back on. `connections.ts` already imports from `links.ts` (`markdownLinkRegex`, `namesPage`) and `links.ts` imports nothing from it, so `markdownPageLink` joining that import opens no cycle.
+`keepsAlias` stays the alias list's rule (`aliasMemory.ts`, `AliasList.tsx`), composed from `aliasSpells` and `repeatsTarget`; `names.ts`'s call inherits the 255 cap, and its message names every refusal it makes. `markdownPageLink` stays in `links.ts`, read by `pageLinkText` alone. `pageEmbedText` and `fileLinkText` are their own writers: an embed line is a tile's relation and a File reference is read by `wikiTitle`, and neither has a slot to fall back on. `resolveLink`, `pageLabel`, `shownAlias`, and `resolvedTarget` (Task 6-3) all read `namedPage`.
 
 **VERIFY**
 
-- [ ] `linkValue.test.ts`, `connections.test.ts`, `assignValue.test.ts`, `connectionCommit.test.tsx`, `pasteAsMenu` tests, and the menu tests pass.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes (`showsTarget`, `connectionSpells` have no reader; "repeats the target", "names the target", and "spells as a wikilink" are each spelled once; `connectionText` has no reader outside `connections.ts`).
+- [x] `linkValue.test.ts`, `connections.test.ts`, `assignValue.test.ts`, `connectionCommit.test.tsx`, `autocomplete.test.ts`, `pasteAsMenu.test.ts`, `linkEdit.test.tsx`, `names.test.ts`, and the menu tests pass.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes (`showsTarget`, `connectionSpells`, `connectionText`, and `tokens.ts`'s `headingOf` have no reader; "repeats the target", "names the target", "spells as a wikilink", and "the page a written link names" are each spelled once).
 
 #### Task 6-2
 
-**TASK:** One private `follow` serves both rename arms: it carries shown text through `namesTarget`, drops through `repeatsTarget`, falls back to the markdown form over `hit.full` where a wikilink can't spell the new target, keeps in-place edits otherwise (a table cell's `\|` rides through), and escapes what the table codec escapes where the hit sits in a table region; `shows` and the heading arm's skip go.
+**TASK:** One private `follower` serves both rename arms: it reads the old name off the hit's halves, carries shown text through `carry` (which switches on `namesTarget`'s answer), drops through `repeatsTarget`, falls back to the markdown form over `hit.full` where a wikilink can't spell the new target, keeps in-place edits otherwise (a table cell's `\|` rides through), and escapes what the table codec escapes where the hit sits in a table region, read once on the first hit; `shows` and the heading arm's skip go.
 
-**NOW:** `rewriteConnections` (`rewrite.ts:10-31`) and `rewriteHeadingConnections` (`:47-74`) each carry and drop in their own words through `shows` (`:34-42`); the heading arm skips a wikilink whose new heading can't be spelled (`:64`), leaving it stale (pinned at `rewrite.test.ts:232-236` and `linkValue.test.ts:270`); the heading arm never drops an alias that comes to repeat `title#heading`; neither arm escapes a `|` landing in a markdown label inside a table row, where `escapeCell` (`Engine/Tables/codec.ts:12`) is the one rule and `tableRegions` (`Engine/Tables/regions.ts:30`) the one detector.
+**NOW (at BASELINE):** `rewriteConnections` (`rewrite.ts:10-31`) and `rewriteHeadingConnections` (`:47-74`) each carry and drop in their own words through `shows` (`:34-42`); the heading arm skips a wikilink whose new heading can't be spelled (`:64`), leaving it stale; the heading arm never drops an alias that comes to repeat `title#heading`; neither arm escapes a `|` landing in a markdown label inside a table row, where `escapeCell` (`Engine/Tables/codec.ts:12`) is the one rule and `tableRegions` (`Engine/Tables/regions.ts:30`) the one detector.
 
 **CHANGE**
 
-- [ ] In `rewrite.test.ts`, keep `:22-27,29-33,189-197` (they hold under `repeatsTarget`), rewrite `:232-236` to expect `[A | B](#A%20%7C%20B) [x](#A%20%7C%20B)`, and add: `[[P#Old|P#Old]]` renamed to `New` gives `[[P#New]]`; a heading renamed to `A|B` inside a table row writes `[A \| B](#A%20%7C%20B)` and the row keeps its columns; `[[Old#Intro|Old#Intro]]` with the page renamed gives `[[New#Intro]]` (the alias follows the title to `New#Intro` and then repeats the target, so the drop applies, as `:22-27` already pins for a heading); `[[Old#H|Old]]` gives `[[New#H|New]]`; a lone `![[A#Old]]` renamed to an unspellable heading becomes `![Old…](A#…)` on its own line and still indexes as an embed. In `linkValue.test.ts:264-271`, `:270` expects `[D](Meeting%20Notes#A%7CB)`. Watch them fail.
-- [ ] Write `rewrite.ts` as below.
+- [x] `rewrite.test.ts`: a heading renamed to `A | B` writes `[A | B](#A%20%7C%20B) [x](#A%20%7C%20B)` and `[[P#Old|Mine]]` → `[Mine](P#A%7CB)`; `[[P#Old|P#Old]]` and `[[P#Old|P#New]]` renamed to `New` give `[[P#New]]`; `[[Old#Intro|Old#Intro]]` with the page renamed gives `[[New#Intro]]`; `[Setup Notes](P#Setup%20Notes)` carries its label through a heading rename, compared decoded; a lone `![[A#Old]]` renamed to `A|B` becomes `![A|B](A#A%7CB)` and still indexes as an embed; inside a real table (header and delimiter rows) `[[P#Old]] | [x](P#Old) | §Old` renamed to `A|B` writes `[A\|B](P#A%7CB) | [x](P#A%7CB) | §A\|B` with its columns kept. `linkValue.test.ts`: the `A|B` move writes `[D](Meeting%20Notes#A%7CB)`.
+- [x] `rewrite.ts` as below.
 
 **AFTER**
 
-```Core/Connections/rewrite.ts diff
--import { expressibleInLink } from './connections'
-+import { namesTarget, type PageName, pageLinkText, repeatsTarget, spellsAsWiki } from './connections'
--import { encodeLinkTarget, escapeLabel, unescapeLabel } from './links'
-+import { decodeLinkTarget, encodeLinkTarget, escapeLabel, unescapeLabel } from './links'
--import { applyEdits, type TextEdit } from '../MarkdownPM/Engine/markdownCode'
-+import { applyEdits, type Span, type TextEdit } from '../MarkdownPM/Engine/markdownCode'
-+import { escapeCell } from '../MarkdownPM/Engine/Tables/codec'
-+import { scanDoc, spanAt } from '../MarkdownPM/Engine/docScan'
- import { type LinkHit, linksIn } from './scan'
-@@ rewriteConnections @@
--/** Code stays untouched — … as `connectionText` drops one. */
-+/** Code stays untouched: a page documenting `[[Old Title]]` in a fenced block is showing a sample. Only the written name changes; shown text that only named it follows it, and shown text that comes to repeat the new target goes, as the writer drops one. */
- export function rewriteConnections(body: string, oldTitle: string, newTitle: string): string {
-   const oldKey = normalizeTitle(oldTitle)
--  const edits: TextEdit[] = []
--  for (const { syntax, target, title, heading, shown } of linksIn(body)) {
--    if (target !== oldKey) continue
--    … 15 lines of the title arm …
--  }
--  return applyEdits(body, edits)
-+  const rewriter = follower(body)
-+  const edits: TextEdit[] = []
-+  for (const hit of linksIn(body)) {
-+    if (hit.target !== oldKey) continue
-+    const heading = hit.heading ? half(body, hit, hit.heading) : undefined
-+    edits.push(...rewriter(hit, { title: oldTitle, heading }, { title: newTitle, heading }, 'title'))
-+  }
-+  return applyEdits(body, edits)
- }
--// Whether a link's shown text only named the target being renamed …
--function shows(…) { … }
-+
-+/** A hit's half as a name: a markdown destination decodes, a wikilink reads as written. */
-+const half = (body: string, hit: LinkHit, span: Span): string =>
-+  hit.syntax === 'markdown' ? decodeLinkTarget(body.slice(...span)) : body.slice(...span)
-+
-+/** Shown text naming the old target follows it to the new one, by whichever part it named; anything else is a given name and stays. */
-+function carry(shown: string, from: PageName, to: PageName): string {
-+  if (!namesTarget(shown, from)) return shown
-+  if (repeatsTarget(shown, from.title)) return to.title
-+  if (from.heading !== undefined && repeatsTarget(shown, from.heading)) return to.heading!
-+  return `${to.title}#${to.heading}`
-+}
-+
-+/** One rewrite per hit, for either arm: the renamed part is edited in place (a table cell's `\|` rides through), shown text naming the old target follows it, shown text repeating the new target drops its pipe, and a wikilink whose new target it can't spell is rewritten whole through the one writer, which falls to the markdown form. Inside a table region every inserted text is escaped as the cell codec escapes, since a rename writes the row's source. */
-+function follower(body: string) {
-+  const { tables } = scanDoc(body)
-+  return (hit: LinkHit, from: PageName, to: PageName, part: 'title' | 'heading'): TextEdit[] => {
-+    const esc = spanAt(tables, hit.full[0]) ? escapeCell : (s: string) => s
-+    const markdown = hit.syntax === 'markdown'
-+    const shownRaw = hit.shown ? body.slice(...hit.shown) : undefined
-+    const shown = shownRaw === undefined ? undefined : markdown ? unescapeLabel(shownRaw) : shownRaw
-+    const carried = shown === undefined ? undefined : carry(shown, from, to)
-+    if (hit.syntax === 'wiki' && !spellsAsWiki({ title: to.title, heading: to.heading, shown: carried })) {
-+      const writtenTitle = body.slice(...hit.title) === '' ? '' : to.title
-+      return [{ from: hit.full[0], to: hit.full[1], insert: esc(pageLinkText({ title: writtenTitle, heading: to.heading, shown: carried }, 'markdown')) }]
-+    }
-+    const span = part === 'title' ? hit.title : hit.heading!
-+    const value = part === 'title' ? to.title : to.heading!
-+    const edits: TextEdit[] = [{ from: span[0], to: span[1], insert: esc(markdown ? encodeLinkTarget(value) : value) }]
-+    if (hit.shown && carried !== undefined) {
-+      if (!markdown && (carried === '' || repeatsTarget(carried, to.title, to.heading)))
-+        edits.push({ from: (hit.heading ?? hit.title)[1], to: hit.shown[1], insert: '' })
-+      else if (carried !== shown)
-+        edits.push({ from: hit.shown[0], to: hit.shown[1], insert: esc(markdown ? escapeLabel(carried) : carried) })
-+    }
-+    return edits
-+  }
-+}
+```Core/Connections/rewrite.ts (landed)
+export function rewriteConnections(body: string, oldTitle: string, newTitle: string): string {
+  const oldKey = normalizeTitle(oldTitle)
+  const rewrite = follower(body)
+  const edits: TextEdit[] = []
+  for (const hit of linksIn(body))
+    if (hit.target === oldKey) edits.push(...rewrite(hit, 'title', newTitle))
+  return applyEdits(body, edits)
+}
+
+/** Shown text naming the old target follows it to the new one, by whichever part it named; anything else is a given name and stays. */
+function carry(shown: string, from: PageName, to: PageName): string {
+  switch (namesTarget(shown, from)) {
+    case 'title':
+      return to.title
+    case 'heading':
+      return to.heading!
+    case 'both':
+      return `${to.title}#${to.heading}`
+    case null:
+      return shown
+  }
+}
+
+/** One rewrite per hit, for either arm, the hit's halves read as names (a markdown destination decodes, a wikilink reads as written, trimmed as the index reads them) and `part` replaced by `value`: the renamed part is edited in place (a table cell's `\|` rides through), shown text naming the old target follows it, shown text repeating the new target drops its pipe, and a wikilink whose new target it can't spell is rewritten whole through the one writer, which falls to the markdown form. Inside a table region every inserted text is escaped as the cell codec escapes, since a rename writes the row's source; the regions are read once, on the first hit. */
+function follower(body: string) {
+  let tables: TableRegion[] | undefined
+  return (hit: LinkHit, part: 'title' | 'heading', value: string): TextEdit[] => {
+    tables ??= scanDoc(body).tables
+    const esc = spanAt(tables, hit.full[0]) ? escapeCell : (s: string) => s
+    const markdown = hit.syntax === 'markdown'
+    const half = (span: Span): string => {
+      const written = body.slice(...span)
+      return (markdown ? decodeLinkTarget(written) : written).trim()
+    }
+    const from = { title: half(hit.title), heading: hit.heading ? half(hit.heading) : undefined }
+    const to = { ...from, [part]: value }
+    const shownRaw = hit.shown ? body.slice(...hit.shown) : undefined
+    const shown = shownRaw === undefined ? undefined : markdown ? unescapeLabel(shownRaw) : shownRaw
+    const carried = shown === undefined ? undefined : carry(shown, from, to)
+    const next = { title: to.title, heading: to.heading, shown: carried }
+    if (hit.syntax === 'wiki' && !spellsAsWiki(next))
+      return [{ from: hit.full[0], to: hit.full[1], insert: esc(pageLinkText(next, 'markdown')) }]
+    const span = part === 'title' ? hit.title : hit.heading!
+    const edits: TextEdit[] = [
+      { from: span[0], to: span[1], insert: esc(markdown ? encodeLinkTarget(value) : value) },
+    ]
+    if (hit.shown && carried !== undefined) {
+      if (!markdown && (carried === '' || repeatsTarget(carried, to.title, to.heading)))
+        edits.push({ from: targetSpan(hit)[1], to: hit.shown[1], insert: '' })
+      else if (carried !== shown)
+        edits.push({
+          from: hit.shown[0],
+          to: hit.shown[1],
+          insert: esc(markdown ? escapeLabel(carried) : carried),
+        })
+    }
+    return edits
+  }
+}
+
 @@ rewriteHeadingConnections @@
-   if (!HEADING_REFERENCE.test(body)) return body
-   const titleKey = normalizeTitle(title)
-   const oldKey = normalizeTitle(oldHeading)
--  const wiki = expressibleInLink(newHeading)
-+  const rewriter = follower(body)
-   const edits: TextEdit[] = []
-   for (const hit of linksIn(body, ownTitle, outline && [...outline, oldHeading])) {
-     if (hit.target !== titleKey || hit.qualifier !== oldKey || !hit.heading) continue
--    const [from, to] = hit.heading
--    const markdown = hit.syntax === 'markdown'
--    if (!markdown && hit.syntax !== 'section' && !wiki) continue
--    edits.push({ from, to, insert: markdown ? encodeLinkTarget(newHeading) : newHeading })
--    if (hit.alias && shows(body, hit, oldKey)) edits.push({ … })
-+    const written = half(body, hit, hit.title)
-+    edits.push(...rewriter(hit, { title: written, heading: oldHeading }, { title: written, heading: newHeading }, 'heading'))
-   }
-   return applyEdits(body, edits)
- }
+  const rewrite = follower(body)
+  const edits: TextEdit[] = []
+  for (const hit of linksIn(body, ownTitle, outline && [...outline, oldHeading]))
+    if (hit.target === titleKey && hit.qualifier === oldKey && hit.heading)
+      edits.push(...rewrite(hit, 'heading', newHeading))
+  return applyEdits(body, edits)
 ```
 
-A lone `![[…]]` line keeps its `!`, which sits outside `full`, so an embed line falling back stays an embed line in markdown form. `scanDoc` runs once per rewritten page, on the cascade's own read of that page, never on a keystroke; `docScan.ts` is an Engine module with no window import, so the host graph stays clean.
+A lone `![[…]]` line keeps its `!`, which sits outside `full`, so an embed line falling back stays an embed line in markdown form. `scanDoc` runs once per rewritten page that holds a hit, on the cascade's own read of that page, never on a keystroke; `docScan.ts` and the table codec are Engine modules with no window import, so the host graph stays clean. A `§` run inside a table cell renamed to a heading holding `|` is written escaped (`§A\|B`), which keeps the row's columns and the cell editor's run but is a form `sectionRunsIn` can't match again; Phase 7 weighs that where the index reads table rows.
 
 **VERIFY**
 
-- [ ] `rewrite.test.ts`, `linkValue.test.ts`, `cascade.test.ts`, and `headingRenameSettle.test.ts` pass; `HEAD`'s probe `rewriteConnections('[[Old#Intro|Old#Intro]]', 'Old', 'New')` now gives `[[New#Intro]]` where HEAD left the alias stale; `hostGraph.test.ts` stays green.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes (`shows` has no reader; the carry, the drop, the fallback, and the wiki-spelling check are each spelled once; a markdown hit's halves are compared decoded, so `[Setup Notes](Page#Setup%20Notes)` carries its label through a heading rename).
+- [x] `rewrite.test.ts`, `linkValue.test.ts`, `cascade.test.ts` pass; `rewriteConnections('[[Old#Intro|Old#Intro]]', 'Old', 'New')` gives `[[New#Intro]]`; `hostGraph.test.ts` and `engineGraph.test.ts` stay green.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes (`shows` has no reader; the carry, the drop, the fallback, and the wiki-spelling check are each spelled once; a markdown hit's halves are compared decoded).
 
 #### Task 6-3
 
-**TASK:** `shownText` is the one rule for what a written link shows (alias, else a markdown link's default label, else `Title § Heading`, the heading, or the title for a wikilink; an address under its display); `linkDisplayText` reads it for a value and `shownProse` for each connection in a text; Remove Link's `shownConnection` reads it; sort and filter read `shownProse` for Text values; Rename on a Link value writes a wikilink wherever one spells.
+**TASK:** `linkDisplayText` is the one rule for what a written link shows (alias, else a markdown link's default label, else `Title § Heading`, the heading, or the title for a wikilink; an address under its display); `shownProse` applies it to each connection in a text; Remove Link reads it for both token kinds; sort and filter read `shownProse` for Text values; Rename on a Link value writes a wikilink wherever one spells; `resolvedTarget` is the one "written as the page it resolves to" rule, which the Link field's edit and paste both apply.
 
-**NOW:** `linkDisplayText` (`linkValue.ts:145-158`) returns a page link's title, empty for `[[#Heading]]`; sort and filter read it for Link values only (`sort.ts:58-62`, `filter.ts:140-144`) and a Text value's raw syntax, so `[[Alpha|nice]] notes` sorts under `[`; Remove Link spells `shownConnection` (`linkEdit.ts:43-48`); `linkValueFromRename` keeps the value's syntax (`linkValue.ts:140-141`). File values already sort by `fileName`.
+**NOW (at BASELINE):** `linkDisplayText` (`linkValue.ts:145-158`) returns a page link's title, empty for `[[#Heading]]`; sort and filter read it for Link values only (`sort.ts:58-62`, `filter.ts:140-144`) and a Text value's raw syntax, so `[[Alpha|nice]] notes` sorts under `[`; Remove Link spells `shownConnection` (`linkEdit.ts:43-48`); `linkValueFromRename` keeps the value's syntax (`linkValue.ts:140-141`); `retarget`'s url arm normalizes `[x](notes.io)` into `[x](https://notes.io)` although a page holds `notes.io`, so paste pointed a page link at the web where the Link field's edit resolved first.
 
 **CHANGE**
 
-- [ ] In `linkValue.test.ts:234-238`, add `[[#H]]` → `H`, `[[P#H]]` → `P § H`, `[](P#H)` → `H`, `[[P|nice]]` → `nice`; add `shownProse('[[Alpha|nice]] notes')` → `nice notes`, `shownProse('[[P#H]]')` → `P § H`, and a plain text passing through untouched; in `sort.test.ts` and `filter.test.ts`, a Text value holding `[[Alpha|nice]] notes` sorts under `n` and matches `contains nice`; a Link value `[[#Setup]]` is not empty, and a Link value `example.com` still sorts as `https://example.com`. Watch them fail.
-- [ ] Write the rule and the pass as below; `sort.ts:58-62` and `filter.ts:140-144` read `case 'text': return shownProse(v.value)` beside their `link` case; `linkEdit.ts:43-48,72` read `linkDisplayText(text.slice(...tk.range))`; `linkValueFromRename`'s `syntax` line goes (`'wiki'`, through `retarget`, which now falls back through `pageLinkText`).
+- [x] `linkValue.test.ts`: `[[#H]]` → `H`, `[[P#H]]` → `P § H`, `[](P#H)` → `H`, `[](P)` → `P`, `[[P|nice]]` → `nice`; `shownProse('[[Alpha|nice]] notes')` → `nice notes`, `[[P#H]] and [x](https://a.com)` → `P § H and x`, plain text and a code span untouched; Rename on a markdown value writes `[[Meeting Notes#H|Today]]`. `sort.test.ts` and `filter.test.ts`: a Text value holding `[[Alpha|nice]] notes` sorts under `n` and matches `contains nice`, not `contains Alpha`; a Link value `[[#Setup]]` is not empty and sorts after `[[Alpha]]`; a bare `example.com` still sorts as `https://example.com`. `linkEdit.test.tsx`: Remove Link on `[](P#H)` writes `H` and on `[](https://a.com)` writes the address. `pasteLink.test.tsx`: `[x](notes.io)` pasted over `[[Page1]]` where a page holds `notes.io` writes `[[notes.io|x]]`, over `[y](Page1)` writes `[x](notes.io)`, and `[x](nowhere.io)` still writes `[x](https://nowhere.io)`.
+- [x] The rule and the pass as below; `sort.ts` and `filter.ts` read `case 'text': return shownProse(v.value)` beside their `link` case; `linkEdit.ts`'s `link:remove` writes `linkDisplayText(text.slice(s, e))`; `linkValueFromRename`'s `syntax` line goes; `linkValueFromEdit` reads `resolvedTarget`, and `pasteEdit` applies it to the clipboard target once, so both its branches write a page-held address as that page (a pasted `[[page1]]` lands as `[[Page1]]`: one written shape).
 
 **AFTER**
 
-```Core/Connections/linkValue.ts diff
--// No display means the raw URL: sort and filter must not move when a property's look changes.
- export function linkDisplayText(raw: string, display?: LinkDisplay, title?: string): string {
--  const target = readLinkText(raw)
--  if (!target) return raw
--  if (target.alias) return target.alias
--  if (target.kind === 'page') return target.title
--  switch (display) { … }
-+  return shownText(readLinkText(raw), display, title) ?? raw
- }
-+
-+/** What a written link shows: its alias, a markdown link's default label, a wikilink's title, heading, or `Title § Heading`, or an address under its display; no display means the raw address, so sort and filter never move when a property's look changes. */
-+function shownText(target: LinkTarget | null, display?: LinkDisplay, title?: string): string | null {
-+  if (!target) return null
-+  if (target.alias) return target.alias
-+  if (target.kind === 'page')
-+    return target.syntax === 'markdown' ? defaultLabel(target.title, target.heading) : target.heading ? (target.title ? `${target.title} § ${target.heading}` : target.heading) : target.title
-+  switch (display) { … the url arms as today, the default arm reading normalizeLinkUrl(target.url) (Task 3-1) … }
-+}
-+
-+/** A text with each connection replaced by what it shows, so a Text value sorts and filters as it reads. */
-+export function shownProse(text: string): string {
-+  if (!text.includes('[[') && !text.includes('](')) return text
-+  let out = ''
-+  let at = 0
-+  for (const o of linkOccurrences(text, codeMask(text))) {
-+    out += text.slice(at, o.full[0]) + (shownText(readOccurrence(text, o)) ?? text.slice(o.full[0], o.full[1]))
-+    at = o.full[1]
-+  }
-+  return out + text.slice(at)
-+}
+```Core/Connections/linkValue.ts (landed)
+/** A written link as the page it resolves to, written by that page's own title in the syntax it came in (a value's bare heading keeps its empty title); anything else as written. */
+export function resolvedTarget(
+  written: LinkTarget,
+  index: PageIndex | undefined,
+  own?: ConnPage,
+): LinkTarget {
+  const target = resolveLink(written, index, own)
+  const named = namedPage(written)
+  if (target.kind !== 'page' || !named) return written
+  return {
+    kind: 'page',
+    syntax: written.syntax === 'wiki' ? 'wiki' : 'markdown',
+    title: named.title === '' ? '' : target.page.title,
+    ...(target.heading ? { heading: target.heading } : {}),
+    ...(written.alias ? { alias: written.alias } : {}),
+  }
+}
+
+/** What a written link shows: its alias, a markdown link's default label, a wikilink's title, heading, or `Title § Heading`, or an address under its display; no display means the raw address, so sort and filter never move when a property's look changes. */
+export function linkDisplayText(raw: string, display?: LinkDisplay, title?: string): string {
+  const target = readLinkText(raw)
+  if (!target) return raw
+  if (target.alias) return target.alias
+  if (target.kind === 'page') {
+    if (target.syntax === 'markdown') return defaultLabel(target.title, target.heading)
+    if (!target.heading) return target.title
+    return target.title ? `${target.title} § ${target.heading}` : target.heading
+  }
+  switch (display) { … the url arms, the default arm reading normalizeLinkUrl(target.url) … }
+}
+
+/** A text with each connection replaced by what it shows, so a Text value sorts and filters as it reads. */
+export function shownProse(text: string): string {
+  if (!text.includes('[[') && !text.includes('](')) return text
+  let out = ''
+  let at = 0
+  for (const o of linkOccurrences(text, codeMask(text))) {
+    out += text.slice(at, o.full[0]) + linkDisplayText(text.slice(o.full[0], o.full[1]))
+    at = o.full[1]
+  }
+  return out + text.slice(at)
+}
+
+@@ linkValueFromEdit @@
+  const next = resolvedTarget(written, index, own)
 @@ linkValueFromRename @@
--  const syntax = target.syntax === 'wiki' ? 'wiki' : 'markdown'
--  return { kind: 'link', value: retarget(syntax, { ...target, alias: named }).text }
-+  return { kind: 'link', value: retarget('wiki', { ...target, alias: named }).text }
+  return { kind: 'link', value: retarget('wiki', { ...target, alias: named }).text }
 ```
 
-```Core/Views/Pipeline/sort.ts + filter.ts diff
-     case 'text':
--      return v.value
-+      return shownProse(v.value)
-     case 'link':
--      // Sort by the SHOWN text (alias, else URL) — the same parse boundary Cell renders, so an aliased link never sorts by its raw markdown.
-       return linkDisplayText(v.value)
+```Core/MarkdownPM/Links/pasteLink.ts (landed)
+  const clipboard = clipboardTarget(pasted, how)
+  if (!clipboard) return plain
+  const { defaultLinkFormat: format, removeTitleOnLinkChange } = host.settings()
+  const index = host.connections()?.index
+  const target = resolvedTarget(clipboard, index)
 ```
 
-Keys are extracted once per row per resolve (`sort.ts:136-141`), off every keystroke path; a plain value exits `shownProse` at its gate, and a Link value keeps `linkDisplayText`, whose bare-address arm normalizes where a Text value's prose never does.
+Keys are extracted once per row per resolve, off every keystroke path; a plain value exits `shownProse` at its gate, and a Link value keeps `linkDisplayText`, whose bare-address arm normalizes where a Text value's prose never does. Paste As rows (`pasteAsRows`, built by the menu without an index) still label a page-held address an address; the write resolves.
 
 **VERIFY**
 
-- [ ] `linkValue.test.ts`, `sort.test.ts`, `filter.test.ts`, and `linkEdit.test.tsx` (Remove Link's text) pass; `linkValue.test.ts:144`'s premise ("sort must not move when a look changes") holds, since the page arm reads no setting.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes (`shownConnection` has no reader; what a link shows is spelled once, in `shownText`).
+- [x] `linkValue.test.ts`, `sort.test.ts`, `filter.test.ts`, `linkEdit.test.tsx`, and `pasteLink.test.tsx` pass; the page arm reads no setting, so sort and filter never move when a look changes.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes (`shownConnection` has no reader; what a link shows is spelled once, in `linkDisplayText`; "written as the page it resolves to" once, in `resolvedTarget`).
 
 #### Task 6-4
 
-**TASK:** `EditableInput` and `RenamableLabel` pass `{ by: 'key' | 'blur' }` to `onCommit` and `onCancel`, so `AliasList` stops sniffing keys.
+**TASK:** `EditableInput` and `RenamableLabel` pass `{ by: 'key' | 'blur' }` (`EditEnd`) to `onCommit` and `onCancel`, so `AliasList` stops sniffing keys.
 
-**NOW:** `AliasList.tsx:57,65-69,141-144` records whether the last keydown was Enter or Escape on an input and reads it back in `onCommit`/`onCancel`; `EditableInput` commits through the blur Enter causes (`EditableInput.tsx:80-83,94-103`) and cancels on Escape (`:84-91`); `RenamableLabel.tsx:71` turns an unchanged commit into `onCancel()`.
+**NOW (at BASELINE):** `AliasList.tsx:57,65-69,141-144` records whether the last keydown was Enter or Escape on an input and reads it back in `onCommit`/`onCancel`; `EditableInput` commits through the blur Enter causes (`EditableInput.tsx:80-83,94-103`) and cancels on Escape (`:84-91`); `RenamableLabel.tsx:71` turns an unchanged commit into `onCancel()`.
 
 **CHANGE**
 
-- [ ] `EditableInput.test.tsx:54,70` expect `[['Alpha', { by: 'key' }], …]` as each case commits; add a blur-commit case with `{ by: 'blur' }`. Watch them fail.
-- [ ] Thread `by` as below; `AliasList` reads it and drops `keyed`, `byKey`, and the capture handler.
+- [x] `EditableInput.test.tsx` expects `[['Alpha', { by: 'blur' }], ['Beta', { by: 'key' }]]` (the first commit there is a blur, Enter the second), `[['Gamma', { by: 'blur' }]]`, and each cancel's `how`; `aliasPicker.test.tsx` pins an alias edit ending after the pane unmounted (the `endEdit` guard's case).
+- [x] `by` threaded as below; `AliasList` reads `how.by === 'key'` and drops `keyed`, `byKey`, and the capture handler.
 
 **AFTER**
 
-```UIX/Fields/EditableInput.tsx diff
--  onCommit: (next: string) => void
--  onCancel: () => void
-+  onCommit: (next: string, how: { by: 'key' | 'blur' }) => void
-+  onCancel: (how: { by: 'key' | 'blur' }) => void
- }): React.JSX.Element {
-   const settled = useRef(false)
-+  const byKey = useRef(false)
-   …
-       onKeyDown={(e) => {
-         if (e.key === 'Enter') {
-           e.preventDefault()
-+          byKey.current = true
-           e.currentTarget.blur()
-         } else if (e.key === 'Escape') {
-           …
--          onCancel()
-+          onCancel({ by: 'key' })
-         }
-       }}
-       onBlur={(e) => {
-         if (settled.current) return
-         settled.current = true
-+        const how = { by: byKey.current ? 'key' : 'blur' } as const
-+        byKey.current = false
-         const next = e.currentTarget.value.trim()
-         if ((required && !next) || invalid?.(next)) {
-           e.currentTarget.value = initial
--          return onCancel()
-+          return onCancel(how)
-         }
--        onCommit(next)
-+        onCommit(next, how)
-       }}
+```UIX/Fields/EditableInput.tsx (landed)
+/** How an edit ended: by Enter or Escape, or by the focus leaving. */
+export type EditEnd = { by: 'key' | 'blur' }
+  …
+  onCommit: (next: string, how: EditEnd) => void
+  onCancel: (how: EditEnd) => void
+  …
+  const byKey = useRef(false)
+  …
+        if (e.key === 'Enter') {
+          e.preventDefault()
+          byKey.current = true
+          e.currentTarget.blur()
+        } else if (e.key === 'Escape') {
+          …
+          onCancel({ by: 'key' })
+        }
+      }}
+      onBlur={(e) => {
+        if (settled.current) return
+        settled.current = true
+        const how: EditEnd = { by: byKey.current ? 'key' : 'blur' }
+        byKey.current = false
+        const next = e.currentTarget.value.trim()
+        if ((required && !next) || invalid?.(next)) {
+          e.currentTarget.value = initial
+          return onCancel(how)
+        }
+        onCommit(next, how)
+      }}
 ```
 
-```UIX/Fields/RenamableLabel.tsx + Core/MarkdownPM/Autocomplete/AliasList.tsx diff
- RenamableLabel.tsx:71   onCommit={(next, how) => (next !== value ? commit(next, how) : onCancel(how))}   (commit forwards `how`)
- AliasList.tsx           onCommit={(next, how) => { const landed = list.commit(row, next); end(row.key, how.by === 'key'); return landed }}
-                         onCancel={(how) => { if (row.draft) list.cancel(); end(row.key, how.by === 'key') }}
--                        const keyed = useRef(false) … const byKey = (): boolean => { … } … onKeyDownCapture={…}
+```UIX/Fields/RenamableLabel.tsx + Core/MarkdownPM/Autocomplete/AliasList.tsx (landed)
+RenamableLabel.tsx   onCommit={(next, how) => (next !== value ? commit(next, how) : onCancel(how))}   (commit forwards `how`)
+AliasList.tsx        onCommit={(next, how) => { const landed = list.commit(row, next); end(row.key, how.by === 'key'); return landed }}
+                     onCancel={(how) => { if (row.draft) list.cancel(); end(row.key, how.by === 'key') }}
 ```
 
 The other `EditableInput` and `RenamableLabel` users ignore the trailing argument; `PommoraUIX.md:287` is in Phase 9.
 
 **VERIFY**
 
-- [ ] `EditableInput.test.tsx`, `aliasPicker.test.tsx`, and `AliasesRow.test.tsx` pass; add the post-unmount alias-edit case `useConnectionAutocomplete.ts:210`'s guard exists for.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `EditableInput.test.tsx`, `RenamableLabel.test.tsx`, `aliasPicker.test.tsx`, and `AliasesRow.test.tsx` pass.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Review Checkpoint
 
-- [ ] `grep -rn "connectionText(\|markdownPageLink(" Core --include='*.ts' --include='*.tsx' | grep -v test` shows both only inside `pageLinkText`.
-- [ ] The three probes that opened W22 now hold: `linkValueFromEdit('[a\]b](Page)')` keeps the alias in markdown form; `markdownPageLink('C# Notes','Intro')` round-trips; `rewriteConnections('[[Old#Intro|Old#Intro]]')` follows the alias to the new target and drops it as repeating it (`[[New#Intro]]`).
-- [ ] A heading renamed to `A|B` inside a table keeps the table's columns.
-- [ ] Net Ledger: Phase 6 measured.
+- [x] `grep -rn "markdownPageLink(" Core --include='*.ts' --include='*.tsx' | grep -v test` shows it only inside `pageLinkText`; `connectionText` has no definition.
+- [x] The three probes that opened W22 hold: `linkValueFromEdit('[a\]b](Page)')` keeps the alias in markdown form; `markdownPageLink('C# Notes','Intro')` round-trips; `rewriteConnections('[[Old#Intro|Old#Intro]]')` follows the alias to the new target and drops it as repeating it (`[[New#Intro]]`).
+- [x] A heading renamed to `A|B` inside a table keeps the table's columns.
+- [x] Net Ledger: Phase 6 measured.
 
 ---
 
@@ -2515,7 +2496,7 @@ The other `EditableInput` and `RenamableLabel` users ignore the trailing argumen
 
 #### Task 7-1
 
-**TASK:** `valueLinks` yields every link in every frontmatter value with its key, `frontmatterMentions` folds into it, `Relation` gains `key`, `RelationKind`'s `frontmatter` becomes `value`, the `relations` table gains the column, and `holdsLinks` is written once. Weigh here, with the index in hand, whether `scan.ts`'s and `Trash/holdings.ts`'s "page or address" reads (today from the written kind alone, so a value `[x](notes.io)` naming a page is never indexed, stripped, or parked; Brief §113) should ask `resolveLink`, and state the call either way.
+**TASK:** `valueLinks` yields every link in every frontmatter value with its key, `frontmatterMentions` folds into it, `Relation` gains `key`, `RelationKind`'s `frontmatter` becomes `value`, the `relations` table gains the column, and `holdsLinks` is written once. Weigh here, with the index in hand, whether `scan.ts`'s and `Trash/holdings.ts`'s "page or address" reads (today from the written kind alone, so a value `[x](notes.io)` naming a page is never indexed, stripped, or parked; Brief §113) should ask `resolveLink`, and state the call either way. Weigh too how the index reads a table row: Phase 6's rename escapes what it writes inside a table region as the cell codec does, so a `§` run renamed to a heading holding `|` lands as `§A\|B`, which the cell editor draws as a run but `sectionRunsIn` can't match again; either the index reads rows through the codec, or a run in a cell renamed to an unspellable heading is ruled out of the graph, stated here.
 
 **NOW:** `valueLinks` (`scan.ts:159-169`) walks string values under every key and yields body-shaped hits that `indexSeed.ts:61` records as `body` rows; `frontmatterMentions` (`:143-157`) records whole-value links as `frontmatter` rows; neither carries the key, so no reader can apply a keys rule later. `relations` has no key column (`ddl.ts:18-25`); `INDEX_GENERATION` is 13. `patchOf` (`cascade.ts:197-199`) rewrites Link and Text keys only and `spacesLinkHeading` (`:60-68`) reads every Space key with no gate.
 
@@ -2954,7 +2935,7 @@ The check is one map lookup per `value` row on a graph push or a registry change
 
 #### Task 8-2
 
-**TASK:** `PropertyValueInput` builds one host and mounts `ValueEditor` for the Link field (opening on the whole written value), the Link value's Rename (the same editor, seated in its alias slot), and the single-line Text field; `TextPicker` and `EditableInput` stay for Number; `linkEditText`, `linkValueFromRename`, `LinkEditContext.keepTitle`, and `linkValueFromEdit`'s `current` and `keepTitle` go; Show Full Link reads the whole value.
+**TASK:** `PropertyValueInput` builds one host and mounts `ValueEditor` for the Link field (opening on the whole written value), the Link value's Rename (the same editor, seated in its alias slot), and the single-line Text field; `TextPicker` and `EditableInput` stay for Number; `linkEditText`, `linkValueFromRename`, `LinkEditContext.keepTitle`, and `linkValueFromEdit`'s `current` and `keepTitle` go; Show Full Link reads the whole value. The Rename seat decides which of a markdown-only value's two "no alias" spellings it writes when the alias is cleared: `linkValueFromRename('', '[x](Page#A%7CB)')` writes the default label explicitly (`[A|B](Page#A%7CB)`) where `[](Page#A%7CB)` draws the same; `linkDisplayText` and the settle read both alike, but the raw value differs.
 
 **NOW:** `PropertyValueInput.tsx:54-96` builds `initial` from `linkEditText` (the target alone) or the alias alone (`alias` mode), parses through `linkValueFromRename` or `parseEditorValue` with `keepTitle`, tints a Link field with `def.link_color` (`:69,96`), and mounts `TextPicker` or `EditableInput`; four sites mount it: inline at `PropertyPanel.tsx:410`, `CardValue.tsx:144`, `TableView.tsx:213`, the full popover at `ValuePickPresenter.tsx:39`, and the Rename popover at `PropertyPanel.tsx:541`, `CardsView.tsx:487`, `TableView.tsx:251` (passing `alias` for a Link value). `linkValueFromEdit` (`linkValue.ts:122-134`) re-applies a hidden alias through `keepsShown` because the field hid it, so typing a new title into the field today drops the hidden alias when the old link pointed somewhere; Rename on a bare address writes `[alias](url)` through `linkValueFromRename` (`:136-143`).
 
@@ -3211,3 +3192,7 @@ The check is one map lookup per `value` row on a graph push or a registry change
 - Task 5-2 wrote a heading pick that opens the alias slot through `whole`, which rewrote the title's spelling (`Notes.md` to `Notes`, `My Notes` to `My%20Notes`); landed inserting in place, since a heading pick never re-aims.
 - The settle's collapse filling a markdown label a tick after a pick cleared the pick's rest, so the link showed raw syntax where its wiki twin read finished; landed carrying `linkRest` through the collapse's changes (the field itself is Frozen and unchanged).
 - The link settle lives in `Links/linkSettle.ts` beside `headingRenameSettle.ts` rather than across `linkReveal.ts` and `linkEdit.ts`, and `linkWithin` beside the other editor readers in `Input/edits.ts`; a reader finds each settle in one file. Phase 4's count ends 27 above its band for this and the fixes the ledger row names.
+- Task 6-1's `shownAlias` asked whether shown text named the old target of the *resolved* old link, so a label that only named a page since deleted or never held (`[Draft](Draft)` re-picked to Alpha, `Draft` kept under Remove Title's phantom rule) was remembered as Alpha's alias; landed asking it of the link as it was written, resolving only for the same-alias-same-page check (`linkValue.test.ts` pins it).
+- Task 6-1 sent a File value's reference through `pageLinkText` claiming a readable markdown link where the wikilink grammar can't spell the file name; `wikiTitle` refuses the markdown form, so that reference would be read by nothing. Landed as `fileLinkText`, a writer with no fallback, beside `pageEmbedText`; `adoptFile`'s own gate still refuses the name first.
+- Task 6-1's sentence that the writers honour a url arm's `page?` through `resolveLink` reached only the remember rule; paste still wrote `[x](notes.io)` as `[x](https://notes.io)` where a page holds `notes.io`. Landed as `resolvedTarget`, the one "written as the page it resolves to" rule the Link field's edit already spelled inline, applied to paste's clipboard target once; a pasted `[[page1]]` now lands as `[[Page1]]`, one written shape, where it was written as pasted.
+- Phase 5's review observed that a heading re-pick keeps a label that named the old section (`[Setup](Notes#Setup)` re-picked to Usage keeps `Setup`) where a rename carries it. The picker sharing the rename's carry was typed and measured at about 45 Actionable lines (a shared in-place rewriter with adapter shapes, the query carrying its shown slot's position, a hook switch); reversed as weight that outruns its case. A heading pick keeps its shown text in both syntaxes, as Phase 5 landed.
