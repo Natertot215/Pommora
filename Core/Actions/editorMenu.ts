@@ -12,7 +12,7 @@ import {
   LIST_ROWS,
 } from './blockMenu'
 import { isValidLink } from '../Paths/urlPath'
-import { HIGHLIGHT_COLOR_NAMES, type HighlightColor } from '../MarkdownPM/Engine/highlightColors'
+import { PAINT_COLOR_NAMES, type PaintColor } from '../MarkdownPM/Engine/paints'
 
 /** What sits under a right-click, sent to the host as the menu is asked for; main cannot see CM6 state. */
 export const editorMenuRequest = z.object({
@@ -22,9 +22,7 @@ export const editorMenuRequest = z.object({
   bold: z.boolean(),
   italic: z.boolean(),
   strikethrough: z.boolean(),
-  highlight: z
-    .enum(['accent', ...HIGHLIGHT_COLOR_NAMES] as ['accent', ...HighlightColor[]])
-    .nullable(),
+  highlight: z.enum(['accent', ...PAINT_COLOR_NAMES] as ['accent', ...PaintColor[]]).nullable(),
   inlineCode: z.boolean(),
   link: z.boolean(),
   connection: z.boolean(),
@@ -56,7 +54,7 @@ type EditorMenuAction =
   | FormatChordAction
   | 'heading:0'
   | 'link:insert'
-  | `highlight:${HighlightColor}`
+  | `highlight:${PaintColor}`
 
 type FormatFlag = Exclude<FormatChordAction extends `format:${infer F}` ? F : never, 'highlight'>
 
@@ -77,7 +75,7 @@ function highlightRows(s: EditorMenuRequest, commands: Commands): LeafItem<Edito
       checked: s.highlight === 'accent',
       chord: commands['format:highlight'],
     },
-    ...HIGHLIGHT_COLOR_NAMES.map(
+    ...PAINT_COLOR_NAMES.map(
       (color, i): LeafItem<EditorMenuAction> => ({
         label: capitalize(color),
         action: `highlight:${color}`,

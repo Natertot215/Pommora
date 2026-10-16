@@ -1,8 +1,8 @@
 import { globalStyle } from '@vanilla-extract/css'
 import { cellColor } from '@pommora/uix/Theme/ramp'
-import { HIGHLIGHT_COLOR_NAMES, HIGHLIGHT_COLORS } from './Engine/highlightColors'
+import { PAINT_COLOR_NAMES, PAINT_COLORS } from './Engine/paints'
 
-for (const color of HIGHLIGHT_COLOR_NAMES)
-  globalStyle(`.md-highlight-${color}`, {
-    vars: { '--highlight': cellColor(HIGHLIGHT_COLORS[color].cell) },
+for (const color of PAINT_COLOR_NAMES)
+  globalStyle(`.md-paint-${color}`, {
+    vars: { '--paint': cellColor(PAINT_COLORS[color].cell) },
   })

@@ -20,7 +20,7 @@ import {
 import type { HeadingLevel, ListKind } from '../../Actions/gripMenu'
 import type { BlockFormat, LinkWrapKind } from '../../Actions/blockMenu'
 import { emptyTable } from '../Engine/Tables/model'
-import { type HighlightColor, writtenMark } from '../Engine/highlightColors'
+import { isPaint, type Paint, type PaintColor, writtenMark } from '../Engine/paints'
 import { serialize } from '../Engine/Tables/codec'
 import { type DocScan, inFenceAt } from '../Engine/docScan'
 import { isValidLink, normalizeLinkUrl } from '../../Paths/urlPath'
@@ -44,6 +44,7 @@ const WRAP = {
   italic: '*',
   strikethrough: '~~',
   highlight: '==',
+  textColor: '=',
   inlineCode: '`',
 } as const
 
@@ -64,23 +65,21 @@ const LINKS: Record<LinkWrapKind, LinkWrap> = {
 const SWAPS: Partial<Record<TokenKind, TokenKind>> = { bold: 'italic', italic: 'bold' }
 const MARKER_CHARS = '*_~=`'
 
-/** A highlight's `color` is null for the accent; one already highlighted in another color is recolored rather than removed. */
+/** A paint's `color` is null for the accent highlight. A span wears one color, so a paint picked anywhere in it recolors it, turns it into the other paint, or, in its own paint and color, removes it. */
 export function toggleInline(
   scan: DocScan,
   selFrom: number,
   selTo: number,
   fmt: InlineFormat,
-  color: HighlightColor | null = null,
+  color: PaintColor | null = null,
 ): FormatEdit | null {
   if (inFenceAt(scan, selFrom)) return null
   const doc = scan.text
   const [from, to] = trimmedRange(doc, selFrom, selTo)
   if (fmt in LINKS) return toggleWrap(doc, from, to, LINKS[fmt as LinkWrapKind])
   const kind = fmt as keyof typeof WRAP & TokenKind
-  const w = WRAP[kind]
-  const mark = color ? writtenMark(color) : ''
-  const open = w + mark
-  const close = mark + w
+  const close = WRAP[kind]
+  const open = color ? close + writtenMark(color) : close
   // Inline marks are line-local, so only the caret's line is tokenized; the hit is shifted back to document coordinates.
   const ls = lineStartAt(doc, from)
   const line = doc.slice(ls, lineEndAt(doc, from))
@@ -93,12 +92,14 @@ export function toggleInline(
     return s <= f && t <= e
   })
   const found =
-    covering.find((tk) => tk.kind === kind) ??
+    covering.find((tk) => tk.kind === kind || (isPaint(kind) && isPaint(tk.kind))) ??
     covering.find(
       (tk) =>
         tk.kind === SWAPS[kind] &&
         (from === to || (tk.contentRange[0] === f && tk.contentRange[1] === t)),
     )
+  const reach = found ? line.slice(...found.contentRange) : doc.slice(Math.max(0, from - 1), to + 1)
+  if (kind === 'textColor' && reach.includes('=')) return null
   if (found) {
     const [m0, m1] = shiftToken(found, ls).markerRanges
     const off = found.kind === kind && (found.color ?? null) === color
@@ -133,7 +134,8 @@ export function editFor(
     case 'format':
       return toggleInline(scan, from, to, value as InlineFormat)
     case 'highlight':
-      return toggleInline(scan, from, to, 'highlight', value as HighlightColor)
+    case 'textColor':
+      return toggleInline(scan, from, to, group as Paint, value as PaintColor)
     case 'heading':
       return setHeading(scan.text, from, to, Number(value) as HeadingLevel)
     case 'list':

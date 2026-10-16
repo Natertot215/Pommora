@@ -32,7 +32,7 @@ import { type EditorHost, mirrored, redrawNudge } from './api'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import { Scrollbar } from '@pommora/uix/Interactions/Scrollbar'
 import './markdown-pm.css'
-import './highlights.css'
+import './paints.css'
 
 export const EMPTY_PAGE_TEXT = 'Click to type or press / for actions'
 

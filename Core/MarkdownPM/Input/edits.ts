@@ -35,6 +35,7 @@ import {
   type MarkdownScope,
   readsLists,
 } from '../Engine/detect'
+import { tokenize } from '../Engine/tokens'
 
 // A transform reading more than its own line takes the caller's whole-document scan (one per doc version): the string-form code and callout tests re-split and re-pair every fence per call.
 
@@ -493,6 +494,7 @@ const isWordCh = (ch: string | undefined): boolean => ch !== undefined && /\w/.t
 function closerEndAt(scan: DocScan, caret: number): number | null {
   if (inCodeAt(scan, caret)) return null
   const doc = scan.text
+  if (doc[caret] === '=' && doc[caret + 1] !== '=') return textColorEndAt(doc, caret)
   const before = doc.slice(lineStartAt(doc, caret), caret)
   // A single-char symmetric marker flanked by word chars is prose — contractions would poison the parity and teleport the caret.
   const count = (s: string): number => {
@@ -520,6 +522,15 @@ function closerEndAt(scan: DocScan, caret: number): number | null {
       : caret + close.length
   }
   return null
+}
+
+/** Where the text color whose words end at `caret` ends, past its closing `=`: a lone `=` is too often prose for parity to read. */
+function textColorEndAt(doc: string, caret: number): number | null {
+  const ls = lineStartAt(doc, caret)
+  const tk = tokenize(doc.slice(ls, lineEndAt(doc, caret))).find(
+    (tk) => tk.kind === 'textColor' && tk.contentRange[1] === caret - ls,
+  )
+  return tk ? ls + tk.range[1] : null
 }
 
 export function closeConstructOnEnter(
