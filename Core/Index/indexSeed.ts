@@ -1,7 +1,7 @@
 import { join, relative, isMarkdownFile, titleFromPath } from '../Paths/posix'
 import { escapes } from '../Paths/pathSafety'
 import { errText } from '../Contract/result'
-import { frontmatterMentions, linksIn, valueLinks } from '../Connections/scan'
+import { linksIn, valueLinks } from '../Connections/scan'
 import { headingOutlineOf } from '../MarkdownPM/Engine/headingScan'
 import { inCodeAt, scanDoc } from '../MarkdownPM/Engine/docScan'
 import { contextTitles, parseContextKey } from '../Contexts/contexts'
@@ -45,22 +45,20 @@ function extractPageIndex(rel: string, content: string): PageIndexEntry {
   const headings = headingOutlineOf(scan).filter((h) => normalizeTitle(h.text) !== '')
   const outline = headings.map((h) => h.text)
   const tally = new Map<string, Relation>()
-  // A NUL separator: no normalized title or Context key can hold one, so the three parts never blur.
-  const add = (kind: RelationKind, target: string, qualifier: string): void => {
-    const key = `${kind}\0${target}\0${qualifier}`
-    const held = tally.get(key)
+  // A NUL separator: no normalized title, Context key, or frontmatter key can hold one, so the four parts never blur.
+  const add = (kind: RelationKind, target: string, qualifier: string, key = ''): void => {
+    const id = `${kind}\0${target}\0${qualifier}\0${key}`
+    const held = tally.get(id)
     if (held) held.count++
-    else tally.set(key, { kind, target, qualifier, count: 1 })
+    else tally.set(id, { kind, target, qualifier, key, count: 1 })
   }
   for (const hit of linksIn(body, own, outline, (p) => inCodeAt(scan, p))) {
     add(hit.embed ? 'embed' : 'body', hit.target, hit.qualifier)
     if (hit.full[0] >= scan.lineStarts[scan.citations.firstLine])
       add('citation', hit.target, hit.qualifier)
   }
-  // A value's links are a small body's — under the page's own title and outline, never citations, and never a tile's.
-  for (const hit of valueLinks(values, own, outline)) add('body', hit.target, hit.qualifier)
-  for (const { target, qualifier } of frontmatterMentions(values, own))
-    add('frontmatter', target, qualifier)
+  for (const hit of valueLinks(values, own, outline))
+    add('value', hit.target, hit.qualifier, hit.key)
   for (const { target, qualifier } of spaceRelations(values)) add('space', target, qualifier)
   return { relations: [...tally.values()], headings, values }
 }

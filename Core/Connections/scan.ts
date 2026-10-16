@@ -3,7 +3,7 @@
 import { type LinkOccurrence, linkOccurrences } from './connections'
 import { normalizeTitle } from '../Paths/caseFold'
 import { targetFragment, targetTitle } from './links'
-import { readLinkText, wholeValueLink } from './linkValue'
+import { linkEntry } from './linkValue'
 import {
   codeMask,
   type CodeMask,
@@ -121,30 +121,15 @@ export function* linksIn(
     }
 }
 
-/** A Link property holds a connection as its whole value, so a rename reaching only bodies would leave it pointing at nothing. */
-export function frontmatterMentions(
-  values: Record<string, unknown>,
-  ownTitle = '',
-): { target: string; qualifier: string }[] {
-  const out = new Map<string, { target: string; qualifier: string }>()
-  for (const value of Object.values(values)) {
-    const link = wholeValueLink(value)
-    if (link?.kind !== 'page') continue
-    const target = titleKey(link.title, normalizeTitle(ownTitle))
-    const qualifier = normalizeTitle(link.heading ?? '')
-    if (target) out.set(`${target}\0${qualifier}`, { target, qualifier })
-  }
-  return [...out.values()]
-}
-
-/** The links inside every string value that isn't one whole connection — a sentence under any key, registered or not, read as a body is; the whole-value ones are `frontmatterMentions`'. */
+/** Every link inside every frontmatter value, each under the key it sits in, read as a small body is: a whole-value `[[Page]]` (an unquoted one yaml reads as a nested list included) and a sentence holding links alike. Which keys count is the reader's question, asked with the registry in hand. */
 export function* valueLinks(
   values: Record<string, unknown>,
   ownTitle = '',
   outline: readonly string[] = [],
-): Generator<LinkHit> {
-  for (const value of Object.values(values)) {
-    if (typeof value !== 'string' || readLinkText(value)?.kind === 'page') continue
-    yield* linksIn(value, ownTitle, outline)
+): Generator<LinkHit & { key: string }> {
+  for (const [key, value] of Object.entries(values)) {
+    const text = linkEntry(value, 2)
+    if (text === null) continue
+    for (const hit of linksIn(text, ownTitle, outline)) yield { ...hit, key }
   }
 }

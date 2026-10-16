@@ -137,7 +137,9 @@ class MatrixRuntime {
     const b = this.built
     const held = matrixTree(s.tree)
     const connections =
-      b && b.held === held && b.links === links ? b.connections : matrixConnections(s.tree, links)
+      b && b.held === held && b.links === links && b.tree.config.registry === s.tree.config.registry
+        ? b.connections
+        : matrixConnections(s.tree, links)
     const judged =
       b &&
       b.held === held &&

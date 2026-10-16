@@ -4,7 +4,7 @@ import type { PageRelationRow } from '../Platform/stores'
 import { pageValuesOf } from '../Views/pageValues'
 import type { PageValues } from '../Views/viewRow'
 
-export interface MatrixLink extends Pick<PageRelationRow, 'path' | 'kind' | 'target'> {
+export interface MatrixLink extends Pick<PageRelationRow, 'path' | 'kind' | 'target' | 'key'> {
   pageId: string
 }
 
@@ -26,15 +26,15 @@ export function readMatrixGraph(withValues: boolean, paths?: string[]): MatrixGr
     idOf.set(path, id)
     if (values) values[id] = pageValuesOf(id, page.values, page.mtimeMs)
   }
-  // A link to a page and links to its headings are one row each in the index, and one link here.
+  // A link to a page and links to its headings are one row each in the index, and one link here; a value's link stays one per key, so each reaches the keys rule.
   const seen = new Set<string>()
   const links: MatrixLink[] = []
-  for (const { path, kind, target } of rows.relations) {
+  for (const { path, kind, target, key } of rows.relations) {
     const pageId = idOf.get(path)
-    const key = `${path}\0${kind}\0${target}`
-    if (!pageId || seen.has(key)) continue
-    seen.add(key)
-    links.push({ path, kind, target, pageId })
+    const id = `${path}\0${kind}\0${target}\0${key}`
+    if (!pageId || seen.has(id)) continue
+    seen.add(id)
+    links.push({ path, kind, target, key, pageId })
   }
   return paths ? { links, values, ids: [...idOf.values()] } : { links, values }
 }

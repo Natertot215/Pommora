@@ -5,14 +5,15 @@ export interface KeyValueStore {
   entries(scope: string): Record<string, string>
 }
 
-// `citation` overlays rather than replaces: a link or embed inside a footnote definition emits its own syntax kind AND a `citation` row, so a reader asking for body links sees it and a reader weighting footnotes sees it too.
-export type RelationKind = 'body' | 'citation' | 'frontmatter' | 'embed' | 'space'
+// `citation` overlays rather than replaces: a link or embed inside a footnote definition emits its own kind AND a `citation` row, so a reader asking for body links sees it and a reader weighting footnotes sees it too. A `value` row is a link inside a frontmatter value, under `key`; every other kind carries `key` as ''.
+export type RelationKind = 'body' | 'citation' | 'value' | 'embed' | 'space'
 
-/** `target` is a normalized title, never a path — resolution happens at read time. `qualifier` is a normalized heading key for a heading-naming link, a folded Context key for a `space` row, and '' otherwise. `count` is occurrences, always 1 for `frontmatter`, whose producer yields each target and qualifier once. */
+/** `target` is a normalized title, never a path — resolution happens at read time. `qualifier` is a normalized heading key for a heading-naming link, a folded Context key for a `space` row, and '' otherwise. `count` is occurrences. */
 export interface Relation {
   kind: RelationKind
   target: string
   qualifier: string
+  key: string
   count: number
 }
 
@@ -37,7 +38,7 @@ export interface RelationRow extends Relation {
 }
 
 export interface PageRelationRow extends RelationRow {
-  kind: Extract<RelationKind, 'body' | 'citation' | 'frontmatter'>
+  kind: Extract<RelationKind, 'body' | 'citation' | 'value'>
 }
 
 export interface PageRelations {
@@ -66,7 +67,7 @@ export interface ContentIndexStore {
   queryMembers(key: string, title: string): string[]
   readIndexedStat(path: string): IndexedStat | null
   readIndexedStats(): Map<string, IndexedStat>
-  /** Page → page rows only (`body`, `citation`, `frontmatter`), plus every indexed page's governed values and mtime; `paths` narrows both, and `key` narrows the values to that one key. */
+  /** Page → page rows only (`body`, `citation`, `value`), plus every indexed page's governed values and mtime; `paths` narrows both, and `key` narrows the values to that one key. */
   readPageRelations(paths?: string[], key?: string): PageRelations
 }
 

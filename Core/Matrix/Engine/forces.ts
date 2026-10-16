@@ -7,7 +7,7 @@ export const BASE_RADIUS: Record<GraphNodeKind, number> = { page: 25, folder: 35
 export const LINK_MULTIPLE: Record<LinkKind, number> = {
   body: 0.075,
   citation: 0.05,
-  frontmatter: 0.075,
+  value: 0.075,
   space: 0,
   location: 0,
 }
@@ -17,7 +17,7 @@ export const RADIUS_MAX = 160
 const LINK_STRENGTH: Record<LinkKind, number> = {
   body: 1,
   citation: 0.6,
-  frontmatter: 0.8,
+  value: 0.8,
   space: 0.7,
   location: 0.75,
 }

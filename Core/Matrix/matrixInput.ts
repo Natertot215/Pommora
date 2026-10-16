@@ -5,6 +5,7 @@ import { pageIndexOf } from '../Nexus/record'
 import { heldKey } from '../Files/heldKeys'
 import { spaceRowOf } from '../Properties/pageRow'
 import { type PropertyDefinition, specOf } from '../Properties/properties'
+import { linkKeysOf } from '../Properties/schema'
 import { declaredType } from '../Properties/value'
 import { applyFilter } from '../Views/Pipeline/filter'
 import { toRow } from '../Views/Pipeline/group'
@@ -61,8 +62,15 @@ export function matrixConnections(
   links: MatrixGraphReply['links'],
 ): GraphInput['connections'] {
   const resolve = pageIndexOf(tree).resolve
+  // A value row relates only under a key that holds links; asked here, with the registry in hand, so a property created, renamed, or synced over a held key changes the graph without a re-index. The rule runs before the dedupe, so a Number key never shadows a Link key naming the same page.
+  const holds = linkKeysOf(tree.config.registry)
+  const seen = new Set<string>()
   const connections: GraphInput['connections'] = []
   for (const link of links) {
+    if (link.kind === 'value' && !holds(link.key)) continue
+    const id = `${link.pageId}\0${link.kind}\0${link.target}`
+    if (seen.has(id)) continue
+    seen.add(id)
     const hit = resolve(link.target)
     if (hit.status === 'resolved' && hit.page)
       connections.push({ from: link.pageId, to: hit.page.id, kind: link.kind })
