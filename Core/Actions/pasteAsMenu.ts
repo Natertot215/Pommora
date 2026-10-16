@@ -92,7 +92,7 @@ export function pasteAsWrite(
     switch (how) {
       case 'connection':
       case 'markdown':
-        return retarget(how === 'connection' ? 'wiki' : 'markdown', null, target, false)
+        return retarget(how === 'connection' ? 'wiki' : 'markdown', target)
       case 'embedPage':
         return { kind: 'line', text: pageEmbedText(target.title) }
       default:

@@ -1,5 +1,6 @@
 import { EditorView } from '@codemirror/view'
-import { readLinkText, retarget, type LinkTarget } from '../../Connections/linkValue'
+import type { EditorState } from '@codemirror/state'
+import { keepsShown, readLinkText, retarget, type LinkTarget } from '../../Connections/linkValue'
 import { pasteAsWrite, type PasteMode, type PasteWrite } from '../../Actions/pasteAsMenu'
 import { matchesCommand } from '../../Actions/commands'
 import { isWebAddress, normalizeLinkUrl } from '../../Paths/urlPath'
@@ -11,6 +12,7 @@ import { insertCitation } from '../Citations/citationActions'
 import { citationText } from '../Citations/citationEdits'
 import { embedSeatAt } from '../Embeds/embedInsert'
 import { settledLinkText, writeLinkAt } from './pendingTitle'
+import { baselineAt } from './linkSettle'
 import { type EditorHost, editorHost } from '../api'
 import { lineStartAt, trimmedRange, type TextEdit } from '../Engine/markdownCode'
 
@@ -33,6 +35,7 @@ function pasteEdit(
   text: string,
   how: PasteMode,
   host: EditorHost,
+  state: EditorState | null,
 ): PasteEdit {
   const pasted = text.trim()
   if (how === 'literal' || !pasted || /[\r\n]/.test(pasted) || inCodeNear(scan, sel.from))
@@ -55,16 +58,16 @@ function pasteEdit(
     const [start, end] = [ls + within.full[0], ls + within.full[1]]
     const syntax =
       how === 'connection' || (how !== 'markdown' && within.syntax === 'wiki') ? 'wiki' : 'markdown'
+    const now = scan.text.slice(start, end)
+    const was = readLinkText(state ? baselineAt(state, start, now) : now)
+    const alias =
+      target.alias ??
+      (keepsShown(was, target, removeTitleOnLinkChange, index)
+        ? readLinkText(now)?.alias
+        : undefined)
     const write = isLinkDisplay(how)
       ? pasteAsWrite(target, how, { selection: '', format, title })
-      : retarget(
-          syntax,
-          readLinkText(scan.text.slice(start, end)),
-          target,
-          removeTitleOnLinkChange,
-          index,
-          { format, title },
-        )
+      : retarget(syntax, { ...target, alias }, { format, title })
     return write ? { from: start, to: end, write } : plain
   }
   // A link still being written takes the paste as its own text, in either syntax.
@@ -109,6 +112,7 @@ export function paste(view: EditorView, text: string, how: PasteMode): boolean {
     text,
     how,
     host,
+    view.state,
   )
   if (write.kind === 'link') writeLinkAt(view, from, to, write, 'input.paste')
   else if (write.kind === 'line') writeLine(view, write.text)
@@ -130,7 +134,7 @@ export async function pastedCellText(
   text: string,
   how: PasteMode,
 ): Promise<TextEdit> {
-  const { from, to, write } = pasteEdit(scanDoc(doc), sel, text, how, host)
+  const { from, to, write } = pasteEdit(scanDoc(doc), sel, text, how, host, null)
   return { from, to, insert: await settledLinkText(host, write) }
 }
 

@@ -41,7 +41,8 @@ import type { DiffTally, MarkdownScope } from './Engine/detect'
 import { sectionRunsIn } from '../Connections/scan'
 import { CHECK_GLYPH, CODE_TAGS, COPY_GLYPH, pathGlyph } from './codeGlyphs'
 import { pathTitles } from './Engine/codeLangs'
-import { linkRest, linkWriting } from './Links/linkReveal'
+import { linkRest } from './Links/linkReveal'
+import { linkWriting } from './Links/linkSettle'
 import {
   assembleLineIntents,
   type DecoIntent,
@@ -556,12 +557,16 @@ function build(view: EditorView, scope: MarkdownScope): Built {
           tk.contentRange[0],
         ),
       )
-    } else
+    } else {
+      const writing = !shown && typing === tk.range[0]
       ranges.push(
         Decoration.mark({
-          class: cx(linkClass(look), internal && isActive && 'md-connection-open'),
+          class: writing
+            ? 'md-connection-typing'
+            : cx(linkClass(look), internal && isActive && 'md-connection-open'),
         }).range(tk.contentRange[0], tk.contentRange[1]),
       )
+    }
     const dim = Decoration.mark({ class: shown ? 'md-control' : 'md-phantom-syntax' })
     if (!shown || isActive) {
       ranges.push(dim.range(open[0], open[1]))

@@ -256,12 +256,12 @@ export function commitEdit(
     }
   }
   if (ac.form === 'link') {
-    const { text } = retarget(
-      'wiki',
-      null,
-      { kind: 'page', syntax: 'wiki', title: value, alias: opts.kept },
-      false,
-    )
+    const { text } = retarget('wiki', {
+      kind: 'page',
+      syntax: 'wiki',
+      title: value,
+      alias: opts.kept,
+    })
     return { changes: [{ from: ac.from, to: ac.to, insert: text }], anchor: ac.from + text.length }
   }
   // Bare text, no wrapping syntax to land inside of — the anchor sits right after the heading itself.

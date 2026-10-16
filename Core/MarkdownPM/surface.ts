@@ -4,7 +4,8 @@ import type { MarkdownScope } from './Engine/detect'
 import { markdownDecorations } from './decorations'
 import { listDragExtension } from './Gestures/listDrag'
 import { blockDragExtension } from './Gestures/blockDrag'
-import { linkRest, linkWriting } from './Links/linkReveal'
+import { linkRest } from './Links/linkReveal'
+import { linkSettle, linkWriting } from './Links/linkSettle'
 import { listRenumber } from './Input/listRenumber'
 import { smartDelete, typedInput, wrapChords } from './Input/markdownInput'
 import { blockHandles, pointerReveal } from './Menus/blockHandles'
@@ -16,7 +17,7 @@ import { linkPointer } from './Links/linkClicks'
 import { citationPointer } from './Citations/citationPointer'
 import { pasteLink } from './Links/pasteLink'
 import { pendingTitles } from './Links/pendingTitle'
-import { commitAliasOnEnter, linkSettle } from './Links/linkEdit'
+import { commitAliasOnEnter } from './Links/linkEdit'
 import { type EditorHost, editorHost } from './api'
 import { editorKeymap } from './Input/formatKeymap'
 import { type EditorPane, paneKeys } from './Menus/caretPane'
@@ -48,7 +49,7 @@ export const inlineSurface = (scope: MarkdownScope): Extension => [
   citationPointer(),
   pasteLink,
   pendingTitles,
-  linkSettle.of({ scope, remembers: true }),
+  linkSettle.of(scope),
   linkRest,
   linkWriting,
   EditorView.lineWrapping,

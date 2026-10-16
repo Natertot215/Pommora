@@ -21,7 +21,8 @@ import type { MarkdownScope } from '../Engine/detect'
 import { keepsShown, readLinkText } from '../../Connections/linkValue'
 import { unescapeLabel } from '../../Connections/links'
 import { normalizeTitle } from '../../Paths/caseFold'
-import { linkWriting, restedOnLink } from '../Links/linkReveal'
+import { restedOnLink } from '../Links/linkReveal'
+import { baselineAt } from '../Links/linkSettle'
 import type { AutocompletePaneProps } from './AutocompletePane'
 import { acQuery, closeAcQuery } from './acQuery'
 import type { PageHeading } from '../../Platform/stores'
@@ -135,16 +136,15 @@ export function useConnectionAutocomplete(
     if (!view || !ac || !ctl.current.open) return
     const settings = host.settings()
     const conn = host.connections()
-    // The link as the picker reads it, until Task 5-1 puts the link's span on every query: from the label's start or the query's, through the closer.
+    // Until Task 5-1 puts the link's span on every query, the picker reads the link here: `start` and the closer from the query, `reaims` from its form, and `shown` from the label's own span, restating the label rule because an empty destination reads as no link.
     const start = ac.label ? ac.label.from - 1 : ac.from
-    const written = readLinkText(
-      view.state.sliceDoc(start, ac.to) + (ac.label || !ac.closed ? closerOf(ac.form) : ''),
-    )
-    // How the link read before this edit began (null for one that never closed) decides whether the shown text survives a re-aim; the link as it stands is where that shown text is read from.
-    const w = view.state.field(linkWriting)
-    const baseline = w?.start === start ? readLinkText(w.was) : ac.closed ? written : null
+    const text =
+      view.state.sliceDoc(start, ac.to) + (ac.label || !ac.closed ? closerOf(ac.form) : '')
+    const written = readLinkText(text)
+    // How the link read before this edit began decides whether the shown text survives a re-aim; the link as it stands is where that shown text is read from.
+    const was = baselineAt(view.state, start, ac.closed ? text : null)
+    const baseline = was === null ? null : readLinkText(was)
     const reaims = ac.form === 'link' ? 'wiki' : ac.form === 'target' ? 'markdown' : null
-    // An empty destination reads as no link, so a markdown label is read from its own span.
     const shown = ac.label
       ? unescapeLabel(view.state.sliceDoc(ac.label.from, ac.label.to).trim())
       : written?.alias
