@@ -229,7 +229,9 @@ describe('PropertyPanel', () => {
       'Clear',
       'Remove',
     ])
-    expect(host.querySelector('[data-property-row="prop_site"] input')).not.toBeNull()
+    expect(
+      host.querySelector('[data-property-row="prop_site"] .value-field .cm-editor'),
+    ).not.toBeNull()
   })
 
   it('a push naming the page or a property rename re-reads it, and a sibling’s push does not', async () => {

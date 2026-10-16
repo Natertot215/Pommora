@@ -2,6 +2,7 @@
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { EditorView } from '@codemirror/view'
 import { stubEditorBridge } from '../../Testing/editorHarness'
 import { makeTree } from '../../Testing/testTree'
 import { useSession } from '../../Session/store'
@@ -34,16 +35,22 @@ describe('a Link value picked from the page menu', () => {
       }),
     )
     act(() => root.render(<ValuePickPresenter />))
-    const input = document.querySelector(
-      '[data-picker-portal]:not([data-dismissal-shield]) input',
-    ) as HTMLInputElement
+    const dom = document.querySelector(
+      '[data-picker-portal]:not([data-dismissal-shield]) .value-field .cm-editor',
+    ) as HTMLElement
+    const view = EditorView.findFromDOM(dom)!
     act(() => {
-      input.value = '[[alpha]]'
-      input.dispatchEvent(new Event('input', { bubbles: true }))
+      view.dispatch({
+        changes: { from: 0, insert: '[[alpha]]' },
+        selection: { anchor: 9 },
+        userEvent: 'input.type',
+      })
     })
-    expect(input.getAttribute('aria-invalid')).toBe('false')
+    expect(view.dom.getAttribute('aria-invalid')).toBe('false')
     act(() => {
-      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+      view.contentDOM.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }),
+      )
     })
     expect(commit).toHaveBeenCalledWith({ kind: 'link', value: '[[Alpha]]' })
   })

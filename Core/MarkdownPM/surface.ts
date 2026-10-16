@@ -39,8 +39,11 @@ function blockGestures(scope: MarkdownScope): Extension {
   }
 }
 
-/** Everything a page body, a table cell, and a Text value share: inline rendering, the block gestures their scope holds, link and footnote pointers, the paste and alias rules, typing, and the right-click menu. The surfaces differ only in what wraps this. */
-export const inlineSurface = (scope: MarkdownScope): Extension => [
+/** Everything a page body, a table cell, and a property value share: inline rendering, the block gestures their scope holds, link and footnote pointers, the paste and alias rules, typing, and the right-click menu. The surfaces differ only in what wraps this. `oneLine` is a value field's surface: it scrolls where a body wraps, and it spellchecks nothing, since a field often holds an address or a name; `remembers` off leaves alias memory to the surface's write layer. */
+export const inlineSurface = (
+  scope: MarkdownScope,
+  { oneLine = false, remembers = true } = {},
+): Extension => [
   markdownDecorations(scope),
   blockGestures(scope),
   customCaret,
@@ -49,15 +52,15 @@ export const inlineSurface = (scope: MarkdownScope): Extension => [
   citationPointer(),
   pasteLink,
   pendingTitles,
-  linkSettle.of(scope),
+  linkSettle.of({ scope, remembers }),
   linkRest,
   linkWriting,
-  EditorView.lineWrapping,
+  oneLine ? [] : EditorView.lineWrapping,
   // A cell's contentEditable=false widget host suppresses the inherited spellcheck; the rest are iOS keyboard hints.
   EditorView.contentAttributes.of({
     autocapitalize: 'sentences',
     autocorrect: 'off',
-    spellcheck: 'true',
+    spellcheck: oneLine ? 'false' : 'true',
     enterkeyhint: 'enter',
     'data-drawn-caret': '',
   }),
@@ -72,14 +75,18 @@ export const editorBase = ({
   scope,
   panes,
   formatExt,
+  oneLine,
+  remembers,
 }: {
   host: EditorHost
   scope: MarkdownScope
   panes: readonly EditorPane[]
   formatExt: Extension
+  oneLine?: boolean
+  remembers?: boolean
 }): Extension => [
   editorHost.of(host),
-  inlineSurface(scope),
+  inlineSurface(scope, { oneLine, remembers }),
   Prec.highest(
     keymap.of([
       ...paneKeys(panes.map((p) => p.ctl)),

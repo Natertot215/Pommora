@@ -6,9 +6,7 @@ import type { LinkTarget } from './linkValue'
 import {
   keepsShown,
   linkDisplayText,
-  linkEditText,
   linkValueFromEdit,
-  linkValueFromRename,
   linkPaste,
   readLinkText,
   resolveLink,
@@ -247,36 +245,28 @@ describe('linkDisplayText — no alias, the look decides', () => {
 
 describe('internal links', () => {
   it('keeps a pasted connection’s alias', () => {
-    expect(
-      linkValueFromEdit('[[Meeting Notes|Today]]', undefined, notes, undefined, false),
-    ).toEqual({
+    expect(linkValueFromEdit('[[Meeting Notes|Today]]', notes, undefined)).toEqual({
       kind: 'link',
       value: '[[Meeting Notes|Today]]',
     })
   })
   it('reads a markdown link naming a page as a connection, label and all', () => {
-    expect(
-      linkValueFromEdit('[Today](Meeting%20Notes)', undefined, notes, undefined, false),
-    ).toEqual({
+    expect(linkValueFromEdit('[Today](Meeting%20Notes)', notes, undefined)).toEqual({
       kind: 'link',
       value: '[[Meeting Notes|Today]]',
     })
   })
   it('drops an alias that merely repeats the title', () => {
-    expect(
-      linkValueFromEdit('[[Meeting Notes|meeting notes]]', undefined, notes, undefined, false),
-    ).toEqual({
+    expect(linkValueFromEdit('[[Meeting Notes|meeting notes]]', notes, undefined)).toEqual({
       kind: 'link',
       value: '[[Meeting Notes]]',
     })
   })
   it('refuses a title no page answers to', () => {
-    expect(linkValueFromEdit('[[Nowhere]]', undefined, notes, undefined, false)).toBeUndefined()
+    expect(linkValueFromEdit('[[Nowhere]]', notes, undefined)).toBeUndefined()
   })
   it('reads a markdown link over an address as the aliased URL', () => {
-    expect(
-      linkValueFromEdit('[My Site](https://example.com)', undefined, notes, undefined, false),
-    ).toEqual({
+    expect(linkValueFromEdit('[My Site](https://example.com)', notes, undefined)).toEqual({
       kind: 'link',
       value: '[My Site](https://example.com)',
     })
@@ -298,26 +288,6 @@ describe('internal links', () => {
     expect(shownProse('[[P#H]] and [x](https://a.com)')).toBe('P § H and x')
     expect(shownProse('plain text')).toBe('plain text')
     expect(shownProse('`[[Alpha]]` stays')).toBe('`[[Alpha]]` stays')
-  })
-  it('edits as itself', () => {
-    expect(linkEditText('[[Meeting Notes|Today]]')).toBe('[[Meeting Notes]]')
-  })
-  it('renames by setting the connection’s alias', () => {
-    expect(linkValueFromRename('Today', '[[Meeting Notes]]')).toEqual({
-      kind: 'link',
-      value: '[[Meeting Notes|Today]]',
-    })
-    expect(linkValueFromRename('', '[[Meeting Notes|Today]]')).toEqual({
-      kind: 'link',
-      value: '[[Meeting Notes]]',
-    })
-  })
-  it('renames a markdown page link as a wikilink, where one spells', () => {
-    expect(linkValueFromRename('Today', '[x](Meeting%20Notes#H)')).toEqual({
-      kind: 'link',
-      value: '[[Meeting Notes#H|Today]]',
-    })
-    expect(linkValueFromRename('a]b', '[[Page]]')).toEqual({ kind: 'link', value: '[a\\]b](Page)' })
   })
   it('a page rename rewrites a Link value naming the page in either syntax, and nothing else', () => {
     const rename = (value: string) => rewriteConnections(value, 'Meeting Notes', 'New Title')
@@ -341,62 +311,40 @@ describe('internal links', () => {
       heading: 'H',
     })
   })
-  it('keeps the heading through a page rename, an edit, a typed commit, and an alias rename', () => {
+  it('keeps the heading through a page rename and a typed commit', () => {
     expect(rewriteConnections('[[Meeting Notes#Decisions]]', 'Meeting Notes', 'New Title')).toBe(
       '[[New Title#Decisions]]',
     )
-    expect(linkEditText('[[Meeting Notes#Decisions]]')).toBe('[[Meeting Notes#Decisions]]')
-    expect(
-      linkValueFromEdit('[[meeting notes#Decisions]]', undefined, notes, undefined, false),
-    ).toEqual({
+    expect(linkValueFromEdit('[[meeting notes#Decisions]]', notes, undefined)).toEqual({
       kind: 'link',
       value: '[[Meeting Notes#Decisions]]',
     })
-    expect(
-      linkValueFromEdit('[Label](Meeting%20Notes#Decisions)', undefined, notes, undefined, false),
-    ).toEqual({
+    expect(linkValueFromEdit('[Label](Meeting%20Notes#Decisions)', notes, undefined)).toEqual({
       kind: 'link',
       value: '[[Meeting Notes#Decisions|Label]]',
-    })
-    expect(linkValueFromRename('Today', '[[Meeting Notes#Decisions]]')).toEqual({
-      kind: 'link',
-      value: '[[Meeting Notes#Decisions|Today]]',
     })
   })
 })
 
-describe('a connection under the Link cell’s three menu actions', () => {
+describe('a Link value retyped under the cell’s Edit', () => {
   const CONNECTION = '[[Meeting Notes|Today]]'
 
-  it('Edit opens on the page alone, as an address opens on the address', () => {
-    expect(linkEditText(CONNECTION)).toBe('[[Meeting Notes]]')
-    expect(linkEditText('[My Site](https://example.com)')).toBe('https://example.com')
-  })
-  it('Edit swaps a connection for an address, and an address back for a connection', () => {
-    expect(linkValueFromEdit('example.com', CONNECTION, notes, undefined, false)).toEqual({
+  it('writes what the field shows: an address, a connection, an aliased address', () => {
+    expect(linkValueFromEdit('example.com', notes, undefined)).toEqual({
       kind: 'link',
       value: 'https://example.com',
     })
-    expect(
-      linkValueFromEdit('example.org', '[My Site](https://example.com)', notes, undefined, true),
-    ).toEqual({
+    expect(linkValueFromEdit('[My Site](example.org)', notes, undefined)).toEqual({
       kind: 'link',
       value: '[My Site](https://example.org)',
     })
-    expect(linkValueFromEdit(CONNECTION, 'https://example.com', notes, undefined, false)).toEqual({
+    expect(linkValueFromEdit(CONNECTION, notes, undefined)).toEqual({
       kind: 'link',
       value: CONNECTION,
     })
   })
-  it('Rename opens on the alias and writes it back onto the same page', () => {
-    expect(readLinkText(CONNECTION)?.alias).toBe('Today')
-    expect(linkValueFromRename('Tomorrow', CONNECTION)).toEqual({
-      kind: 'link',
-      value: '[[Meeting Notes|Tomorrow]]',
-    })
-  })
   it('an alias the wikilink grammar cannot spell is written in the markdown form', () => {
-    expect(linkValueFromRename('Notes] done', '[[Meeting Notes]]')).toEqual({
+    expect(linkValueFromEdit('[Notes\\] done](Meeting%20Notes)', notes, undefined)).toEqual({
       kind: 'link',
       value: '[Notes\\] done](Meeting%20Notes)',
     })
@@ -411,8 +359,8 @@ describe('a Link value’s Edit commit', () => {
     { id: 'd1', title: 'Dup', path: 'A/Dup.md' },
     { id: 'd2', title: 'Dup', path: 'B/Dup.md' },
   ])
-  const commit = (raw: string, current?: string, keepTitle = false, held = true) => {
-    const next = linkValueFromEdit(raw, current, index, held ? holder : undefined, keepTitle)
+  const commit = (raw: string, held = true) => {
+    const next = linkValueFromEdit(raw, index, held ? holder : undefined)
     return next?.kind === 'link' ? next.value : next
   }
 
@@ -423,23 +371,16 @@ describe('a Link value’s Edit commit', () => {
   })
   it('a bare heading commits on a page, and is refused where nothing holds the value', () => {
     expect(commit('[[#Setup]]')).toBe('[[#Setup]]')
-    expect(commit('[[#Setup]]', undefined, false, false)).toBeUndefined()
+    expect(commit('[[#Setup]]', false)).toBeUndefined()
   })
   it('an address commits with a scheme, written in a link or bare', () => {
     expect(commit('[x](example.com)')).toBe('[x](https://example.com)')
     expect(commit('example.com')).toBe('https://example.com')
   })
-  it('a new target keeps the old alias only when the setting keeps it, and the same target always', () => {
-    expect(commit('[[Alpha]]', '[[Beta|Mine]]', true)).toBe('[[Alpha|Mine]]')
-    expect(commit('[[Alpha]]', '[[Beta|Mine]]', false)).toBe('[[Alpha]]')
-    expect(commit('https://b.com', '[x](https://a.com)', false)).toBe('https://b.com')
-    expect(commit('[[beta]]', '[[Beta|Mine]]', false)).toBe('[[Beta|Mine]]')
-  })
-  it('a new target keeps the old alias where the old value named no page', () => {
-    expect(commit('[[Alpha]]', '[[Nope|Mine]]', false)).toBe('[[Alpha|Mine]]')
-  })
-  it('a page is stored as a connection whatever the old value was', () => {
-    expect(commit('[[Alpha]]', '[x](https://a.com)')).toBe('[[Alpha]]')
+  it('writes the alias the field shows and re-applies none: the field holds the whole link', () => {
+    expect(commit('[[beta|Mine]]')).toBe('[[Beta|Mine]]')
+    expect(commit('[[Alpha]]')).toBe('[[Alpha]]')
+    expect(commit('[[Alpha|alpha]]')).toBe('[[Alpha]]')
   })
 })
 

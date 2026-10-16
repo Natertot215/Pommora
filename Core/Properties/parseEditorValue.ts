@@ -1,18 +1,17 @@
 import type { PropertyValue } from './propertyValue'
 import type { PropertyType } from './properties'
-import { linkEditText, linkValueFromEdit } from '../Connections/linkValue'
+import { linkValueFromEdit } from '../Connections/linkValue'
 import { readNumber } from './formatValue'
 import type { ConnPage, PageIndex } from '../Connections/pageIndex'
 
 interface LinkEditContext {
   index: PageIndex | undefined
   own: ConnPage | undefined
-  keepTitle: boolean
 }
 
 export function editorText(value?: PropertyValue | null): string {
   if (value?.kind === 'number') return String(value.value)
-  if (value?.kind === 'link') return linkEditText(value.value)
+  if (value?.kind === 'link') return value.value
   if (value?.kind === 'text') return value.value.split('\n', 1)[0].trim()
   return ''
 }
@@ -39,14 +38,7 @@ export function parseEditorValue(
     const n = readNumber(raw)
     return n === undefined ? undefined : { kind: 'number', value: n }
   }
-  if (type === 'link' && link)
-    return linkValueFromEdit(
-      raw,
-      current?.kind === 'link' ? current.value : undefined,
-      link.index,
-      link.own,
-      link.keepTitle,
-    )
+  if (type === 'link' && link) return linkValueFromEdit(raw, link.index, link.own)
   if (type === 'text') return textFromEdit(raw, current)
   return undefined
 }

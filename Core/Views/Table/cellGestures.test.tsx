@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ok } from '../../Contract/result'
 import { act } from 'react'
 import type { Root } from 'react-dom/client'
+import { EditorView } from '@codemirror/view'
 import type { PropertyDefinition } from '../../Properties/properties'
 import type { CollectionNode } from '../../Nexus/tree'
 import { useSession } from '../../Session/store'
@@ -385,11 +386,16 @@ describe('menu-entered editing', () => {
     await act(async () => {
       linkCell.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
     })
-    const input = linkCell.querySelector('input') as HTMLInputElement
-    expect(input.value).toBe('https://old.com')
+    const view = EditorView.findFromDOM(
+      linkCell.querySelector('.value-field .cm-editor') as HTMLElement,
+    )!
+    expect(view.state.doc.toString()).toBe('https://old.com')
     await act(async () => {
-      typeInto(input, 'example.com')
-      key(input, 'Enter')
+      view.dispatch({
+        changes: { from: 0, to: view.state.doc.length, insert: 'example.com' },
+        userEvent: 'input.type',
+      })
+      key(view.contentDOM, 'Enter')
     })
     expect(mutateSpy).toHaveBeenCalledWith({
       op: 'setProperty',

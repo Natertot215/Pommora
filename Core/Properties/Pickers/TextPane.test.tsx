@@ -11,6 +11,8 @@ import type { ConnPage } from '../../Connections/pageIndex'
 import type { PropertyValue } from '../propertyValue'
 import { TextPane } from './TextPane'
 import { writeLinkAt } from '../../MarkdownPM/Links/pendingTitle'
+import { useEditorHost } from '../../Pages/editorHost'
+import { previewConnections } from '../../Session/pageConnections'
 
 const ALPHA = { id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' }
 const ALPHA_HEADINGS = {
@@ -31,7 +33,7 @@ let host: HTMLDivElement
 let root: Root
 let reopen: () => void = () => {}
 
-// The seat as the surfaces hold it: mounted across closes, its writer retired in its own passive cleanup.
+// The seat as the surfaces hold it: mounted across closes, its writer retired in its own passive cleanup, its host built as the field builds one.
 function Seat({
   current,
   holder,
@@ -49,11 +51,13 @@ function Seat({
     },
     [],
   )
+  const editorHost = useEditorHost({ connections: useSession(() => previewConnections()) })
   return (
     <span ref={triggerRef}>
       <TextPane
         current={current}
         holder={holder}
+        host={editorHost}
         open={open}
         triggerRef={triggerRef}
         onCommit={(v) => live.current && onCommit(v)}

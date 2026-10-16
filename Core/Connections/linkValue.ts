@@ -176,37 +176,18 @@ export function serializeLink(url: string, label?: string): string {
   return label ? markdownLink(url, label) : url
 }
 
-export function linkEditText(raw: string): string {
-  const target = readLinkText(raw)
-  if (!target) return raw
-  return target.kind === 'page'
-    ? pageLinkText({ title: target.title, heading: target.heading }, 'wiki')
-    : target.url
-}
-
+/** A Link value as the field wrote it: the page it resolves to, by title, as a wikilink wherever one spells; an address under its scheme; nothing a page or an address answers for is refused. */
 export function linkValueFromEdit(
   raw: string,
-  current: string | undefined,
   index: PageIndex | undefined,
   own: ConnPage | undefined,
-  keepTitle: boolean,
 ): PropertyValue | null | undefined {
   const trimmed = raw.trim()
   if (trimmed === '') return null
   const written = readLinkText(trimmed)
   const target = resolveLink(written, index, own)
   if (!written || (target.kind !== 'page' && target.kind !== 'url')) return undefined
-  const next = resolvedTarget(written, index, own)
-  const was = current ? readLinkText(current) : null
-  const alias = next.alias ?? (keepsShown(was, next, !keepTitle, index) ? was?.alias : undefined)
-  return { kind: 'link', value: retarget('wiki', { ...next, alias }).text }
-}
-
-export function linkValueFromRename(alias: string, current: string): PropertyValue {
-  const named = alias.trim() || undefined
-  const target = readLinkText(current)
-  if (!target) return { kind: 'link', value: current }
-  return { kind: 'link', value: retarget('wiki', { ...target, alias: named }).text }
+  return { kind: 'link', value: retarget('wiki', resolvedTarget(written, index, own)).text }
 }
 
 /** What a written link shows: its alias, a markdown link's default label, a wikilink's title, heading, or `Title § Heading`, or an address under its display; no display means the raw address, so sort and filter never move when a property's look changes. */

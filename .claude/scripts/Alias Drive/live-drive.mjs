@@ -1,7 +1,7 @@
 import { readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import {
-  activate, against, ask, boxOf, check, chooseNative, click, closePanel, createPage, doubleClick, drag, escapeAll, field, frontmatter,
+  activate, against, ask, boxOf, check, chooseNative, click, closePanel, createPage, doubleClick, drag, escapeAll, frontmatter,
   launch, measure, metrics, mouseAt, mouseClick, must, nativeMenu, NEXUS, openCollection, openPage, openPane, openPanel,
   PAGE_VIEW, pageFile, pageIds, pagePath, PANE, PANE_VIEW, portalOpen, pressKey, printMetrics, read, refusal, restore, results,
   row, sel, SETTINGS_BUTTON, settles, shot, sleep, sweep, typeText, until, writeBody, writeMetrics,
@@ -138,6 +138,8 @@ const boundsOf = (cdp, S) =>
 
 // The editor a gesture types into, and where its alias slot stands.
 const CELL_VIEW = `document.querySelector('.mdpm-tbl-cell-editor .cm-content').cmTile.root.view`
+const FIELD = '.value-field'
+const FIELD_VIEW = `document.querySelector('${FIELD} .cm-content').cmTile.root.view`
 const docOf = (cdp, view) => cdp.evaluate(`${view}.state.doc.toString()`)
 const inSlot = (view, query = '') =>
   `(() => { const v = ${view}; const d = v.state.doc.toString(); const at = d.indexOf(${JSON.stringify(`[[${TARGET}|`)}); return document.activeElement === v.contentDOM && at >= 0 && v.state.selection.main.head === at + ${TARGET.length + 3 + query.length} })()`
@@ -209,15 +211,17 @@ async function group1(cdp) {
   check('group 1: an add and a forget fired together both land, and the forgotten name never returns', ok && same(aliasesOf(RACE), ['race-d']) && stays(mixed.states[META_DIR], 'race-c'), JSON.stringify(aliasesOf(RACE)))
   check('group 1: no alias edit touched a page file', Object.entries(bodies).every(([t, b]) => pageFile(t) === b))
 
-  // A Link value remembers in the renderer, once its write lands, so it is committed through the table's field.
+  // A Link value remembers in the renderer, once its write lands, so it is committed through the table's field: the one-line editor, whose `[[` opens the picker, so the whole link lands at once over the selected value and the caret rests past it; a picker left open is closed, since Enter there picks rather than commits.
   await resetAliases(cdp, TARGET, ['other'])
   await home(cdp)
   const commitLink = async (name, text, [md, shard], want, reads = text) => {
     const box = await boxOf(cdp, cell(SOURCE, LINK))
     await mouseAt(cdp, { x: box.left + 4, y: box.y })
-    await until("Drive Source's Link field", () => cdp.evaluate(`!!(${field})`))
-    await selectAll(cdp)
+    await until("Drive Source's Link field", () => cdp.evaluate(`!!document.querySelector('${FIELD} .cm-content')`))
+    await cdp.evaluate(`(() => { const v = ${FIELD_VIEW}; v.focus(); v.dispatch({ selection: { anchor: 0, head: v.state.doc.length } }) })()`)
     await typeText(cdp, text)
+    await sleep(300)
+    if (await cdp.evaluate(`!!${PICKER}`)) await pressKey(cdp, 'Escape')
     await step(cdp, `group 1: ${name}`, () => pressKey(cdp, 'Enter'), { writes: { [pagePath(SOURCE)]: md, [META_DIR]: shard }, window: 2000 })
     check(`group 1: ${name} — Drive Link reads ${reads} and the aliases ${JSON.stringify(want)}`, frontmatter(SOURCE)[LINK] === reads && same(aliasesOf(TARGET), want), JSON.stringify([frontmatter(SOURCE)[LINK], aliasesOf(TARGET)]))
   }
@@ -227,6 +231,7 @@ async function group1(cdp) {
   await commitLink('an unaliased link remembers nothing', '[[Drive Target]]', [1, 0], ['other', 'launch'])
   await commitLink('a phantom page is refused and remembers nothing', '[[Nowhere|ghost]]', [0, 0], ['other', 'launch'], '[[Drive Target]]')
   await commitLink('a respelled alias is respelled in place', '[[Drive Target|LAUNCH]]', [1, 1], ['other', 'LAUNCH'])
+  await commitLink('a new alias typed into a heading link is never saved', '[[Drive Target#Setup|zzq]]', [1, 0], ['other', 'LAUNCH'])
 }
 
 // ── Group 2 — the Aliases pane ──────────────────────────────────────────────
