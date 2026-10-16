@@ -15,9 +15,9 @@
   max-height: 320px; /* KNOB */
   overflow-y: auto;
 }
-/* A page's editor fills its host and pads for a rail the pane doesn't have. */
-.text-pane .mdpm-editor,
-.text-pane .mdpm-editor .cm-editor {
+/* A page's editor fills its host and clips, and pads for a rail neither the pane nor the field has; both size to their content. */
+:is(.text-pane, .value-field) .mdpm-editor,
+:is(.text-pane, .value-field) .mdpm-editor .cm-editor {
   height: auto;
   overflow: visible;
 }
@@ -26,15 +26,11 @@
   padding: 12px 32px 12px 14px;
   min-height: 96px; /* KNOB — room to see the placeholder */
 }
-/* The one-line field: the editor at its seat's text metrics, one line that scrolls past its edge, as the kit's fill input sits. */
+/* The one-line field: the editor at its seat's text metrics (a cell's, or the text picker's field), one line that scrolls past its edge, as the kit's fill input sits. */
 .value-field {
+  height: auto;
   width: 100%;
   min-width: 0; /* a flex item in the popover's field, so a long value scrolls inside it rather than widening it */
-}
-.value-field,
-.value-field .mdpm-editor,
-.value-field .mdpm-editor .cm-editor {
-  height: auto;
 }
 .value-field .mdpm-editor .cm-scroller {
   line-height: inherit;
@@ -47,9 +43,4 @@
 }
 .value-field .mdpm-editor .cm-line {
   padding: 0;
-}
-/* The field in a popover sits in the kit's field chrome, sized to its value between the text picker's bounds. */
-.value-popover {
-  min-width: 100px; /* KNOB */
-  max-width: 200px; /* KNOB */
 }
