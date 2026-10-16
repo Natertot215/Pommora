@@ -39,9 +39,9 @@ The work lands in nine phases, each the next layer of the system and each the la
 | | Functions, fields, plugins, components | Types | Files | Members, parameters, options | Total |
 |---|---|---|---|---|---|
 | **Removed** | 48 | 14 (ten named types and four local `Span` declarations) | 1 (`headingHash.ts`) | 25 | **88** |
-| **Added** | 41 (28 exported, 13 private) and 2 style rules | 5 | 2 (`linkSettle.ts`, `ValueEditor.tsx`) | 27 | **77** |
+| **Added** | 41 (28 exported, 13 private) and 2 style rules | 5 | 2 (`linkSettle.ts`, `ValueEditor.tsx`) | 28 | **78** |
 | **Moved** | 10 (and 2 made exported) | 1 | 1 moved, 1 renamed | | 12 |
-| **Net** | −7 | −9 | +1 | +2 | **−11 named things** |
+| **Net** | −7 | −9 | +1 | +3 | **−10 named things** |
 
 Every row of both tables in *§Concepts* is in that count; a reader can redo it from the tables alone. The named count understates the consolidation, because most of what arrives is the one owner that replaces several spellings. Counted as ways of doing one thing, before and after:
 
@@ -94,7 +94,7 @@ Sixty ways of doing thirty things disappear; every row's "after" has one named o
 | `LinkHit.embed`, `LinkHit.full`, `LinkHit.shown` • fields | The hit carries the occurrence's spans under the occurrence's names, plus the embed-line answer for both syntaxes. | `Core/Connections/scan.ts` |
 | `Token.link` • field | A link token carries the occurrence it was built from. | `Core/MarkdownPM/Engine/tokens.ts` |
 | `LinkPart` • type | The three slots a caret can sit in: `'title' \| 'heading' \| 'shown'`. | `Core/Connections/connections.ts` |
-| `openLinkAt`, `slotAt` • functions, `partOf` • private until Task 5-1 | A link still being written, read through a placeholder at the caret; the link and the slot holding the caret; the one "which slot" rule. | `Core/MarkdownPM/Input/edits.ts` |
+| `openLinkAt`, `slotAt`, `partOf` • functions | A written link whose slot at the caret was emptied, read whole, else the link still being written, read through a placeholder at the caret; the link and the slot holding the caret; the one "which slot" rule, exported for the picker. | `Core/MarkdownPM/Input/edits.ts` |
 | `targetSpan`, `mapSpans` • functions | The destination as written, title through heading, so no reader rebuilds it; the occurrence's spans mapped with its arm kept, so no reader casts. | `Core/Connections/connections.ts` |
 | `headingHash` • function (relocated) | The `§` transform, folded in as "the caret is in a page-naming title slot". | `Core/MarkdownPM/Input/edits.ts` |
 | `LabelWidget` • class, `LinkLook.label` • field, `.md-link-label` • style rule | Draws an empty-label link's default label in the editor; the look decides the label once, from what the link resolved to; the plain-links setting hides a phantom's label so the raw syntax reads as plain text. | `Core/MarkdownPM/decorations.ts`, `Links/connectionsApi.ts`, `markdown-pm.css` |
@@ -115,8 +115,8 @@ Sixty ways of doing thirty things disappear; every row's "after" has one named o
 | `linkSettle` • plugin | One instance, mounted as `linkSettle.of(scope)` (Task 8-1 adds `remembers`): settles the field, remembers, collapses emptied parts, flushes on unmount. | `Core/MarkdownPM/Links/linkSettle.ts` |
 | `pageLabel` • function | The label a link shows for the page it names, by what it resolved to: what the draw shows for an empty label and what the settle fills an emptied label with. | `Core/Connections/linkValue.ts` |
 | `Links/headingRenameSettle.ts` • file (moved) | The heading-rename settle beside the link settle. | `Core/MarkdownPM/Links/` |
-| `QuerySyntax`, `CLOSER` • type and record | The picker's syntax axis (its part axis is the grammar's `LinkPart`) and its one closer table. | `Core/MarkdownPM/Autocomplete/autocomplete.ts` |
-| `AutocompleteQuery.syntax`, `.part`, `.start`, `.end` • fields | On every query. | `Core/MarkdownPM/Autocomplete/autocomplete.ts` |
+| `QuerySyntax`, `CLOSER` • type and record (private) | The picker's syntax axis (its part axis is the grammar's `LinkPart`) and its one closer table. | `Core/MarkdownPM/Autocomplete/autocomplete.ts` |
+| `AutocompleteQuery.syntax`, `.part`, `.start`, `.end`, `.shown` • fields | On every query; `shown` where the link writes an alias or label, read as its slot reads. | `Core/MarkdownPM/Autocomplete/autocomplete.ts` |
 | `PageName` • type | A page named by title and, where the link names one, heading: the shape every rule and writer takes. | `Core/Connections/connections.ts` |
 | `aliasSpells`, `spellsAsWiki`, `repeatsTarget`, `namesTarget` • functions | What the alias slot spells; whether a wikilink spells every slot; the one drop rule; the one carry-and-never-remember rule. | `Core/Connections/connections.ts` |
 | `pageLinkText` • function | The one exported page-link writer: a wikilink where every slot spells, the markdown form otherwise; `connectionText` becomes private behind it. | `Core/Connections/connections.ts` |
@@ -131,7 +131,7 @@ Sixty ways of doing thirty things disappear; every row's "after" has one named o
 | `inlineSurface(scope, { oneLine, remembers })`, `editorBase({ …, oneLine, remembers })` • options | A field's surface and the Link field's memory exemption. | `Core/MarkdownPM/surface.ts` |
 | `EditableInput`/`RenamableLabel` `{ by }` • argument | How an edit ended, passed to `onCommit` and `onCancel`. | `UIX/Fields/EditableInput.tsx`, `RenamableLabel.tsx` |
 | `ConnectionsApi.index`, `LinkEditContext.index`, `LinkEditContext.own`, `commitEdit`'s `kept` • members and option | The host interface holds the index rather than spreading it; the Link field's parse carries the index and the holder; the picker's commit takes the one kept alias. | `Core/MarkdownPM/Links/connectionsApi.ts`, `Core/Properties/parseEditorValue.ts`, `Core/MarkdownPM/Autocomplete/autocomplete.ts` |
-| `fitsSlot`, `markdownSpans`, `embedLine`, `holdersOf`, `ancestries`, `plain`, `changedLink`, `linkStartingAt`, `labelRest` • private helpers | The grammar's slot cap; the markdown occurrence's split; the embed-line test for both syntaxes; the title index's holders map; the renderer's ancestry memo; the baseline's four-field strip; the tracker's changed-link read; the link starting exactly at an offset, which the remember and the collapse both ask; Return's rest into a markdown label. | `connections.ts`, `scan.ts`, `pageIndex.ts`, `treeIndex.ts`, `remintLedger.ts`, `linkSettle.ts`, `linkEdit.ts` |
+| `fitsSlot`, `markdownSpans`, `embedLine`, `holdersOf`, `ancestries`, `plain`, `changedLink`, `linkStartingAt`, `namedTitle` • private helpers | The grammar's slot cap; the markdown occurrence's split; the embed-line test for both syntaxes; the title index's holders map; the renderer's ancestry memo; the baseline's four-field strip; the tracker's changed-link read; the link starting exactly at an offset, which the remember and the collapse both ask; the title a heading or shown query lists against. | `connections.ts`, `scan.ts`, `pageIndex.ts`, `treeIndex.ts`, `remintLedger.ts`, `linkSettle.ts`, `linkEdit.ts` |
 
 **REMOVED**
 
@@ -229,11 +229,11 @@ Sixty ways of doing thirty things disappear; every row's "after" has one named o
   - [x] Task 4-3 · One Remove Title rule over the one baseline
   - [x] Task 4-4 · The heading-rename settle lives in `Links/`
   - [x] Review Checkpoint
-- [ ] **Phase 5** — One Picker Model
-  - [ ] Task 5-1 · The query is `{ syntax, part }` over the one reader set
-  - [ ] Task 5-2 · `commitEdit` switches on `part` and writes through the writer
-  - [ ] Task 5-3 · Return in a markdown destination, and the alias list uncapped
-  - [ ] Review Checkpoint
+- [x] **Phase 5** — One Picker Model
+  - [x] Task 5-1 · The query is `{ syntax, part }` over the one reader set
+  - [x] Task 5-2 · `commitEdit` switches on `part` and writes through the writer
+  - [x] Task 5-3 · Return in a markdown destination, and the alias list uncapped
+  - [x] Review Checkpoint
 - [ ] `[Compaction Checkpoint 2: c/pre-compaction with the MANDATE and PRINCIPLES re-instilled; stop, and continue only when re-prompted]`
 - [ ] **Phase 6** — One Set of Rules, One Writer
   - [ ] Task 6-1 · The slot check, the drop, the carry, and `pageLinkText`
@@ -265,7 +265,7 @@ Sixty ways of doing thirty things disappear; every row's "after" has one named o
 | 2 | ≈ −45 | ≈ −35 | −55 to −10 | no typed grammar diff survived; the AFTER count expands the long occurrence and reader lines; landed inside the band | 516 | 468 | −48 | −120 |
 | 3 | ≈ −28 | ≈ −20 | −35 to +5 | half typed (`c4` +3, corrected); the label task moved here from Phase 2 (+16); landed 2 above the band: the label widget with its phantom drawing, plain-setting rule, and exact click, the formatter wrapping the resolver, and `linkValueFromEdit` rebuilding a target from a resolution until Phase 6 | 344 | 351 | +7 | −113 |
 | 4 | ≈ −49 | ≈ −40 | −55 to −25 | re-typed design (`c11`, corrected); the settle's guard and flushes added; landed at −36 (`ad220222a`), then the review's fix round (`1eaef8c88`, +38) ended it 27 above the band: the settle in its own file beside its sibling (an import block), the field dropping with its opener (a wrong remember and a wrong rewrite made right), paste reading the one baseline (the ruled parity), the typing color on both syntaxes, a pasted link arming, and the writer split from the decision | 450 | 452 | +2 | −111 |
-| 5 | ≈ −26 | ≈ −60 | −90 to −16 | typed `c8` −16 kept more structure than the three-arm commit and the one-return query (about 207 lines of `autocomplete.ts` leave against about 105 formatted arriving); unverified until typed | | | | |
+| 5 | ≈ −26 | ≈ −60 | −90 to −16 | typed `c8` −16 kept more structure than the three-arm commit and the one-return query (about 207 lines of `autocomplete.ts` leave against about 105 formatted arriving); unverified until typed; landed at −74 (`252809203`), then the review's fix round (`fd49d1189`, +36: the open-link reader reading an emptied slot, the query's shown text, the heading pick writing in place, the collapse carrying the rest) ended it inside the band | 292 | 254 | −38 | −149 |
 | 6 | ≈ −17 | ≈ +2 | −10 to +12 | the rules and `follower` add about what they remove; buys the three wrong results made right | | | | |
 | 7 | ≈ 0 | ≈ +5 | 0 to +10 | `linkKeysOf`, the dedupe, and the `key` column; buys the staleness fix | | | | |
 | 8 | ≈ +24 | ≈ +50 | +35 to +65 | the one-line mode, seat, and commit lifecycle; buys the ruled one surface; measured on a worktree before commit | | | | |
@@ -1970,222 +1970,179 @@ export function retarget(syntax: 'wiki' | 'markdown', next: LinkTarget, into?: {
 
 ### Phase 5 — One Picker Model
 
-**GOAL:** The picker's query is one flat record keyed by syntax and part, with the link's start and end on every query; its rows, its closer, and its commit each switch on those two axes; a page pick writes the whole link through the writer with the shown text decided once; an opened slot's caret is read back from the written text through the grammar; markdown picks open the alias list as wikilink picks do; Return in a markdown destination rests in the label; and the alias list stops truncating. Seven form names, three predicates, the `label` side span, `closerOf`, the hook's `linkStart` read, and the hand-built markdown retarget go. This phase lands on Phase 4's baseline and Phase 2's readers.
+**GOAL:** The picker's query is one flat record keyed by syntax and part, with the link's start, end, and shown text on every query; its rows, its closer, and its commit each switch on those two axes; a page pick writes the whole link through the writer with the shown text decided once; an opened slot's caret is read back from the written text through the grammar; markdown picks open the alias list as wikilink picks do; Return in a markdown destination rests in the label; and the alias list stops truncating. Seven form names, three predicates, the `label` side span, `closerOf`, the hook's Phase 4 interim, and the hand-built markdown retarget go. This phase lands on Phase 4's baseline and Phase 2's readers, and leaves the open-link reader reading an emptied slot of a written link as that whole link.
 
 #### Task 5-1
 
-**TASK:** `AutocompleteQuery` becomes `{ syntax, part, start, end, from, to, query, closed, title? }` built from `linkAt ?? openLinkAt` and `partOf`; `listsPages`, `listsHeadings`, `listsAliases`, `closerOf`, `ConnectionForm`, and the hook's interim `linkStart` read (Task 4-3) go; `AutocompletePane` and `acQuery` read `part` and `syntax`.
+**TASK:** `AutocompleteQuery` becomes `{ syntax, part, start, end, from, to, query, closed, title?, shown? }` built from `linkAt ?? openLinkAt` and `partOf` (exported from here); `listsPages`, `listsHeadings`, `listsAliases`, `closerOf`, `ConnectionForm`, `QueryBase`, the `label` side span, and the hook's interim go; `AutocompletePane`, `acQuery`, and the hook read `part` and `syntax`.
 
-**NOW:** `autocompleteQuery` (`autocomplete.ts:55-167`) branches seven ways over three readers and returns a union whose `label` arm alone carries `end`; `listsPages`/`listsHeadings`/`listsAliases` (`:45-53`) and `closerOf` (`:218-231`) translate the form back into axes at every consumer (`useConnectionAutocomplete.ts:81,84,116,134,149,155,188,234`, `AutocompletePane.tsx:26,56-63,87-88`, `acQuery.ts:8,27-34`).
+**NOW (at BASELINE):** `autocompleteQuery` (`autocomplete.ts:55-167`) branches seven ways over three readers and returns a union whose `label` arm alone carries `end`; `listsPages`/`listsHeadings`/`listsAliases` (`:45-53`) and `closerOf` (`:218-231`) translate the form back into axes at every consumer (`useConnectionAutocomplete.ts:81,84,116,134,149,155,188,234`, `AutocompletePane.tsx:26,56-63,87-88`, `acQuery.ts:8,27-34`).
 
 **CHANGE**
 
-- [ ] Rewrite `autocomplete.test.ts`'s `form` assertions (`:35` to `:482`, `:494`) and `acQuery.test.ts:34,105,111,167`, `mdLinkTarget.test.tsx:235` to `{ syntax, part }`; every `toEqual` query object gains `start` and `end`; `:210-217,227-231` read `shown` for `label`; `:466`'s name follows. Add: a markdown label query carries `syntax: 'markdown', part: 'shown'`; a `§` run carries `syntax: 'prose', part: 'heading'`. Watch them fail.
-- [ ] Write the query and `autocompleteQuery` as below; replace the predicates inline (`ac.part === 'title'` and so on) at every consumer; `CLOSER: Record<Syntax, string>` replaces `closerOf`; `sameQuery` compares `syntax`, `part`, `start`, `end`, `from`, `to`, `closed`, `query`, `title`; the hook's commit reads `ac.start` and `ac.end` where Task 4-3 left `ac.label ? ac.label.from - 1 : ac.from` and `ac.to`, `ac.syntax` where it left `reaims`, and the shown text from the query's occurrence (`openLinkAt`'s placeholder keeps an empty destination readable) where it left the label-span read.
+- [x] `autocomplete.test.ts`, `acQuery.test.ts`, and `mdLinkTarget.test.tsx` assert `{ syntax, part }` with `start`, `end`, and `shown` where one is written; a markdown label query carries `syntax: 'markdown', part: 'shown'`; a `§` run carries `syntax: 'prose', part: 'heading'`; `[[Pa[x](y)` reads as the grammar yields it (a markdown link labeled `[Pa[x`), pinned as a fact of the grammar.
+- [x] The query and `autocompleteQuery` as below; the predicates inline (`ac.part === 'title'` and so on) at every consumer; `CLOSER` (private to `autocomplete.ts`) replaces `closerOf`; `sameQuery` compares `syntax`, `part`, `start`, `end`, `from`, `to`, `closed`, `query`, `title`, `shown`.
+- [x] `openLinkAt` reads an emptied slot of a written link as that whole link (`[[Old|Mine]]` with `Old` deleted read as `[[Alpha]]|Mine]]` after a pick, since the grammar refuses the empty title and the reader kept only the text before the caret); its first read splices the holder into the whole line and keeps the occurrence only when the holder stands alone in its slot, else it falls back to the text before the caret plus a closer. `edits.test.ts` pins `[[|Mine]]`, `[x]()`, `[]()`, and `[[` typed before `[[B]]` reading only the open link.
 
 **AFTER**
 
-```Core/MarkdownPM/Autocomplete/autocomplete.ts diff
-@@ shapes @@
--type ConnectionForm = 'link' | 'alias' | 'target' | 'label' | 'heading' | 'fragment' | 'section'
--interface QueryBase { query; from; to; closed; title?; label?: { from; to } }
--/** A markdown link's label lies before its destination, so its query carries the link's end, past the `)`, for a pick to rest on. */
--export type AutocompleteQuery = (QueryBase & { form: Exclude<ConnectionForm, 'label'> }) | (QueryBase & { form: 'label'; end: number })
-+export type QuerySyntax = 'wiki' | 'markdown' | 'prose'
-+/** One query, two axes: which syntax holds the caret (`prose` for a bare `§` run, always in its heading) and which part, the grammar's `LinkPart`. `start`..`end` is the whole link, `from`..`to` the part's text, and `closed` whether the closer follows the caret. */
-+export interface AutocompleteQuery {
-+  syntax: QuerySyntax
-+  part: LinkPart
-+  start: number
-+  end: number
-+  from: number
-+  to: number
-+  query: string
-+  closed: boolean
-+  title?: string
-+}
-+export const CLOSER: Record<QuerySyntax, string> = { wiki: ']]', markdown: ')', prose: '' }
--export const listsPages = …
--export const listsHeadings = …
--export const listsAliases = …
-@@ autocompleteQuery @@
- export function autocompleteQuery(scan: DocScan, caret: number, armed?: number): AutocompleteQuery | null {
-   if (inCodeAt(scan, caret)) return null
-   const i = lineIndexAt(scan, caret)
-   const line = scan.lines[i]
-   const lineStart = scan.lineStarts[i]
-   const rel = caret - lineStart
-   if (armed !== undefined) {
-     … the §-run branch unchanged except …
--      return { query, from: armed + 1, to: caret, form: 'section', closed: true, title: '' }
-+      return { syntax: 'prose', part: 'heading', start: armed, end: caret, query, from: armed + 1, to: caret, closed: true, title: '' }
-   }
--  … the seven branches over connectionAt, openConnectionAt, and markdownLinkAt …
-+  if (!line.includes('[[') && !line.includes('](')) return null
-+  const closedLink = linkAt(scan, caret)
-+  const o = closedLink ?? openLinkAt(scan, caret)
-+  const part = o && partOf(o, rel)
-+  if (!o || !part) return null
-+  const closed = closedLink !== null || line.startsWith(CLOSER[o.syntax], rel)
-+  const start = lineStart + o.full[0]
-+  const end = lineStart + o.full[1] + (!closedLink && closed ? CLOSER[o.syntax].length : 0)
-+  const slot = part === 'title' ? o.title : part === 'heading' ? o.heading! : o.shown!
-+  const raw = line.slice(slot[0], slot[1])
-+  // A wikilink's slots read as written; a markdown destination decodes and its label unescapes. A heading or shown slot lists against the written title, and a markdown shown slot lies before its destination, which is why every query carries the link's end.
-+  const query = o.syntax === 'wiki' ? raw : part === 'shown' ? unescapeLabel(raw) : decodeLinkTarget(raw)
-+  const title = o.syntax === 'wiki' ? line.slice(...o.title) : (targetTitle(line.slice(...o.title), o.heading !== null) ?? '')
-+  return { syntax: o.syntax, part, start, end, from: lineStart + slot[0], to: lineStart + slot[1], query, closed, ...(part === 'title' ? {} : { title }) }
- }
+```Core/MarkdownPM/Autocomplete/autocomplete.ts (landed)
+export type QuerySyntax = 'wiki' | 'markdown' | 'prose'
+/** One query, two axes: which syntax holds the caret (`prose` for a bare `§` run, always in its heading) and which part, the grammar's `LinkPart`. `start`..`end` is the whole link, `from`..`to` the part's text, `closed` whether the closer follows the caret, and `shown` the link's alias or label, read as the query reads its slot, where one is written. */
+export interface AutocompleteQuery { syntax: QuerySyntax; part: LinkPart; start: number; end: number; from: number; to: number; query: string; closed: boolean; title?: string; shown?: string }
+const CLOSER: Record<QuerySyntax, string> = { wiki: ']]', markdown: ')', prose: '' }
+
+/** The title a link's heading or shown slot lists against: a wikilink's as written, a markdown destination's decoded. */
+function namedTitle(line: string, o: LinkOccurrence): string
+
+export function autocompleteQuery(scan: DocScan, caret: number, armed?: number): AutocompleteQuery | null {
+  … the §-run branch returns { syntax: 'prose', part: 'heading', start: armed, end: caret, from: armed + 1, to: caret, query, closed: true, title: '' } …
+  const closedLink = linkAt(scan, caret)
+  const o = closedLink ?? openLinkAt(scan, caret)
+  const part = o && partOf(o, rel)
+  if (!o || !part) return null
+  const slot = o[part]!
+  const raw = line.slice(slot[0], slot[1])
+  const query = o.syntax === 'wiki' ? raw : part === 'shown' ? unescapeLabel(raw) : decodeLinkTarget(raw)
+  const shown = o.shown ? line.slice(o.shown[0], o.shown[1]).trim() : ''
+  return {
+    syntax: o.syntax, part, start: lineStart + o.full[0], end: lineStart + o.full[1], from: lineStart + slot[0], to: lineStart + slot[1], query,
+    closed: closedLink !== null || o.full[1] > rel,
+    ...(part === 'title' ? {} : { title: namedTitle(line, o) }),
+    ...(shown ? { shown: o.syntax === 'wiki' ? shown : unescapeLabel(shown) } : {}),
+  }
+}
 ```
 
-```Core/MarkdownPM/Autocomplete/AutocompletePane.tsx diff
--import { type AcRow, type HeadingRow, listsHeadings, listsPages } from './autocomplete'
-+import type { AcRow, HeadingRow } from './autocomplete'
--const CLOSED: AcState = { query: '', from: 0, to: 0, form: 'link', closed: true, ...CLOSED_GEOMETRY }
-+const CLOSED: AcState = { syntax: 'wiki', part: 'title', start: 0, end: 0, from: 0, to: 0, query: '', closed: true, ...CLOSED_GEOMETRY }
--  const linksPages = listsPages(v.ac.form)
--  const headingForm = listsHeadings(v.ac.form)
-+  const linksPages = v.ac.part === 'title'
-+  const headingForm = v.ac.part === 'heading'
+```Core/MarkdownPM/Input/edits.ts (landed)
+const SLOT_HOLDER = '\u0000'
+/** The link the grammar can't read at `at` because its slot there is empty: a written link whose slot at the caret was emptied, read whole with that slot empty, else the link still being written before `at`, as it reads once closed, its slot cut back to the caret. */
+export function openLinkAt(scan: DocScan, at: number): LinkOccurrence | null
+  // the whole line with the holder at the caret, kept where partOf's slot is exactly [rel, rel + 1] and mapped back; else the head plus a closer, clamped to the head
+export function partOf(o: LinkOccurrence, rel: number): LinkPart | null
 ```
 
-A wikilink's empty opener (`[[` just typed) reads through `openLinkAt`'s placeholder as a `title` query with an empty `query`, which replaces HEAD's special case at `autocomplete.ts:87-96`.
+Cost: `autocompleteQuery` is one `linkAt`, one `openLinkAt` where no closed link holds the caret, and one `partOf`, as at BASELINE; `openLinkAt` pays one more occurrence walk over the line than before where the caret sits in no closed link on a line holding link syntax (the typing-a-link case with Pair Brackets off, or an emptied slot).
 
 **VERIFY**
 
-- [ ] `autocomplete.test.ts`, `acQuery.test.ts`, `AutocompletePane` tests, and `mdLinkTarget.test.tsx` pass.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes (`form` appears nowhere; no consumer re-derives an axis from a name).
+- [x] `autocomplete.test.ts`, `acQuery.test.ts`, `edits.test.ts`, and `mdLinkTarget.test.tsx` pass.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes (`form` appears nowhere; no consumer re-derives an axis from a name).
 
 #### Task 5-2
 
-**TASK:** `commitEdit` becomes three arms switched on `part` (prose falling in `heading`): a page pick, and a heading pick that opens the alias slot, write the whole link through `retarget` with the shown text decided once by the hook from the link as it stands, an opened slot's anchor is read back from the written text through `linkOccurrences`, a heading pick inserts and never applies Remove Title, and a shown pick inserts the escaped label or raw alias plus the closer when the link is unclosed, every finishing pick resting past the closer; the alias-stage gate is the same in both syntaxes.
+**TASK:** `commitEdit` becomes three arms switched on `part` (prose falling in `heading`): a page pick writes the whole link through `retarget` with the shown text decided once by the hook from the query, an opened slot's anchor read back from the written text through `wholeLink`; a heading pick inserts in place and never re-aims (one opening the alias slot inserts the heading and seats the caret in the empty label or after the pipe it writes); a shown pick inserts the escaped label or raw alias; every finishing pick rests past the closer through one anchor rule; the alias-stage gate is one rule in both syntaxes.
 
-**NOW:** `commitEdit` (`autocomplete.ts:233-320`) is eight arms: two opening-slot arms hand-build `[[value#…]]` and `[[value|]]`, the `link` arm calls `retarget`, the `target` arm hand-encodes the destination and decides the label fill itself (`:303-319`), the `label`/`alias`/`heading` arms each compute their own anchor, and a closed heading or target pick rests past the closer (`:296-299,316-318`). The alias stage opens for `link` and `heading` forms only (`useConnectionAutocomplete.ts:154-159`), so a markdown pick never offers aliases, and a heading pick into a link already showing an alias would write a second pipe; `connectionCommit.test.tsx:315` row 1 pins the markdown pick resting past the link, `:505-516` pins the heading pick filling an empty label at pick time, and `:290-302` pins `[x]` + `(Al` picked as `[x](Alpha)`, a link that never closed before the pick.
+**NOW (at BASELINE):** `commitEdit` (`autocomplete.ts:233-320`) is eight arms: two opening-slot arms hand-build `[[value#…]]` and `[[value|]]`, the `link` arm calls `retarget`, the `target` arm hand-encodes the destination and decides the label fill itself (`:303-319`), the `label`/`alias`/`heading` arms each compute their own anchor, and a closed heading or target pick rests past the closer (`:296-299,316-318`). The alias stage opens for `link` and `heading` forms only (`useConnectionAutocomplete.ts:154-159`), so a markdown pick never offers aliases, and a heading pick into a link already showing an alias would write a second pipe.
 
 **CHANGE**
 
-- [ ] In `autocomplete.test.ts`, drop `:203` (the partial edit); make `:224,237` slice the whole link; add markdown parity cases for every wiki case (a page pick into `[x](Old)` with Remove Title on and `Old` resolved writes `[Gamma](Gamma)`; with `Old` phantom writes `[x](Gamma)`; a pick opening the heading slot writes `[](Gamma#)` with the caret after `#`; a pick opening the alias slot writes `[](Gamma)` with the caret in the label; a heading pick opening the alias slot into `[](Gamma#Se)` writes `[](Gamma#Setup)` with the caret in the label and into `[[Gamma#Se]]` writes `[[Gamma#Setup|]]` with the caret in the slot); pin the closed heading pick resting past the closer in both syntaxes (`[[Notes#Se]]` → 15, `[x](Notes#Se)` → 16) and `[[Notes#|Mine]]` resting after the heading with `Mine` kept (`connectionCommit.test.tsx:518-540`'s text assertion gains the caret). In `connectionCommit.test.tsx:315`, row 1 reads `[](Gamma) x` with the stage open and fills to `[Gamma](Gamma) x` on leave; `:505-516` reads `[](Notes#Setup)` at the pick, drawn as `Setup`, and `[Setup](Notes#Setup)` once the caret leaves; `:290-302` holds (`x` is read from the link as it stands). Watch them fail.
-- [ ] Write `commitEdit` and the hook's commit as below.
+- [x] `autocomplete.test.ts` holds the markdown parity cases for every wiki case (a page pick into `[x](Old)` with Remove Title on and `Old` resolved writes `[Gamma](Gamma)`; with `Old` phantom writes `[x](Gamma)`; a pick opening the heading slot writes `[](Gamma#)` with the caret after `#`; a pick opening the alias slot writes `[](Gamma)` with the caret in the label; a heading pick opening the alias slot into `[](Gamma#Se)` writes `[](Gamma#Setup)` with the caret in the label, into `[[Gamma#Se]]` writes `[[Gamma#Setup|]]` with the caret in the slot, and into `[](Notes.md#Se)` keeps `Notes.md`; `[[Pa]]` with the chevron on `A|B` writes `[](A%7CB#)`); the closed heading pick rests past the closer in both syntaxes, and `[[Notes#|Mine]]` rests past the link with `Mine` kept. `connectionCommit.test.tsx` holds the retarget table with a `left` column (the stage opens exactly where leaving changes the text; `[](Gamma) x` leaves as `[Gamma](Gamma) x`), the chevron label filled a tick after the pick, the heading-then-alias-stage case in both syntaxes, `[[Old|Mine]]`/`[Mine](Old)` with the title emptied and picked keeping `Mine`, and `[sel](#Setup)`/`[[#Setup|sel]]` picked under Remove Title dropping `sel` (an own-heading link pointed).
+- [x] `commitEdit` and the hook's commit as below.
 
 **AFTER**
 
-```Core/MarkdownPM/Autocomplete/autocomplete.ts diff
- export function commitEdit(
-   ac: AutocompleteQuery,
-   value: string,
-   opts: { kept?: string; openAlias?: boolean; openHeading?: boolean },
- ): { changes: TextEdit[]; anchor: number } {
--  … eight arms, reading `opts.kept` since Task 4-3 …
-+  const syntax = ac.syntax === 'markdown' ? 'markdown' : 'wiki'
-+  const closer = ac.closed ? '' : CLOSER[ac.syntax]
-+  // A whole-link write rests past what it wrote, or inside the slot it opened, read back from the written text through the one grammar, so a writer falling back to the other syntax still seats the caret right.
-+  const whole = (next: LinkTarget & { kind: 'page' }, open?: 'heading' | 'shown'): { changes: TextEdit[]; anchor: number } => {
-+    const { text } = retarget(syntax, next)
-+    const o = open && linkOccurrences(text, () => false)[0]
-+    const anchor = ac.start + (o ? (open === 'heading' ? o.heading! : o.shown!)[0] : text.length)
-+    return { changes: [{ from: ac.start, to: ac.end, insert: text }], anchor }
-+  }
-+  switch (ac.part) {
-+    case 'title': {
-+      const open = opts.openHeading ? 'heading' : opts.openAlias ? 'shown' : undefined
-+      // Opening a slot writes it empty; a markdown link opening its heading keeps an empty label for the heading pick, since the label's default is drawn, not written.
-+      const alias = open === 'shown' ? '' : (opts.kept ?? (open === 'heading' && syntax === 'markdown' ? '' : undefined))
-+      return whole({ kind: 'page', syntax, title: value, heading: open === 'heading' ? '' : undefined, alias }, open)
-+    }
-+    case 'heading': {
-+      // A heading pick never re-aims the link, so Remove Title doesn't apply; opening the alias slot rewrites the whole link with that slot empty, in either syntax.
-+      if (opts.openAlias) return whole({ kind: 'page', syntax, title: ac.title ?? '', heading: value, alias: '' }, 'shown')
-+      const written = ac.syntax === 'markdown' ? encodeLinkTarget(value) : value
-+      return { changes: [{ from: ac.from, to: ac.to, insert: written + closer }], anchor: ac.end + written.length - (ac.to - ac.from) + closer.length }
-+    }
-+    case 'shown': {
-+      const written = ac.syntax === 'markdown' ? escapeLabel(value) : value
-+      return { changes: [{ from: ac.from, to: ac.to, insert: written + closer }], anchor: ac.end + written.length - (ac.to - ac.from) + closer.length }
-+    }
-+  }
- }
+```Core/MarkdownPM/Autocomplete/autocomplete.ts (landed)
+export function commitEdit(ac: AutocompleteQuery, value: string, opts: { kept?: string; openAlias?: boolean; openHeading?: boolean }): { changes: TextEdit[]; anchor: number } {
+  const syntax = ac.syntax === 'markdown' ? 'markdown' : 'wiki'
+  const closer = ac.closed ? '' : CLOSER[ac.syntax]
+  // A whole-link write rests past what it wrote, or inside the slot it opened, read back from the written text through the grammar, so a writer falling back to the other syntax still seats the caret right.
+  const whole = (name: { title: string; heading?: string; alias?: string }, open?: 'heading' | 'shown') => {
+    const { text } = retarget(syntax, { kind: 'page', syntax, ...name })
+    const slot = open && wholeLink(text)?.[open]
+    return { changes: [{ from: ac.start, to: ac.end, insert: text }], anchor: ac.start + (slot ? slot[0] : text.length) }
+  }
+  const inserted = (written: string) => ({ changes: [{ from: ac.from, to: ac.to, insert: written + closer }], anchor: ac.end + written.length - (ac.to - ac.from) + closer.length })
+  switch (ac.part) {
+    case 'title': {
+      const open = opts.openHeading ? 'heading' : opts.openAlias ? 'shown' : undefined
+      // Opening a slot writes it empty; a link written in markdown keeps an empty label when opening its heading, for the heading pick to fill, since the label's default is drawn, not written.
+      const asMarkdown = !(syntax === 'wiki' && connectionSpells({ title: value }))
+      const alias = open === 'shown' ? '' : (opts.kept ?? (open === 'heading' && asMarkdown ? '' : undefined))
+      return whole({ title: value, heading: open === 'heading' ? '' : undefined, alias }, open)
+    }
+    case 'heading': {
+      // A heading pick never re-aims the link, so it writes in place; one opening the alias slot finds it empty, since only a link showing nothing opens it, and a wikilink's lone empty pipe gives way to the one it writes.
+      const written = ac.syntax === 'markdown' ? encodeLinkTarget(value) : value
+      if (!opts.openAlias) return inserted(written)
+      if (ac.syntax === 'markdown') return { changes: [{ from: ac.from, to: ac.to, insert: written + closer }], anchor: ac.start + 1 }
+      return { changes: [{ from: ac.from, to: ac.end - (ac.closed ? CLOSER.wiki.length : 0), insert: `${written}|${closer}` }], anchor: ac.from + written.length + 1 }
+    }
+    case 'shown':
+      return inserted(ac.syntax === 'markdown' ? escapeLabel(value) : value)
+  }
+}
 ```
 
-```Core/MarkdownPM/Autocomplete/useConnectionAutocomplete.ts diff
-@@ commit (from Task 4-3's shape) @@
--    const start = ac.label ? ac.label.from - 1 : ac.from
--    const text = view.state.sliceDoc(start, ac.to) + (ac.label || !ac.closed ? closerOf(ac.form) : '')
-+    const text = view.state.sliceDoc(ac.start, ac.end) + (ac.closed ? '' : CLOSER[ac.syntax])
-     const written = readLinkText(text)
--    const was = baselineAt(view.state, start, ac.closed ? text : null)
-+    const was = baselineAt(view.state, ac.start, ac.closed ? text : null)
-     const baseline = was === null ? null : readLinkText(was)
--    const reaims = ac.form === 'link' ? 'wiki' : ac.form === 'target' ? 'markdown' : null
--    const shown = ac.label ? unescapeLabel(view.state.sliceDoc(ac.label.from, ac.label.to).trim()) : written?.alias
-+    const shown = written?.alias
-     const kept =
--      reaims && shown && keepsShown(baseline, { kind: 'page', syntax: reaims, title: row.value }, settings.removeTitleOnLinkChange, conn?.index)
-+      ac.part === 'title' && shown && keepsShown(baseline, { kind: 'page', syntax: ac.syntax === 'markdown' ? 'markdown' : 'wiki', title: row.value }, settings.removeTitleOnLinkChange, conn?.index)
-         ? shown
-         : undefined
--    const keepsWritten = kept !== undefined
-     const pageId = row.kind === 'page' ? row.pageId : ac.title ? page?.id : undefined
-+    // Only a page the picker offered can open an alias slot, and only a link not already showing one: a dropped alias opens it for the new page, a kept one stays.
-     const openAlias =
--      (ac.form === 'link' || ac.form === 'heading') &&
-+      (ac.part === 'title' || ac.part === 'heading') &&
-+      ac.syntax !== 'prose' &&
--      !opts.openHeading && !keepsWritten && settings.aliasPickerOnCommit && host.aliases.list(pageId ?? '').length > 0
-+      !opts.openHeading && !(ac.part === 'title' ? kept : written?.alias) && settings.aliasPickerOnCommit && host.aliases.list(pageId ?? '').length > 0
-     …
-     const { changes, anchor } = commitEdit(ac, row.value, { kept, openAlias, openHeading: opts.openHeading })
+```Core/MarkdownPM/Autocomplete/useConnectionAutocomplete.ts (landed)
+    const doc = view.state.doc
+    // How the link read before this edit began decides whether the shown text survives a re-aim; the link as it stands is where that shown text is read from.
+    const was = baselineAt(view.state, ac.start, ac.closed ? doc.sliceString(ac.start, ac.end) : null)
+    const baseline = was === null ? null : readLinkText(was)
+    const kept =
+      ac.shown && (ac.part !== 'title' || keepsShown(baseline, { kind: 'page', syntax: ac.syntax === 'markdown' ? 'markdown' : 'wiki', title: row.value }, settings.removeTitleOnLinkChange, conn?.index))
+        ? ac.shown
+        : undefined
+    const pageId = row.kind === 'page' ? row.pageId : ac.title ? page?.id : undefined
+    // A page or heading pick opens the alias stage on a link left showing nothing, for a page that remembers aliases.
+    const openAlias = ac.part !== 'shown' && !opts.openHeading && !kept && settings.aliasPickerOnCommit && pageId !== undefined && host.aliases.list(pageId).length > 0
+    …
+    const { changes, anchor } = commitEdit(ac, row.value, { kept, openAlias, openHeading: opts.openHeading })
 ```
 
-The one finishing-anchor rule, `ac.end + delta + closer`, serves a closed and an unclosed link alike, since an unclosed query's `end` is the caret; a markdown heading pick into `[](Page#…)` leaves the label empty for the drawn default label (Task 3-4), and `emptied` writes it when the caret leaves; the `whole` read-back needs Task 2-1's present-but-empty spelling in both writers.
+The one finishing-anchor rule, `ac.end + delta + closer`, serves a closed and an unclosed link alike, since an unclosed query's `end` is the caret; a markdown heading pick into `[](Page#…)` leaves the label empty for the drawn default label (Task 3-4), and `emptied` writes it when the caret leaves, carrying the pick's rest past the filled label (Task 4-2's collapse adds `restedOnLink` mapped through its changes where `linkRest` holds one); a `§` run has no page, so the alias stage never opens for it.
 
 **VERIFY**
 
-- [ ] `autocomplete.test.ts` and `connectionCommit.test.tsx` pass, markdown parity cases included; `connectionCommit.test.tsx:383` (the alias stage follows a heading commit when the page has aliases) holds in both syntaxes.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes (no hand-spelled `[[`, `]]`, `](`, or `)` outside `CLOSER` and the writers; `keepsShown` runs once per commit, in the hook).
+- [x] `autocomplete.test.ts` and `connectionCommit.test.tsx` pass, markdown parity cases included; the alias stage follows a heading commit in both syntaxes; `linkSettle.test.ts` pins the rest carried past a filled label.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes (no hand-spelled `[[`, `]]`, `](`, or `)` outside `CLOSER`, the readers, and the writers; `keepsShown` runs once per commit, in the hook).
 
 #### Task 5-3
 
 **TASK:** Return in a closed markdown link's destination rests the caret in its label under `aliasPickerOnCommit`; the alias list drops its 20-row cap and animates arrivals like its sibling lists.
 
-**NOW:** `commitAliasOnEnter` (`linkEdit.ts`, scoped in Task 2-5) rests past a shown slot only; `aliasRows` slices at `AC_MAX` (`autocomplete.ts:214`) where the page and heading lists don't; `AliasList` animates only drafts (`AliasList.tsx:191`'s `enterOnMount={row.draft}`).
+**NOW (at BASELINE):** `commitAliasOnEnter` (`linkEdit.ts`, scoped in Task 2-5) rests past a shown slot only; `aliasRows` slices at `AC_MAX` (`autocomplete.ts:214`) where the page and heading lists don't; `AliasList` animates only drafts (`AliasList.tsx:191`'s `enterOnMount={row.draft}`).
 
 **CHANGE**
 
-- [ ] Add to `linkEdit.test.tsx`: Return with the caret in `[x](Alpha)`'s destination and `aliasPickerOnCommit` on rests the caret at the label's end; with the setting off it breaks the line; for a URL destination it rests in the label and the picker lists nothing. Add to `aliasPicker.test.tsx`: 25 aliases all list. Watch them fail.
-- [ ] Extend `commitAliasOnEnter`: with no shown-slot rest, if the caret sits in a closed markdown link's title or heading slot and the setting is on, rest at `shown[1]`.
-- [ ] `aliasRows` loses `.slice(0, AC_MAX)`; `AliasList` reads `const entering = useEntrance(list.rows, (r) => r.key, match === 0)` and passes `enterOnMount={entering(row.key)}`.
+- [x] `linkEdit.test.tsx`: Return with the caret in `[x](Alpha)`'s destination and `aliasPickerOnCommit` on rests the caret at the label's end; with the setting off it breaks the line; for a URL destination it rests in the label and the picker lists nothing. `aliasPicker.test.tsx`: 25 aliases all list.
+- [x] `commitAliasOnEnter` reads the slot once: a shown slot rests at the closer with the `restedOnLink` effect; a closed markdown link's title or heading slot, with the setting on, rests at `shown[1]` with no effect (a rest applies only at a token's end).
+- [x] `aliasRows` loses `.slice(0, AC_MAX)`; `AliasList` reads `const entering = useEntrance(list.rows, (r) => r.key, match === 0)` and passes `enterOnMount={row.draft || entering(row.key)}`.
 
 **AFTER**
 
-```Core/MarkdownPM/Links/linkEdit.ts diff
- export const commitAliasOnEnter = (scope: MarkdownScope) => (view: EditorView): boolean => {
-   const sel = view.state.selection.main
--  const end = sel.empty ? shownEnd(view.state, sel.head, scope) : null
-+  const end = sel.empty ? (shownEnd(view.state, sel.head, scope) ?? labelRest(view.state, sel.head, scope)) : null
-   …
- }
-+// Return in a markdown destination, the moment an address is assigned, moves on to its label, where the picker lists the page's aliases; a URL lists none.
-+function labelRest(state: EditorState, at: number, scope: MarkdownScope): number | null {
-+  if (!state.facet(editorHost).settings().aliasPickerOnCommit || inRawHtml(state, at, scope)) return null
-+  const s = slotAt(docScan(state.doc), at)
-+  return s?.link.syntax === 'markdown' && s.part !== 'shown' ? s.from + s.link.shown[1] : null
-+}
+```Core/MarkdownPM/Links/linkEdit.ts (landed)
+/** Return in an alias or label lands the caret on the closer with no separating space, since the closer is the one caret position that doesn't reveal the syntax; in a written markdown destination, the moment an address is assigned, it moves on to the label, where the picker lists the page's aliases. */
+export const commitAliasOnEnter = (scope: MarkdownScope) => (view: EditorView): boolean => {
+  const { state } = view
+  const sel = state.selection.main
+  if (!sel.empty || inRawHtml(state, sel.head, scope)) return false
+  const s = slotAt(docScan(state.doc), sel.head)
+  if (s?.part === 'shown') {
+    const end = s.from + s.link.full[1]
+    view.dispatch({ selection: EditorSelection.cursor(end, 1), effects: restedOnLink.of(end) })
+  } else if (s?.link.syntax === 'markdown' && state.facet(editorHost).settings().aliasPickerOnCommit)
+    view.dispatch({ selection: EditorSelection.cursor(s.from + s.link.shown[1], 1) })
+  else return false
+  view.focus()
+  return true
+}
 ```
 
 **VERIFY**
 
-- [ ] `linkEdit.test.tsx` and `aliasPicker.test.tsx` pass; `connectionCommit.test.tsx:292-304` still sees one `edit` call (memory fires on leave).
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `linkEdit.test.tsx` and `aliasPicker.test.tsx` pass; `connectionCommit.test.tsx` still sees one `edit` call per pick-and-leave.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Review Checkpoint
 
-- [ ] One query shape, one closer record, one commit switch; `AC_MAX` bounds the page list only.
-- [ ] Wiki and markdown picks behave as mirrors in every row of `connectionCommit.test.tsx`'s tables.
-- [ ] The live drive's group 3 (`live-drive.mjs:513-516` re-expected, the two additions) passes.
-- [ ] Net Ledger: Phase 5 measured.
+- [x] One query shape, one closer record, one commit switch; `AC_MAX` bounds the page list only.
+- [x] Wiki and markdown picks behave as mirrors in every row of `connectionCommit.test.tsx`'s tables.
+- [ ] The live drive's group 3 (`live-drive.mjs` re-expected, with the two additions: a page picked behind an empty label lists every alias and leaves showing the title; Return in a markdown destination lists every alias) passes at Phase 8's live drive.
+- [x] Net Ledger: Phase 5 measured.
 
 ---
 
@@ -2202,7 +2159,7 @@ The one finishing-anchor rule, `ac.end + delta + closer`, serves a closed and an
 **CHANGE**
 
 - [ ] In `linkValue.test.ts`, rewrite `:334-339` ("an alias that would break the grammar is refused rather than written") to expect `[Notes\] done](Meeting%20Notes)`, `:252-257` to expect Rename writing `[[Meeting Notes#H|Today]]`, `:391-401` to the default label `[H\]](P#H%5D)`; add `linkValueFromRename('a]b', '[[Page]]')` → `[a\]b](Page)`, a 256-character heading falling back, `[[Alpha#Intro|my notes]]` remembering nothing (`assignValue.test.ts:290-298` gains it; `:292` gets a page-only fixture `[[Alpha|old]]` to keep pinning "already showed"), and `pageLinkText({ title: 'Page', heading: 'Intro', shown: 'Intro' }, 'wiki')` keeping its alias (the drop asks `Page#Intro`). In `connections.test.ts:86-112`, the `connectionText` cases read `pageLinkText(…, 'wiki')`, since `connectionText` is private from here, and add `expressibleInLink('x'.repeat(256))` false and `pageLinkText({ title: 'A', shown: 'a]b' }, 'wiki')` → `[a\]b](A)`. In `connectionCommit.test.tsx:488,502`, `[x](Notes#Setup)` remembers nothing. Watch them fail.
-- [ ] Write the rules and the writer as below; sweep every `connectionText` caller to `pageLinkText`: `retarget`'s page arm → `pageLinkText(next, syntax)`; `commitEdit`'s `whole` → `pageLinkText(next, syntax)` in place of `retarget(syntax, next)`, its parameter typed `PageName & { shown?: string }` and its callers passing `shown` where they passed `alias`; `pageMenuActions.ts:54`, `gripMenu.ts:92` (`linkable` becomes `title !== null`), `LinkCell.tsx:48`, and `linkEditText` (until Task 8-2 deletes it) → `pageLinkText({ title, heading }, 'wiki')`; `adoptFile.ts:53,64` and `assetWrite.ts:31` → `pageLinkText({ title }, 'wiki')` (a file title the wikilink grammar can't spell was a broken `[[…]]` today and is a readable markdown link now); `embeddableTarget` (`Actions/pasteAsMenu.ts:43-47`) keeps `expressibleInLink`, since it asks whether a bare title can embed, not which syntax to write; `headingRows` drops its `expressibleInLink` filter.
+- [ ] Write the rules and the writer as below; sweep every `connectionText` caller to `pageLinkText`: `retarget`'s page arm → `pageLinkText(next, syntax)`; `commitEdit`'s `whole` → `pageLinkText({ ...name, shown: name.alias }, syntax)` in place of `retarget(syntax, { kind: 'page', syntax, ...name })`, and its `asMarkdown` test asks `spellsAsWiki` where it asked `connectionSpells`, its parameter typed `PageName & { shown?: string }` and its callers passing `shown` where they passed `alias`; `pageMenuActions.ts:54`, `gripMenu.ts:92` (`linkable` becomes `title !== null`), `LinkCell.tsx:48`, and `linkEditText` (until Task 8-2 deletes it) → `pageLinkText({ title, heading }, 'wiki')`; `adoptFile.ts:53,64` and `assetWrite.ts:31` → `pageLinkText({ title }, 'wiki')` (a file title the wikilink grammar can't spell was a broken `[[…]]` today and is a readable markdown link now); `embeddableTarget` (`Actions/pasteAsMenu.ts:43-47`) keeps `expressibleInLink`, since it asks whether a bare title can embed, not which syntax to write; `headingRows` drops its `expressibleInLink` filter.
 
 **AFTER**
 
@@ -3250,4 +3207,7 @@ The check is one map lookup per `value` row on a graph push or a registry change
 - Task 4-3 typed "pointed" as a page or address resolution, which left a link to this document's own heading (`[[#Intro|x]]`) keeping its alias under Remove Title on a re-aim; landed as any resolution, so an own-heading link drops its alias as every other resolved link does (`linkValue.test.ts` pins it).
 - Task 4-3 disclosed that paste compares against the link as it stands, so a title retyped by hand and then pasted over kept its alias where the picker dropped it; landed reading the field's `was` through `baselineAt`, since `paste(view, …)` holds the state, so the picker and paste decide from one baseline as the ruling says.
 - `retarget` decided and wrote in one, which forced paste to feed it one link for two questions (how it read before, what alias it shows now); landed as a writer alone, with `keepsShown`'s answer folded into `next.alias` by each caller, so the three writer-only callers pass no `null, false`.
+- Phase 5's reviews found `openLinkAt` reading only the text before the caret, so a pick into a written link whose title had been emptied (`[[Old|Mine]]` with `Old` deleted) wrote `[[Alpha]]|Mine]]`, a wrong result from before BASELINE that the markdown twin never had; landed reading the whole line with the holder at the caret first, kept only where the holder stands alone in its slot, so the query's `closed` and `end` come from the occurrence and the mirror holds. One more occurrence walk per caret move where no closed link holds the caret on a line with link syntax.
+- Task 5-2 wrote a heading pick that opens the alias slot through `whole`, which rewrote the title's spelling (`Notes.md` to `Notes`, `My Notes` to `My%20Notes`); landed inserting in place, since a heading pick never re-aims.
+- The settle's collapse filling a markdown label a tick after a pick cleared the pick's rest, so the link showed raw syntax where its wiki twin read finished; landed carrying `linkRest` through the collapse's changes (the field itself is Frozen and unchanged).
 - The link settle lives in `Links/linkSettle.ts` beside `headingRenameSettle.ts` rather than across `linkReveal.ts` and `linkEdit.ts`, and `linkWithin` beside the other editor readers in `Input/edits.ts`; a reader finds each settle in one file. Phase 4's count ends 27 above its band for this and the fixes the ledger row names.
