@@ -1,11 +1,9 @@
 import { text } from '@pommora/uix/Theme'
-import { cx } from '@pommora/uix/Utilities/cx'
 import type { SelectionState } from '../../Navigation/navRef'
 import { BoardLock } from '../../Tiles/BoardLock'
 import { useSession, useSetting } from '../../Session/store'
 import { subfieldCrumbs } from './crumbs'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
-import { overScrollEllipsis } from '@pommora/uix/Interactions/OverScroll'
 import { DEFAULT_ITEMS, SubfieldItem, type SubfieldPage } from './subfieldItems'
 import './subfield.css'
 
@@ -50,8 +48,8 @@ export function Subfield({
           segments={crumbs}
           chevronSize="control"
           overScroll={false}
+          truncate
           className="subfield-crumbs"
-          segmentClassName={cx('subfield-crumb', overScrollEllipsis)}
         />
       )}
       <div className="subfield-items">
