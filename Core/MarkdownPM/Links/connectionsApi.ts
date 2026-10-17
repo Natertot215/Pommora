@@ -22,7 +22,7 @@ export interface ConnectionsApi {
 }
 
 // A fragment is missing only when the named page's heading keys are known and lack it; a page absent from the map reads as present. A bare fragment reads the document's own keys, which a surface without page identity leaves undefined.
-function headingMissing(
+export function headingMissing(
   conn: ConnectionsApi | undefined,
   target: ResolvedLink,
   ownKeys: readonly string[] | undefined,

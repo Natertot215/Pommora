@@ -60,6 +60,7 @@ const CLOSED: AcState = {
   to: 0,
   query: '',
   closed: true,
+  embed: false,
   ...CLOSED_GEOMETRY,
 }
 
@@ -93,7 +94,7 @@ export function AutocompletePane({
     <MenuScrollFrame maxHeight={h}>
       {rows.map((row, i) => (
         <MenuItem
-          key={row.kind === 'page' ? row.pageId : row.value}
+          key={row.kind === 'page' ? row.page.id : row.value}
           ref={active && i === v.index ? keepInView : undefined}
           className={overScrollHost}
           active={active && i === v.index}

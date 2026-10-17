@@ -24,8 +24,6 @@ import { useResizable } from '@pommora/uix/Interactions/useResizable'
 import { type DismissalHandle, pushDismissal } from '@pommora/uix/Interactions/dismissalStack'
 import { TILE_DEFAULT_PX, TILE_GAP_PX } from '@pommora/uix/Theme/theme-vars.css'
 import { TILE_MIN_PX } from '@pommora/uix/Utilities/tileMetrics'
-import { titleFromPath } from '../../Paths/posix'
-import { normalizeTitle } from '../../Paths/caseFold'
 import '../../Tiles/tile-base.css'
 import { ZOOM } from '../../Settings/personalization'
 import { zoomStep } from '../../Tiles/tileZoom'
@@ -645,9 +643,8 @@ export function embedTileRanges(state: EditorState): readonly TileRange[] {
 export function embedExclusions(state: EditorState): Set<string> {
   const out = new Set<string>()
   const host = state.facet(embedHost)
-  // Page ranges only: a webpage label collides with real titles by construction, and would delete that page from the pool.
-  for (const t of embedTileRanges(state)) if (t.kind === 'page') out.add(normalizeTitle(t.title))
-  for (const a of host.ancestors) out.add(normalizeTitle(titleFromPath(a)))
+  for (const t of embedTileRanges(state)) if (t.kind === 'page') out.add(t.path)
+  for (const a of host.ancestors) out.add(a)
   return out
 }
 

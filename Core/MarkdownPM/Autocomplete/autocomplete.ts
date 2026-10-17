@@ -25,7 +25,7 @@ import type { EditorHost } from '../api'
 
 type QuerySyntax = 'wiki' | 'markdown' | 'prose'
 
-/** One query, two axes: which syntax holds the caret (`prose` for a bare `§` run, always in its heading) and which part, the grammar's `LinkPart`. `start`..`end` is the whole link, `from`..`to` the part's text, `closed` whether the closer follows the caret, and `shown` the link's alias or label, read as the query reads its slot, where one is written. */
+/** One query, two axes: which syntax holds the caret (`prose` for a bare `§` run, always in its heading) and which part, the grammar's `LinkPart`. `start`..`end` is the whole link, `from`..`to` the part's text, `closed` whether the closer follows the caret, `heading` a title query's written heading, for a pick to keep when the picked page holds it, and `shown` the link's alias or label, read as the query reads its slot, where one is written. */
 export interface AutocompleteQuery {
   syntax: QuerySyntax
   part: LinkPart
@@ -35,12 +35,14 @@ export interface AutocompleteQuery {
   to: number
   query: string
   closed: boolean
+  embed: boolean
   title?: string
+  heading?: string
   shown?: string
 }
 
 export type AcRow = { value: string } & (
-  | { kind: 'page'; pageId: string; location: TrailSegment[] }
+  | { kind: 'page'; page: ConnPage; location: TrailSegment[] }
   | { kind: 'heading'; level: number }
   | { kind: 'alias' }
 )
@@ -77,6 +79,7 @@ export function autocompleteQuery(
         to: caret,
         query,
         closed: true,
+        embed: false,
         title: '',
       }
   }
@@ -87,6 +90,7 @@ export function autocompleteQuery(
   const query =
     o.syntax === 'wiki' ? raw : part === 'shown' ? unescapeLabel(raw) : decodeLinkTarget(raw)
   const shown = o.shown ? line.slice(o.shown[0], o.shown[1]).trim() : ''
+  const named = namedPage(readOccurrence(line, o))
   return {
     syntax: o.syntax,
     part,
@@ -96,7 +100,9 @@ export function autocompleteQuery(
     to: lineStart + slot[1],
     query,
     closed: closedLink !== null || o.full[1] > rel,
-    ...(part === 'title' ? {} : { title: namedPage(readOccurrence(line, o))?.title ?? '' }),
+    embed: line[o.full[0] - 1] === '!',
+    ...(part === 'title' ? {} : { title: named?.title ?? '' }),
+    ...(part === 'title' && named?.heading ? { heading: named.heading } : {}),
     ...(shown ? { shown: o.syntax === 'wiki' ? shown : unescapeLabel(shown) } : {}),
   }
 }
@@ -104,7 +110,7 @@ export function autocompleteQuery(
 export const pageRow = (p: ConnPage, host: EditorHost): AcRow => ({
   kind: 'page',
   value: p.title,
-  pageId: p.id,
+  page: p,
   location: host.location(p.id),
 })
 
@@ -152,12 +158,15 @@ export function aliasRows(
 export function commitEdit(
   ac: AutocompleteQuery,
   value: string,
-  opts: { kept?: string; openAlias?: boolean; openHeading?: boolean },
+  opts: { kept?: string; heading?: string; openAlias?: boolean; openHeading?: boolean },
 ): { changes: TextEdit[]; anchor: number } {
   const syntax = ac.syntax === 'markdown' ? 'markdown' : 'wiki'
   const closer = ac.closed || ac.syntax === 'prose' ? '' : CLOSER[ac.syntax]
   // A whole-link write rests past what it wrote, or inside the slot it opened, read back from the written text through the grammar, so a writer falling back to the other syntax still seats the caret right.
-  const whole = (name: PageName & { shown?: string }, open?: 'heading' | 'shown') => {
+  const whole = (
+    name: PageName & { shown?: string; embed?: boolean },
+    open?: 'heading' | 'shown',
+  ) => {
     const text = pageLinkText(name, syntax)
     const slot = open && wholeLink(text)?.[open]
     return {
@@ -173,10 +182,13 @@ export function commitEdit(
     case 'title': {
       const open = opts.openHeading ? 'heading' : opts.openAlias ? 'shown' : undefined
       // Opening a slot writes it empty; a link written in markdown keeps an empty label when opening its heading, for the heading pick to fill, since the label's default is drawn, not written.
-      const asMarkdown = !(syntax === 'wiki' && spellsAsWiki({ title: value, shown: opts.kept }))
+      const heading = open === 'heading' ? '' : opts.heading
+      const asMarkdown = !(
+        syntax === 'wiki' && spellsAsWiki({ title: value, heading, shown: opts.kept })
+      )
       const shown =
         open === 'shown' ? '' : (opts.kept ?? (open === 'heading' && asMarkdown ? '' : undefined))
-      return whole({ title: value, heading: open === 'heading' ? '' : undefined, shown }, open)
+      return whole({ title: value, heading, shown, embed: ac.embed }, open)
     }
     case 'heading': {
       // A heading pick writes in place; one opening the alias slot finds it empty, since only a link showing nothing opens it, and a wikilink's lone empty pipe gives way to the one it writes. One dropping the shown text it re-aims away from, or a wikilink that can't spell the heading, is written whole, falling to the markdown form with its title as written.

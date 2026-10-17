@@ -60,7 +60,7 @@ function ownRows(ctx: GripMenuContext): ActionItem<GripMenuAction>[] {
   switch (ctx.kind) {
     case 'embed':
       return [
-        { label: 'Source', submenu: pickRows(ctx.tree, (title) => `source:${title}` as const) },
+        { label: 'Source', submenu: pickRows(ctx.tree, (path) => `source:${path}` as const) },
         scaleRow(ctx.zoom),
       ]
     case 'webpage':

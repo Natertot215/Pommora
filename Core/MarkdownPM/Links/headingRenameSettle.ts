@@ -2,7 +2,6 @@ import { type EditorState, MapMode, Transaction } from '@codemirror/state'
 import { ViewPlugin } from '@codemirror/view'
 import { normalizeTitle } from '../../Paths/caseFold'
 import { rewriteHeadingConnections } from '../../Connections/rewrite'
-import { pageKey } from '../../Connections/pageIndex'
 import { headingParts } from '../Engine/detect'
 import { editorHost, mirrorBody } from '../api'
 import { docHeadingKeys, docOutline, docSectionHeadings, docString } from '../docCache'
@@ -49,7 +48,9 @@ export const headingRenameSettle = ViewPlugin.define(
       const rewrite = (): void => {
         const now = view.state
         const host = now.facet(editorHost)
-        const keys = new Set([pageKey(host.pageTitle() ?? '')])
+        const page = host.page()
+        const index = host.connections()?.index
+        const keys = new Set(page && index ? index.namesOf(page.path) : [])
         const outline =
           host.settings().inPageHeadingResolution === 'automatic'
             ? docSectionHeadings(now.doc)

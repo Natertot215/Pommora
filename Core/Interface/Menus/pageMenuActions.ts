@@ -4,6 +4,7 @@ import type { NexusTree } from '../../Nexus/tree'
 import { relDirname, titleFromPath } from '../../Paths/posix'
 import { containerTargets } from '../../Actions/destinationTree'
 import { useSession } from '../../Session/store'
+import { pageIndexOf } from '../../Nexus/record'
 import { dialer } from '../../Platform/dialer'
 import { confirmDelete } from '../Confirm/confirmations'
 import { popMenu } from '../../Actions/menuActions'
@@ -51,7 +52,13 @@ export function runPageAction(
       void s.select(ref, { newTab: true, heading: page.heading })
       return true
     case 'title:copylink':
-      void dialer().ask('clipboard:write', pageLinkText({ title, heading: page.heading }, 'wiki'))
+      void dialer().ask(
+        'clipboard:write',
+        pageLinkText(
+          { title: s.tree ? pageIndexOf(s.tree).writtenName(path) : title, heading: page.heading },
+          'wiki',
+        ),
+      )
       return true
     case 'title:history':
       s.openHistory(ref)

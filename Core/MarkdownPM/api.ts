@@ -201,8 +201,8 @@ export interface EditorHost {
   /** A page's trail, for the picker's rows; the editor holds no tree, so its host answers. */
   location(pageId: string): TrailSegment[]
   openLink(url: string): void
-  // The live tree's title for the surface's own page, read fresh rather than from a capped cache; null off a page identity.
-  pageTitle(): string | null
+  // The live tree's record of the surface's own page, read fresh rather than from a capped cache; null off a page identity.
+  page(): ConnPage | null
   // The one surface whose web guests run live; nested and secondary editors show their faces.
   pageSurface?: boolean
   prefs?: {
