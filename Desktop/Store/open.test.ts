@@ -292,7 +292,7 @@ describe('upgrade in place', () => {
         stat: STAT,
       },
     ])
-    expect(queryMentions('beta')).toEqual(['Notes/A.md'])
+    expect(queryMentions(['beta'])).toEqual(['Notes/A.md'])
     expect(readScope('folds')).toEqual({ p1: ['x'] })
     closeSessionDb()
   })

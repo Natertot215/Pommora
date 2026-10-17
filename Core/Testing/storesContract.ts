@@ -78,6 +78,25 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
       store = make()
     })
 
+    it('answers every page linking any of several keys, once each, in path order', () => {
+      upsert('Notes/A.md', {
+        relations: [body('beta'), body('b/beta', 'setup')],
+        headings: [],
+        values: {},
+      })
+      upsert('Loose/B.md', {
+        relations: [body('gamma'), body('beta', 'setup')],
+        headings: [],
+        values: {},
+      })
+      upsert('Zeta/C.md', { relations: [body('delta', 'setup')], headings: [], values: {} })
+      expect(store.queryMentions(['beta', 'gamma'])).toEqual(['Loose/B.md', 'Notes/A.md'])
+      expect(store.queryHeadingMentions('setup', ['beta', 'b/beta'])).toEqual([
+        'Loose/B.md',
+        'Notes/A.md',
+      ])
+    })
+
     it('round-trips an upsert through every query', () => {
       upsert('Notes/A.md', {
         relations: [body('beta'), space('<Projects>', 'pommora')],
@@ -94,8 +113,8 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
         headings: [],
         values: { '<Projects>': ['Pommora', 'Sapphire'] },
       })
-      expect(store.queryMentions('beta')).toEqual(['Loose/B.md', 'Notes/A.md'])
-      expect(store.queryMentions('gamma')).toEqual(['Loose/B.md'])
+      expect(store.queryMentions(['beta'])).toEqual(['Loose/B.md', 'Notes/A.md'])
+      expect(store.queryMentions(['gamma'])).toEqual(['Loose/B.md'])
       expect(store.queryKeyHolders('Status')).toEqual(['Notes/A.md'])
       expect(store.queryMembers('<Projects>', 'pommora')).toEqual(['Loose/B.md', 'Notes/A.md'])
       expect(store.queryMembers('<Projects>', 'sapphire')).toEqual(['Loose/B.md'])
@@ -110,8 +129,8 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
         { relations: [body('gamma')], headings: [], values: {} },
         { mtimeMs: 2000, size: 12 },
       )
-      expect(store.queryMentions('beta')).toEqual([])
-      expect(store.queryMentions('gamma')).toEqual(['Notes/A.md'])
+      expect(store.queryMentions(['beta'])).toEqual([])
+      expect(store.queryMentions(['gamma'])).toEqual(['Notes/A.md'])
       expect(store.queryKeyHolders('Status')).toEqual([])
       expect(store.readIndexedStat('Notes/A.md')).toEqual({ mtimeMs: 2000, size: 12 })
     })
@@ -135,7 +154,7 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
         values: { Status: 'Open' },
       })
       store.removePathIndex('Notes/A.md')
-      expect(store.queryMentions('beta')).toEqual([])
+      expect(store.queryMentions(['beta'])).toEqual([])
       expect(store.queryKeyHolders('Status')).toEqual([])
       expect(store.queryMembers('<Projects>', 'pommora')).toEqual([])
       expect(store.readIndexedStat('Notes/A.md')).toBeNull()
@@ -148,7 +167,7 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
         values: { Status: 'Open' },
       })
       store.renamePathIndex('Notes/A.md', 'Notes/Alpha.md')
-      expect(store.queryMentions('beta')).toEqual(['Notes/Alpha.md'])
+      expect(store.queryMentions(['beta'])).toEqual(['Notes/Alpha.md'])
       expect(store.queryKeyHolders('Status')).toEqual(['Notes/Alpha.md'])
       expect(store.queryMembers('<Projects>', 'pommora')).toEqual(['Notes/Alpha.md'])
       expect(store.readIndexedStat('Notes/A.md')).toBeNull()
@@ -163,10 +182,10 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
       })
       expect(store.readHeadings()).toEqual({ 'Notes/A.md': OUTLINE })
       expect(store.readHeadings(['Notes/A.md'])).toEqual({ 'Notes/A.md': OUTLINE })
-      expect(store.queryHeadingMentions('beta', 'setup')).toEqual(['Notes/A.md'])
+      expect(store.queryHeadingMentions('setup', ['beta'])).toEqual(['Notes/A.md'])
       store.renamePathIndex('Notes/A.md', 'Notes/Alpha.md')
       expect(store.readHeadings()).toEqual({ 'Notes/Alpha.md': OUTLINE })
-      expect(store.queryHeadingMentions('beta', 'setup')).toEqual(['Notes/Alpha.md'])
+      expect(store.queryHeadingMentions('setup', ['beta'])).toEqual(['Notes/Alpha.md'])
     })
 
     it('a page with no headings reads as an empty list, cold and by path alike', () => {
@@ -215,12 +234,12 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
         { path: 'Notes/A.md', ...relation('value', 'beta', '', 'Notes') },
         { path: 'Notes/A.md', ...relation('value', 'beta', '', 'Ref') },
       ])
-      expect(store.queryMentions('beta')).toEqual(['Notes/A.md'])
+      expect(store.queryMentions(['beta'])).toEqual(['Notes/A.md'])
     })
 
     it('a heading-naming link answers the bare title query', () => {
       upsert('Notes/A.md', { relations: [body('beta', 'setup')], headings: [], values: {} })
-      expect(store.queryMentions('beta')).toEqual(['Notes/A.md'])
+      expect(store.queryMentions(['beta'])).toEqual(['Notes/A.md'])
     })
 
     it('returns a path once however many rows reach the target', () => {
@@ -234,14 +253,14 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
         headings: [],
         values: {},
       })
-      expect(store.queryMentions('beta')).toEqual(['Notes/A.md'])
+      expect(store.queryMentions(['beta'])).toEqual(['Notes/A.md'])
     })
 
     it('keeps space rows out of the title queries and link rows out of the member query', () => {
       upsert('Notes/A.md', { relations: [space('<Projects>', 'beta')], headings: [], values: {} })
       upsert('Loose/B.md', { relations: [body('beta')], headings: [], values: {} })
-      expect(store.queryMentions('beta')).toEqual(['Loose/B.md'])
-      expect(store.queryHeadingMentions('beta', '')).toEqual(['Loose/B.md'])
+      expect(store.queryMentions(['beta'])).toEqual(['Loose/B.md'])
+      expect(store.queryHeadingMentions('', ['beta'])).toEqual(['Loose/B.md'])
       expect(store.queryMembers('<Projects>', 'beta')).toEqual(['Notes/A.md'])
     })
 
@@ -249,20 +268,20 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
       upsert('50% Off/A.md', { relations: [body('beta')], headings: [], values: {} })
       upsert('50% Off More/B.md', { relations: [body('beta')], headings: [], values: {} })
       store.renamePathPrefixIndex('50% Off', 'Sale')
-      expect(store.queryMentions('beta')).toEqual(['50% Off More/B.md', 'Sale/A.md'])
+      expect(store.queryMentions(['beta'])).toEqual(['50% Off More/B.md', 'Sale/A.md'])
     })
 
     it('prefix-renames across an astral folder name', () => {
       upsert('Projects 🚀/A.md', { relations: [body('beta')], headings: [], values: {} })
       store.renamePathPrefixIndex('Projects 🚀', 'Launchpad')
-      expect(store.queryMentions('beta')).toEqual(['Launchpad/A.md'])
+      expect(store.queryMentions(['beta'])).toEqual(['Launchpad/A.md'])
     })
 
     it('removes a prefix, exact on a % folder name', () => {
       upsert('50% Off/A.md', { relations: [body('beta')], headings: [], values: {} })
       upsert('50% Off More/B.md', { relations: [body('beta')], headings: [], values: {} })
       store.removePathPrefixIndex('50% Off')
-      expect(store.queryMentions('beta')).toEqual(['50% Off More/B.md'])
+      expect(store.queryMentions(['beta'])).toEqual(['50% Off More/B.md'])
     })
   })
 }

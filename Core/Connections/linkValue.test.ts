@@ -305,7 +305,7 @@ describe('internal links', () => {
   })
   it('a heading rename moves a Link value aimed at that heading, alias kept, and nothing else', () => {
     const move = (value: string, to = 'Outcomes') =>
-      rewriteHeadingConnections(value, 'Meeting Notes', 'Decisions', to)
+      rewriteHeadingConnections(value, new Set(['meeting notes']), 'Decisions', to, false)
     expect(move('[[Meeting Notes#Decisions|D]]')).toBe('[[Meeting Notes#Outcomes|D]]')
     expect(move('[[Meeting Notes#Other]]')).toBe('[[Meeting Notes#Other]]')
     expect(move('[[Meeting Notes]]')).toBe('[[Meeting Notes]]')

@@ -63,7 +63,7 @@ describe('seedContentIndex', () => {
     expect(corpus.sort()).toEqual(['Loose/Note.md', 'Notes/A.md'])
     const stats = readIndexedStats()
     for (const rel of corpus) expect(stats?.has(rel)).toBe(true)
-    expect(queryMentions('target')?.sort()).toEqual(['Loose/Note.md', 'Notes/A.md'])
+    expect(queryMentions(['target'])?.sort()).toEqual(['Loose/Note.md', 'Notes/A.md'])
     expect(queryKeyHolders('Status')).toEqual(['Notes/A.md'])
     expect(stats?.has('Hidden/Secret.md')).toBe(false)
   })
@@ -80,9 +80,9 @@ describe('seedContentIndex', () => {
       await writeFile(abs(rel), 'links [[Target]]\n')
       await indexWrittenPage(root, abs(rel))
     }
-    expect(queryMentions('target')?.sort()).toEqual(['Loose/Note.md', 'Notes/A.md'])
+    expect(queryMentions(['target'])?.sort()).toEqual(['Loose/Note.md', 'Notes/A.md'])
     await moveIndexPaths(root, abs('Loose'), abs('Hidden', 'Loose'))
-    expect(queryMentions('target')).toEqual(['Notes/A.md'])
+    expect(queryMentions(['target'])).toEqual(['Notes/A.md'])
     expect(readIndexedStats()?.has('Hidden/Loose/Note.md')).toBe(false)
   })
 
@@ -93,7 +93,7 @@ describe('seedContentIndex', () => {
     )
     expect(sweepParse(`---\nID: 01BX5ZZKBKTCTAV9WEVGEMMVRZ\n---\n\n[[Target]]\n`)).toBeNull()
     await seedContentIndex(root)
-    expect(queryMentions('target')?.sort()).toEqual(['Loose/Note.md', 'Notes/A.md'])
+    expect(queryMentions(['target'])?.sort()).toEqual(['Loose/Note.md', 'Notes/A.md'])
     expect(readIndexedStats()?.has('Notes/Foreign.md')).toBe(true)
   })
 
@@ -103,17 +103,17 @@ describe('seedContentIndex', () => {
     for (const [key, row] of mem.index.relations)
       if (row.path === 'Notes/A.md' && row.kind !== 'space') mem.index.relations.delete(key)
     await seedContentIndex(root)
-    expect(queryMentions('target')).toEqual(['Loose/Note.md'])
+    expect(queryMentions(['target'])).toEqual(['Loose/Note.md'])
     await utimes(abs('Notes', 'A.md'), new Date(), new Date(Date.now() + 5000))
     await seedContentIndex(root)
-    expect(queryMentions('target')?.sort()).toEqual(['Loose/Note.md', 'Notes/A.md'])
+    expect(queryMentions(['target'])?.sort()).toEqual(['Loose/Note.md', 'Notes/A.md'])
   })
 
   it("a deleted file's rows prune on the next seed", async () => {
     await seedContentIndex(root)
     await unlink(abs('Loose', 'Note.md'))
     await seedContentIndex(root)
-    expect(queryMentions('target')).toEqual(['Notes/A.md'])
+    expect(queryMentions(['target'])).toEqual(['Notes/A.md'])
     expect(readIndexedStats()?.has('Loose/Note.md')).toBe(false)
   })
 
@@ -155,13 +155,13 @@ describe('seedContentIndex', () => {
         { text: 'Notes', level: 3 },
       ],
     })
-    expect(queryHeadingMentions('b', 'intro')).toEqual(['Notes/A.md'])
+    expect(queryHeadingMentions('intro', ['b'])).toEqual(['Notes/A.md'])
   })
 
-  it('records a bare `[[#Heading]]` as a heading mention naming its own page', async () => {
+  it('records a bare `[[#Heading]]` as a heading mention of its own page, keyed to no title', async () => {
     await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\n---\n\n## Setup\n\n[[#Setup]]\n`)
     await seedContentIndex(root)
-    expect(queryHeadingMentions('a', 'setup')).toEqual(['Notes/A.md'])
+    expect(queryHeadingMentions('setup', [''])).toEqual(['Notes/A.md'])
   })
 
   it('recognizes an external heading rename and cascades it (B and A’s own bare link both follow)', async () => {
@@ -171,8 +171,8 @@ describe('seedContentIndex', () => {
     // An external editor rewrites only the heading line — the raw file's link still reads the old heading, exactly as an outside writer leaves it.
     await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\n---\n\n## Intro\n\n[[#Setup]]\n`)
     const [seen] = await indexWrittenPage(root, abs('Notes', 'A.md'))
-    expect(seen).toEqual({ title: 'A', old: 'setup', next: 'Intro' })
-    await renameCascade(root, seen.title, { heading: seen.old, to: seen.next })
+    expect(seen).toEqual({ path: 'Notes/A.md', old: 'setup', next: 'Intro' })
+    await renameCascade(root, { path: seen.path, heading: seen.old, to: seen.next })
     // The cascade's own writes re-enter the re-scan with nothing gone, so nothing loops.
     expect(await indexWrittenPage(root, abs('Notes', 'B.md'))).toEqual([])
     expect(splitEnvelope(await readFile(abs('Notes', 'A.md'), 'utf8')).body).toBe(
@@ -214,7 +214,7 @@ describe('seedContentIndex', () => {
   it('with no database the seed stands down and queries stay null', async () => {
     installStores(NO_STORES)
     await expect(seedContentIndex(root)).resolves.toEqual({ db: null, rels: [], renames: [] })
-    expect(queryMentions('target')).toBeNull()
+    expect(queryMentions(['target'])).toBeNull()
   })
 })
 
@@ -339,7 +339,7 @@ describe('the relations a page yields', () => {
     await page('## A|B\n\n| h |\n|---|\n| §A\\|B |\n')
     expect(rowsOf('Notes/A.md')).toEqual([])
     await page('## A|B\n\n§A|B\n')
-    expect(rowsOf('Notes/A.md')).toEqual([{ kind: 'body', target: 'a', qualifier: 'a|b', key: '' }])
+    expect(rowsOf('Notes/A.md')).toEqual([{ kind: 'body', target: '', qualifier: 'a|b', key: '' }])
   })
 
   it('a wikilink inside an inline code span names nothing', async () => {
@@ -347,14 +347,14 @@ describe('the relations a page yields', () => {
     expect(rowsOf('Notes/A.md')).toEqual([])
   })
 
-  it('a link inside a value is a `value` row under its key, read under the page’s own title', async () => {
+  it('a link inside a value is a `value` row under its key, its own heading keyed to no title', async () => {
     await writeFile(
       abs('Notes', 'A.md'),
       `---\nID: ${ULID_A}\ndescription: see [[Zeta]] and [[#Part]]\n---\n\n## Part\n`,
     )
     await seedContentIndex(root)
     expect(rowsOf('Notes/A.md')).toEqual([
-      { kind: 'value', target: 'a', qualifier: 'part', key: 'description' },
+      { kind: 'value', target: '', qualifier: 'part', key: 'description' },
       { kind: 'value', target: 'zeta', qualifier: '', key: 'description' },
     ])
   })

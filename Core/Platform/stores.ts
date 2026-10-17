@@ -8,7 +8,7 @@ export interface KeyValueStore {
 // `citation` overlays rather than replaces: a link or embed inside a footnote definition emits its own kind AND a `citation` row, so a reader asking for body links sees it and a reader weighting footnotes sees it too. A `value` row is a link inside a frontmatter value, under `key`; every other kind carries `key` as ''.
 export type RelationKind = 'body' | 'citation' | 'value' | 'embed' | 'space'
 
-/** `target` is a normalized title, never a path — resolution happens at read time. `qualifier` is a normalized heading key for a heading-naming link, a folded Context key for a `space` row, and '' otherwise. */
+/** `target` is the written page half as `pageKey` reads it, a title or a path from the Nexus root or any tail of one, '' for a page's own heading, or the Space's folded title in a `space` row — resolution happens at read time. `qualifier` is a normalized heading key for a heading-naming link, a folded Context key for a `space` row, and '' otherwise. */
 export interface Relation {
   kind: RelationKind
   target: string
@@ -57,8 +57,9 @@ export interface ContentIndexStore {
   renamePathIndex(oldPath: string, newPath: string): void
   removePathPrefixIndex(dir: string): void
   renamePathPrefixIndex(oldDir: string, newDir: string): void
-  queryMentions(normalizedTitle: string): string[]
-  queryHeadingMentions(normalizedTitle: string, normalizedHeading: string): string[]
+  /** Every page linking any of `keys`. */
+  queryMentions(keys: readonly string[]): string[]
+  queryHeadingMentions(normalizedHeading: string, keys: readonly string[]): string[]
   readHeadings(paths?: string[]): Record<string, PageHeading[]>
   /** Every page holding `key` in any casing. */
   queryKeyHolders(key: string): string[]

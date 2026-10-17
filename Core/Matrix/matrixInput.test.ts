@@ -70,6 +70,19 @@ describe('matrixInput', () => {
     expect(phantom.input.connections).toEqual([])
   })
 
+  it('draws one connection for a body linking one page as a title and as a path', () => {
+    const links = [link('p2', 'Alpha'), link('p2', 'Notes/Alpha')]
+    expect(matrixConnections(makeTree(), links)).toEqual([{ from: 'p2', to: 'p1', kind: 'body' }])
+  })
+
+  it('draws a path link’s edge to the page its path names, a twin title notwithstanding', () => {
+    const links = [link('p2', 'Notes/Ideas/Alpha'), link('p2', 'Notes/Alpha')]
+    expect(matrixConnections(withTwin(), links)).toEqual([
+      { from: 'p2', to: 'p3', kind: 'body' },
+      { from: 'p2', to: 'p1', kind: 'body' },
+    ])
+  })
+
   it('relates a value row only under a key that holds links, asked of the registry at hand', () => {
     const tree = makeTree()
     const number: PropertyDefinition = { id: 'prop_rank', name: 'Rank', type: 'number' }

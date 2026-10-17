@@ -63,8 +63,8 @@ describe('the content index', () => {
         stat: STAT,
       },
     ])
-    expect(queryMentions('beta')).toEqual(['Loose/B.md', 'Notes/A.md'])
-    expect(queryMentions('gamma')).toEqual(['Loose/B.md'])
+    expect(queryMentions(['beta'])).toEqual(['Loose/B.md', 'Notes/A.md'])
+    expect(queryMentions(['gamma'])).toEqual(['Loose/B.md'])
     expect(queryKeyHolders('Status')).toEqual(['Notes/A.md'])
     expect(queryMembers('<Projects>')).toEqual(['Loose/B.md', 'Notes/A.md'])
     expect(queryMembers('<Projects>', 'sapphire')).toEqual(['Loose/B.md'])
@@ -98,8 +98,8 @@ describe('the content index', () => {
         stat: { mtimeMs: 2000, size: 12 },
       },
     ])
-    expect(queryMentions('beta')).toEqual([])
-    expect(queryMentions('gamma')).toEqual(['Notes/A.md'])
+    expect(queryMentions(['beta'])).toEqual([])
+    expect(queryMentions(['gamma'])).toEqual(['Notes/A.md'])
     expect(queryKeyHolders('Status')).toEqual([])
     expect(queryMembers('<Projects>', 'pommora')).toEqual([])
     expect(readIndexedStats()?.get('Notes/A.md')).toEqual({ mtimeMs: 2000, size: 12 })
@@ -109,9 +109,9 @@ describe('the content index', () => {
     upsertPageIndexes([
       { path: 'Notes/A.md', entry: { relations: [], headings: [], values: {} }, stat: STAT },
     ])
-    expect(queryMentions('beta')).toEqual([])
+    expect(queryMentions(['beta'])).toEqual([])
     installStores(NO_STORES)
-    expect(queryMentions('beta')).toBeNull()
+    expect(queryMentions(['beta'])).toBeNull()
     expect(queryKeyHolders('Status')).toBeNull()
     expect(queryMembers('<Projects>', 'pommora')).toBeNull()
     expect(readIndexedStats()).toBeNull()
@@ -131,9 +131,9 @@ describe('the content index', () => {
         stat: STAT,
       },
     ])
-    expect(queryMentions('beta')).toBeNull()
+    expect(queryMentions(['beta'])).toBeNull()
     markIndexReady()
-    expect(queryMentions('beta')).toEqual(['Notes/A.md'])
+    expect(queryMentions(['beta'])).toEqual(['Notes/A.md'])
   })
 
   it('a prefix rename survives an astral folder name (SQL-side character arithmetic)', () => {
@@ -149,13 +149,13 @@ describe('the content index', () => {
       },
     ])
     renamePathPrefixIndex('Projects 🚀', 'Launchpad')
-    expect(queryMentions('beta')).toEqual(['Launchpad/A.md'])
+    expect(queryMentions(['beta'])).toEqual(['Launchpad/A.md'])
   })
 
   it('a rename moves every row to the new path', () => {
     upsertPageIndexes([{ path: 'Notes/A.md', entry: TAGGED, stat: STAT }])
     renamePathIndex('Notes/A.md', 'Notes/Alpha.md')
-    expect(queryMentions('beta')).toEqual(['Notes/Alpha.md'])
+    expect(queryMentions(['beta'])).toEqual(['Notes/Alpha.md'])
     expect(queryKeyHolders('Status')).toEqual(['Notes/Alpha.md'])
     expect(queryMembers('<Projects>', 'pommora')).toEqual(['Notes/Alpha.md'])
     expect(readIndexedStats()?.has('Notes/A.md')).toBe(false)
@@ -165,7 +165,7 @@ describe('the content index', () => {
   it('a removal clears every row for the path', () => {
     upsertPageIndexes([{ path: 'Notes/A.md', entry: TAGGED, stat: STAT }])
     removePathIndex('Notes/A.md')
-    expect(queryMentions('beta')).toEqual([])
+    expect(queryMentions(['beta'])).toEqual([])
     expect(queryKeyHolders('Status')).toEqual([])
     expect(queryMembers('<Projects>', 'pommora')).toEqual([])
     expect(readIndexedStats()?.has('Notes/A.md')).toBe(false)

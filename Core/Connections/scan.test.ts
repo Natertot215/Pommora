@@ -4,10 +4,10 @@ import { describe, it, expect } from 'vitest'
 import { codeMask } from '../MarkdownPM/Engine/markdownCode'
 import { type LinkHit, linksIn, sectionRunsIn, valueLinks } from './scan'
 
-// `extractMentions` and `extractHeadingMentions` were the index's two readers of `linksIn` until the relation rows took their place. They are kept here, unchanged, so the properties they pinned keep answering over the one walker that remains.
-function extractMentions(body: string, ownTitle = ''): Set<string> {
+// `extractMentions` and `extractHeadingMentions` were the index's two readers of `linksIn` until the relation rows took their place. They are kept here so the properties they pinned keep answering over the one walker that remains.
+function extractMentions(body: string): Set<string> {
   const out = new Set<string>()
-  for (const hit of linksIn(body, ownTitle)) out.add(hit.target)
+  for (const hit of linksIn(body)) out.add(hit.target)
   return out
 }
 
@@ -16,15 +16,11 @@ interface HeadingMention {
   heading: string
 }
 
-/** Every link that names a heading, keyed the way the index stores it; a bare fragment or a bare `§` run names the containing page. */
-function extractHeadingMentions(
-  body: string,
-  ownTitle: string,
-  outline: readonly string[] = [],
-): HeadingMention[] {
+/** Every link that names a heading, keyed the way the index stores it; a bare fragment or a bare `§` run names the containing page, keyed ''. */
+function extractHeadingMentions(body: string, outline: readonly string[] = []): HeadingMention[] {
   const seen = new Set<string>()
   const out: HeadingMention[] = []
-  for (const hit of linksIn(body, ownTitle, outline)) {
+  for (const hit of linksIn(body, outline)) {
     // An unqualified link yields an empty qualifier.
     if (hit.qualifier === '') continue
     const key = `${hit.target}#${hit.qualifier}`
@@ -86,6 +82,11 @@ describe('extractMentions over linksIn', () => {
       new Set(['alpha', 'beta', 'gamma']),
     )
     expect(extractMentions('nothing here')).toEqual(new Set())
+  })
+
+  it('keys a path link by its written half, `.md` dropped, in both syntaxes', () => {
+    expect(extractMentions('[[A/Notes.md]]')).toEqual(new Set(['a/notes']))
+    expect(extractMentions('[x](A/Notes)')).toEqual(new Set(['a/notes']))
   })
 })
 
@@ -158,49 +159,47 @@ describe('sectionRunsIn', () => {
 describe('extractHeadingMentions', () => {
   it('reads a page-and-heading link into both extractors', () => {
     expect(extractMentions('[[Page#H]]')).toEqual(new Set(['page']))
-    expect(extractHeadingMentions('[[Page#H]]', '')).toEqual([{ title: 'page', heading: 'h' }])
+    expect(extractHeadingMentions('[[Page#H]]')).toEqual([{ title: 'page', heading: 'h' }])
   })
 
-  it('reads a bare fragment as the containing page, in both extractors', () => {
-    expect(extractHeadingMentions('[[#H]]', 'Own')).toEqual([{ title: 'own', heading: 'h' }])
-    expect(extractMentions('[[#H]]', 'Own')).toEqual(new Set(['own']))
+  it('keys a bare fragment as the containing page’s own heading in both extractors', () => {
+    expect(extractHeadingMentions('[[#H]]')).toEqual([{ title: '', heading: 'h' }])
+    expect(extractMentions('[[#H]]')).toEqual(new Set(['']))
   })
 
   it('reads a markdown link’s fragment the same way', () => {
-    expect(extractHeadingMentions('[Alias](Page#H)', '')).toEqual([{ title: 'page', heading: 'h' }])
+    expect(extractHeadingMentions('[Alias](Page#H)')).toEqual([{ title: 'page', heading: 'h' }])
   })
 
   it('reads a bare `§` run against the outline as a self-mention', () => {
-    expect(extractHeadingMentions('§Setup', 'Own', ['Setup'])).toEqual([
-      { title: 'own', heading: 'setup' },
-    ])
+    expect(extractHeadingMentions('§Setup', ['Setup'])).toEqual([{ title: '', heading: 'setup' }])
   })
 
   it('reads an empty heading as no heading mention', () => {
-    expect(extractHeadingMentions('[[Page#]]', '')).toEqual([])
+    expect(extractHeadingMentions('[[Page#]]')).toEqual([])
   })
 
   it('reads an empty link as no mention at all', () => {
-    expect(extractHeadingMentions('[[]]', 'Own')).toEqual([])
-    expect(extractMentions('[[]]', 'Own')).toEqual(new Set())
+    expect(extractHeadingMentions('[[]]')).toEqual([])
+    expect(extractMentions('[[]]')).toEqual(new Set())
   })
 })
 
 describe('an empty fragment', () => {
   it('[[#]] indexes nothing, and a property holding one writes no empty key', () => {
-    expect([...extractMentions('[[#]]', 'Own')]).toEqual([])
-    expect([...valueLinks({ a: '[[#]]' }, 'Own')]).toEqual([])
+    expect([...extractMentions('[[#]]')]).toEqual([])
+    expect([...valueLinks({ a: '[[#]]' })]).toEqual([])
   })
 })
 
 describe('valueLinks', () => {
-  const read = (values: Record<string, unknown>, own?: string) =>
-    [...valueLinks(values, own)].map(({ key, target, qualifier }) => ({ key, target, qualifier }))
+  const read = (values: Record<string, unknown>) =>
+    [...valueLinks(values)].map(({ key, target, qualifier }) => ({ key, target, qualifier }))
 
   it('reads a whole-value link under its key, a bare `[[#H]]` as naming the page that holds it', () => {
-    expect(read({ Related: '[[Alpha]]', a: '[[#H]]' }, 'Own')).toEqual([
+    expect(read({ Related: '[[Alpha]]', a: '[[#H]]' })).toEqual([
       { key: 'Related', target: 'alpha', qualifier: '' },
-      { key: 'a', target: 'own', qualifier: 'h' },
+      { key: 'a', target: '', qualifier: 'h' },
     ])
   })
 
@@ -211,9 +210,9 @@ describe('valueLinks', () => {
   })
 
   it('reads a sentence’s links each under the key', () => {
-    expect(read({ a: 'see [[Zeta]] and [[#Part]]' }, 'Own')).toEqual([
+    expect(read({ a: 'see [[Zeta]] and [[#Part]]' })).toEqual([
       { key: 'a', target: 'zeta', qualifier: '' },
-      { key: 'a', target: 'own', qualifier: 'part' },
+      { key: 'a', target: '', qualifier: 'part' },
     ])
   })
 
@@ -225,8 +224,8 @@ describe('valueLinks', () => {
 })
 
 describe('linksIn', () => {
-  const hits = (body: string, own = '', outline: readonly string[] = []): LinkHit[] => [
-    ...linksIn(body, own, outline),
+  const hits = (body: string, outline: readonly string[] = []): LinkHit[] => [
+    ...linksIn(body, outline),
   ]
 
   it('names the syntax each occurrence was written in', () => {
@@ -235,7 +234,7 @@ describe('linksIn', () => {
     expect(hits('an ![[Alpha]] embed').map((h) => h.syntax)).toEqual(['wiki'])
     expect(hits('```\n![[Alpha]]\n```\n- ![[Alpha]]').map((h) => h.syntax)).toEqual(['wiki'])
     expect(hits('a [label](Alpha.md) link').map((h) => h.syntax)).toEqual(['markdown'])
-    expect(hits('see §Setup', 'Own', ['Setup']).map((h) => h.syntax)).toEqual(['section'])
+    expect(hits('see §Setup', ['Setup']).map((h) => h.syntax)).toEqual(['section'])
   })
 
   it('reads the heading half of a link into the qualifier', () => {
@@ -260,7 +259,7 @@ describe('linksIn', () => {
   })
 
   it('reads a wikilink title trimmed, so a blank one before a heading names its own page', () => {
-    expect(hits('[[ #H]]', 'Own')[0]).toMatchObject({ target: 'own', qualifier: 'h' })
+    expect(hits('[[ #H]]')[0]).toMatchObject({ target: '', qualifier: 'h' })
   })
 
   it('marks a markdown link alone on its line behind a `!` as an embed, and an inline one as not', () => {
@@ -276,12 +275,12 @@ describe('linksIn', () => {
     expect(hits('[[Foo\\#Bar]]')[0]).toMatchObject({ target: 'foo\\', qualifier: 'bar' })
   })
 
-  it('yields a `§` run only under an outline, keyed to the own title, blank when none is given', () => {
-    expect(hits('see §Setup', 'Own', ['Setup'])).toEqual([
+  it('yields a `§` run only under an outline, keyed as the page’s own heading', () => {
+    expect(hits('see §Setup', ['Setup'])).toEqual([
       {
         syntax: 'section',
         named: { title: '', heading: 'Setup' },
-        target: 'own',
+        target: '',
         embed: false,
         qualifier: 'setup',
         full: [4, 10],
@@ -290,13 +289,12 @@ describe('linksIn', () => {
         shown: null,
       },
     ])
-    expect(hits('see §Setup', 'Own', [])).toEqual([])
-    expect(hits('see §Setup', '', ['Setup'])).toMatchObject([{ target: '', qualifier: 'setup' }])
+    expect(hits('see §Setup', [])).toEqual([])
   })
 
   it('honors a mask passed in rather than building its own', () => {
     const body = 'plain [[Alpha]] and [x](Beta.md) and ![[Gamma]]'
     expect(hits(body)).toHaveLength(3)
-    expect([...linksIn(body, '', [], () => true)]).toEqual([])
+    expect([...linksIn(body, [], () => true)]).toEqual([])
   })
 })

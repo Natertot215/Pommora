@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { rewriteConnections, rewriteHeadingConnections } from './rewrite'
 import { linksIn } from './scan'
+import { pageKey } from './pageIndex'
 
 describe('rewriteConnections', () => {
   it('rewrites a normalized-matching link to the new title', () => {
@@ -191,38 +192,52 @@ describe('rewriteHeadingConnections', () => {
     expect(
       rewriteHeadingConnections(
         '[Old](P#Old) [x](P#Old) [[P#Old|old]] [[P#Old|y]]',
-        'P',
+        new Set(['p']),
         'Old',
         'New',
+        false,
       ),
     ).toBe('[New](P#New) [x](P#New) [[P#New|New]] [[P#New|y]]')
   })
 
   it('a label following a heading past the slot empties rather than leaving a link the grammar refuses', () => {
     const long = 'h'.repeat(256)
-    const out = rewriteHeadingConnections('[Old](A#Old)', 'A', 'Old', long)
+    const out = rewriteHeadingConnections('[Old](A#Old)', new Set(['a']), 'Old', long, false)
     expect(out).toBe(`[](A#${long})`)
     expect([...linksIn(out)]).toHaveLength(1)
   })
 
   it('rewrites a wikilink, an aliased wikilink, and a markdown link naming the heading', () => {
-    expect(rewriteHeadingConnections('[[P#Old]]', 'P', 'Old', 'New')).toBe('[[P#New]]')
-    expect(rewriteHeadingConnections('[[P#Old|a]]', 'P', 'Old', 'New')).toBe('[[P#New|a]]')
-    expect(rewriteHeadingConnections('[a](P#Old)', 'P', 'Old', 'New')).toBe('[a](P#New)')
+    expect(rewriteHeadingConnections('[[P#Old]]', new Set(['p']), 'Old', 'New', false)).toBe(
+      '[[P#New]]',
+    )
+    expect(rewriteHeadingConnections('[[P#Old|a]]', new Set(['p']), 'Old', 'New', false)).toBe(
+      '[[P#New|a]]',
+    )
+    expect(rewriteHeadingConnections('[a](P#Old)', new Set(['p']), 'Old', 'New', false)).toBe(
+      '[a](P#New)',
+    )
   })
 
-  it('rewrites a bare fragment naming the same page when ownTitle is given', () => {
-    expect(rewriteHeadingConnections('[[#Old]]', 'P', 'Old', 'New', 'P')).toBe('[[#New]]')
+  it('rewrites a bare fragment only in the page’s own body', () => {
+    expect(rewriteHeadingConnections('[[#Old]]', new Set(['p']), 'Old', 'New', true)).toBe(
+      '[[#New]]',
+    )
+    expect(rewriteHeadingConnections('[[#Old]]', new Set(['p']), 'Old', 'New', false)).toBe(
+      '[[#Old]]',
+    )
   })
 
   it('rewrites a bare `§` run only when the outline is given', () => {
-    expect(rewriteHeadingConnections('§Old', 'P', 'Old', 'New', 'P')).toBe('§Old')
-    expect(rewriteHeadingConnections('§Old', 'P', 'Old', 'New', 'P', ['Old'])).toBe('§New')
+    expect(rewriteHeadingConnections('§Old', new Set(['p']), 'Old', 'New', true)).toBe('§Old')
+    expect(rewriteHeadingConnections('§Old', new Set(['p']), 'Old', 'New', true, ['Old'])).toBe(
+      '§New',
+    )
   })
 
   it('a run naming a longer heading keeps it when the shorter one renames', () => {
     expect(
-      rewriteHeadingConnections('§Note Taking §Note', 'P', 'Note', 'Note!', 'P', [
+      rewriteHeadingConnections('§Note Taking §Note', new Set(['p']), 'Note', 'Note!', true, [
         'Note',
         'Note Taking',
       ]),
@@ -231,37 +246,62 @@ describe('rewriteHeadingConnections', () => {
 
   it('a § inside a heading’s text rides through links and runs', () => {
     expect(
-      rewriteHeadingConnections('[[#§Intro]] [[P#§Intro]] §§Intro', 'P', '§Intro', '§Start', 'P', [
+      rewriteHeadingConnections(
+        '[[#§Intro]] [[P#§Intro]] §§Intro',
+        new Set(['p']),
         '§Intro',
-      ]),
+        '§Start',
+        true,
+        ['§Intro'],
+      ),
     ).toBe('[[#§Start]] [[P#§Start]] §§Start')
   })
 
   it('writes a heading the wikilink grammar cannot spell in the markdown form', () => {
-    expect(rewriteHeadingConnections('[[#Old]] [x](#Old)', 'P', 'Old', 'A | B', 'P')).toBe(
-      '[A | B](#A%20%7C%20B) [x](#A%20%7C%20B)',
+    expect(
+      rewriteHeadingConnections('[[#Old]] [x](#Old)', new Set(['p']), 'Old', 'A | B', true),
+    ).toBe('[A | B](#A%20%7C%20B) [x](#A%20%7C%20B)')
+    expect(rewriteHeadingConnections('[[P#Old|Mine]]', new Set(['p']), 'Old', 'A|B', false)).toBe(
+      '[Mine](P#A%7CB)',
     )
-    expect(rewriteHeadingConnections('[[P#Old|Mine]]', 'P', 'Old', 'A|B')).toBe('[Mine](P#A%7CB)')
   })
 
   it('a lone embed falling back stays an embed line in markdown form', () => {
-    expect(rewriteHeadingConnections('![[A#Old]]', 'A', 'Old', 'A|B')).toBe('![A|B](A#A%7CB)')
+    expect(rewriteHeadingConnections('![[A#Old]]', new Set(['a']), 'Old', 'A|B', false)).toBe(
+      '![A|B](A#A%7CB)',
+    )
     const hits = [...linksIn('![A|B](A#A%7CB)')]
     expect(hits.map((h) => [h.syntax, h.embed, h.qualifier])).toEqual([['markdown', true, 'a|b']])
   })
 
   it('drops an alias that comes to repeat the renamed heading’s target', () => {
-    expect(rewriteHeadingConnections('[[P#Old|P#Old]]', 'P', 'Old', 'New')).toBe('[[P#New]]')
-    expect(rewriteHeadingConnections('[[P#Old|P#New]]', 'P', 'Old', 'New')).toBe('[[P#New]]')
+    expect(rewriteHeadingConnections('[[P#Old|P#Old]]', new Set(['p']), 'Old', 'New', false)).toBe(
+      '[[P#New]]',
+    )
+    expect(rewriteHeadingConnections('[[P#Old|P#New]]', new Set(['p']), 'Old', 'New', false)).toBe(
+      '[[P#New]]',
+    )
   })
 
   it('carries a markdown label that named the heading, compared decoded', () => {
     expect(
-      rewriteHeadingConnections('[Setup Notes](P#Setup%20Notes)', 'P', 'Setup Notes', 'Usage'),
+      rewriteHeadingConnections(
+        '[Setup Notes](P#Setup%20Notes)',
+        new Set(['p']),
+        'Setup Notes',
+        'Usage',
+        false,
+      ),
     ).toBe('[Usage](P#Usage)')
-    expect(rewriteHeadingConnections('[Intro](Notes.md#Intro)', 'Notes', 'Intro', 'Setup')).toBe(
-      '[Setup](Notes.md#Setup)',
-    )
+    expect(
+      rewriteHeadingConnections(
+        '[Intro](Notes.md#Intro)',
+        new Set(['notes']),
+        'Intro',
+        'Setup',
+        false,
+      ),
+    ).toBe('[Setup](Notes.md#Setup)')
   })
 
   it('inside a table row, escapes a pipe the new heading carries and keeps the columns', () => {
@@ -269,40 +309,43 @@ describe('rewriteHeadingConnections', () => {
     expect(
       rewriteHeadingConnections(
         table('| [[P#Old]] | [x](P#Old) | §Old |'),
-        'P',
+        new Set(['p']),
         'Old',
         'A|B',
-        'P',
+        true,
         ['Old'],
       ),
     ).toBe(table('| [A\\|B](P#A%7CB) | [x](P#A%7CB) | §A\\|B |'))
-    expect(rewriteHeadingConnections(table('| [[P#Old|Old]] |'), 'P', 'Old', 'New')).toBe(
-      table('| [[P#New|New]] |'),
-    )
+    expect(
+      rewriteHeadingConnections(table('| [[P#Old|Old]] |'), new Set(['p']), 'Old', 'New', false),
+    ).toBe(table('| [[P#New|New]] |'))
   })
 
   it('leaves a link naming a different page untouched', () => {
-    expect(rewriteHeadingConnections('[[Q#Old]]', 'P', 'Old', 'New', 'P', ['Old'])).toBe(
-      '[[Q#Old]]',
-    )
+    expect(
+      rewriteHeadingConnections('[[Q#Old]]', new Set(['p']), 'Old', 'New', true, ['Old']),
+    ).toBe('[[Q#Old]]')
   })
 
   it('leaves a run that merely starts with the heading untouched', () => {
-    expect(rewriteHeadingConnections('§Older', 'P', 'Old', 'New', 'P', ['Old'])).toBe('§Older')
+    expect(rewriteHeadingConnections('§Older', new Set(['p']), 'Old', 'New', true, ['Old'])).toBe(
+      '§Older',
+    )
   })
 
   it('leaves a fenced sample untouched', () => {
     const body = '```\n[[P#Old]]\n```'
-    expect(rewriteHeadingConnections(body, 'P', 'Old', 'New')).toBe(body)
+    expect(rewriteHeadingConnections(body, new Set(['p']), 'Old', 'New', false)).toBe(body)
   })
 
   it('moves an embed of the renamed heading and leaves another heading’s embed and a fenced sample', () => {
     expect(
       rewriteHeadingConnections(
         '![[A#Setup]] ![[A#Other]]\n```\n![[A#Setup]]\n```',
-        'A',
+        new Set(['a']),
         'Setup',
         'Intro',
+        false,
       ),
     ).toBe('![[A#Intro]] ![[A#Other]]\n```\n![[A#Setup]]\n```')
   })
@@ -319,13 +362,18 @@ describe('the heading gate lets every heading reference through', () => {
       ['a\u2028b', '[[a\u2028b#Old]]', '[[a\u2028b#New]]'],
     ]
     for (const [page, body, want] of rewrites)
-      expect([body, rewriteHeadingConnections(body, page, 'Old', 'New')]).toEqual([body, want])
+      expect([
+        body,
+        rewriteHeadingConnections(body, new Set([pageKey(page)]), 'Old', 'New', false),
+      ]).toEqual([body, want])
   })
 
   it('rewrites a bare fragment and a section run on the page itself', () => {
-    expect(rewriteHeadingConnections('[[#Old]]', 'P', 'Old', 'New', 'P')).toBe('[[#New]]')
-    expect(rewriteHeadingConnections('see §Old here', 'P', 'Old', 'New', 'P', ['Old'])).toBe(
-      'see §New here',
+    expect(rewriteHeadingConnections('[[#Old]]', new Set(['p']), 'Old', 'New', true)).toBe(
+      '[[#New]]',
     )
+    expect(
+      rewriteHeadingConnections('see §Old here', new Set(['p']), 'Old', 'New', true, ['Old']),
+    ).toBe('see §New here')
   })
 })

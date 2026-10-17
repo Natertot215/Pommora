@@ -106,7 +106,7 @@ describe('the content index over SQLite', () => {
     db.exec(
       'DROP TABLE relations; DROP TABLE headings; DROP TABLE page_values; DROP TABLE indexed_files',
     )
-    expect(queryMentions('beta')).toBeNull()
+    expect(queryMentions(['beta'])).toBeNull()
     expect(queryKeyHolders('Status')).toBeNull()
     expect(queryMembers('<Projects>', 'pommora')).toBeNull()
     expect(readIndexedStats()).toBeNull()

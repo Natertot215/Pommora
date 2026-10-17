@@ -1,4 +1,4 @@
-// One walker answers for every link syntax; `embed` marks a link of either syntax alone on its line behind a `!`, a tile's relation that renames as a link and relates as nothing.
+// One walker answers for every link syntax; `embed` marks a link of either syntax alone on its line behind a `!`, a tile's relation that renames as a link and relates as nothing. A link names its page by the written half's key; a page's own heading (`[[#H]]`, a `§` run) keys ''.
 
 import { type LinkOccurrence, linkOccurrences, mayHoldLink, type PageName } from './connections'
 import { normalizeTitle } from '../Paths/caseFold'
@@ -22,9 +22,7 @@ interface SectionRun {
 
 const wordChar = /[\p{L}\p{N}_]/u
 
-const titleKey = (raw: string, own: string): string => (raw === '' ? own : pageKey(raw))
-
-// A blank title names nothing; a bare fragment names this page, whose key is '' when no title is given, and `[[#]]` names nothing at all.
+// A blank title names nothing; a bare fragment names this page, whose key is '', and `[[#]]` names nothing at all.
 const names = (target: string, written: string, qualifier: string): boolean =>
   written === '' ? qualifier !== '' : target !== ''
 
@@ -63,7 +61,7 @@ export function sectionRunsIn(
   return out
 }
 
-/** One occurrence the index and the rename rewriter share: the occurrence's spans under its names, `named` the page as the link reads it, `target` and `qualifier` as normalized keys (`qualifier` is '' when the link names no heading), `title` empty where the link names its own page by leaving it out, and `embed` for a link alone on its line behind a `!`. */
+/** One occurrence the index and the rename rewriter share: the occurrence's spans under its names, `named` the page as the link reads it, `target` (the written half through `pageKey`, '' for the page's own heading) and `qualifier` (the heading's key, '' when the link names none) as normalized keys, `title` empty where the link names its own page by leaving it out, and `embed` for a link alone on its line behind a `!`. */
 export interface LinkHit {
   syntax: LinkOccurrence['syntax'] | 'section'
   embed: boolean
@@ -84,18 +82,16 @@ const embedLine = (body: string, [from, to]: Span): boolean =>
 /** The gate in front is on SYNTAX rather than any title: a substring test would break the NFC invariant `normalizeTitle` exists for, and an NFD-composed body would be skipped silently. `inCode` is resolved inside the body, never as a default parameter: a generator binds its parameters at call time, so a default would build a whole-document mask even for the calls that return at the gate. */
 export function* linksIn(
   body: string,
-  ownTitle = '',
   outline: readonly string[] = [],
   inCode?: CodeMask,
 ): Generator<LinkHit> {
   const runs = outline.length > 0 && body.includes('§')
   if (!mayHoldLink(body) && !runs) return
   const mask = inCode ?? codeMask(body)
-  const own = normalizeTitle(ownTitle)
   for (const o of linkOccurrences(body, mask)) {
     const named = namedPage(readOccurrence(body, o))
     if (!named) continue
-    const target = titleKey(named.title, own)
+    const target = pageKey(named.title)
     const qualifier = normalizeTitle(named.heading ?? '')
     if (!names(target, named.title, qualifier)) continue
     yield { ...o, embed: embedLine(body, o.full), named, target, qualifier }
@@ -106,7 +102,7 @@ export function* linksIn(
       syntax: 'section',
       embed: false,
       named: { title: '', heading },
-      target: own,
+      target: '',
       qualifier: normalizeTitle(heading),
       full: [from, to],
       title: [from, from],
@@ -118,12 +114,11 @@ export function* linksIn(
 /** Every link inside every frontmatter value, each under the key it sits in, read as a small body is: a whole-value `[[Page]]` (an unquoted one yaml reads as a nested list included) and a sentence holding links alike. Which keys count is the reader's question, asked with the registry in hand. */
 export function* valueLinks(
   values: Record<string, unknown>,
-  ownTitle = '',
   outline: readonly string[] = [],
 ): Generator<LinkHit & { key: string }> {
   for (const [key, value] of Object.entries(values)) {
     const text = linkEntry(value, 2)
     if (text === null) continue
-    for (const hit of linksIn(text, ownTitle, outline)) yield { ...hit, key }
+    for (const hit of linksIn(text, outline)) yield { ...hit, key }
   }
 }

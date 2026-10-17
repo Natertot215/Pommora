@@ -125,11 +125,11 @@ The work lands in nine phases in dependency order, each the largest run one agen
   - [x] Task 1-3 · The compare sites read the title, and a path link carries its alias
   - [x] Task 1-4 · A path link draws its title only (the live check is the owner's, pending)
   - [x] Review Checkpoint
-- [ ] **Phase 2** — The Index Key
-  - [ ] Task 2-1 · The scanner keys by `pageKey`, and a self-link keys `''`
-  - [ ] Task 2-2 · The mention queries take key lists
-  - [ ] Task 2-3 · The Matrix dedupes by page, and the generation moves to 18
-  - [ ] Review Checkpoint
+- [x] **Phase 2** — The Index Key
+  - [x] Task 2-1 · The scanner keys by `pageKey`, and a self-link keys `''`
+  - [x] Task 2-2 · The mention queries take key lists
+  - [x] Task 2-3 · The Matrix dedupes by page, and the generation moves to 18
+  - [x] Review Checkpoint
 - [ ] **Phase 3** — The Writers and the Picker
   - [ ] Task 3-1 · One written name at every writer, and `EditorHost.page()`
   - [ ] Task 3-2 · The picker writes the written name, keeps a held heading, and closes on resolution
@@ -532,7 +532,7 @@ The work lands in nine phases in dependency order, each the largest run one agen
 
 ### Phase 2 — The Index Key
 
-**GOAL:** The content index records what a link writes, through the one `pageKey`, and records a page's own-heading links under no key at all, so the heading cascade stops reaching a twin's links through a shared title and the outside heading-rename lane stops guessing from a title; the two mention queries take key lists so a folder operation asks once; the Matrix draws one edge per page pair; and the generation moves to 18 so every index re-keys on its next open.
+**GOAL:** The content index records what a link writes, through the one `pageKey`, and records a page's own-heading links under no key at all, so the heading cascade stops rewriting a twin's own fragments through a shared title (its path-spelled linkers follow in Task 6-2) and the outside heading-rename lane stops guessing from a title; the two mention queries take key lists so a folder operation asks once; the Matrix draws one edge per page pair; and the generation moves to 18 so every index re-keys on its next open.
 
 #### Task 2-1
 
@@ -546,9 +546,9 @@ The work lands in nine phases in dependency order, each the largest run one agen
 - [ ] `scan.ts`: delete `titleKey`; `target = pageKey(named.title)` (an empty title keys `''`); `linksIn(body, outline = [], inCode?)` and `valueLinks(values, outline = [])`; the `section` arm's `target: ''`; header and `LinkHit` docs say a page's own heading keys `''`.
 - [ ] `indexSeed.ts`: `extractPageIndex` drops `own`; `HeadingRenameSeen { path, old, next }` and `reindex` fills `path`.
 - [ ] `rewrite.ts`: `rewriteHeadingConnections(body, keys: ReadonlySet<string>, oldHeading, newHeading, own: boolean, outline?)` matches `(hit.target === '' ? own : keys.has(hit.target)) && hit.qualifier === oldKey && hit.heading`.
-- [ ] `rewrite.ts:18`: `RenameChange` becomes `CascadeChange = { title: string; to: string } | { path: string; heading: string; to: string }` (Task 6-2 replaces its title arm); `cascade.ts`: `renameCascade(root, change, skipRel = null)`; the heading arm's `title = titleFromPath(change.path)`, its files are the index's hits plus `change.path` always (a self-link is never queried for), its `rewrite(text, own: boolean, outlineOf)` and `patchOf(raw, holds, own = false, outlineOf = '')` take `own` as a boolean, `text(content, file)` computes `own = relative(root, file) === change.path`, and the `§` gate becomes `runs && own`; delete `spacesLinkHeading` and its `valueLinks` import if unused.
+- [ ] `rewrite.ts:18`: `RenameChange` becomes `CascadeChange = { title: string; to: string } | { path: string; heading: string; to: string }` (Task 6-2 replaces its title arm); `cascade.ts`: `renameCascade(root, change, settled = false)`, `settled` saying the caller's editor already rewrote the page's own body (the one caller, `mutate.ts:94`, passes `true` where it passed `req.path`); the heading arm is narrowed once (`heading = 'heading' in change ? change : null`), its `title = titleFromPath(change.path)`, its files are the index's hits plus `change.path` always (a self-link is never queried for), its `rewrite(text, own: boolean, outlineOf)` and `patchOf(raw, holds, own = false, outlineOf = '')` take `own` as a boolean, `text(content, file)` computes `own = relative(root, file) === change.path`, and the `§` gate becomes `runs && own`; delete `spacesLinkHeading` and its `valueLinks` import if unused.
 - [ ] `fileEvents.ts`: `cascadeSeen` becomes `renameCascade(root, { path: seen.path, heading: seen.old, to: seen.next })`, the log, and `oweCascade`; its comment says every outside heading rename sweeps its own page (the file was just written), and the gate's three questions are the cascade's own.
-- [ ] `rename.ts:42`: `renameCascade(root, { title: oldTitle, to: req.newName })`. `mutate.ts:94`: `renameCascade(root, req, req.path)` (the request is `{ path, heading, to }`).
+- [ ] `rename.ts:42`: `renameCascade(root, { title: oldTitle, to: req.newName })`. `mutate.ts:94`: `renameCascade(root, req, true)` (the request is `{ path, heading, to }`).
 - [ ] `queryHeadingMentions` takes the heading first, `(normalizedHeading, normalizedTitle)`, in `Platform/stores.ts:61`, `Desktop/Store/stores.ts`, `memoryStores.ts`, and `contentIndex.ts`, with `storesContract.ts:166,169,244` flipped to match: the order Task 2-2's list form needs, flipped here where the cascade first writes it.
 - [ ] `headingRenameSettle.ts:51-57`: `keys = new Set([pageKey(host.pageTitle() ?? '')])`, `own: true` (a one-phase interim: Task 3-1 hands it the page and `namesOf`).
 
@@ -755,9 +755,9 @@ The work lands in nine phases in dependency order, each the largest run one agen
 **CHANGE**
 
 - [ ] `storesContract.ts`: add a case where `queryMentions('beta', 'gamma')` returns the union in path order and `queryHeadingMentions('setup', 'beta', 'b/beta')` likewise. Watch them fail.
-- [ ] `Core/Platform/stores.ts`: `queryMentions(...normalizedKeys: string[]): string[]`, `queryHeadingMentions(normalizedHeading: string, ...normalizedKeys: string[]): string[]`; the `Relation` doc at `:11` says `target` is the written key as `pageKey` reads it, `''` for a page's own heading.
-- [ ] `Desktop/Store/stores.ts`: both read `target IN ${PATHS_OF}` bound to `JSON.stringify(keys)`. `memoryStores.ts`: `keys.includes(r.target)`. `contentIndex.ts`: the wrappers take and pass the same shapes.
-- [ ] `cascade.ts:96-99` → `const rels = queryMentions(...gone) ?? (await nexusCorpus(root))`.
+- [ ] `Core/Platform/stores.ts`: `queryMentions(keys: readonly string[]): string[]`, `queryHeadingMentions(normalizedHeading: string, keys: readonly string[]): string[]`, arrays like their neighbors `readHeadings` and `readPageRelations`; the `Relation` doc at `:11` says `target` is the written key as `pageKey` reads it, `''` for a page's own heading.
+- [ ] `Desktop/Store/stores.ts`: `PATHS_OF` becomes `LISTED` (it binds any list, not paths alone); both read `target IN ${LISTED}` bound to `JSON.stringify(keys)`. `memoryStores.ts`: `keys.includes(r.target)`. `contentIndex.ts`: the wrappers take and pass the same shapes.
+- [ ] `cascade.ts:96-99` → `const rels = queryMentions([...gone]) ?? (await nexusCorpus(root))`, behind an early return on an empty `gone` beside the one on no link definitions (an empty list before the index is ready would read the corpus for nothing).
 
 **AFTER**
 
@@ -769,29 +769,29 @@ The work lands in nine phases in dependency order, each the largest run one agen
 -  queryMentions(normalizedTitle: string): string[]
 -  queryHeadingMentions(normalizedTitle: string, normalizedHeading: string): string[]
 +  /** Every page linking any of `keys`; one query, since a folder's pages are named by thousands of keys at once. */
-+  queryMentions(...normalizedKeys: string[]): string[]
-+  queryHeadingMentions(normalizedHeading: string, ...normalizedKeys: string[]): string[]
++  queryMentions(keys: readonly string[]): string[]
++  queryHeadingMentions(normalizedHeading: string, keys: readonly string[]): string[]
 ```
 
 ```Desktop/Store/stores.ts diff
 @@ queryMentions @@
 -  queryMentions(normalizedTitle) {
-+  queryMentions(...keys) {
++  queryMentions(keys) {
      return paths(
        db,
 -      "SELECT DISTINCT path FROM relations WHERE target = ? AND kind <> 'space' ORDER BY path",
 -      normalizedTitle,
-+      `SELECT DISTINCT path FROM relations WHERE target IN ${PATHS_OF} AND kind <> 'space' ORDER BY path`,
++      `SELECT DISTINCT path FROM relations WHERE target IN ${LISTED} AND kind <> 'space' ORDER BY path`,
 +      JSON.stringify(keys),
      )
    },
 -  queryHeadingMentions(normalizedTitle, normalizedHeading) {
-+  queryHeadingMentions(normalizedHeading, ...keys) {
++  queryHeadingMentions(normalizedHeading, keys) {
      return paths(
        db,
 -      "SELECT DISTINCT path FROM relations WHERE target = ? AND qualifier = ? AND kind <> 'space' ORDER BY path",
 -      normalizedTitle,
-+      `SELECT DISTINCT path FROM relations WHERE target IN ${PATHS_OF} AND qualifier = ? AND kind <> 'space' ORDER BY path`,
++      `SELECT DISTINCT path FROM relations WHERE target IN ${LISTED} AND qualifier = ? AND kind <> 'space' ORDER BY path`,
 +      JSON.stringify(keys),
        normalizedHeading,
      )
@@ -801,14 +801,14 @@ The work lands in nine phases in dependency order, each the largest run one agen
 ```Core/Testing/memoryStores.ts diff
 @@ queryMentions @@
 -    queryMentions(normalizedTitle) {
-+    queryMentions(...keys) {
++    queryMentions(keys) {
        return sortedPaths(
          relationRows()
 -          .filter((r) => r.target === normalizedTitle && r.kind !== 'space')
 +          .filter((r) => keys.includes(r.target) && r.kind !== 'space')
 @@ queryHeadingMentions @@
 -    queryHeadingMentions(normalizedTitle, normalizedHeading) {
-+    queryHeadingMentions(normalizedHeading, ...keys) {
++    queryHeadingMentions(normalizedHeading, keys) {
        …
 -              r.target === normalizedTitle &&
 +              keys.includes(r.target) &&
@@ -818,17 +818,17 @@ The work lands in nine phases in dependency order, each the largest run one agen
 ```Core/Index/contentIndex.ts diff
 -export function queryMentions(normalizedTitle: string): string[] | null {
 -  return queryPaths((db) => db.queryMentions(normalizedTitle))
-+export function queryMentions(...normalizedKeys: string[]): string[] | null {
-+  return queryPaths((db) => db.queryMentions(...normalizedKeys))
++export function queryMentions(keys: readonly string[]): string[] | null {
++  return queryPaths((db) => db.queryMentions(keys))
  }
  
  export function queryHeadingMentions(
 -  normalizedTitle: string,
    normalizedHeading: string,
-+  ...normalizedKeys: string[]
++  keys: readonly string[],
  ): string[] | null {
 -  return queryPaths((db) => db.queryHeadingMentions(normalizedTitle, normalizedHeading))
-+  return queryPaths((db) => db.queryHeadingMentions(normalizedHeading, ...normalizedKeys))
++  return queryPaths((db) => db.queryHeadingMentions(normalizedHeading, keys))
  }
 ```
 
@@ -838,7 +838,7 @@ The work lands in nine phases in dependency order, each the largest run one agen
 -    const rels = hits.includes(null)
 -      ? await nexusCorpus(root)
 -      : [...new Set(hits.flatMap((h) => h ?? []))]
-+    const rels = queryMentions(...gone) ?? (await nexusCorpus(root))
++    const rels = queryMentions([...gone]) ?? (await nexusCorpus(root))
 ```
 
 **VERIFY**
@@ -1864,7 +1864,7 @@ The work lands in nine phases in dependency order, each the largest run one agen
 **CHANGE**
 
 - [ ] Write and watch fail: `cascade.test.ts`: `renameCascade(root, { names, label })` rewrites a body's `[[Old]]`, a Link value, a Space sidecar's value, a tile's link, and a cached value through the map; a heading rename on `A/Notes` with a twin `B/Notes` rewrites `[[A/Notes#H]]` and the page's own `[[#H]]` and leaves `[[Notes#H]]` (ambiguous) and `[[B/Notes#H]]` alone; a title rename reads no tile when none links a mapped key (spy on the tile read). `tilesFile.test.ts:325-327`: `tilesLink(root, ['notes'])` is true for a tile linking `[[Notes]]` and `tilesLink(root, ['notes'], 'setup')` for `[[Notes#Setup]]`.
-- [ ] `rewrite.ts`: `CascadeChange`'s title arm becomes `{ names: ReadonlyMap<string, string>; label: string }`. `cascade.ts`: the title arm's files are `queryMentions(...names.keys()) ?? await nexusCorpus(root)`; `rewrite` calls `rewriteConnections(text, change.names)`; the heading arm's `keys = pageIndexOf(tree).namesOf(change.path)` and its files `queryHeadingMentions(headingKey, ...keys)` plus the page itself; tiles are read when `tilesLink(root, keys, heading?)` says one links a key; the warning names `change.label` or `${title}#${heading}`.
+- [ ] `rewrite.ts`: `CascadeChange`'s title arm becomes `{ names: ReadonlyMap<string, string>; label: string }`. `cascade.ts`: the title arm's files are `queryMentions([...names.keys()]) ?? await nexusCorpus(root)`; `rewrite` calls `rewriteConnections(text, change.names)`; the heading arm's `keys = pageIndexOf(tree).namesOf(change.path)` and its files `queryHeadingMentions(headingKey, keys)` plus the page itself; tiles are read when `tilesLink(root, keys, heading?)` says one links a key; the warning names `change.label` or `${title}#${heading}`.
 - [ ] `tilesFile.ts`: `readTileHeadingLinks` becomes `readTileLinks`, caching each hit's `target` and, where it names a heading, `target\0qualifier`; `tilesLinkHeading` becomes `tilesLink(root, keys: Iterable<string>, heading?: string)`; `dropTileHeadingLinks` becomes `dropTileLinks` (`settle.ts:103`, `fileEvents.ts`'s tiles leaf, `tilesFile.ts`'s own call).
 - [ ] `rename.ts:42` takes the names arm as a one-entry map, `{ names: new Map([[pageKey(oldTitle), req.newName]]), label: oldTitle }`, until Task 6-3 removes the call; `mutate.ts:94` and `cascadeSeen` are unchanged in shape.
 
@@ -1885,10 +1885,11 @@ The work lands in nine phases in dependency order, each the largest run one agen
  export async function renameCascade(
    root: string,
    change: CascadeChange,
-   skipRel: string | null = null,
+   settled = false,
  ): Promise<CascadeReport> {
 -  const title = 'title' in change ? change.title : titleFromPath(change.path)
 -  const named = 'title' in change ? title : `${title}#${change.heading}`
+-  const heading = 'heading' in change ? change : null
 +  const named = 'names' in change ? change.label : `${titleFromPath(change.path)}#${change.heading}`
    try {
 -    const titleKey = pageKey(title)
@@ -1897,11 +1898,11 @@ The work lands in nine phases in dependency order, each the largest run one agen
 +    const heading = 'heading' in change ? normalizeTitle(change.heading) : undefined
      const rels =
 -      'title' in change
--        ? (queryMentions(titleKey) ?? (await nexusCorpus(root)))
--        : [...(queryHeadingMentions(normalizeTitle(change.heading), titleKey) ?? []), change.path]
+-        ? (queryMentions([titleKey]) ?? (await nexusCorpus(root)))
+-        : [...(queryHeadingMentions(headingKey, [titleKey]) ?? []), heading.path]
 +      heading === undefined
-+        ? (queryMentions(...keys) ?? (await nexusCorpus(root)))
-+        : [...(queryHeadingMentions(heading, ...keys) ?? []), change.path]
++        ? (queryMentions(keys) ?? (await nexusCorpus(root)))
++        : [...(queryHeadingMentions(heading, keys) ?? []), change.path]
      …
      const rewrite = (text: string, own = false, outlineOf = text): string =>
 -      'title' in change
@@ -2118,8 +2119,8 @@ The work lands in nine phases in dependency order, each the largest run one agen
 -      return renameOp(ctx, req)
 +      return addressed(() => renameOp(ctx, req))
      case 'renameHeading':
--      return ok({ cascade: await renameCascade(root, req, req.path) })
-+      return inSettleTurn(async () => ok({ cascade: await renameCascade(root, req, req.path) }))
+-      return ok({ cascade: await renameCascade(root, req, true) })
++      return inSettleTurn(async () => ok({ cascade: await renameCascade(root, req, true) }))
      case 'delete':
        return req.kind === 'space' || req.kind === 'context'
 -        ? underContexts(() => deleteOp(ctx, req))
@@ -2750,7 +2751,7 @@ The work lands in nine phases in dependency order, each the largest run one agen
 **CHANGE**
 
 - [ ] Write and watch fail: `spend.test.ts` (restore): a page whose body links `[[Beta]]`, embeds `![[Beta]]`, and holds `Related: [[Beta]]` returns after Beta was renamed `Gamma` with all three reading `Gamma`, after Beta moved to another Set with all three as written, and after Beta was deleted with the body as written and the value dropped and parked into Beta's bundle; a page restored with a destination after its Set was deleted lands under the Collection and a live linker's `[[Daily/Alpha]]` reads `[[Notes/Alpha]]` while its `[[Alpha]]` stays; a page returning while a twin created meanwhile holds its title in another folder leaves the twin's bare linkers reading `[[Other/Alpha|Alpha]]`, and a stripped `[[Alpha]]` refills as `[[Notes/Alpha|Alpha]]`; a page returning as `Alpha 2` beside a new `Alpha` in its own folder refills a stripped `[[Alpha]]` as `[[Alpha 2]]` and reports nothing unrestored; the reply's `cascade.pages` names the live linker; `:1031` passes; a bundle without `targets` restores as today. `restoreScrub.test.ts:320` passes; a Link naming a page renamed meanwhile is kept by the scrub (`targets`) and repaired after the landing. `cascade.test.ts` passes through the extraction unchanged. `nexusSlice.test`: `restore` flushes pending saves.
-- [ ] `cascade.ts`: `fileRewrites(root, tree, rewrite, { skipRel?, ownRel? }): { text: RewriteText; spaceMoved: Rewrite }` hoists the closures, `ownRel` the heading arm's own page (Task 2-1's `own`); `renameCascade` calls it.
+- [ ] `cascade.ts`: `fileRewrites(root, tree, rewrite, { ownRel?, settled? }): { text: RewriteText; spaceMoved: Rewrite }` hoists the closures, `ownRel` the heading arm's own page (Task 2-1's `own`) and `settled` whether its editor already rewrote its body; `renameCascade` calls it.
 - [ ] `restoreScrub.ts`: `artifactFiles(root, abs): Promise<{ pages: string[]; sidecars: string[] }>` hoists the scrub's two listings; `scrubReturning` reads it; `repairLanded(root, tree, targetAbs, repair)` sweeps the landed pages through `sweepGovernedRoots(root, pages, { text })` and the landed sidecars through `rmwJsonStrict(file, (raw) => spaceMoved(raw, file))`, both from `fileRewrites(tree, (t) => rewriteConnections(t, repair))`, and answers the files it couldn't write.
 - [ ] `spend.ts`: `back = await trashedPagesOf(root, bundleAbs, await contentPages(record.entity, artifactAbs))` before the scrub; the scrub's `frozen = frozenWorld(buildPageIndex([...pagesOf(tree), ...back]), targets)`; after the relocate, `after = await settledIndex(root)`; `repair` maps each recorded key to `after.respell(key, q)` for the page `q` its id names now; `named = respellings(buildPageIndex(back), after, ids, [])` and `names = respellings(pageIndexOf(tree), after, [], ids)` plus every `named` entry whose key resolved to nothing in the live world before; the repair runs, then `renameCascade(root, { names, label: title })`, then the refill through `rewriteConnections(l.value, named)` against `frozenWorld(after)`; `was` and `landed` go; `Restored` picks `cascade` too, the repair's unwritten files joined in through `joinCascades`.
 - [ ] `nexusSlice.ts:236-239`: `restore` joins the ops that flush pending saves.
@@ -2759,19 +2760,19 @@ The work lands in nine phases in dependency order, each the largest run one agen
 **AFTER**
 
 ```Core/Nexus/cascade.ts diff
-+/** The per-file arm every cascade shares: a page's body and each Link or Text value through `rewrite`, a Space sidecar's values alone. `skipRel` is a page whose editor already rewrote its own body; its frontmatter still takes the patch. */
++/** The per-file arm every cascade shares: a page's body and each Link or Text value through `rewrite`, a Space sidecar's values alone. `settled` says `ownRel`'s editor already rewrote its body; its frontmatter still takes the patch. */
 +export function fileRewrites(
 +  root: string,
 +  tree: NexusTree,
 +  rewrite: (text: string, own?: boolean, outlineOf?: string) => string,
-+  arms: { skipRel?: string | null; ownRel?: string | null } = {},
++  arms: { ownRel?: string | null; settled?: boolean } = {},
 +): { text: RewriteText; spaceMoved: Rewrite } {
 +  const holds = linkKeysOf(tree.config.registry)
 +  const patchOf = … (as today)
 +  const withPatch = … (as today)
 +  const spaceMoved: Rewrite = (raw) => withPatch(raw, patchOf(raw, holds))
 +  const text: RewriteText = (content, file) => {
-+    … (as today, with `rel = relative(root, file)`, `own = rel === arms.ownRel`, and `rel === arms.skipRel` keeping the body)
++    … (as today, with `rel = relative(root, file)`, `own = rel === arms.ownRel`, and `own && arms.settled` keeping the body)
 +  }
 +  return { text, spaceMoved }
 +}
@@ -2780,10 +2781,7 @@ The work lands in nine phases in dependency order, each the largest run one agen
 -    const withPatch = …
 -    const spaceMoved: Rewrite = …
 -    const text = …
-+    const { text, spaceMoved } = fileRewrites(root, tree, rewrite, {
-+      skipRel,
-+      ownRel: 'path' in change ? change.path : null,
-+    })
++    const { text, spaceMoved } = fileRewrites(root, tree, rewrite, { ownRel: heading?.path, settled })
 ```
 
 ```Core/Trash/restoreScrub.ts diff

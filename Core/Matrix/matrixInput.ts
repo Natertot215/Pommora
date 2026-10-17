@@ -68,12 +68,12 @@ export function matrixConnections(
   const connections: GraphInput['connections'] = []
   for (const link of links) {
     if (link.kind === 'value' && !holds(link.key)) continue
-    const id = `${link.pageId}\0${link.kind}\0${link.target}`
+    const hit = resolve(link.target)
+    if (hit.status !== 'resolved' || !hit.page) continue
+    const id = `${link.pageId}\0${link.kind}\0${hit.page.id}`
     if (seen.has(id)) continue
     seen.add(id)
-    const hit = resolve(link.target)
-    if (hit.status === 'resolved' && hit.page)
-      connections.push({ from: link.pageId, to: hit.page.id, kind: link.kind })
+    connections.push({ from: link.pageId, to: hit.page.id, kind: link.kind })
   }
   return connections
 }

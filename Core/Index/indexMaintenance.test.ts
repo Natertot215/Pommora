@@ -94,8 +94,8 @@ describe('the writers maintain the rows', () => {
       deps,
     )
     expect(r.ok).toBe(true)
-    expect(queryMentions('gamma')).toEqual(['Notes/Daily/Alpha.md'])
-    expect(queryMentions('beta')).toEqual([])
+    expect(queryMentions(['gamma'])).toEqual(['Notes/Daily/Alpha.md'])
+    expect(queryMentions(['beta'])).toEqual([])
     await expectMaintained()
   })
 
@@ -124,7 +124,7 @@ describe('the writers maintain the rows', () => {
       deps,
     )
     expect(r.ok).toBe(true)
-    expect(queryMentions('beta')).toEqual(['Notes/Weekly/Alpha.md'])
+    expect(queryMentions(['beta'])).toEqual(['Notes/Weekly/Alpha.md'])
     await expectMaintained()
   })
 
@@ -192,7 +192,7 @@ describe('the writers maintain the rows', () => {
       deps,
     )
     expect(del.ok).toBe(true)
-    expect(queryMentions('beta')).toEqual(['Notes/Daily/Alpha.md'])
+    expect(queryMentions(['beta'])).toEqual(['Notes/Daily/Alpha.md'])
     await expectMaintained()
     const [listed] = await listBundles(root)
     const restored = await settledMutate(
@@ -207,7 +207,7 @@ describe('the writers maintain the rows', () => {
   it('a Set delete clears every row beneath it; its restore indexes each page that came back', async () => {
     const del = await settledMutate(root, { op: 'delete', path: 'Notes/Daily', kind: 'set' }, deps)
     expect(del.ok).toBe(true)
-    expect(queryMentions('beta')).toEqual([])
+    expect(queryMentions(['beta'])).toEqual([])
     const [listed] = await listBundles(root)
     const restored = await settledMutate(
       root,
@@ -215,7 +215,7 @@ describe('the writers maintain the rows', () => {
       deps,
     )
     expect(restored.ok).toBe(true)
-    expect(queryMentions('beta')).toEqual(['Notes/Daily/Alpha.md'])
+    expect(queryMentions(['beta'])).toEqual(['Notes/Daily/Alpha.md'])
     await expectMaintained()
   })
 
@@ -249,14 +249,14 @@ describe('the watcher maintains the rows', () => {
       { event: 'add', absPath: join(root, 'Loose', 'Note.md'), origin: 'watched' },
     ])
     expect(owedFor(root).walk).toBe(false)
-    expect(queryMentions('alpha')).toEqual(['Loose/Note.md'])
+    expect(queryMentions(['alpha'])).toEqual(['Loose/Note.md'])
     await expectMaintained()
     await writeFile(join(root, 'Notes', 'Daily', 'Beta.md'), `---\nID: ${B_ID}\n---\n\n[[Alpha]]`)
     await applyEvents(root, [
       { event: 'change', absPath: join(root, 'Notes', 'Daily', 'Beta.md'), origin: 'watched' },
     ])
     expect(owedFor(root).walk).toBe(false)
-    expect(queryMentions('alpha')?.sort()).toEqual(['Loose/Note.md', 'Notes/Daily/Beta.md'])
+    expect(queryMentions(['alpha'])?.sort()).toEqual(['Loose/Note.md', 'Notes/Daily/Beta.md'])
     await unlink(join(root, 'Loose', 'Note.md'))
     await applyEvents(root, [
       { event: 'unlink', absPath: join(root, 'Loose', 'Note.md'), origin: 'watched' },

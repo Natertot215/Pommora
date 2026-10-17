@@ -127,21 +127,19 @@ const contentIndex = (index: MemoryIndex): ContentIndexStore => {
         index.stats.set(move(path), stat)
       }
     },
-    queryMentions(normalizedTitle) {
+    queryMentions(keys) {
       return sortedPaths(
         relationRows()
-          .filter((r) => r.target === normalizedTitle && r.kind !== 'space')
+          .filter((r) => keys.includes(r.target) && r.kind !== 'space')
           .map((r) => r.path),
       )
     },
-    queryHeadingMentions(normalizedTitle, normalizedHeading) {
+    queryHeadingMentions(normalizedHeading, keys) {
       return sortedPaths(
         relationRows()
           .filter(
             (r) =>
-              r.target === normalizedTitle &&
-              r.qualifier === normalizedHeading &&
-              r.kind !== 'space',
+              keys.includes(r.target) && r.qualifier === normalizedHeading && r.kind !== 'space',
           )
           .map((r) => r.path),
       )
