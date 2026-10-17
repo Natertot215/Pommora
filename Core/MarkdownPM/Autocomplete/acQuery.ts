@@ -50,7 +50,9 @@ export const acQuery = (scope: MarkdownScope) =>
     update(value, tr) {
       const close = tr.effects.find((e) => e.is(closeAcQuery))
       if (close) return { ...IDLE, dismissed: close.value === 'dismiss' ? value.query : null }
-      if (!tr.docChanged && !tr.selection) return value
+      // A tile flipping out of read-only arms a query with neither a doc nor a selection change: its press already seated the caret.
+      if (!tr.docChanged && !tr.selection && tr.startState.readOnly === tr.state.readOnly)
+        return value
       let armed = armedBy(tr) ?? (value.armed === null ? null : tr.changes.mapPos(value.armed))
       const head = tr.newSelection.main.head
       if (

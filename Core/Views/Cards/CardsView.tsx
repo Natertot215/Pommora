@@ -491,7 +491,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
             current={popover.current}
             holder={popoverRow ? holderOf(popoverRow, ctx) : undefined}
             connections={ctx.connections}
-            alias={popover.def.type === 'link'}
+            seat={popover.def.type === 'link' ? 'rename' : undefined}
             onCommit={commitPicked}
             onClose={() => setValuePicker(null)}
           />

@@ -195,26 +195,47 @@ describe('the Link field', () => {
     expect(wrapper.style.getPropertyValue('--connection')).toBe('')
   })
 
+  it('a value that is one unresolved link opens in its title, with the picker on it', async () => {
+    const coords = vi
+      .spyOn(EditorView.prototype, 'coordsAtPos')
+      .mockReturnValue({ left: 10, right: 10, top: 10, bottom: 20 })
+    await act(async () => mount(SITE, link('[[Dup|mine]]')))
+    expect(view().state.selection.main.head).toBe(5)
+    const holders = [...document.querySelectorAll('.mdpm-ac .mdpm-ac-aside')]
+    expect(holders.map((a) => a.getAttribute('aria-label'))).toEqual([
+      'Headings of Dup',
+      'Headings of Dup',
+    ])
+    coords.mockRestore()
+    remount(SITE, link('[[Zeta]]'))
+    expect(view().state.selection.main.head).toBe(6)
+  })
+
+  it('Edit Link opens a resolved value with its target selected', () => {
+    mount(SITE, link('[[Alpha|nice]]'), { seat: 'editLink' })
+    expect(selected()).toBe('Alpha')
+  })
+
   it('Rename opens the same editor seated in the alias slot', () => {
-    mount(SITE, link('[[Alpha|nice]]'), { alias: true, popover })
+    mount(SITE, link('[[Alpha|nice]]'), { seat: 'rename', popover })
     expect(selected()).toBe('nice')
-    remount(SITE, link('[[Alpha]]'), { alias: true, popover })
+    remount(SITE, link('[[Alpha]]'), { seat: 'rename', popover })
     expect(doc()).toBe('[[Alpha|]]')
     expect(view().state.selection.main.head).toBe(8)
-    remount(SITE, link('https://example.com'), { alias: true, popover })
+    remount(SITE, link('https://example.com'), { seat: 'rename', popover })
     expect(doc()).toBe('[](https://example.com)')
     expect(view().state.selection.main.head).toBe(1)
   })
 
   it('Rename writes the typed alias onto the same target, and drops it when emptied', () => {
-    mount(SITE, link('[[Alpha|nice]]'), { alias: true, popover })
+    mount(SITE, link('[[Alpha|nice]]'), { seat: 'rename', popover })
     type('mine')
     press('Enter')
     press('Enter')
     expect(onCommit).toHaveBeenCalledExactlyOnceWith(link('[[Alpha|mine]]'))
     expect(onClose).toHaveBeenCalledOnce()
     onCommit.mockClear()
-    remount(SITE, link('[[Alpha|nice]]'), { alias: true, popover })
+    remount(SITE, link('[[Alpha|nice]]'), { seat: 'rename', popover })
     type('')
     press('Enter')
     press('Enter')
@@ -222,7 +243,7 @@ describe('the Link field', () => {
   })
 
   it('Rename emptied then escaped writes nothing, inline or in the popover', () => {
-    for (const props of [{ alias: true }, { alias: true, popover }]) {
+    for (const props of [{ seat: 'rename' as const }, { seat: 'rename' as const, popover }]) {
       remount(SITE, link('[[Alpha|nice]]'), props)
       type('')
       press('Escape')
@@ -233,7 +254,7 @@ describe('the Link field', () => {
   })
 
   it('Rename on a bare address and a title respelled by the index both close without a commit', () => {
-    mount(SITE, link('https://example.com'), { alias: true, popover })
+    mount(SITE, link('https://example.com'), { seat: 'rename', popover })
     press('Enter')
     press('Enter')
     remount(SITE, link('[[Alpha]]'))
@@ -244,7 +265,7 @@ describe('the Link field', () => {
   })
 
   it('Rename clearing the label of a value only the markdown form spells writes its default label, through the settle', () => {
-    mount(SITE, link('[x](Page#A%7CB)'), { alias: true, popover })
+    mount(SITE, link('[x](Page#A%7CB)'), { seat: 'rename', popover })
     expect(selected()).toBe('x')
     type('')
     expect(doc()).toBe('[](Page#A%7CB)')
@@ -317,7 +338,7 @@ describe('the Link field', () => {
 
   it('remembers nothing on leave: the write layer remembers a landed value once', () => {
     const mutate = vi.spyOn(useSession.getState(), 'mutate').mockResolvedValue(null)
-    mount(SITE, link('[[Alpha]]'), { alias: true, popover })
+    mount(SITE, link('[[Alpha]]'), { seat: 'rename', popover })
     type('nick')
     press('Enter')
     press('Enter')

@@ -150,7 +150,7 @@ describe('a connection acts on its text, and leaves its edges to the caret', () 
   })
 })
 
-describe('a link that leads nowhere still takes the caret where it was pressed', () => {
+describe('a link that leads nowhere seats the caret in its title', () => {
   const ambiguous: ConnectionsApi = {
     index: buildPageIndex([
       { id: 'b1', title: 'Beta', path: 'Notes/Beta.md' },
@@ -160,34 +160,57 @@ describe('a link that leads nowhere still takes the caret where it was pressed',
     open: (p: ConnPage, heading?: string) => opened(p.id, heading),
   }
 
-  const bracketEdges = [2, 10]
-
-  it('a press inside an unresolved link is left to the editor', async () => {
-    const view = await mountEditor({ initialBody: 'a [[Zeta]] b', connections: conn })
+  const pressOn = async (
+    body: string,
+    api: ConnectionsApi,
+    pos: number,
+    at: (view: EditorView) => Element,
+    caretBefore = 0,
+  ): Promise<number> => {
+    const view = await mountEditor({ initialBody: body, connections: api })
     await act(async () => view.focus())
-    view.dispatch({ selection: { anchor: 0 } })
-    vi.spyOn(view, 'posAtCoords').mockReturnValue(7)
-    view.contentDOM.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 0 }))
-    expect(bracketEdges).not.toContain(view.state.selection.main.head)
+    view.dispatch({ selection: { anchor: caretBefore } })
+    vi.spyOn(view, 'posAtCoords').mockReturnValue(pos)
+    at(view).dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 0 }))
+    return view.state.selection.main.head
+  }
+  const el = (selector: string) => (view: EditorView) =>
+    view.dom.querySelector(selector) as HTMLElement
+
+  it('a press on a phantom’s text seats the title’s end', async () => {
+    expect(await pressOn('a [[Zeta]] b', conn, 6, el('.md-connection-phantom'))).toBe(8)
   })
 
-  it('a press on an ambiguous link’s text is left to the editor', async () => {
-    const view = await mountEditor({ initialBody: 'a [[Beta]] b', connections: ambiguous })
-    await act(async () => view.focus())
-    view.dispatch({ selection: { anchor: 0 } })
-    vi.spyOn(view, 'posAtCoords').mockReturnValue(6)
-    const span = view.dom.querySelector('.md-connection-ambiguous') as HTMLElement
-    span.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 0 }))
-    expect(bracketEdges).not.toContain(view.state.selection.main.head)
+  it('a press on a phantom’s bracket seats the title’s end', async () => {
+    expect(await pressOn('a [[Zeta]] b', conn, 3, el('.md-phantom-syntax'))).toBe(8)
+  })
+
+  it('a press that clamped onto a phantom from past its line’s end stays there', async () => {
+    expect(await pressOn('a [[Zeta]]', conn, 10, (view) => view.contentDOM)).toBe(10)
+  })
+
+  it('a press on an ambiguous link’s text seats the title’s end, with the picker listing both holders', async () => {
+    const coords = vi
+      .spyOn(EditorView.prototype, 'coordsAtPos')
+      .mockReturnValue({ left: 10, right: 10, top: 10, bottom: 20 })
+    expect(await pressOn('a [[Beta]] b', ambiguous, 6, el('.md-connection-ambiguous'))).toBe(8)
+    await act(async () => {})
+    const holders = [...document.querySelectorAll('.mdpm-ac .mdpm-ac-aside')]
+    expect(holders.map((a) => a.getAttribute('aria-label'))).toEqual([
+      'Headings of Beta',
+      'Headings of Beta',
+    ])
+    coords.mockRestore()
   })
 
   it('but one still seats at the nearer edge when the press clamped in from beside it', async () => {
-    const view = await mountEditor({ initialBody: 'a [[Beta]] b', connections: ambiguous })
-    await act(async () => view.focus())
-    view.dispatch({ selection: { anchor: 0 } })
-    vi.spyOn(view, 'posAtCoords').mockReturnValue(8)
-    view.contentDOM.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 0 }))
-    expect(view.state.selection.main.head).toBe(10)
+    expect(await pressOn('a [[Beta]] b', ambiguous, 8, (view) => view.contentDOM)).toBe(10)
+  })
+
+  it('a press on its text lands where pressed once the caret is inside it', async () => {
+    expect(await pressOn('a [[Beta]] b', ambiguous, 6, el('.md-connection-ambiguous'), 6)).not.toBe(
+      8,
+    )
   })
 })
 

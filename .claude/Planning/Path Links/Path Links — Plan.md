@@ -142,10 +142,10 @@ The work lands in nine phases in dependency order, each the largest run one agen
   - [x] Task 4-1 · Highlighting goes
   - [x] Task 4-2 · The one matcher, and every search on it
   - [x] Review Checkpoint
-- [ ] **Phase 5** — The Click Rule
-  - [ ] Task 5-1 · The `seatTitle` arm and the editor's press
-  - [ ] Task 5-2 · Resting cells and the value field
-  - [ ] Review Checkpoint
+- [x] **Phase 5** — The Click Rule
+  - [x] Task 5-1 · The `seatTitle` arm and the editor's press
+  - [x] Task 5-2 · Resting cells and the value field
+  - [x] Review Checkpoint
 - [ ] **Phase 6** — The In-App Re-Spell
   - [ ] Task 6-1 · The one re-spell rule
   - [ ] Task 6-2 · The heading cascade decides by keys, and the dead gates go
@@ -1625,8 +1625,8 @@ The work lands in nine phases in dependency order, each the largest run one agen
 
 - [ ] Rewrite `linkEdges.test.tsx:153-192` and watch it fail: a press on a phantom `[[Zeta]]`'s text (dispatched on `.md-connection-phantom`) seats 8, the title's end; a press on its bracket seats 8; a press on an ambiguous `[[Beta]]`'s text seats 8; a press clamped in beside it still seats the nearer edge, 10 (`:184` unchanged); with the caret already at 6 inside `[[Beta]]` and the editor focused, a press on its text lands where pressed; a press on a resolved link follows as before.
 - [ ] `linkEdit.ts`: `export type SlotAction = LinkAction | 'seatTitle'`; `linkEdit` and `applyLinkAction` take `SlotAction`; the arm `case 'seatTitle': return { kind: 'select', range: [tk.link.title[1], tk.link.title[1]] }` (the end: any spot gives the same query, since the query reads the whole slot, and backspace narrows).
-- [ ] `pointerPath.ts`: `PointerSpec` gains `seat?: (hit: H, view: EditorView) => boolean`; mousedown runs it after the right-press return and the double-click refusal, unless the caret is strictly inside the link (`view.hasFocus && head > range[0] && head < range[1]`), and claims the press when it acts. `caretInside` keeps its inclusive ends for follow, dwell, and the menu.
-- [ ] `linkClicks.ts`: the selector gains `.md-connection-phantom`; `seat` applies `seatTitle` when the hit has a token, its target is unresolved, and the press is on text or on a phantom (whose syntax is visible); follow, dwell, and menu are untouched.
+- [ ] `pointerPath.ts`: `PointerSpec` gains `seat?: (hit: H, view: EditorView, event: MouseEvent) => boolean`; mousedown runs it after the right-press return and the double-click refusal, unless the caret is strictly inside the link (`view.hasFocus && head > range[0] && head < range[1]`), and claims the press when it acts. `caretInside` keeps its inclusive ends for follow, dwell, and the menu.
+- [ ] `linkClicks.ts`: the selector gains `.md-connection-phantom`; `seat` applies `seatTitle` when the hit has a token, its target is unresolved, and the press is on text or on a phantom's drawn syntax (`.md-phantom-syntax`); a press that only clamped onto the link's edge stays beside it, since `linkTokenAt` counts the end position as inside and an end-of-line click would otherwise open the picker; follow, dwell, and menu are untouched.
 
 **AFTER**
 
@@ -1659,7 +1659,7 @@ The work lands in nine phases in dependency order, each the largest run one agen
    hitAt: (view: EditorView, event: MouseEvent) => H | null
    follow: (hit: H, view: EditorView, event: MouseEvent) => (() => void) | null
 +  /** Where a press lands before anything else: a seat the hit itself asks for, reporting whether it acted. */
-+  seat?: (hit: H, view: EditorView) => boolean
++  seat?: (hit: H, view: EditorView, event: MouseEvent) => boolean
 @@ mousedown @@
        if (event.button === 2) return go != null
        if (event.button !== 0 || event.shiftKey || event.detail > 1) return false
@@ -1681,9 +1681,10 @@ The work lands in nine phases in dependency order, each the largest run one agen
    )
 @@ linkPointer @@
      hitAt: (view, event) => linkUnder(view, apiOf(view), event),
-+    // An unresolved link seats its title, so the picker opens on it: on its text, or anywhere on a phantom, whose syntax is visible; an ambiguous link hides its brackets, so a press beside its text stays a press beside it.
-+    seat: (hit, view) => {
-+      if (!hit.tk || hit.target.kind !== 'unresolved' || (!hit.onText && hit.hidesSyntax)) return false
++    // A press that only clamped onto an unresolved link, off its text and a phantom's drawn syntax, stays beside it.
++    seat: (hit, view, event) => {
++      const onSyntax = (event.target as HTMLElement).closest?.('.md-phantom-syntax') != null
++      if (!hit.tk || hit.target.kind !== 'unresolved' || !(hit.onText || onSyntax)) return false
 +      applyLinkAction(view, 'seatTitle', hit.range)
 +      return true
 +    },
@@ -1706,10 +1707,10 @@ The work lands in nine phases in dependency order, each the largest run one agen
 **CHANGE**
 
 - [ ] Write and watch fail: `cellStatic.test.tsx:201-220` lists the phantom's wrapper span; a resting-cell test: a click on a phantom activates with a `select` seat at its title's end. `PropertyValueInput.test.tsx`: an unresolved Link value opens with the caret at its title's end and the picker's query armed; Edit Link opens a resolved value with its target selected; a plain click still opens at the end (`:187` stays). A tile test: a seated caret in a tile flipping out of read-only arms the query.
-- [ ] `cellStatic.tsx`: the phantom `Fragment` becomes a `span` with `linkSpan(s, e)` (no `data-at`; the inner `verbatim` spans keep their offsets); `applyAtRest` takes `SlotAction`; `claimLink` falls back to `() => void applyAtRest(tk, 'seatTitle')` when the hit has a token, its target is unresolved, and the cell isn't read-only.
+- [ ] `cellStatic.tsx`: the phantom `Fragment` becomes a `span` with `linkSpan(s, e)` (no `data-at`; the inner `verbatim` spans keep their offsets); `applyAtRest` takes `SlotAction`; `claimLink` falls back to `() => void applyAtRest(tk, 'seatTitle')` when the hit has a token, its target is unresolved, the cell isn't read-only, and the cell is fresh (`current() === text`, the check `applyAtRest` makes), so a stale cell's click still falls through to point activation.
 - [ ] `valueClick.ts`: the `edit` intent gains `seat?: ConnEditAction`; `MENU_INTENTS.editLink` is `{ kind: 'edit', seat: 'editLink' }`.
-- [ ] The three surfaces carry `intent.seat` into their editing state and pass `seat` to `PropertyValueInput`; their popovers pass `seat={def.type === 'link' ? 'rename' : undefined}` for `alias={def.type === 'link'}`. `PropertyValueInput`'s `alias?: boolean` becomes `seat?: ConnEditAction`, passed through; its doc comment says the field opens in the title of a value that is one unresolved link.
-- [ ] `ValueEditor`: `alias?: boolean` becomes `seat?: ConnEditAction`; on mount, a `oneLine` value whose drawn link spans the whole text and resolves unresolved seats `seatTitle`; otherwise `seat` applies as Rename does today (a bare address under Rename still gains its label); otherwise the caret rests at the end.
+- [ ] The three surfaces carry `intent.seat` into their editing state and pass `seat` to `PropertyValueInput`; their popovers pass `seat={def.type === 'link' ? 'rename' : undefined}` for `alias={def.type === 'link'}`. `PropertyValueInput`'s `alias?: boolean` becomes `seat?: ConnEditAction`, passed through; its doc comment states the one seat rule below.
+- [ ] `ValueEditor`: `alias?: boolean` becomes `seat?: ConnEditAction`; on mount, one rule: Rename seats the alias slot (a phantom under Rename is being renamed, not resolved); otherwise a `oneLine` value whose drawn link spans the whole text and resolves unresolved seats `seatTitle`; otherwise `seat` applies (Edit Link selects the target, and a bare address, which draws no token, is its whole target); otherwise the caret rests at the end. A bare address under Rename still gains its label.
 - [ ] `acQuery.ts`: the early return also requires `tr.startState.readOnly === tr.state.readOnly`.
 
 **AFTER**
@@ -1738,7 +1739,7 @@ The work lands in nine phases in dependency order, each the largest run one agen
 +    const { tk } = found
 +    const go =
 +      followTarget(found.target, host.connections(), e) ??
-+      (tk && found.target.kind === 'unresolved' && !readOnly()
++      (tk && found.target.kind === 'unresolved' && !readOnly() && current() === text
 +        ? () => void applyAtRest(tk, 'seatTitle')
 +        : null)
      if (!go) return null
@@ -1746,7 +1747,6 @@ The work lands in nine phases in dependency order, each the largest run one agen
 
 ```Core/Properties/Pickers/valueClick.ts diff
 -  | { kind: 'edit' }
-+  /** `seat` is the link slot the field opens in, carried from the action that opened it. */
 +  | { kind: 'edit'; seat?: ConnEditAction }
  …
  const MENU_INTENTS: Partial<Record<CellMenuAction | LinkAction, ValueIntent>> = {
@@ -1757,22 +1757,28 @@ The work lands in nine phases in dependency order, each the largest run one agen
 ```Core/Properties/Pickers/ValueEditor.tsx diff
 -  /** Once mounted, seat the caret in the value's alias slot: the Link value's Rename. */
 -  alias?: boolean
-+  /** Once mounted, the link slot to seat the caret in: Rename's alias, Edit Link's target; a value that is one unresolved link seats its title whatever opened it. */
++  /** Once mounted, the link slot to seat the caret in: Rename seats the alias; otherwise a one-line value that is one unresolved link seats its title; otherwise Edit Link selects the target, and a bare address is its whole target; otherwise the caret rests at the end. */
 +  seat?: ConnEditAction
 @@ mount @@
      const doc = view.state.doc.toString()
 -    if (alias && drawnLinkAt(view, 0)) applyLinkAction(view, 'rename', [0, doc.length])
 -    else if (alias) {
 +    const tk = drawnLinkAt(view, 0)
-+    const lone =
++    const action: SlotAction | undefined =
++      seat !== 'rename' &&
 +      oneLine &&
-+      tk?.range[0] === 0 &&
-+      tk.range[1] === doc.length &&
-+      resolveLink(readOccurrence(doc, tk.link), host.connections()?.index, holder).kind === 'unresolved'
-+    const action: SlotAction | undefined = seat === 'rename' || !lone ? seat : 'seatTitle'
++      tk?.range[1] === doc.length &&
++      resolveLink(readOccurrence(doc, tk.link), host.connections()?.index, holder).kind ===
++        'unresolved'
++        ? 'seatTitle'
++        : seat
 +    if (tk && action) applyLinkAction(view, action, [0, doc.length])
 +    else if (seat === 'rename') {
        // A bare address draws no link token, so Rename gives it the label a markdown link has.
+       …
+-    } else {
++    } else if (seat === 'editLink') focusRange(view, 0, doc.length)
++    else {
 ```
 
 ```Core/MarkdownPM/Autocomplete/acQuery.ts diff
@@ -3098,6 +3104,7 @@ Each ruling below was the planner's (10-16-2026), taken against the BRIEF's prin
 - **An index row lost** (a page the index somehow holds no row for, re-saved outside) is read as an arrival at its next watched write (Task 7-2), so a title it shares with one live page path-spells that page's bare links once; those links were ambiguous already, and the index losing a row is itself a defect to find.
 - **Sync:** a receiving device may re-spell a linker locally before the sender's own rewrite of that linker arrives; the plan leaves what Sync's conflict capture then does unverified and out of scope (*§Constraints · Out of Scope*), to be read when the Sync lane is next worked.
 - **The picker closes on a typed title that resolves.** `[[` auto-pairs `]]`, so a link being typed reads as finished; typing `[[Notes]]` beside a `Notes Archive` closes the pane when `Notes` resolves, and one more character reopens it. The heading and alias arms have always closed on an exact match the same way, so the title arm joins them (Task 3-2) rather than carrying a rule of its own; the owner can overturn (about five lines, closing only a query the caret arrived at).
+- **A phantom's seat inside a resting tile** lands on the first press in a body (the tile's flip then arms the picker) and on the second in a table cell, whose resting hand-off refuses while read-only (Task 5-2); a `[[#]]` phantom seats before its `#`, in the empty title, as C-1 reads; Cmd-click on a phantom seats as it follows a resolved link. Each is the one rule applied as written; the owner can rule otherwise.
 - **An emptied `#` on a path link** collapses to `[[A/Notes]]` without the title alias, since the settle drops the slot as text rather than rewriting the link; Pommora reads it the same, and the next re-spell writes it through the writer.
 - **The Number:** the count exceeds the BRIEF's band (*§Overview · The Number*); the planner's call is to keep Phases 7 and 8, since E-4 and F-5 are mandates and a deferral would leave them half-done. The owner rules at ratification.
 

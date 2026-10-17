@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { EditorState } from '@codemirror/state'
+import { Compartment, EditorState } from '@codemirror/state'
 import { editorHost, type EditorSettings } from '../api'
 import { testHost } from '../../Testing/editorHarness'
 import { acQuery, closeAcQuery } from './acQuery'
@@ -56,6 +56,20 @@ describe('the picker’s query as editor state', () => {
     expect(again.field(field).query).toBeNull()
     const moved = typed(again, 5, 'j')
     expect(moved.field(field).query).toMatchObject({ query: 'Proj' })
+  })
+
+  it('arms on a caret already seated when a tile flips out of read-only, and clears flipping back', () => {
+    const field = acQuery('page')
+    const gate = new Compartment()
+    const seated = EditorState.create({
+      doc: '[[Zeta]] x',
+      extensions: [field, editorHost.of(testHost()), gate.of(EditorState.readOnly.of(true))],
+    }).update({ selection: { anchor: 6 } }).state
+    expect(seated.field(field).query).toBeNull()
+    const live = seated.update({ effects: gate.reconfigure(EditorState.readOnly.of(false)) }).state
+    expect(live.field(field).query).toMatchObject({ query: 'Zeta' })
+    const back = live.update({ effects: gate.reconfigure(EditorState.readOnly.of(true)) }).state
+    expect(back.field(field).query).toBeNull()
   })
 
   it('a blur closes without remembering the query', () => {

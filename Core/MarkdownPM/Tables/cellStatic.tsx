@@ -34,7 +34,7 @@ import { mayNameOwnHeading } from '../../Connections/connections'
 import { labelEscapes } from '../../Connections/links'
 import type { ConnPage, PageHeadings } from '../../Connections/pageIndex'
 import { linkClass, linkLook, type ConnectionsApi } from '../Links/connectionsApi'
-import { linkEdit } from '../Links/linkEdit'
+import { linkEdit, type SlotAction } from '../Links/linkEdit'
 import { settledLinkText } from '../Links/pendingTitle'
 import { type LinkAction, linkMenuTarget } from '../../Actions/connectionMenu'
 import { dwellTarget, followTarget } from '../Links/linkClicks'
@@ -148,7 +148,7 @@ export function renderCellContent(
         const look = linkLook(conn, text, tk, around?.keys, headingLinkStyle)
         if (look.status === 'phantom')
           return (
-            <Fragment key={key++}>
+            <span key={key++} {...linkSpan(s, e)}>
               <span className="md-phantom-syntax" {...verbatim(s, cs)}>
                 {text.slice(s, cs)}
               </span>
@@ -161,7 +161,7 @@ export function renderCellContent(
               <span className="md-phantom-syntax" {...verbatim(ce, e)}>
                 {text.slice(ce, e)}
               </span>
-            </Fragment>
+            </span>
           )
         const join = tk.kind === 'wikiLink' && look.join
         // A resolved label hides its escapes by position, through every token inside it, as the live draw does; its text then no longer maps to its source, so the link seats at its edges, as a join does.
@@ -441,7 +441,7 @@ function StaticCellImpl({
     return true
   }
 
-  const applyAtRest = async (tk: TokenOf<LinkKind>, action: LinkAction): Promise<void> => {
+  const applyAtRest = async (tk: TokenOf<LinkKind>, action: SlotAction): Promise<void> => {
     if (current() !== text) return
     const edit = linkEdit(text, tk, action, host.linkTitles)
     if (!edit) return
@@ -458,10 +458,16 @@ function StaticCellImpl({
     { editable: () => !readOnly(), apply: applyAtRest },
   )
 
-  // Following waits for the click so a drag that starts on a link selects instead.
+  // Following waits for the click so a drag that starts on a link selects instead; an unresolved link hands its title seat to the editor the activation opens.
   const claimLink = (e: React.MouseEvent): (() => void) | null => {
     const found = linkAt(e)
-    const go = found && followTarget(found.target, host.connections(), e)
+    if (!found) return null
+    const { tk } = found
+    const go =
+      followTarget(found.target, host.connections(), e) ??
+      (tk && found.target.kind === 'unresolved' && !readOnly() && current() === text
+        ? () => void applyAtRest(tk, 'seatTitle')
+        : null)
     if (!go) return null
     e.preventDefault()
     e.stopPropagation()

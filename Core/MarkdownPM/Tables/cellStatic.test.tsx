@@ -2,6 +2,7 @@
 import { describe, it, expect, afterEach, vi } from 'vitest'
 import { createElement, act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
+import { EditorView } from '@codemirror/view'
 import { MarkdownTable } from './MarkdownTable'
 import { type CellPage, renderCellContent } from './cellStatic'
 import { tableStubs, testHost } from '../../Testing/editorHarness'
@@ -214,10 +215,57 @@ describe('a resting cell draws an unresolved link as an unresolved connection, w
       el.textContent,
     ])
     expect(parts).toEqual([
+      ['', '[x](Missing)'],
       ['md-phantom-syntax', '['],
       ['md-connection-phantom', 'x'],
       ['md-phantom-syntax', '](Missing)'],
     ])
+  })
+
+  it('a click on a phantom opens the cell with the caret at its title’s end', async () => {
+    container = document.createElement('div')
+    document.body.appendChild(container)
+    root = createRoot(container)
+    const conn = { index: buildPageIndex([]), headingsOf: () => undefined, open: () => {} }
+    await act(async () =>
+      root.render(
+        createElement(MarkdownTable, {
+          ...tableStubs,
+          host: { ...testHost(), connections: () => conn },
+          model: { ...model, rows: [['a [[Zeta]] b']] },
+          cellAt: () => 'a [[Zeta]] b',
+        }),
+      ),
+    )
+    const phantom = container.querySelector('.md-connection-phantom') as HTMLElement
+    await act(async () => {
+      phantom.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 0 }))
+      phantom.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0, detail: 1 }))
+    })
+    const editor = container.querySelector('.cm-editor') as HTMLElement
+    expect(EditorView.findFromDOM(editor)?.state.selection.main.head).toBe(8)
+  })
+
+  it('a click on a phantom in a stale cell still opens it where pressed', async () => {
+    container = document.createElement('div')
+    document.body.appendChild(container)
+    root = createRoot(container)
+    const conn = { index: buildPageIndex([]), headingsOf: () => undefined, open: () => {} }
+    await act(async () =>
+      root.render(
+        createElement(MarkdownTable, {
+          ...tableStubs,
+          host: { ...testHost(), connections: () => conn },
+          model: { ...model, rows: [['a [[Zeta]] b']] },
+        }),
+      ),
+    )
+    const phantom = container.querySelector('.md-connection-phantom') as HTMLElement
+    await act(async () => {
+      phantom.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 0 }))
+      phantom.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0, detail: 1 }))
+    })
+    expect(container.querySelector('.cm-editor')).not.toBeNull()
   })
 })
 

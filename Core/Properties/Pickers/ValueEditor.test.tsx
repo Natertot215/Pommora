@@ -242,30 +242,44 @@ describe('ValueEditor in its one-line mode', () => {
   })
 })
 
+describe('ValueEditor seated on the link target', () => {
+  it('selects the whole of a bare address', () => {
+    const view = mount('https://example.com', { seat: 'editLink' })
+    const { from, to } = view.state.selection.main
+    expect([from, to]).toEqual([0, 19])
+  })
+})
+
 describe('ValueEditor seated in the alias slot', () => {
   it('selects a written alias', () => {
-    const view = mount('[[Alpha|Mine]]', { alias: true })
+    const view = mount('[[Alpha|Mine]]', { seat: 'rename' })
     const { from, to } = view.state.selection.main
     expect(doc(view).slice(from, to)).toBe('Mine')
     expect(document.activeElement).toBe(view.contentDOM)
   })
 
   it('opens an empty slot after the pipe where none is written', () => {
-    const view = mount('[[Alpha]]', { alias: true })
+    const view = mount('[[Alpha]]', { seat: 'rename' })
     expect(doc(view)).toBe('[[Alpha|]]')
     expect(view.state.selection.main.head).toBe(8)
     expect(document.activeElement).toBe(view.contentDOM)
   })
 
+  it('seats an unresolved link’s alias slot rather than its title', () => {
+    const view = mount('[[Zeta]]', { seat: 'rename' })
+    expect(doc(view)).toBe('[[Zeta|]]')
+    expect(view.state.selection.main.head).toBe(7)
+  })
+
   it('gives a bare address a markdown label and seats the caret in it', () => {
-    const view = mount('https://example.com', { alias: true })
+    const view = mount('https://example.com', { seat: 'rename' })
     expect(doc(view)).toBe('[](https://example.com)')
     expect(view.state.selection.main.head).toBe(1)
     expect(document.activeElement).toBe(view.contentDOM)
   })
 
   it('Escape after emptying the slot ends the edit, so the unmount writes no collapsed link', () => {
-    const view = mount('[[Alpha|Mine]]', { alias: true })
+    const view = mount('[[Alpha|Mine]]', { seat: 'rename' })
     type(view, '', 'delete.backward')
     press(view, 'Escape')
     expect(onClose).toHaveBeenCalledOnce()
@@ -275,7 +289,7 @@ describe('ValueEditor seated in the alias slot', () => {
   })
 
   it('an emptied slot collapses through the settle before the commit reads it', () => {
-    const view = mount('[[Alpha|Mine]]', { alias: true })
+    const view = mount('[[Alpha|Mine]]', { seat: 'rename' })
     type(view, '', 'delete.backward')
     expect(doc(view)).toBe('[[Alpha|]]')
     press(view, 'Enter')
