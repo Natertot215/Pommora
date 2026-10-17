@@ -1,6 +1,6 @@
 import { StateEffect, StateField, Transaction } from '@codemirror/state'
 import { Decoration, EditorView } from '@codemirror/view'
-import { BLOCK_MENU_SECTIONS, filterBlockMenu, type BlockMenuMatch } from '../../Actions/blockMenu'
+import { filterBlockMenu, type BlockMenuSection } from '../../Actions/blockMenu'
 import { inSealedLine, type DocScan } from '../Engine/docScan'
 import { lineIndexAt } from '../Engine/markdownCode'
 import { docScan } from '../docCache'
@@ -14,14 +14,14 @@ export interface BlockQuery {
 export function blockQueryAt(scan: DocScan, caret: number): BlockQuery | null {
   const i = lineIndexAt(scan, caret)
   const from = scan.lineStarts[i]
-  const match = /^\/(\S*)$/.exec(scan.lines[i])
+  const match = /^\/([^\s/]*)$/.exec(scan.lines[i])
   if (!match || caret !== from + scan.lines[i].length) return null
   if (inSealedLine(scan, i) || i >= scan.citations.firstLine) return null
   return { query: match[1], from, to: caret }
 }
 
 export interface OpenBlockQuery extends BlockQuery {
-  matches: BlockMenuMatch[]
+  matches: readonly BlockMenuSection[]
 }
 
 export const closeBlockQuery = StateEffect.define<null>()
@@ -39,7 +39,7 @@ export const blockQuery = StateField.define<OpenBlockQuery | null>({
     if (!sel.empty || tr.startState.readOnly) return null
     const q = blockQueryAt(docScan(tr.newDoc), sel.head)
     if (!q) return null
-    const matches = filterBlockMenu(BLOCK_MENU_SECTIONS, q.query)
+    const matches = filterBlockMenu(q.query)
     return matches.length > 0 ? { ...q, matches } : null
   },
   provide: (field) =>

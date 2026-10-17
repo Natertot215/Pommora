@@ -25,7 +25,7 @@ export function compareTitles(a: string, b: string): number {
   return titleCollator.compare(a, b)
 }
 
-export function matchScore(t: string, q: string): number | null {
+function foldedScore(t: string, q: string): number | null {
   let ti = 0
   let score = 0
   let streak = 0
@@ -45,20 +45,48 @@ export function matchScore(t: string, q: string): number | null {
   return score - t.length * 0.01
 }
 
-type Ranked<T> = { item: T; score: number }
+/** A search's view of an item: its folded name, and where it has a location, that location and the name as one string of words. */
+export interface MatchKey {
+  name: string
+  place?: string
+}
 
-export function rankMatches<T extends { title: string }>(
+/** A query, or a key's text, folded with every run of `/` and spaces one word break, so `Pommora/Cl`, `Pommora / Cl`, and `pommora cl` ask the same and a heading `Q1/Q2` answers both. */
+export const matchQuery = (raw: string): string => foldKey(raw.replace(/[\s/]+/g, ' ').trim())
+
+export const matchKey = (name: string, place = ''): MatchKey =>
+  place
+    ? { name: matchQuery(name), place: matchQuery(`${place}/${name}`) }
+    : { name: matchQuery(name) }
+
+// A name's score tops out near 34,000 at the 255 characters a link slot holds, so a location's sits under every name's.
+const UNDER_NAMES = 100_000
+
+/** The name's score where the name matches, else the location's, seated below every name match: a plain title query ranks as the name alone does, and a folder query reaches through the location. */
+export function matchScore(key: MatchKey, q: string): number | null {
+  const name = foldedScore(key.name, q)
+  if (name !== null) return name
+  const place = key.place === undefined ? null : foldedScore(key.place, q)
+  return place === null ? null : place - UNDER_NAMES
+}
+
+type Ranked<T> = { item: T; score: number; name: string }
+
+/** The items whose key matches `q`, best first, a tie broken by name. */
+export function rankMatches<T>(
   items: readonly T[],
-  scoreOf: (item: T) => number | null,
+  q: string,
+  keyOf: (item: T) => MatchKey,
   cap = Number.POSITIVE_INFINITY,
 ): T[] {
   const before = (a: Ranked<T>, b: Ranked<T>): number =>
-    b.score - a.score || compareTitles(a.item.title, b.item.title)
+    b.score - a.score || compareTitles(a.name, b.name)
   const kept: Ranked<T>[] = []
   for (const item of items) {
-    const score = scoreOf(item)
+    const key = keyOf(item)
+    const score = matchScore(key, q)
     if (score === null) continue
-    const hit = { item, score }
+    const hit = { item, score, name: key.name }
     if (kept.length === cap && before(hit, kept[cap - 1]) >= 0) continue
     let lo = 0
     let hi = kept.length

@@ -18,7 +18,7 @@ import type { TrashRow } from '../Trash/trashRow'
 import { PropertyTypeIcon, propertyTypeIconName } from '../Properties/Cells/PropertyTypes'
 import { formatDate } from '../Properties/formatValue'
 import { containerTargets, contextTargets } from '../Actions/destinationTree'
-import { foldKey, matchScore, rankMatches } from '../Paths/caseFold'
+import { matchKey, matchQuery, rankMatches } from '../Paths/caseFold'
 import { useSession } from '../Session/store'
 import { trashChanged } from '../Session/nexusSlice'
 import { personalizationOf } from '../Session/configSlice'
@@ -49,13 +49,11 @@ export function countPhrase(rows: TrashRow[]): string {
 }
 
 export function filterRows(rows: TrashRow[], query: string): TrashRow[] {
-  const q = foldKey(query.trim())
+  const q = matchQuery(query)
   if (!q) return rows
-  return rankMatches(rows, (row) => {
-    const title = matchScore(foldKey(row.title), q)
-    const place = matchScore(foldKey(row.crumbs.map((c) => c.title).join(' ')), q)
-    return title === null ? place : place === null ? title : Math.max(title, place)
-  })
+  return rankMatches(rows, q, (row) =>
+    matchKey(row.title, row.crumbs.map((c) => c.title).join('/')),
+  )
 }
 
 // Keyed on the nexus so a switch with Settings open mounts a body with its own list.

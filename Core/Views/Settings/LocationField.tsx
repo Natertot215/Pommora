@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from 'react'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import { Icon } from '@pommora/uix/Symbols'
 import { TokenField } from '@pommora/uix/Fields/TokenField'
-import { foldKey, matchScore } from '../../Paths/caseFold'
+import { foldKey, matchKey, matchQuery, matchScore } from '../../Paths/caseFold'
 import { EntityIcon } from '../../Assets/EntityIcon'
 import { DisclosureRow, MenuScrollFrame, pickRuns, useDisclosureSet } from '@pommora/uix/Menus'
 import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
@@ -21,14 +21,14 @@ export function flattenNodes(nodes: Folder[] | undefined): Folder[] {
 /** Matches with their whole subtrees, under the ancestors that lead to them; `leads` names those ancestors, which open by default. */
 function narrowed(nodes: Folder[], query: string): { nodes: Folder[]; leads: Set<string> } {
   const leads = new Set<string>()
-  const walk = <N extends Folder>(ns: N[]): N[] =>
+  const walk = <N extends Folder>(ns: N[], place: string): N[] =>
     ns.flatMap((n) => {
-      const sets = walk(n.sets ?? [])
+      const sets = walk(n.sets ?? [], place ? `${place}/${n.title}` : n.title)
       if (sets.length > 0) leads.add(n.id)
-      if (matchScore(foldKey(n.title), query) !== null) return [n]
-      return sets.length > 0 ? [{ ...n, sets }] : []
+      const kept = sets.length > 0 || matchScore(matchKey(n.title, place), query) !== null
+      return kept ? [{ ...n, sets }] : []
     })
-  return { nodes: walk(nodes), leads }
+  return { nodes: walk(nodes, ''), leads }
 }
 
 const shownRows = (nodes: Folder[], isOpen: (id: string) => boolean): Folder[] =>
@@ -103,7 +103,7 @@ export function LocationField({
   const { shown, toggle } = useMultiValue(values, onCommit)
   const expanded = useDisclosureSet()
   const [narrow, setNarrow] = useState({ q: '', ids: NO_FLIPS })
-  const q = foldKey(draft.trim())
+  const q = matchQuery(draft)
   const tree = useMemo(
     () => (q ? narrowed(nodes, q) : { nodes, leads: new Set<string>() }),
     [nodes, q],

@@ -4,7 +4,7 @@ import type { RememberedSize } from '@pommora/uix/Interactions/useResizable'
 import { PICKER_MAX_HEIGHT } from '@pommora/uix/Pickers/picker-base.css'
 import { type PaneBounds, usePaneResize } from '@pommora/uix/Pickers/usePaneResize'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
-import { emphasizeMatch, MenuItem, MenuRowView, MenuScrollFrame } from '@pommora/uix/Menus'
+import { MenuItem, MenuRowView, MenuScrollFrame } from '@pommora/uix/Menus'
 import type { BlockMenuAction } from '../../Actions/blockMenu'
 import { useKeepInView } from '@pommora/uix/Interactions/paneCtl'
 import { CaretPane, CLOSED_GEOMETRY } from './caretPane'
@@ -26,7 +26,6 @@ export function BlockMenuPane({ state, selected, onPick, geometry }: Props): Rea
   const open = state !== null
   const resize = usePaneResize(open, BLOCK_BOUNDS, geometry)
   const v = useHeld({ state: state ?? CLOSED, selected }, open)
-  const matchLen = v.state.query.length
   const keepInView = useKeepInView(v.selected)
 
   return (
@@ -44,7 +43,7 @@ export function BlockMenuPane({ state, selected, onPick, geometry }: Props): Rea
                 leading={row.icon && <Icon name={row.icon} size="body" />}
                 onMouseDown={() => onPick(row.action)}
               >
-                {emphasizeMatch(row.label, row.at, matchLen)}
+                {row.label}
               </MenuItem>
             ))}
           </Fragment>
