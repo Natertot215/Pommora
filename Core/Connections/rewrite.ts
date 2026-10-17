@@ -8,18 +8,20 @@ import {
   targetSpan,
 } from './connections'
 import { normalizeTitle } from '../Paths/caseFold'
+import { titleFromPath } from '../Paths/posix'
 import { encodeLinkTarget, escapeLabel, fitsSlot, unescapeLabel } from './links'
 import { applyEdits, type TextEdit } from '../MarkdownPM/Engine/markdownCode'
 import { escapeCell } from '../MarkdownPM/Engine/Tables/codec'
 import type { TableRegion } from '../MarkdownPM/Engine/Tables/regions'
 import { scanDoc, spanAt } from '../MarkdownPM/Engine/docScan'
 import { type LinkHit, linksIn } from './scan'
+import { pageKey } from './pageIndex'
 
 export type RenameChange = { title: string } | { heading: string; to: string }
 
 /** Code stays untouched: a page documenting `[[Old Title]]` in a fenced block is showing a sample. Only the written name changes; shown text that only named it follows it, and shown text that comes to repeat the new target goes, as the writer drops one. */
 export function rewriteConnections(body: string, oldTitle: string, newTitle: string): string {
-  const oldKey = normalizeTitle(oldTitle)
+  const oldKey = pageKey(oldTitle)
   const rewrite = follower(body)
   const edits: TextEdit[] = []
   for (const hit of linksIn(body))
@@ -31,11 +33,11 @@ export function rewriteConnections(body: string, oldTitle: string, newTitle: str
 function carry(shown: string, from: PageName, to: PageName): string {
   switch (namesTarget(shown, from)) {
     case 'title':
-      return to.title
+      return titleFromPath(to.title)
     case 'heading':
       return to.heading!
     case 'both':
-      return `${to.title}#${to.heading}`
+      return `${titleFromPath(to.title)}#${to.heading}`
     case null:
       return shown
   }
@@ -84,7 +86,7 @@ export function rewriteHeadingConnections(
   outline?: readonly string[],
 ): string {
   if (!mayNameHeading(body)) return body
-  const titleKey = normalizeTitle(title)
+  const titleKey = pageKey(title)
   const oldKey = normalizeTitle(oldHeading)
   const rewrite = follower(body)
   const edits: TextEdit[] = []

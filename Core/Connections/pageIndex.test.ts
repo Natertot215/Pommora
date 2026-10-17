@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { buildPageIndex, type ConnPage } from './pageIndex'
+import { titleFromPath } from '../Paths/posix'
 
 const pages: ConnPage[] = [
   { id: '1', title: 'Project Atlas', path: 'v/Project Atlas.md' },
@@ -58,5 +59,62 @@ describe('candidates (prefix, ranked exact → shortest → A–Z)', () => {
   })
   it('respects the limit', () => {
     expect(idx.candidates('p', 1)).toHaveLength(1)
+  })
+})
+
+describe('paths', () => {
+  const at = (...paths: string[]) =>
+    buildPageIndex(paths.map((path, i) => ({ id: String(i), title: titleFromPath(path), path })))
+  const named = (idx: ReturnType<typeof at>, raw: string) => idx.resolve(raw).page?.path
+
+  it('a full path names its page, and names one of a shared title', () => {
+    expect(named(at('A/Notes.md'), 'A/Notes')).toBe('A/Notes.md')
+    const twins = at('A/Notes.md', 'B/Notes.md')
+    expect(twins.resolve('Notes').status).toBe('ambiguous')
+    expect(named(twins, 'B/Notes')).toBe('B/Notes.md')
+  })
+  it('a tail names its page alone, and is ambiguous where two paths end with it', () => {
+    expect(named(at('Q/X/Notes.md'), 'X/Notes')).toBe('Q/X/Notes.md')
+    expect(at('Q/X/Notes.md', 'R/X/Notes.md').resolve('X/Notes').status).toBe('ambiguous')
+  })
+  it('a full path wins over a tail', () => {
+    expect(named(at('A/B/Notes.md', 'B/Notes.md'), 'B/Notes')).toBe('B/Notes.md')
+  })
+  it('two paths folding to one are ambiguous', () => {
+    expect(at('A/Notes.md', 'A/notes.md').resolve('A/Notes').status).toBe('ambiguous')
+  })
+  it('reads the extension on the page half', () => {
+    const idx = at('A/Notes.md')
+    expect(named(idx, 'Notes.md')).toBe('A/Notes.md')
+    expect(named(idx, 'A/Notes.md')).toBe('A/Notes.md')
+  })
+  it('a relative, rooted, or unfinished path is phantom', () => {
+    const idx = at('A/Notes.md', 'x.md')
+    for (const raw of ['./x', '../x', '/A/Notes', 'A/'])
+      expect(idx.resolve(raw).status).toBe('phantom')
+  })
+  it('writtenName spells the title where it names the page alone, else a tail at the written depth, else the full path', () => {
+    expect(at('A/Notes.md').writtenName('A/Notes.md')).toBe('Notes')
+    expect(at('A/Notes.md', 'B/Notes.md').writtenName('B/Notes.md')).toBe('B/Notes')
+    expect(at('A/Notes.md', 'Q/B/Notes.md').writtenName('Q/B/Notes.md', 'x/notes')).toBe('B/Notes')
+    expect(at('Q/B/Notes.md', 'R/B/Notes.md').writtenName('Q/B/Notes.md', 'x/notes')).toBe(
+      'Q/B/Notes',
+    )
+    expect(at('A/Notes.md', 'A/notes.md').writtenName('A/Notes.md')).toBe('A/Notes')
+  })
+  it('a doubled extension keys by path as it keys by title', () => {
+    const doubled = at('A/X.md.md')
+    for (const raw of ['X', 'X.md', 'A/X', 'A/X.md']) expect(named(doubled, raw)).toBe('A/X.md.md')
+    expect(doubled.namesOf('A/X.md.md')).toEqual(['x', 'a/x'])
+    const beside = at('A/X.md.md', 'A/X.md')
+    expect(beside.resolve('A/X').status).toBe('ambiguous')
+    expect(beside.namesOf('A/X.md.md')).toEqual([])
+  })
+  it('namesOf lists the tails that resolve to the page, shortest first', () => {
+    expect(at('Q/X/Notes.md').namesOf('Q/X/Notes.md')).toEqual(['notes', 'x/notes', 'q/x/notes'])
+    expect(at('Q/X/Notes.md', 'B/Notes.md').namesOf('Q/X/Notes.md')).toEqual([
+      'x/notes',
+      'q/x/notes',
+    ])
   })
 })

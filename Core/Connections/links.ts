@@ -1,5 +1,5 @@
 import { HAS_SCHEME } from '../Paths/urlPath'
-import { isMarkdownFile, stripMarkdownExt } from '../Paths/posix'
+import { isMarkdownFile, titleFromPath } from '../Paths/posix'
 
 // The label's cap is load-bearing (an alternation under a quantifier backtracks quadratically on a long unclosed `[` run), it may be empty, and it may not open with a raw `^`, which GFM reads as a footnote reference; the writer escapes one. The destination needs a character and admits parentheses nested two deep, what cmark renders.
 const LINK_LABEL = '((?!\\^)(?:[^\\]\\\\\\r\\n]|\\\\.){0,255})'
@@ -31,12 +31,12 @@ export function labelEscapes(label: string): number[] {
 export const markdownLink = (dest: string, label: string): string =>
   `[${escapeLabel(label)}](${dest})`
 
-/** What a markdown link shows when its label is empty, and what a picked link's label defaults to. */
-export const defaultLabel = (title: string, heading?: string): string => heading || title
+/** What a markdown link shows when its label is empty, and what a picked link's label defaults to: the heading, else the page's title alone, whatever path the link spells it by. */
+export const defaultLabel = (title: string, heading?: string): string =>
+  heading || titleFromPath(title)
 
-// Only the half before the first `#` decides: a scheme or a path separator there addresses something outside the Nexus, while a fragment is a heading's own text.
-export const namesPage = (pageHalf: string): boolean =>
-  !pageHalf.includes('/') && !HAS_SCHEME.test(pageHalf.trim())
+// Only the half before the first `#` decides: a scheme there addresses something outside the Nexus, a `/` names a folder on the way to a page, and a fragment is a heading's own text.
+export const namesPage = (pageHalf: string): boolean => !HAS_SCHEME.test(pageHalf.trim())
 
 // `encodeURI` leaves parens, colons, and `#` alone; a raw colon declares a target a URL, a lone `(` leaves the link untokenizable, and a raw `#` is where the reader splits the heading off, so all three are escaped on top. A lone surrogate makes encodeURI throw, and the rename cascade calls this unwrapped.
 export function encodeLinkTarget(target: string): string {
@@ -60,12 +60,12 @@ export function decodeLinkTarget(target: string): string {
   }
 }
 
-// The halves arrive already split by the occurrence, so an encoded `%23` decodes inside the title. An address names no page; a title that decodes to nothing is the page itself when a heading follows, and no page at all otherwise.
+// The halves arrive already split by the occurrence, so an encoded `%23` decodes inside the title. An address names no page; a title that decodes to nothing is the page itself when a heading follows, and no page at all otherwise. A written `.md` stays for the resolver's key to drop, as the wiki reader keeps it.
 export const targetTitle = (titleHalf: string, hasHeading: boolean): string | null => {
   if (!namesPage(titleHalf)) return null
   const decoded = decodeLinkTarget(titleHalf).trim()
   if (!decoded) return hasHeading ? '' : null
-  return stripMarkdownExt(decoded)
+  return decoded
 }
 
 export const targetNamesFile = (titleHalf: string): boolean =>

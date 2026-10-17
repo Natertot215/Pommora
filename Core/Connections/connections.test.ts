@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   aliasSpells,
+  carriesTitleAlias,
   expressibleInLink,
   keepsAlias,
   linkOccurrences,
@@ -10,7 +11,7 @@ import {
   spellsAsWiki,
 } from './connections'
 import { codeMask } from '../MarkdownPM/Engine/markdownCode'
-import { targetTitle } from './links'
+import { defaultLabel, targetTitle } from './links'
 import { readLinkText } from './linkValue'
 
 const walk = (text: string) => linkOccurrences(text, codeMask(text))
@@ -101,6 +102,20 @@ describe('pageLinkText and the slot rules', () => {
     expect(pageLinkText({ title: 'P', heading: 'H' }, 'markdown')).toBe('[H](P#H)')
     expect(pageLinkText({ title: '', heading: 'H' }, 'markdown')).toBe('[H](#H)')
   })
+  it('a path link shows its title alone: a wikilink carries it as its alias, a markdown link as its label', () => {
+    expect(defaultLabel('A/Notes')).toBe('Notes')
+    expect(defaultLabel('Notes.md')).toBe('Notes')
+    expect(pageLinkText({ title: 'A/Notes' }, 'wiki')).toBe('[[A/Notes|Notes]]')
+    expect(pageLinkText({ title: 'A/Notes', heading: 'H' }, 'wiki')).toBe('[[A/Notes#H]]')
+    expect(pageLinkText({ title: 'A/Notes', shown: 'x' }, 'wiki')).toBe('[[A/Notes|x]]')
+    expect(pageLinkText({ title: 'A/Notes' }, 'markdown')).toBe('[Notes](A/Notes)')
+    expect(pageLinkText({ title: 'Ideas#1/Notes' }, 'wiki')).toBe('[Notes](Ideas%231/Notes)')
+  })
+  it('carries the title alias for a bare path alone', () => {
+    expect(carriesTitleAlias({ title: 'A/Notes' })).toBe(true)
+    expect(carriesTitleAlias({ title: 'A/Notes', heading: 'H' })).toBe(false)
+    expect(carriesTitleAlias({ title: 'A/Notes', shown: 'x' })).toBe(false)
+  })
   it('a markdown title holding `#` reads back as itself', () => {
     const text = pageLinkText({ title: 'C# Notes', heading: 'Intro' }, 'markdown')
     const [o] = linkOccurrences(text, () => false)
@@ -142,6 +157,13 @@ describe('repeatsTarget and namesTarget', () => {
     expect(namesTarget('Alpha#H', { title: 'Alpha', heading: 'H' })).toBe('both')
     expect(namesTarget('H', { title: 'Alpha' })).toBeNull()
     expect(namesTarget('Mine', { title: 'Alpha', heading: 'H' })).toBeNull()
+  })
+  it('names a path link by its title, and compares a heading directly', () => {
+    expect(namesTarget('Notes', { title: 'A/Notes' })).toBe('title')
+    expect(namesTarget('A/Notes', { title: 'A/Notes' })).toBe('title')
+    expect(namesTarget('A/Notes#H', { title: 'A/Notes', heading: 'H' })).toBe('both')
+    expect(namesTarget('A/B', { title: 'P', heading: 'A/B' })).toBe('heading')
+    expect(namesTarget('B', { title: 'P', heading: 'A/B' })).toBeNull()
   })
 })
 

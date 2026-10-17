@@ -94,6 +94,8 @@ describe('toggleInline', () => {
   it('unwrapping an aliased connection leaves the alias behind, not the title', () => {
     const doc = 'a [[Q3 Plan|the plan]] b'
     expect(apply(doc, toggleInline(scanDoc(doc), 14, 14, 'connection'))).toBe('a the plan b')
+    const path = 'a [[A/B/Notes]] b'
+    expect(apply(path, toggleInline(scanDoc(path), 10, 10, 'connection'))).toBe('a Notes b')
   })
   it('stands down on a fenced line', () => {
     expect(toggleInline(scanDoc('```\n**b**\n```'), 6, 6, 'bold')).toBeNull()

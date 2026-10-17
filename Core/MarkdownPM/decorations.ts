@@ -591,7 +591,6 @@ function build(view: EditorView, scope: MarkdownScope): Built {
   tokens.forEach((tk, i) => {
     if (tk.kind !== 'wikiLink' || !conn) return
     const alias = aliasedToken(tk)
-    const [rs, re] = tk.link.title
     const look = linkLook(conn, text, tk, ownKeys, headingLinkStyle)
     const { status, bare, join } = look
     const open = active.has(i)
@@ -618,8 +617,8 @@ function build(view: EditorView, scope: MarkdownScope): Built {
       if (!bare)
         ranges.push(
           (join.showPage ? Decoration.mark({ class: 'md-connection-resolved' }) : hideMarker).range(
-            rs,
-            re,
+            tk.contentRange[0],
+            tk.link.title[1],
           ),
         )
       ranges.push(

@@ -251,6 +251,19 @@ describe('a resting cell draws every token as a span, through the tokens inside 
     expect(link.querySelector('.md-bold')?.textContent).toBe('b')
   })
 
+  it('a path link with a heading draws as `Notes § H`, its folder hidden', async () => {
+    container = document.createElement('div')
+    document.body.appendChild(container)
+    root = createRoot(container)
+    const paths = {
+      ...conn,
+      index: buildPageIndex([{ id: 'n', title: 'Notes', path: 'A/Notes.md' }]),
+    }
+    await act(async () => root.render(renderCellContent('[[A/Notes#H]]', () => paths)))
+    expect(container.textContent).toBe('Notes§H')
+    expect(container.querySelector('.md-heading-symbol-spaced')?.textContent).toBe('§')
+  })
+
   it('a § run over a heading of the page draws as a link', async () => {
     await draw('see §Setup', { ordinalOf: () => null, keys: [], texts: ['Setup'] })
     const run = container.querySelector('.md-section-run') as HTMLElement

@@ -226,7 +226,7 @@ function blockLatexTokens(text: string, maths: readonly [number, number][]): Tok
   })
 }
 
-function linkToken(o: LinkOccurrence): Token {
+function linkToken(text: string, o: LinkOccurrence): Token {
   const [fs, fe] = o.full
   if (o.syntax === 'markdown')
     return {
@@ -239,10 +239,12 @@ function linkToken(o: LinkOccurrence): Token {
       ],
       link: o,
     }
-  // The leading marker swallows `[[Title|`. An opened-but-empty alias shows nothing, so it stays a plain link.
+  // The leading marker swallows the folder and `[[Title|`; a half still being written (ending in `/`) keeps the whole slot. An opened-but-empty alias shows nothing, so it stays a plain link.
   const alias = filled(o.shown) ? o.shown : null
   const heading = filled(o.heading) ? o.heading : null
-  const shown = alias ?? [o.title[0], heading ? heading[1] : o.title[1]]
+  const half = text.slice(o.title[0], o.title[1])
+  const start = o.title[0] + (half.trimEnd().endsWith('/') ? 0 : half.lastIndexOf('/') + 1)
+  const shown = alias ?? [start, heading ? heading[1] : o.title[1]]
   return {
     kind: 'wikiLink',
     range: o.full,
@@ -275,7 +277,7 @@ export function tokenizeChunk(text: string): { tokens: Token[]; html: Span[] } {
   const matches = (spec: RegexSpec): Token[] => regexTokens(text, spec, inCode)
 
   const code = inlineCodeTokens(text, inCode)
-  const links = linkOccurrences(text, inCode).map(linkToken)
+  const links = linkOccurrences(text, inCode).map((o) => linkToken(text, o))
   const wikis = links.filter((tk) => tk.kind === 'wikiLink')
   const cites = matches({ kind: 'citationRef', re: markerRegex(), open: 2, close: 1 }).filter(
     notOverlapping([...wikis, ...code]),

@@ -59,6 +59,18 @@ describe('a heading link reads per the two heading settings', () => {
     expect(heading?.textContent).toBe('Setup')
   })
 
+  it('[[A/Notes#Setup]] draws as `Notes § Setup`, its folder hidden', async () => {
+    const view = await mountEditor({
+      initialBody: '[[A/Notes#Setup]]',
+      connections: {
+        ...conn,
+        index: buildPageIndex([{ id: 'n', title: 'Notes', path: 'A/Notes.md' }]),
+      },
+    })
+    expect(view.dom.textContent).toBe('Notes§Setup')
+    expect(view.dom.querySelector('.md-heading-symbol-spaced')?.textContent).toBe('§')
+  })
+
   it('heading-only style drops the page text and the spacing', async () => {
     const view = await mountEditor({
       initialBody: '[[Alpha#Setup]]',

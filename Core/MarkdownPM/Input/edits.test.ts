@@ -796,6 +796,7 @@ describe('headingHash', () => {
       ['[a](Page)', 8],
       ['[a]()', 4],
       ['[a](Pa', 6],
+      ['[a](dir/Page)', 12],
     ] as const)
       expect(headingHash(scanDoc(doc), at, at, '§')).toEqual({
         from: at,
@@ -810,7 +811,6 @@ describe('headingHash', () => {
       ['[al](Page)', 2],
       ['[a](Page#Se)', 11],
       ['[a](https://x.com)', 17],
-      ['[a](dir/Page)', 12],
     ] as const)
       expect(headingHash(scanDoc(doc), at, at, '§')).toBeNull()
   })

@@ -36,6 +36,11 @@ The work lands in nine phases in dependency order, each the largest run one agen
 
 **The Number:** counted from this plan's AFTER blocks (code lines, comments excluded), the work adds about 770 lines and removes about 380, roughly +390 net, against the BRIEF's +80 to +140 and the scouts' +120 to +150; the blocks elide unchanged code, so the landed count may run higher. Per phase: 1 (+62/−31), 2 (+50/−69), 3 (+79/−32), 4 (+71/−77), 5 (+44/−15), 6 (+181/−78), 7 (+140/−46), 8 (+142/−37). The scouts costed the read path, the index key, and the search fold; they didn't cost the three phases that carry most of the additions, each a mandate the BRIEF names: the re-spell over moves, folder renames, and collisions (E-1 to E-3, E-6), the outside lane paired across batches and at the open-time seed (E-4), and a restored page's own links repaired by identity (F-5, F-6). Every addition is listed with what it buys in its task, the removals it earns stand beside it, and no phase is padded; the planner's call (10-16-2026) is that the design is already at its minimal form for the mandate and that deferring Phase 7 or 8 would leave E-4 or F-5 half-done, which the BRIEF forbids. The owner weighs the number at ratification.
 
+**Net Ledger** (the Actionable column of `view-delta`, per phase, cumulative from the BASELINE head):
+
+| Phase | Estimate | Measured | Cumulative |
+| ----- | -------- | -------- | ---------- |
+
 #### Concepts
 
 **ADDED**
@@ -104,7 +109,7 @@ The work lands in nine phases in dependency order, each the largest run one agen
 - **Frozen:** `wikiTitle` and every File value, banner, cover, and asset reference it reads (A-8); `Core/Connections/aliasMemory.ts` and the metadata shard; `Core/Contract/bridge.ts` (no channel changes; `MutateOutcome.cascade` already exists and the store contract widens through `Core/Platform/stores.ts`); the `relations` table's columns (no schema change); `Core/MarkdownPM/Engine/detect.ts`'s `loneEmbedTitle`; `UIX/Symbols/allSymbols.ts`'s `searchIcons` (D-3); a view's filter operators (D-5); **Display Unresolved Links As Plain Syntax**; a trashed page's body while it sits in the Trash (F-3); `Core/Sync/`; every behavior of a resolved link's click (C-2).
 - **The Number:** every phase's VERIFY runs `python3 ~/"The Studio/.claude/scripts/view-delta/view-delta.py" <BASELINE>..HEAD` and records the **Actionable** column (code minus comments; tests and docs excluded) in the Net Ledger beside the phase's estimate, with removals and additions apart. A phase that lands above its band is reported in chat before the next phase opens, with what the increase buys. There is no floor (the owner's bar: every addition earns its place and the outcome reads as intended, with the merges counting toward a codebase left with less); the final report states the measured total against the count under *§Overview · The Number*.
 - **Shape:** a feature with a refactor, removals, and fixes inside it. The behavioral baseline is today's behavior as the Decisions' *§Context* states it, kept except where a decision names a change and proven by the tests each task rewrites or adds. Every removal task lists its consumers (the sibling sweep), and the Frozen list holds throughout. Every fix task names what else consumed the old behavior. The index generation bump is the one migration: it drops and reseeds the content index on the first open, which is how the rows re-key.
-- **Conventions:** finite states are unions plus exhaustive switches; no O(N), allocating, or layout-reading work lands on a keystroke, a caret move, a decoration build, or a settle that nothing owes, and every task that touches one of those paths states its cost; the index resolves nothing eagerly at build (both processes rebuild it on every tree change, and the host never opens a picker); nothing in SQL rewrites `relations.target` (it mirrors the file's bytes; the sweep rewrites files and re-indexing re-keys them); host-run code imports no React or UIX, and `Desktop/hostGraph.test.ts` and `Core/Contract/engineGraph.test.ts` stay green; nothing inside an address operation awaits `inTurn` (`payOwedWalk`, `settleNow`), since `inTurns` has no re-entry detection and would hang silently (Task 6-3's audit lists every transitive caller); comments are added only where a reader meets an exception and needs its reason, and the comments the scouts list as false are rewritten or removed by the task that falsifies them; commit messages are past tense and one to four sentences; nothing temporary, transitional, or compatibility-kept remains at a phase's end.
+- **Conventions:** finite states are unions plus exhaustive switches; no O(N), allocating, or layout-reading work lands on a keystroke, a caret move, a decoration build, or a settle that nothing owes, and every task that touches one of those paths states its cost; the index resolves nothing eagerly at build (both processes rebuild it on every tree change, and the host never opens a picker); nothing in SQL rewrites `relations.target` (it mirrors the file's bytes; the sweep rewrites files and re-indexing re-keys them); host-run code imports no React or UIX, and `Desktop/hostGraph.test.ts` and `Core/Contract/engineGraph.test.ts` stay green; nothing inside an address operation awaits `inTurn` (`payOwedWalk`, `settleNow`), since `inTurns` has no re-entry detection and would hang silently (Task 6-3's audit lists every transitive caller); a comment is written only where the code would be genuinely ambiguous or misread without it (the owner, 10-17-2026): the comment lines in an AFTER block state intent for the executor and are not written unless they meet that bar, a comment that restates its code or claims a cost is dropped, and the comments the scouts list as false are rewritten or removed by the task that falsifies them; commit messages are past tense and one to four sentences; nothing temporary, transitional, or compatibility-kept remains at a phase's end.
 - **Execution:** the plan runs end to end autonomously, the owner reachable only at check-ins. Every review checkpoint dispatches two agents to the `closeout-review` skill's standards (correctness, simplification, cohesiveness, and consequences; its closing procedures, write-guards, and output format don't apply), reading outward (whether the phase reads correct from the rest of the codebase's point of view) rather than in isolation, and the orchestrator's own post-phase look weighs the landed work against the **Mandate** above before the next phase opens. An in-flight call is weighed against those and the plan's objectives, disclosed in chat, and recorded under *§Deviations* only where it changes an outcome. The two compaction checkpoints in *§Process Overview* sit before Phases 4 and 7 (placed by the planner; the owner adjusts them at ratification); each runs `c/pre-compaction`, re-instills the Mandate in the handoff exactly as the owner gave it, and stops until the owner re-prompts.
 - **Rulings (Not Re-Raised):** every decision in *Path Links — Decisions* and its *§Rejected* list: titles are never forced unique; a shared title writes the full path, never a shortest unique tail; nothing shortens a link for its own sake, and a path link never shortens back when a collision goes away; Ambiguous stays its own state; ambiguity is resolved through the picker alone; a path link draws its title only; `#` is the only heading opener inside a link and a `§` there is ordinary text (A-9); no new search box, no per-letter highlighting, no ambiguous-link menu, no reserved extension list, no whole-target file reading; the one click rule's exception is a caret already inside the unresolved link being edited; Text values keep their two-click path where prose surrounds the link; outside and closed-app moves repair through the heading-rename lane; a trashed page's body is never touched in the Trash; File and asset references aren't connections. The owner's rulings during planning are recorded as they land (*§Deviations* records any that change an outcome).
 - **Neutral Gate:** the work ends with a `fable-high` neutral reviewer given only the BASELINE head, HEAD, and this intention, with no plan, log, or document: *"Pommora's page links named pages by title alone, so two pages sharing a title couldn't be told apart, and its link cascades, searches, and clicks on unresolved links each worked their own way. This work lets a link name a page by its path from the Nexus root, written and read as Obsidian does, keeps every link pointing at its page through renames, moves, folder changes, collisions, and restores made inside or outside the app, makes every search match one way, and seats a click on an unresolved link in its title, with each rule stated once, built from what the architecture already had, and nothing left over."* Every phase is written so that review passes.
@@ -113,12 +118,12 @@ The work lands in nine phases in dependency order, each the largest run one agen
 
 #### Process Overview
 
-- [ ] **Phase 1** — The Read Path
-  - [ ] Task 1-1 · The grammar admits a path, and the reader keeps `.md`
-  - [ ] Task 1-2 · The resolver reads paths, and the index names pages
-  - [ ] Task 1-3 · The compare sites read the title, and a path link carries its alias
-  - [ ] Task 1-4 · A path link draws its title only
-  - [ ] Review Checkpoint
+- [x] **Phase 1** — The Read Path
+  - [x] Task 1-1 · The grammar admits a path, and the reader keeps `.md`
+  - [x] Task 1-2 · The resolver reads paths, and the index names pages
+  - [x] Task 1-3 · The compare sites read the title, and a path link carries its alias
+  - [x] Task 1-4 · A path link draws its title only (the live check is the owner's, pending)
+  - [x] Review Checkpoint
 - [ ] **Phase 2** — The Index Key
   - [ ] Task 2-1 · The scanner keys by `pageKey`, and a self-link keys `''`
   - [ ] Task 2-2 · The mention queries take key lists
@@ -224,11 +229,26 @@ The work lands in nine phases in dependency order, each the largest run one agen
 
 **CHANGE**
 
-- [ ] Write the `pageIndex.test.ts` cases and watch them fail: `resolve('A/Notes')` names the page at `A/Notes.md`; `resolve('Notes')` with holders at `A/Notes.md` and `B/Notes.md` is ambiguous while `resolve('B/Notes')` names B's; `resolve('X/Notes')` for a page at `Q/X/Notes.md` names it by its tail, and is ambiguous when `R/X/Notes.md` also exists; a full path wins over a tail (`resolve('B/Notes')` names `B/Notes.md` when `A/B/Notes.md` also exists); `A/Notes.md` beside `A/notes.md` is ambiguous at `A/Notes` (B-3); `resolve('Notes.md')` and `resolve('A/Notes.md')` read the extension on the page half (A-5); `./x`, `../x`, `/A/Notes`, and `A/` are phantom; `writtenName` returns the title for a sole holder, the full path for a shared title, the written tail at depth two where it names the page alone (`'B/Notes'` for `like: 'x/notes'`), the full path where that tail is shared, and the full path for a case-variant twin; `namesOf('Q/X/Notes.md')` is `['notes', 'x/notes', 'q/x/notes']` while `notes` is unique and drops `notes` once `B/Notes.md` exists.
-- [ ] In `pageIndex.ts`, add `pageKey`, a private `tailOf`, and `pathKeys`; key `entries` by `pageKey(p.title)` (so an outside-made `X.md.md` and a written `[[X.md]]` meet on `x`); rewrite `holdersOf` with the tail branch; add `writtenName` and `namesOf` to `PageIndex` and the built object; rename the `rawTitle` parameters `raw`. `candidates` is untouched here (Phase 4 folds it).
-- [ ] `scan.ts:24`'s `titleKey` is Phase 2's; nothing else changes.
+- [ ] Write the `pageIndex.test.ts` cases and watch them fail: `resolve('A/Notes')` names the page at `A/Notes.md`; `resolve('Notes')` with holders at `A/Notes.md` and `B/Notes.md` is ambiguous while `resolve('B/Notes')` names B's; `resolve('X/Notes')` for a page at `Q/X/Notes.md` names it by its tail, and is ambiguous when `R/X/Notes.md` also exists; a full path wins over a tail (`resolve('B/Notes')` names `B/Notes.md` when `A/B/Notes.md` also exists); `A/Notes.md` beside `A/notes.md` is ambiguous at `A/Notes` (B-3); `resolve('Notes.md')` and `resolve('A/Notes.md')` read the extension on the page half (A-5); `./x`, `../x`, `/A/Notes`, and `A/` are phantom; `writtenName` returns the title for a sole holder, the full path for a shared title, the written tail at depth two where it names the page alone (`'B/Notes'` for `like: 'x/notes'`), the full path where that tail is shared, and the full path for a case-variant twin; `namesOf('Q/X/Notes.md')` is `['notes', 'x/notes', 'q/x/notes']` while `notes` is unique and drops `notes` once `B/Notes.md` exists; `A/X.md.md` resolves at `X`, `X.md`, `A/X`, and `A/X.md`, its `namesOf` is `['x', 'a/x']`, and beside `A/X.md` both read ambiguous at `A/X`.
+- [ ] In `pageIndex.ts`, add `pageKey`, a private `tailOf` and `pathKey` (a path keys as its title does, so an outside-made `A/X.md.md` resolves at `X`, `X.md`, `A/X`, and `A/X.md` alike), and `pathKeys`; key `entries` by `pageKey(p.title)`; rewrite `holdersOf` with the tail branch; add `writtenName` and `namesOf` to `PageIndex` and the built object; rename the `rawTitle` parameters `raw`. `candidates` is untouched here (Phase 4 folds it).
+- [ ] `scan.ts:24`'s `titleKey`, `rewriteConnections`' `oldKey`, and `rewriteHeadingConnections`' `titleKey` (`rewrite.ts:22,87`) key through `pageKey`, so a `.md` link still indexes and renames as `notes`; Phase 2 removes `titleKey`.
 
 **AFTER**
+
+```Core/Connections/scan.ts diff
+@@ titleKey @@
+-const titleKey = (raw: string, own: string): string => (raw === '' ? own : normalizeTitle(raw))
++const titleKey = (raw: string, own: string): string => (raw === '' ? own : pageKey(raw))
+```
+
+```Core/Connections/rewrite.ts diff
+@@ rewriteConnections @@
+-  const oldKey = normalizeTitle(oldTitle)
++  const oldKey = pageKey(oldTitle)
+@@ rewriteHeadingConnections @@
+-  const titleKey = normalizeTitle(title)
++  const titleKey = pageKey(title)
+```
 
 ```Core/Connections/pageIndex.ts diff
 @@ imports @@
@@ -242,11 +262,12 @@ The work lands in nine phases in dependency order, each the largest run one agen
 +const tailOf = (path: string, depth: number): string =>
 +  stripMarkdownExt(path).split('/').slice(-depth).join('/')
 +
++/** A page's path as a key: its title's key under its folders, so a page keys the same by path and by title. */
++const pathKey = (path: string): string => pageKey(stripMarkdownExt(path))
++
 +/** Every tail of a page's path as a key, shortest first: the keys a link may name the page by. */
-+export function pathKeys(path: string): string[] {
-+  const segs = path.split('/')
-+  return segs.map((_, i) => pageKey(segs.slice(i).join('/'))).reverse()
-+}
++export const pathKeys = (path: string): string[] =>
++  path.split('/').map((_, i) => pageKey(tailOf(path, i + 1)))
 +
  export interface PageIndex {
 -  holders: (rawTitle: string) => readonly ConnPage[]
@@ -262,7 +283,7 @@ The work lands in nine phases in dependency order, each the largest run one agen
 @@ buildPageIndex @@
 -  // Titles normalize ONCE at build — candidates() runs per autocomplete keystroke.
 -  const entries = pages.map((p) => ({ p, norm: normalizeTitle(p.title) }))
-+  // Titles key ONCE at build — candidates() runs per autocomplete keystroke. Paths key per resolve instead, over a title's few holders, so a build costs nothing more.
++  // Titles key ONCE at build — candidates() runs per autocomplete keystroke.
 +  const entries = pages.map((p) => ({ p, norm: pageKey(p.title) }))
    …
 -  const holdersOf = (rawTitle: string): readonly ConnPage[] =>
@@ -273,8 +294,8 @@ The work lands in nine phases in dependency order, each the largest run one agen
 +    const cut = key.lastIndexOf('/')
 +    const titled = byTitle.get(key.slice(cut + 1)) ?? []
 +    if (cut < 0) return titled
-+    const exact = titled.filter((p) => pageKey(p.path) === key)
-+    return exact.length ? exact : titled.filter((p) => pageKey(p.path).endsWith(`/${key}`))
++    const exact = titled.filter((p) => pathKey(p.path) === key)
++    return exact.length ? exact : titled.filter((p) => pathKey(p.path).endsWith(`/${key}`))
 +  }
 +  const resolve = (raw: string): ConnResolution => {
 +    const holders = holdersOf(raw)
@@ -302,6 +323,7 @@ The work lands in nine phases in dependency order, each the largest run one agen
 **VERIFY**
 
 - [ ] `pageIndex.test.ts` passes, the existing `resolve` and `holders` cases included (`:11-42`).
+- [ ] `rewrite.test.ts:136`, `:257`, and `scan.test.ts:243` (`.md` links keyed and renamed) are green again.
 - [ ] `linkValue.test.ts:125-127` (ambiguous `Dup`) still holds and gains `[[A/Dup]]` resolving; `:155` (a dotted title in a markdown link) still holds.
 - [ ] Both processes build the index exactly as before: no new work in `buildPageIndex`'s loop (read the diff).
 - [ ] Run the gates.
@@ -309,7 +331,7 @@ The work lands in nine phases in dependency order, each the largest run one agen
 
 #### Task 1-3
 
-**TASK:** Make every place that compares shown text to a link's title, or draws a title from a `PageName`, read the basename through `titleFromPath`; let the one writer give a path link the alias Obsidian's writer gives it; and compare a heading directly in `namesTarget`.
+**TASK:** Make every place that compares shown text to a link's title, or draws a title from a `PageName`, read the basename through `titleFromPath`; let the one writer give a path link the alias Obsidian's writer gives it; compare a heading directly in `namesTarget`; and let `resolvedTarget` spell at the written depth, since a path that resolves would otherwise collapse to its bare title.
 
 **NOW:** `defaultLabel` (`links.ts:35`) returns the whole title, so `[](A/Notes)` would label itself `A/Notes` and the settle's label fill (`linkSettle.ts:118-122` via `pageLabel`) would write `A/Notes` into a file. `repeatsTarget` (`connections.ts:145-146`) compares the whole target, `namesTarget` (`:153-158`) passes a heading through its title parameter, and `carry` (`rewrite.ts:31-42`) writes `to.title` whole, so `[[A/Notes|Notes]]` renamed would keep a stale alias and a markdown label would become `A/Plan`. `linkDisplayText`'s wiki arm (`linkValue.ts:201-202`) returns the raw half to sort, filter, and Remove Link. `pageLinkText` (`connections.ts:161-175`) writes no alias unless given one.
 
@@ -317,11 +339,12 @@ The work lands in nine phases in dependency order, each the largest run one agen
 
 **CHANGE**
 
-- [ ] Write and watch fail: `connections.test.ts`: `defaultLabel('A/Notes')` → `'Notes'`, `defaultLabel('Notes.md')` → `'Notes'`; `pageLinkText({ title: 'A/Notes' }, 'wiki')` → `[[A/Notes|Notes]]`, `pageLinkText({ title: 'Ideas#1/Notes' }, 'wiki')` falls to the markdown form (A-6: a folder named with `#` can't be spelled in a wikilink), `carriesTitleAlias` is true for a bare path and false for one with a heading or shown text, `pageLinkText({ title: 'A/Notes', heading: 'H' }, 'wiki')` → `[[A/Notes#H]]`, `pageLinkText({ title: 'A/Notes', shown: 'x' }, 'wiki')` → `[[A/Notes|x]]`, `pageLinkText({ title: 'A/Notes' }, 'markdown')` → `[Notes](A/Notes)`; `namesTarget('Notes', { title: 'A/Notes' })` → `'title'`, `namesTarget('B', { title: 'P', heading: 'A/B' })` → `'heading'` (the heading compared directly), `namesTarget('A/Notes', { title: 'A/Notes' })` → `'title'`. `rewrite.test.ts`: renaming the page behind `[[A/Notes|Notes]]` to `Plan` (through the existing title arm until Phase 6 replaces it) writes `[[A/Plan|Plan]]`, and `[Notes](A/Notes)` writes `[Plan](A/Plan)`. `linkValue.test.ts`: `linkDisplayText('[[A/Notes]]')` → `'Notes'`, `linkDisplayText('[[A/Notes#H]]')` → `'Notes § H'`.
+- [ ] Write and watch fail: `connections.test.ts`: `defaultLabel('A/Notes')` → `'Notes'`, `defaultLabel('Notes.md')` → `'Notes'`; `pageLinkText({ title: 'A/Notes' }, 'wiki')` → `[[A/Notes|Notes]]`, `pageLinkText({ title: 'Ideas#1/Notes' }, 'wiki')` falls to the markdown form (A-6: a folder named with `#` can't be spelled in a wikilink), `carriesTitleAlias` is true for a bare path and false for one with a heading or shown text, `pageLinkText({ title: 'A/Notes', heading: 'H' }, 'wiki')` → `[[A/Notes#H]]`, `pageLinkText({ title: 'A/Notes', shown: 'x' }, 'wiki')` → `[[A/Notes|x]]`, `pageLinkText({ title: 'A/Notes' }, 'markdown')` → `[Notes](A/Notes)`; `namesTarget('Notes', { title: 'A/Notes' })` and `namesTarget('A/Notes', { title: 'A/Notes' })` → `'title'`, `namesTarget('A/Notes#H', { title: 'A/Notes', heading: 'H' })` → `'both'` (shown text naming the title or the whole written half follows a rename), `namesTarget('A/B', { title: 'P', heading: 'A/B' })` → `'heading'` and `namesTarget('B', …)` → `null` (the heading compared directly). `rewrite.test.ts`: renaming the page behind `[[A/Notes|Notes]]` to `Plan` (through the existing title arm until Phase 6 replaces it) writes `[[A/Plan|Plan]]`, and `[Notes](A/Notes)` writes `[Plan](A/Plan)`. `linkValue.test.ts`: `linkDisplayText('[[A/Notes]]')` → `'Notes'`, `linkDisplayText('[[A/Notes#H]]')` → `'Notes § H'`; `resolvedTarget` on `[[a/dup]]` with twins `A/Dup.md` and `B/Dup.md` writes `A/Dup`, on `[[notes]]` with one holder `Notes`, on `[[x/notes]]` for `Q/X/Notes.md` the tail `X/Notes`; `linkValueFromEdit('[[A/Dup]]', twins)` is `[[A/Dup|Dup]]` where `[[Dup]]` stays refused; `shownAlias` records nothing for `[[A/Notes|Notes]]` or `[[A/Notes|A/Notes]]` and `x` for `[[A/Notes|x]]`.
 - [ ] `defaultLabel` → `heading || titleFromPath(title)`. `linkDisplayText`'s wiki arm reads `titleFromPath(target.title)`. `carry`'s `'title'` and `'both'` arms write `titleFromPath(to.title)`.
-- [ ] `namesTarget`: the title arm asks `repeatsTarget(shown, titleFromPath(t.title))`; the heading arm asks `normalizeTitle(shown) === normalizeTitle(t.heading)`; the both arm asks `repeatsTarget(shown, titleFromPath(t.title), t.heading)`.
+- [ ] `namesTarget`: the title and both arms ask whether shown text repeats the title's basename or the whole written half (`names(heading?)`), so `[[A/Notes|A/Notes]]` follows a rename rather than keeping a stale alias; the heading arm asks `normalizeTitle(shown) === normalizeTitle(t.heading)`.
 - [ ] `pageLinkText`: the wiki branch asks `carriesTitleAlias(t)` and gives such a link `titleFromPath(title)` as its alias (the default ruling); the predicate is exported beside it.
 - [ ] `connections.ts:144`'s `repeatsTarget` doc gains the reason the whole target is compared: a path link's title alias isn't redundant, since another reader shows the path.
+- [ ] `resolvedTarget`: return `written` when there's no index; otherwise `title: named.title === '' ? '' : index.writtenName(target.page.path, named.title)`; its doc and `linkValueFromEdit`'s say "at the depth it was written". `shownAlias` refuses an alias `namesTarget` says names the target, so memory never keeps `[[A/Notes|A/Notes]]`.
 
 **AFTER**
 
@@ -349,13 +372,14 @@ The work lands in nine phases in dependency order, each the largest run one agen
 +/** Which part of its target shown text names, the title (its basename, whatever path spells it), the heading, or both, rather than giving it a name: what a rename carries along and what memory never keeps. `H` names the heading of `A#H` without repeating `A#H`, which is `repeatsTarget`'s question. */
  export function namesTarget(shown: string, t: PageName): 'title' | 'heading' | 'both' | null {
 -  if (repeatsTarget(shown, t.title)) return 'title'
-+  const title = titleFromPath(t.title)
-+  if (repeatsTarget(shown, title)) return 'title'
++  const names = (heading?: string): boolean =>
++    repeatsTarget(shown, titleFromPath(t.title), heading) || repeatsTarget(shown, t.title, heading)
++  if (names()) return 'title'
    if (t.heading === undefined) return null
 -  if (repeatsTarget(shown, t.heading)) return 'heading'
 -  return repeatsTarget(shown, t.title, t.heading) ? 'both' : null
 +  if (normalizeTitle(shown) === normalizeTitle(t.heading)) return 'heading'
-+  return repeatsTarget(shown, title, t.heading) ? 'both' : null
++  return names(t.heading) ? 'both' : null
  }
 @@ pageLinkText @@
 -/** The one writer of a page link: a wikilink where every slot spells, the markdown form otherwise, its label emptied where the grammar's label can't spell it so the draw gives it the default, so no writer leaves a slot unwritten or writes a link the grammar can't read back. A present-but-empty heading or alias spells its slot (`[[A#]]`, `[[A|]]`): the picker opens a slot by writing it. */
@@ -376,7 +400,7 @@ The work lands in nine phases in dependency order, each the largest run one agen
 +  return named ? `[[${target}|${alias}]]` : `[[${target}]]`
  }
 +
-+/** Whether a wikilink to `t` carries the page's title as its alias: a path with no heading and no shown text, so a reader that doesn't understand paths still reads the title, as Obsidian's writer does since 1.3. The one statement of the rule; the writer and the rename follower both ask it, and an embed never does. */
++/** Whether a wikilink to `t` carries the page's title as its alias: a path with no heading and no shown text, so a reader that doesn't understand paths still reads the title, as Obsidian's writer does since 1.3. The one statement of the rule; the writer asks it, and an embed never does. */
 +export const carriesTitleAlias = (t: PageName & { shown?: string }): boolean =>
 +  t.shown === undefined && t.heading === undefined && t.title.includes('/')
 ```
@@ -396,6 +420,33 @@ The work lands in nine phases in dependency order, each the largest run one agen
 ```
 
 ```Core/Connections/linkValue.ts diff
+@@ shownAlias @@
+   const written = readLinkText(text)
+   const target = resolveLink(written, index)
++  const named = namedPage(written)
+   const alias = written?.shown
+-  if (target.kind !== 'page' || target.heading || !alias || !keepsAlias(alias, target.page.title))
+-    return null
++  if (!named || target.kind !== 'page' || target.heading || !alias) return null
++  if (namesTarget(alias, named) || !keepsAlias(alias, target.page.title)) return null
+   const { page } = target
+   const wasWritten = was === undefined ? null : readLinkText(was)
+-  const named = namedPage(wasWritten)
+-  if (named && namesTarget(alias, named)) return null
++  const wasNamed = namedPage(wasWritten)
++  if (wasNamed && namesTarget(alias, wasNamed)) return null
+@@ resolvedTarget @@
+-/** A written link as the page it resolves to, written by that page's own title in the syntax it came in (a value's bare heading keeps its empty title); anything else as written. */
++/** A written link as the page it resolves to, spelled at the depth it was written (its title, or the same tail of the page's path, case corrected, or the full path where that tail no longer names the page alone) in the syntax it came in (a value's bare heading keeps its empty title); anything else as written. */
+   const target = resolveLink(written, index, own)
+   const named = namedPage(written)
+-  if (target.kind !== 'page' || !named) return written
++  if (target.kind !== 'page' || !named || !index) return written
+   return {
+     kind: 'page',
+     syntax: written.syntax === 'wiki' ? 'wiki' : 'markdown',
+-    title: named.title === '' ? '' : target.page.title,
++    title: named.title === '' ? '' : index.writtenName(target.page.path, named.title),
 @@ linkDisplayText @@
    if (target.kind === 'page') {
      if (target.syntax === 'markdown') return defaultLabel(target.title, target.heading)
@@ -410,7 +461,7 @@ The work lands in nine phases in dependency order, each the largest run one agen
 **VERIFY**
 
 - [ ] The new cases pass; `rewrite.test.ts:136` (a label that named the old title follows it) and `:145-148` (a URL's last segment is never a page) still pass; `linkValue.test.ts:259-263` (an alias that merely repeats the title drops) still passes, since the page's title is a basename.
-- [ ] `shownAlias` on `[[A/Notes|Notes]]` records nothing (`keepsAlias(alias, target.page.title)` refuses the page's own title), and `[[A/Notes|A/Notes]]` records `A/Notes` (a given name under the whole-target rule; disclosed).
+- [ ] `shownAlias` on `[[A/Notes|Notes]]` and `[[A/Notes|A/Notes]]` records nothing: shown text that names the target, by `namesTarget`, is never memory.
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
@@ -422,10 +473,10 @@ The work lands in nine phases in dependency order, each the largest run one agen
 
 **CHANGE**
 
-- [ ] Write and watch fail: `tokens.test.ts`: `[[A/B/Notes]]` tokenizes with `contentRange` over `Notes` and a leading marker over `[[A/B/`; `[[A/B/Notes#H]]` over `Notes#H`; `[[A/B/Notes|x]]` over `x`; `[[A/]]` keeps its content over `A/` (still being written); a markdown token is unchanged. A `decorations` test and a `cellStatic` test draw `[[A/Notes#H]]` as `Notes § H` with the folder hidden.
-- [ ] `linkToken(text, o)`: the wiki content starts past the last `/` inside the title that has a character after it; `tokenizeChunk` passes `text`.
-- [ ] The editor's join reads `[tk.contentRange[0], tk.link.title[1]]` in place of `tk.link.title`; the resting cell's slices the same.
-- [ ] `tokens.ts:242`'s comment ("swallows `[[Title|`") says the leading marker swallows the folder too.
+- [ ] Write and watch fail: `tokens.test.ts`: `[[A/B/Notes]]` tokenizes with `contentRange` over `Notes` and a leading marker over `[[A/B/`; `[[A/B/Notes#H]]` over `Notes#H`; `[[A/B/Notes|x]]` over `x`; `[[A/]]`, `[[A/B/]]`, and `[[A/B/ ]]` keep their whole content (still being written); a markdown token is unchanged. `format.test.ts`: unwrapping `[[A/B/Notes]]` leaves `Notes`, the word the reader saw. A `decorations` test and a `cellStatic` test draw `[[A/Notes#H]]` as `Notes § H` with the folder hidden.
+- [ ] `linkToken(text, o)`: the wiki content starts past the title's last `/`, unless the title ends in `/` (trailing space aside), in which case the whole slot stays; the search is bounded to the title; `tokenizeChunk` passes `text`.
+- [ ] The editor's join ranges over `tk.contentRange[0]` to `tk.link.title[1]` in place of `tk.link.title`; the resting cell slices `cs` to `tk.link.title[1]`.
+- [ ] `tokens.ts:242`'s comment ("swallows `[[Title|`") says the leading marker swallows the folder too, and that a half ending in `/` keeps the slot.
 
 **AFTER**
 
@@ -437,12 +488,12 @@ The work lands in nine phases in dependency order, each the largest run one agen
    if (o.syntax === 'markdown')
      …
 -  // The leading marker swallows `[[Title|`. An opened-but-empty alias shows nothing, so it stays a plain link.
-+  // The leading marker swallows `[[Folder/Sub/` and `[[Title|`, so a path link draws its title alone; a half ending in `/` is still being written and keeps the whole slot. An opened-but-empty alias shows nothing, so it stays a plain link.
++  // The leading marker swallows the folder and `[[Title|`; a half still being written (ending in `/`) keeps the whole slot. An opened-but-empty alias shows nothing, so it stays a plain link.
    const alias = filled(o.shown) ? o.shown : null
    const heading = filled(o.heading) ? o.heading : null
 -  const shown = alias ?? [o.title[0], heading ? heading[1] : o.title[1]]
-+  const slash = text.lastIndexOf('/', o.title[1] - 2)
-+  const start = slash >= o.title[0] ? slash + 1 : o.title[0]
++  const half = text.slice(o.title[0], o.title[1])
++  const start = o.title[0] + (half.trimEnd().endsWith('/') ? 0 : half.lastIndexOf('/') + 1)
 +  const shown = alias ?? [start, heading ? heading[1] : o.title[1]]
 @@ tokenizeChunk @@
 -  const links = linkOccurrences(text, inCode).map(linkToken)
@@ -452,20 +503,25 @@ The work lands in nine phases in dependency order, each the largest run one agen
 ```Core/MarkdownPM/decorations.ts diff
 @@ the wikiLink join @@
 -    const [rs, re] = tk.link.title
-+    // The title's drawn part: its folder sits in the leading marker.
-+    const [rs, re] = [tk.contentRange[0], tk.link.title[1]]
+@@ the join's range @@
+           (join.showPage ? Decoration.mark({ class: 'md-connection-resolved' }) : hideMarker).range(
+-            rs,
+-            re,
++            tk.contentRange[0],
++            tk.link.title[1],
+           ),
 ```
 
 ```Core/MarkdownPM/Tables/cellStatic.tsx diff
 @@ the resting join @@
 -                {join.showPage && text.slice(...tk.link.title)}
-+                {join.showPage && text.slice(tk.contentRange[0], tk.link.title[1])}
++                {join.showPage && text.slice(cs, tk.link.title[1])}
 ```
 
 **VERIFY**
 
-- [ ] The new cases pass; the existing `tokens`, `decorations`, and `cellStatic` link tests pass unchanged (an unaliased title without `/` keeps its content start).
-- [ ] Live: in `~/Test`, type `[[` and a page's path; the folder hides when the caret leaves and reveals when it returns, in a body and in a resting cell; a phantom path link under **Display Unresolved Links As Plain Syntax** shows its whole syntax; an aliased path link revealed styles `Folder/Title` as the target while an unaliased one shows the folder in the bracket color (disclosed; one range would equalize it, left as is).
+- [ ] The new cases pass; the existing `tokens`, `decorations`, and `cellStatic` link tests pass unchanged (an unaliased title without `/` keeps its content start). Turning the Connection format off on a path link leaves the title the reader saw, as it leaves an alias.
+- [ ] Live (the owner's, by hand): in `~/Test`, type `[[` and a page's path; the folder hides when the caret leaves and reveals when it returns, in a body and in a resting cell; a phantom path link under **Display Unresolved Links As Plain Syntax** shows its whole syntax; an aliased path link revealed styles `Folder/Title` as the target while an unaliased one shows the folder in the bracket color (disclosed; one range would equalize it, left as is).
 - [ ] Run the gates, then `view-delta` for Phase 1.
 - [ ] Check for unnecessary code or mistakes.
 
@@ -851,12 +907,11 @@ The work lands in nine phases in dependency order, each the largest run one agen
 
 **TASK:** Spell the page at every writer through `writtenName`, replace `EditorHost.pageTitle()` with `page()`, key the embed pick tree and its exclusions by path, and let the editor's own heading-rename pass take the page's keys.
 
-**NOW:** `resolvedTarget` (`linkValue.ts:159-174`) writes `target.page.title`, so a typed `[[A/Notes]]` committed in a Link field, pasted, or shown in full becomes `[[Notes]]`. Copy Link writes `pageLinkText({ title, heading }, 'wiki')` from the title (`Core/Interface/Menus/pageMenuActions.ts:54`); the heading grip reads `host.pageTitle()` (`Core/MarkdownPM/Menus/gripMenu.ts:78,93`), as does `headingRenameSettle.ts:51` (Phase 2's interim) and the harness (`Core/Testing/editorHarness.ts:27,83,90,135`); `EditorHost.pageTitle()` is declared at `api.ts:205` and built at `Core/Pages/editorHost.tsx:145` from `pageOf`, which already returns a `ConnPage`. The embed source pick tree picks `p.title` (`editorHost.tsx:136-139`) and the grip writes `pageEmbedText(title)` (`gripMenu.ts:140-147`); `embedPickTree` excludes by `normalizeTitle(n.pick)` (`gripMenu.ts:23-30`) against `embedExclusions`' normalized titles (`embedWidget.tsx:645-652`), while ancestors arrive as paths. `LinkCell`'s Show Full Link writes `target.page.title` (`LinkCell.tsx:46`). `pasteAsMenu.ts:100` writes `pageEmbedText(target.title)` from `resolvedTarget`, which keeps its depth once this task lands, so it changes nothing.
+**NOW:** `resolvedTarget` spells at the written depth since Task 1-3. Copy Link writes `pageLinkText({ title, heading }, 'wiki')` from the title (`Core/Interface/Menus/pageMenuActions.ts:54`); the heading grip reads `host.pageTitle()` (`Core/MarkdownPM/Menus/gripMenu.ts:78,93`), as does `headingRenameSettle.ts:51` (Phase 2's interim) and the harness (`Core/Testing/editorHarness.ts:27,83,90,135`); `EditorHost.pageTitle()` is declared at `api.ts:205` and built at `Core/Pages/editorHost.tsx:145` from `pageOf`, which already returns a `ConnPage`. The embed source pick tree picks `p.title` (`editorHost.tsx:136-139`) and the grip writes `pageEmbedText(title)` (`gripMenu.ts:140-147`); `embedPickTree` excludes by `normalizeTitle(n.pick)` (`gripMenu.ts:23-30`) against `embedExclusions`' normalized titles (`embedWidget.tsx:645-652`), while ancestors arrive as paths. `LinkCell`'s Show Full Link writes `target.page.title` (`LinkCell.tsx:46`). `pasteAsMenu.ts:100` writes `pageEmbedText(target.title)` from `resolvedTarget`, which keeps its depth once this task lands, so it changes nothing.
 
 **CHANGE**
 
-- [ ] Write and watch fail: `linkValue.test.ts:414-428` gains depth cases: `resolvedTarget` on `[[a/dup]]` with twins `A/Dup.md` and `B/Dup.md` writes `A/Dup`, on `[[dup]]` with one holder writes `Dup`, on `[[q/x/notes]]` (partial, unique) writes `Q/X/Notes`'s tail `X/Notes`... as written at depth two, and on a bare heading keeps `''`; `linkValueFromEdit('[[A/Dup]]', twins, undefined)` is accepted where `[[Dup]]` (`:369`) stays refused. `gripMenu.test.ts:45-56` picks paths and excludes by path; `embedWidget.test.ts:117,132-136` excludes by path. `LinkCell.test.tsx` gains a Show Full Link case writing a shared holder's path. `gripMenuFlow.test.tsx:241` and `bodyMount.test.tsx:52` pass `page: { id, title, path }`.
-- [ ] `resolvedTarget`: return `written` when there's no index; otherwise `title: named.title === '' ? '' : index.writtenName(target.page.path, named.title)`; its doc and `linkValueFromEdit`'s (`:180`) say "at the depth it was written".
+- [ ] Write and watch fail: `gripMenu.test.ts:45-56` picks paths and excludes by path; `embedWidget.test.ts:117,132-136` excludes by path. `LinkCell.test.tsx` gains a Show Full Link case writing a shared holder's path. `gripMenuFlow.test.tsx:241` and `bodyMount.test.tsx:52` pass `page: { id, title, path }`.
 - [ ] `api.ts`: `page(): ConnPage | null` replaces `pageTitle()` with its comment; `editorHost.tsx:145`: `page: () => (pageId && pageOf(pageId)) ?? null`; the harness's `spec.pageTitle` becomes `spec.page?: ConnPage` and its alias lines read `spec.page?.title ?? ''`.
 - [ ] `gripMenu.ts:78-94`: `const page = host.page()`, `linkable = page !== null`, Copy Link writes `pageLinkText({ title: host.connections()?.index.writtenName(page.path) ?? page.title, heading }, 'wiki')`.
 - [ ] `headingRenameSettle.ts:51-57`: `const page = host.page()`, `const index = host.connections()?.index`, `keys = new Set(page && index ? index.namesOf(page.path) : [])`, `own: true`; `pageKey` import goes.
@@ -865,26 +920,6 @@ The work lands in nine phases in dependency order, each the largest run one agen
 - [ ] `LinkCell.tsx:46`: `pageLinkText({ title: api?.index.writtenName(target.page.path, namedPage(written)?.title) ?? target.page.title, heading: target.heading }, 'wiki')`, so a bare `[[#H]]` on a holder still shows `[[Holder#H]]` and a shared holder shows its path.
 
 **AFTER**
-
-```Core/Connections/linkValue.ts diff
-@@ resolvedTarget @@
--/** A written link as the page it resolves to, written by that page's own title in the syntax it came in (a value's bare heading keeps its empty title); anything else as written. */
-+/** A written link as the page it resolves to, spelled at the depth it was written (its title, or the same tail of the page's path, case corrected, or the full path where that tail no longer names the page alone) in the syntax it came in (a value's bare heading keeps its empty title); anything else as written. */
- export function resolvedTarget(
-   written: LinkTarget,
-   index: PageIndex | undefined,
-   own?: ConnPage,
- ): LinkTarget {
-   const target = resolveLink(written, index, own)
-   const named = namedPage(written)
--  if (target.kind !== 'page' || !named) return written
-+  if (target.kind !== 'page' || !named || !index) return written
-   return {
-     kind: 'page',
-     syntax: written.syntax === 'wiki' ? 'wiki' : 'markdown',
--    title: named.title === '' ? '' : target.page.title,
-+    title: named.title === '' ? '' : index.writtenName(target.page.path, named.title),
-```
 
 ```Core/MarkdownPM/api.ts diff
 -  // The live tree's title for the surface's own page, read fresh rather than from a capped cache; null off a page identity.
@@ -1701,7 +1736,7 @@ The work lands in nine phases in dependency order, each the largest run one agen
 
 - [ ] Write and watch fail: `pageIndex.test.ts`: `respell('notes', q)` is null when `notes` still names `q` and its path's tail is unchanged; `'Notes'` when the page was renamed from `notes` (a case-only rename follows); `'A/Notes'` when a twin arrived and `notes` no longer names `q` alone; `'A/Plan'` for the key `a/notes` after a rename to `Plan`; null for a key whose depth reaches above a renamed folder when the tail is unchanged; with no `oldPath`, null exactly when the key still names the page; `byId` holds the first of two pages claiming one id. `rewrite.test.ts`: `respellings` over a page rename maps its bare and path keys; over a move maps only the keys through the changed folder; over a folder rename maps the keys through the renamed segment for every page under it and nothing shallower; over an arrival that shares a sole holder's title maps that holder's bare key to its full path (and maps nothing when the arrival's keys named nobody); `rewriteConnections(body, names)` rewrites `[[notes]]`, `[Notes](notes)`, and `[[Notes.md]]` to the mapped spelling, leaves `[[Notes]]` alone when the map holds `notes → 'Notes'`, writes `[[A/Notes|Notes]]` for a bare `[[Notes]]` gaining a path and `![[A/Notes]]` for the embed `![[Notes]]` (alias default), and carries `[[A/Notes|Notes]]` to `[[A/Plan|Plan]]`.
 - [ ] `pageIndex.ts`: `writtenName` hoisted to a `const` beside `resolve`; `respell(key, page, oldPath = page.path)`; `byId`, built on first use as `alphabetical` is, first listed wins. `record.ts`: `pagesByIdOf` reads `pageIndexOf(tree).byId`, so the tree has one by-id rule.
-- [ ] `rewrite.ts`: `respellings(before, after, moved, arriving)` over two indexes; `rewriteConnections(body, names: ReadonlyMap<string, string>)`; `follower` writes a wikilink whole where `carriesTitleAlias(next)` (Task 1-3's predicate) and the hit isn't an embed, since `pageEmbedText` writes no alias and `expressibleInLink` refuses one; not written under the no-alias ruling.
+- [ ] `rewrite.ts`: `respellings(before, after, moved, arriving)` over two indexes; `rewriteConnections(body, names: ReadonlyMap<string, string>)`; `follower` writes a wikilink whole where `carriesTitleAlias(next)` (Task 1-3's predicate, whose doc now names the follower beside the writer) and the hit isn't an embed, since `pageEmbedText` writes no alias and `expressibleInLink` refuses one; not written under the no-alias ruling.
 - [ ] The three callers keep the gates green until their own tasks: `cascade.ts`'s rewrite call takes `new Map([[pageKey(title), change.to]])` (Task 6-2 replaces it), `spend.ts:265` takes `new Map([[pageKey(was), landed]])` (Task 8-2 replaces it), and `tilesFile.test.ts:509`'s `rename` helper takes `new Map([['target', 'Renamed']])`.
 
 **AFTER**
@@ -2092,7 +2127,7 @@ The work lands in nine phases in dependency order, each the largest run one agen
 +        : inSettleTurn(() => deleteOp(ctx, req))
      case 'restore':
 -      return underContexts(() => restoreOp(ctx, req))
-+      // The restore composes its own world before, since its pages come from the Trash (Task 8-2).
++      // The restore composes its own world before, since its pages come from the Trash.
 +      return underContexts(() => inSettleTurn(() => restoreOp(ctx, req)))
      case 'emptyBundle': {
        const resolved = await resolveUnderRoot(root, req.bundlePath)
@@ -2894,6 +2929,8 @@ The work lands in nine phases in dependency order, each the largest run one agen
 #### Task 9-1
 
 **TASK:** Rewrite each listed sentence, close F-038 and re-word F-039 through the `batch-issues` skill, correct the two source comments, and settle A-2's Obsidian clause.
+
+An `opus-low` agent makes the document edits, each surgical and no longer than the sentence it replaces (the owner, 10-17-2026); a source comment changes only where the landed code falsifies it.
 
 **NOW:** `ConnectionsPM.md` says a connection "resolves by its title", that a path separator in a markdown target "addresses something outside the Nexus", that main holds "the title index for its own checks — whether a title is still held outside a delete", that the cascade rewrites "every body that names the old title", and that "renaming or deleting one of two same-titled pages rewrites and strips nothing"; its picker line says "matched by title prefix" and its *Prospects* still propose "Duplicate disambiguation — id-scoping". `PagesPM.md:14` says a connection to a shared title "resolves as ambiguous" with no way out; `NavigationPM.md:12` and `ViewTypesPM.md:75` describe two title-only searches; `PommoraUIX.md:364` lists `emphasizeMatch`; `InterfacePM.md:42` writes Copy Link as `[[Title]]`; `NexusRecordPM.md:10,14` describe the bundle and the restore without the recorded targets or the repair; `CorePM.md:83,87,155` and `DesktopPM.md:14,22` describe the index, the dispatcher, and the watcher without the ID column, the address turn, or the pairing; the project's `CLAUDE.md:19` says links "resolve against an in-memory title map". `IssuesPM.md`'s F-038 describes a Trash refill that identity resolves, and F-039's description names "a same-titled page still in the Trash". `connections.ts:128` and `linkValue.ts:180` say "by title".
 

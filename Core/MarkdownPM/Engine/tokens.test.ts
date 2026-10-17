@@ -201,6 +201,29 @@ describe('a heading link separates its page half, its heading, and what it resol
   })
 })
 
+describe('a path link draws its title alone', () => {
+  const drawn = (t: string): string[] => {
+    const tk = tokenize(t)[0]
+    return [slice(t, tk.contentRange), ...tk.markerRanges.map((m) => slice(t, m))]
+  }
+
+  it('the leading marker swallows the folder, a heading and an alias drawing as before', () => {
+    expect(drawn('[[A/B/Notes]]')).toEqual(['Notes', '[[A/B/', ']]'])
+    expect(drawn('[[A/B/Notes#H]]')).toEqual(['Notes#H', '[[A/B/', ']]'])
+    expect(drawn('[[A/B/Notes|x]]')).toEqual(['x', '[[A/B/Notes|', ']]'])
+  })
+
+  it('a half ending in `/` is still being written and keeps the whole slot', () => {
+    expect(drawn('[[A/]]')).toEqual(['A/', '[[', ']]'])
+    expect(drawn('[[A/B/]]')).toEqual(['A/B/', '[[', ']]'])
+    expect(drawn('[[A/B/ ]]')).toEqual(['A/B/ ', '[[', ']]'])
+  })
+
+  it('a markdown link is unchanged', () => {
+    expect(drawn('[x](A/Notes)')).toEqual(['x', '[', '](A/Notes)'])
+  })
+})
+
 describe('an HTML tag colors its name and keeps its brackets', () => {
   const tags = (t: string): string[][] =>
     byKind(tokenize(t), 'htmlTag').map((tk) => [

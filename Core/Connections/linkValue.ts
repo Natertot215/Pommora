@@ -22,6 +22,7 @@ import {
 import { isHttpLink, isValidLink, linkDomain, normalizeLinkUrl } from '../Paths/urlPath'
 import { isScalar } from '../Contract/validators'
 import { normalizeTitle } from '../Paths/caseFold'
+import { titleFromPath } from '../Paths/posix'
 import type { LinkDisplay } from '../Properties/properties'
 import type { PropertyValue } from '../Properties/propertyValue'
 import type { ConnPage, PageIndex } from './pageIndex'
@@ -142,20 +143,21 @@ export function shownAlias(
 ): { page: ConnPage; alias: string } | null {
   const written = readLinkText(text)
   const target = resolveLink(written, index)
+  const named = namedPage(written)
   const alias = written?.shown
-  if (target.kind !== 'page' || target.heading || !alias || !keepsAlias(alias, target.page.title))
-    return null
+  if (!named || target.kind !== 'page' || target.heading || !alias) return null
+  if (namesTarget(alias, named) || !keepsAlias(alias, target.page.title)) return null
   const { page } = target
   const wasWritten = was === undefined ? null : readLinkText(was)
-  const named = namedPage(wasWritten)
-  if (named && namesTarget(alias, named)) return null
+  const wasNamed = namedPage(wasWritten)
+  if (wasNamed && namesTarget(alias, wasNamed)) return null
   const before = resolveLink(wasWritten, index)
   if (wasWritten?.shown === alias && before.kind === 'page' && before.page.id === page.id)
     return null
   return { page, alias }
 }
 
-/** A written link as the page it resolves to, written by that page's own title in the syntax it came in (a value's bare heading keeps its empty title); anything else as written. */
+/** A written link as the page it resolves to, spelled at the depth it was written (its title, or the same tail of the page's path, case corrected, or the full path where that tail no longer names the page alone) in the syntax it came in (a value's bare heading keeps its empty title); anything else as written. */
 export function resolvedTarget(
   written: LinkTarget,
   index: PageIndex | undefined,
@@ -163,11 +165,11 @@ export function resolvedTarget(
 ): LinkTarget {
   const target = resolveLink(written, index, own)
   const named = namedPage(written)
-  if (target.kind !== 'page' || !named) return written
+  if (target.kind !== 'page' || !named || !index) return written
   return {
     kind: 'page',
     syntax: written.syntax === 'wiki' ? 'wiki' : 'markdown',
-    title: named.title === '' ? '' : target.page.title,
+    title: named.title === '' ? '' : index.writtenName(target.page.path, named.title),
     ...(target.heading ? { heading: target.heading } : {}),
     ...(written.shown ? { shown: written.shown } : {}),
   }
@@ -177,7 +179,7 @@ export function serializeLink(url: string, label?: string): string {
   return label ? markdownLink(url, label) : url
 }
 
-/** A Link value as the field wrote it: the page it resolves to, by title, as a wikilink wherever one spells; an address under its scheme; nothing a page or an address answers for is refused. */
+/** A Link value as the field wrote it: the page it resolves to, at the depth it was written, as a wikilink wherever one spells; an address under its scheme; nothing a page or an address answers for is refused. */
 export function linkValueFromEdit(
   raw: string,
   index: PageIndex | undefined,
@@ -198,8 +200,9 @@ export function linkDisplayText(raw: string, display?: LinkDisplay, title?: stri
   if (target.shown) return target.shown
   if (target.kind === 'page') {
     if (target.syntax === 'markdown') return defaultLabel(target.title, target.heading)
-    if (!target.heading) return target.title
-    return target.title ? `${target.title} § ${target.heading}` : target.heading
+    const title = titleFromPath(target.title)
+    if (!target.heading) return title
+    return title ? `${title} § ${target.heading}` : target.heading
   }
   switch (display) {
     case 'link-title':

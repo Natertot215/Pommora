@@ -136,6 +136,11 @@ describe('the markdown-link sweep', () => {
     expect(rewriteConnections('[Notes](Notes.md)', 'Notes', 'Alpha')).toBe('[Alpha](Alpha)')
   })
 
+  it('a path link keeps showing the title it names through a rename, in either syntax', () => {
+    expect(rewriteConnections('[[A/Notes|Notes]]', 'A/Notes', 'A/Plan')).toBe('[[A/Plan|Plan]]')
+    expect(rewriteConnections('[Notes](A/Notes)', 'A/Notes', 'A/Plan')).toBe('[Plan](A/Plan)')
+  })
+
   it('re-encodes a new title that needs it', () => {
     expect(rewriteConnections('[x](Old)', 'Old', 'Atomic Habits (Book)')).toBe(
       '[x](Atomic%20Habits%20%28Book%29)',

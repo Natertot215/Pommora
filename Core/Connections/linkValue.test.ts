@@ -42,13 +42,13 @@ describe('readLinkText', () => {
     expect(readLinkText('[x](Notes.md)')).toEqual({
       kind: 'page',
       syntax: 'markdown',
-      title: 'Notes',
+      title: 'Notes.md',
       shown: 'x',
     })
     expect(readLinkText('[x](Notes.md#Setup)')).toEqual({
       kind: 'page',
       syntax: 'markdown',
-      title: 'Notes',
+      title: 'Notes.md',
       heading: 'Setup',
       shown: 'x',
     })
@@ -125,6 +125,10 @@ describe('resolveLink', () => {
   it('is unresolved and ambiguous where two pages hold the title, address-shaped or not', () => {
     expect(resolved('[[Dup]]')).toEqual({ kind: 'unresolved', status: 'ambiguous' })
     expect(resolved('[x](dup.io)')).toEqual({ kind: 'unresolved', status: 'ambiguous' })
+    expect(resolved('[[A/Dup]]')).toEqual({
+      kind: 'page',
+      page: { id: 'd1', title: 'Dup', path: 'A/Dup.md' },
+    })
   })
   it('is unresolved and phantom where no page holds the title', () => {
     expect(resolved('[[Nowhere]]')).toEqual({ kind: 'unresolved', status: 'phantom' })
@@ -283,6 +287,10 @@ describe('internal links', () => {
     expect(linkDisplayText('[](P)')).toBe('P')
     expect(linkDisplayText('[[P|nice]]')).toBe('nice')
   })
+  it('shows a path link by its title alone', () => {
+    expect(linkDisplayText('[[A/Notes]]')).toBe('Notes')
+    expect(linkDisplayText('[[A/Notes#H]]')).toBe('Notes § H')
+  })
   it('shownProse replaces each connection in a text with what it shows', () => {
     expect(shownProse('[[Alpha|nice]] notes')).toBe('nice notes')
     expect(shownProse('[[P#H]] and [x](https://a.com)')).toBe('P § H and x')
@@ -397,6 +405,12 @@ describe('shownAlias — what a landed link remembers, against how it read befor
       alias: 'Draft',
     })
   })
+  it('never remembers shown text that names the target, by its title or its whole written half', () => {
+    const paths = buildPageIndex([{ id: 'n', title: 'Notes', path: 'A/Notes.md' }])
+    expect(shownAlias('[[A/Notes|Notes]]', paths)).toBeNull()
+    expect(shownAlias('[[A/Notes|A/Notes]]', paths)).toBeNull()
+    expect(shownAlias('[[A/Notes|x]]', paths)?.alias).toBe('x')
+  })
   it('reads an address-shaped page the link named before as that page', () => {
     expect(shownAlias('[[notes.io|x]]', index, '[x](notes.io)')).toBeNull()
     expect(shownAlias('[[notes.io|y]]', index, '[x](notes.io)')).toEqual({
@@ -427,6 +441,24 @@ describe('resolvedTarget — a written link as the page it resolves to', () => {
     })
     const own = { id: 'h', title: 'Holder', path: 'Holder.md' }
     expect(resolvedTarget(readLinkText('[[#H]]')!, index, own)).toMatchObject({ title: '' })
+  })
+  it('spells a path link at the depth it was written, and a shared title by its path', () => {
+    const paths = buildPageIndex([
+      { id: '1', title: 'Dup', path: 'A/Dup.md' },
+      { id: '2', title: 'Dup', path: 'B/Dup.md' },
+      { id: '3', title: 'Notes', path: 'Q/X/Notes.md' },
+    ])
+    const spelled = (text: string) =>
+      (resolvedTarget(readLinkText(text)!, paths) as { title: string }).title
+    expect(spelled('[[a/dup]]')).toBe('A/Dup')
+    expect(spelled('[[notes]]')).toBe('Notes')
+    expect(spelled('[[q/x/notes]]')).toBe('Q/X/Notes')
+    expect(spelled('[[x/notes]]')).toBe('X/Notes')
+    expect(linkValueFromEdit('[[A/Dup]]', paths, undefined)).toEqual({
+      kind: 'link',
+      value: '[[A/Dup|Dup]]',
+    })
+    expect(linkValueFromEdit('[[Dup]]', paths, undefined)).toBeUndefined()
   })
   it('leaves an address no page holds, and a phantom, as written', () => {
     for (const text of ['[x](https://a.com)', '[[Nowhere]]'])

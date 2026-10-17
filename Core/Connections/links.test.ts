@@ -80,21 +80,22 @@ describe('the page-target codec', () => {
 })
 
 describe('targetTitle — what a markdown link names', () => {
-  it('reads a bare title, with or without its extension', () => {
+  it('reads a bare title or a path as written, its extension kept', () => {
     expect(targetTitle('Notes', false)).toBe('Notes')
-    expect(targetTitle('Notes.md', false)).toBe('Notes')
+    expect(targetTitle('Notes.md', false)).toBe('Notes.md')
+    expect(targetTitle('A/Notes', false)).toBe('A/Notes')
     expect(targetTitle('Work%20Notes', false)).toBe('Work Notes')
   })
 
   // isValidLink accepts any dotted host, so these two would open a browser and make the pages they name unreachable if resolution didn't run first.
   it('a dotted title is still a title', () => {
     expect(targetTitle('Node.js', false)).toBe('Node.js')
-    expect(targetTitle('Notes.md', false)).toBe('Notes')
+    expect(targetTitle('Notes.md', false)).toBe('Notes.md')
+    expect(targetTitle('example.com/Notes', false)).toBe('example.com/Notes')
   })
 
   it('anything addressing the outside names no page', () => {
     expect(targetTitle('https://example.com/Notes', false)).toBeNull()
-    expect(targetTitle('example.com/Notes', false)).toBeNull()
     expect(targetTitle('mailto:a@b.com', false)).toBeNull()
     expect(targetTitle('', false)).toBeNull()
   })
