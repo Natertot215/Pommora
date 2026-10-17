@@ -687,7 +687,7 @@ async function group3(cdp, pid) {
 
   for (const [pasted, page_, name] of [
     ['[[Set Beta/Notes]]', 'Set Beta/Notes', 'keeps its depth'],
-    ['[[set beta/notes]]', 'Set Beta/Notes', 'is case-corrected at its depth'],
+    ['[[set beta/notes]]', 'set beta/notes', 'is left as written, since it resolves'],
     ['[[Collection A/Set Alpha/Notes]]', 'Collection A/Set Alpha/Notes', 'keeps its full path'],
   ]) {
     await setDoc(cdp, PAGE_VIEW, '')
