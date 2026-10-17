@@ -184,6 +184,11 @@ export const lineEndAt = (doc: string, pos: number): number => {
   return i === -1 ? doc.length : i
 }
 
+// A URL-shaped run is an address: no transform or section run reads inside it.
+const urlRunRe = /(?:^|[\s([{<"'])[a-z][a-z0-9+.-]*:\/\/\S*$/i
+export const inUrlRun = (doc: string, c: number): boolean =>
+  urlRunRe.test(doc.slice(lineStartAt(doc, c), c))
+
 export const overlaps = (a: readonly [number, number], b: readonly [number, number]): boolean =>
   a[0] < b[1] && b[0] < a[1]
 

@@ -6,6 +6,7 @@ import { linkEntry, namedPage, readOccurrence } from './linkValue'
 import {
   codeMask,
   type CodeMask,
+  inUrlRun,
   lineEndAt,
   lineStartAt,
   type Span,
@@ -26,7 +27,7 @@ const titleKey = (raw: string, own: string): string => (raw === '' ? own : norma
 const names = (target: string, written: string, qualifier: string): boolean =>
   written === '' ? qualifier !== '' : target !== ''
 
-// A bare `§Heading` in prose: the longest outline heading the text after `§` begins with, ending at the run's end or a non-word character, so `§Overviewing` never links `Overview`. Runs inside code, a wikilink, a markdown link, or a heading line (whose `§` is the heading's own text) are never runs.
+// A bare `§Heading` in prose: the longest outline heading the text after `§` begins with, ending at the run's end or a non-word character, so `§Overviewing` never links `Overview`. Runs inside code, a link, a bare address, or a heading line (whose `§` is the heading's own text) are never runs.
 export function sectionRunsIn(
   text: string,
   headings: readonly string[],
@@ -46,7 +47,8 @@ export function sectionRunsIn(
   let link = 0
   for (let i = text.indexOf('§'); i !== -1; i = text.indexOf('§', i + 1)) {
     while (link < links.length && links[link][1] <= i) link++
-    if (inCode(i) || onHeading(i) || (link < links.length && links[link][0] <= i)) continue
+    const inLink = link < links.length && links[link][0] <= i
+    if (inLink || inCode(i) || onHeading(i) || inUrlRun(text, i)) continue
     for (const length of lengths) {
       const end = i + 1 + length
       if (end > text.length || (end < text.length && wordChar.test(text[end]))) continue

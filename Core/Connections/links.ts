@@ -34,7 +34,7 @@ export const markdownLink = (dest: string, label: string): string =>
 /** What a markdown link shows when its label is empty, and what a picked link's label defaults to. */
 export const defaultLabel = (title: string, heading?: string): string => heading || title
 
-// Only the half before the first opener decides: a scheme or a path separator there addresses something outside the Nexus, while a fragment is a heading's own text.
+// Only the half before the first `#` decides: a scheme or a path separator there addresses something outside the Nexus, while a fragment is a heading's own text.
 export const namesPage = (pageHalf: string): boolean =>
   !pageHalf.includes('/') && !HAS_SCHEME.test(pageHalf.trim())
 

@@ -102,28 +102,25 @@ function linkStartingAt(
   return o && line.from + o.full[0] === start ? { line, o } : null
 }
 
-/** Every empty part of the link at `start`: an empty alias takes its pipe and an empty heading its hash, matching the nexus-wide rule that an emptied value drops its key; a markdown link can't drop its label, so an empty one shows the label the draw gives it, as a picked one does, and an emptied address label stays empty, since an address has none. */
+/** Every empty part of the link at `start`: an empty alias takes its pipe and an empty heading after a title its `#`, matching the nexus-wide rule that an emptied value drops its key; a markdown link can't drop its label, so an empty one shows the label the draw gives it, as a picked one does, and an emptied address label stays empty, since an address has none. */
 function emptied(state: EditorState, start: number): ChangeSpec[] {
   const hit = linkStartingAt(state, start)
   if (!hit) return []
   const { line, o } = hit
   const empty = (s: Span | null): s is Span => s !== null && s[0] === s[1]
+  const heading =
+    empty(o.heading) && !empty(o.title)
+      ? [{ from: line.from + o.heading[0] - 1, to: line.from + o.heading[1] }]
+      : []
+  if (!empty(o.shown)) return heading
   if (o.syntax === 'wiki')
-    return [
-      ...(empty(o.heading)
-        ? [{ from: line.from + o.heading[0] - 1, to: line.from + o.heading[1] }]
-        : []),
-      ...(empty(o.shown)
-        ? [{ from: line.from + targetSpan(o)[1], to: line.from + o.shown[1] }]
-        : []),
-    ]
-  if (!empty(o.shown)) return []
+    return [...heading, { from: line.from + targetSpan(o)[1], to: line.from + o.shown[1] }]
   const written = readOccurrence(line.text, o)
   const index = state.facet(editorHost).connections()?.index
   const label = pageLabel(written, resolveLink(written, index))
   return label && fitsSlot(label)
-    ? [{ from: line.from + o.shown[0], insert: escapeLabel(label) }]
-    : []
+    ? [...heading, { from: line.from + o.shown[0], insert: escapeLabel(label) }]
+    : heading
 }
 
 /** When a surface's alias memory writes: `leave` as the caret leaves the link, `flush` once its host flushes, so a field whose edit can be cancelled remembers only what it saved, and `never` where the surface's write layer remembers. */
