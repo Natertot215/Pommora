@@ -138,6 +138,18 @@ describe('migrateAssets', () => {
     expect((await readJson('Notes/_pagecollection.json')).banner).toBe('[[Notes Banner.jpg]]')
   })
 
+  it('keeps an invented name where its owner’s can’t be written as a link', async () => {
+    await asset('two/banner-mxplrbde.jpg', 'invented')
+    await mkdir(join(root, 'C#'), { recursive: true })
+    await writeFile(
+      join(root, 'C#', '_pagecollection.json'),
+      JSON.stringify({ id: 'pc', banner: '.nexus/assets/two/banner-mxplrbde.jpg' }),
+    )
+    const r = await migrateAssets(root, nexusDeps)
+    expect(r?.skipped).toEqual([])
+    expect((await readJson('C#/_pagecollection.json')).banner).toBe('[[banner-mxplrbde.jpg]]')
+  })
+
   it('the nexus singletons take the nexus’s own names', async () => {
     await asset('banner-aaaaaa11.jpg', 'nav')
     await asset('id/profile-bbbbbb22.png', 'icon')

@@ -1,13 +1,13 @@
 import { basename, extname, join, relative } from '../Paths/posix'
 import { machine } from '../Platform/machine'
 import { expressibleInLink, fileLinkText } from '../Connections/connections'
-import { fault, ok, fail, type Result } from '../Contract/result'
+import { ok, fail, type Result } from '../Contract/result'
 import { atomicWriteBinary, pathExists } from '../Files/atomicWrite'
 import { liveAssetMap, resolveAssetName } from './assetMap'
 import { createDisambiguated, reservedAssetLeaf } from '../Paths/names'
 import { assetsDir } from '../Paths/paths'
 
-export const UNSPELLABLE = fault('That file’s name can’t be written as a link.')
+export const UNSPELLABLE = fail('invalid-name', 'That file’s name can’t be written as a link.')
 
 export async function writeAssetFile(
   root: string,
