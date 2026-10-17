@@ -45,6 +45,7 @@ The work lands in nine phases in dependency order, each the largest run one agen
 | 3 | +79 / −32 | +128 / −56 (+72) | +96 at `dce42f50a` |
 | 4 | +71 / −77 | +107 / −106 (+1) | +97 at `cee4825e3` |
 | 5 | +44 / −15 | +81 / −33 (+48) | +145 at `35db9f366` |
+| 6 | +181 / −78 | +227 / −85 (+142) | +287 at `c8e4b18ca` |
 
 #### Concepts
 
