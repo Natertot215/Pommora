@@ -1053,6 +1053,23 @@ describe('store — the mutate rail', () => {
     expect(order).toEqual(['save Notes/A.md', 'save Notes/C.md', 'mutate'])
   })
 
+  it('a page create lands every pending save first, since its collision can rewrite other pages', async () => {
+    const order: string[] = []
+    channels['page:updateBody'] = vi.fn(async (path: string) => {
+      order.push(`save ${path}`)
+      return ok({ hash: 'h', stale: false })
+    })
+    channels.mutate = vi.fn(async () => {
+      order.push('mutate')
+      return ok({})
+    })
+    scheduleBodySave('Notes/A.md', 'typed', pageIO)
+    await useSession
+      .getState()
+      .mutate({ op: 'createPage', id: 'p-new', parentPath: 'Notes', name: 'A' })
+    expect(order).toEqual(['save Notes/A.md', 'mutate'])
+  })
+
   it('a heading rename lands pending tile saves first', async () => {
     const order: string[] = []
     channels['tiles:writeMarkdown'] = vi.fn(async () => {

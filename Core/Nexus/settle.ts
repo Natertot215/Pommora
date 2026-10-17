@@ -9,7 +9,7 @@ import { type FileEvent, setOwnTap } from '../Files/writeEcho'
 import { getHeldAssetMap, refreshAssetMap } from '../Assets/assetMap'
 import { seedContentIndex } from '../Index/indexSeed'
 import { registerHeldOptions } from '../Properties/optionOps'
-import { dropTileHeadingLinks } from '../Tiles/tilesFile'
+import { dropTileLinks } from '../Tiles/tilesFile'
 import { stampMissing } from './adopt'
 import {
   applyEvents,
@@ -30,6 +30,10 @@ import { adopting, sessionRoot } from './session'
 import type { NexusTree, Unreadable, ValueChange } from './tree'
 import { deltaOf } from './treeDelta'
 import { liveIdIndex } from './heldPages'
+import { pageIndexOf } from './record'
+import { type CascadeReport, renameCascade } from './cascade'
+import { respellings } from '../Connections/rewrite'
+import type { PageIndex } from '../Connections/pageIndex'
 
 // ── The app's own events ──
 
@@ -100,7 +104,7 @@ async function walkWhileOwed(root: string): Promise<void> {
   const owed = owedFor(root)
   while (owed.walk) {
     owed.walk = false
-    dropTileHeadingLinks()
+    dropTileLinks()
     const assets = getHeldAssetMap(root)
     try {
       // The epoch bump comes first because `refreshTree` joins any in-flight walk, and one that started before the change would otherwise install pre-change disk as canon with nothing scheduled to correct it.
@@ -210,6 +214,35 @@ export async function settleBatch(
 }
 
 export const payOwedWalk = (root: string): Promise<void> => inTurn(() => walkWhileOwed(root))
+
+/** Runs an operation in the settle's own turn on a settled tree, so no settle interleaves with it; nothing inside may await another turn (`payOwedWalk`, `settleNow`), since a turn queued behind this one starts only when it ends. */
+export const inSettleTurn = <T>(root: string, op: () => Promise<T>): Promise<T> =>
+  inTurn(async () => {
+    await walkWhileOwed(root)
+    return op()
+  })
+
+/** The index once the walk the latest writes may have owed is paid; null when the tree isn't this root's. */
+export async function settledIndex(root: string): Promise<PageIndex | null> {
+  await walkWhileOwed(root)
+  const tree = heldTreeOf(root)
+  return tree && pageIndexOf(tree)
+}
+
+/** The one re-spell, run inside the settle's turn: the map `respellings` builds from `before` to `after`, swept under `label`; undefined when it touches nothing and warns of nothing. */
+export async function relink(
+  root: string,
+  before: PageIndex,
+  after: PageIndex,
+  label: string,
+  moved: readonly string[],
+  arriving: readonly string[],
+): Promise<CascadeReport | undefined> {
+  const names = respellings(before, after, moved, arriving)
+  if (!names.size) return undefined
+  const report = await renameCascade(root, { names, label })
+  return report.pages.length || report.hosts.length || report.warning ? report : undefined
+}
 
 // One settle at a time, and one reseed at a time on a chain of its own: a reply waits for the settles ahead of its own, and for a reseed only when its own settle found the corpus moved; a moved scope waits for the watcher's restart, whose catch-up seeds after the reply.
 export async function settleNow(pusher: Pusher, root: string): Promise<void> {

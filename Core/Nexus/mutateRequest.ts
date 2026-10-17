@@ -61,7 +61,7 @@ export const mutateRequest = z.discriminatedUnion('op', [
     name: z.string(),
     order: ids.optional(),
   }),
-  // Membership is keyed by TITLE, so Spaces and Contexts rename through their own ops. `fromCreate` marks a just-created page's first commit: disambiguates like a create, and skips the link cascade a linkless page can't need.
+  // Membership is keyed by TITLE, so Spaces and Contexts rename through their own ops. `fromCreate` marks a just-created page's first commit: disambiguates like a create, and arrives without moving, so a stale link to the name it was born with never follows.
   op('rename', {
     path: z.string(),
     kind: heldKind.exclude(['space', 'context']),

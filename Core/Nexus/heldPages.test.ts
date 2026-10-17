@@ -1,7 +1,7 @@
 import { join } from '../Paths/posix'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { NexusTree } from './tree'
-import { frozenWorld, liveIdIndex, liveIdOf, livePathOf, titleHeldOutside } from './heldPages'
+import { frozenWorld, liveIdIndex, liveIdOf, livePathOf } from './heldPages'
 
 const held = { tree: null as NexusTree | null }
 vi.mock('./liveTree', () => ({
@@ -79,13 +79,6 @@ describe('titles answer from the one index', () => {
     )
     return t
   }
-
-  it('titleHeldOutside is false when only the leaving file holds the title, true when a second page does', () => {
-    held.tree = withAlpha('Notes/Alpha.md')
-    expect(titleHeldOutside(ROOT, 'Alpha', 'Notes/Alpha.md')).toBe(false)
-    held.tree = withAlpha('Notes/Alpha.md', 'Notes/Deep/Alpha.md')
-    expect(titleHeldOutside(ROOT, 'Alpha', 'Notes/Alpha.md')).toBe(true)
-  })
 
   it('frozenWorld holds an arriving title and a held one, and nothing else', () => {
     const world = frozenWorld(withAlpha('Notes/Alpha.md'), ['Landing'])

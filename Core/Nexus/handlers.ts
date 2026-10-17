@@ -24,7 +24,7 @@ import { ensureConfigLayout, ensureIdentity } from './identity'
 import { dropLiveTree, liveTreeOf, seedLiveTree } from './liveTree'
 import { normalizePropertyTypes, normalizeSavedViews } from './migrateConfig'
 import { handleMutate } from './mutate'
-import { dropTileHeadingLinks } from '../Tiles/tilesFile'
+import { dropTileLinks } from '../Tiles/tilesFile'
 import { runOpenLedger } from './remintLedger'
 import { openSession, sessionRoot, waitingOpen, waitOn, whileAdopting } from './session'
 import { readNexus, readNexusConfig } from './readNexus'
@@ -67,7 +67,7 @@ export async function openNexusSequence(
   if (root !== priorRoot) {
     forgetLastReads()
     dropLiveTree()
-    dropTileHeadingLinks()
+    dropTileLinks()
   }
   const config = await readNexusConfig(root).catch(errText)
   // A sync start for the old root that shared the first stop's wait began after it; either branch stops it again before the new stores bind.

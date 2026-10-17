@@ -11,7 +11,7 @@ import {
   searchEntriesOf,
   spaceLinksOf,
 } from './treeIndex'
-import { pageIndexOf, pagesByIdOf, pagesOf, recordById, recordsOf } from './record'
+import { pageIndexOf, pageMoves, pagesByIdOf, pagesOf, recordById, recordsOf } from './record'
 
 describe('the record walk', () => {
   it('caches every projection on the tree identity — same tree, same object', () => {
@@ -244,5 +244,21 @@ describe('a configuration patch keeps every entity lookup', () => {
       unreadable: [{ path: 'Notes/Bad.md', kind: 'page', reason: 'unparsed' }],
     }
     expect(reconcileIndexOf(unreadable)).not.toBe(held[0])
+  })
+})
+
+describe('pageMoves', () => {
+  it('lists an id whose path changed and an id new to the second map, and neither an unchanged nor a departed one', () => {
+    const was = new Map([
+      ['moved', { path: 'A/X.md' }],
+      ['same', { path: 'A/Y.md' }],
+      ['gone', { path: 'A/Z.md' }],
+    ])
+    const now = new Map([
+      ['moved', { path: 'B/X.md' }],
+      ['same', { path: 'A/Y.md' }],
+      ['new', { path: 'A/W.md' }],
+    ])
+    expect(pageMoves(was, now)).toEqual({ moved: ['moved'], arrived: ['new'] })
   })
 })

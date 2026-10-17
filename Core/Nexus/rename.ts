@@ -1,4 +1,4 @@
-import { dirname, join, titleFromPath } from '../Paths/posix'
+import { dirname, join } from '../Paths/posix'
 import { createDisambiguated } from '../Paths/names'
 import { ok } from '../Contract/result'
 import { mutableTarget } from './liveTree'
@@ -7,9 +7,7 @@ import type { MutateContext } from './mutate'
 import { renamePage } from './page'
 import { landingRefusal, renameFolderEntity } from './folderEntity'
 import { pathExists } from '../Files/atomicWrite'
-import { renameCascade } from './cascade'
 import { excludedWithin, exclusionWriteRefusal } from '../Settings/settings'
-import { titleHeldOutside } from './heldPages'
 
 export async function renameOp(
   { root }: MutateContext,
@@ -34,10 +32,6 @@ export async function renameOp(
     )
     return r.ok ? ok({}) : r
   }
-  const oldTitle = titleFromPath(abs)
-  const heldOutside = titleHeldOutside(root, oldTitle, req.path)
   const r = await renamePage(abs, req.newName)
-  if (!r.ok) return r
-  if (heldOutside) return ok({})
-  return ok({ cascade: await renameCascade(root, { title: oldTitle, to: req.newName }) })
+  return r.ok ? ok({}) : r
 }

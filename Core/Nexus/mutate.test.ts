@@ -33,6 +33,7 @@ const B_ID = '01KVGMT8BFP350FZZXAMG1QDRB'
 const C_ID = '01KVGMT8BFP350FZZXAMG1QDRC'
 const G_ID = '01KVGMT8BFP350FZZXAMG1QDRG'
 import { openSession, closeSession } from './session'
+import * as settle from './settle'
 import { settleNow, settleBatch } from './settle'
 import { applyEvents, oweWalk } from './fileEvents'
 import * as readNexusModule from './readNexus'
@@ -395,7 +396,30 @@ describe('handleMutate — rename', () => {
     expect(await read('Notes/Daily/Alpha.md')).toContain('[[Beta]]')
   })
 
-  it('container rename renames the folder (no cascade)', async () => {
+  it('renaming one of two twins re-spells the path links to it', async () => {
+    await mkdir(join(root, 'Notes', 'Other'), { recursive: true })
+    await writeFile(join(root, 'Notes', 'Other', '_pageset.json'), JSON.stringify({ id: 'other' }))
+    await writeFile(join(root, 'Notes', 'Other', 'Beta.md'), `---\nID: ${G_ID}\n---\n`)
+    await writeFile(
+      join(root, 'Notes', 'Daily', 'Alpha.md'),
+      `---\nID: ${A_ID}\n---\n\n[[Daily/Beta]] [[Other/Beta]]`,
+    )
+    await refreshTree(root)
+    const r = await settledMutate(
+      root,
+      { op: 'rename', path: 'Notes/Daily/Beta.md', kind: 'page', newName: 'Gamma' },
+      nexusDeps,
+    )
+    expect(r.ok).toBe(true)
+    expect(await read('Notes/Daily/Alpha.md')).toContain('[[Daily/Gamma|Gamma]] [[Other/Beta]]')
+  })
+
+  it('a container rename re-spells the path links through it', async () => {
+    await writeFile(
+      join(root, 'Notes', 'Daily', 'Alpha.md'),
+      `---\nID: ${A_ID}\n---\n\n[[Daily/Beta]] [[Beta]]`,
+    )
+    await refreshTree(root)
     const r = await settledMutate(
       root,
       { op: 'rename', path: 'Notes/Daily', kind: 'set', newName: 'Journal' },
@@ -404,6 +428,8 @@ describe('handleMutate — rename', () => {
     expect(r.ok).toBe(true)
     expect(await pathExists(join(root, 'Notes/Journal/_pageset.json'))).toBe(true)
     expect(await pathExists(join(root, 'Notes/Daily'))).toBe(false)
+    expect(await read('Notes/Journal/Alpha.md')).toContain('[[Journal/Beta|Beta]] [[Beta]]')
+    if (r.ok) expect(r.value.cascade?.pages).toEqual(['Notes/Journal/Alpha.md'])
   })
 
   it('rejects a duplicate name', async () => {
@@ -415,6 +441,165 @@ describe('handleMutate — rename', () => {
     expect(r.ok).toBe(false)
     if (r.ok) return
     expect(r.error.code).toBe('exists')
+  })
+})
+
+describe('handleMutate — the re-spell', () => {
+  const page = (rel: string, id: string, body = '') =>
+    writeFile(join(root, rel), `---\nID: ${id}\n---\n\n${body}`)
+  const set = async (rel: string, id: string) => {
+    await mkdir(join(root, rel), { recursive: true })
+    await writeFile(join(root, rel, '_pageset.json'), JSON.stringify({ id }))
+  }
+  const collection = async (rel: string, id: string) => {
+    await mkdir(join(root, rel), { recursive: true })
+    await writeFile(join(root, rel, '_pagecollection.json'), JSON.stringify({ id }))
+  }
+
+  it('a page move re-spells the path links through the folder it left, and leaves a bare one', async () => {
+    await set('Notes/Archive', 'set-archive')
+    await page('Notes/Daily/Alpha.md', A_ID, '[[Daily/Beta]] [[Beta]]')
+    await refreshTree(root)
+    const r = await settledMutate(
+      root,
+      { op: 'movePage', path: 'Notes/Daily/Beta.md', newParentPath: 'Notes/Archive' },
+      nexusDeps,
+    )
+    expect(r.ok).toBe(true)
+    expect(await read('Notes/Daily/Alpha.md')).toContain('[[Archive/Beta|Beta]] [[Beta]]')
+    if (r.ok) expect(r.value.cascade?.pages).toEqual(['Notes/Daily/Alpha.md'])
+  })
+
+  it('a move that makes a path link ambiguous re-spells the other holder’s links to its full path', async () => {
+    await collection('Work', 'col-work')
+    await set('Work/Inbox', 'set-inbox')
+    await set('Work/Daily', 'set-work-daily')
+    await page('Work/Inbox/Beta.md', G_ID)
+    await page('Notes/Daily/Alpha.md', A_ID, '[[Daily/Beta]]')
+    await refreshTree(root)
+    const r = await settledMutate(
+      root,
+      { op: 'movePage', path: 'Work/Inbox/Beta.md', newParentPath: 'Work/Daily' },
+      nexusDeps,
+    )
+    expect(r.ok).toBe(true)
+    expect(await read('Notes/Daily/Alpha.md')).toContain('[[Notes/Daily/Beta|Beta]]')
+  })
+
+  it('a create sharing a sole holder’s title re-spells that holder’s bare links', async () => {
+    await set('Notes/Other', 'other')
+    await refreshTree(root)
+    const r = await settledMutate(
+      root,
+      { op: 'createPage', id: newContentId('page'), parentPath: 'Notes/Other', name: 'Beta' },
+      nexusDeps,
+    )
+    expect(r.ok).toBe(true)
+    expect(await read('Notes/Daily/Alpha.md')).toContain('See [[Notes/Daily/Beta|Beta]] for more.')
+    if (r.ok) expect(r.value.cascade?.pages).toEqual(['Notes/Daily/Alpha.md'])
+  })
+
+  it('a create under the default name re-spells nothing', async () => {
+    await set('Notes/Other', 'other')
+    await page('Notes/Daily/Untitled.md', C_ID)
+    await page('Notes/Daily/Alpha.md', A_ID, '[[Untitled]]')
+    await refreshTree(root)
+    const r = await settledMutate(
+      root,
+      { op: 'createPage', id: newContentId('page'), parentPath: 'Notes/Other', name: 'Untitled' },
+      nexusDeps,
+    )
+    expect(r.ok).toBe(true)
+    expect(await read('Notes/Daily/Alpha.md')).toContain('[[Untitled]]')
+    if (r.ok) expect(r.value.cascade).toBeUndefined()
+  })
+
+  it('a create disambiguated off the default name is no arrival, even beside a sole holder of the name it lands as', async () => {
+    await set('Notes/Other', 'other')
+    await page('Notes/Other/Untitled.md', C_ID)
+    await set('Notes/Elsewhere', 'elsewhere')
+    await page('Notes/Elsewhere/Untitled (2).md', G_ID)
+    await page('Notes/Daily/Alpha.md', A_ID, '[[Untitled (2)]]')
+    await refreshTree(root)
+    const r = await settledMutate(
+      root,
+      { op: 'createPage', id: newContentId('page'), parentPath: 'Notes/Other', name: 'Untitled' },
+      nexusDeps,
+    )
+    expect(r.ok).toBe(true)
+    expect(await pathExists(join(root, 'Notes/Other/Untitled (2).md'))).toBe(true)
+    expect(await read('Notes/Daily/Alpha.md')).toContain('[[Untitled (2)]]')
+    if (r.ok) expect(r.value.cascade).toBeUndefined()
+  })
+
+  it('a page move over a dropped tree warns that its links weren’t updated', async () => {
+    await set('Notes/Archive', 'set-archive')
+    dropLiveTree()
+    const r = await handleMutate(
+      root,
+      { op: 'movePage', path: 'Notes/Daily/Beta.md', newParentPath: 'Notes/Archive' },
+      nexusDeps,
+    )
+    expect(r.ok && r.value.cascade).toEqual({
+      pages: [],
+      hosts: [],
+      warning: "Links to “Beta” weren't updated.",
+    })
+  })
+
+  it('a first commit beside a sole holder re-spells its bare links, and a stale link to the name it was born with stays', async () => {
+    await set('Notes/Other', 'other')
+    await page('Notes/Daily/Alpha.md', A_ID, '[[Beta]] [[Untitled]]')
+    await refreshTree(root)
+    await settledMutate(
+      root,
+      { op: 'createPage', id: newContentId('page'), parentPath: 'Notes/Other', name: 'Untitled' },
+      nexusDeps,
+    )
+    const r = await settledMutate(
+      root,
+      {
+        op: 'rename',
+        path: 'Notes/Other/Untitled.md',
+        kind: 'page',
+        newName: 'Beta',
+        fromCreate: true,
+      },
+      nexusDeps,
+    )
+    expect(r.ok).toBe(true)
+    expect(await read('Notes/Daily/Alpha.md')).toContain('[[Notes/Daily/Beta|Beta]] [[Untitled]]')
+  })
+
+  it('two address operations issued at once re-spell one after the other', async () => {
+    await page('Notes/Daily/Alpha.md', A_ID, '[[Beta]] [[Gamma]]')
+    await page('Notes/Daily/Gamma.md', C_ID)
+    await refreshTree(root)
+    const order: string[] = []
+    const real = settle.relink
+    const relinks = vi.spyOn(settle, 'relink').mockImplementation(async (...args) => {
+      order.push(`start ${args[3]}`)
+      await new Promise((r) => setTimeout(r, 20))
+      const report = await real(...args)
+      order.push(`end ${args[3]}`)
+      return report
+    })
+    const [one, two] = await Promise.all([
+      handleMutate(
+        root,
+        { op: 'rename', path: 'Notes/Daily/Beta.md', kind: 'page', newName: 'Delta' },
+        nexusDeps,
+      ),
+      handleMutate(
+        root,
+        { op: 'rename', path: 'Notes/Daily/Gamma.md', kind: 'page', newName: 'Epsilon' },
+        nexusDeps,
+      ),
+    ])
+    relinks.mockRestore()
+    expect([one.ok, two.ok]).toEqual([true, true])
+    expect(order).toEqual(['start Beta', 'end Beta', 'start Gamma', 'end Gamma'])
+    expect(await read('Notes/Daily/Alpha.md')).toContain('[[Delta]] [[Epsilon]]')
   })
 })
 
@@ -1156,7 +1341,11 @@ describe('handleMutate — review-round hardening', () => {
           { op: 'rename', path: 'Notes/Daily/Beta.md', kind: 'page', newName: 'Gamma' },
           nexusDeps,
         )
-        expect(r.ok && r.value.cascade?.warning).toBe('Couldn’t update links to “Beta” in 1 file.')
+        expect(r.ok && r.value.cascade).toEqual({
+          pages: ['Notes/Daily/Alpha.md'],
+          hosts: [],
+          warning: 'Couldn’t update links to “Beta” in 1 file.',
+        })
         expect(await pathExists(join(root, 'Notes/Daily/Gamma.md'))).toBe(true)
         expect(await pathExists(join(root, 'Notes/Daily/Beta.md'))).toBe(false)
         const alpha = await read('Notes/Daily/Alpha.md')
@@ -1424,6 +1613,7 @@ describe('nexusHandlers.mutate — a create’s ID', () => {
   it('admits a page ID carrying its kind mark', async () => {
     const id = newContentId('page')
     const req = { op: 'createPage', id, parentPath: 'Notes/Daily', name: 'Marked' }
+    await refreshTree(root)
     expect(await nexusHandlers.mutate(ctx, req)).toEqual(
       ok({ created: { path: 'Notes/Daily/Marked.md' } }),
     )
@@ -2526,8 +2716,10 @@ describe('the Contexts lock', () => {
       },
       nexusDeps,
     )
-    await settleNow({ push: () => {}, watch: async () => {} }, root)
+    // The value's settle takes the settle's turn, which the paused operation holds until it ends.
+    const settled = settleNow({ push: () => {}, watch: async () => {} }, root)
     paused.release()
+    await settled
     expect((await running).ok && valued.ok).toBe(true)
     vi.restoreAllMocks()
     await settleNow({ push: () => {}, watch: async () => {} }, root)

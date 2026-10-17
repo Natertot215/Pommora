@@ -1,67 +1,63 @@
 import { describe, it, expect } from 'vitest'
-import { rewriteConnections, rewriteHeadingConnections } from './rewrite'
+import { respellings, rewriteConnections, rewriteHeadingConnections } from './rewrite'
 import { linksIn } from './scan'
-import { pageKey } from './pageIndex'
+import { buildPageIndex, pageKey } from './pageIndex'
+import { titleFromPath } from '../Paths/posix'
+
+const renamed = (body: string, from: string, to: string): string =>
+  rewriteConnections(body, new Map([[pageKey(from), to]]))
 
 describe('rewriteConnections', () => {
   it('rewrites a normalized-matching link to the new title', () => {
-    expect(rewriteConnections('go to [[Old Page]] now', 'Old Page', 'New Page')).toBe(
-      'go to [[New Page]] now',
-    )
+    expect(renamed('go to [[Old Page]] now', 'Old Page', 'New Page')).toBe('go to [[New Page]] now')
   })
 
   it('matches case-insensitively and carries an alias through', () => {
-    expect(rewriteConnections('[[old page]] and [[Old Page|the old one]]', 'Old Page', 'New')).toBe(
+    expect(renamed('[[old page]] and [[Old Page|the old one]]', 'Old Page', 'New')).toBe(
       '[[New]] and [[New|the old one]]',
     )
   })
 
   it('drops an empty alias segment rather than preserving a bare pipe', () => {
-    expect(rewriteConnections('[[Old|]]', 'Old', 'New')).toBe('[[New]]')
+    expect(renamed('[[Old|]]', 'Old', 'New')).toBe('[[New]]')
   })
 
   it('drops an alias the new target repeats, cell escape included, as a written connection does', () => {
-    expect(rewriteConnections('[[Old|New]] [[Old#H|new#h]] [[Old|Other]]', 'Old', 'New')).toBe(
+    expect(renamed('[[Old|New]] [[Old#H|new#h]] [[Old|Other]]', 'Old', 'New')).toBe(
       '[[New]] [[New#H]] [[New|Other]]',
     )
-    expect(rewriteConnections('| [[Old\\|New]] |', 'Old', 'New')).toBe('| [[New]] |')
+    expect(renamed('| [[Old\\|New]] |', 'Old', 'New')).toBe('| [[New]] |')
   })
 
   it('renames an alias that only showed the old title, dropping it where it would repeat the new target', () => {
-    expect(rewriteConnections('[[Old|old]] [[Old#H|Old]]', 'Old', 'New')).toBe(
-      '[[New]] [[New#H|New]]',
-    )
-    expect(rewriteConnections('[[Old#Intro|Old#Intro]]', 'Old', 'New')).toBe('[[New#Intro]]')
+    expect(renamed('[[Old|old]] [[Old#H|Old]]', 'Old', 'New')).toBe('[[New]] [[New#H|New]]')
+    expect(renamed('[[Old#Intro|Old#Intro]]', 'Old', 'New')).toBe('[[New#Intro]]')
   })
 
   it('never gives a bare fragment a title: `[[#H]]` on the renamed page stays as written', () => {
     const body = '[[#H]] [x](#H) [[Old#H]] [[#H|Old]]'
-    expect(rewriteConnections(body, 'Old', 'New')).toBe('[[#H]] [x](#H) [[New#H]] [[#H|Old]]')
+    expect(renamed(body, 'Old', 'New')).toBe('[[#H]] [x](#H) [[New#H]] [[#H|Old]]')
   })
 
   it('edits only the page name, so unusual spacing and escapes survive byte for byte', () => {
-    expect(rewriteConnections('[[ Old ]] [x]( Old#Part ) [[Old\\|a]]', 'Old', 'New')).toBe(
+    expect(renamed('[[ Old ]] [x]( Old#Part ) [[Old\\|a]]', 'Old', 'New')).toBe(
       '[[New]] [x]( New#Part ) [[New\\|a]]',
     )
   })
 
   it('leaves non-matching links untouched; a matching embed follows the rename', () => {
     // An embed names a page the same way a connection does — the sweep reaches both.
-    expect(rewriteConnections('[[Other]] and ![[Old.png]]', 'Old.png', 'X')).toBe(
-      '[[Other]] and ![[X]]',
-    )
+    expect(renamed('[[Other]] and ![[Old.png]]', 'Old.png', 'X')).toBe('[[Other]] and ![[X]]')
   })
 
   it('rewrites TO a title with internal brackets and it round-trips', () => {
-    const body = rewriteConnections('go to [[Old]] now', 'Old', 'New [v2] final')
+    const body = renamed('go to [[Old]] now', 'Old', 'New [v2] final')
     expect(body).toBe('go to [[New [v2] final]] now')
-    expect(rewriteConnections(body, 'New [v2] final', 'Again')).toBe('go to [[Again]] now')
+    expect(renamed(body, 'New [v2] final', 'Again')).toBe('go to [[Again]] now')
   })
 
   it('rewrites FROM a title that itself contains brackets', () => {
-    expect(rewriteConnections('[[Notes [WIP] final]] here', 'Notes [WIP] final', 'Done')).toBe(
-      '[[Done]] here',
-    )
+    expect(renamed('[[Notes [WIP] final]] here', 'Notes [WIP] final', 'Done')).toBe('[[Done]] here')
   })
 })
 
@@ -76,13 +72,13 @@ describe('rewriteConnections — code is a sample, never a connection', () => {
       '',
       'and [[Old]]',
     ].join('\n')
-    expect(rewriteConnections(body, 'Old', 'New')).toBe(
+    expect(renamed(body, 'Old', 'New')).toBe(
       ['see [[New]]', '', '```md', 'write [[Old]] to link it', '```', '', 'and [[New]]'].join('\n'),
     )
   })
 
   it('leaves a link inside an inline span alone', () => {
-    expect(rewriteConnections('type `[[Old]]` to get [[Old]]', 'Old', 'New')).toBe(
+    expect(renamed('type `[[Old]]` to get [[Old]]', 'Old', 'New')).toBe(
       'type `[[Old]]` to get [[New]]',
     )
   })
@@ -90,14 +86,14 @@ describe('rewriteConnections — code is a sample, never a connection', () => {
   it('leaves a link inside a fence under a quoted list item alone', () => {
     const body =
       '> [!note] Setup\n> - Install:\n>   ```\n>   npm i -[[Old]]\n>   ```\n> See [[Old]].'
-    expect(rewriteConnections(body, 'Old', 'New')).toBe(
+    expect(renamed(body, 'Old', 'New')).toBe(
       '> [!note] Setup\n> - Install:\n>   ```\n>   npm i -[[Old]]\n>   ```\n> See [[New]].',
     )
   })
 
   it('honors a ~~~ fence and treats a ``` line inside it as content', () => {
     const body = ['~~~', '[[Old]]', '```', '[[Old]]', '~~~', '[[Old]]'].join('\n')
-    expect(rewriteConnections(body, 'Old', 'New')).toBe(
+    expect(renamed(body, 'Old', 'New')).toBe(
       ['~~~', '[[Old]]', '```', '[[Old]]', '~~~', '[[New]]'].join('\n'),
     )
   })
@@ -106,15 +102,13 @@ describe('rewriteConnections — code is a sample, never a connection', () => {
 describe('the embed sweep', () => {
   it('rewrites ![[Old]] alongside [[Old]], one sweep', () => {
     const body = 'see [[Old]] and\n\n![[Old]]\n\nand [[Old|alias]]'
-    expect(rewriteConnections(body, 'Old', 'New')).toBe(
-      'see [[New]] and\n\n![[New]]\n\nand [[New|alias]]',
-    )
+    expect(renamed(body, 'Old', 'New')).toBe('see [[New]] and\n\n![[New]]\n\nand [[New|alias]]')
   })
 
   it('a fenced sample of either syntax stays a sample — under a LENGTH-CHANGING rename', () => {
     // Same-length fixtures can't see a mask misread; the offsets must survive real drift.
     const body = '[[Old]]\n![[Old]]\n```\n[[Old]]\n![[Old]]\n```\n![[Old]]'
-    expect(rewriteConnections(body, 'Old', 'A Much Longer Title')).toBe(
+    expect(renamed(body, 'Old', 'A Much Longer Title')).toBe(
       '[[A Much Longer Title]]\n![[A Much Longer Title]]\n```\n[[Old]]\n![[Old]]\n```\n![[A Much Longer Title]]',
     )
   })
@@ -122,68 +116,66 @@ describe('the embed sweep', () => {
 
 describe('the markdown-link sweep', () => {
   it('rewrites a target that names the renamed page, keeping the label', () => {
-    expect(rewriteConnections('see [the notes](Old%20Title) end', 'Old Title', 'New Title')).toBe(
+    expect(renamed('see [the notes](Old%20Title) end', 'Old Title', 'New Title')).toBe(
       'see [the notes](New%20Title) end',
     )
   })
 
   it('renames a label that only showed the old title, and keeps one giving a name', () => {
-    expect(
-      rewriteConnections('[Old Title](Old%20Title) [mine](Old%20Title)', 'Old Title', 'New'),
-    ).toBe('[New](New) [mine](New)')
+    expect(renamed('[Old Title](Old%20Title) [mine](Old%20Title)', 'Old Title', 'New')).toBe(
+      '[New](New) [mine](New)',
+    )
   })
 
   it('a label naming the page through its `.md` destination follows the rename', () => {
-    expect(rewriteConnections('[Notes](Notes.md)', 'Notes', 'Alpha')).toBe('[Alpha](Alpha)')
+    expect(renamed('[Notes](Notes.md)', 'Notes', 'Alpha')).toBe('[Alpha](Alpha)')
   })
 
   it('a path link keeps showing the title it names through a rename, in either syntax', () => {
-    expect(rewriteConnections('[[A/Notes|Notes]]', 'A/Notes', 'A/Plan')).toBe('[[A/Plan|Plan]]')
-    expect(rewriteConnections('[Notes](A/Notes)', 'A/Notes', 'A/Plan')).toBe('[Plan](A/Plan)')
+    expect(renamed('[[A/Notes|Notes]]', 'A/Notes', 'A/Plan')).toBe('[[A/Plan|Plan]]')
+    expect(renamed('[Notes](A/Notes)', 'A/Notes', 'A/Plan')).toBe('[Plan](A/Plan)')
   })
 
   it('re-encodes a new title that needs it', () => {
-    expect(rewriteConnections('[x](Old)', 'Old', 'Atomic Habits (Book)')).toBe(
+    expect(renamed('[x](Old)', 'Old', 'Atomic Habits (Book)')).toBe(
       '[x](Atomic%20Habits%20%28Book%29)',
     )
   })
 
   it('leaves a URL alone even when its last segment collides', () => {
     const body = 'see [site](https://example.com/Old%20Title) end'
-    expect(rewriteConnections(body, 'Old Title', 'New Title')).toBe(body)
+    expect(renamed(body, 'Old Title', 'New Title')).toBe(body)
   })
 
   it('a link inside code stays a sample', () => {
     const body = '```\n[x](Old)\n```\n'
-    expect(rewriteConnections(body, 'Old', 'New')).toBe(body)
+    expect(renamed(body, 'Old', 'New')).toBe(body)
   })
 
   // rewritePageSerialized calls this unwrapped, so one `%`-bearing body would leave that page’s links unmoved on every rename.
   it('a %-bearing body does not throw the rename into a revert', () => {
     const body = 'see [x](Revenue 50% plan) and [[Old]] end'
-    expect(() => rewriteConnections(body, 'Old', 'New')).not.toThrow()
-    expect(rewriteConnections(body, 'Old', 'New')).toContain('[[New]]')
+    expect(() => renamed(body, 'Old', 'New')).not.toThrow()
+    expect(renamed(body, 'Old', 'New')).toContain('[[New]]')
   })
 
   it('all three syntaxes move in one sweep', () => {
-    expect(rewriteConnections('[[Old]] ![[Old]] [x](Old)', 'Old', 'New')).toBe(
-      '[[New]] ![[New]] [x](New)',
-    )
+    expect(renamed('[[Old]] ![[Old]] [x](Old)', 'Old', 'New')).toBe('[[New]] ![[New]] [x](New)')
   })
 })
 
 describe('a page rename keeps every fragment', () => {
   it('re-emits `#heading` across all three syntaxes and a pipe-escape', () => {
-    expect(rewriteConnections('[[Old#H]]', 'Old', 'New')).toBe('[[New#H]]')
-    expect(rewriteConnections('[[Old#H|a]]', 'Old', 'New')).toBe('[[New#H|a]]')
-    expect(rewriteConnections('![[Old#H]]', 'Old', 'New')).toBe('![[New#H]]')
-    expect(rewriteConnections('[a](Old#H)', 'Old', 'New')).toBe('[a](New#H)')
+    expect(renamed('[[Old#H]]', 'Old', 'New')).toBe('[[New#H]]')
+    expect(renamed('[[Old#H|a]]', 'Old', 'New')).toBe('[[New#H|a]]')
+    expect(renamed('![[Old#H]]', 'Old', 'New')).toBe('![[New#H]]')
+    expect(renamed('[a](Old#H)', 'Old', 'New')).toBe('[a](New#H)')
   })
 })
 
 describe('a page rename inside a table cell', () => {
   it('re-emits the cell pipe-escape once on a heading link', () => {
-    expect(rewriteConnections('| [[Old#H\\|a]] |', 'Old', 'New')).toBe('| [[New#H\\|a]] |')
+    expect(renamed('| [[Old#H\\|a]] |', 'Old', 'New')).toBe('| [[New#H\\|a]] |')
   })
 })
 
@@ -375,5 +367,83 @@ describe('the heading gate lets every heading reference through', () => {
     expect(
       rewriteHeadingConnections('see §Old here', new Set(['p']), 'Old', 'New', true, ['Old']),
     ).toBe('see §New here')
+  })
+})
+
+describe('respellings', () => {
+  const index = (...pages: [string, string][]) =>
+    buildPageIndex(pages.map(([id, path]) => ({ id, title: titleFromPath(path), path })))
+  const map = (m: Map<string, string>) => Object.fromEntries(m)
+
+  it('a page rename maps its bare and path keys', () => {
+    const was = index(['n', 'A/Notes.md'])
+    const now = index(['n', 'A/Plan.md'])
+    expect(map(respellings(was, now, ['n'], []))).toEqual({ notes: 'Plan', 'a/notes': 'A/Plan' })
+  })
+  it('a move maps only the keys through the changed folder', () => {
+    const was = index(['n', 'Q/A/Notes.md'])
+    const now = index(['n', 'Q/B/Notes.md'])
+    expect(map(respellings(was, now, ['n'], []))).toEqual({
+      'a/notes': 'B/Notes',
+      'q/a/notes': 'Q/B/Notes',
+    })
+  })
+  it('a folder rename maps the keys through the renamed segment for every page under it', () => {
+    const was = index(['1', 'Q/X/One.md'], ['2', 'Q/X/Two.md'])
+    const now = index(['1', 'Q/Y/One.md'], ['2', 'Q/Y/Two.md'])
+    expect(map(respellings(was, now, ['1', '2'], []))).toEqual({
+      'x/one': 'Y/One',
+      'q/x/one': 'Q/Y/One',
+      'x/two': 'Y/Two',
+      'q/x/two': 'Q/Y/Two',
+    })
+  })
+  it('an arrival sharing a sole holder’s title maps that holder’s bare key to its full path', () => {
+    const was = index(['a', 'A/Notes.md'])
+    const now = index(['a', 'A/Notes.md'], ['b', 'B/Notes.md'])
+    expect(map(respellings(was, now, [], ['b']))).toEqual({ notes: 'A/Notes' })
+  })
+  it('an arrival whose keys named nobody maps nothing', () => {
+    const was = index(['a', 'A/Notes.md'])
+    const now = index(['a', 'A/Notes.md'], ['c', 'C/Other.md'])
+    expect(respellings(was, now, [], ['c']).size).toBe(0)
+  })
+  it('a folder of 5,000 pages renamed maps in well under a second, as does one of 2,000 where 500 share a title', () => {
+    const timed = (paths: (id: number) => string, count: number) => {
+      const ids = Array.from({ length: count }, (_, i) => String(i))
+      const was = index(...ids.map((id): [string, string] => [id, `F/${paths(Number(id))}.md`]))
+      const now = index(...ids.map((id): [string, string] => [id, `G/${paths(Number(id))}.md`]))
+      const start = performance.now()
+      const names = respellings(was, now, ids, [])
+      return { size: names.size, took: performance.now() - start }
+    }
+    const distinct = timed((i) => `P${i}`, 5000)
+    expect(distinct.size).toBe(5000)
+    expect(distinct.took).toBeLessThan(1000)
+    const shared = timed((i) => (i < 500 ? `S${i}/Same` : `P${i}`), 2000)
+    expect(shared.size).toBe(2000)
+    expect(shared.took).toBeLessThan(1000)
+  })
+})
+
+describe('rewriteConnections through the map', () => {
+  it('rewrites every spelling of a mapped key', () => {
+    expect(
+      rewriteConnections('[[notes]] [Notes](notes) [[Notes.md]]', new Map([['notes', 'Plan']])),
+    ).toBe('[[Plan]] [Plan](Plan) [[Plan]]')
+  })
+  it('leaves a link already spelled as mapped, and follows a case-only rename', () => {
+    const names = new Map([['notes', 'Notes']])
+    expect(rewriteConnections('[[Notes]] [[notes]]', names)).toBe('[[Notes]] [[Notes]]')
+  })
+  it('a bare wikilink gaining a path gains its title alias, and an embed doesn’t', () => {
+    const names = new Map([['notes', 'A/Notes']])
+    expect(rewriteConnections('[[Notes]]', names)).toBe('[[A/Notes|Notes]]')
+    expect(rewriteConnections('![[Notes]]', names)).toBe('![[A/Notes]]')
+  })
+  it('carries a path link’s title alias through a rename', () => {
+    expect(rewriteConnections('[[A/Notes|Notes]]', new Map([['a/notes', 'A/Plan']]))).toBe(
+      '[[A/Plan|Plan]]',
+    )
   })
 })

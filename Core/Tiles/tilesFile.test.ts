@@ -13,7 +13,7 @@ import {
   removeTile,
   restoreTile,
   rewriteTileConnections,
-  tilesLinkHeading,
+  tilesLink,
   writeMarkdownTile,
 } from './tilesFile'
 import { readTileDocAt, writeTileDocAt } from './tileDoc'
@@ -317,14 +317,24 @@ describe('markdown tile lifecycle', () => {
     expect(await entries()).toHaveLength(1)
   })
 
+  it('lists every key a tile links, and every key with the heading it names', async () => {
+    const id = await landedId(createTile(root, home(), append))
+    await write(home(), id, 'see [[Notes]] and [[Plan#Setup]]')
+    expect(await tilesLink(root, ['notes'])).toBe(true)
+    expect(await tilesLink(root, ['plan'], 'setup')).toBe(true)
+    expect(await tilesLink(root, ['notes'], 'setup')).toBe(false)
+    expect(await tilesLink(root, ['other', 'plan'])).toBe(true)
+    expect(await tilesLink(root, ['other'])).toBe(false)
+  })
+
   it('a restored tile’s links count again for a heading renamed outside the app', async () => {
     const id = await landedId(createTile(root, home(), append))
     await write(home(), id, 'see [[A#Keep]]')
     const removed = await removeTile(root, home(), id, nexusDeps)
     if (!removed.ok) throw new Error('remove refused')
-    expect(await tilesLinkHeading(root, 'a', 'keep')).toBe(false)
+    expect(await tilesLink(root, ['a'], 'keep')).toBe(false)
     await restoreTile(home(), removed.value.removed)
-    expect(await tilesLinkHeading(root, 'a', 'keep')).toBe(true)
+    expect(await tilesLink(root, ['a'], 'keep')).toBe(true)
   })
 
   it('a restore seats the tile in its band on disk, and leaves a board already holding it alone', async () => {
@@ -506,7 +516,8 @@ describe('markdown tile lifecycle', () => {
 })
 
 describe('rewriteTileConnections', () => {
-  const rename = (body: string): string => rewriteConnections(body, 'Target', 'Renamed')
+  const rename = (body: string): string =>
+    rewriteConnections(body, new Map([['target', 'Renamed']]))
 
   it('rewrites [[oldTitle]] → [[newTitle]] in tile bodies, leaving non-matches untouched', async () => {
     const id = await landedId(createTile(root, home(), append))

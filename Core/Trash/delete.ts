@@ -1,10 +1,10 @@
-import { basename, dirname, join, relative, titleFromPath } from '../Paths/posix'
+import { basename, dirname, isAtOrUnder, join, relative } from '../Paths/posix'
 import { liveTreeOf, mutableTarget } from '../Nexus/liveTree'
+import { pagesOf } from '../Nexus/record'
 import { dropPageMetadata } from '../Nexus/pageMetadata'
 import { isContainer } from '../Nexus/entities'
 import { goneEdit, reachConfig, reachReport } from '../Nexus/configReach'
 import { pathExists, relocate } from '../Files/atomicWrite'
-import { folderCorpus } from '../Index/indexSeed'
 import { fail, ok, valueOr } from '../Contract/result'
 import { mutateRegistryFile, readRegistryStrict, withContextAt } from '../Contexts/contextsRegistry'
 import { unlinkContextKey, unlinkSpaceValue } from '../Contexts/contextCascade'
@@ -33,7 +33,8 @@ export async function deleteOp(
   const abs = resolved.value
   const rel = relative(root, abs)
   if (!(await pathExists(abs))) return fail('not-found', 'Nothing to delete.')
-  const edit = goneEdit(await liveTreeOf(root), req.kind, req.path)
+  const before = await liveTreeOf(root)
+  const edit = goneEdit(before, req.kind, req.path)
   const contexts = req.kind === 'context' ? await readRegistryStrict(root) : null
   if (contexts && !contexts.ok) return contexts
   if (isContainer(req)) {
@@ -55,7 +56,7 @@ export async function deleteOp(
     throw e
   }
   let record: RecordFile | null = null
-  let titles: string[] | null = null
+  let paths: string[] | null = null
   if (req.kind === 'space') {
     const registry = write ? await readRegistryStrict(root) : null
     if (write) await write(await gatherSpaceRecord(abs, registry, null))
@@ -86,15 +87,14 @@ export async function deleteOp(
   } else {
     record = write ? await gatherContentRecord(root, req.kind, abs) : null
     if (write && record) await write({ ...record, partial: true })
-    titles =
-      req.kind === 'page'
-        ? [titleFromPath(abs)]
-        : (await folderCorpus(root, abs)).map(titleFromPath)
+    paths = pagesOf(before)
+      .filter((p) => isAtOrUnder(p.path, rel))
+      .map((p) => p.path)
   }
   if (bundle) await relocate(abs, join(bundle, basename(abs)))
   else await machine().lock(abs, () => discardFile(root, abs, deps))
   await dropPageMetadata(root, pageIds)
-  const gone = titles ? await deleteCascade(root, abs, titles) : null
+  const gone = paths ? await deleteCascade(root, abs, paths) : null
   if (write && record && gone)
     await write({
       ...record,

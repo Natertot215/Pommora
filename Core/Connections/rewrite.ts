@@ -1,4 +1,5 @@
 import {
+  carriesTitleAlias,
   mayNameHeading,
   namesTarget,
   type PageName,
@@ -15,19 +16,50 @@ import { escapeCell } from '../MarkdownPM/Engine/Tables/codec'
 import type { TableRegion } from '../MarkdownPM/Engine/Tables/regions'
 import { scanDoc, spanAt } from '../MarkdownPM/Engine/docScan'
 import { type LinkHit, linksIn } from './scan'
-import { pageKey } from './pageIndex'
+import { type ConnPage, type PageIndex, pathKeys } from './pageIndex'
 
+/** `label` is what the warning names. */
 export type CascadeChange =
-  | { title: string; to: string }
+  | { names: ReadonlyMap<string, string>; label: string }
   | { path: string; heading: string; to: string }
 
-/** Code stays untouched: a page documenting `[[Old Title]]` in a fenced block is showing a sample. Only the written name changes; shown text that only named it follows it, and shown text that comes to repeat the new target goes, as the writer drops one. */
-export function rewriteConnections(body: string, oldTitle: string, newTitle: string): string {
-  const oldKey = pageKey(oldTitle)
+/** The one re-spell's map: every key that named a moved page in the index before, and every key that named one other page alone before which a tail of an arriving page's path now spells (a collision), mapped to how it spells that page in the index after; a key the page still answers at an unchanged tail is left out. */
+export function respellings(
+  before: PageIndex,
+  after: PageIndex,
+  moved: readonly string[],
+  arriving: readonly string[],
+): Map<string, string> {
+  const examined = new Map<string, ConnPage>()
+  for (const id of moved) {
+    const p = before.byId.get(id)
+    if (p) examined.set(id, p)
+  }
+  for (const id of arriving)
+    for (const k of pathKeys(after.byId.get(id)?.path ?? '')) {
+      const y = before.resolve(k).page
+      if (y && y.id !== id) examined.set(y.id, y)
+    }
+  const names = new Map<string, string>()
+  for (const p of examined.values()) {
+    const q = after.byId.get(p.id)
+    if (!q) continue
+    for (const k of before.namesOf(p.path)) {
+      const next = after.respell(k, q, p.path)
+      if (next !== null) names.set(k, next)
+    }
+  }
+  return names
+}
+
+/** Code stays untouched: a page documenting `[[Old Title]]` in a fenced block is showing a sample. Only the written name changes, to what `names` maps its key to; shown text that only named it follows it, and shown text that comes to repeat the new target goes, as the writer drops one. */
+export function rewriteConnections(body: string, names: ReadonlyMap<string, string>): string {
   const rewrite = follower(body)
   const edits: TextEdit[] = []
-  for (const hit of linksIn(body))
-    if (hit.target === oldKey) edits.push(...rewrite(hit, 'title', newTitle))
+  for (const hit of linksIn(body)) {
+    const next = names.get(hit.target)
+    if (next !== undefined && next !== hit.named.title) edits.push(...rewrite(hit, 'title', next))
+  }
   return applyEdits(body, edits)
 }
 
@@ -45,7 +77,7 @@ function carry(shown: string, from: PageName, to: PageName): string {
   }
 }
 
-/** One rewrite per hit, for either arm, the hit's name as the index reads it and `part` replaced by `value`: the renamed part is edited in place (a table cell's `\|` rides through), shown text naming the old target follows it, shown text repeating the new target drops its pipe, and a wikilink whose new target it can't spell is rewritten whole through the one writer, which falls to the markdown form. Inside a table region every inserted text is escaped as the cell codec escapes, since a rename writes the row's source; the regions are read once, on the first hit. */
+/** One rewrite per hit, for either arm, the hit's name as the index reads it and `part` replaced by `value`: the renamed part is edited in place (a table cell's `\|` rides through), shown text naming the old target follows it, shown text repeating the new target drops its pipe, and a wikilink whose new target it can't spell, or which gains a path and with it the title alias the writer gives one, is rewritten whole through the one writer, which falls to the markdown form where it must. Inside a table region every inserted text is escaped as the cell codec escapes, since a rename writes the row's source; the regions are read once, on the first hit. */
 function follower(body: string) {
   let tables: TableRegion[] | undefined
   return (hit: LinkHit, part: 'title' | 'heading', value: string): TextEdit[] => {
@@ -58,8 +90,11 @@ function follower(body: string) {
     const shown = shownRaw === undefined ? undefined : markdown ? unescapeLabel(shownRaw) : shownRaw
     const carried = shown === undefined ? undefined : carry(shown, from, to)
     const next = { title: to.title, heading: to.heading, shown: carried }
-    if (hit.syntax === 'wiki' && !spellsAsWiki(next))
-      return [{ from: hit.full[0], to: hit.full[1], insert: esc(pageLinkText(next, 'markdown')) }]
+    if (
+      hit.syntax === 'wiki' &&
+      (!spellsAsWiki(next) || carriesTitleAlias({ ...next, embed: hit.embed }))
+    )
+      return [{ from: hit.full[0], to: hit.full[1], insert: esc(pageLinkText(next, 'wiki')) }]
     const span = part === 'title' ? hit.title : hit.heading!
     const edits: TextEdit[] = [
       { from: span[0], to: span[1], insert: esc(markdown ? encodeLinkTarget(value) : value) },

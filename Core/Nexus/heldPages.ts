@@ -1,7 +1,7 @@
 // The held tree's pages by path and by id, for the host's writers; titles answer from the one index.
 
 import { heldTreeOf } from './liveTree'
-import { isAtOrUnder, relative } from '../Paths/posix'
+import { relative } from '../Paths/posix'
 import { normalizeTitle } from '../Paths/caseFold'
 import type { Frozen } from '../Properties/propertyValue'
 import { pageIndexOf, pagesByPathOf, pagesOf } from './record'
@@ -32,15 +32,6 @@ export const livePathOf = (root: string, id: string): string | null => {
 export const idHeld = (root: string, id: string): boolean => {
   const tree = heldTreeOf(root)
   return tree ? writablePathsOf(tree).has(id) : false
-}
-
-/** Whether a page outside `rel` still answers `title`, so a link naming it resolves once `rel` is gone. */
-export function titleHeldOutside(root: string, title: string, rel: string): boolean {
-  const tree = heldTreeOf(root)
-  if (!tree) return false
-  return pageIndexOf(tree)
-    .holders(title)
-    .some((p) => !isAtOrUnder(p.path, rel))
 }
 
 /** A restore's world: the pages the tree holds, and those landing with it. */

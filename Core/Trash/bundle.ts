@@ -19,6 +19,10 @@ async function trashChainDir(nexusRoot: string, absPath: string): Promise<string
   return dir
 }
 
+/** Where a bundled file lived before its delete: the bundle's chain under `.trash` mirrors the folder it left, and the artifact keeps its own tree. */
+export const deletedPathOf = (root: string, bundleAbs: string, file: string): string =>
+  join(relative(join(root, TRASH_DIR), dirname(bundleAbs)), relative(bundleAbs, file))
+
 export const fileStamp = (): string => new Date().toISOString().replace(/[:.]/g, '-')
 
 const stampedLeaf = (stamp: string, n: number, base: string): string =>

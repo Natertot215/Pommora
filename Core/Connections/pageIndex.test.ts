@@ -9,6 +9,9 @@ const pages: ConnPage[] = [
   { id: '4', title: 'Notes', path: 'v/Notes.md' },
 ]
 
+const at = (...paths: string[]) =>
+  buildPageIndex(paths.map((path, i) => ({ id: String(i), title: titleFromPath(path), path })))
+
 describe('resolve', () => {
   const idx = buildPageIndex(pages)
   it('resolved → exactly one holder, with its page', () => {
@@ -100,8 +103,6 @@ describe('candidates (ranked by match, then A–Z)', () => {
 })
 
 describe('paths', () => {
-  const at = (...paths: string[]) =>
-    buildPageIndex(paths.map((path, i) => ({ id: String(i), title: titleFromPath(path), path })))
   const named = (idx: ReturnType<typeof at>, raw: string) => idx.resolve(raw).page?.path
 
   it('a full path names its page, and names one of a shared title', () => {
@@ -154,5 +155,44 @@ describe('paths', () => {
       'x/notes',
       'q/x/notes',
     ])
+  })
+})
+
+describe('respell', () => {
+  const page = (idx: ReturnType<typeof at>, path: string) => idx.resolve(path).page!
+
+  it('leaves a key that still names the page at an unchanged tail', () => {
+    const idx = at('A/Notes.md')
+    expect(idx.respell('notes', page(idx, 'A/Notes'))).toBeNull()
+  })
+  it('follows a case-only rename', () => {
+    const idx = at('A/Notes.md')
+    expect(idx.respell('notes', page(idx, 'A/Notes'), 'A/notes.md')).toBe('Notes')
+  })
+  it('spells the full path when a twin arrives and the key no longer names the page alone', () => {
+    const idx = at('A/Notes.md', 'B/Notes.md')
+    expect(idx.respell('notes', page(idx, 'A/Notes'))).toBe('A/Notes')
+  })
+  it('keeps the depth a path key was written at through a rename', () => {
+    const idx = at('A/Plan.md')
+    expect(idx.respell('a/notes', page(idx, 'A/Plan'), 'A/Notes.md')).toBe('A/Plan')
+  })
+  it('leaves a key shallower than a renamed folder, and re-spells one through it', () => {
+    const idx = at('R/X/Notes.md')
+    const q = page(idx, 'R/X/Notes')
+    expect(idx.respell('x/notes', q, 'Q/X/Notes.md')).toBeNull()
+    expect(idx.respell('q/x/notes', q, 'Q/X/Notes.md')).toBe('R/X/Notes')
+  })
+  it('without an old path, resolution alone decides', () => {
+    const idx = at('A/Notes.md', 'B/Notes.md')
+    expect(idx.respell('a/notes', page(idx, 'A/Notes'))).toBeNull()
+    expect(idx.respell('notes', page(idx, 'B/Notes'))).toBe('B/Notes')
+  })
+  it('byId holds the first of two pages claiming one id', () => {
+    const idx = buildPageIndex([
+      { id: 'd', title: 'Notes', path: 'A/Notes.md' },
+      { id: 'd', title: 'Notes', path: 'B/Notes.md' },
+    ])
+    expect(idx.byId.get('d')?.path).toBe('A/Notes.md')
   })
 })

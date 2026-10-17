@@ -38,7 +38,7 @@ import { heldTreeOf, patchLiveTree } from './liveTree'
 import { resolveOrder } from './order'
 import { type TileHostRef, type TilesChanged, tileHostKey } from '../Tiles/tiles'
 import { tileHostAt } from '../Tiles/tileHosts'
-import { dropTileHeadingLinks } from '../Tiles/tilesFile'
+import { dropTileLinks } from '../Tiles/tilesFile'
 import {
   contextLinker,
   pageRecordOf,
@@ -614,7 +614,7 @@ async function applyOne(root: string, ev: FileEvent, owed: Owed): Promise<Applie
     case 'settings-leaf':
       return applySettings(root, ev, owed)
     case 'tiles-leaf': {
-      dropTileHeadingLinks()
+      dropTileLinks()
       if (ev.origin === 'own') return 'ok'
       const doc = basename(c.rel) === TILE_DOC_FILENAME
       oweTiles(owed, c.host, doc ? [] : [basename(c.rel, '.md')])

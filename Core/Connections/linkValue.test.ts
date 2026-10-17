@@ -298,7 +298,8 @@ describe('internal links', () => {
     expect(shownProse('`[[Alpha]]` stays')).toBe('`[[Alpha]]` stays')
   })
   it('a page rename rewrites a Link value naming the page in either syntax, and nothing else', () => {
-    const rename = (value: string) => rewriteConnections(value, 'Meeting Notes', 'New Title')
+    const rename = (value: string) =>
+      rewriteConnections(value, new Map([['meeting notes', 'New Title']]))
     expect(rename('[[Meeting Notes]]')).toBe('[[New Title]]')
     expect(rename('[x](Meeting%20Notes#H)')).toBe('[x](New%20Title#H)')
     expect(rename('https://example.com/Meeting Notes')).toBe('https://example.com/Meeting Notes')
@@ -320,9 +321,9 @@ describe('internal links', () => {
     })
   })
   it('keeps the heading through a page rename and a typed commit', () => {
-    expect(rewriteConnections('[[Meeting Notes#Decisions]]', 'Meeting Notes', 'New Title')).toBe(
-      '[[New Title#Decisions]]',
-    )
+    expect(
+      rewriteConnections('[[Meeting Notes#Decisions]]', new Map([['meeting notes', 'New Title']])),
+    ).toBe('[[New Title#Decisions]]')
     expect(linkValueFromEdit('[[meeting notes#Decisions]]', notes, undefined)).toEqual({
       kind: 'link',
       value: '[[Meeting Notes#Decisions]]',

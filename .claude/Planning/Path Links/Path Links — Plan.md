@@ -114,7 +114,7 @@ The work lands in nine phases in dependency order, each the largest run one agen
 - **Frozen:** `wikiTitle` and every File value, banner, cover, and asset reference it reads (A-8); `Core/Connections/aliasMemory.ts` and the metadata shard; `Core/Contract/bridge.ts` (no channel changes; `MutateOutcome.cascade` already exists and the store contract widens through `Core/Platform/stores.ts`); the `relations` table's columns (no schema change); `Core/MarkdownPM/Engine/detect.ts`'s `loneEmbedTitle`; `UIX/Symbols/allSymbols.ts`'s `searchIcons` (D-3); a view's filter operators (D-5); **Display Unresolved Links As Plain Syntax**; a trashed page's body while it sits in the Trash (F-3); `Core/Sync/`; every behavior of a resolved link's click (C-2).
 - **The Number:** every phase's VERIFY runs `python3 ~/"The Studio/.claude/scripts/view-delta/view-delta.py" <BASELINE>..HEAD --exclude .claude` and records the **Actionable** column (code minus comments; tests and docs excluded) in the Net Ledger beside the phase's estimate, with removals and additions apart. A phase that lands above its band is reported in chat before the next phase opens, with what the increase buys. There is no floor (the owner's bar: every addition earns its place and the outcome reads as intended, with the merges counting toward a codebase left with less); the final report states the measured total against the count under *§Overview · The Number*.
 - **Shape:** a feature with a refactor, removals, and fixes inside it. The behavioral baseline is today's behavior as the Decisions' *§Context* states it, kept except where a decision names a change and proven by the tests each task rewrites or adds. Every removal task lists its consumers (the sibling sweep), and the Frozen list holds throughout. Every fix task names what else consumed the old behavior. The index generation bump is the one migration: it drops and reseeds the content index on the first open, which is how the rows re-key.
-- **Conventions:** finite states are unions plus exhaustive switches; no O(N), allocating, or layout-reading work lands on a keystroke, a caret move, a decoration build, or a settle that nothing owes, and every task that touches one of those paths states its cost; the index resolves nothing eagerly at build (both processes rebuild it on every tree change, and the host never opens a picker); nothing in SQL rewrites `relations.target` (it mirrors the file's bytes; the sweep rewrites files and re-indexing re-keys them); host-run code imports no React or UIX, and `Desktop/hostGraph.test.ts` and `Core/Contract/engineGraph.test.ts` stay green; nothing inside an address operation awaits `inTurn` (`payOwedWalk`, `settleNow`), since `inTurns` has no re-entry detection and would hang silently (Task 6-3's audit lists every transitive caller); a comment is written only where the code would be genuinely ambiguous or misread without it (the owner, 10-17-2026): the comment lines in an AFTER block state intent for the executor and are not written unless they meet that bar, a comment that restates its code or claims a cost is dropped, and the comments the scouts list as false are rewritten or removed by the task that falsifies them; commit messages are past tense and one to four sentences; nothing temporary, transitional, or compatibility-kept remains at a phase's end.
+- **Conventions:** finite states are unions plus exhaustive switches; no O(N), allocating, or layout-reading work lands on a keystroke, a caret move, a decoration build, or a settle that nothing owes, and every task that touches one of those paths states its cost; the index resolves nothing eagerly at build (both processes rebuild it on every tree change, and the host never opens a picker); nothing in SQL rewrites `relations.target` (it mirrors the file's bytes; the sweep rewrites files and re-indexing re-keys them); host-run code imports no React or UIX, and `Desktop/hostGraph.test.ts` and `Core/Contract/engineGraph.test.ts` stay green; nothing inside an address operation awaits `inTurn` (`payOwedWalk`, `settleNow`), since `inTurns` has no re-entry detection and would hang silently (Task 6-3's audit, recorded there, lists every awaiter and every lock the turn takes: only `settle.ts` itself, `underContexts`'s `finally`, the two handlers after an operation, the watcher's own queue, and the test harness await a turn, and nothing a gated operation reaches imports `settle.ts`); a comment is written only where the code would be genuinely ambiguous or misread without it (the owner, 10-17-2026): the comment lines in an AFTER block state intent for the executor and are not written unless they meet that bar, a comment that restates its code or claims a cost is dropped, and the comments the scouts list as false are rewritten or removed by the task that falsifies them; commit messages are past tense and one to four sentences; nothing temporary, transitional, or compatibility-kept remains at a phase's end.
 - **Execution:** the plan runs end to end autonomously, the owner reachable only at check-ins. Every review checkpoint dispatches two agents to the `closeout-review` skill's standards (correctness, simplification, cohesiveness, and consequences; its closing procedures, write-guards, and output format don't apply), reading outward (whether the phase reads correct from the rest of the codebase's point of view) rather than in isolation, and the orchestrator's own post-phase look weighs the landed work against the **Mandate** above before the next phase opens. An in-flight call is weighed against those and the plan's objectives, disclosed in chat, and recorded under *§Deviations* only where it changes an outcome. The two compaction checkpoints in *§Process Overview* sit before Phases 4 and 7 (placed by the planner; the owner adjusts them at ratification); each runs `c/pre-compaction`, re-instills the Mandate in the handoff exactly as the owner gave it, and stops until the owner re-prompts.
 - **Rulings (Not Re-Raised):** every decision in *Path Links — Decisions* and its *§Rejected* list: titles are never forced unique; a shared title writes the full path, never a shortest unique tail; nothing shortens a link for its own sake, and a path link never shortens back when a collision goes away; Ambiguous stays its own state; ambiguity is resolved through the picker alone; a path link draws its title only; `#` is the only heading opener inside a link and a `§` there is ordinary text (A-9); no new search box, no per-letter highlighting, no ambiguous-link menu, no reserved extension list, no whole-target file reading; the one click rule's exception is a caret already inside the unresolved link being edited; Text values keep their two-click path where prose surrounds the link; outside and closed-app moves repair through the heading-rename lane; a trashed page's body is never touched in the Trash; File and asset references aren't connections. The owner's rulings during planning are recorded as they land (*§Deviations* records any that change an outcome).
 - **Neutral Gate:** the work ends with a `fable-high` neutral reviewer given only the BASELINE head, HEAD, and this intention, with no plan, log, or document: *"Pommora's page links named pages by title alone, so two pages sharing a title couldn't be told apart, and its link cascades, searches, and clicks on unresolved links each worked their own way. This work lets a link name a page by its path from the Nexus root, written and read as Obsidian does, keeps every link pointing at its page through renames, moves, folder changes, collisions, and restores made inside or outside the app, makes every search match one way, and seats a click on an unresolved link in its title, with each rule stated once, built from what the architecture already had, and nothing left over."* Every phase is written so that review passes.
@@ -147,12 +147,12 @@ The work lands in nine phases in dependency order, each the largest run one agen
   - [x] Task 5-1 · The `seatTitle` arm and the editor's press
   - [x] Task 5-2 · Resting cells and the value field
   - [x] Review Checkpoint
-- [ ] **Phase 6** — The In-App Re-Spell
-  - [ ] Task 6-1 · The one re-spell rule
-  - [ ] Task 6-2 · The heading cascade decides by keys, and the dead gates go
-  - [ ] Task 6-3 · `addressed`: every address operation re-spells by its before-and-after diff, inside the settle's turn
-  - [ ] Task 6-4 · The delete strips by worlds, and `titleHeldOutside` goes
-  - [ ] Review Checkpoint
+- [x] **Phase 6** — The In-App Re-Spell
+  - [x] Task 6-1 · The one re-spell rule
+  - [x] Task 6-2 · The heading cascade decides by keys, and the dead gates go
+  - [x] Task 6-3 · `addressed`: every address operation re-spells by its before-and-after diff, inside the settle's turn
+  - [x] Task 6-4 · The delete strips by worlds, and `titleHeldOutside` goes
+  - [x] Review Checkpoint
 - [ ] `[Compaction checkpoint: c/pre-compaction]`
 - [ ] **Phase 7** — The Outside-Move Lane
   - [ ] Task 7-1 · The index names what vanished and what landed
@@ -1828,7 +1828,7 @@ The work lands in nine phases in dependency order, each the largest run one agen
 **CHANGE**
 
 - [ ] Write and watch fail: `pageIndex.test.ts`: `respell('notes', q)` is null when `notes` still names `q` and its path's tail is unchanged; `'Notes'` when the page was renamed from `notes` (a case-only rename follows); `'A/Notes'` when a twin arrived and `notes` no longer names `q` alone; `'A/Plan'` for the key `a/notes` after a rename to `Plan`; null for a key whose depth reaches above a renamed folder when the tail is unchanged; with no `oldPath`, null exactly when the key still names the page; `byId` holds the first of two pages claiming one id. `rewrite.test.ts`: `respellings` over a page rename maps its bare and path keys; over a move maps only the keys through the changed folder; over a folder rename maps the keys through the renamed segment for every page under it and nothing shallower; over an arrival that shares a sole holder's title maps that holder's bare key to its full path (and maps nothing when the arrival's keys named nobody); `rewriteConnections(body, names)` rewrites `[[notes]]`, `[Notes](notes)`, and `[[Notes.md]]` to the mapped spelling, leaves `[[Notes]]` alone when the map holds `notes → 'Notes'`, writes `[[A/Notes|Notes]]` for a bare `[[Notes]]` gaining a path and `![[A/Notes]]` for the embed `![[Notes]]` (alias default), and carries `[[A/Notes|Notes]]` to `[[A/Plan|Plan]]`.
-- [ ] `pageIndex.ts`: `writtenName` hoisted to a `const` beside `resolve`; `respell(key, page, oldPath = page.path)`; `byId`, built on first use as `alphabetical` is, first listed wins. `record.ts`: `pagesByIdOf` reads `pageIndexOf(tree).byId`, so the tree has one by-id rule.
+- [ ] `pageIndex.ts`: `writtenName` hoisted to a `const` beside `resolve`; `respell(key, page, oldPath = page.path)`; `byId`, built on first use as `alphabetical` is, first listed wins; `holdersOf` reads each holder's path key through a lazy per-page memo, since a folder rename over pages sharing one title asks for each many times (measured: 2,000 pages with 500 sharing a title, 305 ms without the memo, 33 ms with). `record.ts`: `pagesByIdOf` reads `pageIndexOf(tree).byId`, so the tree has one by-id rule.
 - [ ] `rewrite.ts`: `respellings(before, after, moved, arriving)` over two indexes; `rewriteConnections(body, names: ReadonlyMap<string, string>)`; `follower` writes a wikilink whole where `carriesTitleAlias({ ...next, embed: hit.embed })` (Task 1-3's predicate; an embed never carries one, since `expressibleInLink` refuses a `|` there); not written under the no-alias ruling.
 - [ ] The three callers keep the gates green until their own tasks: `cascade.ts`'s rewrite call takes `new Map([[pageKey(title), change.to]])` (Task 6-2 replaces it), `spend.ts:265` takes `new Map([[pageKey(was), landed]])` (Task 8-2 replaces it), and `tilesFile.test.ts:509`'s `rename` helper takes `new Map([['target', 'Renamed']])`.
 
@@ -1843,6 +1843,15 @@ The work lands in nine phases in dependency order, each the largest run one agen
 +  readonly byId: ReadonlyMap<string, ConnPage>
 @@ buildPageIndex @@
 +  let byId: Map<string, ConnPage> | undefined
++  // Each page's path key, folded on first ask: a path key resolves over every holder of its title, and a folder rename over pages sharing one title asks for each many times.
++  const pathKeyMemo = new Map<ConnPage, string>()
++  const pathKeyOf = (p: ConnPage): string => {
++    const held = pathKeyMemo.get(p)
++    if (held !== undefined) return held
++    const k = pageKey(p.path)
++    pathKeyMemo.set(p, k)
++    return k
++  }
 +  const writtenName = (path: string, like = ''): string => { … (Task 1-2's body, as a const) }
 +  const respell = (key: string, page: ConnPage, oldPath = page.path): string | null => {
 +    const depth = key.split('/').length
@@ -1942,7 +1951,7 @@ The work lands in nine phases in dependency order, each the largest run one agen
 **VERIFY**
 
 - [ ] The new cases pass; `rewrite.test.ts`'s title-arm cases take a one-entry map (`new Map([['old', 'New']])`) and pass; `rewrite.test.ts:136` and `:145-148` pass; `tilesFile.test.ts`'s `rewriteTileConnections` cases pass through the map form.
-- [ ] `respellings` over 5,000 pages under one folder completes in the test harness in well under a second (one timing assertion, generous bound), since it resolves each page's tails against both indexes in memory.
+- [ ] `respellings` over 5,000 pages under one folder, and over 2,000 of which 500 share a title, completes in the test harness in well under a second (one timing assertion per case, generous bound).
 - [ ] `git grep -n "this\." -- Core/Connections/pageIndex.ts` finds nothing.
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
@@ -2087,11 +2096,11 @@ The work lands in nine phases in dependency order, each the largest run one agen
 
 **CHANGE**
 
-- [ ] **Audit first:** list every function the gated operations reach that awaits `inTurn` (`payOwedWalk`, `settleNow`) or takes a `machine().lock` key the settle's own turn also takes; at HEAD the awaiters are `mutate.ts:78` (`underContexts`'s `finally`, which stays outside the turn), `Contract/handlers.ts:105` and `Nexus/handlers.ts:105,108` (after the operation), and `Testing/settledMutate.ts:20`; the settle's turn takes `nexusDir` through `registerHeldOptions` and per-file locks, and no operation holds `nexusDir` across the turn boundary (`restoreProperty` takes and releases it inside its own turn). Record the list in this task and in the Constraint.
+- [ ] **Audit first:** list every function the gated operations reach that awaits `inTurn` (`payOwedWalk`, `settleNow`) or takes a `machine().lock` key the settle's own turn also takes. **The list (recorded at execution, 10-17-2026):** the awaiters of `inTurn` are `settle.ts`'s own `payOwedWalk`, `settleNow`, and `settleBatch` (through `settleNow`, on the watcher's own queue, holding no lock); `mutate.ts`'s `underContexts` `finally` (`payOwedWalk`, which runs after the nested turn has resolved); `Contract/handlers.ts`'s `withWriteRoot` `finally` (`settleNow`, after the operation); `Nexus/handlers.ts`'s session start; and `Testing/settledMutate.ts` after `handleMutate`. Only `mutate.ts`, the two handlers, `settledMutate.ts`, and `Desktop/FileWatch/watcher.ts` import `settle.ts`; no module a gated operation reaches (`create`, `rename`, `move`, `Trash/delete`, `Trash/spend`, `cascade`, `folderEntity`, `page`, the own-write tap through `applyOwn`) does, and inside the turn `settledIndex`, `renameCascade`, `tilesLink`, and the writers reach `walkWhileOwed`, `liveTreeOf`, and `applyEvents` alone, none of which takes a turn. The turn takes `nexusDir` (through `registerHeldOptions`) and per-file locks (through `cascadeSeen`'s sweeps); `contextsDir` is taken only in `underContexts`, outside the turn, and nothing inside the turn takes it; no operation holds `nexusDir` or a page lock while awaiting the turn (`restoreProperty` takes and releases `nexusDir` inside its own operation), and re-taking a held lock key throws rather than hanging. The own-write tap is awaited by every writer (`atomicWrite.ts`, `bundle.ts`), so the index read after an operation holds its events.
 - [ ] Write and watch fail: `mutate.test.ts`: `:398` becomes "a container rename re-spells the path links through it" (`[[A/Notes]]` → `[[B/Notes]]`, a bare `[[Notes]]` untouched); a page move from `A/` to `B/` re-spells `[[A/Notes]]` and leaves `[[Notes]]`; a move that makes `[[Notes]]` ambiguous re-spells the other holder's bare links to its path; a create named `Plan` beside a sole `Plan` re-spells the first's bare links, and a create named `Untitled` beside a sole `Untitled` re-spells nothing; a first commit from `Untitled` to `Notes` beside a sole `Notes` re-spells that page's bare links and leaves a stale `[[Untitled]]` elsewhere as written; `:365` stays true; `:383` stays true; renaming one of two twins re-spells `[[A/Notes]]` to `[[A/Plan]]` (today it skips); each reply carries `cascade` with the files it reached and the moved page's title in its warning; two address operations issued at once run one after the other (spy on `relink`'s order). `nexusSlice.test`: `createPage` flushes pending saves as `rename` does. `record.test.ts`: `pageMoves` lists an id whose path changed and an id new to the after map, and neither an unchanged nor a departed one.
 - [ ] `record.ts`: `pageMoves(before, after)` over two by-id maps; `nexusSlice.ts`'s `movedHeadings` relocates the headings of `pageMoves(before, after).moved` instead of walking `before` itself.
-- [ ] `settle.ts`: export `inSettleTurn`, `settledIndex`, and `relink`.
-- [ ] `mutate.ts`: `addressed` wraps what can move or add a page (`createPage`, `rename`, `movePage`, `moveSet`), inside `underContexts` where that applies; what sweeps or removes alone (`renameHeading`, `delete`, `emptyBundle`) runs under `inSettleTurn`, since a diff there finds nothing and a heading rename settles often; `restore` runs under `inSettleTurn` too, since its pages come from the Trash and Task 8-2 composes its own world before.
+- [ ] `settle.ts`: export `inSettleTurn(root, op)` (every operation in the turn starts from a settled tree), `settledIndex`, and `relink(root, before, after, label, moved, arriving)`, which returns undefined when the map is empty or the report touches nothing and warns of nothing, so no reply carries an empty cascade.
+- [ ] `mutate.ts`: `addressed(req, fn)` wraps what can move or add a page (`createPage`, `rename`, `movePage`, `moveSet`), inside `underContexts` where that applies; it labels the cascade from the request (a create's `name`, a first commit's `newName`, else the old path's title, so a rename warns about the title the stale links still show and a Set rename names the Set), decides the default-name exemption by the request (`req.name === DEFAULT_NEW_NAME`, so a create disambiguated to `Untitled (2)` is no arrival either), and answers a null index (a dropped tree) with the warning the renderer shows rather than dropping the re-spell; what sweeps or removes alone (`renameHeading`, `delete`, `emptyBundle`) runs under `inSettleTurn`, since a diff there finds nothing and a heading rename settles often; `restore` runs under `inSettleTurn` too, since its pages come from the Trash and Task 8-2 composes its own world before.
 - [ ] `rename.ts`: the page arm drops `titleHeldOutside` and its cascade call and returns `ok({})` like its siblings; `mutateRequest.ts:64`'s `fromCreate` comment reads "disambiguates like a create, and arrives without moving, so a stale link to the name it was born with never follows". `move.ts` and `create.ts` are untouched.
 - [ ] `nexusSlice.ts:236-239`: `createPage` joins the ops that flush pending saves (its collision arm rewrites other pages' bodies).
 - [ ] `heldPages.ts`: `titleHeldOutside` goes; `heldPages.test.ts:83` goes.
@@ -2143,8 +2152,12 @@ The work lands in nine phases in dependency order, each the largest run one agen
 +import { respellings } from '../Connections/rewrite'
 +import type { PageIndex } from '../Connections/pageIndex'
 @@ after walkWhileOwed @@
-+/** Runs an address-changing operation in the settle's own turn, so no payment of an owed re-spell interleaves with it; nothing inside may await another turn (`payOwedWalk`, `settleNow`), since a turn queued behind this one starts only when it ends. */
-+export const inSettleTurn = <T>(op: () => Promise<T>): Promise<T> => inTurn(op)
++/** Runs an operation in the settle's own turn on a settled tree, so no settle interleaves with it; nothing inside may await another turn (`payOwedWalk`, `settleNow`), since a turn queued behind this one starts only when it ends. */
++export const inSettleTurn = <T>(root: string, op: () => Promise<T>): Promise<T> =>
++  inTurn(async () => {
++    await walkWhileOwed(root)
++    return op()
++  })
 +
 +/** The index once the walk the latest writes may have owed is paid; null when the tree isn't this root's. */
 +export async function settledIndex(root: string): Promise<PageIndex | null> {
@@ -2153,18 +2166,19 @@ The work lands in nine phases in dependency order, each the largest run one agen
 +  return tree && pageIndexOf(tree)
 +}
 +
-+/** The one re-spell, run inside the settle's turn against the index as it stands now: the map `respellings` builds from `before` to the settled index, swept by the cascade under `label`; undefined when nothing needs re-spelling. */
++/** The one re-spell, run inside the settle's turn: the map `respellings` builds from `before` to `after`, swept under `label`; undefined when it touches nothing and warns of nothing. */
 +export async function relink(
 +  root: string,
 +  before: PageIndex,
++  after: PageIndex,
 +  label: string,
 +  moved: readonly string[],
 +  arriving: readonly string[],
 +): Promise<CascadeReport | undefined> {
-+  const after = await settledIndex(root)
-+  if (!after) return { pages: [], hosts: [], warning: `Links to “${label}” weren't updated.` }
 +  const names = respellings(before, after, moved, arriving)
-+  return names.size ? renameCascade(root, { names, label }) : undefined
++  if (!names.size) return undefined
++  const report = await renameCascade(root, { names, label })
++  return report.pages.length || report.hosts.length || report.warning ? report : undefined
 +}
 ```
 
@@ -2176,65 +2190,72 @@ The work lands in nine phases in dependency order, each the largest run one agen
 +import { DEFAULT_NEW_NAME } from './mutateRequest'
 @@ dispatch @@
    const underContexts = …
-+  // A write that changes a page's address, or sweeps links, runs in the settle's turn, so an owed re-spell is never paid mid-operation and two such writes never interleave; it holds the Contexts lock outside the turn, since that lock's `finally` takes a turn of its own. A write that can move or add a page also reads the index before and after and re-spells by the difference (one that only sweeps or removes runs in the turn alone): a page whose path changed moved, a page new to the index arrived, and both can collide. A first commit's rename arrives without moving, so a stale link to the name it was born with never follows it, and a page created under the default name is no arrival, since it's uncommitted and its first commit is where it arrives.
-+  const addressed = (fn: () => Promise<MutateReply>): Promise<MutateReply> =>
-+    inSettleTurn(async () => {
++  // A write that moves, adds, sweeps, or removes a page runs in the settle's turn, nested inside `underContexts` rather than around it, since that lock's `finally` takes a turn of its own. One that can move or add a page re-spells by the index's difference across it: a first commit's rename arrives without moving, so a stale link to the name the page was born with never follows it, and a page created under the default name is no arrival, since its first commit is where it arrives.
++  const addressed = (
++    req: Extract<MutateRequest, { op: 'createPage' | 'rename' | 'movePage' | 'moveSet' }>,
++    fn: () => Promise<MutateReply>,
++  ): Promise<MutateReply> =>
++    inSettleTurn(root, async () => {
 +      const before = await settledIndex(root)
 +      const reply = await fn()
-+      if (!reply.ok || !before) return reply
++      if (!reply.ok) return reply
 +      const after = await settledIndex(root)
-+      if (!after) return reply
-+      const { moved, arrived } = pageMoves(before.byId, after.byId)
 +      const firstCommit = req.op === 'rename' && req.fromCreate === true
-+      const stayed = firstCommit ? [] : moved
-+      const arriving = [
-+        ...(firstCommit ? moved : []),
-+        ...arrived.filter((id) => after.byId.get(id)?.title !== DEFAULT_NEW_NAME),
-+      ]
-+      const first = after.byId.get(stayed[0] ?? arriving[0] ?? '')
-+      const cascade = first
-+        ? await relink(root, before, first.title, stayed, [...stayed, ...arriving])
-+        : undefined
++      const label =
++        req.op === 'createPage' ? req.name : firstCommit ? req.newName : titleFromPath(req.path)
++      let cascade: CascadeReport | undefined = {
++        pages: [],
++        hosts: [],
++        warning: `Links to “${label}” weren't updated.`,
++      }
++      if (before && after) {
++        const { moved, arrived } = pageMoves(before.byId, after.byId)
++        const arrivals = req.op === 'createPage' && req.name === DEFAULT_NEW_NAME ? [] : arrived
++        const stayed = firstCommit ? [] : moved
++        cascade = await relink(root, before, after, label, stayed, [...moved, ...arrivals])
++      }
 +      if (!cascade) return reply
-+      const joined = reply.value.cascade ? joinCascades(reply.value.cascade, cascade) : cascade
-+      return ok({ ...reply.value, cascade: joined })
++      return ok({
++        ...reply.value,
++        cascade: reply.value.cascade ? joinCascades(reply.value.cascade, cascade) : cascade,
++      })
 +    })
    switch (req.op) {
      case 'createPage':
        return seedsContext(req)
 -        ? underContexts(() => createPageOp(ctx, req))
 -        : createPageOp(ctx, req)
-+        ? underContexts(() => addressed(() => createPageOp(ctx, req)))
-+        : addressed(() => createPageOp(ctx, req))
++        ? underContexts(() => addressed(req, () => createPageOp(ctx, req)))
++        : addressed(req, () => createPageOp(ctx, req))
      …
      case 'rename':
 -      return renameOp(ctx, req)
-+      return addressed(() => renameOp(ctx, req))
++      return addressed(req, () => renameOp(ctx, req))
      case 'renameHeading':
 -      return ok({ cascade: await renameCascade(root, req, true) })
-+      return inSettleTurn(async () => ok({ cascade: await renameCascade(root, req, true) }))
++      return inSettleTurn(root, async () => ok({ cascade: await renameCascade(root, req, true) }))
      case 'delete':
        return req.kind === 'space' || req.kind === 'context'
 -        ? underContexts(() => deleteOp(ctx, req))
 -        : deleteOp(ctx, req)
-+        ? underContexts(() => inSettleTurn(() => deleteOp(ctx, req)))
-+        : inSettleTurn(() => deleteOp(ctx, req))
++        ? underContexts(() => inSettleTurn(root, () => deleteOp(ctx, req)))
++        : inSettleTurn(root, () => deleteOp(ctx, req))
      case 'restore':
 -      return underContexts(() => restoreOp(ctx, req))
 +      // The restore composes its own world before, since its pages come from the Trash.
-+      return underContexts(() => inSettleTurn(() => restoreOp(ctx, req)))
++      return underContexts(() => inSettleTurn(root, () => restoreOp(ctx, req)))
      case 'emptyBundle': {
        const resolved = await resolveUnderRoot(root, req.bundlePath)
 -      return resolved.ok ? emptyBundle(root, resolved.value, deps) : resolved
-+      return resolved.ok ? inSettleTurn(() => emptyBundle(root, resolved.value, deps)) : resolved
++      return resolved.ok ? inSettleTurn(root, () => emptyBundle(root, resolved.value, deps)) : resolved
      }
      …
      case 'movePage':
 -      return movePageOp(ctx, req)
-+      return addressed(() => movePageOp(ctx, req))
++      return addressed(req, () => movePageOp(ctx, req))
      case 'moveSet':
 -      return moveSetOp(ctx, req)
-+      return addressed(() => moveSetOp(ctx, req))
++      return addressed(req, () => moveSetOp(ctx, req))
 ```
 
 ```Core/Nexus/rename.ts diff
@@ -2329,7 +2350,7 @@ The work lands in nine phases in dependency order, each the largest run one agen
 
 **VERIFY**
 
-- [ ] The listed tests pass; `git grep -n "folderCorpus" -- Core` finds only `indexSeed.ts`'s own export and `moveIndexPaths`.
+- [ ] The listed tests pass; `git grep -n "folderCorpus" -- Core` finds only `indexSeed.ts`'s own export, `moveIndexPaths`, and `Views/loadValues.ts`.
 - [ ] Run the gates, then `view-delta` for Phase 6.
 - [ ] Check for unnecessary code or mistakes.
 
@@ -2644,7 +2665,7 @@ The work lands in nine phases in dependency order, each the largest run one agen
 +  const before = buildPageIndex(
 +    pagesOf(tree).flatMap((p) => (absent.has(p.id) ? [] : [moved.get(p.id) ?? p])),
 +  )
-+  paid(root, await relink(root, before, label, [...moved.keys()], [...moved.keys(), ...arriving]), 'outside move')
++  paid(root, await relink(root, before, pageIndexOf(tree), label, [...moved.keys()], [...moved.keys(), ...arriving]), 'outside move')
 +}
 @@ settle @@
    await walkWhileOwed(root)
@@ -2847,7 +2868,7 @@ The work lands in nine phases in dependency order, each the largest run one agen
 - [ ] `restoreScrub.ts`: `artifactFiles(root, abs): Promise<{ pages: string[]; sidecars: string[] }>` hoists the scrub's two listings; `scrubReturning` reads it; `repairLanded(root, tree, targetAbs, repair)` sweeps the landed pages through `sweepGovernedRoots(root, pages, { text })` and the landed sidecars through `rmwJsonStrict(file, (raw) => spaceMoved(raw, file))`, both from `fileRewrites(tree, (t) => rewriteConnections(t, repair))`, and answers the files it couldn't write.
 - [ ] `spend.ts`: `back = await trashedPagesOf(root, bundleAbs, await contentPages(record.entity, artifactAbs))` before the scrub; the scrub's `frozen = frozenWorld(buildPageIndex([...pagesOf(tree), ...back]), targets)`; after the relocate, `after = await settledIndex(root)`; `repair` maps each recorded key to `after.respell(key, q)` for the page `q` its id names now; `named = respellings(buildPageIndex(back), after, ids, [])` and `names = respellings(pageIndexOf(tree), after, [], ids)` plus every `named` entry whose key resolved to nothing in the live world before; the repair runs, then `renameCascade(root, { names, label: title })`, then the refill through `rewriteConnections(l.value, named)` against `frozenWorld(after)`; `was` and `landed` go; `Restored` picks `cascade` too, the repair's unwritten files joined in through `joinCascades`.
 - [ ] `nexusSlice.ts:236-239`: `restore` joins the ops that flush pending saves.
-- [ ] `mutate.ts`'s `restore` case runs under `inSettleTurn` alone (Task 6-3), so `settledIndex` here reads inside the turn and nothing awaits another.
+- [ ] `mutate.ts`'s `restore` case runs under `inSettleTurn(root, …)` alone (Task 6-3), which pays any owed walk first, so `settledIndex` here reads inside the turn and nothing awaits another.
 
 **AFTER**
 
@@ -3099,6 +3120,7 @@ Each ruling below was the planner's (10-16-2026), taken against the BRIEF's prin
 - **The default name is no arrival.** A page created under `Untitled` runs no collision arm, since it's uncommitted; its first commit arrives, without moving, so a stale `[[Untitled]]` elsewhere never follows (Task 6-3). A create under any other name arrives at once.
 - **Restore Links On Deletion** governs the refill alone (Task 8-2); the returning page's own repair and the live re-spell run regardless, since they correct links rather than restore values.
 - **An ID-less returning page** (one never stamped before its delete) is scrubbed and repaired but runs no collision or follow arm until the walk stamps it (Task 8-2's `back` holds stamped pages); the settle's stamp then owes it as an arrival (Task 7-1).
+- **A folder rename over pages sharing one title** resolves each page's keys over every holder of the title, so `respellings` is quadratic in the holders (measured at Phase 6: 2,000 distinct titles 18 ms, 200 `README` among 2,000 pages 91 ms, 3,000 same-titled pages 17.8 s before the index memoized each page's path key, well under a second after). The memo is the one cost fix; a tail-keyed map is a follow-up if a Nexus shows it.
 - **The outside lane's before-index** is built once per settle that pairs a move or reads an arrival, over every page the tree holds (Task 7-2); a sync landing many renames one batch at a time builds it once per batch. Measured in the Phase 7 live check; an incremental index is a follow-up if it shows.
 - **Unpaired vanishes** stay in the record until the Nexus closes (Task 7-1), one map entry per outside delete, each settle an O(1) lookup per entry; an id that returns later at another path is read as a move, which is the right reading.
 - **A paired id before the index is ready** (`readIndexedStat` answers null, so the pairing remembers the id as pending) lingers like an unpaired vanish, one set entry, until a landed row names it or the Nexus closes.

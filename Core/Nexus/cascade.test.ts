@@ -21,6 +21,7 @@ import { machine } from '../Platform/machine'
 import { contextsDir, contextsRegistryFile, tileFilePath, homepageDir } from '../Paths/paths'
 import { createTile, readMarkdownTile, writeMarkdownTile } from '../Tiles/tilesFile'
 import { landedId } from '../Testing/tileLayouts'
+import { titled } from '../Testing/fixtures'
 
 vi.mock('../Properties/governedSweep', async (importOriginal) => {
   const mod = await importOriginal<typeof import('../Properties/governedSweep')>()
@@ -67,7 +68,7 @@ describe('renameCascade', () => {
     if (!a.ok || !b.ok || !c.ok || !nested.ok) throw new Error('setup failed')
 
     const before = await fmBytesOf(a.value.path)
-    const r = await renameCascade(root, { title: 'Target', to: 'New Target' })
+    const r = await renameCascade(root, titled('Target', 'New Target'))
     expect(r.pages.sort()).toEqual([a.value.path, b.value.path, nested.value.path].map(rel).sort())
 
     expect(await bodyOf(a.value.path)).toBe('go to [[New Target]] now')
@@ -80,8 +81,27 @@ describe('renameCascade', () => {
 
   it('touches nothing when no page links the old title', async () => {
     await createTestPage(dir, 'Solo', { body: 'nothing here' })
-    const r = await renameCascade(root, { title: 'Ghost', to: 'Phantom' })
+    const r = await renameCascade(root, titled('Ghost', 'Phantom'))
     expect(r.pages).toEqual([])
+  })
+
+  it('rewrites a markdown tile linking a mapped key', async () => {
+    const tile = await landedId(createTile(root, homepageDir(root), { kind: 'append' }))
+    await writeMarkdownTile(homepageDir(root), tile, 'see [[Target]]', machine().sha256Hex(''))
+    const r = await renameCascade(root, titled('Target', 'Omega'))
+    expect(r.hosts).toEqual([{ host: { kind: 'homepage' }, ids: [tile] }])
+    expect(await readMarkdownTile(homepageDir(root), tile)).toEqual(ok('see [[Omega]]'))
+  })
+
+  it('locks and rewrites no tile file when no tile links a mapped key', async () => {
+    const tile = await landedId(createTile(root, homepageDir(root), { kind: 'append' }))
+    await writeMarkdownTile(homepageDir(root), tile, 'see [[Other]]', machine().sha256Hex(''))
+    rewriteSpy.mockClear()
+    const r = await renameCascade(root, titled('Target', 'Omega'))
+    expect(r.hosts).toEqual([])
+    expect(rewriteSpy.mock.calls.map(([file]) => file)).not.toContain(
+      tileFilePath(homepageDir(root), tile),
+    )
   })
 
   it.skipIf(noModeBits)(
@@ -95,7 +115,7 @@ describe('renameCascade', () => {
       await writeFile(join(locked, 'X.md'), 'see [[Target]]\n')
       await chmod(locked, 0o555)
       try {
-        const r = await renameCascade(root, { title: 'Target', to: 'New Target' })
+        const r = await renameCascade(root, titled('Target', 'New Target'))
         expect(r.pages).toEqual(['Notes/Cites.md'])
         expect(r.warning).toBe('Couldn’t update links to “Target” in 1 file.')
       } finally {
@@ -139,7 +159,7 @@ describe('the cascade queries the index', () => {
     installStores(memoryStores().stores)
     await seedContentIndex(root)
     sweepSpy.mockClear()
-    const r = await renameCascade(root, { title: 'Target', to: 'New Target' })
+    const r = await renameCascade(root, titled('Target', 'New Target'))
     expect(r.pages).toHaveLength(3)
     expect(sweptFiles()).toHaveLength(3)
     expect(await readFile(join(root, 'Loose', 'Note.md'), 'utf8')).toBe(
@@ -151,7 +171,7 @@ describe('the cascade queries the index', () => {
   it('a null index falls back to the corpus scan — excluded folders unreachable either way', async () => {
     await seedFixture()
     sweepSpy.mockClear()
-    const r = await renameCascade(root, { title: 'Target', to: 'New Target' })
+    const r = await renameCascade(root, titled('Target', 'New Target'))
     expect(r.pages).toHaveLength(3)
     // The fallback reads the whole corpus — every filler too — but never the excluded note.
     expect(sweptFiles()).toHaveLength(40)
@@ -175,7 +195,7 @@ describe('renameCascade over frontmatter', () => {
     if (!a.ok) throw new Error('setup failed')
     await setValue(a.value.path, SOURCE, '[[Target|the brief]]')
 
-    await renameCascade(root, { title: 'Target', to: 'New Target' })
+    await renameCascade(root, titled('Target', 'New Target'))
     expect(await bodyOf(a.value.path)).toContain('[[New Target]]')
     expect((await fmOf(a.value.path))[SOURCE]).toBe('[[New Target|the brief]]')
   })
@@ -187,7 +207,7 @@ describe('renameCascade over frontmatter', () => {
     installStores(memoryStores().stores)
     await seedContentIndex(root)
 
-    const r = await renameCascade(root, { title: 'Target', to: 'New Target' })
+    const r = await renameCascade(root, titled('Target', 'New Target'))
     installStores(NO_STORES)
     expect(r.pages).toEqual([rel(a.value.path)])
     expect((await fmOf(a.value.path))[SOURCE]).toBe('[[New Target]]')
@@ -198,7 +218,7 @@ describe('renameCascade over frontmatter', () => {
     if (!a.ok) throw new Error('setup failed')
     await setValue(a.value.path, 'source', '[[Target]]')
 
-    await renameCascade(root, { title: 'Target', to: 'New Target' })
+    await renameCascade(root, titled('Target', 'New Target'))
     const fm = await fmOf(a.value.path)
     expect(fm.source).toBe('[[New Target]]')
     expect(fm).not.toHaveProperty(SOURCE)
@@ -213,7 +233,7 @@ describe('renameCascade over frontmatter', () => {
     installStores(memoryStores().stores)
     await seedContentIndex(root)
     const mentions = queryMentions(['target'])
-    await renameCascade(root, { title: 'Target', to: 'New' })
+    await renameCascade(root, titled('Target', 'New'))
     installStores(NO_STORES)
     expect(mentions).toEqual([rel(a.value.path)])
     expect((await fmOf(a.value.path))[SOURCE]).toBe('[[New]]')
@@ -224,7 +244,7 @@ describe('renameCascade over frontmatter', () => {
     if (!a.ok) throw new Error('setup failed')
     await setValue(a.value.path, SITE, 'https://example.com/Target')
 
-    await renameCascade(root, { title: 'Target', to: 'New Target' })
+    await renameCascade(root, titled('Target', 'New Target'))
     expect((await fmOf(a.value.path))[SITE]).toBe('https://example.com/Target')
   })
 
@@ -235,7 +255,7 @@ describe('renameCascade over frontmatter', () => {
     const b = await createTestPage(dir, 'Whole', { body: 'no links here' })
     if (!b.ok) throw new Error('setup failed')
     await setValue(b.value.path, 'Notes', '[[Target|New Target]]')
-    await renameCascade(root, { title: 'Target', to: 'New Target' })
+    await renameCascade(root, titled('Target', 'New Target'))
     expect((await fmOf(a.value.path)).Notes).toBe('see [[New Target|the brief]] here')
     expect((await fmOf(b.value.path)).Notes).toBe('[[New Target]]')
   })
@@ -248,7 +268,7 @@ describe('renameCascade over frontmatter', () => {
     await setValue(a.value.path, 'Files', '[[Target]]')
     await setValue(a.value.path, 'Stage', '[[Target]]')
     await setValue(a.value.path, 'Rank', '[[Target]]')
-    await renameCascade(root, { title: 'Target', to: 'New Target' })
+    await renameCascade(root, titled('Target', 'New Target'))
     const fm = await fmOf(a.value.path)
     expect(fm.Files).toBe('[[Target]]')
     expect(fm.Stage).toBe('[[Target]]')
@@ -259,12 +279,17 @@ describe('renameCascade over frontmatter', () => {
     const a = await createTestPage(dir, 'Untyped', { body: 'no links here' })
     if (!a.ok) throw new Error('setup failed')
     await setValue(a.value.path, 'Related', '[[Target]]')
-    await renameCascade(root, { title: 'Target', to: 'New Target' })
+    await renameCascade(root, titled('Target', 'New Target'))
     expect((await fmOf(a.value.path)).Related).toBe('[[New Target]]')
   })
 })
 
 describe('renameCascade for a heading', () => {
+  // The heading arm keys by the page's names in the tree, so its pages sit in Collections the tree holds.
+  beforeEach(async () => {
+    await writeFile(join(dir, '_pagecollection.json'), JSON.stringify({ id: 'col-notes' }))
+  })
+
   const seedAB = async (): Promise<{ a: string; b: string }> => {
     const a = await createTestPage(dir, 'A', { body: '## Setup\n[[#Setup]]' })
     const b = await createTestPage(dir, 'B', { body: '[[A#Setup]]' })
@@ -406,8 +431,10 @@ describe('renameCascade for a heading', () => {
   })
 
   it('renaming a heading on one of two same-titled pages leaves the twin’s own fragment alone', async () => {
-    await mkdir(join(root, 'A'))
-    await mkdir(join(root, 'B'))
+    for (const twin of ['A', 'B']) {
+      await mkdir(join(root, twin))
+      await writeFile(join(root, twin, '_pagecollection.json'), JSON.stringify({ id: twin }))
+    }
     const a = await createTestPage(join(root, 'A'), 'Notes', { body: '## Setup\n[[#Setup]]' })
     const b = await createTestPage(join(root, 'B'), 'Notes', { body: '## Setup\n[[#Setup]]' })
     if (!a.ok || !b.ok) throw new Error('setup failed')
@@ -417,6 +444,25 @@ describe('renameCascade for a heading', () => {
     installStores(NO_STORES)
     expect(await bodyOf(a.value.path)).toBe('## Setup\n[[#Intro]]')
     expect(await bodyOf(b.value.path)).toBe('## Setup\n[[#Setup]]')
+  })
+
+  it('renaming a heading on one of two twins rewrites only the links that resolve to it', async () => {
+    for (const twin of ['A', 'B']) {
+      await mkdir(join(root, twin))
+      await writeFile(join(root, twin, '_pagecollection.json'), JSON.stringify({ id: twin }))
+    }
+    const a = await createTestPage(join(root, 'A'), 'Notes', { body: '## Setup\n[[#Setup]]' })
+    await createTestPage(join(root, 'B'), 'Notes', { body: '## Setup' })
+    const c = await createTestPage(dir, 'C', {
+      body: '[[A/Notes#Setup]] [[Notes#Setup]] [[B/Notes#Setup]]',
+    })
+    if (!a.ok || !c.ok) throw new Error('setup failed')
+    installStores(memoryStores().stores)
+    await seedContentIndex(root)
+    await renameCascade(root, { path: 'A/Notes.md', heading: 'Setup', to: 'Intro' })
+    installStores(NO_STORES)
+    expect(await bodyOf(a.value.path)).toBe('## Setup\n[[#Intro]]')
+    expect(await bodyOf(c.value.path)).toBe('[[A/Notes#Intro]] [[Notes#Setup]] [[B/Notes#Setup]]')
   })
 
   it('moves a Link value `[[#Old]]` on its own page as a Text value moves', async () => {
@@ -485,7 +531,7 @@ describe('deleteCascade', () => {
   it('strips a Link property naming the page, keeps the body’s link, and records the value', async () => {
     const a = await linker('Cites', '[[Target]]')
     await refreshTree(root)
-    const r = await deleteCascade(root, target(), ['Target'])
+    const r = await deleteCascade(root, target(), ['Notes/Target.md'])
     expect(await fmOf(a.path)).not.toHaveProperty('Related')
     expect(await bodyOf(a.path)).toBe('see [[Target]]')
     expect(r).toEqual({
@@ -497,7 +543,7 @@ describe('deleteCascade', () => {
   it('strips a hand-written markdown Link value naming the page, recording it as written', async () => {
     const a = await linker('Cites', '[x](Target)')
     await refreshTree(root)
-    const r = await deleteCascade(root, target(), ['Target'])
+    const r = await deleteCascade(root, target(), ['Notes/Target.md'])
     expect(await fmOf(a.path)).not.toHaveProperty('Related')
     expect(r.links).toEqual([{ page: a.id, property: related, value: '[x](Target)' }])
   })
@@ -507,7 +553,7 @@ describe('deleteCascade', () => {
     const bytes = await readFile(a.path, 'utf8')
     await writeFile(a.path, bytes.replace('Related: held', 'Related: [[Target]]'))
     await refreshTree(root)
-    const r = await deleteCascade(root, target(), ['Target'])
+    const r = await deleteCascade(root, target(), ['Notes/Target.md'])
     expect(await fmOf(a.path)).not.toHaveProperty('Related')
     expect(r.links).toEqual([{ page: a.id, property: related, value: '[[Target]]' }])
   })
@@ -515,7 +561,7 @@ describe('deleteCascade', () => {
   it('strips a Link value held under a key spelled in another case, recording it', async () => {
     const a = await linker('Cites', '[[Target]]', dir, 'related')
     await refreshTree(root)
-    const r = await deleteCascade(root, target(), ['Target'])
+    const r = await deleteCascade(root, target(), ['Notes/Target.md'])
     expect(await fmOf(a.path)).not.toHaveProperty('related')
     expect(r.links).toEqual([{ page: a.id, property: related, value: '[[Target]]' }])
   })
@@ -523,7 +569,7 @@ describe('deleteCascade', () => {
   it('records an aliased heading value verbatim', async () => {
     const a = await linker('Cites', '[[Target#Intro|see]]')
     await refreshTree(root)
-    const r = await deleteCascade(root, target(), ['Target'])
+    const r = await deleteCascade(root, target(), ['Notes/Target.md'])
     expect(await fmOf(a.path)).not.toHaveProperty('Related')
     expect(r.links).toEqual([{ page: a.id, property: related, value: '[[Target#Intro|see]]' }])
   })
@@ -533,7 +579,7 @@ describe('deleteCascade', () => {
     const b = await linker('Cites', '[[Target]]')
     await refreshTree(root)
     const before = await readFile(a.path, 'utf8')
-    const r = await deleteCascade(root, target(), ['Target'])
+    const r = await deleteCascade(root, target(), ['Notes/Target.md'])
     expect(await readFile(a.path, 'utf8')).toBe(before)
     expect(r.cascade.pages).toEqual([rel(b.path)])
   })
@@ -545,7 +591,7 @@ describe('deleteCascade', () => {
     const a = await linker('Cites', '[[Target]]')
     await refreshTree(root)
     sweepSpy.mockClear()
-    const r = await deleteCascade(root, target(), ['Target'])
+    const r = await deleteCascade(root, target(), ['Notes/Target.md'])
     expect(sweptFiles()).toEqual([a.path])
     expect(r.cascade.pages).toEqual([rel(a.path)])
     expect(await readFile(loose, 'utf8')).toBe(content)
@@ -566,14 +612,14 @@ describe('deleteCascade', () => {
       installStores(memoryStores().stores)
       await seedContentIndex(root)
       sweepSpy.mockClear()
-      await deleteCascade(root, target(), ['Target'])
+      await deleteCascade(root, target(), ['Notes/Target.md'])
       expect(sweptFiles()).toEqual([a.path])
       expect(await fmOf(a.path)).not.toHaveProperty('Related')
     })
 
     it('through the corpus when there is no index', async () => {
       sweepSpy.mockClear()
-      await deleteCascade(root, target(), ['Target'])
+      await deleteCascade(root, target(), ['Notes/Target.md'])
       expect(sweptFiles()).toHaveLength(4)
       expect(await fmOf(a.path)).not.toHaveProperty('Related')
     })
@@ -585,7 +631,7 @@ describe('deleteCascade', () => {
     await refreshTree(root)
     const before = await readFile(t.path, 'utf8')
     sweepSpy.mockClear()
-    await deleteCascade(root, t.path, ['Target'])
+    await deleteCascade(root, t.path, ['Notes/Target.md'])
     expect(sweptFiles()).toEqual([a.path])
     expect(await readFile(t.path, 'utf8')).toBe(before)
   })
@@ -595,7 +641,7 @@ describe('deleteCascade', () => {
     if (!(await createTestPage(other, 'Target')).ok) throw new Error('setup failed')
     const a = await linker('Cites', '[[Target]]')
     await refreshTree(root)
-    const r = await deleteCascade(root, target(), ['Target'])
+    const r = await deleteCascade(root, target(), ['Notes/Target.md'])
     expect((await fmOf(a.path)).Related).toBe('[[Target]]')
     expect(r).toEqual({ cascade: { pages: [], hosts: [] }, links: [] })
   })
@@ -607,9 +653,39 @@ describe('deleteCascade', () => {
       throw new Error('setup failed')
     const a = await linker('Cites', '[[Target]]')
     await refreshTree(root)
-    const r = await deleteCascade(root, other, ['Target', 'Target'])
+    const r = await deleteCascade(root, other, [
+      'Notes/Other/Target.md',
+      'Notes/Other/Deep/Target.md',
+    ])
     expect(await fmOf(a.path)).not.toHaveProperty('Related')
     expect(r.links).toEqual([{ page: a.id, property: related, value: '[[Target]]' }])
+  })
+
+  it('strips a path-form value naming the deleted page and keeps one naming its twin', async () => {
+    const twin = await set(dir, 'B')
+    if (!(await createTestPage(await set(dir, 'A'), 'Notes')).ok) throw new Error('setup failed')
+    if (!(await createTestPage(twin, 'Notes')).ok) throw new Error('setup failed')
+    const a = await linker('Cites A', '[[A/Notes]]')
+    const b = await linker('Cites B', '[[B/Notes]]')
+    const bare = await linker('Cites Bare', '[[Notes]]')
+    await refreshTree(root)
+    const r = await deleteCascade(root, join(dir, 'A', 'Notes.md'), ['Notes/A/Notes.md'])
+    expect(await fmOf(a.path)).not.toHaveProperty('Related')
+    expect((await fmOf(b.path)).Related).toBe('[[B/Notes]]')
+    expect((await fmOf(bare.path)).Related).toBe('[[Notes]]')
+    expect(r.links).toEqual([{ page: a.id, property: related, value: '[[A/Notes]]' }])
+  })
+
+  it('keeps a value whose path a live namesake answers by precedence', async () => {
+    await mkdir(join(root, 'B'))
+    await writeFile(join(root, 'B', '_pagecollection.json'), JSON.stringify({ id: 'col-b' }))
+    if (!(await createTestPage(join(root, 'B'), 'Notes')).ok) throw new Error('setup failed')
+    if (!(await createTestPage(await set(dir, 'B'), 'Notes')).ok) throw new Error('setup failed')
+    const a = await linker('Cites', '[[B/Notes]]')
+    await refreshTree(root)
+    const r = await deleteCascade(root, join(dir, 'B', 'Notes.md'), ['Notes/B/Notes.md'])
+    expect((await fmOf(a.path)).Related).toBe('[[B/Notes]]')
+    expect(r.links).toEqual([])
   })
 
   it('sweeps a sibling whose name extends the deleted folder', async () => {
@@ -617,7 +693,7 @@ describe('deleteCascade', () => {
     await linker('Inner', '[[Other]]', gone)
     const sib = await linker('Sib', '[[Inner]]', await set(dir, 'Gone Archive'))
     await refreshTree(root)
-    const r = await deleteCascade(root, gone, ['Inner'])
+    const r = await deleteCascade(root, gone, ['Notes/Gone/Inner.md'])
     expect(r.cascade.pages).toEqual([rel(sib.path)])
   })
 
@@ -629,7 +705,7 @@ describe('deleteCascade', () => {
     )
     await refreshTree(root)
     sweepSpy.mockClear()
-    expect(await deleteCascade(root, target(), ['Target'])).toEqual({
+    expect(await deleteCascade(root, target(), ['Notes/Target.md'])).toEqual({
       cascade: { pages: [], hosts: [] },
       links: [],
     })
@@ -646,7 +722,7 @@ describe('deleteCascade', () => {
       kind: 'page',
       reason: 'missing',
     })
-    const r = await deleteCascade(root, target(), ['Target'])
+    const r = await deleteCascade(root, target(), ['Notes/Target.md'])
     expect(r.links).toEqual([])
     expect(await readFile(loose, 'utf8')).toBe(content)
   })
@@ -659,7 +735,7 @@ describe('deleteCascade', () => {
     await refreshTree(root)
     const held = [await readFile(inner.path, 'utf8'), await readFile(deeper.path, 'utf8')]
     sweepSpy.mockClear()
-    const r = await deleteCascade(root, gone, ['Inner', 'Deeper'])
+    const r = await deleteCascade(root, gone, ['Notes/Gone/Inner.md', 'Notes/Gone/Deep/Deeper.md'])
     expect(sweptFiles()).toEqual([a.path])
     expect(r.cascade.pages).toEqual([rel(a.path)])
     expect([await readFile(inner.path, 'utf8'), await readFile(deeper.path, 'utf8')]).toEqual(held)
@@ -672,7 +748,10 @@ describe('deleteCascade', () => {
     installStores(memoryStores().stores)
     await seedContentIndex(root)
     sweepSpy.mockClear()
-    const r = await deleteCascade(root, join(dir, 'Gone'), ['Alpha', 'Beta'])
+    const r = await deleteCascade(root, join(dir, 'Gone'), [
+      'Notes/Gone/Alpha.md',
+      'Notes/Gone/Beta.md',
+    ])
     expect(sweepSpy.mock.calls.length).toBe(1)
     expect(r.cascade.pages.sort()).toEqual([rel(a.path), rel(b.path)].sort())
     expect(r.links).toEqual(
@@ -692,7 +771,7 @@ describe('deleteCascade', () => {
       await refreshTree(root)
       await chmod(locked, 0o555)
       try {
-        const r = await deleteCascade(root, target(), ['Target'])
+        const r = await deleteCascade(root, target(), ['Notes/Target.md'])
         expect(r).toEqual({
           cascade: { pages: [], hosts: [], warning: unsweptLine(1, 'links in ') },
           links: [],
@@ -711,7 +790,7 @@ describe('deleteCascade', () => {
     await writeFile(broken, content)
     await refreshTree(root)
     sweepSpy.mockClear()
-    const r = await deleteCascade(root, target(), ['Target'])
+    const r = await deleteCascade(root, target(), ['Notes/Target.md'])
     expect(heldTreeOf(root)?.unreadable).toContainEqual({
       path: rel(broken),
       kind: 'page',
@@ -769,7 +848,7 @@ describe('the link cascades reach Spaces and caches', () => {
     await space({ Related: '[[Target]]' })
     await cache({ [LINKER]: '[[Target]]' })
     await refreshTree(root)
-    const r = await deleteCascade(root, join(dir, 'Target.md'), ['Target'])
+    const r = await deleteCascade(root, join(dir, 'Target.md'), ['Notes/Target.md'])
     expect(await readJson(sidecar())).toEqual({ id: 'sp-pom' })
     expect(await cached()).toEqual({ [LINKER]: '[[Target]]' })
     expect(r.links).toEqual([{ page: 'sp-pom', property: related, value: '[[Target]]' }])
@@ -780,7 +859,7 @@ describe('the link cascades reach Spaces and caches', () => {
     await space({ Related: '[[Target#Intro|see]]' })
     await cache({ [LINKER]: '[[Target]]', [OTHER]: '[[Other]]' })
     await refreshTree(root)
-    await renameCascade(root, { title: 'Target', to: 'Omega' })
+    await renameCascade(root, titled('Target', 'Omega'))
     expect((await readJson(sidecar())).Related).toBe('[[Omega#Intro|see]]')
     expect(await cached()).toEqual({ [LINKER]: '[[Omega]]', [OTHER]: '[[Other]]' })
   })
@@ -814,7 +893,7 @@ describe('the link cascades reach Spaces and caches', () => {
       }),
     )
     await refreshTree(root)
-    await renameCascade(root, { title: 'Target', to: 'New Target' })
+    await renameCascade(root, titled('Target', 'New Target'))
     expect((await readJson(sidecar())).Notes).toBe('see [[New Target]]')
     expect((await readJson(collection())).property_cache[notes.value.id].values).toEqual({
       [LINKER]: 'see [[New Target]]',
@@ -826,8 +905,8 @@ describe('the link cascades reach Spaces and caches', () => {
     await refreshTree(root)
     await cache({ [LINKER]: '[[Target]]' })
     sweepSpy.mockClear()
-    await deleteCascade(root, join(dir, 'Target.md'), ['Target'])
-    await renameCascade(root, { title: 'Target', to: 'Omega' })
+    await deleteCascade(root, join(dir, 'Target.md'), ['Notes/Target.md'])
+    await renameCascade(root, titled('Target', 'Omega'))
     for (const [, , plan] of sweepSpy.mock.calls) expect(plan).not.toHaveProperty('sidecars')
     expect(await cached()).toEqual({ [LINKER]: '[[Target]]' })
   })

@@ -21,6 +21,7 @@ import type { HostContext } from '../Contract/handlers'
 import { openNexusSequence } from './handlers'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
+import { titled } from '../Testing/fixtures'
 
 const TASK_ULID = '01KVGMT8BFT350FZZXAMG1QDRD'
 const deps: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
@@ -114,7 +115,7 @@ describe('the Unknown cases, on disk', () => {
 describe('the nexus-wide write sweeps', () => {
   it('the link cascade rewrites members and id-less pages, never an Unknown one', async () => {
     const before = await Promise.all(Object.keys(UNKNOWN_FILES).map(bytes))
-    await renameCascade(root, { title: 'Target', to: 'Renamed' })
+    await renameCascade(root, titled('Target', 'Renamed'))
 
     expect(await bytes('Member.md')).toContain('[[Renamed]]')
     expect(await bytes('Adoptable.md')).toContain('[[Renamed]]')
@@ -129,7 +130,7 @@ describe('the nexus-wide write sweeps', () => {
     )
     expect(await titles()).toContain('Upper')
 
-    await renameCascade(root, { title: 'Target', to: 'Renamed' })
+    await renameCascade(root, titled('Target', 'Renamed'))
     expect(await bytes('Upper.MD')).toContain('[[Renamed]]')
   })
 

@@ -61,16 +61,9 @@ export const pagesOf = entityMemo([], (tree): readonly ConnPage[] =>
     .map(({ id, title, path }) => ({ id, title, path })),
 )
 
-/** Where two files claim one id, the first listed shows and refills a cache; the host's file writers refuse it (`heldPages.ts`). */
-export const pagesByIdOf = entityMemo(
-  [],
-  (tree): ReadonlyMap<string, ConnPage> =>
-    new Map(
-      Object.values(recordById(tree)).flatMap(({ id, kind, title, path }): [string, ConnPage][] =>
-        kind === 'page' ? [[id, { id, title, path }]] : [],
-      ),
-    ),
-)
+/** The host's file writers refuse an id two files claim (`heldPages.ts`). */
+export const pagesByIdOf = (tree: NexusTree): ReadonlyMap<string, ConnPage> =>
+  pageIndexOf(tree).byId
 
 export const pagesByPathOf = entityMemo(
   [],
@@ -83,3 +76,17 @@ export const livePagePath = (
 ): string => (tree && pagesByIdOf(tree).get(target.id)?.path) ?? target.path
 
 export const pageIndexOf = entityMemo([], (tree): PageIndex => buildPageIndex(pagesOf(tree)))
+
+export function pageMoves(
+  before: ReadonlyMap<string, { path: string }>,
+  after: ReadonlyMap<string, { path: string }>,
+): { moved: string[]; arrived: string[] } {
+  const moved: string[] = []
+  const arrived: string[] = []
+  for (const [id, { path }] of after) {
+    const was = before.get(id)?.path
+    if (was === undefined) arrived.push(id)
+    else if (was !== path) moved.push(id)
+  }
+  return { moved, arrived }
+}

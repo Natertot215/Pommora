@@ -9,6 +9,7 @@ import type { TrashRow } from './trashRow'
 import { settledMutate } from '../Testing/settledMutate'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
 import { writePropertyBundle } from './record'
+import { deletedPathOf } from './bundle'
 import { listBundles } from './holdings'
 import { readNexus } from '../Nexus/readNexus'
 import { closeSession, openSession } from '../Nexus/session'
@@ -227,5 +228,14 @@ describe('trashRows — `homeResolves` agrees with the resolver', () => {
       nexusDeps,
     )
     expect(restored.ok).toBe(false)
+  })
+})
+
+describe('deletedPathOf', () => {
+  it('reads a bundled file’s delete-time path from the bundle chain and the artifact’s own tree', () => {
+    const page = '/nexus/.trash/Studio/Pommora/2026-10-17T00-00-00-000Z__ClaudeMD.md.deleted'
+    expect(deletedPathOf('/nexus', page, `${page}/ClaudeMD.md`)).toBe('Studio/Pommora/ClaudeMD.md')
+    const set = '/nexus/.trash/Coll/2026-10-17T00-00-00-000Z__Set.deleted'
+    expect(deletedPathOf('/nexus', set, `${set}/Set/X.md`)).toBe('Coll/Set/X.md')
   })
 })
