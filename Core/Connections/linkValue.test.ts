@@ -30,11 +30,6 @@ describe('readLinkText', () => {
       shown: 'a',
     })
   })
-  it('reads an extension after the opener as heading text, and one before it as the page file', () => {
-    expect(readLinkText('[[File§Text.md]]')).toMatchObject({ title: 'File', heading: 'Text.md' })
-    expect(readLinkText('[[File§Text.png]]')).toMatchObject({ title: 'File', heading: 'Text.png' })
-    expect(readLinkText('[x](File.md§Setup)')).toMatchObject({ title: 'File', heading: 'Setup' })
-  })
   it('reads a markdown link to a title-shaped target as a page', () => {
     expect(readLinkText('[x](Old)')).toEqual({
       kind: 'page',
@@ -139,12 +134,6 @@ describe('resolveLink', () => {
     expect(resolved('[[#H]]', holder)).toEqual({ kind: 'page', page: holder, heading: 'H' })
     expect(resolved('[[#H]]')).toEqual({ kind: 'self', heading: 'H' })
     expect(resolved('[[ #H]]')).toEqual({ kind: 'self', heading: 'H' })
-  })
-  it('a `§` opener names the heading as `#` does', () => {
-    const page = { id: 'mn', title: 'Meeting Notes', path: 'Meeting Notes.md' }
-    expect(resolved('[[Meeting Notes§Setup]]')).toEqual({ kind: 'page', page, heading: 'Setup' })
-    expect(resolved('[](§Setup)', holder)).toEqual({ kind: 'page', page: holder, heading: 'Setup' })
-    expect(resolved('[[§Setup]]', holder)).toEqual({ kind: 'page', page: holder, heading: 'Setup' })
   })
   it('a titled link names its own page, not the page holding the value', () => {
     expect(resolveLink(readLinkText('[[Alpha#H]]'), withAlpha, holder)).toEqual({

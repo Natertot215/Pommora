@@ -593,9 +593,43 @@ describe('a typed § arms a prose heading query', () => {
 
   // A label is prose the way an alias is, and the scanner never reads a run inside a markdown link.
   it('a § inside a bracket, a markdown link’s label included, is not armed', () => {
-    for (const doc of ['see [§Set](x) end', 'see [§Set'] as const) {
+    expect(autocompleteQuery('see [§Set](x) end', 9, 5)).toMatchObject({
+      syntax: 'markdown',
+      part: 'shown',
+    })
+    expect(autocompleteQuery('see [§Set', 9, 5)).toBeNull()
+  })
+
+  it('a link holding the caret reads before the arm, and an armed § inside a link is not armed', () => {
+    expect(autocompleteQuery('[x](Notes#Set§', 14, 13)).toMatchObject({
+      syntax: 'markdown',
+      part: 'heading',
+    })
+    expect(autocompleteQuery('[a](https://x.io/§', 18, 17)).toMatchObject({
+      syntax: 'markdown',
+      part: 'title',
+    })
+    expect(autocompleteQuery('[x](Notes#Set§) Intro', 21, 13)).toBeNull()
+    expect(autocompleteQuery('§Set [[A', 8, 0)).toMatchObject({
+      syntax: 'wiki',
+      part: 'title',
+      query: 'A',
+    })
+  })
+
+  it('a § in a bare address, in a closed code span, or on a heading line is not armed', () => {
+    expect(autocompleteQuery('see https://x.io/§Set', 21, 17)).toBeNull()
+    expect(autocompleteQuery('`§Set` x', 8, 1)).toBeNull()
+    expect(autocompleteQuery('# Title §Set', 12, 8)).toBeNull()
+  })
+
+  it('a § typed just past a code span or a link arms', () => {
+    for (const doc of ['`x`§Set', '[[A]]§Set'] as const) {
       const armed = doc.indexOf('§')
-      expect(autocompleteQuery(doc, armed + 4, armed)?.syntax).not.toBe('prose')
+      expect(autocompleteQuery(doc, doc.length, armed)).toMatchObject({
+        syntax: 'prose',
+        query: 'Set',
+      })
     }
   })
 })

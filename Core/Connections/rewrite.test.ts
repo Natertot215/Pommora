@@ -15,16 +15,6 @@ describe('rewriteConnections', () => {
     )
   })
 
-  it('renames the title before a `§` opener and keeps the opener', () => {
-    expect(rewriteConnections('[[Notes§Setup]] [x](Notes§Setup)', 'Notes', 'Docs')).toBe(
-      '[[Docs§Setup]] [x](Docs§Setup)',
-    )
-  })
-
-  it('carries a label repeating a title that holds an opener', () => {
-    expect(rewriteConnections('[A§B#H](A%C2%A7B#H)', 'A§B', 'C')).toBe('[C#H](C#H)')
-  })
-
   it('drops an empty alias segment rather than preserving a bare pipe', () => {
     expect(rewriteConnections('[[Old|]]', 'Old', 'New')).toBe('[[New]]')
   })
@@ -214,21 +204,6 @@ describe('rewriteHeadingConnections', () => {
     expect(rewriteHeadingConnections('[[P#Old]]', 'P', 'Old', 'New')).toBe('[[P#New]]')
     expect(rewriteHeadingConnections('[[P#Old|a]]', 'P', 'Old', 'New')).toBe('[[P#New|a]]')
     expect(rewriteHeadingConnections('[a](P#Old)', 'P', 'Old', 'New')).toBe('[a](P#New)')
-  })
-
-  it('rewrites a heading behind a `§` opener and keeps the opener', () => {
-    expect(rewriteHeadingConnections('[[Notes§Setup]]', 'Notes', 'Setup', 'Start')).toBe(
-      '[[Notes§Start]]',
-    )
-  })
-
-  it('shown text spelling the target at a `§` drops or follows as the `#` spelling does', () => {
-    expect(
-      rewriteHeadingConnections('[[Notes#Setup|Notes§Setup]]', 'Notes', 'Setup', 'Start'),
-    ).toBe('[[Notes#Start]]')
-    expect(rewriteHeadingConnections('[Notes§Setup](Notes#Setup)', 'Notes', 'Setup', 'Start')).toBe(
-      '[Notes§Start](Notes#Start)',
-    )
   })
 
   it('rewrites a bare fragment naming the same page when ownTitle is given', () => {

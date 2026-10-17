@@ -39,8 +39,8 @@ describe('writeAssetFile — the crops name is reserved at the assets root', () 
 })
 
 describe('writeAssetFile — a name no link can spell', () => {
-  it('refuses foo§bar.png as adoption does and writes nothing', async () => {
-    expect(await writeAssetFile(root, ASSETS_DIR_REL, 'foo§bar.png', bytes)).toBe(UNSPELLABLE)
-    expect(await pathExists(join(root, ASSETS_DIR_REL, 'foo§bar.png'))).toBe(false)
+  it('refuses foo#bar.png as adoption does and writes nothing', async () => {
+    expect(await writeAssetFile(root, ASSETS_DIR_REL, 'foo#bar.png', bytes)).toBe(UNSPELLABLE)
+    expect(await pathExists(join(root, ASSETS_DIR_REL, 'foo#bar.png'))).toBe(false)
   })
 })

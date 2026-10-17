@@ -1,7 +1,5 @@
 import { StateEffect, StateField, type Transaction } from '@codemirror/state'
 import { docScan } from '../docCache'
-import { inCodeAt } from '../Engine/docScan'
-import { inBracket } from '../Input/edits'
 import { editorHost, inRawHtml } from '../api'
 import type { MarkdownScope } from '../Engine/detect'
 import { type AutocompleteQuery, autocompleteQuery } from './autocomplete'
@@ -41,9 +39,7 @@ function armedBy(tr: Transaction): number | null {
     seen++
     if (toB - fromB === 1 && tr.newDoc.sliceString(fromB, toB) === '§') at = fromB
   })
-  if (seen !== 1 || at === null) return null
-  const line = tr.newDoc.lineAt(at)
-  return inBracket(line.text, at - line.from) || inCodeAt(docScan(tr.newDoc), at) ? null : at
+  return seen === 1 ? at : null
 }
 
 export const acQuery = (scope: MarkdownScope) =>

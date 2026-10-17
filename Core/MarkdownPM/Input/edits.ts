@@ -20,6 +20,7 @@ import {
   fenceAt,
   isBlockquoteLine,
   lineEndOf,
+  inUrlRun,
   lineIndexAt,
   lineStartAt,
   lineEndAt,
@@ -680,10 +681,6 @@ export function closeConstructOnShiftEnter(
   return end === null ? null : shiftEnterEdit(scan, end, end)
 }
 
-// A URL-shaped run is link content: converting `--` → `—` would corrupt the path.
-const urlRunRe = /(?:^|[\s([{<"'])[a-z][a-z0-9+.-]*:\/\/\S*$/i
-const inUrlRun = (doc: string, c: number): boolean =>
-  urlRunRe.test(doc.slice(lineStartAt(doc, c), c))
 // Inside a link's slots or a link still being written; a transform typed just past `]]` is prose.
 const isLiteralAt = (scan: DocScan, c: number): boolean =>
   inCodeNear(scan, c) ||
@@ -693,11 +690,14 @@ const isLiteralAt = (scan: DocScan, c: number): boolean =>
   inUrlRun(scan.text, c)
 
 // An unclosed `[` holds a citation's label or a link's text: a glyph written there lands inside the reference.
-export const inBracket = (doc: string, c: number): boolean => {
+const inBracket = (doc: string, c: number): boolean => {
   const line = doc.slice(lineStartAt(doc, c), c)
   const open = line.lastIndexOf('[')
   return open !== -1 && !line.slice(open).includes(']')
 }
+
+export const literalOrBracketAt = (scan: DocScan, c: number): boolean =>
+  isLiteralAt(scan, c) || inBracket(scan.text, c)
 
 const lineBodyBefore = (doc: string, pos: number): string => {
   const ls = lineStartAt(doc, pos)
@@ -737,7 +737,7 @@ export function sectionSign(
   const doc = scan.text
   const c = selStart
   if (doc[c - 1] !== '#' || doc[c - 2] === '#') return null
-  if (opensLine(doc, c - 1) || isLiteralAt(scan, c) || inBracket(doc, c)) return null
+  if (opensLine(doc, c - 1) || literalOrBracketAt(scan, c)) return null
   return { from: c - 1, to: c, insert: '§', selection: c }
 }
 
@@ -753,8 +753,7 @@ export function bullet(
   const doc = scan.text
   const c = selStart
   if (c < 2 || doc[c - 1] !== '^' || doc[c - 2] !== ' ') return null
-  if (isLiteralAt(scan, c) || inBracket(doc, c) || !/\S/.test(lineBodyBefore(doc, c - 2)))
-    return null
+  if (literalOrBracketAt(scan, c) || !/\S/.test(lineBodyBefore(doc, c - 2))) return null
   return { from: c - 1, to: c, insert: '• ', selection: c + 1 }
 }
 

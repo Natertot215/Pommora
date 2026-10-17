@@ -18,6 +18,8 @@ The scouts confirmed every reading surface goes through the occurrence, Desktop 
 
 ### Overview
 
+**OUTCOME:** The owner reverted `§` as a link opener on 10-16-2026, after Phase 2 landed, so `#` stays the only opener inside a link, as in Obsidian. Tasks 1-1, 1-2, 1-3, and 2-1 were reverted to the baseline; the sibling fixes (Tasks 1-4, 2-2, 2-3, and 2-4) stand on their own and landed, as *§Deviations* records.
+
 `§` becomes the second heading opener in the grammar itself: the wikilink pattern's page half stops at `#` or `§` and its heading opens after either, `markdownSpans` splits a destination at its first `#` or `§`, and one `OPENER` pattern beside the wikilink pattern serves every other rule that asks about the opener. The first opener wins, so `[[A#B§C]]` names heading `B§C`, and an address keeps its `§` because `namesPage` already refuses a page half carrying a scheme or a separator. The writer keeps writing `#`, the `§` → `#` typing transform stays, and a part edit (a rename, a heading pick) changes only its part, so an author's `§` opener stays as written; `#` is the canonical spelling every writer emits, and `§` is what the grammar tolerates on arrival.
 
 Every rule that answers a question about the opener then reads it from the grammar: the title spelling rule refuses both openers while the heading rule keeps refusing `#` alone (Obsidian's nested path), so a File reference, a wikilink like any other, can't name a file holding `§` any more than one holding `#`; `repeatsTarget` accepts the target spelled with either opener, and `carry` keeps the author's opener; the `§` transform fires wherever the `§` would open the heading; the prose `§` arm stands down wherever a link holds the caret or where `##` would stay `##`, through one predicate the transforms share; the run reader skips a `§` inside a bare address, as the transforms do; an emptied heading is tidied in both syntaxes wherever a title remains to keep the link a link; and the asset writer refuses a name no link can spell, as adoption does.
@@ -54,17 +56,17 @@ Every rule that answers a question about the opener then reads it from the gramm
 #### Process Overview
 
 - [x] **Phase 1** — The Grammar And Its Rules
-  - [x] Task 1-1 — `§` opens the heading in both syntaxes
-  - [x] Task 1-2 — The title spelling rule refuses both openers
-  - [x] Task 1-3 — Shown text repeats a target at either opener
+  - [x] Task 1-1 — `§` opens the heading in both syntaxes `[Reverted]`
+  - [x] Task 1-2 — The title spelling rule refuses both openers `[Reverted]`
+  - [x] Task 1-3 — Shown text repeats a target at either opener `[Reverted]`
   - [x] Task 1-4 — The asset writer refuses an unspellable name
   - [x] Review Checkpoint
-- [ ] **Phase 2** — Input, The Picker, And The Edges
-  - [ ] Task 2-1 — The `§` transform fires wherever the `§` would open the heading
-  - [ ] Task 2-2 — One predicate for prose constructs, and the arm stands down inside links
-  - [ ] Task 2-3 — A run never starts inside a bare address
-  - [ ] Task 2-4 — An emptied heading tidies in both syntaxes
-  - [ ] Review Checkpoint
+- [x] **Phase 2** — Input, The Picker, And The Edges
+  - [x] Task 2-1 — The `§` transform fires wherever the `§` would open the heading `[Reverted]`
+  - [x] Task 2-2 — One predicate for prose constructs, and the arm stands down inside links
+  - [x] Task 2-3 — A run never starts inside a bare address
+  - [x] Task 2-4 — An emptied heading tidies in both syntaxes
+  - [x] Review Checkpoint
 - [ ] **Phase 3** — Reconciliation
   - [ ] Task 3-1 — Comments and documents
 
@@ -576,20 +578,17 @@ Every rule that answers a question about the opener then reads it from the gramm
 
 #### Task 3-1
 
-**TASK:** Reconcile every comment and document the plan makes false, surgically, per *§Reconciliation*.
+**TASK:** Reconcile every comment and document the landed fixes make false, surgically.
 
-**NOW:** *§Reconciliation* lists each claim.
+**NOW:** The reverted tasks leave their comments and *ConnectionsPM.md* as they were at the baseline; the landed fixes rewrote their own comments (`sectionRunsIn`, `emptied`, `urlRunRe`), and *ConnectionsPM.md* describes the emptied alias's tidy but not the emptied heading's.
 
 **CHANGE**
 
-- [ ] Rewrite each entry in place; add no new sections.
-- [ ] `ConnectionsPM.md:10` reads: "…`[[#Heading]]` names a heading on the page it sits in; the fragment after the first `#` or `§` is the heading's own text. … A title can't contain `|`, `#`, or `§`, and the name rule rejects them at creation; every writer spells the opener `#`, and a `§` typed where a title is being written becomes `#`, while a `§` that arrives some other way reads as the same opener."
-- [ ] `ConnectionsPM.md:11` reads: "…carry the same fragments the wikilink does, opened by the first `#` or `§`; a `§` typed in the target before its fragment becomes `#` the same way."
-- [ ] `ConnectionsPM.md:60` reads "A heading accepted after the opener, …".
+- [ ] `ConnectionsPM.md:60` ends: "…a label emptied and left fills with that default — the heading, else the title — as an emptied alias drops its pipe and an emptied heading after a title its `#`; one the caret only passes through stays as written."
 
 **VERIFY**
 
-- [ ] `grep -rn "first \`#\`\|only ever holds" .claude/Features .claude/Guidelines Core --include='*.md' --include='*.ts'` finds nothing stale.
+- [ ] `grep -rn "inBracket\|inUrlRun\|armedBy" .claude/Features .claude/Guidelines` finds nothing stale.
 - [ ] Run the gates.
 
 ---
@@ -618,29 +617,19 @@ Every rule that answers a question about the opener then reads it from the gramm
 
 #### Reconciliation
 
-- `Core/Connections/connections.ts:18` — "The page half stops at the first `#`" — Task 1-1
-- `Core/Connections/connections.ts:26, :29` — "a `#` … or a `§` run" — Task 1-1
-- `Core/Connections/connections.ts:34` — "up to a page-naming `#` … what follows that `#`" — Task 1-1
-- `Core/Connections/connections.ts:88` — "splits at its first raw `#`" — Task 1-1
-- `Core/Connections/connections.ts:131` — "`|` and `#` would open the next slot" — Task 1-2
-- `Core/Connections/links.ts:37` — "the half before the first `#`" — Task 1-1
-- `Core/MarkdownPM/Input/edits.ts:458` — "fires only where a link names its page" — Task 2-1
 - `Core/Connections/scan.ts:29` — the runs that are never runs — Task 2-3
+- `Core/MarkdownPM/Engine/markdownCode.ts:187` — the address run's comment, now shared — Task 2-3
 - `Core/MarkdownPM/Links/linkSettle.ts:105` — "an empty heading its hash" — Task 2-4
-- `Core/MarkdownPM/Engine/detect.ts:429` — "an address never splits at `#`" — Task 1-1
-- `Core/MarkdownPM/Input/edits.test.ts:791, :818-819` — a selection reaching past the title stays `§` — Task 2-1
-- `.claude/Features/ConnectionsPM.md:10` — "the fragment after the `#`", "so the file only ever holds `#`" — Task 3-1
-- `.claude/Features/ConnectionsPM.md:11` — the markdown fragment's opener — Task 3-1
-- `.claude/Features/ConnectionsPM.md:60` — "A heading accepted after the `#`" — Task 3-1
+- `.claude/Features/ConnectionsPM.md:60` — the emptied heading's tidy — Task 3-1
 
 #### Open Items
 
-- A `§` typed into a markdown destination's surrounding whitespace (`[a]( Page)` with the caret before `Page`) sits in no slot, so it stays `§`; it still reads as the opener, so only the file's spelling differs. Left as is: the grammar trims that whitespace, and covering it would make `headingHash` re-derive the raw destination.
+- An arm refused when its `§` was typed (in code or a label) can arm later once its surroundings are deleted, since the refusal now reads the document at query time; left as is.
+- `urlRunRe`'s `\S*` reaches across a closing `)`, so a `§` flush after an address link (`[a](https://x.io)§Setup`) is neither a run nor an arm, as `##` already stayed `##` there.
+- The run reader reads a `§` run inside an unclosed `[` (`a [§Setup`), where the arm, `##`, and `^` treat that bracket as a reference label and stay text.
 
 #### Deviations
 
-- **Phase 1 — `openerOf`:** the plan's first shape took the first opener in the shown text, which misread a title holding an opener (`A§B#H` against `A§B` › `H`, true at baseline); `openerOf` now tests both spellings against the title and heading. Both reviewers found it.
-- **Phase 1 — `INDEX_GENERATION`:** bumped to 16, which the plan missed; the project bumps it whenever a reader change alters how unchanged files index.
-- **Phase 1 — Red-before:** five pins were already green at HEAD and stand as guards: the address and encoded `§` case, `[[A#B§C]]`, `spellsAsWiki({ title: 'A', heading: '§H' })`, `[[P#§Intro]]`, and the `Cover#1.png` adoption case.
-- **Phase 1 — File values:** a File value adopted before this change with `§` in its name (`[[Cover§1.png]]`) now reads as `Cover` › `1.png`, as `#` would; the owner ruled file references read like any wikilink. No such value exists in the owner's Nexuses.
-- **Phase 1 — Extensions:** the owner ruled that an extension after the opener is heading text (`[[File§Text.md]]` is `File` › `Text.md`) and a link naming a heading carries its extension on the page half (`[[File.md§Heading]]`); relayed to the Path Links session for its `.md` reading.
+- **Reversion:** after Phase 2 landed, the owner ruled in the Path Links session that `#` stays the only opener inside a link, so a `§` in a target is ordinary text and files named with `§` link as written. Tasks 1-1, 1-2, 1-3, and 2-1 and their pins were restored to `8606e26e8`, and `INDEX_GENERATION` returned to 15, so an index stamped 16 by the interim build rebuilds under the restored reading. Phase 1's commit `50a1c2cf3` stays in history.
+- **Task 1-4:** `UNSPELLABLE` reads the restored `expressibleInLink`, so the writer refuses `#`, `|`, `]]`, and a trailing `]`, and its pin is `foo#bar.png`.
+- **Phase 2 review:** the arm also refuses a heading line through `headingParts`, as the run reader skips one; `emptied` checks the shown text first; the arm's two position guards, which `acQuery` already guaranteed, were removed; the `urlRunRe` comment names its shared use; and the address and code-span refusals were pinned.

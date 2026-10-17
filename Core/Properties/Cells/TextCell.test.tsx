@@ -31,7 +31,7 @@ describe('a Text value draws against the page that holds it', () => {
   const headings = (text: string) => ({
     [holder.path]: { keys: [text.toLowerCase()], texts: [text], outline: [{ text, level: 2 }] },
   })
-  const mount = async (text = '[[#Nope]] see §Setup'): Promise<HTMLDivElement> => {
+  const mount = async (): Promise<HTMLDivElement> => {
     useSession.setState({
       tree: makeTree({ personalization: { inPageHeadingResolution: 'automatic' } }),
       headings: headings('Setup'),
@@ -40,7 +40,9 @@ describe('a Text value draws against the page that holds it', () => {
     document.body.appendChild(host)
     root = createRoot(host)
     await act(async () =>
-      root?.render(createElement(TextCell, { text, connections: () => conn, holder })),
+      root?.render(
+        createElement(TextCell, { text: '[[#Nope]] see §Setup', connections: () => conn, holder }),
+      ),
     )
     return host
   }
@@ -48,15 +50,6 @@ describe('a Text value draws against the page that holds it', () => {
   it('marks a heading its page lacks as missing', async () => {
     const el = await mount()
     expect(el.querySelector('.md-connection-heading-missing')?.textContent).toBe('Nope')
-  })
-
-  it('draws a `#` and a `§` opener alike as the page’s own heading', async () => {
-    const el = await mount('[[#Setup]] and [[§Setup]]')
-    expect([...el.querySelectorAll('.md-connection-heading')].map((e) => e.textContent)).toEqual([
-      'Setup',
-      'Setup',
-    ])
-    expect(el.querySelector('.md-connection-heading-missing')).toBeNull()
   })
 
   it('draws a § run over the page’s heading, and a click opens the page there', async () => {

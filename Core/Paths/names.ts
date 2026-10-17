@@ -4,7 +4,7 @@ import { foldKey } from './caseFold'
 import { hiddenFolder, hiddenName } from './exclusion'
 import { isMarkdownFile } from './posix'
 import { CROPS_REL } from './nexusPaths'
-import { expressibleInLink, OPENER } from '../Connections/connections'
+import { expressibleInLink } from '../Connections/connections'
 
 type NameRole = 'page' | 'directory'
 
@@ -25,7 +25,7 @@ export function nameError(name: string, role: NameRole): string | null {
   if (hiddenName(name)) return `"${name}" can't begin with a dot or underscore.`
   if (role === 'directory' && hiddenFolder(name))
     return `"${name}" is a folder name the Nexus keeps hidden.`
-  if (name.includes('|') || OPENER.test(name)) return `"${name}" can't contain "|", "#", or "§".`
+  if (/[|#§]/.test(name)) return `"${name}" can't contain "|", "#", or "§".`
   if (role === 'page' && !expressibleInLink(name))
     return `"${name}" can't end in "]", contain "]]", or run past 255 characters.`
   if (role === 'page' && isMarkdownFile(name)) return `"${name}" can't end in ".md".`

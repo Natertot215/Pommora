@@ -145,6 +145,14 @@ describe('sectionRunsIn', () => {
       sectionRunsIn(text, ['Setup', 'Intro', 'Guide'], codeMask(text)).map((r) => r.heading),
     ).toEqual(['Intro', 'Setup'])
   })
+
+  it('never matches a `§` inside a bare address', () => {
+    const text = 'see https://x.io/§Setup and §Setup'
+    const at = text.lastIndexOf('§')
+    expect(sectionRunsIn(text, ['Setup'], codeMask(text))).toEqual([
+      { from: at, to: at + 6, heading: 'Setup' },
+    ])
+  })
 })
 
 describe('extractHeadingMentions', () => {
@@ -234,11 +242,6 @@ describe('linksIn', () => {
     expect(hits('[[Page#Heading]]')[0]).toMatchObject({ target: 'page', qualifier: 'heading' })
     expect(hits('[Text](Page.md#frag)')[0]).toMatchObject({ target: 'page', qualifier: 'frag' })
     expect(hits('[[Page]]')[0].qualifier).toBe('')
-  })
-
-  it('reads the half after a `§` opener into the qualifier', () => {
-    expect(hits('[[Notes§Setup]]')[0]).toMatchObject({ target: 'notes', qualifier: 'setup' })
-    expect(hits('[x](Notes§Setup)')[0]).toMatchObject({ target: 'notes', qualifier: 'setup' })
   })
 
   it('reads an embed’s heading as its qualifier', () => {

@@ -16,8 +16,9 @@ import {
 import { namedPage, readOccurrence } from '../../Connections/linkValue'
 import type { TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { type DocScan, inCodeAt } from '../Engine/docScan'
-import { inBracket, linkAt, openLinkAt, partOf } from '../Input/edits'
+import { linkAt, literalOrBracketAt, openLinkAt, partOf } from '../Input/edits'
 import { lineIndexAt, type TextEdit } from '../Engine/markdownCode'
+import { headingParts } from '../Engine/detect'
 import type { ConnPage } from '../../Connections/pageIndex'
 import type { PageHeading } from '../../Platform/stores'
 import type { EditorHost } from '../api'
@@ -56,13 +57,15 @@ export function autocompleteQuery(
   const line = scan.lines[i]
   const lineStart = scan.lineStarts[i]
   const rel = caret - lineStart
-  if (armed !== undefined) {
+  const closedLink = linkAt(scan, caret)
+  const o = closedLink ?? openLinkAt(scan, caret)
+  const part = o && partOf(o, rel)
+  if (armed !== undefined && !part) {
     const armedRel = armed - lineStart
     if (
-      armedRel >= 0 &&
-      armedRel < line.length &&
       caret >= armed + 1 &&
-      !inBracket(line, armedRel) &&
+      headingParts(line) === null &&
+      !literalOrBracketAt(scan, armed + 1) &&
       !/^\s/.test(line.slice(armedRel + 1, rel))
     )
       return {
@@ -77,9 +80,6 @@ export function autocompleteQuery(
         title: '',
       }
   }
-  const closedLink = linkAt(scan, caret)
-  const o = closedLink ?? openLinkAt(scan, caret)
-  const part = o && partOf(o, rel)
   if (!o || !part) return null
   const slot = o[part]!
   // A wikilink's slots read as written; a markdown destination decodes and its label unescapes. A heading or shown slot lists against the written title, and a markdown label lies before its destination, which is why every query carries the link's end.

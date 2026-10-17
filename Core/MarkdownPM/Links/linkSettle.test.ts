@@ -508,6 +508,23 @@ describe('an emptied markdown label shows its target, as an emptied alias drops 
   })
 })
 
+describe('an emptied heading drops its opener in both syntaxes, wherever a title remains', () => {
+  it.each([
+    ['a [a](Page#H) b', 'a [a](Page) b'],
+    ['a [](Page#H) b', 'a [Page](Page) b'],
+    ['a [x](#H) b', 'a [x](#) b'],
+    ['a [[#H]] b', 'a [[#]] b'],
+  ])('emptying and leaving %s gives %s', async (initialBody, written) => {
+    const view = await mountEditor({ initialBody, connections: conn })
+    const at = initialBody.indexOf('H') + 1
+    await act(async () => view.focus())
+    await caretTo(view, at)
+    await emptyBefore(view, at)
+    await caretTo(view, 0)
+    expect(view.state.doc.toString()).toBe(written)
+  })
+})
+
 describe('an alias left in raw HTML stays as written', () => {
   it('keeps an emptied slot’s pipe when the caret leaves it', async () => {
     const view = await mountEditor({
