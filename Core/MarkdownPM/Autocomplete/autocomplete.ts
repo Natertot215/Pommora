@@ -61,12 +61,12 @@ export function autocompleteQuery(
   const o = closedLink ?? openLinkAt(scan, caret)
   const part = o && partOf(o, rel)
   if (armed !== undefined && !part) {
-    const armedRel = armed - lineStart
+    const query = line.slice(armed - lineStart + 1, rel)
     if (
       caret >= armed + 1 &&
       headingParts(line) === null &&
       !literalOrBracketAt(scan, armed + 1) &&
-      !/^\s/.test(line.slice(armedRel + 1, rel))
+      !/^\s/.test(query)
     )
       return {
         syntax: 'prose',
@@ -75,7 +75,7 @@ export function autocompleteQuery(
         end: caret,
         from: armed + 1,
         to: caret,
-        query: line.slice(armedRel + 1, rel),
+        query,
         closed: true,
         title: '',
       }

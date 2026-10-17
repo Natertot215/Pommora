@@ -1,5 +1,6 @@
 // Walks the STORES, not the directory: nothing cleans up `.nexus/assets/<id>/` when an entity is deleted, so a directory-driven copy would carry orphans into a folder shared with Obsidian.
 
+import { expressibleInLink } from '../Connections/connections'
 import { wikiTitle } from '../Connections/linkValue'
 import { ASSETS_DIR_REL, NEXUS_CONFIG_FILES, SIDECARS } from '../Paths/nexusPaths'
 import { basename, titleFromPath, dirname, extname, join, relative } from '../Paths/posix'
@@ -194,7 +195,9 @@ export async function migrateAssets(root: string, deps: TrashDeps): Promise<Asse
     if (!link) {
       const base = basename(hit)
       const ext = extname(base)
-      const name = INVENTED.test(basename(base, ext)) ? `${ref.owner}${ext}` : base
+      const invented = `${ref.owner}${ext}`
+      const name =
+        INVENTED.test(basename(base, ext)) && expressibleInLink(invented) ? invented : base
       const written = await writeAssetFile(root, assetDir, name, bytes)
       if (!written.ok) {
         result.skipped.push({ store: ref.store, why: written.error.message })
