@@ -1,14 +1,14 @@
 ## Heading Opener — Implementation Plan
 
 **DATE:** 10-16-2026
-**STATUS:** Ratified 10-16-2026
+**STATUS:** Complete 10-16-2026 — `8606e26e8..HEAD`
 **SOURCE:** The 10-16-2026 planning conversation: the `§`-as-opener mandate, its HEAD probe, four scouts' reports, and the owner's rulings — a part edit keeps the author's opener; shown text spelling the target with `§` repeats it as `#` does; a wikilink title refuses `§` while a heading may hold it; the sibling odd-ones-out are folded in wherever the core principles call for them.
 
 **BASELINE**
 
 | Head | Tests | Start | End |
 |------|-------|-------|-----|
-| `8606e26e8` | 8049 passed, 2 skipped | 10-16-2026 07:13 PM | |
+| `8606e26e8` | 8049 passed, 2 skipped | 10-16-2026 07:13 PM | 10-16-2026 09:14 PM |
 
 ### Context
 
@@ -67,8 +67,8 @@ Every rule that answers a question about the opener then reads it from the gramm
   - [x] Task 2-3 — A run never starts inside a bare address
   - [x] Task 2-4 — An emptied heading tidies in both syntaxes
   - [x] Review Checkpoint
-- [ ] **Phase 3** — Reconciliation
-  - [ ] Task 3-1 — Comments and documents
+- [x] **Phase 3** — Reconciliation
+  - [x] Task 3-1 — Comments and documents
 
 ---
 
@@ -95,11 +95,11 @@ Every rule that answers a question about the opener then reads it from the gramm
 
 **CHANGE**
 
-- [ ] Write the pins and watch them fail: in `connections.test.ts` *linkOccurrences*, `walk('[[Notes§Setup]]')`, `walk('[x](Notes§Setup)')`, `walk('[[§Setup]]')`, `walk('[](§Setup)')`, `walk('[[Notes§Setup|Mine]]')` read the same spans as their `#` twins; `[[A#B§C]]` and `[[A§B#C]]` split at the first opener; `[a](https://x.io/§Setup)` and `[a](dir/Pa§ge)` keep one undivided title; `[x](Notes%C2%A7Setup)` keeps its title whole. In `linkValue.test.ts` *readLinkText* and *resolveLink*, `[[Notes§Setup]]` reads `{ title: 'Notes', heading: 'Setup' }` and resolves to Notes › Setup, `[](§Setup)` and `[[§Setup]]` resolve to the own page's heading. In `scan.test.ts` *linksIn*, `[[Notes§Setup]]` and `[x](Notes§Setup)` yield `target` `notes`, `qualifier` `setup`. In `rewrite.test.ts`, `rewriteConnections('[[Notes§Setup]] [x](Notes§Setup)', 'Notes', 'Docs')` returns `[[Docs§Setup]] [x](Docs§Setup)` and `rewriteHeadingConnections('[[Notes§Setup]]', 'Notes', 'Setup', 'Start')` returns `[[Notes§Start]]`.
-- [ ] Write the surface pins beside them and watch them fail: in `aliasRender.test.tsx` *a heading link reads per the two heading settings*, `[[Alpha§Setup]]` draws as `[[Alpha#Setup]]` does (the `.md-heading-symbol-spaced` join and the `.md-connection-heading` text) and `[x](Alpha§Setup)` draws resolved; in `cellStatic.test.tsx` *a resting cell draws every token as a span*, `[[P§Setup]]` draws the resolved page, the join, and the heading, and `[](P§Setup)` draws `Setup`; in `TextCell.test.tsx`, a Text value `[[#Setup]] and [[§Setup]]` on a page holding Setup draws both as own-page heading links.
-- [ ] Add `OPENER`, widen the pattern, and split the markdown destination through `OPENER`.
-- [ ] Bump `INDEX_GENERATION` to 16 (`Desktop/Store/ddl.ts:3`), so files unchanged since the change re-index their `§` links and the rename cascades find them.
-- [ ] Pin the extension ruling in `linkValue.test.ts` *readLinkText*: `[[File§Text.md]]` and `[[File§Text.png]]` read heading `Text.md` and `Text.png`, and `[x](File.md§Setup)` reads `File` › `Setup`; an extension after the opener is heading text, and a link naming a heading carries its extension on the page half.
+- [x] Write the pins and watch them fail: in `connections.test.ts` *linkOccurrences*, `walk('[[Notes§Setup]]')`, `walk('[x](Notes§Setup)')`, `walk('[[§Setup]]')`, `walk('[](§Setup)')`, `walk('[[Notes§Setup|Mine]]')` read the same spans as their `#` twins; `[[A#B§C]]` and `[[A§B#C]]` split at the first opener; `[a](https://x.io/§Setup)` and `[a](dir/Pa§ge)` keep one undivided title; `[x](Notes%C2%A7Setup)` keeps its title whole. In `linkValue.test.ts` *readLinkText* and *resolveLink*, `[[Notes§Setup]]` reads `{ title: 'Notes', heading: 'Setup' }` and resolves to Notes › Setup, `[](§Setup)` and `[[§Setup]]` resolve to the own page's heading. In `scan.test.ts` *linksIn*, `[[Notes§Setup]]` and `[x](Notes§Setup)` yield `target` `notes`, `qualifier` `setup`. In `rewrite.test.ts`, `rewriteConnections('[[Notes§Setup]] [x](Notes§Setup)', 'Notes', 'Docs')` returns `[[Docs§Setup]] [x](Docs§Setup)` and `rewriteHeadingConnections('[[Notes§Setup]]', 'Notes', 'Setup', 'Start')` returns `[[Notes§Start]]`.
+- [x] Write the surface pins beside them and watch them fail: in `aliasRender.test.tsx` *a heading link reads per the two heading settings*, `[[Alpha§Setup]]` draws as `[[Alpha#Setup]]` does (the `.md-heading-symbol-spaced` join and the `.md-connection-heading` text) and `[x](Alpha§Setup)` draws resolved; in `cellStatic.test.tsx` *a resting cell draws every token as a span*, `[[P§Setup]]` draws the resolved page, the join, and the heading, and `[](P§Setup)` draws `Setup`; in `TextCell.test.tsx`, a Text value `[[#Setup]] and [[§Setup]]` on a page holding Setup draws both as own-page heading links.
+- [x] Add `OPENER`, widen the pattern, and split the markdown destination through `OPENER`.
+- [x] Bump `INDEX_GENERATION` to 16 (`Desktop/Store/ddl.ts:3`), so files unchanged since the change re-index their `§` links and the rename cascades find them.
+- [x] Pin the extension ruling in `linkValue.test.ts` *readLinkText*: `[[File§Text.md]]` and `[[File§Text.png]]` read heading `Text.md` and `Text.png`, and `[x](File.md§Setup)` reads `File` › `Setup`; an extension after the opener is heading text, and a link naming a heading carries its extension on the page half.
 
 **AFTER**
 
@@ -148,10 +148,10 @@ Every rule that answers a question about the opener then reads it from the gramm
 
 **VERIFY**
 
-- [ ] The new pins, the surface pins included, fail before the change and pass after; `scan.test.ts`, `rewrite.test.ts:227-232`, and every existing `connections.test.ts` case stay green.
-- [ ] `grep -n "'#'" Core/Connections/connections.ts Core/Connections/links.ts` shows no opener read outside `OPENER`, the pattern, and the writers.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] The new pins, the surface pins included, fail before the change and pass after; `scan.test.ts`, `rewrite.test.ts:227-232`, and every existing `connections.test.ts` case stay green.
+- [x] `grep -n "'#'" Core/Connections/connections.ts Core/Connections/links.ts` shows no opener read outside `OPENER`, the pattern, and the writers.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 1-2
 
@@ -161,9 +161,9 @@ Every rule that answers a question about the opener then reads it from the gramm
 
 **CHANGE**
 
-- [ ] Write the pins in `connections.test.ts` *pageLinkText and the slot rules* and watch them fail: `expressibleInLink('A§B')` is false; `spellsAsWiki({ title: 'A', heading: '§H' })` is true; `pageLinkText({ title: 'A§B' }, 'wiki')` is `[A§B](A%C2%A7B)`; `pageLinkText({ title: 'P', heading: '§Intro' }, 'wiki')` is `[[P#§Intro]]`.
-- [ ] Pin the user-facing consequence in `Core/Nexus/mutate.test.ts` *adoptFile — the shared adoption seam*: adopting `Cover§1.png` faults with "That file’s name can’t be written as a link.", as `Cover#1.png` already does.
-- [ ] Factor the shared tail into `spells` and state each slot's refusal; `names.ts:28` reads the openers from `OPENER` rather than spelling `#§` again.
+- [x] Write the pins in `connections.test.ts` *pageLinkText and the slot rules* and watch them fail: `expressibleInLink('A§B')` is false; `spellsAsWiki({ title: 'A', heading: '§H' })` is true; `pageLinkText({ title: 'A§B' }, 'wiki')` is `[A§B](A%C2%A7B)`; `pageLinkText({ title: 'P', heading: '§Intro' }, 'wiki')` is `[[P#§Intro]]`.
+- [x] Pin the user-facing consequence in `Core/Nexus/mutate.test.ts` *adoptFile — the shared adoption seam*: adopting `Cover§1.png` faults with "That file’s name can’t be written as a link.", as `Cover#1.png` already does.
+- [x] Factor the shared tail into `spells` and state each slot's refusal; `names.ts:28` reads the openers from `OPENER` rather than spelling `#§` again.
 
 **AFTER**
 
@@ -201,10 +201,10 @@ Every rule that answers a question about the opener then reads it from the gramm
 
 **VERIFY**
 
-- [ ] The five pins fail before and pass after; `rewrite.test.ts:227-232` still writes `[[P#§Start]]`.
-- [ ] `names.test.ts`, `adoptFile`'s tests, `pasteAsMenu`'s and `gripMenu`'s tests stay green.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] The five pins fail before and pass after; `rewrite.test.ts:227-232` still writes `[[P#§Start]]`.
+- [x] `names.test.ts`, `adoptFile`'s tests, `pasteAsMenu`'s and `gripMenu`'s tests stay green.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 1-3
 
@@ -214,9 +214,9 @@ Every rule that answers a question about the opener then reads it from the gramm
 
 **CHANGE**
 
-- [ ] Write the pins and watch them fail: in `connections.test.ts` *repeatsTarget and namesTarget*, `repeatsTarget('Notes§Setup', 'Notes', 'Setup')`, `repeatsTarget('§Setup', '', 'Setup')`, and `namesTarget('Notes§Setup', { title: 'Notes', heading: 'Setup' }) === 'both'` are true, while `repeatsTarget('Notes § Setup', 'Notes', 'Setup')` stays false, as `'Notes # Setup'` is today. In `rewrite.test.ts` *rewriteHeadingConnections*, `[[Notes#Setup|Notes§Setup]]` renamed Setup → Start becomes `[[Notes#Start]]`, and `[Notes§Setup](Notes#Setup)` becomes `[Notes§Start](Notes#Start)`.
-- [ ] Pin a title holding an opener: `repeatsTarget('A§B#H', 'A§B', 'H')` and `repeatsTarget('C# Notes§H', 'C# Notes', 'H')` are true, and `rewriteConnections('[A§B#H](A%C2%A7B#H)', 'A§B', 'C')` carries the label to `[C#H](C#H)`, as it did at baseline.
-- [ ] Add `openerOf`, the opener at which shown text repeats `title` › `heading`, and have `repeatsTarget` and `carry`'s `'both'` arm read it.
+- [x] Write the pins and watch them fail: in `connections.test.ts` *repeatsTarget and namesTarget*, `repeatsTarget('Notes§Setup', 'Notes', 'Setup')`, `repeatsTarget('§Setup', '', 'Setup')`, and `namesTarget('Notes§Setup', { title: 'Notes', heading: 'Setup' }) === 'both'` are true, while `repeatsTarget('Notes § Setup', 'Notes', 'Setup')` stays false, as `'Notes # Setup'` is today. In `rewrite.test.ts` *rewriteHeadingConnections*, `[[Notes#Setup|Notes§Setup]]` renamed Setup → Start becomes `[[Notes#Start]]`, and `[Notes§Setup](Notes#Setup)` becomes `[Notes§Start](Notes#Start)`.
+- [x] Pin a title holding an opener: `repeatsTarget('A§B#H', 'A§B', 'H')` and `repeatsTarget('C# Notes§H', 'C# Notes', 'H')` are true, and `rewriteConnections('[A§B#H](A%C2%A7B#H)', 'A§B', 'C')` carries the label to `[C#H](C#H)`, as it did at baseline.
+- [x] Add `openerOf`, the opener at which shown text repeats `title` › `heading`, and have `repeatsTarget` and `carry`'s `'both'` arm read it.
 
 **AFTER**
 
@@ -253,9 +253,9 @@ Every rule that answers a question about the opener then reads it from the gramm
 
 **VERIFY**
 
-- [ ] The pins fail before and pass after; every existing `repeatsTarget`, `namesTarget`, `keepsAlias`, `shownAlias`, and `rewrite.test.ts` case stays green.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] The pins fail before and pass after; every existing `repeatsTarget`, `namesTarget`, `keepsAlias`, `shownAlias`, and `rewrite.test.ts` case stays green.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 1-4
 
@@ -265,8 +265,8 @@ Every rule that answers a question about the opener then reads it from the gramm
 
 **CHANGE**
 
-- [ ] Write the pin in `assetWrite.test.ts` and watch it fail: `writeAssetFile(root, assetDir, 'foo§bar.png', bytes)` returns `UNSPELLABLE` and writes nothing.
-- [ ] Hoist adoption's refusal into `UNSPELLABLE` beside the writer, as `NOT_A_PROPERTY_DIR` and `NO_NEXUS` are shared refusals, and gate the name before the reserved-leaf check.
+- [x] Write the pin in `assetWrite.test.ts` and watch it fail: `writeAssetFile(root, assetDir, 'foo§bar.png', bytes)` returns `UNSPELLABLE` and writes nothing.
+- [x] Hoist adoption's refusal into `UNSPELLABLE` beside the writer, as `NOT_A_PROPERTY_DIR` and `NO_NEXUS` are shared refusals, and gate the name before the reserved-leaf check.
 
 **AFTER**
 
@@ -302,14 +302,14 @@ Every rule that answers a question about the opener then reads it from the gramm
 
 **VERIFY**
 
-- [ ] The pin fails before and passes after; `assetMigrate.test.ts` and `adoptFile`'s tests stay green.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] The pin fails before and passes after; `assetMigrate.test.ts` and `adoptFile`'s tests stay green.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Review Checkpoint
 
-- [ ] `grep -rn "'#'\|\"#\"\|split('#')\|indexOf('#')" Core --include='*.ts' --include='*.tsx'` outside tests finds no target-opener read beyond the grammar and its writers.
-- [ ] A simplification reviewer and a correctness reviewer (`opus-medium`, `opus-high`) read Phase 1 against *§Constraints* and the rulings; every holding finding is fixed before Phase 2.
+- [x] `grep -rn "'#'\|\"#\"\|split('#')\|indexOf('#')" Core --include='*.ts' --include='*.tsx'` outside tests finds no target-opener read beyond the grammar and its writers.
+- [x] A simplification reviewer and a correctness reviewer (`opus-medium`, `opus-high`) read Phase 1 against *§Constraints* and the rulings; every holding finding is fixed before Phase 2.
 
 ---
 
@@ -325,8 +325,8 @@ Every rule that answers a question about the opener then reads it from the gramm
 
 **CHANGE**
 
-- [ ] Write the pins in `edits.test.ts` and watch them fail: `headingHash(scanDoc('[a](Page/x)'), 8, 8, '§')` writes `#`. Rewrite `:791` and `:818-819` to expect `{ insert: '#' }` for `[[Alpha]] x` 2..10 and `[a](Page) x` 5..11, under titles that say a `§` replacing a selection from inside the title opens the heading.
-- [ ] Drop the selection gate and ask `namesPage` of the half before the caret.
+- [x] Write the pins in `edits.test.ts` and watch them fail: `headingHash(scanDoc('[a](Page/x)'), 8, 8, '§')` writes `#`. Rewrite `:791` and `:818-819` to expect `{ insert: '#' }` for `[[Alpha]] x` 2..10 and `[a](Page) x` 5..11, under titles that say a `§` replacing a selection from inside the title opens the heading.
+- [x] Drop the selection gate and ask `namesPage` of the half before the caret.
 
 **AFTER**
 
@@ -346,9 +346,9 @@ Every rule that answers a question about the opener then reads it from the gramm
 
 **VERIFY**
 
-- [ ] The pins fail before and pass after; `edits.test.ts:733-822`'s other cases stay green, `[a](dir/Page)` and `[a](https://x.com)` among them.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] The pins fail before and pass after; `edits.test.ts:733-822`'s other cases stay green, `[a](dir/Page)` and `[a](https://x.com)` among them.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 2-2
 
@@ -358,8 +358,8 @@ Every rule that answers a question about the opener then reads it from the gramm
 
 **CHANGE**
 
-- [ ] Write the pins in `autocomplete.test.ts` beside `:594-600` and watch them fail: `autocompleteQuery('[x](Notes#Set§', 14, 13)` is `{ syntax: 'markdown', part: 'heading' }`; `autocompleteQuery('[a](https://x.io/§', 18, 17)?.syntax` is not `'prose'`; `autocompleteQuery('[x](Notes#Set§) Intro', 21, 13)` is null; `autocompleteQuery('§Set [[A', 8, 0)` is `{ syntax: 'wiki', part: 'title', query: 'A' }`. Pin `` autocompleteQuery('`x`§Set', 7, 3) `` and `autocompleteQuery('[[A]]§Set', 9, 5)` as prose queries `Set`, which arm at HEAD and must keep arming; the pinned armed cases (`autocomplete.test.ts:569-600`) stay green.
-- [ ] Add `literalOrBracketAt`, route `sectionSign` and `bullet` through it, make `inBracket` private, reorder `autocompleteQuery` link-first with the arm asking `literalOrBracketAt(scan, armed + 1)`, and reduce `armedBy` to detecting a lone typed `§`.
+- [x] Write the pins in `autocomplete.test.ts` beside `:594-600` and watch them fail: `autocompleteQuery('[x](Notes#Set§', 14, 13)` is `{ syntax: 'markdown', part: 'heading' }`; `autocompleteQuery('[a](https://x.io/§', 18, 17)?.syntax` is not `'prose'`; `autocompleteQuery('[x](Notes#Set§) Intro', 21, 13)` is null; `autocompleteQuery('§Set [[A', 8, 0)` is `{ syntax: 'wiki', part: 'title', query: 'A' }`. Pin `` autocompleteQuery('`x`§Set', 7, 3) `` and `autocompleteQuery('[[A]]§Set', 9, 5)` as prose queries `Set`, which arm at HEAD and must keep arming; the pinned armed cases (`autocomplete.test.ts:569-600`) stay green.
+- [x] Add `literalOrBracketAt`, route `sectionSign` and `bullet` through it, make `inBracket` private, reorder `autocompleteQuery` link-first with the arm asking `literalOrBracketAt(scan, armed + 1)`, and reduce `armedBy` to detecting a lone typed `§`.
 
 **AFTER**
 
@@ -442,10 +442,10 @@ Every rule that answers a question about the opener then reads it from the gramm
 
 **VERIFY**
 
-- [ ] The four pins fail before and pass after; `acQuery.test.ts`'s *the § arm* cases and every `sectionSign` and `bullet` case in `edits.test.ts` stay green.
-- [ ] `grep -rn "inBracket" Core --include='*.ts' --include='*.tsx'` finds it only inside `edits.ts`.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] The four pins fail before and pass after; `acQuery.test.ts`'s *the § arm* cases and every `sectionSign` and `bullet` case in `edits.test.ts` stay green.
+- [x] `grep -rn "inBracket" Core --include='*.ts' --include='*.tsx'` finds it only inside `edits.ts`.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 2-3
 
@@ -455,8 +455,8 @@ Every rule that answers a question about the opener then reads it from the gramm
 
 **CHANGE**
 
-- [ ] Write the pin in `scan.test.ts` *sectionRunsIn* and watch it fail: `sectionRunsIn('see https://x.io/§Setup and §Setup', ['Setup'], codeMask(''))` yields one run, the second.
-- [ ] Move `urlRunRe` and `inUrlRun` to `markdownCode.ts` beside `lineStartAt`, export `inUrlRun`, import it in `edits.ts` and `scan.ts`, and skip it in `sectionRunsIn`.
+- [x] Write the pin in `scan.test.ts` *sectionRunsIn* and watch it fail: `sectionRunsIn('see https://x.io/§Setup and §Setup', ['Setup'], codeMask(''))` yields one run, the second.
+- [x] Move `urlRunRe` and `inUrlRun` to `markdownCode.ts` beside `lineStartAt`, export `inUrlRun`, import it in `edits.ts` and `scan.ts`, and skip it in `sectionRunsIn`.
 
 **AFTER**
 
@@ -505,10 +505,10 @@ Every rule that answers a question about the opener then reads it from the gramm
 
 **VERIFY**
 
-- [ ] The pin fails before and passes after; every `sectionRunsIn`, `linksIn`, cell-run, and `edits.test.ts` transform case stays green.
-- [ ] `engineGraph.test.ts` and `hostGraph.test.ts` stay green.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] The pin fails before and passes after; every `sectionRunsIn`, `linksIn`, cell-run, and `edits.test.ts` transform case stays green.
+- [x] `engineGraph.test.ts` and `hostGraph.test.ts` stay green.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 2-4
 
@@ -518,8 +518,8 @@ Every rule that answers a question about the opener then reads it from the gramm
 
 **CHANGE**
 
-- [ ] Write the pins in `linkSettle.test.ts` beside *an emptied markdown label shows its target* and watch them fail: `[a](Page#)` left becomes `[a](Page)`; `[](Page#)` left becomes `[Page](Page)`; `[a](Page§)` left becomes `[a](Page)`; `[[Page§]]` left becomes `[[Page]]`; `a [x](#H) b` with `H` deleted and left stays `a [x](#) b`, and `[[#]]` left stays `[[#]]`.
-- [ ] Hoist the heading tidy out of the wikilink arm and make it ask that a title remains.
+- [x] Write the pins in `linkSettle.test.ts` beside *an emptied markdown label shows its target* and watch them fail: `[a](Page#)` left becomes `[a](Page)`; `[](Page#)` left becomes `[Page](Page)`; `[a](Page§)` left becomes `[a](Page)`; `[[Page§]]` left becomes `[[Page]]`; `a [x](#H) b` with `H` deleted and left stays `a [x](#) b`, and `[[#]]` left stays `[[#]]`.
+- [x] Hoist the heading tidy out of the wikilink arm and make it ask that a title remains.
 
 **AFTER**
 
@@ -561,14 +561,14 @@ Every rule that answers a question about the opener then reads it from the gramm
 
 **VERIFY**
 
-- [ ] The pins fail before and pass after; every `linkSettle.test.ts` case stays green.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] The pins fail before and pass after; every `linkSettle.test.ts` case stays green.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Review Checkpoint
 
-- [ ] Every input surface (body, table cell, Text pane, the one-line fields) binds the same `typedInput` and `acQuery`, so the Phase 2 pins speak for all of them; a reviewer confirms nothing binds a second path.
-- [ ] A simplification reviewer and a correctness reviewer (`opus-medium`, `opus-high`) read Phase 2 against *§Constraints* and the rulings; every holding finding is fixed before Phase 3.
+- [x] Every input surface (body, table cell, Text pane, the one-line fields) binds the same `typedInput` and `acQuery`, so the Phase 2 pins speak for all of them; a reviewer confirms nothing binds a second path.
+- [x] A simplification reviewer and a correctness reviewer (`opus-medium`, `opus-high`) read Phase 2 against *§Constraints* and the rulings; every holding finding is fixed before Phase 3.
 
 ---
 
@@ -584,12 +584,12 @@ Every rule that answers a question about the opener then reads it from the gramm
 
 **CHANGE**
 
-- [ ] `ConnectionsPM.md:60` ends: "…a label emptied and left fills with that default — the heading, else the title — as an emptied alias drops its pipe and an emptied heading after a title its `#`; one the caret only passes through stays as written."
+- [x] `ConnectionsPM.md:60` ends: "…a label emptied and left fills with that default — the heading, else the title — as an emptied alias drops its pipe and an emptied heading after a title its `#`; one the caret only passes through stays as written."
 
 **VERIFY**
 
-- [ ] `grep -rn "inBracket\|inUrlRun\|armedBy" .claude/Features .claude/Guidelines` finds nothing stale.
-- [ ] Run the gates.
+- [x] `grep -rn "inBracket\|inUrlRun\|armedBy" .claude/Features .claude/Guidelines` finds nothing stale.
+- [x] Run the gates.
 
 ---
 
@@ -608,12 +608,12 @@ Every rule that answers a question about the opener then reads it from the gramm
 
 **THE STANDARD:** The work is finished when a later review of it finds nothing to correct. Not just doing the chores — doing the laundry, folding it, picking up what fell out of the hamper, emptying the lint trap, leaving no trace that anything went wrong. Nothing is carried as a concern, nothing is deferred where the fix is known, and nothing is declared that wasn't watched happen. Where something genuinely couldn't get there, the report names which and why, and everything else is still finished. Ambiguity met during execution took the simplest reading and was recorded; it didn't stop the run.
 
-- [ ] Phase review (`opus-medium` simplification, `opus-high` correctness): Phase 1 · Phase 2 · Phase 3
-- [ ] Simplification lens → adversarial lens (`opus-high`) over `$BASE..HEAD`
-- [ ] Neutral verification (`opus-high`) over `$BASE..HEAD`
-- [ ] Own pass: gates · diff · deviations · criteria
-- [ ] Reconciliation walked
-- [ ] Report delivered
+- [x] Phase review (`opus-medium` simplification, `opus-high` correctness): Phase 1 · Phase 2 · Phase 3
+- [x] Simplification lens → adversarial lens (`opus-high`) over `$BASE..HEAD`
+- [x] Neutral verification (`opus-high`) over `$BASE..HEAD`
+- [x] Own pass: gates · diff · deviations · criteria
+- [x] Reconciliation walked
+- [x] Report delivered
 
 #### Reconciliation
 
@@ -630,6 +630,8 @@ Every rule that answers a question about the opener then reads it from the gramm
 
 #### Deviations
 
-- **Reversion:** after Phase 2 landed, the owner ruled in the Path Links session that `#` stays the only opener inside a link, so a `§` in a target is ordinary text and files named with `§` link as written. Tasks 1-1, 1-2, 1-3, and 2-1 and their pins were restored to `8606e26e8`, and `INDEX_GENERATION` returned to 15, so an index stamped 16 by the interim build rebuilds under the restored reading. Phase 1's commit `50a1c2cf3` stays in history.
+- **Reversion:** after Phase 2 landed, the owner ruled in the Path Links session that `#` stays the only opener inside a link, so a `§` in a target is ordinary text and files named with `§` link as written. Tasks 1-1, 1-2, 1-3, and 2-1 and their pins were restored to `8606e26e8`, and `INDEX_GENERATION` moved to 17, past the 16 the interim build stamped, so every index rebuilds under the restored link reading and Task 2-3's address rule. Phase 1's commit `50a1c2cf3` stays in history.
 - **Task 1-4:** `UNSPELLABLE` reads the restored `expressibleInLink`, so the writer refuses `#`, `|`, `]]`, and a trailing `]`, and its pin is `foo#bar.png`.
 - **Phase 2 review:** the arm also refuses a heading line through `headingParts`, as the run reader skips one; `emptied` checks the shown text first; the arm's two position guards, which `acQuery` already guaranteed, were removed; the `urlRunRe` comment names its shared use; and the address and code-span refusals were pinned.
+- **Final verification:** both lenses found that the asset migration refused a banner name it invented from an owner no link can spell (a `C#` folder), holding the legacy sweep; it now keeps the file's own name there. `UNSPELLABLE` reads `invalid-name`, as the other name refusals do, and the arm reads its query once. The neutral review found Task 2-3 changes indexed `section` rows without a generation bump, which the move to 17 covers, and that the emptied-heading tidy also keeps `[[#]]` a link where the baseline wrote `[[]]`, as Task 2-4 planned.
+- **Delta:** −2 (+36 / −38) over `8606e26e8..HEAD`, tests and comments excluded, against the estimate of about +3 for the landed fixes.
