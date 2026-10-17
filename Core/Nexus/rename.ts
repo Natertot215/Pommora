@@ -39,5 +39,5 @@ export async function renameOp(
   const r = await renamePage(abs, req.newName)
   if (!r.ok) return r
   if (heldOutside) return ok({})
-  return ok({ cascade: await renameCascade(root, oldTitle, { title: req.newName }) })
+  return ok({ cascade: await renameCascade(root, { title: oldTitle, to: req.newName }) })
 }

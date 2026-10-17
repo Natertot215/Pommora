@@ -1,4 +1,4 @@
-import { join, relative, isMarkdownFile, titleFromPath } from '../Paths/posix'
+import { join, relative, isMarkdownFile } from '../Paths/posix'
 import { escapes } from '../Paths/pathSafety'
 import { errText } from '../Contract/result'
 import { linksIn, valueLinks } from '../Connections/scan'
@@ -36,26 +36,24 @@ import { readWatchScope } from '../Settings/settings'
 
 const NO_ROWS: PageIndexEntry = { relations: [], headings: [], values: {} }
 
-function extractPageIndex(rel: string, content: string): PageIndexEntry {
+function extractPageIndex(content: string): PageIndexEntry {
   const { frontmatter: values, admission } = parsePage(content)
   if (admission.state === 'unknown') return NO_ROWS
-  const own = titleFromPath(rel)
   const { body } = splitEnvelope(content)
   const scan = scanDoc(body)
   const headings = headingOutlineOf(scan).filter((h) => normalizeTitle(h.text) !== '')
   const outline = headings.map((h) => h.text)
   const tally = new Map<string, Relation>()
-  // A NUL separator: no normalized title, Context key, or frontmatter key can hold one, so the four parts never blur.
+  // A NUL separator: no key can hold one, so the four parts never blur.
   const add = (kind: RelationKind, target: string, qualifier: string, key = ''): void => {
     tally.set(`${kind}\0${target}\0${qualifier}\0${key}`, { kind, target, qualifier, key })
   }
-  for (const hit of linksIn(body, own, outline, (p) => inCodeAt(scan, p))) {
+  for (const hit of linksIn(body, outline, (p) => inCodeAt(scan, p))) {
     add(hit.embed ? 'embed' : 'body', hit.target, hit.qualifier)
     if (hit.full[0] >= scan.lineStarts[scan.citations.firstLine])
       add('citation', hit.target, hit.qualifier)
   }
-  for (const hit of valueLinks(values, own, outline))
-    add('value', hit.target, hit.qualifier, hit.key)
+  for (const hit of valueLinks(values, outline)) add('value', hit.target, hit.qualifier, hit.key)
   for (const { target, qualifier } of spaceRelations(values)) add('space', target, qualifier)
   return { relations: [...tally.values()], headings, values }
 }
@@ -92,7 +90,7 @@ async function relCorpusPath(root: string, abs: string): Promise<string | null> 
 }
 
 export interface HeadingRenameSeen {
-  title: string
+  path: string
   old: string
   next: string
 }
@@ -117,7 +115,7 @@ export async function indexWrittenPage(
   const content = text ?? (await readTextOrNull(abs))
   if (content === null) return []
   const stat = { mtimeMs: st.mtimeMs, size: st.size }
-  return reindex([{ path: rel, entry: extractPageIndex(rel, content), stat }])
+  return reindex([{ path: rel, entry: extractPageIndex(content), stat }])
 }
 
 // Writes each page's rows and reports the heading renames they show against the rows they replace: one heading gone and one fresh heading at its ordinal, the outline otherwise unchanged. Anything murkier is left to the muted heading.
@@ -137,7 +135,7 @@ function reindex(rows: readonly PageIndexRow[]): HeadingRenameSeen[] {
     )
       return []
     const next = entry.headings.find((h) => normalizeTitle(h.text) === fresh[0])
-    return next ? [{ title: titleFromPath(path), old: gone[0], next: next.text }] : []
+    return next ? [{ path, old: gone[0], next: next.text }] : []
   })
 }
 
@@ -213,7 +211,7 @@ export async function seedContentIndex(root: string): Promise<SeedReread> {
       if (contentIndexStore() !== db0) return NO_REREAD
       queued.push({
         path: rel,
-        entry: extractPageIndex(rel, content),
+        entry: extractPageIndex(content),
         stat: { mtimeMs: st.mtimeMs, size: st.size },
       })
       if (queued.length === SEED_BATCH) flush()

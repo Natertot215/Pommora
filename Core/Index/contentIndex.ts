@@ -62,15 +62,15 @@ function queryPaths(run: (db: ContentIndexStore) => string[]): string[] | null {
   return queried(run)
 }
 
-export function queryMentions(normalizedTitle: string): string[] | null {
-  return queryPaths((db) => db.queryMentions(normalizedTitle))
+export function queryMentions(keys: readonly string[]): string[] | null {
+  return queryPaths((db) => db.queryMentions(keys))
 }
 
 export function queryHeadingMentions(
-  normalizedTitle: string,
   normalizedHeading: string,
+  keys: readonly string[],
 ): string[] | null {
-  return queryPaths((db) => db.queryHeadingMentions(normalizedTitle, normalizedHeading))
+  return queryPaths((db) => db.queryHeadingMentions(normalizedHeading, keys))
 }
 
 export function readHeadings(paths?: string[]): Record<string, PageHeading[]> | null {

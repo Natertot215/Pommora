@@ -2,7 +2,7 @@
 
 import { setOrDrop } from '../Files/atomicWrite'
 import { patchSidecar } from '../Files/sidecar'
-import { isMarkdownFile, titleFromPath } from '../Paths/posix'
+import { isMarkdownFile } from '../Paths/posix'
 import { resolveUnderRoot } from '../Paths/pathSafety'
 import { contextsDir } from '../Paths/paths'
 import { machine } from '../Platform/machine'
@@ -91,7 +91,7 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
       return renameOp(ctx, req)
 
     case 'renameHeading':
-      return ok({ cascade: await renameCascade(root, titleFromPath(req.path), req, req.path) })
+      return ok({ cascade: await renameCascade(root, req, true) })
 
     case 'delete':
       return req.kind === 'space' || req.kind === 'context'

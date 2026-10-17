@@ -12,8 +12,8 @@ import type {
 import { type Db, inTransaction } from './driver'
 import { INDEX_TABLES } from './ddl'
 
-// A batch of paths binds as one JSON argument: a placeholder per path fails past SQLite's variable limit on a large sync or checkout.
-const PATHS_OF = '(SELECT value FROM json_each(?))'
+// A list binds as one JSON argument: a placeholder per value fails past SQLite's variable limit.
+const LISTED = '(SELECT value FROM json_each(?))'
 
 export const keyValueStore = (db: Db): KeyValueStore => ({
   get(scope, key) {
@@ -97,18 +97,18 @@ export const contentIndexStore = (db: Db): ContentIndexStore => ({
     }
   },
   // Qualifier-agnostic by construction: a page that links only `[[Alpha#Intro]]` names Alpha, and a predicate narrowing to the unqualified row would drop it from the rename cascade silently. DISTINCT because one page reaches one target through several kinds and qualifiers.
-  queryMentions(normalizedTitle) {
+  queryMentions(keys) {
     return paths(
       db,
-      "SELECT DISTINCT path FROM relations WHERE target = ? AND kind <> 'space' ORDER BY path",
-      normalizedTitle,
+      `SELECT DISTINCT path FROM relations WHERE target IN ${LISTED} AND kind <> 'space' ORDER BY path`,
+      JSON.stringify(keys),
     )
   },
-  queryHeadingMentions(normalizedTitle, normalizedHeading) {
+  queryHeadingMentions(normalizedHeading, keys) {
     return paths(
       db,
-      "SELECT DISTINCT path FROM relations WHERE target = ? AND qualifier = ? AND kind <> 'space' ORDER BY path",
-      normalizedTitle,
+      `SELECT DISTINCT path FROM relations WHERE target IN ${LISTED} AND qualifier = ? AND kind <> 'space' ORDER BY path`,
+      JSON.stringify(keys),
       normalizedHeading,
     )
   },
@@ -117,7 +117,7 @@ export const contentIndexStore = (db: Db): ContentIndexStore => ({
       only
         ? db
             .prepare(
-              `SELECT path, text, level FROM headings WHERE path IN ${PATHS_OF} ORDER BY path, ordinal`,
+              `SELECT path, text, level FROM headings WHERE path IN ${LISTED} ORDER BY path, ordinal`,
             )
             .all(JSON.stringify(only))
         : db.prepare('SELECT path, text, level FROM headings ORDER BY path, ordinal').all()
@@ -131,7 +131,7 @@ export const contentIndexStore = (db: Db): ContentIndexStore => ({
     return out
   },
   readPageRelations(only, key) {
-    const inClause = only ? ` AND path IN ${PATHS_OF}` : ''
+    const inClause = only ? ` AND path IN ${LISTED}` : ''
     const args = only ? [JSON.stringify(only)] : []
     const relations = db
       .prepare(

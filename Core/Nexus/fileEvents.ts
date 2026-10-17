@@ -25,21 +25,20 @@ import type { Changed, FileEvent, Moved } from '../Files/writeEcho'
 import type { ContainerKind } from './entities'
 import type { Json } from '../Files/stableJson'
 import { isContentName } from '../Files/walk'
-import { queryHeadingMentions } from '../Index/contentIndex'
-import { foldKey, normalizeTitle } from '../Paths/caseFold'
+import { foldKey } from '../Paths/caseFold'
 import {
   deindexPath,
   type HeadingRenameSeen,
   indexWrittenPage,
   moveIndexPaths,
 } from '../Index/indexSeed'
-import { renameCascade, spacesLinkHeading } from './cascade'
+import { renameCascade } from './cascade'
 import { noteExternalEdit } from '../Pages/fileHistory'
 import { heldTreeOf, patchLiveTree } from './liveTree'
 import { resolveOrder } from './order'
 import { type TileHostRef, type TilesChanged, tileHostKey } from '../Tiles/tiles'
 import { tileHostAt } from '../Tiles/tileHosts'
-import { dropTileHeadingLinks, tilesLinkHeading } from '../Tiles/tilesFile'
+import { dropTileHeadingLinks } from '../Tiles/tilesFile'
 import {
   contextLinker,
   pageRecordOf,
@@ -295,15 +294,7 @@ export function oweRenames(root: string, renames: readonly HeadingRenameSeen[]):
 
 // A rename an outside edit shows (Obsidian or sync, landed live or found by the index seed) takes the same cascade the editor's settle takes; the editor's own save owes none, its settle having spoken.
 export async function cascadeSeen(root: string, seen: HeadingRenameSeen): Promise<void> {
-  const title = normalizeTitle(seen.title)
-  const linked = queryHeadingMentions(title, seen.old)?.length
-  if (
-    !linked &&
-    !spacesLinkHeading(root, title, seen.old) &&
-    !(await tilesLinkHeading(root, title, seen.old))
-  )
-    return
-  const c = await renameCascade(root, seen.title, { heading: seen.old, to: seen.next })
+  const c = await renameCascade(root, { path: seen.path, heading: seen.old, to: seen.next })
   if (c.warning) console.error('heading rename:', c.warning)
   oweCascade(root, c.pages, c.hosts)
 }

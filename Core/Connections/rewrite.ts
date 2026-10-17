@@ -17,7 +17,9 @@ import { scanDoc, spanAt } from '../MarkdownPM/Engine/docScan'
 import { type LinkHit, linksIn } from './scan'
 import { pageKey } from './pageIndex'
 
-export type RenameChange = { title: string } | { heading: string; to: string }
+export type CascadeChange =
+  | { title: string; to: string }
+  | { path: string; heading: string; to: string }
 
 /** Code stays untouched: a page documenting `[[Old Title]]` in a fenced block is showing a sample. Only the written name changes; shown text that only named it follows it, and shown text that comes to repeat the new target goes, as the writer drops one. */
 export function rewriteConnections(body: string, oldTitle: string, newTitle: string): string {
@@ -76,22 +78,21 @@ function follower(body: string) {
   }
 }
 
-/** Rewrites every link and bare run that names `oldHeading` on the page titled `title`; a bare fragment counts only when `ownTitle` is that page, and a `§` run only when `outline` (the page's headings around the rename) is given, so a longer heading the run names keeps it. */
+/** Rewrites every link and bare run that names `oldHeading` on the page `keys` name; a bare fragment counts only in that page's own body (`own`), and a `§` run only when `outline` (the page's headings around the rename) is given, so a longer heading the run names keeps it. */
 export function rewriteHeadingConnections(
   body: string,
-  title: string,
+  keys: ReadonlySet<string>,
   oldHeading: string,
   newHeading: string,
-  ownTitle = '',
+  own: boolean,
   outline?: readonly string[],
 ): string {
   if (!mayNameHeading(body)) return body
-  const titleKey = pageKey(title)
   const oldKey = normalizeTitle(oldHeading)
   const rewrite = follower(body)
   const edits: TextEdit[] = []
-  for (const hit of linksIn(body, ownTitle, outline && [...outline, oldHeading]))
-    if (hit.target === titleKey && hit.qualifier === oldKey && hit.heading)
+  for (const hit of linksIn(body, outline && [...outline, oldHeading]))
+    if ((hit.target === '' ? own : keys.has(hit.target)) && hit.qualifier === oldKey && hit.heading)
       edits.push(...rewrite(hit, 'heading', newHeading))
   return applyEdits(body, edits)
 }
