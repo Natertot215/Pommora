@@ -23,8 +23,10 @@ const sameQuery = (a: AutocompleteQuery, b: AutocompleteQuery | null): boolean =
   a.from === b.from &&
   a.to === b.to &&
   a.closed === b.closed &&
+  a.embed === b.embed &&
   a.query === b.query &&
   a.title === b.title &&
+  a.heading === b.heading &&
   a.shown === b.shown
 
 function armedBy(tr: Transaction): number | null {

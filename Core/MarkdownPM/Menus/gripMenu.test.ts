@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { blockDeleteSpan, embedPickTree } from './gripMenu'
 import type { PickItem } from '../../Actions/menuModel'
+import { titleFromPath } from '../../Paths/posix'
 
 describe('blockDeleteSpan', () => {
   const del = (doc: string, from: number, to: number): string => {
@@ -34,23 +35,24 @@ describe('embedPickTree', () => {
     {
       label: 'Notes',
       submenu: [
-        { label: 'Drafts', submenu: [{ label: 'Beta', pick: 'Beta' }] },
-        { label: 'Alpha', pick: 'Alpha' },
+        { label: 'Drafts', submenu: [{ label: 'Beta', pick: 'Notes/Drafts/Beta.md' }] },
+        { label: 'Alpha', pick: 'Notes/Alpha.md' },
       ],
     },
     { label: 'Empty', submenu: [] },
   ]
+  const name = (path: string): string => titleFromPath(path)
 
   it('walks containers to pages, keeping an empty container as an empty branch', () => {
-    const t = embedPickTree(tree, new Set())
+    const t = embedPickTree(tree, new Set(), name)
     expect(t.map((n) => n.label)).toEqual(['Notes', 'Empty'])
     expect(t[0].submenu?.map((n) => n.label)).toEqual(['Drafts', 'Alpha'])
-    expect(t[0].submenu?.[0].submenu?.[0]).toEqual({ label: 'Beta', pick: 'Beta' })
+    expect(t[0].submenu?.[0].submenu?.[0]).toEqual({ label: 'Beta', pick: 'Notes/Drafts/Beta.md' })
     expect(t[1].submenu).toEqual([])
   })
 
-  it('excluded titles drop out, and a container emptied by exclusion stays as an empty branch', () => {
-    const t = embedPickTree(tree, new Set(['beta']))
+  it('excluded paths drop out, and a container emptied by exclusion stays as an empty branch', () => {
+    const t = embedPickTree(tree, new Set(['Notes/Drafts/Beta.md']), name)
     expect(t[0].submenu?.map((n) => n.label)).toEqual(['Drafts', 'Alpha'])
     expect(t[0].submenu?.[0].submenu).toEqual([])
   })

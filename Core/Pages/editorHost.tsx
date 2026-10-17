@@ -135,14 +135,14 @@ function buildEditorHost(
       ),
     pickTree: () => {
       const s = state()
-      return s.tree ? pagePickTree(s.tree, personalizationOf(s).defaultIcons, (p) => p.title) : []
+      return s.tree ? pagePickTree(s.tree, personalizationOf(s).defaultIcons, (p) => p.path) : []
     },
     location: (id) => {
       const tree = state().tree
       return (tree && nodesByIdOf(tree).get(id)?.parents) || NO_TRAIL
     },
     openLink: openWebLink,
-    pageTitle: () => (pageId && pageOf(pageId)?.title) ?? null,
+    page: () => (pageId && pageOf(pageId)) || null,
   }
 }
 

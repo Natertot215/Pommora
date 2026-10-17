@@ -34,6 +34,7 @@ describe('autocompleteQuery', () => {
       to: 6,
       query: '',
       closed: true,
+      embed: false,
     })
   })
   it('reads a closed ![[…]] as the connection after its `!`', () => {
@@ -103,6 +104,7 @@ describe('an unclosed link reads as the link it would be once closed', () => {
       to: 9,
       query: 'Pro',
       closed: false,
+      embed: false,
     })
   })
 
@@ -116,6 +118,7 @@ describe('an unclosed link reads as the link it would be once closed', () => {
       to: 6,
       query: '',
       closed: false,
+      embed: false,
     })
   })
 
@@ -129,6 +132,7 @@ describe('an unclosed link reads as the link it would be once closed', () => {
       to: 3,
       query: '',
       closed: true,
+      embed: true,
     })
   })
 
@@ -146,6 +150,7 @@ describe('an unclosed link reads as the link it would be once closed', () => {
       to: 9,
       query: 'He',
       closed: false,
+      embed: false,
       title: 'Page',
     })
   })
@@ -286,17 +291,27 @@ describe('the ( ) slots', () => {
       to: 6,
       query: 'x',
       closed: true,
+      embed: false,
       title: 'Notes',
       shown: 'x',
     })
   })
 
-  it('the page half queries alone, and a retarget drops the old fragment as a wikilink does', () => {
+  it('a title pick given no heading writes none', () => {
     const doc = 'see [x](Work%20Notes#Setup) end'
     const r = autocompleteQuery(doc, doc.indexOf('Work') + 2)!
     expect(r.part).toBe('title')
     expect(r.query).toBe('Work Notes')
     expect(landed(doc, commitEdit(r, 'Other', { kept: 'x' }))).toBe('see [x](Other) end')
+  })
+
+  it('a title query carries the written heading, and a pick given it keeps it', () => {
+    const doc = 'see [x](Work%20Notes#Setup) end'
+    const r = autocompleteQuery(doc, doc.indexOf('Work') + 2)!
+    expect(r.heading).toBe('Setup')
+    expect(landed(doc, commitEdit(r, 'Other', { kept: 'x', heading: 'Setup' }))).toBe(
+      'see [x](Other#Setup) end',
+    )
   })
 
   it('after the #, the heading slot asks for the named page’s headings', () => {

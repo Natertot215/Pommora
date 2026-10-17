@@ -10,7 +10,7 @@ import { docScan, docString } from '../docCache'
 import { HEADING_LINE } from '../folding'
 import { applyEmbedZoom, embedExclusions, embedZoomAt, setWebLinkSeat } from '../Embeds/embedWidget'
 import { focusRange } from '../caretPlacement'
-import { normalizeTitle } from '../../Paths/caseFold'
+import { titleFromPath } from '../../Paths/posix'
 import { lineEndAt, lineStartAt } from '../Engine/markdownCode'
 import { applyEdit } from '../Input/applyEdit'
 import { type EditorHost, editorHost } from '../api'
@@ -20,13 +20,18 @@ import { GRIP_LINE } from '../Engine/intents'
 const gripLineAt = (e: MouseEvent): HTMLElement | null => gutterLineAt(e, GRIP_LINE)
 const headingLineAt = (e: MouseEvent): HTMLElement | null => gutterLineAt(e, HEADING_LINE)
 
+const nameOf = (host: EditorHost, path: string): string =>
+  host.connections()?.index.writtenName(path) ?? titleFromPath(path)
+
 export function embedPickTree(
   nodes: readonly PickItem<string>[],
   exclude: ReadonlySet<string>,
+  name: (path: string) => string,
 ): PickItem<string>[] {
   return nodes.flatMap((n) => {
-    if (n.pick === undefined) return [{ ...n, submenu: embedPickTree(n.submenu ?? [], exclude) }]
-    return expressibleInLink(n.pick) && !exclude.has(normalizeTitle(n.pick)) ? [n] : []
+    if (n.pick === undefined)
+      return [{ ...n, submenu: embedPickTree(n.submenu ?? [], exclude, name) }]
+    return expressibleInLink(name(n.pick)) && !exclude.has(n.pick) ? [n] : []
   })
 }
 
@@ -53,7 +58,9 @@ function contextFor(view: EditorView, doc: string, block: Block): GripMenuContex
       const host = view.state.facet(editorHost)
       return {
         kind: 'embed',
-        tree: embedPickTree(host.pickTree(), embedExclusions(view.state)),
+        tree: embedPickTree(host.pickTree(), embedExclusions(view.state), (path) =>
+          nameOf(host, path),
+        ),
         zoom: embedZoomAt(view.state, block.from),
       }
     }
@@ -75,8 +82,8 @@ function popHeadingMenu(view: EditorView, headingEl: HTMLElement): void {
   if (!openedParts) return
   const level = openedParts.hashes.length
   const host = view.state.facet(editorHost)
-  const title = host.pageTitle()
-  const linkable = title !== null
+  const page = host.page()
+  const linkable = page !== null
   void host.menus
     .grip({ kind: 'heading', level, linkable, editable: !view.state.readOnly })
     .then((action) => {
@@ -88,9 +95,15 @@ function popHeadingMenu(view: EditorView, headingEl: HTMLElement): void {
       if (!parts || line.text !== opened.text) return
       const contentStart = line.from + parts.contentStart
       if (action === 'rename') focusRange(view, contentStart, line.to)
-      else if (action === COPY_LINK_ROW.action && title !== null)
+      else if (action === COPY_LINK_ROW.action && page !== null)
         void host.clipboard.write(
-          pageLinkText({ title, heading: parts.content.trim() || undefined }, 'wiki'),
+          pageLinkText(
+            {
+              title: nameOf(host, page.path),
+              heading: parts.content.trim() || undefined,
+            },
+            'wiki',
+          ),
         )
       else if (action === 'delete') {
         const span = blockDeleteSpan(doc, { from: line.from, to: line.to })
@@ -137,13 +150,17 @@ export const gripMenu = EditorView.domEventHandlers({
       if (!block || doc.slice(block.from, block.to) !== opened) return
       const arg = (prefix: string): string | undefined =>
         action.startsWith(prefix) ? action.slice(prefix.length) : undefined
-      const title = arg('source:')
+      const path = arg('source:')
       const zoom = arg('zoom:')
       const kind = arg('listKind:')
-      if (title !== undefined) {
+      if (path !== undefined) {
         // The block span IS the embed line, claimed or not — acting through the claimed set would dead-end the menu precisely when a stale embed needs re-aiming.
         view.dispatch({
-          changes: { from: block.from, to: block.to, insert: pageEmbedText(title) },
+          changes: {
+            from: block.from,
+            to: block.to,
+            insert: pageEmbedText(nameOf(host, path)),
+          },
           userEvent: 'input',
         })
       } else if (zoom !== undefined) applyEmbedZoom(view, block.from, Number(zoom))

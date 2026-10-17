@@ -486,6 +486,7 @@ describe('the heading slide’s top row marks how it arrived', () => {
     to: 0,
     query: '',
     closed: true,
+    embed: false,
     title: 'Notes',
     caretX: 0,
     caretTop: 0,

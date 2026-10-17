@@ -374,8 +374,8 @@ describe('a pick into an emptied slot rewrites the whole link around it', () => 
   })
 
   it.each([
-    ['[sel](#Setup) x', 6, '[Alpha](Alpha) x'],
-    ['[[#Setup|sel]]', 2, '[[Alpha]]'],
+    ['[sel](#Setup) x', 6, '[Setup](Alpha#Setup) x'],
+    ['[[#Setup|sel]]', 2, '[[Alpha#Setup]]'],
   ] as const)('%s, picked at %i with Remove Title on, drops the text this document’s own heading showed: %s', async (body, caret, written) => {
     const view = await mounted(body, { removeTitleOnLinkChange: true })
     await act(async () => {
@@ -703,5 +703,156 @@ describe('the chevron slides in a page’s headings', () => {
       await new Promise((r) => setTimeout(r, 0))
     })
     expect(view.state.doc.toString()).toBe('see [top](#) tail')
+  })
+})
+
+describe('a pick names the page as a new link should, and the picker closes on a finished link', () => {
+  const shared: ConnectionsApi = {
+    index: buildPageIndex([
+      { id: 'nA', title: 'Notes', path: 'A/Notes.md' },
+      { id: 'nB', title: 'Notes', path: 'B/Notes.md' },
+      { id: 'cP', title: 'ClaudeMD', path: 'Studio/Pommora/ClaudeMD.md' },
+      { id: 'cS', title: 'ClaudeMD', path: 'Studio/Sapphire/ClaudeMD.md' },
+    ]),
+    headingsOf: (path) =>
+      path === 'A/Notes.md'
+        ? { keys: ['intro'], texts: ['Intro'], outline: [{ text: 'Intro', level: 2 }] }
+        : { keys: [], texts: [], outline: [] },
+    open: () => {},
+  }
+  const unique: ConnectionsApi = {
+    index: buildPageIndex([
+      { id: 'n', title: 'Notes', path: 'Notes.md' },
+      { id: 'nX', title: 'Notes Archive', path: 'Notes Archive.md' },
+      { id: 'pg', title: 'Page', path: 'Page.md' },
+    ]),
+    headingsOf: (path) =>
+      path === 'Page.md'
+        ? {
+            keys: ['setup', 'setup 2'],
+            texts: ['Setup', 'Setup 2'],
+            outline: [
+              { text: 'Setup', level: 2 },
+              { text: 'Setup 2', level: 2 },
+            ],
+          }
+        : undefined,
+    open: () => {},
+  }
+  const at = async (body: string, caret: number, connections: ConnectionsApi) => {
+    const view = await mountEditor({ initialBody: body, connections })
+    vi.spyOn(view, 'coordsAtPos').mockReturnValue(coords)
+    await act(async () => {
+      view.focus()
+      view.dispatch({ selection: { anchor: caret } })
+    })
+    return view
+  }
+  const rows = (): string[] =>
+    [...document.querySelectorAll(`.mdpm-ac .${matchText}`)].map((x) => x.textContent ?? '')
+
+  it('a pick of one of two Notes writes its path and rests past it', async () => {
+    const view = await at('[[Not]]', 5, shared)
+    await press(view, 'Enter')
+    expect(view.state.doc.toString()).toBe('[[A/Notes|Notes]]')
+    expect(view.state.selection.main.head).toBe('[[A/Notes|Notes]]'.length)
+  })
+
+  it('re-picking the same holder with Remove Title on keeps the alias', async () => {
+    const view = await at('[[A/Notes|x]]', 4, shared)
+    await act(async () => {
+      view.dispatch({ selection: { anchor: 2, head: 9 } })
+    })
+    await act(async () => {
+      view.dispatch({
+        changes: { from: 2, to: 9, insert: 'Not' },
+        selection: { anchor: 5 },
+        userEvent: 'input.type',
+      })
+    })
+    await press(view, 'Enter')
+    expect(view.state.doc.toString()).toBe('[[A/Notes|x]]')
+  })
+
+  it('a pick keeps the heading the picked page holds, and drops one it lacks', async () => {
+    const view = await at('[[Notes#Intro|A]]', 4, shared)
+    await press(view, 'Enter')
+    expect(view.state.doc.toString()).toBe('[[A/Notes#Intro|A]]')
+    await cleanupEditor()
+    const other = await at('[[Notes#Intro|A]]', 4, shared)
+    await press(other, 'ArrowDown')
+    await press(other, 'Enter')
+    expect(other.state.doc.toString()).toBe('[[B/Notes|A]]')
+  })
+
+  it('a pick inside an embed writes no alias', async () => {
+    const view = await at('![[Notes', 8, shared)
+    await press(view, 'Enter')
+    expect(view.state.doc.toString()).toBe('![[A/Notes]]')
+  })
+
+  it('the chevron on a holder checks the link as it writes it, without the heading it opens', async () => {
+    const view = await mountEditor({
+      initialBody: '[[A/Notes#Intro|A]] tail',
+      connections: shared,
+      host: { settings: { removeTitleOnLinkChange: true } },
+    })
+    vi.spyOn(view, 'coordsAtPos').mockReturnValue(coords)
+    await act(async () => {
+      view.focus()
+      view.dispatch({ selection: { anchor: 2, head: 9 } })
+    })
+    await act(async () => {
+      view.dispatch({
+        changes: { from: 2, to: 9, insert: 'Not' },
+        selection: { anchor: 5 },
+        userEvent: 'input.type',
+      })
+    })
+    await press(view, 'ArrowRight')
+    await act(async () => {
+      view.dispatch({ selection: { anchor: view.state.doc.length } })
+      await new Promise((r) => setTimeout(r, 0))
+    })
+    expect(view.state.doc.toString()).toBe('[[A/Notes]] tail')
+  })
+
+  it('a finished title opens nothing, even beside a longer one or as a path', async () => {
+    await at('[[Notes]]', 4, unique)
+    expect(document.querySelector('.mdpm-ac')).toBeNull()
+    await cleanupEditor()
+    await at('[[Pommora/ClaudeMD]]', 4, shared)
+    expect(document.querySelector('.mdpm-ac')).toBeNull()
+  })
+
+  it('an ambiguous title opens on both holders', async () => {
+    await at('[[Notes]]', 4, shared)
+    expect(rows()).toEqual(['Notes', 'Notes'])
+  })
+
+  it('an ambiguous title written with its extension lists its holders', async () => {
+    await at('[[Notes.md]]', 4, shared)
+    expect(rows()).toEqual(['Notes', 'Notes'])
+  })
+
+  it('an ambiguous title lists its holders first and the longer titles after them', async () => {
+    const archive: ConnectionsApi = {
+      ...shared,
+      index: buildPageIndex([
+        { id: 'nA', title: 'Notes', path: 'A/Notes.md' },
+        { id: 'nB', title: 'Notes', path: 'B/Notes.md' },
+        { id: 'ar', title: 'Notes Archive', path: 'A/Notes Archive.md' },
+      ]),
+    }
+    await at('[[Notes]]', 4, archive)
+    const asides = [...document.querySelectorAll('.mdpm-ac-aside')].map((x) =>
+      x.getAttribute('aria-label'),
+    )
+    expect(asides).toEqual(['Headings of Notes', 'Headings of Notes', 'Headings of Notes Archive'])
+  })
+
+  it('a finished heading opens nothing beside a longer one', async () => {
+    await at('[[Page#Setup]]', 10, unique)
+    expect(document.querySelector('.mdpm-ac')).toBeNull()
   })
 })

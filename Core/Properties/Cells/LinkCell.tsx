@@ -5,7 +5,7 @@ import { cx } from '@pommora/uix/Utilities/cx'
 import { isSecondaryClick } from '@pommora/uix/Interactions/chords'
 import { OverScroll } from '@pommora/uix/Interactions/OverScroll'
 import { pageLinkText } from '../../Connections/connections'
-import { linkDisplayText, readLinkText, resolveLink } from '../../Connections/linkValue'
+import { linkDisplayText, namedPage, readLinkText, resolveLink } from '../../Connections/linkValue'
 import { solidColorCss } from '@pommora/uix/Theme/ramp'
 import { glanceHost } from '../../Interface/Glance/glanceAction'
 import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'
@@ -43,7 +43,15 @@ export function LinkCell({
       <TextCell
         text={
           showFullLink && target.kind === 'page'
-            ? pageLinkText({ title: target.page.title, heading: target.heading }, 'wiki')
+            ? pageLinkText(
+                {
+                  title:
+                    api?.index.writtenName(target.page.path, namedPage(written)?.title) ??
+                    target.page.title,
+                  heading: target.heading,
+                },
+                'wiki',
+              )
             : raw
         }
         connections={connections}

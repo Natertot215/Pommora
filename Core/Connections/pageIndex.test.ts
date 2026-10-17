@@ -104,7 +104,8 @@ describe('paths', () => {
   })
   it('a doubled extension keys by path as it keys by title', () => {
     const doubled = at('A/X.md.md')
-    for (const raw of ['X', 'X.md', 'A/X', 'A/X.md']) expect(named(doubled, raw)).toBe('A/X.md.md')
+    for (const raw of ['X', 'X.md', 'X.md.md', 'A/X', 'A/X.md', 'A/X.md.md'])
+      expect(named(doubled, raw)).toBe('A/X.md.md')
     expect(doubled.namesOf('A/X.md.md')).toEqual(['x', 'a/x'])
     const beside = at('A/X.md.md', 'A/X.md')
     expect(beside.resolve('A/X').status).toBe('ambiguous')

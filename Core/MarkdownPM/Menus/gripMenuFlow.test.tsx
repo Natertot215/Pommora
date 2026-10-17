@@ -19,8 +19,8 @@ const pages = [
   { id: 'p3', title: 'Soup', path: 'Notes/Soup.md' },
 ]
 
-const treeOf = (collectionPages: { title: string }[]): PickItem<string>[] => [
-  { label: 'Notes', submenu: collectionPages.map((p) => ({ label: p.title, pick: p.title })) },
+const treeOf = (collectionPages: { title: string; path: string }[]): PickItem<string>[] => [
+  { label: 'Notes', submenu: collectionPages.map((p) => ({ label: p.title, pick: p.path })) },
 ]
 
 const conn: ConnectionsApi = {
@@ -29,7 +29,7 @@ const conn: ConnectionsApi = {
   headingsOf: () => undefined,
 }
 
-const seed = (collectionPages: { title: string }[]): void =>
+const seed = (collectionPages: { title: string; path: string }[]): void =>
   seedHost({
     pickTree: treeOf(collectionPages),
     menus: {
@@ -49,7 +49,7 @@ afterEach(cleanupEditor)
 const mount = (initialBody: string): Promise<EditorView> =>
   mountEditor({ initialBody, connections: conn, embedAncestors: ['Notes/EmbedHost.md'] })
 
-const offeredTitles = (): string[] => {
+const offeredPaths = (): string[] => {
   const out: string[] = []
   const walk = (rows: readonly ActionItem<string>[]): void => {
     for (const r of rows) {
@@ -125,27 +125,30 @@ describe('a document that moves while the menu is open', () => {
 describe('the embed tile grip', () => {
   it('offers tile mode, and Source re-aims the line', async () => {
     const view = await mount('intro\n\n![[Alpha]]\n\nbelow')
-    nextPick = 'source:Beta'
+    nextPick = 'source:Notes/Beta.md'
     await gripMenu(view, 'tile')
     expect(calls[0]?.[0].label).toBe('Source')
-    expect(offeredTitles()).toEqual(['Beta', 'Soup'])
+    expect(offeredPaths()).toEqual(['Notes/Beta.md', 'Notes/Soup.md'])
     expect(view.state.doc.toString()).toBe('intro\n\n![[Beta]]\n\nbelow')
   })
 
   it('Source re-aims an UNRESOLVED embed line — the stale token is exactly what needs re-aiming', async () => {
     const view = await mount('intro\n\n![[Ghost]]\n\nbelow')
-    nextPick = 'source:Beta'
+    nextPick = 'source:Notes/Beta.md'
     await gripMenu(view, 'Ghost')
     expect(calls[0]?.[0].label).toBe('Source')
     expect(view.state.doc.toString()).toBe('intro\n\n![[Beta]]\n\nbelow')
   })
 
   it('a bracket-bearing title is never offered — the syntax cannot express it', async () => {
-    seed([{ title: 'Notes [Draft]' }, { title: 'Soup' }])
+    seed([
+      { title: 'Notes [Draft]', path: 'Notes/Notes [Draft].md' },
+      { title: 'Soup', path: 'Notes/Soup.md' },
+    ])
     const view = await mount('intro\n\n![[Alpha]]\n\nbelow')
     nextPick = null
     await gripMenu(view, 'tile')
-    expect(offeredTitles()).toEqual(['Soup'])
+    expect(offeredPaths()).toEqual(['Notes/Soup.md'])
   })
 })
 
@@ -238,7 +241,7 @@ describe('a read-only heading’s grip', () => {
     const written: string[] = []
     const asked: unknown[] = []
     seedHost({
-      pageTitle: 'Notes',
+      page: { id: 'n', title: 'Notes', path: 'Notes.md' },
       clipboard: { write: async (t) => void written.push(t) },
       menus: {
         grip: async (ctx) => {

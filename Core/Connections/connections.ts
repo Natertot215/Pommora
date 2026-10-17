@@ -160,9 +160,9 @@ export function namesTarget(shown: string, t: PageName): 'title' | 'heading' | '
   return names(t.heading) ? 'both' : null
 }
 
-/** The one writer of a page link: a wikilink where every slot spells, the markdown form otherwise, its label emptied where the grammar's label can't spell it so the draw gives it the default, so no writer leaves a slot unwritten or writes a link the grammar can't read back. A present-but-empty heading or alias spells its slot (`[[A#]]`, `[[A|]]`): the picker opens a slot by writing it. A wikilink spelling a path with no heading and no shown text carries its title as its alias, as Obsidian's writer does, so the link shows the title in every reader. */
+/** The one writer of a page link: a wikilink where every slot spells, the markdown form otherwise, its label emptied where the grammar's label can't spell it so the draw gives it the default, so no writer leaves a slot unwritten or writes a link the grammar can't read back. A present-but-empty heading or alias spells its slot (`[[A#]]`, `[[A|]]`): the picker opens a slot by writing it. A wikilink spelling a path with no heading and no shown text of its own carries its title as its alias, as Obsidian's writer does, so the link shows the title in every reader. */
 export function pageLinkText(
-  t: PageName & { shown?: string },
+  t: PageName & { shown?: string; embed?: boolean },
   prefer: 'wiki' | 'markdown',
 ): string {
   const { title, heading, shown } = t
@@ -173,14 +173,18 @@ export function pageLinkText(
     return markdownLink(dest, fitsSlot(label) ? label : '')
   }
   const target = heading === undefined ? title : `${title}#${heading}`
-  const alias = carriesTitleAlias(t) ? titleFromPath(title) : shown
-  const named = alias !== undefined && (alias === '' || !repeatsTarget(alias, title, heading))
-  return named ? `[[${target}|${alias}]]` : `[[${target}]]`
+  const given =
+    shown !== undefined && (shown === '' || !repeatsTarget(shown, title, heading))
+      ? shown
+      : undefined
+  const alias =
+    given ?? (carriesTitleAlias({ ...t, shown: given }) ? titleFromPath(title) : undefined)
+  return alias === undefined ? `[[${target}]]` : `[[${target}|${alias}]]`
 }
 
 /** Whether a wikilink to `t` carries the page's title as its alias: a path with no heading and no shown text, so a reader that doesn't understand paths still reads the title, as Obsidian's writer does since 1.3. The one statement of the rule; the writer asks it, and an embed never does. */
-export const carriesTitleAlias = (t: PageName & { shown?: string }): boolean =>
-  t.shown === undefined && t.heading === undefined && t.title.includes('/')
+export const carriesTitleAlias = (t: PageName & { shown?: string; embed?: boolean }): boolean =>
+  !t.embed && t.shown === undefined && t.heading === undefined && t.title.includes('/')
 
 export function pageEmbedText(title: string): string {
   return `![[${title}]]`

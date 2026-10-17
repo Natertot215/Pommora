@@ -41,7 +41,11 @@ const conn: ConnectionsApi = {
 const def = { id: 'prop_l', name: 'Site', type: 'link', link_color: 'blue' } as const
 const bubbled = vi.fn()
 
-const mount = async (raw: string, withHolder = false): Promise<HTMLDivElement> => {
+const mount = async (
+  raw: string,
+  withHolder = false,
+  showFullLink = false,
+): Promise<HTMLDivElement> => {
   useSession.setState({ tree: makeTree() })
   const el = document.createElement('div')
   host = el
@@ -57,6 +61,7 @@ const mount = async (raw: string, withHolder = false): Promise<HTMLDivElement> =
           def,
           connections: () => conn,
           ...(withHolder ? { holder } : {}),
+          showFullLink,
         }),
       ),
     ),
@@ -91,6 +96,17 @@ describe('a Link value naming a page draws and follows as every link does', () =
     expect(
       (await mount('[[#Setup]]', true)).querySelector('.md-connection-resolved'),
     ).not.toBeNull()
+  })
+
+  it('Show Full Link writes a shared holder by its path, so it still resolves', async () => {
+    const el = await mount('[[a/dup]]', false, true)
+    expect(el.querySelector('.md-connection-ambiguous')).toBeNull()
+    expect(el.querySelector('.md-connection-resolved')?.textContent).toBe('Dup')
+  })
+
+  it('Show Full Link writes a bare heading by its holder', async () => {
+    const el = await mount('[[#Setup]]', true, true)
+    expect(el.querySelector('.md-connection-resolved')?.textContent).toBe('Holder§Setup')
   })
 
   it('a click on the text opens through the connections, ⌘ in a new tab', async () => {

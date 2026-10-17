@@ -1,6 +1,6 @@
 import type { LinkStatus } from './connections'
 import { compareTitles, normalizeTitle } from '../Paths/caseFold'
-import { stripMarkdownExt } from '../Paths/posix'
+import { isMarkdownFile, stripMarkdownExt } from '../Paths/posix'
 import type { PageHeading } from '../Platform/stores'
 
 export interface ConnPage {
@@ -24,15 +24,15 @@ export const headingKeys = (headings: readonly PageHeading[]): string[] => [
   ...new Set(headings.map((h) => normalizeTitle(h.text))),
 ]
 
-/** A written page half, or a page's path, as the one key both compare by: folded, its `.md` dropped. A heading never passes through it. */
-export const pageKey = (raw: string): string => stripMarkdownExt(normalizeTitle(raw))
+/** A written page half, or a page's path, as the one key both compare by: folded, every trailing `.md` dropped. A heading never passes through it. */
+export const pageKey = (raw: string): string => {
+  const key = normalizeTitle(raw)
+  return isMarkdownFile(key) ? pageKey(stripMarkdownExt(key)) : key
+}
 
 /** The last `depth` segments of a page's path, `.md` dropped: what a link written at that depth spells. */
 const tailOf = (path: string, depth: number): string =>
   stripMarkdownExt(path).split('/').slice(-depth).join('/')
-
-/** A page's path as a key: its title's key under its folders, so a page keys the same by path and by title. */
-const pathKey = (path: string): string => pageKey(stripMarkdownExt(path))
 
 /** Every tail of a page's path as a key, shortest first: the keys a link may name the page by. */
 export const pathKeys = (path: string): string[] =>
@@ -66,8 +66,8 @@ export function buildPageIndex(pages: readonly ConnPage[]): PageIndex {
     const cut = key.lastIndexOf('/')
     const titled = byTitle.get(key.slice(cut + 1)) ?? []
     if (cut < 0) return titled
-    const exact = titled.filter((p) => pathKey(p.path) === key)
-    return exact.length ? exact : titled.filter((p) => pathKey(p.path).endsWith(`/${key}`))
+    const exact = titled.filter((p) => pageKey(p.path) === key)
+    return exact.length ? exact : titled.filter((p) => pageKey(p.path).endsWith(`/${key}`))
   }
   const resolve = (raw: string): ConnResolution => {
     const holders = holdersOf(raw)

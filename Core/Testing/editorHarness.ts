@@ -6,6 +6,7 @@ import type { PickItem } from '../Actions/menuModel'
 import { MarkdownEditor } from '../MarkdownPM/MarkdownEditor'
 import type { MarkdownTable } from '../MarkdownPM/Tables/MarkdownTable'
 import type { ConnectionsApi } from '../MarkdownPM/Links/connectionsApi'
+import type { ConnPage } from '../Connections/pageIndex'
 import { DEFAULT_COMMANDS } from '../Actions/commands'
 import { type AliasEdit, applyAliasEdit, heldAliases } from '../Connections/aliasMemory'
 import { type EditorHost, type EditorSettings, editorSettingsOf } from '../MarkdownPM/api'
@@ -24,7 +25,7 @@ interface HarnessHost {
   glance?: EditorHost['glance'] | false
   pickTree?: PickItem<string>[]
   openLink?: EditorHost['openLink']
-  pageTitle?: string
+  page?: ConnPage
   pageSurface?: boolean
   prefs?: EditorHost['prefs']
 }
@@ -80,14 +81,14 @@ function harnessHost(spec: HarnessHost, rerender: () => void = () => {}): Harnes
   const watchers = new Set<() => void>()
   const worn = (id: string): string[] => state.aliases[id] ?? []
   const wear = (id: string, edit: AliasEdit): void => {
-    state.aliases[id] = applyAliasEdit(worn(id), edit, spec.pageTitle ?? '')
+    state.aliases[id] = applyAliasEdit(worn(id), edit, spec.page?.title ?? '')
     for (const cb of watchers) cb()
   }
   state.host = {
     settings: () => state.settings,
     connections: () => state.connections,
     aliases: {
-      list: (id) => heldAliases(worn(id), spec.pageTitle ?? ''),
+      list: (id) => heldAliases(worn(id), spec.page?.title ?? ''),
       edit: async (id, edit) => {
         wear(id, edit)
         return true
@@ -132,7 +133,7 @@ function harnessHost(spec: HarnessHost, rerender: () => void = () => {}): Harnes
     pickTree: () => spec.pickTree ?? [],
     location: () => [],
     openLink: spec.openLink ?? (() => {}),
-    pageTitle: () => spec.pageTitle ?? null,
+    page: () => spec.page ?? null,
     pageSurface: spec.pageSurface,
     prefs: spec.prefs,
     paneGeometry: () => ({ onSizeChange: () => {} }),

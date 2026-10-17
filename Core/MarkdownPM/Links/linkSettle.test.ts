@@ -166,6 +166,22 @@ describe('an alias opened and abandoned leaves nothing behind', () => {
     expect(view.state.doc.toString()).toBe('a [[Alpha]] b')
   })
 
+  it('leaving an emptied alias on a path link collapses its pipe as for any wikilink', async () => {
+    const paths: ConnectionsApi = {
+      ...conn,
+      index: buildPageIndex([
+        { id: 'a', title: 'Notes', path: 'A/Notes.md' },
+        { id: 'b', title: 'Notes', path: 'B/Notes.md' },
+      ]),
+    }
+    const view = await mountEditor({ initialBody: 'a [[A/Notes|x]] b', connections: paths })
+    await act(async () => view.focus())
+    await caretTo(view, 13)
+    await emptyBefore(view, 13)
+    await caretTo(view, 0)
+    expect(view.state.doc.toString()).toBe('a [[A/Notes]] b')
+  })
+
   it('collapses on blur without waiting for a timer', async () => {
     const view = await mountEditor({ initialBody: 'a [[Alpha|x]] b', connections: conn })
     await act(async () => view.focus())

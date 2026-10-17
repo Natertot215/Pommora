@@ -108,6 +108,8 @@ describe('pageLinkText and the slot rules', () => {
     expect(pageLinkText({ title: 'A/Notes' }, 'wiki')).toBe('[[A/Notes|Notes]]')
     expect(pageLinkText({ title: 'A/Notes', heading: 'H' }, 'wiki')).toBe('[[A/Notes#H]]')
     expect(pageLinkText({ title: 'A/Notes', shown: 'x' }, 'wiki')).toBe('[[A/Notes|x]]')
+    expect(pageLinkText({ title: 'A/Notes', shown: 'A/Notes' }, 'wiki')).toBe('[[A/Notes|Notes]]')
+    expect(pageLinkText({ title: 'A/Notes', embed: true }, 'wiki')).toBe('[[A/Notes]]')
     expect(pageLinkText({ title: 'A/Notes' }, 'markdown')).toBe('[Notes](A/Notes)')
     expect(pageLinkText({ title: 'Ideas#1/Notes' }, 'wiki')).toBe('[Notes](Ideas%231/Notes)')
   })
@@ -115,6 +117,7 @@ describe('pageLinkText and the slot rules', () => {
     expect(carriesTitleAlias({ title: 'A/Notes' })).toBe(true)
     expect(carriesTitleAlias({ title: 'A/Notes', heading: 'H' })).toBe(false)
     expect(carriesTitleAlias({ title: 'A/Notes', shown: 'x' })).toBe(false)
+    expect(carriesTitleAlias({ title: 'A/Notes', embed: true })).toBe(false)
   })
   it('a markdown title holding `#` reads back as itself', () => {
     const text = pageLinkText({ title: 'C# Notes', heading: 'Intro' }, 'markdown')

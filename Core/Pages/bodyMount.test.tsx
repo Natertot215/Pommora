@@ -49,7 +49,10 @@ function Mount({ name, seed }: { name: string; seed: string }): React.JSX.Elemen
   return createElement(MarkdownEditor, {
     initialBody: seed,
     host: {
-      ...testHost({ pageTitle: 'B', settings: { inPageHeadingResolution: 'automatic' } }),
+      ...testHost({
+        page: { id: '3', title: 'B', path: PATH },
+        settings: { inPageHeadingResolution: 'automatic' },
+      }),
       connections: () => connections,
     },
     onChange: (body: string) => {

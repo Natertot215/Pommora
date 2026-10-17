@@ -55,6 +55,23 @@ from `editor-parity/worktree.sh`, group 6 times that build instead, skipping the
 before it lacks. It seeds `Collection A/Set Alpha` with its properties, a table view, and `Drive …`
 pages on debug port 9373.
 
+`Path Links Drive/live-drive.mjs` drives Path Links end to end, in eight groups that follow the
+plan's phases: the read path (every path, tail, `.md`, heading, relative, and case spelling in both
+syntaxes, drawn in a page body, a markdown table's resting and editing cells, a Text value at rest and
+in TextPane, a Link value at rest and in its field, and the Properties panel, plus the Link field's
+commit, sort, filter, the link menu, and File values left as files); the index's link keys and
+generation; the writers and the picker; one search; the click rule; the in-app re-spell across
+renames, moves, folder renames, collisions, Space values, and markdown tiles; the outside-move lane,
+made with direct writes to `~/Test` and a closed-app rename across a relaunch; and the Trash's strip,
+record, restore, and repair. Each item names the decision it proves and the phase that owns it, and an
+item owned by a phase later than `POMMORA_PL_LANDED` (default 1) prints `AWAIT` and leaves the exit
+code alone, so the drive runs whole at every phase. It takes the groups to run as arguments —
+`node live-drive.mjs 1 6` — and `scale` opens `~/Benchmark-Medium` (from `make-benchmark-nexus.mjs`),
+seeds a Twin in every Set, a page of fifty path links, and a path Link value on every page of its first
+Collection, and times the Link column's open, the decoration build on caret moves and edits, and a
+native caret move. It seeds `Collection A/Set Alpha` and its neighbors with real duplicates and
+`PL …` pages on debug port 9383, and exits non-zero on any failed check a landed phase owns.
+
 The drives share `drive-harness.mjs`, which builds the app, backs up `~/Test`, launches the build
 with its own userData and the drive's debug port, writes a screenshot of each state to
 `$POMMORA_DRIVE_SHOTS` (a per-drive folder in the system temp directory otherwise), and restores

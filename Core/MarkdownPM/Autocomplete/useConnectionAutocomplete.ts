@@ -17,6 +17,7 @@ import type { MarkdownScope } from '../Engine/detect'
 import { normalizeTitle } from '../../Paths/caseFold'
 import { restedOnLink } from '../Links/linkReveal'
 import { keptShown } from '../Links/linkSettle'
+import { headingMissing } from '../Links/connectionsApi'
 import type { AutocompletePaneProps } from './AutocompletePane'
 import { acQuery, closeAcQuery } from './acQuery'
 import type { PageHeading } from '../../Platform/stores'
@@ -105,18 +106,27 @@ export function useConnectionAutocomplete(
     const conn = host.connections()
     if (!conn) return []
     if (part === 'shown') return aliasRows(host.aliases, page?.id, q)
-    return conn.index.candidates(q, AC_MAX).map((p) => pageRow(p, host))
+    const held = conn.index.resolve(q).status === 'ambiguous' ? conn.index.holders(q) : []
+    const more = conn.index.candidates(q, AC_MAX).filter((p) => !held.includes(p))
+    return [...held, ...more].map((p) => pageRow(p, host))
   }
-  // A query that names its one match exactly is a finished link, so the caret resting in one opens nothing; Back is the exception.
+  // A finished link opens nothing: a title that resolves (an ambiguous one stays open, for the pick that settles it), a heading its outline holds, or an alias the page remembers; Back is the exception.
   const candidates = useMemo(() => {
     if (query === null) return []
+    const q = normalizeTitle(query)
+    const finished = closed && q !== normalizeTitle(backedTo ?? '')
+    if (
+      finished &&
+      part === 'title' &&
+      host.connections()?.index.resolve(query).status === 'resolved'
+    )
+      return []
     const found = heading
       ? query === ''
         ? openHeadingRows(allHeadingRows, collapsed)
         : allHeadingRows
       : lookup(query)
-    const exact = found.length === 1 && normalizeTitle(found[0].value) === normalizeTitle(query)
-    if (exact && closed && normalizeTitle(query) !== normalizeTitle(backedTo ?? '')) return []
+    if (finished && part !== 'title' && found.some((r) => normalizeTitle(r.value) === q)) return []
     return found
   }, [query, closed, part, page, host, aliasEpoch, heading, allHeadingRows, collapsed, backedTo])
 
@@ -130,6 +140,15 @@ export function useConnectionAutocomplete(
     if (!view || !ac || !ctl.current.open) return
     const settings = host.settings()
     const conn = host.connections()
+    const name =
+      row.kind === 'page' ? (conn?.index.writtenName(row.page.path) ?? row.value) : row.value
+    const keptHeading =
+      row.kind === 'page' &&
+      !opts.openHeading &&
+      ac.heading &&
+      !headingMissing(conn, { kind: 'page', page: row.page, heading: ac.heading }, undefined)
+        ? ac.heading
+        : undefined
     // How the link read before this edit began decides whether its shown text survives a re-aim, of its title or its heading.
     const kept =
       ac.shown &&
@@ -141,15 +160,15 @@ export function useConnectionAutocomplete(
           {
             kind: 'page',
             syntax: ac.syntax === 'markdown' ? 'markdown' : 'wiki',
-            title: ac.part === 'heading' ? (ac.title ?? '') : row.value,
-            heading: ac.part === 'heading' ? row.value : undefined,
+            title: ac.part === 'heading' ? (ac.title ?? '') : name,
+            heading: ac.part === 'heading' ? row.value : keptHeading,
           },
           settings.removeTitleOnLinkChange,
           conn?.index,
         ))
         ? ac.shown
         : undefined
-    const pageId = row.kind === 'page' ? row.pageId : ac.title ? page?.id : undefined
+    const pageId = row.kind === 'page' ? row.page.id : ac.title ? page?.id : undefined
     // A page or heading pick opens the alias stage on a link left showing nothing, for a page that remembers aliases.
     const openAlias =
       ac.part !== 'shown' &&
@@ -159,8 +178,9 @@ export function useConnectionAutocomplete(
       pageId !== undefined &&
       host.aliases.list(pageId).length > 0
     const opensSlot = openAlias || opts.openHeading
-    const { changes, anchor } = commitEdit(ac, row.value, {
+    const { changes, anchor } = commitEdit(ac, name, {
       kept,
+      heading: keptHeading,
       openAlias,
       openHeading: opts.openHeading,
     })

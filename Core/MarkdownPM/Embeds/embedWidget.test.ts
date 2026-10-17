@@ -110,14 +110,6 @@ describe('the webpage formation gate', () => {
   })
 })
 
-describe('webpage labels never enter the page exclusions', () => {
-  it('a tile labeled like an existing Page leaves that Page pickable', () => {
-    const state = mk(`![Alpha](${URL})`)
-    expect(embedTileRanges(state)).toHaveLength(1)
-    expect(embedExclusions(state).has('alpha')).toBe(false)
-  })
-})
-
 describe('a page is excluded from embedding itself', () => {
   const self = (doc: string, title?: string): EditorState =>
     EditorState.create({
@@ -128,8 +120,8 @@ describe('a page is excluded from embedding itself', () => {
       ],
     })
 
-  it('the host title is excluded with no chain above it', () => {
-    expect(embedExclusions(self('text', 'Alpha')).has('alpha')).toBe(true)
+  it('the host path is excluded with no chain above it', () => {
+    expect(embedExclusions(self('text', 'Alpha')).has('Alpha.md')).toBe(true)
   })
 
   it('a surface naming no page excludes nothing of its own', () => {
