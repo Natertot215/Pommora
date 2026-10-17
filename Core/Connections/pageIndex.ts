@@ -52,6 +52,10 @@ export interface PageIndex {
   writtenName: (path: string, like?: string) => string
   /** The keys that name the page at `path` and resolve to it: the tails of its path, shortest first. */
   namesOf: (path: string) => string[]
+  /** How `key`, which named `page` before, spells it now: null to leave the link as written, when the key still names the page and the page's path at the key's depth is unchanged from `oldPath` byte for byte (a case-only rename changes it); else the written name at the key's depth. */
+  respell: (key: string, page: ConnPage, oldPath?: string) => string | null
+  /** The page each id names, first listed where two files claim one. */
+  readonly byId: ReadonlyMap<string, ConnPage>
   candidates: (query: string, limit?: number) => ConnPage[]
 }
 
@@ -66,14 +70,23 @@ export function buildPageIndex(pages: readonly ConnPage[]): PageIndex {
   }
   // Sorted and keyed on the first autocomplete, not at build: the index rebuilds whenever the pages change, and most builds (the host's always) never reach a picker.
   let alphabetical: { p: ConnPage; key: MatchKey }[] | null = null
+  let byId: Map<string, ConnPage> | undefined
+  const pathKeyMemo = new Map<ConnPage, string>()
+  const pathKeyOf = (p: ConnPage): string => {
+    const held = pathKeyMemo.get(p)
+    if (held !== undefined) return held
+    const k = pageKey(p.path)
+    pathKeyMemo.set(p, k)
+    return k
+  }
   // A key holding `/` names a page by a tail of its path: the full path first, otherwise the title's holders whose path ends with it; several, or two paths folding to one, read Ambiguous.
   const holdersOf = (raw: string): readonly ConnPage[] => {
     const key = pageKey(raw)
     const cut = key.lastIndexOf('/')
     const titled = byTitle.get(key.slice(cut + 1)) ?? []
     if (cut < 0) return titled
-    const exact = titled.filter((p) => pageKey(p.path) === key)
-    return exact.length ? exact : titled.filter((p) => pageKey(p.path).endsWith(`/${key}`))
+    const exact = titled.filter((p) => pathKeyOf(p) === key)
+    return exact.length ? exact : titled.filter((p) => pathKeyOf(p).endsWith(`/${key}`))
   }
   const resolve = (raw: string): ConnResolution => {
     const holders = holdersOf(raw)
@@ -81,14 +94,28 @@ export function buildPageIndex(pages: readonly ConnPage[]): PageIndex {
     if (holders.length > 1) return { status: 'ambiguous' }
     return { status: 'resolved', page: holders[0] }
   }
+  const writtenName = (path: string, like = ''): string => {
+    const tail = tailOf(path, like.split('/').length)
+    return resolve(tail).page?.path === path ? tail : stripMarkdownExt(path)
+  }
   return {
     holders: holdersOf,
     resolve,
-    writtenName(path, like = '') {
-      const tail = tailOf(path, like.split('/').length)
-      return resolve(tail).page?.path === path ? tail : stripMarkdownExt(path)
-    },
+    writtenName,
     namesOf: (path) => pathKeys(path).filter((k) => resolve(k).page?.path === path),
+    respell(key, page, oldPath = page.path) {
+      const depth = key.split('/').length
+      const keeps =
+        resolve(key).page?.id === page.id && tailOf(oldPath, depth) === tailOf(page.path, depth)
+      return keeps ? null : writtenName(page.path, key)
+    },
+    get byId() {
+      if (!byId) {
+        byId = new Map()
+        for (const p of pages) if (!byId.has(p.id)) byId.set(p.id, p)
+      }
+      return byId
+    },
     candidates(query, limit = 20) {
       alphabetical ??= pages
         .map((p) => ({ p, key: matchKey(p.title, relDirname(p.path)) }))

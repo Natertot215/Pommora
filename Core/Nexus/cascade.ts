@@ -12,6 +12,7 @@ import {
 import { byFoldedName } from '../Properties/properties'
 import { editCaches } from '../Properties/propertyCache'
 import { heldTreeOf, liveTreeOf } from './liveTree'
+import { pageIndexOf, pagesOf } from './record'
 import type { NexusTree } from './tree'
 import { withheldIn } from './treePatch'
 import {
@@ -25,12 +26,12 @@ import { nexusCorpus } from '../Index/indexSeed'
 import { linkDefsOf } from '../Properties/propertiesRegistry'
 import { linkKeysOf } from '../Properties/schema'
 import { readLiveSetting } from '../Settings/settings'
-import { rewriteTileConnections, tilesLinkHeading } from '../Tiles/tilesFile'
+import { rewriteTileConnections, tilesLink } from '../Tiles/tilesFile'
 import type { TilesChanged } from '../Tiles/tiles'
 import { linkEntry } from '../Connections/linkValue'
-import { pageKey } from '../Connections/pageIndex'
+import { buildPageIndex, pageKey, pathKeys } from '../Connections/pageIndex'
 import { gonePageEntry } from '../Properties/propertyValue'
-import { liveIdIndex, livePathOf, titleHeldOutside } from './heldPages'
+import { liveIdIndex, livePathOf } from './heldPages'
 import { ID_KEY } from './identityMark'
 import { asString } from './coerce'
 
@@ -63,24 +64,24 @@ export const joinCascades = (a: CascadeReport, b: CascadeReport): CascadeReport 
   warning: [a.warning, b.warning].filter(Boolean).join(' ') || undefined,
 })
 
-/** A delete strips every Link property value naming a page it took from the pages and Spaces the tree holds outside it, unless a page outside it still answers that title; bodies keep their links and read unresolved. Nothing at or under `abs` is swept, since it left with the delete. */
+/** A delete strips every Link property value naming a page it took, by any key that now resolves to nothing, from the pages and Spaces the tree holds outside it; a key a page outside still answers is left to that page, and bodies keep their links and read unresolved. Nothing at or under `abs` is swept, since it left with the delete. */
 export async function deleteCascade(
   root: string,
   abs: string,
-  titles: string[],
+  paths: readonly string[],
 ): Promise<DeleteCascade> {
   const deleted = relative(root, abs)
   const inside = (rel: string): boolean => isAtOrUnder(rel, deleted)
-  const gone = new Set(
-    titles.filter((t) => !titleHeldOutside(root, t, deleted)).map(normalizeTitle),
-  )
   const tree = heldTreeOf(root)
+  // The held tree may still list the deleted pages, since its patch can fall to a walk, so they're left out by path; with no tree, nothing answers and every key strips.
+  const after = buildPageIndex(tree ? pagesOf(tree).filter((p) => !inside(p.path)) : [])
+  const gone = new Set(paths.flatMap(pathKeys).filter((k) => after.resolve(k).status === 'phantom'))
   try {
     const defs = byFoldedName(linkDefsOf(tree?.config.registry ?? []))
     if (!defs.size || !gone.size) return { cascade: { pages: [], hosts: [] }, links: [] }
     const rels = queryMentions([...gone]) ?? (await nexusCorpus(root))
     const goneEntry = (value: unknown): string | null =>
-      gonePageEntry(value, { holds: (t) => !gone.has(normalizeTitle(t)) })
+      gonePageEntry(value, { holds: (t) => !gone.has(pageKey(t)) })
     const named = (raw: Record<string, unknown>) =>
       Object.entries(raw).flatMap(([key, held]) => {
         const def = defs.get(foldKey(key))
@@ -140,37 +141,37 @@ export async function deleteCascade(
   }
 }
 
-/** A page rename sweeps the files the index names, or the whole corpus before there is one; a heading rename sweeps what a ready index names and the page itself always, since its own bare fragments are keyed to no page, and a corpus scan per heading edit is an on-every-edit cost. Markdown tiles sit outside the index: a title rename reads every one, and a heading rename reads them when one links the heading. `settled` says the page's editor already rewrote its own body; its frontmatter still takes the patch. */
+/** A re-spell sweeps the files the index names under the map's keys, or the whole corpus before there is one; a heading rename sweeps what a ready index names under the page's keys and the page itself always, since its own bare fragments are keyed to no page, and a corpus scan per heading edit is an on-every-edit cost. Markdown tiles sit outside the index, so a cached list of what they link gates their read. `settled` says the page's editor already rewrote its own body; its frontmatter still takes the patch. */
 export async function renameCascade(
   root: string,
   change: CascadeChange,
   settled = false,
 ): Promise<CascadeReport> {
-  const heading = 'heading' in change ? change : null
-  const title = 'title' in change ? change.title : titleFromPath(change.path)
-  const named = heading === null ? title : `${title}#${heading.heading}`
-  const titleKey = pageKey(title)
-  const keys = new Set([titleKey])
-  const headingKey = heading ? normalizeTitle(heading.heading) : ''
+  const headingKey = 'names' in change ? undefined : normalizeTitle(change.heading)
+  const named = 'names' in change ? change.label : `${titleFromPath(change.path)}#${change.heading}`
   try {
+    const tree = await liveTreeOf(root)
+    const keys = new Set(
+      'names' in change ? change.names.keys() : pageIndexOf(tree).namesOf(change.path),
+    )
     const rels =
-      heading === null
-        ? (queryMentions([titleKey]) ?? (await nexusCorpus(root)))
-        : [...(queryHeadingMentions(headingKey, [titleKey]) ?? []), heading.path]
+      'names' in change
+        ? (queryMentions([...keys]) ?? (await nexusCorpus(root)))
+        : [...(queryHeadingMentions(headingKey!, [...keys]) ?? []), change.path]
     const runs =
-      heading !== null && (await readLiveSetting(root, 'inPageHeadingResolution')) === 'automatic'
+      !('names' in change) &&
+      (await readLiveSetting(root, 'inPageHeadingResolution')) === 'automatic'
     const rewrite = (text: string, own = false, outlineOf = text): string =>
-      heading === null
-        ? rewriteConnections(text, title, change.to)
+      'names' in change
+        ? rewriteConnections(text, change.names)
         : rewriteHeadingConnections(
             text,
             keys,
-            heading.heading,
-            heading.to,
+            change.heading,
+            change.to,
             own,
             runs && own ? headingOutline(outlineOf).map((h) => h.text) : undefined,
           )
-    const tree = await liveTreeOf(root)
     const defs = tree.config.registry
     const holds = linkKeysOf(defs)
     const patchOf = (
@@ -197,7 +198,7 @@ export async function renameCascade(
     const text = (content: string, file: string): string | null => {
       const { body } = splitEnvelope(content)
       const rel = relative(root, file)
-      const own = rel === heading?.path
+      const own = !('names' in change) && rel === change.path
       const patch = patchOf(splitFrontmatter(content), holds, own, body)
       const keys = Object.keys(patch)
       const next = own && settled ? body : rewrite(body, own)
@@ -210,11 +211,10 @@ export async function renameCascade(
       text,
       ...spaceArm(tree, spaceMoved),
     })
-    const tiles =
-      'title' in change || (await tilesLinkHeading(root, titleKey, headingKey))
-        ? await rewriteTileConnections(root, rewrite)
-        : { hosts: [], failed: 0 }
-    // A heading edit settles often and a cached Link still reaches its page, so only a title reaches the caches. A block holds one property's values, so every entry holds links when the property does.
+    const tiles = (await tilesLink(root, keys, headingKey))
+      ? await rewriteTileConnections(root, rewrite)
+      : { hosts: [], failed: 0 }
+    // A heading edit settles often and a cached Link still reaches its page, so only a re-spell reaches the caches. A block holds one property's values, so every entry holds links when the property does.
     const cachedIds = new Set(defs.filter((d) => holds(d.name)).map((d) => d.id))
     const movedCache = (values: Record<string, unknown>): Record<string, unknown> | null =>
       withPatch(
@@ -222,7 +222,7 @@ export async function renameCascade(
         patchOf(values, () => true),
       )
     const uncached =
-      'title' in change ? await editCaches(root, tree.collections, cachedIds, movedCache) : 0
+      'names' in change ? await editCaches(root, tree.collections, cachedIds, movedCache) : 0
     const unmoved = swept.skipped.length + tiles.failed + uncached
     return {
       pages: [...swept.touched.keys()].filter(isMarkdownFile).map((file) => relative(root, file)),

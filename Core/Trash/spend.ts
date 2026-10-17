@@ -21,9 +21,10 @@ import { exclusionWriteRefusal, readLiveSetting, reseatExcludedFolders } from '.
 import { sweepRootsById } from '../Properties/governedSweep'
 import { heldValue, joinValues, landValue, writeTarget } from '../Files/heldKeys'
 import { rewriteConnections } from '../Connections/rewrite'
+import { pageKey } from '../Connections/pageIndex'
 import { linkDefsOf } from '../Properties/propertiesRegistry'
 import { refillValues } from '../Properties/assignment'
-import { BUNDLE_SUFFIX } from './bundle'
+import { BUNDLE_SUFFIX, deletedPathOf } from './bundle'
 import { pathExists, relocate, rmwJsonStrict } from '../Files/atomicWrite'
 import { dropPageMetadata } from '../Nexus/pageMetadata'
 import { dropSpaceOrder } from '../Nexus/reorder'
@@ -81,7 +82,11 @@ export async function emptyBundle(
   if (opened.value.entity === 'context') await dropSpaceOrder(root, opened.value.registry.id)
   // Permanent now: a Link value naming one of its pages, recorded by the delete or taken up since, names nothing any more unless another bundle holds that title.
   const gone = pages.length
-    ? await deleteCascade(root, artifactAbs, pages.map(titleFromPath))
+    ? await deleteCascade(
+        root,
+        artifactAbs,
+        pages.map((file) => deletedPathOf(root, bundleAbs, file)),
+      )
     : null
   recordWrite(bundleAbs)
   await machine().remove(bundleAbs)
@@ -262,7 +267,9 @@ async function restoreArtifact(
           .filter((l) => l.property === def.id)
           .map((l) => [
             l.page,
-            landed === was ? l.value : rewriteConnections(l.value, was, landed),
+            landed === was
+              ? l.value
+              : rewriteConnections(l.value, new Map([[pageKey(was), landed]])),
           ]),
       )
       const taken = await refillValues(root, def, roots, all, frozen)

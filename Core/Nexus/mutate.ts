@@ -2,7 +2,7 @@
 
 import { setOrDrop } from '../Files/atomicWrite'
 import { patchSidecar } from '../Files/sidecar'
-import { isMarkdownFile } from '../Paths/posix'
+import { isMarkdownFile, titleFromPath } from '../Paths/posix'
 import { resolveUnderRoot } from '../Paths/pathSafety'
 import { contextsDir } from '../Paths/paths'
 import { machine } from '../Platform/machine'
@@ -24,7 +24,13 @@ import {
 } from '../Contexts/contextWrite'
 import { renameContextOp, renameSpaceOp, type Unswept } from '../Contexts/contextCascade'
 import { reorderContextsOp } from '../Contexts/reorderContexts'
-import { done, seedsContext, type MutateReply, type MutateRequest } from './mutateRequest'
+import {
+  DEFAULT_NEW_NAME,
+  done,
+  seedsContext,
+  type MutateReply,
+  type MutateRequest,
+} from './mutateRequest'
 import { CONTAINER_KINDS } from './entities'
 import { setActiveView } from '../Views/viewsFile'
 import type { TrashDeps } from '../Trash/bundle'
@@ -32,12 +38,13 @@ import { createContainerOp, createPageOp, createSpaceOp } from './create'
 import { movePageOp, moveSetOp } from './move'
 import { editPageAliases, writePageMeta } from './pageMetadata'
 import { renameOp } from './rename'
-import { renameCascade } from './cascade'
+import { type CascadeReport, joinCascades, renameCascade } from './cascade'
 import { setChildOrder, setCollectionOrder, setPanelContextOrder, setSpaceOrder } from './reorder'
 import { liveTreeOf, mutableTarget } from './liveTree'
 import { oweRetry, oweWalk } from './fileEvents'
 import { reachReport } from './configReach'
-import { payOwedWalk } from './settle'
+import { inSettleTurn, payOwedWalk, relink, settledIndex } from './settle'
+import { pageMoves } from './record'
 
 export interface MutateContext {
   root: string
@@ -78,32 +85,64 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
         await payOwedWalk(root)
       }
     })
+  // A write that moves, adds, sweeps, or removes a page runs in the settle's turn, nested inside `underContexts` rather than around it, since that lock's `finally` takes a turn of its own. One that can move or add a page re-spells by the index's difference across it: a first commit's rename arrives without moving, so a stale link to the name the page was born with never follows it, and a page created under the default name is no arrival, since its first commit is where it arrives.
+  const addressed = (
+    req: Extract<MutateRequest, { op: 'createPage' | 'rename' | 'movePage' | 'moveSet' }>,
+    fn: () => Promise<MutateReply>,
+  ): Promise<MutateReply> =>
+    inSettleTurn(root, async () => {
+      const before = await settledIndex(root)
+      const reply = await fn()
+      if (!reply.ok) return reply
+      const after = await settledIndex(root)
+      const firstCommit = req.op === 'rename' && req.fromCreate === true
+      const label =
+        req.op === 'createPage' ? req.name : firstCommit ? req.newName : titleFromPath(req.path)
+      let cascade: CascadeReport | undefined = {
+        pages: [],
+        hosts: [],
+        warning: `Links to “${label}” weren't updated.`,
+      }
+      if (before && after) {
+        const { moved, arrived } = pageMoves(before.byId, after.byId)
+        const arrivals = req.op === 'createPage' && req.name === DEFAULT_NEW_NAME ? [] : arrived
+        const stayed = firstCommit ? [] : moved
+        cascade = await relink(root, before, after, label, stayed, [...moved, ...arrivals])
+      }
+      if (!cascade) return reply
+      return ok({
+        ...reply.value,
+        cascade: reply.value.cascade ? joinCascades(reply.value.cascade, cascade) : cascade,
+      })
+    })
   switch (req.op) {
     case 'createPage':
       return seedsContext(req)
-        ? underContexts(() => createPageOp(ctx, req))
-        : createPageOp(ctx, req)
+        ? underContexts(() => addressed(req, () => createPageOp(ctx, req)))
+        : addressed(req, () => createPageOp(ctx, req))
 
     case 'createContainer':
       return createContainerOp(ctx, req)
 
     case 'rename':
-      return renameOp(ctx, req)
+      return addressed(req, () => renameOp(ctx, req))
 
     case 'renameHeading':
-      return ok({ cascade: await renameCascade(root, req, true) })
+      return inSettleTurn(root, async () => ok({ cascade: await renameCascade(root, req, true) }))
 
     case 'delete':
       return req.kind === 'space' || req.kind === 'context'
-        ? underContexts(() => deleteOp(ctx, req))
-        : deleteOp(ctx, req)
+        ? underContexts(() => inSettleTurn(root, () => deleteOp(ctx, req)))
+        : inSettleTurn(root, () => deleteOp(ctx, req))
 
     case 'restore':
-      return underContexts(() => restoreOp(ctx, req))
+      return underContexts(() => inSettleTurn(root, () => restoreOp(ctx, req)))
 
     case 'emptyBundle': {
       const resolved = await resolveUnderRoot(root, req.bundlePath)
-      return resolved.ok ? emptyBundle(root, resolved.value, deps) : resolved
+      return resolved.ok
+        ? inSettleTurn(root, () => emptyBundle(root, resolved.value, deps))
+        : resolved
     }
 
     case 'setProfileImage':
@@ -154,10 +193,10 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
       return editPageAliases(root, req.path, req.edit)
 
     case 'movePage':
-      return movePageOp(ctx, req)
+      return addressed(req, () => movePageOp(ctx, req))
 
     case 'moveSet':
-      return moveSetOp(ctx, req)
+      return addressed(req, () => moveSetOp(ctx, req))
 
     case 'reorderChildren': {
       const parent = await mutableTarget(root, req.parentPath, CONTAINER_KINDS)

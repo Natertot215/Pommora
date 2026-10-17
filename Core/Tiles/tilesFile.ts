@@ -189,7 +189,7 @@ export async function restoreTile(dir: string, removed: unknown): Promise<Result
   }
   const written = await seatTile(dir, removed.entry, (layout) =>
     insertBand(layout, at?.band ?? layout.bands.length, id, at?.h ?? NEW_TILE_H),
-  ).finally(dropTileHeadingLinks)
+  ).finally(dropTileLinks)
   return landed(written, {})
 }
 
@@ -249,7 +249,7 @@ export async function writeMarkdownTile(
     const held = await machine().readText(file)
     if (held !== null && machine().sha256Hex(held) !== baseHash) return { stale: true }
     await atomicWriteFile(file, body, true)
-    dropTileHeadingLinks()
+    dropTileLinks()
     return { stale: false, hash: machine().sha256Hex(body) }
   })
 }
@@ -264,28 +264,35 @@ const markdownTileIds = async (dir: string): Promise<string[] | null> => {
   })
 }
 
-let tileHeadingLinks: { root: string; keys: Promise<Set<string>> } | null = null
+let tileLinks: { root: string; keys: Promise<Set<string>> } | null = null
 
-export const dropTileHeadingLinks = (): void => {
-  tileHeadingLinks = null
+export const dropTileLinks = (): void => {
+  tileLinks = null
 }
 
-async function readTileHeadingLinks(root: string): Promise<Set<string>> {
+/** Every key a markdown tile links, and every `key\0heading` where it names a heading: what no index holds, read once per tree. */
+async function readTileLinks(root: string): Promise<Set<string>> {
   const keys = new Set<string>()
   for (const { dir } of tileHostsOf(root, await liveTreeOf(root)).hosts)
     for (const id of (await markdownTileIds(dir)) ?? [])
-      for (const hit of linksIn(valueOr(await readMarkdownTile(dir, id), '')))
+      for (const hit of linksIn(valueOr(await readMarkdownTile(dir, id), ''))) {
+        keys.add(hit.target)
         if (hit.qualifier) keys.add(`${hit.target}\0${hit.qualifier}`)
+      }
   return keys
 }
 
-export function tilesLinkHeading(
+export function tilesLink(
   root: string,
-  normalizedTitle: string,
-  normalizedHeading: string,
+  normalizedKeys: Iterable<string>,
+  normalizedHeading?: string,
 ): Promise<boolean> {
-  if (tileHeadingLinks?.root !== root) tileHeadingLinks = { root, keys: readTileHeadingLinks(root) }
-  return tileHeadingLinks.keys.then((keys) => keys.has(`${normalizedTitle}\0${normalizedHeading}`))
+  if (tileLinks?.root !== root) tileLinks = { root, keys: readTileLinks(root) }
+  return tileLinks.keys.then((keys) => {
+    for (const k of normalizedKeys)
+      if (keys.has(normalizedHeading === undefined ? k : `${k}\0${normalizedHeading}`)) return true
+    return false
+  })
 }
 
 export async function rewriteTileConnections(
@@ -309,7 +316,7 @@ export async function rewriteTileConnections(
       else if (landed) wrote.push(id)
     }
     if (!wrote.length) continue
-    dropTileHeadingLinks()
+    dropTileLinks()
     if (host) hosts.push({ host, ids: wrote })
   }
   return { hosts, failed }

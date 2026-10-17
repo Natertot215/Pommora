@@ -13,7 +13,7 @@ import type { SyncStatus } from '../Sync/Contract/wire'
 import { applyDelta } from '../Nexus/treeDelta'
 import { stabilize } from '../Nexus/treeStabilize'
 import { applyPersonalization } from '../Settings/applyPersonalization'
-import { pagesByIdOf } from '../Nexus/record'
+import { pageMoves, pagesByIdOf } from '../Nexus/record'
 import { reconcileIndexOf } from '../Nexus/treeIndex'
 import { headingKeys, type PageHeadings } from '../Connections/pageIndex'
 import { tileDocsSettled } from '../Tiles/tileDocStore'
@@ -31,9 +31,10 @@ export function movedHeadings(
   after: ReadonlyMap<string, { path: string }>,
 ): Record<string, PageHeadings> {
   let next = headings
-  for (const [id, { path: was }] of before) {
-    const now = after.get(id)?.path
-    if (now === undefined || now === was || !(was in headings)) continue
+  for (const id of pageMoves(before, after).moved) {
+    const was = before.get(id)?.path ?? ''
+    const now = after.get(id)?.path ?? ''
+    if (!(was in headings)) continue
     if (next === headings) next = { ...headings }
     next[now] = headings[was]
     delete next[was]
@@ -236,7 +237,8 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       const held = get().tree
       const moves = req.op === 'rename' || req.op === 'movePage' || req.op === 'moveSet'
       // A save queued for a file this op moves or rewrites would land on the old path or go stale.
-      if (moves || req.op === 'renameHeading' || req.op === 'delete') await flushAllSaves()
+      if (moves || req.op === 'createPage' || req.op === 'renameHeading' || req.op === 'delete')
+        await flushAllSaves()
       // A flush held by a Nexus switch resumes after it, when the path this op names belongs to the Nexus it left.
       if (get().tree?.nexus.id !== held?.nexus.id) return null
       const res = await dialer().ask('mutate', req)
