@@ -136,7 +136,7 @@ The work lands in nine phases in dependency order, each the largest run one agen
   - [x] Task 3-1 · One written name at every writer, and `EditorHost.page()`
   - [x] Task 3-2 · The picker writes the written name, keeps a held heading, and closes on resolution
   - [x] Review Checkpoint
-- [ ] `[Compaction checkpoint: c/pre-compaction]`
+- [x] `[Compaction checkpoint: c/pre-compaction]`
 - [ ] **Phase 4** — One Search
   - [ ] Task 4-1 · Highlighting goes
   - [ ] Task 4-2 · The one matcher, and every search on it
