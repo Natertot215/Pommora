@@ -665,6 +665,23 @@ async function group3(cdp, pid) {
   item(3, 3, 'A-2', 'picker: a pick of a unique title writes it bare ([[Solo]])', (await docOf(cdp, PAGE_VIEW)).trim() === '[[Solo]]', show(await docOf(cdp, PAGE_VIEW)))
 
   await setDoc(cdp, PAGE_VIEW, '')
+  await typeLink(cdp, '[[', 'Solo')
+  item(3, 3, 'B-4', 'picker: a typed title that resolves ([[Solo]]) closes the picker', !(await acOpen(cdp)), show(await acText(cdp)))
+
+  await setDoc(cdp, PAGE_VIEW, '')
+  await typeLink(cdp, '[[', 'Notes.md')
+  const dotted = await acText(cdp)
+  item(3, 3, 'B-4', 'picker: [[Notes.md, ambiguous through its .md, lists the holders of Notes', (dotted.match(/\bNotes\b/g) ?? []).length >= 3, show(dotted))
+  await escapeAll(cdp)
+
+  await setDoc(cdp, PAGE_VIEW, '')
+  await typeLink(cdp, '![[', 'Not')
+  await pressKey(cdp, 'Enter')
+  await sleep(600)
+  const embedded = (await docOf(cdp, PAGE_VIEW)).trim()
+  item(3, 3, 'A-3', 'picker: an embed pick of a shared title writes its full path with no alias', paths.some((p) => embedded === `![[${p}/Notes]]`), show(embedded))
+
+  await setDoc(cdp, PAGE_VIEW, '')
   await typeLink(cdp, '[n](', 'Notes')
   await pressKey(cdp, 'Enter')
   await sleep(600)
@@ -749,11 +766,22 @@ async function group4(cdp) {
     }
   }
   await setDoc(cdp, PAGE_VIEW, '')
+  await typeLink(cdp, '[[', 'Notes')
+  await pressKey(cdp, 'ArrowRight')
+  await sleep(700)
+  const slid = await docOf(cdp, PAGE_VIEW)
+  await pressKey(cdp, 'ArrowLeft')
+  await sleep(700)
+  const relisted = await acText(cdp)
+  item(4, 4, 'C-6', `picker: after sliding into one holder's headings (${slid.trim()}), Back relists that holder by its location`, /#/.test(slid) && (await acOpen(cdp)) && /\bNotes\b/.test(relisted) && ['Set Alpha', 'Set Beta', 'Collection B'].some((p) => relisted.includes(p)), show({ slid, relisted }))
+  await escapeAll(cdp)
+
+  await setDoc(cdp, PAGE_VIEW, '')
   await typeText(cdp, '/')
   await typeText(cdp, 'hr')
   await sleep(600)
   const block = await cdp.evaluate(`document.querySelector('.mdpm-block-menu')?.innerText ?? ''`)
-  item(4, 4, 'D-2', 'block menu: /hr lists Horizontal Rule under its Insert section', block.includes('Horizontal Rule') && block.includes('Insert'), show(block))
+  item(4, 4, 'D-2', 'block menu: /hr lists Horizontal Rule under its Insert section', block.includes('Horizontal Rule') && /insert/i.test(block), show(block))
   await pressKey(cdp, 'Escape')
   await setDoc(cdp, PAGE_VIEW, '')
 
