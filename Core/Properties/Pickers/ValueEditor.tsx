@@ -6,12 +6,14 @@ import { invalidInput } from '@pommora/uix/Fields/fields.css'
 import { PICKER_PORTAL_ATTR } from '@pommora/uix/Pickers/PickerMenu'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import type { ConnPage } from '../../Connections/pageIndex'
+import type { ConnEditAction } from '../../Actions/connectionMenu'
+import { readOccurrence, resolveLink } from '../../Connections/linkValue'
 import { markdownLink } from '../../Connections/links'
 import { type EditorHost, heldPage, mirrorBody } from '../../MarkdownPM/api'
 import { editorBase } from '../../MarkdownPM/surface'
 import { focusRange } from '../../MarkdownPM/caretPlacement'
 import { drawnLinkAt } from '../../MarkdownPM/decorations'
-import { applyLinkAction } from '../../MarkdownPM/Links/linkEdit'
+import { applyLinkAction, type SlotAction } from '../../MarkdownPM/Links/linkEdit'
 import { linkSettle, type Remembers } from '../../MarkdownPM/Links/linkSettle'
 import { inCaretPane } from '../../MarkdownPM/Menus/caretPane'
 import { formatKeymap } from '../../MarkdownPM/Input/formatKeymap'
@@ -31,7 +33,7 @@ export function ValueEditor({
   host,
   oneLine = false,
   remembers,
-  alias,
+  seat,
   invalid,
   saveRef,
   onCommit,
@@ -42,8 +44,8 @@ export function ValueEditor({
   host: EditorHost
   oneLine?: boolean
   remembers?: Remembers
-  /** Once mounted, seat the caret in the value's alias slot: the Link value's Rename. */
-  alias?: boolean
+  /** Once mounted, the link slot to seat the caret in: Rename seats the alias; otherwise a one-line value that is one unresolved link seats its title; otherwise Edit Link selects the target, and a bare address is its whole target; otherwise the caret rests at the end. */
+  seat?: ConnEditAction
   invalid?: (text: string) => boolean
   saveRef?: RefObject<() => void>
   onCommit: (text: string) => void
@@ -142,12 +144,22 @@ export function ValueEditor({
     viewRef.current = view
     if (invalid) view.dom.setAttribute('aria-invalid', String(invalid(initial)))
     const doc = view.state.doc.toString()
-    if (alias && drawnLinkAt(view, 0)) applyLinkAction(view, 'rename', [0, doc.length])
-    else if (alias) {
+    const tk = drawnLinkAt(view, 0)
+    const action: SlotAction | undefined =
+      seat !== 'rename' &&
+      oneLine &&
+      tk?.range[1] === doc.length &&
+      resolveLink(readOccurrence(doc, tk.link), host.connections()?.index, holder).kind ===
+        'unresolved'
+        ? 'seatTitle'
+        : seat
+    if (tk && action) applyLinkAction(view, action, [0, doc.length])
+    else if (seat === 'rename') {
       // A bare address draws no link token, so Rename gives it the label a markdown link has.
       view.dispatch({ changes: { from: 0, to: doc.length, insert: markdownLink(doc, '') } })
       focusRange(view, 1)
-    } else {
+    } else if (seat === 'editLink') focusRange(view, 0, doc.length)
+    else {
       view.dispatch({ selection: { anchor: doc.length }, scrollIntoView: true })
       view.focus()
     }

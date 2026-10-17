@@ -20,15 +20,21 @@ type LinkEdit =
   | { kind: 'select'; range: Span }
   | { kind: 'write'; from: number; to: number; text: string; awaits?: string; select?: number }
 
+/** The menu's link actions, and the title seat a press on an unresolved link takes. */
+export type SlotAction = LinkAction | 'seatTitle'
+
 export function linkEdit(
   text: string,
   tk: TokenOf<LinkKind>,
-  action: LinkAction,
+  action: SlotAction,
   titles: Pick<EditorHost['linkTitles'], 'get'>,
 ): LinkEdit | null {
   const [s, e] = tk.range
   const [cs, ce] = tk.contentRange
   switch (action) {
+    // The title's end: the picker reads the whole slot wherever the caret sits, and backspace narrows from the end.
+    case 'seatTitle':
+      return { kind: 'select', range: [tk.link.title[1], tk.link.title[1]] }
     case 'rename': {
       if (tk.kind === 'link' || aliasedToken(tk)) return { kind: 'select', range: [cs, ce] }
       const { shown } = tk.link
@@ -70,7 +76,7 @@ function formatted(
   }
 }
 
-export function applyLinkAction(view: EditorView, action: LinkAction, range: Span): void {
+export function applyLinkAction(view: EditorView, action: SlotAction, range: Span): void {
   const tk = drawnLinkAt(view, range[0])
   if (!tk || tk.range[0] !== range[0]) return
   const edit = linkEdit(

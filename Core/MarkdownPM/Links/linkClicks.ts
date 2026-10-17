@@ -61,7 +61,7 @@ function linkUnder(
     heldOf(view),
   )
   const el = (event.target as HTMLElement).closest?.(
-    '.md-connection-resolved, .md-connection-ambiguous, .md-heading-symbol, .md-link',
+    '.md-connection-resolved, .md-connection-ambiguous, .md-connection-phantom, .md-heading-symbol, .md-link',
   )
   return {
     tk,
@@ -134,6 +134,13 @@ export function linkPointer(): Extension {
     // Both gates are required: weblinks wear the link class, not the connection one.
     hoverGate: '.md-connection-resolved, .md-link',
     hitAt: (view, event) => linkUnder(view, apiOf(view), event),
+    // A press that only clamped onto an unresolved link, off its text and a phantom's drawn syntax, stays beside it.
+    seat: (hit, view, event) => {
+      const onSyntax = (event.target as HTMLElement).closest?.('.md-phantom-syntax') != null
+      if (!hit.tk || hit.target.kind !== 'unresolved' || !(hit.onText || onSyntax)) return false
+      applyLinkAction(view, 'seatTitle', hit.range)
+      return true
+    },
     follow: (hit, view, event) =>
       hit.onText ? followTarget(hit.target, apiOf(view), event) : null,
     dwell: (hit, el, glance) => (hit.onText ? dwellTarget(hit.target, glance, el) : null),

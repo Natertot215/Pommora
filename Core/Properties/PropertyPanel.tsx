@@ -60,13 +60,13 @@ import { fetchPageDetail, readPageDetail } from '../Session/pageDetailCache'
 import { popMenu } from '../Actions/menuActions'
 import { showConnectionMenu } from '../Interface/Menus/connectionMenuActions'
 import { valueMenuTarget } from './Cells/valueMenuTarget'
-import type { LinkAction } from '../Actions/connectionMenu'
+import type { ConnEditAction, LinkAction } from '../Actions/connectionMenu'
 import * as s from './property-panel.css'
 import { heldKey } from '../Files/heldKeys'
 import { normalizeTitle } from '../Paths/caseFold'
 import { AliasesRow } from '../Pages/AliasesRow'
 
-type Editing = { id: string; mode: 'picker' | 'editor' | 'popover' } | null
+type Editing = { id: string; mode: 'picker' | 'editor' | 'popover'; seat?: ConnEditAction } | null
 type Field = PaneTarget & { def: PropertyDefinition | null }
 
 const GROUPS = [
@@ -299,7 +299,7 @@ export function PropertyPanel({
       file: () => pickFileInto(def, current, fileChipIndex(from), (next) => commit(def.id, next)),
       picker: editAs('picker'),
       dateTime: editAs('picker'),
-      edit: editAs('editor'),
+      edit: ({ seat }) => setEditing({ id: def.id, mode: 'editor', seat }),
       rename: editAs('popover'),
       popover: editAs('popover'),
       hide: () => emptyRow(def.id, false),
@@ -412,6 +412,7 @@ export function PropertyPanel({
                   current={current}
                   holder={holderOf(row, ctx)}
                   connections={ctx.connections}
+                  seat={editing.seat}
                   onCommit={(next) => commit(id, next)}
                   onClose={() => setEditing(null)}
                 />
@@ -539,7 +540,7 @@ export function PropertyPanel({
         </div>
         {editing?.mode === 'popover' && editingDef && row && ctx && (
           <PropertyValueInput
-            alias={editingDef.type === 'link'}
+            seat={editingDef.type === 'link' ? 'rename' : undefined}
             popover={{ open: true, triggerRef }}
             def={editingDef}
             holder={holderOf(row, ctx)}

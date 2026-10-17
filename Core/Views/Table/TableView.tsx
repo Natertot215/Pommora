@@ -52,7 +52,7 @@ import { useCellSweep } from './cellSweep'
 import { LineZone, useLineRow } from '@pommora/uix/Interactions/drag'
 import { showConnectionMenu } from '../../Interface/Menus/connectionMenuActions'
 import { valueMenuTarget } from '../../Properties/Cells/valueMenuTarget'
-import type { LinkAction } from '../../Actions/connectionMenu'
+import type { ConnEditAction, LinkAction } from '../../Actions/connectionMenu'
 import { popMenu } from '../../Actions/menuActions'
 
 export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
@@ -100,6 +100,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     rowId: string
     colId: string
     mode: 'picker' | 'editor' | 'popover'
+    seat?: ConnEditAction
     nonce?: number
     fromCreate?: true
   }
@@ -147,7 +148,14 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       },
       picker: editAs('picker'),
       dateTime: editAs('picker'),
-      edit: editAs('editor'),
+      edit: ({ seat }) =>
+        setEditing({
+          rowId: row.id,
+          colId: col.id,
+          mode: 'editor',
+          seat,
+          nonce: ++editNonce.current,
+        }),
       popover: editAs('popover'),
       rename: editAs('popover'),
       hide: null,
@@ -215,6 +223,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
         current={resolveFieldValue(row, col.id, schema)}
         holder={holderOf(row, ctx)}
         connections={ctx.connections}
+        seat={editing.seat}
         onCommit={(next) => commitValue(row, col, next)}
         onClose={() => setEditing(null)}
       />
@@ -255,7 +264,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
         current={resolveFieldValue(row, col.id, schema)}
         holder={holderOf(row, ctx)}
         connections={ctx.connections}
-        alias={def.type === 'link'}
+        seat={def.type === 'link' ? 'rename' : undefined}
         onCommit={(next) => commitValue(row, col, next)}
         onClose={() => setEditing(null)}
       />

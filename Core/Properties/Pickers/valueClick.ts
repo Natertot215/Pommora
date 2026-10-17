@@ -3,7 +3,7 @@
 import type { PropertyValue } from '../propertyValue'
 import type { ColumnLook } from '../columnStyles'
 import type { CellMenuAction } from '../../Actions/cellMenu'
-import type { LinkAction } from '../../Actions/connectionMenu'
+import type { ConnEditAction, LinkAction } from '../../Actions/connectionMenu'
 import { type NumberConfig, type PropertyType, specOf } from '../properties'
 import { barDivisor } from '../formatValue'
 
@@ -12,7 +12,7 @@ export type ValueIntent =
   | { kind: 'picker' }
   | { kind: 'dateTime' }
   | { kind: 'file' }
-  | { kind: 'edit' }
+  | { kind: 'edit'; seat?: ConnEditAction }
   | { kind: 'popover' }
   | { kind: 'rename' }
   | { kind: 'hide' }
@@ -48,7 +48,7 @@ export function valueClickIntent(
 }
 
 const MENU_INTENTS: Partial<Record<CellMenuAction | LinkAction, ValueIntent>> = {
-  editLink: { kind: 'edit' },
+  editLink: { kind: 'edit', seat: 'editLink' },
   'cell:edit': { kind: 'edit' },
   rename: { kind: 'rename' },
   'cell:clear': { kind: 'commit', value: null },

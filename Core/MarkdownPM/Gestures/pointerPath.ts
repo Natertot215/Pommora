@@ -22,6 +22,8 @@ interface PointerSpec<H extends PointerTarget> {
   hoverGate: string
   hitAt: (view: EditorView, event: MouseEvent) => H | null
   follow: (hit: H, view: EditorView, event: MouseEvent) => (() => void) | null
+  /** A seat the hit asks a primary press for; true when it acted. */
+  seat?: (hit: H, view: EditorView, event: MouseEvent) => boolean
   /** Never asked on a host without a glance, which then pays neither the layout read nor the token lookup. */
   dwell: (hit: H, el: Element, glance: Glance) => (() => void) | null
   menu: (hit: H, view: EditorView) => (() => void) | null
@@ -46,6 +48,13 @@ export function pointerHandlers<H extends PointerTarget>(spec: PointerSpec<H>): 
       // LOAD-BEARING: `contextmenu` reads the live caret to decide it is inside the syntax and should stand down, so a fallthrough seats one on every right-press and the menu never appears.
       if (event.button === 2) return go != null
       if (event.button !== 0 || event.shiftKey || event.detail > 1) return false
+      // Strictly inside, unlike `caretInside`: a caret resting at the link's edge isn't editing it, so the seat still applies there.
+      const head = view.state.selection.main.head
+      const inside = view.hasFocus && head > hit.range[0] && head < hit.range[1]
+      if (!inside && spec.seat?.(hit, view, event)) {
+        event.preventDefault()
+        return true
+      }
       // A press that missed the drawn text but clamped inside belongs outside — the zero-width marker that made the coordinate land here would drop the caret inside a label the pointer never touched.
       if (!hit.onText && hit.hidesSyntax && !editingOnPress)
         return seatAtNearerEdge(view, hit.pos, hit.range)

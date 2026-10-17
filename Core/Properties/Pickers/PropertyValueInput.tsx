@@ -5,6 +5,7 @@ import { fillInput } from '@pommora/uix/Fields/fields.css'
 import { FieldPicker } from '@pommora/uix/Pickers/FieldPicker'
 import { solidColorCss } from '@pommora/uix/Theme/ramp'
 import type { ConnPage } from '../../Connections/pageIndex'
+import type { ConnEditAction } from '../../Actions/connectionMenu'
 import type { PropertyDefinition } from '../properties'
 import type { PropertyValue } from '../propertyValue'
 import { editorText, parseEditorValue } from '../parseEditorValue'
@@ -14,13 +15,13 @@ import { useSession } from '../../Session/store'
 import { TextPane } from './TextPane'
 import { ValueEditor } from './ValueEditor'
 
-/** A value typed as text: a Number in the kit's input, a Text value's popover in its pane, and every other value in the one-line editor, which opens on the whole written value and, for the Link value's Rename, seats the caret in its alias slot. A Link value leaves alias memory to the write layer, which remembers once per landed value; a one-line Text field remembers as its edit commits, so a cancelled one remembers nothing. */
+/** A value typed as text: a Number in the kit's input, a Text value's popover in its pane, and every other value in the one-line editor, which opens on the whole written value: Rename in the alias slot, otherwise in the title of a value that is one unresolved link, otherwise in the slot `seat` names, and otherwise with the caret at the end. A Link value leaves alias memory to the write layer, which remembers once per landed value; a one-line Text field remembers as its edit commits, so a cancelled one remembers nothing. */
 export function PropertyValueInput({
   def,
   current,
   holder,
   connections,
-  alias,
+  seat,
   popover,
   onCommit,
   onClose,
@@ -29,7 +30,7 @@ export function PropertyValueInput({
   current: PropertyValue | null
   holder?: ConnPage
   connections?: () => ConnectionsApi | undefined
-  alias?: boolean
+  seat?: ConnEditAction
   popover?: { open: boolean; triggerRef: RefObject<HTMLElement | null> }
   onCommit: (next: PropertyValue | null) => void
   onClose: () => void
@@ -92,7 +93,7 @@ export function PropertyValueInput({
       host={host}
       oneLine
       remembers={def.type === 'link' ? 'never' : 'flush'}
-      alias={alias}
+      seat={seat}
       invalid={invalid}
       onCommit={commit}
       onClose={onClose}

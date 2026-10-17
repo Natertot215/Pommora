@@ -13,7 +13,7 @@ import { GhostSuppress } from '@pommora/uix/Interactions/ghostCreate'
 import { Cell } from '../../Properties/Cells/Cell'
 import { showConnectionMenu } from '../../Interface/Menus/connectionMenuActions'
 import { valueMenuTarget } from '../../Properties/Cells/valueMenuTarget'
-import type { LinkAction } from '../../Actions/connectionMenu'
+import type { ConnEditAction, LinkAction } from '../../Actions/connectionMenu'
 import { PropertyValueInput } from '../../Properties/Pickers/PropertyValueInput'
 import { holderOf, type ValueContext } from '../../Properties/valueContext'
 import { numberBarCapable } from '../../Properties/formatValue'
@@ -56,7 +56,7 @@ export function CardValue({
   allowInlineRemove: boolean
 }): React.JSX.Element {
   const anchorRef = useRef<HTMLSpanElement>(null)
-  const [editing, setEditing] = useState(false)
+  const [editing, setEditing] = useState<{ seat?: ConnEditAction } | null>(null)
   // The view's ghost stands down while this value's native menu or inline field owns the pointer.
   const holdGhost = useContext(GhostSuppress)
   useEffect(() => {
@@ -88,7 +88,7 @@ export function CardValue({
       dateTime: () => open('dateTime'),
       rename: () => open('popover'),
       popover: () => open('popover'),
-      edit: () => setEditing(true),
+      edit: ({ seat }) => setEditing({ seat }),
       hide: () => onHide(column.id),
     })
   }
@@ -146,8 +146,9 @@ export function CardValue({
           current={v}
           holder={holderOf(row, ctx)}
           connections={ctx.connections}
+          seat={editing.seat}
           onCommit={commit}
-          onClose={() => setEditing(false)}
+          onClose={() => setEditing(null)}
         />
       ) : (
         <Cell
