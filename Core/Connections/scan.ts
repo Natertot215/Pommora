@@ -3,6 +3,7 @@
 import { type LinkOccurrence, linkOccurrences, mayHoldLink, type PageName } from './connections'
 import { normalizeTitle } from '../Paths/caseFold'
 import { linkEntry, namedPage, readOccurrence } from './linkValue'
+import { pageKey } from './pageIndex'
 import {
   codeMask,
   type CodeMask,
@@ -21,7 +22,7 @@ interface SectionRun {
 
 const wordChar = /[\p{L}\p{N}_]/u
 
-const titleKey = (raw: string, own: string): string => (raw === '' ? own : normalizeTitle(raw))
+const titleKey = (raw: string, own: string): string => (raw === '' ? own : pageKey(raw))
 
 // A blank title names nothing; a bare fragment names this page, whose key is '' when no title is given, and `[[#]]` names nothing at all.
 const names = (target: string, written: string, qualifier: string): boolean =>

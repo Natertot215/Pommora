@@ -1,4 +1,5 @@
 import { normalizeTitle } from '../Paths/caseFold'
+import { titleFromPath } from '../Paths/posix'
 import {
   defaultLabel,
   encodeLinkTarget,
@@ -85,7 +86,7 @@ function wikiSpans(m: RegExpMatchArray): LinkOccurrence | null {
   }
 }
 
-// The destination splits at its first raw `#` only when the half before names a page, so an address keeps one undivided title; it splits before decoding, so `%23` stays inside the title.
+// The destination splits at its first raw `#` only when the half before names a page, so an address keeps one undivided destination; it splits before decoding, so `%23` stays inside the title.
 function markdownSpans(text: string, [full, label, dest]: [Span, Span, Span]): LinkOccurrence {
   const [from, to] = trimmedRange(text, dest[0], dest[1])
   let hash = from
@@ -125,7 +126,7 @@ export function wholeLink(text: string): LinkOccurrence | null {
   )
 }
 
-/** A page named by title, and by heading where the link names one: the shape every rule and writer below takes. */
+/** A page named by its written page half (a title, or a path from the Nexus root or any tail of one ending in the title), and by heading where the link names one: the shape every rule and writer below takes. */
 export type PageName = { title: string; heading?: string }
 
 /** What the title or heading slot can spell: `|` and `#` would open the next slot, and `]]` or a trailing `]` would close the link. */
@@ -141,7 +142,7 @@ export const spellsAsWiki = (t: PageName & { shown?: string }): boolean =>
   (t.heading === undefined || expressibleInLink(t.heading)) &&
   (t.shown === undefined || aliasSpells(t.shown))
 
-/** Whether shown text only repeats a target, `title` or `title#heading`, so the link draws the same without it: the one drop rule. */
+/** Whether shown text only repeats a target, `title` or `title#heading`, so the link draws the same without it: the one drop rule. The whole written half is compared, so a path link's title alias (`[[A/Notes|Notes]]`, which Obsidian writes, since it shows the path otherwise) is kept rather than dropped. */
 export const repeatsTarget = (shown: string, title: string, heading?: string): boolean =>
   normalizeTitle(shown) === normalizeTitle(heading === undefined ? title : `${title}#${heading}`)
 
@@ -149,15 +150,17 @@ export const repeatsTarget = (shown: string, title: string, heading?: string): b
 export const keepsAlias = (name: string, title: string): boolean =>
   name.trim() !== '' && aliasSpells(name) && !repeatsTarget(name, title)
 
-/** Which part of its target shown text names, the title, the heading, or both, rather than giving it a name: what a rename carries along and what memory never keeps. `H` names the heading of `A#H` without repeating `A#H`, which is `repeatsTarget`'s question. */
+/** Which part of its target shown text names, the title (its basename, whatever path spells it), the heading, or both, rather than giving it a name: what a rename carries along and what memory never keeps. `H` names the heading of `A#H` without repeating `A#H`, which is `repeatsTarget`'s question. */
 export function namesTarget(shown: string, t: PageName): 'title' | 'heading' | 'both' | null {
-  if (repeatsTarget(shown, t.title)) return 'title'
+  const names = (heading?: string): boolean =>
+    repeatsTarget(shown, titleFromPath(t.title), heading) || repeatsTarget(shown, t.title, heading)
+  if (names()) return 'title'
   if (t.heading === undefined) return null
-  if (repeatsTarget(shown, t.heading)) return 'heading'
-  return repeatsTarget(shown, t.title, t.heading) ? 'both' : null
+  if (normalizeTitle(shown) === normalizeTitle(t.heading)) return 'heading'
+  return names(t.heading) ? 'both' : null
 }
 
-/** The one writer of a page link: a wikilink where every slot spells, the markdown form otherwise, its label emptied where the grammar's label can't spell it so the draw gives it the default, so no writer leaves a slot unwritten or writes a link the grammar can't read back. A present-but-empty heading or alias spells its slot (`[[A#]]`, `[[A|]]`): the picker opens a slot by writing it. */
+/** The one writer of a page link: a wikilink where every slot spells, the markdown form otherwise, its label emptied where the grammar's label can't spell it so the draw gives it the default, so no writer leaves a slot unwritten or writes a link the grammar can't read back. A present-but-empty heading or alias spells its slot (`[[A#]]`, `[[A|]]`): the picker opens a slot by writing it. A wikilink spelling a path with no heading and no shown text carries its title as its alias, as Obsidian's writer does, so the link shows the title in every reader. */
 export function pageLinkText(
   t: PageName & { shown?: string },
   prefer: 'wiki' | 'markdown',
@@ -170,9 +173,14 @@ export function pageLinkText(
     return markdownLink(dest, fitsSlot(label) ? label : '')
   }
   const target = heading === undefined ? title : `${title}#${heading}`
-  const named = shown !== undefined && (shown === '' || !repeatsTarget(shown, title, heading))
-  return named ? `[[${target}|${shown}]]` : `[[${target}]]`
+  const alias = carriesTitleAlias(t) ? titleFromPath(title) : shown
+  const named = alias !== undefined && (alias === '' || !repeatsTarget(alias, title, heading))
+  return named ? `[[${target}|${alias}]]` : `[[${target}]]`
 }
+
+/** Whether a wikilink to `t` carries the page's title as its alias: a path with no heading and no shown text, so a reader that doesn't understand paths still reads the title, as Obsidian's writer does since 1.3. The one statement of the rule; the writer asks it, and an embed never does. */
+export const carriesTitleAlias = (t: PageName & { shown?: string }): boolean =>
+  t.shown === undefined && t.heading === undefined && t.title.includes('/')
 
 export function pageEmbedText(title: string): string {
   return `![[${title}]]`
