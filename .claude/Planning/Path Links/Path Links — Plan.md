@@ -154,7 +154,7 @@ The work lands in nine phases in dependency order, each the largest run one agen
   - [x] Task 6-3 · `addressed`: every address operation re-spells by its before-and-after diff, inside the settle's turn
   - [x] Task 6-4 · The delete strips by worlds, and `titleHeldOutside` goes
   - [x] Review Checkpoint
-- [ ] `[Compaction checkpoint: c/pre-compaction]`
+- [x] `[Compaction checkpoint: c/pre-compaction]`
 - [ ] **Phase 7** — The Outside-Move Lane
   - [ ] Task 7-1 · The index names what vanished and what landed
   - [ ] Task 7-2 · The settle pairs and pays
