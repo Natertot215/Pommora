@@ -812,12 +812,13 @@ async function group5(cdp, pid) {
   const CLICK_TEXT = await createAt(cdp, A_ALPHA, 'PL Click Text', { [props[TEXT]]: { kind: 'text', value: 'see [[Nowhere|x]]' } })
   const CLICK_LINK = await createAt(cdp, A_ALPHA, 'PL Click Link', { [props[LINK]]: { kind: 'link', value: '[[Notes|Shared]]' } })
   await sleep(600)
-  setBody(CLICK, `${tagged([['k01', 'x [[Notes|Shared]] y'], ['k02', 'x [[Nowhere|Here]] y'], ['k03', 'x [[Set Beta/Notes|Beta]] y']])}\n| K |\n| --- |\n| k04 [[Nowhere\\|There]] |\n`)
+  // A phantom whose title matches nothing (`Nowhere`) seats the caret but lists no rows, so no pane shows; `Note` is a phantom the Notes pages answer.
+  setBody(CLICK, `${tagged([['k01', 'x [[Notes|Shared]] y'], ['k02', 'x [[Note|Here]] y'], ['k03', 'x [[Set Beta/Notes|Beta]] y']])}\n| K |\n| --- |\n| k04 [[Note\\|There]] |\n`)
   await sleep(1200)
   await home(cdp)
   await openRow(cdp, CLICK)
   const spanIn = async (tag, inner) => cdp.evaluate(`(() => { const d = ${PAGE_VIEW}.state.doc.toString(); const l = d.indexOf('${tag} '); const a = d.indexOf(${JSON.stringify(inner)}, l); return [a, a + ${inner.length}] })()`)
-  for (const [tag, alias, title] of [['k01', 'Shared', 'Notes'], ['k02', 'Here', 'Nowhere']]) {
+  for (const [tag, alias, title] of [['k01', 'Shared', 'Notes'], ['k02', 'Here', 'Note']]) {
     await cdp.evaluate(`(() => { const v = ${PAGE_VIEW}; v.dispatch({ selection: { anchor: v.state.doc.length } }) })()`)
     await sleep(300)
     await mouseClick(cdp, linkEl(`${PAGE_VIEW}.contentDOM`, alias))
@@ -843,7 +844,7 @@ async function group5(cdp, pid) {
   await sleep(300)
   await mouseClick(cdp, linkEl(there, 'There'))
   const opened = await settles(() => cdp.evaluate(`!!document.querySelector('.mdpm-tbl-cell-editor .cm-content')`), 3000)
-  const cellSel = opened ? await cdp.evaluate(`(() => { const v = ${CELL_VIEW}; const d = v.state.doc.toString(); const s = v.state.selection.main; const a = d.indexOf('Nowhere'); return { from: s.from, to: s.to, a, b: a + 7 } })()`) : null
+  const cellSel = opened ? await cdp.evaluate(`(() => { const v = ${CELL_VIEW}; const d = v.state.doc.toString(); const s = v.state.selection.main; const a = d.indexOf('Note'); return { from: s.from, to: s.to, a, b: a + 4 } })()`) : null
   item(5, 5, 'C-1', 'resting table cell: a click on a phantom opens the cell with the caret in its title and the picker open',
     opened && cellSel.from >= cellSel.a && cellSel.to <= cellSel.b && (await acOpen(cdp)), show({ opened, cellSel }))
   await pressKey(cdp, 'Escape')
