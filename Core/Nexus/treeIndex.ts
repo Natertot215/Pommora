@@ -12,7 +12,7 @@ import { DEFAULT_NEXUS_ICON, entityIcon } from '../Assets/entityIconPolicy'
 import { NO_TRAIL, type TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import type { NavCore, ResolveIndex } from '../Navigation/navResolve'
 import type { SearchEntry } from '../Navigation/navSearch'
-import { foldKey } from '../Paths/caseFold'
+import { matchKey } from '../Paths/caseFold'
 import { relDirname } from '../Paths/posix'
 import { contextWorldOf } from '../Contexts/contextResolve'
 import type { ReconcileIndex } from '../Session/reconcileSelection'
@@ -159,7 +159,7 @@ export const searchEntriesOf = entityMemo(
         key: r.key,
         target: toNavRef(r),
         title: r.title,
-        folded: foldKey(r.title),
+        match: matchKey(r.title, r.parents.map((p) => p.title).join('/')),
       })
     }
     return [

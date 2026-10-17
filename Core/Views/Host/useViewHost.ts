@@ -28,7 +28,8 @@ import {
 } from '../Pipeline/group'
 import { resolveView } from '../Pipeline/resolveView'
 import { searchGroups } from '../Pipeline/search'
-import { foldKey } from '../../Paths/caseFold'
+import { matchKey, matchQuery } from '../../Paths/caseFold'
+import { relDirname } from '../../Paths/posix'
 import { resolvedSortCount } from '../Pipeline/sort'
 import { useActiveView } from './useActiveView'
 import { useBandHeads } from './useBandHeads'
@@ -51,7 +52,7 @@ export function useViewHost(source: CollectionNode | SetNode, nests: boolean) {
   const tile = useViewTileScope()
   const host = useContentHost()
   const query = useSession((s) => (tile || !host ? undefined : s.viewSearch[host.tabId]?.query))
-  const needle = foldKey(query?.trim() ?? '')
+  const needle = matchQuery(query ?? '')
   const searching = needle !== ''
 
   const { values, effectiveValues, setValueOverride } = useContainerValues(source.path)
@@ -87,13 +88,22 @@ export function useViewHost(source: CollectionNode | SetNode, nests: boolean) {
       rows,
     }
   }, [painted, effectiveValues, pageMetadata, view, schema, plan, manualOrder, contextIds])
-  const titles = useMemo(
-    () => (searching ? new Map(rows.map((r) => [r.id, foldKey(r.title)])) : null),
-    [rows, searching],
+  // A row's place is the Set chain below the source: every row shares the source's own name, which would otherwise keep them all.
+  const keys = useMemo(
+    () =>
+      searching
+        ? new Map(
+            rows.map((r) => [
+              r.id,
+              matchKey(r.title, relDirname(r.path).slice(source.path.length + 1)),
+            ]),
+          )
+        : null,
+    [rows, searching, source.path],
   )
   const groups = useMemo(
-    () => (titles ? searchGroups(resolvedGroups, needle, titles) : resolvedGroups),
-    [resolvedGroups, needle, titles],
+    () => (keys ? searchGroups(resolvedGroups, needle, keys) : resolvedGroups),
+    [resolvedGroups, needle, keys],
   )
   const shownCollapsed = searching ? NO_COLLAPSE : collapsed
   // A single-sorted view lays its rows out in value RUNS, so a reorder landing one strictly inside another run rewrites the sorted property. Armed only when the column is shown — an unrendered property leaves the run boundaries unreadable.

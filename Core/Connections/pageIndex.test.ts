@@ -42,14 +42,14 @@ describe('holders', () => {
   })
 })
 
-describe('candidates (prefix, ranked exact → shortest → A–Z)', () => {
+describe('candidates (ranked by match, then A–Z)', () => {
   const idx = buildPageIndex([
     { id: '1', title: 'Project Atlas', path: 'a' },
     { id: '2', title: 'Pro', path: 'b' },
     { id: '3', title: 'Projects', path: 'c' },
     { id: '4', title: 'Notes', path: 'd' },
   ])
-  it('prefix-matches and ranks exact first, then shortest, then alpha', () => {
+  it('ranks the tightest match first, then the shortest, then alpha', () => {
     const titles = idx.candidates('pro').map((p) => p.title)
     expect(titles).toEqual(['Pro', 'Projects', 'Project Atlas'])
   })
@@ -59,6 +59,43 @@ describe('candidates (prefix, ranked exact → shortest → A–Z)', () => {
   })
   it('respects the limit', () => {
     expect(idx.candidates('p', 1)).toHaveLength(1)
+  })
+  it('a title match ranks above every page reached through its folder, inside the limit', () => {
+    const archived = Array.from({ length: 30 }, (_, i) => ({
+      id: `n${i}`,
+      title: `N${i}`,
+      path: `Archive/N${i}.md`,
+    }))
+    const titles = buildPageIndex([
+      ...archived,
+      { id: 'a', title: 'Articles about stuff', path: 'Articles about stuff.md' },
+    ])
+      .candidates('ar', 20)
+      .map((p) => p.title)
+    expect(titles[0]).toBe('Articles about stuff')
+    expect(titles).toHaveLength(20)
+  })
+  it('a folder query finds the page under it and not its namesake elsewhere', () => {
+    const studio = buildPageIndex([
+      { id: 'p', title: 'ClaudeMD', path: 'Studio/Pommora/ClaudeMD.md' },
+      { id: 's', title: 'ClaudeMD', path: 'Studio/Sapphire/ClaudeMD.md' },
+    ])
+    expect(studio.candidates('Pommora/Cl').map((p) => p.id)).toEqual(['p'])
+  })
+  it('an exact title ranks first', () => {
+    const notes = buildPageIndex([
+      { id: 'f', title: 'Footnotes', path: 'Footnotes.md' },
+      { id: 'a', title: 'Notes Archive', path: 'Notes Archive.md' },
+      { id: 'n', title: 'Notes', path: 'Journal/Notes.md' },
+    ])
+    expect(notes.candidates('notes')[0].id).toBe('n')
+  })
+  it('two holders of one title both appear under a plain query', () => {
+    const shared = buildPageIndex([
+      { id: 'a', title: 'Notes', path: 'A/Notes.md' },
+      { id: 'b', title: 'Notes', path: 'B/Notes.md' },
+    ])
+    expect(shared.candidates('notes').map((p) => p.id)).toEqual(['a', 'b'])
   })
 })
 

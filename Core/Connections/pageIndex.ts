@@ -1,6 +1,13 @@
 import type { LinkStatus } from './connections'
-import { compareTitles, normalizeTitle } from '../Paths/caseFold'
-import { isMarkdownFile, stripMarkdownExt } from '../Paths/posix'
+import {
+  compareTitles,
+  type MatchKey,
+  matchKey,
+  matchQuery,
+  normalizeTitle,
+  rankMatches,
+} from '../Paths/caseFold'
+import { isMarkdownFile, relDirname, stripMarkdownExt } from '../Paths/posix'
 import type { PageHeading } from '../Platform/stores'
 
 export interface ConnPage {
@@ -49,17 +56,16 @@ export interface PageIndex {
 }
 
 export function buildPageIndex(pages: readonly ConnPage[]): PageIndex {
-  // Titles key ONCE at build — candidates() runs per autocomplete keystroke.
-  const entries = pages.map((p) => ({ p, norm: pageKey(p.title) }))
   const byTitle = new Map<string, ConnPage[]>()
-  for (const { p, norm } of entries) {
+  for (const p of pages) {
+    const norm = pageKey(p.title)
     if (!norm) continue
     const holders = byTitle.get(norm)
     if (holders) holders.push(p)
     else byTitle.set(norm, [p])
   }
-  // Sorted on the first autocomplete, not at build: the index rebuilds whenever the pages change, and most builds (the host's always) never reach a picker.
-  let alphabetical: typeof entries | null = null
+  // Sorted and keyed on the first autocomplete, not at build: the index rebuilds whenever the pages change, and most builds (the host's always) never reach a picker.
+  let alphabetical: { p: ConnPage; key: MatchKey }[] | null = null
   // A key holding `/` names a page by a tail of its path: the full path first, otherwise the title's holders whose path ends with it; several, or two paths folding to one, read Ambiguous.
   const holdersOf = (raw: string): readonly ConnPage[] => {
     const key = pageKey(raw)
@@ -84,18 +90,13 @@ export function buildPageIndex(pages: readonly ConnPage[]): PageIndex {
     },
     namesOf: (path) => pathKeys(path).filter((k) => resolve(k).page?.path === path),
     candidates(query, limit = 20) {
-      alphabetical ??= [...entries].sort((a, b) => compareTitles(a.p.title, b.p.title))
-      const q = normalizeTitle(query)
+      alphabetical ??= pages
+        .map((p) => ({ p, key: matchKey(p.title, relDirname(p.path)) }))
+        .sort((a, b) => compareTitles(a.p.title, b.p.title))
+      const q = matchQuery(query)
       // An empty query browses the whole index alphabetically, as an empty `[[` or `[label](` lists.
       if (!q) return alphabetical.slice(0, limit).map((x) => x.p)
-      return alphabetical
-        .filter((x) => x.norm.startsWith(q))
-        .sort(
-          (a, b) =>
-            (a.norm === q ? 0 : 1) - (b.norm === q ? 0 : 1) || a.p.title.length - b.p.title.length,
-        )
-        .slice(0, limit)
-        .map((x) => x.p)
+      return rankMatches(alphabetical, q, (x) => x.key, limit).map((x) => x.p)
     },
   }
 }

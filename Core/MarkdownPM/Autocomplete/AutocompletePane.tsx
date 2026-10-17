@@ -9,7 +9,6 @@ import {
   MenuItem,
   MenuScrollFrame,
   MenuTopRow,
-  emphasizeMatch,
   itemEmphasized,
 } from '@pommora/uix/Menus'
 import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
@@ -85,7 +84,6 @@ export function AutocompletePane({
     { ac: ac ?? CLOSED, candidates, index, behind, headingRows, collapsed, aliasHost },
     open,
   )
-  const matchLen = v.ac.query.length
   const keepInView = useKeepInView(v.index)
 
   const sliding = v.behind !== null
@@ -124,7 +122,7 @@ export function AutocompletePane({
             onPick(row)
           }}
         >
-          {emphasizeMatch(row.value, 0, matchLen)}
+          {row.value}
         </MenuItem>
       ))}
     </MenuScrollFrame>
@@ -133,7 +131,7 @@ export function AutocompletePane({
   const headingRow = (row: AcRow, i: number, children?: React.ReactNode): React.JSX.Element => (
     <DisclosureRow
       key={row.value}
-      title={emphasizeMatch(row.value, 0, matchLen)}
+      title={row.value}
       icon={null}
       className={itemEmphasized}
       dropOutline={children ? 'chevron' : 'spacer'}
@@ -190,7 +188,7 @@ export function AutocompletePane({
         aliases={v.candidates.map((r) => r.value)}
         host={v.aliasHost}
         active={v.index}
-        match={matchLen}
+        query={v.ac.query}
         maxHeight={h}
         onPick={(alias) => onPick({ kind: 'alias', value: alias })}
       />

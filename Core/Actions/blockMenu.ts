@@ -1,4 +1,5 @@
 import type { LeafItem } from './menuModel'
+import { matchKey, matchQuery, rankMatches } from '../Paths/caseFold'
 import { HEADING_LEVELS, LIST_KINDS, type HeadingLevel, type ListKind } from './gripMenu'
 
 export type LinkWrapKind = 'link' | 'linkText' | 'connection'
@@ -13,16 +14,9 @@ export type BlockMenuAction =
   | 'block:page'
   | 'block:webpage'
 
-interface BlockMenuSection {
+export interface BlockMenuSection {
   title: string
   rows: readonly LeafItem<BlockMenuAction>[]
-}
-
-type BlockMenuRow = LeafItem<BlockMenuAction> & { at: number | null }
-
-export interface BlockMenuMatch {
-  title: string
-  rows: readonly BlockMenuRow[]
 }
 
 const HEADING_ROWS: readonly LeafItem<BlockMenuAction>[] = HEADING_LEVELS.flatMap(
@@ -82,25 +76,19 @@ export const BLOCK_MENU_SECTIONS: readonly BlockMenuSection[] = [
   { title: 'Embed', rows: EMBED_ROWS },
 ]
 
-function matchAt(label: string, query: string): number | null {
-  const at = label.toLowerCase().indexOf(query)
-  return at === -1 ? null : at
-}
+const BLOCK_MENU_ROWS = BLOCK_MENU_SECTIONS.flatMap((s) =>
+  s.rows.map((row) => ({ title: s.title, row, key: matchKey(row.label, s.title) })),
+)
 
-export function filterBlockMenu(
-  sections: readonly BlockMenuSection[],
-  query: string,
-): BlockMenuMatch[] {
-  const q = query.toLowerCase()
-  const out: BlockMenuMatch[] = []
-  for (const s of sections) {
-    const titleAt = matchAt(s.title, q)
-    const rows: BlockMenuRow[] = []
-    for (const row of s.rows) {
-      const at = matchAt(row.label, q)
-      if (titleAt !== null || at !== null) rows.push({ ...row, at })
-    }
-    if (rows.length > 0) out.push({ title: s.title, rows })
+/** A typed query ranks every row by its match and seats each section where its best row falls, so Enter picks the best match; an empty query lists the menu as it stands. */
+export function filterBlockMenu(query: string): readonly BlockMenuSection[] {
+  const q = matchQuery(query)
+  if (!q) return BLOCK_MENU_SECTIONS
+  const out: { title: string; rows: LeafItem<BlockMenuAction>[] }[] = []
+  for (const { title, row } of rankMatches(BLOCK_MENU_ROWS, q, (r) => r.key)) {
+    const section = out.find((s) => s.title === title)
+    if (section) section.rows.push(row)
+    else out.push({ title, rows: [row] })
   }
   return out
 }

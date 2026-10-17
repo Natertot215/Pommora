@@ -98,7 +98,7 @@ describe('searchEntriesOf', () => {
     const alpha = entries.find((e) => e.title === 'Alpha')
     expect(alpha?.target).toEqual({ kind: 'page', id: 'p1' })
     expect(alpha?.key).toBe('page:p1')
-    expect(alpha?.folded).toBe('alpha')
+    expect(alpha?.match).toEqual({ name: 'alpha', place: 'notes alpha' })
   })
 
   it('indexes the homepage, the Matrix, spaces, collections, sets, and pages', () => {
@@ -142,7 +142,7 @@ describe('the connections projections', () => {
     const idx = pageIndexOf(makeTree())
     expect(idx.resolve('Alpha')).toMatchObject({ status: 'resolved' })
     expect(idx.resolve('Ghost')).toEqual({ status: 'phantom' })
-    expect(idx.candidates('nes').map((p) => p.id)).toEqual(['p2'])
+    expect(idx.candidates('nes').map((p) => p.id)).toEqual(['p2', 'p1'])
   })
 })
 

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { searchEntriesOf } from '../Nexus/treeIndex'
 import { filterNav } from './navSearch'
-import { foldKey } from '../Paths/caseFold'
+import { matchKey } from '../Paths/caseFold'
 import { makeTree } from '../Testing/testTree'
 
 const index = (): ReturnType<typeof searchEntriesOf> => searchEntriesOf(makeTree())
@@ -28,13 +28,17 @@ describe('filterNav', () => {
     expect(hits[0].title).toBe('Nested Beta')
   })
 
+  it('finds an entry through the folders it sits in', () => {
+    expect(filterNav(index(), 'ideas/nested').map((h) => h.title)).toEqual(['Nested Beta'])
+  })
+
   it('drops non-matches', () => {
     expect(filterNav(index(), 'zzzzz')).toEqual([])
   })
 
   it('finds a title stored decomposed from a composed query', () => {
     const entry = { key: 'page:x', target: { kind: 'page', id: 'x' } as const, title: 'Cafe\u0301' }
-    const hits = filterNav([{ ...entry, folded: foldKey(entry.title) }], 'Caf\u00e9')
+    const hits = filterNav([{ ...entry, match: matchKey(entry.title) }], 'Caf\u00e9')
     expect(hits.map((h) => h.key)).toEqual(['page:x'])
   })
 })

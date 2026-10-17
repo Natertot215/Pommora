@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { undo } from '@codemirror/commands'
 import type { EditorView } from '@codemirror/view'
-import { itemActive, matchText } from '@pommora/uix/Menus/menu-row.css'
+import { itemActive } from '@pommora/uix/Menus/menu-row.css'
 import { emptyTable } from '../Engine/Tables/model'
 import { serialize } from '../Engine/Tables/codec'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '../../Testing/editorHarness'
@@ -52,9 +52,6 @@ async function press(view: EditorView, key: string): Promise<void> {
   })
 }
 
-const marks = (): string[] =>
-  [...document.querySelectorAll(`.mdpm-block-menu .${matchText}`)].map((m) => m.textContent ?? '')
-
 async function click(row: Element | undefined): Promise<void> {
   await act(async () => {
     row?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }))
@@ -79,7 +76,27 @@ describe('the block menu opens on the slash and narrows as it is typed', () => {
       expect(text).toContain(title)
     expect(text).toContain('Footnote')
     expect(rows()).toHaveLength(22)
-    expect(marks()).toEqual([])
+  })
+
+  it('narrows to the rows whose labels or sections match', async () => {
+    const view = await open('')
+    await type(view, '/hr')
+    expect([...rows()].map((r) => r.textContent)).toEqual(['Horizontal Rule'])
+  })
+
+  it('keeps the rows of a section whose title matches', async () => {
+    const view = await open('')
+    await type(view, '/embed')
+    expect([...rows()].map((r) => r.textContent)).toEqual(['External Link', 'Internal Page'])
+  })
+
+  it('closes on a second slash, which no block names', async () => {
+    const view = await open('')
+    await type(view, '//')
+    await gone()
+    expect(pane()).toBeNull()
+    await press(view, 'Enter')
+    expect(view.state.doc.toString()).toBe('//\n')
   })
 
   it('closes on Escape and comes back with the next character', async () => {
@@ -164,7 +181,7 @@ describe('picking a row writes the block and leaves one undo step', () => {
   it('writes an embed on a document that opens with a blank line', async () => {
     const view = await open('\nfoo', 0)
     await type(view, '/int')
-    expect(rows()).toHaveLength(1)
+    expect(rows()[0]?.textContent).toBe('Internal Page')
     await press(view, 'Enter')
     expect(view.state.doc.toString()).toBe('![[]]\n\nfoo')
   })
@@ -172,7 +189,7 @@ describe('picking a row writes the block and leaves one undo step', () => {
   it('writes the table from a click on its row', async () => {
     const view = await open('')
     await type(view, '/tab')
-    expect(rows()).toHaveLength(1)
+    expect(rows()[0]?.textContent).toBe('Table')
     await click(rows()[0])
     const doc = view.state.doc.toString()
     expect(doc).toBe(`${serialize(emptyTable(3, 3))}\n`)
@@ -219,22 +236,6 @@ describe('a row held through the closing animation picks nothing', () => {
     expect(rows().length).toBeGreaterThan(0)
     await click(rows()[0])
     expect(view.state.doc.toString()).toBe('/zz')
-  })
-})
-
-describe('the query is emphasized wherever it matched', () => {
-  it('marks the matched word, not the start of the label', async () => {
-    const view = await open('')
-    await type(view, '/bl')
-    expect(marks()).toEqual(['Bl', 'Bl', 'bl'])
-    expect(rows()[1]?.textContent).toBe('Code Block')
-  })
-
-  it('marks nothing when the rows matched only through their section', async () => {
-    const view = await open('')
-    await type(view, '/embed')
-    expect(marks()).toEqual([])
-    expect(rows()).toHaveLength(2)
   })
 })
 

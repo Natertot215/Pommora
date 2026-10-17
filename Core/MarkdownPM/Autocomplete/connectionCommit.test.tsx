@@ -2,7 +2,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import type { EditorView } from '@codemirror/view'
-import { matchText } from '@pommora/uix/Menus/menu-row.css'
 import type { ConnectionsApi } from '../Links/connectionsApi'
 import type { EditorSettings } from '../api'
 import { buildPageIndex } from '../../Connections/pageIndex'
@@ -33,6 +32,10 @@ const conn: ConnectionsApi = {
   open: () => {},
 }
 const coords = { left: 10, right: 10, top: 10, bottom: 20 }
+
+const asides = (): Element[] => [...document.querySelectorAll('.mdpm-ac .mdpm-ac-aside')]
+const titleRows = (): string[] =>
+  asides().map((a) => (a.getAttribute('aria-label') ?? '').slice('Headings of '.length))
 
 const press = async (view: EditorView, key: string): Promise<void> => {
   await act(async () => {
@@ -182,7 +185,7 @@ describe('the picker stands down when it has nothing to add', () => {
     await act(async () => {
       view.dispatch({ changes: { from: 5, insert: 'ha' }, selection: { anchor: 7 } })
     })
-    const held = document.querySelector(`.mdpm-ac .${matchText}`)
+    const held = asides()[0]?.closest('[data-reveal-host]')
     expect(held).toBeTruthy()
     await act(async () => {
       held?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }))
@@ -748,8 +751,6 @@ describe('a pick names the page as a new link should, and the picker closes on a
     })
     return view
   }
-  const rows = (): string[] =>
-    [...document.querySelectorAll(`.mdpm-ac .${matchText}`)].map((x) => x.textContent ?? '')
 
   it('a pick of one of two Notes writes its path and rests past it', async () => {
     const view = await at('[[Not]]', 5, shared)
@@ -827,12 +828,12 @@ describe('a pick names the page as a new link should, and the picker closes on a
 
   it('an ambiguous title opens on both holders', async () => {
     await at('[[Notes]]', 4, shared)
-    expect(rows()).toEqual(['Notes', 'Notes'])
+    expect(titleRows()).toEqual(['Notes', 'Notes'])
   })
 
   it('an ambiguous title written with its extension lists its holders', async () => {
     await at('[[Notes.md]]', 4, shared)
-    expect(rows()).toEqual(['Notes', 'Notes'])
+    expect(titleRows()).toEqual(['Notes', 'Notes'])
   })
 
   it('an ambiguous title lists its holders first and the longer titles after them', async () => {
@@ -845,10 +846,7 @@ describe('a pick names the page as a new link should, and the picker closes on a
       ]),
     }
     await at('[[Notes]]', 4, archive)
-    const asides = [...document.querySelectorAll('.mdpm-ac-aside')].map((x) =>
-      x.getAttribute('aria-label'),
-    )
-    expect(asides).toEqual(['Headings of Notes', 'Headings of Notes', 'Headings of Notes Archive'])
+    expect(titleRows()).toEqual(['Notes', 'Notes', 'Notes Archive'])
   })
 
   it('a finished heading opens nothing beside a longer one', async () => {

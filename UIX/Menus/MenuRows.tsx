@@ -27,18 +27,6 @@ export const menuDropLine = ({
   right: s.ROW_TRAIL,
 })
 
-/** A searched row's label with the typed match drawn emphasized; `at` is where the matcher found it. */
-export function emphasizeMatch(label: string, at: number | null, len: number): ReactNode {
-  if (at === null || len === 0) return label
-  return (
-    <>
-      {label.slice(0, at)}
-      <span className={s.matchText}>{label.slice(at, at + len)}</span>
-      {label.slice(at + len)}
-    </>
-  )
-}
-
 export function MenuTopRow({
   label,
   onBack,

@@ -6,7 +6,7 @@ import {
   spellsAsWiki,
   wholeLink,
 } from '../../Connections/connections'
-import { normalizeTitle } from '../../Paths/caseFold'
+import { matchKey, matchQuery, normalizeTitle, rankMatches } from '../../Paths/caseFold'
 import {
   decodeLinkTarget,
   encodeLinkTarget,
@@ -114,17 +114,23 @@ export const pageRow = (p: ConnPage, host: EditorHost): AcRow => ({
   location: host.location(p.id),
 })
 
+/** Rows in their own order under an empty query, ranked by a typed one. */
+const ranked = <R extends AcRow>(rows: R[], q: string): R[] =>
+  q ? rankMatches(rows, q, (r) => matchKey(r.value)) : rows
+
+/** The outline's headings, repeated text listed once. */
 export function headingRows(outline: readonly PageHeading[], query: string): HeadingRow[] {
-  const q = normalizeTitle(query)
+  const q = matchQuery(query)
   const seen = new Set<string>()
-  return outline
+  const rows = outline
     .filter((h) => {
       const key = normalizeTitle(h.text)
-      if (!key.startsWith(q) || seen.has(key)) return false
+      if (seen.has(key)) return false
       seen.add(key)
       return true
     })
     .map((h): HeadingRow => ({ kind: 'heading', value: h.text, level: h.level }))
+  return ranked(rows, q)
 }
 
 // The rows a collapsed heading hides: everything deeper than it, up to the next heading at its level or above.
@@ -148,11 +154,9 @@ export function aliasRows(
   query: string,
 ): AcRow[] {
   if (!pageId) return []
-  const q = normalizeTitle(query)
-  return aliases
-    .list(pageId)
-    .filter((a) => normalizeTitle(a).startsWith(q))
-    .map((a): AcRow => ({ kind: 'alias', value: a }))
+  const q = matchQuery(query)
+  const rows = aliases.list(pageId).map((a): AcRow => ({ kind: 'alias', value: a }))
+  return ranked(rows, q)
 }
 
 export function commitEdit(

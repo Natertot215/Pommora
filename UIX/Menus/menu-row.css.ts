@@ -153,8 +153,6 @@ export const chipPicked = styleVariants(RUN_EDGES, ([top, bottom]) => ({
 
 export const itemEmphasized = style([text.body.emphasized])
 
-export const matchText = style({ fontWeight: font.weight.emphasized })
-
 export const rowDisabled = style({
   selectors: {
     '&&': { opacity: STATE_OPACITY.inactive, pointerEvents: 'none' },

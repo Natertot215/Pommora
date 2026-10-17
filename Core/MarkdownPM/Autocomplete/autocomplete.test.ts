@@ -548,14 +548,25 @@ describe('the heading slot opens after a typed #', () => {
     expect(r.query).toBe('Se')
   })
 
-  it('headingRows filters by prefix and dedupes repeated text', () => {
+  it('headingRows ranks a typed query, lists the outline as it stands for an empty one, and dedupes repeated text', () => {
     const outline = [
       { from: 0, level: 1, text: 'Setup', key: 'Setup' },
       { from: 10, level: 2, text: 'Setup 2', key: 'Setup 2' },
       { from: 20, level: 1, text: 'Other', key: 'Other' },
+      { from: 30, level: 1, text: 'Setup', key: 'Setup' },
     ]
     expect(headingRows(outline, 'Set').map((r) => r.value)).toEqual(['Setup', 'Setup 2'])
     expect(headingRows(outline, '').map((r) => r.value)).toEqual(['Setup', 'Setup 2', 'Other'])
+    const scattered = [
+      { from: 0, level: 1, text: 'Implementation Notes', key: 'Implementation Notes' },
+      { from: 10, level: 1, text: 'Intro', key: 'Intro' },
+    ]
+    expect(headingRows(scattered, 'int').map((r) => r.value)).toEqual([
+      'Intro',
+      'Implementation Notes',
+    ])
+    const notes = [{ from: 0, level: 1, text: 'Notes', key: 'Notes' }]
+    expect(headingRows(notes, 'nts').map((r) => r.value)).toEqual(['Notes'])
     const unspellable = [{ from: 0, level: 1, text: 'A|B', key: 'A|B' }]
     expect(headingRows(unspellable, '').map((r) => r.value)).toEqual(['A|B'])
   })

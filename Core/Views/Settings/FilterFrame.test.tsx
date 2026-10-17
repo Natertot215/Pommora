@@ -602,6 +602,13 @@ describe('FilterFrame location field', () => {
     expect(pickerRows()).toEqual(['Projects', 'Notes'])
   })
 
+  it('typing a parent and a child narrows to the child under its parent', async () => {
+    await mount(locationRule('is_inside'))
+    await focusLocation()
+    await typeLocation('projects/docs')
+    expect(pickerRows()).toEqual(['Projects', 'Docs'])
+  })
+
   it('Enter under Contains adds the typed name and clears the draft, even one naming a folder', async () => {
     await mount(locationRule('is_inside'))
     await focusLocation()
@@ -701,17 +708,18 @@ describe('FilterFrame location field', () => {
     expect(savedValues()).toEqual(['docs'])
   })
 
-  it("narrowing keeps a matched folder's subfolders, collapsed until opened", async () => {
+  it("narrowing to a folder's name reaches its subfolders, open until collapsed", async () => {
     await mount(locationRule('is_inside'))
     await focusLocation()
     await typeLocation('proj')
-    expect(pickerRows()).toEqual(['Projects'])
+    expect(pickerRows()).toEqual(['Projects', 'Docs', 'Notes'])
     await act(async () => {
       document
         .querySelector('[data-picker-portal] [data-drop-outline]')
         ?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
     })
-    expect(pickerRows()).toEqual(['Projects', 'Docs', 'Notes'])
+    await settle()
+    expect(pickerRows()).toEqual(['Projects'])
   })
 
   it('a lead collapsed under one draft opens again under another', async () => {

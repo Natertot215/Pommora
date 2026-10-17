@@ -44,6 +44,10 @@ describe('filterRows', () => {
     expect(filterRows(rows, 'journ').map((r) => r.title)).toEqual(['Beta'])
   })
 
+  it('matches a location and a title together, a / reading as a word break', () => {
+    expect(filterRows(rows, 'notes/alpha').map((r) => r.title)).toEqual(['Alpha'])
+  })
+
   it('a query nothing answers yields nothing', () => {
     expect(filterRows(rows, 'zzz')).toEqual([])
   })

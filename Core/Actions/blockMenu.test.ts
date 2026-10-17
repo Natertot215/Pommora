@@ -51,65 +51,66 @@ describe('the block menu catalog', () => {
 })
 
 describe('the block menu filter', () => {
+  const labels = (m: ReturnType<typeof filterBlockMenu>[number]): string[] =>
+    m.rows.map((r) => r.label)
+
   it('keeps a section whose rows match and drops the rest', () => {
-    const hea = filterBlockMenu(seated, 'hea')
-    expect(hea.map((s) => s.title)).toEqual(['Headings'])
+    const hea = filterBlockMenu('hea')
+    expect(hea.map((s) => s.title)).toEqual(['Headings', 'Lists'])
     expect(hea[0].rows).toHaveLength(6)
-    expect(hea[0].rows.every((r) => r.at === 0)).toBe(true)
-    expect(filterBlockMenu(seated, 'HEA')).toEqual(hea)
+    expect(labels(hea[1])).toEqual(['Alphabetical List'])
+    expect(filterBlockMenu('HEA')).toEqual(hea)
   })
 
-  it('matches anywhere in the label and reports where it begins', () => {
-    const bl = filterBlockMenu(seated, 'bl')
-    expect(bl.map((s) => s.title)).toEqual(['Insert'])
-    expect(bl[0].rows.map((r) => [r.label, r.at])).toEqual([
-      ['Blockquote', 0],
-      ['Code Block', 5],
-      ['Table', 2],
+  it('ranks the rows by their match, each section seated where its best row falls', () => {
+    const bl = filterBlockMenu('bl')
+    expect(bl.map((s) => s.title)).toEqual(['Insert', 'Lists', 'Embed'])
+    expect(labels(bl[0])).toEqual(['Blockquote', 'Code Block', 'Table'])
+    expect(labels(bl[1])).toEqual(['Bullet List', 'Numbered List', 'Alphabetical List'])
+    expect(labels(bl[2])).toEqual(['External Link', 'Internal Page'])
+    expect(filterBlockMenu('hr')).toEqual([
+      { title: 'Insert', rows: [expect.objectContaining({ label: 'Horizontal Rule' })] },
     ])
-    expect(filterBlockMenu(seated, 'quo')[0].rows.map((r) => [r.label, r.at])).toEqual([
-      ['Blockquote', 5],
+    expect(labels(filterBlockMenu('quo')[0])).toEqual(['Blockquote'])
+  })
+
+  it('seats the row a query names first, ahead of the rows its letters scatter through', () => {
+    for (const [query, label] of [
+      ['tab', 'Table'],
+      ['int', 'Internal Page'],
+      ['call', 'Callout'],
     ])
+      expect(filterBlockMenu(query)[0].rows[0].label).toBe(label)
   })
 
   it('refuses a query nothing carries', () => {
-    expect(filterBlockMenu(seated, 'zz')).toEqual([])
+    expect(filterBlockMenu('zz')).toEqual([])
   })
 
   it('keeps a whole section whose title matches', () => {
-    const link = filterBlockMenu(seated, 'link')
+    const link = filterBlockMenu('link')
     expect(link.map((s) => s.title)).toEqual(['Link', 'Embed'])
-    expect(link[0].rows.map((r) => [r.label, r.at])).toEqual([
-      ['Connection', null],
-      ['Markdown Link', 9],
-      ['External Link', 9],
-    ])
-    expect(link[1].rows.map((r) => [r.label, r.at])).toEqual([['External Link', 9]])
+    expect(labels(link[0])).toEqual(['Markdown Link', 'External Link', 'Connection'])
+    expect(labels(link[1])).toEqual(['External Link'])
 
-    const embed = filterBlockMenu(seated, 'embed')
+    const embed = filterBlockMenu('embed')
     expect(embed.map((s) => s.title)).toEqual(['Embed'])
-    expect(embed[0].rows.map((r) => [r.label, r.at])).toEqual([
-      ['Internal Page', null],
-      ['External Link', null],
-    ])
+    expect(labels(embed[0])).toEqual(['External Link', 'Internal Page'])
   })
 
-  it('holds a section title to the same word-start rule its rows answer', () => {
-    const list = filterBlockMenu(seated, 'list')
+  it('ranks by the name alone where the name matches, the shorter label first on a tie', () => {
+    const list = filterBlockMenu('list')
     expect(list.map((s) => s.title)).toEqual(['Lists'])
-    expect(list[0].rows.map((r) => [r.label, r.at])).toEqual([
-      ['Bullet List', 7],
-      ['Numbered List', 9],
-      ['Alphabetical List', 13],
-      ['Task List', 5],
-      ['Arrowed List', 8],
+    expect(labels(list[0])).toEqual([
+      'Task List',
+      'Arrowed List',
+      'Numbered List',
+      'Bullet List',
+      'Alphabetical List',
     ])
   })
 
-  it('keeps everything at 0 for an empty query', () => {
-    const all = filterBlockMenu(seated, '')
-    expect(all.map((s) => s.title)).toEqual(seated.map((s) => s.title))
-    expect(all.flatMap((s) => s.rows)).toHaveLength(22)
-    expect(all.flatMap((s) => s.rows).every((r) => r.at === 0)).toBe(true)
+  it('lists the menu as it stands for an empty query', () => {
+    expect(filterBlockMenu('')).toBe(seated)
   })
 })

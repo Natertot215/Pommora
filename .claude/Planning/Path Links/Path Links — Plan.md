@@ -28,7 +28,7 @@ The work lands in nine phases in dependency order, each the largest run one agen
 - **Resolver** (`Core/Connections/pageIndex.ts`): one `pageKey` (fold, drop `.md`) keys titles and written halves alike; `holders` and `resolve` read a key holding `/` as a full path first, else as a tail of the title's holders, several reading Ambiguous; `writtenName(path, like?)` is the one naming rule (the title when it names the page alone, else the full path, at the depth a link was written); `namesOf(path)` is the one keys rule (the tails of a page's path that resolve to it). Nothing is precomputed at build.
 - **Index** (`Core/Connections/scan.ts`, `Core/Index/`, `Desktop/Store/`): `relations.target` holds the written key through `pageKey`; a self-link keys `''` and the scanner takes no own title; the two mention queries take key lists through the store's `json_each` idiom; the generation moves to 18.
 - **Writers and Picker** (`Core/MarkdownPM/Autocomplete/`, `linkValue.ts`, the Copy Link sites, `LinkCell.tsx`, the embed pick tree): every writer that holds a page spells it through `writtenName`; `resolvedTarget` spells at the written depth, so Paste As, a paste inside a link, the Link field, and Show Full Link keep a written form, and a plain paste of a link that resolves inserts it as copied (A-7); a title pick keeps a heading the picked page holds (C-5); the picker closes on a title that resolves (B-4).
-- **Search** (`Core/Paths/caseFold.ts` and eight sites): one `matchScore(key, q)` over a `matchKey(name, place)` and a `matchQuery(raw)`, the better of a name score and a location score with `/` read as a word break; each surface keeps its own order; highlighting goes first, as its own task (D-6).
+- **Search** (`Core/Paths/caseFold.ts` and eight sites): one `matchScore(key, q)` over a `matchKey(name, place)` and a `matchQuery(raw)`, the better of a name score and a location score with `/` read as a word break; a list a typed query is picked from ranks by score and a view or a folder tree keeps its order; highlighting goes first, as its own task (D-6).
 - **Click** (`Core/MarkdownPM/Links/linkEdit.ts`, `Gestures/pointerPath.ts`, `Tables/cellStatic.tsx`, `Core/Properties/Pickers/ValueEditor.tsx`): one `seatTitle` arm on the existing link-slot seat channel, reached from the editor's press, a resting cell's hand-off, and a value field's open; Edit Link selects the target in the Link field too (C-4).
 - **Re-Spell** (`Core/Connections/rewrite.ts`, `Core/Nexus/cascade.ts`, `mutate.ts`): one per-key decision (`PageIndex.respell`) builds a map from key to spelling (`respellings`) by comparing the indexes before and after over the moved and arriving pages; the map is the query list, the tile gate, and the rewrite in one; every operation that can move, add, sweep, or remove a page runs inside the settle's turn (E-6), and one wrapper in the dispatcher, `addressed`, around those that can move or add, reads the index before and after, diffs the two by id, and hands `relink` what moved and what arrived, returning the warning the renderer already shows (E-5), so no operation carries a cascade line of its own; the heading cascade decides by keys and always sweeps the page's own file (E-7).
 - **Outside Lane** (`Core/Index/indexSeed.ts`, `Core/Nexus/fileEvents.ts`, `settle.ts`): the index reports the pages whose rows it removes and the pages it indexes for the first time, and the seed reports what it pruned and found; the settle pairs a vanished ID with its live path across any number of batches, reads every other landed id the tree holds as an arrival (a paired move's late row excepted), builds the before-world with each paired page back at its old path and each arrival absent, and pays one re-spell for them all, logging what it couldn't write (E-3, E-4, E-5).
@@ -93,7 +93,7 @@ The work lands in nine phases in dependency order, each the largest run one agen
 | `tilesLinkHeading` · `readTileHeadingLinks` · `dropTileHeadingLinks` • functions | The heading-only tile gate. | `Core/Tiles/tilesFile.ts` |
 | `oweRenames` • function | Owed heading renames alone; `oweSeen` owes the whole `IndexSeen`. | `Core/Nexus/fileEvents.ts` |
 | `emphasizeMatch` · `matchText` • function · style | The typed-match emphasis in searched rows (D-6). | `UIX/Menus/` |
-| `BlockMenuRow` • type · `matchLen` · `matchAt` • members | The block menu's match offsets and its own matcher. | `Core/Actions/blockMenu.ts` · `Core/MarkdownPM/Menus/` |
+| `BlockMenuRow` · `BlockMenuMatch` • types · `matchLen` · `matchAt` • members | The block menu's match offsets and its own matcher; the match shape was the section's once the offsets went. | `Core/Actions/blockMenu.ts` · `Core/MarkdownPM/Menus/` |
 | `EditorHost.pageTitle` • method | The editor's title read; `page()` hands the page. | `Core/MarkdownPM/` |
 | `trashedTitles` • function | The newest-bundle-by-title walk; parking resolves by delete-time path. | `Core/Trash/holdings.ts` |
 | `ValueEditor.alias` · `PropertyValueInput.alias` • props | The alias-seat flag; `seat` carries the action. | `Core/Properties/Pickers/` |
@@ -137,10 +137,10 @@ The work lands in nine phases in dependency order, each the largest run one agen
   - [x] Task 3-2 · The picker writes the written name, keeps a held heading, and closes on resolution
   - [x] Review Checkpoint
 - [x] `[Compaction checkpoint: c/pre-compaction]`
-- [ ] **Phase 4** — One Search
-  - [ ] Task 4-1 · Highlighting goes
-  - [ ] Task 4-2 · The one matcher, and every search on it
-  - [ ] Review Checkpoint
+- [x] **Phase 4** — One Search
+  - [x] Task 4-1 · Highlighting goes
+  - [x] Task 4-2 · The one matcher, and every search on it
+  - [x] Review Checkpoint
 - [ ] **Phase 5** — The Click Rule
   - [ ] Task 5-1 · The `seatTitle` arm and the editor's press
   - [ ] Task 5-2 · Resting cells and the value field
@@ -1188,7 +1188,7 @@ The work lands in nine phases in dependency order, each the largest run one agen
 
 ### Phase 4 — One Search
 
-**GOAL:** Every search the app has matches one way, by an item's name or its location, through one matcher in `Core/Paths/caseFold.ts`, with each surface keeping its own order (D-1, D-2, D-4); match highlighting leaves first as its own task, so a reversal at ratification leaves the matcher untouched (D-6); icon search and filter rules stay their own (D-3, D-5). Typing a folder narrows the picker as it narrows every other search, which the click rule needs (C-6).
+**GOAL:** Every search the app has matches one way, by an item's name or its location, through one matcher in `Core/Paths/caseFold.ts`, every list a typed query is picked from ranking by score and a view or a folder tree keeping its order (D-1, D-2, D-4, the order clause corrected in execution: a loose match on an unranked pick list seats noise first, so `/tab` wrote an Alphabetical List); match highlighting leaves first as its own task, so a reversal at ratification leaves the matcher untouched (D-6); icon search and filter rules stay their own (D-3, D-5). Typing a folder narrows the picker as it narrows every other search, which the click rule needs (C-6).
 
 #### Task 4-1
 
@@ -1198,7 +1198,7 @@ The work lands in nine phases in dependency order, each the largest run one agen
 
 **CHANGE**
 
-- [ ] `aliasPicker.test.tsx`: add: typing `e` after clicking "the plan" within the pick window drops the pending pick (the list's query changed, its rows didn't). `blockMenu.test.ts`: every `at` assertion goes. `blockMenuFlow.test.tsx:6,56,225+`: the emphasis assertions go. Watch the alias case fail.
+- [ ] `aliasPicker.test.tsx`: add: typing `e` after clicking "the plan" within the pick window inserts nothing (a pin, green before the change too: the typed letter also changes the rows, so the pending-pick effect's `query` dependency can't be isolated on this fixture). `blockMenu.test.ts`: every `at` assertion goes. `blockMenuFlow.test.tsx:6,56,225+`: the emphasis assertions go.
 - [ ] Delete `emphasizeMatch`, its export, and `matchText`.
 - [ ] `blockMenu.ts`: `BlockMenuMatch.rows` is `readonly LeafItem<BlockMenuAction>[]`; `filterBlockMenu` pushes `row` as is; `BlockMenuRow` goes (`matchAt` stays for Task 4-2 to replace).
 - [ ] `AutocompletePane.tsx`: the rows draw `row.value`; `matchLen` goes; the alias list takes `query={v.ac.query}`.
@@ -1272,12 +1272,12 @@ The work lands in nine phases in dependency order, each the largest run one agen
 
 **TASK:** Give `caseFold.ts` the one matcher (a `MatchKey` of a folded name and an optional folded place, a `matchQuery` that folds a typed `/` to a word break, and a `matchScore(key, q)` that takes the better of the two scores) and fold every search onto it in the same task, since the matcher's new shape and its eight callers can't pass the gates apart: each site builds its key where it already builds its rows and keeps its own order.
 
-**NOW:** `matchScore(t, q)` (`caseFold.ts:28-46`) scores one folded string, greedy, with a bonus at a word start after `' '`; `rankMatches` (`:50-74`) ranks items by a score with `compareTitles` on ties. Every site folds its own query (`foldKey(query.trim())`, eight times) and most score a title alone. Scoring one joined "place name" string drags title ranking down (an exact `Journal/Notes` scores 13.87 against a scattered root `Footnotes` at 18.91), so two scores are needed to keep today's title ranking while reaching through a location.
+**NOW:** `matchScore(t, q)` (`caseFold.ts:28-46`) scores one folded string, greedy, with a bonus at a word start after `' '`; `rankMatches` (`:50-74`) ranks items by a score with `compareTitles` on ties. Every site folds its own query (`foldKey(query.trim())`, eight times) and most score a title alone. Scoring one joined "place name" string drags title ranking down (an exact `Journal/Notes` scores 13.87 against a scattered root `Footnotes` at 18.91), so the name scores alone wherever it matches, and the location's score is seated below every name's.
 
 **CHANGE**
 
-- [ ] `caseFold.test.ts`: `matchScore(matchKey('Notes', 'Journal'), 'notes')` equals `matchScore(matchKey('Notes'), 'notes')`; `matchScore(matchKey('ClaudeMD', 'Studio/Pommora'), matchQuery('Pommora/Cl'))` is non-null while `matchKey('ClaudeMD', 'Studio/Sapphire')` misses; `matchQuery('/Studio/Pommora')` has no leading space; an empty query scores every key. Watch them fail.
-- [ ] Rename today's scorer to a private `foldedScore` (`scoreOf` is already `rankMatches`'s parameter); add `MatchKey`, `matchQuery`, `matchKey`, and the new `matchScore`.
+- [ ] `caseFold.test.ts`: `matchScore(matchKey('Notes', 'Journal'), 'notes')` equals `matchScore(matchKey('Notes'), 'notes')`; `matchScore(matchKey('ClaudeMD', 'Studio/Pommora'), matchQuery('Pommora/Cl'))` is non-null while `matchKey('ClaudeMD', 'Studio/Sapphire')` misses; `matchQuery('/Studio/Pommora')` has no leading space and `Pommora / Cl` folds to `pommora cl`; a heading `Q1/Q2 Plan` answers `Q1/Q2`; `Articles about stuff` outscores `N0` under `Archive` for `ar`; `rankMatches` ranks by key and ties by name. Watch them fail.
+- [ ] Rename today's scorer to a private `foldedScore` (`scoreOf` is already `rankMatches`'s parameter); add `MatchKey`, `matchQuery` (every run of `/` and spaces one word break), `matchKey` (the name folded through `matchQuery` too, so a heading `Q1/Q2` answers both spellings), and the new `matchScore` (the name's score where the name matches, else the location's under every name's, so a title match is never outranked or pushed past the cap by a folder's pages); `rankMatches(items, q, keyOf, cap?)` scores through `matchScore` and ties by the key's name, since every ranked list ranks by a match key.
 
 **AFTER**
 
@@ -1295,18 +1295,48 @@ The work lands in nine phases in dependency order, each the largest run one agen
 +  place?: string
 +}
 +
-+/** A typed query folded as a key is, a `/` read as a word break, so `Pommora/Cl` and `pommora cl` ask the same; the fold runs before the trim, so a leading `/` leaves no leading space. */
-+export const matchQuery = (raw: string): string => foldKey(raw.replaceAll('/', ' ').trim())
++/** A query, or a key's text, folded with every run of `/` and spaces one word break, so `Pommora/Cl`, `Pommora / Cl`, and `pommora cl` ask the same and a heading `Q1/Q2` answers both. */
++export const matchQuery = (raw: string): string => foldKey(raw.replace(/[\s/]+/g, ' ').trim())
 +
 +export const matchKey = (name: string, place = ''): MatchKey =>
-+  place ? { name: foldKey(name), place: matchQuery(`${place}/${name}`) } : { name: foldKey(name) }
++  place
++    ? { name: matchQuery(name), place: matchQuery(`${place}/${name}`) }
++    : { name: matchQuery(name) }
 +
-+/** The better of the name's score and the location's: a plain title query ranks as the name alone does (the greedy scan would land its first letter in the place otherwise), and a folder query reaches through the location. Null where neither matches; an empty query matches every key. */
++// A name's score tops out near 34,000 at the 255 characters a link slot holds, so a location's sits under every name's.
++const UNDER_NAMES = 100_000
++
++/** The name's score where the name matches, else the location's, seated below every name match: a plain title query ranks as the name alone does, and a folder query reaches through the location. */
 +export function matchScore(key: MatchKey, q: string): number | null {
 +  const name = foldedScore(key.name, q)
++  if (name !== null) return name
 +  const place = key.place === undefined ? null : foldedScore(key.place, q)
-+  return name === null ? place : place === null ? name : Math.max(name, place)
++  return place === null ? null : place - UNDER_NAMES
 +}
+@@ rankMatches @@
+-type Ranked<T> = { item: T; score: number }
++type Ranked<T> = { item: T; score: number; name: string }
+
+-export function rankMatches<T extends { title: string }>(
++/** The items whose key matches `q`, best first, a tie broken by name. */
++export function rankMatches<T>(
+   items: readonly T[],
+-  scoreOf: (item: T) => number | null,
++  q: string,
++  keyOf: (item: T) => MatchKey,
+   cap = Number.POSITIVE_INFINITY,
+ ): T[] {
+   const before = (a: Ranked<T>, b: Ranked<T>): number =>
+-    b.score - a.score || compareTitles(a.item.title, b.item.title)
++    b.score - a.score || compareTitles(a.name, b.name)
+   const kept: Ranked<T>[] = []
+   for (const item of items) {
+-    const score = scoreOf(item)
++    const key = keyOf(item)
++    const score = matchScore(key, q)
+     if (score === null) continue
+-    const hit = { item, score }
++    const hit = { item, score, name: key.name }
 ```
 
 **THE SITES**
@@ -1315,14 +1345,14 @@ The work lands in nine phases in dependency order, each the largest run one agen
 
 **CHANGE**
 
-- [ ] Write and watch fail: `pageIndex.test.ts:44-60` renamed (ranked, not prefix) and gaining "`Pommora/Cl` finds `Studio/Pommora/ClaudeMD` and not `Studio/Sapphire/ClaudeMD`", "an exact title ranks first", "two holders of one title both appear under a plain query"; `navSearch.test.ts:35-38` and `treeIndex.test.ts:101` take `match` for `folded` and gain a parent-folder query; `TrashFrame.test.tsx` gains `notes/alpha`; `search.test.ts:9` takes a `MatchKey` map and gains a set-chain query; `autocomplete.test.ts:536-545` renamed (fuzzy) with `nts` finding `Notes`; `blockMenu.test.ts:53-115` `hea` and `bl` counts updated (`hr` now finds Horizontal Rule); a `LocationField` case where `parent/child` narrows.
-- [ ] `pageIndex.ts`: the lazy list carries `{ p, title: p.title, key: matchKey(p.title, relDirname(p.path)) }`; `candidates` ranks it with `rankMatches(…, limit)` under `matchQuery(query)` and keeps the empty-query alphabetical browse; the `:33` comment says the keys are built on the first `candidates` call.
-- [ ] `navSearch.ts`: `SearchEntry.folded` becomes `match: MatchKey`; `filterNav` ranks on `matchScore(e.match, matchQuery(query))`. `treeIndex.ts` builds `match: matchKey(r.title, r.parents.map((p) => p.title).join('/'))`.
-- [ ] `TrashFrame.tsx` `filterRows`: `rankMatches(rows, (row) => matchScore(matchKey(row.title, row.crumbs.map((c) => c.title).join('/')), q))` under `matchQuery`.
-- [ ] `autocomplete.ts`: `headingRows` and `aliasRows` filter on `matchScore(matchKey(text), matchQuery(query)) !== null`, keeping the outline's order and dedupe and the remembered order.
-- [ ] `LocationField.tsx`: `narrowed`'s walk threads `place` (the ancestors' titles joined by `/`) and matches `matchScore(matchKey(n.title, place), q) !== null`; the draft folds through `matchQuery`.
-- [ ] `useViewHost.ts`: `needle = matchQuery(query ?? '')`; the map becomes `Map<string, MatchKey>` with `matchKey(r.title, relDirname(r.path).slice(source.path.length + 1))`, the Set chain below the source (every row shares the source's own name, which would otherwise keep every row). `search.ts`: `searchGroups(groups, needle, keys)` keeps a row when its key exists and scores.
-- [ ] `blockMenu.ts`: `filterBlockMenu` keeps a row when `matchScore(matchKey(row.label, s.title), matchQuery(query)) !== null` (a matching section title still keeps its rows, since a subsequence of the title is one of the key); `matchAt` goes.
+- [ ] Write and watch fail: `pageIndex.test.ts:44-60` renamed (ranked, not prefix) and gaining "`Pommora/Cl` finds `Studio/Pommora/ClaudeMD` and not `Studio/Sapphire/ClaudeMD`", "an exact title ranks first", "two holders of one title both appear under a plain query"; `navSearch.test.ts:35-38` and `treeIndex.test.ts:101` take `match` for `folded` and gain a parent-folder query; `TrashFrame.test.tsx` gains `notes/alpha`; `search.test.ts:9` takes a `MatchKey` map and gains a set-chain query; `autocomplete.test.ts:536-545` renamed (ranked) with `nts` finding `Notes` and `int` seating `Intro` before `Implementation Notes`; `aliasPicker.test.tsx` ranks `plan` before `the plan`; `blockMenu.test.ts:53-115` `hea` and `bl` re-derived under the ranked order, `tab`, `int`, and `call` each seating the row they name first; `blockMenuFlow.test.tsx` pins `/int` then Enter writing the embed and `/tab` listing Table first; a `LocationField` case where `parent/child` narrows.
+- [ ] `pageIndex.ts`: the lazy list carries `{ p, key: matchKey(p.title, relDirname(p.path)) }`; `candidates` ranks it with `rankMatches(alphabetical, q, (x) => x.key, limit)` under `matchQuery(query)` and keeps the empty-query alphabetical browse; the `norm` precompute folds into the `byTitle` loop, since nothing else reads it. `pageIndex.test.ts` pins a title match ranking inside the limit above thirty pages reached through an `Archive` folder.
+- [ ] `navSearch.ts`: `SearchEntry.folded` becomes `match: MatchKey`; `filterNav` ranks with `rankMatches(index, q, (e) => e.match, 50)`. `treeIndex.ts` builds `match: matchKey(r.title, r.parents.map((p) => p.title).join('/'))`.
+- [ ] `TrashFrame.tsx` `filterRows`: `rankMatches(rows, q, (row) => matchKey(row.title, row.crumbs.map((c) => c.title).join('/')))` under `matchQuery`.
+- [ ] `autocomplete.ts`: one local `ranked(rows, q)` returns the rows as they stand under an empty query and through `rankMatches` under a typed one; `headingRows` dedupes the outline then ranks it (the outline's order survives for the nested view), and `aliasRows` ranks the remembered list (the remembered order survives where alone a drag is enabled).
+- [ ] `LocationField.tsx`: `narrowed`'s walk threads `place` (the ancestors' titles joined by `/`) and keeps a folder whose key scores or whose subtree kept something, one branch, since a folder matched by name keeps every descendant through their place (so it opens onto them); the draft folds through `matchQuery`.
+- [ ] `useViewHost.ts`: `needle = matchQuery(query ?? '')`; the map becomes `Map<string, MatchKey>` with `matchKey(r.title, relDirname(r.path).slice(source.path.length + 1))`, the Set chain below the source (every row shares the source's own name, which would otherwise keep every row). `search.ts`: `searchGroups(groups, needle, keys)` keeps a row whose key scores (every grouped row has one, built from the same rows).
+- [ ] `blockMenu.ts`: the rows are keyed once beside the sections (`BLOCK_MENU_ROWS`, each `{ title, row, key: matchKey(row.label, s.title) }`); `filterBlockMenu(query)` ranks them through `rankMatches` and regroups the hits by section in the order their best row falls, so Enter picks the best match; an empty query returns `BLOCK_MENU_SECTIONS` itself; `BlockMenuMatch` folds into an exported `BlockMenuSection` (the two shapes were one once `BlockMenuRow` went); `matchAt` goes. `blockQuery.ts`: the query grammar stops at a second `/` as it stops at a space (`^\/([^\s/]*)$`), since `/` folds to a word break and no block names one; `//` then Enter writes a newline, not a heading.
 - [ ] Every `foldKey(query.trim())` at these sites goes; unused `foldKey`/`normalizeTitle` imports go.
 
 **AFTER**
@@ -1331,7 +1361,7 @@ The work lands in nine phases in dependency order, each the largest run one agen
 @@ imports @@
 -import { compareTitles, normalizeTitle } from '../Paths/caseFold'
 -import { stripMarkdownExt } from '../Paths/posix'
-+import { compareTitles, type MatchKey, matchKey, matchQuery, matchScore, normalizeTitle, rankMatches } from '../Paths/caseFold'
++import { compareTitles, type MatchKey, matchKey, matchQuery, normalizeTitle, rankMatches } from '../Paths/caseFold'
 +import { relDirname, stripMarkdownExt } from '../Paths/posix'
 @@ buildPageIndex @@
 -  // Titles key ONCE at build — candidates() runs per autocomplete keystroke. Paths key per resolve instead, over a title's few holders, so a build costs nothing more.
@@ -1340,14 +1370,14 @@ The work lands in nine phases in dependency order, each the largest run one agen
 -  // Sorted on the first autocomplete, not at build: the index rebuilds whenever the pages change, and most builds (the host's always) never reach a picker.
 -  let alphabetical: typeof entries | null = null
 +  // Sorted and keyed on the first autocomplete, not at build: the index rebuilds whenever the pages change, and most builds (the host's always) never reach a picker.
-+  let alphabetical: { p: ConnPage; title: string; key: MatchKey }[] | null = null
++  let alphabetical: { p: ConnPage; key: MatchKey }[] | null = null
    …
      candidates(query, limit = 20) {
 -      alphabetical ??= [...entries].sort((a, b) => compareTitles(a.p.title, b.p.title))
 -      const q = normalizeTitle(query)
 +      alphabetical ??= pages
-+        .map((p) => ({ p, title: p.title, key: matchKey(p.title, relDirname(p.path)) }))
-+        .sort((a, b) => compareTitles(a.title, b.title))
++        .map((p) => ({ p, key: matchKey(p.title, relDirname(p.path)) }))
++        .sort((a, b) => compareTitles(a.p.title, b.p.title))
 +      const q = matchQuery(query)
        // An empty query browses the whole index alphabetically, as an empty `[[` or `[label](` lists.
        if (!q) return alphabetical.slice(0, limit).map((x) => x.p)
@@ -1359,13 +1389,13 @@ The work lands in nine phases in dependency order, each the largest run one agen
 -        )
 -        .slice(0, limit)
 -        .map((x) => x.p)
-+      return rankMatches(alphabetical, (x) => matchScore(x.key, q), limit).map((x) => x.p)
++      return rankMatches(alphabetical, q, (x) => x.key, limit).map((x) => x.p)
      },
 ```
 
 ```Core/Navigation/navSearch.ts diff
 -import { foldKey, matchScore, rankMatches } from '../Paths/caseFold'
-+import { type MatchKey, matchQuery, matchScore, rankMatches } from '../Paths/caseFold'
++import { type MatchKey, matchQuery, rankMatches } from '../Paths/caseFold'
  …
 -  /** Folded once at build — filterNav scores EVERY entry on every keystroke. */
 -  folded: string
@@ -1377,7 +1407,7 @@ The work lands in nine phases in dependency order, each the largest run one agen
 -  const q = foldKey(query.trim())
 -  return q ? rankMatches(index, (e) => matchScore(e.folded, q), 50) : []
 +  const q = matchQuery(query)
-+  return q ? rankMatches(index, (e) => matchScore(e.match, q), 50) : []
++  return q ? rankMatches(index, q, (e) => e.match, 50) : []
  }
 ```
 
@@ -1397,29 +1427,45 @@ The work lands in nine phases in dependency order, each the largest run one agen
 -    const place = matchScore(foldKey(row.crumbs.map((c) => c.title).join(' ')), q)
 -    return title === null ? place : place === null ? title : Math.max(title, place)
 -  })
-+  return rankMatches(rows, (row) =>
-+    matchScore(matchKey(row.title, row.crumbs.map((c) => c.title).join('/')), q),
++  return rankMatches(rows, q, (row) =>
++    matchKey(row.title, row.crumbs.map((c) => c.title).join('/')),
 +  )
  }
 ```
 
 ```Core/MarkdownPM/Autocomplete/autocomplete.ts diff
 @@ headingRows @@
++/** Rows in their own order under an empty query, ranked by a typed one. */
++const ranked = <R extends AcRow>(rows: R[], q: string): R[] =>
++  q ? rankMatches(rows, q, (r) => matchKey(r.value)) : rows
++
++/** The outline's headings, repeated text listed once. */
+ export function headingRows(outline: readonly PageHeading[], query: string): HeadingRow[] {
 -  const q = normalizeTitle(query)
 +  const q = matchQuery(query)
    const seen = new Set<string>()
-   return outline
+-  return outline
++  const rows = outline
      .filter((h) => {
        const key = normalizeTitle(h.text)
 -      if (!key.startsWith(q) || seen.has(key)) return false
-+      if (matchScore(matchKey(h.text), q) === null || seen.has(key)) return false
++      if (seen.has(key)) return false
+       seen.add(key)
+       return true
+     })
+     .map((h): HeadingRow => ({ kind: 'heading', value: h.text, level: h.level }))
++  return ranked(rows, q)
 @@ aliasRows @@
 -  const q = normalizeTitle(query)
-+  const q = matchQuery(query)
-   return aliases
-     .list(pageId)
+-  return aliases
+-    .list(pageId)
 -    .filter((a) => normalizeTitle(a).startsWith(q))
-+    .filter((a) => matchScore(matchKey(a), q) !== null)
+-    .map((a): AcRow => ({ kind: 'alias', value: a }))
++  const q = matchQuery(query)
++  return ranked(
++    aliases.list(pageId).map((a): AcRow => ({ kind: 'alias', value: a })),
++    q,
++  )
 ```
 
 ```Core/Views/Settings/LocationField.tsx diff
@@ -1432,8 +1478,9 @@ The work lands in nine phases in dependency order, each the largest run one agen
 +      const sets = walk(n.sets ?? [], place ? `${place}/${n.title}` : n.title)
        if (sets.length > 0) leads.add(n.id)
 -      if (matchScore(foldKey(n.title), query) !== null) return [n]
-+      if (matchScore(matchKey(n.title, place), query) !== null) return [n]
-       return sets.length > 0 ? [{ ...n, sets }] : []
+-      return sets.length > 0 ? [{ ...n, sets }] : []
++      const kept = sets.length > 0 || matchScore(matchKey(n.title, place), query) !== null
++      return kept ? [{ ...n, sets }] : []
      })
 -  return { nodes: walk(nodes), leads }
 +  return { nodes: walk(nodes, ''), leads }
@@ -1485,33 +1532,68 @@ The work lands in nine phases in dependency order, each the largest run one agen
    return groups.flatMap((group) => {
 -    const items = group.items.filter((row) => matchScore(titles.get(row.id) ?? '', needle) !== null)
 -    const children = group.children && searchGroups(group.children, needle, titles)
-+    const items = group.items.filter((row) => {
-+      const key = keys.get(row.id)
-+      return key !== undefined && matchScore(key, needle) !== null
-+    })
++    const items = group.items.filter((row) => matchScore(keys.get(row.id)!, needle) !== null)
 +    const children = group.children && searchGroups(group.children, needle, keys)
 ```
 
 ```Core/Actions/blockMenu.ts diff
+-interface BlockMenuSection {
++export interface BlockMenuSection {
+   title: string
+   rows: readonly LeafItem<BlockMenuAction>[]
+ }
+-
+-export interface BlockMenuMatch {
+-  title: string
+-  rows: readonly LeafItem<BlockMenuAction>[]
+-}
+ …
 -function matchAt(label: string, query: string): number | null {
 -  const at = label.toLowerCase().indexOf(query)
 -  return at === -1 ? null : at
 -}
 -
- export function filterBlockMenu(
-   sections: readonly BlockMenuSection[],
-   query: string,
- ): BlockMenuMatch[] {
++const BLOCK_MENU_ROWS = BLOCK_MENU_SECTIONS.flatMap((s) =>
++  s.rows.map((row) => ({ title: s.title, row, key: matchKey(row.label, s.title) })),
++)
++
++/** A typed query ranks every row by its match and seats each section where its best row falls, so Enter picks the best match; an empty query lists the menu as it stands. */
+-export function filterBlockMenu(
+-  sections: readonly BlockMenuSection[],
+-  query: string,
+-): BlockMenuMatch[] {
 -  const q = query.toLowerCase()
-+  const q = matchQuery(query)
-   const out: BlockMenuMatch[] = []
-   for (const s of sections) {
+-  const out: BlockMenuMatch[] = []
+-  for (const s of sections) {
 -    const titleAt = matchAt(s.title, q)
 -    const rows = s.rows.filter((row) => titleAt !== null || matchAt(row.label, q) !== null)
-+    // The section is the row's place, so a query naming the section keeps every row in it.
-+    const rows = s.rows.filter((row) => matchScore(matchKey(row.label, s.title), q) !== null)
-     if (rows.length > 0) out.push({ title: s.title, rows })
-   }
+-    if (rows.length > 0) out.push({ title: s.title, rows })
+-  }
++export function filterBlockMenu(query: string): readonly BlockMenuSection[] {
++  const q = matchQuery(query)
++  if (!q) return BLOCK_MENU_SECTIONS
++  const out: { title: string; rows: LeafItem<BlockMenuAction>[] }[] = []
++  for (const { title, row } of rankMatches(BLOCK_MENU_ROWS, q, (r) => r.key)) {
++    const section = out.find((s) => s.title === title)
++    if (section) section.rows.push(row)
++    else out.push({ title, rows: [row] })
++  }
+   return out
+ }
+```
+
+```Core/MarkdownPM/Menus/blockQuery.ts diff
+-import { BLOCK_MENU_SECTIONS, filterBlockMenu, type BlockMenuMatch } from '../../Actions/blockMenu'
++import { filterBlockMenu, type BlockMenuSection } from '../../Actions/blockMenu'
+@@ blockQueryAt @@
+-  const match = /^\/(\S*)$/.exec(scan.lines[i])
++  const match = /^\/([^\s/]*)$/.exec(scan.lines[i])
+@@ OpenBlockQuery @@
+-  matches: BlockMenuMatch[]
++  matches: readonly BlockMenuSection[]
+@@ update @@
+-    const matches = filterBlockMenu(BLOCK_MENU_SECTIONS, q.query)
++    const matches = filterBlockMenu(q.query)
 ```
 
 **VERIFY**
@@ -1524,7 +1606,7 @@ The work lands in nine phases in dependency order, each the largest run one agen
 
 #### Review Checkpoint
 
-- [ ] Two `closeout-review` agents, reading outward: every type-to-filter in `Core/` and `UIX/` goes through `matchScore(key, q)` except `searchIcons` (D-3) and a view's filter rules (D-5); no site folds its own query; every ranked surface ranks and every structural surface keeps its order; keys are built where the rows are built, never per keystroke where a memo exists, and the picker's are lazy; the alias list's drag gate survives without highlighting.
+- [ ] Two `closeout-review` agents, reading outward: every type-to-filter in `Core/` and `UIX/` goes through `matchScore(key, q)` except `searchIcons` (D-3) and a view's filter rules (D-5); no site folds its own query; every list a typed query is picked from ranks (the picker's pages, headings, and aliases, the sidebar, the Trash, the block menu by section) and a view or a folder tree keeps its order; keys are built where the rows are built, never per keystroke where a memo exists, and the picker's are lazy; the alias list's drag gate survives without highlighting.
 
 ---
 
@@ -2973,7 +3055,7 @@ An `opus-low` agent makes the document edits, each surgical and no longer than t
 
 - **Conformance:** every change sits under *§Constraints*; no mechanism landed that an existing one already provided (one key, one naming rule, one keys rule, one per-key decision, one map, one matcher, one click arm, one Trash index, one per-file rewrite); nothing changed outside the files the tasks name, and `Core/Sync/`, the Matrix's drawing, Project Sapphire, and the settings set are untouched.
 - **Correctness:** each of the owner's six principles is observably true in `~/Test` as the VERIFY lines exercise them: a shared title writes a path and a unique one a bare title; `[[Folder/Title]]`, `[[Title.md]]`, and `[Alias](Folder/Title)` resolve as Obsidian reads them; a rename, a move, a folder rename, a create onto a held title, a Finder move, and a restore each leave every link that named the page resolving to it; one search rule answers every surface; an unresolved link's click seats the caret in its name everywhere a link rests; the Trash resolves by identity.
-- **Completeness:** every task and checkpoint in *§Process Overview* is ticked; every removal the tasks name is gone (`titleKey`, `spacesLinkHeading`, `titleHeldOutside`, `emphasizeMatch`, `matchText`, `BlockMenuRow`, `matchAt`, `tilesLinkHeading`, `oweRenames`, `trashedTitles`, `EditorHost.pageTitle`, `RenameChange`); no scaffolding, debug output, or unauthorized TODO remains.
+- **Completeness:** every task and checkpoint in *§Process Overview* is ticked; every removal the tasks name is gone (`titleKey`, `spacesLinkHeading`, `titleHeldOutside`, `emphasizeMatch`, `matchText`, `BlockMenuRow`, `BlockMenuMatch`, `matchAt`, `tilesLinkHeading`, `oweRenames`, `trashedTitles`, `EditorHost.pageTitle`, `RenameChange`); no scaffolding, debug output, or unauthorized TODO remains.
 - **Confirmation:** every "write and watch fail" test went red before its change and green after; every VERIFY ran and its output was read; the live checks the owner takes carry the owner's word in the task that names them.
 - **Continuity:** *§Reconciliation* is walked; the documents Task 9-1 names read true; every deviation is fixed or ruled on under *§Deviations*.
 - **Confidence:** the three gates are green from a clean checkout at HEAD; `view-delta <BASELINE>..HEAD` is reported with additions and removals apart, per phase and in total, against the count under *§Overview · The Number*, and growth past it states what it bought.
@@ -2994,7 +3076,7 @@ An `opus-low` agent makes the document edits, each surgical and no longer than t
 - [ ] `Features/ConnectionsPM.md`, `PagesPM.md`, `NavigationPM.md`, `ViewTypesPM.md`, `PommoraUIX.md`, `InterfacePM.md`, `NexusRecordPM.md`, `CorePM.md`, `DesktopPM.md` read true (Task 9-1).
 - [ ] `.claude/CLAUDE.md:19` reads true (Task 9-1).
 - [ ] `IssuesPM.md`: F-038 closed, F-039 re-worded, totals current (Task 9-1).
-- [ ] *Path Links — Decisions* A-2 reads per the alias ruling; *Other Workstreams* in the Decisions and this plan name the generation as 18 and the HEAD the plan was ratified at.
+- [ ] *Path Links — Decisions* A-2 reads per the alias ruling, and D-4's order clause reads per the Phase 4 ruling (a list a typed query is picked from ranks; a view and a folder tree keep their order); *Other Workstreams* in the Decisions and this plan name the generation as 18 and the HEAD the plan was ratified at.
 - [ ] `ContextPM.md` and `HandoffPM.md` carry the plan's completion in their own voice (where-things-stand and the next session's focus); `HistoryPM.md` only if the owner asks.
 - [ ] The Dashboard's line ledger reflects the final delta through its own hooks (no manual edit).
 - [ ] This plan's STATUS reads `Complete MM-DD-YYYY — <BASELINE>..<HEAD>` and BASELINE's End is filled.
@@ -3022,3 +3104,4 @@ Each ruling below was the planner's (10-16-2026), taken against the BRIEF's prin
 
 | # | Phase | Deviation | Ruling |
 | - | ----- | --------- | ------ |
+| 1 | 4 | D-4 kept the block menu, the heading list, and the alias list in native order under the one matcher; a loose match on an unranked list Enter picks from seats noise first (`/tab` then Enter wrote an Alphabetical List, `/int` a Numbered List). | Every list a typed query is picked from ranks by score through `rankMatches`, the block menu's sections seated where their best row falls; a view and the folder tree keep their order. The orchestrator's call under the BRIEF (10-17-2026), the owner having delegated it; Task 9-1 corrects D-4. |

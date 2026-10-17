@@ -5,7 +5,6 @@ import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
 import { LineRow, LineZone, lineList } from '@pommora/uix/Interactions/drag'
 import { useKeepInView } from '@pommora/uix/Interactions/paneCtl'
 import {
-  emphasizeMatch,
   FootingCreate,
   MenuFooting,
   MenuItem,
@@ -38,14 +37,14 @@ export function AliasList({
   aliases,
   host,
   active,
-  match = 0,
+  query = '',
   maxHeight,
   onPick,
 }: {
   aliases: readonly string[]
   host: AliasHost
   active?: number
-  match?: number
+  query?: string
   maxHeight?: number
   onPick?: (alias: string) => void
 }): React.JSX.Element {
@@ -53,7 +52,7 @@ export function AliasList({
     onAdd: (alias) => host.edit({ op: 'add', alias }),
     onRename: (from, to) => host.edit({ op: 'rename', from, to }),
   })
-  const entering = useEntrance(list.rows, (r) => r.key, match === 0)
+  const entering = useEntrance(list.rows, (r) => r.key, query === '')
   const [renaming, setRenaming] = useState<string | null>(null)
   const rows = useRef<HTMLDivElement>(null)
   const pick = useRef<number | undefined>(undefined)
@@ -61,7 +60,7 @@ export function AliasList({
   const keepInView = useKeepInView(active ?? -1)
   // A pending pick belongs to the list it was clicked in: typing in the slot or moving to another changes the list and drops it.
   const listed = aliases.join('\u0000')
-  useEffect(() => () => window.clearTimeout(pick.current), [listed, match])
+  useEffect(() => () => window.clearTimeout(pick.current), [listed, query])
   const editing = (row: ListRow): boolean => row.draft || renaming === row.key
   const end = (key: string, stay: boolean): void => {
     setRenaming((k) => (k === key ? null : k))
@@ -124,7 +123,7 @@ export function AliasList({
     >
       <LineZone
         {...lineList({
-          disabled: match > 0 || renaming !== null || list.drafting,
+          disabled: query !== '' || renaming !== null || list.drafting,
           commit: (alias, slot) => void host.edit({ op: 'move', alias, toIndex: slot.index }),
           line: menuDropLine,
           label: (alias) => alias,
@@ -172,9 +171,7 @@ export function AliasList({
                     if (row.draft) list.cancel()
                     end(row.key, how === 'key')
                   }}
-                >
-                  {(shown) => emphasizeMatch(shown, 0, match)}
-                </RenamableLabel>
+                />
               </MenuItem>
             )
             return (

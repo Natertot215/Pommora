@@ -42,9 +42,11 @@ describe('the picker offers what a page has been called before', () => {
     expect(aliasRows(aliases, 'p1', '').map((r) => r.value)).toEqual(['the plan', 'Q3 doc'])
   })
 
-  it('filters by what has been typed', () => {
+  it('ranks by what has been typed', () => {
     expect(aliasRows(aliases, 'p1', 'the').map((r) => r.value)).toEqual(['the plan'])
     expect(aliasRows(aliases, 'p1', 'zzz')).toEqual([])
+    remembered = { p1: ['the plan', 'plan'] }
+    expect(aliasRows(aliases, 'p1', 'plan').map((r) => r.value)).toEqual(['plan', 'the plan'])
   })
 
   it('offers every alias, however many', () => {
@@ -166,6 +168,21 @@ describe('the body picker’s alias list', () => {
     })
     await act(async () => vi.advanceTimersByTime(PICK_WAIT))
     expect(view.state.doc.toString()).toBe('[[Alpha|t]]')
+  })
+
+  it('a click insert pending when the slot’s query changes inserts nothing', async () => {
+    const view = await openPicker()
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] })
+    await click(itemOf('the plan'), 1)
+    await act(async () => {
+      view.dispatch({
+        changes: { from: 8, insert: 'e' },
+        selection: { anchor: 9 },
+        userEvent: 'input.type',
+      })
+    })
+    await act(async () => vi.advanceTimersByTime(PICK_WAIT))
+    expect(view.state.doc.toString()).toBe('[[Alpha|e]]')
   })
 
   it('a click insert pending when the caret moves to another link’s slot inserts nothing there', async () => {
