@@ -45,7 +45,7 @@ The work lands in ten phases in dependency order, removal first: the Space order
 | 2B | +110 / −225 | +109 / −254 | −202 (+208 / −410) |
 | 3 | +80 / −64 | +203 / −121 | −120 (+399 / −519) |
 | 4 | +67 / −58 | +125 / −108 | −103 (+488 / −591) |
-| 5A | +96 / −82 | | |
+| 5A | +96 / −82 | +135 / −121 | −89 (+590 / −679) |
 | 5B | +163 / −139 | | |
 | 6 | +151 / −151 | | |
 | 7A | +163 / −39 | | |
@@ -173,11 +173,11 @@ The work lands in ten phases in dependency order, removal first: the Space order
   - [x] Task 4-2 · Every count is its operation's dry run
   - [x] Task 4-3 · The dialog skips at each caller's count, and notices say Items
   - [x] Review Checkpoint
-- [ ] **Phase 5A** — Definitions Carry a Label and a Key
+- [x] **Phase 5A** — Definitions Carry a Label and a Key
   - [x] `[Stop: Nathan words the six messages, quits Pommora on both Nexuses through Task 5B-4, and gives his word for 5B-4]`
-  - [ ] Task 5A-1 · `name` becomes `label` and `key` at every reader and writer
-  - [ ] Task 5A-2 · Every name check reads both words
-  - [ ] Review Checkpoint
+  - [x] Task 5A-1 · `name` becomes `label` and `key` at every reader and writer
+  - [x] Task 5A-2 · Every name check reads both words
+  - [x] Review Checkpoint
 - [ ] **Phase 5B** — Options Carry a Key and a Label
   - [ ] Task 5B-1 · An option's `value` becomes `key` and `label`
   - [ ] Task 5B-2 · The encode writes keys, and adoption subtracts labels and keys
@@ -2675,8 +2675,8 @@ The work lands in ten phases in dependency order, removal first: the Space order
 - [ ] Write and watch fail: `schema.test.ts` *§validateName* takes `{ label, key }`: `{ label: 'stage', key: 'stage' }` beside `{ label: 'Stage', key: 'Stage' }` refuses `KEY_REFUSAL.duplicate('stage')`; `{ label: 'Stage', key: 'Stage' }` beside `{ label: 'Phase', key: 'stage' }` refuses `KEY_REFUSAL.duplicateKey('Stage')`; `{ label: 'My Banner', key: 'banner' }` refuses `KEY_REFUSAL.reserved('banner')` and `{ label: 'ID', key: 'x' }` refuses `KEY_REFUSAL.reserved('ID')`; `{ label: '---', key: '' }` refuses `KEY_REFUSAL.noKey`; the existing cases (`:16-47`) pass each word as both. `propertiesRegistry.test.ts:70` adds: of `{ label: 'A', key: 'x' }` and `{ label: 'B', key: 'X' }`, the second is unadmitted and rides through a write; `{ label: 'My Banner', key: 'banner' }` is unadmitted. `registryProperty.test.ts`: a rename of `{ label: 'Status', key: 'status' }` with a page holding `status: Open` to `status` writes the label `status`, leaves the journal slot empty, leaves the page byte-identical, and answers `{ from: 'status', to: 'status' }`. `PropertyFrame.test.tsx`: a rename answering `{ from: 'status', to: 'status' }` leaves `valuesEpoch` as it was; one answering `{ from: 'Stage', to: 'Phase' }` bumps it with that pair.
 - [ ] `schema.ts`: `validateName(words, existing, excludeId)` takes `Pick<PropertyDefinition, 'label' | 'key'>`, refuses `keyRefusal(words.label)`, then an empty key (`KEY_REFUSAL.noKey`) or `keyRefusal(words.key)`, then a folded label clash (`KEY_REFUSAL.duplicate(label)`), then a folded key clash (`KEY_REFUSAL.duplicateKey(key)`); its doc says it checks both words; `validateDefinition` passes `def`; `keyRefusal`'s doc names a label or a key.
 - [ ] `properties.ts`: `KEY_REFUSAL.duplicateKey(key)` reads `A property already writes "{key}" to files.`, and `KEY_REFUSAL.noKey` reads `Properties cannot contain an invalid name.`
-- [ ] `propertiesRegistry.ts`: admission admits a definition when `validateName` passes it against the definitions already admitted, its comment saying the first to hold a label or a key in any casing is the one admitted; the `keyRefusal` and `normalizeTitle` imports go.
-- [ ] `registryProperty.ts`: `renameProperty` validates `{ label: to, key: to }`, refuses on clashes only when `to !== prior.key`, sweeps only when the committed `from` differs from `def.key`, and answers `{ from, to: def.key }`.
+- [ ] `propertiesRegistry.ts`: admission walks the definitions by id, the order the registry is written in, and admits one when `validateName` passes it against the definitions already admitted, its comment saying the first by id to hold a label or a key in any casing is the one admitted; the `keyRefusal` and `normalizeTitle` imports go.
+- [ ] `registryProperty.ts`: `renameProperty` validates `{ label: to, key: to }`; when `to` is the prior key it checks no clash and journals nothing; it sweeps only when the committed `from` differs from `def.key`, and answers `{ from, to: def.key }`.
 - [ ] `PropertyFrame.tsx:237`: `bumpValuesEpoch` runs only when `res.value.from !== res.value.to`.
 
 **AFTER**
@@ -2692,14 +2692,15 @@ The work lands in ten phases in dependency order, removal first: the Space order
    excludeId?: string,
  ): Result<null> {
 -  const refusal = keyRefusal(name)
-+  const refusal = keyRefusal(label) ?? (normalizeTitle(key) ? keyRefusal(key) : KEY_REFUSAL.noKey)
++  const refusal = keyRefusal(label) ?? (key.trim() ? keyRefusal(key) : KEY_REFUSAL.noKey)
    if (refusal) return fail('invalid-property', refusal)
 -  const folded = normalizeTitle(name)
 -  const clash = existing.some((d) => d.id !== excludeId && normalizeTitle(d.label) === folded)
 -  if (clash) return fail('invalid-property', KEY_REFUSAL.duplicate(name))
-+  const others = existing.filter((d) => d.id !== excludeId)
-+  const holds = (word: string, of: (d: PropertyDefinition) => string): boolean =>
-+    others.some((d) => normalizeTitle(of(d)) === normalizeTitle(word))
++  const holds = (word: string, of: (d: PropertyDefinition) => string): boolean => {
++    const folded = normalizeTitle(word)
++    return existing.some((d) => d.id !== excludeId && normalizeTitle(of(d)) === folded)
++  }
 +  if (holds(label, (d) => d.label)) return fail('invalid-property', KEY_REFUSAL.duplicate(label))
 +  if (holds(key, (d) => d.key)) return fail('invalid-property', KEY_REFUSAL.duplicateKey(key))
    return ok(null)
@@ -2747,15 +2748,20 @@ The work lands in ten phases in dependency order, removal first: the Space order
      if (!named.ok) return named
      // A file holding only the new key is adopted, its value going live as a create's would; one holding both would lose its old value.
 -    const clashes = await bothKeyHolders(root, prior.key, to)
-+    const clashes = to === prior.key ? [] : await bothKeyHolders(root, prior.key, to)
++    const moves = to !== prior.key
++    const clashes = moves ? await bothKeyHolders(root, prior.key, to) : []
+     …
+-    await writeSchemaJournal(root, record)
++    if (moves) await writeSchemaJournal(root, record)
      …
 -        const v = validateName(to, Object.values(registry.defs), propertyId)
 +        const v = validateName({ label: to, key: to }, Object.values(registry.defs), propertyId)
      …
      const { from, def } = edit.value
 -    const skipped = await renameSweep(root, from, def)
+-    if (!skipped) await clearSchemaJournal(root, record)
 +    const skipped = from === def.key ? 0 : await renameSweep(root, from, def)
-     if (!skipped) await clearSchemaJournal(root, record)
++    if (moves && !skipped) await clearSchemaJournal(root, record)
 -    return ok({ from, to, ...schemaCascade({ skipped, hosts: [] }, record) })
 +    return ok({ from, to: def.key, ...schemaCascade({ skipped, hosts: [] }, record) })
 ```
@@ -4268,12 +4274,12 @@ for (const miss of misses) console.log(JSON.stringify(miss))
 
 **TASK:** Hoist `renameProperty`'s body into one rekey that a rename and a Key Format change both enter, writing the key through the Key Format, with the rename sweep taking keys; add the `property:setKeyFormat` channel.
 
-**NOW:** `renameProperty(root, propertyId, name)` (`Core/Properties/registryProperty.ts:110-154`, as Phases 2A, 5A, and 6 leave it) trims the label (`exactTitle`), no-ops on `to === prior.label`, validates `{ label: to, key: to }` before the journal and again inside the commit, skips the clash check when `to === prior.key`, refuses through `bothKeyHolders` and `KEY_REFUSAL.held(prior.key, to, n)`, journals `{ op: 'rename', id, from: prior.key, to }` unconditionally before the commit, commits `{ ...current, label: to, key: to }`, sweeps only when the committed `from` differs from `def.key`, and answers `{ from, to: def.key, … }`. `renameSweep(root, oldKey, def)` (`:82-98`, after Phase 1: sidecars through `rekeyHeld` alone) queries `keyHolderFiles` by the old key and sweeps `{ text, sidecars }`; its callers are `renameProperty` and the rename replay (`Core/Properties/replaySchemaCascade.ts:55`, `renameSweep(root, journal.from, def)`). Phase 4 left `sweepCount(root, files, plan)` and the exported `SweepPlan` (`Core/Properties/governedSweep.ts`), and `deletePlan` beside `stripAndRemove` (`Core/Properties/deleteProperty.ts`) as the plan-builder precedent. `property:rename` is `registryChannel(idAndValue, renameProperty)` with the default reply (`Core/Properties/handlers.ts:157`); the bridge declares it at `Core/Contract/bridge.ts:147-150`. The rename replay sweeps from `journal.from` to the definition's current key while no definition holds `from` (Phase 2A), which serves a Key Format change's record unchanged.
+**NOW:** `renameProperty(root, propertyId, name)` (`Core/Properties/registryProperty.ts:110-154`, as Phases 2A, 5A, and 6 leave it) trims the label (`exactTitle`), no-ops on `to === prior.label`, validates `{ label: to, key: to }` before the journal and again inside the commit, refuses through `bothKeyHolders` and `KEY_REFUSAL.held(prior.key, to, n)` and journals `{ op: 'rename', id, from: prior.key, to }` before the commit only when `to` moves the key (`moves`), commits `{ ...current, label: to, key: to }`, sweeps only when the committed `from` differs from `def.key`, and answers `{ from, to: def.key, … }`. `renameSweep(root, oldKey, def)` (`:82-98`, after Phase 1: sidecars through `rekeyHeld` alone) queries `keyHolderFiles` by the old key and sweeps `{ text, sidecars }`; its callers are `renameProperty` and the rename replay (`Core/Properties/replaySchemaCascade.ts:55`, `renameSweep(root, journal.from, def)`). Phase 4 left `sweepCount(root, files, plan)` and the exported `SweepPlan` (`Core/Properties/governedSweep.ts`), and `deletePlan` beside `stripAndRemove` (`Core/Properties/deleteProperty.ts`) as the plan-builder precedent. `property:rename` is `registryChannel(idAndValue, renameProperty)` with the default reply (`Core/Properties/handlers.ts:157`); the bridge declares it at `Core/Contract/bridge.ts:147-150`. The rename replay sweeps from `journal.from` to the definition's current key while no definition holds `from` (Phase 2A), which serves a Key Format change's record unchanged.
 
 **CHANGE**
 
 - [ ] Write and watch fail: `registryProperty.test.ts`, a new describe *§a Key Format change is a rename of the key*: with `Tags` (Match Title) assigned to `Col`, a page holding `Tags: [a]` between two other keys and a Space holding `Tags: ['b']`, `setKeyFormat(root, id, 'lowercase')` stores `{ label: 'Tags', key: 'tags', key_format: 'lowercase' }`, the page reads `tags: [a]` on the same line, the Space holds `tags: ['b']`, the journal is null, and it answers `ok` with `from: 'Tags'` and `to: 'tags'`; under `Heading Icon Hidden`, `setKeyFormat(root, id, 'snake_case')` refuses `KEY_REFUSAL.reserved('heading_icon_hidden')` and the registry, the holders, and the journal are unchanged; beside `{ label: 'Due_Date', key: 'Due_Date' }`, `Due Date` under `snake_case` refuses `KEY_REFUSAL.duplicateKey('due_date')`; under a property labelled `---`, `kebab-case` refuses `KEY_REFUSAL.empty`; with a page holding both `Tags: [a]` and `tags: [b]`, `lowercase` refuses `KEY_REFUSAL.held('Tags', 'tags', 1)` and stages no journal; `setKeyFormat(root, id, 'Match Title')` on a definition already storing `key_format: 'Match Title'` answers `ok(null)` and writes nothing; under `{ label: 'Tags', key: 'tags', key_format: 'lowercase' }`, `renameProperty(root, id, 'Labels')` writes `key: 'labels'` and moves the page's `tags:` to `labels:`, and `renameProperty(root, id, 'TAGS')` writes `label: 'TAGS'`, keeps `key: 'tags'`, leaves the page byte-identical, and answers `from` and `to` both `'tags'`. `handlers.test.ts` *§the property channels*: `property:setKeyFormat` with `'Shouting'` answers the `NEEDS_ID_AND_VALUE` fault. `replaySchemaCascade.test.ts`: an owed `{ op: 'rename', id, from: 'Tags', to: 'tags' }` over a definition storing `key: 'tags'` sweeps a page's `Tags:` to `tags:` and clears. `renameSweep.test.ts`: every call, as Phase 2A leaves the file, passes the new key in place of the definition (`renameSweep(root, 'Status', stage)` becomes `renameSweep(root, 'Status', 'Stage')`), every expectation unchanged, and the `stage` fixture (`:12`) and the `PropertyDefinition` import go, since no call reads them.
-- [ ] `registryProperty.ts`: delete `renameProperty`'s body; add `retitled(def, change)` (the definition with `change` applied and its key written from its label through its Key Format), `rekeyPlan(root, propertyId, change)` (the prior definition and the moved one, or the refusal, or null when neither the label nor the Key Format moves), and `rekeyProperty(root, propertyId, change)` (the journal, the commit re-checking `validateName` on `retitled(current, change)`, and the sweep); `renameProperty` enters it with `{ label: exactTitle(label) }` and `setKeyFormat` with `{ key_format }`; `renameSweep(root, from, to)` takes keys.
+- [ ] `registryProperty.ts`: delete `renameProperty`'s body; add `retitled(def, change)` (the definition with `change` applied and its key written from its label through its Key Format), `rekeyPlan(root, propertyId, change)` (the prior definition and the moved one, or the refusal, or null when neither the label nor the Key Format moves), and `rekeyProperty(root, propertyId, change)` (the journal when the key moves, the commit re-checking `validateName` on `retitled(current, change)`, and the sweep); `renameProperty` enters it with `{ label: exactTitle(label) }` and `setKeyFormat` with `{ key_format }`; `renameSweep(root, from, to)` takes keys.
 - [ ] `replaySchemaCascade.ts:55`: `renameSweep(root, journal.from, def.key)`.
 - [ ] `handlers.ts`: add `idAndFormat` and `'property:setKeyFormat': registryChannel(idAndFormat, setKeyFormat)`; `bridge.ts`: declare `'property:setKeyFormat'`, and `property:rename`'s reply keeps `PropertyRename | null`.
 
@@ -4341,11 +4347,12 @@ for (const miss of misses) console.log(JSON.stringify(miss))
 -    const named = validateName({ label: to, key: to }, Object.values(defs), propertyId)
 -    if (!named.ok) return named
 -    // A file holding only the new key is adopted, its value going live as a create's would; one holding both would lose its old value.
--    const clashes = to === prior.key ? [] : await bothKeyHolders(root, prior.key, to)
+-    const moves = to !== prior.key
+-    const clashes = moves ? await bothKeyHolders(root, prior.key, to) : []
 -    if (clashes.length)
 -      return fail('invalid-property', KEY_REFUSAL.held(prior.key, to, clashes.length))
 -    const record: SchemaJournal = { op: 'rename', id: propertyId, from: prior.key, to }
--    await writeSchemaJournal(root, record)
+-    if (moves) await writeSchemaJournal(root, record)
 +/** Validated before the journal and again on the registry it commits to, since a create can land between the two. The journal is staged BEFORE the commit: registry-first ordering means a crash between commit and sweep is recoverable from nowhere else, so the old key survives only there. */
 +function rekeyProperty(
 +  root: string,
@@ -4357,8 +4364,9 @@ for (const miss of misses) console.log(JSON.stringify(miss))
 +    if (!planned.ok) return planned
 +    if (!planned.value) return ok(null)
 +    const { prior, moved } = planned.value
++    const moves = moved.key !== prior.key
 +    const record: SchemaJournal = { op: 'rename', id: propertyId, from: prior.key, to: moved.key }
-+    await writeSchemaJournal(root, record)
++    if (moves) await writeSchemaJournal(root, record)
      const edit = await mutateRegistry<Result<{ from: string; def: PropertyDefinition }>>(
        root,
        (registry) => {
@@ -4376,13 +4384,13 @@ for (const miss of misses) console.log(JSON.stringify(miss))
        },
      )
      if (!edit.ok) {
-       await clearSchemaJournal(root, record)
+       if (moves) await clearSchemaJournal(root, record)
        return edit
      }
      const { from, def } = edit.value
 -    const skipped = from === def.key ? 0 : await renameSweep(root, from, def)
 +    const skipped = from === def.key ? 0 : await renameSweep(root, from, def.key)
-     if (!skipped) await clearSchemaJournal(root, record)
+     if (moves && !skipped) await clearSchemaJournal(root, record)
      return ok({ from, to: def.key, ...schemaCascade({ skipped, hosts: [] }, record) })
    })
  }
