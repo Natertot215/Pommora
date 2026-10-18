@@ -90,7 +90,8 @@ const schemaChannel = <A extends unknown[], T = null, R = T>(
 const idOnly = ([id]: unknown[]): [string] | Result<never> =>
   typeof id === 'string' ? [id] : NEEDS_PROPERTY_ID
 
-const journalRecord = ([raw]: unknown[]): [SchemaJournal] | Result<never> => {
+const journalRecord = ([raw]: unknown[]): [SchemaJournal | undefined] | Result<never> => {
+  if (raw === undefined) return [undefined]
   const record = isPlainObject(raw) ? decodeSchemaJournal(raw) : null
   return record ? [record] : fault('A schema record is required.')
 }

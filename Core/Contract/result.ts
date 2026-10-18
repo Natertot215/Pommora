@@ -11,6 +11,7 @@ type ErrorCode =
   | 'operation-failed'
   | 'no-nexus'
   | 'busy'
+  | 'owed'
 
 export interface PommoraError {
   code: ErrorCode

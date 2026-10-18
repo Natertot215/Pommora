@@ -26,9 +26,9 @@ export function editList(xs: readonly unknown[], edit: ValueEdit): unknown[] | n
   const landed = new Set<unknown>()
   const out: unknown[] = []
   for (const el of xs) {
-    const named = to.has(memberKey(el))
-    const next = named ? to.get(memberKey(el)) : el
-    if (named && next === null) continue
+    const mapped = to.get(memberKey(el))
+    if (mapped === null) continue
+    const next = mapped ?? el
     const key = memberKey(next)
     if (targets.has(key)) {
       if (landed.has(key)) continue

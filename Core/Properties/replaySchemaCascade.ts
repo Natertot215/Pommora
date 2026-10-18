@@ -70,7 +70,7 @@ async function replay(
       return optionCascade(root, def, new Map(journal.keys), journal.labels)
     }
     case 'option-remove': {
-      // Pages-first order holds the value in the def until the strip completes, so the value still listed is the owed state; gone means only the clear failed. An option has no identity, so an answer's record is owed only while the slot still holds it: past that, the value listed may have been added again.
+      // Pages-first order holds the key in the def until the strip completes, so the key still listed is the owed state; gone means only the clear failed. An option has no identity, so an answer's record is owed only while the slot still holds it: past that, the key listed may have been added again.
       const def = defs[journal.id]
       const held = answered ? await readSchemaJournal(root) : journal
       if (!def || !held || !same(held, journal)) return NO_REACH

@@ -15,7 +15,7 @@ import { basename, isAtOrUnder, relDirname, relJoin, titleFromPath } from '../Pa
 import { CONTEXTS_DIR_REL, contextDirRel } from '../Paths/nexusPaths'
 import { asStringArray } from './coerce'
 import { resolveOrder } from './order'
-import { isContainer } from './entities'
+import { type ContainerKind, isContainer } from './entities'
 import { contextWorldOf } from '../Contexts/contextResolve'
 import { sameItems } from '@pommora/uix/Utilities/same'
 
@@ -268,5 +268,7 @@ export const withheldIn =
   (path: string): boolean =>
     listed.some((u) => u.kind !== 'page' && isAtOrUnder(path, u.path))
 
-export const damagedFolders = (listed: readonly Unreadable[] = []): Unreadable[] =>
-  listed.filter((u) => u.reason === 'unparsed' && isContainer(u))
+export const damagedFolders = (
+  listed: readonly Unreadable[] = [],
+): (Unreadable & { kind: ContainerKind })[] =>
+  listed.filter((u) => u.reason === 'unparsed').filter(isContainer)
