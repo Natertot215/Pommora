@@ -3374,8 +3374,8 @@ The work lands in ten phases in dependency order, removal first: the Space order
 
 **CHANGE**
 
-- [ ] Write and watch fail: `schema.test.ts` *§validateOptionValues* (`:101-112`) takes `{ key, label }` options: `[{ key: 'A', label: 'A' }, { key: 'a', label: 'B' }]` refuses `'An option with this title already exists, please choose another name.'`, and with a second argument refuses that one instead; `[{ key: '', label: 'A' }]` refuses `'Options cannot contain an invalid name.'`; the existing four cases pass with each word as both. *§validateDefinition*: a Status whose groups hold `Done` and `done` refuses `'Option titles must be unique.'`, and a Status holding `{ key: ' ', label: 'Open' }` refuses `'Options cannot contain an invalid name.'`. *§withUniqueOptions* (new): of `{ key: 'x', label: 'A' }` and `{ key: 'X', label: 'B' }` it keeps the first; it drops `{ key: '', label: 'C' }`. `propertiesRegistry.test.ts:70` adds the key-fold pair, admitted with its first option.
-- [ ] `schema.ts`: `validateOptionValues(options: { key: string; label: string }[], taken?)` refuses a blank label (`'Option titles can’t be blank.'`), then a blank key (`'Options cannot contain an invalid name.'`), then a folded label clash (`'Option titles must be unique.'`), then a folded key clash (`taken`, by default `'An option with this title already exists, please choose another name.'`); its doc says labels and keys compare case-folded; `withUniqueOptions` drops every option with a blank label or key, then keeps the first per folded label through `firstPerTitle`, then the first per folded key among those; `validateDefinition` checks `optionsOf(def)` whenever `PROPERTY_TYPES[def.type].options` is set.
+- [ ] Write and watch fail: `schema.test.ts` *§validateOptionValues* (`:101-112`) takes `{ key, label }` options: `[{ key: 'A', label: 'A' }, { key: 'a', label: 'B' }]` refuses `'An option with this title already exists, please choose another name.'`; `[{ key: '', label: 'A' }]` refuses `'Options cannot contain an invalid name.'`; the existing four cases pass with each word as both. *§validateDefinition*: a Status whose groups hold `Done` and `done` refuses `'Option titles must be unique.'`, and a Status holding `{ key: ' ', label: 'Open' }` refuses `'Options cannot contain an invalid name.'`. *§withUniqueOptions* (new): of `{ key: 'x', label: 'A' }` and `{ key: 'X', label: 'B' }` it keeps the first; it drops `{ key: '', label: 'C' }`. `propertiesRegistry.test.ts:70` adds the key-fold pair, admitted with its first option.
+- [ ] `schema.ts`: `validateOptionValues(options: { key: string; label: string }[])` refuses a blank label (`'Option titles can’t be blank.'`), then a blank key (`'Options cannot contain an invalid name.'`), then a folded label clash (`'Option titles must be unique.'`), then a folded key clash (`'An option with this title already exists, please choose another name.'`); its doc says labels and keys compare case-folded; `withUniqueOptions` drops every option with a blank label or key, then keeps the first per folded label through `firstPerTitle`, then the first per folded key among those; `validateDefinition` checks `optionsOf(def)` whenever `PROPERTY_TYPES[def.type].options` is set.
 
 **AFTER**
 
@@ -3422,17 +3422,18 @@ The work lands in ten phases in dependency order, removal first: the Space order
 -    return fail('invalid-property', 'Option titles must be unique.')
 -  }
 +/** No minimum count — a Select may hold zero options. Enforced at create AND on every option edit; labels and keys each compare case-folded. */
-+export function validateOptionValues(
-+  options: { key: string; label: string }[],
-+  taken = 'An option with this title already exists, please choose another name.',
-+): Result<null> {
++export function validateOptionValues(options: { key: string; label: string }[]): Result<null> {
 +  const labels = options.map((o) => normalizeTitle(o.label))
 +  const keys = options.map((o) => normalizeTitle(o.key))
 +  if (labels.includes('')) return fail('invalid-property', 'Option titles can’t be blank.')
 +  if (keys.includes('')) return fail('invalid-property', 'Options cannot contain an invalid name.')
 +  if (new Set(labels).size < labels.length)
 +    return fail('invalid-property', 'Option titles must be unique.')
-+  if (new Set(keys).size < keys.length) return fail('invalid-property', taken)
++  if (new Set(keys).size < keys.length)
++    return fail(
++      'invalid-property',
++      'An option with this title already exists, please choose another name.',
++    )
    return ok(null)
  }
 ```
@@ -4680,15 +4681,31 @@ for (const miss of misses) console.log(JSON.stringify(miss))
 
 **TASK:** Add the Value Format change: one plan computes each moved option's key pair under the new format and refuses a collision or a crossing; the change enters `rekeyOptions` with one key-only `option-rename` record and the format, so it commits every key and the format and runs the option cascade over the key map with no configuration pass, as an option rename does; its count is that cascade's file sweep run dry. Add the `property:setValueFormat` channel.
 
-**NOW:** After Task 7B-1 an option rename enters `rekeyOptions(root, record)` (`Core/Properties/optionOps.ts`), which journals the record or refuses `OWED`, re-keys every stored option through `record.keys` and relabels through `record.labels`, and cascades from the record. After Phase 6 the option cascade takes a key map and an optional label pair (`optionCascade(root, def, keys, labels?)`, `Core/Properties/optionOps.ts`), sweeping files and caches when the map isn't empty and configuration only with `labels`; `valueEditPlan(root, def, keys)` builds its file plan; `OWED` refuses an option change while another record is owed; the `option-rename` record is `{ id, keys: [from, to][], labels? }`, its replay acting while the definition holds every `to` and no `from` and cascading `new Map(journal.keys)` with `journal.labels` (`Core/Properties/replaySchemaCascade.ts`), and the adoption shield covers every `from` of an owed record. `validateOptionValues` (`Core/Properties/schema.ts:85-91`, after Phase 5B) refuses a blank label, a blank key, a fold-duplicate label, and a fold-duplicate key, the last with its `taken` argument, by default `'An option with this title already exists, please choose another name.'`. `editStoredOptions(def, stored, edit)` (`optionOps.ts:53-60`) edits the stored entry's groups and writes them onto `def`. Nothing refuses a crossing: under `lowercase` to `kebab-case`, `WifiPro` moves `wifipro` → `wifi-pro` while `WiFi-Pro` moves `wifi-pro` → `wi-fi-pro`, and every uniqueness check passes (F-1 INFERRED; *MetadataV3 — Investigation*, *§Uniqueness and Collisions*). `memberKey` (`Core/Files/heldKeys.ts:51`, the trimmed NFC text after Phase 3) is what the replay's `editList` matches by.
+**NOW:** After Task 7B-1 an option rename enters `rekeyOptions(root, record)` (`Core/Properties/optionOps.ts`), which journals the record or refuses `OWED`, re-keys every stored option through `record.keys` and relabels through `record.labels`, and cascades from the record. After Phase 6 the option cascade takes a key map and an optional label pair (`optionCascade(root, def, keys, labels?)`, `Core/Properties/optionOps.ts`), sweeping files and caches when the map isn't empty and configuration only with `labels`; `valueEditPlan(root, def, keys)` builds its file plan; `OWED` refuses an option change while another record is owed; the `option-rename` record is `{ id, keys: [from, to][], labels? }`, its replay acting while the definition holds every `to` and no `from` and cascading `new Map(journal.keys)` with `journal.labels` (`Core/Properties/replaySchemaCascade.ts`), and the adoption shield covers every `from` of an owed record. `validateOptionValues` (`Core/Properties/schema.ts:85-91`, after Phase 5B) refuses a blank label, a blank key, a fold-duplicate label, and a fold-duplicate key, the last with `'An option with this title already exists, please choose another name.'`. `editStoredOptions(def, stored, edit)` (`optionOps.ts:53-60`) edits the stored entry's groups and writes them onto `def`. Nothing refuses a crossing: under `lowercase` to `kebab-case`, `WifiPro` moves `wifipro` → `wifi-pro` while `WiFi-Pro` moves `wifi-pro` → `wi-fi-pro`, and every uniqueness check passes (F-1 INFERRED; *MetadataV3 — Investigation*, *§Uniqueness and Collisions*). `memberKey` (`Core/Files/heldKeys.ts:51`, the trimmed NFC text after Phase 3) is what the replay's `editList` matches by.
 
 **CHANGE**
 
 - [ ] Write and watch fail: `optionOps.test.ts`, a new describe *§a Value Format change re-keys every option*: a Multi-Select `Tones` with `Light Blue` and `Dark Red` (Match Title) assigned to `Col`, a page holding `Tones: [Light Blue, "Dark Red"]`, a Space holding `Tones: ['Light Blue']`, `Col`'s cache block holding `{ p1: ['Light Blue'] }`, and a view filtering `Light Blue` (`seedConfigSurfaces`); `setValueFormat(root, id, 'kebab-case')` stores `value_format: 'kebab-case'` and the options `{ key: 'light-blue', label: 'Light Blue' }` and `{ key: 'dark-red', label: 'Dark Red' }`, the page reads `Tones: ["light-blue", "dark-red"]` (a renamed member with no exact held match takes the file's first quoted style, as A-3 writes), the Space `['light-blue']`, the cache `{ p1: ['light-blue'] }`, every configuration surface reads as it did, the journal is null, and the answer holds no `owed`; with `Wifi Pro` and `Wifi-Pro`, `kebab-case` refuses `'This format would give two options the same key, please rename one first.'` and the registry, the page, and the journal are unchanged; created under `lowercase` with `WifiPro` and `WiFi-Pro` (keys `wifipro` and `wifi-pro`), `kebab-case` refuses `CROSSED` and nothing changes; with `{ op: 'rename', id: 'prop_other', from: 'A', to: 'B' }` held, it answers `OWED` and nothing changes; with the page unreadable (`it.skipIf(noModeBits)`), it answers `owed: { op: 'option-rename', id, keys: [['Light Blue', 'light-blue'], ['Dark Red', 'dark-red']] }`, and `replaySchemaCascade(root, owed)` brings the page current and clears; `setValueFormat(root, id, 'Match Title')` under Match Title keeps every option and writes no holder; `setValueFormat` on a Text refuses `NO_OPTIONS`. A new describe *§valueFormatHolders*: the page and the Space count `ok(2)` for `kebab-case` and every file keeps its bytes; the crossing pair answers `CROSSED`; `Match Title` over keys equal to labels answers `ok(0)`. `handlers.test.ts` *§the property channels*: `property:setValueFormat` with `'Shouting'` answers the `NEEDS_ID_AND_VALUE` fault.
-- [ ] `optionOps.ts`: add `CROSSED`, `fail('invalid-property', 'This format would give one option the key another option writes now, please rename one first.')`; `valueFormatPlan(root, propertyId, format)`, answering the definition and the key pair of each option `format` moves, refused by `validateOptionValues` over the moved options, with `'This format would give two options the same key, please rename one first.'` for a key clash, and by `CROSSED` when a pair's new key is another pair's old key by `memberKey`; `rekeyOptions` takes an optional `value_format`, committing it on the definition it re-keys; `setValueFormat(root, propertyId, format)` enters `rekeyOptions` with `{ op: 'option-rename', id, keys }` from the plan and `format`; `valueFormatHolders(root, propertyId, format)`, answering `0` when no key moves and otherwise `sweepCount` over `valueEditPlan(root, def, new Map(keys))`.
+- [ ] `optionOps.ts`: add `CROSSED`, `fail('invalid-property', 'This format would give one option the key another option writes now, please rename one first.')`; `valueFormatPlan(root, propertyId, format)`, answering the definition and the key pair of each option `format` moves, refused by `validateOptionValues` over the moved options, which takes the key clash's refusal as an optional `taken` argument (by default Task 5B-3's) so the format passes `'This format would give two options the same key, please rename one first.'`, and by `CROSSED` when a pair's new key is another pair's old key by `memberKey`; `rekeyOptions` takes an optional `value_format`, committing it on the definition it re-keys; `setValueFormat(root, propertyId, format)` enters `rekeyOptions` with `{ op: 'option-rename', id, keys }` from the plan and `format`; `valueFormatHolders(root, propertyId, format)`, answering `0` when no key moves and otherwise `sweepCount` over `valueEditPlan(root, def, new Map(keys))`.
 - [ ] `handlers.ts`: `'property:setValueFormat': registryChannel(idAndFormat, setValueFormat, cascadeReply)`; `bridge.ts` declares it with the `Result<SchemaCascade>` reply.
 
 **AFTER**
+
+```Core/Properties/schema.ts diff
+@@ validateOptionValues @@
+-export function validateOptionValues(options: { key: string; label: string }[]): Result<null> {
++export function validateOptionValues(
++  options: { key: string; label: string }[],
++  taken = 'An option with this title already exists, please choose another name.',
++): Result<null> {
+   …
+-  if (new Set(keys).size < keys.length)
+-    return fail(
+-      'invalid-property',
+-      'An option with this title already exists, please choose another name.',
+-    )
++  if (new Set(keys).size < keys.length) return fail('invalid-property', taken)
+```
 
 ```Core/Properties/optionOps.ts diff
 @@ imports @@
