@@ -40,7 +40,7 @@ The work lands in ten phases in dependency order, removal first: the Space order
 
 | Phase | Estimate | Measured | Cumulative |
 | ----- | -------- | -------- | ---------- |
-| 1 | +63 / −102 | | |
+| 1 | +63 / −102 | +66 / −102 | −36 (+66 / −102) |
 | 2A | +34 / −50 | | |
 | 2B | +110 / −225 | | |
 | 3 | +80 / −64 | | |

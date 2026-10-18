@@ -371,11 +371,13 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
     splitFrontmatter(await readFile(join(root, rel), 'utf8'))['<Projects>']
 
   it.skipIf(noModeBits)(
-    'a refused Context delete returns every file it swept byte-for-byte, leaves no bundle, and can be retried',
+    'a refused Context delete returns every file it swept byte-for-byte, leaves no bundle, and can be retried, the retry dropping its id from a Space’s $order',
     async () => {
       await refuseThenRetry('.nexus/contexts/Projects', 'context')
       expect(await projectsOf('Notes/Beta.md')).toBeUndefined()
       expect(await projectsOf('Notes/Gamma.md')).toBeUndefined()
+      const health = await readJsonAt(join(root, '.nexus/contexts/Areas/Health/_space.json'))
+      expect('$order' in health).toBe(false)
     },
   )
 

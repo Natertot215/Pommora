@@ -131,7 +131,7 @@ describe('renameSweep reaches a Space sidecar', () => {
     expect(raw.$order).toEqual(['ctxA', 'prop_other', 'prop_s'])
   })
 
-  it('leaves a sidecar with neither the key nor the entry byte-identical', async () => {
+  it('leaves a sidecar without the key byte-identical', async () => {
     const file = await seedSpace({ id: 'sp1', Other: 'x' })
     const bytes = await readFile(file, 'utf8')
     const mtime = (await stat(file)).mtimeMs
