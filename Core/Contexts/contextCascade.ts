@@ -1,5 +1,5 @@
 import { basename, dirname, join } from '../Paths/posix'
-import { normalizeTitle } from '../Paths/caseFold'
+import { exactTitle, normalizeTitle } from '../Paths/caseFold'
 import { contextKey } from './contexts'
 import { ID_KEY } from '../Nexus/identityMark'
 import { asString } from '../Nexus/coerce'
@@ -62,7 +62,7 @@ async function sweepMembers(
   raw: Rewrite,
   pageText?: RewriteText,
 ): Promise<SweepResult> {
-  const title = member.spaceTitle === undefined ? undefined : normalizeTitle(member.spaceTitle)
+  const title = member.spaceTitle === undefined ? undefined : exactTitle(member.spaceTitle)
   const rels = queryMembers(member.key, title) ?? (await nexusCorpus(root))
   return sweepGovernedRoots(
     root,

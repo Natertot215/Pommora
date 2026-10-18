@@ -89,21 +89,10 @@ describe('editList', () => {
     expect(editList(['x', 'a', 'y', 'b'], 'a', { op: 'replace', to: 'b' })).toEqual(['x', 'b', 'y'])
   })
 
-  it('a replace of two spellings of one Space yields one title', () => {
-    expect(editList(['Pommora', 'x', 'pommora'], 'Pommora', { op: 'replace', to: 'Pom' })).toEqual([
-      'Pom',
-      'x',
-    ])
-  })
-
-  it('a Space renamed onto a title the list already spells differently holds one copy, spelled as the new title', () => {
-    expect(editList(['b', 'x', 'A'], 'A', { op: 'replace', to: 'B' })).toEqual(['B', 'x'])
-  })
-
-  it('renames an option written in any casing, merging one already held in another', () => {
+  it('leaves an option written in another casing alone', () => {
     const finished = { op: 'replace', to: 'Finished' } as const
-    expect(editList(['done', 'Active'], 'Done', finished)).toEqual(['Finished', 'Active'])
-    expect(editList(['done', 'finished'], 'Done', finished)).toEqual(['Finished'])
+    expect(editList(['done', 'Active'], 'Done', finished)).toBeNull()
+    expect(editList(['done', 'finished'], 'Done', finished)).toBeNull()
   })
 
   it('a strip that empties the list answers an empty list', () => {
@@ -112,10 +101,12 @@ describe('editList', () => {
 })
 
 describe('namesValue', () => {
-  it('names a value written in any casing', () => {
+  it('names a value by its exact trimmed title', () => {
     const done = namesValue('Done')
-    expect(done('done')).toBe(true)
-    expect(done('DONE')).toBe(true)
+    expect(done('Done')).toBe(true)
+    expect(done(' Done ')).toBe(true)
+    expect(done('done')).toBe(false)
+    expect(done('DONE')).toBe(false)
     expect(done('Open')).toBe(false)
   })
 })

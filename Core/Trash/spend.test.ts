@@ -946,9 +946,9 @@ describe('restore — the record spends, headless', () => {
     expect(sap['<Projects>']).toEqual(['Pommora'])
   })
 
-  it('a Context round-trips a member spelled in another case than its Space, written once', async () => {
+  it('a Context restore leaves a member written in another casing than its Space off the page', async () => {
     const alpha = join(root, 'Notes', 'Daily', 'Alpha.md')
-    await writeFile(alpha, `---\nID: ${PAGE_A}\n<Projects>:\n  - pommora\n  - POMMORA\n---\nbody`)
+    await writeFile(alpha, `---\nID: ${PAGE_A}\n<Projects>:\n  - pommora\n---\nbody`)
     await refreshTree(root)
     await settledMutate(
       root,
@@ -956,12 +956,9 @@ describe('restore — the record spends, headless', () => {
       nexusDeps,
     )
     const [listed] = await listBundles(root)
-    expect(listed.record).toMatchObject({
-      membership: [{ root: { id: PAGE_A }, spaces: [{ id: 'sp-pom' }] }],
-    })
     const r = await settledMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
     expect(r).toEqual({ ok: true, value: {} })
-    expect(splitFrontmatter(await readFile(alpha, 'utf8'))['<Projects>']).toEqual(['Pommora'])
+    expect('<Projects>' in splitFrontmatter(await readFile(alpha, 'utf8'))).toBe(false)
   })
 
   it('the resolver re-runs inside the op — a parent gone between list and restore refuses', async () => {

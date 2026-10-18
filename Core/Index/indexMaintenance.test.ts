@@ -163,7 +163,7 @@ describe('the writers maintain the rows', () => {
       deps,
     )
     expect(tagged.ok).toBe(true)
-    expect(queryMembers('<Projects>', 'pommora')).toEqual(['Notes/Daily/Alpha.md'])
+    expect(queryMembers('<Projects>', 'Pommora')).toEqual(['Notes/Daily/Alpha.md'])
     await expectMaintained()
     const renamed = await settledMutate(
       root,
@@ -171,8 +171,8 @@ describe('the writers maintain the rows', () => {
       deps,
     )
     expect(renamed.ok).toBe(true)
-    expect(queryMembers('<Projects>', 'pommora')).toEqual([])
-    expect(queryMembers('<Projects>', 'pom')).toEqual(['Notes/Daily/Alpha.md'])
+    expect(queryMembers('<Projects>', 'Pommora')).toEqual([])
+    expect(queryMembers('<Projects>', 'Pom')).toEqual(['Notes/Daily/Alpha.md'])
     await expectMaintained()
     await refreshTree(root)
     const deleted = await settledMutate(

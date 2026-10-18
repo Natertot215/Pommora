@@ -193,13 +193,13 @@ describe('a returning artifact is reconciled against the world it comes back to'
     expect(await pathExists(join(root, 'Notes', 'Alpha.md'))).toBe(false)
   })
 
-  it('keeps a near-miss Space title’s spelling on the way back', async () => {
+  it('prunes a member naming no Space exactly', async () => {
     await writeFile(
       join(root, 'Notes', 'Alpha.md'),
       `---\nID: ${PAGE_A}\n<Projects>:\n  - pommora\n---\nbody`,
     )
     await cycle('Notes/Alpha.md', 'page', async () => {})
-    expect((await fm('Notes/Alpha.md'))['<Projects>']).toEqual(['pommora'])
+    expect((await fm('Notes/Alpha.md'))['<Projects>']).toBeUndefined()
   })
 
   it('a value an outside write left as a number still names its Space', async () => {
@@ -224,16 +224,16 @@ describe('a returning artifact is reconciled against the world it comes back to'
     )
     await writeFile(
       join(root, 'Notes', 'Alpha.md'),
-      `---\nID: ${PAGE_A}\n<Projects>:\n  - pommora\n  - Sapphire\n---\nbody`,
+      `---\nID: ${PAGE_A}\n<Projects>:\n  - Pommora\n  - Sapphire\n---\nbody`,
     )
     await cycle('Notes/Alpha.md', 'page', async () => {
       await rm(join(contextsDir(root), 'Projects', 'Sapphire'), { recursive: true, force: true })
     })
   }
 
-  it('prunes the dead Space from a near-miss tag and keeps the survivor’s spelling', async () => {
+  it('prunes the dead Space from a tag and keeps the survivor', async () => {
     await prunedTag()
-    expect((await fm('Notes/Alpha.md'))['<Projects>']).toEqual(['pommora'])
+    expect((await fm('Notes/Alpha.md'))['<Projects>']).toEqual(['Pommora'])
   })
 
   it('reconciles every page inside a returning folder, not just a lone file', async () => {

@@ -130,7 +130,7 @@ describe('a re-assign puts a cached value back', () => {
     select_options: [{ value: 'Claude', color: 'red' }],
   }
 
-  it('keeps a cached Multi-Select member’s spelling', async () => {
-    expect((await reassigned('', tags, 'Tags: [claude]')).Tags).toEqual(['claude'])
+  it('a cached Multi-Select member comes back spelled as its option', async () => {
+    expect((await reassigned('', tags, 'Tags: [claude]')).Tags).toEqual(['Claude'])
   })
 })

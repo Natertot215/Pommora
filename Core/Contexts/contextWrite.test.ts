@@ -147,7 +147,7 @@ describe('setPageContext', () => {
   const siblings =
     '---\nid: p1\n<Projects>:\n  - pommora\n<Classes>:\n  - cs 161\n  - Bogus\n---\nbody'
 
-  it('keeps each held Space title’s spelling', async () => {
+  it('writes each Space under its own title', async () => {
     await writeFile(page(), '---\nid: p1\n<Projects>:\n  - pommora\n---\nbody')
     const other = join(contextsDir(root), 'Projects', 'Other')
     await mkdir(other, { recursive: true })
@@ -156,7 +156,7 @@ describe('setPageContext', () => {
       true,
     )
     expect(splitFrontmatter(await readFile(page(), 'utf8'))['<Projects>']).toEqual([
-      'pommora',
+      'Pommora',
       'Other',
     ])
   })

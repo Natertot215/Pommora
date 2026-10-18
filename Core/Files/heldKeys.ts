@@ -1,5 +1,5 @@
 import type { Json } from './stableJson'
-import { normalizeTitle } from '../Paths/caseFold'
+import { exactTitle } from '../Paths/caseFold'
 import { isScalar, listOf } from '../Contract/validators'
 
 /** `root` with `value` under `key`, in its place when the root holds it; `undefined` drops the key. */
@@ -10,8 +10,8 @@ export function landValue(root: Json, key: string, value: unknown): Json {
   return next
 }
 
-/** What a member matches by: a scalar's folded title, or the member itself. */
-export const memberKey = (v: unknown): unknown => (isScalar(v) ? normalizeTitle(v) : v)
+/** What a member matches by: a scalar's trimmed text, or the member itself. */
+export const memberKey = (v: unknown): unknown => (isScalar(v) ? exactTitle(v) : v)
 
 /** Two values as one list: `keep`'s members, then each of `from`'s that matches none of them by `memberKey`; a single value reads as a list of one. */
 export function joinValues(keep: unknown, from: unknown): unknown[] {

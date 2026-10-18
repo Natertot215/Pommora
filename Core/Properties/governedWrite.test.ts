@@ -189,12 +189,6 @@ describe('setGovernedRootKey — spellings', () => {
     expect(fm.Status).toEqual(['Done'])
   })
 
-  it('keeps how each held member is spelled', async () => {
-    await seeded('Tags: [claude, docs]')
-    await setGovernedRootKey(page, 'Tags', ['Claude', 'Docs', 'New'], world)
-    expect(splitFrontmatter(await readFile(page, 'utf8')).Tags).toEqual(['claude', 'docs', 'New'])
-  })
-
   it('a checked box over an unchecked word lands as its pair’s checked word, cased alike', async () => {
     await seeded('Done: No')
     await setGovernedRootKey(page, 'Done', true, world)

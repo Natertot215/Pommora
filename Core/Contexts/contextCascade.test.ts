@@ -73,7 +73,7 @@ beforeEach(async () => {
   await writeFile(csSidecar(), JSON.stringify({ id: 'sp-cs', '<Projects>': ['Pommora'] }))
   await mkdir(join(root, 'Notes'), { recursive: true })
   await writeFile(join(root, 'Notes', '_pagecollection.json'), JSON.stringify({ id: 'c-notes' }))
-  await writeFile(page(), '---\nid: p1\n<Projects>:\n  - Pommora\n  - pommora\n---\nbody')
+  await writeFile(page(), '---\nid: p1\n<Projects>:\n  - Pommora\n---\nbody')
 })
 afterEach(async () => {
   installStores(NO_STORES)
@@ -96,6 +96,13 @@ describe('the cascades open only the members the index names', () => {
     expect(sweepSpy.mock.calls[0]?.[1]).toEqual([page()])
     expect((await fmOf(page()))['<Projects>']).toEqual(['Pom'])
     expect((await readJsonAt(csSidecar()))['<Projects>']).toEqual(['Pom'])
+  })
+
+  it('a Space rename leaves a member written in another casing as written', async () => {
+    await writeFile(page(), '---\nid: p1\n<Projects>:\n  - Pommora\n  - pommora\n---\nbody')
+    await seedContentIndex(root)
+    expect((await renameSpaceOp(root, 'sp-pom', 'Pom')).ok).toBe(true)
+    expect((await fmOf(page()))['<Projects>']).toEqual(['Pom', 'pommora'])
   })
 
   it('a Context rename opens the holders of the key alone', async () => {
@@ -143,7 +150,7 @@ describe('renames and casing', () => {
     expect((await renameContextOp(root, 'ctx_projects', 'projects')).ok).toBe(true)
     expect(await readdir(contextsDir(root))).toContain('projects')
     expect(await regTitle('ctx_projects')).toBe('projects')
-    expect(await fmOf(page())).toEqual({ id: 'p1', '<projects>': ['Pommora', 'pommora'] })
+    expect(await fmOf(page())).toEqual({ id: 'p1', '<projects>': ['Pommora'] })
     expect(await readJsonAt(csSidecar())).toEqual({ id: 'sp-cs', '<projects>': ['Pommora'] })
     expect(await readFile(other(), 'utf8')).toBe(otherBefore)
     expect(await readJournal(root)).toBeNull()
@@ -300,7 +307,7 @@ describe('renameContextOp', () => {
     const r = await renameContextOp(root, 'ctx_projects', 'Ventures')
     expect(r.ok).toBe(true)
     const fm = await fmOf(page())
-    expect(fm['<Ventures>']).toEqual(['Pommora', 'pommora'])
+    expect(fm['<Ventures>']).toEqual(['Pommora'])
     expect('<Projects>' in fm).toBe(false)
     const sc = await readJsonAt(csSidecar())
     expect(sc['<Ventures>']).toEqual(['Pommora'])
@@ -330,7 +337,7 @@ describe('renameContextOp', () => {
     const r = await renameContextOp(root, 'ctx_projects', 'Ventures')
     expect(r.ok).toBe(false)
     expect(sweepSpy).toHaveBeenCalledTimes(2)
-    expect((await fmOf(page()))['<Projects>']).toEqual(['Pommora', 'pommora'])
+    expect((await fmOf(page()))['<Projects>']).toEqual(['Pommora'])
     expect((await fmOf(page()))['<Ventures>']).toBeUndefined()
     expect((await readJsonAt(csSidecar()))['<Projects>']).toEqual(['Pommora'])
     expect(await pathExists(join(contextsDir(root), 'Projects', 'Pommora'))).toBe(true)
@@ -349,10 +356,10 @@ describe('renameContextOp', () => {
       const r = await renameContextOp(root, 'ctx_projects', 'Ventures')
       await chmod(page(), 0o644)
       expect(r).toEqual(fault(`refused ${unsweptLine(1)}`))
-      expect((await fmOf(page()))['<Ventures>']).toEqual(['Pommora', 'pommora'])
+      expect((await fmOf(page()))['<Ventures>']).toEqual(['Pommora'])
       expect((await readJournal(root))?.skipped).toEqual([page()])
       await replayPendingRename(root)
-      expect((await fmOf(page()))['<Projects>']).toEqual(['Pommora', 'pommora'])
+      expect((await fmOf(page()))['<Projects>']).toEqual(['Pommora'])
       expect((await fmOf(page()))['<Ventures>']).toBeUndefined()
       expect(await readJournal(root)).toBeNull()
       expect(await regTitle('ctx_projects')).toBe('Projects')
@@ -396,7 +403,7 @@ describe('a renamed Context key keeps its place on every page carrying it', () =
     await writeFile(other(), unwritable)
     expect((await renameContextOp(root, 'ctx_projects', 'Ventures')).ok).toBe(true)
     expect(await readFile(other(), 'utf8')).toBe(unwritable)
-    expect((await fmOf(page()))['<Ventures>']).toEqual(['Pommora', 'pommora'])
+    expect((await fmOf(page()))['<Ventures>']).toEqual(['Pommora'])
     expect(await regTitle('ctx_projects')).toBe('Ventures')
     expect(await readJournal(root)).toBeNull()
   })
@@ -451,7 +458,7 @@ describe('renameSpaceOp', () => {
   })
 
   it('rewrites a tag written as a single value', async () => {
-    await writeFile(other(), '---\nid: p2\n<Projects>: pommora\n---\nbody')
+    await writeFile(other(), '---\nid: p2\n<Projects>: Pommora\n---\nbody')
     expect((await renameSpaceOp(root, 'sp-pom', 'Pommora 2')).ok).toBe(true)
     expect((await fmOf(other()))['<Projects>']).toEqual(['Pommora 2'])
   })
@@ -662,7 +669,7 @@ describe('unlink cascades (D-3)', () => {
     expect(r.ok).toBe(true)
     expect(r.ok && r.value.captured).toContainEqual({
       kind: 'page',
-      values: ['Pommora', 'pommora'],
+      values: ['Pommora'],
     })
     expect('<Projects>' in (await fmOf(page()))).toBe(false)
     expect((await fmOf(other()))['<Projects>']).toEqual(['Sapphire'])
@@ -710,7 +717,7 @@ describe('the sweep tells the truth about what it did (G-2)', () => {
     expect((await fmOf(join(root, 'Notes', 'Alien.md')))['<Projects>']).toEqual(['Pommora'])
     // Captures discriminate by id key: the ID page, the id-less legacy page (honest, unrestorable), and the Space sidecar.
     expect(captured).toContainEqual({ id: PAGE_C, kind: 'page', values: ['Pommora'] })
-    expect(captured).toContainEqual({ kind: 'page', values: ['Pommora', 'pommora'] })
+    expect(captured).toContainEqual({ kind: 'page', values: ['Pommora'] })
     expect(captured).toContainEqual({ id: 'sp-cs', kind: 'space', values: ['Pommora'] })
     expect(captured).toHaveLength(3)
   })
@@ -735,7 +742,7 @@ describe('the sweep tells the truth about what it did (G-2)', () => {
     const r = await unlinkSpaceValue(root, 'Projects', 'Pommora')
     expect(r.ok).toBe(true)
     if (!r.ok) return
-    expect(r.value.captured).toContainEqual({ kind: 'page', values: ['Pommora', 'pommora'] })
+    expect(r.value.captured).toContainEqual({ kind: 'page', values: ['Pommora'] })
     expect(r.value.captured).toContainEqual({ id: 'sp-cs', kind: 'space', values: ['Pommora'] })
     expect(r.value.captured).toHaveLength(2)
 
@@ -811,7 +818,7 @@ describe('replayPendingRename (D-7a crash windows)', () => {
       JSON.stringify({ id: 'sp-pom' }),
     )
     await replayPendingRename(root)
-    expect((await fmOf(page()))['<Ventures>']).toEqual(['Pommora', 'pommora'])
+    expect((await fmOf(page()))['<Ventures>']).toEqual(['Pommora'])
     expect(await regTitle('ctx_projects')).toBe('Ventures')
     expect(await readJournal(root)).toBeNull()
   })
@@ -825,7 +832,7 @@ describe('replayPendingRename (D-7a crash windows)', () => {
     })
     await replayPendingRename(root)
     await replayPendingRename(root)
-    expect((await fmOf(page()))['<Ventures>']).toEqual(['Pommora', 'pommora'])
+    expect((await fmOf(page()))['<Ventures>']).toEqual(['Pommora'])
     expect(await regTitle('ctx_projects')).toBe('Ventures')
     expect(await readJournal(root)).toBeNull()
   })
@@ -838,7 +845,7 @@ describe('replayPendingRename (D-7a crash windows)', () => {
       skipped: [],
     })
     await replayPendingRename(root)
-    expect((await fmOf(page()))['<Projects>']).toEqual(['Pommora', 'pommora'])
+    expect((await fmOf(page()))['<Projects>']).toEqual(['Pommora'])
     expect(await regTitle('ctx_projects')).toBe('Projects')
     expect(await readJournal(root)).toBeNull()
   })
@@ -864,7 +871,7 @@ describe('replayPendingRename (D-7a crash windows)', () => {
       skipped: [],
     })
     await replayPendingRename(root)
-    expect((await fmOf(page()))['<Projects>']).toEqual(['Pommora', 'pommora'])
+    expect((await fmOf(page()))['<Projects>']).toEqual(['Pommora'])
     expect(await readJournal(root)).toBeNull()
   })
 
@@ -923,7 +930,7 @@ describe('replayPendingRename (D-7a crash windows)', () => {
     }
     await writeJournal(root, j)
     await replayPendingRename(root)
-    expect((await fmOf(page()))['<Projects>']).toEqual(['Pommora', 'pommora'])
+    expect((await fmOf(page()))['<Projects>']).toEqual(['Pommora'])
     expect(await pathExists(join(contextsDir(root), 'Projects', 'Pommora', '_space.json'))).toBe(
       true,
     )

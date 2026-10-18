@@ -4,8 +4,8 @@ import { assembleEnvelope, renameFrontmatterKey, splitFrontmatter } from './page
 import { namesValue, stripList } from '../Properties/pageValue'
 
 describe('joinValues', () => {
-  it('keeps the first value and adds each member of the second that matches none of it: a scalar by its folded title, any other member only by itself', () => {
-    expect(joinValues(['b'], ['a', 'B'])).toEqual(['b', 'a'])
+  it('keeps the first value and adds each member of the second that matches none of it: a scalar by its exact title, any other member only by itself', () => {
+    expect(joinValues(['b'], ['a', 'B'])).toEqual(['b', 'a', 'B'])
     expect(joinValues(['Pommora'], [[['Pommora']]])).toEqual(['Pommora', [['Pommora']]])
     expect(joinValues('Pommora', ['X'])).toEqual(['Pommora', 'X'])
     expect(joinValues(undefined, ['X'])).toEqual(['X'])

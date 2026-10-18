@@ -44,13 +44,16 @@ describe('resolveContextKeys', () => {
     expect(links.size).toBe(0)
   })
 
-  it('matches values through coercion + NFC (scalars, case, whitespace), and only a scalar names a Space', () => {
+  it('matches values through coercion + NFC (scalars, whitespace), and only a scalar names a Space', () => {
     const links = resolveContextKeys(
-      { '<Classes>': [2024, true], '<Projects>': [' pommora '] },
+      { '<Classes>': [2024, true], '<Projects>': [' Pommora '] },
       contexts,
     )
     expect(links.get('ctxA')).toEqual(['sp3', 'sp4'])
     expect(links.get('ctx_projects')).toEqual(['sp1'])
+    expect(resolveContextKeys({ '<Projects>': ['pommora'] }, contexts).has('ctx_projects')).toBe(
+      false,
+    )
     expect(
       resolveContextKeys({ '<Projects>': [[['Pommora']]] }, contexts).has('ctx_projects'),
     ).toBe(false)
@@ -102,7 +105,7 @@ describe('reconcileGovernedRoot — the context arm', () => {
       world,
       {},
     )
-    expect(root['<Projects>']).toEqual(['pommora', 'CS 161'])
+    expect(root['<Projects>']).toEqual(['CS 161'])
     expect(changed).toEqual(['<Projects>'])
   })
 
@@ -137,21 +140,17 @@ describe('reconcileGovernedRoot — the context arm', () => {
     expect(r.changed).toEqual([])
   })
 
-  it('writes a Space named twice in two casings once, in its registered spelling', () => {
-    for (const twice of [
-      ['Pommora', 'pommora'],
-      ['pommora', 'Pommora'],
-    ])
-      expect(reconcileGovernedRoot({ '<Projects>': twice }, world).root['<Projects>']).toEqual([
-        'Pommora',
-      ])
+  it('writes a Space named twice once', () => {
+    expect(
+      reconcileGovernedRoot({ '<Projects>': ['Pommora', 'Pommora'] }, world).root['<Projects>'],
+    ).toEqual(['Pommora'])
   })
 
   it('reads a scalar Context value as a list of one, keeping its spelling, so a hand-typed tag resolves', () => {
-    const { root, changed } = reconcileGovernedRoot({ '<Projects>': 'pommora' }, world)
-    expect(root['<Projects>']).toEqual(['pommora'])
+    const { root, changed } = reconcileGovernedRoot({ '<Projects>': 'Pommora' }, world)
+    expect(root['<Projects>']).toEqual(['Pommora'])
     expect(changed).toEqual(['<Projects>'])
-    expect(resolveContextKeys({ '<Projects>': 'pommora' }, contexts).get('ctx_projects')).toEqual([
+    expect(resolveContextKeys({ '<Projects>': 'Pommora' }, contexts).get('ctx_projects')).toEqual([
       'sp1',
     ])
   })
@@ -232,19 +231,19 @@ describe('reconcileGovernedRoot — option, checkbox, and number spellings (the 
   const spelled: GovernedWorld = { ...world, defs: byKey([stageDef, doneDef, priceDef]) }
   const input = { Stage: ['done'], Done: 'Yes', Price: '$1,200.00' }
 
-  it('keeps each value as the file spells it, reading it as registered', () => {
+  it('spells an option word in another casing as registered, keeping the checkbox and number spellings', () => {
     const { root } = reconcileGovernedRoot(input, spelled)
-    expect(root).toEqual(input)
+    expect(root).toEqual({ ...input, Stage: ['Done'] })
     expect(decodeValue(stageDef, root.Stage)).toEqual({ kind: 'select', value: 'Done' })
     expect(decodeValue(doneDef, root.Done)).toEqual({ kind: 'checkbox', value: true })
     expect(decodeValue(priceDef, root.Price)).toEqual({ kind: 'number', value: 1200 })
   })
 
-  it('writes a Multi-Select holding two casings of one option as that option once', () => {
+  it('keeps a Multi-Select holding two casings of one option as written', () => {
     const labels: PropertyDefinition = { ...tagsDef, select_options: [{ value: 'Done' }] }
     const held = { ...spelled, defs: byKey([labels]) }
     const twice = { Tags: ['done', 'Done', 'x'] }
-    expect(reconcileGovernedRoot(twice, held).root).toEqual({ Tags: ['Done', 'x'] })
+    expect(reconcileGovernedRoot(twice, held).root).toEqual(twice)
   })
 })
 

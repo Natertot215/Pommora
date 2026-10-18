@@ -9,7 +9,7 @@ import type { SweepCapture, UnlinkOutcome } from '../Contexts/contextCascade'
 import { readTextOrNull } from '../Files/atomicWrite'
 import { spaceIdsIn } from '../Contexts/spaceSidecar'
 import { sidecarId } from '../Files/sidecar'
-import { normalizeTitle } from '../Paths/caseFold'
+import { exactTitle } from '../Paths/caseFold'
 
 import type { RecordFile, ParentRef } from './record'
 import type { ContainerKind } from '../Nexus/entities'
@@ -78,7 +78,7 @@ export async function gatherContextEvidence(
   at: number,
 ): Promise<ContextEvidence> {
   const { ids, unread: unresolved } = await spaceIdsIn(abs)
-  const spaceIds = new Map([...ids].map(([name, id]) => [normalizeTitle(name), id]))
+  const spaceIds = new Map([...ids].map(([name, id]) => [exactTitle(name), id]))
   return { entry: { ...entry }, at, spaceIds, unresolved }
 }
 
@@ -91,7 +91,7 @@ export function buildContextRecord(
     spaces: [
       ...new Map(
         c.values.map((title) => {
-          const id = evidence.spaceIds.get(normalizeTitle(title))
+          const id = evidence.spaceIds.get(exactTitle(title))
           return [id ?? title, id ? { id, title } : { title }]
         }),
       ).values(),

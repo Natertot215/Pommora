@@ -399,15 +399,15 @@ describe('writtenSpelling', () => {
     expect(writtenSpelling('note', undefined)).toBe('note')
   })
 
-  it('gives each member the one held member its title folds to; a member held twice keeps the registered spelling', () => {
+  it('gives each member the one held member its title names exactly; a member held twice keeps the registered spelling', () => {
     expect(writtenSpelling(['Done'], ['done', 'Done'])).toEqual(['Done'])
     expect(writtenSpelling(['Done'], ['done', 'DONE'])).toEqual(['Done'])
-    expect(writtenSpelling(['Done', 'Active'], 'done')).toEqual(['done', 'Active'])
+    expect(writtenSpelling(['Done', 'Active'], 'done')).toEqual(['Done', 'Active'])
   })
 
   it('a member keeps the held member that names it, of any scalar shape or as an unquoted wikilink, and a whole unquoted wikilink stays whole', () => {
     expect(writtenSpelling(['2024'], [2024])).toEqual([2024])
-    expect(writtenSpelling(['[[A.png]]'], [[['a.png']]])).toEqual([[['a.png']]])
+    expect(writtenSpelling(['[[A.png]]'], [[['a.png']]])).toEqual(['[[A.png]]'])
     expect(writtenSpelling(['[[a.png]]'], [['a.png']])).toEqual([['a.png']])
     expect(writtenSpelling(['[[a.png]]', '[[b.png]]'], [['a.png']])).toEqual([
       '[[a.png]]',
