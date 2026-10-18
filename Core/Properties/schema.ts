@@ -18,12 +18,14 @@ const RESERVED_KEY_NAMES: ReadonlySet<string> = new Set(
   [...PAGE_MODELED_KEYS, ...SPACE_MODELED_KEYS].map(normalizeTitle),
 )
 
-/** Why `name` can't be a property's on-disk key — empty, or a key Pommora manages in any casing — or null when it can. */
+/** Why `name` can't be a property's on-disk key — empty, a key Pommora manages in any casing, or a name every object already answers to — or null when it can. */
 export function keyRefusal(name: string): string | null {
   if (!name) return KEY_REFUSAL.empty
   if (name.startsWith(RESERVED_NAME_PREFIX) || name.startsWith('<'))
     return KEY_REFUSAL.reservedPrefix
-  return RESERVED_KEY_NAMES.has(normalizeTitle(name)) ? KEY_REFUSAL.reserved(name) : null
+  return RESERVED_KEY_NAMES.has(normalizeTitle(name)) || Object.hasOwn(Object.prototype, name)
+    ? KEY_REFUSAL.reserved(name)
+    : null
 }
 
 /** Which frontmatter keys hold links the graph relates and a rename rewrites, asked of a registry: Link and Text, and a key the registry hasn't typed unless Pommora keeps it; never File, whose references name assets. One lookup, built once per reader. */
