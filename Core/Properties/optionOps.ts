@@ -8,7 +8,7 @@ import { sweepParse } from '../Files/pageFile'
 import { spaceSidecars } from '../Contexts/spaceSidecar'
 import { namesValue, valueEditRewrite, type ValueEdit } from './pageValue'
 import { errText, ok, fail, fault, type Result } from '../Contract/result'
-import { heldPropertyValue, unregisteredMembers } from './propertyValue'
+import { unregisteredMembers } from './propertyValue'
 import {
   addOption,
   applyOptionEdit,
@@ -99,7 +99,7 @@ export async function registerHeldOptions(root: string, rels?: readonly string[]
       const held = new Map<string, string[]>()
       const collect = (values: Json, defs: readonly PropertyDefinition[]): void => {
         for (const def of defs) {
-          const members = unregisteredMembers(def, heldPropertyValue(values, def))
+          const members = unregisteredMembers(def, values[def.name])
           if (members.length) held.set(def.id, [...(held.get(def.id) ?? []), ...members])
         }
       }

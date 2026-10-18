@@ -9,7 +9,6 @@ import { renameSweep } from './registryProperty'
 import { stripAndRemove } from './deleteProperty'
 import { dropOptionFromDef, optionCascade } from './optionOps'
 import { optionValues } from './properties'
-import { normalizeTitle } from '../Paths/caseFold'
 import {
   clearSchemaJournal,
   readSchemaJournal,
@@ -35,11 +34,6 @@ export function replaySchemaCascade(
   })
 }
 
-const named =
-  (name: string) =>
-  (d: { name: string }): boolean =>
-    normalizeTitle(d.name) === normalizeTitle(name)
-
 async function replay(
   root: string,
   journal: SchemaJournal,
@@ -56,8 +50,8 @@ async function replay(
     case 'delete': {
       // The registry commits LAST in a delete, so the def still present under its journaled name is the crash state. The id under another name is alive on purpose — a restore or re-create consumes the record at createProperty; this arm catches what the delete left owed. A record a delete's answer carried exists only once its registry commit landed, so for it a present def is a restore.
       const def = defs[journal.id]
-      const crashed = !answered && def !== undefined && named(journal.name)(def)
-      const freed = !def && !Object.values(defs).some(named(journal.name))
+      const crashed = !answered && def !== undefined && def.name === journal.name
+      const freed = !def && !Object.values(defs).some((d) => d.name === journal.name)
       if (!crashed && !freed) return NO_REACH
       const folders = await collectionFolders(root)
       const files = await keyHolderFiles(root, journal.name, folders)

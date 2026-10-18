@@ -16,7 +16,6 @@ import { asString } from '../Nexus/coerce'
 import { fail, fault, ok, type Result } from '../Contract/result'
 import type { PageDetail } from '../Pages/pageDetail'
 import { machine } from '../Platform/machine'
-import { spellings } from '../Paths/caseFold'
 import { joinValues, type KeyCollision } from './heldKeys'
 
 interface PageEnvelope {
@@ -137,7 +136,7 @@ const envelope = (fenced: boolean, fm: string, body: string): string =>
 /** Whether yaml quotes `value` unasked, as it does a numeral's `"2024"`, a `'"Q3"'`, or a `[[Page]]`. */
 const quotesUnasked = (value: unknown): boolean => /^["']/.test(yamlInline(value))
 
-/** `value` as a node spelled as the `held` spellings of its key are, the first the one it lands on: a list keeps that one's flow or block style unless it's a whole unquoted `[[x]]`, whose brackets spell a link rather than a style, and a list nested in it, or a whole `[[x]]`, is written flow; each single-line string, the value itself or a list's member, keeps the quotes of the held string equal to it, else takes those of the first held string quoted where yaml wouldn't, and a string yaml quotes unasked, where the file chose none, those of the first quoted held string; anything else is spelled as yaml spells it. */
+/** `value` as a node spelled as the `held` nodes are, the first the one it lands on: a list keeps that one's flow or block style unless it's a whole unquoted `[[x]]`, whose brackets spell a link rather than a style, and a list nested in it, or a whole `[[x]]`, is written flow; each single-line string, the value itself or a list's member, keeps the quotes of the held string equal to it, else takes those of the first held string quoted where yaml wouldn't, and a string yaml quotes unasked, where the file chose none, those of the first quoted held string; anything else is spelled as yaml spells it. */
 function nodeSpelledAs(doc: Document, value: unknown, held: unknown[]): Node {
   const node = doc.createNode(value)
   const [lands] = held
@@ -165,19 +164,11 @@ function mergeInto(
 ): string {
   if (mergeable(doc)) {
     const written = (key: string): boolean => modeled[key] !== undefined
-    const items = isMap(doc.contents) ? doc.contents.items : []
     const dropped = modeledKeys.filter((k) => !written(k) && doc.has(k))
-    // A key written beside a dropped spelling of itself takes that spelling's place.
-    for (const key of modeledKeys.filter((k) => written(k) && !doc.has(k))) {
-      const was = spellings(dropped, key)[0]
-      const pair = items.find((i) => String(i.key) === was)
-      if (pair) (pair.key as { value: string }).value = key
-    }
     const held = valuesOf(doc)
     for (const key of modeledKeys.filter(written)) {
       if (JSON.stringify(held[key]) === JSON.stringify(modeled[key])) continue
-      const spelled = [key, ...spellings(dropped, key)].map((k) => doc.get(k, true))
-      doc.set(key, nodeSpelledAs(doc, modeled[key], spelled))
+      doc.set(key, nodeSpelledAs(doc, modeled[key], [doc.get(key, true)]))
     }
     for (const key of dropped) doc.delete(key)
     const out = serialized(doc)

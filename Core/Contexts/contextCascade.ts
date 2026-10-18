@@ -38,7 +38,7 @@ export const rekeyContext =
     rekeyHeld(raw, contextKey(oldTitle), contextKey(newTitle), NEITHER_KEY_IS_FRESHER)
 
 const retitleSpace = (raw: Json, contextTitle: string, j: RenameJournal): Json | null =>
-  editHeldList(raw, contextKey(contextTitle), true, (held) =>
+  editHeldList(raw, contextKey(contextTitle), (held) =>
     editList(held, j.oldTitle, { op: 'replace', to: j.newTitle }),
   )
 
@@ -149,7 +149,7 @@ export async function unlinkSpaceValue(
   const names = namesValue(spaceTitle)
   const take: Rewrite = (raw, file) => {
     const taken: string[] = []
-    const next = editHeldList(raw, key, true, (held) => {
+    const next = editHeldList(raw, key, (held) => {
       taken.push(...held.filter(names).map(String))
       return stripList(held, names)
     })

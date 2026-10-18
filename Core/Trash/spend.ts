@@ -19,7 +19,7 @@ import { restoreProperty } from './restoreProperty'
 import { scrubReturning } from './restoreScrub'
 import { exclusionWriteRefusal, readLiveSetting, reseatExcludedFolders } from '../Settings/settings'
 import { sweepRootsById } from '../Properties/governedSweep'
-import { heldValue, joinValues, landValue, writeTarget } from '../Files/heldKeys'
+import { joinValues, landValue } from '../Files/heldKeys'
 import { rewriteConnections } from '../Connections/rewrite'
 import { pageKey } from '../Connections/pageIndex'
 import { linkDefsOf } from '../Properties/propertiesRegistry'
@@ -296,7 +296,7 @@ async function reapply(
   additions: Record<string, string[]>,
 ): Promise<string[]> {
   const taken = await sweepRootsById(root, roots, additions, (raw, titles) =>
-    landValue(raw, writeTarget(raw, key), joinValues(heldValue(raw, key, true), titles)),
+    landValue(raw, key, joinValues(raw[key], titles)),
   )
   return Object.keys(additions).filter((id) => roots[id] && !taken.has(id))
 }

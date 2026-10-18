@@ -17,7 +17,6 @@ import { collectionFolders } from './assignment'
 import { confirmedKeyHolders, keyHolderFiles } from './keyHolders'
 import { sweepGovernedRoots, type Rewrite } from './governedSweep'
 import { rekeyHeld, type KeyCollision } from '../Files/heldKeys'
-import { normalizeTitle } from '../Paths/caseFold'
 import {
   clearSchemaJournal,
   readSchemaJournal,
@@ -66,10 +65,7 @@ export async function createProperty(
   // A landed create wearing a journaled delete's name or id supersedes the record, or a later replay would strip the living property. Only after commit: a refused create must not spend a record it never displaced.
   if (created.ok) {
     const journal = await readSchemaJournal(root)
-    if (
-      journal?.op === 'delete' &&
-      (normalizeTitle(journal.name) === normalizeTitle(landed) || journal.id === created.value.id)
-    )
+    if (journal?.op === 'delete' && (journal.name === landed || journal.id === created.value.id))
       await clearSchemaJournal(root, journal)
   }
   return created

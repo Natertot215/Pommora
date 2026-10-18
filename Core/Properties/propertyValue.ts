@@ -1,14 +1,8 @@
 import { z } from 'zod'
 import { listOf, scalarMembers } from '../Contract/validators'
-import {
-  firstPerTitle,
-  holdsList,
-  optionValues,
-  PROPERTY_TYPES,
-  type PropertyDefinition,
-} from './properties'
+import { firstPerTitle, optionValues, PROPERTY_TYPES, type PropertyDefinition } from './properties'
 import { normalizeTitle } from '../Paths/caseFold'
-import { heldValue, landValue, writeTarget } from '../Files/heldKeys'
+import { landValue } from '../Files/heldKeys'
 import { yamlInline } from '../Files/pageFile'
 import { linkEntry, readLinkText } from '../Connections/linkValue'
 import { readNumber, spelledNumber } from './formatValue'
@@ -237,20 +231,10 @@ export function isBlankValue(value: PropertyValue | null): boolean {
   }
 }
 
-/** What `root` holds for `def`: a list property's every spelling joined, any other's the one key it reads. */
-export const heldPropertyValue = (
-  root: Record<string, unknown>,
-  def: Pick<PropertyDefinition, 'name' | 'type'>,
-): unknown => heldValue(root, def.name, holdsList(def))
-
 /** The renderer's copy of a value write, landed where the host's lands; its members keep the spelling given, since a read decodes them by fold. */
 export const applyValueAtRoot = (
   root: Record<string, unknown>,
   def: PropertyDefinition,
   value: PropertyValue | null,
 ): Record<string, unknown> =>
-  landValue(
-    root,
-    writeTarget(root, def.name),
-    value === null || isBlankValue(value) ? undefined : encodeValue(value),
-  )
+  landValue(root, def.name, value === null || isBlankValue(value) ? undefined : encodeValue(value))

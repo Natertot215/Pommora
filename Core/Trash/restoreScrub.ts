@@ -2,9 +2,8 @@
 
 import type { NexusTree } from '../Nexus/tree'
 import { assignedDefs } from '../Properties/assignment'
-import { foldKey } from '../Paths/caseFold'
-import { heldKeys, stripKeys } from '../Files/heldKeys'
-import { byFoldedName } from '../Properties/properties'
+import { stripKeys } from '../Files/heldKeys'
+import { byKey } from '../Properties/properties'
 import { governedWorld, reconcileGovernedRoot, spaceWorldOf } from '../Contexts/contextResolve'
 import { type Frozen, gonePageEntry } from '../Properties/propertyValue'
 import { ensurePageId } from '../Nexus/adopt'
@@ -32,19 +31,19 @@ export async function scrubReturning(
 ): Promise<StrippedLink[]> {
   const world = governedWorld(tree, await assignedDefs(root, destCollectionFolder))
   const spaceWorld = spaceWorldOf(tree)
-  const links = byFoldedName(tree.config.registry.filter((d) => d.type === 'link'))
+  const links = byKey(tree.config.registry.filter((d) => d.type === 'link'))
   const dropped: StrippedLink[] = []
   // Whether or not the destination assigns its key, a Link naming a page gone leaves, noted by its root's id.
   const unlinked = (raw: Record<string, unknown>): Record<string, string> =>
     Object.fromEntries(
       Object.entries(raw).flatMap(([k, v]) => {
-        const entry = links.has(foldKey(k)) ? gonePageEntry(v, frozen) : null
+        const entry = links.has(k) ? gonePageEntry(v, frozen) : null
         return entry === null ? [] : [[k, entry]]
       }),
     )
   const note = (gone: Record<string, string>, id: string | undefined): void => {
     for (const [key, value] of Object.entries(gone)) {
-      const def = links.get(foldKey(key))
+      const def = links.get(key)
       if (def && id) dropped.push({ page: id, property: def.id, value })
     }
   }
@@ -71,8 +70,7 @@ export async function scrubReturning(
   )
   for (const rel of sidecars)
     await rmwJsonStrict(join(root, rel), (raw) => {
-      const skip = inTransitKey === undefined ? [] : heldKeys(raw, inTransitKey)
-      const r = reconcileGovernedRoot(raw, spaceWorld, {}, skip)
+      const r = reconcileGovernedRoot(raw, spaceWorld, {}, inTransitKey)
       const next = r.changed.length ? r.root : null
       const gone = unlinked(next ?? raw)
       note(gone, asString(raw.id))

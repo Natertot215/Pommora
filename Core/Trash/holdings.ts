@@ -2,7 +2,7 @@
 
 import { basename, join, relative, titleFromPath } from '../Paths/posix'
 import { SPACE_SIDECAR, TRASH_DIR } from '../Paths/nexusPaths'
-import { heldValue, landValue, writeTarget } from '../Files/heldKeys'
+import { landValue } from '../Files/heldKeys'
 import { readLinkText } from '../Connections/linkValue'
 import { normalizeTitle } from '../Paths/caseFold'
 import type { StrippedLink } from '../Nexus/cascade'
@@ -125,7 +125,7 @@ async function trashedHolders(
   return found
 }
 
-/** A Link value whose page or Space sits in the Trash goes back into its trashed copy wherever that property reads blank, landing where `writeTarget` places it, so it returns with it; `names` maps each property's ID to its name. */
+/** A Link value whose page or Space sits in the Trash goes back into its trashed copy wherever that property reads blank, so it returns with it; `names` maps each property's ID to its name. */
 export async function refillTrashed(
   root: string,
   links: StrippedLink[],
@@ -137,8 +137,7 @@ export async function refillTrashed(
     let next = raw
     for (const { page, property, value } of links) {
       const name = names.get(property)
-      if (page === id && name && isBlankRaw(heldValue(next, name, false)))
-        next = landValue(next, writeTarget(next, name, false), value)
+      if (page === id && name && isBlankRaw(next[name])) next = landValue(next, name, value)
     }
     return next === raw ? null : next
   }

@@ -8,7 +8,7 @@ import {
   RESERVED_PROPERTY_ID,
   STAMP_TYPE,
 } from './properties'
-import { decodeValue, heldPropertyValue, NULL_VALUE, type PropertyValue } from './propertyValue'
+import { decodeValue, NULL_VALUE, type PropertyValue } from './propertyValue'
 import { wikiTitle } from '../Connections/linkValue'
 
 export function declaredType(
@@ -54,7 +54,7 @@ export function resolveFieldValue(
   }
   let v = m.get(def)
   if (!v) {
-    v = decodeValue(def, heldPropertyValue(row.frontmatter as Record<string, unknown>, def))
+    v = decodeValue(def, (row.frontmatter as Record<string, unknown>)[def.name])
     m.set(def, v)
   }
   return v

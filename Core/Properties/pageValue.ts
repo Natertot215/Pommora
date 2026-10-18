@@ -2,7 +2,7 @@
 
 import type { Rewrite } from './governedSweep'
 import { editHeldList, memberKey } from '../Files/heldKeys'
-import { holdsList, type PropertyDefinition } from './properties'
+import type { PropertyDefinition } from './properties'
 import { normalizeTitle } from '../Paths/caseFold'
 
 export type ValueEdit = { op: 'strip' } | { op: 'replace'; to: string }
@@ -34,10 +34,9 @@ export function editList(
 }
 
 export function valueEditRewrite(
-  def: Pick<PropertyDefinition, 'name' | 'type'>,
+  def: Pick<PropertyDefinition, 'name'>,
   target: string,
   edit: ValueEdit,
 ): Rewrite {
-  return (raw) =>
-    editHeldList(raw, def.name, holdsList(def), (held) => editList(held, target, edit))
+  return (raw) => editHeldList(raw, def.name, (held) => editList(held, target, edit))
 }

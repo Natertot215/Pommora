@@ -1,7 +1,6 @@
 import { basename, join, isMarkdownFile, relative } from '../Paths/posix'
 import { contextKey } from './contexts'
 import { namesValue, stripList } from '../Properties/pageValue'
-import { heldValue } from '../Files/heldKeys'
 import {
   contextWorldOf,
   governedWorld,
@@ -106,9 +105,9 @@ async function setSpaceContext(
   for (const far of world.contexts.groupById.get(contextId)?.spaces ?? []) {
     if (far.id === a.id) continue
     const wants = targetSpaceIds.includes(far.id)
-    // Decided on what the far file holds, inside its own read-modify-write, never on the tree's copy of it. The far list is edited rather than replaced, so every spelling's members stay.
+    // Decided on what the far file holds, inside its own read-modify-write, never on the tree's copy of it. The far list is edited rather than replaced, so its other members stay.
     const half = await writeSpaceSidecar(join(root, far.path), (raw) => {
-      const held = listOf(heldValue(raw, backKey, true) ?? [])
+      const held = listOf(raw[backKey] ?? [])
       if (held.some(namesA) === wants) return null
       const without = stripList(held, namesA) ?? held
       const next = wants ? [...without, a.title] : without

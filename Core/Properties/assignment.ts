@@ -9,11 +9,10 @@ import { heldTreeOf, liveTreeOf } from '../Nexus/liveTree'
 import { type EntityRecord, recordById } from '../Nexus/record'
 import { damagedFolders } from '../Nexus/treePatch'
 import { readRegistry, serializeSchemaOp } from './propertiesRegistry'
-import { byFoldedName, holdsList, type PropertyDefinition } from './properties'
+import { byKey, type PropertyDefinition } from './properties'
 import {
   encodeValue,
   type Frozen,
-  heldPropertyValue,
   isBlankValue,
   gonePageEntry,
   reconcilePropertyValue,
@@ -22,7 +21,7 @@ import {
 import { parkLinks } from '../Trash/holdings'
 import { frozenWorld } from '../Nexus/heldPages'
 import { sweepRootsById } from './governedSweep'
-import { landValue, writeTarget } from '../Files/heldKeys'
+import { landValue } from '../Files/heldKeys'
 import { ok, fail, type Result } from '../Contract/result'
 
 export const assignedIds = (raw: Record<string, unknown> | null): string[] =>
@@ -38,11 +37,11 @@ export async function assignedDefs(
   const held = heldTreeOf(root)
   if (held) {
     const node = held.collections.find((c) => join(root, c.path) === collectionFolder)
-    if (node) return byFoldedName(node.properties ?? [])
+    if (node) return byKey(node.properties ?? [])
   }
   const registry = (await readRegistry(root)).defs
   const assigned = assignedIds(await readJsonObject(sidecarPath(collectionFolder, 'collection')))
-  return byFoldedName(assigned.flatMap((id) => registry[id] ?? []))
+  return byKey(assigned.flatMap((id) => registry[id] ?? []))
 }
 
 /** Puts each value `frozen` still admits back on the page or Space its ID names wherever that root holds none, and answers the IDs that took theirs. */
@@ -57,12 +56,8 @@ export async function refillValues(
     const restored = reconcilePropertyValue(def, value, frozen)
     const encoded = isBlankValue(restored) ? undefined : encodeValue(restored)
     if (encoded === undefined) return null
-    if (!isBlankValue(reconcilePropertyValue(def, heldPropertyValue(raw, def), {}))) return null
-    return landValue(
-      raw,
-      writeTarget(raw, def.name, holdsList(def)),
-      writtenSpelling(encoded, value),
-    )
+    if (!isBlankValue(reconcilePropertyValue(def, raw[def.name], {}))) return null
+    return landValue(raw, def.name, writtenSpelling(encoded, value))
   })
 }
 
