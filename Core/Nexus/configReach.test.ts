@@ -159,7 +159,7 @@ afterEach(async () => {
 })
 
 describe('an option rename', () => {
-  it('reaches every field that holds the option on a Collection, a Set, a tile, and the Matrix', async () => {
+  it('reaches every field that holds the option on a Collection, a Set, a tile, and the Matrix, and leaves the cache', async () => {
     const reach = await reachConfig(root, rename)
     expect(reach).toEqual({
       skipped: 0,
@@ -196,7 +196,7 @@ describe('an option rename', () => {
       rules: [{ property_id: 'prop_s', op: 'is', value: 'Closed' }, null],
     })
     expect(((await readJsonAt(colFile())).property_cache as Raw).prop_s).toEqual({
-      values: { p1: ['Closed'], p2: ['Closed', 'Todo'], p3: 'Todo' },
+      values: { p1: 'Done', p2: ['Done', 'Todo'], p3: 'Todo' },
     })
   })
 
@@ -251,7 +251,7 @@ describe('an option rename', () => {
 })
 
 describe('an option removal', () => {
-  it('drops a rule it leaves with no operand, or whose chip list it empties beside a value, and strips the cache', async () => {
+  it('drops a rule it leaves with no operand, or whose chip list it empties beside a value, and leaves the cache', async () => {
     await reachConfig(root, removal)
     const [view] = await viewsOf(colFile())
     expect(view.filter).toEqual({
@@ -268,7 +268,7 @@ describe('an option removal', () => {
     expect(view.collapsed_groups).toEqual(['Todo'])
     expect((view.group as Raw).order).toEqual(['Todo'])
     expect(((await readJsonAt(colFile())).property_cache as Raw).prop_s).toEqual({
-      values: { p2: ['Todo'], p3: 'Todo' },
+      values: { p1: 'Done', p2: ['Done', 'Todo'], p3: 'Todo' },
     })
     expect(await matrixRules()).toEqual({ match: 'all', rules: [null] })
   })

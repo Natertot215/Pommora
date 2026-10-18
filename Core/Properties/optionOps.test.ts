@@ -7,6 +7,7 @@ import { fault, ok } from '../Contract/result'
 import { editOption, optionHolders, renameOption, removeOption, clearOption } from './optionOps'
 import { createProperty, editProperty } from './registryProperty'
 import { assignProperty } from './assignment'
+import { removeProperty } from './removeProperty'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { newId } from '../Nexus/ids'
 import { createTestPage } from '../Testing/createTestPage'
@@ -767,6 +768,80 @@ describe('option cascades reach a Space sidecar', () => {
     expect((await clearOption(root, id, 'A')).ok).toBe(true)
     expect(await readFile(file, 'utf8')).toBe(bytes)
     expect((await stat(file)).mtimeMs).toBe(mtime)
+  })
+})
+
+describe('the option cascades reach the Collection caches', () => {
+  async function cached(): Promise<{
+    id: string
+    col: string
+    pages: { id: string; path: string }[]
+    cache: () => Promise<unknown>
+  }> {
+    const id = await mkSelect([
+      { key: 'A', label: 'A' },
+      { key: 'B', label: 'B' },
+    ])
+    const made = await createFolderEntity(root, 'collection', 'Col', newId())
+    if (!made.ok) throw new Error('folder failed')
+    const col = made.value.path
+    await assignProperty(root, col, id)
+    const pages = []
+    for (const title of ['One', 'Two', 'Three']) {
+      const p = await createTestPage(col, title, { body: 'b' })
+      if (!p.ok) throw new Error('page failed')
+      pages.push(p.value)
+    }
+    const [p1, p2, p3] = pages.map((p) => p.id)
+    const file = sidecarPath(col, 'collection')
+    await writeFile(
+      file,
+      JSON.stringify({
+        ...(await readJsonAt(file)),
+        property_cache: { [id]: { values: { [p1]: ['A'], [p2]: ['A', 'B'], [p3]: 'B' } } },
+      }),
+    )
+    const cache = async () => (await readJsonAt(file)).property_cache
+    return { id, col, pages, cache }
+  }
+
+  const block = (id: string, values: Record<string, unknown>) => ({ [id]: { values } })
+
+  it('a rename rewrites every cached list', async () => {
+    const { id, pages, cache } = await cached()
+    const [p1, p2, p3] = pages.map((p) => p.id)
+    expect((await renameOption(root, id, 'A', 'Z')).ok).toBe(true)
+    expect(await cache()).toEqual(block(id, { [p1]: ['Z'], [p2]: ['Z', 'B'], [p3]: 'B' }))
+  })
+
+  it('a removal strips the option from every cached list', async () => {
+    const { id, pages, cache } = await cached()
+    const [, p2, p3] = pages.map((p) => p.id)
+    expect((await removeOption(root, id, 'A')).ok).toBe(true)
+    expect(await cache()).toEqual(block(id, { [p2]: ['B'], [p3]: 'B' }))
+  })
+
+  it('a clear strips the cache, so a reassign refills no page with the option', async () => {
+    const { id, col, pages, cache } = await cached()
+    const [, p2, p3] = pages.map((p) => p.id)
+    expect(await clearOption(root, id, 'A')).toEqual(ok(null))
+    expect(await cache()).toEqual(block(id, { [p2]: ['B'], [p3]: 'B' }))
+    expect((await removeProperty(root, col, id)).ok).toBe(true)
+    expect((await assignProperty(root, col, id)).ok).toBe(true)
+    for (const p of pages) expect(await readFile(p.path, 'utf8')).not.toMatch(/\bA\b/)
+  })
+
+  it('a damaged Collection counts once, as the configuration pass skips it, and the record stays owed', async () => {
+    const { id } = await cached()
+    const other = await createFolderEntity(root, 'collection', 'Other', newId())
+    if (!other.ok) throw new Error('folder failed')
+    const file = sidecarPath(other.value.path, 'collection')
+    await rm(file)
+    await mkdir(file)
+    const r = await renameOption(root, id, 'A', 'Z')
+    expect(r.ok && r.value.cascade.warning).toBe(unsweptLine(1))
+    expect(r.ok && r.value.owed).toEqual({ op: 'option-rename', id, from: 'A', to: 'Z' })
+    expect(await readSchemaJournal(root)).toEqual({ op: 'option-rename', id, from: 'A', to: 'Z' })
   })
 })
 

@@ -29,7 +29,7 @@ export function patchCacheBlock(
 }
 
 /** Edits `ids`' blocks through `edit`, which answers a block's next values or null to leave it, dropping a block it empties; answers the next sidecar, or null when nothing changed. */
-export function editCacheBlocks(
+function editCacheBlocks(
   sidecar: Record<string, unknown>,
   ids: readonly string[],
   edit: (values: Record<string, unknown>, id: string) => Record<string, unknown> | null,

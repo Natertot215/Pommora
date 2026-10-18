@@ -16,7 +16,6 @@ import {
   OPERANDLESS_OPS,
   SUBSTRING_OPS,
 } from '../Views/filterRules'
-import { editCacheBlocks } from '../Properties/propertyCache'
 import {
   PROPERTY_TYPES,
   type PropertyDefinition,
@@ -32,7 +31,7 @@ import { same } from '../Files/stableJson'
 import { errText } from '../Contract/result'
 import { sidecarPath, tileDocPath } from '../Paths/paths'
 import { isAtOrUnder, join } from '../Paths/posix'
-import { isPlainObject, listOf } from '../Contract/validators'
+import { isPlainObject } from '../Contract/validators'
 import type { CollectionNode, NexusTree, SetNode } from './tree'
 import type { CascadeReport } from './cascade'
 import type { ContainerKind, HeldKind } from './entities'
@@ -305,20 +304,6 @@ export function goneEdit(tree: NexusTree, kind: HeldKind, rel: string): ConfigEd
   }
 }
 
-const cacheEdit = (e: OptionReach, cur: Raw): Raw | null =>
-  editCacheBlocks(cur, [e.def.id], (cached) => {
-    const values = { ...cached }
-    let touched = false
-    for (const [id, held] of Object.entries(cached)) {
-      const edited = editList(listOf(held), e.value, e.edit)
-      if (!edited) continue
-      touched = true
-      if (edited.length) values[id] = edited
-      else delete values[id]
-    }
-    return touched ? values : null
-  })
-
 const editStandalone = (rule: (r: Raw) => Raw | null, held: unknown): unknown => {
   if (!isPlainObject(held)) return held
   const rules = editRules(held.rules, rule)
@@ -362,11 +347,7 @@ export async function reachConfig(
   const { view: edit, rule } = editsOf(e)
   const containers = containersOf(tree, root, under)
   for (const { kind, dir } of containers) {
-    await written(sidecarPath(dir, kind), (cur) => {
-      const views = mapViews(cur, edit)
-      const cache = kind === 'collection' && e.kind === 'option' ? cacheEdit(e, views ?? cur) : null
-      return cache ?? views
-    })
+    await written(sidecarPath(dir, kind), (cur) => mapViews(cur, edit))
   }
   const sources = new Set(containers.map((c) => c.id))
   const inScope = (entry: unknown): boolean => {
