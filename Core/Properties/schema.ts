@@ -19,12 +19,12 @@ const RESERVED_KEY_NAMES: ReadonlySet<string> = new Set(
 )
 
 /** Why a word can't be a property's label or key — empty, a key Pommora manages in any casing, or a name every object already answers to — or null when it can. */
-export function keyRefusal(name: string): string | null {
-  if (!name) return KEY_REFUSAL.empty
-  if (name.startsWith(RESERVED_NAME_PREFIX) || name.startsWith('<'))
+export function keyRefusal(word: string): string | null {
+  if (!word) return KEY_REFUSAL.empty
+  if (word.startsWith(RESERVED_NAME_PREFIX) || word.startsWith('<'))
     return KEY_REFUSAL.reservedPrefix
-  return RESERVED_KEY_NAMES.has(normalizeTitle(name)) || Object.hasOwn(Object.prototype, name)
-    ? KEY_REFUSAL.reserved(name)
+  return RESERVED_KEY_NAMES.has(normalizeTitle(word)) || Object.hasOwn(Object.prototype, word)
+    ? KEY_REFUSAL.reserved(word)
     : null
 }
 
@@ -43,11 +43,12 @@ export function validateName(
   existing: PropertyDefinition[],
   excludeId?: string,
 ): Result<null> {
-  const refusal = keyRefusal(label) ?? (normalizeTitle(key) ? keyRefusal(key) : KEY_REFUSAL.noKey)
+  const refusal = keyRefusal(label) ?? (key.trim() ? keyRefusal(key) : KEY_REFUSAL.noKey)
   if (refusal) return fail('invalid-property', refusal)
-  const others = existing.filter((d) => d.id !== excludeId)
-  const holds = (word: string, of: (d: PropertyDefinition) => string): boolean =>
-    others.some((d) => normalizeTitle(of(d)) === normalizeTitle(word))
+  const holds = (word: string, of: (d: PropertyDefinition) => string): boolean => {
+    const folded = normalizeTitle(word)
+    return existing.some((d) => d.id !== excludeId && normalizeTitle(of(d)) === folded)
+  }
   if (holds(label, (d) => d.label)) return fail('invalid-property', KEY_REFUSAL.duplicate(label))
   if (holds(key, (d) => d.key)) return fail('invalid-property', KEY_REFUSAL.duplicateKey(key))
   return ok(null)

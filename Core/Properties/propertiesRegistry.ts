@@ -25,9 +25,10 @@ function normalizeRegistry(obj: Record<string, unknown>): {
   const rawDefs = isPlainObject(obj.defs) ? obj.defs : {}
   const defs: PropertyRegistry = {}
   const unadmitted: Record<string, unknown> = {}
-  for (const [id, value] of Object.entries(rawDefs)) {
+  for (const id of Object.keys(rawDefs).sort()) {
+    const value = rawDefs[id]
     const parsed = propertyDefinition.safeParse(value)
-    // The first definition to hold a label or a key in any casing is the one admitted.
+    // The first definition by id to hold a label or a key in any casing is the one admitted.
     if (parsed.success && validateName(parsed.data, Object.values(defs)).ok)
       defs[id] = withUniqueOptions(parsed.data)
     // Only a plausible def (a plain object) rides through writes; a scalar under an id key is corrupt noise.

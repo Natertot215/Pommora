@@ -315,12 +315,11 @@ export function PropertyPanel({
     if (keep) reveal(id)
     else setRevealed((prev) => new Set([...prev].filter((r) => r !== id)))
   }
-  const rowMenu = async (id: string, name: string, value: PropertyValue): Promise<void> => {
+  const rowMenu = async (id: string, value: PropertyValue): Promise<void> => {
     const def = schema.find((d) => d.id === id)
     const action = await popMenu(
       propertyMenuModel({
         kind: 'page-value',
-        name,
         filled: !isBlankValue(value),
         editable: def?.type === 'text',
       }),
@@ -387,7 +386,7 @@ export function PropertyPanel({
           leading={<Icon name={icon} size="control" />}
           onContextMenu={(e) => {
             e.preventDefault()
-            void rowMenu(id, label, current)
+            void rowMenu(id, current)
           }}
           trailing={
             // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a grid cell; the grid wants roving tabindex, not per-cell tab stops

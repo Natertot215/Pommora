@@ -116,9 +116,9 @@ const askHolding = async (
   return (quietAt !== undefined && r.value <= quietAt) || ask(req(itemCount(r.value)))
 }
 
-export const askDestroyProperty = (propertyId: string, name: string): Promise<boolean> =>
+export const askDestroyProperty = (propertyId: string, label: string): Promise<boolean> =>
   askHolding(propertyId, undefined, (held) => ({
-    message: `Delete “${name}” everywhere?`,
+    message: `Delete “${label}” everywhere?`,
     detail: `It is removed from every collection and stripped from ${held}; a restorable record lands in the nexus’s .trash folder.`,
     action: 'Delete',
     tone: 'destructive',
