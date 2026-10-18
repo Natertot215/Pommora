@@ -18,6 +18,7 @@ import {
   checkboxWord,
   isBlankValue,
   type PropertyValue,
+  selectedValues,
   type ValueKind,
 } from '../../Properties/propertyValue'
 import { declaredType, resolveFieldValue } from '../../Properties/value'
@@ -267,12 +268,7 @@ function evaluateText(v: PropertyValue, op: string, want: string[]): boolean {
 }
 
 function evaluateMembers(v: PropertyValue, op: string, want: string[]): boolean {
-  const xs =
-    v.kind === 'select'
-      ? [v.value]
-      : v.kind === 'multiSelect' || v.kind === 'context'
-        ? v.value
-        : []
+  const xs = selectedValues(v)
   switch (op) {
     case FILTER_OPS.isEmpty:
       return xs.length === 0

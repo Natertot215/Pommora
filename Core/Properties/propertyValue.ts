@@ -224,6 +224,13 @@ export function encodeValue(value: PropertyValue): unknown {
 export const isBlankRaw = (raw: unknown): boolean =>
   raw == null || raw === '' || (Array.isArray(raw) && raw.length === 0)
 
+export const selectedValues = (current: PropertyValue | null): string[] => {
+  if (!current) return []
+  if (current.kind === 'multiSelect' || current.kind === 'context') return current.value
+  if (current.kind === 'select') return [current.value]
+  return []
+}
+
 export function isBlankValue(value: PropertyValue | null): boolean {
   if (value === null) return true
   switch (value.kind) {

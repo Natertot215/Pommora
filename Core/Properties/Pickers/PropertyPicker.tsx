@@ -10,7 +10,7 @@ import {
   type PropertyDefinition,
   SELECT_GROUP,
 } from '../properties'
-import { NULL_VALUE, type PropertyValue } from '../propertyValue'
+import { NULL_VALUE, type PropertyValue, selectedValues } from '../propertyValue'
 import { OptionDraft, type OptionStyleControl, useOptionEdit } from '../Schema/useOptionEdit'
 import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
 import { PICKER_MAX_HEIGHT } from '@pommora/uix/Pickers/picker-base.css'
@@ -55,13 +55,6 @@ export type PickEntry = {
   revealOnly: boolean
   drillable: boolean
   group?: 'Spaces' | 'Properties'
-}
-
-export const selectedValues = (current: PropertyValue | null): string[] => {
-  if (!current) return []
-  if (current.kind === 'multiSelect' || current.kind === 'context') return current.value
-  if (current.kind === 'select') return [current.value]
-  return []
 }
 
 type PickGroup = { id: string; options: PickOption[] }

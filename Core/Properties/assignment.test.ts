@@ -133,4 +133,8 @@ describe('a re-assign puts a cached value back', () => {
   it("a cached member naming no option exactly doesn't come back", async () => {
     expect((await reassigned('', tags, 'Tags: [claude]')).Tags).toBeUndefined()
   })
+
+  it('leaves a root whose key holds only words no option names as it is', async () => {
+    expect((await reassigned('\nTags: [ideas]', tags, 'Tags: [Claude]')).Tags).toEqual(['ideas'])
+  })
 })

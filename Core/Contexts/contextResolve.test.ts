@@ -146,7 +146,7 @@ describe('reconcileGovernedRoot — the context arm', () => {
     ).toEqual(['Pommora'])
   })
 
-  it('reads a scalar Context value as a list of one, keeping its spelling, so a hand-typed tag resolves', () => {
+  it('reads a scalar Context value as a list of one, so a hand-typed tag resolves', () => {
     const { root, changed } = reconcileGovernedRoot({ '<Projects>': 'Pommora' }, world)
     expect(root['<Projects>']).toEqual(['Pommora'])
     expect(changed).toEqual(['<Projects>'])

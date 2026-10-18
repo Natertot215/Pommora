@@ -447,7 +447,7 @@ describe('the renames report their folder to sync', () => {
 })
 
 describe('renameSpaceOp', () => {
-  it('rewrites every spelling that names the Space', async () => {
+  it('rewrites the title on every holder', async () => {
     const r = await renameSpaceOp(root, 'sp-pom', 'Pommora 2')
     expect(r.ok).toBe(true)
     expect((await fmOf(page()))['<Projects>']).toEqual(['Pommora 2'])
@@ -662,7 +662,7 @@ describe('unlink cascades (D-3)', () => {
     expect('<Projects>' in (await readJsonAt(csSidecar()))).toBe(false)
   })
 
-  it('unlinkSpaceValue strips and captures every spelling of the title, dropping an emptied key', async () => {
+  it('unlinkSpaceValue strips and captures the title, dropping an emptied key', async () => {
     await writeFile(other(), '---\nid: p2\n<Projects>:\n  - Pommora\n  - Sapphire\n---\nbody')
     const { unlinkSpaceValue } = await import('./contextCascade')
     const r = await unlinkSpaceValue(root, 'Projects', 'Pommora')

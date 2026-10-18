@@ -43,7 +43,7 @@ The work lands in ten phases in dependency order, removal first: the Space order
 | 1 | +63 / −102 | +66 / −102 | −36 (+66 / −102) |
 | 2A | +34 / −50 | +33 / −54 | −57 (+99 / −156) |
 | 2B | +110 / −225 | +109 / −254 | −202 (+208 / −410) |
-| 3 | +80 / −64 | | |
+| 3 | +80 / −64 | +91 / −72 | −183 (+289 / −472) |
 | 4 | +67 / −58 | | |
 | 5A | +96 / −82 | | |
 | 5B | +163 / −139 | | |
@@ -160,11 +160,11 @@ The work lands in ten phases in dependency order, removal first: the Space order
   - [x] Task 2B-1 · The spelling resolution behind reads, writes, and strips leaves
   - [x] Task 2B-2 · `heldKeys` and `heldKey` leave, and every gate reads the exact key
   - [x] Review Checkpoint
-- [ ] **Phase 3** — Exact Words and the Index
-  - [ ] Task 3-1 · Members and Space titles match by `exactTitle`
-  - [ ] Task 3-2 · Option words decode exactly, and a Multi-Select carries its foreign words
-  - [ ] Task 3-3 · Select and Status Is and Is Not compare exactly
-  - [ ] Task 3-4 · The index keys exactly, at generation 19
+- [x] **Phase 3** — Exact Words and the Index
+  - [x] Task 3-1 · Members and Space titles match by `exactTitle`
+  - [x] Task 3-2 · Option words decode exactly, and a Multi-Select carries its foreign words
+  - [x] Task 3-3 · Select and Status Is and Is Not compare exactly
+  - [x] Task 3-4 · The index keys exactly, at generation 19
   - [ ] Review Checkpoint
 - [ ] `[Compaction checkpoint: c/pre-compaction; on the re-prompt, reread §Constraints and c/plan-execution before Phase 4 opens]`
 - [ ] **Phase 4** — One Counter
@@ -1954,7 +1954,7 @@ The work lands in ten phases in dependency order, removal first: the Space order
 
 - [ ] The listed tests pass against both stores (`storesContract.ts` runs over the memory store and the SQLite store).
 - [ ] `EXPLAIN QUERY PLAN SELECT path FROM page_values WHERE key = ? ORDER BY path` searches `page_values_by_key` with no temporary B-tree (once, by hand, in the drive harness), and an index stamped 18 rebuilds on open and reads `index_generation` 19 (open `~/Test` in the harness).
-- [ ] `git grep -n "page_values_by_fold\|WHERE fold = ?" -- Desktop Core` finds only `sync_base`'s queries.
+- [ ] `git grep -n "page_values_by_fold\|WHERE fold = ?" -- Desktop Core ':!*.test.ts'` finds only `sync_base`'s queries.
 - [ ] Run the gates, then `view-delta` for Phase 3.
 - [ ] Check for unnecessary code or mistakes.
 
@@ -2489,7 +2489,9 @@ The work lands in ten phases in dependency order, removal first: the Space order
 
 ```Core/Properties/assignment.ts diff
 @@ refillValues @@
+-    if (!isBlankRaw(raw[def.name])) return null
 -    return landValue(raw, def.name, writtenSpelling(encoded, value))
++    if (!isBlankRaw(raw[def.key])) return null
 +    return landValue(raw, def.key, writtenSpelling(encoded, value))
 ```
 
@@ -5749,6 +5751,8 @@ Behaviors to read once before ratifying, each following the decisions:
 - **A Restored Collection's Saved Values Keep Their Old Keys:** a Collection in the Trash through a Value Format change comes back with its `property_cache` as it left, so a value removed from it before the delete doesn't return on reassign under the new format. No decision names that cache at restore, and re-spelling it costs a second cache pass in the scrub; the plan leaves it out.
 
 #### Deviations
+
+- **A Refill Never Replaces Words** (Phase 3 review): `refillValues` asked whether a root's value reconciles blank, so once words matched exactly a page holding only words no option names (`Tags: [ideas]`, or `Status: done` under `Done`) read as holding none and the re-assign replaced them with the cached value. It now skips any root whose key holds anything (`isBlankRaw`), as `refillTrashed` already did, and the cached value stays cached.
 
 - **The Behavior Matrix** (Nathan, during Phase 2B): the Metadata Spelling Drive grew into the Metadata Drive, a nine-group matrix of every combination the decisions guarantee, by channel and by gesture, written to the end-state contract with one seed adapter and the six messages held open; each Review Checkpoint runs the groups landed so far, Task 9-2 finishes it rather than rewriting the old drive, and the README paragraph Task 10-7 rewrote came with it, so the PRD task is now 10-7.
 
