@@ -18,7 +18,7 @@ const RESERVED_KEY_NAMES: ReadonlySet<string> = new Set(
   [...PAGE_MODELED_KEYS, ...SPACE_MODELED_KEYS].map(normalizeTitle),
 )
 
-/** Why `name` can't be a property's on-disk key — empty, a key Pommora manages in any casing, or a name every object already answers to — or null when it can. */
+/** Why a word can't be a property's label or key — empty, a key Pommora manages in any casing, or a name every object already answers to — or null when it can. */
 export function keyRefusal(name: string): string | null {
   if (!name) return KEY_REFUSAL.empty
   if (name.startsWith(RESERVED_NAME_PREFIX) || name.startsWith('<'))
@@ -37,17 +37,19 @@ export const linkKeysOf = (defs: readonly PropertyDefinition[]): ((key: string) 
   }
 }
 
-/** The whole name gate: an admissible key, unique nexus-wide, compared case-folded because the name is the on-disk key. */
+/** The whole name gate: neither word a key Pommora manages, the label unique among labels and the key among keys nexus-wide, each compared case-folded. */
 export function validateName(
-  name: string,
+  { label, key }: Pick<PropertyDefinition, 'label' | 'key'>,
   existing: PropertyDefinition[],
   excludeId?: string,
 ): Result<null> {
-  const refusal = keyRefusal(name)
+  const refusal = keyRefusal(label) ?? (normalizeTitle(key) ? keyRefusal(key) : KEY_REFUSAL.noKey)
   if (refusal) return fail('invalid-property', refusal)
-  const folded = normalizeTitle(name)
-  const clash = existing.some((d) => d.id !== excludeId && normalizeTitle(d.label) === folded)
-  if (clash) return fail('invalid-property', KEY_REFUSAL.duplicate(name))
+  const others = existing.filter((d) => d.id !== excludeId)
+  const holds = (word: string, of: (d: PropertyDefinition) => string): boolean =>
+    others.some((d) => normalizeTitle(of(d)) === normalizeTitle(word))
+  if (holds(label, (d) => d.label)) return fail('invalid-property', KEY_REFUSAL.duplicate(label))
+  if (holds(key, (d) => d.key)) return fail('invalid-property', KEY_REFUSAL.duplicateKey(key))
   return ok(null)
 }
 
@@ -55,7 +57,7 @@ export function validateDefinition(
   def: PropertyDefinition,
   existing: PropertyDefinition[],
 ): Result<null> {
-  const nameCheck = validateName(def.label, existing, def.id)
+  const nameCheck = validateName(def, existing, def.id)
   if (!nameCheck.ok) return nameCheck
   if (isReservedPropertyId(def.id)) return fail('invalid-property', 'That property id is reserved.')
   if (PROPERTY_TYPES[def.type].origin !== 'user')

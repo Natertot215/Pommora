@@ -234,7 +234,7 @@ export function PropertyFrame({
   const rename = async (id: string, name: string): Promise<void> => {
     const res = await dialer().ask('property:rename', id, name)
     if (!reportRefusal(res) || !res.value) return
-    bumpValuesEpoch(res.value.from, res.value.to)
+    if (res.value.from !== res.value.to) bumpValuesEpoch(res.value.from, res.value.to)
     retryOwed(res.value)
   }
   const remove = async (id: string): Promise<void> => {

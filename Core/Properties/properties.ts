@@ -276,6 +276,8 @@ export const KEY_REFUSAL = {
   reservedPrefix: `A name cannot start with ${RESERVED_NAME_PREFIX} or <.`,
   reserved: (name: string) => `"${name}" is a key Pommora manages.`,
   duplicate: (name: string) => `A property named "${name}" already exists.`,
+  duplicateKey: (key: string) => `A property already writes "${key}" to files.`,
+  noKey: 'Properties cannot contain an invalid name.',
   held: (from: string, to: string, n: number) =>
     `${itemCount(n)} ${n === 1 ? 'holds' : 'hold'} both "${from}" and "${to}".`,
 } as const
