@@ -35,7 +35,7 @@ async function removeInner(
 
   const { values, strip } = await keyedHolders(
     await keyHolderFiles(root, key, [collectionFolder]),
-    def,
+    key,
   )
   const clear = propertyClear(propertyId)
   // Views, cache, and the assignment change in ONE write under the sidecar's own lock, so the page-read window above can't revert a concurrent icon/banner/view write — THEN the pass and the page strip. The cache keeps the values it already holds, which a refill cut short left for pages it never reached.
