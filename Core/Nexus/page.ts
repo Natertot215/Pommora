@@ -25,7 +25,7 @@ export async function createPage(
   const modeled: Record<string, unknown> = { [ID_KEY]: opts.id }
   const keys: string[] = [...PAGE_MODELED_KEYS]
   for (const { def, value } of opts.values ?? []) {
-    const encoded = encodedValue(def, value)
+    const encoded = valueToWrite(def, value)
     if (!encoded.ok) return encoded
     if (encoded.value === undefined) continue
     modeled[def.name] = encoded.value
@@ -87,7 +87,7 @@ export async function movePage(
   return ok({ path: target })
 }
 
-export function encodedValue(
+export function valueToWrite(
   def: PropertyDefinition,
   value: PropertyValue | null,
 ): Result<unknown> {

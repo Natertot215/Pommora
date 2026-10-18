@@ -3,7 +3,7 @@ import { liveTreeOf, mutableTarget } from '../Nexus/liveTree'
 import { setGovernedRootKey, writtenRoot } from './governedWrite'
 import { pageWorldOf, writeSpaceSidecar } from '../Contexts/contextWrite'
 import { type GovernedWorld, spaceWorldOf } from '../Contexts/contextResolve'
-import { encodedValue } from '../Nexus/page'
+import { valueToWrite } from '../Nexus/page'
 import { pathExists } from '../Files/atomicWrite'
 import { fail, ok, type Result } from '../Contract/result'
 import type { MutateContext } from '../Nexus/mutate'
@@ -40,7 +40,7 @@ type ValueRequest = Extract<MutateRequest, { op: 'setProperty' | 'restoreValue' 
 function landed(req: ValueRequest, def: PropertyDefinition): Result<unknown> {
   switch (req.op) {
     case 'setProperty':
-      return encodedValue(def, req.value)
+      return valueToWrite(def, req.value)
     case 'restoreValue':
       return ok(req.held)
   }
