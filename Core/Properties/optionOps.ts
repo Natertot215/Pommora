@@ -3,7 +3,9 @@ import { uniqueOptionGroups, validateOptionValues } from './schema'
 import { collectionFolders } from './assignment'
 import { keyHolderFiles } from './keyHolders'
 import { sweepCount, sweepGovernedRoots, type SweepPlan, unsweptLine } from './governedSweep'
-import { namesValue, valueEditRewrite, type ValueEdit } from './pageValue'
+import { editList, namesValue, valueEditRewrite, type ValueEdit } from './pageValue'
+import { editCaches } from './propertyCache'
+import { editHeldList } from '../Files/heldKeys'
 import { errText, ok, fail, fault, type Result } from '../Contract/result'
 import { findOption, unregisteredMembers } from './propertyValue'
 import {
@@ -31,7 +33,7 @@ import {
   writeSchemaJournal,
 } from './propertyJournal'
 import { type ConfigReach, reachConfig } from '../Nexus/configReach'
-import { heldTreeOf } from '../Nexus/liveTree'
+import { heldTreeOf, liveTreeOf } from '../Nexus/liveTree'
 import { readPageRecord } from '../Nexus/readNexus'
 import { containerAt, containerSchema, pagePathsIn, spaceAt } from '../Nexus/treePatch'
 import type { Json } from '../Files/stableJson'
@@ -199,6 +201,22 @@ async function valueEditSweep(
   return (await sweepGovernedRoots(root, pages, plan)).skipped.length
 }
 
+async function cacheSweep(
+  root: string,
+  def: PropertyDefinition,
+  target: string,
+  edit: ValueEdit,
+): Promise<number> {
+  const { collections } = await liveTreeOf(root)
+  return editCaches(root, collections, new Set([def.id]), (values) =>
+    Object.keys(values).reduce<Json | null>(
+      (next, id) =>
+        editHeldList(next ?? values, id, (held) => editList(held, target, edit)) ?? next,
+      null,
+    ),
+  )
+}
+
 export async function optionCascade(
   root: string,
   def: PropertyDefinition,
@@ -207,8 +225,9 @@ export async function optionCascade(
 ): Promise<ConfigReach> {
   const pages = await valueEditSweep(root, def, value, edit)
   if (pages && edit.op === 'strip') return { skipped: pages, hosts: [] }
+  const caches = await cacheSweep(root, def, value, edit)
   const reach = await reachConfig(root, { kind: 'option', def, value, edit })
-  return { skipped: pages + reach.skipped, hosts: reach.hosts }
+  return { skipped: pages + caches + reach.skipped, hosts: reach.hosts }
 }
 
 export function renameOption(
@@ -265,7 +284,10 @@ export function clearOption(
   return serializeSchemaOp(root, async () => {
     const r = await resolveForCascade(root, propertyId, label)
     if (!r.ok) return r
-    const skipped = await valueEditSweep(root, r.value.def, r.value.key, { op: 'strip' })
+    const { def, key } = r.value
+    const strip: ValueEdit = { op: 'strip' }
+    const skipped =
+      (await valueEditSweep(root, def, key, strip)) + (await cacheSweep(root, def, key, strip))
     return skipped ? fault(unsweptLine(skipped)) : ok(null)
   })
 }
