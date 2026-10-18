@@ -174,7 +174,7 @@ The work lands in ten phases in dependency order, removal first: the Space order
   - [x] Task 4-3 · The dialog skips at each caller's count, and notices say Items
   - [x] Review Checkpoint
 - [ ] **Phase 5A** — Definitions Carry a Label and a Key
-  - [ ] `[Stop: Nathan words the six messages, quits Pommora on both Nexuses through Task 5B-4, and gives his word for 5B-4]`
+  - [x] `[Stop: Nathan words the six messages, quits Pommora on both Nexuses through Task 5B-4, and gives his word for 5B-4]`
   - [ ] Task 5A-1 · `name` becomes `label` and `key` at every reader and writer
   - [ ] Task 5A-2 · Every name check reads both words
   - [ ] Review Checkpoint
@@ -2290,7 +2290,7 @@ The work lands in ten phases in dependency order, removal first: the Space order
 
 **GOAL:** Every property definition stores a `label`, its title in the app, and a `key`, the word it writes to disk, in place of `name` (C-1, C-2); a registry entry omitting `label` reads its `key` (C-3). Every read that used `name` as the on-disk key reads `key`, every read that used it as a title reads `label`, and every uniqueness and reserved-key check reads both words without regard to case (D-1). Keys equal labels this phase, since no Key Format exists yet: a create and a rename write `key = label`, so nothing a user does behaves differently, and the divergent pairs C-2's INFERRED rule trusts (a key edited by hand) are what the tests pin. From this phase's first commit until Task 5B-4 rewrites the registries, a build reads neither Nexus, so the gates run on fixtures and neither phase's checkpoint drives the app. It's a separate phase from 5B because the definition's field rename and the option's field rename are two compile units, each touching every reader of its field and a few hundred test fixtures; together they're past one run.
 
-- [ ] `[Stop: before Task 5A-1 — Nathan words the six messages in §Open Items, which every task from Task 5A-2 on writes; quits every Pommora window on NexusOS and ~/Test, keeping them closed through Task 5B-4; and gives his word for Task 5B-4; the orchestrator then writes the copy into the tasks and runs Phases 5A and 5B through Task 5B-4]`
+- [x] `[Stop: before Task 5A-1 — Nathan words the six messages in §Open Items, which every task from Task 5A-2 on writes; quits every Pommora window on NexusOS and ~/Test, keeping them closed through Task 5B-4; and gives his word for Task 5B-4; the orchestrator then writes the copy into the tasks and runs Phases 5A and 5B through Task 5B-4]`
 
 #### Task 5A-1
 
