@@ -47,7 +47,7 @@ The work lands in ten phases in dependency order, removal first: the Space order
 | 4 | +67 / −58 | +125 / −108 | −103 (+488 / −591) |
 | 5A | +96 / −82 | +135 / −121 | −89 (+590 / −679) |
 | 5B | +163 / −139 | +230 / −196 | −55 (+806 / −861) |
-| 6 | +151 / −151 | | |
+| 6 | +151 / −151 | +169 / −156 | −42 (+951 / −993) |
 | 7A | +163 / −39 | | |
 | 7B | +305 / −77 | | |
 | 8 | +106 / −9 | | |
@@ -79,7 +79,9 @@ The work lands in ten phases in dependency order, removal first: the Space order
 | `wordsOf` · `OptionWords` · `keyOf` • function · type · function | One cached index per definition, key to label and label to option, that the decode, the encode, and `findOption` read. | `Core/Properties/propertyValue.ts` |
 | `uniqueOptionGroups` • function | Option groups holding each label and each key once, the first of any that fold alike and none blank: the repair a stored list and an option edit share. | `Core/Properties/schema.ts` |
 | `cacheSweep` • function | The Collection caches edited by key beside the file sweep. | `Core/Properties/optionOps.ts` |
-| `OWED` · `CROSSED` • refusals | An option change waiting for an owed record; a Value Format change crossing two options' keys. | `Core/Properties/optionOps.ts` |
+| `OWED` · `CROSSED` • refusals | An option change waiting for an owed record, refused with its own Try Again; a Value Format change crossing two options' keys. | `Core/Properties/optionOps.ts` |
+| `owedKeys` • function | The old keys an owed option rename still holds, which adoption and an option edit leave alone. | `Core/Properties/optionOps.ts` |
+| `'owed'` • error code | A refusal the renderer answers with a Try Again that replays the held record. | `Core/Contract/result.ts` |
 | `keyFormat.ts` • module | `KEY_FORMATS`, `KeyFormat`, `DEFAULT_KEY_FORMAT`, `isKeyFormat`, `formatKey`, `spellingsOf`, and `FormatChange`: the one converter. | `Core/Properties/keyFormat.ts` |
 | `key_format` · `value_format` • fields | A property's Key Format and Value Format. | `Core/Properties/properties.ts` |
 | `rekeyProperty` · `rekeyPlan` · `renamePlan` · `retitled` · `Retitle` · `freeLabel` • functions · type | The one rekey a rename and a Key Format change enter, the check it runs first, the sweep plan a rename and its count share, the definition it writes, and the create's step-aside on both words. | `Core/Properties/registryProperty.ts` |
@@ -185,12 +187,12 @@ The work lands in ten phases in dependency order, removal first: the Space order
   - [x] Task 5B-3 · Option labels and keys are unique and non-blank, Status included
   - [x] Task 5B-4 · NexusOS committed, the six Trash records deleted, both registries rewritten
   - [x] Review Checkpoint
-- [ ] **Phase 6** — Label and Key: the Journal and Cascades
-  - [ ] Task 6-1 · The caches leave the configuration pass
-  - [ ] Task 6-2 · One key map edits every list; files by key, configuration by label
-  - [ ] Task 6-3 · Every journal record carries keys
-  - [ ] Task 6-4 · Option changes wait for an owed record
-  - [ ] Review Checkpoint
+- [x] **Phase 6** — Label and Key: the Journal and Cascades
+  - [x] Task 6-1 · The caches leave the configuration pass
+  - [x] Task 6-2 · One key map edits every list; files by key, configuration by label
+  - [x] Task 6-3 · Every journal record carries keys
+  - [x] Task 6-4 · Option changes wait for an owed record
+  - [x] Review Checkpoint
 - [ ] `[Compaction checkpoint: c/pre-compaction; on the re-prompt, reread §Constraints and c/plan-execution before Phase 7A opens]`
 - [ ] **Phase 7A** — The Converter and the Key Format
   - [ ] Task 7A-1 · The converter
@@ -3014,7 +3016,7 @@ The work lands in ten phases in dependency order, removal first: the Space order
 +      from: r.value.key,
 +      to: newLabel,
      }
-     // Staged BEFORE the commit: a crash between commit and cascade is recoverable only from this record, and one stranded by a refusal is disposed of by the replay's holds-to-and-not-from gate.
+     // Staged BEFORE the commit: a crash between commit and cascade is recoverable only from this record.
 -    if ((await readRegistry(root)).defs[propertyId]) await writeSchemaJournal(root, record)
 +    await writeSchemaJournal(root, record)
      const edit = await mutateRegistry<Result<PropertyDefinition>>(root, (registry, stored) => {
@@ -4033,17 +4035,18 @@ console.log(files.join('\n'))
 **CHANGE**
 
 - [ ] Write and watch fail: `optionOps.test.ts` — a new describe *§an owed record holds option changes*: with `{ op: 'rename', id: 'prop_x', from: 'Old', to: 'New' }` held, `renameOption(root, id, 'A', 'B')` and `removeOption(root, id, 'A')` each answer `fault(OWED_MESSAGE)`, the registry still lists `A`, every holder keeps its bytes, and the held record is unchanged; `clearOption(root, id, 'A')` still strips (it writes no record); a held record identical to the one an op would write (the op re-run) doesn't refuse. `journalWiring.test.ts:305-317` passes unchanged (a delete still runs over a held record).
-- [ ] `optionOps.ts`: delete `removeOption`'s `journaled` and its conditional; add `OWED`, `fault('An earlier change hasn’t reached every file yet. Use Try Again on its notice first.')`; `renameOption` and `removeOption` answer `OWED` when `writeSchemaJournal` answers false, before any commit or sweep; `removeOption` answers `schemaCascade(reach, record)`.
+- [ ] `optionOps.ts`: delete `removeOption`'s `journaled` and its conditional; add `OWED`, `fail('owed', 'An earlier change hasn’t reached every file yet. Use Try Again to finish it first.')`; `renameOption` and `removeOption` answer `OWED` when `writeSchemaJournal` answers false, before any commit or sweep; `removeOption` answers `schemaCascade(reach, record)`.
 - [ ] `journalSlot.ts:1`: the header says the op now starting runs unjournaled or refuses, as its owner decides.
+- [ ] The refusal carries its own Try Again: `OWED`'s code is `'owed'` (`Core/Contract/result.ts`); `property:replay` takes an optional record, and with none replays the one the slot holds; `propertyWrite.ts`' `write` and `warnOwed` answer an `'owed'` refusal with `notifyRetry(message, replay())`. `owedKeys(journal, id)` gives `registerHeldOptions` and `editOption` one owed-key set, and `editOption` refuses `OWED` when an edit would leave the definition holding a key the set names that it didn't hold.
 
 **AFTER**
 
 ```Core/Properties/optionOps.ts diff
 @@ constants @@
  const NO_GROUP = fail('not-found', 'That group no longer exists.')
-+const OWED = fault('An earlier change hasn’t reached every file yet. Use Try Again on its notice first.')
++const OWED = fail('owed', 'An earlier change hasn’t reached every file yet. Use Try Again to finish it first.')
 @@ renameOption @@
-     // Staged BEFORE the commit: a crash between commit and cascade is recoverable only from this record, and one stranded by a refusal is disposed of by the replay's holds-to-and-not-from gate.
+     // Staged BEFORE the commit: a crash between commit and cascade is recoverable only from this record.
 -    await writeSchemaJournal(root, record)
 +    if (!(await writeSchemaJournal(root, record))) return OWED
 @@ removeOption @@
@@ -4071,7 +4074,7 @@ console.log(files.join('\n'))
 
 #### Review Checkpoint
 
-- [ ] Two review agents, `code-simplification` and `adversarial-review`, reading outward: no file sweep, cache edit, or replay gate reads a label, and no configuration arm reads a key; a key change with no label pair writes no saved view, tile, Matrix filter, or preview rule, and a label change with no key pair writes no page or Space; every list edit goes through the one map-taking `editList`, and a list it names nothing in comes back null; Clear, Remove, and rename edit the caches of every Collection they can write, a damaged Collection counted once by the configuration pass on a rename or a Remove and not on a Clear, as page-rename leaves it, and a cleared value doesn't return at the next assign; every record carries keys, `same` and the decoder agree on the four shapes, and each replay arm acts only on the state its record maps; an option rename or removal refuses over a different owed record while a property rename and a delete still run; the shield covers every old key of an owed rename.
+- [ ] Two review agents, `code-simplification` and `adversarial-review`, reading outward: no file sweep or cache edit reads a label, a replay gate reads one only to see a relabel landed, and no configuration arm reads a key; a key change with no label pair writes no saved view, tile, Matrix filter, or preview rule, and a label change with no key pair writes no page or Space; every option list edit goes through the one map-taking `editList`, and a list it names nothing in comes back null; Clear, Remove, and rename edit the caches of every Collection they can write, a settings file the configuration pass can't read counted once on a rename or a Remove and not on a Clear, and one nobody can parse left as it is and holding nothing owed, and a cleared value doesn't return at the next assign; every record carries keys, `same` and the decoder agree on the four shapes, and each replay arm acts only on the state its record maps; an option rename or removal refuses over a different owed record, with a Try Again that replays it, while a property rename and a delete still run; the shield covers every old key of an owed rename.
 
 ### Phase 7A — The Converter and the Key Format
 
@@ -4622,7 +4625,7 @@ for (const miss of misses) console.log(JSON.stringify(miss))
 +  root: string,
 +  record: Extract<SchemaJournal, { op: 'option-rename' }>,
 +): Promise<Result<SchemaCascade>> {
-+  // Staged BEFORE the commit: a crash between commit and cascade is recoverable only from this record, and one stranded by a refusal is disposed of by the replay's holds-to-and-not-from gate.
++  // Staged BEFORE the commit: a crash between commit and cascade is recoverable only from this record.
 +  if (!(await writeSchemaJournal(root, record))) return OWED
 +  const keys = new Map(record.keys)
 +  const relabel = (label: string): string =>
@@ -4667,7 +4670,7 @@ for (const miss of misses) console.log(JSON.stringify(miss))
 -      keys: key === newLabel ? [] : [[key, newLabel]],
 -      labels: [oldLabel, newLabel],
 -    }
--    // Staged BEFORE the commit: a crash between commit and cascade is recoverable only from this record, and one stranded by a refusal is disposed of by the replay's holds-to-and-not-from gate.
+-    // Staged BEFORE the commit: a crash between commit and cascade is recoverable only from this record.
 -    if (!(await writeSchemaJournal(root, record))) return OWED
 -    const edit = await mutateRegistry<Result<PropertyDefinition>>(root, (registry, stored) => {
 -      const def = registry.defs[propertyId]
@@ -4745,7 +4748,7 @@ for (const miss of misses) console.log(JSON.stringify(miss))
 -import { formatKey } from './keyFormat'
 +import { formatKey, type KeyFormat } from './keyFormat'
 @@ constants @@
- const OWED = fault('An earlier change hasn’t reached every file yet. Use Try Again on its notice first.')
+ const OWED = fail('owed', 'An earlier change hasn’t reached every file yet. Use Try Again to finish it first.')
 +// A replay over a partly swept file can't tell a moved word from an unmoved one.
 +const CROSSED = fail(
 +  'invalid-property',
@@ -5807,7 +5810,7 @@ Nathan's copy, decided at the Stop before Task 5A-1:
 
 - **A Key Another Property Writes** (Task 5A-2, `KEY_REFUSAL.duplicateKey`): "A property already writes "{key}" to files."
 - **Two Options Writing One Key** (Task 5B-3's `validateOptionValues`): "An option with this title already exists, please choose another name."; a Value Format change (Task 7B-2) refuses "This format would give two options the same key, please rename one first."
-- **An Option Change Waiting for Try Again** (Task 6-4, `OWED`): "An earlier change hasn’t reached every file yet. Use Try Again on its notice first."
+- **An Option Change Waiting for Try Again** (Task 6-4, `OWED`): "An earlier change hasn’t reached every file yet. Use Try Again to finish it first.", worded once the refusal carried its own Try Again.
 - **A Label That Leaves Its Key Empty** (Task 5A-2's `KEY_REFUSAL.noKey`, Task 5B-3's `validateOptionValues`): "Properties cannot contain an invalid name." and "Options cannot contain an invalid name.", reached through a format (Tasks 7A-3, 7B-2) or a registry written by hand; a blank label keeps "A name cannot be empty." and "Option titles can’t be blank."
 - **A Value Format Change Crossing Two Options' Keys** (Task 7B-2, `CROSSED`): "This format would give one option the key another option writes now, please rename one first."
 - **The Format Change's Confirmation** (Task 7B-4, `askFormatChange`): "This action would rewrite metadata in {N Items}.", detail "Each key changes to the new format; values stay the same.", action "Rewrite", tone `positive`.
@@ -5826,6 +5829,8 @@ An alternative Nathan raised during Phase 4, held open while the plan runs as wr
 - **Label and Key Without Formats:** every property, and each Select, Multi-Select, and Status option, carries a label shown in the app and a key written to disk, the key taking the label at creation and edited beside it in one Label | Key field, and Pommora reads and writes only the key. It keeps Phases 1 to 6 and drops the Key and Value Formats, the converter, format-led adoption, and the restore re-spell (Phases 7A, 7B, and 8), at the cost of editing option keys one by one where a Value Format changes every option at once, and of a rule for whether a label rename moves its key.
 
 #### Deviations
+
+- **A File Nobody Can Parse Holds Nothing Owed** (Phase 6 review, Nathan's call to follow the codebase's existing pattern): the configuration pass counted every Collection or Set sidecar that didn't parse, and every corrupt tile document or Contexts registry, as a skip, even one naming no option, so with Task 6-4's wait a single damaged file kept a change owed on every open and refused every later option rename or removal Nexus-wide, behind a Try Again notice that fades and doesn't survive a restart. The pass now follows the rule every other journaled pass already does (`governedSweep.ts`): a file it can't read counts once, and one nobody can parse is left as it is and holds nothing owed, so its views keep the old label once it's repaired. `OWED` carries its own Try Again replaying the held record (its copy now reads "Use Try Again to finish it first."), and an option edit can't take back an owed rename's old key. A `settings.json` that doesn't parse still counts as a skip, since its writer reports a corrupt file and an unreadable one alike.
 
 - **Undo Puts Back What the File Held** (Phase 3 review, Nathan's ruling): an undo wrote the decoded prior, so once words matched exactly a page holding only words no option names (`Tags: [work]`), a Select in another casing (`Status: done`), or a value its type can't read (`Count: abc`) lost its key on ⌘Z, confirmed live through the table's picker. `assignValue` now captures the raw value beside the decoded one, and the revert sends `restoreValue`, which the page and Space handlers land through the same resolve-and-lock and `writtenRoot` a `setProperty` does, `valueToWrite` being the one encode both share; a Context column's undo still writes its prior ids.
 
