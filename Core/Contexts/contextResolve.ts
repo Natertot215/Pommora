@@ -110,7 +110,7 @@ export function reconcileGovernedRoot(
     let next: unknown
     if ('def' in governor) {
       const reconciled = reconcilePropertyValue(governor.def, raw, frozen)
-      if (!isBlankValue(reconciled)) next = encodeValue(reconciled)
+      if (!isBlankValue(reconciled)) next = encodeValue(governor.def, reconciled)
     } else {
       const byTitle = world.contexts.spacesByTitle.get(governor.group.def.id)
       const titles = contextTitles(raw).flatMap((title) => byTitle?.get(title)?.title ?? [])

@@ -92,7 +92,7 @@ export function valueToWrite(
   value: PropertyValue | null,
 ): Result<unknown> {
   if (value === null || isBlankValue(value)) return ok(undefined)
-  const encoded = encodeValue(value)
+  const encoded = encodeValue(def, value)
   return encoded === undefined
     ? fail('invalid-property', `"${def.label}" was given a value it has no shape for.`)
     : ok(encoded)
