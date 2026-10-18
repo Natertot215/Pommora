@@ -348,7 +348,7 @@ function EditableOptionRows({
             groups={groups}
             selected={selected}
             row={(o, run) => (
-              <Reveal key={edit.keyOf(o.value)} open enterOnMount={edit.entering(o.value)} fill>
+              <Reveal key={edit.rowKeyOf(o.value)} open enterOnMount={edit.entering(o.value)} fill>
                 <LineRow
                   id={o.value}
                   open={() => onPick(o.value)}

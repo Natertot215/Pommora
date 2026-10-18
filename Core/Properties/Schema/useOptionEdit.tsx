@@ -32,7 +32,7 @@ type Editing = { row: string; value: string }
 type Draft = { key: string; groupId: string; index?: number }
 
 export type OptionEditApi = {
-  keyOf: (value: string) => string
+  rowKeyOf: (value: string) => string
   entering: (value: string) => boolean
   isOpen: (row: string) => boolean
   toggle: (value: string, anchor: HTMLElement | undefined) => void
@@ -69,14 +69,15 @@ export function useOptionEdit({
     options.map((o) => o.label),
     editing?.value,
   )
-  const { keyOf } = keys
+  const { rowKeyOf } = keys
 
   const editOption = (edit: OptionEdit): Promise<boolean> =>
     write(dialer().ask('property:editOption', def.id, edit))
-  const enteringKey = useEntrance(options, (o) => keyOf(o.label))
+  const enteringKey = useEntrance(options, (o) => rowKeyOf(o.label))
   const entering = (value: string): boolean =>
-    keyOf(value) !== draft?.key && enteringKey(keyOf(value))
-  const isOpen = (row: string): boolean => editing !== null && keyOf(row) === keyOf(editing.row)
+    rowKeyOf(value) !== draft?.key && enteringKey(rowKeyOf(value))
+  const isOpen = (row: string): boolean =>
+    editing !== null && rowKeyOf(row) === rowKeyOf(editing.row)
   const open = (value: string, el: HTMLElement | undefined): void => {
     anchor.current = el ?? null
     setEditing({ row: value, value })
@@ -146,9 +147,9 @@ export function useOptionEdit({
       if (ok) setDraft((d) => (d === draft ? null : d))
     })
   }
-  const drafted = draft && !options.some((o) => keyOf(o.label) === draft.key) ? draft : null
+  const drafted = draft && !options.some((o) => rowKeyOf(o.label) === draft.key) ? draft : null
 
-  const option = editing && options.find((o) => keyOf(o.label) === keyOf(editing.row))
+  const option = editing && options.find((o) => rowKeyOf(o.label) === rowKeyOf(editing.row))
   useEffect(() => {
     if (editing && !option) setEditing(null)
   }, [editing, option])
@@ -172,7 +173,7 @@ export function useOptionEdit({
   ) : null
 
   return {
-    keyOf,
+    rowKeyOf,
     entering,
     isOpen,
     toggle,

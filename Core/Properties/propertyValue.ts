@@ -1,6 +1,13 @@
 import { z } from 'zod'
 import { listOf, scalarMembers } from '../Contract/validators'
-import { firstPerTitle, optionsOf, PROPERTY_TYPES, type PropertyDefinition } from './properties'
+import {
+  firstPerTitle,
+  optionsOf,
+  PROPERTY_TYPES,
+  type PropertyDefinition,
+  type SelectOption,
+  type StatusOption,
+} from './properties'
 import { exactTitle, normalizeTitle } from '../Paths/caseFold'
 import { joinValues, landValue } from '../Files/heldKeys'
 import { yamlInline } from '../Files/pageFile'
@@ -39,7 +46,7 @@ const optionList = (raw: unknown): string[] =>
 
 type OptionWords = {
   labelOf: Map<string, string>
-  keyOf: Map<string, string>
+  byLabel: Map<string, SelectOption | StatusOption>
   folds: ReadonlySet<string>
 }
 
@@ -52,7 +59,7 @@ function wordsOf(def: PropertyDefinition): OptionWords {
     const options = optionsOf(def)
     words = {
       labelOf: new Map(options.map((o) => [exactTitle(o.key), o.label])),
-      keyOf: new Map(options.map((o) => [o.label, o.key])),
+      byLabel: new Map(options.map((o) => [o.label, o])),
       folds: new Set(options.flatMap((o) => [normalizeTitle(o.label), normalizeTitle(o.key)])),
     }
     optionWords.set(def, words)
@@ -64,9 +71,14 @@ function wordsOf(def: PropertyDefinition): OptionWords {
 const registeredOption = (def: PropertyDefinition, written: string): string | undefined =>
   wordsOf(def).labelOf.get(exactTitle(written))
 
+export const findOption = (
+  def: PropertyDefinition | undefined,
+  label: string,
+): SelectOption | StatusOption | undefined => (def ? wordsOf(def).byLabel.get(label) : undefined)
+
 /** The key of the option `label` names; a label no option holds is written as given. */
 const keyOf = (def: PropertyDefinition, label: string): string =>
-  wordsOf(def).keyOf.get(label) ?? label
+  wordsOf(def).byLabel.get(label)?.key ?? label
 
 const CHECKBOX_WORDS = [
   ['true', 'false'],

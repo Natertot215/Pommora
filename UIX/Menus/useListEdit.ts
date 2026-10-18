@@ -26,7 +26,7 @@ export function useListEdit(
 } {
   const [draft, setDraft] = useState<string | null>(null)
   const keys = useRenameKeys(values)
-  const rows = values.map((value) => ({ key: keys.keyOf(value), value, draft: false }))
+  const rows = values.map((value) => ({ key: keys.rowKeyOf(value), value, draft: false }))
   const drafting = draft !== null && !rows.some((r) => r.key === draft)
   if (drafting) rows.push({ key: draft, value: '', draft: true })
   return {

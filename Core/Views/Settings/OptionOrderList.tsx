@@ -1,4 +1,5 @@
-import { optionsOf, PROPERTY_TYPES, type PropertyDefinition } from '../../Properties/properties'
+import { PROPERTY_TYPES, type PropertyDefinition } from '../../Properties/properties'
+import { findOption } from '../../Properties/propertyValue'
 import { heading, menuDropLine, type PickerRowLook } from '@pommora/uix/Menus'
 import { side } from '@pommora/uix/Menus/menu-row.css'
 import { hiddenRow, optionRow } from '@pommora/uix/Menus/frames.css'
@@ -68,10 +69,9 @@ export function OptionOrderList({
   onSave?: (order: string[]) => void
 } & HideControls): React.JSX.Element | null {
   if (!def) return null
-  const byValue = new Map(optionsOf(def).map((o) => [o.label, o]))
   const order = liveBucketOrder(group, def, [])
   const chip = (v: string): React.JSX.Element => (
-    <OptionChip type={def.type} option={byValue.get(v)} />
+    <OptionChip type={def.type} option={findOption(def, v)} />
   )
   return (
     <LineZone
@@ -91,7 +91,7 @@ export function OptionOrderList({
         <div key={section.key}>
           {section.label !== null && <div className={heading}>{section.label}</div>}
           {section.values.flatMap((v) =>
-            byValue.has(v)
+            findOption(def, v)
               ? [
                   <LineRow key={v} id={v} className={cx(optionRow, isHidden?.(v) && hiddenRow)}>
                     {chip(v)}
