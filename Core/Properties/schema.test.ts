@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest'
-import { linkKeysOf, validateName, validateDefinition, validateOptionValues } from './schema'
+import {
+  linkKeysOf,
+  validateName,
+  validateDefinition,
+  validateOptionValues,
+  withUniqueOptions,
+} from './schema'
 import { KEY_REFUSAL, type PropertyDefinition } from './properties'
 
 const def = (
@@ -107,6 +113,46 @@ describe('validateDefinition', () => {
     expect(validateDefinition(dupOpts, existing).ok).toBe(false)
   })
 
+  const status = (options: { key: string; label: string }[]) =>
+    def({
+      id: 'p6',
+      label: 'Phase',
+      key: 'Phase',
+      type: 'status',
+      status_groups: [
+        {
+          id: 'upcoming',
+          label: 'Upcoming',
+          color: 'grey',
+          options: options.slice(0, 1).map((o) => ({ ...o, group_id: 'upcoming' })),
+        },
+        {
+          id: 'done',
+          label: 'Done',
+          color: 'green',
+          options: options.slice(1).map((o) => ({ ...o, group_id: 'done' })),
+        },
+      ],
+    })
+  const refusalOf = (d: PropertyDefinition): string | null => {
+    const r = validateDefinition(d, existing)
+    return r.ok ? null : r.error.message
+  }
+
+  it('checks a Status property\u2019s options at create', () => {
+    expect(
+      refusalOf(
+        status([
+          { key: 'Done', label: 'Done' },
+          { key: 'done', label: 'done' },
+        ]),
+      ),
+    ).toBe('Option titles must be unique.')
+    expect(refusalOf(status([{ key: ' ', label: 'Open' }]))).toBe(
+      'Options cannot contain an invalid name.',
+    )
+  })
+
   it('allows a zero-option select (no floor)', () => {
     expect(
       validateDefinition(
@@ -145,6 +191,25 @@ describe('validateOptionValues', () => {
     expect(validateOptionValues([]).ok).toBe(true)
   })
 
+  const refusalOf = (options: { key: string; label: string }[]): string | null => {
+    const r = validateOptionValues(options)
+    return r.ok ? null : r.error.message
+  }
+
+  it('refuses two keys that fold alike', () => {
+    const pair = [
+      { key: 'A', label: 'A' },
+      { key: 'a', label: 'B' },
+    ]
+    expect(refusalOf(pair)).toBe(
+      'An option with this title already exists, please choose another name.',
+    )
+  })
+
+  it('refuses a blank key', () => {
+    expect(refusalOf([{ key: '', label: 'A' }])).toBe('Options cannot contain an invalid name.')
+  })
+
   it('compares titles without regard to case', () => {
     expect(
       validateOptionValues([
@@ -158,6 +223,33 @@ describe('validateOptionValues', () => {
         { key: 'Open', label: 'Open' },
       ]).ok,
     ).toBe(true)
+  })
+})
+
+describe('withUniqueOptions', () => {
+  const select = (select_options: { key: string; label: string }[]) =>
+    def({ id: 'p1', label: 'Tag', key: 'Tag', type: 'select', select_options })
+
+  it('keeps the first of two options whose keys fold alike', () => {
+    expect(
+      withUniqueOptions(
+        select([
+          { key: 'x', label: 'A' },
+          { key: 'X', label: 'B' },
+        ]),
+      ).select_options,
+    ).toEqual([{ key: 'x', label: 'A' }])
+  })
+
+  it('drops an option with a blank key', () => {
+    expect(
+      withUniqueOptions(
+        select([
+          { key: 'a', label: 'A' },
+          { key: '', label: 'C' },
+        ]),
+      ).select_options,
+    ).toEqual([{ key: 'a', label: 'A' }])
   })
 })
 
