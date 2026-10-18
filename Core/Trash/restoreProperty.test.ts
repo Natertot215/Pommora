@@ -152,6 +152,33 @@ describe('restoring a deleted property', () => {
     expect(await listBundles(root)).toHaveLength(0)
   })
 
+  it('comes back with the option keys its record holds, refilling the pages that held them', async () => {
+    const c = await createProperty(root, {
+      id: '',
+      label: 'Phase',
+      type: 'select',
+      value_format: 'Match Title',
+      select_options: [{ key: 'wip', label: 'In Progress' }],
+    })
+    if (!c.ok) throw new Error('seed failed')
+    await assignProperty(root, notes, c.value.id)
+    const page = await createTestPage(notes, 'P', { body: 'b' })
+    if (!page.ok) throw new Error('page failed')
+    await updatePageProperty(page.value.path, await liveDef(c.value.id), {
+      kind: 'select',
+      value: 'In Progress',
+    })
+    expect(await valueOn(page.value.path, 'Phase')).toEqual(['wip'])
+    expect((await deleteProperty(root, c.value.id)).ok).toBe(true)
+
+    const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() }, deps)
+    expect(r.ok).toBe(true)
+    expect((await liveDef(c.value.id)).select_options).toEqual([
+      { key: 'wip', label: 'In Progress' },
+    ])
+    expect(await valueOn(page.value.path, 'Phase')).toEqual(['wip'])
+  })
+
   it('steps aside when the name has been taken since', async () => {
     const id = await seedPriority()
     expect((await deleteProperty(root, id)).ok).toBe(true)

@@ -162,6 +162,45 @@ describe('createProperty', () => {
     ])
   })
 
+  it('seeds a Status and a Select with each option keyed from its label through the Value Format', async () => {
+    const status = await createProperty(
+      root,
+      def({ label: 'Stage', type: 'status', value_format: 'kebab-case' }),
+    )
+    const select = await createProperty(
+      root,
+      def({ label: 'Kind', type: 'select', value_format: 'UPPERCASE' }),
+    )
+    if (!status.ok || !select.ok) throw new Error('create failed')
+    const { defs } = await readRegistry(root)
+    expect(
+      defs[status.value.id].status_groups?.flatMap((g) =>
+        g.options.map(({ key, label }) => ({ key, label })),
+      ),
+    ).toEqual([
+      { key: 'open', label: 'Open' },
+      { key: 'active', label: 'Active' },
+      { key: 'done', label: 'Done' },
+    ])
+    expect(defs[select.value.id].select_options).toEqual([{ key: 'OPTION 1', label: 'Option 1' }])
+  })
+
+  it('keeps the option keys a create is handed, whatever the Value Format', async () => {
+    const r = await createProperty(
+      root,
+      def({
+        label: 'Tone',
+        type: 'select',
+        value_format: 'kebab-case',
+        select_options: [{ key: 'x', label: 'Light Blue' }],
+      }),
+    )
+    if (!r.ok) throw new Error('create failed')
+    expect((await readRegistry(root)).defs[r.value.id].select_options).toEqual([
+      { key: 'x', label: 'Light Blue' },
+    ])
+  })
+
   it('steps a taken title aside, folding case — the title IS the key values write under', async () => {
     await createProperty(root, def({ label: 'Priority', type: 'select' }))
     const r = await createProperty(root, def({ label: 'priority', type: 'number' }))
@@ -341,6 +380,20 @@ describe('renameProperty and editProperty', () => {
       expect(content).not.toContain('Old:')
     }
     expect(await readFile(pages[1], 'utf8')).toContain('broken: {oops')
+  })
+
+  it('an edit seeding a definition stored without options keys the seed through the Value Format', async () => {
+    await seedRegistry({
+      id: 'prop_k',
+      label: 'Kind',
+      key: 'Kind',
+      type: 'select',
+      value_format: 'lowercase',
+    })
+    expect(await editProperty(root, 'prop_k', { icon: 'tag' })).toEqual(ok(null))
+    expect((await readRegistry(root)).defs.prop_k.select_options).toEqual([
+      { key: 'option 1', label: 'Option 1' },
+    ])
   })
 
   it('writes and then clears a checkbox property color in place', async () => {

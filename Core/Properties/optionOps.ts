@@ -8,12 +8,8 @@ import { editCaches } from './propertyCache'
 import { editHeldList, memberKey } from '../Files/heldKeys'
 import { errText, ok, fail, fault, type Result } from '../Contract/result'
 import { findOption, unregisteredMembers } from './propertyValue'
-import {
-  addOption,
-  applyOptionEdit,
-  renameOption as renameInGroups,
-  type OptionEdit,
-} from './optionModel'
+import { formatKey } from './keyFormat'
+import { addOption, applyOptionEdit, type OptionEdit } from './optionModel'
 import {
   labelled,
   optionGroupsOf,
@@ -93,7 +89,7 @@ export function editOption(root: string, propertyId: string, e: OptionEdit): Pro
       const admitted = admitOptionEdit(def, e)
       if (!admitted.ok) return { result: admitted }
       const next = editStoredOptions(def, stored[propertyId], (groups) =>
-        applyOptionEdit(groups, e),
+        applyOptionEdit(groups, e, def.value_format),
       )
       const check = validateOptionValues(optionsOf(next))
       if (!check.ok) return { result: check }
@@ -149,7 +145,7 @@ export async function registerHeldOptions(root: string, rels?: readonly string[]
           const fresh = unregisteredMembers(def, members).filter((v) => !owed.has(memberKey(v)))
           if (!fresh.length) continue
           const next = editStoredOptions(def, stored[id], (groups) =>
-            fresh.reduce((g, v) => addOption(g, SELECT_GROUP, v), groups),
+            fresh.reduce((g, v) => addOption(g, SELECT_GROUP, v, v), groups),
           )
           defs = { ...defs, [id]: next }
         }
@@ -221,13 +217,54 @@ export async function optionCascade(
   keys: ValueEdit,
   labels?: readonly [string, string | null],
 ): Promise<ConfigReach> {
-  const { pages, plan } = await valueEditPlan(root, def, keys)
-  const skipped = (await sweepGovernedRoots(root, pages, plan)).skipped.length
-  // A Remove that skipped a file stops here, so the option and every reference to it stay while its replay is owed.
-  if (skipped && labels?.[1] === null) return { skipped, hosts: [] }
-  const caches = await cacheSweep(root, def, keys)
+  let skipped = 0
+  if (keys.size) {
+    const { pages, plan } = await valueEditPlan(root, def, keys)
+    skipped = (await sweepGovernedRoots(root, pages, plan)).skipped.length
+    // A Remove that skipped a file stops here, so the option and every reference to it stay while its replay is owed.
+    if (skipped && labels?.[1] === null) return { skipped, hosts: [] }
+    skipped += await cacheSweep(root, def, keys)
+  }
   const reach = labels ? await reachConfig(root, { kind: 'option', def, labels }) : NO_REACH
-  return { skipped: skipped + caches + reach.skipped, hosts: reach.hosts }
+  return { skipped: skipped + reach.skipped, hosts: reach.hosts }
+}
+
+async function rekeyOptions(
+  root: string,
+  record: Extract<SchemaJournal, { op: 'option-rename' }>,
+): Promise<Result<SchemaCascade>> {
+  // Staged BEFORE the commit: a crash between commit and cascade is recoverable only from this record.
+  if (!(await writeSchemaJournal(root, record))) return OWED
+  const keys = new Map(record.keys)
+  const relabel = (label: string): string =>
+    record.labels && label === record.labels[0] ? record.labels[1] : label
+  const edit = await mutateRegistry<Result<PropertyDefinition>>(root, (registry, stored) => {
+    const def = registry.defs[record.id]
+    if (!def) return { result: NO_PROPERTY }
+    const typeCheck = requireOptions(def)
+    if (!typeCheck.ok) return { result: typeCheck }
+    if (record.labels && !findOption(def, record.labels[0])) return { result: NO_OPTION }
+    const next = editStoredOptions(def, stored[record.id], (groups) =>
+      groups.map((g) => ({
+        ...g,
+        options: g.options.map((o) => ({
+          ...o,
+          key: keys.get(o.key) ?? o.key,
+          label: relabel(o.label),
+        })),
+      })),
+    )
+    const check = validateOptionValues(optionsOf(next))
+    if (!check.ok) return { result: check }
+    return { next: { ...registry, defs: { ...registry.defs, [record.id]: next } }, result: ok(def) }
+  })
+  if (!edit.ok) {
+    await clearSchemaJournal(root, record)
+    return edit
+  }
+  const reach = await optionCascade(root, edit.value, keys, record.labels)
+  if (!reach.skipped) await clearSchemaJournal(root, record)
+  return ok(schemaCascade(reach, record))
 }
 
 export function renameOption(
@@ -239,38 +276,14 @@ export function renameOption(
   return serializeSchemaOp(root, async () => {
     const r = await resolveForCascade(root, propertyId, oldLabel)
     if (!r.ok) return r
-    const { key } = r.value
-    const record: SchemaJournal = {
+    const { def, key } = r.value
+    const to = formatKey(newLabel, def.value_format)
+    return rekeyOptions(root, {
       op: 'option-rename',
       id: propertyId,
-      keys: key === newLabel ? [] : [[key, newLabel]],
+      keys: key === to ? [] : [[key, to]],
       labels: [oldLabel, newLabel],
-    }
-    // Staged BEFORE the commit: a crash between commit and cascade is recoverable only from this record.
-    if (!(await writeSchemaJournal(root, record))) return OWED
-    const edit = await mutateRegistry<Result<PropertyDefinition>>(root, (registry, stored) => {
-      const def = registry.defs[propertyId]
-      if (!def) return { result: NO_PROPERTY }
-      const typeCheck = requireOptions(def)
-      if (!typeCheck.ok) return { result: typeCheck }
-      if (!findOption(def, oldLabel)) return { result: NO_OPTION }
-      const next = editStoredOptions(def, stored[propertyId], (groups) =>
-        renameInGroups(groups, oldLabel, newLabel),
-      )
-      const check = validateOptionValues(optionsOf(next))
-      if (!check.ok) return { result: check }
-      return {
-        next: { ...registry, defs: { ...registry.defs, [propertyId]: next } },
-        result: ok(def),
-      }
     })
-    if (!edit.ok) {
-      await clearSchemaJournal(root, record)
-      return edit
-    }
-    const reach = await optionCascade(root, edit.value, new Map(record.keys), record.labels)
-    if (!reach.skipped) await clearSchemaJournal(root, record)
-    return ok(schemaCascade(reach, record))
   })
 }
 

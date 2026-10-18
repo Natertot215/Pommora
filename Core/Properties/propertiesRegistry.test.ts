@@ -160,6 +160,20 @@ describe('hostile hand-edited files (breaker M-2/L-1)', () => {
     expect(reg.defs.prop_a?.key_format).toBeUndefined()
   })
 
+  it('decodes an unknown Value Format as none', async () => {
+    await mkdir(join(root, '.nexus'), { recursive: true })
+    await writeFile(
+      join(root, '.nexus', 'properties.json'),
+      JSON.stringify({
+        order: ['prop_a'],
+        defs: { prop_a: { ...def('prop_a', 'Real'), value_format: 'Shouting' } },
+      }),
+    )
+    const reg = await readRegistry(root)
+    expect(reg.defs.prop_a).toBeDefined()
+    expect(reg.defs.prop_a?.value_format).toBeUndefined()
+  })
+
   it('orderedDefs lists a key≠id desync exactly once', async () => {
     const desynced = { ...def('prop_b', 'Desync'), id: 'prop_b' }
     const reg = { order: ['prop_a'], defs: { prop_a: desynced } }

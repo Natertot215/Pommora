@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { addOption, applyOptionEdit, moveOption, renameOption } from './optionModel'
+import { addOption, applyOptionEdit, moveOption } from './optionModel'
 import {
   optionGroupsOf,
   withOptionGroups,
@@ -26,27 +26,14 @@ const A = groups[0].options[0]
 const D = groups[1].options[0]
 
 describe('optionModel', () => {
-  it('addOption inserts into the matched group only, carrying its group_id', () => {
-    expect(addOption(groups, 'upcoming', 'Triage', 0)[0].options).toEqual([
-      { key: 'Triage', label: 'Triage', group_id: 'upcoming' },
+  it('addOption inserts the label and key it is handed into the matched group only, carrying its group_id', () => {
+    expect(addOption(groups, 'upcoming', 'Triage', 'triage', 0)[0].options).toEqual([
+      { key: 'triage', label: 'Triage', group_id: 'upcoming' },
       A,
     ])
-    const next = addOption(groups, 'upcoming', 'Backlog')
+    const next = addOption(groups, 'upcoming', 'Backlog', 'Backlog')
     expect(next[0].options).toEqual([A, { key: 'Backlog', label: 'Backlog', group_id: 'upcoming' }])
     expect(next[1]).toBe(groups[1])
-  })
-
-  it('renameOption sets the label and the key to the new title in any group, keeping group_id + color', () => {
-    expect(renameOption(groups, 'D', 'Shipped')[1].options[0]).toEqual({
-      ...D,
-      label: 'Shipped',
-      key: 'Shipped',
-    })
-    expect(renameOption(groups, 'A', 'Z')[0].options[0]).toEqual({
-      ...A,
-      label: 'Z',
-      key: 'Z',
-    })
   })
 
   it('moveOption reassigns group_id and inserts at the target index (cross-group)', () => {

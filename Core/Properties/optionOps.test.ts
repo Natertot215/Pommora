@@ -89,6 +89,22 @@ describe('editOption', () => {
     expect((await readRegistry(root)).defs[id].select_options).toEqual([])
   })
 
+  it('add keys the option from its title through the Value Format', async () => {
+    const id = await mkProperty({
+      label: 'Tags',
+      key: 'Tags',
+      type: 'select',
+      value_format: 'kebab-case',
+      select_options: [],
+    })
+    expect(
+      await editOption(root, id, { op: 'add', groupId: 'select', title: 'Light Blue' }),
+    ).toEqual(ok(null))
+    expect((await readRegistry(root)).defs[id].select_options).toEqual([
+      { key: 'light-blue', label: 'Light Blue' },
+    ])
+  })
+
   it('add refuses a title another option holds', async () => {
     const id = await mkSelect([{ key: 'A', label: 'A' }])
     const r = await editOption(root, id, { op: 'add', groupId: 'select', title: 'A' })
@@ -532,6 +548,52 @@ describe('renameOption', () => {
       Tags: ['Finished', 'Keep'],
       tags: ['Done'],
     })
+  })
+
+  it('writes the new key from the new label through the Value Format, rewriting the pages', async () => {
+    const id = await mkProperty({
+      label: 'Tags',
+      key: 'Tags',
+      type: 'select',
+      value_format: 'kebab-case',
+      select_options: [{ key: 'light-blue', label: 'Light Blue' }],
+    })
+    const page = await pageHolding(id, 'Light Blue')
+    expect(await readFile(page, 'utf8')).toContain('light-blue')
+
+    expect((await renameOption(root, id, 'Light Blue', 'Dark Blue')).ok).toBe(true)
+    expect((await readRegistry(root)).defs[id].select_options).toEqual([
+      { key: 'dark-blue', label: 'Dark Blue' },
+    ])
+    const content = await readFile(page, 'utf8')
+    expect(content).toContain('dark-blue')
+    expect(content).not.toContain('light-blue')
+  })
+
+  it('an adopted word renamed onto the key its Value Format writes keeps its key, leaves its pages, and relabels the views', async () => {
+    const id = await mkProperty({
+      label: 'Tags',
+      key: 'Tags',
+      type: 'multiSelect',
+      value_format: 'kebab-case',
+      select_options: [{ key: 'in-progress', label: 'in-progress' }],
+    })
+    const col = await createFolderEntity(root, 'collection', 'Col', newId())
+    if (!col.ok) throw new Error('folder failed')
+    await assignProperty(root, col.value.path, id)
+    const page = join(col.value.path, 'One.md')
+    await writeFile(page, '---\nID: 01ARZ3NDEKPSV4RRFFQ69G5FAV\nTags: [in-progress]\n---\nb\n')
+    const surfaces = await seedConfigSurfaces(root, col.value.path, viewOn(id, 'in-progress'))
+    const bytes = await readFile(page, 'utf8')
+    const mtime = (await stat(page)).mtimeMs
+
+    expect((await renameOption(root, id, 'in-progress', 'In Progress')).ok).toBe(true)
+    expect((await readRegistry(root)).defs[id].select_options).toEqual([
+      { key: 'in-progress', label: 'In Progress' },
+    ])
+    expect(await readFile(page, 'utf8')).toBe(bytes)
+    expect((await stat(page)).mtimeMs).toBe(mtime)
+    expect((await surfaces.read()).collection).toEqual(viewOn(id, 'In Progress'))
   })
 
   it('rejects a whitespace rename, leaving the option as it was', async () => {
