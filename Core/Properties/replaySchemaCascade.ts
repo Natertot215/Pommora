@@ -48,7 +48,7 @@ async function replay(
   const defs = (await readRegistry(root)).defs
   switch (journal.op) {
     case 'rename': {
-      // The def alive with `from` held by none means the commit landed and the sweep is owed, to the name the def holds now, however many renames have followed; anything else is a state the record no longer maps.
+      // The def alive while no definition is named `from` means the commit landed and the sweep is owed, to the name the def holds now, however many renames have followed; anything else is a state the record no longer maps.
       const def = defs[journal.id]
       if (!def || Object.values(defs).some((d) => d.name === journal.from)) return NO_REACH
       return { skipped: await renameSweep(root, journal.from, def), hosts: [] }

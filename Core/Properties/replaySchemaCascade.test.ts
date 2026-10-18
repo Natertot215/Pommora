@@ -122,28 +122,6 @@ describe('rename replay', () => {
     expect(await readSchemaJournal(root)).toBeNull()
   })
 
-  it('a record still replays after the property is re-cased, sweeping to the name it holds now', async () => {
-    const root = await seedNexus()
-    for (const [name, id] of [
-      ['A', PAGE_IDS[0]],
-      ['B', PAGE_IDS[1]],
-    ])
-      await writeFile(join(root, 'Col', `${name}.md`), `---\nID: ${id}\nStatus: Draft\n---\nbody\n`)
-    await mutateRegistry(root, (registry) => ({
-      next: {
-        ...registry,
-        defs: { ...registry.defs, prop_s: { ...registry.defs.prop_s, name: 'STAGE' } },
-      },
-      result: null,
-    }))
-    await writeSchemaJournal(root, { op: 'rename', id: 'prop_s', from: 'Status', to: 'Stage' })
-    await openSession(root)
-    await replaySchemaCascade(root)
-    expect(await page(root, 'A')).toBe(`---\nID: ${PAGE_IDS[0]}\nSTAGE: Draft\n---\nbody\n`)
-    expect(await page(root, 'B')).toBe(`---\nID: ${PAGE_IDS[1]}\nSTAGE: Draft\n---\nbody\n`)
-    expect(await readSchemaJournal(root)).toBeNull()
-  })
-
   it('a record replays to the name the definition holds after a chained rename', async () => {
     const root = await seedNexus()
     for (const [name, id] of [

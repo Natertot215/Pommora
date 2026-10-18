@@ -82,6 +82,7 @@ describe('rekeyHeld — the twin of renameFrontmatterKey', () => {
     ['<Projects>: [Y]\n<Ventures>: X', '<Projects>', '<Ventures>', 'merge'],
     ['Tags: [b]\nlabels: [x]', 'Tags', 'Labels', 'prefer-new'],
     ['<Other>: x', 'Status', 'Stage', 'prefer-new'],
+    ['Tags: [b]', 'Tags', 'Tags', 'merge'],
   ]
 
   it.each(

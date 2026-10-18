@@ -137,12 +137,9 @@ describe('case folding on renames', () => {
     expect(reg.contexts.find((c) => c.id === 'ctx_projects')!.title).toBe('PROJECTS')
   })
 
-  const members = () => [page(), other(), csSidecar()]
-  const snapshot = (files: string[]) => Promise.all(files.map((f) => readFile(f, 'utf8')))
-
   it('a case-only Context rename relocates the folder, commits the registry, and moves the key on every holder', async () => {
     await writeFile(other(), '---\nid: p2\n<projects>:\n  - Pommora\n---\nbody')
-    const [, otherBefore] = await snapshot(members())
+    const otherBefore = await readFile(other(), 'utf8')
     expect((await renameContextOp(root, 'ctx_projects', 'projects')).ok).toBe(true)
     expect(await readdir(contextsDir(root))).toContain('projects')
     expect(await regTitle('ctx_projects')).toBe('projects')
@@ -215,6 +212,21 @@ describe('case folding on renames', () => {
       expect(await readJournal(root)).toBeNull()
     })
 
+    it('a Context already moved has its key rewritten, its title committed, and the journal clears', async () => {
+      await rename(join(contextsDir(root), 'Projects'), join(contextsDir(root), 'projects'))
+      await writeJournal(root, {
+        contextId: 'ctx_projects',
+        oldTitle: 'Projects',
+        newTitle: 'projects',
+        skipped: [],
+      })
+      await replayPendingRename(root)
+      expect(await readdir(contextsDir(root))).toContain('projects')
+      expect(Object.keys(await fmOf(page()))).toEqual(['id', '<projects>'])
+      expect(await regTitle('ctx_projects')).toBe('projects')
+      expect(await readJournal(root)).toBeNull()
+    })
+
     it('a Context that crashed before its move is moved, its key rewritten, its title committed, and the journal clears', async () => {
       await writeJournal(root, {
         contextId: 'ctx_projects',
@@ -236,17 +248,6 @@ describe('case folding on renames', () => {
     const before = [await readFile(other(), 'utf8'), await readFile(csSidecar(), 'utf8')]
     expect((await renameContextOp(root, 'ctx_projects', 'Ventures')).ok).toBe(true)
     expect([await readFile(other(), 'utf8'), await readFile(csSidecar(), 'utf8')]).toEqual(before)
-  })
-
-  it('a single value renamed onto a held list joins it as a list of one, on a page and a Space', async () => {
-    await writeFile(other(), '---\nid: p2\n<Projects>: Pommora\n<Ventures>:\n  - X\n---\nbody')
-    await writeFile(
-      csSidecar(),
-      JSON.stringify({ id: 'sp-cs', '<Projects>': 'Pommora', '<Ventures>': ['X'] }),
-    )
-    expect((await renameContextOp(root, 'ctx_projects', 'Ventures')).ok).toBe(true)
-    expect(await fmOf(other())).toEqual({ id: 'p2', '<Ventures>': ['X', 'Pommora'] })
-    expect(await readJsonAt(csSidecar())).toEqual({ id: 'sp-cs', '<Ventures>': ['X', 'Pommora'] })
   })
 
   it('a Space rename rewrites the title under every spelling of the key', async () => {
@@ -281,6 +282,23 @@ describe('case folding on renames', () => {
 })
 
 describe('renameContextOp', () => {
+  it('a single value renamed onto a held list joins it as a list of one, on a page and a Space', async () => {
+    await writeFile(other(), '---\nid: p2\n<Projects>: Pommora\n<Ventures>:\n  - X\n---\nbody')
+    await writeFile(
+      csSidecar(),
+      JSON.stringify({ id: 'sp-cs', '<Projects>': 'Pommora', '<Ventures>': ['X'] }),
+    )
+    expect((await renameContextOp(root, 'ctx_projects', 'Ventures')).ok).toBe(true)
+    expect(await fmOf(other())).toEqual({ id: 'p2', '<Ventures>': ['X', 'Pommora'] })
+    expect(await readJsonAt(csSidecar())).toEqual({ id: 'sp-cs', '<Ventures>': ['X', 'Pommora'] })
+  })
+
+  it('a retry whose old title the Context holds again leaves every holder byte-identical', async () => {
+    const before = [await readFile(page(), 'utf8'), await readFile(csSidecar(), 'utf8')]
+    expect((await renameContextOp(root, 'ctx_projects', 'Projects', 'Projects')).ok).toBe(true)
+    expect([await readFile(page(), 'utf8'), await readFile(csSidecar(), 'utf8')]).toEqual(before)
+  })
+
   it('rewrites the KEY in both scopes, commits the registry, clears the journal', async () => {
     const r = await renameContextOp(root, 'ctx_projects', 'Ventures')
     expect(r.ok).toBe(true)
