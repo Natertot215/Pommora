@@ -9,9 +9,11 @@ import {
   defaultStatusSeed,
   defaultSelectSeed,
   KEY_REFUSAL,
+  optionGroupsOf,
   PROPERTY_TYPES,
   type PropertyDefinition,
   type PropertyDraft,
+  withOptionGroups,
 } from './properties'
 import { ok, fail, type Result } from '../Contract/result'
 import { renameFrontmatterKey } from '../Files/pageFile'
@@ -28,14 +30,25 @@ import {
   type SchemaJournal,
 } from './propertyJournal'
 
+const withOptionKeys = (def: PropertyDefinition): PropertyDefinition =>
+  withOptionGroups(
+    def,
+    optionGroupsOf(def).map((g) => ({
+      ...g,
+      options: g.options.map((o) => ({ ...o, key: formatKey(o.label, def.value_format) })),
+    })),
+  )
+
 // Seeds only when the field is undefined; an EMPTY array is a deliberate state, or emptying a select's options then making any unrelated edit would resurrect the seed.
 function seeded(def: PropertyDefinition): PropertyDefinition {
   switch (PROPERTY_TYPES[def.type].options) {
     case 'status':
-      return def.status_groups === undefined ? { ...def, status_groups: defaultStatusSeed() } : def
+      return def.status_groups === undefined
+        ? withOptionKeys({ ...def, status_groups: defaultStatusSeed() })
+        : def
     case 'select':
       return def.select_options === undefined
-        ? { ...def, select_options: defaultSelectSeed() }
+        ? withOptionKeys({ ...def, select_options: defaultSelectSeed() })
         : def
     case undefined:
       return def
@@ -186,11 +199,14 @@ export const setKeyFormat = (
   key_format: KeyFormat,
 ): Promise<Result<PropertyRename | null>> => rekeyProperty(root, propertyId, { key_format })
 
-/** Every definition edit but the label, the key, and the Key Format, which ride the rename path since each can move the key in every file. */
+/** Every definition edit but the label, the key, and the formats, which ride the rename paths since each can move keys in every file. */
 export function editProperty(
   root: string,
   propertyId: string,
-  changes: Omit<Partial<PropertyDefinition>, 'id' | 'label' | 'key' | 'key_format'>,
+  changes: Omit<
+    Partial<PropertyDefinition>,
+    'id' | 'label' | 'key' | 'key_format' | 'value_format'
+  >,
 ): Promise<Result<null>> {
   return serializeSchemaOp(root, () =>
     mutateRegistry<Result<null>>(root, (registry) => {

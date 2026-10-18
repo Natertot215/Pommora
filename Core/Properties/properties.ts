@@ -177,6 +177,7 @@ const propertyDefinitionFields = z.object({
   label: z.string().optional(),
   type: propertyType,
   key_format: z.enum(KEY_FORMATS).optional().catch(undefined),
+  value_format: z.enum(KEY_FORMATS).optional().catch(undefined),
   icon: z.string().optional(),
   select_options: selectOptions.optional(),
   status_groups: statusGroups.optional(),

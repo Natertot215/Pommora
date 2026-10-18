@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { index, op } from '../Files/decoders'
+import { formatKey, type KeyFormat } from './keyFormat'
 import { optionAppearance, type StatusGroup, type StatusOption } from './properties'
 
 function mapOption(
@@ -25,19 +26,16 @@ function withField<T extends { label: string }, K extends keyof T>(
 export function addOption(
   groups: StatusGroup[],
   groupId: string,
-  title: string,
+  label: string,
+  key: string,
   atIndex?: number,
 ): StatusGroup[] {
   return groups.map((g) => {
     if (g.id !== groupId) return g
-    const next = { key: title, label: title, group_id: g.id }
+    const next = { key, label, group_id: g.id }
     const i = atIndex ?? g.options.length
     return { ...g, options: [...g.options.slice(0, i), next, ...g.options.slice(i)] }
   })
-}
-
-export function renameOption(groups: StatusGroup[], label: string, to: string): StatusGroup[] {
-  return mapOption(groups, label, (o) => ({ ...o, label: to, key: to }))
 }
 
 export function moveOption(
@@ -70,10 +68,14 @@ export const optionEdit = z.discriminatedUnion('op', [
 ])
 export type OptionEdit = z.infer<typeof optionEdit>
 
-export function applyOptionEdit(groups: StatusGroup[], e: OptionEdit): StatusGroup[] {
+export function applyOptionEdit(
+  groups: StatusGroup[],
+  e: OptionEdit,
+  format?: KeyFormat,
+): StatusGroup[] {
   switch (e.op) {
     case 'add':
-      return addOption(groups, e.groupId, e.title, e.atIndex)
+      return addOption(groups, e.groupId, e.title, formatKey(e.title, format), e.atIndex)
     case 'recolor':
       return mapOption(groups, e.option, (o) => withField(o, 'color', e.color))
     case 'icon':
