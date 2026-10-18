@@ -42,7 +42,7 @@ The work lands in ten phases in dependency order, removal first: the Space order
 | ----- | -------- | -------- | ---------- |
 | 1 | +63 / −102 | +66 / −102 | −36 (+66 / −102) |
 | 2A | +34 / −50 | +33 / −54 | −57 (+99 / −156) |
-| 2B | +110 / −225 | +103 / −250 | −204 (+202 / −406) |
+| 2B | +110 / −225 | +109 / −254 | −202 (+208 / −410) |
 | 3 | +80 / −64 | | |
 | 4 | +67 / −58 | | |
 | 5A | +96 / −82 | | |
@@ -131,7 +131,7 @@ The work lands in ten phases in dependency order, removal first: the Space order
 - **Approach (Nathan's, from *MetadataV3 — Brief*):** what's true now is assessed for removal, deletion, consolidation, or replacement before anything is designed on it; nothing is added without evidence it's required; net-negative lines are the north star, and a net-positive result states its rationale against these principles; the outcome reads as always-intended, looking outward for shared design rather than hand-rolling.
 - **The Plan's Own Mandate (Nathan, 10-17-2026):** the plan follows these principles throughout. It ends net-negative in issues, mechanisms, and complexity; the line count attempts to follow in principle, while the total is whatever is genuinely necessary without sacrifice. The measure is the codebase, not the product: the work leaves the codebase unarguably in a better state than it began with.
 - **Plan Rules (Nathan, 10-17-2026):** removal comes first in every phase. Tasks build necessity-first, written to their result, so no executing agent reads an opening to do more than they say. A test that changes asserts the new behavior the decisions name rather than being bent to pass. AFTER blocks leave the codebase with fewer comments than it has, and add one only where the code would otherwise be misread. Any cautionary code has its reason asked of Nathan before it's written. Consolidation that's unambiguously right needs no separate sign-off, and dead or dormant code inside the surface is removed rather than left.
-- **Gates:** `npm run typecheck`, `npm run test`, and `npm run lint`, from the repo root; each prints its own failures, and lint runs clean. Biome formats every TS write, so an edit failing on whitespace means it reformatted: re-read and retry. "Run the gates" in a task means these three. A VERIFY grep that uses `\b` runs under `git grep -P`, since this toolchain's `git grep -E` matches nothing at a `\b`.
+- **Gates:** `npm run typecheck`, `npm run test`, and `npm run lint`, from the repo root; each prints its own failures, and lint runs clean. Biome formats every TS write, so an edit failing on whitespace means it reformatted: re-read and retry. "Run the gates" in a task means these three. A VERIFY grep that uses `\b` runs under `git grep -P`, since this toolchain's `git grep -E` matches nothing at a `\b`. From Phase 2B on, each Review Checkpoint also runs the Metadata Drive (`.claude/scripts/Metadata Drive/live-drive.mjs`) over the groups of every phase landed so far, group N for Phase N (group 2 covering 2A and 2B, group 5 waiting for Task 5B-4, group 9 for Phase 9), from a worktree of the phase's head built by `editor-parity/worktree.sh` and named by `POMMORA_DRIVE_REPO`; a failing case is fixed in the code, or in the drive where the case misreads a decision, never bent to pass.
 - **Frozen:**
   - Path Links' link machinery: `respell`, `respellings`, `relink`, `renameCascade`'s link arms, and every `[[…]]` target a restore repairs (Path Links Phase 8 owns them).
   - Quote, number, Boolean, and link preservation (A-3): `nodeSpelledAs`, `checkedSpelling`, and the number shapes.
@@ -159,7 +159,7 @@ The work lands in ten phases in dependency order, removal first: the Space order
 - [x] **Phase 2B** — Reads and Writes Land on the Key
   - [x] Task 2B-1 · The spelling resolution behind reads, writes, and strips leaves
   - [x] Task 2B-2 · `heldKeys` and `heldKey` leave, and every gate reads the exact key
-  - [ ] Review Checkpoint
+  - [x] Review Checkpoint
 - [ ] **Phase 3** — Exact Words and the Index
   - [ ] Task 3-1 · Members and Space titles match by `exactTitle`
   - [ ] Task 3-2 · Option words decode exactly, and a Multi-Select carries its foreign words
@@ -209,7 +209,7 @@ The work lands in ten phases in dependency order, removal first: the Space order
   - [ ] Task 9-2 · The two live drives
   - [ ] Review Checkpoint
 - [ ] **Phase 10** — Reconciliation
-  - [ ] Tasks 10-1 to 10-8 · The feature documents, the drives' README, and the PRD
+  - [ ] Tasks 10-1 to 10-7 · The feature documents and the PRD
   - [ ] Review Checkpoint
 - [ ] `[Compaction checkpoint: c/pre-compaction; on the re-prompt, reread §Constraints and c/plan-execution before §Final Verification opens]`
 - [ ] `[Stop: the final verification's report, per §Final Verification]`
@@ -5312,253 +5312,40 @@ for (const miss of misses) console.log(JSON.stringify(miss))
 
 #### Task 9-2
 
-**TASK:** Move both live drives to the exact identity. In `.claude/scripts/Metadata Spelling Drive/live-drive.mjs`, the seeds move to `{label, key}`, seven folded expectations invert, the descriptions stop promising another casing, and new rows cover a case-only rename, exact keys, adoption under `lowercase`, a Key Format change, a Value Format change with a saved view untouched, and a restore re-spell. In `.claude/scripts/Option Picker Drive/live-drive.mjs`, the registry field reads move to `label` and `key`. The three other drives that seed through `schema:add` and the registry watcher move to the new shape.
+**TASK:** Finish the Metadata Drive and move every other drive to the exact identity. The Metadata Drive (`.claude/scripts/Metadata Drive/`), grown during Phase 2B from the Metadata Spelling Drive into the behavior matrix its `MATRIX.md` lays out, drops its one seed adapter, takes the six messages Nathan worded into its `COPY` table, and runs all nine groups. In `.claude/scripts/Option Picker Drive/live-drive.mjs`, the registry field reads move to `label` and `key`. The three other drives that seed through `schema:add` and the registry watcher move to the new shape.
 
-**NOW:** The Metadata Spelling Drive seeds eight properties through `schema:add` as `{name, type, select_options: [{value}]}` and `status_groups` options `{value}` (`:15-31`, `:231-233`), reads each case through the table, writes it through `mutate`, and renames through `property:rename`, `property:renameOption`, and `mutate` `rename` and `renameSpace`. Seven expectations pin the fold: a Select `done` reads `Done`, a Status `["todo"]` reads `Todo`, a Multi-Select `work` reads and writes as `Work`, a Space `area one` reads and keeps as `Area One`, and the option, Space, and key cascades rewrite `[work]`, `[area one]`, and `mx choice:`. The Option Picker Drive reads the registry as `d.name` and `o.value`. The drive harness restores `~/Test` when a drive ends, so no data persists; both drives launch the app themselves on ports 9363 and 9343.
-
-**Expectations that invert** (Metadata Spelling Drive; the Match Title registry makes each key equal its label):
-
-| Line | Current | New | Decision |
-| --- | --- | --- | --- |
-| `:97` | `['done', 'Done', '\n  - Doing'],` | `['done', '', '\n  - Doing'],` | A-1, E-2: `done` isn't option `Done`; a Select pick replaces the value. |
-| `:108` | `[' ["todo"]', 'Todo', ' ["Done"]'],` | `[' ["todo"]', '', ' ["Done"]'],` | A-1, E-2: same for Status. |
-| `:126` | `[' [work, "Life"]', 'Work\|Life', ['Work'], ' [work]'],` | `[' [work, "Life"]', 'Life', ['Work'], ' ["Work", work]'],` | E-1, E-3: `work` duplicates `Work` and isn't read, and a pick of `Work` keeps it after the picked word; `Work`, held nowhere exactly, takes the file's first quoted style. |
-| `:185` | `[' area one', 'Area One', ['Area One', 'Area Two'], '\n  - area one\n  - Area Two'],` | `[' area one', '', ['Area One', 'Area Two'], '\n  - Area One\n  - Area Two'],` | A-2: `area one` is foreign data; the Context write lists the picked Spaces. |
-| `:200` | `want: 'Mx Labels: [Job]'` | `want: 'Mx Labels: [work]'` | A-1: an option rename leaves `work` untouched. |
-| `:203` | `want: \`${AREAS}: [Area Uno]\`` | `want: \`${AREAS}: [area one]\`` | A-2: a Space retitle leaves `area one` untouched. |
-| `:205` | `want: 'Mx Pick:\n  - "Done"'` | `want: 'mx choice:\n  - "Done"'` | A-1: a property rename leaves `mx choice:` untouched. |
-
-The reader returns `''` for a blank Select, Status, or Context cell (`propertyValue.ts` decodes an unrecognized option to `NULL_VALUE`, and `checkReads` already maps a blank Amount cell from `''`), so the inverted reads expect `''`.
+**NOW:** The Metadata Drive seeds through `define`, which sends each definition through `shaped`: while the registry still reads `name`, `inToday` and `todayOption` map the end-state `{ label, key }` seed onto `name` and option `value`, a no-op once Task 5B-4 rewrites the registry. Its `COPY` table holds `null` for each of the six *§Open Items* messages, so those checks assert a refusal's or a dialog's presence and placement, not its text. Each Review Checkpoint from Phase 2B on ran the groups for the phases landed by then. The Option Picker Drive reads the registry as `d.name` and `o.value`. The drive harness restores `~/Test` when a drive ends, so no data persists; both drives launch the app themselves on ports 9363 and 9343.
 
 **CHANGE**
 
-- [ ] `Metadata Spelling Drive/live-drive.mjs`, descriptions first:
-  - `:91` — "a scalar of any quote style or casing names its option;" reads "a scalar of any quote style names its option, and one in another casing names none;".
-  - `:113-114` — "and a list keeps its flow or block style." reads "a list keeps its flow or block style, and a word no option claims stays after the picked ones.".
-  - `:178` — "Spaces: a Space title matches quoted, bare, or in another casing, and a Space write keeps the file's spelling." reads "Spaces: a Space title matches exactly, quoted or bare, a title in another casing is foreign data, and a Space write keeps the file's quotes and list style.".
-  - `:190` — "and every spelling follows it in its own quotes." reads "and every quote style follows it, while a key, word, or title in another casing stays as written.".
-  - `:336` — the check name `rewrites every spelling in its own quotes` reads `rewrites every quote style and leaves another casing as written`.
-- [ ] The seven inversions in the table above.
-- [ ] The seeds: add `word`; every `name` becomes `label` plus `key`; every option `{value}` becomes `{key, label}`; `key()` reads `.label`; the seed loop passes the definition whole.
-- [ ] The new properties `cased`, `tones`, and `shades`, the new pages, the filter view, and the adoption check in `seed`.
-- [ ] The new matrix rows (`Keys`, `Shades`, one `Labels` row), the `recase` cascade, and `checkFormats` with its call.
+- [ ] `Metadata Drive/live-drive.mjs`: delete the seed-shape block (`today`, `todayOption`, `inToday`, `shaped`) and send each definition as written; fill each `COPY` entry with the message Nathan worded at the Stop before Task 5A-1, as a function of the words it names.
 - [ ] `Option Picker Drive/live-drive.mjs`: `:24-25`, `:33`, `:94`, `:155-156`, `:250`, `:254`, `:272` as below.
 - [ ] The seeds that send `{ id: '', name, type }` to `schema:add` send `label`: `Text Property Drive/live-drive.mjs:65,448`, `Alias Drive/live-drive.mjs:75`, and `Path Links Drive/live-drive.mjs:178,1222`; the Alias Drive's `optionValues` (`:35`) finds its definition by `d.label` and reads `o.label`; `nexus-watch.mjs:27-31` reads `d.label` and `o.label`.
 
 **AFTER**
 
-```.claude/scripts/Metadata Spelling Drive/live-drive.mjs diff
-@@ imports @@
-
- import {
--  ask, check, click, frontRaw, launch, mintPageId, must, NEXUS, pagePath, restore, results, settles, sleep, until,
-+  ask, check, click, frontRaw, launch, mintPageId, must, NEXUS, pagePath, read, restore, results, settles, sleep, until,
- } from '../drive-harness.mjs'
-
-@@ constants @@
-
- const VIEW_ID = 'view_01KZSPELLDRIVE0000000TABLE'
-+const FILTER_VIEW_ID = 'view_01KZSPELLDRIVE00000000FILT'
-
-@@ PROPS @@
-
-+const word = (w) => ({ key: w, label: w })
-+
- const PROPS = {
--  check: { name: 'Mx Check', type: 'checkbox' },
--  amount: { name: 'Mx Amount', type: 'number' },
--  choice: { name: 'Mx Choice', type: 'select', select_options: ['Done', 'Doing', '2024'].map((value) => ({ value })) },
-+  check: { label: 'Mx Check', type: 'checkbox' },
-+  amount: { label: 'Mx Amount', type: 'number' },
-+  choice: { label: 'Mx Choice', type: 'select', select_options: ['Done', 'Doing', '2024'].map(word) },
-   stage: {
--    name: 'Mx Stage',
-+    label: 'Mx Stage',
-     type: 'status',
-     status_groups: [
--      { id: 'todo', label: 'To-do', color: 'grey', options: [{ value: 'Todo', group_id: 'todo' }] },
--      { id: 'complete', label: 'Complete', color: 'green', options: [{ value: 'Done', group_id: 'complete' }] },
-+      { id: 'todo', label: 'To-do', color: 'grey', options: [{ ...word('Todo'), group_id: 'todo' }] },
-+      { id: 'complete', label: 'Complete', color: 'green', options: [{ ...word('Done'), group_id: 'complete' }] },
-     ],
-   },
--  labels: { name: 'Mx Labels', type: 'multiSelect', select_options: ['Work', 'Life', 'Home', '2024', '2025'].map((value) => ({ value })) },
--  note: { name: 'Mx Note', type: 'text' },
--  ref: { name: 'Mx Ref', type: 'link' },
--  files: { name: 'Mx Files', type: 'file' },
-+  labels: { label: 'Mx Labels', type: 'multiSelect', select_options: ['Work', 'Life', 'Home', '2024', '2025'].map(word) },
-+  note: { label: 'Mx Note', type: 'text' },
-+  ref: { label: 'Mx Ref', type: 'link' },
-+  files: { label: 'Mx Files', type: 'file' },
-+  cased: { label: 'Mx Cased', type: 'text' },
-+  tones: { label: 'Mx Tones', type: 'multiSelect', select_options: ['Light Blue', 'Dark Red'].map(word) },
-+  shades: { label: 'Mx Shades', type: 'multiSelect', value_format: 'lowercase', select_options: ['red', 'blue'].map(word) },
- }
-
-@@ key @@
-
--const key = (prop) => (prop === 'areas' ? AREAS : PROPS[prop].name)
-+const key = (prop) => (prop === 'areas' ? AREAS : PROPS[prop].label)
-
-@@ Select and Status @@
-
--// Select and Status: a scalar of any quote style or casing names its option; a write lands as a one-item list in
-+// Select and Status: a scalar of any quote style names its option, and one in another casing names none; a write lands as a one-item list in
- // the file's quotes, a quote yaml needed spreading to no value it can leave bare.
- ...
--  ['done', 'Done', '\n  - Doing'],
-+  ['done', '', '\n  - Doing'],
- ...
--  [' ["todo"]', 'Todo', ' ["Done"]'],
-+  [' ["todo"]', '', ' ["Done"]'],
-
-@@ Multi-Select @@
-
--// Multi-Select: each member keeps its own quotes, a new member takes the quotes the file chose, and a list keeps
--// its flow or block style.
-+// Multi-Select: each member keeps its own quotes, a new member takes the quotes the file chose, a list keeps
-+// its flow or block style, and a word no option claims stays after the picked ones.
- ...
--  [' [work, "Life"]', 'Work|Life', ['Work'], ' [work]'],
-+  [' [work, "Life"]', 'Life', ['Work'], ' ["Work", work]'],
- ...
- ])
-   add('Labels', 'labels', `Mx Labels:${held}`, read, set('multiSelect', next), `Mx Labels:${want}`)
-+add('Labels', 'labels', 'Mx Labels: [Work, work]', 'Work', set('multiSelect', null), '')
-
-@@ Keys and Shades (after Files) @@
-
-+// Keys: a key in another casing is a different key, foreign to the property; the write lands beside it.
-+add('Keys', 'amount', 'mx amount: 1200', null, set('number', 1300), 'mx amount: 1200\nMx Amount: 1300')
-+add('Keys', 'choice', 'mx choice: Done', '', set('select', 'Doing'), 'mx choice: Done\nMx Choice:\n  - Doing')
-+
-+// Shades: under `lowercase`, green is adopted as an option; PURPLE, and Red beside red, stay foreign on disk and
-+// survive a pick after the picked words.
-+add('Shades', 'shades', 'Mx Shades: [red, green, PURPLE, Red]', 'red|green', set('multiSelect', ['red']), 'Mx Shades: [red, PURPLE, Red]')
-+add('Shades', 'shades', 'Mx Shades: [Red]', '', set('multiSelect', ['blue']), 'Mx Shades: [blue, Red]')
-
-@@ Spaces @@
-
--// Spaces: a Space title matches quoted, bare, or in another casing, and a Space write keeps the file's spelling.
-+// Spaces: a Space title matches exactly, quoted or bare, a title in another casing is foreign data, and a Space write keeps the file's quotes and list style.
- ...
--  [' area one', 'Area One', ['Area One', 'Area Two'], '\n  - area one\n  - Area Two'],
-+  [' area one', '', ['Area One', 'Area Two'], '\n  - Area One\n  - Area Two'],
-
-@@ CASCADES @@
-
--// The cascades: each renames something these pages hold, and every spelling follows it in its own quotes.
-+// The cascades: each renames something these pages hold, and every quote style follows it, while a key, word, or title in another casing stays as written.
- ...
--  { title: 'Mx Cascade Option 3', held: 'Mx Labels: [work]', want: 'Mx Labels: [Job]', by: 'option' },
-+  { title: 'Mx Cascade Option 3', held: 'Mx Labels: [work]', want: 'Mx Labels: [work]', by: 'option' },
- ...
--  { title: 'Mx Cascade Space 3', held: `${AREAS}: [area one]`, want: `${AREAS}: [Area Uno]`, by: 'space' },
-+  { title: 'Mx Cascade Space 3', held: `${AREAS}: [area one]`, want: `${AREAS}: [area one]`, by: 'space' },
- ...
--  { title: 'Mx Cascade Key 2', held: 'mx choice:\n  - "Done"', want: 'Mx Pick:\n  - "Done"', by: 'key' },
-+  { title: 'Mx Cascade Key 2', held: 'mx choice:\n  - "Done"', want: 'mx choice:\n  - "Done"', by: 'key' },
-+  { title: 'Mx Cascade Recase 1', held: 'Mx Note: kept', want: 'mx note: kept', by: 'recase' },
- ]
-
-+const FORMAT_PAGES = [
-+  { title: 'Mx Format Key 1', held: 'Mx Cased: one' },
-+  { title: 'Mx Format Key 2', held: 'mx cased: two' },
-+  { title: 'Mx Format Tone', held: 'Mx Tones: [Light Blue, "Dark Red"]' },
-+  { title: 'Mx Format Gone', held: "Mx Cased: gone\nMx Tones: ['Light Blue']" },
-+]
-+
-+const registryDef = (label) => Object.values(JSON.parse(read('.nexus/properties.json')).defs).find((d) => d.label === label)
-+const wordsOf = (label) => registryDef(label).select_options.map((o) => [o.key, o.label])
-+const filterView = () => JSON.parse(read(`${COLLECTION}/_pagecollection.json`)).views.find((v) => v.id === FILTER_VIEW_ID)
-
-@@ seed @@
-
-   for (const c of CASCADES) seedPage(c.title, c.held)
-+  for (const p of FORMAT_PAGES) seedPage(p.title, p.held)
-   const all = Object.values(pageIds)
- ...
--  for (const [prop, { name, type, ...options }] of Object.entries(PROPS)) {
--    const r = await ask(cdp, 'schema:add', COLLECTION, { id: '', name, type, ...options })
--    if (!r.ok) throw new Error(`The seed stops: schema:add refused ${name}: ${JSON.stringify(r)}`)
-+  for (const [prop, def] of Object.entries(PROPS)) {
-+    const r = await ask(cdp, 'schema:add', COLLECTION, { id: '', ...def })
-+    if (!r.ok) throw new Error(`The seed stops: schema:add refused ${def.label}: ${JSON.stringify(r)}`)
-     ids[prop] = r.value.id
-   }
-   ids.areas = contextId('Areas')
-+  await must('the filter view', ask(cdp, 'views:save', COLLECTION, 'collection', {
-+    id: FILTER_VIEW_ID, name: 'Spelling Filter', type: 'table', hidden_properties: [], property_order: ['_title'],
-+    filter: { match: 'all', rules: [{ property_id: ids.tones, op: 'contains_any', values: ['Light Blue'] }] },
-+  }, {}))
-   await must('the matrix view', ask(cdp, 'views:save', COLLECTION, 'collection', {
- ...
--  const moved = [...cases, ...CASCADES].filter((c) => block(c.title) !== c.held)
--  check(`registering leaves all ${cases.length + CASCADES.length} pages byte-identical`, moved.length === 0,
-+  const moved = [...cases, ...CASCADES, ...FORMAT_PAGES].filter((c) => block(c.title) !== c.held)
-+  check(`registering leaves all ${cases.length + CASCADES.length + FORMAT_PAGES.length} pages byte-identical`, moved.length === 0,
-     moved.map((c) => `${c.title}: ${JSON.stringify(block(c.title))}`).join('\n      '))
-+  const adopted = await settles(async () => wordsOf('Mx Shades').some(([k]) => k === 'green'), 8000)
-+  check('adoption: lowercase adopts green and leaves PURPLE and Red foreign',
-+    adopted && JSON.stringify(wordsOf('Mx Shades')) === JSON.stringify([['red', 'red'], ['blue', 'blue'], ['green', 'green']]),
-+    JSON.stringify(wordsOf('Mx Shades')))
- }
-
-@@ checkCascades @@
-
-     option: () => ask(cdp, 'property:renameOption', ids.labels, 'Work', 'Job'),
- ...
-     key: () => ask(cdp, 'property:rename', ids.choice, 'Mx Pick'),
-+    recase: () => ask(cdp, 'property:rename', ids.note, 'mx note'),
-   }
--  const LABEL = { page: 'a page rename', year: "a whole-number page's rename", option: 'an option rename', space: 'a Space retitle', key: 'a property rename' }
-+  const LABEL = { page: 'a page rename', year: "a whole-number page's rename", option: 'an option rename', space: 'a Space retitle', key: 'a property rename', recase: 'a case-only property rename' }
- ...
--    check(`${LABEL[by]} rewrites every spelling in its own quotes (${mine.length} cases)`, wrong.length === 0, wrong.join('\n      '))
-+    check(`${LABEL[by]} rewrites every quote style and leaves another casing as written (${mine.length} cases)`, wrong.length === 0, wrong.join('\n      '))
-   }
- }
-
-+async function checkFormats(cdp) {
-+  const cell = (rows, title, prop) => rows[pageIds[title]]?.[COLUMNS.indexOf(prop)]
-+  const wrote = (title, want) => settles(async () => block(title) === want, 6000)
-+  const bundle = (await must('trash Mx Format Gone', ask(cdp, 'mutate', { op: 'delete', path: pagePath('Mx Format Gone'), kind: 'page' }))).trashed.bundlePath
-+  let rows = await readTable(cdp)
-+  check('Match Title: a lowercase key is foreign data to the property',
-+    cell(rows, 'Mx Format Key 1', 'cased') === 'one' && cell(rows, 'Mx Format Key 2', 'cased') === '',
-+    JSON.stringify([cell(rows, 'Mx Format Key 1', 'cased'), cell(rows, 'Mx Format Key 2', 'cased')]))
-+  await must('Key Format lowercase', ask(cdp, 'property:setKeyFormat', ids.cased, 'lowercase'))
-+  check('Key Format lowercase: the key moves on the page holding it and the lowercase page is left alone',
-+    (await wrote('Mx Format Key 1', 'mx cased: one')) && block('Mx Format Key 2') === 'mx cased: two',
-+    JSON.stringify([block('Mx Format Key 1'), block('Mx Format Key 2')]))
-+  rows = await readTable(cdp)
-+  check('Key Format lowercase: both pages read under the new key',
-+    cell(rows, 'Mx Format Key 1', 'cased') === 'one' && cell(rows, 'Mx Format Key 2', 'cased') === 'two',
-+    JSON.stringify([cell(rows, 'Mx Format Key 1', 'cased'), cell(rows, 'Mx Format Key 2', 'cased')]))
-+  const view = filterView()
-+  await must('Value Format kebab-case', ask(cdp, 'property:setValueFormat', ids.tones, 'kebab-case'))
-+  check('Value Format kebab-case: every option word moves on the page and in the registry, labels stay',
-+    (await wrote('Mx Format Tone', 'Mx Tones: ["light-blue", "dark-red"]'))
-+      && JSON.stringify(wordsOf('Mx Tones')) === JSON.stringify([['light-blue', 'Light Blue'], ['dark-red', 'Dark Red']]),
-+    JSON.stringify([block('Mx Format Tone'), wordsOf('Mx Tones')]))
-+  check('Value Format kebab-case: the saved view naming Light Blue is untouched',
-+    JSON.stringify(filterView()) === JSON.stringify(view), JSON.stringify(filterView()))
-+  rows = await readTable(cdp)
-+  check('Value Format kebab-case: the page still reads Light Blue and Dark Red',
-+    cell(rows, 'Mx Format Tone', 'tones') === 'Light Blue|Dark Red', JSON.stringify(cell(rows, 'Mx Format Tone', 'tones')))
-+  await must('restore Mx Format Gone', ask(cdp, 'mutate', { op: 'restore', bundlePath: bundle }))
-+  check('Trash restore: the key and option word return in their current spelling',
-+    await wrote('Mx Format Gone', "mx cased: gone\nMx Tones: ['light-blue']"), JSON.stringify(block('Mx Format Gone')))
-+}
-
-@@ the run @@
-
-   await checkWrites(cdp)
-   await checkCascades(cdp)
-+  await checkFormats(cdp)
- ...
--  console.log(`\n${results.length - failed.length}/${results.length} checks passed over ${cases.length + CASCADES.length} pages`)
-+  console.log(`\n${results.length - failed.length}/${results.length} checks passed over ${cases.length + CASCADES.length + FORMAT_PAGES.length} pages`)
+```.claude/scripts/Metadata Drive/live-drive.mjs diff
+@@ the seed shape @@
+-// ── The seed shape ──────────────────────────────────────────────────────────
+-// Task 9-2 removes this block: until Task 5B-4 rewrites the registry, the build reads a definition's `name` and an
+-// option's `value`, so a seed written in the final shape is sent in today's.
+-let today
+-const todayOption = ({ key, label, ...rest }) => ({ ...rest, value: key })
+-const inToday = ({ label, key_format, value_format, select_options, status_groups, ...rest }) => ({
+-  …
+-})
+-function shaped(def) {
+-  today ??= Object.values(registry().defs).some((d) => 'name' in d)
+-  return today ? inToday(def) : def
+-}
+-// ────────────────────────────────────────────────────────────────────────────
+@@ add @@
+-const add = (cdp, def, container = COLLECTION) => ask(cdp, 'schema:add', container, { id: '', ...shaped(def) })
++const add = (cdp, def, container = COLLECTION) => ask(cdp, 'schema:add', container, { id: '', ...def })
+@@ COPY @@
+-  aKeyAnotherPropertyWrites: null,
++  aKeyAnotherPropertyWrites: (key) => `{the worded refusal, naming key}`,
+   …
 ```
 
 ```.claude/scripts/Option Picker Drive/live-drive.mjs diff
@@ -5640,20 +5427,19 @@ The reader returns `''` for a blank Select, Status, or Context cell (`propertyVa
 
 **VERIFY**
 
-- [ ] `grep -n "{ name\|(value) =>\|PROPS\[prop\]\.name\|{ value:" ".claude/scripts/Metadata Spelling Drive/live-drive.mjs"` returns nothing.
+- [ ] `grep -n "shaped\|inToday\|todayOption\|: null," ".claude/scripts/Metadata Drive/live-drive.mjs"` returns nothing.
 - [ ] `grep -n "d\.name\|o\.value\|\.options\[0\]\.value\|at(-1)?\.value" ".claude/scripts/Option Picker Drive/live-drive.mjs"` returns nothing; its zero-count Remove check (`:174`, "stripped from 0 Items.") and Clear at one (`:168`, `Clear “Alpha” from 1 Item?`) are unchanged and pass.
-- [ ] `env -u ELECTRON_RUN_AS_NODE node ".claude/scripts/Metadata Spelling Drive/live-drive.mjs"` exits 0 with every check passing, including the seven inverted rows, the `Keys`, `Shades`, and `Labels [Work, work]` rows, the case-only rename, the adoption check, and the four format checks; the harness's `restore()` returns `~/Test` to its pre-run state.
+- [ ] `env -u ELECTRON_RUN_AS_NODE node live-drive.mjs 1 2 3 4 5 6 7 8 9`, run from `.claude/scripts/Metadata Drive/`, exits 0 with every check passing, each of the six messages asserted by its worded text; the harness's `restore()` returns `~/Test` to its pre-run state.
 - [ ] `env -u ELECTRON_RUN_AS_NODE node ".claude/scripts/Option Picker Drive/live-drive.mjs"` exits 0 with every check passing.
 - [ ] `grep -n "{ id: '', name\|d\.name\|o\.value" ".claude/scripts/Text Property Drive/live-drive.mjs" ".claude/scripts/Alias Drive/live-drive.mjs" ".claude/scripts/Path Links Drive/live-drive.mjs" .claude/scripts/nexus-watch.mjs` lists no registry read or `schema:add` payload; the Text Property and Alias drives' first groups and the Path Links Drive's seed run green.
-- [ ] The Format Change confirmation (skipped at one or none) isn't driven here: the drive calls the channels directly, below the renderer's dialog, and `Core/Interface/Confirm/confirmations.test.ts` (Phase 4) pins the skip.
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
 #### Review Checkpoint
 
 - [ ] Two review agents, `code-simplification` and `adversarial-review`, read outward over Phases 1 through 9 against the Done criteria in *MetadataV3 — Decisions & Intention*: a property titled `Description` under `lowercase` shows its title and writes `description:`; `Name:` and `name:` are two keys; a Multi-Select under `lowercase` adopts `green`, leaves `PURPLE` unread, and keeps it through an edit; a Value Format change leaves views untouched; a restored page returns in the current spelling; the leaf reads Metadata.
-- [ ] Both drives are read against the decisions line by line: each inverted row asserts the behavior A-1, A-2, E-1, or E-3 names, and no row was adjusted to pass around a behavior.
-- [ ] `/view-delta` shows the phase: `frames.ts`, the two drives, the three seeds, and the watcher.
+- [ ] The Metadata Drive's `MATRIX.md` and the Option Picker Drive are read against the decisions line by line: each case asserts the behavior its decision names, and no case was adjusted to pass around a behavior.
+- [ ] `/view-delta` shows the phase: `frames.ts`, the drives, the three seeds, and the watcher.
 
 ### Phase 10 — Reconciliation
 
@@ -5794,23 +5580,6 @@ The listed sentences are quoted from the tree at the plan's baseline. Each task 
 
 #### Task 10-7
 
-**TASK:** Rewrite `scripts/README.md`'s Metadata Spelling Drive paragraph for the drive Task 9-2 leaves.
-
-**NOW:** The README hard-wraps at 100 columns, so each replacement is re-wrapped at that width in the file. The paragraph says Space values are held "in another casing" and that the drive runs renames "over held spellings"; the drive now treats another casing as foreign data and also runs a case-only rename, a Key Format change, a Value Format change, adoption, and a Trash restore.
-
-**CHANGE**
-
-- [ ] `scripts/README.md:33` — "Space values held bare, single-quoted, double-quoted, in another casing, or as flow and block lists." reads "Space values held bare, single-quoted, double-quoted, or as flow and block lists, and keys, words, and titles in another casing as foreign data."
-- [ ] `scripts/README.md:36` — "runs the page, option, Space, and property renames over held spellings." reads "runs the page, option, Space, and property renames over held quote styles and another casing, then a Key Format change, a Value Format change, adoption, and a Trash restore."
-
-**VERIFY**
-
-- [ ] `grep -n "in another casing, or as flow\|over held spellings" .claude/scripts/README.md` returns nothing.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
-
-#### Task 10-8
-
 **TASK:** Rewrite the four `PommoraPRD.md` sentences that describe folded matching and `name` as the key.
 
 **NOW:** The PRD is maintained beside the feature documents (commit `21b35cf2d` brought it to the folded rule) and still says a Context key matches without regard to case (`:75`), that a write collapses a second spelling of a recognized key (`:101`), that a property's name is its key (`:141`), and that a Status stores its label and keys and options match without regard to case (`:145`).
@@ -5860,10 +5629,10 @@ The listed sentences are quoted from the tree at the plan's baseline. Each task 
 
 **Documentation**
 
-- `.claude/PommoraPRD.md:75` — "a key matches its Context's title without regard to case." — Task 10-8
-- `.claude/PommoraPRD.md:101` — "apart from a second spelling of a recognized key, which a write to that key collapses …" — Task 10-8
-- `.claude/PommoraPRD.md:141` — "its name is the key its values write under, unique nexus-wide …" — Task 10-8
-- `.claude/PommoraPRD.md:145` — "a Status stores its label … a key and an option match without regard to case." — Task 10-8
+- `.claude/PommoraPRD.md:75` — "a key matches its Context's title without regard to case." — Task 10-7
+- `.claude/PommoraPRD.md:101` — "apart from a second spelling of a recognized key, which a write to that key collapses …" — Task 10-7
+- `.claude/PommoraPRD.md:141` — "its name is the key its values write under, unique nexus-wide …" — Task 10-7
+- `.claude/PommoraPRD.md:145` — "a Status stores its label … a key and an option match without regard to case." — Task 10-7
 - `.claude/Features/PropertiesPM.md:18` — "The option's own value, in a list of one" — Task 10-1
 - `.claude/Features/PropertiesPM.md:27` — "Every property carries two independent identifiers." — Task 10-1
 - `.claude/Features/PropertiesPM.md:27` — "Its **`name`** is the key a value is written under, bare and matched without regard to case — unique …" — Task 10-1
@@ -5898,8 +5667,6 @@ The listed sentences are quoted from the tree at the plan's baseline. Each task 
 - `.claude/Features/NexusRecordPM.md:14` — "A returning artifact is reconciled against the world it comes back to: a governed key survives only if what …" — Task 10-4
 - `.claude/Features/ViewTypesPM.md:41` — "Text comparisons ignore case on Title, Text, Link, Select, and Status." — Task 10-5
 - `.claude/Features/InterfacePM.md:76` — "Files & Links, Properties, Pages & Writing" — Task 10-6
-- `.claude/scripts/README.md:33` — "Space values held bare, single-quoted, double-quoted, in another casing, or as flow and block lists." — Task 10-7
-- `.claude/scripts/README.md:36` — "runs the page, option, Space, and property renames over held spellings." — Task 10-7
 - `Core/Index/contentIndex.ts:84` — "/** The pages holding a Context key in any casing, or — given a normalized Space title — those whose key …" — Task 3-4
 - `.claude/Features/ConfigurationPM.md:135` — "#### Properties" (the Settings window's leaf heading) — Task 10-6
 - `.claude/Features/ConfigurationPM.md:137` — "**Metadata**" (the leaf's section title) — Task 10-6
@@ -5909,20 +5676,6 @@ The listed sentences are quoted from the tree at the plan's baseline. Each task 
 - `Core/Settings/frames.ts:637` — "key: 'properties'" (the Settings leaf's key) — Task 9-1
 - `Core/Settings/frames.ts:638` — "label: 'Properties'" (the Settings leaf's label) — Task 9-1
 - `Core/Settings/frames.ts:642` — "title: 'Metadata'" (the leaf's one section) — Task 9-1
-- `.claude/scripts/Metadata Spelling Drive/live-drive.mjs:15-31,231-233` — "seeds a property as `{name, type}` and an option as `{value}`" — Task 9-2
-- `.claude/scripts/Metadata Spelling Drive/live-drive.mjs:39` — "`key()` reads `PROPS[prop].name`" — Task 9-2
-- `.claude/scripts/Metadata Spelling Drive/live-drive.mjs:91` — "a scalar of any quote style or casing names its option" — Task 9-2
-- `.claude/scripts/Metadata Spelling Drive/live-drive.mjs:97` — "Select `done` reads `Done`" — Task 9-2
-- `.claude/scripts/Metadata Spelling Drive/live-drive.mjs:108` — "Status `[\"todo\"]` reads `Todo`" — Task 9-2
-- `.claude/scripts/Metadata Spelling Drive/live-drive.mjs:113-114` — "each member keeps its own quotes ... a list keeps its flow or block style" (no foreign-word rule) — Task 9-2
-- `.claude/scripts/Metadata Spelling Drive/live-drive.mjs:126` — "Multi-Select `[work, \"Life\"]` reads `Work|Life` and a pick of `Work` leaves `[work]`" — Task 9-2
-- `.claude/scripts/Metadata Spelling Drive/live-drive.mjs:178` — "a Space title matches quoted, bare, or in another casing" — Task 9-2
-- `.claude/scripts/Metadata Spelling Drive/live-drive.mjs:185` — "Space ` area one` reads `Area One` and a write keeps `area one`" — Task 9-2
-- `.claude/scripts/Metadata Spelling Drive/live-drive.mjs:190` — "every spelling follows it in its own quotes" — Task 9-2
-- `.claude/scripts/Metadata Spelling Drive/live-drive.mjs:200` — "an option rename rewrites `[work]` to `[Job]`" — Task 9-2
-- `.claude/scripts/Metadata Spelling Drive/live-drive.mjs:203` — "a Space retitle rewrites `[area one]` to `[Area Uno]`" — Task 9-2
-- `.claude/scripts/Metadata Spelling Drive/live-drive.mjs:205` — "a property rename rewrites `mx choice:` to `Mx Pick:`" — Task 9-2
-- `.claude/scripts/Metadata Spelling Drive/live-drive.mjs:336` — "rewrites every spelling in its own quotes" (the cascade check name) — Task 9-2
 - `.claude/scripts/Option Picker Drive/live-drive.mjs:24-25` — "reads the registry as `d.name` and `o.value`" — Task 9-2
 - `.claude/scripts/Option Picker Drive/live-drive.mjs:33` — "`schema:add` takes `{name, type}`" — Task 9-2
 - `.claude/scripts/Option Picker Drive/live-drive.mjs:94` — "finds an option by `o.value`" — Task 9-2
@@ -5996,6 +5749,8 @@ Behaviors to read once before ratifying, each following the decisions:
 - **A Restored Collection's Saved Values Keep Their Old Keys:** a Collection in the Trash through a Value Format change comes back with its `property_cache` as it left, so a value removed from it before the delete doesn't return on reassign under the new format. No decision names that cache at restore, and re-spelling it costs a second cache pass in the scrub; the plan leaves it out.
 
 #### Deviations
+
+- **The Behavior Matrix** (Nathan, during Phase 2B): the Metadata Spelling Drive grew into the Metadata Drive, a nine-group matrix of every combination the decisions guarantee, by channel and by gesture, written to the end-state contract with one seed adapter and the six messages held open; each Review Checkpoint runs the groups landed so far, Task 9-2 finishes it rather than rewriting the old drive, and the README paragraph Task 10-7 rewrote came with it, so the PRD task is now 10-7.
 
 - **Built-In Object Names Are Reserved** (Phase 2B review, Nathan's ruling): with reads landing on `root[key]`, a property named exactly `constructor`, `toString`, `valueOf`, `hasOwnProperty`, `__proto__`, or another name `Object.prototype` holds read a function off every page, so its column threw at render and its value couldn't be set. `keyRefusal` refuses those exact spellings with `KEY_REFUSAL.reserved`, so every read, write, admission, and later format is covered at the one gate; `Constructor` stays a free name.
 
