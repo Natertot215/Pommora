@@ -70,9 +70,11 @@ describe('keyFormat', () => {
     expect(formatKey('Heading Icon Hidden', 'snake_case')).toBe('heading_icon_hidden')
   })
 
-  it('cases ß, final sigma, and NFD labels correctly', () => {
+  it('cases ß, ligatures, final sigma, and NFD labels correctly', () => {
     expect(formatKey('Straße', 'UPPERCASE')).toBe('STRASSE')
     expect(formatKey('Straße', 'lowercase')).toBe('straße')
+    expect(formatKey('ﬁle Name', 'Train-Case')).toBe('File-Name')
+    expect(formatKey('File-Name', 'Train-Case')).toBe('File-Name')
     expect(formatKey('ΑΣ Σ', 'PascalCase')).toBe('ΑςΣ')
     expect(formatKey('CaféBar'.normalize('NFD'), 'kebab-case')).toBe('café-bar')
     expect(formatKey('CaféBar'.normalize('NFD'), 'kebab-case')).toBe(

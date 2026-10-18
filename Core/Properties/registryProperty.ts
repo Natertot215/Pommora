@@ -186,7 +186,7 @@ export const setKeyFormat = (
   key_format: KeyFormat,
 ): Promise<Result<PropertyRename | null>> => rekeyProperty(root, propertyId, { key_format })
 
-/** Every definition edit but the label, the key, and the Key Format, which ride the rename path since each rewrites the key in every file. */
+/** Every definition edit but the label, the key, and the Key Format, which ride the rename path since each can move the key in every file. */
 export function editProperty(
   root: string,
   propertyId: string,
