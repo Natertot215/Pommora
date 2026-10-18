@@ -26,16 +26,17 @@ way it saves, and style parity with the page body). It takes the groups to run a
 a channel's reply. It seeds `Collection A/Set Alpha` with its properties, views, and `Drive …` pages
 on debug port 9353.
 
-`Metadata Spelling Drive/live-drive.mjs` drives how every value type reads and writes the spellings
-other applications leave, one page per case: each checkbox word pair in three casings and three quote
-styles, each number shape (quoted, grouped, percent, every currency symbol before or after, signed,
-decimal, and the shapes the grammar refuses), and Select, Status, Multi-Select, Text, Link, File, and
-Space values held bare, single-quoted, double-quoted, in another casing, or as flow and block lists.
-It reads each value as the table draws it, asserts that registering the properties leaves every page
-byte-identical, writes each case and asserts the exact bytes it leaves, unticks every checkbox, and
-runs the page, option, Space, and property renames over held spellings. It seeds `Collection A/Set
-Alpha` with its properties, a table view, and `Mx …` pages on debug port 9363, and exits non-zero on
-any failed check.
+`Metadata Drive/live-drive.mjs` drives MetadataV3's exact metadata identity against the real app as a matrix of
+every behavior the decisions guarantee, in nine groups: groups 1 to 8 follow the plan phase of their number through
+the host channels the interface calls (Space order by id, exact keys and their renames, exact words and filters,
+counts, the label and key registry, the journal and its cascades, the Key and Value Formats with adoption, and the
+restore re-spell), asserting page bytes, Space sidecars, `properties.json`, the views, View Tiles, Matrix filter, and
+Collection caches, the journal slot, and what the table draws and filters; group 9 drives each surface by real
+gesture (the Metadata leaf, the value picker, the format rows and their counted confirmation, the Trash browser, and
+a Space's Property Panel). `MATRIX.md` beside it holds the dimensions it crosses, what it prunes and why, and the
+decision each case pins. It takes the groups to run as arguments — `node live-drive.mjs 1 2` — seeds each group's
+own properties, pages, Contexts, and Spaces in `Collection A/Set Alpha`, `Collection B/Set Alpha`, and `~/Test`'s
+Contexts on debug port 9363, and exits non-zero on any failed check.
 
 `Alias Drive/live-drive.mjs` drives alias management end to end, in six groups: the host's alias
 edits over the `mutate` channel (add, rename, move, and forget, case folding, the title refused,
