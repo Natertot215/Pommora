@@ -82,6 +82,17 @@ afterEach(async () => {
 })
 
 describe('the property channels', () => {
+  it('schema:add writes the key from the label, replacing a key the payload carries', async () => {
+    const r = await propertiesHandlers['schema:add'](ctx, relative(root, col), {
+      id: '',
+      label: 'Due Date',
+      key: 'whatever',
+      type: 'text',
+    })
+    if (!r.ok) throw new Error('add failed')
+    expect((await readRegistry(root)).defs[r.value.id]?.key).toBe('Due Date')
+  })
+
   it('a rename pushes each board it wrote once, and the held tree holds the containers it wrote', async () => {
     const r = await propertiesHandlers['property:renameOption'](ctx, propId, 'Done', 'Closed')
     expect(r).toEqual(ok({ cascade: { pages: [], hosts: [HOME] } }))

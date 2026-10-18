@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { updatePageProperty } from '../Testing/propertyWrites'
-import { readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { readJsonAt, seedSpaceSidecar, tempRoot } from '../Testing/hostFs'
 import {
@@ -17,7 +17,7 @@ import { createTestPage } from '../Testing/createTestPage'
 import { pathExists } from '../Files/atomicWrite'
 import { readRegistry } from './propertiesRegistry'
 import { readSchemaJournal, writeSchemaJournal } from './propertyJournal'
-import { nexusConfig } from '../Paths/paths'
+import { nexusConfig, nexusDir } from '../Paths/paths'
 import { NEXUS_CONFIG_FILES } from '../Paths/nexusPaths'
 import type { PropertyDraft } from './properties'
 
@@ -40,6 +40,14 @@ const def = (over: Partial<PropertyDraft> & { label: string; type: PropertyDraft
   ({ id: '', ...over }) as PropertyDraft
 
 const registryFilePath = () => nexusConfig(root, NEXUS_CONFIG_FILES.properties)
+
+const seedRegistry = async (stored: { id: string } & Record<string, unknown>) => {
+  await mkdir(nexusDir(root), { recursive: true })
+  await writeFile(
+    registryFilePath(),
+    JSON.stringify({ order: [stored.id], defs: { [stored.id]: stored } }),
+  )
+}
 
 describe('the registry file is never replaced by a failed read', () => {
   it('a mutation against an unreadable registry fails and writes nothing', async () => {
@@ -72,6 +80,70 @@ describe('createProperty', () => {
     expect((await readRegistry(root)).defs[r.value.id]).toMatchObject({
       label: 'Priority',
       key: 'Priority',
+    })
+  })
+
+  it('writes the key from the landed label through the Key Format', async () => {
+    const r = await createProperty(root, {
+      id: '',
+      label: 'Due Date',
+      type: 'dateTime',
+      key_format: 'snake_case',
+    })
+    if (!r.ok) throw new Error('create failed')
+    expect((await readRegistry(root)).defs[r.value.id]).toMatchObject({
+      label: 'Due Date',
+      key: 'due_date',
+      key_format: 'snake_case',
+    })
+  })
+
+  it('steps a held label aside and writes the stepped label through the Key Format', async () => {
+    await createProperty(root, def({ label: 'Name', type: 'text' }))
+    const r = await createProperty(
+      root,
+      def({ label: 'Name', type: 'text', key_format: 'kebab-case' }),
+    )
+    if (!r.ok) throw new Error('create failed')
+    expect((await readRegistry(root)).defs[r.value.id]).toMatchObject({
+      label: 'Name (2)',
+      key: 'name-(2)',
+    })
+  })
+
+  it('steps the label aside while the key its format writes is held', async () => {
+    await seedRegistry({ id: 'prop_d', label: 'Due', key: 'due_date', type: 'text' })
+    const r = await createProperty(
+      root,
+      def({ label: 'Due Date', type: 'text', key_format: 'snake_case' }),
+    )
+    if (!r.ok) throw new Error('create failed')
+    expect((await readRegistry(root)).defs[r.value.id]).toMatchObject({
+      label: 'Due Date (2)',
+      key: 'due_date_(2)',
+    })
+  })
+
+  it('keeps a label another definition holds only as its key', async () => {
+    await seedRegistry({ id: 'prop_x', label: 'X', key: 'due date', type: 'text' })
+    const r = await createProperty(
+      root,
+      def({ label: 'Due Date', type: 'text', key_format: 'kebab-case' }),
+    )
+    if (!r.ok) throw new Error('create failed')
+    expect((await readRegistry(root)).defs[r.value.id]).toMatchObject({
+      label: 'Due Date',
+      key: 'due-date',
+    })
+  })
+
+  it('steps a label aside whose key folds onto a held key', async () => {
+    await seedRegistry({ id: 'prop_p', label: 'Phase', key: 'stage', type: 'text' })
+    const r = await createProperty(root, def({ label: 'Stage', type: 'text' }))
+    if (!r.ok) throw new Error('create failed')
+    expect((await readRegistry(root)).defs[r.value.id]).toMatchObject({
+      label: 'Stage (2)',
+      key: 'Stage (2)',
     })
   })
 

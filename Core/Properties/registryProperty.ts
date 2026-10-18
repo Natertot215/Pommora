@@ -3,7 +3,8 @@ import { mutateRegistry, readRegistry, NO_PROPERTY, serializeSchemaOp } from './
 import { validateDefinition, validateName } from './schema'
 import { mintPropertyId } from '../Nexus/ids'
 import { freeName } from '../Paths/names'
-import { exactTitle } from '../Paths/caseFold'
+import { exactTitle, normalizeTitle } from '../Paths/caseFold'
+import { formatKey, type KeyFormat } from './keyFormat'
 import {
   defaultStatusSeed,
   defaultSelectSeed,
@@ -41,18 +42,31 @@ function seeded(def: PropertyDefinition): PropertyDefinition {
   }
 }
 
+function freeLabel(
+  label: string,
+  format: KeyFormat | undefined,
+  defs: PropertyDefinition[],
+): string {
+  const labels = defs.map((d) => d.label)
+  const keys = new Set(defs.map((d) => normalizeTitle(d.key)))
+  let free = freeName(label, labels)
+  while (keys.has(normalizeTitle(formatKey(free, format)))) {
+    labels.push(free)
+    free = freeName(free, labels)
+  }
+  return free
+}
+
 export async function createProperty(
   root: string,
   def: PropertyDraft,
 ): Promise<Result<{ id: string }>> {
-  let landed = ''
+  let key = ''
   const created = await mutateRegistry<Result<{ id: string }>>(root, (registry) => {
     const defs = Object.values(registry.defs)
-    landed = freeName(
-      exactTitle(def.label),
-      defs.map((d) => d.label),
-    )
-    const candidate = seeded({ ...def, label: landed, key: landed, id: def.id || mintPropertyId() })
+    const label = freeLabel(exactTitle(def.label), def.key_format, defs)
+    key = formatKey(label, def.key_format)
+    const candidate = seeded({ ...def, label, key, id: def.id || mintPropertyId() })
     const v = validateDefinition(candidate, defs)
     if (!v.ok) return { result: v }
     return {
@@ -66,7 +80,7 @@ export async function createProperty(
   // A landed create wearing a journaled delete's key or id supersedes the record, or a later replay would strip the living property. Only after commit: a refused create must not spend a record it never displaced.
   if (created.ok) {
     const journal = await readSchemaJournal(root)
-    if (journal?.op === 'delete' && (journal.key === landed || journal.id === created.value.id))
+    if (journal?.op === 'delete' && (journal.key === key || journal.id === created.value.id))
       await clearSchemaJournal(root, journal)
   }
   return created
@@ -144,11 +158,11 @@ export function renameProperty(
   })
 }
 
-/** Every definition edit but the label and key, which are renameProperty's since the key cascades into every page. */
+/** Every definition edit but the label, the key, and the Key Format, which ride the rename path since each rewrites the key in every file. */
 export function editProperty(
   root: string,
   propertyId: string,
-  changes: Omit<Partial<PropertyDefinition>, 'id' | 'label' | 'key'>,
+  changes: Omit<Partial<PropertyDefinition>, 'id' | 'label' | 'key' | 'key_format'>,
 ): Promise<Result<null>> {
   return serializeSchemaOp(root, () =>
     mutateRegistry<Result<null>>(root, (registry) => {
