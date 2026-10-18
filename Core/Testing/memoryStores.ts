@@ -180,16 +180,12 @@ const contentIndex = (index: MemoryIndex): ContentIndexStore => {
       return { relations, pages }
     },
     queryKeyHolders(key) {
-      const fold = foldKey(key)
-      return sortedPaths(
-        [...index.values.values()].filter((r) => foldKey(r.key) === fold).map((r) => r.path),
-      )
+      return sortedPaths([...index.values.values()].filter((r) => r.key === key).map((r) => r.path))
     },
     queryMembers(key, title) {
-      const fold = foldKey(key)
       return sortedPaths(
         relationRows()
-          .filter((r) => r.kind === 'space' && r.qualifier === fold && r.target === title)
+          .filter((r) => r.kind === 'space' && r.qualifier === key && r.target === title)
           .map((r) => r.path),
       )
     },

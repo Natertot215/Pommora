@@ -359,18 +359,7 @@ describe('the relations a page yields', () => {
     )
     await seedContentIndex(root)
     expect(rowsOf('Notes/A.md')).toEqual([
-      { kind: 'space', target: 'Pommora', qualifier: '<projects>', key: '' },
-    ])
-  })
-
-  it('a Context key held in two casings over one Space is one `space` row', async () => {
-    await writeFile(
-      abs('Notes', 'A.md'),
-      `---\nID: ${ULID_A}\n<Projects>: Pommora\n<projects>: Pommora\n---\n\nbody\n`,
-    )
-    await seedContentIndex(root)
-    expect(rowsOf('Notes/A.md')).toEqual([
-      { kind: 'space', target: 'Pommora', qualifier: '<projects>', key: '' },
+      { kind: 'space', target: 'Pommora', qualifier: '<Projects>', key: '' },
     ])
   })
 

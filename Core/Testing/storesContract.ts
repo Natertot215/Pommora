@@ -1,4 +1,3 @@
-import { foldKey } from '../Paths/caseFold'
 import { beforeEach, describe, expect, it } from 'vitest'
 import type {
   BaseRecord,
@@ -71,7 +70,7 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
       key,
     })
     const body = (target: string, qualifier = ''): Relation => relation('body', target, qualifier)
-    const space = (key: string, title: string): Relation => relation('space', title, foldKey(key))
+    const space = (key: string, title: string): Relation => relation('space', title, key)
     const upsert = (path: string, entry: PageIndexEntry, stat = STAT): void =>
       store.upsertPageIndexes([{ path, entry, stat }])
     beforeEach(() => {
@@ -163,11 +162,13 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
       expect(store.readIndexedStat('Notes/A.md')).toEqual({ mtimeMs: 2000, size: 12 })
     })
 
-    it('answers a key holder in any casing, listing a page once', () => {
+    it('answers a key holder by its exact key', () => {
       upsert('Notes/A.md', { relations: [], headings: [], values: { Status: 'Open' } })
       upsert('Notes/B.md', { relations: [], headings: [], values: { tags: ['a'], Tags: ['b'] } })
-      expect(store.queryKeyHolders('status')).toEqual(['Notes/A.md'])
-      expect(store.queryKeyHolders('TAGS')).toEqual(['Notes/B.md'])
+      expect(store.queryKeyHolders('status')).toEqual([])
+      expect(store.queryKeyHolders('TAGS')).toEqual([])
+      expect(store.queryKeyHolders('Status')).toEqual(['Notes/A.md'])
+      expect(store.queryKeyHolders('Tags')).toEqual(['Notes/B.md'])
     })
 
     it('serializes a null value rather than dropping the key', () => {

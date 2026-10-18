@@ -117,6 +117,20 @@ describe('keyHolderFiles', () => {
     },
   )
 
+  it.skipIf(noModeBits)(
+    'a change of case alone over an unreadable holder is not refused as holding both keys',
+    async () => {
+      const a = abs('Notes', 'HolderA.md')
+      try {
+        await chmod(a, 0o000)
+        await indexWrittenPage(root, a)
+        expect((await renameProperty(root, 'prop_s', 'STAGE')).ok).toBe(true)
+      } finally {
+        await chmod(a, 0o644)
+      }
+    },
+  )
+
   it('confirmedKeyHolders counts only the exact key, never a page or a Space holding another casing', async () => {
     await page('Q9X', 'phase: x\n')
     await seedContentIndex(root)
