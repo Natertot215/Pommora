@@ -93,8 +93,8 @@ function answers(
       return true
     case 'user': {
       if (OPERANDLESS_OPS.has(rule.op)) return true
-      const name = schema.find((d) => d.id === rule.property_id)?.name
-      return name !== undefined && Object.hasOwn(row.frontmatter, name)
+      const key = schema.find((d) => d.id === rule.property_id)?.key
+      return key !== undefined && Object.hasOwn(row.frontmatter, key)
     }
   }
 }

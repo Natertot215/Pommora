@@ -15,5 +15,5 @@ export function columnLabel(
 ): string {
   const title = contexts.get(columnId)?.title
   if (title) return title
-  return RESERVED_LABEL[columnId] ?? schema.find((d) => d.id === columnId)?.name ?? columnId
+  return RESERVED_LABEL[columnId] ?? schema.find((d) => d.id === columnId)?.label ?? columnId
 }

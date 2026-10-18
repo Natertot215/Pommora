@@ -36,7 +36,7 @@ async function snapshot(
   folders: string[],
   held: KeyedHolders,
 ): Promise<string> {
-  const key = def.name
+  const key = def.key
   const values = { ...held.values }
   const assignments: string[] = []
   const caches: Record<string, Record<string, unknown>> = {}
@@ -79,7 +79,7 @@ export type PropertyDeletion = SchemaCascade & Required<Pick<MutateOutcome, 'tra
 export async function propertyHolders(root: string, propertyId: string): Promise<Result<number>> {
   const def = (await readRegistry(root)).defs[propertyId]
   if (!def) return NO_PROPERTY
-  const { held, plan } = await deletePlan(root, propertyId, def.name, await collectionFolders(root))
+  const { held, plan } = await deletePlan(root, propertyId, def.key, await collectionFolders(root))
   return ok(await sweepCount(root, held.strip, plan))
 }
 
@@ -93,14 +93,14 @@ export function deleteProperty(
 async function deleteInner(root: string, propertyId: string): Promise<Result<PropertyDeletion>> {
   const def = (await readRegistry(root)).defs[propertyId]
   if (!def) return NO_PROPERTY
-  const key = def.name
+  const key = def.key
 
   // EVERY collection folder, not just current assigners — a Remove-cache block lives on a collection sidecar that no longer assigns the id, and pre-cache dormant values may sit on any page.
   const folders = await collectionFolders(root)
   const planned = await deletePlan(root, propertyId, key, folders)
   const bundle = await snapshot(root, propertyId, def, folders, planned.held)
   // Journaled AFTER the snapshot — a replay re-runs the strip tail, never the bundle mint.
-  const record: SchemaJournal = { op: 'delete', id: propertyId, name: def.name }
+  const record: SchemaJournal = { op: 'delete', id: propertyId, name: key }
   await writeSchemaJournal(root, record)
 
   const { removed, ...reach } = await stripAndRemove(root, propertyId, folders, planned)

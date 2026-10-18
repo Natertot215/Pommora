@@ -125,7 +125,7 @@ async function trashedHolders(
   return found
 }
 
-/** A Link value whose page or Space sits in the Trash goes back into its trashed copy wherever that property reads blank, so it returns with it; `names` maps each property's ID to its name. */
+/** A Link value whose page or Space sits in the Trash goes back into its trashed copy wherever that property reads blank, so it returns with it; `names` maps each property's ID to its key. */
 export async function refillTrashed(
   root: string,
   links: StrippedLink[],

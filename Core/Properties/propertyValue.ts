@@ -259,8 +259,8 @@ export const applyValueAtRoot = (
 ): Record<string, unknown> =>
   landValue(
     root,
-    def.name,
+    def.key,
     value === null || isBlankValue(value)
       ? undefined
-      : keepingForeignWords(def, encodeValue(value), root[def.name]),
+      : keepingForeignWords(def, encodeValue(value), root[def.key]),
   )

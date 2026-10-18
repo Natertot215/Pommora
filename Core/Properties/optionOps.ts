@@ -96,7 +96,7 @@ export async function registerHeldOptions(root: string, rels?: readonly string[]
       const held = new Map<string, string[]>()
       const collect = (values: Json, defs: readonly PropertyDefinition[]): void => {
         for (const def of defs) {
-          const members = unregisteredMembers(def, values[def.name])
+          const members = unregisteredMembers(def, values[def.key])
           if (members.length) held.set(def.id, [...(held.get(def.id) ?? []), ...members])
         }
       }
@@ -183,7 +183,7 @@ async function valueEditPlan(
   target: string,
   edit: ValueEdit,
 ): Promise<{ pages: string[]; plan: SweepPlan }> {
-  const pages = await keyHolderFiles(root, def.name, await collectionFolders(root))
+  const pages = await keyHolderFiles(root, def.key, await collectionFolders(root))
   const raw = valueEditRewrite(def, target, edit)
   return { pages, plan: { raw, sidecars: raw } }
 }

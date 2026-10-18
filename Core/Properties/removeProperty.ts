@@ -31,7 +31,7 @@ async function removeInner(
 
   const def = (await readRegistry(root)).defs[propertyId]
   if (!def) return NOTHING_TO_REMOVE
-  const key = def.name
+  const key = def.key
 
   const { values, strip } = await keyedHolders(
     await keyHolderFiles(root, key, [collectionFolder]),

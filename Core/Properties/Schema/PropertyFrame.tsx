@@ -95,7 +95,7 @@ function ListGroups({
     <RenamableLabel
       renames="row"
       editing={renamingId === d.id}
-      value={d.name}
+      value={d.label}
       className={cx(titleInput, 'row-title-input')}
       onCommit={(next) => onRenameCommit(d.id, next)}
       onCancel={onRenameCancel}
@@ -148,13 +148,13 @@ function ListGroups({
                       <AccessoryButton
                         icon="plus"
                         size={s.ICON.rowPlus}
-                        ariaLabel={`Assign ${d.name}`}
+                        ariaLabel={`Assign ${d.label}`}
                         create
                         onClick={() => onAssign(d.id)}
                       />
                     }
                   >
-                    {d.name}
+                    {d.label}
                   </MenuItem>
                 </LineRow>
               </Reveal>
@@ -226,7 +226,7 @@ export function PropertyFrame({
   const create = async (type: PropertyType): Promise<void> => {
     const res = await dialer().ask('schema:add', collectionPath, {
       id: '',
-      name: `New ${propertyTypeLabel(type)}`,
+      label: `New ${propertyTypeLabel(type)}`,
       type,
     })
     if (reportRefusal(res)) setView({ kind: 'edit', id: res.value.id })
@@ -267,25 +267,25 @@ export function PropertyFrame({
 
   const defOf = (id: string): PropertyDefinition | undefined =>
     props.find((d) => d.id === id) ?? unassigned.find((d) => d.id === id)
-  const nameFor = (id: string): string => defOf(id)?.name ?? ''
+  const nameFor = (id: string): string => defOf(id)?.label ?? ''
   const glyphFor = (id: string): ReactNode => {
     const d = defOf(id)
     return d && <Icon name={propertyIcon(d)} />
   }
 
   const editorMenu = async (def: PropertyDefinition): Promise<void> => {
-    const action = await popMenu(propertyMenuModel({ kind: 'editor', name: def.name }))
+    const action = await popMenu(propertyMenuModel({ kind: 'editor', name: def.label }))
     if (action === 'property:remove') await remove(def.id)
-    else if (action === 'property:destroy' && (await askDestroyProperty(def.id, def.name))) {
+    else if (action === 'property:destroy' && (await askDestroyProperty(def.id, def.label))) {
       const deleted = await dialer().ask('property:delete', def.id)
       if (!reportRefusal(deleted)) return
       trashChanged.emit()
       backToList()
-      notifyTrashed(def.name, deleted.value, deleted.value.owed && replay(deleted.value.owed))
+      notifyTrashed(def.label, deleted.value, deleted.value.owed && replay(deleted.value.owed))
     }
   }
   const rowMenu = async (d: PropertyDefinition): Promise<void> => {
-    const action = await popMenu(propertyMenuModel({ kind: 'assigned-row', name: d.name }))
+    const action = await popMenu(propertyMenuModel({ kind: 'assigned-row', name: d.label }))
     if (action === 'property:rename') beginPropertyRename({ collectionPath, propertyId: d.id })
     else if (action === 'property:remove')
       reportRefusal(await dialer().ask('schema:unassign', collectionPath, d.id))
@@ -417,7 +417,7 @@ export function PropertyFrame({
         footer={styleFooting}
       >
         <InlineEditHeader
-          value={def.name}
+          value={def.label}
           icon={propertyIcon(def)}
           iconRef={iconRef}
           iconOpen={iconOpen}

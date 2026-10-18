@@ -33,9 +33,9 @@ export function editList(
 }
 
 export function valueEditRewrite(
-  def: Pick<PropertyDefinition, 'name'>,
+  def: Pick<PropertyDefinition, 'key'>,
   target: string,
   edit: ValueEdit,
 ): Rewrite {
-  return (raw) => editHeldList(raw, def.name, (held) => editList(held, target, edit))
+  return (raw) => editHeldList(raw, def.key, (held) => editList(held, target, edit))
 }

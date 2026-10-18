@@ -43,14 +43,14 @@ async function replay(
     case 'rename': {
       // The def alive while no definition is named `from` means the commit landed and the sweep is owed, to the name the def holds now, however many renames have followed; anything else is a state the record no longer maps.
       const def = defs[journal.id]
-      if (!def || Object.values(defs).some((d) => d.name === journal.from)) return NO_REACH
+      if (!def || Object.values(defs).some((d) => d.key === journal.from)) return NO_REACH
       return { skipped: await renameSweep(root, journal.from, def), hosts: [] }
     }
     case 'delete': {
       // The registry commits LAST in a delete, so the def still present under its journaled name is the crash state. The id under another name is alive on purpose — a restore or re-create consumes the record at createProperty; this arm catches what the delete left owed. A record a delete's answer carried exists only once its registry commit landed, so for it a present def is a restore.
       const def = defs[journal.id]
-      const crashed = !answered && def !== undefined && def.name === journal.name
-      const freed = !def && !Object.values(defs).some((d) => d.name === journal.name)
+      const crashed = !answered && def !== undefined && def.key === journal.name
+      const freed = !def && !Object.values(defs).some((d) => d.key === journal.name)
       if (!crashed && !freed) return NO_REACH
       const folders = await collectionFolders(root)
       const { skipped, hosts, removed } = await stripAndRemove(

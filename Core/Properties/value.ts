@@ -54,7 +54,7 @@ export function resolveFieldValue(
   }
   let v = m.get(def)
   if (!v) {
-    v = decodeValue(def, (row.frontmatter as Record<string, unknown>)[def.name])
+    v = decodeValue(def, (row.frontmatter as Record<string, unknown>)[def.key])
     m.set(def, v)
   }
   return v

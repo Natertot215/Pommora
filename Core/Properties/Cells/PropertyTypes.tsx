@@ -85,7 +85,7 @@ export const schemaTargets = (
 ): (PaneTarget & { def: PropertyDefinition })[] =>
   schema.filter(qualifies).map((d) => ({
     id: d.id,
-    label: d.name,
+    label: d.label,
     icon: propertyIcon(d),
     def: d,
   }))
