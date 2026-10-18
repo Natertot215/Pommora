@@ -37,7 +37,11 @@ const asText = (raw: unknown): string => linkEntry(raw, 2) ?? yamlInline(raw)
 const optionList = (raw: unknown): string[] =>
   scalarMembers(raw).filter((x) => exactTitle(x) !== '')
 
-type OptionWords = { labelOf: Map<string, string>; folds: ReadonlySet<string> }
+type OptionWords = {
+  labelOf: Map<string, string>
+  keyOf: Map<string, string>
+  folds: ReadonlySet<string>
+}
 
 const optionWords = new WeakMap<PropertyDefinition, OptionWords>()
 
@@ -48,7 +52,8 @@ function wordsOf(def: PropertyDefinition): OptionWords {
     const options = optionsOf(def)
     words = {
       labelOf: new Map(options.map((o) => [exactTitle(o.key), o.label])),
-      folds: new Set(options.map((o) => normalizeTitle(o.label))),
+      keyOf: new Map(options.map((o) => [o.label, o.key])),
+      folds: new Set(options.flatMap((o) => [normalizeTitle(o.label), normalizeTitle(o.key)])),
     }
     optionWords.set(def, words)
   }
@@ -58,6 +63,10 @@ function wordsOf(def: PropertyDefinition): OptionWords {
 /** The label of the option whose key `written` names. */
 const registeredOption = (def: PropertyDefinition, written: string): string | undefined =>
   wordsOf(def).labelOf.get(exactTitle(written))
+
+/** The key of the option `label` names; a label no option holds is written as given. */
+const keyOf = (def: PropertyDefinition, label: string): string =>
+  wordsOf(def).keyOf.get(label) ?? label
 
 const CHECKBOX_WORDS = [
   ['true', 'false'],
@@ -123,7 +132,7 @@ export function decodeValue(def: PropertyDefinition, raw: unknown): PropertyValu
   }
 }
 
-/** The words a Multi-Select's `raw` holds that no option's title claims without regard to case, each once by fold. */
+/** The words a Multi-Select's `raw` holds that no option's label or key claims without regard to case, each once by fold. */
 export function unregisteredMembers(def: PropertyDefinition, raw: unknown): string[] {
   const { folds } = wordsOf(def)
   return [...firstPerTitle(optionList(raw))].flatMap(([fold, w]) => (folds.has(fold) ? [] : [w]))
@@ -196,16 +205,17 @@ export function writtenSpelling(next: unknown, raw: unknown): unknown {
   })
 }
 
-export function encodeValue(value: PropertyValue): unknown {
+export function encodeValue(def: PropertyDefinition, value: PropertyValue): unknown {
   switch (value.kind) {
     case 'select':
-      return [value.value]
+      return [keyOf(def, value.value)]
+    case 'multiSelect':
+      return value.value.map((label) => keyOf(def, label))
     case 'number':
     case 'checkbox':
     case 'link':
     case 'dateTime':
     case 'text':
-    case 'multiSelect':
     case 'file':
     case 'context':
       return value.value
@@ -262,5 +272,5 @@ export const applyValueAtRoot = (
     def.key,
     value === null || isBlankValue(value)
       ? undefined
-      : keepingForeignWords(def, encodeValue(value), root[def.key]),
+      : keepingForeignWords(def, encodeValue(def, value), root[def.key]),
   )

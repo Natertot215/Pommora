@@ -2,10 +2,15 @@ import { readFile, rm, stat, utimes, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { contextWorldOf, type GovernedWorld } from '../Contexts/contextResolve'
+import {
+  contextWorldOf,
+  reconcileGovernedRoot,
+  type GovernedWorld,
+} from '../Contexts/contextResolve'
 import { splitFrontmatter } from '../Files/pageFile'
 import { byKey, type PropertyDefinition } from './properties'
 import { setGovernedRootKey } from './governedWrite'
+import { encodeValue } from './propertyValue'
 
 let dir: string
 let page: string
@@ -194,9 +199,16 @@ describe('setGovernedRootKey — spellings', () => {
       { key: 'Done', label: 'Done' },
     ],
   }
+  const stage: PropertyDefinition = {
+    id: 'prop_stage',
+    label: 'Stage',
+    key: 'Stage',
+    type: 'select',
+    select_options: [{ key: 'done', label: 'Done' }],
+  }
   const world: GovernedWorld = {
     contexts: contextWorldOf([]),
-    defs: byKey([tags, done, status, price]),
+    defs: byKey([tags, done, status, price, stage]),
   }
   const seeded = async (keys: string): Promise<void> =>
     writeFile(page, `---\nid: p1\n${keys}\nfoo: bar\n---\nbody\n`)
@@ -231,6 +243,20 @@ describe('setGovernedRootKey — spellings', () => {
     const before = await readFile(page, 'utf8')
     await setGovernedRootKey(page, 'Tags', ['a'], world)
     expect(await readFile(page, 'utf8')).toBe(before)
+  })
+
+  it('a write of an option’s label over the key it holds leaves the file byte-identical, as the reconcile leaves it', async () => {
+    await seeded('Stage: [done]')
+    const before = await readFile(page, 'utf8')
+    await setGovernedRootKey(
+      page,
+      'Stage',
+      encodeValue(stage, { kind: 'select', value: 'Done' }),
+      world,
+    )
+    expect(await readFile(page, 'utf8')).toBe(before)
+    const held = splitFrontmatter(before)
+    expect(reconcileGovernedRoot(held, world)).toEqual({ root: held, changed: [] })
   })
 
   it('a Multi-Select write keeps the words no option names after the picked ones, and a clear drops the key', async () => {

@@ -45,6 +45,13 @@ const multiSelectOf = (...values: string[]): PropertyDefinition =>
     select_options: values.map((value) => ({ key: value, label: value })),
   })
 
+const keyedOptions = [
+  { key: 'done', label: 'Done' },
+  { key: 'in-progress', label: 'In Progress' },
+]
+const keyedSelect = def({ type: 'select', select_options: keyedOptions })
+const keyedMulti = def({ type: 'multiSelect', select_options: keyedOptions })
+
 describe('decodeValue — the declared type decides, never the shape', () => {
   it('free text reads a string as itself, an unquoted wikilink as the connection it spells, and any other shape as the yaml that spells it', () => {
     const text = def({ type: 'text' })
@@ -277,12 +284,15 @@ describe('decodeValue — a file value names files', () => {
 })
 
 describe('encodeValue — bare on disk', () => {
-  it('writes the value itself; a single option as a list of one', () => {
-    expect(encodeValue({ kind: 'select', value: 'Done' })).toEqual(['Done'])
-    expect(encodeValue({ kind: 'number', value: 42 })).toBe(42)
-    expect(encodeValue({ kind: 'checkbox', value: true })).toBe(true)
-    expect(encodeValue({ kind: 'multiSelect', value: ['a'] })).toEqual(['a'])
-    expect(encodeValue({ kind: 'null' })).toBeNull()
+  it('writes each option label’s key, a label no option holds as given, and every other kind as itself', () => {
+    expect(encodeValue(keyedSelect, { kind: 'select', value: 'Done' })).toEqual(['done'])
+    expect(
+      encodeValue(keyedMulti, { kind: 'multiSelect', value: ['In Progress', 'Done'] }),
+    ).toEqual(['in-progress', 'done'])
+    expect(encodeValue(keyedSelect, { kind: 'select', value: 'Gone' })).toEqual(['Gone'])
+    expect(encodeValue(def({ type: 'number' }), { kind: 'number', value: 42 })).toBe(42)
+    expect(encodeValue(def({ type: 'checkbox' }), { kind: 'checkbox', value: true })).toBe(true)
+    expect(encodeValue(def({ type: 'number' }), { kind: 'null' })).toBeNull()
   })
 
   it('round-trips every canonical shape through its own declared type', () => {
@@ -294,14 +304,17 @@ describe('encodeValue — bare on disk', () => {
       [selectDef, ['A']],
       [multiSelectOf('a', 'b'), ['a', 'b']],
       [statusDef, ['Done']],
+      [keyedSelect, ['done']],
       [def({ type: 'file' }), ['[[y.png]]']],
     ]
-    for (const [d, raw] of pairs) expect(encodeValue(decodeValue(d, raw))).toEqual(raw)
+    for (const [d, raw] of pairs) expect(encodeValue(d, decodeValue(d, raw))).toEqual(raw)
+    expect(decodeValue(keyedSelect, ['done'])).toEqual({ kind: 'select', value: 'Done' })
   })
 
   it('a hand-edited unquoted wikilink encodes back as the string it meant', () => {
     const raw = [[['Report.pdf']]]
-    expect(encodeValue(decodeValue(def({ type: 'file' }), raw))).toEqual(['[[Report.pdf]]'])
+    const file = def({ type: 'file' })
+    expect(encodeValue(file, decodeValue(file, raw))).toEqual(['[[Report.pdf]]'])
   })
 })
 
@@ -501,6 +514,10 @@ describe('options decode exactly; checkboxes without regard to case', () => {
       'PURPLE',
     ])
   })
+
+  it('unregisteredMembers subtracts every word whose fold an option’s label or key holds', () => {
+    expect(unregisteredMembers(keyedMulti, ['IN-PROGRESS', 'done', 'DONE', 'new'])).toEqual(['new'])
+  })
 })
 
 describe('keepingForeignWords', () => {
@@ -518,5 +535,9 @@ describe('keepingForeignWords', () => {
   it('answers an emptied list and a Select value as given', () => {
     expect(keepingForeignWords(tags, [], ['Ideas'])).toEqual([])
     expect(keepingForeignWords(selectDef, ['A'], ['Ideas'])).toEqual(['A'])
+  })
+
+  it('keeps a held word no option’s key names after the written keys', () => {
+    expect(keepingForeignWords(keyedMulti, ['done'], ['Doing'])).toEqual(['done', 'Doing'])
   })
 })

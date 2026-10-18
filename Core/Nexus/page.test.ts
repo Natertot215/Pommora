@@ -74,6 +74,18 @@ describe('createPage', () => {
     expect('empty' in fm).toBe(false)
     expect(isUlidShaped(fm[ID_KEY])).toBe(true)
   })
+
+  it('writes each Multi-Select label as its option’s key', async () => {
+    const tags: PropertyDefinition = {
+      ...defOf('prop_tags', 'multiSelect'),
+      select_options: [{ key: 'in-progress', label: 'In Progress' }],
+    }
+    const r = await createTestPage(typeDir, 'Keyed Birth', {
+      values: [{ def: tags, value: { kind: 'multiSelect', value: ['In Progress'] } }],
+    })
+    if (!r.ok) throw new Error('setup failed')
+    expect(await readFile(r.value.path, 'utf8')).toContain('tags:\n  - in-progress\n')
+  })
 })
 
 describe('renamePage', () => {
