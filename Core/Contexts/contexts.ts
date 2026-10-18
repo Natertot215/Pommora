@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { holdsName } from '../Paths/names'
 import { scalarMembers } from '../Contract/validators'
-import { normalizeTitle } from '../Paths/caseFold'
+import { exactTitle } from '../Paths/caseFold'
 
 const SIGIL = ['<', '>'] as const
 
@@ -34,9 +34,9 @@ export function parseContextKey(key: string): string | null {
     : null
 }
 
-/** The folded titles a Context value names: each scalar member's, a lone scalar read as a list of one. A member of any other shape names nothing. */
+/** The titles a Context value names: each scalar member's, a lone scalar read as a list of one. A member of any other shape names nothing. */
 export const contextTitles = (raw: unknown): string[] =>
-  scalarMembers(raw).map(normalizeTitle).filter(Boolean)
+  scalarMembers(raw).map(exactTitle).filter(Boolean)
 
 export function seededRegistry(mintId: () => string): ContextsRegistry {
   return {

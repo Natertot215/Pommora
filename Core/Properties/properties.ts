@@ -263,10 +263,6 @@ export const KEY_REFUSAL = {
     `${n} ${n === 1 ? 'file holds' : 'files hold'} both "${from}" and "${to}".`,
 } as const
 
-export function normalizePropertyName(raw: string): string {
-  return raw.trim().normalize('NFC')
-}
-
 /** An option without its own color wears its group's. */
 export const groupOptions = (g: StatusGroup): StatusOption[] =>
   g.options.map((o) => (o.color ? o : { ...o, color: g.color }))

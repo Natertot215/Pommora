@@ -3,11 +3,11 @@ import { mutateRegistry, readRegistry, NO_PROPERTY, serializeSchemaOp } from './
 import { validateDefinition, validateName } from './schema'
 import { mintPropertyId } from '../Nexus/ids'
 import { freeName } from '../Paths/names'
+import { exactTitle } from '../Paths/caseFold'
 import {
   defaultStatusSeed,
   defaultSelectSeed,
   KEY_REFUSAL,
-  normalizePropertyName,
   PROPERTY_TYPES,
   type PropertyDefinition,
 } from './properties'
@@ -48,7 +48,7 @@ export async function createProperty(
   const created = await mutateRegistry<Result<{ id: string }>>(root, (registry) => {
     const defs = Object.values(registry.defs)
     landed = freeName(
-      normalizePropertyName(def.name ?? ''),
+      exactTitle(def.name ?? ''),
       defs.map((d) => d.name),
     )
     const candidate = seeded({ ...def, name: landed, id: def.id || mintPropertyId() })
@@ -103,7 +103,7 @@ export function renameProperty(
   propertyId: string,
   name: string,
 ): Promise<Result<PropertyRename | null>> {
-  const to = normalizePropertyName(name)
+  const to = exactTitle(name)
   return serializeSchemaOp(root, async () => {
     const { defs } = await readRegistry(root)
     const prior = defs[propertyId]

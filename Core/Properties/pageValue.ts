@@ -3,13 +3,12 @@
 import type { Rewrite } from './governedSweep'
 import { editHeldList, memberKey } from '../Files/heldKeys'
 import type { PropertyDefinition } from './properties'
-import { normalizeTitle } from '../Paths/caseFold'
 
 export type ValueEdit = { op: 'strip' } | { op: 'replace'; to: string }
 export type Matcher = (el: unknown) => boolean
 
 export const namesValue = (value: string): Matcher => {
-  const want = normalizeTitle(value)
+  const want = memberKey(value)
   return (el) => memberKey(el) === want
 }
 

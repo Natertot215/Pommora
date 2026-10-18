@@ -1,4 +1,4 @@
-import { normalizeTitle } from '../Paths/caseFold'
+import { exactTitle } from '../Paths/caseFold'
 import { memberKey } from '../Files/heldKeys'
 import { contextTitles, parseContextKey } from './contexts'
 import { byKey, type PropertyDefinition } from '../Properties/properties'
@@ -31,7 +31,7 @@ export function contextWorldOf(groups: ContextGroup[]): ContextWorld {
     groupById: new Map(groups.map((g) => [g.def.id, g])),
     idByTitle: new Map(groups.map((g) => [g.def.title, g.def.id])),
     spacesByTitle: new Map(
-      groups.map((g) => [g.def.id, new Map(g.spaces.map((s) => [normalizeTitle(s.title), s]))]),
+      groups.map((g) => [g.def.id, new Map(g.spaces.map((s) => [exactTitle(s.title), s]))]),
     ),
     spaceById: new Map(groups.flatMap((g) => g.spaces.map((s): [string, SpaceNode] => [s.id, s]))),
   }
