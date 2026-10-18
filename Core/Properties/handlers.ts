@@ -16,12 +16,14 @@ import {
   narrowNumberFormat,
   propertyDraft,
 } from './properties'
+import { isKeyFormat, type KeyFormat } from './keyFormat'
 import {
   createProperty,
   editProperty,
   removeFromRegistry,
   renameProperty,
   reorderRegistry,
+  setKeyFormat,
 } from './registryProperty'
 import { removeProperty } from './removeProperty'
 import { replaySchemaCascade } from './replaySchemaCascade'
@@ -111,6 +113,9 @@ const idAndEdit = ([id, e]: unknown[]): [string, OptionEdit] | Result<never> => 
 const idAndValue = ([id, value]: unknown[]): [string, string] | Result<never> =>
   typeof id === 'string' && typeof value === 'string' ? [id, value] : NEEDS_ID_AND_VALUE
 
+const idAndFormat = ([id, format]: unknown[]): [string, KeyFormat] | Result<never> =>
+  typeof id === 'string' && isKeyFormat(format) ? [id, format] : NEEDS_ID_AND_VALUE
+
 const idOldNew = ([id, oldLabel, newLabel]: unknown[]): [string, string, string] | Result<never> =>
   typeof id === 'string' && typeof oldLabel === 'string' && typeof newLabel === 'string'
     ? [id, oldLabel, newLabel]
@@ -156,6 +161,7 @@ export const propertiesHandlers = {
 
   'registry:reorder': registryChannel(idAndIndex, reorderRegistry),
   'property:rename': registryChannel(idAndValue, renameProperty),
+  'property:setKeyFormat': registryChannel(idAndFormat, setKeyFormat),
   'property:delete': registryChannel(idOnly, deleteProperty, cascadeReply),
   'property:replay': registryChannel(
     journalRecord,

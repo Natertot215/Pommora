@@ -20,6 +20,7 @@ import type { OptionEdit } from '../Properties/optionModel'
 import type { PropertyDeletion } from '../Properties/deleteProperty'
 import type { SchemaCascade, SchemaJournal } from '../Properties/propertyJournal'
 import type { PropertyRename } from '../Properties/registryProperty'
+import type { KeyFormat } from '../Properties/keyFormat'
 import type { Personalization } from '../Settings/personalization'
 import type { InsertTarget } from '../Tiles/Layout/model'
 import type {
@@ -141,6 +142,10 @@ export interface Asks {
   'registry:reorder': { args: [propertyId: string, toIndex: number]; reply: Result<null> }
   'property:rename': {
     args: [propertyId: string, label: string]
+    reply: Result<PropertyRename | null>
+  }
+  'property:setKeyFormat': {
+    args: [propertyId: string, format: KeyFormat]
     reply: Result<PropertyRename | null>
   }
   'property:delete': { args: [propertyId: string]; reply: Result<PropertyDeletion> }

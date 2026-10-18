@@ -43,7 +43,7 @@ async function replay(
       // The def alive while no definition is keyed `from` means the commit landed and the sweep is owed, to the key the def holds now, however many renames have followed; anything else is a state the record no longer maps.
       const def = defs[journal.id]
       if (!def || Object.values(defs).some((d) => d.key === journal.from)) return NO_REACH
-      return { skipped: await renameSweep(root, journal.from, def), hosts: [] }
+      return { skipped: await renameSweep(root, journal.from, def.key), hosts: [] }
     }
     case 'delete': {
       // The registry commits LAST in a delete, so the def still present under its journaled key is the crash state. The id under another key is alive on purpose — a restore or re-create consumes the record at createProperty; this arm catches what the delete left owed. A record a delete's answer carried exists only once its registry commit landed, so for it a present def is a restore.
