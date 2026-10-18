@@ -41,7 +41,7 @@ The work lands in ten phases in dependency order, removal first: the Space order
 | Phase | Estimate | Measured | Cumulative |
 | ----- | -------- | -------- | ---------- |
 | 1 | +63 / −102 | +66 / −102 | −36 (+66 / −102) |
-| 2A | +34 / −50 | +33 / −50 | −53 (+99 / −152) |
+| 2A | +34 / −50 | +33 / −54 | −57 (+99 / −156) |
 | 2B | +110 / −225 | | |
 | 3 | +80 / −64 | | |
 | 4 | +67 / −58 | | |
@@ -155,7 +155,7 @@ The work lands in ten phases in dependency order, removal first: the Space order
 - [x] **Phase 2A** — Exact Renames
   - [x] Task 2A-1 · The YAML and JSON renames move one exact key
   - [x] Task 2A-2 · The case-only skips go, and the rename replay follows its property
-  - [ ] Review Checkpoint
+  - [x] Review Checkpoint
 - [ ] `[Compaction checkpoint: c/pre-compaction; on the re-prompt, reread §Constraints and c/plan-execution before Phase 2B opens]`
 - [ ] **Phase 2B** — Reads and Writes Land on the Key
   - [ ] Task 2B-1 · The spelling resolution behind reads, writes, and strips leaves
