@@ -187,7 +187,7 @@ describe('renameProperty and editProperty', () => {
 
     const refused = await renameProperty(root, c.value.id, 'Stage')
     expect(refused.ok).toBe(false)
-    if (!refused.ok) expect(refused.error.message).toBe('1 file holds both "Status" and "Stage".')
+    if (!refused.ok) expect(refused.error.message).toBe('1 Item holds both "Status" and "Stage".')
     expect(await pathExists(join(root, '.nexus', 'property-cascade.json'))).toBe(false)
     expect(await readJsonAt(file)).toEqual({
       id: 'sp1',

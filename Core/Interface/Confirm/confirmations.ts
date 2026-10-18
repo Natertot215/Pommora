@@ -7,6 +7,7 @@ import { personalizationOf } from '../../Session/configSlice'
 import { SETTING_DEFAULTS, settingOf } from '../../Settings/personalization'
 import { notifyDeleted, reportRefusal } from '../Notifications/notifications'
 import { dialer } from '../../Platform/dialer'
+import { itemCount } from '../../Properties/properties'
 
 const DELETE_FACTS_FALLBACK = {
   trashMode: DEFAULT_TRASH_MODE,
@@ -104,15 +105,15 @@ export const askDeleteView = (from: 'container' | 'tile' = 'container'): Promise
     tone: 'destructive',
   })
 
-const items = (count: number): string => `${count} ${count === 1 ? 'Item' : 'Items'}`
-
 const askHolding = async (
   propertyId: string,
   value: string | undefined,
   req: (held: string) => ConfirmRequest,
+  quietAt?: number,
 ): Promise<boolean> => {
   const r = await dialer().ask('property:holders', propertyId, value)
-  return reportRefusal(r) && ask(req(items(r.value)))
+  if (!reportRefusal(r)) return false
+  return (quietAt !== undefined && r.value <= quietAt) || ask(req(itemCount(r.value)))
 }
 
 export const askDestroyProperty = (propertyId: string, name: string): Promise<boolean> =>
@@ -132,12 +133,17 @@ export const askRemoveOption = (propertyId: string, name: string): Promise<boole
   }))
 
 export const askClearOption = (propertyId: string, name: string): Promise<boolean> =>
-  askHolding(propertyId, name, (held) => ({
-    message: `Clear “${name}” from ${held}?`,
-    detail: 'The option stays; only its assigned values are removed.',
-    action: 'Clear',
-    tone: 'destructive',
-  }))
+  askHolding(
+    propertyId,
+    name,
+    (held) => ({
+      message: `Clear “${name}” from ${held}?`,
+      detail: 'The option stays; only its assigned values are removed.',
+      action: 'Clear',
+      tone: 'destructive',
+    }),
+    0,
+  )
 
 export const askEmptyTrash = async (count: number): Promise<boolean> => {
   const { permanentDelete } = valueOr(await dialer().ask('delete:facts'), DELETE_FACTS_FALLBACK)

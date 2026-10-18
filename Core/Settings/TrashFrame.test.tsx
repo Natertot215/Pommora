@@ -256,7 +256,7 @@ describe('the Trash pane', () => {
     listed = [row({ title: 'Alpha' }), row({ title: 'Beta' })]
     await act(async () => nexus('B'))
     useSession.setState({ askConfirm: async () => true })
-    const warning = 'Couldn’t update links in 1 file.'
+    const warning = 'Couldn’t update links in 1 Item.'
     mutated.mockResolvedValue({ ok: true, value: { cascade: { pages: [], hosts: [], warning } } })
     for (const box of host?.querySelectorAll('[role="checkbox"]') ?? [])
       await act(async () => (box as HTMLButtonElement).click())

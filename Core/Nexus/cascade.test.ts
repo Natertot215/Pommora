@@ -117,7 +117,7 @@ describe('renameCascade', () => {
       try {
         const r = await renameCascade(root, titled('Target', 'New Target'))
         expect(r.pages).toEqual(['Notes/Cites.md'])
-        expect(r.warning).toBe('Couldn’t update links to “Target” in 1 file.')
+        expect(r.warning).toBe('Couldn’t update links to “Target” in 1 Item.')
       } finally {
         await chmod(locked, 0o755)
       }

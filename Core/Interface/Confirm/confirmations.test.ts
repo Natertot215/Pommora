@@ -59,6 +59,24 @@ describe('what the Confirm Before Deletion switch governs', () => {
     expect(asked[2]).toMatch(/^Clear “Active” from 1 Item\?/)
   })
 
+  it('clears an option no Item holds unasked, while a property delete and an option Remove still ask', async () => {
+    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+      'property:holders': async () => ok(0),
+    })
+    useSession.setState({
+      askConfirm: async (r) => {
+        asked.push(`${r.message} ${r.detail}`)
+        return true
+      },
+    })
+    expect(await askClearOption('p1', 'Active')).toBe(true)
+    expect(asked).toEqual([])
+    await askDestroyProperty('p1', 'Status')
+    await askRemoveOption('p1', 'Active')
+    expect(asked).toHaveLength(2)
+    expect(asked[0]).toContain('stripped from 0 Items;')
+  })
+
   it('asks nothing when the host refuses the count', async () => {
     ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
       'property:holders': async () => fault('That option no longer exists.'),
@@ -136,7 +154,7 @@ describe('a delete through the confirmation', () => {
   })
 
   it('carries the configuration pass’s warning in the Deleted notice', async () => {
-    const warning = 'Couldn’t update 1 file.'
+    const warning = 'Couldn’t update 1 Item.'
     mutate.mockResolvedValue({
       trashed: { bundlePath: '.trash/b1' },
       cascade: { pages: [], hosts: [], warning },

@@ -1344,7 +1344,7 @@ describe('handleMutate — review-round hardening', () => {
         expect(r.ok && r.value.cascade).toEqual({
           pages: ['Notes/Daily/Alpha.md'],
           hosts: [],
-          warning: 'Couldn’t update links to “Beta” in 1 file.',
+          warning: 'Couldn’t update links to “Beta” in 1 Item.',
         })
         expect(await pathExists(join(root, 'Notes/Daily/Gamma.md'))).toBe(true)
         expect(await pathExists(join(root, 'Notes/Daily/Beta.md'))).toBe(false)

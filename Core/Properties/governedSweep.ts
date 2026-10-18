@@ -13,6 +13,7 @@ import type { EntityRecord } from '../Nexus/record'
 import { splitFrontmatter, sweepParse, type SweptPage } from '../Files/pageFile'
 import type { Json } from '../Files/stableJson'
 import { spaceSidecars } from '../Contexts/spaceSidecar'
+import { itemCount } from './properties'
 
 export interface SweepResult {
   /** Each file the sweep wrote, or a dry run would write, with the text it held before and the text the write leaves. */
@@ -28,7 +29,7 @@ export type RewriteText = (content: string, file: string) => string | null
 export type SweepPlan = ({ raw: Rewrite } | { text: RewriteText }) & { sidecars?: Rewrite }
 
 export const unsweptLine = (count: number, what = ''): string =>
-  `Couldn’t update ${what}${count} ${count === 1 ? 'file' : 'files'}.`
+  `Couldn’t update ${what}${itemCount(count)}.`
 
 /** The root a governed file holds: a page's frontmatter, or a Space sidecar's object. */
 export const governedRoot = (file: string, text: string): Json =>

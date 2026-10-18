@@ -41,8 +41,8 @@ describe('a delete notification', () => {
 
   it('carries a note beside its Undo', async () => {
     const undo = vi.fn()
-    notifyDeleted('X', undo, { pages: [], warning: 'Couldn’t update 1 file.' })
-    expect(currentNotification()?.message).toBe('Deleted “X”. Couldn’t update 1 file.')
+    notifyDeleted('X', undo, { pages: [], warning: 'Couldn’t update 1 Item.' })
+    expect(currentNotification()?.message).toBe('Deleted “X”. Couldn’t update 1 Item.')
     expect(currentNotification()?.segment).toBeUndefined()
     expect(currentNotification()?.tone).toBe('error')
     void currentNotification()?.action?.run()
@@ -66,11 +66,11 @@ describe('a delete notification', () => {
   it('joins a warning to the count', () => {
     notifyDeleted('X', vi.fn(), {
       pages: ['A.md', 'B.md'],
-      warning: 'Couldn’t update links in 1 file.',
+      warning: 'Couldn’t update links in 1 Item.',
     })
     expect(currentNotification()).toMatchObject({
       message: 'Deleted “X”',
-      segment: '2 Internal Links. Couldn’t update links in 1 file.',
+      segment: '2 Internal Links. Couldn’t update links in 1 Item.',
       tone: 'error',
     })
   })
@@ -83,7 +83,7 @@ describe('a delete notification', () => {
   it('offers Try Again beside its note, and keeps Undo on the chord', async () => {
     const undo = vi.fn()
     const retry = vi.fn()
-    notifyDeleted('X', undo, { pages: [], warning: 'Couldn’t update 1 file.' }, retry)
+    notifyDeleted('X', undo, { pages: [], warning: 'Couldn’t update 1 Item.' }, retry)
     expect(currentNotification()?.action?.label).toBe('Try Again')
     void currentNotification()?.action?.run()
     expect(retry).toHaveBeenCalledTimes(1)
