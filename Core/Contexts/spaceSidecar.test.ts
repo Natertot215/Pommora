@@ -3,7 +3,7 @@ import { mkdir, rm, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { contextsDir } from '../Paths/paths'
 import { tempRoot } from '../Testing/hostFs'
-import { readSpaceRowOrder, spaceNodeFrom, spaceSidecars, withOrderEntry } from './spaceSidecar'
+import { spaceNodeFrom, spaceSidecars, withoutOrderId } from './spaceSidecar'
 
 describe('spaceSidecars', () => {
   it('finds each Space sidecar one level into each Context folder, hidden and plain folders aside', async () => {
@@ -57,14 +57,20 @@ describe('spaceNodeFrom', () => {
         $color: 'mint',
         '<Areas>': ['Home'],
         Status: 'Active',
-        $order: { contexts: ['g1'], properties: ['prop_a'] },
+        $order: ['g1', 'prop_a'],
       },
       AT,
     )
-    expect(node?.values).toEqual({
-      Status: 'Active',
-      $order: { contexts: ['g1'], properties: ['prop_a'] },
-    })
+    expect(node?.values).toEqual({ Status: 'Active' })
+    expect(node?.rowOrder).toEqual(['g1', 'prop_a'])
+  })
+
+  it('reads an $order that is not a list of ids as no order, and never as a value', () => {
+    for (const $order of [{ contexts: ['g1'] }, ['g1', 7]]) {
+      const node = spaceNodeFrom({ id: 'sp1', $order }, AT)
+      expect(node?.rowOrder).toBeUndefined()
+      expect(node?.values).toBeUndefined()
+    }
   })
 })
 
@@ -76,62 +82,28 @@ describe('spaceNodeFrom — the glyph key', () => {
   })
 })
 
-describe('readSpaceRowOrder', () => {
-  it('reads two empty lists for a missing or malformed $order', () => {
-    expect(readSpaceRowOrder(undefined)).toEqual({ contexts: [], properties: [] })
-    expect(readSpaceRowOrder({})).toEqual({ contexts: [], properties: [] })
-    expect(readSpaceRowOrder({ $order: 'nope' })).toEqual({ contexts: [], properties: [] })
-    expect(readSpaceRowOrder({ $order: { contexts: 'nope' } })).toEqual({
-      contexts: [],
-      properties: [],
-    })
-  })
-
-  it('keeps only a list string entries', () => {
-    expect(readSpaceRowOrder({ $order: { contexts: ['g1', 7, null, 'g2'] } })).toEqual({
-      contexts: ['g1', 'g2'],
-      properties: [],
-    })
-  })
-})
-
-describe('withOrderEntry', () => {
+describe('withoutOrderId', () => {
   const inert = (): null => null
-  const raw = {
-    Status: 'Active',
-    $order: { contexts: ['g1', 'g2'], properties: ['prop_a'] },
-  }
 
-  it('renames the entry in place over an inner rewrite that changed nothing', () => {
-    const out = withOrderEntry(inert, 'properties', 'prop_a', 'prop_b')(raw, 'f')
-    expect(out).toEqual({
-      Status: 'Active',
-      $order: { contexts: ['g1', 'g2'], properties: ['prop_b'] },
-    })
+  it('drops the id over an inner rewrite that changed nothing', () => {
+    const out = withoutOrderId(inert, 'g1')({ Status: 'Active', $order: ['g1', 'g2'] }, 'f')
+    expect(out).toEqual({ Status: 'Active', $order: ['g2'] })
   })
 
-  it('drops the entry when `to` is null', () => {
-    const out = withOrderEntry(inert, 'contexts', 'g1', null)(raw, 'f')
-    expect(out).toEqual({
-      Status: 'Active',
-      $order: { contexts: ['g2'], properties: ['prop_a'] },
-    })
+  it('drops the key once its last id leaves', () => {
+    expect(withoutOrderId(inert, 'g1')({ $order: ['g1'] }, 'f')).toEqual({})
   })
 
-  it('returns the inner answer when the list does not name `from`', () => {
-    expect(withOrderEntry(inert, 'contexts', 'g9', 'g8')(raw, 'f')).toBeNull()
+  it('returns the inner answer when the order does not list the id', () => {
+    expect(withoutOrderId(inert, 'g9')({ $order: ['g1'] }, 'f')).toBeNull()
   })
 
-  it('rewrites the entry over the object the inner rewrite returned', () => {
+  it('drops the id from the object the inner rewrite returned', () => {
     const inner = (r: Record<string, unknown>): Record<string, unknown> => ({
       ...r,
       Stage: 'Active',
     })
-    const out = withOrderEntry(inner, 'properties', 'prop_a', 'prop_b')(raw, 'f')
-    expect(out).toEqual({
-      Status: 'Active',
-      Stage: 'Active',
-      $order: { contexts: ['g1', 'g2'], properties: ['prop_b'] },
-    })
+    const out = withoutOrderId(inner, 'g1')({ Status: 'Active', $order: ['g1', 'g2'] }, 'f')
+    expect(out).toEqual({ Status: 'Active', Stage: 'Active', $order: ['g2'] })
   })
 })

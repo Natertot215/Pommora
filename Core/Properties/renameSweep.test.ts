@@ -118,29 +118,17 @@ describe('renameSweep reaches a Space sidecar', () => {
   const seedSpace = (raw: Record<string, unknown>): Promise<string> =>
     seedSpaceSidecar(root, 'Projects', 'Pommora', raw)
 
-  it('moves the key and its $order entry together', async () => {
+  it('moves the key and leaves $order as it was', async () => {
     const file = await seedSpace({
       id: 'sp1',
       Status: 'Old',
-      $order: { contexts: ['ctxA'], properties: ['Other', 'Status'] },
+      $order: ['ctxA', 'prop_other', 'prop_s'],
     })
     await renameSweep(root, 'Status', stage)
     const raw = await readJsonAt(file)
     expect(raw.Stage).toBe('Old')
     expect('Status' in raw).toBe(false)
-    expect(raw.$order).toEqual({ contexts: ['ctxA'], properties: ['Other', 'Stage'] })
-  })
-
-  it('renames a listed entry on a sidecar that no longer holds the key', async () => {
-    const file = await seedSpace({ id: 'sp1', $order: { properties: ['Status'] } })
-    await renameSweep(root, 'Status', stage)
-    expect((await readJsonAt(file)).$order).toEqual({ properties: ['Stage'] })
-  })
-
-  it('renames a listed entry spelled in another casing', async () => {
-    const file = await seedSpace({ id: 'sp1', $order: { properties: ['status'] } })
-    await renameSweep(root, 'Status', stage)
-    expect((await readJsonAt(file)).$order).toEqual({ properties: ['Stage'] })
+    expect(raw.$order).toEqual(['ctxA', 'prop_other', 'prop_s'])
   })
 
   it('leaves a sidecar with neither the key nor the entry byte-identical', async () => {

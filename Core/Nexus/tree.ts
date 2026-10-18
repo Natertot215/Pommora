@@ -33,6 +33,7 @@ export interface SpaceNode extends ChromeNode {
   kind: 'space'
   contextId: string
   color?: string
+  rowOrder?: string[]
   contextValues?: Record<string, string[]>
   values?: Record<string, unknown>
 }

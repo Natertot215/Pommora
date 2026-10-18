@@ -2,7 +2,7 @@
 
 **DATE:** 10-17-2026
 **STATUS:** Draft
-**BASELINE:** `3d191b895`, the HEAD *MetadataV3 — Investigation* verified, with Path Links still executing in a parallel session
+**BASELINE:** `988f6ee43`, the HEAD *MetadataV3 — Investigation* verified, with Path Links' last three phases still executing in a parallel session
 
 Nathan's 10-17-2026 prompt for per-property metadata formats, kept as the basis every planning session and review starts from. *§The Idea* is his intent as the brainstorm sharpened it; *§Settled* lists his decisions, which *MetadataV3 — Decisions & Intention* records in full; *§Context* is his recollection of today's Pommora corrected against the code; *§Open Within the Idea* names each question the prompt left and the decision that settles it.
 
@@ -10,7 +10,7 @@ Nathan's 10-17-2026 prompt for per-property metadata formats, kept as the basis 
 
 - ***MetadataV3 — Brief***: this document.
 - ***MetadataV3 — Scout Findings***: the first four scouts' briefs and reports at `e6e851183`, verbatim, with the main session's spot-checks.
-- ***MetadataV3 — Investigation***: four further scouts reconciled against the code at `3d191b895`, with the removal inventory, the reusable mechanisms, and the cleaned reports.
+- ***MetadataV3 — Investigation***: the planning session's three scouts reconciled with the earlier scouting against the code at `988f6ee43`, with the removal inventory, the reusable mechanisms, the approaches, and the cleaned reports.
 - ***MetadataV3 — Decisions & Intention***: the brainstorm's decision log and its session questionnaire.
 - ***MetadataV3 — Implementation Plan***: written through Plan-Creation on the ratified decisions.
 
@@ -108,7 +108,7 @@ MetadataV3's `key` differs from the Swift one: it's a readable spelling of the l
 
 #### The Removal-First Inventory
 
-The fold rests on one primitive, `foldKey` in `Core/Paths/caseFold.ts`. With every metadata key and value matching exactly, the spelling machinery built on it leaves metadata identity: `heldKeys`, `heldKey`, `heldValue`, `writeTarget`, and `stripHeld` in `Core/Files/heldKeys.ts`, with `editHeldList` and `rekeyHeld` reduced to single-key forms; `byFoldedName` and `holdsList`; `joins` and `joinsSpellings` with the reconcile's join-and-retire branch; `mergeInto`'s spelling step and `renameFrontmatterKey`'s variants; the property and Context case-only rename skips; the folded replay gate; the `stored()` label strip; and the index's `fold` column with its index. The fold remains where case shouldn't separate two things: uniqueness of labels, keys, and titles, the reserved-key refusal, the restore's match, configuration references to options and Space `$order`, search, sort, and file names on a case-insensitive disk.
+The fold rests on one primitive, `foldKey` in `Core/Paths/caseFold.ts`. With every metadata key and value matching exactly, the spelling machinery built on it leaves metadata identity: `heldKeys`, `heldKey`, `heldValue`, `writeTarget`, and `stripHeld` in `Core/Files/heldKeys.ts`, with `editHeldList` and `rekeyHeld` reduced to single-key forms; `byFoldedName` and `holdsList`; `joins` and `joinsSpellings` with the reconcile's join-and-retire branch; `mergeInto`'s spelling step and `renameFrontmatterKey`'s variants; the property and Context case-only rename skips; the folded replay gate; the `stored()` label strip; `withOrderEntry` and every `$order` title edit; and the index's `fold` column with its index. The fold remains where case shouldn't separate two things: uniqueness of labels, keys, and titles, the reserved-key refusal, the restore's match, search, sort, and file names on a case-insensitive disk.
 
 - **What the Idea Adds:** `label` and `key` on every property and option with a one-time rewrite of the registries on disk; a case-conversion module (nothing in the tree splits free-typed titles into words); key-uniqueness and reserved-key checks on keys; the two settings rows; a format change on the rename path and a widened option rename with its journal record; the restore re-spell; an exact key index; one dry-run counter for every holder confirmation; the Multi-Select write carrying unrecognized words from the file; the adoption shield widened from one owed word to the list a Value Format change owes; and the create step-aside clearing keys as well as labels. Each answers a decision in *MetadataV3 — Decisions & Intention*, and the plan states what it lets go.
 - **The Table:** *MetadataV3 — Investigation*, *§What Leaves, Narrows, and Changes*, classifies every mechanism with its citations, and a planning session re-derives it at its own HEAD.
@@ -134,11 +134,11 @@ Divergences the scouts found inside this surface, and where each lands.
 
 - **The Write-Time Collapse Rules:** four rules answered one question differently, and PropertiesPM stated one. They leave with exact identity (A-1).
 - **The Two Folds in `heldKeys.ts`:** `heldKeys` through `spellings` and `heldValue` filtering on its own, with name comparisons mixing `foldKey` and `normalizeTitle`. They leave with the spelling machinery (A-1).
-- **Mixed Matching in Configuration:** `configReach.ts` folds filter operands, sort and group orders, and the cache while matching collapsed and hidden bands exactly, and the Select filter folds where the Multi-Select filter matches exactly. Option references follow one matching rule the plan chooses (F-2).
+- **Mixed Matching in Configuration:** `configReach.ts` folds filter operands, sort and group orders, and the cache while matching collapsed and hidden bands exactly, and the Select filter folds where the Multi-Select filter matches exactly. Option references match exactly (F-2).
 - **The Case-Only Rename Asymmetry:** a case-only option rename swept files while a case-only property rename didn't. Both sweep when the stored key changes (A-1, F-1).
 - **Files and Items:** the rename refusal and unswept notices say files where confirmations say Items for the same count; they say Items (J-1).
 - **The Delete Count:** it counts pages the delete leaves alone and misses Spaces touched only for `$order`; it equals what the delete rewrites (F-4, J-1).
-- **Space `$order`:** it stores property names where everything else keys properties by id; it follows the same rule as the other label references (F-2).
+- **Space `$order`:** it stores property and Context names where everything else orders by id; it orders by id (F-5).
 - **The Leftover Option `label`:** it becomes the stored field (C-2).
 - **Status at Create:** a Status's options go unchecked when the property is created; they're checked (J-1).
 - **PropertiesPM:** its "Edit options" row omits the `property_cache` cascade, and "case-folded … once at write" misstates how names are stored; it's rewritten to describe identity as it becomes (J-1).
@@ -183,7 +183,7 @@ Planning runs on Nathan's two draft processes, kept on the NexusOS side of the A
 - **Verify, Then Ask:** every claim about the code is checked against the tree, and each open question goes to Nathan with what was found, what it implies, and a recommended answer, in plain terms.
 - **The Advisor Checkpoint:** the advisor reads the approach before a line of the plan is written.
 - **Nathan's Copy:** planning stops for Nathan to word the two rows' hints (H-1) and to title the renamed Metadata leaf's section (J-1).
-- **The Plan:** written through Plan-Creation as *MetadataV3 — Implementation Plan*, in its document template, closing on its *Final Verification* with the neutral verification it describes.
+- **The Plan:** written through Plan-Creation as *MetadataV3 — Implementation Plan*, in its document template, closing on its *Final Verification* with the neutral verification it describes. It's drafted against `204f16671` and lands before Path Links' Phase 8. Before ratification it went through two review rounds of two `opus-xhigh` reviewers per lens, the simplification and adversarial lenses running side by side on Nathan's call, each asked whether the plan follows the principles above and would leave the codebase unarguably in a better state than it began with; a finding was folded in only where it held against the code and didn't over-harden or trade one problem for two.
 - **The Live Drive:** `.claude/scripts/Metadata Spelling Drive/live-drive.mjs` already drives key and value spellings across casings and quote styles on `~/Test`; it extends rather than a new drive being written.
 - **The Number:** each phase is measured with `view-delta`, removals and additions apart; no plan promises a number its design can't deliver.
 

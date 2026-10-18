@@ -190,14 +190,14 @@ describe('delete replay', () => {
     const file = await seedSpace(root, {
       id: 'sp1',
       Stage: ['Draft'],
-      $order: { properties: ['Stage'] },
+      $order: ['prop_s'],
     })
     await writeSchemaJournal(root, { op: 'delete', id: 'prop_s', name: 'Stage' })
     await openSession(root)
     await replaySchemaCascade(root)
     const raw = await readJsonAt(file)
     expect('Stage' in raw).toBe(false)
-    expect(raw.$order).toEqual({ properties: [] })
+    expect('$order' in raw).toBe(false)
   })
 
   it('a create named in another case supersedes the record', async () => {

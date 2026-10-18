@@ -108,7 +108,7 @@ describe('the cascades open only the members the index names', () => {
     const space = await unlinkSpaceValue(root, 'Projects', 'Pommora')
     expect(space.ok && space.value.captured.map((c) => c.kind).sort()).toEqual(['page', 'space'])
     expect(sweepSpy.mock.calls[0]?.[1]).toEqual([page()])
-    const key = await unlinkContextKey(root, 'Classes')
+    const key = await unlinkContextKey(root, 'Classes', 'ctxC')
     expect(key.ok && [...key.value.touched.keys()]).toEqual([classes()])
     expect(sweepSpy.mock.calls[1]?.[1]).toEqual([classes()])
   })
@@ -231,7 +231,7 @@ describe('case folding on renames', () => {
       other(),
       '---\nid: p2\n<projects>:\n  - Pommora\n<Projects>: Sapphire\n---\nbody',
     )
-    const r = await unlinkContextKey(root, 'Projects')
+    const r = await unlinkContextKey(root, 'Projects', 'ctx_projects')
     expect(r.ok && r.value.captured).toContainEqual({
       kind: 'page',
       values: ['Sapphire', 'Pommora'],
@@ -603,7 +603,7 @@ describe('skip-aware journal (D-7b)', () => {
 describe('unlink cascades (D-3)', () => {
   it('unlinkContextKey strips the wrapped key from both scopes', async () => {
     const { unlinkContextKey } = await import('./contextCascade')
-    const r = await unlinkContextKey(root, 'Projects')
+    const r = await unlinkContextKey(root, 'Projects', 'ctx_projects')
     expect(r.ok).toBe(true)
     expect('<Projects>' in (await fmOf(page()))).toBe(false)
     expect('<Projects>' in (await readJsonAt(csSidecar()))).toBe(false)
@@ -631,7 +631,7 @@ describe('unlink cascades (D-3)', () => {
 
   it('unlinkContextKey captures a member written as a number', async () => {
     await writeFile(other(), '---\nid: p2\n<Classes>:\n  - 2024\n  - CS 161\n---\nbody')
-    const r = await unlinkContextKey(root, 'Classes')
+    const r = await unlinkContextKey(root, 'Classes', 'ctxC')
     expect(r.ok && r.value.captured).toContainEqual({ kind: 'page', values: ['2024', 'CS 161'] })
   })
 
@@ -656,7 +656,7 @@ describe('the sweep tells the truth about what it did (G-2)', () => {
       `---\nID: 01KVGMT8BFT350FZZXAMG1QDTB\n<Projects>:\n  - Pommora\n---\nbody`,
     )
     const { unlinkContextKey } = await import('./contextCascade')
-    const r = await unlinkContextKey(root, 'Projects')
+    const r = await unlinkContextKey(root, 'Projects', 'ctx_projects')
     expect(r.ok).toBe(true)
     if (!r.ok) return
     const { captured, refused } = r.value
@@ -698,39 +698,24 @@ describe('the sweep tells the truth about what it did (G-2)', () => {
   })
 })
 
-describe('the Context cascades carry $order.contexts (B-7)', () => {
+describe('the Context cascades and $order', () => {
   const pomSidecar = () => join(contextsDir(root), 'Projects', 'Pommora', '_space.json')
 
-  it('a rename rewrites the entry on a Space that lists the Context without holding its key', async () => {
-    await writeFile(
-      pomSidecar(),
-      JSON.stringify({ id: 'sp-pom', $order: { contexts: ['Classes', 'Projects'] } }),
-    )
+  it('a rename leaves the order of a Space that lists the Context untouched', async () => {
+    const seeded = JSON.stringify({ id: 'sp-pom', $order: ['ctxC', 'ctx_projects'] })
+    await writeFile(pomSidecar(), seeded)
     expect((await renameContextOp(root, 'ctx_projects', 'Ventures')).ok).toBe(true)
-    const pom = await readJsonAt(join(contextsDir(root), 'Ventures', 'Pommora', '_space.json'))
-    expect(pom.$order).toEqual({ contexts: ['Classes', 'Ventures'] })
+    const pom = join(contextsDir(root), 'Ventures', 'Pommora', '_space.json')
+    expect(await readFile(pom, 'utf8')).toBe(seeded)
   })
 
-  it('a rename rewrites an entry spelled in another casing', async () => {
-    await writeFile(
-      pomSidecar(),
-      JSON.stringify({ id: 'sp-pom', $order: { contexts: ['projects'] } }),
-    )
-    expect((await renameContextOp(root, 'ctx_projects', 'Ventures')).ok).toBe(true)
-    const pom = await readJsonAt(join(contextsDir(root), 'Ventures', 'Pommora', '_space.json'))
-    expect(pom.$order).toEqual({ contexts: ['Ventures'] })
-  })
-
-  it('a delete drops the entry and captures nothing for a Space that only listed it', async () => {
-    await writeFile(
-      pomSidecar(),
-      JSON.stringify({ id: 'sp-pom', $order: { contexts: ['Projects'] } }),
-    )
-    const r = await unlinkContextKey(root, 'Projects')
+  it('a delete drops the id and captures nothing for a Space that only listed it', async () => {
+    await writeFile(pomSidecar(), JSON.stringify({ id: 'sp-pom', $order: ['ctx_projects'] }))
+    const r = await unlinkContextKey(root, 'Projects', 'ctx_projects')
     expect(r.ok).toBe(true)
     if (!r.ok) return
     const pom = await readJsonAt(pomSidecar())
-    expect(pom.$order).toEqual({ contexts: [] })
+    expect('$order' in pom).toBe(false)
     expect(r.value.captured.some((c) => c.id === 'sp-pom')).toBe(false)
   })
 })
@@ -741,7 +726,12 @@ describe('a delete sweep never strips a passenger (G-1a)', () => {
   it('roots under the deleted Context keep their keys; outside roots still lose them', async () => {
     await writeFile(pomSidecar(), JSON.stringify({ id: 'sp-pom', '<Projects>': ['Sapphire'] }))
     const { unlinkContextKey } = await import('./contextCascade')
-    const r = await unlinkContextKey(root, 'Projects', join(contextsDir(root), 'Projects'))
+    const r = await unlinkContextKey(
+      root,
+      'Projects',
+      'ctx_projects',
+      join(contextsDir(root), 'Projects'),
+    )
     expect(r.ok).toBe(true)
     const pom = await readJsonAt(pomSidecar())
     expect(pom['<Projects>']).toEqual(['Sapphire'])

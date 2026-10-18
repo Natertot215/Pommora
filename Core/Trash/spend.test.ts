@@ -331,7 +331,7 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
     '.nexus/contexts/Areas/Health/_space.json': JSON.stringify({
       id: 'sp-health',
       '<Projects>': ['Pommora', 'Sapphire'],
-      $order: { contexts: ['Projects'], properties: [] },
+      $order: ['ctx_projects'],
     }),
   }
   const watched = [
@@ -1258,34 +1258,6 @@ describe('restore — the attack folds', () => {
     // The passenger's key follows the final title — never left pointing at the impostor.
     expect(sap['<Projects (2)>']).toEqual(['Pommora'])
     expect('<Projects>' in sap).toBe(false)
-  })
-
-  it('a re-keyed passenger carries its $order.contexts entry to the final title', async () => {
-    await writeFile(
-      join(contextsDir(root), 'Projects', 'Sapphire', '_space.json'),
-      JSON.stringify({
-        id: 'sp-sap',
-        '<Projects>': ['Pommora'],
-        $order: { contexts: ['Projects'] },
-      }),
-    )
-    await settledMutate(
-      root,
-      { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' },
-      nexusDeps,
-    )
-    const reg = await readJsonAt<ContextsRegistry>(contextsRegistryFile(root))
-    reg.contexts.push({ id: 'ctx_impostor', title: 'Projects' })
-    await writeFile(contextsRegistryFile(root), JSON.stringify(reg))
-    await mkdir(join(contextsDir(root), 'Projects'), { recursive: true })
-    await refreshTree(root)
-
-    const [listed] = await listBundles(root)
-    expect(
-      (await settledMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)).ok,
-    ).toBe(true)
-    const sap = await readJsonAt(join(contextsDir(root), 'Projects (2)', 'Sapphire', '_space.json'))
-    expect(sap.$order).toEqual({ contexts: ['Projects (2)'] })
   })
 })
 

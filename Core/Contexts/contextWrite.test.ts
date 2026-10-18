@@ -382,12 +382,12 @@ describe('setSpaceRowOrder', () => {
   const dir = (): string => join(contextsDir(root), 'Projects', 'Pommora')
   const sidecar = (): Promise<Record<string, unknown>> => readJsonAt(join(dir(), '_space.json'))
 
-  it('writes both lists under $order, replaces them wholesale, and removes the key when both empty', async () => {
-    expect((await setSpaceRowOrder(dir(), ['ctxC'], ['prop_a'])).ok).toBe(true)
-    expect((await sidecar()).$order).toEqual({ contexts: ['ctxC'], properties: ['prop_a'] })
-    expect((await setSpaceRowOrder(dir(), ['ctx_projects'], [])).ok).toBe(true)
-    expect((await sidecar()).$order).toEqual({ contexts: ['ctx_projects'], properties: [] })
-    expect((await setSpaceRowOrder(dir(), [], [])).ok).toBe(true)
+  it('writes the ids under $order, replaces them wholesale, and removes the key when empty', async () => {
+    expect((await setSpaceRowOrder(dir(), ['ctxC', 'prop_a'])).ok).toBe(true)
+    expect((await sidecar()).$order).toEqual(['ctxC', 'prop_a'])
+    expect((await setSpaceRowOrder(dir(), ['ctx_projects'])).ok).toBe(true)
+    expect((await sidecar()).$order).toEqual(['ctx_projects'])
+    expect((await setSpaceRowOrder(dir(), [])).ok).toBe(true)
     expect('$order' in (await sidecar())).toBe(false)
   })
 })

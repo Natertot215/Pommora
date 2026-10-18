@@ -45,7 +45,6 @@ import { contextPaneTargets, type PaneTarget, schemaTargets } from './Cells/Prop
 import { useGhostOptionAnchor } from './Schema/GhostOptionChip'
 import { resolveRowOrder } from './rowOrder'
 import { pushUndo } from '../Session/undo'
-import { readSpaceRowOrder, type SpaceRowOrder } from '../Contexts/spaceSidecar'
 import { dialer } from '../Platform/dialer'
 import { contextOptionsFor } from '../Contexts/contextOptions'
 import { identityOf, isContextColumnId } from '../Contexts/contextIdentity'
@@ -63,7 +62,6 @@ import { valueMenuTarget } from './Cells/valueMenuTarget'
 import type { ConnEditAction, LinkAction } from '../Actions/connectionMenu'
 import * as s from './property-panel.css'
 import { heldKey } from '../Files/heldKeys'
-import { normalizeTitle } from '../Paths/caseFold'
 import { AliasesRow } from '../Pages/AliasesRow'
 
 type Editing = { id: string; mode: 'picker' | 'editor' | 'popover'; seat?: ConnEditAction } | null
@@ -215,13 +213,10 @@ export function PropertyPanel({
       ? fm !== null && heldKey(fm, f.def.name) !== undefined
       : (contextValues?.[f.id]?.length ?? 0) > 0
   const isShown = (f: Field): boolean => held(f) || revealed.has(f.id)
-  const spaceOrder = useMemo(() => readSpaceRowOrder(spaceNode?.values), [spaceNode])
-  const nameOf = (f: Field): string => f.def?.name ?? f.label
-  const orderKey = (f: Field): string => normalizeTitle(nameOf(f))
   const nexusWide = resolveRowOrder(contextFields, (f) => f.id, tree?.config.order.contexts)
   const fields: Record<GroupKey, Field[]> = {
-    contexts: resolveRowOrder(nexusWide, orderKey, spaceOrder.contexts.map(normalizeTitle)),
-    properties: resolveRowOrder(schemaFields, orderKey, spaceOrder.properties.map(normalizeTitle)),
+    contexts: resolveRowOrder(nexusWide, (f) => f.id, spaceNode?.rowOrder),
+    properties: resolveRowOrder(schemaFields, (f) => f.id, spaceNode?.rowOrder),
   }
   const shown: Record<GroupKey, Field[]> = {
     contexts: fields.contexts.filter(isShown),
@@ -249,11 +244,15 @@ export function PropertyPanel({
     const shownIds = shown[group].map((f) => f.id)
     if (isSpace) {
       const moved = moveItem(shown[group], shownIds.indexOf(id), toIndex)
-      const next: SpaceRowOrder = {
-        contexts: (group === 'contexts' ? moved : shown.contexts).map(nameOf),
-        properties: (group === 'properties' ? moved : shown.properties).map(nameOf),
-      }
-      sendWithUndo((o) => void mutate({ op: 'setSpaceRowOrder', path, ...o }), next, spaceOrder)
+      const next = [
+        ...(group === 'contexts' ? moved : shown.contexts),
+        ...(group === 'properties' ? moved : shown.properties),
+      ].map((f) => f.id)
+      sendWithUndo(
+        (ids) => void mutate({ op: 'setSpaceRowOrder', path, ids }),
+        next,
+        spaceNode?.rowOrder ?? [],
+      )
       return
     }
     if (group === 'contexts') {

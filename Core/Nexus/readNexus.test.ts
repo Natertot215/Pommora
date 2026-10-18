@@ -327,7 +327,7 @@ describe('readNexus — registry-backed contexts', () => {
         $color: 'cyan',
         '<Classes>': ['CS 161'],
         Status: ['Active'],
-        $order: { contexts: ['ctxC'], properties: [] },
+        $order: ['ctxC'],
       }),
     )
     d(join(reg, '.nexus', 'contexts', 'Projects', 'CS Project'))
@@ -370,10 +370,9 @@ describe('readNexus — registry-backed contexts', () => {
   it('carries the sidecar own values, and nothing the node already models', async () => {
     const t = await readNexus(reg)
     const projects = t.contexts?.find((g) => g.def.id === 'ctx_projects')
-    expect(projects?.spaces.find((s) => s.id === 'sp-pom')?.values).toEqual({
-      Status: ['Active'],
-      $order: { contexts: ['ctxC'], properties: [] },
-    })
+    const pom = projects?.spaces.find((s) => s.id === 'sp-pom')
+    expect(pom?.values).toEqual({ Status: ['Active'] })
+    expect(pom?.rowOrder).toEqual(['ctxC'])
     expect(projects?.spaces.find((s) => s.id === 'sp-cs-proj')?.values).toBeUndefined()
   })
 

@@ -1,9 +1,9 @@
 ### MetadataV3 — Investigation
 
 **DATE:** 10-17-2026
-**HEAD:** `3d191b895`, verified against the working tree at that commit. A parallel session had uncommitted edits in seven cited files, each marked † where it's cited: `Core/Nexus/cascade.ts`, `Core/Nexus/fileEvents.ts`, `Core/Nexus/handlers.ts`, `Core/Nexus/mutate.ts`, `Core/Nexus/settle.ts`, `Core/Trash/spend.ts`, and `.claude/IssuesPM.md`. Line numbers in those files are from the working tree at the last check, and they continue to move.
+**HEAD:** `988f6ee43`, verified against the working tree at that commit. The Path Links session has uncommitted edits in ten cited files, each marked † where it's cited: `Core/Index/contentIndex.ts`, `Core/Index/indexSeed.ts`, `Core/Nexus/adopt.ts`, `Core/Nexus/fileEvents.ts`, `Core/Nexus/handlers.ts`, `Core/Nexus/settle.ts`, `Core/Platform/stores.ts`, `Core/Testing/memoryStores.ts`, `Core/Testing/storesContract.ts`, and `Desktop/Store/stores.ts`. Its Phase 8 rewrites the Trash restore (`Core/Trash/spend.ts`, `holdings.ts`, `restoreScrub.ts`, `Core/Nexus/heldPages.ts`), so restore citations are re-read once it lands.
 
-This document reconciles four scout reports written between `74b4ff18f` and `3d191b895` (key side, option side, index and sweeps, interop and data) with the earlier *MetadataV3 — Scout Findings* written at `e6e851183`. It checks each load-bearing claim against the code, merges the findings the reports share, settles their disagreements against the evidence, and adds sites none of them named. It classifies the code against *MetadataV3 — Decisions & Intention*: properties and options match exactly on page frontmatter and Space sidecars alike, under one stored `key` per property and per option, spelled from a stored `label` by the Key Format and Value Format; Context `<Title>:` keys and the Space titles under them match exactly as titled and get no format; property and option labels and keys, and Context and Space titles, stay unique without regard to case; format changes ride the existing rename and option-rename paths; configuration names options by label; and a page restored from the Trash has its keys and option words matched to the current properties whatever casing or format spelled them and re-spelled into their current keys, while live reads and repair-on-open stay exact. It records what is true and the approaches weighed, each naming the decision that settles it, and makes no decisions of its own.
+This document reconciles three planning scouts (identity and the registry, cascades and the restore, the converter and the interface) with the earlier investigation at `3d191b895` and *MetadataV3 — Scout Findings* at `e6e851183`. It checks each load-bearing claim against the code, merges what the reports share, settles their disagreements against the evidence, and classifies the code against *MetadataV3 — Decisions & Intention* as ratified on 10-17-2026 with the planning session's rulings: exact identity for property keys, option words, Context keys, and the Space titles under them; a stored `label` and `key` on every property and option; formats that ride the rename paths; configuration matched exactly by label; and a Space's `$order` kept by id. It records what is true and the approaches weighed, each naming the decision that settles it.
 
 ---
 
@@ -11,384 +11,389 @@ This document reconciles four scout reports written between `74b4ff18f` and `3d1
 
 ##### Key Identity Today
 
-**One Primitive:** every key comparison folds through `foldKey`, which lowercases and then NFC-normalizes (`Core/Paths/caseFold.ts:7-9`). `normalizeTitle` stringifies, trims, and then folds (`caseFold.ts:12-14`), and `spellings` returns every name that folds to a given one, the exact spelling first (`caseFold.ts:17-21`). The fold is locale-pinned through `toLowerCase` (`caseFold.ts:1-2`). Property titles are stored trimmed and NFC-normalized but unfolded (`Core/Properties/properties.ts:272-274`) and folded only when compared (`Core/Properties/schema.ts:46-47`). The same file holds the title collator and the search matchers (`caseFold.ts:23-102`).
+**One Primitive:** every key comparison folds through `foldKey`, which lowercases and then NFC-normalizes (`Core/Paths/caseFold.ts:7-9`). `normalizeTitle` stringifies, trims, and folds (`caseFold.ts:12-14`), and `spellings` returns every name that folds to a given one, the exact spelling first (`caseFold.ts:17-21`). Property titles are stored trimmed and NFC-normalized but unfolded (`Core/Properties/properties.ts:272-274`) and folded only when compared (`Core/Properties/schema.ts:46-47`).
 
-**Name to Definition:** `byFoldedName` maps a folded title to its definition through `new Map`, so the last of two fold-alike definitions wins (`properties.ts:49-50`). Registry admission admits only the first definition per folded title (`Core/Properties/propertiesRegistry.ts:29-37`), so the two orders never meet on admitted data.
+**Name to Definition:** `byFoldedName` maps a folded title to its definition (`properties.ts:49-50`), with six callers (`Core/Properties/assignment.ts:41,45`; `Core/Contexts/contextResolve.ts:59`; `schema.ts:31`; `Core/Nexus/cascade.ts:80`; `Core/Trash/restoreScrub.ts:35`). Registry admission admits the first definition per folded title (`Core/Properties/propertiesRegistry.ts:29-37`).
 
-**Definition to Held Key:** `heldKey` answers the exact spelling first, then the first key in root order that folds to the name (`Core/Files/heldKeys.ts:11-12`). `heldValue` joins every spelling's members for a list-holding property, through its own `foldKey` filter in root order rather than through `spellings` (`heldKeys.ts:15-26`). A property holds a list when its kind is Multi-Select or File (`properties.ts:66-69`). `writeTarget` collapses two or more held spellings into the name (`heldKeys.ts:34-39`), and `stripHeld`, `editHeldList`, and `rekeyHeld` act on every spelling (`heldKeys.ts:61-110`).
+**Definition to Held Key:** `heldKey` answers the exact spelling first, then the first key in root order that folds to the name (`Core/Files/heldKeys.ts:11-12`). `heldValue` joins every spelling's members for a list-holding property, Multi-Select or File (`heldKeys.ts:15-26`; `properties.ts:66-69`). `writeTarget` collapses two or more held spellings into the name (`heldKeys.ts:34-39`), and `stripHeld`, `editHeldList`, and `rekeyHeld` act on every spelling (`heldKeys.ts:61-110`). `landValue` writes one key in place of the spellings it governs (`heldKeys.ts:42-48`).
 
-**Pages and Space Sidecars:** a page's property keys resolve through the page world, built from the owning Collection's assigned definitions keyed by `byFoldedName` (`Core/Contexts/contextWrite.ts:70-74`; `Core/Properties/assignment.ts:33-46`). A Space's property keys resolve through `spaceWorldOf`, which keys the whole registry the same way (`Core/Contexts/contextResolve.ts:57-59`). Both hosts use one property title as the key, so the host-blind functions below apply one rule to both. The mutate dispatch routes a value write by `isMarkdownFile(req.path)` (`Core/Nexus/mutate.ts:178-180`†).
+**Pages and Space Sidecars:** a page's keys resolve through the owning Collection's assigned definitions keyed by `byFoldedName` (`Core/Contexts/contextWrite.ts:70-74`; `assignment.ts:33-46`), a Space's through `spaceWorldOf` over the whole registry (`contextResolve.ts:57-59`). Both hosts key by the property title, so the host-blind functions apply one rule to both: `writtenRoot` (`Core/Properties/governedWrite.ts:16-21`), `heldPropertyValue` (`Core/Properties/propertyValue.ts:241-244`), `reconcileGovernedRoot` (`contextResolve.ts:111-157`), `valueEditRewrite` (`Core/Properties/pageValue.ts:36-43`), `stripHeld`, `applyValueAtRoot` (`propertyValue.ts:247-256`), and `resolveFieldValue` (`Core/Properties/value.ts:37-61`).
 
-**Host-Blind Functions:** `writtenRoot` (`Core/Properties/governedWrite.ts:16-21`), `heldPropertyValue` (`Core/Properties/propertyValue.ts:241-244`), `reconcileGovernedRoot` (`contextResolve.ts:111-157`), `valueEditRewrite` (`Core/Properties/pageValue.ts:36-43`), `stripHeld` (`heldKeys.ts:87-90`), `applyValueAtRoot` (`propertyValue.ts:247-256`), and `resolveFieldValue` (`Core/Properties/value.ts:37-61`). A `ViewRow` carries no host field (`Core/Views/viewRow.ts:17-27`), and `spaceRowOf` dresses a Space as a row by spreading its values and stamping `ID_KEY` (`Core/Properties/pageRow.ts:31-49`).
+**Fan-Outs That Send One Rewrite to Both Hosts:** `refillValues` through `sweepRootsById` (`assignment.ts:49-67`; `Core/Properties/governedSweep.ts:146-170`); `stripAndRemove` (`Core/Properties/deleteProperty.ts:113-131`); `valueEditSweep` with `{ raw, sidecars: raw }` (`Core/Properties/optionOps.ts:193-201`); `deleteCascade` and `renameCascade` through `spaceArm` (`cascade.ts:56,117,196,211`); `refillTrashed` (`Core/Trash/holdings.ts:128-148`); and `renameSweep`, whose page and sidecar arms share one `oldName`/`def.name` pair (`Core/Properties/registryProperty.ts:82-98`).
 
-**Fan-Outs That Send One Rewrite to Both Hosts:**
-- `refillValues` through `sweepRootsById` (`assignment.ts:49-67`; `Core/Properties/governedSweep.ts:146-170`), from property restore (`Core/Trash/restoreProperty.ts:63,71`), Link restore (`Core/Trash/spend.ts:275`†), and re-assignment (`assignment.ts:100`).
-- `stripAndRemove` (`Core/Properties/deleteProperty.ts:119-123`).
-- `valueEditSweep` with `{ raw, sidecars: raw }` (`Core/Properties/optionOps.ts:199-200`) and `optionHolders` (`optionOps.ts:276-283`).
-- `deleteCascade` and `renameCascade` through `spaceArm` (`Core/Nexus/cascade.ts:56,117,196,211`†).
-- `refillTrashed` (`Core/Trash/holdings.ts:136-147`) and `scrubReturning`'s `links` map (`Core/Trash/restoreScrub.ts:35,38-50`).
-- `renameSweep`, whose page arm and sidecar arm share one `oldName`/`def.name` pair, the sidecar arm also renaming the Space `$order` entry (`Core/Properties/registryProperty.ts:82-98`).
+**Context Keys:** a `<Title>:` key resolves through `governorOf`'s Context branch (`contextResolve.ts:91-98`) and always joins its spellings (`contextResolve.ts:100-106`). `contextWorldOf` keys Context titles by `foldKey` and Space titles by `normalizeTitle` (`contextResolve.ts:28-41`), and `contextTitles` reads each member as a trimmed, folded title (`Core/Contexts/contexts.ts:37-39`). The Context cascades rename keys through `rekeyHeld` and `renameFrontmatterKey` with the `merge` rule (`Core/Contexts/contextCascade.ts:34-43,85-90`), retitle a Space through a joined, folded list edit (`contextCascade.ts:45-48`), unlink through `heldKeys` (`contextCascade.ts:132-149`), and skip a case-only retitle (`contextCascade.ts:116-119`). Context and Space titles are folder names held unique by folded title (`contexts.ts:16`; `contextCascade.ts:214,222,273,319`).
 
-**Context Keys:** a `<Title>:` key resolves through `governorOf`'s Context branch (`contextResolve.ts:96-97`) and always joins its spellings (`contextResolve.ts:100`). `contextWorldOf` keys Context titles by `foldKey` and Space titles by `normalizeTitle` (`contextResolve.ts:33-35`), `groupOf` folds the parsed title (`contextResolve.ts:61-65`), and `contextTitles` reads each member of a Context value as a trimmed, folded title (`Core/Contexts/contexts.ts:37-39`). The Context cascades rename keys through `rekeyHeld` and `renameFrontmatterKey` with the `merge` rule and joining (`Core/Contexts/contextCascade.ts:36-43,85-90`), retitle a Space through a joined, folded list edit (`contextCascade.ts:45-48`), unlink through `heldKeys` and a folded member match (`contextCascade.ts:132-149,151-169`), and skip a case-only retitle entirely (`contextCascade.ts:116-119`). A Space-to-Space link write joins spellings and matches the far title folded (`contextWrite.ts:99-110`), and the Trash re-tag collapses and joins (`spend.ts:292-302`†).
+**Readers and Writers of `def.name`:** 54 typed production reads in 22 files, plus 4 typed writes, by TypeScript's find-references; Desktop, UIX, and Sync never import a definition. They split as 27 reads used as a key, 17 as a title, 7 as identity (uniqueness, reserved keys, no-op checks: `propertiesRegistry.ts:32,34`; `registryProperty.ts:55,121,125`; `schema.ts:47,56`), and 3 that take both words from one read (`registryProperty.ts:95,129`; `deleteProperty.ts:103`). Untyped reads add `replaySchemaCascade.ts:38-41`, `Core/Trash/trashRows.ts:59`, `byFoldedName`'s six callers, and the write at `registryProperty.ts:138`.
 
-**Title Checks on Contexts and Spaces:** a Context or Space title is a folder name (`contexts.ts:16`), clashes are refused by folded title (`contextCascade.ts:214,222,273,319`), and `recase` re-spells a folder whose case alone changed on a case-insensitive disk (`Core/Files/atomicWrite.ts:325-334`), reading directory entries through `heldName` and `spellings` (`atomicWrite.ts:320-323`).
-
-**Writers That Spell a Key From `def.name`:** `createPage` (`Core/Nexus/page.ts:36-37`), `updatePageProperty` (`page.ts:106`), `setSpaceProperty` (`Core/Properties/setProperty.ts:26,28`), `refillValues` (`assignment.ts:63`), `refillTrashed` through `spend.ts:281`†, `renameSweep` (`registryProperty.ts:91-95`), `valueEditRewrite` (`pageValue.ts:42`), `stripAndRemove` and `removeProperty` (`deleteProperty.ts:96,106`; `Core/Properties/removeProperty.ts:34,55`), `applyValueAtRoot` (`propertyValue.ts:254`), and `rekeyOverrides` (`Core/Views/Host/useContainerValues.ts:16-27`), which the rename reply's titles feed (`Core/Properties/Schema/PropertyFrame.tsx:237`; `Core/Session/cacheSlice.ts:55-58`).
-
-**Readers That Use `def.name` as a Key:** `resolveFieldValue` (`value.ts:57`), the PropertyPanel `held` check (`Core/Properties/PropertyPanel.tsx:213-216`), the Matrix filter's `answers` for Space rows (`Core/Matrix/matrixInput.ts:98`), `keyedHolders` (`Core/Properties/keyHolders.ts:59`), the delete snapshot's sidecar loop (`deleteProperty.ts:62`), the delete cascade's dedupe (`cascade.ts:125`†), and `renameCascade`'s cache gate `defs.filter((d) => holds(d.name))` (`cascade.ts:218`†). That gate passes a title to `linkKeysOf`'s key predicate; once the predicate answers by stored key, a title that isn't a key falls through to the foreign rule and answers true (`schema.ts:34`), so the gate would admit non-Link properties.
-
-**Readers That Use `def.name` as a Title:** the Trash row (`Core/Trash/trashRows.ts:59`), the type picker (`Core/Properties/Cells/PropertyTypes.tsx:88`), the property list and editor header (`PropertyFrame.tsx:98,151,157,420`), and the property picker (`Core/Properties/Pickers/PropertyPicker.tsx:150`).
-
-**Key-Independent Writers:** `setBanner` writes the literal `banner` with no world (`Core/Pages/setBanner.ts:29`; `governedWrite.ts:34`), `createPage` writes `ID` (`page.ts:30`), and the asset migration reads and writes whatever exact key a slot sits under (`Core/Assets/assetMigrate.ts:142-151`). No code path moves a property value between a page and a Space: creation seeds are decoded values keyed by property id (`page.ts:32-37`), and Trash records key values by holder id (`restoreProperty.ts:62-63`).
+**Key-Independent Writers:** `setBanner` writes the literal `banner` (`Core/Pages/setBanner.ts:29`), `createPage` writes `ID` (`Core/Nexus/page.ts:30`), and the asset migration acts on whatever exact key a slot sits under (`Core/Assets/assetMigrate.ts:142-151`). No path moves a value between a page and a Space.
 
 ##### Option Identity and References
 
-**The Option:** an option is `{value, icon?, color?, appearance?}`, with `group_id` for Status (`properties.ts:133-156`); `value` is at once its title, its word on disk, and its identity, and no option id exists (`Core/Properties/replaySchemaCascade.ts:83`). Status groups carry a `label` (`properties.ts:158-165`), Context picks split `{value: spaceId, label: title}` (`Core/Contexts/contextOptions.ts:31-36`), and `PickOption` has both slots (`properties.ts:284`), which options fill with one word (`PropertyPicker.tsx:73`). `stored()` strips a leftover option `label` on every option write (`properties.ts:308-311`).
+**The Option:** `{value, icon?, color?, appearance?}`, with `group_id` for Status (`properties.ts:133-156`); `value` is its title, its word on disk, and its identity, and no option id exists. Status groups carry `{id, label, color, options}` (`properties.ts:158-165`), and `PickOption` has a `label` beside `value` that options fill with one word (`properties.ts:284`; `Core/Properties/Pickers/PropertyPicker.tsx:73`). `stored()` strips a leftover option `label` on every option write (`properties.ts:308-311`). An option has 26 typed production reads: 14 as a label (cells, chips, the option editor, group and order lists, `schema.ts:76,79`), 11 as registry-op identity, and `optionValues` (`properties.ts:296`), whose nine callers split between labels (`Core/Views/Pipeline/group.ts:199,219`; `sort.ts:87`) and keys (`optionOps.ts:63,179,235`; `propertyValue.ts:52`; `replaySchemaCascade.ts:77,87`). No production read uses an option's `value` as the word on disk directly; that role exists only in decode and encode.
 
-**Exact Inside the Registry:** option edits compare `o.value` exactly (`Core/Properties/optionModel.ts:12,53,57`; `optionOps.ts:63,179,235`), and so does display (`Core/Properties/Cells/cellResolve.ts:4`; `Core/Properties/Cells/OptionChip.tsx:28`; `Core/Views/Settings/OptionOrderList.tsx:71`; `Core/Views/Settings/GroupFrame.tsx:375`).
+**Decode and Encode:** `optionsByFold` caches folded title to title per definition, first wins (`propertyValue.ts:46-56`), and `registeredOption` reads it (`:59-60`). A Select or Status keeps the last element naming a registered option and drops an unregistered one (`:101-107`); a Multi-Select dedupes by fold, maps registered members to their titles, and keeps unregistered ones verbatim (`:108-112`), which is adoption's only input today (`unregisteredMembers`, `:129-134`). `encodeValue(value)` takes no definition and writes the decoded word, a Select as `[value]` (`:192-214`); its six callers all hold the definition (`:255`; `Core/Properties/setProperty.ts:22`; `page.ts:34,104`; `contextResolve.ts:131`; `assignment.ts:58`).
 
-**Folded at Decode:** `optionsByFold` caches folded title to title per definition through `firstPerTitle`, first wins (`propertyValue.ts:46-56`; `properties.ts:53-63`), and `registeredOption` reads it (`propertyValue.ts:59-60`). A Select or Status keeps the last element that names a registered option and drops an unregistered one (`propertyValue.ts:101-107`). A Multi-Select dedupes by fold, maps a registered member to its title, and keeps an unregistered one verbatim (`propertyValue.ts:108-112`). An outside numeral still names an option, since `optionList` reads scalars through `normalizeTitle` (`propertyValue.ts:42-44`).
+**Folded Member Matching:** `memberKey` compares a scalar member by `normalizeTitle` (`heldKeys.ts:51`), under `joinValues` (`:54-58`), `namesValue`, `editList`, and `stripList` (`pageValue.ts:11-34`), and the reconcile's `memberCount` (`contextResolve.ts:108`). `editList` serves page and sidecar values, Context values, `property_cache`, saved-view operands and orders, and Space `$order` (`pageValue.ts:42`; `contextCascade.ts:45-48`; `Core/Nexus/configReach.ts:142-159,308-320`; `Core/Contexts/spaceSidecar.ts:98-114`). Its replace answers a non-null list whenever any element matches, even when nothing changes (`pageValue.ts:26-33`).
 
-**Folded Member Matching:** `memberKey` compares a scalar member by `normalizeTitle` (`heldKeys.ts:51`), and three helpers build on it: `joinValues` (`heldKeys.ts:54-58`), `namesValue`, which `editList` and `stripList` use (`pageValue.ts:11-34`), and the reconcile's `memberCount` (`contextResolve.ts:108`). `editList` serves page and sidecar values, Context values, `property_cache` blocks, saved-view operands and orders, and Space `$order` lists (`pageValue.ts:42`; `contextCascade.ts:45-48`; `Core/Nexus/configReach.ts:142-159,308-320`; `Core/Contexts/spaceSidecar.ts:98-114`). A `Matcher` type for a caller-supplied match already exists (`pageValue.ts:9`).
+**Where an Option Word Lives Outside Its File:**
 
-**Where an Option Word Is Stored Outside the File That Holds It:**
-
-| Site | Location | What It Holds | Matched |
+| Site | Holds | Cascade Matches | Evaluation Matches |
 | --- | --- | --- | --- |
-| View filter operands | `views[].filter` (`Core/Views/filterRules.ts:10-15`) | Titles | Cascade folds (`configReach.ts:142-145`); Select evaluates folded, Multi-Select exactly (`Core/Views/Pipeline/filter.ts:83,244-267,269-286`) |
-| Sort and group `order` | `Core/Views/views.ts:62-67,75-79` | Titles | Cascade folds (`configReach.ts:155-159`); evaluation exact (`Core/Views/Pipeline/sort.ts:82-94`; `Core/Views/Pipeline/group.ts:209-229`) |
-| `collapsed_groups`, `hidden_groups` | `views.ts:176,178` | Titles inside bucket keys | Exact (`configReach.ts:161-172`; `views.ts:359-375`) |
-| View Tiles | `_tiles.json` view configs | As views | As views (`configReach.ts:376-383`) |
-| Matrix filter | `.nexus/matrix.json` | Titles | Cascade folds (`configReach.ts:385-388`); one rule evaluates pages and Spaces (`matrixInput.ts:116-133`) |
-| `openInPreview` | `settings.json` | Rule operands | The reach exists (`configReach.ts:389-399`), and no registry property can be targeted there (`Core/Navigation/previewRules.ts:26,31-37`) |
-| Collection `property_cache` | Collection sidecar, written by Remove (`removeProperty.ts:41-50`) | Raw page words by property id and page id | Cascade folds (`configReach.ts:308-320,367`) |
-| Property Trash bundle | `.trash` record (`Core/Trash/record.ts:54-63`) | The whole definition plus raw values by holder id (`deleteProperty.ts:33-76`) | Fold on restore (`restoreProperty.ts:71`; `assignment.ts:57`) |
-| Trashed pages and containers | `.trash` | Raw frontmatter, views, and caches | Reached by no cascade (`keyHolders.ts:14-20`; `configReach.ts:332-337`) |
-| Schema journal | `.nexus/` slot (`Core/Properties/propertyJournal.ts:8-12`) | `option-rename {from, to}`, `option-remove {value}` | Gate exact (`replaySchemaCascade.ts:74-93`); the cascade it drives folds |
-| Renderer override | `Core/Properties/valueOverride.ts:5-41` | Patched raw frontmatter from `applyValueAtRoot` | Depends on the fold (`propertyValue.ts:246`) |
-| Undo stack | `Core/Properties/assignValue.ts:71-72,82-91` | The decoded prior value | n/a |
-| Creation seeds | `Core/Views/Pipeline/creationSeeds.ts:20-43` | A decoded value from an operand or bucket key | n/a |
+| View filter operands (`Core/Views/filterRules.ts:10-15`) | Labels | Fold (`configReach.ts:142-145`, whole-value ops only, `:121-122`) | Select and Status Is and Is Not fold through the text evaluator (`Core/Views/Pipeline/filter.ts:79-83,244-267`); Multi-Select exact (`:269-286`) |
+| Sort and group `order` (`Core/Views/views.ts:62-79`) | Labels | Fold (`configReach.ts:155-159,182-184`) | Exact (`sort.ts:28-35,82-94`; `group.ts:203-229`) |
+| `collapsed_groups`, `hidden_groups` | Labels inside bucket keys | Exact (`configReach.ts:161-172`; `views.ts:359-375`) | Exact (`views.ts:325-337`) |
+| View Tiles, Matrix filter (`.nexus/matrix.json`) | As views | As views (`configReach.ts:376-388`) | As the filter (`Core/Matrix/matrixInput.ts:116-133`) |
+| Creation seeds, filter chips | Operands | n/a | Verbatim (`Core/Views/Pipeline/creationSeeds.ts:32,41`); exact (`FilterFrame.tsx:148`) |
+| Collection `property_cache` | Raw page words, so keys, by property id and page id (`Core/Properties/propertyCache.ts:8-29`) | Fold, inside `reachConfig`'s container loop (`configReach.ts:308-320,364-369`) | Decoded against current options at refill (`assignment.ts:57,91`) |
+| Property Trash bundle | The definition and raw values by holder id (`Core/Trash/record.ts:54-63`) | None | Fold at refill (`assignment.ts:57`) |
+| Schema journal | `option-rename {from, to}`, `option-remove {value}` (`Core/Properties/propertyJournal.ts:8-12`) | Gate exact (`replaySchemaCascade.ts:74-93`) | n/a |
 
-`column_styles` holds looks and formats per property id and no option words (`Core/Properties/columnStyles.ts:76-85`).
+**The Cache's Writers:** Remove writes it (`Core/Properties/removeProperty.ts:36-51`), the property restore writes it (`Core/Trash/restoreProperty.ts:51-55`), the reassign refill trims it (`assignment.ts:102-106`), Delete purges and snapshots it (`deleteProperty.ts:51-54,133-141`), and the page-rename cascade edits it through `editCaches` (`cascade.ts:225`; `propertyCache.ts:52-68`). Clear runs `valueEditSweep` alone (`optionOps.ts:256-267`), so a cleared option's cached words come back at the next reassign.
 
 ##### The Read/Write Chain
 
-**Read:**
-1. Frontmatter is parsed and indexed whole, registered or not (`Core/Index/indexSeed.ts:39-58`), and values reach the renderer through `view:loadValues` (`pageRow.ts:52-58`).
-2. `heldPropertyValue` picks the held key or joins list spellings (`propertyValue.ts:241-244`).
-3. `decodeValue` turns the held value into a `PropertyValue` (`propertyValue.ts:83-126`).
-4. `resolveFieldValue` memoizes per frontmatter object and definition (`value.ts:50-64`) and serves every cell, card, filter, sort, group, panel row, and Matrix row, Space rows included.
+**Read:** frontmatter is indexed whole (`Core/Index/indexSeed.ts:41-61`†); `heldPropertyValue` picks the held key or joins list spellings (`propertyValue.ts:241-244`); `decodeValue` turns it into a `PropertyValue` (`:83-126`); `resolveFieldValue` memoizes per frontmatter object and definition (`value.ts:50-64`) and serves every cell, card, filter, sort, group, panel row, and Matrix row.
 
-**Write:**
-1. A pick builds the next value (`PropertyPicker.tsx:397-406`); a Multi-Select toggle keeps unregistered verbatim members (`PropertyPicker.tsx:60-65,86-87`).
-2. The renderer lands an optimistic copy through `applyValueAtRoot` (`assignValue.ts:41`; `propertyValue.ts:247-256`), also used for view-row creation (`Core/Views/Host/useViewCreation.ts:53`).
-3. The host encodes (`propertyValue.ts:192-214`, Select as `[value]` at `:195`) and calls `writtenRoot` through `setGovernedRootKey` (`governedWrite.ts:23-42`; `page.ts:106`) or directly for a Space (`setProperty.ts:28`).
-4. `writtenRoot` collapses every held spelling (`governedWrite.ts:17`), reconciles every other governed key on the root while skipping the target (`governedWrite.ts:18`; `contextResolve.ts:121`), and spells the value through `writtenSpelling` (`governedWrite.ts:19`).
-5. `writtenSpelling` keeps checkbox words, number shapes, and each list member's held spelling where exactly one held member folds to it (`propertyValue.ts:177-190`).
-6. `mergeFrontmatter` writes the changed keys; `mergeInto` puts a written key in the place of a dropped spelling of itself, and `nodeSpelledAs` carries quote and flow style (`Core/Files/pageFile.ts:143-191`).
+**Write:** a pick builds the next value, a Multi-Select toggle sending the whole list (`PropertyPicker.tsx:397-406`); the renderer lands an optimistic copy through `applyValueAtRoot` (`Core/Properties/assignValue.ts:41`); the host clears on a null or blank value, an emptied Multi-Select included (`page.ts:103`; `propertyValue.ts:220-228`), and otherwise encodes and calls `writtenRoot` (`governedWrite.ts:23-42`; `setProperty.ts:28`). `writtenRoot` collapses every held spelling, reconciles every other governed key while skipping the target (`governedWrite.ts:17-18`; `contextResolve.ts:121`), and spells the value through `writtenSpelling` against the held value it already reads (`governedWrite.ts:19`; `propertyValue.ts:177-190`). Nothing on the write path edits a list in place.
 
-**Context Writes Reconcile Properties Too:** a page Context write goes through `setGovernedRootKey` with the page world (`contextWrite.ts:61-65`), so it reconciles every governed property key on the page.
+**A Recognized Variant Survives a Write:** `writtenSpelling`'s list arm keeps a held member that folds to the written one (`propertyValue.ts:184-189`), and the reconcile and the refill call it the same way (`contextResolve.ts:149`; `assignment.ts:64`).
 
-**Repair:** `reconcileGovernedRoot` re-encodes each governed value (`contextResolve.ts:129-131`), keeps file spellings through `writtenSpelling` (`contextResolve.ts:149`), never shrinks a live value by folded member count (`contextResolve.ts:108,137-141`), and joins and retires extra spellings (`contextResolve.ts:142-148`). It's the engine of every governed write, the repair-on-open sweep (`Core/Properties/repairSweep.ts:37-41`, pages only, gated by `repairOnOpen` at `:20`), and the restore scrub (`restoreScrub.ts:55,75`).
+**Repair:** `reconcileGovernedRoot` re-encodes each governed value, keeps file spellings through `writtenSpelling`, never shrinks a live value by folded member count, and joins and retires extra spellings (`contextResolve.ts:108,129-149`). It drives every governed write, the repair-on-open sweep over pages (`Core/Properties/repairSweep.ts:20,37-41`), and the restore scrub (`restoreScrub.ts:55,75`).
 
-**An In-App Edit Drops an Unregistered Select or Status Word:** decode drops it (`propertyValue.ts:104`), the pick writes `[value]` (`propertyValue.ts:195`), the reconcile skips the target key so the never-shrink guard doesn't apply (`governedWrite.ts:17-18`; `contextResolve.ts:121`), and undo writes the null prior back (`assignValue.ts:71-72,85`).
-
-**A Recognized Variant Survives a Write:** `writtenSpelling` keeps a held member that folds to the written one (`propertyValue.ts:184-189`), and the reconcile and the refill call it the same way (`contextResolve.ts:149`; `assignment.ts:64`). Under exact keys this fold arm would re-land a foreign case variant: with an UPPERCASE Value Format, label `Red`, key `RED`, and a held `red`, a pick of `Red` encodes `RED` and the write lands `red`.
-
-**Adoption:** only Multi-Select adopts, behind three type gates (`propertyValue.ts:131-133`; `optionOps.ts:113-115`; `Core/Nexus/fileEvents.ts:520-521`†). Status couldn't adopt with the gates lifted, since adoption appends through `addOption(g, SELECT_GROUP, v)` (`optionOps.ts:138`) and `addOption` leaves groups untouched when no group id matches (`optionModel.ts:31-32`). Adoption runs when a Collection gains a property (`fileEvents.ts:425-426`†), on any Space change (`fileEvents.ts:432`†), when a definition becomes a Multi-Select or its folded title changes (`fileEvents.ts:513-530`†), at each settle (`Core/Nexus/settle.ts:116,149`†), and on open after the replay and the repair sweep (`Core/Nexus/handlers.ts:104-107`†). It skips only an owed `option-rename`'s old word (`optionOps.ts:125-135`). The 10-07 ruling scoped adoption to Multi-Select without a stated reason for excluding Select and Status (`.claude/sessions/10-07-2026-Text-Properties-Implementation.md:2702`).
+**Adoption:** only Multi-Select adopts, behind type gates at `optionOps.ts:113-115`, `propertyValue.ts:131`, and `fileEvents.ts:527-528`†. It runs when a Collection gains a property (`fileEvents.ts:432-433`†), on any Space change (`:439`†), on a registry change through `oweNamedKeys` (`:496,520-537`†), at each settle over the owed holders, every page whose values changed, and every path newly in reach (`Core/Nexus/settle.ts:117,150-153`†), and on open after replay and repair (`Core/Nexus/handlers.ts:104-110`†). `registerHeldOptions` runs under the schema lock (`optionOps.ts:96`), so it never sees a sweep in progress; it shields only the slot's `option-rename` `from` (`optionOps.ts:125-135`). Status can't adopt, since `addOption` leaves groups untouched when no group id matches (`Core/Properties/optionModel.ts:31-32`).
 
 ##### Uniqueness and Reserved Keys
 
-**Titles:** `validateName` refuses a folded clash (`schema.ts:39-50`), admission admits the first definition per folded title (`propertiesRegistry.ts:29-37`), and `freeName` steps aside on folded titles (`Core/Paths/names.ts:56-64`, from `registryProperty.ts:53-56`). Context and Space titles are held unique by folded title (`contextCascade.ts:222,273`).
+**Titles:** `validateName` refuses a folded clash (`schema.ts:39-50`), admission admits the first definition per folded title, and `freeName` steps a create aside on folded titles with a ` (2)` suffix (`Core/Paths/names.ts:53-64`; `registryProperty.ts:53-56`).
 
-**Reserved Keys:** `keyRefusal` rejects an empty name, a `$` or `<` prefix, and any folded member of `PAGE_MODELED_KEYS` (`ID`, `banner`) or `SPACE_MODELED_KEYS` (`id`, `$icon`, `banner`, `heading_icon_hidden`, `$color`) (`schema.ts:17-27`; `Core/Nexus/identityMark.ts:11`; `spaceSidecar.ts:18-24`). It runs from `validateName`, admission, and `linkKeysOf`'s foreign rule (`schema.ts:34,44`; `propertiesRegistry.ts:34`). Pommora's readers of modeled keys are exact on pages (`identityMark.ts:34`; `Core/Pages/pageDetail.ts:13`) and on sidecars (`spaceSidecar.ts:73`). The fold in the refusal guards today's folded sidecar reads: a property titled `Banner` would fold-read a Space's `banner`, and one titled `Id` the `ID` that `spaceRowOf` stamps (`pageRow.ts:37`).
+**Reserved Keys:** `keyRefusal` rejects an empty name, a `$` or `<` prefix, and any folded member of `ID`, `banner`, `id`, `$icon`, `heading_icon_hidden`, and `$color` (`schema.ts:17-27`; `Core/Nexus/identityMark.ts:11`; `spaceSidecar.ts:18-24`), from `validateName`, admission, and `linkKeysOf`'s foreign rule (`schema.ts:30-36,44`).
 
-**Options:** `validateOptionValues` requires titles non-blank and fold-unique (`schema.ts:85-91`). It runs from `editOption` (`optionOps.ts:83`), `renameOption` (`optionOps.ts:239`), and `validateDefinition`, which checks `select_options` for Select and Multi-Select and skips Status (`schema.ts:64-67`; `properties.ts:39-41`). `withUniqueOptions` keeps the first of each fold-alike set at every admission (`propertiesRegistry.ts:36`) and before every option edit (`optionOps.ts:58`), so a Status created with fold-alike options reads deduplicated. Adoption dedupes its batch by fold and runs no validation after appending (`optionOps.ts:133-139`).
+**Options:** `validateOptionValues` requires titles non-blank and fold-unique (`schema.ts:85-91`), from `editOption`, `renameOption`, and `validateDefinition`, which checks Select and Multi-Select and skips Status (`schema.ts:64-67`). `withUniqueOptions` keeps the first of each fold-alike set at admission and before every option edit (`propertiesRegistry.ts:36`; `optionOps.ts:58`).
 
 ##### Confirmations and Counts
 
-**One Channel, Two Counters:** `property:holders` routes to `propertyHolders` without a value and `optionHolders` with one (`Core/Properties/handlers.ts:181-185`), outside the schema lock.
-- **Delete:** `confirmedKeyHolders` counts pages under every Collection folder holding the key in any casing, re-read from disk, plus every Space sidecar holding it (`deleteProperty.ts:80-84`; `keyHolders.ts:23-41`). An unreadable page counts when the index named it (`keyHolders.ts:33`). The count includes ID-less and duplicate-ID pages the strip leaves alone (`keyHolders.ts:60-64,71`; `deleteProperty.ts:106`) and omits a Space touched only for its `$order` entry (`deleteProperty.ts:122`; `spaceSidecar.ts:98-114`).
-- **Clear and Remove:** a dry run of the strip over the page holders plus every Space sidecar (`optionOps.ts:269-285`), matching the sweep for files (`optionOps.ts:189-200`); Remove's config reach isn't counted (`optionOps.ts:203-213`).
+**One Channel, Two Counters:** `property:holders` routes to `propertyHolders` without a value and `optionHolders` with one (`Core/Properties/handlers.ts:181-185`; `Core/Contract/bridge.ts:180`), outside the schema lock. Delete counts pages under every Collection holding the key in any casing plus every Space sidecar holding it, including ID-less and duplicate-ID pages the strip leaves alone and omitting a Space touched only for `$order` (`deleteProperty.ts:80-84`; `Core/Properties/keyHolders.ts:23-41,60-71`). Clear and Remove count by a hand-written dry run of the strip (`optionOps.ts:269-285`).
 
-**The Dialog Always Asks:** `askHolding` shows the dialog at any count (`Core/Interface/Confirm/confirmations.ts:109-116`), called by `askDestroyProperty` (`PropertyFrame.tsx:279`), `askClearOption`, and `askRemoveOption` (`Core/Properties/Schema/useOptionEdit.tsx:110,114`). The Option Picker Drive asserts the zero-count Remove dialog (`.claude/scripts/Option Picker Drive/live-drive.mjs:174`), and a unit test asserts the wording (`Core/Interface/Confirm/confirmations.test.ts:57-59`).
+**The Dialog Always Asks:** `askHolding` shows the dialog at any count (`Core/Interface/Confirm/confirmations.ts:109-116`), from `askDestroyProperty`, `askClearOption`, and `askRemoveOption` (`Core/Properties/Schema/PropertyFrame.tsx:279`; `Core/Properties/Schema/useOptionEdit.tsx:110,114`). Confirmations count Items (`confirmations.ts:107`), while the rename refusal and the unswept notices say files (`properties.ts:268-269`; `governedSweep.ts:30-31`).
 
-**Wording:** confirmations count Items (`confirmations.ts:107`), while the rename refusal and every unswept notice say files (`properties.ts:268-269`; `governedSweep.ts:30-31`), for counts that include Space sidecars.
-
-**A Dry-Run Counter Fits Beside the Sweep:** `rewriteRaw` and `changedKeys` already decide whether a rewrite changes anything (`governedSweep.ts:43-56`), and `rewriteRaw` is module-private. `editList`'s replace answers a non-null list whenever any element matches, even when nothing changes (`pageValue.ts:26-33`), so a count built on non-null results would overcount a no-op format change.
+**The Sweep's No-Op Guard:** `rewriteRaw` drops a rewrite that changes no key (`governedSweep.ts:43-56`), but the page `text` arm and the sidecar arm write any non-null result (`governedSweep.ts:79-80,101-105`).
 
 ##### Sweeps and the Journal
 
-**The Engine:** `sweepGovernedRoots` rewrites each file under its own lock, preserves page times, and runs the sidecar arm over every Space sidecar (`governedSweep.ts:59-109`). `optionCascade` runs one full holder walk, one full sidecar walk, and one config pass per option (`optionOps.ts:203-213`; `configReach.ts:339-403`). `valueEditRewrite` takes one target and one edit (`pageValue.ts:36-43`), and `editList`'s replace dedupes onto `edit.to` (`pageValue.ts:30-31`).
+**The Engine:** `sweepGovernedRoots` rewrites each file under its own lock, preserves page times, and runs the sidecar arm over every Space sidecar (`governedSweep.ts:59-109`). `optionCascade` runs the file sweep and then `reachConfig` from one `{value, edit}` pair, so the configuration arms and `cacheEdit` share it (`optionOps.ts:203-213`; `configReach.ts:92,339-403`).
 
-**The Property Rename:** `renameProperty` validates, refuses files holding both keys unless the change is case-only, writes the journal, commits the registry, sweeps unless case-only, and clears the journal when nothing was skipped (`registryProperty.ts:111-154`). The case-only test is `normalizeTitle(to) === normalizeTitle(prior.name)` (`registryProperty.ts:125`), and it skips both the clash check and the sweep (`registryProperty.ts:126,150`). A case-only option rename sweeps every holder (`pageValue.ts:24-31`; `optionOps.ts:250`). The journal write's boolean is ignored, so a rename proceeds unjournaled when the slot holds another record (`registryProperty.ts:130`).
+**The Property Rename:** `renameProperty` validates, refuses files holding both keys unless the change is case-only, writes the journal, commits, sweeps unless case-only, and clears when nothing was skipped (`registryProperty.ts:111-154`). `renameSweep` always wraps its sidecar arm in `withOrderEntry`, so a rename rewrites every Space whose `$order` lists the property, even where the key arm changed nothing (`registryProperty.ts:95`; `spaceSidecar.ts:98-114`).
 
-**`editProperty` Takes Any Field but `id` and `name`:** it writes the registry alone (`registryProperty.ts:156-173`), and every `defEditOp` channel funnels into it (`handlers.ts:121-134`). A format field patched through it would re-key every holder with no sweep.
+**`editProperty`:** writes the registry alone for every field but `id` and `name` (`registryProperty.ts:156-173`), reached only through `defEditOp`, whose narrowers admit display configs, the icon, and the file directory (`Core/Properties/handlers.ts:120-176`).
 
-**The YAML Rename on a Case-Only Pair:** `renameFrontmatterKey` resolves both the old key and the rival through `spellings` (`pageFile.ts:221-225`). For a pair such as `name` → `Name`, both resolve to the same node on a file holding either spelling, and `prefer-new` drops that node (`pageFile.ts:229-230`), deleting the key from every holder. The JSON twin keeps the key unchanged in the same case (`heldKeys.ts:102-106`). Today's case-only skips keep the path unreached (`registryProperty.ts:150`; `contextCascade.ts:116-119`).
+**The YAML Rename on a Case-Only Pair:** `renameFrontmatterKey` resolves the old key and the rival through `spellings` (`Core/Files/pageFile.ts:221-225`), so on a pair such as `Tags` to `tags` both name one node, and the rename deletes the key under either collision rule: `prefer-new` drops the node (`:229-230`), and `merge` joins it and renames a node no longer in the document (`:234-239`). The JSON twin leaves the key unchanged under `prefer-new` and re-cases it under `merge` (`heldKeys.ts:105-109`). The property and Context case-only skips keep both paths unreached (`registryProperty.ts:150`; `contextCascade.ts:116-119`).
 
-**The Journal:** one slot (`Core/Properties/journalSlot.ts:14-49`) holds a four-op union with an arm each in `sameRecord`, `decodeSchemaJournal`, and `replay` (`propertyJournal.ts:8-43`; `replaySchemaCascade.ts:43-95`). A write that would displace a different record returns false (`journalSlot.ts:37`); the slot accepts an optional `supersedes` rule the schema journal doesn't pass (`journalSlot.ts:19`; `propertyJournal.ts:45`). Records are intent, and replay re-derives the target files from disk (`propertyJournal.ts:1`); the `rename` and `option-rename` records name both words (`propertyJournal.ts:9,11`). Try Again hands any owed record to `property:replay` (`Core/Properties/propertyWrite.ts:10-24`; `handlers.ts:159-163`).
+**The Journal:** one slot holds a four-op union with an arm each in `sameRecord`, `decodeSchemaJournal`, and `replay` (`Core/Properties/journalSlot.ts:14-49`; `propertyJournal.ts:8-43`; `replaySchemaCascade.ts:43-95`). A write that would displace a different record returns false (`journalSlot.ts:37`). `renameProperty`, `renameOption`, and the delete ignore that boolean, run unjournaled, and still answer the in-memory record as owed, so Try Again works within the session and crash replay can't recover them (`registryProperty.ts:130`; `optionOps.ts:229`; `deleteProperty.ts:104`; `propertyJournal.ts:54-57`). `removeOption` reads it and claims owed only when the write landed, since its replay acts only while the slot holds the record (`optionOps.ts:296,303`; `replaySchemaCascade.ts:85-86`).
 
-**The Replay Gate Folds:** `named` compares titles by `normalizeTitle` (`replaySchemaCascade.ts:38-41`). The rename arm returns `NO_REACH` when any definition is `named(from)` (`replaySchemaCascade.ts:53`), so an owed rename whose words differ only in case would match the renamed definition itself and clear its record. The delete arm's `crashed` and `freed` fold the same way (`replaySchemaCascade.ts:60-61`), and replay sweeps to `def.name` (`replaySchemaCascade.ts:55,64`).
-
-**Create Supersede:** a create landing under a journaled delete's folded title, or its id, clears that record (`registryProperty.ts:68-76`).
+**The Replay Gates:** `named` folds (`replaySchemaCascade.ts:38-41`). The rename arm acts while the definition is named `to` and no definition is named `from` (`:53`), so an owed case-only rename clears itself, and replay sweeps to the definition's current name (`:55`). The option-rename arm acts while the definition holds `to` and not `from` (`:79`). A create landing under a journaled delete's folded title or id clears the record (`registryProperty.ts:68-76`). Neither Nexus holds a journal file today.
 
 ##### The Index
 
-**`page_values`:** every frontmatter key of every indexed page, as spelled, with `fold` and the JSON value; primary key `(path, key)` and one secondary index, `page_values_by_fold` (`Desktop/Store/ddl.ts:34-41`). Rows are written with `foldKey(key)` (`Desktop/Store/stores.ts:58-60,72-73`).
+**`page_values`:** every frontmatter key of every indexed page as spelled, with `fold` and the JSON value; primary key `(path, key)` and one secondary index, `page_values_by_fold` (`Desktop/Store/ddl.ts:34-41`). Rows are written with `foldKey(key)` (`Desktop/Store/stores.ts:67-69,82`†).
 
-**`queryKeyHolders`:** `SELECT DISTINCT path FROM page_values WHERE fold = ?` (`stores.ts:158-164`). The memory double re-folds every row (`Core/Testing/memoryStores.ts:176-181`), the shared contract test asserts folded lookups (`Core/Testing/storesContract.ts:141-142`), and without an index callers walk the corpus (`keyHolders.ts:19,29-30`). Property queries and Context queries share it: `queryMembers` without a title is `queryKeyHolders` (`Core/Index/contentIndex.ts:84-89`), reached from a whole-Context rename and a Context delete's unlink (`contextCascade.ts:64-77,121-124,132-149`).
+**Its Readers:** `queryKeyHolders` is `WHERE fold = ?` (`stores.ts:167-173`†), and its memory double re-folds every row (`Core/Testing/memoryStores.ts:182-187`†); the shared contract asserts folded lookups (`Core/Testing/storesContract.ts:166-171`†). `queryMembers` without a title routes to it (`Core/Index/contentIndex.ts:84-89`†), from the Context rename and unlink cascades (`contextCascade.ts:64-77`). Nothing else reads `fold`. Path Links' Phase 7 adds an exact read joining `page_values` on `key = ID_KEY` (`stores.ts:46-52`†) and changes no DDL or generation.
 
-**Space Relations:** `space` rows carry `qualifier = foldKey(key)` and one row per Space title the value names, the titles folded by `contextTitles` (`indexSeed.ts:62-69`; `contexts.ts:37-39`), and `queryMembers` with a title matches both (`stores.ts:165-173`). A Context key naming no Space has no relation row.
+**Space Relations:** `space` rows carry `qualifier = foldKey(key)` and one row per Space title the value names, folded by `contextTitles` (`indexSeed.ts:63-71`†), and `queryMembers` with a title matches both (`stores.ts:174-182`†).
 
-**Exact Lookups Already Exist:** `readPageRelations` narrows by `AND key = ?` (`stores.ts:145-148`), and value-link rows keep the key as spelled (`indexSeed.ts:56`).
+**Generations:** `INDEX_GENERATION` is 18, the DDL runs on every open, and only a generation mismatch drops the index tables (`ddl.ts:3,80-92`). A `key`-only predicate can't use the primary key's index, led by `path` (`ddl.ts:39`).
 
-**Generations:** `INDEX_GENERATION` is 18, the DDL runs on every open, and only a generation mismatch drops the index tables (`ddl.ts:3,80-92`), so an added `CREATE INDEX IF NOT EXISTS` lands without a bump and a changed column needs one. A `key`-only predicate can't use the primary key's index, whose leading column is `path` (`ddl.ts:39`). Nothing on disk carries a schema version (`.claude/Features/CorePM.md:110`).
+##### Row Order
 
-**Scope:** key-holder queries are intersected with Collection folders (`keyHolders.ts:14-20`; `assignment.ts:156-160`), so pages outside every Collection are never swept.
+**One Resolver:** `resolveRowOrder(items, keyOf, listed)` places listed keys first and the rest after, skipping a listed key no item has (`Core/Properties/rowOrder.ts:1-13`). The registry, the view bands, the group pipeline, and the property panel all order through it (`propertiesRegistry.ts:66`; `Core/Views/Pipeline/bandOrder.ts:13`; `Core/Views/Bands/bandRouter.ts:69-88`; `group.ts:436`; `Core/Properties/PropertyPanel.tsx:221-224`).
+
+**Every Order but One Is by Id:** the registry `order`, a Collection's `properties`, a view's `property_order`, `hidden_properties`, and `group_order`, and the Nexus-wide panel Context order (`config.order.contexts`, `Core/Nexus/readNexus.ts:72`) all list ids. A Space's `$order` lists names: `{contexts, properties}` of Context titles and property titles (`spaceSidecar.ts:60-63,89-96`), written from the panel by `nameOf` and resolved through `normalizeTitle` (`PropertyPanel.tsx:219-225,249-257`; `contextWrite.ts:198-210`). It rides in the Space's `values` rather than as a modeled field (`spaceSidecar.ts:65-87`).
+
+**Who Edits `$order`:** `withOrderEntry` (`spaceSidecar.ts:98-114`) from the property rename (`registryProperty.ts:95`), the property delete (`deleteProperty.ts:122`), the Context rename (`contextCascade.ts:37-43`), and the Context unlink (`:146`). The property delete and Context unlink sweeps already run their sidecar arm over every Space sidecar (`governedSweep.ts:86-107`; `contextCascade.ts:64-77`).
+
+**Three Reorder Paths in the Panel:** a Space writes the moved shown rows of both groups as names, the Nexus-wide Context order writes the full id list placed by `nexusReorderIndex`, and a Collection's properties go through `schema:reorder` by index (`PropertyPanel.tsx:249-277`; `Core/Properties/paneDrop.tsx:28`).
+
+**A Deleted Id:** the orders in `state.json` (Collections, Contexts, and Spaces) keep a deleted id, and the read skips it (`readNexus.ts:67-74`; `Core/Nexus/reorder.ts:37-45`; `rowOrder.ts:7-10`); views and the registry drop a deleted property's id in the passes their deletes already run (`configReach.ts:197-200`; `registryProperty.ts:175-185`).
 
 ##### Trash
 
-**No Cascade Reaches `.trash`:** page holders come from the content corpus, and `.trash` is a hidden folder outside it (`Core/Paths/exclusion.ts:79`); Space sidecars come from `.nexus/contexts` (`spaceSidecar.ts:51-57`); `reachConfig` walks only live containers (`configReach.ts:332-337`).
+**No Cascade Reaches `.trash`:** page holders come from the content corpus, which excludes `.trash` (`Core/Paths/exclusion.ts:79`); Space sidecars come from `.nexus/contexts` (`spaceSidecar.ts:51-58`); `reachConfig` walks live containers only (`configReach.ts:332-337`).
 
-**Restores:** a page or container restore runs `scrubReturning` (`spend.ts:190-197`†), which reconciles each page against the destination's page world and each sidecar against the Space world (`restoreScrub.ts:25-82`), skipping a Context key in transit by `heldKeys` (`restoreScrub.ts:74`). A property restore re-creates the definition through `createProperty`, which can step the title aside (`restoreProperty.ts:41`; `registryProperty.ts:53-56`), then `refillValues` lands each value with `writeTarget(raw, def.name, holdsList(def))` and keeps the record's spelling (`assignment.ts:56-66`). The property bundle carries the definition whole (`record.ts:58`). `refillTrashed` writes Link values back into trashed copies under `def.name`, never collapsing (`holdings.ts:129-148`; `spend.ts:281`†).
+**Restores:** a page or container restore runs `scrubReturning` (`spend.ts:190-197`), which reconciles each page against the destination's page world and each sidecar against the Space world (`restoreScrub.ts:25-82`), skipping a Context key in transit by `heldKeys` (`:74`). The scrub covers pages and Space sidecars, not a restored Collection's `property_cache`. A property restore re-creates the definition through `createProperty`, which can step its title aside (`restoreProperty.ts:41`), then `refillValues` lands each value under `writeTarget` (`assignment.ts:56-66`). `refillTrashed` writes Link values back into trashed copies under `def.name` beside whatever spelling the copy holds (`holdings.ts:128-148`; `spend.ts:281`). Path Links' Phase 8 keeps `scrubReturning`'s two closures, hoists their listings into `artifactFiles`, and adds `repairLanded` after the relocate over links only (*Path Links — Plan*, Task 8-2).
 
 **On Disk:** NexusOS's `.trash` holds 254 Markdown files and five deleted-property records; `~/Test`'s holds one deleted-property record.
 
+##### Type Changes
+
+No channel in the app sets a property's type: the type picker only creates (`PropertyFrame.tsx:226-233,294-300`), and `defEditOp` keeps `type` out (`Core/Properties/handlers.ts:120`). A type changes only through an outside edit of `properties.json`, which `oweNamedKeys` notices (`fileEvents.ts:520-537`†). The loose decoder keeps the array the type moved away from, and `optionsOf` reads the declared type's array (`properties.ts:286-306`). `seeded()` fills an empty `select_options` or `status_groups` on create and on every `editProperty` (`registryProperty.ts:33-44,166`; `properties.ts:323-348`).
+
 ##### Interop
 
-**Sapphire:** `norm` lowercases and trims, and `resolveKey` answers the exact key first, else the first key whose lowercase matches (`Sapphire/src/core/store/caseFold.ts:3-14`). Every frontmatter write resolves to the key the note already holds and reuses its raw spelling (`Sapphire/src/core/frontmatter/frontmatterSplice.ts:38,48`), and `assignProp` treats a note holding a case variant as assigned (`Sapphire/src/automations/actions.ts:81`). Its option manager matches values exactly, and its conditions fold case but not separators (`Sapphire/src/properties/options/rename.ts:38-41`; `Sapphire/src/core/rules/evaluate.ts:5,13-26`). Its only Pommora awareness is hiding `<…>` keys (`Sapphire/src/core/store/store.ts:17,248-251`).
+**Sapphire:** `resolveKey` answers the exact key first, else the first key whose lowercase matches (`Sapphire/src/core/store/caseFold.ts:3-14`), and every frontmatter write reuses the key the note holds (`Sapphire/src/core/frontmatter/frontmatterSplice.ts:38,48`). Its option manager matches values exactly, and its conditions fold case but not separators (`Sapphire/src/properties/options/rename.ts:38-41`; `Sapphire/src/core/rules/evaluate.ts:5,13-26`).
 
-**Obsidian:** In Obsidian 1.14.4, `getPropertyInfo`, `rebuildProperties`, and `setType` key property types by the lowercased name. The metadata editor's `handleUpdateKey` refuses a key that matches another key on the note once both are lowercased ("Property already exists"). Bases reads frontmatter through `getInsensitive`, and tag lookups through an exact-first, then case-blind key match. A Bases property's `displayName` keeps a display name apart from its key. All of these are in `~/Library/Application Support/obsidian/obsidian-1.14.4.asar`.
+**Obsidian:** In Obsidian 1.14.4, property types are keyed by the lowercased name, the metadata editor refuses a key matching another once both are lowercased, Bases reads frontmatter exact-first and then case-blind, and a Bases property's `displayName` stays apart from its key (`~/Library/Application Support/obsidian/obsidian-1.14.4.asar`).
 
-**YAML:** Pommora writes with `yaml@2.9.0` under the default 1.2 core schema (`pageFile.ts:90,105-108`). Spaced, hyphenated, underscored, accented, and CJK keys write bare, as do `on`, `yes`, `No`, `y`, and `n`; `null`, `true`, `~`, numerals, and indicator characters are quoted; an empty key writes in the complex-key form `? ""` (Scout 4's `yamltest.mjs`, re-run 10-17-2026). `nodeSpelledAs` keeps a held quote style for an equal string (`pageFile.ts:143-161`).
+**YAML:** Pommora writes with `yaml@2.9.0` under the 1.2 core schema (`pageFile.ts:90,105-108`); spaced, hyphenated, underscored, accented, and CJK keys write bare, as do `on`, `yes`, and `No`, while `null`, `true`, numerals, and indicator characters are quoted. `nodeSpelledAs` keeps a held quote style (`pageFile.ts:143-161`).
 
-**Sync:** the wire carries paths, mtimes, sizes, and hashes with no property keys (`Core/Sync/Contract/wire.ts:82-110`), Markdown lands whole (`Core/Sync/Arrival/land.ts:45-46`), and `properties.json` merges per definition and per field (`Core/Sync/Arrival/mergePolicy.ts:32-33`; `.claude/IssuesPM.md:198`†). Scout 3 found no Sync binding in either Nexus's `nexus.db` (the binding is `readValue('sync')`, `Core/Sync/handlers.ts:73`).
+**Sync:** the wire carries no property keys (`Core/Sync/Contract/wire.ts:82-110`), and `properties.json` merges per definition and per field (`Core/Sync/Arrival/mergePolicy.ts:32-33`).
 
 ##### Real Data
 
-**NexusOS:** 607 Markdown files, 606 with parseable frontmatter; 15 definitions, 14 in `order` (`Status` is unordered); 59 options, 28 carrying a leftover `label` equal to `value`.
-- **Case-Variant Property Keys:** three registered properties are held under a lowercase spelling: `tags` on 337 pages (with `Tags` on 2, both in `Studio`), `description` on 15, and `version` on 29. No page holds two spellings of one key.
-- **Option Words:** every held option word equals a registered title exactly, apart from two unregistered Tags members (`Events`, `Guide`) and one blank Status.
-- **Context Values:** every Context value on NexusOS pages matches its Space title exactly (*Decisions & Intention*, A-2).
-- **Separators:** no key or option word differs from a registered one by separators alone.
-- **Space Sidecars:** 10, none holding a property value.
-- **Foreign Keys:** `Priority` on 18 pages and `name` on 3.
+**NexusOS:** 606 pages with parseable frontmatter; 15 definitions; 59 options, 28 carrying a leftover `label` equal to `value`.
+- **Keys:** `tags` on 337 pages (`Tags` on 2, both in `Studio`), `description` on 15, and `version` on 29 sit under capitalized properties; no page holds two spellings of one key. `Priority` (18 pages) and `name` (3) are foreign.
+- **Option Words:** every held option word equals a registered title exactly, apart from two unregistered Tags members (`Events`, `Guide`) and one blank Status; none differs from an option by case alone.
+- **Context Values:** every one matches its Space title exactly.
+- **Configuration:** 23 option references across views, tiles, and `matrix.json`, all matching an option exactly; 64 hidden or collapsed bucket keys; no `property_cache` in its 6 Collection sidecars; no `$order` in its 10 Space sidecars, none of which holds a property value.
 
-**`~/Test`:** 33 pages, every held key and option word in registered spelling; one Space holds eight property values in registered casing.
+**`~/Test`:** 33 pages, every held key and option word in registered spelling; 5 options, 4 with a leftover `label`; one Space holds eight property values; no cache, `$order`, or option reference.
+
+##### The Converter Against Real Titles
+
+A prototype of B-5 and B-6 ran every property label, option label, Context title, and Space title in both Nexuses (109 unique) through the ten formats, 1,090 conversions: no empty key, no option or property key collision under any format, no collision with a reserved key, and no restore ambiguity within a property, an option list, a Nexus's Contexts, or a Context's Spaces. Two conversions don't round-trip, both `J. Crew` under `PascalCase` and `camelCase`. On 5,000 synthetic labels heavy in digits and punctuation, only `PascalCase` and `camelCase` failed, wherever a word ending in a digit, a punctuation mark, or a capital meets the next word; no splitting rule closes it while B-6 lowercases each word's remainder. The upper-upper-lower split never fires on real titles and matches `toKebabIconId`'s rule (`UIX/Symbols/iconRoster.ts:4-11`).
+
+**JavaScript Case Behavior:** `toUpperCase` turns `ß` into `SS` and `ﬁ` into `FI`, `toLowerCase` turns `İ` into two code units, and final sigma depends on the whole word, so lowercasing a sliced remainder gives `σ` where the word gives `ς`. An NFD label doesn't split at a hump after a combining mark, so `CaféBar` in NFD stays one word.
 
 ---
 
 #### What Leaves, Narrows, and Changes
 
-**Classification:** *Leaves* means the mechanism exists only for folded metadata identity, so nothing calls it once property keys, option words, Context keys, and Space titles under them all match exactly. *Narrows* means it survives only for uniqueness, the reserved-key refusal, the restore's match, configuration references, search, sort, or file names. *Changes* means it stays and matches by stored key or exact title. *Stays* means it's independent of metadata identity.
+**Classification:** *Leaves* means the mechanism exists only for folded metadata identity or name-keyed row order. *Narrows* means it survives only for uniqueness, the reserved-key refusal, the restore's match, search, sort, or file names. *Changes* means it stays and matches by stored key, exact title, or id. *Stays* means it's independent of metadata identity.
 
 | Mechanism | Location | Today | Under the Decisions | Note |
 | --- | --- | --- | --- | --- |
-| `foldKey`, `normalizeTitle` | `caseFold.ts:7-14` | Every fold | Narrows | Uniqueness, the reserved-key refusal, the restore's match, configuration references, search, sort, paths, and Sync paths keep them. |
-| `spellings` | `caseFold.ts:17-21` | Key and file-name spellings | Narrows | Its last caller reads directory entries (`atomicWrite.ts:322`). |
+| `foldKey`, `normalizeTitle` | `caseFold.ts:7-14` | Every fold | Narrows | Uniqueness, reserved keys, the restore's match, search, sort, paths. |
+| `spellings` | `caseFold.ts:17-21` | Key and file-name spellings | Narrows | Its last caller is `heldName` (`Core/Files/atomicWrite.ts:320-323`), where it can live privately. |
 | `compareTitles`, `matchQuery`, `rankMatches` | `caseFold.ts:23-102` | Title sort and search | Stays | |
-| `byFoldedName` | `properties.ts:49-50` | Folded title to definition | Leaves | A map by stored key replaces it at `assignment.ts:41,45`, `contextResolve.ts:59`, `schema.ts:31`, `cascade.ts:80`†, and `restoreScrub.ts:35`. |
-| `holdsList` | `properties.ts:66-69` | Whether spellings join | Leaves | Every caller joins spellings (`contextResolve.ts:100`; `propertyValue.ts:244`; `registryProperty.ts:89`; `pageValue.ts:42`; `assignment.ts:63`). |
-| `firstPerTitle` | `properties.ts:53-63` | Folded title map | Narrows | Label uniqueness keeps it (`schema.ts:76`); decode matches by stored key instead (`propertyValue.ts:52,110`). |
+| `byFoldedName` | `properties.ts:49-50` | Folded title to definition | Leaves | A map by stored key at its six callers. |
+| `holdsList` | `properties.ts:66-69` | Whether spellings join | Leaves | With the `join` parameters it feeds (`heldKeys.ts:100`; `pageFile.ts:213`). |
+| `firstPerTitle` | `properties.ts:52-63` | Folded title map | Narrows | Label uniqueness alone (`schema.ts:76`); private to `schema.ts`. |
 | `stored()` label strip | `properties.ts:308-311` | Drops a leftover option `label` | Leaves | Every option stores `label` (C-2). |
-| Option and definition fields | `properties.ts:133-171` | `name`; option `value` | Changes | `label` and `key` on both (C-2). |
-| `heldKeys`, `heldKey` | `heldKeys.ts:8-12` | Exact then fold | Leaves | Callers read `Object.hasOwn(root, key)`. |
-| `heldValue` | `heldKeys.ts:15-26` | Read one spelling or join all | Leaves | A read is `root[key]`. |
-| `writeTarget` | `heldKeys.ts:28-39` | Where a write lands among spellings | Leaves | A write lands on the key. |
-| `landValue` | `heldKeys.ts:42-48` | Write a key, retiring governed spellings | Changes | Nothing else is governed. |
-| `memberKey` | `heldKeys.ts:51` | Folded member identity | Changes | Members compare with regard to case; trimming, numeral stringification, and NFC stay (A-3). |
-| `joinValues` | `heldKeys.ts:54-58` | Folded member join | Changes | Still joins a `merge` rival's list on a Context rename. |
-| `editHeldList` | `heldKeys.ts:61-78` | Joined or per-spelling list edit | Changes | Reduces to an edit of the list under one key. |
-| `stripKeys` | `heldKeys.ts:81-84` | Exact strip | Stays | |
-| `stripHeld` | `heldKeys.ts:87-90` | Strip every spelling | Leaves | `stripKeys(root, [key])`. |
-| `rekeyHeld` | `heldKeys.ts:95-110` | JSON rename over spellings | Changes | An exact move plus the rival rule. |
-| `renameFrontmatterKey` | `pageFile.ts:208-243` | YAML rename over spellings | Changes | Exact `held`; the variants and the `join` parameter go, the rival rule stays. |
-| `mergeInto` spelling step | `pageFile.ts:171-177,181` | A written key takes a dropped spelling's place | Leaves | Only collapses reach it. |
+| Definition and option fields | `properties.ts:133-199` | `name`; option `value` | Changes | `label` and `key` on both, plus `key_format` and `value_format` (C-2, B-1). |
+| `heldKeys`, `heldKey`, `heldValue`, `writeTarget`, `stripHeld` | `heldKeys.ts:8-39,87-90` | Spelling resolution | Leaves | A read is `root[key]`, a strip is `stripKeys(root, [key])`. |
+| `landValue`, `WriteTarget` | `heldKeys.ts:28-48` | Write a key, retiring spellings | Changes | Reduces to a set-or-delete beside `setOrDrop` (`atomicWrite.ts:273-282`), which drops falsy values; one helper remains. |
+| `editHeldList` | `heldKeys.ts:61-78` | Joined or per-spelling list edit | Leaves | An edit of `listOf(raw[key])` at its three callers (`pageValue.ts:42`; `contextCascade.ts:46,161`). |
+| `memberKey`, `joinValues` | `heldKeys.ts:51-58` | Folded member identity | Changes | Members compare with regard to case; trimming, stringifying, and NFC stay (A-3). |
+| `rekeyHeld` | `heldKeys.ts:95-110` | JSON rename over spellings | Changes | An exact move with the rival rule. |
+| `renameFrontmatterKey` | `pageFile.ts:208-243` | YAML rename over spellings | Changes | Exact `held`; the variants and `join` go, the rival rule stays. |
+| `mergeInto` spelling step | `pageFile.ts:171-177,181` | A written key takes a dropped spelling's place | Leaves | The restore re-spell moves keys through `renameFrontmatterKey`, which keeps the line. |
 | `nodeSpelledAs` | `pageFile.ts:143-161` | Quote and flow style | Stays | A-3. |
-| `governorOf` | `contextResolve.ts:93-98` | Folded lookup; `name: def.name` | Changes | Exact by stored key, with the key as `name` (`:95`); the Context branch looks up the exact title. |
+| `governorOf`, `Governor.name` | `contextResolve.ts:91-98` | Folded lookup; `name: def.name` | Changes | Exact by stored key; `Governor` becomes `{def} \| {group}`. |
 | `joins`, `joinsSpellings` | `contextResolve.ts:100-106` | Whether a governed key joins | Leaves | |
-| `reconcileGovernedRoot` | `contextResolve.ts:111-157` | Reconcile every governed key | Changes | The held-key check (`:122`) and the join-and-retire branch (`:142-148`) go; re-encoding and the never-shrink guard stay, counting exactly (`:108`). |
-| `contextWorldOf` title maps | `contextResolve.ts:28-41` | Folded Context and Space titles | Changes | Exact titles for metadata reads. |
-| `groupOf`, `resolveContextKeys` | `contextResolve.ts:61-84` | Folded key, joined value | Changes | |
-| `contextTitles` | `contexts.ts:37-39` | Trimmed, folded member titles | Changes | Feeds resolution, the reconcile, and the index. |
-| Context cascades | `contextCascade.ts:36-169` | Folded keys and titles | Changes | `rekeyContext`, `retitleSpace`, `sweepMembers`, `pageLeg`, and both unlinks match exactly. |
-| Context case-only skip | `contextCascade.ts:116-119` | A case-only retitle sweeps nothing | Leaves | A case-only retitle changes `<Title>:` keys and Space-title values; `recase` re-spells the folder (`atomicWrite.ts:325-334`). |
-| Context and Space title clashes | `contextCascade.ts:214,222,273,319`; `contexts.ts:16` | Folded | Narrows | Title uniqueness (D-1, D-2, D-3). |
-| `setSpaceContext` | `contextWrite.ts:99-110` | Joined read, folded far title | Changes | |
-| Trash re-tag `reapply` | `spend.ts:292-302`† | Collapse and folded join | Changes | |
-| `heldPropertyValue` | `propertyValue.ts:241-244` | Read by title, joined | Changes | Reads `root[def.key]` on both hosts. |
-| `optionsByFold`, `registeredOption` | `propertyValue.ts:46-60` | Folded title map | Changes | A per-definition map from stored key to label. |
-| Multi-Select fold dedupe | `propertyValue.ts:108-112` | Folded | Changes | Exact. |
-| `writtenSpelling` list arm | `propertyValue.ts:184-189` | Keeps a folded held member | Changes | Exact; it keeps the wikilink shape for Link and File (`:183`). |
-| `encodeValue` | `propertyValue.ts:192-214` | Writes the title | Changes | Writes the option's stored key. |
-| `applyValueAtRoot` | `propertyValue.ts:247-256` | Collapsing optimistic write | Changes | Lands on the key. |
-| `namesValue`, `editList`, `stripList` | `pageValue.ts:11-34` | Folded member edits | Changes | Exact for keys and Context values; config labels and `$order` titles take a separate matcher (*§Config and `$order` Matching*). |
-| `valueEditRewrite`, `valueEditSweep`, `optionHolders` | `pageValue.ts:36-43`; `optionOps.ts:183-201,269-285` | One folded rewrite for both hosts | Changes | One exact rewrite still serves both hosts. |
-| `optionCascade` and `option-rename` | `optionOps.ts:203-254`; `propertyJournal.ts:11` | One pair | Changes | Widened to the whole list under one record (F-1). |
-| `registerHeldOptions` | `optionOps.ts:94-150` | Folded Multi-Select adoption | Changes | Exact recognition; a shield for a pending Value Format sweep. |
-| `cacheEdit` | `configReach.ts:308-320` | Folded edit of raw page words | Changes | Exact by key; a Value Format change reaches it (F-2). |
-| Config option arms | `configReach.ts:142-195`; `views.ts:359-375` | Titles, mixed fold and exact | Changes | They name options by label under one matching rule the plan chooses (F-2). |
-| `filter.ts` text evaluation | `filter.ts:83,244-267` | Folded text match on shown values | Stays | A search behavior over labels. |
-| `writtenRoot` | `governedWrite.ts:16-21` | Collapse, reconcile, spell | Changes | Lands on the key, with no collapse. |
+| `reconcileGovernedRoot` | `contextResolve.ts:111-157` | Reconcile every governed key | Changes | The held-key check and the join-and-retire branch go; re-encoding and the never-shrink guard stay, counting exactly. |
+| `contextWorldOf`, `groupOf`, `contextTitles` | `contextResolve.ts:28-84`; `contexts.ts:37-39` | Folded Context and Space titles | Changes | Exact titles, trimmed and NFC. |
+| Context cascades | `contextCascade.ts:34-169` | Folded keys and titles | Changes | Exact; `rekeyContext` loses its `$order` edit (F-5). |
+| Context case-only skip | `contextCascade.ts:116-119` | A case-only retitle sweeps nothing | Leaves | After the YAML rename is exact. |
+| Context and Space title clashes | `contextCascade.ts:214,222,273,319` | Folded | Narrows | D-3. |
+| `setSpaceContext`, Trash re-tag | `contextWrite.ts:99-110`; `spend.ts:292-302` | Joined, folded | Changes | |
+| `heldPropertyValue` | `propertyValue.ts:241-244` | Read by title, joined | Changes | `root[def.key]` on both hosts. |
+| `optionsByFold`, `registeredOption` | `propertyValue.ts:46-60` | Folded title map | Changes | One cached map per definition from key to label. |
+| Multi-Select decode | `propertyValue.ts:108-112` | Folded dedupe; unregistered kept | Changes | Exact; unrecognized words leave the decoded value (E-3). |
+| `unregisteredMembers` | `propertyValue.ts:129-134` | Built on decode | Changes | Reads the raw list minus stored keys, filtered by the Value Format (E-1); its type check duplicates `optionOps.ts:113-115`. |
+| `writtenSpelling` list arm | `propertyValue.ts:184-189` | Keeps a folded held member | Changes | Exact; keeps the wikilink shape for Link and File. |
+| `encodeValue` | `propertyValue.ts:192-214` | Writes the decoded word | Changes | `encodeValue(def, value)` maps label to key. |
+| `applyValueAtRoot`, `writtenRoot` | `propertyValue.ts:247-256`; `governedWrite.ts:16-21` | Collapsing write | Changes | Land on the key; a Multi-Select appends the file's unrecognized words (E-3). |
+| `ValueEdit`, `namesValue`, `editList`, `stripList` | `pageValue.ts:8-34` | Folded member edits, two branches | Changes | One key map (`from → to \| null`) in one pass serves a rename, a strip, a Value Format change, and the restore re-spell. |
+| `valueEditRewrite`, `valueEditSweep`, `valueEditPlan` | `pageValue.ts:36-43`; `optionOps.ts:183-201` | One folded rewrite for both hosts | Changes | Take the key map; `valueEditSweep` folds into the plan plus a sweep. |
+| `optionCascade`, `OptionReach`, `option-rename` | `optionOps.ts:203-254`; `configReach.ts:92`; `propertyJournal.ts:11` | One pair for files, cache, and configuration | Changes | Key pairs for files and the cache, a label pair for configuration (F-1, F-2). |
+| `cacheEdit` | `configReach.ts:308-320,367` | Folded cache edit inside `reachConfig` | Leaves | The existing `editCaches` edits caches by key (`propertyCache.ts:52-68`). |
+| `clearOption` | `optionOps.ts:256-267` | Sweeps pages and Spaces | Changes | Also strips the caches (J-1). |
+| `registerHeldOptions` | `optionOps.ts:94-150` | Folded adoption, one-word shield | Changes | Exact recognition; the shield takes every `from` key in the record. |
+| Config option arms | `configReach.ts:142-195`; `views.ts:359-375` | Mixed fold and exact | Changes | Exact by label (F-2). |
+| Select evaluator | `filter.ts:79-83,119-123` | Is and Is Not through `evaluateText` | Changes | Is and Is Not compare exactly; Contains and Starts With stay folded (F-2). |
+| `filter.ts` text evaluation | `filter.ts:244-267` | Folded text match | Stays | Search over Title, Text, and Link. |
 | `createPage`, `updatePageProperty`, `setSpaceProperty` | `page.ts:36-37,106`; `setProperty.ts:26,28` | Write `def.name` | Changes | Write `def.key`. |
-| `keyHolderFiles`, `confirmedKeyHolders`, `keyedHolders` | `keyHolders.ts:14-74` | Folded holders | Changes | Exact by key on pages and sidecars. |
-| `page_values.fold`, `page_values_by_fold`, `queryKeyHolders` | `ddl.ts:37,41`; `stores.ts:58-60,72-73,158-164`; `memoryStores.ts:176-181`; `storesContract.ts:141-142` | Folded holders for properties and Contexts | Leaves (the column and its index); Changes (the query) | No reader of `fold` remains; an exact query needs an index led by `key`, and dropping the column needs a generation bump (*§The Index Query*). |
-| `space` relation rows | `indexSeed.ts:62-69`; `stores.ts:165-173` | Folded qualifier and titles | Changes | Exact Context key and Space title. |
-| `renameSweep` | `registryProperty.ts:82-98` | One title pair for both arms | Changes | Both arms move the stored key; the `$order` edit takes the title pair. |
+| `keyHolderFiles`, `confirmedKeyHolders`, `keyedHolders` | `keyHolders.ts:14-74` | Folded holders | Changes | Exact by key. |
+| `page_values.fold`, `page_values_by_fold` | `ddl.ts:37,41`; `stores.ts:67-69,82`† | Folded holder column | Leaves | No reader remains (F-3). |
+| `queryKeyHolders`, `space` rows | `stores.ts:167-182`†; `memoryStores.ts:182-187`†; `indexSeed.ts:63-71`† | Folded | Changes | `WHERE key = ?` over a `(key, path)` index; exact Context key and Space title. |
+| `renameSweep` | `registryProperty.ts:82-98` | One title pair, `$order` always | Changes | The key arm runs when the key changes; no `$order` edit (F-5). |
 | `recased` skip | `registryProperty.ts:125-126,150` | Case-only renames skip | Leaves | A rename sweeps when the stored key changes. |
-| `bothKeyHolders`, `KEY_REFUSAL.held` | `registryProperty.ts:102-108,126-128`; `properties.ts:268-269` | Folded clash, titles named | Changes | Exact keys. |
-| `editProperty` | `registryProperty.ts:156-173` | Every field but `id`, `name` | Changes | Format fields route through the rename path (F-1). |
-| `validateName` | `schema.ts:39-50` | Folded title uniqueness | Changes | Title check stays; a key check joins it. |
-| `keyRefusal` | `schema.ts:17-27` | Folded refusal on the title | Changes | Checks the key and the label without regard to case (D-1). |
-| `validateOptionValues`, `withUniqueOptions` | `schema.ts:71-91` | Folded title uniqueness | Changes | Label check stays; a key check joins it. |
-| Registry admission | `propertiesRegistry.ts:29-37` | First per folded title | Changes | Also first per key. |
-| `freeName` on create | `names.ts:56-64` | Folded titles | Changes | The step-aside also has to clear keys. |
+| `bothKeyHolders`, `KEY_REFUSAL.held` | `registryProperty.ts:102-108`; `properties.ts:268-269` | Folded clash, titles, "files" | Changes | Exact keys, named as keys, counted in Items (J-1). |
+| `editProperty` | `registryProperty.ts:156-173` | Every field but `id`, `name` | Changes | Format fields route through the rename paths (F-1). |
+| `validateName`, `keyRefusal`, `validateOptionValues`, admission, `freeName` | `schema.ts:17-91`; `propertiesRegistry.ts:29-37`; `names.ts:53-64` | Folded on titles | Changes | Check the label and the key without regard to case (D-1, D-2); the step-aside iterates until the key is free. |
 | Create supersede | `registryProperty.ts:68-76` | Folded title or id | Changes | The record's key. |
-| Replay `named` | `replaySchemaCascade.ts:38-61` | Folded title gate | Leaves | Gates compare stored keys. |
+| Replay `named` and gates | `replaySchemaCascade.ts:38-93` | Folded titles | Leaves (`named`); Changes (gates) | Stored keys, exactly; the rename gate becomes "moved off `from`". |
 | `SchemaJournal` records | `propertyJournal.ts:8-43` | Titles | Changes | Keys, and pairs for options (F-1). |
-| `linkKeysOf` | `schema.ts:30-36` | Folded key to type | Changes | Exact by key; `cascade.ts:218`† passes a title. |
-| Delete-cascade Link strip | `cascade.ts:68-142`† | Folded lookup, dedupe | Changes | The dedupe (`:125`) goes. |
+| `linkKeysOf` | `schema.ts:30-36` | Folded key to type | Changes | Exact by key; `cascade.ts:218`'s gate passes keys. |
+| Delete-cascade Link strip | `cascade.ts:68-142` | Folded lookup, dedupe | Changes | The dedupe (`:125`) goes. |
+| `propertyHolders`, `optionHolders`' loop | `deleteProperty.ts:80-84`; `optionOps.ts:269-285` | Two counters | Leaves (the loop); Changes (`propertyHolders`) | Plan builders for one dry-run counter (F-4). |
+| `askHolding` | `confirmations.ts:109-116` | Always asks | Changes | Skips at the count each caller names (F-4). |
 | Restore scrub | `restoreScrub.ts:25-82` | Folded worlds and links | Changes | Gains the restore re-spell (G-1). |
-| Repair on open | `repairSweep.ts:17-45` | Folded reconcile | Changes, through the world | Exact (G-2). |
-| `refillValues`, `refillTrashed` | `assignment.ts:49-67`; `holdings.ts:129-148` | Write `def.name` among spellings | Changes | Write the key. |
-| `oweNamedKeys` | `fileEvents.ts:513-530`† | Folded title change owes adoption | Changes | A key change owes it. |
-| `useValuesEpoch`, `rekeyOverrides`, `bumpValuesEpoch` | `useContainerValues.ts:16-64`; `cacheSlice.ts:55-58`; `PropertyFrame.tsx:237` | Folded re-key by title | Changes | Carry keys. |
+| Repair on open | `repairSweep.ts:17-45` | Folded reconcile | Changes | Exact (G-2). |
+| `refillValues`, `refillTrashed` | `assignment.ts:49-67`; `holdings.ts:128-148` | Write `def.name` among spellings | Changes | Write the key. |
+| `oweNamedKeys` | `fileEvents.ts:520-537`† | Folded title change owes adoption | Changes | A key or Value Format change owes it. |
+| `useValuesEpoch`, `rekeyOverrides`, rename reply | `Core/Views/Host/useContainerValues.ts:16-64`; `Core/Session/cacheSlice.ts:55-58`; `PropertyFrame.tsx:237`; `registryProperty.ts:100,152` | Re-key by title | Changes | Carry the key pair; nothing re-keys when the key didn't change. |
 | PropertyPanel `held`, Matrix `answers` | `PropertyPanel.tsx:213-216`; `matrixInput.ts:81-101` | Folded | Changes | `Object.hasOwn(fm, def.key)`. |
-| Space `$order` | `PropertyPanel.tsx:218-225`; `spaceSidecar.ts:98-114` | Titles, folded | Stays | Row order by title (*§Config and `$order` Matching*). |
-| Search and Connections title folds | `caseFold.ts:48-102`; `Core/Connections/*` | Titles | Stays | Outside metadata identity. |
+| `withOrderEntry` | `spaceSidecar.ts:98-114` | `$order` title edit | Leaves | Renames don't touch `$order`; a delete drops an id inside its existing sweep (F-5). |
+| `SpaceRowOrder`, `readSpaceRowOrder`, `setSpaceRowOrder` | `spaceSidecar.ts:60-96`; `contextWrite.ts:198-210`; `Core/Nexus/mutateRequest.ts:105` | Two name lists in `values` | Changes | One id list, a modeled field of the Space (F-5). |
+| Panel row order | `PropertyPanel.tsx:219-277` | Names, folded; three reorder paths | Changes | Both groups resolve by id; the Space reorder takes the Nexus-wide path's shape. |
+| `seeded()` | `registryProperty.ts:33-44` | Seeds titles | Changes | Seed keys through the Value Format. |
+| Search and Connections title folds | `caseFold.ts:48-102`; `Core/Connections/*` | Titles | Stays | |
 | `heldName`, `recase` | `atomicWrite.ts:320-334` | File-name spellings | Stays | A case-insensitive disk. |
 
-**The Removal Yield:** with every metadata key and value matching exactly, the spelling machinery in `heldKeys.ts` goes: `heldKeys`, `heldKey`, `heldValue`, `writeTarget`, and `stripHeld`, with `editHeldList` and `rekeyHeld` reduced to single-key forms. So do `byFoldedName`, `holdsList`, `joins` and `joinsSpellings`, the reconcile's join-and-retire branch, `mergeInto`'s spelling step, `renameFrontmatterKey`'s variants and `join` parameter, the property and Context case-only skips, the folded replay gate, the `stored()` label strip, and the index's `fold` column with its index, its writer argument, and the memory double's fold. The folds that stay serve uniqueness of property and option labels and keys and of Context and Space titles, the restore's match, configuration matched by label, Space `$order` by title, search and sort, and file names on a case-insensitive disk. The additions are a case-conversion module for the ten formats, `label` and `key` on every property and option with a one-time rewrite of the two `properties.json` files and six deleted-property records (C-3), key-uniqueness and reserved-key checks on keys, two settings rows, a format change routed through the rename path and a widened option rename with its journal record (F-1), the restore re-spell (G-1), an exact key index (F-3), a dry-run counter for the confirmations (F-4), the Multi-Select write carrying unrecognized words from the file (E-3), the adoption shield widened to a Value Format change's whole list (F-1), and the create step-aside clearing keys (D-1). One rule for both hosts means the shared fan-outs keep one closure. Whether the line count falls depends mostly on the conversion module and the restore re-spell against the removed spelling paths; the `name` to `label` and `value` to `key` renames touch many lines without adding mechanisms.
+**The Removal Yield:** with every metadata key and value matching exactly and every row order by id, the spelling machinery in `heldKeys.ts` goes (`heldKeys`, `heldKey`, `heldValue`, `writeTarget`, `stripHeld`, `editHeldList`, `WriteTarget`), with `landValue` reduced to one set-or-delete and `rekeyHeld` to an exact move. So do `byFoldedName`, `holdsList` and the two `join` parameters, `joins` and `joinsSpellings`, `Governor.name`, the reconcile's join-and-retire branch, `mergeInto`'s spelling step, the property and Context case-only skips, the folded replay gate, the `stored()` label strip, `cacheEdit`, `optionHolders`' loop, `withOrderEntry` and its four call sites, `ValueEdit`'s two branches, the `$order` name folds, and the index's `fold` column with its index, writer argument, and memory fold. The additions are a converter for the ten formats; `label`, `key`, and the two format fields with a one-time registry rewrite (C-3); key checks beside the label checks; the two settings rows; the format changes routed through the rename paths, with the option rename widened to a key map and a label pair; the crossing refusal and the owed-record refusal; the restore re-spell; an exact key index; a dry mode on the sweep for every count; the Multi-Select append; adoption reading raw words; and the create step-aside clearing keys.
 
 ---
 
 #### What's Reusable
 
-- **The Exact Primitives:** `landValue` and `stripKeys` (`heldKeys.ts:42-48,81-84`).
-- **The Shared Fan-Outs:** one closure already serves pages and sidecars at each fan-out in *§Key Identity Today*, and one stored key keeps it that way.
-- **`renameSweep` as the Key Format Engine:** it already runs a YAML arm for pages and a JSON arm for sidecars (`registryProperty.ts:93-96`); a Key Format change is a rename from the old stored key to the new one with no title change, so the `$order` edit has nothing to do.
-- **The Option Rename as the Value Format Engine:** `renameOption`, `optionCascade`, `valueEditRewrite`, the journal arm, and Try Again (`optionOps.ts:203-254`; `replaySchemaCascade.ts:74-81`), widened from one pair to a list (F-1).
-- **The Rename Path:** validate, journal, commit, sweep, clear, and Try Again (`registryProperty.ts:111-154`; `propertyWrite.ts:10-24`), with `registryChannel` and `cascadeReply` on the bridge side (`handlers.ts:54,66-75`).
-- **The `Matcher` Type:** `pageValue.ts:9`, for the label matcher that config and `$order` keep beside the exact one.
-- **The Dry-Run Pieces:** `sweepParse`, `rewriteRaw`, and `changedKeys` (`pageFile.ts:268-274`; `governedSweep.ts:43-56`).
-- **The Label Precedents:** `PickOption.label` (`properties.ts:284`), the Status group `label` (`properties.ts:158-165`), and the Context pick split (`contextOptions.ts:31-36`).
-- **Definition-Level Settings:** a zod field on `propertyDefinitionFields` (`properties.ts:169-199`), carried through rewrites by `looseDecoder` (`properties.ts:1`) and merged per field by `mergeKeys` (`propertiesRegistry.ts:110`).
-- **The Settings Row:** `pickerRow` (`UIX/Menus/MenuIndex.tsx:54-77`) and the const-array-plus-labels pattern of `LINK_FORMAT_OPTIONS` (`Core/Properties/Schema/linkFormatOptions.ts:5-8`; `properties.ts:109-121`). The panel's shared insertion point sits between the separator and `SETTINGS[def.type]` (`PropertyFrame.tsx:427-428`), and the option-type predicate is `PROPERTY_TYPES[def.type].options !== undefined` (`PropertyFrame.tsx:391-392`).
-- **Case Helpers:** `capitalize` (`UIX/Utilities/capitalize.ts:1`) and `checkedSpelling`'s casing mirror (`propertyValue.ts:167-174`). No helper splits free-typed titles into words; `toKebabIconId` splits only on case and digit boundaries (`UIX/Symbols/iconRoster.ts:4-11`).
-- **`recase`:** re-spells a folder whose case alone changed (`atomicWrite.ts:325-334`).
-- **The Live Drive:** `.claude/scripts/Metadata Spelling Drive/live-drive.mjs` seeds spellings across casings and quote styles and checks bytes, reads, writes, and five cascades.
+- **The Exact Primitives:** `stripKeys` and `setOrDrop` (`heldKeys.ts:81-84`; `atomicWrite.ts:273-282`).
+- **The Shared Fan-Outs:** one closure already serves pages and sidecars at each fan-out, and one stored key keeps it that way.
+- **`renameSweep` as the Key Format Engine:** its YAML arm for pages and JSON arm for sidecars (`registryProperty.ts:93-96`); a Key Format change is a rename from the old stored key to the new one.
+- **The Option Rename as the Value Format Engine:** `renameOption`, `optionCascade`, `valueEditRewrite`, the journal arm, and Try Again (`optionOps.ts:203-254`; `replaySchemaCascade.ts:74-81`; `Core/Properties/propertyWrite.ts:10-24`).
+- **`editCaches`:** the targeted cache editor the page-rename cascade already uses, scoped by `node.cached` (`propertyCache.ts:52-68`; `cascade.ts:225`).
+- **The Dry-Run Pieces:** `sweepParse`, `rewriteRaw`, and `changedKeys` (`pageFile.ts:268-274`; `governedSweep.ts:43-56`), private to the sweep.
+- **`resolveRowOrder` and `nexusReorderIndex`:** the one order resolver and the Nexus-wide reorder placement (`rowOrder.ts:1-13`; `paneDrop.tsx:28`).
+- **Definition-Level Settings:** a zod field on `propertyDefinitionFields`, as `link_display` is (`properties.ts:169-199`), carried by `looseDecoder` and merged per field (`propertiesRegistry.ts:110`).
+- **The Settings Row:** `pickerRow` with its `caption` slot (`UIX/Menus/MenuIndex.tsx:20-77`), the `LINK_FORMAT_OPTIONS` pattern with the default first (`Core/Properties/Schema/linkFormatOptions.ts:1-8`), the shared insertion point between the separator and `SETTINGS[def.type]` (`PropertyFrame.tsx:427-428`), and the option-type predicate `PROPERTY_TYPES[def.type].options` (`PropertyFrame.tsx:391-392`).
+- **The Registry Rewrite's Shape:** `migrateConfig`'s field rewrite and `.trash` walk (`Core/Nexus/migrateConfig.ts:44-72`), run once as a script for C-3.
+- **The Live Drive:** `.claude/scripts/Metadata Spelling Drive/live-drive.mjs`, which seeds spellings across casings and quote styles and checks bytes, reads, writes, and five cascades.
 
 ---
 
 #### Approaches Worth Weighing
 
-Each fork the reports raised, with its options and evidence, and the entry in *MetadataV3 — Decisions & Intention* that settles it.
+Each fork the reports raised, with its evidence and the entry in *MetadataV3 — Decisions & Intention* that settles it.
 
 ##### What Exact Includes
 
 **Serves:** A-1 and A-3. **Settled:** A-3.
 
-`normalizeTitle` bundles stringifying, trimming, lowercasing, and NFC (`caseFold.ts:12-14`), and only the lowercasing is casing identity. An outside `- 2024` names option "2024" (`propertyValue.ts:42-44`), a member with stray spaces names its option, and an NFD key from another tool matches an NFC title. Byte-exact matching drops all three; matching on the stringified, trimmed, NFC form keeps them while ending the case fold, which is A-3. `normalizePropertyName` already NFCs titles on entry (`properties.ts:272-274`).
+`normalizeTitle` bundles stringifying, trimming, lowercasing, and NFC (`caseFold.ts:12-14`), and only the lowercasing is casing identity. Matching on the stringified, trimmed, NFC form keeps an outside `- 2024`, stray spaces, and an NFD key matching while ending the case fold.
+
+##### Decoded Values Hold Labels
+
+**Serves:** C-1, C-2, and F-2. **Settled:** C-2 and F-2.
+
+A decoded Select, Status, or Multi-Select value holds labels, decode maps stored key to label through one cached map per definition, and `encodeValue(def, value)` maps label to key at its six callers, each already holding the definition. Every display, filter, sort, group, bucket key, and creation seed already works in labels, so configuration needs no change; holding keys instead would push a key-to-label lookup onto every display site. The option channels (`property:renameOption`, `removeOption`, `clearOption`, `holders`) name an option by key, which the journal records and replay compare.
 
 ##### The Case-Conversion Module
 
 **Serves:** B-2, B-5, and B-6. **Settled:** B-5 and B-6.
 
-One module can own the ten formats as a tokenizer plus join-and-case rules, living in Core beside `caseFold.ts` and using its non-locale methods. B-5 splits at spaces, hyphens, underscores, and lowercase-to-uppercase humps, keeps every other punctuation mark inside its word (`v5.0` and `J. Crew` are both held in NexusOS), and refuses a label that converts to an empty key. A word also starts at an uppercase letter between another uppercase letter and a lowercase one (`XMLHttp` splits as `XML` and `Http`), and under `PascalCase`, `camelCase`, and `Train-Case` each word's first letter takes the format's case and the rest lowercase (B-6), so `URL Slug` gives `UrlSlug` and a format converts its own output back to itself (`iPhone 17` gives `IPhone17` in `PascalCase`), apart from labels of consecutive single letters (`A B` gives `AB`, which converts to `Ab`). `lowercase` and `UPPERCASE` re-case the label as typed and keep its separators. The module also meets `İ` lowercasing to two code points, `ß` uppercasing to `SS`, final sigma, titlecase digraphs, NFD input, and uncased scripts, which a `[A-Za-z]` splitter would drop. With keys stored (C-2), a later change to the module changes only the keys it writes afterward.
+One module, `Core/Properties/keyFormat.ts`, owns the ten formats as a splitter plus join-and-case rules: `KEY_FORMATS` with `Match Title` first, `formatKey(label, format)`, and the ten spellings of a label for the restore. It sits in Core because the engine, the Trash, and the renderer all reach it, and UIX can't import Core. It NFC-normalizes the label before splitting, splits at spaces, `-`, `_`, lowercase-to-uppercase humps, and upper-upper-lower boundaries over Unicode letter classes, uses `toLowerCase` and `toUpperCase` rather than their locale forms, and lowercases whole words before uppercasing a first letter so final sigma holds. `lowercase` and `UPPERCASE` re-case the label as typed. Adoption's test is `formatKey(w, format) === w`, so the round-trip exception only withholds adoption of foreign words.
 
 ##### Uniqueness and Collisions
 
-**Serves:** Open Within the Idea 5. **Settled:** D-1, D-2, and D-3.
+**Serves:** D-1 to D-3 and F-1. **Settled:** D-1, D-2, D-3, and F-1.
 
-- **Titles and Labels:** property labels, option labels within a property, and Context and Space titles stay unique without regard to case.
-- **Property Keys:** two definitions sharing a key would read and write one value, so keys are unique, and D-1 holds them unique without regard to case: Obsidian keys property types by the lowercased name (*§Interop*), and a Sapphire write lands on a held case variant (`frontmatterSplice.ts:38`). Separator-dropping formats create clashes only the folded check catches, such as `Due Date` in camelCase (`dueDate`) beside a `Match Title` property titled `DueDate`.
-- **Option Keys:** unique and non-empty within a property, compared without regard to case (D-2). `Q3 Report` and `Q3-Report` share `q3-report` under kebab-case, `Straße` and `Strasse` share `STRASSE` under UPPERCASE, and an all-punctuation label converts to an empty key (B-5). `validateDefinition` skips Status at create (`schema.ts:64-67`), which J-1 closes.
-- **Reserved Keys:** a one-word label that folds to a modeled key (`Banner`, `Id`) is refused at creation, as today. A multi-word label can reach one through a format, as `Heading Icon Hidden` under `snake_case` gives `heading_icon_hidden`, and a format change can create that collision after the fact; D-1 refuses it on the key without regard to case.
-- **The Step-Aside:** `freeName`'s ` (2)` suffix (`names.ts:53`) has to survive the format (`name-2` in kebab-case, `name2` in camelCase), so the step-aside iterates until the key is free.
-- **YAML Typing:** formats can produce `true`, `null`, or numerals, which the writer quotes, and bare `yes`, `no`, `on`, `off`, `y`, `n`, or date-shaped words, which a YAML 1.1 reader may type (*§Interop*).
+- **Labels and Keys:** property labels and keys, option labels and keys within a property, and Context and Space titles stay unique without regard to case.
+- **Reserved Keys:** a one-word label folding to a modeled key is refused at creation; a format change reaching one, as `Heading Icon Hidden` under `snake_case`, is refused on the key.
+- **Crossing Keys:** a Value Format change can give one option a key another option holds before the change while every uniqueness check passes. An exhaustive search over 11,480 short labels found 80,480 such pairs, every one pairing `lowercase` or `UPPERCASE` with a hump-splitting format; under `lowercase` to `kebab-case`, `WifiPro` goes `wifipro` to `wifi-pro` while `WiFi-Pro` goes `wifi-pro` to `wi-fi-pro`. A hand-edited key widens it further. The refusal drops pairs whose key doesn't change and refuses when any pair's new key is another pair's old key, through the matcher replay applies.
+- **The Step-Aside:** `freeName`'s ` (2)` survives a format as `name-(2)` in `kebab-case` and `name(2)` in `camelCase`, so the step-aside iterates until the key is free.
 
 ##### Adoption
 
-**Serves:** Open Within the Idea 2. **Settled:** E-1, E-2, and E-3.
+**Serves:** E-1 and E-2. **Settled:** E-1 and E-2.
 
-- **The Word Itself:** an adopted Multi-Select word becomes the option's key and its label. Adoption admits only a word the format could have produced, so the word is what the format writes from that label.
-- **The Label Collision:** a foreign `red` beside an option labelled `Red` stays foreign, since option labels stay unique without regard to case (D-2).
-- **The Namespace:** a foreign word rides verbatim in a Multi-Select value today (`propertyValue.ts:110`), where it would share the label namespace once decode maps keys to labels. E-3 keeps unrecognized words out of the value and untouched on disk through an in-app edit.
-- **Select and Status:** Select adoption would register every foreign single word, and a list `[A, B]` would register both while reading as `B` (`propertyValue.ts:102-105`); Status adoption needs a group nothing supplies (`properties.ts:323-344`). E-2 keeps both out.
+Adoption reads the file's raw members (`optionList`, `propertyValue.ts:43-44`) minus stored keys, keeps a word the Value Format leaves unchanged and whose label duplicates no option without regard to case, and dedupes its batch by fold, first wins. The shield takes every `from` key of an owed `option-rename` with exact membership; a Key Format change's owed rename and an owed `option-remove` need none, since skipped pages hold a key no definition reads and a removed option stays in the definition until its strip lands. `oweNamedKeys` owes adoption when a key or a Value Format changes, since the format decides what's adoptable.
 
-##### Data Held Today and the Cutover
+##### E-3's Append
 
-**Serves:** Open Within the Idea 6. **Settled:** I-1, C-3 (inferred), and the *Ordering* constraint.
+**Serves:** E-3. **Settled:** E-3.
 
-- **What Goes Unread:** with exact keys under `Match Title`, NexusOS's `tags` (337 pages), `description` (15), and `version` (29) are foreign until those properties take a `lowercase` Key Format, which reads them and moves the two `Studio` pages holding `Tags` to `tags`. Every other registered key, every option word, and every Context value reads exactly (*§Real Data*), and `~/Test` reads whole.
-- **The Registry Rewrite:** the two `properties.json` files and six deleted-property records are rewritten once (C-3).
-- **The Ordering:** exact matching lands before or with the formats, since the YAML rename deletes keys on a case-only pair under today's helpers (`pageFile.ts:221-230`) and the replay gate misreads a case-only record (`replaySchemaCascade.ts:53`).
+No existing mechanism carries unrecognized words: the write path never targets a member, the never-shrink guard skips the target key, and `writtenSpelling` only re-spells what it's handed. `writtenRoot`, which both hosts share, already reads the held value; for a Multi-Select with a non-empty written list it appends the held words that are no stored key, and `applyValueAtRoot` does the same so the panel doesn't flicker. An emptied list reaches the host as a blank value and clears the key (`page.ts:103`), so emptying removes the foreign words with no added code. The append stays out of `writtenSpelling`, which the reconcile and the refill also call, so a restore still drops unrecognized words (G-2). Undo rides the same host path.
 
 ##### The Index Query
 
-**Serves:** F-3, the holder lookups. **Settled:** F-3 (inferred).
+**Serves:** F-3. **Settled:** F-3.
 
-With Context keys exact, no reader of `fold` remains, and property and Context holder queries both become exact key lookups. A `key`-only predicate needs an index led by `key` (`ddl.ts:39`); adding one needs no generation bump (`ddl.ts:90`), and dropping `fold` is a column change that does (`ddl.ts:80-92`). An index on `(key, path)` also serves the `DISTINCT path` query. Context holder queries stay on `page_values` rather than the `space` relation rows, which miss a Context key naming no Space (`indexSeed.ts:62-69`). The memory double and the contract test change with the store (`memoryStores.ts:176-181`; `storesContract.ts:141-142`).
+`page_values` drops `fold` and `page_values_by_fold`, gains `page_values_by_key ON (key, path)`, and `queryKeyHolders` becomes `WHERE key = ?`; the writer drops its fold argument, and `space` rows carry the exact key and the trimmed NFC title. `INDEX_GENERATION` moves to 19, required both by the column change and by A-2 changing what existing `space` rows hold. Context holder queries stay on `page_values`, since `space` rows miss a Context key naming no Space. The memory double and the contract change with the store.
 
-##### Counting and the Zero Skip
+##### One Counter
 
 **Serves:** F-4. **Settled:** F-4.
 
-- **One Counter:** `countRewrites(root, files, plan)` beside `sweepGovernedRoots`, with `propertyHolders` and `optionHolders` reduced to plan builders. The count equals the reach by construction, dropping ID-less pages from the delete count and adding `$order`-only Spaces.
-- **Where the Skip Lives:** Clear and a format change are true no-ops at zero (`optionOps.ts:256-267`), while Remove and Delete still change definitions at zero (`optionOps.ts:298-300`; `deleteProperty.ts:93-131`). F-4 skips a format change's confirmation at zero or one item and Clear's at zero, and keeps Remove's and Delete's at any count, so the skip lives at those callers and the Option Picker Drive's zero-count Remove expectation holds (`live-drive.mjs:174`).
+`sweepGovernedRoots` gains a dry mode, and every arm takes `rewriteRaw`'s no-op guard (`changedKeys` for raw and sidecar arms, `next === content` for the text arm), which also stops today's spurious sidecar writes and the adoption they owe. The count is the dry run's `touched` size, unreadable files falling in `skipped`. Each confirmation counts its own operation's plan: Delete's strip plan (dropping ID-less and duplicate-ID pages and adding `$order`-holding Spaces), Clear's and Remove's strip, the Key Format change's rename plan, and the Value Format change's key map. `propertyHolders` and `optionHolders` reduce to plan builders behind `property:holders`, which takes a request shape for the two format changes. Collection caches stay out of the count, as Delete's and Remove's already leave out their cache and configuration passes. `askHolding` stays the one asker and skips at the count each caller names.
 
 ##### Recording a Format Change
 
-**Serves:** B-1 and F-1. **Settled:** F-1.
+**Serves:** F-1. **Settled:** F-1.
 
-- **The Key Format Record:** the `rename` record names both words (`propertyJournal.ts:9`). Recording stored keys lets replay gate on the definition's current key exactly; recording labels as well serves a label rename's `$order` edit.
-- **The Value Format Record:** the widened `option-rename` carries the list of `[from, to]` key pairs, with arms in `sameRecord`, `decodeSchemaJournal`, and `replay` (`propertyJournal.ts:14-43`; `replaySchemaCascade.ts:74-81`). Replay over partly swept files is safe when no word is both an old key and a new key for different options, which D-2's collision refusal or a precheck guarantees (*Decisions & Intention*, *§Open Items*).
-- **The Held-Option Shield:** `registerHeldOptions` shields only an owed `option-rename`'s single `from` (`optionOps.ts:125-135`); the widened record shields every `from`, or a settle during a partial sweep registers each unconverted Multi-Select word.
+- **Records:** `{op: 'rename', id, from, to}` with keys; `{op: 'delete', id, key}`; `{op: 'option-rename', id, keys: [from, to][], label?: [from, to]}`; `{op: 'option-remove', id, key}`, whose label replay looks up while the option is still listed. With `$order` by id, no property record carries a label.
+- **What Each Change Writes:** a Key Format change is a rename with keys only. A Value Format change carries the key pairs and no label pair, so it runs no configuration pass. An option label rename always carries the label pair and carries a key pair only when the format writes a different key from the new label.
+- **Gates:** the rename gate becomes "the definition has moved off `from` and no definition holds `from`", sweeping to the definition's current key, so a chained rename still sweeps (`replaySchemaCascade.test.ts:125-139` already expects that intent). The option-rename gate holds every `to` and no `from` among current keys.
+- **Owed Records:** an option rename, an option removal, or a Value Format change refuses when the slot holds a different record, pointing to Try Again, through the boolean `writeSchemaJournal` already returns; `removeOption`'s run-anyway branch goes with it. A property rename and a Key Format change keep running unjournaled with the record in their answer.
 - **The Read Window:** the registry commits before the sweep (`registryProperty.ts:131-150`), so a skipped file reads as foreign until Try Again lands.
-- **Interleaving:** an option edit made while a format record is owed runs unjournaled (`journalSlot.ts:37`).
+
+##### The Option Cascade
+
+**Serves:** F-1 and F-2. **Settled:** F-1, F-2, and J-1.
+
+`optionCascade(root, def, keys, label?)` runs three steps: the file sweep over the key map, `editCaches` over the key map for the Collections caching the property (counting damaged Collections as skips, as `reachConfig` does at `configReach.ts:351-353`), and `reachConfig` with the label pair only when the label changed. `cacheEdit` and its branch leave `configReach`. Clear runs the same cache strip, which closes the cleared-value return.
+
+##### Configuration Matching
+
+**Serves:** F-2. **Settled:** F-2.
+
+| | Exact | Case-Insensitive |
+| --- | --- | --- |
+| Matchers | One: `memberKey` loses its lowercasing and serves keys, labels, and Context values | Two: `editList` takes a matcher chosen at five call sites |
+| Cascade sites | None beyond the shared matcher | The file rewrites keep exact; the configuration arms pass the folded matcher |
+| Evaluation sites | Select's Is and Is Not leave the text evaluator (+5) | Folds added to `evaluateSet`, sort's rank map, group's order and tail, every bucket-key reader and writer, creation seeds, and chips |
+| Cost | About +4 lines, nothing per row | About +40 lines, a fold per row on every sort and group run |
+
+Every live reference already matches exactly, and Pommora writes each one itself. Exact matching with Select's Is and Is Not split out is the one rule.
+
+##### Row Order by Id
+
+**Serves:** F-5. **Settled:** F-5.
+
+`$order` becomes one list of property and Context ids, read by `spaceNodeFrom` as a modeled field beside `icon` and `color` rather than riding in `values`. Property ids carry a `prop_` prefix and Context ids don't, so one list serves both panel groups. The panel resolves both groups through `resolveRowOrder` keyed by id, its `nameOf`, `orderKey`, and `normalizeTitle` calls going, and the Space reorder writes the full id list placed by `nexusReorderIndex`, as the Nexus-wide Context order does. `setSpaceRowOrder` takes one list. `withOrderEntry` and its rename call sites go; the property delete and the Context unlink drop the id inside the sweeps they already run over every Space sidecar, as views and the registry drop ids in their own delete passes, while `state.json`'s orders stay stale-tolerant.
 
 ##### The Restore Re-Spell
 
 **Serves:** G-1 and G-2. **Settled:** G-1 and G-2.
 
-- **Where It Runs:** `scrubReturning`'s page text reconcile (`restoreScrub.ts:53-64`) is the one point a returning page passes through.
-- **Its Reach:** a key left from before a label rename made while the page sat in the Trash matches none of the new label's spellings and returns as foreign data.
-- **What It Recognizes:** a held key matches a current property when it equals, without regard to case, one of the ten spellings the formats write from the property's label, as `VALUE_ONE` or `valueOne` against `Value One`, and is re-spelled into the property's current key; option words match option labels the same way. Comparing against the converter's own output keeps every key Pommora wrote under an earlier format matchable, including the single-letter exception (`AB`) and length-changing case (`STRASSE`), and the match runs only when a restore lands.
-- **Ties:** two labels can share a spelling, as `Due Date` and `Due-Date` both give `due-date`. A held key that is exactly a current key takes that property, and a match naming more than one property returns as foreign data (G-1, inferred).
-- **Other Restores:** Space and Context bundles restore sidecars through the same scrub (`restoreScrub.ts:69-80`), and their property keys re-spell the same way. A property bundle restores its own definition, key included, and a step-aside on restore changes the key the refill writes under (`restoreProperty.ts:41`).
-- **What Stays:** a key matching no current property returns as foreign data, and the reconcile drops an option word matching no current option, as today.
-- **Contexts:** `<Title>:` keys and the Space titles under them match the current Contexts and Spaces by the same comparison at restore (G-1, inferred).
+- **Where:** inside `scrubReturning`'s page and sidecar closures, before `unlinked` and the reconcile, since the scrub's link map becomes an exact key map and a re-spelled Link key has to be re-spelled before it's read. Phase 8's `repairLanded` runs after the relocate over links only, so the two don't meet.
+- **Reach:** registry-wide (`tree.config.registry`), matching what the sweeps reach, so a dormant value in a Collection that doesn't assign the property re-spells too.
+- **Shape:** one respeller built per restore: the exact set of stored keys, and a map from each folded spelling of each label across the ten formats to its key, `null` marking a spelling two labels share. A held key that is a current key wins; otherwise the map answers. Keys move through `renameFrontmatterKey` on page text, which keeps the line, and the exact `rekeyHeld` on sidecars; option words go through the same key-map rewrite a Value Format change uses. Context keys and Space titles use the same respeller with each title as label and key.
+- **Rival:** `refillTrashed` can fill the current key into a trashed copy that holds an old spelling, so the exact key keeps its value and the variant stays foreign.
+- **Caches:** a Collection restored after a Value Format change holds old keys in its cache, which the reassign refill then drops; the same option map over `editCacheBlocks` reaches it.
+- **Cost:** about (15 definitions + 59 options) × 10 conversions per restore on NexusOS. A token fold would skip the converter but miss length-changing case (`Straße` and `STRASSE`) and accept spellings no format writes.
 
-##### Config and `$order` Matching
+##### Data Held Today and the Cutover
 
-**Serves:** F-2. **Settled:** F-2.
+**Serves:** I-1 and C-3. **Settled:** I-1 and C-3.
 
-Saved views, View Tiles, and the Matrix filter name options by label; their cascades fold some fields and match others exactly (`configReach.ts:142-172`; `views.ts:359-375`), and the Select filter folds where the Multi-Select filter matches exactly (`filter.ts:83,244-286`). Space `$order` stores property and Context titles matched by `normalizeTitle` (`PropertyPanel.tsx:218-225`). Labels are unique without regard to case, so either matcher picks one option or row; F-2 puts every such reference under one rule, case-insensitive or exact, chosen by the planning agent from what each costs against today's mixed matching; case-insensitive matching only reconciles references edited outside the app. Text operators keep matching as search does.
+With exact keys under `Match Title`, NexusOS's `tags`, `description`, and `version` read as foreign until those properties take a `lowercase` Key Format, which also moves the two `Studio` pages from `Tags:` to `tags:`. Every other key, option word, and Context value reads exactly. The two `properties.json` files and six deleted-property records are rewritten once by a script in `migrateConfig`'s shape, then deleted.
 
 ##### Sapphire and Obsidian
 
-**Serves:** Open Within the Idea 8. **Settled:** I-2 and D-1.
+**Serves:** I-2 and D-1. **Settled:** I-2 and D-1.
 
-- **Keys:** with keys unique without regard to case, Sapphire's exact-first resolution reads and writes Pommora's keys correctly. Keys differing only by case would let a Sapphire write land on the other property's key and merge their options, kind, and hidden state in its store (`frontmatterSplice.ts:38`; `actions.ts:81`; `store.ts:37-39,116-123`), which D-1 rules out.
-- **Values:** Sapphire treats `in-progress`, `In Progress`, and `IN_PROGRESS` as three options, its conditions fold case but not separators, and its value colors are keyed by word (`rename.ts:38-41,62,73`; `evaluate.ts:16`). Nathan's own properties take the formats their Sapphire automations and frontmatter use (I-2).
-- **Context Keys:** Sapphire hides `<…>` keys (`store.ts:248-251`).
+With keys unique without regard to case, Sapphire's exact-first resolution reads and writes Pommora's keys correctly, and Obsidian's lowercased property types never meet two Pommora keys. Sapphire treats `in-progress`, `In Progress`, and `IN_PROGRESS` as three options, so Nathan's properties take the formats their Sapphire automations use.
 
-##### The Settings Rows
+##### The Settings Rows and the Leaf
 
-**Serves:** the brief's *§The Settings Rows*. **Settled:** H-1.
+**Serves:** H-1 and J-1. **Settled:** H-1 and J-1.
 
-One shared section at `PropertyFrame.tsx:427-428` reaches all nine user types, with Value Format gated by the option-type predicate (`PropertyFrame.tsx:391-392`); H-1 places both rows there, at the top and divided from the type's own settings. A per-editor placement would repeat a row across five different wrappers. Number and Link each have a picker labelled `Format`, and Date has a `Format` heading (`Core/Properties/Schema/NumberEditor.tsx:66`; `Core/Properties/Schema/LinkEditor.tsx:51`; `Core/Properties/Schema/DateTimeEditor.tsx:32`).
+One `FormatRows` section between the separator and `SETTINGS[def.type]` (`PropertyFrame.tsx:427-428`), followed by its own separator, reaches all nine user types, Text included; the Context, Created Time, and Last Edited Time arms are unreachable, since those definitions never reach the editor (`PropertyFrame.tsx:194,374-376`). Value Format shows when `PROPERTY_TYPES[def.type].options` is set. Each row is a `pickerRow` with its hint in the caption, sending through its own channel on the rename paths rather than `defEditOp`. The ten-option pane is the panel's longest picker. The Settings leaf at `Core/Settings/frames.ts:636-651` takes the label Metadata, the key `metadata`, which nothing persists or references (`Core/Settings/SettingsWindow.tsx:35,64`), and the section title Maintenance.
+
+##### Sequencing With Path Links
+
+Phase 7 changes no DDL, so generation 19 is MetadataV3's. Phase 8 pins `spend.test.ts:1031` and `restoreScrub.test.ts:320` as passing, and MetadataV3 inverts `:1031`; landing after Path Links, MetadataV3 owns that inversion. The plan's baseline is the commit after Path Links' Phase 9.
+
+---
+
+#### Tests That Change
+
+About forty tests across twenty-one files pin folded matching; line numbers are the working tree's.
+
+- **Go With Their Subjects:** `Core/Files/heldKeys.test.ts` whole, apart from `:23` (`joinValues`), which inverts; `Core/Paths/caseFold.test.ts:86` moves to `heldName`; `Core/Files/pageFile.test.ts:292,308,322,357,368`; `Core/Properties/properties.test.ts:310`; `schema.test.ts:132`; `keyHolders.test.ts:151,157`; `deleteProperty.test.ts:218`; `assignment.test.ts:137,144`; `repairSweep.test.ts:179`; `Core/Trash/spend.test.ts:868`; `Core/Contexts/spaceSidecar.test.ts:105`.
+- **Invert:** `propertyValue.test.ts:378,385,407,445,450,458,472`; `governedWrite.test.ts:148-248`; `setSpaceProperty.test.ts:163-187`; `value.test.ts:115,134`; `contextResolve.test.ts:64-330`; `contextWrite.test.ts:150,164,289,296,308`; `keyHolders.test.ts:120,141`; `renameSweep.test.ts:86-140`; `assignment.test.ts:121,133`; `removeProperty.test.ts:116,296`; `pageValue.test.ts:92,99,103,115`; `optionOps.test.ts:437`; `registryProperty.test.ts:142,157`; `replaySchemaCascade.test.ts:125,203`; `settle.test.ts:1028,1059`†; `PropertyPanel.test.tsx:137,357`; `filter.test.ts:288,366`; `matrixInput.test.ts:172`; `cascade.test.ts:216,561`; `restoreScrub.test.ts:196,234`; `spend.test.ts:862,959,1031`; `trashRecovery.test.ts:714`; `useViewHost.test.tsx:525`; `assignValue.test.ts:47`; `contexts.test.ts:43`; `contextCascade.test.ts:143-878` (its `['Pommora','pommora']` fixture); `indexSeed.test.ts:357`†; `contentIndex.test.ts`, `indexMaintenance.test.ts:144-175`, `storesContract.ts:74,166-171`†; `Desktop/Store/open.test.ts:79,148-170`, which rewrite to the new shape.
+- **Change:** `settle.test.ts:1013-1026`† (the shield takes pairs); `replaySchemaCascade.test.ts:242,323,376` (list records); `optionOps.test.ts:616` (a dry run); `confirmations.test.ts:39-59` (the skips); `configReach.test.ts:249` (the cache strip moves).
+- **Keep Their Uniqueness Intent, With Key Cases Added:** `schema.test.ts:16,38,108`; `propertiesRegistry.test.ts:70`; `registryProperty.test.ts:78`; `names.test.ts:119`; `contextWrite.test.ts:81`; `settle.test.ts:906`†.
+- **Stay:** `propertyValue.test.ts:423,465` and the drive's Check matrix (checkbox words, A-3); `restoreProperty.test.ts:292` (a case-insensitive disk); `restoreScrub.test.ts:320`; Connections, search, and path-fold tests.
+- **The Live Drives:** the Metadata Spelling Drive's `:97,108,126,185,200,203,205` invert, its seeds move from `{name}` and `{value}` to `{label, key}`, and its descriptions at `:41,113,131,150,166,178,190` lose "in another casing". The Option Picker Drive's zero-count Remove dialog (`:174`) and its Clear at one (`:168,170`) stay, while its field reads (`:25-26,33,39,94,155,254`) move to `label` and `key`.
 
 ---
 
 #### What Contradicts the Sources
 
-- **PropertiesPM, *§Identity & Values*:** "case-folded, trimmed and NFC-normalized once at write" (`.claude/Features/PropertiesPM.md:27`) describes a stored fold, and names are stored trimmed and NFC-normalized and folded only when compared (`properties.ts:272-274`; `schema.ts:46-47`). "A write collapses the spellings into the registered one" (`PropertiesPM.md:29`) holds for `writtenRoot`; `refillValues` collapses list types, the reconcile collapses only when joining, and `refillTrashed` never collapses (`assignment.ts:63`; `contextResolve.ts:142`; `holdings.ts:141`).
-- **PropertiesPM, *§Schema Mutations*:** the "Edit options" row omits the `property_cache` reach (`PropertiesPM.md:133`; `configReach.ts:367`).
-- **The Prior Scout Findings:** Scout A calls the reserved-key fold "only a safety margin", and at HEAD it guards folded sidecar reads (`pageRow.ts:37`; `contextResolve.ts:59`). It counts five `reconcileGovernedRoot` call sites, and there are four (`governedWrite.ts:18`; `repairSweep.ts:39`; `restoreScrub.ts:55,75`). Scout C's "`renameSweep` needs the case-only short-circuit removed" omits the key-deleting path in `renameFrontmatterKey` (`pageFile.ts:221-230`). Scout D's data tallies (558 pages, `ID` 492, `Link` 1, `banner` 4, `~/Test` 10 pages) are 606, 540, 46, 49, and 33 at HEAD, and its "Sapphire makes automations write a second key" follows a stale doc (`frontmatterSplice.ts:38`). Scout B lists `openInPreview` as a live option cascade surface, which can't hold an option rule (`previewRules.ts:26,31-37`).
-- **Sapphire's Docs:** `AutomationsSPH.md:43` says actions add a second key; every write resolves to the held variant (`frontmatterSplice.ts:38`).
-- **Code Comments:** `rekeyHeld`'s doc calls it the twin of `renameFrontmatterKey` "by the same collision and join rules" (`heldKeys.ts:94`), and the two differ on a case-only pair (`heldKeys.ts:102-106`; `pageFile.ts:221-230`).
+- **PropertiesPM:** *§Identity & Values* says names are "case-folded, trimmed and NFC-normalized once at write" (`.claude/Features/PropertiesPM.md:27`), and they're stored trimmed and NFC and folded only when compared (`properties.ts:272-274`; `schema.ts:46-47`). "A write collapses the spellings into the registered one" (`:29`) holds for `writtenRoot`, while `refillTrashed` never collapses (`holdings.ts:141`). *§Schema Mutations*' "Edit options" row omits the `property_cache` reach (`:133`; `configReach.ts:367`).
+- **The Earlier Investigation:** it said a Key Format change's `$order` edit "has nothing to do", and `renameSweep` rewrites every Space whose `$order` lists the property (`registryProperty.ts:95`; `governedSweep.ts:101-105`). It said E-3's write could reuse `editList`'s in-place edit, and no write targets a member (`PropertyPicker.tsx:398-406`; `governedWrite.ts:17-18`). It said a settle mid-sweep could adopt unconverted words, and adoption shares the schema lock (`optionOps.ts:96,221-253`). It said D-2's refusal could guarantee a safe replay, and it doesn't (*§Uniqueness and Collisions*). It named only `prefer-new` as deleting a key on a case-only pair. It gave the step-aside's spellings as `name-2` and `name2`.
+- **The Planning Handoff:** it said Path Links' Phase 7 adds an ID column to `indexed_files`; the phase joins `page_values` instead (`stores.ts:46-52`†).
+- **Code Comments:** `rekeyHeld`'s doc calls it the twin of `renameFrontmatterKey` "by the same collision and join rules" (`heldKeys.ts:94`), and the two differ on a case-only pair. `Core/Platform/stores.ts:66-69`† says "in any casing" twice.
+- **Sapphire's Docs:** `AutomationsSPH.md:43` says actions add a second key, and every write resolves to the held variant (`frontmatterSplice.ts:38`).
 
 ---
 
@@ -396,110 +401,76 @@ One shared section at `PropertyFrame.tsx:427-428` reaches all nine user types, w
 
 ##### Disagreements Resolved
 
-- **Whether the Index Needs a Schema Change:** Scout 1 said no, since a folded query is a superset of exact holders; Scout 3 said add `page_values_by_key` and keep `fold` for Contexts. Both kept `fold` for Context keys, which match exactly under A-2, so `fold` has no reader left. An exact key query needs an index led by `key`, and removing the column needs a generation bump (*§The Index Query*).
-- **Stored or Derived Key:** Scout 1 favored a stored key, and Scout 2 favored deriving option words from labels. C-2 stores both words on every property and option.
-- **Whether a Key Format Change Touches Space Sidecars:** Scout 4 said it rewrites every holding page and Space sidecar. B-4 applies formats on both hosts, so it holds, and `renameSweep`'s two arms already reach both (`registryProperty.ts:93-96`).
-- **Tolerant Recognition:** Scouts 2 and 3 proposed tolerant recognizers on restore, repair, and the cache refill. G-1 and G-2 place recognition across casing and format at restore alone; live reads and repair-on-open match exactly.
-- **What Can Be Deleted:** Scout 1 found almost nothing deletable while sidecars and Context keys folded. With every metadata key and value exact, the spelling machinery listed in *§What Leaves, Narrows, and Changes* leaves.
-- **Where the Host Rule Lives:** Scout 1 weighed four ways to apply different rules to pages and sidecars. One stored key on both hosts gives one rule, and the shared fan-outs keep one closure.
-- **The Format List:** Scout 4's opinion that a smaller launch set would cover the observed data stands against B-2. It's kept as a labeled opinion.
+- **Select's Is and Is Not:** the converter scout would keep the fold as search, and the cascades scout would split Select out of the text evaluator. F-2 puts option references under one rule, and a Select cell holds only registered labels once identity is exact, so Is and Is Not compare exactly while Contains and Starts With stay search.
+- **What `$order` Holds:** the identity scout kept labels and carried them in the rename and delete records; the cascades scout proposed ids; the main session proposed keys. Ids remove `withOrderEntry`, the records' labels, and F-2's `$order` half, where keys keep the rename edit; Nathan chose ids (F-5).
+- **An Owed Record:** the cascades scout would refuse every format change, and the identity scout would refuse only a Value Format change. A property's replay follows its id and recovers a chained rename, while an option's replay and shield depend on the slot; Nathan chose refusing option renames and Value Format changes (F-1).
+- **`mergeInto`'s Spelling Step:** the identity scout would keep a pairing version so re-spelled keys hold their place; the cascades scout moves restore keys through `renameFrontmatterKey`, which keeps the line. The step goes.
+- **NexusOS Space Sidecars:** the cascades scout counted 21; the folder walk finds 10 under `.nexus/contexts` across three Contexts, matching the earlier count.
 
-##### Claims Dropped, Narrowed, or Widened
+##### Claims Narrowed or Widened
 
-- **Scout 2, "the `writtenSpelling` list arm becomes identity for page options":** dropped; a held case variant still folds to the written member and is kept (`propertyValue.ts:184-189`).
-- **Scout 1, the reconcile "works unchanged" given two changes:** narrowed; `governorOf` also returns `name: def.name` (`contextResolve.ts:95`).
-- **Scout 3, the case-only YAML rename destroys keys only on files "already spelled the new way":** widened to every holder of either spelling (`pageFile.ts:221-230`).
-- **Scout 3, "`rekeyHeld` is safe in the same case":** narrowed; it leaves the key unchanged (`heldKeys.ts:102-106`).
-- **Scout 2, "`validateDefinition` covers Select options only":** it covers Select and Multi-Select and skips Status (`schema.ts:64`; `properties.ts:39-41`).
-- **Scout 2, "a Status created with fold-duplicate options isn't checked":** narrowed; it reads deduplicated through admission (`propertiesRegistry.ts:36`).
-- **Scout 4, Obsidian's fold "unverified":** verified against Obsidian's bundled code (*§Interop*).
-- **Scouts 2 and 3, older-build and sync-lag hazards:** outside the Constraints (one Mac, no other build).
-- **Scout 2, the two-step `label` rollout for older builds:** outside C-3's one-time rewrite.
+- **Identity scout, "the YAML rename deletes only under `prefer-new`":** widened to both collision rules, run against the real function.
+- **Cascades scout, adoption triggers:** widened to every page whose values changed and every path newly in reach (`settle.ts:150-153`†).
+- **Converter scout, B-5's exception:** widened from consecutive single letters to any `PascalCase` or `camelCase` word ending in a digit, a punctuation mark, or a capital.
+- **Earlier scouts, the index needing `fold` for Contexts:** with Context keys exact, nothing reads it.
 
 ##### Citations Corrected
 
-| Report | As Cited | At `3d191b895` |
-| --- | --- | --- |
-| Scouts 1, 2, 3 | `settle.ts:112,145` | `settle.ts:116,149`† |
-| Scouts 1, 3 | `spend.ts:271` (Link refill) | `spend.ts:275`† |
-| Scouts 1, 3 | `spend.ts:274`, `:277` (refill names) | `spend.ts:281`† |
-| Scout 3 | `spend.ts:185-192` (restore scrub call) | `spend.ts:190-197`† |
-| Scout 1, Prior Scout A | `spend.ts:288-298`, `:292`, `:295` (re-tag) | `spend.ts:292-302`, `:299`† |
-| Scout 1 | `cascade.ts:55`, `:67-141`, `:79`, `:84-94`, `:86`, `:116`, `:124` | `cascade.ts:56`, `:68-142`, `:80`, `:85-95`, `:87`, `:117`, `:125`† |
-| Scout 1 | `cascade.ts:174`, `:195`, `:200`, `:210` | `cascade.ts:175`, `:196`, `:201`, `:211`† |
-| Scout 1 | `mutate.ts:145-148` (setProperty dispatch) | `mutate.ts:178-180`† |
-| Scout 3 | `schema.ts:65` (`validateOptionValues`) | Defined at `schema.ts:85-91`; `:65` is a call |
-| Scout 4 | `spaceSidecar.ts:19-25` | `spaceSidecar.ts:18-24` |
-| Scouts 1, 2 | `contextCascade.ts:115-118` (Context case-only skip) | `contextCascade.ts:116-119` |
-| Scout 4 | `registryProperty.ts:78-97` (`renameSweep`) | `registryProperty.ts:82-98` |
-| Scout 4 | `registryProperty.ts:111-155` | `registryProperty.ts:111-154` |
-| Scout 4 | `properties.ts:~262` (`KEY_REFUSAL.empty`) | `properties.ts:264` |
-| Prior Scout A | `pageFile.ts:207-243` | `pageFile.ts:208-243` |
+| As Cited | At `988f6ee43` |
+| --- | --- |
+| `stores.ts:58-60,72-73,158-164` | `stores.ts:67-69,82,167-173`† |
+| `memoryStores.ts:176-181` | `memoryStores.ts:182-187`† |
+| `storesContract.ts:141-142` | `storesContract.ts:166-171`† |
+| `indexSeed.ts:39-58`, `:56`, `:62-69` | `indexSeed.ts:41-61`, `:58`, `:63-71`† |
+| `settle.ts:116,149` | `settle.ts:117,153`† |
+| `handlers.ts:104-107` (Nexus) | `handlers.ts:104-110`† |
+| `fileEvents.ts:425-426,432,513-530` | `fileEvents.ts:432-433,439,520-537`† |
+| `mutate.ts:178-180` | `mutate.ts:185` |
 
-Every other citation the four reports make in the files opened for this investigation matched the tree. Some rest on the reports alone and should be re-opened before a plan leans on them: the view pipeline and renderer internals beyond the lines quoted here (`sort.ts`, `group.ts`, `Cells/*`, `Cards/*`, `TableView.tsx`, `propertyMenuActions.ts`, `useViewCreation.ts:246`), `columnStyles.ts`, `filterRules.ts`, Sapphire's `store.ts`, `candidateIndex.ts`, `rename.ts`, `values.ts`, and `evaluate.ts`, the Sapphire docs other than `AutomationsSPH.md:43`, and Scout 3's `nexus.db` check.
+`cascade.ts`, `mutate.ts`, and `spend.ts` match HEAD, so the earlier † on them no longer applies.
 
 ---
 
 #### Cleaned Reports
 
-##### Scout 1 — Key Side
+##### Scout 1 — Identity and the Registry
 
-**Baseline:** `3d191b895`.
+**Baseline:** `988f6ee43` and the working tree; reference counts from TypeScript's find-references over `Core/tsconfig.json`; the case-only rename checks ran the real `renameFrontmatterKey` and `rekeyHeld`.
 
-**`heldKey` Callers:** `contextResolve.ts:76,122`, `cascade.ts:125`†, `setProperty.ts:26`, `PropertyPanel.tsx:215`, `keyHolders.ts:33,38,59`, `deleteProperty.ts:62`, `useContainerValues.ts:21`, `matrixInput.ts:98`, and `heldKeys.ts:104`. Each becomes `Object.hasOwn(root, key)` against the stored key, or against the exact `<Title>:` key for the two Context sites.
+**The Split's Real Decisions:** what a decoded value holds (labels, with `encodeValue(def, value)`); `optionValues` splitting by caller; one identity for the option channels (the key); the Multi-Select read and write under E-3; the rename reply carrying the key pair; `withOrderEntry` and `OptionReach` each splitting a pair. Everything else is a mechanical rename.
 
-**`heldPropertyValue` Callers:** `value.ts:57`, `optionOps.ts:102`, `assignment.ts:60`, `deleteProperty.ts:65`, and `keyHolders.ts:66`. `registerHeldOptions` already branches on `space ?` (`optionOps.ts:113,117`).
+**Journal Needs:** the rename arm needs the old and new key and, while `$order` held labels, the old label; the delete arm needs the key; option-rename needs key pairs and a label pair; option-remove needs the key.
 
-**`writtenRoot`:** with the key exact, the target is the key and the spelling source is `raw[key]`; its four callers stay as they are (`governedWrite.ts:33`; `setProperty.ts:28`; `contextWrite.ts:109,114`).
+**Ordering Hazards, If Formats Landed on Folded Matching:** the case-only YAML rename deletes keys; the `recased` skip turns the cutover into a registry-only edit; `writeTarget` keeps an old spelling on skipped pages for good; `writtenSpelling` re-applies an old Value Format to missed members; the folded replay gate clears an owed case-only rename; folded decode beside separator formats adopts `in-progress` as a second option or drops it from a Select.
 
-**`confirmedKeyHolders`:** both loops test the stored key exactly; a format-change count is both loops.
+**Opinions (Labeled):** the decoded value should hold labels; the rename gate should be "moved off `from`"; `seeded()` must key seeds through the Value Format, since it runs on every `editProperty`; a per-field Sync merge of a label on one device and a format on another would be C-2's first real test of trusting a stored key.
 
-**`renameSweep`:** both arms move the old stored key to the new one, and a rename that doesn't change the key skips them, as when a snake_case title changes only case. The `$order` edit takes the title pair and runs when the title changes.
+##### Scout 2 — Cascades, Counts, Adoption, Restore
 
-**`deleteProperty`:** the snapshot is already split by host (`deleteProperty.ts:56-66,100`), and `stripAndRemove` strips the stored key on both arms with the `$order` edit on the title.
+**Baseline:** `988f6ee43` and the working tree.
 
-**Trash Refill:** `refillValues` and `refillTrashed` write the stored key on both hosts; `refillTrashed`'s `names` maps id to key.
+**Matching Costs:** exact, about +4 lines; case-insensitive, about +40 and a fold per row on every sort and group run.
 
-**Journal Records:** `rename { id, from, to }` carrying keys, and `delete { id, key }`.
+**Cache Split:** `cacheEdit` moves to `editCaches` by key; configuration takes the label pair alone, so a Value Format change runs no configuration pass; Clear gains the cache strip.
 
-**Create Supersede:** a new definition can share a deleted one's key without its title, or the reverse, so supersede compares keys.
+**Counter:** a dry mode on `sweepGovernedRoots` with the no-op guard on every arm.
 
-**Hazards:** replay clears an owed case-only rename under a folded gate (`replaySchemaCascade.ts:41,53`); `editProperty` changes a format field with no sweep (`registryProperty.ts:156-173`); `KEY_REFUSAL.held` and `.duplicate` name titles (`properties.ts:266-269`); the renderer epoch carries titles (`PropertyFrame.tsx:237`); an off-spelled key becomes foreign, so `linkKeysOf`'s foreign rule makes a page rename rewrite `[[…]]` inside it (`schema.ts:34`).
+**E-3:** the append in `writtenRoot` and `applyValueAtRoot`; never in `writtenSpelling`.
 
-**Opinions (Labeled):** persist the key, since deriving on-disk identity from a word-splitter is the most regret-prone choice; require keys unique folded too, which keeps every Nexus within Obsidian's and Sapphire's folding.
+**Restore:** a ten-spelling respeller in `scrubReturning` before `unlinked` and the reconcile, registry-wide, with a rival rule for `refillTrashed`'s fills.
 
-##### Scout 2 — Option Side
+**Reach:** rename and Key Format reach Collection pages and every Space sidecar; option rename and Value Format add every container sidecar, tiles, `matrix.json`, `settings.json`, and the cache; Delete adds every Collection's assignment and cache; Remove reaches one Collection; Clear reaches pages and Space sidecars. Pages outside every Collection are neither swept nor read as holders, and `/Tasks` and `/Events` need a decision when Agenda lands.
 
-**Baseline:** `35db9f366`, re-verified at `3d191b895`.
+**Opinions (Labeled):** store `$order` as ids; refuse format changes while a record is owed; the Delete dialog's "stripped from N Items" wording is Nathan's call.
 
-**References:** every config reference holds the option's title, so config keyed by label needs no migration and no reach on a format change. Option words live outside the files that hold them in two places, `property_cache` and Trash records. The property Trash bundle carries its own definition (`record.ts:58`), so its values match the format it restores.
+##### Scout 3 — Converter, Interface, Drives, Docs
 
-**Where the Key Applies:** a per-definition map from stored key to label replaces `optionsByFold` (`propertyValue.ts:46-60`), and `unregisteredMembers` and the frozen restore filter use it (`propertyValue.ts:132,162`). `encodeValue` writes the stored key, affecting `setProperty.ts:22`, `page.ts:34,104`, `contextResolve.ts:131`, `assignment.ts:58`, and `propertyValue.ts:255`. An option rename or a Value Format change rewrites files and `property_cache` from old key to new key, and config by label only when the label changes.
+**Baseline:** `988f6ee43` and the working tree; the converter prototype and its corpus runs sit in the session scratchpad.
 
-**Exact Member Helpers:** `memberCount`, `joinValues`, and `editList` merge, rename, or strip a case variant along with its option under the fold (`contextResolve.ts:108`; `heldKeys.ts:54-58`; `pageValue.ts:24-31`), so each matches exactly on values.
+**Converter Must-Dos:** NFC first and last; non-locale case methods; whole-word lowercasing; Unicode letter classes for humps; an empty-key refusal for the seven word formats, with `---` staying non-empty under the three whole-label formats.
 
-**Hazards:** Select substring filters are excluded from the cascade (`configReach.ts:121-122`); the held-option shield covers one pair (`optionOps.ts:125-135`); trashed pages and containers are reached by no cascade (`keyHolders.ts:14-20`; `configReach.ts:332-337`).
+**Interface:** the converter in `Core/Properties/keyFormat.ts` beside a `keyFormatOptions.ts` that mirrors `linkFormatOptions.ts`; one `FormatRows` section; the leaf's key free to follow its label.
 
-**Opinions (Labeled):** label as the in-app value is nearly free, since today's titles are tomorrow's labels; option ids would be a better long-term identity and don't belong in this work; Multi-Select's `string[]` can't distinguish a foreign word from a label once they share a namespace; Select and Status adoption is a separate product decision.
+**Documentation That Becomes False:** PropertiesPM (`:27,29,74,129-139`), CorePM (`:93,94,155`), ContextsPM (`:12,26,27`), PagesPM (`:8`), NexusRecordPM (`:14`), InterfacePM (`:76`), ConfigurationPM (`:136-141`), and ViewTypesPM (`:41`, Select's Is and Is Not); the project `CLAUDE.md` holds none.
 
-##### Scout 3 — Index, Counts, Sweeps
-
-**Baseline:** `35db9f366`, re-verified at `3d191b895`.
-
-**What the Live Drive Encodes:** option fold on a page (`live-drive.mjs:97,108`), option fold with the member's spelling kept (`:126`), a fold-matched option cascade (`:200`), a fold-matched key cascade (`:205`), and folded Space titles under a Context key (`:185,203`); each case reads or cascades differently once matching is exact. The byte-identity check on registration (`:244`) stays, and the seed writes options as `{ value }` (`:18,23-24,27`).
-
-**What the Drive Would Need:** Key Format cases over multi-word, digit, acronym, and reserved-adjacent titles per format, asserting page and sidecar bytes; Value Format cases per option type asserting pages, sidecars, and `property_cache` re-spelled with views still resolving; exact Context keys and Space titles; the confirmation count against files rewritten, with the zero skip; off-spelled pages after the cutover; a collision refusal; a restore re-spell; and Try Again after a forced skip.
-
-**Hazards:** a stranded journal record makes the next format change run unjournaled (`journalSlot.ts:1,37`); a file holding `Status:` and `status:` blocks a rename between them (`registryProperty.ts:126-128`); pages outside Collections aren't swept, and `/Tasks` and `/Events` need a decision when Agenda lands (`keyHolders.ts:1,19`); the count is taken outside the schema lock (`handlers.ts:181`).
-
-**Opinions (Labeled):** exact matching with a journaled migration is one step and formats a second; build the dry-run counter now; restrict the zero skip to format changes and Clear; a `.nexus` format marker would be the cheapest gate for future changes.
-
-##### Scout 4 — Interop, Editor, Data
-
-**Baseline:** `74b4ff18f` for Pommora, Sapphire at `d62431e1`.
-
-**Sapphire's Store:** option lists are stored verbatim per property in `data.json` and looked up through `resolveKey` (`store.ts:37-39,116-123`); derived kind sets are lowercase-keyed, so a kind set on one of two case-variant entries applies to both (`store.ts:109-114,151-167`); `isManageable` excludes `tags` and `aliases` in any case (`Sapphire/src/core/store/propertyKinds.ts:19-21`); the suggestion tally pools case-variant keys (`Sapphire/src/properties/options/candidateIndex.ts`). Its live store holds lowercase `price` and `version` where Pommora's titles are `Price` and `Version`, and its automations name `Status`, `Priority`, and `Timeframe`, which pages hold exactly.
-
-**`types.json`:** NexusOS's Obsidian types hold `aliases`, `cssclasses`, `tags`, `banner`, and `version` lowercase and `Status`, `Areas`, `Projects`, `Priority`, `Price`, `Brand`, and `Color` capitalized (`~/NexusOS/.obsidian/types.json`).
-
-**Opinions (Labeled):** one shared Format section at `PropertyFrame.tsx:427`; the real data argues for lowercase as the one non-default Key Format that matters, and a smaller launch set (B-2 fixes the list); Value Format has no observed demand and is the source of the worst Sapphire interop, so Key Format could ship first; refuse two properties whose keys fold alike; update `AutomationsSPH.md:43`.
+**Opinions (Labeled):** keep the upper-upper-lower split as defensive; assert the corpus's real round-trip figure rather than zero; the duplicate-looking `work` beside `Work` deserves a ruling (E-3 settles it).

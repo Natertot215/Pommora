@@ -1,10 +1,8 @@
-import { isPlainObject } from '../Contract/validators'
 import { parseContextKey } from './contexts'
-import { asString } from '../Nexus/coerce'
+import { asString, asStringArray } from '../Nexus/coerce'
 import type { Json } from '../Files/stableJson'
 import type { Rewrite } from '../Properties/governedSweep'
-import { editList } from '../Properties/pageValue'
-import { pathExists, readJsonObject } from '../Files/atomicWrite'
+import { pathExists, readJsonObject, withoutId } from '../Files/atomicWrite'
 import { visibleFolders } from '../Files/walk'
 import { contextsDir, sidecarPath } from '../Paths/paths'
 import { join } from '../Paths/posix'
@@ -21,6 +19,7 @@ export const SPACE_MODELED_KEYS = new Set([
   'banner',
   'heading_icon_hidden',
   COLOR_KEY,
+  ORDER_KEY,
 ])
 
 /** The Spaces a Context folder holds, by folder name, and where each one's sidecar sits; a folder without a sidecar is a plain folder its reader passes over. */
@@ -57,11 +56,6 @@ export async function spaceSidecars(root: string): Promise<string[]> {
   return files
 }
 
-export interface SpaceRowOrder {
-  contexts: string[]
-  properties: string[]
-}
-
 export function spaceNodeFrom(
   sc: Json,
   at: { title: string; path: string; contextId: string },
@@ -82,34 +76,14 @@ export function spaceNodeFrom(
     banner: asString(sc.banner),
     headingIconHidden: sc.heading_icon_hidden === true,
     color: asString(sc[COLOR_KEY]),
+    rowOrder: asStringArray(sc[ORDER_KEY]),
     values,
   }
 }
 
-export function readSpaceRowOrder(values: Json | undefined): SpaceRowOrder {
-  const order = values?.[ORDER_KEY]
-  const list = (k: keyof SpaceRowOrder): string[] => {
-    const entries = isPlainObject(order) ? order[k] : undefined
-    return Array.isArray(entries) ? entries.filter((e): e is string => typeof e === 'string') : []
+export const withoutOrderId =
+  (inner: Rewrite, id: string): Rewrite =>
+  (raw, file) => {
+    const kept = inner(raw, file)
+    return withoutId(kept ?? raw, ORDER_KEY, id) ?? kept
   }
-  return { contexts: list('contexts'), properties: list('properties') }
-}
-
-export function withOrderEntry(
-  inner: Rewrite,
-  list: keyof SpaceRowOrder,
-  from: string,
-  to: string | null,
-): Rewrite {
-  return (raw, file) => {
-    const keyed = inner(raw, file)
-    const cur = keyed ?? raw
-    const order = cur[ORDER_KEY]
-    const entries = isPlainObject(order) ? order[list] : undefined
-    const next =
-      Array.isArray(entries) &&
-      editList(entries, from, to === null ? { op: 'strip' } : { op: 'replace', to })
-    if (!isPlainObject(order) || !next) return keyed
-    return { ...cur, [ORDER_KEY]: { ...order, [list]: next } }
-  }
-}

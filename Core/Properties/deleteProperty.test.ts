@@ -197,14 +197,15 @@ describe('a global delete reaches a Space sidecar', () => {
     return record as unknown as { values: Record<string, unknown>; partial?: true }
   }
 
-  it('captures the value under the sidecar id and strips the key and its $order entry', async () => {
+  it('captures the value under the sidecar id and strips the key and its $order id', async () => {
     const id = await mkProperty()
     const file = await seedSpace('Pommora', {
       id: 'sp1',
       Priority: ['hi'],
       $icon: 'box',
-      $order: { properties: ['Priority', 'Other'] },
+      $order: [id, 'prop_other'],
     })
+    const listing = await seedSpace('Sapphire', { id: 'sp2', $order: [id] })
 
     expect((await deleteProperty(root, id)).ok).toBe(true)
 
@@ -212,7 +213,8 @@ describe('a global delete reaches a Space sidecar', () => {
     const raw = await readJsonAt(file)
     expect('Priority' in raw).toBe(false)
     expect(raw.$icon).toBe('box')
-    expect(raw.$order).toEqual({ properties: ['Other'] })
+    expect(raw.$order).toEqual(['prop_other'])
+    expect('$order' in (await readJsonAt(listing))).toBe(false)
   })
 
   it('strips every spelling from a page and a Space and records the joined value', async () => {

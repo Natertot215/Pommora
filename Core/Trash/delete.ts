@@ -77,7 +77,7 @@ export async function deleteOp(
       if (bundle) await machine().remove(bundle)
       return removed
     }
-    const swept = await unlinkContextKey(root, title, abs).catch(async (e) => {
+    const swept = await unlinkContextKey(root, title, entry?.id, abs).catch(async (e) => {
       // A sweep cut short puts the entry back where it stood, so the Context can be deleted again.
       if (entry) await mutateRegistryFile(root, withContextAt(entry, at))
       return unmint(e)

@@ -22,7 +22,7 @@ import { heldPropertyValue } from './propertyValue'
 import { patchSidecar } from '../Files/sidecar'
 import { readJsonObject } from '../Files/atomicWrite'
 import { sidecarPath } from '../Paths/paths'
-import { spaceSidecars, withOrderEntry } from '../Contexts/spaceSidecar'
+import { spaceSidecars, withoutOrderId } from '../Contexts/spaceSidecar'
 
 import { isPlainObject } from '../Contract/validators'
 import { ok, type Result } from '../Contract/result'
@@ -119,7 +119,7 @@ export async function stripAndRemove(
   const raw = stripHeld(key)
   const swept = await sweepGovernedRoots(root, files, {
     raw,
-    sidecars: withOrderEntry(raw, 'properties', key, null),
+    sidecars: withoutOrderId(raw, propertyId),
   })
   for (const folder of folders) await unassignAndPurge(folder, propertyId)
   const reach = await reachConfig(root, { kind: 'property', propertyId })

@@ -31,16 +31,21 @@ let host: HTMLDivElement
 let root: Root
 let ask: ReturnType<typeof vi.fn>
 
-const spaceNode = (values?: Record<string, unknown>): unknown => ({
+const spaceNode = (values?: Record<string, unknown>, rowOrder?: string[]): unknown => ({
   kind: 'space',
   id: 'area_work',
   title: 'Work',
   path: '.nexus/contexts/Areas/Work',
   contextId: 'ctx_areas',
+  rowOrder,
   values,
 })
 
-const setTree = (values?: Record<string, unknown>, contextOrder?: string[]): void => {
+const setTree = (
+  values?: Record<string, unknown>,
+  contextOrder?: string[],
+  spaceOrder?: string[],
+): void => {
   useSession.setState({
     assetMap: {} as never,
     mutate: vi.fn(async () => ({})) as never,
@@ -55,7 +60,7 @@ const setTree = (values?: Record<string, unknown>, contextOrder?: string[]): voi
       contexts: [
         {
           def: { id: 'ctx_areas', title: 'Areas', singular: 'Area' },
-          spaces: [spaceNode(values)],
+          spaces: [spaceNode(values, spaceOrder)],
         },
         {
           def: { id: 'ctx_topics', title: 'Topics', singular: 'Topic' },
@@ -346,18 +351,12 @@ describe('PropertyPanel', () => {
   })
 
   it('a Space’s property rows read its own $order, unlisted last', async () => {
-    setTree({ Stage: 'Alpha', Note: 5, Rank: 7, $order: { properties: ['Note', 'Stage'] } })
+    setTree({ Stage: 'Alpha', Note: 5, Rank: 7 }, undefined, ['prop_note', 'prop_stage'])
     await renderPanel(<PropertyPanel subject={SPACE} host="dropdown" />)
     const read = text()
     expect(read).toContain('Note')
     expect(read.indexOf('Note')).toBeLessThan(read.indexOf('Stage'))
     expect(read.indexOf('Stage')).toBeLessThan(read.indexOf('Rank'))
-  })
-
-  it('a Space’s $order lists a row under any spelling of its name', async () => {
-    setTree({ Stage: 'Alpha', Rank: 7, $order: { properties: ['rank'] } })
-    await renderPanel(<PropertyPanel subject={SPACE} host="dropdown" />)
-    expect(text().indexOf('Rank')).toBeLessThan(text().indexOf('Stage'))
   })
 })
 
@@ -418,6 +417,9 @@ describe('the property row drag', () => {
   const drag = async (id: string, from: number, ...to: number[]): Promise<void> => {
     cachePageDetail(detail({ path: 'Col/Page.md', frontmatter: { Stage: 'Alpha', Note: 3 } }))
     await renderPanel(<PropertyPanel subject={PAGE} host="side-pane" />)
+    await pull(id, from, ...to)
+  }
+  const pull = async (id: string, from: number, ...to: number[]): Promise<void> => {
     stubRect(row('prop_stage').closest('.line-zone')!, { top: 0, bottom: 40 })
     stubRect(row('prop_stage'), { top: 0, bottom: 20 })
     stubRect(row('prop_note'), { top: 20, bottom: 40 })
@@ -441,5 +443,16 @@ describe('the property row drag', () => {
       expect.anything(),
       expect.anything(),
     )
+  })
+
+  it('a Space reorder writes its shown rows by id', async () => {
+    setTree({ Stage: 'Alpha', Note: 3 })
+    await renderPanel(<PropertyPanel subject={SPACE} host="side-pane" />)
+    await pull('prop_note', 30, 15, 2)
+    expect(useSession.getState().mutate).toHaveBeenCalledWith({
+      op: 'setSpaceRowOrder',
+      path: '.nexus/contexts/Areas/Work',
+      ids: ['prop_note', 'prop_stage'],
+    })
   })
 })

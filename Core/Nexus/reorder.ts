@@ -1,5 +1,5 @@
 import { isPlainObject } from '../Contract/validators'
-import { pathExists, updateNexusConfig } from '../Files/atomicWrite'
+import { pathExists, updateNexusConfig, withIds, withoutId } from '../Files/atomicWrite'
 import { patchSidecar } from '../Files/sidecar'
 import { sidecarPath } from '../Paths/paths'
 import { ok, type Result } from '../Contract/result'
@@ -63,36 +63,17 @@ const patchContainer = async (
   return ok(null)
 }
 
-const withOrder = (
-  cur: Record<string, unknown>,
-  key: ContainerOrderKey,
-  ids: string[],
-): Record<string, unknown> => {
-  const { [key]: _, ...rest } = cur
-  return ids.length > 0 ? { ...cur, [key]: ids } : rest
-}
-
 export const dropFromChildOrder = (
   absFolder: string,
   key: ContainerOrderKey,
   id: string,
-): Promise<Result<unknown>> =>
-  patchContainer(absFolder, (cur) => {
-    const ids = cur[key]
-    return Array.isArray(ids) && ids.includes(id)
-      ? withOrder(
-          cur,
-          key,
-          ids.filter((x) => x !== id),
-        )
-      : null
-  })
+): Promise<Result<unknown>> => patchContainer(absFolder, (cur) => withoutId(cur, key, id))
 
 export async function setChildOrder(
   absFolder: string,
   key: ContainerOrderKey,
   ids: string[],
 ): Promise<Result<null>> {
-  const r = await patchContainer(absFolder, (cur) => withOrder(cur, key, ids))
+  const r = await patchContainer(absFolder, (cur) => withIds(cur, key, ids))
   return r.ok ? ok(null) : r
 }

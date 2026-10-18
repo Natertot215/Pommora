@@ -18,7 +18,6 @@ import { collectionFolders } from './assignment'
 import { confirmedKeyHolders, keyHolderFiles } from './keyHolders'
 import { sweepGovernedRoots, type Rewrite } from './governedSweep'
 import { rekeyHeld, type KeyCollision } from '../Files/heldKeys'
-import { withOrderEntry } from '../Contexts/spaceSidecar'
 import { normalizeTitle } from '../Paths/caseFold'
 import {
   clearSchemaJournal,
@@ -90,10 +89,7 @@ export async function renameSweep(
   const text = (content: string): string | null =>
     renameFrontmatterKey(content, oldName, def.name, NEW_KEY_IS_FRESHER, join)
   const rekey: Rewrite = (raw) => rekeyHeld(raw, oldName, def.name, NEW_KEY_IS_FRESHER, join)
-  const swept = await sweepGovernedRoots(root, files, {
-    text,
-    sidecars: withOrderEntry(rekey, 'properties', oldName, def.name),
-  })
+  const swept = await sweepGovernedRoots(root, files, { text, sidecars: rekey })
   return swept.skipped.length
 }
 
