@@ -43,7 +43,7 @@ The work lands in ten phases in dependency order, removal first: the Space order
 | 1 | +63 / −102 | +66 / −102 | −36 (+66 / −102) |
 | 2A | +34 / −50 | +33 / −54 | −57 (+99 / −156) |
 | 2B | +110 / −225 | +109 / −254 | −202 (+208 / −410) |
-| 3 | +80 / −64 | +91 / −72 | −183 (+289 / −472) |
+| 3 | +80 / −64 | +203 / −121 | −120 (+399 / −519) |
 | 4 | +67 / −58 | | |
 | 5A | +96 / −82 | | |
 | 5B | +163 / −139 | | |
@@ -166,7 +166,7 @@ The work lands in ten phases in dependency order, removal first: the Space order
   - [x] Task 3-2 · Option words decode exactly, and a Multi-Select carries its foreign words
   - [x] Task 3-3 · Select and Status Is and Is Not compare exactly
   - [x] Task 3-4 · The index keys exactly, at generation 19
-  - [ ] Review Checkpoint
+  - [x] Review Checkpoint
 - [ ] `[Compaction checkpoint: c/pre-compaction; on the re-prompt, reread §Constraints and c/plan-execution before Phase 4 opens]`
 - [ ] **Phase 4** — One Counter
   - [ ] Task 4-1 · The sweep runs dry
