@@ -4,7 +4,6 @@ import { seedSpaceSidecar, readJsonAt, tempRoot } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { renameSweep } from './registryProperty'
 import type { PropertyDefinition } from './properties'
-import { splitFrontmatter } from '../Files/pageFile'
 
 let root: string
 let page: string
@@ -82,35 +81,29 @@ describe('renameSweep', () => {
   })
 })
 
-describe('renameSweep reaches every spelling', () => {
-  it('renames a page and a Space holding another casing', async () => {
+describe('renameSweep moves the exact key', () => {
+  it('leaves a page and a Space holding another casing byte-identical', async () => {
     await seed('id: p1\nstatus: Old\n')
     const file = await seedSpaceSidecar(root, 'Projects', 'Pommora', { id: 'sp1', status: 'Old' })
+    const before = [await readFile(page, 'utf8'), await readFile(file, 'utf8')]
     await renameSweep(root, 'Status', stage)
-    expect(await readFile(page, 'utf8')).toBe('---\nid: p1\nStage: Old\n---\nbody\n')
-    expect(await readJsonAt(file)).toEqual({ id: 'sp1', Stage: 'Old' })
+    expect([await readFile(page, 'utf8'), await readFile(file, 'utf8')]).toEqual(before)
   })
 
-  it('joins a list property’s spellings into one list', async () => {
-    await seed('id: p1\nTags: [a]\ntags: [b, A]\n')
-    await renameSweep(root, 'Tags', {
-      id: 'prop_t',
-      name: 'Labels',
-      type: 'multiSelect',
-    } as PropertyDefinition)
-    expect(splitFrontmatter(await readFile(page, 'utf8'))).toEqual({ id: 'p1', Labels: ['a', 'b'] })
-  })
-
-  it('keeps the read spelling’s value for any other type', async () => {
-    await seed('id: p1\nStage: Draft\nstage: Done\n')
-    await renameSweep(root, 'Stage', { ...stage, name: 'Phase' })
-    expect(await readFile(page, 'utf8')).toBe('---\nid: p1\nPhase: Draft\n---\nbody\n')
-  })
-
-  it('a rival held in another casing wins, and the old key goes', async () => {
+  it('a key in another casing is no rival, and stays beside the moved one', async () => {
     await seed('id: p1\nStatus: Stale\nstage: Fresh\n')
     await renameSweep(root, 'Status', stage)
-    expect(await readFile(page, 'utf8')).toBe('---\nid: p1\nstage: Fresh\n---\nbody\n')
+    expect(await readFile(page, 'utf8')).toBe(
+      '---\nid: p1\nStage: Stale\nstage: Fresh\n---\nbody\n',
+    )
+  })
+
+  it('a rename to another casing of its own name moves the key on a page and a Space', async () => {
+    await seed('id: p1\nStatus: Old\n')
+    const file = await seedSpaceSidecar(root, 'Projects', 'Pommora', { id: 'sp1', Status: 'Old' })
+    await renameSweep(root, 'Status', { ...stage, name: 'status' })
+    expect(await readFile(page, 'utf8')).toBe('---\nid: p1\nstatus: Old\n---\nbody\n')
+    expect(await readJsonAt(file)).toEqual({ id: 'sp1', status: 'Old' })
   })
 })
 

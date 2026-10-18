@@ -75,21 +75,21 @@ describe('editHeldList', () => {
 })
 
 describe('rekeyHeld — the twin of renameFrontmatterKey', () => {
-  const cases: [string, string, string, KeyCollision, boolean][] = [
-    ['a: 1\nTags: [b]\ntags: [a, B]\nz: 2', 'Tags', 'Labels', 'prefer-new', true],
-    ['a: 1\nTags: [b]\ntags: [a, B]', 'Tags', 'Labels', 'prefer-new', false],
-    ['Tags: [b]\nlabels: [x]\ntags: [a]', 'Tags', 'Labels', 'prefer-new', true],
-    ['<Projects>: [Y]\n<Ventures>: X', '<Projects>', '<Ventures>', 'merge', true],
-    ['tags:\n  - a\n  - b', 'Tags', 'Labels', 'prefer-new', true],
-    ['<Other>: x', 'Status', 'Stage', 'prefer-new', false],
+  const cases: [string, string, string, KeyCollision][] = [
+    ['a: 1\nTags: [b]\nz: 2', 'Tags', 'tags', 'prefer-new'],
+    ['a: 1\nTags: [b]\nz: 2', 'Tags', 'tags', 'merge'],
+    ['Tags: [b]\nLabels: [x]', 'Tags', 'Labels', 'prefer-new'],
+    ['<Projects>: [Y]\n<Ventures>: X', '<Projects>', '<Ventures>', 'merge'],
+    ['Tags: [b]\nlabels: [x]', 'Tags', 'Labels', 'prefer-new'],
+    ['<Other>: x', 'Status', 'Stage', 'prefer-new'],
   ]
 
   it.each(
     cases,
-  )('answers the keys and values the page rename does for %j', (fm, from, to, collision, join) => {
+  )('answers the keys and values the page rename does for %j', (fm, from, to, collision) => {
     const content = assembleEnvelope(`${fm}\n`, 'Body')
-    const page = renameFrontmatterKey(content, from, to, collision, join)
-    const json = rekeyHeld(splitFrontmatter(content), from, to, collision, join)
+    const page = renameFrontmatterKey(content, from, to, collision)
+    const json = rekeyHeld(splitFrontmatter(content), from, to, collision)
     expect(json).toEqual(page === null ? null : splitFrontmatter(page))
   })
 })

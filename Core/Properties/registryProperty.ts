@@ -6,7 +6,6 @@ import { freeName } from '../Paths/names'
 import {
   defaultStatusSeed,
   defaultSelectSeed,
-  holdsList,
   KEY_REFUSAL,
   normalizePropertyName,
   PROPERTY_TYPES,
@@ -83,12 +82,11 @@ export async function renameSweep(
   oldName: string,
   def: PropertyDefinition,
 ): Promise<number> {
-  // Queried by the OLD key: a page holding only the new one needs no rewrite, and one holding both holds the old one too. A list property's spellings join; any other keeps the value its read key holds.
+  // Queried by the OLD key: a page holding only the new one needs no rewrite, and one holding both holds the old one too.
   const files = await keyHolderFiles(root, oldName, await collectionFolders(root))
-  const join = holdsList(def)
   const text = (content: string): string | null =>
-    renameFrontmatterKey(content, oldName, def.name, NEW_KEY_IS_FRESHER, join)
-  const rekey: Rewrite = (raw) => rekeyHeld(raw, oldName, def.name, NEW_KEY_IS_FRESHER, join)
+    renameFrontmatterKey(content, oldName, def.name, NEW_KEY_IS_FRESHER)
+  const rekey: Rewrite = (raw) => rekeyHeld(raw, oldName, def.name, NEW_KEY_IS_FRESHER)
   const swept = await sweepGovernedRoots(root, files, { text, sidecars: rekey })
   return swept.skipped.length
 }
@@ -117,9 +115,8 @@ export function renameProperty(
     if (to === prior.name) return ok(null)
     const named = validateName(to, Object.values(defs), propertyId)
     if (!named.ok) return named
-    // A file holding only the new key is adopted, its value going live as a create's would; one holding both would lose a value to the merge. A change of case alone moves no key, and the holders a folded query finds are its own.
-    const recased = normalizeTitle(to) === normalizeTitle(prior.name)
-    const clashes = recased ? [] : await bothKeyHolders(root, prior.name, to)
+    // A file holding only the new key is adopted, its value going live as a create's would; one holding both would lose a value to the merge.
+    const clashes = await bothKeyHolders(root, prior.name, to)
     if (clashes.length)
       return fail('invalid-property', KEY_REFUSAL.held(prior.name, to, clashes.length))
     const record: SchemaJournal = { op: 'rename', id: propertyId, from: prior.name, to }
@@ -143,7 +140,7 @@ export function renameProperty(
       return edit
     }
     const { from, def } = edit.value
-    const skipped = recased ? 0 : await renameSweep(root, from, def)
+    const skipped = await renameSweep(root, from, def)
     if (!skipped) await clearSchemaJournal(root, record)
     return ok({ from, to, ...schemaCascade({ skipped, hosts: [] }, record) })
   })

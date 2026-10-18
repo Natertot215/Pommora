@@ -303,13 +303,16 @@ describe('a schema op started while another operation’s record holds the journ
       expect(await readSchemaJournal(root)).toEqual(other)
     })
 
-    it.skipIf(noModeBits)('changes nothing once the property is renamed again', async () => {
-      const owed = await renamed()
-      expect((await propertiesHandlers['property:rename'](ctx, propId, 'Phase 2')).ok).toBe(true)
-      const before = await fm()
-      expect(await propertiesHandlers['property:replay'](ctx, owed)).toEqual(ok(null))
-      expect(await fm()).toBe(before)
-    })
+    it.skipIf(noModeBits)(
+      'sweeps to the current name once the property is renamed again',
+      async () => {
+        const owed = await renamed()
+        expect((await propertiesHandlers['property:rename'](ctx, propId, 'Phase 2')).ok).toBe(true)
+        expect(await propertiesHandlers['property:replay'](ctx, owed)).toEqual(ok(null))
+        expect(await fm()).toContain('Phase 2:\n  - Done')
+        expect(await fm()).not.toContain('Stage')
+      },
+    )
 
     it.skipIf(noModeBits)('changes nothing once another property takes the old name', async () => {
       const owed = await renamed()

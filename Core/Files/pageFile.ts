@@ -19,7 +19,7 @@ import { fail, fault, ok, type Result } from '../Contract/result'
 import type { PageDetail } from '../Pages/pageDetail'
 import { machine } from '../Platform/machine'
 import { spellings } from '../Paths/caseFold'
-import { heldValue, joinValues, type KeyCollision } from './heldKeys'
+import { joinValues, type KeyCollision } from './heldKeys'
 
 interface PageEnvelope {
   frontmatter: string
@@ -204,38 +204,31 @@ export function mergeFrontmatter(
 
 type FrontmatterPair = Pair<ParsedNode, ParsedNode | null>
 
-/** Renames every spelling of `oldName` the frontmatter holds to `newName`, at the first one's place. A held spelling of `newName` is the rival: under `'prefer-new'` it keeps its value and the old spellings go; otherwise the rival, the first old spelling, and with `join` the other old spellings combine through `joinValues`. */
+/** Renames `oldName` to `newName` in its place. A held `newName` is the rival: under `'prefer-new'` it keeps its value and `oldName` goes; under `'merge'` the two combine through `joinValues` in `oldName`'s place. */
 export function renameFrontmatterKey(
   content: string,
   oldName: string,
   newName: string,
   collision: KeyCollision,
-  join: boolean,
 ): string | null {
   const { frontmatter, body } = splitEnvelope(content)
   const doc = parseDocument(frontmatter)
   if (doc.errors.length > 0 || !isMap(doc.contents)) return null
   const items = doc.contents.items
-  const keys = items.map((i) => String(i.key))
-  const values = valuesOf(doc)
-  const held = (name: string): FrontmatterPair[] =>
-    spellings(keys, name).map((k) => items[keys.indexOf(k)])
-  const [pair, ...variants] = held(oldName)
+  const held = (name: string): FrontmatterPair | undefined =>
+    items.find((i) => String(i.key) === name)
+  const pair = held(oldName)
   if (!pair) return null
-  const [rival] = held(newName)
-  const drop = (p: FrontmatterPair): void => {
-    items.splice(items.indexOf(p), 1)
-  }
+  const rival = held(newName)
   if (rival && collision === 'prefer-new') {
-    for (const p of [pair, ...variants]) drop(p)
+    items.splice(items.indexOf(pair), 1)
   } else {
-    const moved = heldValue(values, oldName, join)
-    const value = rival ? joinValues(values[String(rival.key)], moved) : moved
-    const joined = [...variants, ...(rival ? [rival] : [])]
-    const spelled = [pair, ...joined].map((p) => p.value)
-    if (value !== values[String(pair.key)])
-      doc.set(String(pair.key), nodeSpelledAs(doc, value, spelled))
-    for (const p of joined) drop(p)
+    if (rival) {
+      const values = valuesOf(doc)
+      const joined = joinValues(values[newName], values[oldName])
+      doc.set(oldName, nodeSpelledAs(doc, joined, [pair.value, rival.value]))
+      items.splice(items.indexOf(rival), 1)
+    }
     ;(pair.key as { value: string }).value = newName
   }
   const out = serialized(doc)

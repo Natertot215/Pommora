@@ -117,13 +117,15 @@ describe('keyHolderFiles', () => {
     },
   )
 
-  it('confirmedKeyHolders counts a page and a Space holding another casing', async () => {
+  it('confirmedKeyHolders counts only the exact key, never a page or a Space holding another casing', async () => {
     await page('Q9X', 'phase: x\n')
     await seedContentIndex(root)
-    const space = await seedSpaceSidecar(root, 'Projects', 'Pommora', { id: 'sp1', PHASE: 'y' })
+    await seedSpaceSidecar(root, 'Projects', 'Pommora', { id: 'sp1', PHASE: 'y' })
+    expect(await confirmedKeyHolders(root, 'Phase', [abs('Notes')])).toEqual([])
+    await page('Q9Y', 'Phase: x\n')
+    await seedContentIndex(root)
     expect(await confirmedKeyHolders(root, 'Phase', [abs('Notes')])).toEqual([
-      abs('Notes', 'Q9X.md'),
-      space,
+      abs('Notes', 'Q9Y.md'),
     ])
   })
 

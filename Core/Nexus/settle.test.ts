@@ -1056,13 +1056,12 @@ describe('held options — the Multi-Select members a changed file holds are reg
     expect(await options()).toEqual(['beta'])
   })
 
-  it('a rename that changes only the name’s casing reads the same key and owes nothing', async () => {
-    await writeFile(abs('Notes', 'A.md'), page(ULID_A, 'tags:\n  - Ideas\n'))
+  it('a rename that changes only the name’s casing moves the key', async () => {
+    await writeFile(abs('Notes', 'A.md'), page(ULID_A, tags('Ideas')))
     await walked()
-    const registrar = vi.spyOn(optionOps, 'registerHeldOptions')
     expect((await renameProperty(root, 'tags', 'TAGS')).ok).toBe(true)
     await settleNow(pusher, root)
-    expect(registrar).not.toHaveBeenCalled()
+    expect(await readFile(abs('Notes', 'A.md'), 'utf8')).toContain('\nTAGS:\n  - Ideas\n')
   })
 
   it('a registry arriving from outside with a property a Collection already assigns registers the members its pages hold', async () => {

@@ -687,7 +687,7 @@ The work lands in ten phases in dependency order, removal first: the Space order
 **VERIFY**
 
 - [ ] The listed tests pass; `heldKeys.test.ts`'s twin answers the page rename's keys and values for every case.
-- [ ] `git grep -nE "renameFrontmatterKey\([^)]*, (true|false)\)|rekeyHeld\([^)]*, (true|false|join)\)" -- Core` finds nothing.
+- [ ] `git grep -nP "(renameFrontmatterKey|rekeyHeld)\(.*(FRESHER|'prefer-new'|'merge'|collision), (true|false|join)\)" -- Core` finds nothing.
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 

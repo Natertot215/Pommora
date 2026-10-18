@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { readFile, rm, stat, writeFile } from 'node:fs/promises'
+import { readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { readJsonAt, seedSpaceSidecar, tempRoot } from '../Testing/hostFs'
 import {
@@ -146,7 +146,7 @@ describe('renameProperty and editProperty', () => {
     await assignProperty(root, col.value.path, c.value.id)
     const p = await createTestPage(col.value.path, 'Holder', { body: 'b' })
     if (!p.ok) return
-    const held = `---\nID: 01ARZ3NDEKPSV4RRFFQ69G5FAV\ndescription: a page about bars\n---\nb\n`
+    const held = `---\nID: 01ARZ3NDEKPSV4RRFFQ69G5FAV\nDescription: a page about bars\n---\nb\n`
     await writeFile(p.value.path, held)
 
     expect((await renameProperty(root, c.value.id, 'Description')).ok).toBe(true)
@@ -154,7 +154,7 @@ describe('renameProperty and editProperty', () => {
     expect(await readFile(p.value.path, 'utf8')).toBe(held)
   })
 
-  it('a change of case alone commits the registry and writes no member file or journal', async () => {
+  it('a change of case alone moves the key on every holder and clears the journal', async () => {
     const c = await createProperty(root, def({ name: 'Status', type: 'select' }))
     const col = await createFolderEntity(root, 'collection', 'Col', newId())
     if (!c.ok || !col.ok) return
@@ -162,16 +162,17 @@ describe('renameProperty and editProperty', () => {
     const p = await createTestPage(col.value.path, 'Holder', { body: 'b' })
     if (!p.ok) return
     await writeFile(p.value.path, `---\nID: 01ARZ3NDEKPSV4RRFFQ69G5FAV\nStatus: Active\n---\nb\n`)
-    const space = await seedSpaceSidecar(root, 'Projects', 'Pommora', { id: 'sp1', status: 'x' })
-    const before = await stat(p.value.path)
+    const space = await seedSpaceSidecar(root, 'Projects', 'Pommora', { id: 'sp1', Status: 'x' })
+    const other = await seedSpaceSidecar(root, 'Projects', 'Sapphire', { id: 'sp2', status: 'x' })
+    const otherBytes = await readFile(other, 'utf8')
 
     expect((await renameProperty(root, c.value.id, 'STATUS')).ok).toBe(true)
     expect((await readRegistry(root)).defs[c.value.id].name).toBe('STATUS')
     expect(await readFile(p.value.path, 'utf8')).toBe(
-      `---\nID: 01ARZ3NDEKPSV4RRFFQ69G5FAV\nStatus: Active\n---\nb\n`,
+      `---\nID: 01ARZ3NDEKPSV4RRFFQ69G5FAV\nSTATUS: Active\n---\nb\n`,
     )
-    expect((await stat(p.value.path)).mtimeMs).toBe(before.mtimeMs)
-    expect(await readJsonAt(space)).toEqual({ id: 'sp1', status: 'x' })
+    expect(await readJsonAt(space)).toEqual({ id: 'sp1', STATUS: 'x' })
+    expect(await readFile(other, 'utf8')).toBe(otherBytes)
     expect(await readSchemaJournal(root)).toBeNull()
   })
 
