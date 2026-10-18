@@ -376,7 +376,7 @@ describe('a delete reaches saved views', () => {
 
   it('the replayed delete clears the views the same way', async () => {
     const { id, surfaces } = await seeded()
-    await writeSchemaJournal(root, { op: 'delete', id, name: 'Priority' })
+    await writeSchemaJournal(root, { op: 'delete', id, key: 'Priority' })
     await replaySchemaCascade(root)
     await expectCleared(surfaces)
     expect((await readRegistry(root)).defs[id]).toBeUndefined()
@@ -387,7 +387,7 @@ describe('a delete reaches saved views', () => {
     const { id, surfaces } = await seeded()
     vi.mocked(removeFromRegistry).mockResolvedValueOnce(fault('refused'))
     expect((await deleteProperty(root, id)).ok).toBe(false)
-    expect(await readSchemaJournal(root)).toEqual({ op: 'delete', id, name: 'Priority' })
+    expect(await readSchemaJournal(root)).toEqual({ op: 'delete', id, key: 'Priority' })
     await expectCleared(surfaces)
     await replaySchemaCascade(root)
     expect((await readRegistry(root)).defs[id]).toBeUndefined()
@@ -396,7 +396,7 @@ describe('a delete reaches saved views', () => {
 
   it('a replay in the freed state with a clean sweep clears the record', async () => {
     const { id } = await seeded()
-    await writeSchemaJournal(root, { op: 'delete', id, name: 'Priority' })
+    await writeSchemaJournal(root, { op: 'delete', id, key: 'Priority' })
     await removeFromRegistry(root, id)
     await replaySchemaCascade(root)
     expect(await readSchemaJournal(root)).toBeNull()

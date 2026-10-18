@@ -3,9 +3,9 @@ import { uniqueOptionGroups, validateOptionValues } from './schema'
 import { collectionFolders } from './assignment'
 import { keyHolderFiles } from './keyHolders'
 import { sweepCount, sweepGovernedRoots, type SweepPlan, unsweptLine } from './governedSweep'
-import { editList, namesValue, valueEditRewrite, type ValueEdit } from './pageValue'
+import { editList, valueEditRewrite, type ValueEdit } from './pageValue'
 import { editCaches } from './propertyCache'
-import { editHeldList } from '../Files/heldKeys'
+import { editHeldList, memberKey } from '../Files/heldKeys'
 import { errText, ok, fail, fault, type Result } from '../Contract/result'
 import { findOption, unregisteredMembers } from './propertyValue'
 import {
@@ -122,7 +122,7 @@ export async function registerHeldOptions(root: string, rels?: readonly string[]
           }
       }
       if (!held.size) return
-      // A rename still owed to the files its sweep skipped leaves its old value held, and registering it would end the rename's replay.
+      // A rename still owed to the files its sweep skipped leaves its old keys held, and registering one would end the rename's replay.
       const journal = await readSchemaJournal(root)
       const renamed = journal?.op === 'option-rename' ? journal : null
       await mutateRegistry(root, (registry, stored) => {
@@ -130,9 +130,10 @@ export async function registerHeldOptions(root: string, rels?: readonly string[]
         for (const [id, members] of held) {
           const def = defs[id]
           if (!def) continue
-          const fresh = unregisteredMembers(def, members).filter(
-            (v) => !(renamed?.id === id && namesValue(renamed.from)(v)),
+          const owed = new Set(
+            renamed?.id === id ? renamed.keys.map(([from]) => memberKey(from)) : [],
           )
+          const fresh = unregisteredMembers(def, members).filter((v) => !owed.has(memberKey(v)))
           if (!fresh.length) continue
           const next = editStoredOptions(def, stored[id], (groups) =>
             fresh.reduce((g, v) => addOption(g, SELECT_GROUP, v), groups),
@@ -225,11 +226,12 @@ export function renameOption(
   return serializeSchemaOp(root, async () => {
     const r = await resolveForCascade(root, propertyId, oldLabel)
     if (!r.ok) return r
+    const { key } = r.value
     const record: SchemaJournal = {
       op: 'option-rename',
       id: propertyId,
-      from: r.value.key,
-      to: newLabel,
+      keys: key === newLabel ? [] : [[key, newLabel]],
+      labels: [oldLabel, newLabel],
     }
     // Staged BEFORE the commit: a crash between commit and cascade is recoverable only from this record, and one stranded by a refusal is disposed of by the replay's holds-to-and-not-from gate.
     await writeSchemaJournal(root, record)
@@ -253,10 +255,7 @@ export function renameOption(
       await clearSchemaJournal(root, record)
       return edit
     }
-    const reach = await optionCascade(root, edit.value, new Map([[record.from, record.to]]), [
-      oldLabel,
-      newLabel,
-    ])
+    const reach = await optionCascade(root, edit.value, new Map(record.keys), record.labels)
     if (!reach.skipped) await clearSchemaJournal(root, record)
     return ok(schemaCascade(reach, record))
   })
@@ -295,7 +294,7 @@ export function removeOption(
     const r = await resolveForCascade(root, propertyId, label)
     if (!r.ok) return r
     const { def, key } = r.value
-    const record: SchemaJournal = { op: 'option-remove', id: propertyId, value: key }
+    const record: SchemaJournal = { op: 'option-remove', id: propertyId, key }
     const journaled = await writeSchemaJournal(root, record)
     const reach = await optionCascade(root, def, new Map([[key, null]]), [label, null])
     if (!reach.skipped) {

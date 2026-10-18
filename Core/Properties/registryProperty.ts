@@ -66,7 +66,7 @@ export async function createProperty(
   // A landed create wearing a journaled delete's key or id supersedes the record, or a later replay would strip the living property. Only after commit: a refused create must not spend a record it never displaced.
   if (created.ok) {
     const journal = await readSchemaJournal(root)
-    if (journal?.op === 'delete' && (journal.name === landed || journal.id === created.value.id))
+    if (journal?.op === 'delete' && (journal.key === landed || journal.id === created.value.id))
       await clearSchemaJournal(root, journal)
   }
   return created

@@ -118,7 +118,12 @@ describe('the property channels', () => {
     await rm(setFile)
     await mkdir(setFile)
     const r = await propertiesHandlers['property:renameOption'](ctx, propId, 'Done', 'Closed')
-    const record = { op: 'option-rename', id: propId, from: 'Done', to: 'Closed' }
+    const record = {
+      op: 'option-rename',
+      id: propId,
+      keys: [['Done', 'Closed']],
+      labels: ['Done', 'Closed'],
+    }
     expect(r.ok && r.value.cascade.warning).toBe(unsweptLine(1))
     expect(r.ok && r.value.owed).toEqual(record)
     expect((liveViewAt(col) as { filter: unknown }).filter).toEqual(viewOn(propId, 'Closed').filter)
@@ -136,7 +141,7 @@ describe('the property channels', () => {
     await mkdir(setFile)
     const r = await propertiesHandlers['property:removeOption'](ctx, propId, 'Done')
     expect(r.ok && r.value.cascade.warning).toBe(unsweptLine(1))
-    expect(r.ok && r.value.owed).toEqual({ op: 'option-remove', id: propId, value: 'Done' })
+    expect(r.ok && r.value.owed).toEqual({ op: 'option-remove', id: propId, key: 'Done' })
     expect(liveViewAt(col)).not.toHaveProperty('filter')
     expect(tilePushes()).toEqual([HOME])
   })
@@ -147,7 +152,7 @@ describe('the property channels', () => {
     await rm(setFile)
     await mkdir(setFile)
     const r = await propertiesHandlers['property:delete'](ctx, propId)
-    const record = { op: 'delete', id: propId, name: 'Stage' }
+    const record = { op: 'delete', id: propId, key: 'Stage' }
     expect(r.ok && r.value.cascade?.warning).toBe(unsweptLine(1))
     expect(r.ok && r.value.owed).toEqual(record)
     expect(tilePushes()).toEqual([HOME])
@@ -190,7 +195,7 @@ describe('the property channels', () => {
     await rm(setFile)
     await mkdir(setFile)
     const r = await propertiesHandlers['property:delete'](ctx, propId)
-    const record = { op: 'delete', id: propId, name: 'Stage' }
+    const record = { op: 'delete', id: propId, key: 'Stage' }
     expect(r.ok && r.value.cascade.warning).toBe(unsweptLine(1))
     expect(r.ok && r.value.owed).toEqual(record)
     expect(await propertiesHandlers['property:replay'](ctx, record)).toEqual(fault(unsweptLine(1)))
@@ -260,7 +265,12 @@ describe('a schema op started while another operation’s record holds the journ
   })
 
   it.skipIf(noModeBits)('an option rename', async () => {
-    const record = { op: 'option-rename', id: propId, from: 'Done', to: 'Closed' }
+    const record = {
+      op: 'option-rename',
+      id: propId,
+      keys: [['Done', 'Closed']],
+      labels: ['Done', 'Closed'],
+    }
     const r = await unreadable(() =>
       propertiesHandlers['property:renameOption'](ctx, propId, 'Done', 'Closed'),
     )
@@ -281,7 +291,7 @@ describe('a schema op started while another operation’s record holds the journ
   })
 
   it.skipIf(noModeBits)('a property delete', async () => {
-    const record = { op: 'delete', id: propId, name: 'Stage' }
+    const record = { op: 'delete', id: propId, key: 'Stage' }
     const r = await unreadable(() => propertiesHandlers['property:delete'](ctx, propId))
     expect(r.ok && r.value.cascade.warning).toBe(unsweptLine(1))
     expect(r.ok && r.value.owed).toEqual(record)
@@ -343,7 +353,12 @@ describe('a Collection whose sidecar doesn’t parse', () => {
 
   it('an option rename answers its record, and the replay brings the Collection current once it reads', async () => {
     const held = await damaged()
-    const record = { op: 'option-rename', id: propId, from: 'Done', to: 'Closed' }
+    const record = {
+      op: 'option-rename',
+      id: propId,
+      keys: [['Done', 'Closed']],
+      labels: ['Done', 'Closed'],
+    }
     const r = await propertiesHandlers['property:renameOption'](ctx, propId, 'Done', 'Closed')
     expect(r.ok && r.value.cascade.warning).toBeDefined()
     expect(r.ok && r.value.owed).toEqual(record)
@@ -354,7 +369,7 @@ describe('a Collection whose sidecar doesn’t parse', () => {
 
   it('an option removal answers its record, and the replay brings the Collection current once it reads', async () => {
     const held = await damaged()
-    const record = { op: 'option-remove', id: propId, value: 'Done' }
+    const record = { op: 'option-remove', id: propId, key: 'Done' }
     const r = await propertiesHandlers['property:removeOption'](ctx, propId, 'Done')
     expect(r.ok && r.value.cascade.warning).toBeDefined()
     expect(r.ok && r.value.owed).toEqual(record)

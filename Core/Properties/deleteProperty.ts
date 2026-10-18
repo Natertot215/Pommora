@@ -100,7 +100,7 @@ async function deleteInner(root: string, propertyId: string): Promise<Result<Pro
   const planned = await deletePlan(root, propertyId, key, folders)
   const bundle = await snapshot(root, propertyId, def, folders, planned.held)
   // Journaled AFTER the snapshot — a replay re-runs the strip tail, never the bundle mint.
-  const record: SchemaJournal = { op: 'delete', id: propertyId, name: key }
+  const record: SchemaJournal = { op: 'delete', id: propertyId, key }
   await writeSchemaJournal(root, record)
 
   const { removed, ...reach } = await stripAndRemove(root, propertyId, folders, planned)

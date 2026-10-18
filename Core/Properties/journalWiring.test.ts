@@ -273,33 +273,33 @@ describe('the option-op writers', () => {
 
 describe('the create-side consumer', () => {
   it('a create wearing a journaled delete’s name consumes the record', async () => {
-    await writeSchemaJournal(root, { op: 'delete', id: 'prop_gone', name: 'Priority' })
+    await writeSchemaJournal(root, { op: 'delete', id: 'prop_gone', key: 'Priority' })
     await createProperty(root, { id: '', label: 'Priority', type: 'select' })
     expect(await readSchemaJournal(root)).toBeNull()
   })
 
   it('a restore-shaped create wearing the journaled id consumes the record', async () => {
-    await writeSchemaJournal(root, { op: 'delete', id: 'prop_gone', name: 'Priority' })
+    await writeSchemaJournal(root, { op: 'delete', id: 'prop_gone', key: 'Priority' })
     await createProperty(root, { id: 'prop_gone', label: 'Renamed Since', type: 'select' })
     expect(await readSchemaJournal(root)).toBeNull()
   })
 
   it('an unrelated create leaves the record standing', async () => {
-    await writeSchemaJournal(root, { op: 'delete', id: 'prop_gone', name: 'Priority' })
+    await writeSchemaJournal(root, { op: 'delete', id: 'prop_gone', key: 'Priority' })
     await createProperty(root, { id: '', label: 'Unrelated', type: 'select' })
     expect(await readSchemaJournal(root)).toEqual({
       op: 'delete',
       id: 'prop_gone',
-      name: 'Priority',
+      key: 'Priority',
     })
   })
 
   it('a create stepped aside from the journaled name never spends the record it did not displace', async () => {
     // The crash state: the delete's def still stands, so a same-name create lands as Stage (2).
-    await writeSchemaJournal(root, { op: 'delete', id: 'prop_s', name: 'Stage' })
+    await writeSchemaJournal(root, { op: 'delete', id: 'prop_s', key: 'Stage' })
     const r = await createProperty(root, { id: '', label: 'Stage', type: 'select' })
     expect(r.ok).toBe(true)
-    expect(await readSchemaJournal(root)).toEqual({ op: 'delete', id: 'prop_s', name: 'Stage' })
+    expect(await readSchemaJournal(root)).toEqual({ op: 'delete', id: 'prop_s', key: 'Stage' })
   })
 })
 

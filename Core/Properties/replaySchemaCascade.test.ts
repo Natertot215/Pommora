@@ -18,7 +18,7 @@ import { readJsonObject } from '../Files/atomicWrite'
 import { createProperty, renameProperty } from './registryProperty'
 import { deleteProperty } from './deleteProperty'
 import { removeOption, renameOption } from './optionOps'
-import { readSchemaJournal, writeSchemaJournal } from './propertyJournal'
+import { readSchemaJournal, type SchemaJournal, writeSchemaJournal } from './propertyJournal'
 import { replaySchemaCascade } from './replaySchemaCascade'
 import { unsweptLine } from './governedSweep'
 import { ensureContextsRegistry } from '../Contexts/contextsRegistry'
@@ -197,7 +197,7 @@ describe('delete replay', () => {
       values: { [PAGE_IDS[0]]: 'Draft', [PAGE_IDS[1]]: 'Draft' },
       assignments: ['c1'],
     })
-    await writeSchemaJournal(crashed, { op: 'delete', id: 'prop_s', name: 'Stage' })
+    await writeSchemaJournal(crashed, { op: 'delete', id: 'prop_s', key: 'Stage' })
     await writeFile(join(crashed, 'Col', 'A.md'), `---\nID: ${PAGE_IDS[0]}\n---\nbody\n`)
     await openSession(crashed)
     await replaySchemaCascade(crashed)
@@ -217,7 +217,7 @@ describe('delete replay', () => {
       Stage: ['Draft'],
       $order: ['prop_s'],
     })
-    await writeSchemaJournal(root, { op: 'delete', id: 'prop_s', name: 'Stage' })
+    await writeSchemaJournal(root, { op: 'delete', id: 'prop_s', key: 'Stage' })
     await openSession(root)
     await replaySchemaCascade(root)
     const raw = await readJsonAt(file)
@@ -229,7 +229,7 @@ describe('delete replay', () => {
     const root = await seedNexus()
     const idless = '---\nStage: Draft\n---\nbody\n'
     await writeFile(join(root, 'Col', 'C.md'), idless)
-    await writeSchemaJournal(root, { op: 'delete', id: 'prop_s', name: 'Stage' })
+    await writeSchemaJournal(root, { op: 'delete', id: 'prop_s', key: 'Stage' })
     await openSession(root)
     await replaySchemaCascade(root)
     expect(await page(root, 'A')).toBe(`---\nID: ${PAGE_IDS[0]}\n---\nbody\n`)
@@ -241,7 +241,7 @@ describe('delete replay', () => {
     (await createProperty(root, { id: '', label: name, type: 'number' })).ok
 
   it('only a create named exactly as the record supersedes it', async () => {
-    const record = { op: 'delete', id: 'prop_gone', name: 'Example' } as const
+    const record = { op: 'delete', id: 'prop_gone', key: 'Example' } as const
     const other = await seedNexus()
     await writeSchemaJournal(other, record)
     expect(await created(other, 'example')).toBe(true)
@@ -256,7 +256,7 @@ describe('delete replay', () => {
     const root = await seedNexus()
     await writeFile(join(root, 'Col', 'A.md'), `---\nID: ${PAGE_IDS[0]}\nExample: 1\n---\nbody\n`)
     await writeFile(join(root, 'Col', 'B.md'), `---\nID: ${PAGE_IDS[1]}\nexample: 2\n---\nbody\n`)
-    await writeSchemaJournal(root, { op: 'delete', id: 'prop_gone', name: 'Example' })
+    await writeSchemaJournal(root, { op: 'delete', id: 'prop_gone', key: 'Example' })
     expect(await created(root, 'example')).toBe(true)
     const before = await page(root, 'B')
     await openSession(root)
@@ -268,7 +268,7 @@ describe('delete replay', () => {
 
   it('a record meeting the id under another name clears untouched', async () => {
     const root = await seedNexus()
-    await writeSchemaJournal(root, { op: 'delete', id: 'prop_s', name: 'Priority' })
+    await writeSchemaJournal(root, { op: 'delete', id: 'prop_s', key: 'Priority' })
     const before = await page(root, 'A')
     await openSession(root)
     await replaySchemaCascade(root)
@@ -279,7 +279,7 @@ describe('delete replay', () => {
 
   it('a record whose name a different def now wears clears untouched', async () => {
     const root = await seedNexus()
-    await writeSchemaJournal(root, { op: 'delete', id: 'prop_gone', name: 'Stage' })
+    await writeSchemaJournal(root, { op: 'delete', id: 'prop_gone', key: 'Stage' })
     const before = await page(root, 'A')
     await openSession(root)
     await replaySchemaCascade(root)
@@ -303,8 +303,8 @@ describe('option replay', () => {
     await writeSchemaJournal(crashed, {
       op: 'option-rename',
       id: 'prop_s',
-      from: 'Draft',
-      to: 'Queued',
+      keys: [['Draft', 'Queued']],
+      labels: ['Draft', 'Queued'],
     })
     await mutateRegistry(crashed, (registry) => ({
       next: {
@@ -332,7 +332,12 @@ describe('option replay', () => {
 
   it('a refused rename’s residue — the def holding both values — clears untouched', async () => {
     const root = await seedNexus()
-    await writeSchemaJournal(root, { op: 'option-rename', id: 'prop_s', from: 'Draft', to: 'Done' })
+    await writeSchemaJournal(root, {
+      op: 'option-rename',
+      id: 'prop_s',
+      keys: [['Draft', 'Done']],
+      labels: ['Draft', 'Done'],
+    })
     const before = await page(root, 'A')
     await openSession(root)
     await replaySchemaCascade(root)
@@ -352,7 +357,7 @@ describe('option replay', () => {
 
     // Pages-first order: the crash lands after A's strip, before the registry drop.
     const crashed = await seedNexus()
-    await writeSchemaJournal(crashed, { op: 'option-remove', id: 'prop_s', value: 'Draft' })
+    await writeSchemaJournal(crashed, { op: 'option-remove', id: 'prop_s', key: 'Draft' })
     await writeFile(join(crashed, 'Col', 'A.md'), `---\nID: ${PAGE_IDS[0]}\n---\nbody\n`)
     await openSession(crashed)
     await replaySchemaCascade(crashed)
@@ -368,7 +373,7 @@ describe('option replay', () => {
     await openSession(root)
     expect((await removeOption(root, 'prop_s', 'Draft')).ok).toBe(true)
     await writeFile(join(root, 'Col', 'A.md'), `---\nID: ${PAGE_IDS[0]}\nStage: Draft\n---\nbody\n`)
-    await writeSchemaJournal(root, { op: 'option-remove', id: 'prop_s', value: 'Draft' })
+    await writeSchemaJournal(root, { op: 'option-remove', id: 'prop_s', key: 'Draft' })
     await replaySchemaCascade(root)
     expect(await page(root, 'A')).toContain('Stage: Draft')
     expect(await readSchemaJournal(root)).toBeNull()
@@ -380,8 +385,8 @@ describe('option replay', () => {
     await writeSchemaJournal(root, {
       op: 'option-rename',
       id: 'prop_s',
-      from: 'Draft',
-      to: 'Queued',
+      keys: [['Draft', 'Queued']],
+      labels: ['Draft', 'Queued'],
     })
     await mutateRegistry(root, (registry) => ({
       next: {
@@ -407,7 +412,7 @@ describe('option replay', () => {
   it('option-remove, replayed, reaches a Space sidecar', async () => {
     const root = await seedNexus()
     const file = await seedSpace(root, { id: 'sp1', Stage: ['Draft'] })
-    await writeSchemaJournal(root, { op: 'option-remove', id: 'prop_s', value: 'Draft' })
+    await writeSchemaJournal(root, { op: 'option-remove', id: 'prop_s', key: 'Draft' })
     await openSession(root)
     await replaySchemaCascade(root)
     expect('Stage' in (await readJsonAt(file))).toBe(false)
@@ -436,7 +441,12 @@ describe('option replay reaches saved views', () => {
   it('option-rename rewrites a view still holding the old value, and replaying twice equals once', async () => {
     const root = await seedNexus()
     const surfaces = await seedConfigSurfaces(root, join(root, 'Col'), viewOn('prop_s', 'Draft'))
-    const record = { op: 'option-rename', id: 'prop_s', from: 'Draft', to: 'Queued' } as const
+    const record: SchemaJournal = {
+      op: 'option-rename',
+      id: 'prop_s',
+      keys: [['Draft', 'Queued']],
+      labels: ['Draft', 'Queued'],
+    }
     await writeSchemaJournal(root, record)
     await renamedDef(root)
     await openSession(root)
@@ -454,12 +464,80 @@ describe('option replay reaches saved views', () => {
     expect(await readSchemaJournal(root)).toBeNull()
   })
 
+  it('a record of two keys and no labels rewrites both words on every page and leaves the views as written', async () => {
+    const root = await seedNexus()
+    const surfaces = await seedConfigSurfaces(root, join(root, 'Col'), viewOn('prop_s', 'Draft'))
+    await writeFile(join(root, 'Col', 'B.md'), `---\nID: ${PAGE_IDS[1]}\nStage: Todo\n---\nbody\n`)
+    await writeSchemaJournal(root, {
+      op: 'option-rename',
+      id: 'prop_s',
+      keys: [
+        ['Draft', 'Done'],
+        ['Todo', 'Later'],
+      ],
+    })
+    await mutateRegistry(root, (registry) => ({
+      next: {
+        ...registry,
+        defs: {
+          ...registry.defs,
+          prop_s: {
+            ...registry.defs.prop_s,
+            select_options: [
+              { key: 'Done', label: 'Done' },
+              { key: 'Later', label: 'Later' },
+            ],
+          },
+        },
+      },
+      result: null,
+    }))
+    const before = await surfaces.read()
+    await openSession(root)
+    await replaySchemaCascade(root)
+    expect(await page(root, 'A')).toBe(`---\nID: ${PAGE_IDS[0]}\nStage:\n  - Done\n---\nbody\n`)
+    expect(await page(root, 'B')).toBe(`---\nID: ${PAGE_IDS[1]}\nStage:\n  - Later\n---\nbody\n`)
+    expect(await surfaces.read()).toEqual(before)
+    expect(await readSchemaJournal(root)).toBeNull()
+  })
+
+  it('a record whose labels the definition no longer holds clears untouched', async () => {
+    const root = await seedNexus()
+    await writeSchemaJournal(root, {
+      op: 'option-rename',
+      id: 'prop_s',
+      keys: [['Draft', 'Queued']],
+      labels: ['Draft', 'Queued'],
+    })
+    await mutateRegistry(root, (registry) => ({
+      next: {
+        ...registry,
+        defs: {
+          ...registry.defs,
+          prop_s: {
+            ...registry.defs.prop_s,
+            select_options: [
+              { key: 'Queued', label: 'Draft' },
+              { key: 'Done', label: 'Done' },
+            ],
+          },
+        },
+      },
+      result: null,
+    }))
+    const before = await page(root, 'A')
+    await openSession(root)
+    await replaySchemaCascade(root)
+    expect(await page(root, 'A')).toBe(before)
+    expect(await readSchemaJournal(root)).toBeNull()
+  })
+
   it('option-remove with clean pages strips a view still holding the value, then drops the option', async () => {
     const root = await seedNexus()
     const surfaces = await seedConfigSurfaces(root, join(root, 'Col'), viewOn('prop_s', 'Draft'))
     await writeFile(join(root, 'Col', 'A.md'), `---\nID: ${PAGE_IDS[0]}\n---\nbody\n`)
     await writeFile(join(root, 'Col', 'B.md'), `---\nID: ${PAGE_IDS[1]}\n---\nbody\n`)
-    await writeSchemaJournal(root, { op: 'option-remove', id: 'prop_s', value: 'Draft' })
+    await writeSchemaJournal(root, { op: 'option-remove', id: 'prop_s', key: 'Draft' })
     await openSession(root)
     await replaySchemaCascade(root)
     const views = await surfaces.read()
@@ -477,12 +555,12 @@ describe('an unreadable registry holds the record', () => {
   it('a delete record does not sweep when the registry cannot be read', async () => {
     const root = await seedNexus()
     await openSession(root)
-    await writeSchemaJournal(root, { op: 'delete', id: 'prop_s', name: 'Stage' })
+    await writeSchemaJournal(root, { op: 'delete', id: 'prop_s', key: 'Stage' })
     await writeFile(join(root, '.nexus', 'properties.json'), '{nope')
     await replaySchemaCascade(root)
     expect(await page(root, 'A')).toContain('Stage: Draft')
     expect(await page(root, 'B')).toContain('Stage: Draft')
-    expect(await readSchemaJournal(root)).toEqual({ op: 'delete', id: 'prop_s', name: 'Stage' })
+    expect(await readSchemaJournal(root)).toEqual({ op: 'delete', id: 'prop_s', key: 'Stage' })
   })
 })
 
@@ -520,7 +598,7 @@ describe('unreadable holders hold the record', () => {
       await chmod(join(root, 'Col', 'B.md'), 0o000)
       expect((await deleteProperty(root, 'prop_s')).ok).toBe(true)
       expect((await readRegistry(root)).defs.prop_s).toBeUndefined()
-      expect(await readSchemaJournal(root)).toEqual({ op: 'delete', id: 'prop_s', name: 'Stage' })
+      expect(await readSchemaJournal(root)).toEqual({ op: 'delete', id: 'prop_s', key: 'Stage' })
       expect(await replaySchemaCascade(root).then(() => readSchemaJournal(root))).not.toBeNull()
       await chmod(join(root, 'Col', 'B.md'), 0o644)
       await replaySchemaCascade(root)
@@ -542,7 +620,7 @@ describe('unreadable holders hold the record', () => {
       const deleted = await deleteProperty(root, 'prop_s')
       await chmod(b, 0o644)
       if (!deleted.ok) throw new Error('delete refused')
-      expect(deleted.value.owed).toEqual({ op: 'delete', id: 'prop_s', name: 'Stage' })
+      expect(deleted.value.owed).toEqual({ op: 'delete', id: 'prop_s', key: 'Stage' })
       expect(deleted.value.cascade.warning).toBeDefined()
       expect(await readRecord(join(root, deleted.value.trashed.bundlePath))).toMatchObject({
         partial: true,

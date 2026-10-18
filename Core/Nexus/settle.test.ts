@@ -1024,7 +1024,12 @@ describe('held options — the Multi-Select members a changed file holds are reg
     await registry('beta')
     await writeFile(abs('Notes', 'A.md'), page(ULID_A, tags('alpha')))
     await walked()
-    await writeSchemaJournal(root, { op: 'option-rename', id: 'tags', from: 'alpha', to: 'beta' })
+    await writeSchemaJournal(root, {
+      op: 'option-rename',
+      id: 'tags',
+      keys: [['alpha', 'beta']],
+      labels: ['alpha', 'beta'],
+    })
     await writeFile(abs('Notes', 'A.md'), page(ULID_A, tags('alpha', 'Ideas')))
     await settleBatch(pusher, root, [ev('change', 'Notes', 'A.md')])
     expect(await options()).toEqual(['beta', 'Ideas'])
@@ -1033,6 +1038,22 @@ describe('held options — the Multi-Select members a changed file holds are reg
       'beta',
       'Ideas',
     ])
+  })
+
+  it('a rename owed over two keys shields every old key its record names', async () => {
+    await registry('beta')
+    await walked()
+    await writeSchemaJournal(root, {
+      op: 'option-rename',
+      id: 'tags',
+      keys: [
+        ['alpha', 'beta'],
+        ['gamma', 'delta'],
+      ],
+    })
+    await writeFile(abs('Notes', 'A.md'), page(ULID_A, tags('alpha', 'gamma')))
+    await settleBatch(pusher, root, [ev('change', 'Notes', 'A.md')])
+    expect(await options()).toEqual(['beta'])
   })
 
   it('renaming the property onto a key its Collection’s pages already hold registers their members', async () => {

@@ -840,8 +840,18 @@ describe('the option cascades reach the Collection caches', () => {
     await mkdir(file)
     const r = await renameOption(root, id, 'A', 'Z')
     expect(r.ok && r.value.cascade.warning).toBe(unsweptLine(1))
-    expect(r.ok && r.value.owed).toEqual({ op: 'option-rename', id, from: 'A', to: 'Z' })
-    expect(await readSchemaJournal(root)).toEqual({ op: 'option-rename', id, from: 'A', to: 'Z' })
+    expect(r.ok && r.value.owed).toEqual({
+      op: 'option-rename',
+      id,
+      keys: [['A', 'Z']],
+      labels: ['A', 'Z'],
+    })
+    expect(await readSchemaJournal(root)).toEqual({
+      op: 'option-rename',
+      id,
+      keys: [['A', 'Z']],
+      labels: ['A', 'Z'],
+    })
   })
 })
 
@@ -962,7 +972,7 @@ describe('option cascades reach saved views', () => {
         expect(await removeOption(root, id, 'Done')).toEqual(
           ok({
             cascade: { pages: [], hosts: [], warning: unsweptLine(1) },
-            owed: { op: 'option-remove', id, value: 'Done' },
+            owed: { op: 'option-remove', id, key: 'Done' },
           }),
         )
       } finally {
@@ -971,7 +981,7 @@ describe('option cascades reach saved views', () => {
       const views = await surfaces.read()
       const held = viewOn(id, 'Done')
       expect([views.collection, views.set, views.tile]).toEqual([held, held, held])
-      expect(await readSchemaJournal(root)).toEqual({ op: 'option-remove', id, value: 'Done' })
+      expect(await readSchemaJournal(root)).toEqual({ op: 'option-remove', id, key: 'Done' })
       expect((await readRegistry(root)).defs[id].select_options?.map((o) => o.label)).toEqual([
         'Done',
         'Todo',
@@ -988,7 +998,12 @@ describe('option cascades reach saved views', () => {
         expect(await renameOption(root, id, 'Done', 'Closed')).toEqual(
           ok({
             cascade: { pages: [], hosts: [HOME], warning: unsweptLine(1) },
-            owed: { op: 'option-rename', id, from: 'Done', to: 'Closed' },
+            owed: {
+              op: 'option-rename',
+              id,
+              keys: [['Done', 'Closed']],
+              labels: ['Done', 'Closed'],
+            },
           }),
         )
       } finally {
@@ -1007,10 +1022,10 @@ describe('option cascades reach saved views', () => {
     expect(await removeOption(root, id, 'Done')).toEqual(
       ok({
         cascade: { pages: [], hosts: [HOME], warning: unsweptLine(1) },
-        owed: { op: 'option-remove', id, value: 'Done' },
+        owed: { op: 'option-remove', id, key: 'Done' },
       }),
     )
-    expect(await readSchemaJournal(root)).toEqual({ op: 'option-remove', id, value: 'Done' })
+    expect(await readSchemaJournal(root)).toEqual({ op: 'option-remove', id, key: 'Done' })
     expect((await readRegistry(root)).defs[id].select_options?.map((o) => o.label)).toEqual([
       'Done',
       'Todo',
@@ -1021,7 +1036,7 @@ describe('option cascades reach saved views', () => {
     const { id } = await seeded()
     vi.mocked(mutateRegistry).mockResolvedValueOnce(fault('refused'))
     expect((await removeOption(root, id, 'Done')).ok).toBe(false)
-    expect(await readSchemaJournal(root)).toEqual({ op: 'option-remove', id, value: 'Done' })
+    expect(await readSchemaJournal(root)).toEqual({ op: 'option-remove', id, key: 'Done' })
   })
 
   it('a clear reaches no view', async () => {

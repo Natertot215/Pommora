@@ -7,13 +7,12 @@ import { collectionFolders } from './assignment'
 import { renameSweep } from './registryProperty'
 import { deletePlan, stripAndRemove } from './deleteProperty'
 import { dropOptionFromDef, optionCascade } from './optionOps'
-import { optionsOf } from './properties'
-import {
-  clearSchemaJournal,
-  readSchemaJournal,
-  sameRecord,
-  type SchemaJournal,
-} from './propertyJournal'
+import { optionLabels, optionsOf } from './properties'
+import { same } from '../Files/stableJson'
+import { clearSchemaJournal, readSchemaJournal, type SchemaJournal } from './propertyJournal'
+
+const landed = (pairs: readonly (readonly [string, string])[], held: readonly string[]): boolean =>
+  pairs.every(([from, to]) => held.includes(to) && !held.includes(from))
 
 export function replaySchemaCascade(
   root: string,
@@ -49,15 +48,15 @@ async function replay(
     case 'delete': {
       // The registry commits LAST in a delete, so the def still present under its journaled key is the crash state. The id under another key is alive on purpose — a restore or re-create consumes the record at createProperty; this arm catches what the delete left owed. A record a delete's answer carried exists only once its registry commit landed, so for it a present def is a restore.
       const def = defs[journal.id]
-      const crashed = !answered && def !== undefined && def.key === journal.name
-      const freed = !def && !Object.values(defs).some((d) => d.key === journal.name)
+      const crashed = !answered && def !== undefined && def.key === journal.key
+      const freed = !def && !Object.values(defs).some((d) => d.key === journal.key)
       if (!crashed && !freed) return NO_REACH
       const folders = await collectionFolders(root)
       const { skipped, hosts, removed } = await stripAndRemove(
         root,
         journal.id,
         folders,
-        await deletePlan(root, journal.id, journal.name, folders),
+        await deletePlan(root, journal.id, journal.key, folders),
       )
       return { skipped: skipped + (crashed && !removed.ok ? 1 : 0), hosts }
     }
@@ -65,26 +64,24 @@ async function replay(
       const def = defs[journal.id]
       if (!def) return NO_REACH
       const keys = optionsOf(def).map((o) => o.key)
-      // Holds `to` and not `from` = the commit landed cleanly; every other state is not this record's.
-      if (!keys.includes(journal.to) || keys.includes(journal.from)) return NO_REACH
-      return optionCascade(root, def, new Map([[journal.from, journal.to]]), [
-        journal.from,
-        journal.to,
-      ])
+      // Every new key and the new label held, and no old one, = the commit landed cleanly; every other state is not this record's.
+      if (!landed(journal.keys, keys)) return NO_REACH
+      if (journal.labels && !landed([journal.labels], optionLabels(def))) return NO_REACH
+      return optionCascade(root, def, new Map(journal.keys), journal.labels)
     }
     case 'option-remove': {
       // Pages-first order holds the value in the def until the strip completes, so the value still listed is the owed state; gone means only the clear failed. An option has no identity, so an answer's record is owed only while the slot still holds it: past that, the value listed may have been added again.
       const def = defs[journal.id]
       const held = answered ? await readSchemaJournal(root) : journal
-      if (!def || !held || !sameRecord(held, journal)) return NO_REACH
-      const option = optionsOf(def).find((o) => o.key === journal.value)
+      if (!def || !held || !same(held, journal)) return NO_REACH
+      const option = optionsOf(def).find((o) => o.key === journal.key)
       if (!option) return NO_REACH
-      const owed = await optionCascade(root, def, new Map([[journal.value, null]]), [
+      const owed = await optionCascade(root, def, new Map([[journal.key, null]]), [
         option.label,
         null,
       ])
       if (owed.skipped) return owed
-      return (await dropOptionFromDef(root, journal.id, journal.value)).ok
+      return (await dropOptionFromDef(root, journal.id, journal.key)).ok
         ? owed
         : { ...owed, skipped: 1 }
     }

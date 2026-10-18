@@ -146,7 +146,7 @@ describe('the option menu', () => {
   it('Remove asks, then removes the option; a kept record offers Try Again', async () => {
     menu.mockResolvedValueOnce(ok('option:remove'))
     removeOption.mockResolvedValueOnce(
-      ok({ cascade: { warning: 'w' }, owed: { op: 'option-remove', id: 'p1', value: 'Urgent' } }),
+      ok({ cascade: { warning: 'w' }, owed: { op: 'option-remove', id: 'p1', key: 'Urgent' } }),
     )
     render('select', select)
     await rightClick('Urgent')

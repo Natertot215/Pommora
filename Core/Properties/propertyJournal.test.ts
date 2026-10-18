@@ -25,9 +25,17 @@ afterEach(async () => {
 
 const SHAPES: SchemaJournal[] = [
   { op: 'rename', id: 'prop_a', from: 'Foo', to: 'Bar' },
-  { op: 'delete', id: 'prop_a', name: 'Foo' },
-  { op: 'option-rename', id: 'prop_a', from: 'Draft', to: 'Done' },
-  { op: 'option-remove', id: 'prop_a', value: 'Draft' },
+  { op: 'delete', id: 'prop_a', key: 'Foo' },
+  { op: 'option-rename', id: 'prop_a', keys: [['Draft', 'Done']], labels: ['Draft', 'Done'] },
+  {
+    op: 'option-rename',
+    id: 'prop_a',
+    keys: [
+      ['draft', 'done'],
+      ['open', 'opened'],
+    ],
+  },
+  { op: 'option-remove', id: 'prop_a', key: 'Draft' },
 ]
 
 describe('the record round-trips', () => {
@@ -56,8 +64,10 @@ describe('the validator refuses what the writer never produces', () => {
     ['unknown op', { op: 'explode', id: 'x' }],
     ['missing id', { op: 'rename', from: 'A', to: 'B' }],
     ['mistyped field', { op: 'rename', id: 'x', from: 'A', to: 7 }],
-    ['delete without name', { op: 'delete', id: 'x' }],
-    ['remove without value', { op: 'option-remove', id: 'x' }],
+    ['delete without key', { op: 'delete', id: 'x' }],
+    ['remove without key', { op: 'option-remove', id: 'x' }],
+    ['option-rename with a half pair', { op: 'option-rename', id: 'x', keys: [['a']] }],
+    ['option-rename with mistyped labels', { op: 'option-rename', id: 'x', keys: [], labels: 'a' }],
   ])('%s → null', async (_label, raw) => {
     if (raw !== null) await writeFile(journalPath(), JSON.stringify(raw))
     expect(await readSchemaJournal(root)).toBeNull()
