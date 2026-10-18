@@ -512,6 +512,24 @@ describe('matrixRuntime', () => {
     expect([at('p1').pinned, at('p2').pinned, at('p3').pinned]).toEqual([true, true, false])
   })
 
+  it('settles the two ends of a new link and holds every other node still', () => {
+    const grown = makeTree()
+    grown.collections[0].pages.push({
+      kind: 'page',
+      id: 'p3',
+      title: 'Gamma',
+      path: 'Notes/Gamma.md',
+    })
+    seed({ tree: grown, matrixPositions: { p1: [0, 0], p2: [400, 0], p3: [0, 400] } })
+    attach()
+    expect(matrixRuntime.sim?.awake).toBe(false)
+
+    useSession.setState({ matrixGraph: linked() })
+    const at = (id: string) => matrixRuntime.graph.nodes[matrixRuntime.graph.index.get(id) ?? -1]
+    expect(matrixRuntime.sim?.awake).toBe(true)
+    expect([at('p1').pinned, at('p2').pinned, at('p3').pinned]).toEqual([false, false, true])
+  })
+
   it('reads nothing for a store write it does not draw from', () => {
     seed()
     attach()

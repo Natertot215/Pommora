@@ -199,6 +199,9 @@ class MatrixRuntime {
     }
     const fresh = place(graph, layout)
     const settleAll = fresh.size === graph.nodes.length
+    // A node whose links changed settles into them, as a node the layout has never seen does.
+    const woken = new Set(fresh)
+    if (b) for (const n of graph.nodes) if (this.nodeOf(n.id)?.degree !== n.degree) woken.add(n.id)
     const prev = this.sim
     // A local settle's moving set is carried too, or a push mid-settle would jiggle the whole picture at the local wake's heat.
     const moving = prev?.local ? prev.graph.nodes.filter((n) => !n.pinned).map((n) => n.id) : null
@@ -207,10 +210,10 @@ class MatrixRuntime {
     this.sim = createSimulation(graph, c.forces[c.group.mode], settleAll)
     this.sim.drag = prev?.drag && graph.index.has(prev.drag.id) ? prev.drag : null
     if (prev?.awake && !settleAll) {
-      if (moving) wakeLocal(this.sim, new Set([...moving, ...fresh]))
+      if (moving) wakeLocal(this.sim, new Set([...moving, ...woken]))
       this.sim.awake = true
       this.sim.alpha = prev.alpha
-    } else if (!settleAll && fresh.size > 0) wakeLocal(this.sim, fresh)
+    } else if (!settleAll && woken.size > 0) wakeLocal(this.sim, woken)
     if (b && b.group !== c.group) resettle(this.sim)
     else if (b && b.forces[c.group.mode] !== c.forces[c.group.mode]) reheat(this.sim)
     if (first) {
