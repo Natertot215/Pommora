@@ -1032,4 +1032,40 @@ describe('option cascades reach saved views', () => {
     expect([views.collection, views.set, views.tile]).toEqual([held, held, held])
     expect(views.matrix).toEqual(held.filter)
   })
+
+  it('a rename and a removal edit files by key and views by label', async () => {
+    const id = await mkSelect([{ key: 'urgent', label: 'Urgent' }])
+    const col = await createFolderEntity(root, 'collection', 'Col', newId())
+    if (!col.ok) throw new Error('folder failed')
+    await assignProperty(root, col.value.path, id)
+    const page = join(col.value.path, 'One.md')
+    await writeFile(page, '---\nID: 01ARZ3NDEKPSV4RRFFQ69G5FAV\nTags: [urgent]\n---\nb\n')
+    const surfaces = await seedConfigSurfaces(root, col.value.path, viewOn(id, 'Urgent'))
+
+    expect((await renameOption(root, id, 'Urgent', 'Critical')).ok).toBe(true)
+    expect(splitFrontmatter(await readFile(page, 'utf8')).Tags).toEqual(['Critical'])
+    expect((await surfaces.read()).collection.filter).toEqual(viewOn(id, 'Critical').filter)
+
+    expect((await removeOption(root, id, 'Critical')).ok).toBe(true)
+    expect(splitFrontmatter(await readFile(page, 'utf8'))).toEqual({
+      ID: '01ARZ3NDEKPSV4RRFFQ69G5FAV',
+    })
+    expect((await surfaces.read()).collection.filter).toBeUndefined()
+  })
+
+  it("a removal leaves the views on another option whose label is the removed one's key", async () => {
+    const id = await mkSelect([
+      { key: 'a', label: 'Z' },
+      { key: 'B2', label: 'a' },
+    ])
+    const col = await createFolderEntity(root, 'collection', 'Col', newId())
+    if (!col.ok) throw new Error('folder failed')
+    await assignProperty(root, col.value.path, id)
+    const surfaces = await seedConfigSurfaces(root, col.value.path, viewOn(id, 'a'))
+
+    expect((await removeOption(root, id, 'Z')).ok).toBe(true)
+    const views = await surfaces.read()
+    const held = viewOn(id, 'a')
+    expect([views.collection, views.set, views.tile]).toEqual([held, held, held])
+  })
 })

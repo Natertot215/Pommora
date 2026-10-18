@@ -38,18 +38,8 @@ const TAGS: PropertyDefinition = {
   select_options: [{ key: 'A', label: 'A' }],
 }
 
-const rename = {
-  kind: 'option' as const,
-  def: STAGE,
-  value: 'Done',
-  edit: { op: 'replace' as const, to: 'Closed' },
-}
-const removal = {
-  kind: 'option' as const,
-  def: STAGE,
-  value: 'Done',
-  edit: { op: 'strip' as const },
-}
+const rename = { kind: 'option' as const, def: STAGE, labels: ['Done', 'Closed'] as const }
+const removal = { kind: 'option' as const, def: STAGE, labels: ['Done', null] as const }
 const clear = { kind: 'property' as const, propertyId: 'prop_s' }
 
 const rich = (id: string): Raw => ({
@@ -220,12 +210,7 @@ describe('an option rename', () => {
         },
       ],
     })
-    await reachConfig(root, {
-      kind: 'option',
-      def: TAGS,
-      value: 'A',
-      edit: { op: 'replace', to: 'B' },
-    })
+    await reachConfig(root, { kind: 'option', def: TAGS, labels: ['A', 'B'] })
     expect((await viewsOf(setFile()))[0].filter).toEqual({
       match: 'all',
       rules: [{ property_id: 'prop_m', op: 'contains', values: ['B'] }],

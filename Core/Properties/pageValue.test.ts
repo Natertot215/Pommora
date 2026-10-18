@@ -5,10 +5,10 @@ import type { Json } from '../Files/stableJson'
 const defOf = (key: string) => ({ key, type: key === 'M' ? 'multiSelect' : 'select' }) as const
 
 const strip = (raw: Json, key: string, value: string): Json | null =>
-  valueEditRewrite(defOf(key), value, { op: 'strip' })(raw, 'p.md')
+  valueEditRewrite(defOf(key), new Map([[value, null]]))(raw, 'p.md')
 
 const replace = (raw: Json, key: string, oldValue: string, newValue: string): Json | null =>
-  valueEditRewrite(defOf(key), oldValue, { op: 'replace', to: newValue })(raw, 'p.md')
+  valueEditRewrite(defOf(key), new Map([[oldValue, newValue]]))(raw, 'p.md')
 
 describe('valueEditRewrite — strip', () => {
   it('select: deletes the key iff the value matches', () => {
@@ -78,25 +78,58 @@ describe('valueEditRewrite — replace (rename cascade)', () => {
 
 describe('editList', () => {
   it('edits a list of one', () => {
-    expect(editList(['a'], 'a', { op: 'replace', to: 'b' })).toEqual(['b'])
+    expect(editList(['a'], new Map([['a', 'b']]))).toEqual(['b'])
   })
 
   it('answers null when nothing matches', () => {
-    expect(editList(['a', 1, null], 'z', { op: 'strip' })).toBeNull()
+    expect(editList(['a', 1, null], new Map([['z', null]]))).toBeNull()
   })
 
   it('a replace into a value the list holds keeps one copy at the renamed element', () => {
-    expect(editList(['x', 'a', 'y', 'b'], 'a', { op: 'replace', to: 'b' })).toEqual(['x', 'b', 'y'])
+    expect(editList(['x', 'a', 'y', 'b'], new Map([['a', 'b']]))).toEqual(['x', 'b', 'y'])
   })
 
   it('leaves an option written in another casing alone', () => {
-    const finished = { op: 'replace', to: 'Finished' } as const
-    expect(editList(['done', 'Active'], 'Done', finished)).toBeNull()
-    expect(editList(['done', 'finished'], 'Done', finished)).toBeNull()
+    const finished = new Map([['Done', 'Finished']])
+    expect(editList(['done', 'Active'], finished)).toBeNull()
+    expect(editList(['done', 'finished'], finished)).toBeNull()
   })
 
   it('a strip that empties the list answers an empty list', () => {
-    expect(editList(['a', 'a'], 'a', { op: 'strip' })).toEqual([])
+    expect(editList(['a', 'a'], new Map([['a', null]]))).toEqual([])
+  })
+
+  it('renames and strips several members in one pass', () => {
+    expect(
+      editList(
+        ['a', 'x', 'b'],
+        new Map([
+          ['a', null],
+          ['b', 'c'],
+        ]),
+      ),
+    ).toEqual(['x', 'c'])
+    expect(
+      editList(
+        ['a', 'b', 'c'],
+        new Map([
+          ['a', 'A'],
+          ['b', 'B'],
+        ]),
+      ),
+    ).toEqual(['A', 'B', 'c'])
+  })
+
+  it('answers null when the map names no member, leaving an unrelated duplicate', () => {
+    expect(editList(['b', 'b'], new Map([['a', 'b']]))).toBeNull()
+  })
+
+  it('a member renamed onto one the list holds is kept once', () => {
+    expect(editList(['a', 'b'], new Map([['a', 'b']]))).toEqual(['b'])
+  })
+
+  it('keeps a foreign null, which no strip names', () => {
+    expect(editList(['a', null, 5], new Map([['a', 'b']]))).toEqual(['b', null, 5])
   })
 })
 

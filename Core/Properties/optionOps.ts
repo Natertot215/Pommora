@@ -32,7 +32,7 @@ import {
   type SchemaJournal,
   writeSchemaJournal,
 } from './propertyJournal'
-import { type ConfigReach, reachConfig } from '../Nexus/configReach'
+import { type ConfigReach, NO_REACH, reachConfig } from '../Nexus/configReach'
 import { heldTreeOf, liveTreeOf } from '../Nexus/liveTree'
 import { readPageRecord } from '../Nexus/readNexus'
 import { containerAt, containerSchema, pagePathsIn, spaceAt } from '../Nexus/treePatch'
@@ -183,51 +183,37 @@ async function resolveForCascade(
 async function valueEditPlan(
   root: string,
   def: PropertyDefinition,
-  target: string,
-  edit: ValueEdit,
+  keys: ValueEdit,
 ): Promise<{ pages: string[]; plan: SweepPlan }> {
   const pages = await keyHolderFiles(root, def.key, await collectionFolders(root))
-  const raw = valueEditRewrite(def, target, edit)
+  const raw = valueEditRewrite(def, keys)
   return { pages, plan: { raw, sidecars: raw } }
 }
 
-async function valueEditSweep(
-  root: string,
-  def: PropertyDefinition,
-  target: string,
-  edit: ValueEdit,
-): Promise<number> {
-  const { pages, plan } = await valueEditPlan(root, def, target, edit)
-  return (await sweepGovernedRoots(root, pages, plan)).skipped.length
-}
-
-async function cacheSweep(
-  root: string,
-  def: PropertyDefinition,
-  target: string,
-  edit: ValueEdit,
-): Promise<number> {
+async function cacheSweep(root: string, def: PropertyDefinition, keys: ValueEdit): Promise<number> {
   const { collections } = await liveTreeOf(root)
   return editCaches(root, collections, new Set([def.id]), (values) =>
     Object.keys(values).reduce<Json | null>(
-      (next, id) =>
-        editHeldList(next ?? values, id, (held) => editList(held, target, edit)) ?? next,
+      (next, id) => editHeldList(next ?? values, id, (held) => editList(held, keys)) ?? next,
       null,
     ),
   )
 }
 
+/** Rewrites the files and caches holding `keys`' old keys, and with `labels` every configuration reference to the option's label. */
 export async function optionCascade(
   root: string,
   def: PropertyDefinition,
-  value: string,
-  edit: ValueEdit,
+  keys: ValueEdit,
+  labels?: readonly [string, string | null],
 ): Promise<ConfigReach> {
-  const pages = await valueEditSweep(root, def, value, edit)
-  if (pages && edit.op === 'strip') return { skipped: pages, hosts: [] }
-  const caches = await cacheSweep(root, def, value, edit)
-  const reach = await reachConfig(root, { kind: 'option', def, value, edit })
-  return { skipped: pages + caches + reach.skipped, hosts: reach.hosts }
+  const { pages, plan } = await valueEditPlan(root, def, keys)
+  const skipped = (await sweepGovernedRoots(root, pages, plan)).skipped.length
+  // A Remove that skipped a file stops here, so the option and every reference to it stay while its replay is owed.
+  if (skipped && labels?.[1] === null) return { skipped, hosts: [] }
+  const caches = await cacheSweep(root, def, keys)
+  const reach = labels ? await reachConfig(root, { kind: 'option', def, labels }) : NO_REACH
+  return { skipped: skipped + caches + reach.skipped, hosts: reach.hosts }
 }
 
 export function renameOption(
@@ -267,10 +253,10 @@ export function renameOption(
       await clearSchemaJournal(root, record)
       return edit
     }
-    const reach = await optionCascade(root, edit.value, record.from, {
-      op: 'replace',
-      to: record.to,
-    })
+    const reach = await optionCascade(root, edit.value, new Map([[record.from, record.to]]), [
+      oldLabel,
+      newLabel,
+    ])
     if (!reach.skipped) await clearSchemaJournal(root, record)
     return ok(schemaCascade(reach, record))
   })
@@ -284,10 +270,7 @@ export function clearOption(
   return serializeSchemaOp(root, async () => {
     const r = await resolveForCascade(root, propertyId, label)
     if (!r.ok) return r
-    const { def, key } = r.value
-    const strip: ValueEdit = { op: 'strip' }
-    const skipped =
-      (await valueEditSweep(root, def, key, strip)) + (await cacheSweep(root, def, key, strip))
+    const { skipped } = await optionCascade(root, r.value.def, new Map([[r.value.key, null]]))
     return skipped ? fault(unsweptLine(skipped)) : ok(null)
   })
 }
@@ -299,7 +282,7 @@ export async function optionHolders(
 ): Promise<Result<number>> {
   const r = await resolveForCascade(root, propertyId, label)
   if (!r.ok) return r
-  const { pages, plan } = await valueEditPlan(root, r.value.def, r.value.key, { op: 'strip' })
+  const { pages, plan } = await valueEditPlan(root, r.value.def, new Map([[r.value.key, null]]))
   return ok(await sweepCount(root, pages, plan))
 }
 
@@ -314,7 +297,7 @@ export function removeOption(
     const { def, key } = r.value
     const record: SchemaJournal = { op: 'option-remove', id: propertyId, value: key }
     const journaled = await writeSchemaJournal(root, record)
-    const reach = await optionCascade(root, def, key, { op: 'strip' })
+    const reach = await optionCascade(root, def, new Map([[key, null]]), [label, null])
     if (!reach.skipped) {
       const dropped = await dropOptionFromDef(root, propertyId, key)
       if (!dropped.ok) return dropped
