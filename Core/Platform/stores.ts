@@ -30,6 +30,8 @@ export interface PageIndexEntry {
 export interface IndexedStat {
   mtimeMs: number
   size: number
+  /** The ID the page's frontmatter carries, when one is written: what pairs its rows' removal with where the tree holds it next. */
+  id?: string
 }
 
 export interface RelationRow extends Relation {
@@ -66,7 +68,7 @@ export interface ContentIndexStore {
   /** Every page whose Context `key`, in any casing, names the Space of the normalized `title`. */
   queryMembers(key: string, title: string): string[]
   readIndexedStat(path: string): IndexedStat | null
-  readIndexedStats(): Map<string, IndexedStat>
+  readIndexedStats(under?: string): Map<string, IndexedStat>
   /** Page → page rows only (`body`, `citation`, `value`), plus every indexed page's governed values and mtime; `paths` narrows both, and `key` narrows the values to that one key. */
   readPageRelations(paths?: string[], key?: string): PageRelations
 }

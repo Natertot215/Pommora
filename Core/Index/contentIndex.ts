@@ -96,6 +96,6 @@ export function readIndexedStat(path: string): IndexedStat | null {
   return queried((db) => db.readIndexedStat(path))
 }
 
-export function readIndexedStats(): Map<string, IndexedStat> | null {
-  return queried((db) => db.readIndexedStats())
+export function readIndexedStats(under?: string): Map<string, IndexedStat> | null {
+  return queried((db) => db.readIndexedStats(under))
 }

@@ -29,10 +29,12 @@ import { foldKey } from '../Paths/caseFold'
 import {
   deindexPath,
   type HeadingRenameSeen,
+  type IndexSeen,
   indexWrittenPage,
   moveIndexPaths,
 } from '../Index/indexSeed'
-import { renameCascade } from './cascade'
+import type { ConnPage } from '../Connections/pageIndex'
+import { contentIndexStore } from '../Platform/stores'
 import { noteExternalEdit } from '../Pages/fileHistory'
 import { heldTreeOf, patchLiveTree } from './liveTree'
 import { resolveOrder } from './order'
@@ -105,6 +107,10 @@ interface Owed {
   options: Set<string>
   tiles: Map<string, { host: TileHostRef; ids: Set<string> }>
   renames: HeadingRenameSeen[]
+  // Pages whose rows left a path and whose id the tree is yet to hold again, by id at the first path they left; the ids the index or the stamp first saw since the last settle, a folder's among them, the tree saying which are pages; and the ids the settle paired whose own row is yet to land, so that row reads as the move's and not as an arrival.
+  vanished: Map<string, ConnPage>
+  landed: Set<string>
+  paired: Set<string>
 }
 
 export const nothingOwed = (root: string): Owed => ({
@@ -120,6 +126,9 @@ export const nothingOwed = (root: string): Owed => ({
   options: new Set(),
   tiles: new Map(),
   renames: [],
+  vanished: new Map(),
+  landed: new Set(),
+  paired: new Set(),
 })
 
 let owed: Owed | null = null
@@ -269,15 +278,17 @@ export async function indexEvent(root: string, ev: FileEvent): Promise<void> {
         await moveIndexPaths(root, ev.from, ev.absPath)
         return
       case 'unlink':
-      case 'unlinkDir':
-        await deindexPath(root, ev.absPath)
+      case 'unlinkDir': {
+        const seen = await deindexPath(root, ev.absPath)
+        if (ev.origin === 'watched') oweSeen(root, seen)
         return
+      }
       case 'addDir':
         return
       case 'add':
       case 'change': {
-        const renames = await indexWrittenPage(root, ev.absPath, ev.text)
-        if (ev.origin === 'watched') oweRenames(root, renames)
+        const seen = await indexWrittenPage(root, ev.absPath, ev.text)
+        if (ev.origin === 'watched') oweSeen(root, seen)
         return
       }
     }
@@ -287,16 +298,14 @@ export async function indexEvent(root: string, ev: FileEvent): Promise<void> {
   }
 }
 
-// A seed that bailed reads none, so a root a switch left behind never takes the record.
-export function oweRenames(root: string, renames: readonly HeadingRenameSeen[]): void {
-  if (renames.length) owedFor(root).renames.push(...renames)
-}
-
-// A rename an outside edit shows (Obsidian or sync, landed live or found by the index seed) takes the same cascade the editor's settle takes; the editor's own save owes none, its settle having spoken.
-export async function cascadeSeen(root: string, seen: HeadingRenameSeen): Promise<void> {
-  const c = await renameCascade(root, { path: seen.path, heading: seen.old, to: seen.next })
-  if (c.warning) console.error('heading rename:', c.warning)
-  oweCascade(root, c.pages, c.hosts)
+// Without an index there is no memory to pair against, so nothing is owed; a seed that bailed reads none, so a root a switch left behind never takes the record.
+export function oweSeen(root: string, seen: IndexSeen): void {
+  if (!contentIndexStore()) return
+  if (!seen.renames.length && !seen.vanished.length && !seen.landed.length) return
+  const owed = owedFor(root)
+  owed.renames.push(...seen.renames)
+  for (const p of seen.vanished) if (!owed.vanished.has(p.id)) owed.vanished.set(p.id, p)
+  for (const id of seen.landed) owed.landed.add(id)
 }
 
 // ── The tree's half ──
