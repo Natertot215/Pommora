@@ -148,7 +148,7 @@ export const askClearOption = (propertyId: string, name: string): Promise<boolea
 export const askEmptyTrash = async (count: number): Promise<boolean> => {
   const { permanentDelete } = valueOr(await dialer().ask('delete:facts'), DELETE_FACTS_FALLBACK)
   return ask({
-    message: count === 1 ? 'Delete this item?' : `Delete these ${count} items?`,
+    message: count === 1 ? 'Delete this Item?' : `Delete these ${itemCount(count)}?`,
     detail: permanentDelete
       ? 'It will be erased from this computer. This cannot be undone.'
       : 'It will move to your system trash, which is where you would get it back from.',

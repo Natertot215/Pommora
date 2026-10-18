@@ -1,9 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { updatePageProperty } from '../Testing/propertyWrites'
 import { ID_KEY, isUlidShaped } from './identityMark'
 import { chmod, rm, mkdir, readdir, stat, readFile, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot, noModeBits } from '../Testing/hostFs'
-import { renamePage, updatePageBody, movePage, updatePageProperty } from './page'
+import { renamePage, updatePageBody, movePage } from './page'
 import { createTestPage } from '../Testing/createTestPage'
 import { splitEnvelope, assembleEnvelope, splitFrontmatter } from '../Files/pageFile'
 import { machine } from '../Platform/machine'
@@ -225,7 +226,7 @@ describe('movePage', () => {
   })
 })
 
-describe('updatePageProperty', () => {
+describe('a page property write', () => {
   it('sets, replaces, and clears values; preserves siblings + other frontmatter', async () => {
     const c = await createTestPage(typeDir, 'Props', { body: 'x' })
     if (!c.ok) throw new Error('setup failed')

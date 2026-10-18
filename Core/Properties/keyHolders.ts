@@ -38,11 +38,14 @@ export async function confirmedKeyHolders(
   return holders
 }
 
+export interface KeyedHolders {
+  values: Record<string, unknown>
+  strip: string[]
+  partial: boolean
+}
+
 /** The values of the pages holding `key`, filed by ID, the files a strip should reach, and whether the values miss a holder: a holder with no ID, or whose ID another already took, is kept out of the strip, and a file that can't be read is stripped once it reads. */
-export async function keyedHolders(
-  files: string[],
-  key: string,
-): Promise<{ values: Record<string, unknown>; strip: string[]; partial: boolean }> {
+export async function keyedHolders(files: string[], key: string): Promise<KeyedHolders> {
   const values: Record<string, unknown> = {}
   const kept: string[] = []
   const seen = new Set<string>()

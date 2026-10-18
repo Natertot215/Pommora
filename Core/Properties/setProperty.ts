@@ -1,27 +1,29 @@
 import { machine } from '../Platform/machine'
 import { liveTreeOf, mutableTarget } from '../Nexus/liveTree'
-import { writtenRoot } from './governedWrite'
+import { setGovernedRootKey, writtenRoot } from './governedWrite'
 import { pageWorldOf, writeSpaceSidecar } from '../Contexts/contextWrite'
-import { spaceWorldOf } from '../Contexts/contextResolve'
-import { encodedValue, landPageValue } from '../Nexus/page'
-import { ok, type Result } from '../Contract/result'
+import { type GovernedWorld, spaceWorldOf } from '../Contexts/contextResolve'
+import { encodedValue } from '../Nexus/page'
+import { pathExists } from '../Files/atomicWrite'
+import { fail, ok, type Result } from '../Contract/result'
 import type { MutateContext } from '../Nexus/mutate'
 import { done, type MutateReply, type MutateRequest } from '../Nexus/mutateRequest'
 import type { PropertyDefinition } from './properties'
-import type { PropertyValue } from './propertyValue'
 import { readRegistry, NO_PROPERTY } from './propertiesRegistry'
 
-export async function setSpaceProperty(
-  root: string,
-  absSpaceDir: string,
-  def: PropertyDefinition,
-  value: PropertyValue | null,
+// Takes no lock of its own: callers hold the page's lock over a wider span, and a re-take would be refused.
+export async function landPageValue(
+  absFile: string,
+  name: string,
+  raw: unknown,
+  world?: GovernedWorld,
 ): Promise<Result<null>> {
-  const encoded = encodedValue(def, value)
-  return encoded.ok ? landSpaceValue(root, absSpaceDir, def.name, encoded.value) : encoded
+  if (!(await pathExists(absFile))) return fail('not-found', 'Page not found.')
+  await setGovernedRootKey(absFile, name, raw, world)
+  return ok(null)
 }
 
-async function landSpaceValue(
+export async function landSpaceValue(
   root: string,
   absSpaceDir: string,
   name: string,

@@ -12,6 +12,7 @@ import type { PropertyDefinition } from './properties'
 import { splitFrontmatter } from '../Files/pageFile'
 import { createProperty } from './registryProperty'
 import { removeProperty } from './removeProperty'
+import { updatePageProperty } from '../Testing/propertyWrites'
 import { refreshTree } from '../Nexus/liveTree'
 
 let root: string
@@ -51,11 +52,6 @@ it('collectionFolders lists every collection folder from the live tree', async (
 })
 
 it('a Remove racing an Assign on ONE collection never loses either write (breaker H-2)', async () => {
-  const { createProperty } = await import('./registryProperty')
-  const { removeProperty } = await import('./removeProperty')
-  const { updatePageProperty } = await import('../Nexus/page')
-  const { readFile } = await import('node:fs/promises')
-  const { splitFrontmatter } = await import('../Files/pageFile')
   const mk = async (name: string): Promise<string> => {
     const r = await createProperty(root, { id: '', name, type: 'number' } as never)
     if (!r.ok) throw new Error('setup failed')

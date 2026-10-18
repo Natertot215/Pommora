@@ -95,8 +95,8 @@ export function assignValue(
   const target = w.rowOf(row.id) ?? row
   const resolved = resolveFieldValue(target, column.id, w.schema)
   const prior = isBlankValue(resolved) ? null : resolved
-  const name = w.schema.find((d) => d.id === column.id)?.name
-  const held = name === undefined ? undefined : target.frontmatter[name]
+  const def = w.schema.find((d) => d.id === column.id)
+  const held = def && target.frontmatter[def.name]
   const pending = write(w, target, column, value)
   if (!pending) return pending
   // Pushed now, so a sweep's group collects it; a refused write leaves nothing to revert.

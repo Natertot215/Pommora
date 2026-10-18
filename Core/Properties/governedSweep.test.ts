@@ -93,6 +93,26 @@ describe('sweepGovernedRoots', () => {
     expect(await readFile(a, 'utf8')).toBe(page)
     expect(await readFile(sidecar.file, 'utf8')).toBe(sidecar.text)
   })
+
+  it.skipIf(noModeBits)(
+    'a dry run files a file it can’t read as skipped, and sweepCount leaves it out',
+    async () => {
+      const { root, a, b } = await seed()
+      const page = await readFile(a, 'utf8')
+      await chmod(b, 0o000)
+      try {
+        const textPlan: SweepPlan = { text: (c) => `${c}x` }
+        expect(await sweepGovernedRoots(root, [b, a], textPlan, true)).toEqual({
+          skipped: [b],
+          refused: [],
+          touched: new Map([[a, { before: page, after: `${page}x` }]]),
+        })
+        expect(await sweepCount(root, [b, a], textPlan)).toBe(1)
+      } finally {
+        await chmod(b, 0o644)
+      }
+    },
+  )
 })
 
 describe('sweepCount', () => {

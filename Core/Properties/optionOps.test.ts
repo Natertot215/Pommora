@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { updatePageProperty } from '../Testing/propertyWrites'
 import { chmod, mkdir, rm, readFile, stat, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { noModeBits, seedSpaceSidecar, readJsonAt, tempRoot } from '../Testing/hostFs'
@@ -8,7 +9,6 @@ import { createProperty, editProperty } from './registryProperty'
 import { assignProperty } from './assignment'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { newId } from '../Nexus/ids'
-import { updatePageProperty } from '../Nexus/page'
 import { createTestPage } from '../Testing/createTestPage'
 import { mutateRegistry, readRegistry, serializeSchemaOp } from './propertiesRegistry'
 

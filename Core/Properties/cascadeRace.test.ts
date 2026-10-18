@@ -1,6 +1,7 @@
 // The cascade and the cell-write path must serialize on the SAME per-file lock. They match only because openSession canonicalizes the root — on a symlinked root a raw sessionRoot would split them into different buckets, so the test opens its Nexus through a symlink.
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { updatePageProperty } from '../Testing/propertyWrites'
 import { symlinkSync } from 'node:fs'
 import { rm } from 'node:fs/promises'
 import { relative } from '../Paths/posix'
@@ -11,7 +12,6 @@ import { createProperty } from './registryProperty'
 import { assignProperty } from './assignment'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { newId } from '../Nexus/ids'
-import { updatePageProperty } from '../Nexus/page'
 import { createTestPage } from '../Testing/createTestPage'
 import { machine } from '../Platform/machine'
 import { openSession, closeSession, sessionRoot } from '../Nexus/session'

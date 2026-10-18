@@ -4,11 +4,11 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { rm, readdir, readFile } from 'node:fs/promises'
 import { tempRoot } from '../Testing/hostFs'
 import type { SavedView } from '../Views/views'
-import type { PropertyDefinition } from '../Properties/properties'
+import { landPageValue } from '../Properties/setProperty'
 import { machine } from '../Platform/machine'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { newId } from '../Nexus/ids'
-import { updatePageBody, renamePage, updatePageProperty } from '../Nexus/page'
+import { updatePageBody, renamePage } from '../Nexus/page'
 import { createTestPage } from '../Testing/createTestPage'
 import { setChildOrder } from '../Nexus/reorder'
 import { saveView } from '../Views/viewsFile'
@@ -72,17 +72,14 @@ describe('concurrent sidecar writers', () => {
 })
 
 describe('a value write racing a body write on one page', () => {
-  // `updatePageProperty` deliberately takes no lock of its own — its callers need a wider span — so this pins the law at the shape both of them use.
+  // `landPageValue` deliberately takes no lock of its own — its callers need a wider span — so this pins the law at the shape both of them use.
   it('keeps both, since each caller writes under the page key', async () => {
     const p = await createTestPage(folder, 'Note', { body: 'first' })
     if (!p.ok) throw new Error('setup failed')
-    const def: PropertyDefinition = { id: 'p1', name: 'Priority', type: 'select' }
 
     await Promise.all([
       updatePageBody(p.value.path, 'second'),
-      machine().lock(p.value.path, () =>
-        updatePageProperty(p.value.path, def, { kind: 'select', value: 'hi' }),
-      ),
+      machine().lock(p.value.path, () => landPageValue(p.value.path, 'Priority', 'hi')),
     ])
 
     const content = await readFile(p.value.path, 'utf8')

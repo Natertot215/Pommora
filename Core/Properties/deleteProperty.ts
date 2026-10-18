@@ -8,7 +8,7 @@ import {
   serializeSchemaOp,
 } from './propertiesRegistry'
 import { removeFromRegistry } from './registryProperty'
-import { keyedHolders, keyHolderFiles } from './keyHolders'
+import { type KeyedHolders, keyedHolders, keyHolderFiles } from './keyHolders'
 import {
   clearSchemaJournal,
   type SchemaCascade,
@@ -34,7 +34,7 @@ async function snapshot(
   propertyId: string,
   def: PropertyRegistry[string],
   folders: string[],
-  held: Awaited<ReturnType<typeof keyedHolders>>,
+  held: KeyedHolders,
 ): Promise<string> {
   const key = def.name
   const values = { ...held.values }
@@ -97,16 +97,21 @@ async function deleteInner(root: string, propertyId: string): Promise<Result<Pro
 
   // EVERY collection folder, not just current assigners — a Remove-cache block lives on a collection sidecar that no longer assigns the id, and pre-cache dormant values may sit on any page.
   const folders = await collectionFolders(root)
-  const { held, plan } = await deletePlan(root, propertyId, key, folders)
-  const bundle = await snapshot(root, propertyId, def, folders, held)
+  const planned = await deletePlan(root, propertyId, key, folders)
+  const bundle = await snapshot(root, propertyId, def, folders, planned.held)
   // Journaled AFTER the snapshot — a replay re-runs the strip tail, never the bundle mint.
   const record: SchemaJournal = { op: 'delete', id: propertyId, name: def.name }
   await writeSchemaJournal(root, record)
 
-  const { removed, ...reach } = await stripAndRemove(root, propertyId, folders, held.strip, plan)
+  const { removed, ...reach } = await stripAndRemove(root, propertyId, folders, planned)
   if (!removed.ok) return removed
   if (!reach.skipped) await clearSchemaJournal(root, record)
   return ok({ trashed: { bundlePath: relative(root, bundle) }, ...schemaCascade(reach, record) })
+}
+
+interface DeletePlan {
+  held: KeyedHolders
+  plan: SweepPlan
 }
 
 export async function deletePlan(
@@ -114,7 +119,7 @@ export async function deletePlan(
   propertyId: string,
   key: string,
   folders: string[],
-): Promise<{ held: Awaited<ReturnType<typeof keyedHolders>>; plan: SweepPlan }> {
+): Promise<DeletePlan> {
   const held = await keyedHolders(await keyHolderFiles(root, key, folders), key)
   const raw: Rewrite = (r) => stripKeys(r, [key])
   return { held, plan: { raw, sidecars: withoutOrderId(raw, propertyId) } }
@@ -124,10 +129,9 @@ export async function stripAndRemove(
   root: string,
   propertyId: string,
   folders: string[],
-  files: string[],
-  plan: SweepPlan,
+  { held, plan }: DeletePlan,
 ): Promise<ConfigReach & { removed: Result<null> }> {
-  const swept = await sweepGovernedRoots(root, files, plan)
+  const swept = await sweepGovernedRoots(root, held.strip, plan)
   for (const folder of folders) await unassignAndPurge(folder, propertyId)
   const reach = await reachConfig(root, { kind: 'property', propertyId })
   return {
