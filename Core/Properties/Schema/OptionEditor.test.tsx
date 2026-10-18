@@ -41,9 +41,10 @@ let root: Root
 const menu = vi.fn(async () => ok<string | null>(null))
 const editOption = vi.fn(async (): Promise<Result<null>> => ok(null))
 const renameOption = vi.fn(async (): Promise<Result<{ cascade: object }>> => ok({ cascade: {} }))
-const removeOption = vi.fn(async () => ok({ cascade: {} }))
+const removeOption = vi.fn(async (): Promise<Result<{ cascade: object }>> => ok({ cascade: {} }))
 const clearOption = vi.fn(async () => ok(null))
 const holders = vi.fn(async () => ok(2))
+const replay = vi.fn(async () => ok(null))
 const style = { current: { ...dateDefaults('full'), look: 'standard' as const }, set: vi.fn() }
 
 beforeEach(() => {
@@ -54,12 +55,22 @@ beforeEach(() => {
     'property:removeOption': removeOption,
     'property:clearOption': clearOption,
     'property:holders': holders,
+    'property:replay': replay,
   })
   useSession.setState({ tree: makeTree({ personalization: { iconFavorites: ['anchor'] } }) })
   host = document.createElement('div')
   document.body.appendChild(host)
   root = createRoot(host)
-  for (const fn of [menu, editOption, renameOption, removeOption, clearOption, holders, style.set])
+  for (const fn of [
+    menu,
+    editOption,
+    renameOption,
+    removeOption,
+    clearOption,
+    holders,
+    replay,
+    style.set,
+  ])
     fn.mockClear()
 })
 
@@ -153,6 +164,25 @@ describe('the option menu', () => {
     await confirm()
     expect(removeOption).toHaveBeenCalledWith('p1', 'Urgent')
     expect(currentNotification()).toMatchObject({ message: 'w', action: { label: 'Try Again' } })
+  })
+
+  it('a remove refused while another change is owed offers a Try Again that replays the held record', async () => {
+    menu.mockResolvedValueOnce(ok('option:remove'))
+    removeOption.mockResolvedValueOnce(
+      fail(
+        'owed',
+        'An earlier change hasn’t reached every file yet. Use Try Again to finish it first.',
+      ),
+    )
+    render('select', select)
+    await rightClick('Urgent')
+    await confirm()
+    expect(currentNotification()).toMatchObject({
+      message: 'An earlier change hasn’t reached every file yet. Use Try Again to finish it first.',
+      action: { label: 'Try Again' },
+    })
+    await act(async () => currentNotification()?.action?.run())
+    expect(replay).toHaveBeenCalledWith(undefined)
   })
 
   it('a remove with no record shows its line without an action', async () => {

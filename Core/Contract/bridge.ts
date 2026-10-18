@@ -144,7 +144,7 @@ export interface Asks {
     reply: Result<PropertyRename | null>
   }
   'property:delete': { args: [propertyId: string]; reply: Result<PropertyDeletion> }
-  'property:replay': { args: [record: SchemaJournal]; reply: Result<null> }
+  'property:replay': { args: [record?: SchemaJournal]; reply: Result<null> }
   'property:setLinkConfig': {
     args: [propertyId: string, patch: LinkConfig]
     reply: Result<null>

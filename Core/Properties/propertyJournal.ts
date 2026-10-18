@@ -48,7 +48,7 @@ export const clearSchemaJournal = slot.clear
 /** A schema op's answer: its cascade, and the record whose replay reaches the files it skipped. */
 export type SchemaCascade = { cascade: CascadeReport; owed?: SchemaJournal }
 
-export const schemaCascade = (reach: ConfigReach, record?: SchemaJournal): SchemaCascade => ({
+export const schemaCascade = (reach: ConfigReach, record: SchemaJournal): SchemaCascade => ({
   cascade: reachReport(reach),
-  ...(reach.skipped && record ? { owed: record } : {}),
+  ...(reach.skipped ? { owed: record } : {}),
 })

@@ -41,8 +41,9 @@ import { isMarkdownFile, join } from '../Paths/posix'
 
 const NO_OPTION = fail('not-found', 'That option no longer exists.')
 const NO_GROUP = fail('not-found', 'That group no longer exists.')
-const OWED = fault(
-  'An earlier change hasn’t reached every file yet. Use Try Again on its notice first.',
+const OWED = fail(
+  'owed',
+  'An earlier change hasn’t reached every file yet. Use Try Again to finish it first.',
 )
 const NO_OPTIONS = fail(
   'invalid-property',
@@ -71,9 +72,20 @@ function admitOptionEdit(def: PropertyDefinition, e: OptionEdit): Result<null> {
   return ok(null)
 }
 
+// A rename still owed to the files its sweep skipped leaves its old keys held there, so an option taking one back would end the rename's replay.
+const owedKeys = (journal: SchemaJournal | null, id: string): Set<unknown> =>
+  new Set(
+    journal?.op === 'option-rename' && journal.id === id
+      ? journal.keys.map(([from]) => memberKey(from))
+      : [],
+  )
+
+const keysOf = (def: PropertyDefinition): unknown[] => optionsOf(def).map((o) => memberKey(o.key))
+
 export function editOption(root: string, propertyId: string, e: OptionEdit): Promise<Result<null>> {
-  return serializeSchemaOp(root, () =>
-    mutateRegistry<Result<null>>(root, (registry, stored) => {
+  return serializeSchemaOp(root, async () => {
+    const owed = owedKeys(await readSchemaJournal(root), propertyId)
+    return mutateRegistry<Result<null>>(root, (registry, stored) => {
       const def = registry.defs[propertyId]
       if (!def) return { result: NO_PROPERTY }
       const typeCheck = requireOptions(def)
@@ -85,12 +97,14 @@ export function editOption(root: string, propertyId: string, e: OptionEdit): Pro
       )
       const check = validateOptionValues(optionsOf(next))
       if (!check.ok) return { result: check }
+      const held = new Set(keysOf(def))
+      if (keysOf(next).some((k) => owed.has(k) && !held.has(k))) return { result: OWED }
       return {
         next: { ...registry, defs: { ...registry.defs, [propertyId]: next } },
         result: ok(null),
       }
-    }),
-  )
+    })
+  })
 }
 
 /** Registers each Multi-Select member the files at `rels` hold beyond their definition — a page, a container's pages, or a Space — or every file's when `rels` is omitted, in one write. It reads under the schema lock, so a cascade is read whole. */
@@ -125,17 +139,13 @@ export async function registerHeldOptions(root: string, rels?: readonly string[]
           }
       }
       if (!held.size) return
-      // A rename still owed to the files its sweep skipped leaves its old keys held, and registering one would end the rename's replay.
       const journal = await readSchemaJournal(root)
-      const renamed = journal?.op === 'option-rename' ? journal : null
       await mutateRegistry(root, (registry, stored) => {
         let defs = registry.defs
         for (const [id, members] of held) {
           const def = defs[id]
           if (!def) continue
-          const owed = new Set(
-            renamed?.id === id ? renamed.keys.map(([from]) => memberKey(from)) : [],
-          )
+          const owed = owedKeys(journal, id)
           const fresh = unregisteredMembers(def, members).filter((v) => !owed.has(memberKey(v)))
           if (!fresh.length) continue
           const next = editStoredOptions(def, stored[id], (groups) =>
@@ -236,7 +246,7 @@ export function renameOption(
       keys: key === newLabel ? [] : [[key, newLabel]],
       labels: [oldLabel, newLabel],
     }
-    // Staged BEFORE the commit: a crash between commit and cascade is recoverable only from this record, and one stranded by a refusal is disposed of by the replay's holds-to-and-not-from gate.
+    // Staged BEFORE the commit: a crash between commit and cascade is recoverable only from this record.
     if (!(await writeSchemaJournal(root, record))) return OWED
     const edit = await mutateRegistry<Result<PropertyDefinition>>(root, (registry, stored) => {
       const def = registry.defs[propertyId]

@@ -5,7 +5,7 @@ import { relative } from '../Paths/posix'
 import { noModeBits, readJsonAt, tempRoot } from '../Testing/hostFs'
 import { type ConfigSurfaces, seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
 import type { HostContext } from '../Contract/handlers'
-import { fault, ok } from '../Contract/result'
+import { fail, fault, ok } from '../Contract/result'
 import { sidecarPath } from '../Paths/paths'
 import { closeSession, openSession } from '../Nexus/session'
 import { dropLiveTree, heldTreeOf, refreshTree } from '../Nexus/liveTree'
@@ -135,6 +135,20 @@ describe('the property channels', () => {
     expect(await readSchemaJournal(root)).toBeNull()
   })
 
+  it('a replay asked with no record replays the one the journal holds', async () => {
+    const setFile = sidecarPath(surfaces.set, 'set')
+    const held = await readFile(setFile, 'utf8')
+    await rm(setFile)
+    await mkdir(setFile)
+    await propertiesHandlers['property:renameOption'](ctx, propId, 'Done', 'Closed')
+    await rm(setFile, { recursive: true })
+    await writeFile(setFile, held)
+    await refreshTree(root)
+    expect(await propertiesHandlers['property:replay'](ctx)).toEqual(ok(null))
+    expect((await readJsonAt(setFile)).views).toEqual([viewOn(propId, 'Closed')])
+    expect(await readSchemaJournal(root)).toBeNull()
+  })
+
   it('an option removal held by an unreadable Set sidecar keeps the option and offers the replay', async () => {
     const setFile = sidecarPath(surfaces.set, 'set')
     await rm(setFile)
@@ -206,7 +220,10 @@ describe('the property channels', () => {
     const owed = { op: 'rename' as const, id: 'prop_other', from: 'A', to: 'B' }
     await writeSchemaJournal(root, owed)
     expect(await propertiesHandlers['property:removeOption'](ctx, propId, 'Done')).toEqual(
-      fault('An earlier change hasn’t reached every file yet. Use Try Again on its notice first.'),
+      fail(
+        'owed',
+        'An earlier change hasn’t reached every file yet. Use Try Again to finish it first.',
+      ),
     )
     expect((await readRegistry(root)).defs[propId]?.select_options).toContainEqual({
       key: 'Done',
@@ -274,7 +291,10 @@ describe('a schema op started while another operation’s record holds the journ
   ])('%s is refused, leaving every holder', async (_, run) => {
     const before = await fm()
     expect(await run()).toEqual(
-      fault('An earlier change hasn’t reached every file yet. Use Try Again on its notice first.'),
+      fail(
+        'owed',
+        'An earlier change hasn’t reached every file yet. Use Try Again to finish it first.',
+      ),
     )
     expect(await fm()).toBe(before)
     expect(await readSchemaJournal(root)).toEqual(other)
@@ -341,32 +361,22 @@ describe('a Collection whose sidecar doesn’t parse', () => {
     await refreshTree(root)
   }
 
-  it('an option rename answers its record, and the replay brings the Collection current once it reads', async () => {
+  it('an option rename holds nothing owed, and the Collection keeps the old label once it reads', async () => {
     const held = await damaged()
-    const record = {
-      op: 'option-rename',
-      id: propId,
-      keys: [['Done', 'Closed']],
-      labels: ['Done', 'Closed'],
-    }
     const r = await propertiesHandlers['property:renameOption'](ctx, propId, 'Done', 'Closed')
-    expect(r.ok && r.value.cascade.warning).toBeDefined()
-    expect(r.ok && r.value.owed).toEqual(record)
+    expect(r).toEqual(ok({ cascade: { pages: [], hosts: [HOME] } }))
+    expect(await readSchemaJournal(root)).toBeNull()
     await repaired(held)
-    expect(await propertiesHandlers['property:replay'](ctx, record)).toEqual(ok(null))
-    expect((await readJsonAt(colFile())).views).toEqual([viewOn(propId, 'Closed')])
+    expect((await readJsonAt(colFile())).views).toEqual([viewOn(propId, 'Done')])
   })
 
-  it('an option removal answers its record, and the replay brings the Collection current once it reads', async () => {
+  it('an option removal holds nothing owed and drops the option, and the Collection keeps its filter once it reads', async () => {
     const held = await damaged()
-    const record = { op: 'option-remove', id: propId, key: 'Done' }
     const r = await propertiesHandlers['property:removeOption'](ctx, propId, 'Done')
-    expect(r.ok && r.value.cascade.warning).toBeDefined()
-    expect(r.ok && r.value.owed).toEqual(record)
+    expect(r).toEqual(ok({ cascade: { pages: [], hosts: [HOME] } }))
+    expect(await readSchemaJournal(root)).toBeNull()
     await repaired(held)
-    expect(await propertiesHandlers['property:replay'](ctx, record)).toEqual(ok(null))
-    const views = (await readJsonAt(colFile())).views as { filter: unknown }[]
-    expect(views[0]).not.toHaveProperty('filter')
+    expect((await readJsonAt(colFile())).views).toEqual([viewOn(propId, 'Done')])
     const options = (await readRegistry(root)).defs[propId].select_options?.map((o) => o.label)
     expect(options).toEqual(['Todo'])
   })

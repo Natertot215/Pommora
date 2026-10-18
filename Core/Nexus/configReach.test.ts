@@ -345,9 +345,9 @@ describe('what the pass skips', () => {
     expect((await reachConfig(root, rename)).skipped).toBe(1)
   })
 
-  it('counts a corrupt sidecar as one skip and leaves its bytes', async () => {
+  it('leaves a corrupt sidecar’s bytes and holds nothing owed for it', async () => {
     await writeFile(setFile(), '{ not json')
-    expect((await reachConfig(root, rename)).skipped).toBe(1)
+    expect((await reachConfig(root, rename)).skipped).toBe(0)
     expect(await readFile(setFile(), 'utf8')).toBe('{ not json')
   })
 
@@ -381,8 +381,14 @@ describe('what the pass skips', () => {
   })
 
   it('counts an unreadable Contexts registry as one skip, since no Space can be found', async () => {
-    await writeFile(join(root, '.nexus', 'contexts', 'contexts.json'), '{ not json')
+    await rm(join(root, '.nexus', 'contexts', 'contexts.json'))
+    await mkdir(join(root, '.nexus', 'contexts', 'contexts.json'))
     expect(await reachConfig(root, rename)).toEqual({ skipped: 1, hosts: [] })
+  })
+
+  it('holds nothing owed for a Contexts registry that doesn’t parse', async () => {
+    await writeFile(join(root, '.nexus', 'contexts', 'contexts.json'), '{ not json')
+    expect(await reachConfig(root, rename)).toEqual({ skipped: 0, hosts: [] })
   })
 
   it('answers one skip and writes nothing when the walk throws', async () => {
