@@ -173,18 +173,19 @@ The drive's cases, derived from *MetadataV3 — Decisions & Intention* and writt
 - **The hints' apostrophes:** H-1 quotes the hints with straight apostrophes and the plan's `FormatRows.tsx` writes `’`; the drive asserts the AFTER block's.
 - **"The value picker (foreign words, captions)":** captions exist only on the two format rows (`PickerRowLook.caption`), so the drive asserts them there and asserts foreign words in the value picker.
 
-#### Copy To Fill
+#### Copy
 
-The six `{COPY: …}` messages in *§Open Items* sit in the drive's `COPY` table, one entry each, as functions of the words their messages name. While an entry is null, its checks assert that the refusal or the dialog is present at its place; once filled, they assert the text.
+The messages Nathan worded at the Stop before Task 5A-1 sit in the drive's `COPY` table, one entry each, as functions of the words their messages name.
 
 | Entry | Where It's Asserted |
 | --- | --- |
 | `aKeyAnotherPropertyWrites` | group 5's rename onto `m5_due`; group 7's Key Format change onto `Ship_Date` |
-| `twoOptionsWritingOneKey` | group 5's create holding `A` and `a`; group 7's collision |
+| `twoOptionsWritingOneKey` | group 5's create holding `A` and `a` |
+| `aFormatGivingTwoOptionsOneKey` | group 7's collision |
 | `anOptionChangeWaitingForTryAgain` | group 6's option rename and removal; group 7's Value Format change |
-| `aFormatThatWritesNoKey` | group 7's create and Key Format change on `---` |
+| `anEmptyKey` | group 5's creates holding a blank option key and a Status's blank option key; group 7's create and Key Format change on `---` |
 | `aValueFormatChangeCrossingTwoOptionsKeys` | group 7's `Router` crossing |
-| `theFormatChangesConfirmation` | group 9's dialogs, asserted by their `2 Items` until worded |
+| `theFormatChangesConfirmation` | group 9's dialogs |
 
 #### Expectations the Plan Doesn't Spell Byte for Byte
 

@@ -75,7 +75,7 @@ The work lands in ten phases in dependency order, removal first: the Space order
 | `optionLabels` • function | An option list's labels, in place of `optionValues`. | `Core/Properties/properties.ts` |
 | `restoreValue` • mutate op | An undo's put-back: the raw value the file held under a property's key, written as it was, or the key removed when it held none. | `Core/Nexus/mutateRequest.ts`, `Core/Properties/setProperty.ts` |
 | `findOption` • function | The option a label names, for the host's option channels and the renderer alike, moved from `Cells/cellResolve.ts`. | `Core/Properties/properties.ts` |
-| `KEY_REFUSAL.duplicateKey` • refusal | Another property writes this key. | `Core/Properties/properties.ts` |
+| `KEY_REFUSAL.duplicateKey` · `KEY_REFUSAL.noKey` • refusals | Another property writes this key; a label that leaves its key empty. | `Core/Properties/properties.ts` |
 | `wordsOf` · `OptionWords` · `keyOf` • function · type · function | One cached map per definition, key to label and label to key. | `Core/Properties/propertyValue.ts` |
 | `cacheSweep` • function | The Collection caches edited by key beside the file sweep. | `Core/Properties/optionOps.ts` |
 | `OWED` · `CROSSED` • refusals | An option change waiting for an owed record; a Value Format change crossing two options' keys. | `Core/Properties/optionOps.ts` |
@@ -2290,7 +2290,7 @@ The work lands in ten phases in dependency order, removal first: the Space order
 
 **GOAL:** Every property definition stores a `label`, its title in the app, and a `key`, the word it writes to disk, in place of `name` (C-1, C-2); a registry entry omitting `label` reads its `key` (C-3). Every read that used `name` as the on-disk key reads `key`, every read that used it as a title reads `label`, and every uniqueness and reserved-key check reads both words without regard to case (D-1). Keys equal labels this phase, since no Key Format exists yet: a create and a rename write `key = label`, so nothing a user does behaves differently, and the divergent pairs C-2's INFERRED rule trusts (a key edited by hand) are what the tests pin. From this phase's first commit until Task 5B-4 rewrites the registries, a build reads neither Nexus, so the gates run on fixtures and neither phase's checkpoint drives the app. It's a separate phase from 5B because the definition's field rename and the option's field rename are two compile units, each touching every reader of its field and a few hundred test fixtures; together they're past one run.
 
-- [ ] `[Stop: before Task 5A-1 — Nathan words the six messages in §Open Items, which every {COPY: …} placeholder from Task 5A-2 on takes; quits every Pommora window on NexusOS and ~/Test, keeping them closed through Task 5B-4; and gives his word for Task 5B-4; the orchestrator then writes the copy into the tasks and runs Phases 5A and 5B through Task 5B-4]`
+- [ ] `[Stop: before Task 5A-1 — Nathan words the six messages in §Open Items, which every task from Task 5A-2 on writes; quits every Pommora window on NexusOS and ~/Test, keeping them closed through Task 5B-4; and gives his word for Task 5B-4; the orchestrator then writes the copy into the tasks and runs Phases 5A and 5B through Task 5B-4]`
 
 #### Task 5A-1
 
@@ -2672,9 +2672,9 @@ The work lands in ten phases in dependency order, removal first: the Space order
 
 **CHANGE**
 
-- [ ] Write and watch fail: `schema.test.ts` *§validateName* takes `{ label, key }`: `{ label: 'stage', key: 'stage' }` beside `{ label: 'Stage', key: 'Stage' }` refuses `KEY_REFUSAL.duplicate('stage')`; `{ label: 'Stage', key: 'Stage' }` beside `{ label: 'Phase', key: 'stage' }` refuses `KEY_REFUSAL.duplicateKey('Stage')`; `{ label: 'My Banner', key: 'banner' }` refuses `KEY_REFUSAL.reserved('banner')` and `{ label: 'ID', key: 'x' }` refuses `KEY_REFUSAL.reserved('ID')`; the existing cases (`:16-47`) pass each word as both. `propertiesRegistry.test.ts:70` adds: of `{ label: 'A', key: 'x' }` and `{ label: 'B', key: 'X' }`, the second is unadmitted and rides through a write; `{ label: 'My Banner', key: 'banner' }` is unadmitted. `registryProperty.test.ts`: a rename of `{ label: 'Status', key: 'status' }` with a page holding `status: Open` to `status` writes the label `status`, leaves the journal slot empty, leaves the page byte-identical, and answers `{ from: 'status', to: 'status' }`. `PropertyFrame.test.tsx`: a rename answering `{ from: 'status', to: 'status' }` leaves `valuesEpoch` as it was; one answering `{ from: 'Stage', to: 'Phase' }` bumps it with that pair.
-- [ ] `schema.ts`: `validateName(words, existing, excludeId)` takes `Pick<PropertyDefinition, 'label' | 'key'>`, refuses `keyRefusal(words.label) ?? keyRefusal(words.key)`, then a folded label clash (`KEY_REFUSAL.duplicate(label)`), then a folded key clash (`KEY_REFUSAL.duplicateKey(key)`); its doc says it checks both words; `validateDefinition` passes `def`; `keyRefusal`'s doc names a label or a key.
-- [ ] `properties.ts`: `KEY_REFUSAL.duplicateKey(key)` reads `{COPY: refusal — another property already writes this key}`.
+- [ ] Write and watch fail: `schema.test.ts` *§validateName* takes `{ label, key }`: `{ label: 'stage', key: 'stage' }` beside `{ label: 'Stage', key: 'Stage' }` refuses `KEY_REFUSAL.duplicate('stage')`; `{ label: 'Stage', key: 'Stage' }` beside `{ label: 'Phase', key: 'stage' }` refuses `KEY_REFUSAL.duplicateKey('Stage')`; `{ label: 'My Banner', key: 'banner' }` refuses `KEY_REFUSAL.reserved('banner')` and `{ label: 'ID', key: 'x' }` refuses `KEY_REFUSAL.reserved('ID')`; `{ label: '---', key: '' }` refuses `KEY_REFUSAL.noKey`; the existing cases (`:16-47`) pass each word as both. `propertiesRegistry.test.ts:70` adds: of `{ label: 'A', key: 'x' }` and `{ label: 'B', key: 'X' }`, the second is unadmitted and rides through a write; `{ label: 'My Banner', key: 'banner' }` is unadmitted. `registryProperty.test.ts`: a rename of `{ label: 'Status', key: 'status' }` with a page holding `status: Open` to `status` writes the label `status`, leaves the journal slot empty, leaves the page byte-identical, and answers `{ from: 'status', to: 'status' }`. `PropertyFrame.test.tsx`: a rename answering `{ from: 'status', to: 'status' }` leaves `valuesEpoch` as it was; one answering `{ from: 'Stage', to: 'Phase' }` bumps it with that pair.
+- [ ] `schema.ts`: `validateName(words, existing, excludeId)` takes `Pick<PropertyDefinition, 'label' | 'key'>`, refuses `keyRefusal(words.label)`, then an empty key (`KEY_REFUSAL.noKey`) or `keyRefusal(words.key)`, then a folded label clash (`KEY_REFUSAL.duplicate(label)`), then a folded key clash (`KEY_REFUSAL.duplicateKey(key)`); its doc says it checks both words; `validateDefinition` passes `def`; `keyRefusal`'s doc names a label or a key.
+- [ ] `properties.ts`: `KEY_REFUSAL.duplicateKey(key)` reads `A property already writes "{key}" to files.`, and `KEY_REFUSAL.noKey` reads `Properties cannot contain an invalid name.`
 - [ ] `propertiesRegistry.ts`: admission admits a definition when `validateName` passes it against the definitions already admitted, its comment saying the first to hold a label or a key in any casing is the one admitted; the `keyRefusal` and `normalizeTitle` imports go.
 - [ ] `registryProperty.ts`: `renameProperty` validates `{ label: to, key: to }`, refuses on clashes only when `to !== prior.key`, sweeps only when the committed `from` differs from `def.key`, and answers `{ from, to: def.key }`.
 - [ ] `PropertyFrame.tsx:237`: `bumpValuesEpoch` runs only when `res.value.from !== res.value.to`.
@@ -2692,7 +2692,7 @@ The work lands in ten phases in dependency order, removal first: the Space order
    excludeId?: string,
  ): Result<null> {
 -  const refusal = keyRefusal(name)
-+  const refusal = keyRefusal(label) ?? keyRefusal(key)
++  const refusal = keyRefusal(label) ?? (normalizeTitle(key) ? keyRefusal(key) : KEY_REFUSAL.noKey)
    if (refusal) return fail('invalid-property', refusal)
 -  const folded = normalizeTitle(name)
 -  const clash = existing.some((d) => d.id !== excludeId && normalizeTitle(d.label) === folded)
@@ -2715,7 +2715,8 @@ The work lands in ten phases in dependency order, removal first: the Space order
 ```Core/Properties/properties.ts diff
 @@ KEY_REFUSAL @@
    duplicate: (name: string) => `A property named "${name}" already exists.`,
-+  duplicateKey: (key: string) => `{COPY: refusal — another property already writes "${key}"}`,
++  duplicateKey: (key: string) => `A property already writes "${key}" to files.`,
++  noKey: 'Properties cannot contain an invalid name.',
 ```
 
 ```Core/Properties/propertiesRegistry.ts diff
@@ -3367,8 +3368,8 @@ The work lands in ten phases in dependency order, removal first: the Space order
 
 **CHANGE**
 
-- [ ] Write and watch fail: `schema.test.ts` *§validateOptionValues* (`:101-112`) takes `{ key, label }` options: `[{ key: 'A', label: 'A' }, { key: 'a', label: 'B' }]` refuses `{COPY: refusal — two options write one key}`; `[{ key: '', label: 'A' }]` refuses the same blank refusal as a blank label; the existing four cases pass with each word as both. *§validateDefinition*: a Status whose groups hold `Done` and `done` refuses `'Option titles must be unique.'`, and a Status holding `{ key: ' ', label: 'Open' }` refuses `'Option titles can’t be blank.'`. *§withUniqueOptions* (new): of `{ key: 'x', label: 'A' }` and `{ key: 'X', label: 'B' }` it keeps the first; it drops `{ key: '', label: 'C' }`. `propertiesRegistry.test.ts:70` adds the key-fold pair, admitted with its first option.
-- [ ] `schema.ts`: `validateOptionValues(options: { key: string; label: string }[])` refuses a blank label or key, then a folded label clash (`'Option titles must be unique.'`), then a folded key clash (`{COPY: refusal — two options write one key}`); its doc says labels and keys compare case-folded; `withUniqueOptions` drops every option with a blank label or key, then keeps the first per folded label through `firstPerTitle`, then the first per folded key among those; `validateDefinition` checks `optionsOf(def)` whenever `PROPERTY_TYPES[def.type].options` is set.
+- [ ] Write and watch fail: `schema.test.ts` *§validateOptionValues* (`:101-112`) takes `{ key, label }` options: `[{ key: 'A', label: 'A' }, { key: 'a', label: 'B' }]` refuses `'An option with this title already exists, please choose another name.'`, and with a second argument refuses that one instead; `[{ key: '', label: 'A' }]` refuses `'Options cannot contain an invalid name.'`; the existing four cases pass with each word as both. *§validateDefinition*: a Status whose groups hold `Done` and `done` refuses `'Option titles must be unique.'`, and a Status holding `{ key: ' ', label: 'Open' }` refuses `'Options cannot contain an invalid name.'`. *§withUniqueOptions* (new): of `{ key: 'x', label: 'A' }` and `{ key: 'X', label: 'B' }` it keeps the first; it drops `{ key: '', label: 'C' }`. `propertiesRegistry.test.ts:70` adds the key-fold pair, admitted with its first option.
+- [ ] `schema.ts`: `validateOptionValues(options: { key: string; label: string }[], taken?)` refuses a blank label (`'Option titles can’t be blank.'`), then a blank key (`'Options cannot contain an invalid name.'`), then a folded label clash (`'Option titles must be unique.'`), then a folded key clash (`taken`, by default `'An option with this title already exists, please choose another name.'`); its doc says labels and keys compare case-folded; `withUniqueOptions` drops every option with a blank label or key, then keeps the first per folded label through `firstPerTitle`, then the first per folded key among those; `validateDefinition` checks `optionsOf(def)` whenever `PROPERTY_TYPES[def.type].options` is set.
 
 **AFTER**
 
@@ -3415,15 +3416,17 @@ The work lands in ten phases in dependency order, removal first: the Space order
 -    return fail('invalid-property', 'Option titles must be unique.')
 -  }
 +/** No minimum count — a Select may hold zero options. Enforced at create AND on every option edit; labels and keys each compare case-folded. */
-+export function validateOptionValues(options: { key: string; label: string }[]): Result<null> {
++export function validateOptionValues(
++  options: { key: string; label: string }[],
++  taken = 'An option with this title already exists, please choose another name.',
++): Result<null> {
 +  const labels = options.map((o) => normalizeTitle(o.label))
 +  const keys = options.map((o) => normalizeTitle(o.key))
-+  if ([...labels, ...keys].includes(''))
-+    return fail('invalid-property', 'Option titles can’t be blank.')
++  if (labels.includes('')) return fail('invalid-property', 'Option titles can’t be blank.')
++  if (keys.includes('')) return fail('invalid-property', 'Options cannot contain an invalid name.')
 +  if (new Set(labels).size < labels.length)
 +    return fail('invalid-property', 'Option titles must be unique.')
-+  if (new Set(keys).size < keys.length)
-+    return fail('invalid-property', '{COPY: refusal — two options write one key}')
++  if (new Set(keys).size < keys.length) return fail('invalid-property', taken)
    return ok(null)
  }
 ```
@@ -4010,7 +4013,7 @@ console.log(files.join('\n'))
 **CHANGE**
 
 - [ ] Write and watch fail: `optionOps.test.ts` — a new describe *§an owed record holds option changes*: with `{ op: 'rename', id: 'prop_x', from: 'Old', to: 'New' }` held, `renameOption(root, id, 'A', 'B')` and `removeOption(root, id, 'A')` each answer `fault(OWED_MESSAGE)`, the registry still lists `A`, every holder keeps its bytes, and the held record is unchanged; `clearOption(root, id, 'A')` still strips (it writes no record); a held record identical to the one an op would write (the op re-run) doesn't refuse. `journalWiring.test.ts:305-317` passes unchanged (a delete still runs over a held record).
-- [ ] `optionOps.ts`: delete `removeOption`'s `journaled` and its conditional; add `OWED`, `fault('{COPY: refusal pointing to Try Again}')`; `renameOption` and `removeOption` answer `OWED` when `writeSchemaJournal` answers false, before any commit or sweep; `removeOption` answers `schemaCascade(reach, record)`.
+- [ ] `optionOps.ts`: delete `removeOption`'s `journaled` and its conditional; add `OWED`, `fault('An earlier change hasn’t reached every file yet. Use Try Again on its notice first.')`; `renameOption` and `removeOption` answer `OWED` when `writeSchemaJournal` answers false, before any commit or sweep; `removeOption` answers `schemaCascade(reach, record)`.
 - [ ] `journalSlot.ts:1`: the header says the op now starting runs unjournaled or refuses, as its owner decides.
 
 **AFTER**
@@ -4018,7 +4021,7 @@ console.log(files.join('\n'))
 ```Core/Properties/optionOps.ts diff
 @@ constants @@
  const NO_GROUP = fail('not-found', 'That group no longer exists.')
-+const OWED = fault('{COPY: refusal pointing to Try Again}')
++const OWED = fault('An earlier change hasn’t reached every file yet. Use Try Again on its notice first.')
 @@ renameOption @@
      // Staged BEFORE the commit: a crash between commit and cascade is recoverable only from this record, and one stranded by a refusal is disposed of by the replay's holds-to-and-not-from gate.
 -    await writeSchemaJournal(root, record)
@@ -4669,12 +4672,12 @@ for (const miss of misses) console.log(JSON.stringify(miss))
 
 **TASK:** Add the Value Format change: one plan computes each moved option's key pair under the new format and refuses a collision or a crossing; the change enters `rekeyOptions` with one key-only `option-rename` record and the format, so it commits every key and the format and runs the option cascade over the key map with no configuration pass, as an option rename does; its count is that cascade's file sweep run dry. Add the `property:setValueFormat` channel.
 
-**NOW:** After Task 7B-1 an option rename enters `rekeyOptions(root, record)` (`Core/Properties/optionOps.ts`), which journals the record or refuses `OWED`, re-keys every stored option through `record.keys` and relabels through `record.labels`, and cascades from the record. After Phase 6 the option cascade takes a key map and an optional label pair (`optionCascade(root, def, keys, labels?)`, `Core/Properties/optionOps.ts`), sweeping files and caches when the map isn't empty and configuration only with `labels`; `valueEditPlan(root, def, keys)` builds its file plan; `OWED` refuses an option change while another record is owed; the `option-rename` record is `{ id, keys: [from, to][], labels? }`, its replay acting while the definition holds every `to` and no `from` and cascading `new Map(journal.keys)` with `journal.labels` (`Core/Properties/replaySchemaCascade.ts`), and the adoption shield covers every `from` of an owed record. `validateOptionValues` (`Core/Properties/schema.ts:85-91`, after Phase 5B) refuses a blank label or key, a fold-duplicate label, and a fold-duplicate key with `{COPY: refusal — two options write one key}`. `editStoredOptions(def, stored, edit)` (`optionOps.ts:53-60`) edits the stored entry's groups and writes them onto `def`. Nothing refuses a crossing: under `lowercase` to `kebab-case`, `WifiPro` moves `wifipro` → `wifi-pro` while `WiFi-Pro` moves `wifi-pro` → `wi-fi-pro`, and every uniqueness check passes (F-1 INFERRED; *MetadataV3 — Investigation*, *§Uniqueness and Collisions*). `memberKey` (`Core/Files/heldKeys.ts:51`, the trimmed NFC text after Phase 3) is what the replay's `editList` matches by.
+**NOW:** After Task 7B-1 an option rename enters `rekeyOptions(root, record)` (`Core/Properties/optionOps.ts`), which journals the record or refuses `OWED`, re-keys every stored option through `record.keys` and relabels through `record.labels`, and cascades from the record. After Phase 6 the option cascade takes a key map and an optional label pair (`optionCascade(root, def, keys, labels?)`, `Core/Properties/optionOps.ts`), sweeping files and caches when the map isn't empty and configuration only with `labels`; `valueEditPlan(root, def, keys)` builds its file plan; `OWED` refuses an option change while another record is owed; the `option-rename` record is `{ id, keys: [from, to][], labels? }`, its replay acting while the definition holds every `to` and no `from` and cascading `new Map(journal.keys)` with `journal.labels` (`Core/Properties/replaySchemaCascade.ts`), and the adoption shield covers every `from` of an owed record. `validateOptionValues` (`Core/Properties/schema.ts:85-91`, after Phase 5B) refuses a blank label, a blank key, a fold-duplicate label, and a fold-duplicate key, the last with its `taken` argument, by default `'An option with this title already exists, please choose another name.'`. `editStoredOptions(def, stored, edit)` (`optionOps.ts:53-60`) edits the stored entry's groups and writes them onto `def`. Nothing refuses a crossing: under `lowercase` to `kebab-case`, `WifiPro` moves `wifipro` → `wifi-pro` while `WiFi-Pro` moves `wifi-pro` → `wi-fi-pro`, and every uniqueness check passes (F-1 INFERRED; *MetadataV3 — Investigation*, *§Uniqueness and Collisions*). `memberKey` (`Core/Files/heldKeys.ts:51`, the trimmed NFC text after Phase 3) is what the replay's `editList` matches by.
 
 **CHANGE**
 
-- [ ] Write and watch fail: `optionOps.test.ts`, a new describe *§a Value Format change re-keys every option*: a Multi-Select `Tones` with `Light Blue` and `Dark Red` (Match Title) assigned to `Col`, a page holding `Tones: [Light Blue, "Dark Red"]`, a Space holding `Tones: ['Light Blue']`, `Col`'s cache block holding `{ p1: ['Light Blue'] }`, and a view filtering `Light Blue` (`seedConfigSurfaces`); `setValueFormat(root, id, 'kebab-case')` stores `value_format: 'kebab-case'` and the options `{ key: 'light-blue', label: 'Light Blue' }` and `{ key: 'dark-red', label: 'Dark Red' }`, the page reads `Tones: ["light-blue", "dark-red"]` (a renamed member with no exact held match takes the file's first quoted style, as A-3 writes), the Space `['light-blue']`, the cache `{ p1: ['light-blue'] }`, every configuration surface reads as it did, the journal is null, and the answer holds no `owed`; with `Wifi Pro` and `Wifi-Pro`, `kebab-case` refuses `{COPY: refusal — two options write one key}` (Task 5B-3's refusal) and the registry, the page, and the journal are unchanged; created under `lowercase` with `WifiPro` and `WiFi-Pro` (keys `wifipro` and `wifi-pro`), `kebab-case` refuses `CROSSED` and nothing changes; with `{ op: 'rename', id: 'prop_other', from: 'A', to: 'B' }` held, it answers `OWED` and nothing changes; with the page unreadable (`it.skipIf(noModeBits)`), it answers `owed: { op: 'option-rename', id, keys: [['Light Blue', 'light-blue'], ['Dark Red', 'dark-red']] }`, and `replaySchemaCascade(root, owed)` brings the page current and clears; `setValueFormat(root, id, 'Match Title')` under Match Title keeps every option and writes no holder; `setValueFormat` on a Text refuses `NO_OPTIONS`. A new describe *§valueFormatHolders*: the page and the Space count `ok(2)` for `kebab-case` and every file keeps its bytes; the crossing pair answers `CROSSED`; `Match Title` over keys equal to labels answers `ok(0)`. `handlers.test.ts` *§the property channels*: `property:setValueFormat` with `'Shouting'` answers the `NEEDS_ID_AND_VALUE` fault.
-- [ ] `optionOps.ts`: add `CROSSED`, `fail('invalid-property', '{COPY: refusal — the format would give an option a key another option holds now}')`; `valueFormatPlan(root, propertyId, format)`, answering the definition and the key pair of each option `format` moves, refused by `validateOptionValues` over the moved options and by `CROSSED` when a pair's new key is another pair's old key by `memberKey`; `rekeyOptions` takes an optional `value_format`, committing it on the definition it re-keys; `setValueFormat(root, propertyId, format)` enters `rekeyOptions` with `{ op: 'option-rename', id, keys }` from the plan and `format`; `valueFormatHolders(root, propertyId, format)`, answering `0` when no key moves and otherwise `sweepCount` over `valueEditPlan(root, def, new Map(keys))`.
+- [ ] Write and watch fail: `optionOps.test.ts`, a new describe *§a Value Format change re-keys every option*: a Multi-Select `Tones` with `Light Blue` and `Dark Red` (Match Title) assigned to `Col`, a page holding `Tones: [Light Blue, "Dark Red"]`, a Space holding `Tones: ['Light Blue']`, `Col`'s cache block holding `{ p1: ['Light Blue'] }`, and a view filtering `Light Blue` (`seedConfigSurfaces`); `setValueFormat(root, id, 'kebab-case')` stores `value_format: 'kebab-case'` and the options `{ key: 'light-blue', label: 'Light Blue' }` and `{ key: 'dark-red', label: 'Dark Red' }`, the page reads `Tones: ["light-blue", "dark-red"]` (a renamed member with no exact held match takes the file's first quoted style, as A-3 writes), the Space `['light-blue']`, the cache `{ p1: ['light-blue'] }`, every configuration surface reads as it did, the journal is null, and the answer holds no `owed`; with `Wifi Pro` and `Wifi-Pro`, `kebab-case` refuses `'This format would give two options the same key, please rename one first.'` and the registry, the page, and the journal are unchanged; created under `lowercase` with `WifiPro` and `WiFi-Pro` (keys `wifipro` and `wifi-pro`), `kebab-case` refuses `CROSSED` and nothing changes; with `{ op: 'rename', id: 'prop_other', from: 'A', to: 'B' }` held, it answers `OWED` and nothing changes; with the page unreadable (`it.skipIf(noModeBits)`), it answers `owed: { op: 'option-rename', id, keys: [['Light Blue', 'light-blue'], ['Dark Red', 'dark-red']] }`, and `replaySchemaCascade(root, owed)` brings the page current and clears; `setValueFormat(root, id, 'Match Title')` under Match Title keeps every option and writes no holder; `setValueFormat` on a Text refuses `NO_OPTIONS`. A new describe *§valueFormatHolders*: the page and the Space count `ok(2)` for `kebab-case` and every file keeps its bytes; the crossing pair answers `CROSSED`; `Match Title` over keys equal to labels answers `ok(0)`. `handlers.test.ts` *§the property channels*: `property:setValueFormat` with `'Shouting'` answers the `NEEDS_ID_AND_VALUE` fault.
+- [ ] `optionOps.ts`: add `CROSSED`, `fail('invalid-property', 'This format would give one option the key another option writes now, please rename one first.')`; `valueFormatPlan(root, propertyId, format)`, answering the definition and the key pair of each option `format` moves, refused by `validateOptionValues` over the moved options, with `'This format would give two options the same key, please rename one first.'` for a key clash, and by `CROSSED` when a pair's new key is another pair's old key by `memberKey`; `rekeyOptions` takes an optional `value_format`, committing it on the definition it re-keys; `setValueFormat(root, propertyId, format)` enters `rekeyOptions` with `{ op: 'option-rename', id, keys }` from the plan and `format`; `valueFormatHolders(root, propertyId, format)`, answering `0` when no key moves and otherwise `sweepCount` over `valueEditPlan(root, def, new Map(keys))`.
 - [ ] `handlers.ts`: `'property:setValueFormat': registryChannel(idAndFormat, setValueFormat, cascadeReply)`; `bridge.ts` declares it with the `Result<SchemaCascade>` reply.
 
 **AFTER**
@@ -4684,11 +4687,11 @@ for (const miss of misses) console.log(JSON.stringify(miss))
 -import { formatKey } from './keyFormat'
 +import { formatKey, type KeyFormat } from './keyFormat'
 @@ constants @@
- const OWED = fault('{COPY: refusal pointing to Try Again}')
+ const OWED = fault('An earlier change hasn’t reached every file yet. Use Try Again on its notice first.')
 +// A replay over a partly swept file can't tell a moved word from an unmoved one.
 +const CROSSED = fail(
 +  'invalid-property',
-+  '{COPY: refusal — the format would give an option a key another option holds now}',
++  'This format would give one option the key another option writes now, please rename one first.',
 +)
 @@ valueFormatPlan @@
 +async function valueFormatPlan(
@@ -4701,7 +4704,10 @@ for (const miss of misses) console.log(JSON.stringify(miss))
 +  const typeCheck = requireOptions(def)
 +  if (!typeCheck.ok) return typeCheck
 +  const moved = optionsOf(def).map((o) => ({ ...o, was: o.key, key: formatKey(o.label, format) }))
-+  const check = validateOptionValues(moved)
++  const check = validateOptionValues(
++    moved,
++    'This format would give two options the same key, please rename one first.',
++  )
 +  if (!check.ok) return check
 +  const keys = moved.flatMap(({ was, key }): [string, string][] => (key === was ? [] : [[was, key]]))
 +  const olds = new Set(keys.map(([from]) => memberKey(from)))
@@ -4841,13 +4847,13 @@ for (const miss of misses) console.log(JSON.stringify(miss))
 
 **CHANGE**
 
-- [ ] Write and watch fail: `confirmations.test.ts` — a new case: with `property:holders` answering `ok(2)`, `askFormatChange('p1', { key_format: 'lowercase' })` asks `'This action would rewrite metadata in 2 Items'` and the holders stub saw `['p1', { key_format: 'lowercase' }]`; answering `ok(1)` and `ok(0)`, it resolves `true` without asking; refused, it resolves `false` without asking. `PropertyFrame.test.tsx` *§native menus + the inline-rename channel*: the `Count` (Number) editor shows a `Key Format` row reading `Match Title` with the hint "How this property’s name is written into each file’s metadata key." and no `Value Format` row; the `Status` editor shows both, `Value Format` with "How each value is written in the file’s metadata."; the picker's list is driven as `MatrixMenu.test.tsx:17-18` drives it, `setMenuDoor(door)` with a `vi.fn<MenuDoor>` answering the picked format (the harness installs no door, so `PickerControl.tsx:102` opens nothing without one): in the `Count` editor, with `property:holders` answering `ok(3)` and the door answering `'lowercase'`, a click on `button[aria-label="Key Format"]` raises a pending confirm reading `This action would rewrite metadata in 3 Items`, and settling it `true` asks `property:setKeyFormat('prop_n', 'lowercase')` and bumps the values epoch with the answered key pair; with `property:holders` answering `ok(1)`, the pick asks `property:setKeyFormat` with no confirm; in the `Status` editor, a `Value Format` pick of `kebab-case` over a count of `ok(0)` asks `property:setValueFormat('prop_status', 'kebab-case')`. `handlers.test.ts` *§the property channels*: `property:holders(propId, { value_format: 'kebab-case' })` and `property:holders(propId, { key_format: 'lowercase' })` answer their counts; `property:holders(propId, { key_format: 'Shouting' })` answers the `NEEDS_ID_AND_VALUE` fault; `confirmations.test.ts:39-59` passes unchanged.
+- [ ] Write and watch fail: `confirmations.test.ts` — a new case: with `property:holders` answering `ok(2)`, `askFormatChange('p1', { key_format: 'lowercase' })` asks `'This action would rewrite metadata in 2 Items.'` and the holders stub saw `['p1', { key_format: 'lowercase' }]`; answering `ok(1)` and `ok(0)`, it resolves `true` without asking; refused, it resolves `false` without asking. `PropertyFrame.test.tsx` *§native menus + the inline-rename channel*: the `Count` (Number) editor shows a `Key Format` row reading `Match Title` with the hint "How this property’s name is written into each file’s metadata key." and no `Value Format` row; the `Status` editor shows both, `Value Format` with "How each value is written in the file’s metadata."; the picker's list is driven as `MatrixMenu.test.tsx:17-18` drives it, `setMenuDoor(door)` with a `vi.fn<MenuDoor>` answering the picked format (the harness installs no door, so `PickerControl.tsx:102` opens nothing without one): in the `Count` editor, with `property:holders` answering `ok(3)` and the door answering `'lowercase'`, a click on `button[aria-label="Key Format"]` raises a pending confirm reading `This action would rewrite metadata in 3 Items.`, and settling it `true` asks `property:setKeyFormat('prop_n', 'lowercase')` and bumps the values epoch with the answered key pair; with `property:holders` answering `ok(1)`, the pick asks `property:setKeyFormat` with no confirm; in the `Status` editor, a `Value Format` pick of `kebab-case` over a count of `ok(0)` asks `property:setValueFormat('prop_status', 'kebab-case')`. `handlers.test.ts` *§the property channels*: `property:holders(propId, { value_format: 'kebab-case' })` and `property:holders(propId, { key_format: 'lowercase' })` answer their counts; `property:holders(propId, { key_format: 'Shouting' })` answers the `NEEDS_ID_AND_VALUE` fault; `confirmations.test.ts:39-59` passes unchanged.
 - [ ] `registryProperty.test.ts`, a new describe *§keyFormatHolders*: the page and the Space holding `Tags` count `ok(2)`, a page holding only `tags` isn't counted, every file keeps its bytes; the `Heading Icon Hidden` case answers the reserved refusal; a format whose key equals the stored key (`lowercase` over `{ label: 'tags', key: 'tags' }`) answers `ok(0)`.
 - [ ] `registryProperty.ts`: `renameSweep(root, from, to)` sweeps `renamePlan(root, from, to)`, split out of it; add `keyFormatHolders(root, propertyId, format)`, answering the dry run of that plan for the rekey `rekeyPlan` checks, `0` when the key stays, and its refusal otherwise.
 - [ ] `UIX/Menus/MenuIndex.tsx`: `PickerRowLook` gains `caption?: ReactNode`, and `pickerRow` passes `caption: look?.caption`.
 - [ ] `keyFormat.ts`: add `FormatChange`.
 - [ ] `Core/Properties/Schema/FormatRows.tsx` (new): one `MenuIndex` section inside `s.configEditor`, the `Key Format` row and, when `PROPERTY_TYPES[def.type].options`, the `Value Format` row, each a `pickerRow` over the ten formats (labels as written, the stored format or `DEFAULT_KEY_FORMAT` as the value), inert, its H-1 hint as the caption, answering a `FormatChange`. The format options live here, their one reader.
-- [ ] `confirmations.ts`: `askHolding`'s second parameter is `of: string | FormatChange | undefined`; add `askFormatChange(propertyId, change)`, quiet at `1`, its message the Brief's sentence with the count, `{COPY: detail}` and `{COPY: action}`.
+- [ ] `confirmations.ts`: `askHolding`'s second parameter is `of: string | FormatChange | undefined`; add `askFormatChange(propertyId, change)`, quiet at `1`, its message the Brief's sentence with the count, its detail `Each key changes to the new format; values stay the same.`, and its action `Rewrite`.
 - [ ] `PropertyFrame.tsx`: `rename`'s answer handling becomes `renamed(res)`, shared with the Key Format change; add `setFormat(id, change)`, asking `askFormatChange` and then `property:setKeyFormat` (through `renamed`) or `property:setValueFormat` (through `warnOwed`); render `FormatRows` after `:427`, and a second `<MenuSeparator flush />` before the type's settings only where it has some: `NO_SETTINGS` (`:310`) answers null in place of its 8 px spacer, since every editor now has the rows as its body, and `SETTINGS`' value type admits null.
 - [ ] `handlers.ts`: `property:holders` answers `keyFormatHolders` for `{ key_format }` and `valueFormatHolders` for `{ value_format }`; `bridge.ts`: its second argument is `of?: string | FormatChange`.
 
@@ -4951,9 +4957,9 @@ for (const miss of misses) console.log(JSON.stringify(miss))
 +    propertyId,
 +    change,
 +    (held) => ({
-+      message: `This action would rewrite metadata in ${held}`,
-+      detail: '{COPY: detail — what the rewrite changes, and that views stay}',
-+      action: '{COPY: action}',
++      message: `This action would rewrite metadata in ${held}.`,
++      detail: 'Each key changes to the new format; values stay the same.',
++      action: 'Rewrite',
 +      tone: 'positive',
 +    }),
 +    1,
@@ -5325,13 +5331,13 @@ for (const miss of misses) console.log(JSON.stringify(miss))
 
 #### Task 9-2
 
-**TASK:** Finish the Metadata Drive and move every other drive to the exact identity. The Metadata Drive (`.claude/scripts/Metadata Drive/`), grown during Phase 2B from the Metadata Spelling Drive into the behavior matrix its `MATRIX.md` lays out, drops its one seed adapter, takes the six messages Nathan worded into its `COPY` table, and runs all nine groups. In `.claude/scripts/Option Picker Drive/live-drive.mjs`, the registry field reads move to `label` and `key`. The three other drives that seed through `schema:add` and the registry watcher move to the new shape.
+**TASK:** Finish the Metadata Drive and move every other drive to the exact identity. The Metadata Drive (`.claude/scripts/Metadata Drive/`), grown during Phase 2B from the Metadata Spelling Drive into the behavior matrix its `MATRIX.md` lays out, drops its one seed adapter and runs all nine groups. In `.claude/scripts/Option Picker Drive/live-drive.mjs`, the registry field reads move to `label` and `key`. The three other drives that seed through `schema:add` and the registry watcher move to the new shape.
 
-**NOW:** The Metadata Drive seeds through `define`, which sends each definition through `shaped`: while the registry still reads `name`, `inToday` and `todayOption` map the end-state `{ label, key }` seed onto `name` and option `value`, a no-op once Task 5B-4 rewrites the registry. Its `COPY` table holds `null` for each of the six *§Open Items* messages, so those checks assert a refusal's or a dialog's presence and placement, not its text. Each Review Checkpoint from Phase 2B on ran the groups for the phases landed by then. The Option Picker Drive reads the registry as `d.name` and `o.value`. The drive harness restores `~/Test` when a drive ends, so no data persists; both drives launch the app themselves on ports 9363 and 9343.
+**NOW:** The Metadata Drive seeds through `define`, which sends each definition through `shaped`: while the registry still reads `name`, `inToday` and `todayOption` map the end-state `{ label, key }` seed onto `name` and option `value`, a no-op once Task 5B-4 rewrites the registry. Its `COPY` table holds the messages Nathan worded at the Stop before Task 5A-1. Each Review Checkpoint from Phase 2B on ran the groups for the phases landed by then. The Option Picker Drive reads the registry as `d.name` and `o.value`. The drive harness restores `~/Test` when a drive ends, so no data persists; both drives launch the app themselves on ports 9363 and 9343.
 
 **CHANGE**
 
-- [ ] `Metadata Drive/live-drive.mjs`: delete the seed-shape block (`today`, `todayOption`, `inToday`, `shaped`) and send each definition as written; fill each `COPY` entry with the message Nathan worded at the Stop before Task 5A-1, as a function of the words it names.
+- [ ] `Metadata Drive/live-drive.mjs`: delete the seed-shape block (`today`, `todayOption`, `inToday`, `shaped`) and send each definition as written.
 - [ ] `Option Picker Drive/live-drive.mjs`: `:24-25`, `:33`, `:94`, `:155-156`, `:250`, `:254`, `:272` as below.
 - [ ] The seeds that send `{ id: '', name, type }` to `schema:add` send `label`: `Text Property Drive/live-drive.mjs:65,448`, `Alias Drive/live-drive.mjs:75`, and `Path Links Drive/live-drive.mjs:178,1222`; the Alias Drive's `optionValues` (`:35`) finds its definition by `d.label` and reads `o.label`; `nexus-watch.mjs:27-31` reads `d.label` and `o.label`.
 
@@ -5355,10 +5361,6 @@ for (const miss of misses) console.log(JSON.stringify(miss))
 @@ add @@
 -const add = (cdp, def, container = COLLECTION) => ask(cdp, 'schema:add', container, { id: '', ...shaped(def) })
 +const add = (cdp, def, container = COLLECTION) => ask(cdp, 'schema:add', container, { id: '', ...def })
-@@ COPY @@
--  aKeyAnotherPropertyWrites: null,
-+  aKeyAnotherPropertyWrites: (key) => `{the worded refusal, naming key}`,
-   …
 ```
 
 ```.claude/scripts/Option Picker Drive/live-drive.mjs diff
@@ -5440,7 +5442,7 @@ for (const miss of misses) console.log(JSON.stringify(miss))
 
 **VERIFY**
 
-- [ ] `grep -n "shaped\|inToday\|todayOption\|: null," ".claude/scripts/Metadata Drive/live-drive.mjs"` returns nothing.
+- [ ] `grep -n "shaped\|inToday\|todayOption" ".claude/scripts/Metadata Drive/live-drive.mjs"` returns nothing.
 - [ ] `grep -n "d\.name\|o\.value\|\.options\[0\]\.value\|at(-1)?\.value" ".claude/scripts/Option Picker Drive/live-drive.mjs"` returns nothing; its zero-count Remove check (`:174`, "stripped from 0 Items.") and Clear at one (`:168`, `Clear “Alpha” from 1 Item?`) are unchanged and pass.
 - [ ] `env -u ELECTRON_RUN_AS_NODE node live-drive.mjs 1 2 3 4 5 6 7 8 9`, run from `.claude/scripts/Metadata Drive/`, exits 0 with every check passing, each of the six messages asserted by its worded text; the harness's `restore()` returns `~/Test` to its pre-run state.
 - [ ] `env -u ELECTRON_RUN_AS_NODE node ".claude/scripts/Option Picker Drive/live-drive.mjs"` exits 0 with every check passing.
@@ -5743,14 +5745,14 @@ The listed sentences are quoted from the tree at the plan's baseline. Each task 
 
 #### Open Items
 
-Nathan's copy, decided at the Stop before Task 5A-1, before any task writes it (each task holds a `{COPY: …}` placeholder until then):
+Nathan's copy, decided at the Stop before Task 5A-1:
 
-- **A Key Another Property Writes** (Task 5A-2, `KEY_REFUSAL.duplicateKey`): proposed "A property already writes "{key}" to files."
-- **Two Options Writing One Key** (Tasks 5B-3, 7B-2): proposed "Two options would write "{key}" to files."
-- **An Option Change Waiting for Try Again** (Task 6-4, `OWED`): proposed "An earlier change hasn't reached every file yet. Use Try Again on its notice first."
-- **A Format That Writes No Key** (Tasks 7A-3, 7B-2): a label such as `---` converts to nothing under a word format; the plan reuses "A name cannot be empty." and "Option titles can’t be blank.", or takes a format-specific line.
-- **A Value Format Change Crossing Two Options' Keys** (Task 7B-2, `CROSSED`).
-- **The Format Change's Confirmation** (Task 7B-4, `askFormatChange`): the message is the Brief's "This action would rewrite metadata in N items"; its detail, its action, its tone (`positive`, since it removes nothing), and whether the message ends without a question mark as written.
+- **A Key Another Property Writes** (Task 5A-2, `KEY_REFUSAL.duplicateKey`): "A property already writes "{key}" to files."
+- **Two Options Writing One Key** (Task 5B-3's `validateOptionValues`): "An option with this title already exists, please choose another name."; a Value Format change (Task 7B-2) refuses "This format would give two options the same key, please rename one first."
+- **An Option Change Waiting for Try Again** (Task 6-4, `OWED`): "An earlier change hasn’t reached every file yet. Use Try Again on its notice first."
+- **A Label That Leaves Its Key Empty** (Task 5A-2's `KEY_REFUSAL.noKey`, Task 5B-3's `validateOptionValues`): "Properties cannot contain an invalid name." and "Options cannot contain an invalid name.", reached through a format (Tasks 7A-3, 7B-2) or a registry written by hand; a blank label keeps "A name cannot be empty." and "Option titles can’t be blank."
+- **A Value Format Change Crossing Two Options' Keys** (Task 7B-2, `CROSSED`): "This format would give one option the key another option writes now, please rename one first."
+- **The Format Change's Confirmation** (Task 7B-4, `askFormatChange`): "This action would rewrite metadata in {N Items}.", detail "Each key changes to the new format; values stay the same.", action "Rewrite", tone `positive`.
 
 Behaviors to read once before ratifying, each following the decisions:
 

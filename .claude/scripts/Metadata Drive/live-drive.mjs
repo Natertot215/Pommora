@@ -29,15 +29,15 @@ const KEY_HINT = 'How this property’s name is written into each file’s metad
 const VALUE_HINT = 'How each value is written in the file’s metadata.'
 const itemCount = (n) => `${n} ${n === 1 ? 'Item' : 'Items'}`
 
-// The six messages *§Open Items* leaves unworded, each to be filled in as a function of the words its message names.
-// While one is null, its checks assert that the refusal or the dialog is there; once worded, they assert the text.
+// The messages Nathan worded at the Stop before Task 5A-1, each a function of the words it names.
 const COPY = {
-  aKeyAnotherPropertyWrites: null,
-  twoOptionsWritingOneKey: null,
-  anOptionChangeWaitingForTryAgain: null,
-  aFormatThatWritesNoKey: null,
-  aValueFormatChangeCrossingTwoOptionsKeys: null,
-  theFormatChangesConfirmation: null,
+  aKeyAnotherPropertyWrites: (key) => `A property already writes "${key}" to files.`,
+  twoOptionsWritingOneKey: () => 'An option with this title already exists, please choose another name.',
+  aFormatGivingTwoOptionsOneKey: () => 'This format would give two options the same key, please rename one first.',
+  anOptionChangeWaitingForTryAgain: () => 'An earlier change hasn’t reached every file yet. Use Try Again on its notice first.',
+  anEmptyKey: (kind) => `${kind} cannot contain an invalid name.`,
+  aValueFormatChangeCrossingTwoOptionsKeys: () => 'This format would give one option the key another option writes now, please rename one first.',
+  theFormatChangesConfirmation: (items) => `This action would rewrite metadata in ${items}.`,
 }
 
 // ── Checks ──────────────────────────────────────────────────────────────────
@@ -49,7 +49,7 @@ const canon = (v) =>
   Array.isArray(v) ? v.map(canon) : v && typeof v === 'object' ? Object.fromEntries(Object.keys(v).sort().map((k) => [k, canon(v[k])])) : v
 const same = (a, b) => show(canon(a)) === show(canon(b))
 const refusedWith = (r, text) => r?.ok === false && r.error?.message === text
-const refusedAs = (r, copy, ...words) => r?.ok === false && (copy === null ? !!r.error?.message : r.error?.message === copy(...words))
+const refusedAs = (r, copy, ...words) => r?.ok === false && r.error?.message === copy(...words)
 const fileOf = (rel) => {
   try {
     return read(rel)
@@ -898,13 +898,13 @@ async function group5(cdp) {
   pin(G, 'D-2', 'an option label in another casing of one the property holds is refused',
     (await ask(cdp, 'property:editOption', grade, { op: 'add', groupId: 'select', title: 'a' })).ok === false && show(wordsOf(grade)) === optionsBefore)
   pin(G, 'D-2', 'two options writing one key in two casings are refused at create',
-    refusedAs(await add(cdp, { label: 'M5 Twins', type: 'select', select_options: [{ key: 'A', label: 'A' }, { key: 'a', label: 'B' }] }), COPY.twoOptionsWritingOneKey, 'a'))
+    refusedAs(await add(cdp, { label: 'M5 Twins', type: 'select', select_options: [{ key: 'A', label: 'A' }, { key: 'a', label: 'B' }] }), COPY.twoOptionsWritingOneKey))
   pin(G, 'D-2', 'an option with a blank key is refused at create',
-    refusedWith(await add(cdp, { label: 'M5 Blank', type: 'select', select_options: [{ key: '', label: 'A' }] }), 'Option titles can’t be blank.'))
+    refusedAs(await add(cdp, { label: 'M5 Blank', type: 'select', select_options: [{ key: '', label: 'A' }] }), COPY.anEmptyKey, 'Options'))
   pin(G, 'J-1', 'a Status create holding two options in two casings is refused',
     refusedWith(await add(cdp, { label: 'M5 Doubled', type: 'status', status_groups: statusGroups(['Done'], ['done']) }), 'Option titles must be unique.'))
   pin(G, 'J-1', 'a Status create holding a blank key is refused',
-    refusedWith(await add(cdp, { label: 'M5 Hollow', type: 'status', status_groups: [{ id: 'todo', label: 'To-do', color: 'grey', options: [{ key: ' ', label: 'Open', group_id: 'todo' }] }] }), 'Option titles can’t be blank.'))
+    refusedAs(await add(cdp, { label: 'M5 Hollow', type: 'status', status_groups: [{ id: 'todo', label: 'To-do', color: 'grey', options: [{ key: ' ', label: 'Open', group_id: 'todo' }] }] }), COPY.anEmptyKey, 'Options'))
 }
 
 // ── Group 6 — The journal and the cascades (Phase 6) ───────────────────────
@@ -1147,10 +1147,10 @@ async function group7(cdp) {
     defOf(stepped.id)?.label === 'Ship Date (2)' && defOf(stepped.id)?.key === 'ship_date_(2)', show(defOf(stepped.id)))
   pin(G, 'D-1', 'a Key Format change onto a key another property writes is refused',
     refusedAs(await ask(cdp, 'property:setKeyFormat', shipDate, 'snake_case'), COPY.aKeyAnotherPropertyWrites, 'ship_date') && defOf(shipDate).key === 'Ship Date')
-  pin(G, 'B-5', 'a create whose format writes no key is refused', refusedAs(await add(cdp, { label: '---', type: 'text', key_format: 'kebab-case' }), COPY.aFormatThatWritesNoKey))
+  pin(G, 'B-5', 'a create whose format writes no key is refused', refusedAs(await add(cdp, { label: '---', type: 'text', key_format: 'kebab-case' }), COPY.anEmptyKey, 'Properties'))
   const dashes = await define(cdp, { label: '---', type: 'text' })
   pin(G, 'B-5', 'a Key Format change that writes no key is refused',
-    refusedAs(await ask(cdp, 'property:setKeyFormat', dashes, 'kebab-case'), COPY.aFormatThatWritesNoKey) && defOf(dashes).key === '---')
+    refusedAs(await ask(cdp, 'property:setKeyFormat', dashes, 'kebab-case'), COPY.anEmptyKey, 'Properties') && defOf(dashes).key === '---')
   const hidden = ids['Heading Icon Hidden'] ?? (await define(cdp, { label: 'Heading Icon Hidden', type: 'text' }))
   pin(G, 'D-1', 'a Key Format change onto a key Pommora manages is refused',
     refusedWith(await ask(cdp, 'property:setKeyFormat', hidden, 'snake_case'), '"heading_icon_hidden" is a key Pommora manages.') && defOf(hidden).key === 'Heading Icon Hidden')
@@ -1207,7 +1207,7 @@ async function group7(cdp) {
 
   const collision = snapshot([wifi, REGISTRY, JOURNAL])
   pin(G, 'D-2 F-1', 'a Value Format change giving two options one key is refused, and nothing changes',
-    refusedAs(await ask(cdp, 'property:setValueFormat', wifiId, 'kebab-case'), COPY.twoOptionsWritingOneKey, 'wifi-pro') && (await collision.holds()))
+    refusedAs(await ask(cdp, 'property:setValueFormat', wifiId, 'kebab-case'), COPY.aFormatGivingTwoOptionsOneKey) && (await collision.holds()))
   const crossing = snapshot([REGISTRY, JOURNAL])
   pin(G, 'F-1', "a Value Format change crossing two options' keys is refused, and nothing changes",
     refusedAs(await ask(cdp, 'property:setValueFormat', router, 'kebab-case'), COPY.aValueFormatChangeCrossingTwoOptionsKeys) && (await crossing.holds()))
@@ -1383,7 +1383,7 @@ async function pickFormat(cdp, pid, row, format, { confirm = true } = {}) {
   return { asked, message }
 }
 const askedFor = (asked, n) =>
-  !!asked.asked && (COPY.theFormatChangesConfirmation === null ? asked.message.includes(itemCount(n)) : asked.message === COPY.theFormatChangesConfirmation(itemCount(n)))
+  !!asked.asked && asked.message === COPY.theFormatChangesConfirmation(itemCount(n))
 
 async function group9(cdp, pid) {
   const G = 9
