@@ -202,15 +202,16 @@ describe('the property channels', () => {
     expect(await readSchemaJournal(root)).toEqual(owed)
   })
 
-  it('an option removal that finds another operation owed in the journal answers its line with no record', async () => {
+  it('an option removal that finds another operation owed in the journal is refused, keeping the option', async () => {
     const owed = { op: 'rename' as const, id: 'prop_other', from: 'A', to: 'B' }
     await writeSchemaJournal(root, owed)
-    const setFile = sidecarPath(surfaces.set, 'set')
-    await rm(setFile)
-    await mkdir(setFile)
-    const r = await propertiesHandlers['property:removeOption'](ctx, propId, 'Done')
-    expect(r.ok && r.value.cascade.warning).toBe(unsweptLine(1))
-    expect(r.ok && r.value.owed).toBeUndefined()
+    expect(await propertiesHandlers['property:removeOption'](ctx, propId, 'Done')).toEqual(
+      fault('An earlier change hasn’t reached every file yet. Use Try Again on its notice first.'),
+    )
+    expect((await readRegistry(root)).defs[propId]?.select_options).toContainEqual({
+      key: 'Done',
+      label: 'Done',
+    })
     expect(await readSchemaJournal(root)).toEqual(owed)
   })
 
@@ -264,29 +265,18 @@ describe('a schema op started while another operation’s record holds the journ
     await writeSchemaJournal(root, other)
   })
 
-  it.skipIf(noModeBits)('an option rename', async () => {
-    const record = {
-      op: 'option-rename',
-      id: propId,
-      keys: [['Done', 'Closed']],
-      labels: ['Done', 'Closed'],
-    }
-    const r = await unreadable(() =>
-      propertiesHandlers['property:renameOption'](ctx, propId, 'Done', 'Closed'),
+  it.each([
+    [
+      'an option rename',
+      () => propertiesHandlers['property:renameOption'](ctx, propId, 'Done', 'Closed'),
+    ],
+    ['an option removal', () => propertiesHandlers['property:removeOption'](ctx, propId, 'Done')],
+  ])('%s is refused, leaving every holder', async (_, run) => {
+    const before = await fm()
+    expect(await run()).toEqual(
+      fault('An earlier change hasn’t reached every file yet. Use Try Again on its notice first.'),
     )
-    expect(r.ok && r.value.cascade.warning).toBe(unsweptLine(1))
-    expect(r.ok && r.value.owed).toEqual(record)
-    expect(await propertiesHandlers['property:replay'](ctx, record)).toEqual(ok(null))
-    expect(await fm()).toContain('Stage:\n  - Closed')
-    expect(await readSchemaJournal(root)).toEqual(other)
-  })
-
-  it.skipIf(noModeBits)('an option removal answers its line with no record', async () => {
-    const r = await unreadable(() =>
-      propertiesHandlers['property:removeOption'](ctx, propId, 'Done'),
-    )
-    expect(r.ok && r.value.cascade.warning).toBe(unsweptLine(1))
-    expect(r.ok && r.value.owed).toBeUndefined()
+    expect(await fm()).toBe(before)
     expect(await readSchemaJournal(root)).toEqual(other)
   })
 

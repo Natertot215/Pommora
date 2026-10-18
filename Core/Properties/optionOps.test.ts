@@ -19,7 +19,7 @@ type PropDefLike = Record<string, unknown> & {
   type?: string
 }
 type RegistryFile = { order: string[]; defs: Record<string, PropDefLike> }
-import { readSchemaJournal } from './propertyJournal'
+import { readSchemaJournal, writeSchemaJournal } from './propertyJournal'
 import { unsweptLine } from './governedSweep'
 import { type ConfigSurfaces, seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
 import { sidecarPath } from '../Paths/paths'
@@ -624,6 +624,60 @@ describe('removeOption', () => {
 
   it('fails for an unknown property id', async () => {
     expect((await removeOption(root, 'prop_nope', 'A')).ok).toBe(false)
+  })
+})
+
+describe('an owed record holds option changes', () => {
+  const OWED_MESSAGE =
+    'An earlier change hasn’t reached every file yet. Use Try Again on its notice first.'
+  const held = { op: 'rename', id: 'prop_x', from: 'Old', to: 'New' } as const
+  const owing = async (): Promise<{ id: string; page: string; bytes: string }> => {
+    const id = await mkSelect([
+      { key: 'A', label: 'A' },
+      { key: 'C', label: 'C' },
+    ])
+    const page = await pageHolding(id, 'A')
+    await writeSchemaJournal(root, held)
+    return { id, page, bytes: await readFile(page, 'utf8') }
+  }
+
+  it.each([
+    ['renameOption', (id: string) => renameOption(root, id, 'A', 'B')],
+    ['removeOption', (id: string) => removeOption(root, id, 'A')],
+  ])('%s refuses, leaving the registry, every holder, and the held record', async (_, run) => {
+    const { id, page, bytes } = await owing()
+    expect(await run(id)).toEqual(fault(OWED_MESSAGE))
+    expect((await readRegistry(root)).defs[id].select_options?.map((o) => o.label)).toEqual([
+      'A',
+      'C',
+    ])
+    expect(await readFile(page, 'utf8')).toBe(bytes)
+    expect(await readSchemaJournal(root)).toEqual(held)
+  })
+
+  it('clearOption still strips', async () => {
+    const { id, page, bytes } = await owing()
+    expect(splitFrontmatter(bytes)).toHaveProperty('Tags')
+    expect(await clearOption(root, id, 'A')).toEqual(ok(null))
+    expect(splitFrontmatter(await readFile(page, 'utf8'))).not.toHaveProperty('Tags')
+  })
+
+  it('a held record identical to the one the op writes runs the op', async () => {
+    const id = await mkSelect([
+      { key: 'A', label: 'A' },
+      { key: 'C', label: 'C' },
+    ])
+    await writeSchemaJournal(root, {
+      op: 'option-rename',
+      id,
+      keys: [['A', 'B']],
+      labels: ['A', 'B'],
+    })
+    expect((await renameOption(root, id, 'A', 'B')).ok).toBe(true)
+    await writeSchemaJournal(root, { op: 'option-remove', id, key: 'C' })
+    expect((await removeOption(root, id, 'C')).ok).toBe(true)
+    expect((await readRegistry(root)).defs[id].select_options?.map((o) => o.label)).toEqual(['B'])
+    expect(await readSchemaJournal(root)).toBeNull()
   })
 })
 
