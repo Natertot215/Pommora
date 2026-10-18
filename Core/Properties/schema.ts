@@ -4,6 +4,7 @@ import {
   isReservedPropertyId,
   KEY_REFUSAL,
   optionGroupsOf,
+  optionsOf,
   PROPERTY_TYPES,
   type PropertyDefinition,
   RESERVED_NAME_PREFIX,
@@ -66,32 +67,43 @@ export function validateDefinition(
   if (existing.some((d) => d.id === def.id)) {
     return fail('invalid-property', 'That property id already exists.')
   }
-  if (PROPERTY_TYPES[def.type].options === 'select') {
-    const check = validateOptionValues(def.select_options ?? [])
+  if (PROPERTY_TYPES[def.type].options) {
+    const check = validateOptionValues(optionsOf(def))
     if (!check.ok) return check
   }
   return ok(null)
 }
 
-/** `def` holding each option title once, the first of any that fold alike, and none blank; a definition already so is answered as it is. */
+/** `def` holding each option label and each key once, the first of any that fold alike, and none blank; a definition already so is answered as it is. */
 export function withUniqueOptions(def: PropertyDefinition): PropertyDefinition {
   const groups = optionGroupsOf(def)
   const options = groups.flatMap((g) => g.options)
   if (validateOptionValues(options).ok) return def
-  const first = new Set(firstPerTitle(options, (o) => o.label).values())
+  const named = options.filter(
+    (o) => normalizeTitle(o.label) !== '' && normalizeTitle(o.key) !== '',
+  )
+  const first = new Set(
+    firstPerTitle(firstPerTitle(named, (o) => o.label).values(), (o) => o.key).values(),
+  )
   const kept = groups.map((g) => ({
     ...g,
-    options: g.options.filter((o) => first.has(o) && normalizeTitle(o.label) !== ''),
+    options: g.options.filter((o) => first.has(o)),
   }))
   return withOptionGroups(def, kept)
 }
 
-/** No minimum count — a Select may hold zero options. Enforced at create AND on every option edit; titles compare case-folded. */
+/** No minimum count — a Select may hold zero options. Enforced at create AND on every option edit; labels and keys each compare case-folded. */
 export function validateOptionValues(options: { key: string; label: string }[]): Result<null> {
-  const titles = options.map((o) => normalizeTitle(o.label))
-  if (titles.includes('')) return fail('invalid-property', 'Option titles can’t be blank.')
-  if (new Set(titles).size < titles.length) {
+  const labels = options.map((o) => normalizeTitle(o.label))
+  const keys = options.map((o) => normalizeTitle(o.key))
+  if (labels.includes('')) return fail('invalid-property', 'Option titles can’t be blank.')
+  if (keys.includes('')) return fail('invalid-property', 'Options cannot contain an invalid name.')
+  if (new Set(labels).size < labels.length)
     return fail('invalid-property', 'Option titles must be unique.')
-  }
+  if (new Set(keys).size < keys.length)
+    return fail(
+      'invalid-property',
+      'An option with this title already exists, please choose another name.',
+    )
   return ok(null)
 }
