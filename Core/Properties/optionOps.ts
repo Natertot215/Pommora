@@ -13,9 +13,10 @@ import {
   type OptionEdit,
 } from './optionModel'
 import {
+  findOption,
+  labelled,
   optionGroupsOf,
   optionsOf,
-  optionValues,
   PROPERTY_TYPES,
   type PropertyDefinition,
   SELECT_GROUP,
@@ -52,12 +53,14 @@ function editStoredOptions(
   stored: unknown,
   edit: (groups: StatusGroup[]) => StatusGroup[],
 ): PropertyDefinition {
-  const raw = withUniqueOptions({ ...(stored as PropertyDefinition), type: def.type })
-  return withOptionGroups(def, edit(optionGroupsOf(raw)))
+  const raw = { ...(stored as PropertyDefinition), type: def.type }
+  const named = optionGroupsOf(raw).map((g) => ({ ...g, options: g.options.map(labelled) }))
+  const unique = withUniqueOptions(withOptionGroups(raw, named))
+  return withOptionGroups(def, edit(optionGroupsOf(unique)))
 }
 
 function admitOptionEdit(def: PropertyDefinition, e: OptionEdit): Result<null> {
-  if ('value' in e && !optionValues(def).includes(e.value)) return NO_OPTION
+  if ('option' in e && !findOption(def, e.option)) return NO_OPTION
   if ('groupId' in e && !optionGroupsOf(def).some((g) => g.id === e.groupId)) return NO_GROUP
   if (e.op === 'relabelGroup' && PROPERTY_TYPES[def.type].options !== 'status') return NO_GROUP
   if (e.op === 'relabelGroup' && !e.label.trim())
@@ -149,13 +152,13 @@ export async function registerHeldOptions(root: string, rels?: readonly string[]
 export function dropOptionFromDef(
   root: string,
   propertyId: string,
-  value: string,
+  key: string,
 ): Promise<Result<null>> {
   return mutateRegistry<Result<null>>(root, (registry, stored) => {
     const current = registry.defs[propertyId]
     if (!current) return { result: NO_PROPERTY }
     const next = editStoredOptions(current, stored[propertyId], (groups) =>
-      groups.map((g) => ({ ...g, options: g.options.filter((o) => o.value !== value) })),
+      groups.map((g) => ({ ...g, options: g.options.filter((o) => o.key !== key) })),
     )
     return {
       next: { ...registry, defs: { ...registry.defs, [propertyId]: next } },
@@ -167,14 +170,14 @@ export function dropOptionFromDef(
 async function resolveForCascade(
   root: string,
   propertyId: string,
-  value: string,
-): Promise<Result<PropertyDefinition>> {
+  label: string,
+): Promise<Result<{ def: PropertyDefinition; key: string }>> {
   const def = (await readRegistry(root)).defs[propertyId]
   if (!def) return NO_PROPERTY
   const typeCheck = requireOptions(def)
   if (!typeCheck.ok) return typeCheck
-  if (!optionValues(def).includes(value)) return NO_OPTION
-  return ok(def)
+  const option = findOption(def, label)
+  return option ? ok({ def, key: option.key }) : NO_OPTION
 }
 
 async function valueEditPlan(
@@ -213,26 +216,28 @@ export async function optionCascade(
 export function renameOption(
   root: string,
   propertyId: string,
-  oldValue: string,
-  newTitle: string,
+  oldLabel: string,
+  newLabel: string,
 ): Promise<Result<SchemaCascade>> {
   return serializeSchemaOp(root, async () => {
+    const r = await resolveForCascade(root, propertyId, oldLabel)
+    if (!r.ok) return r
     const record: SchemaJournal = {
       op: 'option-rename',
       id: propertyId,
-      from: oldValue,
-      to: newTitle,
+      from: r.value.key,
+      to: newLabel,
     }
     // Staged BEFORE the commit: a crash between commit and cascade is recoverable only from this record, and one stranded by a refusal is disposed of by the replay's holds-to-and-not-from gate.
-    if ((await readRegistry(root)).defs[propertyId]) await writeSchemaJournal(root, record)
+    await writeSchemaJournal(root, record)
     const edit = await mutateRegistry<Result<PropertyDefinition>>(root, (registry, stored) => {
       const def = registry.defs[propertyId]
       if (!def) return { result: NO_PROPERTY }
       const typeCheck = requireOptions(def)
       if (!typeCheck.ok) return { result: typeCheck }
-      if (!optionValues(def).includes(oldValue)) return { result: NO_OPTION }
+      if (!findOption(def, oldLabel)) return { result: NO_OPTION }
       const next = editStoredOptions(def, stored[propertyId], (groups) =>
-        renameInGroups(groups, oldValue, newTitle),
+        renameInGroups(groups, oldLabel, newLabel),
       )
       const check = validateOptionValues(optionsOf(next))
       if (!check.ok) return { result: check }
@@ -245,7 +250,10 @@ export function renameOption(
       await clearSchemaJournal(root, record)
       return edit
     }
-    const reach = await optionCascade(root, edit.value, oldValue, { op: 'replace', to: newTitle })
+    const reach = await optionCascade(root, edit.value, record.from, {
+      op: 'replace',
+      to: record.to,
+    })
     if (!reach.skipped) await clearSchemaJournal(root, record)
     return ok(schemaCascade(reach, record))
   })
@@ -254,12 +262,12 @@ export function renameOption(
 export function clearOption(
   root: string,
   propertyId: string,
-  value: string,
+  label: string,
 ): Promise<Result<null>> {
   return serializeSchemaOp(root, async () => {
-    const r = await resolveForCascade(root, propertyId, value)
+    const r = await resolveForCascade(root, propertyId, label)
     if (!r.ok) return r
-    const skipped = await valueEditSweep(root, r.value, value, { op: 'strip' })
+    const skipped = await valueEditSweep(root, r.value.def, r.value.key, { op: 'strip' })
     return skipped ? fault(unsweptLine(skipped)) : ok(null)
   })
 }
@@ -267,27 +275,28 @@ export function clearOption(
 export async function optionHolders(
   root: string,
   propertyId: string,
-  value: string,
+  label: string,
 ): Promise<Result<number>> {
-  const r = await resolveForCascade(root, propertyId, value)
+  const r = await resolveForCascade(root, propertyId, label)
   if (!r.ok) return r
-  const { pages, plan } = await valueEditPlan(root, r.value, value, { op: 'strip' })
+  const { pages, plan } = await valueEditPlan(root, r.value.def, r.value.key, { op: 'strip' })
   return ok(await sweepCount(root, pages, plan))
 }
 
 export function removeOption(
   root: string,
   propertyId: string,
-  value: string,
+  label: string,
 ): Promise<Result<SchemaCascade>> {
   return serializeSchemaOp(root, async () => {
-    const r = await resolveForCascade(root, propertyId, value)
+    const r = await resolveForCascade(root, propertyId, label)
     if (!r.ok) return r
-    const record: SchemaJournal = { op: 'option-remove', id: propertyId, value }
+    const { def, key } = r.value
+    const record: SchemaJournal = { op: 'option-remove', id: propertyId, value: key }
     const journaled = await writeSchemaJournal(root, record)
-    const reach = await optionCascade(root, r.value, value, { op: 'strip' })
+    const reach = await optionCascade(root, def, key, { op: 'strip' })
     if (!reach.skipped) {
-      const dropped = await dropOptionFromDef(root, propertyId, value)
+      const dropped = await dropOptionFromDef(root, propertyId, key)
       if (!dropped.ok) return dropped
       await clearSchemaJournal(root, record)
     }

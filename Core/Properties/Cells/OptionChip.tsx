@@ -6,7 +6,7 @@ import { Icon, type IconName, iconNameOr } from '@pommora/uix/Symbols'
 import { colorNameFor } from '@pommora/uix/Theme/ramp'
 
 export interface OptionChipData {
-  value: string
+  label: string
   color?: string
   icon?: string
   appearance?: OptionAppearance
@@ -24,8 +24,8 @@ export function optionGlyph(
   def?: Pick<PropertyDefinition, 'status_groups'>,
 ): string {
   if (type !== 'status') return iconNameOr(option?.icon, type === 'multiSelect' ? 'tags' : 'tag')
-  const value = option?.value ?? ''
-  const group = def?.status_groups?.find((g) => g.options.some((o) => o.value === value))
+  const label = option?.label ?? ''
+  const group = def?.status_groups?.find((g) => g.options.some((o) => o.label === label))
   return iconNameOr(option?.icon, (group && STATUS_GROUP_GLYPH[group.id]) ?? 'circle-dashed')
 }
 
@@ -44,7 +44,7 @@ export function OptionChip({
   onRemove?: () => void
   className?: string
 }): React.JSX.Element {
-  const value = option?.value ?? ''
+  const label = option?.label ?? ''
   return (
     <Label
       shape={optionShapeFor(type)}
@@ -53,7 +53,7 @@ export function OptionChip({
       className={className}
       {...(look === 'compact'
         ? { icon: <Icon name={optionGlyph(type, option, def)} size="body" /> }
-        : { text: value })}
+        : { text: label })}
       {...(onRemove ? { onRemove } : {})}
     />
   )

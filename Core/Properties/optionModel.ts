@@ -4,16 +4,16 @@ import { optionAppearance, type StatusGroup, type StatusOption } from './propert
 
 function mapOption(
   groups: StatusGroup[],
-  value: string,
+  label: string,
   fn: (o: StatusOption) => StatusOption,
 ): StatusGroup[] {
   return groups.map((g) => ({
     ...g,
-    options: g.options.map((o) => (o.value === value ? fn(o) : o)),
+    options: g.options.map((o) => (o.label === label ? fn(o) : o)),
   }))
 }
 
-function withField<T extends { value: string }, K extends keyof T>(
+function withField<T extends { label: string }, K extends keyof T>(
   o: T,
   key: K,
   v: T[K] | undefined,
@@ -30,46 +30,42 @@ export function addOption(
 ): StatusGroup[] {
   return groups.map((g) => {
     if (g.id !== groupId) return g
-    const next = { value: title, group_id: g.id }
+    const next = { key: title, label: title, group_id: g.id }
     const i = atIndex ?? g.options.length
     return { ...g, options: [...g.options.slice(0, i), next, ...g.options.slice(i)] }
   })
 }
 
-export function renameOption(
-  groups: StatusGroup[],
-  oldValue: string,
-  newTitle: string,
-): StatusGroup[] {
-  return mapOption(groups, oldValue, (o) => ({ ...o, value: newTitle }))
+export function renameOption(groups: StatusGroup[], label: string, to: string): StatusGroup[] {
+  return mapOption(groups, label, (o) => ({ ...o, label: to, key: to }))
 }
 
 export function moveOption(
   groups: StatusGroup[],
-  value: string,
+  label: string,
   toGroupId: string,
   toIndex: number,
 ): StatusGroup[] {
-  const moved = groups.flatMap((g) => g.options).find((o) => o.value === value)
+  const moved = groups.flatMap((g) => g.options).find((o) => o.label === label)
   if (!moved) return groups
   const next = { ...moved, group_id: toGroupId }
   return groups.map((g) => {
-    const without = g.options.filter((o) => o.value !== value)
+    const without = g.options.filter((o) => o.label !== label)
     return g.id === toGroupId
       ? { ...g, options: [...without.slice(0, toIndex), next, ...without.slice(toIndex)] }
       : { ...g, options: without }
   })
 }
 
-const value = z.string()
+const option = z.string()
 const groupId = z.string()
 
 export const optionEdit = z.discriminatedUnion('op', [
   op('add', { groupId, title: z.string(), atIndex: index.optional() }),
-  op('recolor', { value, color: z.string().optional() }),
-  op('icon', { value, icon: z.string().optional() }),
-  op('appearance', { value, appearance: optionAppearance }),
-  op('move', { value, groupId, toIndex: index }),
+  op('recolor', { option, color: z.string().optional() }),
+  op('icon', { option, icon: z.string().optional() }),
+  op('appearance', { option, appearance: optionAppearance }),
+  op('move', { option, groupId, toIndex: index }),
   op('relabelGroup', { groupId, label: z.string() }),
 ])
 export type OptionEdit = z.infer<typeof optionEdit>
@@ -79,15 +75,15 @@ export function applyOptionEdit(groups: StatusGroup[], e: OptionEdit): StatusGro
     case 'add':
       return addOption(groups, e.groupId, e.title, e.atIndex)
     case 'recolor':
-      return mapOption(groups, e.value, (o) => withField(o, 'color', e.color))
+      return mapOption(groups, e.option, (o) => withField(o, 'color', e.color))
     case 'icon':
-      return mapOption(groups, e.value, (o) => withField(o, 'icon', e.icon))
+      return mapOption(groups, e.option, (o) => withField(o, 'icon', e.icon))
     case 'appearance':
-      return mapOption(groups, e.value, (o) =>
+      return mapOption(groups, e.option, (o) =>
         withField(o, 'appearance', e.appearance === 'clear' ? e.appearance : undefined),
       )
     case 'move':
-      return moveOption(groups, e.value, e.groupId, e.toIndex)
+      return moveOption(groups, e.option, e.groupId, e.toIndex)
     case 'relabelGroup':
       return groups.map((g) => (g.id === e.groupId ? { ...g, label: e.label } : g))
   }

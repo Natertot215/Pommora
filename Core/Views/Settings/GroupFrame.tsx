@@ -372,7 +372,7 @@ function LocationHierarchy({
 
   const subChips = useMemo(() => {
     if (!sub || !subDef) return []
-    const byValue = new Map(optionsOf(subDef).map((o) => [o.value, o]))
+    const byValue = new Map(optionsOf(subDef).map((o) => [o.label, o]))
     return liveBucketOrder(sub, subDef, []).flatMap((v) => {
       const o = byValue.get(v)
       return o ? [o] : []
@@ -389,9 +389,9 @@ function LocationHierarchy({
           children: subDef
             ? subChips.map(
                 (o): ResolvedGroup => ({
-                  key: subGroupKey(id, o.value),
+                  key: subGroupKey(id, o.label),
                   kind: 'bucket',
-                  value: o.value,
+                  value: o.label,
                   items: [],
                 }),
               )
@@ -412,12 +412,12 @@ function LocationHierarchy({
 
   const subChipRow = (setId: string, o: (typeof subChips)[number]): React.JSX.Element => (
     <LineRow
-      key={o.value}
-      id={subGroupKey(setId, o.value)}
-      className={cx(optionRow, gp.subChip, subControls.isHidden?.(o.value) && hiddenRow)}
+      key={o.label}
+      id={subGroupKey(setId, o.label)}
+      className={cx(optionRow, gp.subChip, subControls.isHidden?.(o.label) && hiddenRow)}
     >
       <OptionChip type={subDef?.type ?? ''} option={o} />
-      {rowEye(o.value, o.value, subControls)}
+      {rowEye(o.label, o.label, subControls)}
     </LineRow>
   )
 

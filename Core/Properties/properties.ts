@@ -134,12 +134,13 @@ export const labelled = <W extends { key: string; label?: string }>(
 
 const selectOption = looseDecoder(
   z.object({
-    value: z.string(),
+    key: z.string(),
+    label: z.string().optional(),
     icon: z.string().optional().catch(undefined),
     color: z.string().optional().catch(undefined),
     appearance: optionAppearance.optional().catch(undefined),
   }),
-)
+).transform(labelled)
 export type SelectOption = z.infer<typeof selectOption>
 const selectOptions = z.array(selectOption)
 
@@ -148,13 +149,14 @@ const statusGroupId = z.string()
 
 const statusOption = looseDecoder(
   z.object({
-    value: z.string(),
+    key: z.string(),
+    label: z.string().optional(),
     color: z.string().optional().catch(undefined),
     icon: z.string().optional().catch(undefined),
     appearance: optionAppearance.optional().catch(undefined),
     group_id: statusGroupId,
   }),
-)
+).transform(labelled)
 export type StatusOption = z.infer<typeof statusOption>
 
 const statusGroup = looseDecoder(
@@ -300,9 +302,12 @@ export const optionsOf = (
     ? statusOptions(def)
     : (def?.select_options ?? [])
 
-export const optionValues = (
+export const optionLabels = (
   def: Pick<PropertyDefinition, 'type' | 'status_groups' | 'select_options'>,
-): string[] => optionsOf(def).map((o) => o.value)
+): string[] => optionsOf(def).map((o) => o.label)
+
+export const findOption = (def: PropertyDefinition | undefined, label: string) =>
+  optionsOf(def).find((o) => o.label === label)
 
 export const SELECT_GROUP = 'select'
 
@@ -314,18 +319,12 @@ export function optionGroupsOf(
   return [{ id: SELECT_GROUP, label: '', color: '', options }]
 }
 
-const stored = <O extends object>({
-  label: _stale,
-  ...o
-}: O & { label?: string }): Omit<O, 'label'> => o
-
 export function withOptionGroups(
   def: PropertyDefinition,
   groups: StatusGroup[],
 ): PropertyDefinition {
-  if (PROPERTY_TYPES[def.type].options === 'status')
-    return { ...def, status_groups: groups.map((g) => ({ ...g, options: g.options.map(stored) })) }
-  const select_options = (groups[0]?.options ?? []).map(({ group_id: _drop, ...o }) => stored(o))
+  if (PROPERTY_TYPES[def.type].options === 'status') return { ...def, status_groups: groups }
+  const select_options = (groups[0]?.options ?? []).map(({ group_id: _drop, ...o }) => o)
   return { ...def, select_options }
 }
 
@@ -335,23 +334,23 @@ export function defaultStatusSeed(): StatusGroup[] {
       id: 'upcoming',
       label: 'Open',
       color: 'grey',
-      options: [{ value: 'Open', color: 'grey', group_id: 'upcoming' }],
+      options: [{ key: 'Open', label: 'Open', color: 'grey', group_id: 'upcoming' }],
     },
     {
       id: 'in_progress',
       label: 'Active',
       color: 'blue',
-      options: [{ value: 'Active', color: 'blue', group_id: 'in_progress' }],
+      options: [{ key: 'Active', label: 'Active', color: 'blue', group_id: 'in_progress' }],
     },
     {
       id: 'done',
       label: 'Done',
       color: 'green',
-      options: [{ value: 'Done', color: 'green', group_id: 'done' }],
+      options: [{ key: 'Done', label: 'Done', color: 'green', group_id: 'done' }],
     },
   ]
 }
 
-export function defaultSelectSeed(): { value: string }[] {
-  return [{ value: 'Option 1' }]
+export function defaultSelectSeed(): SelectOption[] {
+  return [{ key: 'Option 1', label: 'Option 1' }]
 }

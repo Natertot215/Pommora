@@ -176,7 +176,7 @@ function ChipsField({
                 <OptionChip
                   key={v}
                   type={def.type}
-                  option={o ?? { value: v }}
+                  option={o ?? { label: v }}
                   onRemove={() => toggle(v)}
                 />
               )

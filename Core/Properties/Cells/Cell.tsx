@@ -10,7 +10,7 @@ import { FILE_CHIP_INDEX_ATTR, fileValueWithout } from '../Pickers/filePick'
 import { fileName, resolveFieldValue } from '../value'
 import { barDivisor, formatDate, formatNumber } from '../formatValue'
 import { OptionChip } from './OptionChip'
-import { findOption } from './cellResolve'
+import { findOption } from '../properties'
 import { LinkCell } from './LinkCell'
 import { TextCell } from './TextCell'
 import { CheckboxGlyph } from './CheckboxGlyph'
@@ -68,7 +68,7 @@ export function Cell({
           <OptionChip
             type={dt ?? ''}
             look={style.look}
-            option={opt ?? { value: v.value }}
+            option={opt ?? { label: v.value }}
             def={def}
             {...(removesOption ? { onRemove: () => remove(null) } : {})}
           />
@@ -82,7 +82,7 @@ export function Cell({
             <OptionChip
               type={dt ?? ''}
               look={style.look}
-              option={findOption(def, val) ?? { value: val }}
+              option={findOption(def, val) ?? { label: val }}
               {...(removesOption
                 ? {
                     onRemove: () =>

@@ -63,7 +63,7 @@ export const pickGroups = (def: PropertyDefinition, contextOptions?: PickOption[
   contextOptions
     ? [{ id: def.id, options: contextOptions }]
     : optionGroupsOf(def)
-        .map((g) => ({ id: g.id, options: groupOptions(g).map((o) => ({ ...o, label: o.value })) }))
+        .map((g) => ({ id: g.id, options: groupOptions(g).map((o) => ({ ...o, value: o.label })) }))
         .filter((g) => g.options.length > 0)
 
 const pickKind = (def: PropertyDefinition): OptionPickKind => pickKindOf(def.type) ?? 'select'

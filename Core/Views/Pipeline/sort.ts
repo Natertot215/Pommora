@@ -4,7 +4,7 @@ import type { SortCriterion } from '../views'
 import type { ViewRow } from '../viewRow'
 import { compareTitles } from '../../Paths/caseFold'
 import {
-  optionValues,
+  optionLabels,
   type PropertyDefinition,
   RESERVED_PROPERTY_ID,
   specOf,
@@ -84,7 +84,7 @@ function buildCriterion(c: SortCriterion, schema: PropertyDefinition[]): Resolve
       const def = schema.find((d) => d.id === c.property_id)
       const custom = c.order?.length ? c.order : undefined
       const listed = new Set(custom)
-      const tail = (def ? optionValues(def) : []).filter((v) => !listed.has(v))
+      const tail = (def ? optionLabels(def) : []).filter((v) => !listed.has(v))
       const order = Object.fromEntries([...(custom ?? []), ...tail].map((v, i) => [v, i]))
       return {
         extract: (r) => rank(r, c.property_id, order, schema),

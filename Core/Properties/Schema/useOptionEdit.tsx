@@ -38,7 +38,7 @@ export type OptionEditApi = {
   toggle: (value: string, anchor: HTMLElement | undefined) => void
   openMenu: (value: string, row: HTMLElement) => Promise<void>
   editOption: (edit: OptionEdit) => Promise<boolean>
-  moves: (groups: readonly { id: string; options: readonly { value: string }[] }[]) => {
+  moves: (groups: readonly { id: string; options: readonly { label: string }[] }[]) => {
     laneOf: () => (value: string) => string | undefined
     commit: (value: string, slot: LaneSlot) => void
     chip: (value: string) => React.JSX.Element
@@ -66,14 +66,14 @@ export function useOptionEdit({
   const [draft, setDraft] = useState<Draft | null>(null)
   const anchor = useRef<HTMLElement | null>(null)
   const keys = useRenameKeys(
-    options.map((o) => o.value),
+    options.map((o) => o.label),
     editing?.value,
   )
   const { keyOf } = keys
 
   const editOption = (edit: OptionEdit): Promise<boolean> =>
     write(dialer().ask('property:editOption', def.id, edit))
-  const enteringKey = useEntrance(options, (o) => keyOf(o.value))
+  const enteringKey = useEntrance(options, (o) => keyOf(o.label))
   const entering = (value: string): boolean =>
     keyOf(value) !== draft?.key && enteringKey(keyOf(value))
   const isOpen = (row: string): boolean => editing !== null && keyOf(row) === keyOf(editing.row)
@@ -123,16 +123,16 @@ export function useOptionEdit({
 
   const moves: OptionEditApi['moves'] = (groups) => ({
     laneOf: () => {
-      const laneOf = new Map(groups.flatMap((g) => g.options.map((o) => [o.value, g.id] as const)))
+      const laneOf = new Map(groups.flatMap((g) => g.options.map((o) => [o.label, g.id] as const)))
       return (value) => laneOf.get(value)
     },
     commit: (value, slot) =>
-      void editOption({ op: 'move', value, groupId: slot.lane, toIndex: slot.index }),
+      void editOption({ op: 'move', option: value, groupId: slot.lane, toIndex: slot.index }),
     chip: (value) => (
       <OptionChip
         type={def.type}
         look={style?.current.look}
-        option={options.find((o) => o.value === value)}
+        option={options.find((o) => o.label === value)}
         def={def}
       />
     ),
@@ -146,9 +146,9 @@ export function useOptionEdit({
       if (ok) setDraft((d) => (d === draft ? null : d))
     })
   }
-  const drafted = draft && !options.some((o) => keyOf(o.value) === draft.key) ? draft : null
+  const drafted = draft && !options.some((o) => keyOf(o.label) === draft.key) ? draft : null
 
-  const option = editing && options.find((o) => keyOf(o.value) === keyOf(editing.row))
+  const option = editing && options.find((o) => keyOf(o.label) === keyOf(editing.row))
   useEffect(() => {
     if (editing && !option) setEditing(null)
   }, [editing, option])
@@ -158,15 +158,15 @@ export function useOptionEdit({
       open={!!option}
       contentKey={held.value}
       type={def.type}
-      option={{ ...held.option, value: held.value }}
+      option={{ ...held.option, label: held.value }}
       def={def}
       triggerRef={anchor}
       onDismiss={() => setEditing(null)}
       onRename={(title) => void rename(title)}
-      onPickIcon={(icon) => void editOption({ op: 'icon', value: held.value, icon })}
-      onPickColor={(color) => void editOption({ op: 'recolor', value: held.value, color })}
+      onPickIcon={(icon) => void editOption({ op: 'icon', option: held.value, icon })}
+      onPickColor={(color) => void editOption({ op: 'recolor', option: held.value, color })}
       onPickAppearance={(appearance) =>
-        void editOption({ op: 'appearance', value: held.value, appearance })
+        void editOption({ op: 'appearance', option: held.value, appearance })
       }
     />
   ) : null
