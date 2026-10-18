@@ -11,16 +11,14 @@ import { fetchPageValues } from '../../Properties/pageRow'
 import { isAtOrUnder } from '../../Paths/posix'
 import { useSession } from '../../Session/store'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
-import { heldKey } from '../../Files/heldKeys'
 
 const rekeyOverrides = (o: Overrides | null, oldKey: string, newKey: string): Overrides | null => {
   if (!o) return o
   return Object.fromEntries(
     Object.entries(o).map(([id, entry]) => {
       const root = entry.fm as unknown as Record<string, unknown>
-      const held = heldKey(root, oldKey)
-      if (held === undefined) return [id, entry]
-      const { [held]: moved, ...rest } = root
+      if (!Object.hasOwn(root, oldKey)) return [id, entry]
+      const { [oldKey]: moved, ...rest } = root
       return [id, { ...entry, fm: { ...rest, [newKey]: moved } as PageFrontmatter }]
     }),
   )

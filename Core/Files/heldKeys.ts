@@ -1,12 +1,6 @@
 import type { Json } from './stableJson'
-import { spellings, normalizeTitle } from '../Paths/caseFold'
+import { normalizeTitle } from '../Paths/caseFold'
 import { isScalar, listOf } from '../Contract/validators'
-
-export const heldKeys = (root: object, name: string): string[] => spellings(Object.keys(root), name)
-
-/** The key `root` reads `name` under; an exact spelling answers before anything folds. */
-export const heldKey = (root: object, name: string): string | undefined =>
-  Object.hasOwn(root, name) ? name : heldKeys(root, name)[0]
 
 /** `root` with `value` under `key`, in its place when the root holds it; `undefined` drops the key. */
 export function landValue(root: Json, key: string, value: unknown): Json {

@@ -2,7 +2,6 @@ import { contextIdsOf } from '../Contexts/contextIdentity'
 import type { CollectionNode, NexusTree, PageNode, SetNode } from '../Nexus/tree'
 import { entityMemo } from '../Nexus/tree'
 import { pageIndexOf } from '../Nexus/record'
-import { heldKey } from '../Files/heldKeys'
 import { spaceRowOf } from '../Properties/pageRow'
 import { type PropertyDefinition, specOf } from '../Properties/properties'
 import { linkKeysOf } from '../Properties/schema'
@@ -95,7 +94,7 @@ function answers(
     case 'user': {
       if (OPERANDLESS_OPS.has(rule.op)) return true
       const name = schema.find((d) => d.id === rule.property_id)?.name
-      return name !== undefined && heldKey(row.frontmatter, name) !== undefined
+      return name !== undefined && Object.hasOwn(row.frontmatter, name)
     }
   }
 }

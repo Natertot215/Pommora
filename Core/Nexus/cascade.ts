@@ -1,6 +1,6 @@
 import { isAtOrUnder, isMarkdownFile, join, relative, titleFromPath } from '../Paths/posix'
 import { normalizeTitle } from '../Paths/caseFold'
-import { heldKey, stripKeys } from '../Files/heldKeys'
+import { stripKeys } from '../Files/heldKeys'
 import { errText } from '../Contract/result'
 import { splitEnvelope, mergeFrontmatter, splitFrontmatter, stampedId } from '../Files/pageFile'
 import {
@@ -121,8 +121,7 @@ export async function deleteCascade(
       const raw = governedRoot(file, before)
       const id = isMarkdownFile(file) ? stampedId(before) : asString(raw.id)
       if (!id) continue
-      for (const { key, def, value } of named(raw))
-        if (key === heldKey(raw, def.name)) links.push({ page: id, property: def.id, value })
+      for (const { def, value } of named(raw)) links.push({ page: id, property: def.id, value })
     }
     const unswept = swept.skipped.length + twins
     return {

@@ -1,6 +1,5 @@
 import { machine } from '../Platform/machine'
 import { liveTreeOf, mutableTarget } from '../Nexus/liveTree'
-import { heldKey } from '../Files/heldKeys'
 import { writtenRoot } from './governedWrite'
 import { pageWorldOf, writeSpaceSidecar } from '../Contexts/contextWrite'
 import { spaceWorldOf } from '../Contexts/contextResolve'
@@ -23,9 +22,7 @@ export async function setSpaceProperty(
   if (!clear && encoded === undefined) return noShape(def.name)
   const world = spaceWorldOf(await liveTreeOf(root))
   return writeSpaceSidecar(absSpaceDir, (raw) =>
-    clear && heldKey(raw, def.name) === undefined
-      ? null
-      : writtenRoot(raw, def.name, encoded, world),
+    clear && !Object.hasOwn(raw, def.name) ? null : writtenRoot(raw, def.name, encoded, world),
   )
 }
 

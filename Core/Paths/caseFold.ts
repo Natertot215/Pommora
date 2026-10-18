@@ -13,13 +13,6 @@ export function normalizeTitle(raw: unknown): string {
   return foldKey(String(raw).trim())
 }
 
-/** Every spelling `names` holds of `name`: its exact spelling first, then each other that folds to it, in order. */
-export function spellings(names: readonly string[], name: string): string[] {
-  const fold = foldKey(name)
-  const others = names.filter((n) => n !== name && foldKey(n) === fold)
-  return names.includes(name) ? [name, ...others] : others
-}
-
 /** A host-independent ordering for user-visible titles; accent-sensitive and case-insensitive, matching the value sort. */
 export function compareTitles(a: string, b: string): number {
   return titleCollator.compare(a, b)
