@@ -6,6 +6,7 @@ import { looseDecoder } from '../Files/decoders'
 import { rootSegs } from '../Paths/exclusion'
 import { normalizeTitle } from '../Paths/caseFold'
 import type { ValueKind } from './propertyValue'
+import { KEY_FORMATS } from './keyFormat'
 
 const typeIds = z.enum([
   'text',
@@ -175,6 +176,7 @@ const propertyDefinitionFields = z.object({
   key: z.string(),
   label: z.string().optional(),
   type: propertyType,
+  key_format: z.enum(KEY_FORMATS).optional().catch(undefined),
   icon: z.string().optional(),
   select_options: selectOptions.optional(),
   status_groups: statusGroups.optional(),
