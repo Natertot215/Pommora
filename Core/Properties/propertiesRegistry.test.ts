@@ -25,7 +25,7 @@ const def = (id: string, name: string): PropertyDefinition =>
     label: name,
     key: name,
     type: 'select',
-    select_options: [{ value: 'a', color: 'blue' }],
+    select_options: [{ key: 'a', label: 'a', color: 'blue' }],
   }) as PropertyDefinition
 
 describe('propertiesRegistry', () => {
@@ -70,7 +70,11 @@ describe('propertiesRegistry', () => {
 
   it('reads two options that fold alike as the first, and two definitions whose names fold alike as the first', async () => {
     await mkdir(join(root, '.nexus'), { recursive: true })
-    const options = [{ value: 'alpha' }, { value: 'Alpha' }, { value: 'beta' }]
+    const options = [
+      { key: 'alpha', label: 'alpha' },
+      { key: 'Alpha', label: 'Alpha' },
+      { key: 'beta', label: 'beta' },
+    ]
     const file = {
       order: ['prop_a', 'prop_b'],
       defs: {
@@ -87,7 +91,7 @@ describe('propertiesRegistry', () => {
     await writeFile(join(root, '.nexus', 'properties.json'), JSON.stringify(file))
     const { defs } = await readRegistry(root)
     expect(Object.keys(defs)).toEqual(['prop_a'])
-    expect(defs.prop_a.select_options?.map((o) => o.value)).toEqual(['alpha', 'beta'])
+    expect(defs.prop_a.select_options?.map((o) => o.label)).toEqual(['alpha', 'beta'])
     await mutateRegistry(root, (registry) => ({ next: registry, result: undefined }))
     const kept = await readJsonAt<RegistryFile>(join(root, '.nexus', 'properties.json'))
     expect(kept.defs.prop_b).toEqual(file.defs.prop_b)

@@ -80,8 +80,8 @@ beforeEach(async () => {
           key: 'Priority',
           type: 'select',
           select_options: [
-            { value: 'hi', color: 'red' },
-            { value: 'lo', color: 'blue' },
+            { key: 'hi', label: 'hi', color: 'red' },
+            { key: 'lo', label: 'lo', color: 'blue' },
           ],
         },
       },
@@ -263,7 +263,7 @@ describe('a returning artifact is reconciled against the world it comes back to'
               label: 'Priority',
               key: 'Priority',
               type: 'select',
-              select_options: [{ value: 'lo', color: 'blue' }],
+              select_options: [{ key: 'lo', label: 'lo', color: 'blue' }],
             },
           },
         }),
@@ -284,8 +284,8 @@ describe('a returning artifact is reconciled against the world it comes back to'
             key: 'Tags',
             type: 'multi_select',
             select_options: [
-              { value: 'a', color: 'red' },
-              { value: 'b', color: 'blue' },
+              { key: 'a', label: 'a', color: 'red' },
+              { key: 'b', label: 'b', color: 'blue' },
             ],
           },
         },
@@ -306,7 +306,7 @@ describe('a returning artifact is reconciled against the world it comes back to'
               label: 'Tags',
               key: 'Tags',
               type: 'multi_select',
-              select_options: [{ value: 'a', color: 'red' }],
+              select_options: [{ key: 'a', label: 'a', color: 'red' }],
             },
           },
         }),
@@ -314,11 +314,11 @@ describe('a returning artifact is reconciled against the world it comes back to'
     })
     expect((await fm('Notes/Alpha.md')).Tags).toEqual(['a'])
     const def = (
-      await readJsonAt<{ defs: Record<string, { select_options: { value: string }[] }> }>(
+      await readJsonAt<{ defs: Record<string, { select_options: { label: string }[] }> }>(
         join(root, '.nexus', 'properties.json'),
       )
     ).defs[PROP]
-    expect(def.select_options.map((o) => o.value)).toEqual(['a'])
+    expect(def.select_options.map((o) => o.label)).toEqual(['a'])
   })
 
   it('keeps a gone Link held under a key no Link property claims', async () => {

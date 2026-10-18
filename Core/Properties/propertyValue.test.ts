@@ -24,8 +24,8 @@ const statusDef = def({
       label: 'G',
       color: 'blue',
       options: [
-        { value: 'Done', group_id: 'g' },
-        { value: 'Open', group_id: 'g' },
+        { key: 'Done', label: 'Done', group_id: 'g' },
+        { key: 'Open', label: 'Open', group_id: 'g' },
       ],
     },
   ],
@@ -33,11 +33,17 @@ const statusDef = def({
 
 const selectDef = def({
   type: 'select',
-  select_options: [{ value: 'A' }, { value: 'B' }],
+  select_options: [
+    { key: 'A', label: 'A' },
+    { key: 'B', label: 'B' },
+  ],
 })
 
 const multiSelectOf = (...values: string[]): PropertyDefinition =>
-  def({ type: 'multiSelect', select_options: values.map((value) => ({ value })) })
+  def({
+    type: 'multiSelect',
+    select_options: values.map((value) => ({ key: value, label: value })),
+  })
 
 describe('decodeValue — the declared type decides, never the shape', () => {
   it('free text reads a string as itself, an unquoted wikilink as the connection it spells, and any other shape as the yaml that spells it', () => {
@@ -67,7 +73,10 @@ describe('decodeValue — the declared type decides, never the shape', () => {
   it('never guesses: a select option shaped like a date or a url stays a select', () => {
     const shaped = def({
       type: 'select',
-      select_options: [{ value: '2024-01-01' }, { value: 'https://acme.io' }],
+      select_options: [
+        { key: '2024-01-01', label: '2024-01-01' },
+        { key: 'https://acme.io', label: 'https://acme.io' },
+      ],
     })
     expect(decodeValue(shaped, '2024-01-01')).toEqual({ kind: 'select', value: '2024-01-01' })
     expect(decodeValue(shaped, 'https://acme.io')).toEqual({
@@ -115,7 +124,7 @@ describe('decodeValue — the declared type decides, never the shape', () => {
   })
 
   it('a YAML number or boolean names the option it spells — an outside `- 2024` is the option "2024"', () => {
-    const year = def({ type: 'select', select_options: [{ value: '2024' }] })
+    const year = def({ type: 'select', select_options: [{ key: '2024', label: '2024' }] })
     expect(decodeValue(year, [2024])).toEqual({ kind: 'select', value: '2024' })
     expect(decodeValue(year, 2024)).toEqual({ kind: 'select', value: '2024' })
     expect(decodeValue(multiSelectOf('true', 'x'), [true, 'x'])).toEqual({
@@ -169,7 +178,7 @@ describe('the single-option resolution — one rule, tested on Select and on Sta
 
   it("decodeValue's select case is that rule", () => {
     const options = (...values: string[]) =>
-      def({ type: 'select', select_options: values.map((value) => ({ value })) })
+      def({ type: 'select', select_options: values.map((value) => ({ key: value, label: value })) })
     expect(decodeValue(options('Open', 'Active', 'Done'), ['Open', 'Active'])).toEqual({
       kind: 'select',
       value: 'Active',
@@ -443,10 +452,19 @@ describe('writtenSpelling', () => {
 })
 
 describe('options decode exactly; checkboxes without regard to case', () => {
-  const stage = def({ type: 'select', select_options: [{ value: 'Done' }, { value: 'Active' }] })
+  const stage = def({
+    type: 'select',
+    select_options: [
+      { key: 'Done', label: 'Done' },
+      { key: 'Active', label: 'Active' },
+    ],
+  })
   const labels = def({
     type: 'multiSelect',
-    select_options: [{ value: 'Claude' }, { value: 'Docs' }],
+    select_options: [
+      { key: 'Claude', label: 'Claude' },
+      { key: 'Docs', label: 'Docs' },
+    ],
   })
   const checkbox = def({ type: 'checkbox' })
 

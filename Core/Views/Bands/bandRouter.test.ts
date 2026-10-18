@@ -25,17 +25,27 @@ const statusDef: PropertyDefinition = {
   key: 'Status',
   type: 'status',
   status_groups: [
-    { id: 'todo', label: 'To Do', color: 'gray', options: [{ value: 'open', group_id: 'todo' }] },
+    {
+      id: 'todo',
+      label: 'To Do',
+      color: 'gray',
+      options: [{ key: 'open', label: 'open', group_id: 'todo' }],
+    },
     {
       id: 'doing',
       label: 'Doing',
       color: 'blue',
       options: [
-        { value: 'active', group_id: 'doing' },
-        { value: 'review', group_id: 'doing' },
+        { key: 'active', label: 'active', group_id: 'doing' },
+        { key: 'review', label: 'review', group_id: 'doing' },
       ],
     },
-    { id: 'done', label: 'Done', color: 'green', options: [{ value: 'closed', group_id: 'done' }] },
+    {
+      id: 'done',
+      label: 'Done',
+      color: 'green',
+      options: [{ key: 'closed', label: 'closed', group_id: 'done' }],
+    },
   ],
 }
 const view = (patch: Partial<SavedView> = {}): SavedView =>

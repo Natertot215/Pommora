@@ -75,7 +75,7 @@ describe('shownColumnsFor', () => {
     label: 'Sel',
     key: 'Sel',
     type: 'select',
-    select_options: [{ value: 'Done' }],
+    select_options: [{ key: 'Done', label: 'Done' }],
   } as PropertyDefinition
   const chk = { id: 'chk', label: 'Chk', key: 'Chk', type: 'checkbox' } as PropertyDefinition
   const ctx = { schema: [sel, chk], contextsById: new Map() } as unknown as ValueContext

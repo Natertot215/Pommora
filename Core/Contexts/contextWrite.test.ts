@@ -252,7 +252,7 @@ describe('setContext reads the held tree', () => {
       id: '',
       label: 'Tags',
       type: 'multiSelect',
-      select_options: [{ value: 'alpha' }],
+      select_options: [{ key: 'alpha', label: 'alpha' }],
     })
     if (!tags.ok) throw new Error('setup')
     await mkdir(join(contextsDir(root), 'Projects', 'Athena'), { recursive: true })
@@ -266,7 +266,7 @@ describe('setContext reads the held tree', () => {
     expect((await readJsonAt(sidecarOf('Projects', 'Athena')))['<Projects>']).toEqual(['Pommora'])
     await settleNow({ push: () => {}, watch: async () => {} }, root)
     const options = (await readRegistry(root)).defs[tags.value.id].select_options
-    expect(options?.map((o) => o.value)).toEqual(['alpha', 'zeta'])
+    expect(options?.map((o) => o.label)).toEqual(['alpha', 'zeta'])
   })
 
   describe('a Space’s links (G-1, cross-context)', () => {

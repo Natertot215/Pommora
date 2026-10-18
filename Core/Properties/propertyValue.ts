@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { listOf, scalarMembers } from '../Contract/validators'
-import { firstPerTitle, optionValues, PROPERTY_TYPES, type PropertyDefinition } from './properties'
+import { firstPerTitle, optionsOf, PROPERTY_TYPES, type PropertyDefinition } from './properties'
 import { exactTitle, normalizeTitle } from '../Paths/caseFold'
 import { joinValues, landValue } from '../Files/heldKeys'
 import { yamlInline } from '../Files/pageFile'
@@ -45,17 +45,17 @@ const optionWords = new WeakMap<PropertyDefinition, OptionWords>()
 function wordsOf(def: PropertyDefinition): OptionWords {
   let words = optionWords.get(def)
   if (!words) {
-    const values = optionValues(def)
+    const options = optionsOf(def)
     words = {
-      labelOf: new Map(values.map((v) => [exactTitle(v), v])),
-      folds: new Set(values.map(normalizeTitle)),
+      labelOf: new Map(options.map((o) => [exactTitle(o.key), o.label])),
+      folds: new Set(options.map((o) => normalizeTitle(o.label))),
     }
     optionWords.set(def, words)
   }
   return words
 }
 
-/** The option `written` names, as its definition spells it. */
+/** The label of the option whose key `written` names. */
 const registeredOption = (def: PropertyDefinition, written: string): string | undefined =>
   wordsOf(def).labelOf.get(exactTitle(written))
 

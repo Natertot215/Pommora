@@ -79,21 +79,27 @@ const statusDef: PropertyDefinition = {
   label: 'Status',
   key: 'Status',
   type: 'select',
-  select_options: [{ value: 'Open' }, { value: 'Active' }],
+  select_options: [
+    { key: 'Open', label: 'Open' },
+    { key: 'Active', label: 'Active' },
+  ],
 }
 const tagsDef: PropertyDefinition = {
   id: 'prop_tags',
   label: 'Tags',
   key: 'Tags',
   type: 'multiSelect',
-  select_options: [{ value: 'alpha' }],
+  select_options: [{ key: 'alpha', label: 'alpha' }],
 }
 const stageDef: PropertyDefinition = {
   id: 'prop_stage',
   label: 'Stage',
   key: 'Stage',
   type: 'select',
-  select_options: [{ value: 'Done' }, { value: 'Open' }],
+  select_options: [
+    { key: 'Done', label: 'Done' },
+    { key: 'Open', label: 'Open' },
+  ],
 }
 const notesDef: PropertyDefinition = {
   id: 'prop_notes',

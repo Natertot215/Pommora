@@ -185,7 +185,7 @@ describe('openNexusSequence', () => {
             label: 'Tags',
             key: 'Tags',
             type: 'multiSelect',
-            select_options: [{ value: 'alpha' }],
+            select_options: [{ key: 'alpha', label: 'alpha' }],
           },
         },
       }),
@@ -202,8 +202,8 @@ describe('openNexusSequence', () => {
     await vi.waitFor(async () =>
       expect(
         (
-          await readJsonAt<{ defs: { tags: { select_options: { value: string }[] } } }>(registry)
-        ).defs.tags.select_options.map((o) => o.value),
+          await readJsonAt<{ defs: { tags: { select_options: { label: string }[] } } }>(registry)
+        ).defs.tags.select_options.map((o) => o.label),
       ).toEqual(['alpha', 'Ideas']),
     )
   })

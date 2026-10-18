@@ -20,7 +20,7 @@ const status = [
     id: 'todo',
     label: 'To-do',
     color: 'grey',
-    options: [{ value: 'Open', group_id: 'todo' }],
+    options: [{ key: 'Open', label: 'Open', group_id: 'todo' }],
   },
 ] as StatusGroup[]
 
@@ -30,8 +30,8 @@ const select = [
     label: '',
     color: '',
     options: [
-      { value: 'Urgent', group_id: 'select' },
-      { value: 'Later', group_id: 'select' },
+      { key: 'Urgent', label: 'Urgent', group_id: 'select' },
+      { key: 'Later', label: 'Later', group_id: 'select' },
     ],
   },
 ] as StatusGroup[]
@@ -199,7 +199,10 @@ describe('creating an option', () => {
     await commit(host.querySelector('input'), 'Fresh')
     expect(host.querySelector('input')?.value).toBe('Fresh')
     render('select', [
-      { ...select[0], options: [...select[0].options, { value: 'Fresh', group_id: 'select' }] },
+      {
+        ...select[0],
+        options: [...select[0].options, { key: 'Fresh', label: 'Fresh', group_id: 'select' }],
+      },
     ])
     expect(host.querySelector('input')).toBeNull()
     await act(async () => reply(ok(null)))
@@ -241,11 +244,11 @@ describe('the popup through a rename', () => {
     await commit(titleField(), 'Critical')
     expect(renameOption).toHaveBeenCalledWith('p1', 'Urgent', 'Critical')
     const color = pickSwatch()
-    expect(editOption).toHaveBeenCalledWith('p1', { op: 'recolor', value: 'Critical', color })
+    expect(editOption).toHaveBeenCalledWith('p1', { op: 'recolor', option: 'Critical', color })
     act(() => portalButton('Appearance')?.click())
     expect(editOption).toHaveBeenCalledWith('p1', {
       op: 'appearance',
-      value: 'Critical',
+      option: 'Critical',
       appearance: 'clear',
     })
     act(() => portalButton('Edit Icon')?.click())
@@ -254,7 +257,11 @@ describe('the popup through a rename', () => {
         .querySelector<HTMLButtonElement>('[data-picker-portal] button[title="anchor"]')
         ?.click(),
     )
-    expect(editOption).toHaveBeenCalledWith('p1', { op: 'icon', value: 'Critical', icon: 'anchor' })
+    expect(editOption).toHaveBeenCalledWith('p1', {
+      op: 'icon',
+      option: 'Critical',
+      icon: 'anchor',
+    })
     expect(popup()).not.toBeNull()
     await commit(titleField(), 'Critical')
     expect(renameOption).toHaveBeenCalledTimes(1)
@@ -270,7 +277,7 @@ describe('the popup through a rename', () => {
       ['p1', 'Critical', 'Urgent'],
     ])
     const color = pickSwatch()
-    expect(editOption).toHaveBeenCalledWith('p1', { op: 'recolor', value: 'Urgent', color })
+    expect(editOption).toHaveBeenCalledWith('p1', { op: 'recolor', option: 'Urgent', color })
   })
 
   it('the row and its popup survive the refresh that carries the rename', async () => {
@@ -282,7 +289,7 @@ describe('the popup through a rename', () => {
     const refreshed = [
       {
         ...select[0],
-        options: [{ value: 'Critical', group_id: 'select' }, select[0].options[1]],
+        options: [{ key: 'Critical', label: 'Critical', group_id: 'select' }, select[0].options[1]],
       },
     ]
     const errors = vi.spyOn(console, 'error').mockImplementation(() => {})
@@ -293,7 +300,7 @@ describe('the popup through a rename', () => {
     expect(row?.isConnected).toBe(true)
     expect(row?.textContent).toContain('Critical')
     const color = pickSwatch()
-    expect(editOption).toHaveBeenCalledWith('p1', { op: 'recolor', value: 'Critical', color })
+    expect(editOption).toHaveBeenCalledWith('p1', { op: 'recolor', option: 'Critical', color })
   })
 
   it('a second rename after the refresh keeps the popup on its row', async () => {
@@ -301,18 +308,24 @@ describe('the popup through a rename', () => {
     openPopup()
     await commit(titleField(), 'Critical')
     render('select', [
-      { ...select[0], options: [{ value: 'Critical', group_id: 'select' }, select[0].options[1]] },
+      {
+        ...select[0],
+        options: [{ key: 'Critical', label: 'Critical', group_id: 'select' }, select[0].options[1]],
+      },
     ])
     await commit(titleField(), 'Severe')
     expect(renameOption).toHaveBeenLastCalledWith('p1', 'Critical', 'Severe')
     const field = titleField()
     expect(field?.value).toBe('Severe')
     render('select', [
-      { ...select[0], options: [{ value: 'Severe', group_id: 'select' }, select[0].options[1]] },
+      {
+        ...select[0],
+        options: [{ key: 'Severe', label: 'Severe', group_id: 'select' }, select[0].options[1]],
+      },
     ])
     expect(titleField()).toBe(field)
     const color = pickSwatch()
-    expect(editOption).toHaveBeenCalledWith('p1', { op: 'recolor', value: 'Severe', color })
+    expect(editOption).toHaveBeenCalledWith('p1', { op: 'recolor', option: 'Severe', color })
   })
 
   it('two renames before a refresh lands keep the popup through both refreshes', async () => {
@@ -322,17 +335,23 @@ describe('the popup through a rename', () => {
     await commit(titleField(), 'Critical')
     const errors = vi.spyOn(console, 'error').mockImplementation(() => {})
     render('select', [
-      { ...select[0], options: [{ value: 'High', group_id: 'select' }, select[0].options[1]] },
+      {
+        ...select[0],
+        options: [{ key: 'High', label: 'High', group_id: 'select' }, select[0].options[1]],
+      },
     ])
     expect(titleField()?.value).toBe('Critical')
     render('select', [
-      { ...select[0], options: [{ value: 'Critical', group_id: 'select' }, select[0].options[1]] },
+      {
+        ...select[0],
+        options: [{ key: 'Critical', label: 'Critical', group_id: 'select' }, select[0].options[1]],
+      },
     ])
     expect(errors).not.toHaveBeenCalled()
     errors.mockRestore()
     expect(titleField()?.value).toBe('Critical')
     const color = pickSwatch()
-    expect(editOption).toHaveBeenCalledWith('p1', { op: 'recolor', value: 'Critical', color })
+    expect(editOption).toHaveBeenCalledWith('p1', { op: 'recolor', option: 'Critical', color })
   })
 
   it('a rename the host refuses leaves the popup addressed to the old title, and the field reads it again', async () => {
@@ -343,7 +362,7 @@ describe('the popup through a rename', () => {
     expect(renameOption).toHaveBeenCalledWith('p1', 'Urgent', 'later')
     expect(titleField()?.value).toBe('Urgent')
     const color = pickSwatch()
-    expect(editOption).toHaveBeenCalledWith('p1', { op: 'recolor', value: 'Urgent', color })
+    expect(editOption).toHaveBeenCalledWith('p1', { op: 'recolor', option: 'Urgent', color })
   })
 
   it('a later option taking an intermediate name keys apart from the renamed row', async () => {
@@ -351,14 +370,20 @@ describe('the popup through a rename', () => {
     openPopup()
     await commit(titleField(), 'High')
     render('select', [
-      { ...select[0], options: [{ value: 'High', group_id: 'select' }, select[0].options[1]] },
+      {
+        ...select[0],
+        options: [{ key: 'High', label: 'High', group_id: 'select' }, select[0].options[1]],
+      },
     ])
     await commit(titleField(), 'Critical')
-    const refreshed = [{ value: 'Critical', group_id: 'select' }, select[0].options[1]]
+    const refreshed = [
+      { key: 'Critical', label: 'Critical', group_id: 'select' },
+      select[0].options[1],
+    ]
     render('select', [{ ...select[0], options: refreshed }])
     const errors = vi.spyOn(console, 'error').mockImplementation(() => {})
     render('select', [
-      { ...select[0], options: [...refreshed, { value: 'High', group_id: 'select' }] },
+      { ...select[0], options: [...refreshed, { key: 'High', label: 'High', group_id: 'select' }] },
     ])
     expect(errors).not.toHaveBeenCalled()
     errors.mockRestore()
@@ -391,7 +416,7 @@ describe('the popup through a rename', () => {
     ).toHaveLength(1)
     expect(host.querySelectorAll('[data-reveal-held]')).toHaveLength(1)
     const color = pickSwatch()
-    expect(editOption).toHaveBeenCalledWith('p1', { op: 'recolor', value: 'Urgent', color })
+    expect(editOption).toHaveBeenCalledWith('p1', { op: 'recolor', option: 'Urgent', color })
   })
 })
 
@@ -436,12 +461,17 @@ describe('the option drag', () => {
       label: 'To-do',
       color: 'grey',
       options: [
-        { value: 'Open', group_id: 'todo' },
-        { value: 'Next', group_id: 'todo' },
+        { key: 'Open', label: 'Open', group_id: 'todo' },
+        { key: 'Next', label: 'Next', group_id: 'todo' },
       ],
     },
     { id: 'doing', label: 'Doing', color: 'blue', options: [] },
-    { id: 'done', label: 'Done', color: 'green', options: [{ value: 'Closed', group_id: 'done' }] },
+    {
+      id: 'done',
+      label: 'Done',
+      color: 'green',
+      options: [{ key: 'Closed', label: 'Closed', group_id: 'done' }],
+    },
   ] as StatusGroup[]
   const row = (value: string): Element => span(value)!.closest('[data-line-row]')!
   const lay = (): void => {
@@ -468,7 +498,7 @@ describe('the option drag', () => {
     drag('Open', 20, 40, 80)
     expect(editOption).toHaveBeenCalledExactlyOnceWith('p1', {
       op: 'move',
-      value: 'Open',
+      option: 'Open',
       groupId: 'doing',
       toIndex: 0,
     })
@@ -478,7 +508,7 @@ describe('the option drag', () => {
     drag('Closed', 120, 100, 15)
     expect(editOption).toHaveBeenCalledExactlyOnceWith('p1', {
       op: 'move',
-      value: 'Closed',
+      option: 'Closed',
       groupId: 'todo',
       toIndex: 0,
     })
@@ -502,7 +532,7 @@ describe('the option drag', () => {
     key(' ')
     expect(editOption).toHaveBeenCalledExactlyOnceWith('p1', {
       op: 'move',
-      value: 'Open',
+      option: 'Open',
       groupId: 'doing',
       toIndex: 0,
     })

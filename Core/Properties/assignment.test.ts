@@ -91,7 +91,7 @@ describe('a re-assign puts a cached value back', () => {
     label: 'Status',
     key: 'Status',
     type: 'select',
-    select_options: [{ value: 'hi', color: 'red' }],
+    select_options: [{ key: 'hi', label: 'hi', color: 'red' }],
   }
   const reassigned = async (
     held = '\nstatus:',
@@ -125,7 +125,7 @@ describe('a re-assign puts a cached value back', () => {
     label: 'Tags',
     key: 'Tags',
     type: 'multiSelect',
-    select_options: [{ value: 'Claude', color: 'red' }],
+    select_options: [{ key: 'Claude', label: 'Claude', color: 'red' }],
   }
 
   it("a cached member naming no option exactly doesn't come back", async () => {

@@ -105,7 +105,10 @@ describe('a value write reconciles the Space it lands on', () => {
       def({
         label: 'Tags',
         type: 'multiSelect',
-        select_options: [{ value: 'alpha' }, { value: 'beta' }],
+        select_options: [
+          { key: 'alpha', label: 'alpha' },
+          { key: 'beta', label: 'beta' },
+        ],
       }),
     )
     if (!priority.ok || !tags.ok) throw new Error('setup failed')
@@ -141,7 +144,7 @@ describe('a value write reconciles the Space it lands on', () => {
     await seed({ Tags: ['alpha', 'zeta'] })
     expect((await set(tagsId, null)).ok).toBe(true)
     expect('Tags' in (await sidecar())).toBe(false)
-    const options = (await readRegistry(root)).defs[tagsId].select_options?.map((o) => o.value)
+    const options = (await readRegistry(root)).defs[tagsId].select_options?.map((o) => o.label)
     expect(options).toEqual(['alpha', 'beta'])
   })
 

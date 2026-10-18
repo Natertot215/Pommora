@@ -87,14 +87,14 @@ describe('setGovernedRootKey with a world — the three precedence rules', () =>
     label: 'Priority',
     key: 'Priority',
     type: 'select',
-    select_options: [{ value: 'High' }],
+    select_options: [{ key: 'High', label: 'High' }],
   }
   const status: PropertyDefinition = {
     id: 'prop_status',
     label: 'Status',
     key: 'Status',
     type: 'select',
-    select_options: [{ value: 'Open' }],
+    select_options: [{ key: 'Open', label: 'Open' }],
   }
   const world: GovernedWorld = {
     contexts: contextWorldOf([
@@ -153,7 +153,7 @@ describe('setGovernedRootKey with a world — the three precedence rules', () =>
       label: 'Tags',
       key: 'Tags',
       type: 'multiSelect',
-      select_options: [{ value: 'alpha' }],
+      select_options: [{ key: 'alpha', label: 'alpha' }],
     }
     await writeFile(page, "---\nid: p1\nTags:\n  - ''\n  - alpha\n---\nbody\n")
     await setGovernedRootKey(page, 'Status', 'Done', {
@@ -171,7 +171,11 @@ describe('setGovernedRootKey — spellings', () => {
     label: 'Tags',
     key: 'Tags',
     type: 'multiSelect',
-    select_options: [{ value: 'a' }, { value: 'Docs' }, { value: 'Work' }],
+    select_options: [
+      { key: 'a', label: 'a' },
+      { key: 'Docs', label: 'Docs' },
+      { key: 'Work', label: 'Work' },
+    ],
   }
   const done: PropertyDefinition = { id: 'prop_done', label: 'Done', key: 'Done', type: 'checkbox' }
   const price: PropertyDefinition = {
@@ -185,7 +189,10 @@ describe('setGovernedRootKey — spellings', () => {
     label: 'Status',
     key: 'Status',
     type: 'select',
-    select_options: [{ value: 'Open' }, { value: 'Done' }],
+    select_options: [
+      { key: 'Open', label: 'Open' },
+      { key: 'Done', label: 'Done' },
+    ],
   }
   const world: GovernedWorld = {
     contexts: contextWorldOf([]),

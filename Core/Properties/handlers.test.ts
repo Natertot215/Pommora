@@ -56,7 +56,10 @@ beforeEach(async () => {
     id: '',
     label: 'Stage',
     type: 'select',
-    select_options: [{ value: 'Done' }, { value: 'Todo' }],
+    select_options: [
+      { key: 'Done', label: 'Done' },
+      { key: 'Todo', label: 'Todo' },
+    ],
   })
   if (!c.ok || !p.ok) throw new Error('setup failed')
   col = c.value.path
@@ -227,7 +230,8 @@ describe('the property channels', () => {
     expect(await propertiesHandlers['property:replay'](ctx, record)).toEqual(ok(null))
     expect(await readFile(page, 'utf8')).toBe(before)
     expect((await readRegistry(root)).defs[propId]?.select_options).toContainEqual({
-      value: 'Done',
+      key: 'Done',
+      label: 'Done',
     })
   })
 
@@ -358,7 +362,7 @@ describe('a Collection whose sidecar doesn’t parse', () => {
     expect(await propertiesHandlers['property:replay'](ctx, record)).toEqual(ok(null))
     const views = (await readJsonAt(colFile())).views as { filter: unknown }[]
     expect(views[0]).not.toHaveProperty('filter')
-    const options = (await readRegistry(root)).defs[propId].select_options?.map((o) => o.value)
+    const options = (await readRegistry(root)).defs[propId].select_options?.map((o) => o.label)
     expect(options).toEqual(['Todo'])
   })
 })

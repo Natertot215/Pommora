@@ -12,37 +12,37 @@ const def: PropertyDefinition = {
       id: 'upcoming',
       label: 'Upcoming',
       color: 'gray',
-      options: [{ value: 'not_started', group_id: 'upcoming' }],
+      options: [{ key: 'not_started', label: 'not_started', group_id: 'upcoming' }],
     },
     {
       id: 'in_progress',
       label: 'In Progress',
       color: 'blue',
-      options: [{ value: 'active', group_id: 'in_progress' }],
+      options: [{ key: 'active', label: 'active', group_id: 'in_progress' }],
     },
     {
       id: 'done',
       label: 'Done',
       color: 'green',
-      options: [{ value: 'complete', group_id: 'done' }],
+      options: [{ key: 'complete', label: 'complete', group_id: 'done' }],
     },
   ],
 }
 
 describe('optionGlyph', () => {
   it('draws a Multi-Select option as tags and a Select option as a tag when the option has no icon', () => {
-    expect(optionGlyph('multiSelect', { value: 'a' })).toBe('tags')
-    expect(optionGlyph('select', { value: 'a' })).toBe('tag')
+    expect(optionGlyph('multiSelect', { label: 'a' })).toBe('tags')
+    expect(optionGlyph('select', { label: 'a' })).toBe('tag')
   })
 
   it('draws a Status option by its group when the option has no icon', () => {
-    expect(optionGlyph('status', { value: 'not_started' }, def)).toBe('circle-dashed')
-    expect(optionGlyph('status', { value: 'active' }, def)).toBe('minus')
-    expect(optionGlyph('status', { value: 'complete' }, def)).toBe('check')
+    expect(optionGlyph('status', { label: 'not_started' }, def)).toBe('circle-dashed')
+    expect(optionGlyph('status', { label: 'active' }, def)).toBe('minus')
+    expect(optionGlyph('status', { label: 'complete' }, def)).toBe('check')
   })
 
   it('falls back to the upcoming glyph for an unknown value or a missing def', () => {
-    expect(optionGlyph('status', { value: 'nope' }, def)).toBe('circle-dashed')
-    expect(optionGlyph('status', { value: 'active' })).toBe('circle-dashed')
+    expect(optionGlyph('status', { label: 'nope' }, def)).toBe('circle-dashed')
+    expect(optionGlyph('status', { label: 'active' })).toBe('circle-dashed')
   })
 })

@@ -7,7 +7,7 @@ import { collectionFolders } from './assignment'
 import { renameSweep } from './registryProperty'
 import { deletePlan, stripAndRemove } from './deleteProperty'
 import { dropOptionFromDef, optionCascade } from './optionOps'
-import { optionValues } from './properties'
+import { optionsOf } from './properties'
 import {
   clearSchemaJournal,
   readSchemaJournal,
@@ -64,9 +64,9 @@ async function replay(
     case 'option-rename': {
       const def = defs[journal.id]
       if (!def) return NO_REACH
-      const values = optionValues(def)
+      const keys = optionsOf(def).map((o) => o.key)
       // Holds `to` and not `from` = the commit landed cleanly; every other state is not this record's.
-      if (!values.includes(journal.to) || values.includes(journal.from)) return NO_REACH
+      if (!keys.includes(journal.to) || keys.includes(journal.from)) return NO_REACH
       return optionCascade(root, def, journal.from, { op: 'replace', to: journal.to })
     }
     case 'option-remove': {
@@ -74,7 +74,7 @@ async function replay(
       const def = defs[journal.id]
       const held = answered ? await readSchemaJournal(root) : journal
       if (!def || !held || !sameRecord(held, journal)) return NO_REACH
-      if (!optionValues(def).includes(journal.value)) return NO_REACH
+      if (!optionsOf(def).some((o) => o.key === journal.value)) return NO_REACH
       const owed = await optionCascade(root, def, journal.value, { op: 'strip' })
       if (owed.skipped) return owed
       return (await dropOptionFromDef(root, journal.id, journal.value)).ok

@@ -45,7 +45,10 @@ async function seedNexus(): Promise<string> {
     id: 'prop_s',
     label: 'Stage',
     type: 'select',
-    select_options: [{ value: 'Draft' }, { value: 'Done' }],
+    select_options: [
+      { key: 'Draft', label: 'Draft' },
+      { key: 'Done', label: 'Done' },
+    ],
   })
   await writeFile(
     join(root, 'Col', '_pagecollection.json'),
@@ -310,7 +313,10 @@ describe('option replay', () => {
           ...registry.defs,
           prop_s: {
             ...registry.defs.prop_s,
-            select_options: [{ value: 'Queued' }, { value: 'Done' }],
+            select_options: [
+              { key: 'Queued', label: 'Queued' },
+              { key: 'Done', label: 'Done' },
+            ],
           },
         },
       },
@@ -384,7 +390,10 @@ describe('option replay', () => {
           ...registry.defs,
           prop_s: {
             ...registry.defs.prop_s,
-            select_options: [{ value: 'Queued' }, { value: 'Done' }],
+            select_options: [
+              { key: 'Queued', label: 'Queued' },
+              { key: 'Done', label: 'Done' },
+            ],
           },
         },
       },
@@ -414,7 +423,10 @@ describe('option replay reaches saved views', () => {
           ...registry.defs,
           prop_s: {
             ...registry.defs.prop_s,
-            select_options: [{ value: 'Queued' }, { value: 'Done' }],
+            select_options: [
+              { key: 'Queued', label: 'Queued' },
+              { key: 'Done', label: 'Done' },
+            ],
           },
         },
       },
@@ -454,7 +466,9 @@ describe('option replay reaches saved views', () => {
     expect(views.set).not.toHaveProperty('filter')
     expect(views.tile.hidden_groups).toEqual([])
     expect(views.matrix).toBeNull()
-    expect((await readRegistry(root)).defs.prop_s?.select_options).toEqual([{ value: 'Done' }])
+    expect((await readRegistry(root)).defs.prop_s?.select_options).toEqual([
+      { key: 'Done', label: 'Done' },
+    ])
     expect(await readSchemaJournal(root)).toBeNull()
   })
 })

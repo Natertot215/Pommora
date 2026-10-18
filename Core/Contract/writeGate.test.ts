@@ -65,7 +65,7 @@ beforeEach(async () => {
           label: 'Stage',
           key: 'Stage',
           type: 'select',
-          select_options: [{ value: 'A' }],
+          select_options: [{ key: 'A', label: 'A' }],
         },
       },
     }),
@@ -154,7 +154,7 @@ describe('one write through each channel leaves the held tree as the disk reads,
       () =>
         propertiesHandlers['property:editOption'](ctx, 'prop_s', {
           op: 'recolor',
-          value: 'A',
+          option: 'A',
           color: 'red',
         }),
       ['nexus:changed'],

@@ -8,7 +8,7 @@ import { assignProperty } from '../Properties/assignment'
 import { createProperty, renameProperty } from '../Properties/registryProperty'
 import { renameOption } from '../Properties/optionOps'
 import * as optionOps from '../Properties/optionOps'
-import { optionValues, type PropertyDefinition } from '../Properties/properties'
+import { optionLabels, type PropertyDefinition } from '../Properties/properties'
 import { writeSchemaJournal } from '../Properties/propertyJournal'
 import { replaySchemaCascade } from '../Properties/replaySchemaCascade'
 import type { Pushes } from '../Contract/bridge'
@@ -821,14 +821,14 @@ describe('held options — the Multi-Select members a changed file holds are reg
             label: 'Tags',
             key: 'Tags',
             type: 'multiSelect',
-            select_options: [{ value: first, color: 'blue' }],
+            select_options: [{ key: first, label: first, color: 'blue' }],
           },
           kind: {
             id: 'kind',
             label: 'Kind',
             key: 'Kind',
             type: 'select',
-            select_options: [{ value: 'Note' }],
+            select_options: [{ key: 'Note', label: 'Note' }],
           },
         },
       }),
@@ -836,10 +836,10 @@ describe('held options — the Multi-Select members a changed file holds are reg
   const stored = async (id: string) =>
     (
       await readJsonAt<{
-        defs: Record<string, { select_options: { value: string; color?: string }[] }>
+        defs: Record<string, { select_options: { label: string; color?: string }[] }>
       }>(abs('.nexus', 'properties.json'))
     ).defs[id]?.select_options ?? []
-  const options = async (id = 'tags'): Promise<string[]> => (await stored(id)).map((o) => o.value)
+  const options = async (id = 'tags'): Promise<string[]> => (await stored(id)).map((o) => o.label)
   const walked = async (): Promise<void> => {
     shown = recordHanded(await refreshTree(root)).tree
   }
@@ -869,11 +869,14 @@ describe('held options — the Multi-Select members a changed file holds are reg
   it('an outside edit registers the member its page holds after the options already there, in the push that carries the page', async () => {
     await writeFile(abs('Notes', 'A.md'), page(ULID_A, tags('alpha', 'Ideas')))
     await settleBatch(pusher, root, [ev('change', 'Notes', 'A.md')])
-    expect(await stored('tags')).toEqual([{ value: 'alpha', color: 'blue' }, { value: 'Ideas' }])
+    expect(await stored('tags')).toEqual([
+      { key: 'alpha', label: 'alpha', color: 'blue' },
+      { key: 'Ideas', label: 'Ideas' },
+    ])
     expect(channels()).toEqual(['nexus:changed', 'pages:changed', 'values:changed'])
     const pushed = applyDelta(shown, (payload('nexus:changed') as NexusChange).delta)
     const def = pushed.config.registry.find((d) => d.id === 'tags') as PropertyDefinition
-    expect(optionValues(def)).toEqual(['alpha', 'Ideas'])
+    expect(optionLabels(def)).toEqual(['alpha', 'Ideas'])
   })
 
   it('an in-app toggle of another option registers the member the page already holds', async () => {

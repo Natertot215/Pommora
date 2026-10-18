@@ -13,13 +13,13 @@ const groups: StatusGroup[] = [
     id: 'upcoming',
     label: 'Open',
     color: 'grey',
-    options: [{ value: 'A', group_id: 'upcoming' }],
+    options: [{ key: 'A', label: 'A', group_id: 'upcoming' }],
   },
   {
     id: 'done',
     label: 'Done',
     color: 'green',
-    options: [{ value: 'D', group_id: 'done', color: 'red' }],
+    options: [{ key: 'D', label: 'D', group_id: 'done', color: 'red' }],
   },
 ]
 const A = groups[0].options[0]
@@ -27,23 +27,25 @@ const D = groups[1].options[0]
 
 describe('optionModel', () => {
   it('addOption inserts into the matched group only, carrying its group_id', () => {
-    expect(addOption(groups, 'upcoming', 'Triage', 0)[0].options.map((o) => o.value)).toEqual([
-      'Triage',
-      'A',
+    expect(addOption(groups, 'upcoming', 'Triage', 0)[0].options).toEqual([
+      { key: 'Triage', label: 'Triage', group_id: 'upcoming' },
+      A,
     ])
     const next = addOption(groups, 'upcoming', 'Backlog')
-    expect(next[0].options).toEqual([A, { value: 'Backlog', group_id: 'upcoming' }])
+    expect(next[0].options).toEqual([A, { key: 'Backlog', label: 'Backlog', group_id: 'upcoming' }])
     expect(next[1]).toBe(groups[1])
   })
 
-  it('renameOption sets the value to the new title in any group, keeping group_id + color', () => {
+  it('renameOption sets the label and the key to the new title in any group, keeping group_id + color', () => {
     expect(renameOption(groups, 'D', 'Shipped')[1].options[0]).toEqual({
       ...D,
-      value: 'Shipped',
+      label: 'Shipped',
+      key: 'Shipped',
     })
-    expect(renameOption(groups, 'A', 'Todo')[0].options[0]).toEqual({
+    expect(renameOption(groups, 'A', 'Z')[0].options[0]).toEqual({
       ...A,
-      value: 'Todo',
+      label: 'Z',
+      key: 'Z',
     })
   })
 
@@ -55,19 +57,20 @@ describe('optionModel', () => {
 
   it('applyOptionEdit recolor sets a color on one option and clears it on another', () => {
     expect(
-      applyOptionEdit(groups, { op: 'recolor', value: 'A', color: 'red' })[0].options[0],
+      applyOptionEdit(groups, { op: 'recolor', option: 'A', color: 'red' })[0].options[0],
     ).toEqual({ ...A, color: 'red' })
-    expect(applyOptionEdit(groups, { op: 'recolor', value: 'D' })[1].options[0]).toEqual({
-      value: 'D',
+    expect(applyOptionEdit(groups, { op: 'recolor', option: 'D' })[1].options[0]).toEqual({
+      key: 'D',
+      label: 'D',
       group_id: 'done',
     })
   })
 
   it('applyOptionEdit icon and appearance set and clear the field on the option in whichever group holds it', () => {
     const icon = (gs: StatusGroup[], icon?: string) =>
-      applyOptionEdit(gs, { op: 'icon', value: 'D', icon })
+      applyOptionEdit(gs, { op: 'icon', option: 'D', icon })
     const appearance = (gs: StatusGroup[], appearance: 'clear' | 'filled') =>
-      applyOptionEdit(gs, { op: 'appearance', value: 'A', appearance })
+      applyOptionEdit(gs, { op: 'appearance', option: 'A', appearance })
     expect(icon(groups, 'star')[1].options[0]).toEqual({ ...D, icon: 'star' })
     expect(icon(icon(groups, 'star'), undefined)[1].options[0]).toEqual(D)
     expect(appearance(groups, 'clear')[0].options[0]).toEqual({ ...A, appearance: 'clear' })
@@ -89,8 +92,8 @@ describe('optionModel', () => {
         color: 'grey',
         tint: 'x',
         options: [
-          { value: 'A', group_id: 'g1', tint: 'x', appearance: 'outline' },
-          { value: 'B', group_id: 'g1', tint: 'x', appearance: 'outline' },
+          { key: 'A', label: 'A', group_id: 'g1', tint: 'x', appearance: 'outline' },
+          { key: 'B', label: 'B', group_id: 'g1', tint: 'x', appearance: 'outline' },
         ],
       },
       {
@@ -98,33 +101,36 @@ describe('optionModel', () => {
         label: 'Two',
         color: 'green',
         tint: 'x',
-        options: [{ value: 'C', group_id: 'g2', tint: 'x', appearance: 'outline' }],
+        options: [{ key: 'C', label: 'C', group_id: 'g2', tint: 'x', appearance: 'outline' }],
       },
     ] as unknown as StatusGroup[]
     const entries = (gs: StatusGroup[]) => gs.flatMap((g) => g.options) as Raw[]
     const edits = [
       { op: 'add', groupId: 'g1', title: 'N' },
-      { op: 'recolor', value: 'A', color: 'red' },
-      { op: 'icon', value: 'A', icon: 'star' },
-      { op: 'appearance', value: 'A', appearance: 'clear' },
-      { op: 'move', value: 'A', groupId: 'g2', toIndex: 0 },
+      { op: 'recolor', option: 'A', color: 'red' },
+      { op: 'icon', option: 'A', icon: 'star' },
+      { op: 'appearance', option: 'A', appearance: 'clear' },
+      { op: 'move', option: 'A', groupId: 'g2', toIndex: 0 },
       { op: 'relabelGroup', groupId: 'g1', label: 'Uno' },
     ] as const
     for (const e of edits) {
       const next = applyOptionEdit(raw, e)
       expect(next.map((g) => (g as { tint?: string }).tint)).toEqual(['x', 'x'])
-      expect(entries(next).filter((o) => o.value !== 'N')).toHaveLength(3)
+      expect(entries(next).filter((o) => o.label !== 'N')).toHaveLength(3)
       for (const o of entries(next)) {
-        if (o.value === 'N') continue
+        if (o.label === 'N') continue
         expect(o.tint).toBe('x')
-        if (o.value !== 'A') expect(o).toEqual(entries(raw).find((r) => r.value === o.value))
+        if (o.label !== 'A') expect(o).toEqual(entries(raw).find((r) => r.label === o.label))
         else if (e.op !== 'appearance') expect(o.appearance).toBe('outline')
       }
     }
   })
 
   it('withOptionGroups(optionGroupsOf(select)) round-trips a Select with no group_id on any entry', () => {
-    const options = [{ value: 'A' }, { value: 'B', color: 'red' }]
+    const options = [
+      { key: 'A', label: 'A' },
+      { key: 'B', label: 'B', color: 'red' },
+    ]
     const select = {
       id: 'p',
       label: 'Tags',
@@ -143,7 +149,7 @@ describe('optionModel', () => {
         select,
         applyOptionEdit(selectGroups, { op: 'add', groupId: 'select', title: 'C' }),
       ).select_options,
-    ).toEqual([...options, { value: 'C' }])
+    ).toEqual([...options, { key: 'C', label: 'C' }])
   })
 
   it('optionGroupsOf(status) is status_groups by reference', () => {

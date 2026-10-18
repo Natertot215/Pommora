@@ -26,7 +26,7 @@ const schema: PropertyDefinition[] = [
         id: 'g',
         label: 'G',
         color: 'blue',
-        options: [{ value: 'active', color: 'blue', group_id: 'g' }],
+        options: [{ key: 'active', label: 'active', color: 'blue', group_id: 'g' }],
       },
     ],
   },
@@ -35,7 +35,7 @@ const schema: PropertyDefinition[] = [
     label: 'Sel',
     key: 'Sel',
     type: 'select',
-    select_options: [{ value: 'red', color: 'red' }],
+    select_options: [{ key: 'red', label: 'red', color: 'red' }],
   },
   { id: 'prop_date', label: 'When', key: 'When', type: 'dateTime' },
 ] as PropertyDefinition[]

@@ -20,7 +20,10 @@ const stageDef: PropertyDefinition = {
   label: 'Stage',
   key: 'Stage',
   type: 'select',
-  select_options: [{ value: 'Alpha' }, { value: 'Beta' }],
+  select_options: [
+    { key: 'Alpha', label: 'Alpha' },
+    { key: 'Beta', label: 'Beta' },
+  ],
 }
 const noteDef: PropertyDefinition = { id: 'prop_note', label: 'Note', key: 'Note', type: 'number' }
 const rankDef: PropertyDefinition = { id: 'prop_rank', label: 'Rank', key: 'Rank', type: 'number' }

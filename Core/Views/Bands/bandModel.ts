@@ -1,12 +1,11 @@
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import type { ColumnStyle } from '../../Properties/columnStyles'
-import type { PropertyDefinition } from '../../Properties/properties'
+import { findOption, type PropertyDefinition } from '../../Properties/properties'
 import { isEmptyBand, type ResolvedGroup } from '../viewRow'
 import { granularityOf, type SavedView, type SubGroupConfig, viewOption } from '../views'
 import type { StepPart } from '@pommora/uix/Interactions/keyboard'
 import { type Geometry, INTO_EDGE, rank, walksTo } from '@pommora/uix/Interactions/reorderModel'
 import { asRenderableIcon } from '@pommora/uix/Symbols'
-import { findOption } from '../../Properties/Cells/cellResolve'
 import type { OptionChipData } from '../../Properties/Cells/OptionChip'
 import { formatBucketLabel } from '../../Properties/formatValue'
 import {
@@ -78,7 +77,7 @@ export function headContextOf(
             face: {
               kind: 'option',
               type: def?.type ?? '',
-              option: findOption(def, value) ?? { value },
+              option: findOption(def, value) ?? { label: value },
               def,
             },
           },

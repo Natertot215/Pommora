@@ -20,7 +20,11 @@ const selectDef: PropertyDefinition = {
   label: 'Kind',
   key: 'Kind',
   type: 'select',
-  select_options: [{ value: 'Alpha' }, { value: 'Beta' }, { value: 'Gamma' }],
+  select_options: [
+    { key: 'Alpha', label: 'Alpha' },
+    { key: 'Beta', label: 'Beta' },
+    { key: 'Gamma', label: 'Gamma' },
+  ],
 }
 
 const statusDef: PropertyDefinition = {
@@ -33,19 +37,19 @@ const statusDef: PropertyDefinition = {
       id: 'upcoming',
       label: 'Upcoming',
       color: 'gray',
-      options: [{ value: 'not_started', group_id: 'upcoming' }],
+      options: [{ key: 'not_started', label: 'not_started', group_id: 'upcoming' }],
     },
     {
       id: 'in_progress',
       label: 'In Progress',
       color: 'blue',
-      options: [{ value: 'active', color: 'blue', group_id: 'in_progress' }],
+      options: [{ key: 'active', label: 'active', color: 'blue', group_id: 'in_progress' }],
     },
     {
       id: 'done',
       label: 'Done',
       color: 'green',
-      options: [{ value: 'complete', color: 'green', group_id: 'done' }],
+      options: [{ key: 'complete', label: 'complete', color: 'green', group_id: 'done' }],
     },
   ],
 }
@@ -87,13 +91,13 @@ describe('OptionOrderList', () => {
   it('previews a Select by its own options, never as a stale status_groups array it still carries', async () => {
     const def: PropertyDefinition = {
       ...selectDef,
-      select_options: [{ value: 'Alpha' }],
+      select_options: [{ key: 'Alpha', label: 'Alpha' }],
       status_groups: [
         {
           id: 'g',
           label: 'Stale Group',
           color: 'grey',
-          options: [{ value: 'Zeta', group_id: 'g' }],
+          options: [{ key: 'Zeta', label: 'Zeta', group_id: 'g' }],
         },
       ],
     }

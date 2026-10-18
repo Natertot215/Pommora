@@ -187,7 +187,10 @@ describe('the option-op writers', () => {
       id: 'prop_t',
       label: 'Tags',
       type: 'select',
-      select_options: [{ value: 'Draft' }, { value: 'Done' }],
+      select_options: [
+        { key: 'Draft', label: 'Draft' },
+        { key: 'Done', label: 'Done' },
+      ],
     })
     await writeFile(
       abs('Col', '_pagecollection.json'),
@@ -228,7 +231,7 @@ describe('the option-op writers', () => {
     expect(writes.every((w) => w.journaled)).toBe(true)
     expect(await readSchemaJournal(root)).toBeNull()
     const def = (await readRegistry(root)).defs.prop_t
-    expect(def?.select_options?.map((o) => o.value)).toEqual(['Done'])
+    expect(def?.select_options?.map((o) => o.label)).toEqual(['Done'])
     expect(await readFile(abs('Col', 'C.md'), 'utf8')).not.toContain('Tags: Draft')
   })
 
@@ -257,7 +260,7 @@ describe('the option-op writers', () => {
     expect(r.ok).toBe(true)
     expect(observed.some((o) => o.path === journalFile())).toBe(false)
     const def = (await readRegistry(root)).defs.prop_t
-    expect(def?.select_options?.map((o) => o.value)).toEqual(['Draft', 'Done'])
+    expect(def?.select_options?.map((o) => o.label)).toEqual(['Draft', 'Done'])
     expect(await readFile(abs('Col', 'C.md'), 'utf8')).not.toContain('Tags: Draft')
   })
 

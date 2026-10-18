@@ -47,12 +47,18 @@ beforeEach(async () => {
   ids.Tags = await property({
     label: 'Tags',
     type: 'multiSelect',
-    select_options: [{ value: 'Work' }, { value: 'Life' }],
+    select_options: [
+      { key: 'Work', label: 'Work' },
+      { key: 'Life', label: 'Life' },
+    ],
   })
   ids.Status = await property({
     label: 'Status',
     type: 'select',
-    select_options: [{ value: 'Doing' }, { value: 'Done' }],
+    select_options: [
+      { key: 'Doing', label: 'Doing' },
+      { key: 'Done', label: 'Done' },
+    ],
   })
   ids.Count = await property({ label: 'Count', type: 'number' })
   for (const id of Object.values(ids)) await assignProperty(root, col.value.path, id)

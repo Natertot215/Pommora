@@ -24,19 +24,19 @@ const statusDef: PropertyDefinition = {
       id: 'upcoming',
       label: 'Upcoming',
       color: 'gray',
-      options: [{ value: 'not_started', group_id: 'upcoming' }],
+      options: [{ key: 'not_started', label: 'not_started', group_id: 'upcoming' }],
     },
     {
       id: 'in_progress',
       label: 'In Progress',
       color: 'blue',
-      options: [{ value: 'active', color: 'blue', group_id: 'in_progress' }],
+      options: [{ key: 'active', label: 'active', color: 'blue', group_id: 'in_progress' }],
     },
     {
       id: 'done',
       label: 'Done',
       color: 'green',
-      options: [{ value: 'complete', color: 'green', group_id: 'done' }],
+      options: [{ key: 'complete', label: 'complete', color: 'green', group_id: 'done' }],
     },
   ],
 }
@@ -54,7 +54,10 @@ const multiDef: PropertyDefinition = {
   label: 'Tags',
   key: 'Tags',
   type: 'multiSelect',
-  select_options: [{ value: 'a' }, { value: 'b' }],
+  select_options: [
+    { key: 'a', label: 'a' },
+    { key: 'b', label: 'b' },
+  ],
 }
 
 const allDefs: PropertyDefinition[] = [

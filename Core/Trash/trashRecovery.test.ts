@@ -75,7 +75,7 @@ beforeEach(async () => {
           label: 'Status',
           key: 'Status',
           type: 'select',
-          select_options: [{ value: 'live', color: 'green' }],
+          select_options: [{ key: 'live', label: 'live', color: 'green' }],
         },
         prop_related: { id: 'prop_related', label: 'Related', key: 'Related', type: 'link' },
         prop_parent: { id: 'prop_parent', label: 'Parent', key: 'Parent', type: 'link' },

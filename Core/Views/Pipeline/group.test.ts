@@ -77,21 +77,21 @@ const statusSchema: PropertyDefinition[] = [
         label: 'U',
         color: 'gray',
         options: [
-          { value: 'not_started', group_id: 'upcoming' },
-          { value: 'opt_open', group_id: 'upcoming' },
+          { key: 'not_started', label: 'not_started', group_id: 'upcoming' },
+          { key: 'opt_open', label: 'opt_open', group_id: 'upcoming' },
         ],
       },
       {
         id: 'in_progress',
         label: 'IP',
         color: 'blue',
-        options: [{ value: 'in_progress', group_id: 'in_progress' }],
+        options: [{ key: 'in_progress', label: 'in_progress', group_id: 'in_progress' }],
       },
       {
         id: 'done',
         label: 'D',
         color: 'green',
-        options: [{ value: 'done', group_id: 'done' }],
+        options: [{ key: 'done', label: 'done', group_id: 'done' }],
       },
     ],
   },
@@ -493,7 +493,11 @@ describe('property grouping — configured / reversed / date', () => {
       label: 'Sel',
       key: 'Sel',
       type: 'select',
-      select_options: [{ value: 'a' }, { value: 'b' }, { value: 'c' }],
+      select_options: [
+        { key: 'a', label: 'a' },
+        { key: 'b', label: 'b' },
+        { key: 'c', label: 'c' },
+      ],
     },
   ]
   const cfg = (over: Partial<Extract<GroupConfig, { kind: 'property' }>>): GroupConfig => ({

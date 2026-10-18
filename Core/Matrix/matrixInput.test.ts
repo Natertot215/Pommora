@@ -140,7 +140,10 @@ const STATUS: PropertyDefinition = {
   label: 'Status',
   key: 'Status',
   type: 'select',
-  select_options: [{ value: 'Active' }, { value: 'Done' }],
+  select_options: [
+    { key: 'Active', label: 'Active' },
+    { key: 'Done', label: 'Done' },
+  ],
 }
 
 const spacesTree = (aValues: Record<string, unknown> = { Status: 'Done' }): NexusTree => {

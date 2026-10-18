@@ -16,7 +16,7 @@ const schema: PropertyDefinition[] = [
         id: 'g',
         label: 'G',
         color: 'blue',
-        options: [{ value: 'in_progress', group_id: 'g' }],
+        options: [{ key: 'in_progress', label: 'in_progress', group_id: 'g' }],
       },
     ],
   },
@@ -25,14 +25,17 @@ const schema: PropertyDefinition[] = [
     label: 'Sel',
     key: 'Sel',
     type: 'select',
-    select_options: [{ value: 'opt_a' }],
+    select_options: [{ key: 'opt_a', label: 'opt_a' }],
   },
   {
     id: 'prop_s',
     label: 'S',
     key: 'S',
     type: 'select',
-    select_options: [{ value: 'open' }, { value: 'done' }],
+    select_options: [
+      { key: 'open', label: 'open' },
+      { key: 'done', label: 'done' },
+    ],
   },
   { id: 'prop_when', label: 'When', key: 'When', type: 'dateTime' },
   { id: 'prop_num', label: 'Num', key: 'Num', type: 'number' },
@@ -143,7 +146,10 @@ describe('resolveFieldValue', () => {
       label: 'S',
       key: 's',
       type: 'select',
-      select_options: [{ value: 'open' }, { value: 'done' }],
+      select_options: [
+        { key: 'open', label: 'open' },
+        { key: 'done', label: 'done' },
+      ],
     }
     const keyed: ViewRow = { ...row, frontmatter: { [ID_KEY]: '01ROW', S: 'done', s: 'open' } }
     expect(resolveFieldValue(keyed, 'prop_s', [def])).toEqual({ kind: 'select', value: 'open' })
@@ -219,7 +225,7 @@ describe('resolveFieldValue memoization', () => {
     const def = schema.find((d) => d.id === 'prop_s') as PropertyDefinition
     const gained = {
       ...def,
-      select_options: [...(def.select_options ?? []), { value: 'Final' }],
+      select_options: [...(def.select_options ?? []), { key: 'Final', label: 'Final' }],
     }
     expect(resolveFieldValue(r, 'prop_s', [def])).toEqual({ kind: 'null' })
     expect(resolveFieldValue(r, 'prop_s', [gained])).toEqual({ kind: 'select', value: 'Final' })
@@ -271,7 +277,10 @@ describe('resolveFieldValue — the declared type is obeyed, never inferred from
       label: 'Tag',
       key: 'Tag',
       type: 'select',
-      select_options: [{ value: 'opt_a' }, { value: '[URGENT](tel:911)' }],
+      select_options: [
+        { key: 'opt_a', label: 'opt_a' },
+        { key: '[URGENT](tel:911)', label: '[URGENT](tel:911)' },
+      ],
     },
   ]
   const rowOf = (properties: Record<string, unknown>): ViewRow => ({

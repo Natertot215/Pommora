@@ -13,7 +13,11 @@ const schema: PropertyDefinition[] = [
     label: 'Sel',
     key: 'Sel',
     type: 'select',
-    select_options: [{ value: 'a' }, { value: 'b' }, { value: 'c' }],
+    select_options: [
+      { key: 'a', label: 'a' },
+      { key: 'b', label: 'b' },
+      { key: 'c', label: 'c' },
+    ],
   },
   {
     id: 'prop_status',
@@ -25,19 +29,19 @@ const schema: PropertyDefinition[] = [
         id: 'upcoming',
         label: 'U',
         color: 'gray',
-        options: [{ value: 'not_started', group_id: 'upcoming' }],
+        options: [{ key: 'not_started', label: 'not_started', group_id: 'upcoming' }],
       },
       {
         id: 'in_progress',
         label: 'IP',
         color: 'blue',
-        options: [{ value: 'in_progress', group_id: 'in_progress' }],
+        options: [{ key: 'in_progress', label: 'in_progress', group_id: 'in_progress' }],
       },
       {
         id: 'done',
         label: 'D',
         color: 'green',
-        options: [{ value: 'done', group_id: 'done' }],
+        options: [{ key: 'done', label: 'done', group_id: 'done' }],
       },
     ],
   },
@@ -143,13 +147,16 @@ describe('makeSorter — type-aware single criterion', () => {
       label: 'Stale',
       key: 'Stale',
       type: 'select',
-      select_options: [{ value: 'a' }, { value: 'b' }],
+      select_options: [
+        { key: 'a', label: 'a' },
+        { key: 'b', label: 'b' },
+      ],
       status_groups: [
         {
           id: 'g',
           label: 'G',
           color: 'grey',
-          options: [{ value: 'a', group_id: 'g' }],
+          options: [{ key: 'a', label: 'a', group_id: 'g' }],
         },
       ],
     }
@@ -173,15 +180,15 @@ describe('makeSorter — type-aware single criterion', () => {
       label: 'Stale',
       key: 'Stale',
       type: 'status',
-      select_options: [{ value: 'done' }],
+      select_options: [{ key: 'done', label: 'done' }],
       status_groups: [
         {
           id: 'g',
           label: 'G',
           color: 'grey',
           options: [
-            { value: 'todo', group_id: 'g' },
-            { value: 'done', group_id: 'g' },
+            { key: 'todo', label: 'todo', group_id: 'g' },
+            { key: 'done', label: 'done', group_id: 'g' },
           ],
         },
       ],

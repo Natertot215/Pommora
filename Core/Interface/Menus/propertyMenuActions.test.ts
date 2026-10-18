@@ -19,14 +19,20 @@ const SCHEMA: PropertyDefinition[] = [
     label: 'stage',
     key: 'stage',
     type: 'select',
-    select_options: [{ value: 'a' }, { value: 'b' }],
+    select_options: [
+      { key: 'a', label: 'a' },
+      { key: 'b', label: 'b' },
+    ],
   },
   {
     id: 'prop_tags',
     label: 'Tags',
     key: 'Tags',
     type: 'multiSelect',
-    select_options: [{ value: 'x' }, { value: 'y' }],
+    select_options: [
+      { key: 'x', label: 'x' },
+      { key: 'y', label: 'y' },
+    ],
   },
   { id: 'prop_num', label: 'Count', key: 'Count', type: 'number' },
   { id: 'prop_box', label: 'Done', key: 'Done', type: 'checkbox' },
@@ -151,7 +157,7 @@ describe('propertyMenuBranches', () => {
           id: 'upcoming',
           label: 'Open',
           color: 'grey',
-          options: [{ value: 'Open', group_id: 'upcoming' }],
+          options: [{ key: 'Open', label: 'Open', group_id: 'upcoming' }],
         },
         { id: 'in_progress', label: 'Active', color: 'blue', options: [] },
         {
@@ -159,8 +165,8 @@ describe('propertyMenuBranches', () => {
           label: 'Done',
           color: 'green',
           options: [
-            { value: 'Done', group_id: 'done' },
-            { value: 'Dropped', group_id: 'done' },
+            { key: 'Done', label: 'Done', group_id: 'done' },
+            { key: 'Dropped', label: 'Dropped', group_id: 'done' },
           ],
         },
       ],

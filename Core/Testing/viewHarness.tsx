@@ -65,13 +65,13 @@ export const STATUS_DEF: PropertyDefinition = {
       id: 'in_progress',
       label: 'In Progress',
       color: 'blue',
-      options: [{ value: 'Active', color: 'blue', group_id: 'in_progress' }],
+      options: [{ key: 'Active', label: 'Active', color: 'blue', group_id: 'in_progress' }],
     },
     {
       id: 'done',
       label: 'Done',
       color: 'green',
-      options: [{ value: 'Complete', color: 'green', group_id: 'done' }],
+      options: [{ key: 'Complete', label: 'Complete', color: 'green', group_id: 'done' }],
     },
   ],
 }

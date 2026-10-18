@@ -29,8 +29,8 @@ export function OptionSlot({
   const rowEl = useLineEl()
   return (
     <LineRow
-      id={option.value}
-      {...ghostAnchorProps(ghost, option.value)}
+      id={option.label}
+      {...ghostAnchorProps(ghost, option.label)}
       className={s.optionRow}
       data-reveal-host=""
       onContextMenu={(e) => {
@@ -40,7 +40,7 @@ export function OptionSlot({
     >
       <span className={s.optionLead}>
         <OptionChip type={type} look={look} option={option} def={def} />
-        {look === 'compact' && <span className={compactTitle}>{option.value}</span>}
+        {look === 'compact' && <span className={compactTitle}>{option.label}</span>}
       </span>
       <Button
         size="button-inline"
@@ -50,7 +50,7 @@ export function OptionSlot({
         className={s.optionEditButton}
         data-reveal-held={editing || undefined}
         aria-label="Edit Option"
-        onClick={() => onToggleEditing(rowEl(option.value))}
+        onClick={() => onToggleEditing(rowEl(option.label))}
       />
     </LineRow>
   )

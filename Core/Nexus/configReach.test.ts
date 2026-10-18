@@ -25,14 +25,17 @@ const STAGE: PropertyDefinition = {
   label: 'Stage',
   key: 'Stage',
   type: 'select',
-  select_options: [{ value: 'Done' }, { value: 'Todo' }],
+  select_options: [
+    { key: 'Done', label: 'Done' },
+    { key: 'Todo', label: 'Todo' },
+  ],
 }
 const TAGS: PropertyDefinition = {
   id: 'prop_m',
   label: 'Tags',
   key: 'Tags',
   type: 'multiSelect',
-  select_options: [{ value: 'A' }],
+  select_options: [{ key: 'A', label: 'A' }],
 }
 
 const rename = {

@@ -51,7 +51,7 @@ function sectionsOf(
   const reversed = group.order_mode === 'reversed'
   const groups = def.status_groups ?? []
   return (reversed ? [...groups].reverse() : groups).map((g) => {
-    const values = g.options.map((o) => o.value)
+    const values = g.options.map((o) => o.label)
     return { key: g.id, label: g.label, values: reversed ? values.reverse() : values }
   })
 }
@@ -68,7 +68,7 @@ export function OptionOrderList({
   onSave?: (order: string[]) => void
 } & HideControls): React.JSX.Element | null {
   if (!def) return null
-  const byValue = new Map(optionsOf(def).map((o) => [o.value, o]))
+  const byValue = new Map(optionsOf(def).map((o) => [o.label, o]))
   const order = liveBucketOrder(group, def, [])
   const chip = (v: string): React.JSX.Element => (
     <OptionChip type={def.type} option={byValue.get(v)} />

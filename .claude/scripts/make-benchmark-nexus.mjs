@@ -145,13 +145,13 @@ const PROPS = TYPES.flatMap(({ type, name, count, make }) =>
 
 function definition(p) {
   const def = { id: p.id, key: p.name, label: p.name, type: p.type }
-  if (p.type === 'select' || p.type === 'multiSelect') def.select_options = p.options.map((value) => ({ value }))
+  if (p.type === 'select' || p.type === 'multiSelect') def.select_options = p.options.map((value) => ({ key: value, label: value }))
   if (p.type === 'status') {
     def.status_groups = STATUS_GROUPS.map((g, gi) => ({
       ...g,
       options: p.options
         .filter((_, i) => Math.floor((i * STATUS_GROUPS.length) / p.options.length) === gi)
-        .map((value) => ({ value, color: g.color, group_id: g.id })),
+        .map((value) => ({ key: value, label: value, color: g.color, group_id: g.id })),
     }))
   }
   return def

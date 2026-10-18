@@ -99,7 +99,10 @@ describe('validateDefinition', () => {
       label: 'Tag2',
       key: 'Tag2',
       type: 'select',
-      select_options: [{ value: 'a' }, { value: 'a' }],
+      select_options: [
+        { key: 'a', label: 'a' },
+        { key: 'a', label: 'a' },
+      ],
     })
     expect(validateDefinition(dupOpts, existing).ok).toBe(false)
   })
@@ -127,14 +130,34 @@ describe('validateDefinition', () => {
 
 describe('validateOptionValues', () => {
   it('rejects duplicate titles, accepts unique', () => {
-    expect(validateOptionValues([{ value: 'A' }, { value: 'A' }]).ok).toBe(false)
-    expect(validateOptionValues([{ value: 'A' }, { value: 'B' }]).ok).toBe(true)
+    expect(
+      validateOptionValues([
+        { key: 'A', label: 'A' },
+        { key: 'A', label: 'A' },
+      ]).ok,
+    ).toBe(false)
+    expect(
+      validateOptionValues([
+        { key: 'A', label: 'A' },
+        { key: 'B', label: 'B' },
+      ]).ok,
+    ).toBe(true)
     expect(validateOptionValues([]).ok).toBe(true)
   })
 
   it('compares titles without regard to case', () => {
-    expect(validateOptionValues([{ value: 'Done' }, { value: 'done' }]).ok).toBe(false)
-    expect(validateOptionValues([{ value: 'done' }, { value: 'Open' }]).ok).toBe(true)
+    expect(
+      validateOptionValues([
+        { key: 'Done', label: 'Done' },
+        { key: 'done', label: 'done' },
+      ]).ok,
+    ).toBe(false)
+    expect(
+      validateOptionValues([
+        { key: 'done', label: 'done' },
+        { key: 'Open', label: 'Open' },
+      ]).ok,
+    ).toBe(true)
   })
 })
 

@@ -59,7 +59,7 @@ export function OptionEditor({
         across: true,
         boxes: (g) => g.groups,
         line: menuDropLine,
-        label: (value) => (options.some((o) => o.value === value) ? value : headingOf(value)),
+        label: (value) => (options.some((o) => o.label === value) ? value : headingOf(value)),
         watch: [groups],
       })}
     >
@@ -96,20 +96,20 @@ export function OptionEditor({
             {...(g.options.length === 0 ? ghostAnchorProps(ghostApi, g.id) : {})}
           >
             {groupOptions(g).map((o, i) => (
-              <Fragment key={edit.keyOf(o.value)}>
-                <Reveal open enterOnMount={edit.entering(o.value)} fill>
+              <Fragment key={edit.keyOf(o.label)}>
+                <Reveal open enterOnMount={edit.entering(o.label)} fill>
                   <OptionSlot
                     option={o}
                     type={type}
                     look={look}
                     def={def}
-                    editing={edit.isOpen(o.value)}
+                    editing={edit.isOpen(o.label)}
                     ghost={ghostApi}
-                    onToggleEditing={(el) => edit.toggle(o.value, el)}
-                    onOpenMenu={(row) => void edit.openMenu(o.value, row)}
+                    onToggleEditing={(el) => edit.toggle(o.label, el)}
+                    onOpenMenu={(row) => void edit.openMenu(o.label, row)}
                   />
                 </Reveal>
-                {slotAt(g, i + 1, o.value)}
+                {slotAt(g, i + 1, o.label)}
               </Fragment>
             ))}
             {g.options.length === 0 ? slotAt(g, 0, g.id) : null}

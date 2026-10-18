@@ -164,15 +164,15 @@ export interface Asks {
   }
   'property:editOption': { args: [propertyId: string, edit: OptionEdit]; reply: Result<null> }
   'property:renameOption': {
-    args: [propertyId: string, oldValue: string, newTitle: string]
+    args: [propertyId: string, oldLabel: string, newLabel: string]
     reply: Result<SchemaCascade>
   }
   'property:removeOption': {
-    args: [propertyId: string, value: string]
+    args: [propertyId: string, label: string]
     reply: Result<SchemaCascade>
   }
-  'property:clearOption': { args: [propertyId: string, value: string]; reply: Result<null> }
-  'property:holders': { args: [propertyId: string, value?: string]; reply: Result<number> }
+  'property:clearOption': { args: [propertyId: string, label: string]; reply: Result<null> }
+  'property:holders': { args: [propertyId: string, label?: string]; reply: Result<number> }
 
   'tiles:get': { args: [host: TileHostRef]; reply: Result<TileDoc> }
   'tiles:save': { args: [host: TileHostRef, patch: TileDocPatch]; reply: Result<Landed> }

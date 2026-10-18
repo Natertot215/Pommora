@@ -7,6 +7,7 @@ import {
   propertyType,
   isReservedPropertyId,
   defaultStatusSeed,
+  findOption,
   groupable,
   optionsOf,
   pickKindOf,
@@ -17,6 +18,8 @@ import {
   type StatusGroup,
   narrowLinkConfig,
   narrowNumberFormat,
+  SELECT_GROUP,
+  withOptionGroups,
 } from './properties'
 
 describe('propertyType', () => {
@@ -252,9 +255,9 @@ describe('optionsOf', () => {
       label: 'x',
       key: 'x',
       type: 'select' as const,
-      select_options: [{ value: 'a' }],
+      select_options: [{ key: 'a', label: 'a' }],
     }
-    expect(optionsOf(def).map((o) => o.value)).toEqual(['a'])
+    expect(optionsOf(def).map((o) => o.label)).toEqual(['a'])
   })
 
   it('returns [] for a def with no options and for undefined', () => {
@@ -269,9 +272,45 @@ describe('optionsOf', () => {
       key: 'x',
       type: 'status' as const,
       status_groups: defaultStatusSeed(),
-      select_options: [{ value: 'stale' }],
+      select_options: [{ key: 'stale', label: 'stale' }],
     }
-    expect(optionsOf(def).map((o) => o.value)).toEqual(['Open', 'Active', 'Done'])
+    expect(optionsOf(def).map((o) => o.label)).toEqual(['Open', 'Active', 'Done'])
+  })
+})
+
+describe('an option label', () => {
+  it('reads its key when the registry stores none', () => {
+    const def = propertyDefinition.parse({
+      id: 'p',
+      key: 'x',
+      type: 'select',
+      select_options: [{ key: 'a' }],
+    })
+    expect(def.select_options).toEqual([{ key: 'a', label: 'a' }])
+  })
+
+  it('stays through an option write', () => {
+    const def: PropertyDefinition = { id: 'p', label: 'x', key: 'x', type: 'select' }
+    const options = [{ key: 'a', label: 'A', group_id: SELECT_GROUP }]
+    expect(
+      withOptionGroups(def, [{ id: SELECT_GROUP, label: '', color: '', options }]).select_options,
+    ).toEqual([{ key: 'a', label: 'A' }])
+  })
+})
+
+describe('findOption', () => {
+  const tag: PropertyDefinition = {
+    id: 'prop_tag',
+    label: 'Tag',
+    key: 'Tag',
+    type: 'select',
+    select_options: [{ key: 'opt_a', label: 'opt_a', color: 'green' }],
+  }
+  it('returns the option with its color (the chip tint)', () => {
+    expect(findOption(tag, 'opt_a')).toEqual({ key: 'opt_a', label: 'opt_a', color: 'green' })
+  })
+  it('returns undefined for an unknown value', () => {
+    expect(findOption(tag, 'nope')).toBeUndefined()
   })
 })
 
@@ -282,7 +321,8 @@ describe('status seed relabel', () => {
     expect(g.map((x) => x.label)).toEqual(['Open', 'Active', 'Done'])
     for (const grp of g) {
       expect(grp.options).toHaveLength(1)
-      expect(grp.options[0].value).toBe(grp.label)
+      expect(grp.options[0].key).toBe(grp.label)
+      expect(grp.options[0].label).toBe(grp.label)
       expect(grp.options[0].color).toBe(grp.color)
     }
   })
@@ -296,14 +336,14 @@ describe('keys this build does not know', () => {
       key: 'Stage',
       type: 'status',
       foreign_block: { key: 'a', scope: 'deep' },
-      select_options: [{ value: 'a', tint: 'warm' }],
+      select_options: [{ key: 'a', label: 'a', tint: 'warm' }],
       status_groups: [
         {
           id: 'todo',
           label: 'To Do',
           color: 'grey',
           collapsed: true,
-          options: [{ value: 'open', group_id: 'todo', glyph: 'o' }],
+          options: [{ key: 'open', label: 'open', group_id: 'todo', glyph: 'o' }],
         },
       ],
     })

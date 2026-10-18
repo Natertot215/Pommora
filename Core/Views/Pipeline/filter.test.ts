@@ -18,8 +18,8 @@ const schema: PropertyDefinition[] = [
         label: 'G',
         color: 'blue',
         options: [
-          { value: 'Done', group_id: 'g' },
-          { value: 'Open', group_id: 'g' },
+          { key: 'Done', label: 'Done', group_id: 'g' },
+          { key: 'Open', label: 'Open', group_id: 'g' },
         ],
       },
     ],
@@ -29,7 +29,10 @@ const schema: PropertyDefinition[] = [
     label: 'Sel',
     key: 'Sel',
     type: 'select',
-    select_options: ['a', 'b', 'alpha', 'beta', 'apple', 'banana'].map((value) => ({ value })),
+    select_options: ['a', 'b', 'alpha', 'beta', 'apple', 'banana'].map((value) => ({
+      key: value,
+      label: value,
+    })),
   },
   { id: 'prop_num', label: 'Num', key: 'Num', type: 'number' },
   { id: 'prop_url', label: 'Link', key: 'Link', type: 'link' },
@@ -40,7 +43,7 @@ const schema: PropertyDefinition[] = [
     label: 'Tags',
     key: 'Tags',
     type: 'multiSelect',
-    select_options: ['x', 'y', 'z', 'a', 'b', 'c'].map((value) => ({ value })),
+    select_options: ['x', 'y', 'z', 'a', 'b', 'c'].map((value) => ({ key: value, label: value })),
   },
   { id: 'prop_notes', label: 'Notes', key: 'Notes', type: 'text' },
 ]
@@ -695,7 +698,7 @@ describe('applyFilter — new single-operand ops', () => {
       rules: [{ property_id: 'prop_sel', op: 'contains', ...extra }],
     })
     expect(ids(pair, rule({ values: ['ban'] }))).toEqual(['sBanana'])
-    expect(ids(pair, rule({ value: 'app', values: ['ban'] }))).toEqual(['sBanana'])
+    expect(ids(pair, rule({ key: 'app', label: 'app', values: ['ban'] }))).toEqual(['sBanana'])
     expect(
       ids(rows, { match: 'all', rules: [{ property_id: 'prop_when', op: 'is', value: 'soon' }] }),
     ).toEqual(rows.map((r) => r.id))

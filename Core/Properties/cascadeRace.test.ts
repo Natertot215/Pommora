@@ -43,7 +43,7 @@ async function setup(root: string, value: string): Promise<{ propertyId: string;
     id: '',
     label: 'P',
     type: 'select',
-    select_options: [{ value }],
+    select_options: [{ key: value, label: value }],
   })
   if (!c.ok) throw new Error('createProperty failed')
   const col = await createFolderEntity(root, 'collection', 'Col', newId())

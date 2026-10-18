@@ -46,13 +46,13 @@ const stageDef = {
       id: 'upcoming',
       label: 'To-do',
       color: 'gray',
-      options: [{ value: 'active', group_id: 'upcoming' }],
+      options: [{ key: 'active', label: 'active', group_id: 'upcoming' }],
     },
     {
       id: 'done',
       label: 'Done',
       color: 'green',
-      options: [{ value: 'done', group_id: 'done' }],
+      options: [{ key: 'done', label: 'done', group_id: 'done' }],
     },
   ],
 } as PropertyDefinition
@@ -302,7 +302,7 @@ describe('restore on re-assign — per-value schema-currency reconciliation (C-3
           id: 'done',
           label: 'Done',
           color: 'green',
-          options: [{ value: 'done', group_id: 'done' }],
+          options: [{ key: 'done', label: 'done', group_id: 'done' }],
         },
       ],
     } as Partial<PropertyDefinition>)
@@ -341,9 +341,9 @@ describe('restore on re-assign — per-value schema-currency reconciliation (C-3
       label: 'Milestone',
       type: 'select',
       select_options: [
-        { value: '2024-01-01' },
-        { value: 'https://acme.io' },
-        { value: 'note:draft' },
+        { key: '2024-01-01', label: '2024-01-01' },
+        { key: 'https://acme.io', label: 'https://acme.io' },
+        { key: 'note:draft', label: 'note:draft' },
       ],
     })
     if (!sel.ok) throw new Error('setup failed')
@@ -364,7 +364,7 @@ describe('restore on re-assign — per-value schema-currency reconciliation (C-3
       id: '',
       label: 'Tags',
       type: 'multiSelect',
-      select_options: [{ value: 'alpha' }],
+      select_options: [{ key: 'alpha', label: 'alpha' }],
     })
     if (!tags.ok) throw new Error('setup failed')
     await assignProperty(root, folder, tags.value.id)
@@ -379,6 +379,6 @@ describe('restore on re-assign — per-value schema-currency reconciliation (C-3
     const fm = splitFrontmatter(await readFile(p.value.path, 'utf8'))
     expect(fm.Tags).toEqual(['alpha'])
     const def = (await readRegistry(root)).defs[tags.value.id]
-    expect(def.select_options?.map((o) => o.value)).toEqual(['alpha'])
+    expect(def.select_options?.map((o) => o.label)).toEqual(['alpha'])
   })
 })
