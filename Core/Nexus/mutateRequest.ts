@@ -102,7 +102,7 @@ export const mutateRequest = z.discriminatedUnion('op', [
   op('reorderContexts', { ids }),
   op('reorderPanelContexts', { ids }),
   op('reorderSpaces', { contextId: z.string(), ids }),
-  op('setSpaceRowOrder', { path: z.string(), contexts: ids, properties: ids }),
+  op('setSpaceRowOrder', { path: z.string(), ids }),
   op('retryUnreadable', { path: z.string() }),
 ])
 export type MutateRequest = z.infer<typeof mutateRequest>

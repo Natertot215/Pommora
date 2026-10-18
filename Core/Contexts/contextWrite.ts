@@ -24,7 +24,13 @@ import { ok, fail, type Result, fault } from '../Contract/result'
 import { mutateRegistryFile, withContextAt } from './contextsRegistry'
 import { newId } from '../Nexus/ids'
 import { createDisambiguated, freeName, nameError } from '../Paths/names'
-import { atomicWriteFile, pathExists, rmwJsonStrict, setOrDrop } from '../Files/atomicWrite'
+import {
+  atomicWriteFile,
+  pathExists,
+  rmwJsonStrict,
+  setOrDrop,
+  withIds,
+} from '../Files/atomicWrite'
 import { machine } from '../Platform/machine'
 import { setGovernedRootKey, writtenRoot } from '../Properties/governedWrite'
 import { contextsDir, tileFilePath } from '../Paths/paths'
@@ -195,15 +201,5 @@ export async function setSpaceColor(
   return writeSpaceSidecar(join(root, space.path), (cur) => setOrDrop(cur, COLOR_KEY, color))
 }
 
-export const setSpaceRowOrder = (
-  absSpaceDir: string,
-  contexts: string[],
-  properties: string[],
-): Promise<Result<null>> =>
-  writeSpaceSidecar(absSpaceDir, (raw) =>
-    setOrDrop(
-      raw,
-      ORDER_KEY,
-      (contexts.length > 0 || properties.length > 0) && { contexts, properties },
-    ),
-  )
+export const setSpaceRowOrder = (absSpaceDir: string, ids: string[]): Promise<Result<null>> =>
+  writeSpaceSidecar(absSpaceDir, (raw) => withIds(raw, ORDER_KEY, ids))

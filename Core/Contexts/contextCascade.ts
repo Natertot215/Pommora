@@ -19,7 +19,7 @@ import {
   undoSweep,
   unsweptLine,
 } from '../Properties/governedSweep'
-import { withOrderEntry } from './spaceSidecar'
+import { withoutOrderId } from './spaceSidecar'
 import { editHeldList, heldKeys, rekeyHeld, stripKeys, type KeyCollision } from '../Files/heldKeys'
 import { editList, namesValue, stripList } from '../Properties/pageValue'
 import { contextWorldOf } from './contextResolve'
@@ -33,14 +33,10 @@ import { nameError } from '../Paths/names'
 /** A Context rename commits its registry LAST, so a tag written mid-cascade still lands under the OLD key while a key already wearing the new title can only be inert or hand-authored — neither list is fresher, so dropping either would silently lose tags. */
 const NEITHER_KEY_IS_FRESHER: KeyCollision = 'merge'
 
-export const rekeyContext = (oldTitle: string, newTitle: string): Rewrite =>
-  withOrderEntry(
-    (raw) =>
-      rekeyHeld(raw, contextKey(oldTitle), contextKey(newTitle), NEITHER_KEY_IS_FRESHER, true),
-    'contexts',
-    oldTitle,
-    newTitle,
-  )
+export const rekeyContext =
+  (oldTitle: string, newTitle: string): Rewrite =>
+  (raw) =>
+    rekeyHeld(raw, contextKey(oldTitle), contextKey(newTitle), NEITHER_KEY_IS_FRESHER, true)
 
 const retitleSpace = (raw: Json, contextTitle: string, j: RenameJournal): Json | null =>
   editHeldList(raw, contextKey(contextTitle), true, (held) =>
@@ -132,6 +128,7 @@ async function cascadeTitle(
 export async function unlinkContextKey(
   root: string,
   contextTitle: string,
+  contextId: string | undefined,
   skipUnder?: string,
 ): Promise<Result<UnlinkOutcome>> {
   const key = contextKey(contextTitle)
@@ -143,7 +140,7 @@ export async function unlinkContextKey(
     captured.push(captureRoot(raw, file, values))
     return stripKeys(raw, keys)
   }
-  const entry = withOrderEntry(strip, 'contexts', contextTitle, null)
+  const entry = contextId === undefined ? strip : withoutOrderId(strip, contextId)
   const swept = await unlinkMembers(root, { key }, entry, skipUnder)
   return ok({ ...swept, captured })
 }

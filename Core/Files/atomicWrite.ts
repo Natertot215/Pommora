@@ -281,6 +281,26 @@ export function setOrDrop(
   return next
 }
 
+export const withIds = (
+  cur: Record<string, unknown>,
+  key: string,
+  ids: string[],
+): Record<string, unknown> => setOrDrop(cur, key, ids.length > 0 && ids)
+
+export function withoutId(
+  cur: Record<string, unknown>,
+  key: string,
+  id: string,
+): Record<string, unknown> | null {
+  const ids = cur[key]
+  if (!Array.isArray(ids) || !ids.includes(id)) return null
+  return withIds(
+    cur,
+    key,
+    ids.filter((x) => x !== id),
+  )
+}
+
 export function rewritePageSerialized(
   file: string,
   rewrite: (content: string) => string | null,

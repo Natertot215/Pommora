@@ -245,7 +245,7 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
       return underContexts(async () => {
         const resolved = await mutableTarget(root, req.path, ['space'])
         if (!resolved.ok) return resolved
-        return done(await setSpaceRowOrder(resolved.value, req.contexts, req.properties))
+        return done(await setSpaceRowOrder(resolved.value, req.ids))
       })
 
     case 'retryUnreadable': {
