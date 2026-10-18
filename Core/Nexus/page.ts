@@ -92,17 +92,33 @@ export async function movePage(
   return ok({ path: target })
 }
 
+export function encodedValue(
+  def: PropertyDefinition,
+  value: PropertyValue | null,
+): Result<unknown> {
+  if (value === null || isBlankValue(value)) return ok(undefined)
+  const encoded = encodeValue(value)
+  return encoded === undefined ? noShape(def.name) : ok(encoded)
+}
+
 // Takes no lock of its own: callers hold the page's lock over a wider span, and a re-take would be refused.
+export async function landPageValue(
+  absFile: string,
+  name: string,
+  raw: unknown,
+  world?: GovernedWorld,
+): Promise<Result<null>> {
+  if (!(await pathExists(absFile))) return fail('not-found', 'Page not found.')
+  await setGovernedRootKey(absFile, name, raw, world)
+  return ok(null)
+}
+
 export async function updatePageProperty(
   absFile: string,
   def: PropertyDefinition,
   value: PropertyValue | null,
   world?: GovernedWorld,
 ): Promise<Result<null>> {
-  if (!(await pathExists(absFile))) return fail('not-found', 'Page not found.')
-  const clear = value === null || isBlankValue(value)
-  const encoded = clear ? undefined : encodeValue(value)
-  if (!clear && encoded === undefined) return noShape(def.name)
-  await setGovernedRootKey(absFile, def.name, encoded, world)
-  return ok(null)
+  const encoded = encodedValue(def, value)
+  return encoded.ok ? landPageValue(absFile, def.name, encoded.value, world) : encoded
 }

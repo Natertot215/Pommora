@@ -3,12 +3,12 @@ import { liveTreeOf, mutableTarget } from '../Nexus/liveTree'
 import { writtenRoot } from './governedWrite'
 import { pageWorldOf, writeSpaceSidecar } from '../Contexts/contextWrite'
 import { spaceWorldOf } from '../Contexts/contextResolve'
-import { noShape, updatePageProperty } from '../Nexus/page'
-import type { Result } from '../Contract/result'
+import { encodedValue, landPageValue } from '../Nexus/page'
+import { ok, type Result } from '../Contract/result'
 import type { MutateContext } from '../Nexus/mutate'
 import { done, type MutateReply, type MutateRequest } from '../Nexus/mutateRequest'
 import type { PropertyDefinition } from './properties'
-import { encodeValue, isBlankValue, type PropertyValue } from './propertyValue'
+import type { PropertyValue } from './propertyValue'
 import { readRegistry, NO_PROPERTY } from './propertiesRegistry'
 
 export async function setSpaceProperty(
@@ -17,29 +17,48 @@ export async function setSpaceProperty(
   def: PropertyDefinition,
   value: PropertyValue | null,
 ): Promise<Result<null>> {
-  const clear = value === null || isBlankValue(value)
-  const encoded = clear ? undefined : encodeValue(value)
-  if (!clear && encoded === undefined) return noShape(def.name)
+  const encoded = encodedValue(def, value)
+  return encoded.ok ? landSpaceValue(root, absSpaceDir, def.name, encoded.value) : encoded
+}
+
+async function landSpaceValue(
+  root: string,
+  absSpaceDir: string,
+  name: string,
+  value: unknown,
+): Promise<Result<null>> {
   const world = spaceWorldOf(await liveTreeOf(root))
   return writeSpaceSidecar(absSpaceDir, (raw) =>
-    clear && !Object.hasOwn(raw, def.name) ? null : writtenRoot(raw, def.name, encoded, world),
+    value === undefined && !Object.hasOwn(raw, name) ? null : writtenRoot(raw, name, value, world),
   )
+}
+
+type ValueRequest = Extract<MutateRequest, { op: 'setProperty' | 'restoreValue' }>
+
+function landed(req: ValueRequest, def: PropertyDefinition): Result<unknown> {
+  switch (req.op) {
+    case 'setProperty':
+      return encodedValue(def, req.value)
+    case 'restoreValue':
+      return ok(req.held)
+  }
 }
 
 export async function setSpacePropertyOp(
   { root }: MutateContext,
-  req: Extract<MutateRequest, { op: 'setProperty' }>,
+  req: ValueRequest,
 ): Promise<MutateReply> {
   const resolved = await mutableTarget(root, req.path, ['space'])
   if (!resolved.ok) return resolved
   const def = (await readRegistry(root)).defs[req.propertyId]
   if (!def) return NO_PROPERTY
-  return done(await setSpaceProperty(root, resolved.value, def, req.value))
+  const value = landed(req, def)
+  return done(value.ok ? await landSpaceValue(root, resolved.value, def.name, value.value) : value)
 }
 
 export async function setPagePropertyOp(
   { root }: MutateContext,
-  req: Extract<MutateRequest, { op: 'setProperty' }>,
+  req: ValueRequest,
 ): Promise<MutateReply> {
   const resolved = await mutableTarget(root, req.path, ['page'])
   if (!resolved.ok) return resolved
@@ -48,12 +67,15 @@ export async function setPagePropertyOp(
     await machine().lock(resolved.value, async () => {
       const def = (await readRegistry(root)).defs[req.propertyId]
       if (!def) return NO_PROPERTY
-      return updatePageProperty(
-        resolved.value,
-        def,
-        req.value,
-        await pageWorldOf(root, resolved.value),
-      )
+      const value = landed(req, def)
+      return value.ok
+        ? landPageValue(
+            resolved.value,
+            def.name,
+            value.value,
+            await pageWorldOf(root, resolved.value),
+          )
+        : value
     }),
   )
 }

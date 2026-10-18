@@ -65,7 +65,7 @@ describe('assignValue', () => {
     })
   })
 
-  it('records a revert that writes the prior value back', async () => {
+  it('records a revert that restores the value the file held', async () => {
     await assignValue(
       writer,
       row,
@@ -81,14 +81,14 @@ describe('assignValue', () => {
       undefined,
     )
     expect(mutate).toHaveBeenLastCalledWith({
-      op: 'setProperty',
+      op: 'restoreValue',
       path: row.path,
       propertyId: 'prop_tag',
-      value: { kind: 'select', value: 'red' },
+      held: ['red'],
     })
   })
 
-  it('reverts a blank prior as a clear, and pushes no second entry', async () => {
+  it('reverts a key the file didn’t hold as a restore of nothing, and pushes no second entry', async () => {
     row = rowOf({ id: 'page1' })
     await assignValue(
       writer,
@@ -100,10 +100,10 @@ describe('assignValue', () => {
     expect(undoValue(null)).toBe(true)
     expect(apply).toHaveBeenLastCalledWith('page1', { id: 'page1' }, expect.anything(), undefined)
     expect(mutate).toHaveBeenLastCalledWith({
-      op: 'setProperty',
+      op: 'restoreValue',
       path: row.path,
       propertyId: 'prop_tag',
-      value: null,
+      held: undefined,
     })
     expect(undoValue(null)).toBe(false)
   })

@@ -182,6 +182,7 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
     }
 
     case 'setProperty':
+    case 'restoreValue':
       return isMarkdownFile(req.path)
         ? setPagePropertyOp(ctx, req)
         : underContexts(() => setSpacePropertyOp(ctx, req))
