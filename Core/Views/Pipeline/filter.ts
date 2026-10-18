@@ -79,7 +79,7 @@ export function prepareRule(
   const t = declaredType(id, schema, contextIds)
   if (t === undefined) return undefined
   // resolveFieldValue('_title') carries row.title as a select-kind string — the text evaluator reads it.
-  const evaluate = t === 'title' ? evaluateText : evaluatorOf(PROPERTY_TYPES[t].kind)
+  const evaluate = t === 'title' ? evaluateText : evaluatorOf(PROPERTY_TYPES[t].kind, op)
   const operands = evaluate === evaluateText ? want.map(foldKey) : want
   return (row) => evaluate(resolveFieldValue(row, id, schema), op, operands)
 }
@@ -113,7 +113,7 @@ function prepareLocation(op: string, want: string[], setTree: SetTreeNode[]): Ro
   }
 }
 
-function evaluatorOf(kind: ValueKind): Evaluator {
+function evaluatorOf(kind: ValueKind, op: string): Evaluator {
   switch (kind) {
     case 'number':
       return evaluateNumber
@@ -122,13 +122,13 @@ function evaluatorOf(kind: ValueKind): Evaluator {
     case 'checkbox':
       return evaluateCheckbox
     case 'select':
+      return op === FILTER_OPS.is || op === FILTER_OPS.isNot ? evaluateMembers : evaluateText
     case 'link':
     case 'text':
       return evaluateText
     case 'multiSelect':
     case 'context':
-      return (v, op, want) =>
-        evaluateSet(v.kind === 'multiSelect' || v.kind === 'context' ? v.value : [], op, want)
+      return evaluateMembers
     case 'file':
       return evaluatePresence
   }
@@ -266,7 +266,13 @@ function evaluateText(v: PropertyValue, op: string, want: string[]): boolean {
   }
 }
 
-function evaluateSet(xs: string[], op: string, want: string[]): boolean {
+function evaluateMembers(v: PropertyValue, op: string, want: string[]): boolean {
+  const xs =
+    v.kind === 'select'
+      ? [v.value]
+      : v.kind === 'multiSelect' || v.kind === 'context'
+        ? v.value
+        : []
   switch (op) {
     case FILTER_OPS.isEmpty:
       return xs.length === 0
