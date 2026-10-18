@@ -3802,16 +3802,13 @@ console.log(files.join('\n'))
 -  const caches = await cacheSweep(root, def, value, edit)
 -  const reach = await reachConfig(root, { kind: 'option', def, value, edit })
 -  return { skipped: pages + caches + reach.skipped, hosts: reach.hosts }
-+  let skipped = 0
-+  if (keys.size) {
-+    const { pages, plan } = await valueEditPlan(root, def, keys)
-+    skipped = (await sweepGovernedRoots(root, pages, plan)).skipped.length
-+    // A Remove that skipped a file stops here, so the option and every reference to it stay while its replay is owed.
-+    if (skipped && labels?.[1] === null) return { skipped, hosts: [] }
-+    skipped += await cacheSweep(root, def, keys)
-+  }
++  const { pages, plan } = await valueEditPlan(root, def, keys)
++  const skipped = (await sweepGovernedRoots(root, pages, plan)).skipped.length
++  // A Remove that skipped a file stops here, so the option and every reference to it stay while its replay is owed.
++  if (skipped && labels?.[1] === null) return { skipped, hosts: [] }
++  const caches = await cacheSweep(root, def, keys)
 +  const reach = labels ? await reachConfig(root, { kind: 'option', def, labels }) : NO_REACH
-+  return { skipped: skipped + reach.skipped, hosts: reach.hosts }
++  return { skipped: skipped + caches + reach.skipped, hosts: reach.hosts }
  }
 @@ renameOption @@
 -    const reach = await optionCascade(root, edit.value, record.from, { op: 'replace', to: record.to })
@@ -4493,7 +4490,7 @@ for (const miss of misses) console.log(JSON.stringify(miss))
 - [ ] `optionModel.ts`: delete `renameOption`; `addOption(groups, groupId, label, key, atIndex?)` mints `{ key, label, group_id }`; `applyOptionEdit(groups, e, format?)` keys an added option `formatKey(e.title, format)`.
 - [ ] `properties.ts`: add `value_format`, `z.enum(KEY_FORMATS).optional().catch(undefined)`, beside `key_format`.
 - [ ] `registryProperty.ts`: add `withOptionKeys(def)` beside `seeded`, its one reader, writing each option's key from its label through the Value Format; `seeded` keys each seed through it; `editProperty` omits `value_format` beside `key_format`, its doc naming the formats.
-- [ ] `optionOps.ts`: delete the `renameOption as renameInGroups` import; `editOption` passes `def.value_format` to `applyOptionEdit`; adoption adds `addOption(g, SELECT_GROUP, v, v)`; add `rekeyOptions(root, record)`, holding what `renameOption`'s body held after its resolve: the journal write (refusing `OWED`), a commit re-keying every stored option through `record.keys` and, with `record.labels`, relabelling the option its old label names (refusing a gone definition, a type without options, `NO_OPTION` when no option holds the old label, and `validateOptionValues`), the clear on a refusal, `optionCascade(root, def, new Map(record.keys), record.labels)`, and the clear when nothing was skipped; `renameOption` resolves the option, writes `to = formatKey(newLabel, def.value_format)`, and enters `rekeyOptions` with `keys: key === to ? [] : [[key, to]]` and `labels: [oldLabel, newLabel]`.
+- [ ] `optionOps.ts`: delete the `renameOption as renameInGroups` import; `editOption` passes `def.value_format` to `applyOptionEdit`; adoption adds `addOption(g, SELECT_GROUP, v, v)`; add `rekeyOptions(root, record)`, holding what `renameOption`'s body held after its resolve: the journal write (refusing `OWED`), a commit re-keying every stored option through `record.keys` and, with `record.labels`, relabelling the option its old label names (refusing a gone definition, a type without options, `NO_OPTION` when no option holds the old label, and `validateOptionValues`), the clear on a refusal, `optionCascade(root, def, new Map(record.keys), record.labels)`, and the clear when nothing was skipped; `renameOption` resolves the option, writes `to = formatKey(newLabel, def.value_format)`, and enters `rekeyOptions` with `keys: key === to ? [] : [[key, to]]` and `labels: [oldLabel, newLabel]`; `optionCascade` sweeps files and caches only when its key map isn't empty, since a label-only rename now hands it none.
 
 **AFTER**
 
@@ -4579,6 +4576,26 @@ for (const miss of misses) console.log(JSON.stringify(miss))
    propertyId: string,
 -  changes: Omit<Partial<PropertyDefinition>, 'id' | 'label' | 'key' | 'key_format'>,
 +  changes: Omit<Partial<PropertyDefinition>, 'id' | 'label' | 'key' | 'key_format' | 'value_format'>,
+```
+
+```Core/Properties/optionOps.ts diff
+@@ optionCascade @@
+-  const { pages, plan } = await valueEditPlan(root, def, keys)
+-  const skipped = (await sweepGovernedRoots(root, pages, plan)).skipped.length
+-  // A Remove that skipped a file stops here, so the option and every reference to it stay while its replay is owed.
+-  if (skipped && labels?.[1] === null) return { skipped, hosts: [] }
+-  const caches = await cacheSweep(root, def, keys)
++  let skipped = 0
++  if (keys.size) {
++    const { pages, plan } = await valueEditPlan(root, def, keys)
++    skipped = (await sweepGovernedRoots(root, pages, plan)).skipped.length
++    // A Remove that skipped a file stops here, so the option and every reference to it stay while its replay is owed.
++    if (skipped && labels?.[1] === null) return { skipped, hosts: [] }
++    skipped += await cacheSweep(root, def, keys)
++  }
+   const reach = labels ? await reachConfig(root, { kind: 'option', def, labels }) : NO_REACH
+-  return { skipped: skipped + caches + reach.skipped, hosts: reach.hosts }
++  return { skipped: skipped + reach.skipped, hosts: reach.hosts }
 ```
 
 ```Core/Properties/optionOps.ts diff
@@ -4697,7 +4714,7 @@ for (const miss of misses) console.log(JSON.stringify(miss))
 
 **TASK:** Add the Value Format change: one plan computes each moved option's key pair under the new format and refuses a collision or a crossing; the change enters `rekeyOptions` with one key-only `option-rename` record and the format, so it commits every key and the format and runs the option cascade over the key map with no configuration pass, as an option rename does; its count is that cascade's file sweep run dry. Add the `property:setValueFormat` channel.
 
-**NOW:** After Task 7B-1 an option rename enters `rekeyOptions(root, record)` (`Core/Properties/optionOps.ts`), which journals the record or refuses `OWED`, re-keys every stored option through `record.keys` and relabels through `record.labels`, and cascades from the record. After Phase 6 the option cascade takes a key map and an optional label pair (`optionCascade(root, def, keys, labels?)`, `Core/Properties/optionOps.ts`), sweeping files and caches when the map isn't empty and configuration only with `labels`; `valueEditPlan(root, def, keys)` builds its file plan; `OWED` refuses an option change while another record is owed; the `option-rename` record is `{ id, keys: [from, to][], labels? }`, its replay acting while the definition holds every `to` and no `from` and cascading `new Map(journal.keys)` with `journal.labels` (`Core/Properties/replaySchemaCascade.ts`), and the adoption shield covers every `from` of an owed record. `validateOptionValues` (`Core/Properties/schema.ts:85-91`, after Phase 5B) refuses a blank label, a blank key, a fold-duplicate label, and a fold-duplicate key, the last with `'An option with this title already exists, please choose another name.'`. `editStoredOptions(def, stored, edit)` (`optionOps.ts:53-60`) edits the stored entry's groups and writes them onto `def`. Nothing refuses a crossing: under `lowercase` to `kebab-case`, `WifiPro` moves `wifipro` → `wifi-pro` while `WiFi-Pro` moves `wifi-pro` → `wi-fi-pro`, and every uniqueness check passes (F-1 INFERRED; *MetadataV3 — Investigation*, *§Uniqueness and Collisions*). `memberKey` (`Core/Files/heldKeys.ts:51`, the trimmed NFC text after Phase 3) is what the replay's `editList` matches by.
+**NOW:** After Task 7B-1 an option rename enters `rekeyOptions(root, record)` (`Core/Properties/optionOps.ts`), which journals the record or refuses `OWED`, re-keys every stored option through `record.keys` and relabels through `record.labels`, and cascades from the record. After Phase 6 and Task 7B-1 the option cascade takes a key map and an optional label pair (`optionCascade(root, def, keys, labels?)`, `Core/Properties/optionOps.ts`), sweeping files and caches when the map isn't empty and configuration only with `labels`; `valueEditPlan(root, def, keys)` builds its file plan; `OWED` refuses an option change while another record is owed; the `option-rename` record is `{ id, keys: [from, to][], labels? }`, its replay acting while the definition holds every `to` and no `from` and cascading `new Map(journal.keys)` with `journal.labels` (`Core/Properties/replaySchemaCascade.ts`), and the adoption shield covers every `from` of an owed record. `validateOptionValues` (`Core/Properties/schema.ts:85-91`, after Phase 5B) refuses a blank label, a blank key, a fold-duplicate label, and a fold-duplicate key, the last with `'An option with this title already exists, please choose another name.'`. `editStoredOptions(def, stored, edit)` (`optionOps.ts:53-60`) edits the stored entry's groups and writes them onto `def`. Nothing refuses a crossing: under `lowercase` to `kebab-case`, `WifiPro` moves `wifipro` → `wifi-pro` while `WiFi-Pro` moves `wifi-pro` → `wi-fi-pro`, and every uniqueness check passes (F-1 INFERRED; *MetadataV3 — Investigation*, *§Uniqueness and Collisions*). `memberKey` (`Core/Files/heldKeys.ts:51`, the trimmed NFC text after Phase 3) is what the replay's `editList` matches by.
 
 **CHANGE**
 
