@@ -1,10 +1,10 @@
 import type { RefObject } from 'react'
 import type { PickOption, PropertyDefinition } from '../properties'
-import type { PropertyValue } from '../propertyValue'
+import { type PropertyValue, selectedValues } from '../propertyValue'
 import type { OptionStyleControl } from '../Schema/useOptionEdit'
 import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
 import { massPickCommits, massSelected } from './massAssign'
-import { pickShape, PropertyOptionRows, selectedValues } from './PropertyPicker'
+import { pickShape, PropertyOptionRows } from './PropertyPicker'
 
 export function MassPropertyPicker({
   def,

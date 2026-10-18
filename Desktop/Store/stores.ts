@@ -167,7 +167,6 @@ export const contentIndexStore = (db: Db): ContentIndexStore => ({
   queryKeyHolders(key) {
     return paths(db, 'SELECT path FROM page_values WHERE key = ? ORDER BY path', key)
   },
-  // A `space` row holds the Context key in `qualifier` and the Space title in `target`.
   queryMembers(key, title) {
     return paths(
       db,

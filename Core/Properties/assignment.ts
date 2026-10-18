@@ -13,6 +13,7 @@ import { byKey, type PropertyDefinition } from './properties'
 import {
   encodeValue,
   type Frozen,
+  isBlankRaw,
   isBlankValue,
   gonePageEntry,
   reconcilePropertyValue,
@@ -56,7 +57,7 @@ export async function refillValues(
     const restored = reconcilePropertyValue(def, value, frozen)
     const encoded = isBlankValue(restored) ? undefined : encodeValue(restored)
     if (encoded === undefined) return null
-    if (!isBlankValue(reconcilePropertyValue(def, raw[def.name], {}))) return null
+    if (!isBlankRaw(raw[def.name])) return null
     return landValue(raw, def.name, writtenSpelling(encoded, value))
   })
 }

@@ -13,7 +13,7 @@ export function normalizeTitle(raw: unknown): string {
   return foldKey(String(raw).trim())
 }
 
-/** A scalar's trimmed NFC text: what a member, an option word, or a Space title matches by. */
+/** A scalar's trimmed NFC text: what a property name, a member, an option word, or a Space title matches by. */
 export function exactTitle(raw: unknown): string {
   return String(raw).trim().normalize('NFC')
 }
