@@ -46,7 +46,7 @@ The work lands in ten phases in dependency order, removal first: the Space order
 | 3 | +80 / −64 | +203 / −121 | −120 (+399 / −519) |
 | 4 | +67 / −58 | +125 / −108 | −103 (+488 / −591) |
 | 5A | +96 / −82 | +135 / −121 | −89 (+590 / −679) |
-| 5B | +163 / −139 | | |
+| 5B | +163 / −139 | +230 / −196 | −55 (+806 / −861) |
 | 6 | +151 / −151 | | |
 | 7A | +163 / −39 | | |
 | 7B | +305 / −77 | | |
@@ -74,9 +74,10 @@ The work lands in ten phases in dependency order, removal first: the Space order
 | `propertyDraft` · `PropertyDraft` • decoder · type | What a create is handed: a definition without its key. | `Core/Properties/properties.ts` |
 | `optionLabels` • function | An option list's labels, in place of `optionValues`. | `Core/Properties/properties.ts` |
 | `restoreValue` • mutate op | An undo's put-back: the raw value the file held under a property's key, written as it was, or the key removed when it held none. | `Core/Nexus/mutateRequest.ts`, `Core/Properties/setProperty.ts` |
-| `findOption` • function | The option a label names, for the host's option channels and the renderer alike, moved from `Cells/cellResolve.ts`. | `Core/Properties/properties.ts` |
+| `findOption` • function | The option a label names, for the host's option channels and the renderer alike, read from the cached option index; moved from `Cells/cellResolve.ts`. | `Core/Properties/propertyValue.ts` |
 | `KEY_REFUSAL.duplicateKey` · `KEY_REFUSAL.noKey` • refusals | Another property writes this key; a label that leaves its key empty. | `Core/Properties/properties.ts` |
-| `wordsOf` · `OptionWords` · `keyOf` • function · type · function | One cached map per definition, key to label and label to key. | `Core/Properties/propertyValue.ts` |
+| `wordsOf` · `OptionWords` · `keyOf` • function · type · function | One cached index per definition, key to label and label to option, that the decode, the encode, and `findOption` read. | `Core/Properties/propertyValue.ts` |
+| `uniqueOptionGroups` • function | Option groups holding each label and each key once, the first of any that fold alike and none blank: the repair a stored list and an option edit share. | `Core/Properties/schema.ts` |
 | `cacheSweep` • function | The Collection caches edited by key beside the file sweep. | `Core/Properties/optionOps.ts` |
 | `OWED` · `CROSSED` • refusals | An option change waiting for an owed record; a Value Format change crossing two options' keys. | `Core/Properties/optionOps.ts` |
 | `keyFormat.ts` • module | `KEY_FORMATS`, `KeyFormat`, `DEFAULT_KEY_FORMAT`, `isKeyFormat`, `formatKey`, `spellingsOf`, and `FormatChange`: the one converter. | `Core/Properties/keyFormat.ts` |
@@ -178,12 +179,12 @@ The work lands in ten phases in dependency order, removal first: the Space order
   - [x] Task 5A-1 · `name` becomes `label` and `key` at every reader and writer
   - [x] Task 5A-2 · Every name check reads both words
   - [x] Review Checkpoint
-- [ ] **Phase 5B** — Options Carry a Key and a Label
-  - [ ] Task 5B-1 · An option's `value` becomes `key` and `label`
-  - [ ] Task 5B-2 · The encode writes keys, and adoption subtracts labels and keys
-  - [ ] Task 5B-3 · Option labels and keys are unique and non-blank, Status included
-  - [ ] Task 5B-4 · NexusOS committed, the six Trash records deleted, both registries rewritten
-  - [ ] Review Checkpoint
+- [x] **Phase 5B** — Options Carry a Key and a Label
+  - [x] Task 5B-1 · An option's `value` becomes `key` and `label`
+  - [x] Task 5B-2 · The encode writes keys, and adoption subtracts labels and keys
+  - [x] Task 5B-3 · Option labels and keys are unique and non-blank, Status included
+  - [x] Task 5B-4 · NexusOS committed, the six Trash records deleted, both registries rewritten
+  - [x] Review Checkpoint
 - [ ] **Phase 6** — Label and Key: the Journal and Cascades
   - [ ] Task 6-1 · The caches leave the configuration pass
   - [ ] Task 6-2 · One key map edits every list; files by key, configuration by label
@@ -2288,7 +2289,7 @@ The work lands in ten phases in dependency order, removal first: the Space order
 
 ### Phase 5A — Definitions Carry a Label and a Key
 
-**GOAL:** Every property definition stores a `label`, its title in the app, and a `key`, the word it writes to disk, in place of `name` (C-1, C-2); a registry entry omitting `label` reads its `key` (C-3). Every read that used `name` as the on-disk key reads `key`, every read that used it as a title reads `label`, and every uniqueness and reserved-key check reads both words without regard to case (D-1). Keys equal labels this phase, since no Key Format exists yet: a create and a rename write `key = label`, so nothing a user does behaves differently, and the divergent pairs C-2's INFERRED rule trusts (a key edited by hand) are what the tests pin. From this phase's first commit until Task 5B-4 rewrites the registries, a build reads neither Nexus, so the gates run on fixtures and neither phase's checkpoint drives the app. It's a separate phase from 5B because the definition's field rename and the option's field rename are two compile units, each touching every reader of its field and a few hundred test fixtures; together they're past one run.
+**GOAL:** Every property definition stores a `label`, its title in the app, and a `key`, the word it writes to disk, in place of `name` (C-1, C-2); a registry entry omitting `label` reads its `key` (C-3). Every read that used `name` as the on-disk key reads `key`, every read that used it as a title reads `label`, and every uniqueness and reserved-key check reads both words without regard to case (D-1). Keys equal labels this phase, since no Key Format exists yet: a create and a rename write `key = label`, so nothing a user does behaves differently, and the divergent pairs C-2's INFERRED rule trusts (a key edited by hand) are what the tests pin. From this phase's first commit until Task 5B-4 rewrites the registries, a build reads neither Nexus, so the gates run on fixtures, Phase 5A's checkpoint drives nothing, and Phase 5B's runs the drive once Task 5B-4 has rewritten them. It's a separate phase from 5B because the definition's field rename and the option's field rename are two compile units, each touching every reader of its field and a few hundred test fixtures; together they're past one run.
 
 - [x] `[Stop: before Task 5A-1 — Nathan words the six messages in §Open Items, which every task from Task 5A-2 on writes; quits every Pommora window on NexusOS and ~/Test, keeping them closed through Task 5B-4; and gives his word for Task 5B-4; the orchestrator then writes the copy into the tasks and runs Phases 5A and 5B through Task 5B-4]`
 
@@ -2791,7 +2792,7 @@ The work lands in ten phases in dependency order, removal first: the Space order
 
 #### Task 5B-1
 
-**TASK:** Delete the leftover-label strip, replace the option's `value` with `key` and `label`, rename `optionValues` to `optionLabels`, give the host and the renderer one `findOption` in `properties.ts`, and move every option read to the word its role names: the renderer reads labels, the decode map reads keys and yields labels, the registry ops find an option by label, and the cascades and replay act on keys.
+**TASK:** Delete the leftover-label strip, replace the option's `value` with `key` and `label`, rename `optionValues` to `optionLabels`, give the host and the renderer one `findOption` reading the cached option index in `propertyValue.ts`, and move every option read to the word its role names: the renderer reads labels, the decode map reads keys and yields labels, the registry ops find an option by label, and the cascades and replay act on keys.
 
 **NOW:** `selectOption` and `statusOption` hold `value: z.string()` (`Core/Properties/properties.ts:133-156`); `stored()` strips a leftover option `label` on every option write (`:308-311`), through `withOptionGroups` (`:313-321`). `optionValues` (`:294-296`) has callers needing keys (the replay arms, `Core/Properties/replaySchemaCascade.ts:77,87`; the decode map, `Core/Properties/propertyValue.ts:52`, as Phase 3's `wordsOf`; `unregisteredMembers`' fold set, Phase 3) and labels (`Core/Views/Pipeline/group.ts:199,219`; `Core/Views/Pipeline/sort.ts:87`; the registry ops, which match what the renderer names: `Core/Properties/optionOps.ts:63,179,235`). Seeds write `{ value }` (`properties.ts:323-348`); `addOption` mints `{ value: title }` and `renameOption` sets `value` (`Core/Properties/optionModel.ts:25-45`); `mapOption`, `withField`, and `moveOption` match `o.value` (`:5-23,47-62`); `OptionEdit`'s `recolor`, `icon`, `appearance`, and `move` name an option as `value` (`:64-75`), beside `relabelGroup`'s group `label`. `dropOptionFromDef` filters `o.value` (`optionOps.ts:152-168`); `resolveForCascade` (`:170-181`) answers the definition. The renderer reads an option's `value` as both its title and its identity: `OptionChipData.value` (`Core/Properties/Cells/OptionChip.tsx:8-13,26-28,47`), `findOption` (`Core/Properties/Cells/cellResolve.ts:3-4`) and its fallbacks (`Core/Properties/Cells/Cell.tsx:71,85`; `Core/Views/Bands/bandModel.ts:81`; `Core/Views/Settings/FilterFrame.tsx:179`), `pickGroups` (`Core/Properties/Pickers/PropertyPicker.tsx:73`, which fills `label: o.value`), `OptionEditor.tsx:62,99-112`, `OptionRow.tsx:32,33,43,53`, `OptionEditPopup.tsx:70`, `useOptionEdit.tsx:69,76,126-137,149-170`, `Core/Views/Settings/GroupFrame.tsx:375,392,394,415-420`, and `Core/Views/Settings/OptionOrderList.tsx:54,71`. A `PickOption` keeps `{ value, label }` (`properties.ts:284`), its `value` what a pick writes; Context pick options hold a Space id and title (`Core/Contexts/contextOptions.ts:27-37`). The option channels take the option's word (`Core/Contract/bridge.ts:170-180`).
 
@@ -3375,7 +3376,7 @@ The work lands in ten phases in dependency order, removal first: the Space order
 **CHANGE**
 
 - [ ] Write and watch fail: `schema.test.ts` *§validateOptionValues* (`:101-112`) takes `{ key, label }` options: `[{ key: 'A', label: 'A' }, { key: 'a', label: 'B' }]` refuses `'An option with this title already exists, please choose another name.'`; `[{ key: '', label: 'A' }]` refuses `'Options cannot contain an invalid name.'`; the existing four cases pass with each word as both. *§validateDefinition*: a Status whose groups hold `Done` and `done` refuses `'Option titles must be unique.'`, and a Status holding `{ key: ' ', label: 'Open' }` refuses `'Options cannot contain an invalid name.'`. *§withUniqueOptions* (new): of `{ key: 'x', label: 'A' }` and `{ key: 'X', label: 'B' }` it keeps the first; it drops `{ key: '', label: 'C' }`. `propertiesRegistry.test.ts:70` adds the key-fold pair, admitted with its first option.
-- [ ] `schema.ts`: `validateOptionValues(options: { key: string; label: string }[])` refuses a blank label (`'Option titles can’t be blank.'`), then a blank key (`'Options cannot contain an invalid name.'`), then a folded label clash (`'Option titles must be unique.'`), then a folded key clash (`'An option with this title already exists, please choose another name.'`); its doc says labels and keys compare case-folded; `withUniqueOptions` drops every option with a blank label or key, then keeps the first per folded label through `firstPerTitle`, then the first per folded key among those; `validateDefinition` checks `optionsOf(def)` whenever `PROPERTY_TYPES[def.type].options` is set.
+- [ ] `schema.ts`: `validateOptionValues(options: { key: string; label: string }[])` refuses a blank label (`'Option titles can’t be blank.'`), then a blank key (`'Options cannot contain an invalid name.'`), then a folded label clash (`'Option titles must be unique.'`), then a folded key clash (`'An option with this title already exists, please choose another name.'`); its doc says labels and keys compare case-folded; `uniqueOptionGroups(groups)` walks the groups once, keeping an option only when its folded label and key are both non-blank and neither is held by an option already kept, and `withUniqueOptions` answers a valid definition as it is and otherwise applies it, as `editStoredOptions` applies it to the stored groups; `validateDefinition` checks `optionsOf(def)` whenever `PROPERTY_TYPES[def.type].options` is set.
 
 **AFTER**
 
@@ -3398,20 +3399,35 @@ The work lands in ten phases in dependency order, removal first: the Space order
    }
 @@ withUniqueOptions @@
 -/** `def` holding each option title once, the first of any that fold alike, and none blank; a definition already so is answered as it is. */
-+/** `def` holding each option label and each key once, the first of any that fold alike, and none blank; a definition already so is answered as it is. */
- export function withUniqueOptions(def: PropertyDefinition): PropertyDefinition {
-   const groups = optionGroupsOf(def)
-   const options = groups.flatMap((g) => g.options)
-   if (validateOptionValues(options).ok) return def
+-export function withUniqueOptions(def: PropertyDefinition): PropertyDefinition {
+-  const groups = optionGroupsOf(def)
+-  const options = groups.flatMap((g) => g.options)
+-  if (validateOptionValues(options).ok) return def
 -  const first = new Set(firstPerTitle(options, (o) => o.label).values())
-+  const named = options.filter((o) => normalizeTitle(o.label) !== '' && normalizeTitle(o.key) !== '')
-+  const first = new Set(firstPerTitle(firstPerTitle(named, (o) => o.label).values(), (o) => o.key).values())
-   const kept = groups.map((g) => ({
+-  const kept = groups.map((g) => ({
++/** `groups` holding each option label and each key once, the first of any that fold alike, and none blank. */
++export function uniqueOptionGroups(groups: StatusGroup[]): StatusGroup[] {
++  const labels = new Set<string>()
++  const keys = new Set<string>()
++  const keeps = (label: string, key: string): boolean => {
++    if (!label || !key || labels.has(label) || keys.has(key)) return false
++    labels.add(label)
++    keys.add(key)
++    return true
++  }
++  return groups.map((g) => ({
      ...g,
 -    options: g.options.filter((o) => first.has(o) && normalizeTitle(o.label) !== ''),
-+    options: g.options.filter((o) => first.has(o)),
++    options: g.options.filter((o) => keeps(normalizeTitle(o.label), normalizeTitle(o.key))),
    }))
-   return withOptionGroups(def, kept)
+-  return withOptionGroups(def, kept)
++}
++
++/** `def` with its options made unique as `uniqueOptionGroups` does; a definition already so is answered as it is. */
++export function withUniqueOptions(def: PropertyDefinition): PropertyDefinition {
++  const groups = optionGroupsOf(def)
++  if (validateOptionValues(groups.flatMap((g) => g.options)).ok) return def
++  return withOptionGroups(def, uniqueOptionGroups(groups))
  }
 @@ validateOptionValues @@
 -/** No minimum count — a Select may hold zero options. Enforced at create AND on every option edit; titles compare case-folded. */
@@ -3511,7 +3527,7 @@ console.log(files.join('\n'))
 
 #### Review Checkpoint
 
-- [ ] Two review agents, `code-simplification` and `adversarial-review`, reading outward: no production read of an option's `value` remains outside `PickOption`; the renderer names options by label everywhere, and each option channel and `OptionEdit` resolves the label to its option host-side, journaling and cascading the key; a decoded value holds labels and every encode writes keys, at all six callers; the reconcile, the repair, the refill, and the restore scrub leave a page holding an option's key byte-identical; adoption subtracts folded labels and keys, and an adopted word is its own label and key; option labels and keys are each unique and non-blank at create, every edit, and admission, Status included; the leftover-label strip is gone and labels persist; the rewrite ran once after its backup, and both Nexuses open and read on the new build.
+- [ ] Two review agents, `code-simplification` and `adversarial-review`, reading outward: no production read of an option's `value` remains outside `PickOption`; the renderer names options by label everywhere, and each option channel and `OptionEdit` resolves the label to its option host-side, journaling and cascading the key; a decoded value holds labels and every encode writes keys, at its four callers; the reconcile, the repair, the refill, and the restore scrub leave a page holding an option's key byte-identical; adoption subtracts folded labels and keys, and an adopted word is its own label and key; option labels and keys are each unique and non-blank at create, every edit, and admission, Status included; the leftover-label strip is gone and labels persist; the rewrite ran once after its backup, and both Nexuses open and read on the new build.
 
 ### Phase 6 — Label and Key: the Journal and Cascades
 
@@ -3619,7 +3635,7 @@ console.log(files.join('\n'))
 
 **CHANGE**
 
-- [ ] Write and watch fail: `pageValue.test.ts` — the helpers build `valueEditRewrite({ key }, new Map([[value, null]]))` and `new Map([[old, next]])`, and every *§valueEditRewrite* and *§the option list is the one shape* case keeps its expectation; *§editList*: `:80-90` and `:109-111` take one-pair maps and keep their expectations; new cases: `editList(['a', 'x', 'b'], new Map([['a', null], ['b', 'c']]))` is `['x', 'c']`; `editList(['a', 'b', 'c'], new Map([['a', 'A'], ['b', 'B']]))` is `['A', 'B', 'c']`; `editList(['b', 'b'], new Map([['a', 'b']]))` is null (no member the map names, so an unrelated duplicate stays); `editList(['a', 'b'], new Map([['a', 'b']]))` is `['b']`; `editList(['a', null, 5], new Map([['a', 'b']]))` is `['b', null, 5]` (a foreign `null` isn't a strip). *§namesValue* (`:114-121`) stays. `configReach.test.ts:35-46`: `rename` is `{ kind: 'option', def: STAGE, labels: ['Done', 'Closed'] }` and `removal` `{ …, labels: ['Done', null] }`; `:219`'s reach likewise; every assertion stays. `optionOps.test.ts` — a new case: under `{ key: 'urgent', label: 'Urgent' }` with a page holding `Tags: [urgent]` and a view filtering `is` `Urgent`, `renameOption(root, id, 'Urgent', 'Critical')` writes the page `Tags: [Critical]` and the view's operand `Critical`, and `removeOption(root, id, 'Critical')` strips both.
+- [ ] Write and watch fail: `pageValue.test.ts` — the helpers build `valueEditRewrite({ key }, new Map([[value, null]]))` and `new Map([[old, next]])`, and every *§valueEditRewrite* and *§the option list is the one shape* case keeps its expectation; *§editList*: `:80-90` and `:109-111` take one-pair maps and keep their expectations; new cases: `editList(['a', 'x', 'b'], new Map([['a', null], ['b', 'c']]))` is `['x', 'c']`; `editList(['a', 'b', 'c'], new Map([['a', 'A'], ['b', 'B']]))` is `['A', 'B', 'c']`; `editList(['b', 'b'], new Map([['a', 'b']]))` is null (no member the map names, so an unrelated duplicate stays); `editList(['a', 'b'], new Map([['a', 'b']]))` is `['b']`; `editList(['a', null, 5], new Map([['a', 'b']]))` is `['b', null, 5]` (a foreign `null` isn't a strip). *§namesValue* (`:114-121`) stays. `configReach.test.ts:35-46`: `rename` is `{ kind: 'option', def: STAGE, labels: ['Done', 'Closed'] }` and `removal` `{ …, labels: ['Done', null] }`; `:219`'s reach likewise; every assertion stays. `optionOps.test.ts` — a new case: under `{ key: 'urgent', label: 'Urgent' }` with a page holding `Tags: [urgent]` and a view filtering `is` `Urgent`, `renameOption(root, id, 'Urgent', 'Critical')` writes the page `Tags: [Critical]` and the view's operand `Critical`, and `removeOption(root, id, 'Critical')` strips both; under `{ key: 'a', label: 'Z' }` and `{ key: 'B2', label: 'a' }` with a view on `a`, `removeOption(root, id, 'Z')` leaves that view's filter, sorts, groups, and hidden and collapsed groups as they were.
 - [ ] `pageValue.ts`: `ValueEdit` is `ReadonlyMap<string, string | null>`; `editList(xs, edit)` answers null when no member is one the map names, and otherwise each named member renamed or dropped in one pass, a member landing on a target the list already holds kept once where it first lands; `valueEditRewrite(def, edit)`; `namesValue`, `stripList`, and `Matcher` stay for their matcher readers and `configReach`'s gone arms.
 - [ ] `contextCascade.ts:45-48`: `retitleSpace` edits with `new Map([[j.oldTitle, j.newTitle]])`.
 - [ ] `configReach.ts`: `OptionReach` is `{ def, labels: readonly [string, string | null] }`; `optionRule` and `scopedOrder` edit through `new Map([e.labels])`; `collapsedKeys` and the `hiddenKeys` arm destructure `e.labels`; the `ValueEdit` import goes.
