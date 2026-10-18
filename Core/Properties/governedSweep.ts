@@ -15,7 +15,7 @@ import type { Json } from '../Files/stableJson'
 import { spaceSidecars } from '../Contexts/spaceSidecar'
 
 export interface SweepResult {
-  /** Each file the sweep wrote, with the text it held before the write and the text the write left. */
+  /** Each file the sweep wrote, or a dry run would write, with the text it held before and the text the write leaves. */
   touched: Map<string, { before: string; after: string }>
   skipped: string[]
   refused: string[]
@@ -25,7 +25,7 @@ export type Rewrite = (raw: Json, file: string) => Json | null
 
 export type RewriteText = (content: string, file: string) => string | null
 
-type SweepPlan = ({ raw: Rewrite } | { text: RewriteText }) & { sidecars?: Rewrite }
+export type SweepPlan = ({ raw: Rewrite } | { text: RewriteText }) & { sidecars?: Rewrite }
 
 export const unsweptLine = (count: number, what = ''): string =>
   `Couldn’t update ${what}${count} ${count === 1 ? 'file' : 'files'}.`
@@ -60,6 +60,7 @@ export async function sweepGovernedRoots(
   root: string,
   files: string[],
   plan: SweepPlan,
+  dry = false,
 ): Promise<SweepResult> {
   const out: SweepResult = { touched: new Map(), skipped: [], refused: [] }
 
@@ -78,7 +79,7 @@ export async function sweepGovernedRoots(
       }
       const next = 'text' in plan ? plan.text(content, file) : rewriteRaw(plan.raw, page, file)
       if (next === null) return
-      await rewritePreservingTimes(file, next)
+      if (!dry) await rewritePreservingTimes(file, next)
       out.touched.set(file, { before: content, after: next })
     })
   }
@@ -101,12 +102,15 @@ export async function sweepGovernedRoots(
         const next = sidecars(raw, file)
         if (next === null) return
         const after = jsonText(next)
-        await atomicWriteFile(file, after)
+        if (!dry) await atomicWriteFile(file, after)
         out.touched.set(file, { before: text, after })
       })
     }
   return out
 }
+
+export const sweepCount = async (root: string, files: string[], plan: SweepPlan): Promise<number> =>
+  (await sweepGovernedRoots(root, files, plan, true)).touched.size
 
 /** Returns the keys a sweep changed to what they held, each file whole while it still holds the sweep's write, so a write since to any other key or to the body is kept; answers the files it couldn't put back. */
 export async function undoSweep(touched: SweepResult['touched']): Promise<string[]> {
