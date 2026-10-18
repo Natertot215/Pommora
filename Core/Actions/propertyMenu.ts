@@ -3,10 +3,10 @@ import { type ActionItem, joinGroups } from './menuModel'
 // Delete is offered only inside the property's own pane.
 
 type PropertyMenuContext =
-  | { kind: 'editor'; name: string }
-  | { kind: 'assigned-row'; name: string }
+  | { kind: 'editor' }
+  | { kind: 'assigned-row' }
   /** Neither Clear nor Remove touches the schema: the property stays assigned to its Collection. */
-  | { kind: 'page-value'; name: string; filled: boolean; editable?: boolean }
+  | { kind: 'page-value'; filled: boolean; editable?: boolean }
 
 type PropertyMenuAction =
   | 'property:rename'

@@ -422,7 +422,7 @@ describe('native menus + the inline-rename channel (T7)', () => {
       host.querySelector<HTMLButtonElement>('[aria-label="Property Menu"]')!.click()
     })
     expect(propertyMenuSpy).toHaveBeenCalledWith({
-      items: propertyMenuModel({ kind: 'editor', name: 'Status' }),
+      items: propertyMenuModel({ kind: 'editor' }),
       anchor: undefined,
     })
     expect(unassignSpy).toHaveBeenCalledWith('Col', 'prop_status')
@@ -472,7 +472,7 @@ describe('native menus + the inline-rename channel (T7)', () => {
         .dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
     })
     expect(propertyMenuSpy).toHaveBeenCalledWith({
-      items: propertyMenuModel({ kind: 'assigned-row', name: 'Status' }),
+      items: propertyMenuModel({ kind: 'assigned-row' }),
       anchor: undefined,
     })
     const input = host.querySelector<HTMLInputElement>('.row-title-input')

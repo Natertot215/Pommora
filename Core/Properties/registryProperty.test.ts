@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { updatePageProperty } from '../Testing/propertyWrites'
 import { readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
@@ -16,10 +16,15 @@ import { newId } from '../Nexus/ids'
 import { createTestPage } from '../Testing/createTestPage'
 import { pathExists } from '../Files/atomicWrite'
 import { readRegistry } from './propertiesRegistry'
-import { readSchemaJournal } from './propertyJournal'
+import { readSchemaJournal, writeSchemaJournal } from './propertyJournal'
 import { nexusConfig } from '../Paths/paths'
 import { NEXUS_CONFIG_FILES } from '../Paths/nexusPaths'
 import type { PropertyDraft } from './properties'
+
+vi.mock('./propertyJournal', async (importOriginal) => {
+  const mod = await importOriginal<typeof import('./propertyJournal')>()
+  return { ...mod, writeSchemaJournal: vi.fn(mod.writeSchemaJournal) }
+})
 
 type RegistryFile = { order: string[]; defs: Record<string, unknown> }
 
@@ -187,16 +192,17 @@ describe('renameProperty and editProperty', () => {
   it('a rename onto its own key writes the label alone, journaling and sweeping nothing', async () => {
     const c = await createProperty(root, def({ label: 'Status', type: 'select' }))
     const col = await createFolderEntity(root, 'collection', 'Col', newId())
-    if (!c.ok || !col.ok) return
+    if (!c.ok || !col.ok) throw new Error('setup failed')
     await assignProperty(root, col.value.path, c.value.id)
     const p = await createTestPage(col.value.path, 'Holder', { body: 'b' })
-    if (!p.ok) return
+    if (!p.ok) throw new Error('setup failed')
     const held = `---\nID: 01ARZ3NDEKPSV4RRFFQ69G5FAV\nstatus: Open\n---\nb\n`
     await writeFile(p.value.path, held)
     const registry = await readJsonAt<RegistryFile>(registryFilePath())
     const stored = registry.defs[c.value.id] as Record<string, unknown>
     registry.defs[c.value.id] = { ...stored, key: 'status' }
     await writeFile(registryFilePath(), JSON.stringify(registry))
+    vi.mocked(writeSchemaJournal).mockClear()
 
     const renamed = await renameProperty(root, c.value.id, 'status')
     expect(renamed.ok && renamed.value).toMatchObject({ from: 'status', to: 'status' })
@@ -204,6 +210,7 @@ describe('renameProperty and editProperty', () => {
       label: 'status',
       key: 'status',
     })
+    expect(writeSchemaJournal).not.toHaveBeenCalled()
     expect(await readSchemaJournal(root)).toBeNull()
     expect(await readFile(p.value.path, 'utf8')).toBe(held)
   })

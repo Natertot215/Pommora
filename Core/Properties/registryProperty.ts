@@ -63,7 +63,7 @@ export async function createProperty(
       result: ok({ id: candidate.id }),
     }
   })
-  // A landed create wearing a journaled delete's name or id supersedes the record, or a later replay would strip the living property. Only after commit: a refused create must not spend a record it never displaced.
+  // A landed create wearing a journaled delete's key or id supersedes the record, or a later replay would strip the living property. Only after commit: a refused create must not spend a record it never displaced.
   if (created.ok) {
     const journal = await readSchemaJournal(root)
     if (journal?.op === 'delete' && (journal.name === landed || journal.id === created.value.id))
@@ -98,7 +98,7 @@ async function bothKeyHolders(root: string, from: string, to: string): Promise<s
   return fromHolders.filter((f) => toHolders.has(f))
 }
 
-/** Validated before the journal and again on the registry it commits to, since a create can land between the two. The journal is staged BEFORE the commit: registry-first ordering means a crash between commit and sweep is recoverable from nowhere else, so the old name survives only there. */
+/** Validated before the journal and again on the registry it commits to, since a create can land between the two. The journal is staged BEFORE the commit: registry-first ordering means a crash between commit and sweep is recoverable from nowhere else, so the old key survives only there. */
 export function renameProperty(
   root: string,
   propertyId: string,
@@ -112,12 +112,13 @@ export function renameProperty(
     if (to === prior.label) return ok(null)
     const named = validateName({ label: to, key: to }, Object.values(defs), propertyId)
     if (!named.ok) return named
+    const moves = to !== prior.key
     // A file holding only the new key is adopted, its value going live as a create's would; one holding both would lose its old value.
-    const clashes = to === prior.key ? [] : await bothKeyHolders(root, prior.key, to)
+    const clashes = moves ? await bothKeyHolders(root, prior.key, to) : []
     if (clashes.length)
       return fail('invalid-property', KEY_REFUSAL.held(prior.key, to, clashes.length))
     const record: SchemaJournal = { op: 'rename', id: propertyId, from: prior.key, to }
-    await writeSchemaJournal(root, record)
+    if (moves) await writeSchemaJournal(root, record)
     const edit = await mutateRegistry<Result<{ from: string; def: PropertyDefinition }>>(
       root,
       (registry) => {
@@ -133,12 +134,12 @@ export function renameProperty(
       },
     )
     if (!edit.ok) {
-      await clearSchemaJournal(root, record)
+      if (moves) await clearSchemaJournal(root, record)
       return edit
     }
     const { from, def } = edit.value
     const skipped = from === def.key ? 0 : await renameSweep(root, from, def)
-    if (!skipped) await clearSchemaJournal(root, record)
+    if (moves && !skipped) await clearSchemaJournal(root, record)
     return ok({ from, to: def.key, ...schemaCascade({ skipped, hosts: [] }, record) })
   })
 }

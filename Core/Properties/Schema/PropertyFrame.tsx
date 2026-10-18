@@ -231,8 +231,8 @@ export function PropertyFrame({
     })
     if (reportRefusal(res)) setView({ kind: 'edit', id: res.value.id })
   }
-  const rename = async (id: string, name: string): Promise<void> => {
-    const res = await dialer().ask('property:rename', id, name)
+  const rename = async (id: string, label: string): Promise<void> => {
+    const res = await dialer().ask('property:rename', id, label)
     if (!reportRefusal(res) || !res.value) return
     if (res.value.from !== res.value.to) bumpValuesEpoch(res.value.from, res.value.to)
     retryOwed(res.value)
@@ -267,14 +267,14 @@ export function PropertyFrame({
 
   const defOf = (id: string): PropertyDefinition | undefined =>
     props.find((d) => d.id === id) ?? unassigned.find((d) => d.id === id)
-  const nameFor = (id: string): string => defOf(id)?.label ?? ''
+  const labelFor = (id: string): string => defOf(id)?.label ?? ''
   const glyphFor = (id: string): ReactNode => {
     const d = defOf(id)
     return d && <Icon name={propertyIcon(d)} />
   }
 
   const editorMenu = async (def: PropertyDefinition): Promise<void> => {
-    const action = await popMenu(propertyMenuModel({ kind: 'editor', name: def.label }))
+    const action = await popMenu(propertyMenuModel({ kind: 'editor' }))
     if (action === 'property:remove') await remove(def.id)
     else if (action === 'property:destroy' && (await askDestroyProperty(def.id, def.label))) {
       const deleted = await dialer().ask('property:delete', def.id)
@@ -285,7 +285,7 @@ export function PropertyFrame({
     }
   }
   const rowMenu = async (d: PropertyDefinition): Promise<void> => {
-    const action = await popMenu(propertyMenuModel({ kind: 'assigned-row', name: d.label }))
+    const action = await popMenu(propertyMenuModel({ kind: 'assigned-row' }))
     if (action === 'property:rename') beginPropertyRename({ collectionPath, propertyId: d.id })
     else if (action === 'property:remove')
       reportRefusal(await dialer().ask('schema:unassign', collectionPath, d.id))
@@ -447,7 +447,7 @@ export function PropertyFrame({
           assigned: props.map((d) => d.id),
           ordersAll: true,
           titles: TITLES,
-          label: nameFor,
+          label: labelFor,
           glyph: glyphFor,
           onDrop: (drop) => void handleDrop(drop),
           watch: [schema, registry],
