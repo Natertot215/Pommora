@@ -1,4 +1,4 @@
-// A write displaces nothing it can't read and no different stranded record — its owed heal outranks the op now starting, which runs unjournaled — while a corrupt slot is set aside by the next write, and a clear lands only for the caller's own record.
+// A write displaces nothing it can't read and no different stranded record — its owed heal outranks the op now starting, which runs unjournaled or refuses, as its owner decides — while a corrupt slot is set aside by the next write, and a clear lands only for the caller's own record.
 import { readJsonStrictly, setAside, type StrictMiss, writeJson } from '../Files/atomicWrite'
 import { machine } from '../Platform/machine'
 import { nexusConfig } from '../Paths/paths'

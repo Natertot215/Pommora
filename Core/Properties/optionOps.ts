@@ -41,6 +41,9 @@ import { isMarkdownFile, join } from '../Paths/posix'
 
 const NO_OPTION = fail('not-found', 'That option no longer exists.')
 const NO_GROUP = fail('not-found', 'That group no longer exists.')
+const OWED = fault(
+  'An earlier change hasn’t reached every file yet. Use Try Again on its notice first.',
+)
 const NO_OPTIONS = fail(
   'invalid-property',
   'Options can only be edited on a Select, Multi-Select, or Status property.',
@@ -234,7 +237,7 @@ export function renameOption(
       labels: [oldLabel, newLabel],
     }
     // Staged BEFORE the commit: a crash between commit and cascade is recoverable only from this record, and one stranded by a refusal is disposed of by the replay's holds-to-and-not-from gate.
-    await writeSchemaJournal(root, record)
+    if (!(await writeSchemaJournal(root, record))) return OWED
     const edit = await mutateRegistry<Result<PropertyDefinition>>(root, (registry, stored) => {
       const def = registry.defs[propertyId]
       if (!def) return { result: NO_PROPERTY }
@@ -295,13 +298,13 @@ export function removeOption(
     if (!r.ok) return r
     const { def, key } = r.value
     const record: SchemaJournal = { op: 'option-remove', id: propertyId, key }
-    const journaled = await writeSchemaJournal(root, record)
+    if (!(await writeSchemaJournal(root, record))) return OWED
     const reach = await optionCascade(root, def, new Map([[key, null]]), [label, null])
     if (!reach.skipped) {
       const dropped = await dropOptionFromDef(root, propertyId, key)
       if (!dropped.ok) return dropped
       await clearSchemaJournal(root, record)
     }
-    return ok(schemaCascade(reach, journaled ? record : undefined))
+    return ok(schemaCascade(reach, record))
   })
 }
