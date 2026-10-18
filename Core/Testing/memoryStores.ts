@@ -1,4 +1,5 @@
 import { foldKey } from '../Paths/caseFold'
+import { ID_KEY } from '../Nexus/identityMark'
 import type {
   BaseRecord,
   CaptureReason,
@@ -77,6 +78,11 @@ const contentIndex = (index: MemoryIndex): ContentIndexStore => {
     index.stats.delete(path)
   }
   const sortedPaths = (paths: Iterable<string>): string[] => [...new Set(paths)].sort()
+  const statOf = (path: string, { mtimeMs, size }: IndexedStat): IndexedStat => {
+    const row = index.values.get(k(path, ID_KEY))
+    const value: unknown = row && JSON.parse(row.value)
+    return typeof value === 'string' ? { mtimeMs, size, id: value } : { mtimeMs, size }
+  }
   const relationRows = (): RelationRow[] => [...index.relations.values()]
   return {
     upsertPageIndexes(rows) {
@@ -189,10 +195,14 @@ const contentIndex = (index: MemoryIndex): ContentIndexStore => {
     },
     readIndexedStat(path) {
       const s = index.stats.get(path)
-      return s ? { ...s } : null
+      return s ? statOf(path, s) : null
     },
-    readIndexedStats() {
-      return new Map([...index.stats].map(([path, s]) => [path, { ...s }]))
+    readIndexedStats(under) {
+      return new Map(
+        [...index.stats]
+          .filter(([path]) => under === undefined || underPrefix(path, under))
+          .map(([path, s]) => [path, statOf(path, s)]),
+      )
     },
   }
 }

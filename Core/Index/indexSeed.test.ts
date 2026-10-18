@@ -15,11 +15,14 @@ import {
 } from './contentIndex'
 import { corpusFiles } from '../Files/walk'
 import { sweepParse, splitEnvelope } from '../Files/pageFile'
-import { indexWrittenPage, moveIndexPaths, seedContentIndex } from './indexSeed'
+import { deindexPath, indexWrittenPage, moveIndexPaths, seedContentIndex } from './indexSeed'
 import { renameCascade } from '../Nexus/cascade'
+import { owedFor, oweSeen } from '../Nexus/fileEvents'
 import { newContentId } from '../Nexus/ids'
 
 const ULID_A = '01ARZ3NDEKPSV4RRFFQ69G5FAV'
+const ULID_B = '01BX5ZZKBKPCTAV9WEVGEMMVRZ'
+const ULID_C = '01CX5ZZKBKPCTAV9WEVGEMMVRC'
 
 let root: string
 let mem: ReturnType<typeof memoryStores>
@@ -170,11 +173,11 @@ describe('seedContentIndex', () => {
     await seedContentIndex(root)
     // An external editor rewrites only the heading line — the raw file's link still reads the old heading, exactly as an outside writer leaves it.
     await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\n---\n\n## Intro\n\n[[#Setup]]\n`)
-    const [seen] = await indexWrittenPage(root, abs('Notes', 'A.md'))
+    const [seen] = (await indexWrittenPage(root, abs('Notes', 'A.md'))).renames
     expect(seen).toEqual({ path: 'Notes/A.md', old: 'setup', next: 'Intro' })
     await renameCascade(root, { path: seen.path, heading: seen.old, to: seen.next })
     // The cascade's own writes re-enter the re-scan with nothing gone, so nothing loops.
-    expect(await indexWrittenPage(root, abs('Notes', 'B.md'))).toEqual([])
+    expect((await indexWrittenPage(root, abs('Notes', 'B.md'))).renames).toEqual([])
     expect(splitEnvelope(await readFile(abs('Notes', 'A.md'), 'utf8')).body).toBe(
       '## Intro\n\n[[#Intro]]\n',
     )
@@ -189,7 +192,7 @@ describe('seedContentIndex', () => {
       abs('Notes', 'A.md'),
       `---\nID: ${ULID_A}\n---\n\n## One\n\n## Two\n\n[[#Setup]]\n`,
     )
-    expect(await indexWrittenPage(root, abs('Notes', 'A.md'))).toEqual([])
+    expect((await indexWrittenPage(root, abs('Notes', 'A.md'))).renames).toEqual([])
   })
 
   it('a linked heading replaced by a section elsewhere is not a rename', async () => {
@@ -200,7 +203,7 @@ describe('seedContentIndex', () => {
       abs('Notes', 'A.md'),
       `---\nID: ${ULID_A}\n---\n\n## Keep\n\n## Meeting Notes\n`,
     )
-    expect(await indexWrittenPage(root, abs('Notes', 'A.md'))).toEqual([])
+    expect((await indexWrittenPage(root, abs('Notes', 'A.md'))).renames).toEqual([])
   })
 
   it('renaming one of two headings sharing the old text is not a rename', async () => {
@@ -208,13 +211,89 @@ describe('seedContentIndex', () => {
     await writeFile(abs('Notes', 'B.md'), `---\nID: ${newContentId('page')}\n---\n\n[[A#Setup]]\n`)
     await seedContentIndex(root)
     await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\n---\n\n## Intro\n\n## Setup\n`)
-    expect(await indexWrittenPage(root, abs('Notes', 'A.md'))).toEqual([])
+    expect((await indexWrittenPage(root, abs('Notes', 'A.md'))).renames).toEqual([])
   })
 
   it('with no database the seed stands down and queries stay null', async () => {
     installStores(NO_STORES)
-    await expect(seedContentIndex(root)).resolves.toEqual({ db: null, rels: [], renames: [] })
+    await expect(seedContentIndex(root)).resolves.toEqual({
+      db: null,
+      rels: [],
+      renames: [],
+      vanished: [],
+      landed: [],
+    })
     expect(queryMentions(['target'])).toBeNull()
+  })
+
+  it('reports a pruned page as vanished and a page the snapshot lacked as landed; a cold seed reports neither', async () => {
+    await writeFile(abs('Notes', 'B.md'), `---\nID: ${ULID_B}\n---\n\nbeta\n`)
+    const cold = await seedContentIndex(root)
+    expect([cold.vanished, cold.landed]).toEqual([[], []])
+    await unlink(abs('Notes', 'B.md'))
+    await writeFile(abs('Notes', 'C.md'), `---\nID: ${ULID_C}\n---\n\ngamma\n`)
+    await writeFile(abs('Notes', 'Bare.md'), 'bare\n')
+    const warm = await seedContentIndex(root)
+    expect(warm.vanished).toEqual([{ id: ULID_B, title: 'B', path: 'Notes/B.md' }])
+    expect(warm.landed).toEqual([ULID_C])
+  })
+
+  it('the vanished and landed pages a seed reports reach the record', async () => {
+    await writeFile(abs('Notes', 'B.md'), `---\nID: ${ULID_B}\n---\n\nbeta\n`)
+    await seedContentIndex(root)
+    await unlink(abs('Notes', 'B.md'))
+    await writeFile(abs('Notes', 'C.md'), `---\nID: ${ULID_C}\n---\n\ngamma\n`)
+    oweSeen(root, await seedContentIndex(root))
+    expect([...owedFor(root).vanished.values()]).toEqual([
+      { id: ULID_B, title: 'B', path: 'Notes/B.md' },
+    ])
+    expect([...owedFor(root).landed]).toEqual([ULID_C])
+  })
+})
+
+describe('what an index step reports', () => {
+  beforeEach(async () => {
+    await mkdir(abs('Notes', 'Sub'), { recursive: true })
+    await writeFile(abs('Notes', 'Sub', 'B.md'), `---\nID: ${ULID_B}\n---\n\nbeta\n`)
+    await seedContentIndex(root)
+  })
+
+  it('removing a page answers that page and removes its rows', async () => {
+    await unlink(abs('Notes', 'A.md'))
+    expect(await deindexPath(root, abs('Notes', 'A.md'))).toEqual({
+      renames: [],
+      vanished: [{ id: ULID_A, title: 'A', path: 'Notes/A.md' }],
+      landed: [],
+    })
+    expect(readIndexedStats()?.has('Notes/A.md')).toBe(false)
+  })
+
+  it('removing a folder answers every page under it and removes their rows', async () => {
+    await rm(abs('Notes'), { recursive: true })
+    const seen = await deindexPath(root, abs('Notes'))
+    expect(seen.vanished.sort((a, b) => a.path.localeCompare(b.path))).toEqual([
+      { id: ULID_A, title: 'A', path: 'Notes/A.md' },
+      { id: ULID_B, title: 'B', path: 'Notes/Sub/B.md' },
+    ])
+    expect([...(readIndexedStats()?.keys() ?? [])]).toEqual(['Loose/Note.md'])
+  })
+
+  it('a page re-indexed under another ID answers the old page vanished and the new ID landed', async () => {
+    await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_C}\n---\n\nalpha\n`)
+    expect(await indexWrittenPage(root, abs('Notes', 'A.md'))).toEqual({
+      renames: [],
+      vanished: [{ id: ULID_A, title: 'A', path: 'Notes/A.md' }],
+      landed: [ULID_C],
+    })
+  })
+
+  it('a page indexed at a path the index lacked lands its ID; one it held, or one without an ID, lands nothing', async () => {
+    await writeFile(abs('Notes', 'C.md'), `---\nID: ${ULID_C}\n---\n\ngamma\n`)
+    expect((await indexWrittenPage(root, abs('Notes', 'C.md'))).landed).toEqual([ULID_C])
+    expect((await indexWrittenPage(root, abs('Notes', 'C.md'))).landed).toEqual([])
+    expect((await indexWrittenPage(root, abs('Notes', 'A.md'))).landed).toEqual([])
+    await writeFile(abs('Notes', 'Bare.md'), 'bare\n')
+    expect((await indexWrittenPage(root, abs('Notes', 'Bare.md'))).landed).toEqual([])
   })
 })
 

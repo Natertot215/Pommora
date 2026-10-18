@@ -1,4 +1,4 @@
-import { join, relative, isMarkdownFile } from '../Paths/posix'
+import { join, relative, isMarkdownFile, titleFromPath } from '../Paths/posix'
 import { escapes } from '../Paths/pathSafety'
 import { errText } from '../Contract/result'
 import { linksIn, valueLinks } from '../Connections/scan'
@@ -21,6 +21,7 @@ import {
 import {
   type ContentIndexStore,
   contentIndexStore,
+  type IndexedStat,
   type PageIndexRow,
   type RelationKind,
   type Relation,
@@ -30,7 +31,8 @@ import { machine } from '../Platform/machine'
 import { readTextOrNull } from '../Files/atomicWrite'
 import { corpusFiles, corpusFilesUnder } from '../Files/walk'
 import { outsideContent } from '../Paths/exclusion'
-import { headingKeys } from '../Connections/pageIndex'
+import { type ConnPage, headingKeys } from '../Connections/pageIndex'
+import { ID_KEY } from '../Nexus/identityMark'
 
 import { readWatchScope } from '../Settings/settings'
 
@@ -95,27 +97,48 @@ export interface HeadingRenameSeen {
   next: string
 }
 
-// Re-indexes a written page, from `text` when its writer hands it over, and reports a heading rename it reads.
+/** What one index step saw: the heading renames the rows show, the pages whose rows it removed, and the ids the index first saw at a path, or saw change there. Watched events owe it, and the settle owes the ids its stamp answers; the app's own writes don't, their operation having spoken. */
+export interface IndexSeen {
+  renames: HeadingRenameSeen[]
+  vanished: ConnPage[]
+  landed: string[]
+}
+
+export const NOTHING_SEEN: IndexSeen = { renames: [], vanished: [], landed: [] }
+const pageOf = (path: string, stat: IndexedStat | null): ConnPage[] =>
+  stat?.id === undefined ? [] : [{ id: stat.id, title: titleFromPath(path), path }]
+const idOf = (entry: PageIndexEntry): string[] => {
+  const id = entry.values[ID_KEY]
+  return typeof id === 'string' ? [id] : []
+}
+const unindexed = (rel: string, stat = readIndexedStat(rel)): ConnPage[] => {
+  removePathIndex(rel)
+  return pageOf(rel, stat)
+}
+
+// Re-indexes a written page, from `text` when its writer hands it over, and reports what it saw.
 export async function indexWrittenPage(
   root: string,
   abs: string,
   text?: string,
-): Promise<HeadingRenameSeen[]> {
-  if (!isMarkdownFile(abs)) return []
+): Promise<IndexSeen> {
+  if (!isMarkdownFile(abs)) return NOTHING_SEEN
   const rel = await relCorpusPath(root, abs)
-  if (!rel) return []
+  if (!rel) return NOTHING_SEEN
   const st = await machine()
     .stat(abs)
     .catch(() => null)
-  if (!st) {
-    removePathIndex(rel)
-    return []
-  }
+  if (!st) return { ...NOTHING_SEEN, vanished: unindexed(rel) }
   // An unreadable page keeps its rows, so a sweep the index seeds still reaches the file and counts it.
   const content = text ?? (await readTextOrNull(abs))
-  if (content === null) return []
+  if (content === null) return NOTHING_SEEN
+  const prior = readIndexedStat(rel)
   const stat = { mtimeMs: st.mtimeMs, size: st.size }
-  return reindex([{ path: rel, entry: extractPageIndex(content), stat }])
+  const entry = extractPageIndex(content)
+  const renames = reindex([{ path: rel, entry, stat }])
+  const [now] = idOf(entry)
+  if (prior?.id === now) return { ...NOTHING_SEEN, renames }
+  return { renames, vanished: pageOf(rel, prior), landed: now === undefined ? [] : [now] }
 }
 
 // Writes each page's rows and reports the heading renames they show against the rows they replace: one heading gone and one fresh heading at its ordinal, the outline otherwise unchanged. Anything murkier is left to the muted heading.
@@ -139,11 +162,13 @@ function reindex(rows: readonly PageIndexRow[]): HeadingRenameSeen[] {
   })
 }
 
-export async function deindexPath(root: string, abs: string): Promise<void> {
+export async function deindexPath(root: string, abs: string): Promise<IndexSeen> {
   const rel = await relCorpusPath(root, abs)
-  if (!rel) return
-  if (isMarkdownFile(rel)) removePathIndex(rel)
-  else removePathPrefixIndex(rel)
+  if (!rel) return NOTHING_SEEN
+  if (isMarkdownFile(rel)) return { ...NOTHING_SEEN, vanished: unindexed(rel) }
+  const vanished = [...(readIndexedStats(rel) ?? [])].flatMap(([path, stat]) => pageOf(path, stat))
+  removePathPrefixIndex(rel)
+  return { ...NOTHING_SEEN, vanished }
 }
 
 export async function moveIndexPaths(root: string, oldAbs: string, newAbs: string): Promise<void> {
@@ -163,14 +188,13 @@ export async function moveIndexPaths(root: string, oldAbs: string, newAbs: strin
   await indexWrittenPage(root, newAbs)
 }
 
-/** The pages a seed re-read and the heading renames they showed, bound to the database it read them into; none when it built a cold index, bailed, or failed. */
-export interface SeedReread {
+/** What a seed saw and the pages it re-read, bound to the database it read them into; none when it built a cold index, bailed, or failed. */
+export interface SeedReread extends IndexSeen {
   db: ContentIndexStore | null
   rels: readonly string[]
-  renames: readonly HeadingRenameSeen[]
 }
 
-const NO_REREAD: SeedReread = { db: null, rels: [], renames: [] }
+const NO_REREAD: SeedReread = { ...NOTHING_SEEN, db: null, rels: [] }
 
 const SEED_BATCH = 200
 
@@ -182,6 +206,7 @@ export async function seedContentIndex(root: string): Promise<SeedReread> {
   const reread: string[] = []
   const renames: HeadingRenameSeen[] = []
   const queued: PageIndexRow[] = []
+  const landed: string[] = []
   const flush = (): void => {
     const rows = queued.splice(0).filter(({ path }) => {
       // A maintaining writer that landed while this file's read was in flight left a fresher row than the snapshot knew — keep theirs; this read predates their write.
@@ -190,7 +215,10 @@ export async function seedContentIndex(root: string): Promise<SeedReread> {
       return !row || (row.mtimeMs === prior?.mtimeMs && row.size === prior?.size)
     })
     renames.push(...reindex(rows))
-    for (const { path } of rows) reread.push(path)
+    for (const { path, entry } of rows) {
+      reread.push(path)
+      if (!indexed.has(path)) landed.push(...idOf(entry))
+    }
   }
   try {
     const rels = await nexusCorpus(root)
@@ -219,9 +247,10 @@ export async function seedContentIndex(root: string): Promise<SeedReread> {
     if (contentIndexStore() !== db0) return NO_REREAD
     flush()
     // Prune only what the pre-seed gate knew and the corpus no longer yields — a page born while the seed ran is absent from the snapshot and must survive this pass.
-    for (const rel of indexed.keys()) if (!seen.has(rel)) removePathIndex(rel)
+    const vanished: ConnPage[] = []
+    for (const [rel, stat] of indexed) if (!seen.has(rel)) vanished.push(...unindexed(rel, stat))
     markIndexReady()
-    return indexed.size === 0 ? NO_REREAD : { db: db0, rels: reread, renames }
+    return indexed.size === 0 ? NO_REREAD : { db: db0, rels: reread, renames, vanished, landed }
   } catch (e) {
     console.error('content index: seed failed — queries fall back to scans:', errText(e))
     return NO_REREAD

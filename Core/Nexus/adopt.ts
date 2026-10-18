@@ -99,19 +99,22 @@ export async function ensurePageId(absFile: string): Promise<Result<string>> {
 
 type AdoptableKind = Exclude<FolderKind, 'unknown'>
 
-async function stampFolder(absDir: string, kind: FolderNodeKind): Promise<boolean> {
+async function stampFolder(absDir: string, kind: FolderNodeKind): Promise<string | null> {
   const file = sidecarPath(absDir, kind)
   if (kind !== 'space' && !(await pathExists(file))) await migrateContainerSidecar(absDir, kind)
+  let id: string | null = null
   const written = await rmwJsonStrict(
     file,
     (cur) => {
       const renamed = renamedSidecar(cur)
-      if (asString(cur.id)) return renamed
-      return { ...(renamed ?? cur), id: newId() }
+      id = asString(cur.id) ?? null
+      if (id) return renamed
+      id = newId()
+      return { ...(renamed ?? cur), id }
     },
     () => ({}),
   )
-  return written.ok
+  return written.ok ? id : null
 }
 
 async function migrateContainerSidecar(absDir: string, kind: ContainerKind): Promise<void> {
@@ -126,18 +129,18 @@ async function migrateContainerSidecar(absDir: string, kind: ContainerKind): Pro
 // A page the tree held under an ID when its file lost it carries that ID, which its stamp writes back unless another page holds it by then.
 export type Stamp = Unreadable & { held?: string }
 
-export async function stampMissing(root: string, listed: readonly Stamp[] = []): Promise<boolean> {
-  let landed = false
+/** Answers every id it stamped or found written, a folder's as well as a page's: for the index, a page that arrived without one arrives when its ID lands. */
+export async function stampMissing(root: string, listed: readonly Stamp[] = []): Promise<string[]> {
+  const landed: string[] = []
   for (const { path, kind, reason, held } of listed) {
     if (reason !== 'missing' && reason !== 'malformed') continue
     const abs = join(root, path)
     const kept = held && !idHeld(root, held) ? held : undefined
+    let id: string | null = null
     if (kind === 'page')
-      landed =
-        (await stampPage(abs, 'page', reason === 'malformed', kept).catch(() => null)) !== null ||
-        landed
-    else if (reason === 'missing')
-      landed = (await stampFolder(abs, kind).catch(() => false)) || landed
+      id = await stampPage(abs, 'page', reason === 'malformed', kept).catch(() => null)
+    else if (reason === 'missing') id = await stampFolder(abs, kind).catch(() => null)
+    if (id !== null) landed.push(id)
   }
   return landed
 }

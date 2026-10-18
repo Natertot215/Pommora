@@ -116,7 +116,7 @@ The work lands in nine phases in dependency order, each the largest run one agen
 - **The Number:** every phase's VERIFY runs `python3 ~/"The Studio/.claude/scripts/view-delta/view-delta.py" <BASELINE>..HEAD --exclude .claude` and records the **Actionable** column (code minus comments; tests and docs excluded) in the Net Ledger beside the phase's estimate, with removals and additions apart. A phase that lands above its band is reported in chat before the next phase opens, with what the increase buys. There is no floor (the owner's bar: every addition earns its place and the outcome reads as intended, with the merges counting toward a codebase left with less); the final report states the measured total against the count under *§Overview · The Number*.
 - **Shape:** a feature with a refactor, removals, and fixes inside it. The behavioral baseline is today's behavior as the Decisions' *§Context* states it, kept except where a decision names a change and proven by the tests each task rewrites or adds. Every removal task lists its consumers (the sibling sweep), and the Frozen list holds throughout. Every fix task names what else consumed the old behavior. The index generation bump is the one migration: it drops and reseeds the content index on the first open, which is how the rows re-key.
 - **Conventions:** finite states are unions plus exhaustive switches; no O(N), allocating, or layout-reading work lands on a keystroke, a caret move, a decoration build, or a settle that nothing owes, and every task that touches one of those paths states its cost; the index resolves nothing eagerly at build (both processes rebuild it on every tree change, and the host never opens a picker); nothing in SQL rewrites `relations.target` (it mirrors the file's bytes; the sweep rewrites files and re-indexing re-keys them); host-run code imports no React or UIX, and `Desktop/hostGraph.test.ts` and `Core/Contract/engineGraph.test.ts` stay green; nothing inside an address operation awaits `inTurn` (`payOwedWalk`, `settleNow`), since `inTurns` has no re-entry detection and would hang silently (Task 6-3's audit, recorded there, lists every awaiter and every lock the turn takes: only `settle.ts` itself, `underContexts`'s `finally`, the two handlers after an operation, the watcher's own queue, and the test harness await a turn, and nothing a gated operation reaches imports `settle.ts`); a comment is written only where the code would be genuinely ambiguous or misread without it (the owner, 10-17-2026): the comment lines in an AFTER block state intent for the executor and are not written unless they meet that bar, a comment that restates its code or claims a cost is dropped, and the comments the scouts list as false are rewritten or removed by the task that falsifies them; commit messages are past tense and one to four sentences; nothing temporary, transitional, or compatibility-kept remains at a phase's end.
-- **Execution:** the plan runs end to end autonomously, the owner reachable only at check-ins. Every review checkpoint dispatches two agents to the `closeout-review` skill's standards (correctness, simplification, cohesiveness, and consequences; its closing procedures, write-guards, and output format don't apply), reading outward (whether the phase reads correct from the rest of the codebase's point of view) rather than in isolation, and the orchestrator's own post-phase look weighs the landed work against the **Mandate** above before the next phase opens. An in-flight call is weighed against those and the plan's objectives, disclosed in chat, and recorded under *§Deviations* only where it changes an outcome. The two compaction checkpoints in *§Process Overview* sit before Phases 4 and 7 (placed by the planner; the owner adjusts them at ratification); each runs `c/pre-compaction`, re-instills the Mandate in the handoff exactly as the owner gave it, and stops until the owner re-prompts.
+- **Execution:** the plan runs end to end autonomously, the owner reachable only at check-ins. Every review checkpoint dispatches two agents to the `closeout-review` skill's standards (correctness, simplification, cohesiveness, and consequences; its closing procedures, write-guards, and output format don't apply), reading outward (whether the phase reads correct from the rest of the codebase's point of view) rather than in isolation, and the orchestrator's own post-phase look weighs the landed work against the **Mandate** above before the next phase opens. An in-flight call is weighed against those and the plan's objectives, disclosed in chat, and recorded under *§Deviations* only where it changes an outcome. The three compaction checkpoints in *§Process Overview* sit before Phases 4, 7, and 9 (the first two placed by the planner, the third by the owner on 10-17-2026); each runs `c/pre-compaction`, re-instills the Mandate in the handoff exactly as the owner gave it, and stops until the owner re-prompts.
 - **Rulings (Not Re-Raised):** every decision in *Path Links — Decisions* and its *§Rejected* list: titles are never forced unique; a shared title writes the full path, never a shortest unique tail; nothing shortens a link for its own sake, and a path link never shortens back when a collision goes away; Ambiguous stays its own state; ambiguity is resolved through the picker alone; a path link draws its title only; `#` is the only heading opener inside a link and a `§` there is ordinary text (A-9); no new search box, no per-letter highlighting, no ambiguous-link menu, no reserved extension list, no whole-target file reading; the one click rule's exception is a caret already inside the unresolved link being edited; Text values keep their two-click path where prose surrounds the link; outside and closed-app moves repair through the heading-rename lane; a trashed page's body is never touched in the Trash; File and asset references aren't connections. The owner's rulings during planning are recorded as they land (*§Deviations* records any that change an outcome).
 - **Neutral Gate:** the work ends with a `fable-high` neutral reviewer given only the BASELINE head, HEAD, and this intention, with no plan, log, or document: *"Pommora's page links named pages by title alone, so two pages sharing a title couldn't be told apart, and its link cascades, searches, and clicks on unresolved links each worked their own way. This work lets a link name a page by its path from the Nexus root, written and read as Obsidian does, keeps every link pointing at its page through renames, moves, folder changes, collisions, and restores made inside or outside the app, makes every search match one way, and seats a click on an unresolved link in its title, with each rule stated once, built from what the architecture already had, and nothing left over."* Every phase is written so that review passes.
 - **Other Workstreams:** the Heading Opener plan closed at `c65469e3d`, and HEAD at this plan's writing is `d059eb9d4` (a docs-only issues renumbering): `#` is the only opener again; `UNSPELLABLE` is shared by adoption and the asset writer (refusing as an invalid name, `§` allowed in file names), `literalOrBracketAt` is shared by the `§` transforms and the prose picker arm, `inUrlRun` lives in `markdownCode.ts`, the link settle drops an emptied heading's `#`, and `INDEX_GENERATION` is 17, so this plan's bump is 18. The Desktop window's parallel planning (Scout Findings round 4) stopped at the owner's ruling; its approach and advisor list are folded here, and nothing of its is committed. Sync's `landRename` performs a bare `machine().rename` with no echo, so a receiving device reads a synced rename as an outside move once pairing lands and re-spells its linkers to the bytes the sender wrote; where the sender's own rewrite of a linker lands after that, what Sync's conflict capture does is unverified (*§Open Items*), and a Sync-side echo is a prospect, not this plan's work.
@@ -155,14 +155,15 @@ The work lands in nine phases in dependency order, each the largest run one agen
   - [x] Task 6-4 · The delete strips by worlds, and `titleHeldOutside` goes
   - [x] Review Checkpoint
 - [x] `[Compaction checkpoint: c/pre-compaction]`
-- [ ] **Phase 7** — The Outside-Move Lane
-  - [ ] Task 7-1 · The index names what vanished and what landed
-  - [ ] Task 7-2 · The settle pairs and pays
-  - [ ] Review Checkpoint
+- [x] **Phase 7** — The Outside-Move Lane
+  - [x] Task 7-1 · The index names what vanished and what landed
+  - [x] Task 7-2 · The settle pairs and pays
+  - [x] Review Checkpoint
 - [ ] **Phase 8** — The Trash
   - [ ] Task 8-1 · The delete records what each link named, and one Trash index resolves by delete-time path
   - [ ] Task 8-2 · The restore repairs, re-spells, and refills by the one rule
   - [ ] Review Checkpoint
+- [ ] `[Compaction checkpoint: c/pre-compaction]`
 - [ ] **Phase 9** — Reconciliation
   - [ ] Task 9-1 · The feature documents, the project overview, the issues index, and the comments
 - [ ] `[Stop: the final verification's report, per §Final Verification]`
@@ -2376,9 +2377,9 @@ The work lands in nine phases in dependency order, each the largest run one agen
 - [ ] Write and watch fail: `storesContract.ts`: `readIndexedStat` carries the `ID` the row's values hold under the exact `ID` key and omits it where none is written or it isn't a string; `readIndexedStats('Notes')` returns the rows under `Notes/` alone, excluding `Notes` itself and `Notes2/…`. `indexSeed.test.ts`: `deindexPath` of a page returns that page (id, title, path) and of a folder returns every page under it, and removes the rows; `indexWrittenPage` of a path the index didn't hold reports its id landed, of one it held reports nothing landed, and of a new path without an ID reports nothing landed; `seedContentIndex` reports a pruned page as vanished and a page absent from the pre-seed snapshot as landed, and a cold seed reports neither (`:216`'s `NO_REREAD` gains the two empty lists). `adopt.test`: `stampMissing` answers the ids it wrote.
 - [ ] `Platform/stores.ts`: `IndexedStat.id?: string`; `readIndexedStats(under?: string)`. `contentIndex.ts:99`: the wrapper takes and passes `under`.
 - [ ] `Desktop/Store/stores.ts`: both reads LEFT JOIN `page_values` on the path and `key = ID_KEY` (the exact key the app writes and `stampedId` reads, so a file holding both `ID` and `id` yields one row), unwrapping the stored JSON with `json_extract(value, '$')` and keeping a string alone; `under` adds the prefix range the sibling queries use. `memoryStores.ts`: the same through `index.values`.
-- [ ] `indexSeed.ts`: `IndexSeen { renames; vanished: ConnPage[]; landed: string[] }` and `NOTHING_SEEN`; `deindexPath` returns the pages it removed (one stat read per unlink, one range read per `unlinkDir`, before the removal); `indexWrittenPage` returns `IndexSeen`, its page landed when no row held the path before the upsert and `entry.values[ID_KEY]` is a string; `SeedReread extends IndexSeen`, pruned rows vanished and rows absent from `indexed` landed, both read from what the seed already holds; `moveIndexPaths` ignores `deindexPath`'s answer (an own move).
-- [ ] `adopt.ts`: `stampMissing` answers the ids it wrote into pages (`string[]`); `Nexus/handlers.ts:89-99` reads `.length`. `settle.ts`'s `stampListed` owes them as landed, since a page that arrived without an ID arrives, for the index, when its ID lands.
-- [ ] `fileEvents.ts`: `Owed.vanished: Map<string, ConnPage>` (by id, the first path kept, so a page that left twice between settles pairs from where links last named it), `Owed.landed: Set<string>`, and `Owed.paired: Set<string>` (Task 7-2's); `oweSeen(root, seen: IndexSeen)` replaces `oweRenames`; `indexEvent` owes every watched event's `IndexSeen`. `Nexus/handlers.ts:103` and `settle.ts:176` call `oweSeen(root, reread)`; `settle.test.ts:643`'s mock gains the two lists.
+- [ ] `indexSeed.ts`: `IndexSeen { renames; vanished: ConnPage[]; landed: string[] }` and `NOTHING_SEEN`; one local `unindexed(rel, stat?)` removes a path's rows and answers the page they were (read before the removal), serving `deindexPath`'s file arm, `indexWrittenPage`'s file-gone arm, and the seed's prune; `deindexPath` of a folder answers every page under it from one range read; `indexWrittenPage` returns `IndexSeen` by comparing the row's id before the upsert with the entry's: a path no row held lands the entry's id, an unchanged id reports nothing, an id the entry dropped or changed reports that page vanished at its own path (so the settle's stamp writing it back pairs in place and re-spells nothing) and a changed one landed; `SeedReread extends IndexSeen`, pruned rows vanished and rows absent from `indexed` landed, both read from what the seed already holds; `moveIndexPaths` ignores both answers (an own move). Cost: one primary-key read of `indexed_files` joined to the page's `ID` row per written page, the app's own saves included.
+- [ ] `adopt.ts`: `stampFolder` answers the id it minted or found written (the open loop re-reads the tree on either, as it did when the answer was `written.ok`); `stampMissing` answers every id it stamped or found written, a folder's as well as a page's (`string[]`); `Nexus/handlers.ts:89-99` reads `.length`. `settle.ts`'s `stampListed` owes them all as landed, since a page that arrived without an ID arrives, for the index, when its ID lands; `payOutsideMoves` keeps only those `livePathOf` holds a page for, so a folder's id costs one set entry until the next payment.
+- [ ] `fileEvents.ts`: `Owed.vanished: Map<string, ConnPage>` (by id, the first path kept, so a page that left twice between settles pairs from where links last named it; `fileEvents.test.ts` pins it), `Owed.landed: Set<string>`, and `Owed.paired: Set<string>` (Task 7-2's); `oweSeen(root, seen: IndexSeen)` replaces `oweRenames`, owing nothing without a content index (the lane has no memory to pair against, so the stamp's answer owes nothing there either) and nothing from an empty report (`owedFor(root)` replaces the record for a different root); `indexEvent` owes every watched event's `IndexSeen`. `Nexus/handlers.ts:103` and `settle.ts:176` call `oweSeen(root, reread)`; `settle.test.ts:643`'s mock gains the two lists.
 
 **AFTER**
 
@@ -2438,7 +2439,7 @@ The work lands in nine phases in dependency order, each the largest run one agen
 
 ```Core/Index/indexSeed.ts diff
 @@ HeadingRenameSeen @@
-+/** What one index step saw: the heading renames the rows show, the pages whose rows it removed, and the ids of pages indexed for the first time. Watched events owe it, and the settle owes the ids its stamp writes; the app's own writes don't, their operation having spoken. */
++/** What one index step saw: the heading renames the rows show, the pages whose rows it removed, and the ids the index first saw at a path, or saw change there. Watched events owe it, and the settle owes the ids its stamp answers; the app's own writes don't, their operation having spoken. */
 +export interface IndexSeen {
 +  renames: HeadingRenameSeen[]
 +  vanished: ConnPage[]
@@ -2452,6 +2453,10 @@ The work lands in nine phases in dependency order, each the largest run one agen
 +  const id = entry.values[ID_KEY]
 +  return typeof id === 'string' ? [id] : []
 +}
++const unindexed = (rel: string, stat = readIndexedStat(rel)): ConnPage[] => {
++  removePathIndex(rel)
++  return pageOf(rel, stat)
++}
 @@ indexWrittenPage @@
 -): Promise<HeadingRenameSeen[]> {
 -  if (!isMarkdownFile(abs)) return []
@@ -2461,36 +2466,32 @@ The work lands in nine phases in dependency order, each the largest run one agen
 -  if (!rel) return []
 +  if (!rel) return NOTHING_SEEN
    …
-   if (!st) {
-+    const vanished = pageOf(rel, readIndexedStat(rel))
-     removePathIndex(rel)
+-  if (!st) {
+-    removePathIndex(rel)
 -    return []
-+    return { ...NOTHING_SEEN, vanished }
-   }
+-  }
++  if (!st) return { ...NOTHING_SEEN, vanished: unindexed(rel) }
    const content = text ?? (await readTextOrNull(abs))
 -  if (content === null) return []
 +  if (content === null) return NOTHING_SEEN
-+  const fresh = readIndexedStat(rel) === null
++  const prior = readIndexedStat(rel)
    const stat = { mtimeMs: st.mtimeMs, size: st.size }
--  return reindex([{ path: rel, entry: extractPageIndex(rel, content), stat }])
-+  const entry = extractPageIndex(rel, content)
+-  return reindex([{ path: rel, entry: extractPageIndex(content), stat }])
++  const entry = extractPageIndex(content)
 +  const renames = reindex([{ path: rel, entry, stat }])
-+  return { renames, vanished: [], landed: fresh ? idOf(entry) : [] }
++  const [now] = idOf(entry)
++  if (prior?.id === now) return { ...NOTHING_SEEN, renames }
++  return { renames, vanished: pageOf(rel, prior), landed: now === undefined ? [] : [now] }
  }
 @@ deindexPath @@
 -export async function deindexPath(root: string, abs: string): Promise<void> {
-+/** Removes a path's rows, or a folder's, answering the pages they were, read before the removal. */
 +export async function deindexPath(root: string, abs: string): Promise<IndexSeen> {
    const rel = await relCorpusPath(root, abs)
 -  if (!rel) return
 -  if (isMarkdownFile(rel)) removePathIndex(rel)
 -  else removePathPrefixIndex(rel)
 +  if (!rel) return NOTHING_SEEN
-+  if (isMarkdownFile(rel)) {
-+    const vanished = pageOf(rel, readIndexedStat(rel))
-+    removePathIndex(rel)
-+    return { ...NOTHING_SEEN, vanished }
-+  }
++  if (isMarkdownFile(rel)) return { ...NOTHING_SEEN, vanished: unindexed(rel) }
 +  const vanished = [...(readIndexedStats(rel) ?? [])].flatMap(([path, stat]) => pageOf(path, stat))
 +  removePathPrefixIndex(rel)
 +  return { ...NOTHING_SEEN, vanished }
@@ -2518,26 +2519,51 @@ The work lands in nine phases in dependency order, each the largest run one agen
    …
 -    for (const rel of indexed.keys()) if (!seen.has(rel)) removePathIndex(rel)
 +    const vanished: ConnPage[] = []
-+    for (const [rel, stat] of indexed)
-+      if (!seen.has(rel)) {
-+        vanished.push(...pageOf(rel, stat))
-+        removePathIndex(rel)
-+      }
++    for (const [rel, stat] of indexed) if (!seen.has(rel)) vanished.push(...unindexed(rel, stat))
      markIndexReady()
 -    return indexed.size === 0 ? NO_REREAD : { db: db0, rels: reread, renames }
 +    return indexed.size === 0 ? NO_REREAD : { db: db0, rels: reread, renames, vanished, landed }
 ```
 
 ```Core/Nexus/adopt.ts diff
+@@ stampFolder @@
+-async function stampFolder(absDir: string, kind: FolderNodeKind): Promise<boolean> {
++async function stampFolder(absDir: string, kind: FolderNodeKind): Promise<string | null> {
++  let id: string | null = null
+   const written = await rmwJsonStrict(
+     file,
+     (cur) => {
+       const renamed = renamedSidecar(cur)
+-      if (asString(cur.id)) return renamed
+-      return { ...(renamed ?? cur), id: newId() }
++      id = asString(cur.id) ?? null
++      if (id) return renamed
++      id = newId()
++      return { ...(renamed ?? cur), id }
+     },
+     () => ({}),
+   )
+-  return written.ok
++  return written.ok ? id : null
+@@ stampMissing @@
 -export async function stampMissing(root: string, listed: readonly Stamp[] = []): Promise<boolean> {
 -  let landed = false
-+/** Answers the ids it wrote into pages: for the index, a page that arrived without one arrives when its ID lands. */
++/** Answers every id it stamped or found written, a folder's as well as a page's: for the index, a page that arrived without one arrives when its ID lands. */
 +export async function stampMissing(root: string, listed: readonly Stamp[] = []): Promise<string[]> {
 +  const landed: string[] = []
-   …
--      landed = true
-+      landed.push(id)
-   …
+   for (const { path, kind, reason, held } of listed) {
+     …
++    let id: string | null = null
+     if (kind === 'page')
+-      landed =
+-        (await stampPage(abs, 'page', reason === 'malformed', kept).catch(() => null)) !== null ||
+-        landed
+-    else if (reason === 'missing')
+-      landed = (await stampFolder(abs, kind).catch(() => false)) || landed
++      id = await stampPage(abs, 'page', reason === 'malformed', kept).catch(() => null)
++    else if (reason === 'missing') id = await stampFolder(abs, kind).catch(() => null)
++    if (id !== null) landed.push(id)
+   }
    return landed
 ```
 
@@ -2545,7 +2571,7 @@ The work lands in nine phases in dependency order, each the largest run one agen
 @@ Owed @@
    tiles: Map<string, { host: TileHostRef; ids: Set<string> }>
    renames: HeadingRenameSeen[]
-+  // Pages whose rows left a path and whose id the tree is yet to hold again, by id at the first path they left; the ids of pages indexed or stamped for the first time since the last settle; and the ids the settle paired whose own row is yet to land, so that row reads as the move's and not as an arrival.
++  // Pages whose rows left a path and whose id the tree is yet to hold again, by id at the first path they left; the ids the index or the stamp first saw since the last settle, a folder's among them, the tree saying which are pages; and the ids the settle paired whose own row is yet to land, so that row reads as the move's and not as an arrival.
 +  vanished: Map<string, ConnPage>
 +  landed: Set<string>
 +  paired: Set<string>
@@ -2579,8 +2605,10 @@ The work lands in nine phases in dependency order, each the largest run one agen
 -// A seed that bailed reads none, so a root a switch left behind never takes the record.
 -export function oweRenames(root: string, renames: readonly HeadingRenameSeen[]): void {
 -  if (renames.length) owedFor(root).renames.push(...renames)
-+// A seed that bailed reads none, so a root a switch left behind never takes the record.
++// Without an index there is no memory to pair against, so nothing is owed; a seed that bailed reads none, so a root a switch left behind never takes the record.
 +export function oweSeen(root: string, seen: IndexSeen): void {
++  if (!contentIndexStore()) return
++  if (!seen.renames.length && !seen.vanished.length && !seen.landed.length) return
 +  const owed = owedFor(root)
 +  owed.renames.push(...seen.renames)
 +  for (const p of seen.vanished) if (!owed.vanished.has(p.id)) owed.vanished.set(p.id, p)
@@ -2599,6 +2627,7 @@ The work lands in nine phases in dependency order, each the largest run one agen
 
 - [ ] The listed tests pass; `indexSeed.test.ts:173-211` read `.renames`; `keyHolders.test.ts:91,111` and `replaySchemaCascade.test.ts:479,488` discard the answer as before.
 - [ ] `git grep -n "oweRenames" -- Core Desktop` finds nothing.
+- [ ] `fileEvents.test.ts`: with no content index, a watched edit of a page beside a namesake re-spells nothing, nor does its ID stamped back; with memory stores, a page beside a namesake whose ID line is removed outside and stamped back by the settle re-spells nothing (it vanished and landed in place). `indexSeed.test.ts`: a page re-indexed under another ID answers the old page vanished and the new id landed.
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
@@ -2610,20 +2639,41 @@ The work lands in nine phases in dependency order, each the largest run one agen
 
 **CHANGE**
 
-- [ ] Write and watch fail: `fileEvents.test.ts`, the parity cases: a page moved outside the app from `Notes/Daily/D.md` to `Notes/Weekly/D.md` re-spells `[[Daily/D]]` in a linker to `[[Weekly/D]]` and leaves `[[D]]` as written, with the unlink before the add and with the add before the unlink; the same move with its unlink and add settled apart (two `settled` calls) re-spells at the second settle and not the first; a Set renamed outside (`:426`) re-spells the path links through it, leaves a page linking its pages by bare title byte-identical, still costs no walk, and re-spells nothing more when its children's `add` events settle a batch later beside a namesake elsewhere; a folder of pages copied in with their IDs, whose rows settle a batch after its folder, re-spells the collisions its pages cause; a page created outside beside a sole holder re-spells the holder's bare links to its path, with an ID in the file and without one (the settle's stamp supplies it); a page created while the app was closed is an arrival at the open (`settle.test.ts`, through the seed's `landed`); a page deleted outside leaves its links as written, runs no cascade, and a later settle with nothing new still runs none; a copy landing under an id the tree already holds re-spells nothing. `indexSeed.test.ts`: the seed's vanished and landed pages reach the record (`oweSeen` with a reread holding both).
-- [ ] `settle.ts`: `cascadeSeen` moves here from `fileEvents.ts` (its one caller is here) as the heading arm beside `payOutsideMoves`, both ending in one `paid(root, c)`; `payOutsideMoves(root)` pairs and pays, an arrival being any landed id the tree holds that no pairing consumed; `settle` calls it after `walkWhileOwed` when not `batching`; the drain keeps `vanished`, `landed`, and `paired` with `renames`; `missedEvents` owes the whole reread. `fileEvents.ts` drops `cascadeSeen` and the imports only it used.
-- [ ] `fileEvents.ts`'s module comment (`:1`) names the pairing beside the renames.
+- [ ] Write and watch fail: `fileEvents.test.ts`, the parity cases: a page moved outside the app from `Notes/Daily/D.md` to `Notes/Weekly/D.md` re-spells `[[Daily/D]]` in a linker to `[[Weekly/D|D]]` (the writer's title alias) and leaves `[[D]]` as written, with the unlink before the add and with the add before the unlink; the same move with its unlink and add settled apart (two `settled` calls) re-spells at the second settle and not the first; a Set renamed outside (`:426`) re-spells the path links through it, leaves a page linking its pages by bare title byte-identical, still costs no walk, and re-spells nothing more when its children's `add` events settle a batch later beside a namesake elsewhere; a folder of pages copied in with their IDs, whose rows settle a batch after its folder, re-spells the collisions its pages cause; a page created outside beside a sole holder re-spells the holder's bare links to its path, with an ID in the file and without one (the settle's stamp supplies it); a page created while the app was closed is an arrival at the open (`settle.test.ts`, through the seed's `landed`); a page deleted outside leaves its links as written, runs no cascade, and a later settle with nothing new still runs none; a copy landing under an id the tree already holds re-spells nothing. `indexSeed.test.ts`: the seed's vanished and landed pages reach the record (`oweSeen` with a reread holding both).
+- [ ] `settle.ts`: the heading arm inlines into `settle`'s renames loop (its one caller, one statement, the comment moving with it) and `payOutsideMoves(root)` pairs and pays, both ending in one `paid(root, c, what)`; an arrival is any landed id the tree holds that no pairing consumed; `settle` calls it after `walkWhileOwed` when not `batching`, then walks again for what its own writes owed (a no-op when nothing is), and checks `away()` after both; the drain keeps `vanished`, `landed`, and `paired` with `renames`; `missedEvents` owes the whole reread. `fileEvents.ts` drops `cascadeSeen` and the imports only it used.
+- [ ] `settle.ts`'s module comment (`:1`), which names what a settle pays, names the outside moves and arrivals beside the heading renames; `fileEvents.ts:1` never named either.
 
 **AFTER**
 
 ```Core/Nexus/settle.ts diff
 @@ imports @@
-+import { livePathOf } from './heldPages'
++import { liveIdIndex, livePathOf } from './heldPages'
 +import { pageIndexOf, pagesOf } from './record'
-+import { buildPageIndex, type ConnPage } from '../Connections/pageIndex'
++import { buildPageIndex, type ConnPage, type PageIndex } from '../Connections/pageIndex'
 +import { oweCascade, oweSeen, … } from './fileEvents'
-+import { type HeadingRenameSeen, NOTHING_SEEN } from '../Index/indexSeed'
++import { NOTHING_SEEN, seedContentIndex } from '../Index/indexSeed'
 +import { readIndexedStat } from '../Index/contentIndex'
+@@ settle, the renames loop @@
+-  // Ahead of the walk, which a cascade's own writes may owe, and one at a time, so what an open begun meanwhile finds unpaid stays owed.
++  // A heading rename an outside edit shows (Obsidian or sync, landed live or found by the index seed) takes the same cascade the editor's settle takes; the editor's own save owes none, its settle having spoken. Ahead of the walk, which a cascade's own writes may owe, and one at a time, so what an open begun meanwhile finds unpaid stays owed.
+   while (!away()) {
+     const seen = owedFor(root).renames.shift()
+     if (!seen) break
+-    await cascadeSeen(root, seen)
++    paid(
++      root,
++      await renameCascade(root, { path: seen.path, heading: seen.old, to: seen.next }),
++      'heading rename',
++    )
+   }
+   await walkWhileOwed(root)
++  // Not mid-batch: a reply's settle while the watcher's batch is still applying would read a half-landed folder.
++  if (!batching) {
++    await payOutsideMoves(root)
++    await walkWhileOwed(root)
++  }
+   if (away()) return null
+   const owed = owedFor(root)
 @@ after relink @@
 +// What an outside payment leaves: a warning logged, since no one is there to read a notice, and the files it wrote owed to the push.
 +function paid(root: string, c: CascadeReport | undefined, what: string): void {
@@ -2632,17 +2682,12 @@ The work lands in nine phases in dependency order, each the largest run one agen
 +  oweCascade(root, c.pages, c.hosts)
 +}
 +
-+// A heading rename an outside edit shows (Obsidian or sync, landed live or found by the index seed) takes the same cascade the editor's settle takes; the editor's own save owes none, its settle having spoken.
-+async function cascadeSeen(root: string, seen: HeadingRenameSeen): Promise<void> {
-+  paid(root, await renameCascade(root, { path: seen.path, heading: seen.old, to: seen.next }), 'heading rename')
-+}
-+
-+// An outside move: a page whose rows left one path and whose id the tree now holds at another, paired after the walk whichever order its two events came in and however many settles apart; a vanish nothing holds yet waits for its id (a copy across volumes lands after it leaves). Every other landed id the tree holds arrived outright, so only its collisions re-spell; a paired move's own row, landing a batch after its folder, is remembered as the move's and is no arrival. The world before is the tree's pages with each paired page back where it left and each arrival absent.
++// An outside move: a page whose rows left one path and whose id the tree now holds at another, paired whichever order its two events came in and however many settles apart; a vanish nothing holds yet waits for its id. Every other landed id the tree holds arrived outright, so only its collisions re-spell; a paired move's own row, landing a batch after its folder, is remembered as the move's and is no arrival. The world before is the tree's pages with each paired page back where it left and each arrival absent.
 +async function payOutsideMoves(root: string): Promise<void> {
 +  const owed = owedFor(root)
 +  const tree = heldTreeOf(root)
 +  if (!tree || (!owed.vanished.size && !owed.landed.size)) return
-+  const moved = new Map<string, ConnPage>()
++  const left = new Map<string, ConnPage>()
 +  let label = ''
 +  for (const [id, from] of owed.vanished) {
 +    const to = livePathOf(root, id)
@@ -2650,7 +2695,7 @@ The work lands in nine phases in dependency order, each the largest run one agen
 +    owed.vanished.delete(id)
 +    if (!owed.landed.delete(id) && readIndexedStat(to)?.id !== id) owed.paired.add(id)
 +    if (to === from.path) continue
-+    moved.set(id, from)
++    left.set(id, from)
 +    label ||= titleFromPath(to)
 +  }
 +  const arriving = [...owed.landed].filter((id) => {
@@ -2661,19 +2706,19 @@ The work lands in nine phases in dependency order, each the largest run one agen
 +    return true
 +  })
 +  owed.landed.clear()
-+  if (!moved.size && !arriving.length) return
++  if (!left.size && !arriving.length) return
 +  const absent = new Set(arriving)
 +  const before = buildPageIndex(
-+    pagesOf(tree).flatMap((p) => (absent.has(p.id) ? [] : [moved.get(p.id) ?? p])),
++    pagesOf(tree).flatMap((p) => (absent.has(p.id) ? [] : [left.get(p.id) ?? p])),
 +  )
-+  paid(root, await relink(root, before, pageIndexOf(tree), label, [...moved.keys()], [...moved.keys(), ...arriving]), 'outside move')
++  const moved = [...left.keys()]
++  paid(
++    root,
++    await relink(root, before, pageIndexOf(tree), label, moved, [...moved, ...arriving]),
++    'outside move',
++  )
 +}
-@@ settle @@
-   await walkWhileOwed(root)
-   if (away()) return null
-+  // Not mid-batch: a reply's settle while the watcher's batch is still applying would read a half-landed folder.
-+  if (!batching) await payOutsideMoves(root)
-   const owed = owedFor(root)
+@@ settle, the drain @@
    …
 -  Object.assign(owed, nothingOwed(root), { stamp, walk, whole, renames: drained.renames })
 +  const { renames, vanished, landed, paired } = drained
@@ -2694,16 +2739,21 @@ The work lands in nine phases in dependency order, each the largest run one agen
 -}
 ```
 
+```Desktop/Store/stores.ts diff
+~ `STAT_COLUMNS` is `SELECT_STATS`, holding the whole `SELECT … FROM indexed_files f LEFT JOIN page_values v ON v.path = f.path AND v.key = ? AND json_type(v.value) = 'text'`, so `id` is `string | null` and a non-string `ID` never leaks; `Core/Testing/memoryStores.ts` reads the same through `index.values` under `ID_KEY`, and `Core/Testing/storesContract.ts` pins both (`ID` beside `id`, `id` alone, `ID: 7`, `ID: ['p4']`, none; `under` excludes the folder itself and `Notes2/`).
+```
+
 **VERIFY**
 
 - [ ] The listed tests pass; `fileEvents.test.ts:417,426,401,409` still assert no walk; `fileEvents.test.ts:885-958`'s outside heading rename cases pass against `settle.ts`'s arm; `settle.test.ts` passes with the widened mock.
-- [ ] Live, in `~/Test` with the app open: in Finder, rename a Set holding a page another page links by path, and the link follows within a second with a console line only on failure; move a page between Sets, and `[[Set/Page]]` follows while `[[Page]]` stays; in Obsidian, create a page sharing a title, and the first page's bare links become path links once the settle stamps it; quit the app, rename a page in Finder, reopen, and the links follow on open.
+- [ ] Live, in `~/Test` with the app open (the Path Links Drive's group 7): in Finder, rename a Set holding a page another page links by path, and the link follows within a second with a console line only on failure; move a page between Sets, and `[[Set/Page]]` follows while `[[Page]]` stays; in Obsidian, create a page sharing a title, and the first page's bare links become path links once the settle stamps it; quit the app, rename a page in Finder, reopen, and the links follow with the watcher's first batch (the open's own settle returns before paying while `adopting()` holds, and the owed record survives it).
+- [ ] `fileEvents.test.ts`: a page that left twice between settles pairs from the first path it left (`[[Daily/D]]` reads `[[Monthly/D|D]]` after Daily → Weekly → Monthly across two batches).
 - [ ] Run the gates, then `view-delta` for Phase 7.
 - [ ] Check for unnecessary code or mistakes.
 
 #### Review Checkpoint
 
-- [ ] Two `closeout-review` agents, reading outward: the index owes only watched events, the seed, and the settle's own stamp, never an operation's writes (`moveIndexPaths` discards; `origin` gates); `payOutsideMoves` runs after the walk, outside a batch, and inside the settle's turn, so it can't interleave an in-app `addressed` write; an unpaired vanish and a paired id whose row is yet to land survive the drain, and a paired or arrived page doesn't; a paired move's late row re-spells nothing; a landed page under an id two files claim re-spells nothing; the before-world puts every paired page back at the first path it left; `IndexSeen` is the only shape an index step returns; both outside payments end in `paid`.
+- [ ] Two `closeout-review` agents, reading outward: the index owes only watched events, the seed, and the settle's own stamp, never an operation's writes (`moveIndexPaths` discards; `origin` gates); `payOutsideMoves` runs after the walk, outside a batch, and inside the settle's turn, so it can't interleave an in-app `addressed` write; an unpaired vanish and a paired id whose row is yet to land survive the drain, and a paired or arrived page doesn't; a paired move's late row re-spells nothing; a landed page under an id two files claim re-spells nothing; the before-world puts every paired page back at the first path it left; `IndexSeen` is the only shape an index step returns; both outside payments end in `paid`; without a content index nothing is owed, so an outside edit beside a namesake re-spells nothing; a stamp writing a page's held id back vanished and landed in place and re-spells nothing; a walk the payment's own writes owe is paid in the same settle.
 
 ---
 
@@ -3122,9 +3172,11 @@ Each ruling below was the planner's (10-16-2026), taken against the BRIEF's prin
 - **Restore Links On Deletion** governs the refill alone (Task 8-2); the returning page's own repair and the live re-spell run regardless, since they correct links rather than restore values.
 - **An ID-less returning page** (one never stamped before its delete) is scrubbed and repaired but runs no collision or follow arm until the walk stamps it (Task 8-2's `back` holds stamped pages); the settle's stamp then owes it as an arrival (Task 7-1).
 - **A folder rename over pages sharing one title** resolves each page's keys over every holder of the title, so `respellings` is quadratic in the holders (measured at Phase 6: 2,000 distinct titles 18 ms, 200 `README` among 2,000 pages 91 ms, 3,000 same-titled pages 17.8 s before the index memoized each page's path key, well under a second after). The memo is the one cost fix; a tail-keyed map is a follow-up if a Nexus shows it.
-- **The outside lane's before-index** is built once per settle that pairs a move or reads an arrival, over every page the tree holds (Task 7-2); a sync landing many renames one batch at a time builds it once per batch. Measured in the Phase 7 live check; an incremental index is a follow-up if it shows.
+- **The outside lane's before-index** is built once per settle that pairs a move or reads an arrival, over every page the tree holds (Task 7-2); a sync landing many renames one batch at a time builds it once per batch. Measured at Phase 7 (`buildPageIndex` with the lazy `byId` plus the list rebuild, 2% of titles shared): about 2 ms at 10,000 pages and 10 ms at 50,000; an incremental index is a follow-up if a Nexus shows it.
 - **Unpaired vanishes** stay in the record until the Nexus closes (Task 7-1), one map entry per outside delete, each settle an O(1) lookup per entry; an id that returns later at another path is read as a move, which is the right reading.
-- **A paired id before the index is ready** (`readIndexedStat` answers null, so the pairing remembers the id as pending) lingers like an unpaired vanish, one set entry, until a landed row names it or the Nexus closes.
+- **A paired id before the index is ready** (`readIndexedStat` answers null, so the pairing remembers the id as pending) lingers like an unpaired vanish, one set entry, until a landed row names it or the Nexus closes; so does one whose late row lands over a path that already held a row (a Finder replace), and the next arrival under that id would be consumed by it once, re-spelling only its collisions late.
+- **Un-excluding a folder** lands every page under it as an arrival at the restarted watcher's catch-up seed, so each title it shares with a sole holder elsewhere path-spells that holder's bare links, with a console line only on failure: the collision rule applied to a settings toggle, which can re-spell many pages at once. The owner can rule otherwise.
+- **An open-time stamp of a page the index already held** (a page added outside and its stamp separated by a quit) is re-read by the seed but not landed, since its row predates the stamp; widening the seed's rule to an id that differs from the row's would read a minted id replacing a stripped one as an arrival, so the narrower rule stays.
 - **An index row lost** (a page the index somehow holds no row for, re-saved outside) is read as an arrival at its next watched write (Task 7-2), so a title it shares with one live page path-spells that page's bare links once; those links were ambiguous already, and the index losing a row is itself a defect to find.
 - **Sync:** a receiving device may re-spell a linker locally before the sender's own rewrite of that linker arrives; the plan leaves what Sync's conflict capture then does unverified and out of scope (*§Constraints · Out of Scope*), to be read when the Sync lane is next worked.
 - **The picker closes on a typed title that resolves.** `[[` auto-pairs `]]`, so a link being typed reads as finished; typing `[[Notes]]` beside a `Notes Archive` closes the pane when `Notes` resolves, and one more character reopens it. The heading and alias arms have always closed on an exact match the same way, so the title arm joins them (Task 3-2) rather than carrying a rule of its own; the owner can overturn (about five lines, closing only a query the caret arrived at).

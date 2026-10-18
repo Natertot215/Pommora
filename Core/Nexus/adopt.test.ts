@@ -4,7 +4,7 @@ import { rm, mkdir, writeFile, readFile, readdir, stat, utimes } from 'node:fs/p
 import { join } from '../Paths/posix'
 import { tempRoot, readJsonAt } from '../Testing/hostFs'
 import { lockContention } from '../Testing/machines'
-import { ensurePageId, stampAdopted } from './adopt'
+import { ensurePageId, stampAdopted, stampMissing } from './adopt'
 import { splitFrontmatter } from '../Files/pageFile'
 import { idTime } from './ids'
 import { nexusConfig, nexusDir, sidecarPath } from '../Paths/paths'
@@ -188,6 +188,23 @@ describe('stampAdopted', () => {
     await writeFile(page, '---\nbad: [unclosed\n---\nprose', 'utf8')
     await open()
     expect(await readFile(page, 'utf8')).toBe('---\nbad: [unclosed\n---\nprose')
+  })
+})
+
+describe('stampMissing', () => {
+  it('answers every id it wrote, a folder’s as well as a page’s', async () => {
+    const idOf = async (...segs: string[]) =>
+      splitFrontmatter(await readFile(join(root, ...segs), 'utf8'))[ID_KEY]
+    const landed = await stampMissing(root, [
+      { path: 'Notes/Note1.md', kind: 'page', reason: 'missing' },
+      { path: 'Notes', kind: 'collection', reason: 'missing' },
+      { path: 'Notes/Daily/Day1.md', kind: 'page', reason: 'missing' },
+    ])
+    expect(landed).toEqual([
+      await idOf('Notes', 'Note1.md'),
+      (await coll(join(root, 'Notes')))?.id,
+      await idOf('Notes', 'Daily', 'Day1.md'),
+    ])
   })
 })
 

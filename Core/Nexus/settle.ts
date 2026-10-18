@@ -1,25 +1,26 @@
-// The one place a change to the tree, pages, values, tiles, or assets reaches the window. The app's own writes land here as events while they happen; a write's gate and the watcher's batch then stamp what their events listed missing, and settle: the heading renames outside edits owed cascaded, the walk the events owed, whose own listing of what is missing its ID is stamped as `stampable` allows and settled in turn, the options the owed files hold registered, and one push of what moved.
+// The one place a change to the tree, pages, values, tiles, or assets reaches the window. The app's own writes land here as events while they happen; a write's gate and the watcher's batch then stamp what their events listed missing, and settle: the heading renames outside edits owed cascaded, the walk the events owed, whose own listing of what is missing its ID is stamped as `stampable` allows and settled in turn, the outside moves and arrivals the index saw re-spelled, the options the owed files hold registered, and one push of what moved.
 
-import { join, relDirname, relative } from '../Paths/posix'
+import { join, relDirname, relative, titleFromPath } from '../Paths/posix'
 import { escapes } from '../Paths/pathSafety'
 import type { HostContext } from '../Contract/handlers'
 import { errText } from '../Contract/result'
 import { inTurns } from '../Platform/inTurns'
 import { type FileEvent, setOwnTap } from '../Files/writeEcho'
 import { getHeldAssetMap, refreshAssetMap } from '../Assets/assetMap'
-import { seedContentIndex } from '../Index/indexSeed'
+import { NOTHING_SEEN, seedContentIndex } from '../Index/indexSeed'
+import { readIndexedStat } from '../Index/contentIndex'
 import { registerHeldOptions } from '../Properties/optionOps'
 import { dropTileLinks } from '../Tiles/tilesFile'
 import { stampMissing } from './adopt'
 import {
   applyEvents,
-  cascadeSeen,
   indexEvent,
   nothingOwed,
   oweAgain,
+  oweCascade,
   oweNamedKeys,
-  oweRenames,
   oweRescope,
+  oweSeen,
   oweWalk,
   owedFor,
   stampable,
@@ -29,11 +30,11 @@ import { diskMoved, dropLiveTree, heldTreeOf, refreshTree } from './liveTree'
 import { adopting, sessionRoot } from './session'
 import type { NexusTree, Unreadable, ValueChange } from './tree'
 import { deltaOf } from './treeDelta'
-import { liveIdIndex } from './heldPages'
-import { pageIndexOf } from './record'
+import { liveIdIndex, livePathOf } from './heldPages'
+import { pageIndexOf, pagesOf } from './record'
 import { type CascadeReport, renameCascade } from './cascade'
 import { respellings } from '../Connections/rewrite'
-import type { PageIndex } from '../Connections/pageIndex'
+import { buildPageIndex, type ConnPage, type PageIndex } from '../Connections/pageIndex'
 
 // ── The app's own events ──
 
@@ -128,19 +129,29 @@ async function walkWhileOwed(root: string): Promise<void> {
 async function settle(pusher: Pusher, root: string): Promise<{ rescope: boolean } | null> {
   // An open in progress has no window on this Nexus yet, so what is owed waits for the settle that follows it.
   const away = (): boolean => sessionRoot() !== root || adopting()
-  // Ahead of the walk, which a cascade's own writes may owe, and one at a time, so what an open begun meanwhile finds unpaid stays owed.
+  // A heading rename an outside edit shows (Obsidian or sync, landed live or found by the index seed) takes the same cascade the editor's settle takes; the editor's own save owes none, its settle having spoken. Ahead of the walk, which a cascade's own writes may owe, and one at a time, so what an open begun meanwhile finds unpaid stays owed.
   while (!away()) {
     const seen = owedFor(root).renames.shift()
     if (!seen) break
-    await cascadeSeen(root, seen)
+    paid(
+      root,
+      await renameCascade(root, { path: seen.path, heading: seen.old, to: seen.next }),
+      'heading rename',
+    )
   }
   await walkWhileOwed(root)
+  // Not mid-batch: a reply's settle while the watcher's batch is still applying would read a half-landed folder.
+  if (!batching) {
+    await payOutsideMoves(root)
+    await walkWhileOwed(root)
+  }
   if (away()) return null
   const owed = owedFor(root)
-  // An arm still awaiting its file writes to this record after the push, so it is emptied in place and never replaced; the walk, the stamps, and the renames still owed outlive it, and the paths newly in reach outlive it while a stamp is owed or a pass is stamping.
+  // An arm still awaiting its file writes to this record after the push, so it is emptied in place and never replaced; the walk, the stamps, and the outside changes still owed outlive it, and the paths newly in reach outlive it while a stamp is owed or a pass is stamping.
   const drained = { ...owed }
   const { pages, values, options, tiles, assets, corpus, rescope, stamp, walk, whole } = drained
-  Object.assign(owed, nothingOwed(root), { stamp, walk, whole, renames: drained.renames })
+  const { renames, vanished, landed, paired } = drained
+  Object.assign(owed, nothingOwed(root), { stamp, walk, whole, renames, vanished, landed, paired })
   const released = !stamp.length && !stamping
   if (released) owed.whole = []
   const changed = [...values].flatMap(([rel, bodyOnly]) => (bodyOnly ? [] : rel))
@@ -166,19 +177,23 @@ async function settle(pusher: Pusher, root: string): Promise<{ rescope: boolean 
   return corpus || rescope ? { rescope } : null
 }
 
-// The armed scope is spent state: chokidar's ignore filter would keep reading the stale capture. A rescope leaves the seed to the restarted watcher's catch-up, since a seed while the old watcher still holds an event its stop drops would take in that page and leave the catch-up nothing to find. Its renames go unowed, since the app's own save whose indexing failed would read as one.
+// The armed scope is spent state: chokidar's ignore filter would keep reading the stale capture. A rescope leaves the seed to the restarted watcher's catch-up, since a seed while the old watcher still holds an event its stop drops would take in that page and leave the catch-up nothing to find. What it saw goes unowed, since an own write whose indexing failed would read as a rename, a vanish, or an arrival.
 async function reseed(pusher: Pusher, root: string, rescope: boolean): Promise<void> {
   if (sessionRoot() !== root) return
   if (rescope) await pusher.watch(root)
   else await seedContentIndex(root)
 }
 
-// What changed while no watcher listened: the walk reads the tree, each page the seed finds moved applies as the event it never raised, already indexed, and the renames it read are owed.
+// What changed while no watcher listened: the walk reads the tree, each page the seed finds moved applies as the event it never raised, already indexed, and what it saw is owed.
 async function missedEvents(root: string): Promise<FileEvent[]> {
   oweWalk(root)
-  const { rels, renames } = await seedContentIndex(root)
-  oweRenames(root, renames)
-  return rels.map((rel) => ({ event: 'change', absPath: join(root, rel), origin: 'watched' }))
+  const reread = await seedContentIndex(root)
+  oweSeen(root, reread)
+  return reread.rels.map((rel) => ({
+    event: 'change',
+    absPath: join(root, rel),
+    origin: 'watched',
+  }))
 }
 
 // A stamp's own write lands as an event that may list more, so a turn stamps until nothing is listed. A gate leaves the list to a batch in its turn, which may still be reading the files it listed.
@@ -187,7 +202,8 @@ async function stampListed(root: string, gate: boolean): Promise<void> {
   const owed = owedFor(root)
   stamping++
   try {
-    while (owed.stamp.length && !(gate && batching)) await stampMissing(root, owed.stamp.splice(0))
+    while (owed.stamp.length && !(gate && batching))
+      oweSeen(root, { ...NOTHING_SEEN, landed: await stampMissing(root, owed.stamp.splice(0)) })
   } finally {
     stamping--
   }
@@ -242,6 +258,50 @@ export async function relink(
   if (!names.size) return undefined
   const report = await renameCascade(root, { names, label })
   return report.pages.length || report.hosts.length || report.warning ? report : undefined
+}
+
+// What an outside payment leaves: a warning logged, since no one is there to read a notice, and the files it wrote owed to the push.
+function paid(root: string, c: CascadeReport | undefined, what: string): void {
+  if (!c) return
+  if (c.warning) console.error(`${what}:`, c.warning)
+  oweCascade(root, c.pages, c.hosts)
+}
+
+// An outside move: a page whose rows left one path and whose id the tree now holds at another, paired whichever order its two events came in and however many settles apart; a vanish nothing holds yet waits for its id. Every other landed id the tree holds arrived outright, so only its collisions re-spell; a paired move's own row, landing a batch after its folder, is remembered as the move's and is no arrival. The world before is the tree's pages with each paired page back where it left and each arrival absent.
+async function payOutsideMoves(root: string): Promise<void> {
+  const owed = owedFor(root)
+  const tree = heldTreeOf(root)
+  if (!tree || (!owed.vanished.size && !owed.landed.size)) return
+  const left = new Map<string, ConnPage>()
+  let label = ''
+  for (const [id, from] of owed.vanished) {
+    const to = livePathOf(root, id)
+    if (to === null) continue
+    owed.vanished.delete(id)
+    if (!owed.landed.delete(id) && readIndexedStat(to)?.id !== id) owed.paired.add(id)
+    if (to === from.path) continue
+    left.set(id, from)
+    label ||= titleFromPath(to)
+  }
+  const arriving = [...owed.landed].filter((id) => {
+    if (owed.paired.delete(id)) return false
+    const to = livePathOf(root, id)
+    if (to === null) return false
+    label ||= titleFromPath(to)
+    return true
+  })
+  owed.landed.clear()
+  if (!left.size && !arriving.length) return
+  const absent = new Set(arriving)
+  const before = buildPageIndex(
+    pagesOf(tree).flatMap((p) => (absent.has(p.id) ? [] : [left.get(p.id) ?? p])),
+  )
+  const moved = [...left.keys()]
+  paid(
+    root,
+    await relink(root, before, pageIndexOf(tree), label, moved, [...moved, ...arriving]),
+    'outside move',
+  )
 }
 
 // One settle at a time, and one reseed at a time on a chain of its own: a reply waits for the settles ahead of its own, and for a reseed only when its own settle found the corpus moved; a moved scope waits for the watcher's restart, whose catch-up seeds after the reply.

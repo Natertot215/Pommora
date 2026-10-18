@@ -1,4 +1,5 @@
 import { foldKey } from '@pommora/core/Paths/caseFold'
+import { ID_KEY } from '@pommora/core/Nexus/identityMark'
 import type {
   BaseRecord,
   ContentIndexStore,
@@ -40,6 +41,14 @@ export const keyValueStore = (db: Db): KeyValueStore => ({
     }[]
     return Object.fromEntries(rows.map((r) => [r.key, r.value]))
   },
+})
+
+const SELECT_STATS = `SELECT f.path, f.mtime_ms, f.size, json_extract(v.value, '$') AS id FROM indexed_files f LEFT JOIN page_values v ON v.path = f.path AND v.key = ? AND json_type(v.value) = 'text'`
+type StatRow = { path: string; mtime_ms: number; size: number; id: string | null }
+const statOf = (r: StatRow): IndexedStat => ({
+  mtimeMs: r.mtime_ms,
+  size: r.size,
+  ...(r.id === null ? {} : { id: r.id }),
 })
 
 const clearPath = (db: Db, path: string): void => {
@@ -172,20 +181,20 @@ export const contentIndexStore = (db: Db): ContentIndexStore => ({
     )
   },
   readIndexedStat(path) {
-    const row = db.prepare('SELECT mtime_ms, size FROM indexed_files WHERE path = ?').get(path) as
-      | { mtime_ms: number; size: number }
+    const row = db.prepare(`${SELECT_STATS} WHERE f.path = ?`).get(ID_KEY, path) as
+      | StatRow
       | undefined
-    return row ? { mtimeMs: row.mtime_ms, size: row.size } : null
+    return row ? statOf(row) : null
   },
-  readIndexedStats() {
-    const rows = db.prepare('SELECT path, mtime_ms, size FROM indexed_files').all() as {
-      path: string
-      mtime_ms: number
-      size: number
-    }[]
-    return new Map<string, IndexedStat>(
-      rows.map((r) => [r.path, { mtimeMs: r.mtime_ms, size: r.size }]),
-    )
+  readIndexedStats(under) {
+    const rows = (
+      under === undefined
+        ? db.prepare(SELECT_STATS).all(ID_KEY)
+        : db
+            .prepare(`${SELECT_STATS} WHERE f.path >= ? || '/' AND f.path < ? || '0'`)
+            .all(ID_KEY, under, under)
+    ) as StatRow[]
+    return new Map(rows.map((r) => [r.path, statOf(r)]))
   },
 })
 

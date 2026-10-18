@@ -27,7 +27,8 @@ import { createTile, writeMarkdownTile } from '../Tiles/tilesFile'
 import { landedId } from '../Testing/tileLayouts'
 import { contextsDir, contextsRegistryFile, tileFilePath } from '../Paths/paths'
 import { machine } from '../Platform/machine'
-import { splitFrontmatter } from '../Files/pageFile'
+import { splitEnvelope, splitFrontmatter } from '../Files/pageFile'
+import * as cascade from './cascade'
 import { ID_KEY } from './identityMark'
 
 vi.mock('../Pages/fileHistory', () => ({ noteExternalEdit: vi.fn() }))
@@ -35,6 +36,8 @@ vi.mock('../Pages/fileHistory', () => ({ noteExternalEdit: vi.fn() }))
 const ULID_A = '01ARZ3NDEKPSV4RRFFQ69G5FAV'
 const ULID_B = '01BX5ZZKBKPCTAV9WEVGEMMVRZ'
 const ULID_C = '01CX5ZZKBKPCTAV9WEVGEMMVRC'
+const ULID_D = '01DX5ZZKBKPCTAV9WEVGEMMVRD'
+const ULID_E = '01EX5ZZKBKPCTAV9WEVGEMMVRE'
 const QUIET = { push: () => {}, watch: async () => {} }
 
 let root: string
@@ -556,6 +559,170 @@ describe('the parity cases', () => {
     await settleNow(QUIET, root)
     expect(walk).toHaveBeenCalledTimes(1)
     await agrees()
+  })
+
+  describe('an outside move or arrival re-spells as an in-app one does', () => {
+    const page = (id: string, body = 'body') => `---\nID: ${id}\n---\n\n${body}\n`
+    const set = async (name: string, id: string): Promise<void> => {
+      await mkdir(abs('Notes', name))
+      await writeFile(abs('Notes', name, '_pageset.json'), JSON.stringify({ id }))
+    }
+    const linker = (body: string): Promise<void> =>
+      writeFile(abs('Notes', 'L.md'), page(ULID_C, body))
+    const linked = async (): Promise<string> =>
+      splitEnvelope(await readFile(abs('Notes', 'L.md'), 'utf8')).body
+    const seeded = async (): Promise<void> => {
+      await refreshTree(root)
+      await seedContentIndex(root)
+      walk.mockClear()
+    }
+    const withDailyD = async (): Promise<void> => {
+      await set('Daily', 's1')
+      await set('Weekly', 's2')
+      await writeFile(abs('Notes', 'Daily', 'D.md'), page(ULID_B))
+      await linker('[[Daily/D]] [[D]]')
+      await seeded()
+    }
+    const movedD = async (): Promise<FileEvent[]> => {
+      await rename(abs('Notes', 'Daily', 'D.md'), abs('Notes', 'Weekly', 'D.md'))
+      return [ev('unlink', 'Notes', 'Daily', 'D.md'), ev('add', 'Notes', 'Weekly', 'D.md')]
+    }
+    beforeEach(() => {
+      installStores(memoryStores().stores)
+    })
+    afterEach(() => installStores(NO_STORES))
+
+    for (const order of ['unlink first', 'add first'] as const)
+      it(`a page moved between Sets re-spells a path link and leaves a bare one, ${order}`, async () => {
+        await withDailyD()
+        const events = await movedD()
+        await settled(order === 'unlink first' ? events : events.reverse())
+        expect(await linked()).toBe('[[Weekly/D|D]] [[D]]\n')
+        await agrees()
+        expect(walk).not.toHaveBeenCalled()
+      })
+
+    for (const order of ['unlink first', 'add first'] as const)
+      it(`a page move whose two events settle apart re-spells at the second settle, ${order}`, async () => {
+        await withDailyD()
+        const [unlinked, added] = await movedD()
+        const [first, second] = order === 'unlink first' ? [unlinked, added] : [added, unlinked]
+        await settled([first])
+        expect(await linked()).toBe('[[Daily/D]] [[D]]\n')
+        await settled([second])
+        expect(await linked()).toBe('[[Weekly/D|D]] [[D]]\n')
+        await agrees()
+      })
+
+    it('a Set renamed outside re-spells the path links through it with no walk, and its pages’ late rows beside a namesake re-spell nothing more', async () => {
+      await set('Daily', 's1')
+      await writeFile(abs('Notes', 'Daily', 'D.md'), page(ULID_B))
+      await writeFile(abs('Notes', 'Daily', 'E.md'), page(ULID_E))
+      await writeFile(abs('Notes', 'D.md'), page(ULID_D))
+      await linker('[[Daily/D]] [[E]] [[D]]')
+      await seeded()
+      const events = await renamed(abs('Notes', 'Daily'), abs('Notes', 'Weekly'))
+      const adds = events.filter((e) => e.event === 'add')
+      await settled(events.filter((e) => e.event !== 'add'))
+      expect(await linked()).toBe('[[Weekly/D|D]] [[E]] [[D]]\n')
+      expect(held().collections[0]?.sets.map((s) => s.title)).toEqual(['Weekly'])
+      await settled(adds)
+      expect(await linked()).toBe('[[Weekly/D|D]] [[E]] [[D]]\n')
+      await agrees()
+      expect(walk).not.toHaveBeenCalled()
+    })
+
+    it('a folder of pages copied in, whose rows settle a batch after the folder, re-spells the collisions its pages cause', async () => {
+      await linker('[[A]]')
+      await seeded()
+      await set('Copy', 's-copy')
+      await writeFile(abs('Notes', 'Copy', 'A.md'), page(ULID_B))
+      await settled([ev('addDir', 'Notes', 'Copy')])
+      await settled([
+        ev('add', 'Notes', 'Copy', '_pageset.json'),
+        ev('add', 'Notes', 'Copy', 'A.md'),
+      ])
+      expect(await linked()).toBe('[[Notes/A|A]]\n')
+      await agrees()
+    })
+
+    for (const withId of [true, false])
+      it(`a page created outside beside a sole holder re-spells the holder’s bare links to its path, ${withId ? 'carrying its ID' : 'stamped by the settle'}`, async () => {
+        await set('Sub', 's-sub')
+        await linker('[[A]]')
+        await seeded()
+        await writeFile(abs('Notes', 'Sub', 'A.md'), withId ? page(ULID_B) : 'sub\n')
+        await settled([ev('add', 'Notes', 'Sub', 'A.md')])
+        expect(await linked()).toBe('[[Notes/A|A]]\n')
+        await agrees()
+      })
+
+    it('a page that left twice between settles pairs from the first path it left', async () => {
+      await withDailyD()
+      await set('Monthly', 's3')
+      await refreshTree(root)
+      await applyEvents(root, await movedD())
+      await rename(abs('Notes', 'Weekly', 'D.md'), abs('Notes', 'Monthly', 'D.md'))
+      await settled([
+        ev('unlink', 'Notes', 'Weekly', 'D.md'),
+        ev('add', 'Notes', 'Monthly', 'D.md'),
+      ])
+      expect(await linked()).toBe('[[Monthly/D|D]] [[D]]\n')
+      await agrees()
+    })
+
+    it('with no content index, a watched edit of a page beside a namesake re-spells nothing, nor does its ID stamped back', async () => {
+      installStores(NO_STORES)
+      await set('Sub', 's-sub')
+      await writeFile(abs('Notes', 'Sub', 'A.md'), page(ULID_B))
+      await linker('[[A]]')
+      await refreshTree(root)
+      await writeFile(abs('Notes', 'Sub', 'A.md'), page(ULID_B, 'edited'))
+      await settled([ev('change', 'Notes', 'Sub', 'A.md')])
+      expect(await linked()).toBe('[[A]]\n')
+      await writeFile(abs('Notes', 'Sub', 'A.md'), 'sub\n')
+      await settled([ev('change', 'Notes', 'Sub', 'A.md')])
+      expect(splitFrontmatter(await readFile(abs('Notes', 'Sub', 'A.md'), 'utf8'))[ID_KEY]).toBe(
+        ULID_B,
+      )
+      expect(await linked()).toBe('[[A]]\n')
+    })
+
+    it('a page beside a namesake whose ID is removed outside and stamped back re-spells nothing', async () => {
+      await set('Sub', 's-sub')
+      await writeFile(abs('Notes', 'Sub', 'A.md'), page(ULID_B))
+      await linker('[[A]]')
+      await seeded()
+      await writeFile(abs('Notes', 'Sub', 'A.md'), 'sub\n')
+      await settled([ev('change', 'Notes', 'Sub', 'A.md')])
+      expect(splitFrontmatter(await readFile(abs('Notes', 'Sub', 'A.md'), 'utf8'))[ID_KEY]).toBe(
+        ULID_B,
+      )
+      expect(await linked()).toBe('[[A]]\n')
+      await agrees()
+    })
+
+    it('a page deleted outside leaves its links as written and runs no cascade, then or at a later settle', async () => {
+      await linker('[[A]]')
+      await seeded()
+      const cascades = vi.spyOn(cascade, 'renameCascade')
+      await unlink(abs('Notes', 'A.md'))
+      await settled([ev('unlink', 'Notes', 'A.md')])
+      await settled([])
+      expect(await linked()).toBe('[[A]]\n')
+      expect(cascades).not.toHaveBeenCalled()
+    })
+
+    it('a copy landing under an id the tree already holds re-spells nothing', async () => {
+      await set('Sub', 's-sub')
+      await linker('[[A]]')
+      await seeded()
+      const cascades = vi.spyOn(cascade, 'renameCascade')
+      await writeFile(abs('Notes', 'Sub', 'A.md'), page(ULID_A))
+      await settled([ev('add', 'Notes', 'Sub', 'A.md')])
+      expect(await linked()).toBe('[[A]]\n')
+      expect(cascades).not.toHaveBeenCalled()
+    })
   })
 
   it('an ID: 42 page saved twice is read once per save and costs no walk', async () => {

@@ -640,7 +640,7 @@ describe('the settle', () => {
     await settleNow(pusher, root)
     expect(seed).toHaveBeenCalledTimes(1)
     expect(firstDone).toBe(false)
-    seeding.open({ db: null, rels: [], renames: [] })
+    seeding.open({ db: null, rels: [], renames: [], vanished: [], landed: [] })
     await first
     expect(firstDone).toBe(true)
   })
@@ -1151,5 +1151,25 @@ describe('a heading renamed while no watcher listened', () => {
     await settleBatch(pusher, root, [], true)
     expect(await readFile(abs('Notes', 'B.md'), 'utf8')).toBe(before)
     expect(payload('pages:changed')).toEqual(expect.arrayContaining(['Notes/A.md', 'Notes/B.md']))
+  })
+})
+
+describe('a page created while no watcher listened', () => {
+  it('is an arrival at the catch-up, so a sole holder’s bare links take its path', async () => {
+    installStores(memoryStores().stores)
+    try {
+      await writeFile(abs('Notes', 'B.md'), `---\nID: ${ULID_B}\n---\n\n[[A]]\n`)
+      recordHanded(await refreshTree(root))
+      await indexSeed.seedContentIndex(root)
+      await mkdir(abs('Notes', 'Sub'))
+      await writeFile(abs('Notes', 'Sub', '_pageset.json'), JSON.stringify({ id: 's-sub' }))
+      await writeFile(abs('Notes', 'Sub', 'A.md'), `---\nID: ${ULID_C}\n---\n\nsub\n`)
+      await settleBatch(pusher, root, [], true)
+      expect(splitEnvelope(await readFile(abs('Notes', 'B.md'), 'utf8')).body).toBe(
+        '[[Notes/A|A]]\n',
+      )
+    } finally {
+      installStores(NO_STORES)
+    }
   })
 })

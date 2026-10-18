@@ -19,7 +19,7 @@ import { runRepairSweep } from '../Properties/repairSweep'
 import { replaySchemaCascade } from '../Properties/replaySchemaCascade'
 import { startSession, stopSession } from '../Sync/Client/session'
 import { stampAdopted, stampMissing } from './adopt'
-import { oweCascade, oweRenames } from './fileEvents'
+import { oweCascade, oweSeen } from './fileEvents'
 import { ensureConfigLayout, ensureIdentity } from './identity'
 import { dropLiveTree, liveTreeOf, seedLiveTree } from './liveTree'
 import { normalizePropertyTypes, normalizeSavedViews } from './migrateConfig'
@@ -88,10 +88,12 @@ export async function openNexusSequence(
       let tree = await readNexus(root)
       // Every file it lists missing its ID is stamped, since the watcher starts after the open, so neither a file that predates it nor one written before the open's index seed gets an event; and read again rather than patched, since a first adoption stamps every page and one more read costs less than a patch per stamp; a page with a foreign ID is written over only by its Try Again.
       while (
-        await stampMissing(
-          root,
-          tree.unreadable?.filter((u) => u.reason === 'missing'),
-        )
+        (
+          await stampMissing(
+            root,
+            tree.unreadable?.filter((u) => u.reason === 'missing'),
+          )
+        ).length
       )
         tree = await readNexus(root)
       seedLiveTree(tree)
@@ -100,7 +102,7 @@ export async function openNexusSequence(
       console.error('adopt: the seed walk failed; reads will retry:', errText(e))
     }
     const reread = await seedContentIndex(root)
-    oweRenames(root, reread.renames)
+    oweSeen(root, reread)
     await replaySchemaCascade(root)
     await settleNow(ctx, root)
     void runRepairSweep(root, reread)

@@ -122,6 +122,34 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
       expect(store.readIndexedStats().get('Loose/B.md')).toEqual(STAT)
     })
 
+    it('a stat carries the string the page holds under the exact `ID` key, and nothing else', () => {
+      const values = (values: Record<string, unknown>): PageIndexEntry => ({
+        relations: [],
+        headings: [],
+        values,
+      })
+      upsert('Notes/A.md', values({ ID: 'p1', id: 'other' }))
+      upsert('Notes/B.md', values({ id: 'p2' }))
+      upsert('Notes/C.md', values({ ID: 7 }))
+      upsert('Notes/D.md', values({ ID: ['p4'] }))
+      upsert('Notes/E.md', values({}))
+      expect(store.readIndexedStat('Notes/A.md')).toEqual({ ...STAT, id: 'p1' })
+      for (const path of ['Notes/B.md', 'Notes/C.md', 'Notes/D.md', 'Notes/E.md'])
+        expect(store.readIndexedStat(path)).toEqual(STAT)
+      expect(store.readIndexedStats().get('Notes/A.md')).toEqual({ ...STAT, id: 'p1' })
+      expect(store.readIndexedStats().get('Notes/D.md')).toEqual(STAT)
+    })
+
+    it('reads the stats under a folder alone, not the folder itself or a sibling sharing its opening', () => {
+      const none: PageIndexEntry = { relations: [], headings: [], values: {} }
+      for (const path of ['Notes', 'Notes/A.md', 'Notes/Sub/B.md', 'Notes2/C.md', 'Loose/D.md'])
+        upsert(path, none)
+      expect([...store.readIndexedStats('Notes').keys()].sort()).toEqual([
+        'Notes/A.md',
+        'Notes/Sub/B.md',
+      ])
+    })
+
     it('a re-upsert replaces the page rows rather than accreting them', () => {
       upsert('Notes/A.md', { relations: [body('beta')], headings: [], values: { Status: 'Open' } })
       upsert(
