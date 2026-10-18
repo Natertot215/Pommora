@@ -44,7 +44,7 @@ The work lands in ten phases in dependency order, removal first: the Space order
 | 2A | +34 / −50 | +33 / −54 | −57 (+99 / −156) |
 | 2B | +110 / −225 | +109 / −254 | −202 (+208 / −410) |
 | 3 | +80 / −64 | +203 / −121 | −120 (+399 / −519) |
-| 4 | +67 / −58 | | |
+| 4 | +67 / −58 | +125 / −108 | −103 (+488 / −591) |
 | 5A | +96 / −82 | | |
 | 5B | +163 / −139 | | |
 | 6 | +151 / −151 | | |
@@ -167,12 +167,12 @@ The work lands in ten phases in dependency order, removal first: the Space order
   - [x] Task 3-3 · Select and Status Is and Is Not compare exactly
   - [x] Task 3-4 · The index keys exactly, at generation 19
   - [x] Review Checkpoint
-- [ ] `[Compaction checkpoint: c/pre-compaction; on the re-prompt, reread §Constraints and c/plan-execution before Phase 4 opens]`
-- [ ] **Phase 4** — One Counter
-  - [ ] Task 4-1 · The sweep runs dry
-  - [ ] Task 4-2 · Every count is its operation's dry run
-  - [ ] Task 4-3 · The dialog skips at each caller's count, and notices say Items
-  - [ ] Review Checkpoint
+- [x] `[Compaction checkpoint: c/pre-compaction; on the re-prompt, reread §Constraints and c/plan-execution before Phase 4 opens]`
+- [x] **Phase 4** — One Counter
+  - [x] Task 4-1 · The sweep runs dry
+  - [x] Task 4-2 · Every count is its operation's dry run
+  - [x] Task 4-3 · The dialog skips at each caller's count, and notices say Items
+  - [x] Review Checkpoint
 - [ ] **Phase 5A** — Definitions Carry a Label and a Key
   - [ ] `[Stop: Nathan words the six messages, quits Pommora on both Nexuses through Task 5B-4, and gives his word for 5B-4]`
   - [ ] Task 5A-1 · `name` becomes `label` and `key` at every reader and writer
@@ -555,7 +555,7 @@ The work lands in ten phases in dependency order, removal first: the Space order
 
 #### Review Checkpoint
 
-- [ ] Two review agents, `code-simplification` and `adversarial-review`,, reading outward: no reader still expects `$order` inside `SpaceNode.values` or in the `{ contexts, properties }` shape (`Core/Nexus/fileEvents.ts:453`'s `spaceNodeFrom` call, `Core/Properties/optionOps.ts:117`'s `space.values` read, the Matrix and tile readers of `values`); no rename path writes `$order` (`renameSweep`, `rekeyContext` and its `spend.ts:230` caller, the Space retitle); the property delete and the Context delete drop the id on every Space sidecar, and a refused Context delete puts the order back through `undoSweep`; the panel's three reorder paths each write ids, and undo returns the Space's prior list.
+- [ ] Two review agents, `code-simplification` and `adversarial-review`, reading outward: no reader still expects `$order` inside `SpaceNode.values` or in the `{ contexts, properties }` shape (`Core/Nexus/fileEvents.ts:453`'s `spaceNodeFrom` call, `Core/Properties/optionOps.ts:117`'s `space.values` read, the Matrix and tile readers of `values`); no rename path writes `$order` (`renameSweep`, `rekeyContext` and its `spend.ts:230` caller, the Space retitle); the property delete and the Context delete drop the id on every Space sidecar, and a refused Context delete puts the order back through `undoSweep`; the panel's three reorder paths each write ids, and undo returns the Space's prior list.
 
 ### Phase 2A — Exact Renames
 
@@ -797,7 +797,7 @@ The work lands in ten phases in dependency order, removal first: the Space order
 
 #### Review Checkpoint
 
-- [ ] Two review agents, `code-simplification` and `adversarial-review`,, reading outward: no rename path still resolves a key through a spelling (`renameSweep`, `rekeyContext` and its `spend.ts:230` caller, `pageLeg`, the rename replay); a case-only property, Context, and Space rename each sweep their holders and clear their journal, and a crash before or after the folder move, or a skipped holder, replays them on the next open; `bothKeyHolders` refuses only a file holding both exact keys; the rename replay sweeps a chained rename to the current name and clears a record whose `from` a live definition holds; the delete replay and the create supersede still fold, guarding a strip that still folds; nothing reads `recased` or the deleted skip's walk.
+- [ ] Two review agents, `code-simplification` and `adversarial-review`, reading outward: no rename path still resolves a key through a spelling (`renameSweep`, `rekeyContext` and its `spend.ts:230` caller, `pageLeg`, the rename replay); a case-only property, Context, and Space rename each sweep their holders and clear their journal, and a crash before or after the folder move, or a skipped holder, replays them on the next open; `bothKeyHolders` refuses only a file holding both exact keys; the rename replay sweeps a chained rename to the current name and clears a record whose `from` a live definition holds; the delete replay and the create supersede still fold, guarding a strip that still folds; nothing reads `recased` or the deleted skip's walk.
 
 ### Phase 2B — Reads and Writes Land on the Key
 
@@ -1519,7 +1519,7 @@ The work lands in ten phases in dependency order, removal first: the Space order
 
 #### Review Checkpoint
 
-- [ ] Two review agents, `code-simplification` and `adversarial-review`,, reading outward: no read or write still resolves a property or `<Title>:` key through a fold (`git grep foldKey -- Core` lists only uniqueness, reserved keys, paths, search, the Sync base, option words, and Space titles); both hosts' writes land the same key through `writtenRoot` and `applyValueAtRoot`; the reconcile repairs each governed key on its own and never shrinks a live value; `heldKeys.ts` holds only `landValue`, `memberKey`, `joinValues`, `editHeldList`, `stripKeys`, `KeyCollision`, and `rekeyHeld`; the Trash refill, re-tag, and restore scrub write and skip the exact key; a case-only Multi-Select rename owes adoption; no caller reads a property's value through a helper rather than its key.
+- [ ] Two review agents, `code-simplification` and `adversarial-review`, reading outward: no read or write still resolves a property or `<Title>:` key through a fold (`git grep foldKey -- Core` lists only uniqueness, reserved keys, paths, search, the Sync base, option words, and Space titles); both hosts' writes land the same key through `writtenRoot` and `applyValueAtRoot`; the reconcile repairs each governed key on its own and never shrinks a live value; `heldKeys.ts` holds only `landValue`, `memberKey`, `joinValues`, `editHeldList`, `stripKeys`, `KeyCollision`, and `rekeyHeld`; the Trash refill, re-tag, and restore scrub write and skip the exact key; a case-only Multi-Select rename owes adoption; no caller reads a property's value through a helper rather than its key.
 - [ ] The orchestrator tells Nathan in chat: from this phase until NexusOS's Key Format cutover (I-1), NexusOS's `tags`, `description`, and `version` keys read as foreign to `Tags`, `Description`, and `Version`, so an edit of those three in Pommora lands a second key the cutover then refuses (`KEY_REFUSAL.held`), and a rename or delete of `Description` or `Version`, or a rename or removal of a `Tags` option, leaves the lowercase keys and words as they were; edit them in Obsidian and hold those changes until the cutover.
 
 ### Phase 3 — Exact Words and the Index
@@ -1961,7 +1961,7 @@ The work lands in ten phases in dependency order, removal first: the Space order
 
 #### Review Checkpoint
 
-- [ ] Two review agents, `code-simplification` and `adversarial-review`,, reading outward: every member match (option words, Context values, configuration operands and orders, bucket renames, the cache edit) reads `exactTitle` through `memberKey`, and every surviving `normalizeTitle` is a uniqueness, reserved-key, search, sort, heading, or path fold; a Multi-Select's decoded value holds registered options only, adoption reads raw words under the E-1 duplicate rule, and both hosts' writes append the unrecognized words after the picked ones while an emptied list clears the key; the reconcile and the refill don't carry unrecognized words (G-2); Select and Status Is and Is Not compare exactly while the text operators stay folded; the index writer, both stores, the seed, and the contract agree on exact keys and titles, and generation 19 is MetadataV3's only migration.
+- [ ] Two review agents, `code-simplification` and `adversarial-review`, reading outward: every member match (option words, Context values, configuration operands and orders, bucket renames, the cache edit) reads `exactTitle` through `memberKey`, and every surviving `normalizeTitle` is a uniqueness, reserved-key, search, sort, heading, or path fold; a Multi-Select's decoded value holds registered options only, adoption reads raw words under the E-1 duplicate rule, and both hosts' writes append the unrecognized words after the picked ones while an emptied list clears the key; the reconcile and the refill don't carry unrecognized words (G-2); Select and Status Is and Is Not compare exactly while the text operators stay folded; the index writer, both stores, the seed, and the contract agree on exact keys and titles, and generation 19 is MetadataV3's only migration.
 
 ### Phase 4 — One Counter
 
@@ -1975,7 +1975,7 @@ The work lands in ten phases in dependency order, removal first: the Space order
 
 **CHANGE**
 
-- [ ] Write and watch fail: `governedSweep.test.ts` — a new case *a dry run writes nothing and reports each write it would make*: `sweepGovernedRoots(root, [a], { text: (c) => `${c}x`, sidecars: (raw) => ({ ...raw, Tags: ['b'] }) }, true)` answers `touched` holding `a` (`before` its bytes, `after` them plus `x`) and the sidecar (`after` its `jsonText` with `Tags: ['b']`), and both files keep their bytes; a new case: `sweepCount` over the same plan answers `2`, and both files keep their bytes. `:27-51` and `:53-61` pass unchanged.
+- [ ] Write and watch fail: `governedSweep.test.ts` — a new case *a dry run writes nothing and reports each write it would make*: `sweepGovernedRoots(root, [a], { text: (c) => `${c}x`, sidecars: (raw) => ({ ...raw, Tags: ['b'] }) }, true)` answers `touched` holding `a` (`before` its bytes, `after` them plus `x`) and the sidecar (`after` its `jsonText` with `Tags: ['b']`), and both files keep their bytes; a new case: `sweepCount` over the same plan answers `2`, and both files keep their bytes; a new case: a dry run files a file it can't read under `skipped`, not `touched`, and `sweepCount` leaves it out. `:27-51` and `:53-61` pass unchanged.
 - [ ] `governedSweep.ts`: export `SweepPlan`; `sweepGovernedRoots` takes `dry = false`, and neither arm writes when `dry`; `SweepResult.touched`'s doc says "would write" for a dry run; add `sweepCount(root, files, plan)`, the dry run's `touched.size`.
 
 **AFTER**
@@ -2015,7 +2015,7 @@ The work lands in ten phases in dependency order, removal first: the Space order
 
 **VERIFY**
 
-- [ ] The listed tests pass; every other sweep caller's suite passes unchanged (`contextCascade.test.ts`, `cascade.test.ts`, `renameSweep.test.ts`, `restoreScrub.test.ts`, `repairSweep.test.ts`, `exclusionScan`'s, `holdings`').
+- [ ] The listed tests pass; every other sweep caller's suite passes unchanged (`contextCascade.test.ts`, `cascade.test.ts`, `renameSweep.test.ts`, `restoreScrub.test.ts`, `repairSweep.test.ts`, and `exclusionScan`'s).
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
@@ -2029,9 +2029,9 @@ The work lands in ten phases in dependency order, removal first: the Space order
 
 - [ ] Write and watch fail: `deleteProperty.test.ts` — the `propertyHolders` describe (`:152-173`) keeps its case (`ok(2)`) and adds *counts what the delete strips, writing nothing*: beside the page and Space holding `Priority`, an ID-less page in `Notes` holding `Priority: [hi]` and a page whose `ID` copies the first page's are not counted, a Space `{ id: 'sp2', $order: [id] }` holding no value is, so the count is `ok(3)`, and every one of those files keeps its bytes. `optionOps.test.ts`'s `optionHolders` case (`:616-624`) adds that the page and both sidecars keep their bytes after counting. `replaySchemaCascade.test.ts`: a new case in *§delete replay*: a record `{ op: 'delete', id: 'prop_s', name: 'Stage' }` replayed over `seedNexus()` plus an ID-less `Col/C.md` holding `Stage: Draft` strips `A.md` and `B.md` and leaves `C.md` byte-identical, as the live delete does. `keyHolders.test.ts`: the `keyedHolders` describe drops its `tags` fixture and calls `keyedHolders([file], 'Tags')`.
 - [ ] `optionOps.ts`: delete `optionHolders`' loop and the `parseJsonObject`, `readTextOrNull`, `sweepParse`, `spaceSidecars`, and `Rewrite` imports (their one reader); `valueEditPlan` answers `{ pages, plan }` with `plan` the `SweepPlan` `{ raw, sidecars: raw }`; `valueEditSweep` sweeps that plan; `optionHolders` answers `sweepCount(root, pages, plan)`.
-- [ ] `keyHolders.ts`: `keyedHolders(files, key)` takes the key it reads, files `fields[key]`, and drops the `PropertyDefinition` import; `removeProperty.ts:36-39` passes `key`.
-- [ ] `deleteProperty.ts`: delete `propertyHolders`' `confirmedKeyHolders` count and that import; add `deletePlan(root, propertyId, key, folders)`, answering the `keyedHolders` result as `held` and the sweep plan (the key strip, and the strip composed with `withoutOrderId` for sidecars); `propertyHolders` answers `sweepCount(root, held.strip, plan)`; `deleteInner` builds the plan once and hands `held` to `snapshot` and `held.strip` with the plan to `stripAndRemove`; `stripAndRemove(root, propertyId, folders, files, plan)` sweeps the plan it's given, its `key` parameter gone.
-- [ ] `replaySchemaCascade.ts`: the delete arm builds `deletePlan(root, journal.id, journal.name, folders)` and strips `held.strip`; the `keyHolderFiles` import goes (its one reader). The replay then leaves alone the ID-less and duplicate-ID pages the live delete leaves alone.
+- [ ] `keyHolders.ts`: `keyedHolders(files, key)` takes the key it reads, files `fields[key]`, answers the exported `KeyedHolders`, and drops the `PropertyDefinition` import; `removeProperty.ts:36-39` passes `key`.
+- [ ] `deleteProperty.ts`: delete `propertyHolders`' `confirmedKeyHolders` count and that import; add `deletePlan(root, propertyId, key, folders)`, answering a `DeletePlan`: the `keyedHolders` result as `held` and the sweep plan (the key strip, and the strip composed with `withoutOrderId` for sidecars); `snapshot` reads `KeyedHolders`; `propertyHolders` answers `sweepCount(root, held.strip, plan)`; `deleteInner` builds the plan once and hands its `held` to `snapshot` and the plan whole to `stripAndRemove`; `stripAndRemove(root, propertyId, folders, { held, plan })` sweeps `held.strip` under the plan, its `key` parameter gone.
+- [ ] `replaySchemaCascade.ts`: the delete arm hands `deletePlan(root, journal.id, journal.name, folders)` to `stripAndRemove`; the `keyHolderFiles` import goes (its one reader). The replay then leaves alone the ID-less pages the live delete leaves alone. A page copying another's ID is told apart only while the other still holds the key, so a replay after a partial strip strips it, as the replay did before.
 
 **AFTER**
 
@@ -2081,11 +2081,17 @@ The work lands in ten phases in dependency order, removal first: the Space order
 @@ imports @@
 -import type { PropertyDefinition } from './properties'
 @@ keyedHolders @@
- export async function keyedHolders(
-   files: string[],
--  def: Pick<PropertyDefinition, 'name' | 'type'>,
-+  key: string,
- ): Promise<{ values: Record<string, unknown>; strip: string[]; partial: boolean }> {
++export interface KeyedHolders {
++  values: Record<string, unknown>
++  strip: string[]
++  partial: boolean
++}
++
+-export async function keyedHolders(
+-  files: string[],
+-  def: Pick<PropertyDefinition, 'name'>,
+-): Promise<{ values: Record<string, unknown>; strip: string[]; partial: boolean }> {
++export async function keyedHolders(files: string[], key: string): Promise<KeyedHolders> {
    …
      const fields = splitFrontmatter(content) as Record<string, unknown>
 -    if (!Object.hasOwn(fields, def.name)) continue
@@ -2109,9 +2115,12 @@ The work lands in ten phases in dependency order, removal first: the Space order
 ```Core/Properties/deleteProperty.ts diff
 @@ imports @@
 -import { confirmedKeyHolders, keyedHolders, keyHolderFiles } from './keyHolders'
-+import { keyedHolders, keyHolderFiles } from './keyHolders'
++import { type KeyedHolders, keyedHolders, keyHolderFiles } from './keyHolders'
 -import { type Rewrite, sweepGovernedRoots } from './governedSweep'
 +import { type Rewrite, sweepCount, sweepGovernedRoots, type SweepPlan } from './governedSweep'
+@@ snapshot @@
+-  held: Awaited<ReturnType<typeof keyedHolders>>,
++  held: KeyedHolders,
 @@ propertyHolders @@
  export async function propertyHolders(root: string, propertyId: string): Promise<Result<number>> {
    const def = (await readRegistry(root)).defs[propertyId]
@@ -2123,18 +2132,24 @@ The work lands in ten phases in dependency order, removal first: the Space order
 @@ deleteInner @@
    const folders = await collectionFolders(root)
 -  const held = await keyedHolders(await keyHolderFiles(root, key, folders), def)
-+  const { held, plan } = await deletePlan(root, propertyId, key, folders)
-   const bundle = await snapshot(root, propertyId, def, folders, held)
+-  const bundle = await snapshot(root, propertyId, def, folders, held)
++  const planned = await deletePlan(root, propertyId, key, folders)
++  const bundle = await snapshot(root, propertyId, def, folders, planned.held)
    …
 -  const { removed, ...reach } = await stripAndRemove(root, propertyId, key, folders, held.strip)
-+  const { removed, ...reach } = await stripAndRemove(root, propertyId, folders, held.strip, plan)
++  const { removed, ...reach } = await stripAndRemove(root, propertyId, folders, planned)
 @@ deletePlan @@
++interface DeletePlan {
++  held: KeyedHolders
++  plan: SweepPlan
++}
++
 +export async function deletePlan(
 +  root: string,
 +  propertyId: string,
 +  key: string,
 +  folders: string[],
-+): Promise<{ held: Awaited<ReturnType<typeof keyedHolders>>; plan: SweepPlan }> {
++): Promise<DeletePlan> {
 +  const held = await keyedHolders(await keyHolderFiles(root, key, folders), key)
 +  const raw: Rewrite = (r) => stripKeys(r, [key])
 +  return { held, plan: { raw, sidecars: withoutOrderId(raw, propertyId) } }
@@ -2146,15 +2161,15 @@ The work lands in ten phases in dependency order, removal first: the Space order
    propertyId: string,
 -  key: string,
    folders: string[],
-   files: string[],
-+  plan: SweepPlan,
+-  files: string[],
++  { held, plan }: DeletePlan,
  ): Promise<ConfigReach & { removed: Result<null> }> {
 -  const raw: Rewrite = (r) => stripKeys(r, [key])
 -  const swept = await sweepGovernedRoots(root, files, {
 -    raw,
 -    sidecars: withoutOrderId(raw, propertyId),
 -  })
-+  const swept = await sweepGovernedRoots(root, files, plan)
++  const swept = await sweepGovernedRoots(root, held.strip, plan)
    for (const folder of folders) await unassignAndPurge(folder, propertyId)
 ```
 
@@ -2166,21 +2181,14 @@ The work lands in ten phases in dependency order, removal first: the Space order
 @@ delete @@
        const folders = await collectionFolders(root)
 -      const files = await keyHolderFiles(root, journal.name, folders)
--      const { skipped, hosts, removed } = await stripAndRemove(
--        root,
--        journal.id,
+       const { skipped, hosts, removed } = await stripAndRemove(
+         root,
+         journal.id,
 -        journal.name,
--        folders,
+         folders,
 -        files,
--      )
-+      const { held, plan } = await deletePlan(root, journal.id, journal.name, folders)
-+      const { skipped, hosts, removed } = await stripAndRemove(
-+        root,
-+        journal.id,
-+        folders,
-+        held.strip,
-+        plan,
-+      )
++        await deletePlan(root, journal.id, journal.name, folders),
+       )
 ```
 
 **VERIFY**
@@ -2199,7 +2207,7 @@ The work lands in ten phases in dependency order, removal first: the Space order
 **CHANGE**
 
 - [ ] Write and watch fail: `confirmations.test.ts` — a new case beside `:39`: with `property:holders` answering `ok(0)`, `askClearOption('p1', 'Active')` resolves `true` without asking, while `askDestroyProperty('p1', 'Status')` and `askRemoveOption('p1', 'Active')` still ask (`asked` holds both, the first containing "stripped from 0 Items;"); `:39-60` passes unchanged; `:139`'s warning fixture reads `'Couldn’t update 1 Item.'`. `registryProperty.test.ts:189` expects `'1 Item holds both "Status" and "Stage".'`. `cascade.test.ts:120` expects `'Couldn’t update links to “Target” in 1 Item.'` and `mutate.test.ts:1347` `'Couldn’t update links to “Beta” in 1 Item.'`. `notifications.test.ts:44-45,69,73,86`'s warning fixtures read `1 Item` for `1 file`. Every other suite compares against `unsweptLine(n)` itself and passes unchanged.
-- [ ] `confirmations.ts`: delete `items`; `askHolding(propertyId, value, req, quietAt?)` answers `true` without asking when `quietAt` is given and the count is at or under it, and otherwise asks as today; `askClearOption` passes `0`; `askDestroyProperty` and `askRemoveOption` pass none; import `itemCount`.
+- [ ] `confirmations.ts`: delete `items`; `askHolding(propertyId, value, req, quietAt?)` answers `true` without asking when `quietAt` is given and the count is at or under it, and otherwise asks as today; `askClearOption` passes `0`; `askDestroyProperty` and `askRemoveOption` pass none; `askEmptyTrash`'s count reads through `itemCount` too; import `itemCount`.
 - [ ] `properties.ts`: add `itemCount(n)` (`1 Item`, `n Items`) above `KEY_REFUSAL`; `KEY_REFUSAL.held` reads `${itemCount(n)} ${n === 1 ? 'holds' : 'hold'} both …`.
 - [ ] `governedSweep.ts`: `unsweptLine` reads `` `Couldn’t update ${what}${itemCount(count)}.` `` and imports `itemCount`.
 
@@ -2262,6 +2270,9 @@ The work lands in ten phases in dependency order, removal first: the Space order
 +    }),
 +    0,
 +  )
+@@ askEmptyTrash @@
+-    message: count === 1 ? 'Delete this item?' : `Delete these ${count} items?`,
++    message: count === 1 ? 'Delete this Item?' : `Delete these ${itemCount(count)}?`,
 ```
 
 **VERIFY**
@@ -2273,7 +2284,7 @@ The work lands in ten phases in dependency order, removal first: the Space order
 
 #### Review Checkpoint
 
-- [ ] Two review agents, `code-simplification` and `adversarial-review`,, reading outward: every rewrite a count runs answers null for a file it leaves alone, so `touched` counts the files a live run writes; a dry run writes nothing on either arm and still files unreadable files under `skipped`; Delete's count, its live strip, and its replay strip the same files through `deletePlan`, and the count includes a Space touched only for `$order`; Clear's and Remove's count is their strip's dry run; Clear skips its dialog at zero while Delete and Remove ask at any count; every notice and refusal that counts says Items through `itemCount`.
+- [ ] Two review agents, `code-simplification` and `adversarial-review`, reading outward: every rewrite a count runs answers null for a file it leaves alone, so `touched` counts the files a live run writes; a dry run writes nothing on either arm and still files unreadable files under `skipped`; Delete's count, its live strip, and its replay strip the same files through `deletePlan`, and the count includes a Space touched only for `$order`; Clear's and Remove's count is their strip's dry run; Clear skips its dialog at zero while Delete and Remove ask at any count; every notice and refusal that counts says Items through `itemCount`.
 
 ### Phase 5A — Definitions Carry a Label and a Key
 
@@ -2286,8 +2297,8 @@ The work lands in ten phases in dependency order, removal first: the Space order
 **TASK:** Replace the definition's `name` with `key` and `label` and give creates their own `PropertyDraft`, then move every reader and writer of `name` to the word it means, the Investigation's classification (*§Readers and Writers of `def.name`*), with keys equal to labels.
 
 **NOW:** `propertyDefinitionFields` holds `name: z.string()` (`Core/Properties/properties.ts:169-199`), and `propertyDefinition` is its loose decoder (`:200-201`). As Phases 2B and 3 leave them, `byKey` keys by `d.name` (`properties.ts`, the old `byFoldedName`, with six callers: `Core/Properties/assignment.ts:41,45`, `Core/Contexts/contextResolve.ts` `spaceWorldOf`, `Core/Properties/schema.ts` `linkKeysOf`, `Core/Nexus/cascade.ts:80`, `Core/Trash/restoreScrub.ts:35`), and these production reads remain (HEAD lines):
-- **Key (`def.name` as the word on disk):** `Core/Matrix/matrixInput.ts:97`; `Core/Nexus/cascade.ts:218`; `Core/Nexus/fileEvents.ts:530` (`p.name !== d.name`); `Core/Nexus/page.ts:36,37` and `updatePageProperty`'s `landPageValue(absFile, def.name, …)`; `Core/Properties/assignValue.ts`' `held` read (`target.frontmatter[name]`) and `restore`'s `landValue(row.frontmatter, def.name, held)`; `Core/Properties/PropertyPanel.tsx:215`; `assignment.ts:63` (`refillValues`' `landValue`); `Core/Properties/deleteProperty.ts:40,96` and `propertyHolders` (as Phase 4 leaves it); `Core/Properties/optionOps.ts:189`; `Core/Properties/pageValue.ts:42`; `Core/Properties/propertyValue.ts`' `applyValueAtRoot` (both reads); the reads Task 2B-1 inlined in place of `heldPropertyValue` (`assignment.ts:60`, `deleteProperty.ts:65` through its `key`, `optionOps.ts:102`, `Core/Properties/value.ts:57`); `Core/Properties/registryProperty.ts:91,92` (`renameSweep`), `:126,128` (`bothKeyHolders`, `KEY_REFUSAL.held`), `:129` (the record's `from`), `:141` (the reply's `from`); `Core/Properties/removeProperty.ts:34`; `Core/Properties/setProperty.ts`' three `landSpaceValue`/`landPageValue` calls (`setSpaceProperty` and both ops); `Core/Trash/spend.ts:281`; `deleteProperty.ts:103` (the delete record's `name`, which holds the key until Phase 6 renames the field); `Core/Properties/replaySchemaCascade.ts`' three definition compares; `registryProperty.ts`' create supersede (`journal.name === landed`).
-- **Title (`def.name` as the shown name):** `page.ts:35,105` and `setProperty.ts:23` (`noShape`); `Core/Properties/Cells/PropertyTypes.tsx:88`; `Core/Properties/Cells/columnLabel.ts:18`; `Core/Properties/Pickers/PropertyPicker.tsx:150`; `Core/Properties/Schema/PropertyFrame.tsx:98,151,157,270,277,279,284,288,420`; `registryProperty.ts:54` (the label `freeName` steps aside); `Core/Trash/trashRows.ts:59` (a property record's title, read untyped).
+- **Key (`def.name` as the word on disk):** `Core/Matrix/matrixInput.ts:97`; `Core/Nexus/cascade.ts:218`; `Core/Nexus/fileEvents.ts:530` (`p.name !== d.name`); `Core/Nexus/page.ts`' `createPage` (`modeled[def.name]`, `keys.push(def.name)`); `Core/Properties/assignValue.ts`' `held` read (`target.frontmatter[name]`) and `restore`'s `landValue(row.frontmatter, def.name, held)`; `Core/Properties/PropertyPanel.tsx:215`; `assignment.ts:63` (`refillValues`' `landValue`); `Core/Properties/deleteProperty.ts:40,96` and `propertyHolders` (as Phase 4 leaves it); `Core/Properties/optionOps.ts:189`; `Core/Properties/pageValue.ts:42`; `Core/Properties/propertyValue.ts`' `applyValueAtRoot` (both reads); the reads Task 2B-1 inlined in place of `heldPropertyValue` (`assignment.ts:60`, `deleteProperty.ts:65` through its `key`, `optionOps.ts:102`, `Core/Properties/value.ts:57`); `Core/Properties/registryProperty.ts:91,92` (`renameSweep`), `:126,128` (`bothKeyHolders`, `KEY_REFUSAL.held`), `:129` (the record's `from`), `:141` (the reply's `from`); `Core/Properties/removeProperty.ts:34`; `Core/Properties/setProperty.ts`' two ops' `landSpaceValue`/`landPageValue` calls, and the two test writes in `Core/Testing/propertyWrites.ts`; `Core/Trash/spend.ts:281`; `deleteProperty.ts:103` (the delete record's `name`, which holds the key until Phase 6 renames the field); `Core/Properties/replaySchemaCascade.ts`' three definition compares; `registryProperty.ts`' create supersede (`journal.name === landed`).
+- **Title (`def.name` as the shown name):** `page.ts`' `valueToWrite` (its no-shape refusal); `Core/Properties/Cells/PropertyTypes.tsx:88`; `Core/Properties/Cells/columnLabel.ts:18`; `Core/Properties/Pickers/PropertyPicker.tsx:150`; `Core/Properties/Schema/PropertyFrame.tsx:98,151,157,270,277,279,284,288,420`; `registryProperty.ts:54` (the label `freeName` steps aside); `Core/Trash/trashRows.ts:59` (a property record's title, read untyped).
 - **Identity (uniqueness, reserved keys, no-ops):** `Core/Properties/propertiesRegistry.ts:32,34`; `registryProperty.ts:55,121`; `schema.ts:47,56`. Task 5A-2 makes each read both words; this task points them at `label`.
 - **Writes:** `properties.ts:171` (the field); `PropertyPicker.tsx:91` (`syntheticContextDef`); `PropertyFrame.tsx:229` (the `schema:add` payload); `registryProperty.ts:57` (`createProperty`'s candidate) and `:138` (`renameProperty`'s commit).
 
@@ -2439,27 +2450,34 @@ The work lands in ten phases in dependency order, removal first: the Space order
 
 ```Core/Nexus/page.ts diff
 @@ createPage @@
-     const encoded = encodeValue(value)
--    if (encoded === undefined) return noShape(def.name)
--    modeled[def.name] = encoded
+     if (encoded.value === undefined) continue
+-    modeled[def.name] = encoded.value
 -    keys.push(def.name)
-+    if (encoded === undefined) return noShape(def.label)
-+    modeled[def.key] = encoded
++    modeled[def.key] = encoded.value
 +    keys.push(def.key)
-@@ updatePageProperty @@
--  if (!clear && encoded === undefined) return noShape(def.name)
--  await setGovernedRootKey(absFile, def.name, encoded, world)
-+  if (!clear && encoded === undefined) return noShape(def.label)
-+  await setGovernedRootKey(absFile, def.key, encoded, world)
+@@ valueToWrite @@
+-    ? fail('invalid-property', `"${def.name}" was given a value it has no shape for.`)
++    ? fail('invalid-property', `"${def.label}" was given a value it has no shape for.`)
 ```
 
 ```Core/Properties/setProperty.ts diff
+@@ setSpacePropertyOp @@
+-  return done(value.ok ? await landSpaceValue(root, resolved.value, def.name, value.value) : value)
++  return done(value.ok ? await landSpaceValue(root, resolved.value, def.key, value.value) : value)
+@@ setPagePropertyOp @@
+         ? landPageValue(
+             resolved.value,
+-            def.name,
++            def.key,
+```
+
+```Core/Testing/propertyWrites.ts diff
+@@ updatePageProperty @@
+-  return encoded.ok ? landPageValue(absFile, def.name, encoded.value, world) : encoded
++  return encoded.ok ? landPageValue(absFile, def.key, encoded.value, world) : encoded
 @@ setSpaceProperty @@
--  if (!clear && encoded === undefined) return noShape(def.name)
-+  if (!clear && encoded === undefined) return noShape(def.label)
-   …
--    clear && !Object.hasOwn(raw, def.name) ? null : writtenRoot(raw, def.name, encoded, world),
-+    clear && !Object.hasOwn(raw, def.key) ? null : writtenRoot(raw, def.key, encoded, world),
+-  return encoded.ok ? landSpaceValue(root, absSpaceDir, def.name, encoded.value) : encoded
++  return encoded.ok ? landSpaceValue(root, absSpaceDir, def.key, encoded.value) : encoded
 ```
 
 ```Core/Properties/propertyValue.ts diff
@@ -2758,7 +2776,7 @@ The work lands in ten phases in dependency order, removal first: the Space order
 
 #### Review Checkpoint
 
-- [ ] Two review agents, `code-simplification` and `adversarial-review`,, reading outward: no production read of a definition's `name` remains, and each former read reads the word its role names (a frontmatter or sidecar key reads `key`; a title, menu, notice, or dialog reads `label`); a decoded definition always holds both words and a stored one omitting `label` reads its key; `byKey`'s six callers and `linkKeysOf` key by `key`; every create writes `key` from the landed label, the restore's stale key included; the rename journal, reply, and refusal name keys, and a rename keeping its key journals, sweeps, and re-keys nothing; reserved keys, uniqueness, and admission each read both words through `validateName`; the benchmark script and `Core/Testing` write the new shape.
+- [ ] Two review agents, `code-simplification` and `adversarial-review`, reading outward: no production read of a definition's `name` remains, and each former read reads the word its role names (a frontmatter or sidecar key reads `key`; a title, menu, notice, or dialog reads `label`); a decoded definition always holds both words and a stored one omitting `label` reads its key; `byKey`'s six callers and `linkKeysOf` key by `key`; every create writes `key` from the landed label, the restore's stale key included; the rename journal, reply, and refusal name keys, and a rename keeping its key journals, sweeps, and re-keys nothing; reserved keys, uniqueness, and admission each read both words through `validateName`; the benchmark script and `Core/Testing` write the new shape.
 
 ### Phase 5B — Options Carry a Key and a Label
 
@@ -3259,15 +3277,15 @@ The work lands in ten phases in dependency order, removal first: the Space order
 
 #### Task 5B-2
 
-**TASK:** Make `encodeValue(def, value)` write each label's key at its six callers, and let adoption subtract every option's label and key without regard to case, so the decode of Task 5B-1 and the encode agree on a key that differs from its label.
+**TASK:** Make `encodeValue(def, value)` write each label's key at its four callers, and let adoption subtract every option's label and key without regard to case, so the decode of Task 5B-1 and the encode agree on a key that differs from its label.
 
-**NOW:** After Task 5B-1, `registeredOption(def, written)` answers the label of the option whose key `written` names (`propertyValue.ts`' `wordsOf`), so a Select holding `done` under `{ key: 'done', label: 'Done' }` decodes `Done`; `encodeValue(value)` (`propertyValue.ts:192-214`) still writes the decoded word, so writing that value back lands `Done`, a word no option's key names. Its callers each hold the definition: `applyValueAtRoot` (`propertyValue.ts:255`), `setSpaceProperty` (`Core/Properties/setProperty.ts:22`), `createPage` and `updatePageProperty` (`Core/Nexus/page.ts:34,104`), the reconcile (`Core/Contexts/contextResolve.ts:131`), and `refillValues` (`Core/Properties/assignment.ts:58`). `unregisteredMembers` subtracts words whose fold an option's label holds; a word whose fold a key holds (`IN-PROGRESS` beside `{ key: 'in-progress', label: 'In Progress' }`) would be adopted as a second option with a key that folds to a held one (D-2 INFERRED). `keepingForeignWords` (Phase 3) appends held words `registeredOption` doesn't name, which now means words no key names. A label no option holds reaches `encodeValue` when a pick or an undo races the option's rename or removal, or a creation seed names a label a view still holds (`Core/Views/Pipeline/creationSeeds.ts:32,41`).
+**NOW:** After Task 5B-1, `registeredOption(def, written)` answers the label of the option whose key `written` names (`propertyValue.ts`' `wordsOf`), so a Select holding `done` under `{ key: 'done', label: 'Done' }` decodes `Done`; `encodeValue(value)` (`propertyValue.ts:192-214`) still writes the decoded word, so writing that value back lands `Done`, a word no option's key names. Its callers each hold the definition: `applyValueAtRoot` (`propertyValue.ts:255`), `valueToWrite` (`Core/Nexus/page.ts`, the one encode a page create and every page and Space value write go through), the reconcile (`Core/Contexts/contextResolve.ts:131`), and `refillValues` (`Core/Properties/assignment.ts:58`). `unregisteredMembers` subtracts words whose fold an option's label holds; a word whose fold a key holds (`IN-PROGRESS` beside `{ key: 'in-progress', label: 'In Progress' }`) would be adopted as a second option with a key that folds to a held one (D-2 INFERRED). `keepingForeignWords` (Phase 3) appends held words `registeredOption` doesn't name, which now means words no key names. A label no option holds reaches `encodeValue` when a pick or an undo races the option's rename or removal, or a creation seed names a label a view still holds (`Core/Views/Pipeline/creationSeeds.ts:32,41`).
 
 **CHANGE**
 
 - [ ] Write and watch fail: `propertyValue.test.ts` — the *§encodeValue* describe (`:266-293`) passes a definition: under `{ key: 'done', label: 'Done' }` and `{ key: 'in-progress', label: 'In Progress' }`, `encodeValue(def, { kind: 'select', value: 'Done' })` is `['done']`, a Multi-Select `['In Progress', 'Done']` is `['in-progress', 'done']`, a label no option holds (`'Gone'`) is written as given, `['Gone']`, and the other kinds encode as before; the round-trip case (`:275-287`) passes each pair's definition, and a new pair decodes `['done']` to `Done` and encodes it back to `['done']`; `unregisteredMembers` under those options over `['IN-PROGRESS', 'done', 'DONE', 'new']` is `['new']`; `keepingForeignWords` under them keeps a held `Doing` after a written `['done']`. `governedWrite.test.ts` — a page holding `Stage: [done]` under `{ key: 'done', label: 'Done' }` written `{ kind: 'select', value: 'Done' }` stays byte-identical, and the reconcile (`reconcileGovernedRoot`) leaves it unchanged. `page.test.ts` — `createPage` with a Multi-Select value `['In Progress']` writes `- in-progress`.
 - [ ] `propertyValue.ts`: the cached words hold both directions per definition, the decode reading key to label and the encode label to key, and their folds take each option's key beside its label; `encodeValue(def, value)` writes each Select and Multi-Select label's key, and a label no option holds as given; `unregisteredMembers`, reading those folds, subtracts every word whose fold any option's label or key holds; `applyValueAtRoot` passes `def`.
-- [ ] The five other callers pass the definition they hold: `setProperty.ts:22` and `page.ts:34,104` (`def`), `contextResolve.ts:131` (`governor.def`), `assignment.ts:58` (`def`).
+- [ ] The three other callers pass the definition they hold: `valueToWrite` (`page.ts`, `def`), `contextResolve.ts:131` (`governor.def`), `assignment.ts:58` (`def`).
 
 **AFTER**
 
@@ -3319,17 +3337,9 @@ The work lands in ten phases in dependency order, removal first: the Space order
 ```
 
 ```Core/Nexus/page.ts diff
-@@ createPage @@
--    const encoded = encodeValue(value)
-+    const encoded = encodeValue(def, value)
-@@ updatePageProperty @@
--  const encoded = clear ? undefined : encodeValue(value)
-+  const encoded = clear ? undefined : encodeValue(def, value)
-```
-
-```Core/Properties/setProperty.ts diff
--  const encoded = clear ? undefined : encodeValue(value)
-+  const encoded = clear ? undefined : encodeValue(def, value)
+@@ valueToWrite @@
+-  const encoded = encodeValue(value)
++  const encoded = encodeValue(def, value)
 ```
 
 ```Core/Contexts/contextResolve.ts diff
@@ -3491,7 +3501,7 @@ console.log(files.join('\n'))
 
 #### Review Checkpoint
 
-- [ ] Two review agents, `code-simplification` and `adversarial-review`,, reading outward: no production read of an option's `value` remains outside `PickOption`; the renderer names options by label everywhere, and each option channel and `OptionEdit` resolves the label to its option host-side, journaling and cascading the key; a decoded value holds labels and every encode writes keys, at all six callers; the reconcile, the repair, the refill, and the restore scrub leave a page holding an option's key byte-identical; adoption subtracts folded labels and keys, and an adopted word is its own label and key; option labels and keys are each unique and non-blank at create, every edit, and admission, Status included; the leftover-label strip is gone and labels persist; the rewrite ran once after its backup, and both Nexuses open and read on the new build.
+- [ ] Two review agents, `code-simplification` and `adversarial-review`, reading outward: no production read of an option's `value` remains outside `PickOption`; the renderer names options by label everywhere, and each option channel and `OptionEdit` resolves the label to its option host-side, journaling and cascading the key; a decoded value holds labels and every encode writes keys, at all six callers; the reconcile, the repair, the refill, and the restore scrub leave a page holding an option's key byte-identical; adoption subtracts folded labels and keys, and an adopted word is its own label and key; option labels and keys are each unique and non-blank at create, every edit, and admission, Status included; the leftover-label strip is gone and labels persist; the rewrite ran once after its backup, and both Nexuses open and read on the new build.
 
 ### Phase 6 — Label and Key: the Journal and Cascades
 
@@ -4038,7 +4048,7 @@ console.log(files.join('\n'))
 
 #### Review Checkpoint
 
-- [ ] Two review agents, `code-simplification` and `adversarial-review`,, reading outward: no file sweep, cache edit, or replay gate reads a label, and no configuration arm reads a key; a key change with no label pair writes no saved view, tile, Matrix filter, or preview rule, and a label change with no key pair writes no page or Space; every list edit goes through the one map-taking `editList`, and a list it names nothing in comes back null; Clear, Remove, and rename edit the caches of every Collection they can write, a damaged Collection counted once by the configuration pass on a rename or a Remove and not on a Clear, as page-rename leaves it, and a cleared value doesn't return at the next assign; every record carries keys, `same` and the decoder agree on the four shapes, and each replay arm acts only on the state its record maps; an option rename or removal refuses over a different owed record while a property rename and a delete still run; the shield covers every old key of an owed rename.
+- [ ] Two review agents, `code-simplification` and `adversarial-review`, reading outward: no file sweep, cache edit, or replay gate reads a label, and no configuration arm reads a key; a key change with no label pair writes no saved view, tile, Matrix filter, or preview rule, and a label change with no key pair writes no page or Space; every list edit goes through the one map-taking `editList`, and a list it names nothing in comes back null; Clear, Remove, and rename edit the caches of every Collection they can write, a damaged Collection counted once by the configuration pass on a rename or a Remove and not on a Clear, as page-rename leaves it, and a cleared value doesn't return at the next assign; every record carries keys, `same` and the decoder agree on the four shapes, and each replay arm acts only on the state its record maps; an option rename or removal refuses over a different owed record while a property rename and a delete still run; the shield covers every old key of an owed rename.
 
 ### Phase 7A — The Converter and the Key Format
 
@@ -4437,7 +4447,7 @@ for (const miss of misses) console.log(JSON.stringify(miss))
 
 #### Review Checkpoint
 
-- [ ] Two review agents, `code-simplification` and `adversarial-review`,, reading outward: `formatKey` holds B-5 and B-6 and the must-dos (NFC before the split and after the case, `\p{Lu}`/`\p{Ll}` humps, upper-upper-lower, whole-word lowercasing, non-locale case methods) and imports nothing; every write of a property label (the create, the property restore through it, the rename) writes its key through the Key Format, and a caller's key never survives a create; the step-aside keeps the label free among labels and its key free among keys; a Key Format change and a rename share one rekey, one record shape, one clash check, one sweep, and one replay; a refusal (reserved, duplicate, empty, held both) leaves the registry, the holders, and the journal as they were; `editProperty` can't reach a format.
+- [ ] Two review agents, `code-simplification` and `adversarial-review`, reading outward: `formatKey` holds B-5 and B-6 and the must-dos (NFC before the split and after the case, `\p{Lu}`/`\p{Ll}` humps, upper-upper-lower, whole-word lowercasing, non-locale case methods) and imports nothing; every write of a property label (the create, the property restore through it, the rename) writes its key through the Key Format, and a caller's key never survives a create; the step-aside keeps the label free among labels and its key free among keys; a Key Format change and a rename share one rekey, one record shape, one clash check, one sweep, and one replay; a refusal (reserved, duplicate, empty, held both) leaves the registry, the holders, and the journal as they were; `editProperty` can't reach a format.
 
 ### Phase 7B — The Value Format, Adoption, and the Rows
 
@@ -5095,7 +5105,7 @@ for (const miss of misses) console.log(JSON.stringify(miss))
 
 #### Review Checkpoint
 
-- [ ] Two review agents, `code-simplification` and `adversarial-review`,, reading outward: every option label a write lands (seed, add, rename) takes its key through the Value Format, a create and a restore keep the keys they're handed, an adopted word stays its own label and key, and nothing re-keys an option outside a label or format change (C-2 INFERRED); a Value Format change journals one key-only record, refuses a collision, a crossing, and an owed record before anything writes, re-keys files and caches through the same `rekeyOptions`, cascade, and replay an option rename uses, and leaves every view, tile, preview rule, and Matrix filter byte-identical; adoption converts only on its existing triggers and takes only words the format leaves unchanged, and a Value Format change owes it; the rows sit between the header's separator and the type's settings, Value Format only on option types; both format confirmations count the dry run of the plan their change runs, skip at one or fewer, and a collision or a crossing the plan answers shows before any dialog (an owed record refuses at the change, after the dialog, as an option rename's does); no new copy beyond H-1's hints and the Brief's sentence.
+- [ ] Two review agents, `code-simplification` and `adversarial-review`, reading outward: every option label a write lands (seed, add, rename) takes its key through the Value Format, a create and a restore keep the keys they're handed, an adopted word stays its own label and key, and nothing re-keys an option outside a label or format change (C-2 INFERRED); a Value Format change journals one key-only record, refuses a collision, a crossing, and an owed record before anything writes, re-keys files and caches through the same `rekeyOptions`, cascade, and replay an option rename uses, and leaves every view, tile, preview rule, and Matrix filter byte-identical; adoption converts only on its existing triggers and takes only words the format leaves unchanged, and a Value Format change owes it; the rows sit between the header's separator and the type's settings, Value Format only on option types; both format confirmations count the dry run of the plan their change runs, skip at one or fewer, and a collision or a crossing the plan answers shows before any dialog (an owed record refuses at the change, after the dialog, as an option rename's does); no new copy beyond H-1's hints and the Brief's sentence.
 
 ### Phase 8 — The Restore Re-Spell (G-1)
 
@@ -5270,7 +5280,7 @@ for (const miss of misses) console.log(JSON.stringify(miss))
 
 #### Review Checkpoint
 
-- [ ] Two review agents, `code-simplification` and `adversarial-review`,, reading outward: the match runs once per restore and nowhere else (no live read, write, repair-on-open, or refill converts); a held word that is exactly a current key keeps it, a variant beside a held current key stays foreign with its value, and a spelling two current words share or none has returns as foreign data; property keys, `<Title>:` keys, option words, and Space titles re-spell on pages and Space sidecars alike, through `renameFrontmatterKey` on page text (each key on its own line) and `rekeyHeld` on sidecars, before the reconcile and `unlinked`; no `[[…]]` target or Link value is touched, so Path Links Phase 8's `repairLanded` after the relocate meets nothing this phase wrote; G-2's drops (an unmatched key ignored, an unmatched word reconciled away) hold as before.
+- [ ] Two review agents, `code-simplification` and `adversarial-review`, reading outward: the match runs once per restore and nowhere else (no live read, write, repair-on-open, or refill converts); a held word that is exactly a current key keeps it, a variant beside a held current key stays foreign with its value, and a spelling two current words share or none has returns as foreign data; property keys, `<Title>:` keys, option words, and Space titles re-spell on pages and Space sidecars alike, through `renameFrontmatterKey` on page text (each key on its own line) and `rekeyHeld` on sidecars, before the reconcile and `unlinked`; no `[[…]]` target or Link value is touched, so Path Links Phase 8's `repairLanded` after the relocate meets nothing this phase wrote; G-2's drops (an unmatched key ignored, an unmatched word reconciled away) hold as before.
 
 ### Phase 9 — Interface and Drives
 
@@ -5751,9 +5761,13 @@ Behaviors to read once before ratifying, each following the decisions:
 - **A Restore Keeps Pommora's Own Keys** (Task 8-1): G-1 matches a returning key against every format's spelling of every label, and D-1 refuses a key Pommora manages, so a Space's `heading_icon_hidden` or a page's `ID` stays where it is even beside a property labelled `Heading Icon Hidden` or `I-D`, whose `snake_case` or `PascalCase` spelling it is.
 - **A Restored Collection's Saved Values Keep Their Old Keys:** a Collection in the Trash through a Value Format change comes back with its `property_cache` as it left, so a value removed from it before the delete doesn't return on reassign under the new format. No decision names that cache at restore, and re-spelling it costs a second cache pass in the scrub; the plan leaves it out.
 
+An alternative Nathan raised during Phase 4, held open while the plan runs as written:
+
+- **Label and Key Without Formats:** every property, and each Select, Multi-Select, and Status option, carries a label shown in the app and a key written to disk, the key taking the label at creation and edited beside it in one Label | Key field, and Pommora reads and writes only the key. It keeps Phases 1 to 6 and drops the Key and Value Formats, the converter, format-led adoption, and the restore re-spell (Phases 7A, 7B, and 8), at the cost of editing option keys one by one where a Value Format changes every option at once, and of a rule for whether a label rename moves its key.
+
 #### Deviations
 
-- **Undo Puts Back What the File Held** (Phase 3 review, Nathan's ruling): an undo wrote the decoded prior, so once words matched exactly a page holding only words no option names (`Tags: [work]`), a Select in another casing (`Status: done`), or a value its type can't read (`Count: abc`) lost its key on ⌘Z, confirmed live through the table's picker. `assignValue` now captures the raw value beside the decoded one, and the revert sends `restoreValue`, which the page and Space handlers land through the same resolve-and-lock and `writtenRoot` a `setProperty` does, `encodedValue` being the one encode both share; a Context column's undo still writes its prior ids.
+- **Undo Puts Back What the File Held** (Phase 3 review, Nathan's ruling): an undo wrote the decoded prior, so once words matched exactly a page holding only words no option names (`Tags: [work]`), a Select in another casing (`Status: done`), or a value its type can't read (`Count: abc`) lost its key on ⌘Z, confirmed live through the table's picker. `assignValue` now captures the raw value beside the decoded one, and the revert sends `restoreValue`, which the page and Space handlers land through the same resolve-and-lock and `writtenRoot` a `setProperty` does, `valueToWrite` being the one encode both share; a Context column's undo still writes its prior ids.
 
 - **A Refill Never Replaces Words** (Phase 3 review): `refillValues` asked whether a root's value reconciles blank, so once words matched exactly a page holding only words no option names (`Tags: [ideas]`, or `Status: done` under `Done`) read as holding none and the re-assign replaced them with the cached value. It now skips any root whose key holds anything (`isBlankRaw`), as `refillTrashed` already did, and the cached value stays cached.
 
