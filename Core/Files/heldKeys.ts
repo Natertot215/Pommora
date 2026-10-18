@@ -91,14 +91,14 @@ export const stripHeld =
 
 export type KeyCollision = 'prefer-new' | 'merge'
 
-/** A JSON root with `oldName` moved to `newName`; the twin of `renameFrontmatterKey`, by the same collision rule. */
+/** A JSON root with `oldName` moved to `newName`, null when nothing moves; the twin of `renameFrontmatterKey`, by the same collision rule. */
 export function rekeyHeld(
   raw: Json,
   oldName: string,
   newName: string,
   collision: KeyCollision,
 ): Json | null {
-  if (!Object.hasOwn(raw, oldName)) return null
+  if (oldName === newName || !Object.hasOwn(raw, oldName)) return null
   const { [oldName]: moved, ...rest } = raw
   if (!Object.hasOwn(rest, newName)) return { ...rest, [newName]: moved }
   return collision === 'prefer-new'

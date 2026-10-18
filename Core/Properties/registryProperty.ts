@@ -115,7 +115,7 @@ export function renameProperty(
     if (to === prior.name) return ok(null)
     const named = validateName(to, Object.values(defs), propertyId)
     if (!named.ok) return named
-    // A file holding only the new key is adopted, its value going live as a create's would; one holding both would lose a value to the merge.
+    // A file holding only the new key is adopted, its value going live as a create's would; one holding both would lose its old value.
     const clashes = await bothKeyHolders(root, prior.name, to)
     if (clashes.length)
       return fail('invalid-property', KEY_REFUSAL.held(prior.name, to, clashes.length))

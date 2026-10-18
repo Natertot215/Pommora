@@ -1,8 +1,6 @@
 import {
   type Document,
   type Node,
-  type Pair,
-  type ParsedNode,
   type Scalar,
   parseDocument,
   isMap,
@@ -202,21 +200,19 @@ export function mergeFrontmatter(
   return envelope(fenced, mergeInto(parseDocument(frontmatter), modeled, modeledKeys), body)
 }
 
-type FrontmatterPair = Pair<ParsedNode, ParsedNode | null>
-
-/** Renames `oldName` to `newName` in its place. A held `newName` is the rival: under `'prefer-new'` it keeps its value and `oldName` goes; under `'merge'` the two combine through `joinValues` in `oldName`'s place. */
+/** Renames `oldName` to `newName` in its place; null when nothing moves. A held `newName` is the rival: under `'prefer-new'` it keeps its value and `oldName` goes; under `'merge'` the two combine through `joinValues` in `oldName`'s place. */
 export function renameFrontmatterKey(
   content: string,
   oldName: string,
   newName: string,
   collision: KeyCollision,
 ): string | null {
+  if (oldName === newName) return null
   const { frontmatter, body } = splitEnvelope(content)
   const doc = parseDocument(frontmatter)
   if (doc.errors.length > 0 || !isMap(doc.contents)) return null
   const items = doc.contents.items
-  const held = (name: string): FrontmatterPair | undefined =>
-    items.find((i) => String(i.key) === name)
+  const held = (name: string) => items.find((i) => String(i.key) === name)
   const pair = held(oldName)
   if (!pair) return null
   const rival = held(newName)
