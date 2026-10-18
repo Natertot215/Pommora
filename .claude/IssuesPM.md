@@ -4,7 +4,7 @@
 
 | Total | Critical | High | Moderate | Low | Minimal |
 |-------|----------|------|----------|-----|---------|
-| 71 | 0 | 4 | 15 | 34 | 18 |
+| 72 | 0 | 4 | 15 | 35 | 18 |
 
 #### A1 • Sync & Devices
 
@@ -74,6 +74,7 @@
 | [F-046](#F-046 • A page renamed or moved while a refused Space or Context delete puts its sweep back keeps the swept state.) | A page renamed or moved while a refused Space or Context delete puts its sweep back keeps the swept state. | Low | Small (=🟢+8=) | Shortcut | `93baa6931` | **Created:** 10-01-2026<br>**Updated:** 10-03-2026 |
 | [F-047](#F-047 • An outside edit to a page inside a folder the app just renamed or moved is lost until the page's next event.) | An outside edit to a page inside a folder the app just renamed or moved is lost until the page's next event. | Low | Small (=🟢+8=) | Shortcut | `93baa6931` | **Created:** 10-01-2026<br>**Updated:** 10-16-2026 |
 | [F-038](#F-038 • With two same-titled pages both deleted, restoring the first one deleted leaves the links to their title stripped.) | With two same-titled pages both deleted, restoring the first one deleted leaves the links to their title stripped. | Low | Small (=🟢+10=) | Shortcut | `34227ef5c` | **Created:** 09-28-2026<br>**Updated:** 10-16-2026 |
+| [F-072](#F-072 • A property edit's undo put back the value the app showed rather than the value the file held, so undoing a pick over a value Pommora can't read deleted its key.) | A property edit's undo put back the value the app showed rather than the value the file held, so undoing a pick over a value Pommora can't read deleted its key. | Low | Small (TBD) | Drift | `e0a803028` | **Created:** 10-18-2026<br>**Updated:** 10-18-2026 |
 
 #### A4 • Architecture
 
@@ -950,6 +951,20 @@ A delete leaves a title's Link values alone while a page outside it still holds 
 
 **Owner's call.** Either the delete records the rows for a title a survivor still holds without stripping them, and the refill counts a page already holding the recorded value as having taken it back, compared before the landed-title rebuild so a namesake landing as `Ideas (2)` leaves `[[Ideas]]` in place; or the survivor gate is withdrawn and the first delete strips again.
 
+#### F-072 • A property edit's undo put back the value the app showed rather than the value the file held, so undoing a pick over a value Pommora can't read deleted its key.
+
+| Concern | Scale | Origin | Base | Date |
+|---------|-------|--------|------|------|
+| Low | Small (TBD) | Drift | `e0a803028` | **Created:** 10-18-2026<br>**Updated:** 10-18-2026 |
+
+**Description**
+
+A property edit's undo remembered the value the app had decoded for display, which is blank for anything Pommora can't represent even when the file holds something: a Multi-Select holding only words no option names (`Tags: [work]` under option `Work`), a Select in another casing (`Status: done`), or a Number holding text (`Count: abc`). Picking a value and pressing undo wrote blank back and deleted the key, including words the user never touched. Matching keys and option words exactly made the first two cases reachable, and the Number case predates it. The refill after a property is re-assigned shared the assumption, treating a page whose decoded value was blank as holding none. Both are fixed: `assignValue` captures the raw value the file held and undo writes it back through a dedicated `restoreValue` op, and `refillValues` checks the raw value with `isBlankRaw`.[^72]
+
+**Solution** [Deferred]
+
+The current fix works. What's in question is whether the design avoids the problem at its source: the divide between what the app shows and what the file holds runs through every write and revert, and each consumer that treated the decoded value as the file's state needed its own put-back path. Whether the file's raw value should be what every write and revert is built from is left to its own investigation.
+
 ### A4 • Architecture
 
 #### F-051 • Every call site chooses for itself whether an error is shown, logged, or dropped, and about forty host-side failures reach no one.
@@ -1290,3 +1305,4 @@ Paths are relative to `Core/MarkdownPM/`, and the test's name settles any drift 
 [^69]: **F-069:** `Core/Tiles/tileHosts.ts:16-37` (`TILE_HOSTS`), `Core/Nexus/migrateConfig.ts:45-53` (`normalizeSavedViews`), `Core/Nexus/identity.ts:58-62` (`ensureConfigLayout`), `Core/Nexus/remint.ts:110`
 [^70]: **F-070:** `Core/Files/atomicWrite.ts:202-203` (`readAppFile`), `Core/Files/atomicWrite.ts:178-193` (`readLast`), `Core/Files/atomicWrite.ts:207-212` (`readAppFileKnown`), `Core/Files/atomicWrite.ts:144-161` (`rmwLocked`), `Core/Files/atomicWrite.ts:225-236` (`updateNexusFile`), `Core/Files/atomicWrite.ts:265-271` (`updateNexusConfig`), `Core/Nexus/readNexus.ts:68` (`readOrder`), `Core/Nexus/readNexus.ts:113` (`readConfig`), `Core/Nexus/readNexus.ts:287` (`readNexusConfig`), `Core/Navigation/navigationFile.ts:33-41` (`readNavigationFile`), `Core/Matrix/matrixFile.ts:11` (`readMatrixFile`), `Core/Nexus/fileEvents.ts:543-562,633-634` (`applyOrder`), `Core/Session/navigationSlice.ts:270-271` (`writeNav`), `Core/Session/matrixSlice.ts:172-174` (`patchMatrix`), `Core/Interface/Notifications/notifications.ts` (`persist`, `reportRefusal`), `Core/Assets/assetMigrate.ts:85-114,166,175` (`collectRefs`, `migrateAssets`), `Core/Tiles/tileDoc.ts:20` (`readTileDocAt`)
 [^71]: **F-071:** `Core/MarkdownPM/Input/format.ts:70-83,86-145` (`underSelection`, `toggleInline`), `Core/MarkdownPM/Engine/tokens.ts` (`tokenizeChunk`)
+[^72]: **F-072:** `Core/Properties/assignValue.ts:71,87` (`assignValue`), `Core/Properties/setProperty.ts:20-72` (`landSpaceValue`, the `restoreValue` case), `Core/Nexus/page.ts:95-123` (`encodedValue`, `landPageValue`), `Core/Nexus/mutate.ts:185`, `Core/Properties/assignment.ts:49-60` (`refillValues`), `Core/Properties/propertyValue.ts:224` (`isBlankRaw`)
