@@ -30,12 +30,12 @@ export async function confirmedKeyHolders(
   for (const file of corpusUnder(root, indexed ?? (await nexusCorpus(root)), folders)) {
     const content = await readTextOrNull(file)
     // An unreadable file holds the key when the index last read it holding it.
-    if (content === null ? indexed !== null : heldKey(splitFrontmatter(content), key) !== undefined)
+    if (content === null ? indexed !== null : Object.hasOwn(splitFrontmatter(content), key))
       holders.push(file)
   }
   for (const file of await spaceSidecars(root)) {
     const raw = await readJsonObject(file)
-    if (raw && heldKey(raw, key) !== undefined) holders.push(file)
+    if (raw && Object.hasOwn(raw, key)) holders.push(file)
   }
   return holders
 }

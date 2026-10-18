@@ -5,7 +5,7 @@ import { ID_KEY } from '../Nexus/identityMark'
 import { asString } from '../Nexus/coerce'
 import { ok, fail, type Result, fault } from '../Contract/result'
 import { mutateRegistryFile, readRegistryStrict } from './contextsRegistry'
-import { pathExists, readJsonStrict, relocate, targetTaken } from '../Files/atomicWrite'
+import { heldName, pathExists, readJsonStrict, relocate, targetTaken } from '../Files/atomicWrite'
 import { renameFrontmatterKey } from '../Files/pageFile'
 import type { Json } from '../Files/stableJson'
 import { contextsDir } from '../Paths/paths'
@@ -23,7 +23,6 @@ import { withoutOrderId } from './spaceSidecar'
 import { editHeldList, heldKeys, rekeyHeld, stripKeys, type KeyCollision } from '../Files/heldKeys'
 import { editList, namesValue, stripList } from '../Properties/pageValue'
 import { contextWorldOf } from './contextResolve'
-import { oweWalk } from '../Nexus/fileEvents'
 import { liveTreeOf } from '../Nexus/liveTree'
 import { scalarMembers } from '../Contract/validators'
 import { queryMembers } from '../Index/contentIndex'
@@ -36,7 +35,7 @@ const NEITHER_KEY_IS_FRESHER: KeyCollision = 'merge'
 export const rekeyContext =
   (oldTitle: string, newTitle: string): Rewrite =>
   (raw) =>
-    rekeyHeld(raw, contextKey(oldTitle), contextKey(newTitle), NEITHER_KEY_IS_FRESHER, true)
+    rekeyHeld(raw, contextKey(oldTitle), contextKey(newTitle), NEITHER_KEY_IS_FRESHER)
 
 const retitleSpace = (raw: Json, contextTitle: string, j: RenameJournal): Json | null =>
   editHeldList(raw, contextKey(contextTitle), true, (held) =>
@@ -82,7 +81,7 @@ function pageLeg(j: RenameJournal): RewriteText | undefined {
   if (j.spaceId !== undefined) return undefined
   const oldKey = contextKey(j.oldTitle)
   const newKey = contextKey(j.newTitle)
-  return (content) => renameFrontmatterKey(content, oldKey, newKey, NEITHER_KEY_IS_FRESHER, true)
+  return (content) => renameFrontmatterKey(content, oldKey, newKey, NEITHER_KEY_IS_FRESHER)
 }
 
 export interface Unswept {
@@ -108,11 +107,6 @@ async function cascadeTitle(
   contextTitle: string,
   j: RenameJournal,
 ): Promise<SweepResult> {
-  // A title that changes only its case moves no key or value: every file's spelling already resolves to it. A file holding two spellings of a Context's key is read under the one the new title matches, so the held tree is owed a walk.
-  if (normalizeTitle(j.oldTitle) === normalizeTitle(j.newTitle)) {
-    if (j.spaceId === undefined) oweWalk(root)
-    return { touched: new Map(), skipped: [], refused: [] }
-  }
   // The key being rewritten comes from the journal, never the registry title, which may already read old or new.
   const member: Member =
     j.spaceId === undefined
@@ -321,7 +315,8 @@ export async function replayPendingRename(root: string): Promise<void> {
     }
     const oldDir = join(contextsDir(root), j.oldTitle)
     const newDir = join(contextsDir(root), j.newTitle)
-    if ((await pathExists(oldDir)) && !(await pathExists(newDir))) await relocate(oldDir, newDir)
+    if ((await heldName(oldDir)) === j.oldTitle && !(await targetTaken(oldDir, newDir)))
+      await relocate(oldDir, newDir)
     const cascade = await cascadeTitle(root, entry.title, j)
     if (entry.title !== j.newTitle) {
       const committed = await commitTitle(root, j.contextId, j.newTitle)
@@ -333,6 +328,7 @@ export async function replayPendingRename(root: string): Promise<void> {
 
   const ctxDir = join(contextsDir(root), entry.title)
   const findTitle = async (title: string): Promise<boolean | null> => {
+    if ((await heldName(join(ctxDir, title))) !== title) return false
     const sc = await readJsonStrict(join(ctxDir, title, SPACE_SIDECAR))
     if (sc.ok) return sc.value.id === j.spaceId
     return sc.error.code === 'not-found' ? false : null
@@ -344,14 +340,14 @@ export async function replayPendingRename(root: string): Promise<void> {
     await clearJournal(root, j)
     return
   }
-  if (atNew && (await pathExists(join(ctxDir, j.oldTitle)))) {
+  if (atNew && (await heldName(join(ctxDir, j.oldTitle))) === j.oldTitle) {
     // The freed old title was re-minted by another Space — discard, never hijack.
     await clearJournal(root, j)
     return
   }
   if (atOld) {
     const target = join(ctxDir, j.newTitle)
-    if (await pathExists(target)) {
+    if (await targetTaken(join(ctxDir, j.oldTitle), target)) {
       await clearJournal(root, j)
       return
     }
