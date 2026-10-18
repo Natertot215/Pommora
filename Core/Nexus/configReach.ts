@@ -21,7 +21,7 @@ import {
   type PropertyDefinition,
   RESERVED_PROPERTY_ID,
 } from '../Properties/properties'
-import { editList, type Matcher, stripList, type ValueEdit } from '../Properties/pageValue'
+import { editList, type Matcher, stripList } from '../Properties/pageValue'
 import { unsweptLine } from '../Properties/governedSweep'
 import { tileHostsOf } from '../Tiles/tileHosts'
 import type { TilesChanged } from '../Tiles/tiles'
@@ -88,7 +88,7 @@ const ROLES = {
 } as const satisfies Record<keyof SavedView, Role>
 
 // ── Edits ──
-type OptionReach = { def: PropertyDefinition; value: string; edit: ValueEdit }
+type OptionReach = { def: PropertyDefinition; labels: readonly [string, string | null] }
 type Gone = { propertyId: string; ids: readonly string[] }
 type ConfigEdit =
   | ({ kind: 'option' } & OptionReach)
@@ -140,7 +140,7 @@ function editOperands(rule: Raw, edit: (xs: readonly unknown[]) => unknown[] | n
 
 const optionRule = (e: OptionReach, rule: Raw): Raw | null =>
   onProperty(e.def.id, rule) && wholeValues(e.def, rule.op)
-    ? editOperands(rule, (xs) => editList(xs, e.value, e.edit))
+    ? editOperands(rule, (xs) => editList(xs, new Map([e.labels])))
     : rule
 
 const gone =
@@ -153,18 +153,18 @@ const goneRule = (e: Gone, rule: Raw): Raw | null =>
 
 const scopedOrder = (e: OptionReach, holder: unknown): unknown => {
   if (!onProperty(e.def.id, holder) || !Array.isArray(holder.order)) return holder
-  const order = editList(holder.order, e.value, e.edit)
+  const order = editList(holder.order, new Map([e.labels]))
   return order ? { ...holder, order } : holder
 }
 
 function collapsedKeys(e: OptionReach, view: SavedView, keys: unknown[]): unknown[] {
   const top = groupsOn(view, 'group', e.def.id)
   const sub = groupsOn(view, 'sub', e.def.id)
-  const to = e.edit.op === 'replace' ? e.edit.to : null
+  const [from, to] = e.labels
   const rename = (k: string): string | null => {
-    if (top && k === e.value) return to
-    if (!sub || !k.endsWith(`/${e.value}`)) return k
-    return to === null ? null : `${k.slice(0, -e.value.length)}${to}`
+    if (top && k === from) return to
+    if (!sub || !k.endsWith(`/${from}`)) return k
+    return to === null ? null : `${k.slice(0, -from.length)}${to}`
   }
   const renamed = keys.map((k) => (typeof k === 'string' ? rename(k) : k))
   return [...new Set(renamed)].filter((k) => k !== null)
@@ -183,12 +183,7 @@ const RENAME: Record<Role, Handler<OptionReach>> = {
   subGroup: scopedOrder,
   hiddenKeys: (e, held, view) =>
     overStrings(held, (keys) =>
-      editHiddenBucket(
-        { ...view, hidden_groups: keys },
-        e.def.id,
-        e.value,
-        e.edit.op === 'replace' ? e.edit.to : null,
-      ),
+      editHiddenBucket({ ...view, hidden_groups: keys }, e.def.id, ...e.labels),
     ),
   bandKeys: (e, held, view) => (Array.isArray(held) ? collapsedKeys(e, view, held) : held),
 }

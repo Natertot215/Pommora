@@ -67,15 +67,22 @@ async function replay(
       const keys = optionsOf(def).map((o) => o.key)
       // Holds `to` and not `from` = the commit landed cleanly; every other state is not this record's.
       if (!keys.includes(journal.to) || keys.includes(journal.from)) return NO_REACH
-      return optionCascade(root, def, journal.from, { op: 'replace', to: journal.to })
+      return optionCascade(root, def, new Map([[journal.from, journal.to]]), [
+        journal.from,
+        journal.to,
+      ])
     }
     case 'option-remove': {
       // Pages-first order holds the value in the def until the strip completes, so the value still listed is the owed state; gone means only the clear failed. An option has no identity, so an answer's record is owed only while the slot still holds it: past that, the value listed may have been added again.
       const def = defs[journal.id]
       const held = answered ? await readSchemaJournal(root) : journal
       if (!def || !held || !sameRecord(held, journal)) return NO_REACH
-      if (!optionsOf(def).some((o) => o.key === journal.value)) return NO_REACH
-      const owed = await optionCascade(root, def, journal.value, { op: 'strip' })
+      const option = optionsOf(def).find((o) => o.key === journal.value)
+      if (!option) return NO_REACH
+      const owed = await optionCascade(root, def, new Map([[journal.value, null]]), [
+        option.label,
+        null,
+      ])
       if (owed.skipped) return owed
       return (await dropOptionFromDef(root, journal.id, journal.value)).ok
         ? owed

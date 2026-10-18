@@ -39,7 +39,7 @@ export const rekeyContext =
 
 const retitleSpace = (raw: Json, contextTitle: string, j: RenameJournal): Json | null =>
   editHeldList(raw, contextKey(contextTitle), (held) =>
-    editList(held, j.oldTitle, { op: 'replace', to: j.newTitle }),
+    editList(held, new Map([[j.oldTitle, j.newTitle]])),
   )
 
 export interface SweepCapture {
