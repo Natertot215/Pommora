@@ -4,9 +4,8 @@ import { errText, fault, ok, type Result } from '../Contract/result'
 import { type ConfigReach, NO_REACH } from '../Nexus/configReach'
 import { readRegistry, serializeSchemaOp } from './propertiesRegistry'
 import { collectionFolders } from './assignment'
-import { keyHolderFiles } from './keyHolders'
 import { renameSweep } from './registryProperty'
-import { stripAndRemove } from './deleteProperty'
+import { deletePlan, stripAndRemove } from './deleteProperty'
 import { dropOptionFromDef, optionCascade } from './optionOps'
 import { optionValues } from './properties'
 import {
@@ -54,13 +53,13 @@ async function replay(
       const freed = !def && !Object.values(defs).some((d) => d.name === journal.name)
       if (!crashed && !freed) return NO_REACH
       const folders = await collectionFolders(root)
-      const files = await keyHolderFiles(root, journal.name, folders)
+      const { held, plan } = await deletePlan(root, journal.id, journal.name, folders)
       const { skipped, hosts, removed } = await stripAndRemove(
         root,
         journal.id,
-        journal.name,
         folders,
-        files,
+        held.strip,
+        plan,
       )
       return { skipped: skipped + (crashed && !removed.ok ? 1 : 0), hosts }
     }

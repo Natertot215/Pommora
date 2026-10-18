@@ -8,7 +8,6 @@ import { ID_KEY } from '../Nexus/identityMark'
 import { asString } from '../Nexus/coerce'
 import { isBlankRaw } from './propertyValue'
 import { spaceSidecars } from '../Contexts/spaceSidecar'
-import type { PropertyDefinition } from './properties'
 
 export async function keyHolderFiles(
   root: string,
@@ -42,7 +41,7 @@ export async function confirmedKeyHolders(
 /** The values of the pages holding `key`, filed by ID, the files a strip should reach, and whether the values miss a holder: a holder with no ID, or whose ID another already took, is kept out of the strip, and a file that can't be read is stripped once it reads. */
 export async function keyedHolders(
   files: string[],
-  def: Pick<PropertyDefinition, 'name'>,
+  key: string,
 ): Promise<{ values: Record<string, unknown>; strip: string[]; partial: boolean }> {
   const values: Record<string, unknown> = {}
   const kept: string[] = []
@@ -55,15 +54,14 @@ export async function keyedHolders(
       continue
     }
     const fields = splitFrontmatter(content) as Record<string, unknown>
-    if (!Object.hasOwn(fields, def.name)) continue
+    if (!Object.hasOwn(fields, key)) continue
     const id = asString(fields[ID_KEY])
     if (!id || seen.has(id)) {
       kept.push(file)
       continue
     }
     seen.add(id)
-    const held = fields[def.name]
-    if (!isBlankRaw(held)) values[id] = held
+    if (!isBlankRaw(fields[key])) values[id] = fields[key]
   }
   return {
     values,

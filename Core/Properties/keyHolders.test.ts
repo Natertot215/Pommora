@@ -152,12 +152,10 @@ describe('keyHolderFiles', () => {
 })
 
 describe('keyedHolders', () => {
-  const tags = { name: 'Tags', type: 'multiSelect' } as const
-
   it('files no value for a page holding another casing of the key', async () => {
     await page('K1', 'tags: [a]\n')
     const file = abs('Notes', 'K1.md')
-    expect(await keyedHolders([file], tags)).toEqual({
+    expect(await keyedHolders([file], 'Tags')).toEqual({
       values: {},
       strip: [file],
       partial: false,

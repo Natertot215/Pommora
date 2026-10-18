@@ -2,10 +2,7 @@ import { mutateRegistry, readRegistry, NO_PROPERTY, serializeSchemaOp } from './
 import { validateOptionValues, withUniqueOptions } from './schema'
 import { collectionFolders } from './assignment'
 import { keyHolderFiles } from './keyHolders'
-import { type Rewrite, sweepGovernedRoots, unsweptLine } from './governedSweep'
-import { parseJsonObject, readTextOrNull } from '../Files/atomicWrite'
-import { sweepParse } from '../Files/pageFile'
-import { spaceSidecars } from '../Contexts/spaceSidecar'
+import { sweepCount, sweepGovernedRoots, type SweepPlan, unsweptLine } from './governedSweep'
 import { namesValue, valueEditRewrite, type ValueEdit } from './pageValue'
 import { errText, ok, fail, fault, type Result } from '../Contract/result'
 import { unregisteredMembers } from './propertyValue'
@@ -185,9 +182,10 @@ async function valueEditPlan(
   def: PropertyDefinition,
   target: string,
   edit: ValueEdit,
-): Promise<{ pages: string[]; raw: Rewrite }> {
+): Promise<{ pages: string[]; plan: SweepPlan }> {
   const pages = await keyHolderFiles(root, def.name, await collectionFolders(root))
-  return { pages, raw: valueEditRewrite(def, target, edit) }
+  const raw = valueEditRewrite(def, target, edit)
+  return { pages, plan: { raw, sidecars: raw } }
 }
 
 async function valueEditSweep(
@@ -196,8 +194,8 @@ async function valueEditSweep(
   target: string,
   edit: ValueEdit,
 ): Promise<number> {
-  const { pages, raw } = await valueEditPlan(root, def, target, edit)
-  return (await sweepGovernedRoots(root, pages, { raw, sidecars: raw })).skipped.length
+  const { pages, plan } = await valueEditPlan(root, def, target, edit)
+  return (await sweepGovernedRoots(root, pages, plan)).skipped.length
 }
 
 export async function optionCascade(
@@ -273,15 +271,8 @@ export async function optionHolders(
 ): Promise<Result<number>> {
   const r = await resolveForCascade(root, propertyId, value)
   if (!r.ok) return r
-  const { pages, raw: strip } = await valueEditPlan(root, r.value, value, { op: 'strip' })
-  let held = 0
-  for (const file of [...pages, ...(await spaceSidecars(root))]) {
-    const text = await readTextOrNull(file)
-    if (text === null) continue
-    const raw = isMarkdownFile(file) ? sweepParse(text)?.raw : parseJsonObject(text)
-    if (raw && strip(raw, file) !== null) held++
-  }
-  return ok(held)
+  const { pages, plan } = await valueEditPlan(root, r.value, value, { op: 'strip' })
+  return ok(await sweepCount(root, pages, plan))
 }
 
 export function removeOption(

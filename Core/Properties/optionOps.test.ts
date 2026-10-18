@@ -616,12 +616,16 @@ describe('clearOption', () => {
 describe('optionHolders', () => {
   it('counts the pages and Spaces holding the value, and no holder of another', async () => {
     const id = await mkSelect([{ value: 'A' }, { value: 'B' }])
-    await pageHolding(id, 'A')
-    await spaceSidecar('Pommora', { id: 'sp1', Tags: ['A', 'B'] })
-    await spaceSidecar('Sapphire', { id: 'sp2', Tags: 'B' })
+    const files = [
+      await pageHolding(id, 'A'),
+      await spaceSidecar('Pommora', { id: 'sp1', Tags: ['A', 'B'] }),
+      await spaceSidecar('Sapphire', { id: 'sp2', Tags: 'B' }),
+    ]
+    const before = await Promise.all(files.map((f) => readFile(f, 'utf8')))
 
     expect(await optionHolders(root, id, 'A')).toEqual(ok(2))
     expect(await optionHolders(root, id, 'B')).toEqual(ok(2))
+    expect(await Promise.all(files.map((f) => readFile(f, 'utf8')))).toEqual(before)
   })
 
   it('is refused for a value the definition lacks', async () => {

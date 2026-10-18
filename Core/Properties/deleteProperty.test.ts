@@ -171,6 +171,39 @@ describe('propertyHolders', () => {
     expect(await propertyHolders(root, c.value.id)).toEqual(ok(2))
     expect((await propertyHolders(root, 'prop_nope')).ok).toBe(false)
   })
+
+  it('counts what the delete strips, writing nothing', async () => {
+    const c = await createProperty(root, {
+      id: '',
+      name: 'Priority',
+      type: 'select',
+      select_options: [{ value: 'hi' }],
+    } as PropertyDefinition)
+    if (!c.ok) throw new Error('setup failed')
+    await assignProperty(root, notes, c.value.id)
+    const page = await createTestPage(notes, 'A', { body: 'b' })
+    if (!page.ok) throw new Error('setup failed')
+    await updatePageProperty(page.value.path, await liveDef(c.value.id), {
+      kind: 'select',
+      value: 'hi',
+    })
+    const pid = splitFrontmatter(await readFile(page.value.path, 'utf8'))[ID_KEY] as string
+    const idless = join(notes, 'Loose.md')
+    await writeFile(idless, '---\nPriority: [hi]\n---\nb\n')
+    const copy = join(notes, 'Copy.md')
+    await writeFile(copy, `---\n${ID_KEY}: ${pid}\nPriority: hi\n---\nb\n`)
+    const files = [
+      page.value.path,
+      idless,
+      copy,
+      await seedSpaceSidecar(root, 'Projects', 'Pommora', { id: 'sp1', Priority: ['hi'] }),
+      await seedSpaceSidecar(root, 'Projects', 'Sapphire', { id: 'sp2', $order: [c.value.id] }),
+    ]
+    const before = await Promise.all(files.map((f) => readFile(f, 'utf8')))
+
+    expect(await propertyHolders(root, c.value.id)).toEqual(ok(3))
+    expect(await Promise.all(files.map((f) => readFile(f, 'utf8')))).toEqual(before)
+  })
 })
 
 describe('a global delete reaches a Space sidecar', () => {

@@ -217,6 +217,18 @@ describe('delete replay', () => {
     expect('$order' in raw).toBe(false)
   })
 
+  it('strips the pages the live delete strips, leaving an ID-less holder byte-identical', async () => {
+    const root = await seedNexus()
+    const idless = '---\nStage: Draft\n---\nbody\n'
+    await writeFile(join(root, 'Col', 'C.md'), idless)
+    await writeSchemaJournal(root, { op: 'delete', id: 'prop_s', name: 'Stage' })
+    await openSession(root)
+    await replaySchemaCascade(root)
+    expect(await page(root, 'A')).toBe(`---\nID: ${PAGE_IDS[0]}\n---\nbody\n`)
+    expect(await page(root, 'B')).toBe(`---\nID: ${PAGE_IDS[1]}\n---\nbody\n`)
+    expect(await page(root, 'C')).toBe(idless)
+  })
+
   const created = async (root: string, name: string): Promise<boolean> =>
     (await createProperty(root, { id: '', name, type: 'number' } as PropertyDefinition)).ok
 
