@@ -140,8 +140,8 @@ export async function unlinkContextKey(
     captured.push(captureRoot(raw, file, values))
     return stripKeys(raw, keys)
   }
-  const entry = contextId === undefined ? strip : withoutOrderId(strip, contextId)
-  const swept = await unlinkMembers(root, { key }, entry, skipUnder)
+  const rewrite = contextId === undefined ? strip : withoutOrderId(strip, contextId)
+  const swept = await unlinkMembers(root, { key }, rewrite, skipUnder)
   return ok({ ...swept, captured })
 }
 
