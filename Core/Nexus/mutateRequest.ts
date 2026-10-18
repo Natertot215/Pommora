@@ -81,6 +81,8 @@ export const mutateRequest = z.discriminatedUnion('op', [
   op('setDisclosureLock', { path: z.string(), kind: containerKind, locked: z.boolean() }),
   op('setActiveView', { path: z.string(), kind: containerKind, viewId: z.string() }),
   op('setProperty', { path: z.string(), propertyId: z.string(), value: propertyValue.nullable() }),
+  // `held` is what the file held under the property's key, written back as it was; absent, the file held no key.
+  op('restoreValue', { path: z.string(), propertyId: z.string(), held: z.unknown().optional() }),
   op('setPageMeta', { path: z.string(), patch: pageMetaPatch }),
   op('editAliases', { path: z.string(), edit: aliasEdit }),
   // Absent order = legacy append. Stale ids in a source container self-drop on the next read.
