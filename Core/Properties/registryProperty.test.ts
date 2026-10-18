@@ -184,6 +184,30 @@ describe('renameProperty and editProperty', () => {
     expect(await readSchemaJournal(root)).toBeNull()
   })
 
+  it('a rename onto its own key writes the label alone, journaling and sweeping nothing', async () => {
+    const c = await createProperty(root, def({ label: 'Status', type: 'select' }))
+    const col = await createFolderEntity(root, 'collection', 'Col', newId())
+    if (!c.ok || !col.ok) return
+    await assignProperty(root, col.value.path, c.value.id)
+    const p = await createTestPage(col.value.path, 'Holder', { body: 'b' })
+    if (!p.ok) return
+    const held = `---\nID: 01ARZ3NDEKPSV4RRFFQ69G5FAV\nstatus: Open\n---\nb\n`
+    await writeFile(p.value.path, held)
+    const registry = await readJsonAt<RegistryFile>(registryFilePath())
+    const stored = registry.defs[c.value.id] as Record<string, unknown>
+    registry.defs[c.value.id] = { ...stored, key: 'status' }
+    await writeFile(registryFilePath(), JSON.stringify(registry))
+
+    const renamed = await renameProperty(root, c.value.id, 'status')
+    expect(renamed.ok && renamed.value).toMatchObject({ from: 'status', to: 'status' })
+    expect((await readRegistry(root)).defs[c.value.id]).toMatchObject({
+      label: 'status',
+      key: 'status',
+    })
+    expect(await readSchemaJournal(root)).toBeNull()
+    expect(await readFile(p.value.path, 'utf8')).toBe(held)
+  })
+
   it('refuses a rename onto a key a file holds beside the old one, and stages no journal', async () => {
     const c = await createProperty(root, def({ label: 'Status', type: 'select' }))
     if (!c.ok) return

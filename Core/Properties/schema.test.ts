@@ -13,19 +13,34 @@ const def = (
 
 describe('validateName', () => {
   const existing = [def({ id: 'p1', label: 'Stage', key: 'Stage', type: 'status' })]
+  const both = (word: string) => ({ label: word, key: word })
+  const refusalOf = (words: { label: string; key: string }, among = existing): string | null => {
+    const r = validateName(words, among)
+    return r.ok ? null : r.error.message
+  }
+  const refusal = (name: string): string | null => refusalOf(both(name))
 
   it('rejects a case-insensitive duplicate name (empty is the callers\u2019 gate)', () => {
-    expect(validateName('stage', existing).ok).toBe(false)
+    expect(refusal('stage')).toBe(KEY_REFUSAL.duplicate('stage'))
   })
 
   it('allows the same name when it is the excluded def (rename no-op)', () => {
-    expect(validateName('Stage', existing, 'p1').ok).toBe(true)
+    expect(validateName(both('Stage'), existing, 'p1').ok).toBe(true)
   })
 
-  const refusal = (name: string): string | null => {
-    const r = validateName(name, existing)
-    return r.ok ? null : r.error.message
-  }
+  it('refuses a key another property writes in any casing', () => {
+    const phase = [def({ id: 'p2', label: 'Phase', key: 'stage', type: 'status' })]
+    expect(refusalOf(both('Stage'), phase)).toBe(KEY_REFUSAL.duplicateKey('Stage'))
+  })
+
+  it('refuses a reserved key or a reserved label', () => {
+    expect(refusalOf({ label: 'My Banner', key: 'banner' })).toBe(KEY_REFUSAL.reserved('banner'))
+    expect(refusalOf({ label: 'ID', key: 'x' })).toBe(KEY_REFUSAL.reserved('ID'))
+  })
+
+  it('refuses a label that leaves its key empty', () => {
+    expect(refusalOf({ label: '---', key: '' })).toBe(KEY_REFUSAL.noKey)
+  })
 
   it('refuses an empty name', () => {
     expect(refusal('')).toBe(KEY_REFUSAL.empty)

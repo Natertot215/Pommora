@@ -93,6 +93,24 @@ describe('propertiesRegistry', () => {
     expect(kept.defs.prop_b).toEqual(file.defs.prop_b)
     expect(kept.defs.prop_a.select_options).toEqual(options)
   })
+
+  it('admits the first definition to write a key in any casing, and none whose key Pommora manages', async () => {
+    await mkdir(join(root, '.nexus'), { recursive: true })
+    const file = {
+      order: ['prop_a', 'prop_b', 'prop_c'],
+      defs: {
+        prop_a: { id: 'prop_a', label: 'A', key: 'x', type: 'number' },
+        prop_b: { id: 'prop_b', label: 'B', key: 'X', type: 'number' },
+        prop_c: { id: 'prop_c', label: 'My Banner', key: 'banner', type: 'text' },
+      },
+    }
+    await writeFile(join(root, '.nexus', 'properties.json'), JSON.stringify(file))
+    expect(Object.keys((await readRegistry(root)).defs)).toEqual(['prop_a'])
+    await mutateRegistry(root, (registry) => ({ next: registry, result: undefined }))
+    const kept = await readJsonAt<RegistryFile>(join(root, '.nexus', 'properties.json'))
+    expect(kept.defs.prop_b).toEqual(file.defs.prop_b)
+    expect(kept.defs.prop_c).toEqual(file.defs.prop_c)
+  })
 })
 
 describe('a definition with no label (C-3)', () => {

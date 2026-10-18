@@ -110,10 +110,10 @@ export function renameProperty(
     const prior = defs[propertyId]
     if (!prior) return NO_PROPERTY
     if (to === prior.label) return ok(null)
-    const named = validateName(to, Object.values(defs), propertyId)
+    const named = validateName({ label: to, key: to }, Object.values(defs), propertyId)
     if (!named.ok) return named
     // A file holding only the new key is adopted, its value going live as a create's would; one holding both would lose its old value.
-    const clashes = await bothKeyHolders(root, prior.key, to)
+    const clashes = to === prior.key ? [] : await bothKeyHolders(root, prior.key, to)
     if (clashes.length)
       return fail('invalid-property', KEY_REFUSAL.held(prior.key, to, clashes.length))
     const record: SchemaJournal = { op: 'rename', id: propertyId, from: prior.key, to }
@@ -123,7 +123,7 @@ export function renameProperty(
       (registry) => {
         const current = registry.defs[propertyId]
         if (!current) return { result: NO_PROPERTY }
-        const v = validateName(to, Object.values(registry.defs), propertyId)
+        const v = validateName({ label: to, key: to }, Object.values(registry.defs), propertyId)
         if (!v.ok) return { result: v }
         const def = { ...current, label: to, key: to }
         return {
@@ -137,9 +137,9 @@ export function renameProperty(
       return edit
     }
     const { from, def } = edit.value
-    const skipped = await renameSweep(root, from, def)
+    const skipped = from === def.key ? 0 : await renameSweep(root, from, def)
     if (!skipped) await clearSchemaJournal(root, record)
-    return ok({ from, to, ...schemaCascade({ skipped, hosts: [] }, record) })
+    return ok({ from, to: def.key, ...schemaCascade({ skipped, hosts: [] }, record) })
   })
 }
 

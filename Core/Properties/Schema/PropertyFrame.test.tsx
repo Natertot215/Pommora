@@ -490,6 +490,36 @@ describe('native menus + the inline-rename channel (T7)', () => {
     expect(host.querySelector('.row-title-input')).toBeNull()
   })
 
+  it('a rename keeping its key leaves the values epoch, and one moving it bumps with its pair', async () => {
+    const renameTo = async (from: string, to: string): Promise<void> => {
+      renameSpy.mockResolvedValueOnce({
+        ok: true,
+        value: { from, to, cascade: { pages: [], hosts: [] } },
+      })
+      propertyMenuSpy.mockResolvedValueOnce('property:rename')
+      await act(async () => {
+        lineRow('Status')
+          .querySelector('[class*="item"]')!
+          .dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
+      })
+      const input = host.querySelector<HTMLInputElement>('.row-title-input')!
+      await act(async () => {
+        commitTitle(input, to)
+        input.blur()
+      })
+    }
+    await mountPane()
+    const before = useSession.getState().valuesEpoch
+    await renameTo('status', 'status')
+    expect(useSession.getState().valuesEpoch).toBe(before)
+    await renameTo('Stage', 'Phase')
+    expect(useSession.getState().valuesEpoch).toMatchObject({
+      kind: 'rename',
+      oldKey: 'Stage',
+      newKey: 'Phase',
+    })
+  })
+
   it('a registry row opens no menu', async () => {
     useSession.setState({ tree: { config: { registry: [effortDef] } } as never })
     await mountPane()
