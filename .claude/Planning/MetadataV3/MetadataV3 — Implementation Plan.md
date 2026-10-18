@@ -48,7 +48,7 @@ The work lands in ten phases in dependency order, removal first: the Space order
 | 5A | +96 / −82 | +135 / −121 | −89 (+590 / −679) |
 | 5B | +163 / −139 | +230 / −196 | −55 (+806 / −861) |
 | 6 | +151 / −151 | +169 / −156 | −42 (+951 / −993) |
-| 7A | +163 / −39 | | |
+| 7A | +163 / −39 | +160 / −35 | +83 (+1,090 / −1,007) |
 | 7B | +305 / −77 | | |
 | 8 | +106 / −9 | | |
 | 9 | +3 / −3 | | |
@@ -193,12 +193,12 @@ The work lands in ten phases in dependency order, removal first: the Space order
   - [x] Task 6-3 · Every journal record carries keys
   - [x] Task 6-4 · Option changes wait for an owed record
   - [x] Review Checkpoint
-- [ ] `[Compaction checkpoint: c/pre-compaction; on the re-prompt, reread §Constraints and c/plan-execution before Phase 7A opens]`
-- [ ] **Phase 7A** — The Converter and the Key Format
-  - [ ] Task 7A-1 · The converter
-  - [ ] Task 7A-2 · The Key Format field, and a create keyed through it
-  - [ ] Task 7A-3 · One move for a rename and a Key Format change
-  - [ ] Review Checkpoint
+- [x] `[Compaction checkpoint: c/pre-compaction; on the re-prompt, reread §Constraints and c/plan-execution before Phase 7A opens]`
+- [x] **Phase 7A** — The Converter and the Key Format
+  - [x] Task 7A-1 · The converter
+  - [x] Task 7A-2 · The Key Format field, and a create keyed through it
+  - [x] Task 7A-3 · One move for a rename and a Key Format change
+  - [x] Review Checkpoint
 - [ ] **Phase 7B** — The Value Format, Adoption, and the Rows
   - [ ] Task 7B-1 · The Value Format field, its seeds, adds, and renames, and one option rekey
   - [ ] Task 7B-2 · The Value Format change
@@ -4088,7 +4088,7 @@ console.log(files.join('\n'))
 
 **CHANGE**
 
-- [ ] Write and watch fail: `Core/Properties/keyFormat.test.ts` (new) — `KEY_FORMATS` is the ten in B-2's order with `Match Title` first, and `DEFAULT_KEY_FORMAT` is `'Match Title'`; `formatKey('Due Date')` (no format) is `'Due Date'`; B-5: `formatKey('v5.0', 'kebab-case')` is `'v5.0'`, `formatKey('J. Crew', 'kebab-case')` is `'j.-crew'`, `formatKey('New Property', 'lowercase')` is `'new property'`, `formatKey('Due-Date', 'lowercase')` is `'due-date'`; the humps: `formatKey('IPhone', 'kebab-case')` is `'i-phone'`, `formatKey('XMLHttp', 'kebab-case')` is `'xml-http'`, `formatKey('iPhone 17', 'PascalCase')` is `'IPhone17'` and converts to itself, `formatKey('A B Test', 'camelCase')` is `'aBTest'` and converts to itself; B-6: `URL Slug` is `UrlSlug`, `urlSlug`, `Url-Slug`, `url_slug`, `URL_SLUG`, and `URL-SLUG` under `PascalCase`, `camelCase`, `Train-Case`, `snake_case`, `UPPER_SNAKE_CASE`, and `UPPER-KEBAB-CASE`; B-6's adoption table: the formats leaving `Red` unchanged are exactly `['Match Title', 'PascalCase', 'Train-Case']`, `RED` exactly `['Match Title', 'UPPERCASE', 'UPPER_SNAKE_CASE', 'UPPER-KEBAB-CASE']`, and `green` exactly `['Match Title', 'lowercase', 'kebab-case', 'camelCase', 'snake_case']`; D-1's example: `formatKey('Heading Icon Hidden', 'snake_case')` is `'heading_icon_hidden'`; `ß`: `formatKey('Straße', 'UPPERCASE')` is `'STRASSE'` and `formatKey('Straße', 'lowercase')` is `'straße'`; final sigma: `formatKey('ΑΣ Σ', 'PascalCase')` is `'ΑςΣ'`; NFD: `formatKey('CaféBar', 'kebab-case')` is `'café-bar'`, equal to the NFC label's; the round-trip exception: `formatKey('J. Crew', 'PascalCase')` is `'J.Crew'` and `formatKey('J.Crew', 'PascalCase')` is `'J.crew'`; an all-separator label: `formatKey('---', 'kebab-case')` is `''` and `formatKey('---', 'lowercase')` is `'---'`; `isKeyFormat('kebab-case')` is true and `isKeyFormat('Kebab')` and `isKeyFormat(undefined)` are false.
+- [ ] Write and watch fail: `Core/Properties/keyFormat.test.ts` (new) — `KEY_FORMATS` is the ten in B-2's order with `Match Title` first, and `DEFAULT_KEY_FORMAT` is `'Match Title'`; `formatKey('Due Date')` (no format) is `'Due Date'`; B-5: `formatKey('v5.0', 'kebab-case')` is `'v5.0'`, `formatKey('J. Crew', 'kebab-case')` is `'j.-crew'`, `formatKey('New Property', 'lowercase')` is `'new property'`, `formatKey('Due-Date', 'lowercase')` is `'due-date'`; the humps: `formatKey('IPhone', 'kebab-case')` is `'i-phone'`, `formatKey('XMLHttp', 'kebab-case')` is `'xml-http'`, `formatKey('iPhone 17', 'PascalCase')` is `'IPhone17'` and converts to itself, `formatKey('A B Test', 'camelCase')` is `'aBTest'` and converts to itself; B-6: `URL Slug` is `UrlSlug`, `urlSlug`, `Url-Slug`, `url_slug`, `URL_SLUG`, and `URL-SLUG` under `PascalCase`, `camelCase`, `Train-Case`, `snake_case`, `UPPER_SNAKE_CASE`, and `UPPER-KEBAB-CASE`; B-6's adoption table: the formats leaving `Red` unchanged are exactly `['Match Title', 'PascalCase', 'Train-Case']`, `RED` exactly `['Match Title', 'UPPERCASE', 'UPPER_SNAKE_CASE', 'UPPER-KEBAB-CASE']`, and `green` exactly `['Match Title', 'lowercase', 'kebab-case', 'camelCase', 'snake_case']`; D-1's example: `formatKey('Heading Icon Hidden', 'snake_case')` is `'heading_icon_hidden'`; `ß`: `formatKey('Straße', 'UPPERCASE')` is `'STRASSE'` and `formatKey('Straße', 'lowercase')` is `'straße'`; a ligature: `formatKey('ﬁle Name', 'Train-Case')` is `'File-Name'` and converts to itself; final sigma: `formatKey('ΑΣ Σ', 'PascalCase')` is `'ΑςΣ'`; NFD: `formatKey('CaféBar', 'kebab-case')` is `'café-bar'`, equal to the NFC label's; the round-trip exception: `formatKey('J. Crew', 'PascalCase')` is `'J.Crew'` and `formatKey('J.Crew', 'PascalCase')` is `'J.crew'`; an all-separator label: `formatKey('---', 'kebab-case')` is `''` and `formatKey('---', 'lowercase')` is `'---'`; `isKeyFormat('kebab-case')` is true and `isKeyFormat('Kebab')` and `isKeyFormat(undefined)` are false.
 - [ ] `Core/Properties/keyFormat.ts` (new): the module below, importing nothing, so the engine, the Trash, and the renderer all reach it (`Core/Contract/engineGraph.test.ts` stays green).
 
 **AFTER**
@@ -4142,7 +4142,9 @@ console.log(files.join('\n'))
 +
 +const capital = (w: string): string => {
 +  const [first = '', ...rest] = Array.from(w.toLowerCase())
-+  return first.toUpperCase() + rest.join('')
++  // A letter that uppercases to two, as `ﬁ` to `FI`, keeps only the first capital.
++  const [head = '', ...tail] = Array.from(first.toUpperCase())
++  return head + tail.join('').toLowerCase() + rest.join('')
 +}
 +
 +const joined =
@@ -4271,7 +4273,7 @@ for (const miss of misses) console.log(JSON.stringify(miss))
 +      (journal.key === key || journal.id === created.value.id)
 @@ editProperty @@
 -/** Every definition edit but the label and key, which are renameProperty's since the key cascades into every page. */
-+/** Every definition edit but the label, the key, and the Key Format, which ride the rename path since each rewrites the key in every file. */
++/** Every definition edit but the label, the key, and the Key Format, which ride the rename path since each can move the key in every file. */
  export function editProperty(
    root: string,
    propertyId: string,
@@ -4295,7 +4297,7 @@ for (const miss of misses) console.log(JSON.stringify(miss))
 
 **CHANGE**
 
-- [ ] Write and watch fail: `registryProperty.test.ts`, a new describe *§a Key Format change is a rename of the key*: with `Tags` (Match Title) assigned to `Col`, a page holding `Tags: [a]` between two other keys and a Space holding `Tags: ['b']`, `setKeyFormat(root, id, 'lowercase')` stores `{ label: 'Tags', key: 'tags', key_format: 'lowercase' }`, the page reads `tags: [a]` on the same line, the Space holds `tags: ['b']`, the journal is null, and it answers `ok` with `from: 'Tags'` and `to: 'tags'`; under `Heading Icon Hidden`, `setKeyFormat(root, id, 'snake_case')` refuses `KEY_REFUSAL.reserved('heading_icon_hidden')` and the registry, the holders, and the journal are unchanged; beside `{ label: 'Due_Date', key: 'Due_Date' }`, `Due Date` under `snake_case` refuses `KEY_REFUSAL.duplicateKey('due_date')`; under a property labelled `---`, `kebab-case` refuses `KEY_REFUSAL.empty`; with a page holding both `Tags: [a]` and `tags: [b]`, `lowercase` refuses `KEY_REFUSAL.held('Tags', 'tags', 1)` and stages no journal; `setKeyFormat(root, id, 'Match Title')` on a definition already storing `key_format: 'Match Title'` answers `ok(null)` and writes nothing; under `{ label: 'Tags', key: 'tags', key_format: 'lowercase' }`, `renameProperty(root, id, 'Labels')` writes `key: 'labels'` and moves the page's `tags:` to `labels:`, and `renameProperty(root, id, 'TAGS')` writes `label: 'TAGS'`, keeps `key: 'tags'`, leaves the page byte-identical, and answers `from` and `to` both `'tags'`. `handlers.test.ts` *§the property channels*: `property:setKeyFormat` with `'Shouting'` answers the `NEEDS_ID_AND_VALUE` fault. `replaySchemaCascade.test.ts`: an owed `{ op: 'rename', id, from: 'Tags', to: 'tags' }` over a definition storing `key: 'tags'` sweeps a page's `Tags:` to `tags:` and clears. `renameSweep.test.ts`: every call, as Phase 2A leaves the file, passes the new key in place of the definition (`renameSweep(root, 'Status', stage)` becomes `renameSweep(root, 'Status', 'Stage')`), every expectation unchanged, and the `stage` fixture (`:12`) and the `PropertyDefinition` import go, since no call reads them.
+- [ ] Write and watch fail: `registryProperty.test.ts`, a new describe *§a Key Format change is a rename of the key*: with `Tags` (Match Title) assigned to `Col`, a page holding `Tags: [a]` between two other keys and a Space holding `Tags: ['b']`, `setKeyFormat(root, id, 'lowercase')` stores `{ label: 'Tags', key: 'tags', key_format: 'lowercase' }`, the page reads `tags: [a]` on the same line, the Space holds `tags: ['b']`, the journal is null, and it answers `ok` with `from: 'Tags'` and `to: 'tags'`; under `Heading Icon Hidden`, `setKeyFormat(root, id, 'snake_case')` refuses `KEY_REFUSAL.reserved('heading_icon_hidden')` and the registry, the holders, and the journal are unchanged; beside `{ label: 'Due_Date', key: 'Due_Date' }`, `Due Date` under `snake_case` refuses `KEY_REFUSAL.duplicateKey('due_date')`; under a property labelled `---`, `kebab-case` refuses `KEY_REFUSAL.noKey`; with a page holding both `Tags: [a]` and `tags: [b]`, `lowercase` refuses `KEY_REFUSAL.held('Tags', 'tags', 1)` and stages no journal; `setKeyFormat(root, id, 'Match Title')` on a definition already storing `key_format: 'Match Title'` answers `ok(null)` and writes nothing; under `{ label: 'Tags', key: 'tags', key_format: 'lowercase' }`, `renameProperty(root, id, 'Labels')` writes `key: 'labels'` and moves the page's `tags:` to `labels:`, and `renameProperty(root, id, 'TAGS')` writes `label: 'TAGS'`, keeps `key: 'tags'`, leaves the page byte-identical, and answers `from` and `to` both `'tags'`. `handlers.test.ts` *§the property channels*: `property:setKeyFormat` with `'Shouting'` answers the `NEEDS_ID_AND_VALUE` fault. `replaySchemaCascade.test.ts`: an owed `{ op: 'rename', id, from: 'Tags', to: 'tags' }` over a definition storing `key: 'tags'` sweeps a page's `Tags:` to `tags:` and clears. `renameSweep.test.ts`: every call, as Phase 2A leaves the file, passes the new key in place of the definition (`renameSweep(root, 'Status', stage)` becomes `renameSweep(root, 'Status', 'Stage')`), every expectation unchanged, and the `stage` fixture (`:12`) and the `PropertyDefinition` import go, since no call reads them.
 - [ ] `registryProperty.ts`: delete `renameProperty`'s body; add `retitled(def, change)` (the definition with `change` applied and its key written from its label through its Key Format), `rekeyPlan(root, propertyId, change)` (the prior definition and the moved one, or the refusal, or null when neither the label nor the Key Format moves), and `rekeyProperty(root, propertyId, change)` (the journal when the key moves, the commit re-checking `validateName` on `retitled(current, change)`, and the sweep); `renameProperty` enters it with `{ label: exactTitle(label) }` and `setKeyFormat` with `{ key_format }`; `renameSweep(root, from, to)` takes keys.
 - [ ] `replaySchemaCascade.ts:55`: `renameSweep(root, journal.from, def.key)`.
 - [ ] `handlers.ts`: add `idAndFormat` and `'property:setKeyFormat': registryChannel(idAndFormat, setKeyFormat)`; `bridge.ts`: declare `'property:setKeyFormat'`, and `property:rename`'s reply keeps `PropertyRename | null`.
@@ -4572,8 +4574,8 @@ for (const miss of misses) console.log(JSON.stringify(miss))
 +        ? withOptionKeys({ ...def, select_options: defaultSelectSeed() })
          : def
 @@ editProperty @@
--/** Every definition edit but the label, the key, and the Key Format, which ride the rename path since each rewrites the key in every file. */
-+/** Every definition edit but the label, the key, and the formats, which ride the rename paths since each rewrites keys in every file. */
+-/** Every definition edit but the label, the key, and the Key Format, which ride the rename path since each can move the key in every file. */
++/** Every definition edit but the label, the key, and the formats, which ride the rename paths since each can move keys in every file. */
  export function editProperty(
    root: string,
    propertyId: string,
