@@ -290,17 +290,19 @@ describe('applyFilter — per type', () => {
     ).toEqual(['b'])
   })
 
-  it('select and title: is / is_not fold case', () => {
+  it('select is / is_not compare exactly; title folds', () => {
     const rows = [
       row('Bread', { props: { prop_sel: 'alpha' } }),
       row('Milk', { props: { prop_sel: 'beta' } }),
     ]
     const run = (property_id: string, op: string, value: string): string[] =>
       ids(rows, { match: 'all', rules: [{ property_id, op, value }] })
-    expect(run('prop_sel', 'is', 'ALPHA')).toEqual(['Bread'])
-    expect(run('prop_sel', 'is_not', 'ALPHA')).toEqual(['Milk'])
+    expect(run('prop_sel', 'is', 'ALPHA')).toEqual([])
+    expect(run('prop_sel', 'is', 'alpha')).toEqual(['Bread'])
+    expect(run('prop_sel', 'is_not', 'ALPHA')).toEqual(['Bread', 'Milk'])
     expect(run('_title', 'is', 'bread')).toEqual(['Bread'])
     expect(run('_title', 'is_not', 'bread')).toEqual(['Milk'])
+    expect(run('prop_sel', 'contains', 'ALP')).toEqual(['Bread'])
   })
 
   it('select (text): is / contains / does_not_contain', () => {
