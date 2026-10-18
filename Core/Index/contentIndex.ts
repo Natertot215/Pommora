@@ -81,7 +81,7 @@ export function queryKeyHolders(key: string): string[] | null {
   return queryPaths((db) => db.queryKeyHolders(key))
 }
 
-/** The pages holding a Context key in any casing, or — given a normalized Space title — those whose key names that Space. */
+/** The pages holding a Context key, or — given a trimmed NFC Space title — those whose key names that Space. */
 export function queryMembers(key: string, title?: string): string[] | null {
   return title === undefined
     ? queryKeyHolders(key)

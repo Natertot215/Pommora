@@ -5,7 +5,7 @@ import { linksIn, valueLinks } from '../Connections/scan'
 import { headingOutlineOf } from '../MarkdownPM/Engine/headingScan'
 import { inCodeAt, scanDoc } from '../MarkdownPM/Engine/docScan'
 import { contextTitles, parseContextKey } from '../Contexts/contexts'
-import { foldKey, normalizeTitle } from '../Paths/caseFold'
+import { normalizeTitle } from '../Paths/caseFold'
 import { parsePage, splitEnvelope } from '../Files/pageFile'
 import {
   markIndexReady,
@@ -66,7 +66,7 @@ function* spaceRelations(
 ): Generator<{ target: string; qualifier: string }> {
   for (const [key, raw] of Object.entries(values)) {
     if (parseContextKey(key) === null) continue
-    for (const target of new Set(contextTitles(raw))) yield { target, qualifier: foldKey(key) }
+    for (const target of new Set(contextTitles(raw))) yield { target, qualifier: key }
   }
 }
 
