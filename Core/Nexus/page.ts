@@ -3,17 +3,12 @@ import { ID_KEY, PAGE_MODELED_KEYS } from './identityMark'
 import { bodyHash, mergeFrontmatter } from '../Files/pageFile'
 import { machine } from '../Platform/machine'
 import { encodeValue, isBlankValue, type PropertyValue } from '../Properties/propertyValue'
-import type { GovernedWorld } from '../Contexts/contextResolve'
 import { ok, fail, type Result, fault } from '../Contract/result'
 import { atomicWriteFile, pathExists, relocate, targetTaken } from '../Files/atomicWrite'
 import { nameError } from '../Paths/names'
-import { setGovernedRootKey } from '../Properties/governedWrite'
 import type { PropertyDefinition } from '../Properties/properties'
 
 const MD = '.md'
-
-export const noShape = (name: string): Result<never> =>
-  fail('invalid-property', `"${name}" was given a value it has no shape for.`)
 
 export async function createPage(
   parentDir: string,
@@ -30,10 +25,10 @@ export async function createPage(
   const modeled: Record<string, unknown> = { [ID_KEY]: opts.id }
   const keys: string[] = [...PAGE_MODELED_KEYS]
   for (const { def, value } of opts.values ?? []) {
-    if (isBlankValue(value)) continue
-    const encoded = encodeValue(value)
-    if (encoded === undefined) return noShape(def.name)
-    modeled[def.name] = encoded
+    const encoded = encodedValue(def, value)
+    if (!encoded.ok) return encoded
+    if (encoded.value === undefined) continue
+    modeled[def.name] = encoded.value
     keys.push(def.name)
   }
   return machine().lock(file, async () => {
@@ -98,27 +93,7 @@ export function encodedValue(
 ): Result<unknown> {
   if (value === null || isBlankValue(value)) return ok(undefined)
   const encoded = encodeValue(value)
-  return encoded === undefined ? noShape(def.name) : ok(encoded)
-}
-
-// Takes no lock of its own: callers hold the page's lock over a wider span, and a re-take would be refused.
-export async function landPageValue(
-  absFile: string,
-  name: string,
-  raw: unknown,
-  world?: GovernedWorld,
-): Promise<Result<null>> {
-  if (!(await pathExists(absFile))) return fail('not-found', 'Page not found.')
-  await setGovernedRootKey(absFile, name, raw, world)
-  return ok(null)
-}
-
-export async function updatePageProperty(
-  absFile: string,
-  def: PropertyDefinition,
-  value: PropertyValue | null,
-  world?: GovernedWorld,
-): Promise<Result<null>> {
-  const encoded = encodedValue(def, value)
-  return encoded.ok ? landPageValue(absFile, def.name, encoded.value, world) : encoded
+  return encoded === undefined
+    ? fail('invalid-property', `"${def.name}" was given a value it has no shape for.`)
+    : ok(encoded)
 }

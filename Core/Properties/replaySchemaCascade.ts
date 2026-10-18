@@ -53,13 +53,11 @@ async function replay(
       const freed = !def && !Object.values(defs).some((d) => d.name === journal.name)
       if (!crashed && !freed) return NO_REACH
       const folders = await collectionFolders(root)
-      const { held, plan } = await deletePlan(root, journal.id, journal.name, folders)
       const { skipped, hosts, removed } = await stripAndRemove(
         root,
         journal.id,
         folders,
-        held.strip,
-        plan,
+        await deletePlan(root, journal.id, journal.name, folders),
       )
       return { skipped: skipped + (crashed && !removed.ok ? 1 : 0), hosts }
     }
