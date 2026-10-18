@@ -93,7 +93,6 @@ function governorOf(key: string, world: GovernedWorld): Governor | undefined {
 
 const memberCount = (v: unknown): number => new Set(listOf(v).map(memberKey)).size
 
-// The `skip` key passes through verbatim.
 export function reconcileGovernedRoot(
   root: Record<string, unknown>,
   world: GovernedWorld,

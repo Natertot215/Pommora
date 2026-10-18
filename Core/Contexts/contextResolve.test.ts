@@ -249,12 +249,6 @@ describe('reconcileGovernedRoot — option, checkbox, and number spellings (the 
 })
 
 describe('reconcileGovernedRoot — another casing', () => {
-  it('passes another casing of a property key through verbatim', () => {
-    const { root, changed } = reconcileGovernedRoot({ status: 'Open' }, world)
-    expect(root).toEqual({ status: 'Open' })
-    expect(changed).toEqual([])
-  })
-
   it('leaves another casing of a list key and of a Context key as written', () => {
     const input = { tags: ['a'], '<projects>': ['pommora'] }
     const { root, changed } = reconcileGovernedRoot(input, world)

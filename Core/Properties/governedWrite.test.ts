@@ -217,7 +217,7 @@ describe('setGovernedRootKey — spellings', () => {
     expect(await readFile(page, 'utf8')).toBe(before)
   })
 
-  it('a banner write, which passes no world, writes its exact key beside a spelling of it', async () => {
+  it('a banner write, which passes no world, writes its exact key beside another casing of it', async () => {
     await seeded('Banner: x')
     await setGovernedRootKey(page, 'banner', '[[b.png]]')
     const fm = splitFrontmatter(await readFile(page, 'utf8'))

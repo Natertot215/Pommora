@@ -1057,14 +1057,13 @@ describe('held options — the Multi-Select members a changed file holds are reg
   })
 
   it('an outside registry edit that re-cases a Multi-Select’s name registers its members', async () => {
-    await writeFile(abs('Notes', 'A.md'), page(ULID_A, tags('alpha', 'Ideas')))
+    await writeFile(abs('Notes', 'A.md'), page(ULID_A, 'TAGS:\n  - Ideas\n'))
     await walked()
-    const registrar = vi.spyOn(optionOps, 'registerHeldOptions')
     const held = JSON.parse(await readFile(abs('.nexus', 'properties.json'), 'utf8'))
     held.defs.tags.name = 'TAGS'
     await writeFile(abs('.nexus', 'properties.json'), JSON.stringify(held))
     await settleBatch(pusher, root, [ev('change', '.nexus', 'properties.json')])
-    expect(registrar).toHaveBeenCalled()
+    expect(await options()).toContain('Ideas')
   })
 
   it('a rename that changes only the name’s casing moves the key', async () => {

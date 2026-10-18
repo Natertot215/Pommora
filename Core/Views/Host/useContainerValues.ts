@@ -6,6 +6,8 @@ import {
   settled,
 } from '../../Properties/valueOverride'
 import type { PageFrontmatter } from '../../Nexus/schemas'
+import { rekeyHeld } from '../../Files/heldKeys'
+import type { Json } from '../../Files/stableJson'
 import type { PageValues, RowValues } from '../viewRow'
 import { fetchPageValues } from '../../Properties/pageRow'
 import { isAtOrUnder } from '../../Paths/posix'
@@ -16,10 +18,8 @@ const rekeyOverrides = (o: Overrides | null, oldKey: string, newKey: string): Ov
   if (!o) return o
   return Object.fromEntries(
     Object.entries(o).map(([id, entry]) => {
-      const root = entry.fm as unknown as Record<string, unknown>
-      if (!Object.hasOwn(root, oldKey)) return [id, entry]
-      const { [oldKey]: moved, ...rest } = root
-      return [id, { ...entry, fm: { ...rest, [newKey]: moved } as PageFrontmatter }]
+      const fm = rekeyHeld(entry.fm as unknown as Json, oldKey, newKey, 'prefer-new')
+      return [id, fm ? { ...entry, fm: fm as PageFrontmatter } : entry]
     }),
   )
 }

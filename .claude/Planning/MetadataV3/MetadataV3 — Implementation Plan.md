@@ -42,7 +42,7 @@ The work lands in ten phases in dependency order, removal first: the Space order
 | ----- | -------- | -------- | ---------- |
 | 1 | +63 / −102 | +66 / −102 | −36 (+66 / −102) |
 | 2A | +34 / −50 | +33 / −54 | −57 (+99 / −156) |
-| 2B | +110 / −225 | | |
+| 2B | +110 / −225 | +103 / −250 | −204 (+202 / −406) |
 | 3 | +80 / −64 | | |
 | 4 | +67 / −58 | | |
 | 5A | +96 / −82 | | |
@@ -156,9 +156,9 @@ The work lands in ten phases in dependency order, removal first: the Space order
   - [x] Task 2A-1 · The YAML and JSON renames move one exact key
   - [x] Task 2A-2 · The case-only skips go, and the rename replay follows its property
   - [x] Review Checkpoint
-- [ ] **Phase 2B** — Reads and Writes Land on the Key
-  - [ ] Task 2B-1 · The spelling resolution behind reads, writes, and strips leaves
-  - [ ] Task 2B-2 · `heldKeys` and `heldKey` leave, and every gate reads the exact key
+- [x] **Phase 2B** — Reads and Writes Land on the Key
+  - [x] Task 2B-1 · The spelling resolution behind reads, writes, and strips leaves
+  - [x] Task 2B-2 · `heldKeys` and `heldKey` leave, and every gate reads the exact key
   - [ ] Review Checkpoint
 - [ ] **Phase 3** — Exact Words and the Index
   - [ ] Task 3-1 · Members and Space titles match by `exactTitle`
@@ -883,12 +883,15 @@ The work lands in ten phases in dependency order, removal first: the Space order
 +  key: string,
 +  edit: (held: unknown[]) => unknown[] | null,
 +): Json | null {
-+  const list = raw[key] === undefined ? null : edit(listOf(raw[key]))
++  const list = Object.hasOwn(raw, key) ? edit(listOf(raw[key])) : null
 +  return list && landValue(raw, key, list.length ? list : undefined)
 +}
 @@ joinValues doc @@
 -/** Two values as one list: `keep`'s members, then each of `from`'s that matches none of them by `memberKey`; a single value reads as a list of one. Every join of two spellings, and a `'merge'` rename, uses it. */
 +/** Two values as one list: `keep`'s members, then each of `from`'s that matches none of them by `memberKey`; a single value reads as a list of one. */
+@@ stripKeys @@
+-  if (!keys.some((k) => k in root)) return null
++  if (!keys.some((k) => Object.hasOwn(root, k))) return null
 @@ stripHeld @@
 -/** Strips every spelling of `name` from a root; null when it holds none. */
 -export const stripHeld =
@@ -984,7 +987,6 @@ The work lands in ten phases in dependency order, removal first: the Space order
 -}
 @@ reconcileGovernedRoot @@
 -// A governed name reconciles once, under the key `heldKey` reads: a list's spellings join it under the registered spelling and leave once that key is written, while a scalar's other spellings pass through as foreign, for a write to settle. A key in `skip` passes through verbatim.
-+// The `skip` key passes through verbatim.
  export function reconcileGovernedRoot(
    root: Record<string, unknown>,
    world: GovernedWorld,
@@ -1378,7 +1380,7 @@ The work lands in ten phases in dependency order, removal first: the Space order
 - [ ] Write and watch fail: `heldKeys.test.ts:14-20` goes and its import drops `heldKey`. `caseFold.test.ts:85-91` goes with `spellings`' import, and a new `atomicWrite.test.ts` case pins `heldName`: in a folder holding `TAGS.md`, `heldName(join(dir, 'Tags.md'))` and `heldName(join(dir, 'TAGS.md'))` answer `'TAGS.md'`, and a missing name answers null. `PropertyPanel.test.tsx:137` inverts (a page holding `stage` shows no Stage row). `matrixInput.test.ts:172` inverts (the Space holding another spelling abstains: `['a1', 'b1']`). `useViewHost.test.tsx:525` inverts (an override holding `status` stays `{ id: 'p2', status: ['Done'] }` through a rename of `Status`). `contextCascade.test.ts:229` inverts (unlinking `Projects` captures `{ kind: 'page', values: ['Sapphire'] }` and leaves `other()` holding `<projects>: ['Pommora']`). `settle.test.ts`: a new case beside `:1047`: an outside `properties.json` edit re-casing `tags` to `TAGS`, with no file changed, calls `registerHeldOptions`.
 - [ ] `heldKeys.ts`: delete `heldKeys`, `heldKey`, and the `spellings` import.
 - [ ] `caseFold.ts`: delete `spellings`; `atomicWrite.ts`: `heldName` answers the exact name when the folder holds it, else the first name that folds to it, the `spellings` import going (`spellings` had no other reader, so it folds into its one caller rather than moving).
-- [ ] Sibling sweep, each reading `Object.hasOwn(root, key)` or the key itself: `PropertyPanel.tsx:215` and its import; `matrixInput.ts:98` and its import; `cascade.ts:125` pushes every named entry (one key names one definition) and its `heldKey` import goes; `setProperty.ts:26` and its import; `useContainerValues.ts:16-27`; `contextCascade.ts:139-145` (`unlinkContextKey`'s strip reads and captures `raw[key]` alone).
+- [ ] Sibling sweep, each reading `Object.hasOwn(root, key)` or the key itself: `PropertyPanel.tsx:215` and its import; `matrixInput.ts:98` and its import; `cascade.ts:125` pushes every named entry (one key names one definition) and its `heldKey` import goes; `setProperty.ts:26` and its import; `useContainerValues.ts:16-27` (`rekeyOverrides` moves each override's key through `rekeyHeld` under `'prefer-new'`, the host rename's rule); `contextCascade.ts:139-145` (`unlinkContextKey`'s strip reads and captures `raw[key]` alone).
 - [ ] `fileEvents.ts:530`: `p.name !== d.name`; the `foldKey` import goes (its one reader).
 
 **AFTER**
@@ -1466,14 +1468,17 @@ The work lands in ten phases in dependency order, removal first: the Space order
 ```Core/Views/Host/useContainerValues.ts diff
 @@ imports @@
 -import { heldKey } from '../../Files/heldKeys'
+@@ imports @@
++import { rekeyHeld } from '../../Files/heldKeys'
++import type { Json } from '../../Files/stableJson'
 @@ rekeyOverrides @@
-       const root = entry.fm as unknown as Record<string, unknown>
+-      const root = entry.fm as unknown as Record<string, unknown>
 -      const held = heldKey(root, oldKey)
 -      if (held === undefined) return [id, entry]
 -      const { [held]: moved, ...rest } = root
-+      if (!Object.hasOwn(root, oldKey)) return [id, entry]
-+      const { [oldKey]: moved, ...rest } = root
-       return [id, { ...entry, fm: { ...rest, [newKey]: moved } as PageFrontmatter }]
+-      return [id, { ...entry, fm: { ...rest, [newKey]: moved } as PageFrontmatter }]
++      const fm = rekeyHeld(entry.fm as unknown as Json, oldKey, newKey, 'prefer-new')
++      return [id, fm ? { ...entry, fm: fm as PageFrontmatter } : entry]
 ```
 
 ```Core/Contexts/contextCascade.ts diff
@@ -1514,7 +1519,7 @@ The work lands in ten phases in dependency order, removal first: the Space order
 #### Review Checkpoint
 
 - [ ] Two review agents, `code-simplification` and `adversarial-review`,, reading outward: no read or write still resolves a property or `<Title>:` key through a fold (`git grep foldKey -- Core` lists only uniqueness, reserved keys, paths, search, the Sync base, option words, and Space titles); both hosts' writes land the same key through `writtenRoot` and `applyValueAtRoot`; the reconcile repairs each governed key on its own and never shrinks a live value; `heldKeys.ts` holds only `landValue`, `memberKey`, `joinValues`, `editHeldList`, `stripKeys`, `KeyCollision`, and `rekeyHeld`; the Trash refill, re-tag, and restore scrub write and skip the exact key; a case-only Multi-Select rename owes adoption; no caller reads a property's value through a helper rather than its key.
-- [ ] The orchestrator tells Nathan in chat: from this phase until NexusOS's Key Format cutover (I-1), NexusOS's `tags`, `description`, and `version` keys read as foreign to `Tags`, `Description`, and `Version`, so an edit of those three in Pommora lands a second key the cutover then refuses (`KEY_REFUSAL.held`); edit them in Obsidian until the cutover.
+- [ ] The orchestrator tells Nathan in chat: from this phase until NexusOS's Key Format cutover (I-1), NexusOS's `tags`, `description`, and `version` keys read as foreign to `Tags`, `Description`, and `Version`, so an edit of those three in Pommora lands a second key the cutover then refuses (`KEY_REFUSAL.held`), and a rename or delete of `Description` or `Version`, or a rename or removal of a `Tags` option, leaves the lowercase keys and words as they were; edit them in Obsidian and hold those changes until the cutover.
 
 ### Phase 3 — Exact Words and the Index
 
@@ -1587,9 +1592,6 @@ The work lands in ten phases in dependency order, removal first: the Space order
 -export const memberKey = (v: unknown): unknown => (isScalar(v) ? normalizeTitle(v) : v)
 +/** What a member matches by: a scalar's trimmed text, or the member itself. */
 +export const memberKey = (v: unknown): unknown => (isScalar(v) ? exactTitle(v) : v)
-@@ joinValues @@
--/** Two values as one list: `keep`'s members, then each of `from`'s that matches none of them by `memberKey`; a single value reads as a list of one. Every join of two spellings, and a `'merge'` rename, uses it. */
-+/** Two values as one list: `keep`'s members, then each of `from`'s that matches none of them by `memberKey`; a single value reads as a list of one. A `'merge'` rename and the Trash re-tag use it. */
 ```
 
 ```Core/Properties/pageValue.ts diff

@@ -26,13 +26,13 @@ export function editHeldList(
   key: string,
   edit: (held: unknown[]) => unknown[] | null,
 ): Json | null {
-  const list = raw[key] === undefined ? null : edit(listOf(raw[key]))
+  const list = Object.hasOwn(raw, key) ? edit(listOf(raw[key])) : null
   return list && landValue(raw, key, list.length ? list : undefined)
 }
 
 /** `root` without `keys`; null when it holds none of them. */
 export function stripKeys(root: Json, keys: readonly string[]): Json | null {
-  if (!keys.some((k) => k in root)) return null
+  if (!keys.some((k) => Object.hasOwn(root, k))) return null
   return Object.fromEntries(Object.entries(root).filter(([k]) => !keys.includes(k)))
 }
 
