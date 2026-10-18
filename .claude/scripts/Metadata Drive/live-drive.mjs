@@ -606,7 +606,7 @@ async function group3(cdp) {
     ['Done', 'Done', '\n  - Doing'], ["'Done'", 'Done', "\n  - 'Doing'"], ['"Done"', 'Done', '\n  - "Doing"'],
     ['done', '', '\n  - Doing', 'A-1 E-2'], ['[Done]', 'Done', ' [Doing]'], ["['Done']", 'Done', " ['Doing']"],
     ['\n  - "Done"', 'Done', '\n  - "Doing"'], ['2024', '2024', '\n  - Doing'], ["'2024'", '2024', '\n  - Doing'],
-    ['" Done "', 'Done', '\n  - "Doing"'], ['Café', 'Café', '\n  - Doing'],
+    ['" Done "', 'Done', '\n  - Doing'], ['Café', 'Café', '\n  - Doing'],
   ])
     row('Choice', decision, C.choice, `M3 Choice:${held.startsWith('\n') ? '' : ' '}${held}`, shown, [set('select', 'Doing'), `M3 Choice:${want}`])
   for (const [held, shown, want, decision = 'A-3'] of [
@@ -627,7 +627,7 @@ async function group3(cdp) {
     [' [Work, work]', 'Work', null, '', 'E-3'], [' [Work, LIFE]', 'Work', ['Work', 'Home'], ' [Work, Home, LIFE]', 'E-3'],
     [' [life, Work]', 'Work', ['Home'], ' [Home, life]', 'E-3'],
   ])
-    row('Labels', decision, C.labels, `M3 Labels:${held}`, shown, [set('multiSelect', next), `M3 Labels:${want}`])
+    row('Labels', decision, C.labels, `M3 Labels:${held}`, shown, [set('multiSelect', next), want === '' ? '' : `M3 Labels:${want}`])
 
   // Adoption under Match Title: a foreign word of any casing becomes an option unless it duplicates one without regard to case.
   row('Colors', 'E-1 E-3', C.colors, 'M3 Colors: [red, green, PURPLE, Red]', 'red|green|PURPLE', [set('multiSelect', ['red']), 'M3 Colors: [red, Red]'])
@@ -692,7 +692,6 @@ async function group3(cdp) {
   await checkWrites(G, cdp, cases)
 
   // Is and Is Not compare an option exactly, as Contains Any does; Contains stays folded as search.
-  const filterView = mintViewId()
   const titled = rule('_title', 'starts_with', 'M3 Filter')
   for (const [decision, name, r, want] of [
     ['F-2', 'Select Is names its option exactly', rule(ids[C.choice], 'is', 'Done'), [FILTER_A]],
@@ -705,7 +704,8 @@ async function group3(cdp) {
     ['F-2', 'Multi-Select Contains Any with another casing matches nothing', rule(ids[C.labels], 'contains_any', ['work']), []],
     ['F-2', 'Multi-Select Contains Any names its option exactly', rule(ids[C.labels], 'contains_any', ['Work']), [FILTER_A]],
   ]) {
-    await saveView(cdp, filterView, 'Metadata Drive Filter', [], { filter: filterOf(titled, r) })
+    const filterView = mintViewId()
+    await saveView(cdp, filterView, name, [], { filter: filterOf(titled, r) })
     const shown = shownRels(await readTable(cdp, filterView))
     pin(G, decision, name, same(shown, [...want].sort()), show(shown))
   }
