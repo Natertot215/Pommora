@@ -1,6 +1,6 @@
 ## Metadata Drive — Matrix
 
-The drive's cases, derived from *MetadataV3 — Decisions & Intention* and written to the end-state contract of the *MetadataV3 — Implementation Plan*'s AFTER blocks. Groups 1 to 8 each land with the plan phase of their number and drive the host channels the interface calls; group 9 drives each surface by real gesture. Every check prints as `[g<group> <decisions>] <name>`, so a run reads against the tables below line for line. A decision column marked **RULING** is written to the decision and waits on the orchestrator (*§Rulings*).
+The drive's cases, derived from *MetadataV3 — Decisions & Intention* and written to the end-state contract of the *MetadataV3 — Implementation Plan*'s AFTER blocks. Groups 1 to 8 each land with the plan phase of their number and drive the host channels the interface calls, except undo, which lives only in the interface and drives by gesture; group 9 drives each surface by real gesture. Every check prints as `[g<group> <decisions>] <name>`, so a run reads against the tables below line for line. A decision column marked **RULING** is written to the decision and waits on the orchestrator (*§Rulings*).
 
 #### Dimensions
 
@@ -72,6 +72,11 @@ The drive's cases, derived from *MetadataV3 — Decisions & Intention* and writt
 | Option rename | pages, Area One, two views | `renameOption` | every quote style follows; `[work]`, a Space's `work`, and a view naming `work` stay | A-1, F-2 |
 | Space retitle | pages | `renameSpace` | every quote style follows; `[m3 place]` stays | A-2 |
 | Case-only skip | two pages, one unreadable | rename to `m3 case`, `property:replay` | the owed case-only rename sweeps on Try Again; until the index keys exactly, the unreadable holder reads as holding both keys and the rename is refused | A-1, F-3 |
+| Undo over a foreign word | page | pick Work in the table's picker, ⌘Z | `[work]` → `[Work, work]`; the undo puts back `[work]` byte for byte | A-1, E-3, Undo |
+| Undo beside an adopted word | page | unpick Work, ⌘Z | `[Work, ideas]` → `[ideas]`; the undo puts back `[Work, ideas]` | E-1, Undo |
+| Undo over another casing | page | pick Doing, ⌘Z | `done` → a list of one, `Doing`; the undo puts back `done` | A-1, E-2, Undo |
+| Undo over an unreadable Number | page | type 5, ⌘Z | `abc` → `5`; the undo puts back `abc` | Undo |
+| Undo of an added option | page | pick Play, ⌘Z | `[Work]` → `[Work, Play]`; the undo puts back `[Work]` | Undo |
 
 #### Group 4 — Counts and Items
 
@@ -160,6 +165,7 @@ The drive's cases, derived from *MetadataV3 — Decisions & Intention* and writt
 
 #### Rulings
 
+- **Undo puts back what the file held** (group 3's undo cases, `Undo`): Nathan's ruling, recorded in the plan's *§Deviations*; each case cites it beside the decisions its gesture exercises.
 - **A Context pick drops a foreign Space title** (group 3, `area one`): E-3 carries foreign words for a Multi-Select alone, and A-2 makes `area one` foreign data, so the pick writes the picked Spaces only; *§Open Items* lists it to read once.
 - **An exact current key beside a variant** (group 8, `Urgency`): G-1's INFERRED entry gives an exact key its property and says nothing of the variant; the case follows the plan's Phase 8 GOAL, where the variant stays foreign.
 - **A re-spelled Date losing an unreadable value** (group 8, `deadline_date: soon`): G-1 re-spells the key and G-2's reconcile drops what the Date can't read; *§Open Items* lists it to read once.

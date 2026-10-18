@@ -3,9 +3,9 @@ import { join } from 'node:path'
 import { ulid } from 'ulidx'
 import { parse } from 'yaml'
 import {
-  activate, ask, check, chooseNative, click, drag, FM, holds, key, KEY, launch, mintPageId, mouseAt, boxOf, mouseClick, must,
-  nativeMenu, NEXUS, openPanel, portalOpen, pressKey, read, restore, results, SETTINGS_BUTTON, settles, shot, sleep, textEl,
-  until,
+  activate, ask, check, chooseNative, click, drag, FM, holds, key, KEY, launch, META, mintPageId, mouseAt, boxOf, mouseClick,
+  must, nativeMenu, NEXUS, openField, openPanel, portalOpen, pressKey, read, restore, results, selectField, SETTINGS_BUTTON,
+  settles, shot, sleep, textEl, typeText, until,
 } from '../drive-harness.mjs'
 
 const PORT = 9363
@@ -286,6 +286,13 @@ async function readTable(cdp, viewId) {
   return rows
 }
 const shownRels = (rows) => Object.keys(rows).map((id) => relById[id]).filter(Boolean).sort()
+const cellOf = (rel, at) => `document.querySelector('.data-row[data-rid="${pageIds[rel]}"]').querySelectorAll('.data-cell')[${at + 1}]`
+const PICKER_ROWS = '[data-picker-portal] [data-line-row]'
+const pickerRowOf = (label) => `[...document.querySelectorAll(${JSON.stringify(PICKER_ROWS)})].find((e) => e.textContent.trim() === ${JSON.stringify(label)})`
+async function escapeAll(cdp) {
+  for (let i = 0; i < 4 && (await portalOpen(cdp)); i++) await pressKey(cdp, 'Escape')
+  await pressKey(cdp, 'Escape')
+}
 
 // ── The case table ──────────────────────────────────────────────────────────
 // One page per case: `held` is the block the file holds, `read` what the table draws for it (left out for a case that
@@ -594,7 +601,7 @@ async function group2(cdp) {
 
 // ── Group 3 — Exact words, foreign words, Is and Is Not (Phase 3) ──────────
 
-async function group3(cdp) {
+async function group3(cdp, pid) {
   const G = 3
   const { cases, add: row } = caseTable('M3')
   const C = { choice: 'M3 Choice', stage: 'M3 Stage', labels: 'M3 Labels', colors: 'M3 Colors', areas: '<Areas>' }
@@ -657,6 +664,15 @@ async function group3(cdp) {
     { rel: pageAt('M3 Cascade Space 3'), held: '<Areas>: [m3 place]', want: '<Areas>: [m3 place]', by: 'space' },
   ]
   const recasePages = [[pageAt('M3 Case 1'), 'M3 Case: a'], [pageAt('M3 Case 2'), 'M3 Case: b']]
+  // Undo lives only in the interface: each gesture's revert puts back what the file held, byte for byte.
+  const U = { tags: 'M3 Tags', pick: 'M3 Pick', count: 'M3 Count' }
+  const undos = [
+    { name: 'a Multi-Select pick over a word no option names', decision: 'A-1 E-3 Undo', column: U.tags, held: 'M3 Tags: [work]', pick: 'Work', want: 'M3 Tags: [Work, work]' },
+    { name: 'unpicking beside an adopted word', decision: 'E-1 Undo', column: U.tags, held: 'M3 Tags: [Work, ideas]', pick: 'Work', want: 'M3 Tags: [ideas]' },
+    { name: 'a Select pick over another casing', decision: 'A-1 E-2 Undo', column: U.pick, held: 'M3 Pick: done', pick: 'Doing', want: 'M3 Pick:\n  - Doing' },
+    { name: "a Number typed over a value it can't read", decision: 'Undo', column: U.count, held: 'M3 Count: abc', typed: '5', want: 'M3 Count: 5' },
+    { name: 'a Multi-Select pick adding an option', decision: 'Undo', column: U.tags, held: 'M3 Tags: [Work]', pick: 'Play', want: 'M3 Tags: [Work, Play]' },
+  ].map((u, i) => ({ ...u, rel: pageAt(`M3 Undo ${i + 1}`) }))
   const FILTER_A = pageAt('M3 Filter A')
   const FILTER_B = pageAt('M3 Filter B')
   const seeds = [
@@ -665,6 +681,7 @@ async function group3(cdp) {
     [FILTER_A, 'M3 Choice: Done\nM3 Stage: Todo\nM3 Labels: [Work]'],
     [FILTER_B, 'M3 Choice: Doing\nM3 Stage: Done'],
     ...recasePages,
+    ...undos.map((u) => [u.rel, u.held]),
   ]
   seedAll(seeds)
   editSidecar('Areas', 'Area One', { 'M3 Labels': ['work', 'Work'] })
@@ -675,6 +692,9 @@ async function group3(cdp) {
     { label: C.labels, type: 'multiSelect', select_options: ['Work', 'Life', 'Home', '2024', '2025'].map(word) },
     { label: C.colors, type: 'multiSelect', select_options: ['red', 'blue'].map(word) },
     { label: 'M3 Case', type: 'text' },
+    { label: U.tags, type: 'multiSelect', select_options: ['Work', 'Play'].map(word) },
+    { label: U.pick, type: 'select', select_options: ['Done', 'Doing'].map(word) },
+    { label: U.count, type: 'number' },
   ])
   ids[C.areas] = contextIdOf('Areas')
   const columns = Object.values(C)
@@ -684,7 +704,11 @@ async function group3(cdp) {
   await saveView(cdp, view, 'Metadata Drive Words', columns.map((c) => ids[c]))
   await saveView(cdp, exact, 'Metadata Drive Work', [], { filter: filterOf(rule(ids[C.labels], 'contains_any', ['Work'])) })
   await saveView(cdp, folded, 'Metadata Drive work', [], { filter: filterOf(rule(ids[C.labels], 'contains_any', ['work'])) })
+  const undoColumns = Object.values(U)
+  const undoView = mintViewId()
+  await saveView(cdp, undoView, 'Metadata Drive Undo', undoColumns.map((c) => ids[c]), { filter: filterOf(rule('_title', 'starts_with', 'M3 Undo')) })
   await until('green adopted', async () => (await ask(cdp, 'property:holders', ids[C.colors], 'green')).ok, 10000)
+  await until('ideas adopted', async () => (await ask(cdp, 'property:holders', ids[U.tags], 'ideas')).ok, 10000)
   await sleep(1500)
   seededAsWritten(G, seeds)
 
@@ -708,6 +732,27 @@ async function group3(cdp) {
     await saveView(cdp, filterView, name, [], { filter: filterOf(titled, r) })
     const shown = shownRels(await readTable(cdp, filterView))
     pin(G, decision, name, same(shown, [...want].sort()), show(shown))
+  }
+
+  await readTable(cdp, undoView)
+  for (const u of undos) {
+    const cell = cellOf(u.rel, undoColumns.indexOf(u.column))
+    await escapeAll(cdp)
+    if (u.typed) {
+      await openField(cdp, cell)
+      await selectField(cdp)
+      await typeText(cdp, u.typed)
+      await pressKey(cdp, 'Enter')
+    } else {
+      await mouseClick(cdp, cell)
+      await until('the value picker', () => portalOpen(cdp))
+      await mouseAt(cdp, await boxOf(cdp, pickerRowOf(u.pick)))
+    }
+    await escapeAll(cdp)
+    pin(G, u.decision, `${u.name}: the gesture writes ${show(u.want)}`, await wrote(u.rel, u.want), show(blockOf(u.rel)))
+    await activate(cdp, pid)
+    await pressKey(cdp, 'z', META)
+    pin(G, u.decision, `${u.name}: undo puts back what the file held`, await wrote(u.rel, u.held), show(blockOf(u.rel)))
   }
 
   await checkCascades(G, cdp, cascades, {
@@ -1283,8 +1328,6 @@ const DIALOG = `document.querySelector('[role="alertdialog"]')`
 const trigger = (label) => `document.querySelector('button[aria-label="${label}"]')`
 /** The smallest element around `label`'s trigger holding `text`: the row, once the text is its caption. */
 const rowAround = (label, text) => `(() => { let e = ${trigger(label)}; while (e && !e.textContent.includes(${JSON.stringify(text)})) e = e.parentElement; return e })()`
-const PICKER_ROWS = '[data-picker-portal] [data-line-row]'
-const pickerRowOf = (label) => `[...document.querySelectorAll(${JSON.stringify(PICKER_ROWS)})].find((e) => e.textContent.trim() === ${JSON.stringify(label)})`
 const dialogUp = (cdp) => cdp.evaluate(`!!${DIALOG}`)
 const dialogButton = (cancel) => `[...${DIALOG}.querySelectorAll('button')].find((b) => (b.textContent.trim() === 'Cancel') === ${cancel})`
 
@@ -1314,10 +1357,6 @@ async function openSettings(cdp, frame) {
 async function closeSettings(cdp) {
   if (await cdp.evaluate(`!!document.querySelector('.settings-rail')`)) await mouseClick(cdp, ribbon('Settings'))
   await sleep(600)
-}
-async function escapeAll(cdp) {
-  for (let i = 0; i < 4 && (await portalOpen(cdp)); i++) await pressKey(cdp, 'Escape')
-  await pressKey(cdp, 'Escape')
 }
 async function openEditor(cdp, label) {
   await escapeAll(cdp)
@@ -1383,7 +1422,7 @@ async function group9(cdp, pid) {
 
   // The value picker: a word no option claims shows nowhere, and a pick keeps it after the picked options.
   await readTable(cdp, view)
-  const labelCell = `document.querySelector('.data-row[data-rid="${pageIds[labels]}"]').querySelectorAll('.data-cell')[1]`
+  const labelCell = cellOf(labels, 0)
   const chips = await cdp.evaluate(`[...(${labelCell}).querySelectorAll('.cell-chips .over-scroll-host')].map((h) => h.textContent.trim())`)
   pin(G, 'E-3', 'a word no option claims draws no chip', same(chips, ['Work']), show(chips))
   await mouseClick(cdp, labelCell)
@@ -1484,7 +1523,7 @@ try {
   const { pid } = app
   if (GROUPS.has(1)) await group1(cdp)
   if (GROUPS.has(2)) await group2(cdp)
-  if (GROUPS.has(3)) await group3(cdp)
+  if (GROUPS.has(3)) await group3(cdp, pid)
   if (GROUPS.has(4)) await group4(cdp)
   if (GROUPS.has(5)) await group5(cdp)
   if (GROUPS.has(6)) await group6(cdp)

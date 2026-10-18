@@ -153,7 +153,7 @@ export const nativeMenu = (pid) => {
 
 export const click = (cdp, expr) => cdp.evaluate(`(${expr}).click()`)
 
-const VK = { Enter: 13, Escape: 27, Tab: 9, Backspace: 8, b: 66, ArrowDown: 40, ArrowUp: 38, ' ': 32 }
+const VK = { Enter: 13, Escape: 27, Tab: 9, Backspace: 8, b: 66, z: 90, ArrowDown: 40, ArrowUp: 38, ' ': 32 }
 export async function pressKey(cdp, name, modifiers = 0) {
   for (const type of ['rawKeyDown', 'keyUp'])
     await cdp.send('Input.dispatchKeyEvent', { type, key: name, code: name === ' ' ? 'Space' : name.length === 1 ? `Key${name.toUpperCase()}` : name, windowsVirtualKeyCode: VK[name], modifiers })
