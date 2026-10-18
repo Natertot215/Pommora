@@ -14,7 +14,7 @@ import {
 } from './propertyValue'
 
 const def = (over: Partial<PropertyDefinition>): PropertyDefinition =>
-  ({ id: 'p', name: 'P', type: 'select', ...over }) as PropertyDefinition
+  ({ id: 'p', label: 'P', key: 'P', type: 'select', ...over }) as PropertyDefinition
 
 const statusDef = def({
   type: 'status',
@@ -380,7 +380,7 @@ describe('gonePageEntry — the entry a restore parks', () => {
 
 describe('applyValueAtRoot', () => {
   it('writes the exact key beside another casing, and a clear leaves that casing', () => {
-    const status = { ...statusDef, name: 'Status' }
+    const status = { ...statusDef, label: 'Status', key: 'Status' }
     const done = { kind: 'select', value: 'Done' } as const
     expect(applyValueAtRoot({ status: 'Open' }, status, done)).toEqual({
       status: 'Open',
@@ -390,7 +390,7 @@ describe('applyValueAtRoot', () => {
   })
 
   it('a Multi-Select pick keeps the words no option names after it, and a clear drops the key', () => {
-    const tags = { ...multiSelectOf('Docs', 'Work'), name: 'Tags' }
+    const tags = { ...multiSelectOf('Docs', 'Work'), label: 'Tags', key: 'Tags' }
     const picked: PropertyValue = { kind: 'multiSelect', value: ['Docs', 'Work'] }
     expect(applyValueAtRoot({ Tags: ['Docs', 'Ideas'] }, tags, picked)).toEqual({
       Tags: ['Docs', 'Work', 'Ideas'],

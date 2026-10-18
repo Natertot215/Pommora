@@ -54,7 +54,12 @@ const entity = async (
 const addWork = (): Promise<void> =>
   putJson(join(contextsDir(root), 'Areas', 'Work', SIDECAR_FILENAME.space), { id: 'sp_work' })
 
-const RELATED = { id: 'prop_related', name: 'Related', type: 'link' } as PropertyDefinition
+const RELATED = {
+  id: 'prop_related',
+  label: 'Related',
+  key: 'Related',
+  type: 'link',
+} as PropertyDefinition
 
 const addRelated = (): Promise<void> =>
   putJson(nexusConfig(root, NEXUS_CONFIG_FILES.properties), {

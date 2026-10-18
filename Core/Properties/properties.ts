@@ -46,8 +46,8 @@ export const PROPERTY_TYPES: Readonly<Record<PropertyType, TypeSpec>> = {
   file: { kind: 'file', origin: 'user' },
 }
 
-export const byKey = <D extends { name: string }>(defs: Iterable<D>): Map<string, D> =>
-  new Map(Array.from(defs, (d) => [d.name, d]))
+export const byKey = <D extends { key: string }>(defs: Iterable<D>): Map<string, D> =>
+  new Map(Array.from(defs, (d) => [d.key, d]))
 
 /** Each item under its folded title, the first of any whose titles fold alike. */
 export function firstPerTitle<T>(
@@ -124,6 +124,14 @@ export const DEFAULT_CURRENCY: (typeof CURRENCY_CODES)[number] = 'USD'
 export const optionAppearance = z.enum(['filled', 'clear'])
 export type OptionAppearance = z.infer<typeof optionAppearance>
 
+/** A word a registry gives no label reads its key as its label (C-3). */
+export const labelled = <W extends { key: string; label?: string }>(
+  w: W,
+): W & { label: string } => ({
+  ...w,
+  label: w.label ?? w.key,
+})
+
 const selectOption = looseDecoder(
   z.object({
     value: z.string(),
@@ -162,7 +170,8 @@ const statusGroups = z.array(statusGroup)
 
 const propertyDefinitionFields = z.object({
   id: z.string(),
-  name: z.string(),
+  key: z.string(),
+  label: z.string().optional(),
   type: propertyType,
   icon: z.string().optional(),
   select_options: selectOptions.optional(),
@@ -191,8 +200,14 @@ const propertyDefinitionFields = z.object({
   // Relative to the asset root, so re-pointing the root moves every property's folder with it. Governs new writes only — files already on disk keep resolving where they sit.
   file_directory: z.string().optional().catch(undefined),
 })
-export const propertyDefinition = looseDecoder(propertyDefinitionFields)
+export const propertyDefinition = looseDecoder(propertyDefinitionFields).transform(labelled)
 export type PropertyDefinition = z.infer<typeof propertyDefinition>
+
+/** What a create is handed: the create writes the key from the label it lands. */
+export const propertyDraft = looseDecoder(
+  propertyDefinitionFields.omit({ key: true }).extend({ label: z.string() }),
+)
+export type PropertyDraft = z.infer<typeof propertyDraft>
 
 export type LinkConfig = Pick<PropertyDefinition, 'link_underline' | 'link_display' | 'link_color'>
 

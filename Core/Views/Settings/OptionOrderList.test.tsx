@@ -17,14 +17,16 @@ mountEachTest((h, r) => {
 
 const selectDef: PropertyDefinition = {
   id: 'p',
-  name: 'Kind',
+  label: 'Kind',
+  key: 'Kind',
   type: 'select',
   select_options: [{ value: 'Alpha' }, { value: 'Beta' }, { value: 'Gamma' }],
 }
 
 const statusDef: PropertyDefinition = {
   id: 's',
-  name: 'Status',
+  label: 'Status',
+  key: 'Status',
   type: 'status',
   status_groups: [
     {

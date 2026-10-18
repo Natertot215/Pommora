@@ -19,12 +19,13 @@ import {
 
 const selectDef: PropertyDefinition = {
   id: 'prop_sel',
-  name: 'Stage',
+  label: 'Stage',
+  key: 'Stage',
   type: 'select',
   select_options: [{ value: 'Alpha' }, { value: 'Beta' }],
 }
-const dateDef: PropertyDefinition = { id: 'prop_d', name: 'Due', type: 'dateTime' }
-const fileDef: PropertyDefinition = { id: 'prop_f', name: 'Doc', type: 'file' }
+const dateDef: PropertyDefinition = { id: 'prop_d', label: 'Due', key: 'Due', type: 'dateTime' }
+const fileDef: PropertyDefinition = { id: 'prop_f', label: 'Doc', key: 'Doc', type: 'file' }
 
 const optionsTarget = (): PickTarget => ({ kind: 'options', def: selectDef, current: null })
 const dateTimeTarget = (): PickTarget => ({ kind: 'dateTime', def: dateDef, current: null })
@@ -322,7 +323,8 @@ describe('editing options from the picker', () => {
     const [open, active, done] = defaultStatusSeed()
     const statusDef: PropertyDefinition = {
       id: 'prop_st',
-      name: 'Status',
+      label: 'Status',
+      key: 'Status',
       type: 'status',
       status_groups: [open, { ...active, options: [] }, done],
     }

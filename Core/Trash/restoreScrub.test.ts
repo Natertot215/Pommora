@@ -76,7 +76,8 @@ beforeEach(async () => {
       defs: {
         [PROP]: {
           id: PROP,
-          name: 'Priority',
+          label: 'Priority',
+          key: 'Priority',
           type: 'select',
           select_options: [
             { value: 'hi', color: 'red' },
@@ -259,7 +260,8 @@ describe('a returning artifact is reconciled against the world it comes back to'
           defs: {
             [PROP]: {
               id: PROP,
-              name: 'Priority',
+              label: 'Priority',
+              key: 'Priority',
               type: 'select',
               select_options: [{ value: 'lo', color: 'blue' }],
             },
@@ -278,7 +280,8 @@ describe('a returning artifact is reconciled against the world it comes back to'
         defs: {
           [PROP]: {
             id: PROP,
-            name: 'Tags',
+            label: 'Tags',
+            key: 'Tags',
             type: 'multi_select',
             select_options: [
               { value: 'a', color: 'red' },
@@ -300,7 +303,8 @@ describe('a returning artifact is reconciled against the world it comes back to'
           defs: {
             [PROP]: {
               id: PROP,
-              name: 'Tags',
+              label: 'Tags',
+              key: 'Tags',
               type: 'multi_select',
               select_options: [{ value: 'a', color: 'red' }],
             },
@@ -322,7 +326,7 @@ describe('a returning artifact is reconciled against the world it comes back to'
       join(root, '.nexus', 'properties.json'),
       JSON.stringify({
         order: [LINK],
-        defs: { [LINK]: { id: LINK, name: 'Related', type: 'link' } },
+        defs: { [LINK]: { id: LINK, label: 'Related', key: 'Related', type: 'link' } },
       }),
     )
     await writeFile(

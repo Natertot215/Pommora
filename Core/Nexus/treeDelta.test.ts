@@ -8,7 +8,7 @@ type Tree = {
   contexts: { def: { id: string; title: string }; spaces: { id: string; path: string }[] }[]
   config: {
     excluded: string[]
-    registry: { id: string; name: string }[]
+    registry: { id: string; label: string; key: string }[]
     order: { collections: string[] }
   }
 }
@@ -48,8 +48,8 @@ function treeFrom(r: () => number): Tree {
     config: {
       excluded: ['Archive'],
       registry: [
-        { id: 'prop_a', name: 'A' },
-        { id: 'prop_b', name: 'B' },
+        { id: 'prop_a', label: 'A', key: 'A' },
+        { id: 'prop_b', label: 'B', key: 'B' },
       ],
       order: { collections: collections.map((c) => c.id) },
     },
@@ -108,7 +108,9 @@ function edited(r: () => number, a: Tree): Tree {
           ...t,
           config: {
             ...t.config,
-            registry: t.config.registry.map((d, i) => (i === 1 ? { ...d, name: `${d.name}*` } : d)),
+            registry: t.config.registry.map((d, i) =>
+              i === 1 ? { ...d, label: `${d.label}*` } : d,
+            ),
           },
         }
         break

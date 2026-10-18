@@ -10,13 +10,15 @@ import { propsAtRoot } from '../../Testing/pageValues'
 const schema: PropertyDefinition[] = [
   {
     id: 'prop_sel',
-    name: 'Sel',
+    label: 'Sel',
+    key: 'Sel',
     type: 'select',
     select_options: [{ value: 'a' }, { value: 'b' }, { value: 'c' }],
   },
   {
     id: 'prop_status',
-    name: 'Status',
+    label: 'Status',
+    key: 'Status',
     type: 'status',
     status_groups: [
       {
@@ -39,18 +41,19 @@ const schema: PropertyDefinition[] = [
       },
     ],
   },
-  { id: 'prop_num', name: 'Num', type: 'number' },
-  { id: 'prop_done', name: 'Done', type: 'checkbox' },
-  { id: 'prop_when', name: 'When', type: 'dateTime' },
-  { id: 'prop_led', name: 'Edited', type: 'lastEditedTime' },
+  { id: 'prop_num', label: 'Num', key: 'Num', type: 'number' },
+  { id: 'prop_done', label: 'Done', key: 'Done', type: 'checkbox' },
+  { id: 'prop_when', label: 'When', key: 'When', type: 'dateTime' },
+  { id: 'prop_led', label: 'Edited', key: 'Edited', type: 'lastEditedTime' },
   {
     id: 'prop_rel',
-    name: 'Rel',
+    label: 'Rel',
+    key: 'Rel',
     type: 'context',
   },
-  { id: 'prop_link', name: 'Link', type: 'link' },
-  { id: 'prop_file', name: 'File', type: 'file' },
-  { id: 'prop_notes', name: 'Notes', type: 'text' },
+  { id: 'prop_link', label: 'Link', key: 'Link', type: 'link' },
+  { id: 'prop_file', label: 'File', key: 'File', type: 'file' },
+  { id: 'prop_notes', label: 'Notes', key: 'Notes', type: 'text' },
 ]
 
 function makeRow(
@@ -137,7 +140,8 @@ describe('makeSorter — type-aware single criterion', () => {
   it('a Select sorts by its own options, never by a stale status_groups array it still carries', () => {
     const stale: PropertyDefinition = {
       id: 'prop_stale',
-      name: 'Stale',
+      label: 'Stale',
+      key: 'Stale',
       type: 'select',
       select_options: [{ value: 'a' }, { value: 'b' }],
       status_groups: [
@@ -166,7 +170,8 @@ describe('makeSorter — type-aware single criterion', () => {
   it('a Status sorts by its groups, never by a stale select_options array it still carries', () => {
     const stale: PropertyDefinition = {
       id: 'prop_stale',
-      name: 'Stale',
+      label: 'Stale',
+      key: 'Stale',
       type: 'status',
       select_options: [{ value: 'done' }],
       status_groups: [

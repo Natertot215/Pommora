@@ -143,7 +143,7 @@ describe('trashRows — a bundle as the browser reads it', () => {
     await writePropertyBundle(root, {
       entity: 'property',
       id: 'prop_x',
-      def: { id: 'prop_x', name: 'Stage' },
+      def: { id: 'prop_x', label: 'Stage', key: 'Stage' },
       values: {},
     })
     await del('Notes/Daily/Alpha.md', 'page')

@@ -12,7 +12,7 @@ export async function updatePageProperty(
   world?: GovernedWorld,
 ): Promise<Result<null>> {
   const encoded = valueToWrite(def, value)
-  return encoded.ok ? landPageValue(absFile, def.name, encoded.value, world) : encoded
+  return encoded.ok ? landPageValue(absFile, def.key, encoded.value, world) : encoded
 }
 
 export async function setSpaceProperty(
@@ -22,5 +22,5 @@ export async function setSpaceProperty(
   value: PropertyValue | null,
 ): Promise<Result<null>> {
   const encoded = valueToWrite(def, value)
-  return encoded.ok ? landSpaceValue(root, absSpaceDir, def.name, encoded.value) : encoded
+  return encoded.ok ? landSpaceValue(root, absSpaceDir, def.key, encoded.value) : encoded
 }

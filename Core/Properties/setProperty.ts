@@ -55,7 +55,7 @@ export async function setSpacePropertyOp(
   const def = (await readRegistry(root)).defs[req.propertyId]
   if (!def) return NO_PROPERTY
   const value = landed(req, def)
-  return done(value.ok ? await landSpaceValue(root, resolved.value, def.name, value.value) : value)
+  return done(value.ok ? await landSpaceValue(root, resolved.value, def.key, value.value) : value)
 }
 
 export async function setPagePropertyOp(
@@ -73,7 +73,7 @@ export async function setPagePropertyOp(
       return value.ok
         ? landPageValue(
             resolved.value,
-            def.name,
+            def.key,
             value.value,
             await pageWorldOf(root, resolved.value),
           )

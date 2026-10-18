@@ -30,7 +30,7 @@ const render = async (openInPreview?: StandaloneFilter): Promise<void> => {
   useSession.setState({
     tree: makeTree({
       personalization: openInPreview ? { openInPreview } : {},
-      registry: [{ id: 'prop_mood', name: 'Mood', type: 'text' }],
+      registry: [{ id: 'prop_mood', label: 'Mood', key: 'Mood', type: 'text' }],
     }),
   })
   host = document.createElement('div')

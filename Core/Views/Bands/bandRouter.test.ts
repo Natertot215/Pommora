@@ -21,7 +21,8 @@ const source = set('col', 'Col', [
 ])
 const statusDef: PropertyDefinition = {
   id: 'prop_status',
-  name: 'Status',
+  label: 'Status',
+  key: 'Status',
   type: 'status',
   status_groups: [
     { id: 'todo', label: 'To Do', color: 'gray', options: [{ value: 'open', group_id: 'todo' }] },

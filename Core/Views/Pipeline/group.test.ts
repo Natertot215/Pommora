@@ -68,7 +68,8 @@ const itemIds = (g: { items: ViewRow[] }): string[] => g.items.map((r) => r.id)
 const statusSchema: PropertyDefinition[] = [
   {
     id: 'prop_status',
-    name: 'Status',
+    label: 'Status',
+    key: 'Status',
     type: 'status',
     status_groups: [
       {
@@ -489,7 +490,8 @@ describe('property grouping — configured / reversed / date', () => {
   const selSchema: PropertyDefinition[] = [
     {
       id: 'prop_sel',
-      name: 'Sel',
+      label: 'Sel',
+      key: 'Sel',
       type: 'select',
       select_options: [{ value: 'a' }, { value: 'b' }, { value: 'c' }],
     },
@@ -525,7 +527,9 @@ describe('property grouping — configured / reversed / date', () => {
   })
 
   it('a checkbox group property falls back to structural; its rows still bucket for sort-run reassign', () => {
-    const cbSchema: PropertyDefinition[] = [{ id: 'prop_done', name: 'Done', type: 'checkbox' }]
+    const cbSchema: PropertyDefinition[] = [
+      { id: 'prop_done', label: 'Done', key: 'Done', type: 'checkbox' },
+    ]
     const values = pageValues({
       p1: { [ID_KEY]: 'p1', ...propsAtRoot({ prop_done: true }, cbSchema) },
       p2: { [ID_KEY]: 'p2' },
@@ -545,7 +549,9 @@ describe('property grouping — configured / reversed / date', () => {
   })
 
   it('a text value never buckets', () => {
-    const textSchema: PropertyDefinition[] = [{ id: 'prop_notes', name: 'Notes', type: 'text' }]
+    const textSchema: PropertyDefinition[] = [
+      { id: 'prop_notes', label: 'Notes', key: 'Notes', type: 'text' },
+    ]
     const values = pageValues({
       p1: { [ID_KEY]: 'p1', ...propsAtRoot({ prop_notes: 'a note' }, textSchema) },
     })
@@ -554,7 +560,9 @@ describe('property grouping — configured / reversed / date', () => {
   })
 
   it('buckets dates by granularity (same month together)', () => {
-    const dateSchema: PropertyDefinition[] = [{ id: 'prop_when', name: 'When', type: 'dateTime' }]
+    const dateSchema: PropertyDefinition[] = [
+      { id: 'prop_when', label: 'When', key: 'When', type: 'dateTime' },
+    ]
     const values = pageValues({
       p1: {
         [ID_KEY]: 'p1',
@@ -592,7 +600,9 @@ describe('property grouping — configured / reversed / date', () => {
   })
 
   it('buckets a date-only value by its stored date (no timezone shift)', () => {
-    const dueSchema: PropertyDefinition[] = [{ id: 'prop_due', name: 'Due', type: 'dateTime' }]
+    const dueSchema: PropertyDefinition[] = [
+      { id: 'prop_due', label: 'Due', key: 'Due', type: 'dateTime' },
+    ]
     const values = pageValues({
       p1: { [ID_KEY]: 'p1', ...propsAtRoot({ prop_due: '2026-06-27' }, dueSchema) },
     })
@@ -628,7 +638,7 @@ describe('property grouping — non-groupable fallback', () => {
         property_id: 'prop_num',
         order_mode: 'configured',
       },
-      [{ id: 'prop_num', name: 'Num', type: 'number' }],
+      [{ id: 'prop_num', label: 'Num', key: 'Num', type: 'number' }],
       setTree,
       null,
       'bottom',
@@ -642,7 +652,7 @@ describe('property grouping — non-groupable fallback', () => {
         property_id: 'prop_tags',
         order_mode: 'configured',
       },
-      [{ id: 'prop_tags', name: 'Tags', type: 'multiSelect' }],
+      [{ id: 'prop_tags', label: 'Tags', key: 'Tags', type: 'multiSelect' }],
       setTree,
       null,
       'bottom',
@@ -683,8 +693,8 @@ describe('dateBucketKey', () => {
 
 describe('bucketGroupingOf', () => {
   const schema: PropertyDefinition[] = [
-    { id: 'prop_s', name: 'S', type: 'status' },
-    { id: 'prop_d', name: 'D', type: 'dateTime' },
+    { id: 'prop_s', label: 'S', key: 'S', type: 'status' },
+    { id: 'prop_d', label: 'D', key: 'D', type: 'dateTime' },
   ]
   const sub = { property_id: 'prop_s', order_mode: 'configured' } as const
   const plan = (view: Partial<SavedView>) => groupPlan(view as SavedView, schema, true)
@@ -717,7 +727,7 @@ describe('bucketGroupingOf', () => {
 })
 
 describe('setOrderOf and pageOrderOf', () => {
-  const schema: PropertyDefinition[] = [{ id: 'prop_s', name: 'S', type: 'status' }]
+  const schema: PropertyDefinition[] = [{ id: 'prop_s', label: 'S', key: 'S', type: 'status' }]
   const property = { kind: 'property', property_id: 'prop_s', order_mode: 'configured' } as const
   const locationSort = [{ property_id: LOCATION_SORT, direction: 'asc' }]
   const planOf = (view: Partial<SavedView>, nests = true) =>

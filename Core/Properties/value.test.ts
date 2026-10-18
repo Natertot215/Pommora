@@ -8,7 +8,8 @@ import { propsAtRoot } from '../Testing/pageValues'
 const schema: PropertyDefinition[] = [
   {
     id: 'prop_status',
-    name: 'Status',
+    label: 'Status',
+    key: 'Status',
     type: 'status',
     status_groups: [
       {
@@ -19,15 +20,22 @@ const schema: PropertyDefinition[] = [
       },
     ],
   },
-  { id: 'prop_sel', name: 'Sel', type: 'select', select_options: [{ value: 'opt_a' }] },
+  {
+    id: 'prop_sel',
+    label: 'Sel',
+    key: 'Sel',
+    type: 'select',
+    select_options: [{ value: 'opt_a' }],
+  },
   {
     id: 'prop_s',
-    name: 'S',
+    label: 'S',
+    key: 'S',
     type: 'select',
     select_options: [{ value: 'open' }, { value: 'done' }],
   },
-  { id: 'prop_when', name: 'When', type: 'dateTime' },
-  { id: 'prop_num', name: 'Num', type: 'number' },
+  { id: 'prop_when', label: 'When', key: 'When', type: 'dateTime' },
+  { id: 'prop_num', label: 'Num', key: 'Num', type: 'number' },
 ]
 
 const rfv = (r: ViewRow, p: string) => resolveFieldValue(r, p, schema)
@@ -82,7 +90,9 @@ describe('declaredType', () => {
     expect(columnType({ id: 'ctx_areas', kind: 'context' }, [])).toBe('context')
     expect(columnType({ id: '_title', kind: 'title' }, [])).toBe('title')
     expect(
-      columnType({ id: 'p', kind: 'property' }, [{ id: 'p', name: 'P', type: 'number' }]),
+      columnType({ id: 'p', kind: 'property' }, [
+        { id: 'p', label: 'P', key: 'P', type: 'number' },
+      ]),
     ).toBe('number')
   })
 })
@@ -125,6 +135,18 @@ describe('resolveFieldValue', () => {
     expect(rfv(held({ STATUS: 'in_progress', status: 'other' }), 'prop_status')).toEqual({
       kind: 'null',
     })
+  })
+
+  it('reads a property under its key, not its label', () => {
+    const def: PropertyDefinition = {
+      id: 'prop_s',
+      label: 'S',
+      key: 's',
+      type: 'select',
+      select_options: [{ value: 'open' }, { value: 'done' }],
+    }
+    const keyed: ViewRow = { ...row, frontmatter: { [ID_KEY]: '01ROW', S: 'done', s: 'open' } }
+    expect(resolveFieldValue(keyed, 'prop_s', [def])).toEqual({ kind: 'select', value: 'open' })
   })
 
   it('returns null for an absent property', () => {
@@ -215,7 +237,7 @@ describe('resolveFieldValue memoization', () => {
     }
     const def = schema.find((d) => d.id === 'prop_s') as PropertyDefinition
     expect(resolveFieldValue(r, 'prop_s', [def])).toEqual({ kind: 'select', value: 'open' })
-    expect(resolveFieldValue(r, 'prop_s', [{ ...def, name: 'T' }])).toEqual({
+    expect(resolveFieldValue(r, 'prop_s', [{ ...def, label: 'T', key: 'T' }])).toEqual({
       kind: 'select',
       value: 'done',
     })
@@ -243,10 +265,11 @@ describe('resolveFieldValue memoization', () => {
 
 describe('resolveFieldValue — the declared type is obeyed, never inferred from the value', () => {
   const typedSchema: PropertyDefinition[] = [
-    { id: 'prop_link', name: 'Link', type: 'link' },
+    { id: 'prop_link', label: 'Link', key: 'Link', type: 'link' },
     {
       id: 'prop_tag',
-      name: 'Tag',
+      label: 'Tag',
+      key: 'Tag',
       type: 'select',
       select_options: [{ value: 'opt_a' }, { value: '[URGENT](tel:911)' }],
     },

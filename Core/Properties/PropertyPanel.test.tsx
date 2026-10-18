@@ -17,12 +17,13 @@ stubPointerCapture()
 
 const stageDef: PropertyDefinition = {
   id: 'prop_stage',
-  name: 'Stage',
+  label: 'Stage',
+  key: 'Stage',
   type: 'select',
   select_options: [{ value: 'Alpha' }, { value: 'Beta' }],
 }
-const noteDef: PropertyDefinition = { id: 'prop_note', name: 'Note', type: 'number' }
-const rankDef: PropertyDefinition = { id: 'prop_rank', name: 'Rank', type: 'number' }
+const noteDef: PropertyDefinition = { id: 'prop_note', label: 'Note', key: 'Note', type: 'number' }
+const rankDef: PropertyDefinition = { id: 'prop_rank', label: 'Rank', key: 'Rank', type: 'number' }
 
 const PAGE = { kind: 'page', id: 'p1', path: 'Col/Page.md' } as const
 const SPACE = { kind: 'space', id: 'area_work' } as const
@@ -164,7 +165,12 @@ describe('PropertyPanel', () => {
   })
 
   it('Remove on a Link value’s menu clears the value and hides its row', async () => {
-    const siteDef: PropertyDefinition = { id: 'prop_site', name: 'Site', type: 'link' }
+    const siteDef: PropertyDefinition = {
+      id: 'prop_site',
+      label: 'Site',
+      key: 'Site',
+      type: 'link',
+    }
     setTree()
     const tree = useSession.getState().tree as unknown as {
       config: { registry: PropertyDefinition[] }
@@ -201,7 +207,12 @@ describe('PropertyPanel', () => {
   })
 
   it('a Link value naming no page pops the fallback menu, whose Edit opens the editor', async () => {
-    const siteDef: PropertyDefinition = { id: 'prop_site', name: 'Site', type: 'link' }
+    const siteDef: PropertyDefinition = {
+      id: 'prop_site',
+      label: 'Site',
+      key: 'Site',
+      type: 'link',
+    }
     setTree()
     const tree = useSession.getState().tree as unknown as {
       config: { registry: PropertyDefinition[] }

@@ -36,7 +36,7 @@ beforeEach(async () => {
   await mkdir(abs('Notes'), { recursive: true })
   await createProperty(root, {
     id: 'prop_s',
-    name: 'Stage',
+    label: 'Stage',
     type: 'select',
     select_options: [{ value: 'Draft' }],
   })
@@ -68,7 +68,7 @@ describe('keyHolderFiles', () => {
   it('a name registered after the seed finds the pages already holding it, with no re-read', async () => {
     await page('Late', 'Notes: x\n')
     await seedContentIndex(root)
-    await createProperty(root, { id: 'prop_n', name: 'Notes', type: 'link' })
+    await createProperty(root, { id: 'prop_n', label: 'Notes', type: 'link' })
     expect(await keyHolderFiles(root, 'Notes', [abs('Notes')])).toEqual([abs('Notes', 'Late.md')])
   })
 

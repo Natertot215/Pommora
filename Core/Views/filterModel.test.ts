@@ -44,15 +44,15 @@ describe('decodeFilter', () => {
 
 describe('vocabulary', () => {
   const schema: PropertyDefinition[] = [
-    { id: 'prop_sel', name: 'Sel', type: 'select' },
-    { id: 'prop_done', name: 'Done', type: 'checkbox' },
-    { id: 'prop_tags', name: 'Tags', type: 'multiSelect' },
+    { id: 'prop_sel', label: 'Sel', key: 'Sel', type: 'select' },
+    { id: 'prop_done', label: 'Done', key: 'Done', type: 'checkbox' },
+    { id: 'prop_tags', label: 'Tags', key: 'Tags', type: 'multiSelect' },
   ]
 
   it("text reads Link's seven operators", () => {
     const linkAndText: PropertyDefinition[] = [
-      { id: 'prop_url', name: 'Link', type: 'link' },
-      { id: 'prop_notes', name: 'Notes', type: 'text' },
+      { id: 'prop_url', label: 'Link', key: 'Link', type: 'link' },
+      { id: 'prop_notes', label: 'Notes', key: 'Notes', type: 'text' },
     ]
     expect(operatorsFor('prop_notes', linkAndText)).toEqual(operatorsFor('prop_url', linkAndText))
     expect(operatorsFor('prop_notes', linkAndText)).toHaveLength(7)

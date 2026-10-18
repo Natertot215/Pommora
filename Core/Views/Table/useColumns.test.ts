@@ -11,14 +11,14 @@ import {
 } from './useColumns'
 
 const schema: PropertyDefinition[] = [
-  { id: 'prop_status', name: 'Status', type: 'status' },
-  { id: 'prop_select', name: 'Tag', type: 'select' },
-  { id: 'prop_multi', name: 'Tags', type: 'multiSelect' },
-  { id: 'prop_n', name: 'Count', type: 'number' },
-  { id: 'prop_done', name: 'Done', type: 'checkbox' },
-  { id: 'prop_url', name: 'Link', type: 'link' },
-  { id: 'prop_date', name: 'Due', type: 'dateTime' },
-  { id: 'prop_notes', name: 'Notes', type: 'text' },
+  { id: 'prop_status', label: 'Status', key: 'Status', type: 'status' },
+  { id: 'prop_select', label: 'Tag', key: 'Tag', type: 'select' },
+  { id: 'prop_multi', label: 'Tags', key: 'Tags', type: 'multiSelect' },
+  { id: 'prop_n', label: 'Count', key: 'Count', type: 'number' },
+  { id: 'prop_done', label: 'Done', key: 'Done', type: 'checkbox' },
+  { id: 'prop_url', label: 'Link', key: 'Link', type: 'link' },
+  { id: 'prop_date', label: 'Due', key: 'Due', type: 'dateTime' },
+  { id: 'prop_notes', label: 'Notes', key: 'Notes', type: 'text' },
 ]
 
 describe('column widths', () => {

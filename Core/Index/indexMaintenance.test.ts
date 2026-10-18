@@ -129,7 +129,7 @@ describe('the writers maintain the rows', () => {
   })
 
   it('a property write lands in page_values; a create is born indexed', async () => {
-    await createProperty(root, { id: 'prop_s', name: 'Stage', type: 'select' })
+    await createProperty(root, { id: 'prop_s', label: 'Stage', type: 'select' })
     const set = await settledMutate(
       root,
       {

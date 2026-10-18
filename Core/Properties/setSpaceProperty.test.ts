@@ -10,7 +10,7 @@ import { readRegistry } from './propertiesRegistry'
 import { setSpacePropertyOp } from './setProperty'
 import type { MutateContext } from '../Nexus/mutate'
 import type { TrashDeps } from '../Trash/bundle'
-import type { PropertyDefinition } from './properties'
+import type { PropertyDraft } from './properties'
 import type { PropertyValue } from './propertyValue'
 import { closeSession, openSession } from '../Nexus/session'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
@@ -24,9 +24,8 @@ let statusId: string
 const deps: TrashDeps = { trashMode: 'system', trashToSystem: async () => {} }
 const ctx = (): MutateContext => ({ root, deps })
 
-const def = (
-  over: Partial<PropertyDefinition> & { name: string; type: PropertyDefinition['type'] },
-) => ({ id: '', ...over }) as PropertyDefinition
+const def = (over: Partial<PropertyDraft> & { label: string; type: PropertyDraft['type'] }) =>
+  ({ id: '', ...over }) as PropertyDraft
 
 beforeEach(async () => {
   root = tempRoot('pom-spaceprop-')
@@ -39,7 +38,7 @@ beforeEach(async () => {
   const space = await createSpace(root, groupId, 'Pommora', newId())
   if (!space.ok) throw new Error('setup failed')
   spaceRel = space.value.path
-  const made = await createProperty(root, def({ name: 'Status', type: 'select' }))
+  const made = await createProperty(root, def({ label: 'Status', type: 'select' }))
   if (!made.ok) throw new Error('setup failed')
   statusId = made.value.id
 })
@@ -100,11 +99,11 @@ describe('a value write reconciles the Space it lands on', () => {
       join(nexusDir(root), 'nexus.json'),
       JSON.stringify({ id: 'nx', createdAt: 'x' }),
     )
-    const priority = await createProperty(root, def({ name: 'Priority', type: 'number' }))
+    const priority = await createProperty(root, def({ label: 'Priority', type: 'number' }))
     const tags = await createProperty(
       root,
       def({
-        name: 'Tags',
+        label: 'Tags',
         type: 'multiSelect',
         select_options: [{ value: 'alpha' }, { value: 'beta' }],
       }),

@@ -81,7 +81,8 @@ export const toggleValue = (selected: string[], value: string): string[] =>
 
 export const syntheticContextDef = (id: string): PropertyDefinition => ({
   id,
-  name: '',
+  label: '',
+  key: '',
   type: 'context',
 })
 
@@ -140,7 +141,7 @@ export function PropertyPicker({
     />
   ) : (
     <PathField
-      label={t.def.name}
+      label={t.def.label}
       value=""
       empty="Choose a file"
       browseLabel="Choose File"

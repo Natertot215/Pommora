@@ -56,7 +56,7 @@ export function trashRowOf(bundle: ListedBundle, tree: NexusTree): TrashRow | nu
     return {
       bundlePath,
       kind: 'property',
-      title: typeof record.def.name === 'string' ? record.def.name : record.id,
+      title: typeof record.def.label === 'string' ? record.def.label : record.id,
       ...(type.success ? { propertyType: type.data } : {}),
       crumbs: [],
       deletedAt: deletedAtOf(bundlePath),

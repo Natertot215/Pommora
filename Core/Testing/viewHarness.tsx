@@ -57,7 +57,8 @@ export const settle = (ms = 1): Promise<void> =>
 /** The two-group Status property the card suites group and reassign across. */
 export const STATUS_DEF: PropertyDefinition = {
   id: 'prop_status',
-  name: 'Status',
+  label: 'Status',
+  key: 'Status',
   type: 'status',
   status_groups: [
     {

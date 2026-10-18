@@ -38,7 +38,7 @@ const conn: ConnectionsApi = {
   open,
 }
 
-const def = { id: 'prop_l', name: 'Site', type: 'link', link_color: 'blue' } as const
+const def = { id: 'prop_l', label: 'Site', key: 'Site', type: 'link', link_color: 'blue' } as const
 const bubbled = vi.fn()
 
 const mount = async (

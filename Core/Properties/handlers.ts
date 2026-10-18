@@ -14,7 +14,7 @@ import {
   narrowFileConfig,
   narrowLinkConfig,
   narrowNumberFormat,
-  propertyDefinition,
+  propertyDraft,
 } from './properties'
 import {
   createProperty,
@@ -137,7 +137,7 @@ export const propertiesHandlers = {
   'schema:add': withWriteRoot(async (root, _ctx, containerPath: unknown, def: unknown) => {
     const c = await resolveSchemaFolder(root, containerPath)
     if (!c.ok) return c
-    const parsed = propertyDefinition.safeParse(def)
+    const parsed = propertyDraft.safeParse(def)
     if (!parsed.success) return fault('Invalid property definition.')
     const created = await createProperty(root, parsed.data)
     if (!created.ok) return created

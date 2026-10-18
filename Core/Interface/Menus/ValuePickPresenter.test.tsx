@@ -28,7 +28,7 @@ describe('a Link value picked from the page menu', () => {
     useSession.setState({ tree: makeTree() })
     act(() =>
       useSession.getState().requestPick({
-        def: { id: 'prop_l', name: 'Site', type: 'link' },
+        def: { id: 'prop_l', label: 'Site', key: 'Site', type: 'link' },
         current: { kind: 'null' },
         trigger: host,
         commit,

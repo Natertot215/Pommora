@@ -18,7 +18,8 @@ import { containerCreators } from '../../Actions/createMenu'
 
 const statusDef: PropertyDefinition = {
   id: 'prop_status',
-  name: 'Status',
+  label: 'Status',
+  key: 'Status',
   type: 'status',
   status_groups: [
     {

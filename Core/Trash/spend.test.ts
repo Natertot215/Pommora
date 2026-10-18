@@ -1008,7 +1008,9 @@ describe('a Link value refilled into a trashed copy', () => {
       join(root, '.nexus', 'properties.json'),
       JSON.stringify({
         order: ['prop_related'],
-        defs: { prop_related: { id: 'prop_related', name: 'Related', type: 'link' } },
+        defs: {
+          prop_related: { id: 'prop_related', label: 'Related', key: 'Related', type: 'link' },
+        },
       }),
     )
     await writeFile(beta(), `---\nID: ${PAGE_B}\nRelated: "[[Alpha]]"\n---\nlinker`)
@@ -1647,7 +1649,8 @@ describe('restore — into a chosen destination', () => {
         defs: {
           prop_status: {
             id: 'prop_status',
-            name: 'Status',
+            label: 'Status',
+            key: 'Status',
             type: 'select',
             select_options: [{ value: 'live', color: 'green' }],
           },
@@ -1694,7 +1697,8 @@ describe('restore — into a chosen destination', () => {
         defs: {
           prop_status: {
             id: 'prop_status',
-            name: 'Status',
+            label: 'Status',
+            key: 'Status',
             type: 'select',
             select_options: [{ value: 'live', color: 'green' }],
           },

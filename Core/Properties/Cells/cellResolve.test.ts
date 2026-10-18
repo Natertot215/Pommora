@@ -5,7 +5,8 @@ import type { PropertyDefinition } from '../properties'
 const schema: PropertyDefinition[] = [
   {
     id: 'prop_tag',
-    name: 'Tag',
+    label: 'Tag',
+    key: 'Tag',
     type: 'select',
     select_options: [{ value: 'opt_a', color: 'green' }],
   },

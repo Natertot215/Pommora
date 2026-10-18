@@ -76,23 +76,31 @@ describe('resolveContextKeys', () => {
 
 const statusDef: PropertyDefinition = {
   id: 'prop_status',
-  name: 'Status',
+  label: 'Status',
+  key: 'Status',
   type: 'select',
   select_options: [{ value: 'Open' }, { value: 'Active' }],
 }
 const tagsDef: PropertyDefinition = {
   id: 'prop_tags',
-  name: 'Tags',
+  label: 'Tags',
+  key: 'Tags',
   type: 'multiSelect',
   select_options: [{ value: 'alpha' }],
 }
 const stageDef: PropertyDefinition = {
   id: 'prop_stage',
-  name: 'Stage',
+  label: 'Stage',
+  key: 'Stage',
   type: 'select',
   select_options: [{ value: 'Done' }, { value: 'Open' }],
 }
-const notesDef: PropertyDefinition = { id: 'prop_notes', name: 'Notes', type: 'text' }
+const notesDef: PropertyDefinition = {
+  id: 'prop_notes',
+  label: 'Notes',
+  key: 'Notes',
+  type: 'text',
+}
 const world: GovernedWorld = {
   contexts,
   defs: byKey([statusDef, tagsDef, stageDef, notesDef]),
@@ -226,8 +234,18 @@ describe('reconcileGovernedRoot — the property arm', () => {
 })
 
 describe('reconcileGovernedRoot — option, checkbox, and number spellings (the crossing)', () => {
-  const doneDef: PropertyDefinition = { id: 'prop_done', name: 'Done', type: 'checkbox' }
-  const priceDef: PropertyDefinition = { id: 'prop_price', name: 'Price', type: 'number' }
+  const doneDef: PropertyDefinition = {
+    id: 'prop_done',
+    label: 'Done',
+    key: 'Done',
+    type: 'checkbox',
+  }
+  const priceDef: PropertyDefinition = {
+    id: 'prop_price',
+    label: 'Price',
+    key: 'Price',
+    type: 'number',
+  }
   const spelled: GovernedWorld = { ...world, defs: byKey([stageDef, doneDef, priceDef]) }
   const input = { Stage: ['done'], Done: 'Yes', Price: '$1,200.00' }
 

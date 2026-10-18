@@ -170,7 +170,7 @@ describe('handleMutate — create', () => {
   })
 
   it('createPage writes its seeds in the birth write; a dead-property seed drops; a blank seed writes no key', async () => {
-    await createProperty(root, { id: 'prop_stage', name: 'Stage', type: 'select' })
+    await createProperty(root, { id: 'prop_stage', label: 'Stage', type: 'select' })
     const r = await settledMutate(
       root,
       {
@@ -1424,7 +1424,9 @@ describe('handleMutate — a page delete’s linkers', () => {
       join(root, '.nexus', 'properties.json'),
       JSON.stringify({
         order: ['prop_related'],
-        defs: { prop_related: { id: 'prop_related', name: 'Related', type: 'link' } },
+        defs: {
+          prop_related: { id: 'prop_related', label: 'Related', key: 'Related', type: 'link' },
+        },
       }),
     )
     await writeFile(
@@ -1454,7 +1456,9 @@ describe('handleMutate — a page delete reaches the pages beneath a Set whose s
       join(root, '.nexus', 'properties.json'),
       JSON.stringify({
         order: ['prop_related'],
-        defs: { prop_related: { id: 'prop_related', name: 'Related', type: 'link' } },
+        defs: {
+          prop_related: { id: 'prop_related', label: 'Related', key: 'Related', type: 'link' },
+        },
       }),
     )
     await mkdir(join(root, 'Notes', 'Archive'))
@@ -1981,8 +1985,8 @@ describe('handleMutate — setCrop', () => {
 describe('handleMutate — setProperty (the D-4 cross-group reassignment write)', () => {
   // A value only writes for a property the registry knows — the key carries a name, and an unknown name is inert by construction.
   beforeEach(async () => {
-    await createProperty(root, { id: 'prop_s', name: 'Stage', type: 'select' })
-    await createProperty(root, { id: 'prop_m', name: 'Tags', type: 'multiSelect' })
+    await createProperty(root, { id: 'prop_s', label: 'Stage', type: 'select' })
+    await createProperty(root, { id: 'prop_m', label: 'Tags', type: 'multiSelect' })
   })
 
   it('writes a typed property into the page frontmatter, preserving id + body', async () => {
@@ -2313,7 +2317,7 @@ describe('adoptFile — the shared adoption seam', () => {
 describe('a file value never destroys what it stops naming', () => {
   // The seam dedups, so two pages picking the same source share ONE file on disk; a Replace that ever learned to delete would destroy what another page's reference names. This asserts the FILE, not the absence of a call: a call-spy passes with zero implementation.
   beforeEach(async () => {
-    await createProperty(root, { id: 'prop_f', name: 'Attachments', type: 'file' })
+    await createProperty(root, { id: 'prop_f', label: 'Attachments', type: 'file' })
     await writeFile(
       join(root, '.nexus', 'settings.json'),
       JSON.stringify({ asset_directory: 'file-assets' }),
@@ -2358,7 +2362,7 @@ describe('the acceptance chain, read raw off the disk at every step', () => {
   let outside: string
   beforeEach(async () => {
     outside = tempRoot('pom-chain-')
-    await createProperty(root, { id: 'prop_f', name: 'Attachments', type: 'file' })
+    await createProperty(root, { id: 'prop_f', label: 'Attachments', type: 'file' })
     await writeFile(
       join(root, '.nexus', 'settings.json'),
       JSON.stringify({ asset_directory: 'file-assets' }),
@@ -2556,7 +2560,7 @@ describe('the Contexts lock', () => {
   })
 
   it('a color queued behind a Space rename lands on the renamed Space, and a value addressed to its old path is refused', async () => {
-    const stage = await createProperty(root, { id: '', name: 'Stage', type: 'number' })
+    const stage = await createProperty(root, { id: '', label: 'Stage', type: 'number' })
     if (!stage.ok) throw new Error('setup')
     await refreshTree(root)
     // Unlocked, the rename waits until the color has read the Space's path, and the color writes only once the rename is done; locked, it waits until the color queues on the lock.
@@ -2700,7 +2704,7 @@ describe('the Contexts lock', () => {
     pause: () => { reached: Promise<void>; release: () => void },
     tagged: boolean,
   ): Promise<void> => {
-    const stage = await createProperty(root, { id: '', name: 'Stage', type: 'number' })
+    const stage = await createProperty(root, { id: '', label: 'Stage', type: 'number' })
     if (!stage.ok) throw new Error('setup')
     await refreshTree(root)
     const paused = pause()
@@ -2798,7 +2802,7 @@ describe('the Contexts lock', () => {
     it.skipIf(noModeBits)(
       `a page value written after a refused ${entity} delete's sweep reached the page survives the refusal, and the tag is back`,
       async () => {
-        const stage = await createProperty(root, { id: '', name: 'Stage', type: 'number' })
+        const stage = await createProperty(root, { id: '', label: 'Stage', type: 'number' })
         if (!stage.ok) throw new Error('setup')
         const text = await writtenDuringRefusal(op, async () => {
           const valued = await handleMutate(
@@ -3431,7 +3435,7 @@ describe('handleMutate — excluded entries follow their folders', () => {
 describe('each routine operation lands from its own events, with no walk', () => {
   beforeEach(async () => {
     await seedTwoContexts()
-    await createProperty(root, { id: 'prop_s', name: 'Stage', type: 'select' })
+    await createProperty(root, { id: 'prop_s', label: 'Stage', type: 'select' })
     await mkdir(join(root, 'Other'))
     await writeFile(join(root, 'Other', '_pagecollection.json'), JSON.stringify({ id: 'ot' }))
     await refreshTree(root)

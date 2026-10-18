@@ -4,7 +4,6 @@ import { describe, it, expect, afterEach } from 'vitest'
 import { chmod, mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot, noModeBits, seedSpaceSidecar, readJsonAt } from '../Testing/hostFs'
-import type { PropertyDefinition } from './properties'
 import { closeSession, openSession } from '../Nexus/session'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
@@ -44,10 +43,10 @@ async function seedNexus(): Promise<string> {
   await mkdir(join(root, 'Col'), { recursive: true })
   await createProperty(root, {
     id: 'prop_s',
-    name: 'Stage',
+    label: 'Stage',
     type: 'select',
     select_options: [{ value: 'Draft' }, { value: 'Done' }],
-  } as PropertyDefinition)
+  })
   await writeFile(
     join(root, 'Col', '_pagecollection.json'),
     JSON.stringify({ id: 'c1', properties: ['prop_s'] }),
@@ -68,7 +67,7 @@ async function renameCrashState(root: string): Promise<void> {
   await mutateRegistry(root, (registry) => ({
     next: {
       ...registry,
-      defs: { ...registry.defs, prop_s: { ...registry.defs.prop_s, name: 'Phase' } },
+      defs: { ...registry.defs, prop_s: { ...registry.defs.prop_s, label: 'Phase', key: 'Phase' } },
     },
     result: null,
   }))
@@ -132,7 +131,10 @@ describe('rename replay', () => {
     await mutateRegistry(root, (registry) => ({
       next: {
         ...registry,
-        defs: { ...registry.defs, prop_s: { ...registry.defs.prop_s, name: 'Phase' } },
+        defs: {
+          ...registry.defs,
+          prop_s: { ...registry.defs.prop_s, label: 'Phase', key: 'Phase' },
+        },
       },
       result: null,
     }))
@@ -149,7 +151,10 @@ describe('rename replay', () => {
     await mutateRegistry(root, (registry) => ({
       next: {
         ...registry,
-        defs: { ...registry.defs, prop_s: { ...registry.defs.prop_s, name: 'stage' } },
+        defs: {
+          ...registry.defs,
+          prop_s: { ...registry.defs.prop_s, label: 'stage', key: 'stage' },
+        },
       },
       result: null,
     }))
@@ -164,7 +169,7 @@ describe('rename replay', () => {
   it('the divergence persists without the replay — the fixture is not self-healing', async () => {
     const root = await seedNexus()
     await renameCrashState(root)
-    expect((await readRegistry(root)).defs.prop_s?.name).toBe('Phase')
+    expect((await readRegistry(root)).defs.prop_s?.label).toBe('Phase')
     expect(await page(root, 'B')).toContain('Stage: Draft')
   })
 })
@@ -230,7 +235,7 @@ describe('delete replay', () => {
   })
 
   const created = async (root: string, name: string): Promise<boolean> =>
-    (await createProperty(root, { id: '', name, type: 'number' } as PropertyDefinition)).ok
+    (await createProperty(root, { id: '', label: name, type: 'number' })).ok
 
   it('only a create named exactly as the record supersedes it', async () => {
     const record = { op: 'delete', id: 'prop_gone', name: 'Example' } as const

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { editList, namesValue, stripList, valueEditRewrite } from './pageValue'
 import type { Json } from '../Files/stableJson'
 
-const defOf = (name: string) => ({ name, type: name === 'M' ? 'multiSelect' : 'select' }) as const
+const defOf = (key: string) => ({ key, type: key === 'M' ? 'multiSelect' : 'select' }) as const
 
 const strip = (raw: Json, key: string, value: string): Json | null =>
   valueEditRewrite(defOf(key), value, { op: 'strip' })(raw, 'p.md')

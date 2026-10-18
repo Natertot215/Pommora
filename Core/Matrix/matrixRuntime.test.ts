@@ -635,7 +635,7 @@ describe('matrixRuntime', () => {
 
   it('re-judges a filter when a value it reads arrives', () => {
     const tree = makeTree()
-    tree.config.registry = [{ id: 'prop_rank', name: 'Rank', type: 'number' }]
+    tree.config.registry = [{ id: 'prop_rank', label: 'Rank', key: 'Rank', type: 'number' }]
     const reply = linked()
     seed({
       tree,
@@ -697,7 +697,10 @@ describe('matrixRuntime', () => {
     useSession.setState({
       tree: {
         ...tree,
-        config: { ...tree.config, registry: [{ id: 'prop_rank', name: 'Rank', type: 'number' }] },
+        config: {
+          ...tree.config,
+          registry: [{ id: 'prop_rank', label: 'Rank', key: 'Rank', type: 'number' }],
+        },
       },
     })
     expect(matrixRuntime.graph.index.has('p1')).toBe(false)
@@ -710,7 +713,7 @@ describe('matrixRuntime', () => {
     flush()
     const linked = () => matrixRuntime.graph.links.length
     expect(linked()).toBe(1)
-    const registry = [{ id: 'prop_rank', name: 'Rank', type: 'number' as const }]
+    const registry = [{ id: 'prop_rank', label: 'Rank', key: 'Rank', type: 'number' as const }]
     const typed = { ...tree, config: { ...tree.config, registry } }
     useSession.setState({ tree: typed })
     expect(linked()).toBe(0)

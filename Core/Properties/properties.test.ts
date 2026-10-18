@@ -53,7 +53,8 @@ describe('propertyDefinition', () => {
   it('round-trips a fully-specified def and preserves a foreign key', () => {
     const def = {
       id: 'prop_01H',
-      name: 'Stage',
+      label: 'Stage',
+      key: 'Stage',
       type: 'status',
       icon: 'circle',
       status_groups: defaultStatusSeed(),
@@ -65,14 +66,21 @@ describe('propertyDefinition', () => {
   })
 
   it('round-trips a checkbox def with its property-wide color', () => {
-    const def = { id: 'prop_ck', name: 'Done', type: 'checkbox', checkbox_color: 'blue' }
+    const def = {
+      id: 'prop_ck',
+      label: 'Done',
+      key: 'Done',
+      type: 'checkbox',
+      checkbox_color: 'blue',
+    }
     expect(propertyDefinition.parse(def)).toEqual(def)
   })
 
   it('drops a non-string checkbox_color to undefined rather than failing the def', () => {
     const parsed = propertyDefinition.parse({
       id: 'p',
-      name: 'x',
+      label: 'x',
+      key: 'x',
       type: 'checkbox',
       checkbox_color: 42,
     })
@@ -81,7 +89,7 @@ describe('propertyDefinition', () => {
 
   it('round-trips a link def in each of the three link displays', () => {
     for (const link_display of LINK_DISPLAYS) {
-      const def = { id: 'prop_u', name: 'Site', type: 'link', link_display }
+      const def = { id: 'prop_u', label: 'Site', key: 'Site', type: 'link', link_display }
       expect(propertyDefinition.parse(def)).toEqual(def)
     }
   })
@@ -90,7 +98,8 @@ describe('propertyDefinition', () => {
   it('drops an unrecognized link_display to undefined rather than failing the def', () => {
     const parsed = propertyDefinition.parse({
       id: 'p',
-      name: 'x',
+      label: 'x',
+      key: 'x',
       type: 'link',
       link_display: 'link-url',
     })
@@ -100,7 +109,8 @@ describe('propertyDefinition', () => {
   it('round-trips a number def with its property-wide format config', () => {
     const def = {
       id: 'prop_n',
-      name: 'Progress',
+      label: 'Progress',
+      key: 'Progress',
       type: 'number',
       number_family: 'currency',
       number_currency: 'GBP',
@@ -115,7 +125,8 @@ describe('propertyDefinition', () => {
   it('drops a non-string number_family to undefined rather than failing the def', () => {
     const parsed = propertyDefinition.parse({
       id: 'p',
-      name: 'x',
+      label: 'x',
+      key: 'x',
       type: 'number',
       number_family: 9,
     })
@@ -124,19 +135,30 @@ describe('propertyDefinition', () => {
 
   it('accepts number_decimals as the literal "hidden" or an integer', () => {
     expect(
-      propertyDefinition.parse({ id: 'p', name: 'x', type: 'number', number_decimals: 'hidden' })
-        .number_decimals,
+      propertyDefinition.parse({
+        id: 'p',
+        label: 'x',
+        key: 'x',
+        type: 'number',
+        number_decimals: 'hidden',
+      }).number_decimals,
     ).toBe('hidden')
     expect(
-      propertyDefinition.parse({ id: 'p', name: 'x', type: 'number', number_decimals: 3 })
-        .number_decimals,
+      propertyDefinition.parse({
+        id: 'p',
+        label: 'x',
+        key: 'x',
+        type: 'number',
+        number_decimals: 3,
+      }).number_decimals,
     ).toBe(3)
   })
 
   it('drops a number format Intl would throw on', () => {
     const def = propertyDefinition.parse({
       id: 'p',
-      name: 'x',
+      label: 'x',
+      key: 'x',
       type: 'number',
       number_currency: 'dollars',
       number_decimals: 101,
@@ -144,15 +166,24 @@ describe('propertyDefinition', () => {
     expect(def.number_currency).toBeUndefined()
     expect(def.number_decimals).toBeUndefined()
     expect(
-      propertyDefinition.parse({ id: 'p', name: 'x', type: 'number', number_currency: 'CHF' })
-        .number_currency,
+      propertyDefinition.parse({
+        id: 'p',
+        label: 'x',
+        key: 'x',
+        type: 'number',
+        number_currency: 'CHF',
+      }).number_currency,
     ).toBe('CHF')
   })
 
-  it('requires id, name, and a valid type', () => {
-    expect(propertyDefinition.safeParse({ name: 'x', type: 'number' }).success).toBe(false)
+  it('requires id, key, and a valid type', () => {
+    expect(propertyDefinition.safeParse({ label: 'x', key: 'x', type: 'number' }).success).toBe(
+      false,
+    )
     expect(propertyDefinition.safeParse({ id: 'p', type: 'number' }).success).toBe(false)
-    expect(propertyDefinition.safeParse({ id: 'p', name: 'x', type: 'nope' }).success).toBe(false)
+    expect(
+      propertyDefinition.safeParse({ id: 'p', label: 'x', key: 'x', type: 'nope' }).success,
+    ).toBe(false)
   })
 })
 
@@ -218,7 +249,8 @@ describe('optionsOf', () => {
   it('reads a select def from select_options', () => {
     const def = {
       id: 'p',
-      name: 'x',
+      label: 'x',
+      key: 'x',
       type: 'select' as const,
       select_options: [{ value: 'a' }],
     }
@@ -233,7 +265,8 @@ describe('optionsOf', () => {
   it('reads a status def from its groups, ignoring a stale select_options left by a type change', () => {
     const def = {
       id: 'p',
-      name: 'x',
+      label: 'x',
+      key: 'x',
       type: 'status' as const,
       status_groups: defaultStatusSeed(),
       select_options: [{ value: 'stale' }],
@@ -259,7 +292,8 @@ describe('keys this build does not know', () => {
   it('ride through every level of a definition', () => {
     const def = propertyDefinition.parse({
       id: 'prop_s',
-      name: 'Stage',
+      label: 'Stage',
+      key: 'Stage',
       type: 'status',
       foreign_block: { key: 'a', scope: 'deep' },
       select_options: [{ value: 'a', tint: 'warm' }],
@@ -307,7 +341,12 @@ describe("the display-config narrowers decode against the definition's own field
 
 describe('byKey', () => {
   it('keys definitions by name as written', () => {
-    const def = { id: 'p', name: 'Due Date', type: 'dateTime' } as PropertyDefinition
+    const def = {
+      id: 'p',
+      label: 'Due Date',
+      key: 'Due Date',
+      type: 'dateTime',
+    } as PropertyDefinition
     expect([...byKey([def]).entries()]).toEqual([['Due Date', def]])
   })
 })

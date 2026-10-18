@@ -22,13 +22,15 @@ type Raw = Record<string, unknown>
 
 const STAGE: PropertyDefinition = {
   id: 'prop_s',
-  name: 'Stage',
+  label: 'Stage',
+  key: 'Stage',
   type: 'select',
   select_options: [{ value: 'Done' }, { value: 'Todo' }],
 }
 const TAGS: PropertyDefinition = {
   id: 'prop_m',
-  name: 'Tags',
+  label: 'Tags',
+  key: 'Tags',
   type: 'multiSelect',
   select_options: [{ value: 'A' }],
 }

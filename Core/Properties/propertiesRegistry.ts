@@ -29,9 +29,9 @@ function normalizeRegistry(obj: Record<string, unknown>): {
   const names = new Set<string>()
   for (const [id, value] of Object.entries(rawDefs)) {
     const parsed = propertyDefinition.safeParse(value)
-    const name = parsed.success ? normalizeTitle(parsed.data.name) : ''
+    const name = parsed.success ? normalizeTitle(parsed.data.label) : ''
     // A name is one key on disk, so the first definition to hold it in any casing is the one admitted.
-    if (parsed.success && keyRefusal(parsed.data.name) === null && !names.has(name)) {
+    if (parsed.success && keyRefusal(parsed.data.label) === null && !names.has(name)) {
       names.add(name)
       defs[id] = withUniqueOptions(parsed.data)
     }

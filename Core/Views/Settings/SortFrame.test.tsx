@@ -13,7 +13,8 @@ import { mountEachTest } from '../../Testing/viewHarness'
 
 const statusDef: PropertyDefinition = {
   id: 'prop_status',
-  name: 'Status',
+  label: 'Status',
+  key: 'Status',
   type: 'status',
   status_groups: [
     {
@@ -27,9 +28,24 @@ const statusDef: PropertyDefinition = {
     },
   ],
 }
-const dateDef: PropertyDefinition = { id: 'prop_when', name: 'When', type: 'dateTime' }
-const fileDef: PropertyDefinition = { id: 'prop_file', name: 'Attachment', type: 'file' }
-const checkDef: PropertyDefinition = { id: 'prop_check', name: 'Checked', type: 'checkbox' }
+const dateDef: PropertyDefinition = {
+  id: 'prop_when',
+  label: 'When',
+  key: 'When',
+  type: 'dateTime',
+}
+const fileDef: PropertyDefinition = {
+  id: 'prop_file',
+  label: 'Attachment',
+  key: 'Attachment',
+  type: 'file',
+}
+const checkDef: PropertyDefinition = {
+  id: 'prop_check',
+  label: 'Checked',
+  key: 'Checked',
+  type: 'checkbox',
+}
 const schema = [statusDef, dateDef, fileDef, checkDef]
 
 const view = (over?: Partial<SavedView>): SavedView => ({

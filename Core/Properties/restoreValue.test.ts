@@ -10,7 +10,7 @@ import { closeSession, openSession } from '../Nexus/session'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
 import { settledMutate } from '../Testing/settledMutate'
 import type { TrashDeps } from '../Trash/bundle'
-import type { PropertyDefinition } from './properties'
+import type { PropertyDraft } from './properties'
 import type { PropertyValue } from './propertyValue'
 import { createProperty } from './registryProperty'
 import { assignProperty } from './assignment'
@@ -23,8 +23,8 @@ let pagePath: string
 let spacePath: string
 const ids: Record<string, string> = {}
 
-const property = async (over: Omit<PropertyDefinition, 'id'>): Promise<string> => {
-  const made = await createProperty(root, { id: '', ...over } as PropertyDefinition)
+const property = async (over: Omit<PropertyDraft, 'id'>): Promise<string> => {
+  const made = await createProperty(root, { id: '', ...over })
   if (!made.ok) throw new Error('setup')
   return made.value.id
 }
@@ -45,16 +45,16 @@ beforeEach(async () => {
   if (!col.ok) throw new Error('setup')
   pagePath = 'Notes/One.md'
   ids.Tags = await property({
-    name: 'Tags',
+    label: 'Tags',
     type: 'multiSelect',
     select_options: [{ value: 'Work' }, { value: 'Life' }],
   })
   ids.Status = await property({
-    name: 'Status',
+    label: 'Status',
     type: 'select',
     select_options: [{ value: 'Doing' }, { value: 'Done' }],
   })
-  ids.Count = await property({ name: 'Count', type: 'number' })
+  ids.Count = await property({ label: 'Count', type: 'number' })
   for (const id of Object.values(ids)) await assignProperty(root, col.value.path, id)
   await writeFile(join(root, pagePath), `---\nID: ${PAGE_ID}\n---\nb\n`)
   await openSession(root)

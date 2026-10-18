@@ -85,23 +85,28 @@ describe('matrixInput', () => {
 
   it('relates a value row only under a key that holds links, asked of the registry at hand', () => {
     const tree = makeTree()
-    const number: PropertyDefinition = { id: 'prop_rank', name: 'Rank', type: 'number' }
+    const number: PropertyDefinition = {
+      id: 'prop_rank',
+      label: 'Rank',
+      key: 'Rank',
+      type: 'number',
+    }
     tree.config.registry = [number]
     const under = (key: string) => replyOf([link('p2', 'Alpha', 'value', key)]).links
     expect(matrixConnections(tree, under('Rank'))).toEqual([])
     expect(matrixConnections(tree, under('Related'))).toEqual([
       { from: 'p2', to: 'p1', kind: 'value' },
     ])
-    tree.config.registry = [{ ...number, name: 'Related' }]
+    tree.config.registry = [{ ...number, label: 'Related', key: 'Related' }]
     expect(matrixConnections(tree, under('Related'))).toEqual([])
   })
 
   it('draws one connection for a target held under two keys, a Number key never shadowing a Link key', () => {
     const tree = makeTree()
     tree.config.registry = [
-      { id: 'prop_rank', name: 'Rank', type: 'number' },
-      { id: 'prop_source', name: 'Source', type: 'link' },
-      { id: 'prop_site', name: 'Site', type: 'link' },
+      { id: 'prop_rank', label: 'Rank', key: 'Rank', type: 'number' },
+      { id: 'prop_source', label: 'Source', key: 'Source', type: 'link' },
+      { id: 'prop_site', label: 'Site', key: 'Site', type: 'link' },
     ]
     const rows = (...keys: string[]) => keys.map((key) => link('p2', 'Alpha', 'value', key))
     expect(matrixConnections(tree, rows('Rank', 'Source'))).toEqual([
@@ -132,7 +137,8 @@ describe('matrixInput', () => {
 
 const STATUS: PropertyDefinition = {
   id: 'prop_status',
-  name: 'Status',
+  label: 'Status',
+  key: 'Status',
   type: 'select',
   select_options: [{ value: 'Active' }, { value: 'Done' }],
 }

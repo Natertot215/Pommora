@@ -18,7 +18,8 @@ import { setIndexOf } from '../Pipeline/setIndex'
 const schema: PropertyDefinition[] = [
   {
     id: 'prop_status',
-    name: 'Status',
+    label: 'Status',
+    key: 'Status',
     type: 'status',
     status_groups: [
       {
@@ -31,11 +32,12 @@ const schema: PropertyDefinition[] = [
   },
   {
     id: 'prop_select',
-    name: 'Sel',
+    label: 'Sel',
+    key: 'Sel',
     type: 'select',
     select_options: [{ value: 'red', color: 'red' }],
   },
-  { id: 'prop_date', name: 'When', type: 'dateTime' },
+  { id: 'prop_date', label: 'When', key: 'When', type: 'dateTime' },
 ] as PropertyDefinition[]
 
 const setA = { kind: 'set', id: 'sA', title: 'Alpha', path: 'Inbox/Alpha', sets: [], pages: [] }

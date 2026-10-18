@@ -3,7 +3,6 @@ import { existsSync } from 'node:fs'
 import { mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
-import type { PropertyDefinition } from './properties'
 import {
   atomicWriteFile,
   editJsonStrict,
@@ -49,7 +48,7 @@ beforeEach(async () => {
   await writeFile(abs('.nexus', 'nexus.json'), JSON.stringify({ id: 'nx', createdAt: 'x' }))
   await writeFile(abs('.nexus', 'settings.json'), '{}')
   await mkdir(abs('Col'), { recursive: true })
-  await createProperty(root, { id: 'prop_s', name: 'Stage', type: 'select' })
+  await createProperty(root, { id: 'prop_s', label: 'Stage', type: 'select' })
   await writeFile(
     abs('Col', '_pagecollection.json'),
     JSON.stringify({ id: 'c1', properties: ['prop_s'] }),
@@ -130,7 +129,7 @@ describe('the rename writer', () => {
   })
 
   it('writes no record for a rename refused before the commit', async () => {
-    await createProperty(root, { id: 'prop_o', name: 'Other', type: 'select' })
+    await createProperty(root, { id: 'prop_o', label: 'Other', type: 'select' })
     const r = await renameProperty(root, 'prop_s', 'Other')
     expect(r.ok).toBe(false)
     expect(observed.some((o) => o.path === journalFile())).toBe(false)
@@ -143,7 +142,7 @@ describe('the rename writer', () => {
     const race = async (path: string): Promise<void> => {
       if (path !== journalFile() || raced) return
       raced = true
-      await createProperty(root, { id: 'prop_o', name: 'Other', type: 'select' })
+      await createProperty(root, { id: 'prop_o', label: 'Other', type: 'select' })
     }
     vi.mocked(atomicWriteFile).mockImplementation(async (path, data) => {
       await real.atomicWriteFile(path, data)
@@ -186,10 +185,10 @@ describe('the option-op writers', () => {
   const withOptions = async (): Promise<void> => {
     await createProperty(root, {
       id: 'prop_t',
-      name: 'Tags',
+      label: 'Tags',
       type: 'select',
       select_options: [{ value: 'Draft' }, { value: 'Done' }],
-    } as PropertyDefinition)
+    })
     await writeFile(
       abs('Col', '_pagecollection.json'),
       JSON.stringify({ id: 'c1', properties: ['prop_s', 'prop_t'] }),
@@ -272,19 +271,19 @@ describe('the option-op writers', () => {
 describe('the create-side consumer', () => {
   it('a create wearing a journaled delete’s name consumes the record', async () => {
     await writeSchemaJournal(root, { op: 'delete', id: 'prop_gone', name: 'Priority' })
-    await createProperty(root, { id: '', name: 'Priority', type: 'select' })
+    await createProperty(root, { id: '', label: 'Priority', type: 'select' })
     expect(await readSchemaJournal(root)).toBeNull()
   })
 
   it('a restore-shaped create wearing the journaled id consumes the record', async () => {
     await writeSchemaJournal(root, { op: 'delete', id: 'prop_gone', name: 'Priority' })
-    await createProperty(root, { id: 'prop_gone', name: 'Renamed Since', type: 'select' })
+    await createProperty(root, { id: 'prop_gone', label: 'Renamed Since', type: 'select' })
     expect(await readSchemaJournal(root)).toBeNull()
   })
 
   it('an unrelated create leaves the record standing', async () => {
     await writeSchemaJournal(root, { op: 'delete', id: 'prop_gone', name: 'Priority' })
-    await createProperty(root, { id: '', name: 'Unrelated', type: 'select' })
+    await createProperty(root, { id: '', label: 'Unrelated', type: 'select' })
     expect(await readSchemaJournal(root)).toEqual({
       op: 'delete',
       id: 'prop_gone',
@@ -295,7 +294,7 @@ describe('the create-side consumer', () => {
   it('a create stepped aside from the journaled name never spends the record it did not displace', async () => {
     // The crash state: the delete's def still stands, so a same-name create lands as Stage (2).
     await writeSchemaJournal(root, { op: 'delete', id: 'prop_s', name: 'Stage' })
-    const r = await createProperty(root, { id: '', name: 'Stage', type: 'select' })
+    const r = await createProperty(root, { id: '', label: 'Stage', type: 'select' })
     expect(r.ok).toBe(true)
     expect(await readSchemaJournal(root)).toEqual({ op: 'delete', id: 'prop_s', name: 'Stage' })
   })
@@ -352,7 +351,7 @@ describe('a second nexus', () => {
     )
     await writeFile(join(other, '.nexus', 'settings.json'), '{}')
     await mkdir(join(other, 'Col'), { recursive: true })
-    await createProperty(other, { id: 'prop_s', name: 'Stage', type: 'select' })
+    await createProperty(other, { id: 'prop_s', label: 'Stage', type: 'select' })
     await writeFile(
       join(other, 'Col', '_pagecollection.json'),
       JSON.stringify({ id: 'c2', properties: ['prop_s'] }),

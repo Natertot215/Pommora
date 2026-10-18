@@ -7,13 +7,13 @@ import type { ViewRow } from '../viewRow'
 import { filterSeeds } from './creationSeeds'
 
 const schema: PropertyDefinition[] = [
-  { id: 'p_status', name: 'Status', type: 'status' },
-  { id: 'p_sel', name: 'Kind', type: 'select' },
-  { id: 'p_pri', name: 'Priority', type: 'select' },
-  { id: 'p_check', name: 'Done', type: 'checkbox' },
-  { id: 'p_num', name: 'Count', type: 'number' },
-  { id: 'p_tags', name: 'Tags', type: 'multiSelect' },
-  { id: 'p_notes', name: 'Notes', type: 'text' },
+  { id: 'p_status', label: 'Status', key: 'Status', type: 'status' },
+  { id: 'p_sel', label: 'Kind', key: 'Kind', type: 'select' },
+  { id: 'p_pri', label: 'Priority', key: 'Priority', type: 'select' },
+  { id: 'p_check', label: 'Done', key: 'Done', type: 'checkbox' },
+  { id: 'p_num', label: 'Count', key: 'Count', type: 'number' },
+  { id: 'p_tags', label: 'Tags', key: 'Tags', type: 'multiSelect' },
+  { id: 'p_notes', label: 'Notes', key: 'Notes', type: 'text' },
 ]
 
 const blank: ViewRow = {

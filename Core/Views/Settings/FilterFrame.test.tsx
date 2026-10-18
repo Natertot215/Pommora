@@ -13,7 +13,8 @@ import { TITLE_TARGET } from '../../Properties/Cells/PropertyTypes'
 
 const statusDef: PropertyDefinition = {
   id: 'prop_status',
-  name: 'Status',
+  label: 'Status',
+  key: 'Status',
   type: 'status',
   status_groups: [
     {
@@ -27,7 +28,12 @@ const statusDef: PropertyDefinition = {
     },
   ],
 }
-const checkDef: PropertyDefinition = { id: 'prop_check', name: 'Archived', type: 'checkbox' }
+const checkDef: PropertyDefinition = {
+  id: 'prop_check',
+  label: 'Archived',
+  key: 'Archived',
+  type: 'checkbox',
+}
 const schema = [statusDef, checkDef]
 
 const view = (over?: Partial<SavedView>): SavedView => ({

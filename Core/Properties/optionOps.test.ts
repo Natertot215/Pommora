@@ -50,9 +50,9 @@ async function mkProperty(def: Omit<PropertyDefinition, 'id'>): Promise<string> 
 }
 
 const mkSelect = (select_options: SelectOption[]): Promise<string> =>
-  mkProperty({ name: 'Tags', type: 'select', select_options })
+  mkProperty({ label: 'Tags', key: 'Tags', type: 'select', select_options })
 
-const mkStatus = (): Promise<string> => mkProperty({ name: 'Stage', type: 'status' })
+const mkStatus = (): Promise<string> => mkProperty({ label: 'Stage', key: 'Stage', type: 'status' })
 
 async function pageHolding(id: string, value: string): Promise<string> {
   const col = await createFolderEntity(root, 'collection', 'Col', newId())
@@ -244,11 +244,24 @@ describe('an option edit leaves every other stored entry as written', () => {
       JSON.stringify({
         order: ['prop_sel', 'prop_st', 'prop_multi'],
         defs: {
-          prop_sel: { id: 'prop_sel', name: 'Tags', type: 'select', select_options: selectSeed },
-          prop_st: { id: 'prop_st', name: 'Stage', type: 'status', status_groups: statusSeed },
+          prop_sel: {
+            id: 'prop_sel',
+            label: 'Tags',
+            key: 'Tags',
+            type: 'select',
+            select_options: selectSeed,
+          },
+          prop_st: {
+            id: 'prop_st',
+            label: 'Stage',
+            key: 'Stage',
+            type: 'status',
+            status_groups: statusSeed,
+          },
           prop_multi: {
             id: 'prop_multi',
-            name: 'Labels',
+            label: 'Labels',
+            key: 'Labels',
             type: 'multiSelect',
             select_options: multiSeed,
           },
@@ -358,7 +371,8 @@ describe('an option write drops a stored label', () => {
         defs: {
           prop_sel: {
             id: 'prop_sel',
-            name: 'Tags',
+            label: 'Tags',
+            key: 'Tags',
             type: 'select',
             select_options: [
               { value: 'A', label: 'A' },
@@ -367,7 +381,8 @@ describe('an option write drops a stored label', () => {
           },
           prop_st: {
             id: 'prop_st',
-            name: 'Stage',
+            label: 'Stage',
+            key: 'Stage',
             type: 'status',
             status_groups: [
               {
@@ -384,7 +399,13 @@ describe('an option write drops a stored label', () => {
               },
             ],
           },
-          prop_other: { id: 'prop_other', name: 'Kind', type: 'select', select_options: other },
+          prop_other: {
+            id: 'prop_other',
+            label: 'Kind',
+            key: 'Kind',
+            type: 'select',
+            select_options: other,
+          },
         },
       }),
     )
@@ -401,7 +422,8 @@ describe('an option write drops a stored label', () => {
 })
 
 describe('option ops refuse a property without options', () => {
-  const mkNumber = (): Promise<string> => mkProperty({ name: 'Count', type: 'number' })
+  const mkNumber = (): Promise<string> =>
+    mkProperty({ label: 'Count', key: 'Count', type: 'number' })
 
   it('editOption', async () => {
     const id = await mkNumber()
@@ -436,12 +458,14 @@ describe('renameOption', () => {
 
   it('rewrites only the exact keys, leaving another casing of each as written', async () => {
     const status = await mkProperty({
-      name: 'Status',
+      label: 'Status',
+      key: 'Status',
       type: 'select',
       select_options: [{ value: 'Done' }],
     })
     const tags = await mkProperty({
-      name: 'Tags',
+      label: 'Tags',
+      key: 'Tags',
       type: 'multiSelect',
       select_options: [{ value: 'Done' }],
     })

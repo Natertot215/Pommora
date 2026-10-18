@@ -84,13 +84,15 @@ describe('setGovernedRootKey', () => {
 describe('setGovernedRootKey with a world — the three precedence rules', () => {
   const priority: PropertyDefinition = {
     id: 'prop_priority',
-    name: 'Priority',
+    label: 'Priority',
+    key: 'Priority',
     type: 'select',
     select_options: [{ value: 'High' }],
   }
   const status: PropertyDefinition = {
     id: 'prop_status',
-    name: 'Status',
+    label: 'Status',
+    key: 'Status',
     type: 'select',
     select_options: [{ value: 'Open' }],
   }
@@ -148,7 +150,8 @@ describe('setGovernedRootKey with a world — the three precedence rules', () =>
   it('withholds an own multi-select that reconciles smaller, keeping the original list', async () => {
     const tags: PropertyDefinition = {
       id: 'prop_tags',
-      name: 'Tags',
+      label: 'Tags',
+      key: 'Tags',
       type: 'multiSelect',
       select_options: [{ value: 'alpha' }],
     }
@@ -165,15 +168,22 @@ describe('setGovernedRootKey with a world — the three precedence rules', () =>
 describe('setGovernedRootKey — spellings', () => {
   const tags: PropertyDefinition = {
     id: 'prop_tags',
-    name: 'Tags',
+    label: 'Tags',
+    key: 'Tags',
     type: 'multiSelect',
     select_options: [{ value: 'a' }, { value: 'Docs' }, { value: 'Work' }],
   }
-  const done: PropertyDefinition = { id: 'prop_done', name: 'Done', type: 'checkbox' }
-  const price: PropertyDefinition = { id: 'prop_price', name: 'Price', type: 'number' }
+  const done: PropertyDefinition = { id: 'prop_done', label: 'Done', key: 'Done', type: 'checkbox' }
+  const price: PropertyDefinition = {
+    id: 'prop_price',
+    label: 'Price',
+    key: 'Price',
+    type: 'number',
+  }
   const status: PropertyDefinition = {
     id: 'prop_status',
-    name: 'Status',
+    label: 'Status',
+    key: 'Status',
     type: 'select',
     select_options: [{ value: 'Open' }, { value: 'Done' }],
   }

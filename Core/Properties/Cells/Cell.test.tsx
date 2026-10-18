@@ -19,7 +19,8 @@ import { propsAtRoot } from '../../Testing/pageValues'
 const schema: PropertyDefinition[] = [
   {
     id: 'prop_status',
-    name: 'Status',
+    label: 'Status',
+    key: 'Status',
     type: 'status',
     status_groups: [
       {
@@ -42,18 +43,19 @@ const schema: PropertyDefinition[] = [
       },
     ],
   },
-  { id: 'prop_done', name: 'Done', type: 'checkbox' },
-  { id: 'prop_pin', name: 'Pinned', type: 'checkbox', checkbox_color: 'blue' },
-  { id: 'prop_when', name: 'When', type: 'dateTime' },
-  { id: 'prop_n', name: 'Count', type: 'number' },
-  { id: 'prop_files', name: 'Files', type: 'file' },
+  { id: 'prop_done', label: 'Done', key: 'Done', type: 'checkbox' },
+  { id: 'prop_pin', label: 'Pinned', key: 'Pinned', type: 'checkbox', checkbox_color: 'blue' },
+  { id: 'prop_when', label: 'When', key: 'When', type: 'dateTime' },
+  { id: 'prop_n', label: 'Count', key: 'Count', type: 'number' },
+  { id: 'prop_files', label: 'Files', key: 'Files', type: 'file' },
   {
     id: 'prop_tags',
-    name: 'Tags',
+    label: 'Tags',
+    key: 'Tags',
     type: 'multiSelect',
     select_options: ['a', 'b', 'c'].map((value) => ({ value })),
   },
-  { id: 'prop_notes', name: 'Notes', type: 'text' },
+  { id: 'prop_notes', label: 'Notes', key: 'Notes', type: 'text' },
 ]
 const ctx = {
   schema,

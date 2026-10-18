@@ -16,7 +16,8 @@ import { makeTree } from '../../Testing/testTree'
 
 const statusDef: PropertyDefinition = {
   id: 'prop_status',
-  name: 'Status',
+  label: 'Status',
+  key: 'Status',
   type: 'status',
   status_groups: [
     {
@@ -39,13 +40,19 @@ const statusDef: PropertyDefinition = {
     },
   ],
 }
-const checkboxDef: PropertyDefinition = { id: 'prop_done', name: 'Done', type: 'checkbox' }
-const numberDef: PropertyDefinition = { id: 'prop_n', name: 'Count', type: 'number' }
-const linkDef: PropertyDefinition = { id: 'prop_link', name: 'Link', type: 'link' }
-const fileDef: PropertyDefinition = { id: 'prop_files', name: 'Files', type: 'file' }
+const checkboxDef: PropertyDefinition = {
+  id: 'prop_done',
+  label: 'Done',
+  key: 'Done',
+  type: 'checkbox',
+}
+const numberDef: PropertyDefinition = { id: 'prop_n', label: 'Count', key: 'Count', type: 'number' }
+const linkDef: PropertyDefinition = { id: 'prop_link', label: 'Link', key: 'Link', type: 'link' }
+const fileDef: PropertyDefinition = { id: 'prop_files', label: 'Files', key: 'Files', type: 'file' }
 const multiDef: PropertyDefinition = {
   id: 'prop_tags',
-  name: 'Tags',
+  label: 'Tags',
+  key: 'Tags',
   type: 'multiSelect',
   select_options: [{ value: 'a' }, { value: 'b' }],
 }
@@ -495,7 +502,8 @@ describe('PropertyPicker (direct mount) — seed values', () => {
     const { defaultStatusSeed } = await import('../../Properties/properties')
     const seedDef: PropertyDefinition = {
       id: 'prop_seed',
-      name: 'Status',
+      label: 'Status',
+      key: 'Status',
       type: 'status',
       status_groups: defaultStatusSeed(),
     }

@@ -12,7 +12,8 @@ import { makeTree } from '../Testing/testTree'
 const schema: PropertyDefinition[] = [
   {
     id: 'prop_tag',
-    name: 'Tag',
+    label: 'Tag',
+    key: 'Tag',
     type: 'select',
     select_options: [{ value: 'red' }, { value: 'blue' }],
   },
@@ -212,7 +213,7 @@ describe('a landed Link value remembers the alias it shows', () => {
   const settled = () => new Promise((r) => setTimeout(r))
 
   beforeEach(() => {
-    live.schema = [...schema, { id: 'prop_link', name: 'Link', type: 'link' }]
+    live.schema = [...schema, { id: 'prop_link', label: 'Link', key: 'Link', type: 'link' }]
     row = rowOf({ id: 'page1', Link: '[[Alpha|old]]' })
     useSession.setState({ tree: makeTree() })
   })

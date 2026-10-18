@@ -32,7 +32,8 @@ const realMutate = useSession.getState().mutate
 
 const statusDef: PropertyDefinition = {
   id: 'prop_status',
-  name: 'Status',
+  label: 'Status',
+  key: 'Status',
   type: 'status',
   status_groups: [
     {
@@ -821,7 +822,12 @@ describe('settleOrders — a create composes with the live order', () => {
 
 describe('creation seeding', () => {
   it("a create beside a row judges the filter with the gesture's seeds, so a Done-band sibling seeds no Priority", async () => {
-    const priorityDef: PropertyDefinition = { id: 'prop_pri', name: 'Priority', type: 'select' }
+    const priorityDef: PropertyDefinition = {
+      id: 'prop_pri',
+      label: 'Priority',
+      key: 'Priority',
+      type: 'select',
+    }
     useSession.setState({
       mutate: vi.fn(async (req: { id: string }) => ({
         created: { path: `Col/${req.id}.md` },

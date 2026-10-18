@@ -524,7 +524,7 @@ export function oweNamedKeys(owed: Owed, was: PropertyDefinition[], tree: NexusT
     tree.config.registry
       .filter((d) => {
         const p = prior[d.id]
-        return d.type === 'multiSelect' && (p?.type !== 'multiSelect' || p.name !== d.name)
+        return d.type === 'multiSelect' && (p?.type !== 'multiSelect' || p.key !== d.key)
       })
       .map((d) => d.id),
   )

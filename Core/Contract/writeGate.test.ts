@@ -60,7 +60,13 @@ beforeEach(async () => {
     JSON.stringify({
       order: ['prop_s'],
       defs: {
-        prop_s: { id: 'prop_s', name: 'Stage', type: 'select', select_options: [{ value: 'A' }] },
+        prop_s: {
+          id: 'prop_s',
+          label: 'Stage',
+          key: 'Stage',
+          type: 'select',
+          select_options: [{ value: 'A' }],
+        },
       },
     }),
   )
@@ -133,7 +139,7 @@ describe('one write through each channel leaves the held tree as the disk reads,
       () =>
         propertiesHandlers['schema:add'](ctx, 'Notes', {
           id: '',
-          name: 'Due',
+          label: 'Due',
           type: 'number',
         }),
       ['nexus:changed'],

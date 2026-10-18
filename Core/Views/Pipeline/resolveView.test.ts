@@ -127,7 +127,8 @@ describe('resolveView — full pipeline over the fixture', () => {
     const schema: PropertyDefinition[] = [
       {
         id: 'prop_status',
-        name: 'S',
+        label: 'S',
+        key: 'S',
         type: 'status',
         status_groups: [
           {
@@ -260,7 +261,8 @@ describe('resolveView — group_order', () => {
     const schema: PropertyDefinition[] = [
       {
         id: 'prop_status',
-        name: 'S',
+        label: 'S',
+        key: 'S',
         type: 'status',
         status_groups: [
           {
@@ -453,7 +455,8 @@ describe('resolveView — hidden groups + Hide Empty Groups', () => {
   const selectSchema: PropertyDefinition[] = [
     {
       id: 'prop_sel',
-      name: 'Sel',
+      label: 'Sel',
+      key: 'Sel',
       type: 'select',
       select_options: [{ value: 'Alpha' }, { value: 'Beta' }, { value: 'Gamma' }],
     },
@@ -584,7 +587,9 @@ describe('resolveView — hidden groups + Hide Empty Groups', () => {
   })
 
   it('a hidden date bucket drops by its bucket key', () => {
-    const dateSchema: PropertyDefinition[] = [{ id: 'prop_when', name: 'When', type: 'dateTime' }]
+    const dateSchema: PropertyDefinition[] = [
+      { id: 'prop_when', label: 'When', key: 'When', type: 'dateTime' },
+    ]
     const values = pageValues({
       p1: { [ID_KEY]: 'p1', ...propsAtRoot({ prop_when: '2025-07-02' }, dateSchema) },
       p2: { [ID_KEY]: 'p2', ...propsAtRoot({ prop_when: '2025-08-03' }, dateSchema) },
@@ -648,7 +653,9 @@ describe('resolveView — hidden groups + Hide Empty Groups', () => {
   })
 
   it('an encoded date bucket drops by its property and bucket', () => {
-    const dateSchema: PropertyDefinition[] = [{ id: 'prop_when', name: 'When', type: 'dateTime' }]
+    const dateSchema: PropertyDefinition[] = [
+      { id: 'prop_when', label: 'When', key: 'When', type: 'dateTime' },
+    ]
     const values = pageValues({
       p1: { [ID_KEY]: 'p1', ...propsAtRoot({ prop_when: '2025-07-02' }, dateSchema) },
       p2: { [ID_KEY]: 'p2', ...propsAtRoot({ prop_when: '2025-08-03' }, dateSchema) },
@@ -676,7 +683,8 @@ describe('resolveView — hidden groups + Hide Empty Groups', () => {
       ...selectSchema,
       {
         id: 'prop_other',
-        name: 'Other',
+        label: 'Other',
+        key: 'Other',
         type: 'select',
         select_options: [{ value: 'Alpha' }],
       },
@@ -717,8 +725,8 @@ describe('resolveView — hidden groups + Hide Empty Groups', () => {
 describe('mintDefaultView', () => {
   it('mints a Table view: its own id, title-only, structural, no sort or _modified_at', () => {
     const schema: PropertyDefinition[] = [
-      { id: 'prop_x', name: 'X', type: 'select' },
-      { id: 'prop_y', name: 'Y', type: 'number' },
+      { id: 'prop_x', label: 'X', key: 'X', type: 'select' },
+      { id: 'prop_y', label: 'Y', key: 'Y', type: 'number' },
     ]
     const v = mintDefaultView(schema)
     expect(v.id).toMatch(/^view_[0-9A-HJKMNP-TV-Z]{26}$/)

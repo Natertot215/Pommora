@@ -108,7 +108,7 @@ const type = (insert: string, from?: number, to?: number): void =>
   })
 
 describe('a Number value', () => {
-  const COUNT: PropertyDefinition = { id: 'prop_n', name: 'Count', type: 'number' }
+  const COUNT: PropertyDefinition = { id: 'prop_n', label: 'Count', key: 'Count', type: 'number' }
   const input = (): HTMLInputElement => host.querySelector('input') as HTMLInputElement
   const typeInto = (value: string): void =>
     act(() => {
@@ -146,7 +146,7 @@ describe('a Number value', () => {
 
 describe('the popover routes', () => {
   const popoverFor = (type: PropertyType): Element => {
-    remount({ id: 'prop_t', name: 'Notes', type }, null, { popover })
+    remount({ id: 'prop_t', label: 'Notes', key: 'Notes', type }, null, { popover })
     return portal()
   }
   it('opens TextPane for a Text value, the one-line editor for a Link, and the input for a Number', () => {
@@ -159,7 +159,14 @@ describe('the popover routes', () => {
 
   it('a Number popover shows its affixes around the input, and a Link popover its editor, in the one field', () => {
     remount(
-      { id: 'prop_n', name: 'Count', type: 'number', number_fraction: true, number_denominator: 5 },
+      {
+        id: 'prop_n',
+        label: 'Count',
+        key: 'Count',
+        type: 'number',
+        number_fraction: true,
+        number_denominator: 5,
+      },
       { kind: 'number', value: 2 },
       { popover },
     )
@@ -167,7 +174,7 @@ describe('the popover routes', () => {
     const number = portal().querySelector(chrome)!
     expect(number.querySelector('input')).not.toBeNull()
     expect(number.textContent).toBe('#/ 5')
-    remount({ id: 'prop_l', name: 'Site', type: 'link' }, null, { popover })
+    remount({ id: 'prop_l', label: 'Site', key: 'Site', type: 'link' }, null, { popover })
     expect(portal().querySelector(`${chrome} .value-field .cm-editor`)).not.toBeNull()
   })
 
@@ -182,7 +189,13 @@ describe('the popover routes', () => {
 })
 
 describe('the Link field', () => {
-  const SITE: PropertyDefinition = { id: 'prop_l', name: 'Site', type: 'link', link_color: 'red' }
+  const SITE: PropertyDefinition = {
+    id: 'prop_l',
+    label: 'Site',
+    key: 'Site',
+    type: 'link',
+    link_color: 'red',
+  }
 
   it('opens on the whole written value with the caret at the end, wearing the property’s link color', () => {
     mount(SITE, link('[[Alpha|nice]]'))
@@ -349,7 +362,7 @@ describe('the Link field', () => {
 })
 
 describe('the single-line Text field', () => {
-  const NOTES: PropertyDefinition = { id: 'prop_t', name: 'Notes', type: 'text' }
+  const NOTES: PropertyDefinition = { id: 'prop_t', label: 'Notes', key: 'Notes', type: 'text' }
 
   it('opens on the first line and commits it over the lines behind, untouched', () => {
     mount(NOTES, text('first\nsecond\n'))

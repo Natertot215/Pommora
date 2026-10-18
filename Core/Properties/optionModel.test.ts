@@ -127,7 +127,8 @@ describe('optionModel', () => {
     const options = [{ value: 'A' }, { value: 'B', color: 'red' }]
     const select = {
       id: 'p',
-      name: 'Tags',
+      label: 'Tags',
+      key: 'Tags',
       type: 'select',
       select_options: options,
     } as PropertyDefinition
@@ -148,7 +149,8 @@ describe('optionModel', () => {
   it('optionGroupsOf(status) is status_groups by reference', () => {
     const status = {
       id: 'p',
-      name: 'Stage',
+      label: 'Stage',
+      key: 'Stage',
       type: 'status',
       status_groups: groups,
     } as PropertyDefinition

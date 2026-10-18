@@ -10,6 +10,7 @@ import {
   KEY_REFUSAL,
   PROPERTY_TYPES,
   type PropertyDefinition,
+  type PropertyDraft,
 } from './properties'
 import { ok, fail, type Result } from '../Contract/result'
 import { renameFrontmatterKey } from '../Files/pageFile'
@@ -42,16 +43,16 @@ function seeded(def: PropertyDefinition): PropertyDefinition {
 
 export async function createProperty(
   root: string,
-  def: PropertyDefinition,
+  def: PropertyDraft,
 ): Promise<Result<{ id: string }>> {
   let landed = ''
   const created = await mutateRegistry<Result<{ id: string }>>(root, (registry) => {
     const defs = Object.values(registry.defs)
     landed = freeName(
-      exactTitle(def.name ?? ''),
-      defs.map((d) => d.name),
+      exactTitle(def.label),
+      defs.map((d) => d.label),
     )
-    const candidate = seeded({ ...def, name: landed, id: def.id || mintPropertyId() })
+    const candidate = seeded({ ...def, label: landed, key: landed, id: def.id || mintPropertyId() })
     const v = validateDefinition(candidate, defs)
     if (!v.ok) return { result: v }
     return {
@@ -75,14 +76,14 @@ const NEW_KEY_IS_FRESHER: KeyCollision = 'prefer-new'
 
 export async function renameSweep(
   root: string,
-  oldName: string,
+  oldKey: string,
   def: PropertyDefinition,
 ): Promise<number> {
   // Queried by the OLD key: a page holding only the new one needs no rewrite, and one holding both holds the old one too.
-  const files = await keyHolderFiles(root, oldName, await collectionFolders(root))
+  const files = await keyHolderFiles(root, oldKey, await collectionFolders(root))
   const text = (content: string): string | null =>
-    renameFrontmatterKey(content, oldName, def.name, NEW_KEY_IS_FRESHER)
-  const rekey: Rewrite = (raw) => rekeyHeld(raw, oldName, def.name, NEW_KEY_IS_FRESHER)
+    renameFrontmatterKey(content, oldKey, def.key, NEW_KEY_IS_FRESHER)
+  const rekey: Rewrite = (raw) => rekeyHeld(raw, oldKey, def.key, NEW_KEY_IS_FRESHER)
   const swept = await sweepGovernedRoots(root, files, { text, sidecars: rekey })
   return swept.skipped.length
 }
@@ -101,21 +102,21 @@ async function bothKeyHolders(root: string, from: string, to: string): Promise<s
 export function renameProperty(
   root: string,
   propertyId: string,
-  name: string,
+  label: string,
 ): Promise<Result<PropertyRename | null>> {
-  const to = exactTitle(name)
+  const to = exactTitle(label)
   return serializeSchemaOp(root, async () => {
     const { defs } = await readRegistry(root)
     const prior = defs[propertyId]
     if (!prior) return NO_PROPERTY
-    if (to === prior.name) return ok(null)
+    if (to === prior.label) return ok(null)
     const named = validateName(to, Object.values(defs), propertyId)
     if (!named.ok) return named
     // A file holding only the new key is adopted, its value going live as a create's would; one holding both would lose its old value.
-    const clashes = await bothKeyHolders(root, prior.name, to)
+    const clashes = await bothKeyHolders(root, prior.key, to)
     if (clashes.length)
-      return fail('invalid-property', KEY_REFUSAL.held(prior.name, to, clashes.length))
-    const record: SchemaJournal = { op: 'rename', id: propertyId, from: prior.name, to }
+      return fail('invalid-property', KEY_REFUSAL.held(prior.key, to, clashes.length))
+    const record: SchemaJournal = { op: 'rename', id: propertyId, from: prior.key, to }
     await writeSchemaJournal(root, record)
     const edit = await mutateRegistry<Result<{ from: string; def: PropertyDefinition }>>(
       root,
@@ -124,10 +125,10 @@ export function renameProperty(
         if (!current) return { result: NO_PROPERTY }
         const v = validateName(to, Object.values(registry.defs), propertyId)
         if (!v.ok) return { result: v }
-        const def = { ...current, name: to }
+        const def = { ...current, label: to, key: to }
         return {
           next: { ...registry, defs: { ...registry.defs, [propertyId]: def } },
-          result: ok({ from: current.name, def }),
+          result: ok({ from: current.key, def }),
         }
       },
     )
@@ -142,11 +143,11 @@ export function renameProperty(
   })
 }
 
-/** Every definition edit but the name, which is renameProperty's since it cascades into every page. */
+/** Every definition edit but the label and key, which are renameProperty's since the key cascades into every page. */
 export function editProperty(
   root: string,
   propertyId: string,
-  changes: Omit<Partial<PropertyDefinition>, 'id' | 'name'>,
+  changes: Omit<Partial<PropertyDefinition>, 'id' | 'label' | 'key'>,
 ): Promise<Result<null>> {
   return serializeSchemaOp(root, () =>
     mutateRegistry<Result<null>>(root, (registry) => {

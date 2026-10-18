@@ -12,7 +12,7 @@ import { propsAtRoot, valuesReply } from '../../Testing/pageValues'
 import { stubDialer } from '../../vitest.setup'
 import { makeTree } from '../../Testing/testTree'
 // Absent from property_order and blank on every page, so it is the card menu's one addable entry.
-const numberDef: PropertyDefinition = { id: 'prop_n', name: 'Count', type: 'number' }
+const numberDef: PropertyDefinition = { id: 'prop_n', label: 'Count', key: 'Count', type: 'number' }
 
 const source = (): CollectionNode =>
   ({
@@ -173,7 +173,7 @@ describe('the card menu', () => {
 })
 
 describe('a card’s link value', () => {
-  const siteDef: PropertyDefinition = { id: 'prop_site', name: 'Site', type: 'link' }
+  const siteDef: PropertyDefinition = { id: 'prop_site', label: 'Site', key: 'Site', type: 'link' }
 
   it('pops the link menu, which closes with Clear and Remove', async () => {
     const base = source()

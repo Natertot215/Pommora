@@ -1,4 +1,4 @@
-// Per-page value fixtures for view and property suites: frontmatter keyed by the property NAME the file carries, and the loadValues reply a stubbed dialer answers with.
+// Per-page value fixtures for view and property suites: frontmatter keyed by the property KEY the file carries, and the loadValues reply a stubbed dialer answers with.
 
 import type { PropertyDefinition } from '../Properties/properties'
 import type { PageFrontmatter } from '../Nexus/schemas'
@@ -12,7 +12,7 @@ export const propsAtRoot = (
   Object.fromEntries(
     Object.entries(props).map(([id, v]) => {
       const d = defs.find((x) => x.id === id)
-      return [d ? d.name : id, v]
+      return [d ? d.key : id, v]
     }),
   )
 

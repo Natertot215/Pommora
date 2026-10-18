@@ -8,7 +8,7 @@ import type { PropertyDefinition } from './properties'
 let root: string
 let page: string
 
-const stage = { id: 'prop_s', name: 'Stage', type: 'select' } as PropertyDefinition
+const stage = { id: 'prop_s', label: 'Stage', key: 'Stage', type: 'select' } as PropertyDefinition
 
 const seed = async (fm: string): Promise<void> => writeFile(page, `---\n${fm}---\nbody\n`)
 
@@ -101,7 +101,7 @@ describe('renameSweep moves the exact key', () => {
   it('a rename to another casing of its own name moves the key on a page and a Space', async () => {
     await seed('id: p1\nStatus: Old\n')
     const file = await seedSpaceSidecar(root, 'Projects', 'Pommora', { id: 'sp1', Status: 'Old' })
-    await renameSweep(root, 'Status', { ...stage, name: 'status' })
+    await renameSweep(root, 'Status', { ...stage, label: 'status', key: 'status' })
     expect(await readFile(page, 'utf8')).toBe('---\nid: p1\nstatus: Old\n---\nbody\n')
     expect(await readJsonAt(file)).toEqual({ id: 'sp1', status: 'Old' })
   })

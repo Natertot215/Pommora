@@ -54,7 +54,7 @@ beforeEach(async () => {
   const c = await createFolderEntity(root, 'collection', 'Notes', newId())
   const p = await createProperty(root, {
     id: '',
-    name: 'Stage',
+    label: 'Stage',
     type: 'select',
     select_options: [{ value: 'Done' }, { value: 'Todo' }],
   })
@@ -176,7 +176,7 @@ describe('the property channels', () => {
     expect((await handleMutate(root, { op: 'restore', bundlePath }, deps)).ok).toBe(true)
     const page = await readFile(`${col}/A.md`, 'utf8')
     expect(await propertiesHandlers['property:replay'](ctx, record)).toEqual(ok(null))
-    expect((await readRegistry(root)).defs[propId]?.name).toBe('Stage')
+    expect((await readRegistry(root)).defs[propId]?.label).toBe('Stage')
     expect(await readFile(`${col}/A.md`, 'utf8')).toBe(page)
   })
 
@@ -316,7 +316,7 @@ describe('a schema op started while another operation’s record holds the journ
 
     it.skipIf(noModeBits)('changes nothing once another property takes the old name', async () => {
       const owed = await renamed()
-      expect((await createProperty(root, { id: '', name: 'Stage', type: 'number' })).ok).toBe(true)
+      expect((await createProperty(root, { id: '', label: 'Stage', type: 'number' })).ok).toBe(true)
       const before = await fm()
       expect(await propertiesHandlers['property:replay'](ctx, owed)).toEqual(ok(null))
       expect(await fm()).toBe(before)

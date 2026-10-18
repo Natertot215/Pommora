@@ -16,7 +16,8 @@ import { useActiveView } from './Host/useActiveView'
 
 const statusDef: PropertyDefinition = {
   id: 'prop_status',
-  name: 'Status',
+  label: 'Status',
+  key: 'Status',
   type: 'status',
   status_groups: [
     {

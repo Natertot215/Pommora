@@ -4,8 +4,8 @@ import { contextsByIdOf } from '../../Contexts/contextIdentity'
 import { RESERVED_PROPERTY_ID, type PropertyDefinition } from '../properties'
 
 const schema: PropertyDefinition[] = [
-  { id: 'prop_status', name: 'Status', type: 'status' },
-  { id: 'prop_due', name: 'Due', type: 'dateTime' },
+  { id: 'prop_status', label: 'Status', key: 'Status', type: 'status' },
+  { id: 'prop_due', label: 'Due Date', key: 'due_date', type: 'dateTime' },
 ]
 
 const NO_CONTEXTS = new Map()
@@ -32,8 +32,9 @@ describe('columnLabel', () => {
     expect(columnLabel('ctx_areas', schema, NO_CONTEXTS)).toBe('ctx_areas')
   })
 
-  it('resolves a user property through the schema name', () => {
+  it('resolves a user property through its label', () => {
     expect(columnLabel('prop_status', schema, NO_CONTEXTS)).toBe('Status')
+    expect(columnLabel('prop_due', schema, NO_CONTEXTS)).toBe('Due Date')
   })
 
   it('falls back to the id for an unknown column (never throws)', () => {

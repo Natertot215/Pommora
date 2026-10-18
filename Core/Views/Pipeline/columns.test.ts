@@ -6,8 +6,8 @@ import { propertyDefinition, type PropertyDefinition } from '../../Properties/pr
 import { resolveColumns } from './columns'
 
 const schema: PropertyDefinition[] = [
-  { id: 'prop_a', name: 'A', type: 'select' },
-  { id: 'prop_b', name: 'B', type: 'number' },
+  { id: 'prop_a', label: 'A', key: 'A', type: 'select' },
+  { id: 'prop_b', label: 'B', key: 'B', type: 'number' },
 ]
 
 const CONTEXT_IDS = ['ctx_areas', 'ctx_topics', 'ctx_projects', 'ctxC']

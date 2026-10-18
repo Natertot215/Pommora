@@ -108,7 +108,9 @@ beforeEach(async () => {
     join(root, '.nexus', 'properties.json'),
     JSON.stringify({
       order: ['prop_related'],
-      defs: { prop_related: { id: 'prop_related', name: 'Related', type: 'link' } },
+      defs: {
+        prop_related: { id: 'prop_related', label: 'Related', key: 'Related', type: 'link' },
+      },
     }),
   )
   await writeFile(

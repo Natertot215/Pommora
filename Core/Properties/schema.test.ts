@@ -5,13 +5,14 @@ import { KEY_REFUSAL, type PropertyDefinition } from './properties'
 const def = (
   over: Partial<PropertyDefinition> & {
     id: string
-    name: string
+    label: string
+    key: string
     type: PropertyDefinition['type']
   },
 ) => over as PropertyDefinition
 
 describe('validateName', () => {
-  const existing = [def({ id: 'p1', name: 'Stage', type: 'status' })]
+  const existing = [def({ id: 'p1', label: 'Stage', key: 'Stage', type: 'status' })]
 
   it('rejects a case-insensitive duplicate name (empty is the callers\u2019 gate)', () => {
     expect(validateName('stage', existing).ok).toBe(false)
@@ -52,32 +53,36 @@ describe('validateName', () => {
 })
 
 describe('validateDefinition', () => {
-  const existing = [def({ id: 'p1', name: 'Stage', type: 'status' })]
+  const existing = [def({ id: 'p1', label: 'Stage', key: 'Stage', type: 'status' })]
 
   it('refuses the type a Context column wears', () => {
-    expect(validateDefinition(def({ id: 'p5', name: 'Area', type: 'context' }), existing).ok).toBe(
-      false,
-    )
+    expect(
+      validateDefinition(def({ id: 'p5', label: 'Area', key: 'Area', type: 'context' }), existing)
+        .ok,
+    ).toBe(false)
   })
 
   it('refuses the types the timestamp columns wear', () => {
     for (const type of ['createdTime', 'lastEditedTime'] as const)
-      expect(validateDefinition(def({ id: 'p6', name: 'When', type }), existing).ok).toBe(false)
+      expect(
+        validateDefinition(def({ id: 'p6', label: 'When', key: 'When', type }), existing).ok,
+      ).toBe(false)
   })
 
   it('blocks reserved ids and duplicate ids', () => {
-    expect(validateDefinition(def({ id: '_title', name: 'X', type: 'number' }), existing).ok).toBe(
-      false,
-    )
-    expect(validateDefinition(def({ id: 'p1', name: 'New', type: 'number' }), existing).ok).toBe(
-      false,
-    )
+    expect(
+      validateDefinition(def({ id: '_title', label: 'X', key: 'X', type: 'number' }), existing).ok,
+    ).toBe(false)
+    expect(
+      validateDefinition(def({ id: 'p1', label: 'New', key: 'New', type: 'number' }), existing).ok,
+    ).toBe(false)
   })
 
   it('rejects duplicate select option values', () => {
     const dupOpts = def({
       id: 'p3',
-      name: 'Tag2',
+      label: 'Tag2',
+      key: 'Tag2',
       type: 'select',
       select_options: [{ value: 'a' }, { value: 'a' }],
     })
@@ -87,19 +92,21 @@ describe('validateDefinition', () => {
   it('allows a zero-option select (no floor)', () => {
     expect(
       validateDefinition(
-        def({ id: 'p2', name: 'Tag', type: 'select', select_options: [] }),
+        def({ id: 'p2', label: 'Tag', key: 'Tag', type: 'select', select_options: [] }),
         existing,
       ).ok,
     ).toBe(true)
-    expect(validateDefinition(def({ id: 'p4', name: 'Tag3', type: 'select' }), existing).ok).toBe(
-      true,
-    )
+    expect(
+      validateDefinition(def({ id: 'p4', label: 'Tag3', key: 'Tag3', type: 'select' }), existing)
+        .ok,
+    ).toBe(true)
   })
 
   it('accepts a valid new property', () => {
-    expect(validateDefinition(def({ id: 'p9', name: 'Score', type: 'number' }), existing).ok).toBe(
-      true,
-    )
+    expect(
+      validateDefinition(def({ id: 'p9', label: 'Score', key: 'Score', type: 'number' }), existing)
+        .ok,
+    ).toBe(true)
   })
 })
 
@@ -118,7 +125,7 @@ describe('validateOptionValues', () => {
 
 describe('linkKeysOf', () => {
   const typed = (name: string, type: PropertyDefinition['type']) =>
-    linkKeysOf([def({ id: 'p1', name, type })])(name)
+    linkKeysOf([def({ id: 'p1', label: name, key: name, type })])(name)
 
   it('a Link or Text key holds links; a File, Number, or Select key never does', () => {
     expect(typed('Source', 'link')).toBe(true)
@@ -135,7 +142,7 @@ describe('linkKeysOf', () => {
   })
 
   it('asks the registry by exact key, another casing reading as untyped', () => {
-    const holds = linkKeysOf([def({ id: 'p1', name: 'Rank', type: 'number' })])
+    const holds = linkKeysOf([def({ id: 'p1', label: 'Rank', key: 'Rank', type: 'number' })])
     expect(holds('rank')).toBe(true)
     expect(holds('Rank')).toBe(false)
     expect(holds('Related')).toBe(true)

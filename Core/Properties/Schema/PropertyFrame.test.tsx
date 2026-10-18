@@ -31,8 +31,14 @@ vi.mock('@pommora/uix/Fields/RenamableLabel', async (actual) => {
 })
 
 const defs: PropertyDefinition[] = [
-  { id: 'prop_status', name: 'Status', type: 'status', status_groups: defaultStatusSeed() },
-  { id: 'prop_n', name: 'Count', type: 'number' },
+  {
+    id: 'prop_status',
+    label: 'Status',
+    key: 'Status',
+    type: 'status',
+    status_groups: defaultStatusSeed(),
+  },
+  { id: 'prop_n', label: 'Count', key: 'Count', type: 'number' },
 ]
 
 let host: HTMLDivElement
@@ -131,7 +137,12 @@ describe('the DRY nested slide (A-7)', () => {
   })
 })
 
-const effortDef: PropertyDefinition = { id: 'prop_x', name: 'Effort', type: 'number' }
+const effortDef: PropertyDefinition = {
+  id: 'prop_x',
+  label: 'Effort',
+  key: 'Effort',
+  type: 'number',
+}
 const commitTitle = (input: HTMLInputElement, value: string): void => {
   Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set?.call(
     input,
@@ -140,7 +151,7 @@ const commitTitle = (input: HTMLInputElement, value: string): void => {
   input.dispatchEvent(new Event('input', { bubbles: true }))
   input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
 }
-const titleDef: PropertyDefinition = { id: '_title', name: 'Title', type: 'link' }
+const titleDef: PropertyDefinition = { id: '_title', label: 'Title', key: 'Title', type: 'link' }
 
 describe('the All Properties section (T5)', () => {
   it('lists only unassigned, unreserved registry defs (A-4/E-5), in registry order (B-1)', async () => {
@@ -178,7 +189,7 @@ describe('the All Properties section (T5)', () => {
   })
 
   it('creating a property opens its editor pane', async () => {
-    await mountPane([...defs, { id: 'prop_new', name: 'New Text', type: 'text' }])
+    await mountPane([...defs, { id: 'prop_new', label: 'New Text', key: 'New Text', type: 'text' }])
     await act(async () => {
       host.querySelector<HTMLButtonElement>('[aria-label="New Property"]')!.click()
     })

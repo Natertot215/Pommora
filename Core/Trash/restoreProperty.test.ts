@@ -44,13 +44,13 @@ const valueOn = async (absPage: string, name: string): Promise<unknown> =>
 async function seedPriority(): Promise<string> {
   const c = await createProperty(root, {
     id: '',
-    name: 'Priority',
+    label: 'Priority',
     type: 'select',
     select_options: [
       { value: 'hi', color: 'red' },
       { value: 'lo', color: 'blue' },
     ],
-  } as PropertyDefinition)
+  })
   if (!c.ok) throw new Error('seed failed')
   await assignProperty(root, notes, c.value.id)
   await assignProperty(root, tasks, c.value.id)
@@ -144,7 +144,7 @@ describe('restoring a deleted property', () => {
     expect(r.ok).toBe(true)
 
     const def = (await readRegistry(root)).defs[id]
-    expect(def).toMatchObject({ id, name: 'Priority', type: 'select' })
+    expect(def).toMatchObject({ id, label: 'Priority', key: 'Priority', type: 'select' })
     expect(await assigns(notes, id)).toBe(true)
     expect(await assigns(tasks, id)).toBe(true)
     expect(await valueOn(p1.value.path, 'Priority')).toEqual(['hi'])
@@ -157,14 +157,17 @@ describe('restoring a deleted property', () => {
     expect((await deleteProperty(root, id)).ok).toBe(true)
     const impostor = await createProperty(root, {
       id: '',
-      name: 'Priority',
+      label: 'Priority',
       type: 'number',
-    } as PropertyDefinition)
+    })
     expect(impostor.ok).toBe(true)
 
     const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() }, deps)
     expect(r.ok).toBe(true)
-    expect((await readRegistry(root)).defs[id]?.name).toBe('Priority (2)')
+    expect((await readRegistry(root)).defs[id]).toMatchObject({
+      label: 'Priority (2)',
+      key: 'Priority (2)',
+    })
     expect(await listBundles(root)).toHaveLength(0)
   })
 
@@ -173,15 +176,15 @@ describe('restoring a deleted property', () => {
     expect((await deleteProperty(root, id)).ok).toBe(true)
     const back = await createProperty(root, {
       id,
-      name: 'Urgency',
+      label: 'Urgency',
       type: 'select',
       select_options: [{ value: 'hi', color: 'red' }],
-    } as PropertyDefinition)
+    })
     expect(back.ok).toBe(true)
 
     const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() }, deps)
     expect(r.ok).toBe(false)
-    expect((await readRegistry(root)).defs[id]).toMatchObject({ name: 'Urgency' })
+    expect((await readRegistry(root)).defs[id]).toMatchObject({ label: 'Urgency', key: 'Urgency' })
     expect(await listBundles(root)).toHaveLength(1)
   })
 
@@ -314,9 +317,9 @@ describe('restoring a deleted property', () => {
   it('a Link value naming a page gone since comes back nowhere', async () => {
     const c = await createProperty(root, {
       id: '',
-      name: 'Related',
+      label: 'Related',
       type: 'link',
-    } as PropertyDefinition)
+    })
     if (!c.ok) throw new Error('seed failed')
     await assignProperty(root, notes, c.value.id)
     const target = await createTestPage(notes, 'Target', { body: 'b' })
@@ -336,9 +339,9 @@ describe('restoring a deleted property', () => {
   it('a cached Link value naming no page stays out when the property is assigned again', async () => {
     const c = await createProperty(root, {
       id: '',
-      name: 'Related',
+      label: 'Related',
       type: 'link',
-    } as PropertyDefinition)
+    })
     if (!c.ok) throw new Error('seed failed')
     await assignProperty(root, tasks, c.value.id)
     const target = await createTestPage(tasks, 'Target', { body: 'b' })
@@ -357,10 +360,10 @@ describe('restoring a deleted property', () => {
   it('a Multi-Select value comes back holding only the options the definition still offers', async () => {
     const c = await createProperty(root, {
       id: '',
-      name: 'Tags',
+      label: 'Tags',
       type: 'multiSelect',
       select_options: [{ value: 'alpha' }],
-    } as PropertyDefinition)
+    })
     if (!c.ok) throw new Error('seed failed')
     await assignProperty(root, notes, c.value.id)
     const page = await createTestPage(notes, 'T', { body: 'b' })

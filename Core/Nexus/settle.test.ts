@@ -818,11 +818,18 @@ describe('held options — the Multi-Select members a changed file holds are reg
         defs: {
           tags: {
             id: 'tags',
-            name: 'Tags',
+            label: 'Tags',
+            key: 'Tags',
             type: 'multiSelect',
             select_options: [{ value: first, color: 'blue' }],
           },
-          kind: { id: 'kind', name: 'Kind', type: 'select', select_options: [{ value: 'Note' }] },
+          kind: {
+            id: 'kind',
+            label: 'Kind',
+            key: 'Kind',
+            type: 'select',
+            select_options: [{ value: 'Note' }],
+          },
         },
       }),
     )
@@ -1038,7 +1045,7 @@ describe('held options — the Multi-Select members a changed file holds are reg
     await walked()
     const created = await createProperty(root, {
       id: 'labels',
-      name: 'Labels',
+      label: 'Labels',
       type: 'multiSelect',
     })
     expect(created.ok).toBe(true)
@@ -1060,7 +1067,8 @@ describe('held options — the Multi-Select members a changed file holds are reg
     await writeFile(abs('Notes', 'A.md'), page(ULID_A, 'TAGS:\n  - Ideas\n'))
     await walked()
     const held = JSON.parse(await readFile(abs('.nexus', 'properties.json'), 'utf8'))
-    held.defs.tags.name = 'TAGS'
+    held.defs.tags.label = 'TAGS'
+    held.defs.tags.key = 'TAGS'
     await writeFile(abs('.nexus', 'properties.json'), JSON.stringify(held))
     await settleBatch(pusher, root, [ev('change', '.nexus', 'properties.json')])
     expect(await options()).toContain('Ideas')
@@ -1083,7 +1091,13 @@ describe('held options — the Multi-Select members a changed file holds are reg
     await walked()
     const held = JSON.parse(await readFile(abs('.nexus', 'properties.json'), 'utf8'))
     held.order.push('labels')
-    held.defs.labels = { id: 'labels', name: 'Labels', type: 'multiSelect', select_options: [] }
+    held.defs.labels = {
+      id: 'labels',
+      label: 'Labels',
+      key: 'Labels',
+      type: 'multiSelect',
+      select_options: [],
+    }
     await writeFile(abs('.nexus', 'properties.json'), JSON.stringify(held))
     await settleBatch(pusher, root, [ev('change', '.nexus', 'properties.json')])
     expect(await options('labels')).toEqual(['Ideas'])

@@ -164,7 +164,9 @@ describe('openNexusSequence', () => {
     const registry = join(root, '.nexus', 'properties.json')
     await writeFile(
       registry,
-      JSON.stringify({ defs: { a: { id: 'a', name: 'Tags', type: 'multi_select' } } }),
+      JSON.stringify({
+        defs: { a: { id: 'a', label: 'Tags', key: 'Tags', type: 'multi_select' } },
+      }),
     )
     await openNexusSequence(ctx, root, false)
     expect((await readJsonAt<{ defs: { a: { type: string } } }>(registry)).defs.a.type).toBe(
@@ -180,7 +182,8 @@ describe('openNexusSequence', () => {
         defs: {
           tags: {
             id: 'tags',
-            name: 'Tags',
+            label: 'Tags',
+            key: 'Tags',
             type: 'multiSelect',
             select_options: [{ value: 'alpha' }],
           },

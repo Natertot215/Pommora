@@ -8,7 +8,9 @@ import { DEFAULT_VIEW_ID, type SavedView } from '../views'
 import { useActiveView } from './useActiveView'
 import { mountEachTest } from '../../Testing/viewHarness'
 
-const schema: PropertyDefinition[] = [{ id: 'prop_status', name: 'Status', type: 'status' }]
+const schema: PropertyDefinition[] = [
+  { id: 'prop_status', label: 'Status', key: 'Status', type: 'status' },
+]
 
 const view = (id: string): SavedView => ({
   id,

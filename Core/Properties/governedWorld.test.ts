@@ -2,7 +2,6 @@ import { mkdir, rm, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { PropertyDefinition } from './properties'
 import * as liveTree from '../Nexus/liveTree'
 import { assignedDefs, assignProperty, collectionFolders } from './assignment'
 import { pageWorldOf } from '../Contexts/contextWrite'
@@ -26,14 +25,14 @@ beforeEach(async () => {
   notes = col.value.path
   const status = await createProperty(root, {
     id: '',
-    name: 'Status',
+    label: 'Status',
     type: 'select',
-  } as PropertyDefinition)
+  })
   const priority = await createProperty(root, {
     id: '',
-    name: 'Priority',
+    label: 'Priority',
     type: 'number',
-  } as PropertyDefinition)
+  })
   if (!status.ok || !priority.ok) throw new Error('setup')
   statusId = status.value.id
   await assignProperty(root, notes, statusId)

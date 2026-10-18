@@ -481,27 +481,33 @@ describe('the parity cases', () => {
     writeFile(abs('.nexus', 'properties.json'), JSON.stringify({ order: Object.keys(defs), defs }))
 
   it('a properties.json edit that changes a definition re-points it with no walk', async () => {
-    await registry({ prop_status: { id: 'prop_status', name: 'Status', type: 'number' } })
+    await registry({
+      prop_status: { id: 'prop_status', label: 'Status', key: 'Status', type: 'number' },
+    })
     await writeFile(
       abs('Notes', '_pagecollection.json'),
       JSON.stringify({ id: 'c1', properties: ['prop_status'] }),
     )
     await refreshTree(root)
     walk.mockClear()
-    await registry({ prop_status: { id: 'prop_status', name: 'State', type: 'number' } })
+    await registry({
+      prop_status: { id: 'prop_status', label: 'State', key: 'State', type: 'number' },
+    })
     await settled([ev('change', '.nexus', 'properties.json')])
-    expect(held().collections[0]?.properties?.map((d) => d.name)).toEqual(['State'])
+    expect(held().collections[0]?.properties?.map((d) => d.label)).toEqual(['State'])
     await agrees()
     expect(walk).not.toHaveBeenCalled()
   })
 
   it('a properties.json edit that adds a definition walks', async () => {
-    await registry({ prop_status: { id: 'prop_status', name: 'Status', type: 'number' } })
+    await registry({
+      prop_status: { id: 'prop_status', label: 'Status', key: 'Status', type: 'number' },
+    })
     await refreshTree(root)
     walk.mockClear()
     await registry({
-      prop_status: { id: 'prop_status', name: 'Status', type: 'number' },
-      prop_due: { id: 'prop_due', name: 'Due', type: 'dateTime' },
+      prop_status: { id: 'prop_status', label: 'Status', key: 'Status', type: 'number' },
+      prop_due: { id: 'prop_due', label: 'Due', key: 'Due', type: 'dateTime' },
     })
     await settled([ev('change', '.nexus', 'properties.json')])
     expect(walk).toHaveBeenCalledTimes(1)
@@ -1099,7 +1105,9 @@ describe('an outside heading rename a Space alone links', () => {
       abs('.nexus', 'properties.json'),
       JSON.stringify({
         order: ['prop_related'],
-        defs: { prop_related: { id: 'prop_related', name: 'Related', type: 'link' } },
+        defs: {
+          prop_related: { id: 'prop_related', label: 'Related', key: 'Related', type: 'link' },
+        },
       }),
     )
     await writeFile(
@@ -1208,7 +1216,7 @@ describe('the app’s own events', () => {
       '.nexus/properties.json',
       JSON.stringify({
         order: ['prop_due'],
-        defs: { prop_due: { id: 'prop_due', name: 'Due', type: 'dateTime' } },
+        defs: { prop_due: { id: 'prop_due', label: 'Due', key: 'Due', type: 'dateTime' } },
       }),
     )
     expect(held().config.registry.map((d) => d.id)).toEqual(['prop_due'])

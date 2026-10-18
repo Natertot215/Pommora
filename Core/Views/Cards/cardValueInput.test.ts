@@ -72,11 +72,12 @@ describe('orderAddableEntries', () => {
 describe('shownColumnsFor', () => {
   const sel = {
     id: 'sel',
-    name: 'Sel',
+    label: 'Sel',
+    key: 'Sel',
     type: 'select',
     select_options: [{ value: 'Done' }],
   } as PropertyDefinition
-  const chk = { id: 'chk', name: 'Chk', type: 'checkbox' } as PropertyDefinition
+  const chk = { id: 'chk', label: 'Chk', key: 'Chk', type: 'checkbox' } as PropertyDefinition
   const ctx = { schema: [sel, chk], contextsById: new Map() } as unknown as ValueContext
   const columns: ResolvedColumn[] = [
     { id: '_title', kind: 'title' },
@@ -93,7 +94,7 @@ describe('shownColumnsFor', () => {
   it('Compact drops blank values except checkbox and keeps filled ones', () => {
     expect(shownColumnsFor(row({}), columns, ctx, true).map((c) => c.id)).toEqual(['chk'])
     expect(
-      shownColumnsFor(row({ [sel.name]: 'Done' }), columns, ctx, true).map((c) => c.id),
+      shownColumnsFor(row({ [sel.key]: 'Done' }), columns, ctx, true).map((c) => c.id),
     ).toEqual(['sel', 'chk'])
   })
 })

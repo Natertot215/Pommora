@@ -193,7 +193,8 @@ beforeAll(() => {
       defs: {
         prop_p1: {
           id: 'prop_p1',
-          name: 'Status',
+          label: 'Status',
+          key: 'Status',
           type: 'select',
           select_options: [{ value: 'a', color: 'blue' }],
         },
@@ -242,7 +243,7 @@ describe('readNexus — sidecar mode', () => {
     expect(notes.pages.map((p) => p.title)).toEqual(['Loose'])
     expect(notes.sets[0].pages.map((p) => p.title)).toEqual(['Entry'])
     expect(notes.properties?.length).toBe(1)
-    expect((notes.properties?.[0] as { name?: string })?.name).toBe('Status')
+    expect((notes.properties?.[0] as { label?: string })?.label).toBe('Status')
   })
 })
 
@@ -493,7 +494,10 @@ describe('readNexus — the walk names what it cannot read', () => {
       w(join(r, '.nexus', 'settings.json'), JSON.stringify({ excluded_folders: ['Private'] }))
       w(
         join(r, '.nexus', 'properties.json'),
-        JSON.stringify({ order: ['p'], defs: { p: { id: 'p', name: 'Done', type: 'checkbox' } } }),
+        JSON.stringify({
+          order: ['p'],
+          defs: { p: { id: 'p', label: 'Done', key: 'Done', type: 'checkbox' } },
+        }),
       )
       const first = await readNexus(r)
       w(join(r, '.nexus', file), '{ corrupt')
@@ -828,11 +832,12 @@ describe('PropertiesV2 — registry-resolved collection schema', () => {
         defs: {
           prop_a: {
             id: 'prop_a',
-            name: 'Priority',
+            label: 'Priority',
+            key: 'Priority',
             type: 'select',
             select_options: [{ value: 'hi', color: 'red' }],
           },
-          prop_b: { id: 'prop_b', name: 'Done', type: 'checkbox' },
+          prop_b: { id: 'prop_b', label: 'Done', key: 'Done', type: 'checkbox' },
         },
       }),
     )
@@ -845,7 +850,7 @@ describe('PropertiesV2 — registry-resolved collection schema', () => {
     const tree = await readNexus(root)
     const notes = tree.collections!.find((c) => c.id === 'col_notes')!
     expect(notes.properties?.map((p) => p.id)).toEqual(['prop_a', 'prop_b'])
-    expect(notes.properties?.map((p) => p.name)).toEqual(['Priority', 'Done'])
+    expect(notes.properties?.map((p) => p.label)).toEqual(['Priority', 'Done'])
     rmSync(root, { recursive: true, force: true })
   })
 })

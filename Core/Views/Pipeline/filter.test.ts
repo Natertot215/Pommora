@@ -9,7 +9,8 @@ import { propsAtRoot } from '../../Testing/pageValues'
 const schema: PropertyDefinition[] = [
   {
     id: 'prop_st',
-    name: 'Stage',
+    label: 'Stage',
+    key: 'Stage',
     type: 'status',
     status_groups: [
       {
@@ -25,21 +26,23 @@ const schema: PropertyDefinition[] = [
   },
   {
     id: 'prop_sel',
-    name: 'Sel',
+    label: 'Sel',
+    key: 'Sel',
     type: 'select',
     select_options: ['a', 'b', 'alpha', 'beta', 'apple', 'banana'].map((value) => ({ value })),
   },
-  { id: 'prop_num', name: 'Num', type: 'number' },
-  { id: 'prop_url', name: 'Link', type: 'link' },
-  { id: 'prop_when', name: 'When', type: 'dateTime' },
-  { id: 'prop_done', name: 'Done', type: 'checkbox' },
+  { id: 'prop_num', label: 'Num', key: 'Num', type: 'number' },
+  { id: 'prop_url', label: 'Link', key: 'Link', type: 'link' },
+  { id: 'prop_when', label: 'When', key: 'When', type: 'dateTime' },
+  { id: 'prop_done', label: 'Done', key: 'Done', type: 'checkbox' },
   {
     id: 'prop_tags',
-    name: 'Tags',
+    label: 'Tags',
+    key: 'Tags',
     type: 'multiSelect',
     select_options: ['x', 'y', 'z', 'a', 'b', 'c'].map((value) => ({ value })),
   },
-  { id: 'prop_notes', name: 'Notes', type: 'text' },
+  { id: 'prop_notes', label: 'Notes', key: 'Notes', type: 'text' },
 ]
 
 function row(

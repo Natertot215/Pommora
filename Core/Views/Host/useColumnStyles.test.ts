@@ -12,9 +12,9 @@ const nexus = (dateFormat: DateFormat) => ({
 const DATES = dateDefaults('full')
 
 const schema: PropertyDefinition[] = [
-  { id: 'prop_status', name: 'Status', type: 'status' },
-  { id: 'prop_date', name: 'Due', type: 'dateTime' },
-  { id: 'prop_n', name: 'Count', type: 'number' },
+  { id: 'prop_status', label: 'Status', key: 'Status', type: 'status' },
+  { id: 'prop_date', label: 'Due', key: 'Due', type: 'dateTime' },
+  { id: 'prop_n', label: 'Count', key: 'Count', type: 'number' },
 ]
 
 function view(over: Partial<SavedView>): SavedView {
@@ -87,7 +87,7 @@ describe('styleFor', () => {
   it('reaches Modified columns, which share the dateTime arm', () => {
     const withModified: PropertyDefinition[] = [
       ...schema,
-      { id: 'prop_m', name: 'Modified', type: 'lastEditedTime' },
+      { id: 'prop_m', label: 'Modified', key: 'Modified', type: 'lastEditedTime' },
     ]
     expect(styleFor('prop_m', withModified, view({}), nexus('dayMonthYear')).date_format).toBe(
       'dayMonthYear',

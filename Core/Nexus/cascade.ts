@@ -214,7 +214,7 @@ export async function renameCascade(
       ? await rewriteTileConnections(root, rewrite)
       : { hosts: [], failed: 0 }
     // A heading edit settles often and a cached Link still reaches its page, so only a re-spell reaches the caches. A block holds one property's values, so every entry holds links when the property does.
-    const cachedIds = new Set(defs.filter((d) => holds(d.name)).map((d) => d.id))
+    const cachedIds = new Set(defs.filter((d) => holds(d.key)).map((d) => d.id))
     const movedCache = (values: Record<string, unknown>): Record<string, unknown> | null =>
       withPatch(
         values,

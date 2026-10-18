@@ -2,7 +2,6 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { chmod, rm, mkdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { noModeBits, tempRoot } from '../Testing/hostFs'
-import type { PropertyDefinition } from '../Properties/properties'
 import { deleteCascade, renameCascade } from './cascade'
 import { sweepGovernedRoots, unsweptLine } from '../Properties/governedSweep'
 import { createTestPage } from '../Testing/createTestPage'
@@ -185,10 +184,10 @@ describe('renameCascade over frontmatter', () => {
   const SITE = 'Site'
   beforeEach(async () => {
     for (const name of [SOURCE, SITE]) {
-      await createProperty(root, { id: '', name, type: 'link' } as PropertyDefinition)
+      await createProperty(root, { id: '', label: name, type: 'link' })
     }
-    await createProperty(root, { id: '', name: 'Notes', type: 'text' } as PropertyDefinition)
-    await createProperty(root, { id: '', name: 'Files', type: 'file' } as PropertyDefinition)
+    await createProperty(root, { id: '', label: 'Notes', type: 'text' })
+    await createProperty(root, { id: '', label: 'Files', type: 'file' })
   })
   it('moves a Link property naming the page, and the body’s links with it', async () => {
     const a = await createTestPage(dir, 'Cites', { body: 'see [[Target]]' })
@@ -261,8 +260,8 @@ describe('renameCascade over frontmatter', () => {
   })
 
   it('leaves a File, a Select, and a Number value that read as connections', async () => {
-    await createProperty(root, { id: '', name: 'Stage', type: 'select' } as PropertyDefinition)
-    await createProperty(root, { id: '', name: 'Rank', type: 'number' } as PropertyDefinition)
+    await createProperty(root, { id: '', label: 'Stage', type: 'select' })
+    await createProperty(root, { id: '', label: 'Rank', type: 'number' })
     const a = await createTestPage(dir, 'Other', { body: 'no links here' })
     if (!a.ok) throw new Error('setup failed')
     await setValue(a.value.path, 'Files', '[[Target]]')
@@ -370,7 +369,7 @@ describe('renameCascade for a heading', () => {
   })
 
   it('moves a Link property aimed at the renamed heading, found through the index', async () => {
-    await createProperty(root, { id: '', name: 'Source', type: 'link' } as PropertyDefinition)
+    await createProperty(root, { id: '', label: 'Source', type: 'link' })
     const a = await createTestPage(dir, 'A', { body: '## Setup' })
     const c = await createTestPage(dir, 'C', { body: 'no links' })
     if (!a.ok || !c.ok) throw new Error('setup failed')
@@ -400,7 +399,7 @@ describe('renameCascade for a heading', () => {
       join(root, '.nexus', 'settings.json'),
       JSON.stringify({ personalization: { inPageHeadingResolution: 'automatic' } }),
     )
-    await createProperty(root, { id: '', name: 'Notes', type: 'text' } as PropertyDefinition)
+    await createProperty(root, { id: '', label: 'Notes', type: 'text' })
     const a = await createTestPage(dir, 'A', { body: '## Setup\n[[#Setup]]' })
     if (!a.ok) throw new Error('setup failed')
     await setValue(a.value.path, 'Notes', 'see [[#Setup]] and §Setup')
@@ -419,7 +418,7 @@ describe('renameCascade for a heading', () => {
       join(root, '.nexus', 'settings.json'),
       JSON.stringify({ personalization: { inPageHeadingResolution: 'automatic' } }),
     )
-    await createProperty(root, { id: '', name: 'Notes', type: 'text' } as PropertyDefinition)
+    await createProperty(root, { id: '', label: 'Notes', type: 'text' })
     const a = await createTestPage(dir, 'A', { body: '## Intro' })
     if (!a.ok) throw new Error('setup failed')
     await setValue(a.value.path, 'Notes', 'see §Setup')
@@ -466,7 +465,7 @@ describe('renameCascade for a heading', () => {
   })
 
   it('moves a Link value `[[#Old]]` on its own page as a Text value moves', async () => {
-    await createProperty(root, { id: '', name: 'Ref', type: 'link' } as PropertyDefinition)
+    await createProperty(root, { id: '', label: 'Ref', type: 'link' })
     const a = await createTestPage(dir, 'A', { body: '## Intro' })
     if (!a.ok) throw new Error('setup failed')
     await setValue(a.value.path, 'Ref', '[[#Setup|the start]]')
@@ -510,14 +509,14 @@ describe('deleteCascade', () => {
     await writeFile(join(dir, '_pagecollection.json'), JSON.stringify({ id: 'col-notes' }))
     const link = await createProperty(root, {
       id: '',
-      name: 'Related',
+      label: 'Related',
       type: 'link',
-    } as PropertyDefinition)
+    })
     const select = await createProperty(root, {
       id: '',
-      name: 'Kind',
+      label: 'Kind',
       type: 'select',
-    } as PropertyDefinition)
+    })
     if (!link.ok || !select.ok) throw new Error('setup failed')
     related = link.value.id
     await openSession(root)
@@ -832,9 +831,9 @@ describe('the link cascades reach Spaces and caches', () => {
     await writeFile(collection(), JSON.stringify({ id: 'col-notes' }))
     const link = await createProperty(root, {
       id: '',
-      name: 'Related',
+      label: 'Related',
       type: 'link',
-    } as PropertyDefinition)
+    })
     if (!link.ok) throw new Error('setup failed')
     related = link.value.id
     await openSession(root)
@@ -880,9 +879,9 @@ describe('the link cascades reach Spaces and caches', () => {
   it('a title rename moves a Space’s Text value and a cached Text value onto the new title', async () => {
     const notes = await createProperty(root, {
       id: '',
-      name: 'Notes',
+      label: 'Notes',
       type: 'text',
-    } as PropertyDefinition)
+    })
     if (!notes.ok) throw new Error('setup failed')
     await space({ Notes: 'see [[Target]]' })
     await writeFile(

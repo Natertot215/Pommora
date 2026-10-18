@@ -27,11 +27,18 @@ describe('normalizePropertyTypes', () => {
       order: ['a', 'b', 'c', 'd', 'e'],
       plugin: { keep: true },
       defs: {
-        a: { id: 'a', name: 'Tags', type: 'multi_select', select_options: [], foreign: 1 },
-        b: { id: 'b', name: 'Site', type: 'url' },
-        c: { id: 'c', name: 'Due', type: 'datetime' },
-        d: { id: 'd', name: 'Size', type: 'number' },
-        e: { id: 'e', name: 'Odd', type: 'rich_text' },
+        a: {
+          id: 'a',
+          label: 'Tags',
+          key: 'Tags',
+          type: 'multi_select',
+          select_options: [],
+          foreign: 1,
+        },
+        b: { id: 'b', label: 'Site', key: 'Site', type: 'url' },
+        c: { id: 'c', label: 'Due', key: 'Due', type: 'datetime' },
+        d: { id: 'd', label: 'Size', key: 'Size', type: 'number' },
+        e: { id: 'e', label: 'Odd', key: 'Odd', type: 'rich_text' },
       },
     })
     await normalizePropertyTypes(root)
@@ -39,17 +46,27 @@ describe('normalizePropertyTypes', () => {
       order: ['a', 'b', 'c', 'd', 'e'],
       plugin: { keep: true },
       defs: {
-        a: { id: 'a', name: 'Tags', type: 'multiSelect', select_options: [], foreign: 1 },
-        b: { id: 'b', name: 'Site', type: 'link' },
-        c: { id: 'c', name: 'Due', type: 'dateTime' },
-        d: { id: 'd', name: 'Size', type: 'number' },
-        e: { id: 'e', name: 'Odd', type: 'rich_text' },
+        a: {
+          id: 'a',
+          label: 'Tags',
+          key: 'Tags',
+          type: 'multiSelect',
+          select_options: [],
+          foreign: 1,
+        },
+        b: { id: 'b', label: 'Site', key: 'Site', type: 'link' },
+        c: { id: 'c', label: 'Due', key: 'Due', type: 'dateTime' },
+        d: { id: 'd', label: 'Size', key: 'Size', type: 'number' },
+        e: { id: 'e', label: 'Odd', key: 'Odd', type: 'rich_text' },
       },
     })
   })
 
   it('leaves a registry with only current ids untouched', async () => {
-    await seedRegistry({ order: ['a'], defs: { a: { id: 'a', name: 'Site', type: 'link' } } })
+    await seedRegistry({
+      order: ['a'],
+      defs: { a: { id: 'a', label: 'Site', key: 'Site', type: 'link' } },
+    })
     const before = (await stat(registry())).mtimeMs
     await normalizePropertyTypes(root)
     expect((await stat(registry())).mtimeMs).toBe(before)

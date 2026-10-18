@@ -46,7 +46,7 @@ export function validateName(
   const refusal = keyRefusal(name)
   if (refusal) return fail('invalid-property', refusal)
   const folded = normalizeTitle(name)
-  const clash = existing.some((d) => d.id !== excludeId && normalizeTitle(d.name) === folded)
+  const clash = existing.some((d) => d.id !== excludeId && normalizeTitle(d.label) === folded)
   if (clash) return fail('invalid-property', KEY_REFUSAL.duplicate(name))
   return ok(null)
 }
@@ -55,7 +55,7 @@ export function validateDefinition(
   def: PropertyDefinition,
   existing: PropertyDefinition[],
 ): Result<null> {
-  const nameCheck = validateName(def.name, existing, def.id)
+  const nameCheck = validateName(def.label, existing, def.id)
   if (!nameCheck.ok) return nameCheck
   if (isReservedPropertyId(def.id)) return fail('invalid-property', 'That property id is reserved.')
   if (PROPERTY_TYPES[def.type].origin !== 'user')

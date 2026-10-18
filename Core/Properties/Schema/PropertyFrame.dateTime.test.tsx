@@ -13,7 +13,7 @@ import { MenuDoorHost } from '../../Testing/MenuDoorHost'
 
 stubPointerCapture()
 
-const dateDef: PropertyDefinition = { id: 'prop_due', name: 'Due', type: 'dateTime' }
+const dateDef: PropertyDefinition = { id: 'prop_due', label: 'Due', key: 'Due', type: 'dateTime' }
 const source = { id: 'col1', kind: 'collection', path: 'Col', title: 'Col', views: [] } as never
 
 let host: HTMLDivElement

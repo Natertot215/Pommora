@@ -278,7 +278,7 @@ async function restoreArtifact(
         else if (!taken.has(id)) unlinked.add(id)
     }
     // A page or Space in the Trash takes its value back into its trashed copy, so it returns with it.
-    await refillTrashed(root, trashed, new Map(defs.map((d) => [d.id, d.name])))
+    await refillTrashed(root, trashed, new Map(defs.map((d) => [d.id, d.key])))
   }
   // The record outlives a partial re-tag, so what didn't come back stays written down.
   if (!unspent.length) {

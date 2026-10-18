@@ -11,7 +11,9 @@ import { stubDialer } from '../../vitest.setup'
 import { mountEachTest } from '../../Testing/viewHarness'
 import { firePointer, stubRect } from '@pommora/uix/Utilities/pointerHarness'
 
-const schema: PropertyDefinition[] = [{ id: 'prop_status', name: 'Status', type: 'status' }]
+const schema: PropertyDefinition[] = [
+  { id: 'prop_status', label: 'Status', key: 'Status', type: 'status' },
+]
 
 const view = (id: string, name: string): SavedView => ({
   id,

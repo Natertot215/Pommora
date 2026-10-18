@@ -15,7 +15,8 @@ import { makeTree } from '../../Testing/testTree'
 
 const statusDef: PropertyDefinition = {
   id: 'prop_status',
-  name: 'Status',
+  label: 'Status',
+  key: 'Status',
   type: 'status',
   status_groups: [
     {
@@ -26,7 +27,12 @@ const statusDef: PropertyDefinition = {
     },
   ],
 }
-const dateDef: PropertyDefinition = { id: 'prop_when', name: 'When', type: 'dateTime' }
+const dateDef: PropertyDefinition = {
+  id: 'prop_when',
+  label: 'When',
+  key: 'When',
+  type: 'dateTime',
+}
 
 const view = (over?: Partial<SavedView>): SavedView => ({
   id: 'view_1',

@@ -20,7 +20,8 @@ import type { PropertyDefinition, PropertyType } from './properties'
 
 const defOf = (id: string, type: PropertyType = 'select'): PropertyDefinition => ({
   id,
-  name: 'P',
+  label: 'P',
+  key: 'P',
   type,
 })
 
@@ -40,10 +41,10 @@ afterEach(async () => {
 async function setup(root: string, value: string): Promise<{ propertyId: string; rel: string }> {
   const c = await createProperty(root, {
     id: '',
-    name: 'P',
+    label: 'P',
     type: 'select',
     select_options: [{ value }],
-  } as PropertyDefinition)
+  })
   if (!c.ok) throw new Error('createProperty failed')
   const col = await createFolderEntity(root, 'collection', 'Col', newId())
   if (!col.ok) throw new Error('collection failed')

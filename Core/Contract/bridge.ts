@@ -31,12 +31,7 @@ import type {
   TilePick,
   TilesChanged,
 } from '../Tiles/tiles'
-import type {
-  FileConfig,
-  LinkConfig,
-  NumberConfig,
-  PropertyDefinition,
-} from '../Properties/properties'
+import type { FileConfig, LinkConfig, NumberConfig, PropertyDraft } from '../Properties/properties'
 import type { MenuRequest } from '../Actions/menuModel'
 import type { DevicePrefs } from '../Settings/devicePrefs'
 import type { SyncState, SyncStatus } from '../Sync/Contract/wire'
@@ -131,7 +126,7 @@ export interface Asks {
   }
 
   'schema:add': {
-    args: [containerPath: string, def: PropertyDefinition]
+    args: [containerPath: string, def: PropertyDraft]
     reply: Result<{ id: string }>
   }
   'schema:reorder': {
@@ -145,7 +140,7 @@ export interface Asks {
   }
   'registry:reorder': { args: [propertyId: string, toIndex: number]; reply: Result<null> }
   'property:rename': {
-    args: [propertyId: string, name: string]
+    args: [propertyId: string, label: string]
     reply: Result<PropertyRename | null>
   }
   'property:delete': { args: [propertyId: string]; reply: Result<PropertyDeletion> }

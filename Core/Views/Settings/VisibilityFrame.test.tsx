@@ -14,9 +14,9 @@ const save = vi.hoisted(() => vi.fn())
 vi.mock('../viewWrite', () => ({ useSaveView: () => save }))
 
 const schema: PropertyDefinition[] = [
-  { id: 'prop_a', name: 'Alpha', type: 'number' },
-  { id: 'prop_b', name: 'Beta', type: 'number' },
-  { id: 'prop_c', name: 'Gamma', type: 'number' },
+  { id: 'prop_a', label: 'Alpha', key: 'Alpha', type: 'number' },
+  { id: 'prop_b', label: 'Beta', key: 'Beta', type: 'number' },
+  { id: 'prop_c', label: 'Gamma', key: 'Gamma', type: 'number' },
 ]
 const view: SavedView = {
   id: 'view_a',

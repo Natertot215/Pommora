@@ -1,7 +1,8 @@
 {
   "prop_status": {
     "id": "prop_status",
-    "name": "Status",
+    "key": "Status",
+    "label": "Status",
     "type": "status",
     "status_groups": [
       {
@@ -29,7 +30,8 @@
   },
   "prop_when": {
     "id": "prop_when",
-    "name": "Timeframe",
+    "key": "Timeframe",
+    "label": "Timeframe",
     "type": "datetime"
   }
 }

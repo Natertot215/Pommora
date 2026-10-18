@@ -53,7 +53,7 @@ it('collectionFolders lists every collection folder from the live tree', async (
 
 it('a Remove racing an Assign on ONE collection never loses either write (breaker H-2)', async () => {
   const mk = async (name: string): Promise<string> => {
-    const r = await createProperty(root, { id: '', name, type: 'number' } as never)
+    const r = await createProperty(root, { id: '', label: name, type: 'number' } as never)
     if (!r.ok) throw new Error('setup failed')
     return r.value.id
   }
@@ -64,7 +64,7 @@ it('a Remove racing an Assign on ONE collection never loses either write (breake
   if (!page.ok) throw new Error('setup failed')
   await updatePageProperty(
     page.value.path,
-    { id: pC, name: 'Gone', type: 'number' } as PropertyDefinition,
+    { id: pC, label: 'Gone', key: 'Gone', type: 'number' } as PropertyDefinition,
     { kind: 'number', value: 7 },
   )
 
@@ -88,7 +88,8 @@ it('a Remove racing an Assign on ONE collection never loses either write (breake
 
 describe('a re-assign puts a cached value back', () => {
   const status: Omit<PropertyDefinition, 'id'> = {
-    name: 'Status',
+    label: 'Status',
+    key: 'Status',
     type: 'select',
     select_options: [{ value: 'hi', color: 'red' }],
   }
@@ -121,7 +122,8 @@ describe('a re-assign puts a cached value back', () => {
   })
 
   const tags: Omit<PropertyDefinition, 'id'> = {
-    name: 'Tags',
+    label: 'Tags',
+    key: 'Tags',
     type: 'multiSelect',
     select_options: [{ value: 'Claude', color: 'red' }],
   }

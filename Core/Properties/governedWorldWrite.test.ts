@@ -44,15 +44,15 @@ beforeEach(async () => {
   notes = col.value.path
   const status = await createProperty(root, {
     id: '',
-    name: 'Status',
+    label: 'Status',
     type: 'select',
     select_options: [{ value: 'Open' }],
-  } as PropertyDefinition)
+  })
   const priority = await createProperty(root, {
     id: '',
-    name: 'Priority',
+    label: 'Priority',
     type: 'number',
-  } as PropertyDefinition)
+  })
   if (!status.ok || !priority.ok) throw new Error('setup')
   statusId = status.value.id
   priorityId = priority.value.id
@@ -131,8 +131,14 @@ describe('a registry definition named for a key Pommora manages', () => {
   it('governs no own key and reads as no property', async () => {
     const registryFile = join(root, '.nexus', 'properties.json')
     const registry = JSON.parse(await readFile(registryFile, 'utf8'))
-    registry.defs.prop_id = { id: 'prop_id', name: 'Id', type: 'multiSelect', select_options: [] }
-    registry.defs.prop_banner = { id: 'prop_banner', name: 'Banner', type: 'file' }
+    registry.defs.prop_id = {
+      id: 'prop_id',
+      label: 'Id',
+      key: 'Id',
+      type: 'multiSelect',
+      select_options: [],
+    }
+    registry.defs.prop_banner = { id: 'prop_banner', label: 'Banner', key: 'Banner', type: 'file' }
     registry.order.push('prop_id', 'prop_banner')
     await writeFile(registryFile, JSON.stringify(registry))
     const collectionFile = sidecarPath(notes, 'collection')
@@ -151,7 +157,7 @@ describe('a registry definition named for a key Pommora manages', () => {
     await refreshTree(root)
 
     const tree = await liveTreeOf(root)
-    const names = (defs: readonly PropertyDefinition[] = []) => defs.map((d) => d.name)
+    const names = (defs: readonly PropertyDefinition[] = []) => defs.map((d) => d.label)
     expect(names(tree.config.registry)).toEqual(['Status', 'Priority'])
     expect(names(tree.collections.find((c) => c.path === rel(notes))?.properties)).toEqual([
       'Status',

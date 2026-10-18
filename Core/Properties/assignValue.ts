@@ -67,7 +67,7 @@ function restore(
   if (column.kind === 'context') return write(w, row, column, prior)
   const def = w.schema.find((d) => d.id === column.id)
   if (!def) return undefined
-  const patched = landValue(row.frontmatter, def.name, held) as PageFrontmatter
+  const patched = landValue(row.frontmatter, def.key, held) as PageFrontmatter
   return send(w, row, { op: 'restoreValue', path: row.path, propertyId: column.id, held }, patched)
 }
 
@@ -96,7 +96,7 @@ export function assignValue(
   const resolved = resolveFieldValue(target, column.id, w.schema)
   const prior = isBlankValue(resolved) ? null : resolved
   const def = w.schema.find((d) => d.id === column.id)
-  const held = def && target.frontmatter[def.name]
+  const held = def && target.frontmatter[def.key]
   const pending = write(w, target, column, value)
   if (!pending) return pending
   // Pushed now, so a sweep's group collects it; a refused write leaves nothing to revert.

@@ -69,10 +69,10 @@ describe('deleteProperty', () => {
   it('scrubs the value from every assigner, drops the def + all assignments, and snapshots', async () => {
     const c = await createProperty(root, {
       id: '',
-      name: 'Priority',
+      label: 'Priority',
       type: 'select',
       select_options: [{ value: 'hi', color: 'red' }],
-    } as PropertyDefinition)
+    })
     expect(c.ok).toBe(true)
     if (!c.ok) return
     const id = c.value.id
@@ -125,10 +125,10 @@ describe('deleteProperty', () => {
   it('purges the property_cache block in every sidecar — even non-assigners (D-6)', async () => {
     const c = await createProperty(root, {
       id: '',
-      name: 'Priority',
+      label: 'Priority',
       type: 'select',
       select_options: [{ value: 'hi', color: 'red' }],
-    } as PropertyDefinition)
+    })
     if (!c.ok) return
     const id = c.value.id
     await assignProperty(root, notes, id)
@@ -152,10 +152,10 @@ describe('propertyHolders', () => {
   it('counts the pages and Spaces holding the property', async () => {
     const c = await createProperty(root, {
       id: '',
-      name: 'Priority',
+      label: 'Priority',
       type: 'select',
       select_options: [{ value: 'hi' }],
-    } as PropertyDefinition)
+    })
     if (!c.ok) throw new Error('setup failed')
     await assignProperty(root, notes, c.value.id)
     const page = await createTestPage(notes, 'A', { body: 'b' })
@@ -174,10 +174,10 @@ describe('propertyHolders', () => {
   it('counts what the delete strips, writing nothing', async () => {
     const c = await createProperty(root, {
       id: '',
-      name: 'Priority',
+      label: 'Priority',
       type: 'select',
       select_options: [{ value: 'hi' }],
-    } as PropertyDefinition)
+    })
     if (!c.ok) throw new Error('setup failed')
     await assignProperty(root, notes, c.value.id)
     const page = await createTestPage(notes, 'A', { body: 'b' })
@@ -212,10 +212,10 @@ describe('a global delete reaches a Space sidecar', () => {
   const mkProperty = async (): Promise<string> => {
     const c = await createProperty(root, {
       id: '',
-      name: 'Priority',
+      label: 'Priority',
       type: 'select',
       select_options: [{ value: 'hi' }],
-    } as PropertyDefinition)
+    })
     if (!c.ok) throw new Error('setup failed')
     return c.value.id
   }
@@ -252,10 +252,10 @@ describe('a global delete reaches a Space sidecar', () => {
   it('strips the exact key from a page and a Space, records its value, and leaves another casing', async () => {
     const c = await createProperty(root, {
       id: '',
-      name: 'Tags',
+      label: 'Tags',
       type: 'multiSelect',
       select_options: [{ value: 'a' }, { value: 'b' }],
-    } as PropertyDefinition)
+    })
     if (!c.ok) throw new Error('setup failed')
     await assignProperty(root, notes, c.value.id)
     const p = await createTestPage(notes, 'A', { body: 'b' })
@@ -274,9 +274,9 @@ describe('a global delete reaches a Space sidecar', () => {
   it('a property named icon sets and deletes as a value, leaving every Space its glyph', async () => {
     const c = await createProperty(root, {
       id: '',
-      name: 'icon',
+      label: 'icon',
       type: 'link',
-    } as PropertyDefinition)
+    })
     if (!c.ok) throw new Error('setup failed')
     const pom = await seedSpace('Pommora', { id: 'sp1', $icon: 'box' })
     const atlas = await seedSpace('Atlas', {
@@ -343,10 +343,10 @@ describe('a delete reaches saved views', () => {
   }> {
     const c = await createProperty(root, {
       id: '',
-      name: 'Priority',
+      label: 'Priority',
       type: 'select',
       select_options: [{ value: 'hi' }],
-    } as PropertyDefinition)
+    })
     if (!c.ok) throw new Error('setup failed')
     await assignProperty(root, notes, c.value.id)
     return {

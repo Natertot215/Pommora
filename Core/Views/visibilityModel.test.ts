@@ -7,7 +7,7 @@ const { title, createdAt, modifiedAt } = RESERVED_PROPERTY_ID
 const [areas, projects] = ['ctx_areas', 'ctx_projects']
 const stamps = [createdAt, modifiedAt]
 
-const def = (id: string): PropertyDefinition => ({ id, name: id, type: 'select' })
+const def = (id: string): PropertyDefinition => ({ id, label: id, key: id, type: 'select' })
 
 const view = (property_order: string[], hidden_properties: string[]): SavedView => ({
   id: 'view_1',

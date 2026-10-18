@@ -2,7 +2,6 @@ import { mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { PropertyDefinition } from './properties'
 import { assignProperty } from './assignment'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { newId } from '../Nexus/ids'
@@ -42,15 +41,15 @@ beforeEach(async () => {
   await settings(true)
   const status = await createProperty(root, {
     id: '',
-    name: 'Status',
+    label: 'Status',
     type: 'status',
-  } as PropertyDefinition)
+  })
   const tags = await createProperty(root, {
     id: '',
-    name: 'Tags',
+    label: 'Tags',
     type: 'multiSelect',
     select_options: [{ value: 'alpha' }],
-  } as PropertyDefinition)
+  })
   if (!status.ok || !tags.ok) throw new Error('registry failed')
   tagsId = tags.value.id
   const col = await createFolderEntity(root, 'collection', 'Col', newId())

@@ -28,8 +28,8 @@ export async function createPage(
     const encoded = valueToWrite(def, value)
     if (!encoded.ok) return encoded
     if (encoded.value === undefined) continue
-    modeled[def.name] = encoded.value
-    keys.push(def.name)
+    modeled[def.key] = encoded.value
+    keys.push(def.key)
   }
   return machine().lock(file, async () => {
     if (await pathExists(file)) return fail('exists', `"${name}" already exists.`)
@@ -94,6 +94,6 @@ export function valueToWrite(
   if (value === null || isBlankValue(value)) return ok(undefined)
   const encoded = encodeValue(value)
   return encoded === undefined
-    ? fail('invalid-property', `"${def.name}" was given a value it has no shape for.`)
+    ? fail('invalid-property', `"${def.label}" was given a value it has no shape for.`)
     : ok(encoded)
 }

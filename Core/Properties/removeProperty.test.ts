@@ -38,7 +38,8 @@ let pageB: string
 
 const stageDef = {
   id: '',
-  name: 'Stage',
+  label: 'Stage',
+  key: 'Stage',
   type: 'status',
   status_groups: [
     {
@@ -79,7 +80,7 @@ afterEach(async () => {
 })
 
 const pageValue = async (path: string): Promise<unknown> =>
-  splitFrontmatter(await readFile(path, 'utf8'))[liveDef.name]
+  splitFrontmatter(await readFile(path, 'utf8'))[liveDef.key]
 const sidecar = (): Promise<Record<string, unknown> | null> =>
   readJsonObject(sidecarPath(folder, 'collection'))
 const cacheBlock = async (): Promise<{ values: Record<string, unknown> } | undefined> =>
@@ -283,7 +284,7 @@ describe('restore on re-assign — per-value schema-currency reconciliation (C-3
   it('a page that regained the key itself keeps its own value; a page without it still gets the cached one', async () => {
     await removeProperty(root, folder, propId)
     const raw = await readFile(pageA, 'utf8')
-    await writeFile(pageA, raw.replace(/^---\n/, `---\n${liveDef.name}:\n  - done\n`))
+    await writeFile(pageA, raw.replace(/^---\n/, `---\n${liveDef.key}:\n  - done\n`))
 
     const r = await assignProperty(root, folder, propId)
     expect(r.ok).toBe(true)
@@ -337,14 +338,14 @@ describe('restore on re-assign — per-value schema-currency reconciliation (C-3
   it('restores select values whose STRINGS look like dates or URLs — type-directed, never shape-inferred (breaker H-1)', async () => {
     const sel = await createProperty(root, {
       id: '',
-      name: 'Milestone',
+      label: 'Milestone',
       type: 'select',
       select_options: [
         { value: '2024-01-01' },
         { value: 'https://acme.io' },
         { value: 'note:draft' },
       ],
-    } as PropertyDefinition)
+    })
     if (!sel.ok) throw new Error('setup failed')
     const id = sel.value.id
     await assignProperty(root, folder, id)
@@ -355,16 +356,16 @@ describe('restore on re-assign — per-value schema-currency reconciliation (C-3
     await removeProperty(root, folder, id)
     await assignProperty(root, folder, id)
     const root2 = splitFrontmatter(await readFile(c.value.path, 'utf8'))
-    expect(root2[selDef.name]).toEqual(['2024-01-01'])
+    expect(root2[selDef.key]).toEqual(['2024-01-01'])
   })
 
   it('a Multi-Select restore keeps only the options the definition still offers — a deleted option never returns', async () => {
     const tags = await createProperty(root, {
       id: '',
-      name: 'Tags',
+      label: 'Tags',
       type: 'multiSelect',
       select_options: [{ value: 'alpha' }],
-    } as PropertyDefinition)
+    })
     if (!tags.ok) throw new Error('setup failed')
     await assignProperty(root, folder, tags.value.id)
     const p = await createTestPage(folder, 'T', { body: 'b' })

@@ -4,7 +4,8 @@ import { optionGlyph } from './OptionChip'
 
 const def: PropertyDefinition = {
   id: 'prop_status',
-  name: 'Status',
+  label: 'Status',
+  key: 'Status',
   type: 'status',
   status_groups: [
     {

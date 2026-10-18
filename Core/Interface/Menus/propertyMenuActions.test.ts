@@ -16,19 +16,21 @@ import { useSession } from '../../Session/store'
 const SCHEMA: PropertyDefinition[] = [
   {
     id: 'prop_sel',
-    name: 'stage',
+    label: 'stage',
+    key: 'stage',
     type: 'select',
     select_options: [{ value: 'a' }, { value: 'b' }],
   },
   {
     id: 'prop_tags',
-    name: 'Tags',
+    label: 'Tags',
+    key: 'Tags',
     type: 'multiSelect',
     select_options: [{ value: 'x' }, { value: 'y' }],
   },
-  { id: 'prop_num', name: 'Count', type: 'number' },
-  { id: 'prop_box', name: 'Done', type: 'checkbox' },
-  { id: 'prop_made', name: 'Made', type: 'createdTime' },
+  { id: 'prop_num', label: 'Count', key: 'Count', type: 'number' },
+  { id: 'prop_box', label: 'Done', key: 'Done', type: 'checkbox' },
+  { id: 'prop_made', label: 'Made', key: 'Made', type: 'createdTime' },
 ]
 
 const CONTEXT_ID = makeTree().contexts[0].def.id
@@ -141,7 +143,8 @@ describe('propertyMenuBranches', () => {
   it('a status offers its non-empty groups as runs, in group order', () => {
     const status: PropertyDefinition = {
       id: 'prop_st',
-      name: 'Phase',
+      label: 'Phase',
+      key: 'Phase',
       type: 'status',
       status_groups: [
         {
