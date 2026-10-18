@@ -163,7 +163,12 @@ describe('setGovernedRootKey with a world — the three precedence rules', () =>
 })
 
 describe('setGovernedRootKey — spellings', () => {
-  const tags: PropertyDefinition = { id: 'prop_tags', name: 'Tags', type: 'multiSelect' }
+  const tags: PropertyDefinition = {
+    id: 'prop_tags',
+    name: 'Tags',
+    type: 'multiSelect',
+    select_options: [{ value: 'a' }, { value: 'Docs' }, { value: 'Work' }],
+  }
   const done: PropertyDefinition = { id: 'prop_done', name: 'Done', type: 'checkbox' }
   const price: PropertyDefinition = { id: 'prop_price', name: 'Price', type: 'number' }
   const status: PropertyDefinition = {
@@ -209,6 +214,14 @@ describe('setGovernedRootKey — spellings', () => {
     const before = await readFile(page, 'utf8')
     await setGovernedRootKey(page, 'Tags', ['a'], world)
     expect(await readFile(page, 'utf8')).toBe(before)
+  })
+
+  it('a Multi-Select write keeps the words no option names after the picked ones, and a clear drops the key', async () => {
+    await seeded('Tags: [Docs, Ideas]')
+    await setGovernedRootKey(page, 'Tags', ['Docs', 'Work'], world)
+    expect(await lines()).toContain('Tags: [Docs, Work, Ideas]')
+    await setGovernedRootKey(page, 'Tags', undefined, world)
+    expect(await readFile(page, 'utf8')).not.toContain('Tags')
   })
 
   it('a banner write, which passes no world, writes its exact key beside another casing of it', async () => {

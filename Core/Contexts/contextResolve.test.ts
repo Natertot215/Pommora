@@ -231,19 +231,12 @@ describe('reconcileGovernedRoot — option, checkbox, and number spellings (the 
   const spelled: GovernedWorld = { ...world, defs: byKey([stageDef, doneDef, priceDef]) }
   const input = { Stage: ['done'], Done: 'Yes', Price: '$1,200.00' }
 
-  it('spells an option word in another casing as registered, keeping the checkbox and number spellings', () => {
+  it('keeps an option word in another casing as written, naming no option, beside the checkbox and number spellings', () => {
     const { root } = reconcileGovernedRoot(input, spelled)
-    expect(root).toEqual({ ...input, Stage: ['Done'] })
-    expect(decodeValue(stageDef, root.Stage)).toEqual({ kind: 'select', value: 'Done' })
+    expect(root).toEqual(input)
+    expect(decodeValue(stageDef, root.Stage)).toEqual({ kind: 'null' })
     expect(decodeValue(doneDef, root.Done)).toEqual({ kind: 'checkbox', value: true })
     expect(decodeValue(priceDef, root.Price)).toEqual({ kind: 'number', value: 1200 })
-  })
-
-  it('keeps a Multi-Select holding two casings of one option as written', () => {
-    const labels: PropertyDefinition = { ...tagsDef, select_options: [{ value: 'Done' }] }
-    const held = { ...spelled, defs: byKey([labels]) }
-    const twice = { Tags: ['done', 'Done', 'x'] }
-    expect(reconcileGovernedRoot(twice, held).root).toEqual(twice)
   })
 })
 

@@ -33,7 +33,12 @@ const schema: PropertyDefinition[] = [
   { id: 'prop_url', name: 'Link', type: 'link' },
   { id: 'prop_when', name: 'When', type: 'dateTime' },
   { id: 'prop_done', name: 'Done', type: 'checkbox' },
-  { id: 'prop_tags', name: 'Tags', type: 'multiSelect' },
+  {
+    id: 'prop_tags',
+    name: 'Tags',
+    type: 'multiSelect',
+    select_options: ['x', 'y', 'z', 'a', 'b', 'c'].map((value) => ({ value })),
+  },
   { id: 'prop_notes', name: 'Notes', type: 'text' },
 ]
 

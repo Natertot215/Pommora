@@ -6,6 +6,7 @@ import {
   encodeValue,
   writtenSpelling,
   isBlankValue,
+  keepingForeignWords,
   reconcilePropertyValue,
   unregisteredMembers,
   type PropertyValue,
@@ -34,6 +35,9 @@ const selectDef = def({
   type: 'select',
   select_options: [{ value: 'A' }, { value: 'B' }],
 })
+
+const multiSelectOf = (...values: string[]): PropertyDefinition =>
+  def({ type: 'multiSelect', select_options: values.map((value) => ({ value })) })
 
 describe('decodeValue — the declared type decides, never the shape', () => {
   it('free text reads a string as itself, an unquoted wikilink as the connection it spells, and any other shape as the yaml that spells it', () => {
@@ -99,7 +103,7 @@ describe('decodeValue — the declared type decides, never the shape', () => {
       kind: 'dateTime',
       value: '2026-06-15',
     })
-    expect(decodeValue(def({ type: 'multiSelect' }), ['a', 'b'])).toEqual({
+    expect(decodeValue(multiSelectOf('a', 'b'), ['a', 'b'])).toEqual({
       kind: 'multiSelect',
       value: ['a', 'b'],
     })
@@ -114,14 +118,14 @@ describe('decodeValue — the declared type decides, never the shape', () => {
     const year = def({ type: 'select', select_options: [{ value: '2024' }] })
     expect(decodeValue(year, [2024])).toEqual({ kind: 'select', value: '2024' })
     expect(decodeValue(year, 2024)).toEqual({ kind: 'select', value: '2024' })
-    expect(decodeValue(def({ type: 'multiSelect' }), [true, 'x'])).toEqual({
+    expect(decodeValue(multiSelectOf('true', 'x'), [true, 'x'])).toEqual({
       kind: 'multiSelect',
       value: ['true', 'x'],
     })
   })
 
   it('an option type reads a scalar as a list of one', () => {
-    expect(decodeValue(def({ type: 'multiSelect' }), 'zeta')).toEqual({
+    expect(decodeValue(multiSelectOf('zeta'), 'zeta')).toEqual({
       kind: 'multiSelect',
       value: ['zeta'],
     })
@@ -190,10 +194,10 @@ describe('decodeValue — lenient on read', () => {
     expect(decodeValue(selectDef, 'A')).toEqual({ kind: 'select', value: 'A' })
   })
 
-  it('a multi-select keeps a value the schema does not offer yet', () => {
-    const d = def({ type: 'multiSelect', select_options: [{ value: 'A' }] })
-    expect(decodeValue(d, ['A', 'Gone'])).toEqual({ kind: 'multiSelect', value: ['A', 'Gone'] })
-    expect(decodeValue(d, ['Gone'])).toEqual({ kind: 'multiSelect', value: ['Gone'] })
+  it('a multi-select drops a value the schema does not offer', () => {
+    const d = multiSelectOf('A')
+    expect(decodeValue(d, ['A', 'Gone'])).toEqual({ kind: 'multiSelect', value: ['A'] })
+    expect(decodeValue(d, ['Gone'])).toEqual({ kind: 'null' })
   })
 
   it('an empty string is a link value', () => {
@@ -279,7 +283,7 @@ describe('encodeValue — bare on disk', () => {
       [def({ type: 'link' }), 'https://acme.io'],
       [def({ type: 'dateTime' }), '2026-06-15T14:30:00Z'],
       [selectDef, ['A']],
-      [def({ type: 'multiSelect' }), ['a', 'b']],
+      [multiSelectOf('a', 'b'), ['a', 'b']],
       [statusDef, ['Done']],
       [def({ type: 'file' }), ['[[y.png]]']],
     ]
@@ -384,6 +388,15 @@ describe('applyValueAtRoot', () => {
     })
     expect(applyValueAtRoot({ status: 'Open' }, status, null)).toEqual({ status: 'Open' })
   })
+
+  it('a Multi-Select pick keeps the words no option names after it, and a clear drops the key', () => {
+    const tags = { ...multiSelectOf('Docs', 'Work'), name: 'Tags' }
+    const picked: PropertyValue = { kind: 'multiSelect', value: ['Docs', 'Work'] }
+    expect(applyValueAtRoot({ Tags: ['Docs', 'Ideas'] }, tags, picked)).toEqual({
+      Tags: ['Docs', 'Work', 'Ideas'],
+    })
+    expect(applyValueAtRoot({ Tags: ['Docs', 'Ideas'] }, tags, null)).toEqual({})
+  })
 })
 
 describe('writtenSpelling', () => {
@@ -429,7 +442,7 @@ describe('writtenSpelling', () => {
   })
 })
 
-describe('options and checkboxes decode without regard to case', () => {
+describe('options decode exactly; checkboxes without regard to case', () => {
   const stage = def({ type: 'select', select_options: [{ value: 'Done' }, { value: 'Active' }] })
   const labels = def({
     type: 'multiSelect',
@@ -437,23 +450,22 @@ describe('options and checkboxes decode without regard to case', () => {
   })
   const checkbox = def({ type: 'checkbox' })
 
-  it('a Select reads a written option as the registered spelling', () => {
-    expect(decodeValue(stage, 'done')).toEqual({ kind: 'select', value: 'Done' })
+  it('a Select reads only an option written exactly as registered', () => {
+    expect(decodeValue(stage, 'done')).toEqual({ kind: 'null' })
     expect(decodeValue(stage, ['done', 'Active'])).toEqual({ kind: 'select', value: 'Active' })
   })
 
-  it('a Multi-Select reads each registered member as its option and keeps the rest', () => {
-    const raw = ['claude', 'Docs', 'new']
-    expect(decodeValue(labels, raw)).toEqual({
+  it('a Multi-Select reads each option written exactly and drops every other word', () => {
+    expect(decodeValue(labels, ['claude', 'Docs', 'new'])).toEqual({
       kind: 'multiSelect',
-      value: ['Claude', 'Docs', 'new'],
+      value: ['Docs'],
     })
   })
 
-  it('a Multi-Select reads two casings of one member as that member once, where it first stands', () => {
-    expect(decodeValue(labels, ['docs', 'new', 'Docs', 'NEW'])).toEqual({
+  it('a member held twice reads once', () => {
+    expect(decodeValue(labels, ['Docs', 'new', 'Docs'])).toEqual({
       kind: 'multiSelect',
-      value: ['Docs', 'new'],
+      value: ['Docs'],
     })
   })
 
@@ -464,8 +476,29 @@ describe('options and checkboxes decode without regard to case', () => {
       expect(decodeValue(checkbox, raw)).toEqual({ kind: 'null' })
   })
 
-  it('unregisteredMembers answers each member a Multi-Select holds beyond its definition once, and none for a Select', () => {
+  it('unregisteredMembers answers each word no option claims without regard to case, once by fold', () => {
     expect(unregisteredMembers(labels, ['CLAUDE', 'Ideas', 'ideas'])).toEqual(['Ideas'])
-    expect(unregisteredMembers(stage, ['Ideas'])).toEqual([])
+    expect(unregisteredMembers(multiSelectOf('red', 'blue'), ['green', 'Red', 'PURPLE'])).toEqual([
+      'green',
+      'PURPLE',
+    ])
+  })
+})
+
+describe('keepingForeignWords', () => {
+  const tags = multiSelectOf('Work', 'Docs')
+
+  it('joins the words no option names after the written ones', () => {
+    expect(keepingForeignWords(tags, ['Work'], ['Docs', 'work', 'Ideas'])).toEqual([
+      'Work',
+      'work',
+      'Ideas',
+    ])
+    expect(keepingForeignWords(tags, ['Ideas'], ['Ideas'])).toEqual(['Ideas'])
+  })
+
+  it('answers an emptied list and a Select value as given', () => {
+    expect(keepingForeignWords(tags, [], ['Ideas'])).toEqual([])
+    expect(keepingForeignWords(selectDef, ['A'], ['Ideas'])).toEqual(['A'])
   })
 })

@@ -1,8 +1,8 @@
 import { z } from 'zod'
 import { listOf, scalarMembers } from '../Contract/validators'
 import { firstPerTitle, optionValues, PROPERTY_TYPES, type PropertyDefinition } from './properties'
-import { normalizeTitle } from '../Paths/caseFold'
-import { landValue } from '../Files/heldKeys'
+import { exactTitle, normalizeTitle } from '../Paths/caseFold'
+import { joinValues, landValue } from '../Files/heldKeys'
 import { yamlInline } from '../Files/pageFile'
 import { linkEntry, readLinkText } from '../Connections/linkValue'
 import { readNumber, spelledNumber } from './formatValue'
@@ -35,23 +35,29 @@ const asText = (raw: unknown): string => linkEntry(raw, 2) ?? yamlInline(raw)
 
 // An outside `- 2024` parses as a number and must still name the option "2024".
 const optionList = (raw: unknown): string[] =>
-  scalarMembers(raw).filter((x) => normalizeTitle(x) !== '')
+  scalarMembers(raw).filter((x) => exactTitle(x) !== '')
 
-const foldedOptions = new WeakMap<PropertyDefinition, Map<string, string>>()
+type OptionWords = { labelOf: Map<string, string>; folds: ReadonlySet<string> }
+
+const optionWords = new WeakMap<PropertyDefinition, OptionWords>()
 
 // Held against the definition it was built from, which an edit replaces rather than mutates.
-function optionsByFold(def: PropertyDefinition): Map<string, string> {
-  let byFold = foldedOptions.get(def)
-  if (!byFold) {
-    byFold = firstPerTitle(optionValues(def))
-    foldedOptions.set(def, byFold)
+function wordsOf(def: PropertyDefinition): OptionWords {
+  let words = optionWords.get(def)
+  if (!words) {
+    const values = optionValues(def)
+    words = {
+      labelOf: new Map(values.map((v) => [exactTitle(v), v])),
+      folds: new Set(values.map(normalizeTitle)),
+    }
+    optionWords.set(def, words)
   }
-  return byFold
+  return words
 }
 
 /** The option `written` names, as its definition spells it. */
 const registeredOption = (def: PropertyDefinition, written: string): string | undefined =>
-  optionsByFold(def).get(normalizeTitle(written))
+  wordsOf(def).labelOf.get(exactTitle(written))
 
 const CHECKBOX_WORDS = [
   ['true', 'false'],
@@ -100,11 +106,9 @@ export function decodeValue(def: PropertyDefinition, raw: unknown): PropertyValu
       return value === undefined ? NULL_VALUE : { kind, value }
     }
     case 'multiSelect': {
-      const byFold = optionsByFold(def)
-      const value = Array.from(firstPerTitle(optionList(raw)), ([fold, x]) => byFold.get(fold) ?? x)
+      const value = [...new Set(optionList(raw).flatMap((x) => registeredOption(def, x) ?? []))]
       return value.length === 0 ? NULL_VALUE : { kind, value }
     }
-    // Deliberately NOT merged with multiSelect: optionValues on a file def returns [], so a merged case would discard every attachment through the restore path.
     case 'file': {
       // An entry nothing can spell is dropped rather than nulling the whole list and losing the other attachments.
       const entries: string[] = []
@@ -119,12 +123,23 @@ export function decodeValue(def: PropertyDefinition, raw: unknown): PropertyValu
   }
 }
 
-/** The members `raw` holds that a Multi-Select `def` doesn't register, each once; none for any other type. */
+/** The words a Multi-Select's `raw` holds that no option's title claims without regard to case, each once by fold. */
 export function unregisteredMembers(def: PropertyDefinition, raw: unknown): string[] {
-  const value = decodeValue(def, raw)
-  return value.kind === 'multiSelect'
-    ? value.value.filter((v) => registeredOption(def, v) === undefined)
-    : []
+  const { folds } = wordsOf(def)
+  return [...firstPerTitle(optionList(raw))].flatMap(([fold, w]) => (folds.has(fold) ? [] : [w]))
+}
+
+export function keepingForeignWords(
+  def: PropertyDefinition,
+  written: unknown,
+  held: unknown,
+): unknown {
+  if (PROPERTY_TYPES[def.type].kind !== 'multiSelect' || !Array.isArray(written) || !written.length)
+    return written
+  return joinValues(
+    written,
+    optionList(held).filter((w) => registeredOption(def, w) === undefined),
+  )
 }
 
 /** What a frozen copy may still name: its options are the definition's own, and `holds`, when given, answers which pages still exist. */
@@ -152,9 +167,7 @@ export function reconcilePropertyValue(
   const value = decodeValue(def, raw)
   if (!frozen) return value
   if (value.kind === 'link') return gonePageEntry(value.value, frozen) === null ? value : NULL_VALUE
-  if (value.kind !== 'multiSelect') return value
-  const kept = value.value.filter((v) => registeredOption(def, v) !== undefined)
-  return kept.length ? { kind: 'multiSelect', value: kept } : NULL_VALUE
+  return value
 }
 
 /** A checked value as `raw` spells one: its checked word as written, or its unchecked word's partner in the same casing (`no` → `yes`, `OFF` → `ON`), else `true`. */
@@ -231,10 +244,16 @@ export function isBlankValue(value: PropertyValue | null): boolean {
   }
 }
 
-/** The renderer's copy of a value write, landed where the host's lands; its members keep the spelling given, since a read decodes them by fold. */
+/** The renderer's copy of a value write, landed where the host's lands, a Multi-Select keeping the words no option claims after the picked ones. */
 export const applyValueAtRoot = (
   root: Record<string, unknown>,
   def: PropertyDefinition,
   value: PropertyValue | null,
 ): Record<string, unknown> =>
-  landValue(root, def.name, value === null || isBlankValue(value) ? undefined : encodeValue(value))
+  landValue(
+    root,
+    def.name,
+    value === null || isBlankValue(value)
+      ? undefined
+      : keepingForeignWords(def, encodeValue(value), root[def.name]),
+  )

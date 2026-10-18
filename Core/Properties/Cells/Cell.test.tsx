@@ -47,7 +47,12 @@ const schema: PropertyDefinition[] = [
   { id: 'prop_when', name: 'When', type: 'dateTime' },
   { id: 'prop_n', name: 'Count', type: 'number' },
   { id: 'prop_files', name: 'Files', type: 'file' },
-  { id: 'prop_tags', name: 'Tags', type: 'multiSelect' },
+  {
+    id: 'prop_tags',
+    name: 'Tags',
+    type: 'multiSelect',
+    select_options: ['a', 'b', 'c'].map((value) => ({ value })),
+  },
   { id: 'prop_notes', name: 'Notes', type: 'text' },
 ]
 const ctx = {
