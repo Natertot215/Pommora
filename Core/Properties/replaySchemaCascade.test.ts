@@ -169,6 +169,31 @@ describe('rename replay', () => {
     expect(await readSchemaJournal(root)).toBeNull()
   })
 
+  it('an owed Key Format change sweeps its holders from the label onto the key and clears', async () => {
+    const root = await seedNexus()
+    for (const [name, id] of [
+      ['A', PAGE_IDS[0]],
+      ['B', PAGE_IDS[1]],
+    ])
+      await writeFile(join(root, 'Col', `${name}.md`), `---\nID: ${id}\nTags: Draft\n---\nbody\n`)
+    await mutateRegistry(root, (registry) => ({
+      next: {
+        ...registry,
+        defs: {
+          ...registry.defs,
+          prop_s: { ...registry.defs.prop_s, label: 'Tags', key: 'tags', key_format: 'lowercase' },
+        },
+      },
+      result: null,
+    }))
+    await writeSchemaJournal(root, { op: 'rename', id: 'prop_s', from: 'Tags', to: 'tags' })
+    await openSession(root)
+    await replaySchemaCascade(root)
+    expect(await page(root, 'A')).toBe(`---\nID: ${PAGE_IDS[0]}\ntags: Draft\n---\nbody\n`)
+    expect(await page(root, 'B')).toBe(`---\nID: ${PAGE_IDS[1]}\ntags: Draft\n---\nbody\n`)
+    expect(await readSchemaJournal(root)).toBeNull()
+  })
+
   it('the divergence persists without the replay — the fixture is not self-healing', async () => {
     const root = await seedNexus()
     await renameCrashState(root)

@@ -3,12 +3,9 @@ import { join } from '../Paths/posix'
 import { seedSpaceSidecar, readJsonAt, tempRoot } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { renameSweep } from './registryProperty'
-import type { PropertyDefinition } from './properties'
 
 let root: string
 let page: string
-
-const stage = { id: 'prop_s', label: 'Stage', key: 'Stage', type: 'select' } as PropertyDefinition
 
 const seed = async (fm: string): Promise<void> => writeFile(page, `---\n${fm}---\nbody\n`)
 
@@ -26,7 +23,7 @@ afterEach(async () => {
 describe('renameSweep', () => {
   it('renames the key in place when only the old one is there', async () => {
     await seed('id: p1\nStatus: Old\n')
-    await renameSweep(root, 'Status', stage)
+    await renameSweep(root, 'Status', 'Stage')
     const out = await readFile(page, 'utf8')
     expect(out).toContain('Stage: Old')
     expect(out).not.toContain('Status')
@@ -34,7 +31,7 @@ describe('renameSweep', () => {
 
   it('keeps the key’s position and the comment attached to it', async () => {
     await seed('id: p1\n# which stage this is at\nStatus: Old\nauthor: Username\n')
-    await renameSweep(root, 'Status', stage)
+    await renameSweep(root, 'Status', 'Stage')
     expect(await readFile(page, 'utf8')).toBe(
       '---\nid: p1\n# which stage this is at\nStage: Old\nauthor: Username\n---\nbody\n',
     )
@@ -43,7 +40,7 @@ describe('renameSweep', () => {
   it('drops the old key where the new one already holds a value', async () => {
     // A write landed under the new name while the sweep was running: it is the fresher of the two.
     await seed('id: p1\nStatus: Stale\nStage: Fresh\n')
-    await renameSweep(root, 'Status', stage)
+    await renameSweep(root, 'Status', 'Stage')
     const out = await readFile(page, 'utf8')
     expect(out).toContain('Stage: Fresh')
     expect(out).not.toContain('Stale')
@@ -51,15 +48,15 @@ describe('renameSweep', () => {
 
   it('is idempotent — a second sweep changes nothing', async () => {
     await seed('id: p1\nStatus: Old\n')
-    await renameSweep(root, 'Status', stage)
+    await renameSweep(root, 'Status', 'Stage')
     const once = await readFile(page, 'utf8')
-    await renameSweep(root, 'Status', stage)
+    await renameSweep(root, 'Status', 'Stage')
     expect(await readFile(page, 'utf8')).toBe(once)
   })
 
   it('leaves an unmatched wrapped key inert, and every foreign key with it', async () => {
     await seed('id: p1\n# keep\nStatus: Old\n<Retired>: keep\n<Areas>:\n  - Work\nforeign: keep\n')
-    await renameSweep(root, 'Status', stage)
+    await renameSweep(root, 'Status', 'Stage')
     const out = await readFile(page, 'utf8')
     expect(out).toContain('<Retired>: keep')
     expect(out).toContain('<Areas>')
@@ -69,14 +66,14 @@ describe('renameSweep', () => {
 
   it('does not re-date a page — a key-only rename is not a content edit', async () => {
     await seed('id: p1\nmodified_at: 2020-01-01T00:00:00.000Z\nStatus: Old\n')
-    await renameSweep(root, 'Status', stage)
+    await renameSweep(root, 'Status', 'Stage')
     expect(await readFile(page, 'utf8')).toContain('2020-01-01T00:00:00.000Z')
   })
 
   it('never touches a page holding neither key', async () => {
     await seed('id: p1\n<Other>: x\n')
     const before = await readFile(page, 'utf8')
-    await renameSweep(root, 'Status', stage)
+    await renameSweep(root, 'Status', 'Stage')
     expect(await readFile(page, 'utf8')).toBe(before)
   })
 })
@@ -86,13 +83,13 @@ describe('renameSweep moves the exact key', () => {
     await seed('id: p1\nstatus: Old\n')
     const file = await seedSpaceSidecar(root, 'Projects', 'Pommora', { id: 'sp1', status: 'Old' })
     const before = [await readFile(page, 'utf8'), await readFile(file, 'utf8')]
-    await renameSweep(root, 'Status', stage)
+    await renameSweep(root, 'Status', 'Stage')
     expect([await readFile(page, 'utf8'), await readFile(file, 'utf8')]).toEqual(before)
   })
 
   it('a key in another casing is no rival, and stays beside the moved one', async () => {
     await seed('id: p1\nStatus: Stale\nstage: Fresh\n')
-    await renameSweep(root, 'Status', stage)
+    await renameSweep(root, 'Status', 'Stage')
     expect(await readFile(page, 'utf8')).toBe(
       '---\nid: p1\nStage: Stale\nstage: Fresh\n---\nbody\n',
     )
@@ -101,7 +98,7 @@ describe('renameSweep moves the exact key', () => {
   it('a rename to another casing of its own name moves the key on a page and a Space', async () => {
     await seed('id: p1\nStatus: Old\n')
     const file = await seedSpaceSidecar(root, 'Projects', 'Pommora', { id: 'sp1', Status: 'Old' })
-    await renameSweep(root, 'Status', { ...stage, label: 'status', key: 'status' })
+    await renameSweep(root, 'Status', 'status')
     expect(await readFile(page, 'utf8')).toBe('---\nid: p1\nstatus: Old\n---\nbody\n')
     expect(await readJsonAt(file)).toEqual({ id: 'sp1', status: 'Old' })
   })
@@ -117,7 +114,7 @@ describe('renameSweep reaches a Space sidecar', () => {
       Status: 'Old',
       $order: ['ctxA', 'prop_other', 'prop_s'],
     })
-    await renameSweep(root, 'Status', stage)
+    await renameSweep(root, 'Status', 'Stage')
     const raw = await readJsonAt(file)
     expect(raw.Stage).toBe('Old')
     expect('Status' in raw).toBe(false)
@@ -128,7 +125,7 @@ describe('renameSweep reaches a Space sidecar', () => {
     const file = await seedSpace({ id: 'sp1', Other: 'x' })
     const bytes = await readFile(file, 'utf8')
     const mtime = (await stat(file)).mtimeMs
-    await renameSweep(root, 'Status', stage)
+    await renameSweep(root, 'Status', 'Stage')
     expect(await readFile(file, 'utf8')).toBe(bytes)
     expect((await stat(file)).mtimeMs).toBe(mtime)
   })

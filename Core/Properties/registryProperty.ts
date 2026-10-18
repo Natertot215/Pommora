@@ -88,16 +88,12 @@ export async function createProperty(
 
 const NEW_KEY_IS_FRESHER: KeyCollision = 'prefer-new'
 
-export async function renameSweep(
-  root: string,
-  oldKey: string,
-  def: PropertyDefinition,
-): Promise<number> {
+export async function renameSweep(root: string, from: string, to: string): Promise<number> {
   // Queried by the OLD key: a page holding only the new one needs no rewrite, and one holding both holds the old one too.
-  const files = await keyHolderFiles(root, oldKey, await collectionFolders(root))
+  const files = await keyHolderFiles(root, from, await collectionFolders(root))
   const text = (content: string): string | null =>
-    renameFrontmatterKey(content, oldKey, def.key, NEW_KEY_IS_FRESHER)
-  const rekey: Rewrite = (raw) => rekeyHeld(raw, oldKey, def.key, NEW_KEY_IS_FRESHER)
+    renameFrontmatterKey(content, from, to, NEW_KEY_IS_FRESHER)
+  const rekey: Rewrite = (raw) => rekeyHeld(raw, from, to, NEW_KEY_IS_FRESHER)
   const swept = await sweepGovernedRoots(root, files, { text, sidecars: rekey })
   return swept.skipped.length
 }
@@ -112,35 +108,54 @@ async function bothKeyHolders(root: string, from: string, to: string): Promise<s
   return fromHolders.filter((f) => toHolders.has(f))
 }
 
-/** Validated before the journal and again on the registry it commits to, since a create can land between the two. The journal is staged BEFORE the commit: registry-first ordering means a crash between commit and sweep is recoverable from nowhere else, so the old key survives only there. */
-export function renameProperty(
+type Retitle = Pick<PropertyDefinition, 'label'> | Pick<PropertyDefinition, 'key_format'>
+
+const retitled = (def: PropertyDefinition, change: Retitle): PropertyDefinition => {
+  const next = { ...def, ...change }
+  return { ...next, key: formatKey(next.label, next.key_format) }
+}
+
+async function rekeyPlan(
   root: string,
   propertyId: string,
-  label: string,
+  change: Retitle,
+): Promise<Result<{ prior: PropertyDefinition; moved: PropertyDefinition } | null>> {
+  const { defs } = await readRegistry(root)
+  const prior = defs[propertyId]
+  if (!prior) return NO_PROPERTY
+  const moved = retitled(prior, change)
+  if (moved.label === prior.label && moved.key_format === prior.key_format) return ok(null)
+  const named = validateName(moved, Object.values(defs), propertyId)
+  if (!named.ok) return named
+  // A file holding only the new key is adopted, its value going live as a create's would; one holding both would lose its old value.
+  const clashes = moved.key === prior.key ? [] : await bothKeyHolders(root, prior.key, moved.key)
+  if (clashes.length)
+    return fail('invalid-property', KEY_REFUSAL.held(prior.key, moved.key, clashes.length))
+  return ok({ prior, moved })
+}
+
+/** Validated before the journal and again on the registry it commits to, since a create can land between the two. The journal is staged BEFORE the commit: registry-first ordering means a crash between commit and sweep is recoverable from nowhere else, so the old key survives only there. */
+function rekeyProperty(
+  root: string,
+  propertyId: string,
+  change: Retitle,
 ): Promise<Result<PropertyRename | null>> {
-  const to = exactTitle(label)
   return serializeSchemaOp(root, async () => {
-    const { defs } = await readRegistry(root)
-    const prior = defs[propertyId]
-    if (!prior) return NO_PROPERTY
-    if (to === prior.label) return ok(null)
-    const named = validateName({ label: to, key: to }, Object.values(defs), propertyId)
-    if (!named.ok) return named
-    const moves = to !== prior.key
-    // A file holding only the new key is adopted, its value going live as a create's would; one holding both would lose its old value.
-    const clashes = moves ? await bothKeyHolders(root, prior.key, to) : []
-    if (clashes.length)
-      return fail('invalid-property', KEY_REFUSAL.held(prior.key, to, clashes.length))
-    const record: SchemaJournal = { op: 'rename', id: propertyId, from: prior.key, to }
+    const planned = await rekeyPlan(root, propertyId, change)
+    if (!planned.ok) return planned
+    if (!planned.value) return ok(null)
+    const { prior, moved } = planned.value
+    const moves = moved.key !== prior.key
+    const record: SchemaJournal = { op: 'rename', id: propertyId, from: prior.key, to: moved.key }
     if (moves) await writeSchemaJournal(root, record)
     const edit = await mutateRegistry<Result<{ from: string; def: PropertyDefinition }>>(
       root,
       (registry) => {
         const current = registry.defs[propertyId]
         if (!current) return { result: NO_PROPERTY }
-        const v = validateName({ label: to, key: to }, Object.values(registry.defs), propertyId)
+        const def = retitled(current, change)
+        const v = validateName(def, Object.values(registry.defs), propertyId)
         if (!v.ok) return { result: v }
-        const def = { ...current, label: to, key: to }
         return {
           next: { ...registry, defs: { ...registry.defs, [propertyId]: def } },
           result: ok({ from: current.key, def }),
@@ -152,11 +167,24 @@ export function renameProperty(
       return edit
     }
     const { from, def } = edit.value
-    const skipped = from === def.key ? 0 : await renameSweep(root, from, def)
+    const skipped = from === def.key ? 0 : await renameSweep(root, from, def.key)
     if (moves && !skipped) await clearSchemaJournal(root, record)
     return ok({ from, to: def.key, ...schemaCascade({ skipped, hosts: [] }, record) })
   })
 }
+
+export const renameProperty = (
+  root: string,
+  propertyId: string,
+  label: string,
+): Promise<Result<PropertyRename | null>> =>
+  rekeyProperty(root, propertyId, { label: exactTitle(label) })
+
+export const setKeyFormat = (
+  root: string,
+  propertyId: string,
+  key_format: KeyFormat,
+): Promise<Result<PropertyRename | null>> => rekeyProperty(root, propertyId, { key_format })
 
 /** Every definition edit but the label, the key, and the Key Format, which ride the rename path since each rewrites the key in every file. */
 export function editProperty(

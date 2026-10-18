@@ -9,6 +9,7 @@ import {
   renameProperty,
   removeFromRegistry,
   reorderRegistry,
+  setKeyFormat,
 } from './registryProperty'
 import { assignProperty } from './assignment'
 import { createFolderEntity } from '../Nexus/folderEntity'
@@ -19,7 +20,8 @@ import { readRegistry } from './propertiesRegistry'
 import { readSchemaJournal, writeSchemaJournal } from './propertyJournal'
 import { nexusConfig, nexusDir } from '../Paths/paths'
 import { NEXUS_CONFIG_FILES } from '../Paths/nexusPaths'
-import type { PropertyDraft } from './properties'
+import { KEY_REFUSAL, type PropertyDraft } from './properties'
+import { ok } from '../Contract/result'
 
 vi.mock('./propertyJournal', async (importOriginal) => {
   const mod = await importOriginal<typeof import('./propertyJournal')>()
@@ -348,6 +350,122 @@ describe('renameProperty and editProperty', () => {
     expect((await readRegistry(root)).defs[c.value.id].checkbox_color).toBe('blue')
     await editProperty(root, c.value.id, { checkbox_color: undefined })
     expect((await readRegistry(root)).defs[c.value.id].checkbox_color).toBeUndefined()
+  })
+})
+
+describe('a Key Format change is a rename of the key', () => {
+  const ID_LINE = 'ID: 01ARZ3NDEKPSV4RRFFQ69G5FAV'
+
+  const seedHeld = async (draft: PropertyDraft, frontmatter: string) => {
+    const c = await createProperty(root, draft)
+    const col = await createFolderEntity(root, 'collection', 'Col', newId())
+    if (!c.ok || !col.ok) throw new Error('setup failed')
+    await assignProperty(root, col.value.path, c.value.id)
+    const p = await createTestPage(col.value.path, 'Holder', { body: 'b' })
+    if (!p.ok) throw new Error('setup failed')
+    await writeFile(p.value.path, `---\n${ID_LINE}\n${frontmatter}---\nb\n`)
+    vi.mocked(writeSchemaJournal).mockClear()
+    return { id: c.value.id, page: p.value.path }
+  }
+
+  it('moves the key on every holder, in place, and clears the journal', async () => {
+    const { id, page } = await seedHeld(
+      def({ label: 'Tags', type: 'multiSelect' }),
+      'Alpha: 1\nTags: [a]\nZeta: 2\n',
+    )
+    const space = await seedSpaceSidecar(root, 'Projects', 'Pommora', { id: 'sp1', Tags: ['b'] })
+
+    const r = await setKeyFormat(root, id, 'lowercase')
+    expect(r.ok && r.value).toMatchObject({ from: 'Tags', to: 'tags' })
+    expect((await readRegistry(root)).defs[id]).toMatchObject({
+      label: 'Tags',
+      key: 'tags',
+      key_format: 'lowercase',
+    })
+    expect(await readFile(page, 'utf8')).toBe(
+      `---\n${ID_LINE}\nAlpha: 1\ntags: [a]\nZeta: 2\n---\nb\n`,
+    )
+    expect(await readJsonAt(space)).toEqual({ id: 'sp1', tags: ['b'] })
+    expect(await readSchemaJournal(root)).toBeNull()
+  })
+
+  it('refuses a format writing a key Pommora manages, changing nothing', async () => {
+    const { id, page } = await seedHeld(
+      def({ label: 'Heading Icon Hidden', type: 'text' }),
+      'Heading Icon Hidden: x\n',
+    )
+    const registry = await readFile(registryFilePath(), 'utf8')
+    const held = await readFile(page, 'utf8')
+
+    const r = await setKeyFormat(root, id, 'snake_case')
+    expect(!r.ok && r.error.message).toBe(KEY_REFUSAL.reserved('heading_icon_hidden'))
+    expect(await readFile(registryFilePath(), 'utf8')).toBe(registry)
+    expect(await readFile(page, 'utf8')).toBe(held)
+    expect(writeSchemaJournal).not.toHaveBeenCalled()
+    expect(await readSchemaJournal(root)).toBeNull()
+  })
+
+  it('refuses a format writing a key another property writes', async () => {
+    await seedRegistry({ id: 'prop_u', label: 'Due_Date', key: 'Due_Date', type: 'text' })
+    const c = await createProperty(root, def({ label: 'Due Date', type: 'text' }))
+    if (!c.ok) throw new Error('setup failed')
+    const r = await setKeyFormat(root, c.value.id, 'snake_case')
+    expect(!r.ok && r.error.message).toBe(KEY_REFUSAL.duplicateKey('due_date'))
+  })
+
+  it('refuses a format writing no key from the label', async () => {
+    const c = await createProperty(root, def({ label: '---', type: 'text' }))
+    if (!c.ok) throw new Error('setup failed')
+    const r = await setKeyFormat(root, c.value.id, 'kebab-case')
+    expect(!r.ok && r.error.message).toBe(KEY_REFUSAL.noKey)
+  })
+
+  it('refuses a format onto a key a file holds beside the old one, and stages no journal', async () => {
+    const { id } = await seedHeld(
+      def({ label: 'Tags', type: 'multiSelect' }),
+      'Tags: [a]\ntags: [b]\n',
+    )
+    const r = await setKeyFormat(root, id, 'lowercase')
+    expect(!r.ok && r.error.message).toBe(KEY_REFUSAL.held('Tags', 'tags', 1))
+    expect(writeSchemaJournal).not.toHaveBeenCalled()
+    expect(await pathExists(join(root, '.nexus', 'property-cascade.json'))).toBe(false)
+  })
+
+  it('setting the format a definition already stores answers null and writes nothing', async () => {
+    await seedRegistry({
+      id: 'prop_t',
+      label: 'Tags',
+      key: 'Tags',
+      type: 'text',
+      key_format: 'Match Title',
+    })
+    const registry = await readFile(registryFilePath(), 'utf8')
+    vi.mocked(writeSchemaJournal).mockClear()
+    expect(await setKeyFormat(root, 'prop_t', 'Match Title')).toEqual(ok(null))
+    expect(await readFile(registryFilePath(), 'utf8')).toBe(registry)
+    expect(writeSchemaJournal).not.toHaveBeenCalled()
+  })
+
+  it('a rename writes the key from the new label through the Key Format', async () => {
+    const { id, page } = await seedHeld(
+      def({ label: 'Tags', type: 'multiSelect', key_format: 'lowercase' }),
+      'tags: [a]\n',
+    )
+    expect((await renameProperty(root, id, 'Labels')).ok).toBe(true)
+    expect((await readRegistry(root)).defs[id]).toMatchObject({ label: 'Labels', key: 'labels' })
+    expect(await readFile(page, 'utf8')).toBe(`---\n${ID_LINE}\nlabels: [a]\n---\nb\n`)
+  })
+
+  it('a rename the Key Format writes onto the same key changes the label alone', async () => {
+    const { id, page } = await seedHeld(
+      def({ label: 'Tags', type: 'multiSelect', key_format: 'lowercase' }),
+      'tags: [a]\n',
+    )
+    const held = await readFile(page, 'utf8')
+    const r = await renameProperty(root, id, 'TAGS')
+    expect(r.ok && r.value).toMatchObject({ from: 'tags', to: 'tags' })
+    expect((await readRegistry(root)).defs[id]).toMatchObject({ label: 'TAGS', key: 'tags' })
+    expect(await readFile(page, 'utf8')).toBe(held)
   })
 })
 
