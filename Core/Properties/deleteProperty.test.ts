@@ -217,7 +217,7 @@ describe('a global delete reaches a Space sidecar', () => {
     expect('$order' in (await readJsonAt(listing))).toBe(false)
   })
 
-  it('strips every spelling from a page and a Space and records the joined value', async () => {
+  it('strips the exact key from a page and a Space, records its value, and leaves another casing', async () => {
     const c = await createProperty(root, {
       id: '',
       name: 'Tags',
@@ -234,9 +234,9 @@ describe('a global delete reaches a Space sidecar', () => {
 
     expect((await deleteProperty(root, c.value.id)).ok).toBe(true)
 
-    expect(await readFile(p.value.path, 'utf8')).toBe(`---\n${ID_KEY}: ${pid}\n---\nb\n`)
-    expect(await readJsonAt(file)).toEqual({ id: 'sp1' })
-    expect((await bundle(c.value.id)).values).toEqual({ [pid]: ['a', 'b'], sp1: ['b', 'a'] })
+    expect(await readFile(p.value.path, 'utf8')).toBe(`---\n${ID_KEY}: ${pid}\ntags: [b]\n---\nb\n`)
+    expect(await readJsonAt(file)).toEqual({ id: 'sp1', tags: ['a', 'B'] })
+    expect((await bundle(c.value.id)).values).toEqual({ [pid]: ['a'], sp1: ['b'] })
   })
 
   it('a property named icon sets and deletes as a value, leaving every Space its glyph', async () => {

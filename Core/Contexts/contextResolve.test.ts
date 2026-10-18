@@ -5,7 +5,7 @@ import {
   reconcileGovernedRoot,
   resolveContextKeys,
 } from './contextResolve'
-import { byFoldedName, type PropertyDefinition } from '../Properties/properties'
+import { byKey, type PropertyDefinition } from '../Properties/properties'
 import { decodeValue } from '../Properties/propertyValue'
 import type { ContextGroup, SpaceNode } from '../Nexus/tree'
 
@@ -61,20 +61,13 @@ describe('resolveContextKeys', () => {
     expect(links.get('ctx_projects')).toEqual(['sp1'])
   })
 
-  it('matches a key without regard to case, joining every spelling', () => {
-    expect(resolveContextKeys({ '<projects>': ['Pommora'] }, contexts).get('ctx_projects')).toEqual(
-      ['sp1'],
-    )
+  it('reads a key only as the Context is titled, another casing resolving nothing', () => {
+    expect(resolveContextKeys({ '<projects>': ['Pommora'] }, contexts).size).toBe(0)
     const both = resolveContextKeys(
       { '<projects>': ['CS 161'], '<Projects>': ['Pommora'] },
       contexts,
     )
-    expect(both.get('ctx_projects')).toEqual(['sp2', 'sp1'])
-  })
-
-  it('reads a spelling holding values beside an empty one', () => {
-    const links = resolveContextKeys({ '<Projects>': null, '<projects>': ['Pommora'] }, contexts)
-    expect(links.get('ctx_projects')).toEqual(['sp1'])
+    expect(both.get('ctx_projects')).toEqual(['sp1'])
   })
 })
 
@@ -99,7 +92,7 @@ const stageDef: PropertyDefinition = {
 const notesDef: PropertyDefinition = { id: 'prop_notes', name: 'Notes', type: 'text' }
 const world: GovernedWorld = {
   contexts,
-  defs: byFoldedName([statusDef, tagsDef, stageDef, notesDef]),
+  defs: byKey([statusDef, tagsDef, stageDef, notesDef]),
 }
 
 describe('reconcileGovernedRoot — the context arm', () => {
@@ -236,7 +229,7 @@ describe('reconcileGovernedRoot — the property arm', () => {
 describe('reconcileGovernedRoot — option, checkbox, and number spellings (the crossing)', () => {
   const doneDef: PropertyDefinition = { id: 'prop_done', name: 'Done', type: 'checkbox' }
   const priceDef: PropertyDefinition = { id: 'prop_price', name: 'Price', type: 'number' }
-  const spelled: GovernedWorld = { ...world, defs: byFoldedName([stageDef, doneDef, priceDef]) }
+  const spelled: GovernedWorld = { ...world, defs: byKey([stageDef, doneDef, priceDef]) }
   const input = { Stage: ['done'], Done: 'Yes', Price: '$1,200.00' }
 
   it('keeps each value as the file spells it, reading it as registered', () => {
@@ -249,66 +242,40 @@ describe('reconcileGovernedRoot — option, checkbox, and number spellings (the 
 
   it('writes a Multi-Select holding two casings of one option as that option once', () => {
     const labels: PropertyDefinition = { ...tagsDef, select_options: [{ value: 'Done' }] }
-    const held = { ...spelled, defs: byFoldedName([labels]) }
+    const held = { ...spelled, defs: byKey([labels]) }
     const twice = { Tags: ['done', 'Done', 'x'] }
     expect(reconcileGovernedRoot(twice, held).root).toEqual({ Tags: ['Done', 'x'] })
   })
 })
 
-describe('reconcileGovernedRoot — spellings', () => {
-  it('reconciles a lone spelling under the key the file holds', () => {
+describe('reconcileGovernedRoot — another casing', () => {
+  it('passes another casing of a property key through verbatim', () => {
     const { root, changed } = reconcileGovernedRoot({ status: 'Open' }, world)
-    expect(root).toEqual({ status: ['Open'] })
-    expect(changed).toEqual(['status'])
+    expect(root).toEqual({ status: 'Open' })
+    expect(changed).toEqual([])
   })
 
-  it('leaves a lone list spelling and a lone Context key where the file holds them', () => {
+  it('leaves another casing of a list key and of a Context key as written', () => {
     const input = { tags: ['a'], '<projects>': ['pommora'] }
     const { root, changed } = reconcileGovernedRoot(input, world)
     expect(root).toEqual(input)
     expect(changed).toEqual([])
   })
 
-  it('joins two spellings of a list under the registered spelling', () => {
-    const { root, changed } = reconcileGovernedRoot({ tags: ['a'], Tags: ['b'] }, world)
-    expect(root).toEqual({ Tags: ['a', 'b'] })
-    expect(changed.sort()).toEqual(['Tags', 'tags'])
-  })
-
-  it('joins under the registered spelling when the file holds it in no exact spelling', () => {
-    const { root } = reconcileGovernedRoot({ tags: ['a'], TAGS: ['b'] }, world)
-    expect(root).toEqual({ Tags: ['a', 'b'] })
-  })
-
-  it('joins two spellings of a Context key under its registered spelling', () => {
-    const input = { '<projects>': ['pommora'], '<PROJECTS>': ['CS 161'] }
-    expect(reconcileGovernedRoot(input, world).root).toEqual({
-      '<Projects>': ['pommora', 'CS 161'],
-    })
-  })
-
-  it("leaves a scalar's second spelling verbatim, as foreign, for a write to settle", () => {
+  it("leaves a scalar key in another casing beside the property's own as written, as foreign", () => {
     const { root, changed } = reconcileGovernedRoot({ Status: ['Open'], status: 'Done' }, world)
     expect(root).toEqual({ Status: ['Open'], status: 'Done' })
     expect(changed).toEqual([])
   })
 
-  it('leaves a Context key naming an unknown Space wholly as written, its spellings unjoined', () => {
+  it('leaves a Context key naming an unknown Space wholly as written', () => {
     const input = { '<Projects>': ['pommora', 'Ghost'], '<projects>': ['CS 161'] }
     const { root, changed } = reconcileGovernedRoot(input, world)
     expect(root).toEqual(input)
     expect(changed).toEqual([])
   })
 
-  it('a restore that empties a list drops every spelling of it', () => {
-    const r = reconcileGovernedRoot({ tags: ['zeta'], Tags: ['eta'] }, world, {})
-    expect(r.root).toEqual({})
-    expect(r.changed.sort()).toEqual(['Tags', 'tags'])
-    const ctx = reconcileGovernedRoot({ '<projects>': ['Dead'], '<Projects>': ['Gone'] }, world, {})
-    expect(ctx.root).toEqual({})
-  })
-
-  it('a retired scalar spelling waits on its key being written', () => {
+  it('a restore drops a key reading as nothing and leaves another casing of it as written', () => {
     const { root, changed } = reconcileGovernedRoot(
       { Stage: ['Bogus'], stage: ['Done'] },
       world,
@@ -317,19 +284,12 @@ describe('reconcileGovernedRoot — spellings', () => {
     expect(root).toEqual({ stage: ['Done'] })
     expect(changed).toEqual(['Stage'])
   })
-
-  it('a join that would lose a member is withheld, every spelling left as written', () => {
-    const original = { tags: ['', 'alpha'], TAGS: ['beta'] }
-    const r = reconcileGovernedRoot(original, world)
-    expect(r.root).toEqual(original)
-    expect(r.changed).toEqual([])
-  })
 })
 
 describe('reconcileGovernedRoot — skip', () => {
-  it('passes a skipped key and a second spelling of it verbatim', () => {
+  it('passes the skipped key verbatim, and a key in another casing as foreign', () => {
     const input = { Status: 'Open', status: 'Done' }
-    const { root, changed } = reconcileGovernedRoot(input, world, undefined, ['Status'])
+    const { root, changed } = reconcileGovernedRoot(input, world, undefined, 'Status')
     expect(root).toEqual(input)
     expect(changed).toEqual([])
   })

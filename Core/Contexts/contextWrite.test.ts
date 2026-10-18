@@ -293,7 +293,7 @@ describe('setContext reads the held tree', () => {
     const pomFile = (): string => join(contextsDir(root), 'Projects', 'Pommora', '_space.json')
     const csFile = (): string => join(contextsDir(root), 'Classes', 'CS 161', '_space.json')
 
-    it('the far half edits the list its file holds, joining its spellings', async () => {
+    it('the far half edits the exact key’s list, leaving another casing as written', async () => {
       await writeFile(
         csFile(),
         JSON.stringify({ id: 'sp-cs', '<Projects>': ['B'], '<projects>': ['C'] }),
@@ -301,16 +301,8 @@ describe('setContext reads the held tree', () => {
       await refreshTree(root)
       expect((await link('ctxC', ['sp-cs'])).ok).toBe(true)
       const far = await readJsonAt(csFile())
-      expect(far['<Projects>']).toEqual(['B', 'C', 'Pommora'])
-      expect('<projects>' in far).toBe(false)
-    })
-
-    it('a link the far file holds under a second spelling leaves the far file as written', async () => {
-      const held = { id: 'sp-cs', '<Projects>': ['B'], '<projects>': ['Pommora'] }
-      await writeFile(csFile(), JSON.stringify(held))
-      await refreshTree(root)
-      expect((await link('ctxC', ['sp-cs'])).ok).toBe(true)
-      expect(await readJsonAt(csFile())).toEqual(held)
+      expect(far['<Projects>']).toEqual(['B', 'Pommora'])
+      expect(far['<projects>']).toEqual(['C'])
     })
 
     it('writes the pair onto both files', async () => {

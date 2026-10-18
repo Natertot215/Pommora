@@ -112,31 +112,18 @@ describe('resolveFieldValue', () => {
     expect(rfv(row, 'prop_num')).toEqual({ kind: 'number', value: 42 })
   })
 
-  it('reads a property under any spelling of its name, the exact one first, else the first held', () => {
+  it('reads a property under its exact key only, another casing reading as nothing', () => {
     const held = (fm: Record<string, unknown>): ViewRow => ({
       ...row,
       frontmatter: { [ID_KEY]: '01ROW', ...fm },
     })
-    expect(rfv(held({ status: 'in_progress' }), 'prop_status')).toEqual({
-      kind: 'select',
-      value: 'in_progress',
-    })
+    expect(rfv(held({ status: 'in_progress' }), 'prop_status')).toEqual({ kind: 'null' })
     expect(rfv(held({ status: 'other', Status: 'in_progress' }), 'prop_status')).toEqual({
       kind: 'select',
       value: 'in_progress',
     })
     expect(rfv(held({ STATUS: 'in_progress', status: 'other' }), 'prop_status')).toEqual({
-      kind: 'select',
-      value: 'in_progress',
-    })
-  })
-
-  it('reads a list held under two spellings as one, in the file’s order', () => {
-    const tags: PropertyDefinition = { id: 'prop_tags', name: 'Tags', type: 'multiSelect' }
-    const frontmatter = { [ID_KEY]: '01ROW', tags: ['foo', 'Bar'], Tags: ['bar', 'baz'] }
-    expect(resolveFieldValue({ ...row, frontmatter }, 'prop_tags', [tags])).toEqual({
-      kind: 'multiSelect',
-      value: ['foo', 'Bar', 'baz'],
+      kind: 'null',
     })
   })
 

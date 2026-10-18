@@ -149,7 +149,7 @@ describe('case folding on renames', () => {
     expect(await readJournal(root)).toBeNull()
   })
 
-  it('a case-only Context rename merges the key into the one it already shares a page with, the page reading the same Spaces', async () => {
+  it('a case-only Context rename merges the key into the one it already shares a page with, the page then reading both keys’ Spaces', async () => {
     await mkdir(join(contextsDir(root), 'Projects', 'Sapphire'), { recursive: true })
     await writeFile(
       join(contextsDir(root), 'Projects', 'Sapphire', '_space.json'),
@@ -162,7 +162,7 @@ describe('case folding on renames', () => {
     await refreshTree(root)
     const tagged = () =>
       heldTreeOf(root)?.collections[0].pages.find((p) => p.title === 'B')?.contextValues
-    expect(tagged()).toEqual({ ctx_projects: ['sp-sap', 'sp-pom'] })
+    expect(tagged()).toEqual({ ctx_projects: ['sp-pom'] })
     const r = await settledMutate(
       root,
       { op: 'renameContext', contextId: 'ctx_projects', newName: 'projects' },
@@ -250,12 +250,12 @@ describe('case folding on renames', () => {
     expect([await readFile(other(), 'utf8'), await readFile(csSidecar(), 'utf8')]).toEqual(before)
   })
 
-  it('a Space rename rewrites the title under every spelling of the key', async () => {
+  it('a Space rename leaves the title under another casing of the key as written', async () => {
     await writeFile(other(), '---\nid: p2\n<projects>:\n  - Pommora\n---\nbody')
     await writeFile(csSidecar(), JSON.stringify({ id: 'sp-cs', '<projects>': ['Pommora'] }))
     expect((await renameSpaceOp(root, 'sp-pom', 'Pom')).ok).toBe(true)
-    expect((await fmOf(other()))['<projects>']).toEqual(['Pom'])
-    expect((await readJsonAt(csSidecar()))['<projects>']).toEqual(['Pom'])
+    expect((await fmOf(other()))['<projects>']).toEqual(['Pommora'])
+    expect((await readJsonAt(csSidecar()))['<projects>']).toEqual(['Pommora'])
   })
 
   it('unlinking a Context strips every spelling of its key and captures their values', async () => {

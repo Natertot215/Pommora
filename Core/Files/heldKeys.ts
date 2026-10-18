@@ -1,8 +1,5 @@
-// What a root holds for a name, and where a write to it lands. A name is held under its exact spelling, else the first key that folds to it, in the root's order: a scalar read acts on that one key and a list read joins every spelling in the root's order; a write lands on a lone spelling where it sits and, when it collapses, puts the name in place of two or more, and a rename, a strip, or a list edit acts on every spelling.
-
-import { setOrDrop } from './atomicWrite'
 import type { Json } from './stableJson'
-import { foldKey, spellings, normalizeTitle } from '../Paths/caseFold'
+import { spellings, normalizeTitle } from '../Paths/caseFold'
 import { isScalar, listOf } from '../Contract/validators'
 
 export const heldKeys = (root: object, name: string): string[] => spellings(Object.keys(root), name)
@@ -11,37 +8,9 @@ export const heldKeys = (root: object, name: string): string[] => spellings(Obje
 export const heldKey = (root: object, name: string): string | undefined =>
   Object.hasOwn(root, name) ? name : heldKeys(root, name)[0]
 
-/** What `root` holds for `name`: the value under the key `heldKey` reads, or with `join` every spelling's value as one list, in the root's order. */
-export function heldValue(root: Json, name: string, join: boolean): unknown {
-  if (!join) {
-    const key = heldKey(root, name)
-    return key === undefined ? undefined : root[key]
-  }
-  const fold = foldKey(name)
-  const [first, ...rest] = Object.keys(root).filter((k) => foldKey(k) === fold)
-  return rest.reduce<unknown>(
-    (value, key) => joinValues(value, root[key]),
-    first === undefined ? undefined : root[first],
-  )
-}
-
-interface WriteTarget {
-  key: string
-  govern: readonly string[]
-}
-
-/** Where a write to `name` lands on `root` and the spellings it replaces: with `collapse`, the name itself in place of two or more spellings; otherwise the first spelling, or the name when the root holds none. */
-export function writeTarget(root: Json, name: string, collapse = true): WriteTarget {
-  const held = heldKeys(root, name)
-  return collapse && held.length > 1
-    ? { key: name, govern: held }
-    : { key: held[0] ?? name, govern: held.slice(0, 1) }
-}
-
-/** `root` with `value` under the target's key in place of every key it governs, the target keeping its place when the root holds it; `undefined` drops the key. */
-export function landValue(root: Json, { key, govern }: WriteTarget, value: unknown): Json {
+/** `root` with `value` under `key`, in its place when the root holds it; `undefined` drops the key. */
+export function landValue(root: Json, key: string, value: unknown): Json {
   const next = { ...root }
-  for (const k of govern) if (k !== key) delete next[k]
   if (value === undefined) delete next[key]
   else next[key] = value
   return next
@@ -50,31 +19,21 @@ export function landValue(root: Json, { key, govern }: WriteTarget, value: unkno
 /** What a member matches by: a scalar's folded title, or the member itself. */
 export const memberKey = (v: unknown): unknown => (isScalar(v) ? normalizeTitle(v) : v)
 
-/** Two values as one list: `keep`'s members, then each of `from`'s that matches none of them by `memberKey`; a single value reads as a list of one. Every join of two spellings, and a `'merge'` rename, uses it. */
+/** Two values as one list: `keep`'s members, then each of `from`'s that matches none of them by `memberKey`; a single value reads as a list of one. */
 export function joinValues(keep: unknown, from: unknown): unknown[] {
   const kept = listOf(keep ?? [])
   const seen = new Set(kept.map(memberKey))
   return [...kept, ...listOf(from ?? []).filter((v) => !seen.has(memberKey(v)))]
 }
 
-/** Edits what `name` holds as a list; null when nothing changed. With `join`, every spelling is edited as one list landing where `writeTarget` places it; otherwise each spelling is edited where it sits. A list the edit empties drops its key. */
+/** Edits what `key` holds as a list; null when nothing changed. A list the edit empties drops its key. */
 export function editHeldList(
   raw: Json,
-  name: string,
-  join: boolean,
+  key: string,
   edit: (held: unknown[]) => unknown[] | null,
 ): Json | null {
-  if (join) {
-    const held = heldValue(raw, name, true)
-    const list = held === undefined ? null : edit(listOf(held))
-    return list && landValue(raw, writeTarget(raw, name), list.length ? list : undefined)
-  }
-  let next: Json | null = null
-  for (const key of heldKeys(raw, name)) {
-    const list = edit(listOf(raw[key]))
-    if (list) next = setOrDrop(next ?? raw, key, list.length ? list : undefined)
-  }
-  return next
+  const list = raw[key] === undefined ? null : edit(listOf(raw[key]))
+  return list && landValue(raw, key, list.length ? list : undefined)
 }
 
 /** `root` without `keys`; null when it holds none of them. */
@@ -82,12 +41,6 @@ export function stripKeys(root: Json, keys: readonly string[]): Json | null {
   if (!keys.some((k) => k in root)) return null
   return Object.fromEntries(Object.entries(root).filter(([k]) => !keys.includes(k)))
 }
-
-/** Strips every spelling of `name` from a root; null when it holds none. */
-export const stripHeld =
-  (name: string) =>
-  (root: Json): Json | null =>
-    stripKeys(root, heldKeys(root, name))
 
 export type KeyCollision = 'prefer-new' | 'merge'
 

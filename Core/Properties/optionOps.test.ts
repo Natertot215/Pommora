@@ -434,7 +434,7 @@ describe('renameOption', () => {
     expect(content).not.toContain('Urgent')
   })
 
-  it('rewrites a scalar under every spelling where it sits, and collapses a list’s spellings', async () => {
+  it('rewrites only the exact keys, leaving another casing of each as written', async () => {
     const status = await mkProperty({
       name: 'Status',
       type: 'select',
@@ -459,8 +459,9 @@ describe('renameOption', () => {
     expect((await renameOption(root, tags, 'Done', 'Finished')).ok).toBe(true)
     expect(splitFrontmatter(await readFile(page, 'utf8'))).toEqual({
       ID: '01ARZ3NDEKPSV4RRFFQ69G5FAV',
-      status: ['Finished'],
+      status: 'Done',
       Tags: ['Finished', 'Keep'],
+      tags: ['Done'],
     })
   })
 

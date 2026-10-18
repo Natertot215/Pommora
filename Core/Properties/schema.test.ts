@@ -129,9 +129,10 @@ describe('linkKeysOf', () => {
     for (const key of ['ID', 'banner', '<Areas>', '$x']) expect(holds(key)).toBe(false)
   })
 
-  it('asks the registry by folded name', () => {
+  it('asks the registry by exact key, another casing reading as untyped', () => {
     const holds = linkKeysOf([def({ id: 'p1', name: 'Rank', type: 'number' })])
-    expect(holds('rank')).toBe(false)
+    expect(holds('rank')).toBe(true)
+    expect(holds('Rank')).toBe(false)
     expect(holds('Related')).toBe(true)
   })
 })

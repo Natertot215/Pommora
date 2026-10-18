@@ -16,9 +16,8 @@ import {
   type SchemaJournal,
   writeSchemaJournal,
 } from './propertyJournal'
-import { sweepGovernedRoots } from './governedSweep'
-import { heldKey, stripHeld } from '../Files/heldKeys'
-import { heldPropertyValue } from './propertyValue'
+import { type Rewrite, sweepGovernedRoots } from './governedSweep'
+import { stripKeys } from '../Files/heldKeys'
 import { patchSidecar } from '../Files/sidecar'
 import { readJsonObject } from '../Files/atomicWrite'
 import { sidecarPath } from '../Paths/paths'
@@ -59,10 +58,10 @@ async function snapshot(
       partial = true
       continue
     }
-    if (heldKey(raw, key) === undefined) continue
+    if (!Object.hasOwn(raw, key)) continue
     const id = typeof raw.id === 'string' ? raw.id : undefined
     if (!id || id in values) partial = true
-    else values[id] = heldPropertyValue(raw, def)
+    else values[id] = raw[key]
   }
   return writePropertyBundle(root, {
     entity: 'property',
@@ -116,7 +115,7 @@ export async function stripAndRemove(
   folders: string[],
   files: string[],
 ): Promise<ConfigReach & { removed: Result<null> }> {
-  const raw = stripHeld(key)
+  const raw: Rewrite = (r) => stripKeys(r, [key])
   const swept = await sweepGovernedRoots(root, files, {
     raw,
     sidecars: withoutOrderId(raw, propertyId),

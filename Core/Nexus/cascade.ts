@@ -1,5 +1,5 @@
 import { isAtOrUnder, isMarkdownFile, join, relative, titleFromPath } from '../Paths/posix'
-import { foldKey, normalizeTitle } from '../Paths/caseFold'
+import { normalizeTitle } from '../Paths/caseFold'
 import { heldKey, stripKeys } from '../Files/heldKeys'
 import { errText } from '../Contract/result'
 import { splitEnvelope, mergeFrontmatter, splitFrontmatter, stampedId } from '../Files/pageFile'
@@ -9,7 +9,7 @@ import {
   sweepGovernedRoots,
   unsweptLine,
 } from '../Properties/governedSweep'
-import { byFoldedName } from '../Properties/properties'
+import { byKey } from '../Properties/properties'
 import { editCaches } from '../Properties/propertyCache'
 import { heldTreeOf, liveTreeOf } from './liveTree'
 import { pageIndexOf, pagesOf } from './record'
@@ -77,14 +77,14 @@ export async function deleteCascade(
   const after = buildPageIndex(tree ? pagesOf(tree).filter((p) => !inside(p.path)) : [])
   const gone = new Set(paths.flatMap(pathKeys).filter((k) => after.resolve(k).status === 'phantom'))
   try {
-    const defs = byFoldedName(linkDefsOf(tree?.config.registry ?? []))
+    const defs = byKey(linkDefsOf(tree?.config.registry ?? []))
     if (!defs.size || !gone.size) return { cascade: { pages: [], hosts: [] }, links: [] }
     const rels = queryMentions([...gone]) ?? (await nexusCorpus(root))
     const goneEntry = (value: unknown): string | null =>
       gonePageEntry(value, { holds: (t) => !gone.has(pageKey(t)) })
     const named = (raw: Record<string, unknown>) =>
       Object.entries(raw).flatMap(([key, held]) => {
-        const def = defs.get(foldKey(key))
+        const def = defs.get(key)
         const value = def && goneEntry(held)
         return def && value ? [{ key, def, value }] : []
       })

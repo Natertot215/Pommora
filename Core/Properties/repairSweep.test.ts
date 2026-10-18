@@ -3,7 +3,6 @@ import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { PropertyDefinition } from './properties'
-import { splitFrontmatter } from '../Files/pageFile'
 import { assignProperty } from './assignment'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { newId } from '../Nexus/ids'
@@ -168,23 +167,12 @@ describe('runRepairSweep', () => {
     expect(await readFile(page, 'utf8')).toContain('Status: Open')
   })
 
-  it('a re-read page’s lone list key keeps its spelling, byte for byte', async () => {
+  it('a re-read page holding another casing of a list key stays byte for byte', async () => {
     await refreshTree(root)
     await frontmatter('tags: [alpha]')
     const before = await readFile(page, 'utf8')
     await runRepairSweep(root, await seedContentIndex(root))
     expect(await readFile(page, 'utf8')).toBe(before)
-  })
-
-  it('joins a re-read page’s two spellings of a list under the registered one, on the first’s line', async () => {
-    await refreshTree(root)
-    await frontmatter('tags: [alpha]\nTAGS: [beta]')
-    const line = (await readFile(page, 'utf8')).split('\n').indexOf('tags: [alpha]')
-    await runRepairSweep(root, await seedContentIndex(root))
-    const out = await readFile(page, 'utf8')
-    expect(out.split('\n')[line]).toBe('Tags: [alpha, beta]')
-    expect(splitFrontmatter(out)).toMatchObject({ Tags: ['alpha', 'beta'] })
-    expect('tags' in splitFrontmatter(out) || 'TAGS' in splitFrontmatter(out)).toBe(false)
   })
 
   it('a re-read page’s Context key keeps its spelling, byte for byte', async () => {

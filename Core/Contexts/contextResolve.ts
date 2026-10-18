@@ -1,7 +1,7 @@
-import { foldKey, normalizeTitle } from '../Paths/caseFold'
-import { heldKey, heldValue, memberKey, writeTarget } from '../Files/heldKeys'
-import { contextKey, contextTitles, parseContextKey } from './contexts'
-import { byFoldedName, holdsList, type PropertyDefinition } from '../Properties/properties'
+import { normalizeTitle } from '../Paths/caseFold'
+import { memberKey } from '../Files/heldKeys'
+import { contextTitles, parseContextKey } from './contexts'
+import { byKey, type PropertyDefinition } from '../Properties/properties'
 import {
   type Frozen,
   encodeValue,
@@ -16,7 +16,6 @@ type ResolvedLinks = Map<string, string[]>
 
 export interface ContextWorld {
   groupById: ReadonlyMap<string, ContextGroup>
-  /** Keyed by folded title. */
   idByTitle: ReadonlyMap<string, string>
   spacesByTitle: ReadonlyMap<string, ReadonlyMap<string, SpaceNode>>
   spaceById: ReadonlyMap<string, SpaceNode>
@@ -30,7 +29,7 @@ export function contextWorldOf(groups: ContextGroup[]): ContextWorld {
   if (held) return held
   const world: ContextWorld = {
     groupById: new Map(groups.map((g) => [g.def.id, g])),
-    idByTitle: new Map(groups.map((g) => [foldKey(g.def.title), g.def.id])),
+    idByTitle: new Map(groups.map((g) => [g.def.title, g.def.id])),
     spacesByTitle: new Map(
       groups.map((g) => [g.def.id, new Map(g.spaces.map((s) => [normalizeTitle(s.title), s]))]),
     ),
@@ -42,7 +41,6 @@ export function contextWorldOf(groups: ContextGroup[]): ContextWorld {
 
 export interface GovernedWorld {
   contexts: ContextWorld
-  /** Keyed by folded name. */
   defs: ReadonlyMap<string, PropertyDefinition>
 }
 
@@ -54,13 +52,13 @@ export const governedWorld = (
   defs,
 })
 
-// A Space holds any registry property, so its own values reconcile against every definition, by name.
+// A Space holds any registry property, so its own values reconcile against every definition, by key.
 export const spaceWorldOf = (tree: NexusTree): GovernedWorld =>
-  governedWorld(tree, byFoldedName(tree.config.registry))
+  governedWorld(tree, byKey(tree.config.registry))
 
 function groupOf(key: string, world: ContextWorld): ContextGroup | undefined {
   const title = parseContextKey(key)
-  const id = title === null ? undefined : world.idByTitle.get(foldKey(title))
+  const id = title === null ? undefined : world.idByTitle.get(title)
   return id === undefined ? undefined : world.groupById.get(id)
 }
 
@@ -69,15 +67,11 @@ export function resolveContextKeys(
   world: ContextWorld,
 ): ResolvedLinks {
   const links: ResolvedLinks = new Map()
-  for (const key of Object.keys(root)) {
+  for (const [key, raw] of Object.entries(root)) {
     const group = groupOf(key, world)
     if (!group) continue
-    const name = contextKey(group.def.title)
-    if (heldKey(root, name) !== key) continue
     const byTitle = world.spacesByTitle.get(group.def.id)
-    const ids = contextTitles(heldValue(root, name, true)).flatMap(
-      (title) => byTitle?.get(title)?.id ?? [],
-    )
+    const ids = contextTitles(raw).flatMap((title) => byTitle?.get(title)?.id ?? [])
     if (ids.length) links.set(group.def.id, ids)
   }
   return links
@@ -88,70 +82,52 @@ interface Reconciled {
   changed: string[]
 }
 
-type Governor = { name: string; def: PropertyDefinition } | { name: string; group: ContextGroup }
+type Governor = { def: PropertyDefinition } | { group: ContextGroup }
 
 function governorOf(key: string, world: GovernedWorld): Governor | undefined {
-  const def = world.defs.get(foldKey(key))
-  if (def) return { name: def.name, def }
+  const def = world.defs.get(key)
+  if (def) return { def }
   const group = groupOf(key, world.contexts)
-  return group && { name: contextKey(group.def.title), group }
-}
-
-const joins = (governor: Governor): boolean => 'group' in governor || holdsList(governor.def)
-
-/** Whether a read of `name` joins its spellings: a Context key's or a list-holding property's does. */
-export function joinsSpellings(name: string, world: GovernedWorld): boolean {
-  const governor = governorOf(name, world)
-  return governor !== undefined && joins(governor)
+  return group && { group }
 }
 
 const memberCount = (v: unknown): number => new Set(listOf(v).map(memberKey)).size
 
-// A governed name reconciles once, under the key `heldKey` reads: a list's spellings join it under the registered spelling and leave once that key is written, while a scalar's other spellings pass through as foreign, for a write to settle. A key in `skip` passes through verbatim.
+// The `skip` key passes through verbatim.
 export function reconcileGovernedRoot(
   root: Record<string, unknown>,
   world: GovernedWorld,
   frozen?: Frozen,
-  skip: readonly string[] = [],
+  skip?: string,
 ): Reconciled {
   const out: Record<string, unknown> = {}
   const changed: string[] = []
-  const retired = new Set<string>()
   for (const [key, raw] of Object.entries(root)) {
-    const governor = skip.includes(key) ? undefined : governorOf(key, world)
-    if (!governor || heldKey(root, governor.name) !== key) {
+    const governor = key === skip ? undefined : governorOf(key, world)
+    if (!governor) {
       out[key] = raw
       continue
     }
-    const join = joins(governor)
-    const held = heldValue(root, governor.name, join)
     let next: unknown
     if ('def' in governor) {
-      const reconciled = reconcilePropertyValue(governor.def, held, frozen)
+      const reconciled = reconcilePropertyValue(governor.def, raw, frozen)
       if (!isBlankValue(reconciled)) next = encodeValue(reconciled)
     } else {
       const byTitle = world.contexts.spacesByTitle.get(governor.group.def.id)
-      const titles = contextTitles(held).flatMap((title) => byTitle?.get(title)?.title ?? [])
+      const titles = contextTitles(raw).flatMap((title) => byTitle?.get(title)?.title ?? [])
       if (titles.length) next = [...new Set(titles)]
     }
-    // A live reconcile never shrinks or blanks a value: one holding a member it can't resolve, or reading as nothing, stays as written, every spelling of it, for the user to settle.
-    if (!frozen && (next === undefined || memberCount(next) < memberCount(held))) {
+    // A live reconcile never shrinks or blanks a value: one holding a member it can't resolve, or reading as nothing, stays as written, for the user to settle.
+    if (!frozen && (next === undefined || memberCount(next) < memberCount(raw))) {
       out[key] = raw
       continue
     }
-    const { key: target, govern } = writeTarget(root, governor.name, join)
     if (next === undefined) {
-      for (const k of govern) retired.add(k)
+      changed.push(key)
       continue
     }
-    const joined = govern.filter((k) => k !== target)
-    for (const k of joined) retired.add(k)
-    out[target] = writtenSpelling(next, held)
-    if (joined.length || JSON.stringify(out[target]) !== JSON.stringify(raw)) changed.push(target)
-  }
-  for (const k of retired) {
-    delete out[k]
-    changed.push(k)
+    out[key] = writtenSpelling(next, raw)
+    if (JSON.stringify(out[key]) !== JSON.stringify(raw)) changed.push(key)
   }
   return { root: out, changed }
 }

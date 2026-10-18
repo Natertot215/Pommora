@@ -4,7 +4,7 @@ import { tempRoot } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { contextWorldOf, type GovernedWorld } from '../Contexts/contextResolve'
 import { splitFrontmatter } from '../Files/pageFile'
-import { byFoldedName, type PropertyDefinition } from './properties'
+import { byKey, type PropertyDefinition } from './properties'
 import { setGovernedRootKey } from './governedWrite'
 
 let dir: string
@@ -101,7 +101,7 @@ describe('setGovernedRootKey with a world — the three precedence rules', () =>
         spaces: [{ kind: 'space', id: 'sp', title: 'Health', path: 'x', contextId: 'ctx_areas' }],
       },
     ]),
-    defs: byFoldedName([priority, status]),
+    defs: byKey([priority, status]),
   }
 
   it('an unassign deletes its key while the reconcile repairs the siblings', async () => {
@@ -155,7 +155,7 @@ describe('setGovernedRootKey with a world — the three precedence rules', () =>
     await writeFile(page, "---\nid: p1\nTags:\n  - ''\n  - alpha\n---\nbody\n")
     await setGovernedRootKey(page, 'Status', 'Done', {
       ...world,
-      defs: byFoldedName([tags]),
+      defs: byKey([tags]),
     })
     const fm = splitFrontmatter(await readFile(page, 'utf8'))
     expect(fm.Tags).toEqual(['', 'alpha'])
@@ -174,24 +174,25 @@ describe('setGovernedRootKey — spellings', () => {
   }
   const world: GovernedWorld = {
     contexts: contextWorldOf([]),
-    defs: byFoldedName([tags, done, status, price]),
+    defs: byKey([tags, done, status, price]),
   }
   const seeded = async (keys: string): Promise<void> =>
     writeFile(page, `---\nid: p1\n${keys}\nfoo: bar\n---\nbody\n`)
   const lines = async (): Promise<string[]> => (await readFile(page, 'utf8')).split('\n')
 
-  it('writes to the spelling the page holds', async () => {
+  it('writes the exact key after the other keys, leaving another casing of it as written', async () => {
     await seeded('status: Open')
     await setGovernedRootKey(page, 'Status', ['Done'], world)
     const fm = splitFrontmatter(await readFile(page, 'utf8'))
-    expect(fm.status).toEqual(['Done'])
-    expect('Status' in fm).toBe(false)
+    expect(Object.keys(fm)).toEqual(['id', 'status', 'foo', 'Status'])
+    expect(fm.status).toBe('Open')
+    expect(fm.Status).toEqual(['Done'])
   })
 
   it('keeps how each held member is spelled', async () => {
-    await seeded('tags: [claude, docs]')
+    await seeded('Tags: [claude, docs]')
     await setGovernedRootKey(page, 'Tags', ['Claude', 'Docs', 'New'], world)
-    expect(splitFrontmatter(await readFile(page, 'utf8')).tags).toEqual(['claude', 'docs', 'New'])
+    expect(splitFrontmatter(await readFile(page, 'utf8')).Tags).toEqual(['claude', 'docs', 'New'])
   })
 
   it('a checked box over an unchecked word lands as its pair’s checked word, cased alike', async () => {
@@ -209,37 +210,8 @@ describe('setGovernedRootKey — spellings', () => {
     expect(await lines()).toContain('Price: $1,300')
   })
 
-  it('collapses two spellings of a scalar under the registered spelling, where the first sat', async () => {
-    await seeded('status: Open\nSTATUS: Done')
-    const at = (await lines()).indexOf('status: Open')
-    await setGovernedRootKey(page, 'Status', ['Open'], world)
-    const out = await readFile(page, 'utf8')
-    expect(out.split('\n')[at]).toBe('Status:')
-    expect(splitFrontmatter(out)).toEqual({ id: 'p1', Status: ['Open'], foo: 'bar' })
-  })
-
-  it('spells a collapsed scalar from the key it reads, never from the twin it discards', async () => {
-    await seeded('status: [open]\nStatus: [Done]')
-    await setGovernedRootKey(page, 'Status', ['Open'], world)
-    expect(splitFrontmatter(await readFile(page, 'utf8'))).toEqual({
-      id: 'p1',
-      Status: ['Open'],
-      foo: 'bar',
-    })
-  })
-
-  it('collapses two spellings of a list into the value set, keeping how each held member is spelled', async () => {
-    await seeded('Tags: [b]\ntags: [claude]')
-    await setGovernedRootKey(page, 'Tags', ['b', 'Claude', 'c'], world)
-    expect(splitFrontmatter(await readFile(page, 'utf8'))).toEqual({
-      id: 'p1',
-      Tags: ['b', 'claude', 'c'],
-      foo: 'bar',
-    })
-  })
-
   it('a write of the value a flow list already holds leaves the file byte-identical', async () => {
-    await seeded('tags: [a]')
+    await seeded('Tags: [a]')
     const before = await readFile(page, 'utf8')
     await setGovernedRootKey(page, 'Tags', ['a'], world)
     expect(await readFile(page, 'utf8')).toBe(before)

@@ -1025,8 +1025,8 @@ describe('held options — the Multi-Select members a changed file holds are reg
     ])
   })
 
-  it('renaming the property onto a key its Collection’s pages already hold, in any casing, registers their members', async () => {
-    await writeFile(abs('Notes', 'A.md'), page(ULID_A, 'labels:\n  - Ideas\n'))
+  it('renaming the property onto a key its Collection’s pages already hold registers their members', async () => {
+    await writeFile(abs('Notes', 'A.md'), page(ULID_A, 'Labels:\n  - Ideas\n'))
     await walked()
     expect((await renameProperty(root, 'tags', 'Labels')).ok).toBe(true)
     await settleNow(pusher, root)
@@ -1034,7 +1034,7 @@ describe('held options — the Multi-Select members a changed file holds are reg
   })
 
   it('creating a property under a key a Space holds registers the Space’s members', async () => {
-    await writeFile(abs(...SPACE), JSON.stringify({ id: ULID_D, labels: ['Ideas'] }))
+    await writeFile(abs(...SPACE), JSON.stringify({ id: ULID_D, Labels: ['Ideas'] }))
     await walked()
     const created = await createProperty(root, {
       id: 'labels',

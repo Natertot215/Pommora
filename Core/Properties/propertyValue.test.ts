@@ -375,19 +375,14 @@ describe('gonePageEntry — the entry a restore parks', () => {
 })
 
 describe('applyValueAtRoot', () => {
-  it('writes and clears the spelling the root holds', () => {
+  it('writes the exact key beside another casing, and a clear leaves that casing', () => {
     const status = { ...statusDef, name: 'Status' }
     const done = { kind: 'select', value: 'Done' } as const
-    expect(applyValueAtRoot({ status: 'Open' }, status, done)).toEqual({ status: ['Done'] })
-    expect(applyValueAtRoot({ status: 'Open' }, status, null)).toEqual({})
-  })
-
-  it('writes under the name in place of two or more spellings', () => {
-    const status = { ...statusDef, name: 'Status' }
-    const done = { kind: 'select', value: 'Done' } as const
-    const held = { STATUS: 'Open', status: 'Later' }
-    expect(applyValueAtRoot(held, status, done)).toEqual({ Status: ['Done'] })
-    expect(applyValueAtRoot(held, status, null)).toEqual({})
+    expect(applyValueAtRoot({ status: 'Open' }, status, done)).toEqual({
+      status: 'Open',
+      Status: ['Done'],
+    })
+    expect(applyValueAtRoot({ status: 'Open' }, status, null)).toEqual({ status: 'Open' })
   })
 })
 

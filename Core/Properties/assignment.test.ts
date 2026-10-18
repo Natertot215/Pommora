@@ -118,10 +118,10 @@ describe('a re-assign puts a cached value back', () => {
     expect((await reassigned('')).Status).toEqual(['hi'])
   })
 
-  it('fills a blank key spelled in another case where it sits', async () => {
+  it('fills the exact key beside a blank key in another casing, which stays', async () => {
     const fm = await reassigned()
-    expect(fm.status).toEqual(['hi'])
-    expect(fm).not.toHaveProperty('Status')
+    expect(fm.Status).toEqual(['hi'])
+    expect(fm.status).toBeNull()
   })
 
   const tags: Omit<PropertyDefinition, 'id'> = {
@@ -132,18 +132,5 @@ describe('a re-assign puts a cached value back', () => {
 
   it('keeps a cached Multi-Select member’s spelling', async () => {
     expect((await reassigned('', tags, 'Tags: [claude]')).Tags).toEqual(['claude'])
-  })
-
-  it('collapses blank spellings of a list under the registered key', async () => {
-    expect(await reassigned('\ntags:\nTAGS:', tags, 'Tags: [claude]')).toEqual({
-      ID: expect.any(String),
-      Tags: ['claude'],
-    })
-  })
-
-  it('leaves a list whose second spelling holds a value untouched', async () => {
-    const fm = await reassigned('\ntags:\nTAGS: [Claude]', tags, 'Tags: [claude]')
-    expect(fm.TAGS).toEqual(['Claude'])
-    expect(fm).not.toHaveProperty('Tags')
   })
 })

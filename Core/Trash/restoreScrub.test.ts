@@ -317,7 +317,7 @@ describe('a returning artifact is reconciled against the world it comes back to'
     expect(def.select_options.map((o) => o.value)).toEqual(['a'])
   })
 
-  it('drops a Link naming a page gone, held under a key spelled in another case', async () => {
+  it('keeps a gone Link held under a key no Link property claims', async () => {
     await writeFile(
       join(root, '.nexus', 'properties.json'),
       JSON.stringify({
@@ -330,7 +330,7 @@ describe('a returning artifact is reconciled against the world it comes back to'
       `---\nID: ${PAGE_A}\nrelated: "[[Nowhere]]"\n---\nbody`,
     )
     await cycle('Notes/Alpha.md', 'page', async () => {})
-    expect(await fm('Notes/Alpha.md')).not.toHaveProperty('related')
+    expect((await fm('Notes/Alpha.md')).related).toBe('[[Nowhere]]')
   })
 
   it('leaves foreign frontmatter and the body untouched while it strips', async () => {

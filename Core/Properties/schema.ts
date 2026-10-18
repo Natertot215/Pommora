@@ -1,5 +1,5 @@
 import {
-  byFoldedName,
+  byKey,
   firstPerTitle,
   isReservedPropertyId,
   KEY_REFUSAL,
@@ -10,7 +10,7 @@ import {
   withOptionGroups,
 } from './properties'
 import { fail, ok, type Result } from '../Contract/result'
-import { foldKey, normalizeTitle } from '../Paths/caseFold'
+import { normalizeTitle } from '../Paths/caseFold'
 import { PAGE_MODELED_KEYS } from '../Nexus/identityMark'
 import { SPACE_MODELED_KEYS } from '../Contexts/spaceSidecar'
 
@@ -26,11 +26,11 @@ export function keyRefusal(name: string): string | null {
   return RESERVED_KEY_NAMES.has(normalizeTitle(name)) ? KEY_REFUSAL.reserved(name) : null
 }
 
-/** Which frontmatter keys hold links the graph relates and a rename rewrites, asked of a registry: Link and Text, and a key the registry hasn't typed unless Pommora keeps it; never File, whose references name assets. One folded lookup, built once per reader. */
+/** Which frontmatter keys hold links the graph relates and a rename rewrites, asked of a registry: Link and Text, and a key the registry hasn't typed unless Pommora keeps it; never File, whose references name assets. One lookup, built once per reader. */
 export const linkKeysOf = (defs: readonly PropertyDefinition[]): ((key: string) => boolean) => {
-  const names = byFoldedName(defs)
+  const names = byKey(defs)
   return (key) => {
-    const type = names.get(foldKey(key))?.type
+    const type = names.get(key)?.type
     return type === undefined ? keyRefusal(key) === null : type === 'link' || type === 'text'
   }
 }

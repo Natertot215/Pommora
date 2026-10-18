@@ -330,40 +330,7 @@ describe('renameFrontmatterKey — a key in another casing is another key', () =
   })
 })
 
-describe('mergeFrontmatter — a key moved to another spelling keeps its place', () => {
-  it('writes the new spelling where the dropped one sat', () => {
-    expect(
-      mergeFrontmatter(
-        '---\na: 1\ntags:\n  - x\nb: 2\n---\nbody',
-        { Tags: ['x'] },
-        ['tags', 'Tags'],
-        'body',
-      ),
-    ).toBe('---\na: 1\nTags:\n  - x\nb: 2\n---\nbody')
-  })
-
-  it('takes the first dropped spelling’s place when two are dropped, each member keeping its own quotes', () => {
-    expect(
-      mergeFrontmatter(
-        '---\na: 1\ntags:\n  - x\nb: 2\nTAGS:\n  - "y"\n---\nbody',
-        { Tags: ['x', 'y'] },
-        ['tags', 'TAGS', 'Tags'],
-        'body',
-      ),
-    ).toBe('---\na: 1\nTags:\n  - x\n  - "y"\nb: 2\n---\nbody')
-  })
-
-  it('a moved key whose value is unchanged keeps its node, comments included', () => {
-    expect(
-      mergeFrontmatter(
-        '---\ntags:\n  - x # first\n  - y\n---\nbody',
-        { Tags: ['x', 'y'] },
-        ['tags', 'Tags'],
-        'body',
-      ),
-    ).toBe('---\nTags:\n  - x # first\n  - y\n---\nbody')
-  })
-
+describe('mergeFrontmatter — a written key and a dropped one', () => {
   it('appends a key written beside an unrelated dropped one', () => {
     expect(
       mergeFrontmatter('---\nold: 1\nb: 2\n---\nbody', { Tags: ['x'] }, ['old', 'Tags'], 'body'),

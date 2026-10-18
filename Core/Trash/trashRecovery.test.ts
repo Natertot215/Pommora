@@ -364,16 +364,6 @@ describe('links come back with the page', () => {
     expect((await frontmatter()).Related).toBe('[[Alpha]]')
   })
 
-  it('a Link held under two spellings comes back as the spelling that’s read', async () => {
-    await linker(beta, BETA_ID, 'Related: "[[Alpha]]"\nrelated: "[[Alpha|al]]"')
-    await del('Journal/Daily/Alpha.md', 'page')
-    expect((await listBundles(root))[0].record).toMatchObject({
-      links: [{ page: BETA_ID, property: 'prop_related', value: '[[Alpha]]' }],
-    })
-    expect(await restore('Alpha')).toBeUndefined()
-    expect((await frontmatter()).Related).toBe('[[Alpha]]')
-  })
-
   it.each([
     ['[[Alpha]]', '[[Alpha (2)]]'],
     ['[[Alpha#Intro|see]]', '[[Alpha (2)#Intro|see]]'],
@@ -709,16 +699,6 @@ describe('links come back with the page', () => {
     expect(await restore('Alpha')).toBeUndefined()
     expect(await restore('Beta')).toBeUndefined()
     expect((await frontmatter()).Related).toBe('[[Alpha]]')
-  })
-
-  it('a page restored while its linker sits in the Trash writes the value under the spelling the linker’s trashed copy holds', async () => {
-    await linker(beta, BETA_ID, 'RELATED: "[[Alpha]]"\nrelated: ""')
-    await del('Journal/Daily/Alpha.md', 'page')
-    await del(beta, 'page')
-    expect(await restore('Alpha')).toBeUndefined()
-    const { bundlePath } = await find('Beta')
-    const copy = splitFrontmatter(await readFile(join(root, bundlePath, 'Beta.md'), 'utf8'))
-    expect(copy).toEqual({ ID: BETA_ID, related: '[[Alpha]]' })
   })
 
   it('a page restored while a linking Space sits in the Trash writes the value into the Space’s trashed copy', async () => {

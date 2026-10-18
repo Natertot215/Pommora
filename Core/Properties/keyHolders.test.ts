@@ -140,26 +140,14 @@ describe('keyHolderFiles', () => {
 describe('keyedHolders', () => {
   const tags = { name: 'Tags', type: 'multiSelect' } as const
 
-  it('files a holder of another casing under the definition', async () => {
+  it('files no value for a page holding another casing of the key', async () => {
     await page('K1', 'tags: [a]\n')
     const file = abs('Notes', 'K1.md')
     expect(await keyedHolders([file], tags)).toEqual({
-      values: { '01ARZ3NDEKPSV4RRFFQ69G5FK1': ['a'] },
+      values: {},
       strip: [file],
       partial: false,
     })
-  })
-
-  it('joins every spelling for a list property', async () => {
-    await page('K2', 'Tags: [a]\ntags: [b, A]\n')
-    const held = await keyedHolders([abs('Notes', 'K2.md')], tags)
-    expect(held.values).toEqual({ '01ARZ3NDEKPSV4RRFFQ69G5FK2': ['a', 'b'] })
-  })
-
-  it('keeps the read spelling’s value alone for any other type', async () => {
-    await page('K3', 'Stage: Draft\nstage: Done\n')
-    const held = await keyedHolders([abs('Notes', 'K3.md')], { name: 'Stage', type: 'select' })
-    expect(held.values).toEqual({ '01ARZ3NDEKPSV4RRFFQ69G5FK3': 'Draft' })
   })
 })
 

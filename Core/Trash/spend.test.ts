@@ -841,7 +841,7 @@ describe('restore — the record spends, headless', () => {
     expect(sap['<Projects>']).toEqual(['Pommora'])
   })
 
-  describe('a Space’s tags go back under the key each root holds', () => {
+  describe('a Space’s tags go back under its Context’s exact key', () => {
     const alpha = (): string => join(root, 'Notes', 'Daily', 'Alpha.md')
     const restoredPommora = async (keys: string): Promise<Record<string, unknown>> => {
       await settledMutate(
@@ -861,22 +861,10 @@ describe('restore — the record spends, headless', () => {
       return splitFrontmatter(await readFile(alpha(), 'utf8'))
     }
 
-    it('appends to a held key spelled in another case, keeping its members’ spelling', async () => {
+    it('lands the exact key beside another casing, which keeps its members', async () => {
       const fm = await restoredPommora('<projects>:\n  - sapphire')
-      expect(fm['<projects>']).toEqual(['sapphire', 'Pommora'])
-      expect(fm).not.toHaveProperty('<Projects>')
-    })
-
-    it('lands one registered key holding every spelling’s members', async () => {
-      await mkdir(join(contextsDir(root), 'Projects', 'Studio'), { recursive: true })
-      await writeFile(
-        join(contextsDir(root), 'Projects', 'Studio', '_space.json'),
-        JSON.stringify({ id: 'sp-studio' }),
-      )
-      const fm = await restoredPommora('<projects>:\n  - sapphire\n<PROJECTS>:\n  - Studio')
-      expect(fm['<Projects>']).toEqual(['sapphire', 'Studio', 'Pommora'])
-      expect(fm).not.toHaveProperty('<projects>')
-      expect(fm).not.toHaveProperty('<PROJECTS>')
+      expect(fm['<projects>']).toEqual(['sapphire'])
+      expect(fm['<Projects>']).toEqual(['Pommora'])
     })
   })
 
@@ -1030,7 +1018,7 @@ describe('a Link value refilled into a trashed copy', () => {
     await refreshTree(root)
   })
 
-  it('fills the key the copy holds, spelled in another case', async () => {
+  it('fills the exact key, leaving another casing the copy holds blank', async () => {
     await settledMutate(
       root,
       { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' },
@@ -1042,8 +1030,8 @@ describe('a Link value refilled into a trashed copy', () => {
     await restore('Alpha.md')
     await restore('Beta.md')
     const fm = splitFrontmatter(await readFile(beta(), 'utf8'))
-    expect(fm.related).toBe('[[Alpha]]')
-    expect(fm).not.toHaveProperty('Related')
+    expect(fm.Related).toBe('[[Alpha]]')
+    expect(fm.related).toBeNull()
   })
 })
 

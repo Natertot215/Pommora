@@ -217,18 +217,32 @@ describe('delete replay', () => {
     expect('$order' in raw).toBe(false)
   })
 
-  it('a create named in another case supersedes the record', async () => {
+  const created = async (root: string, name: string): Promise<boolean> =>
+    (await createProperty(root, { id: '', name, type: 'number' } as PropertyDefinition)).ok
+
+  it('only a create named exactly as the record supersedes it', async () => {
+    const record = { op: 'delete', id: 'prop_gone', name: 'Example' } as const
+    const other = await seedNexus()
+    await writeSchemaJournal(other, record)
+    expect(await created(other, 'example')).toBe(true)
+    expect(await readSchemaJournal(other)).toEqual(record)
+    const same = await seedNexus()
+    await writeSchemaJournal(same, record)
+    expect(await created(same, 'Example')).toBe(true)
+    expect(await readSchemaJournal(same)).toBeNull()
+  })
+
+  it('a record left beside a create in another casing replays its strip, leaving that casing’s holders byte-identical', async () => {
     const root = await seedNexus()
+    await writeFile(join(root, 'Col', 'A.md'), `---\nID: ${PAGE_IDS[0]}\nExample: 1\n---\nbody\n`)
+    await writeFile(join(root, 'Col', 'B.md'), `---\nID: ${PAGE_IDS[1]}\nexample: 2\n---\nbody\n`)
     await writeSchemaJournal(root, { op: 'delete', id: 'prop_gone', name: 'Example' })
-    expect(
-      (
-        await createProperty(root, {
-          id: '',
-          name: 'example',
-          type: 'number',
-        } as PropertyDefinition)
-      ).ok,
-    ).toBe(true)
+    expect(await created(root, 'example')).toBe(true)
+    const before = await page(root, 'B')
+    await openSession(root)
+    await replaySchemaCascade(root)
+    expect(await page(root, 'A')).toBe(`---\nID: ${PAGE_IDS[0]}\n---\nbody\n`)
+    expect(await page(root, 'B')).toBe(before)
     expect(await readSchemaJournal(root)).toBeNull()
   })
 

@@ -156,7 +156,6 @@ The work lands in ten phases in dependency order, removal first: the Space order
   - [x] Task 2A-1 · The YAML and JSON renames move one exact key
   - [x] Task 2A-2 · The case-only skips go, and the rename replay follows its property
   - [x] Review Checkpoint
-- [ ] `[Compaction checkpoint: c/pre-compaction; on the re-prompt, reread §Constraints and c/plan-execution before Phase 2B opens]`
 - [ ] **Phase 2B** — Reads and Writes Land on the Key
   - [ ] Task 2B-1 · The spelling resolution behind reads, writes, and strips leaves
   - [ ] Task 2B-2 · `heldKeys` and `heldKey` leave, and every gate reads the exact key
@@ -173,7 +172,6 @@ The work lands in ten phases in dependency order, removal first: the Space order
   - [ ] Task 4-2 · Every count is its operation's dry run
   - [ ] Task 4-3 · The dialog skips at each caller's count, and notices say Items
   - [ ] Review Checkpoint
-- [ ] `[Compaction checkpoint: c/pre-compaction; on the re-prompt, reread §Constraints and c/plan-execution before Phase 5A's Stop opens]`
 - [ ] **Phase 5A** — Definitions Carry a Label and a Key
   - [ ] `[Stop: Nathan words the six messages, quits Pommora on both Nexuses through Task 5B-4, and gives his word for 5B-4]`
   - [ ] Task 5A-1 · `name` becomes `label` and `key` at every reader and writer
@@ -185,7 +183,6 @@ The work lands in ten phases in dependency order, removal first: the Space order
   - [ ] Task 5B-3 · Option labels and keys are unique and non-blank, Status included
   - [ ] Task 5B-4 · NexusOS committed, the six Trash records deleted, both registries rewritten
   - [ ] Review Checkpoint
-- [ ] `[Compaction checkpoint: c/pre-compaction; on the re-prompt, reread §Constraints and c/plan-execution before Phase 6 opens]`
 - [ ] **Phase 6** — Label and Key: the Journal and Cascades
   - [ ] Task 6-1 · The caches leave the configuration pass
   - [ ] Task 6-2 · One key map edits every list; files by key, configuration by label
@@ -204,7 +201,6 @@ The work lands in ten phases in dependency order, removal first: the Space order
   - [ ] Task 7B-3 · Adoption follows the Value Format
   - [ ] Task 7B-4 · The two rows and the counted confirmation
   - [ ] Review Checkpoint
-- [ ] `[Compaction checkpoint: c/pre-compaction; on the re-prompt, reread §Constraints and c/plan-execution before Phase 8 opens]`
 - [ ] **Phase 8** — The Restore Re-Spell
   - [ ] Task 8-1 · Keys and words re-spell in the restore scrub
   - [ ] Review Checkpoint
@@ -822,7 +818,7 @@ The work lands in ten phases in dependency order, removal first: the Space order
 - [ ] `propertyValue.ts`: delete `heldPropertyValue`; its five callers read the key itself (`raw[def.name]`, `values[def.name]`, `fields[def.name]`, `row.frontmatter[def.name]`), each import following; `applyValueAtRoot` lands under `def.name`; the `holdsList`, `heldValue`, and `writeTarget` imports go.
 - [ ] `pageValue.ts`: `valueEditRewrite` edits `def.name` through `editHeldList(raw, def.name, edit)`, over `Pick<PropertyDefinition, 'name'>`; the `holdsList` import goes.
 - [ ] `pageFile.ts`: `mergeInto` deletes the spelling step (`:171-177`) and spells each written key from its own held node; `nodeSpelledAs`'s doc says "the `held` nodes" for "the `held` spellings of its key"; the `spellings` import goes.
-- [ ] Sibling sweep: `assignment.ts` (`byKey` at `:41,45`; `refillValues` lands under `def.name`); `holdings.ts:140-141` (`isBlankRaw(next[name])`, `landValue(next, name, value)`, its doc losing "landing where `writeTarget` places it"); `spend.ts:299` (`landValue(raw, key, joinValues(raw[key], titles))`); `contextWrite.ts:103-105` (`listOf(raw[backKey] ?? [])`, its comment's "every spelling's members" clause becoming "its other members"); `contextCascade.ts:46,161` (`editHeldList(raw, key, edit)`); `schema.ts:29-36` (`byKey`, `names.get(key)`, the doc's "One folded lookup" becoming "One lookup", the `foldKey` import going); `cascade.ts:80,87` (`byKey`, `defs.get(key)`, the `foldKey` import going); `restoreScrub.ts:35,41,47` (`byKey`, `links.has(k)`, `links.get(key)`, the `foldKey` import going); `keyHolders.ts:59` (`Object.hasOwn`, the `heldKey` import going); `deleteProperty.ts:62` (`Object.hasOwn`) and `:119` (`(r) => stripKeys(r, [key])`, typed `Rewrite`), its `heldKey`/`stripHeld` import becoming `stripKeys`; `removeProperty.ts:55` likewise; `replaySchemaCascade.ts` deletes `named`, the delete arm comparing `journal.name` inline as Task 2A-2's rename arm already does, and the `normalizeTitle` import goes; `registryProperty.ts:68-76`'s create supersede compares `journal.name === landed`, and the `normalizeTitle` import goes (its last reader).
+- [ ] Sibling sweep: `assignment.ts` (`byKey` at `:41,45`; `refillValues` lands under `def.name`); `holdings.ts:140-141` (`isBlankRaw(next[name])`, `landValue(next, name, value)`, its doc losing "landing where `writeTarget` places it"); `spend.ts:299` (`landValue(raw, key, joinValues(raw[key], titles))`); `contextWrite.ts:103-105` (`listOf(raw[backKey] ?? [])`, its comment's "every spelling's members" clause becoming "its other members"); `contextCascade.ts:46,161` (`editHeldList(raw, key, edit)`); `schema.ts:29-36` (`byKey`, `names.get(key)`, the doc's "One folded lookup" becoming "One lookup", the `foldKey` import going); `cascade.ts:80,87` (`byKey`, `defs.get(key)`, the `foldKey` import going); `restoreScrub.ts:35,41,47` (`byKey`, `links.has(k)`, `links.get(key)`, the `foldKey` import going) and `:74-75` (the reconcile skips `inTransitKey` itself, the one key `skip` now takes, and its `heldKeys` import goes); `keyHolders.ts:59` (`Object.hasOwn`, the `heldKey` import going); `deleteProperty.ts:62` (`Object.hasOwn`) and `:119` (`(r) => stripKeys(r, [key])`, typed `Rewrite`), its `heldKey`/`stripHeld` import becoming `stripKeys`; `removeProperty.ts:55` likewise; `replaySchemaCascade.ts` deletes `named`, the delete arm comparing `journal.name` inline as Task 2A-2's rename arm already does, and the `normalizeTitle` import goes; `registryProperty.ts:68-76`'s create supersede compares `journal.name === landed`, and the `normalizeTitle` import goes (its last reader).
 
 **AFTER**
 
@@ -890,6 +886,9 @@ The work lands in ten phases in dependency order, removal first: the Space order
 +  const list = raw[key] === undefined ? null : edit(listOf(raw[key]))
 +  return list && landValue(raw, key, list.length ? list : undefined)
 +}
+@@ joinValues doc @@
+-/** Two values as one list: `keep`'s members, then each of `from`'s that matches none of them by `memberKey`; a single value reads as a list of one. Every join of two spellings, and a `'merge'` rename, uses it. */
++/** Two values as one list: `keep`'s members, then each of `from`'s that matches none of them by `memberKey`; a single value reads as a list of one. */
 @@ stripHeld @@
 -/** Strips every spelling of `name` from a root; null when it holds none. */
 -export const stripHeld =
@@ -1257,6 +1256,12 @@ The work lands in ten phases in dependency order, removal first: the Space order
 -import { foldKey } from '../Paths/caseFold'
 -import { byFoldedName } from '../Properties/properties'
 +import { byKey } from '../Properties/properties'
+-import { heldKeys, stripKeys } from '../Files/heldKeys'
++import { stripKeys } from '../Files/heldKeys'
+@@ sidecars @@
+-      const skip = inTransitKey === undefined ? [] : heldKeys(raw, inTransitKey)
+-      const r = reconcileGovernedRoot(raw, spaceWorld, {}, skip)
++      const r = reconcileGovernedRoot(raw, spaceWorld, {}, inTransitKey)
 @@ scrubReturning @@
 -  const links = byFoldedName(tree.config.registry.filter((d) => d.type === 'link'))
 +  const links = byKey(tree.config.registry.filter((d) => d.type === 'link'))
@@ -1274,6 +1279,8 @@ The work lands in ten phases in dependency order, removal first: the Space order
 -import { heldPropertyValue, isBlankRaw } from './propertyValue'
 +import { isBlankRaw } from './propertyValue'
 @@ keyedHolders @@
+-  def: Pick<PropertyDefinition, 'name' | 'type'>,
++  def: Pick<PropertyDefinition, 'name'>,
 -    if (heldKey(fields, def.name) === undefined) continue
 +    if (!Object.hasOwn(fields, def.name)) continue
    …
@@ -1371,7 +1378,7 @@ The work lands in ten phases in dependency order, removal first: the Space order
 - [ ] Write and watch fail: `heldKeys.test.ts:14-20` goes and its import drops `heldKey`. `caseFold.test.ts:85-91` goes with `spellings`' import, and a new `atomicWrite.test.ts` case pins `heldName`: in a folder holding `TAGS.md`, `heldName(join(dir, 'Tags.md'))` and `heldName(join(dir, 'TAGS.md'))` answer `'TAGS.md'`, and a missing name answers null. `PropertyPanel.test.tsx:137` inverts (a page holding `stage` shows no Stage row). `matrixInput.test.ts:172` inverts (the Space holding another spelling abstains: `['a1', 'b1']`). `useViewHost.test.tsx:525` inverts (an override holding `status` stays `{ id: 'p2', status: ['Done'] }` through a rename of `Status`). `contextCascade.test.ts:229` inverts (unlinking `Projects` captures `{ kind: 'page', values: ['Sapphire'] }` and leaves `other()` holding `<projects>: ['Pommora']`). `settle.test.ts`: a new case beside `:1047`: an outside `properties.json` edit re-casing `tags` to `TAGS`, with no file changed, calls `registerHeldOptions`.
 - [ ] `heldKeys.ts`: delete `heldKeys`, `heldKey`, and the `spellings` import.
 - [ ] `caseFold.ts`: delete `spellings`; `atomicWrite.ts`: `heldName` answers the exact name when the folder holds it, else the first name that folds to it, the `spellings` import going (`spellings` had no other reader, so it folds into its one caller rather than moving).
-- [ ] Sibling sweep, each reading `Object.hasOwn(root, key)` or the key itself: `PropertyPanel.tsx:215` and its import; `matrixInput.ts:98` and its import; `cascade.ts:125` pushes every named entry (one key names one definition) and its `heldKey` import goes; `setProperty.ts:26` and its import; `useContainerValues.ts:16-27`; `contextCascade.ts:139-145` (`unlinkContextKey`'s strip reads and captures `raw[key]` alone); `restoreScrub.ts:74-75` (the reconcile skips `inTransitKey` itself), its `heldKeys` import going.
+- [ ] Sibling sweep, each reading `Object.hasOwn(root, key)` or the key itself: `PropertyPanel.tsx:215` and its import; `matrixInput.ts:98` and its import; `cascade.ts:125` pushes every named entry (one key names one definition) and its `heldKey` import goes; `setProperty.ts:26` and its import; `useContainerValues.ts:16-27`; `contextCascade.ts:139-145` (`unlinkContextKey`'s strip reads and captures `raw[key]` alone).
 - [ ] `fileEvents.ts:530`: `p.name !== d.name`; the `foldKey` import goes (its one reader).
 
 **AFTER**
@@ -1484,16 +1491,6 @@ The work lands in ten phases in dependency order, removal first: the Space order
 +    captured.push(captureRoot(raw, file, scalarMembers(raw[key])))
 +    return stripKeys(raw, [key])
    }
-```
-
-```Core/Trash/restoreScrub.ts diff
-@@ imports @@
--import { heldKeys, stripKeys } from '../Files/heldKeys'
-+import { stripKeys } from '../Files/heldKeys'
-@@ sidecars @@
--      const skip = inTransitKey === undefined ? [] : heldKeys(raw, inTransitKey)
--      const r = reconcileGovernedRoot(raw, spaceWorld, {}, skip)
-+      const r = reconcileGovernedRoot(raw, spaceWorld, {}, inTransitKey)
 ```
 
 ```Core/Nexus/fileEvents.ts diff

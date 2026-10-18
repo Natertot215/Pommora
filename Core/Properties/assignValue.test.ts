@@ -44,22 +44,6 @@ beforeEach(() => {
 })
 
 describe('assignValue', () => {
-  it('patches the value under the name in place of two or more spellings', () => {
-    row = rowOf({ id: 'page1', TAG: ['red'], tag: ['red'] })
-    assignValue(
-      writer,
-      row,
-      { id: 'prop_tag', kind: 'property' },
-      { kind: 'select', value: 'blue' },
-    )
-    expect(apply).toHaveBeenCalledWith(
-      'page1',
-      { id: 'page1', Tag: ['blue'] },
-      expect.anything(),
-      undefined,
-    )
-  })
-
   it('patches the frontmatter and mutates the property', () => {
     assignValue(
       writer,
