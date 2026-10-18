@@ -45,7 +45,9 @@ const upper = (w: string): string => w.toUpperCase()
 
 const capital = (w: string): string => {
   const [first = '', ...rest] = Array.from(w.toLowerCase())
-  return first.toUpperCase() + rest.join('')
+  // A letter that uppercases to two, as `ﬁ` to `FI`, keeps only the first capital.
+  const [head = '', ...tail] = Array.from(first.toUpperCase())
+  return head + tail.join('').toLowerCase() + rest.join('')
 }
 
 const joined =
