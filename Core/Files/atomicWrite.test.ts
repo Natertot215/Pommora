@@ -8,6 +8,7 @@ import {
   atomicWriteBinary,
   atomicWriteFile,
   editJsonStrict,
+  heldName,
   landBytes,
   rewritePageSerialized,
   writeJson,
@@ -321,6 +322,15 @@ describe('relocate', () => {
     const p = join(dir, 'ghost.md')
     const bundle = await mintBundle(dir, p)
     await expect(relocate(p, join(bundle, 'ghost.md'))).rejects.toThrow()
+  })
+})
+
+describe('heldName', () => {
+  it('answers the exact name the folder holds, else the first that folds to it, else null', async () => {
+    await atomicWriteFile(join(dir, 'TAGS.md'), '')
+    expect(await heldName(join(dir, 'Tags.md'))).toBe('TAGS.md')
+    expect(await heldName(join(dir, 'TAGS.md'))).toBe('TAGS.md')
+    expect(await heldName(join(dir, 'Other.md'))).toBeNull()
   })
 })
 

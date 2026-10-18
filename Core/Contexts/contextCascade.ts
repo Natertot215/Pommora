@@ -20,7 +20,7 @@ import {
   unsweptLine,
 } from '../Properties/governedSweep'
 import { withoutOrderId } from './spaceSidecar'
-import { editHeldList, heldKeys, rekeyHeld, stripKeys, type KeyCollision } from '../Files/heldKeys'
+import { editHeldList, rekeyHeld, stripKeys, type KeyCollision } from '../Files/heldKeys'
 import { editList, namesValue, stripList } from '../Properties/pageValue'
 import { contextWorldOf } from './contextResolve'
 import { liveTreeOf } from '../Nexus/liveTree'
@@ -128,11 +128,9 @@ export async function unlinkContextKey(
   const key = contextKey(contextTitle)
   const captured: SweepCapture[] = []
   const strip: Rewrite = (raw, file) => {
-    const keys = heldKeys(raw, key)
-    if (!keys.length) return null
-    const values = keys.flatMap((k) => scalarMembers(raw[k]))
-    captured.push(captureRoot(raw, file, values))
-    return stripKeys(raw, keys)
+    if (!Object.hasOwn(raw, key)) return null
+    captured.push(captureRoot(raw, file, scalarMembers(raw[key])))
+    return stripKeys(raw, [key])
   }
   const rewrite = contextId === undefined ? strip : withoutOrderId(strip, contextId)
   const swept = await unlinkMembers(root, { key }, rewrite, skipUnder)

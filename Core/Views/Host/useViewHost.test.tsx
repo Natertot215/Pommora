@@ -522,7 +522,7 @@ describe('the values epoch', () => {
     expect(vals?.effectiveValues.p2?.frontmatter).toEqual({ id: 'p2', State: ['Done'] })
   })
 
-  it('a rename re-keys an override holding another casing', async () => {
+  it('a rename leaves an override holding another casing of the old key as it is', async () => {
     await mountValues()
     act(() =>
       vals?.setValueOverride({
@@ -531,7 +531,7 @@ describe('the values epoch', () => {
     )
     act(() => useSession.getState().bumpValuesEpoch('Status', 'State'))
     await act(async () => {})
-    expect(vals?.effectiveValues.p2?.frontmatter).toEqual({ id: 'p2', State: ['Done'] })
+    expect(vals?.effectiveValues.p2?.frontmatter).toEqual({ id: 'p2', status: ['Done'] })
   })
 })
 

@@ -169,9 +169,9 @@ describe('matrixVisible over Spaces', () => {
     expect(spacesVisible(all({ property_id: 'prop_status', op: 'is_not_empty' }))).toEqual(['a1'])
   })
 
-  it('answers a rule on a property for a Space holding another spelling of its name', () => {
+  it('abstains on a rule for a Space holding another casing of the property’s key', () => {
     const rule = all({ property_id: 'prop_status', op: 'is', value: 'Active' })
-    expect(spacesVisible(rule, { status: 'Done' })).toEqual(['b1'])
+    expect(spacesVisible(rule, { status: 'Done' })).toEqual(['a1', 'b1'])
   })
 
   it('keeps a Space under its own Context and the Spaces linked to it', () => {

@@ -25,7 +25,6 @@ import type { Changed, FileEvent, Moved } from '../Files/writeEcho'
 import type { ContainerKind } from './entities'
 import type { Json } from '../Files/stableJson'
 import { isContentName } from '../Files/walk'
-import { foldKey } from '../Paths/caseFold'
 import {
   deindexPath,
   type HeadingRenameSeen,
@@ -525,10 +524,7 @@ export function oweNamedKeys(owed: Owed, was: PropertyDefinition[], tree: NexusT
     tree.config.registry
       .filter((d) => {
         const p = prior[d.id]
-        return (
-          d.type === 'multiSelect' &&
-          (p?.type !== 'multiSelect' || foldKey(p.name) !== foldKey(d.name))
-        )
+        return d.type === 'multiSelect' && (p?.type !== 'multiSelect' || p.name !== d.name)
       })
       .map((d) => d.id),
   )

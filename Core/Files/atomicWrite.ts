@@ -5,7 +5,7 @@ import { forgetParse } from './walkCache'
 import { noteOwn, recordWrite, reportRename } from './writeEcho'
 import { machine } from '../Platform/machine'
 import { basename, dirname, join } from '../Paths/posix'
-import { foldKey, spellings } from '../Paths/caseFold'
+import { foldKey } from '../Paths/caseFold'
 import { newId } from '../Nexus/ids'
 import { nexusConfig } from '../Paths/paths'
 import { NEXUS_CONFIG_FILES, type NexusConfigFile } from '../Paths/nexusPaths'
@@ -339,7 +339,9 @@ export async function pathExists(p: string): Promise<boolean> {
 
 export async function heldName(abs: string): Promise<string | null> {
   const names = (await machine().readDir(dirname(abs))).map((e) => e.name)
-  return spellings(names, basename(abs))[0] ?? null
+  const name = basename(abs)
+  const fold = foldKey(name)
+  return names.includes(name) ? name : (names.find((n) => foldKey(n) === fold) ?? null)
 }
 
 export async function recase(root: string, rel: string): Promise<void> {

@@ -128,7 +128,7 @@ const regTitle = async (id: string): Promise<string | undefined> => {
 const fmOf = async (file: string): Promise<Record<string, unknown>> =>
   splitFrontmatter(await readFile(file, 'utf8')) as Record<string, unknown>
 
-describe('case folding on renames', () => {
+describe('renames and casing', () => {
   it('a case-only Context rename of itself passes; a case-variant of ANOTHER fails', async () => {
     expect((await renameContextOp(root, 'ctx_projects', 'classes')).ok).toBe(false)
     const self = await renameContextOp(root, 'ctx_projects', 'PROJECTS')
@@ -258,17 +258,14 @@ describe('case folding on renames', () => {
     expect((await readJsonAt(csSidecar()))['<projects>']).toEqual(['Pommora'])
   })
 
-  it('unlinking a Context strips every spelling of its key and captures their values', async () => {
+  it('unlinking a Context strips and captures its exact key, leaving another casing in place', async () => {
     await writeFile(
       other(),
       '---\nid: p2\n<projects>:\n  - Pommora\n<Projects>: Sapphire\n---\nbody',
     )
     const r = await unlinkContextKey(root, 'Projects', 'ctx_projects')
-    expect(r.ok && r.value.captured).toContainEqual({
-      kind: 'page',
-      values: ['Sapphire', 'Pommora'],
-    })
-    expect(await fmOf(other())).toEqual({ id: 'p2' })
+    expect(r.ok && r.value.captured).toContainEqual({ kind: 'page', values: ['Sapphire'] })
+    expect(await fmOf(other())).toEqual({ id: 'p2', '<projects>': ['Pommora'] })
   })
 
   it('a retry whose old title another Context holds in another case answers null and sweeps nothing', async () => {

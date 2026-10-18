@@ -61,7 +61,6 @@ import { showConnectionMenu } from '../Interface/Menus/connectionMenuActions'
 import { valueMenuTarget } from './Cells/valueMenuTarget'
 import type { ConnEditAction, LinkAction } from '../Actions/connectionMenu'
 import * as s from './property-panel.css'
-import { heldKey } from '../Files/heldKeys'
 import { AliasesRow } from '../Pages/AliasesRow'
 
 type Editing = { id: string; mode: 'picker' | 'editor' | 'popover'; seat?: ConnEditAction } | null
@@ -209,9 +208,7 @@ export function PropertyPanel({
   const contextFields: Field[] = contextPaneTargets(tree).map((t) => ({ ...t, def: null }))
   const schemaFields: Field[] = schemaTargets(schema, () => true)
   const held = (f: Field): boolean =>
-    f.def
-      ? fm !== null && heldKey(fm, f.def.name) !== undefined
-      : (contextValues?.[f.id]?.length ?? 0) > 0
+    f.def ? fm !== null && Object.hasOwn(fm, f.def.name) : (contextValues?.[f.id]?.length ?? 0) > 0
   const isShown = (f: Field): boolean => held(f) || revealed.has(f.id)
   const nexusWide = resolveRowOrder(contextFields, (f) => f.id, tree?.config.order.contexts)
   const fields: Record<GroupKey, Field[]> = {

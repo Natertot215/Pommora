@@ -6,7 +6,6 @@ import {
   matchScore,
   normalizeTitle,
   rankMatches,
-  spellings,
 } from './caseFold'
 
 const titled = (...titles: string[]) => titles.map((title) => ({ title }))
@@ -79,13 +78,5 @@ describe('rankMatches', () => {
     expect(rankMatches(titled('Alpha', 'Beta'), 'alp', keyed).map((i) => i.title)).toEqual([
       'Alpha',
     ])
-  })
-})
-
-describe('spellings', () => {
-  it('puts the exact spelling first, then every other that folds to it, in order', () => {
-    expect(spellings(['tags', 'Tags', 'TAGS'], 'Tags')).toEqual(['Tags', 'tags', 'TAGS'])
-    expect(spellings(['tags', 'TAGS'], 'Tags')).toEqual(['tags', 'TAGS'])
-    expect(spellings(['other'], 'Tags')).toEqual([])
   })
 })

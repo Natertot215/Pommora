@@ -1,15 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { editHeldList, heldKey, joinValues, type KeyCollision, rekeyHeld } from './heldKeys'
+import { editHeldList, joinValues, type KeyCollision, rekeyHeld } from './heldKeys'
 import { assembleEnvelope, renameFrontmatterKey, splitFrontmatter } from './pageFile'
 import { namesValue, stripList } from '../Properties/pageValue'
-
-describe('heldKey', () => {
-  it('answers the exact spelling before anything folds, else the first that folds', () => {
-    expect(heldKey({ tags: 1, Tags: 2 }, 'Tags')).toBe('Tags')
-    expect(heldKey({ STATUS: 1, status: 2 }, 'Status')).toBe('STATUS')
-    expect(heldKey({}, 'Status')).toBeUndefined()
-  })
-})
 
 describe('joinValues', () => {
   it('keeps the first value and adds each member of the second that matches none of it: a scalar by its folded title, any other member only by itself', () => {

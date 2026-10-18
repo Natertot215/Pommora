@@ -139,10 +139,10 @@ describe('PropertyPanel', () => {
     expect(text()).not.toContain('Note')
   })
 
-  it('a property held under another spelling shows its row', async () => {
+  it('a page holding another casing of a property’s key shows no row for it', async () => {
     cachePageDetail(detail({ path: 'Col/Page.md', frontmatter: { stage: 'Alpha' } }))
     await renderPanel(<PropertyPanel subject={PAGE} host="side-pane" />)
-    expect(text()).toContain('Stage')
+    expect(text()).not.toContain('Stage')
   })
 
   it('a row removed through its menu disappears', async () => {
