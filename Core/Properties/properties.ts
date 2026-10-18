@@ -254,13 +254,15 @@ export function isReservedPropertyId(id: string): boolean {
 
 export const RESERVED_NAME_PREFIX = '$'
 
+export const itemCount = (n: number): string => `${n} ${n === 1 ? 'Item' : 'Items'}`
+
 export const KEY_REFUSAL = {
   empty: 'A name cannot be empty.',
   reservedPrefix: `A name cannot start with ${RESERVED_NAME_PREFIX} or <.`,
   reserved: (name: string) => `"${name}" is a key Pommora manages.`,
   duplicate: (name: string) => `A property named "${name}" already exists.`,
   held: (from: string, to: string, n: number) =>
-    `${n} ${n === 1 ? 'file holds' : 'files hold'} both "${from}" and "${to}".`,
+    `${itemCount(n)} ${n === 1 ? 'holds' : 'hold'} both "${from}" and "${to}".`,
 } as const
 
 /** An option without its own color wears its group's. */
