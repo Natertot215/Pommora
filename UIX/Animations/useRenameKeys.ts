@@ -5,7 +5,7 @@ export function useRenameKeys(
   values: readonly string[],
   holding?: string,
 ): {
-  keyOf: (value: string) => string
+  rowKeyOf: (value: string) => string
   land: (from: string, to: string, write: () => Promise<boolean>) => Promise<boolean>
   mint: () => string
 } {
@@ -16,14 +16,14 @@ export function useRenameKeys(
     if (present.has(value)) entry.seen = true
     else if (entry.seen && value !== holding) renamed.current.delete(value)
   }
-  const keyOf = (value: string): string => {
+  const rowKeyOf = (value: string): string => {
     const key = renamed.current.get(value)?.key
     return key !== undefined && !present.has(key) ? key : value
   }
   return {
-    keyOf,
+    rowKeyOf,
     land: (from, to, write) => {
-      if (!present.has(to)) renamed.current.set(to, { key: keyOf(from), seen: false })
+      if (!present.has(to)) renamed.current.set(to, { key: rowKeyOf(from), seen: false })
       const landed = write()
       void landed.then((ok) => {
         if (!ok && !renamed.current.get(to)?.seen) renamed.current.delete(to)

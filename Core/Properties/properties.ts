@@ -306,9 +306,6 @@ export const optionLabels = (
   def: Pick<PropertyDefinition, 'type' | 'status_groups' | 'select_options'>,
 ): string[] => optionsOf(def).map((o) => o.label)
 
-export const findOption = (def: PropertyDefinition | undefined, label: string) =>
-  optionsOf(def).find((o) => o.label === label)
-
 export const SELECT_GROUP = 'select'
 
 export function optionGroupsOf(

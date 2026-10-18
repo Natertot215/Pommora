@@ -1,6 +1,5 @@
 import {
   byKey,
-  firstPerTitle,
   isReservedPropertyId,
   KEY_REFUSAL,
   optionGroupsOf,
@@ -8,6 +7,7 @@ import {
   PROPERTY_TYPES,
   type PropertyDefinition,
   RESERVED_NAME_PREFIX,
+  type StatusGroup,
   withOptionGroups,
 } from './properties'
 import { fail, ok, type Result } from '../Contract/result'
@@ -74,22 +74,27 @@ export function validateDefinition(
   return ok(null)
 }
 
-/** `def` holding each option label and each key once, the first of any that fold alike, and none blank; a definition already so is answered as it is. */
+/** `groups` holding each option label and each key once, the first of any that fold alike, and none blank. */
+export function uniqueOptionGroups(groups: StatusGroup[]): StatusGroup[] {
+  const labels = new Set<string>()
+  const keys = new Set<string>()
+  const keeps = (label: string, key: string): boolean => {
+    if (!label || !key || labels.has(label) || keys.has(key)) return false
+    labels.add(label)
+    keys.add(key)
+    return true
+  }
+  return groups.map((g) => ({
+    ...g,
+    options: g.options.filter((o) => keeps(normalizeTitle(o.label), normalizeTitle(o.key))),
+  }))
+}
+
+/** `def` with its options made unique as `uniqueOptionGroups` does; a definition already so is answered as it is. */
 export function withUniqueOptions(def: PropertyDefinition): PropertyDefinition {
   const groups = optionGroupsOf(def)
-  const options = groups.flatMap((g) => g.options)
-  if (validateOptionValues(options).ok) return def
-  const named = options.filter(
-    (o) => normalizeTitle(o.label) !== '' && normalizeTitle(o.key) !== '',
-  )
-  const first = new Set(
-    firstPerTitle(firstPerTitle(named, (o) => o.label).values(), (o) => o.key).values(),
-  )
-  const kept = groups.map((g) => ({
-    ...g,
-    options: g.options.filter((o) => first.has(o)),
-  }))
-  return withOptionGroups(def, kept)
+  if (validateOptionValues(groups.flatMap((g) => g.options)).ok) return def
+  return withOptionGroups(def, uniqueOptionGroups(groups))
 }
 
 /** No minimum count — a Select may hold zero options. Enforced at create AND on every option edit; labels and keys each compare case-folded. */

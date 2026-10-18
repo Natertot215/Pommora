@@ -1,6 +1,7 @@
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import type { ColumnStyle } from '../../Properties/columnStyles'
-import { findOption, type PropertyDefinition } from '../../Properties/properties'
+import type { PropertyDefinition } from '../../Properties/properties'
+import { findOption } from '../../Properties/propertyValue'
 import { isEmptyBand, type ResolvedGroup } from '../viewRow'
 import { granularityOf, type SavedView, type SubGroupConfig, viewOption } from '../views'
 import type { StepPart } from '@pommora/uix/Interactions/keyboard'

@@ -241,6 +241,21 @@ describe('withUniqueOptions', () => {
     ).toEqual([{ key: 'x', label: 'A' }])
   })
 
+  it('keeps an option whose key clashed only with one already dropped', () => {
+    expect(
+      withUniqueOptions(
+        select([
+          { key: '1', label: 'x' },
+          { key: '1', label: 'y' },
+          { key: '2', label: 'y' },
+        ]),
+      ).select_options,
+    ).toEqual([
+      { key: '1', label: 'x' },
+      { key: '2', label: 'y' },
+    ])
+  })
+
   it('drops an option with a blank key', () => {
     expect(
       withUniqueOptions(

@@ -1,12 +1,8 @@
 import { useMemo } from 'react'
 import type { Result } from '../../Contract/result'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
-import {
-  groupable,
-  type PropertyDefinition,
-  type PropertyType,
-  optionsOf,
-} from '../../Properties/properties'
+import { groupable, type PropertyDefinition, type PropertyType } from '../../Properties/properties'
+import { findOption } from '../../Properties/propertyValue'
 import {
   type DateGranularity,
   type GroupConfig,
@@ -372,9 +368,8 @@ function LocationHierarchy({
 
   const subChips = useMemo(() => {
     if (!sub || !subDef) return []
-    const byValue = new Map(optionsOf(subDef).map((o) => [o.label, o]))
     return liveBucketOrder(sub, subDef, []).flatMap((v) => {
-      const o = byValue.get(v)
+      const o = findOption(subDef, v)
       return o ? [o] : []
     })
   }, [sub, subDef])

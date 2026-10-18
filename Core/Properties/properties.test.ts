@@ -7,7 +7,6 @@ import {
   propertyType,
   isReservedPropertyId,
   defaultStatusSeed,
-  findOption,
   groupable,
   optionsOf,
   pickKindOf,
@@ -295,22 +294,6 @@ describe('an option label', () => {
     expect(
       withOptionGroups(def, [{ id: SELECT_GROUP, label: '', color: '', options }]).select_options,
     ).toEqual([{ key: 'a', label: 'A' }])
-  })
-})
-
-describe('findOption', () => {
-  const tag: PropertyDefinition = {
-    id: 'prop_tag',
-    label: 'Tag',
-    key: 'Tag',
-    type: 'select',
-    select_options: [{ key: 'opt_a', label: 'opt_a', color: 'green' }],
-  }
-  it('returns the option with its color (the chip tint)', () => {
-    expect(findOption(tag, 'opt_a')).toEqual({ key: 'opt_a', label: 'opt_a', color: 'green' })
-  })
-  it('returns undefined for an unknown value', () => {
-    expect(findOption(tag, 'nope')).toBeUndefined()
   })
 })
 

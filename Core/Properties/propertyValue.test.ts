@@ -4,6 +4,7 @@ import {
   applyValueAtRoot,
   decodeValue,
   encodeValue,
+  findOption,
   writtenSpelling,
   isBlankValue,
   keepingForeignWords,
@@ -539,5 +540,21 @@ describe('keepingForeignWords', () => {
 
   it('keeps a held word no option’s key names after the written keys', () => {
     expect(keepingForeignWords(keyedMulti, ['done'], ['Doing'])).toEqual(['done', 'Doing'])
+  })
+})
+
+describe('findOption', () => {
+  const tag: PropertyDefinition = {
+    id: 'prop_tag',
+    label: 'Tag',
+    key: 'Tag',
+    type: 'select',
+    select_options: [{ key: 'opt_a', label: 'opt_a', color: 'green' }],
+  }
+  it('returns the option with its color (the chip tint)', () => {
+    expect(findOption(tag, 'opt_a')).toEqual({ key: 'opt_a', label: 'opt_a', color: 'green' })
+  })
+  it('returns undefined for an unknown label', () => {
+    expect(findOption(tag, 'nope')).toBeUndefined()
   })
 })

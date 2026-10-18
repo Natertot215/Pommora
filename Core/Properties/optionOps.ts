@@ -1,11 +1,11 @@
 import { mutateRegistry, readRegistry, NO_PROPERTY, serializeSchemaOp } from './propertiesRegistry'
-import { validateOptionValues, withUniqueOptions } from './schema'
+import { uniqueOptionGroups, validateOptionValues } from './schema'
 import { collectionFolders } from './assignment'
 import { keyHolderFiles } from './keyHolders'
 import { sweepCount, sweepGovernedRoots, type SweepPlan, unsweptLine } from './governedSweep'
 import { namesValue, valueEditRewrite, type ValueEdit } from './pageValue'
 import { errText, ok, fail, fault, type Result } from '../Contract/result'
-import { unregisteredMembers } from './propertyValue'
+import { findOption, unregisteredMembers } from './propertyValue'
 import {
   addOption,
   applyOptionEdit,
@@ -13,7 +13,6 @@ import {
   type OptionEdit,
 } from './optionModel'
 import {
-  findOption,
   labelled,
   optionGroupsOf,
   optionsOf,
@@ -55,8 +54,7 @@ function editStoredOptions(
 ): PropertyDefinition {
   const raw = { ...(stored as PropertyDefinition), type: def.type }
   const named = optionGroupsOf(raw).map((g) => ({ ...g, options: g.options.map(labelled) }))
-  const unique = withUniqueOptions(withOptionGroups(raw, named))
-  return withOptionGroups(def, edit(optionGroupsOf(unique)))
+  return withOptionGroups(def, edit(uniqueOptionGroups(named)))
 }
 
 function admitOptionEdit(def: PropertyDefinition, e: OptionEdit): Result<null> {

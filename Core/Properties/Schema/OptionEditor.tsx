@@ -96,7 +96,7 @@ export function OptionEditor({
             {...(g.options.length === 0 ? ghostAnchorProps(ghostApi, g.id) : {})}
           >
             {groupOptions(g).map((o, i) => (
-              <Fragment key={edit.keyOf(o.label)}>
+              <Fragment key={edit.rowKeyOf(o.label)}>
                 <Reveal open enterOnMount={edit.entering(o.label)} fill>
                   <OptionSlot
                     option={o}
