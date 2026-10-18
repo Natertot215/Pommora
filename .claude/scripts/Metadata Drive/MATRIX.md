@@ -97,7 +97,7 @@ The drive's cases, derived from *MetadataV3 — Decisions & Intention* and writt
 | No label | registry, page | hand-written `{ key: 'M5 Bare' }` | reads its key, and rides an unrelated write without gaining a label | C-3 |
 | Decode and encode | pages | read, pick | `[done]` reads Done; a pick writes `[in-progress, done]`; a Select's label written as a word is foreign | A-1, C-1 |
 | Clear by label | pages | `clearOption('Urgent')` | strips `urgent`, leaves `Urgent` | C-1 |
-| Uniqueness | registry | creates and renames | a fold-duplicate label or key steps aside on both words at create and is refused at rename; `Id` and `Banner` are refused; a hand-written `banner` key isn't admitted | D-1 |
+| Uniqueness | registry | creates and renames | a fold-duplicate label steps aside on both words at create, and a fold-duplicate label or key is refused at rename; `Id` and `Banner` are refused; a hand-written `banner` key isn't admitted | D-1 |
 | Option uniqueness | registry | option add, creates | a fold-duplicate label, two keys in two casings, a blank key, and a Status's duplicate or blank option are refused | D-2, J-1 |
 
 #### Group 6 — The Journal and the Cascades

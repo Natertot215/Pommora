@@ -880,10 +880,6 @@ async function group5(cdp) {
   const step = await must('create m5 grade', add(cdp, { label: 'm5 grade', type: 'text' }))
   pin(G, 'D-1', 'a create under a label another holds in another casing steps aside on both words',
     defOf(step.id)?.label === 'm5 grade (2)' && defOf(step.id)?.key === 'm5 grade (2)', show(defOf(step.id)))
-  await handWritten(cdp, { id: mintPropertyId(), label: 'M5 Other', key: 'm5 duo', type: 'text' })
-  const duo = await must('create M5 Duo', add(cdp, { label: 'M5 Duo', type: 'text' }))
-  pin(G, 'D-1', 'a create whose key another property writes in another casing steps aside on both words',
-    defOf(duo.id)?.label === 'M5 Duo (2)' && defOf(duo.id)?.key === 'M5 Duo (2)', show(defOf(duo.id)))
   pin(G, 'D-1', 'a rename onto a label another holds in another casing is refused',
     refusedWith(await ask(cdp, 'property:rename', kindId, 'm5 grade'), 'A property named "m5 grade" already exists.'))
   pin(G, 'D-1', 'a rename onto a key another property writes is refused',

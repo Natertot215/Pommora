@@ -432,11 +432,19 @@ export function against(path) {
 // ── The run ─────────────────────────────────────────────────────────────────
 
 /** Kills every Electron a run left behind: the helpers carry the run's temp dir on their command line, and the main is a helper's parent. */
+// A stray is an earlier drive's Electron: its helpers carry the drive's userData, and their parent is its main. Only a process whose executable is Electron's is read, so a shell or an agent whose arguments merely name the folder is never touched.
 function sweepStrays() {
-  const rows = execFileSync('ps', ['-A', '-o', 'pid=,ppid=,command='], { encoding: 'utf8' }).split('\n').filter((l) => l.includes('pommora-drive-'))
-  for (const row of rows) {
-    const [pid, ppid] = row.trim().split(/\s+/, 2).map(Number)
-    for (const p of ppid > 1 ? [pid, ppid] : [pid]) if (p !== process.pid) try { process.kill(p, 'SIGKILL') } catch {}
+  const ps = (fields) => execFileSync('ps', ['-A', '-o', fields], { encoding: 'utf8' }).split('\n')
+  const parent = new Map()
+  for (const row of ps('pid=,ppid=,comm=')) {
+    const [, pid, ppid, exe] = row.trim().match(/^(\d+)\s+(\d+)\s+(.*)$/) ?? []
+    if (exe?.includes('/node_modules/electron/dist/Electron.app/')) parent.set(Number(pid), Number(ppid))
+  }
+  for (const row of ps('pid=,command=')) {
+    const [, pid, command] = row.trim().match(/^(\d+)\s+(.*)$/) ?? []
+    const ppid = parent.get(Number(pid))
+    if (ppid !== undefined && command.includes('pommora-drive-'))
+      for (const p of parent.has(ppid) ? [Number(pid), ppid] : [Number(pid)]) try { process.kill(p, 'SIGKILL') } catch {}
   }
 }
 
