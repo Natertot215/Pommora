@@ -159,3 +159,33 @@ describe('EditableInput marking text that will not commit', () => {
     expect(input.value).toBe('12')
   })
 })
+
+describe('EditableInput with symbols', () => {
+  it('sits between them, and a press on one keeps the caret without reaching the host', () => {
+    const hostClick = vi.fn()
+    act(() =>
+      root.render(
+        // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a stand-in host listening for clicks
+        <div onClick={hostClick}>
+          <EditableInput
+            initial="30"
+            className="field"
+            leading="$"
+            trailing="/ 10"
+            onCommit={() => {}}
+            onCancel={() => {}}
+          />
+        </div>,
+      ),
+    )
+    const run = host.querySelector('input')?.parentElement
+    expect(run?.textContent).toBe('$/ 10')
+    expect([...(run?.children ?? [])].map((el) => el.tagName)).toEqual(['SPAN', 'INPUT', 'SPAN'])
+    const symbol = run?.firstElementChild as HTMLElement
+    const press = new MouseEvent('mousedown', { bubbles: true, cancelable: true })
+    symbol.dispatchEvent(press)
+    expect(press.defaultPrevented).toBe(true)
+    act(() => symbol.click())
+    expect(hostClick).not.toHaveBeenCalled()
+  })
+})

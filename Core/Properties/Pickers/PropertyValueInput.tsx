@@ -9,7 +9,7 @@ import type { ConnEditAction } from '../../Actions/connectionMenu'
 import type { PropertyDefinition } from '../properties'
 import type { PropertyValue } from '../propertyValue'
 import { editorText, parseEditorValue } from '../parseEditorValue'
-import { fractionDenominator, numberFormatGlyph } from '../formatValue'
+import { numberAffixes } from '../formatValue'
 import { useEditorHost } from '../../Pages/editorHost'
 import { useSession } from '../../Session/store'
 import { TextPane } from './TextPane'
@@ -50,25 +50,27 @@ export function PropertyValueInput({
       commit(text)
       onClose()
     }
-    if (popover) {
-      const denominator = fractionDenominator(def)
+    const { leading, trailing } = numberAffixes(def)
+    // Away from its column, the picker names even a plain number's format.
+    if (popover)
       return (
         <FieldPicker
           {...popover}
           value={initial}
-          leading={numberFormatGlyph(def)}
-          trailing={denominator === undefined ? undefined : `/ ${denominator}`}
+          leading={(def.number_family ?? 'number') === 'number' ? '#' : leading}
+          trailing={trailing}
           invalid={invalid}
           onCommit={close}
           onDismiss={onClose}
         />
       )
-    }
     return (
       <EditableInput
         initial={initial}
         className={fillInput}
         caretAtEnd
+        leading={leading}
+        trailing={trailing}
         invalid={invalid}
         onCommit={close}
         onCancel={onClose}

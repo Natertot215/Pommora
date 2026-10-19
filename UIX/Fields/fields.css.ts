@@ -90,6 +90,20 @@ const slot = {
 
 export const leading = style({ ...slot, marginRight: LEAD_GAP, color: c.label.secondary })
 
+/** A typed value with its symbols fills its host as a bare field does, so a press anywhere in it stays in the edit. */
+export const affixed = style({ display: 'block', width: '100%', minWidth: 0 })
+
+/** The symbols and the typed text as one run, placed by the host's alignment and scrolling the text past its bound. */
+export const affixRun = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: LEAD_GAP,
+  maxWidth: '100%',
+  verticalAlign: 'top',
+})
+
+export const affix = style({ flex: '0 0 auto', whiteSpace: 'nowrap', color: c.label.secondary })
+
 /** Never closer than the gap, so a content-sized field still separates the two. */
 export const trailing = style({
   ...slot,

@@ -1,10 +1,7 @@
 import { style } from '@vanilla-extract/css'
-import { vars } from '../Theme/color.css'
 import { font } from '../Theme/typography.css'
 import { base, field as kitField } from '../Fields/fields.css'
 import { focusRing } from '../Fields/fieldRing'
-
-const c = vars.color
 
 /** Left-anchored so the caret sits at the field's left edge, never centered. */
 export const content = style({ alignItems: 'flex-start' })
@@ -13,7 +10,6 @@ export const content = style({ alignItems: 'flex-start' })
 export const field = style([
   kitField,
   {
-    gap: '6px',
     width: 'auto',
     minWidth: '100px', // KNOB
     maxWidth: '200px', // KNOB
@@ -40,17 +36,3 @@ export const suffixInput = style([
     vars: { '--scroll-fade': 'var(--fade-light)' },
   },
 ])
-
-export const leading = style({
-  flex: '0 0 auto',
-  display: 'inline-flex',
-  color: c.label.secondary,
-  fontWeight: font.weight.semibold,
-})
-
-/** The "/ N" out-of hint — pinned, never scrolling. */
-export const trailing = style({
-  flex: '0 0 auto',
-  whiteSpace: 'nowrap',
-  color: c.label.tertiary,
-})
