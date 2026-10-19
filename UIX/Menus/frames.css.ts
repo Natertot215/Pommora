@@ -125,7 +125,7 @@ export const optionRow = style([
 /** A pane of filter-like rows — rules whose trailing side holds field, token, and operator controls — reads compact on every host. */
 export const ruleFrame = style([menuCompact])
 
-/** KNOB — a View settings pane's height ceiling; above MENU_MAX_HEIGHT so the middle region's rows sit beneath the tallest stack of controls. */
+/** KNOB — a settings pane's height ceiling, for a View pane or a property's editor; above MENU_MAX_HEIGHT so the middle region's rows sit beneath the tallest stack of controls. */
 export const VIEW_SETTINGS_MAX_HEIGHT = 440
 
 /** KNOB — a pane's middle list region shows this many rows before it scrolls; it never yields that room to the pane's controls. */
