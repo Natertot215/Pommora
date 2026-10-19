@@ -19,6 +19,7 @@ import { createTestPage } from '../Testing/createTestPage'
 import { pathExists } from '../Files/atomicWrite'
 import { readRegistry } from './propertiesRegistry'
 import { readSchemaJournal, writeSchemaJournal } from './propertyJournal'
+import { replaySchemaCascade } from './replaySchemaCascade'
 import { nexusConfig, nexusDir } from '../Paths/paths'
 import { NEXUS_CONFIG_FILES } from '../Paths/nexusPaths'
 import { KEY_REFUSAL, type PropertyDraft } from './properties'
@@ -147,6 +148,42 @@ describe('createProperty', () => {
     expect((await readRegistry(root)).defs[r.value.id]).toMatchObject({
       label: 'Stage (2)',
       key: 'Stage (2)',
+    })
+  })
+
+  it('steps aside from an owed rename’s old key, and the replay then sweeps the skipped file onto the new one', async () => {
+    const c = await createProperty(root, def({ label: 'Status', type: 'select' }))
+    const col = await createFolderEntity(root, 'collection', 'Col', newId())
+    if (!c.ok || !col.ok) throw new Error('setup failed')
+    await assignProperty(root, col.value.path, c.value.id)
+    expect((await renameProperty(root, c.value.id, 'Stage')).ok).toBe(true)
+    const p = await createTestPage(col.value.path, 'Skipped', { body: 'b' })
+    if (!p.ok) throw new Error('setup failed')
+    await writeFile(p.value.path, `---\nID: 01ARZ3NDEKPSV4RRFFQ69G5FAV\nStatus: Done\n---\nb\n`)
+    await writeSchemaJournal(root, { op: 'rename', id: c.value.id, from: 'Status', to: 'Stage' })
+
+    const r = await createProperty(root, def({ label: 'Status', type: 'select' }))
+    if (!r.ok) throw new Error('create failed')
+    expect((await readRegistry(root)).defs[r.value.id]).toMatchObject({
+      label: 'Status (2)',
+      key: 'Status (2)',
+    })
+    expect((await replaySchemaCascade(root))?.ok).toBe(true)
+    expect(await readFile(p.value.path, 'utf8')).toBe(
+      `---\nID: 01ARZ3NDEKPSV4RRFFQ69G5FAV\nStage: Done\n---\nb\n`,
+    )
+    expect(await readSchemaJournal(root)).toBeNull()
+  })
+
+  it('takes a label whose key no owed record holds', async () => {
+    const c = await createProperty(root, def({ label: 'Status', type: 'select' }))
+    if (!c.ok) throw new Error('setup failed')
+    expect((await renameProperty(root, c.value.id, 'Stage')).ok).toBe(true)
+    const r = await createProperty(root, def({ label: 'Status', type: 'select' }))
+    if (!r.ok) throw new Error('create failed')
+    expect((await readRegistry(root)).defs[r.value.id]).toMatchObject({
+      label: 'Status',
+      key: 'Status',
     })
   })
 

@@ -338,6 +338,9 @@ export function clearOption(
   label: string,
 ): Promise<Result<null>> {
   return serializeSchemaOp(root, async () => {
+    const journal = await readSchemaJournal(root)
+    const option = journal?.op === 'option-rename' || journal?.op === 'option-remove'
+    if (option && journal.id === propertyId) return OWED
     const r = await resolveForCascade(root, propertyId, label)
     if (!r.ok) return r
     const { skipped } = await optionCascade(root, r.value.def, new Map([[r.value.key, null]]))

@@ -772,6 +772,48 @@ describe('an owed record holds option changes', () => {
     expect(splitFrontmatter(await readFile(page, 'utf8'))).not.toHaveProperty('Tags')
   })
 
+  it.skipIf(noModeBits)(
+    'clearOption refuses while the same property’s option record is owed, writing nothing',
+    async () => {
+      const id = await mkSelect([{ key: 'In Progress', label: 'In Progress' }])
+      const one = await pageHolding(id, 'In Progress')
+      const set = await createFolderEntity(join(root, 'Col'), 'set', 'Locked', newId())
+      if (!set.ok) throw new Error('set failed')
+      const p = await createTestPage(set.value.path, 'Two', { body: 'b' })
+      if (!p.ok) throw new Error('page failed')
+      const two = p.value.path
+      await writePageValue(two, (await readRegistry(root)).defs[id], {
+        kind: 'select',
+        value: 'In Progress',
+      })
+      await chmod(set.value.path, 0o555)
+      try {
+        expect((await setValueFormat(root, id, 'kebab-case')).ok).toBe(true)
+      } finally {
+        await chmod(set.value.path, 0o755)
+      }
+      const record = { op: 'option-rename', id, keys: [['In Progress', 'in-progress']] }
+      expect(await readSchemaJournal(root)).toEqual(record)
+      const def = (await readRegistry(root)).defs[id]
+      const bytes = [await readFile(one, 'utf8'), await readFile(two, 'utf8')]
+
+      expect(await clearOption(root, id, 'In Progress')).toEqual(fail('owed', OWED_MESSAGE))
+      expect((await readRegistry(root)).defs[id]).toEqual(def)
+      expect([await readFile(one, 'utf8'), await readFile(two, 'utf8')]).toEqual(bytes)
+      expect(await readSchemaJournal(root)).toEqual(record)
+    },
+  )
+
+  it('clearOption strips while another property’s option record is owed', async () => {
+    const id = await mkSelect([{ key: 'A', label: 'A' }])
+    const page = await pageHolding(id, 'A')
+    const other = { op: 'option-remove', id: 'prop_x', key: 'A' } as const
+    await writeSchemaJournal(root, other)
+    expect(await clearOption(root, id, 'A')).toEqual(ok(null))
+    expect(splitFrontmatter(await readFile(page, 'utf8'))).not.toHaveProperty('Tags')
+    expect(await readSchemaJournal(root)).toEqual(other)
+  })
+
   it('a held record identical to the one the op writes runs the op', async () => {
     const id = await mkSelect([
       { key: 'A', label: 'A' },
