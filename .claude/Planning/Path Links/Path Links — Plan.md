@@ -1,14 +1,14 @@
 ## Path Links — Implementation Plan
 
 **DATE:** 10-16-2026
-**STATUS:** Ratified 10-17-2026
+**STATUS:** Complete 10-19-2026 — `d059eb9d4..6231cb841`
 **SOURCE:** *Path Links — Decisions* (ratified 10-16-2026; thirty-nine decisions A-1 to G-1), *BRIEF.md* (the owner's principles, working rules, and planning process), *Path Links — Scout Findings* (rounds 1 to 3 from the decision rounds; rounds 4 and 4B from the two planning windows that scouted the same lanes at HEAD `14da3f152`), the advisor checkpoint on the reconciled approach (10-16-2026), and the owner's rulings during planning: the advisor reads the approach before any fork reaches him; two `opus-xhigh` reviews (simplification, break-it) and the planner's self-review are folded in; the finished plan's last read is one `opus-high` scout for what should change (the owner, 10-16-2026, in place of the `fable-high` neutral read the BRIEF named).
 
 **BASELINE** (filled after ratification; the end logged in the final report)
 
 | Head | Tests | Start | End |
 |------|-------|-------|-----|
-| `d059eb9d4` | 8059 passed, 2 skipped (535 files) | 10-17-2026 12:18 AM | |
+| `d059eb9d4` | 8059 passed, 2 skipped (535 files) | 10-17-2026 12:18 AM | 10-19-2026 06:14 PM (8343 passed, 2 skipped, 536 files, at `6231cb841`) |
 
 ### Context
 
@@ -48,6 +48,9 @@ The work lands in nine phases in dependency order, each the largest run one agen
 | 6 | +181 / −78 | +227 / −85 (+142) | +287 at `c8e4b18ca` |
 | 7 | +140 / −46 | +221 / −75 (+146) | +433 at `d0e6e5ffa` |
 | 8 | +142 / −37 | +311 / −191 (+120) | +553 at `d5462735f` |
+| 8, amended (Deviation 2) | — | +4 / −4 (±0) | +553 at `f212ab06b` |
+| Final simplification | — | +34 / −34 (±0) | +553 at `bcb004fb6` |
+| Final verification | — | +146 / −99 (+47) | +600 at `6231cb841` |
 
 #### Concepts
 
@@ -168,7 +171,7 @@ The work lands in nine phases in dependency order, each the largest run one agen
 - [x] `[Compaction checkpoint: c/pre-compaction]`
 - [x] **Phase 9** — Reconciliation
   - [x] Task 9-1 · The feature documents, the project overview, the issues index, and the comments
-- [ ] `[Stop: the final verification's report, per §Final Verification]`
+- [x] `[Stop: the final verification's report, per §Final Verification]`
 
 ---
 
@@ -3164,9 +3167,9 @@ An `opus-low` agent makes the document edits, each surgical and no longer than t
 - [x] **Simplification lens** — one `opus-xhigh` agent reads `<BASELINE>..HEAD` whole for what can be removed, folded, or hoisted now that every phase has landed: duplicated decisions, a helper used once, a guard whose cause the plan removed, a type arm no caller reaches. Its findings are applied before any adversarial read. Applied (10-19-2026): one definition of an embed, the editor's `loneEmbedTitle`, read by the scanner (`embedLine`, a private adapter), the picker, the index, the rewriter, the Matrix, and the Trash's targets, where the picker had read any `!` before a link and the scanner had widened the rule to markdown links (a lone `![x](Page)` is a link behind a `!`, as the editor draws it); `fileRewrites` answers the link-key set it builds, so `renameCascade` builds it once; the Table's and panel's Edit intent go through `editAs(mode, seat?)`; `movedHeadings` asserts what `pageMoves` guarantees; the pages under a deleted folder are listed once per delete; two doc comments corrected.
 - [x] **Adversarial lens** — two `opus-xhigh` agents, each over `<BASELINE>..HEAD` and the six principles, one reading inward (correctness of each rule against its tests and the Decisions) and one outward (cohesion with the rest of Core, Desktop, and UIX; anything that reads as an odd-one-out). Findings are verified by the orchestrator against the code before any is applied. Applied (10-19-2026): the restore's repair through `respell` with each target's recorded path (Deviation 2); a delete gathers targets from the pages' files when the index can't answer; the value field seats a title only with a connections api, and Edit Link selects an unresolved target; one predicate names the operations that run in the settle's turn; one `stampedIdOf`, one `connPage`, one `UNDER`; a non-empty string is the one definition of a carried id; the Trash frame keys its rows once; Edit Link selects a markdown page link's title; a copied path link's title alias is the writer's, not a given name; a CRLF embed line still reads as one; a cell's pick reads no embed; a phantom path link's seat lists the holders of its title where the path matches nothing (the owner's ruling, 10-19-2026); `CascadeChange` beside `renameCascade`; the tests the inward lens found unpinned.
 - [x] **Neutral verification** — one `fable-high` agent, given only the BASELINE head, HEAD, and the intention under *§Constraints · Neutral Gate*, with no plan, log, or document, answers whether the mandate holds and what it would correct. Its answer (10-19-2026): every clause holds, with the function and the pin named for each; "I would inherit this as designed." Its corrections folded above where the six principles agreed (the no-index delete, the value field's seat, `defaultLabel` once); its note that a Finder drag out of `.trash` is an arrival and not a restore is recorded under *§Open Items*.
-- [ ] **The orchestrator's own pass** — the live checks in `~/Test` run once more end to end as the owner would use them; the gates from a clean state; `view-delta` totals.
-- [ ] **Reconciliation** — *§Reconciliation* walked; *§Deviations* ruled on; STATUS and BASELINE's End filled.
-- [ ] **Report** — the owner receives the final delta per phase and in total, every deviation, the neutral reviewer's answer verbatim, and the open items that remain the owner's, through `c/save-delta`.
+- [x] **The orchestrator's own pass** — the live checks in `~/Test` run once more end to end as the owner would use them; the gates from a clean state; `view-delta` totals. The Path Links Drive held 321/321 across groups 1–8 at `bcb004fb6` and again at `6231cb841`; the gates are green at `6231cb841` (typecheck 0, lint clean, 8343 tests passing, 2 skipped, twice); the Net Ledger's rows are each commit's own `view-delta`.
+- [x] **Reconciliation** — *§Reconciliation* walked; *§Deviations* ruled on; STATUS and BASELINE's End filled.
+- [x] **Report** — the owner receives the final delta per phase and in total, every deviation, the neutral reviewer's answer verbatim, and the open items that remain the owner's, through `c/save-delta` (*Path Links — Results.md*, beside this plan).
 
 #### Reconciliation
 
@@ -3175,8 +3178,8 @@ An `opus-low` agent makes the document edits, each surgical and no longer than t
 - [x] `IssuesPM.md`: F-038 closed, F-039 re-worded as F-038, totals current (Task 9-1).
 - [x] *Path Links — Decisions* A-2 reads per the alias ruling, and D-4's order clause reads per the Phase 4 ruling (a list a typed query is picked from ranks; a view and a folder tree keep their order); *Other Workstreams* in the Decisions and this plan name the generation as 18, MetadataV3's move to 19, and the HEAD the plan was ratified at.
 - [x] `ContextPM.md` and `HandoffPM.md` carry the plan's completion in their own voice (where-things-stand and the next session's focus); `HistoryPM.md` only if the owner asks.
-- [ ] The Dashboard's line ledger reflects the final delta through its own hooks (no manual edit).
-- [ ] This plan's STATUS reads `Complete MM-DD-YYYY — <BASELINE>..<HEAD>` and BASELINE's End is filled.
+- [x] The Dashboard's line ledger reflects the final delta through its own hooks (no manual edit).
+- [x] This plan's STATUS reads `Complete MM-DD-YYYY — <BASELINE>..<HEAD>` and BASELINE's End is filled.
 
 #### Open Items
 
