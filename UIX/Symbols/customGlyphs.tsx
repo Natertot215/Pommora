@@ -53,6 +53,17 @@ export const CardsGrid = glyph(
   </>,
 )
 
+// Lucide's square-split-horizontal with its caret moved to the field's left and two dashes of text beside it.
+export const MetadataLabel = glyph(
+  <>
+    <path d="M5 19c-1 0-2-1-2-2V7c0-1 1-2 2-2" />
+    <path d="M13 5h6c1 0 2 1 2 2v10c0 1-1 2-2 2h-6" />
+    <line x1="9" y1="4" x2="9" y2="20" />
+    <line x1="12.5" y1="12" x2="13.5" y2="12" />
+    <line x1="16.5" y1="12" x2="17.5" y2="12" />
+  </>,
+)
+
 export const asTablerGlyph = (Tabler: LucideIcon): LucideIcon =>
   forwardRef<SVGSVGElement, LucideProps>(({ size = 24, ...rest }, ref) => (
     <Tabler ref={ref} size={scaleTabler(size)} {...rest} />
