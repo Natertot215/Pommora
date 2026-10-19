@@ -94,7 +94,6 @@ The work lands in ten phases in dependency order, removal first: the Space order
 | `property:setKeyFormat` · `property:setValueFormat` · `idAndFormat` • channels · decoder | The two format changes and their argument decoder. | `Core/Contract/bridge.ts`, `Core/Properties/handlers.ts` |
 | `FormatRows` • component | The Key Format and Value Format rows. | `Core/Properties/Schema/FormatRows.tsx` |
 | `askFormatChange` • confirmation | A format change's counted confirmation. | `Core/Interface/Confirm/confirmations.ts` |
-| `PickerRowLook.caption` · `configHint` • field · style | A picker row's hint, and the measure a config row's hint wraps at so it never widens its pane. | `UIX/Menus/MenuIndex.tsx`, `UIX/Menus/frames.css.ts` |
 | `matchOf` · `Match` · `currentKeys` • functions · type | The restore's one matcher over the ten spellings, built once per restore. | `Core/Trash/restoreScrub.ts` |
 
 **REMOVED**
@@ -147,7 +146,7 @@ The work lands in ten phases in dependency order, removal first: the Space order
 - **Shape:** a removal and a refactor with one migration inside it. The behavioral baseline is today's behavior as *MetadataV3 — Decisions & Intention · §Context* states it, kept except where a decision names a change and proven by the tests each task rewrites or adds. Every removal task lists its consumers. The registry rewrite (Task 5B-4) runs once, after both Phase 5 halves land, on Nathan's word at its Stop: NexusOS is committed first, the six deleted-property Trash records are deleted rather than migrated, and `~/Test`'s registry is copied for the run. The index generation bump (Task 3-4) drops and reseeds the content index on first open.
 - **Conventions:** finite states are unions plus exhaustive switches; no format conversion, fold, or allocation lands on a keystroke, a decode, or a settle that nothing owes, so live reads are exact lookups by stored key, the converter runs where a label or a format is written, adoption runs on its existing triggers, and the restore's match runs once per restore; host-run code imports no React or UIX, and `Desktop/hostGraph.test.ts` and `Core/Contract/engineGraph.test.ts` stay green; user-facing words are the ones the decisions quote; a test whose body inverts takes a title stating the behavior it now asserts; commit messages are past tense and one to four sentences; nothing temporary, transitional, or compatibility-kept remains at a phase's end.
 - **Execution:** the plan runs end to end through `c/plan-execution`, Nathan reachable at check-ins and Stops. Each task goes to an `execution-agent` (`opus-medium`) informed of *§Context* and *§Overview*, which reports insights, concerns, and suggestions rather than diverging, and the orchestrator checks its result against the task's AFTER and VERIFY. Every review checkpoint dispatches two read-only agents, one under `code-simplification` and one under `adversarial-review`, each weighing the phase against these constraints and its place in the plan, reading outward rather than in isolation, with no implementation running meanwhile; the orchestrator reconciles both reports and weighs the landed work against the **Mandate** before the next phase opens. An in-flight call is weighed against those and the plan's objectives, disclosed in chat, and recorded under *§Deviations* only where it changes an outcome. Each compaction checkpoint in *§Process Overview* runs `c/pre-compaction` and stops until Nathan re-prompts; on the re-prompt the orchestrator rereads *§Constraints* and `c/plan-execution` from the files themselves, rather than from the handoff's summary of them, before the next phase opens.
-- **Rulings (Not Re-Raised):** every entry in *MetadataV3 — Decisions & Intention* and its *§Rejected* list, including the planning rulings: configuration matches option labels exactly (F-2); a Space's `$order` names rows by id (F-5); a Multi-Select keeps foreign words after the picked options and emptying it removes them (E-3); an option rename, an option removal, or a Value Format change waits for Try Again while another record is owed (F-1); the row hints and the Metadata leaf's Maintenance section (H-1, J-1).
+- **Rulings (Not Re-Raised):** every entry in *MetadataV3 — Decisions & Intention* and its *§Rejected* list, including the planning rulings: configuration matches option labels exactly (F-2); a Space's `$order` names rows by id (F-5); a Multi-Select keeps foreign words after the picked options and emptying it removes them (E-3); an option rename, an option removal, or a Value Format change waits for Try Again while another record is owed (F-1); the two format rows and the Metadata leaf's Maintenance section (H-1, J-1).
 - **Neutral Gate:** the work ends with a `fable-high` neutral reviewer given only the BASELINE head, HEAD, and this intention, with no plan, log, or document: *"Pommora matched every property key, option word, Context key, and Space title without regard to case through one fold and a set of spelling helpers, so it couldn't write the lowercase keys tools expect while showing capitalized titles, two spellings of one key quietly merged, and a Space ordered its rows by name where everything else ordered by id. This work gives every property and option a label shown in the app and a key written to disk, writes the key from the label through per-property Key and Value Formats, matches every key and word exactly, keeps a Space's row order by id, carries format changes on the rename, journal, and restore machinery that already existed, and removes the spelling machinery, with each rule stated once, built from what the architecture already had, and nothing left over."* It answers, without hedging, whether the result holds to every principle under **Mandate**, **Approach**, and **Plan Rules**, and what it would correct. Every phase is written so that review passes.
 - **Other Workstreams:** Path Links is paused before its Phase 8 at `204f16671` and lands after this plan, re-fitting its Trash phase onto what this plan leaves; it owns the restore tests it pins (`spend.test.ts:1031`, `restoreScrub.test.ts:320`), which this plan inverts to exact matching first. `INDEX_GENERATION` is 18 at the baseline; this plan's bump is 19, which the last phase reports to the Path Links session.
 - **Out of Scope Everywhere:** Indexed Trash, Format Detection at Create, and Option IDs (*§Prospects*); pages outside every Collection, and `/Tasks` and `/Events` until Agenda lands; Sync's per-field merge of a label and a format edited on two devices; NexusOS's cutover (I-1), which follows the plan on Nathan's word.
@@ -4483,7 +4482,7 @@ for (const miss of misses) console.log(JSON.stringify(miss))
 
 ### Phase 7B — The Value Format, Adoption, and the Rows
 
-**GOAL:** Every option's key is written from its label through the property's Value Format wherever a label is written: seeded, added, and renamed options alike, while a create keeps the keys it's handed (C-2), and a Value Format change re-keys every option at once through the one rekey an option rename enters, refused when two options would share a key or one would take a key another holds before the change, journaled as one key-only record, and cascading through files and caches with no configuration pass (D-2, F-1, F-2). Adoption takes only words the Value Format could have produced (E-1). The two settings rows sit at the top of every property's settings with H-1's hints, and a format change confirms with the count of items it rewrites, silent at one or fewer (F-4, H-1). It's a separate phase because it rides the option cascade and the renderer, after 7A gave the definition its fields and the converter. Its removal lines lead each CHANGE list; no task is a pure removal.
+**GOAL:** Every option's key is written from its label through the property's Value Format wherever a label is written: seeded, added, and renamed options alike, while a create keeps the keys it's handed (C-2), and a Value Format change re-keys every option at once through the one rekey an option rename enters, refused when two options would share a key or one would take a key another holds before the change, journaled as one key-only record, and cascading through files and caches with no configuration pass (D-2, F-1, F-2). Adoption takes only words the Value Format could have produced (E-1). The two settings rows sit at the top of every property's settings, compact and without hints (*§Deviations*), and a format change confirms with the count of items it rewrites, silent at one or fewer (F-4, H-1). It's a separate phase because it rides the option cascade and the renderer, after 7A gave the definition its fields and the converter. Its removal lines lead each CHANGE list; no task is a pure removal.
 
 #### Task 7B-1
 
@@ -4915,35 +4914,22 @@ for (const miss of misses) console.log(JSON.stringify(miss))
 
 #### Task 7B-4
 
-**TASK:** Add the two settings rows at the top of every property's settings, each with its H-1 hint, sending through the two format channels after a confirmation that counts the items the change rewrites and skips at one or fewer; split the rename sweep into a plan and its sweep so a Key Format change's count runs that plan dry; widen `property:holders` to count a format change.
+**TASK:** Add the two settings rows at the top of every property's settings, sending through the two format channels after a confirmation that counts the items the change rewrites and skips at one or fewer; split the rename sweep into a plan and its sweep so a Key Format change's count runs that plan dry; widen `property:holders` to count a format change.
 
 **NOW:** The editor (`Core/Properties/Schema/PropertyFrame.tsx:379-431`) renders the header, `<MenuSeparator flush />` (`:427`), and `SETTINGS[def.type](def, columnStyle)` (`:428`); every user type reaches it (`:194`, `:374-376`'s arms are unreachable; *MetadataV3 — Investigation*, *§The Settings Rows and the Leaf*). Its `rename` (`:234-239`, after Phase 5A) asks `property:rename`, bumps the values epoch when `from !== to`, and runs `retryOwed`. `pickerRow(glyph, label, value, options, onPick, look?)` (`UIX/Menus/MenuIndex.tsx:54-77`) builds an inert picker item; its `PickerRowLook` (`:43-52`) has no caption, while the item row it returns renders `caption` as its sub-label (`MenuIndex.tsx:30,145`; `Core/Settings/SettingsWindow.tsx:51` writes one directly). `LinkEditor.tsx:21-61` wraps its rows in `s.configEditor`. `PickerControl` fires `onPick` only for a value other than the one shown (`UIX/Pickers/PickerControl.tsx:113`). `askHolding(propertyId, value, req, quietAt?)` (`Core/Interface/Confirm/confirmations.ts:109-116`, as Phase 4 leaves it) counts through `property:holders(propertyId, label?)` (`Core/Contract/bridge.ts:180`; `Core/Properties/handlers.ts:181-185`) and asks unless the count is at or under `quietAt`. `warnOwed` (`Core/Properties/propertyWrite.ts:20-25`) reports a `SchemaCascade` answer.
 
 **CHANGE**
 
-- [ ] Write and watch fail: `confirmations.test.ts` — a new case: with `property:holders` answering `ok(2)`, `askFormatChange('p1', { key_format: 'lowercase' })` asks `'This action would rewrite metadata in 2 Items.'` and the holders stub saw `['p1', { key_format: 'lowercase' }]`; answering `ok(1)` and `ok(0)`, it resolves `true` without asking; refused, it resolves `false` without asking. `PropertyFrame.test.tsx` *§native menus + the inline-rename channel*: the `Count` (Number) editor shows a `Key Format` row reading `Match Title` with the hint "How this property’s name is written into each file’s metadata key." and no `Value Format` row; the `Status` editor shows both, `Value Format` with "How each value is written in the file’s metadata."; the picker's list is driven as `MatrixMenu.test.tsx:17-18` drives it, `setMenuDoor(door)` with a `vi.fn<MenuDoor>` answering the picked format (the harness installs no door, so `PickerControl.tsx:102` opens nothing without one): in the `Count` editor, with `property:holders` answering `ok(3)` and the door answering `'lowercase'`, a click on `button[aria-label="Key Format"]` raises a pending confirm reading `This action would rewrite metadata in 3 Items.`, and settling it `true` asks `property:setKeyFormat('prop_n', 'lowercase')` and bumps the values epoch with the answered key pair; with `property:holders` answering `ok(1)`, the pick asks `property:setKeyFormat` with no confirm; in the `Status` editor, a `Value Format` pick of `kebab-case` over a count of `ok(0)` asks `property:setValueFormat('prop_status', 'kebab-case')`. `handlers.test.ts` *§the property channels*: `property:holders(propId, { value_format: 'kebab-case' })` and `property:holders(propId, { key_format: 'lowercase' })` answer their counts; `property:holders(propId, { key_format: 'Shouting' })` answers the `NEEDS_ID_AND_VALUE` fault; `confirmations.test.ts:39-59` passes unchanged.
+- [ ] Write and watch fail: `confirmations.test.ts` — a new case: with `property:holders` answering `ok(2)`, `askFormatChange('p1', { key_format: 'lowercase' })` asks `'This action would rewrite metadata in 2 Items.'` and the holders stub saw `['p1', { key_format: 'lowercase' }]`; answering `ok(1)` and `ok(0)`, it resolves `true` without asking; refused, it resolves `false` without asking. `PropertyFrame.test.tsx` *§native menus + the inline-rename channel*: the `Count` (Number) editor shows a `Key Format` row reading `Match Title` and no `Value Format` row; the `Status` editor shows both, `Value Format` reading `Match Title`; the picker's list is driven as `MatrixMenu.test.tsx:17-18` drives it, `setMenuDoor(door)` with a `vi.fn<MenuDoor>` answering the picked format (the harness installs no door, so `PickerControl.tsx:102` opens nothing without one): in the `Count` editor, with `property:holders` answering `ok(3)` and the door answering `'lowercase'`, a click on `button[aria-label="Key Format"]` raises a pending confirm reading `This action would rewrite metadata in 3 Items.`, and settling it `true` asks `property:setKeyFormat('prop_n', 'lowercase')` and bumps the values epoch with the answered key pair; with `property:holders` answering `ok(1)`, the pick asks `property:setKeyFormat` with no confirm; in the `Status` editor, a `Value Format` pick of `kebab-case` over a count of `ok(0)` asks `property:setValueFormat('prop_status', 'kebab-case')`. `handlers.test.ts` *§the property channels*: `property:holders(propId, { value_format: 'kebab-case' })` and `property:holders(propId, { key_format: 'lowercase' })` answer their counts; `property:holders(propId, { key_format: 'Shouting' })` answers the `NEEDS_ID_AND_VALUE` fault; `confirmations.test.ts:39-59` passes unchanged.
 - [ ] `registryProperty.test.ts`, a new describe *§keyFormatHolders*: the page and the Space holding `Tags` count `ok(2)`, a page holding only `tags` isn't counted, every file keeps its bytes; the `Heading Icon Hidden` case answers the reserved refusal; a format whose key equals the stored key (`lowercase` over `{ label: 'tags', key: 'tags' }`) answers `ok(0)`.
 - [ ] `registryProperty.ts`: `renameSweep(root, from, to)` sweeps `renamePlan(root, from, to)`, split out of it; add `keyFormatHolders(root, propertyId, format)`, answering the dry run of that plan for the rekey `rekeyPlan` checks, `0` when the key stays, and its refusal otherwise.
-- [ ] `UIX/Menus/MenuIndex.tsx`: `PickerRowLook` gains `caption?: ReactNode`, and `pickerRow` passes `caption: look?.caption`.
 - [ ] `keyFormat.ts`: add `FormatChange`.
-- [ ] `Core/Properties/Schema/FormatRows.tsx` (new): one `MenuIndex` section inside `s.configEditor`, the `Key Format` row and, when `PROPERTY_TYPES[def.type].options`, the `Value Format` row, each a `pickerRow` over the ten formats (labels as written, the stored format or `DEFAULT_KEY_FORMAT` as the value), inert, its H-1 hint as the caption, wrapped at `configHint`'s measure (`UIX/Menus/frames.css.ts`, beside `configEditor`) so the pane keeps the width its rows give it, answering a `FormatChange`. The format options live here, their one reader.
+- [ ] `Core/Properties/Schema/FormatRows.tsx` (new): one `MenuIndex` section inside `s.configEditor` with `menuCompact`'s rows, the `Key Format` row and, when `PROPERTY_TYPES[def.type].options`, the `Value Format` row, each a `pickerRow` over the ten formats (labels as written, the stored format or `DEFAULT_KEY_FORMAT` as the value), inert, answering a `FormatChange`. The format options live here, their one reader.
 - [ ] `confirmations.ts`: `askHolding`'s second parameter is `of: string | FormatChange | undefined`; add `askFormatChange(propertyId, change)`, quiet at `1`, its message the Brief's sentence with the count, its detail `Each key changes to the new format; values stay the same.`, and its action `Rewrite`.
 - [ ] `PropertyFrame.tsx`: `rename`'s answer handling becomes `renamed(res)`, shared with the Key Format change; add `setFormat(id, change)`, asking `askFormatChange` and then `property:setKeyFormat` (through `renamed`) or `property:setValueFormat` (through `warnOwed`); render `FormatRows` after `:427`, and a second `<MenuSeparator flush />` before the type's settings only where it has some: `NO_SETTINGS` (`:310`) answers null in place of its 8 px spacer, since every editor now has the rows as its body, and `SETTINGS`' value type admits null.
 - [ ] `handlers.ts`: `property:holders` answers `keyFormatHolders` for `{ key_format }` and `valueFormatHolders` for `{ value_format }`; `bridge.ts`: its second argument is `of?: string | FormatChange`.
 
 **AFTER**
-
-```UIX/Menus/MenuIndex.tsx diff
-@@ PickerRowLook @@
- export interface PickerRowLook {
-   ariaLabel?: string
-+  caption?: ReactNode
-   iconSize?: IconSize
-@@ pickerRow @@
-   label: look?.labelClassName ? <span className={look.labelClassName}>{label}</span> : label,
-+  caption: look?.caption,
-   trailing: {
-```
 
 ```Core/Properties/keyFormat.ts diff
 @@ FormatChange @@
@@ -4956,6 +4942,8 @@ for (const miss of misses) console.log(JSON.stringify(miss))
 +import { MenuIndex, pickerRow } from '@pommora/uix/Menus'
 +import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
 +import * as s from '@pommora/uix/Menus/frames.css'
++import { menuCompact } from '@pommora/uix/Menus/menu-row.css'
++import { cx } from '@pommora/uix/Utilities/cx'
 +import { DEFAULT_KEY_FORMAT, type FormatChange, KEY_FORMATS, type KeyFormat } from '../keyFormat'
 +import { type PropertyDefinition, PROPERTY_TYPES } from '../properties'
 +
@@ -4971,34 +4959,20 @@ for (const miss of misses) console.log(JSON.stringify(miss))
 +  const row = (
 +    label: string,
 +    value: KeyFormat | undefined,
-+    caption: string,
 +    change: (format: KeyFormat) => FormatChange,
 +  ) =>
 +    pickerRow(undefined, label, value ?? DEFAULT_KEY_FORMAT, FORMAT_OPTIONS, (v: KeyFormat) => onPick(change(v)), {
 +      inert: true,
-+      caption: <span className={s.configHint}>{caption}</span>,
 +    })
 +  return (
-+    <div className={s.configEditor}>
++    <div className={cx(s.configEditor, menuCompact)}>
 +      <MenuIndex
 +        sections={[
 +          {
 +            rows: [
-+              row(
-+                'Key Format',
-+                def.key_format,
-+                'How this property’s name is written into each file’s metadata key.',
-+                (key_format) => ({ key_format }),
-+              ),
++              row('Key Format', def.key_format, (key_format) => ({ key_format })),
 +              ...(PROPERTY_TYPES[def.type].options
-+                ? [
-+                    row(
-+                      'Value Format',
-+                      def.value_format,
-+                      'How each value is written in the file’s metadata.',
-+                      (value_format) => ({ value_format }),
-+                    ),
-+                  ]
++                ? [row('Value Format', def.value_format, (value_format) => ({ value_format }))]
 +                : []),
 +            ],
 +          },
@@ -5185,7 +5159,7 @@ for (const miss of misses) console.log(JSON.stringify(miss))
 
 #### Review Checkpoint
 
-- [ ] Two review agents, `code-simplification` and `adversarial-review`, reading outward: every option label a write lands (seed, add, rename) takes its key through the Value Format, a create and a restore keep the keys they're handed, an adopted word stays its own label and key, and nothing re-keys an option outside a label or format change (C-2 INFERRED); a Value Format change journals one key-only record, refuses a collision, a crossing, and an owed record before anything writes, re-keys files and caches through the same `rekeyOptions`, cascade, and replay an option rename uses, and leaves every view, tile, preview rule, and Matrix filter byte-identical; adoption converts only on its existing triggers and takes only words the format leaves unchanged, and a Value Format change owes it; the rows sit between the header's separator and the type's settings, Value Format only on option types; both format confirmations count the dry run of the plan their change runs, skip at one or fewer, and a collision or a crossing the plan answers shows before any dialog (an owed record refuses at the change, after the dialog, as an option rename's does); no new copy beyond H-1's hints and the Brief's sentence.
+- [ ] Two review agents, `code-simplification` and `adversarial-review`, reading outward: every option label a write lands (seed, add, rename) takes its key through the Value Format, a create and a restore keep the keys they're handed, an adopted word stays its own label and key, and nothing re-keys an option outside a label or format change (C-2 INFERRED); a Value Format change journals one key-only record, refuses a collision, a crossing, and an owed record before anything writes, re-keys files and caches through the same `rekeyOptions`, cascade, and replay an option rename uses, and leaves every view, tile, preview rule, and Matrix filter byte-identical; adoption converts only on its existing triggers and takes only words the format leaves unchanged, and a Value Format change owes it; the rows sit between the header's separator and the type's settings, Value Format only on option types; both format confirmations count the dry run of the plan their change runs, skip at one or fewer, and a collision or a crossing the plan answers shows before any dialog (an owed record refuses at the change, after the dialog, as an option rename's does); no new copy beyond the Brief's sentence.
 
 ### Phase 8 — The Restore Re-Spell (G-1)
 
@@ -5842,6 +5816,8 @@ An alternative Nathan raised during Phase 4, held open while the plan runs as wr
 - **Label and Key Without Formats:** every property, and each Select, Multi-Select, and Status option, carries a label shown in the app and a key written to disk, the key taking the label at creation and edited beside it in one Label | Key field, and Pommora reads and writes only the key. It keeps Phases 1 to 6 and drops the Key and Value Formats, the converter, format-led adoption, and the restore re-spell (Phases 7A, 7B, and 8), at the cost of editing option keys one by one where a Value Format changes every option at once, and of a rule for whether a label rename moves its key.
 
 #### Deviations
+
+- **The Format Rows Carry No Hints** (Phase 7B review, Nathan's call): H-1's two hints ran on one line and widened every property's settings pane, which sizes to its widest row, and a cap on those two hints alone would have been the only hint measure in the kit. The rows ship compact and without hints, and `PickerRowLook.caption`, which only they read, didn't land; *IssuesPM* F-073 holds the rule a hint in a content-sized pane waits on, after which the rows take their hints back.
 
 - **A File Nobody Can Parse Holds Nothing Owed** (Phase 6 review, Nathan's call to follow the codebase's existing pattern): the configuration pass counted every Collection or Set sidecar that didn't parse, and every corrupt tile document or Contexts registry, as a skip, even one naming no option, so with Task 6-4's wait a single damaged file kept a change owed on every open and refused every later option rename or removal Nexus-wide, behind a Try Again notice that fades and doesn't survive a restart. The pass now follows the rule every other journaled pass already does (`governedSweep.ts`): a file it can't read counts once, and one nobody can parse is left as it is and holds nothing owed, so its views keep the old label once it's repaired. `OWED` carries its own Try Again replaying the held record (its copy now reads "Use Try Again to finish it first."), and an option edit can't take back an owed rename's old key. A `settings.json` that doesn't parse still counts as a skip, since its writer reports a corrupt file and an unreadable one alike.
 
