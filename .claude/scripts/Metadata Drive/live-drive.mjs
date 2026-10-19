@@ -865,7 +865,7 @@ async function group5(cdp) {
   pin(G, 'D-1', 'a definition written by hand onto a reserved key is not admitted', (await ask(cdp, 'property:holders', banner)).ok === false)
   const optionsBefore = show(wordsOf(grade))
   pin(G, 'D-2', 'an option label in another casing of one the property holds is refused',
-    refusedAs(await ask(cdp, 'property:editOption', grade, { op: 'add', groupId: 'select', title: 'a' }), COPY.twoOptionsTitledAlike) && show(wordsOf(grade)) === optionsBefore)
+    refusedAs(await ask(cdp, 'property:editOption', grade, { op: 'add', groupId: 'select', label: 'a' }), COPY.twoOptionsTitledAlike) && show(wordsOf(grade)) === optionsBefore)
   pin(G, 'D-2', 'two options writing one key in two casings are refused at create',
     refusedAs(await add(cdp, { label: 'M5 Twins', type: 'select', select_options: [{ key: 'A', label: 'A' }, { key: 'a', label: 'B' }] }), COPY.twoOptionsWritingOneKey))
   pin(G, 'D-2', 'an option with a blank key is refused at create',
@@ -959,7 +959,8 @@ async function group6(cdp) {
   pin(G, 'F-1', 'an option removal waits while a record is owed',
     refusedAs(await ask(cdp, 'property:removeOption', tints, 'Deep'), COPY.anOptionChangeWaitingForTryAgain))
   pin(G, 'F-1', 'a waiting option change writes nothing', await held.holds(), show(held.changed()))
-  pin(G, 'F-1', 'Clear still runs while a record is owed', (await ask(cdp, 'property:clearOption', tints, 'Deep')).ok)
+  pin(G, 'F-1', "Clear waits while its own property's option record is owed",
+    refusedAs(await ask(cdp, 'property:clearOption', tints, 'Deep'), COPY.anOptionChangeWaitingForTryAgain))
   await must('rename M6 Free', ask(cdp, 'property:rename', ids['M6 Free'], 'M6 Freed'))
   pin(G, 'F-1', 'a property rename still runs while a record is owed', await wrote(free, 'M6 Freed: f'), show(blockOf(free)))
   const shielded = seedPage(pageAt('M6 Tint 3'), 'M6 Tints: [Pale]')
@@ -1146,7 +1147,7 @@ async function group7(cdp) {
   const seededSelect = await must('a Select under UPPERCASE', add(cdp, { label: 'Option Seed', type: 'select', value_format: 'UPPERCASE' }))
   pin(G, 'C-2', "a Select seed's key is written through the Value Format", same(wordsOf(seededSelect.id), [['OPTION 1', 'Option 1']]), show(defOf(seededSelect.id)))
   pin(G, 'C-2', 'a create keeps the option keys it is handed', same(wordsOf(paletteId), [['x', 'Light Blue']]), show(defOf(paletteId)))
-  await must('add Dark Blue', ask(cdp, 'property:editOption', paletteId, { op: 'add', groupId: 'select', title: 'Dark Blue' }))
+  await must('add Dark Blue', ask(cdp, 'property:editOption', paletteId, { op: 'add', groupId: 'select', label: 'Dark Blue' }))
   pin(G, 'C-2', "an added option's key is written through the Value Format", same(wordsOf(paletteId), [['x', 'Light Blue'], ['dark-blue', 'Dark Blue']]), show(defOf(paletteId)))
   await must('rename Dark Blue', ask(cdp, 'property:renameOption', paletteId, 'Dark Blue', 'Navy Blue'))
   pin(G, 'C-2', "an option label rename writes its key through the Value Format and moves it on the page",

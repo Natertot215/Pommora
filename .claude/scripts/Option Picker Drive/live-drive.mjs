@@ -36,7 +36,7 @@ async function seed(cdp) {
   }
   for (const [name, titles] of [['Drive Select', ['Alpha', 'Beta']], ['Drive Multi', ['One', 'Two']]])
     for (const title of titles) {
-      const r = await ask(cdp, 'property:editOption', ids[name], { op: 'add', groupId: 'select', title })
+      const r = await ask(cdp, 'property:editOption', ids[name], { op: 'add', groupId: 'select', label: title })
       check(`seed: ${name} ${title}`, r.ok, JSON.stringify(r))
     }
   const view = await ask(cdp, 'views:save', 'Collection A', 'collection', { id: 'view_01KZDRIVE0000000000000TABLE', name: 'Drive Table', type: 'table', property_order: ['_title', ...Object.keys(PROPS).map((name) => ids[name])], hidden_properties: [] }, {})
@@ -283,7 +283,7 @@ async function stepEditor(cdp) {
 }
 
 async function stepHostRefusal(cdp) {
-  const r = await ask(cdp, 'property:editOption', ids['Drive Select'], { op: 'add', groupId: 'select', title: '' })
+  const r = await ask(cdp, 'property:editOption', ids['Drive Select'], { op: 'add', groupId: 'select', label: '' })
   check('the host refuses a blank option title', r.ok === false, JSON.stringify(r))
 }
 

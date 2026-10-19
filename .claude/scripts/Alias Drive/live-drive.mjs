@@ -77,7 +77,7 @@ async function seed(cdp) {
     if (!r.ok) throw new Error(`The seed stops: schema:add refused ${name} of type ${type}.`)
     ids[name] = r.value.id
   }
-  for (const title of ['Alpha', 'Beta']) await must(`${CHOICE} ${title}`, ask(cdp, 'property:editOption', ids[CHOICE], { op: 'add', groupId: 'select', title }))
+  for (const title of ['Alpha', 'Beta']) await must(`${CHOICE} ${title}`, ask(cdp, 'property:editOption', ids[CHOICE], { op: 'add', groupId: 'select', label: title }))
   await must('the Drive table', ask(cdp, 'views:save', 'Collection A', 'collection', { id: VIEW.id, name: VIEW.name, type: 'table', property_order: ['_title', ...COLUMNS.map((c) => ids[c])], hidden_properties: [] }, {}))
   for (const title of [TARGET, BARE, SOURCE, GRID, RACE]) await createPage(cdp, title)
   await createPage(cdp, HOST, { [ids[NOTES]]: { kind: 'text', value: 'host notes' } })

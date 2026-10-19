@@ -32,6 +32,12 @@ import { nameError } from '../Paths/names'
 /** A Context rename commits its registry LAST, so a tag written mid-cascade still lands under the OLD key while a key already wearing the new title can only be inert or hand-authored — neither list is fresher, so dropping either would silently lose tags. */
 const NEITHER_KEY_IS_FRESHER: KeyCollision = 'merge'
 
+/** Whether another entry would take the folder name `title` gives, which the file system matches without regard to case. */
+const rivalTitled =
+  (title: string, id: string) =>
+  (e: { id: string; title: string }): boolean =>
+    e.id !== id && normalizeTitle(e.title) === normalizeTitle(title)
+
 export const rekeyContext =
   (oldTitle: string, newTitle: string): Rewrite =>
   (raw) =>
@@ -199,18 +205,12 @@ export async function renameContextOp(
   if (!entry) return fail('not-found', 'Unknown Context.')
   // A retry sweeps what the rename left to the title the Context holds now, which a later rename may have moved on.
   if (from !== undefined) {
-    const taken = reg.value.contexts.some(
-      (c) => c.id !== contextId && normalizeTitle(c.title) === normalizeTitle(from),
-    )
+    const taken = reg.value.contexts.some(rivalTitled(from, contextId))
     const again = { contextId, oldTitle: from, newTitle: entry.title, skipped: [] }
     return taken ? ok(null) : sweepAgain(root, entry.title, again)
   }
   if (entry.title === newName) return ok(null)
-  if (
-    reg.value.contexts.some(
-      (c) => c.id !== contextId && normalizeTitle(c.title) === normalizeTitle(newName),
-    )
-  )
+  if (reg.value.contexts.some(rivalTitled(newName, contextId)))
     return fail('exists', `"${newName}" already exists.`)
 
   const j: RenameJournal = { contextId, oldTitle: entry.title, newTitle: newName, skipped: [] }
@@ -258,9 +258,7 @@ export async function renameSpaceOp(
   const group = space && groupById.get(space.contextId)
   if (!space || !group) return fail('not-found', 'Unknown Space.')
   if (from !== undefined) {
-    const taken = group.spaces.some(
-      (s) => s.id !== spaceId && normalizeTitle(s.title) === normalizeTitle(from),
-    )
+    const taken = group.spaces.some(rivalTitled(from, spaceId))
     const again = { contextId: space.contextId, spaceId, oldTitle: from, newTitle: space.title }
     return taken ? ok(null) : sweepAgain(root, group.def.title, { ...again, skipped: [] })
   }
@@ -304,9 +302,7 @@ export async function replayPendingRename(root: string): Promise<void> {
   }
 
   if (j.spaceId === undefined) {
-    const othersOwnOld = reg.value.contexts.some(
-      (c) => c.id !== j.contextId && normalizeTitle(c.title) === normalizeTitle(j.oldTitle),
-    )
+    const othersOwnOld = reg.value.contexts.some(rivalTitled(j.oldTitle, j.contextId))
     if ((entry.title !== j.oldTitle && entry.title !== j.newTitle) || othersOwnOld) {
       await clearJournal(root, j)
       return

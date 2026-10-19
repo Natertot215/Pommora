@@ -110,7 +110,7 @@ The drive's cases, derived from *MetadataV3 — Decisions & Intention* and writt
 | Option removal | page, cache | `removeOption` | strips the page and the cache | F-2 |
 | Clear | cache, Collection B | Clear, reassign | the cache loses the value and the reassign brings it back nowhere | J-1 |
 | Records carry keys | journal | rename, option rename, delete, option removal, each over an unreadable file | `{ op: 'rename', from, to }` in keys; `{ op: 'option-rename', keys, labels }`; `{ op: 'delete', key }`; `{ op: 'option-remove', key }` | F-1 |
-| An owed record | registry, pages, journal | option rename and removal; Clear; property rename | the two option changes are refused and write nothing; Clear and a property rename run | F-1 |
+| An owed record | registry, pages, journal | option rename and removal; Clear; property rename | the two option changes and a Clear on the owed property are refused and write nothing; a property rename runs | F-1 |
 | Adoption shield | a new page holding the old word | settle | the owed record's old key isn't adopted | F-1 |
 | Try Again | the skipped files | `property:replay` | each record's replay brings its file current and clears | F-1 |
 
