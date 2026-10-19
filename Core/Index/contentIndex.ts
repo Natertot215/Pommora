@@ -1,4 +1,4 @@
-// A null answer means no index, and an empty array is a genuine empty result: the title, Context, and key-holder queries fall back to a scan on null, while the heading cascade and the Matrix graph wait for the index.
+// A null answer means no index, and an empty array is a genuine empty result: the link-key, Context, and key-holder queries fall back to a scan on null, while the heading cascade and the Matrix graph wait for the index.
 
 import { errText } from '../Contract/result'
 import {
@@ -81,7 +81,7 @@ export function queryMembers(key: string, title?: string): string[] | null {
     : queryPaths((db) => db.queryMembers(key, title))
 }
 
-export function readPageRelations(paths?: string[], key?: string): PageRelations | null {
+export function readPageRelations(paths?: readonly string[], key?: string): PageRelations | null {
   return contentIndexStore() !== readyDb ? null : queried((db) => db.readPageRelations(paths, key))
 }
 

@@ -1,4 +1,4 @@
-import { join, relative, isMarkdownFile, titleFromPath } from '../Paths/posix'
+import { join, relative, isMarkdownFile } from '../Paths/posix'
 import { escapes } from '../Paths/pathSafety'
 import { errText } from '../Contract/result'
 import { linksIn, valueLinks } from '../Connections/scan'
@@ -31,14 +31,15 @@ import { machine } from '../Platform/machine'
 import { readTextOrNull } from '../Files/atomicWrite'
 import { corpusFiles, corpusFilesUnder } from '../Files/walk'
 import { outsideContent } from '../Paths/exclusion'
-import { type ConnPage, headingKeys } from '../Connections/pageIndex'
+import { type ConnPage, connPage, headingKeys } from '../Connections/pageIndex'
+import { asString } from '../Nexus/coerce'
 import { ID_KEY } from '../Nexus/identityMark'
 
 import { readWatchScope } from '../Settings/settings'
 
 const NO_ROWS: PageIndexEntry = { relations: [], headings: [], values: {} }
 
-function extractPageIndex(content: string): PageIndexEntry {
+export function extractPageIndex(content: string): PageIndexEntry {
   const { frontmatter: values, admission } = parsePage(content)
   if (admission.state === 'unknown') return NO_ROWS
   const { body } = splitEnvelope(content)
@@ -106,10 +107,10 @@ export interface IndexSeen {
 
 export const NOTHING_SEEN: IndexSeen = { renames: [], vanished: [], landed: [] }
 const pageOf = (path: string, stat: IndexedStat | null): ConnPage[] =>
-  stat?.id === undefined ? [] : [{ id: stat.id, title: titleFromPath(path), path }]
+  stat?.id === undefined ? [] : [connPage(stat.id, path)]
 const idOf = (entry: PageIndexEntry): string[] => {
-  const id = entry.values[ID_KEY]
-  return typeof id === 'string' ? [id] : []
+  const id = asString(entry.values[ID_KEY])
+  return id === undefined ? [] : [id]
 }
 const unindexed = (rel: string, stat = readIndexedStat(rel)): ConnPage[] => {
   removePathIndex(rel)

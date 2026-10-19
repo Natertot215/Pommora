@@ -44,7 +44,7 @@ export function ValueEditor({
   host: EditorHost
   oneLine?: boolean
   remembers?: Remembers
-  /** Once mounted, the link slot to seat the caret in: Rename seats the alias; otherwise a one-line value that is one unresolved link seats its title; otherwise Edit Link selects the target, and a bare address is its whole target; otherwise the caret rests at the end. */
+  /** Once mounted, the link slot to seat the caret in: Rename seats the alias, and Edit Link selects the target, a bare address its whole target; with neither, a one-line value that is one unresolved link seats its title where connections resolve, and otherwise the caret rests at the end. */
   seat?: ConnEditAction
   invalid?: (text: string) => boolean
   saveRef?: RefObject<() => void>
@@ -145,12 +145,13 @@ export function ValueEditor({
     if (invalid) view.dom.setAttribute('aria-invalid', String(invalid(initial)))
     const doc = view.state.doc.toString()
     const tk = drawnLinkAt(view, 0)
+    const connections = host.connections()
     const action: SlotAction | undefined =
-      seat !== 'rename' &&
+      seat === undefined &&
+      connections &&
       oneLine &&
       tk?.range[1] === doc.length &&
-      resolveLink(readOccurrence(doc, tk.link), host.connections()?.index, holder).kind ===
-        'unresolved'
+      resolveLink(readOccurrence(doc, tk.link), connections.index, holder).kind === 'unresolved'
         ? 'seatTitle'
         : seat
     if (tk && action) applyLinkAction(view, action, [0, doc.length])

@@ -13,13 +13,13 @@ import { entityIcon } from '../Assets/entityIconPolicy'
 import { itemCount } from '../Properties/properties'
 import { text } from '@pommora/uix/Theme'
 import { askEmptyTrash, spendBundle } from '../Interface/Confirm/confirmations'
-import type { MutateRequest } from '../Nexus/mutateRequest'
+import { changesSettled, type MutateRequest } from '../Nexus/mutateRequest'
 import type { Personalization } from './personalization'
 import type { TrashRow } from '../Trash/trashRow'
 import { PropertyTypeIcon, propertyTypeIconName } from '../Properties/Cells/PropertyTypes'
 import { formatDate } from '../Properties/formatValue'
 import { containerTargets, contextTargets } from '../Actions/destinationTree'
-import { matchKey, matchQuery, rankMatches } from '../Paths/caseFold'
+import { matchQuery, rankMatches } from '../Paths/caseFold'
 import { useSession } from '../Session/store'
 import { flushAllSaves, trashChanged } from '../Session/nexusSlice'
 import { personalizationOf } from '../Session/configSlice'
@@ -52,9 +52,7 @@ export function countPhrase(rows: TrashRow[]): string {
 export function filterRows(rows: TrashRow[], query: string): TrashRow[] {
   const q = matchQuery(query)
   if (!q) return rows
-  return rankMatches(rows, q, (row) =>
-    matchKey(row.title, row.crumbs.map((c) => c.title).join('/')),
-  )
+  return rankMatches(rows, q, (row) => row.match)
 }
 
 // Keyed on the nexus so a switch with Settings open mounts a body with its own list.
@@ -115,6 +113,7 @@ function TrashBody(): React.JSX.Element {
     const refused: TrashRow[] = []
     const unrestored: string[] = []
     const warnings = new Set<string>()
+    if (changesSettled(op)) await flushAllSaves()
     for (const row of targets) {
       const res = await dialer().ask('mutate', { op, bundlePath: row.bundlePath })
       ;(res.ok ? done : refused).push(row)
@@ -129,7 +128,6 @@ function TrashBody(): React.JSX.Element {
 
   const restoreBatch = async (targets: TrashRow[]): Promise<void> => {
     const addressable = targets.filter((r) => r.homeResolves)
-    await flushAllSaves()
     const { done, refused, unrestored, warnings } = await many(addressable, 'restore')
     const homeless = targets.filter((r) => !r.homeResolves)
     const unmet = [
@@ -144,7 +142,6 @@ function TrashBody(): React.JSX.Element {
 
   const emptyBatch = async (targets: TrashRow[]): Promise<void> => {
     if (!(await askEmptyTrash(targets.length))) return
-    await flushAllSaves()
     const { done, refused, warnings } = await many(targets, 'emptyBundle')
     const unmet = [
       refused.length > 0 && `${countPhrase(refused)} couldn’t be deleted.`,

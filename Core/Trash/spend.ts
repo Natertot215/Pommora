@@ -236,9 +236,10 @@ async function restoreArtifact(
   let cascade = after ? undefined : linksNotUpdated(title)
   if (after) {
     const repair = new Map<string, string>()
-    for (const [key, id] of targets) {
+    for (const [key, { id, path }] of targets) {
       const q = after.byId.get(id)
-      if (q) repair.set(key, after.writtenName(q.path, key))
+      const next = q && after.respell(key, q, path)
+      if (next) repair.set(key, next)
     }
     unswept.push(...(await repairLanded(root, tree, record.entity, targetAbs, repair)))
     const live = pageIndexOf(tree)

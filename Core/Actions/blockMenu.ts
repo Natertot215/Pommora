@@ -68,7 +68,7 @@ export const EMBED_ROWS: readonly LeafItem<BlockMenuAction>[] = [
   { label: 'External Link', action: 'block:webpage', icon: 'globe' },
 ]
 
-export const BLOCK_MENU_SECTIONS: readonly BlockMenuSection[] = [
+const BLOCK_MENU_SECTIONS: readonly BlockMenuSection[] = [
   { title: 'Headings', rows: HEADING_ROWS },
   { title: 'Lists', rows: LIST_ROWS },
   { title: 'Link', rows: LINK_ROWS },

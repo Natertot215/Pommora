@@ -17,11 +17,7 @@ import { heldTreeOf, liveTreeOf } from './liveTree'
 import { pageIndexOf, pagesOf } from './record'
 import type { NexusTree } from './tree'
 import { withheldIn } from './treePatch'
-import {
-  type CascadeChange,
-  rewriteConnections,
-  rewriteHeadingConnections,
-} from '../Connections/rewrite'
+import { rewriteConnections, rewriteHeadingConnections } from '../Connections/rewrite'
 import { headingOutline } from '../MarkdownPM/Engine/headingScan'
 import { queryMentions } from '../Index/contentIndex'
 import { nexusCorpus } from '../Index/indexSeed'
@@ -159,9 +155,9 @@ export function fileRewrites(
   text: RewriteText
   spaceMoved: Rewrite
   cacheMoved: Rewrite
-  holds: (key: string) => boolean
+  isLinkKey: (key: string) => boolean
 } {
-  const holds = linkKeysOf(tree.config.registry)
+  const isLinkKey = linkKeysOf(tree.config.registry)
   const patchOf = (
     raw: Json,
     isLinkKey: (key: string) => boolean,
@@ -184,23 +180,28 @@ export function fileRewrites(
     text: (content, file) => {
       const { body } = splitEnvelope(content)
       const own = relative(root, file) === ownRel
-      const patch = patchOf(splitFrontmatter(content), holds, own, body)
+      const patch = patchOf(splitFrontmatter(content), isLinkKey, own, body)
       const keys = Object.keys(patch)
       const next = own && settled ? body : rewrite(body, own)
       return next === body && keys.length === 0
         ? null
         : mergeFrontmatter(content, patch, keys, next)
     },
-    spaceMoved: (raw) => withPatch(raw, patchOf(raw, holds)),
+    spaceMoved: (raw) => withPatch(raw, patchOf(raw, isLinkKey)),
     // A block holds one property's values, so every entry holds links when the property does.
     cacheMoved: (values) =>
       withPatch(
         values,
         patchOf(values, () => true),
       ),
-    holds,
+    isLinkKey,
   }
 }
+
+/** `label` is what the warning names. */
+export type CascadeChange =
+  | { names: ReadonlyMap<string, string>; label: string }
+  | { path: string; heading: string; to: string }
 
 /** A re-spell sweeps the files the index names under the map's keys, or the whole corpus before there is one; a heading rename sweeps what a ready index names under the page's keys and the page itself always, since its own bare fragments are keyed to no page, and a corpus scan per heading edit is an on-every-edit cost. Markdown tiles sit outside the index, so a cached list of what they link gates their read. `settled` says the page's editor already rewrote its own body; its frontmatter still takes the patch. */
 export async function renameCascade(
@@ -233,7 +234,7 @@ export async function renameCascade(
             own,
             runs && own ? headingOutline(outlineOf).map((h) => h.text) : undefined,
           )
-    const { text, spaceMoved, cacheMoved, holds } = fileRewrites(root, tree, rewrite, {
+    const { text, spaceMoved, cacheMoved, isLinkKey } = fileRewrites(root, tree, rewrite, {
       ownRel: 'names' in change ? undefined : change.path,
       settled,
     })
@@ -246,7 +247,7 @@ export async function renameCascade(
       ? await rewriteTileConnections(root, rewrite)
       : { hosts: [], failed: 0 }
     // A heading edit settles often and a cached Link still reaches its page, so only a re-spell reaches the caches.
-    const cachedIds = new Set(tree.config.registry.filter((d) => holds(d.key)).map((d) => d.id))
+    const cachedIds = new Set(tree.config.registry.filter((d) => isLinkKey(d.key)).map((d) => d.id))
     const uncached =
       'names' in change ? await editCaches(root, tree.collections, cachedIds, cacheMoved) : 0
     const unmoved = swept.skipped.length + tiles.failed + uncached

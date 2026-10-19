@@ -18,11 +18,6 @@ import { scanDoc, spanAt } from '../MarkdownPM/Engine/docScan'
 import { type LinkHit, linksIn } from './scan'
 import { type ConnPage, type PageIndex, pathKeys } from './pageIndex'
 
-/** `label` is what the warning names. */
-export type CascadeChange =
-  | { names: ReadonlyMap<string, string>; label: string }
-  | { path: string; heading: string; to: string }
-
 /** The one re-spell's map: every key that named a moved page in the index before, and every key that named one other page alone before which a tail of an arriving page's path now spells (a collision), mapped to how it spells that page in the index after; a key the page still answers at an unchanged tail is left out. */
 export function respellings(
   before: PageIndex,

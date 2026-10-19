@@ -42,8 +42,9 @@ export function linkEdit(
       const slot = targetSpan(tk.link)[1]
       return { kind: 'write', from: slot, to: slot, text: '|', select: slot + 1 }
     }
+    // An address never splits at its `#`, so its title is the whole destination.
     case 'editLink':
-      return { kind: 'select', range: tk.kind === 'link' ? targetSpan(tk.link) : tk.link.title }
+      return { kind: 'select', range: tk.link.title }
     case 'link:remove':
       return { kind: 'write', from: s, to: e, text: linkDisplayText(text.slice(s, e)) }
     case 'link:delete':

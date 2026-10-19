@@ -7,6 +7,7 @@ import { containerTrailWhere } from '../Nexus/treePatch'
 import type { ListedBundle } from './holdings'
 import { propertyType } from '../Properties/properties'
 import { contextWorldOf } from '../Contexts/contextResolve'
+import { matchKey } from '../Paths/caseFold'
 
 const STAMP = /^(\d{4}-\d{2}-\d{2})T(\d{2})-(\d{2})-(\d{2})-(\d{3})Z$/
 
@@ -48,12 +49,17 @@ function homeResolvesFor(record: ArtifactRecord, artifactName: string, tree: Nex
   return !('refuse' in resolution) || resolution.refuse === 'id-live'
 }
 
+const matched = (row: Omit<TrashRow, 'match'>): TrashRow => ({
+  ...row,
+  match: matchKey(row.title, row.crumbs.map((c) => c.title).join('/')),
+})
+
 /** A property record has no artifact to name it, so its title is its definition's own; it lived nowhere, so it always has a home to return to. */
 export function trashRowOf(bundle: ListedBundle, tree: NexusTree): TrashRow | null {
   const { record, bundlePath, artifactName } = bundle
   if (record.entity === 'property') {
     const type = propertyType.safeParse(record.def.type)
-    return {
+    return matched({
       bundlePath,
       kind: 'property',
       title: typeof record.def.label === 'string' ? record.def.label : record.id,
@@ -61,11 +67,11 @@ export function trashRowOf(bundle: ListedBundle, tree: NexusTree): TrashRow | nu
       crumbs: [],
       deletedAt: deletedAtOf(bundlePath),
       homeResolves: true,
-    }
+    })
   }
   if (!artifactName) return null
   const live = liveCrumbs(record, tree)
-  return {
+  return matched({
     bundlePath,
     kind: record.entity,
     title: record.entity === 'page' ? titleFromPath(artifactName) : artifactName,
@@ -73,7 +79,7 @@ export function trashRowOf(bundle: ListedBundle, tree: NexusTree): TrashRow | nu
     ...(live ? {} : { historical: true }),
     deletedAt: deletedAtOf(bundlePath),
     homeResolves: homeResolvesFor(record, artifactName, tree),
-  }
+  })
 }
 
 export function trashRows(bundles: ListedBundle[], tree: NexusTree): TrashRow[] {

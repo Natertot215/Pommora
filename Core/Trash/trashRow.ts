@@ -1,5 +1,6 @@
 import type { HeldKind } from '../Nexus/entities'
 import type { PropertyType } from '../Properties/properties'
+import type { MatchKey } from '../Paths/caseFold'
 
 /** `kind` is absent on a historical crumb, which is a frozen folder name rather than a live entity. */
 export interface TrashCrumb {
@@ -22,6 +23,8 @@ export interface TrashRow {
   deletedAt: number | null
   /** False when restoring would refuse for want of a home — the signal to ask where instead. */
   homeResolves: boolean
+  /** The search's key: the title, placed by the crumbs. */
+  match: MatchKey
 }
 
 /** The in-nexus `.trash` (portable, index-aware) or the macOS system Trash. Device-level since system Trash isn't portable nexus data. */

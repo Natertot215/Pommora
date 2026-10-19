@@ -69,7 +69,7 @@ export interface ContentIndexStore {
   readIndexedStat(path: string): IndexedStat | null
   readIndexedStats(under?: string): Map<string, IndexedStat>
   /** Page → page rows only (every kind but `space`), plus every indexed page's governed values and mtime; `paths` narrows both, and `key` narrows the values to that one key. */
-  readPageRelations(paths?: string[], key?: string): PageRelations
+  readPageRelations(paths?: readonly string[], key?: string): PageRelations
 }
 
 export type SnapshotSource = 'edit' | 'external' | 'restore'

@@ -18,14 +18,14 @@ import type { TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { type DocScan, inCodeAt } from '../Engine/docScan'
 import { linkAt, literalOrBracketAt, openLinkAt, partOf } from '../Input/edits'
 import { lineIndexAt, type TextEdit } from '../Engine/markdownCode'
-import { headingParts, loneEmbedTitle } from '../Engine/detect'
+import { headingParts, loneEmbedTitle, type MarkdownScope } from '../Engine/detect'
 import type { ConnPage } from '../../Connections/pageIndex'
 import type { PageHeading } from '../../Platform/stores'
 import type { EditorHost } from '../api'
 
 type QuerySyntax = 'wiki' | 'markdown' | 'prose'
 
-/** One query, two axes: which syntax holds the caret (`prose` for a bare `§` run, always in its heading) and which part, the grammar's `LinkPart`. `start`..`end` is the whole link, `from`..`to` the part's text, `closed` whether the closer follows the caret, `heading` a title query's written heading, for a pick to keep when the picked page holds it, and `shown` the link's alias or label, read as the query reads its slot, where one is written. */
+/** One query, two axes: which syntax holds the caret (`prose` for a bare `§` run, always in its heading) and which part, the grammar's `LinkPart`. `start`..`end` is the whole link, `from`..`to` the part's text, `closed` whether the closer follows the caret, `embed` whether the link stands alone on its line behind a `!` and so draws as an embed, which a table cell never does, `title` the link's written title on a query outside it, `heading` a title query's written heading, for a pick to keep when the picked page holds it, and `shown` the link's alias or label, read as the query reads its slot, where one is written. */
 export interface AutocompleteQuery {
   syntax: QuerySyntax
   part: LinkPart
@@ -53,6 +53,7 @@ export function autocompleteQuery(
   scan: DocScan,
   caret: number,
   armed?: number,
+  scope: MarkdownScope = 'page',
 ): AutocompleteQuery | null {
   if (inCodeAt(scan, caret)) return null
   const i = lineIndexAt(scan, caret)
@@ -101,6 +102,7 @@ export function autocompleteQuery(
     query,
     closed: closedLink !== null || o.full[1] > rel,
     embed:
+      scope !== 'cell' &&
       o.syntax === 'wiki' &&
       loneEmbedTitle(`${line.slice(0, o.full[0])}[[]]${line.slice(o.full[1])}`) !== null,
     ...(part === 'title' ? {} : { title: named?.title ?? '' }),
