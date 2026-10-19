@@ -59,7 +59,7 @@ const option = z.string()
 const groupId = z.string()
 
 export const optionEdit = z.discriminatedUnion('op', [
-  op('add', { groupId, title: z.string(), atIndex: index.optional() }),
+  op('add', { groupId, label: z.string(), atIndex: index.optional() }),
   op('recolor', { option, color: z.string().optional() }),
   op('icon', { option, icon: z.string().optional() }),
   op('appearance', { option, appearance: optionAppearance }),
@@ -75,7 +75,7 @@ export function applyOptionEdit(
 ): StatusGroup[] {
   switch (e.op) {
     case 'add':
-      return addOption(groups, e.groupId, e.title, formatKey(e.title, format), e.atIndex)
+      return addOption(groups, e.groupId, e.label, formatKey(e.label, format), e.atIndex)
     case 'recolor':
       return mapOption(groups, e.option, (o) => withField(o, 'color', e.color))
     case 'icon':

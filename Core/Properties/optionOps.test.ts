@@ -108,7 +108,7 @@ describe('editOption', () => {
       select_options: [],
     })
     expect(
-      await editOption(root, id, { op: 'add', groupId: 'select', title: 'Light Blue' }),
+      await editOption(root, id, { op: 'add', groupId: 'select', label: 'Light Blue' }),
     ).toEqual(ok(null))
     expect((await readRegistry(root)).defs[id].select_options).toEqual([
       { key: 'light-blue', label: 'Light Blue' },
@@ -117,15 +117,15 @@ describe('editOption', () => {
 
   it('add refuses a title another option holds', async () => {
     const id = await mkSelect([{ key: 'A', label: 'A' }])
-    const r = await editOption(root, id, { op: 'add', groupId: 'select', title: 'A' })
+    const r = await editOption(root, id, { op: 'add', groupId: 'select', label: 'A' })
     expect(r.ok).toBe(false)
     expect((await readRegistry(root)).defs[id].select_options).toEqual([{ key: 'A', label: 'A' }])
   })
 
   it('add refuses a blank or whitespace title', async () => {
     const id = await mkSelect([{ key: 'A', label: 'A' }])
-    for (const title of ['', '  ']) {
-      const r = await editOption(root, id, { op: 'add', groupId: SELECT_GROUP, title })
+    for (const label of ['', '  ']) {
+      const r = await editOption(root, id, { op: 'add', groupId: SELECT_GROUP, label })
       expect(r.ok).toBe(false)
       if (!r.ok) expect(r.error.message).toBe('Option titles can’t be blank.')
     }
@@ -148,7 +148,7 @@ describe('editOption', () => {
       await gate
       order.push('schema-op')
     })
-    const fast = editOption(root, id, { op: 'add', groupId: 'select', title: 'B' }).then(() =>
+    const fast = editOption(root, id, { op: 'add', groupId: 'select', label: 'B' }).then(() =>
       order.push('editOption'),
     )
     await new Promise((r) => setTimeout(r, 50))
@@ -181,7 +181,7 @@ describe('editOption', () => {
       ]
       return { registry, result: null }
     })
-    expect((await editOption(root, id, { op: 'add', groupId: SELECT_GROUP, title: 'B' })).ok).toBe(
+    expect((await editOption(root, id, { op: 'add', groupId: SELECT_GROUP, label: 'B' })).ok).toBe(
       true,
     )
     expect((await readRegistry(root)).defs[id].select_options).toEqual([
@@ -193,7 +193,7 @@ describe('editOption', () => {
   it('add and move are refused for a group the definition lacks', async () => {
     const id = await mkStatus()
     const before = await statusValues(id)
-    expect(await editOption(root, id, { op: 'add', groupId: 'nope', title: 'X' })).toMatchObject({
+    expect(await editOption(root, id, { op: 'add', groupId: 'nope', label: 'X' })).toMatchObject({
       ok: false,
       error: { code: 'not-found' },
     })
@@ -231,7 +231,7 @@ describe('a definition stored with two options that fold alike', () => {
       { key: 'Alpha', label: 'Alpha' },
     ]
     await writeFile(file, JSON.stringify(raw))
-    expect((await editOption(root, id, { op: 'add', groupId: 'select', title: 'beta' })).ok).toBe(
+    expect((await editOption(root, id, { op: 'add', groupId: 'select', label: 'beta' })).ok).toBe(
       true,
     )
     const after = await readJsonAt<{ defs: Record<string, PropDefLike> }>(file)
@@ -345,7 +345,7 @@ describe('an option edit leaves every other stored entry as written', () => {
     expect((await removeOption(root, 'prop_sel', 'C')).ok).toBe(true)
     expect((await removeOption(root, 'prop_st', 'W')).ok).toBe(true)
     expect(
-      (await editOption(root, 'prop_multi', { op: 'add', groupId: SELECT_GROUP, title: 'c' })).ok,
+      (await editOption(root, 'prop_multi', { op: 'add', groupId: SELECT_GROUP, label: 'c' })).ok,
     ).toBe(true)
     const defs = await rawDefs()
     expect(defs.prop_sel.select_options).toEqual([
@@ -418,7 +418,7 @@ describe('an option edit leaves every other stored entry as written', () => {
     file.defs.prop_multi.type = 'multi_select'
     await writeFile(registryFile(), JSON.stringify(file))
     expect(
-      (await editOption(root, 'prop_multi', { op: 'add', groupId: SELECT_GROUP, title: 'c' })).ok,
+      (await editOption(root, 'prop_multi', { op: 'add', groupId: SELECT_GROUP, label: 'c' })).ok,
     ).toBe(true)
     expect(
       (await editOption(root, 'prop_multi', { op: 'recolor', option: 'a', color: 'red' })).ok,
@@ -755,7 +755,7 @@ describe('an owed record holds option changes', () => {
       }
       const record = { op: 'option-rename', id, keys: [['A', 'Z']], labels: ['A', 'Z'] }
       expect(await readSchemaJournal(root)).toEqual(record)
-      const add = { op: 'add' as const, groupId: SELECT_GROUP, title: 'A' }
+      const add = { op: 'add' as const, groupId: SELECT_GROUP, label: 'A' }
       expect(await editOption(root, id, add)).toEqual(fail('owed', OWED_MESSAGE))
       expect((await readRegistry(root)).defs[id].select_options?.map((o) => o.label)).toEqual([
         'Z',
@@ -765,11 +765,12 @@ describe('an owed record holds option changes', () => {
     },
   )
 
-  it('clearOption still strips', async () => {
+  it('clearOption strips while another property’s rename record is owed, leaving the record held', async () => {
     const { id, page, bytes } = await owing()
     expect(splitFrontmatter(bytes)).toHaveProperty('Tags')
     expect(await clearOption(root, id, 'A')).toEqual(ok(null))
     expect(splitFrontmatter(await readFile(page, 'utf8'))).not.toHaveProperty('Tags')
+    expect(await readSchemaJournal(root)).toEqual(held)
   })
 
   it.skipIf(noModeBits)(

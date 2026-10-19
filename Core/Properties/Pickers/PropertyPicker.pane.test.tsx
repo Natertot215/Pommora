@@ -288,7 +288,7 @@ describe('editing options from the picker', () => {
     expect(editOption).toHaveBeenCalledWith('prop_sel', {
       op: 'add',
       groupId: 'select',
-      title: 'Fresh',
+      label: 'Fresh',
     })
     expect(onCommit).not.toHaveBeenCalled()
     await act(async () => {})

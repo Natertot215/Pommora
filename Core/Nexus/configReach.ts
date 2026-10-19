@@ -26,15 +26,10 @@ import { unsweptLine } from '../Properties/governedSweep'
 import { tileHostsOf } from '../Tiles/tileHosts'
 import type { TilesChanged } from '../Tiles/tiles'
 import { liveTreeOf } from './liveTree'
-import {
-  editJsonStrict,
-  readJsonStrictly,
-  type StrictEdit,
-  updateNexusConfig,
-} from '../Files/atomicWrite'
+import { editJsonStrict, type StrictEdit, updateNexusConfig } from '../Files/atomicWrite'
 import { same } from '../Files/stableJson'
 import { errText } from '../Contract/result'
-import { contextsRegistryFile, sidecarPath, tileDocPath } from '../Paths/paths'
+import { sidecarPath, tileDocPath } from '../Paths/paths'
 import { isAtOrUnder, join } from '../Paths/posix'
 import { isPlainObject } from '../Contract/validators'
 import type { CollectionNode, NexusTree, SetNode } from './tree'
@@ -334,9 +329,7 @@ export async function reachConfig(
   }
   const tiles = tileHostsOf(root, tree)
   // A file that doesn't parse won't read any better on a retry, so it's left as it is and holds nothing owed; only a file this pass can't read, or whose edit throws, is a skip.
-  const hidden =
-    tiles.unreadable > 0 &&
-    (await readJsonStrictly(contextsRegistryFile(root))).kind === 'unreadable'
+  const hidden = tree.unreadable?.some((u) => u.kind === 'registry' && u.reason === 'unreadable')
   const reach: ConfigReach = { skipped: hidden ? 1 : 0, hosts: [] }
   const written = async (path: string, mutate: (cur: Raw) => Raw | null): Promise<boolean> => {
     const outcome = await editJsonStrict(path, mutate).catch((err): StrictEdit => {

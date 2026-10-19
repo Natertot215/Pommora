@@ -204,7 +204,7 @@ describe('creating an option', () => {
     expect(editOption).toHaveBeenCalledWith('p1', {
       op: 'add',
       groupId: 'select',
-      title: 'Fresh',
+      label: 'Fresh',
       atIndex: 2,
     })
   })

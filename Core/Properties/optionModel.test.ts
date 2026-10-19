@@ -93,7 +93,7 @@ describe('optionModel', () => {
     ] as unknown as StatusGroup[]
     const entries = (gs: StatusGroup[]) => gs.flatMap((g) => g.options) as Raw[]
     const edits = [
-      { op: 'add', groupId: 'g1', title: 'N' },
+      { op: 'add', groupId: 'g1', label: 'N' },
       { op: 'recolor', option: 'A', color: 'red' },
       { op: 'icon', option: 'A', icon: 'star' },
       { op: 'appearance', option: 'A', appearance: 'clear' },
@@ -134,7 +134,7 @@ describe('optionModel', () => {
     expect(
       withOptionGroups(
         select,
-        applyOptionEdit(selectGroups, { op: 'add', groupId: 'select', title: 'C' }),
+        applyOptionEdit(selectGroups, { op: 'add', groupId: 'select', label: 'C' }),
       ).select_options,
     ).toEqual([...options, { key: 'C', label: 'C' }])
   })

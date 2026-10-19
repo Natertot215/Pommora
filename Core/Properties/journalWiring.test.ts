@@ -266,7 +266,7 @@ describe('the option-op writers', () => {
 
   it('editOption never writes a record', async () => {
     await withOptions()
-    await editOption(root, 'prop_t', { op: 'add', groupId: 'select', title: 'Solo' })
+    await editOption(root, 'prop_t', { op: 'add', groupId: 'select', label: 'Solo' })
     expect(observed.some((o) => o.path === journalFile())).toBe(false)
   })
 })

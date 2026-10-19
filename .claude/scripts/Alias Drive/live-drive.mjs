@@ -243,7 +243,7 @@ async function group2(cdp) {
   await shot(cdp, 'aliases-row')
 
   await step(cdp, 'group 2: Manage opens the pane', () => mouseClick(cdp, manageButton('Aliases')), { reflect: `${rows(MANAGE)}.length === 3`, writes: aliasWrites(0) })
-  const rest = await cdp.evaluate(`(() => { const p = ${MANAGE}; return { inside: !!p && p.contains(document.activeElement), rows: ${rows(MANAGE)}.map((r) => ({ name: r.textContent.trim(), x: !!r.querySelector('[aria-label="Delete alias"]'), glyph: !!r.querySelector('svg.lucide-square-split-horizontal') })) } })()`)
+  const rest = await cdp.evaluate(`(() => { const p = ${MANAGE}; return { inside: !!p && p.contains(document.activeElement), rows: ${rows(MANAGE)}.map((r) => ({ name: r.textContent.trim(), x: !!r.querySelector('[aria-label="Delete alias"]'), glyph: !!r.querySelector('svg path[d^="M8 21H5"]') })) } })()`)
   check('group 2: the pane focuses nothing', !rest.inside)
   check('group 2: one menu row per alias, each with the alias glyph and a Delete alias ×', same(rest.rows.map((r) => r.name), ['launch', 'liftoff', 'Q3 doc']) && rest.rows.every((r) => r.x && r.glyph), JSON.stringify(rest.rows))
   const bounds = await boundsOf(cdp, MANAGE)

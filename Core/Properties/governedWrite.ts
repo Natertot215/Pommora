@@ -8,24 +8,24 @@ import { atomicWriteFile, readTextOrNull } from '../Files/atomicWrite'
 import { mergeFrontmatter, splitEnvelope, splitFrontmatter } from '../Files/pageFile'
 import type { Json } from '../Files/stableJson'
 
-/** `raw` with `value` under `name`, its members spelled as the root already spells them, after the reconcile repairs every other governed key. */
-export function writtenRoot(raw: Json, name: string, value: unknown, world: GovernedWorld): Json {
-  const reconciled = reconcileGovernedRoot(raw, world, undefined, name).root
-  const def = world.defs.get(name)
-  const kept = def ? keepingForeignWords(def, value, raw[name]) : value
-  return landValue(reconciled, name, writtenSpelling(kept, raw[name]))
+/** `raw` with `value` under `key`, its members spelled as the root already spells them, after the reconcile repairs every other governed key. */
+export function writtenRoot(raw: Json, key: string, value: unknown, world: GovernedWorld): Json {
+  const reconciled = reconcileGovernedRoot(raw, world, undefined, key).root
+  const def = world.defs.get(key)
+  const kept = def ? keepingForeignWords(def, value, raw[key]) : value
+  return landValue(reconciled, key, writtenSpelling(kept, raw[key]))
 }
 
 export async function setGovernedRootKey(
   absFile: string,
-  name: string,
+  key: string,
   value: unknown,
   world?: GovernedWorld,
 ): Promise<void> {
   const existing = await readTextOrNull(absFile)
   if (existing === null) throw new Error('That page could not be read.')
   const raw = splitFrontmatter(existing)
-  const next = world ? writtenRoot(raw, name, value, world) : landValue(raw, name, value)
+  const next = world ? writtenRoot(raw, key, value, world) : landValue(raw, key, value)
   const content = mergeFrontmatter(
     existing,
     next,

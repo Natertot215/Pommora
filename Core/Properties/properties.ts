@@ -111,7 +111,7 @@ export const DEFAULT_CURRENCY: (typeof CURRENCY_CODES)[number] = 'USD'
 export const optionAppearance = z.enum(['filled', 'clear'])
 export type OptionAppearance = z.infer<typeof optionAppearance>
 
-/** A word a registry gives no label reads its key as its label (C-3). */
+/** A word a registry gives no label reads its key as its label. */
 export const labelled = <W extends { key: string; label?: string }>(
   w: W,
 ): W & { label: string } => ({

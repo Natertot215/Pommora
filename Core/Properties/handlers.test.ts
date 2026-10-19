@@ -252,7 +252,7 @@ describe('the property channels', () => {
     await writeFile(setFile, held)
     await refreshTree(root)
     expect((await propertiesHandlers['property:removeOption'](ctx, propId, 'Done')).ok).toBe(true)
-    const add = { op: 'add' as const, groupId: 'select', title: 'Done' }
+    const add = { op: 'add' as const, groupId: 'select', label: 'Done' }
     expect((await propertiesHandlers['property:editOption'](ctx, propId, add)).ok).toBe(true)
     const page = `${col}/A.md`
     const def = (await readRegistry(root)).defs[propId]
@@ -268,13 +268,13 @@ describe('the property channels', () => {
 
   it('property:setKeyFormat refuses a format that isn’t a Key Format', async () => {
     expect(await propertiesHandlers['property:setKeyFormat'](ctx, propId, 'Shouting')).toEqual(
-      fault('A property id and value are required.'),
+      fault('A property id and format are required.'),
     )
   })
 
   it('property:setValueFormat refuses a format that isn’t a Key Format', async () => {
     expect(await propertiesHandlers['property:setValueFormat'](ctx, propId, 'Shouting')).toEqual(
-      fault('A property id and value are required.'),
+      fault('A property id and format are required.'),
     )
   })
 

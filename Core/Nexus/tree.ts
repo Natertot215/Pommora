@@ -108,7 +108,7 @@ export type UnreadReason = 'missing' | 'malformed' | 'contradicting' | 'unparsed
 
 export type Unreadable = { path: string } & (
   | { kind: NodeKind; reason: UnreadReason }
-  | { kind: 'registry'; reason: 'unparsed' }
+  | { kind: 'registry'; reason: 'unparsed' | 'unreadable' }
 )
 
 export interface NexusTree {

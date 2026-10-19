@@ -363,13 +363,13 @@ describe("the display-config narrowers decode against the definition's own field
 })
 
 describe('byKey', () => {
-  it('keys definitions by name as written', () => {
+  it('keys definitions by key, not label', () => {
     const def = {
       id: 'p',
       label: 'Due Date',
-      key: 'Due Date',
+      key: 'due_date',
       type: 'dateTime',
     } as PropertyDefinition
-    expect([...byKey([def]).entries()]).toEqual([['Due Date', def]])
+    expect([...byKey([def]).entries()]).toEqual([['due_date', def]])
   })
 })
