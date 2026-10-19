@@ -1,7 +1,7 @@
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { join } from '../Paths/posix'
-import { tempRoot } from '../Testing/hostFs'
+import { readJsonAt, tempRoot } from '../Testing/hostFs'
 import { contextsDir, contextsRegistryFile, nexusDir } from '../Paths/paths'
 import { createContextGroup, createSpace } from '../Contexts/contextWrite'
 import { createFolderEntity } from '../Nexus/folderEntity'
@@ -79,8 +79,7 @@ interface Target {
 
 const pageFile = () => join(root, pagePath)
 const sidecarFile = () => join(root, spacePath, '_space.json')
-const sidecar = async (): Promise<Record<string, unknown>> =>
-  JSON.parse(await readFile(sidecarFile(), 'utf8'))
+const sidecar = () => readJsonAt(sidecarFile())
 
 // A page's key as its frontmatter lines spell it; a Space's as its JSON value.
 const page: Target = {
