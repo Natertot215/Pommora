@@ -16,6 +16,7 @@ import { asString } from '../Nexus/coerce'
 import { fail, fault, ok, type Result } from '../Contract/result'
 import type { PageDetail } from '../Pages/pageDetail'
 import { machine } from '../Platform/machine'
+import { readTextOrNull } from './atomicWrite'
 import { joinValues, type KeyCollision } from './rootValues'
 
 interface PageEnvelope {
@@ -82,6 +83,11 @@ export function parsePage(
 
 export const stampedId = (text: string): string | null =>
   asString(splitFrontmatter(text)[ID_KEY]) ?? null
+
+export const stampedIdOf = async (absFile: string): Promise<string | null> => {
+  const text = await readTextOrNull(absFile)
+  return text === null ? null : stampedId(text)
+}
 
 /** How a block is spelled on its way out: no wrapping, and a flow collection as its author wrote it, `[a, b]`. */
 const YAML_OUT = { lineWidth: 0, flowCollectionPadding: false } as const

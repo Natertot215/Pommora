@@ -85,6 +85,15 @@ describe('candidates (ranked by match, then A–Z)', () => {
     ])
     expect(studio.candidates('Pommora/Cl', 20).map((p) => p.id)).toEqual(['p'])
   })
+  it('a path query nothing sits under lists the holders of its last segment', () => {
+    const dups = buildPageIndex([
+      { id: 'a', title: 'Dup', path: 'A/Dup.md' },
+      { id: 'b', title: 'Dup', path: 'B/Dup.md' },
+      { id: 'o', title: 'Other', path: 'Gone2/Other.md' },
+    ])
+    expect(dups.candidates('Gone/Dup', 20).map((p) => p.id)).toEqual(['a', 'b'])
+    expect(dups.candidates('Zzz/', 20)).toEqual([])
+  })
   it('an exact title ranks first', () => {
     const notes = buildPageIndex([
       { id: 'f', title: 'Footnotes', path: 'Footnotes.md' },

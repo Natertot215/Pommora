@@ -16,6 +16,9 @@ import { INDEX_TABLES } from './ddl'
 // A list binds as one JSON argument: a placeholder per value fails past SQLite's variable limit.
 const LISTED = '(SELECT value FROM json_each(?))'
 
+// A folder's descendants by range, bound to the folder twice: from `dir/` up to `dir0`, exact because '0' is the code point after '/', where a LIKE would let a legal '%' in a folder name over-match.
+const UNDER = (column: string): string => `${column} >= ? || '/' AND ${column} < ? || '0'`
+
 export const keyValueStore = (db: Db): KeyValueStore => ({
   get(scope, key) {
     const row = db
@@ -43,7 +46,7 @@ export const keyValueStore = (db: Db): KeyValueStore => ({
   },
 })
 
-const SELECT_STATS = `SELECT f.path, f.mtime_ms, f.size, json_extract(v.value, '$') AS id FROM indexed_files f LEFT JOIN page_values v ON v.path = f.path AND v.key = ? AND json_type(v.value) = 'text'`
+const SELECT_STATS = `SELECT f.path, f.mtime_ms, f.size, json_extract(v.value, '$') AS id FROM indexed_files f LEFT JOIN page_values v ON v.path = f.path AND v.key = ? AND json_type(v.value) = 'text' AND v.value <> '""'`
 type StatRow = { path: string; mtime_ms: number; size: number; id: string | null }
 const statOf = (r: StatRow): IndexedStat => ({
   mtimeMs: r.mtime_ms,
@@ -55,7 +58,6 @@ const clearPath = (db: Db, path: string): void => {
   for (const table of INDEX_TABLES) db.prepare(`DELETE FROM ${table} WHERE path = ?`).run(path)
 }
 
-// The prefix pair `path >= dir||'/' AND path < dir||'0'` selects `dir`'s descendants by range — exact because '0' is the code point after '/', where a LIKE would let a legal '%' in a folder name over-match.
 export const contentIndexStore = (db: Db): ContentIndexStore => ({
   upsertPageIndexes(rows) {
     const insRelation = db.prepare(
@@ -94,14 +96,14 @@ export const contentIndexStore = (db: Db): ContentIndexStore => ({
   },
   removePathPrefixIndex(dir) {
     for (const table of INDEX_TABLES) {
-      db.prepare(`DELETE FROM ${table} WHERE path >= ? || '/' AND path < ? || '0'`).run(dir, dir)
+      db.prepare(`DELETE FROM ${table} WHERE ${UNDER('path')}`).run(dir, dir)
     }
   },
   renamePathPrefixIndex(oldDir, newDir) {
     for (const table of INDEX_TABLES) {
       // The suffix offset is computed by SQL's own length() — SQLite counts characters where a JS .length counts UTF-16 units, and mixing the two swallows the separator after any astral character.
       db.prepare(
-        `UPDATE OR REPLACE ${table} SET path = ? || substr(path, length(?) + 1) WHERE path >= ? || '/' AND path < ? || '0'`,
+        `UPDATE OR REPLACE ${table} SET path = ? || substr(path, length(?) + 1) WHERE ${UNDER('path')}`,
       ).run(newDir, oldDir, oldDir, oldDir)
     }
   },
@@ -179,9 +181,7 @@ export const contentIndexStore = (db: Db): ContentIndexStore => ({
     const rows = (
       under === undefined
         ? db.prepare(SELECT_STATS).all(ID_KEY)
-        : db
-            .prepare(`${SELECT_STATS} WHERE f.path >= ? || '/' AND f.path < ? || '0'`)
-            .all(ID_KEY, under, under)
+        : db.prepare(`${SELECT_STATS} WHERE ${UNDER('f.path')}`).all(ID_KEY, under, under)
     ) as StatRow[]
     return new Map(rows.map((r) => [r.path, statOf(r)]))
   },
@@ -226,7 +226,7 @@ export const syncStore = (db: Db): SyncStore => ({
     const fold = foldKey(prefix)
     return (
       db
-        .prepare(`SELECT ${BASE_COLUMNS} FROM sync_base WHERE fold >= ? || '/' AND fold < ? || '0'`)
+        .prepare(`SELECT ${BASE_COLUMNS} FROM sync_base WHERE ${UNDER('fold')}`)
         .all(fold, fold) as BaseRow[]
     ).map(baseRecord)
   },

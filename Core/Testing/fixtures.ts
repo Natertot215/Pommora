@@ -1,5 +1,5 @@
 import { pageKey } from '../Connections/pageIndex'
-import type { CascadeChange } from '../Connections/rewrite'
+import type { CascadeChange } from '../Nexus/cascade'
 import type { PageDetail } from '../Pages/pageDetail'
 import { machine } from '../Platform/machine'
 import type { DeviceRecord } from '../Sync/Contract/wire'

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { asRenderableIcon } from '@pommora/uix/Symbols'
-import { BLOCK_MENU_SECTIONS, filterBlockMenu, insertRows } from './blockMenu'
+import { filterBlockMenu, insertRows } from './blockMenu'
 
-const seated = BLOCK_MENU_SECTIONS
+const seated = filterBlockMenu('')
 
 describe('the block menu catalog', () => {
   it('titles five sections and lists their rows in order', () => {
@@ -110,7 +110,7 @@ describe('the block menu filter', () => {
     ])
   })
 
-  it('lists the menu as it stands for an empty query', () => {
-    expect(filterBlockMenu('')).toBe(seated)
+  it('lists the menu as it stands for a query of word breaks alone', () => {
+    expect(filterBlockMenu(' / ').map((s) => s.title)).toEqual(seated.map((s) => s.title))
   })
 })

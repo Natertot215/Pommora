@@ -1,6 +1,6 @@
-import { basename, dirname, isAtOrUnder, relative } from '../Paths/posix'
+import { basename, dirname, isAtOrUnder, join, relative } from '../Paths/posix'
 import { excludedWithin } from '../Settings/settings'
-import { stampedId } from '../Files/pageFile'
+import { stampedIdOf } from '../Files/pageFile'
 import type { ContextDef, ContextsRegistry } from '../Contexts/contexts'
 import type { Result } from '../Contract/result'
 import { liveTreeOf } from '../Nexus/liveTree'
@@ -11,10 +11,12 @@ import { spaceIdsIn } from '../Contexts/spaceSidecar'
 import { sidecarId } from '../Files/sidecar'
 import { exactTitle } from '../Paths/caseFold'
 import { readPageRelations } from '../Index/contentIndex'
+import { extractPageIndex } from '../Index/indexSeed'
 import { valueLinks } from '../Connections/scan'
 import { ID_KEY } from '../Nexus/identityMark'
 import { pageIndexOf } from '../Nexus/record'
 import type { NexusTree } from '../Nexus/tree'
+import type { Relation } from '../Platform/stores'
 
 import type { RecordFile, ParentRef } from './record'
 import type { ContainerKind } from '../Nexus/entities'
@@ -26,19 +28,30 @@ async function gatherParentRef(root: string, absEntity: string): Promise<ParentR
   return id ? { kind: 'container', id } : { kind: 'unaddressable' }
 }
 
-/** What each outbound link at or under `rel` named: the id of the page its key resolves to alone, from the rows the index holds for the pages there (`paths`) and the values the Spaces there hold. */
-export function gatherLinkTargets(
+/** The page-to-page rows of the pages at `paths`: the index's, or read from their files by the index's own extractor while it has none to answer with. */
+async function pageRelationsOf(root: string, paths: readonly string[]): Promise<Relation[]> {
+  const indexed = readPageRelations(paths, ID_KEY)
+  if (indexed) return indexed.relations
+  const texts = await Promise.all(paths.map((p) => readTextOrNull(join(root, p))))
+  return texts.flatMap((text) =>
+    text === null ? [] : extractPageIndex(text).relations.filter((r) => r.kind !== 'space'),
+  )
+}
+
+/** What each outbound link at or under `rel` named: the id and path of the page its key resolves to alone, from the rows of the pages there (`paths`) and the values the Spaces there hold. */
+export async function gatherLinkTargets(
+  root: string,
   tree: NexusTree,
   rel: string,
-  paths: string[],
-): Record<string, string> {
+  paths: readonly string[],
+): Promise<Record<string, { id: string; path: string }>> {
   const index = pageIndexOf(tree)
-  const out = new Map<string, string>()
+  const out = new Map<string, { id: string; path: string }>()
   const note = (key: string): void => {
     const page = out.has(key) ? undefined : index.resolve(key).page
-    if (page) out.set(key, page.id)
+    if (page) out.set(key, { id: page.id, path: page.path })
   }
-  for (const row of readPageRelations(paths, ID_KEY)?.relations ?? []) note(row.target)
+  for (const row of await pageRelationsOf(root, paths)) note(row.target)
   for (const g of tree.contexts)
     for (const s of g.spaces)
       if (isAtOrUnder(s.path, rel)) for (const hit of valueLinks(s.values ?? {})) note(hit.target)
@@ -51,8 +64,7 @@ export async function gatherContentRecord(
   abs: string,
 ): Promise<RecordFile> {
   const parent = await gatherParentRef(root, abs)
-  const id =
-    kind === 'page' ? stampedId((await readTextOrNull(abs)) ?? '') : await sidecarId(abs, kind)
+  const id = kind === 'page' ? await stampedIdOf(abs) : await sidecarId(abs, kind)
   return {
     entity: kind,
     ...(id ? { id } : {}),

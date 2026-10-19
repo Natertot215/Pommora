@@ -20,6 +20,7 @@ import type { AliasRowAction } from '../../Actions/aliasRowMenu'
 import { ALIAS_ICON } from '../../Assets/entityIconPolicy'
 import type { AliasEdit } from '../../Connections/aliasMemory'
 import { keepsAlias } from '../../Connections/connections'
+import { matchQuery } from '../../Paths/caseFold'
 
 // KNOB — how long a click on a picker row waits for a second click that makes it a rename.
 const PICK_DELAY_MS = 300
@@ -52,7 +53,8 @@ export function AliasList({
     onAdd: (alias) => host.edit({ op: 'add', alias }),
     onRename: (from, to) => host.edit({ op: 'rename', from, to }),
   })
-  const entering = useEntrance(list.rows, (r) => r.key, query === '')
+  const filtered = matchQuery(query) !== ''
+  const entering = useEntrance(list.rows, (r) => r.key, !filtered)
   const [renaming, setRenaming] = useState<string | null>(null)
   const rows = useRef<HTMLDivElement>(null)
   const pick = useRef<number | undefined>(undefined)
@@ -123,7 +125,7 @@ export function AliasList({
     >
       <LineZone
         {...lineList({
-          disabled: query !== '' || renaming !== null || list.drafting,
+          disabled: filtered || renaming !== null || list.drafting,
           commit: (alias, slot) => void host.edit({ op: 'move', alias, toIndex: slot.index }),
           line: menuDropLine,
           label: (alias) => alias,

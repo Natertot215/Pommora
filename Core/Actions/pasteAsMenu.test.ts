@@ -131,6 +131,17 @@ describe('what the clipboard offers to become', () => {
     expect(labels('[[T#H]]', true)).toEqual(['Connection', 'Markdown Link'])
     expect(labels('[[T|a]]', true)).toEqual(['Connection', 'Markdown Link'])
   })
+
+  it('offers Embedded Page for a path link whose alias is the title its writer gave it', () => {
+    const index = buildPageIndex([
+      { id: 'a', title: 'Notes', path: 'A/Notes.md' },
+      { id: 'b', title: 'Notes', path: 'B/Notes.md' },
+    ])
+    const offered = (clipboard: string) =>
+      pasteAsRows(clipboard, true, false, index).map((r) => r.label)
+    expect(offered('[[A/Notes|Notes]]')).toContain('Embedded Page')
+    expect(offered('[[A/Notes|mine]]')).not.toContain('Embedded Page')
+  })
 })
 
 describe('what each form writes', () => {

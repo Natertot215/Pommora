@@ -243,6 +243,23 @@ describe('linksIn', () => {
     expect(hits('[[Page]]')[0].qualifier).toBe('')
   })
 
+  it('reads a `.md` off the page half alone, keeping one a heading ends in', () => {
+    expect(hits('[[File#Text.md]]')[0]).toMatchObject({
+      named: { title: 'File', heading: 'Text.md' },
+      target: 'file',
+      qualifier: 'text.md',
+    })
+    expect(hits('[[File.md#H]]')[0]).toMatchObject({
+      named: { heading: 'H' },
+      target: 'file',
+      qualifier: 'h',
+    })
+  })
+
+  it('reads an embed alone on a CRLF line as an embed', () => {
+    expect([...linksIn('![[A/Notes]]\r\nnext\r\n')].map((h) => h.embed)).toEqual([true])
+  })
+
   it('reads an embed’s heading as its qualifier', () => {
     expect(hits('![[Alpha#Part]]')[0]).toMatchObject({
       embed: true,

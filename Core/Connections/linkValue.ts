@@ -157,7 +157,7 @@ export function shownAlias(
   return { page, alias }
 }
 
-/** A written link as the page it resolves to, spelled at the depth it was written (its title, or the same tail of the page's path, case corrected, or the full path where that tail no longer names the page alone) in the syntax it came in (a value's bare heading keeps its empty title); anything else as written. */
+/** A written link as the page it resolves to, spelled at the depth it was written (its title, or the same tail of the page's path, case corrected, or the full path where that tail no longer names the page alone) in the syntax it came in (a value's bare heading keeps its empty title), with shown text that only names its title read as absent, the writer's own rather than a given name, for the writer to give again where a path needs it; anything else as written. */
 export function resolvedTarget(
   written: LinkTarget,
   index: PageIndex | undefined,
@@ -171,7 +171,9 @@ export function resolvedTarget(
     syntax: written.syntax === 'wiki' ? 'wiki' : 'markdown',
     title: named.title === '' ? '' : index.writtenName(target.page.path, named.title),
     ...(target.heading ? { heading: target.heading } : {}),
-    ...(written.shown ? { shown: written.shown } : {}),
+    ...(written.shown && namesTarget(written.shown, named) !== 'title'
+      ? { shown: written.shown }
+      : {}),
   }
 }
 
@@ -254,13 +256,17 @@ const sameTarget = (a: ResolvedLink, b: ResolvedLink): boolean => {
   return a.kind === 'url' && b.kind === 'url' && normalizeLinkUrl(a.url) === normalizeLinkUrl(b.url)
 }
 
-/** Whether a retarget keeps the link's shown text: always with Remove Title On Link Change off, and otherwise only where the link pointed somewhere as it read before the edit (`baseline`, null for a link that never closed) and is being re-aimed elsewhere. */
+/** Whether a retarget keeps the link's shown text: never for a wikilink alias that only named the title, which is the writer's own and drawn as none; otherwise always with Remove Title On Link Change off, and otherwise only where the link pointed somewhere as it read before the edit (`baseline`, null for a link that never closed) and is being re-aimed elsewhere. */
 export function keepsShown(
   baseline: LinkTarget | null,
   next: LinkTarget,
   removeTitle: boolean,
   index?: PageIndex,
 ): boolean {
+  if (baseline?.kind === 'page' && baseline.syntax === 'wiki' && baseline.shown !== undefined) {
+    const named = namedPage(baseline)
+    if (named && namesTarget(baseline.shown, named) === 'title') return false
+  }
   if (!removeTitle || baseline === null) return true
   const was = resolveLink(baseline, index)
   return was.kind === 'unresolved' || sameTarget(was, resolveLink(next, index))

@@ -390,6 +390,12 @@ describe('a pick reads an embed as the scanner does', () => {
     expect(pick('see ![[Notes]] here')).toBe('see ![[A/Notes|Notes]] here')
     expect(pick('![[Notes]]')).toBe('![[A/Notes]]')
   })
+
+  it('a table cell draws no embed, so one alone in it keeps the title alias', () => {
+    const doc = '![[Notes'
+    const ac = queryOf(scanDoc(doc), doc.length, undefined, 'cell')!
+    expect(landed(doc, commitEdit(ac, 'A/Notes', {}))).toBe('![[A/Notes|Notes]]')
+  })
 })
 
 describe('wiki and markdown picks mirror each other', () => {

@@ -1,5 +1,6 @@
 import { foldKey } from '../Paths/caseFold'
 import { ID_KEY } from '../Nexus/identityMark'
+import { asString } from '../Nexus/coerce'
 import type {
   BaseRecord,
   CaptureReason,
@@ -80,8 +81,8 @@ const contentIndex = (index: MemoryIndex): ContentIndexStore => {
   const sortedPaths = (paths: Iterable<string>): string[] => [...new Set(paths)].sort()
   const statOf = (path: string, { mtimeMs, size }: IndexedStat): IndexedStat => {
     const row = index.values.get(k(path, ID_KEY))
-    const value: unknown = row && JSON.parse(row.value)
-    return typeof value === 'string' ? { mtimeMs, size, id: value } : { mtimeMs, size }
+    const id = row && asString(JSON.parse(row.value))
+    return id === undefined ? { mtimeMs, size } : { mtimeMs, size, id }
   }
   const relationRows = (): RelationRow[] => [...index.relations.values()]
   return {

@@ -5,6 +5,7 @@ import type { EditorView } from '@codemirror/view'
 import type { ConnectionsApi } from '../Links/connectionsApi'
 import type { EditorSettings } from '../api'
 import { buildPageIndex } from '../../Connections/pageIndex'
+import { applyLinkAction } from '../Links/linkEdit'
 import {
   cleanupEditor,
   harnessState,
@@ -784,6 +785,25 @@ describe('a pick names the page as a new link should, and the picker closes on a
     await press(other, 'ArrowDown')
     await press(other, 'Enter')
     expect(other.state.doc.toString()).toBe('[[B/Notes|A]]')
+  })
+
+  it('a phantom path link seated by a click lists its title’s holders, and a pick writes the path', async () => {
+    const dups: ConnectionsApi = {
+      index: buildPageIndex([
+        { id: 'dA', title: 'Dup', path: 'A/Dup.md' },
+        { id: 'dB', title: 'Dup', path: 'B/Dup.md' },
+      ]),
+      headingsOf: () => undefined,
+      open: () => {},
+    }
+    const body = '[[Gone/Dup|Dup]]'
+    const view = await at(body, 0, dups)
+    await act(async () => applyLinkAction(view, 'seatTitle', [0, body.length]))
+    expect(view.state.selection.main.head).toBe('[[Gone/Dup'.length)
+    expect(titleRows()).toEqual(['Dup', 'Dup'])
+    await press(view, 'ArrowDown')
+    await press(view, 'Enter')
+    expect(view.state.doc.toString()).toBe('[[B/Dup|Dup]]')
   })
 
   it('a pick inside an embed writes no alias', async () => {

@@ -47,7 +47,7 @@ export async function deleteOp(
   // With no bundle to keep them, the pages' metadata entries leave with the delete, by the ids their files carry before the move.
   const pageIds = bundle ? [] : await pageIdsOf(await contentPages(req.kind, abs))
   const under = pagesOf(before).flatMap((p) => (isAtOrUnder(p.path, rel) ? p.path : []))
-  const targets = bundle ? gatherLinkTargets(before, rel, under) : {}
+  const targets = bundle ? await gatherLinkTargets(root, before, rel, under) : {}
   const write = bundle
     ? async (record: RecordFile | null): Promise<void> => {
         if (record)

@@ -27,8 +27,8 @@ const strippedLink: z.ZodType<StrippedLink> = z.object({
   value: z.string(),
 })
 
-/** The page each outbound link under the artifact named at the delete, by id under the key it was written with, so a restore follows it by identity. */
-const linkTargets = z.record(z.string(), z.string()).optional()
+/** The page each outbound link under the artifact named at the delete, by its id and its path then under the key it was written with, so a restore follows it by identity and re-spells only what changed since. */
+const linkTargets = z.record(z.string(), z.object({ id: z.string(), path: z.string() })).optional()
 
 const contentRecord = <E extends string>(entity: E) =>
   z.object({

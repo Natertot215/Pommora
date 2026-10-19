@@ -134,3 +134,14 @@ export const contextSeeds = (req: CreatePageRequest): [contextId: string, spaceI
   )
 
 export const seedsContext = (req: CreatePageRequest): boolean => contextSeeds(req).length > 0
+
+/** The operations that change what the settle holds, each moving, adding, rewriting, or removing pages in its turn, so a save queued for a file one touches lands first. */
+export const changesSettled = (operation: MutateRequest['op']): boolean =>
+  operation === 'createPage' ||
+  operation === 'rename' ||
+  operation === 'movePage' ||
+  operation === 'moveSet' ||
+  operation === 'renameHeading' ||
+  operation === 'delete' ||
+  operation === 'restore' ||
+  operation === 'emptyBundle'

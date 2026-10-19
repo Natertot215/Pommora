@@ -7,7 +7,7 @@ import {
   normalizeTitle,
   rankMatches,
 } from '../Paths/caseFold'
-import { isMarkdownFile, relDirname, stripMarkdownExt } from '../Paths/posix'
+import { isMarkdownFile, relDirname, stripMarkdownExt, titleFromPath } from '../Paths/posix'
 import type { PageHeading } from '../Platform/stores'
 
 export interface ConnPage {
@@ -15,6 +15,12 @@ export interface ConnPage {
   title: string
   path: string
 }
+
+export const connPage = (id: string, path: string): ConnPage => ({
+  id,
+  title: titleFromPath(path),
+  path,
+})
 
 export interface ConnResolution {
   status: LinkStatus
@@ -121,9 +127,15 @@ export function buildPageIndex(pages: readonly ConnPage[]): PageIndex {
         .map((p) => ({ p, key: matchKey(p.title, relDirname(p.path)) }))
         .sort((a, b) => compareTitles(a.p.title, b.p.title))
       const q = matchQuery(query)
-      // An empty query browses the whole index alphabetically, as an empty `[[` or `[label](` lists.
+      // An empty query browses the whole index alphabetically, as an empty `[[` or `[label](` lists; a path query nothing answers ranks again by its last segment, so a link through a folder gone since lists its title's holders.
       if (!q) return alphabetical.slice(0, limit).map((x) => x.p)
-      return rankMatches(alphabetical, q, (x) => x.key, limit).map((x) => x.p)
+      const hits = rankMatches(alphabetical, q, (x) => x.key, limit)
+      const last = matchQuery(query.slice(query.lastIndexOf('/') + 1))
+      return (
+        hits.length || !last || last === q
+          ? hits
+          : rankMatches(alphabetical, last, (x) => x.key, limit)
+      ).map((x) => x.p)
     },
   }
 }

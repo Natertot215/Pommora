@@ -414,8 +414,8 @@ describe('frozenWorld', () => {
         { id: 'back', title: 'Landing', path: 'Ideas/Old/Landing.md' },
       ]),
       new Map([
-        ['old a', 'pA'],
-        ['alpha', 'gone'],
+        ['old a', { id: 'pA' }],
+        ['alpha', { id: 'gone' }],
       ]),
     )
     expect(world.holds?.('Ideas/Old/Landing')).toBe(true)

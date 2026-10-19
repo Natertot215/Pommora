@@ -118,7 +118,7 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
       expect(store.readIndexedStats().get('Loose/B.md')).toEqual(STAT)
     })
 
-    it('a stat carries the string the page holds under the exact `ID` key, and nothing else', () => {
+    it('a stat carries the non-empty string the page holds under the exact `ID` key, and nothing else', () => {
       const values = (values: Record<string, unknown>): PageIndexEntry => ({
         relations: [],
         headings: [],
@@ -129,8 +129,9 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
       upsert('Notes/C.md', values({ ID: 7 }))
       upsert('Notes/D.md', values({ ID: ['p4'] }))
       upsert('Notes/E.md', values({}))
+      upsert('Notes/F.md', values({ ID: '' }))
       expect(store.readIndexedStat('Notes/A.md')).toEqual({ ...STAT, id: 'p1' })
-      for (const path of ['Notes/B.md', 'Notes/C.md', 'Notes/D.md', 'Notes/E.md'])
+      for (const path of ['Notes/B.md', 'Notes/C.md', 'Notes/D.md', 'Notes/E.md', 'Notes/F.md'])
         expect(store.readIndexedStat(path)).toEqual(STAT)
       expect(store.readIndexedStats().get('Notes/A.md')).toEqual({ ...STAT, id: 'p1' })
       expect(store.readIndexedStats().get('Notes/D.md')).toEqual(STAT)

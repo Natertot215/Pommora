@@ -90,6 +90,11 @@ describe('ValueEditor in its one-line mode', () => {
     expect(container.querySelector('.value-field.mdpm-shell')).not.toBeNull()
   })
 
+  it('with no connections, a one-line link is no link to seat, and the caret rests at the end', () => {
+    const view = mount('[[Notes]]', { host: testHost() })
+    expect(view.state.selection.main.head).toBe(9)
+  })
+
   it('Return commits a changed value once and closes; on an unchanged value it closes alone', () => {
     const view = mount('[[Alpha]]')
     type(view, ' x')

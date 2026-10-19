@@ -6,7 +6,7 @@ import {
   reportRefusal,
   unrestoredLine,
 } from '../Interface/Notifications/notifications'
-import type { MutateOutcome, MutateRequest } from '../Nexus/mutateRequest'
+import { changesSettled, type MutateOutcome, type MutateRequest } from '../Nexus/mutateRequest'
 import { caught, type PommoraError, type Result, valueOr } from '../Contract/result'
 import type { NexusChange, NexusTree } from '../Nexus/tree'
 import type { SyncStatus } from '../Sync/Contract/wire'
@@ -236,16 +236,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
     mutate: async (req) => {
       const held = get().tree
       const moves = req.op === 'rename' || req.op === 'movePage' || req.op === 'moveSet'
-      // A save queued for a file this op moves or rewrites would land on the old path or go stale.
-      if (
-        moves ||
-        req.op === 'createPage' ||
-        req.op === 'renameHeading' ||
-        req.op === 'delete' ||
-        req.op === 'restore' ||
-        req.op === 'emptyBundle'
-      )
-        await flushAllSaves()
+      if (changesSettled(req.op)) await flushAllSaves()
       // A flush held by a Nexus switch resumes after it, when the path this op names belongs to the Nexus it left.
       if (get().tree?.nexus.id !== held?.nexus.id) return null
       const res = await dialer().ask('mutate', req)

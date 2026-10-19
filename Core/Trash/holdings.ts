@@ -1,14 +1,14 @@
 // What the Trash holds — its bundles, the pages they hold at the paths they left, and the pages and Spaces they hold by ID — and the Link values a restore hands to it.
 
-import { basename, join, relative, titleFromPath } from '../Paths/posix'
+import { basename, join, relative } from '../Paths/posix'
 import { SPACE_SIDECAR, TRASH_DIR } from '../Paths/nexusPaths'
 import { landValue } from '../Files/rootValues'
 import { readLinkText } from '../Connections/linkValue'
-import { buildPageIndex, type ConnPage } from '../Connections/pageIndex'
+import { buildPageIndex, type ConnPage, connPage } from '../Connections/pageIndex'
 import type { StrippedLink } from '../Nexus/cascade'
 import { spaceIdsIn } from '../Contexts/spaceSidecar'
-import { readTextOrNull, rmwJsonStrict } from '../Files/atomicWrite'
-import { stampedId } from '../Files/pageFile'
+import { rmwJsonStrict } from '../Files/atomicWrite'
+import { stampedIdOf } from '../Files/pageFile'
 import { listEntries, listMarkdownFiles } from '../Files/walk'
 import { sweepGovernedRoots } from '../Properties/governedSweep'
 import { isBlankRaw } from '../Properties/propertyValue'
@@ -62,14 +62,12 @@ export async function contentPages(
 
 /** The ids `pages` carry, read from the files themselves. */
 export async function pageIdsOf(pages: string[]): Promise<string[]> {
-  const texts = await Promise.all(pages.map(readTextOrNull))
-  return texts.flatMap((text) => stampedId(text ?? '') ?? [])
+  const ids = await Promise.all(pages.map(stampedIdOf))
+  return ids.flatMap((id) => id ?? [])
 }
 
-const trashedPage = (root: string, bundleAbs: string, file: string, id: string): ConnPage => {
-  const path = deletedPathOf(root, bundleAbs, file)
-  return { id, title: titleFromPath(path), path }
-}
+const trashedPage = (root: string, bundleAbs: string, file: string, id: string): ConnPage =>
+  connPage(id, deletedPathOf(root, bundleAbs, file))
 
 /** Every trashed page at the path it left, its `id` the bundle holding it, since parking needs the bundle alone and reads no file. */
 async function trashedPages(root: string): Promise<ConnPage[]> {
@@ -91,7 +89,7 @@ export async function trashedPagesOf(
 ): Promise<ConnPage[]> {
   const out: ConnPage[] = []
   for (const file of files) {
-    const id = stampedId((await readTextOrNull(file)) ?? '')
+    const id = await stampedIdOf(file)
     out.push(trashedPage(root, bundleAbs, file, id ?? file))
   }
   return out
@@ -126,7 +124,7 @@ async function trashedHolders(
       case 'set':
       case 'collection':
         for (const page of await contentPages(record.entity, artifact)) {
-          const id = stampedId((await readTextOrNull(page)) ?? '')
+          const id = await stampedIdOf(page)
           if (id && ids.has(id)) found.set(id, page)
         }
         break

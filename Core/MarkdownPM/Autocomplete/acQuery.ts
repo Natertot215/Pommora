@@ -63,7 +63,7 @@ export const acQuery = (scope: MarkdownScope) =>
         armed = null
       const q =
         tr.newSelection.main.empty && !tr.state.readOnly && !inRawHtml(tr.state, head, scope)
-          ? autocompleteQuery(docScan(tr.newDoc), head, armed ?? undefined)
+          ? autocompleteQuery(docScan(tr.newDoc), head, armed ?? undefined, scope)
           : null
       const dismissed = q && sameQuery(q, value.dismissed) ? value.dismissed : null
       const query = dismissed ? null : q && sameQuery(q, value.query) ? value.query : q

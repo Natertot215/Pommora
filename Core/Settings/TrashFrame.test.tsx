@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import type { TrashRow } from '../Trash/trashRow'
+import { matchKey } from '../Paths/caseFold'
 import { countPhrase, filterRows, TrashFrame } from './TrashFrame'
 import { stubDialer } from '../vitest.setup'
 import { useSession } from '../Session/store'
@@ -15,15 +16,19 @@ import { pageIO, scheduleBodySave } from '../Session/saveScheduler'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
-const row = (over: Partial<TrashRow>): TrashRow => ({
-  bundlePath: `.trash/${over.title ?? 'x'}.deleted`,
-  kind: 'page',
-  title: 'Alpha',
-  crumbs: [{ kind: 'collection', title: 'Notes' }],
-  deletedAt: 0,
-  homeResolves: true,
-  ...over,
-})
+const row = (over: Partial<TrashRow>): TrashRow => {
+  const { title = 'Alpha', crumbs = [{ kind: 'collection', title: 'Notes' }] } = over
+  return {
+    bundlePath: `.trash/${over.title ?? 'x'}.deleted`,
+    kind: 'page',
+    title,
+    crumbs,
+    deletedAt: 0,
+    homeResolves: true,
+    match: matchKey(title, crumbs.map((c) => c.title).join('/')),
+    ...over,
+  }
+}
 
 describe('filterRows', () => {
   const rows = [

@@ -74,8 +74,11 @@ export interface LinkHit {
   shown: Span | null
 }
 
-const embedLine = (body: string, [from, to]: Span): boolean =>
-  loneEmbedTitle(body.slice(lineStartAt(body, from), lineEndAt(body, to))) !== null
+// The editor's lines never hold a `\r`, a body's CRLF lines do, so the line goes in without it.
+const embedLine = (body: string, [from, to]: Span): boolean => {
+  const line = body.slice(lineStartAt(body, from), lineEndAt(body, to))
+  return loneEmbedTitle(line.replace(/\r$/, '')) !== null
+}
 
 /** The gate in front is on SYNTAX rather than any title: a substring test would break the NFC invariant `normalizeTitle` exists for, and an NFD-composed body would be skipped silently. `inCode` is resolved inside the body, never as a default parameter: a generator binds its parameters at call time, so a default would build a whole-document mask even for the calls that return at the gate. */
 export function* linksIn(

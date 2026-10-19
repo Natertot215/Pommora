@@ -514,9 +514,26 @@ describe('the bundle records the page each outbound link named', () => {
   })
   afterEach(() => installStores(NO_STORES))
 
-  const ALPHA_TARGETS = { 'b/notes': NOTES, notes: NOTES, beta: PAGE_B, gamma: GAMMA }
+  const ALPHA_TARGETS = {
+    'b/notes': { id: NOTES, path: 'Notes/B/Notes.md' },
+    notes: { id: NOTES, path: 'Notes/B/Notes.md' },
+    beta: { id: PAGE_B, path: 'Notes/Beta.md' },
+    gamma: { id: GAMMA, path: 'Notes/Gamma.md' },
+  }
 
   it('a page delete records each key, embeds included, resolved alone, and none ambiguous or phantom', async () => {
+    const r = await settledMutate(
+      root,
+      { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' },
+      nexusDeps,
+    )
+    expect(r.ok).toBe(true)
+    const { record } = await onlyBundle()
+    expect((record as { targets?: unknown }).targets).toEqual(ALPHA_TARGETS)
+  })
+
+  it('a page delete with no index records the same keys, read from its file', async () => {
+    installStores(NO_STORES)
     const r = await settledMutate(
       root,
       { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' },
@@ -560,7 +577,9 @@ describe('the bundle records the page each outbound link named', () => {
     )
     expect(r.ok).toBe(true)
     const { record } = await onlyBundle()
-    expect((record as { targets?: unknown }).targets).toEqual({ gamma: GAMMA })
+    expect((record as { targets?: unknown }).targets).toEqual({
+      gamma: { id: GAMMA, path: 'Notes/Gamma.md' },
+    })
   })
 
   it('a record with targets round-trips, and one without them still reads', async () => {
@@ -1196,6 +1215,15 @@ describe('restore — the returning page’s links follow the pages they named',
     )
   })
 
+  it('keeps every link byte for byte when nothing it named changed meanwhile', async () => {
+    const written = `---\nID: ${PAGE_A}\nRelated: "[[beta]]"\n---\n[[beta]] [[notes/beta]] [b](beta)`
+    await writeFile(join(root, ALPHA), written)
+    await reseed()
+    await del(ALPHA)
+    await restore('Alpha.md')
+    expect(await text(ALPHA)).toBe(written)
+  })
+
   it('follows a case-only rename meanwhile, leaving a link to an unchanged page that carries .md as written', async () => {
     await write(ALPHA, PAGE_A, 'Related: "[[beta]]"\n', '[[beta]] [[Gamma.md]]')
     await write('Notes/Gamma.md', '01KVGMT8BFP350FZZXAMG1QDVG', '', 'gamma')
@@ -1413,7 +1441,9 @@ describe('restore — the returning page’s links follow the pages they named',
         ).ok,
       ).toBe(true)
       const [listed] = await listBundles(root)
-      expect(listed.record).toMatchObject({ targets: { beta: PAGE_B } })
+      expect(listed.record).toMatchObject({
+        targets: { beta: { id: PAGE_B, path: 'Notes/Beta.md' } },
+      })
       await renameBeta()
       await restore('Projects')
       expect((await readJsonAt(sidecar())).Related).toBe('[[Gamma]]')

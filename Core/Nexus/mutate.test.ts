@@ -470,6 +470,21 @@ describe('handleMutate — the re-spell', () => {
     if (r.ok) expect(r.value.cascade?.pages).toEqual(['Notes/Daily/Alpha.md'])
   })
 
+  it('a Set move re-spells the path links through the folder it left, and leaves the ones it keeps answering', async () => {
+    await set('Notes/Archive', 'set-archive')
+    await page('Notes/Linker.md', G_ID, '[[Notes/Daily/Beta]] [[Daily/Beta]] [[Beta]]')
+    await refreshTree(root)
+    const r = await settledMutate(
+      root,
+      { op: 'moveSet', path: 'Notes/Daily', newParentPath: 'Notes/Archive', order: [] },
+      nexusDeps,
+    )
+    expect(r.ok).toBe(true)
+    expect(await read('Notes/Linker.md')).toContain(
+      '[[Archive/Daily/Beta|Beta]] [[Daily/Beta]] [[Beta]]',
+    )
+  })
+
   it('a move that makes a path link ambiguous re-spells the other holder’s links to its full path', async () => {
     await collection('Work', 'col-work')
     await set('Work/Inbox', 'set-inbox')

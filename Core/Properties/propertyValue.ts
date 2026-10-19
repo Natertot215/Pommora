@@ -186,11 +186,11 @@ export interface Frozen {
 /** A world a value is read against: a key `targets` recorded at the delete answers by whether the page it named is there under any name, any other key by the name. */
 export function frozenWorld(
   index: PageIndex,
-  targets: ReadonlyMap<string, string> = new Map(),
+  targets: ReadonlyMap<string, { id: string }> = new Map(),
 ): Frozen {
   return {
     holds: (title) => {
-      const id = targets.get(pageKey(title))
+      const id = targets.get(pageKey(title))?.id
       return id === undefined ? index.holders(title).length > 0 : index.byId.has(id)
     },
   }

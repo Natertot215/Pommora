@@ -229,6 +229,11 @@ describe('the Link field', () => {
     expect(selected()).toBe('Alpha')
   })
 
+  it('Edit Link opens an unresolved value with its target selected', () => {
+    mount(SITE, link('[[Zeta]]'), { seat: 'editLink' })
+    expect(selected()).toBe('Zeta')
+  })
+
   it('Rename opens the same editor seated in the alias slot', () => {
     mount(SITE, link('[[Alpha|nice]]'), { seat: 'rename', popover })
     expect(selected()).toBe('nice')

@@ -351,6 +351,7 @@ describe('a pick turns into a selection or a write, for both syntaxes', () => {
 
   it('a markdown link naming a page edits its title as a connection does', () => {
     expect(selected('[x](Page)', 'editLink')).toBe('Page')
+    expect(selected('[x](Alpha#Intro)', 'editLink')).toBe('Alpha')
   })
 
   it('Remove Link writes the shown text', () => {

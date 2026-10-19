@@ -408,6 +408,11 @@ describe('respellings', () => {
     const now = index(['a', 'A/Notes.md'], ['c', 'C/Other.md'])
     expect(respellings(was, now, [], ['c']).size).toBe(0)
   })
+  it('an arrival onto a title two pages already hold maps nothing', () => {
+    const was = index(['a', 'A/Notes.md'], ['b', 'B/Notes.md'])
+    const now = index(['a', 'A/Notes.md'], ['b', 'B/Notes.md'], ['c', 'C/Notes.md'])
+    expect(respellings(was, now, [], ['c']).size).toBe(0)
+  })
   it('a folder of 5,000 pages renamed maps in well under a second, as does one of 2,000 where 500 share a title', () => {
     const timed = (paths: (id: number) => string, count: number) => {
       const ids = Array.from({ length: count }, (_, i) => String(i))

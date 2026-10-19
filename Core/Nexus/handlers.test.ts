@@ -1,4 +1,4 @@
-import { mkdir, readFile, rm, utimes, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, rename, rm, utimes, writeFile } from 'node:fs/promises'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { HostContext } from '../Contract/handlers'
 import { writeJournal } from '../Contexts/contextJournal'
@@ -454,6 +454,22 @@ describe('openNexusSequence', () => {
     await openNexusSequence(ctx, root, false)
     await vi.waitFor(async () =>
       expect(await readFile(linker, 'utf8')).toContain('[[Notes#Intro]]'),
+    )
+  })
+
+  it('an open re-spells a path link to a page moved while it was closed, and leaves a bare one', async () => {
+    const linker = join(root, 'Library', 'Linker.md')
+    await mkdir(join(root, 'Archive'))
+    await writeFile(
+      join(root, 'Archive', '_pagecollection.json'),
+      JSON.stringify({ id: 'col-arc' }),
+    )
+    await writeFile(linker, `---\nID: ${THIRD_PAGE}\n---\n\n[[Library/Notes]] and [[Notes]]\n`)
+    await seedContentIndex(root)
+    await rename(join(root, 'Library', 'Notes.md'), join(root, 'Archive', 'Notes.md'))
+    await openNexusSequence(ctx, root, false)
+    await vi.waitFor(async () =>
+      expect(await readFile(linker, 'utf8')).toContain('[[Archive/Notes|Notes]] and [[Notes]]'),
     )
   })
 })

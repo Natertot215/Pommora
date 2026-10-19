@@ -461,6 +461,16 @@ describe('resolvedTarget — a written link as the page it resolves to', () => {
     })
     expect(linkValueFromEdit('[[Dup]]', paths, undefined)).toBeUndefined()
   })
+  it('reads a path link’s alias naming its title as the writer’s own, and keeps a given one', () => {
+    const shared = buildPageIndex([
+      { id: '1', title: 'Notes', path: 'A/Notes.md' },
+      { id: '2', title: 'Notes', path: 'B/Notes.md' },
+    ])
+    expect(resolvedTarget(readLinkText('[[A/Notes|Notes]]')!, shared)).not.toHaveProperty('shown')
+    expect(resolvedTarget(readLinkText('[[A/Notes|mine]]')!, shared)).toMatchObject({
+      shown: 'mine',
+    })
+  })
   it('leaves an address no page holds, and a phantom, as written', () => {
     for (const text of ['[x](https://a.com)', '[[Nowhere]]'])
       expect(resolvedTarget(readLinkText(text)!, index)).toEqual(readLinkText(text))
@@ -480,6 +490,10 @@ describe('keepsShown — Remove Title On Link Change over the link as it read be
   it('keeps it with the setting off, and for a link that never closed', () => {
     expect(keepsShown(was('[[Alpha|x]]'), page('Beta'), false, index)).toBe(true)
     expect(keepsShown(null, page('Beta'), true, index)).toBe(true)
+  })
+  it('never carries shown text that only named the title, the writer’s own, whatever the setting', () => {
+    expect(keepsShown(was('[[A/Alpha|Alpha]]'), page('Beta'), false, index)).toBe(false)
+    expect(keepsShown(was('[[A/Alpha|alpha]]'), page('Beta'), true, index)).toBe(false)
   })
   it('keeps it where the link pointed nowhere', () => {
     expect(keepsShown(was('[[Nope|x]]'), page('Beta'), true, index)).toBe(true)
