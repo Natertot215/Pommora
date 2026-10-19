@@ -205,7 +205,7 @@ The work lands in ten phases in dependency order, removal first: the Space order
   - [x] Task 7B-2 · The Value Format change
   - [x] Task 7B-3 · Adoption follows the Value Format
   - [x] Task 7B-4 · The two rows and the counted confirmation
-  - [ ] Review Checkpoint
+  - [x] Review Checkpoint
 - [ ] **Phase 8** — The Restore Re-Spell
   - [x] Task 8-1 · Keys and words re-spell in the restore scrub
   - [ ] Review Checkpoint

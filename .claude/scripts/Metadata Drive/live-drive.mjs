@@ -1320,7 +1320,6 @@ async function group8(cdp) {
 const RAIL = `[...document.querySelectorAll('.settings-rail [data-reveal-host]')]`
 const DIALOG = `document.querySelector('[role="alertdialog"]')`
 const trigger = (label) => `document.querySelector('button[aria-label="${label}"]')`
-/** The smallest element around `label`'s trigger holding `text`: the row, once the text is its caption. */
 const dialogUp = (cdp) => cdp.evaluate(`!!${DIALOG}`)
 const dialogButton = (cancel) => `[...${DIALOG}.querySelectorAll('button')].find((b) => (b.textContent.trim() === 'Cancel') === ${cancel})`
 
