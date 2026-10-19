@@ -33,7 +33,7 @@ counts, the label and key registry, the journal and its cascades, the Key and Va
 restore re-spell), asserting page bytes, Space sidecars, `properties.json`, the views, View Tiles, Matrix filter, and
 Collection caches, the journal slot, and what the table draws and filters; group 9 drives each surface by real
 gesture (the Metadata leaf, the value picker, the format rows and their counted confirmation, the Trash browser, and
-a Space's Property Panel). `MATRIX.md` beside it holds the dimensions it crosses, what it prunes and why, and the
+a Space's Properties panel). `MATRIX.md` beside it holds the dimensions it crosses, what it prunes and why, and the
 decision each case pins. It takes the groups to run as arguments — `node live-drive.mjs 1 2` — seeds each group's
 own properties, pages, Contexts, and Spaces in `Collection A/Set Alpha`, `Collection B/Set Alpha`, and `~/Test`'s
 Contexts on debug port 9363, and exits non-zero on any failed check.
