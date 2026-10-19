@@ -8,6 +8,7 @@ import { SETTING_DEFAULTS, settingOf } from '../../Settings/personalization'
 import { notifyDeleted, reportRefusal } from '../Notifications/notifications'
 import { dialer } from '../../Platform/dialer'
 import { itemCount } from '../../Properties/properties'
+import type { FormatChange } from '../../Properties/keyFormat'
 
 const DELETE_FACTS_FALLBACK = {
   trashMode: DEFAULT_TRASH_MODE,
@@ -107,11 +108,11 @@ export const askDeleteView = (from: 'container' | 'tile' = 'container'): Promise
 
 const askHolding = async (
   propertyId: string,
-  value: string | undefined,
+  of: string | FormatChange | undefined,
   req: (held: string) => ConfirmRequest,
   quietAt?: number,
 ): Promise<boolean> => {
-  const r = await dialer().ask('property:holders', propertyId, value)
+  const r = await dialer().ask('property:holders', propertyId, of)
   if (!reportRefusal(r)) return false
   return (quietAt !== undefined && r.value <= quietAt) || ask(req(itemCount(r.value)))
 }
@@ -143,6 +144,19 @@ export const askClearOption = (propertyId: string, name: string): Promise<boolea
       tone: 'destructive',
     }),
     0,
+  )
+
+export const askFormatChange = (propertyId: string, change: FormatChange): Promise<boolean> =>
+  askHolding(
+    propertyId,
+    change,
+    (held) => ({
+      message: `This action would rewrite metadata in ${held}.`,
+      detail: 'Each key changes to the new format; values stay the same.',
+      action: 'Rewrite',
+      tone: 'positive',
+    }),
+    1,
   )
 
 export const askEmptyTrash = async (count: number): Promise<boolean> => {

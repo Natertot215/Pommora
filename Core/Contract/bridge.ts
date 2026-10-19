@@ -20,7 +20,7 @@ import type { OptionEdit } from '../Properties/optionModel'
 import type { PropertyDeletion } from '../Properties/deleteProperty'
 import type { SchemaCascade, SchemaJournal } from '../Properties/propertyJournal'
 import type { PropertyRename } from '../Properties/registryProperty'
-import type { KeyFormat } from '../Properties/keyFormat'
+import type { FormatChange, KeyFormat } from '../Properties/keyFormat'
 import type { Personalization } from '../Settings/personalization'
 import type { InsertTarget } from '../Tiles/Layout/model'
 import type {
@@ -181,7 +181,10 @@ export interface Asks {
     reply: Result<SchemaCascade>
   }
   'property:clearOption': { args: [propertyId: string, label: string]; reply: Result<null> }
-  'property:holders': { args: [propertyId: string, label?: string]; reply: Result<number> }
+  'property:holders': {
+    args: [propertyId: string, of?: string | FormatChange]
+    reply: Result<number>
+  }
 
   'tiles:get': { args: [host: TileHostRef]; reply: Result<TileDoc> }
   'tiles:save': { args: [host: TileHostRef, patch: TileDocPatch]; reply: Result<Landed> }

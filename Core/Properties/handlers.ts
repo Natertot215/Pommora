@@ -14,6 +14,7 @@ import {
   removeOption,
   renameOption,
   setValueFormat,
+  valueFormatHolders,
 } from './optionOps'
 import { optionEdit, type OptionEdit } from './optionModel'
 import {
@@ -27,6 +28,7 @@ import { isKeyFormat, type KeyFormat } from './keyFormat'
 import {
   createProperty,
   editProperty,
+  keyFormatHolders,
   removeFromRegistry,
   renameProperty,
   reorderRegistry,
@@ -193,9 +195,14 @@ export const propertiesHandlers = {
   'property:setValueFormat': registryChannel(idAndFormat, setValueFormat, cascadeReply),
   'property:removeOption': registryChannel(idAndValue, removeOption, cascadeReply),
   'property:clearOption': registryChannel(idAndValue, clearOption),
-  'property:holders': withRoot(async (root, _ctx, id: unknown, value: unknown) => {
+  'property:holders': withRoot(async (root, _ctx, id: unknown, of: unknown) => {
     if (typeof id !== 'string') return NEEDS_PROPERTY_ID
-    if (value === undefined) return propertyHolders(root, id)
-    return typeof value === 'string' ? optionHolders(root, id, value) : NEEDS_ID_AND_VALUE
+    if (of === undefined) return propertyHolders(root, id)
+    if (typeof of === 'string') return optionHolders(root, id, of)
+    if (isPlainObject(of) && isKeyFormat(of.key_format))
+      return keyFormatHolders(root, id, of.key_format)
+    if (isPlainObject(of) && isKeyFormat(of.value_format))
+      return valueFormatHolders(root, id, of.value_format)
+    return NEEDS_ID_AND_VALUE
   }),
 } satisfies Partial<Handlers>
