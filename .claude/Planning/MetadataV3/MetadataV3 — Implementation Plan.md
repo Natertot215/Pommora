@@ -5804,7 +5804,7 @@ Nathan's copy, decided at the Stop before Task 5A-1:
 
 - **A Key Pommora Manages** (`KEY_REFUSAL.reserved`): "Name is taken by an app-managed key.", worded during Phase 7B in place of naming the key.
 - **A Key Another Property Writes** (Task 5A-2, `KEY_REFUSAL.duplicateKey`): "A property already writes "{key}" to files."
-- **Two Options Writing One Key** (Task 5B-3's `validateOptionValues`): "An option with this title already exists, please choose another name."; a Value Format change (Task 7B-2) refuses "This format would give two options the same key, please rename one first."
+- **Two Options Writing One Key** (Task 5B-3's `validateOptionValues`): "Another option already writes this to files, please choose another name.", reworded at the final verification once a format could make the key collide where no title does; a Value Format change (Task 7B-2) refuses "This format would give two options the same key, please rename one first."
 - **An Option Change Waiting for Try Again** (Task 6-4, `OWED`): "An earlier change hasn’t reached every file yet.", the Try Again beside it carrying the rest.
 - **A Label That Leaves Its Key Empty** (Task 5A-2's `KEY_REFUSAL.noKey`, Task 5B-3's `validateOptionValues`): "Properties cannot contain an invalid name." and "Options cannot contain an invalid name.", reached through a format (Tasks 7A-3, 7B-2) or a registry written by hand; a blank label keeps "A name cannot be empty." and "Option titles can’t be blank."
 - **A Value Format Change Crossing Two Options' Keys** (Task 7B-2, `CROSSED`): "This format would give one option the key another option writes now, please rename one first."
@@ -5825,8 +5825,6 @@ Behaviors to read once before ratifying, each following the decisions:
 
 Rulings the final verification left with Nathan (10-19-2026):
 
-- **An Option Add Whose Key Alone Collides:** under a Value Format, adding or renaming an option whose label folds apart from every other but whose key another option writes is refused with "An option with this title already exists, please choose another name." (`validateOptionValues`' default), the title message where the key is what's taken; a key-clash message in the shape of "A property already writes "{key}" to files." wants Nathan's words.
-- **A Registry in the Old Shape:** a `properties.json` written before Task 5B-4 (`name`, option `value`) opens with every definition unadmitted, since no migration arm moves the old words; the plan rewrote both Nexuses once instead, and the benchmark builder writes the new shape. Whether any other Nexus Pommora opens holds the old shape, and whether a migration arm or a stated assumption answers it, is Nathan's call; a mixed-version Sync fleet meets the same seam.
 - **One Holders Shape:** `property:holders` answers four counts by its argument's shape beside two typed setters (`property:setKeyFormat`, `property:setValueFormat`); the neutral reviewer would split the count or collapse the setters into one `property:setFormat`.
 
 An alternative Nathan raised during Phase 4, held open while the plan runs as written:

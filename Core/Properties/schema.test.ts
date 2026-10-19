@@ -202,7 +202,7 @@ describe('validateOptionValues', () => {
       { key: 'a', label: 'B' },
     ]
     expect(refusalOf(pair)).toBe(
-      'An option with this title already exists, please choose another name.',
+      'Another option already writes this to files, please choose another name.',
     )
   })
 

@@ -302,7 +302,7 @@ export const COPY = {
   aKeyPommoraManages: () => 'Name is taken by an app-managed key.',
   itemsHoldingBothKeys: (n, from, to) => `${itemCount(n)} ${n === 1 ? 'holds' : 'hold'} both "${from}" and "${to}".`,
   twoOptionsTitledAlike: () => 'Option titles must be unique.',
-  twoOptionsWritingOneKey: () => 'An option with this title already exists, please choose another name.',
+  twoOptionsWritingOneKey: () => 'Another option already writes this to files, please choose another name.',
   aFormatGivingTwoOptionsOneKey: () => 'This format would give two options the same key, please rename one first.',
   anOptionChangeWaitingForTryAgain: () => 'An earlier change hasn’t reached every file yet.',
   anEmptyKey: (kind) => `${kind} cannot contain an invalid name.`,
