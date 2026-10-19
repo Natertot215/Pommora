@@ -258,12 +258,12 @@ describe('rewriteHeadingConnections', () => {
     )
   })
 
-  it('a lone embed falling back stays an embed line in markdown form', () => {
+  it('a lone embed falling back to markdown form reads as a link behind a `!`', () => {
     expect(rewriteHeadingConnections('![[A#Old]]', new Set(['a']), 'Old', 'A|B', false)).toBe(
       '![A|B](A#A%7CB)',
     )
     const hits = [...linksIn('![A|B](A#A%7CB)')]
-    expect(hits.map((h) => [h.syntax, h.embed, h.qualifier])).toEqual([['markdown', true, 'a|b']])
+    expect(hits.map((h) => [h.syntax, h.embed, h.qualifier])).toEqual([['markdown', false, 'a|b']])
   })
 
   it('drops an alias that comes to repeat the renamed heading’s target', () => {

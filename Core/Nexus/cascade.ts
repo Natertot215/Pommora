@@ -155,17 +155,22 @@ export function fileRewrites(
   tree: NexusTree,
   rewrite: (text: string, own?: boolean, outlineOf?: string) => string,
   { ownRel, settled = false }: { ownRel?: string; settled?: boolean } = {},
-): { text: RewriteText; spaceMoved: Rewrite; cacheMoved: Rewrite } {
+): {
+  text: RewriteText
+  spaceMoved: Rewrite
+  cacheMoved: Rewrite
+  holds: (key: string) => boolean
+} {
   const holds = linkKeysOf(tree.config.registry)
   const patchOf = (
     raw: Json,
-    holds: (key: string) => boolean,
+    isLinkKey: (key: string) => boolean,
     own = false,
     outlineOf = '',
   ): Record<string, string> => {
     const patch: Record<string, string> = {}
     for (const [key, value] of Object.entries(raw)) {
-      if (!holds(key)) continue
+      if (!isLinkKey(key)) continue
       // A string, or a `[[Page]]` yaml read as a nested list; a foreign one-item list stays a list.
       const text = linkEntry(value, 2)
       const next = text === null ? null : rewrite(text, own, outlineOf)
@@ -193,6 +198,7 @@ export function fileRewrites(
         values,
         patchOf(values, () => true),
       ),
+    holds,
   }
 }
 
@@ -227,7 +233,7 @@ export async function renameCascade(
             own,
             runs && own ? headingOutline(outlineOf).map((h) => h.text) : undefined,
           )
-    const { text, spaceMoved, cacheMoved } = fileRewrites(root, tree, rewrite, {
+    const { text, spaceMoved, cacheMoved, holds } = fileRewrites(root, tree, rewrite, {
       ownRel: 'names' in change ? undefined : change.path,
       settled,
     })
@@ -240,9 +246,7 @@ export async function renameCascade(
       ? await rewriteTileConnections(root, rewrite)
       : { hosts: [], failed: 0 }
     // A heading edit settles often and a cached Link still reaches its page, so only a re-spell reaches the caches.
-    const defs = tree.config.registry
-    const holds = linkKeysOf(defs)
-    const cachedIds = new Set(defs.filter((d) => holds(d.key)).map((d) => d.id))
+    const cachedIds = new Set(tree.config.registry.filter((d) => holds(d.key)).map((d) => d.id))
     const uncached =
       'names' in change ? await editCaches(root, tree.collections, cachedIds, cacheMoved) : 0
     const unmoved = swept.skipped.length + tiles.failed + uncached

@@ -262,8 +262,8 @@ describe('linksIn', () => {
     expect(hits('[[ #H]]')[0]).toMatchObject({ target: '', qualifier: 'h' })
   })
 
-  it('marks a markdown link alone on its line behind a `!` as an embed, and an inline one as not', () => {
-    expect(hits('![Alias](Zeta)')[0]).toMatchObject({ syntax: 'markdown', embed: true })
+  it('marks no markdown link behind a `!` as an embed, alone on its line or inline', () => {
+    expect(hits('![Alias](Zeta)')[0]).toMatchObject({ syntax: 'markdown', embed: false })
     expect(hits('see ![x](Zeta)')[0]).toMatchObject({ syntax: 'markdown', embed: false })
   })
 

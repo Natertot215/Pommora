@@ -382,6 +382,16 @@ describe('a pick writes the shown text its caller kept', () => {
   })
 })
 
+describe('a pick reads an embed as the scanner does', () => {
+  const pick = (doc: string) =>
+    landed(doc, commitEdit(autocompleteQuery(doc, doc.indexOf('Notes') + 1)!, 'A/Notes', {}))
+
+  it('only a link alone on its line behind a ! drops the title alias', () => {
+    expect(pick('see ![[Notes]] here')).toBe('see ![[A/Notes|Notes]] here')
+    expect(pick('![[Notes]]')).toBe('![[A/Notes]]')
+  })
+})
+
 describe('wiki and markdown picks mirror each other', () => {
   const pick = (doc: string, at: string, value: string, opts: Parameters<typeof commitEdit>[2]) => {
     const edit = commitEdit(autocompleteQuery(doc, doc.indexOf(at) + at.length)!, value, opts)

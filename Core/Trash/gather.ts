@@ -13,7 +13,7 @@ import { exactTitle } from '../Paths/caseFold'
 import { readPageRelations } from '../Index/contentIndex'
 import { valueLinks } from '../Connections/scan'
 import { ID_KEY } from '../Nexus/identityMark'
-import { pageIndexOf, pagesOf } from '../Nexus/record'
+import { pageIndexOf } from '../Nexus/record'
 import type { NexusTree } from '../Nexus/tree'
 
 import type { RecordFile, ParentRef } from './record'
@@ -26,15 +26,18 @@ async function gatherParentRef(root: string, absEntity: string): Promise<ParentR
   return id ? { kind: 'container', id } : { kind: 'unaddressable' }
 }
 
-/** What each outbound link at or under `rel` named: the id of the page its key resolves to alone, from the rows the index holds for the pages there and the values the Spaces there hold. */
-export function gatherLinkTargets(tree: NexusTree, rel: string): Record<string, string> {
+/** What each outbound link at or under `rel` named: the id of the page its key resolves to alone, from the rows the index holds for the pages there (`paths`) and the values the Spaces there hold. */
+export function gatherLinkTargets(
+  tree: NexusTree,
+  rel: string,
+  paths: string[],
+): Record<string, string> {
   const index = pageIndexOf(tree)
   const out = new Map<string, string>()
   const note = (key: string): void => {
     const page = out.has(key) ? undefined : index.resolve(key).page
     if (page) out.set(key, page.id)
   }
-  const paths = pagesOf(tree).flatMap((p) => (isAtOrUnder(p.path, rel) ? p.path : []))
   for (const row of readPageRelations(paths, ID_KEY)?.relations ?? []) note(row.target)
   for (const g of tree.contexts)
     for (const s of g.spaces)

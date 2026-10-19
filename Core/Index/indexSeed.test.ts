@@ -319,11 +319,9 @@ describe('the relations a page yields', () => {
     expect(rowsOf('Notes/A.md')).toEqual([{ kind: 'body', target: 'zeta', qualifier: '', key: '' }])
   })
 
-  it('a lone markdown embed is an `embed` row, and an inline one a `body` row', async () => {
+  it('a markdown link behind a `!` is a `body` row, alone on its line or inline', async () => {
     await page('![Alias](Zeta)\n')
-    expect(rowsOf('Notes/A.md')).toEqual([
-      { kind: 'embed', target: 'zeta', qualifier: '', key: '' },
-    ])
+    expect(rowsOf('Notes/A.md')).toEqual([{ kind: 'body', target: 'zeta', qualifier: '', key: '' }])
     await page('shows ![Alias](Zeta)\n')
     expect(rowsOf('Notes/A.md')).toEqual([{ kind: 'body', target: 'zeta', qualifier: '', key: '' }])
   })
