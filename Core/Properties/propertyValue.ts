@@ -143,7 +143,7 @@ export function decodeValue(def: PropertyDefinition, raw: unknown): PropertyValu
   }
 }
 
-/** The words a Multi-Select's `raw` holds that its Value Format could have written and no option's label or key claims without regard to case, each once by fold. */
+/** The words a Multi-Select's `raw` holds that its Value Format could have written and no option's label or key claims without regard to case, the fold option uniqueness compares by, each once by fold. */
 export function unregisteredMembers(def: PropertyDefinition, raw: unknown): string[] {
   const folds = new Set(
     optionsOf(def).flatMap((o) => [normalizeTitle(o.label), normalizeTitle(o.key)]),
