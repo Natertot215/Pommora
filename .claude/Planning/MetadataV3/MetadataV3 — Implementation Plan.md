@@ -206,9 +206,9 @@ The work lands in ten phases in dependency order, removal first: the Space order
   - [x] Task 7B-3 · Adoption follows the Value Format
   - [x] Task 7B-4 · The two rows and the counted confirmation
   - [x] Review Checkpoint
-- [ ] **Phase 8** — The Restore Re-Spell
+- [x] **Phase 8** — The Restore Re-Spell
   - [x] Task 8-1 · Keys and words re-spell in the restore scrub
-  - [ ] Review Checkpoint
+  - [x] Review Checkpoint
 - [ ] **Phase 9** — Interface and Drives
   - [ ] Task 9-1 · The Metadata leaf
   - [ ] Task 9-2 · The two live drives
@@ -5814,7 +5814,7 @@ Behaviors to read once before ratifying, each following the decisions:
 - **A Context Edit Replaces a Foreign Space Title:** E-3's carry is a Multi-Select's alone, so picking Spaces on a page holding `- area one` beside a Space `Area One` writes the picked titles and drops `area one`, as a Context write already replaces its value.
 - **Foreign Words Move After the Picks, and Emptying Removes Them** (E-3, Nathan's rulings).
 - **The Registry Rewrite's Window:** from Phase 5A's first commit until Task 5B-4, a build reads neither Nexus; the gates run on fixtures, and the Stop before Task 5A-1 asks Nathan to keep Pommora closed through it.
-- **A Restore Renames a Foreign Key a Format Could Have Written** (G-1, G-2): a page returning from the Trash holding an agent's `due_date` beside a Date property `Due Date` comes back holding `Due Date`, and the reconcile then drops a value the Date can't read; a key hand-edited away from every spelling of its label is matched only as written.
+- **A Restore Renames a Foreign Key a Format Could Have Written** (G-1, G-2): a page returning from the Trash holding an agent's `due_date` beside a Date property `Due Date` comes back holding `Due Date` with its value as written, since the restore's reconcile keeps any text a Date holds; a key hand-edited away from every spelling of its label is matched only as written.
 - **A Restore Keeps Pommora's Own Keys** (Task 8-1): G-1 matches a returning key against every format's spelling of every label, and D-1 refuses a key Pommora manages, so a Space's `heading_icon_hidden` or a page's `ID` stays where it is even beside a property labelled `Heading Icon Hidden` or `I-D`, whose `snake_case` or `PascalCase` spelling it is.
 - **A Restored Tag Meeting a Trashed Sibling:** with Contexts `Work-Log` and `Work Log` both live, a page trashed under `<Work-Log>` and then its Context trashed restores re-spelled onto `Work Log` (or dropped, where `Work Log` lacks the Space), since the match reads only current words and G-2 adds no cascade into `.trash`; properties and Spaces whose labels share a spelling behave alike.
 - **A Restored Collection's Saved Values Keep Their Old Keys:** a Collection in the Trash through a Value Format change comes back with its `property_cache` as it left, so a value removed from it before the delete doesn't return on reassign under the new format. No decision names that cache at restore, and re-spelling it costs a second cache pass in the scrub; the plan leaves it out.

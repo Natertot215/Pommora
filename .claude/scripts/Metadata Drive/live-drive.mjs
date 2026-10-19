@@ -1256,7 +1256,7 @@ async function group8(cdp) {
     { label: 'Value One', type: 'text' }, { label: 'Priority', type: 'select', select_options: hiLo },
     { label: 'Severity', type: 'select', select_options: hiLo }, { label: 'Urgency', type: 'select', select_options: hiLo },
     { label: 'Arrive Date', type: 'text' }, { label: 'Arrive-Date', type: 'text' }, { label: 'Rank', type: 'text' },
-    { label: 'Grade', type: 'select', select_options: tiers }, { label: 'Marks', type: 'multiSelect', select_options: tiers },
+    { label: 'Grade', type: 'select', select_options: tiers }, { label: 'Marks', type: 'multiSelect', value_format: 'Train-Case', select_options: tiers },
     { label: 'I-D', type: 'text' }, { label: 'Source Link', type: 'link' }, { label: 'Deadline Date', type: 'dateTime' },
   ])
   ids['Heading Icon Hidden'] ??= await define(cdp, { label: 'Heading Icon Hidden', type: 'text' })
@@ -1306,8 +1306,8 @@ async function group8(cdp) {
     fm('Link')['Source Link'] === '[[Page A]]' && !('source link' in fm('Link')), show(blockOf(P.Link)))
   pin(G, 'G-1', 'a foreign key a format could have written takes back its Date property',
     String(fm('Deadline')['Deadline Date'] ?? '').startsWith('2026-01-05') && !('deadline_date' in fm('Deadline')), show(fm('Deadline')))
-  pin(G, 'G-1 G-2 RULING', "a foreign key re-spelled onto a Date holding a value it can't read loses the value",
-    !('Deadline Date' in fm('Deadline Unread')) && !('deadline_date' in fm('Deadline Unread')), show(fm('Deadline Unread')))
+  pin(G, 'G-1 G-2 RULING', 'a foreign key re-spelled onto a Date keeps a value the Date reads as text',
+    fm('Deadline Unread')['Deadline Date'] === 'soon' && !('deadline_date' in fm('Deadline Unread')), show(fm('Deadline Unread')))
   const returning = sidecar('Topics', 'M8 Returning')
   pin(G, 'G-1', "a restored Space's sidecar takes back the current keys, words, and titles",
     same(returning['<Projects>'], ['Project One']) && same(returning.Grade, ['Top Tier']) && !('<projects>' in returning) && !('grade' in returning), show(returning))

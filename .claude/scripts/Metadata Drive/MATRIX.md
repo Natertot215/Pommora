@@ -168,7 +168,8 @@ The drive's cases, derived from *MetadataV3 — Decisions & Intention* and writt
 - **Undo puts back what the file held** (group 3's undo cases, `Undo`): Nathan's ruling, recorded in the plan's *§Deviations*; each case cites it beside the decisions its gesture exercises.
 - **A Context pick drops a foreign Space title** (group 3, `area one`): E-3 carries foreign words for a Multi-Select alone, and A-2 makes `area one` foreign data, so the pick writes the picked Spaces only; *§Open Items* lists it to read once.
 - **An exact current key beside a variant** (group 8, `Urgency`): G-1's INFERRED entry gives an exact key its property and says nothing of the variant; the case follows the plan's Phase 8 GOAL, where the variant stays foreign.
-- **A re-spelled Date losing an unreadable value** (group 8, `deadline_date: soon`): G-1 re-spells the key and G-2's reconcile drops what the Date can't read; *§Open Items* lists it to read once.
+- **A re-spelled Date keeps its text** (group 8, `deadline_date: soon`): G-1 re-spells the key, and the restore's reconcile keeps any text a Date holds, as it does today; *§Open Items* lists it to read once.
+- **Marks' Value Format** (group 8): `Train-Case`, so adoption (E-1) leaves the trashed page's `low_tier` foreign for the restore to re-spell; under `Match Title` adoption registers it as its own option when the property is created.
 - **A restored Collection's cache** keeps its old keys (*§Open Items*); no decision names it, so the drive doesn't pin it either way.
 - **"The value picker (foreign words, captions)":** the format rows carry no hints (the plan's *§Deviations*), so the drive asserts foreign words in the value picker alone.
 
