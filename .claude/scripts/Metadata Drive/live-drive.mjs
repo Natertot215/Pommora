@@ -882,8 +882,8 @@ async function group5(cdp) {
     refusedWith(await ask(cdp, 'property:rename', kindId, 'm5 grade'), 'A property named "m5 grade" already exists.'))
   pin(G, 'D-1', 'a rename onto a key another property writes is refused',
     refusedAs(await ask(cdp, 'property:rename', kindId, 'M5_DUE'), COPY.aKeyAnotherPropertyWrites, 'M5_DUE') && defOf(kindId).label === 'M5 Kind')
-  pin(G, 'D-1', 'a create labelled Id is refused as a key Pommora manages', refusedWith(await add(cdp, { label: 'Id', type: 'text' }), '"Id" is a key Pommora manages.'))
-  pin(G, 'D-1', 'a create labelled Banner is refused as a key Pommora manages', refusedWith(await add(cdp, { label: 'Banner', type: 'text' }), '"Banner" is a key Pommora manages.'))
+  pin(G, 'D-1', 'a create labelled Id is refused as a key Pommora manages', refusedWith(await add(cdp, { label: 'Id', type: 'text' }), 'Name is taken by an app-managed key.'))
+  pin(G, 'D-1', 'a create labelled Banner is refused as a key Pommora manages', refusedWith(await add(cdp, { label: 'Banner', type: 'text' }), 'Name is taken by an app-managed key.'))
   const banner = mintPropertyId()
   writeDef({ id: banner, label: 'M5 Banner', key: 'banner', type: 'text' })
   await sleep(1500)
@@ -1147,9 +1147,9 @@ async function group7(cdp) {
     refusedAs(await ask(cdp, 'property:setKeyFormat', dashes, 'kebab-case'), COPY.anEmptyKey, 'Properties') && defOf(dashes).key === '---')
   const hidden = ids['Heading Icon Hidden'] ?? (await define(cdp, { label: 'Heading Icon Hidden', type: 'text' }))
   pin(G, 'D-1', 'a Key Format change onto a key Pommora manages is refused',
-    refusedWith(await ask(cdp, 'property:setKeyFormat', hidden, 'snake_case'), '"heading_icon_hidden" is a key Pommora manages.') && defOf(hidden).key === 'Heading Icon Hidden')
+    refusedWith(await ask(cdp, 'property:setKeyFormat', hidden, 'snake_case'), 'Name is taken by an app-managed key.') && defOf(hidden).key === 'Heading Icon Hidden')
   pin(G, 'D-1', 'a create whose format writes a key Pommora manages is refused',
-    refusedWith(await add(cdp, { label: 'I D', type: 'text', key_format: 'PascalCase' }), '"ID" is a key Pommora manages.'))
+    refusedWith(await add(cdp, { label: 'I D', type: 'text', key_format: 'PascalCase' }), 'Name is taken by an app-managed key.'))
 
   await must('rename Due Soon', ask(cdp, 'property:rename', dueSoonId, 'Due Later'))
   pin(G, 'C-2', 'the next label change writes that key through the format', defOf(dueSoonId).key === 'due_later' && (await wrote(dueSoon, 'due_later: x')), show([defOf(dueSoonId), blockOf(dueSoon)]))

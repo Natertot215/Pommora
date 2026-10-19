@@ -40,8 +40,8 @@ describe('validateName', () => {
   })
 
   it('refuses a reserved key or a reserved label', () => {
-    expect(refusalOf({ label: 'My Banner', key: 'banner' })).toBe(KEY_REFUSAL.reserved('banner'))
-    expect(refusalOf({ label: 'ID', key: 'x' })).toBe(KEY_REFUSAL.reserved('ID'))
+    expect(refusalOf({ label: 'My Banner', key: 'banner' })).toBe(KEY_REFUSAL.reserved)
+    expect(refusalOf({ label: 'ID', key: 'x' })).toBe(KEY_REFUSAL.reserved)
   })
 
   it('refuses a label that leaves its key empty', () => {
@@ -59,12 +59,12 @@ describe('validateName', () => {
 
   it('refuses a key Pommora manages in any casing', () => {
     for (const name of ['id', 'Id', 'BANNER', 'Heading_Icon_Hidden'])
-      expect(refusal(name)).toBe(KEY_REFUSAL.reserved(name))
+      expect(refusal(name)).toBe(KEY_REFUSAL.reserved)
   })
 
   it('refuses a name every object already answers to, in its exact spelling only', () => {
     for (const name of ['constructor', 'toString', 'valueOf', 'hasOwnProperty', '__proto__'])
-      expect(refusal(name)).toBe(KEY_REFUSAL.reserved(name))
+      expect(refusal(name)).toBe(KEY_REFUSAL.reserved)
   })
 
   it('takes ordinary names, PageID, modified_at, and Constructor among them', () => {

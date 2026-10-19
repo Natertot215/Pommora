@@ -218,7 +218,7 @@ describe('createProperty', () => {
   it('refuses a name Pommora manages as a page key, on create and on rename', async () => {
     const created = await createProperty(root, def({ label: 'Banner', type: 'dateTime' }))
     expect(created.ok).toBe(false)
-    if (!created.ok) expect(created.error.message).toContain('Banner')
+    if (!created.ok) expect(created.error.message).toBe(KEY_REFUSAL.reserved)
     const ok = await createProperty(root, def({ label: 'Due', type: 'dateTime' }))
     if (!ok.ok) return
     expect((await renameProperty(root, ok.value.id, 'Banner')).ok).toBe(false)
@@ -452,7 +452,7 @@ describe('a Key Format change is a rename of the key', () => {
     const held = await readFile(page, 'utf8')
 
     const r = await setKeyFormat(root, id, 'snake_case')
-    expect(!r.ok && r.error.message).toBe(KEY_REFUSAL.reserved('heading_icon_hidden'))
+    expect(!r.ok && r.error.message).toBe(KEY_REFUSAL.reserved)
     expect(await readFile(registryFilePath(), 'utf8')).toBe(registry)
     expect(await readFile(page, 'utf8')).toBe(held)
     expect(writeSchemaJournal).not.toHaveBeenCalled()
@@ -543,7 +543,7 @@ describe('keyFormatHolders', () => {
       'Heading Icon Hidden: x\n',
     )
     const r = await keyFormatHolders(root, id, 'snake_case')
-    expect(!r.ok && r.error.message).toBe(KEY_REFUSAL.reserved('heading_icon_hidden'))
+    expect(!r.ok && r.error.message).toBe(KEY_REFUSAL.reserved)
   })
 
   it('counts nothing for a format writing the key already stored', async () => {
