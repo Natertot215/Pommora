@@ -8,7 +8,7 @@ import { editCaches } from './propertyCache'
 import { editHeldList, memberKey } from '../Files/heldKeys'
 import { errText, ok, fail, fault, type Result } from '../Contract/result'
 import { findOption, unregisteredMembers } from './propertyValue'
-import { formatKey } from './keyFormat'
+import { formatKey, type KeyFormat } from './keyFormat'
 import { addOption, applyOptionEdit, type OptionEdit } from './optionModel'
 import {
   labelled,
@@ -40,6 +40,11 @@ const NO_GROUP = fail('not-found', 'That group no longer exists.')
 const OWED = fail(
   'owed',
   'An earlier change hasn’t reached every file yet. Use Try Again to finish it first.',
+)
+// A replay over a partly swept file can't tell a moved word from an unmoved one.
+const CROSSED = fail(
+  'invalid-property',
+  'This format would give one option the key another option writes now, please rename one first.',
 )
 const NO_OPTIONS = fail(
   'invalid-property',
@@ -232,6 +237,7 @@ export async function optionCascade(
 async function rekeyOptions(
   root: string,
   record: Extract<SchemaJournal, { op: 'option-rename' }>,
+  value_format?: KeyFormat,
 ): Promise<Result<SchemaCascade>> {
   // Staged BEFORE the commit: a crash between commit and cascade is recoverable only from this record.
   if (!(await writeSchemaJournal(root, record))) return OWED
@@ -244,7 +250,8 @@ async function rekeyOptions(
     const typeCheck = requireOptions(def)
     if (!typeCheck.ok) return { result: typeCheck }
     if (record.labels && !findOption(def, record.labels[0])) return { result: NO_OPTION }
-    const next = editStoredOptions(def, stored[record.id], (groups) =>
+    const current = value_format ? { ...def, value_format } : def
+    const next = editStoredOptions(current, stored[record.id], (groups) =>
       groups.map((g) => ({
         ...g,
         options: g.options.map((o) => ({
@@ -285,6 +292,58 @@ export function renameOption(
       labels: [oldLabel, newLabel],
     })
   })
+}
+
+async function valueFormatPlan(
+  root: string,
+  propertyId: string,
+  format: KeyFormat,
+): Promise<Result<{ def: PropertyDefinition; keys: [string, string][] }>> {
+  const def = (await readRegistry(root)).defs[propertyId]
+  if (!def) return NO_PROPERTY
+  const typeCheck = requireOptions(def)
+  if (!typeCheck.ok) return typeCheck
+  const moved = optionsOf(def).map((o) => ({ ...o, was: o.key, key: formatKey(o.label, format) }))
+  const check = validateOptionValues(
+    moved,
+    'This format would give two options the same key, please rename one first.',
+  )
+  if (!check.ok) return check
+  const keys = moved.flatMap(({ was, key }): [string, string][] =>
+    key === was ? [] : [[was, key]],
+  )
+  const olds = new Set(keys.map(([from]) => memberKey(from)))
+  if (keys.some(([, to]) => olds.has(memberKey(to)))) return CROSSED
+  return ok({ def, keys })
+}
+
+export function setValueFormat(
+  root: string,
+  propertyId: string,
+  format: KeyFormat,
+): Promise<Result<SchemaCascade>> {
+  return serializeSchemaOp(root, async () => {
+    const planned = await valueFormatPlan(root, propertyId, format)
+    if (!planned.ok) return planned
+    return rekeyOptions(
+      root,
+      { op: 'option-rename', id: propertyId, keys: planned.value.keys },
+      format,
+    )
+  })
+}
+
+export async function valueFormatHolders(
+  root: string,
+  propertyId: string,
+  format: KeyFormat,
+): Promise<Result<number>> {
+  const planned = await valueFormatPlan(root, propertyId, format)
+  if (!planned.ok) return planned
+  const { def, keys } = planned.value
+  if (!keys.length) return ok(0)
+  const { pages, plan } = await valueEditPlan(root, def, new Map(keys))
+  return ok(await sweepCount(root, pages, plan))
 }
 
 export function clearOption(

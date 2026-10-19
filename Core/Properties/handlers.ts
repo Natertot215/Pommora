@@ -7,7 +7,14 @@ import { oweCascade } from '../Nexus/fileEvents'
 import { readWatchScope } from '../Settings/settings'
 import { assignProperty, reorderAssignment } from './assignment'
 import { deleteProperty, propertyHolders } from './deleteProperty'
-import { clearOption, editOption, optionHolders, removeOption, renameOption } from './optionOps'
+import {
+  clearOption,
+  editOption,
+  optionHolders,
+  removeOption,
+  renameOption,
+  setValueFormat,
+} from './optionOps'
 import { optionEdit, type OptionEdit } from './optionModel'
 import {
   type FileConfig,
@@ -183,6 +190,7 @@ export const propertiesHandlers = {
   }),
   'property:editOption': registryChannel(idAndEdit, editOption),
   'property:renameOption': registryChannel(idOldNew, renameOption, cascadeReply),
+  'property:setValueFormat': registryChannel(idAndFormat, setValueFormat, cascadeReply),
   'property:removeOption': registryChannel(idAndValue, removeOption, cascadeReply),
   'property:clearOption': registryChannel(idAndValue, clearOption),
   'property:holders': withRoot(async (root, _ctx, id: unknown, value: unknown) => {
