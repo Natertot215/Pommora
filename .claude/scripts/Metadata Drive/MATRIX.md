@@ -156,7 +156,7 @@ The drive's cases, derived from *MetadataV3 — Decisions & Intention* and writt
 | --- | --- | --- | --- | --- |
 | The Metadata leaf | Settings window | open the leaf | the rail reads Metadata, not Properties; one section, Maintenance, holding Repair Properties On Open | J-1 |
 | Foreign words | the value picker on a table cell | open, pick Life | `work` draws no chip and no row; the pick writes `[Work, Life, work]` | E-3 |
-| The rows | the Property Frame | open a Number and a Status | Key Format at Match Title with its hint, no Value Format on the Number; both rows above the Status's options, divided from them | H-1 |
+| The rows | the Property Frame | open a Number and a Status | Key Format at Match Title, no Value Format on the Number; both rows above the Status's options, divided from them | H-1 |
 | The pane | the Key Format row | open it | Match Title and the nine conventions in order | B-2 |
 | The counted confirmation | the Key Format and Value Format rows | pick at 0, 1, and 2 Items; cancel; confirm | silent at 0 and 1; asks with `2 Items` at 2; a cancel writes nothing; a confirm re-keys | F-4, F-1 |
 | Clear at zero | the option editor's row menu | Clear an option nothing holds | asks nothing | F-4 |
@@ -170,8 +170,7 @@ The drive's cases, derived from *MetadataV3 — Decisions & Intention* and writt
 - **An exact current key beside a variant** (group 8, `Urgency`): G-1's INFERRED entry gives an exact key its property and says nothing of the variant; the case follows the plan's Phase 8 GOAL, where the variant stays foreign.
 - **A re-spelled Date losing an unreadable value** (group 8, `deadline_date: soon`): G-1 re-spells the key and G-2's reconcile drops what the Date can't read; *§Open Items* lists it to read once.
 - **A restored Collection's cache** keeps its old keys (*§Open Items*); no decision names it, so the drive doesn't pin it either way.
-- **The hints' apostrophes:** H-1 quotes the hints with straight apostrophes and the plan's `FormatRows.tsx` writes `’`; the drive asserts the AFTER block's.
-- **"The value picker (foreign words, captions)":** captions exist only on the two format rows (`PickerRowLook.caption`), so the drive asserts them there and asserts foreign words in the value picker.
+- **"The value picker (foreign words, captions)":** the format rows carry no hints (the plan's *§Deviations*), so the drive asserts foreign words in the value picker alone.
 
 #### Copy
 

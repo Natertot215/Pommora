@@ -42,7 +42,6 @@ export type MenuSection = { title?: string; rows: MenuRow[] }
 
 export interface PickerRowLook {
   ariaLabel?: string
-  caption?: ReactNode
   iconSize?: IconSize
   solid?: boolean
   inert?: boolean
@@ -63,7 +62,6 @@ export const pickerRow = <T extends string>(
   kind: 'item',
   icon: glyph ? <Icon name={glyph} size={look?.iconSize ?? 'body'} /> : undefined,
   label: look?.labelClassName ? <span className={look.labelClassName}>{label}</span> : label,
-  caption: look?.caption,
   trailing: {
     kind: 'picker',
     ariaLabel: look?.ariaLabel ?? label,

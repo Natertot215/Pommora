@@ -25,8 +25,6 @@ const REGISTRY = '.nexus/properties.json'
 const JOURNAL = '.nexus/property-cascade.json'
 const MATRIX = '.nexus/interface/matrix.json'
 const FORMATS = ['Match Title', 'lowercase', 'UPPERCASE', 'kebab-case', 'PascalCase', 'camelCase', 'snake_case', 'Train-Case', 'UPPER_SNAKE_CASE', 'UPPER-KEBAB-CASE']
-const KEY_HINT = 'How this property’s name is written into each file’s metadata key.'
-const VALUE_HINT = 'How each value is written in the file’s metadata.'
 const itemCount = (n) => `${n} ${n === 1 ? 'Item' : 'Items'}`
 
 // The messages Nathan worded at the Stop before Task 5A-1, each a function of the words it names.
@@ -1323,7 +1321,6 @@ const RAIL = `[...document.querySelectorAll('.settings-rail [data-reveal-host]')
 const DIALOG = `document.querySelector('[role="alertdialog"]')`
 const trigger = (label) => `document.querySelector('button[aria-label="${label}"]')`
 /** The smallest element around `label`'s trigger holding `text`: the row, once the text is its caption. */
-const rowAround = (label, text) => `(() => { let e = ${trigger(label)}; while (e && !e.textContent.includes(${JSON.stringify(text)})) e = e.parentElement; return e })()`
 const dialogUp = (cdp) => cdp.evaluate(`!!${DIALOG}`)
 const dialogButton = (cancel) => `[...${DIALOG}.querySelectorAll('button')].find((b) => (b.textContent.trim() === 'Cancel') === ${cancel})`
 
@@ -1430,11 +1427,11 @@ async function group9(cdp, pid) {
   pin(G, 'E-3', 'a pick in the value picker keeps the foreign word after the picked options', await wrote(labels, 'M9 Labels: [Work, Life, work]'), show(blockOf(labels)))
   await escapeAll(cdp)
 
-  // The rows: Key Format and Value Format at the top of every property's settings, with H-1's hints, divided from the type's own.
+  // The rows: Key Format and Value Format at the top of every property's settings, divided from the type's own.
   await openEditor(cdp, 'M9 Count')
-  const count = await cdp.evaluate(`({ shown: ${trigger('Key Format')}?.textContent.trim(), hinted: !!${rowAround('Key Format', KEY_HINT)}?.textContent.includes('Key Format'), value: !!${trigger('Value Format')} })`)
-  pin(G, 'H-1', 'a Number reads Key Format at Match Title with its hint, and has no Value Format',
-    count.shown?.includes('Match Title') && count.hinted && !count.value, show(count))
+  const count = await cdp.evaluate(`({ shown: ${trigger('Key Format')}?.textContent.trim(), value: !!${trigger('Value Format')} })`)
+  pin(G, 'H-1', 'a Number reads Key Format at Match Title, and has no Value Format',
+    count.shown?.includes('Match Title') && !count.value, show(count))
   await shot(cdp, 'rows-number')
   const formats = await nativeChoose(cdp, pid, trigger('Key Format'), null)
   pin(G, 'B-2', "the format pane lists Match Title and the nine conventions in order", same(formats, FORMATS), show(formats))
@@ -1446,10 +1443,10 @@ async function group9(cdp, pid) {
     const k = ${trigger('Key Format')}, v = ${trigger('Value Format')}, o = document.querySelector('[aria-label="Edit Option"]')
     const after = (a, b) => !!(a && b && (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING))
     const divided = [...document.querySelectorAll('div[aria-hidden="true"]')].some((d) => d.children.length === 1 && d.firstElementChild.tagName === 'SPAN' && !d.textContent.trim() && after(v, d) && after(d, o))
-    return { order: after(k, v) && after(v, o), divided, hinted: !!${rowAround('Value Format', VALUE_HINT)}?.textContent.includes('Value Format'), keyHinted: !!${rowAround('Key Format', KEY_HINT)} }
+    return { order: after(k, v) && after(v, o), divided }
   })()`)
-  pin(G, 'H-1', 'a Status shows Key Format then Value Format above its options, each with its hint, divided from them',
-    status.order && status.divided && status.hinted && status.keyHinted, show(status))
+  pin(G, 'H-1', 'a Status shows Key Format then Value Format above its options, divided from them',
+    status.order && status.divided, show(status))
   await shot(cdp, 'rows-status')
   const statusKept = snapshot(state)
   const valueAsk = await pickFormat(cdp, pid, 'Value Format', 'UPPERCASE')

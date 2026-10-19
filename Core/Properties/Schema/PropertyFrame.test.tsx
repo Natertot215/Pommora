@@ -553,20 +553,16 @@ describe('native menus + the inline-rename channel (T7)', () => {
     })
   }
 
-  it('a Number editor shows the Key Format row reading Match Title with its hint, and no Value Format row', async () => {
+  it('a Number editor shows the Key Format row reading Match Title, and no Value Format row', async () => {
     await openCount()
     expect(host.querySelector('button[aria-label="Key Format"]')!.textContent).toBe('Match Title')
-    expect(host.textContent).toContain(
-      'How this property’s name is written into each file’s metadata key.',
-    )
     expect(host.querySelector('button[aria-label="Value Format"]')).toBeNull()
   })
 
-  it('a Status editor shows both format rows, the Value Format row with its hint', async () => {
+  it('a Status editor shows both format rows, the Value Format row reading Match Title', async () => {
     await openEditor()
     expect(host.querySelector('button[aria-label="Key Format"]')).toBeTruthy()
     expect(host.querySelector('button[aria-label="Value Format"]')!.textContent).toBe('Match Title')
-    expect(host.textContent).toContain('How each value is written in the file’s metadata.')
   })
 
   it('a Key Format pick over more than one Item asks with the count, then sets the format and bumps the values epoch with its pair', async () => {

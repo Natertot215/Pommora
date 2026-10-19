@@ -4,7 +4,7 @@
 
 | Total | Critical | High | Moderate | Low | Minimal |
 |-------|----------|------|----------|-----|---------|
-| 72 | 0 | 4 | 15 | 35 | 18 |
+| 73 | 0 | 4 | 15 | 35 | 19 |
 
 #### A1 • Sync & Devices
 
@@ -91,6 +91,7 @@
 | [F-036](#F-036 • Inside a pop-up pane, pressing a second dropdown while one list is open cuts the list's close short and reopens it at the new dropdown.) | Inside a pop-up pane, pressing a second dropdown while one list is open cuts the list's close short and reopens it at the new dropdown. | Low | Small (=🟢+8=) | Shortcut | `e3d5c1a10` | **Created:** 09-24-2026<br>**Updated:** 10-03-2026 |
 | [F-061](#F-061 • Four waits that let a transition finish each state their own slack.) | Four waits that let a transition finish each state their own slack. | Minimal | Small (=🔴−2=) | Drift | `7933c518d` | **Created:** 10-03-2026<br>**Updated:** 10-03-2026 |
 | [F-060](#F-060 • Where a pop-up appears is worked out inside a 50-line block tangled with its screen updates.) | Where a pop-up appears is worked out inside a 50-line block tangled with its screen updates. | Minimal | Small (=🟢+2=) | Patch-Over | `f6511401d` | **Created:** 09-23-2026<br>**Updated:** 10-16-2026 |
+| [F-073](#F-073 • A row's hint in a pane that sizes to its content stays on one line and widens the pane, so the format rows carry none.) | A row's hint in a pane that sizes to its content stays on one line and widens the pane, so the format rows carry none. | Minimal | Mini (TBD) | Drift | `54e93e491` | **Created:** 10-18-2026<br>**Updated:** 10-18-2026 |
 
 #### A6 • Tiles & Embeds
 
@@ -1053,6 +1054,20 @@ Every pop-up picker decides where to sit (flip up or down, center or pin to an e
 
 Extract a pure `placePane({ trigger, pane, viewport, bounds, direction, origin, decided }) → { pos, dir, decided }` beside the component; the effect keeps measuring, latching the returned decisions, and `setPos`/`setEffDir`. `setPos` is already change-guarded (`samePos`), so the extraction is purely structural, and the centering tests become plain function tests.
 
+#### F-073 • A row's hint in a pane that sizes to its content stays on one line and widens the pane, so the format rows carry none.
+
+| Concern | Scale | Origin | Base | Date |
+|---------|-------|--------|------|------|
+| Minimal | Mini (TBD) | Drift | `54e93e491` | **Created:** 10-18-2026<br>**Updated:** 10-18-2026 |
+
+**Description**
+
+A property's settings pane sizes to its widest row, with no width ceiling, and a menu row's hint has no measure of its own, so a long hint runs on one line and pushes the pane wide; the Settings window's hints wrap only because that window has a fixed width. The Key Format and Value Format rows were drawn with their hints ("How this property’s name is written into each file’s metadata key." and "How each value is written in the file’s metadata."), which widened every property's settings pane. A cap on those two hints alone was weighed and left out as a one-off rule, and the rows carry no hints.[^73]
+
+**Solution** [Deferred]
+
+One rule for where a hint wraps in a pane that sizes to its content, set once for every such pane: a measure on the row's hint, or a width ceiling on the pane. The format rows then take their hints back.
+
 ### A6 • Tiles & Embeds
 
 #### F-030 • In a free-text markdown tile, the footnotes divider and the footnote reveal do nothing.
@@ -1306,3 +1321,4 @@ Paths are relative to `Core/MarkdownPM/`, and the test's name settles any drift 
 [^70]: **F-070:** `Core/Files/atomicWrite.ts:202-203` (`readAppFile`), `Core/Files/atomicWrite.ts:178-193` (`readLast`), `Core/Files/atomicWrite.ts:207-212` (`readAppFileKnown`), `Core/Files/atomicWrite.ts:144-161` (`rmwLocked`), `Core/Files/atomicWrite.ts:225-236` (`updateNexusFile`), `Core/Files/atomicWrite.ts:265-271` (`updateNexusConfig`), `Core/Nexus/readNexus.ts:68` (`readOrder`), `Core/Nexus/readNexus.ts:113` (`readConfig`), `Core/Nexus/readNexus.ts:287` (`readNexusConfig`), `Core/Navigation/navigationFile.ts:33-41` (`readNavigationFile`), `Core/Matrix/matrixFile.ts:11` (`readMatrixFile`), `Core/Nexus/fileEvents.ts:543-562,633-634` (`applyOrder`), `Core/Session/navigationSlice.ts:270-271` (`writeNav`), `Core/Session/matrixSlice.ts:172-174` (`patchMatrix`), `Core/Interface/Notifications/notifications.ts` (`persist`, `reportRefusal`), `Core/Assets/assetMigrate.ts:85-114,166,175` (`collectRefs`, `migrateAssets`), `Core/Tiles/tileDoc.ts:20` (`readTileDocAt`)
 [^71]: **F-071:** `Core/MarkdownPM/Input/format.ts:70-83,86-145` (`underSelection`, `toggleInline`), `Core/MarkdownPM/Engine/tokens.ts` (`tokenizeChunk`)
 [^72]: **F-072:** `Core/Properties/assignValue.ts:71,87` (`assignValue`), `Core/Properties/setProperty.ts:14-82` (`landPageValue`, `landSpaceValue`, the `restoreValue` case), `Core/Nexus/page.ts:90-99` (`valueToWrite`), `Core/Nexus/mutate.ts:185`, `Core/Properties/assignment.ts:49-60` (`refillValues`), `Core/Properties/propertyValue.ts:224` (`isBlankRaw`)
+[^73]: **F-073:** `UIX/Menus/MenuRows.tsx:153` (`MenuItem`'s hint), `UIX/Menus/menu-row.css.ts:205` (`subLabel`), `UIX/Menus/FrameSlide.tsx:83` (`slotBox`), `Core/Properties/Schema/PropertyFrame.tsx:500-506` (the editor's `FrameSlide`), `Core/Properties/Schema/FormatRows.tsx`, `Core/Settings/SettingsWindow.tsx:47-52` (`settingsRow`)
