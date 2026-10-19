@@ -30,7 +30,7 @@ export function FormatRows({
       (v: KeyFormat) => onPick(change(v)),
       {
         inert: true,
-        caption,
+        caption: <span className={s.configHint}>{caption}</span>,
       },
     )
   return (

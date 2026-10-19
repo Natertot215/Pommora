@@ -5,6 +5,7 @@ import { mintPropertyId } from '../Nexus/ids'
 import { freeName } from '../Paths/names'
 import { exactTitle, normalizeTitle } from '../Paths/caseFold'
 import { formatKey, type KeyFormat } from './keyFormat'
+import { mapOptions } from './optionModel'
 import {
   defaultStatusSeed,
   defaultSelectSeed,
@@ -33,10 +34,7 @@ import {
 const withOptionKeys = (def: PropertyDefinition): PropertyDefinition =>
   withOptionGroups(
     def,
-    optionGroupsOf(def).map((g) => ({
-      ...g,
-      options: g.options.map((o) => ({ ...o, key: formatKey(o.label, def.value_format) })),
-    })),
+    mapOptions(optionGroupsOf(def), (o) => ({ ...o, key: formatKey(o.label, def.value_format) })),
   )
 
 // Seeds only when the field is undefined; an EMPTY array is a deliberate state, or emptying a select's options then making any unrelated edit would resurrect the seed.

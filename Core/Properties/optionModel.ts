@@ -3,15 +3,19 @@ import { index, op } from '../Files/decoders'
 import { formatKey, type KeyFormat } from './keyFormat'
 import { optionAppearance, type StatusGroup, type StatusOption } from './properties'
 
+export function mapOptions(
+  groups: StatusGroup[],
+  fn: (o: StatusOption) => StatusOption,
+): StatusGroup[] {
+  return groups.map((g) => ({ ...g, options: g.options.map(fn) }))
+}
+
 function mapOption(
   groups: StatusGroup[],
   label: string,
   fn: (o: StatusOption) => StatusOption,
 ): StatusGroup[] {
-  return groups.map((g) => ({
-    ...g,
-    options: g.options.map((o) => (o.label === label ? fn(o) : o)),
-  }))
+  return mapOptions(groups, (o) => (o.label === label ? fn(o) : o))
 }
 
 function withField<T extends { label: string }, K extends keyof T>(
