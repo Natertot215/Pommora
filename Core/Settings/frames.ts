@@ -634,12 +634,12 @@ export const FRAMES = roster([
     ],
   },
   {
-    key: 'properties',
-    label: 'Properties',
+    key: 'metadata',
+    label: 'Metadata',
     icon: 'server',
     sections: [
       {
-        title: 'Metadata',
+        title: 'Maintenance',
         rows: [
           {
             kind: 'toggle',
