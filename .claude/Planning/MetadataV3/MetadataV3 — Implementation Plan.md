@@ -49,8 +49,8 @@ The work lands in ten phases in dependency order, removal first: the Space order
 | 5B | +163 / −139 | +230 / −196 | −55 (+806 / −861) |
 | 6 | +151 / −151 | +169 / −156 | −42 (+951 / −993) |
 | 7A | +163 / −39 | +160 / −35 | +83 (+1,090 / −1,007) |
-| 7B | +305 / −77 | +330 / −100 | +313 (+1,378 / −1,065) |
-| 8 | +106 / −9 | | |
+| 7B | +305 / −77 | +326 / −114 | +295 (+1,370 / −1,075) |
+| 8 | +106 / −9 | +106 / −9 | +392 (+1,474 / −1,082) |
 | 9 | +3 / −3 | | |
 
 #### Concepts
@@ -207,7 +207,7 @@ The work lands in ten phases in dependency order, removal first: the Space order
   - [x] Task 7B-4 · The two rows and the counted confirmation
   - [ ] Review Checkpoint
 - [ ] **Phase 8** — The Restore Re-Spell
-  - [ ] Task 8-1 · Keys and words re-spell in the restore scrub
+  - [x] Task 8-1 · Keys and words re-spell in the restore scrub
   - [ ] Review Checkpoint
 - [ ] **Phase 9** — Interface and Drives
   - [ ] Task 9-1 · The Metadata leaf
