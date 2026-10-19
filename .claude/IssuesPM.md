@@ -4,7 +4,7 @@
 
 | Total | Critical | High | Moderate | Low | Minimal |
 |-------|----------|------|----------|-----|---------|
-| 72 | 0 | 4 | 15 | 34 | 19 |
+| 71 | 0 | 4 | 15 | 33 | 19 |
 
 #### A1 • Sync & Devices
 
@@ -23,7 +23,7 @@
 | [F-002](#F-002 • A misbehaving sync hub can crash the app by sending an enormous reply.)                                                                      | A misbehaving sync hub can crash the app by sending an enormous reply.                                                                      | Low      | Small (=🟢+5=)   | Shortcut   | `f6511401d` | **Created:** 09-23-2026<br>**Updated:** 10-03-2026 |
 | [F-008](#F-008 • A revoked device that knows the Nexus password can still unlock the new key.)                                                                | A revoked device that knows the Nexus password can still unlock the new key.                                                                | Low      | Small (±0)       | Shortcut   | `f6511401d` | **Created:** 09-23-2026<br>**Updated:** 10-03-2026 |
 | [F-011](#F-011 • A device revoked while the app was closed thinks it's waiting for approval and never drops its keys.)                                        | A device revoked while the app was closed thinks it's waiting for approval and never drops its keys.                                        | Low      | Small (±0)       | Drift      | `f6511401d` | **Created:** 09-23-2026<br>**Updated:** 10-03-2026 |
-| [F-040](#F-040 • Resetting Sync's records loads every one and deletes them one at a time, and the index's path renames and removals commit table by table.)   | Resetting Sync's records loads every one and deletes them one at a time, and the index's path renames and removals commit table by table.   | Low      | Small (=🟢+6=)   | Drift      | `f6511401d` | **Created:** 09-23-2026<br>**Updated:** 10-16-2026 |
+| [F-039](#F-039 • Resetting Sync's records loads every one and deletes them one at a time, and the index's path renames and removals commit table by table.)   | Resetting Sync's records loads every one and deletes them one at a time, and the index's path renames and removals commit table by table.   | Low      | Small (=🟢+6=)   | Drift      | `f6511401d` | **Created:** 09-23-2026<br>**Updated:** 10-16-2026 |
 
 #### A2 • MarkdownPM
 
@@ -31,27 +31,27 @@
 | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------- | ----------------------- | -------------- | ----------- | -------------------------------------------------- |
 | [F-017](#F-017 • Past about 8,000 lines, the footer's word and character figures re-tokenize the whole page on every typing pause and every selection change, freezing the editor for up to a second.)            | Past about 8,000 lines, the footer's word and character figures re-tokenize the whole page on every typing pause and every selection change, freezing the editor for up to a second. | High     | Small (=🟢+15=)         | Parallel Build | `70fc6063c` | **Created:** 10-08-2026<br>**Updated:** 10-16-2026 |
 | [F-031](#F-031 • A raw-HTML opener with no closer makes every keystroke below it re-scan to the end of the document and re-tokenize everything from the opener down.)                                             | A raw-HTML opener with no closer makes every keystroke below it re-scan to the end of the document and re-tokenize everything from the opener down.                                  | Moderate | Medium (=🟢≈ +28=)      | Shortcut       | `70fc6063c` | **Created:** 10-08-2026<br>**Updated:** 10-16-2026 |
-| [F-051](#F-051 • Scope is a three-member string read by 21 bare comparisons and 13 %60= 'page'%60 defaults, so a fourth scope silently inherits page behavior in some places and cell behavior in others.)        | Scope is a three-member string read by 21 bare comparisons and 13 `= 'page'` defaults, so a fourth scope silently inherits page behavior in some places and cell behavior in others. | Moderate | Medium (=🟢+37 to +75=) | Shortcut       | `70fc6063c` | **Created:** 10-08-2026<br>**Updated:** 10-16-2026 |
-| [F-049](#F-049 • Code-block coloring re-parses the whole fenced block on every keystroke inside it.)                                                                                                              | Code-block coloring re-parses the whole fenced block on every keystroke inside it.                                                                                                   | Moderate | Medium (=🟢+20=)        | Shortcut       | `f6511401d` | **Created:** 09-23-2026<br>**Updated:** 10-03-2026 |
-| [F-070](#F-070 • Bold, italic, strikethrough, or code picked over part of a link writes its markers inside the link, which breaks a connection's title.)                                                          | Bold, italic, strikethrough, or code picked over part of a link writes its markers inside the link, which breaks a connection's title.                                               | Moderate | Small (TBD)             | Shortcut       | `13539fda2` | **Created:** 10-15-2026<br>**Updated:** 10-16-2026 |
+| [F-050](#F-050 • Scope is a three-member string read by 21 bare comparisons and 13 %60= 'page'%60 defaults, so a fourth scope silently inherits page behavior in some places and cell behavior in others.)        | Scope is a three-member string read by 21 bare comparisons and 13 `= 'page'` defaults, so a fourth scope silently inherits page behavior in some places and cell behavior in others. | Moderate | Medium (=🟢+37 to +75=) | Shortcut       | `70fc6063c` | **Created:** 10-08-2026<br>**Updated:** 10-16-2026 |
+| [F-048](#F-048 • Code-block coloring re-parses the whole fenced block on every keystroke inside it.)                                                                                                              | Code-block coloring re-parses the whole fenced block on every keystroke inside it.                                                                                                   | Moderate | Medium (=🟢+20=)        | Shortcut       | `f6511401d` | **Created:** 09-23-2026<br>**Updated:** 10-03-2026 |
+| [F-069](#F-069 • Bold, italic, strikethrough, or code picked over part of a link writes its markers inside the link, which breaks a connection's title.)                                                          | Bold, italic, strikethrough, or code picked over part of a link writes its markers inside the link, which breaks a connection's title.                                               | Moderate | Small (TBD)             | Shortcut       | `13539fda2` | **Created:** 10-15-2026<br>**Updated:** 10-16-2026 |
 | [F-020](#F-020 • The drag handles beside each block re-read every line's list marker on every keystroke.)                                                                                                         | The drag handles beside each block re-read every line's list marker on every keystroke.                                                                                              | Moderate | Small (=🟢+5=)          | Shortcut       | `f6511401d` | **Created:** 09-23-2026<br>**Updated:** 10-16-2026 |
 | [F-014](#F-014 • Typing in a table cell re-reads the whole table as Markdown on every keystroke, and big tables lag.)                                                                                             | Typing in a table cell re-reads the whole table as Markdown on every keystroke, and big tables lag.                                                                                  | Moderate | Mini (=🟢+3=)           | Residue        | `f6511401d` | **Created:** 09-23-2026<br>**Updated:** 10-16-2026 |
 | [F-019](#F-019 • The footer's word and character figures are a second reading of what the editor draws, and the two already disagree.)                                                                            | The footer's word and character figures are a second reading of what the editor draws, and the two already disagree.                                                                 | Low      | Medium (=🟢≈ +21=)      | Parallel Build | `70fc6063c` | **Created:** 10-08-2026<br>**Updated:** 10-16-2026 |
 | [F-026](#F-026 • Each keystroke re-allocates every carried line intent, fence-line record, and table row below the edit just to shift their positions.)                                                           | Each keystroke re-allocates every carried line intent, fence-line record, and table row below the edit just to shift their positions.                                                | Low      | Medium (=🟢≈ +6=)       | Shortcut       | `70fc6063c` | **Created:** 10-08-2026<br>**Updated:** 10-16-2026 |
-| [F-052](#F-052 • What kind of surface an editor sits in is spread over five uncoordinated switches, two sentinel ancestor strings, and a CSS list of host classes.)                                               | What kind of surface an editor sits in is spread over five uncoordinated switches, two sentinel ancestor strings, and a CSS list of host classes.                                    | Low      | Medium (=🟢+30=)        | Drift          | `70fc6063c` | **Created:** 10-08-2026<br>**Updated:** 10-16-2026 |
+| [F-051](#F-051 • What kind of surface an editor sits in is spread over five uncoordinated switches, two sentinel ancestor strings, and a CSS list of host classes.)                                               | What kind of surface an editor sits in is spread over five uncoordinated switches, two sentinel ancestor strings, and a CSS list of host classes.                                    | Low      | Medium (=🟢+30=)        | Drift          | `70fc6063c` | **Created:** 10-08-2026<br>**Updated:** 10-16-2026 |
 | [F-032](#F-032 • A %60#%60 line or a footnote run inside an HTML block still counts as a heading or as the footnotes section.)                                                                                    | A `#` line or a footnote run inside an HTML block still counts as a heading or as the footnotes section.                                                                             | Low      | Medium (=🟢≈ +72=)      | Drift          | `e3d5c1a10` | **Created:** 09-24-2026<br>**Updated:** 10-16-2026 |
 | [F-021](#F-021 • Outliner rails draw guide lines for list ancestors that sit above an unrelated heading or paragraph.)                                                                                            | Outliner rails draw guide lines for list ancestors that sit above an unrelated heading or paragraph.                                                                                 | Low      | Small (=🟢+6=)          | Shortcut       | `70fc6063c` | **Created:** 10-08-2026<br>**Updated:** 10-16-2026 |
 | [F-022](#F-022 • A heading written with closing hashes (%60# foo #%60) keeps them in its name, so the outline, fold keys, index, and heading links read %60foo #%60 where other Markdown readers read %60foo%60.) | A heading written with closing hashes (`# foo #`) keeps them in its name, so the outline, fold keys, index, and heading links read `foo #` where other Markdown readers read `foo`.  | Low      | Small (=🟢+5=)          | Shortcut       | `70fc6063c` | **Created:** 10-08-2026<br>**Updated:** 10-16-2026 |
-| [F-054](#F-054 • A new block or tile kind falls through to silent defaults in the grip menu and block starts.)                                                                                                    | A new block or tile kind falls through to silent defaults in the grip menu and block starts.                                                                                         | Low      | Small (=🟢+13=)         | Shortcut       | `70fc6063c` | **Created:** 10-08-2026<br>**Updated:** 10-16-2026 |
+| [F-053](#F-053 • A new block or tile kind falls through to silent defaults in the grip menu and block starts.)                                                                                                    | A new block or tile kind falls through to silent defaults in the grip menu and block starts.                                                                                         | Low      | Small (=🟢+13=)         | Shortcut       | `70fc6063c` | **Created:** 10-08-2026<br>**Updated:** 10-16-2026 |
 | [F-028](#F-028 • While the pointer is over the editor, every caret move re-measures every visible code block's language tag.)                                                                                     | While the pointer is over the editor, every caret move re-measures every visible code block's language tag.                                                                          | Low      | Mini (=🟢+2=)           | Shortcut       | `70fc6063c` | **Created:** 10-08-2026<br>**Updated:** 10-16-2026 |
 | [F-029](#F-029 • Text that arrives from another copy of a page at the end of a folded section shows up below the fold.)                                                                                           | Text that arrives from another copy of a page at the end of a folded section shows up below the fold.                                                                                | Low      | Mini (=🟢+2=)           | Shortcut       | `70fc6063c` | **Created:** 10-08-2026<br>**Updated:** 10-16-2026 |
 | [F-015](#F-015 • Dragging a table row, column, or column edge redraws the whole table on every mouse movement.)                                                                                                   | Dragging a table row, column, or column edge redraws the whole table on every mouse movement.                                                                                        | Low      | Mini (=🟢+4=)           | Parallel Build | `f6511401d` | **Created:** 09-23-2026<br>**Updated:** 10-09-2026 |
-| [F-055](#F-055 • The scan records its start-and-end ranges two ways, and carries adapters for both.)                                                                                                              | The scan records its start-and-end ranges two ways, and carries adapters for both.                                                                                                   | Minimal  | Medium (=🔴≈ −2=)       | Drift          | `70fc6063c` | **Created:** 10-08-2026<br>**Updated:** 10-16-2026 |
+| [F-054](#F-054 • The scan records its start-and-end ranges two ways, and carries adapters for both.)                                                                                                              | The scan records its start-and-end ranges two ways, and carries adapters for both.                                                                                                   | Minimal  | Medium (=🔴≈ −2=)       | Drift          | `70fc6063c` | **Created:** 10-08-2026<br>**Updated:** 10-16-2026 |
 | [F-024](#F-024 • List-marker readers keep checking for pieces the parser always fills in.)                                                                                                                        | List-marker readers keep checking for pieces the parser always fills in.                                                                                                             | Minimal  | Small (=🔴−10=)         | Shortcut       | `70fc6063c` | **Created:** 10-08-2026<br>**Updated:** 10-16-2026 |
-| [F-053](#F-053 • The host carries one typed menu member per construct, so a new construct menu needs a new host member in three places.)                                                                          | The host carries one typed menu member per construct, so a new construct menu needs a new host member in three places.                                                               | Minimal  | Small (=🔴≈ −4=)        | Shortcut       | `70fc6063c` | **Created:** 10-08-2026<br>**Updated:** 10-16-2026 |
-| [F-056](#F-056 • About thirty names are exported only for tests to import.)                                                                                                                                       | About thirty names are exported only for tests to import.                                                                                                                            | Minimal  | Small (±0)              | Residue        | `70fc6063c` | **Created:** 10-08-2026<br>**Updated:** 10-16-2026 |
-| [F-057](#F-057 • In a development build, a page holding an empty %60*%60 item followed by a %60[ ] task%60 line makes the Markdown parser throw.)                                                                 | In a development build, a page holding an empty `*` item followed by a `[ ] task` line makes the Markdown parser throw.                                                              | Minimal  | Small (TBD)             | Shortcut       | `70fc6063c` | **Created:** 10-08-2026<br>**Updated:** 10-16-2026 |
-| [F-058](#F-058 • A line holding only a non-breaking space ends a table, where the Markdown parser reads it as one more row.)                                                                                      | A line holding only a non-breaking space ends a table, where the Markdown parser reads it as one more row.                                                                           | Minimal  | Small (TBD)             | Drift          | `70fc6063c` | **Created:** 10-08-2026<br>**Updated:** 10-08-2026 |
+| [F-052](#F-052 • The host carries one typed menu member per construct, so a new construct menu needs a new host member in three places.)                                                                          | The host carries one typed menu member per construct, so a new construct menu needs a new host member in three places.                                                               | Minimal  | Small (=🔴≈ −4=)        | Shortcut       | `70fc6063c` | **Created:** 10-08-2026<br>**Updated:** 10-16-2026 |
+| [F-055](#F-055 • About thirty names are exported only for tests to import.)                                                                                                                                       | About thirty names are exported only for tests to import.                                                                                                                            | Minimal  | Small (±0)              | Residue        | `70fc6063c` | **Created:** 10-08-2026<br>**Updated:** 10-16-2026 |
+| [F-056](#F-056 • In a development build, a page holding an empty %60*%60 item followed by a %60[ ] task%60 line makes the Markdown parser throw.)                                                                 | In a development build, a page holding an empty `*` item followed by a `[ ] task` line makes the Markdown parser throw.                                                              | Minimal  | Small (TBD)             | Shortcut       | `70fc6063c` | **Created:** 10-08-2026<br>**Updated:** 10-16-2026 |
+| [F-057](#F-057 • A line holding only a non-breaking space ends a table, where the Markdown parser reads it as one more row.)                                                                                      | A line holding only a non-breaking space ends a table, where the Markdown parser reads it as one more row.                                                                           | Minimal  | Small (TBD)             | Drift          | `70fc6063c` | **Created:** 10-08-2026<br>**Updated:** 10-08-2026 |
 | [F-016](#F-016 • An entered table cell parses its own text twice per keystroke.)                                                                                                                                  | An entered table cell parses its own text twice per keystroke.                                                                                                                       | Minimal  | Mini (=🟢+1=)           | Shortcut       | `70fc6063c` | **Created:** 10-08-2026<br>**Updated:** 10-16-2026 |
 | [F-018](#F-018 • Selection figures re-walk every table in the document on each selection change, whatever the selection covers.)                                                                                  | Selection figures re-walk every table in the document on each selection change, whatever the selection covers.                                                                       | Minimal  | Mini (=🟢+2=)           | Shortcut       | `70fc6063c` | **Created:** 10-08-2026<br>**Updated:** 10-16-2026 |
 | [F-023](#F-023 • The heading list is worked out twice on every keystroke, once for the folds and once for the outline.)                                                                                           | The heading list is worked out twice on every keystroke, once for the folds and once for the outline.                                                                                | Minimal  | Mini (=🔴−1=)           | Drift          | `70fc6063c` | **Created:** 10-08-2026<br>**Updated:** 10-16-2026 |
@@ -62,25 +62,24 @@
 
 | ID | Title | Concern | Scale | Origin | Base | Date |
 | ------ | ---------------------------------------- | -------- | ------------- | --------- | --------- | --------------- |
-| [F-047](#F-047 • An ID lost or damaged outside the app is replaced rather than recovered on every path but a held page's own event, and an ID two files share is answered two ways.) | An ID lost or damaged outside the app is replaced rather than recovered on every path but a held page's own event, and an ID two files share is answered two ways. | Moderate | Large (=🟢+20=) | Shortcut | `1b1ff1205` | **Created:** 10-02-2026<br>**Updated:** 10-16-2026 |
+| [F-046](#F-046 • An ID lost or damaged outside the app is replaced rather than recovered on every path but a held page's own event, and an ID two files share is answered two ways.) | An ID lost or damaged outside the app is replaced rather than recovered on every path but a held page's own event, and an ID two files share is answered two ways. | Moderate | Large (=🟢+20=) | Shortcut | `1b1ff1205` | **Created:** 10-02-2026<br>**Updated:** 10-16-2026 |
 | [F-037](#F-037 • Forty channels write Nexus files beside %60mutate%60, and six files can be written through both.) | Forty channels write Nexus files beside `mutate`, and six files can be written through both. | Moderate | Large (±0) | Parallel Build | `e448ed46f` | **Created:** 09-27-2026<br>**Updated:** 10-16-2026 |
-| [F-042](#F-042 • Contexts and Properties each carry their own journal, replayer, and sweep loop for one pattern.) | Contexts and Properties each carry their own journal, replayer, and sweep loop for one pattern. | Low | Large (=🔴−150 to −300=) | Parallel Build | `03dde6468` | **Created:** 09-30-2026<br>**Updated:** 10-19-2026 |
-| [F-043](#F-043 • A page missing its ID that a folder's read finds after its own event was spent stays out of the tree until the next full read.) | A page missing its ID that a folder's read finds after its own event was spent stays out of the tree until the next full read. | Low | Medium (=🟢+10=) | Shortcut | `93baa6931` | **Created:** 10-01-2026<br>**Updated:** 10-04-2026 |
-| [F-044](#F-044 • A write's reply waits behind a walk an outside change owes.) | A write's reply waits behind a walk an outside change owes. | Low | Medium (=🟢+10=) | Shortcut | `93baa6931` | **Created:** 10-01-2026<br>**Updated:** 10-04-2026 |
-| [F-039](#F-039 • Delete All and Restore All walk the whole Trash once for every bundle that hands a Link value to it.) | Delete All and Restore All walk the whole Trash once for every bundle that hands a Link value to it. | Low | Medium (=🟢+15=) | Shortcut | `34227ef5c` | **Created:** 09-28-2026<br>**Updated:** 10-16-2026 |
-| [F-069](#F-069 • An app file this session never read and can't read opens as empty, so its section shows defaults and its changes are refused, some without a word.) | An app file this session never read and can't read opens as empty, so its section shows defaults and its changes are refused, some without a word. | Low | Medium (=🟢+15=) | Drift | `0c80012cb` | **Created:** 09-26-2026<br>**Updated:** 10-16-2026 |
-| [F-041](#F-041 • An in-app create or rename of a Space, or rename of a Context, leaves the pages already tagged with its new name unlinked until each is read again.) | An in-app create or rename of a Space, or rename of a Context, leaves the pages already tagged with its new name unlinked until each is read again. | Low | Small (=🟢+10=) | Shortcut | `93baa6931` | **Created:** 10-01-2026<br>**Updated:** 10-04-2026 |
-| [F-045](#F-045 • A page renamed or moved while a refused Space or Context delete puts its sweep back keeps the swept state.) | A page renamed or moved while a refused Space or Context delete puts its sweep back keeps the swept state. | Low | Small (=🟢+8=) | Shortcut | `93baa6931` | **Created:** 10-01-2026<br>**Updated:** 10-03-2026 |
-| [F-046](#F-046 • An outside edit to a page inside a folder the app just renamed or moved is lost until the page's next event.) | An outside edit to a page inside a folder the app just renamed or moved is lost until the page's next event. | Low | Small (=🟢+8=) | Shortcut | `93baa6931` | **Created:** 10-01-2026<br>**Updated:** 10-16-2026 |
-| [F-038](#F-038 • With two same-titled pages both deleted, restoring the first one deleted leaves the links to their title stripped.) | With two same-titled pages both deleted, restoring the first one deleted leaves the links to their title stripped. | Low | Small (=🟢+10=) | Shortcut | `34227ef5c` | **Created:** 09-28-2026<br>**Updated:** 10-16-2026 |
-| [F-071](#F-071 • A property edit's undo put back the value the app showed rather than the value the file held, so undoing a pick over a value Pommora can't read deleted its key.) | A property edit's undo put back the value the app showed rather than the value the file held, so undoing a pick over a value Pommora can't read deleted its key. | Low | Small (TBD) | Drift | `e0a803028` | **Created:** 10-18-2026<br>**Updated:** 10-18-2026 |
+| [F-041](#F-041 • Contexts and Properties each carry their own journal, replayer, and sweep loop for one pattern.) | Contexts and Properties each carry their own journal, replayer, and sweep loop for one pattern. | Low | Large (=🔴−150 to −300=) | Parallel Build | `03dde6468` | **Created:** 09-30-2026<br>**Updated:** 10-19-2026 |
+| [F-042](#F-042 • A page missing its ID that a folder's read finds after its own event was spent stays out of the tree until the next full read.) | A page missing its ID that a folder's read finds after its own event was spent stays out of the tree until the next full read. | Low | Medium (=🟢+10=) | Shortcut | `93baa6931` | **Created:** 10-01-2026<br>**Updated:** 10-04-2026 |
+| [F-043](#F-043 • A write's reply waits behind a walk an outside change owes.) | A write's reply waits behind a walk an outside change owes. | Low | Medium (=🟢+10=) | Shortcut | `93baa6931` | **Created:** 10-01-2026<br>**Updated:** 10-04-2026 |
+| [F-038](#F-038 • Delete All and Restore All walk the whole Trash once for every bundle that hands a Link value to it.) | Delete All and Restore All walk the whole Trash once for every bundle that hands a Link value to it. | Low | Medium (=🟢+15=) | Shortcut | `34227ef5c` | **Created:** 09-28-2026<br>**Updated:** 10-16-2026 |
+| [F-068](#F-068 • An app file this session never read and can't read opens as empty, so its section shows defaults and its changes are refused, some without a word.) | An app file this session never read and can't read opens as empty, so its section shows defaults and its changes are refused, some without a word. | Low | Medium (=🟢+15=) | Drift | `0c80012cb` | **Created:** 09-26-2026<br>**Updated:** 10-16-2026 |
+| [F-040](#F-040 • An in-app create or rename of a Space, or rename of a Context, leaves the pages already tagged with its new name unlinked until each is read again.) | An in-app create or rename of a Space, or rename of a Context, leaves the pages already tagged with its new name unlinked until each is read again. | Low | Small (=🟢+10=) | Shortcut | `93baa6931` | **Created:** 10-01-2026<br>**Updated:** 10-04-2026 |
+| [F-044](#F-044 • A page renamed or moved while a refused Space or Context delete puts its sweep back keeps the swept state.) | A page renamed or moved while a refused Space or Context delete puts its sweep back keeps the swept state. | Low | Small (=🟢+8=) | Shortcut | `93baa6931` | **Created:** 10-01-2026<br>**Updated:** 10-03-2026 |
+| [F-045](#F-045 • An outside edit to a page inside a folder the app just renamed or moved is lost until the page's next event.) | An outside edit to a page inside a folder the app just renamed or moved is lost until the page's next event. | Low | Small (=🟢+8=) | Shortcut | `93baa6931` | **Created:** 10-01-2026<br>**Updated:** 10-16-2026 |
+| [F-070](#F-070 • A property edit's undo put back the value the app showed rather than the value the file held, so undoing a pick over a value Pommora can't read deleted its key.) | A property edit's undo put back the value the app showed rather than the value the file held, so undoing a pick over a value Pommora can't read deleted its key. | Low | Small (TBD) | Drift | `e0a803028` | **Created:** 10-18-2026<br>**Updated:** 10-18-2026 |
 
 #### A4 • Architecture
 
 | ID | Title | Concern | Scale | Origin | Base | Date |
 | ----- | --------------------------------------------------- | -------- | -------- | ------ | --------- | ------------- |
-| [F-050](#F-050 • Every call site chooses for itself whether an error is shown, logged, or dropped, and about forty host-side failures reach no one.) | Every call site chooses for itself whether an error is shown, logged, or dropped, and about forty host-side failures reach no one. | Moderate | Large (±0) | Drift | `03dde6468` | **Created:** 09-30-2026<br>**Updated:** 10-08-2026 |
-| [F-048](#F-048 • Nothing in a file's location says whether it runs in the host or the window, and several files sit in another domain's folder.) | Nothing in a file's location says whether it runs in the host or the window, and several files sit in another domain's folder. | Moderate | Large (±0) | Drift | `f6511401d` | **Created:** 09-23-2026<br>**Updated:** 10-03-2026 |
+| [F-049](#F-049 • Every call site chooses for itself whether an error is shown, logged, or dropped, and about forty host-side failures reach no one.) | Every call site chooses for itself whether an error is shown, logged, or dropped, and about forty host-side failures reach no one. | Moderate | Large (±0) | Drift | `03dde6468` | **Created:** 09-30-2026<br>**Updated:** 10-08-2026 |
+| [F-047](#F-047 • Nothing in a file's location says whether it runs in the host or the window, and several files sit in another domain's folder.) | Nothing in a file's location says whether it runs in the host or the window, and several files sit in another domain's folder. | Moderate | Large (±0) | Drift | `f6511401d` | **Created:** 09-23-2026<br>**Updated:** 10-03-2026 |
 
 #### A5 • Theme & UIX
 
@@ -88,38 +87,38 @@
 | ----- | ----------------------------------------------- | -------- | -------- | ---------- | --------- | ------------- |
 | [F-035](#F-035 • Buttons never show keyboard focus.) | Buttons never show keyboard focus. | Moderate | Mini (=🟢+4=) | Drift | `f6511401d` | **Created:** 09-23-2026<br>**Updated:** 10-03-2026 |
 | [F-036](#F-036 • Inside a pop-up pane, pressing a second dropdown while one list is open cuts the list's close short and reopens it at the new dropdown.) | Inside a pop-up pane, pressing a second dropdown while one list is open cuts the list's close short and reopens it at the new dropdown. | Low | Small (=🟢+8=) | Shortcut | `e3d5c1a10` | **Created:** 09-24-2026<br>**Updated:** 10-03-2026 |
-| [F-060](#F-060 • Four waits that let a transition finish each state their own slack.) | Four waits that let a transition finish each state their own slack. | Minimal | Small (=🔴−2=) | Drift | `7933c518d` | **Created:** 10-03-2026<br>**Updated:** 10-03-2026 |
-| [F-059](#F-059 • Where a pop-up appears is worked out inside a 50-line block tangled with its screen updates.) | Where a pop-up appears is worked out inside a 50-line block tangled with its screen updates. | Minimal | Small (=🟢+2=) | Patch-Over | `f6511401d` | **Created:** 09-23-2026<br>**Updated:** 10-16-2026 |
-| [F-072](#F-072 • A row's hint in a pane that sizes to its content stays on one line and widens the pane, so the format rows carry none.) | A row's hint in a pane that sizes to its content stays on one line and widens the pane, so the format rows carry none. | Minimal | Mini (TBD) | Drift | `54e93e491` | **Created:** 10-18-2026<br>**Updated:** 10-18-2026 |
+| [F-059](#F-059 • Four waits that let a transition finish each state their own slack.) | Four waits that let a transition finish each state their own slack. | Minimal | Small (=🔴−2=) | Drift | `7933c518d` | **Created:** 10-03-2026<br>**Updated:** 10-03-2026 |
+| [F-058](#F-058 • Where a pop-up appears is worked out inside a 50-line block tangled with its screen updates.) | Where a pop-up appears is worked out inside a 50-line block tangled with its screen updates. | Minimal | Small (=🟢+2=) | Patch-Over | `f6511401d` | **Created:** 09-23-2026<br>**Updated:** 10-16-2026 |
+| [F-071](#F-071 • A row's hint in a pane that sizes to its content stays on one line and widens the pane, so the format rows carry none.) | A row's hint in a pane that sizes to its content stays on one line and widens the pane, so the format rows carry none. | Minimal | Mini (TBD) | Drift | `54e93e491` | **Created:** 10-18-2026<br>**Updated:** 10-18-2026 |
 
 #### A6 • Tiles & Embeds
 
 | ID | Title | Concern | Scale | Origin | Base | Date |
 | ----- | -------------------------------------------------- | ------- | --------- | ------- | --------- | ------------- |
 | [F-030](#F-030 • In a free-text markdown tile, the footnotes divider and the footnote reveal do nothing.) | In a free-text markdown tile, the footnotes divider and the footnote reveal do nothing. | Low | Small (=🟢≈ +2=) | Shortcut | `70fc6063c` | **Created:** 10-08-2026<br>**Updated:** 10-16-2026 |
-| [F-066](#F-066 • A board whose saved layout can't be read opens empty, and the first new tile replaces the saved layout.) | A board whose saved layout can't be read opens empty, and the first new tile replaces the saved layout. | Low | Small (=🟢+5=) | Shortcut | `740f442e0` | **Created:** 10-04-2026<br>**Updated:** 10-16-2026 |
-| [F-068](#F-068 • Three sites that run without a tree name the tile hosts' folders by hand.) | Three sites that run without a tree name the tile hosts' folders by hand. | Minimal | Small (≈ ±0) | Drift | `668e5398b` | **Created:** 10-05-2026<br>**Updated:** 10-08-2026 |
-| [F-067](#F-067 • The tile shell's memo comparator lists its props by hand.) | The tile shell's memo comparator lists its props by hand. | Minimal | Small (=🔴−8=) | Shortcut | `740f442e0` | **Created:** 10-04-2026<br>**Updated:** 10-08-2026 |
+| [F-065](#F-065 • A board whose saved layout can't be read opens empty, and the first new tile replaces the saved layout.) | A board whose saved layout can't be read opens empty, and the first new tile replaces the saved layout. | Low | Small (=🟢+5=) | Shortcut | `740f442e0` | **Created:** 10-04-2026<br>**Updated:** 10-16-2026 |
+| [F-067](#F-067 • Three sites that run without a tree name the tile hosts' folders by hand.) | Three sites that run without a tree name the tile hosts' folders by hand. | Minimal | Small (≈ ±0) | Drift | `668e5398b` | **Created:** 10-05-2026<br>**Updated:** 10-08-2026 |
+| [F-066](#F-066 • The tile shell's memo comparator lists its props by hand.) | The tile shell's memo comparator lists its props by hand. | Minimal | Small (=🔴−8=) | Shortcut | `740f442e0` | **Created:** 10-04-2026<br>**Updated:** 10-08-2026 |
 
 #### A7 • Views
 
 | ID | Title | Concern | Scale | Origin | Base | Date |
 | ----- | --------------------------------------------------- | ------- | -------- | ------- | --------- | ------------- |
-| [F-063](#F-063 • Dragging a Set to another band shows it at its old rank for the round trip.) | Dragging a Set to another band shows it at its old rank for the round trip. | Low | Small (=🟢+6=) | Drift | `93baa6931` | **Created:** 10-01-2026<br>**Updated:** 10-03-2026 |
-| [F-064](#F-064 • A refused page create clears another new row's staged order until that row's own order lands.) | A refused page create clears another new row's staged order until that row's own order lands. | Low | Small (=🟢+6=) | Shortcut | `93baa6931` | **Created:** 10-01-2026<br>**Updated:** 10-03-2026 |
-| [F-062](#F-062 • A new item's rename field opens one frame after its row.) | A new item's rename field opens one frame after its row. | Minimal | Small (=🟢+5=) | Drift | `93baa6931` | **Created:** 10-01-2026<br>**Updated:** 10-16-2026 |
+| [F-062](#F-062 • Dragging a Set to another band shows it at its old rank for the round trip.) | Dragging a Set to another band shows it at its old rank for the round trip. | Low | Small (=🟢+6=) | Drift | `93baa6931` | **Created:** 10-01-2026<br>**Updated:** 10-03-2026 |
+| [F-063](#F-063 • A refused page create clears another new row's staged order until that row's own order lands.) | A refused page create clears another new row's staged order until that row's own order lands. | Low | Small (=🟢+6=) | Shortcut | `93baa6931` | **Created:** 10-01-2026<br>**Updated:** 10-03-2026 |
+| [F-061](#F-061 • A new item's rename field opens one frame after its row.) | A new item's rename field opens one frame after its row. | Minimal | Small (=🟢+5=) | Drift | `93baa6931` | **Created:** 10-01-2026<br>**Updated:** 10-16-2026 |
 
 #### A8 • Navigation
 
 | ID | Title | Concern | Scale | Origin | Base | Date |
 | ----- | ---------------------------------------------------- | ------ | ------- | -------- | --------- | ------------- |
-| [F-061](#F-061 • Maximum Tab Width has no effect above a tab strip's preferred width, so most of its steps do nothing.) | Maximum Tab Width has no effect above a tab strip's preferred width, so most of its steps do nothing. | Low | Small (=🟢+1=) | Shortcut | `43d0a6d1e` | **Created:** 09-25-2026<br>**Updated:** 10-03-2026 |
+| [F-060](#F-060 • Maximum Tab Width has no effect above a tab strip's preferred width, so most of its steps do nothing.) | Maximum Tab Width has no effect above a tab strip's preferred width, so most of its steps do nothing. | Low | Small (=🟢+1=) | Shortcut | `43d0a6d1e` | **Created:** 09-25-2026<br>**Updated:** 10-03-2026 |
 
 #### A9 • Matrix
 
 | ID | Title | Concern | Scale | Origin | Base | Date |
 | ------ | ---------------------------------------------------- | ------- | ------- | ------- | -------- | ------------- |
-| [F-065](#F-065 • The Matrix can't be pinch-zoomed on a touchscreen.) | The Matrix can't be pinch-zoomed on a touchscreen. | Low | Small (=🟢+12=) | Premature | `f6511401d` | **Created:** 09-23-2026<br>**Updated:** 10-05-2026 |
+| [F-064](#F-064 • The Matrix can't be pinch-zoomed on a touchscreen.) | The Matrix can't be pinch-zoomed on a touchscreen. | Low | Small (=🟢+12=) | Premature | `f6511401d` | **Created:** 09-23-2026<br>**Updated:** 10-05-2026 |
 
 #### A10 • Documentation
 
@@ -349,7 +348,7 @@ A device revoked while the app was closed shows "Waiting for approval from anoth
 
 Add one `isRevoked(host, nexusId, outcome)` in `keyring.ts` (404 `not-found` with a cached device ring), used by `pullWait`, `state`, and `withKeys`, where it runs `forgetKeys` and sets the `off/revoked` status instead of retrying. A wiped hub answers 401 for an unknown signer, so the shared check doesn't misfire on F-003's scenario.
 
-#### F-040 • Resetting Sync's records loads every one and deletes them one at a time, and the index's path renames and removals commit table by table.
+#### F-039 • Resetting Sync's records loads every one and deletes them one at a time, and the index's path renames and removals commit table by table.
 
 | Concern | Scale | Origin | Base | Date |
 |---------|-------|--------|------|------|
@@ -357,7 +356,7 @@ Add one `isRevoked(host, nexusId, outcome)` in `keyring.ts` (404 `not-found` wit
 
 **Description**
 
-The page index (`nexus.db`, the local database that answers link, heading, and value lookups) writes a batch of page rows inside one transaction, but its path methods don't: a page or folder rename and a page or folder removal run one statement per index table, each compiled on the call and committed on its own, so the tables can disagree about a path when the app stops between them. Sync's records sit in the same store, and connecting to a new hub or disconnecting reads every record, its stored base included, then deletes each in its own commit, a cost that grows with the Nexus while the user waits on Sync's settings. `upsertPageIndexes` prepares its inserts once and wraps its rows in `inTransaction`, while `removePathIndex`, `renamePathIndex`, `removePathPrefixIndex`, and `renamePathPrefixIndex` loop over `INDEX_TABLES` with a fresh `db.prepare` each, and both `Core/Sync/handlers.ts` sites run `for (const row of readAllBases()) deleteBase(row.path)`.[^40]
+The page index (`nexus.db`, the local database that answers link, heading, and value lookups) writes a batch of page rows inside one transaction, but its path methods don't: a page or folder rename and a page or folder removal run one statement per index table, each compiled on the call and committed on its own, so the tables can disagree about a path when the app stops between them. Sync's records sit in the same store, and connecting to a new hub or disconnecting reads every record, its stored base included, then deletes each in its own commit, a cost that grows with the Nexus while the user waits on Sync's settings. `upsertPageIndexes` prepares its inserts once and wraps its rows in `inTransaction`, while `removePathIndex`, `renamePathIndex`, `removePathPrefixIndex`, and `renamePathPrefixIndex` loop over `INDEX_TABLES` with a fresh `db.prepare` each, and both `Core/Sync/handlers.ts` sites run `for (const row of readAllBases()) deleteBase(row.path)`.[^39]
 
 **Solution** [Proposed]
 
@@ -393,7 +392,7 @@ A page with a stray `<!--`, `<pre>`, `<script>`, or `<?` near the top lags heavi
 
 A raw opener whose closer never arrives ends before the next blank line (`htmlBlocks` sets the block's end through a `lastBeforeBlank` helper, as type-6 and type-7 blocks already end), a fourth intentional CommonMark divergence that joins Editor-Internals' list. The raw openers and their end conditions move beside the fence grammar in `markdownCode.ts`, with `unclosedHtmlEnd(d, span)` naming the end condition a span's opener still waits for, so the scan and the parser read one grammar. The parser is handed the same reading: `parse` rewrites an unclosed opener's line as a `<p` start of the same length, so micromark ends it at the blank line too; masking it to prose the way a lone fence marker is masked would make it a paragraph, and `htmlBlockSpans(ast)` would drop a block the scan keeps. Because a raw block now runs across blank lines only to a closer, the rescan window re-pairs it as it re-pairs a fence: `loneAbove` widens up to an unclosed opener above the window when the window holds its end condition, and `pairsBelow` widens down when the window holds an unclosed opener whose end condition appears below. A stray opener then costs the lines up to the next blank line, and everything below it scans and tokenizes as it would without the opener. `docScan.test.ts`'s "ends an opener nothing closes at the next blank line" asserts `<!--` / `x` / blank / `y` holds one span ending before the blank line, and that a `<pre>` closed across a blank line still closes; it goes red with the run-to-the-last-line loop restored. The property generator already holds unclosed `<pre>` and `<?php` lines, so the `rescan ≡ scanDoc` and chunk-by-chunk properties pin the re-pairing and the mask. The net is an estimate: this rule was typed only together with F-032, at +36 for the rule, the re-pairing, the parser masks, and three window edge guards, and the guards and the parser's lone-tag mask belong to F-032's lone-tag start condition.
 
-#### F-051 • Scope is a three-member string read by 21 bare comparisons and 13 `= 'page'` defaults, so a fourth scope silently inherits page behavior in some places and cell behavior in others.
+#### F-050 • Scope is a three-member string read by 21 bare comparisons and 13 `= 'page'` defaults, so a fourth scope silently inherits page behavior in some places and cell behavior in others.
 
 | Concern | Scale | Origin | Base | Date |
 |---------|-------|--------|------|------|
@@ -401,15 +400,15 @@ A raw opener whose closer never arrives ends before the next blank line (`htmlBl
 
 **Description**
 
-A page, a table cell, and a Text value read different amounts of Markdown, and the code asks "is this the page?" or "is this the cell?" in twenty-one places across ten files instead of asking one question about what the surface reads. Thirteen parameters default to `'page'`, so a reader that forgets to pass its scope answers from the page-shaped scan. The only capability switches are `readsLists` and `blockGestures`. A new surface would be classified one site at a time, non-page at every `=== 'page'` and page at every `=== 'cell'`, silently. Inside a cell today the readers that forgot already diverge: `lineBodyBefore` and `opensLine` strip a `> ` prefix the cell draws as prose, `listDrag`, `listRenumber`, and `renumberRuns` read the quote-prefixed list grammar, and `blockDrag` takes block starts from the page's vocabulary; none of those is reachable from a glyph a cell draws, which is why this waits.[^51]
+A page, a table cell, and a Text value read different amounts of Markdown, and the code asks "is this the page?" or "is this the cell?" in twenty-one places across ten files instead of asking one question about what the surface reads. Thirteen parameters default to `'page'`, so a reader that forgets to pass its scope answers from the page-shaped scan. The only capability switches are `readsLists` and `blockGestures`. A new surface would be classified one site at a time, non-page at every `=== 'page'` and page at every `=== 'cell'`, silently. Inside a cell today the readers that forgot already diverge: `lineBodyBefore` and `opensLine` strip a `> ` prefix the cell draws as prose, `listDrag`, `listRenumber`, and `renumberRuns` read the quote-prefixed list grammar, and `blockDrag` takes block starts from the page's vocabulary; none of those is reachable from a glyph a cell draws, which is why this waits.[^50]
 
 Inside a fence pair in a cell, the inline transforms and the cell's tokenizer agree in treating the paired lines as code, while `listLineAt` ignores the pair, so Enter continues a list line inside it. A cell and a Text value keep reading fences as they do today, and MarkdownPM.md's "fences stay literal text" is corrected to say the pair is read.
 
 **Solution** [Deferred]
 
-Waits for a fourth scope. One `Core/MarkdownPM/Engine/surfaces.ts` owns the scope tuple, the `MarkdownScope` type, and the capability predicates `readsLists`, `readsBlocks`, `readsTiles`, `gripKinds`, and `hasGutter`; the twenty-two compares read them, the thirteen defaults go so a forgotten scope is a compile error, the zod enum derives from the tuple, and `blockPrefix`'s two helpers, `listDrag`, `listRenumber`, `renumberRuns`, `dropChanges`, and `blockDragExtension` take the scope. Typed as five switches it measured +75; as one table keyed by scope with the five capabilities as columns, about +37 with the same exhaustiveness. `smartDelete`'s page compare, which gates the tile hold and the footnote cascade, reads `readsTiles` and `readsBlocks`. Lands with F-054, whose grip table becomes `gripKinds(scope)`. `format.ts`'s Lists ▸ menu, `tableGuard.ts`'s paste guard, `subBlockAt`, and `checkboxToggleChange` also read the quote-prefixed grammar with no scope, though in a cell each starts from a glyph drawn only on an unprefixed line; they take the scope with the rest.
+Waits for a fourth scope. One `Core/MarkdownPM/Engine/surfaces.ts` owns the scope tuple, the `MarkdownScope` type, and the capability predicates `readsLists`, `readsBlocks`, `readsTiles`, `gripKinds`, and `hasGutter`; the twenty-two compares read them, the thirteen defaults go so a forgotten scope is a compile error, the zod enum derives from the tuple, and `blockPrefix`'s two helpers, `listDrag`, `listRenumber`, `renumberRuns`, `dropChanges`, and `blockDragExtension` take the scope. Typed as five switches it measured +75; as one table keyed by scope with the five capabilities as columns, about +37 with the same exhaustiveness. `smartDelete`'s page compare, which gates the tile hold and the footnote cascade, reads `readsTiles` and `readsBlocks`. Lands with F-053, whose grip table becomes `gripKinds(scope)`. `format.ts`'s Lists ▸ menu, `tableGuard.ts`'s paste guard, `subBlockAt`, and `checkboxToggleChange` also read the quote-prefixed grammar with no scope, though in a cell each starts from a glyph drawn only on an unprefixed line; they take the scope with the rest.
 
-#### F-049 • Code-block coloring re-parses the whole fenced block on every keystroke inside it.
+#### F-048 • Code-block coloring re-parses the whole fenced block on every keystroke inside it.
 
 | Concern | Scale | Origin | Base | Date |
 |---------|-------|--------|------|------|
@@ -417,13 +416,13 @@ Waits for a fourth scope. One `Core/MarkdownPM/Engine/surfaces.ts` owns the scop
 
 **Description**
 
-Code colors come from parsing each visible fenced block with its language, and the parse is remembered by the block's exact text. Any keystroke inside a block therefore misses the memory and the whole block is parsed from scratch, even when only a few of its lines are on screen, so typing in a long code block lags in proportion to the block's length. While a language is still downloading, each redraw also attaches another "loaded" callback. Parsing through the same parser cost 2.4 ms per keystroke at 100 lines, 13.1 ms at 1,000, and 38.6 ms at 3,000, since `paint` joins every line of the block and reads the tree through the text-keyed `drawnLast` while `blockParser.parse(text)` runs with no fragments.[^49]
+Code colors come from parsing each visible fenced block with its language, and the parse is remembered by the block's exact text. Any keystroke inside a block therefore misses the memory and the whole block is parsed from scratch, even when only a few of its lines are on screen, so typing in a long code block lags in proportion to the block's length. While a language is still downloading, each redraw also attaches another "loaded" callback. Parsing through the same parser cost 2.4 ms per keystroke at 100 lines, 13.1 ms at 1,000, and 38.6 ms at 3,000, since `paint` joins every line of the block and reads the tree through the text-keyed `drawnLast` while `blockParser.parse(text)` runs with no fragments.[^48]
 
 **Solution** [TBD]
 
 Keep the previous tree and its `TreeFragment`s per block, keyed by the opener line mapped through the transaction, and reparse with `TreeFragment.applyChanges` in block-local coordinates so an edit re-parses only around the change; or, simpler, parse only from the block's start through the viewport's last visible line. Attach one load callback per language through a module-level set of pending loads.
 
-#### F-070 • Bold, italic, strikethrough, or code picked over part of a link writes its markers inside the link, which breaks a connection's title.
+#### F-069 • Bold, italic, strikethrough, or code picked over part of a link writes its markers inside the link, which breaks a connection's title.
 
 | Concern | Scale | Origin | Base | Date |
 |---------|-------|--------|------|------|
@@ -431,7 +430,7 @@ Keep the previous tree and its `TreeFragment`s per block, keyed by the opener li
 
 **Description**
 
-`toggleInline` writes a mark's opener and closer at the selection's own edges, wherever they fall. ⌘B over `Ba` in `foo [[Bar]] baz` writes `foo [[**Ba**r]] baz`, whose connection now names `**Ba**r` and resolves to nothing. ⌘I and strikethrough do the same, and ⌘E turns the title into code. A selection reaching from prose into a link, such as `foo [[B` in the same line, writes `**foo [[B**ar]]`, splitting the link. The same edges land inside an alias (`[[Bar|**Ali**as]]`), a markdown label, and a markdown destination (`[label](https://**x.c**om)`, which drops the bold altogether). Paints refuse every one of these cases, because they're written only where they read back. The marks have no equivalent check. Reproduced in vite-node at `13539fda2`.[^70]
+`toggleInline` writes a mark's opener and closer at the selection's own edges, wherever they fall. ⌘B over `Ba` in `foo [[Bar]] baz` writes `foo [[**Ba**r]] baz`, whose connection now names `**Ba**r` and resolves to nothing. ⌘I and strikethrough do the same, and ⌘E turns the title into code. A selection reaching from prose into a link, such as `foo [[B` in the same line, writes `**foo [[B**ar]]`, splitting the link. The same edges land inside an alias (`[[Bar|**Ali**as]]`), a markdown label, and a markdown destination (`[label](https://**x.c**om)`, which drops the bold altogether). Paints refuse every one of these cases, because they're written only where they read back. The marks have no equivalent check. Reproduced in vite-node at `13539fda2`.[^69]
 
 **Solution** [Proposed]
 
@@ -449,7 +448,7 @@ The grab handles drawn beside each paragraph, list, and code block are recompute
 
 **Solution** [Proposed]
 
-The line scan gains `markers: (ListMarker | null)[]`: `scanLines` computes it with `parseListMarkerPrefixed` over its window, and `splice` carries it through `perLine` with no offset mapping, since marker offsets are line-relative, as `headings` and `breaks` are. `blockContext` reads `scan.markers` in place of its own walk, and `listRenumber` reads `scan.markers[i]` in place of re-parsing. The markers are parsed by the page's list grammar on every scan, as `blockContext` parses them today, and scope gating waits with F-051. Every `scanDoc` now parses markers once per line, including the chunk scan inside `tokenizeChunk` and a cell's scan, a chunk-sized regex cost on the tokenize path. `blockStarts` itself stays one walk over the lines per keystroke; emitting the grip class from the stepped line intents would remove that too, but it needs block membership, which isn't line-local, carried in the intents. No test is added: the `rescan ≡ scanDoc` property in `docScan.test.ts` compares every `DocScan` key across 1,500 documents and 40 edits each, its generator already holds every marker kind, and it goes red when `splice` drops `markers`. Lands with or after F-024, since the `listRenumber` line it rewrites calls `isSequenced(lm)`, which takes a marker only once F-024 lands; alone, the call stays `isSequenced(lm.kind)`.
+The line scan gains `markers: (ListMarker | null)[]`: `scanLines` computes it with `parseListMarkerPrefixed` over its window, and `splice` carries it through `perLine` with no offset mapping, since marker offsets are line-relative, as `headings` and `breaks` are. `blockContext` reads `scan.markers` in place of its own walk, and `listRenumber` reads `scan.markers[i]` in place of re-parsing. The markers are parsed by the page's list grammar on every scan, as `blockContext` parses them today, and scope gating waits with F-050. Every `scanDoc` now parses markers once per line, including the chunk scan inside `tokenizeChunk` and a cell's scan, a chunk-sized regex cost on the tokenize path. `blockStarts` itself stays one walk over the lines per keystroke; emitting the grip class from the stepped line intents would remove that too, but it needs block membership, which isn't line-local, carried in the intents. No test is added: the `rescan ≡ scanDoc` property in `docScan.test.ts` compares every `DocScan` key across 1,500 documents and 40 edits each, its generator already holds every marker kind, and it goes red when `splice` drops `markers`. Lands with or after F-024, since the `listRenumber` line it rewrites calls `isSequenced(lm)`, which takes a marker only once F-024 lands; alone, the call stays `isSequenced(lm.kind)`.
 
 #### F-014 • Typing in a table cell re-reads the whole table as Markdown on every keystroke, and big tables lag.
 
@@ -493,7 +492,7 @@ On a very long page, typing near the top costs more than typing near the bottom,
 
 Deferred until a long-page benchmark is part of the gates. Cached line intents would be held relative to their line start and re-based where they're read (`assembleLineIntents`, `prefixEndAt`, `seatPastMarker`, and `decorations.ts`'s `atomicsOn`), so the carry copies references, and rails would be derived for the window from `railIntents` as F-021 leaves it. Editor-Internals' sentence that an intent carries document positions only in `from` and `to` is rewritten with it, and `docCache.test.ts`'s `stepLineIntents ≡ docLineIntents` property stays the specification. The fence and table half is open: a block's range could be held once in `fenceRangesOf` rather than on every line. It was not typed; the net is an estimate.
 
-#### F-052 • What kind of surface an editor sits in is spread over five uncoordinated switches, two sentinel ancestor strings, and a CSS list of host classes.
+#### F-051 • What kind of surface an editor sits in is spread over five uncoordinated switches, two sentinel ancestor strings, and a CSS list of host classes.
 
 | Concern | Scale | Origin | Base | Date |
 |---------|-------|--------|------|------|
@@ -501,7 +500,7 @@ Deferred until a long-page benchmark is part of the gates. Cached line intents w
 
 **Description**
 
-To mount the editor somewhere new, a host picks among `readOnly`, `active`, `locked`, `inert`, `pageSurface`, `preview`, a connections mode (`preview | window | inert`; the history window sets both "inerts"), and fake ancestor strings (`HISTORY_ANCESTOR`, `GLANCE_ANCESTORS`) that switch off nested embeds through `host.ancestors.length <= 1`, then adds itself to the placeholder selector in `markdown-pm.css`. The sentinels carry one latent misfire: `embedExclusions` excludes every ancestor's title, so a page titled "glance" or "page-history" can't be embedded inside a glance or a history snapshot.[^52]
+To mount the editor somewhere new, a host picks among `readOnly`, `active`, `locked`, `inert`, `pageSurface`, `preview`, a connections mode (`preview | window | inert`; the history window sets both "inerts"), and fake ancestor strings (`HISTORY_ANCESTOR`, `GLANCE_ANCESTORS`) that switch off nested embeds through `host.ancestors.length <= 1`, then adds itself to the placeholder selector in `markdown-pm.css`. The sentinels carry one latent misfire: `embedExclusions` excludes every ancestor's title, so a page titled "glance" or "page-history" can't be embedded inside a glance or a history snapshot.[^51]
 
 **Solution** [Deferred]
 
@@ -549,7 +548,7 @@ A heading like `# foo #` lists as "foo #", and a link written `[[Page#foo]]`, as
 
 `headingParts` gains a `text` field with CommonMark's closing sequence stripped (a `#` run preceded by a space or tab, or a line of only `#`s), and all four name readers take it; `content` and `contentStart` stay raw for the editing callers, so drawing and rewriting keep the hashes. Its unread `space` field goes. Nothing on disk is rewritten, but per-machine fold keys saved through `prefs.save('folds', …)` change once for such headings, so their remembered folds open once; `nexus.db` heading rows regenerate; and a link already written as `[[Page#foo #]]` stops resolving. Two tests pin it: `folding.test.ts`'s 'names a heading without its closing hashes, as CommonMark reads it' expects `foo`, `bar`, `baz#`, and an empty name, and `headingRenameSettle.test.tsx`'s 'closing hashes added to a heading rename nothing' expects no rename and an untouched link; both go red against today's `content.trim()`. Lands as one edit of `scanHeadings` with F-023, since both rewrite its heading-name line.
 
-#### F-054 • A new block or tile kind falls through to silent defaults in the grip menu and block starts.
+#### F-053 • A new block or tile kind falls through to silent defaults in the grip menu and block starts.
 
 | Concern | Scale | Origin | Base | Date |
 |---------|-------|--------|------|------|
@@ -557,11 +556,11 @@ A heading like `# foo #` lists as "foo #", and a link written `[[Page#foo]]`, as
 
 **Description**
 
-Adding a new kind of block (images are planned) would get the plain grip menu and default behavior in four places with nothing flagging the miss: `contextFor`'s `default`, the `GRIP_KINDS` plain `Set`, `blockStarts`' `default`, and a `startsWith` action chain in `gripMenu.ts` that drops an unhandled action.[^54]
+Adding a new kind of block (images are planned) would get the plain grip menu and default behavior in four places with nothing flagging the miss: `contextFor`'s `default`, the `GRIP_KINDS` plain `Set`, `blockStarts`' `default`, and a `startsWith` action chain in `gripMenu.ts` that drops an unhandled action.[^53]
 
 **Solution** [Deferred]
 
-Waits for the next block kind. `contextFor` and `blockStarts` switch over every `BlockKind` with the plain kinds listed, and `GRIP_KINDS` becomes a `Record<BlockKind, boolean>`; deleting one case or key at each site was confirmed to fail the typecheck. The action chain can't be made exhaustive, since its actions are template-literal strings the menu rows mint and its handler returns nothing, so a switch over them compiles with a case missing. Typed at +13. Lands with F-051, whose `gripKinds(scope)` is where the Record lives.
+Waits for the next block kind. `contextFor` and `blockStarts` switch over every `BlockKind` with the plain kinds listed, and `GRIP_KINDS` becomes a `Record<BlockKind, boolean>`; deleting one case or key at each site was confirmed to fail the typecheck. The action chain can't be made exhaustive, since its actions are template-literal strings the menu rows mint and its handler returns nothing, so a switch over them compiles with a case missing. Typed at +13. Lands with F-050, whose `gripKinds(scope)` is where the Record lives.
 
 #### F-028 • While the pointer is over the editor, every caret move re-measures every visible code block's language tag.
 
@@ -605,7 +604,7 @@ While a row or column is dragged, the whole table component redraws on every poi
 
 React state keeps the slot and the activation: `Drag` becomes `{ axis, from, to }` and `resize` becomes the boundary index. The pointer's offset and the two resize widths move to CSS variables on the table wrap: `startDrag`'s `resolve` writes `--tbl-drag` and `shift` reads it in the dragged row's or column's transform, and `startResize` writes `--tbl-left` and `--tbl-right` at activation and on each move, which `colWidth` reads for the boundary pair. `setDrag` fires only at activation and when the slot changes, and `setResize` only at activation and at the end. Each variable is written at activation before anything reads it and stays after the drop, so the subject holds its drop offset until the reorder's new model clears the drag, the same frame HEAD's state held it, with no snap-back. Hover stays React state: the grips are absolutely positioned siblings of the `<table>`, laid out from the geometry, so no selector relates the hovered cell's index to its grip without one generated rule per index; the update already fires once per cell crossing, and every `StaticCell` is memoized, so a crossing re-renders only `MarkdownTable`'s shell, while the imperative alternative (about +4) would split `data-reveal-host` between React and a handler. Behavior is unchanged; `dragOrigin.test.tsx` and the `Tables` suite pass unchanged, and a per-move render count would need a commit-counting profiler rather than a test.
 
-#### F-055 • The scan records its start-and-end ranges two ways, and carries adapters for both.
+#### F-054 • The scan records its start-and-end ranges two ways, and carries adapters for both.
 
 | Concern | Scale | Origin | Base | Date |
 |---------|-------|--------|------|------|
@@ -613,7 +612,7 @@ React state keeps the slot and the activation: `Drag` becomes `{ axis, from, to 
 
 **Description**
 
-`DocScan`'s `SpanLike` is a tuple for `maths` and `html` and an object for tables, embeds, and webpages, and `fromOf`, `toOf`, and the tuple-versus-object splits exist only because of that. Normalizing `maths` and `html` to `{ from; to }` and deleting the tuple arm touches about twenty `[0]`/`[1]` readers, many in `decorations.ts` and `folding.ts`, for a reduction of about two lines. Confirmed by reading.[^55]
+`DocScan`'s `SpanLike` is a tuple for `maths` and `html` and an object for tables, embeds, and webpages, and `fromOf`, `toOf`, and the tuple-versus-object splits exist only because of that. Normalizing `maths` and `html` to `{ from; to }` and deleting the tuple arm touches about twenty `[0]`/`[1]` readers, many in `decorations.ts` and `folding.ts`, for a reduction of about two lines. Confirmed by reading.[^54]
 
 **Solution** [Proposed]
 
@@ -633,7 +632,7 @@ Normalize both to objects and delete `fromOf`, `toOf`, and the tuple arm in the 
 
 A union by kind: `box` required on `checkbox`, optional on `bullet` and the sequenced kinds (`- []` and `1. [ ]` parse with a box), and absent on `arrow`. `isSequenced` narrows the marker itself to a `SequencedMarker`, so `ordinalOf` reads its ordinal unguarded, and every guard drops. `parseListMarker(line, at = 0)` adds `at` to its offsets, so `parseListMarkerPrefixed` becomes one call in place of the re-spread, which is where the reduction comes from; as a trailing optional argument, `at` would take an array index from a point-free `lines.map(parseListMarker)`, and none exists. The type checker is the pin: six `detect.test.ts` expectations that read optional fields become whole-shape matches, and the Engine, Input, Tables, and Gestures suites pass. Lands with or before F-020, whose `listRenumber` line calls `isSequenced` with the marker.
 
-#### F-053 • The host carries one typed menu member per construct, so a new construct menu needs a new host member in three places.
+#### F-052 • The host carries one typed menu member per construct, so a new construct menu needs a new host member in three places.
 
 | Concern | Scale | Origin | Base | Date |
 |---------|-------|--------|------|------|
@@ -641,13 +640,13 @@ A union by kind: `box` required on `checkbox`, optional on `bullet` and the sequ
 
 **Description**
 
-Every kind of menu the editor shows (grip, table, footnote, alias row) has its own entry on `EditorHost.menus`, each of which the host only pops: `api.ts` imports the grip, table, citation, and alias-row menu models to type them, `editorHost.tsx` builds each model only to `popMenu` it, and the test harness mirrors them. Confirmed by reading.[^53]
+Every kind of menu the editor shows (grip, table, footnote, alias row) has its own entry on `EditorHost.menus`, each of which the host only pops: `api.ts` imports the grip, table, citation, and alias-row menu models to type them, `editorHost.tsx` builds each model only to `popMenu` it, and the test harness mirrors them. Confirmed by reading.[^52]
 
 **Solution** [Deferred]
 
-Waits for the SidePane editor. One `menus.pop<A>(items)` beside `format`, with the editor building its own rows from the pure models; moving the model files alone counts for nothing. Not typed, so the net is an estimate. Lands with F-052, whose `EditorSurface` is where the SidePane adds its kind.
+Waits for the SidePane editor. One `menus.pop<A>(items)` beside `format`, with the editor building its own rows from the pure models; moving the model files alone counts for nothing. Not typed, so the net is an estimate. Lands with F-051, whose `EditorSurface` is where the SidePane adds its kind.
 
-#### F-056 • About thirty names are exported only for tests to import.
+#### F-055 • About thirty names are exported only for tests to import.
 
 | Concern | Scale | Origin | Base | Date |
 |---------|-------|--------|------|------|
@@ -655,13 +654,13 @@ Waits for the SidePane editor. One `menus.pop<A>(items)` beside `format`, with t
 
 **Description**
 
-About thirty `export` keywords in MarkdownPM have a test as their only outside reader (`indentLevel`, `computeStats`, `buildWidgetDecorations`, `refreshTableEffect`, `foldedRegions`, `regionsOf`, `EMPTY_PAGE_TEXT`, and the rest). Each function lives in its file and does real work, so removing the keyword removes no line, and `lineIntentsInto` is the cached-assembly property's reference derivation.[^56]
+About thirty `export` keywords in MarkdownPM have a test as their only outside reader (`indentLevel`, `computeStats`, `buildWidgetDecorations`, `refreshTableEffect`, `foldedRegions`, `regionsOf`, `EMPTY_PAGE_TEXT`, and the rest). Each function lives in its file and does real work, so removing the keyword removes no line, and `lineIntentsInto` is the cached-assembly property's reference derivation.[^55]
 
 **Solution** [Literal]
 
 None on their own; a keyword goes when its file is next rewritten.
 
-#### F-057 • In a development build, a page holding an empty `*` item followed by a `[ ] task` line makes the Markdown parser throw.
+#### F-056 • In a development build, a page holding an empty `*` item followed by a `[ ] task` line makes the Markdown parser throw.
 
 | Concern | Scale | Origin | Base | Date |
 |---------|-------|--------|------|------|
@@ -669,13 +668,13 @@ None on their own; a keyword goes when its file is next rewritten.
 
 **Description**
 
-Under `npm run dev`, a body such as `*` on one line and `[ ] task` on the next throws inside `parse` and `tokenize`, so the viewport tokenizer and the footer's figures fail on that page; CodeMirror deactivates a plugin that throws for the rest of the session. The parser's task-list extension (`mdast-util-gfm-task-list-item`) asserts through `devlop`, whose `development` export condition Vite resolves in the dev build and whose default build in production is a no-op, so a shipped build is unaffected. `scanDoc` throws there too until F-014 lands, through the whole-table confirm in `regions.ts`, which is how it surfaced; after it, `parse` and `tokenize` still do. Probed in vitest under the development condition.[^57]
+Under `npm run dev`, a body such as `*` on one line and `[ ] task` on the next throws inside `parse` and `tokenize`, so the viewport tokenizer and the footer's figures fail on that page; CodeMirror deactivates a plugin that throws for the rest of the session. The parser's task-list extension (`mdast-util-gfm-task-list-item`) asserts through `devlop`, whose `development` export condition Vite resolves in the dev build and whose default build in production is a no-op, so a shipped build is unaffected. `scanDoc` throws there too until F-014 lands, through the whole-table confirm in `regions.ts`, which is how it surfaced; after it, `parse` and `tokenize` still do. Probed in vitest under the development condition.[^56]
 
 **Solution** [TBD]
 
 Either the parser wrapper masks the empty item the way it masks a lone fence marker, so micromark never sees the shape, or the dev build resolves the extension without the development condition. Pin it with `parse('*\n[ ] task')` under the development condition.
 
-#### F-058 • A line holding only a non-breaking space ends a table, where the Markdown parser reads it as one more row.
+#### F-057 • A line holding only a non-breaking space ends a table, where the Markdown parser reads it as one more row.
 
 | Concern | Scale | Origin | Base | Date |
 |---------|-------|--------|------|------|
@@ -683,7 +682,7 @@ Either the parser wrapper masks the empty item the way it masks a lone fence mar
 
 **Description**
 
-A table followed by a line containing only U+00A0 draws as a table that stops above that line, while CommonMark readers and the editor's own parser keep the line as a body row. `tableRegions` ends a body at `line.trim() === ''`, and JavaScript's `trim` strips a non-breaking space where micromark's blank-line test doesn't. Probed while building F-014's property, whose alphabet leaves the case out.[^58]
+A table followed by a line containing only U+00A0 draws as a table that stops above that line, while CommonMark readers and the editor's own parser keep the line as a body row. `tableRegions` ends a body at `line.trim() === ''`, and JavaScript's `trim` strips a non-breaking space where micromark's blank-line test doesn't. Probed while building F-014's property, whose alphabet leaves the case out.[^57]
 
 **Solution** [TBD]
 
@@ -761,7 +760,7 @@ One module-level `Decoration.mark({})`, and a `WeakMap` from the field's `ranges
 
 ### A3 • Nexus & Data
 
-#### F-047 • An ID lost or damaged outside the app is replaced rather than recovered on every path but a held page's own event, and an ID two files share is answered two ways.
+#### F-046 • An ID lost or damaged outside the app is replaced rather than recovered on every path but a held page's own event, and an ID two files share is answered two ways.
 
 | Concern | Scale | Origin | Base | Date |
 |---------|-------|--------|------|------|
@@ -780,7 +779,7 @@ Everything that carries an ID is known by it elsewhere: a page by its tabs, pins
 
 Two files sharing one ID are held in the tree together until the next open gives the copy a fresh one, and the lookups answer that ID two ways: `recordById`, which a restore writes through and the window's `pagesByIdOf` and the reconcile index read, keeps the first the walk listed, while the host's `livePathOf` answers none, with the ledger listing the rest and picking the eldest. A Context ID two registry entries share resolves to the last entry through `contextWorldOf`. A copy the open can't re-mint keeps sharing the ID with no notice.
 
-The device already keeps what the last open saw, the record baseline, keyed by ID with each entity's path, but only the remint ledger reads it, the open's adoption pass runs before this Nexus's store is open, and the held page's restamp reads only the stamp entry, which a failed stamp spends. `applyPage` alone pushes `held` onto `owed.stamp`, and `listUnreadable` keeps no `held`, so `oweRetry` and the open's `stampMissing` hand `stampPage` none; `stampPage` mints through `contentIdAt` for a `missing` admission or an overwritten `malformed` one, `stampFolder` through `newId()`, `ensurePageId` through `stampPage`, `ensureIdentity` over an id-less `nexus.json`, and `ensureContextsRegistry` through `seededRegistry`; `contextEntry` requires a non-empty `id`; `idHeld` checks pages alone; `stampAdopted` runs inside `prepareOpenedNexus`, ahead of `openStores`; `readBaseline` is read only by `runOpenLedger`.[^47]
+The device already keeps what the last open saw, the record baseline, keyed by ID with each entity's path, but only the remint ledger reads it, the open's adoption pass runs before this Nexus's store is open, and the held page's restamp reads only the stamp entry, which a failed stamp spends. `applyPage` alone pushes `held` onto `owed.stamp`, and `listUnreadable` keeps no `held`, so `oweRetry` and the open's `stampMissing` hand `stampPage` none; `stampPage` mints through `contentIdAt` for a `missing` admission or an overwritten `malformed` one, `stampFolder` through `newId()`, `ensurePageId` through `stampPage`, `ensureIdentity` over an id-less `nexus.json`, and `ensureContextsRegistry` through `seededRegistry`; `contextEntry` requires a non-empty `id`; `idHeld` checks pages alone; `stampAdopted` runs inside `prepareOpenedNexus`, ahead of `openStores`; `readBaseline` is read only by `runOpenLedger`.[^46]
 
 **Solution** [Proposed]
 
@@ -807,7 +806,7 @@ Forty channels write Nexus files beside the one dispatcher, `mutate`: six view a
 
 Fold the thirty channels without a structural reason into `mutate`'s operation union, so a new write is one union entry, and keep `nexus:rename`, `exclusions:clear`, and the two base-hash body writes. The other six tile channels fold only once tiles have records, which nothing sizes yet. Every write already settles through the write gate's flush, so a folded channel needs no confirm of its own. `MutateReply` is one optional-field bag, and eleven folded channels answer something other than null (eight types), so the fold carries an op-keyed reply. CorePM's *§Mutations* and the comment on `mutateRequest` follow the fold.
 
-#### F-042 • Contexts and Properties each carry their own journal, replayer, and sweep loop for one pattern.
+#### F-041 • Contexts and Properties each carry their own journal, replayer, and sweep loop for one pattern.
 
 | Concern | Scale | Origin | Base | Date |
 |---------|-------|--------|------|------|
@@ -815,13 +814,13 @@ Fold the thirty channels without a structural reason into `mutate`'s operation u
 
 **Description**
 
-Both registries are a Nexus-wide list whose names appear as keys in files, so a rename or delete sweeps every holder. The code implements that twice. The two share one `journalSlot` and resolve Contexts through one lookup, `contextWorldOf`, but keep two journal vocabularies over that slot, two replayers at two points of the open (`Core/Nexus/handlers.ts:82`, `:102`), opposite commit orders (a property rename commits the registry first, a Context rename last), and nine enumerate-lock-read-decide-write loops where one shared walk would serve. The two also report differently. A property rename, a property delete, and an option rename report the files they skipped whether or not the journal took their record, with a Try Again that replays the record they hand back; a Context or Space rename reports them too, with a Try Again that sends the request again rather than replaying the record, since a later rename displaces a journal record a prior rename holds; and an option remove offers Try Again only while its record holds the slot. The sweeps and the check that guards them list Space sidecars by a disk scan (`spaceSidecars`), where every other reader takes Spaces from the tree: a schema sweep holds the `.nexus` lock and a Context rename the Contexts lock, so a sweep can meet a Context folder that has moved ahead of the tree, and the Context-rename replay sweeps before a tree is held. A Context or Space delete has no crash recovery of its own: one cut short leaves its write-ahead record in the bundle, and deleting again finishes it, where a rename's journal finishes at the next open.[^42]
+Both registries are a Nexus-wide list whose names appear as keys in files, so a rename or delete sweeps every holder. The code implements that twice. The two share one `journalSlot` and resolve Contexts through one lookup, `contextWorldOf`, but keep two journal vocabularies over that slot, two replayers at two points of the open (`Core/Nexus/handlers.ts:82`, `:102`), opposite commit orders (a property rename commits the registry first, a Context rename last), and nine enumerate-lock-read-decide-write loops where one shared walk would serve. The two also report differently. A property rename, a property delete, and an option rename report the files they skipped whether or not the journal took their record, with a Try Again that replays the record they hand back; a Context or Space rename reports them too, with a Try Again that sends the request again rather than replaying the record, since a later rename displaces a journal record a prior rename holds; and an option remove offers Try Again only while its record holds the slot. The sweeps and the check that guards them list Space sidecars by a disk scan (`spaceSidecars`), where every other reader takes Spaces from the tree: a schema sweep holds the `.nexus` lock and a Context rename the Contexts lock, so a sweep can meet a Context folder that has moved ahead of the tree, and the Context-rename replay sweeps before a tree is held. A Context or Space delete has no crash recovery of its own: one cut short leaves its write-ahead record in the bundle, and deleting again finishes it, where a rename's journal finishes at the next open.[^41]
 
 **Solution** [TBD]
 
 One journal-and-replay path and one sweep loop shared by both registries, while they stay separate things to the user. It needs one commit order for both, which changes crash recovery for one of them, and that order is designed and defended here. The shared path carries what each machine leaves today: a record for a Context or Space delete that carries the bundle, with a replay that finishes the sweep, the folder's move, and the configuration reach across both Trash modes; one rule for reporting skipped files and offering Try Again across every rename, delete, and option operation; and room for more than one held record, so an option remove's Try Again rides a record of its own. With one commit order and a replay that runs once the tree is held, the sweeps and their check take Space sidecars from the tree together, counting a Space the tree lists unreadable as a skip, which retires `spaceSidecars`' scan; moving the check alone would refuse against a list the sweep doesn't write through. MetadataV3 holds the one slot's half-finished state together with guards each operation carries: option changes refuse while another record is owed, adoption and option edits skip an owed option rename's old keys, a Clear waits on its own property's owed option record, a create steps aside from an owed rename's old key, and a property rename, Key Format change, or delete runs unjournaled while another record holds the slot. Records held per property fold those into one rule: an operation on a property waits on that property's owed record, and every owed record's old keys count as held.
 
-#### F-043 • A page missing its ID that a folder's read finds after its own event was spent stays out of the tree until the next full read.
+#### F-042 • A page missing its ID that a folder's read finds after its own event was spent stays out of the tree until the next full read.
 
 | Concern | Scale | Origin | Base | Date |
 |---------|-------|--------|------|------|
@@ -829,13 +828,13 @@ One journal-and-replay path and one sweep loop shared by both registries, while 
 
 **Description**
 
-A page without an ID is stamped by its own watcher event, which arrives once the file stops changing, or by a listing under a folder newly in reach (a Try Again on the folder, or a folder a change of Excluded Folders admits). A folder's read leaves any other page missing its ID out of the tree, waiting for that event. When the event was already spent or never comes, the page is held nowhere, listed nowhere, and stamped by nothing until the next full read, which lists it under a Try Again notice; a full read only lists such a page, and only its own event, Try Again, or a reopen stamps it. Two routes produce it: a folder sidecar removed outside the app, whose folder the walk lists and the stamp reads again, and a Trash restore or move of a folder holding a page already listed missing. Apart from these, a settle that lands while a stamp pass is in flight can push a tree that still lists the page being stamped, so the window may post one Try Again notice for a page whose ID lands a moment later. `applyFolder` lists only the missing entries `stampable` returns, unless the tree had listed the folder unreadable for a reason other than a missing ID, and `stampable` takes a page only under a path in `owed.whole`; `walkWhileOwed` stamps from a walk's listing through the same filter; and `stampListed` splices `owed.stamp` empty before each `stampMissing` call, so `shown` hides nothing while that pass runs.[^43]
+A page without an ID is stamped by its own watcher event, which arrives once the file stops changing, or by a listing under a folder newly in reach (a Try Again on the folder, or a folder a change of Excluded Folders admits). A folder's read leaves any other page missing its ID out of the tree, waiting for that event. When the event was already spent or never comes, the page is held nowhere, listed nowhere, and stamped by nothing until the next full read, which lists it under a Try Again notice; a full read only lists such a page, and only its own event, Try Again, or a reopen stamps it. Two routes produce it: a folder sidecar removed outside the app, whose folder the walk lists and the stamp reads again, and a Trash restore or move of a folder holding a page already listed missing. Apart from these, a settle that lands while a stamp pass is in flight can push a tree that still lists the page being stamped, so the window may post one Try Again notice for a page whose ID lands a moment later. `applyFolder` lists only the missing entries `stampable` returns, unless the tree had listed the folder unreadable for a reason other than a missing ID, and `stampable` takes a page only under a path in `owed.whole`; `walkWhileOwed` stamps from a walk's listing through the same filter; and `stampListed` splices `owed.stamp` empty before each `stampMissing` call, so `shown` hides nothing while that pass runs.[^42]
 
 **Solution** [TBD]
 
 Either a folder's read, or a full read, stamps a page missing its ID whose file has sat still longer than the watcher's quiet window, which is the evidence a stamp needs that its writer has finished, or the page keeps a listed entry that its next read stamps. The notice half closes when an entry stays on the owed list until its stamp lands, which needs the two passes that can overlap (a write's gate and a watcher batch) to share the list without one taking the other's entries.
 
-#### F-044 • A write's reply waits behind a walk an outside change owes.
+#### F-043 • A write's reply waits behind a walk an outside change owes.
 
 | Concern | Scale | Origin | Base | Date |
 |---------|-------|--------|------|------|
@@ -843,13 +842,13 @@ Either a folder's read, or a full read, stamps a page missing its ID whose file 
 
 **Description**
 
-A write the user makes while the app is re-reading the Nexus for an outside change waits for that read before its result shows and its reply returns. Every settle runs one at a time on one chain, and a walk an outside batch owes runs as a turn on it; a write that lands meanwhile queues its own settle behind the walk and, unless it's the editor's body save, restarts it. An icon change that answers in 1 to 3 ms alone took 98 ms during the walk of a 4,000-page Nexus, and the wait grows with the Nexus. It applies only while a walk is in flight, which a Space or Context leaving, a registry definition arriving from outside, or a change of scope owes. `settleNow` runs `settle` through `inTurn`, the chain `payOwedWalk` shares; `settle` begins with `walkWhileOwed`; and `applyOwn` marks the disk moved for every write but the editor's body save, so the walk in flight reads again.[^44]
+A write the user makes while the app is re-reading the Nexus for an outside change waits for that read before its result shows and its reply returns. Every settle runs one at a time on one chain, and a walk an outside batch owes runs as a turn on it; a write that lands meanwhile queues its own settle behind the walk and, unless it's the editor's body save, restarts it. An icon change that answers in 1 to 3 ms alone took 98 ms during the walk of a 4,000-page Nexus, and the wait grows with the Nexus. It applies only while a walk is in flight, which a Space or Context leaving, a registry definition arriving from outside, or a change of scope owes. `settleNow` runs `settle` through `inTurn`, the chain `payOwedWalk` shares; `settle` begins with `walkWhileOwed`; and `applyOwn` marks the disk moved for every write but the editor's body save, so the walk in flight reads again.[^43]
 
 **Solution** [Proposed]
 
 A write's own change is pushed, and its reply sent, ahead of a walk it didn't owe: the settle pushes what the applied events moved before it pays a walk another batch owed, and the walk's result follows as its own version.
 
-#### F-039 • Delete All and Restore All walk the whole Trash once for every bundle that hands a Link value to it.
+#### F-038 • Delete All and Restore All walk the whole Trash once for every bundle that hands a Link value to it.
 
 | Concern | Scale | Origin | Base | Date |
 |---------|-------|--------|------|------|
@@ -857,13 +856,13 @@ A write's own change is pushed, and its reply sent, ahead of a walk it didn't ow
 
 **Description**
 
-Emptying a bundle hands the Link values its record kept, and any its empty-time strip took, to a same-titled page still in the Trash through `parkLinks`, which lists every bundle and each Set or Collection bundle's pages. The Trash frame's Delete All sends one request per row, so a batch of link-carrying bundles walks the Trash once per bundle: about 13 ms per empty at 100 bundles and 32 ms at 300, summing to about 0.45 s and 4 s.[^39]
+Emptying a bundle hands the Link values its record kept, and any its empty-time strip took, to the page each value named, still in the Trash, through `parkLinks`, which lists every bundle and each Set or Collection bundle's pages once per call. The Trash frame's Delete All sends one request per row, so a batch of link-carrying bundles walks the Trash once per bundle: about 13 ms per empty at 100 bundles and 32 ms at 300, summing to about 0.45 s and 4 s.[^38]
 
 **Solution** [Proposed]
 
-Send the frame's Delete All and Restore All as one request carrying the bundle list; the host reads the Trash's titles once for the batch and strikes each emptied bundle's titles from that map as it goes. Single-row empties and restores keep today's path.
+Send the frame's Delete All and Restore All as one request carrying the bundle list; the host lists the Trash's pages once for the batch and strikes each emptied bundle's pages from that list as it goes. Single-row empties and restores keep today's path.
 
-#### F-069 • An app file this session never read and can't read opens as empty, so its section shows defaults and its changes are refused, some without a word.
+#### F-068 • An app file this session never read and can't read opens as empty, so its section shows defaults and its changes are refused, some without a word.
 
 | Concern | Scale | Origin | Base | Date |
 |---------|-------|--------|------|------|
@@ -875,13 +874,13 @@ Four of Pommora's own JSON files are read through `readAppFile`: `state.json` (C
 
 Every write to one of these files is then refused by `updateNexusConfig`'s strict read-modify-write, and the user hears about it only sometimes. A reorder, a banner, a crop or a heading-icon change goes through `mutate`, and its refusal is posted. A pin toggle or a Matrix change goes through `persist(…, true)`, which only logs. The pin shows as set, isn't saved, and is replaced by the disk's copy once the file reads again. The asset migration breaks its own rule in the same way. `collectRefs` says an unreadable store holds the sweep, but its `state.json` and `homepage.json` refs read through `readAppFile`, answer with no banner, and add no `skipped` entry. `sweepLegacyRoot` then sends to the trash the legacy banner image the unreadable file still names.
 
-The three hand-authored files (`nexus.json`, `settings.json`, `properties.json`) read through `readKept`, which throws on an unreadable file this session never read, so the open fails there first. This finding covers the case where only the four app-written files are unreadable, which is the likely iCloud shape, since they're the least recently touched files in `.nexus/`.[^69]
+The three hand-authored files (`nexus.json`, `settings.json`, `properties.json`) read through `readKept`, which throws on an unreadable file this session never read, so the open fails there first. This finding covers the case where only the four app-written files are unreadable, which is the likely iCloud shape, since they're the least recently touched files in `.nexus/`.[^68]
 
 **Solution** [TBD]
 
 Route the four readers (the walk's `readConfig`, `readNavigationFile`, `readMatrixFile`, and the file-event arms for `state.json`, `homepage.json`, and `crops.json`) through `readAppFileKnown`. When a file answers `undefined`, the open posts one notice, as the board does: its section shows defaults, and its changes won't save until it reads. `collectRefs` pushes a `skipped` entry for a store that answers `undefined`, so the sweep holds. Leave `persist`'s quiet flag alone, since the notice at open already tells the user. **Your call:** `state.json` alone. Either it holds the open, because it seeds the order every surface reads, or it opens with defaults and the notice. Matrix, Homepage and crops follow the board.
 
-#### F-041 • An in-app create or rename of a Space, or rename of a Context, leaves the pages already tagged with its new name unlinked until each is read again.
+#### F-040 • An in-app create or rename of a Space, or rename of a Context, leaves the pages already tagged with its new name unlinked until each is read again.
 
 | Concern | Scale | Origin | Base | Date |
 |---------|-------|--------|------|------|
@@ -889,13 +888,13 @@ Route the four readers (the walk's `readConfig`, `readNavigationFile`, `readMatr
 
 **Description**
 
-A page tag that names no Space, such as `Projects: [Alpha]` before Alpha exists, stays in the page's file, and every read of the page resolves its tags again, so a Space made outside the app links the pages already tagged with its title at the next walk. Creating a Space, or renaming a Space or a Context, in the app places the node in the held tree from the app's own file event, so a page whose kept tag comes to resolve to it stays unlinked in that tree until something re-reads the page or walks the Nexus: the Space's members, a view's Context column, and the Matrix leave those pages out until the page is saved or edited, or until the next open, Reload, or event the settle can't place. The page's own Property Panel, which resolves its tags against the tree as it renders, already shows the Space. A rename's sweep rewrites the pages holding the old name, and each rewrite relinks its page, so only the pages that already held the new name are missed. `applySpace` places a Space the tree doesn't hold from an own write without a walk; a Space or Context rename's `relocate` lands as an own move that `applyMove` places through `moveNodeInTree`, which renames a Context's group in place, so `applyContexts`' `regroup` then finds the new title already held; and only `applyPage` and the walk resolve a page's kept tags, through `contextLinker`.[^41]
+A page tag that names no Space, such as `Projects: [Alpha]` before Alpha exists, stays in the page's file, and every read of the page resolves its tags again, so a Space made outside the app links the pages already tagged with its title at the next walk. Creating a Space, or renaming a Space or a Context, in the app places the node in the held tree from the app's own file event, so a page whose kept tag comes to resolve to it stays unlinked in that tree until something re-reads the page or walks the Nexus: the Space's members, a view's Context column, and the Matrix leave those pages out until the page is saved or edited, or until the next open, Reload, or event the settle can't place. The page's own Property Panel, which resolves its tags against the tree as it renders, already shows the Space. A rename's sweep rewrites the pages holding the old name, and each rewrite relinks its page, so only the pages that already held the new name are missed. `applySpace` places a Space the tree doesn't hold from an own write without a walk; a Space or Context rename's `relocate` lands as an own move that `applyMove` places through `moveNodeInTree`, which renames a Context's group in place, so `applyContexts`' `regroup` then finds the new title already held; and only `applyPage` and the walk resolve a page's kept tags, through `contextLinker`.[^40]
 
 **Solution** [Proposed]
 
 The settle's placement of a new or renamed Space, or a renamed Context, resolves the kept tags of the pages holding that Context's key against the new name and patches the pages that resolve to it, in place of owing a walk on every create.
 
-#### F-045 • A page renamed or moved while a refused Space or Context delete puts its sweep back keeps the swept state.
+#### F-044 • A page renamed or moved while a refused Space or Context delete puts its sweep back keeps the swept state.
 
 | Concern | Scale | Origin | Base | Date |
 |---------|-------|--------|------|------|
@@ -903,13 +902,13 @@ The settle's placement of a new or renamed Space, or a renamed Context, resolves
 
 **Description**
 
-A Space or Context delete strips its tag from every member and, when one member can't be written, puts back each file it changed and refuses, counting any file it couldn't put back. The putting back reads each file at the path the sweep wrote, and a page the user renamed or moved in the app meanwhile is no longer there: it's passed over, so the page keeps the stripped tag and the refusal's count of files it couldn't put back leaves it out. The app's page rename and move don't take the Contexts lock the delete holds, so nothing orders them. `undoSweep` returns on `now === null`, `unlinkMembers` sums only what `undoSweep` answers, and `dispatch` sends `rename` and `movePage` outside `underContexts`.[^45]
+A Space or Context delete strips its tag from every member and, when one member can't be written, puts back each file it changed and refuses, counting any file it couldn't put back. The putting back reads each file at the path the sweep wrote, and a page the user renamed or moved in the app meanwhile is no longer there: it's passed over, so the page keeps the stripped tag and the refusal's count of files it couldn't put back leaves it out. The app's page rename and move don't take the Contexts lock the delete holds, so nothing orders them. `undoSweep` returns on `now === null`, `unlinkMembers` sums only what `undoSweep` answers, and `dispatch` sends `rename` and `movePage` outside `underContexts`.[^44]
 
 **Solution** [Proposed]
 
 `undoSweep` finds a page that left its path by the ID the sweep read from it, through the held tree, puts it back there, and counts it when no live path holds that ID.
 
-#### F-046 • An outside edit to a page inside a folder the app just renamed or moved is lost until the page's next event.
+#### F-045 • An outside edit to a page inside a folder the app just renamed or moved is lost until the page's next event.
 
 | Concern | Scale | Origin | Base | Date |
 |---------|-------|--------|------|------|
@@ -917,27 +916,13 @@ A Space or Context delete strips its tag from every member and, when one member 
 
 **Description**
 
-When the app renames or moves a folder, the held tree carries the folder's pages to the new path at once, as it last read them. An outside edit to one of those pages that the watcher reports under the old path, in a batch that settles after the move, reaches a path that no longer exists: the index drops that path's rows and the tree finds no page there, and the events the move raises at the new path fall inside the move's echo window and are dropped as the app's own. The page shows its earlier state in the tree, the index, and the window until its next edit or the next full read. `applyMove` places the move through `moveNodeInTree`, which carries each node as held; the old path's event reaches `applyPage`, whose `applyFolder` call finds the folder gone and answers `'ok'`, and `indexWrittenPage` removes the path's rows when `stat` finds nothing; `relocate` records both folder paths without bytes, so `isRecentWrite` drops a descendant's event for `PREFIX_WINDOW_MS` (800 ms) whichever side of the move it names.[^46]
+When the app renames or moves a folder, the held tree carries the folder's pages to the new path at once, as it last read them. An outside edit to one of those pages that the watcher reports under the old path, in a batch that settles after the move, reaches a path that no longer exists: the index drops that path's rows and the tree finds no page there, and the events the move raises at the new path fall inside the move's echo window and are dropped as the app's own. The page shows its earlier state in the tree, the index, and the window until its next edit or the next full read. `applyMove` places the move through `moveNodeInTree`, which carries each node as held; the old path's event reaches `applyPage`, whose `applyFolder` call finds the folder gone and answers `'ok'`, and `indexWrittenPage` removes the path's rows when `stat` finds nothing; `relocate` records both folder paths without bytes, so `isRecentWrite` drops a descendant's event for `PREFIX_WINDOW_MS` (800 ms) whichever side of the move it names.[^45]
 
 **Solution** [Proposed]
 
 The move's echo record carries its destination, and a watched event under the vacated path within the window is re-aimed at the path the move landed on, so the edit reaches the page it belongs to.
 
-#### F-038 • With two same-titled pages both deleted, restoring the first one deleted leaves the links to their title stripped.
-
-| Concern | Scale | Origin | Base | Date |
-|---------|-------|--------|------|------|
-| Low | Small (=🟢+10=) | Shortcut | `34227ef5c` | **Created:** 09-28-2026<br>**Updated:** 10-16-2026 |
-
-**Description**
-
-A delete leaves a title's Link values alone while a page outside it still holds that title, since those values resolve to the survivor. When two same-titled pages are deleted in turn, the first delete strips nothing and the second strips the values and records them in its own bundle. Restoring the first from the Trash lands a page the values would resolve to, but they stay stripped until the second bundle is restored; emptying the second bundle hands its rows to a namesake still in the Trash, or drops them once none remains. Before the survivor gate, the first delete stripped and recorded, so restoring the first brought the values back. The undo chord restores in reverse order, so it never produces the gap.[^38]
-
-**Solution** [TBD]
-
-**Owner's call.** Either the delete records the rows for a title a survivor still holds without stripping them, and the refill counts a page already holding the recorded value as having taken it back, compared before the landed-title rebuild so a namesake landing as `Ideas (2)` leaves `[[Ideas]]` in place; or the survivor gate is withdrawn and the first delete strips again.
-
-#### F-071 • A property edit's undo put back the value the app showed rather than the value the file held, so undoing a pick over a value Pommora can't read deleted its key.
+#### F-070 • A property edit's undo put back the value the app showed rather than the value the file held, so undoing a pick over a value Pommora can't read deleted its key.
 
 | Concern | Scale | Origin | Base | Date |
 |---------|-------|--------|------|------|
@@ -945,7 +930,7 @@ A delete leaves a title's Link values alone while a page outside it still holds 
 
 **Description**
 
-A property edit's undo remembered the value the app had decoded for display, which is blank for anything Pommora can't represent even when the file holds something: a Multi-Select holding only words no option names (`Tags: [work]` under option `Work`), a Select in another casing (`Status: done`), or a Number holding text (`Count: abc`). Picking a value and pressing undo wrote blank back and deleted the key, including words the user never touched. Matching keys and option words exactly made the first two cases reachable, and the Number case predates it. The refill after a property is re-assigned shared the assumption, treating a page whose decoded value was blank as holding none. Both are fixed: `assignValue` captures the raw value the file held and undo writes it back through a dedicated `restoreValue` op, and `refillValues` checks the raw value with `isBlankRaw`.[^71]
+A property edit's undo remembered the value the app had decoded for display, which is blank for anything Pommora can't represent even when the file holds something: a Multi-Select holding only words no option names (`Tags: [work]` under option `Work`), a Select in another casing (`Status: done`), or a Number holding text (`Count: abc`). Picking a value and pressing undo wrote blank back and deleted the key, including words the user never touched. Matching keys and option words exactly made the first two cases reachable, and the Number case predates it. The refill after a property is re-assigned shared the assumption, treating a page whose decoded value was blank as holding none. Both are fixed: `assignValue` captures the raw value the file held and undo writes it back through a dedicated `restoreValue` op, and `refillValues` checks the raw value with `isBlankRaw`.[^70]
 
 **Solution** [Deferred]
 
@@ -953,7 +938,7 @@ The current fix works. What's in question is whether the design avoids the probl
 
 ### A4 • Architecture
 
-#### F-050 • Every call site chooses for itself whether an error is shown, logged, or dropped, and about forty host-side failures reach no one.
+#### F-049 • Every call site chooses for itself whether an error is shown, logged, or dropped, and about forty host-side failures reach no one.
 
 | Concern | Scale | Origin | Base | Date |
 |---------|-------|--------|------|------|
@@ -961,13 +946,13 @@ The current fix works. What's in question is whether the design avoids the probl
 
 **Description**
 
-The window's reporter offers several helpers (`reportRefusal`, `persist`, `notifyReport`, `notifyRetry`), and each caller picks one and, for `persist`, whether it's quiet: settings, footnote visibility, and view options post a notice; folds, embed sizes, the glance size, navigation lists, and the session writer log. About forty `console.error` lines across `Core` and `Desktop` record host-side failures in background passes (the index seed, the repair sweep, re-mint, schema replay), and none reaches the user. Sync's failures travel a fourth way, as a status the Settings pane draws. The user-facing copy for an error is written inline at each site.[^50]
+The window's reporter offers several helpers (`reportRefusal`, `persist`, `notifyReport`, `notifyRetry`), and each caller picks one and, for `persist`, whether it's quiet: settings, footnote visibility, and view options post a notice; folds, embed sizes, the glance size, navigation lists, and the session writer log. About forty `console.error` lines across `Core` and `Desktop` record host-side failures in background passes (the index seed, the repair sweep, re-mint, schema replay), and none reaches the user. Sync's failures travel a fourth way, as a status the Settings pane draws. The user-facing copy for an error is written inline at each site.[^49]
 
 **Solution** [Deferred]
 
 Deferred from the Data Layer work by its Decision Log (M-1), which keeps only the host-to-notice path its own notices need. One table names each kind of error and decides its surface (a notice, a log line, a status, or nothing), the copy, and the action a notice offers; a call site reports a kind and never chooses a surface. *Error Surfaces — Brainstorm Brief* carries the five questions the design settles: the unit of a kind, host-side reach, other surfaces, mobile, and how batches and bursts collapse. Its home is one file readable by both halves, so the reporter's React hook and undo stack move out of `notifications.ts` first.
 
-#### F-048 • Nothing in a file's location says whether it runs in the host or the window, and several files sit in another domain's folder.
+#### F-047 • Nothing in a file's location says whether it runs in the host or the window, and several files sit in another domain's folder.
 
 | Concern | Scale | Origin | Base | Date |
 |---------|-------|--------|------|------|
@@ -975,7 +960,7 @@ Deferred from the Data Layer work by its Decision Log (M-1), which keeps only th
 
 **Description**
 
-Pommora's code runs in two places, the host process that owns the disk and the window that draws the interface, but every Core folder mixes both kinds of file at its root, so a reader can't tell from a path which side a file runs on, and a new file's author learns it only when the host-graph test goes red. Several files also live in a folder they don't belong to: the floating windows' pure tab model and file schema sit in the Interface component folder, so the store and the channel contract import upward into it; the Nexus-wide governed-write machinery sits in Properties while five other domains use it; the Views root mixes host handlers, window files, and Settings-pane models; and the Settings and Interface channel tables each serve the other's channels. An import-graph closure from Desktop's node-side files reached 205 Core and UIX files spread across nearly every folder (Properties 23 of 70, Views 6 of 58, Interface 4 of 68), while `hostGraph.test.ts` checks only file extensions and an external allowlist.[^48]
+Pommora's code runs in two places, the host process that owns the disk and the window that draws the interface, but every Core folder mixes both kinds of file at its root, so a reader can't tell from a path which side a file runs on, and a new file's author learns it only when the host-graph test goes red. Several files also live in a folder they don't belong to: the floating windows' pure tab model and file schema sit in the Interface component folder, so the store and the channel contract import upward into it; the Nexus-wide governed-write machinery sits in Properties while five other domains use it; the Views root mixes host handlers, window files, and Settings-pane models; and the Settings and Interface channel tables each serve the other's channels. An import-graph closure from Desktop's node-side files reached 205 Core and UIX files spread across nearly every folder (Properties 23 of 70, Views 6 of 58, Interface 4 of 68), while `hostGraph.test.ts` checks only file extensions and an external allowlist.[^47]
 
 **Solution** [TBD]
 
@@ -1011,7 +996,7 @@ When a dropdown's list is open inside a pop-up pane, such as a view tile's setti
 
 Either every outside-press dismissal calls `suppressReleaseClick()`, so the tile pane behaves as the toolbar pane does, or clicks keep passing through and `MenuPresenter` holds each presented menu in its own `PickerMenu` until `onExited`, so the closing list finishes its exit while the new one blooms at its own trigger, as pickers that own their `PickerMenu` already do. Keeping the shield up through the exit doesn't reach this case, since the list in a shielded pane never draws one. **Your call:** whether a press that closes a list should also act on what it lands on.
 
-#### F-060 • Four waits that let a transition finish each state their own slack.
+#### F-059 • Four waits that let a transition finish each state their own slack.
 
 | Concern | Scale | Origin | Base | Date |
 |---------|-------|--------|------|------|
@@ -1019,13 +1004,13 @@ Either every outside-press dismissal calls `suppressReleaseClick()`, so the tile
 
 **Description**
 
-Four places wait out a transition and then add slack for the frame that paints its end, and each states the slack itself: an exit's unmount waits its beat plus 30 ms (`exitWait`, which a fold's travel also reads), a settle fallback its beat plus 80 ms (`SETTLE_FALLBACK`), a drag-disclose remeasure its beat plus 70 ms, and the native caret's settle deadline the slowest bloom plus 50 ms. One fact, the paint-start delay past a transition, is written four ways, so a fifth wait has no shared value to reach for.[^60]
+Four places wait out a transition and then add slack for the frame that paints its end, and each states the slack itself: an exit's unmount waits its beat plus 30 ms (`exitWait`, which a fold's travel also reads), a settle fallback its beat plus 80 ms (`SETTLE_FALLBACK`), a drag-disclose remeasure its beat plus 70 ms, and the native caret's settle deadline the slowest bloom plus 50 ms. One fact, the paint-start delay past a transition, is written four ways, so a fifth wait has no shared value to reach for.[^59]
 
 **Solution** [Deferred]
 
 Deferred by the owner, who ruled that each wait's timing reads right as it stands; one shared slack would move three of them by 10 to 50 ms. The fold, if it comes, is one slack constant in `motion.ts` that `exitWait`, `useSettleFallback`, `dragDisclose`, and `nativeCaret` add to their durations.
 
-#### F-059 • Where a pop-up appears is worked out inside a 50-line block tangled with its screen updates.
+#### F-058 • Where a pop-up appears is worked out inside a 50-line block tangled with its screen updates.
 
 | Concern | Scale | Origin | Base | Date |
 |---------|-------|--------|------|------|
@@ -1033,13 +1018,13 @@ Deferred by the owner, who ruled that each wait's timing reads right as it stand
 
 **Description**
 
-Every pop-up picker decides where to sit (flip up or down, center or pin to an edge, clamp to the screen, place its bloom origin) inside one closure in a layout effect, interleaved with latched decisions and state updates. It sits in one of the kit's most-fixed files, and testing any placement decision needs faked DOM measurements. The closure is `measure` in `PickerMenu.tsx`, and nothing in its logic needs React or the DOM. Git history shows 15 commits including 4 fixes in 60 days, while the closure's inputs (trigger rect, pane size, viewport, `bounds`, `direction`, `origin`, `decidedDir`, `decidedCenter`) and outputs (a `Pos`, the effective direction, the latched decisions) are all plain values.[^59]
+Every pop-up picker decides where to sit (flip up or down, center or pin to an edge, clamp to the screen, place its bloom origin) inside one closure in a layout effect, interleaved with latched decisions and state updates. It sits in one of the kit's most-fixed files, and testing any placement decision needs faked DOM measurements. The closure is `measure` in `PickerMenu.tsx`, and nothing in its logic needs React or the DOM. Git history shows 15 commits including 4 fixes in 60 days, while the closure's inputs (trigger rect, pane size, viewport, `bounds`, `direction`, `origin`, `decidedDir`, `decidedCenter`) and outputs (a `Pos`, the effective direction, the latched decisions) are all plain values.[^58]
 
 **Solution** [Proposed]
 
 Extract a pure `placePane({ trigger, pane, viewport, bounds, direction, origin, decided }) → { pos, dir, decided }` beside the component; the effect keeps measuring, latching the returned decisions, and `setPos`/`setEffDir`. `setPos` is already change-guarded (`samePos`), so the extraction is purely structural, and the centering tests become plain function tests.
 
-#### F-072 • A row's hint in a pane that sizes to its content stays on one line and widens the pane, so the format rows carry none.
+#### F-071 • A row's hint in a pane that sizes to its content stays on one line and widens the pane, so the format rows carry none.
 
 | Concern | Scale | Origin | Base | Date |
 |---------|-------|--------|------|------|
@@ -1047,7 +1032,7 @@ Extract a pure `placePane({ trigger, pane, viewport, bounds, direction, origin, 
 
 **Description**
 
-A property's settings pane sizes to its widest row, with no width ceiling, and a menu row's hint has no measure of its own, so a long hint runs on one line and pushes the pane wide; the Settings window's hints wrap only because that window has a fixed width. The Key Format and Value Format rows were drawn with their hints ("How this property’s name is written into each file’s metadata key." and "How each value is written in the file’s metadata."), which widened every property's settings pane. A cap on those two hints alone was weighed and left out as a one-off rule, and the rows carry no hints.[^72]
+A property's settings pane sizes to its widest row, with no width ceiling, and a menu row's hint has no measure of its own, so a long hint runs on one line and pushes the pane wide; the Settings window's hints wrap only because that window has a fixed width. The Key Format and Value Format rows were drawn with their hints ("How this property’s name is written into each file’s metadata key." and "How each value is written in the file’s metadata."), which widened every property's settings pane. A cap on those two hints alone was weighed and left out as a one-off rule, and the rows carry no hints.[^71]
 
 **Solution** [Deferred]
 
@@ -1069,7 +1054,7 @@ In a markdown tile, clicking the footnotes divider or creating a footnote while 
 
 Waits until tiles decide whether they hold footnotes. Either visibility is keyed by the tile id, or a host that can't toggle draws no divider; neither form was typed, and the net is an estimate.
 
-#### F-066 • A board whose saved layout can't be read opens empty, and the first new tile replaces the saved layout.
+#### F-065 • A board whose saved layout can't be read opens empty, and the first new tile replaces the saved layout.
 
 | Concern | Scale | Origin | Base | Date |
 |---------|-------|--------|------|------|
@@ -1079,13 +1064,13 @@ Waits until tiles decide whether they hold footnotes. Either visibility is keyed
 
 If a board's stored layout is present but isn't in a shape the app can decode, the board opens looking empty. Its tiles are still in the file. Creating a tile then writes a new one-tile layout over the stored one, and the old arrangement is gone. This is reachable by a hand edit, or by a newer layout format arriving through sync from a newer build. A missing layout is the ordinary fresh board and is unaffected; nothing in the app writes an undecodable layout.
 
-Decoding fails only when `layout` is present and not `{bands: array}`. `adopt` then takes `emptyLayout()` and marks the board ready, and a create commits `insertBand` onto the empty layout. Treating an undecodable layout as an unreadable document at `readTileDocAt` regresses three readers: the rename cascade's tile list, `duplicateTile`, and the heading-link cache.[^66]
+Decoding fails only when `layout` is present and not `{bands: array}`. `adopt` then takes `emptyLayout()` and marks the board ready, and a create commits `insertBand` onto the empty layout. Treating an undecodable layout as an unreadable document at `readTileDocAt` regresses three readers: the rename cascade's tile list, `duplicateTile`, and the heading-link cache.[^65]
 
 **Solution** [TBD]
 
 Before a layout write replaces undecodable bytes, the writer copies them under a `.bad-` name, the rule corrupt JSON already follows; the board stays usable and nothing is lost. `setAside` renames the whole file, so this needs a copy primitive beside it in the file layer. It is worth taking when a layout format version exists, which is what makes an undecodable layout something sync can deliver.
 
-#### F-068 • Three sites that run without a tree name the tile hosts' folders by hand.
+#### F-067 • Three sites that run without a tree name the tile hosts' folders by hand.
 
 | Concern | Scale | Origin | Base | Date |
 |---------|-------|--------|------|------|
@@ -1093,13 +1078,13 @@ Before a layout write replaces undecodable bytes, the writer copies them under a
 
 **Description**
 
-`TILE_HOSTS` resolves a host to its folder and lists every board from the held tree, and the watcher, the channels, and the rename cascade read it. Three sites run before or without a tree and name host folders themselves. The saved-view normalization at open walks the Homepage folder and the Contexts folder for tile documents, so a new host whose boards live elsewhere has its view tiles skipped without a word. `ensureConfigLayout` creates the Homepage folder, and the open-time re-mint checks for a Space by kind before rewriting a copied folder's board. Adding a host means finding these three beside the table.[^68]
+`TILE_HOSTS` resolves a host to its folder and lists every board from the held tree, and the watcher, the channels, and the rename cascade read it. Three sites run before or without a tree and name host folders themselves. The saved-view normalization at open walks the Homepage folder and the Contexts folder for tile documents, so a new host whose boards live elsewhere has its view tiles skipped without a word. `ensureConfigLayout` creates the Homepage folder, and the open-time re-mint checks for a Space by kind before rewriting a copied folder's board. Adding a host means finding these three beside the table.[^67]
 
 **Solution** [TBD]
 
 Each `TILE_HOSTS` arm names the folder a tree-less pass reaches its boards under, and `normalizeSavedViews` and `ensureConfigLayout` read it. The re-mint's check concerns the copied folder's own kind and may stay.
 
-#### F-067 • The tile shell's memo comparator lists its props by hand.
+#### F-066 • The tile shell's memo comparator lists its props by hand.
 
 | Concern | Scale | Origin | Base | Date |
 |---------|-------|--------|------|------|
@@ -1107,7 +1092,7 @@ Each `TILE_HOSTS` arm names the folder a tree-less pass reaches its boards under
 
 **Description**
 
-`TileShell`'s comparator names each of its thirteen props. A prop added later and left off the list silently stops triggering a redraw.[^67]
+`TileShell`'s comparator names each of its thirteen props. A prop added later and left off the list silently stops triggering a redraw.[^66]
 
 **Solution** [TBD]
 
@@ -1115,7 +1100,7 @@ A generic comparison over the props doesn't fit as written: the comparator compa
 
 ### A7 • Views
 
-#### F-063 • Dragging a Set to another band shows it at its old rank for the round trip.
+#### F-062 • Dragging a Set to another band shows it at its old rank for the round trip.
 
 | Concern | Scale | Origin | Base | Date |
 |---------|-------|--------|------|------|
@@ -1123,13 +1108,13 @@ A generic comparison over the props doesn't fit as written: the comparator compa
 
 **Description**
 
-In a view that groups by Sets in a custom order, dragging a Set under another parent moves it at once, but its place among the groups follows only after the host answers the move, so for the round trip it sits at its old rank and then jumps. The move is painted ahead, while the rank is a view write the band router sends only once the move's reply lands; a page create stages its order with the ask and takes it back on a refusal. `routeSet` returns an `fs` effect carrying `moveSet` and `after: { group_order }`, and `runBandEffect` awaits `io.mutate(effect.req)` before `io.persistView(effect.after)`, where `createPageIn` calls `stageView` before its `mutate` and `unstageView` on a refusal. This predates the Data Layer plan.[^63]
+In a view that groups by Sets in a custom order, dragging a Set under another parent moves it at once, but its place among the groups follows only after the host answers the move, so for the round trip it sits at its old rank and then jumps. The move is painted ahead, while the rank is a view write the band router sends only once the move's reply lands; a page create stages its order with the ask and takes it back on a refusal. `routeSet` returns an `fs` effect carrying `moveSet` and `after: { group_order }`, and `runBandEffect` awaits `io.mutate(effect.req)` before `io.persistView(effect.after)`, where `createPageIn` calls `stageView` before its `mutate` and `unstageView` on a refusal. This predates the Data Layer plan.[^62]
 
 **Solution** [Proposed]
 
 The `fs` arm stages `after` with the ask, persists it once the move lands, and unstages it on a refusal, the shape `createPageIn` and the manual-order drop in `useViewInteractions.tsx` already use.
 
-#### F-064 • A refused page create clears another new row's staged order until that row's own order lands.
+#### F-063 • A refused page create clears another new row's staged order until that row's own order lands.
 
 | Concern | Scale | Origin | Base | Date |
 |---------|-------|--------|------|------|
@@ -1137,13 +1122,13 @@ The `fs` arm stages `after` with the ask, persists it once the move lands, and u
 
 **Description**
 
-A page created in a custom-ordered view stages its place in the view's hand order as it asks, and a second create made before the first's reply composes its order on the first's. When one of them is refused, it takes back the whole staged order rather than its own row, so the other new row drops to where the view's sort places it until its own reply lands and persists the order, a few milliseconds later. `createPageIn` calls `unstageView(c.source.id, c.view.id, staged)` on a refusal; `unstageView` drops every staged slot the patch wrote, here `manual_order`; and `orderPatch` builds that patch from the live view, which already folds the other create's staged order.[^64]
+A page created in a custom-ordered view stages its place in the view's hand order as it asks, and a second create made before the first's reply composes its order on the first's. When one of them is refused, it takes back the whole staged order rather than its own row, so the other new row drops to where the view's sort places it until its own reply lands and persists the order, a few milliseconds later. `createPageIn` calls `unstageView(c.source.id, c.view.id, staged)` on a refusal; `unstageView` drops every staged slot the patch wrote, here `manual_order`; and `orderPatch` builds that patch from the live view, which already folds the other create's staged order.[^63]
 
 **Solution** [Proposed]
 
 A refusal restages the order without the refused ID rather than dropping the slot, so a create still in flight keeps its place.
 
-#### F-062 • A new item's rename field opens one frame after its row.
+#### F-061 • A new item's rename field opens one frame after its row.
 
 | Concern | Scale | Origin | Base | Date |
 |---------|-------|--------|------|------|
@@ -1151,7 +1136,7 @@ A refusal restages the order without the refused ID rather than dropping the slo
 
 **Description**
 
-A page created from a view mounts its row from the host's push, keyed by the ID the window minted, and its title field opens when the create's reply returns, because a rename session is claimed by the page's path, which the host decides as it settles the name. The host pushes before it replies, so the field opens at most one frame after its row, no slower than before the Data Layer plan; the session is still a second key beside the ID the row is mounted under. `createPageIn` calls `rename({ id: req.id, path: landed })` once the flight resolves with `created.path`, `useViewInteractions` routes it to `policy.rename(target, true)`, and the Cards view's policy opens `beginRename(target.path, …)`, whose fence is `renamingPath`.[^62]
+A page created from a view mounts its row from the host's push, keyed by the ID the window minted, and its title field opens when the create's reply returns, because a rename session is claimed by the page's path, which the host decides as it settles the name. The host pushes before it replies, so the field opens at most one frame after its row, no slower than before the Data Layer plan; the session is still a second key beside the ID the row is mounted under. `createPageIn` calls `rename({ id: req.id, path: landed })` once the flight resolves with `created.path`, `useViewInteractions` routes it to `policy.rename(target, true)`, and the Cards view's policy opens `beginRename(target.path, …)`, whose fence is `renamingPath`.[^61]
 
 **Solution** [Proposed]
 
@@ -1159,7 +1144,7 @@ Rename sessions are claimed by ID across creates: a create opens its rename with
 
 ### A8 • Navigation
 
-#### F-061 • Maximum Tab Width has no effect above a tab strip's preferred width, so most of its steps do nothing.
+#### F-060 • Maximum Tab Width has no effect above a tab strip's preferred width, so most of its steps do nothing.
 
 | Concern | Scale | Origin | Base | Date |
 |---------|-------|--------|------|------|
@@ -1167,7 +1152,7 @@ Rename sessions are claimed by ID across creates: a create opens its rename with
 
 **Description**
 
-Settings offers Maximum Tab Width in steps from 150 to 350px, and `ConfigurationPM.md` calls it the widest a tab grows, but a tab never grows past its strip's preferred width, so the setting can only narrow a tab below it. A tab is `flex: 0 1 var(--tab-pref)`, which shrinks in a crowded strip and never grows, so `max-width: var(--tab-max-user, 250px)` takes effect only below `--tab-pref`: 180px on the main bar (`.tabs-standard`) and 150px in a window's strip (`.tabs-compact`). On the main bar the 150 and 175 steps narrow tabs and the other seven change nothing, and in a window's strip none of the nine changes anything; the trailing tab sizes to its label up to `--tab-max-absolute` and ignores the setting too. Measured over CDP against `~/Test`: main-bar tabs read 150, 175, then 180px at every step from 200 to 350, and window-strip tabs read 150px at every step.[^61]
+Settings offers Maximum Tab Width in steps from 150 to 350px, and `ConfigurationPM.md` calls it the widest a tab grows, but a tab never grows past its strip's preferred width, so the setting can only narrow a tab below it. A tab is `flex: 0 1 var(--tab-pref)`, which shrinks in a crowded strip and never grows, so `max-width: var(--tab-max-user, 250px)` takes effect only below `--tab-pref`: 180px on the main bar (`.tabs-standard`) and 150px in a window's strip (`.tabs-compact`). On the main bar the 150 and 175 steps narrow tabs and the other seven change nothing, and in a window's strip none of the nine changes anything; the trailing tab sizes to its label up to `--tab-max-absolute` and ignores the setting too. Measured over CDP against `~/Test`: main-bar tabs read 150, 175, then 180px at every step from 200 to 350, and window-strip tabs read 150px at every step.[^60]
 
 **Solution** [TBD]
 
@@ -1175,7 +1160,7 @@ Give `.tab` `flex-grow: 1`, so tabs fill spare strip width up to the setting; th
 
 ### A9 • Matrix
 
-#### F-065 • The Matrix can't be pinch-zoomed on a touchscreen.
+#### F-064 • The Matrix can't be pinch-zoomed on a touchscreen.
 
 | Concern | Scale | Origin | Base | Date |
 |---------|-------|--------|------|------|
@@ -1183,7 +1168,7 @@ Give `.tab` `flex-grow: 1`, so tabs fill spare strip width up to the setting; th
 
 **Description**
 
-On a touchscreen, such as a Windows touch laptop, two fingers on the Matrix pan it instead of zooming. Zoom arrives only as a Ctrl-wheel event, which is how trackpads report a pinch, so trackpads work and only touchscreens break. The canvas turns off the browser's own touch handling, so both fingers go to pointer handlers that follow one pointer and ignore the second. `onWheel` zooms only `if (e.ctrlKey)`, `touchAction: 'none'` routes every touch to the one-pointer `onPointerDown`/`onPointerMove`, and a search of `Core/Matrix` finds no touch or gesture handlers.[^65]
+On a touchscreen, such as a Windows touch laptop, two fingers on the Matrix pan it instead of zooming. Zoom arrives only as a Ctrl-wheel event, which is how trackpads report a pinch, so trackpads work and only touchscreens break. The canvas turns off the browser's own touch handling, so both fingers go to pointer handlers that follow one pointer and ignore the second. `onWheel` zooms only `if (e.ctrlKey)`, `touchAction: 'none'` routes every touch to the one-pointer `onPointerDown`/`onPointerMove`, and a search of `Core/Matrix` finds no touch or gesture handlers.[^64]
 
 **Solution** [Proposed]
 
@@ -1201,7 +1186,7 @@ In `MatrixCanvas`, keep a small map of active pointer ids on the host; while two
 
 A reader of `MarkdownPM.md` is told things the editor doesn't do. Its folder map places the editor's menu models in `Menus/` when they live in `Core/Actions/`. It says a Text value reads the inline marks alone and that fences stay literal in a table cell, though both a cell and a Text value read a fence pair as code (`tokenizeChunk` suppresses every mark between the fences). It says a nested list run counts from its first number or letter, and that **Type ▸** does the same, where `renumberRuns` and `setListKind` count from 1 or A. It says a citation's number leads back to its first marker, though with no marker bound the press copies `[^label]`; its Plain grip row omits rules and math, which also take that grip; and one sentence reads "on disk;here". `Editor-Internals.md`'s cell-model entry lists fences among what a cell renders as literal text. Each was confirmed against the code.[^33]
 
-The taken fixes turn two more sentences false. F-031 adds a fourth intentional divergence from CommonMark to `Editor-Internals.md`'s fence entry; and F-029 has a landing from another mount re-take each fold's end from the live section, beside the fold entry's account of regions rewritten under a fold. This finding covers the taken work; the sentences that follow deferred work (F-051's scope threading, F-032's HTML sealing) stay with those findings.
+The taken fixes turn two more sentences false. F-031 adds a fourth intentional divergence from CommonMark to `Editor-Internals.md`'s fence entry; and F-029 has a landing from another mount re-take each fold's end from the live section, beside the fold entry's account of regions rewritten under a fold. This finding covers the taken work; the sentences that follow deferred work (F-050's scope threading, F-032's HTML sealing) stay with those findings.
 
 **Solution** [Literal]
 
@@ -1271,38 +1256,37 @@ Paths are relative to `Core/MarkdownPM/`, and the test's name settles any drift 
 [^35]: **F-035:** `UIX/Buttons/button-base.css.ts:68-93` (`button`), `UIX/Buttons/Button.tsx:54-77`, `UIX/Menus/menu-row.css.ts:24-37` (`rowFocus`, `rowShell`), `UIX/Fields/fieldRing.ts:11,19-33` (`fieldRing`)
 [^36]: **F-036:** `UIX/Interactions/dismissalStack.ts:60-75` (`onPointerDown`), `UIX/Interactions/dismissalStack.ts:114` (`shields`), `UIX/Pickers/PickerMenu.tsx:113-121,292,307` (`PickerMenu`), `UIX/Animations/useExitPresence.ts:8-24` (`useExitPresence`), `UIX/Pickers/PickerControl.tsx:91-114,144-148` (`PickerControl`), `Core/Actions/menuActions.ts:20-23` (`popMenu`), `Core/Session/chromeSlice.ts:62-70` (`presentMenu`), `Core/Interface/Menus/MenuPresenter.tsx:84-103` (`MenuPresenter`), `Core/Tiles/Surfaces/ViewTile.tsx:652-660`, `Core/Interface/Toolbar/Toolbar.tsx:29-33`, `Core/Views/Settings/GroupFrame.tsx:235`, `UIX/Interactions/shared.ts:26-34` (`suppressReleaseClick`)
 [^37]: **F-037:** `Core/Contract/bridge.ts:61-255` (`Asks`), `Core/Nexus/mutateRequest.ts:51-108` (`mutateRequest`), `Core/Nexus/mutate.ts:109-143` (`setProfileImage`, `setProfileIcon`, `setDisclosureLock`, `setActiveView`), `Core/Nexus/mutate.ts:167` (`reorderTop`), `Core/Nexus/reorder.ts:26-55`, `Core/Views/handlers.ts:26-62`, `Core/Properties/assignment.ts:111-169` (`assignInner`, `reorderAssignment`), `Core/Settings/handlers.ts:19-51`, `Core/Assets/handlers.ts:42` (`assets:setDir`), `Core/Assets/handlers.ts:74` (`assets:adopt`), `Core/Assets/assetMigrate.ts:113`, `Core/Pages/setBanner.ts:44`, `Core/Nexus/configReach.ts:372,380`, `Core/Nexus/cascade.ts:233-236` (`rewriteTileConnections`), `Core/Navigation/handlers.ts:18` (`nav:write`), `Core/Matrix/handlers.ts:14` (`matrix:write`), `Core/Pages/handlers.ts:26` (`page:updateBody`), `Core/Pages/handlers.ts:45-47` (`history:restore`), `Core/Pages/fileHistory.ts:169-180`, `Core/Nexus/handlers.ts:152` (`nexus:rename`), `Core/Nexus/liveTree.ts:80` (`mutableTarget`), `Core/Tiles/handlers.ts:60-113`, `Core/Properties/handlers.ts:121-124` (`defEditOp`), `Core/Properties/handlers.ts:165-176`, `Core/Contract/handlers.ts:98-110` (`withWriteRoot`), `Desktop/FileWatch/watcher.ts:69-92,114-117` (`pushConfig`)
-[^38]: **F-038:** `Core/Nexus/cascade.ts:82-91` (the survivor gate in `deleteCascade`), `Core/Nexus/heldPages.ts:38` (`titleHeldOutside`), `Core/Trash/spend.ts:252-272` (the restore's link arm over its own record), `Core/Properties/assignment.ts:49` (`refillValues`, blank-only), `Core/Trash/spend.ts:88-89` (the empty-time handoff)
-[^39]: **F-039:** `Core/Trash/holdings.ts:68` (`trashedTitles`), `Core/Trash/holdings.ts:82` (`parkLinks`), `Core/Trash/spend.ts:59,89` (`emptyBundle`), `Core/Trash/spend.ts:193` (a restore's parking), `Core/Settings/TrashFrame.tsx:116,143,156` (`many`, one request per row)
-[^40]: **F-040:** `Desktop/Store/stores.ts:45-47` (`clearPath`), `Desktop/Store/stores.ts:50-77` (`upsertPageIndexes`), `Desktop/Store/stores.ts:78-98` (`removePathIndex`, `renamePathIndex`, `removePathPrefixIndex`, `renamePathPrefixIndex`), `Desktop/Store/driver.ts:16-26` (`inTransaction`), `Desktop/Store/stores.ts:217-259` (`syncStore`), `Core/Sync/handlers.ts:352,365`, `Core/Sync/Client/base.ts:16,21` (`readAllBases`, `deleteBase`)
-[^41]: **F-041:** `Core/Nexus/fileEvents.ts:454-477` (`applySpace`), `Core/Nexus/fileEvents.ts:564-584` (`applyMove`), `Core/Nexus/treePatch.ts:238-264` (`moveNodeInTree`), `Core/Nexus/fileEvents.ts:480-501` (`regroup`, `applyContexts`), `Core/Contexts/contextCascade.ts:208,240-248` (`renameContextOp`), `Core/Contexts/contextCascade.ts:266,299-305` (`renameSpaceOp`), `Core/Files/atomicWrite.ts:62-75` (`relocate`), `Core/Nexus/readNexus.ts:77-85` (`contextLinker`), `Core/Nexus/fileEvents.ts:376-418` (`applyPage`), `Core/Properties/pageRow.ts:11-17` (`pageRowOf`), `Core/Contexts/contextResolve.ts:70` (`resolveContextKeys`)
-[^42]: **F-042:** `Core/Properties/journalSlot.ts:14` (`journalSlot`), `Core/Properties/propertyJournal.ts:47-57` (`writeSchemaJournal`, `schemaCascade`), `Core/Contexts/contextJournal.ts:47-49` (`writeJournal`), `Core/Nexus/handlers.ts:82,102` (the two replays), `Core/Contexts/contextResolve.ts:29` (`contextWorldOf`), `Core/Properties/registryProperty.ts:118-174` (`rekeyPlan`, `rekeyProperty`), `Core/Contexts/contextCascade.ts:208-264` (`renameContextOp`), `Core/Contexts/contextCascade.ts:113-114` (`unswept`), `Core/Nexus/mutate.ts:60-68` (`renamed`), `Core/Trash/delete.ts:61-85` (the delete's write-ahead record), `Core/Properties/governedSweep.ts`, `Core/Contexts/spaceSidecar.ts:45-52` (`spaceSidecars`), `Core/Properties/governedSweep.ts:96`, `Core/Properties/deleteProperty.ts:54`, `Core/Assets/assetMigrate.ts:162`, `Core/Properties/keyHolders.ts:21,33` (`confirmedKeyHolders`), `.claude/Planning/Data Layer — Investigation Reports/E — Governed Data Sweeps.md` (the nine loops and five enumerators)
-[^43]: **F-043:** `Core/Nexus/fileEvents.ts:146-152` (`stampable`), `Core/Nexus/fileEvents.ts:348-374` (`applyFolder`), `Core/Nexus/fileEvents.ts:376-418` (`applyPage`), `Core/Nexus/fileEvents.ts:516-532` (`applySettings`, `oweRescope`), `Core/Nexus/mutate.ts:209-214` (`retryUnreadable`), `Core/Nexus/settle.ts:96-117` (`walkWhileOwed`), `Core/Nexus/settle.ts:172-181` (`stampListed`), `Core/Nexus/settle.ts:63-71` (`shown`), `Core/Nexus/settle.ts:119-154` (`settle`)
-[^44]: **F-044:** `Core/Nexus/settle.ts:55` (`inTurn`), `Core/Platform/inTurns.ts:2-9` (`inTurns`), `Core/Nexus/settle.ts:203` (`payOwedWalk`), `Core/Nexus/settle.ts:206-214` (`settleNow`), `Core/Nexus/settle.ts:119-154` (`settle`), `Core/Nexus/settle.ts:96-117` (`walkWhileOwed`), `Core/Nexus/settle.ts:34-46` (`applyOwn`)
-[^45]: **F-045:** `Core/Properties/governedSweep.ts:120-130` (`undoSweep`), `Core/Contexts/contextCascade.ts:181-195` (`unlinkMembers`), `Core/Nexus/mutate.ts:73-80` (`underContexts`), `Core/Nexus/mutate.ts:90-91,153-154` (`rename`, `movePage`)
-[^46]: **F-046:** `Core/Nexus/fileEvents.ts:564-584` (`applyMove`), `Core/Nexus/treePatch.ts:238-264` (`moveNodeInTree`), `Core/Nexus/fileEvents.ts:348-374` (`applyFolder`), `Core/Nexus/fileEvents.ts:376-418` (`applyPage`), `Core/Index/indexSeed.ts:101-120` (`indexWrittenPage`), `Core/Files/atomicWrite.ts:62-75` (`relocate`), `Core/Files/writeEcho.ts:10,74-88` (`PREFIX_WINDOW_MS`, `isRecentWrite`)
-[^47]: **F-047:** `Core/Nexus/adopt.ts:62-82` (`stampPage`), `Core/Nexus/adopt.ts:89-98` (`ensurePageId`), `Core/Nexus/adopt.ts:102-115` (`stampFolder`), `Core/Nexus/adopt.ts:126-143` (`Stamp`, `stampMissing`), `Core/Nexus/adopt.ts:145-191` (`stampTree`, `stampAdopted`), `Core/Nexus/fileEvents.ts:139-143` (`oweRetry`), `Core/Nexus/fileEvents.ts:146-152` (`stampable`), `Core/Nexus/fileEvents.ts:403-404` (`applyPage`), `Core/Nexus/fileEvents.ts:454-463` (`applySpace`), `Core/Nexus/readNexus.ts:105-109,312-317`, `Core/Nexus/mutate.ts:209-213` (`retryUnreadable`), `Core/Nexus/handlers.ts:34-51,79-96` (`prepareOpenedNexus`, `openStores`), `Core/Nexus/heldPages.ts:32` (`idHeld`), `Core/Nexus/identity.ts:17-50` (`ensureIdentity`), `Core/Nexus/remintLedger.ts:88-104` (`runOpenLedger`, `readBaseline`), `Core/Nexus/remintLedger.ts:20-33,65-86` (`projectBaseline`, `pickEldest`), `Core/Nexus/record.ts:18-56` (`recordsOf`, `recordById`), `Core/Nexus/heldPages.ts:11-15,27-30` (`writablePathsOf`, `livePathOf`), `Core/Nexus/record.ts:65-73` (`pagesByIdOf`), `Core/Contexts/contextResolve.ts:29-42` (`contextWorldOf`), `Core/Contexts/contexts.ts:12-17,35-43` (`contextEntry`, `seededRegistry`), `Core/Contexts/contextsRegistry.ts:20-25` (`ensureContextsRegistry`), `Core/Trash/restoreScrub.ts:68` (`ensurePageId`)
-[^48]: **F-048:** `Desktop/hostGraph.test.ts:31-46`, `Core/Interface/handlers.ts:39-84` (`interfaceHandlers`), `Core/Settings/handlers.ts:50`, `Core/Interface/chrome.ts:1-8`, `Core/Interface/Windows/windowTabs.ts`, `Core/Interface/Windows/windowRecord.ts`, `Core/Interface/Windows/windowState.ts`, `Core/Interface/Windows/windowCache.ts`, `Core/Interface/Windows/windowMorph.ts`, `Core/Properties/governedSweep.ts`, `Core/Properties/governedWrite.ts`, `Core/Properties/journalSlot.ts`, `Core/Properties/keyHolders.ts`, `Core/Views/filterModel.ts`, `Core/Views/visibilityModel.ts`, `Core/Views/creationOrder.ts`
-[^49]: **F-049:** `Core/MarkdownPM/codeHighlight.ts:151` (`blockTrees`), `Core/MarkdownPM/codeHighlight.ts:155-183` (`paint`), `Core/MarkdownPM/codeHighlight.ts:185-218` (`colors`), `Core/MarkdownPM/docCache.ts:40-52` (`drawnLast`)
-[^50]: **F-050:** `Core/Interface/Notifications/notifications.ts` (`reportRefusal`, `persist`, `notifyReport`), `Core/Contract/result.ts` (`ErrorCode`), `Core/Sync/Contract/wire.ts` (`SyncStatus`), `.claude/Planning/Error Surfaces — Brainstorm Brief.md`
-[^51]: **F-051:** compares at `Core/MarkdownPM/Engine/intents.ts:342,447,537,589,665`, `Input/edits.ts:62,72,200,230`, `Menus/blockHandles.ts:44,49,174,189`, `api.ts:219`, `decorations.ts:693`, `Engine/subfieldStats.ts:40`, `Gestures/listDrag.ts:52`, `Input/listRenumber.ts:41`, `Input/markdownInput.ts:189,234`, `Menus/menu.ts:37`; defaults at `Input/edits.ts:61,85,168,180,222,275`, `Engine/intents.ts:419,496,533`, `decorations.ts:810`, `Menus/blockHandles.ts:43,148`, `Core/Testing/markdownEngine.ts:43`; switches at `Engine/detect.ts:517-525` (`readsLists`), `surface.ts:25-40`, `docCache.ts:84`; the enum at `Core/Actions/editorMenu.ts:25`; unscoped readers at `Input/edits.ts:702-710` (`lineBodyBefore`, `opensLine`), `Gestures/listDrag.ts:3`, `Input/listRenumber.ts:30`, `Engine/listDragModel.ts` (`renumberRuns`, `dropChanges`), `Gestures/blockDrag.ts:31`; `.claude/Features/MarkdownPM.md:105`.
-[^52]: **F-052:** `Core/Pages/editorHost.tsx:29-36,48-51,85-113,160-176` (`EditorHostOptions`, `buildEditorHost`, `useEditorHost`), `Core/Session/pageConnections.ts:9`, `Core/Interface/Windows/PageHistoryWindow.tsx:35-36,118-119,246-253` (`HISTORY_ANCESTOR`), `Core/Interface/Glance/GlancePane.tsx:42-43,288-299` (`GLANCE_ANCESTORS`), `Core/MarkdownPM/Embeds/embedWidget.tsx:390`, `Core/MarkdownPM/api.ts:206-207` (`pageSurface`), `Core/MarkdownPM/markdown-pm.css:72-74`.
-[^53]: **F-053:** `Core/MarkdownPM/api.ts:24-29,185-191` (the menu-model imports, `EditorHost.menus`), `Core/Pages/editorHost.tsx:101-112`, `Core/Testing/editorHarness.ts:122-128`.
-[^54]: **F-054:** `Core/MarkdownPM/Menus/gripMenu.ts:50-70,133-167` (`contextFor`, the action chain), `Core/MarkdownPM/Menus/blockHandles.ts:15-26,44` (`GRIP_KINDS`, `blockHandles`), `Core/MarkdownPM/Engine/blockModel.ts:209-210` (`blockStarts`), `Core/Actions/gripMenu.ts:16-24` (`GripMenuAction`).
-[^55]: **F-055:** `Core/MarkdownPM/Engine/docScan.ts:49,52` (`maths`, `html`), `Core/MarkdownPM/Engine/docScan.ts:61` (`SpanLike`), `Core/MarkdownPM/Engine/docScan.ts:229-230` (`fromOf`, `toOf`), `Core/MarkdownPM/Engine/blockModel.ts:66`.
-[^56]: **F-056:** `Core/MarkdownPM/Engine/detect.ts:529` (`indentLevel`), `Core/MarkdownPM/Engine/subfieldStats.ts:125` (`computeStats`), `Core/MarkdownPM/Tables/widget.tsx:395,447` (`buildWidgetDecorations`, `refreshTableEffect`), `Core/MarkdownPM/folding.ts:65,281` (`regionsOf`, `foldedRegions`), `Core/MarkdownPM/MarkdownEditor.tsx:38` (`EMPTY_PAGE_TEXT`), `Core/MarkdownPM/Engine/intents.ts:330` (`lineIntentsInto`).
-[^57]: **F-057:** `Core/MarkdownPM/Engine/parser.ts:17-36` (`parse`), `Core/MarkdownPM/Engine/tokens.ts:262-311` (`tokenizeChunk`, `tokenize`), `node_modules/mdast-util-gfm-task-list-item/lib/index.js:11` (`devlop`'s `ok`), `node_modules/devlop/package.json` (the `development` condition)
-[^58]: **F-058:** `Core/MarkdownPM/Engine/Tables/regions.ts:57` (`tableRegions`)
-[^59]: **F-059:** `UIX/Pickers/PickerMenu.tsx:179-272` (`measure`), `UIX/Pickers/PickerMenu.test.tsx:447-515`
-[^60]: **F-060:** `UIX/Animations/motion.ts:19` (`exitWait`), `UIX/Interactions/shared.ts:43` (`SETTLE_FALLBACK`), `UIX/Animations/useExitPresence.ts:29` (`useSettleFallback`), `UIX/Interactions/dragDisclose.ts:5` (`SETTLE_MS`), `UIX/Theme/nativeCaret.ts:335` (`SETTLE_DEADLINE_MS`), `Core/MarkdownPM/folding.ts:20` (`FOLD_SETTLE_MS`)
-[^61]: **F-061:** `Core/Navigation/tab-base.css:8-10` (`.tab`), `Core/Navigation/tab-base.css:29-32` (`.tab:last-child`), `Core/Navigation/tab-base.css:143-155` (`.tabs-standard`, `.tabs-compact`), `Core/Settings/personalization.ts:45-48` (`TAB_MAX_WIDTH`), `Core/Settings/applyPersonalization.ts:50`, `.claude/Features/ConfigurationPM.md:66`
-[^62]: **F-062:** `Core/Views/Host/useViewCreation.ts:151-177` (`createPageIn`), `Core/Views/Host/useViewInteractions.tsx:46,135` (`rename`), `Core/Views/Cards/CardsView.tsx:196` (`beginRename`), `Core/Views/Table/TableView.tsx:120-128`, `Core/Session/editSlice.ts:16,31,108` (`beginRename`, `renamingPath`), `Core/Session/nexusSlice.ts:235-256` (`mutate`), `Core/Nexus/mutateRequest.ts:125-128` (`minted`)
-[^63]: **F-063:** `Core/Views/Bands/bandRouter.ts:74-109` (`routeSet`), `Core/Views/Bands/bandRouter.ts:134-146` (`runBandEffect`), `Core/Views/Host/pendingView.ts:172-186` (`mutateAhead`), `Core/Views/Host/pendingView.ts:109-121` (`stageView`, `unstageView`), `Core/Views/Host/useViewCreation.ts:151-177` (`createPageIn`), `Core/Views/Host/useViewInteractions.tsx:196-203`
-[^64]: **F-064:** `Core/Views/Host/useViewCreation.ts:125-139` (`orderPatch`), `Core/Views/Host/useViewCreation.ts:151-177` (`createPageIn`), `Core/Views/Host/pendingView.ts:116-121` (`unstageView`), `Core/Views/views.ts:337-345` (`slotsOf`)
-[^65]: **F-065:** `Core/Matrix/MatrixCanvas.tsx:129-145`, `Core/Matrix/MatrixCanvas.tsx:176-197`, `Core/Matrix/matrix.css.ts:39-46`
-[^66]: **F-066:** `Core/Tiles/Layout/codec.ts:26-31`, `Core/Tiles/tileDocStore.ts:148-158` (`adopt`), `Core/Tiles/TileHost.tsx:283-295` (`renderTile`, `onInsert`), `Core/Tiles/tilesFile.ts:136-145,192,235-242,253,277`, `Core/Tiles/tileDoc.ts:20-23` (`readTileDocAt`), `Core/Files/atomicWrite.ts:215` (`setAside`)
-[^67]: **F-067:** `Core/Tiles/TileGrid.tsx:207-226` (`TileShell`'s comparator)
-[^68]: **F-068:** `Core/Tiles/tileHosts.ts:16-37` (`TILE_HOSTS`), `Core/Nexus/migrateConfig.ts:45-53` (`normalizeSavedViews`), `Core/Nexus/identity.ts:58-62` (`ensureConfigLayout`), `Core/Nexus/remint.ts:110`
-[^69]: **F-069:** `Core/Files/atomicWrite.ts:202-203` (`readAppFile`), `Core/Files/atomicWrite.ts:178-193` (`readLast`), `Core/Files/atomicWrite.ts:207-212` (`readAppFileKnown`), `Core/Files/atomicWrite.ts:144-161` (`rmwLocked`), `Core/Files/atomicWrite.ts:225-236` (`updateNexusFile`), `Core/Files/atomicWrite.ts:265-271` (`updateNexusConfig`), `Core/Nexus/readNexus.ts:68` (`readOrder`), `Core/Nexus/readNexus.ts:113` (`readConfig`), `Core/Nexus/readNexus.ts:287` (`readNexusConfig`), `Core/Navigation/navigationFile.ts:33-41` (`readNavigationFile`), `Core/Matrix/matrixFile.ts:11` (`readMatrixFile`), `Core/Nexus/fileEvents.ts:543-562,633-634` (`applyOrder`), `Core/Session/navigationSlice.ts:270-271` (`writeNav`), `Core/Session/matrixSlice.ts:172-174` (`patchMatrix`), `Core/Interface/Notifications/notifications.ts` (`persist`, `reportRefusal`), `Core/Assets/assetMigrate.ts:85-114,166,175` (`collectRefs`, `migrateAssets`), `Core/Tiles/tileDoc.ts:20` (`readTileDocAt`)
-[^70]: **F-070:** `Core/MarkdownPM/Input/format.ts:70-83,86-145` (`underSelection`, `toggleInline`), `Core/MarkdownPM/Engine/tokens.ts` (`tokenizeChunk`)
-[^71]: **F-071:** `Core/Properties/assignValue.ts:71,87` (`assignValue`), `Core/Properties/setProperty.ts:14-82` (`landPageValue`, `landSpaceValue`, the `restoreValue` case), `Core/Nexus/page.ts:90-99` (`valueToWrite`), `Core/Nexus/mutate.ts:185`, `Core/Properties/assignment.ts:49-60` (`refillValues`), `Core/Properties/propertyValue.ts:224` (`isBlankRaw`)
-[^72]: **F-072:** `UIX/Menus/MenuRows.tsx:153` (`MenuItem`'s hint), `UIX/Menus/menu-row.css.ts:205` (`subLabel`), `UIX/Menus/FrameSlide.tsx:83` (`slotBox`), `Core/Properties/Schema/PropertyFrame.tsx:500-506` (the editor's `FrameSlide`), `Core/Properties/Schema/FormatRows.tsx`, `Core/Settings/SettingsWindow.tsx:47-52` (`settingsRow`)
+[^38]: **F-038:** `Core/Trash/holdings.ts:75` (`trashedPages`), `Core/Trash/holdings.ts:101` (`parkLinks`), `Core/Trash/spend.ts:~67-101` (`emptyBundle`), `Core/Trash/spend.ts:154,202` (a restore's parking), `Core/Settings/TrashFrame.tsx:~105-148` (`many`, one request per row)
+[^39]: **F-039:** `Desktop/Store/stores.ts:45-47` (`clearPath`), `Desktop/Store/stores.ts:50-77` (`upsertPageIndexes`), `Desktop/Store/stores.ts:78-98` (`removePathIndex`, `renamePathIndex`, `removePathPrefixIndex`, `renamePathPrefixIndex`), `Desktop/Store/driver.ts:16-26` (`inTransaction`), `Desktop/Store/stores.ts:217-259` (`syncStore`), `Core/Sync/handlers.ts:352,365`, `Core/Sync/Client/base.ts:16,21` (`readAllBases`, `deleteBase`)
+[^40]: **F-040:** `Core/Nexus/fileEvents.ts:454-477` (`applySpace`), `Core/Nexus/fileEvents.ts:564-584` (`applyMove`), `Core/Nexus/treePatch.ts:238-264` (`moveNodeInTree`), `Core/Nexus/fileEvents.ts:480-501` (`regroup`, `applyContexts`), `Core/Contexts/contextCascade.ts:208,240-248` (`renameContextOp`), `Core/Contexts/contextCascade.ts:266,299-305` (`renameSpaceOp`), `Core/Files/atomicWrite.ts:62-75` (`relocate`), `Core/Nexus/readNexus.ts:77-85` (`contextLinker`), `Core/Nexus/fileEvents.ts:376-418` (`applyPage`), `Core/Properties/pageRow.ts:11-17` (`pageRowOf`), `Core/Contexts/contextResolve.ts:70` (`resolveContextKeys`)
+[^41]: **F-041:** `Core/Properties/journalSlot.ts:14` (`journalSlot`), `Core/Properties/propertyJournal.ts:47-57` (`writeSchemaJournal`, `schemaCascade`), `Core/Contexts/contextJournal.ts:47-49` (`writeJournal`), `Core/Nexus/handlers.ts:82,102` (the two replays), `Core/Contexts/contextResolve.ts:29` (`contextWorldOf`), `Core/Properties/registryProperty.ts:118-174` (`rekeyPlan`, `rekeyProperty`), `Core/Contexts/contextCascade.ts:208-264` (`renameContextOp`), `Core/Contexts/contextCascade.ts:113-114` (`unswept`), `Core/Nexus/mutate.ts:60-68` (`renamed`), `Core/Trash/delete.ts:61-85` (the delete's write-ahead record), `Core/Properties/governedSweep.ts`, `Core/Contexts/spaceSidecar.ts:45-52` (`spaceSidecars`), `Core/Properties/governedSweep.ts:96`, `Core/Properties/deleteProperty.ts:54`, `Core/Assets/assetMigrate.ts:162`, `Core/Properties/keyHolders.ts:21,33` (`confirmedKeyHolders`), `.claude/Planning/Data Layer — Investigation Reports/E — Governed Data Sweeps.md` (the nine loops and five enumerators)
+[^42]: **F-042:** `Core/Nexus/fileEvents.ts:146-152` (`stampable`), `Core/Nexus/fileEvents.ts:348-374` (`applyFolder`), `Core/Nexus/fileEvents.ts:376-418` (`applyPage`), `Core/Nexus/fileEvents.ts:516-532` (`applySettings`, `oweRescope`), `Core/Nexus/mutate.ts:209-214` (`retryUnreadable`), `Core/Nexus/settle.ts:96-117` (`walkWhileOwed`), `Core/Nexus/settle.ts:172-181` (`stampListed`), `Core/Nexus/settle.ts:63-71` (`shown`), `Core/Nexus/settle.ts:119-154` (`settle`)
+[^43]: **F-043:** `Core/Nexus/settle.ts:55` (`inTurn`), `Core/Platform/inTurns.ts:2-9` (`inTurns`), `Core/Nexus/settle.ts:203` (`payOwedWalk`), `Core/Nexus/settle.ts:206-214` (`settleNow`), `Core/Nexus/settle.ts:119-154` (`settle`), `Core/Nexus/settle.ts:96-117` (`walkWhileOwed`), `Core/Nexus/settle.ts:34-46` (`applyOwn`)
+[^44]: **F-044:** `Core/Properties/governedSweep.ts:120-130` (`undoSweep`), `Core/Contexts/contextCascade.ts:181-195` (`unlinkMembers`), `Core/Nexus/mutate.ts:73-80` (`underContexts`), `Core/Nexus/mutate.ts:90-91,153-154` (`rename`, `movePage`)
+[^45]: **F-045:** `Core/Nexus/fileEvents.ts:564-584` (`applyMove`), `Core/Nexus/treePatch.ts:238-264` (`moveNodeInTree`), `Core/Nexus/fileEvents.ts:348-374` (`applyFolder`), `Core/Nexus/fileEvents.ts:376-418` (`applyPage`), `Core/Index/indexSeed.ts:101-120` (`indexWrittenPage`), `Core/Files/atomicWrite.ts:62-75` (`relocate`), `Core/Files/writeEcho.ts:10,74-88` (`PREFIX_WINDOW_MS`, `isRecentWrite`)
+[^46]: **F-046:** `Core/Nexus/adopt.ts:62-82` (`stampPage`), `Core/Nexus/adopt.ts:89-98` (`ensurePageId`), `Core/Nexus/adopt.ts:102-115` (`stampFolder`), `Core/Nexus/adopt.ts:126-143` (`Stamp`, `stampMissing`), `Core/Nexus/adopt.ts:145-191` (`stampTree`, `stampAdopted`), `Core/Nexus/fileEvents.ts:139-143` (`oweRetry`), `Core/Nexus/fileEvents.ts:146-152` (`stampable`), `Core/Nexus/fileEvents.ts:403-404` (`applyPage`), `Core/Nexus/fileEvents.ts:454-463` (`applySpace`), `Core/Nexus/readNexus.ts:105-109,312-317`, `Core/Nexus/mutate.ts:209-213` (`retryUnreadable`), `Core/Nexus/handlers.ts:34-51,79-96` (`prepareOpenedNexus`, `openStores`), `Core/Nexus/heldPages.ts:32` (`idHeld`), `Core/Nexus/identity.ts:17-50` (`ensureIdentity`), `Core/Nexus/remintLedger.ts:88-104` (`runOpenLedger`, `readBaseline`), `Core/Nexus/remintLedger.ts:20-33,65-86` (`projectBaseline`, `pickEldest`), `Core/Nexus/record.ts:18-56` (`recordsOf`, `recordById`), `Core/Nexus/heldPages.ts:11-15,27-30` (`writablePathsOf`, `livePathOf`), `Core/Nexus/record.ts:65-73` (`pagesByIdOf`), `Core/Contexts/contextResolve.ts:29-42` (`contextWorldOf`), `Core/Contexts/contexts.ts:12-17,35-43` (`contextEntry`, `seededRegistry`), `Core/Contexts/contextsRegistry.ts:20-25` (`ensureContextsRegistry`), `Core/Trash/restoreScrub.ts:68` (`ensurePageId`)
+[^47]: **F-047:** `Desktop/hostGraph.test.ts:31-46`, `Core/Interface/handlers.ts:39-84` (`interfaceHandlers`), `Core/Settings/handlers.ts:50`, `Core/Interface/chrome.ts:1-8`, `Core/Interface/Windows/windowTabs.ts`, `Core/Interface/Windows/windowRecord.ts`, `Core/Interface/Windows/windowState.ts`, `Core/Interface/Windows/windowCache.ts`, `Core/Interface/Windows/windowMorph.ts`, `Core/Properties/governedSweep.ts`, `Core/Properties/governedWrite.ts`, `Core/Properties/journalSlot.ts`, `Core/Properties/keyHolders.ts`, `Core/Views/filterModel.ts`, `Core/Views/visibilityModel.ts`, `Core/Views/creationOrder.ts`
+[^48]: **F-048:** `Core/MarkdownPM/codeHighlight.ts:151` (`blockTrees`), `Core/MarkdownPM/codeHighlight.ts:155-183` (`paint`), `Core/MarkdownPM/codeHighlight.ts:185-218` (`colors`), `Core/MarkdownPM/docCache.ts:40-52` (`drawnLast`)
+[^49]: **F-049:** `Core/Interface/Notifications/notifications.ts` (`reportRefusal`, `persist`, `notifyReport`), `Core/Contract/result.ts` (`ErrorCode`), `Core/Sync/Contract/wire.ts` (`SyncStatus`), `.claude/Planning/Error Surfaces — Brainstorm Brief.md`
+[^50]: **F-050:** compares at `Core/MarkdownPM/Engine/intents.ts:342,447,537,589,665`, `Input/edits.ts:62,72,200,230`, `Menus/blockHandles.ts:44,49,174,189`, `api.ts:219`, `decorations.ts:693`, `Engine/subfieldStats.ts:40`, `Gestures/listDrag.ts:52`, `Input/listRenumber.ts:41`, `Input/markdownInput.ts:189,234`, `Menus/menu.ts:37`; defaults at `Input/edits.ts:61,85,168,180,222,275`, `Engine/intents.ts:419,496,533`, `decorations.ts:810`, `Menus/blockHandles.ts:43,148`, `Core/Testing/markdownEngine.ts:43`; switches at `Engine/detect.ts:517-525` (`readsLists`), `surface.ts:25-40`, `docCache.ts:84`; the enum at `Core/Actions/editorMenu.ts:25`; unscoped readers at `Input/edits.ts:702-710` (`lineBodyBefore`, `opensLine`), `Gestures/listDrag.ts:3`, `Input/listRenumber.ts:30`, `Engine/listDragModel.ts` (`renumberRuns`, `dropChanges`), `Gestures/blockDrag.ts:31`; `.claude/Features/MarkdownPM.md:105`.
+[^51]: **F-051:** `Core/Pages/editorHost.tsx:29-36,48-51,85-113,160-176` (`EditorHostOptions`, `buildEditorHost`, `useEditorHost`), `Core/Session/pageConnections.ts:9`, `Core/Interface/Windows/PageHistoryWindow.tsx:35-36,118-119,246-253` (`HISTORY_ANCESTOR`), `Core/Interface/Glance/GlancePane.tsx:42-43,288-299` (`GLANCE_ANCESTORS`), `Core/MarkdownPM/Embeds/embedWidget.tsx:390`, `Core/MarkdownPM/api.ts:206-207` (`pageSurface`), `Core/MarkdownPM/markdown-pm.css:72-74`.
+[^52]: **F-052:** `Core/MarkdownPM/api.ts:24-29,185-191` (the menu-model imports, `EditorHost.menus`), `Core/Pages/editorHost.tsx:101-112`, `Core/Testing/editorHarness.ts:122-128`.
+[^53]: **F-053:** `Core/MarkdownPM/Menus/gripMenu.ts:50-70,133-167` (`contextFor`, the action chain), `Core/MarkdownPM/Menus/blockHandles.ts:15-26,44` (`GRIP_KINDS`, `blockHandles`), `Core/MarkdownPM/Engine/blockModel.ts:209-210` (`blockStarts`), `Core/Actions/gripMenu.ts:16-24` (`GripMenuAction`).
+[^54]: **F-054:** `Core/MarkdownPM/Engine/docScan.ts:49,52` (`maths`, `html`), `Core/MarkdownPM/Engine/docScan.ts:61` (`SpanLike`), `Core/MarkdownPM/Engine/docScan.ts:229-230` (`fromOf`, `toOf`), `Core/MarkdownPM/Engine/blockModel.ts:66`.
+[^55]: **F-055:** `Core/MarkdownPM/Engine/detect.ts:529` (`indentLevel`), `Core/MarkdownPM/Engine/subfieldStats.ts:125` (`computeStats`), `Core/MarkdownPM/Tables/widget.tsx:395,447` (`buildWidgetDecorations`, `refreshTableEffect`), `Core/MarkdownPM/folding.ts:65,281` (`regionsOf`, `foldedRegions`), `Core/MarkdownPM/MarkdownEditor.tsx:38` (`EMPTY_PAGE_TEXT`), `Core/MarkdownPM/Engine/intents.ts:330` (`lineIntentsInto`).
+[^56]: **F-056:** `Core/MarkdownPM/Engine/parser.ts:17-36` (`parse`), `Core/MarkdownPM/Engine/tokens.ts:262-311` (`tokenizeChunk`, `tokenize`), `node_modules/mdast-util-gfm-task-list-item/lib/index.js:11` (`devlop`'s `ok`), `node_modules/devlop/package.json` (the `development` condition)
+[^57]: **F-057:** `Core/MarkdownPM/Engine/Tables/regions.ts:57` (`tableRegions`)
+[^58]: **F-058:** `UIX/Pickers/PickerMenu.tsx:179-272` (`measure`), `UIX/Pickers/PickerMenu.test.tsx:447-515`
+[^59]: **F-059:** `UIX/Animations/motion.ts:19` (`exitWait`), `UIX/Interactions/shared.ts:43` (`SETTLE_FALLBACK`), `UIX/Animations/useExitPresence.ts:29` (`useSettleFallback`), `UIX/Interactions/dragDisclose.ts:5` (`SETTLE_MS`), `UIX/Theme/nativeCaret.ts:335` (`SETTLE_DEADLINE_MS`), `Core/MarkdownPM/folding.ts:20` (`FOLD_SETTLE_MS`)
+[^60]: **F-060:** `Core/Navigation/tab-base.css:8-10` (`.tab`), `Core/Navigation/tab-base.css:29-32` (`.tab:last-child`), `Core/Navigation/tab-base.css:143-155` (`.tabs-standard`, `.tabs-compact`), `Core/Settings/personalization.ts:45-48` (`TAB_MAX_WIDTH`), `Core/Settings/applyPersonalization.ts:50`, `.claude/Features/ConfigurationPM.md:66`
+[^61]: **F-061:** `Core/Views/Host/useViewCreation.ts:151-177` (`createPageIn`), `Core/Views/Host/useViewInteractions.tsx:46,135` (`rename`), `Core/Views/Cards/CardsView.tsx:196` (`beginRename`), `Core/Views/Table/TableView.tsx:120-128`, `Core/Session/editSlice.ts:16,31,108` (`beginRename`, `renamingPath`), `Core/Session/nexusSlice.ts:235-256` (`mutate`), `Core/Nexus/mutateRequest.ts:125-128` (`minted`)
+[^62]: **F-062:** `Core/Views/Bands/bandRouter.ts:74-109` (`routeSet`), `Core/Views/Bands/bandRouter.ts:134-146` (`runBandEffect`), `Core/Views/Host/pendingView.ts:172-186` (`mutateAhead`), `Core/Views/Host/pendingView.ts:109-121` (`stageView`, `unstageView`), `Core/Views/Host/useViewCreation.ts:151-177` (`createPageIn`), `Core/Views/Host/useViewInteractions.tsx:196-203`
+[^63]: **F-063:** `Core/Views/Host/useViewCreation.ts:125-139` (`orderPatch`), `Core/Views/Host/useViewCreation.ts:151-177` (`createPageIn`), `Core/Views/Host/pendingView.ts:116-121` (`unstageView`), `Core/Views/views.ts:337-345` (`slotsOf`)
+[^64]: **F-064:** `Core/Matrix/MatrixCanvas.tsx:129-145`, `Core/Matrix/MatrixCanvas.tsx:176-197`, `Core/Matrix/matrix.css.ts:39-46`
+[^65]: **F-065:** `Core/Tiles/Layout/codec.ts:26-31`, `Core/Tiles/tileDocStore.ts:148-158` (`adopt`), `Core/Tiles/TileHost.tsx:283-295` (`renderTile`, `onInsert`), `Core/Tiles/tilesFile.ts:136-145,192,235-242,253,277`, `Core/Tiles/tileDoc.ts:20-23` (`readTileDocAt`), `Core/Files/atomicWrite.ts:215` (`setAside`)
+[^66]: **F-066:** `Core/Tiles/TileGrid.tsx:207-226` (`TileShell`'s comparator)
+[^67]: **F-067:** `Core/Tiles/tileHosts.ts:16-37` (`TILE_HOSTS`), `Core/Nexus/migrateConfig.ts:45-53` (`normalizeSavedViews`), `Core/Nexus/identity.ts:58-62` (`ensureConfigLayout`), `Core/Nexus/remint.ts:110`
+[^68]: **F-068:** `Core/Files/atomicWrite.ts:202-203` (`readAppFile`), `Core/Files/atomicWrite.ts:178-193` (`readLast`), `Core/Files/atomicWrite.ts:207-212` (`readAppFileKnown`), `Core/Files/atomicWrite.ts:144-161` (`rmwLocked`), `Core/Files/atomicWrite.ts:225-236` (`updateNexusFile`), `Core/Files/atomicWrite.ts:265-271` (`updateNexusConfig`), `Core/Nexus/readNexus.ts:68` (`readOrder`), `Core/Nexus/readNexus.ts:113` (`readConfig`), `Core/Nexus/readNexus.ts:287` (`readNexusConfig`), `Core/Navigation/navigationFile.ts:33-41` (`readNavigationFile`), `Core/Matrix/matrixFile.ts:11` (`readMatrixFile`), `Core/Nexus/fileEvents.ts:543-562,633-634` (`applyOrder`), `Core/Session/navigationSlice.ts:270-271` (`writeNav`), `Core/Session/matrixSlice.ts:172-174` (`patchMatrix`), `Core/Interface/Notifications/notifications.ts` (`persist`, `reportRefusal`), `Core/Assets/assetMigrate.ts:85-114,166,175` (`collectRefs`, `migrateAssets`), `Core/Tiles/tileDoc.ts:20` (`readTileDocAt`)
+[^69]: **F-069:** `Core/MarkdownPM/Input/format.ts:70-83,86-145` (`underSelection`, `toggleInline`), `Core/MarkdownPM/Engine/tokens.ts` (`tokenizeChunk`)
+[^70]: **F-070:** `Core/Properties/assignValue.ts:71,87` (`assignValue`), `Core/Properties/setProperty.ts:14-82` (`landPageValue`, `landSpaceValue`, the `restoreValue` case), `Core/Nexus/page.ts:90-99` (`valueToWrite`), `Core/Nexus/mutate.ts:185`, `Core/Properties/assignment.ts:49-60` (`refillValues`), `Core/Properties/propertyValue.ts:224` (`isBlankRaw`)
+[^71]: **F-071:** `UIX/Menus/MenuRows.tsx:153` (`MenuItem`'s hint), `UIX/Menus/menu-row.css.ts:205` (`subLabel`), `UIX/Menus/FrameSlide.tsx:83` (`slotBox`), `Core/Properties/Schema/PropertyFrame.tsx:500-506` (the editor's `FrameSlide`), `Core/Properties/Schema/FormatRows.tsx`, `Core/Settings/SettingsWindow.tsx:47-52` (`settingsRow`)

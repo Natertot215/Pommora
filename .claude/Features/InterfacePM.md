@@ -39,7 +39,7 @@ A page row's menu is the **page menu** (`Core/Actions/pageMenu.ts`), the same ro
 | Identity | Rename · Edit Icon                                                                                       |
 | Values   | Spaces ▸ · Properties ▸ (the page's Contexts and its Collection's properties, set in place)              |
 | Create   | New Page Above · New Page Below (a sibling at that slot in the manual order)                             |
-| Send     | Move To ▸ (every Collection and its Sets, the page's own disabled) · Copy Link (`[[Title]]`) · Copy Path |
+| Send     | Move To ▸ (every Collection and its Sets, the page's own disabled) · Copy Link (`[[Title]]`, or the page's path where its title is shared) · Copy Path |
 | Locate   | View History · Reveal Location                                                                           |
 | Remove   | Delete                                                                                                   |
 

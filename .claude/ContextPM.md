@@ -2,7 +2,7 @@
 
 ### Current Focus
 
-Pommora's open issues are the sole focus. `IssuesPM.md` indexes them by Area, each graded by Concern, Scale, and Origin and dated from the commit it was reported against. Each session takes one Area, or a coherent slice of one, gravest first, through `batch-issues`, then reconciles the index and republishes the Dashboard at closeout.
+Pommora's open issues are the sole focus. `IssuesPM.md` indexes them by Area, each graded by Concern, Scale, and Origin and dated from the commit it was reported against. Each session takes one Area, or a coherent slice of one, gravest first, through `batch-issues`, then reconciles the index and republishes the Dashboard at closeout. Path Links (`.claude/Planning/Path Links/`) has landed Phases 1–9 with Final Verification next: links name pages by path where a title is shared and follow their page through every rename, move, and restore, inside or outside the app.
 
 ### Immediate Work
 

@@ -15,7 +15,7 @@ import { useSession } from '../../Session/store'
 import { TextPane } from './TextPane'
 import { ValueEditor } from './ValueEditor'
 
-/** A value typed as text: a Number in the kit's input, a Text value's popover in its pane, and every other value in the one-line editor, which opens on the whole written value: Rename in the alias slot, otherwise in the title of a value that is one unresolved link, otherwise in the slot `seat` names, and otherwise with the caret at the end. A Link value leaves alias memory to the write layer, which remembers once per landed value; a one-line Text field remembers as its edit commits, so a cancelled one remembers nothing. */
+/** A value typed as text: a Number in the kit's input, a Text value's popover in its pane, and every other value in the one-line editor, which opens on the whole written value, seated as `ValueEditor` seats it. A Link value leaves alias memory to the write layer, which remembers once per landed value; a one-line Text field remembers as its edit commits, so a cancelled one remembers nothing. */
 export function PropertyValueInput({
   def,
   current,

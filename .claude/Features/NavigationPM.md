@@ -9,7 +9,7 @@ A per-Nexus, UI-agnostic store of recents and pins, plus client-side title searc
 
 - **Recents** — an automatic history stream, most recent first, deduplicated, capped at a generous roll-off. A navigation records only when it actually opens a tab, so re-surfacing an entity already open, stepping Back or Forward, and switching tabs record nothing.
 - **Pins** — the durable, user-ordered working set. Pins are the pinned tabs, docked left in the tab bar, and also float to the top of the NavWindow gallery — one set surfaced in two places.
-- **Search** — a title-based subsequence scan over the in-memory tree, memoized per tree. A Context isn't itself a hit; it's the path crumb its Spaces resolve under.
+- **Search** — the one search rule (`matchScore`) over each entity's title and the folders above it, ranked by score and memoized per tree. A Context isn't itself a hit; it's the path crumb its Spaces resolve under.
 
 Pins persist as an ordered array in the `navigation` section of `.nexus/state.json`, which is hand-editable and follows the Nexus, and a pin of a kind an older build doesn't recognize rides through that build's writes unread; recents persist per machine, since two machines interleaving one history has no correct answer.
 
