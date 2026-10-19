@@ -324,15 +324,17 @@ export function PropertyFrame({
 
   const NO_SETTINGS = (): null => null
   const optionSettings = (def: PropertyDefinition, style: ColumnStyle): React.JSX.Element => (
-    <OptionEditor
-      propertyId={def.id}
-      type={def.type}
-      groups={optionGroupsOf(def)}
-      style={{
-        current: style,
-        set: (key, value) => void saveColumnStyle(def.id, { [key]: value }),
-      }}
-    />
+    <div className={cx(s.middleRegion, s.chipRegion, 'scroll-fade')}>
+      <OptionEditor
+        propertyId={def.id}
+        type={def.type}
+        groups={optionGroupsOf(def)}
+        style={{
+          current: style,
+          set: (key, value) => void saveColumnStyle(def.id, { [key]: value }),
+        }}
+      />
+    </div>
   )
 
   // One arm per property type, so a type added to the schema is a compile error here rather than a blank panel at runtime.
@@ -431,6 +433,7 @@ export function PropertyFrame({
           onClick: () => void editorMenu(def),
         })}
         footer={styleFooting}
+        maxHeight={s.VIEW_SETTINGS_MAX_HEIGHT}
       >
         <InlineEditHeader
           value={def.label}

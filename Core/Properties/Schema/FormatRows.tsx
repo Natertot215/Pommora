@@ -1,6 +1,8 @@
 import { MenuIndex, pickerRow } from '@pommora/uix/Menus'
 import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
 import * as s from '@pommora/uix/Menus/frames.css'
+import { menuCompact } from '@pommora/uix/Menus/menu-row.css'
+import { cx } from '@pommora/uix/Utilities/cx'
 import { DEFAULT_KEY_FORMAT, type FormatChange, KEY_FORMATS, type KeyFormat } from '../keyFormat'
 import { type PropertyDefinition, PROPERTY_TYPES } from '../properties'
 
@@ -30,7 +32,7 @@ export function FormatRows({
       { inert: true },
     )
   return (
-    <div className={s.configEditor}>
+    <div className={cx(s.configEditor, menuCompact)}>
       <MenuIndex
         sections={[
           {
