@@ -238,8 +238,7 @@ async function restoreArtifact(
     const repair = new Map<string, string>()
     for (const [key, id] of targets) {
       const q = after.byId.get(id)
-      const next = q && after.respell(key, q, q.path)
-      if (next) repair.set(key, next)
+      if (q) repair.set(key, after.writtenName(q.path, key))
     }
     unswept.push(...(await repairLanded(root, tree, record.entity, targetAbs, repair)))
     const live = pageIndexOf(tree)
