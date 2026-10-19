@@ -194,13 +194,13 @@ describe('a returning artifact is reconciled against the world it comes back to'
     expect(await pathExists(join(root, 'Notes', 'Alpha.md'))).toBe(false)
   })
 
-  it('prunes a member naming no Space exactly', async () => {
+  it('rewrites a Space title in another casing into the current title', async () => {
     await writeFile(
       join(root, 'Notes', 'Alpha.md'),
       `---\nID: ${PAGE_A}\n<Projects>:\n  - pommora\n---\nbody`,
     )
     await cycle('Notes/Alpha.md', 'page', async () => {})
-    expect((await fm('Notes/Alpha.md'))['<Projects>']).toBeUndefined()
+    expect((await fm('Notes/Alpha.md'))['<Projects>']).toEqual(['Pommora'])
   })
 
   it('a value an outside write left as a number still names its Space', async () => {
@@ -225,14 +225,14 @@ describe('a returning artifact is reconciled against the world it comes back to'
     )
     await writeFile(
       join(root, 'Notes', 'Alpha.md'),
-      `---\nID: ${PAGE_A}\n<Projects>:\n  - Pommora\n  - Sapphire\n---\nbody`,
+      `---\nID: ${PAGE_A}\n<Projects>:\n  - pommora\n  - Sapphire\n---\nbody`,
     )
     await cycle('Notes/Alpha.md', 'page', async () => {
       await rm(join(contextsDir(root), 'Projects', 'Sapphire'), { recursive: true, force: true })
     })
   }
 
-  it('prunes the dead Space from a tag and keeps the survivor', async () => {
+  it('prunes the dead Space from a tag and rewrites the survivor', async () => {
     await prunedTag()
     expect((await fm('Notes/Alpha.md'))['<Projects>']).toEqual(['Pommora'])
   })
@@ -321,7 +321,7 @@ describe('a returning artifact is reconciled against the world it comes back to'
     expect(def.select_options.map((o) => o.label)).toEqual(['a'])
   })
 
-  it('keeps a gone Link held under a key no Link property claims', async () => {
+  it('drops a gone Link held under its key in another casing and parks it', async () => {
     await writeFile(
       join(root, '.nexus', 'properties.json'),
       JSON.stringify({
@@ -333,8 +333,29 @@ describe('a returning artifact is reconciled against the world it comes back to'
       join(root, 'Notes', 'Alpha.md'),
       `---\nID: ${PAGE_A}\nrelated: "[[Nowhere]]"\n---\nbody`,
     )
-    await cycle('Notes/Alpha.md', 'page', async () => {})
-    expect((await fm('Notes/Alpha.md')).related).toBe('[[Nowhere]]')
+    await writeFile(
+      join(root, 'Notes', 'Nowhere.md'),
+      `---\nID: 01KVGMT8BFP350FZZXAMG1QDVE\n---\nbody`,
+    )
+    await refreshTree(root)
+    for (const path of ['Notes/Alpha.md', 'Notes/Nowhere.md'])
+      expect((await settledMutate(root, { op: 'delete', path, kind: 'page' }, nexusDeps)).ok).toBe(
+        true,
+      )
+    const bundles = await listBundles(root)
+    const bundleOf = (name: string): string =>
+      bundles.find((b) => b.artifactName === name)?.bundlePath ?? ''
+    expect(
+      (await settledMutate(root, { op: 'restore', bundlePath: bundleOf('Alpha.md') }, nexusDeps))
+        .ok,
+    ).toBe(true)
+    const f = await fm('Notes/Alpha.md')
+    expect(f).not.toHaveProperty('related')
+    expect(f).not.toHaveProperty('Related')
+    const record = await readJsonAt<{ links?: unknown[] }>(
+      join(root, bundleOf('Nowhere.md'), '_record.json'),
+    )
+    expect(record.links).toEqual([{ page: PAGE_A, property: LINK, value: '[[Nowhere]]' }])
   })
 
   it('leaves foreign frontmatter and the body untouched while it strips', async () => {
@@ -350,6 +371,97 @@ describe('a returning artifact is reconciled against the world it comes back to'
     expect(raw).toContain('Priority:\n  - hi')
     expect(raw).toContain('the body')
     expect(raw).not.toContain('Projects')
+  })
+})
+
+describe('a returning page takes the current keys', () => {
+  const priority = (fields: Record<string, unknown>): Promise<void> =>
+    writeFile(
+      join(root, '.nexus', 'properties.json'),
+      JSON.stringify({
+        order: [PROP],
+        defs: {
+          [PROP]: {
+            id: PROP,
+            label: 'Priority',
+            key: 'Priority',
+            type: 'select',
+            select_options: [
+              { key: 'hi', label: 'hi', color: 'red' },
+              { key: 'lo', label: 'lo', color: 'blue' },
+            ],
+            ...fields,
+          },
+        },
+      }),
+    )
+  const page = (frontmatter: string): Promise<void> =>
+    writeFile(join(root, 'Notes', 'Alpha.md'), `---\nID: ${PAGE_A}\n${frontmatter}\n---\nbody`)
+
+  it('moves a key in another casing onto the current key', async () => {
+    await page('priority: hi')
+    await cycle('Notes/Alpha.md', 'page', async () => {})
+    const f = await fm('Notes/Alpha.md')
+    expect(f.Priority).toEqual(['hi'])
+    expect(f).not.toHaveProperty('priority')
+  })
+
+  it('moves a key onto the one a Key Format change wrote while it sat in the Trash', async () => {
+    await cycle('Notes/Alpha.md', 'page', async () => {
+      await priority({ key: 'priority', key_format: 'lowercase' })
+    })
+    const f = await fm('Notes/Alpha.md')
+    expect(f.priority).toEqual(['hi'])
+    expect(f).not.toHaveProperty('Priority')
+  })
+
+  it('moves an option word onto the key a Value Format change wrote while it sat in the Trash', async () => {
+    await cycle('Notes/Alpha.md', 'page', async () => {
+      await priority({
+        value_format: 'UPPERCASE',
+        select_options: [
+          { key: 'HI', label: 'hi', color: 'red' },
+          { key: 'LO', label: 'lo', color: 'blue' },
+        ],
+      })
+    })
+    expect((await fm('Notes/Alpha.md')).Priority).toEqual(['HI'])
+  })
+
+  it('keeps the exact key’s value and leaves a variant beside it foreign', async () => {
+    await page('Priority: hi\npriority: lo')
+    await cycle('Notes/Alpha.md', 'page', async () => {})
+    const f = await fm('Notes/Alpha.md')
+    expect(f.Priority).toEqual(['hi'])
+    expect(f.priority).toBe('lo')
+  })
+
+  it('leaves a spelling two current keys share as written', async () => {
+    await writeFile(
+      join(root, '.nexus', 'properties.json'),
+      JSON.stringify({
+        order: ['prop_due_date', 'prop_due_dash'],
+        defs: {
+          prop_due_date: { id: 'prop_due_date', label: 'Due Date', key: 'Due Date', type: 'text' },
+          prop_due_dash: { id: 'prop_due_dash', label: 'Due-Date', key: 'Due-Date', type: 'text' },
+        },
+      }),
+    )
+    await page('due-date: x')
+    await cycle('Notes/Alpha.md', 'page', async () => {})
+    const f = await fm('Notes/Alpha.md')
+    expect(f['due-date']).toBe('x')
+    expect(f).not.toHaveProperty('Due Date')
+    expect(f).not.toHaveProperty('Due-Date')
+  })
+
+  it('leaves a key whose property was renamed while it sat in the Trash as written', async () => {
+    await cycle('Notes/Alpha.md', 'page', async () => {
+      await priority({ label: 'Urgency', key: 'Urgency' })
+    })
+    const f = await fm('Notes/Alpha.md')
+    expect(f.Priority).toBe('hi')
+    expect(f).not.toHaveProperty('Urgency')
   })
 })
 
@@ -441,6 +553,99 @@ describe('a Space sidecar is a context root too', () => {
       (await settledMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)).ok,
     ).toBe(true)
     expect((await sidecar('Projects (2)/Sapphire'))['<Projects (2)>']).toEqual(['Pommora'])
+  })
+
+  it('a returning Context’s own key in another casing is left for the rekey beside a live Context holding its title', async () => {
+    await rm(join(contextsDir(root), 'Projects'), { recursive: true, force: true })
+    await writeFile(
+      contextsRegistryFile(root),
+      JSON.stringify({ contexts: [{ id: 'ctx_projects', title: 'projects' }] }),
+    )
+    await mkdir(join(contextsDir(root), 'projects', 'Sapphire'), { recursive: true })
+    await writeFile(
+      join(contextsDir(root), 'projects', 'Sapphire', '_space.json'),
+      JSON.stringify({ id: 'sp-sap', '<projects>': ['Pommora'] }),
+    )
+    await refreshTree(root)
+    expect(
+      (
+        await settledMutate(
+          root,
+          { op: 'delete', path: '.nexus/contexts/projects', kind: 'context' },
+          nexusDeps,
+        )
+      ).ok,
+    ).toBe(true)
+    await writeFile(
+      contextsRegistryFile(root),
+      JSON.stringify({ contexts: [{ id: 'ctx_live', title: 'Projects' }] }),
+    )
+    await mkdir(join(contextsDir(root), 'Projects', 'Pommora'), { recursive: true })
+    await writeFile(
+      join(contextsDir(root), 'Projects', 'Pommora', '_space.json'),
+      JSON.stringify({ id: 'sp-pom' }),
+    )
+    await refreshTree(root)
+    const [listed] = await listBundles(root)
+    expect(
+      (await settledMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)).ok,
+    ).toBe(true)
+    const sap = await sidecar('projects (2)/Sapphire')
+    expect(sap['<projects (2)>']).toEqual(['Pommora'])
+    expect(sap).not.toHaveProperty('<Projects>')
+  })
+
+  const spaceCycle = async (): Promise<void> => {
+    expect(
+      (
+        await settledMutate(
+          root,
+          { op: 'delete', path: '.nexus/contexts/Projects/Sapphire', kind: 'space' },
+          nexusDeps,
+        )
+      ).ok,
+    ).toBe(true)
+    const [listed] = await listBundles(root)
+    expect(
+      (await settledMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)).ok,
+    ).toBe(true)
+  }
+
+  it('a returning Space takes the current Context keys, Space titles, and property keys', async () => {
+    await seedPassenger()
+    await writeFile(
+      join(contextsDir(root), 'Projects', 'Sapphire', '_space.json'),
+      JSON.stringify({ id: 'sp-sap', '<areas>': ['work'], priority: ['hi'] }),
+    )
+    await spaceCycle()
+    expect(await sidecar('Projects/Sapphire')).toEqual({
+      id: 'sp-sap',
+      '<Areas>': ['Work'],
+      Priority: ['hi'],
+    })
+  })
+
+  it('a returning Space keeps a key Pommora manages byte-identical though a property spells it', async () => {
+    await seedPassenger()
+    await writeFile(
+      join(root, '.nexus', 'properties.json'),
+      JSON.stringify({
+        order: ['prop_hidden'],
+        defs: {
+          prop_hidden: {
+            id: 'prop_hidden',
+            label: 'Heading Icon Hidden',
+            key: 'Heading Icon Hidden',
+            type: 'text',
+          },
+        },
+      }),
+    )
+    const held = JSON.stringify({ id: 'sp-sap', heading_icon_hidden: true })
+    const file = join(contextsDir(root), 'Projects', 'Sapphire', '_space.json')
+    await writeFile(file, held)
+    await spaceCycle()
+    expect(await readFile(file, 'utf8')).toBe(held)
   })
 })
 

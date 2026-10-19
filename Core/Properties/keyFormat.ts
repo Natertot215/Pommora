@@ -72,3 +72,5 @@ const FORMAT: Record<KeyFormat, (label: string) => string> = {
 
 export const formatKey = (label: string, format: KeyFormat = DEFAULT_KEY_FORMAT): string =>
   FORMAT[format](label.normalize('NFC')).normalize('NFC')
+
+export const spellingsOf = (label: string): string[] => KEY_FORMATS.map((f) => formatKey(label, f))

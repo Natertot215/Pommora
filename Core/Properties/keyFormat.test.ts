@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_KEY_FORMAT, formatKey, isKeyFormat, KEY_FORMATS } from './keyFormat'
+import { DEFAULT_KEY_FORMAT, formatKey, isKeyFormat, KEY_FORMATS, spellingsOf } from './keyFormat'
 
 const unchangedBy = (word: string) => KEY_FORMATS.filter((f) => formatKey(word, f) === word)
 
@@ -96,5 +96,20 @@ describe('keyFormat', () => {
     expect(isKeyFormat('kebab-case')).toBe(true)
     expect(isKeyFormat('Kebab')).toBe(false)
     expect(isKeyFormat(undefined)).toBe(false)
+  })
+
+  it('spells a label under every format, Match Title first', () => {
+    expect(spellingsOf('Value One')).toEqual([
+      'Value One',
+      'value one',
+      'VALUE ONE',
+      'value-one',
+      'ValueOne',
+      'valueOne',
+      'value_one',
+      'Value-One',
+      'VALUE_ONE',
+      'VALUE-ONE',
+    ])
   })
 })
