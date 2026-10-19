@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { PropertyDefinition } from './properties'
+import type { KeyFormat } from './keyFormat'
 import {
   applyValueAtRoot,
   decodeValue,
@@ -518,6 +519,22 @@ describe('options decode exactly; checkboxes without regard to case', () => {
 
   it('unregisteredMembers subtracts every word whose fold an option’s label or key holds', () => {
     expect(unregisteredMembers(keyedMulti, ['IN-PROGRESS', 'done', 'DONE', 'new'])).toEqual(['new'])
+  })
+
+  it('unregisteredMembers answers only the words the Value Format could have written', () => {
+    const under = (value_format: KeyFormat, ...values: string[]): PropertyDefinition => ({
+      ...multiSelectOf(...values),
+      value_format,
+    })
+    expect(
+      unregisteredMembers(under('lowercase', 'red', 'blue'), ['green', 'PURPLE', 'Red']),
+    ).toEqual(['green'])
+    expect(unregisteredMembers(under('kebab-case'), ['due_date', 'in-progress'])).toEqual([
+      'in-progress',
+    ])
+    expect(unregisteredMembers(under('PascalCase'), ['AB', 'J.Crew', 'Red'])).toEqual(['Red'])
+    expect(unregisteredMembers(under('lowercase'), ['Green', 'green'])).toEqual(['green'])
+    expect(unregisteredMembers(under('lowercase'), [' green '])).toEqual([' green '])
   })
 })
 

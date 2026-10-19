@@ -15,6 +15,7 @@ import { linkEntry, readLinkText } from '../Connections/linkValue'
 import { readNumber, spelledNumber } from './formatValue'
 import { capitalize } from '@pommora/uix/Utilities/capitalize'
 import { namesValue } from './pageValue'
+import { formatKey } from './keyFormat'
 
 const strings = z.array(z.string())
 export const propertyValue = z.discriminatedUnion('kind', [
@@ -144,10 +145,13 @@ export function decodeValue(def: PropertyDefinition, raw: unknown): PropertyValu
   }
 }
 
-/** The words a Multi-Select's `raw` holds that no option's label or key claims without regard to case, each once by fold. */
+/** The words a Multi-Select's `raw` holds that its Value Format could have written and no option's label or key claims without regard to case, each once by fold. */
 export function unregisteredMembers(def: PropertyDefinition, raw: unknown): string[] {
   const { folds } = wordsOf(def)
-  return [...firstPerTitle(optionList(raw))].flatMap(([fold, w]) => (folds.has(fold) ? [] : [w]))
+  const writable = optionList(raw).filter(
+    (w) => formatKey(exactTitle(w), def.value_format) === exactTitle(w),
+  )
+  return [...firstPerTitle(writable)].flatMap(([fold, w]) => (folds.has(fold) ? [] : [w]))
 }
 
 export function keepingForeignWords(

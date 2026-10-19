@@ -517,14 +517,17 @@ export function oweRescope(owed: Owed, was: WatchScope, scope: WatchScope): bool
   return true
 }
 
-// A rename names a new key as a create does; every Space is owed because the registrar reads their values from the tree.
+// A new key or a new Value Format names words a Multi-Select can adopt, as a create does; every Space is owed because the registrar reads their values from the tree.
 export function oweNamedKeys(owed: Owed, was: PropertyDefinition[], tree: NexusTree): void {
   const prior = registryOf(was)
   const named = new Set(
     tree.config.registry
       .filter((d) => {
         const p = prior[d.id]
-        return d.type === 'multiSelect' && (p?.type !== 'multiSelect' || p.key !== d.key)
+        return (
+          d.type === 'multiSelect' &&
+          (p?.type !== 'multiSelect' || p.key !== d.key || p.value_format !== d.value_format)
+        )
       })
       .map((d) => d.id),
   )

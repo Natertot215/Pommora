@@ -6,7 +6,7 @@ import { settledMutate } from '../Testing/settledMutate'
 import type { TrashDeps } from '../Trash/bundle'
 import { assignProperty } from '../Properties/assignment'
 import { createProperty, renameProperty } from '../Properties/registryProperty'
-import { renameOption } from '../Properties/optionOps'
+import { renameOption, setValueFormat } from '../Properties/optionOps'
 import * as optionOps from '../Properties/optionOps'
 import { optionLabels, type PropertyDefinition } from '../Properties/properties'
 import { writeSchemaJournal } from '../Properties/propertyJournal'
@@ -1085,6 +1085,19 @@ describe('held options — the Multi-Select members a changed file holds are reg
     await settleBatch(pusher, root, [ev('change', '.nexus', 'properties.json')])
     expect(registrar).not.toHaveBeenCalled()
     expect(await options()).toEqual(['beta'])
+  })
+
+  it('a member its Value Format can’t write stays unregistered until a Value Format change can write it', async () => {
+    const held = JSON.parse(await readFile(abs('.nexus', 'properties.json'), 'utf8'))
+    held.defs.tags.value_format = 'UPPERCASE'
+    await writeFile(abs('.nexus', 'properties.json'), JSON.stringify(held))
+    await walked()
+    await writeFile(abs('Notes', 'A.md'), page(ULID_A, tags('alpha', 'green')))
+    await settleBatch(pusher, root, [ev('change', 'Notes', 'A.md')])
+    expect(await options()).toEqual(['alpha'])
+    expect((await setValueFormat(root, 'tags', 'lowercase')).ok).toBe(true)
+    await settleNow(pusher, root)
+    expect(await options()).toEqual(['alpha', 'green'])
   })
 
   it('an outside registry edit that re-cases a Multi-Select’s name registers its members', async () => {
