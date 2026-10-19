@@ -82,7 +82,8 @@ harness patches its windows to show without activating the app or taking clicks,
 native menu rather than drawing it, so a drive reads the menu's rows and chooses one by its labels,
 running the row's own click. Chromium's backgrounding switches and DevTools focus emulation keep the
 window behaving as the frontmost one, and every press and click goes through DevTools.
-`POMMORA_DRIVE_REPO` builds and launches another checkout in place of this one.
+`POMMORA_DRIVE_REPO` builds and launches another checkout in place of this one. Its `COPY` table holds
+the refusals and the confirmation the drives assert by their worded text.
 Its `measure` runs one gesture under a watch: a worker thread polls the named files every 5 ms and
 counts their distinct contents, an in-page probe times the gesture's first input to the DOM change
 that shows it and the frame after, and the DevTools performance counters and long tasks give its

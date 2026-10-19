@@ -126,10 +126,10 @@ async function attachMain(inspectPort) {
   return line
 }
 
-// A freshly popped menu's rows: each visible item as { label, enabled, submenu? } or { separator }, answering null when no menu pops.
-export async function popNative(cdp, at) {
+// A freshly popped menu's rows: each visible item as { label, enabled, submenu? } or { separator }, answering null when no menu pops. A menu a button pops takes a left press.
+export async function popNative(cdp, at, button = 'right') {
   const seq = await main.evaluate('__drive.seq')
-  await mouseAt(cdp, at, { button: 'right', settle: 0 })
+  await mouseAt(cdp, at, { button, settle: 0 })
   return until('the native menu', () => main.evaluate(`__drive.seq > ${seq} && __drive.rows()`), 3000).catch(() => null)
 }
 /** Chooses the row a path of labels names in the menu now up, or closes it when the path is empty or names no enabled row, answering whether one was chosen. */
@@ -137,9 +137,9 @@ export const pickNative = (path) => main.evaluate(`__drive.choose(${JSON.stringi
 export const labels = (rows) => (rows ?? []).filter((r) => !r.separator).map((r) => r.label)
 
 /** Pops `expr`'s native menu and chooses `path`, answering the menu's top-level labels, disabled rows among them. `edge` presses the element's leading padding, so a link inside it is never the target. */
-export async function chooseNative(cdp, expr, path, { edge = false } = {}) {
+export async function chooseNative(cdp, expr, path, { edge = false, button } = {}) {
   const box = await boxOf(cdp, expr)
-  const rows = await popNative(cdp, edge ? { x: box.left + 4, y: box.y } : box)
+  const rows = await popNative(cdp, edge ? { x: box.left + 4, y: box.y } : box, button)
   const chosen = rows !== null && (await pickNative([path].flat()))
   await sleep(800)
   return { rows: labels(rows), chosen }
@@ -293,6 +293,23 @@ export async function openPane(cdp, scope) {
 
 // A refusal draws as the notification label's alert.
 export const refusal = (cdp) => cdp.evaluate(`document.querySelector('[role="alert"]:not([inert])')?.textContent.trim() ?? ''`)
+
+// The refusals and the confirmation the drives assert by their worded text, each a function of the words it names.
+export const itemCount = (n) => `${n} ${n === 1 ? 'Item' : 'Items'}`
+export const COPY = {
+  aKeyAnotherPropertyWrites: (key) => `A property already writes "${key}" to files.`,
+  aLabelAnotherPropertyHolds: (label) => `A property named "${label}" already exists.`,
+  aKeyPommoraManages: () => 'Name is taken by an app-managed key.',
+  itemsHoldingBothKeys: (n, from, to) => `${itemCount(n)} ${n === 1 ? 'holds' : 'hold'} both "${from}" and "${to}".`,
+  twoOptionsTitledAlike: () => 'Option titles must be unique.',
+  twoOptionsWritingOneKey: () => 'An option with this title already exists, please choose another name.',
+  aFormatGivingTwoOptionsOneKey: () => 'This format would give two options the same key, please rename one first.',
+  anOptionChangeWaitingForTryAgain: () => 'An earlier change hasn’t reached every file yet.',
+  anEmptyKey: (kind) => `${kind} cannot contain an invalid name.`,
+  aValueFormatChangeCrossingTwoOptionsKeys: () => 'This format would give one option the key another option writes now, please rename one first.',
+  anOptionEditWithoutOptions: () => 'Options can only be edited on a Select, Multi-Select, or Status property.',
+  theFormatChangesConfirmation: (items) => `This action would rewrite metadata in ${items}.`,
+}
 
 // ── Measurement ─────────────────────────────────────────────────────────────
 

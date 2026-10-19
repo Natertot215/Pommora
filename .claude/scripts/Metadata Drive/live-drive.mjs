@@ -3,8 +3,8 @@ import { join } from 'node:path'
 import { ulid } from 'ulidx'
 import { parse } from 'yaml'
 import {
-  ask, check, chooseNative, click, drag, FM, holds, launch, META, mintPageId, mouseAt, boxOf, mouseClick,
-  must, NEXUS, openField, openPanel, portalOpen, pressKey, read, restore, results, selectField, SETTINGS_BUTTON,
+  ask, check, chooseNative, click, COPY, drag, FM, holds, itemCount, launch, META, mintPageId, mouseAt, boxOf, mouseClick,
+  closePanel, must, NEXUS, openField, openPanel, portalOpen, pressKey, read, restore, results, selectField, SETTINGS_BUTTON,
   settles, shot, sleep, textEl, typeText, until,
 } from '../drive-harness.mjs'
 
@@ -23,20 +23,9 @@ const CACHE_SET = 'Collection B/Set Alpha'
 const CONTEXTS = '.nexus/contexts'
 const REGISTRY = '.nexus/properties.json'
 const JOURNAL = '.nexus/property-cascade.json'
+const CONTEXT_JOURNAL = '.nexus/context-rename.json'
 const MATRIX = '.nexus/interface/matrix.json'
 const FORMATS = ['Match Title', 'lowercase', 'UPPERCASE', 'kebab-case', 'PascalCase', 'camelCase', 'snake_case', 'Train-Case', 'UPPER_SNAKE_CASE', 'UPPER-KEBAB-CASE']
-const itemCount = (n) => `${n} ${n === 1 ? 'Item' : 'Items'}`
-
-// The messages Nathan worded at the Stop before Task 5A-1, each a function of the words it names.
-const COPY = {
-  aKeyAnotherPropertyWrites: (key) => `A property already writes "${key}" to files.`,
-  twoOptionsWritingOneKey: () => 'An option with this title already exists, please choose another name.',
-  aFormatGivingTwoOptionsOneKey: () => 'This format would give two options the same key, please rename one first.',
-  anOptionChangeWaitingForTryAgain: () => 'An earlier change hasn’t reached every file yet.',
-  anEmptyKey: (kind) => `${kind} cannot contain an invalid name.`,
-  aValueFormatChangeCrossingTwoOptionsKeys: () => 'This format would give one option the key another option writes now, please rename one first.',
-  theFormatChangesConfirmation: (items) => `This action would rewrite metadata in ${items}.`,
-}
 
 // ── Checks ──────────────────────────────────────────────────────────────────
 
@@ -46,7 +35,6 @@ const pin = (group, decision, name, pass, detail) => check(`[g${group} ${decisio
 const canon = (v) =>
   Array.isArray(v) ? v.map(canon) : v && typeof v === 'object' ? Object.fromEntries(Object.keys(v).sort().map((k) => [k, canon(v[k])])) : v
 const same = (a, b) => show(canon(a)) === show(canon(b))
-const refusedWith = (r, text) => r?.ok === false && r.error?.message === text
 const refusedAs = (r, copy, ...words) => r?.ok === false && r.error?.message === copy(...words)
 const fileOf = (rel) => {
   try {
@@ -118,10 +106,12 @@ async function tryAgain(cdp, [[first], [second]], rename, after) {
   const replayed = owed ? await ask(cdp, 'property:replay', owed) : null
   return { r, owed, replayed, first, second }
 }
-const slot = () => {
-  const text = fileOf(JOURNAL)
+const slotOf = (rel) => {
+  const text = fileOf(rel)
   return text === null ? null : JSON.parse(text)
 }
+const slot = () => slotOf(JOURNAL)
+const contextSlot = () => slotOf(CONTEXT_JOURNAL)
 
 // ── Contexts and Spaces ─────────────────────────────────────────────────────
 
@@ -534,7 +524,7 @@ async function group2(cdp) {
   const heldPage = snapshot([held])
   const refused = await ask(cdp, 'property:rename', ids['M2 Held'], 'm2 held')
   pin(G, 'A-1', 'a rename onto a key a page already holds beside it is refused, and nothing moves',
-    refused.ok === false && (await heldPage.holds()) && slot() === null, show(refused))
+    refusedAs(refused, COPY.itemsHoldingBothKeys, 1, 'M2 Held', 'm2 held') && (await heldPage.holds()) && slot() === null, show(refused))
 
   const [[gone]] = pairs.gone
   const deleted = await must('delete M2 Gone', ask(cdp, 'property:delete', ids['M2 Gone']))
@@ -565,7 +555,7 @@ async function group2(cdp) {
     twinKept = snapshot(pairs.twin.map(([rel]) => rel))
   })
   pin(G, 'F-1', 'Try Again after a rename back writes nothing, and no holder loses the key',
-    !!twin.owed && (await twinKept.holds()) && blockOf(twin.first) === 'M2 Twin: a' && blockOf(twin.second) === 'M2 Twin: b',
+    !!twin.owed && twin.replayed?.ok && (await twinKept.holds()) && slot() === null && blockOf(twin.first) === 'M2 Twin: a' && blockOf(twin.second) === 'M2 Twin: b',
     show([twin.r, twin.replayed, blockOf(twin.first), blockOf(twin.second)]))
 
   const [[back1], [back2]] = pairs.back
@@ -575,9 +565,10 @@ async function group2(cdp) {
   await must('rename M2 Front back', ask(cdp, 'mutate', { op: 'renameContext', contextId: back, newName: 'M2 Back' }))
   await wrote(back2, '<M2 Back>: [M2 Spot]')
   const backKept = snapshot([back1, back2])
-  if (retry) await ask(cdp, 'mutate', retry)
+  const retried = retry ? await ask(cdp, 'mutate', retry) : null
   pin(G, 'F-1', "a Context's Try Again after a rename back writes nothing, and no holder loses the key",
-    !!retry && (await backKept.holds()) && blockOf(back1) === '<M2 Back>: [M2 Spot]', show([moved, blockOf(back1), blockOf(back2)]))
+    !!retry && retried?.ok && (await backKept.holds()) && contextSlot() === null && blockOf(back1) === '<M2 Back>: [M2 Spot]',
+    show([moved, retried, contextSlot(), blockOf(back1), blockOf(back2)]))
 }
 
 // ── Group 3 — Exact words, foreign words, Is and Is Not (Phase 3) ──────────
@@ -656,11 +647,13 @@ async function group3(cdp) {
   ].map((u, i) => ({ ...u, rel: pageAt(`M3 Undo ${i + 1}`) }))
   const FILTER_A = pageAt('M3 Filter A')
   const FILTER_B = pageAt('M3 Filter B')
+  const UNADOPTED = pageAt('M3 Unadopted')
   const seeds = [
     ...cases.map((c) => [c.rel, c.held]),
     ...cascades.map((c) => [c.rel, c.held]),
     [FILTER_A, 'M3 Choice: Done\nM3 Stage: Todo\nM3 Labels: [Work]'],
     [FILTER_B, 'M3 Choice: Doing\nM3 Stage: Done'],
+    [UNADOPTED, 'M3 Stage: Blocked'],
     ...recasePages,
     ...undos.map((u) => [u.rel, u.held]),
   ]
@@ -692,6 +685,7 @@ async function group3(cdp) {
   await until('ideas adopted', async () => (await ask(cdp, 'property:holders', ids[U.tags], 'ideas')).ok, 10000)
   await sleep(1500)
   seededAsWritten(G, seeds)
+  pin(G, 'E-2', 'a Status adopts no word its options lack', await holds(async () => same(keysOf(ids[C.stage]), ['Todo', 'Done']), 3000), show(wordsOf(ids[C.stage])))
 
   checkReads(G, cases, await readTable(cdp, view), columns)
   await checkWrites(G, cdp, cases)
@@ -741,7 +735,6 @@ async function group3(cdp) {
   })
   pin(G, 'A-1', 'an option rename edits a Space list by the exact word and leaves another casing',
     same(sidecar('Areas', 'Area One')['M3 Labels'], ['work', 'Job']), show(sidecar('Areas', 'Area One')['M3 Labels']))
-  // An unreadable holder counts as holding a key the index lists it under, so the case-only skip waits for the exact index.
   const recase = await tryAgain(cdp, recasePages, () => ask(cdp, 'property:rename', ids['M3 Case'], 'm3 case'))
   pin(G, 'A-1 F-3', 'a case-only rename owes its skipped file, and Try Again moves the key',
     !!recase.owed && (await wrote(recase.second, 'm3 case: b')) && (await wrote(recase.first, 'm3 case: a')) && slot() === null,
@@ -795,8 +788,8 @@ async function group4(cdp) {
   await counted('F-4', 'a Clear', [tagsId, 'a'], [tags[0], tags[1], AREA_TWO], 3, () => ask(cdp, 'property:clearOption', tagsId, 'a'))
   await counted('F-4', 'a Remove', [tagsId, 'b'], [tags[1], tags[2]], 2, () => ask(cdp, 'property:removeOption', tagsId, 'b'))
 
-  pin(G, 'J-1', 'the rename refusal counts one Item', refusedWith(await ask(cdp, 'property:rename', ids['M4 Held'], 'm4 held'), '1 Item holds both "M4 Held" and "m4 held".'))
-  pin(G, 'J-1', 'the rename refusal counts two Items', refusedWith(await ask(cdp, 'property:rename', ids['M4 Pair'], 'm4 pair'), '2 Items hold both "M4 Pair" and "m4 pair".'))
+  pin(G, 'J-1', 'the rename refusal counts one Item', refusedAs(await ask(cdp, 'property:rename', ids['M4 Held'], 'm4 held'), COPY.itemsHoldingBothKeys, 1, 'M4 Held', 'm4 held'))
+  pin(G, 'J-1', 'the rename refusal counts two Items', refusedAs(await ask(cdp, 'property:rename', ids['M4 Pair'], 'm4 pair'), COPY.itemsHoldingBothKeys, 2, 'M4 Pair', 'm4 pair'))
   const skipped = await unreadable(notice[0], () => ask(cdp, 'property:rename', ids['M4 Notice'], 'M4 Notices'))
   pin(G, 'J-1', 'an unswept notice says Items', skipped.ok && skipped.value?.cascade?.warning === 'Couldn’t update 1 Item.', show(skipped))
   if (skipped.ok && skipped.value?.owed) await must('Try Again', ask(cdp, 'property:replay', skipped.value.owed))
@@ -861,24 +854,24 @@ async function group5(cdp) {
   pin(G, 'D-1', 'a create under a label another holds in another casing steps aside on both words',
     defOf(step.id)?.label === 'm5 grade (2)' && defOf(step.id)?.key === 'm5 grade (2)', show(defOf(step.id)))
   pin(G, 'D-1', 'a rename onto a label another holds in another casing is refused',
-    refusedWith(await ask(cdp, 'property:rename', kindId, 'm5 grade'), 'A property named "m5 grade" already exists.'))
+    refusedAs(await ask(cdp, 'property:rename', kindId, 'm5 grade'), COPY.aLabelAnotherPropertyHolds, 'm5 grade'))
   pin(G, 'D-1', 'a rename onto a key another property writes is refused',
     refusedAs(await ask(cdp, 'property:rename', kindId, 'M5_DUE'), COPY.aKeyAnotherPropertyWrites, 'M5_DUE') && defOf(kindId).label === 'M5 Kind')
-  pin(G, 'D-1', 'a create labelled Id is refused as a key Pommora manages', refusedWith(await add(cdp, { label: 'Id', type: 'text' }), 'Name is taken by an app-managed key.'))
-  pin(G, 'D-1', 'a create labelled Banner is refused as a key Pommora manages', refusedWith(await add(cdp, { label: 'Banner', type: 'text' }), 'Name is taken by an app-managed key.'))
+  pin(G, 'D-1', 'a create labelled Id is refused as a key Pommora manages', refusedAs(await add(cdp, { label: 'Id', type: 'text' }), COPY.aKeyPommoraManages))
+  pin(G, 'D-1', 'a create labelled Banner is refused as a key Pommora manages', refusedAs(await add(cdp, { label: 'Banner', type: 'text' }), COPY.aKeyPommoraManages))
   const banner = mintPropertyId()
   writeDef({ id: banner, label: 'M5 Banner', key: 'banner', type: 'text' })
   await sleep(1500)
   pin(G, 'D-1', 'a definition written by hand onto a reserved key is not admitted', (await ask(cdp, 'property:holders', banner)).ok === false)
   const optionsBefore = show(wordsOf(grade))
   pin(G, 'D-2', 'an option label in another casing of one the property holds is refused',
-    (await ask(cdp, 'property:editOption', grade, { op: 'add', groupId: 'select', title: 'a' })).ok === false && show(wordsOf(grade)) === optionsBefore)
+    refusedAs(await ask(cdp, 'property:editOption', grade, { op: 'add', groupId: 'select', title: 'a' }), COPY.twoOptionsTitledAlike) && show(wordsOf(grade)) === optionsBefore)
   pin(G, 'D-2', 'two options writing one key in two casings are refused at create',
     refusedAs(await add(cdp, { label: 'M5 Twins', type: 'select', select_options: [{ key: 'A', label: 'A' }, { key: 'a', label: 'B' }] }), COPY.twoOptionsWritingOneKey))
   pin(G, 'D-2', 'an option with a blank key is refused at create',
     refusedAs(await add(cdp, { label: 'M5 Blank', type: 'select', select_options: [{ key: '', label: 'A' }] }), COPY.anEmptyKey, 'Options'))
   pin(G, 'J-1', 'a Status create holding two options in two casings is refused',
-    refusedWith(await add(cdp, { label: 'M5 Doubled', type: 'status', status_groups: statusGroups(['Done'], ['done']) }), 'Option titles must be unique.'))
+    refusedAs(await add(cdp, { label: 'M5 Doubled', type: 'status', status_groups: statusGroups(['Done'], ['done']) }), COPY.twoOptionsTitledAlike))
   pin(G, 'J-1', 'a Status create holding a blank key is refused',
     refusedAs(await add(cdp, { label: 'M5 Hollow', type: 'status', status_groups: [{ id: 'todo', label: 'To-do', color: 'grey', options: [{ key: ' ', label: 'Open', group_id: 'todo' }] }] }), COPY.anEmptyKey, 'Options'))
 }
@@ -1025,6 +1018,8 @@ async function group7(cdp) {
   row('Shades', 'E-1 E-3', 'Shades', 'Shades: [red, green, PURPLE, Red]', 'red|green', [set('multiSelect', ['red']), 'Shades: [red, PURPLE, Red]'])
   row('Shades', 'E-1 E-3', 'Shades', 'Shades: [Red]', '', [set('multiSelect', ['blue']), 'Shades: [blue, Red]'])
   const owedPage = [pageAt('M7 Owed 1'), pageAt('M7 Owed 2')]
+  const skipKey = [pageAt('M7 Skip Key 1'), pageAt('M7 Skip Key 2')]
+  const skipValue = [pageAt('M7 Skip Value 1'), pageAt('M7 Skip Value 2')]
   const swatch = FORMATS.map((_, i) => pageAt(`M7 Swatch ${i + 1}`))
   const seeds = [
     [slug[0], 'URL Slug: one'], [slug[1], 'url slug: two'], [kinds, 'x: 1\nKinds: [a]\ny: 2'], [sorts, 'Sorts: a\nsorts: b'],
@@ -1032,6 +1027,8 @@ async function group7(cdp) {
     [tone, 'Tones: [Light Blue, "Dark Red"]'], [wifi, 'Wifi: [Wifi Pro]'], [hues, 'Hues: [alpha, green]'],
     ...shades.map((c) => [c.rel, c.held]),
     ...owedPage.map((rel) => [rel, 'Owed Colors: [Red]']),
+    ...skipKey.map((rel, i) => [rel, `Skip Key: ${'ab'[i]}`]),
+    ...skipValue.map((rel) => [rel, 'Skip Value: [Pale Red]']),
     ...FORMATS.map((f, i) => [swatch[i], `Swatch ${i + 1}: [Red, BLUE, green${SWATCH_WORDS[f] ?? ''}]`]),
   ]
   seedAll(seeds)
@@ -1050,6 +1047,8 @@ async function group7(cdp) {
   const huesId = await define(cdp, { label: 'Hues', type: 'multiSelect', value_format: 'UPPERCASE', select_options: [word('alpha')] })
   const shadesId = await define(cdp, { label: 'Shades', type: 'multiSelect', value_format: 'lowercase', select_options: ['red', 'blue'].map(word) })
   const owedColors = await define(cdp, { label: 'Owed Colors', type: 'multiSelect', select_options: [word('Red')] })
+  const skipKeyId = await define(cdp, { label: 'Skip Key', type: 'text' })
+  const skipValueId = await define(cdp, { label: 'Skip Value', type: 'multiSelect', select_options: [word('Pale Red')] })
   const swatchIds = []
   for (const [i, f] of FORMATS.entries()) swatchIds.push(await define(cdp, { label: `Swatch ${i + 1}`, type: 'multiSelect', value_format: f, select_options: [] }))
   const dueSoonId = await handWritten(cdp, { id: mintPropertyId(), label: 'Due Soon', key: 'Due Soon', key_format: 'snake_case', type: 'text' })
@@ -1108,7 +1107,7 @@ async function group7(cdp) {
 
   const sortsKept = snapshot([sorts, JOURNAL])
   pin(G, 'D-1 J-1', 'a Key Format change onto a key a page holds beside it is refused, and nothing moves',
-    refusedWith(await ask(cdp, 'property:setKeyFormat', sortsId, 'lowercase'), '1 Item holds both "Sorts" and "sorts".') && (await sortsKept.holds()) && defOf(sortsId).key === 'Sorts')
+    refusedAs(await ask(cdp, 'property:setKeyFormat', sortsId, 'lowercase'), COPY.itemsHoldingBothKeys, 1, 'Sorts', 'sorts') && (await sortsKept.holds()) && defOf(sortsId).key === 'Sorts')
 
   for (const [label, format, want] of CREATES) {
     const r = await add(cdp, { label, type: 'text', key_format: format })
@@ -1117,10 +1116,11 @@ async function group7(cdp) {
   const given = await must('create Given Key', add(cdp, { label: 'Given Key', key: 'whatever', type: 'text' }))
   pin(G, 'C-2', 'a create writes its key from its label, whatever key it is handed', defOf(given.id)?.key === 'Given Key', show(defOf(given.id)))
   await define(cdp, { label: 'Ship_Date', type: 'text' })
-  const shipDate = await define(cdp, { label: 'Ship Date', type: 'text' })
   const stepped = await must('create Ship Date under snake_case', add(cdp, { label: 'Ship Date', type: 'text', key_format: 'snake_case' }))
-  pin(G, 'D-1', 'a create steps aside until neither its label nor its key is held',
+  pin(G, 'D-1', 'a create whose key alone another property holds steps aside on both words',
     defOf(stepped.id)?.label === 'Ship Date (2)' && defOf(stepped.id)?.key === 'ship_date_(2)', show(defOf(stepped.id)))
+  const shipDate = await define(cdp, { label: 'Ship Date', type: 'text' })
+  pin(G, 'D-1', 'a create neither of whose words is held lands as written', defOf(shipDate)?.label === 'Ship Date' && defOf(shipDate)?.key === 'Ship Date', show(defOf(shipDate)))
   pin(G, 'D-1', 'a Key Format change onto a key another property writes is refused',
     refusedAs(await ask(cdp, 'property:setKeyFormat', shipDate, 'snake_case'), COPY.aKeyAnotherPropertyWrites, 'ship_date') && defOf(shipDate).key === 'Ship Date')
   pin(G, 'B-5', 'a create whose format writes no key is refused', refusedAs(await add(cdp, { label: '---', type: 'text', key_format: 'kebab-case' }), COPY.anEmptyKey, 'Properties'))
@@ -1129,9 +1129,9 @@ async function group7(cdp) {
     refusedAs(await ask(cdp, 'property:setKeyFormat', dashes, 'kebab-case'), COPY.anEmptyKey, 'Properties') && defOf(dashes).key === '---')
   const hidden = ids['Heading Icon Hidden'] ?? (await define(cdp, { label: 'Heading Icon Hidden', type: 'text' }))
   pin(G, 'D-1', 'a Key Format change onto a key Pommora manages is refused',
-    refusedWith(await ask(cdp, 'property:setKeyFormat', hidden, 'snake_case'), 'Name is taken by an app-managed key.') && defOf(hidden).key === 'Heading Icon Hidden')
+    refusedAs(await ask(cdp, 'property:setKeyFormat', hidden, 'snake_case'), COPY.aKeyPommoraManages) && defOf(hidden).key === 'Heading Icon Hidden')
   pin(G, 'D-1', 'a create whose format writes a key Pommora manages is refused',
-    refusedWith(await add(cdp, { label: 'I D', type: 'text', key_format: 'PascalCase' }), 'Name is taken by an app-managed key.'))
+    refusedAs(await add(cdp, { label: 'I D', type: 'text', key_format: 'PascalCase' }), COPY.aKeyPommoraManages))
 
   await must('rename Due Soon', ask(cdp, 'property:rename', dueSoonId, 'Due Later'))
   pin(G, 'C-2', 'the next label change writes that key through the format', defOf(dueSoonId).key === 'due_later' && (await wrote(dueSoon, 'due_later: x')), show([defOf(dueSoonId), blockOf(dueSoon)]))
@@ -1178,8 +1178,28 @@ async function group7(cdp) {
   const formatted = await readTable(cdp, slugView)
   pin(G, 'F-2', 'after a Value Format change the page still reads its labels', formatted[pageIds[tone]]?.[1] === 'Light Blue|Dark Red', show(formatted[pageIds[tone]]))
   pin(G, 'F-2', 'after a Value Format change the view naming Light Blue still shows the page', shownRels(await readTable(cdp, toneView)).includes(tone))
+  await sidebarTo(cdp, 'Contexts', 'Area Two')
+  pin(G, 'F-2', 'after a Value Format change the View Tile naming Light Blue still shows the page',
+    await settles(() => cdp.evaluate(`!!document.querySelector('.data-row[data-rid="${pageIds[tone]}"]')`), 6000))
+  await sidebarTo(cdp, 'Collections', COLLECTION)
   await must('assign Tones to Collection B again', ask(cdp, 'schema:assign', CACHE_COLLECTION, tones))
   pin(G, 'F-2', 'a reassign after a Value Format change refills the current key', await settles(async () => same(listOf(fmOf(cachedPage).Tones), ['light-blue'])), show(blockOf(cachedPage)))
+
+  // A format change over an unreadable file owes it under a record of stored keys alone, and Try Again brings it current.
+  const keySkip = await unreadable(skipKey[0], () => ask(cdp, 'property:setKeyFormat', skipKeyId, 'lowercase'))
+  const keyRecord = { op: 'rename', id: skipKeyId, from: 'Skip Key', to: 'skip key' }
+  pin(G, 'F-1', 'a Key Format change that skips a file owes a rename record of its stored keys and sweeps the rest',
+    same(keySkip.value?.owed, keyRecord) && same(slot(), keyRecord) && (await wrote(skipKey[1], 'skip key: b')), show([keySkip, slot()]))
+  const keyReplay = await ask(cdp, 'property:replay', keySkip.value?.owed)
+  pin(G, 'F-1', "the Key Format change's Try Again moves the skipped file's key and clears the record",
+    keyReplay.ok && (await wrote(skipKey[0], 'skip key: a')) && slot() === null, show([keyReplay, blockOf(skipKey[0])]))
+  const valueSkip = await unreadable(skipValue[0], () => ask(cdp, 'property:setValueFormat', skipValueId, 'kebab-case'))
+  const valueRecord = { op: 'option-rename', id: skipValueId, keys: [['Pale Red', 'pale-red']] }
+  pin(G, 'F-1', 'a Value Format change that skips a file owes an option-rename record of its key pairs alone and sweeps the rest',
+    same(valueSkip.value?.owed, valueRecord) && same(slot(), valueRecord) && (await wrote(skipValue[1], 'Skip Value: [pale-red]')), show([valueSkip, slot()]))
+  const valueReplay = await ask(cdp, 'property:replay', valueSkip.value?.owed)
+  pin(G, 'F-1', "the Value Format change's Try Again re-keys the skipped file and clears the record",
+    valueReplay.ok && (await wrote(skipValue[0], 'Skip Value: [pale-red]')) && slot() === null, show([valueReplay, blockOf(skipValue[0])]))
 
   const collision = snapshot([wifi, REGISTRY, JOURNAL])
   pin(G, 'D-2 F-1', 'a Value Format change giving two options one key is refused, and nothing changes',
@@ -1187,8 +1207,10 @@ async function group7(cdp) {
   const crossing = snapshot([REGISTRY, JOURNAL])
   pin(G, 'F-1', "a Value Format change crossing two options' keys is refused, and nothing changes",
     refusedAs(await ask(cdp, 'property:setValueFormat', router, 'kebab-case'), COPY.aValueFormatChangeCrossingTwoOptionsKeys) && (await crossing.holds()))
-  pin(G, 'B-3', 'a Value Format change on a property without options is refused', (await ask(cdp, 'property:setValueFormat', slugId, 'kebab-case')).ok === false)
-  pin(G, 'B-3', 'a Value Format count on a property without options is refused', (await ask(cdp, 'property:holders', slugId, { value_format: 'kebab-case' })).ok === false)
+  pin(G, 'B-3', 'a Value Format change on a property without options is refused',
+    refusedAs(await ask(cdp, 'property:setValueFormat', slugId, 'kebab-case'), COPY.anOptionEditWithoutOptions))
+  pin(G, 'B-3', 'a Value Format count on a property without options is refused',
+    refusedAs(await ask(cdp, 'property:holders', slugId, { value_format: 'kebab-case' }), COPY.anOptionEditWithoutOptions))
   const matchTitle = await ask(cdp, 'property:holders', wifiId, { value_format: 'Match Title' })
   pin(G, 'F-4', 'a Value Format count that moves no key is zero', matchTitle.ok && matchTitle.value === 0, show(matchTitle))
 
@@ -1221,7 +1243,7 @@ async function group8(cdp) {
   const G = 8
   const SPELLINGS = ['VALUE ONE', 'value one', 'Value One', 'value-one', 'valueOne', 'VALUE-ONE', 'VALUE_ONE', 'value_one']
   const spelled = SPELLINGS.map((_, i) => pageAt(`M8 Spelling ${i + 1}`))
-  const P = Object.fromEntries(['Key Format', 'Value Format', 'Both', 'Shared', 'Renamed', 'Grade', 'Marks', 'Areas 1', 'Areas 2', 'ID', 'Link', 'Deadline', 'Deadline Unread']
+  const P = Object.fromEntries(['Key Format', 'Value Format', 'Both', 'Shared', 'Renamed', 'Grade', 'Marks', 'Areas 1', 'Areas 2', 'ID', 'Link', 'Deadline', 'Deadline Unread', 'Dropped', 'Retitled']
     .map((t) => [t, pageAt(`M8 ${t}`)]))
   const seeds = [
     ...SPELLINGS.map((s, i) => [spelled[i], `${s}: s${i + 1}`]),
@@ -1229,7 +1251,10 @@ async function group8(cdp) {
     [P.Shared, 'arrive-date: x'], [P.Renamed, 'Rank: first'], [P.Grade, 'Grade: top-tier'], [P.Marks, 'Marks: [TOP TIER, low_tier]'],
     [P['Areas 1'], '<Areas>: [area one]'], [P['Areas 2'], '<areas>: [Area One]'], [P.ID, ''], [P.Link, 'source link: "[[Page A]]"'],
     [P.Deadline, 'deadline_date: 2026-01-05'], [P['Deadline Unread'], 'deadline_date: soon'],
+    [P.Dropped, 'Marks: [Top Tier, zzz]'], [P.Retitled, '<M8-Kind>: [m8-spot]'],
   ]
+  const kindContext = await makeContext(cdp, 'M8-Kind', ['m8-spot'])
+  const kindSpace = spaceIdOf('M8-Kind', 'm8-spot')
   seedAll(seeds)
   await indexed(cdp, COLLECTION, seeds.map(([rel]) => rel))
   const hiLo = ['hi', 'lo'].map(word)
@@ -1260,6 +1285,8 @@ async function group8(cdp) {
   await must('Key Format lowercase on Priority', ask(cdp, 'property:setKeyFormat', ids.Priority, 'lowercase'))
   await must('Value Format UPPERCASE on Severity', ask(cdp, 'property:setValueFormat', ids.Severity, 'UPPERCASE'))
   await must('rename Rank', ask(cdp, 'property:rename', ids.Rank, 'Standing'))
+  await must('retitle M8-Kind', ask(cdp, 'mutate', { op: 'renameContext', contextId: kindContext, newName: 'M8 Kind' }))
+  await must('retitle m8-spot', ask(cdp, 'mutate', { op: 'renameSpace', spaceId: kindSpace, newName: 'M8 Spot' }))
   for (const [rel] of seeds) await must(`restore ${rel}`, ask(cdp, 'mutate', { op: 'restore', bundlePath: bundles[rel] }))
   for (const title of ['M8 Returning', 'M8 Hidden']) await must(`restore ${title}`, ask(cdp, 'mutate', { op: 'restore', bundlePath: spaceBundles[title] }))
   await sleep(1500)
@@ -1290,6 +1317,9 @@ async function group8(cdp) {
     String(fm('Deadline')['Deadline Date'] ?? '').startsWith('2026-01-05') && !('deadline_date' in fm('Deadline')), show(fm('Deadline')))
   pin(G, 'G-1 G-2 RULING', 'a foreign key re-spelled onto a Date keeps a value the Date reads as text',
     fm('Deadline Unread')['Deadline Date'] === 'soon' && !('deadline_date' in fm('Deadline Unread')), show(fm('Deadline Unread')))
+  pin(G, 'G-2', 'a restored Multi-Select drops a word no current option names', await settles(async () => same(fm('Dropped').Marks, ['Top Tier'])), show(fm('Dropped')))
+  pin(G, 'G-1', 'a Context and a Space retitled while the page sat in the Trash reach it at restore',
+    await settles(async () => same(fm('Retitled')['<M8 Kind>'], ['M8 Spot']) && !('<M8-Kind>' in fm('Retitled'))), show(fm('Retitled')))
   const returning = sidecar('Topics', 'M8 Returning')
   pin(G, 'G-1', "a restored Space's sidecar takes back the current keys, words, and titles",
     same(returning['<Projects>'], ['Project One']) && same(returning.Grade, ['Top Tier']) && !('<projects>' in returning) && !('grade' in returning), show(returning))
@@ -1367,10 +1397,11 @@ async function group9(cdp) {
     { label: 'M9 Words', type: 'text' }, { label: 'M9 Single', type: 'text' }, { label: 'M9 Count', type: 'number' },
     { label: 'M9 State', type: 'status', status_groups: statusGroups(['Planned'], ['Shipped']) },
     { label: 'M9 Labels', type: 'multiSelect', select_options: ['Work', 'Life', 'Spare'].map(word) },
-    { label: 'M9 A', type: 'text' }, { label: 'M9 B', type: 'text' },
+    { label: 'M9 A', type: 'text' }, { label: 'M9 B', type: 'text' }, { label: 'M9 Gone', type: 'text' },
+    { label: 'M9 Kind', type: 'select', select_options: ['Low', 'High'].map(word) },
   ])
   const view = mintViewId()
-  await saveView(cdp, view, 'Metadata Drive Gestures', [ids['M9 Labels'], ids['M9 State']], { filter: filterOf(rule('_title', 'starts_with', 'M9')) })
+  await saveView(cdp, view, 'Metadata Drive Gestures', [ids['M9 Labels'], ids['M9 State'], ids['M9 Words']], { filter: filterOf(rule('_title', 'starts_with', 'M9')) })
   await sleep(1500)
   seededAsWritten(G, seeds)
   await must('trash M9 Trashed', ask(cdp, 'mutate', { op: 'delete', path: trashed, kind: 'page' }))
@@ -1410,6 +1441,11 @@ async function group9(cdp) {
   const zero = await pickFormat(cdp, 'Label Format', 'UPPERCASE')
   pin(G, 'F-4', 'a Label Format change over no Items asks nothing', !zero.asked && (await settles(async () => defOf(ids['M9 Count']).key === 'M9 COUNT')), show([zero, defOf(ids['M9 Count'])]))
 
+  await openEditor(cdp, 'M9 Kind')
+  const silent = await pickFormat(cdp, 'Value Format', 'UPPERCASE')
+  pin(G, 'F-4', 'a Value Format change over no Items asks nothing',
+    !silent.asked && (await settles(async () => same(wordsOf(ids['M9 Kind']), [['LOW', 'Low'], ['HIGH', 'High']]))), show([silent, wordsOf(ids['M9 Kind'])]))
+
   await openEditor(cdp, 'M9 State')
   const status = await cdp.evaluate(`(() => {
     const k = ${trigger('Label Format')}, v = ${trigger('Value Format')}, o = document.querySelector('[aria-label="Edit Option"]')
@@ -1437,14 +1473,35 @@ async function group9(cdp) {
     askedFor(confirmed, 2) && (await wrote(words[0], 'm9 words: one')) && (await wrote(words[1], 'm9 words: two')) && defOf(ids['M9 Words']).key_format === 'lowercase',
     show([confirmed, ...words.map(blockOf)]))
 
+  // A property shows its label whatever key its format writes.
+  await readTable(cdp, view)
+  const headers = await cdp.evaluate(`[...document.querySelectorAll('.table-head > *')].map((h) => h.textContent.trim())`)
+  pin(G, 'C-1', 'after a Label Format change the column header reads the label', headers.includes('M9 Words') && !headers.includes('m9 words'), show(headers))
+  await mouseClick(cdp, `document.querySelector('.data-row[data-rid="${pageIds[words[0]]}"] .cell-title-text')`)
+  await sleep(1200)
+  await openPanel(cdp)
+  const panelLabel = await cdp.evaluate(`(() => { const v = document.querySelector('[data-property-row="${ids['M9 Words']}"]'); const row = v?.parentElement?.parentElement; return row ? [...row.querySelectorAll('*')].filter((e) => e.children.length === 0 && !v.contains(e)).map((e) => e.textContent.trim()).filter(Boolean) : null })()`)
+  pin(G, 'C-1', "after a Label Format change the page's Properties panel row reads the label", !!panelLabel?.includes('M9 Words'), show(panelLabel))
+  await closePanel(cdp)
+
   await openEditor(cdp, 'M9 Single')
   const one = await pickFormat(cdp, 'Label Format', 'kebab-case')
   pin(G, 'F-4', 'a Label Format change over one Item asks nothing', !one.asked && (await wrote(single, 'm9-single: s')), show([one, blockOf(single)]))
 
   await openEditor(cdp, 'M9 Labels')
   const spareRow = `[...document.querySelectorAll('[data-line-row]')].find((r) => r.textContent.trim() === 'Spare' && r.querySelector('[aria-label="Edit Option"]'))`
-  await chooseNative(cdp, spareRow, 'Clear')
-  pin(G, 'F-4', 'Clear over no Items asks nothing', await holds(async () => !(await dialogUp(cdp)), 1500))
+  const { chosen: cleared } = await chooseNative(cdp, spareRow, 'Clear')
+  pin(G, 'F-4', 'Clear over no Items asks nothing', cleared === true && (await holds(async () => !(await dialogUp(cdp)), 1500)), show({ cleared }))
+  await escapeAll(cdp)
+
+  // Delete asks at any count.
+  await openEditor(cdp, 'M9 Gone')
+  const { chosen: deleting } = await chooseNative(cdp, trigger('Property Menu'), 'Delete', { button: 'left' })
+  const deleteAsk = await settles(() => dialogUp(cdp), 2500) ? await cdp.evaluate(`({ message: ${DIALOG}.getAttribute('aria-label'), text: ${DIALOG}.textContent })`) : null
+  if (deleteAsk) await click(cdp, dialogButton(true))
+  await sleep(800)
+  pin(G, 'F-4', 'a property Delete over no Items still asks, and a cancel keeps the property',
+    deleting === true && deleteAsk?.message === 'Delete “M9 Gone” everywhere?' && deleteAsk.text.includes('0 Items') && !!defOf(ids['M9 Gone']), show({ deleting, deleteAsk }))
   await escapeAll(cdp)
 
   // The Trash: a page restored through the Trash browser returns in the current spelling.

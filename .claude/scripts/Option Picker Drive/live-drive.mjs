@@ -1,6 +1,6 @@
 import {
-  ask, boxOf, check, chooseNative, click, drag, frontmatter, launch, mintPageId, mouseClick, portalOpen, pressKey, read,
-  restore, results, sel, shot, sleep, sweep, textEl, until,
+  ask, boxOf, check, chooseNative, click, COPY, drag, frontmatter, launch, mintPageId, mouseClick, portalOpen, pressKey, read,
+  refusal, restore, results, sel, shot, sleep, sweep, textEl, until,
 } from '../drive-harness.mjs'
 
 const PICKER_ROWS = '[data-picker-portal] [data-line-row]'
@@ -92,7 +92,7 @@ async function stepCreate(cdp) {
   await shot(cdp, 'draft-standard')
   await enter(cdp)
   const fresh = defNamed('Drive Select').select_options.find((o) => o.label === 'Fresh')
-  check('create: Fresh is appended with no color', optionValues('Drive Select').at(-1) === 'Fresh' && fresh && !('color' in fresh), JSON.stringify(optionValues('Drive Select')))
+  check('create: Fresh is appended with its key and no color', optionValues('Drive Select').at(-1) === 'Fresh' && fresh?.key === 'Fresh' && !('color' in fresh), JSON.stringify(fresh))
   check('create: Drive One still holds Alpha alone', lists('Drive One', 'Drive Select', 'Alpha') && !lists('Drive One', 'Drive Select', 'Fresh'))
   await shot(cdp, 'table-created')
 }
@@ -112,7 +112,8 @@ async function stepRefuseDuplicate(cdp) {
   const before = optionValues('Drive Select')
   await newOption(cdp, 'alpha')
   await enter(cdp)
-  check('a case-variant duplicate is refused with a notice', JSON.stringify(optionValues('Drive Select')) === JSON.stringify(before) && (await cdp.evaluate(`!!document.querySelector('[role="alert"]')`)))
+  const notice = await refusal(cdp)
+  check('a case-variant duplicate is refused with its notice', JSON.stringify(optionValues('Drive Select')) === JSON.stringify(before) && notice === COPY.twoOptionsTitledAlike(), notice)
 }
 
 async function stepDragReorder(cdp) {

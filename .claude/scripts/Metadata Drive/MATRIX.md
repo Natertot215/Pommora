@@ -57,8 +57,8 @@ The drive's cases, derived from *MetadataV3 — Decisions & Intention* and writt
 | Property delete and restore | page, Area Two | `property:delete`, `restore` | strips and refills the exact key; the variant stays | A-1 |
 | Try Again after a skip | two pages, one unreadable | rename, `property:replay` | the rest sweep, the record is owed, the replay brings the file current and clears | F-1 |
 | Chained rename | as above | rename, rename again, replay the first | the replay follows the property to its current key | F-1 |
-| Rename back | as above | rename, rename back, replay | the replay writes nothing and no holder loses the key | F-1 |
-| Context rename back | two pages, one unreadable | `renameContext`, back, the reply's `retry` | the retry writes nothing | F-1 |
+| Rename back | as above | rename, rename back, replay | the replay answers, writes nothing, and clears the journal; no holder loses the key | F-1 |
+| Context rename back | two pages, one unreadable | `renameContext`, back, the reply's `retry` | the retry answers, writes nothing, and clears the Context journal | F-1 |
 
 #### Group 3 — Exact Words
 
@@ -67,11 +67,12 @@ The drive's cases, derived from *MetadataV3 — Decisions & Intention* and writt
 | Select and Status words (15 pages) | pages | read, pick | quotes, a bare numeral, stray spaces, and another Unicode composition name the option; `done` and `["todo"]` name none; a pick lands as a list of one in the file's quotes | A-3, A-1, E-2 |
 | Multi-Select words (15 pages) | pages | read, pick | a fold-duplicate word isn't read; a pick keeps it after the picked options; emptying the property removes it | A-3, E-1, E-3 |
 | Adoption under Match Title | page | read, pick | `green` and `PURPLE` adopt, `Red` beside `red` doesn't; a pick of `red` leaves `[red, Red]` | E-1, E-3 |
+| A Status doesn't adopt | page | settle | `Blocked` stays foreign and the Status's options hold | E-2 |
 | Space titles (8 pages) | pages | read, `setContext` | an exact title reads in any quotes; `area one` reads nothing and the pick lists the picked Spaces | A-3, A-2 **RULING** |
 | Is and Is Not | filter view | nine filters | Select and Status Is and Is Not compare exactly; Contains stays folded; Contains Any is exact | F-2 |
 | Option rename | pages, Area One, two views | `renameOption` | every quote style follows; `[work]`, a Space's `work`, and a view naming `work` stay | A-1, F-2 |
 | Space retitle | pages | `renameSpace` | every quote style follows; `[m3 place]` stays | A-2 |
-| Case-only skip | two pages, one unreadable | rename to `m3 case`, `property:replay` | the owed case-only rename sweeps on Try Again; until the index keys exactly, the unreadable holder reads as holding both keys and the rename is refused | A-1, F-3 |
+| Case-only skip | two pages, one unreadable | rename to `m3 case`, `property:replay` | the owed case-only rename sweeps on Try Again | A-1, F-3 |
 | Undo over a foreign word | page | pick Work in the table's picker, ⌘Z | `[work]` → `[Work, work]`; the undo puts back `[work]` byte for byte | A-1, E-3, Undo |
 | Undo beside an adopted word | page | unpick Work, ⌘Z | `[Work, ideas]` → `[ideas]`; the undo puts back `[Work, ideas]` | E-1, Undo |
 | Undo over another casing | page | pick Doing, ⌘Z | `done` → a list of one, `Doing`; the undo puts back `done` | A-1, E-2, Undo |
@@ -123,13 +124,14 @@ The drive's cases, derived from *MetadataV3 — Decisions & Intention* and writt
 | Label renames | page | rename to `Labels`, then `LABELS` | the key follows through the format, then holds | C-2 |
 | Both spellings on one page | page | `setKeyFormat` lowercase | `1 Item holds both "Sorts" and "sorts".`, nothing moves | D-1, J-1 |
 | The B-5 creates | registry | ten creates | `v5.0`, `j.-crew`, `new property`, `due-date`, `i-phone`, `xml-http`, `IPhone17`, `aBTest`, `due_date`, `STRASSE` | B-5 |
-| Create keys | registry | create handed a key; create beside `Ship_Date` | the key comes from the label; the create steps aside to `Ship Date (2)` / `ship_date_(2)` | C-2, D-1 |
+| Create keys | registry | create handed a key; a `snake_case` create of `Ship Date` beside `Ship_Date`, then a `Match Title` one | the key comes from the label; the create whose key alone collides steps aside to `Ship Date (2)` / `ship_date_(2)`, and the next lands as `Ship Date` | C-2, D-1 |
 | Refusals | registry | Key Format onto another's key, a format writing no key at create and at change, onto `heading_icon_hidden`, a create writing `ID` | each refused, the key unchanged | D-1, B-5 |
 | Stored key trusted | page | hand-written key under `snake_case`, then a rename | reads under the stored key, then the rename writes `due_later` | C-2 |
 | Type changed outside | registry | `setIcon` on a hand-written Select | seeds `option 1` through its Value Format | C-2 |
 | Value Format seeds, adds, renames | registry, page | creates, option add, option rename | seeded and added keys through the format; a create keeps its keys; a rename moves the page's key | C-2 |
 | Adopted rename | page, view | rename `in-progress` to `In Progress` under kebab-case | no page rewritten, the view follows the label | E-1, F-2 |
-| Value Format change | page, Area One, cache, view, View Tile, Matrix filter | count, then `setValueFormat` kebab-case | count 2 with the cache left out; every option re-keyed, labels kept; files and cache by key; the configuration byte-identical; the table and the view still read labels; a reassign refills the new key | F-1, F-2, F-4, C-2 |
+| Value Format change | page, Area One, cache, view, View Tile, Matrix filter | count, then `setValueFormat` kebab-case | count 2 with the cache left out; every option re-keyed, labels kept; files and cache by key; the configuration byte-identical; the table, the view, and the View Tile still read labels; a reassign refills the new key | F-1, F-2, F-4, C-2 |
+| Format skips | two pages each, one unreadable | `setKeyFormat` lowercase, `setValueFormat` kebab-case, `property:replay` | each sweeps the rest and owes a record of stored keys alone, `{ op: 'rename', from, to }` and `{ op: 'option-rename', keys }`; Try Again brings the file current and clears | F-1 |
 | Value Format refusals | registry, pages, journal | collision, crossing, a Text property, an owed record | each refused, nothing changes; a Key Format change still runs while owed | D-2, F-1, B-3 |
 | Adoption per format | ten Multi-Selects | settle | `Red`, `BLUE`, `green` adopt as B-6's table says; `AB` and `J.Crew` don't under PascalCase; `in-progress` does and `due_date` doesn't under kebab-case | E-1, B-6 |
 | Adoption under lowercase | page | settle, picks | `green` adopts; `PURPLE` and `Red` stay foreign through a pick | E-1, E-3 |
@@ -147,8 +149,10 @@ The drive's cases, derived from *MetadataV3 — Decisions & Intention* and writt
 | Context keys and Space titles | pages | trash, restore | `[area one]` and `<areas>` take back `Area One` and `<Areas>` | G-1 |
 | Reserved keys | a page, a Space | trash, restore | the page's `ID` and the Space's `heading_icon_hidden` stay | G-1, D-1 |
 | A Link key | page | trash, restore | `source link` returns as `Source Link`, its connection as written | G-1, A-3 |
-| A foreign key a format could have written | pages | trash, restore | `deadline_date` returns as `Deadline Date`; a value the Date can't read leaves with it | G-1, G-2 **RULING** |
+| A foreign key a format could have written | pages | trash, restore | `deadline_date` returns as `Deadline Date`; a value the Date can't read keeps its text | G-1, G-2 **RULING** |
 | A Space sidecar | M8 Returning | trash, restore | `<projects>`, its title, and `grade` return current | G-1 |
+| A word no option names | page | trash, restore | `[Top Tier, zzz]` returns as `[Top Tier]` | G-2 |
+| A Context and a Space retitled in the Trash | page | trash, retitle `M8-Kind` and `m8-spot`, restore | `<M8-Kind>: [m8-spot]` returns as `<M8 Kind>: [M8 Spot]` | G-1 |
 
 #### Group 9 — The Gesture Pass
 
@@ -156,10 +160,12 @@ The drive's cases, derived from *MetadataV3 — Decisions & Intention* and writt
 | --- | --- | --- | --- | --- |
 | The Metadata leaf | Settings window | open the leaf | the rail reads Metadata, not Properties; one section, Maintenance, holding Repair Properties On Open | J-1 |
 | Foreign words | the value picker on a table cell | open, pick Life | `work` draws no chip and no row; the pick writes `[Work, Life, work]` | E-3 |
-| The rows | the Property Frame | open a Number and a Status | Key Format at Match Title, no Value Format on the Number; both rows above the Status's options, divided from them | H-1 |
-| The pane | the Key Format row | open it | Match Title and the nine conventions in order | B-2 |
-| The counted confirmation | the Key Format and Value Format rows | pick at 0, 1, and 2 Items; cancel; confirm | silent at 0 and 1; asks with `2 Items` at 2; a cancel writes nothing; a confirm re-keys | F-4, F-1 |
-| Clear at zero | the option editor's row menu | Clear an option nothing holds | asks nothing | F-4 |
+| The rows | the Property Frame | open a Number and a Status | Label Format at Match Title, no Value Format on the Number; both rows above the Status's options, divided from them | H-1 |
+| The pane | the Label Format row | open it | Match Title and the nine conventions in order | B-2 |
+| The counted confirmation | the Label Format and Value Format rows | Label Format at 0, 1, and 2 Items, Value Format at 0 and 2; cancel; confirm | silent at 0 and 1; asks with `2 Items` at 2; a cancel writes nothing; a confirm re-keys | F-4, F-1 |
+| Its title | the table's column header, a page's Properties panel | a Label Format change to lowercase | both read `M9 Words` | C-1 |
+| Clear at zero | the option editor's row menu | Clear an option nothing holds | the row is chosen and asks nothing | F-4 |
+| Delete at zero | the Property Menu | Delete a property nothing holds, cancel | asks, naming `0 Items`; the cancel keeps the property | F-4 |
 | The Trash | the Trash browser | right-click, Restore | the page returns under the Key Format set while it was away | G-1 |
 | Row order on a Space | the Property Panel | drag a row, then rename a property | `$order` lists ids in the dragged order; the rename leaves the order and the panel | F-5 |
 
@@ -175,16 +181,21 @@ The drive's cases, derived from *MetadataV3 — Decisions & Intention* and writt
 
 #### Copy
 
-The messages Nathan worded at the Stop before Task 5A-1 sit in the drive's `COPY` table, one entry each, as functions of the words their messages name.
+The refusals and the confirmation the drives assert by their worded text sit in the harness's `COPY` table, one entry each, as functions of the words their messages name; the Metadata and Option Picker drives import it. The seven messages worded at the Stop before Task 5A-1 are among them.
 
 | Entry | Where It's Asserted |
 | --- | --- |
 | `aKeyAnotherPropertyWrites` | group 5's rename onto `m5_due`; group 7's Key Format change onto `Ship_Date` |
+| `aLabelAnotherPropertyHolds` | group 5's rename onto `m5 grade` |
+| `aKeyPommoraManages` | group 5's creates labelled `Id` and `Banner`; group 7's Key Format change onto `heading_icon_hidden` and create writing `ID` |
+| `itemsHoldingBothKeys` | group 2's rename onto `m2 held`; group 4's rename refusals at one and two Items; group 7's Key Format change onto `sorts` |
+| `twoOptionsTitledAlike` | group 5's option add of `a` and its Status create holding `Done` and `done`; the Option Picker's duplicate `alpha` |
 | `twoOptionsWritingOneKey` | group 5's create holding `A` and `a` |
 | `aFormatGivingTwoOptionsOneKey` | group 7's collision |
 | `anOptionChangeWaitingForTryAgain` | group 6's option rename and removal; group 7's Value Format change |
 | `anEmptyKey` | group 5's creates holding a blank option key and a Status's blank option key; group 7's create and Key Format change on `---` |
 | `aValueFormatChangeCrossingTwoOptionsKeys` | group 7's `Router` crossing |
+| `anOptionEditWithoutOptions` | group 7's Value Format change and count on a Text property |
 | `theFormatChangesConfirmation` | group 9's dialogs |
 
 #### Expectations the Plan Doesn't Spell Byte for Byte

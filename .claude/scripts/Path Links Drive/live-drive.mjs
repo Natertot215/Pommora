@@ -604,7 +604,7 @@ async function group2(cdp) {
   const md = rowsOf(MARKDOWN)
   item(2, 2, 'A-4', 'index: [x](Set%20Beta/Notes) keys set beta/notes as the wikilink does', md.some((r) => r.target === 'set beta/notes'), show(md))
   const generation = sql(db, "SELECT value FROM meta WHERE key = 'index_generation'")[0]?.value
-  item(2, 2, 'G-1', 'index: the generation reads 18, so every index stamped 17 reseeded on this open', generation === '18', show(generation))
+  item(2, 2, 'G-1', 'index: the generation reads 19, so every index stamped 18 reseeded on this open', generation === '19', show(generation))
   const graph = (await ask(cdp, 'matrix:graph', false, [INDEX])).value
   const solo = (graph?.links ?? []).filter((l) => l.pageId === ids[INDEX] && ['collection a/set alpha/solo', 'solo'].includes(l.target))
   item(2, 2, 'A-4', 'Matrix: matrix:graph answers the path row and the bare row for the one page pair, each by its pageKey', solo.length >= 2, show(graph?.links?.filter((l) => l.pageId === ids[INDEX])))

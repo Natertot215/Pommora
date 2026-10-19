@@ -36,6 +36,8 @@ function writeFrontLine(title, prop, line) {
 }
 const inline = (raw) => (typeof raw === 'string' ? raw : stringify(raw, { collectionStyle: 'flow', flowCollectionPadding: false, lineWidth: 0 }).trimEnd())
 const collator = new Intl.Collator('en', { sensitivity: 'accent' })
+// A value as sort and filter read it: each wikilink replaced by what it shows, its alias, `Title § Heading`, or the one half it names.
+const shown = (raw) => inline(raw).replace(/\[\[([^\]|#]*)(?:#([^\]|]*))?(?:\|([^\]]*))?\]\]/g, (_, title, heading, alias) => alias ?? (title && heading ? `${title} § ${heading}` : heading || title))
 const sidecar = () => JSON.parse(read('Collection A/_pagecollection.json'))
 const viewNamed = (name) => sidecar().views.find((v) => v.name === name)
 const mtime = (title) => statSync(join(NEXUS, pagePath(title))).mtimeMs
@@ -208,11 +210,11 @@ async function group1(cdp) {
   const titles = () => cdp.evaluate(`[...document.querySelectorAll('.data-row[data-rid]')].map((r) => r.querySelector('.cell-title-text')?.textContent.trim())`)
   const valued = Object.keys(pageIds).filter((t) => has(t, NOTES))
   await must('sort on Drive Notes', ask(cdp, 'views:save', 'Collection A', 'collection', table(), { sort: [{ property_id: ids[NOTES], direction: 'ascending' }] }))
-  const expected = [...valued].sort((a, b) => collator.compare(inline(frontmatter(a)[NOTES]), inline(frontmatter(b)[NOTES])))
+  const expected = [...valued].sort((a, b) => collator.compare(shown(frontmatter(a)[NOTES]), shown(frontmatter(b)[NOTES])))
   const sorted = await settles(async () => JSON.stringify((await titles()).filter((t) => valued.includes(t))) === JSON.stringify(expected))
   check('group 1: a sort on Drive Notes reads A → Z by its text', sorted, JSON.stringify([expected, (await titles()).filter((t) => valued.includes(t))]))
   await must('filter on milk', ask(cdp, 'views:save', 'Collection A', 'collection', table(), { sort: [], filter: { match: 'all', rules: [{ property_id: ids[NOTES], op: 'contains', value: 'milk' }] }, filter_enabled: true }))
-  const milky = valued.filter((t) => inline(frontmatter(t)[NOTES]).toLowerCase().includes('milk')).sort()
+  const milky = valued.filter((t) => shown(frontmatter(t)[NOTES]).toLowerCase().includes('milk')).sort()
   check('group 1: contains milk leaves exactly the values holding milk', await settles(async () => JSON.stringify([...(await titles())].sort()) === JSON.stringify(milky)),
     JSON.stringify([milky, await titles()]))
   await must('filter off', ask(cdp, 'views:save', 'Collection A', 'collection', table(), { filter_enabled: false }))
@@ -399,19 +401,19 @@ async function group2(cdp) {
   await closePanel(cdp)
   await openCollection(cdp)
 
-  check("group 2: Drive Target's Drive Link reads #Setup", (await cdp.evaluate(`(${cell('Drive Target', LINK)}).textContent.trim()`)) === '#Setup')
+  check("group 2: Drive Target's Drive Link reads §Setup", (await cdp.evaluate(`(${cell('Drive Target', LINK)}).textContent.trim()`)) === '§Setup')
   await openPage(cdp, 'Drive Target')
   await openPanel(cdp)
   const rows = [await rectOf(cdp, panelLine()), await rectOf(cdp, panelLine(LINK))].map((r) => r?.height)
-  const fonts = [await styleOf(cdp, `${panelRow()}.querySelector('.cell-text')`, ['fontFamily', 'fontSize', 'lineHeight']), await styleOf(cdp, `${panelRow(LINK)}.querySelector('.cell-connection')`, ['fontFamily', 'fontSize', 'lineHeight'])]
+  const fonts = [await styleOf(cdp, `${panelRow()}.querySelector('.cell-text')`, ['fontFamily', 'fontSize', 'lineHeight']), await styleOf(cdp, `${panelRow(LINK)}.querySelector('.cell-text')`, ['fontFamily', 'fontSize', 'lineHeight'])]
   await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 5, y: 300, button: 'none' })
   await sleep(500)
-  const edges = await cdp.evaluate(`(() => { const end = (e) => { const r = document.createRange(); r.selectNodeContents(e); return r.getBoundingClientRect().right }; return [end(${panelRow()}.querySelector('.cell-text')), end(${panelRow(LINK)}.querySelector('.cell-connection'))] })()`)
+  const edges = await cdp.evaluate(`(() => { const end = (e) => { const r = document.createRange(); r.selectNodeContents(e); return r.getBoundingClientRect().right }; return [end(${panelRow()}.querySelector('.cell-text')), end(${panelRow(LINK)}.querySelector('.cell-text'))] })()`)
   check("group 2: at rest Drive Notes's text ends where Drive Link's does", Math.abs(edges[0] - edges[1]) <= 1, JSON.stringify(edges))
   check("group 2: the panel's Drive Notes row matches Drive Link's in height and type", Math.abs(rows[0] - rows[1]) < 0.5 && !!fonts[0] && JSON.stringify(fonts[0]) === JSON.stringify(fonts[1]), JSON.stringify({ rows, fonts }))
-  await mouseClick(cdp, `${panelRow(LINK)}.querySelector('.cell-connection')`)
+  await mouseClick(cdp, connection(panelRow(LINK), 'resolved', 'Setup'))
   const inView = await settles(() => cdp.evaluate(`(() => { const h = [...document.querySelectorAll('.cm-line')].find((l) => l.textContent.includes('Setup')); if (!h) return false; const r = h.getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight })()`), 3000)
-  check('group 2: a click on #Setup brings the heading into view', inView)
+  check('group 2: a click on §Setup brings the heading into view', inView)
   await shot(cdp, 'link-heading')
   await closePanel(cdp)
   await openCollection(cdp)
@@ -437,13 +439,13 @@ async function group3(cdp) {
   await must('rename to Drive Renamed', ask(cdp, 'mutate', { op: 'rename', path: pagePath('Drive Target'), kind: 'page', newName: 'Drive Renamed' }))
   check('group 3: a rename rewrites the links inside Drive Prose',
     await settles(async () => frontmatter('Drive Prose')[NOTES].includes('[[Drive Renamed]]') && frontmatter('Drive Prose')[NOTES].includes('[[Drive Renamed#Setup]]')), frontmatter('Drive Prose')[NOTES])
-  check("group 3: Drive Foreign's undeclared description stays", frontmatter('Drive Foreign').description === 'see [[Drive Target]] first')
+  check("group 3: the rename rewrites the link inside Drive Foreign's undeclared description", await settles(async () => frontmatter('Drive Foreign').description === 'see [[Drive Renamed]] first'), frontRaw('Drive Foreign'))
   await must('description as Text', ask(cdp, 'schema:add', 'Collection A', { id: '', label: 'description', type: 'text' }))
   await must('rename back', ask(cdp, 'mutate', { op: 'rename', path: `${SET}/Drive Renamed.md`, kind: 'page', newName: 'Drive Target' }))
   check("group 3: the rename back restores Drive Prose's links",
     await settles(async () => frontmatter('Drive Prose')[NOTES].includes('[[Drive Target]]') && frontmatter('Drive Prose')[NOTES].includes('[[Drive Target#Setup]]')))
   await must('rename Drive Foreign away and back', ask(cdp, 'mutate', { op: 'rename', path: pagePath('Drive Target'), kind: 'page', newName: 'Drive Renamed' }))
-  check('group 3: Drive Foreign reads Drive Renamed', await settles(async () => frontmatter('Drive Foreign').description === 'see [[Drive Renamed]] first'), frontmatter('Drive Foreign').description)
+  check("group 3: declared as Text, Drive Foreign's description follows the rename too", await settles(async () => frontmatter('Drive Foreign').description === 'see [[Drive Renamed]] first'), frontmatter('Drive Foreign').description)
   await must('rename back again', ask(cdp, 'mutate', { op: 'rename', path: `${SET}/Drive Renamed.md`, kind: 'page', newName: 'Drive Target' }))
   await sleep(800)
 
@@ -571,8 +573,9 @@ async function group4(cdp) {
     return rows
   }
   const unformatted = await paneDoc(cdp)
-  const blockRows = labels(await paneMenu(() => [])).filter((l) => ['Lists', 'Heading', 'Insert', 'Embed'].includes(l))
-  check("group 4: the pane's native menu holds no Lists, Heading, Insert, or Embed row", blockRows.length === 0 && (await cdp.evaluate(`!!document.querySelector('${PANE}')`)), JSON.stringify(blockRows))
+  const paneRows = labels(await paneMenu(() => []))
+  const blockRows = paneRows.filter((l) => ['Lists', 'Heading', 'Insert', 'Embed'].includes(l))
+  check("group 4: the pane's native menu pops with its Format row and holds no Lists, Heading, Insert, or Embed row", paneRows.includes('Format') && blockRows.length === 0 && (await cdp.evaluate(`!!document.querySelector('${PANE}')`)), JSON.stringify(paneRows))
   await paneMenu((rows) => ['Format', rows.find((r) => r.label === 'Format')?.submenu?.find((r) => !r.separator && r.enabled)?.label])
   check('group 4: its Format row leads to the marks, Italic first', (await paneDoc(cdp)) === unformatted.replace('milk with', '*milk* with'), (await paneDoc(cdp)).split('\n')[1])
   const typed = await paneDoc(cdp)
