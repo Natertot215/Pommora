@@ -8,8 +8,8 @@ type Typed = {
   value: string
   onCommit: (next: string) => void
   invalid?: (text: string) => boolean
-  leading?: ReactNode
-  trailing?: ReactNode
+  leading?: string
+  trailing?: string
   children?: undefined
 }
 type Hosted = {
@@ -45,18 +45,16 @@ export function FieldPicker({
         {inner.value === undefined ? (
           inner.children
         ) : (
-          <>
-            {inner.leading !== undefined && <span className={s.leading}>{inner.leading}</span>}
-            <EditableInput
-              initial={inner.value}
-              className={s.suffixInput}
-              caretAtEnd
-              invalid={inner.invalid}
-              onCommit={inner.onCommit}
-              onCancel={onDismiss}
-            />
-            {inner.trailing !== undefined && <span className={s.trailing}>{inner.trailing}</span>}
-          </>
+          <EditableInput
+            initial={inner.value}
+            className={s.suffixInput}
+            caretAtEnd
+            leading={inner.leading}
+            trailing={inner.trailing}
+            invalid={inner.invalid}
+            onCommit={inner.onCommit}
+            onCancel={onDismiss}
+          />
         )}
       </div>
     </PickerMenu>

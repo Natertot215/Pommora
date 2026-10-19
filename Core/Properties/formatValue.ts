@@ -232,17 +232,27 @@ export const numberBarCapable = (cfg: NumberConfig | undefined): boolean =>
 export const barDivisor = (look: string | undefined, cfg: NumberConfig | undefined) =>
   look === 'bar' ? numberDivisor(cfg) : undefined
 
-/** The symbol Intl gives `currency`: by default the one a cell shows (`A$`, `CA$`), or the narrow one the picker leads with. */
-const currencySymbol = (currency: string, currencyDisplay?: 'narrowSymbol'): string =>
-  numFmt({ style: 'currency', currency, currencyDisplay })
+/** The symbol a cell shows for `currency`, spelling out the ambiguous ones (`A$`, `CA$`). */
+const currencySymbol = (currency: string): string =>
+  numFmt({ style: 'currency', currency })
     .formatToParts(0)
     .find((p) => p.type === 'currency')?.value ?? currency
 
-/** The number picker's leading glyph. */
-export function numberFormatGlyph(cfg: NumberConfig): string {
-  if (cfg.number_family === 'percent') return '%'
-  if (cfg.number_family !== 'currency') return '#'
-  return currencySymbol(cfg.number_currency ?? DEFAULT_CURRENCY, 'narrowSymbol')
+/** What a number's editor shows around the typed digits, where its cell shows them: a currency's symbol before, and a percent sign or a fraction's `/ N` after. */
+export function numberAffixes(cfg: NumberConfig): { leading?: string; trailing?: string } {
+  const denominator = fractionDenominator(cfg)
+  return {
+    leading:
+      cfg.number_family === 'currency'
+        ? currencySymbol(cfg.number_currency ?? DEFAULT_CURRENCY)
+        : undefined,
+    trailing:
+      cfg.number_family === 'percent'
+        ? '%'
+        : denominator === undefined
+          ? undefined
+          : `/ ${denominator}`,
+  }
 }
 
 const SYMBOL = CURRENCY_CODES.map((c) => escapeRegExp(currencySymbol(c))).join('|')

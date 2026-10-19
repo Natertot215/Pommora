@@ -1,6 +1,15 @@
 import { useEffect, useRef } from 'react'
 import { cx } from '../Utilities/cx'
-import { autoSizeWrap, autoSizeMirror, autoSizeInput, invalidInput } from './fields.css'
+import { keepFocus } from '../Interactions/shared'
+import {
+  affix,
+  affixed,
+  affixRun,
+  autoSizeWrap,
+  autoSizeMirror,
+  autoSizeInput,
+  invalidInput,
+} from './fields.css'
 
 /** How an edit ended: by Enter or Escape, or by the focus leaving. */
 export type EditEnd = 'key' | 'blur'
@@ -20,6 +29,8 @@ export function EditableInput({
   autoFocus = true,
   invalid,
   required,
+  leading,
+  trailing,
   onCommit,
   onCancel,
 }: {
@@ -39,6 +50,9 @@ export function EditableInput({
   invalid?: (text: string) => boolean
   /** A blank commit restores the field and cancels: a name, not a value. */
   required?: boolean
+  /** Symbols beside the typed text, belonging to the field: pressing one keeps the caret, and its click never reaches the host. */
+  leading?: string
+  trailing?: string
   onCommit: (next: string, how: EditEnd) => void
   onCancel: (how: EditEnd) => void
 }): React.JSX.Element {
@@ -110,13 +124,25 @@ export function EditableInput({
       }}
     />
   )
-  if (!autoSize) return field
-  return (
+  const sized = autoSize ? (
     <span className={autoSizeWrap}>
       <span ref={mirror} className={autoSizeMirror} aria-hidden>
         {initial || ' '}
       </span>
       {field}
+    </span>
+  ) : (
+    field
+  )
+  if (leading === undefined && trailing === undefined) return sized
+  return (
+    // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: the symbols are the field's own, so the input inside stays the only control
+    <span className={affixed} onMouseDown={keepFocus} onClick={(e) => e.stopPropagation()}>
+      <span className={affixRun}>
+        {leading !== undefined && <span className={affix}>{leading}</span>}
+        {sized}
+        {trailing !== undefined && <span className={affix}>{trailing}</span>}
+      </span>
     </span>
   )
 }
