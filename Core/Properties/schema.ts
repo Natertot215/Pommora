@@ -25,7 +25,7 @@ export function keyRefusal(word: string): string | null {
   if (word.startsWith(RESERVED_NAME_PREFIX) || word.startsWith('<'))
     return KEY_REFUSAL.reservedPrefix
   return RESERVED_KEY_NAMES.has(normalizeTitle(word)) || Object.hasOwn(Object.prototype, word)
-    ? KEY_REFUSAL.reserved(word)
+    ? KEY_REFUSAL.reserved
     : null
 }
 

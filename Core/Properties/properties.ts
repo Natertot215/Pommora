@@ -279,7 +279,7 @@ export const itemCount = (n: number): string => `${n} ${n === 1 ? 'Item' : 'Item
 export const KEY_REFUSAL = {
   empty: 'A name cannot be empty.',
   reservedPrefix: `A name cannot start with ${RESERVED_NAME_PREFIX} or <.`,
-  reserved: (name: string) => `"${name}" is a key Pommora manages.`,
+  reserved: 'Name is taken by an app-managed key.',
   duplicate: (label: string) => `A property named "${label}" already exists.`,
   duplicateKey: (key: string) => `A property already writes "${key}" to files.`,
   noKey: 'Properties cannot contain an invalid name.',
