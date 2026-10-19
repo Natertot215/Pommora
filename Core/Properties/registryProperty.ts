@@ -57,9 +57,10 @@ function freeLabel(
   label: string,
   format: KeyFormat | undefined,
   defs: PropertyDefinition[],
+  owed: readonly string[],
 ): string {
   const labels = defs.map((d) => d.label)
-  const keys = new Set(defs.map((d) => normalizeTitle(d.key)))
+  const keys = new Set([...defs.map((d) => d.key), ...owed].map(normalizeTitle))
   let free = freeName(label, labels)
   while (keys.has(normalizeTitle(formatKey(free, format)))) {
     labels.push(free)
@@ -73,9 +74,11 @@ export async function createProperty(
   def: PropertyDraft,
 ): Promise<Result<{ id: string }>> {
   let key = ''
+  const journal = await readSchemaJournal(root)
+  const owed = journal?.op === 'rename' ? [journal.from] : []
   const created = await mutateRegistry<Result<{ id: string }>>(root, (registry) => {
     const defs = Object.values(registry.defs)
-    const label = freeLabel(exactTitle(def.label), def.key_format, defs)
+    const label = freeLabel(exactTitle(def.label), def.key_format, defs, owed)
     key = formatKey(label, def.key_format)
     const candidate = seeded({ ...def, label, key, id: def.id || mintPropertyId() })
     const v = validateDefinition(candidate, defs)
@@ -89,11 +92,12 @@ export async function createProperty(
     }
   })
   // A landed create wearing a journaled delete's key or id supersedes the record, or a later replay would strip the living property. Only after commit: a refused create must not spend a record it never displaced.
-  if (created.ok) {
-    const journal = await readSchemaJournal(root)
-    if (journal?.op === 'delete' && (journal.key === key || journal.id === created.value.id))
-      await clearSchemaJournal(root, journal)
-  }
+  if (
+    created.ok &&
+    journal?.op === 'delete' &&
+    (journal.key === key || journal.id === created.value.id)
+  )
+    await clearSchemaJournal(root, journal)
   return created
 }
 
