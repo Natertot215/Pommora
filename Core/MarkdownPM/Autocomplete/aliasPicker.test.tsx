@@ -2,6 +2,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
+import { renderToStaticMarkup } from 'react-dom/server'
+import { Icon } from '@pommora/uix/Symbols'
+import { ALIAS_ICON } from '../../Assets/entityIconPolicy'
 import { linkAt, slotAt } from '../Input/edits'
 import { scanDoc } from '../Engine/docScan'
 import { aliasRows, type HeadingRow } from './autocomplete'
@@ -120,11 +123,9 @@ describe('the body picker’s alias list', () => {
   it('draws each row with the alias glyph and its × at rest, and × deletes without inserting', async () => {
     const view = await openPicker()
     const edit = vi.spyOn(harnessState().host.aliases, 'edit')
-    expect(
-      itemOf('the plan')
-        .querySelector('[class*="side"] svg')
-        ?.classList.contains('lucide-square-split-horizontal'),
-    ).toBe(true)
+    expect(itemOf('the plan').querySelector('[class*="side"] svg')?.innerHTML).toBe(
+      renderToStaticMarkup(<Icon name={ALIAS_ICON} />).replace(/^<svg[^>]*>|<\/svg>$/g, ''),
+    )
     const x = rowOf('Q3 doc').querySelector('[aria-label="Delete alias"]') as HTMLElement
     const down = new MouseEvent('mousedown', { bubbles: true, cancelable: true })
     x.dispatchEvent(down)

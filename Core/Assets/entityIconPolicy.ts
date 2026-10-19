@@ -5,7 +5,7 @@ import type { Personalization } from '../Settings/personalization'
 
 export const DEFAULT_NEXUS_ICON: IconName = 'pommora'
 
-export const ALIAS_ICON: IconName = 'square-split-horizontal'
+export const ALIAS_ICON: IconName = 'alias'
 
 export const DEFAULT_ENTITY_ICONS: Record<HeldKind, IconName> = {
   collection: 'gallery-vertical-end',
