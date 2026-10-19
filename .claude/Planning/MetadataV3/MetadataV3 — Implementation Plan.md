@@ -1,14 +1,14 @@
 ## MetadataV3 — Implementation Plan
 
 **DATE:** 10-17-2026
-**STATUS:** Ratified 10-18-2026
+**STATUS:** Completed 10-19-2026
 **SOURCE:** *MetadataV3 — Decisions & Intention* (ratified 10-17-2026, with the planning session's rulings recorded in its *§Session Questionnaire · Planning*), *MetadataV3 — Brief* (Nathan's principles and approach), *MetadataV3 — Investigation* (the code at `988f6ee43`, re-read at `204f16671`), and the advisor checkpoint on the approach (10-17-2026).
 
 **BASELINE** (filled after ratification; the end logged in the final report)
 
 | Head | Tests | Start | End |
 |------|-------|-------|-----|
-| `56514cfb1` | 8,184 passed, 2 skipped (535 files) | 10-18-2026 11:00 AM | |
+| `56514cfb1` | 8,184 passed, 2 skipped (535 files) | 10-18-2026 11:00 AM | 10-19-2026 2:52 AM at `8d85ed855`, 8,302 passed, 2 skipped (536 files) |
 
 ### Context
 
@@ -52,6 +52,7 @@ The work lands in ten phases in dependency order, removal first: the Space order
 | 7B | +305 / −77 | +326 / −114 | +295 (+1,370 / −1,075) |
 | 8 | +106 / −9 | +112 / −11 | +396 (+1,480 / −1,084) |
 | 9 | +3 / −3 | +133 / −119 | +410 (+1,566 / −1,156) |
+| Final Verification | — | +117 / −107 | +420 (+1,648 / −1,228) |
 
 #### Concepts
 
@@ -216,8 +217,8 @@ The work lands in ten phases in dependency order, removal first: the Space order
 - [x] **Phase 10** — Reconciliation
   - [x] Tasks 10-1 to 10-7 · The feature documents and the PRD
   - [x] Review Checkpoint
-- [ ] `[Compaction checkpoint: c/pre-compaction; on the re-prompt, reread §Constraints and c/plan-execution before §Final Verification opens]`
-- [ ] `[Stop: the final verification's report, per §Final Verification]`
+- [x] `[Compaction checkpoint: c/pre-compaction, run after Phase 9; on the re-prompt Nathan directed the run through §Final Verification without a second stop]`
+- [x] `[Stop: the final verification's report, per §Final Verification]`
 
 ---
 
@@ -5686,13 +5687,13 @@ The listed sentences are quoted from the tree at the plan's baseline. Each task 
 
 **THE STANDARD:** The work is finished when a later review of it finds nothing to correct. Not just doing the chores — doing the laundry, folding it, picking up what fell out of the hamper, emptying the lint trap, leaving no trace that anything went wrong. Nothing is carried as a concern, nothing is deferred where the fix is known, and nothing is declared that wasn't watched happen. Where something genuinely couldn't get there, the report names which and why, and everything else is still finished. Ambiguity encountered during execution was taken at its simplest reading and recorded; it didn't stop the run.
 
-- [ ] Phase Review: Phase 1 · Phase 2 · Phase 3 · Phase 4 · Phase 5 · Phase 6 · Phase 7 · Phase 8 · Phase 9 · Phase 10
-- [ ] **Simplification lens** — one `opus-xhigh` agent reads `<BASELINE>..HEAD` whole for what can be removed, folded, or hoisted now that every phase has landed: a duplicated decision, a helper used once, a guard whose cause the plan removed, a type arm no caller reaches. Its findings are applied before any adversarial read.
-- [ ] **Adversarial lens** — two `opus-xhigh` agents over `<BASELINE>..HEAD`, one reading inward (each rule against its tests and the decisions) and one outward (cohesion with the rest of Core, Desktop, and UIX; anything that reads as an odd-one-out). The orchestrator verifies each finding against the code before applying it.
-- [ ] **Neutral verification** — one `fable-high` agent, given only the BASELINE head, HEAD, and the intention under *§Constraints · Neutral Gate*, with no plan, log, or document, answers whether the result holds to every principle it states and what it would correct.
-- [ ] **Own pass** — the live checks in `~/Test` once more end to end as Nathan would use them; the gates from a clean state; baseline counts; the diff read once; *§Completion Criteria* ticked.
-- [ ] **Reconciliation** — *§Reconciliation* walked; *§Deviations* ruled on; STATUS and BASELINE's End filled; the Path Links session sent the final generation (19), the Path Links Drive's seed now sending `label` (Task 9-2), `spend.test.ts:1031`'s end state (a trashed copy's blank `related:` beside the refilled `Related:`, the variant left foreign under G-1), the restore scrub's vocabulary (its comments, tests, and `NexusRecordPM.md:14` speak of keys and words matched and rewritten, leaving "re-spell" to links), and that Path Links' Task 8-2 `scrubReturning` hunk meets a sidecar closure taking `held` and a reconcile taking `inTransitKey` directly, its `skip` line gone (Task 8-1, Phase 2B); and that `refillTrashed` (`Core/Trash/holdings.ts`) lands on the current exact key, so a trashed copy still holding the old spelling with a value of its own (a Key Format change made while both sat in the Trash) comes back with the refilled link under the current key and its own value left foreign, which Path Links' refill resolves by deciding blankness through the restore's matcher (`matchOf` in `restoreScrub.ts`).
-- [ ] **Report** — in `closeout-review`'s closeout format, with the range presented through `/view-changes`, the per-phase and total delta, every deviation, and the neutral reviewer's answer verbatim.
+- [x] Phase Review: Phase 1 · Phase 2 · Phase 3 · Phase 4 · Phase 5 · Phase 6 · Phase 7 · Phase 8 · Phase 9 · Phase 10
+- [x] **Simplification lens** — one `opus-xhigh` agent reads `<BASELINE>..HEAD` whole for what can be removed, folded, or hoisted now that every phase has landed: a duplicated decision, a helper used once, a guard whose cause the plan removed, a type arm no caller reaches. Its findings are applied before any adversarial read.
+- [x] **Adversarial lens** — two `opus-xhigh` agents over `<BASELINE>..HEAD`, one reading inward (each rule against its tests and the decisions) and one outward (cohesion with the rest of Core, Desktop, and UIX; anything that reads as an odd-one-out). The orchestrator verifies each finding against the code before applying it.
+- [x] **Neutral verification** — one `fable-high` agent, given only the BASELINE head, HEAD, and the intention under *§Constraints · Neutral Gate*, with no plan, log, or document, answers whether the result holds to every principle it states and what it would correct.
+- [x] **Own pass** — the live checks in `~/Test` once more end to end as Nathan would use them; the gates from a clean state; baseline counts; the diff read once; *§Completion Criteria* ticked.
+- [x] **Reconciliation** — *§Reconciliation* walked; *§Deviations* ruled on; STATUS and BASELINE's End filled; the Path Links session sent the final generation (19), the Path Links Drive's seed now sending `label` (Task 9-2), `spend.test.ts:1031`'s end state (a trashed copy's blank `related:` beside the refilled `Related:`, the variant left foreign under G-1), the restore scrub's vocabulary (its comments, tests, and `NexusRecordPM.md:14` speak of keys and words matched and rewritten, leaving "re-spell" to links), and that Path Links' Task 8-2 `scrubReturning` hunk meets a sidecar closure taking `held` and a reconcile taking `inTransitKey` directly, its `skip` line gone (Task 8-1, Phase 2B); and that `refillTrashed` (`Core/Trash/holdings.ts`) lands on the current exact key, so a trashed copy still holding the old spelling with a value of its own (a Key Format change made while both sat in the Trash) comes back with the refilled link under the current key and its own value left foreign, which Path Links' refill resolves by deciding blankness through the restore's matcher (`matchOf` in `restoreScrub.ts`).
+- [x] **Report** — in `closeout-review`'s closeout format, with the range presented through `/view-changes`, the per-phase and total delta, every deviation, and the neutral reviewer's answer verbatim.
 
 #### Reconciliation
 
@@ -5821,6 +5822,13 @@ Behaviors to read once before ratifying, each following the decisions:
 - **A Restore Reshapes an Unassigned Scalar:** the re-spell matches keys and words against the whole registry while the reconcile governs only the destination's assigned properties, so an unassigned page's `priority: HI` returns as `Priority: [hi]`, the list form every option cascade writes.
 - **A Restored Tag Meeting a Trashed Sibling:** with Contexts `Work-Log` and `Work Log` both live, a page trashed under `<Work-Log>` and then its Context trashed restores re-spelled onto `Work Log` (or dropped, where `Work Log` lacks the Space), since the match reads only current words and G-2 adds no cascade into `.trash`; properties and Spaces whose labels share a spelling behave alike.
 - **A Restored Collection's Saved Values Keep Their Old Keys:** a Collection in the Trash through a Value Format change comes back with its `property_cache` as it left, so a value removed from it before the delete doesn't return on reassign under the new format. No decision names that cache at restore, and re-spelling it costs a second cache pass in the scrub; the plan leaves it out.
+
+Rulings the final verification left with Nathan (10-19-2026):
+
+- **An Option Add Whose Key Alone Collides:** under a Value Format, adding or renaming an option whose label folds apart from every other but whose key another option writes is refused with "An option with this title already exists, please choose another name." (`validateOptionValues`' default), the title message where the key is what's taken; a key-clash message in the shape of "A property already writes "{key}" to files." wants Nathan's words.
+- **The Format Change's Quiet Threshold:** `askFormatChange` asks past one Item where Clear asks past none, the two numbers carrying no reason at their sites (`confirmations.ts`); either the reason for one is stated there or the change asks past none.
+- **A Registry in the Old Shape:** a `properties.json` written before Task 5B-4 (`name`, option `value`) opens with every definition unadmitted, since no migration arm moves the old words; the plan rewrote both Nexuses once instead, and the benchmark builder writes the new shape. Whether any other Nexus Pommora opens holds the old shape, and whether a migration arm or a stated assumption answers it, is Nathan's call; a mixed-version Sync fleet meets the same seam.
+- **One Holders Shape:** `property:holders` answers four counts by its argument's shape beside two typed setters (`property:setKeyFormat`, `property:setValueFormat`); the neutral reviewer would split the count or collapse the setters into one `property:setFormat`.
 
 An alternative Nathan raised during Phase 4, held open while the plan runs as written:
 

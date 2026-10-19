@@ -2,6 +2,7 @@
 
 | Date                    | ID     | Entry                                                |
 | ----------------------- | ------ | ---------------------------------------------------- |
+| 10-18-2026 → 10-19      | PM-153 | MetadataV3 — Keys & Labels                           |
 | 10-15-2026              | PM-152 | Text Colors & Highlighting                           |
 | 10-14-2026              | PM-151 | Improved Alias Management                            |
 | 10-13-2026              | PM-150 | Previews & Filtering Improvements                    |
@@ -155,6 +156,16 @@
 | 06-14-2026 → 06-15      | PM-002 | The Headless Data Layer                              |
 | 06-14-2026              | PM-001 | Genesis — The Walking Skeleton                       |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot                                 |
+
+#### PM-153 || MetadataV3 — Keys & Labels
+**DATE:** 10-18-2026 → 10-19
+
+Every property and every Select, Status, and Multi-Select option gained a label shown in the app and a key written to disk, replacing the one name that had served as both and the case-insensitive matching behind it. A property's Label Format and, for the option-holding types, its Value Format write each key from its label through one converter offering Match Title and nine conventions, with a change confirmed by the count of Items it rewrites and carried on the rename journal and its Try Again. Keys, option words, Context keys, and Space titles match exactly: a key in another casing is a foreign key, a Multi-Select keeps the foreign words a page holds after its picked options, and adoption registers only a word its Value Format could have written.
+
+A Space's row order became one id list, unaffected by renames. Pages, Spaces, and Contexts returning from the Trash have their keys and option words matched once against the current registry and rewritten in the current spelling, a Pommora-managed key staying where it is and an ambiguous spelling returning as foreign data. Every count behind a confirmation became its operation's dry run, undo puts back what the file held, the content index moved to generation 19 keyed exactly, and the Settings leaf reads Metadata with a Maintenance section. The live drives moved onto labels and keys, grew a nine-group behavior matrix, and run without taking focus.
+
+- **Commits:** `307448bcc^..8d85ed855`
+- **Delta:** +420 (+1,648 / -1,228)
 
 #### PM-152 || Text Colors & Highlighting
 **DATE:** 10-15-2026
