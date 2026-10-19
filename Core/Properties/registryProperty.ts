@@ -19,7 +19,7 @@ import { ok, fail, type Result } from '../Contract/result'
 import { renameFrontmatterKey } from '../Files/pageFile'
 import { collectionFolders } from './assignment'
 import { confirmedKeyHolders, keyHolderFiles } from './keyHolders'
-import { sweepGovernedRoots, type Rewrite } from './governedSweep'
+import { sweepCount, sweepGovernedRoots, type SweepPlan } from './governedSweep'
 import { rekeyHeld, type KeyCollision } from '../Files/heldKeys'
 import {
   clearSchemaJournal,
@@ -101,14 +101,21 @@ export async function createProperty(
 
 const NEW_KEY_IS_FRESHER: KeyCollision = 'prefer-new'
 
-export async function renameSweep(root: string, from: string, to: string): Promise<number> {
+async function renamePlan(
+  root: string,
+  from: string,
+  to: string,
+): Promise<{ files: string[]; plan: SweepPlan }> {
   // Queried by the OLD key: a page holding only the new one needs no rewrite, and one holding both holds the old one too.
   const files = await keyHolderFiles(root, from, await collectionFolders(root))
   const text = (content: string): string | null =>
     renameFrontmatterKey(content, from, to, NEW_KEY_IS_FRESHER)
-  const rekey: Rewrite = (raw) => rekeyHeld(raw, from, to, NEW_KEY_IS_FRESHER)
-  const swept = await sweepGovernedRoots(root, files, { text, sidecars: rekey })
-  return swept.skipped.length
+  return { files, plan: { text, sidecars: (raw) => rekeyHeld(raw, from, to, NEW_KEY_IS_FRESHER) } }
+}
+
+export async function renameSweep(root: string, from: string, to: string): Promise<number> {
+  const { files, plan } = await renamePlan(root, from, to)
+  return (await sweepGovernedRoots(root, files, plan)).skipped.length
 }
 
 export type PropertyRename = { from: string; to: string } & SchemaCascade
@@ -145,6 +152,18 @@ async function rekeyPlan(
   if (clashes.length)
     return fail('invalid-property', KEY_REFUSAL.held(prior.key, moved.key, clashes.length))
   return ok({ prior, moved })
+}
+
+export async function keyFormatHolders(
+  root: string,
+  propertyId: string,
+  key_format: KeyFormat,
+): Promise<Result<number>> {
+  const planned = await rekeyPlan(root, propertyId, { key_format })
+  if (!planned.ok) return planned
+  if (!planned.value || planned.value.moved.key === planned.value.prior.key) return ok(0)
+  const { files, plan } = await renamePlan(root, planned.value.prior.key, planned.value.moved.key)
+  return ok(await sweepCount(root, files, plan))
 }
 
 /** Validated before the journal and again on the registry it commits to, since a create can land between the two. The journal is staged BEFORE the commit: registry-first ordering means a crash between commit and sweep is recoverable from nowhere else, so the old key survives only there. */

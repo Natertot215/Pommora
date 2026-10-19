@@ -12,6 +12,8 @@ export const KEY_FORMATS = [
 ] as const
 export type KeyFormat = (typeof KEY_FORMATS)[number]
 
+export type FormatChange = { key_format: KeyFormat } | { value_format: KeyFormat }
+
 export const DEFAULT_KEY_FORMAT: KeyFormat = KEY_FORMATS[0]
 
 export const isKeyFormat = (v: unknown): v is KeyFormat =>

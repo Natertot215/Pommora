@@ -15,9 +15,14 @@ import {
 import { useSession } from '../../Session/store'
 import { PropertyFrame } from './PropertyFrame'
 import { stubDialer } from '../../vitest.setup'
+import { type MenuDoor, setMenuDoor } from '@pommora/uix/Pickers/PickerControl'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 stubPointerCapture()
+
+let picked: string | null = null
+const door = vi.fn<MenuDoor>(async () => picked)
+setMenuDoor(door)
 
 const titleRenders = vi.hoisted(() => ({ n: 0 }))
 vi.mock('@pommora/uix/Fields/RenamableLabel', async (actual) => {
@@ -49,6 +54,9 @@ let renameSpy: ReturnType<typeof vi.fn>
 let propertyMenuSpy: ReturnType<typeof vi.fn>
 let destroySpy: ReturnType<typeof vi.fn>
 let unassignSpy: ReturnType<typeof vi.fn>
+let holdersSpy: ReturnType<typeof vi.fn>
+let setKeyFormatSpy: ReturnType<typeof vi.fn>
+let setValueFormatSpy: ReturnType<typeof vi.fn>
 
 beforeEach(() => {
   host = document.createElement('div')
@@ -66,6 +74,16 @@ beforeEach(() => {
     value: { trashed: { bundlePath: '.trash/s__property-prop_status.deleted' } },
   }))
   unassignSpy = vi.fn(async () => ({ ok: true, value: null }))
+  holdersSpy = vi.fn(async () => ok(3))
+  setKeyFormatSpy = vi.fn(async () => ({
+    ok: true,
+    value: { from: 'Count', to: 'count', cascade: { pages: [], hosts: [] } },
+  }))
+  setValueFormatSpy = vi.fn(async () => ({
+    ok: true,
+    value: { cascade: { pages: [], hosts: [] } },
+  }))
+  picked = null
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
     'schema:add': vi.fn(async () => ({ ok: true, value: { id: 'prop_new' } })),
     'property:rename': renameSpy,
@@ -73,7 +91,9 @@ beforeEach(() => {
     'schema:unassign': unassignSpy,
     'schema:assign': assignSpy,
     'property:delete': destroySpy,
-    'property:holders': vi.fn(async () => ok(3)),
+    'property:holders': holdersSpy,
+    'property:setKeyFormat': setKeyFormatSpy,
+    'property:setValueFormat': setValueFormatSpy,
     menu: async (req: unknown) =>
       ok(await (propertyMenuSpy as (r: unknown) => Promise<unknown>)(req)),
   })
@@ -518,6 +538,68 @@ describe('native menus + the inline-rename channel (T7)', () => {
       oldKey: 'Stage',
       newKey: 'Phase',
     })
+  })
+
+  const openCount = async (): Promise<void> => {
+    await mountPane()
+    await act(async () => {
+      rowFor('Count').click()
+    })
+  }
+  const pick = async (label: string, format: string): Promise<void> => {
+    picked = format
+    await act(async () => {
+      host.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`)!.click()
+    })
+  }
+
+  it('a Number editor shows the Key Format row reading Match Title with its hint, and no Value Format row', async () => {
+    await openCount()
+    expect(host.querySelector('button[aria-label="Key Format"]')!.textContent).toBe('Match Title')
+    expect(host.textContent).toContain(
+      'How this property’s name is written into each file’s metadata key.',
+    )
+    expect(host.querySelector('button[aria-label="Value Format"]')).toBeNull()
+  })
+
+  it('a Status editor shows both format rows, the Value Format row with its hint', async () => {
+    await openEditor()
+    expect(host.querySelector('button[aria-label="Key Format"]')).toBeTruthy()
+    expect(host.querySelector('button[aria-label="Value Format"]')!.textContent).toBe('Match Title')
+    expect(host.textContent).toContain('How each value is written in the file’s metadata.')
+  })
+
+  it('a Key Format pick over more than one Item asks with the count, then sets the format and bumps the values epoch with its pair', async () => {
+    await openCount()
+    await pick('Key Format', 'lowercase')
+    const pending = useSession.getState().pendingConfirm
+    expect(pending?.req.message).toBe('This action would rewrite metadata in 3 Items.')
+    expect(setKeyFormatSpy).not.toHaveBeenCalled()
+    await act(async () => {
+      pending!.settle(true)
+    })
+    expect(setKeyFormatSpy).toHaveBeenCalledWith('prop_n', 'lowercase')
+    expect(useSession.getState().valuesEpoch).toMatchObject({
+      kind: 'rename',
+      oldKey: 'Count',
+      newKey: 'count',
+    })
+  })
+
+  it('a Key Format pick over one Item sets the format unasked', async () => {
+    holdersSpy.mockResolvedValueOnce(ok(1))
+    await openCount()
+    await pick('Key Format', 'lowercase')
+    expect(useSession.getState().pendingConfirm).toBeNull()
+    expect(setKeyFormatSpy).toHaveBeenCalledWith('prop_n', 'lowercase')
+  })
+
+  it('a Value Format pick over no Item sets the format unasked', async () => {
+    holdersSpy.mockResolvedValueOnce(ok(0))
+    await openEditor()
+    await pick('Value Format', 'kebab-case')
+    expect(useSession.getState().pendingConfirm).toBeNull()
+    expect(setValueFormatSpy).toHaveBeenCalledWith('prop_status', 'kebab-case')
   })
 
   it('a registry row opens no menu', async () => {

@@ -12,7 +12,11 @@ import {
   PROPERTY_TYPES,
   type PropertyType,
 } from '../properties'
-import { replay, retryOwed, write } from '../propertyWrite'
+import { replay, retryOwed, warnOwed, write } from '../propertyWrite'
+import type { Result } from '../../Contract/result'
+import type { FormatChange } from '../keyFormat'
+import type { PropertyRename } from '../registryProperty'
+import { FormatRows } from './FormatRows'
 import { type ColumnStyle, lookOptions, OPTION_LOOKS } from '../columnStyles'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import { useActiveView } from '../../Views/Host/useActiveView'
@@ -55,7 +59,11 @@ import {
 } from '../Cells/PropertyTypes'
 import { cx } from '@pommora/uix/Utilities/cx'
 import * as s from '@pommora/uix/Menus/frames.css'
-import { askDestroyProperty, notifyTrashed } from '../../Interface/Confirm/confirmations'
+import {
+  askDestroyProperty,
+  askFormatChange,
+  notifyTrashed,
+} from '../../Interface/Confirm/confirmations'
 import { dialer } from '../../Platform/dialer'
 import { popMenu } from '../../Actions/menuActions'
 import { propertyMenuModel } from '../../Actions/propertyMenu'
@@ -231,11 +239,18 @@ export function PropertyFrame({
     })
     if (reportRefusal(res)) setView({ kind: 'edit', id: res.value.id })
   }
-  const rename = async (id: string, label: string): Promise<void> => {
-    const res = await dialer().ask('property:rename', id, label)
+  const renamed = (res: Result<PropertyRename | null>): void => {
     if (!reportRefusal(res) || !res.value) return
     if (res.value.from !== res.value.to) bumpValuesEpoch(res.value.from, res.value.to)
     retryOwed(res.value)
+  }
+  const rename = async (id: string, label: string): Promise<void> =>
+    renamed(await dialer().ask('property:rename', id, label))
+  const setFormat = async (id: string, change: FormatChange): Promise<void> => {
+    if (!(await askFormatChange(id, change))) return
+    if ('key_format' in change)
+      renamed(await dialer().ask('property:setKeyFormat', id, change.key_format))
+    else await warnOwed(dialer().ask('property:setValueFormat', id, change.value_format))
   }
   const remove = async (id: string): Promise<void> => {
     if (reportRefusal(await dialer().ask('schema:unassign', collectionPath, id))) backToList()
@@ -307,7 +322,7 @@ export function PropertyFrame({
     </>
   )
 
-  const NO_SETTINGS = (): React.JSX.Element => <div style={{ minHeight: 8 }} />
+  const NO_SETTINGS = (): null => null
   const optionSettings = (def: PropertyDefinition, style: ColumnStyle): React.JSX.Element => (
     <OptionEditor
       propertyId={def.id}
@@ -323,7 +338,7 @@ export function PropertyFrame({
   // One arm per property type, so a type added to the schema is a compile error here rather than a blank panel at runtime.
   const SETTINGS: Record<
     PropertyType,
-    (def: PropertyDefinition, style: ColumnStyle) => React.JSX.Element
+    (def: PropertyDefinition, style: ColumnStyle) => React.JSX.Element | null
   > = {
     select: optionSettings,
     multiSelect: optionSettings,
@@ -387,6 +402,7 @@ export function PropertyFrame({
       )
     }
     const columnStyle = styleFor(def.id, schema, activeView)
+    const settings = SETTINGS[def.type](def, columnStyle)
     const optionLook = columnStyle.look === 'compact' ? 'compact' : 'standard'
     const styleFooting =
       PROPERTY_TYPES[def.type].options !== undefined ? (
@@ -425,7 +441,9 @@ export function PropertyFrame({
           onCommit={(next) => void rename(def.id, next)}
         />
         <MenuSeparator flush />
-        {SETTINGS[def.type](def, columnStyle)}
+        <FormatRows def={def} onPick={(change) => void setFormat(def.id, change)} />
+        {settings && <MenuSeparator flush />}
+        {settings}
       </MenuScrollFrame>
     )
   }

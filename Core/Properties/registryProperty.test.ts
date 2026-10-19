@@ -6,6 +6,7 @@ import { readJsonAt, seedSpaceSidecar, tempRoot } from '../Testing/hostFs'
 import {
   createProperty,
   editProperty,
+  keyFormatHolders,
   renameProperty,
   removeFromRegistry,
   reorderRegistry,
@@ -406,21 +407,21 @@ describe('renameProperty and editProperty', () => {
   })
 })
 
+const ID_LINE = 'ID: 01ARZ3NDEKPSV4RRFFQ69G5FAV'
+
+const seedHeld = async (draft: PropertyDraft, frontmatter: string) => {
+  const c = await createProperty(root, draft)
+  const col = await createFolderEntity(root, 'collection', 'Col', newId())
+  if (!c.ok || !col.ok) throw new Error('setup failed')
+  await assignProperty(root, col.value.path, c.value.id)
+  const p = await createTestPage(col.value.path, 'Holder', { body: 'b' })
+  if (!p.ok) throw new Error('setup failed')
+  await writeFile(p.value.path, `---\n${ID_LINE}\n${frontmatter}---\nb\n`)
+  vi.mocked(writeSchemaJournal).mockClear()
+  return { id: c.value.id, page: p.value.path }
+}
+
 describe('a Key Format change is a rename of the key', () => {
-  const ID_LINE = 'ID: 01ARZ3NDEKPSV4RRFFQ69G5FAV'
-
-  const seedHeld = async (draft: PropertyDraft, frontmatter: string) => {
-    const c = await createProperty(root, draft)
-    const col = await createFolderEntity(root, 'collection', 'Col', newId())
-    if (!c.ok || !col.ok) throw new Error('setup failed')
-    await assignProperty(root, col.value.path, c.value.id)
-    const p = await createTestPage(col.value.path, 'Holder', { body: 'b' })
-    if (!p.ok) throw new Error('setup failed')
-    await writeFile(p.value.path, `---\n${ID_LINE}\n${frontmatter}---\nb\n`)
-    vi.mocked(writeSchemaJournal).mockClear()
-    return { id: c.value.id, page: p.value.path }
-  }
-
   it('moves the key on every holder, in place, and clears the journal', async () => {
     const { id, page } = await seedHeld(
       def({ label: 'Tags', type: 'multiSelect' }),
@@ -519,6 +520,35 @@ describe('a Key Format change is a rename of the key', () => {
     expect(r.ok && r.value).toMatchObject({ from: 'tags', to: 'tags' })
     expect((await readRegistry(root)).defs[id]).toMatchObject({ label: 'TAGS', key: 'tags' })
     expect(await readFile(page, 'utf8')).toBe(held)
+  })
+})
+
+describe('keyFormatHolders', () => {
+  it('counts the page and the Space holding the old key, not a page holding only the new one, and writes nothing', async () => {
+    const { id, page } = await seedHeld(def({ label: 'Tags', type: 'multiSelect' }), 'Tags: [a]\n')
+    const other = await createTestPage(join(root, 'Col'), 'Other', { body: 'b' })
+    if (!other.ok) throw new Error('setup failed')
+    await writeFile(other.value.path, `---\n${ID_LINE}\ntags: [b]\n---\nb\n`)
+    const space = await seedSpaceSidecar(root, 'Projects', 'Pommora', { id: 'sp1', Tags: ['b'] })
+    const files = [page, other.value.path, space, registryFilePath()]
+    const before = await Promise.all(files.map((f) => readFile(f, 'utf8')))
+
+    expect(await keyFormatHolders(root, id, 'lowercase')).toEqual(ok(2))
+    expect(await Promise.all(files.map((f) => readFile(f, 'utf8')))).toEqual(before)
+  })
+
+  it('answers the refusal of a format writing a key Pommora manages', async () => {
+    const { id } = await seedHeld(
+      def({ label: 'Heading Icon Hidden', type: 'text' }),
+      'Heading Icon Hidden: x\n',
+    )
+    const r = await keyFormatHolders(root, id, 'snake_case')
+    expect(!r.ok && r.error.message).toBe(KEY_REFUSAL.reserved('heading_icon_hidden'))
+  })
+
+  it('counts nothing for a format writing the key already stored', async () => {
+    await seedRegistry({ id: 'prop_t', label: 'tags', key: 'tags', type: 'text' })
+    expect(await keyFormatHolders(root, 'prop_t', 'lowercase')).toEqual(ok(0))
   })
 })
 

@@ -4,6 +4,7 @@ import {
   askClearOption,
   askDeleteView,
   askDestroyProperty,
+  askFormatChange,
   askRemoveOption,
   confirmDelete,
   spendBundle,
@@ -14,7 +15,7 @@ import { makeTree } from '../../Testing/testTree'
 import { clearNotification, currentNotification } from '../Notifications/notifications'
 import type { HeldKind } from '../../Nexus/entities'
 import { stubDialer } from '../../vitest.setup'
-import { fault, ok } from '../../Contract/result'
+import { fault, ok, type Result } from '../../Contract/result'
 
 const asked: string[] = []
 
@@ -75,6 +76,23 @@ describe('what the Confirm Before Deletion switch governs', () => {
     await askRemoveOption('p1', 'Active')
     expect(asked).toHaveLength(2)
     expect(asked[0]).toContain('stripped from 0 Items;')
+  })
+
+  it('asks before a format change rewriting more than one Item, counting the change, and rewrites one or none unasked', async () => {
+    const holders = vi.fn(async (): Promise<Result<number>> => ok(2))
+    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({ 'property:holders': holders })
+    expect(await askFormatChange('p1', { key_format: 'lowercase' })).toBe(true)
+    expect(asked).toEqual(['This action would rewrite metadata in 2 Items.'])
+    expect(holders.mock.calls).toEqual([['p1', { key_format: 'lowercase' }]])
+    asked.length = 0
+    for (const count of [1, 0]) {
+      holders.mockResolvedValueOnce(ok(count))
+      expect(await askFormatChange('p1', { key_format: 'lowercase' })).toBe(true)
+    }
+    expect(asked).toEqual([])
+    holders.mockResolvedValueOnce(fault('That property no longer exists.'))
+    expect(await askFormatChange('p1', { key_format: 'lowercase' })).toBe(false)
+    expect(asked).toEqual([])
   })
 
   it('asks nothing when the host refuses the count', async () => {
