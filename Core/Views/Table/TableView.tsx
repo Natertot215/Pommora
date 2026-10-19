@@ -137,8 +137,8 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     intent: ValueIntent | null,
     target: EventTarget | null,
   ): boolean => {
-    const editAs = (mode: Editing['mode']) => (): void =>
-      setEditing({ rowId: row.id, colId: col.id, mode, nonce: ++editNonce.current })
+    const editAs = (mode: Editing['mode'], seat?: ConnEditAction) => (): void =>
+      setEditing({ rowId: row.id, colId: col.id, mode, seat, nonce: ++editNonce.current })
     return runValueIntent(intent, {
       commit: ({ value }) => commitValue(row, col, value),
       file: () => {
@@ -148,14 +148,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       },
       picker: editAs('picker'),
       dateTime: editAs('picker'),
-      edit: ({ seat }) =>
-        setEditing({
-          rowId: row.id,
-          colId: col.id,
-          mode: 'editor',
-          seat,
-          nonce: ++editNonce.current,
-        }),
+      edit: ({ seat }) => editAs('editor', seat)(),
       popover: editAs('popover'),
       rename: editAs('popover'),
       hide: null,

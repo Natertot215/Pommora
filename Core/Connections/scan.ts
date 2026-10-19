@@ -1,4 +1,4 @@
-// One walker answers for every link syntax; `embed` marks a link of either syntax alone on its line behind a `!`, a tile's relation that renames as a link and relates as nothing. A link names its page by the written half's key; a page's own heading (`[[#H]]`, a `§` run) keys ''.
+// One walker answers for every link syntax; `embed` marks a wikilink alone on its line behind a `!`, a tile's relation that renames as a link and relates as nothing. A link names its page by the written half's key; a page's own heading (`[[#H]]`, a `§` run) keys ''.
 
 import { type LinkOccurrence, linkOccurrences, mayHoldLink, type PageName } from './connections'
 import { normalizeTitle } from '../Paths/caseFold'
@@ -12,7 +12,7 @@ import {
   lineStartAt,
   type Span,
 } from '../MarkdownPM/Engine/markdownCode'
-import { headingParts } from '../MarkdownPM/Engine/detect'
+import { headingParts, loneEmbedTitle } from '../MarkdownPM/Engine/detect'
 
 interface SectionRun {
   from: number
@@ -61,7 +61,7 @@ export function sectionRunsIn(
   return out
 }
 
-/** One occurrence the index and the rename rewriter share: the occurrence's spans under its names, `named` the page as the link reads it, `target` (the written half through `pageKey`, '' for the page's own heading) and `qualifier` (the heading's key, '' when the link names none) as normalized keys, `title` empty where the link names its own page by leaving it out, and `embed` for a link alone on its line behind a `!`. */
+/** One occurrence the index and the rename rewriter share: the occurrence's spans under its names, `named` the page as the link reads it, `target` (the written half through `pageKey`, '' for the page's own heading) and `qualifier` (the heading's key, '' when the link names none) as normalized keys, `title` empty where the link names its own page by leaving it out, and `embed` for a wikilink alone on its line behind a `!`. */
 export interface LinkHit {
   syntax: LinkOccurrence['syntax'] | 'section'
   embed: boolean
@@ -75,9 +75,7 @@ export interface LinkHit {
 }
 
 const embedLine = (body: string, [from, to]: Span): boolean =>
-  body[from - 1] === '!' &&
-  lineStartAt(body, from) === from - 1 &&
-  !/\S/.test(body.slice(to, lineEndAt(body, to)))
+  loneEmbedTitle(body.slice(lineStartAt(body, from), lineEndAt(body, to))) !== null
 
 /** The gate in front is on SYNTAX rather than any title: a substring test would break the NFC invariant `normalizeTitle` exists for, and an NFD-composed body would be skipped silently. `inCode` is resolved inside the body, never as a default parameter: a generator binds its parameters at call time, so a default would build a whole-document mask even for the calls that return at the gate. */
 export function* linksIn(

@@ -32,8 +32,8 @@ export function movedHeadings(
 ): Record<string, PageHeadings> {
   let next = headings
   for (const id of pageMoves(before, after).moved) {
-    const was = before.get(id)?.path ?? ''
-    const now = after.get(id)?.path ?? ''
+    const was = before.get(id)!.path
+    const now = after.get(id)!.path
     if (!(was in headings)) continue
     if (next === headings) next = { ...headings }
     next[now] = headings[was]

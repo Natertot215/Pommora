@@ -46,7 +46,8 @@ export async function deleteOp(
   const bundle = deps.trashMode === 'system' ? null : await mintBundle(root, abs)
   // With no bundle to keep them, the pages' metadata entries leave with the delete, by the ids their files carry before the move.
   const pageIds = bundle ? [] : await pageIdsOf(await contentPages(req.kind, abs))
-  const targets = bundle ? gatherLinkTargets(before, rel) : {}
+  const under = pagesOf(before).flatMap((p) => (isAtOrUnder(p.path, rel) ? p.path : []))
+  const targets = bundle ? gatherLinkTargets(before, rel, under) : {}
   const write = bundle
     ? async (record: RecordFile | null): Promise<void> => {
         if (record)
@@ -93,9 +94,7 @@ export async function deleteOp(
   } else {
     record = write ? await gatherContentRecord(root, req.kind, abs) : null
     if (write && record) await write({ ...record, partial: true })
-    paths = pagesOf(before)
-      .filter((p) => isAtOrUnder(p.path, rel))
-      .map((p) => p.path)
+    paths = under
   }
   if (bundle) await relocate(abs, join(bundle, basename(abs)))
   else await machine().lock(abs, () => discardFile(root, abs, deps))

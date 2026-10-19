@@ -61,7 +61,7 @@ export const pagesOf = entityMemo([], (tree): readonly ConnPage[] =>
     .map(({ id, title, path }) => ({ id, title, path })),
 )
 
-/** The host's file writers refuse an id two files claim (`heldPages.ts`). */
+/** The first-listed page per id. */
 export const pagesByIdOf = (tree: NexusTree): ReadonlyMap<string, ConnPage> =>
   pageIndexOf(tree).byId
 

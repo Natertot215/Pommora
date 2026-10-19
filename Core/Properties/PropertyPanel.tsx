@@ -289,13 +289,14 @@ export function PropertyPanel({
     intent: ValueIntent | null,
     from: EventTarget | null,
   ): void => {
-    const editAs = (mode: NonNullable<Editing>['mode']) => () => setEditing({ id: def.id, mode })
+    const editAs = (mode: NonNullable<Editing>['mode'], seat?: ConnEditAction) => () =>
+      setEditing({ id: def.id, mode, seat })
     runValueIntent(intent, {
       commit: ({ value }) => (value === null ? emptyRow(def.id, true) : commit(def.id, value)),
       file: () => pickFileInto(def, current, fileChipIndex(from), (next) => commit(def.id, next)),
       picker: editAs('picker'),
       dateTime: editAs('picker'),
-      edit: ({ seat }) => setEditing({ id: def.id, mode: 'editor', seat }),
+      edit: ({ seat }) => editAs('editor', seat)(),
       rename: editAs('popover'),
       popover: editAs('popover'),
       hide: () => emptyRow(def.id, false),

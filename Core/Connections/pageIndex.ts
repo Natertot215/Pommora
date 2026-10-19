@@ -68,7 +68,7 @@ export function buildPageIndex(pages: readonly ConnPage[]): PageIndex {
     if (holders) holders.push(p)
     else byTitle.set(norm, [p])
   }
-  // Sorted and keyed on the first autocomplete, not at build: the index rebuilds whenever the pages change, and most builds (the host's always) never reach a picker.
+  // Sorted and keyed on the first autocomplete, not at build: most builds (the host's always) never reach a picker.
   let alphabetical: { p: ConnPage; key: MatchKey }[] | null = null
   let byId: Map<string, ConnPage> | undefined
   const pathKeyMemo = new Map<ConnPage, string>()
