@@ -165,7 +165,7 @@ The work lands in nine phases in dependency order, each the largest run one agen
   - [x] Task 8-1 · The delete records what each link named, and one Trash index resolves by delete-time path
   - [x] Task 8-2 · The restore repairs, re-spells, and refills by the one rule
   - [x] Review Checkpoint
-- [ ] `[Compaction checkpoint: c/pre-compaction]`
+- [x] `[Compaction checkpoint: c/pre-compaction]`
 - [ ] **Phase 9** — Reconciliation
   - [ ] Task 9-1 · The feature documents, the project overview, the issues index, and the comments
 - [ ] `[Stop: the final verification's report, per §Final Verification]`
