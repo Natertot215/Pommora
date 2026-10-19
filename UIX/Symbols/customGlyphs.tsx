@@ -68,13 +68,13 @@ export const Alias = glyph(
   </>,
 )
 
-// The field with its caret at the left and two dashes of text beside it; the caret stops short of the edges' corners, which a full-height one at the left closes into a box.
+// The alias field with two dots of text after its caret.
 export const MetadataLabel = glyph(
   <>
     {FIELD_EDGES}
-    <line x1="9" y1="6" x2="9" y2="18" />
-    <line x1="12.5" y1="12" x2="14" y2="12" />
-    <line x1="16.5" y1="12" x2="18" y2="12" />
+    <line x1="12" y1="2" x2="12" y2="22" />
+    <line x1="15" y1="12" x2="15.5" y2="12" />
+    <line x1="18" y1="12" x2="18.5" y2="12" />
   </>,
 )
 
