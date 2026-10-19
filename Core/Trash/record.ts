@@ -27,6 +27,9 @@ const strippedLink: z.ZodType<StrippedLink> = z.object({
   value: z.string(),
 })
 
+/** The page each outbound link under the artifact named at the delete, by id under the key it was written with, so a restore follows it by identity. */
+const linkTargets = z.record(z.string(), z.string()).optional()
+
 const contentRecord = <E extends string>(entity: E) =>
   z.object({
     entity: z.literal(entity),
@@ -36,6 +39,7 @@ const contentRecord = <E extends string>(entity: E) =>
     excluded: z.array(z.string().refine((p) => rootSegs(p).length > 0)).optional(),
     /** Each Link value the delete stripped from a page outside it, by that page's id and the property's, so a restore can put it back. */
     links: z.array(strippedLink).optional(),
+    targets: linkTargets,
     partial: z.literal(true).optional(),
   })
 
@@ -49,6 +53,7 @@ const recordFile = z.discriminatedUnion('entity', [
     id: z.string(),
     parent: parentRef,
     members: z.array(memberRoot),
+    targets: linkTargets,
     partial: z.literal(true).optional(),
   }),
   z.object({
@@ -66,6 +71,7 @@ const recordFile = z.discriminatedUnion('entity', [
     registry: contextEntry,
     at: index.optional(),
     membership: z.array(z.object({ root: memberRoot, spaces: z.array(spaceRef) })),
+    targets: linkTargets,
     partial: z.literal(true).optional(),
   }),
 ])

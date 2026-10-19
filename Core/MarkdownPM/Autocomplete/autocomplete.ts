@@ -115,12 +115,13 @@ export const pageRow = (p: ConnPage, host: EditorHost): AcRow => ({
 })
 
 /** Rows in their own order under an empty query, ranked by a typed one. */
-const ranked = <R extends AcRow>(rows: R[], q: string): R[] =>
-  q ? rankMatches(rows, q, (r) => matchKey(r.value)) : rows
+const ranked = <R extends AcRow>(rows: R[], query: string): R[] => {
+  const q = matchQuery(query)
+  return q ? rankMatches(rows, q, (r) => matchKey(r.value)) : rows
+}
 
 /** The outline's headings, repeated text listed once. */
 export function headingRows(outline: readonly PageHeading[], query: string): HeadingRow[] {
-  const q = matchQuery(query)
   const seen = new Set<string>()
   const rows = outline
     .filter((h) => {
@@ -130,7 +131,7 @@ export function headingRows(outline: readonly PageHeading[], query: string): Hea
       return true
     })
     .map((h): HeadingRow => ({ kind: 'heading', value: h.text, level: h.level }))
-  return ranked(rows, q)
+  return ranked(rows, query)
 }
 
 // The rows a collapsed heading hides: everything deeper than it, up to the next heading at its level or above.
@@ -154,9 +155,8 @@ export function aliasRows(
   query: string,
 ): AcRow[] {
   if (!pageId) return []
-  const q = matchQuery(query)
   const rows = aliases.list(pageId).map((a): AcRow => ({ kind: 'alias', value: a }))
-  return ranked(rows, q)
+  return ranked(rows, query)
 }
 
 export function commitEdit(

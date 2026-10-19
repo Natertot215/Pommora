@@ -38,7 +38,7 @@ import { createContainerOp, createPageOp, createSpaceOp } from './create'
 import { movePageOp, moveSetOp } from './move'
 import { editPageAliases, writePageMeta } from './pageMetadata'
 import { renameOp } from './rename'
-import { type CascadeReport, joinCascades, renameCascade } from './cascade'
+import { type CascadeReport, joinCascades, linksNotUpdated, renameCascade } from './cascade'
 import { setChildOrder, setCollectionOrder, setPanelContextOrder, setSpaceOrder } from './reorder'
 import { liveTreeOf, mutableTarget } from './liveTree'
 import { oweRetry, oweWalk } from './fileEvents'
@@ -98,11 +98,7 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
       const firstCommit = req.op === 'rename' && req.fromCreate === true
       const label =
         req.op === 'createPage' ? req.name : firstCommit ? req.newName : titleFromPath(req.path)
-      let cascade: CascadeReport | undefined = {
-        pages: [],
-        hosts: [],
-        warning: `Links to “${label}” weren't updated.`,
-      }
+      let cascade: CascadeReport | undefined = linksNotUpdated(label)
       if (before && after) {
         const { moved, arrived } = pageMoves(before.byId, after.byId)
         const arrivals = req.op === 'createPage' && req.name === DEFAULT_NEW_NAME ? [] : arrived

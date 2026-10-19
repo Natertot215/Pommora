@@ -21,7 +21,7 @@ import { formatDate } from '../Properties/formatValue'
 import { containerTargets, contextTargets } from '../Actions/destinationTree'
 import { matchKey, matchQuery, rankMatches } from '../Paths/caseFold'
 import { useSession } from '../Session/store'
-import { trashChanged } from '../Session/nexusSlice'
+import { flushAllSaves, trashChanged } from '../Session/nexusSlice'
 import { personalizationOf } from '../Session/configSlice'
 import { notifyReport, unrestoredLine } from '../Interface/Notifications/notifications'
 import { dialer } from '../Platform/dialer'
@@ -129,19 +129,22 @@ function TrashBody(): React.JSX.Element {
 
   const restoreBatch = async (targets: TrashRow[]): Promise<void> => {
     const addressable = targets.filter((r) => r.homeResolves)
-    const { done, refused, unrestored } = await many(addressable, 'restore')
+    await flushAllSaves()
+    const { done, refused, unrestored, warnings } = await many(addressable, 'restore')
     const homeless = targets.filter((r) => !r.homeResolves)
     const unmet = [
       homeless.length > 0 &&
         `${countPhrase(homeless)} had nowhere to go — restore those one at a time to choose where.`,
       refused.length > 0 && `${countPhrase(refused)} couldn’t be restored.`,
       unrestored.length > 0 && unrestoredLine(unrestored),
+      ...warnings,
     ].filter(Boolean)
     notifyReport([`Restored ${countPhrase(done)}.`, ...unmet].join(' '), unmet.length > 0)
   }
 
   const emptyBatch = async (targets: TrashRow[]): Promise<void> => {
     if (!(await askEmptyTrash(targets.length))) return
+    await flushAllSaves()
     const { done, refused, warnings } = await many(targets, 'emptyBundle')
     const unmet = [
       refused.length > 0 && `${countPhrase(refused)} couldn’t be deleted.`,

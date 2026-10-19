@@ -1,4 +1,4 @@
-import { basename, dirname, relative } from '../Paths/posix'
+import { basename, dirname, isAtOrUnder, relative } from '../Paths/posix'
 import { excludedWithin } from '../Settings/settings'
 import { stampedId } from '../Files/pageFile'
 import type { ContextDef, ContextsRegistry } from '../Contexts/contexts'
@@ -10,6 +10,11 @@ import { readTextOrNull } from '../Files/atomicWrite'
 import { spaceIdsIn } from '../Contexts/spaceSidecar'
 import { sidecarId } from '../Files/sidecar'
 import { exactTitle } from '../Paths/caseFold'
+import { readPageRelations } from '../Index/contentIndex'
+import { valueLinks } from '../Connections/scan'
+import { ID_KEY } from '../Nexus/identityMark'
+import { pageIndexOf, pagesOf } from '../Nexus/record'
+import type { NexusTree } from '../Nexus/tree'
 
 import type { RecordFile, ParentRef } from './record'
 import type { ContainerKind } from '../Nexus/entities'
@@ -19,6 +24,22 @@ async function gatherParentRef(root: string, absEntity: string): Promise<ParentR
   if (parentDir === root) return { kind: 'root' }
   const id = containerAt(await liveTreeOf(root), relative(root, parentDir))?.id
   return id ? { kind: 'container', id } : { kind: 'unaddressable' }
+}
+
+/** What each outbound link at or under `rel` named: the id of the page its key resolves to alone, from the rows the index holds for the pages there and the values the Spaces there hold. */
+export function gatherLinkTargets(tree: NexusTree, rel: string): Record<string, string> {
+  const index = pageIndexOf(tree)
+  const out = new Map<string, string>()
+  const note = (key: string): void => {
+    const page = out.has(key) ? undefined : index.resolve(key).page
+    if (page) out.set(key, page.id)
+  }
+  const paths = pagesOf(tree).flatMap((p) => (isAtOrUnder(p.path, rel) ? p.path : []))
+  for (const row of readPageRelations(paths, ID_KEY)?.relations ?? []) note(row.target)
+  for (const g of tree.contexts)
+    for (const s of g.spaces)
+      if (isAtOrUnder(s.path, rel)) for (const hit of valueLinks(s.values ?? {})) note(hit.target)
+  return Object.fromEntries(out)
 }
 
 export async function gatherContentRecord(

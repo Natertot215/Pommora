@@ -1,10 +1,12 @@
 import { isAtOrUnder, isMarkdownFile, join, relative, titleFromPath } from '../Paths/posix'
 import { normalizeTitle } from '../Paths/caseFold'
 import { stripKeys } from '../Files/rootValues'
+import type { Json } from '../Files/stableJson'
 import { errText } from '../Contract/result'
 import { splitEnvelope, mergeFrontmatter, splitFrontmatter, stampedId } from '../Files/pageFile'
 import {
   type Rewrite,
+  type RewriteText,
   governedRoot,
   sweepGovernedRoots,
   unsweptLine,
@@ -21,7 +23,7 @@ import {
   rewriteHeadingConnections,
 } from '../Connections/rewrite'
 import { headingOutline } from '../MarkdownPM/Engine/headingScan'
-import { queryHeadingMentions, queryMentions } from '../Index/contentIndex'
+import { queryMentions } from '../Index/contentIndex'
 import { nexusCorpus } from '../Index/indexSeed'
 import { linkDefsOf } from '../Properties/propertiesRegistry'
 import { linkKeysOf } from '../Properties/schema'
@@ -40,6 +42,13 @@ export interface CascadeReport {
   hosts: TilesChanged[]
   warning?: string
 }
+
+/** A re-spell that never ran, or stopped on `e`, under the label it would have reported. */
+export const linksNotUpdated = (label: string, e?: unknown): CascadeReport => ({
+  pages: [],
+  hosts: [],
+  warning: `Links to “${label}” weren't updated${e === undefined ? '.' : `: ${errText(e)}`}`,
+})
 
 export interface StrippedLink {
   page: string
@@ -140,6 +149,53 @@ export async function deleteCascade(
   }
 }
 
+/** The per-file arm every cascade shares: a page's body and its link-holding values through `rewrite`, and a Space sidecar's or a cache block's values alone. `settled` says the editor of `ownRel`, a heading rename's page, already rewrote its body; its frontmatter still takes the patch. */
+export function fileRewrites(
+  root: string,
+  tree: NexusTree,
+  rewrite: (text: string, own?: boolean, outlineOf?: string) => string,
+  { ownRel, settled = false }: { ownRel?: string; settled?: boolean } = {},
+): { text: RewriteText; spaceMoved: Rewrite; cacheMoved: Rewrite } {
+  const holds = linkKeysOf(tree.config.registry)
+  const patchOf = (
+    raw: Json,
+    holds: (key: string) => boolean,
+    own = false,
+    outlineOf = '',
+  ): Record<string, string> => {
+    const patch: Record<string, string> = {}
+    for (const [key, value] of Object.entries(raw)) {
+      if (!holds(key)) continue
+      // A string, or a `[[Page]]` yaml read as a nested list; a foreign one-item list stays a list.
+      const text = linkEntry(value, 2)
+      const next = text === null ? null : rewrite(text, own, outlineOf)
+      if (next !== null && next !== text) patch[key] = next
+    }
+    return patch
+  }
+  const withPatch = (raw: Json, patch: Record<string, string>): Json | null =>
+    Object.keys(patch).length ? { ...raw, ...patch } : null
+  return {
+    text: (content, file) => {
+      const { body } = splitEnvelope(content)
+      const own = relative(root, file) === ownRel
+      const patch = patchOf(splitFrontmatter(content), holds, own, body)
+      const keys = Object.keys(patch)
+      const next = own && settled ? body : rewrite(body, own)
+      return next === body && keys.length === 0
+        ? null
+        : mergeFrontmatter(content, patch, keys, next)
+    },
+    spaceMoved: (raw) => withPatch(raw, patchOf(raw, holds)),
+    // A block holds one property's values, so every entry holds links when the property does.
+    cacheMoved: (values) =>
+      withPatch(
+        values,
+        patchOf(values, () => true),
+      ),
+  }
+}
+
 /** A re-spell sweeps the files the index names under the map's keys, or the whole corpus before there is one; a heading rename sweeps what a ready index names under the page's keys and the page itself always, since its own bare fragments are keyed to no page, and a corpus scan per heading edit is an on-every-edit cost. Markdown tiles sit outside the index, so a cached list of what they link gates their read. `settled` says the page's editor already rewrote its own body; its frontmatter still takes the patch. */
 export async function renameCascade(
   root: string,
@@ -156,7 +212,7 @@ export async function renameCascade(
     const rels =
       'names' in change
         ? (queryMentions([...keys]) ?? (await nexusCorpus(root)))
-        : [...(queryHeadingMentions(headingKey!, [...keys]) ?? []), change.path]
+        : [...(queryMentions([...keys], headingKey) ?? []), change.path]
     const runs =
       !('names' in change) &&
       (await readLiveSetting(root, 'inPageHeadingResolution')) === 'automatic'
@@ -171,40 +227,10 @@ export async function renameCascade(
             own,
             runs && own ? headingOutline(outlineOf).map((h) => h.text) : undefined,
           )
-    const defs = tree.config.registry
-    const holds = linkKeysOf(defs)
-    const patchOf = (
-      raw: Record<string, unknown>,
-      holds: (key: string) => boolean,
-      own = false,
-      outlineOf = '',
-    ): Record<string, string> => {
-      const patch: Record<string, string> = {}
-      for (const [key, value] of Object.entries(raw)) {
-        if (!holds(key)) continue
-        // A string, or a `[[Page]]` yaml read as a nested list; a foreign one-item list stays a list.
-        const text = linkEntry(value, 2)
-        const next = text === null ? null : rewrite(text, own, outlineOf)
-        if (next !== null && next !== text) patch[key] = next
-      }
-      return patch
-    }
-    const withPatch = (
-      raw: Record<string, unknown>,
-      patch: Record<string, string>,
-    ): Record<string, unknown> | null => (Object.keys(patch).length ? { ...raw, ...patch } : null)
-    const spaceMoved: Rewrite = (raw) => withPatch(raw, patchOf(raw, holds))
-    const text = (content: string, file: string): string | null => {
-      const { body } = splitEnvelope(content)
-      const rel = relative(root, file)
-      const own = !('names' in change) && rel === change.path
-      const patch = patchOf(splitFrontmatter(content), holds, own, body)
-      const keys = Object.keys(patch)
-      const next = own && settled ? body : rewrite(body, own)
-      return next === body && keys.length === 0
-        ? null
-        : mergeFrontmatter(content, patch, keys, next)
-    }
+    const { text, spaceMoved, cacheMoved } = fileRewrites(root, tree, rewrite, {
+      ownRel: 'names' in change ? undefined : change.path,
+      settled,
+    })
     const files = [...new Set(rels)].map((rel) => join(root, rel))
     const swept = await sweepGovernedRoots(root, files, {
       text,
@@ -213,15 +239,12 @@ export async function renameCascade(
     const tiles = (await tilesLink(root, keys, headingKey))
       ? await rewriteTileConnections(root, rewrite)
       : { hosts: [], failed: 0 }
-    // A heading edit settles often and a cached Link still reaches its page, so only a re-spell reaches the caches. A block holds one property's values, so every entry holds links when the property does.
+    // A heading edit settles often and a cached Link still reaches its page, so only a re-spell reaches the caches.
+    const defs = tree.config.registry
+    const holds = linkKeysOf(defs)
     const cachedIds = new Set(defs.filter((d) => holds(d.key)).map((d) => d.id))
-    const movedCache = (values: Record<string, unknown>): Record<string, unknown> | null =>
-      withPatch(
-        values,
-        patchOf(values, () => true),
-      )
     const uncached =
-      'names' in change ? await editCaches(root, tree.collections, cachedIds, movedCache) : 0
+      'names' in change ? await editCaches(root, tree.collections, cachedIds, cacheMoved) : 0
     const unmoved = swept.skipped.length + tiles.failed + uncached
     return {
       pages: [...swept.touched.keys()].filter(isMarkdownFile).map((file) => relative(root, file)),
@@ -229,6 +252,6 @@ export async function renameCascade(
       warning: unmoved ? unsweptLine(unmoved, `links to “${named}” in `) : undefined,
     }
   } catch (e) {
-    return { pages: [], hosts: [], warning: `Links to “${named}” weren't updated: ${errText(e)}` }
+    return linksNotUpdated(named, e)
   }
 }

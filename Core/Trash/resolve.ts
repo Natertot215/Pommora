@@ -12,7 +12,7 @@ import { contextWorldOf } from '../Contexts/contextResolve'
 interface Placement {
   dir: string
   finalName: string
-  /** For a Space or Context: the final title restore writes everywhere (folder, registry, re-applied membership keys). Recorded titles are labels; this is the decision. */
+  /** For a page, Space, or Context: the final title restore writes everywhere (folder, registry, re-applied membership keys, the links its arrival re-spells). Recorded titles are labels; this is the decision. */
   finalTitle?: string
 }
 
@@ -85,7 +85,7 @@ export function resolveRecord(
       ]
       if (record.entity === 'page') {
         const finalTitle = freeName(titleFromPath(baseName), siblings)
-        return { place: { dir: parent.path, finalName: `${finalTitle}.md` } }
+        return { place: { dir: parent.path, finalName: `${finalTitle}.md`, finalTitle } }
       }
       return { place: { dir: parent.path, finalName: freeName(baseName, siblings) } }
     }

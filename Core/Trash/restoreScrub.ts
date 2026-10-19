@@ -1,4 +1,4 @@
-// A bundle froze at its delete while the world moved on; replaying it verbatim would reintroduce governed keys nothing stands behind, so returning content is reconciled before it lands.
+// A bundle froze at its delete while the world moved on; replaying it verbatim would reintroduce governed keys nothing stands behind, so returning content is reconciled before it lands, and its own links repaired once it has.
 
 import type { NexusTree } from '../Nexus/tree'
 import { assignedDefs } from '../Properties/assignment'
@@ -16,7 +16,8 @@ import { type Frozen, gonePageEntry } from '../Properties/propertyValue'
 import { ensurePageId } from '../Nexus/adopt'
 import { valueOr } from '../Contract/result'
 import { asString } from '../Nexus/coerce'
-import type { StrippedLink } from '../Nexus/cascade'
+import { fileRewrites, type StrippedLink } from '../Nexus/cascade'
+import { rewriteConnections } from '../Connections/rewrite'
 import { ID_KEY } from '../Nexus/identityMark'
 import { rmwJsonStrict } from '../Files/atomicWrite'
 import {
@@ -25,8 +26,10 @@ import {
   splitEnvelope,
   splitFrontmatter,
 } from '../Files/pageFile'
-import { basename, isMarkdownFile, join } from '../Paths/posix'
-import { listMarkdownFiles, listPathsUnder } from '../Files/walk'
+import { basename, join } from '../Paths/posix'
+import { listPathsUnder } from '../Files/walk'
+import { contentPages } from './holdings'
+import type { RecordFile } from './record'
 import { hiddenFolder } from '../Paths/exclusion'
 import { SPACE_SIDECAR } from '../Paths/nexusPaths'
 import { sweepGovernedRoots, unsweptLine } from '../Properties/governedSweep'
@@ -116,10 +119,24 @@ function currentKeys(tree: NexusTree, skip?: string) {
   }
 }
 
+/** A returning or landed artifact's governed files: its pages, and the Space sidecars under it. */
+async function artifactFiles(
+  root: string,
+  entity: RecordFile['entity'],
+  abs: string,
+): Promise<{ pages: string[]; sidecars: string[] }> {
+  const pages = await contentPages(entity, abs)
+  const sidecars = await listPathsUnder(root, abs, (rel, kind) =>
+    kind === 'dir' ? !hiddenFolder(basename(rel)) : basename(rel) === SPACE_SIDECAR,
+  )
+  return { pages, sidecars: sidecars.map((rel) => join(root, rel)) }
+}
+
 /** Answers each Link value it dropped, by its root's id, so a restore can park the ones naming a page the Trash holds. */
 export async function scrubReturning(
   root: string,
   tree: NexusTree,
+  entity: RecordFile['entity'],
   absArtifact: string,
   destCollectionFolder: string | null,
   frozen: Frozen,
@@ -144,7 +161,7 @@ export async function scrubReturning(
       if (def && id) dropped.push({ page: id, property: def.id, value })
     }
   }
-  const pages = isMarkdownFile(absArtifact) ? [absArtifact] : await listMarkdownFiles(absArtifact)
+  const { pages, sidecars } = await artifactFiles(root, entity, absArtifact)
   const unstamped = new Map<string, Record<string, string>>()
   const text = (held: string, file: string): string | null => {
     const content = current.text(held)
@@ -163,11 +180,8 @@ export async function scrubReturning(
   if (skipped.length) throw new Error(unsweptLine(skipped.length))
   // An ID-less page takes the ID its next open would give it, so what it dropped can be parked.
   for (const [file, lost] of unstamped) note(lost, valueOr(await ensurePageId(file), undefined))
-  const sidecars = await listPathsUnder(root, absArtifact, (rel, kind) =>
-    kind === 'dir' ? !hiddenFolder(basename(rel)) : basename(rel) === SPACE_SIDECAR,
-  )
-  for (const rel of sidecars)
-    await rmwJsonStrict(join(root, rel), (held) => {
+  for (const file of sidecars)
+    await rmwJsonStrict(file, (held) => {
       const raw = current.words(current.json(held)).root
       const r = reconcileGovernedRoot(raw, spaceWorld, {}, inTransitKey)
       const gone = unlinked(r.root)
@@ -177,4 +191,23 @@ export async function scrubReturning(
       )
     })
   return dropped
+}
+
+/** A returning artifact's own links, repaired where it landed: each key in `repair` re-spells to the current name of the page the delete recorded it naming. Answers the files it couldn't write. */
+export async function repairLanded(
+  root: string,
+  tree: NexusTree,
+  entity: RecordFile['entity'],
+  targetAbs: string,
+  repair: ReadonlyMap<string, string>,
+): Promise<string[]> {
+  if (!repair.size) return []
+  const { text, spaceMoved } = fileRewrites(root, tree, (t) => rewriteConnections(t, repair))
+  const { pages, sidecars } = await artifactFiles(root, entity, targetAbs)
+  const { skipped } = await sweepGovernedRoots(root, pages, { text })
+  for (const file of sidecars) {
+    const wrote = await rmwJsonStrict(file, (raw) => spaceMoved(raw, file)).catch(() => null)
+    if (!wrote?.ok) skipped.push(file)
+  }
+  return skipped
 }

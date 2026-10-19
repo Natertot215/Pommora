@@ -329,8 +329,7 @@ export async function reachConfig(
   }
   const tiles = tileHostsOf(root, tree)
   // A file that doesn't parse won't read any better on a retry, so it's left as it is and holds nothing owed; only a file this pass can't read, or whose edit throws, is a skip.
-  const hidden = tree.unreadable?.some((u) => u.kind === 'registry' && u.reason === 'unreadable')
-  const reach: ConfigReach = { skipped: hidden ? 1 : 0, hosts: [] }
+  const reach: ConfigReach = { skipped: tiles.unreadable, hosts: [] }
   const written = async (path: string, mutate: (cur: Raw) => Raw | null): Promise<boolean> => {
     const outcome = await editJsonStrict(path, mutate).catch((err): StrictEdit => {
       console.error('configuration pass skipped a file:', errText(err))

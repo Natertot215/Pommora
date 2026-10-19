@@ -24,14 +24,12 @@ export async function renameOp(
     const r = await renameFolderEntity(root, abs, req.newName)
     return r.ok ? ok({}) : r
   }
-  if (req.fromCreate) {
-    const r = await createDisambiguated(
-      req.newName,
-      (name) => renamePage(abs, name),
-      (name) => pathExists(join(dirname(abs), `${name}.md`)),
-    )
-    return r.ok ? ok({}) : r
-  }
-  const r = await renamePage(abs, req.newName)
+  const r = req.fromCreate
+    ? await createDisambiguated(
+        req.newName,
+        (name) => renamePage(abs, name),
+        (name) => pathExists(join(dirname(abs), `${name}.md`)),
+      )
+    : await renamePage(abs, req.newName)
   return r.ok ? ok({}) : r
 }

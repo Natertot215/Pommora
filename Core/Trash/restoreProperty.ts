@@ -3,13 +3,12 @@ import { patchSidecar } from '../Files/sidecar'
 import { fail, ok, type Result, fault } from '../Contract/result'
 import { readRegistry, serializeSchemaOp } from '../Properties/propertiesRegistry'
 import type { RecordFile } from './record'
-import { recordById } from '../Nexus/record'
+import { pageIndexOf, recordById } from '../Nexus/record'
 import { liveTreeOf } from '../Nexus/liveTree'
-import { frozenWorld } from '../Nexus/heldPages'
 import { join } from '../Paths/posix'
 import { assignInner, refillValues } from '../Properties/assignment'
 import { patchCacheBlock } from '../Properties/propertyCache'
-import { isBlankRaw, gonePageEntry } from '../Properties/propertyValue'
+import { frozenWorld, isBlankRaw, gonePageEntry } from '../Properties/propertyValue'
 import type { StrippedLink } from '../Nexus/cascade'
 import { createProperty } from '../Properties/registryProperty'
 
@@ -56,7 +55,7 @@ async function restoreInner(
 
   const tree = await liveTreeOf(root)
   const roots = recordById(tree)
-  const frozen = frozenWorld(tree)
+  const frozen = frozenWorld(pageIndexOf(tree))
   const dropped: StrippedLink[] = []
   const values = Object.fromEntries(
     Object.entries(record.values).filter(([id, raw]) => {

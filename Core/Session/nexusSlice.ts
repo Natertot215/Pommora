@@ -237,7 +237,14 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       const held = get().tree
       const moves = req.op === 'rename' || req.op === 'movePage' || req.op === 'moveSet'
       // A save queued for a file this op moves or rewrites would land on the old path or go stale.
-      if (moves || req.op === 'createPage' || req.op === 'renameHeading' || req.op === 'delete')
+      if (
+        moves ||
+        req.op === 'createPage' ||
+        req.op === 'renameHeading' ||
+        req.op === 'delete' ||
+        req.op === 'restore' ||
+        req.op === 'emptyBundle'
+      )
         await flushAllSaves()
       // A flush held by a Nexus switch resumes after it, when the path this op names belongs to the Nexus it left.
       if (get().tree?.nexus.id !== held?.nexus.id) return null

@@ -39,7 +39,7 @@ export interface RelationRow extends Relation {
 }
 
 export interface PageRelationRow extends RelationRow {
-  kind: Extract<RelationKind, 'body' | 'citation' | 'value'>
+  kind: Exclude<RelationKind, 'space'>
 }
 
 export interface PageRelations {
@@ -59,9 +59,8 @@ export interface ContentIndexStore {
   renamePathIndex(oldPath: string, newPath: string): void
   removePathPrefixIndex(dir: string): void
   renamePathPrefixIndex(oldDir: string, newDir: string): void
-  /** Every page linking any of `keys`. */
-  queryMentions(keys: readonly string[]): string[]
-  queryHeadingMentions(normalizedHeading: string, keys: readonly string[]): string[]
+  /** Every page linking any of `keys`; given a `qualifier`, only those naming that heading. */
+  queryMentions(keys: readonly string[], qualifier?: string): string[]
   readHeadings(paths?: string[]): Record<string, PageHeading[]>
   /** Every page holding `key`. */
   queryKeyHolders(key: string): string[]
@@ -69,7 +68,7 @@ export interface ContentIndexStore {
   queryMembers(key: string, title: string): string[]
   readIndexedStat(path: string): IndexedStat | null
   readIndexedStats(under?: string): Map<string, IndexedStat>
-  /** Page → page rows only (`body`, `citation`, `value`), plus every indexed page's governed values and mtime; `paths` narrows both, and `key` narrows the values to that one key. */
+  /** Page → page rows only (every kind but `space`), plus every indexed page's governed values and mtime; `paths` narrows both, and `key` narrows the values to that one key. */
   readPageRelations(paths?: string[], key?: string): PageRelations
 }
 

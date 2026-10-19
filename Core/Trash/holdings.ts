@@ -1,10 +1,10 @@
-// What the Trash holds — its bundles, the page titles they hold, and the pages and Spaces they hold by ID — and the Link values a restore hands to it.
+// What the Trash holds — its bundles, the pages they hold at the paths they left, and the pages and Spaces they hold by ID — and the Link values a restore hands to it.
 
 import { basename, join, relative, titleFromPath } from '../Paths/posix'
 import { SPACE_SIDECAR, TRASH_DIR } from '../Paths/nexusPaths'
 import { landValue } from '../Files/rootValues'
 import { readLinkText } from '../Connections/linkValue'
-import { normalizeTitle } from '../Paths/caseFold'
+import { buildPageIndex, type ConnPage } from '../Connections/pageIndex'
 import type { StrippedLink } from '../Nexus/cascade'
 import { spaceIdsIn } from '../Contexts/spaceSidecar'
 import { readTextOrNull, rmwJsonStrict } from '../Files/atomicWrite'
@@ -12,7 +12,7 @@ import { stampedId } from '../Files/pageFile'
 import { listEntries, listMarkdownFiles } from '../Files/walk'
 import { sweepGovernedRoots } from '../Properties/governedSweep'
 import { isBlankRaw } from '../Properties/propertyValue'
-import { BUNDLE_SUFFIX } from './bundle'
+import { BUNDLE_SUFFIX, deletedPathOf } from './bundle'
 import { type RecordFile, appendLinks, bundleArtifact, readRecord } from './record'
 
 export interface ListedBundle {
@@ -66,28 +66,45 @@ export async function pageIdsOf(pages: string[]): Promise<string[]> {
   return texts.flatMap((text) => stampedId(text ?? '') ?? [])
 }
 
-/** The newest bundle holding each page title in the Trash. */
-async function trashedTitles(root: string): Promise<Map<string, string>> {
-  const newest = new Map<string, string>()
-  for (const { bundlePath, record, artifactName } of await listBundles(root)) {
-    if (!artifactName) continue
-    for (const page of await contentPages(record.entity, join(root, bundlePath, artifactName))) {
-      const title = normalizeTitle(titleFromPath(page))
-      const held = newest.get(title)
-      if (!held || basename(bundlePath) > basename(held)) newest.set(title, join(root, bundlePath))
-    }
-  }
-  return newest
+const trashedPage = (root: string, bundleAbs: string, file: string, id: string): ConnPage => {
+  const path = deletedPathOf(root, bundleAbs, file)
+  return { id, title: titleFromPath(path), path }
 }
 
-/** A Link value dropped for naming a page the Trash holds joins that page's newest bundle, so the page's restore writes it back. */
+/** Every trashed page at the path it left, its `id` the bundle holding it, since parking needs the bundle alone and reads no file. */
+async function trashedPages(root: string): Promise<ConnPage[]> {
+  const out: ConnPage[] = []
+  for (const { bundlePath, record, artifactName } of await listBundles(root)) {
+    if (!artifactName) continue
+    const bundle = join(root, bundlePath)
+    for (const file of await contentPages(record.entity, join(bundle, artifactName)))
+      out.push(trashedPage(root, bundle, file, bundle))
+  }
+  return out
+}
+
+/** One bundle's pages at the paths they left, with the ids their files carry; an ID-less one answers to its file, which no index holds as an id. */
+export async function trashedPagesOf(
+  root: string,
+  bundleAbs: string,
+  files: readonly string[],
+): Promise<ConnPage[]> {
+  const out: ConnPage[] = []
+  for (const file of files) {
+    const id = stampedId((await readTextOrNull(file)) ?? '')
+    out.push(trashedPage(root, bundleAbs, file, id ?? file))
+  }
+  return out
+}
+
+/** A Link value dropped for naming a page the Trash holds joins that page's bundle, so its restore writes it back; a key two trashed pages answer names neither. */
 export async function parkLinks(root: string, links: StrippedLink[]): Promise<void> {
   if (!links.length) return
-  const newest = await trashedTitles(root)
+  const index = buildPageIndex(await trashedPages(root))
   const parked = new Map<string, StrippedLink[]>()
   for (const link of links) {
     const page = readLinkText(link.value)
-    const bundle = page?.kind === 'page' && newest.get(normalizeTitle(page.title))
+    const bundle = page?.kind === 'page' ? index.resolve(page.title).page?.id : undefined
     if (bundle) parked.set(bundle, [...(parked.get(bundle) ?? []), link])
   }
   for (const [bundle, rows] of parked) await appendLinks(bundle, rows)

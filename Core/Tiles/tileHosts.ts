@@ -48,7 +48,9 @@ export const tileHostsOf = (
   hosts: ARMS.flatMap((arm) =>
     arm.boards(tree).map((b) => ({ host: b.host, dir: join(root, b.rel) })),
   ),
-  unreadable: tree.unreadable?.some((u) => u.kind === 'registry') ? 1 : 0,
+  unreadable: tree.unreadable?.some((u) => u.kind === 'registry' && u.reason === 'unreadable')
+    ? 1
+    : 0,
 })
 
 export function tileHostAt(tree: NexusTree, dirRel: string): TileHostRef | null {

@@ -105,20 +105,14 @@ export const contentIndexStore = (db: Db): ContentIndexStore => ({
       ).run(newDir, oldDir, oldDir, oldDir)
     }
   },
-  // Qualifier-agnostic by construction: a page that links only `[[Alpha#Intro]]` names Alpha, and a predicate narrowing to the unqualified row would drop it from the rename cascade silently. DISTINCT because one page reaches one target through several kinds and qualifiers.
-  queryMentions(keys) {
+  // Qualifier-agnostic unless one is asked for: a page that links only `[[Alpha#Intro]]` names Alpha, and a predicate narrowing to the unqualified row would drop it from the rename cascade silently. DISTINCT because one page reaches one target through several kinds and qualifiers.
+  queryMentions(keys, qualifier) {
+    const qualified = qualifier === undefined ? [] : [qualifier]
     return paths(
       db,
-      `SELECT DISTINCT path FROM relations WHERE target IN ${LISTED} AND kind <> 'space' ORDER BY path`,
+      `SELECT DISTINCT path FROM relations WHERE target IN ${LISTED}${qualified.length ? ' AND qualifier = ?' : ''} AND kind <> 'space' ORDER BY path`,
       JSON.stringify(keys),
-    )
-  },
-  queryHeadingMentions(normalizedHeading, keys) {
-    return paths(
-      db,
-      `SELECT DISTINCT path FROM relations WHERE target IN ${LISTED} AND qualifier = ? AND kind <> 'space' ORDER BY path`,
-      JSON.stringify(keys),
-      normalizedHeading,
+      ...qualified,
     )
   },
   readHeadings(only) {
@@ -144,7 +138,7 @@ export const contentIndexStore = (db: Db): ContentIndexStore => ({
     const args = only ? [JSON.stringify(only)] : []
     const relations = db
       .prepare(
-        `SELECT path, kind, target, qualifier, key FROM relations WHERE kind IN ('body','citation','value')${inClause} ORDER BY path`,
+        `SELECT path, kind, target, qualifier, key FROM relations WHERE kind <> 'space'${inClause} ORDER BY path`,
       )
       .all(...args) as unknown as PageRelationRow[]
     const stats = db
