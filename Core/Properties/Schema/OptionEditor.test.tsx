@@ -169,16 +169,13 @@ describe('the option menu', () => {
   it('a remove refused while another change is owed offers a Try Again that replays the held record', async () => {
     menu.mockResolvedValueOnce(ok('option:remove'))
     removeOption.mockResolvedValueOnce(
-      fail(
-        'owed',
-        'An earlier change hasn’t reached every file yet. Use Try Again to finish it first.',
-      ),
+      fail('owed', 'An earlier change hasn’t reached every file yet.'),
     )
     render('select', select)
     await rightClick('Urgent')
     await confirm()
     expect(currentNotification()).toMatchObject({
-      message: 'An earlier change hasn’t reached every file yet. Use Try Again to finish it first.',
+      message: 'An earlier change hasn’t reached every file yet.',
       action: { label: 'Try Again' },
     })
     await act(async () => currentNotification()?.action?.run())

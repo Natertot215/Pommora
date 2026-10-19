@@ -4036,7 +4036,7 @@ console.log(files.join('\n'))
 **CHANGE**
 
 - [ ] Write and watch fail: `optionOps.test.ts` — a new describe *§an owed record holds option changes*: with `{ op: 'rename', id: 'prop_x', from: 'Old', to: 'New' }` held, `renameOption(root, id, 'A', 'B')` and `removeOption(root, id, 'A')` each answer `fault(OWED_MESSAGE)`, the registry still lists `A`, every holder keeps its bytes, and the held record is unchanged; `clearOption(root, id, 'A')` still strips (it writes no record); a held record identical to the one an op would write (the op re-run) doesn't refuse. `journalWiring.test.ts:305-317` passes unchanged (a delete still runs over a held record).
-- [ ] `optionOps.ts`: delete `removeOption`'s `journaled` and its conditional; add `OWED`, `fail('owed', 'An earlier change hasn’t reached every file yet. Use Try Again to finish it first.')`; `renameOption` and `removeOption` answer `OWED` when `writeSchemaJournal` answers false, before any commit or sweep; `removeOption` answers `schemaCascade(reach, record)`.
+- [ ] `optionOps.ts`: delete `removeOption`'s `journaled` and its conditional; add `OWED`, `fail('owed', 'An earlier change hasn’t reached every file yet.')`; `renameOption` and `removeOption` answer `OWED` when `writeSchemaJournal` answers false, before any commit or sweep; `removeOption` answers `schemaCascade(reach, record)`.
 - [ ] `journalSlot.ts:1`: the header says the op now starting runs unjournaled or refuses, as its owner decides.
 - [ ] The refusal carries its own Try Again: `OWED`'s code is `'owed'` (`Core/Contract/result.ts`); `property:replay` takes an optional record, and with none replays the one the slot holds; `propertyWrite.ts`' `write` and `warnOwed` answer an `'owed'` refusal with `notifyRetry(message, replay())`. `owedKeys(journal, id)` gives `registerHeldOptions` and `editOption` one owed-key set, and `editOption` refuses `OWED` when an edit would leave the definition holding a key the set names that it didn't hold.
 
@@ -4045,7 +4045,7 @@ console.log(files.join('\n'))
 ```Core/Properties/optionOps.ts diff
 @@ constants @@
  const NO_GROUP = fail('not-found', 'That group no longer exists.')
-+const OWED = fail('owed', 'An earlier change hasn’t reached every file yet. Use Try Again to finish it first.')
++const OWED = fail('owed', 'An earlier change hasn’t reached every file yet.')
 @@ renameOption @@
      // Staged BEFORE the commit: a crash between commit and cascade is recoverable only from this record.
 -    await writeSchemaJournal(root, record)
@@ -4760,7 +4760,7 @@ for (const miss of misses) console.log(JSON.stringify(miss))
 -import { formatKey } from './keyFormat'
 +import { formatKey, type KeyFormat } from './keyFormat'
 @@ constants @@
- const OWED = fail('owed', 'An earlier change hasn’t reached every file yet. Use Try Again to finish it first.')
+ const OWED = fail('owed', 'An earlier change hasn’t reached every file yet.')
 +// A replay over a partly swept file can't tell a moved word from an unmoved one.
 +const CROSSED = fail(
 +  'invalid-property',
@@ -5797,7 +5797,7 @@ Nathan's copy, decided at the Stop before Task 5A-1:
 
 - **A Key Another Property Writes** (Task 5A-2, `KEY_REFUSAL.duplicateKey`): "A property already writes "{key}" to files."
 - **Two Options Writing One Key** (Task 5B-3's `validateOptionValues`): "An option with this title already exists, please choose another name."; a Value Format change (Task 7B-2) refuses "This format would give two options the same key, please rename one first."
-- **An Option Change Waiting for Try Again** (Task 6-4, `OWED`): "An earlier change hasn’t reached every file yet. Use Try Again to finish it first.", worded once the refusal carried its own Try Again.
+- **An Option Change Waiting for Try Again** (Task 6-4, `OWED`): "An earlier change hasn’t reached every file yet.", the Try Again beside it carrying the rest.
 - **A Label That Leaves Its Key Empty** (Task 5A-2's `KEY_REFUSAL.noKey`, Task 5B-3's `validateOptionValues`): "Properties cannot contain an invalid name." and "Options cannot contain an invalid name.", reached through a format (Tasks 7A-3, 7B-2) or a registry written by hand; a blank label keeps "A name cannot be empty." and "Option titles can’t be blank."
 - **A Value Format Change Crossing Two Options' Keys** (Task 7B-2, `CROSSED`): "This format would give one option the key another option writes now, please rename one first."
 - **The Format Change's Confirmation** (Task 7B-4, `askFormatChange`): "This action would rewrite metadata in {N Items}.", detail "Each key changes to the new format; its display label stays the same." for a Key Format change and "Each value changes to the new format; its display label stays the same." for a Value Format change, worded once the shared line read backwards for a Value Format change, action "Rewrite", tone `positive`.
@@ -5819,7 +5819,7 @@ An alternative Nathan raised during Phase 4, held open while the plan runs as wr
 
 - **The Format Rows Carry No Hints** (Phase 7B review, Nathan's call): H-1's two hints ran on one line and widened every property's settings pane, which sizes to its widest row, and a cap on those two hints alone would have been the only hint measure in the kit. The rows ship compact and without hints, and `PickerRowLook.caption`, which only they read, didn't land; *IssuesPM* F-073 holds the rule a hint in a content-sized pane waits on, after which the rows take their hints back.
 
-- **A File Nobody Can Parse Holds Nothing Owed** (Phase 6 review, Nathan's call to follow the codebase's existing pattern): the configuration pass counted every Collection or Set sidecar that didn't parse, and every corrupt tile document or Contexts registry, as a skip, even one naming no option, so with Task 6-4's wait a single damaged file kept a change owed on every open and refused every later option rename or removal Nexus-wide, behind a Try Again notice that fades and doesn't survive a restart. The pass now follows the rule every other journaled pass already does (`governedSweep.ts`): a file it can't read counts once, and one nobody can parse is left as it is and holds nothing owed, so its views keep the old label once it's repaired. `OWED` carries its own Try Again replaying the held record (its copy now reads "Use Try Again to finish it first."), and an option edit can't take back an owed rename's old key. A `settings.json` that doesn't parse still counts as a skip, since its writer reports a corrupt file and an unreadable one alike.
+- **A File Nobody Can Parse Holds Nothing Owed** (Phase 6 review, Nathan's call to follow the codebase's existing pattern): the configuration pass counted every Collection or Set sidecar that didn't parse, and every corrupt tile document or Contexts registry, as a skip, even one naming no option, so with Task 6-4's wait a single damaged file kept a change owed on every open and refused every later option rename or removal Nexus-wide, behind a Try Again notice that fades and doesn't survive a restart. The pass now follows the rule every other journaled pass already does (`governedSweep.ts`): a file it can't read counts once, and one nobody can parse is left as it is and holds nothing owed, so its views keep the old label once it's repaired. `OWED` carries its own Try Again replaying the held record (its copy now reads "An earlier change hasn’t reached every file yet.", the button beside it saying the rest), and an option edit can't take back an owed rename's old key. A `settings.json` that doesn't parse still counts as a skip, since its writer reports a corrupt file and an unreadable one alike.
 
 - **Undo Puts Back What the File Held** (Phase 3 review, Nathan's ruling): an undo wrote the decoded prior, so once words matched exactly a page holding only words no option names (`Tags: [work]`), a Select in another casing (`Status: done`), or a value its type can't read (`Count: abc`) lost its key on ⌘Z, confirmed live through the table's picker. `assignValue` now captures the raw value beside the decoded one, and the revert sends `restoreValue`, which the page and Space handlers land through the same resolve-and-lock and `writtenRoot` a `setProperty` does, `valueToWrite` being the one encode both share; a Context column's undo still writes its prior ids.
 

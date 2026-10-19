@@ -705,8 +705,7 @@ describe('removeOption', () => {
 })
 
 describe('an owed record holds option changes', () => {
-  const OWED_MESSAGE =
-    'An earlier change hasn’t reached every file yet. Use Try Again to finish it first.'
+  const OWED_MESSAGE = 'An earlier change hasn’t reached every file yet.'
   const held = { op: 'rename', id: 'prop_x', from: 'Old', to: 'New' } as const
   const owing = async (): Promise<{ id: string; page: string; bytes: string }> => {
     const id = await mkSelect([
@@ -1388,10 +1387,7 @@ describe('a Value Format change re-keys every option', () => {
     const bytes = await readFile(page, 'utf8')
 
     expect(await setValueFormat(root, id, 'kebab-case')).toEqual(
-      fail(
-        'owed',
-        'An earlier change hasn’t reached every file yet. Use Try Again to finish it first.',
-      ),
+      fail('owed', 'An earlier change hasn’t reached every file yet.'),
     )
     expect((await readRegistry(root)).defs[id]).toEqual(def)
     expect(await readFile(page, 'utf8')).toBe(bytes)

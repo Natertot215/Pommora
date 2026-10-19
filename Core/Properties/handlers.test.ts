@@ -231,10 +231,7 @@ describe('the property channels', () => {
     const owed = { op: 'rename' as const, id: 'prop_other', from: 'A', to: 'B' }
     await writeSchemaJournal(root, owed)
     expect(await propertiesHandlers['property:removeOption'](ctx, propId, 'Done')).toEqual(
-      fail(
-        'owed',
-        'An earlier change hasn’t reached every file yet. Use Try Again to finish it first.',
-      ),
+      fail('owed', 'An earlier change hasn’t reached every file yet.'),
     )
     expect((await readRegistry(root)).defs[propId]?.select_options).toContainEqual({
       key: 'Done',
@@ -325,12 +322,7 @@ describe('a schema op started while another operation’s record holds the journ
     ['an option removal', () => propertiesHandlers['property:removeOption'](ctx, propId, 'Done')],
   ])('%s is refused, leaving every holder', async (_, run) => {
     const before = await fm()
-    expect(await run()).toEqual(
-      fail(
-        'owed',
-        'An earlier change hasn’t reached every file yet. Use Try Again to finish it first.',
-      ),
-    )
+    expect(await run()).toEqual(fail('owed', 'An earlier change hasn’t reached every file yet.'))
     expect(await fm()).toBe(before)
     expect(await readSchemaJournal(root)).toEqual(other)
   })
