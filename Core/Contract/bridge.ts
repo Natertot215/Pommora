@@ -172,6 +172,10 @@ export interface Asks {
     args: [propertyId: string, oldLabel: string, newLabel: string]
     reply: Result<SchemaCascade>
   }
+  'property:setValueFormat': {
+    args: [propertyId: string, format: KeyFormat]
+    reply: Result<SchemaCascade>
+  }
   'property:removeOption': {
     args: [propertyId: string, label: string]
     reply: Result<SchemaCascade>

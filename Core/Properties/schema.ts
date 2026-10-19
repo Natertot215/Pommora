@@ -98,17 +98,16 @@ export function withUniqueOptions(def: PropertyDefinition): PropertyDefinition {
 }
 
 /** No minimum count — a Select may hold zero options. Enforced at create AND on every option edit; labels and keys each compare case-folded. */
-export function validateOptionValues(options: { key: string; label: string }[]): Result<null> {
+export function validateOptionValues(
+  options: { key: string; label: string }[],
+  taken = 'An option with this title already exists, please choose another name.',
+): Result<null> {
   const labels = options.map((o) => normalizeTitle(o.label))
   const keys = options.map((o) => normalizeTitle(o.key))
   if (labels.includes('')) return fail('invalid-property', 'Option titles can’t be blank.')
   if (keys.includes('')) return fail('invalid-property', 'Options cannot contain an invalid name.')
   if (new Set(labels).size < labels.length)
     return fail('invalid-property', 'Option titles must be unique.')
-  if (new Set(keys).size < keys.length)
-    return fail(
-      'invalid-property',
-      'An option with this title already exists, please choose another name.',
-    )
+  if (new Set(keys).size < keys.length) return fail('invalid-property', taken)
   return ok(null)
 }

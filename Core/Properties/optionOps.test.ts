@@ -4,7 +4,17 @@ import { chmod, mkdir, rm, readFile, stat, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { noModeBits, seedSpaceSidecar, readJsonAt, tempRoot } from '../Testing/hostFs'
 import { fail, fault, ok } from '../Contract/result'
-import { editOption, optionHolders, renameOption, removeOption, clearOption } from './optionOps'
+import {
+  editOption,
+  optionHolders,
+  renameOption,
+  removeOption,
+  clearOption,
+  setValueFormat,
+  valueFormatHolders,
+} from './optionOps'
+import type { KeyFormat } from './keyFormat'
+import { replaySchemaCascade } from './replaySchemaCascade'
 import { createProperty, editProperty } from './registryProperty'
 import { assignProperty } from './assignment'
 import { removeProperty } from './removeProperty'
@@ -19,7 +29,7 @@ type PropDefLike = Record<string, unknown> & {
   type?: string
 }
 type RegistryFile = { order: string[]; defs: Record<string, PropDefLike> }
-import { readSchemaJournal, writeSchemaJournal } from './propertyJournal'
+import { readSchemaJournal, type SchemaJournal, writeSchemaJournal } from './propertyJournal'
 import { unsweptLine } from './governedSweep'
 import { type ConfigSurfaces, seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
 import { sidecarPath } from '../Paths/paths'
@@ -1253,5 +1263,208 @@ describe('option cascades reach saved views', () => {
     const views = await surfaces.read()
     const held = viewOn(id, 'a')
     expect([views.collection, views.set, views.tile]).toEqual([held, held, held])
+  })
+})
+
+const PAGE_ID = '01ARZ3NDEKPSV4RRFFQ69G5FAV'
+const SAME_KEY = fail(
+  'invalid-property',
+  'This format would give two options the same key, please rename one first.',
+)
+const CROSSED = fail(
+  'invalid-property',
+  'This format would give one option the key another option writes now, please rename one first.',
+)
+
+async function toned(
+  select_options: SelectOption[],
+  value_format?: KeyFormat,
+): Promise<{
+  id: string
+  page: string
+  space: string
+  cache: () => Promise<unknown>
+  surfaces: ConfigSurfaces
+}> {
+  const id = await mkProperty({
+    label: 'Tones',
+    key: 'Tones',
+    type: 'multiSelect',
+    ...(value_format ? { value_format } : {}),
+    select_options,
+  })
+  const made = await createFolderEntity(root, 'collection', 'Col', newId())
+  if (!made.ok) throw new Error('folder failed')
+  const col = made.value.path
+  await assignProperty(root, col, id)
+  const page = join(col, 'One.md')
+  const words = select_options.map((o, i) => (i ? `"${o.key}"` : o.key)).join(', ')
+  await writeFile(page, `---\nID: ${PAGE_ID}\nTones: [${words}]\n---\nb\n`)
+  const space = await spaceSidecar('Pommora', { id: 'sp1', Tones: [select_options[0].key] })
+  const file = sidecarPath(col, 'collection')
+  await writeFile(
+    file,
+    JSON.stringify({
+      ...(await readJsonAt(file)),
+      property_cache: { [id]: { values: { [PAGE_ID]: [select_options[0].key] } } },
+    }),
+  )
+  const surfaces = await seedConfigSurfaces(root, col, viewOn(id, select_options[0].label))
+  const cache = async () => (await readJsonAt(file)).property_cache
+  return { id, page, space, cache, surfaces }
+}
+
+const tones = (): Promise<Awaited<ReturnType<typeof toned>>> =>
+  toned([
+    { key: 'Light Blue', label: 'Light Blue' },
+    { key: 'Dark Red', label: 'Dark Red' },
+  ])
+
+describe('a Value Format change re-keys every option', () => {
+  it('stores the format and every option’s new key, rewriting the files and caches and leaving configuration', async () => {
+    const { id, page, space, cache, surfaces } = await tones()
+    const views = await surfaces.read()
+
+    expect(await setValueFormat(root, id, 'kebab-case')).toEqual(
+      ok({ cascade: { pages: [], hosts: [] } }),
+    )
+    const def = (await readRegistry(root)).defs[id]
+    expect(def.value_format).toBe('kebab-case')
+    expect(def.select_options).toEqual([
+      { key: 'light-blue', label: 'Light Blue' },
+      { key: 'dark-red', label: 'Dark Red' },
+    ])
+    expect(await readFile(page, 'utf8')).toContain('Tones: ["light-blue", "dark-red"]')
+    expect((await readJsonAt(space)).Tones).toEqual(['light-blue'])
+    expect(await cache()).toEqual({ [id]: { values: { [PAGE_ID]: ['light-blue'] } } })
+    expect(await surfaces.read()).toEqual(views)
+    expect(await readSchemaJournal(root)).toBeNull()
+  })
+
+  it('refuses two options the format gives one key, changing nothing', async () => {
+    const { id, page } = await toned([
+      { key: 'Wifi Pro', label: 'Wifi Pro' },
+      { key: 'Wifi-Pro', label: 'Wifi-Pro' },
+    ])
+    const def = (await readRegistry(root)).defs[id]
+    const bytes = await readFile(page, 'utf8')
+
+    expect(await setValueFormat(root, id, 'kebab-case')).toEqual(SAME_KEY)
+    expect((await readRegistry(root)).defs[id]).toEqual(def)
+    expect(await readFile(page, 'utf8')).toBe(bytes)
+    expect(await readSchemaJournal(root)).toBeNull()
+  })
+
+  it('refuses an option taking the key another option writes now, changing nothing', async () => {
+    const { id, page } = await toned(
+      [
+        { key: 'wifipro', label: 'WifiPro' },
+        { key: 'wifi-pro', label: 'WiFi-Pro' },
+      ],
+      'lowercase',
+    )
+    const def = (await readRegistry(root)).defs[id]
+    const bytes = await readFile(page, 'utf8')
+
+    expect(await setValueFormat(root, id, 'kebab-case')).toEqual(CROSSED)
+    expect((await readRegistry(root)).defs[id]).toEqual(def)
+    expect(await readFile(page, 'utf8')).toBe(bytes)
+    expect(await readSchemaJournal(root)).toBeNull()
+  })
+
+  it('waits for an owed record, changing nothing', async () => {
+    const { id, page } = await tones()
+    const held = { op: 'rename', id: 'prop_other', from: 'A', to: 'B' } as const
+    await writeSchemaJournal(root, held)
+    const def = (await readRegistry(root)).defs[id]
+    const bytes = await readFile(page, 'utf8')
+
+    expect(await setValueFormat(root, id, 'kebab-case')).toEqual(
+      fail(
+        'owed',
+        'An earlier change hasn’t reached every file yet. Use Try Again to finish it first.',
+      ),
+    )
+    expect((await readRegistry(root)).defs[id]).toEqual(def)
+    expect(await readFile(page, 'utf8')).toBe(bytes)
+    expect(await readSchemaJournal(root)).toEqual(held)
+  })
+
+  it.skipIf(noModeBits)(
+    'an unreadable page owes one key-only record, and its replay brings the page current',
+    async () => {
+      const { id, page } = await tones()
+      const owed: SchemaJournal = {
+        op: 'option-rename',
+        id,
+        keys: [
+          ['Light Blue', 'light-blue'],
+          ['Dark Red', 'dark-red'],
+        ],
+      }
+      await chmod(page, 0o000)
+      try {
+        const r = await setValueFormat(root, id, 'kebab-case')
+        expect(r.ok && r.value.owed).toEqual(owed)
+      } finally {
+        await chmod(page, 0o644)
+      }
+      expect((await replaySchemaCascade(root, owed))?.ok).toBe(true)
+      expect(splitFrontmatter(await readFile(page, 'utf8')).Tones).toEqual([
+        'light-blue',
+        'dark-red',
+      ])
+      expect(await readSchemaJournal(root)).toBeNull()
+    },
+  )
+
+  it('Match Title over keys equal to their labels keeps every option and writes no holder', async () => {
+    const { id, page, space } = await tones()
+    const options = (await readRegistry(root)).defs[id].select_options
+    const bytes = await Promise.all([page, space].map((f) => readFile(f, 'utf8')))
+    const mtimes = await Promise.all([page, space].map(async (f) => (await stat(f)).mtimeMs))
+
+    expect((await setValueFormat(root, id, 'Match Title')).ok).toBe(true)
+    expect((await readRegistry(root)).defs[id].select_options).toEqual(options)
+    expect(await Promise.all([page, space].map((f) => readFile(f, 'utf8')))).toEqual(bytes)
+    expect(await Promise.all([page, space].map(async (f) => (await stat(f)).mtimeMs))).toEqual(
+      mtimes,
+    )
+  })
+
+  it('refuses a property without options', async () => {
+    const id = await mkProperty({ label: 'Notes', key: 'Notes', type: 'text' })
+    expect(await setValueFormat(root, id, 'kebab-case')).toEqual(
+      fail(
+        'invalid-property',
+        'Options can only be edited on a Select, Multi-Select, or Status property.',
+      ),
+    )
+  })
+})
+
+describe('valueFormatHolders', () => {
+  it('counts the page and the Space a format change rewrites, writing neither', async () => {
+    const { id, page, space } = await tones()
+    const bytes = await Promise.all([page, space].map((f) => readFile(f, 'utf8')))
+
+    expect(await valueFormatHolders(root, id, 'kebab-case')).toEqual(ok(2))
+    expect(await Promise.all([page, space].map((f) => readFile(f, 'utf8')))).toEqual(bytes)
+  })
+
+  it('answers the crossing refusal', async () => {
+    const { id } = await toned(
+      [
+        { key: 'wifipro', label: 'WifiPro' },
+        { key: 'wifi-pro', label: 'WiFi-Pro' },
+      ],
+      'lowercase',
+    )
+    expect(await valueFormatHolders(root, id, 'kebab-case')).toEqual(CROSSED)
+  })
+
+  it('counts nothing for Match Title over keys equal to their labels', async () => {
+    const { id } = await tones()
+    expect(await valueFormatHolders(root, id, 'Match Title')).toEqual(ok(0))
   })
 })

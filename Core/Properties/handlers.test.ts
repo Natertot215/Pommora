@@ -275,6 +275,12 @@ describe('the property channels', () => {
     )
   })
 
+  it('property:setValueFormat refuses a format that isn’t a Key Format', async () => {
+    expect(await propertiesHandlers['property:setValueFormat'](ctx, propId, 'Shouting')).toEqual(
+      fault('A property id and value are required.'),
+    )
+  })
+
   it('a removal whose drop fails still lands the Set it wrote in the held tree', async () => {
     vi.mocked(mutateRegistry).mockResolvedValueOnce(fault('refused'))
     const r = await propertiesHandlers['property:removeOption'](ctx, propId, 'Done')
