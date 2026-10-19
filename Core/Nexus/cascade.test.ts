@@ -14,7 +14,7 @@ import { rewritePageSerialized } from '../Files/atomicWrite'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import { seedContentIndex } from '../Index/indexSeed'
-import { queryHeadingMentions, queryMentions } from '../Index/contentIndex'
+import { queryMentions } from '../Index/contentIndex'
 import { ok } from '../Contract/result'
 import { machine } from '../Platform/machine'
 import { contextsDir, contextsRegistryFile, tileFilePath, homepageDir } from '../Paths/paths'
@@ -471,7 +471,7 @@ describe('renameCascade for a heading', () => {
     await setValue(a.value.path, 'Ref', '[[#Setup|the start]]')
     installStores(memoryStores().stores)
     await seedContentIndex(root)
-    const holders = queryHeadingMentions('setup', [''])
+    const holders = queryMentions([''], 'setup')
     await renameCascade(root, { path: 'Notes/A.md', heading: 'Setup', to: 'Intro' }, true)
     installStores(NO_STORES)
     expect(holders).toEqual([rel(a.value.path)])

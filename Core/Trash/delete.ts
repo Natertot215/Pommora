@@ -19,6 +19,7 @@ import {
   buildContextRecord,
   gatherContentRecord,
   gatherContextEvidence,
+  gatherLinkTargets,
   gatherSpaceRecord,
 } from './gather'
 import { type RecordFile, writeRecord } from './record'
@@ -45,9 +46,14 @@ export async function deleteOp(
   const bundle = deps.trashMode === 'system' ? null : await mintBundle(root, abs)
   // With no bundle to keep them, the pages' metadata entries leave with the delete, by the ids their files carry before the move.
   const pageIds = bundle ? [] : await pageIdsOf(await contentPages(req.kind, abs))
+  const targets = bundle ? gatherLinkTargets(before, rel) : {}
   const write = bundle
     ? async (record: RecordFile | null): Promise<void> => {
-        if (record) await writeRecord(bundle, record)
+        if (record)
+          await writeRecord(bundle, {
+            ...record,
+            ...(Object.keys(targets).length ? { targets } : {}),
+          })
       }
     : null
   // A refused unlink leaves nothing deleted, so its bundle goes with it.

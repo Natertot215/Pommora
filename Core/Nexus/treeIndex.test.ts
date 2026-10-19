@@ -142,7 +142,7 @@ describe('the connections projections', () => {
     const idx = pageIndexOf(makeTree())
     expect(idx.resolve('Alpha')).toMatchObject({ status: 'resolved' })
     expect(idx.resolve('Ghost')).toEqual({ status: 'phantom' })
-    expect(idx.candidates('nes').map((p) => p.id)).toEqual(['p2', 'p1'])
+    expect(idx.candidates('nes', 20).map((p) => p.id)).toEqual(['p2', 'p1'])
   })
 })
 

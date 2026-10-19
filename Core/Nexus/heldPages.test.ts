@@ -1,7 +1,7 @@
 import { join } from '../Paths/posix'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { NexusTree } from './tree'
-import { frozenWorld, liveIdIndex, liveIdOf, livePathOf } from './heldPages'
+import { liveIdIndex, liveIdOf, livePathOf } from './heldPages'
 
 const held = { tree: null as NexusTree | null }
 vi.mock('./liveTree', () => ({
@@ -68,22 +68,5 @@ describe('the held tree’s pages', () => {
     held.tree = tree('/elsewhere')
     expect(liveIdOf(ROOT, join(ROOT, 'Notes/A.md'))).toBeUndefined()
     expect(livePathOf(ROOT, 'pA')).toBeNull()
-  })
-})
-
-describe('titles answer from the one index', () => {
-  const withAlpha = (...paths: string[]): NexusTree => {
-    const t = tree(ROOT)
-    t.collections[0].pages.push(
-      ...paths.map((path, i) => ({ kind: 'page' as const, id: `alpha${i}`, title: 'Alpha', path })),
-    )
-    return t
-  }
-
-  it('frozenWorld holds an arriving title and a held one, and nothing else', () => {
-    const world = frozenWorld(withAlpha('Notes/Alpha.md'), ['Landing'])
-    expect(world.holds?.('landing')).toBe(true)
-    expect(world.holds?.('alpha')).toBe(true)
-    expect(world.holds?.('ghost')).toBe(false)
   })
 })

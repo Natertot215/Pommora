@@ -13,6 +13,9 @@ import { listBundles } from './holdings'
 import { stampMissing } from '../Nexus/adopt'
 import { readNexus } from '../Nexus/readNexus'
 import { fault } from '../Contract/result'
+import { installStores, NO_STORES } from '../Platform/stores'
+import { memoryStores } from '../Testing/memoryStores'
+import { seedContentIndex } from '../Index/indexSeed'
 
 import { closeSession, openSession } from '../Nexus/session'
 import type { TrashDeps } from './bundle'
@@ -356,6 +359,40 @@ describe('a returning artifact is reconciled against the world it comes back to'
       join(root, bundleOf('Nowhere.md'), '_record.json'),
     )
     expect(record.links).toEqual([{ page: PAGE_A, property: LINK, value: '[[Nowhere]]' }])
+  })
+
+  it('keeps a Link naming a page renamed meanwhile, which follows it once landed', async () => {
+    await writeFile(
+      join(root, '.nexus', 'properties.json'),
+      JSON.stringify({
+        order: [LINK],
+        defs: { [LINK]: { id: LINK, label: 'Related', key: 'Related', type: 'link' } },
+      }),
+    )
+    await writeFile(
+      join(root, 'Notes', 'Alpha.md'),
+      `---\nID: ${PAGE_A}\nRelated: "[[Beta]]"\n---\nbody`,
+    )
+    await writeFile(
+      join(root, 'Notes', 'Beta.md'),
+      `---\nID: 01KVGMT8BFP350FZZXAMG1QDVE\n---\nbody`,
+    )
+    installStores(memoryStores().stores)
+    try {
+      await refreshTree(root)
+      await seedContentIndex(root)
+      await cycle('Notes/Alpha.md', 'page', async () => {
+        const r = await settledMutate(
+          root,
+          { op: 'rename', path: 'Notes/Beta.md', kind: 'page', newName: 'Gamma' },
+          nexusDeps,
+        )
+        expect(r.ok).toBe(true)
+      })
+      expect((await fm('Notes/Alpha.md')).Related).toBe('[[Gamma]]')
+    } finally {
+      installStores(NO_STORES)
+    }
   })
 
   it('leaves foreign frontmatter and the body untouched while it strips', async () => {

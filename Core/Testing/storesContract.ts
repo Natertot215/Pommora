@@ -90,10 +90,7 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
       })
       upsert('Zeta/C.md', { relations: [body('delta', 'setup')], headings: [], values: {} })
       expect(store.queryMentions(['beta', 'gamma'])).toEqual(['Loose/B.md', 'Notes/A.md'])
-      expect(store.queryHeadingMentions('setup', ['beta', 'b/beta'])).toEqual([
-        'Loose/B.md',
-        'Notes/A.md',
-      ])
+      expect(store.queryMentions(['beta', 'b/beta'], 'setup')).toEqual(['Loose/B.md', 'Notes/A.md'])
     })
 
     it('round-trips an upsert through every query', () => {
@@ -211,10 +208,10 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
       })
       expect(store.readHeadings()).toEqual({ 'Notes/A.md': OUTLINE })
       expect(store.readHeadings(['Notes/A.md'])).toEqual({ 'Notes/A.md': OUTLINE })
-      expect(store.queryHeadingMentions('setup', ['beta'])).toEqual(['Notes/A.md'])
+      expect(store.queryMentions(['beta'], 'setup')).toEqual(['Notes/A.md'])
       store.renamePathIndex('Notes/A.md', 'Notes/Alpha.md')
       expect(store.readHeadings()).toEqual({ 'Notes/Alpha.md': OUTLINE })
-      expect(store.queryHeadingMentions('setup', ['beta'])).toEqual(['Notes/Alpha.md'])
+      expect(store.queryMentions(['beta'], 'setup')).toEqual(['Notes/Alpha.md'])
     })
 
     it('a page with no headings reads as an empty list, cold and by path alike', () => {
@@ -225,7 +222,12 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
 
     it("reads the page-to-page rows and every page's values, whole, by path, and by key", () => {
       upsert('Notes/A.md', {
-        relations: [body('beta'), relation('citation', 'gamma'), space('<Projects>', 'pommora')],
+        relations: [
+          body('beta'),
+          relation('citation', 'gamma'),
+          relation('embed', 'delta'),
+          space('<Projects>', 'pommora'),
+        ],
         headings: [],
         values: { ID: 'idA', Status: ['Open'] },
       })
@@ -238,6 +240,7 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
       expect(whole.relations).toEqual([
         { path: 'Notes/A.md', ...body('beta') },
         { path: 'Notes/A.md', ...relation('citation', 'gamma') },
+        { path: 'Notes/A.md', ...relation('embed', 'delta') },
       ])
       expect(whole.pages).toEqual({
         'Notes/A.md': { values: { ID: 'idA', Status: ['Open'] }, mtimeMs: 1000 },
@@ -289,7 +292,7 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
       upsert('Notes/A.md', { relations: [space('<Projects>', 'beta')], headings: [], values: {} })
       upsert('Loose/B.md', { relations: [body('beta')], headings: [], values: {} })
       expect(store.queryMentions(['beta'])).toEqual(['Loose/B.md'])
-      expect(store.queryHeadingMentions('', ['beta'])).toEqual(['Loose/B.md'])
+      expect(store.queryMentions(['beta'], '')).toEqual(['Loose/B.md'])
       expect(store.queryMembers('<Projects>', 'beta')).toEqual(['Notes/A.md'])
     })
 

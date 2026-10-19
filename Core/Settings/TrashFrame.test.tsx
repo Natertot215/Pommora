@@ -11,6 +11,7 @@ import { personalizationOf } from '../Session/configSlice'
 import { notifyTrashed } from '../Interface/Confirm/confirmations'
 import { currentNotification } from '../Interface/Notifications/notifications'
 import { pushUndo, resetUndo, undoValue } from '../Session/undo'
+import { pageIO, scheduleBodySave } from '../Session/saveScheduler'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -252,19 +253,52 @@ describe('the Trash pane', () => {
     expect(older).toHaveBeenCalledTimes(1)
   })
 
-  it('carries what a Delete All couldn’t strip into its notice', async () => {
+  const pickForBoth = async (action: string): Promise<void> => {
     listed = [row({ title: 'Alpha' }), row({ title: 'Beta' })]
     await act(async () => nexus('B'))
-    useSession.setState({ askConfirm: async () => true })
-    const warning = 'Couldn’t update links in 1 Item.'
-    mutated.mockResolvedValue({ ok: true, value: { cascade: { pages: [], hosts: [], warning } } })
     for (const box of host?.querySelectorAll('[role="checkbox"]') ?? [])
       await act(async () => (box as HTMLButtonElement).click())
-    picked = 'deleteAll'
+    picked = action
     const item = host?.querySelector('.trash-row') as HTMLElement
     await act(async () => {
       item.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
     })
+  }
+
+  it('a Restore All lands every pending save before its first restore', async () => {
+    const order: string[] = []
+    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+      'trash:list': vi.fn(async () => ({ ok: true, value: listed })),
+      menu: vi.fn(async () => ({ ok: true, value: picked })),
+      'page:updateBody': vi.fn(async (path: string) => {
+        order.push(`save ${path}`)
+        return { ok: true, value: { hash: 'h', stale: false } }
+      }),
+      mutate: vi.fn(async () => {
+        order.push('mutate')
+        return { ok: true, value: {} }
+      }),
+    })
+    scheduleBodySave('Notes/A.md', 'typed', pageIO)
+    await pickForBoth('restoreAll')
+    expect(order).toEqual(['save Notes/A.md', 'mutate', 'mutate'])
+  })
+
+  it('carries what a Restore All couldn’t re-spell into its notice', async () => {
+    const warning = 'Couldn’t update links in “Alpha” across 1 Item.'
+    mutated.mockResolvedValue({ ok: true, value: { cascade: { pages: [], hosts: [], warning } } })
+    await pickForBoth('restoreAll')
+    expect(currentNotification()).toMatchObject({
+      message: `Restored 2 pages. ${warning}`,
+      tone: 'error',
+    })
+  })
+
+  it('carries what a Delete All couldn’t strip into its notice', async () => {
+    useSession.setState({ askConfirm: async () => true })
+    const warning = 'Couldn’t update links in 1 Item.'
+    mutated.mockResolvedValue({ ok: true, value: { cascade: { pages: [], hosts: [], warning } } })
+    await pickForBoth('deleteAll')
     expect(currentNotification()).toMatchObject({
       message: `Deleted 2 pages. ${warning}`,
       tone: 'error',

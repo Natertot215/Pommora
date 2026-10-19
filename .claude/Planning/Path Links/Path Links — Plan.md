@@ -116,7 +116,7 @@ The work lands in nine phases in dependency order, each the largest run one agen
 - **Frozen:** `wikiTitle` and every File value, banner, cover, and asset reference it reads (A-8); `Core/Connections/aliasMemory.ts` and the metadata shard; `Core/Contract/bridge.ts` (no channel changes; `MutateOutcome.cascade` already exists and the store contract widens through `Core/Platform/stores.ts`); the `relations` table's columns (no schema change); `Core/MarkdownPM/Engine/detect.ts`'s `loneEmbedTitle`; `UIX/Symbols/allSymbols.ts`'s `searchIcons` (D-3); a view's filter operators (D-5); **Display Unresolved Links As Plain Syntax**; a trashed page's body while it sits in the Trash (F-3); `Core/Sync/`; every behavior of a resolved link's click (C-2).
 - **The Number:** every phase's VERIFY runs `python3 ~/"The Studio/.claude/scripts/view-delta/view-delta.py" <BASELINE>..HEAD --exclude .claude` and records the **Actionable** column (code minus comments; tests and docs excluded) in the Net Ledger beside the phase's estimate, with removals and additions apart. A phase that lands above its band is reported in chat before the next phase opens, with what the increase buys. There is no floor (the owner's bar: every addition earns its place and the outcome reads as intended, with the merges counting toward a codebase left with less); the final report states the measured total against the count under *§Overview · The Number*.
 - **Shape:** a feature with a refactor, removals, and fixes inside it. The behavioral baseline is today's behavior as the Decisions' *§Context* states it, kept except where a decision names a change and proven by the tests each task rewrites or adds. Every removal task lists its consumers (the sibling sweep), and the Frozen list holds throughout. Every fix task names what else consumed the old behavior. The index generation bump is the one migration: it drops and reseeds the content index on the first open, which is how the rows re-key.
-- **Conventions:** finite states are unions plus exhaustive switches; no O(N), allocating, or layout-reading work lands on a keystroke, a caret move, a decoration build, or a settle that nothing owes, and every task that touches one of those paths states its cost; the index resolves nothing eagerly at build (both processes rebuild it on every tree change, and the host never opens a picker); nothing in SQL rewrites `relations.target` (it mirrors the file's bytes; the sweep rewrites files and re-indexing re-keys them); host-run code imports no React or UIX, and `Desktop/hostGraph.test.ts` and `Core/Contract/engineGraph.test.ts` stay green; nothing inside an address operation awaits `inTurn` (`payOwedWalk`, `settleNow`), since `inTurns` has no re-entry detection and would hang silently (Task 6-3's audit, recorded there, lists every awaiter and every lock the turn takes: only `settle.ts` itself, `underContexts`'s `finally`, the two handlers after an operation, the watcher's own queue, and the test harness await a turn, and nothing a gated operation reaches imports `settle.ts`); a comment is written only where the code would be genuinely ambiguous or misread without it (the owner, 10-17-2026): the comment lines in an AFTER block state intent for the executor and are not written unless they meet that bar, a comment that restates its code or claims a cost is dropped, and the comments the scouts list as false are rewritten or removed by the task that falsifies them; commit messages are past tense and one to four sentences; nothing temporary, transitional, or compatibility-kept remains at a phase's end.
+- **Conventions:** finite states are unions plus exhaustive switches; no O(N), allocating, or layout-reading work lands on a keystroke, a caret move, a decoration build, or a settle that nothing owes, and every task that touches one of those paths states its cost; the index resolves nothing eagerly at build (both processes rebuild it on every tree change, and the host never opens a picker); nothing in SQL rewrites `relations.target` (it mirrors the file's bytes; the sweep rewrites files and re-indexing re-keys them); host-run code imports no React or UIX, and `Desktop/hostGraph.test.ts` and `Core/Contract/engineGraph.test.ts` stay green; nothing inside an address operation awaits `inTurn` (`payOwedWalk`, `settleNow`), since `inTurns` has no re-entry detection and would hang silently (Task 6-3's audit, recorded there, lists every awaiter and every lock the turn takes: only `settle.ts` itself, `underContexts`'s `finally`, the two handlers after an operation, the watcher's own queue, and the test harness await a turn, and nothing a gated operation reaches imports `settle.ts` except `Trash/spend.ts`, whose `settledIndex` awaits `walkWhileOwed` and never a turn); a comment is written only where the code would be genuinely ambiguous or misread without it (the owner, 10-17-2026): the comment lines in an AFTER block state intent for the executor and are not written unless they meet that bar, a comment that restates its code or claims a cost is dropped, and the comments the scouts list as false are rewritten or removed by the task that falsifies them; commit messages are past tense and one to four sentences; nothing temporary, transitional, or compatibility-kept remains at a phase's end.
 - **Execution:** the plan runs end to end autonomously, the owner reachable only at check-ins. Every review checkpoint dispatches two agents to the `closeout-review` skill's standards (correctness, simplification, cohesiveness, and consequences; its closing procedures, write-guards, and output format don't apply), reading outward (whether the phase reads correct from the rest of the codebase's point of view) rather than in isolation, and the orchestrator's own post-phase look weighs the landed work against the **Mandate** above before the next phase opens. An in-flight call is weighed against those and the plan's objectives, disclosed in chat, and recorded under *§Deviations* only where it changes an outcome. The three compaction checkpoints in *§Process Overview* sit before Phases 4, 7, and 9 (the first two placed by the planner, the third by the owner on 10-17-2026); each runs `c/pre-compaction`, re-instills the Mandate in the handoff exactly as the owner gave it, and stops until the owner re-prompts.
 - **Rulings (Not Re-Raised):** every decision in *Path Links — Decisions* and its *§Rejected* list: titles are never forced unique; a shared title writes the full path, never a shortest unique tail; nothing shortens a link for its own sake, and a path link never shortens back when a collision goes away; Ambiguous stays its own state; ambiguity is resolved through the picker alone; a path link draws its title only; `#` is the only heading opener inside a link and a `§` there is ordinary text (A-9); no new search box, no per-letter highlighting, no ambiguous-link menu, no reserved extension list, no whole-target file reading; the one click rule's exception is a caret already inside the unresolved link being edited; Text values keep their two-click path where prose surrounds the link; outside and closed-app moves repair through the heading-rename lane; a trashed page's body is never touched in the Trash; File and asset references aren't connections. The owner's rulings during planning are recorded as they land (*§Deviations* records any that change an outcome).
 - **Neutral Gate:** the work ends with a `fable-high` neutral reviewer given only the BASELINE head, HEAD, and this intention, with no plan, log, or document: *"Pommora's page links named pages by title alone, so two pages sharing a title couldn't be told apart, and its link cascades, searches, and clicks on unresolved links each worked their own way. This work lets a link name a page by its path from the Nexus root, written and read as Obsidian does, keeps every link pointing at its page through renames, moves, folder changes, collisions, and restores made inside or outside the app, makes every search match one way, and seats a click on an unresolved link in its title, with each rule stated once, built from what the architecture already had, and nothing left over."* Every phase is written so that review passes.
@@ -160,10 +160,10 @@ The work lands in nine phases in dependency order, each the largest run one agen
   - [x] Task 7-1 · The index names what vanished and what landed
   - [x] Task 7-2 · The settle pairs and pays
   - [x] Review Checkpoint
-- [ ] **Phase 8** — The Trash
-  - [ ] Task 8-1 · The delete records what each link named, and one Trash index resolves by delete-time path
-  - [ ] Task 8-2 · The restore repairs, re-spells, and refills by the one rule
-  - [ ] Review Checkpoint
+- [x] **Phase 8** — The Trash
+  - [x] Task 8-1 · The delete records what each link named, and one Trash index resolves by delete-time path
+  - [x] Task 8-2 · The restore repairs, re-spells, and refills by the one rule
+  - [x] Review Checkpoint
 - [ ] `[Compaction checkpoint: c/pre-compaction]`
 - [ ] **Phase 9** — Reconciliation
   - [ ] Task 9-1 · The feature documents, the project overview, the issues index, and the comments
@@ -2760,7 +2760,7 @@ The work lands in nine phases in dependency order, each the largest run one agen
 
 ### Phase 8 — The Trash
 
-**GOAL:** The Trash's link machinery is re-keyed from a page's title to the page each value named, through the resolution the re-spell uses (F-4, F-6): the delete records what each outbound link under it named by identity, parking and refilling resolve a value's key against the trashed pages at their delete-time paths, and a restore repairs the links of what it lands by identity, re-spells the live world for the arrival and for keys that named only a trashed page (E-3, F-2), and refills the stripped values by the same per-key decision (F-5). Bodies in the Trash are never touched (F-3); the user-facing copy and the Restore Links On Deletion setting are unchanged.
+**GOAL:** The Trash's link machinery is re-keyed from a page's title to the page each value named, through the resolution the re-spell uses (F-4, F-6): the delete records what each outbound link under it named by identity, parking and refilling resolve a value's key against the trashed pages at their delete-time paths, and a restore repairs the links of what it lands by identity, re-spells the live world for the arrival and for keys that named only a trashed page (E-3, F-2), and refills the stripped values by the same per-key decision (F-5). Bodies in the Trash are never touched (F-3); the user-facing copy and the Restore Links On Deletion setting are unchanged. The phase opened with a sweep a read-only pass found after Phase 7 (the orchestrator's call, 10-19-2026, the owner having asked for what was genuinely simplifiable): one `queryMentions(keys, qualifier?)` replaces the two mention queries in the contract, both stores, and the wrapper; `renameOp`'s page branch feeds one return; `respell`'s `oldPath` and `candidates`' `limit` lose the defaults only tests reached; `relink` returns its report unguarded (every consumer reads `warning`, `pages`, or `hosts`, so an empty report and none read the same; Task 6-3's "no reply carries an empty cascade" no longer holds and two `mutate.test.ts` pins read `cascade?.warning`); the autocomplete's `ranked` folds the query itself. MetadataV3 (`56514cfb1..88ad37ea0`) landed between Phases 7 and 8: the scrub matches keys and option words exactly (`matchOf`, `currentKeys`), `heldKeys.ts` is `rootValues.ts`, `refillTrashed` lands on the current exact key, `Unreadable.reason` tells `unparsed` from `unreadable`, and `INDEX_GENERATION` is 19 (this plan adds no bump; `readPageRelations` widening to embed rows changes a read, not the schema). Phase 8 landed the design below onto those shapes.
 
 #### Task 8-1
 
@@ -2770,26 +2770,22 @@ The work lands in nine phases in dependency order, each the largest run one agen
 
 **CHANGE**
 
-- [ ] Write and watch fail: `spend.test.ts` (the bundle): a page delete records `targets` mapping each outbound key, embeds included, to the id it resolved to alone, omitting an ambiguous and a phantom key, with `[[B/Notes]]` and `[[Notes]]` recorded apart; a Set delete records them bundle-wide from the index with no page read (spy on `readTextOrNull` after the mint); a Space delete records its values' targets; a record without `targets` round-trips. `holdings` cases: `parkLinks` parks `[[A/Notes]]` into the bundle holding `A/Notes.md` and `[[Notes]]` into the bundle holding the only trashed `Notes`, parks `[[Notes]]` nowhere while two trashed twins hold it, and reads no page file (spy). `heldPages.test.ts:90`: `frozenWorld(buildPageIndex([...pagesOf(tree), landing]), targets)` holds the landing page's full path and bare title, holds a recorded key whose page lives under another name, drops a recorded key whose page is gone, and answers an unrecorded key by title. `matrixGraph.test`: an embed row reaches no edge.
-- [ ] `record.ts`: `targets: z.record(z.string(), z.string()).optional()` on `contentRecord` and the Space record, documented as what each outbound link named at the delete.
+- [ ] Write and watch fail: `spend.test.ts` (the bundle): a page delete records `targets` mapping each outbound key, embeds included, to the id it resolved to alone, omitting an ambiguous and a phantom key, with `[[B/Notes]]` and `[[Notes]]` recorded apart; a Set delete records them bundle-wide from the index with no page read (spy on `readTextOrNull` after the mint); a Space delete records its values' targets; a record without `targets` round-trips. `holdings` cases: `parkLinks` parks `[[A/Notes]]` into the bundle holding `A/Notes.md` and `[[Notes]]` into the bundle holding the only trashed `Notes`, parks `[[Notes]]` nowhere while two trashed twins hold it, and reads no page file (spy). `propertyValue.test.ts`: `frozenWorld(buildPageIndex([...pagesOf(tree), landing]), targets)` holds the landing page's full path and bare title, holds a recorded key whose page lives under another name, drops a recorded key whose page is gone, and answers an unrecorded key by title. `matrixGraph.test`: an embed row reaches no edge.
+- [ ] `record.ts`: one `linkTargets = z.record(z.string(), z.string()).optional()` as `targets` on the content, Space, and Context records, documented as what each outbound link named at the delete; `delete.ts`'s `write` adds it once to every record it writes, so neither gatherer takes it.
 - [ ] `Desktop/Store/stores.ts:137` and `memoryStores.ts:164`: `readPageRelations` answers `embed` rows too (every page → page kind); `matrixGraph.ts:32` skips `kind === 'embed'`, stating the decision there (a tile's relation relates as nothing).
-- [ ] `gather.ts`: `gatherLinkTargets(tree, rel)`: the rows `readPageRelations` answers for the tree's pages at or under `rel`, plus `valueLinks` over the tree's Space values at or under it, each key mapped to the id `pageIndexOf(tree).resolve(key)` answers alone; `{}` when the index isn't ready. `gatherContentRecord` and `gatherSpaceRecord` take and spread it.
-- [ ] `delete.ts`: passes `gatherLinkTargets(before, rel)` to both gatherers, `before` the tree it already reads.
-- [ ] `holdings.ts`: `trashedPages(root)` lists every trashed page at the path it left, its `id` the bundle it sits in, since parking needs the bundle alone and reads no file; `parkLinks` resolves each value's key through `buildPageIndex(await trashedPages(root))` and parks a resolved one into the bundle its `id` names; `trashedTitles` goes; `trashedPagesOf(root, bundleAbs, files)` reads one bundle's pages with their written ids, for the restore (Task 8-2).
-- [ ] `heldPages.ts`: `frozenWorld(index: PageIndex, targets = {})`: `holds(title)` answers by id when `targets` records the key, else by the index's holders; `restoreProperty.ts:59` and `assignment.ts:91` pass `pageIndexOf(tree)`.
+- [ ] `gather.ts`: `gatherLinkTargets(tree, rel)`: the rows `readPageRelations(paths, ID_KEY)` answers for the tree's pages at or under `rel` (the key narrows the values read to one, since only the relations are wanted), plus `valueLinks` over the tree's Space values at or under it, each key mapped to the id `pageIndexOf(tree).resolve(key)` answers alone, built in a Map so a key spelled like an inherited property (`[[constructor]]`) is never misread; the page rows are `{}` before the index is ready, the Space values always complete.
+- [ ] `delete.ts`: computes `gatherLinkTargets(before, rel)` once per bundle, `before` the tree it already reads, and spreads it into the record it writes.
+- [ ] `holdings.ts`: `trashedPages(root)` lists every trashed page at the path it left, its `id` the bundle it sits in, since parking needs the bundle alone and reads no file; `parkLinks` resolves each value's key through `buildPageIndex(await trashedPages(root))` and parks a resolved one into the bundle its `id` names (a key two trashed pages answer, in one bundle or two, parks nowhere: the "Trash namesakes" ruling under *§Open Items*); `trashedTitles` goes; `trashedPagesOf(root, bundleAbs, files)` reads one bundle's pages with their written ids, for the restore (Task 8-2), an ID-less page listed under its file path as a placeholder id so the scrub's world still holds it by name (a Set delete takes unstamped pages with it; dropping their linkers' values parked them into the bundle being restored, which the restore then removed); both shapes share one `trashedPage`.
+- [ ] `frozenWorld(index: PageIndex, targets: ReadonlyMap = new Map())` moves beside `Frozen` in `Core/Properties/propertyValue.ts`, since it no longer touches a tree (`heldPages.ts` keeps the held tree's lookups alone): `holds(title)` answers by id when `targets` records `pageKey(title)`, else by the index's holders; `restoreProperty.ts` and `assignment.ts` pass `pageIndexOf(tree)`; its test moves to `propertyValue.test.ts`.
 
 **AFTER**
 
 ```Core/Trash/record.ts diff
 @@ contentRecord @@
-     links: z.array(strippedLink).optional(),
-+    /** The page each outbound link under the artifact named at the delete, by the key it was written with, so a restore follows it by identity. */
-+    targets: z.record(z.string(), z.string()).optional(),
-     partial: z.literal(true).optional(),
-@@ space record @@
-     members: z.array(memberRoot),
-+    targets: z.record(z.string(), z.string()).optional(),
-     partial: z.literal(true).optional(),
++/** The page each outbound link under the artifact named at the delete, by id under the key it was written with, so a restore follows it by identity. */
++const linkTargets = z.record(z.string(), z.string()).optional()
+@@ content, space, and context records @@
++    targets: linkTargets,
 ```
 
 ```Core/Matrix/matrixGraph.ts diff
@@ -2802,54 +2798,53 @@ The work lands in nine phases in dependency order, each the largest run one agen
 +/** What each outbound link at or under `rel` named at the delete: the page a key resolved to alone, from the rows the index holds for its pages and the values the tree holds for its Spaces; nothing before the index is ready. */
 +export function gatherLinkTargets(tree: NexusTree, rel: string): Record<string, string> {
 +  const index = pageIndexOf(tree)
-+  const out: Record<string, string> = {}
++  const out = new Map<string, string>()
 +  const note = (key: string): void => {
-+    if (key === '' || key in out) return
-+    const r = index.resolve(key)
-+    if (r.status === 'resolved' && r.page) out[key] = r.page.id
++    const page = out.has(key) ? undefined : index.resolve(key).page
++    if (page) out.set(key, page.id)
 +  }
 +  const paths = pagesOf(tree).flatMap((p) => (isAtOrUnder(p.path, rel) ? p.path : []))
-+  for (const row of readPageRelations(paths)?.relations ?? []) note(row.target)
++  for (const row of readPageRelations(paths, ID_KEY)?.relations ?? []) note(row.target)
 +  for (const g of tree.contexts)
 +    for (const s of g.spaces)
 +      if (isAtOrUnder(s.path, rel)) for (const hit of valueLinks(s.values ?? {})) note(hit.target)
-+  return out
++  return Object.fromEntries(out)
 +}
-+
- export async function gatherContentRecord(
-   root: string,
-   kind: 'page' | ContainerKind,
-   abs: string,
-+  targets: Record<string, string>,
- ): Promise<RecordFile> {
+```
+
+```Core/Trash/delete.ts diff
+@@ the bundle's write @@
++  const targets = bundle ? gatherLinkTargets(before, rel) : {}
    …
-   return {
-     entity: kind,
-     ...(id ? { id } : {}),
-     parent,
-+    ...(Object.keys(targets).length ? { targets } : {}),
-     ...(kind === 'page' ? {} : { excluded: await excludedWithin(root, relative(root, abs)) }),
-   }
+-        if (record) await writeRecord(bundle, record)
++        if (record)
++          await writeRecord(bundle, {
++            ...record,
++            ...(Object.keys(targets).length ? { targets } : {}),
++          })
 ```
 
 ```Core/Trash/holdings.ts diff
 -/** The newest bundle holding each page title in the Trash. */
 -async function trashedTitles(root: string): Promise<Map<string, string>> { … }
-+/** Every trashed page at the path it left, for resolving a name against the Trash: `id` is the bundle the page sits in, since parking needs the bundle alone and reads no file; a page's written id is `trashedHolders`' business. */
++const trashedPage = (root: string, bundleAbs: string, file: string, id: string): ConnPage => {
++  const path = deletedPathOf(root, bundleAbs, file)
++  return { id, title: titleFromPath(path), path }
++}
++
++/** Every trashed page at the path it left, its `id` the bundle holding it, since parking needs the bundle alone and reads no file. */
 +async function trashedPages(root: string): Promise<ConnPage[]> {
 +  const out: ConnPage[] = []
 +  for (const { bundlePath, record, artifactName } of await listBundles(root)) {
 +    if (!artifactName) continue
 +    const bundle = join(root, bundlePath)
-+    for (const file of await contentPages(record.entity, join(bundle, artifactName))) {
-+      const path = deletedPathOf(root, bundle, file)
-+      out.push({ id: bundle, title: titleFromPath(path), path })
-+    }
++    for (const file of await contentPages(record.entity, join(bundle, artifactName)))
++      out.push(trashedPage(root, bundle, file, bundle))
 +  }
 +  return out
 +}
 +
-+/** One bundle's pages as they were, with the ids their files carry, at the paths they left. */
++/** One bundle's pages at the paths they left, with the ids their files carry; one carrying none is listed under its file, so the world still holds it by name. */
 +export async function trashedPagesOf(
 +  root: string,
 +  bundleAbs: string,
@@ -2858,8 +2853,7 @@ The work lands in nine phases in dependency order, each the largest run one agen
 +  const out: ConnPage[] = []
 +  for (const file of files) {
 +    const id = stampedId((await readTextOrNull(file)) ?? '')
-+    const path = deletedPathOf(root, bundleAbs, file)
-+    if (id) out.push({ id, title: titleFromPath(path), path })
++    out.push(trashedPage(root, bundleAbs, file, id ?? file))
 +  }
 +  return out
 +}
@@ -2884,17 +2878,20 @@ The work lands in nine phases in dependency order, each the largest run one agen
 ```Core/Nexus/heldPages.ts diff
 -/** A restore's world: the pages the tree holds, and those landing with it. */
 -export function frozenWorld(tree: NexusTree, landing: readonly string[] = []): Frozen {
--  const index = pageIndexOf(tree)
--  const arriving = new Set(landing.map(normalizeTitle))
--  return {
--    holds: (title) => index.holders(title).length > 0 || arriving.has(normalizeTitle(title)),
--  }
+-  …
 -}
-+/** A world a value is read against, answering by identity where `targets` recorded what a key named at the delete, and by the name otherwise. */
-+export function frozenWorld(index: PageIndex, targets: Record<string, string> = {}): Frozen {
+```
+
+```Core/Properties/propertyValue.ts diff
+@@ after Frozen @@
++/** A world a value is read against: a key `targets` recorded at the delete answers by whether the page it named is there under any name, any other key by the name. */
++export function frozenWorld(
++  index: PageIndex,
++  targets: ReadonlyMap<string, string> = new Map(),
++): Frozen {
 +  return {
 +    holds: (title) => {
-+      const id = targets[pageKey(title)]
++      const id = targets.get(pageKey(title))
 +      return id === undefined ? index.holders(title).length > 0 : index.byId.has(id)
 +    },
 +  }
@@ -2903,7 +2900,7 @@ The work lands in nine phases in dependency order, each the largest run one agen
 
 **VERIFY**
 
-- [ ] The listed tests pass; `spend.test.ts:1031` passes; `git grep -n "trashedTitles" -- Core` finds nothing; the Matrix's graph tests pass.
+- [ ] The listed tests pass; `spend.test.ts`'s "fills the exact key, leaving another casing the copy holds blank" passes; `git grep -n "trashedTitles" -- Core` finds nothing; the Matrix's graph tests pass; `trashRecovery.test.ts` pins `[[Notes]]` parking into the only trashed `Notes` and two namesakes parking nowhere; `spend.test.ts` pins a Set restore keeping a value naming an ID-less page it holds, and a Context recording its Spaces' value targets.
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
@@ -2916,10 +2913,10 @@ The work lands in nine phases in dependency order, each the largest run one agen
 **CHANGE**
 
 - [ ] Write and watch fail: `spend.test.ts` (restore): a page whose body links `[[Beta]]`, embeds `![[Beta]]`, and holds `Related: [[Beta]]` returns after Beta was renamed `Gamma` with all three reading `Gamma`, after Beta moved to another Set with all three as written, and after Beta was deleted with the body as written and the value dropped and parked into Beta's bundle; a page restored with a destination after its Set was deleted lands under the Collection and a live linker's `[[Daily/Alpha]]` reads `[[Notes/Alpha]]` while its `[[Alpha]]` stays; a page returning while a twin created meanwhile holds its title in another folder leaves the twin's bare linkers reading `[[Other/Alpha|Alpha]]`, and a stripped `[[Alpha]]` refills as `[[Notes/Alpha|Alpha]]`; a page returning as `Alpha 2` beside a new `Alpha` in its own folder refills a stripped `[[Alpha]]` as `[[Alpha 2]]` and reports nothing unrestored; the reply's `cascade.pages` names the live linker; `:1031` passes; a bundle without `targets` restores as today. `restoreScrub.test.ts:320` passes; a Link naming a page renamed meanwhile is kept by the scrub (`targets`) and repaired after the landing. `cascade.test.ts` passes through the extraction unchanged. `nexusSlice.test`: `restore` flushes pending saves.
-- [ ] `cascade.ts`: `fileRewrites(root, tree, rewrite, { ownRel?, settled? }): { text: RewriteText; spaceMoved: Rewrite }` hoists the closures, `ownRel` the heading arm's own page (Task 2-1's `own`) and `settled` whether its editor already rewrote its body; `renameCascade` calls it.
-- [ ] `restoreScrub.ts`: `artifactFiles(root, abs): Promise<{ pages: string[]; sidecars: string[] }>` hoists the scrub's two listings; `scrubReturning` reads it; `repairLanded(root, tree, targetAbs, repair)` sweeps the landed pages through `sweepGovernedRoots(root, pages, { text })` and the landed sidecars through `rmwJsonStrict(file, (raw) => spaceMoved(raw, file))`, both from `fileRewrites(tree, (t) => rewriteConnections(t, repair))`, and answers the files it couldn't write.
-- [ ] `spend.ts`: `back = await trashedPagesOf(root, bundleAbs, await contentPages(record.entity, artifactAbs))` before the scrub; the scrub's `frozen = frozenWorld(buildPageIndex([...pagesOf(tree), ...back]), targets)`; after the relocate, `after = await settledIndex(root)`; `repair` maps each recorded key to `after.respell(key, q)` for the page `q` its id names now; `named = respellings(buildPageIndex(back), after, ids, [])` and `names = respellings(pageIndexOf(tree), after, [], ids)` plus every `named` entry whose key resolved to nothing in the live world before; the repair runs, then `renameCascade(root, { names, label: title })`, then the refill through `rewriteConnections(l.value, named)` against `frozenWorld(after)`; `was` and `landed` go; `Restored` picks `cascade` too, the repair's unwritten files joined in through `joinCascades`.
-- [ ] `nexusSlice.ts:236-239`: `restore` joins the ops that flush pending saves.
+- [ ] `cascade.ts`: `fileRewrites(root, tree, rewrite, { ownRel?, settled? }): { text: RewriteText; spaceMoved: Rewrite; cacheMoved: Rewrite }` hoists the closures (the cache arm too, since `movedCache` used the same two helpers), `ownRel` the heading arm's own page and `settled` whether its editor already rewrote its body; `renameCascade` calls it. `linksNotUpdated(label, e?)` states the "Links to “X” weren't updated" report once, for `renameCascade`'s catch, `addressed`'s null index, and the restore's.
+- [ ] `restoreScrub.ts`: a private `artifactFiles(root, entity, abs): Promise<{ pages: string[]; sidecars: string[] }>` hoists the scrub's two listings, its pages through `contentPages(entity, abs)` so a Space's or Context's board tiles are never listed as pages (the plan's `listMarkdownFiles` read them as such, so the repair rewrote tile bodies through the page arm); `scrubReturning` and `repairLanded(root, tree, entity, targetAbs, repair)` take `entity`; the repair sweeps the landed pages through `sweepGovernedRoots(root, pages, { text })` and the landed sidecars through `rmwJsonStrict(file, (raw) => spaceMoved(raw, file))`, each sidecar write caught into the unwritten list as the page sweep guards its own, both arms from `fileRewrites(root, tree, (t) => rewriteConnections(t, repair))`, and answers the files it couldn't write. MetadataV3's key rename inside the scrub still runs before `unlinked` reads the link keys, so a re-cased Link property key is found.
+- [ ] `spend.ts`: `back = await trashedPagesOf(root, bundleAbs, await contentPages(record.entity, artifactAbs))` before the scrub; `world = buildPageIndex([...pagesOf(tree), ...back])` and the scrub's `frozen = frozenWorld(world, targets)` (`targets` a Map from the record); after the relocate, `after = await settledIndex(root)`; `repair` maps each recorded key to `after.respell(key, q, q.path)` for the page `q` its id names now (resolution alone decides, so a case-only rename of a target while the linker sat in the Trash isn't followed: the record holds ids, not delete-time paths; *§Open Items*); `backNames = respellings(buildPageIndex(back), after, ids, [])` and `names = respellings(pageIndexOf(tree), after, [], ids)` plus every `backNames` entry whose key resolved to nothing in the live world before (two maps rather than one `relink`: the arrival's collisions read against the live world alone, since beside the returning pages a twin's bare link reads ambiguous and a returning `Notes/Alpha` would take `notes/alpha` from a live `X/Notes/Alpha`); the repair runs, then `renameCascade(root, { names, label: title })` where `names` has entries, then the refill through `rewriteConnections(l.value, backNames)` against `frozenWorld(after ?? world)`; a null `after` starts the cascade as `linksNotUpdated(title)`, as `addressed` answers it; the Context rekey loop's sidecar writes join the repair's in one `unswept` list; `was` and `landed` go; `resolve.ts`'s page arm returns `finalTitle` as the Space and Context arms do, so `title` labels the cascade; `Restored` picks `cascade` too, the unwritten files joined in through `joinCascades`.
+- [ ] `nexusSlice.ts`: `restore` and `emptyBundle` join the ops that flush pending saves, since both rewrite live pages; `TrashFrame.tsx`'s Restore All and Empty batches, which reach the dialer directly, flush once before their first request and carry each reply's `cascade.warning` into their notice.
 - [ ] `mutate.ts`'s `restore` case runs under `inSettleTurn(root, …)` alone (Task 6-3), which pays any owed walk first, so `settledIndex` here reads inside the turn and nothing awaits another.
 
 **AFTER**
@@ -2931,31 +2928,42 @@ The work lands in nine phases in dependency order, each the largest run one agen
 +  tree: NexusTree,
 +  rewrite: (text: string, own?: boolean, outlineOf?: string) => string,
 +  arms: { ownRel?: string | null; settled?: boolean } = {},
-+): { text: RewriteText; spaceMoved: Rewrite } {
++): { text: RewriteText; spaceMoved: Rewrite; cacheMoved: Rewrite } {
 +  const holds = linkKeysOf(tree.config.registry)
 +  const patchOf = … (as today)
 +  const withPatch = … (as today)
-+  const spaceMoved: Rewrite = (raw) => withPatch(raw, patchOf(raw, holds))
-+  const text: RewriteText = (content, file) => {
-+    … (as today, with `rel = relative(root, file)`, `own = rel === arms.ownRel`, and `own && arms.settled` keeping the body)
++  return {
++    text: (content, file) => { … (as today, `own = relative(root, file) === ownRel`, `own && settled` keeping the body) },
++    spaceMoved: (raw) => withPatch(raw, patchOf(raw, holds)),
++    cacheMoved: (values) => withPatch(values, patchOf(values, () => true)),
 +  }
-+  return { text, spaceMoved }
 +}
++
++export const linksNotUpdated = (label: string, e?: unknown): CascadeReport => ({
++  pages: [],
++  hosts: [],
++  warning: `Links to “${label}” weren't updated${e === undefined ? '.' : `: ${errText(e)}`}`,
++})
 @@ renameCascade @@
 -    const patchOf = …
 -    const withPatch = …
 -    const spaceMoved: Rewrite = …
 -    const text = …
-+    const { text, spaceMoved } = fileRewrites(root, tree, rewrite, { ownRel: heading?.path, settled })
+-    const movedCache = …
++    const { text, spaceMoved, cacheMoved } = fileRewrites(root, tree, rewrite, {
++      ownRel: 'names' in change ? undefined : change.path,
++      settled,
++    })
 ```
 
 ```Core/Trash/restoreScrub.ts diff
 +/** A returning or landed artifact's governed files: its pages, and the Space sidecars under it. */
-+export async function artifactFiles(
++async function artifactFiles(
 +  root: string,
++  entity: RecordFile['entity'],
 +  abs: string,
 +): Promise<{ pages: string[]; sidecars: string[] }> {
-+  const pages = isMarkdownFile(abs) ? [abs] : await listMarkdownFiles(abs)
++  const pages = await contentPages(entity, abs)
 +  const sidecars = (
 +    await listPathsUnder(root, abs, (rel, kind) =>
 +      kind === 'dir' ? !hiddenFolder(basename(rel)) : basename(rel) === SPACE_SIDECAR,
@@ -2979,28 +2987,22 @@ The work lands in nine phases in dependency order, each the largest run one agen
 +export async function repairLanded(
 +  root: string,
 +  tree: NexusTree,
++  entity: RecordFile['entity'],
 +  targetAbs: string,
 +  repair: ReadonlyMap<string, string>,
 +): Promise<string[]> {
 +  if (!repair.size) return []
 +  const { text, spaceMoved } = fileRewrites(root, tree, (t) => rewriteConnections(t, repair))
-+  const { pages, sidecars } = await artifactFiles(root, targetAbs)
++  const { pages, sidecars } = await artifactFiles(root, entity, targetAbs)
 +  const { skipped } = await sweepGovernedRoots(root, pages, { text })
-+  for (const file of sidecars) await rmwJsonStrict(file, (raw) => spaceMoved(raw, file))
++  for (const file of sidecars)
++    if (!(await rmwJsonStrict(file, (raw) => spaceMoved(raw, file)).catch(() => null))?.ok)
++      skipped.push(file)
 +  return skipped
 +}
 ```
 
 ```Core/Trash/spend.ts diff
-@@ imports @@
--import { rewriteConnections } from '../Connections/rewrite'
-+import { respellings, rewriteConnections } from '../Connections/rewrite'
-+import { buildPageIndex } from '../Connections/pageIndex'
-+import { pageIndexOf, pagesOf } from '../Nexus/record'
-+import { settledIndex } from '../Nexus/settle'
-+import { repairLanded, scrubReturning } from './restoreScrub'
-+import { contentPages, pageIdsOf, parkLinks, refillTrashed, trashedPagesOf } from './holdings'
-+import { deleteCascade, joinCascades, type StrippedLink } from '../Nexus/cascade'
 @@ Restored @@
 -type Restored = Pick<MutateOutcome, 'unrestored'>
 +type Restored = Pick<MutateOutcome, 'unrestored' | 'cascade'>
@@ -3013,38 +3015,39 @@ The work lands in nine phases in dependency order, each the largest run one agen
 -      ? [landed]
 -      : (await contentPages(record.entity, artifactAbs)).map(titleFromPath),
 -  )
-+  // The pages coming back, at the paths they left: the world a link written before the delete named them in.
 +  const back = await trashedPagesOf(root, bundleAbs, await contentPages(record.entity, artifactAbs))
-+  const targets = 'targets' in record ? (record.targets ?? {}) : {}
-+  const frozen = frozenWorld(buildPageIndex([...pagesOf(tree), ...back]), targets)
++  const targets = new Map(Object.entries(record.targets ?? {}))
++  const world = buildPageIndex([...pagesOf(tree), ...back])
++  const frozen = frozenWorld(world, targets)
    …
    (relocate as today)
    …
-+  // The page is out of the Trash: its own links repair by identity first, then the live world re-spells once for its arrival (E-3) and for every key that named only a trashed page (F-2), then the values the delete stripped come back through the same decision, read against the world as it stands now.
++  // Two maps rather than one `relink`: the arrival's collisions read against the live world alone, since beside the returning pages a twin's bare link reads ambiguous and a returning `Notes/Alpha` would take `notes/alpha` from a live `X/Notes/Alpha`. `backNames` reads the returning pages' own keys against themselves, feeding the refill whole and the cascade only where the live world names nothing.
 +  const after = await settledIndex(root)
 +  const ids = back.map((p) => p.id)
-+  const named = after ? respellings(buildPageIndex(back), after, ids, []) : new Map<string, string>()
-+  let cascade: CascadeReport | undefined
++  const backNames = after
++    ? respellings(buildPageIndex(back), after, ids, [])
++    : new Map<string, string>()
++  const unswept: string[] = []
++  let cascade = after ? undefined : linksNotUpdated(title)
 +  if (after) {
 +    const repair = new Map<string, string>()
-+    for (const [key, id] of Object.entries(targets)) {
++    for (const [key, id] of targets) {
 +      const q = after.byId.get(id)
-+      const next = q && after.respell(key, q)
++      const next = q && after.respell(key, q, q.path)
 +      if (next) repair.set(key, next)
 +    }
-+    const unrepaired = await repairLanded(root, tree, targetAbs, repair)
++    unswept.push(...(await repairLanded(root, tree, record.entity, targetAbs, repair)))
 +    const live = pageIndexOf(tree)
 +    const names = respellings(live, after, [], ids)
-+    for (const [k, v] of named) if (live.resolve(k).status === 'phantom') names.set(k, v)
-+    cascade = names.size ? await renameCascade(root, { names, label: title }) : undefined
-+    if (unrepaired.length) {
-+      const left = { pages: [], hosts: [], warning: unsweptLine(unrepaired.length, `links in “${title}” across `) }
-+      cascade = cascade ? joinCascades(cascade, left) : left
-+    }
++    for (const [k, v] of backNames) if (live.resolve(k).status === 'phantom') names.set(k, v)
++    if (names.size) cascade = await renameCascade(root, { names, label: title })
 +  }
    const roots = recordById(tree)
    …
-+    const refilled = frozenWorld(after ?? pageIndexOf(tree))
+   (the Context rekey loop's sidecar writes caught into `unswept`)
+   …
++    const refilled = frozenWorld(after ?? world)
      for (const def of defs) {
        const all = Object.fromEntries(
          record.links
@@ -3053,11 +3056,15 @@ The work lands in nine phases in dependency order, each the largest run one agen
 -            l.page,
 -            landed === was ? l.value : rewriteConnections(l.value, was, landed),
 -          ]),
-+          .map((l) => [l.page, rewriteConnections(l.value, named)]),
++          .map((l) => [l.page, rewriteConnections(l.value, backNames)]),
        )
 -      const taken = await refillValues(root, def, roots, all, frozen)
 +      const taken = await refillValues(root, def, roots, all, refilled)
    …
++  if (unswept.length) {
++    const left = { pages: [], hosts: [], warning: unsweptLine(unswept.length, `links in “${title}” across `) }
++    cascade = cascade ? joinCascades(cascade, left) : left
++  }
 -  return ok(restored([...unspent, ...unlinked].map((id) => roots[id].title)))
 +  return ok({
 +    ...restored([...unspent, ...unlinked].map((id) => roots[id].title)),
@@ -3066,23 +3073,30 @@ The work lands in nine phases in dependency order, each the largest run one agen
 ```
 
 ```Core/Session/nexusSlice.ts diff
--      if (moves || req.op === 'renameHeading' || req.op === 'delete') await flushAllSaves()
-+      if (moves || req.op === 'renameHeading' || req.op === 'delete' || req.op === 'restore')
-+        await flushAllSaves()
+       if (
+         moves ||
+         req.op === 'createPage' ||
+         req.op === 'renameHeading' ||
+-        req.op === 'delete'
++        req.op === 'delete' ||
++        req.op === 'restore' ||
++        req.op === 'emptyBundle'
+       )
+         await flushAllSaves()
 ```
 
-(`roots`, read from the tree before the relocate, is unchanged in meaning: the refill's targets are the live roots the delete stripped from. `title` is the resolver's final title, already in scope.)
+(`roots`, read from the tree before the relocate, is unchanged in meaning: the refill's targets are the live roots the delete stripped from. `title` is the resolver's final title for a page, Space, or Context, already in scope.)
 
 **VERIFY**
 
-- [ ] The listed tests pass; `spend.test.ts:800-1005` pass unchanged; `restoreScrub.test.ts` passes.
-- [ ] Live, in `~/Test`: delete a page another page links by `[[Set/Page]]`, delete its Set, restore the page to the Collection, and the linker reads `[[Collection/Page]]` with the notice; delete a page that links and embeds a second page, rename the second, restore the first, and both follow; delete a page, create a twin elsewhere, link the twin bare from a third page, restore the first, and the third page's link gains the twin's path.
+- [ ] The listed tests pass; `restoreScrub.test.ts` passes; `spend.test.ts` pins: a page returning as `Alpha (2)` beside a live `Alpha` refills a stripped `[[Alpha]]` as `[[Alpha (2)]]` with the live `Alpha`'s linkers byte-identical; a Space restored on its own repairs a value through its sidecar with `back` empty; a Set restored beside a live twin re-spells the twin's bare linker; a restore finding no settled world says its links weren't updated; `TrashFrame.test.tsx` pins Restore All flushing before its first restore and carrying a cascade warning; `store.test.tsx` pins `restore` and `emptyBundle` flushing first.
+- [ ] Live, in `~/Test` (the Path Links Drive's group 8): delete a page another page links by `[[Set/Page]]`, delete its Set, restore the page to the Collection, and the linker reads `[[Collection/Page]]` with the notice; delete a page that links and embeds a second page, rename the second, restore the first, and both follow; delete a page, create a twin elsewhere, link the twin bare from a third page, restore the first, and the third page's link gains the twin's path.
 - [ ] Run the gates, then `view-delta` for Phase 8.
 - [ ] Check for unnecessary code or mistakes.
 
 #### Review Checkpoint
 
-- [ ] Two `closeout-review` agents, reading outward: no title-keyed Trash lookup remains (`normalizeTitle` in `holdings.ts`, `was`/`landed` in `spend.ts`); parking reads no page file; the repair runs before the cascade and only over the landed files; the cascade's `names` never carries a key the live world resolved before (the phantom filter), so a live `[[Notes]]` meaning a live page is never rewritten by a restore; the refill is checked against the world after the landing; `fileRewrites` is the only per-file arm and `artifactFiles` the only artifact listing; a bundle without `targets` restores through `frozenWorld`'s name arm with no second code path; a Space restore's `targets` reach `frozenWorld` through the scrub and `repairLanded` through its sidecar, with `back` empty.
+- [ ] Two `closeout-review` agents, reading outward: no title-keyed Trash lookup remains (`normalizeTitle` in `holdings.ts`, `was`/`landed` in `spend.ts`); parking reads no page file; the repair runs before the cascade and only over the landed files; the cascade's `names` never carries a key the live world resolved before (the phantom filter), so a live `[[Notes]]` meaning a live page is never rewritten by a restore; the refill is checked against the world after the landing; `fileRewrites` is the only per-file arm and `artifactFiles` the only artifact listing; a bundle without `targets` restores through `frozenWorld`'s name arm with no second code path; a Space restore's `targets` reach `frozenWorld` through the scrub and `repairLanded` through its sidecar, with `back` empty; a Space's or Context's tiles are never listed as its pages; an ID-less page in a restored bundle is held by name through its placeholder id and its linkers' values kept.
 
 ---
 
@@ -3170,6 +3184,11 @@ Each ruling below was the planner's (10-16-2026), taken against the BRIEF's prin
 - **Trash namesakes: nowhere.** A parked value whose name two trashed pages answer parks nowhere (Task 8-1); it was ambiguous before the delete and is dropped as ambiguous, the one rule the live resolver applies.
 - **Search noise: accepted.** The one matcher admits a page whose folder matches into surfaces that keep their own order, so a view search for `Daily` lists every page under a `Daily` Set among the title matches. One rule everywhere outweighs a per-surface exception (D-1).
 - **The default name is no arrival.** A page created under `Untitled` runs no collision arm, since it's uncommitted; its first commit arrives, without moving, so a stale `[[Untitled]]` elsewhere never follows (Task 6-3). A create under any other name arrives at once.
+- **A key two trashed pages answer in one bundle** (two `Notes` in one deleted Set) parks nowhere, as two bundles' twins do: the link was ambiguous before the delete, and the one rule is applied; parking into the one bundle would have kept the value for a refill that lands it ambiguous again. The owner can rule otherwise (one line in `parkLinks`).
+- **A case-only rename of a target while its linker sat in the Trash** isn't followed by the repair, since the record holds the target's id and not its delete-time path, so `respell` decides by resolution alone; live linkers are re-cased. Recorded, not fixed.
+- **An unparseable Contexts registry** (not an unreadable one) now counts as nothing owed in the tile sweep as it does in the configuration pass (`tileHostsOf`, the seam MetadataV3 handed over), so a rename cascade warns nothing about Space-board tiles behind it; the old warning fired only when the homepage also linked the key. The owner can rule otherwise (two lines).
+- **A Set restored with an ID-less page** leaves the held tree without that page listed unreadable while a fresh walk lists it missing its ID, since the relocate's events never put the landed Set in reach for stamping; a settle finding that predates this plan, recorded for the settle's next work.
+- **A trashed copy whose ID was stripped after the delete** isn't matched by its recorded target id, so its linkers' values are still dropped (the placeholder covers a page that never had one).
 - **Restore Links On Deletion** governs the refill alone (Task 8-2); the returning page's own repair and the live re-spell run regardless, since they correct links rather than restore values.
 - **An ID-less returning page** (one never stamped before its delete) is scrubbed and repaired but runs no collision or follow arm until the walk stamps it (Task 8-2's `back` holds stamped pages); the settle's stamp then owes it as an arrival (Task 7-1).
 - **A folder rename over pages sharing one title** resolves each page's keys over every holder of the title, so `respellings` is quadratic in the holders (measured at Phase 6: 2,000 distinct titles 18 ms, 200 `README` among 2,000 pages 91 ms, 3,000 same-titled pages 17.8 s before the index memoized each page's path key, well under a second after). The memo is the one cost fix; a tail-keyed map is a follow-up if a Nexus shows it.

@@ -13,7 +13,9 @@ import {
   unregisteredMembers,
   type PropertyValue,
   gonePageEntry,
+  frozenWorld,
 } from './propertyValue'
+import { buildPageIndex } from '../Connections/pageIndex'
 
 const def = (over: Partial<PropertyDefinition>): PropertyDefinition =>
   ({ id: 'p', label: 'P', key: 'P', type: 'select', ...over }) as PropertyDefinition
@@ -399,6 +401,29 @@ describe('gonePageEntry — the entry a restore parks', () => {
     expect(gonePageEntry('[x](example.com)', gone)).toBeNull()
     expect(gonePageEntry('[[#Intro]]', gone)).toBeNull()
     expect(gonePageEntry('[[Alpha]]', { holds: (t) => t === 'Alpha' })).toBeNull()
+  })
+})
+
+describe('frozenWorld', () => {
+  it('answers a recorded key by the page it named, and any other by the name', () => {
+    const world = frozenWorld(
+      buildPageIndex([
+        { id: 'pA', title: 'A', path: 'Notes/A.md' },
+        { id: 'pD', title: 'D', path: 'Notes/Deep/D.md' },
+        { id: 'alpha0', title: 'Alpha', path: 'Notes/Alpha.md' },
+        { id: 'back', title: 'Landing', path: 'Ideas/Old/Landing.md' },
+      ]),
+      new Map([
+        ['old a', 'pA'],
+        ['alpha', 'gone'],
+      ]),
+    )
+    expect(world.holds?.('Ideas/Old/Landing')).toBe(true)
+    expect(world.holds?.('landing')).toBe(true)
+    expect(world.holds?.('Old A')).toBe(true)
+    expect(world.holds?.('Alpha')).toBe(false)
+    expect(world.holds?.('d')).toBe(true)
+    expect(world.holds?.('ghost')).toBe(false)
   })
 })
 

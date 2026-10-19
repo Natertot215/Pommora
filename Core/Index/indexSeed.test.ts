@@ -6,7 +6,6 @@ import { tempRoot } from '../Testing/hostFs'
 import { installStores, type Relation, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import {
-  queryHeadingMentions,
   queryKeyHolders,
   queryMembers,
   queryMentions,
@@ -158,13 +157,13 @@ describe('seedContentIndex', () => {
         { text: 'Notes', level: 3 },
       ],
     })
-    expect(queryHeadingMentions('intro', ['b'])).toEqual(['Notes/A.md'])
+    expect(queryMentions(['b'], 'intro')).toEqual(['Notes/A.md'])
   })
 
   it('records a bare `[[#Heading]]` as a heading mention of its own page, keyed to no title', async () => {
     await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\n---\n\n## Setup\n\n[[#Setup]]\n`)
     await seedContentIndex(root)
-    expect(queryHeadingMentions('setup', [''])).toEqual(['Notes/A.md'])
+    expect(queryMentions([''], 'setup')).toEqual(['Notes/A.md'])
   })
 
   it('recognizes an external heading rename and cascades it (B and A’s own bare link both follow)', async () => {

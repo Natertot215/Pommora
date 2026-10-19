@@ -12,7 +12,7 @@ const C = '01KVGMT8BFP350FZZXAMG1QDRX'
 
 let stores: ReturnType<typeof memoryStores>
 
-const relation = (kind: 'body' | 'value', target: string, key = '') => ({
+const relation = (kind: 'body' | 'value' | 'embed', target: string, key = '') => ({
   kind,
   target,
   qualifier: '',
@@ -127,6 +127,21 @@ describe('readMatrixGraph', () => {
       },
     ])
     expect(readMatrixGraph(true, ['Notes/B.md'])!.links.map((l) => l.key)).toEqual(['Ref', 'Rank'])
+  })
+
+  it('an embed reaches no edge', () => {
+    stores.stores.contentIndex!.upsertPageIndexes([
+      {
+        path: 'Notes/A.md',
+        entry: {
+          relations: [relation('embed', 'gamma'), relation('body', 'beta')],
+          headings: [],
+          values: { ID: A },
+        },
+        stat: { mtimeMs: 1000, size: 10 },
+      },
+    ])
+    expect(readMatrixGraph(true, ['Notes/A.md'])!.links.map((l) => l.target)).toEqual(['beta'])
   })
 
   it('reads no values when none are asked for', () => {

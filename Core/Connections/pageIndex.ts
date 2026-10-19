@@ -53,10 +53,10 @@ export interface PageIndex {
   /** The keys that name the page at `path` and resolve to it: the tails of its path, shortest first. */
   namesOf: (path: string) => string[]
   /** How `key`, which named `page` before, spells it now: null to leave the link as written, when the key still names the page and the page's path at the key's depth is unchanged from `oldPath` byte for byte (a case-only rename changes it); else the written name at the key's depth. */
-  respell: (key: string, page: ConnPage, oldPath?: string) => string | null
+  respell: (key: string, page: ConnPage, oldPath: string) => string | null
   /** The page each id names, first listed where two files claim one. */
   readonly byId: ReadonlyMap<string, ConnPage>
-  candidates: (query: string, limit?: number) => ConnPage[]
+  candidates: (query: string, limit: number) => ConnPage[]
 }
 
 export function buildPageIndex(pages: readonly ConnPage[]): PageIndex {
@@ -103,7 +103,7 @@ export function buildPageIndex(pages: readonly ConnPage[]): PageIndex {
     resolve,
     writtenName,
     namesOf: (path) => pathKeys(path).filter((k) => resolve(k).page?.path === path),
-    respell(key, page, oldPath = page.path) {
+    respell(key, page, oldPath) {
       const depth = key.split('/').length
       const keeps =
         resolve(key).page?.id === page.id && tailOf(oldPath, depth) === tailOf(page.path, depth)
@@ -116,7 +116,7 @@ export function buildPageIndex(pages: readonly ConnPage[]): PageIndex {
       }
       return byId
     },
-    candidates(query, limit = 20) {
+    candidates(query, limit) {
       alphabetical ??= pages
         .map((p) => ({ p, key: matchKey(p.title, relDirname(p.path)) }))
         .sort((a, b) => compareTitles(a.p.title, b.p.title))

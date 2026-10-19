@@ -1053,6 +1053,25 @@ describe('store — the mutate rail', () => {
     expect(order).toEqual(['save Notes/A.md', 'save Notes/C.md', 'mutate'])
   })
 
+  for (const req of [
+    { op: 'restore', bundlePath: '.trash/A.md.deleted' },
+    { op: 'emptyBundle', bundlePath: '.trash/A.md.deleted' },
+  ] as const)
+    it(`a ${req.op} lands every pending save first, since it can rewrite other pages`, async () => {
+      const order: string[] = []
+      channels['page:updateBody'] = vi.fn(async (path: string) => {
+        order.push(`save ${path}`)
+        return ok({ hash: 'h', stale: false })
+      })
+      channels.mutate = vi.fn(async () => {
+        order.push('mutate')
+        return ok({})
+      })
+      scheduleBodySave('Notes/A.md', 'typed', pageIO)
+      await useSession.getState().mutate(req)
+      expect(order).toEqual(['save Notes/A.md', 'mutate'])
+    })
+
   it('a page create lands every pending save first, since its collision can rewrite other pages', async () => {
     const order: string[] = []
     channels['page:updateBody'] = vi.fn(async (path: string) => {

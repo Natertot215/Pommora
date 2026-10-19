@@ -1,10 +1,13 @@
 import { applyEvents } from '../Nexus/fileEvents'
+import * as settle from '../Nexus/settle'
 import { settleNow } from '../Nexus/settle'
+import { handleMutate } from '../Nexus/mutate'
 import { mkdir, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { splitFrontmatter } from '../Files/pageFile'
 import { basename, dirname, join, relative } from '../Paths/posix'
 import { tempRoot, noModeBits, readJsonAt } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import * as atomicWrite from '../Files/atomicWrite'
 import { pathExists } from '../Files/atomicWrite'
 import { settledMutate } from '../Testing/settledMutate'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
@@ -22,6 +25,7 @@ import { shardOf } from '../Nexus/ids'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
 import type { TrashDeps } from './bundle'
 import type { ContextsRegistry } from '../Contexts/contexts'
+import type { RestoreDestination } from '../Nexus/mutateRequest'
 
 const PAGE_A = '01KVGMT8BFP350FZZXAMG1QDVA'
 const PAGE_B = '01KVGMT8BFP350FZZXAMG1QDVB'
@@ -485,6 +489,94 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
   })
 })
 
+describe('the bundle records the page each outbound link named', () => {
+  const NOTES = '01KVGMT8BFP350FZZXAMG1QDVN'
+  const GAMMA = '01KVGMT8BFP350FZZXAMG1QDVG'
+  const page = (rel: string, id: string, text = '') =>
+    writeFile(join(root, rel), `---\nID: ${id}\n---\n${text}`)
+
+  beforeEach(async () => {
+    installStores(memoryStores().stores)
+    await mkdir(join(root, 'Notes', 'B'), { recursive: true })
+    await writeFile(join(root, 'Notes', 'B', '_pageset.json'), JSON.stringify({ id: 'set-b' }))
+    await page('Notes/B/Notes.md', NOTES)
+    await page('Notes/Beta.md', PAGE_B)
+    await page('Notes/Gamma.md', GAMMA)
+    await page('Notes/Twin.md', '01KVGMT8BFP350FZZXAMG1QDVT')
+    await page('Notes/B/Twin.md', '01KVGMT8BFP350FZZXAMG1QDVW')
+    await writeFile(
+      join(root, 'Notes', 'Daily', 'Alpha.md'),
+      `---\nID: ${PAGE_A}\nRelated: "[[Gamma]]"\n---\n[[B/Notes]] [[Notes]] ![[Beta]] [[Twin]] [[Ghost]]`,
+    )
+    await page('Notes/Daily/Delta.md', '01KVGMT8BFP350FZZXAMG1QDVD', '[[Gamma]]')
+    await refreshTree(root)
+    await seedContentIndex(root)
+  })
+  afterEach(() => installStores(NO_STORES))
+
+  const ALPHA_TARGETS = { 'b/notes': NOTES, notes: NOTES, beta: PAGE_B, gamma: GAMMA }
+
+  it('a page delete records each key, embeds included, resolved alone, and none ambiguous or phantom', async () => {
+    const r = await settledMutate(
+      root,
+      { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' },
+      nexusDeps,
+    )
+    expect(r.ok).toBe(true)
+    const { record } = await onlyBundle()
+    expect((record as { targets?: unknown }).targets).toEqual(ALPHA_TARGETS)
+  })
+
+  it('a Set delete records them bundle-wide from the index, reading none of its pages', async () => {
+    const reads = vi.spyOn(atomicWrite, 'readTextOrNull')
+    try {
+      const r = await settledMutate(
+        root,
+        { op: 'delete', path: 'Notes/Daily', kind: 'set' },
+        nexusDeps,
+      )
+      expect(r.ok).toBe(true)
+      const { record } = await onlyBundle()
+      expect((record as { targets?: unknown }).targets).toEqual(ALPHA_TARGETS)
+      const pageReads = reads.mock.calls.filter(
+        ([file]) => file.includes('/Notes/Daily/') && file.endsWith('.md'),
+      )
+      expect(pageReads).toEqual([])
+    } finally {
+      reads.mockRestore()
+    }
+  })
+
+  it('a Space delete records the targets of its values', async () => {
+    await writeFile(
+      join(contextsDir(root), 'Projects', 'Pommora', '_space.json'),
+      JSON.stringify({ id: 'sp-pom', Related: '[[Gamma]]' }),
+    )
+    await refreshTree(root)
+    const r = await settledMutate(
+      root,
+      { op: 'delete', path: '.nexus/contexts/Projects/Pommora', kind: 'space' },
+      nexusDeps,
+    )
+    expect(r.ok).toBe(true)
+    const { record } = await onlyBundle()
+    expect((record as { targets?: unknown }).targets).toEqual({ gamma: GAMMA })
+  })
+
+  it('a record with targets round-trips, and one without them still reads', async () => {
+    await settledMutate(
+      root,
+      { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' },
+      nexusDeps,
+    )
+    const { dir, record } = await onlyBundle()
+    expect(await readRecord(dir)).toEqual(record)
+    const { targets: _, ...without } = record as { targets?: unknown }
+    await writeFile(join(dir, '_record.json'), JSON.stringify(without))
+    expect(await readRecord(dir)).toEqual(without)
+  })
+})
+
 describe('writePropertyBundle — the artifact-less shape', () => {
   it('de-collides within one timestamp — a same-stamp double delete keeps both records', async () => {
     vi.useFakeTimers()
@@ -665,7 +757,9 @@ describe('resolveRecord — a placement with final names, or a typed refusal', (
 
   it('places a page into its parent container at the container’s CURRENT path', () => {
     const r = resolveRecord(pageRecord, 'Alpha.md', treeOf([], [notes()]))
-    expect(r).toEqual({ place: { dir: 'Notes/Journal', finalName: 'Alpha.md' } })
+    expect(r).toEqual({
+      place: { dir: 'Notes/Journal', finalName: 'Alpha.md', finalTitle: 'Alpha' },
+    })
   })
 
   it('disambiguates a taken title, matching the create convention', () => {
@@ -673,7 +767,9 @@ describe('resolveRecord — a placement with final names, or a typed refusal', (
       pages: [P({ id: 'page-o', title: 'Alpha', path: 'Notes/Journal/Alpha.md' })],
     })
     const r = resolveRecord(pageRecord, 'Alpha.md', treeOf([], [notes([taken])]))
-    expect(r).toEqual({ place: { dir: 'Notes/Journal', finalName: 'Alpha (2).md' } })
+    expect(r).toEqual({
+      place: { dir: 'Notes/Journal', finalName: 'Alpha (2).md', finalTitle: 'Alpha (2)' },
+    })
   })
 
   it('a set title also blocks a page name — one folder cannot hold both', () => {
@@ -681,7 +777,9 @@ describe('resolveRecord — a placement with final names, or a typed refusal', (
       sets: [journal({ id: 'set-inner', title: 'Alpha', path: 'Notes/Journal/Alpha' })],
     })
     const r = resolveRecord(pageRecord, 'Alpha.md', treeOf([], [notes([inner])]))
-    expect(r).toEqual({ place: { dir: 'Notes/Journal', finalName: 'Alpha (2).md' } })
+    expect(r).toEqual({
+      place: { dir: 'Notes/Journal', finalName: 'Alpha (2).md', finalTitle: 'Alpha (2)' },
+    })
   })
 
   it('refuses when the parent is gone — a still-trashed parent is the same answer', () => {
@@ -1031,6 +1129,278 @@ describe('a Link value refilled into a trashed copy', () => {
     const fm = splitFrontmatter(await readFile(beta(), 'utf8'))
     expect(fm.Related).toBe('[[Alpha]]')
     expect(fm.related).toBeNull()
+  })
+})
+
+describe('restore — the returning page’s links follow the pages they named', () => {
+  const ALPHA = join('Notes', 'Daily', 'Alpha.md')
+  const text = (rel: string): Promise<string> => readFile(join(root, rel), 'utf8')
+  const write = (rel: string, id: string, fm: string, body: string): Promise<void> =>
+    writeFile(join(root, rel), `---\nID: ${id}\n${fm}---\n${body}`)
+  const reseed = async (): Promise<void> => {
+    await refreshTree(root)
+    await seedContentIndex(root)
+  }
+  const del = async (path: string, kind: 'page' | 'set' = 'page'): Promise<void> => {
+    expect((await settledMutate(root, { op: 'delete', path, kind }, nexusDeps)).ok).toBe(true)
+  }
+  const restore = async (name: string, destination?: RestoreDestination) => {
+    const bundles = await listBundles(root)
+    const listed = bundles.filter((b) => b.artifactName === name).at(-1)
+    const r = await settledMutate(
+      root,
+      {
+        op: 'restore',
+        bundlePath: listed?.bundlePath ?? '',
+        ...(destination ? { destination } : {}),
+      },
+      nexusDeps,
+    )
+    expect(r.ok).toBe(true)
+    return r.ok ? r.value : undefined
+  }
+
+  beforeEach(async () => {
+    installStores(memoryStores().stores)
+    await writeFile(
+      join(root, '.nexus', 'properties.json'),
+      JSON.stringify({
+        order: ['prop_related'],
+        defs: {
+          prop_related: { id: 'prop_related', label: 'Related', key: 'Related', type: 'link' },
+        },
+      }),
+    )
+    await mkdir(join(root, 'Notes', 'Other'), { recursive: true })
+    await writeFile(
+      join(root, 'Notes', 'Other', '_pageset.json'),
+      JSON.stringify({ id: 'set-other' }),
+    )
+    await write(ALPHA, PAGE_A, 'Related: "[[Beta]]"\n', '[[Beta]] ![[Beta]]')
+    await write('Notes/Beta.md', PAGE_B, '', 'beta')
+    await reseed()
+  })
+  afterEach(() => installStores(NO_STORES))
+
+  it('follows a page renamed meanwhile, in its body, its embed, and its value', async () => {
+    await del(ALPHA)
+    const renamed = await settledMutate(
+      root,
+      { op: 'rename', path: 'Notes/Beta.md', kind: 'page', newName: 'Gamma' },
+      nexusDeps,
+    )
+    expect(renamed.ok).toBe(true)
+    await restore('Alpha.md')
+    expect(await text(ALPHA)).toBe(
+      `---\nID: ${PAGE_A}\nRelated: "[[Gamma]]"\n---\n[[Gamma]] ![[Gamma]]`,
+    )
+  })
+
+  it('leaves its links as written to a page moved meanwhile', async () => {
+    await del(ALPHA)
+    const moved = await settledMutate(
+      root,
+      { op: 'movePage', path: 'Notes/Beta.md', newParentPath: 'Notes/Other' },
+      nexusDeps,
+    )
+    expect(moved.ok).toBe(true)
+    await restore('Alpha.md')
+    expect(await text(ALPHA)).toBe(
+      `---\nID: ${PAGE_A}\nRelated: "[[Beta]]"\n---\n[[Beta]] ![[Beta]]`,
+    )
+  })
+
+  it('keeps its body and parks its value for a page deleted meanwhile', async () => {
+    await del(ALPHA)
+    await del('Notes/Beta.md')
+    await restore('Alpha.md')
+    const restored = await text(ALPHA)
+    expect(restored).toContain('[[Beta]] ![[Beta]]')
+    expect(splitFrontmatter(restored)).not.toHaveProperty('Related')
+    const beta = (await listBundles(root)).find((b) => b.artifactName === 'Beta.md')
+    expect(beta?.record).toMatchObject({
+      links: [{ page: PAGE_A, property: 'prop_related', value: '[[Beta]]' }],
+    })
+  })
+
+  it('a page landing in the Collection once its Set is gone re-spells a live path link to it, and leaves a bare one', async () => {
+    await write(
+      'Notes/Linker.md',
+      '01KVGMT8BFP350FZZXAMG1QDVK',
+      '',
+      '[[Daily/Alpha]] and [[Alpha]]',
+    )
+    await reseed()
+    await del(ALPHA)
+    await del('Notes/Daily', 'set')
+    const reply = await restore('Alpha.md', { kind: 'container', id: 'col-notes' })
+    expect(await pathExists(join(root, 'Notes', 'Alpha.md'))).toBe(true)
+    expect(await text('Notes/Linker.md')).toContain('[[Notes/Alpha|Alpha]] and [[Alpha]]')
+    expect(reply?.cascade?.pages).toEqual(['Notes/Linker.md'])
+  })
+
+  it('a twin made meanwhile elsewhere: its bare linkers gain its path, and a stripped bare link refills with the returning page’s', async () => {
+    await write(ALPHA, PAGE_A, '', 'alpha')
+    await write('Notes/Beta.md', PAGE_B, 'Related: "[[Alpha]]"\n', 'beta')
+    await reseed()
+    await del(ALPHA)
+    const created = await settledMutate(
+      root,
+      {
+        op: 'createPage',
+        id: '01KVGMT8BFP350FZZXAMG1QDVM',
+        parentPath: 'Notes/Other',
+        name: 'Alpha',
+      },
+      nexusDeps,
+    )
+    expect(created.ok).toBe(true)
+    await write('Notes/Third.md', '01KVGMT8BFP350FZZXAMG1QDVR', '', 'see [[Alpha]]')
+    await reseed()
+    const reply = await restore('Alpha.md')
+    expect(reply?.unrestored).toBeUndefined()
+    expect(await text('Notes/Third.md')).toContain('see [[Notes/Other/Alpha|Alpha]]')
+    expect(splitFrontmatter(await text('Notes/Beta.md')).Related).toBe(
+      '[[Notes/Daily/Alpha|Alpha]]',
+    )
+  })
+
+  it('a bundle without targets restores by the name', async () => {
+    await del(ALPHA)
+    const [listed] = await listBundles(root)
+    const recordFile = join(root, listed.bundlePath, '_record.json')
+    const { targets: _, ...without } = JSON.parse(await readFile(recordFile, 'utf8'))
+    await writeFile(recordFile, JSON.stringify(without))
+    const renamed = await settledMutate(
+      root,
+      { op: 'rename', path: 'Notes/Beta.md', kind: 'page', newName: 'Gamma' },
+      nexusDeps,
+    )
+    expect(renamed.ok).toBe(true)
+    await restore('Alpha.md')
+    expect(await text(ALPHA)).toBe(`---\nID: ${PAGE_A}\n---\n[[Beta]] ![[Beta]]`)
+  })
+
+  it('a Set restore keeps a value naming a page it holds that carries no ID', async () => {
+    const gamma = 'Notes/Daily/Gamma.md'
+    await write(gamma, '01KVGMT8BFP350FZZXAMG1QDVG', 'Related: "[[Omega]]"\n', 'gamma')
+    await writeFile(join(root, 'Notes', 'Daily', 'Omega.md'), 'omega')
+    await reseed()
+    await del('Notes/Daily', 'set')
+    const [listed] = await listBundles(root)
+    // Unsettled: a relocate stamps no page, so the held tree leaves the ID-less one out where a fresh read lists it.
+    const r = await handleMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
+    expect(r).toEqual({ ok: true, value: {} })
+    expect(splitFrontmatter(await text(gamma)).Related).toBe('[[Omega]]')
+    expect(await listBundles(root)).toEqual([])
+  })
+
+  it('a page returning beside a new namesake in its own folder refills its stripped link under its new name, and leaves the namesake’s linkers be', async () => {
+    await write('Notes/Beta.md', PAGE_B, 'Related: "[[Alpha]]"\n', 'beta')
+    await reseed()
+    await del(ALPHA)
+    const created = await settledMutate(
+      root,
+      {
+        op: 'createPage',
+        id: '01KVGMT8BFP350FZZXAMG1QDVM',
+        parentPath: 'Notes/Daily',
+        name: 'Alpha',
+      },
+      nexusDeps,
+    )
+    expect(created.ok).toBe(true)
+    await write(
+      'Notes/Third.md',
+      '01KVGMT8BFP350FZZXAMG1QDVR',
+      'Related: "[[Alpha]]"\n',
+      'see [[Alpha]]',
+    )
+    await reseed()
+    const third = await text('Notes/Third.md')
+    const reply = await restore('Alpha.md')
+    expect(await pathExists(join(root, 'Notes', 'Daily', 'Alpha (2).md'))).toBe(true)
+    expect(reply?.unrestored).toBeUndefined()
+    expect(splitFrontmatter(await text('Notes/Beta.md')).Related).toBe('[[Alpha (2)]]')
+    expect(await text('Notes/Third.md')).toBe(third)
+  })
+
+  it('a Set returning beside a twin made meanwhile gives that twin’s bare linkers its path', async () => {
+    await del('Notes/Daily', 'set')
+    const created = await settledMutate(
+      root,
+      {
+        op: 'createPage',
+        id: '01KVGMT8BFP350FZZXAMG1QDVM',
+        parentPath: 'Notes/Other',
+        name: 'Alpha',
+      },
+      nexusDeps,
+    )
+    expect(created.ok).toBe(true)
+    await write('Notes/Third.md', '01KVGMT8BFP350FZZXAMG1QDVR', '', 'see [[Alpha]]')
+    await reseed()
+    await restore('Daily')
+    expect(await text('Notes/Third.md')).toContain('see [[Notes/Other/Alpha|Alpha]]')
+  })
+
+  it('a restore that finds no settled world says its links weren’t updated', async () => {
+    await del(ALPHA)
+    const unsettled = vi.spyOn(settle, 'settledIndex').mockResolvedValue(null)
+    try {
+      const reply = await restore('Alpha.md')
+      expect(reply?.cascade?.warning).toBe("Links to “Alpha” weren't updated.")
+    } finally {
+      unsettled.mockRestore()
+    }
+  })
+
+  describe('a Space’s values follow the pages they named', () => {
+    const sidecar = () => join(contextsDir(root), 'Projects', 'Pommora', '_space.json')
+    const renameBeta = async (): Promise<void> => {
+      const renamed = await settledMutate(
+        root,
+        { op: 'rename', path: 'Notes/Beta.md', kind: 'page', newName: 'Gamma' },
+        nexusDeps,
+      )
+      expect(renamed.ok).toBe(true)
+    }
+    beforeEach(async () => {
+      await writeFile(sidecar(), JSON.stringify({ id: 'sp-pom', Related: '[[Beta]]' }))
+      await reseed()
+    })
+
+    it('a Space restored on its own re-spells a value whose page was renamed meanwhile', async () => {
+      expect(
+        (
+          await settledMutate(
+            root,
+            { op: 'delete', path: '.nexus/contexts/Projects/Pommora', kind: 'space' },
+            nexusDeps,
+          )
+        ).ok,
+      ).toBe(true)
+      await renameBeta()
+      await restore('Pommora')
+      expect((await readJsonAt(sidecar())).Related).toBe('[[Gamma]]')
+    })
+
+    it('a Context records its Spaces’ value targets, and its restore re-spells a value whose page was renamed meanwhile', async () => {
+      expect(
+        (
+          await settledMutate(
+            root,
+            { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' },
+            nexusDeps,
+          )
+        ).ok,
+      ).toBe(true)
+      const [listed] = await listBundles(root)
+      expect(listed.record).toMatchObject({ targets: { beta: PAGE_B } })
+      await renameBeta()
+      await restore('Projects')
+      expect((await readJsonAt(sidecar())).Related).toBe('[[Gamma]]')
+    })
   })
 })
 

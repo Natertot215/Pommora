@@ -133,19 +133,14 @@ const contentIndex = (index: MemoryIndex): ContentIndexStore => {
         index.stats.set(move(path), stat)
       }
     },
-    queryMentions(keys) {
-      return sortedPaths(
-        relationRows()
-          .filter((r) => keys.includes(r.target) && r.kind !== 'space')
-          .map((r) => r.path),
-      )
-    },
-    queryHeadingMentions(normalizedHeading, keys) {
+    queryMentions(keys, qualifier) {
       return sortedPaths(
         relationRows()
           .filter(
             (r) =>
-              keys.includes(r.target) && r.qualifier === normalizedHeading && r.kind !== 'space',
+              keys.includes(r.target) &&
+              (qualifier === undefined || r.qualifier === qualifier) &&
+              r.kind !== 'space',
           )
           .map((r) => r.path),
       )
@@ -164,10 +159,7 @@ const contentIndex = (index: MemoryIndex): ContentIndexStore => {
     readPageRelations(paths, key) {
       const held = (path: string): boolean => !paths || paths.includes(path)
       const relations = relationRows()
-        .filter(
-          (r): r is PageRelationRow =>
-            (r.kind === 'body' || r.kind === 'citation' || r.kind === 'value') && held(r.path),
-        )
+        .filter((r): r is PageRelationRow => r.kind !== 'space' && held(r.path))
         .sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0))
       const pages: PageRelations['pages'] = {}
       for (const [path, stat] of index.stats)

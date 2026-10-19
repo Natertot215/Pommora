@@ -245,7 +245,7 @@ export async function settledIndex(root: string): Promise<PageIndex | null> {
   return tree && pageIndexOf(tree)
 }
 
-/** The one re-spell, run inside the settle's turn: the map `respellings` builds from `before` to `after`, swept under `label`; undefined when it touches nothing and warns of nothing. */
+/** The one re-spell, run inside the settle's turn: the map `respellings` builds from `before` to `after`, swept under `label`; undefined when nothing needs re-spelling. */
 export async function relink(
   root: string,
   before: PageIndex,
@@ -256,8 +256,7 @@ export async function relink(
 ): Promise<CascadeReport | undefined> {
   const names = respellings(before, after, moved, arriving)
   if (!names.size) return undefined
-  const report = await renameCascade(root, { names, label })
-  return report.pages.length || report.hosts.length || report.warning ? report : undefined
+  return renameCascade(root, { names, label })
 }
 
 // What an outside payment leaves: a warning logged, since no one is there to read a notice, and the files it wrote owed to the push.

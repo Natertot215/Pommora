@@ -2,12 +2,13 @@
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
+import * as atomicWrite from '../Files/atomicWrite'
 import { pathExists } from '../Files/atomicWrite'
 import { settledMutate } from '../Testing/settledMutate'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
-import { listBundles } from './holdings'
+import { listBundles, parkLinks } from './holdings'
 import { readRecord } from './record'
 import { trashRows } from './trashRows'
 import { readNexus } from '../Nexus/readNexus'
@@ -551,21 +552,37 @@ describe('links come back with the page', () => {
     expect((await frontmatter()).Related).toBe('[[Alpha]]')
   })
 
-  it('a link parks with the newest of two namesakes in the Trash', async () => {
+  it('a link parks with the only trashed page its bare title names', async () => {
+    await linker(join('Plain', 'Notes.md'), newContentId('page'), '')
+    await del(join('Plain', 'Notes.md'), 'page')
+    const link = { page: BETA_ID, property: 'prop_related', value: '[[Notes]]' }
+    await parkLinks(root, [link])
+    expect(await readRecord(join(root, (await find('Notes')).bundlePath))).toMatchObject({
+      links: [link],
+    })
+  })
+
+  it('a link parks with the trashed page its path names, and with neither of two namesakes its bare title names', async () => {
     const plain = join('Plain', 'Alpha.md')
     await linker(plain, newContentId('page'), '')
-    await del(beta, 'page')
+    await linker(beta, BETA_ID, '')
     await del('Journal/Daily/Alpha.md', 'page')
     await del(plain, 'page')
-    expect(await restore('Beta')).toBeUndefined()
     const alphas = (await rows()).filter((r) => r.title === 'Alpha')
-    const newest = alphas.find((r) => r.bundlePath.startsWith('.trash/Plain'))
-    const older = alphas.find((r) => r.bundlePath.startsWith('.trash/Journal'))
-    if (!newest || !older) throw new Error('setup failed')
-    expect(await readRecord(join(root, newest.bundlePath))).toMatchObject({
-      links: [{ page: BETA_ID, property: 'prop_related', value: '[[Alpha]]' }],
-    })
-    expect(await readRecord(join(root, older.bundlePath))).not.toHaveProperty('links')
+    const inPlain = alphas.find((r) => r.bundlePath.startsWith('.trash/Plain'))
+    const inJournal = alphas.find((r) => r.bundlePath.startsWith('.trash/Journal'))
+    if (!inPlain || !inJournal) throw new Error('setup failed')
+    const bare = { page: BETA_ID, property: 'prop_related', value: '[[Alpha]]' }
+    const pathed = { page: BETA_ID, property: 'prop_parent', value: '[[Plain/Alpha]]' }
+    const reads = vi.spyOn(atomicWrite, 'readTextOrNull')
+    try {
+      await parkLinks(root, [bare, pathed])
+      expect(reads.mock.calls.filter(([file]) => file.endsWith('.md'))).toEqual([])
+    } finally {
+      reads.mockRestore()
+    }
+    expect(await readRecord(join(root, inPlain.bundlePath))).toMatchObject({ links: [pathed] })
+    expect(await readRecord(join(root, inJournal.bundlePath))).not.toHaveProperty('links')
   })
 
   it('emptying one of two namesakes hands its record’s links to the other', async () => {

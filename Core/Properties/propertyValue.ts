@@ -12,6 +12,7 @@ import { exactTitle, normalizeTitle } from '../Paths/caseFold'
 import { joinValues, landValue } from '../Files/rootValues'
 import { yamlInline } from '../Files/pageFile'
 import { linkEntry, readLinkText } from '../Connections/linkValue'
+import { type PageIndex, pageKey } from '../Connections/pageIndex'
 import { readNumber, spelledNumber } from './formatValue'
 import { capitalize } from '@pommora/uix/Utilities/capitalize'
 import { namesValue } from './pageValue'
@@ -180,6 +181,19 @@ export function keepingForeignWords(
 /** What a frozen copy may still name: its options are the definition's own, and `holds`, when given, answers which pages still exist. */
 export interface Frozen {
   holds?: (title: string) => boolean
+}
+
+/** A world a value is read against: a key `targets` recorded at the delete answers by whether the page it named is there under any name, any other key by the name. */
+export function frozenWorld(
+  index: PageIndex,
+  targets: ReadonlyMap<string, string> = new Map(),
+): Frozen {
+  return {
+    holds: (title) => {
+      const id = targets.get(pageKey(title))
+      return id === undefined ? index.holders(title).length > 0 : index.byId.has(id)
+    },
+  }
 }
 
 export function gonePageEntry(raw: unknown, frozen: Frozen): string | null {

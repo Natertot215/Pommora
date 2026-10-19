@@ -948,7 +948,7 @@ describe('handleMutate — move + guards', () => {
       )
       await seedSet('Notes/Weekly', 'wk', { views: [located(['col', 'wk'])] })
       const r = await moveSet('Notes/Daily', 'Notes/Weekly')
-      expect(r.ok && 'cascade' in r.value).toBe(false)
+      expect(r.ok && r.value.cascade?.warning).toBeUndefined()
       expect(await viewsAt('Notes/_pagecollection.json')).toEqual([located(['col', 'wk'])])
       expect(await viewsAt('Notes/Weekly/_pageset.json')).toEqual([located(['col', 'wk'])])
     })
@@ -3415,7 +3415,7 @@ describe('handleMutate — excluded entries follow their folders', () => {
       { op: 'rename', path: 'Notes', kind: 'collection', newName: 'Journal' },
       nexusDeps,
     )
-    expect(r).toEqual({ ok: true, value: {} })
+    expect(r.ok && r.value.cascade?.warning).toBeUndefined()
     expect(await read('.nexus/settings.json')).toBe(before)
   })
 

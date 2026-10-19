@@ -53,11 +53,11 @@ describe('candidates (ranked by match, then A–Z)', () => {
     { id: '4', title: 'Notes', path: 'd' },
   ])
   it('ranks the tightest match first, then the shortest, then alpha', () => {
-    const titles = idx.candidates('pro').map((p) => p.title)
+    const titles = idx.candidates('pro', 20).map((p) => p.title)
     expect(titles).toEqual(['Pro', 'Projects', 'Project Atlas'])
   })
   it('empty query → the whole index, A–Z', () => {
-    const titles = idx.candidates('').map((p) => p.title)
+    const titles = idx.candidates('', 20).map((p) => p.title)
     expect(titles).toEqual(['Notes', 'Pro', 'Project Atlas', 'Projects'])
   })
   it('respects the limit', () => {
@@ -83,7 +83,7 @@ describe('candidates (ranked by match, then A–Z)', () => {
       { id: 'p', title: 'ClaudeMD', path: 'Studio/Pommora/ClaudeMD.md' },
       { id: 's', title: 'ClaudeMD', path: 'Studio/Sapphire/ClaudeMD.md' },
     ])
-    expect(studio.candidates('Pommora/Cl').map((p) => p.id)).toEqual(['p'])
+    expect(studio.candidates('Pommora/Cl', 20).map((p) => p.id)).toEqual(['p'])
   })
   it('an exact title ranks first', () => {
     const notes = buildPageIndex([
@@ -91,14 +91,14 @@ describe('candidates (ranked by match, then A–Z)', () => {
       { id: 'a', title: 'Notes Archive', path: 'Notes Archive.md' },
       { id: 'n', title: 'Notes', path: 'Journal/Notes.md' },
     ])
-    expect(notes.candidates('notes')[0].id).toBe('n')
+    expect(notes.candidates('notes', 20)[0].id).toBe('n')
   })
   it('two holders of one title both appear under a plain query', () => {
     const shared = buildPageIndex([
       { id: 'a', title: 'Notes', path: 'A/Notes.md' },
       { id: 'b', title: 'Notes', path: 'B/Notes.md' },
     ])
-    expect(shared.candidates('notes').map((p) => p.id)).toEqual(['a', 'b'])
+    expect(shared.candidates('notes', 20).map((p) => p.id)).toEqual(['a', 'b'])
   })
 })
 
@@ -163,7 +163,7 @@ describe('respell', () => {
 
   it('leaves a key that still names the page at an unchanged tail', () => {
     const idx = at('A/Notes.md')
-    expect(idx.respell('notes', page(idx, 'A/Notes'))).toBeNull()
+    expect(idx.respell('notes', page(idx, 'A/Notes'), 'A/Notes.md')).toBeNull()
   })
   it('follows a case-only rename', () => {
     const idx = at('A/Notes.md')
@@ -171,7 +171,7 @@ describe('respell', () => {
   })
   it('spells the full path when a twin arrives and the key no longer names the page alone', () => {
     const idx = at('A/Notes.md', 'B/Notes.md')
-    expect(idx.respell('notes', page(idx, 'A/Notes'))).toBe('A/Notes')
+    expect(idx.respell('notes', page(idx, 'A/Notes'), 'A/Notes.md')).toBe('A/Notes')
   })
   it('keeps the depth a path key was written at through a rename', () => {
     const idx = at('A/Plan.md')
@@ -183,10 +183,10 @@ describe('respell', () => {
     expect(idx.respell('x/notes', q, 'Q/X/Notes.md')).toBeNull()
     expect(idx.respell('q/x/notes', q, 'Q/X/Notes.md')).toBe('R/X/Notes')
   })
-  it('without an old path, resolution alone decides', () => {
+  it('at the page’s own path, resolution alone decides', () => {
     const idx = at('A/Notes.md', 'B/Notes.md')
-    expect(idx.respell('a/notes', page(idx, 'A/Notes'))).toBeNull()
-    expect(idx.respell('notes', page(idx, 'B/Notes'))).toBe('B/Notes')
+    expect(idx.respell('a/notes', page(idx, 'A/Notes'), 'A/Notes.md')).toBeNull()
+    expect(idx.respell('notes', page(idx, 'B/Notes'), 'B/Notes.md')).toBe('B/Notes')
   })
   it('byId holds the first of two pages claiming one id', () => {
     const idx = buildPageIndex([

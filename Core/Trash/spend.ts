@@ -1,4 +1,4 @@
-import { basename, dirname, join, relative, titleFromPath } from '../Paths/posix'
+import { basename, dirname, join, relative } from '../Paths/posix'
 import { resolveUnderRoot } from '../Paths/pathSafety'
 import { contextKey } from '../Contexts/contexts'
 import { spaceIdsIn, spaceSidecarsIn } from '../Contexts/spaceSidecar'
@@ -16,12 +16,12 @@ import { fail, ok, type Result, fault } from '../Contract/result'
 import type { NexusTree } from '../Nexus/tree'
 import { mutateRegistryFile, withContextAt } from '../Contexts/contextsRegistry'
 import { restoreProperty } from './restoreProperty'
-import { scrubReturning } from './restoreScrub'
+import { repairLanded, scrubReturning } from './restoreScrub'
 import { exclusionWriteRefusal, readLiveSetting, reseatExcludedFolders } from '../Settings/settings'
-import { sweepRootsById } from '../Properties/governedSweep'
+import { sweepRootsById, unsweptLine } from '../Properties/governedSweep'
 import { joinValues, landValue } from '../Files/rootValues'
-import { rewriteConnections } from '../Connections/rewrite'
-import { pageKey } from '../Connections/pageIndex'
+import { respellings, rewriteConnections } from '../Connections/rewrite'
+import { buildPageIndex } from '../Connections/pageIndex'
 import { linkDefsOf } from '../Properties/propertiesRegistry'
 import { refillValues } from '../Properties/assignment'
 import { BUNDLE_SUFFIX, deletedPathOf } from './bundle'
@@ -30,13 +30,20 @@ import { dropPageMetadata } from '../Nexus/pageMetadata'
 import { dropSpaceOrder } from '../Nexus/reorder'
 import { machine } from '../Platform/machine'
 import { recordWrite } from '../Files/writeEcho'
-import { frozenWorld } from '../Nexus/heldPages'
+import { frozenWorld } from '../Properties/propertyValue'
 import { liveTreeOf } from '../Nexus/liveTree'
+import { settledIndex } from '../Nexus/settle'
 
-import { type EntityRecord, recordById } from '../Nexus/record'
+import { type EntityRecord, pageIndexOf, pagesOf, recordById } from '../Nexus/record'
 import { type RecordFile, readRecord, bundleArtifact } from './record'
-import { deleteCascade, type StrippedLink } from '../Nexus/cascade'
-import { contentPages, pageIdsOf, parkLinks, refillTrashed } from './holdings'
+import {
+  deleteCascade,
+  joinCascades,
+  linksNotUpdated,
+  renameCascade,
+  type StrippedLink,
+} from '../Nexus/cascade'
+import { contentPages, pageIdsOf, parkLinks, refillTrashed, trashedPagesOf } from './holdings'
 import { findContainerById, resolveRecord, type ArtifactRecord, type Refusal } from './resolve'
 import { owningCollection } from '../Nexus/treePatch'
 import { contextWorldOf } from '../Contexts/contextResolve'
@@ -80,7 +87,7 @@ export async function emptyBundle(
   else await deps.trashToSystem(artifactAbs)
   await dropPageMetadata(root, pageIds)
   if (opened.value.entity === 'context') await dropSpaceOrder(root, opened.value.registry.id)
-  // Permanent now: a Link value naming one of its pages, recorded by the delete or taken up since, names nothing any more unless another bundle holds that title.
+  // Permanent now: a Link value naming one of its pages, recorded by the delete or taken up since, names nothing any more unless another trashed page answers its key.
   const gone = pages.length
     ? await deleteCascade(
         root,
@@ -120,7 +127,7 @@ function withDestination(
   }
 }
 
-type Restored = Pick<MutateOutcome, 'unrestored'>
+type Restored = Pick<MutateOutcome, 'unrestored' | 'cascade'>
 
 const restored = (unrestored: string[]): Restored => (unrestored.length ? { unrestored } : {})
 
@@ -173,14 +180,10 @@ async function restoreArtifact(
   // The tree is the resolver's universe; a file the walk cannot see (an Unknown squatter) could still occupy the target — refuse rather than clobber what nothing adjudicated.
   if (await pathExists(targetAbs))
     return fail('exists', 'Something already sits at the restored location.')
-  const was = titleFromPath(artifactAbs)
-  const landed = record.entity === 'page' ? titleFromPath(finalName) : was
-  const frozen = frozenWorld(
-    tree,
-    record.entity === 'page'
-      ? [landed]
-      : (await contentPages(record.entity, artifactAbs)).map(titleFromPath),
-  )
+  const back = await trashedPagesOf(root, bundleAbs, await contentPages(record.entity, artifactAbs))
+  const targets = new Map(Object.entries(record.targets ?? {}))
+  const world = buildPageIndex([...pagesOf(tree), ...back])
+  const frozen = frozenWorld(world, targets)
   const owner =
     record.entity === 'collection'
       ? artifactAbs
@@ -190,6 +193,7 @@ async function restoreArtifact(
   const dropped = await scrubReturning(
     root,
     tree,
+    record.entity,
     artifactAbs,
     owner === undefined ? null : owner === artifactAbs ? artifactAbs : join(root, owner),
     frozen,
@@ -222,14 +226,37 @@ async function restoreArtifact(
       }))
     return fault(e)
   }
+  // Two maps rather than one `relink`: the arrival's collisions read against the live world alone, since beside the returning pages a twin's bare link reads ambiguous and a returning `Notes/Alpha` would take `notes/alpha` from a live `X/Notes/Alpha`. `backNames` reads the returning pages' own keys against themselves, feeding the refill whole and the cascade only where the live world names nothing.
+  const after = await settledIndex(root)
+  const ids = back.map((p) => p.id)
+  const backNames = after
+    ? respellings(buildPageIndex(back), after, ids, [])
+    : new Map<string, string>()
+  const unswept: string[] = []
+  let cascade = after ? undefined : linksNotUpdated(title)
+  if (after) {
+    const repair = new Map<string, string>()
+    for (const [key, id] of targets) {
+      const q = after.byId.get(id)
+      const next = q && after.respell(key, q, q.path)
+      if (next) repair.set(key, next)
+    }
+    unswept.push(...(await repairLanded(root, tree, record.entity, targetAbs, repair)))
+    const live = pageIndexOf(tree)
+    const names = respellings(live, after, [], ids)
+    for (const [k, v] of backNames) if (live.resolve(k).status === 'phantom') names.set(k, v)
+    if (names.size) cascade = await renameCascade(root, { names, label: title })
+  }
   const roots = recordById(tree)
   const unspent: string[] = []
   const unlinked = new Set<string>()
   if (record.entity === 'context') {
     if (title !== record.registry.title) {
       const rekey = rekeyContext(record.registry.title, title)
-      for (const { file } of await spaceSidecarsIn(targetAbs))
-        await rmwJsonStrict(file, (raw) => rekey(raw, file))
+      for (const { file } of await spaceSidecarsIn(targetAbs)) {
+        const rekeyed = await rmwJsonStrict(file, (raw) => rekey(raw, file)).catch(() => null)
+        if (!rekeyed?.ok) unswept.push(file)
+      }
     }
     const titlesById = new Map(
       [...(await spaceIdsIn(targetAbs)).ids].map(([name, id]) => [id, name]),
@@ -260,19 +287,15 @@ async function restoreArtifact(
     (await readLiveSetting(root, 'restoreLinksOnDeletion'))
   ) {
     const defs = linkDefsOf(tree.config.registry)
+    const refilled = frozenWorld(after ?? world)
     const trashed: StrippedLink[] = []
     for (const def of defs) {
       const all = Object.fromEntries(
         record.links
           .filter((l) => l.property === def.id)
-          .map((l) => [
-            l.page,
-            landed === was
-              ? l.value
-              : rewriteConnections(l.value, new Map([[pageKey(was), landed]])),
-          ]),
+          .map((l) => [l.page, rewriteConnections(l.value, backNames)]),
       )
-      const taken = await refillValues(root, def, roots, all, frozen)
+      const taken = await refillValues(root, def, roots, all, refilled)
       for (const id of Object.keys(all))
         if (!roots[id]) trashed.push({ page: id, property: def.id, value: all[id] })
         else if (!taken.has(id)) unlinked.add(id)
@@ -280,12 +303,23 @@ async function restoreArtifact(
     // A page or Space in the Trash takes its value back into its trashed copy, so it returns with it.
     await refillTrashed(root, trashed, new Map(defs.map((d) => [d.id, d.key])))
   }
+  if (unswept.length) {
+    const left = {
+      pages: [],
+      hosts: [],
+      warning: unsweptLine(unswept.length, `links in “${title}” across `),
+    }
+    cascade = cascade ? joinCascades(cascade, left) : left
+  }
   // The record outlives a partial re-tag, so what didn't come back stays written down.
   if (!unspent.length) {
     recordWrite(bundleAbs)
     await machine().remove(bundleAbs)
   }
-  return ok(restored([...unspent, ...unlinked].map((id) => roots[id].title)))
+  return ok({
+    ...restored([...unspent, ...unlinked].map((id) => roots[id].title)),
+    ...(cascade ? { cascade } : {}),
+  })
 }
 
 /** The ids of what's still here and didn't take its tag back; a root gone since has nothing to take it. */

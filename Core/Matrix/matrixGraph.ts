@@ -4,7 +4,8 @@ import type { PageRelationRow } from '../Platform/stores'
 import { pageValuesOf } from '../Views/pageValues'
 import type { PageValues } from '../Views/viewRow'
 
-export interface MatrixLink extends Pick<PageRelationRow, 'path' | 'kind' | 'target' | 'key'> {
+export interface MatrixLink extends Pick<PageRelationRow, 'path' | 'target' | 'key'> {
+  kind: Exclude<PageRelationRow['kind'], 'embed'>
   pageId: string
 }
 
@@ -30,6 +31,8 @@ export function readMatrixGraph(withValues: boolean, paths?: string[]): MatrixGr
   const seen = new Set<string>()
   const links: MatrixLink[] = []
   for (const { path, kind, target, key } of rows.relations) {
+    // An embed re-spells as a link does but draws no edge.
+    if (kind === 'embed') continue
     const pageId = idOf.get(path)
     const id = `${path}\0${kind}\0${target}\0${key}`
     if (!pageId || seen.has(id)) continue
