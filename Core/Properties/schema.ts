@@ -100,7 +100,7 @@ export function withUniqueOptions(def: PropertyDefinition): PropertyDefinition {
 /** No minimum count — a Select may hold zero options. Enforced at create AND on every option edit; labels and keys each compare case-folded. */
 export function validateOptionValues(
   options: { key: string; label: string }[],
-  taken = 'An option with this title already exists, please choose another name.',
+  taken = 'Another option already writes this to files, please choose another name.',
 ): Result<null> {
   const labels = options.map((o) => normalizeTitle(o.label))
   const keys = options.map((o) => normalizeTitle(o.key))
