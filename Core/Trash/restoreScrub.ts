@@ -2,7 +2,7 @@
 
 import type { NexusTree } from '../Nexus/tree'
 import { assignedDefs } from '../Properties/assignment'
-import { editHeldList, rekeyHeld, stripKeys } from '../Files/heldKeys'
+import { editHeldList, rekeyHeld, stripKeys } from '../Files/rootValues'
 import { byKey, optionsOf, PROPERTY_TYPES } from '../Properties/properties'
 import { spellingsOf } from '../Properties/keyFormat'
 import { editList } from '../Properties/pageValue'

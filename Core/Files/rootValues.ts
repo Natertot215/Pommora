@@ -38,17 +38,15 @@ export function stripKeys(root: Json, keys: readonly string[]): Json | null {
 
 export type KeyCollision = 'prefer-new' | 'merge'
 
-/** A JSON root with `oldName` moved to `newName`, null when nothing moves; the twin of `renameFrontmatterKey`, by the same collision rule. */
+/** A JSON root with `from` moved to `to`, null when nothing moves; the twin of `renameFrontmatterKey`, by the same collision rule. */
 export function rekeyHeld(
   raw: Json,
-  oldName: string,
-  newName: string,
+  from: string,
+  to: string,
   collision: KeyCollision,
 ): Json | null {
-  if (oldName === newName || !Object.hasOwn(raw, oldName)) return null
-  const { [oldName]: moved, ...rest } = raw
-  if (!Object.hasOwn(rest, newName)) return { ...rest, [newName]: moved }
-  return collision === 'prefer-new'
-    ? rest
-    : { ...rest, [newName]: joinValues(rest[newName], moved) }
+  if (from === to || !Object.hasOwn(raw, from)) return null
+  const { [from]: moved, ...rest } = raw
+  if (!Object.hasOwn(rest, to)) return { ...rest, [to]: moved }
+  return collision === 'prefer-new' ? rest : { ...rest, [to]: joinValues(rest[to], moved) }
 }

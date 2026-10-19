@@ -3,7 +3,7 @@
 import { reconcileGovernedRoot, type GovernedWorld } from '../Contexts/contextResolve'
 import { keepingForeignWords, writtenSpelling } from './propertyValue'
 import { changedKeys } from './governedSweep'
-import { landValue } from '../Files/heldKeys'
+import { landValue } from '../Files/rootValues'
 import { atomicWriteFile, readTextOrNull } from '../Files/atomicWrite'
 import { mergeFrontmatter, splitEnvelope, splitFrontmatter } from '../Files/pageFile'
 import type { Json } from '../Files/stableJson'

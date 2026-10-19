@@ -10,6 +10,7 @@ import { retained, toggled } from '@pommora/uix/Utilities/checkSet'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { Icon } from '@pommora/uix/Symbols'
 import { entityIcon } from '../Assets/entityIconPolicy'
+import { itemCount } from '../Properties/properties'
 import { text } from '@pommora/uix/Theme'
 import { askEmptyTrash, spendBundle } from '../Interface/Confirm/confirmations'
 import type { MutateRequest } from '../Nexus/mutateRequest'
@@ -44,8 +45,8 @@ const PLURALS: Record<TrashRow['kind'], string> = {
 export function countPhrase(rows: TrashRow[]): string {
   const kinds = new Set(rows.map((r) => r.kind))
   const kind = kinds.size === 1 ? [...kinds][0] : null
-  if (rows.length === 1) return `1 ${kind ?? 'item'}`
-  return `${rows.length} ${kind === null ? 'items' : PLURALS[kind]}`
+  if (kind === null) return itemCount(rows.length)
+  return rows.length === 1 ? `1 ${kind}` : `${rows.length} ${PLURALS[kind]}`
 }
 
 export function filterRows(rows: TrashRow[], query: string): TrashRow[] {

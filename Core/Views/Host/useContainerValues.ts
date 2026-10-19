@@ -6,7 +6,7 @@ import {
   settled,
 } from '../../Properties/valueOverride'
 import type { PageFrontmatter } from '../../Nexus/schemas'
-import { rekeyHeld } from '../../Files/heldKeys'
+import { rekeyHeld } from '../../Files/rootValues'
 import type { Json } from '../../Files/stableJson'
 import type { PageValues, RowValues } from '../viewRow'
 import { fetchPageValues } from '../../Properties/pageRow'

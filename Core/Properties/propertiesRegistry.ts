@@ -105,6 +105,7 @@ export async function mutateRegistry<T>(
           ? {
               ...mergeKeys(stored, d, rawDefs[id] as Json, {}, () => 'local'),
               ...rebuiltOptions(stored, d),
+              ...(d.key !== stored.key ? { label: d.label } : {}),
             }
           : d
       }
