@@ -183,3 +183,6 @@ export const configEditor = style({
   gap: '8px',
   paddingTop: `${OPTION.gapAroundLabel}px`,
 })
+
+/** KNOB — the measure a config row's hint wraps at, so a long hint never widens its pane. */
+export const configHint = style({ display: 'block', maxWidth: '180px', textWrap: 'balance' })

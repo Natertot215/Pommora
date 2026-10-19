@@ -9,7 +9,7 @@ import { editHeldList, memberKey } from '../Files/heldKeys'
 import { errText, ok, fail, fault, type Result } from '../Contract/result'
 import { findOption, unregisteredMembers } from './propertyValue'
 import { formatKey, type KeyFormat } from './keyFormat'
-import { addOption, applyOptionEdit, type OptionEdit } from './optionModel'
+import { addOption, applyOptionEdit, mapOptions, type OptionEdit } from './optionModel'
 import {
   labelled,
   optionGroupsOf,
@@ -51,8 +51,8 @@ const NO_OPTIONS = fail(
   'Options can only be edited on a Select, Multi-Select, or Status property.',
 )
 
-const requireOptions = (def: PropertyDefinition): Result<null> =>
-  PROPERTY_TYPES[def.type].options ? ok(null) : NO_OPTIONS
+const optionDef = (def: PropertyDefinition | undefined): Result<PropertyDefinition> =>
+  !def ? NO_PROPERTY : PROPERTY_TYPES[def.type].options ? ok(def) : NO_OPTIONS
 
 function editStoredOptions(
   def: PropertyDefinition,
@@ -87,10 +87,9 @@ export function editOption(root: string, propertyId: string, e: OptionEdit): Pro
   return serializeSchemaOp(root, async () => {
     const owed = owedKeys(await readSchemaJournal(root), propertyId)
     return mutateRegistry<Result<null>>(root, (registry, stored) => {
-      const def = registry.defs[propertyId]
-      if (!def) return { result: NO_PROPERTY }
-      const typeCheck = requireOptions(def)
-      if (!typeCheck.ok) return { result: typeCheck }
+      const found = optionDef(registry.defs[propertyId])
+      if (!found.ok) return { result: found }
+      const def = found.value
       const admitted = admitOptionEdit(def, e)
       if (!admitted.ok) return { result: admitted }
       const next = editStoredOptions(def, stored[propertyId], (groups) =>
@@ -187,22 +186,20 @@ async function resolveForCascade(
   propertyId: string,
   label: string,
 ): Promise<Result<{ def: PropertyDefinition; key: string }>> {
-  const def = (await readRegistry(root)).defs[propertyId]
-  if (!def) return NO_PROPERTY
-  const typeCheck = requireOptions(def)
-  if (!typeCheck.ok) return typeCheck
-  const option = findOption(def, label)
-  return option ? ok({ def, key: option.key }) : NO_OPTION
+  const found = optionDef((await readRegistry(root)).defs[propertyId])
+  if (!found.ok) return found
+  const option = findOption(found.value, label)
+  return option ? ok({ def: found.value, key: option.key }) : NO_OPTION
 }
 
 async function valueEditPlan(
   root: string,
   def: PropertyDefinition,
   keys: ValueEdit,
-): Promise<{ pages: string[]; plan: SweepPlan }> {
-  const pages = await keyHolderFiles(root, def.key, await collectionFolders(root))
+): Promise<{ files: string[]; plan: SweepPlan }> {
+  const files = await keyHolderFiles(root, def.key, await collectionFolders(root))
   const raw = valueEditRewrite(def, keys)
-  return { pages, plan: { raw, sidecars: raw } }
+  return { files, plan: { raw, sidecars: raw } }
 }
 
 async function cacheSweep(root: string, def: PropertyDefinition, keys: ValueEdit): Promise<number> {
@@ -224,8 +221,8 @@ export async function optionCascade(
 ): Promise<ConfigReach> {
   let skipped = 0
   if (keys.size) {
-    const { pages, plan } = await valueEditPlan(root, def, keys)
-    skipped = (await sweepGovernedRoots(root, pages, plan)).skipped.length
+    const { files, plan } = await valueEditPlan(root, def, keys)
+    skipped = (await sweepGovernedRoots(root, files, plan)).skipped.length
     // A Remove that skipped a file stops here, so the option and every reference to it stay while its replay is owed.
     if (skipped && labels?.[1] === null) return { skipped, hosts: [] }
     skipped += await cacheSweep(root, def, keys)
@@ -245,21 +242,13 @@ async function rekeyOptions(
   const relabel = (label: string): string =>
     record.labels && label === record.labels[0] ? record.labels[1] : label
   const edit = await mutateRegistry<Result<PropertyDefinition>>(root, (registry, stored) => {
-    const def = registry.defs[record.id]
-    if (!def) return { result: NO_PROPERTY }
-    const typeCheck = requireOptions(def)
-    if (!typeCheck.ok) return { result: typeCheck }
+    const found = optionDef(registry.defs[record.id])
+    if (!found.ok) return { result: found }
+    const def = found.value
     if (record.labels && !findOption(def, record.labels[0])) return { result: NO_OPTION }
     const current = value_format ? { ...def, value_format } : def
     const next = editStoredOptions(current, stored[record.id], (groups) =>
-      groups.map((g) => ({
-        ...g,
-        options: g.options.map((o) => ({
-          ...o,
-          key: keys.get(o.key) ?? o.key,
-          label: relabel(o.label),
-        })),
-      })),
+      mapOptions(groups, (o) => ({ ...o, key: keys.get(o.key) ?? o.key, label: relabel(o.label) })),
     )
     const check = validateOptionValues(optionsOf(next))
     if (!check.ok) return { result: check }
@@ -299,10 +288,9 @@ async function valueFormatPlan(
   propertyId: string,
   format: KeyFormat,
 ): Promise<Result<{ def: PropertyDefinition; keys: [string, string][] }>> {
-  const def = (await readRegistry(root)).defs[propertyId]
-  if (!def) return NO_PROPERTY
-  const typeCheck = requireOptions(def)
-  if (!typeCheck.ok) return typeCheck
+  const found = optionDef((await readRegistry(root)).defs[propertyId])
+  if (!found.ok) return found
+  const def = found.value
   const moved = optionsOf(def).map((o) => ({ ...o, was: o.key, key: formatKey(o.label, format) }))
   const check = validateOptionValues(
     moved,
@@ -313,7 +301,8 @@ async function valueFormatPlan(
     key === was ? [] : [[was, key]],
   )
   const olds = new Set(keys.map(([from]) => memberKey(from)))
-  if (keys.some(([, to]) => olds.has(memberKey(to)))) return CROSSED
+  if (keys.some(([from, to]) => memberKey(to) !== memberKey(from) && olds.has(memberKey(to))))
+    return CROSSED
   return ok({ def, keys })
 }
 
@@ -342,8 +331,8 @@ export async function valueFormatHolders(
   if (!planned.ok) return planned
   const { def, keys } = planned.value
   if (!keys.length) return ok(0)
-  const { pages, plan } = await valueEditPlan(root, def, new Map(keys))
-  return ok(await sweepCount(root, pages, plan))
+  const { files, plan } = await valueEditPlan(root, def, new Map(keys))
+  return ok(await sweepCount(root, files, plan))
 }
 
 export function clearOption(
@@ -366,8 +355,8 @@ export async function optionHolders(
 ): Promise<Result<number>> {
   const r = await resolveForCascade(root, propertyId, label)
   if (!r.ok) return r
-  const { pages, plan } = await valueEditPlan(root, r.value.def, new Map([[r.value.key, null]]))
-  return ok(await sweepCount(root, pages, plan))
+  const { files, plan } = await valueEditPlan(root, r.value.def, new Map([[r.value.key, null]]))
+  return ok(await sweepCount(root, files, plan))
 }
 
 export function removeOption(

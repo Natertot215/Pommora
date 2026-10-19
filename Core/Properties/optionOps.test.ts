@@ -1372,6 +1372,14 @@ describe('a Value Format change re-keys every option', () => {
     expect(await readSchemaJournal(root)).toBeNull()
   })
 
+  it('an option whose new key differs from its old one only by padding isn’t a crossing', async () => {
+    const { id } = await toned([{ key: ' green ', label: ' green ' }])
+    expect((await setValueFormat(root, id, 'kebab-case')).ok).toBe(true)
+    expect((await readRegistry(root)).defs[id].select_options).toEqual([
+      expect.objectContaining({ key: 'green', label: ' green ' }),
+    ])
+  })
+
   it('waits for an owed record, changing nothing', async () => {
     const { id, page } = await tones()
     const held = { op: 'rename', id: 'prop_other', from: 'A', to: 'B' } as const
@@ -1425,7 +1433,11 @@ describe('a Value Format change re-keys every option', () => {
     const mtimes = await Promise.all([page, space].map(async (f) => (await stat(f)).mtimeMs))
 
     expect((await setValueFormat(root, id, 'Match Title')).ok).toBe(true)
-    expect((await readRegistry(root)).defs[id].select_options).toEqual(options)
+    expect((await readRegistry(root)).defs[id]).toMatchObject({
+      value_format: 'Match Title',
+      select_options: options,
+    })
+    expect(await readSchemaJournal(root)).toBeNull()
     expect(await Promise.all([page, space].map((f) => readFile(f, 'utf8')))).toEqual(bytes)
     expect(await Promise.all([page, space].map(async (f) => (await stat(f)).mtimeMs))).toEqual(
       mtimes,
