@@ -37,7 +37,7 @@ export function FormatRows({
         sections={[
           {
             rows: [
-              row('Key Format', def.key_format, (key_format) => ({ key_format })),
+              row('Label Format', def.key_format, (key_format) => ({ key_format })),
               ...(PROPERTY_TYPES[def.type].options
                 ? [row('Value Format', def.value_format, (value_format) => ({ value_format }))]
                 : []),

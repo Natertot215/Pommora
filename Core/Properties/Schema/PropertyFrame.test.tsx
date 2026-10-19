@@ -553,21 +553,21 @@ describe('native menus + the inline-rename channel (T7)', () => {
     })
   }
 
-  it('a Number editor shows the Key Format row reading Match Title, and no Value Format row', async () => {
+  it('a Number editor shows the Label Format row reading Match Title, and no Value Format row', async () => {
     await openCount()
-    expect(host.querySelector('button[aria-label="Key Format"]')!.textContent).toBe('Match Title')
+    expect(host.querySelector('button[aria-label="Label Format"]')!.textContent).toBe('Match Title')
     expect(host.querySelector('button[aria-label="Value Format"]')).toBeNull()
   })
 
   it('a Status editor shows both format rows, the Value Format row reading Match Title', async () => {
     await openEditor()
-    expect(host.querySelector('button[aria-label="Key Format"]')).toBeTruthy()
+    expect(host.querySelector('button[aria-label="Label Format"]')).toBeTruthy()
     expect(host.querySelector('button[aria-label="Value Format"]')!.textContent).toBe('Match Title')
   })
 
-  it('a Key Format pick over more than one Item asks with the count, then sets the format and bumps the values epoch with its pair', async () => {
+  it('a Label Format pick over more than one Item asks with the count, then sets the format and bumps the values epoch with its pair', async () => {
     await openCount()
-    await pick('Key Format', 'lowercase')
+    await pick('Label Format', 'lowercase')
     const pending = useSession.getState().pendingConfirm
     expect(pending?.req.message).toBe('This action would rewrite metadata in 3 Items.')
     expect(setKeyFormatSpy).not.toHaveBeenCalled()
@@ -582,10 +582,10 @@ describe('native menus + the inline-rename channel (T7)', () => {
     })
   })
 
-  it('a Key Format pick over one Item sets the format unasked', async () => {
+  it('a Label Format pick over one Item sets the format unasked', async () => {
     holdersSpy.mockResolvedValueOnce(ok(1))
     await openCount()
-    await pick('Key Format', 'lowercase')
+    await pick('Label Format', 'lowercase')
     expect(useSession.getState().pendingConfirm).toBeNull()
     expect(setKeyFormatSpy).toHaveBeenCalledWith('prop_n', 'lowercase')
   })
