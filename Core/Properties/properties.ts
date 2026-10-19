@@ -4,7 +4,6 @@ import { z } from 'zod'
 import { isKeyOf, isPlainObject } from '../Contract/validators'
 import { looseDecoder } from '../Files/decoders'
 import { rootSegs } from '../Paths/exclusion'
-import { normalizeTitle } from '../Paths/caseFold'
 import type { ValueKind } from './propertyValue'
 import { KEY_FORMATS } from './keyFormat'
 
@@ -49,19 +48,6 @@ export const PROPERTY_TYPES: Readonly<Record<PropertyType, TypeSpec>> = {
 
 export const byKey = <D extends { key: string }>(defs: Iterable<D>): Map<string, D> =>
   new Map(Array.from(defs, (d) => [d.key, d]))
-
-/** Each item under its folded title, the first of any whose titles fold alike. */
-export function firstPerTitle<T>(
-  items: Iterable<T>,
-  titleOf: (item: T) => unknown = (item) => item,
-): Map<string, T> {
-  const byTitle = new Map<string, T>()
-  for (const item of items) {
-    const fold = normalizeTitle(titleOf(item))
-    if (!byTitle.has(fold)) byTitle.set(fold, item)
-  }
-  return byTitle
-}
 
 export const specOf = (t: PropertyType | 'title' | undefined): TypeSpec | undefined =>
   t === undefined || t === 'title' ? undefined : PROPERTY_TYPES[t]

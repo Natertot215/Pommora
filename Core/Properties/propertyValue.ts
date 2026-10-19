@@ -1,7 +1,7 @@
 import { z } from 'zod'
+import { fail, ok, type Result } from '../Contract/result'
 import { listOf, scalarMembers } from '../Contract/validators'
 import {
-  firstPerTitle,
   optionsOf,
   PROPERTY_TYPES,
   type PropertyDefinition,
@@ -151,7 +151,13 @@ export function unregisteredMembers(def: PropertyDefinition, raw: unknown): stri
   const writable = optionList(raw).filter(
     (w) => formatKey(exactTitle(w), def.value_format) === exactTitle(w),
   )
-  return [...firstPerTitle(writable)].flatMap(([fold, w]) => (folds.has(fold) ? [] : [w]))
+  const seen = new Set<string>()
+  return writable.filter((w) => {
+    const fold = normalizeTitle(w)
+    if (seen.has(fold)) return false
+    seen.add(fold)
+    return !folds.has(fold)
+  })
 }
 
 export function keepingForeignWords(
@@ -246,6 +252,17 @@ export function encodeValue(def: PropertyDefinition, value: PropertyValue): unkn
   }
 }
 
+export function valueToWrite(
+  def: PropertyDefinition,
+  value: PropertyValue | null,
+): Result<unknown> {
+  if (value === null || isBlankValue(value)) return ok(undefined)
+  const encoded = encodeValue(def, value)
+  return encoded === undefined
+    ? fail('invalid-property', `"${def.label}" was given a value it has no shape for.`)
+    : ok(encoded)
+}
+
 /** Blank as a file spells it, before any definition reads it. */
 export const isBlankRaw = (raw: unknown): boolean =>
   raw == null || raw === '' || (Array.isArray(raw) && raw.length === 0)
@@ -282,11 +299,11 @@ export const applyValueAtRoot = (
   root: Record<string, unknown>,
   def: PropertyDefinition,
   value: PropertyValue | null,
-): Record<string, unknown> =>
-  landValue(
+): Record<string, unknown> => {
+  const written = valueToWrite(def, value)
+  return landValue(
     root,
     def.key,
-    value === null || isBlankValue(value)
-      ? undefined
-      : keepingForeignWords(def, encodeValue(def, value), root[def.key]),
+    written.ok ? keepingForeignWords(def, written.value, root[def.key]) : undefined,
   )
+}

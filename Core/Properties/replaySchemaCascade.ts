@@ -11,8 +11,10 @@ import { optionLabels, optionsOf } from './properties'
 import { same } from '../Files/stableJson'
 import { clearSchemaJournal, readSchemaJournal, type SchemaJournal } from './propertyJournal'
 
-const landed = (pairs: readonly (readonly [string, string])[], held: readonly string[]): boolean =>
-  pairs.every(([from, to]) => held.includes(to) && !held.includes(from))
+const renamesApplied = (
+  pairs: readonly (readonly [string, string])[],
+  held: readonly string[],
+): boolean => pairs.every(([from, to]) => held.includes(to) && !held.includes(from))
 
 export function replaySchemaCascade(
   root: string,
@@ -65,8 +67,8 @@ async function replay(
       if (!def) return NO_REACH
       const keys = optionsOf(def).map((o) => o.key)
       // Every new key and the new label held, and no old one, = the commit landed cleanly; every other state is not this record's.
-      if (!landed(journal.keys, keys)) return NO_REACH
-      if (journal.labels && !landed([journal.labels], optionLabels(def))) return NO_REACH
+      if (!renamesApplied(journal.keys, keys)) return NO_REACH
+      if (journal.labels && !renamesApplied([journal.labels], optionLabels(def))) return NO_REACH
       return optionCascade(root, def, new Map(journal.keys), journal.labels)
     }
     case 'option-remove': {

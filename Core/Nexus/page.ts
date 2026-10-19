@@ -2,7 +2,7 @@ import { join, dirname, basename } from '../Paths/posix'
 import { ID_KEY, PAGE_MODELED_KEYS } from './identityMark'
 import { bodyHash, mergeFrontmatter } from '../Files/pageFile'
 import { machine } from '../Platform/machine'
-import { encodeValue, isBlankValue, type PropertyValue } from '../Properties/propertyValue'
+import { type PropertyValue, valueToWrite } from '../Properties/propertyValue'
 import { ok, fail, type Result, fault } from '../Contract/result'
 import { atomicWriteFile, pathExists, relocate, targetTaken } from '../Files/atomicWrite'
 import { nameError } from '../Paths/names'
@@ -85,15 +85,4 @@ export async function movePage(
     return fail('exists', `A page named "${basename(absFile)}" already exists there.`)
   await relocate(absFile, target)
   return ok({ path: target })
-}
-
-export function valueToWrite(
-  def: PropertyDefinition,
-  value: PropertyValue | null,
-): Result<unknown> {
-  if (value === null || isBlankValue(value)) return ok(undefined)
-  const encoded = encodeValue(def, value)
-  return encoded === undefined
-    ? fail('invalid-property', `"${def.label}" was given a value it has no shape for.`)
-    : ok(encoded)
 }
