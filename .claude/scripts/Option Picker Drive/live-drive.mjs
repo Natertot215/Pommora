@@ -21,8 +21,8 @@ async function retitle(cdp, text) {
 }
 
 const registry = () => JSON.parse(read('.nexus/properties.json')).defs
-const defNamed = (name) => Object.values(registry()).find((d) => d.name === name)
-const optionValues = (name) => (defNamed(name).select_options ?? []).map((o) => o.value)
+const defNamed = (label) => Object.values(registry()).find((d) => d.label === label)
+const optionValues = (label) => (defNamed(label).select_options ?? []).map((o) => o.label)
 const lists = (title, prop, value) => [frontmatter(title)[prop]].flat().includes(value)
 const driveView = () => JSON.parse(read('Collection A/_pagecollection.json')).views.find((v) => v.name === 'Drive Table')
 
@@ -30,7 +30,7 @@ const PROPS = { 'Drive Select': 'select', 'Drive Multi': 'multiSelect', 'Drive S
 const ids = {}
 async function seed(cdp) {
   for (const [name, type] of Object.entries(PROPS)) {
-    const r = await ask(cdp, 'schema:add', 'Collection A', { id: '', name, type })
+    const r = await ask(cdp, 'schema:add', 'Collection A', { id: '', label: name, type })
     check(`seed: ${name} added`, r.ok, JSON.stringify(r))
     ids[name] = r.value?.id
   }
@@ -91,7 +91,7 @@ async function stepCreate(cdp) {
   await newOption(cdp, 'Fresh')
   await shot(cdp, 'draft-standard')
   await enter(cdp)
-  const fresh = defNamed('Drive Select').select_options.find((o) => o.value === 'Fresh')
+  const fresh = defNamed('Drive Select').select_options.find((o) => o.label === 'Fresh')
   check('create: Fresh is appended with no color', optionValues('Drive Select').at(-1) === 'Fresh' && fresh && !('color' in fresh), JSON.stringify(optionValues('Drive Select')))
   check('create: Drive One still holds Alpha alone', lists('Drive One', 'Drive Select', 'Alpha') && !lists('Drive One', 'Drive Select', 'Fresh'))
   await shot(cdp, 'table-created')
@@ -152,8 +152,8 @@ async function stepEditOption(cdp, pid) {
   await sleep(600)
   await click(cdp, sel('[data-picker-portal] button[title]'))
   await sleep(800)
-  const gamma = defNamed('Drive Select').select_options.find((o) => o.value === 'Gamma')
-  check('popup: color, appearance, and icon land on Gamma', gamma?.color !== undefined && gamma?.appearance === 'clear' && gamma?.icon !== undefined, JSON.stringify(gamma))
+  const gamma = defNamed('Drive Select').select_options.find((o) => o.label === 'Gamma')
+  check('popup: color, appearance, and icon land on Gamma', gamma?.key === 'Gamma' && gamma?.color !== undefined && gamma?.appearance === 'clear' && gamma?.icon !== undefined, JSON.stringify(gamma))
   await shot(cdp, 'table-popup-edited')
   while (await portalOpen(cdp)) await pressKey(cdp, 'Escape')
 }
@@ -247,11 +247,11 @@ async function stepEditor(cdp, pid) {
   await openEditor(cdp, 'Drive Status')
   await shot(cdp, 'editor')
   const firstRow = `[...document.querySelectorAll('[data-line-row]')].find((r) => r.querySelector('[aria-label="Edit Option"]'))`
-  const first = statusGroups()[0].options[0].value
+  const first = statusGroups()[0].options[0].key
   await chooseNative(cdp, pid, firstRow, { downs: 2 })
   check('editor: Edit Option opens the popup', await popupOpen(cdp))
   await retitle(cdp, 'Opened')
-  check('editor: the popup rename lands in status_groups', statusGroups()[0].options[0].value === 'Opened' && !statusGroups().flatMap((g) => g.options).some((o) => o.value === first), JSON.stringify(statusGroups()[0].options))
+  check('editor: the popup rename lands in status_groups', statusGroups()[0].options[0].label === 'Opened' && statusGroups()[0].options[0].key === 'Opened' && !statusGroups().flatMap((g) => g.options).some((o) => o.key === first), JSON.stringify(statusGroups()[0].options))
   await pressKey(cdp, 'Escape')
   await click(cdp, `${firstRow}.querySelector('[aria-label="Edit Option"]')`)
   await sleep(500)
@@ -269,7 +269,7 @@ async function stepEditor(cdp, pid) {
   await sleep(500)
   await cdp.send('Input.insertText', { text: 'Added' })
   await enter(cdp)
-  check('editor: + appends Added to the first group', statusGroups()[0].options.at(-1)?.value === 'Added' && statusGroups().flatMap((g) => g.options).length === count + 1, JSON.stringify(statusGroups()[0].options))
+  check('editor: + appends Added to the first group', statusGroups()[0].options.at(-1)?.label === 'Added' && statusGroups()[0].options.at(-1)?.key === 'Added' && statusGroups().flatMap((g) => g.options).length === count + 1, JSON.stringify(statusGroups()[0].options))
   const heading = `[...document.querySelectorAll('span')].find((e) => e.children.length === 0 && e.textContent.trim() === ${JSON.stringify(statusGroups()[0].label)} && !e.closest('[data-line-row]'))`
   await cdp.evaluate(`(${heading}).dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))`)
   await sleep(400)

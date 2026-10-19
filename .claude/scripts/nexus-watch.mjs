@@ -24,11 +24,11 @@ for (const rel of readdirSync(join(nexus, collection), { recursive: true })) {
 }
 async function snapshot() {
   const { defs } = json('.nexus/properties.json')
-  const names = Object.values(defs).map((d) => d.name)
+  const names = Object.values(defs).map((d) => d.label)
   // A name two definitions share labels each by its id as well, so neither hides the other.
-  const label = (d) => (names.indexOf(d.name) === names.lastIndexOf(d.name) ? d.name : `${d.name} ${d.id}`)
+  const label = (d) => (names.indexOf(d.label) === names.lastIndexOf(d.label) ? d.label : `${d.label} ${d.id}`)
   const registry = Object.fromEntries(
-    Object.values(defs).map((d) => [label(d), `${d.type}[${(d.select_options ?? []).map((o) => o.value).join(', ')}]`]),
+    Object.values(defs).map((d) => [label(d), `${d.type}[${(d.select_options ?? []).map((o) => o.label).join(', ')}]`]),
   )
   const assigned = (json(`${collection}/_pagecollection.json`).properties ?? []).map((id) => (defs[id] ? label(defs[id]) : id))
   const holders = Object.fromEntries(

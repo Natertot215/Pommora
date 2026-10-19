@@ -32,7 +32,7 @@ const entryOf = (title) => shards().map((s) => s.pages?.[pageIds[title]]).find(B
 const aliasesOf = (title) => entryOf(title)?.aliases ?? []
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b)
 const fileName = (f) => (f === META_DIR ? 'the metadata shard' : f.split('/').pop())
-const optionValues = () => (Object.values(JSON.parse(read(REGISTRY)).defs).find((d) => d.name === CHOICE).select_options ?? []).map((o) => o.value)
+const optionValues = () => (Object.values(JSON.parse(read(REGISTRY)).defs).find((d) => d.label === CHOICE).select_options ?? []).map((o) => o.label)
 const excluded = () => JSON.parse(read(SETTINGS)).excluded_folders ?? []
 const driveView = () => JSON.parse(read(SIDECAR)).views.find((v) => v.id === VIEW.id)
 
@@ -72,7 +72,7 @@ const ids = {}
 
 async function seed(cdp) {
   for (const [name, type] of [[LINK, 'link'], [NOTES, 'text'], [CHOICE, 'select']]) {
-    const r = await ask(cdp, 'schema:add', 'Collection A', { id: '', name, type })
+    const r = await ask(cdp, 'schema:add', 'Collection A', { id: '', label: name, type })
     check(`seed: ${name} (${type}) is added`, r.ok, JSON.stringify(r))
     if (!r.ok) throw new Error(`The seed stops: schema:add refused ${name} of type ${type}.`)
     ids[name] = r.value.id

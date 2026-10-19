@@ -62,7 +62,7 @@ const VIEWS = {
 
 async function seed(cdp) {
   for (const [name, type] of [[NOTES, 'text'], [LINK, 'link'], [BAR, 'number']]) {
-    const r = await ask(cdp, 'schema:add', 'Collection A', { id: '', name, type })
+    const r = await ask(cdp, 'schema:add', 'Collection A', { id: '', label: name, type })
     check(`seed: ${name} (${type}) is added`, r.ok, JSON.stringify(r))
     if (!r.ok) throw new Error(`The seed stops: schema:add refused ${name} of type ${type}.`)
     ids[name] = r.value.id
@@ -445,7 +445,7 @@ async function group3(cdp) {
   check('group 3: a rename rewrites the links inside Drive Prose',
     await settles(async () => frontmatter('Drive Prose')[NOTES].includes('[[Drive Renamed]]') && frontmatter('Drive Prose')[NOTES].includes('[[Drive Renamed#Setup]]')), frontmatter('Drive Prose')[NOTES])
   check("group 3: Drive Foreign's undeclared description stays", frontmatter('Drive Foreign').description === 'see [[Drive Target]] first')
-  await must('description as Text', ask(cdp, 'schema:add', 'Collection A', { id: '', name: 'description', type: 'text' }))
+  await must('description as Text', ask(cdp, 'schema:add', 'Collection A', { id: '', label: 'description', type: 'text' }))
   await must('rename back', ask(cdp, 'mutate', { op: 'rename', path: `${SET}/Drive Renamed.md`, kind: 'page', newName: 'Drive Target' }))
   check("group 3: the rename back restores Drive Prose's links",
     await settles(async () => frontmatter('Drive Prose')[NOTES].includes('[[Drive Target]]') && frontmatter('Drive Prose')[NOTES].includes('[[Drive Target#Setup]]')))

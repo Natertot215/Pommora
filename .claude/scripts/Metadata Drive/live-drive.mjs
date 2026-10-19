@@ -169,26 +169,9 @@ async function handWritten(cdp, def) {
 }
 const mintPropertyId = () => `prop_${ulid()}`
 
-// ── The seed shape ──────────────────────────────────────────────────────────
-// Task 9-2 removes this block: until Task 5B-4 rewrites the registry, the build reads a definition's `name` and an
-// option's `value`, so a seed written in the final shape is sent in today's.
-let today
-const todayOption = ({ key, label, ...rest }) => ({ ...rest, value: key })
-const inToday = ({ label, key_format, value_format, select_options, status_groups, ...rest }) => ({
-  ...rest,
-  name: label,
-  ...(select_options && { select_options: select_options.map(todayOption) }),
-  ...(status_groups && { status_groups: status_groups.map((g) => ({ ...g, options: g.options.map(todayOption) })) }),
-})
-function shaped(def) {
-  today ??= Object.values(registry().defs).some((d) => 'name' in d)
-  return today ? inToday(def) : def
-}
-// ────────────────────────────────────────────────────────────────────────────
-
 const ids = {}
 const word = (w) => ({ key: w, label: w })
-const add = (cdp, def, container = COLLECTION) => ask(cdp, 'schema:add', container, { id: '', ...shaped(def) })
+const add = (cdp, def, container = COLLECTION) => ask(cdp, 'schema:add', container, { id: '', ...def })
 async function define(cdp, def, container = COLLECTION) {
   const r = await add(cdp, def, container)
   if (!r.ok) throw new Error(`The seed stops: schema:add refused ${def.label}: ${show(r)}`)
@@ -1323,13 +1306,13 @@ const trigger = (label) => `document.querySelector('button[aria-label="${label}"
 const dialogUp = (cdp) => cdp.evaluate(`!!${DIALOG}`)
 const dialogButton = (cancel) => `[...${DIALOG}.querySelectorAll('button')].find((b) => (b.textContent.trim() === 'Cancel') === ${cancel})`
 
-/** Opens a native menu from `expr` by a press of `button`, answering its rows; with `label`, chooses that row by keystrokes. */
-async function nativeChoose(cdp, pid, expr, label, button = 'left') {
+/** Opens the native context menu on `expr` and chooses `label` by keystrokes, answering the menu's rows. */
+async function nativeChoose(cdp, pid, expr, label) {
   await activate(cdp, pid)
-  await mouseAt(cdp, await boxOf(cdp, expr), { button })
+  await mouseAt(cdp, await boxOf(cdp, expr), { button: 'right' })
   await sleep(700)
   const rows = nativeMenu(pid).filter((n) => n && n !== 'missing value')
-  const at = label ? rows.indexOf(label) : -1
+  const at = rows.indexOf(label)
   if (at < 0) {
     key(KEY.esc)
     await sleep(400)
@@ -1359,12 +1342,20 @@ async function openEditor(cdp, label) {
   await click(cdp, `[...document.querySelectorAll('button, [role=button]')].find((b) => b.textContent.trim() === 'Properties')`)
   await sleep(800)
   await click(cdp, `${textEl('span', label)}.closest('[role=button],button,[data-line-row]')`)
-  await until(`${label}'s settings`, () => cdp.evaluate(`!!${trigger('Key Format')}`))
+  await until(`${label}'s settings`, () => cdp.evaluate(`!!${trigger('Label Format')}`))
   await sleep(600)
 }
+const FORMAT_ROWS = `[...document.querySelectorAll('[data-picker-portal] [role=button]')]`
+/** Opens a format row's pane, answering its rows. */
+async function formatPane(cdp, row) {
+  await click(cdp, trigger(row))
+  await until(`the ${row} pane`, () => portalOpen(cdp))
+  return cdp.evaluate(`${FORMAT_ROWS}.map((e) => e.textContent.trim())`)
+}
 /** A format picked from its row's pane, confirmed or cancelled when the dialog asks: whether it asked, and the message. */
-async function pickFormat(cdp, pid, row, format, { confirm = true } = {}) {
-  await nativeChoose(cdp, pid, trigger(row), format)
+async function pickFormat(cdp, row, format, { confirm = true } = {}) {
+  await formatPane(cdp, row)
+  await click(cdp, `${FORMAT_ROWS}.find((e) => e.textContent.trim() === ${JSON.stringify(format)})`)
   const asked = await settles(() => dialogUp(cdp), 2500)
   const message = asked ? await cdp.evaluate(`${DIALOG}.getAttribute('aria-label')`) : null
   if (asked) {
@@ -1413,42 +1404,42 @@ async function group9(cdp, pid) {
   await closeSettings(cdp)
 
   // The value picker: a word no option claims shows nowhere, and a pick keeps it after the picked options.
-  await readTable(cdp, view)
+  const chips = (await readTable(cdp, view))[pageIds[labels]]?.[0]
+  pin(G, 'E-3', 'a word no option claims draws no chip', chips === 'Work', show(chips))
   const labelCell = cellOf(labels, 0)
-  const chips = await cdp.evaluate(`[...(${labelCell}).querySelectorAll('.cell-chips .over-scroll-host')].map((h) => h.textContent.trim())`)
-  pin(G, 'E-3', 'a word no option claims draws no chip', same(chips, ['Work']), show(chips))
   await mouseClick(cdp, labelCell)
   await until('the value picker', () => portalOpen(cdp))
   const offered = await cdp.evaluate(`[...document.querySelectorAll(${JSON.stringify(PICKER_ROWS)})].map((e) => e.textContent.trim())`)
   pin(G, 'E-3', 'the value picker offers the options alone', offered.includes('Work') && offered.includes('Life') && !offered.includes('work'), show(offered))
   await shot(cdp, 'value-picker')
-  await click(cdp, pickerRowOf('Life'))
+  await mouseAt(cdp, await boxOf(cdp, pickerRowOf('Life')))
   pin(G, 'E-3', 'a pick in the value picker keeps the foreign word after the picked options', await wrote(labels, 'M9 Labels: [Work, Life, work]'), show(blockOf(labels)))
   await escapeAll(cdp)
 
-  // The rows: Key Format and Value Format at the top of every property's settings, divided from the type's own.
+  // The rows: Label Format and Value Format at the top of every property's settings, divided from the type's own.
   await openEditor(cdp, 'M9 Count')
-  const count = await cdp.evaluate(`({ shown: ${trigger('Key Format')}?.textContent.trim(), value: !!${trigger('Value Format')} })`)
-  pin(G, 'H-1', 'a Number reads Key Format at Match Title, and has no Value Format',
+  const count = await cdp.evaluate(`({ shown: ${trigger('Label Format')}?.textContent.trim(), value: !!${trigger('Value Format')} })`)
+  pin(G, 'H-1', 'a Number reads Label Format at Match Title, and has no Value Format',
     count.shown?.includes('Match Title') && !count.value, show(count))
   await shot(cdp, 'rows-number')
-  const formats = await nativeChoose(cdp, pid, trigger('Key Format'), null)
+  const formats = await formatPane(cdp, 'Label Format')
   pin(G, 'B-2', "the format pane lists Match Title and the nine conventions in order", same(formats, FORMATS), show(formats))
-  const zero = await pickFormat(cdp, pid, 'Key Format', 'UPPERCASE')
-  pin(G, 'F-4', 'a Key Format change over no Items asks nothing', !zero.asked && (await settles(async () => defOf(ids['M9 Count']).key === 'M9 COUNT')), show([zero, defOf(ids['M9 Count'])]))
+  await pressKey(cdp, 'Escape')
+  const zero = await pickFormat(cdp, 'Label Format', 'UPPERCASE')
+  pin(G, 'F-4', 'a Label Format change over no Items asks nothing', !zero.asked && (await settles(async () => defOf(ids['M9 Count']).key === 'M9 COUNT')), show([zero, defOf(ids['M9 Count'])]))
 
   await openEditor(cdp, 'M9 State')
   const status = await cdp.evaluate(`(() => {
-    const k = ${trigger('Key Format')}, v = ${trigger('Value Format')}, o = document.querySelector('[aria-label="Edit Option"]')
+    const k = ${trigger('Label Format')}, v = ${trigger('Value Format')}, o = document.querySelector('[aria-label="Edit Option"]')
     const after = (a, b) => !!(a && b && (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING))
     const divided = [...document.querySelectorAll('div[aria-hidden="true"]')].some((d) => d.children.length === 1 && d.firstElementChild.tagName === 'SPAN' && !d.textContent.trim() && after(v, d) && after(d, o))
     return { order: after(k, v) && after(v, o), divided }
   })()`)
-  pin(G, 'H-1', 'a Status shows Key Format then Value Format above its options, divided from them',
+  pin(G, 'H-1', 'a Status shows Label Format then Value Format above its options, divided from them',
     status.order && status.divided, show(status))
   await shot(cdp, 'rows-status')
   const statusKept = snapshot(state)
-  const valueAsk = await pickFormat(cdp, pid, 'Value Format', 'UPPERCASE')
+  const valueAsk = await pickFormat(cdp, 'Value Format', 'UPPERCASE')
   pin(G, 'F-4', 'a Value Format change over two Items asks with the count', askedFor(valueAsk, 2), show(valueAsk))
   pin(G, 'F-1', 'the confirmed Value Format change re-keys the pages',
     (await settles(async () => same(listOf(fmOf(state[0])['M9 State']), ['PLANNED']) && same(listOf(fmOf(state[1])['M9 State']), ['SHIPPED'])))
@@ -1456,17 +1447,17 @@ async function group9(cdp, pid) {
 
   await openEditor(cdp, 'M9 Words')
   const wordsKept = snapshot([...words, REGISTRY])
-  const cancelled = await pickFormat(cdp, pid, 'Key Format', 'lowercase', { confirm: false })
-  pin(G, 'F-4', 'a Key Format change over two Items asks with the count', askedFor(cancelled, 2), show(cancelled))
+  const cancelled = await pickFormat(cdp, 'Label Format', 'lowercase', { confirm: false })
+  pin(G, 'F-4', 'a Label Format change over two Items asks with the count', askedFor(cancelled, 2), show(cancelled))
   pin(G, 'F-4', 'a cancelled format change writes nothing', await wordsKept.holds(), show(wordsKept.changed()))
-  const confirmed = await pickFormat(cdp, pid, 'Key Format', 'lowercase')
-  pin(G, 'F-1 F-4', 'the confirmed Key Format change moves the key on both pages',
+  const confirmed = await pickFormat(cdp, 'Label Format', 'lowercase')
+  pin(G, 'F-1 F-4', 'the confirmed Label Format change moves the key on both pages',
     askedFor(confirmed, 2) && (await wrote(words[0], 'm9 words: one')) && (await wrote(words[1], 'm9 words: two')) && defOf(ids['M9 Words']).key_format === 'lowercase',
     show([confirmed, ...words.map(blockOf)]))
 
   await openEditor(cdp, 'M9 Single')
-  const one = await pickFormat(cdp, pid, 'Key Format', 'kebab-case')
-  pin(G, 'F-4', 'a Key Format change over one Item asks nothing', !one.asked && (await wrote(single, 'm9-single: s')), show([one, blockOf(single)]))
+  const one = await pickFormat(cdp, 'Label Format', 'kebab-case')
+  pin(G, 'F-4', 'a Label Format change over one Item asks nothing', !one.asked && (await wrote(single, 'm9-single: s')), show([one, blockOf(single)]))
 
   await openEditor(cdp, 'M9 Labels')
   const spareRow = `[...document.querySelectorAll('[data-line-row]')].find((r) => r.textContent.trim() === 'Spare' && r.querySelector('[aria-label="Edit Option"]'))`
@@ -1477,8 +1468,8 @@ async function group9(cdp, pid) {
   // The Trash: a page restored through the Trash browser returns in the current spelling.
   await openSettings(cdp, 'Trash')
   const trashRow = `[...document.querySelectorAll('.trash-row')].find((r) => r.textContent.includes('M9 Trashed'))`
-  const menu = await nativeChoose(cdp, pid, trashRow, 'Restore', 'right')
-  pin(G, 'G-1', "a page restored from the Trash browser returns under the Key Format set while it was away",
+  const menu = await nativeChoose(cdp, pid, trashRow, 'Restore')
+  pin(G, 'G-1', "a page restored from the Trash browser returns under the Label Format set while it was away",
     menu.includes('Restore') && (await wrote(trashed, 'm9 words: back')), show([menu, blockOf(trashed)]))
   await closeSettings(cdp)
 
@@ -1492,16 +1483,18 @@ async function group9(cdp, pid) {
   await openPanel(cdp)
   const panelRows = () => cdp.evaluate(`[...document.querySelectorAll('[data-property-row]')].map((e) => e.dataset.propertyRow)`)
   const mine = (list) => list.filter((id) => id === A || id === B)
+  await cdp.evaluate(`${textEl('[data-line-row] *', 'M9 B')}.scrollIntoView({ block: 'nearest' })`)
+  await sleep(600)
   await drag(cdp, textEl('[data-line-row] *', 'M9 B'), textEl('[data-line-row] *', 'M9 A'))
   const known = new Set([...Object.keys(registry().defs), ...JSON.parse(read(`${CONTEXTS}/contexts.json`)).contexts.map((c) => c.id)])
   const order = () => sidecar('Areas', 'Area Two').$order ?? []
   pin(G, 'F-5', 'a drag on a Space writes its rows to $order by id',
     await settles(async () => same(mine(order()), [B, A]) && order().every((id) => known.has(id))), show(order()))
   pin(G, 'F-5', 'the panel draws the dragged order', same(mine(await panelRows()), [B, A]), show(await panelRows()))
-  const orderKept = snapshot([sidecarAt('Areas', 'Area Two')])
+  const orderWas = order()
   await must('rename M9 A', ask(cdp, 'property:rename', A, 'M9 Alpha'))
   pin(G, 'F-5', 'a property rename leaves the order and the panel as they were',
-    (await orderKept.holds()) && same(mine(await panelRows()), [B, A]), show([order(), await panelRows()]))
+    (await holds(async () => same(order(), orderWas))) && same(mine(await panelRows()), [B, A]), show([order(), await panelRows()]))
   await shot(cdp, 'space-panel')
   await sidebarTo(cdp, 'Collections', COLLECTION)
 }
