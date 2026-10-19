@@ -4,7 +4,7 @@
 
 | Total | Critical | High | Moderate | Low | Minimal |
 |-------|----------|------|----------|-----|---------|
-| 71 | 0 | 4 | 15 | 33 | 19 |
+| 79 | 0 | 4 | 15 | 35 | 25 |
 
 #### A1 • Sync & Devices
 
@@ -52,11 +52,13 @@
 | [F-055](#F-055 • About thirty names are exported only for tests to import.)                                                                                                                                       | About thirty names are exported only for tests to import.                                                                                                                            | Minimal  | Small (±0)              | Residue        | `70fc6063c` | **Created:** 10-08-2026<br>**Updated:** 10-16-2026 |
 | [F-056](#F-056 • In a development build, a page holding an empty %60*%60 item followed by a %60[ ] task%60 line makes the Markdown parser throw.)                                                                 | In a development build, a page holding an empty `*` item followed by a `[ ] task` line makes the Markdown parser throw.                                                              | Minimal  | Small (TBD)             | Shortcut       | `70fc6063c` | **Created:** 10-08-2026<br>**Updated:** 10-16-2026 |
 | [F-057](#F-057 • A line holding only a non-breaking space ends a table, where the Markdown parser reads it as one more row.)                                                                                      | A line holding only a non-breaking space ends a table, where the Markdown parser reads it as one more row.                                                                           | Minimal  | Small (TBD)             | Drift          | `70fc6063c` | **Created:** 10-08-2026<br>**Updated:** 10-08-2026 |
+| [F-077](#F-077 • A heading rename to a heading holding a pipe turns a lone page embed into a link.) | A heading rename to a heading holding a pipe turns a lone page embed into a link. | Minimal | Small (TBD) | Drift | `a0441edc9` | **Created:** 10-19-2026<br>**Updated:** 10-19-2026 |
 | [F-016](#F-016 • An entered table cell parses its own text twice per keystroke.)                                                                                                                                  | An entered table cell parses its own text twice per keystroke.                                                                                                                       | Minimal  | Mini (=🟢+1=)           | Shortcut       | `70fc6063c` | **Created:** 10-08-2026<br>**Updated:** 10-16-2026 |
 | [F-018](#F-018 • Selection figures re-walk every table in the document on each selection change, whatever the selection covers.)                                                                                  | Selection figures re-walk every table in the document on each selection change, whatever the selection covers.                                                                       | Minimal  | Mini (=🟢+2=)           | Shortcut       | `70fc6063c` | **Created:** 10-08-2026<br>**Updated:** 10-16-2026 |
 | [F-023](#F-023 • The heading list is worked out twice on every keystroke, once for the folds and once for the outline.)                                                                                           | The heading list is worked out twice on every keystroke, once for the folds and once for the outline.                                                                                | Minimal  | Mini (=🔴−1=)           | Drift          | `70fc6063c` | **Created:** 10-08-2026<br>**Updated:** 10-16-2026 |
 | [F-025](#F-025 • Moving a styled run copies its fields one by one, so a field added later goes missing from everything the editor draws.)                                                                         | Moving a styled run copies its fields one by one, so a field added later goes missing from everything the editor draws.                                                              | Minimal  | Mini (=🔴−2=)           | Shortcut       | `70fc6063c` | **Created:** 10-08-2026<br>**Updated:** 10-16-2026 |
 | [F-027](#F-027 • Every caret move rebuilds the ranges that let the caret step over an embedded tile.)                                                                                                             | Every caret move rebuilds the ranges that let the caret step over an embedded tile.                                                                                                  | Minimal  | Mini (=🟢+6=)           | Shortcut       | `70fc6063c` | **Created:** 10-08-2026<br>**Updated:** 10-16-2026 |
+| [F-078](#F-078 • A link picked before its page's headings load keeps a heading the page may not hold.) | A link picked before its page's headings load keeps a heading the page may not hold. | Minimal | Mini (=🟢+4=) | Shortcut | `a0441edc9` | **Created:** 10-19-2026<br>**Updated:** 10-19-2026 |
 
 #### A3 • Nexus & Data
 
@@ -65,14 +67,19 @@
 | [F-046](#F-046 • An ID lost or damaged outside the app is replaced rather than recovered on every path but a held page's own event, and an ID two files share is answered two ways.) | An ID lost or damaged outside the app is replaced rather than recovered on every path but a held page's own event, and an ID two files share is answered two ways. | Moderate | Large (=🟢+20=) | Shortcut | `1b1ff1205` | **Created:** 10-02-2026<br>**Updated:** 10-16-2026 |
 | [F-037](#F-037 • Forty channels write Nexus files beside %60mutate%60, and six files can be written through both.) | Forty channels write Nexus files beside `mutate`, and six files can be written through both. | Moderate | Large (±0) | Parallel Build | `e448ed46f` | **Created:** 09-27-2026<br>**Updated:** 10-16-2026 |
 | [F-041](#F-041 • Contexts and Properties each carry their own journal, replayer, and sweep loop for one pattern.) | Contexts and Properties each carry their own journal, replayer, and sweep loop for one pattern. | Low | Large (=🔴−150 to −300=) | Parallel Build | `03dde6468` | **Created:** 09-30-2026<br>**Updated:** 10-19-2026 |
-| [F-042](#F-042 • A page missing its ID that a folder's read finds after its own event was spent stays out of the tree until the next full read.) | A page missing its ID that a folder's read finds after its own event was spent stays out of the tree until the next full read. | Low | Medium (=🟢+10=) | Shortcut | `93baa6931` | **Created:** 10-01-2026<br>**Updated:** 10-04-2026 |
+| [F-042](#F-042 • A page missing its ID that a folder's read finds after its own event was spent stays out of the tree until the next full read.) | A page missing its ID that a folder's read finds after its own event was spent stays out of the tree until the next full read. | Low | Medium (=🟢+10=) | Shortcut | `93baa6931` | **Created:** 10-01-2026<br>**Updated:** 10-19-2026 |
 | [F-043](#F-043 • A write's reply waits behind a walk an outside change owes.) | A write's reply waits behind a walk an outside change owes. | Low | Medium (=🟢+10=) | Shortcut | `93baa6931` | **Created:** 10-01-2026<br>**Updated:** 10-04-2026 |
 | [F-038](#F-038 • Delete All and Restore All walk the whole Trash once for every bundle that hands a Link value to it.) | Delete All and Restore All walk the whole Trash once for every bundle that hands a Link value to it. | Low | Medium (=🟢+15=) | Shortcut | `34227ef5c` | **Created:** 09-28-2026<br>**Updated:** 10-16-2026 |
 | [F-068](#F-068 • An app file this session never read and can't read opens as empty, so its section shows defaults and its changes are refused, some without a word.) | An app file this session never read and can't read opens as empty, so its section shows defaults and its changes are refused, some without a word. | Low | Medium (=🟢+15=) | Drift | `0c80012cb` | **Created:** 09-26-2026<br>**Updated:** 10-16-2026 |
 | [F-040](#F-040 • An in-app create or rename of a Space, or rename of a Context, leaves the pages already tagged with its new name unlinked until each is read again.) | An in-app create or rename of a Space, or rename of a Context, leaves the pages already tagged with its new name unlinked until each is read again. | Low | Small (=🟢+10=) | Shortcut | `93baa6931` | **Created:** 10-01-2026<br>**Updated:** 10-04-2026 |
 | [F-044](#F-044 • A page renamed or moved while a refused Space or Context delete puts its sweep back keeps the swept state.) | A page renamed or moved while a refused Space or Context delete puts its sweep back keeps the swept state. | Low | Small (=🟢+8=) | Shortcut | `93baa6931` | **Created:** 10-01-2026<br>**Updated:** 10-03-2026 |
 | [F-045](#F-045 • An outside edit to a page inside a folder the app just renamed or moved is lost until the page's next event.) | An outside edit to a page inside a folder the app just renamed or moved is lost until the page's next event. | Low | Small (=🟢+8=) | Shortcut | `93baa6931` | **Created:** 10-01-2026<br>**Updated:** 10-16-2026 |
+| [F-072](#F-072 • Un-excluding a folder re-spells the links to every page elsewhere that shares a title with one of its pages, with a console line only on failure.) | Un-excluding a folder re-spells the links to every page elsewhere that shares a title with one of its pages, with a console line only on failure. | Low | Small (=🟢+8=) | Shortcut | `a0441edc9` | **Created:** 10-19-2026<br>**Updated:** 10-19-2026 |
+| [F-073](#F-073 • A heading rename and a move of the same page in one outside batch aim the heading rename's sweep at the page's old path.) | A heading rename and a move of the same page in one outside batch aim the heading rename's sweep at the page's old path. | Low | Small (=🟢+6=) | Shortcut | `a0441edc9` | **Created:** 10-19-2026<br>**Updated:** 10-19-2026 |
 | [F-070](#F-070 • A property edit's undo put back the value the app showed rather than the value the file held, so undoing a pick over a value Pommora can't read deleted its key.) | A property edit's undo put back the value the app showed rather than the value the file held, so undoing a pick over a value Pommora can't read deleted its key. | Low | Small (TBD) | Drift | `e0a803028` | **Created:** 10-18-2026<br>**Updated:** 10-18-2026 |
+| [F-074](#F-074 • A page dragged out of the Trash in Finder is read as an arrival, so its own stale links aren't repaired as a restore repairs them.) | A page dragged out of the Trash in Finder is read as an arrival, so its own stale links aren't repaired as a restore repairs them. | Minimal | Medium (=🟢+25=) | Parallel Build | `a0441edc9` | **Created:** 10-19-2026<br>**Updated:** 10-19-2026 |
+| [F-075](#F-075 • A Link value naming a title that two pages of one trashed bundle share is parked with neither.) | A Link value naming a title that two pages of one trashed bundle share is parked with neither. | Minimal | Mini (=🟢+2=) | Shortcut | `a0441edc9` | **Created:** 10-19-2026<br>**Updated:** 10-19-2026 |
+| [F-079](#F-079 • A Trash bundle whose record holds its link targets as bare IDs fails to decode and drops out of the Trash.) | A Trash bundle whose record holds its link targets as bare IDs fails to decode and drops out of the Trash. | Minimal | Mini (±0) | Residue | `a0441edc9` | **Created:** 10-19-2026<br>**Updated:** 10-19-2026 |
 
 #### A4 • Architecture
 
@@ -99,6 +106,7 @@
 | [F-065](#F-065 • A board whose saved layout can't be read opens empty, and the first new tile replaces the saved layout.) | A board whose saved layout can't be read opens empty, and the first new tile replaces the saved layout. | Low | Small (=🟢+5=) | Shortcut | `740f442e0` | **Created:** 10-04-2026<br>**Updated:** 10-16-2026 |
 | [F-067](#F-067 • Three sites that run without a tree name the tile hosts' folders by hand.) | Three sites that run without a tree name the tile hosts' folders by hand. | Minimal | Small (≈ ±0) | Drift | `668e5398b` | **Created:** 10-05-2026<br>**Updated:** 10-08-2026 |
 | [F-066](#F-066 • The tile shell's memo comparator lists its props by hand.) | The tile shell's memo comparator lists its props by hand. | Minimal | Small (=🔴−8=) | Shortcut | `740f442e0` | **Created:** 10-04-2026<br>**Updated:** 10-08-2026 |
+| [F-076](#F-076 • A rename cascade says nothing about Space-board tiles when the Contexts registry doesn't parse.) | A rename cascade says nothing about Space-board tiles when the Contexts registry doesn't parse. | Minimal | Mini (=🟢+3=) | Drift | `a0441edc9` | **Created:** 10-19-2026<br>**Updated:** 10-19-2026 |
 
 #### A7 • Views
 
@@ -688,6 +696,20 @@ A table followed by a line containing only U+00A0 draws as a table that stops ab
 
 End the body on CommonMark's blank line (spaces and tabs only) rather than `trim()`, and add the line to the table property's alphabet. Lands with or after F-014, which rewrites the same loop.
 
+#### F-077 • A heading rename to a heading holding a pipe turns a lone page embed into a link.
+
+| Concern | Scale | Origin | Base | Date |
+|---------|-------|--------|------|------|
+| Minimal | Small (TBD) | Drift | `a0441edc9` | **Created:** 10-19-2026<br>**Updated:** 10-19-2026 |
+
+**Description**
+
+A lone `![[A#Old]]` is a page embed. Renaming the heading to one holding a pipe, such as `A|B`, can't be spelled in a wikilink, so the rewrite writes the link whole through the one writer, which falls to the markdown form `![A|B](A#A%7CB)`. The embed rule reads a wikilink alone on its line behind a `!` and no markdown link, so the line stops being an embed and draws as a link behind a `!`. `follower` rewrites the hit whole when `spellsAsWiki` is false for the new heading, `expressibleInLink` refuses a `|` in a heading, and `loneEmbedTitle` matches `pageLinkPattern`, which spells wikilinks alone.[^77]
+
+**Solution** [TBD]
+
+**Your call:** a wikilink can't spell a pipe in a heading, so either the editor draws a markdown page embed, which `loneEmbedTitle` and the embed's readers would then accept, or a heading holding a pipe is refused where a lone embed names it.
+
 #### F-016 • An entered table cell parses its own text twice per keystroke.
 
 | Concern | Scale | Origin | Base | Date |
@@ -758,6 +780,20 @@ The ranges that make the caret skip an embedded tile in one move are rebuilt on 
 
 One module-level `Decoration.mark({})`, and a `WeakMap` from the field's `ranges` array to the set built from it, so a caret move returns the set the last edit built; since the array's identity follows the document version, the clamp to the document's length stays valid. Nothing visible changes. `embedBoundaryKeys.test.tsx`'s 'a caret move reads the atomic set the last edit built' finds the provider whose set covers the tile line and asserts a caret move returns the same set, red when each call builds a fresh one.
 
+#### F-078 • A link picked before its page's headings load keeps a heading the page may not hold.
+
+| Concern | Scale | Origin | Base | Date |
+|---------|-------|--------|------|------|
+| Minimal | Mini (=🟢+4=) | Shortcut | `a0441edc9` | **Created:** 10-19-2026<br>**Updated:** 10-19-2026 |
+
+**Description**
+
+A page picked in the connection autocomplete keeps the heading typed after its title unless the page's headings are known to lack it. Before the page's headings load, `headingsOf` answers nothing and `headingMissing` answers false, so a pick made in that window writes `[[Page#Heading]]` for a heading the page may not hold, which draws as missing. `headingMissing` reads missing only when the keys are known and lack the heading, and `commit`'s `keptHeading` keeps the typed heading whenever it doesn't.[^78]
+
+**Solution** [Proposed]
+
+The pick awaits the page's headings before it keeps one, or drops the heading when they're unknown.
+
 ### A3 • Nexus & Data
 
 #### F-046 • An ID lost or damaged outside the app is replaced rather than recovered on every path but a held page's own event, and an ID two files share is answered two ways.
@@ -824,15 +860,15 @@ One journal-and-replay path and one sweep loop shared by both registries, while 
 
 | Concern | Scale | Origin | Base | Date |
 |---------|-------|--------|------|------|
-| Low | Medium (=🟢+10=) | Shortcut | `93baa6931` | **Created:** 10-01-2026<br>**Updated:** 10-04-2026 |
+| Low | Medium (=🟢+10=) | Shortcut | `93baa6931` | **Created:** 10-01-2026<br>**Updated:** 10-19-2026 |
 
 **Description**
 
-A page without an ID is stamped by its own watcher event, which arrives once the file stops changing, or by a listing under a folder newly in reach (a Try Again on the folder, or a folder a change of Excluded Folders admits). A folder's read leaves any other page missing its ID out of the tree, waiting for that event. When the event was already spent or never comes, the page is held nowhere, listed nowhere, and stamped by nothing until the next full read, which lists it under a Try Again notice; a full read only lists such a page, and only its own event, Try Again, or a reopen stamps it. Two routes produce it: a folder sidecar removed outside the app, whose folder the walk lists and the stamp reads again, and a Trash restore or move of a folder holding a page already listed missing. Apart from these, a settle that lands while a stamp pass is in flight can push a tree that still lists the page being stamped, so the window may post one Try Again notice for a page whose ID lands a moment later. `applyFolder` lists only the missing entries `stampable` returns, unless the tree had listed the folder unreadable for a reason other than a missing ID, and `stampable` takes a page only under a path in `owed.whole`; `walkWhileOwed` stamps from a walk's listing through the same filter; and `stampListed` splices `owed.stamp` empty before each `stampMissing` call, so `shown` hides nothing while that pass runs.[^42]
+A page without an ID is stamped by its own watcher event, which arrives once the file stops changing, or by a listing under a folder newly in reach (a Try Again on the folder, or a folder a change of Excluded Folders admits). A folder's read leaves any other page missing its ID out of the tree, waiting for that event. When the event was already spent or never comes, the page is held nowhere, listed nowhere, and stamped by nothing until the next full read, which lists it under a Try Again notice; a full read only lists such a page, and only its own event, Try Again, or a reopen stamps it. Two routes produce it: a folder sidecar removed outside the app, whose folder the walk lists and the stamp reads again, and a Trash restore or move of a folder holding a page already listed missing; a Set restored with an ID-less page is left unlisted by the held tree while a fresh walk lists it missing its ID, since the relocate's events never put the landed Set in reach for stamping. Apart from these, a settle that lands while a stamp pass is in flight can push a tree that still lists the page being stamped, so the window may post one Try Again notice for a page whose ID lands a moment later. `applyFolder` lists only the missing entries `stampable` returns, unless the tree had listed the folder unreadable for a reason other than a missing ID, and `stampable` takes a page only under a path in `owed.whole`, which `oweRetry` and a change of Excluded Folders fill and `restoreArtifact`'s `relocate` doesn't; `walkWhileOwed` stamps from a walk's listing through the same filter; and `stampListed` splices `owed.stamp` empty before each `stampMissing` call, so `shown` hides nothing while that pass runs.[^42]
 
 **Solution** [TBD]
 
-Either a folder's read, or a full read, stamps a page missing its ID whose file has sat still longer than the watcher's quiet window, which is the evidence a stamp needs that its writer has finished, or the page keeps a listed entry that its next read stamps. The notice half closes when an entry stays on the owed list until its stamp lands, which needs the two passes that can overlap (a write's gate and a watcher batch) to share the list without one taking the other's entries.
+Either a folder's read, or a full read, stamps a page missing its ID whose file has sat still longer than the watcher's quiet window, which is the evidence a stamp needs that its writer has finished, or the page keeps a listed entry that its next read stamps. A Trash restore of a Set or Collection owes the landed folder as newly in reach, as `oweRetry` does for a Try Again's path, so the next settle's `stampable` admits the page it lists missing. The notice half closes when an entry stays on the owed list until its stamp lands, which needs the two passes that can overlap (a write's gate and a watcher batch) to share the list without one taking the other's entries.
 
 #### F-043 • A write's reply waits behind a walk an outside change owes.
 
@@ -922,6 +958,34 @@ When the app renames or moves a folder, the held tree carries the folder's pages
 
 The move's echo record carries its destination, and a watched event under the vacated path within the window is re-aimed at the path the move landed on, so the edit reaches the page it belongs to.
 
+#### F-072 • Un-excluding a folder re-spells the links to every page elsewhere that shares a title with one of its pages, with a console line only on failure.
+
+| Concern | Scale | Origin | Base | Date |
+|---------|-------|--------|------|------|
+| Low | Small (=🟢+8=) | Shortcut | `a0441edc9` | **Created:** 10-19-2026<br>**Updated:** 10-19-2026 |
+
+**Description**
+
+Un-excluding a folder restarts the watcher, and its catch-up seed finds each page under the folder that the index never held, a folder excluded before the Nexus opened or a page added to it while excluded, so each lands as an arrival; a page excluded earlier in the same session pairs with the vanish its exclusion recorded and re-spells nothing. An arrival that shares a title with a sole holder elsewhere path-spells that holder's bare links, so each keeps naming the page it named. One settings toggle can therefore rewrite links across many pages in a single sweep, and the user hears nothing unless the sweep fails, since an outside payment logs a warning to the console in place of posting a notice. `missedEvents` seeds the index through `seedContentIndex`, whose `landed` takes every path the index didn't hold; `settleBatch` owes what the seed saw through `oweSeen`, `payOutsideMoves` reads each landed id the tree holds as an arrival, and `paid` logs only a warning the cascade reports.[^72]
+
+**Solution** [Proposed]
+
+A catch-up seed that follows a change of scope reports its pages as present rather than landed, so the pages a toggle admits re-spell no one's links. Where the arrival rule is wanted for them, the sweep posts a notice the window shows, naming how many pages it rewrote, in place of the console line.
+
+#### F-073 • A heading rename and a move of the same page in one outside batch aim the heading rename's sweep at the page's old path.
+
+| Concern | Scale | Origin | Base | Date |
+|---------|-------|--------|------|------|
+| Low | Small (=🟢+6=) | Shortcut | `a0441edc9` | **Created:** 10-19-2026<br>**Updated:** 10-19-2026 |
+
+**Description**
+
+A page whose heading is renamed and which is moved in one outside batch, such as a sync landing both, reaches the settle with the heading rename recorded under the page's old path. The settle pays heading renames before moves, and the heading cascade takes the keys that name that path from the held tree, which already holds the page at its new path, so it names no key and sweeps no file: it logs a warning, and the links elsewhere to the renamed heading keep the old one. The move arm then pairs the page by its id and re-spells its links by path alone. `settle` shifts each `owed.renames` entry into `renameCascade` with `seen.path` ahead of `walkWhileOwed`; `renameCascade` takes `namesOf(change.path)` and sweeps `change.path` itself; `payOutsideMoves` pairs the move after, through `livePathOf`.[^73]
+
+**Solution** [Proposed]
+
+The heading arm resolves `seen.path` to the page's live path through `livePathOf` by the page's id, or runs after the move arm so the held tree and the recorded path agree.
+
 #### F-070 • A property edit's undo put back the value the app showed rather than the value the file held, so undoing a pick over a value Pommora can't read deleted its key.
 
 | Concern | Scale | Origin | Base | Date |
@@ -935,6 +999,48 @@ A property edit's undo remembered the value the app had decoded for display, whi
 **Solution** [Deferred]
 
 The current fix works. What's in question is whether the design avoids the problem at its source: the divide between what the app shows and what the file holds runs through every write and revert, and each consumer that treated the decoded value as the file's state needed its own put-back path. An undo over a bare key shows it: a page holding `Status:` comes back as `Status: null`, since the capture holds the decoded null and not how the file spelled it. Whether the file's raw value should be what every write and revert is built from is left to its own investigation.
+
+#### F-074 • A page dragged out of the Trash in Finder is read as an arrival, so its own stale links aren't repaired as a restore repairs them.
+
+| Concern | Scale | Origin | Base | Date |
+|---------|-------|--------|------|------|
+| Minimal | Medium (=🟢+25=) | Parallel Build | `a0441edc9` | **Created:** 10-19-2026<br>**Updated:** 10-19-2026 |
+
+**Description**
+
+A page dragged out of `.trash` in Finder reaches the settle as a page arriving, like any file added outside, so the outside lane re-spells only the bare links its title now collides with. The Trash's restore does more: it reads the bundle's record, repairs the returning page's own links against the targets the delete recorded, and hands back the Link values parked with the bundle. A page returned by hand gets none of that, so links inside it that went stale while it sat in the Trash stay as they are. `payOutsideMoves` pairs a vanish with a landing and reads every other landed id as an arrival; the record, `repairLanded`, and `parkLinks` are reached only through `restoreArtifact`.[^74]
+
+**Solution** [TBD]
+
+**Your call:** the outside lane recognises a path arriving from `.trash`, reads the bundle's record, and runs the restore's repair for it, or the behavior stands, with the Trash's restore the one way to return a page.
+
+#### F-075 • A Link value naming a title that two pages of one trashed bundle share is parked with neither.
+
+| Concern | Scale | Origin | Base | Date |
+|---------|-------|--------|------|------|
+| Minimal | Mini (=🟢+2=) | Shortcut | `a0441edc9` | **Created:** 10-19-2026<br>**Updated:** 10-19-2026 |
+
+**Description**
+
+A Link value stripped for naming a page the Trash holds joins that page's bundle, so the restore writes it back. A title that two pages of one deleted Set share, such as two `Notes`, resolves to no page over the Trash's pages, so the value joins no bundle and is dropped. The link was ambiguous before the delete, and the Trash applies the live resolver's rule, but both holders sit in one bundle, so parking there would keep the value for a refill that lands it ambiguous again. `trashedPages` gives each page the id of its bundle, and `parkLinks` builds `buildPageIndex` over them and parks only a value that resolves to a page.[^75]
+
+**Solution** [TBD]
+
+**Your call:** `parkLinks` parks a value when every holder of its title shares one bundle id, one line, or the value stays dropped, since the refill would land it ambiguous again.
+
+#### F-079 • A Trash bundle whose record holds its link targets as bare IDs fails to decode and drops out of the Trash.
+
+| Concern | Scale | Origin | Base | Date |
+|---------|-------|--------|------|------|
+| Minimal | Mini (±0) | Residue | `a0441edc9` | **Created:** 10-19-2026<br>**Updated:** 10-19-2026 |
+
+**Description**
+
+A Trash bundle written between `d5462735f` and `6231cb841` records its link targets as `key → id`, where the record decodes `key → { id, path }`. Such a bundle fails to decode: `readRecord` answers null, `listBundles` skips it, so the Trash lists nothing for it, and a restore or empty request for it answers that the deletion record is unreadable. Bundles written before `d5462735f` carry no targets and bundles written after `6231cb841` carry the object form, so only that range is affected.[^79]
+
+**Solution** [Deferred]
+
+Deferred by the owner, whose rule keeps no compatibility decode for a record format that changed within a plan. A bundle found this way is mended by editing its record by hand, or by emptying its folder.
 
 ### A4 • Architecture
 
@@ -1098,6 +1204,20 @@ Each `TILE_HOSTS` arm names the folder a tree-less pass reaches its boards under
 
 A generic comparison over the props doesn't fit as written: the comparator compares `place` field by field, which a shallow comparison can't, and building the objects to compare allocates per shell on every pointer move of a drag. The design has to keep the field-wise `place` comparison and allocate nothing on that path.
 
+#### F-076 • A rename cascade says nothing about Space-board tiles when the Contexts registry doesn't parse.
+
+| Concern | Scale | Origin | Base | Date |
+|---------|-------|--------|------|------|
+| Minimal | Mini (=🟢+3=) | Drift | `a0441edc9` | **Created:** 10-19-2026<br>**Updated:** 10-19-2026 |
+
+**Description**
+
+A Contexts registry that doesn't parse blanks the Contexts layer, so the tree lists no Space and `tileHostsOf` names no Space board. A rename cascade that moves a key a Space board's markdown tile links then rewrites only the Homepage's tiles and posts no warning for the boards it couldn't reach: `tileHostsOf` counts a registry listed `unreadable` as one skip and an `unparsed` one as none, the rule the configuration pass applies to a file that doesn't parse. `tilesLink` gates the tile rewrite on the links of the hosts it can see, and `rewriteTileConnections` adds `unreadable` to its failures.[^76]
+
+**Solution** [TBD]
+
+**Your call:** the silent read, which matches the configuration pass, or `tileHostsOf` counts an unparsed registry as one skip like an unreadable one, so a cascade warns whenever a visible tile links the key (two lines). A warning for a tile on a Space board in particular needs the Space folders read from the disk, since the tree lists none.
+
 ### A7 • Views
 
 #### F-062 • Dragging a Set to another band shows it at its old rank for the round trip.
@@ -1260,7 +1380,7 @@ Paths are relative to `Core/MarkdownPM/`, and the test's name settles any drift 
 [^39]: **F-039:** `Desktop/Store/stores.ts:45-47` (`clearPath`), `Desktop/Store/stores.ts:50-77` (`upsertPageIndexes`), `Desktop/Store/stores.ts:78-98` (`removePathIndex`, `renamePathIndex`, `removePathPrefixIndex`, `renamePathPrefixIndex`), `Desktop/Store/driver.ts:16-26` (`inTransaction`), `Desktop/Store/stores.ts:217-259` (`syncStore`), `Core/Sync/handlers.ts:352,365`, `Core/Sync/Client/base.ts:16,21` (`readAllBases`, `deleteBase`)
 [^40]: **F-040:** `Core/Nexus/fileEvents.ts:454-477` (`applySpace`), `Core/Nexus/fileEvents.ts:564-584` (`applyMove`), `Core/Nexus/treePatch.ts:238-264` (`moveNodeInTree`), `Core/Nexus/fileEvents.ts:480-501` (`regroup`, `applyContexts`), `Core/Contexts/contextCascade.ts:208,240-248` (`renameContextOp`), `Core/Contexts/contextCascade.ts:266,299-305` (`renameSpaceOp`), `Core/Files/atomicWrite.ts:62-75` (`relocate`), `Core/Nexus/readNexus.ts:77-85` (`contextLinker`), `Core/Nexus/fileEvents.ts:376-418` (`applyPage`), `Core/Properties/pageRow.ts:11-17` (`pageRowOf`), `Core/Contexts/contextResolve.ts:70` (`resolveContextKeys`)
 [^41]: **F-041:** `Core/Properties/journalSlot.ts:14` (`journalSlot`), `Core/Properties/propertyJournal.ts:47-57` (`writeSchemaJournal`, `schemaCascade`), `Core/Contexts/contextJournal.ts:47-49` (`writeJournal`), `Core/Nexus/handlers.ts:82,102` (the two replays), `Core/Contexts/contextResolve.ts:29` (`contextWorldOf`), `Core/Properties/registryProperty.ts:118-174` (`rekeyPlan`, `rekeyProperty`), `Core/Contexts/contextCascade.ts:208-264` (`renameContextOp`), `Core/Contexts/contextCascade.ts:113-114` (`unswept`), `Core/Nexus/mutate.ts:60-68` (`renamed`), `Core/Trash/delete.ts:61-85` (the delete's write-ahead record), `Core/Properties/governedSweep.ts`, `Core/Contexts/spaceSidecar.ts:45-52` (`spaceSidecars`), `Core/Properties/governedSweep.ts:96`, `Core/Properties/deleteProperty.ts:54`, `Core/Assets/assetMigrate.ts:162`, `Core/Properties/keyHolders.ts:21,33` (`confirmedKeyHolders`), `.claude/Planning/Data Layer — Investigation Reports/E — Governed Data Sweeps.md` (the nine loops and five enumerators)
-[^42]: **F-042:** `Core/Nexus/fileEvents.ts:146-152` (`stampable`), `Core/Nexus/fileEvents.ts:348-374` (`applyFolder`), `Core/Nexus/fileEvents.ts:376-418` (`applyPage`), `Core/Nexus/fileEvents.ts:516-532` (`applySettings`, `oweRescope`), `Core/Nexus/mutate.ts:209-214` (`retryUnreadable`), `Core/Nexus/settle.ts:96-117` (`walkWhileOwed`), `Core/Nexus/settle.ts:172-181` (`stampListed`), `Core/Nexus/settle.ts:63-71` (`shown`), `Core/Nexus/settle.ts:119-154` (`settle`)
+[^42]: **F-042:** `Core/Nexus/fileEvents.ts:146-159` (`oweRetry`, `stampable`), `Core/Nexus/fileEvents.ts:333-359` (`applyFolder`), `Core/Nexus/fileEvents.ts:361-403` (`applyPage`), `Core/Nexus/fileEvents.ts:502-518` (`applySettings`, `oweRescope`), `Core/Nexus/mutate.ts:248-253` (`retryUnreadable`), `Core/Nexus/settle.ts:103-127` (`walkWhileOwed`), `Core/Nexus/settle.ts:200-210` (`stampListed`), `Core/Nexus/settle.ts:70-78` (`shown`), `Core/Nexus/settle.ts:129-178` (`settle`), `Core/Trash/spend.ts:143-228` (`restoreArtifact`, `relocate` at `:214`)
 [^43]: **F-043:** `Core/Nexus/settle.ts:55` (`inTurn`), `Core/Platform/inTurns.ts:2-9` (`inTurns`), `Core/Nexus/settle.ts:203` (`payOwedWalk`), `Core/Nexus/settle.ts:206-214` (`settleNow`), `Core/Nexus/settle.ts:119-154` (`settle`), `Core/Nexus/settle.ts:96-117` (`walkWhileOwed`), `Core/Nexus/settle.ts:34-46` (`applyOwn`)
 [^44]: **F-044:** `Core/Properties/governedSweep.ts:120-130` (`undoSweep`), `Core/Contexts/contextCascade.ts:181-195` (`unlinkMembers`), `Core/Nexus/mutate.ts:73-80` (`underContexts`), `Core/Nexus/mutate.ts:90-91,153-154` (`rename`, `movePage`)
 [^45]: **F-045:** `Core/Nexus/fileEvents.ts:564-584` (`applyMove`), `Core/Nexus/treePatch.ts:238-264` (`moveNodeInTree`), `Core/Nexus/fileEvents.ts:348-374` (`applyFolder`), `Core/Nexus/fileEvents.ts:376-418` (`applyPage`), `Core/Index/indexSeed.ts:101-120` (`indexWrittenPage`), `Core/Files/atomicWrite.ts:62-75` (`relocate`), `Core/Files/writeEcho.ts:10,74-88` (`PREFIX_WINDOW_MS`, `isRecentWrite`)
@@ -1290,3 +1410,11 @@ Paths are relative to `Core/MarkdownPM/`, and the test's name settles any drift 
 [^69]: **F-069:** `Core/MarkdownPM/Input/format.ts:70-83,86-145` (`underSelection`, `toggleInline`), `Core/MarkdownPM/Engine/tokens.ts` (`tokenizeChunk`)
 [^70]: **F-070:** `Core/Properties/assignValue.ts:71,87` (`assignValue`), `Core/Properties/setProperty.ts:14-82` (`landPageValue`, `landSpaceValue`, the `restoreValue` case), `Core/Nexus/page.ts:90-99` (`valueToWrite`), `Core/Nexus/mutate.ts:185`, `Core/Properties/assignment.ts:49-60` (`refillValues`), `Core/Properties/propertyValue.ts:224` (`isBlankRaw`)
 [^71]: **F-071:** `UIX/Menus/MenuRows.tsx:153` (`MenuItem`'s hint), `UIX/Menus/menu-row.css.ts:205` (`subLabel`), `UIX/Menus/FrameSlide.tsx:83` (`slotBox`), `Core/Properties/Schema/PropertyFrame.tsx:500-506` (the editor's `FrameSlide`), `Core/Properties/Schema/FormatRows.tsx`, `Core/Settings/SettingsWindow.tsx:47-52` (`settingsRow`)
+[^72]: **F-072:** `Core/Nexus/settle.ts:~187-197` (`missedEvents`), `Core/Nexus/settle.ts:~212-230` (`settleBatch`), `Core/Nexus/settle.ts:~263-267` (`paid`), `Core/Nexus/settle.ts:~269-304` (`payOutsideMoves`), `Core/Index/indexSeed.ts:~202-259` (`seedContentIndex`, `landed` at `:221`), `Core/Contract/handlers.ts:73` (the restart's catch-up)
+[^73]: **F-073:** `Core/Nexus/settle.ts:~132-142` (the renames loop before `walkWhileOwed`), `Core/Nexus/settle.ts:~269-304` (`payOutsideMoves`), `Core/Nexus/cascade.ts:~207-225` (`renameCascade`), `Core/Connections/pageIndex.ts:111` (`namesOf`), `Core/Nexus/heldPages.ts:~25-28` (`livePathOf`), `Core/Index/indexSeed.ts:~95-99,146` (`HeadingRenameSeen`, `reindex`)
+[^74]: **F-074:** `Core/Nexus/settle.ts:~269-304` (`payOutsideMoves`), `Core/Trash/spend.ts:~143-249` (`restoreArtifact`, `parkLinks` at `:202`, `repairLanded` at `:244`)
+[^75]: **F-075:** `Core/Trash/holdings.ts:~72-82` (`trashedPages`), `Core/Trash/holdings.ts:~98-109` (`parkLinks`)
+[^76]: **F-076:** `Core/Tiles/tileHosts.ts:~22-36` (the Space arm's `boards`), `Core/Tiles/tileHosts.ts:~44-54` (`tileHostsOf`), `Core/Nexus/tree.ts:111`, `Core/Nexus/readNexus.ts:~314-325` (the registry's `unreadable` entry), `Core/Nexus/configReach.ts:~330-332` (`reachConfig`), `Core/Tiles/tilesFile.ts:~285-322` (`tilesLink`, `rewriteTileConnections`), `Core/Nexus/cascade.ts:~246-257`
+[^77]: **F-077:** `Core/Connections/rewrite.ts:~76-110` (`follower`), `Core/Connections/connections.ts:~19-22` (`pageLinkPattern`), `Core/Connections/connections.ts:~132-143` (`expressibleInLink`, `spellsAsWiki`), `Core/MarkdownPM/Engine/detect.ts:~411-416` (`loneEmbedRe`, `loneEmbedTitle`)
+[^78]: **F-078:** `Core/MarkdownPM/Links/connectionsApi.ts:~24-33` (`headingMissing`), `Core/MarkdownPM/Autocomplete/useConnectionAutocomplete.ts:~138-151` (`commit`, `keptHeading`)
+[^79]: **F-079:** `Core/Trash/record.ts:~30-31` (`linkTargets`), `Core/Trash/record.ts:~103-108` (`readRecord`), `Core/Trash/holdings.ts:~24-46` (`listBundles`), `Core/Trash/spend.ts:~58-64` (`openBundle`)
