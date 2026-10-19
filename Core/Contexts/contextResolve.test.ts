@@ -44,7 +44,7 @@ describe('resolveContextKeys', () => {
     expect(links.size).toBe(0)
   })
 
-  it('matches values through coercion + NFC (scalars, whitespace), and only a scalar names a Space', () => {
+  it('matches values through coercion and trimming, only as the Space is titled, and only a scalar names a Space', () => {
     const links = resolveContextKeys(
       { '<Classes>': [2024, true], '<Projects>': [' Pommora '] },
       contexts,

@@ -110,11 +110,11 @@ const askHolding = async (
   propertyId: string,
   of: string | FormatChange | undefined,
   req: (held: string) => ConfirmRequest,
-  quietPastOne = false,
+  asksPastOne = false,
 ): Promise<boolean> => {
   const r = await dialer().ask('property:holders', propertyId, of)
   if (!reportRefusal(r)) return false
-  return (quietPastOne && r.value <= 1) || ask(req(itemCount(r.value)))
+  return (asksPastOne && r.value <= 1) || ask(req(itemCount(r.value)))
 }
 
 export const askDestroyProperty = (propertyId: string, label: string): Promise<boolean> =>

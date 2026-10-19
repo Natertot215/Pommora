@@ -313,8 +313,8 @@ async function walkNexus(root: string): Promise<NexusTree> {
   const order = readOrder(state)
   const unreadable: Unreadable[] = []
   // An unusable registry blanks the whole Contexts layer for the session. Absent stays silent; present names the registry so the record reads the blank layer as unreadable, never as mass deletion.
-  const ctxRead = ctxRegistry ? 'ok' : (await readJsonStrictly(contextsRegistryFile(root))).kind
-  if (ctxRead !== 'ok' && ctxRead !== 'absent')
+  const ctxRead = ctxRegistry ? null : (await readJsonStrictly(contextsRegistryFile(root))).kind
+  if (ctxRead !== null && ctxRead !== 'absent')
     unreadable.push({
       path: CONTEXTS_REGISTRY_REL,
       kind: 'registry',

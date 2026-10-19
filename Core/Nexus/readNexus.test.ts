@@ -511,16 +511,21 @@ describe('readNexus — the walk names what it cannot read', () => {
     }
   })
 
-  it('an unusable registry names itself — a blank Contexts layer is not mass deletion', async () => {
+  it.each([
+    ['corrupt', '{corrupt'],
+    ['of the wrong shape', JSON.stringify({ contexts: 5 })],
+  ])('a registry %s names itself — a blank Contexts layer is not mass deletion', async (_, body) => {
     const r = tempRoot('pom-unread-reg-')
     try {
       d(join(r, '.nexus'))
       w(join(r, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nxc', createdAt: '2026' }))
       d(join(r, '.nexus', 'contexts'))
-      w(join(r, '.nexus', 'contexts', 'contexts.json'), '{corrupt')
+      w(join(r, '.nexus', 'contexts', 'contexts.json'), body)
       const t = await readNexus(r)
       expect(t.contexts).toEqual([])
-      expect(t.unreadable?.map((u) => u.path)).toEqual(['.nexus/contexts/contexts.json'])
+      expect(t.unreadable).toEqual([
+        { path: '.nexus/contexts/contexts.json', kind: 'registry', reason: 'unparsed' },
+      ])
     } finally {
       rmSync(r, { recursive: true, force: true })
     }
