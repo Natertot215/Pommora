@@ -432,9 +432,11 @@ describe('rewriteConnections through the map', () => {
       rewriteConnections('[[notes]] [Notes](notes) [[Notes.md]]', new Map([['notes', 'Plan']])),
     ).toBe('[[Plan]] [Plan](Plan) [[Plan]]')
   })
-  it('leaves a link already spelled as mapped, and follows a case-only rename', () => {
+  it('leaves a link already spelled as mapped, or differing by its .md alone, and follows a case-only rename', () => {
     const names = new Map([['notes', 'Notes']])
-    expect(rewriteConnections('[[Notes]] [[notes]]', names)).toBe('[[Notes]] [[Notes]]')
+    expect(rewriteConnections('[[Notes]] [[notes]] [[Notes.md]] [n](Notes.md)', names)).toBe(
+      '[[Notes]] [[Notes]] [[Notes.md]] [n](Notes.md)',
+    )
   })
   it('a bare wikilink gaining a path gains its title alias, and an embed doesn’t', () => {
     const names = new Map([['notes', 'A/Notes']])

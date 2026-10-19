@@ -9,7 +9,7 @@ import {
   targetSpan,
 } from './connections'
 import { normalizeTitle } from '../Paths/caseFold'
-import { titleFromPath } from '../Paths/posix'
+import { stripMarkdownExt, titleFromPath } from '../Paths/posix'
 import { encodeLinkTarget, escapeLabel, fitsSlot, unescapeLabel } from './links'
 import { applyEdits, type TextEdit } from '../MarkdownPM/Engine/markdownCode'
 import { escapeCell } from '../MarkdownPM/Engine/Tables/codec'
@@ -52,13 +52,14 @@ export function respellings(
   return names
 }
 
-/** Code stays untouched: a page documenting `[[Old Title]]` in a fenced block is showing a sample. Only the written name changes, to what `names` maps its key to; shown text that only named it follows it, and shown text that comes to repeat the new target goes, as the writer drops one. */
+/** Code stays untouched: a page documenting `[[Old Title]]` in a fenced block is showing a sample. Only the written name changes, to what `names` maps its key to, and one differing from that by its `.md` alone is left as written, since the extension is read and never written; shown text that only named it follows it, and shown text that comes to repeat the new target goes, as the writer drops one. */
 export function rewriteConnections(body: string, names: ReadonlyMap<string, string>): string {
   const rewrite = follower(body)
   const edits: TextEdit[] = []
   for (const hit of linksIn(body)) {
     const next = names.get(hit.target)
-    if (next !== undefined && next !== hit.named.title) edits.push(...rewrite(hit, 'title', next))
+    if (next !== undefined && next !== stripMarkdownExt(hit.named.title))
+      edits.push(...rewrite(hit, 'title', next))
   }
   return applyEdits(body, edits)
 }

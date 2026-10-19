@@ -1196,6 +1196,23 @@ describe('restore — the returning page’s links follow the pages they named',
     )
   })
 
+  it('follows a case-only rename meanwhile, leaving a link to an unchanged page that carries .md as written', async () => {
+    await write(ALPHA, PAGE_A, 'Related: "[[beta]]"\n', '[[beta]] [[Gamma.md]]')
+    await write('Notes/Gamma.md', '01KVGMT8BFP350FZZXAMG1QDVG', '', 'gamma')
+    await reseed()
+    await del(ALPHA)
+    const renamed = await settledMutate(
+      root,
+      { op: 'rename', path: 'Notes/Beta.md', kind: 'page', newName: 'BETA' },
+      nexusDeps,
+    )
+    expect(renamed.ok).toBe(true)
+    await restore('Alpha.md')
+    expect(await text(ALPHA)).toBe(
+      `---\nID: ${PAGE_A}\nRelated: "[[BETA]]"\n---\n[[BETA]] [[Gamma.md]]`,
+    )
+  })
+
   it('leaves its links as written to a page moved meanwhile', async () => {
     await del(ALPHA)
     const moved = await settledMutate(
