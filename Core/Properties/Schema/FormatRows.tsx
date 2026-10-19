@@ -19,7 +19,6 @@ export function FormatRows({
   const row = (
     label: string,
     value: KeyFormat | undefined,
-    caption: string,
     change: (format: KeyFormat) => FormatChange,
   ) =>
     pickerRow(
@@ -28,10 +27,7 @@ export function FormatRows({
       value ?? DEFAULT_KEY_FORMAT,
       FORMAT_OPTIONS,
       (v: KeyFormat) => onPick(change(v)),
-      {
-        inert: true,
-        caption: <span className={s.configHint}>{caption}</span>,
-      },
+      { inert: true },
     )
   return (
     <div className={s.configEditor}>
@@ -39,21 +35,9 @@ export function FormatRows({
         sections={[
           {
             rows: [
-              row(
-                'Key Format',
-                def.key_format,
-                'How this property’s name is written into each file’s metadata key.',
-                (key_format) => ({ key_format }),
-              ),
+              row('Key Format', def.key_format, (key_format) => ({ key_format })),
               ...(PROPERTY_TYPES[def.type].options
-                ? [
-                    row(
-                      'Value Format',
-                      def.value_format,
-                      'How each value is written in the file’s metadata.',
-                      (value_format) => ({ value_format }),
-                    ),
-                  ]
+                ? [row('Value Format', def.value_format, (value_format) => ({ value_format }))]
                 : []),
             ],
           },
