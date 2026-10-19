@@ -49,7 +49,7 @@ The work lands in ten phases in dependency order, removal first: the Space order
 | 5B | +163 / −139 | +230 / −196 | −55 (+806 / −861) |
 | 6 | +151 / −151 | +169 / −156 | −42 (+951 / −993) |
 | 7A | +163 / −39 | +160 / −35 | +83 (+1,090 / −1,007) |
-| 7B | +305 / −77 | | |
+| 7B | +305 / −77 | +330 / −100 | +313 (+1,378 / −1,065) |
 | 8 | +106 / −9 | | |
 | 9 | +3 / −3 | | |
 
@@ -88,11 +88,13 @@ The work lands in ten phases in dependency order, removal first: the Space order
 | `setKeyFormat` · `keyFormatHolders` • functions | The Key Format change and its count. | `Core/Properties/registryProperty.ts` |
 | `withOptionKeys` • function | A seed's option keys written through the Value Format. | `Core/Properties/registryProperty.ts` |
 | `rekeyOptions` • function | The one option rekey an option rename and a Value Format change enter, committing and cascading from its record. | `Core/Properties/optionOps.ts` |
+| `optionDef` • function | A definition that holds options, or its refusal (`NO_PROPERTY`, `NO_OPTIONS`): the gate every option op opens with, in place of `requireOptions`. | `Core/Properties/optionOps.ts` |
+| `mapOptions` • function | Every option of an option list mapped once; `mapOption`, `withOptionKeys`, and `rekeyOptions` read it. | `Core/Properties/optionModel.ts` |
 | `setValueFormat` · `valueFormatPlan` · `valueFormatHolders` • functions | The Value Format change, its key map, and its count. | `Core/Properties/optionOps.ts` |
 | `property:setKeyFormat` · `property:setValueFormat` · `idAndFormat` • channels · decoder | The two format changes and their argument decoder. | `Core/Contract/bridge.ts`, `Core/Properties/handlers.ts` |
 | `FormatRows` • component | The Key Format and Value Format rows. | `Core/Properties/Schema/FormatRows.tsx` |
 | `askFormatChange` • confirmation | A format change's counted confirmation. | `Core/Interface/Confirm/confirmations.ts` |
-| `PickerRowLook.caption` • field | A picker row's hint. | `UIX/Menus/MenuIndex.tsx` |
+| `PickerRowLook.caption` · `configHint` • field · style | A picker row's hint, and the measure a config row's hint wraps at so it never widens its pane. | `UIX/Menus/MenuIndex.tsx`, `UIX/Menus/frames.css.ts` |
 | `matchOf` · `Match` · `currentKeys` • functions · type | The restore's one matcher over the ten spellings, built once per restore. | `Core/Trash/restoreScrub.ts` |
 
 **REMOVED**
@@ -199,11 +201,11 @@ The work lands in ten phases in dependency order, removal first: the Space order
   - [x] Task 7A-2 · The Key Format field, and a create keyed through it
   - [x] Task 7A-3 · One move for a rename and a Key Format change
   - [x] Review Checkpoint
-- [ ] **Phase 7B** — The Value Format, Adoption, and the Rows
-  - [ ] Task 7B-1 · The Value Format field, its seeds, adds, and renames, and one option rekey
-  - [ ] Task 7B-2 · The Value Format change
-  - [ ] Task 7B-3 · Adoption follows the Value Format
-  - [ ] Task 7B-4 · The two rows and the counted confirmation
+- [x] **Phase 7B** — The Value Format, Adoption, and the Rows
+  - [x] Task 7B-1 · The Value Format field, its seeds, adds, and renames, and one option rekey
+  - [x] Task 7B-2 · The Value Format change
+  - [x] Task 7B-3 · Adoption follows the Value Format
+  - [x] Task 7B-4 · The two rows and the counted confirmation
   - [ ] Review Checkpoint
 - [ ] **Phase 8** — The Restore Re-Spell
   - [ ] Task 8-1 · Keys and words re-spell in the restore scrub
@@ -4492,16 +4494,35 @@ for (const miss of misses) console.log(JSON.stringify(miss))
 **CHANGE**
 
 - [ ] Write and watch fail: `registryProperty.test.ts` *§createProperty* — a Status created with `value_format: 'kebab-case'` seeds options `{ key: 'open', label: 'Open' }`, `{ key: 'active', label: 'Active' }`, `{ key: 'done', label: 'Done' }`; a Select created with `value_format: 'UPPERCASE'` seeds `{ key: 'OPTION 1', label: 'Option 1' }`; a Select created under `kebab-case` with `select_options: [{ key: 'x', label: 'Light Blue' }]` stores `{ key: 'x', label: 'Light Blue' }` (a create keeps the keys it's handed, C-2 INFERRED). *§renameProperty and editProperty*: a stored `{ id, label: 'Kind', key: 'Kind', type: 'select', value_format: 'lowercase' }` with no `select_options` (seeded as registry JSON), edited with `editProperty(root, id, { icon: 'tag' })`, stores `select_options: [{ key: 'option 1', label: 'Option 1' }]`. `restoreProperty.test.ts`: a deleted Select holding `{ key: 'wip', label: 'In Progress' }` under Match Title, with a page holding `wip`, restores with `key: 'wip'` and refills the page. `propertiesRegistry.test.ts`: a stored `{ value_format: 'Shouting' }` decodes with `value_format` undefined. `optionOps.test.ts` *§editOption*: under `kebab-case`, `{ op: 'add', groupId: 'select', title: 'Light Blue' }` stores `{ key: 'light-blue', label: 'Light Blue' }`. *§renameOption*: under `kebab-case`, an adopted `{ key: 'in-progress', label: 'in-progress' }` held by a page and named by a view, renamed to `In Progress`, stores `{ key: 'in-progress', label: 'In Progress' }`, leaves the page byte-identical (its `mtimeMs` too), and rewrites the view's operand to `In Progress` (E-1); `Light Blue` renamed to `Dark Blue` under `kebab-case` rewrites a page's `light-blue` to `dark-blue`. `optionModel.test.ts:29-47`: `addOption(groups, 'upcoming', 'Triage', 'triage', 0)` mints `{ key: 'triage', label: 'Triage', group_id: 'upcoming' }` and `addOption(groups, 'upcoming', 'Backlog', 'Backlog')` mints its pair; the `renameOption` cases go with their subject.
-- [ ] `optionModel.ts`: delete `renameOption`; `addOption(groups, groupId, label, key, atIndex?)` mints `{ key, label, group_id }`; `applyOptionEdit(groups, e, format?)` keys an added option `formatKey(e.title, format)`.
+- [ ] `optionModel.ts`: delete `renameOption`; add `mapOptions(groups, fn)`, which `mapOption` reads; `addOption(groups, groupId, label, key, atIndex?)` mints `{ key, label, group_id }`; `applyOptionEdit(groups, e, format?)` keys an added option `formatKey(e.title, format)`.
 - [ ] `properties.ts`: add `value_format`, `z.enum(KEY_FORMATS).optional().catch(undefined)`, beside `key_format`.
 - [ ] `registryProperty.ts`: add `withOptionKeys(def)` beside `seeded`, its one reader, writing each option's key from its label through the Value Format; `seeded` keys each seed through it; `editProperty` omits `value_format` beside `key_format`, its doc naming the formats.
-- [ ] `optionOps.ts`: delete the `renameOption as renameInGroups` import; `editOption` passes `def.value_format` to `applyOptionEdit`; adoption adds `addOption(g, SELECT_GROUP, v, v)`; add `rekeyOptions(root, record)`, holding what `renameOption`'s body held after its resolve: the journal write (refusing `OWED`), a commit re-keying every stored option through `record.keys` and, with `record.labels`, relabelling the option its old label names (refusing a gone definition, a type without options, `NO_OPTION` when no option holds the old label, and `validateOptionValues`), the clear on a refusal, `optionCascade(root, def, new Map(record.keys), record.labels)`, and the clear when nothing was skipped; `renameOption` resolves the option, writes `to = formatKey(newLabel, def.value_format)`, and enters `rekeyOptions` with `keys: key === to ? [] : [[key, to]]` and `labels: [oldLabel, newLabel]`; `optionCascade` sweeps files and caches only when its key map isn't empty, since a label-only rename now hands it none.
+- [ ] `optionOps.ts`: delete the `renameOption as renameInGroups` import; `requireOptions` becomes `optionDef(def)`, answering the definition or `NO_PROPERTY` or `NO_OPTIONS`, the one gate `editOption`, `resolveForCascade`, and `rekeyOptions` open with; `valueEditPlan` answers `{ files, plan }`, since its files include Space sidecars; `editOption` passes `def.value_format` to `applyOptionEdit`; adoption adds `addOption(g, SELECT_GROUP, v, v)`; add `rekeyOptions(root, record)`, holding what `renameOption`'s body held after its resolve: the journal write (refusing `OWED`), a commit re-keying every stored option through `record.keys` and, with `record.labels`, relabelling the option its old label names (refusing a gone definition, a type without options, `NO_OPTION` when no option holds the old label, and `validateOptionValues`), the clear on a refusal, `optionCascade(root, def, new Map(record.keys), record.labels)`, and the clear when nothing was skipped; `renameOption` resolves the option, writes `to = formatKey(newLabel, def.value_format)`, and enters `rekeyOptions` with `keys: key === to ? [] : [[key, to]]` and `labels: [oldLabel, newLabel]`; `optionCascade` sweeps files and caches only when its key map isn't empty, since a label-only rename now hands it none.
 
 **AFTER**
 
 ```Core/Properties/optionModel.ts diff
 @@ imports @@
 +import { formatKey, type KeyFormat } from './keyFormat'
+@@ mapOptions @@
++export function mapOptions(
++  groups: StatusGroup[],
++  fn: (o: StatusOption) => StatusOption,
++): StatusGroup[] {
++  return groups.map((g) => ({ ...g, options: g.options.map(fn) }))
++}
++
+ function mapOption(
+   groups: StatusGroup[],
+   label: string,
+   fn: (o: StatusOption) => StatusOption,
+ ): StatusGroup[] {
+-  return groups.map((g) => ({
+-    ...g,
+-    options: g.options.map((o) => (o.label === label ? fn(o) : o)),
+-  }))
++  return mapOptions(groups, (o) => (o.label === label ? fn(o) : o))
+ }
 @@ addOption @@
  export function addOption(
    groups: StatusGroup[],
@@ -4541,6 +4562,7 @@ for (const miss of misses) console.log(JSON.stringify(miss))
 
 ```Core/Properties/registryProperty.ts diff
 @@ imports @@
++import { mapOptions } from './optionModel'
    defaultStatusSeed,
    defaultSelectSeed,
    KEY_REFUSAL,
@@ -4554,10 +4576,7 @@ for (const miss of misses) console.log(JSON.stringify(miss))
 +const withOptionKeys = (def: PropertyDefinition): PropertyDefinition =>
 +  withOptionGroups(
 +    def,
-+    optionGroupsOf(def).map((g) => ({
-+      ...g,
-+      options: g.options.map((o) => ({ ...o, key: formatKey(o.label, def.value_format) })),
-+    })),
++    mapOptions(optionGroupsOf(def), (o) => ({ ...o, key: formatKey(o.label, def.value_format) })),
 +  )
 +
 @@ seeded @@
@@ -4592,8 +4611,8 @@ for (const miss of misses) console.log(JSON.stringify(miss))
 -  const caches = await cacheSweep(root, def, keys)
 +  let skipped = 0
 +  if (keys.size) {
-+    const { pages, plan } = await valueEditPlan(root, def, keys)
-+    skipped = (await sweepGovernedRoots(root, pages, plan)).skipped.length
++    const { files, plan } = await valueEditPlan(root, def, keys)
++    skipped = (await sweepGovernedRoots(root, files, plan)).skipped.length
 +    // A Remove that skipped a file stops here, so the option and every reference to it stay while its replay is owed.
 +    if (skipped && labels?.[1] === null) return { skipped, hosts: [] }
 +    skipped += await cacheSweep(root, def, keys)
@@ -4633,20 +4652,12 @@ for (const miss of misses) console.log(JSON.stringify(miss))
 +  const relabel = (label: string): string =>
 +    record.labels && label === record.labels[0] ? record.labels[1] : label
 +  const edit = await mutateRegistry<Result<PropertyDefinition>>(root, (registry, stored) => {
-+    const def = registry.defs[record.id]
-+    if (!def) return { result: NO_PROPERTY }
-+    const typeCheck = requireOptions(def)
-+    if (!typeCheck.ok) return { result: typeCheck }
++    const found = optionDef(registry.defs[record.id])
++    if (!found.ok) return { result: found }
++    const def = found.value
 +    if (record.labels && !findOption(def, record.labels[0])) return { result: NO_OPTION }
 +    const next = editStoredOptions(def, stored[record.id], (groups) =>
-+      groups.map((g) => ({
-+        ...g,
-+        options: g.options.map((o) => ({
-+          ...o,
-+          key: keys.get(o.key) ?? o.key,
-+          label: relabel(o.label),
-+        })),
-+      })),
++      mapOptions(groups, (o) => ({ ...o, key: keys.get(o.key) ?? o.key, label: relabel(o.label) })),
 +    )
 +    const check = validateOptionValues(optionsOf(next))
 +    if (!check.ok) return { result: check }
@@ -4723,8 +4734,8 @@ for (const miss of misses) console.log(JSON.stringify(miss))
 
 **CHANGE**
 
-- [ ] Write and watch fail: `optionOps.test.ts`, a new describe *§a Value Format change re-keys every option*: a Multi-Select `Tones` with `Light Blue` and `Dark Red` (Match Title) assigned to `Col`, a page holding `Tones: [Light Blue, "Dark Red"]`, a Space holding `Tones: ['Light Blue']`, `Col`'s cache block holding `{ p1: ['Light Blue'] }`, and a view filtering `Light Blue` (`seedConfigSurfaces`); `setValueFormat(root, id, 'kebab-case')` stores `value_format: 'kebab-case'` and the options `{ key: 'light-blue', label: 'Light Blue' }` and `{ key: 'dark-red', label: 'Dark Red' }`, the page reads `Tones: ["light-blue", "dark-red"]` (a renamed member with no exact held match takes the file's first quoted style, as A-3 writes), the Space `['light-blue']`, the cache `{ p1: ['light-blue'] }`, every configuration surface reads as it did, the journal is null, and the answer holds no `owed`; with `Wifi Pro` and `Wifi-Pro`, `kebab-case` refuses `'This format would give two options the same key, please rename one first.'` and the registry, the page, and the journal are unchanged; created under `lowercase` with `WifiPro` and `WiFi-Pro` (keys `wifipro` and `wifi-pro`), `kebab-case` refuses `CROSSED` and nothing changes; with `{ op: 'rename', id: 'prop_other', from: 'A', to: 'B' }` held, it answers `OWED` and nothing changes; with the page unreadable (`it.skipIf(noModeBits)`), it answers `owed: { op: 'option-rename', id, keys: [['Light Blue', 'light-blue'], ['Dark Red', 'dark-red']] }`, and `replaySchemaCascade(root, owed)` brings the page current and clears; `setValueFormat(root, id, 'Match Title')` under Match Title keeps every option and writes no holder; `setValueFormat` on a Text refuses `NO_OPTIONS`. A new describe *§valueFormatHolders*: the page and the Space count `ok(2)` for `kebab-case` and every file keeps its bytes; the crossing pair answers `CROSSED`; `Match Title` over keys equal to labels answers `ok(0)`. `handlers.test.ts` *§the property channels*: `property:setValueFormat` with `'Shouting'` answers the `NEEDS_ID_AND_VALUE` fault.
-- [ ] `optionOps.ts`: add `CROSSED`, `fail('invalid-property', 'This format would give one option the key another option writes now, please rename one first.')`; `valueFormatPlan(root, propertyId, format)`, answering the definition and the key pair of each option `format` moves, refused by `validateOptionValues` over the moved options, which takes the key clash's refusal as an optional `taken` argument (by default Task 5B-3's) so the format passes `'This format would give two options the same key, please rename one first.'`, and by `CROSSED` when a pair's new key is another pair's old key by `memberKey`; `rekeyOptions` takes an optional `value_format`, committing it on the definition it re-keys; `setValueFormat(root, propertyId, format)` enters `rekeyOptions` with `{ op: 'option-rename', id, keys }` from the plan and `format`; `valueFormatHolders(root, propertyId, format)`, answering `0` when no key moves and otherwise `sweepCount` over `valueEditPlan(root, def, new Map(keys))`.
+- [ ] Write and watch fail: `optionOps.test.ts`, a new describe *§a Value Format change re-keys every option*: a Multi-Select `Tones` with `Light Blue` and `Dark Red` (Match Title) assigned to `Col`, a page holding `Tones: [Light Blue, "Dark Red"]`, a Space holding `Tones: ['Light Blue']`, `Col`'s cache block holding `{ p1: ['Light Blue'] }`, and a view filtering `Light Blue` (`seedConfigSurfaces`); `setValueFormat(root, id, 'kebab-case')` stores `value_format: 'kebab-case'` and the options `{ key: 'light-blue', label: 'Light Blue' }` and `{ key: 'dark-red', label: 'Dark Red' }`, the page reads `Tones: ["light-blue", "dark-red"]` (a renamed member with no exact held match takes the file's first quoted style, as A-3 writes), the Space `['light-blue']`, the cache `{ p1: ['light-blue'] }`, every configuration surface reads as it did, the journal is null, and the answer holds no `owed`; with `Wifi Pro` and `Wifi-Pro`, `kebab-case` refuses `'This format would give two options the same key, please rename one first.'` and the registry, the page, and the journal are unchanged; created under `lowercase` with `WifiPro` and `WiFi-Pro` (keys `wifipro` and `wifi-pro`), `kebab-case` refuses `CROSSED` and nothing changes; with `{ op: 'rename', id: 'prop_other', from: 'A', to: 'B' }` held, it answers `OWED` and nothing changes; with the page unreadable (`it.skipIf(noModeBits)`), it answers `owed: { op: 'option-rename', id, keys: [['Light Blue', 'light-blue'], ['Dark Red', 'dark-red']] }`, and `replaySchemaCascade(root, owed)` brings the page current and clears; `setValueFormat(root, id, 'Match Title')` under Match Title keeps every option, stores the format, clears the journal, and writes no holder; an adopted `{ key: ' green ', label: ' green ' }` under `kebab-case` lands `key: 'green'` rather than refusing `CROSSED`; `setValueFormat` on a Text refuses `NO_OPTIONS`. A new describe *§valueFormatHolders*: the page and the Space count `ok(2)` for `kebab-case` and every file keeps its bytes; the crossing pair answers `CROSSED`; `Match Title` over keys equal to labels answers `ok(0)`. `handlers.test.ts` *§the property channels*: `property:setValueFormat` with `'Shouting'` answers the `NEEDS_ID_AND_VALUE` fault.
+- [ ] `optionOps.ts`: add `CROSSED`, `fail('invalid-property', 'This format would give one option the key another option writes now, please rename one first.')`; `valueFormatPlan(root, propertyId, format)`, answering the definition and the key pair of each option `format` moves, refused by `validateOptionValues` over the moved options, which takes the key clash's refusal as an optional `taken` argument (by default Task 5B-3's) so the format passes `'This format would give two options the same key, please rename one first.'`, and by `CROSSED` when a pair's new key is another pair's old key by `memberKey`, a pair whose two keys match by `memberKey` (padding or composition alone) crossing nothing; `rekeyOptions` takes an optional `value_format`, committing it on the definition it re-keys; `setValueFormat(root, propertyId, format)` enters `rekeyOptions` with `{ op: 'option-rename', id, keys }` from the plan and `format`; `valueFormatHolders(root, propertyId, format)`, answering `0` when no key moves and otherwise `sweepCount` over `valueEditPlan(root, def, new Map(keys))`.
 - [ ] `handlers.ts`: `'property:setValueFormat': registryChannel(idAndFormat, setValueFormat, cascadeReply)`; `bridge.ts` declares it with the `Result<SchemaCascade>` reply.
 
 **AFTER**
@@ -4762,10 +4773,9 @@ for (const miss of misses) console.log(JSON.stringify(miss))
 +  propertyId: string,
 +  format: KeyFormat,
 +): Promise<Result<{ def: PropertyDefinition; keys: [string, string][] }>> {
-+  const def = (await readRegistry(root)).defs[propertyId]
-+  if (!def) return NO_PROPERTY
-+  const typeCheck = requireOptions(def)
-+  if (!typeCheck.ok) return typeCheck
++  const found = optionDef((await readRegistry(root)).defs[propertyId])
++  if (!found.ok) return found
++  const def = found.value
 +  const moved = optionsOf(def).map((o) => ({ ...o, was: o.key, key: formatKey(o.label, format) }))
 +  const check = validateOptionValues(
 +    moved,
@@ -4774,7 +4784,8 @@ for (const miss of misses) console.log(JSON.stringify(miss))
 +  if (!check.ok) return check
 +  const keys = moved.flatMap(({ was, key }): [string, string][] => (key === was ? [] : [[was, key]]))
 +  const olds = new Set(keys.map(([from]) => memberKey(from)))
-+  if (keys.some(([, to]) => olds.has(memberKey(to)))) return CROSSED
++  if (keys.some(([from, to]) => memberKey(to) !== memberKey(from) && olds.has(memberKey(to))))
++    return CROSSED
 +  return ok({ def, keys })
 +}
 +
@@ -4814,8 +4825,8 @@ for (const miss of misses) console.log(JSON.stringify(miss))
 +  if (!planned.ok) return planned
 +  const { def, keys } = planned.value
 +  if (!keys.length) return ok(0)
-+  const { pages, plan } = await valueEditPlan(root, def, new Map(keys))
-+  return ok(await sweepCount(root, pages, plan))
++  const { files, plan } = await valueEditPlan(root, def, new Map(keys))
++  return ok(await sweepCount(root, files, plan))
 +}
 ```
 
@@ -4915,7 +4926,7 @@ for (const miss of misses) console.log(JSON.stringify(miss))
 - [ ] `registryProperty.ts`: `renameSweep(root, from, to)` sweeps `renamePlan(root, from, to)`, split out of it; add `keyFormatHolders(root, propertyId, format)`, answering the dry run of that plan for the rekey `rekeyPlan` checks, `0` when the key stays, and its refusal otherwise.
 - [ ] `UIX/Menus/MenuIndex.tsx`: `PickerRowLook` gains `caption?: ReactNode`, and `pickerRow` passes `caption: look?.caption`.
 - [ ] `keyFormat.ts`: add `FormatChange`.
-- [ ] `Core/Properties/Schema/FormatRows.tsx` (new): one `MenuIndex` section inside `s.configEditor`, the `Key Format` row and, when `PROPERTY_TYPES[def.type].options`, the `Value Format` row, each a `pickerRow` over the ten formats (labels as written, the stored format or `DEFAULT_KEY_FORMAT` as the value), inert, its H-1 hint as the caption, answering a `FormatChange`. The format options live here, their one reader.
+- [ ] `Core/Properties/Schema/FormatRows.tsx` (new): one `MenuIndex` section inside `s.configEditor`, the `Key Format` row and, when `PROPERTY_TYPES[def.type].options`, the `Value Format` row, each a `pickerRow` over the ten formats (labels as written, the stored format or `DEFAULT_KEY_FORMAT` as the value), inert, its H-1 hint as the caption, wrapped at `configHint`'s measure (`UIX/Menus/frames.css.ts`, beside `configEditor`) so the pane keeps the width its rows give it, answering a `FormatChange`. The format options live here, their one reader.
 - [ ] `confirmations.ts`: `askHolding`'s second parameter is `of: string | FormatChange | undefined`; add `askFormatChange(propertyId, change)`, quiet at `1`, its message the Brief's sentence with the count, its detail `Each key changes to the new format; values stay the same.`, and its action `Rewrite`.
 - [ ] `PropertyFrame.tsx`: `rename`'s answer handling becomes `renamed(res)`, shared with the Key Format change; add `setFormat(id, change)`, asking `askFormatChange` and then `property:setKeyFormat` (through `renamed`) or `property:setValueFormat` (through `warnOwed`); render `FormatRows` after `:427`, and a second `<MenuSeparator flush />` before the type's settings only where it has some: `NO_SETTINGS` (`:310`) answers null in place of its 8 px spacer, since every editor now has the rows as its body, and `SETTINGS`' value type admits null.
 - [ ] `handlers.ts`: `property:holders` answers `keyFormatHolders` for `{ key_format }` and `valueFormatHolders` for `{ value_format }`; `bridge.ts`: its second argument is `of?: string | FormatChange`.
@@ -4965,7 +4976,7 @@ for (const miss of misses) console.log(JSON.stringify(miss))
 +  ) =>
 +    pickerRow(undefined, label, value ?? DEFAULT_KEY_FORMAT, FORMAT_OPTIONS, (v: KeyFormat) => onPick(change(v)), {
 +      inert: true,
-+      caption,
++      caption: <span className={s.configHint}>{caption}</span>,
 +    })
 +  return (
 +    <div className={s.configEditor}>
