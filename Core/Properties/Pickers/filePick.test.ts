@@ -14,8 +14,13 @@ import {
 } from './filePick'
 import { stubDialer } from '../../vitest.setup'
 
-const def = (over: Partial<PropertyDefinition> = {}): PropertyDefinition =>
-  ({ id: 'p', name: 'Attachments', type: 'file', ...over }) as PropertyDefinition
+const def = (over: Partial<PropertyDefinition> = {}): PropertyDefinition => ({
+  id: 'p',
+  key: 'Attachments',
+  label: 'Attachments',
+  type: 'file',
+  ...over,
+})
 
 const held = (value: string[]) => ({ kind: 'file', value }) as const
 
