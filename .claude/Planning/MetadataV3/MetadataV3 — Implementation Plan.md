@@ -209,12 +209,12 @@ The work lands in ten phases in dependency order, removal first: the Space order
 - [x] **Phase 8** — The Restore Re-Spell
   - [x] Task 8-1 · Keys and words re-spell in the restore scrub
   - [x] Review Checkpoint
-- [ ] **Phase 9** — Interface and Drives
+- [x] **Phase 9** — Interface and Drives
   - [x] Task 9-1 · The Metadata leaf
-  - [ ] Task 9-2 · The two live drives
-  - [ ] Review Checkpoint
+  - [x] Task 9-2 · The two live drives
+  - [x] Review Checkpoint
 - [ ] **Phase 10** — Reconciliation
-  - [ ] Tasks 10-1 to 10-7 · The feature documents and the PRD
+  - [x] Tasks 10-1 to 10-7 · The feature documents and the PRD
   - [ ] Review Checkpoint
 - [ ] `[Compaction checkpoint: c/pre-compaction; on the re-prompt, reread §Constraints and c/plan-execution before §Final Verification opens]`
 - [ ] `[Stop: the final verification's report, per §Final Verification]`
