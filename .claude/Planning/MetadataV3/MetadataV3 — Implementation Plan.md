@@ -213,9 +213,9 @@ The work lands in ten phases in dependency order, removal first: the Space order
   - [x] Task 9-1 · The Metadata leaf
   - [x] Task 9-2 · The two live drives
   - [x] Review Checkpoint
-- [ ] **Phase 10** — Reconciliation
+- [x] **Phase 10** — Reconciliation
   - [x] Tasks 10-1 to 10-7 · The feature documents and the PRD
-  - [ ] Review Checkpoint
+  - [x] Review Checkpoint
 - [ ] `[Compaction checkpoint: c/pre-compaction; on the re-prompt, reread §Constraints and c/plan-execution before §Final Verification opens]`
 - [ ] `[Stop: the final verification's report, per §Final Verification]`
 
