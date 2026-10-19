@@ -3,8 +3,8 @@ import { join } from 'node:path'
 import { ulid } from 'ulidx'
 import { parse } from 'yaml'
 import {
-  activate, ask, check, chooseNative, click, drag, FM, holds, key, KEY, launch, META, mintPageId, mouseAt, boxOf, mouseClick,
-  must, nativeMenu, NEXUS, openField, openPanel, portalOpen, pressKey, read, restore, results, selectField, SETTINGS_BUTTON,
+  ask, check, chooseNative, click, drag, FM, holds, launch, META, mintPageId, mouseAt, boxOf, mouseClick,
+  must, NEXUS, openField, openPanel, portalOpen, pressKey, read, restore, results, selectField, SETTINGS_BUTTON,
   settles, shot, sleep, textEl, typeText, until,
 } from '../drive-harness.mjs'
 
@@ -582,7 +582,7 @@ async function group2(cdp) {
 
 // ── Group 3 — Exact words, foreign words, Is and Is Not (Phase 3) ──────────
 
-async function group3(cdp, pid) {
+async function group3(cdp) {
   const G = 3
   const { cases, add: row } = caseTable('M3')
   const C = { choice: 'M3 Choice', stage: 'M3 Stage', labels: 'M3 Labels', colors: 'M3 Colors', areas: '<Areas>' }
@@ -731,7 +731,6 @@ async function group3(cdp, pid) {
     }
     await escapeAll(cdp)
     pin(G, u.decision, `${u.name}: the gesture writes ${show(u.want)}`, await wrote(u.rel, u.want), show(blockOf(u.rel)))
-    await activate(cdp, pid)
     await pressKey(cdp, 'z', META)
     pin(G, u.decision, `${u.name}: undo puts back what the file held`, await wrote(u.rel, u.held), show(blockOf(u.rel)))
   }
@@ -1306,23 +1305,6 @@ const trigger = (label) => `document.querySelector('button[aria-label="${label}"
 const dialogUp = (cdp) => cdp.evaluate(`!!${DIALOG}`)
 const dialogButton = (cancel) => `[...${DIALOG}.querySelectorAll('button')].find((b) => (b.textContent.trim() === 'Cancel') === ${cancel})`
 
-/** Opens the native context menu on `expr` and chooses `label` by keystrokes, answering the menu's rows. */
-async function nativeChoose(cdp, pid, expr, label) {
-  await activate(cdp, pid)
-  await mouseAt(cdp, await boxOf(cdp, expr), { button: 'right' })
-  await sleep(700)
-  const rows = nativeMenu(pid).filter((n) => n && n !== 'missing value')
-  const at = rows.indexOf(label)
-  if (at < 0) {
-    key(KEY.esc)
-    await sleep(400)
-    return rows
-  }
-  for (let i = 0; i <= at; i++) key(KEY.down)
-  key(KEY.ret)
-  await sleep(900)
-  return rows
-}
 async function openSettings(cdp, frame) {
   if (!(await cdp.evaluate(`!!document.querySelector('.settings-rail')`))) await mouseClick(cdp, ribbon('Settings'))
   await until('the Settings window', () => cdp.evaluate(`!!document.querySelector('.settings-rail')`))
@@ -1368,7 +1350,7 @@ async function pickFormat(cdp, row, format, { confirm = true } = {}) {
 const askedFor = (asked, n) =>
   !!asked.asked && asked.message === COPY.theFormatChangesConfirmation(itemCount(n))
 
-async function group9(cdp, pid) {
+async function group9(cdp) {
   const G = 9
   const words = [pageAt('M9 Words 1'), pageAt('M9 Words 2')]
   const single = pageAt('M9 Single 1')
@@ -1461,14 +1443,14 @@ async function group9(cdp, pid) {
 
   await openEditor(cdp, 'M9 Labels')
   const spareRow = `[...document.querySelectorAll('[data-line-row]')].find((r) => r.textContent.trim() === 'Spare' && r.querySelector('[aria-label="Edit Option"]'))`
-  await chooseNative(cdp, pid, spareRow, { downs: 3 })
+  await chooseNative(cdp, spareRow, 'Clear')
   pin(G, 'F-4', 'Clear over no Items asks nothing', await holds(async () => !(await dialogUp(cdp)), 1500))
   await escapeAll(cdp)
 
   // The Trash: a page restored through the Trash browser returns in the current spelling.
   await openSettings(cdp, 'Trash')
   const trashRow = `[...document.querySelectorAll('.trash-row')].find((r) => r.textContent.includes('M9 Trashed'))`
-  const menu = await nativeChoose(cdp, pid, trashRow, 'Restore')
+  const { rows: menu } = await chooseNative(cdp, trashRow, 'Restore')
   pin(G, 'G-1', "a page restored from the Trash browser returns under the Label Format set while it was away",
     menu.includes('Restore') && (await wrote(trashed, 'm9 words: back')), show([menu, blockOf(trashed)]))
   await closeSettings(cdp)
@@ -1503,18 +1485,16 @@ async function group9(cdp, pid) {
 
 let cdp
 try {
-  const app = await launch(PORT, 'metadata-drive-shots')
-  cdp = app.cdp
-  const { pid } = app
+  cdp = (await launch(PORT, 'metadata-drive-shots')).cdp
   if (GROUPS.has(1)) await group1(cdp)
   if (GROUPS.has(2)) await group2(cdp)
-  if (GROUPS.has(3)) await group3(cdp, pid)
+  if (GROUPS.has(3)) await group3(cdp)
   if (GROUPS.has(4)) await group4(cdp)
   if (GROUPS.has(5)) await group5(cdp)
   if (GROUPS.has(6)) await group6(cdp)
   if (GROUPS.has(7)) await group7(cdp)
   if (GROUPS.has(8)) await group8(cdp)
-  if (GROUPS.has(9)) await group9(cdp, pid)
+  if (GROUPS.has(9)) await group9(cdp)
   cdp.close()
 } catch (e) {
   check('the drive ran to its end', false, String(e?.stack ?? e))

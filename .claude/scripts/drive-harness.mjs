@@ -10,7 +10,7 @@ import { parse } from 'yaml'
 export const REPO = process.env.POMMORA_DRIVE_REPO ?? join(homedir(), 'The Studio/Projects/Project Pommora')
 export const NEXUS = join(homedir(), 'Test')
 const ELECTRON = join(REPO, 'node_modules/electron/dist/Electron.app/Contents/MacOS/Electron')
-let port, shotsDir, backup, userData, child
+let port, shotsDir, backup, userData, child, main
 
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 export async function until(what, fn, ms = 15000) {
@@ -33,22 +33,36 @@ export async function holds(fn, ms = 6000) {
   return true
 }
 
+// One DevTools-protocol socket: the window's page or the main process's inspector. `event` answers the next event of a method.
+async function session(url) {
+  const ws = new WebSocket(url)
+  await new Promise((ok, fail) => { ws.onopen = ok; ws.onerror = fail })
+  const pending = new Map(); const waiting = new Map(); let next = 0
+  ws.onmessage = (m) => {
+    const { id, method, result, error } = JSON.parse(m.data)
+    if (method) {
+      waiting.get(method)?.()
+      waiting.delete(method)
+      return
+    }
+    pending.get(id)?.(error ? Promise.reject(new Error(error.message)) : result); pending.delete(id)
+  }
+  const send = (method, params = {}) => new Promise((r) => { pending.set(++next, r); ws.send(JSON.stringify({ id: next, method, params })) })
+  const event = (method) => new Promise((r) => waiting.set(method, r))
+  const evaluate = async (expression, extra = {}) => {
+    const { result, exceptionDetails } = await send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true, ...extra })
+    if (exceptionDetails) throw new Error(exceptionDetails.exception?.description ?? exceptionDetails.text)
+    return result.value
+  }
+  return { send, event, evaluate, close: () => ws.close() }
+}
+
 async function connect(urls = ['app://']) {
   const target = await until('the app window', async () => {
     const list = await (await fetch(`http://127.0.0.1:${port}/json/list`)).json()
     return list.find((t) => t.type === 'page' && urls.some((u) => t.url.startsWith(u)))
   }, 30000)
-  const ws = new WebSocket(target.webSocketDebuggerUrl)
-  await new Promise((ok, fail) => { ws.onopen = ok; ws.onerror = fail })
-  const pending = new Map(); let next = 0
-  ws.onmessage = (m) => { const { id, result, error } = JSON.parse(m.data); pending.get(id)?.(error ? Promise.reject(new Error(error.message)) : result); pending.delete(id) }
-  const send = (method, params = {}) => new Promise((r) => { pending.set(++next, r); ws.send(JSON.stringify({ id: next, method, params })) })
-  const evaluate = async (expression) => {
-    const { result, exceptionDetails } = await send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true })
-    if (exceptionDetails) throw new Error(exceptionDetails.exception?.description ?? exceptionDetails.text)
-    return result.value
-  }
-  return { send, evaluate, close: () => ws.close() }
+  return session(target.webSocketDebuggerUrl)
 }
 export const ask = (cdp, channel, ...args) => cdp.evaluate(`window.nexus.ask(${JSON.stringify(channel)}, ...${JSON.stringify(args)})`)
 export const must = async (what, reply) => {
@@ -60,18 +74,75 @@ export const must = async (what, reply) => {
 export const results = []
 export const check = (name, pass, detail) => { results.push({ name, pass: !!pass }); console.log(`${pass ? 'PASS' : 'FAIL'}  ${name}${!pass && detail ? `\n      ${detail}` : ''}`) }
 
-// ── Native input ────────────────────────────────────────────────────────────
+// ── The main process ────────────────────────────────────────────────────────
 
-export const osa = (script) => execFileSync('osascript', ['-e', script], { encoding: 'utf8' }).trim()
-export const key = (code) => osa(`tell application "System Events" to key code ${code}`)
-export const KEY = { down: 125, right: 124, ret: 36, esc: 53 }
+// Installed through the inspector before the app's first line runs: a window shows without activating the app, and a native menu is recorded rather than drawn, its rows read and chosen from here.
+const PATCHES = `(() => {
+  const { app, BrowserWindow, Menu } = require('electron')
+  // Click-through as well, so a press meant for the app behind never lands on it and activates it; the drive's input reaches the page through DevTools either way.
+  BrowserWindow.prototype.show = function () {
+    this.setIgnoreMouseEvents(true)
+    this.showInactive()
+  }
+  BrowserWindow.prototype.focus = function () {}
+  BrowserWindow.prototype.moveTop = function () {}
+  app.focus = () => {}
+  const rowsOf = (menu) => menu.items.filter((i) => i.visible).map((i) =>
+    i.type === 'separator' ? { separator: true } : { label: i.label, enabled: i.enabled, ...(i.submenu && { submenu: rowsOf(i.submenu) }) })
+  const itemAt = (menu, path) => path.reduce((item, label) => item?.submenu?.items.find((i) => i.visible && i.type !== 'separator' && i.label === label), { submenu: menu })
+  const drive = { popup: null, seq: 0 }
+  Menu.prototype.popup = function (options = {}) {
+    drive.popup = { menu: this, options }
+    drive.seq++
+  }
+  drive.rows = () => (drive.popup ? rowsOf(drive.popup.menu) : null)
+  // The row's own click with the window the popup named, then the popup's close, as a chosen row runs; an empty or unmatched path only closes it.
+  drive.choose = (path) => {
+    if (!drive.popup) return false
+    const { menu, options } = drive.popup
+    drive.popup = null
+    const item = path.length ? itemAt(menu, path) : null
+    const chosen = !!item && item.enabled && !item.submenu
+    const win = options.window ?? BrowserWindow.getAllWindows()[0]
+    if (chosen) item.click({ triggeredByAccelerator: false, shiftKey: false, ctrlKey: false, altKey: false, metaKey: false }, win, win.webContents)
+    options.callback?.()
+    return chosen
+  }
+  globalThis.__drive = drive
+})()`
 
-export async function activate(cdp, pid) {
-  osa(`tell application "System Events" to set frontmost of (first process whose unix id is ${pid}) to true`)
-  await cdp.send('Page.bringToFront')
-  await sleep(300)
-  const front = osa(`tell application "System Events" to get frontmost of (first process whose unix id is ${pid})`)
-  if (front !== 'true') throw new Error('The app is not frontmost; no keystroke was sent.')
+/** Pauses the launched main process on its inspector, installs the patches before any app code runs, and keeps the line for the menu calls. */
+async function attachMain(inspectPort) {
+  const target = await until('the main inspector', async () => (await (await fetch(`http://127.0.0.1:${inspectPort}/json/list`)).json())[0], 15000)
+  const line = await session(target.webSocketDebuggerUrl)
+  const paused = line.event('Debugger.paused')
+  await line.send('Debugger.enable')
+  await line.send('Runtime.runIfWaitingForDebugger')
+  await paused
+  // A paused process runs no microtasks, so nothing here awaits a promise.
+  await line.evaluate(PATCHES, { includeCommandLineAPI: true, awaitPromise: false })
+  await line.send('Debugger.resume')
+  await line.send('Debugger.disable')
+  return line
+}
+
+// A freshly popped menu's rows: each visible item as { label, enabled, submenu? } or { separator }, answering null when no menu pops.
+export async function popNative(cdp, at) {
+  const seq = await main.evaluate('__drive.seq')
+  await mouseAt(cdp, at, { button: 'right', settle: 0 })
+  return until('the native menu', () => main.evaluate(`__drive.seq > ${seq} && __drive.rows()`), 3000).catch(() => null)
+}
+/** Chooses the row a path of labels names in the menu now up, or closes it when the path is empty or names no enabled row, answering whether one was chosen. */
+export const pickNative = (path) => main.evaluate(`__drive.choose(${JSON.stringify(path)})`)
+export const labels = (rows) => (rows ?? []).filter((r) => !r.separator).map((r) => r.label)
+
+/** Pops `expr`'s native menu and chooses `path`, answering the menu's top-level labels, disabled rows among them. `edge` presses the element's leading padding, so a link inside it is never the target. */
+export async function chooseNative(cdp, expr, path, { edge = false } = {}) {
+  const box = await boxOf(cdp, expr)
+  const rows = await popNative(cdp, edge ? { x: box.left + 4, y: box.y } : box)
+  const chosen = rows !== null && (await pickNative([path].flat()))
+  await sleep(800)
+  return { rows: labels(rows), chosen }
 }
 
 export const sel = (css) => `document.querySelector(${JSON.stringify(css)})`
@@ -120,37 +191,6 @@ export const hover = async (cdp, expr, dwell = 600) => {
   await sleep(dwell)
 }
 
-// A freshly popped native menu highlights nothing: the first Down lands on row 1. `seen` runs while the menu is up.
-// `edge` presses the element's leading padding, so a link inside it is never the target.
-export async function chooseNative(cdp, pid, expr, { downs, into = [], seen, edge = false }) {
-  await activate(cdp, pid)
-  const box = await boxOf(cdp, expr)
-  await mouseAt(cdp, edge ? { x: box.left + 4, y: box.y } : box, { button: 'right' })
-  await sleep(700)
-  try {
-    if (seen) await seen()
-    for (let i = 0; i < downs; i++) key(KEY.down)
-    for (const d of into) {
-      key(KEY.right)
-      for (let i = 0; i < d; i++) key(KEY.down)
-    }
-    key(KEY.ret)
-  } catch (e) {
-    key(KEY.esc)
-    throw e
-  }
-  await sleep(800)
-}
-
-// The items of the native menu now up, read from the app's window; empty when none is.
-export const nativeMenu = (pid) => {
-  try {
-    return osa(`tell application "System Events" to tell (first process whose unix id is ${pid}) to get name of every menu item of every menu of UI element 1`).split(', ')
-  } catch {
-    return []
-  }
-}
-
 export const click = (cdp, expr) => cdp.evaluate(`(${expr}).click()`)
 
 const VK = { Enter: 13, Escape: 27, Tab: 9, Backspace: 8, b: 66, z: 90, ArrowDown: 40, ArrowUp: 38, ' ': 32 }
@@ -164,13 +204,10 @@ export const META = 4
 export const typeText = (cdp, text) => cdp.send('Input.insertText', { text })
 
 let shots = 0
-const shotPath = (name) => join(shotsDir, `${String(++shots).padStart(2, '0')}-${name}.png`)
 export async function shot(cdp, name) {
   const { data } = await cdp.send('Page.captureScreenshot', { format: 'png' })
-  writeFileSync(shotPath(name), Buffer.from(data, 'base64'))
+  writeFileSync(join(shotsDir, `${String(++shots).padStart(2, '0')}-${name}.png`), Buffer.from(data, 'base64'))
 }
-// A native menu draws outside the web contents, so it is captured from the screen.
-export const screenShot = (name) => execFileSync('screencapture', ['-x', shotPath(name)])
 
 // ── The Nexus on disk ───────────────────────────────────────────────────────
 
@@ -262,7 +299,7 @@ export const refusal = (cdp) => cdp.evaluate(`document.querySelector('[role="ale
 const clock = () => performance.timeOrigin + performance.now()
 const round = (ms) => Math.round(ms * 10) / 10
 
-// Its own thread, so a System Events call blocking this one never stalls the poll. A directory reads as its `.json` files together, which leaves an atomic write's temp file out.
+// Its own thread, so work blocking this one never stalls the poll. A directory reads as its `.json` files together, which leaves an atomic write's temp file out.
 const WATCHER = `
 const { parentPort, workerData } = require('node:worker_threads')
 const { readdirSync, readFileSync, statSync } = require('node:fs')
@@ -460,13 +497,36 @@ export async function launch(debugPort, shotsName) {
   writeFileSync(join(userData, 'pommora.json'), JSON.stringify({ lastNexusPath: NEXUS }))
   mkdirSync(shotsDir, { recursive: true })
   process.once('SIGINT', () => restore().then(() => process.exit(130)))
+  return { cdp: await start() }
+}
+
+// The window never activates the app, so Chromium is told to keep a window that isn't frontmost, or is covered, running as one that is, and the page reads as focused.
+const FOREGROUND = ['--disable-backgrounding-occluded-windows', '--disable-renderer-backgrounding', '--disable-background-timer-throttling']
+async function start() {
   const env = { ...process.env, POMMORA_USERDATA: userData, POMMORA_DEBUG_PORT: String(port) }
   delete env.ELECTRON_RUN_AS_NODE; delete env.ELECTRON_RENDERER_URL
-  child = spawn(ELECTRON, ['.'], { cwd: join(REPO, 'Desktop'), env, stdio: 'ignore' })
+  child = spawn(ELECTRON, [`--inspect-brk=${port + 1}`, ...FOREGROUND, '.'], { cwd: join(REPO, 'Desktop'), env, stdio: 'ignore' })
+  main = await attachMain(port + 1)
   const cdp = await connect()
+  await cdp.send('Emulation.setFocusEmulationEnabled', { enabled: true })
   await until('the sidebar', () => cdp.evaluate(`!!document.querySelector('.row span')`), 30000)
   await sleep(3000)
-  return { cdp, pid: child.pid }
+  return cdp
+}
+async function quit() {
+  main?.close()
+  if (!child || child.exitCode !== null) return
+  child.kill('SIGTERM')
+  await Promise.race([new Promise((r) => child.once('exit', r)), sleep(8000)])
+  if (child.exitCode === null) child.kill('SIGKILL')
+}
+
+/** Quits the app, runs `closed` while nothing holds the Nexus, and opens the build again on the same userData, answering the new window. */
+export async function relaunch(cdp, closed) {
+  cdp.close()
+  await quit()
+  await closed()
+  return start()
 }
 
 /** Attaches to an instance already listening on `debugPort`, built or the dev instance the Vite server serves, with no build, backup, or launch. */
@@ -478,11 +538,7 @@ export async function attach(debugPort) {
 // A build that failed before the backup leaves nothing to restore.
 export async function restore() {
   if (!backup) return
-  if (child) {
-    child.kill('SIGTERM')
-    await Promise.race([new Promise((r) => child.once('exit', r)), sleep(8000)])
-    if (child.exitCode === null) child.kill('SIGKILL')
-  }
+  await quit()
   sweepStrays()
   execFileSync('rsync', ['-a', '--delete', join(backup, 'Test') + '/', NEXUS + '/'])
   rmSync(backup, { recursive: true, force: true })

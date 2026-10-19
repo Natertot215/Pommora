@@ -1,12 +1,12 @@
-import { execFileSync, spawn } from 'node:child_process'
-import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync, cpSync } from 'node:fs'
+import { execFileSync } from 'node:child_process'
+import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, statSync, writeFileSync, cpSync } from 'node:fs'
 import { homedir, tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { parse } from 'yaml'
 import {
-  activate, ask, attach, blurField, boxOf, chooseNative, click, closePanel, escapeAll, field, fieldValue, FM, KEY, key, launch, META,
-  measure, mintPageId, mouseAt, mouseClick, must, NEXUS, nativeMenu, openField, openPane, openPanel, PAGE_VIEW, PANE, PANE_VIEW,
-  portalOpen, pressKey, refusal, REPO, restore, results, selectField, settles, SHIFT, shot, sleep, typeText, until,
+  ask, boxOf, chooseNative, click, closePanel, escapeAll, field, fieldValue, FM, launch, META,
+  measure, mintPageId, mouseAt, mouseClick, must, NEXUS, openPane, openPanel, PAGE_VIEW, PANE_VIEW,
+  pressKey, refusal, relaunch, restore, results, selectField, settles, SHIFT, shot, sleep, typeText, until,
 } from '../drive-harness.mjs'
 
 const PORT = 9383
@@ -285,25 +285,6 @@ const FIELD_LINE = `document.querySelector('.value-field .cm-line')`
 const linkEl = (scope, text) =>
   `[...(${scope}).querySelectorAll('.md-connection-resolved, .md-connection-ambiguous, .md-connection-phantom')].find((e) => e.textContent.includes(${JSON.stringify(text)}))`
 
-// The native menu's rows read from System Events; `downs` is the target's place among the rows a Down lands on.
-async function menuChoose(cdp, pid, expr, label) {
-  let rows = []
-  await activate(cdp, pid)
-  const box = await boxOf(cdp, expr)
-  await mouseAt(cdp, box, { button: 'right' })
-  await sleep(700)
-  rows = nativeMenu(pid).filter((n) => n && n !== 'missing value')
-  const at = rows.indexOf(label)
-  if (at < 0) {
-    key(KEY.esc)
-    await sleep(400)
-    return { rows, chosen: false }
-  }
-  for (let i = 0; i <= at; i++) key(KEY.down)
-  key(KEY.ret)
-  await sleep(800)
-  return { rows, chosen: true }
-}
 // A press past the value's end, so a Link value, which is a link through and through, opens its field rather than following.
 async function openValue(cdp, expr) {
   const box = await boxOf(cdp, expr)
@@ -327,7 +308,7 @@ const aliasesOf = (rel) => shards().map((s) => s.pages?.[ids[rel]]).find(Boolean
 
 // ── Group 1 — the read path (Phase 1) ───────────────────────────────────────
 
-async function group1(cdp, pid) {
+async function group1(cdp) {
   await home(cdp)
 
   // The page body, every case resting, then the folder's reveal with the caret.
@@ -496,17 +477,17 @@ async function group1(cdp, pid) {
   // The link menu on a path link in a body: Edit Title, Copy Link, Remove Link; and the Connection format off.
   await openRow(cdp, MENU)
   const target = linkEl(`${PAGE_VIEW}.contentDOM`, 'Notes')
-  const edit = await menuChoose(cdp, pid, target, 'Edit Title')
+  const edit = await chooseNative(cdp, target, 'Edit Title')
   const selected = await cdp.evaluate(`(() => { const v = ${PAGE_VIEW}; const s = v.state.selection.main; return v.state.doc.sliceString(s.from, s.to) })()`)
   item(1, 1, 'B-1', "link menu: Edit Title selects a path link's whole page half", edit.chosen && selected === 'Collection A/Set Alpha/Notes', show({ rows: edit.rows, selected }))
   await cdp.evaluate(`(() => { const v = ${PAGE_VIEW}; v.dispatch({ selection: { anchor: v.state.doc.length } }) })()`)
   await sleep(300)
   const clip = execFileSync('pbpaste', { encoding: 'utf8' })
-  const copy = await menuChoose(cdp, pid, linkEl(`${PAGE_VIEW}.contentDOM`, 'Notes'), 'Copy Link')
+  const copy = await chooseNative(cdp, linkEl(`${PAGE_VIEW}.contentDOM`, 'Notes'), 'Copy Link')
   const copied = (await ask(cdp, 'clipboard:read')).value
   execFileSync('pbcopy', { input: clip })
   item(1, 3, 'A-2', 'link menu: Copy Link on a path link to a shared title copies its full path ([[Collection A/Set Alpha/Notes|Notes]])', copy.chosen && copied === '[[Collection A/Set Alpha/Notes|Notes]]', show({ rows: copy.rows, copied }))
-  const remove = await menuChoose(cdp, pid, linkEl(`${PAGE_VIEW}.contentDOM`, 'Notes'), 'Remove Link')
+  const remove = await chooseNative(cdp, linkEl(`${PAGE_VIEW}.contentDOM`, 'Notes'), 'Remove Link')
   item(1, 1, 'B-1', 'link menu: Remove Link on a path link leaves its title, Notes', remove.chosen && (await settles(async () => bodyOf(MENU) === 'see Notes here\n', 3000)), show(bodyOf(MENU)))
   await cdp.evaluate(`(() => { const v = ${PAGE_VIEW}; v.dispatch({ changes: { from: 0, to: v.state.doc.length, insert: 'see [[Collection A/Set Alpha/Notes]] here\\n' } }) })()`)
   await settles(async () => bodyOf(MENU).includes('[['), 3000)
@@ -635,7 +616,7 @@ async function group2(cdp) {
 const WRITER = page(A_ALPHA, 'PL Writer')
 const HASH_OUT = 'Collection A/Set #Out/Hashed.md'
 
-async function group3(cdp, pid) {
+async function group3(cdp) {
   await createAt(cdp, A_ALPHA, 'PL Writer')
   await createAt(cdp, A_ALPHA, 'Hashed')
   writeOutside(HASH_OUT, '')
@@ -720,7 +701,7 @@ async function group3(cdp, pid) {
   clip.save()
   for (const [rel, want, phase] of [[NOTES_A, '[[Collection A/Set Alpha/Notes|Notes]]', 3], [SOLO, '[[Solo]]', 3]]) {
     await cdp.evaluate(`(${rowOf(rel)}).scrollIntoView({ block: 'center' })`)
-    const r = await menuChoose(cdp, pid, `${rowOf(rel)}.querySelector('.cell-title-text')`, 'Copy Link')
+    const r = await chooseNative(cdp, `${rowOf(rel)}.querySelector('.cell-title-text')`, 'Copy Link')
     const copied = (await ask(cdp, 'clipboard:read')).value
     item(3, phase, 'A-2', `page menu: Copy Link on ${rel} copies ${want}`, r.chosen && copied === want, show({ rows: r.rows, copied }))
   }
@@ -729,14 +710,14 @@ async function group3(cdp, pid) {
   if (hashRow) {
     await cdp.evaluate(`(${rowOf(HASH_OUT)}).scrollIntoView({ block: 'center' })`)
     await sleep(300)
-    const r = await menuChoose(cdp, pid, `${rowOf(HASH_OUT)}.querySelector('.cell-title-text')`, 'Copy Link')
+    const r = await chooseNative(cdp, `${rowOf(HASH_OUT)}.querySelector('.cell-title-text')`, 'Copy Link')
     const copied = (await ask(cdp, 'clipboard:read')).value
     item(3, 3, 'A-6', 'page menu: Copy Link on a shared title whose folder holds # falls back to the markdown form', r.chosen && copied === '[Hashed](Collection%20A/Set%20%23Out/Hashed)', show({ rows: r.rows, copied }))
   } else pending(3, 3, 'A-6', 'Copy Link on a page whose folder holds #', 'the Finder-made "Set #Out" page drew no row to open its menu on')
   clip.restore()
 
   const row2 = page(A_ALPHA, 'PL Row 2')
-  const r = await menuChoose(cdp, pid, linkEl(cellOf(row2, LINK), 'Notes'), 'Rename')
+  const r = await chooseNative(cdp, linkEl(cellOf(row2, LINK), 'Notes'), 'Rename')
   await sleep(500)
   const full = await cdp.evaluate(`(() => { const c = ${cellOf(row2, LINK)}; return c ? (${DRAWN})(c, '') : null })()`)
   item(3, 3, 'A-7', 'Show Full Link: a Link value [[Collection A/Set Alpha/Notes|Notes]] shown in full keeps its path and reads resolved', r.chosen && full?.states[0] === 'resolved', show({ rows: r.rows, full }))
@@ -807,7 +788,7 @@ async function group4(cdp) {
 
 // ── Group 5 — the click rule (Phase 5) ──────────────────────────────────────
 
-async function group5(cdp, pid) {
+async function group5(cdp) {
   const CLICK = await createAt(cdp, A_ALPHA, 'PL Click')
   const CLICK_TEXT = await createAt(cdp, A_ALPHA, 'PL Click Text', { [props[TEXT]]: { kind: 'text', value: 'see [[Nowhere|x]]' } })
   const CLICK_LINK = await createAt(cdp, A_ALPHA, 'PL Click Link', { [props[LINK]]: { kind: 'link', value: '[[Notes|Shared]]' } })
@@ -872,7 +853,7 @@ async function group5(cdp, pid) {
   await pressKey(cdp, 'Escape')
   await home(cdp)
   const row3 = page(A_ALPHA, 'PL Row 3')
-  const edit = await menuChoose(cdp, pid, linkEl(cellOf(row3, LINK), 'Notes'), 'Edit Title')
+  const edit = await chooseNative(cdp, linkEl(cellOf(row3, LINK), 'Notes'), 'Edit Title')
   const ef = await settles(() => cdp.evaluate(`!!(${field})`), 3000)
   const picked = ef ? await cdp.evaluate(`(() => { const v = (${field}).cmTile.root.view; const s = v.state.selection.main; return v.state.doc.sliceString(s.from, s.to) })()`) : null
   item(5, 5, 'C-4', 'Link value: Edit Title opens the field with the target selected', edit.chosen && picked === 'Set Beta/Notes', show({ rows: edit.rows, picked }))
@@ -984,7 +965,6 @@ async function group6(cdp) {
 
 // ── Group 7 — the outside-move lane (Phase 7) ───────────────────────────────
 
-let second = null
 async function group7(cdp) {
   await must('Set G7', ask(cdp, 'mutate', { op: 'createContainer', id: containerId(), parentPath: 'Collection A', kind: 'set', name: 'Set G7' }))
   for (const [title, parent] of [['G7 Target'], ['G7 Folder Page', 'Collection B/Set Beta'], ['G7 Copy', 'Collection A/Set G7'], ['G7 Lone'], ['G7 Closed']])
@@ -1025,22 +1005,14 @@ async function group7(cdp) {
 }
 
 /** Quits the app, renames a page while it's closed, and reopens it on the same userData, answering the new connection. */
-async function closedMove(cdp, pid, HOLDER) {
-  const ud = readdirSync(tmpdir()).filter((n) => n.startsWith('pommora-drive-')).map((n) => join(tmpdir(), n, 'ud')).filter(existsSync)
-    .sort((a, b) => statSync(b).mtimeMs - statSync(a).mtimeMs)[0]
-  cdp.close()
-  process.kill(pid, 'SIGTERM')
-  await until('the app to quit', async () => { try { process.kill(pid, 0); return false } catch { return true } }, 15000)
-  await sleep(1000)
-  renameSync(abs(page(A_ALPHA, 'G7 Closed')), abs(page(A_ALPHA, 'G7 Closed Moved')))
-  const env = { ...process.env, POMMORA_USERDATA: ud, POMMORA_DEBUG_PORT: String(PORT) }
-  delete env.ELECTRON_RUN_AS_NODE; delete env.ELECTRON_RENDERER_URL
-  second = spawn(join(REPO, 'node_modules/electron/dist/Electron.app/Contents/MacOS/Electron'), ['.'], { cwd: join(REPO, 'Desktop'), env, stdio: 'ignore' })
-  const next = (await attach(PORT)).cdp
-  await until('the sidebar', () => next.evaluate(`!!document.querySelector('.row span')`), 30000)
+async function closedMove(cdp, HOLDER) {
+  const next = await relaunch(cdp, async () => {
+    await sleep(1000)
+    renameSync(abs(page(A_ALPHA, 'G7 Closed')), abs(page(A_ALPHA, 'G7 Closed Moved')))
+  })
   await settles(async () => lineOf(HOLDER, 'o06') !== '[[G7 Closed]]', 12000)
   item(7, 7, 'E-4', 'closed-app rename: [[G7 Closed]] follows to [[G7 Closed Moved]] on the next open', lineOf(HOLDER, 'o06') === '[[G7 Closed Moved]]', show(lineOf(HOLDER, 'o06')))
-  return { cdp: next, pid: second.pid }
+  return next
 }
 
 // ── Group 8 — the Trash (Phase 8) ───────────────────────────────────────────
@@ -1248,21 +1220,19 @@ async function scale(cdp) {
 
 let cdp
 try {
-  const app = await launch(PORT, 'path-links-shots')
-  cdp = app.cdp
-  let pid = app.pid
+  cdp = (await launch(PORT, 'path-links-shots')).cdp
   if (GROUPS.size) await seed(cdp)
-  if (GROUPS.has(1)) await group1(cdp, pid)
+  if (GROUPS.has(1)) await group1(cdp)
   if (GROUPS.has(2)) await group2(cdp)
-  if (GROUPS.has(3)) await group3(cdp, pid)
+  if (GROUPS.has(3)) await group3(cdp)
   if (GROUPS.has(4)) await group4(cdp)
-  if (GROUPS.has(5)) await group5(cdp, pid)
+  if (GROUPS.has(5)) await group5(cdp)
   if (GROUPS.has(6)) await group6(cdp)
   if (GROUPS.has(8)) await group8(cdp)
   // The outside lane runs last: its closed-app item quits and reopens the app.
   if (GROUPS.has(7)) {
     const holder = await group7(cdp)
-    ;({ cdp, pid } = await closedMove(cdp, pid, holder))
+    cdp = await closedMove(cdp, holder)
   }
   if (SCALE) await scale(cdp)
   cdp.close()
@@ -1273,7 +1243,6 @@ try {
     console.log(await cdp.evaluate(`JSON.stringify({ tab: document.querySelector('[role=tab][aria-selected=true]')?.title, text: document.body.innerText.slice(0, 400) })`).catch((err) => String(err)))
   }
 } finally {
-  if (second) second.kill('SIGKILL')
   await restore()
 }
 const count = (f) => ledger.filter(f).length

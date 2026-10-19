@@ -76,11 +76,11 @@ async function newOption(cdp, title) {
   if (title) await cdp.send('Input.insertText', { text: title })
 }
 
-async function proveNativeMenu(cdp, pid) {
+async function proveNativeMenu(cdp) {
   await openCellPicker(cdp, 'Drive One', 'Drive Select')
   await shot(cdp, 'table-picker-standard')
-  await chooseNative(cdp, pid, pickerRow('Alpha'), { downs: 2 })
-  if (!(await popupOpen(cdp))) throw new Error('The native menu did not reach Edit Option; the terminal needs Accessibility permission.')
+  await chooseNative(cdp, pickerRow('Alpha'), 'Edit Option')
+  if (!(await popupOpen(cdp))) throw new Error('The native menu did not reach Edit Option.')
   check('the native menu reaches Edit Option', true)
   await shot(cdp, 'table-popup-over-picker')
   await pressKey(cdp, 'Escape')
@@ -122,8 +122,8 @@ async function stepDragReorder(cdp) {
   await shot(cdp, 'table-reordered')
 }
 
-async function stepStyleCompact(cdp, pid) {
-  await chooseNative(cdp, pid, pickerRow('Alpha'), { downs: 1, into: [1] })
+async function stepStyleCompact(cdp) {
+  await chooseNative(cdp, pickerRow('Alpha'), ['Style', 'Compact'])
   await sleep(800)
   check('Style ▸ Compact lands in the view sidecar', driveView().column_styles?.[ids['Drive Select']]?.look === 'compact', JSON.stringify(driveView().column_styles))
   await openCellPicker(cdp, 'Drive One', 'Drive Select')
@@ -131,14 +131,14 @@ async function stepStyleCompact(cdp, pid) {
   await newOption(cdp, 'Compact')
   await shot(cdp, 'draft-compact')
   await pressKey(cdp, 'Escape')
-  await chooseNative(cdp, pid, `document.querySelectorAll(${JSON.stringify(PICKER_ROWS)})[1]`, { downs: 1, into: [0] })
+  await chooseNative(cdp, `document.querySelectorAll(${JSON.stringify(PICKER_ROWS)})[1]`, ['Style', 'Standard'])
   await sleep(800)
   check('Style ▸ Standard lands in the view sidecar', driveView().column_styles?.[ids['Drive Select']]?.look === undefined, JSON.stringify(driveView().column_styles))
 }
 
-async function stepEditOption(cdp, pid) {
+async function stepEditOption(cdp) {
   await openCellPicker(cdp, 'Drive One', 'Drive Select')
-  await chooseNative(cdp, pid, pickerRow('Beta'), { downs: 2 })
+  await chooseNative(cdp, pickerRow('Beta'), 'Edit Option')
   await retitle(cdp, 'Gamma')
   check('popup rename: the registry and Drive Two read Gamma', optionValues('Drive Select').includes('Gamma') && lists('Drive Two', 'Drive Select', 'Gamma'), JSON.stringify(optionValues('Drive Select')))
   check('popup rename: the popup stays open on Gamma', (await popupOpen(cdp)) && (await cdp.evaluate(`${sel(TITLE_FIELD)}.value`)) === 'Gamma')
@@ -159,18 +159,18 @@ async function stepEditOption(cdp, pid) {
 }
 
 const confirmButton = (action) => `[...document.querySelectorAll('button')].find((b) => b.textContent.trim() === ${JSON.stringify(action)} && b.closest('[aria-label]')?.getAttribute('aria-label').startsWith(${JSON.stringify(action)}))`
-async function stepClearRemove(cdp, pid) {
+async function stepClearRemove(cdp) {
   const r = await ask(cdp, 'mutate', { op: 'setProperty', path: 'Collection A/Set Alpha/Drive Two.md', propertyId: ids['Drive Select'], value: { kind: 'select', value: 'Alpha' } })
   check('clear: Drive Two holds Alpha', r.ok && lists('Drive Two', 'Drive Select', 'Alpha'), JSON.stringify(r))
   await openEditor(cdp, 'Drive Select')
   const alphaRow = `[...document.querySelectorAll('[data-line-row]')].find((r) => r.textContent.trim() === 'Alpha' && r.querySelector('[aria-label="Edit Option"]'))`
-  await chooseNative(cdp, pid, alphaRow, { downs: 3 })
+  await chooseNative(cdp, alphaRow, 'Clear')
   check('Clear asks, naming the one Item holding Alpha', await cdp.evaluate(`document.body.innerText.includes('Clear “Alpha” from 1 Item?')`))
   await shot(cdp, 'editor-clear-confirm')
   await click(cdp, confirmButton('Clear'))
   await sleep(1000)
   check('Clear strips Alpha from every page and keeps the option', !lists('Drive Two', 'Drive Select', 'Alpha') && optionValues('Drive Select').includes('Alpha'))
-  await chooseNative(cdp, pid, alphaRow, { downs: 4 })
+  await chooseNative(cdp, alphaRow, 'Remove')
   check('Remove asks, naming no Item', await cdp.evaluate(`document.body.innerText.includes('stripped from 0 Items.')`))
   await click(cdp, confirmButton('Remove'))
   await sleep(1000)
@@ -179,37 +179,37 @@ async function stepClearRemove(cdp, pid) {
   await pressKey(cdp, 'Escape')
 }
 
-async function surfaceCreateDragMenu(cdp, pid, tag, title, { editOptionDowns }) {
+async function surfaceCreateDragMenu(cdp, tag, title) {
   await newOption(cdp, title)
   await enter(cdp)
   check(`${tag}: ${title} is appended and assigned nowhere`, optionValues('Drive Select').at(-1) === title && !lists('Drive One', 'Drive Select', title) && !lists('Drive Two', 'Drive Select', title), JSON.stringify(optionValues('Drive Select')))
   await drag(cdp, pickerRow(title), `document.querySelectorAll(${JSON.stringify(PICKER_ROWS)})[0]`)
   check(`${tag}: ${title} drags to the top`, optionValues('Drive Select')[0] === title, JSON.stringify(optionValues('Drive Select')))
-  await chooseNative(cdp, pid, pickerRow(title), { downs: editOptionDowns })
+  await chooseNative(cdp, pickerRow(title), 'Edit Option')
   check(`${tag}: Edit Option opens the popup`, await popupOpen(cdp))
   await shot(cdp, `${tag}-popup`)
   await pressKey(cdp, 'Escape')
   while (await portalOpen(cdp)) await pressKey(cdp, 'Escape')
 }
 
-async function stepCardsAndMass(cdp, pid) {
+async function stepCardsAndMass(cdp) {
   const r = await ask(cdp, 'views:save', 'Collection A', 'collection', driveView(), { type: 'cards' })
   check('cards: the view switches to Cards', r.ok && driveView().type === 'cards')
   await sleep(1500)
   await mouseClick(cdp, `[...document.querySelectorAll('[data-rid]')].find((c) => c.textContent.includes('Drive One')).querySelector('.card-prop-row .card-value')`)
   if (!(await portalOpen(cdp))) throw new Error("Drive One's card picker did not open")
   await shot(cdp, 'card-picker')
-  await surfaceCreateDragMenu(cdp, pid, 'cards', 'Card New', { editOptionDowns: 2 })
+  await surfaceCreateDragMenu(cdp, 'cards', 'Card New')
   const back = await ask(cdp, 'views:save', 'Collection A', 'collection', driveView(), { type: 'table' })
   check('mass: the view switches back to Table', back.ok && driveView().type === 'table')
   await sleep(1500)
   await sweep(cdp, await boxOf(cdp, cell('Drive One', 'Drive Select')), await boxOf(cdp, cell('Drive Two', 'Drive Select')), { steps: 6 })
   if (!(await portalOpen(cdp))) throw new Error('The mass picker did not open from the sweep')
   await shot(cdp, 'mass-picker')
-  await surfaceCreateDragMenu(cdp, pid, 'mass', 'Mass New', { editOptionDowns: 2 })
+  await surfaceCreateDragMenu(cdp, 'mass', 'Mass New')
 }
 
-async function stepPanel(cdp, pid) {
+async function stepPanel(cdp) {
   const r = await ask(cdp, 'mutate', { op: 'setProperty', path: 'Collection A/Set Alpha/Drive One.md', propertyId: ids['Drive Select'], value: { kind: 'select', value: 'Fresh' } })
   check('panel: Drive One holds Fresh, so its row shows', r.ok && lists('Drive One', 'Drive Select', 'Fresh'), JSON.stringify(r))
   await sleep(800)
@@ -220,7 +220,7 @@ async function stepPanel(cdp, pid) {
   await mouseClick(cdp, sel(`[data-property-row="${ids['Drive Select']}"]`))
   if (!(await portalOpen(cdp))) throw new Error("The Properties panel's picker did not open")
   await shot(cdp, 'panel-picker')
-  await surfaceCreateDragMenu(cdp, pid, 'panel', 'Panel New', { editOptionDowns: 1 })
+  await surfaceCreateDragMenu(cdp, 'panel', 'Panel New')
   await openDriveTable(cdp)
 }
 
@@ -243,12 +243,12 @@ async function openEditor(cdp, name) {
   await sleep(1000)
 }
 
-async function stepEditor(cdp, pid) {
+async function stepEditor(cdp) {
   await openEditor(cdp, 'Drive Status')
   await shot(cdp, 'editor')
   const firstRow = `[...document.querySelectorAll('[data-line-row]')].find((r) => r.querySelector('[aria-label="Edit Option"]'))`
   const first = statusGroups()[0].options[0].key
-  await chooseNative(cdp, pid, firstRow, { downs: 2 })
+  await chooseNative(cdp, firstRow, 'Edit Option')
   check('editor: Edit Option opens the popup', await popupOpen(cdp))
   await retitle(cdp, 'Opened')
   check('editor: the popup rename lands in status_groups', statusGroups()[0].options[0].label === 'Opened' && statusGroups()[0].options[0].key === 'Opened' && !statusGroups().flatMap((g) => g.options).some((o) => o.key === first), JSON.stringify(statusGroups()[0].options))
@@ -288,22 +288,20 @@ async function stepHostRefusal(cdp) {
 
 let cdp
 try {
-  const app = await launch(9343, 'option-picker-shots')
-  cdp = app.cdp
-  const { pid } = app
+  cdp = (await launch(9343, 'option-picker-shots')).cdp
   await seed(cdp)
-  await proveNativeMenu(cdp, pid)
+  await proveNativeMenu(cdp)
   await stepCreate(cdp)
   await stepRefuseBlankAndEscape(cdp)
   await stepRefuseDuplicate(cdp)
   await stepDragReorder(cdp)
-  await stepStyleCompact(cdp, pid)
-  await stepEditOption(cdp, pid)
-  await stepCardsAndMass(cdp, pid)
-  await stepPanel(cdp, pid)
+  await stepStyleCompact(cdp)
+  await stepEditOption(cdp)
+  await stepCardsAndMass(cdp)
+  await stepPanel(cdp)
   await stepMulti(cdp)
-  await stepEditor(cdp, pid)
-  await stepClearRemove(cdp, pid)
+  await stepEditor(cdp)
+  await stepClearRemove(cdp)
   await stepHostRefusal(cdp)
   cdp.close()
 } catch (e) {

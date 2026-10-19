@@ -1,8 +1,8 @@
 import { readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import {
-  activate, against, ask, boxOf, check, chooseNative, click, closePanel, createPage, doubleClick, drag, escapeAll, field, frontmatter,
-  launch, measure, metrics, mouseAt, mouseClick, must, nativeMenu, NEXUS, openCollection, openPage, openPane, openPanel,
+  against, ask, boxOf, check, chooseNative, click, closePanel, createPage, doubleClick, drag, escapeAll, field, frontmatter,
+  launch, measure, metrics, mouseAt, mouseClick, must, NEXUS, openCollection, openPage, openPane, openPanel,
   PAGE_VIEW, pageFile, pageIds, pagePath, PANE, PANE_VIEW, portalOpen, pressKey, printMetrics, read, refusal, restore, results,
   row, sel, selectField, SETTINGS_BUTTON, settles, shot, sleep, sweep, typeText, until, writeBody, writeMetrics,
 } from '../drive-harness.mjs'
@@ -102,7 +102,6 @@ const reveal = (cdp, expr) => cdp.evaluate(`(${expr}).scrollIntoView({ block: 'c
 const tag = (cdp, expr, name) => cdp.evaluate(`(${expr}).dataset.drive = ${JSON.stringify(name)}`)
 const tagged = (name) => `document.querySelector('[data-drive=${JSON.stringify(name)}]')`
 const selectAll = (cdp) => cdp.evaluate(`document.activeElement.select()`)
-const menuRows = (pid) => nativeMenu(pid).filter((n) => n && n !== 'missing value')
 // A row about to go: any change to its own attributes before it leaves the DOM is a collapse.
 const watchLeaving = (cdp, expr) =>
   cdp.evaluate(`(() => { const r = ${expr}; r.dataset.drive = 'leaving'; window.__changed = 0; new MutationObserver((ms) => { window.__changed += ms.filter((m) => m.attributeName !== 'data-drive').length }).observe(r, { attributes: true }) })()`)
@@ -234,7 +233,7 @@ async function group1(cdp) {
 
 // ── Group 2 — the Aliases pane ──────────────────────────────────────────────
 
-async function group2(cdp, pid) {
+async function group2(cdp) {
   await resetAliases(cdp, TARGET, ['launch', 'liftoff', 'Q3 doc'])
   await home(cdp)
   await openPage(cdp, TARGET)
@@ -326,11 +325,11 @@ async function group2(cdp, pid) {
   check('group 2: × on the row being renamed deletes it, closes its field, and writes none of its text', same(aliasesOf(TARGET), ['LAUNCH', 'Road Map']) && !(await editingIn(cdp, MANAGE)), JSON.stringify(aliasesOf(TARGET)))
 
   let menu = []
-  await step(cdp, "group 2: the row menu's Rename", () => chooseNative(cdp, pid, rowOf(MANAGE, 'LAUNCH'), { downs: 1, seen: async () => { menu = menuRows(pid) } }), { reflect: `!!${inputOf(MANAGE)}`, writes: aliasWrites(0), window: 2500 })
+  await step(cdp, "group 2: the row menu's Rename", async () => { menu = (await chooseNative(cdp, rowOf(MANAGE, 'LAUNCH'), 'Rename')).rows }, { reflect: `!!${inputOf(MANAGE)}`, writes: aliasWrites(0), window: 2500 })
   check('group 2: the row menu reads Rename · Delete', same(menu, ['Rename', 'Delete']), JSON.stringify(menu))
   check("group 2: the row menu's Rename opens LAUNCH's field", same(await editingIn(cdp, MANAGE), { value: 'LAUNCH', focused: true }), JSON.stringify(await editingIn(cdp, MANAGE)))
   await pressKey(cdp, 'Escape')
-  await step(cdp, "group 2: the row menu's Delete", () => chooseNative(cdp, pid, rowOf(MANAGE, 'Road Map'), { downs: 2 }), { reflect: `!${rowOf(MANAGE, 'Road Map')}`, writes: aliasWrites(1), window: 2500 })
+  await step(cdp, "group 2: the row menu's Delete", () => chooseNative(cdp, rowOf(MANAGE, 'Road Map'), 'Delete'), { reflect: `!${rowOf(MANAGE, 'Road Map')}`, writes: aliasWrites(1), window: 2500 })
   check("group 2: the row menu's Delete deletes Road Map, and the count reads 1", same(aliasesOf(TARGET), ['LAUNCH']) && (await countOf(cdp, 'Aliases')) === '1', JSON.stringify(aliasesOf(TARGET)))
 
   // Reorder: a drag, a release on its own slot, the keyboard, and a press while a field is open.
@@ -345,7 +344,6 @@ async function group2(cdp, pid) {
   const own = await boxOf(cdp, lineRowOf(MANAGE, 'liftoff'))
   await step(cdp, 'group 2: a drag released on its own slot', () => sweep(cdp, own, { x: own.x, y: own.y + 8 }, { steps: 4 }), { writes: aliasWrites(0) })
   check('group 2: a release on its own slot leaves the order', same(aliasesOf(TARGET), ['launch', 'roadmap', 'liftoff', 'Q3 doc']) && !(await editingIn(cdp, MANAGE)), JSON.stringify(aliasesOf(TARGET)))
-  await activate(cdp, pid)
   await cdp.evaluate(`(${lineRowOf(MANAGE, 'Q3 doc')}).focus()`)
   await step(cdp, 'group 2: Space, ArrowUp, Space on Q3 doc', async () => {
     for (const k of [' ', 'ArrowUp', ' ']) await pressKey(cdp, k)
@@ -361,7 +359,7 @@ async function group2(cdp, pid) {
 
   // The PageWindow's side pane holds the same row.
   await resetAliases(cdp, TARGET, ['launch'])
-  await chooseNative(cdp, pid, `document.querySelector('[role=tab][title=${JSON.stringify(TARGET)}]')`, { downs: 1 })
+  await chooseNative(cdp, `document.querySelector('[role=tab][title=${JSON.stringify(TARGET)}]')`, 'Preview')
   await until('the PageWindow', () => cdp.evaluate(`!!document.querySelector('.page-window')`))
   await mouseClick(cdp, sel('.page-window button[title="Side Pane"]'))
   const SIDE = `document.querySelector('.window-side-pane')`
@@ -385,13 +383,12 @@ async function group2(cdp, pid) {
 
 // ── Group 3 — the body picker ───────────────────────────────────────────────
 
-async function group3(cdp, pid) {
+async function group3(cdp) {
   let list = ['launch', 'liftoff', 'Q3 doc']
   await resetAliases(cdp, TARGET, list)
   await resetAliases(cdp, BARE, [])
   await home(cdp)
   await openPage(cdp, HOST)
-  await activate(cdp, pid)
   const V = PAGE_VIEW
   // Typing autosaves Drive Host, so only the shard and the alias owner's file are watched.
   const writes = aliasWrites(0)
@@ -481,10 +478,10 @@ async function group3(cdp, pid) {
 
   await openStage(cdp, V)
   let menu = []
-  await step(cdp, "group 3: the picker row menu's Rename", () => chooseNative(cdp, pid, rowOf(PICKER, 'launch'), { downs: 1, seen: async () => { menu = menuRows(pid) } }), { reflect: `!!${inputOf(PICKER)}`, writes, window: 2500 })
+  await step(cdp, "group 3: the picker row menu's Rename", async () => { menu = (await chooseNative(cdp, rowOf(PICKER, 'launch'), 'Rename')).rows }, { reflect: `!!${inputOf(PICKER)}`, writes, window: 2500 })
   check("group 3: the picker's row menu reads Rename · Delete, and Rename opens the field with the picker open", same(menu, ['Rename', 'Delete']) && (await editingIn(cdp, PICKER))?.value === 'launch', JSON.stringify(menu))
   await pressKey(cdp, 'Escape')
-  await step(cdp, "group 3: the picker row menu's Delete", () => chooseNative(cdp, pid, rowOf(PICKER, 'zeta'), { downs: 2 }), { reflect: `!${rowOf(PICKER, 'zeta')}`, writes: writes1, window: 2500 })
+  await step(cdp, "group 3: the picker row menu's Delete", () => chooseNative(cdp, rowOf(PICKER, 'zeta'), 'Delete'), { reflect: `!${rowOf(PICKER, 'zeta')}`, writes: writes1, window: 2500 })
   list = ['launch', 'lift-off', 'omega']
   check("group 3: the picker row menu's Delete deletes zeta and inserts nothing", same(aliasesOf(TARGET), list) && (await docOf(cdp, V)) === blank, JSON.stringify(aliasesOf(TARGET)))
 
@@ -814,13 +811,11 @@ async function group6(cdp) {
 
 let cdp
 try {
-  const app = await launch(PORT, 'alias-shots')
-  cdp = app.cdp
-  const { pid } = app
+  cdp = (await launch(PORT, 'alias-shots')).cdp
   await seed(cdp)
   if (GROUPS.has(1)) await group1(cdp)
-  if (GROUPS.has(2)) await group2(cdp, pid)
-  if (GROUPS.has(3)) await group3(cdp, pid)
+  if (GROUPS.has(2)) await group2(cdp)
+  if (GROUPS.has(3)) await group3(cdp)
   if (GROUPS.has(4)) await group4(cdp)
   if (GROUPS.has(5)) await group5(cdp)
   if (GROUPS.has(PERF)) await group6(cdp)

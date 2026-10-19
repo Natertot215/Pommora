@@ -2,10 +2,10 @@ import { statSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { stringify } from 'yaml'
 import {
-  activate, activeTab, ask, blurField, boxOf, caretAtFieldEnd, check, chooseNative, click, closePanel, createPage, escapeAll, field, fieldValue, FM, frontmatter,
-  frontRaw, hover, holds, key, KEY, launch, META, mouseAt, mouseClick, must, nativeMenu, NEXUS, openCollection, openField,
-  openPage, openPane, openPanel, osa, overlaps, PAGE_VIEW, pageFile, pageIds, pagePath, PANE, PANE_VIEW, paneDoc, PEN,
-  portalOpen, pressKey, read, refusal, restore, results, row, screenShot, sel, selectField, SET, settles, SHIFT, shot, sleep, typeText,
+  activeTab, ask, blurField, boxOf, caretAtFieldEnd, check, chooseNative, click, closePanel, createPage, escapeAll, field, fieldValue, FM, frontmatter,
+  frontRaw, hover, holds, labels, launch, META, mouseAt, mouseClick, must, NEXUS, openCollection, openField,
+  openPage, openPane, openPanel, overlaps, PAGE_VIEW, pageFile, pageIds, pagePath, PANE, PANE_VIEW, paneDoc, PEN,
+  pickNative, popNative, portalOpen, pressKey, read, refusal, restore, results, row, sel, selectField, SET, settles, SHIFT, shot, sleep, typeText,
   until, writeBody,
 } from '../drive-harness.mjs'
 
@@ -130,9 +130,8 @@ async function commitField(cdp, expr, text) {
   await sleep(900)
 }
 // A value's native menu reads its rows, and its Edit opens the inline field.
-async function menuEdits(cdp, pid, expr, rows, name) {
-  let read = []
-  await chooseNative(cdp, pid, expr, { downs: 1, edge: true, seen: async () => { read = nativeMenu(pid).filter((n) => n && n !== 'missing value') } })
+async function menuEdits(cdp, expr, rows, name) {
+  const { rows: read } = await chooseNative(cdp, expr, 'Edit', { edge: true })
   check(`group 1: ${name}'s menu reads ${rows.join(' · ')}`, JSON.stringify(read) === JSON.stringify(rows), JSON.stringify(read))
   check(`group 1: ${name}'s Edit opens the inline field`, await settles(() => cdp.evaluate(`!!(${field})`), 3000))
   await pressKey(cdp, 'Escape')
@@ -140,7 +139,7 @@ async function menuEdits(cdp, pid, expr, rows, name) {
 
 // ── Group 1 — the catalog and the field ─────────────────────────────────────
 
-async function group1(cdp, pid) {
+async function group1(cdp) {
   check('group 1: Drive Raw reads 42 and Drive List its flow list', (await cellText(cdp, cell('Drive Raw'))) === '42' && (await cellText(cdp, cell('Drive List'))) === '[milk, eggs, bread]',
     JSON.stringify([await cellText(cdp, cell('Drive Raw')), await cellText(cdp, cell('Drive List'))]))
   const drawn = { first: (await cellText(cdp, cell('Drive Prose')))?.slice(0, 30), lines: (await cellText(cdp, cell('Drive Prose')))?.split('\n').length, oneLine: await oneLine(cdp, cell('Drive Prose')), empty: await cellText(cdp, cell('Drive Empty')) }
@@ -219,12 +218,12 @@ async function group1(cdp, pid) {
   await must('filter off', ask(cdp, 'views:save', 'Collection A', 'collection', table(), { filter_enabled: false }))
   await until('every row back', async () => (await titles()).includes('Drive Empty'))
 
-  await chooseNative(cdp, pid, cell('Drive Prose'), { downs: 2, edge: true, seen: async () => screenShot('cell-menu') })
+  await chooseNative(cdp, cell('Drive Prose'), 'Clear', { edge: true })
   check("group 1: the cell menu's Clear empties the cell and the key", await settles(async () => !has('Drive Prose', NOTES) && (await cellText(cdp, cell('Drive Prose'))) === null), keyLines('Drive Prose', NOTES))
   await must('Drive Prose restored', ask(cdp, 'mutate', { op: 'setProperty', path: pagePath('Drive Prose'), propertyId: ids[NOTES], value: { kind: 'text', value: SHOWCASE } }))
   await until("Drive Prose's value back", async () => (await cellText(cdp, cell('Drive Prose'))) !== null)
-  await menuEdits(cdp, pid, cell('Drive Prose'), ['Edit', 'Clear'], 'a table cell')
-  await menuEdits(cdp, pid, cell('Drive Empty'), ['Edit'], 'an empty table cell')
+  await menuEdits(cdp, cell('Drive Prose'), ['Edit', 'Clear'], 'a table cell')
+  await menuEdits(cdp, cell('Drive Empty'), ['Edit'], 'an empty table cell')
 
   for (const [name, tag] of [['Drive Cards', 'cards-standard'], ['Drive Compact', 'cards-compact']]) {
     await showView(cdp, name)
@@ -236,7 +235,7 @@ async function group1(cdp, pid) {
   await openField(cdp, cardValue('Drive Prose'))
   check("group 1: a Standard card's field holds the first line", (await fieldValue(cdp)) === SHOWCASE.split('\n')[0], await fieldValue(cdp))
   await pressKey(cdp, 'Escape')
-  await menuEdits(cdp, pid, cardValue('Drive Prose'), ['Edit', 'Clear', 'Remove'], 'a card value')
+  await menuEdits(cdp, cardValue('Drive Prose'), ['Edit', 'Clear', 'Remove'], 'a card value')
   await showView(cdp, 'Drive Table')
 
   await openPage(cdp, 'Drive Prose')
@@ -246,7 +245,7 @@ async function group1(cdp, pid) {
   await openField(cdp, panelRow())
   check("group 1: the panel's field holds the first line", (await fieldValue(cdp)) === SHOWCASE.split('\n')[0], await fieldValue(cdp))
   await pressKey(cdp, 'Escape')
-  await menuEdits(cdp, pid, panelRow(), ['Edit', 'Clear', 'Remove'], 'a panel row')
+  await menuEdits(cdp, panelRow(), ['Edit', 'Clear', 'Remove'], 'a panel row')
   await closePanel(cdp)
   await openCollection(cdp)
   await openPage(cdp, 'Drive Empty')
@@ -311,16 +310,10 @@ const panelLine = (prop = NOTES) => `${panelRow(prop)}.parentElement.parentEleme
 const panelLabel = (prop = NOTES) => `[...(${panelLine(prop)}).querySelectorAll('*')].find((e) => e.children.length === 0 && e.textContent.trim() === ${JSON.stringify(prop)})`
 const cardRow = (title) => `(${cardValue(title)}).closest('.card-prop-row')`
 
-async function group2(cdp, pid) {
+async function group2(cdp) {
   await showView(cdp, 'Drive Table')
   await connectionsOn(cdp, cell('Drive Prose'), 'table')
-  await activate(cdp, pid)
-  await mouseClick(cdp, connection(cell('Drive Prose'), 'resolved', 'Drive Target'), { button: 'right' })
-  await sleep(700)
-  const linkMenu = nativeMenu(pid)
-  screenShot('link-menu')
-  key(KEY.esc)
-  await sleep(500)
+  const { rows: linkMenu } = await chooseNative(cdp, connection(cell('Drive Prose'), 'resolved', 'Drive Target'), [])
   check('group 2: right-clicking Drive Target in a Text value opens the link menu, not the cell menu', linkMenu.includes('Copy Link') && !linkMenu.includes('Clear'), JSON.stringify(linkMenu))
   // At rest means no pointer over the value: a hovered cap trades its ellipsis for the scroll.
   await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 4, y: 4, button: 'none' })
@@ -528,10 +521,7 @@ const SNAP_OF = (view) => `(() => {
   return { lines: out, caret: cs ? [cs.backgroundColor, px(cs.width), px(cs.height)] : null }
 })()`
 
-// The row menu's sixth row is Properties ▸, which lists the collection's properties in schema order.
-const PROPERTIES_NOTES = () => ({ downs: 6, into: [sidecar().properties.indexOf(ids[NOTES])] })
-
-async function group4(cdp, pid) {
+async function group4(cdp) {
   await showView(cdp, 'Drive Table')
   await openPane(cdp, cell('Drive Prose'))
   const caretEnd = await cdp.evaluate(`(() => { const v = ${PANE_VIEW}; return v.hasFocus && v.state.selection.main.head === v.state.doc.length })()`)
@@ -572,38 +562,18 @@ async function group4(cdp, pid) {
   await cdp.evaluate(`(() => { const dt = new DataTransfer(); dt.setData('text/plain', 'https://example.com'); ${PANE_VIEW}.contentDOM.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true })) })()`)
   await sleep(600)
   check('group 4: a pasted URL lands in the Default Link Format', /\n\[[^\]\n]+\]\(https:\/\/example\.com\/?\)$/.test(await paneDoc(cdp)), (await paneDoc(cdp)).split('\n').at(-1))
-  // A native menu's rows can't be read back, so type-select proves them: a letter opens the row it begins, Right enters its submenu, and Return takes an entry. A letter no row begins leaves the menu on its first submenu, Format, so the most it writes is an inline mark.
-  const menuAt = async (letter, shotName, downs = 0) => {
+  // The pane's own menu, popped over `milk` with the word selected; `pick` names the row to choose from its rows, or none.
+  const paneMenu = async (pick) => {
     const at = await cdp.evaluate(`(() => { const v = ${PANE_VIEW}; const i = v.state.doc.toString().indexOf('milk'); v.focus(); v.dispatch({ selection: { anchor: i, head: i + 4 } }); const c = v.coordsAtPos(i + 2); return { x: c.left, y: (c.top + c.bottom) / 2 } })()`)
-    await activate(cdp, pid)
-    await mouseAt(cdp, at, { button: 'right' })
-    await sleep(700)
-    try {
-      osa(`tell application "System Events" to keystroke "${letter}"`)
-      await sleep(300)
-      if (shotName) screenShot(shotName)
-      key(KEY.right)
-      await sleep(300)
-      for (let i = 0; i < downs; i++) key(KEY.down)
-      key(KEY.ret)
-    } catch (e) {
-      key(KEY.esc)
-      throw e
-    }
+    const rows = await popNative(cdp, at)
+    await pickNative(rows ? pick(rows) : [])
     await sleep(600)
+    return rows
   }
   const unformatted = await paneDoc(cdp)
-  const unmarked = (doc) => doc.replace(/[*_`]/g, '')
-  const blockRows = []
-  // Heading's first entry is Paragraph, which writes nothing, so its Heading 1 is the one taken.
-  for (const [letter, downs] of [['l', 0], ['h', 1], ['i', 0], ['e', 0]]) {
-    await menuAt(letter, undefined, downs)
-    const after = await paneDoc(cdp)
-    if (unmarked(after) !== unmarked(unformatted)) blockRows.push([letter, after.split('\n')[1]])
-    await cdp.evaluate(`(() => { const v = ${PANE_VIEW}; v.dispatch({ changes: { from: 0, to: v.state.doc.length, insert: ${JSON.stringify(unformatted)} } }) })()`)
-  }
+  const blockRows = labels(await paneMenu(() => [])).filter((l) => ['Lists', 'Heading', 'Insert', 'Embed'].includes(l))
   check("group 4: the pane's native menu holds no Lists, Heading, Insert, or Embed row", blockRows.length === 0 && (await cdp.evaluate(`!!document.querySelector('${PANE}')`)), JSON.stringify(blockRows))
-  await menuAt('f', 'pane-format-menu')
+  await paneMenu((rows) => ['Format', rows.find((r) => r.label === 'Format')?.submenu?.find((r) => !r.separator && r.enabled)?.label])
   check('group 4: its Format row leads to the marks, Italic first', (await paneDoc(cdp)) === unformatted.replace('milk with', '*milk* with'), (await paneDoc(cdp)).split('\n')[1])
   const typed = await paneDoc(cdp)
   await cdp.evaluate(`(() => { const v = ${PANE_VIEW}; v.focus(); v.dispatch({ selection: { anchor: 0, head: 3 } }) })()`)
@@ -679,12 +649,12 @@ async function group4(cdp, pid) {
   await must('Drive Items restored', ask(cdp, 'mutate', { op: 'setProperty', path: pagePath('Drive Items'), propertyId: ids[NOTES], value: { kind: 'text', value: ITEMS } }))
   await sleep(600)
 
-  await chooseNative(cdp, pid, `${row('Drive Prose')}.querySelector('.cell-title-text')`, PROPERTIES_NOTES())
+  await chooseNative(cdp, `${row('Drive Prose')}.querySelector('.cell-title-text')`, ['Properties', NOTES])
   check('group 4: Properties ▸ Drive Notes opens the pane', await settles(() => cdp.evaluate(`!!document.querySelector('${PANE}')`), 3000))
   await shot(cdp, 'pane-from-menu')
   await pressKey(cdp, 'Escape')
   await sleep(500)
-  await chooseNative(cdp, pid, `${row('Drive Prose')}.querySelector('.cell-title-text')`, PROPERTIES_NOTES())
+  await chooseNative(cdp, `${row('Drive Prose')}.querySelector('.cell-title-text')`, ['Properties', NOTES])
   await until('the TextPane again', () => cdp.evaluate(`!!document.querySelector('${PANE} .cm-editor')`), 3000).catch(() => {})
   const again = await paneDoc(cdp).catch(() => null)
   await typeText(cdp, 'q')
@@ -737,14 +707,12 @@ async function group4(cdp, pid) {
 
 let cdp
 try {
-  const app = await launch(PORT, 'text-property-shots')
-  cdp = app.cdp
-  const { pid } = app
+  cdp = (await launch(PORT, 'text-property-shots')).cdp
   await seed(cdp)
-  if (GROUPS.has(1)) await group1(cdp, pid)
-  if (GROUPS.has(2)) await group2(cdp, pid)
+  if (GROUPS.has(1)) await group1(cdp)
+  if (GROUPS.has(2)) await group2(cdp)
   if (GROUPS.has(3)) await group3(cdp)
-  if (GROUPS.has(4)) await group4(cdp, pid)
+  if (GROUPS.has(4)) await group4(cdp)
   cdp.close()
 } catch (e) {
   check('the run reached its end', false, String(e?.stack ?? e))

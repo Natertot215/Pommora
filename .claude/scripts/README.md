@@ -76,9 +76,13 @@ native caret move. It seeds `Collection A/Set Alpha` and its neighbors with real
 The drives share `drive-harness.mjs`, which builds the app, backs up `~/Test`, launches the build
 with its own userData and the drive's debug port, writes a screenshot of each state to
 `$POMMORA_DRIVE_SHOTS` (a per-drive folder in the system temp directory otherwise), and restores
-`~/Test` when the run ends or is interrupted; it chooses native menus with System Events
-keystrokes, so the terminal needs Accessibility permission, and it refuses to send a key unless the
-app is frontmost. `POMMORA_DRIVE_REPO` builds and launches another checkout in place of this one.
+`~/Test` when the run ends or is interrupted. A run never takes focus or sends input through the
+system: the app's main process starts paused on its inspector (the drive's port plus one), where the
+harness patches its windows to show without activating the app or taking clicks, and records each
+native menu rather than drawing it, so a drive reads the menu's rows and chooses one by its labels,
+running the row's own click. Chromium's backgrounding switches and DevTools focus emulation keep the
+window behaving as the frontmost one, and every press and click goes through DevTools.
+`POMMORA_DRIVE_REPO` builds and launches another checkout in place of this one.
 Its `measure` runs one gesture under a watch: a worker thread polls the named files every 5 ms and
 counts their distinct contents, an in-page probe times the gesture's first input to the DOM change
 that shows it and the frame after, and the DevTools performance counters and long tasks give its
