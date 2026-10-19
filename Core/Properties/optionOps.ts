@@ -57,7 +57,7 @@ function editStoredOptions(
   edit: (groups: StatusGroup[]) => StatusGroup[],
 ): PropertyDefinition {
   const raw = { ...(stored as PropertyDefinition), type: def.type }
-  const named = optionGroupsOf(raw).map((g) => ({ ...g, options: g.options.map(labelled) }))
+  const named = mapOptions(optionGroupsOf(raw), labelled)
   return withOptionGroups(def, edit(uniqueOptionGroups(named)))
 }
 
