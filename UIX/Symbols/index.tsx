@@ -84,6 +84,7 @@ import {
 } from 'lucide-react'
 import { useEffect, useSyncExternalStore } from 'react'
 import {
+  Alias,
   CardsGrid,
   Claude,
   Gemini,
@@ -191,6 +192,7 @@ export const icons = {
   sapphire: Sapphire,
   'list-rounded': ListRounded,
   'cards-grid': CardsGrid,
+  alias: Alias,
   'metadata-label': MetadataLabel,
   'progress-check': ProgressCheck,
   'columns-3-cog': Columns3Cog,
