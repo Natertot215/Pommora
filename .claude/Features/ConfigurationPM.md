@@ -132,9 +132,9 @@ Every setting here is a machine-level preference, stored in the device database 
 | Excluded Directories | `excluded_folders` | The folders the app leaves unrecognized, stored at the settings root and edited from Manage beside their count; removing one re-indexes it. | Manage |
 | Clear Exclusion Cache | — | Removes the container files, identity keys, and Context keys Pommora wrote into the excluded folders. Confirms first. | Clear |
 
-#### Properties
+#### Metadata
 
-**Metadata**
+**Maintenance**
 
 | Setting | Key | Description | Options |
 | --- | --- | --- | --- |

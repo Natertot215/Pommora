@@ -38,7 +38,7 @@ The operator families are type-aware, defined in `Core/Views/filterModel.ts`:
 | File | Is Empty · Isn't Empty |
 | Location | Is · Isn't (immediate parent Set) · Contains · Doesn't Contain (any depth) |
 
-Text comparisons ignore case on Title, Text, Link, Select, and Status. Location's Contains and Doesn't Contain also take a typed folder name, which matches every folder of that whole name regardless of case; a name matching no folder matches nothing.
+Text comparisons ignore case on Title, Text, and Link, and Select and Status compare an option exactly by its label. Location's Contains and Doesn't Contain also take a typed folder name, which matches every folder of that whole name regardless of case; a name matching no folder matches nothing.
 
 #### II. Group
 
