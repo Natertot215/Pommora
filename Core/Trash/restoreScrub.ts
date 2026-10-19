@@ -41,6 +41,7 @@ function matchOf(words: Iterable<{ label: string; key: string }>): Match {
   for (const { label, key } of words) {
     keys.add(key)
     for (const fold of spellingsOf(label).map(normalizeTitle)) {
+      if (!fold) continue
       const held = bySpelling.get(fold)
       bySpelling.set(fold, held === undefined || held === key ? key : null)
     }
@@ -51,7 +52,9 @@ function matchOf(words: Iterable<{ label: string; key: string }>): Match {
 function currentKeys(tree: NexusTree, skip?: string) {
   const titled = (title: string) => ({ label: title, key: title })
   const property = matchOf(tree.config.registry)
-  const context = matchOf(tree.contexts.map((g) => titled(g.def.title)))
+  const inTransit = skip === undefined ? null : parseContextKey(skip)
+  const titles = tree.contexts.map((g) => g.def.title)
+  const context = matchOf((inTransit === null ? titles : [...titles, inTransit]).map(titled))
   const words = new Map<string, Match>([
     ...tree.config.registry.flatMap((d) =>
       PROPERTY_TYPES[d.type].options ? [[d.key, matchOf(optionsOf(d))] as const] : [],
@@ -168,10 +171,11 @@ export async function scrubReturning(
     await rmwJsonStrict(join(root, rel), (held) => {
       const raw = current.words(current.json(held)).root
       const r = reconcileGovernedRoot(raw, spaceWorld, {}, inTransitKey)
-      const next = r.changed.length ? r.root : raw === held ? null : raw
-      const gone = unlinked(next ?? raw)
+      const gone = unlinked(r.root)
       note(gone, asString(raw.id))
-      return stripKeys(next ?? raw, Object.keys(gone)) ?? next
+      return (
+        stripKeys(r.root, Object.keys(gone)) ?? (r.changed.length || raw !== held ? r.root : null)
+      )
     })
   return dropped
 }

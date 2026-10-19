@@ -428,6 +428,27 @@ describe('a returning page takes the current keys', () => {
     expect((await fm('Notes/Alpha.md')).Priority).toEqual(['HI'])
   })
 
+  it('moves a key whose value stands as written, changing nothing else', async () => {
+    await priority({ type: 'text', select_options: undefined })
+    await page('priority: x')
+    await cycle('Notes/Alpha.md', 'page', async () => {})
+    expect(await readFile(join(root, 'Notes', 'Alpha.md'), 'utf8')).toBe(
+      `---\nID: ${PAGE_A}\nPriority: x\n---\nbody`,
+    )
+  })
+
+  it('a blank value takes no option whose label is only separators', async () => {
+    await priority({
+      select_options: [
+        { key: 'hi', label: 'hi', color: 'red' },
+        { key: '-', label: '-' },
+      ],
+    })
+    await page('Priority: ""')
+    await cycle('Notes/Alpha.md', 'page', async () => {})
+    expect(await fm('Notes/Alpha.md')).not.toHaveProperty('Priority')
+  })
+
   it('keeps the exact key’s value and leaves a variant beside it foreign', async () => {
     await page('Priority: hi\npriority: lo')
     await cycle('Notes/Alpha.md', 'page', async () => {})
@@ -546,7 +567,11 @@ describe('a Space sidecar is a context root too', () => {
       contextsRegistryFile(root),
       JSON.stringify({ contexts: [{ id: 'ctx_live', title: 'Projects' }] }),
     )
-    await mkdir(join(contextsDir(root), 'Projects'), { recursive: true })
+    await mkdir(join(contextsDir(root), 'Projects', 'pommora'), { recursive: true })
+    await writeFile(
+      join(contextsDir(root), 'Projects', 'pommora', '_space.json'),
+      JSON.stringify({ id: 'sp-live-pom' }),
+    )
     await refreshTree(root)
     const [listed] = await listBundles(root)
     expect(
@@ -593,6 +618,77 @@ describe('a Space sidecar is a context root too', () => {
     const sap = await sidecar('projects (2)/Sapphire')
     expect(sap['<projects (2)>']).toEqual(['Pommora'])
     expect(sap).not.toHaveProperty('<Projects>')
+  })
+
+  it('a variant of a returning Context’s own key stays as written beside a live Context holding its title', async () => {
+    await rm(join(contextsDir(root), 'Projects'), { recursive: true, force: true })
+    await writeFile(
+      contextsRegistryFile(root),
+      JSON.stringify({ contexts: [{ id: 'ctx_projects', title: 'projects' }] }),
+    )
+    await mkdir(join(contextsDir(root), 'projects', 'Sapphire'), { recursive: true })
+    await writeFile(
+      join(contextsDir(root), 'projects', 'Sapphire', '_space.json'),
+      JSON.stringify({ id: 'sp-sap', '<PROJECTS>': ['pommora'] }),
+    )
+    await refreshTree(root)
+    expect(
+      (
+        await settledMutate(
+          root,
+          { op: 'delete', path: '.nexus/contexts/projects', kind: 'context' },
+          nexusDeps,
+        )
+      ).ok,
+    ).toBe(true)
+    await writeFile(
+      contextsRegistryFile(root),
+      JSON.stringify({ contexts: [{ id: 'ctx_live', title: 'Projects' }] }),
+    )
+    await mkdir(join(contextsDir(root), 'Projects', 'Pommora'), { recursive: true })
+    await writeFile(
+      join(contextsDir(root), 'Projects', 'Pommora', '_space.json'),
+      JSON.stringify({ id: 'sp-pom' }),
+    )
+    await refreshTree(root)
+    const [listed] = await listBundles(root)
+    expect(
+      (await settledMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)).ok,
+    ).toBe(true)
+    const sap = await sidecar('projects (2)/Sapphire')
+    expect(sap['<PROJECTS>']).toEqual(['pommora'])
+    expect(sap).not.toHaveProperty('<Projects>')
+  })
+
+  it('a variant of a returning Context’s own key moves onto it when no live Context shares its title', async () => {
+    await rm(join(contextsDir(root), 'Projects'), { recursive: true, force: true })
+    await writeFile(
+      contextsRegistryFile(root),
+      JSON.stringify({ contexts: [{ id: 'ctx_projects', title: 'projects' }] }),
+    )
+    await mkdir(join(contextsDir(root), 'projects', 'Sapphire'), { recursive: true })
+    await writeFile(
+      join(contextsDir(root), 'projects', 'Sapphire', '_space.json'),
+      JSON.stringify({ id: 'sp-sap', '<PROJECTS>': ['pommora'] }),
+    )
+    await refreshTree(root)
+    expect(
+      (
+        await settledMutate(
+          root,
+          { op: 'delete', path: '.nexus/contexts/projects', kind: 'context' },
+          nexusDeps,
+        )
+      ).ok,
+    ).toBe(true)
+    await refreshTree(root)
+    const [listed] = await listBundles(root)
+    expect(
+      (await settledMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)).ok,
+    ).toBe(true)
+    const sap = await sidecar('projects/Sapphire')
+    expect(sap['<projects>']).toEqual(['pommora'])
+    expect(sap).not.toHaveProperty('<PROJECTS>')
   })
 
   const spaceCycle = async (): Promise<void> => {
