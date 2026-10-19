@@ -142,7 +142,7 @@ export function useOptionEdit({
   const commitDraft = (label: string): void => {
     if (!draft) return
     const add = (): Promise<boolean> =>
-      editOption({ op: 'add', groupId: draft.groupId, title: label, atIndex: draft.index })
+      editOption({ op: 'add', groupId: draft.groupId, label, atIndex: draft.index })
     void keys.land(draft.key, label, add).then((ok) => {
       if (ok) setDraft((d) => (d === draft ? null : d))
     })

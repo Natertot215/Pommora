@@ -196,9 +196,8 @@ export function reconcilePropertyValue(
   frozen?: Frozen,
 ): PropertyValue {
   const value = decodeValue(def, raw)
-  if (!frozen) return value
-  if (value.kind === 'link') return gonePageEntry(value.value, frozen) === null ? value : NULL_VALUE
-  return value
+  const gone = frozen && value.kind === 'link' && gonePageEntry(value.value, frozen) !== null
+  return gone ? NULL_VALUE : value
 }
 
 /** A checked value as `raw` spells one: its checked word as written, or its unchecked word's partner in the same casing (`no` → `yes`, `OFF` → `ON`), else `true`. */

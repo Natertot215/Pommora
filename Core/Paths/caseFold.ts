@@ -3,12 +3,11 @@
 
 const titleCollator = new Intl.Collator('en', { sensitivity: 'accent' })
 
-/** The locale-independent comparison key a path segment or a title matches by wherever case doesn't separate two things: uniqueness, the reserved-key refusal, search, sort, and file names. Lowercase precedes NFC so a stored fold, such as `sync_base`'s path key, stays byte-identical. */
+/** The locale-independent comparison key wherever case doesn't separate two things. Lowercase precedes NFC so a stored fold, such as `sync_base`'s path key, stays byte-identical. */
 export function foldKey(text: string): string {
   return text.toLowerCase().normalize('NFC')
 }
 
-/** `foldKey` of any scalar's trimmed text. */
 export function normalizeTitle(raw: unknown): string {
   return foldKey(String(raw).trim())
 }

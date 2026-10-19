@@ -31,7 +31,7 @@ import { comparePaths } from './treePatch'
 import { containerNodeFrom } from './containerFields'
 import { readPageMetadata } from './pageMetadata'
 import { readSettings, scopeOf } from '../Settings/codec'
-import { pathExists, readAppFile, readJsonObject } from '../Files/atomicWrite'
+import { pathExists, readAppFile, readJsonObject, readJsonStrictly } from '../Files/atomicWrite'
 import { readIdentity } from './identity'
 import { isContentFile, listEntries } from '../Files/walk'
 import { machine } from '../Platform/machine'
@@ -313,8 +313,13 @@ async function walkNexus(root: string): Promise<NexusTree> {
   const order = readOrder(state)
   const unreadable: Unreadable[] = []
   // An unusable registry blanks the whole Contexts layer for the session. Absent stays silent; present names the registry so the record reads the blank layer as unreadable, never as mass deletion.
-  if (!ctxRegistry && (await pathExists(contextsRegistryFile(root))))
-    unreadable.push({ path: CONTEXTS_REGISTRY_REL, kind: 'registry', reason: 'unparsed' })
+  const ctxRead = ctxRegistry ? 'ok' : (await readJsonStrictly(contextsRegistryFile(root))).kind
+  if (ctxRead !== 'ok' && ctxRead !== 'absent')
+    unreadable.push({
+      path: CONTEXTS_REGISTRY_REL,
+      kind: 'registry',
+      reason: ctxRead === 'unreadable' ? 'unreadable' : 'unparsed',
+    })
   const contexts = ctxRegistry
     ? await readContextGroups(root, ctxRegistry, order.spaces, unreadable)
     : []

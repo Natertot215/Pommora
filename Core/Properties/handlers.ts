@@ -43,6 +43,7 @@ import { type ConfigReach, NO_REACH } from '../Nexus/configReach'
 
 const NEEDS_PROPERTY_ID = fault('A property id is required.')
 const NEEDS_ID_AND_VALUE = fault('A property id and value are required.')
+const NEEDS_ID_AND_FORMAT = fault('A property id and format are required.')
 const NEEDS_ID_AND_INDEX = fault('propertyId (string) and toIndex (number) are required.')
 const NEEDS_RENAME_ARGS = fault('propertyId, oldLabel, and newLabel are required.')
 const NEEDS_OPTION_EDIT = fault('An option edit is required.')
@@ -123,7 +124,7 @@ const idAndValue = ([id, value]: unknown[]): [string, string] | Result<never> =>
   typeof id === 'string' && typeof value === 'string' ? [id, value] : NEEDS_ID_AND_VALUE
 
 const idAndFormat = ([id, format]: unknown[]): [string, KeyFormat] | Result<never> =>
-  typeof id === 'string' && isKeyFormat(format) ? [id, format] : NEEDS_ID_AND_VALUE
+  typeof id === 'string' && isKeyFormat(format) ? [id, format] : NEEDS_ID_AND_FORMAT
 
 const idOldNew = ([id, oldLabel, newLabel]: unknown[]): [string, string, string] | Result<never> =>
   typeof id === 'string' && typeof oldLabel === 'string' && typeof newLabel === 'string'

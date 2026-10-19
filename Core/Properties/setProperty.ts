@@ -14,24 +14,24 @@ import { readRegistry, NO_PROPERTY } from './propertiesRegistry'
 // Takes no lock of its own: callers hold the page's lock over a wider span, and a re-take would be refused.
 export async function landPageValue(
   absFile: string,
-  name: string,
-  raw: unknown,
+  key: string,
+  value: unknown,
   world?: GovernedWorld,
 ): Promise<Result<null>> {
   if (!(await pathExists(absFile))) return fail('not-found', 'Page not found.')
-  await setGovernedRootKey(absFile, name, raw, world)
+  await setGovernedRootKey(absFile, key, value, world)
   return ok(null)
 }
 
 export async function landSpaceValue(
   root: string,
   absSpaceDir: string,
-  name: string,
+  key: string,
   value: unknown,
 ): Promise<Result<null>> {
   const world = spaceWorldOf(await liveTreeOf(root))
   return writeSpaceSidecar(absSpaceDir, (raw) =>
-    value === undefined && !Object.hasOwn(raw, name) ? null : writtenRoot(raw, name, value, world),
+    value === undefined && !Object.hasOwn(raw, key) ? null : writtenRoot(raw, key, value, world),
   )
 }
 
