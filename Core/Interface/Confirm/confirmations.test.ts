@@ -95,6 +95,25 @@ describe('what the Confirm Before Deletion switch governs', () => {
     expect(asked).toEqual([])
   })
 
+  it('tells a Key Format change its keys change and a Value Format change its values do, each keeping its display label', async () => {
+    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+      'property:holders': async () => ok(2),
+    })
+    const details: string[] = []
+    useSession.setState({
+      askConfirm: async (req) => {
+        details.push(req.detail)
+        return true
+      },
+    })
+    await askFormatChange('p1', { key_format: 'lowercase' })
+    await askFormatChange('p1', { value_format: 'lowercase' })
+    expect(details).toEqual([
+      'Each key changes to the new format; its display label stays the same.',
+      'Each value changes to the new format; its display label stays the same.',
+    ])
+  })
+
   it('asks nothing when the host refuses the count', async () => {
     ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
       'property:holders': async () => fault('That option no longer exists.'),
