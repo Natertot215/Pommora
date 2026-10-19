@@ -152,7 +152,7 @@ export const askFormatChange = (propertyId: string, change: FormatChange): Promi
     change,
     (held) => ({
       message: `This action would rewrite metadata in ${held}.`,
-      detail: 'Each key changes to the new format; values stay the same.',
+      detail: `Each ${'key_format' in change ? 'key' : 'value'} changes to the new format; its display label stays the same.`,
       action: 'Rewrite',
       tone: 'positive',
     }),
