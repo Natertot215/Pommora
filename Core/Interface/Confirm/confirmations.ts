@@ -110,11 +110,11 @@ const askHolding = async (
   propertyId: string,
   of: string | FormatChange | undefined,
   req: (held: string) => ConfirmRequest,
-  quietAt?: number,
+  quietPastOne = false,
 ): Promise<boolean> => {
   const r = await dialer().ask('property:holders', propertyId, of)
   if (!reportRefusal(r)) return false
-  return (quietAt !== undefined && r.value <= quietAt) || ask(req(itemCount(r.value)))
+  return (quietPastOne && r.value <= 1) || ask(req(itemCount(r.value)))
 }
 
 export const askDestroyProperty = (propertyId: string, label: string): Promise<boolean> =>
@@ -143,7 +143,7 @@ export const askClearOption = (propertyId: string, label: string): Promise<boole
       action: 'Clear',
       tone: 'destructive',
     }),
-    0,
+    true,
   )
 
 export const askFormatChange = (propertyId: string, change: FormatChange): Promise<boolean> =>
@@ -156,7 +156,7 @@ export const askFormatChange = (propertyId: string, change: FormatChange): Promi
       action: 'Rewrite',
       tone: 'positive',
     }),
-    1,
+    true,
   )
 
 export const askEmptyTrash = async (count: number): Promise<boolean> => {
