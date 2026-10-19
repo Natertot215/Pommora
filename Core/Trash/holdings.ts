@@ -2,7 +2,7 @@
 
 import { basename, join, relative, titleFromPath } from '../Paths/posix'
 import { SPACE_SIDECAR, TRASH_DIR } from '../Paths/nexusPaths'
-import { landValue } from '../Files/heldKeys'
+import { landValue } from '../Files/rootValues'
 import { readLinkText } from '../Connections/linkValue'
 import { normalizeTitle } from '../Paths/caseFold'
 import type { StrippedLink } from '../Nexus/cascade'
@@ -125,19 +125,19 @@ async function trashedHolders(
   return found
 }
 
-/** A Link value whose page or Space sits in the Trash goes back into its trashed copy wherever that property reads blank, so it returns with it; `names` maps each property's ID to its key. */
+/** A Link value whose page or Space sits in the Trash goes back into its trashed copy wherever that property reads blank, so it returns with it; `keys` maps each property's ID to its key. */
 export async function refillTrashed(
   root: string,
   links: StrippedLink[],
-  names: ReadonlyMap<string, string>,
+  keys: ReadonlyMap<string, string>,
 ): Promise<void> {
   if (!links.length) return
   const holders = await trashedHolders(root, new Set(links.map((l) => l.page)))
   const fill = (raw: Record<string, unknown>, id: unknown): Record<string, unknown> | null => {
     let next = raw
     for (const { page, property, value } of links) {
-      const name = names.get(property)
-      if (page === id && name && isBlankRaw(next[name])) next = landValue(next, name, value)
+      const key = keys.get(property)
+      if (page === id && key && isBlankRaw(next[key])) next = landValue(next, key, value)
     }
     return next === raw ? null : next
   }

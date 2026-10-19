@@ -20,7 +20,7 @@ import {
   unsweptLine,
 } from '../Properties/governedSweep'
 import { withoutOrderId } from './spaceSidecar'
-import { editHeldList, rekeyHeld, stripKeys, type KeyCollision } from '../Files/heldKeys'
+import { editHeldList, rekeyHeld, stripKeys, type KeyCollision } from '../Files/rootValues'
 import { editList, namesValue, stripList } from '../Properties/pageValue'
 import { contextWorldOf } from './contextResolve'
 import { liveTreeOf } from '../Nexus/liveTree'

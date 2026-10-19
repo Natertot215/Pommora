@@ -65,7 +65,7 @@ describe('countPhrase', () => {
   })
 
   it('generalizes when they do not', () => {
-    expect(countPhrase([row({}), row({ kind: 'space' })])).toBe('2 items')
+    expect(countPhrase([row({}), row({ kind: 'space' })])).toBe('2 Items')
   })
 
   it('stays singular for one', () => {
@@ -74,7 +74,7 @@ describe('countPhrase', () => {
   })
 
   it('reports none honestly', () => {
-    expect(countPhrase([])).toBe('0 items')
+    expect(countPhrase([])).toBe('0 Items')
   })
 })
 

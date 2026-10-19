@@ -6,7 +6,7 @@ import { asString } from '../Nexus/coerce'
 import { dropPageMetadata } from '../Nexus/pageMetadata'
 import { fault, ok, type Result } from '../Contract/result'
 import { type Rewrite, sweepGovernedRoots, unsweptLine } from '../Properties/governedSweep'
-import { stripKeys } from '../Files/heldKeys'
+import { stripKeys } from '../Files/rootValues'
 import {
   excludedMatcher,
   hiddenFolder,

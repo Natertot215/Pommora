@@ -17,7 +17,7 @@ import {
   writeSchemaJournal,
 } from './propertyJournal'
 import { type Rewrite, sweepCount, sweepGovernedRoots, type SweepPlan } from './governedSweep'
-import { stripKeys } from '../Files/heldKeys'
+import { stripKeys } from '../Files/rootValues'
 import { patchSidecar } from '../Files/sidecar'
 import { readJsonObject } from '../Files/atomicWrite'
 import { sidecarPath } from '../Paths/paths'

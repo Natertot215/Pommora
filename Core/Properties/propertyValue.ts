@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { fail, ok, type Result } from '../Contract/result'
-import { listOf, scalarMembers } from '../Contract/validators'
+import { isScalar, listOf, scalarMembers } from '../Contract/validators'
 import {
   optionsOf,
   PROPERTY_TYPES,
@@ -9,7 +9,7 @@ import {
   type StatusOption,
 } from './properties'
 import { exactTitle, normalizeTitle } from '../Paths/caseFold'
-import { joinValues, landValue } from '../Files/heldKeys'
+import { joinValues, landValue } from '../Files/rootValues'
 import { yamlInline } from '../Files/pageFile'
 import { linkEntry, readLinkText } from '../Connections/linkValue'
 import { readNumber, spelledNumber } from './formatValue'
@@ -48,7 +48,6 @@ const optionList = (raw: unknown): string[] =>
 type OptionWords = {
   labelOf: Map<string, string>
   byLabel: Map<string, SelectOption | StatusOption>
-  folds: ReadonlySet<string>
 }
 
 const optionWords = new WeakMap<PropertyDefinition, OptionWords>()
@@ -61,7 +60,6 @@ function wordsOf(def: PropertyDefinition): OptionWords {
     words = {
       labelOf: new Map(options.map((o) => [exactTitle(o.key), o.label])),
       byLabel: new Map(options.map((o) => [o.label, o])),
-      folds: new Set(options.flatMap((o) => [normalizeTitle(o.label), normalizeTitle(o.key)])),
     }
     optionWords.set(def, words)
   }
@@ -147,7 +145,9 @@ export function decodeValue(def: PropertyDefinition, raw: unknown): PropertyValu
 
 /** The words a Multi-Select's `raw` holds that its Value Format could have written and no option's label or key claims without regard to case, each once by fold. */
 export function unregisteredMembers(def: PropertyDefinition, raw: unknown): string[] {
-  const { folds } = wordsOf(def)
+  const folds = new Set(
+    optionsOf(def).flatMap((o) => [normalizeTitle(o.label), normalizeTitle(o.key)]),
+  )
   const writable = optionList(raw).filter(
     (w) => formatKey(exactTitle(w), def.value_format) === exactTitle(w),
   )
@@ -169,7 +169,11 @@ export function keepingForeignWords(
     return written
   return joinValues(
     written,
-    optionList(held).filter((w) => registeredOption(def, w) === undefined),
+    listOf(held ?? []).filter((w) =>
+      isScalar(w)
+        ? exactTitle(w) !== '' && registeredOption(def, exactTitle(w)) === undefined
+        : w != null,
+    ),
   )
 }
 

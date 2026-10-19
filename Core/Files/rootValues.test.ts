@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { editHeldList, joinValues, type KeyCollision, rekeyHeld } from './heldKeys'
+import { editHeldList, joinValues, type KeyCollision, rekeyHeld } from './rootValues'
 import { assembleEnvelope, renameFrontmatterKey, splitFrontmatter } from './pageFile'
 import { namesValue, stripList } from '../Properties/pageValue'
 

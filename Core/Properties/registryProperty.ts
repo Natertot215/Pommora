@@ -21,7 +21,7 @@ import { renameFrontmatterKey } from '../Files/pageFile'
 import { collectionFolders } from './assignment'
 import { confirmedKeyHolders, keyHolderFiles } from './keyHolders'
 import { sweepCount, sweepGovernedRoots, type SweepPlan } from './governedSweep'
-import { rekeyHeld, type KeyCollision } from '../Files/heldKeys'
+import { rekeyHeld, type KeyCollision } from '../Files/rootValues'
 import {
   clearSchemaJournal,
   readSchemaJournal,

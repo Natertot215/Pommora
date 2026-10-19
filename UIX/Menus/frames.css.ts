@@ -122,7 +122,7 @@ export const optionRow = style([
   { justifyContent: 'space-between', borderRadius: `${ROW_RADIUS}px` },
 ])
 
-/** A pane of filter-like rows — rules whose trailing side holds field, token, and operator controls — reads compact on every host. */
+/** A pane of compact rows — filter-like rules whose trailing side holds field, token, and operator controls, or a property's format rows — reads compact on every host. */
 export const ruleFrame = style([menuCompact])
 
 /** KNOB — a settings pane's height ceiling, for a View pane or a property's editor; above MENU_MAX_HEIGHT so the middle region's rows sit beneath the tallest stack of controls. */

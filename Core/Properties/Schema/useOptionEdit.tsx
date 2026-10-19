@@ -29,7 +29,7 @@ export type OptionStyleControl = {
 export type OptionDef = Pick<PropertyDefinition, 'id' | 'type' | 'status_groups'>
 
 type Editing = { row: string; label: string }
-type Draft = { key: string; groupId: string; index?: number }
+type Draft = { row: string; groupId: string; index?: number }
 
 export type OptionEditApi = {
   rowKeyOf: (label: string) => string
@@ -75,7 +75,7 @@ export function useOptionEdit({
     write(dialer().ask('property:editOption', def.id, edit))
   const enteringKey = useEntrance(options, (o) => rowKeyOf(o.label))
   const entering = (label: string): boolean =>
-    rowKeyOf(label) !== draft?.key && enteringKey(rowKeyOf(label))
+    rowKeyOf(label) !== draft?.row && enteringKey(rowKeyOf(label))
   const isOpen = (row: string): boolean =>
     editing !== null && rowKeyOf(row) === rowKeyOf(editing.row)
   const open = (label: string, el: HTMLElement | undefined): void => {
@@ -143,11 +143,11 @@ export function useOptionEdit({
     if (!draft) return
     const add = (): Promise<boolean> =>
       editOption({ op: 'add', groupId: draft.groupId, label, atIndex: draft.index })
-    void keys.land(draft.key, label, add).then((ok) => {
+    void keys.land(draft.row, label, add).then((ok) => {
       if (ok) setDraft((d) => (d === draft ? null : d))
     })
   }
-  const drafted = draft && !options.some((o) => rowKeyOf(o.label) === draft.key) ? draft : null
+  const drafted = draft && !options.some((o) => rowKeyOf(o.label) === draft.row) ? draft : null
 
   const option = editing && options.find((o) => rowKeyOf(o.label) === rowKeyOf(editing.row))
   useEffect(() => {
@@ -181,7 +181,7 @@ export function useOptionEdit({
     editOption,
     moves,
     draft: drafted,
-    beginDraft: (groupId, index) => setDraft({ key: keys.mint(), groupId, index }),
+    beginDraft: (groupId, index) => setDraft({ row: keys.mint(), groupId, index }),
     commitDraft,
     cancelDraft: () => setDraft(null),
     busy: editing !== null || draft !== null,

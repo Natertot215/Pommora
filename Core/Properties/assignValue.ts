@@ -9,7 +9,7 @@ import { shownAlias } from '../Connections/linkValue'
 import { pageIndexOf } from '../Nexus/record'
 import { pushUndo } from '../Session/undo'
 import { useSession } from '../Session/store'
-import { landValue } from '../Files/heldKeys'
+import { landValue } from '../Files/rootValues'
 
 export interface ValueWriter {
   schema: PropertyDefinition[]

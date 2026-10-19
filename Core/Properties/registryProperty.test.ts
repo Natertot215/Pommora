@@ -459,6 +459,12 @@ const seedHeld = async (draft: PropertyDraft, frontmatter: string) => {
 }
 
 describe('a Key Format change is a rename of the key', () => {
+  it('keeps the label a definition stored without one reads, writing it beside the new key', async () => {
+    await seedRegistry({ id: 'prop_m', key: 'Model', type: 'text' })
+    expect((await setKeyFormat(root, 'prop_m', 'lowercase')).ok).toBe(true)
+    expect((await readRegistry(root)).defs.prop_m).toMatchObject({ label: 'Model', key: 'model' })
+  })
+
   it('moves the key on every holder, in place, and clears the journal', async () => {
     const { id, page } = await seedHeld(
       def({ label: 'Tags', type: 'multiSelect' }),
