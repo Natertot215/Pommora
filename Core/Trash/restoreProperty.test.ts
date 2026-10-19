@@ -1,5 +1,5 @@
 import { readFile, rename, rm, mkdir, stat, utimes, writeFile } from 'node:fs/promises'
-import { updatePageProperty, setSpaceProperty } from '../Testing/propertyWrites'
+import { writePageValue, writeSpaceValue } from '../Testing/propertyWrites'
 import { join } from '../Paths/posix'
 import { contextsDir, contextsRegistryFile, sidecarPath } from '../Paths/paths'
 import { tempRoot, readJsonAt } from '../Testing/hostFs'
@@ -97,11 +97,11 @@ describe('restoring a deleted property', () => {
     const p1 = await createTestPage(notes, 'A', { body: 'b' })
     const p2 = await createTestPage(tasks, 'B', { body: 'b' })
     if (!p1.ok || !p2.ok) throw new Error('pages failed')
-    await updatePageProperty(p1.value.path, await liveDef(id), {
+    await writePageValue(p1.value.path, await liveDef(id), {
       kind: 'select',
       value: 'hi',
     })
-    await updatePageProperty(p2.value.path, await liveDef(id), {
+    await writePageValue(p2.value.path, await liveDef(id), {
       kind: 'select',
       value: 'lo',
     })
@@ -126,11 +126,11 @@ describe('restoring a deleted property', () => {
     const p1 = await createTestPage(notes, 'A', { body: 'b' })
     const p2 = await createTestPage(tasks, 'B', { body: 'b' })
     if (!p1.ok || !p2.ok) throw new Error('pages failed')
-    await updatePageProperty(p1.value.path, await liveDef(id), {
+    await writePageValue(p1.value.path, await liveDef(id), {
       kind: 'select',
       value: 'hi',
     })
-    await updatePageProperty(p2.value.path, await liveDef(id), {
+    await writePageValue(p2.value.path, await liveDef(id), {
       kind: 'select',
       value: 'lo',
     })
@@ -164,7 +164,7 @@ describe('restoring a deleted property', () => {
     await assignProperty(root, notes, c.value.id)
     const page = await createTestPage(notes, 'P', { body: 'b' })
     if (!page.ok) throw new Error('page failed')
-    await updatePageProperty(page.value.path, await liveDef(c.value.id), {
+    await writePageValue(page.value.path, await liveDef(c.value.id), {
       kind: 'select',
       value: 'In Progress',
     })
@@ -221,9 +221,9 @@ describe('restoring a deleted property', () => {
     const good = await createTestPage(notes, 'B', { body: 'b' })
     if (!page.ok || !good.ok) throw new Error('pages failed')
     const def = await liveDef(id)
-    await updatePageProperty(good.value.path, def, { kind: 'select', value: 'hi' })
+    await writePageValue(good.value.path, def, { kind: 'select', value: 'hi' })
     // A hand-written value naming an option the definition never had.
-    await updatePageProperty(page.value.path, { ...def, type: 'link' } as PropertyDefinition, {
+    await writePageValue(page.value.path, { ...def, type: 'link' } as PropertyDefinition, {
       kind: 'link',
       value: 'nonsense',
     })
@@ -240,7 +240,7 @@ describe('restoring a deleted property', () => {
     const id = await seedPriority()
     const page = await createTestPage(tasks, 'A', { body: 'b' })
     if (!page.ok) throw new Error('page failed')
-    await updatePageProperty(page.value.path, await liveDef(id), {
+    await writePageValue(page.value.path, await liveDef(id), {
       kind: 'select',
       value: 'lo',
     })
@@ -275,8 +275,8 @@ describe('restoring a deleted property', () => {
     const doomed = await createTestPage(tasks, 'B', { body: 'b' })
     if (!p1.ok || !doomed.ok) throw new Error('pages failed')
     const def = await liveDef(id)
-    await updatePageProperty(p1.value.path, def, { kind: 'select', value: 'hi' })
-    await updatePageProperty(doomed.value.path, def, { kind: 'select', value: 'lo' })
+    await writePageValue(p1.value.path, def, { kind: 'select', value: 'hi' })
+    await writePageValue(doomed.value.path, def, { kind: 'select', value: 'lo' })
 
     expect((await deleteProperty(root, id)).ok).toBe(true)
     await rm(tasks, { recursive: true, force: true })
@@ -302,7 +302,7 @@ describe('restoring a deleted property', () => {
     const id = await seedPriority()
     expect(
       (
-        await setSpaceProperty(root, join(root, space.value.path), await liveDef(id), {
+        await writeSpaceValue(root, join(root, space.value.path), await liveDef(id), {
           kind: 'select',
           value: 'hi',
         })
@@ -330,7 +330,7 @@ describe('restoring a deleted property', () => {
     await rename(join(contextsDir(root), 'moved'), join(contextsDir(root), 'projects'))
     const sidecarFile = join(contextsDir(root), 'projects', 'Pommora', '_space.json')
     const id = await seedPriority()
-    await setSpaceProperty(root, join(root, space.value.path), await liveDef(id), {
+    await writeSpaceValue(root, join(root, space.value.path), await liveDef(id), {
       kind: 'select',
       value: 'hi',
     })
@@ -354,8 +354,8 @@ describe('restoring a deleted property', () => {
     const dead = await createTestPage(notes, 'Dead', { body: 'b' })
     if (!target.ok || !live.ok || !dead.ok) throw new Error('pages failed')
     const def = await liveDef(c.value.id)
-    await updatePageProperty(live.value.path, def, { kind: 'link', value: '[[Target]]' })
-    await updatePageProperty(dead.value.path, def, { kind: 'link', value: '[[Gone]]' })
+    await writePageValue(live.value.path, def, { kind: 'link', value: '[[Target]]' })
+    await writePageValue(dead.value.path, def, { kind: 'link', value: '[[Gone]]' })
     expect((await deleteProperty(root, c.value.id)).ok).toBe(true)
     const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() }, deps)
     expect(r).toEqual({ ok: true, value: {} })
@@ -376,8 +376,8 @@ describe('restoring a deleted property', () => {
     const dead = await createTestPage(tasks, 'Dead', { body: 'b' })
     if (!target.ok || !live.ok || !dead.ok) throw new Error('pages failed')
     const def = await liveDef(c.value.id)
-    await updatePageProperty(live.value.path, def, { kind: 'link', value: '[[Target]]' })
-    await updatePageProperty(dead.value.path, def, { kind: 'link', value: '[[Gone]]' })
+    await writePageValue(live.value.path, def, { kind: 'link', value: '[[Target]]' })
+    await writePageValue(dead.value.path, def, { kind: 'link', value: '[[Gone]]' })
     expect((await removeProperty(root, tasks, c.value.id)).ok).toBe(true)
     expect((await assignProperty(root, tasks, c.value.id)).ok).toBe(true)
     expect(await valueOn(live.value.path, 'Related')).toBe('[[Target]]')
@@ -395,7 +395,7 @@ describe('restoring a deleted property', () => {
     await assignProperty(root, notes, c.value.id)
     const page = await createTestPage(notes, 'T', { body: 'b' })
     if (!page.ok) throw new Error('page failed')
-    await updatePageProperty(page.value.path, await liveDef(c.value.id), {
+    await writePageValue(page.value.path, await liveDef(c.value.id), {
       kind: 'multiSelect',
       value: ['alpha', 'zeta'],
     })

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { updatePageProperty } from '../Testing/propertyWrites'
+import { writePageValue } from '../Testing/propertyWrites'
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { readJsonAt, seedSpaceSidecar, tempRoot } from '../Testing/hostFs'
@@ -369,7 +369,7 @@ describe('renameProperty and editProperty', () => {
       const p = await createTestPage(col.value.path, title, { body: 'b' })
       if (!p.ok) return
       pages.push(p.value.path)
-      await updatePageProperty(p.value.path, live, { kind: 'number', value: 1 })
+      await writePageValue(p.value.path, live, { kind: 'number', value: 1 })
     }
     // Hand-edited into unparseable YAML. It sorts between the two healthy pages, so a sweep that throws on it leaves C behind on the old key.
     await writeFile(pages[1], '---\ntitle: B\nOld: 1\nbroken: {oops\n---\nb\n', 'utf8')

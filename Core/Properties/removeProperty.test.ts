@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { updatePageProperty } from '../Testing/propertyWrites'
+import { writePageValue } from '../Testing/propertyWrites'
 import { ID_KEY } from '../Nexus/identityMark'
 import { chmod, rename, rm, readFile, stat, utimes, writeFile } from 'node:fs/promises'
 import { join, relative } from '../Paths/posix'
@@ -71,8 +71,8 @@ beforeEach(async () => {
   if (!a.ok || !b.ok) throw new Error('setup failed')
   pageA = a.value.path
   pageB = b.value.path
-  await updatePageProperty(pageA, liveDef, { kind: 'select', value: 'active' })
-  await updatePageProperty(pageB, liveDef, { kind: 'select', value: 'done' })
+  await writePageValue(pageA, liveDef, { kind: 'select', value: 'active' })
+  await writePageValue(pageB, liveDef, { kind: 'select', value: 'done' })
 })
 afterEach(async () => {
   closeSession()
@@ -167,7 +167,7 @@ describe('removeProperty — strip + cache (C-3/C-6)', () => {
       if (!set.ok) throw new Error('setup failed')
       const held = await createTestPage(set.value.path, 'C', { body: 'b' })
       if (!held.ok) throw new Error('setup failed')
-      await updatePageProperty(held.value.path, liveDef, { kind: 'select', value: 'done' })
+      await writePageValue(held.value.path, liveDef, { kind: 'select', value: 'done' })
       await chmod(set.value.path, 0o555)
       try {
         const r = await removeProperty(root, folder, propId).catch(fault)
@@ -181,7 +181,7 @@ describe('removeProperty — strip + cache (C-3/C-6)', () => {
   it.skipIf(noModeBits)('a holder it can’t read is answered as a skip, not left out', async () => {
     const held = await createTestPage(folder, 'C', { body: 'b' })
     if (!held.ok) throw new Error('setup failed')
-    await updatePageProperty(held.value.path, liveDef, { kind: 'select', value: 'done' })
+    await writePageValue(held.value.path, liveDef, { kind: 'select', value: 'done' })
     await chmod(held.value.path, 0o000)
     try {
       expect(await removeProperty(root, folder, propId)).toEqual(ok({ skipped: 1, hosts: [] }))
@@ -274,7 +274,7 @@ describe('restore on re-assign — per-value schema-currency reconciliation (C-3
       ...cur,
       properties: [...assignedIds(cur), propId],
     }))
-    await updatePageProperty(pageA, liveDef, { kind: 'select', value: 'active' })
+    await writePageValue(pageA, liveDef, { kind: 'select', value: 'active' })
     await removeProperty(root, folder, propId)
     await assignProperty(root, folder, propId)
     expect(await pageValue(pageA)).toEqual(['active'])
@@ -352,7 +352,7 @@ describe('restore on re-assign — per-value schema-currency reconciliation (C-3
     const c = await createTestPage(folder, 'C', { body: 'b' })
     if (!c.ok) throw new Error('setup failed')
     const selDef = (await readRegistry(root)).defs[id]
-    await updatePageProperty(c.value.path, selDef, { kind: 'select', value: '2024-01-01' })
+    await writePageValue(c.value.path, selDef, { kind: 'select', value: '2024-01-01' })
     await removeProperty(root, folder, id)
     await assignProperty(root, folder, id)
     const root2 = splitFrontmatter(await readFile(c.value.path, 'utf8'))
@@ -370,7 +370,7 @@ describe('restore on re-assign — per-value schema-currency reconciliation (C-3
     await assignProperty(root, folder, tags.value.id)
     const p = await createTestPage(folder, 'T', { body: 'b' })
     if (!p.ok) throw new Error('setup failed')
-    await updatePageProperty(p.value.path, (await readRegistry(root)).defs[tags.value.id], {
+    await writePageValue(p.value.path, (await readRegistry(root)).defs[tags.value.id], {
       kind: 'multiSelect',
       value: ['alpha', 'zeta'],
     })

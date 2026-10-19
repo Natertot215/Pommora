@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { updatePageProperty, setSpaceProperty } from '../Testing/propertyWrites'
+import { writePageValue, writeSpaceValue } from '../Testing/propertyWrites'
 import { ID_KEY } from '../Nexus/identityMark'
 import { rm, readFile, readdir, writeFile } from 'node:fs/promises'
 import { dirname, join } from '../Paths/posix'
@@ -81,11 +81,11 @@ describe('deleteProperty', () => {
     const p1 = await createTestPage(notes, 'A', { body: 'b' })
     const p2 = await createTestPage(tasks, 'B', { body: 'b' })
     if (!p1.ok || !p2.ok) return
-    await updatePageProperty(p1.value.path, await liveDef(id), {
+    await writePageValue(p1.value.path, await liveDef(id), {
       kind: 'select',
       value: 'hi',
     })
-    await updatePageProperty(p2.value.path, await liveDef(id), {
+    await writePageValue(p2.value.path, await liveDef(id), {
       kind: 'select',
       value: 'hi',
     })
@@ -134,7 +134,7 @@ describe('deleteProperty', () => {
     await assignProperty(root, notes, id)
     const p = await createTestPage(notes, 'A', { body: 'b' })
     if (!p.ok) return
-    await updatePageProperty(p.value.path, await liveDef(id), { kind: 'select', value: 'hi' })
+    await writePageValue(p.value.path, await liveDef(id), { kind: 'select', value: 'hi' })
     await removeProperty(root, notes, id)
     const before = await readJsonObject(sidecarPath(notes, 'collection'))
     expect((before?.property_cache as Record<string, unknown>)[id]).toBeDefined()
@@ -161,7 +161,7 @@ describe('propertyHolders', () => {
     const page = await createTestPage(notes, 'A', { body: 'b' })
     await createTestPage(notes, 'B', { body: 'b' })
     if (!page.ok) throw new Error('setup failed')
-    await updatePageProperty(page.value.path, await liveDef(c.value.id), {
+    await writePageValue(page.value.path, await liveDef(c.value.id), {
       kind: 'select',
       value: 'hi',
     })
@@ -182,7 +182,7 @@ describe('propertyHolders', () => {
     await assignProperty(root, notes, c.value.id)
     const page = await createTestPage(notes, 'A', { body: 'b' })
     if (!page.ok) throw new Error('setup failed')
-    await updatePageProperty(page.value.path, await liveDef(c.value.id), {
+    await writePageValue(page.value.path, await liveDef(c.value.id), {
       kind: 'select',
       value: 'hi',
     })
@@ -288,7 +288,7 @@ describe('a global delete reaches a Space sidecar', () => {
       icon: 'https://draft.example',
     })
 
-    const set = await setSpaceProperty(root, dirname(pom), await liveDef(c.value.id), {
+    const set = await writeSpaceValue(root, dirname(pom), await liveDef(c.value.id), {
       kind: 'link',
       value: 'https://final.example',
     })

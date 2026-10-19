@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { updatePageProperty } from '../Testing/propertyWrites'
+import { writePageValue } from '../Testing/propertyWrites'
 import { ID_KEY, isUlidShaped } from './identityMark'
 import { chmod, rm, mkdir, readdir, stat, readFile, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
@@ -246,8 +246,8 @@ describe('a page property write', () => {
     const at = async (name: string): Promise<unknown> =>
       (splitFrontmatter(await readFile(f, 'utf8')) as Record<string, unknown>)[name]
 
-    await updatePageProperty(f, defOf('prop_status'), { kind: 'select', value: 'todo' })
-    await updatePageProperty(f, defOf('prop_tags', 'multiSelect'), {
+    await writePageValue(f, defOf('prop_status'), { kind: 'select', value: 'todo' })
+    await writePageValue(f, defOf('prop_tags', 'multiSelect'), {
       kind: 'multiSelect',
       value: ['a', 'b'],
     })
@@ -255,10 +255,10 @@ describe('a page property write', () => {
     expect(await at('tags')).toEqual(['a', 'b'])
     expect(splitFrontmatter(await readFile(f, 'utf8'))[ID_KEY]).toBe(c.value.id)
 
-    await updatePageProperty(f, defOf('prop_status'), { kind: 'select', value: 'done' })
+    await writePageValue(f, defOf('prop_status'), { kind: 'select', value: 'done' })
     expect(await at('status')).toEqual(['done'])
 
-    await updatePageProperty(f, defOf('prop_status'), null)
+    await writePageValue(f, defOf('prop_status'), null)
     expect(await at('status')).toBeUndefined()
     expect(await at('tags')).toEqual(['a', 'b'])
   })
@@ -270,7 +270,7 @@ describe('a page property write', () => {
     const held = (await readFile(f, 'utf8')).replace('---\n', '---\nStage: Held\n')
     await writeFile(f, held)
 
-    await updatePageProperty(f, defOf('prop_stage'), { kind: 'select', value: 'doing' })
+    await writePageValue(f, defOf('prop_stage'), { kind: 'select', value: 'doing' })
 
     const fm = splitFrontmatter(await readFile(f, 'utf8'))
     expect(fm.stage).toEqual(['doing'])
@@ -281,9 +281,9 @@ describe('a page property write', () => {
     const c = await createTestPage(typeDir, 'Unknown Kind', { body: 'x' })
     if (!c.ok) throw new Error('setup failed')
     const f = c.value.path
-    await updatePageProperty(f, defOf('prop_stage'), { kind: 'select', value: 'todo' })
+    await writePageValue(f, defOf('prop_stage'), { kind: 'select', value: 'todo' })
 
-    const r = await updatePageProperty(f, defOf('prop_stage'), {
+    const r = await writePageValue(f, defOf('prop_stage'), {
       kind: 'status',
       value: 'done',
     } as unknown as PropertyValue)
@@ -294,7 +294,7 @@ describe('a page property write', () => {
   })
 
   it('errors when the page is missing', async () => {
-    const r = await updatePageProperty(join(typeDir, 'nope.md'), defOf('p'), {
+    const r = await writePageValue(join(typeDir, 'nope.md'), defOf('p'), {
       kind: 'select',
       value: 'x',
     })

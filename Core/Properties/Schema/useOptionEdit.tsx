@@ -28,24 +28,24 @@ export type OptionStyleControl = {
 
 export type OptionDef = Pick<PropertyDefinition, 'id' | 'type' | 'status_groups'>
 
-type Editing = { row: string; value: string }
+type Editing = { row: string; label: string }
 type Draft = { key: string; groupId: string; index?: number }
 
 export type OptionEditApi = {
-  rowKeyOf: (value: string) => string
-  entering: (value: string) => boolean
+  rowKeyOf: (label: string) => string
+  entering: (label: string) => boolean
   isOpen: (row: string) => boolean
-  toggle: (value: string, anchor: HTMLElement | undefined) => void
-  openMenu: (value: string, row: HTMLElement) => Promise<void>
+  toggle: (label: string, anchor: HTMLElement | undefined) => void
+  openMenu: (label: string, row: HTMLElement) => Promise<void>
   editOption: (edit: OptionEdit) => Promise<boolean>
   moves: (groups: readonly { id: string; options: readonly { label: string }[] }[]) => {
-    laneOf: () => (value: string) => string | undefined
-    commit: (value: string, slot: LaneSlot) => void
-    chip: (value: string) => React.JSX.Element
+    laneOf: () => (label: string) => string | undefined
+    commit: (label: string, slot: LaneSlot) => void
+    chip: (label: string) => React.JSX.Element
   }
   draft: Draft | null
   beginDraft: (groupId: string, index?: number) => void
-  commitDraft: (title: string) => void
+  commitDraft: (label: string) => void
   cancelDraft: () => void
   busy: boolean
   popup: React.JSX.Element | null
@@ -67,35 +67,35 @@ export function useOptionEdit({
   const anchor = useRef<HTMLElement | null>(null)
   const keys = useRenameKeys(
     options.map((o) => o.label),
-    editing?.value,
+    editing?.label,
   )
   const { rowKeyOf } = keys
 
   const editOption = (edit: OptionEdit): Promise<boolean> =>
     write(dialer().ask('property:editOption', def.id, edit))
   const enteringKey = useEntrance(options, (o) => rowKeyOf(o.label))
-  const entering = (value: string): boolean =>
-    rowKeyOf(value) !== draft?.key && enteringKey(rowKeyOf(value))
+  const entering = (label: string): boolean =>
+    rowKeyOf(label) !== draft?.key && enteringKey(rowKeyOf(label))
   const isOpen = (row: string): boolean =>
     editing !== null && rowKeyOf(row) === rowKeyOf(editing.row)
-  const open = (value: string, el: HTMLElement | undefined): void => {
+  const open = (label: string, el: HTMLElement | undefined): void => {
     anchor.current = el ?? null
-    setEditing({ row: value, value })
+    setEditing({ row: label, label })
   }
-  const toggle = (value: string, el: HTMLElement | undefined): void =>
-    isOpen(value) ? setEditing(null) : open(value, el)
+  const toggle = (label: string, el: HTMLElement | undefined): void =>
+    isOpen(label) ? setEditing(null) : open(label, el)
 
-  const rename = async (title: string): Promise<void> => {
-    if (!editing || title === editing.value) return
-    const { row, value: from } = editing
-    setEditing((e) => (e && e.value === from ? { row: e.row, value: title } : e))
+  const rename = async (label: string): Promise<void> => {
+    if (!editing || label === editing.label) return
+    const { row, label: from } = editing
+    setEditing((e) => (e && e.label === from ? { row: e.row, label } : e))
     const renamed = (): Promise<boolean> =>
-      warnOwed(dialer().ask('property:renameOption', def.id, from, title))
-    if (!(await keys.land(row, title, renamed)))
-      setEditing((e) => (e && e.value === title ? { row: e.row, value: from } : e))
+      warnOwed(dialer().ask('property:renameOption', def.id, from, label))
+    if (!(await keys.land(row, label, renamed)))
+      setEditing((e) => (e && e.label === label ? { row: e.row, label: from } : e))
   }
 
-  const openMenu = async (value: string, row: HTMLElement): Promise<void> => {
+  const openMenu = async (label: string, row: HTMLElement): Promise<void> => {
     const action = await popMenu(
       optionMenuModel({
         style: style && { type: def.type, current: style.current },
@@ -106,14 +106,14 @@ export function useOptionEdit({
       case null:
         return
       case 'option:edit':
-        return open(value, row)
+        return open(label, row)
       case 'option:clear':
-        if (await askClearOption(def.id, value))
-          await write(dialer().ask('property:clearOption', def.id, value))
+        if (await askClearOption(def.id, label))
+          await write(dialer().ask('property:clearOption', def.id, label))
         return
       case 'option:remove':
-        if (await askRemoveOption(def.id, value))
-          await warnOwed(dialer().ask('property:removeOption', def.id, value))
+        if (await askRemoveOption(def.id, label))
+          await warnOwed(dialer().ask('property:removeOption', def.id, label))
         return
       default: {
         const picked = parseStyleAction(action)
@@ -125,25 +125,25 @@ export function useOptionEdit({
   const moves: OptionEditApi['moves'] = (groups) => ({
     laneOf: () => {
       const laneOf = new Map(groups.flatMap((g) => g.options.map((o) => [o.label, g.id] as const)))
-      return (value) => laneOf.get(value)
+      return (label) => laneOf.get(label)
     },
-    commit: (value, slot) =>
-      void editOption({ op: 'move', option: value, groupId: slot.lane, toIndex: slot.index }),
-    chip: (value) => (
+    commit: (label, slot) =>
+      void editOption({ op: 'move', option: label, groupId: slot.lane, toIndex: slot.index }),
+    chip: (label) => (
       <OptionChip
         type={def.type}
         look={style?.current.look}
-        option={options.find((o) => o.label === value)}
+        option={options.find((o) => o.label === label)}
         def={def}
       />
     ),
   })
 
-  const commitDraft = (title: string): void => {
+  const commitDraft = (label: string): void => {
     if (!draft) return
     const add = (): Promise<boolean> =>
-      editOption({ op: 'add', groupId: draft.groupId, title, atIndex: draft.index })
-    void keys.land(draft.key, title, add).then((ok) => {
+      editOption({ op: 'add', groupId: draft.groupId, title: label, atIndex: draft.index })
+    void keys.land(draft.key, label, add).then((ok) => {
       if (ok) setDraft((d) => (d === draft ? null : d))
     })
   }
@@ -157,17 +157,17 @@ export function useOptionEdit({
   const popup = held ? (
     <OptionEditPopup
       open={!!option}
-      contentKey={held.value}
+      contentKey={held.label}
       type={def.type}
-      option={{ ...held.option, label: held.value }}
+      option={{ ...held.option, label: held.label }}
       def={def}
       triggerRef={anchor}
       onDismiss={() => setEditing(null)}
-      onRename={(title) => void rename(title)}
-      onPickIcon={(icon) => void editOption({ op: 'icon', option: held.value, icon })}
-      onPickColor={(color) => void editOption({ op: 'recolor', option: held.value, color })}
+      onRename={(label) => void rename(label)}
+      onPickIcon={(icon) => void editOption({ op: 'icon', option: held.label, icon })}
+      onPickColor={(color) => void editOption({ op: 'recolor', option: held.label, color })}
       onPickAppearance={(appearance) =>
-        void editOption({ op: 'appearance', option: held.value, appearance })
+        void editOption({ op: 'appearance', option: held.label, appearance })
       }
     />
   ) : null

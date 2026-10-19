@@ -1,7 +1,7 @@
 // The cascade and the cell-write path must serialize on the SAME per-file lock. They match only because openSession canonicalizes the root — on a symlinked root a raw sessionRoot would split them into different buckets, so the test opens its Nexus through a symlink.
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { updatePageProperty } from '../Testing/propertyWrites'
+import { writePageValue } from '../Testing/propertyWrites'
 import { symlinkSync } from 'node:fs'
 import { rm } from 'node:fs/promises'
 import { relative } from '../Paths/posix'
@@ -51,7 +51,7 @@ async function setup(root: string, value: string): Promise<{ propertyId: string;
   await assignProperty(root, col.value.path, c.value.id)
   const p = await createTestPage(col.value.path, 'Target', { body: 'b' })
   if (!p.ok) throw new Error('page failed')
-  await updatePageProperty(p.value.path, defOf(c.value.id), { kind: 'select', value })
+  await writePageValue(p.value.path, defOf(c.value.id), { kind: 'select', value })
   return { propertyId: c.value.id, rel: relative(root, p.value.path) }
 }
 

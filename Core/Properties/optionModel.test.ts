@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { addOption, applyOptionEdit, moveOption } from './optionModel'
+import { addOption, applyOptionEdit } from './optionModel'
 import {
   optionGroupsOf,
   withOptionGroups,
@@ -36,8 +36,8 @@ describe('optionModel', () => {
     expect(next[1]).toBe(groups[1])
   })
 
-  it('moveOption reassigns group_id and inserts at the target index (cross-group)', () => {
-    const next = moveOption(groups, 'A', 'done', 0)
+  it('applyOptionEdit move reassigns group_id and inserts at the target index (cross-group)', () => {
+    const next = applyOptionEdit(groups, { op: 'move', option: 'A', groupId: 'done', toIndex: 0 })
     expect(next[0].options).toEqual([])
     expect(next[1].options).toEqual([{ ...A, group_id: 'done' }, D])
   })

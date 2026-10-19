@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { updatePageProperty } from '../Testing/propertyWrites'
+import { writePageValue } from '../Testing/propertyWrites'
 import { chmod, mkdir, rm, readFile, stat, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { noModeBits, seedSpaceSidecar, readJsonAt, tempRoot } from '../Testing/hostFs'
@@ -78,7 +78,7 @@ async function pageHolding(id: string, value: string): Promise<string> {
   if (!p.ok) throw new Error('page failed')
   const def = (await readRegistry(root)).defs[id]
   if (!def) throw new Error('definition missing')
-  await updatePageProperty(p.value.path, def, { kind: 'select', value })
+  await writePageValue(p.value.path, def, { kind: 'select', value })
   return p.value.path
 }
 
@@ -634,7 +634,7 @@ describe('renameOption', () => {
   it('is refused for a value the definition lacks, and rewrites no page', async () => {
     const id = await mkSelect([{ key: 'A', label: 'A' }])
     const page = await pageHolding(id, 'A')
-    await updatePageProperty(page, (await readRegistry(root)).defs[id], {
+    await writePageValue(page, (await readRegistry(root)).defs[id], {
       kind: 'select',
       value: 'Stray',
     })
@@ -668,7 +668,7 @@ describe('renameOption', () => {
       for (const title of titles) {
         const p = await createTestPage(col.value.path, title, { body: 'b' })
         if (!p.ok) throw new Error('page failed')
-        await updatePageProperty(p.value.path, def, { kind: 'select', value: 'A' })
+        await writePageValue(p.value.path, def, { kind: 'select', value: 'A' })
       }
     }
     await openSession(root)
@@ -743,7 +743,7 @@ describe('an owed record holds option changes', () => {
       if (!set.ok) throw new Error('set failed')
       const p = await createTestPage(set.value.path, 'Two', { body: 'b' })
       if (!p.ok) throw new Error('page failed')
-      await updatePageProperty(p.value.path, (await readRegistry(root)).defs[id], {
+      await writePageValue(p.value.path, (await readRegistry(root)).defs[id], {
         kind: 'select',
         value: 'A',
       })
@@ -795,7 +795,7 @@ describe('remove and clear on a value the definition lacks', () => {
   const stray = async (): Promise<{ id: string; page: string; bytes: string }> => {
     const id = await mkSelect([{ key: 'A', label: 'A' }])
     const page = await pageHolding(id, 'A')
-    await updatePageProperty(page, (await readRegistry(root)).defs[id], {
+    await writePageValue(page, (await readRegistry(root)).defs[id], {
       kind: 'select',
       value: 'Stray',
     })
@@ -864,7 +864,7 @@ describe('clearOption', () => {
     if (!p.ok) throw new Error('page failed')
     const def = (await readRegistry(root)).defs[id]
     if (!def) throw new Error('definition missing')
-    await updatePageProperty(p.value.path, def, { kind: 'select', value: 'hi' })
+    await writePageValue(p.value.path, def, { kind: 'select', value: 'hi' })
     await chmod(set.value.path, 0o555)
     try {
       const r = await clearOption(root, id, 'hi').catch(fault)
@@ -1088,7 +1088,7 @@ describe('option cascades reach saved views', () => {
     if (!set.ok) throw new Error('set failed')
     const p = await createTestPage(set.value.path, 'Held', { body: 'b' })
     if (!p.ok) throw new Error('page failed')
-    await updatePageProperty(p.value.path, (await readRegistry(root)).defs[id], {
+    await writePageValue(p.value.path, (await readRegistry(root)).defs[id], {
       kind: 'select',
       value: 'Done',
     })

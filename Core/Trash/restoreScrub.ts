@@ -28,7 +28,6 @@ import {
 import { basename, isMarkdownFile, join } from '../Paths/posix'
 import { listMarkdownFiles, listPathsUnder } from '../Files/walk'
 import { hiddenFolder } from '../Paths/exclusion'
-
 import { SPACE_SIDECAR } from '../Paths/nexusPaths'
 import { sweepGovernedRoots, unsweptLine } from '../Properties/governedSweep'
 

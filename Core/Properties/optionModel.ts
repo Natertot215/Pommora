@@ -18,11 +18,7 @@ function mapOption(
   return mapOptions(groups, (o) => (o.label === label ? fn(o) : o))
 }
 
-function withField<T extends { label: string }, K extends keyof T>(
-  o: T,
-  key: K,
-  v: T[K] | undefined,
-): T {
+function withField<T, K extends keyof T>(o: T, key: K, v: T[K] | undefined): T {
   const { [key]: _drop, ...rest } = o
   return (v ? { ...rest, [key]: v } : rest) as T
 }
@@ -42,7 +38,7 @@ export function addOption(
   })
 }
 
-export function moveOption(
+function moveOption(
   groups: StatusGroup[],
   label: string,
   toGroupId: string,

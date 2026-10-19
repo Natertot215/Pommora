@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { updatePageProperty } from '../Testing/propertyWrites'
+import { writePageValue } from '../Testing/propertyWrites'
 import { chmod, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { relative } from '../Paths/posix'
 import { noModeBits, readJsonAt, tempRoot } from '../Testing/hostFs'
@@ -67,7 +67,7 @@ beforeEach(async () => {
   await assignProperty(root, col, propId)
   const page = await createTestPage(col, 'A', { body: 'b' })
   if (!page.ok) throw new Error('setup failed')
-  await updatePageProperty(page.value.path, (await readRegistry(root)).defs[propId], {
+  await writePageValue(page.value.path, (await readRegistry(root)).defs[propId], {
     kind: 'select',
     value: 'Done',
   })
@@ -107,7 +107,7 @@ describe('the property channels', () => {
       if (!locked.ok) throw new Error('setup failed')
       const held = await createTestPage(locked.value.path, 'C', { body: 'b' })
       if (!held.ok) throw new Error('setup failed')
-      await updatePageProperty(held.value.path, (await readRegistry(root)).defs[propId], {
+      await writePageValue(held.value.path, (await readRegistry(root)).defs[propId], {
         kind: 'select',
         value: 'Done',
       })
@@ -256,7 +256,7 @@ describe('the property channels', () => {
     expect((await propertiesHandlers['property:editOption'](ctx, propId, add)).ok).toBe(true)
     const page = `${col}/A.md`
     const def = (await readRegistry(root)).defs[propId]
-    await updatePageProperty(page, def, { kind: 'select', value: 'Done' })
+    await writePageValue(page, def, { kind: 'select', value: 'Done' })
     const before = await readFile(page, 'utf8')
     expect(await propertiesHandlers['property:replay'](ctx, record)).toEqual(ok(null))
     expect(await readFile(page, 'utf8')).toBe(before)

@@ -12,7 +12,7 @@ import type { PropertyDefinition } from './properties'
 import { splitFrontmatter } from '../Files/pageFile'
 import { createProperty } from './registryProperty'
 import { removeProperty } from './removeProperty'
-import { updatePageProperty } from '../Testing/propertyWrites'
+import { writePageValue } from '../Testing/propertyWrites'
 import { refreshTree } from '../Nexus/liveTree'
 
 let root: string
@@ -62,7 +62,7 @@ it('a Remove racing an Assign on ONE collection never loses either write (breake
   await assignProperty(root, notes, pC)
   const page = await createTestPage(notes, 'A', { body: 'b' })
   if (!page.ok) throw new Error('setup failed')
-  await updatePageProperty(
+  await writePageValue(
     page.value.path,
     { id: pC, label: 'Gone', key: 'Gone', type: 'number' } as PropertyDefinition,
     { kind: 'number', value: 7 },
