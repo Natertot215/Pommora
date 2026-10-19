@@ -36,7 +36,7 @@ The work lands in nine phases in dependency order, each the largest run one agen
 
 **The Number:** counted from this plan's AFTER blocks (code lines, comments excluded), the work adds about 770 lines and removes about 380, roughly +390 net, against the BRIEF's +80 to +140 and the scouts' +120 to +150; the blocks elide unchanged code, so the landed count may run higher. Per phase: 1 (+62/−31), 2 (+50/−69), 3 (+79/−32), 4 (+71/−77), 5 (+44/−15), 6 (+181/−78), 7 (+140/−46), 8 (+142/−37). The scouts costed the read path, the index key, and the search fold; they didn't cost the three phases that carry most of the additions, each a mandate the BRIEF names: the re-spell over moves, folder renames, and collisions (E-1 to E-3, E-6), the outside lane paired across batches and at the open-time seed (E-4), and a restored page's own links repaired by identity (F-5, F-6). Every addition is listed with what it buys in its task, the removals it earns stand beside it, and no phase is padded; the planner's call (10-16-2026) is that the design is already at its minimal form for the mandate and that deferring Phase 7 or 8 would leave E-4 or F-5 half-done, which the BRIEF forbids. The owner weighs the number at ratification.
 
-**Net Ledger** (the Actionable column of `view-delta --exclude .claude`, per phase, cumulative from the BASELINE head; the Path Links Drive under `.claude/scripts` is a test harness and stays out of the count):
+**Net Ledger** (the Actionable column of `view-delta --exclude .claude`, per phase, cumulative from the BASELINE head; the Path Links Drive under `.claude/scripts` is a test harness and stays out of the count; from Phase 8 on, MetadataV3's commits sit between the baseline and HEAD, so each row measures its own phase commit and the cumulative is the sum):
 
 | Phase | Estimate | Measured | Cumulative |
 | ----- | -------- | -------- | ---------- |
@@ -47,6 +47,7 @@ The work lands in nine phases in dependency order, each the largest run one agen
 | 5 | +44 / −15 | +81 / −33 (+48) | +145 at `35db9f366` |
 | 6 | +181 / −78 | +227 / −85 (+142) | +287 at `c8e4b18ca` |
 | 7 | +140 / −46 | +221 / −75 (+146) | +433 at `d0e6e5ffa` |
+| 8 | +142 / −37 | +311 / −191 (+120) | +553 at `d5462735f` |
 
 #### Concepts
 
