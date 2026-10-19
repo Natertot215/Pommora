@@ -37,8 +37,8 @@ const switchOn = (): void => {
 }
 
 describe('what the Confirm Before Deletion switch governs', () => {
-  it('asks before a property delete and an option Remove and Clear whatever the switch says, naming the Items the host counts', async () => {
-    const holders = vi.fn(async (_id: string, value?: string) => ok(value === undefined ? 4 : 1))
+  it('asks before a property delete, an option Remove, and a Clear past one Item whatever the switch says, naming the Items the host counts', async () => {
+    const holders = vi.fn(async (_id: string, value?: string) => ok(value === undefined ? 4 : 2))
     ;(window as unknown as { nexus: unknown }).nexus = stubDialer({ 'property:holders': holders })
     useSession.setState({
       askConfirm: async (r) => {
@@ -56,13 +56,13 @@ describe('what the Confirm Before Deletion switch governs', () => {
       ['p1', 'Active'],
     ])
     expect(asked[0]).toContain('stripped from 4 Items;')
-    expect(asked[1]).toContain('stripped from 1 Item.')
-    expect(asked[2]).toMatch(/^Clear “Active” from 1 Item\?/)
+    expect(asked[1]).toContain('stripped from 2 Items.')
+    expect(asked[2]).toMatch(/^Clear “Active” from 2 Items\?/)
   })
 
-  it('clears an option no Item holds unasked, while a property delete and an option Remove still ask', async () => {
+  it('clears an option one Item holds unasked, while a property delete and an option Remove still ask', async () => {
     ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
-      'property:holders': async () => ok(0),
+      'property:holders': async () => ok(1),
     })
     useSession.setState({
       askConfirm: async (r) => {
@@ -75,7 +75,7 @@ describe('what the Confirm Before Deletion switch governs', () => {
     await askDestroyProperty('p1', 'Status')
     await askRemoveOption('p1', 'Active')
     expect(asked).toHaveLength(2)
-    expect(asked[0]).toContain('stripped from 0 Items;')
+    expect(asked[0]).toContain('stripped from 1 Item;')
   })
 
   it('asks before a format change rewriting more than one Item, counting the change, and rewrites one or none unasked', async () => {

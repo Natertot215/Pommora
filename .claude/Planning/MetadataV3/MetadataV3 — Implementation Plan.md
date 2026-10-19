@@ -5826,7 +5826,6 @@ Behaviors to read once before ratifying, each following the decisions:
 Rulings the final verification left with Nathan (10-19-2026):
 
 - **An Option Add Whose Key Alone Collides:** under a Value Format, adding or renaming an option whose label folds apart from every other but whose key another option writes is refused with "An option with this title already exists, please choose another name." (`validateOptionValues`' default), the title message where the key is what's taken; a key-clash message in the shape of "A property already writes "{key}" to files." wants Nathan's words.
-- **The Format Change's Quiet Threshold:** `askFormatChange` asks past one Item where Clear asks past none, the two numbers carrying no reason at their sites (`confirmations.ts`); either the reason for one is stated there or the change asks past none.
 - **A Registry in the Old Shape:** a `properties.json` written before Task 5B-4 (`name`, option `value`) opens with every definition unadmitted, since no migration arm moves the old words; the plan rewrote both Nexuses once instead, and the benchmark builder writes the new shape. Whether any other Nexus Pommora opens holds the old shape, and whether a migration arm or a stated assumption answers it, is Nathan's call; a mixed-version Sync fleet meets the same seam.
 - **One Holders Shape:** `property:holders` answers four counts by its argument's shape beside two typed setters (`property:setKeyFormat`, `property:setValueFormat`); the neutral reviewer would split the count or collapse the setters into one `property:setFormat`.
 
