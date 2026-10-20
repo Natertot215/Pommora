@@ -1,5 +1,6 @@
 import { StateEffect, StateField, type Line, type Range, type Text } from '@codemirror/state'
 import { Decoration, type DecorationSet, EditorView } from '@codemirror/view'
+import type { BlockSpan } from '../Engine/detect'
 
 export function forEachLine(doc: Text, from: number, to: number, fn: (line: Line) => void): void {
   let line = doc.lineAt(from)
@@ -11,7 +12,7 @@ export function forEachLine(doc: Text, from: number, to: number, fn: (line: Line
 }
 
 // A StateField, since CM rebuilds line DOM on every change (a raw class would be wiped, but line decorations survive).
-export const setShade = StateEffect.define<{ from: number; to: number } | null>()
+export const setShade = StateEffect.define<BlockSpan | null>()
 const shadeLine = Decoration.line({ class: 'md-list-drag-source' })
 
 export const shadeField = StateField.define<DecorationSet>({

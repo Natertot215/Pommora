@@ -1,17 +1,12 @@
 import type { Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
-import { parseListMarkerPrefixed as parseListMarker, type MarkdownScope } from '../Engine/detect'
+import type { BlockSpan, MarkdownScope } from '../Engine/detect'
 import { docScan, docString } from '../docCache'
 import { inSealedLine } from '../Engine/docScan'
 import { forEachLine, shadeField, type Boundary } from './dragChrome'
 import { beginRelocateDrag, editorGestureCleanup } from './editorGesture'
 import { lineElementAt, textColumn } from '../lineDom'
-import {
-  subBlockAt,
-  dropChanges,
-  checkboxToggleChange,
-  type BlockRange,
-} from '../Engine/listDragModel'
+import { subBlockAt, dropChanges, checkboxToggleChange } from '../Engine/listDragModel'
 import { GLYPH_CLASS } from '../Engine/intents'
 
 // Measured at drag start and re-measured only on scroll: the doc is static during a drag, so re-measuring per pointermove would be layout thrash.
@@ -37,7 +32,7 @@ function lineRightEdge(view: EditorView, from: number, fallback: number): number
 // Each list line offers two insertion boundaries, so a paragraph between two bullets splits to the nearer edge.
 function collectBoundaries(
   view: EditorView,
-  block: BlockRange,
+  block: BlockSpan,
   scope: MarkdownScope,
 ): Boundary<Drop>[] {
   const doc = view.state.doc
@@ -46,7 +41,7 @@ function collectBoundaries(
   const out: Boundary<Drop>[] = []
   for (const { from, to } of view.visibleRanges) {
     forEachLine(doc, from, to, (line) => {
-      const lm = parseListMarker(line.text)
+      const lm = scan.markers[line.number - 1]
       const inBlock = line.from >= block.from && line.from <= block.to
       // A marker-lookalike inside a page's code, math or table is that block's text, never a drop target; a cell draws none of the three.
       const sealed = scope === 'page' && inSealedLine(scan, line.number - 1)

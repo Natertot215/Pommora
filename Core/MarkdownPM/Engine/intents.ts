@@ -122,15 +122,15 @@ export const railStyle = (r: Pick<RailIntent, 'level' | 'reach'>): Record<string
 export type ListGlyph = 'checkbox' | 'bullet' | 'arrow' | 'number'
 
 export function listGlyphOf(lm: ListMarker): ListGlyph | null {
-  if (lm.kind === 'checkbox' && lm.box) return 'checkbox'
+  if (lm.kind === 'checkbox') return 'checkbox'
   if (lm.kind === 'bullet' && lm.bullet === '-' && !lm.box) return 'bullet'
   if (lm.kind === 'arrow' || (lm.kind === 'bullet' && lm.bullet === '+' && !lm.box)) return 'arrow'
-  return isSequenced(lm.kind) ? 'number' : null
+  return isSequenced(lm) ? 'number' : null
 }
 
 export function listLineClass(lm: ListMarker): string {
   if (lm.kind === 'checkbox') return cx('md-list-item md-list-task', lm.checked && 'md-list-done')
-  return isSequenced(lm.kind) ? 'md-list-item md-list-ordered' : 'md-list-item'
+  return isSequenced(lm) ? 'md-list-item md-list-ordered' : 'md-list-item'
 }
 
 type ContentKind = Exclude<TokenKind, LinkKind | 'citationRef'>
@@ -652,7 +652,7 @@ function pushConstruct(
         })
       if (!caretOnLine) intents.push({ kind: 'hide', from: innerStart, to: contentStart })
     }
-  } else if (lm?.box && glyph === 'checkbox') {
+  } else if (lm?.kind === 'checkbox') {
     pushListLine(intents, ls, innerStart, lm)
     if (!onMarker) {
       intents.push({
@@ -666,7 +666,7 @@ function pushConstruct(
         to: innerStart + lm.box.end,
         spec: {
           type: 'checkbox',
-          checked: lm.checked ?? false,
+          checked: lm.checked,
         },
       })
       intents.push({

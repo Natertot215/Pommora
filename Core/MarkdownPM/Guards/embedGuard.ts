@@ -1,6 +1,6 @@
 import { EditorState, type Text, Transaction } from '@codemirror/state'
 import { pageEmbedText } from '../../Connections/connections'
-import { loneEmbedTitle, loneWebpageEmbed } from '../Engine/detect'
+import { type BlockSpan, loneEmbedTitle, loneWebpageEmbed } from '../Engine/detect'
 import { embedTileRanges } from '../Embeds/embedWidget'
 
 // Per tile, never a document-wide sum — a summed compare would let one tile's un-gluing pay for another's regression.
@@ -14,7 +14,7 @@ function gluedOf(doc: Text, from: number): number {
 
 function boundaryRepair(
   tr: Transaction,
-  r: { from: number; to: number },
+  r: BlockSpan,
 ): { from: number; insert: string; caret: number } | null {
   const changes: { from: number; to: number; text: string }[] = []
   tr.changes.iterChanges((fromA, toA, _fromB, _toB, inserted) => {

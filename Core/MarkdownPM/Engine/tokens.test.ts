@@ -136,7 +136,7 @@ describe('an aliased wikilink separates what it shows from what it resolves', ()
     expect(slice(t, w.contentRange)).toBe('Page')
   })
 
-  // The viewport projection rebuilds every token into a fresh literal, where a new span field is dropped with no type error and the editor silently resolves aliases. Field-set parity is what goes red for that.
+  // The viewport projection re-bases each token's ranges by name, so a range field added to `Token` needs a line in `shiftToken` and one here.
   it('shifting a token carries every field the raw one has, offset alike', () => {
     const move = ([s, e]: [number, number]): [number, number] => [s + 10, e + 10]
     for (const text of ['[[Q3 Plan#H|the plan]]', '[label](Page#H)']) {

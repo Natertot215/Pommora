@@ -7,6 +7,7 @@ import {
   type PointerGestureSpec,
 } from '@pommora/uix/Interactions/gesture'
 import { type Boundary, Overlay, nearestBoundary, setShade } from './dragChrome'
+import type { BlockSpan } from '../Engine/detect'
 
 // The cleanup plugin is mounted in every editor (a page can run several), so the handle carries the view that started it — otherwise a sibling's unmount would abort the drag in progress.
 let live: { view: EditorView; handle: GestureHandle } | null = null
@@ -44,7 +45,7 @@ interface RelocateDragSpec<T> {
 export function beginRelocateDrag<T>(
   view: EditorView,
   e: PointerEvent,
-  block: { from: number; to: number },
+  block: BlockSpan,
   spec: RelocateDragSpec<T>,
 ): void {
   const host = view.scrollDOM

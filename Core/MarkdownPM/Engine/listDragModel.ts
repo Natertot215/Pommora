@@ -5,7 +5,8 @@ import {
   ordinalOf,
   ordinalText,
   parseListMarkerPrefixed as parseListMarker,
-  type ListMarker,
+  type BlockSpan,
+  type SequencedMarker,
 } from './detect'
 import {
   applyEdits,
@@ -25,20 +26,15 @@ import { type DocScan, inJoinedMath } from './docScan'
 export function checkboxToggleChange(doc: string, pos: number): TextEdit | null {
   const ls = lineStartAt(doc, pos)
   const lm = parseListMarker(doc.slice(ls, lineEndAt(doc, pos)))
-  if (lm?.kind !== 'checkbox' || !lm.box) return null
+  if (lm?.kind !== 'checkbox') return null
   return { from: ls + lm.box.start, to: ls + lm.box.end, insert: lm.checked ? '[ ]' : '[x]' }
 }
 
 /** `to` is the last line's end, EXCLUSIVE of the trailing newline. The move logic reads only these two offsets, so it is block-type-blind. */
-export interface BlockRange {
-  from: number
-  to: number
-}
-
-export function subBlockAt(scan: DocScan, pos: number): BlockRange | null {
+export function subBlockAt(scan: DocScan, pos: number): BlockSpan | null {
   const { lines } = scan
   const first = lineIndexAt(scan, pos)
-  const head = parseListMarker(lines[first])
+  const head = scan.markers[first]
   if (head === null) return null
   const depth = quoteDepthOf(lines[first])
 
@@ -46,7 +42,7 @@ export function subBlockAt(scan: DocScan, pos: number): BlockRange | null {
   for (let k = first + 1; k < lines.length; k++) {
     if (!inJoinedMath(scan, k, first, last)) {
       if (quoteDepthOf(lines[k]) !== depth) break
-      const lm = parseListMarker(lines[k])
+      const lm = scan.markers[k]
       const body = lines[k].slice(quotePrefixWidth(lines[k], depth))
       // A wrapped item's continuation body rides with its item — moving the marker line alone would strand it.
       if (lm === null ? body.trim() === '' || !/^[ \t]/.test(body) : lm.level <= head.level) break
@@ -81,7 +77,7 @@ type MoveSeams = 'exact' | 'fenced'
 
 function rebuildMove(
   doc: string,
-  range: BlockRange,
+  range: BlockSpan,
   slot: Slot,
   seams: MoveSeams,
 ): { doc: string; sourceAt: number; destAt: number } | null {
@@ -163,7 +159,7 @@ function renumberRun(doc: string, pos: number, arrived: ReadonlySet<number>): Te
   if (pos < 0 || pos > doc.length) return []
   const ls = lineStartAt(doc, pos)
   const lm = parseListMarker(doc.slice(ls, lineEndAt(doc, pos)))
-  if (lm === null || !isSequenced(lm.kind)) return []
+  if (lm === null || !isSequenced(lm)) return []
   const kind = lm.kind
   const indent = doc.slice(ls, ls + lm.markerStart)
 
@@ -185,7 +181,7 @@ function renumberRun(doc: string, pos: number, arrived: ReadonlySet<number>): Te
     p = prevStart
   }
 
-  type Row = { line: number; from: number; marker: ListMarker }
+  type Row = { line: number; from: number; marker: SequencedMarker }
   const rows: Row[] = []
   for (let p = runStart; p < doc.length; ) {
     const le = lineEndAt(doc, p)
@@ -204,7 +200,7 @@ function renumberRun(doc: string, pos: number, arrived: ReadonlySet<number>): Te
       : Math.min(...(settled.length > 0 ? settled : rows).map((r) => ordinalOf(r.marker)))
   const changes: TextEdit[] = []
   rows.forEach(({ from, marker }, i) => {
-    const have = marker.ordinal ?? ''
+    const have = marker.ordinal
     const want = ordinalText(kind, start + i)
     if (have !== want) changes.push({ from, to: from + have.length, insert: want })
   })
@@ -212,7 +208,7 @@ function renumberRun(doc: string, pos: number, arrived: ReadonlySet<number>): Te
 }
 
 /** Both renumber passes run against the POST-MOVE doc so the ordinal offsets are correct, then map back onto the original. */
-export function dropChanges(doc: string, block: BlockRange, slot: Slot): TextEdit[] | null {
+export function dropChanges(doc: string, block: BlockSpan, slot: Slot): TextEdit[] | null {
   const moved = rebuildMove(doc, block, slot, 'exact')
   if (moved === null) return null
 
@@ -220,7 +216,7 @@ export function dropChanges(doc: string, block: BlockRange, slot: Slot): TextEdi
   return diffAsSingleReplace(doc, finalDoc)
 }
 
-export function moveRange(doc: string, range: BlockRange, slot: Slot): TextEdit[] | null {
+export function moveRange(doc: string, range: BlockSpan, slot: Slot): TextEdit[] | null {
   const moved = rebuildMove(doc, range, slot, 'fenced')
   return moved === null ? null : diffAsSingleReplace(doc, moved.doc)
 }

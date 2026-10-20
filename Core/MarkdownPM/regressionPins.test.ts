@@ -17,7 +17,7 @@ import { renumberRuns } from './Engine/listDragModel'
 import { calloutDeleteVerdict } from './Guards/calloutGuard'
 import type { GuardVerdict } from './Guards/verdictFilter'
 import { headingSections } from './Engine/headingScan'
-import { fenceRangesOf } from './Engine/detect'
+import { fenceOpeners } from './Engine/detect'
 import { chunksOver, type DocScan, inCodeAt, scanDoc } from './Engine/docScan'
 
 describe('codeMask — tilde fences + inline spans', () => {
@@ -215,22 +215,23 @@ describe('calloutDeleteVerdict — repair, not cancel', () => {
 })
 
 describe('renderer fence engine agrees with codeMask on ~~~ (no cross-layer split)', () => {
-  it('fenceRangesOf spans a ~~~ block from its opener to its closer', () => {
-    expect(fenceRangesOf(scanDoc('~~~\n[[LivePage]]\n~~~').fences)).toEqual([[0, 20]])
+  it("a ~~~ block's opener spans to its closer", () => {
+    expect(fenceOpeners(scanDoc('~~~\n[[LivePage]]\n~~~').fences)).toMatchObject([
+      { from: 0, to: 20 },
+    ])
   })
   it('pairs by marker char — a ~~~ line inside ``` is content, not a close', () => {
     const doc = '```\n~~~\ncode\n```\nprose'
-    expect(fenceRangesOf(scanDoc(doc).fences)).toEqual([[0, 16]])
+    expect(fenceOpeners(scanDoc(doc).fences)).toMatchObject([{ from: 0, to: 16 }])
   })
 })
 
 describe('a longer fence holds shorter ones — both layers, one block', () => {
   const doc = '`````\nintro\n```js\nsee [[LivePage]]\n```\noutro\n`````\nprose [[LivePage]]'
   it('the whole span is one block, not three carved around the inner fences', () => {
-    const ranges = fenceRangesOf(scanDoc(doc).fences)
-    expect(ranges.length).toBe(1)
-    expect(ranges[0][0]).toBe(0)
-    expect(ranges[0][1]).toBe(doc.indexOf('\nprose'))
+    const openers = fenceOpeners(scanDoc(doc).fences)
+    expect(openers.length).toBe(1)
+    expect(openers[0]).toMatchObject({ from: 0, to: doc.indexOf('\nprose') })
   })
   it('a rename can never reach a connection inside the inner block', () => {
     // The one that corrupts a file rather than a render: an under-masked line gets its [[Title]] rewritten.

@@ -1,6 +1,6 @@
 // Kept apart from the fold state machine so the block resolver can ask what a heading is without importing it.
 import { headingParts } from './detect'
-import { type DocScan, inSealedLine, scanDoc } from './docScan'
+import { type DocScan, inSealedLine, perScan, scanDoc } from './docScan'
 
 interface HeadingSection {
   from: number
@@ -17,7 +17,7 @@ interface ScannedHeading {
   key: string
 }
 
-function scanHeadings(s: DocScan): ScannedHeading[] {
+const scanHeadings = perScan((s): ScannedHeading[] => {
   const heads: ScannedHeading[] = []
   const seen = new Map<string, number>()
   for (let i = 0; i < s.lines.length; i++) {
@@ -31,7 +31,7 @@ function scanHeadings(s: DocScan): ScannedHeading[] {
     heads.push({ idx: i, level: m.hashes.length, text, key: n === 1 ? text : `${text}\u0000${n}` })
   }
   return heads
-}
+})
 
 export interface OutlineHeading {
   from: number
@@ -58,12 +58,8 @@ export function sectionEnd(headings: readonly { level: number }[], start: number
   return headings.length
 }
 
-const sectionCache = new WeakMap<DocScan, HeadingSection[]>()
-
 /** A section reaching no body lines is dropped but still consumes its ordinal, so duplicate-text keys stay stable. */
-export function headingSections(scan: DocScan): HeadingSection[] {
-  const held = sectionCache.get(scan)
-  if (held) return held
+export const headingSections = perScan((scan): HeadingSection[] => {
   const { lines, lineStarts: starts, citations } = scan
   const heads = scanHeadings(scan)
 
@@ -78,6 +74,5 @@ export function headingSections(scan: DocScan): HeadingSection[] {
     // Strictly more than one line past the heading: a body of one empty line hands out a chevron over a fold whose widget never renders.
     if (to > lineEnd + 1) out.push({ from, lineEnd, level, key, to })
   }
-  sectionCache.set(scan, out)
   return out
-}
+})

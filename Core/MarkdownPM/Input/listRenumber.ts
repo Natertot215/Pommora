@@ -3,7 +3,7 @@ import { docScan, docString } from '../docCache'
 import { renumberRuns } from '../Engine/listDragModel'
 import { inSealedLine } from '../Engine/docScan'
 import { lineIndexAt, type TextEdit } from '../Engine/markdownCode'
-import { isSequenced, parseListMarkerPrefixed, type MarkdownScope } from '../Engine/detect'
+import { isSequenced, type MarkdownScope } from '../Engine/detect'
 
 /** The user event of an edit that writes list markers: Enter continuing a list, Tab and Shift+Tab, and the Lists menu. */
 const RELIST = 'input.list'
@@ -29,10 +29,10 @@ export const listRenumber = (scope: MarkdownScope): Extension =>
       let sequenced = false
       for (let i = lineIndexAt(scan, fromB); i <= last; i++) {
         const ls = scan.lineStarts[i]
-        const lm = parseListMarkerPrefixed(scan.lines[i])
+        const lm = scan.markers[i]
         if (lm === null) continue
         at.push(ls)
-        sequenced ||= isSequenced(lm.kind)
+        sequenced ||= isSequenced(lm)
         if (fromB < ls + lm.contentStart && toB >= ls) arrived.add(ls)
       }
       if (sequenced && last + 1 < scan.lines.length) at.push(scan.lineStarts[last + 1])

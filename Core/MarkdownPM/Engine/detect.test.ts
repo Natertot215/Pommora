@@ -42,34 +42,48 @@ describe('heading', () => {
 
 describe('parseListMarker (single marker source)', () => {
   it('bullet: ranges + level (2 spaces = 1 level)', () => {
-    const m = parseListMarker('  - x')!
-    expect(m.kind).toBe('bullet')
-    expect(m.bullet).toBe('-')
-    expect([m.markerStart, m.markerEnd, m.contentStart]).toEqual([2, 3, 4])
-    expect(m.level).toBe(1)
-    expect(m.box).toBeUndefined()
+    expect(parseListMarker('  - x')).toEqual({
+      kind: 'bullet',
+      bullet: '-',
+      level: 1,
+      markerStart: 2,
+      markerEnd: 3,
+      contentStart: 4,
+    })
   })
   it('ordered: digits + marker spans through the dot', () => {
-    const m = parseListMarker('12. y')!
-    expect(m.kind).toBe('ordered')
-    expect(m.ordinal).toBe('12')
-    expect([m.markerStart, m.markerEnd, m.contentStart]).toEqual([0, 3, 4])
+    expect(parseListMarker('12. y')).toEqual({
+      kind: 'ordered',
+      ordinal: '12',
+      level: 0,
+      markerStart: 0,
+      markerEnd: 3,
+      contentStart: 4,
+    })
   })
   it('alphabetical: one uppercase letter + dot; lowercase stays prose', () => {
-    const m = parseListMarker('B. y')!
-    expect(m.kind).toBe('alphabetical')
-    expect(m.ordinal).toBe('B')
-    expect([m.markerStart, m.markerEnd, m.contentStart]).toEqual([0, 2, 3])
+    expect(parseListMarker('B. y')).toEqual({
+      kind: 'alphabetical',
+      ordinal: 'B',
+      level: 0,
+      markerStart: 0,
+      markerEnd: 2,
+      contentStart: 3,
+    })
     expect(parseListMarker('b. y')).toBeNull()
     expect(parseListMarker('AB. y')).toBeNull()
   })
   it('checkbox: bracket span + checked, markerEnd at the bracket end', () => {
-    const m = parseListMarker('- [x] done')!
-    expect(m.kind).toBe('checkbox')
-    expect(m.checked).toBe(true)
-    expect([m.box!.start, m.box!.end]).toEqual([2, 5])
-    expect(m.markerEnd).toBe(5)
-    expect(m.contentStart).toBe(6)
+    expect(parseListMarker('- [x] done')).toEqual({
+      kind: 'checkbox',
+      bullet: '-',
+      level: 0,
+      markerStart: 0,
+      markerEnd: 5,
+      contentStart: 6,
+      box: { start: 2, end: 5, inner: 'x' },
+      checked: true,
+    })
   })
   it('empty [] is a bullet (box present, not a checkbox); ordered "1. [ ]" stays ordered', () => {
     expect(parseListMarker('-[] a')!.kind).toBe('bullet')
@@ -83,10 +97,14 @@ describe('parseListMarker (single marker source)', () => {
     expect(parseListMarker('* [ ] a')).toBeNull()
   })
   it('arrow: `→ ` is a list marker (the glyph IS the marker), nesting via indent', () => {
-    const m = parseListMarker('→ go')!
-    expect(m.kind).toBe('arrow')
-    expect(m.bullet).toBe('→')
-    expect([m.markerStart, m.markerEnd, m.contentStart]).toEqual([0, 1, 2])
+    expect(parseListMarker('→ go')).toEqual({
+      kind: 'arrow',
+      bullet: '→',
+      level: 0,
+      markerStart: 0,
+      markerEnd: 1,
+      contentStart: 2,
+    })
     expect(parseListMarker('\t→ nested')!.level).toBe(1)
   })
   it('returns null for non-list lines and markers with no trailing space', () => {
@@ -198,9 +216,10 @@ describe('parseListMarkerPrefixed (lists behind a quote/callout prefix)', () => 
     expect(lm.contentStart).toBe(4)
   })
   it('finds a checkbox behind `> ` with shifted box offsets', () => {
-    const lm = parseListMarkerPrefixed('> - [x] done')!
-    expect(lm.kind).toBe('checkbox')
-    expect(lm.box?.start).toBe('> - '.length)
+    expect(parseListMarkerPrefixed('> - [x] done')).toMatchObject({
+      kind: 'checkbox',
+      box: { start: '> - '.length },
+    })
   })
   it('matches plain parseListMarker when there is no prefix', () => {
     const lm = parseListMarkerPrefixed('1. top')!
@@ -450,7 +469,7 @@ describe('blockEmbedLines', () => {
   })
 
   it('excluded regions own their lines', () => {
-    expect(blockEmbedLines(lines('![[A]]\n![[B]]'), [[0, 6]])).toEqual([
+    expect(blockEmbedLines(lines('![[A]]\n![[B]]'), [{ from: 0, to: 6 }])).toEqual([
       { from: 7, to: 13, title: 'B' },
     ])
   })

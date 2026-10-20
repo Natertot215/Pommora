@@ -1,7 +1,6 @@
 import { EditorState, Prec } from '@codemirror/state'
 import { carriedFrom, type DocScan } from '../Engine/docScan'
 import { docScan } from '../docCache'
-import { parseListMarkerPrefixed } from '../Engine/detect'
 import { parseDelimiter } from '../Engine/Tables/codec'
 import { decodePayload } from '../Engine/Tables/clipboard'
 import { tableSelfEdit } from '../Tables/sync'
@@ -36,8 +35,8 @@ export const tablePasteGuard = Prec.low(
       if (refused) return
       const text = inserted.toString().trim()
       if (!text.includes('\n') || !decodePayload(text)) return
-      const line = tr.startState.doc.lineAt(fromA)
-      if (fromA >= tailStart || parseListMarkerPrefixed(line.text)) refused = true
+      const line = tr.startState.doc.lineAt(fromA).number - 1
+      if (fromA >= tailStart || scan.markers[line]) refused = true
     })
     return refused ? [] : tr
   }),

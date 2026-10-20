@@ -92,11 +92,11 @@ export function continueListOnEnter(
 
   // Enter ALWAYS continues the list, even on an empty item — the exits are Shift+Enter and Backspace on the empty marker.
   const indent = line.slice(pfx.length, pfx.length + lm.markerStart)
-  const next = isSequenced(lm.kind)
+  const next = isSequenced(lm)
     ? `${ordinalText(lm.kind, ordinalOf(lm) + 1)}. `
     : lm.kind === 'checkbox'
-      ? `${lm.bullet ?? '-'} [ ] `
-      : `${lm.bullet ?? '-'} `
+      ? `${lm.bullet} [ ] `
+      : `${lm.bullet} `
   const insert = `\n${pfx}${indent}${next}`
   return { from: selStart, to: selStart, insert, selection: selStart + insert.length, relist: true }
 }
@@ -624,7 +624,7 @@ function blockCloser(
     if (
       scan.fences[i] !== undefined ||
       spanAt(scan.tables, at) !== undefined ||
-      (math !== undefined && math[0] !== at)
+      (math !== undefined && math.from !== at)
     )
       return null
     if (scan.mathOpen !== i && !(typed && scan.mathOpen > i)) return null
