@@ -286,6 +286,7 @@ function renderCellBody(
     return renderCellContent(text, connections, { around, headingLinkStyle })
   const starts = lineOffsetsOf(lines)
   const rails = railIntents(
+    lines,
     starts,
     items.map((it) => it?.lm.level ?? -1),
     items.map((it) => (it ? (railTypeClass(it.lm) ?? '') : '')),
