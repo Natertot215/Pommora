@@ -80,6 +80,7 @@ Each Collection, and each top-level Set, gets an ArchiveView reached from an Arc
 #### F - Collections, Exclusion, and Orphans
 
 - **F-1 [CONFIRMED]:** Excluding a folder needs nothing new from the Archive: nothing inside an excluded folder can be archived, since it's outside the tree, and items archived before their Set or Collection was excluded stay in the Archive, inert in the interface. A restore whose origin has since been excluded finds no parent and asks for a destination, as the Trash's does.
+  - **[INFERRED]** Clear Exclusion Cache deletes an excluded Collection's sidecar and with it the id its Archive is filed under (`Core/Settings/exclusionScan.ts:31-95`), so from then on that Archive is orphaned and F-5 moves its items into the Trash, recoverable.
 - **F-2 [CONFIRMED]:** Archiving a Set should leave every excluded folder inside it behind, as if the Set around it had been removed: the excluded folder takes the Set's place in the Set's parent, its excluded entry following it, and it stays there when the Set is restored. Excluded content never enters the Archive, and the Archive records nothing about it.
   - **Example:** `Alpha` is a Collection or Set holding a Set `Beta`, and inside `Beta` sits a folder `Omega` listed in Settings › Exclusions, so Pommora ignores it. Archiving `Beta` first moves `Omega` up into `Alpha`, where `Beta` was, and rewrites its exclusion entry to `Alpha/Omega`, so it stays excluded; then `Beta` and everything Pommora manages in it move into the Archive. `Alpha` now holds `Omega` and no `Beta`. Restoring `Beta` brings it back as `Alpha/Beta` without `Omega`, which stays at `Alpha/Omega`.
   - **[INFERRED]** An excluded folder deeper inside the archived Set, as `Omega` in `Alpha/Beta/Gamma/Omega`, also lands in the archived Set's parent (`Alpha/Omega`), since `Gamma` leaves with `Beta`.
@@ -98,7 +99,7 @@ Each Collection, and each top-level Set, gets an ArchiveView reached from an Arc
   - **[CONFIRMED]** A top-level Set's views dropdown carries the button too, opening an ArchiveView of what was archived from within that Set.
   - **[INFERRED]** The Collection's ArchiveView lists everything archived from anywhere in the Collection, Sets included; the store stays one per Collection, and a Set's ArchiveView is that store narrowed by origin.
 - **G-5 [CONFIRMED]:** ArchiveView should be remembered like any place in the content pane, through Back and Forward and a tab reopened after relaunch; only the reader window is forgotten.
-- **G-6 [CONFIRMED]:** Batch actions should come two ways: the right-click menu on checked rows, as the Trash has, and ActionLabel reading `[Restore | N Pages  (trash icon)]` while rows are checked, Restore tinted and the trash destructive, either press posting the Undo notice. ActionLabel reuses the existing hover and reveal primitives rather than hand-rolling them.
+- **G-6 [CONFIRMED]:** Batch actions should come two ways: the right-click menu on checked rows, as the Trash has, and ActionLabel reading `[Restore | N Pages  (trash icon)]` while rows are checked, its count phrased as the Trash's batches phrase theirs ("3 pages", "2 sets", "5 items" for a mix), Restore tinted and the trash destructive, either press posting the Undo notice. ActionLabel reuses the existing hover and reveal primitives rather than hand-rolling them.
 - **G-7 [CONFIRMED]:** ActionLabel should be its own component, separate from the notification label, as the long-term owner of action points in that position.
 
 #### H - The Reader Window
@@ -118,16 +119,16 @@ Each Collection, and each top-level Set, gets an ArchiveView reached from an Arc
 #### J - File History
 
 - **J-1 [CONFIRMED]:** A Nexus-level history timeframe for archived pages should be part of the core scope, so later additions build on it rather than patching around it.
-  - **[CONFIRMED]** Its row offers the History Timeframe's own steps and starts at the History Timeframe's value. Steps longer than the active History Timeframe show dimmed, and shortening the History Timeframe below it switches the archive timeframe down to match.
-  - **[INFERRED]** Lengthening the History Timeframe afterwards leaves the archive timeframe where it was switched to.
+  - **[CONFIRMED]** Its row offers the History Timeframe's own steps and starts at the History Timeframe's value. Steps longer than the active History Timeframe show dimmed, and shortening the History Timeframe below it switches the archive timeframe down to match. The settings picker has no dimmed option today (`UIX/Pickers/PickerControl.tsx:10-14`), so the row needs one.
+  - **[ASSUMED]** Until a step is picked, the archive timeframe follows the History Timeframe, as the Trash's date column follows the Nexus's Date Format while unset; once picked, lengthening the History Timeframe leaves it where it is.
 
 #### K - Ride-Alongs
 
 - **K-1 [CONFIRMED]:** Carrying an excluded entry with its folder should be crash-safe: the destination entry is written before the folder moves and the source entry dropped after, so a crash never leaves the folder un-excluded. Today the entry follows only after the move (`Core/Settings/settings.ts:97-106`, `Core/Nexus/folderEntity.ts:30-32`), which every Set rename and move shares.
-- **K-2 [CONFIRMED]:** The two whole-index reads the interface asks for should return only what the tree holds: the Matrix graph (`Core/Matrix/matrixGraph.ts:19-41`) and every page's headings (`Core/Nexus/handlers.ts:167-169`). A Collection's value load should read the tree's pages under it rather than every file in its folder (`Core/Views/loadValues.ts:8-18`).
+- **K-2 [CONFIRMED]:** The two whole-index reads the interface asks for should return only what the tree holds: the Matrix graph (`Core/Matrix/matrixGraph.ts:19-43`) and every page's headings (`Core/Nexus/handlers.ts:166-168`). A Collection's value load should read the tree's pages under it rather than every file in its folder (`Core/Views/loadValues.ts:8-18`).
 - **K-3 [CONFIRMED]:** A notice posted with the pointer already near it should stay unarmed until the pointer leaves once, so its countdown doesn't stall (`Core/Interface/Notifications/NotificationLabel.tsx:33-74`).
 - **K-4 [CONFIRMED]:** One Restore and Delete menu builder should serve the Trash, File History, and the Archive (`Core/Actions/trashMenu.ts`, `fileHistoryMenu.ts`).
-- **K-5 [CONFIRMED]:** Comments and copy already false should read true: `NON_CORPUS_TOP`'s comment (`Core/Paths/nexusPaths.ts:7`), `Core/Actions/destinationTree.ts:1`, `Core/Nexus/mutateRequest.ts:88`, and the Permanently Delete Files hint (`Core/Settings/frames.ts:596`).
+- **K-5 [CONFIRMED]:** Comments and copy already false should read true: `NON_CORPUS_TOP`'s comment (`Core/Paths/nexusPaths.ts:7`), `Core/Actions/destinationTree.ts:1`, `Core/Nexus/mutateRequest.ts:88`, and the Permanently Delete Files hint (`Core/Settings/frames.ts:595`).
 
 ---
 
@@ -196,7 +197,7 @@ Nathan's, verbatim.
 
 #### Open Items
 
-1. **The Origin Record (left to planning):** how an archived item's record is shaped and stored. It carries the item's kind, its origin's id (E-1), its archived time (B-4), its exact place in its origin's order (E-2), and its origin path at archive time, so path links re-spell to where it lands (D-1). *Archive — Investigation* recommends one Trash-style bundle per item, flat under the Collection's Archive, in the Trash's record format.
+1. **The Origin Record (left to planning):** how an archived item's record is shaped and stored. It carries the item's kind, its origin's id (E-1), its archived time (B-4), its exact place in its origin's order (E-2), its origin path at archive time, so path links re-spell to where it lands (D-1), and enough of its origin's ancestry for a top-level Set's ArchiveView to list what was archived from anywhere within it (G-4). *Archive — Investigation* recommends one Trash-style bundle per item, flat under the Collection's Archive, in the Trash's record format.
 2. **Confirmation Copy:** the words of "Confirm Before Archiving"'s dialog and of any new refusal or notice, set at the plan's review.
 
 #### Prospects

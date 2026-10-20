@@ -3,13 +3,13 @@ import { cx } from '../Utilities/cx'
 import { keepFocus } from '../Interactions/shared'
 import {
   affixed,
-  affixGlyph,
   affixHint,
   affixRun,
   autoSizeWrap,
   autoSizeMirror,
   autoSizeInput,
   invalidInput,
+  valueGlyph,
 } from './fields.css'
 
 /** How an edit ended: by Enter or Escape, or by the focus leaving. */
@@ -142,9 +142,9 @@ export function EditableInput({
     // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: the symbols are the field's own, so the input inside stays the only control
     <span className={affixed} onMouseDown={keepFocus} onClick={(e) => e.stopPropagation()}>
       <span className={affixRun}>
-        {leading !== undefined && <span className={affixGlyph}>{leading}</span>}
+        {leading !== undefined && <span className={valueGlyph}>{leading}</span>}
         {sized}
-        {trailing !== undefined && <span className={affixGlyph}>{trailing}</span>}
+        {trailing !== undefined && <span className={valueGlyph}>{trailing}</span>}
         {hint !== undefined && <span className={affixHint}>{hint}</span>}
       </span>
     </span>

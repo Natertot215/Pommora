@@ -165,11 +165,15 @@ describe('parseStyleAction', () => {
 })
 
 describe('styleBranch', () => {
-  const label = (type: PropertyType): string | undefined =>
-    styleBranch({ type, current: { ...dateDefaults('full'), look: 'standard' } })[0]?.label
+  const label = (type: PropertyType, barCapable?: boolean): string | undefined =>
+    styleBranch({ type, current: { ...dateDefaults('full'), look: 'standard' }, barCapable })[0]
+      ?.label
   it('says Format for the two whose rows are one', () => {
     expect(label('link')).toBe('Format')
-    expect(label('number')).toBe('Format')
+    expect(label('number', true)).toBe('Format')
+  })
+  it('offers no branch for a lone choice: a number with no bar to fill', () => {
+    expect(label('number')).toBeUndefined()
   })
   it('leaves the rest as Style, and offers nothing where no style exists', () => {
     for (const t of ['status', 'checkbox', 'dateTime'] as const) expect(label(t)).toBe('Style')

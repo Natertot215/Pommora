@@ -157,7 +157,7 @@ describe('the popover routes', () => {
     expect(popoverFor('number').querySelector('input')).not.toBeNull()
   })
 
-  it('a Number popover shows its affixes around the input, and a Link popover its editor, in the one field', () => {
+  it('a Number popover shows its affixes around the input, `#` only where nothing else names its format, and a Link popover its editor, in the one field', () => {
     remount(
       {
         id: 'prop_n',
@@ -173,7 +173,13 @@ describe('the popover routes', () => {
     const chrome = `.${fieldPicker.field.split(' ')[0]}`
     const number = portal().querySelector(chrome)!
     expect(number.querySelector('input')).not.toBeNull()
-    expect(number.textContent).toBe('#/ 5')
+    expect(number.textContent).toBe('/ 5')
+    remount(
+      { id: 'prop_p', label: 'Plain', key: 'Plain', type: 'number' },
+      { kind: 'number', value: 2 },
+      { popover },
+    )
+    expect(portal().querySelector(chrome)?.textContent).toBe('#')
     remount({ id: 'prop_l', label: 'Site', key: 'Site', type: 'link' }, null, { popover })
     expect(portal().querySelector(`${chrome} .value-field .cm-editor`)).not.toBeNull()
   })

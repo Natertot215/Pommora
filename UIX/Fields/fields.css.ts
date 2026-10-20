@@ -104,11 +104,11 @@ export const affixRun = style({
 
 const affix = { flex: '0 0 auto', whiteSpace: 'nowrap' } as const
 
-/** The format's own symbol, read as part of the value. */
-export const affixGlyph = style({
+/** A value's format symbol, at rest beside it or beside its typed text. */
+export const valueGlyph = style({
   ...affix,
   color: c.label.secondary,
-  fontWeight: font.weight.semibold,
+  fontWeight: font.weight.emphasized,
 })
 
 /** A hint about the value rather than part of it. */

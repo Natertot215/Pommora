@@ -180,34 +180,46 @@ describe('formatDate span', () => {
 })
 
 describe('formatNumber', () => {
+  const shown = (...args: Parameters<typeof formatNumber>): string =>
+    formatNumber(...args)
+      .map((p) => p.text)
+      .join('')
+
   it('groups by default and honors separators off', () => {
-    expect(formatNumber(1234.5, { number_family: 'number', number_separators: true })).toBe(
-      '1,234.5',
-    )
-    expect(formatNumber(1234.5, { number_family: 'number', number_separators: false })).toBe(
-      '1234.5',
-    )
+    expect(shown(1234.5, { number_family: 'number', number_separators: true })).toBe('1,234.5')
+    expect(shown(1234.5, { number_family: 'number', number_separators: false })).toBe('1234.5')
   })
   it('hidden decimals show as an integer; a fixed count pads', () => {
-    expect(formatNumber(3.14, { number_decimals: 'hidden' })).toBe('3')
-    expect(formatNumber(3, { number_decimals: 2 })).toBe('3.00')
+    expect(shown(3.14, { number_decimals: 'hidden' })).toBe('3')
+    expect(shown(3, { number_decimals: 2 })).toBe('3.00')
   })
   it('percent is literal + "%", never ×100', () => {
-    expect(formatNumber(30, { number_family: 'percent' })).toBe('30%')
+    expect(shown(30, { number_family: 'percent' })).toBe('30%')
   })
   it('currency uses the chosen ISO code', () => {
     expect(
-      formatNumber(1234, { number_family: 'currency', number_currency: 'GBP', number_decimals: 2 }),
+      shown(1234, { number_family: 'currency', number_currency: 'GBP', number_decimals: 2 }),
     ).toBe('£1,234.00')
   })
   it('fraction renders "N out of Value"', () => {
     expect(
-      formatNumber(3, { number_family: 'number', number_fraction: true, number_denominator: 10 }),
+      shown(3, { number_family: 'number', number_fraction: true, number_denominator: 10 }),
     ).toBe('3 out of 10')
+  })
+  it("flags the format's glyphs apart from the value", () => {
+    expect(formatNumber(-1234, { number_family: 'currency', number_currency: 'AUD' })).toEqual([
+      { text: '-', glyph: false },
+      { text: 'A$', glyph: true },
+      { text: '1,234.00', glyph: false },
+    ])
+    expect(formatNumber(30, { number_family: 'percent' })).toEqual([
+      { text: '30', glyph: false },
+      { text: '%', glyph: true },
+    ])
   })
   it('a zero denominator is no fraction', () => {
     expect(
-      formatNumber(3, { number_family: 'number', number_fraction: true, number_denominator: 0 }),
+      shown(3, { number_family: 'number', number_fraction: true, number_denominator: 0 }),
     ).toBe('3')
   })
 })
@@ -230,9 +242,9 @@ describe('fractionDenominator', () => {
 })
 
 describe('numberFormatGlyph', () => {
-  it('is %, #, or the currency symbol a cell shows', () => {
+  it('is % or the currency symbol a cell shows, and nothing for a plain number', () => {
     expect(numberFormatGlyph({ number_family: 'percent' })).toBe('%')
-    expect(numberFormatGlyph({})).toBe('#')
+    expect(numberFormatGlyph({})).toBeUndefined()
     expect(
       CURRENCY_CODES.map((c) =>
         numberFormatGlyph({ number_family: 'currency', number_currency: c }),

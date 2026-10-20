@@ -53,25 +53,26 @@ export function PropertyValueInput({
     const glyph = numberFormatGlyph(def)
     const denominator = fractionDenominator(def)
     const hint = denominator === undefined ? undefined : `/ ${denominator}`
+    // Away from its column, the picker names a number that shows no symbol at all with `#`.
     if (popover)
       return (
         <FieldPicker
           {...popover}
           value={initial}
-          leading={glyph}
+          leading={glyph ?? (hint === undefined ? '#' : undefined)}
           hint={hint}
           invalid={invalid}
           onCommit={close}
           onDismiss={onClose}
         />
       )
-    // In place, the glyph sits where the formatted value shows it, and a plain number shows none.
+    // In place, the glyph sits where the formatted value shows it.
     return (
       <EditableInput
         initial={initial}
         className={fillInput}
         caretAtEnd
-        leading={def.number_family === 'currency' ? glyph : undefined}
+        leading={def.number_family === 'percent' ? undefined : glyph}
         trailing={def.number_family === 'percent' ? glyph : undefined}
         hint={hint}
         invalid={invalid}

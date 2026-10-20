@@ -1,8 +1,11 @@
 ### Archive — Scout Findings
 
 **DATE:** 10-19-2026
+**HEAD:** `213f95a3b`. The working tree now sits at `b439e56a1`, one commit ahead, whose changes touch no cited range.
 
-The five read-only scout reports behind *Archive — Investigation*, each cleaned of the claims reconciliation dropped and marked where it corrected, narrowed, or couldn't verify one. Every scout received the mid-run scope update that Sets are archivable; Scout D also received the Trash-look and batch-action rulings. Recommendations on the archive's location predate Nathan's ruling for `.nexus/archive/<Collection ID>/` and are kept as weighed.
+These are the five read-only scout reports behind *Archive — Investigation*: A on cascade reach; B on the index, discovery, the watcher, sync, and location; C on the Trash's machinery; D on views, the table, the menus, and batch actions; and E on windows, history, settings, confirmations, and notices. They're evidence of what the code does and of what each scout weighed, not direction. *Archive — Decisions & Intention* governs intent, and *Archive — Investigation* reconciles these reports against the code and the decisions, listing every claim it narrowed, corrected, dropped, or couldn't verify in its *§Reconciliation Log*. Each recommendation a decision has since settled differently is condensed to one line naming that decision, and each question to Nathan names the decision that answers it or marks it as the planner's.
+
+Every scout received the scope update that Sets are archivable (A-2). Scout D also received the rulings that the Trash's look stays (A-3) and that batch actions come by right-click and through ActionLabel (G-6).
 
 ---
 
@@ -14,14 +17,14 @@ The five read-only scout reports behind *Archive — Investigation*, each cleane
 
 ###### The Headline: Picking the Location Decides the Reach
 
-Both locations named in Open Item 1 are **hidden**. `hiddenFolder` (`Core/Paths/exclusion.ts:17-24`) matches any segment starting with `.` or `_`, and `outsideContent` (`exclusion.ts:77-82`) rejects any path with a hidden segment. That one predicate gates the corpus walk (`Core/Files/walk.ts:73-83`), index maintenance (`relCorpusPath`, `Core/Index/indexSeed.ts:89-93`), the seed (`indexSeed.ts:225`), and so every `query… ?? nexusCorpus(root)` fallback. **Today nothing reaches either `<Collection>/.archive/` or `.nexus/archive/<ID>/`.** Not a sweep, not the index, not the seed, not the asset migration. Picking a location *is* picking how reach gets in. The table runs each candidate through the predicates that matter:
+Both hidden locations the scouts weighed are **hidden** to the corpus. `hiddenFolder` (`Core/Paths/exclusion.ts:17-24`) matches any segment starting with `.` or `_`, and `outsideContent` (`exclusion.ts:77-82`) rejects any path with a hidden segment. That one predicate gates the corpus walk (`Core/Files/walk.ts:73-83`), index maintenance (`relCorpusPath`, `Core/Index/indexSeed.ts:89-93`), the seed (`indexSeed.ts:225`), and so every `query… ?? nexusCorpus(root)` fallback. **Today nothing reaches either `<Collection>/.archive/` or `.nexus/archive/<ID>/`.** Not a sweep, not the index, not the seed, not the asset migration. Picking a location *is* picking how reach gets in. The table runs each candidate through the predicates that matter:
 
 | Predicate | `<Coll>/.archive/` | `.nexus/archive/<CollID>/` | Visible kind-marked `<Coll>/<Archive>/` |
 |---|---|---|---|
 | Corpus / index (`outsideContent`, exclusion.ts:77) | out (hidden) | out (hidden) | **in** |
 | Watcher (`neverWatched`, exclusion.ts:27-36) | **not watched** (hidden folder at `i < leaf`) | watched (the `i === 0` `.nexus` exemption), but `classifyEvent` drops it (`Core/Nexus/fileEvents.ts:241`) and the index half rejects it | watched |
 | Sync (`manifestAdmits`, exclusion.ts:44-61) | **doesn't sync** (`!neverWatched(segs)` at :59) | syncs | syncs |
-| Property-sweep scope (`corpusUnder`, indexSeed.ts:78-82) | in, free (`startsWith(folder/)`) | **out**: `collectionFolders` would have to map IDs to archive dirs | in, free |
+| Property-sweep scope (`corpusUnder`, indexSeed.ts:78-82) | in, free (`startsWith(folder/)`) | **out** until the scope step admits the archive root as one prefix | in, free |
 | Moves with a Collection rename or trash | yes | no: keyed by ID, orphaned when the Collection is deleted | yes |
 | Walk adoption | n/a | n/a | **adopted as a Set today**: nested folders resolve to `'set'` (`Core/Nexus/folderKind.ts:53`), `readChildSets` reads them (`Core/Nexus/readNexus.ts:158-170`), and the missing sidecar is listed (readNexus.ts:108-109) and stamped (`Core/Nexus/adopt.ts:133-147`) |
 
@@ -68,10 +71,10 @@ Five reach families exist, each defined separately:
 - **Governed reach:** property and option sweeps. Index-or-corpus candidates intersected with Collection folders, plus every Space sidecar (rows 1–4, 6, 20).
 - **Content reach:** link re-spells and Context sweeps. Index-or-corpus with no scope (rows 7, 8, 10, 11, 21).
 - **Tree reach:** the delete strip (`liveIdIndex ∪ withheldIn`, row 13), the delete's `paths` (row 14), `configReach` (row 19).
-- **By-ID reach:** every refill. `recordById(tree)` passed as `roots` to `sweepRootsById` from three call sites (assignment.ts:56, spend.ts:298, spend.ts:332), plus the `id-live` refusal (`Core/Trash/resolve.ts:36-38`). **Corrected:** the sites are `assignment.ts:81`, `spend.ts:250` (used at `:298` and `:332`), and `Core/Trash/restoreProperty.ts:57`, a fourth refill this report didn't list.
+- **By-ID reach:** every refill. `recordById(tree)` passed as `roots` to `sweepRootsById` from three sites (`assignment.ts:81`, `spend.ts:250`, used at `:298` and `:332`, and `Core/Trash/restoreProperty.ts:57`), plus the `id-live` refusal (`Core/Trash/resolve.ts:36-38`).
 - **Bundle reach:** `contentPages`/`listMarkdownFiles`, `listBundles` (rows 15–17).
 
-A location the corpus admits makes the governed and content families reach archived pages with no code change. **The tree and by-ID families never do, whatever the location.** That's where Reach-In has to put in work, and where Decision 5's strip-without-refill hazard lives.
+A location the corpus admits makes the governed and content families reach archived pages with no code change. **The tree and by-ID families never do, whatever the location.** That's where Reach-In has to put in work, and where C-2's strip-without-refill hazard lives.
 
 ###### The Un-Adopted-Folders Claim
 
@@ -83,12 +86,12 @@ On reach, the claim "indexed and cascade-reachable" (`.claude/Features/CorePM.md
 
 ###### Identity Hazards
 
-- **By-ID refills lose data (the sharpest one):** Decision 5 strips archived pages through governed or content reach, but every refill reads `recordById(tree)`. A delete strips `Ref: [[X]]` from an archived page, and the restore then routes that page's ID to `refillTrashed`, which searches bundles, finds nothing, and drops the value (spend.ts:299-304). The same goes for Space and Context re-tags (spend.ts:335), for property re-assign (assignment.ts:79-84), and, **widened**, for the property restore (`restoreProperty.ts:56-69`). Reach-In needs the by-ID map to span the archive.
+- **By-ID refills lose data (the sharpest one):** C-2 strips archived pages through governed reach, but every refill reads `recordById(tree)`. A delete strips `Ref: [[X]]` from an archived page, and the restore then routes that page's ID to `refillTrashed`, which searches bundles, finds nothing, and drops the value (spend.ts:299-304). The same goes for Space and Context re-tags (spend.ts:335), for property re-assign (assignment.ts:79-84), and for the property restore (`restoreProperty.ts:56-69`). Reach-In needs the by-ID map to span the archive.
 - **`deleteCascade` twins:** `livePathOf` returns null for an absent ID *and* for an ID two files claim (`Core/Nexus/heldPages.ts:8-13, 25-28`). Every archived file looks like a twin (cascade.ts:114).
 - **A second twin rule:** `keyedHolders` keeps the first file per ID and holds later claimants out of the strip (keyHolders.ts:61-64), while `deleteCascade` skips every claimant. That's two definitions of a twin.
 - **The `id-live` refusal** (resolve.ts:38) and the **remint baseline** (remintLedger.ts:21-33) can't see archived IDs. Take a live page and an archived page sharing an ID (a Finder duplicate): the archived copy restores as a fresh claimant and is reminted (remint.ts:32-37), losing its snapshot history, which is keyed by page ID. While archived, a by-ID sweep spanning both would hit an ambiguous ID. The same null-on-twin rule as `writablePathsOf` has to cover the union.
 - **`stampMissing`/`ensurePageId`:** these only see the tree's `unreadable` list (adopt.ts:133). An ID-less file dropped into the archive is never stamped, so by-ID reach can't address it. Path-based sweeps still reach it.
-- **Decision 21:** deleting an archived page records `gatherParentRef` → `containerAt(tree, parentDir)` (`Core/Trash/gather.ts:24-29`). The archive folder isn't in the tree, so the record reads `unaddressable` and the later Trash restore refuses. The record has to carry the archived page's origin, not its archive folder.
+- **Delete From the Archive (E-3):** deleting an archived page records `gatherParentRef` → `containerAt(tree, parentDir)` (`Core/Trash/gather.ts:24-29`). The archive folder isn't in the tree, so the record reads `unaddressable` and the later Trash restore refuses. The record has to carry the archived page's origin, not its archive folder.
 
 ###### Counts
 
@@ -112,7 +115,7 @@ The schema journal stores the operation, not the files (`Core/Properties/propert
 
 ##### Removal & Consolidation
 
-1. **Delete `deleteCascade`'s tree filter and twin branch (≈ -18 lines, cascade.ts:101-119), and run the strip on governed reach.** The strip removes Link *property* values, which only mean something where a schema governs. It's a property sweep, scoped differently from every other property sweep for one reason: the comment says loose files are protected because "no restore could reach it". Governed reach (Collection folders + Spaces) already leaves loose pages out and takes in damaged folders and the archive. Duplicate IDs are left to the one twin rule `keyedHolders` already applies. **Corrected:** `deleteCascade` doesn't route through `keyedHolders`, so the twin rule has to move into the governed strip rather than disappear. After this, `withheldIn` keeps its other two callers (`Core/Nexus/treeIndex.ts:119`, remintLedger.ts:41), and `liveIdIndex`/`livePathOf` lose their `cascade.ts` import. One behavior change: pages under a damaged *Set* sidecar were stripped through `withheldIn` and are still stripped (they sit under a Collection folder). Pages whose own frontmatter is unreadable were never swept (`sweepParse` refuses them).
+1. **Delete `deleteCascade`'s tree filter and twin branch (≈ -18 lines, cascade.ts:101-119), and run the strip on governed reach.** The strip removes Link *property* values, which only mean something where a schema governs. It's a property sweep, scoped differently from every other property sweep for one reason: the comment says loose files are protected because "no restore could reach it". Governed reach (Collection folders + Spaces) already leaves loose pages out and takes in damaged folders and the archive. `deleteCascade` doesn't route through `keyedHolders`, so its twin rule moves into the governed strip as `keyedHolders`' first-claimant rule rather than disappearing. After this, `withheldIn` keeps its other two callers (`Core/Nexus/treeIndex.ts:119`, remintLedger.ts:41), and `liveIdIndex`/`livePathOf` lose their `cascade.ts` import. One behavior change: pages under a damaged *Set* sidecar were stripped through `withheldIn` and are still stripped (they sit under a Collection folder). Pages whose own frontmatter is unreadable were never swept (`sweepParse` refuses them).
 2. **One reach module that owns the fallback and the scope (≈ -25 / +25).** `queryX(...) ?? (await nexusCorpus(root))` is written five times: cascade.ts:87, :221, contextCascade.ts:72, keyHolders.ts:17, :28. The heading arm's `?? []` is a stated exception. The governed scope (`collectionFolders` + `corpusUnder`) is composed at six sites (optionOps.ts:197, registryProperty.ts:112, :126, deleteProperty.ts:82, :99, replaySchemaCascade.ts:56, plus removeProperty.ts:37's single folder). Two named reaches, `contentReach(root, query)` and `governedReach(root, key, folders?)`, collapse that. `keyHolderFiles` and `corpusUnder` fold in, and `collectionFolders` becomes governed reach's own folder list. `confirmedKeyHolders` keeps only its from-disk confirmation.
 3. **One reach-by-ID map beside the live one (≈ +12 / -5).** `heldPages.ts` already owns "the held tree's pages by path and by id, for the host's writers" (heldPages.ts:1). The live lookups shouldn't be widened in place. `livePathOf` also feeds the outside-move pairing (settle.ts:277, :287), where an archived ID would pair an archive move as an ordinary move and re-spell inbound links into the archive. It also feeds `loadValues` (`Core/Views/loadValues.ts:15`) and file history (`Core/Pages/fileHistory.ts:89, :174`). So a second projection in the same file, the reach-by-ID map (tree ∪ archive, with `writablePathsOf`'s null-on-twin rule), is handed to `sweepRootsById` in place of `recordById(tree)` at the three refill sites. That fixes rows 5, 9, and 17. Row 13's twin check goes away with Removal 1. `refillTrashed` then gets only IDs found nowhere, which is its stated purpose. File history may want the reach map too, for the ArchiveWindow; that's another scout's call.
 4. **Space sidecars are reached four ways:** the plan's `sidecars` arm (governedSweep.ts:88-109), `confirmedKeyHolders`' loop (keyHolders.ts:34-37), the delete snapshot's loop (deleteProperty.ts:55-65), and `spaceArm`'s pre-check (cascade.ts:61-64). Folding the two loops into governed reach would trim ≈10 lines. This is optional and outside the archive's need.
@@ -131,7 +134,7 @@ Rough net for the reach work alone under Approach 1: about -15 to +10 lines, bef
 
 ##### Approaches
 
-###### Approach 1: The Archive as a Kind-Marked Content Folder (Recommended)
+###### Approach 1: The Archive as a Kind-Marked Content Folder
 
 The Archive is a visible folder inside its Collection, marked by its own sidecar the way Agenda folders are (`folderKind.ts:39-51`). `resolveFolderKind` names it `archive`, so the walk and adoption pass it by, while the corpus, index, watcher, and sync admit its pages unchanged. The archive's own sidecar needs the same `classifyEvent` arm as its pages, since `SIDECARS.has(name)` sends any unknown sidecar to `{ kind: 'walk' }` (fileEvents.ts:253-256). Governed and content reach include it with zero cascade edits, and `owningCollection` and `corpusUnder` resolve its Collection by path. Collection rename, move, trash, and restore carry it. The work is the tree and by-ID families (Removal 1 and 3), `configReach`'s container list, `sweepCount`'s predicate, and a `classifyEvent` arm. Without that arm, every write to an archived page costs an `applyFolder` read (fileEvents.ts:369-370), so archive paths should go index-only, as Agenda pages ought to as well.
 
@@ -150,13 +153,11 @@ Keep `<Collection>/.archive/` and add an `archived(segs)` exception threaded thr
 The archive stays a Pommora-owned store. A second enumeration root joins the corpus and index, and `collectionFolders` maps each Collection to its archive directory.
 
 - **For:** syncs already. Survives a Collection rename by ID.
-- **Against:** governed reach needs an ID → directory mapping at every scope site. **Corrected:** it is one prefix (the archive root) at the one scope step, `corpusUnder` through `keyHolders.ts:17`, `:28`, not a mapping per site; it can't sit in `collectionFolders`, which doubles as the Collection sidecar list (`deleteProperty.ts:44-54`, `:139-143`). A deleted Collection orphans its archive, and trash, empty, and restore all have to learn about a second place. Folder names are ULIDs, which fails legibility. And it creates two corpus roots, so every enumerator chooses between them.
+- **Against:** governed reach needs the archive root as one more prefix at the scope step, `corpusUnder` through `keyHolders.ts:17`, `:28`, which can't sit in `collectionFolders`, since that list doubles as the Collection sidecar list (`deleteProperty.ts:44-54`, `:139-143`). A deleted Collection orphans its archive, and trash, empty, and restore all have to learn about a second place. Folder names are ids, unreadable by browsing. And it creates two corpus roots, so every enumerator chooses between them.
 
 Indexing the archive without admitting it to the corpus is rejected. It creates two enumeration paths, and the no-index fallbacks (`?? nexusCorpus`) would silently drop archived pages.
 
-**Set Aside by Ruling:** Nathan placed the archive at `.nexus/archive/<Collection ID>/`; this recommendation is kept as weighed.
-
-**Recommendation:** Approach 1. It's the only option that adds a *kind* rather than an *exception*. The reach it needs is mostly removal (the tree filter, the second twin rule, the duplicated fallbacks). The Trash could adopt it later by bundling into the same reach (*§Prospects · Indexed Trash*). If Obsidian visibility rules it out, Approach 2 is next, with its carve-outs gathered behind one named `archived` predicate in `exclusion.ts`, the same file `reachingExcluded` already lives in.
+**Recommendation:** Approach 1, the kind-marked visible folder, with Approach 2 next; set aside by B-1 and B-2, which place the Archive hidden at `.nexus/archive/<Collection ID>/` (the log's *Rejected · A Visible Archive Folder*).
 
 ---
 
@@ -173,17 +174,17 @@ Indexing the archive without admitting it to the corpus is rejected. It creates 
 
 ---
 
-##### Risks & Questions for Nathan
+##### Risks & Questions
 
-1. **Obsidian visibility:** NexusOS is both a vault and a Nexus. Is a visible Archive folder (shown in Obsidian and Finder) acceptable, or must archived pages stay out of Obsidian? This decides between Approach 1 and Approach 2.
-2. **Sync:** `<Collection>/.archive/` as currently imagined **wouldn't sync** (`manifestAdmits` → `neverWatched`). With Mobile and Sync near-term, is that disqualifying? It should be.
-3. **Loose pages and the delete strip:** moving the strip to governed reach keeps loose root pages and Agenda pages unstripped, the same as today. Should a Link value on a loose page be stripped when its target is deleted? Today it isn't, and nothing could refill it.
-4. **Inbound links to an archived page aren't maintained:** this is outside the mandate but load-bearing. Reach-In keeps an archived page's *outbound* links current. Links *naming* it are phantom to `respellings` (`Core/Connections/rewrite.ts:22-49`) while it's archived. If its Collection or Set is renamed, or a live page takes its title, those links don't follow, and the restore lands with stale or retargeted inbound links. The Trash's `targets`/`repairLanded` covers outbound links only. The fix would put archived pages into the *respell* world at their origin path, which is the Trash's `deletedPathOf`/`trashedPagesOf` pattern (holdings.ts:69-96), while staying out of the *resolve* world. Decision 8 doesn't address this. Accept it or design for it?
-5. **Archiving a Set, and views:** should archiving a Set leave the Collection's views and View Tiles that name it untouched (dormant), as Reach-In implies, rather than running the delete's `goneEdit`?
-6. **Restore into an archived parent:** a page whose origin Set has since been archived. Should it refuse, restore into the archived Set, or fall to the Collection?
-7. **Live and archived twins:** when a live page and an archived page share an ID, the restored one is reminted (losing its file history), or by-ID sweeps skip both. Should archiving or restoring refuse on an `id-live` collision, as the Trash does?
-8. **The asset migration** misses Trash bundles today, and would miss a hidden archive, while trashing the legacy files they name. That's an existing data-loss path worth an Issues entry whatever the archive's location.
-9. **Agenda event cost:** watched Agenda pages already route through `applyPage` → `applyFolder` per event (fileEvents.ts:369). An index-only arm for non-tree content kinds would serve both Agenda and the Archive.
+1. **Obsidian Visibility:** a visible Archive folder would show in Obsidian and Finder, since NexusOS is both a vault and a Nexus. **Settled By:** B-1, which keeps the Archive hidden.
+2. **Sync:** `<Collection>/.archive/` wouldn't sync (`manifestAdmits` → `neverWatched`). **Settled By:** B-1 and B-2; `.nexus/archive/` syncs today.
+3. **Loose Pages and the Delete Strip:** moving the strip to governed reach keeps loose root pages and Agenda pages unstripped, as today, and nothing could refill them. **Settled By:** C-3, which runs the strip on governed reach.
+4. **Inbound Links to an Archived Page:** links *naming* an archived page are phantom to `respellings` (`Core/Connections/rewrite.ts:22-49`) while it's archived, so a renamed Collection or Set, or a live page taking its title, leaves them stale or retargeted at restore; the Trash's `targets`/`repairLanded` covers outbound links only. Re-spelling them from the origin path follows the Trash's `deletedPathOf`/`trashedPagesOf` pattern (`holdings.ts:69-96`) while staying out of resolution. **Settled By:** D-1: path links re-spell to where the page lands, and title-only links that landed on a namesake stay with it.
+5. **Archiving a Set and Its Views:** archiving a Set leaves the Collection's views and View Tiles that name it in place rather than running the delete's `goneEdit`. **Planner's Call:** this follows from C-1's restore with nothing to reconcile, and the plan confirms it.
+6. **Restore Into an Archived Parent:** a page whose origin Set has since been archived finds no parent in the tree. **Planner's Call:** the log leaves it open.
+7. **Live and Archived Twins:** when a live page and an archived page share an ID, the restored one is reminted (losing its file history), or by-ID sweeps skip both. **Planner's Call:** whether archiving or restoring refuses on an `id-live` collision, as the Trash's restore does.
+8. **The Asset Migration:** it misses Trash bundles today, and would miss an Archive outside its walks, while trashing the legacy files they name. **Planner's Call:** an existing data-loss path; the Archive's own case is covered by walking the archive root (*Archive — Investigation §The Single Exception*).
+9. **Agenda Event Cost:** watched Agenda pages route through `applyPage` → `applyFolder` per event (`fileEvents.ts:369`). Under B-2 archived pages never reach that path, since `classifyEvent` ignores `.nexus` outside `contexts/`, so the Agenda cost stands on its own.
 
 ---
 
@@ -202,7 +203,7 @@ A folder whose name starts with `.` or `_` is shut out at every layer by one cha
 - **Watcher:** chokidar's ignore filter is `neverWatched(segs) || isExcluded(segs)` (`Desktop/FileWatch/watcher.ts:55-65`). `neverWatched` exempts `.nexus` at index 0 only (`exclusion.ts:27-36`). `.trash` isn't watched either.
 - **Sync:** `manifestAdmits` derives from `neverWatched` and adds `.trash` explicitly (`exclusion.ts:44-61`).
 
-**Archiving into a hidden folder deletes the page on every other device.** An in-app move is `relocate` (`Core/Files/atomicWrite.ts:62-75`), which calls `reportRename`. The sync tap's `feedRename` sees `admits(to)` false and schedules only `from` (`Core/Sync/Client/tap.ts:64-67`). `pushDirty` then finds `from` missing with a base row and pushes a `delete` (`Core/Sync/Client/push.ts`, the `stat === null` branch). The archive copy never syncs. Locally, `moveIndexPaths` sees `newRel` null and de-indexes the page (`indexSeed.ts:178-180`), so it also drops out of every cascade. A hidden location therefore makes the Archive behave like the Trash unless an exemption runs through every link of that chain.
+**Archiving into a hidden folder sync doesn't admit, such as `<Collection>/.archive/`, deletes the page on every other device.** An in-app move is `relocate` (`Core/Files/atomicWrite.ts:62-75`), which calls `reportRename`. The sync tap's `feedRename` sees `admits(to)` false and schedules only `from` (`Core/Sync/Client/tap.ts:64-67`). `pushDirty` then finds `from` missing with a base row and pushes a `delete` (`Core/Sync/Client/push.ts`, the `stat === null` branch). The archive copy never syncs. Locally, `moveIndexPaths` sees `newRel` null and de-indexes the page (`indexSeed.ts:178-180`), so it also drops out of every cascade. A hidden location therefore makes the Archive behave like the Trash unless an exemption runs through every link of that chain.
 
 **Sync landings depend on the watcher.** `landBytes` records no echo and notes no event: "the watcher reports it like any outside write and the tree and index take it from that event" (`atomicWrite.ts:40-49`). `landRename` is a raw `machine().rename` (`Core/Sync/Arrival/land.ts:123-142`). So on a receiving device, an archived page reaches the index only if the watcher watches the Archive. Without that, device B sees only the unlink at the old path, de-indexes the page, and Reach-In is broken there until the next seed.
 
@@ -223,7 +224,7 @@ Every discovery surface resolves through the tree:
 
 - `readMatrixGraph` → `readPageRelations()` with no paths (`Core/Matrix/matrixGraph.ts:20`).
 - `index:headings` with no paths (`Core/Nexus/handlers.ts:167-168` ← `Core/Session/nexusSlice.ts:165`, called with none at `:190`).
-- `view:loadValues` with no ids → `folderCorpus(Collection)` (`Core/Views/loadValues.ts:13`, from `useContainerValues.ts:76`). This **reads and parses every corpus file under the folder**. With an in-Collection Archive, that means every archived page on every full view load, although rows only use tree pages. That's the one real lag source the Archive would add. **Narrowed:** under the ruled `.nexus/archive/` location, `folderCorpus(Collection)` never enters the archive, so this applies to the per-Collection fallback only.
+- `view:loadValues` with no ids → `folderCorpus(Collection)` (`Core/Views/loadValues.ts:13`, from `useContainerValues.ts:76`). This **reads and parses every corpus file under the folder**. With an in-Collection Archive, that means every archived page on every full view load, although rows only use tree pages. That would be the one real lag source an in-Collection Archive adds. Under `.nexus/archive/` (B-2), `folderCorpus(Collection)` never enters the Archive, so the cost doesn't arise.
 
 **The seam:** tree exclusion *is* discovery exclusion. The Archive needs to be in the corpus, watched, and synced, but absent from the tree. No new discovery filter is needed beyond host-side trimming of the three unbounded reads.
 
@@ -238,7 +239,7 @@ Every discovery surface resolves through the tree:
   - **Net:** an archive move is a rename to the index and to sync (both ends admitted → `onRename`, `tap.ts:69-74`), and a removal to the tree, tabs, and selection. To the renderer it's indistinguishable from a delete.
 - **Outside move into the Archive (watched):** `unlink` → `deindexPath` → `vanished`; `add` → `indexWrittenPage` → `landed`. `payOutsideMoves` can't place either id in the tree (`Core/Nexus/settle.ts:276-292`), so the arrival is dropped and the vanish waits in `owed.vanished` until a restore pairs it. That's benign, and a restore to the same path is a no-op (`settle.ts:282`).
 - **Outside edits to an archived file:** they reach the index only if the watcher watches the Archive. Otherwise they reach it at the next seed (`seedContentIndex`, mtime/size-gated, `indexSeed.ts:227-237`).
-- **Restore (move back):** in-app, it lands as an own move. The settle doesn't treat it as an arrival because origin is own, so title collisions re-spell only if the restore op calls `relink` itself, the way page moves do. The archive op must **not** reuse `movePageOp`'s relink. Re-spelling toward a page leaving the index is wrong under Decision 4.
+- **Restore (move back):** in-app, it lands as an own move. The settle doesn't treat it as an arrival because origin is own, so title collisions re-spell only if the restore op calls `relink` itself, the way page moves do. The archive op must **not** reuse `movePageOp`'s relink. Re-spelling toward a page leaving the index is wrong under D-1.
 
 ###### 4. Cascade Reach Today (For the Cascade Scout, Cited Anyway)
 
@@ -248,7 +249,7 @@ There are three reach rules:
 - Property sweeps intersect the index's holders with Collection folders by prefix (`Core/Properties/keyHolders.ts:12-18`, `:28`).
 - `deleteCascade` sweeps only `held.has(rel) || withheld(rel)`, and skips a page whose id the tree doesn't hold as a "twin" (`cascade.ts:101-121`).
 
-An indexed Archive is reached by the first two for free. The third skips it, so Decision 5 fails until reach is unified; the `liveIdIndex`/`withheldIn` filter is the consolidation target for Decision 16. `reachConfig` (views in sidecars) enumerates tree containers only (`Core/Nexus/configReach.ts:312-317`), so an **archived Set's `_pageset.json` views go stale** without an Archive arm. `editCaches` also takes `tree.collections` (`cascade.ts:247`).
+An indexed Archive is reached by the first two for free. The third skips it, so C-2 fails until reach is unified; the `liveIdIndex`/`withheldIn` filter is the consolidation target for C-3. `reachConfig` (views in sidecars) enumerates tree containers only (`Core/Nexus/configReach.ts:312-317`), so an **archived Set's `_pageset.json` views go stale** without an Archive arm. `editCaches` also takes `tree.collections` (`cascade.ts:247`).
 
 ###### 5. Sidecar Readers (For Option D)
 
@@ -265,8 +266,8 @@ Sapphire reads none of them (`~/The Studio/Projects/Sapphire/src` has no sidecar
 
 ###### 6. Data on Disk
 
-- NexusOS already has a user-made `Ideas/II. Archive` and `Agenda/II. Archive`. There are no `.archive`/`_archive` folders anywhere. (**Unverified** by reconciliation.)
-- NexusOS is git-tracked with only `.trash/` ignored (`~/NexusOS/.gitignore`). Obsidian's `showUnsupportedFiles` is false, so JSON sidecars are already invisible there. (**Unverified** by reconciliation.)
+- NexusOS already has a user-made `Ideas/II. Archive` and `Agenda/II. Archive`. There are no `.archive`/`_archive` folders anywhere.
+- NexusOS is git-tracked with only `.trash/` ignored (`~/NexusOS/.gitignore`). Obsidian's `showUnsupportedFiles` is false, so JSON sidecars are already invisible there.
 - `names.ts:25-26` refuses any create or rename starting with `.` or `_`, so a hidden Archive name can never collide with a user Set.
 
 ---
@@ -275,15 +276,15 @@ Sapphire reads none of them (`~/The Studio/Projects/Sapphire/src` has no sidecar
 
 1. **`loadValues` reads what the view shows** (`Core/Views/loadValues.ts:8-18`). A full load reads the tree's pages under the container instead of `folderCorpus`. That removes a per-view-open disk walk, stops parsing withheld, unadopted, and archived files no row uses, and leaves `folderCorpus` with one caller (`indexSeed.ts:183`, inline-able). ~±0 lines, -1 export. Worth doing even without the Archive.
 2. **Trim the unbounded index reads to the tree** (`matrixGraph.ts:20`, `handlers.ts:168`). Filter rows to `pagesByPathOf(tree)` host-side. That also drops Agenda, root-loose, and withheld rows shipped today and discarded. ~+3 lines.
-3. **One reach rule** (Decision 16): `deleteCascade`'s held/withheld/twin filter (`cascade.ts:101-121`, ~15 lines) against the index-wide reach of `renameCascade` and the folder intersection of `keyHolders`. With the Archive in the corpus, "corpus = reach" (CorePM's own "indexed and rewritable name one set") is the single definition, and delete's filter becomes the odd one out to remove. That's the cascade scout's call.
+3. **One reach rule** (C-3): `deleteCascade`'s held/withheld/twin filter (`cascade.ts:101-121`, ~15 lines) against the index-wide reach of `renameCascade` and the folder intersection of `keyHolders`. With the Archive in the corpus, "corpus = reach" (CorePM's own "indexed and rewritable name one set") is the single definition, and delete's filter becomes the odd one out to remove. That's the cascade scout's call.
 4. **`NON_CORPUS_TOP`'s comment is already false** (`nexusPaths.ts:7-8`): "The walk, the index, and every mutation refuse these." Its only reader is `nexusFolderRefusal` (`Core/Settings/codec.ts:51`), and the walk refuses `.nexus`/`.trash` through `hiddenFolder`. Fix the comment or fold the constant into codec.ts. ~0 lines.
-5. **Two content walkers** with two admit rules: `listMarkdownFiles` (hidden-only, `walk.ts:31-39`, Trash only) and `corpusFilesUnder` (`walk.ts:73-83`). Its comment says "held to the same hidden-name rule as the content walk", which stops being true under any option that admits an Archive to the corpus. Decide deliberately whether Trash holdings include a trashed Collection's archived pages (see *§Risks*).
+5. **Two content walkers** with two admit rules: `listMarkdownFiles` (hidden-only, `walk.ts:31-39`, Trash only) and `corpusFilesUnder` (`walk.ts:73-83`). Its comment says "held to the same hidden-name rule as the content walk", which stops being true under any option that admits an Archive to the corpus. Under F-4 a trashed Collection's Archive stays at `.nexus/archive/<Collection ID>/`, so Trash holdings never include archived pages.
 
 ---
 
 ##### Approaches
 
-###### A. Tree Exclusion by Kind Sidecar (Marked, Visible Folder) — Recommended
+###### A. Tree Exclusion by Kind Sidecar (Marked, Visible Folder)
 
 The Archive is an ordinary non-hidden folder directly under the Collection (default name "Archive"), marked by its own sidecar, `_archive.json`. `resolveFolderKind` returns a new `'archive'` kind for it, the same way the Agenda arm returns `'tasks'`/`'events'` (`folderKind.ts:39-51`). Because `readChildSets` keeps only `kinds[i] === 'set'` (`readNexus.ts:166-168`), the Archive and everything in it, nested archived Sets included, never enter the tree.
 
@@ -322,22 +323,20 @@ A variant, **an unindexed Archive scanned per sweep**, is O(archive) for every c
 | Watched (sync landings reach index) | No | No | Yes | No | Yes |
 | In corpus/index | Needs exemption | Needs exemption | Needs `.nexus/archive` exemption | Needs exemption | Yes |
 | Out of tree | Free | Free | Free | Free | One kind case |
-| Collection-scoped sweeps (`corpusUnder`) | Free | Free | One archive-root prefix at the scope step (**corrected**) | Free | Free |
+| Collection-scoped sweeps (`corpusUnder`) | Free | Free | One archive-root prefix at the scope step | Free | Free |
 | Collection rename/trash/restore | Carried | Carried | Trash must carry/restore it explicitly; rename free | Carried | Carried, and scrubbed on restore |
 | Archived Sets (nested folders + `_pageset.json`) | Ignored by tree; restoreScrub skips | Same | Fine | Same as (a) | Fine via kind; `reachConfig` needs an arm in every option |
 | Finder | Hidden | Visible | Hidden, ULID-named | Hidden — the Collection's own sidecar too | Visible |
 | Obsidian (NexusOS) | Hidden | **Visible** | Hidden | Hidden | **Visible** |
-| Legibility Locked Decision | Fair (revealable, self-named) | Good | **Fails** (ID-keyed, detached from its Collection) | Fair, but hides what makes a folder a Collection | Best |
+| Legibility Locked Decision | Fair (revealable, self-named) | Good | ID-keyed, inside `.nexus`, which B-2 holds isn't meant to be legible | Fair, but hides what makes a folder a Collection | Best |
 | Name collisions | Impossible (`names.ts:25`) | Impossible | None | None | Possible, `freeName` |
 | Blast radius | ~2 predicates | Same as (a) | Predicate + sweep folders + Trash | ~21 sidecar files, a data migration of every Nexus and Trash bundle, Sets become the odd one out (`_pageset.json`), the Collection↔Set swap (`adopt.ts:120-127`), and exemptions in the watcher and sync for the sidecar itself | ~5 small union/arm additions |
 
 - **(b)** combines (a)'s exemptions with (e)'s Obsidian visibility, so it's dominated.
-- **(c)** fails legibility and puts content inside the configuration directory.
+- **(c)** names folders by id and puts content inside the app's own folder, which B-2 accepts.
 - **(d)** buys nothing functional over (a): every root sidecar read moves, the Collection's own config goes dark to the watcher and sync without new exemptions, and existing data needs migration residue. Reject it.
 
-**Set Aside by Ruling:** Nathan placed the archive at `.nexus/archive/<Collection ID>/`; this recommendation is kept as weighed.
-
-**Recommendation:** go with **(e)**, the kind-marked Archive folder. Exclusion is already decided by kind, and the corpus, watcher, sync, Trash, and sweeps need no exceptions. It reads best on disk, and its sidecar answers the origin-record question. Fall back to **(a)** only if Nathan wants archived pages invisible in Obsidian and Finder. Then the hidden-but-reached exemption, the restoreScrub/holdings gap, and name-based watching are the price.
+**Recommendation:** (e), the kind-marked Archive folder, falling back to (a); set aside by B-1 and B-2 (the log's *Rejected · A Visible Archive Folder*, *Rejected · A Per-Collection `.archive/`*).
 
 ###### Performance
 
@@ -366,18 +365,18 @@ A variant, **an unindexed Archive scanned per sweep**, is O(archive) for every c
 
 ---
 
-##### Risks & Questions for Nathan
+##### Risks & Questions
 
-1. **Obsidian visibility (the deciding question):** should archived pages be invisible in Obsidian and Finder (pick (a)), or should the Archive be a plainly visible folder that any app reads as "Archive" (pick (e))? Your existing `Ideas/II. Archive` suggests the second. Could that folder become its Collection's Archive?
-2. **Archive folder name under (e):** "Archive" fixed, user-renamable (kind lives in the sidecar), or something else? A Collection already holding a Set named "Archive" would get "Archive (2)".
-3. **Flat or mirrored layout inside the Archive:** titles are filenames, so a flat Archive renames on collision (`Foo (2)`) and the restore must undo it. Mirroring the origin chain (as `.trash` does, `bundle.ts:13-20`) is legible and collision-light, but a chain folder and an archived Set then differ only by `_pageset.json`. That's for planning.
-4. **Sets moved across Collections after archiving:** the archived page stays in Collection A's Archive and A's sweeps reach it by folder prefix, while its origin Set now lives in B. Decision 8 resolves the restore, but schema reach during the archive is A's.
-5. **Delete reach:** `deleteCascade`'s twin skip (`cascade.ts:110-118`) skips archived pages, which breaks Decision 5 until reach is unified. A Collection delete also passes only tree pages as `under` (`delete.ts:49`), so Link values naming its archived pages aren't stripped.
-6. **Archived Set sidecars:** `reachConfig` is tree-sourced (`configReach.ts:312-317`), so view edits miss archived Sets' `_pageset.json`. The shared reach has to include Archive sidecars.
-7. **Excluding an Archive:** should excluding the Archive via Settings be refused? Excluding it takes it out of reach. (e) allows it today; (a) can't be picked.
-8. **Trash interplay:** a page deleted from the Archive gets `parent: unaddressable` (`gather.ts:24-29`) because the Archive isn't in the tree, so Decision 21's origin has to come from the Archive's record. Under (e), Trash holdings will list a trashed Collection's archived pages for link repair. Confirm that's wanted.
-9. **Open tabs:** an open tab on an archived page closes, the same as a delete, and isn't reopened on restore. Pins and recents survive hidden and return.
-10. **Outside vanishes:** an outside move into the Archive leaves an entry in `owed.vanished` for the session (`settle.ts:276-279`). It's benign, but it never pairs unless the page is restored.
+1. **Obsidian Visibility:** invisible in Obsidian and Finder, or a plainly visible folder any app reads as "Archive"; NexusOS's own `Ideas/II. Archive` suggested the second. **Settled By:** B-1 and B-2, a hidden Archive at `.nexus/archive/<Collection ID>/`.
+2. **The Folder Name Under (e):** **Settled By:** B-2; the location has no user-facing name.
+3. **Flat or Mirrored Layout Inside the Archive:** titles are filenames, so a flat Archive renames on collision and the restore undoes it, while mirroring the origin chain, as `.trash` does (`bundle.ts:13-20`), makes a chain folder and an archived Set differ only by `_pageset.json`. **Planner's Call:** Open Item 1.
+4. **Sets Moved Across Collections After Archiving:** the archived page stays in Collection A's Archive while its origin Set now lives in B. **Settled By:** E-1 for the restore, which follows the Set by id; schema reach while archived stays A's.
+5. **Delete Reach:** `deleteCascade`'s twin skip (`cascade.ts:110-118`) skips archived pages, and a Collection delete passes only tree pages as `under` (`delete.ts:49`), so Link values naming its archived pages aren't stripped. **Settled By:** C-2 and C-3.
+6. **Archived Set Sidecars:** `reachConfig` is tree-sourced (`configReach.ts:312-317`), so view edits miss archived Sets' `_pageset.json`. **Planner's Call:** under C-1, configuration reach gains them (*Archive — Investigation §The Reach Definition*).
+7. **Excluding an Archive:** `normalizeExclusions` drops any entry under `.nexus` (`codec.ts:61-85`), so the Archive can't be excluded; F-1 covers Collections and Sets excluded after items were archived from them.
+8. **Trash Interplay:** a page deleted from the Archive gets `parent: unaddressable` (`gather.ts:24-29`) because the Archive isn't in the tree, so its origin has to come from the Archive's record. **Settled By:** E-3.
+9. **Open Tabs:** an open tab on an archived page closes, as for a delete, and isn't reopened on restore; pins and recents survive hidden and return, as D-2 implies.
+10. **Outside Vanishes:** an outside move into the Archive leaves an entry in `owed.vanished` for the session (`settle.ts:276-279`). It's benign and pairs only if the page is restored.
 
 ---
 
@@ -402,7 +401,7 @@ A variant, **an unindexed Archive scanned per sweep**, is O(archive) for every c
 
 - **Shape:** `contentRecord(entity)` (`record.ts:33-44`) holds `{ entity, id?, parent, excluded?, links?, targets?, partial? }` for page, Set, and Collection. `parentRef` is a union of `root | container(id) | context(id) | unaddressable` (`record.ts:14-19`).
 - **Time:** the record has no time field. The deletion time is parsed back out of the bundle folder's stamp (`trashRows.ts:12-19`, `deletedAtOf`).
-- **Fit for the Archive:** the page and Set arms already carry everything an archive origin needs: id, parent by id, and the Set's excluded entries.
+- **Fit for the Archive:** the page and Set arms already carry the id and the parent by id an archive origin needs.
 
 ###### The Restore Path (`Trash/spend.ts` 336, `resolve.ts` 93, `restoreScrub.ts` 213, `restoreProperty.ts` 75, `holdings.ts` 162)
 
@@ -435,7 +434,7 @@ A variant, **an unindexed Archive scanned per sweep**, is O(archive) for every c
 
 ###### Page Metadata
 
-- **Decision 9 Costs Nothing:** `readPageMetadata` loads every shard without pruning (`Nexus/pageMetadata.ts:54-65`, read at `readNexus.ts:303`). Only `dropPageMetadata` removes entries (`pageMetadata.ts:119-134`, filtered by `idHeld`), and it's called by a system-trash delete (`delete.ts:101`), `emptyBundle` (`spend.ts:88`), and Clear Exclusion Cache (`Settings/exclusionScan.ts:85`). If archiving doesn't call it, the entry survives untouched.
+- **B-3 Costs Nothing:** `readPageMetadata` loads every shard without pruning (`Nexus/pageMetadata.ts:54-65`, read at `readNexus.ts:303`). Only `dropPageMetadata` removes entries (`pageMetadata.ts:119-134`, filtered by `idHeld`), and it's called by a system-trash delete (`delete.ts:101`), `emptyBundle` (`spend.ts:88`), and Clear Exclusion Cache (`Settings/exclusionScan.ts:85`). If archiving doesn't call it, the entry survives untouched.
 - **Hidden-Folder Gap:** `contentPages` for a Collection or Set uses `listMarkdownFiles` (`Files/walk.ts:32-39`), which skips hidden folders. If the Archive sits at `<Collection>/.archive/`:
   - **Deleting the Collection:** the archived pages are carried into the bundle without being listed.
   - **System Trash Mode:** their metadata entries are orphaned for good (`delete.ts:48`).
@@ -448,16 +447,16 @@ A variant, **an unindexed Archive scanned per sweep**, is O(archive) for every c
   - **Spending:** `notifyUndoable` pushes one one-shot revert onto the chord stack (`Session/undo.ts:15-21`). The revert is `mutate({op:'restore', bundlePath})`.
   - **`armed` Map:** a map keyed by `bundlePath` (`confirmations.ts:40-46`) lets a restore or delete from the Trash frame spend the notice's Undo through `spendBundle` (`TrashFrame.tsx:100, 121`).
 - **Fixed Wording:** `notifyDeleted` hard-codes "Deleted “…”" (`notifications.ts:90`).
-- **Set Confirmations:** `ALWAYS_ASKS` makes a Set or Collection delete confirm whatever the switch says (`confirmations.ts:29-38`). That bears on archiving a Set, which Decision 13 gives its own switch.
+- **Set Confirmations:** `ALWAYS_ASKS` makes a Set or Collection delete confirm whatever the switch says (`confirmations.ts:29-38`). That bears on archiving a Set, which I-2 gives its own switch.
 
 ###### Sets (Scope Update)
 
 - **Excluded Entries:**
   - **Move:** a Set move carries its excluded entries along (`followExcludedFolders`, `Nexus/folderEntity.ts:31-32`, `Settings/settings.ts:98`).
   - **Trash:** a Trash delete instead records them (`excluded`, `gather.ts:72`), releases them (`delete.ts:109`), and reseats them on restore (`spend.ts:218`, `settings.ts:126-127`).
-  - **Archive:** ~~following them is the right model~~ **Corrected:** following an entry into `.nexus/archive/` is impossible, since `normalizeExclusions` drops any entry under `.nexus` (`Core/Settings/codec.ts:51`, `:70-73`). Nathan's ruling instead leaves excluded folders behind in the Set's parent before it moves, for the archive and the Trash alike.
+  - **Archive:** an entry can't follow its folder into `.nexus/archive/`, since `normalizeExclusions` drops any entry under `.nexus` (`Core/Settings/codec.ts:51`, `:70-73`). F-2 and F-3 instead leave excluded folders behind in the container's parent before it moves, for the Archive and the Trash alike.
 - **Landing:** `moveSetOp` already applies `landingRefusal` + `exclusionWriteRefusal` (`move.ts:50-53`). `landingRefusal` ignores the `hidden` reason (`folderEntity.ts:27`), so it wouldn't refuse a landing inside `.archive`. The unarchive direction is the one that needs it.
-- **Config Reach:** `moveSetOp` runs a config reach when a Set leaves its Collection (`move.ts:54-66`). Archiving a Set shouldn't run `goneEdit`. Views, tiles, and filters naming it should stay in place, as Decision 4 keeps Link values. Deleting it from the Archive has to compute the gone ids from disk, since `goneEdit` reads the tree (see the delete path above).
+- **Config Reach:** `moveSetOp` runs a config reach when a Set leaves its Collection (`move.ts:54-66`). Archiving a Set shouldn't run `goneEdit`. Views, tiles, and filters naming it should stay in place, as D-1 keeps Link values. Deleting it from the Archive has to compute the gone ids from disk, since `goneEdit` reads the tree (see the delete path above).
 
 ---
 
@@ -476,17 +475,17 @@ These have no Trash-specific semantics. Importing them from `Core/Trash/` into `
 
 - **Split `restoreArtifact` by Kind:** `spend.ts:143-323` takes a page or Set arm, a Space arm, and a Context arm, each reading straight through. The Archive shouldn't call it. Reconcile-on-Restore is the thing Reach-In removes, and the page/Set placement it needs is about 20 lines. The split stands on its own as a cleanup, roughly 0 to -20 lines.
 - **Stale Header:** `destinationTree.ts:1` says both askers "read the one walk in `record.ts`". The code reads `nodesOf` from `Nexus/treeIndex.ts:34`. The comment is already false.
-- **Misleading Order Comment:** `mutateRequest.ts:88`. Either the comment is corrected or an explicit order rule replaces it (see *§Risks & Questions* 3).
+- **Misleading Order Comment:** `mutateRequest.ts:88` describes an in-memory skip as a drop; K-5 rewrites it, and E-2's exact position replaces the incidental slot (*§Risks & Questions* 3).
 
 ###### Free Under This Effort (No Code)
 
-- **Decision 9:** don't call `dropPageMetadata` when archiving.
+- **B-3:** don't call `dropPageMetadata` when archiving.
 - **Countdown:** already in place on every notice.
-- **Decision 21:** under Approach A it falls out of the record already naming the origin parent.
+- **E-3:** under Approach A it falls out of the record already naming the origin parent.
 
 ###### Indexed Trash Sizing (For the Record; Source Lines, Tests Separate)
 
-**Unverified:** reconciliation spot-checked these by file length only.
+These figures are file-length estimates.
 
 If trashed pages stayed current through Reach-In, these **go**:
 
@@ -511,7 +510,7 @@ These **stay**:
 
 The test lines that would mostly go are `restoreScrub.test.ts` (825), a large share of `spend.test.ts` (2,148), and parts of `trashRecovery.test.ts` (771).
 
-The cost on the other side is that `.trash` joins the shared reach and every reader learns to skip it. That's the same cost the Archive pays now, which is why Decision 16's shared reach is the real gate for it.
+The cost on the other side is that `.trash` joins the shared reach and every reader learns to skip it. That's the same cost the Archive pays now, which is why C-3's shared reach is the real gate for it.
 
 ---
 
@@ -519,23 +518,23 @@ The cost on the other side is that `.trash` joins the shared reach and every rea
 
 ###### A — One Bundle Shape, Two Stores (Recommended)
 
-**Location Set Aside by Ruling; Record Shape Carried Forward:** the per-item bundle shape is recommended inside `.nexus/archive/<Collection ID>/`.
+The scout placed this store inside each Collection, which B-2 sets aside; the bundle shape itself carries forward inside `.nexus/archive/<Collection ID>/` as Open Item 1's recommendation.
 
 An archived page or Set becomes a bundle in its Collection's Archive store: `<stamp>__<leaf>.archived/` holding the artifact under its own name beside a `_record.json` that reuses `contentRecord('page' | 'set')`.
 
-- **Record:** id, `parent` by container id, and `excluded`. There are no `links` or `targets`, because Reach-In keeps the artifact current. Archived time comes from the stamp, read by the existing `deletedAtOf`, so time has one source in both stores.
+- **Record:** id and `parent` by container id; F-2 keeps excluded entries out of it. There are no `links` or `targets`, because Reach-In keeps the artifact current. Archived time comes from the stamp, read by the existing `deletedAtOf`, so time has one source in both stores.
 - **Archive:** gate on `mutableTarget`, then `mintBundle(store)`, write the record from `gatherContentRecord` (parent is resolved correctly while the page is still in the tree), and `relocate`.
-  - **What It Leaves Alone:** no `dropFromChildOrder`, so the slot stays in `page_order` as the Trash's does; no `dropPageMetadata`; no `deleteCascade`; no `goneEdit`.
-  - **Excluded Entries:** they follow the Set (`followExcludedFolders`).
+  - **What It Leaves Alone:** no `dropFromChildOrder`, so the slot stays in `page_order` as the Trash's does, where E-2 asks for the exact place; no `dropPageMetadata`; no `deleteCascade`; no `goneEdit`.
+  - **Excluded Entries:** following the Set is set aside by F-2, which leaves them in the Set's parent.
 - **Store Layout:** the store lies flat, one bundle level under the Collection's archive folder. `trashChainDir` mirrors the artifact's chain relative to the Nexus root (`bundle.ts:14-20`). Mirroring under `<Collection>/.archive/` would yield `Coll/.archive/Coll/Set/<stamp>__Page.md.archived/`, and `frozenCrumbs` would need its own prefix rule, since it strips only `TRASH_DIR` and the Contexts prefix (`trashRows.ts:22-29`). The parent comes from the record, so a mirrored chain adds nothing. The hoisted `mintBundle` therefore takes a chain-or-flat choice, about +3 lines.
 - **Restore (Unarchive):** `openBundle(store)` → hoisted `resolveRecord` → `landingRefusal` / `exclusionWriteRefusal` / squatter check → `relocate` → remove the emptied bundle. It runs through `addressed`'s before/after `relink` so the live world re-spells for the arrival. `addressed` derives its label from `req.path`, `req.name`, or `req.newName` (`mutate.ts:98-100`), and an unarchive request carries `bundlePath`, so it either takes the label as a parameter or shares the relink through a sibling wrapper (about +3 lines). The restore is about 25 lines and uses none of the reconcile.
-- **Homeless Rows:** a record whose Set is gone is treated as homeless. ArchiveView can default it to the Collection root, or reuse the `withDestination` + `containerTargets` picker scoped to that Collection.
+- **Homeless Rows:** a record whose Set is gone asks for a destination through the `withDestination` + `containerTargets` picker, as the Trash's does (F-1, E-5).
 - **Delete From Archive:**
   - **What `deleteOp` Already Does:** it runs `mintBundle(.trash)` → record → relocate → strip.
   - **Gate:** accept an archive bundle path as a source alongside `mutableTarget`.
-  - **Parent:** take `parent` from the archive record, not `gatherParentRef`, so Decision 21 follows.
+  - **Parent:** take `parent` from the archive record, not `gatherParentRef`, so E-3 follows.
   - **Chain:** mint the `.trash` chain from the **origin** container's current path, not the archive folder, so `deletedPathOf` and the crumbs read `Collection/Set/Page`.
-  - **Paths:** build `paths` for `deleteCascade` from the archived pages mapped to the origin path, so the Link strip (Decision 5) uses the keys the page answered to. Under the follow model, `contentPages`'s `listMarkdownFiles` would also list pages in a Set's excluded subfolders, which a live Set delete never strips because `under` comes from the tree. The list should come from the scoped walk (`corpusFilesUnder`, `walk.ts:73-83`) instead.
+  - **Paths:** build `paths` for `deleteCascade` from the archived pages mapped to the origin path, so the Link strip (C-2) uses the keys the page answered to. Under F-2 no excluded folder rides into the Archive, so the artifact's pages are only what Pommora manages.
   - **Set Config Reach:** gather the gone Set ids from its sidecars on disk for the config reach.
   - **Cleanup:** remove the `.archived` bundle once its artifact has moved into the `.trash` bundle. `listBundles` hides a bundle with no artifact (`holdings.ts:36`), but nothing deletes it, and that's the litter `spend.ts:66` describes.
 - **Listing:** `listBundles(store)` + `trashRowOf` gives ArchiveView its rows, `homeResolves` included.
@@ -564,12 +563,11 @@ The page or Set stays where it is and carries an `archived` mark that every read
 
 - **Trade-Offs:**
   - **Free:** origin, order, metadata, and Reach-In (the files never leave the cascades' reach), and restore is clearing a flag.
-  - **Against:** it contradicts Decision 1 ("a place a page goes") and Legibility: the filesystem would show archived pages as live. Every reader in Decision 6's list needs a skip, which is the exact cost the Archive is trying to put in one place. Sets need the mark on the sidecar and inheritance for their contents.
-- **Status:** it belongs on the table under Removal First, and I'd reject it on Legibility.
+  - **Against:** the filesystem would show archived pages as live, and every discovery surface needs a skip, the cost D-2's leaving-the-tree model avoids (the log's *Rejected · Archived Pages Kept in the Tree Under a Hidden Flag*). Sets need the mark on the sidecar and inheritance for their contents.
 
 ###### Recommendation
 
-**A.** It's the only approach where the Archive adds operations and no new data shapes. The record, bundle, listing, rows, placement, picker, and Undo spend are each one implementation serving two stores, and Decisions 21 and 22 cost nothing. B's legibility gain is real but small against a second record format and a manifest to keep consistent. The Trash's look stays untouched under A. Its data layer only gains a store parameter and the hoisted placement owner, and that's the restructuring the scope update allows.
+**A**, carried forward as Open Item 1's recommendation inside `.nexus/archive/<Collection ID>/` (B-2); its excluded-entry follow is set aside by F-2 and its incidental slot by E-2.
 
 ---
 
@@ -587,21 +585,16 @@ The page or Set stays where it is and carries an `archived` mark that every read
 
 ---
 
-##### Risks & Questions for Nathan
+##### Risks & Questions
 
-1. **Archive Location vs. Reach-In:**
-   - **The Rule:** any `.`- or `_`-prefixed folder is outside the read walk, the watcher, the index corpus, and every cascade by one predicate (`Paths/exclusion.ts:17-24, 77-82`; `Files/walk.ts:73-83`; `CorePM.md:69`).
-   - **Consequence:** whichever location wins (`<Collection>/.archive/`, `.nexus/archive/<id>/`, `.collection/`), the shared reach (Decision 16) has to add it explicitly. Property sweeps take index candidates under Collection folders (`Properties/keyHolders.ts:12-18`), so an un-indexed archive is reached by none of them today.
-   - **In-Folder Option:** `<Collection>/.archive/` travels with Collection renames and deletes, but it creates the hidden-folder gap described under *§Findings · Page Metadata*: a Collection delete or empty skips archived pages' metadata and links.
-   - **Under `.nexus`:** survives a Collection delete as an orphan, keyed by an id that may come back on restore.
-   - **Ask:** which do you want? The Trash interaction should be designed for whichever you pick.
-2. **Restoring Into a Collection That Isn't the Archive's Own:** a Set can move to another Collection while a page archived from it waits. `resolveRecord` would follow the Set across, and the page would land under a different schema. Should a restore follow the Set wherever it went, or fall back to the archive's own Collection?
-3. **Position:** today's Trash restore regains a slot only by accident (see *§Findings · Order*): the tombstone in `page_order` lasts until the folder's next reorder or create. Doing the same in the Archive costs nothing. Making it reliable means recording the next sibling's id at archive time and splicing with `spliceBeside` (`creationOrder.ts:12-28`), about +6 lines. Is best-effort enough?
-4. **Title Collisions:** links that kept naming an archived `Notes` (Decision 4) re-resolve to whatever holds `Notes` while it's away. A restore that steps aside to `Notes (2)` leaves them on the other page. Accept that, or have the restore re-aim them by the archived id?
-5. **Archiving a Set:** should it always confirm, like a Set delete (`ALWAYS_ASKS`, `confirmations.ts:29`), or follow "Confirm Before Archiving"?
-6. **Undo After Edits:** while the Undo is armed, a sibling created under the archived page's title makes the Undo step aside to `Title (2)`. It's the same as the Trash today. Flagging it only so it's a decision.
-7. **Auto-Delete Granularity:** a Set bundle's stamp is the archived time for everything inside it. An auto-delete would expire the Set as one unit, never page by page.
-8. **The `restoreArtifact` Split:** it's worth doing in this effort, because the hoist touches the same lines and leaving the five-kind braid behind would leave the Trash as the odd one out next to a 25-line unarchive.
+1. **Archive Location vs. Reach-In:** any `.`- or `_`-prefixed folder is outside the read walk, the watcher, the index corpus, and every cascade by one predicate (`Paths/exclusion.ts:17-24, 77-82`; `Files/walk.ts:73-83`; `CorePM.md:69`), so whichever location wins, the shared reach has to add it explicitly; an in-Collection `.archive/` creates the hidden-folder gap under *§Findings · Page Metadata*, and `.nexus/archive/<id>/` survives a Collection delete as an orphan. **Settled By:** B-1, B-2, C-3, and F-5.
+2. **Restoring Into a Collection That Isn't the Archive's Own:** a Set can move to another Collection while a page archived from it waits, and `resolveRecord` follows the Set across, landing the page under a different schema. **Settled By:** E-1, which follows the Set by id.
+3. **Position:** today's Trash restore regains a slot only while the tombstone in `page_order` lasts (*§Findings · Order*); recording the next sibling's id and splicing with `spliceBeside` (`creationOrder.ts:12-28`) would make it reliable, about +6 lines. **Settled By:** E-2, the exact place for both stores; the splice is a candidate.
+4. **Title Collisions:** links naming an archived `Notes` re-resolve to whatever holds `Notes` while it's away. **Settled By:** D-1, which leaves them with the namesake; a restore that steps aside to `Notes (2)` follows E-4.
+5. **Archiving a Set:** **Settled By:** I-2; Confirm Before Archiving governs Sets.
+6. **Undo After Edits:** while the Undo is armed, a sibling created under the archived page's title makes the Undo step aside to `Title (2)`, as the Trash's does. **Settled By:** E-4.
+7. **Auto-Delete Granularity:** a Set bundle's stamp is the archived time for everything inside it, so an auto-delete would expire the Set as one unit (the decision log's *§Prospects · Auto-Delete*).
+8. **The `restoreArtifact` Split:** the hoist touches the same lines, and leaving the five-kind braid would leave the Trash the odd one out next to a 25-line unarchive. **Planner's Call:** within A-3's allowance.
 
 ---
 
@@ -613,22 +606,22 @@ The page or Set stays where it is and carries an `archived` mark that every read
 
 ###### 1. The Table, the Trash, and What "Identical" Means
 
-- **TableView has no read-only seam.** It's `ViewHostApi` from top to bottom: it destructures schema, view, columns, groups, ctx, bands, `commitValue`, `pickTarget`, and `mutate` (`Core/Views/Table/TableView.tsx:58-72`), mounts `useViewInteractions` for ghost rows, renames, drops, and title menus (`:119-130`), and keeps about 400 lines of editing, picker, sweep, and ghost code (`:97-399`). `useColumns(host)` writes widths, hides, aligns, and styles into the saved view (`useColumns.ts:252-345`). `useViewHost` reads a live container's values and its saved view (`useViewHost.ts:47-60`), and archived pages sit outside the tree by Decision 1. A read-only mode would mean either faking a host or branching every one of those paths.
+- **TableView has no read-only seam.** It's `ViewHostApi` from top to bottom: it destructures schema, view, columns, groups, ctx, bands, `commitValue`, `pickTarget`, and `mutate` (`Core/Views/Table/TableView.tsx:58-72`), mounts `useViewInteractions` for ghost rows, renames, drops, and title menus (`:119-130`), and keeps about 400 lines of editing, picker, sweep, and ghost code (`:97-399`). `useColumns(host)` writes widths, hides, aligns, and styles into the saved view (`useColumns.ts:252-345`). `useViewHost` reads a live container's values and its saved view (`useViewHost.ts:47-60`), and archived pages sit outside the tree (B-1). A read-only mode would mean either faking a host or branching every one of those paths.
 - **The look comes from the shared sheet, not from TableView.** The full-length column divider is `.data-cell:not(:last-child) { border-right }`, and the rows stretch (`UIX/Table/table.css:4-9, 87-89`). The row hairline is `.data-row { border-top }`, with `.row-lead` dropping it on the first row (`:116-122`). TableView's header uses the short segment bars as well (`.col-header:not(:last-child)::after`, `:95-108`). So "identical to TableView" means body rows built as `.data-row` grids of `.data-cell`s on `--cols`. A list of `MenuItem` rows can't get there.
-- **The Trash's look.** Each row is a `MenuItem` with `className="trash-row table-divider"` (`Core/Settings/TrashFrame.tsx:293-294`). The bar in each row is `.table-divider::after` (`table.css:97-111`), pulled in to the date lane (`trash-frame.css:35-37`), and the rows get a hand-drawn hairline (`trash-frame.css:67-74`). `.table-divider` and `.table.is-clear` each have exactly one code consumer, the Trash (`TrashFrame.tsx:202, 294`). Under ruling (1) both stay.
+- **The Trash's look.** Each row is a `MenuItem` with `className="trash-row table-divider"` (`Core/Settings/TrashFrame.tsx:293-294`). The bar in each row is `.table-divider::after` (`table.css:97-111`), pulled in to the date lane (`trash-frame.css:35-37`), and the rows get a hand-drawn hairline (`trash-frame.css:67-74`). `.table-divider` and `.table.is-clear` each have exactly one code consumer, the Trash (`TrashFrame.tsx:202, 294`). Under A-3 both stay.
 - **TableView's shell lives in Core.** The heading bleed, the content-inset padding, the grip gutter (`--rail-inset`, 20px), and `.row-grip`/`.row-rail` are in `Core/Views/Table/table-view.css:3-75`. A content-pane ArchiveView that looks identical has to wear that same shell, so it either imports `table-view.css` or the shell moves to `UIX/Table/`.
 - **Virtualization:** only `UIX/Pickers/IconPicker.tsx:91` virtualizes. TableView renders every row, and so does the Trash. Adding none keeps ArchiveView consistent.
 - **The date column.** The Trash resolves its style from the personalization key `trashColumnStyle` (`TrashFrame.tsx:65-69`, `personalization.ts:197`) and copies TableView's pick by hand: `styleMenuItems` → `parseStyleAction` → `storedPick` → `holdsStyle` (`TrashFrame.tsx:153-159`). TableView runs the same pick through `setStylePatch` → `columnStylePatch` → `pickedStyle` → `storedPick` (`useColumns.ts:303-306`, `useColumnStyles.ts:48-75`). The menu builder (`columnMenu.ts:54-94`) and the resolver (`columnStyles.ts:107-131`) are already shared. The only duplicated piece is the open-pick-store wrapper, about 7 lines.
 - **Search:** two rules do the same job. The Trash ranks with `rankMatches(rows, q, row.match)` (`TrashFrame.tsx:52-56`). ViewSearch filters with `searchGroups` → `matchScore` (`Core/Views/Pipeline/search.ts:4-14`). Both start from `matchQuery`/`MatchKey` in `Paths/caseFold`. `TrashRow.match` is "the title, placed by the crumbs" (`Core/Trash/trashRow.ts:27-28`), the same key ViewSearch builds from the title and the path below the container.
-- **Checked-row batches exist twice.** The Trash uses `retained`/`toggled` (`TrashFrame.tsx:77, 88, 97`) and the batch rule "a right-click on a checked row acts on the checked rows still in view; on an unchecked row, on that row alone" (`:161-165`). PageHistoryWindow repeats the same state (`PageHistoryWindow.tsx:69, 81, 122`) with a slightly different rule: `checked.has(ts) ? [...checked] : [ts]`, with no in-view filter (`:139`). **Corrected:** `toggled` and `retained` are already shared (`UIX/Utilities/checkSet.ts`), so only the batch rule differs. The menus are near-duplicates as well: `trashMenu.ts:15-33` builds Restore and Delete plus Restore All and Delete All, while **(corrected)** `fileHistoryMenu.ts:5-12` offers Delete All alone for a batch.
+- **The checked-row batch rule exists twice.** The Trash uses the shared `retained`/`toggled` (`UIX/Utilities/checkSet.ts`; `TrashFrame.tsx:77, 88, 97`) and the batch rule "a right-click on a checked row acts on the checked rows still in view; on an unchecked row, on that row alone" (`:161-165`). PageHistoryWindow uses the same helpers (`PageHistoryWindow.tsx:69, 81, 122`) with a slightly different rule: `checked.has(ts) ? [...checked] : [ts]`, with no in-view filter (`:139`). The menus overlap as well: `trashMenu.ts:15-33` builds Restore and Delete plus Restore All and Delete All, while `fileHistoryMenu.ts:5-12` offers Delete All alone for a batch.
 
 ###### 2. Hosting and Memory
 
 - **Rendering:** `ContentView`'s `HostView` switches on `SelectionState.kind` (`Core/Interface/ContentView.tsx:52-89`). For a collection or set it renders `ContainerView` → `InterfaceScaffold`, which holds the banner and title, → `ViewHost` → the renderer (`ContainerView.tsx:6-11`, `ViewHost.tsx:17-33`). Hosts are keyed by `navKey`, parked and kept warm (`ContentView.tsx:93-136`), and the scroll position is held per `(tabId, key)` (`InterfaceScaffold.tsx:21-36`).
-- **The active view is synced data.** It's the sidecar's `active_view`, switched through `setActiveView` (`ViewFrame.tsx:65-68`, `pickView.ts:7-21`, ViewTypesPM L10). Storing "ArchiveView" as a pseudo-view would write a device's browsing state into a synced file and keep it out of Back/Forward. That breaks Decision 20.
+- **The active view is synced data.** It's the sidecar's `active_view`, switched through `setActiveView` (`ViewFrame.tsx:65-68`, `pickView.ts:7-21`, ViewTypesPM L10). Storing "ArchiveView" as a pseudo-view would write a device's browsing state into a synced file and keep it out of Back/Forward. That breaks G-5.
 - **Navigation.** `NavRef`/`SelectionState` are unions (`Core/Navigation/navRef.ts:10-14, 34`), `navKey` is `kind:id` (`:43-45`), and `NAV_KINDS` validates stored refs (`:47-56`). Matrix is the precedent for a place that isn't a node: `MATRIX_REF` (`Core/Matrix/matrixKind.ts:6`), a resolve-index node (`Core/Nexus/treeIndex.ts:54-61`), and a branch in every exhaustive switch. Those switches are `ContentView.tsx:35, 87`, `SettingsMenu.tsx:11-27`, `Subfield/crumbs.ts:49-52`, `navigationSlice.ts:598-614`, and `reconcileSelection.ts:19-42`. `tabKey` is `navKey` (`tabsModel.ts:21-23`), so tabs, `StoredTab`, Back/Forward, and relaunch need nothing new.
 - **Leak paths:** `searchEntriesOf` pushes every `nodesOf` record into nav search with no kind filter (`treeIndex.ts:146-173`), Matrix and the homepage included. An archive node added to `nodesOf` for its tab title and icon would show up in search unless it's filtered out. `searchView` opens only when `isContainer(target)` (`viewSearchSlice.ts:27`), so an archive target has to be admitted there. `ViewMenu` renders only for a Collection or a depth-1 Set (`ViewMenu.tsx:16-27`), so it has to render on the archive target, or the toggle can't take you back.
-- **Sets and the dropdown:** depth-1 Sets have their own views and dropdown (`ViewMenu.tsx:23-25`). Sub-Sets have no dropdown. The Archive is per-Collection, so a depth-1 Set's dropdown would carry an Archive button that opens its *Collection's* ArchiveView, unless Nathan rules otherwise.
+- **Sets and the dropdown:** depth-1 Sets have their own views and dropdown (`ViewMenu.tsx:23-25`). Sub-Sets have no dropdown. G-4 gives a depth-1 Set's dropdown the Archive button too, opening an ArchiveView of what was archived from within that Set.
 
 ###### 3. The Entry Button
 
@@ -651,7 +644,7 @@ The page or Set stays where it is and carries an `archived` mark that every read
   - **`PAGE_ACTION_ROWS`**, through `popPageActions` (`pageMenuActions.ts:74-81`): the toolbar's PageMenu (`Core/Pages/PageMenu.tsx:53`) and the Page Window body (`WindowTabBody.tsx:235`).
 - **Page Delete has one runner.** Every host runs it through `runPageAction`'s `title:delete` case (`pageMenuActions.ts:66-68`): entity menus (`entityMenuActions.ts:106`), views (`useViewInteractions.tsx:404`), the tab bar (`TabBar.tsx:120`), the window tab strip (`WindowTabStrip.tsx:125`), nav rows (`NavList.tsx:40`), and connections (`connectionMenuActions.ts:43`).
 - **Menus with no page Delete:** tabs (`tabMenu.ts:44-47`, send rows and Rename only), nav rows (`navRowMenu.ts:35`), and connections (`connectionMenu.ts:54`, which removes the link). `gripMenu.ts:101` is the MarkdownPM block grip. Glances and embeds carry no page menu of their own. There's no keyboard delete command for a page: `commands.ts:77` is a key-name table.
-- **Set Delete (ruling 2)** is a separate literal: `{ label: 'Delete', action: 'delete' }` in the container branch (`entityMenu.ts:64-67`), run by `confirmDelete(target)` (`entityMenuActions.ts:134`). **Added:** it sits in the `[Rename, Delete]` group above the lock, Copy Path, and Reveal group, not in the bottom-most section Decision 2 names. It reaches the sidebar and GroupBand's Set bands. The Space and Context branch has its own Delete at `:95`.
+- **Set Delete** is a separate literal: `{ label: 'Delete', action: 'delete' }` in the container branch (`entityMenu.ts:64-67`), run by `confirmDelete(target)` (`entityMenuActions.ts:134`). It sits in the `[Rename, Delete]` group above the lock, Copy Path, and Reveal group; I-1 moves it into the bottom section. It reaches the sidebar and GroupBand's Set bands. The Space and Context branch has its own Delete at `:95`.
 
 ###### 6. Batch Actions and the Notice
 
@@ -666,16 +659,16 @@ The page or Set stays where it is and carries an `archived` mark that every read
 | What | Where | Rough Lines |
 | --- | --- | --- |
 | The dead `// PLACEHOLDER` "More" button, replaced by the Archive button | `ViewFrame.tsx:108-116` | −9 / +6 |
-| One Restore/Delete menu builder for the Trash, File History, and the Archive, with batch labels and an optional destination submenu | `trashMenu.ts` + `fileHistoryMenu.ts` → one builder (e.g. `Actions/restoreMenu.ts`) | −12 / +6 (**corrected** from −45 / +30; the two files are 45 lines together) |
-| One batch rule, "checked rows in view, or the clicked row alone", settling the History window's divergent rule | `TrashFrame.tsx:161-165`, `PageHistoryWindow.tsx:139` | −4 / +6 (**corrected**: the set helpers are already shared) |
+| One Restore/Delete menu builder for the Trash, File History, and the Archive, with batch labels and an optional destination submenu | `trashMenu.ts` + `fileHistoryMenu.ts` → one builder (e.g. `Actions/restoreMenu.ts`) | −12 / +6 (the two files are 45 lines together) |
+| One batch rule, "checked rows in view, or the clicked row alone", settling the History window's divergent rule | `TrashFrame.tsx:161-165`, `PageHistoryWindow.tsx:139` | −4 / +6 (the set helpers are already shared) |
 | One date-column hook: resolve the stored style, open the style menu, store the pick. Used by the Trash and the Archive, keyed by setting. | `TrashFrame.tsx:65-69, 153-159` → shared hook | −12 / +18 |
 | One batch runner: flush saves, run the op per item, collect done/refused/warnings, report with `countPhrase`. Trash restore and empty, Archive restore and delete. | `TrashFrame.tsx:99-151` → shared | −50 / +45 |
 | `countPhrase`/`PLURALS`, shared so mixed page and Set rows read "1 set, 3 pages" | `TrashFrame.tsx:36-50` | moved, ±0 |
 | `DELETE_ROW` becomes a removal pair `[ARCHIVE_ROW, DELETE_ROW]`, plus one `title:archive` case in `runPageAction` | `pageMenu.ts:40, 104, 132`; `pageMenuActions.ts:66` | +6 |
-| The container branch's Delete literal becomes the same pair for Sets (not Collections) | `entityMenu.ts:66`, `entityMenuActions.ts:134` | +5 |
+| The container branch's Delete moves into its own bottom section, paired with Archive for Sets and alone for Collections (I-1) | `entityMenu.ts:66`, `entityMenuActions.ts:134` | +5 |
 | TableView's shell CSS hoisted to `UIX/Table/`, so TableView and ArchiveView wear one shell instead of ArchiveView importing a view-private sheet | `table-view.css:3-22, 49-75` → `UIX/Table/table.css` | ±0 (moved, ~45) |
 
-The Trash's visual CSS (`trash-frame.css`, `.table-divider`, `.is-clear`) stays under ruling (1). The `PommoraUIX.md` line describing it stays true.
+The Trash's visual CSS (`trash-frame.css`, `.table-divider`, `.is-clear`) stays under A-3. The `PommoraUIX.md` line describing it stays true.
 
 ---
 
@@ -695,8 +688,8 @@ ArchiveView would mount `TableView` with a synthetic `ViewHostApi`: two fixed co
 - **Genuinely shared vs only alike:**
   - **Data:** shared. Same row model, same batch semantics, same report phrasing.
   - **Interaction:** shared. Same checked-set rule and same menus.
-  - **Look:** only alike. Two different row chromes by Nathan's ruling, and that's honest because one is a Settings list and the other a content-pane table.
-- **Archived Sets (ruling 2):** a Set row shows the Set icon, its title, the trail of where it lived, and its archived date. Opening it discloses its archived pages inline as indented rows, using `--row-indent` (`table-tokens.css:8`), the token TableView already indents nested rows by, and each page opens in the ArchiveWindow. Restore and Delete on a Set act on the whole Set. Navigating into a scoped "Set Archive" would add a second nav place for little gain.
+  - **Look:** only alike. Two different row chromes under A-3, and that's honest because one is a Settings list and the other a content-pane table.
+- **Archived Sets:** a Set row shows the Set icon, its title, the trail of where it lived, and its archived date. Opening it discloses its archived pages inline as indented rows, using `--row-indent` (`table-tokens.css:8`), the token TableView already indents nested rows by, and each page opens in the ArchiveWindow. Restore and Delete on a Set act on the whole Set. G-4 gives each top-level Set its own ArchiveView.
 - **Entry:** `<Button type="filled" size="button-inline" label="Archive" pressed>` in the footing's `leading`, after `FootingCreate`. Pressing it toggles `select({kind:'archive', id: collectionId})` and `select({kind:'collection', id})`, so the toggle is itself a Back/Forward step.
 - **Memory:** a new place kind, `{ kind: 'archive'; id: string }`, on the Matrix precedent. It's added to `SelectionState`, `NavRef`, and `NAV_KINDS`, gets a branch in each exhaustive switch (the compiler lists every site), and a `nodesOf` record titled from the Collection, which `searchEntriesOf` has to skip. `searchView` is admitted for it and `ViewMenu` renders for it. Putting a flag on the collection target instead would make every `kind === 'collection'` check (16 sites) silently treat ArchiveView as the Collection. The pseudo-view route writes to synced data and skips Back/Forward. Both are rejected. About 60-90 lines across nav.
 - **Header:** `DetailTitleHeader` gains an optional `trailing` node rendered after `.detail-title-clear`, threaded from `InterfaceScaffold` (three hops). ArchiveView passes an "Archive" label colored `var(--label-tertiary)`. About +8 lines.
@@ -707,11 +700,11 @@ ArchiveView would mount `TableView` with a synthetic `ViewHostApi`: two fixed co
 
 This would put a presentational fixed-column table with gutter checkboxes in `UIX/Table/` and have the Trash and the Archive both draw through it.
 
-- **Against:** Ruling (1) keeps the Trash on `MenuItem` rows, so C would serve one consumer and is premature. Revisit it if a third fixed-column table appears, File History being the likely one.
+- **Against:** A-3 keeps the Trash on `MenuItem` rows, so C would serve one consumer and is premature. Revisit it if a third fixed-column table appears, File History being the likely one.
 
 ###### Batch Actions: `ActionLabel` vs a `NotificationLabel` Variant
 
-**Recommendation:** a new `ActionLabel`, as Nathan leans, with the label chrome hoisted so the two share the look rather than the behavior.
+**Recommendation:** a new `ActionLabel` (G-7), with the label chrome hoisted so the two share the look rather than the behavior.
 
 - **Why not a variant:** the notice is a global, store-free, single-slot toast that drains on a timer. The action bar is owned by a surface and persists while rows are checked. It has two actions, a count, a tinted and a destructive button, no countdown, and it has to hide when its host is parked or the Settings frame closes. As a variant, half of `NotificationLabel`'s effects (`:23-74`) would branch on mode, and the single channel would have two owners racing for one slot.
 - **What the two share:**
@@ -727,7 +720,6 @@ This would put a presentational fixed-column table with gutter checkboxes in `UI
 
 ##### What Becomes False
 
-- **Decisions & Intention:** the Overview's "ArchiveView shares one table-shaped browser with the Trash" should read as shared data, selection, menus, and date style with distinct chrome. (The Decision 17 and Open Item 3 notes are **dropped**: the log already reads pages and Sets, and Decision 18 settles the Trash's look.)
 - **`.claude/Features/ViewTypesPM.md`:**
   - **L61:** the ViewFrame footer description ("over a New View footer") gains the Archive button.
   - **L66:** *§The View Host* says "Every renderer mounts through one seat, `ViewHost`." ArchiveView mounts outside it, and that exception has to be stated where a reader meets it.
@@ -740,7 +732,7 @@ This would put a presentational fixed-column table with gutter checkboxes in `UI
   - `trashMenu.ts:9` (the batch rule's home moves to the shared hook).
   - `TrashFrame.tsx:162` (that long comment moves with the rule).
 - **Tests:**
-  - **`TrashFrame.test.tsx`:** the `filterRows`/`countPhrase` imports (`:33-85`) move with the hoist, while the DOM tests on `.trash-row`/`.trash-head-date` (`:170, 217-267`) stay valid under ruling (1).
+  - **`TrashFrame.test.tsx`:** the `filterRows`/`countPhrase` imports (`:33-85`) move with the hoist, while the DOM tests on `.trash-row`/`.trash-head-date` (`:170, 217-267`) stay valid under A-3.
   - **`trashMenu.test.ts` and `fileHistoryMenu.test.ts`:** collapse into one.
   - **`entityMenu.test.ts`, `pageMenu.test.ts`, `cellMenu.test.ts`, `cardMenu.test.ts`:** every snapshot of the page menu's last group gains Archive.
   - **`ViewFrame.test.tsx`:** the footing contents change.
@@ -749,18 +741,18 @@ This would put a presentational fixed-column table with gutter checkboxes in `UI
 
 ---
 
-##### Risks & Questions for Nathan
+##### Risks & Questions
 
-1. **The Set dropdown:** should a depth-1 Set's views dropdown carry the Archive button (opening its Collection's Archive), or only the Collection's? And when you toggle back from ArchiveView, does it return to the Collection, or to the Set you came from?
-2. **The views button in ArchiveView:** what does the toolbar's views button show while you're in ArchiveView, the active view's glyph and name, or "Archive"? And what should the sliders (Settings) menu show there? Today `SettingsMenu.tsx:13-15` would render the full view SettingsFrame, which doesn't apply.
-3. **The banner:** should ArchiveView show the Collection's banner image and keep rename and edit icon on its title, or present the title alone?
-4. **The date-column key:** one personalization key for both browsers' date style (renaming `trashColumnStyle`), a sibling `archiveColumnStyle`, or a per-Collection setting in the sidecar?
-5. **Where an item lived:** Decision 10 lists Title and Archived only. A page archived from deep in a Set restores blind unless its row shows where it lived. The Trash already shows `crumbs` through `NavTrail` (`TrashFrame.tsx:296-305`). I'd recommend ArchiveView carry the trail inside the Title cell, as the Trash does, rather than a third column.
-6. **Where the shared parts live:** Decision 23 puts the Archive in `Core/Archive/`, but the shared hooks and runner serve the Trash too. Do they go in `Core/Archive/`, `Core/Trash/`, or a neutral home? A neutral home for "hidden items" fits One Way best, but it's a naming call.
-7. **Recents:** should an ArchiveView appear in recents and pinned like any place, or stay out of navigation entirely, like the archived pages themselves (Decision 6)?
-8. **Scale:** neither TableView nor the Trash virtualizes. A Collection with thousands of archived pages renders them all. That's consistent with today, but it's a scaling flag under the Locked Decisions.
-9. **Archive inside an archived Set:** what does Archive do on a page inside a Set that's later archived itself, and does restoring the Set bring its individually archived pages back? That's a data-layer question for the other scouts, but it decides how ArchiveView's Set rows disclose.
-10. **Collections:** under ruling (2), are Collections themselves archivable? The container branch of `entityMenu.ts:60-80` serves both, so the Archive row would be gated to `kind === 'set'`.
+1. **The Set Dropdown:** **Settled By:** G-4; a top-level Set's dropdown carries the button, opening an ArchiveView of what was archived from within that Set, and the toggle returns to that Set's view.
+2. **The Views Button in ArchiveView:** what the toolbar's views button and the sliders menu show there; `SettingsMenu.tsx:13-15` would render the full view SettingsFrame, which doesn't apply. **Planner's Call.**
+3. **The Banner:** whether ArchiveView shows the Collection's banner image and keeps rename and edit icon on its title. **Planner's Call;** G-3 sets the in-line title and its "Archive" label.
+4. **The Date-Column Key:** one personalization key for both browsers' date style (renaming `trashColumnStyle`), a sibling key, or a per-Collection setting. **Planner's Call;** G-1 sets the default to the Nexus's date format.
+5. **Where an Item Lived:** **Settled By:** G-2; the trail sits beneath the title, as the Trash's crumbs do through `NavTrail` (`TrashFrame.tsx:296-305`).
+6. **Where the Shared Parts Live:** **Settled By:** A-4; one neutral owner beside the Trash and the Archive, named in planning.
+7. **Recents:** G-5 treats ArchiveView as a place like any other; whether that includes recents and pins is the plan's to confirm.
+8. **Scale:** neither TableView nor the Trash virtualizes, so a Collection with thousands of archived pages renders them all. **Planner's Call** under the Scalability Locked Decision.
+9. **Archive Inside an Archived Set:** what Archive does on a page inside a Set that's later archived, and whether restoring the Set brings its individually archived pages back. **Planner's Call;** it decides how ArchiveView's Set rows disclose.
+10. **Collections:** **Settled By:** A-2 and I-1; Collections aren't archivable, and a Collection's Delete moves alone into the bottom section.
 
 ---
 
@@ -785,13 +777,13 @@ This would put a presentational fixed-column table with gutter checkboxes in `UI
 
 ###### The PageWindow Is the Wrong Base
 
-- It's a tabbed window: tab set and active tab in `windowSlot` (`windowSlice.ts:25`, `:144-176`), the set persisted to `windowsFile` on every change (`:129-136`), parked page tabs mounted up to the Active Tab Cache (`Core/Interface/Windows/WindowTabBody.tsx:137-149`), warm editor state per tab (`windowCache.ts:3-22`, `WindowTabBody.tsx:98`), an editable `PageTile` (`:91-102`), and promote / rename / page-actions wiring (`:151-161`, `:230-240`). Each of these is the opposite of "single-state, uncached, unremembered". A read-only mode would need a guard in each of them. This confirms Decision 12's rejection with evidence.
+- It's a tabbed window: tab set and active tab in `windowSlot` (`windowSlice.ts:25`, `:144-176`), the set persisted to `windowsFile` on every change (`:129-136`), parked page tabs mounted up to the Active Tab Cache (`Core/Interface/Windows/WindowTabBody.tsx:137-149`), warm editor state per tab (`windowCache.ts:3-22`, `WindowTabBody.tsx:98`), an editable `PageTile` (`:91-102`), and promote / rename / page-actions wiring (`:151-161`, `:230-240`). Each of these is the opposite of "single-state, uncached, unremembered". A read-only mode would need a guard in each of them. This confirms H-1's rejection (the log's *Rejected · A Mode of `PageWindow`*) with evidence.
 
 ###### WindowBase's Leading Slot and the Lock Glyph
 
 - The toolbar's leading cluster is `div.window-actions-lead`. It renders the `scan` button when `onScan` is passed (title defaults to "Open Full Page"), followed by `lead` (`UIX/Windows/WindowBase.tsx:242-254`). PageWindow, NavWindow, and MatrixWindow pass `onScan` (`PageWindow.tsx:98`, `NavWindow.tsx:117`, `Core/Matrix/MatrixWindow.tsx:37`). WebWindow already fills `lead` with Back/Forward (`WebWindow.tsx:60-79`).
 - **The lock needs no WindowBase change:** omit `onScan` and pass `lead={…}`. `LockGlyph` exists (`UIX/Symbols/index.tsx:263-287`, the `locked` / `lock-outline` faces at `:197-198`) and is used by six surfaces, always with `lockLabel` (`Core/Actions/toggleLabels.ts:12`).
-- **Related vocabulary:** `PageMenu`'s "Page Lock" is a placeholder toggle that locks nothing (`Core/Pages/PageMenu.tsx:32-47`). If a locked glyph on an archived page reads as "this page is locked", the future Page Lock and the ArchiveWindow will claim the same glyph for related meanings. Better to decide now that they agree.
+- **Related vocabulary:** `PageMenu`'s "Page Lock" is a placeholder toggle that locks nothing (`Core/Pages/PageMenu.tsx:32-47`). If a locked glyph on an archived page reads as "this page is locked", the future Page Lock and the reader window claim the same glyph; H-1 gives both the one meaning, read-only.
 
 ###### How the Editor Goes Read-Only (All Already in History)
 
@@ -806,7 +798,7 @@ This would put a presentational fixed-column table with gutter checkboxes in `UI
 
 ###### The Archived Target Breaks Two Tree Lookups
 
-- **Reconcile:** `reconcileWindow` re-resolves `historyTarget` on every tree change (`windowSlice.ts:279-281`) through `reconcileWith` (`Core/Session/reconcileSelection.ts:33-41`). A page id not in the tree survives only if `index.withheld(path)`, which **(corrected)** means a path under an unreadable or sidecar-less folder (`withheldIn`, `Core/Nexus/treePatch.ts:266-269`), not an unreadable file. So an archived target in the same slot would be **closed on the next tree change**.
+- **Reconcile:** `reconcileWindow` re-resolves `historyTarget` on every tree change (`windowSlice.ts:279-281`) through `reconcileWith` (`Core/Session/reconcileSelection.ts:33-41`). A page id not in the tree survives only if `index.withheld(path)`, which means a path under an unreadable or sidecar-less folder (`withheldIn`, `Core/Nexus/treePatch.ts:266-269`). So an archived target in the same slot would be **closed on the next tree change**.
 - **Title:** `trailOf` returns `NO_TRAIL` for an id the tree doesn't hold (`treeIndex.ts:132-143`), so the History title (`PageHistoryWindow.tsx:120`) would render blank for an archived page.
 - **Body read:** `page:open` reads any path under the root through `resolveUnderRoot` + `readPage`, with no tree check (`Core/Pages/handlers.ts:18-24`, `Core/Paths/pathSafety.ts:14-38`). The ArchiveWindow can read an archived file with an uncached `dialer().ask('page:open', path)`.
 
@@ -817,7 +809,7 @@ This would put a presentational fixed-column table with gutter checkboxes in `UI
 - **Config:** `readFileHistoryConfig` → `{enabled, intervalMs, keepMs}` (`Core/Settings/settings.ts:64-73`). Keys: `fileHistory`, `historyDays` (`HISTORY_DAYS` = 7/14/30/60/**90**), and `historyInterval` (`Core/Settings/personalization.ts:42-43`, `:188-190`). These are Nexus personalization keys, so every device reads the same timeframe.
 - **Snapshots key on `page_id`** (`versionsDb.ts:9-15`). The ID survives an archive or restore move, so a restored page keeps whatever the shorter sweep left. Nothing needs re-keying.
 - **The content index already pairs path ↔ ID:** `page_values` stores every frontmatter key including `ID` (`Core/Index/indexSeed.ts:43`, `:61`, `:112`), and `SELECT_STATS` joins `indexed_files` to `page_values` on the ID key (`Desktop/Store/stores.ts:49`). The index's queries return null until the seed marks it ready (`Core/Index/contentIndex.ts:44-62`).
-- **Corpus conflict (cross-mandate, affects Open Item 1):** `outsideContent` refuses any path with a hidden folder on the way, meaning a leading `.` or `_` (`Core/Paths/exclusion.ts:17-23`, `:76-81`). `.nexus` itself counts as hidden there; it's exempt only from `neverWatched`, the watcher filter (`:26-37`). Both candidate locations, `<Collection>/.archive/` and `.nexus/archive/<id>/`, therefore sit **outside the corpus and the index as written**. Sync differs between them: `manifestAdmits` (`exclusion.ts:44-61`) uses `neverWatched` and special-cases `.trash` (`:55`). It **admits `.nexus/archive/…`** but **refuses `<Collection>/.archive/…`**, so as written a page archived there would never reach the hub or other devices. Decision 3 (Reach-In) needs archived pages in what cascades reach, and Decision 1 needs them synced, so whichever location wins, the corpus rule (and, for a Collection-local folder, the manifest rule) must admit it deliberately and identifiably by path. The archive-history design below relies on that and doesn't add it on its own account.
+- **Corpus Conflict (Cross-Mandate, the Location B-2 Settles):** `outsideContent` refuses any path with a hidden folder on the way, meaning a leading `.` or `_` (`Core/Paths/exclusion.ts:17-23`, `:76-81`). `.nexus` itself counts as hidden there; it's exempt only from `neverWatched`, the watcher filter (`:26-37`). Both candidate locations, `<Collection>/.archive/` and `.nexus/archive/<id>/`, therefore sit **outside the corpus and the index as written**. Sync differs between them: `manifestAdmits` (`exclusion.ts:44-61`) uses `neverWatched` and special-cases `.trash` (`:55`). It **admits `.nexus/archive/…`** but **refuses `<Collection>/.archive/…`**, so as written a page archived there would never reach the hub or other devices. C-1 (Reach-In) needs archived pages in what cascades reach, and B-1 needs them synced, so whichever location wins, the corpus rule (and, for a Collection-local folder, the manifest rule) must admit it deliberately and identifiably by path. The archive-history design below relies on that and doesn't add it on its own account.
 - **Hub:** retention is one per-Nexus `history_days`, written once at `info` create (`Core/Sync/handlers.ts:333-341`, `Core/Sync/Contract/wire.ts:59-65`). The hub sweeps by age, skipping blobs that a live item's current version or a capture still references (`Sync/Store/log.ts:70-79`, `:186-191`, `Sync/hub.ts:215`). It knows no page IDs and no archive. **F-013** (`.claude/IssuesPM.md:303-315`) records that it never learns later changes.
 
 ###### 3. Settings
@@ -846,7 +838,7 @@ This would put a presentational fixed-column table with gutter checkboxes in `UI
 | `HISTORY_ANCESTOR = 'page-history'` | Renamed to the window's neutral name; one sentinel. | ±0 |
 | `spendBundle` / `armed` | Renamed `spendUndo(key)`; the key is any string. Archive arms by its own key (archived path or page id). One spend map for both. | ±0 |
 | `waived(kind)` | Takes the setting key: `waived(key, kind?)`, so delete and archive read one predicate. | +1 |
-| `notifyDeleted` | **Kept as is.** Archiving strips nothing (Decision 4), so it has no segment and calls `notifyUndoable(\`Archived “${title}”\`, undo)` directly. Merging would parameterize a verb for one caller. | 0 |
+| `notifyDeleted` | **Kept as is.** Archiving strips nothing (D-1), so it has no segment and calls `notifyUndoable(\`Archived “${title}”\`, undo)` directly. Merging would parameterize a verb for one caller. | 0 |
 | `sweepSnapshots(cutoff)` | Grows one parameter for the archived cutoff; still one statement, one sweep. | +4 |
 | Permanently Delete Files hint | Reworded to match the doc during the rename. | 0 |
 
@@ -877,20 +869,20 @@ A `useReadOnlyPage(path)` hook plus a `ReadOnlyPageBody` component, used by `Pag
 
 Tabs, `windowsFile` persistence, the warm cache, the Active Tab Cache, promote, and rename (`windowSlice.ts:129-136`, `WindowTabBody.tsx:137-161`) would each need an archive guard. That's the opposite of uncached and unremembered.
 
-**Naming:** avoid "Preview". `PageWindow`'s aria label is already "Page Preview" (`PageWindow.tsx:97`), and the **Preview** row and **Open In Preview** setting both target the PageWindow (InterfacePM). I'd keep the file `PageHistoryWindow.tsx` only under B. Under A, rename it **`PageReaderWindow.tsx`** with slot `reader` (or `ReadOnlyWindow` if Nathan prefers plainer), keeping "File History" and "Archive" as its two aria labels and its user-facing names.
+**Naming:** avoid "Preview". `PageWindow`'s aria label is already "Page Preview" (`PageWindow.tsx:97`), and the **Preview** row and **Open In Preview** setting both target the PageWindow (InterfacePM). I'd keep the file `PageHistoryWindow.tsx` only under B. Under A, rename it **`PageReaderWindow.tsx`** with slot `reader`, keeping "File History" and "Archive" as its two aria labels and its user-facing names.
 
-**SidePane:** I'd leave it out of the core. Showing properties read-only needs a new `PropertyPanel` mode (about +20-30 lines touching `writer`, add rows, and menus), and schema resolution depends on where the archive lives. If Nathan wants it, add one `readOnly` prop on `PropertyPanel` and put a hidden-by-default `right` panel in the archive branch, with no second panel component.
+**SidePane:** out of core scope (the decision log's *§Prospects · Read-Only Properties in the Reader Window*). Showing properties read-only needs a new `PropertyPanel` mode, about +20-30 lines touching `writer`, add rows, and menus.
 
 ###### Archive History Timeframe
 
 ###### A. One Sweep, Two Cutoffs, IDs From What Reach-In Enumerates (Recommended)
 
-- **Key:** `archiveHistoryDays: stepped(HISTORY_DAYS)`, default 90 (the range max).
-- **Meaning:** an archived page keeps `min(historyDays, archiveHistoryDays)`. With the default at the max, archived pages follow the live timeframe until the user shortens it, which is exactly "shorter if the user sets it so". No "Same as Pages" sentinel is needed.
-- **Row Placement:** an "Archive History Timeframe" `zoom` row with `unit: DAYS` sits directly under History Timeframe in **File History** (`frames.ts:615-620`), since it's a File History parameter. Trash & Archive gains only Confirm Before Archiving (Decision 13).
+- **Key:** `archiveHistoryDays: stepped(HISTORY_DAYS)`.
+- **Meaning:** the scout proposed `min(historyDays, archiveHistoryDays)` with 90 as the default; set aside by J-1, whose switch writes the archive timeframe down when History Timeframe is shortened below it.
+- **Row Placement:** an "Archive History Timeframe" `zoom` row with `unit: DAYS` sits directly under History Timeframe in **File History** (`frames.ts:615-620`), since it's a File History parameter. Trash & Archive gains only Confirm Before Archiving (I-2).
 - **Store:** `sweepSnapshots(liveCutoffMs, archived: { ids: readonly string[]; cutoffMs: number })` → `DELETE FROM snapshots WHERE ts < ? OR (ts < ? AND page_id IN (SELECT value FROM json_each(?)))`. One statement, one sweep; captures stay on the live cutoff. JSON1 is already relied on by the store (`json_extract` / `json_type` in `Desktop/Store/stores.ts:49`).
-- **No Index Yet:** when the ID query answers null (first open, a reseed, or a store that failed to open, per `contentIndex.ts:1`, `:44-62`), the sweep runs on the live cutoff alone for that pass. Under the min semantics that deletes nothing it shouldn't; archived rows are just kept until the next sweep.
-- **Where IDs come from:** archived-ness is **location**. The sweep asks for the IDs under the archive path prefix(es), the same enumeration Reach-In needs anyway. If archived pages are indexed (which Decision 3 needs, see *§Findings › Corpus Conflict*), **(corrected)** `readIndexedStats(prefix)` already answers path to id for a prefix (`Desktop/Store/stores.ts:180-187`), so no new query is needed. A path prefix covers **pages at any depth inside an archived Set** with no extra work. Nothing is stored in `versions.db`, so a page archived or restored on another device is read correctly on the next sweep, with no drift.
+- **No Index Yet:** when the ID query answers null (first open, a reseed, or a store that failed to open, per `contentIndex.ts:1`, `:44-62`), the sweep runs on the live cutoff alone for that pass. Since archived pages never keep more history than live ones, that deletes nothing it shouldn't; archived rows are kept until the next sweep.
+- **Where IDs come from:** archived-ness is **location**. The sweep asks for the IDs under the archive path prefix(es), the same enumeration Reach-In needs anyway. If archived pages are indexed (which C-1 needs, see *§Findings › Corpus Conflict*), `readIndexedStats(prefix)` already answers path to id for a prefix (`Desktop/Store/stores.ts:180-187`), so no new query is needed. A path prefix covers **pages at any depth inside an archived Set** with no extra work. Nothing is stored in `versions.db`, so a page archived or restored on another device is read correctly on the next sweep, with no drift.
 - **Timing:** the open-time sweep moves from before the tree read (`Nexus/handlers.ts:86`) to after the index seed marks ready. Sweeping isn't urgent. The settings trigger becomes `historyDays || archiveHistoryDays` (`Settings/handlers.ts:46`).
 - **Restore:** the page keeps whatever survived, and the live timeframe applies again from the next sweep. Nothing to repair. Its shortened history is the user's choice and reads that way.
 - **Hub:** nothing. The hub is content-blind and its retention is a recovery horizon, not File History, so it stays on the live timeframe. F-013 is unrelated debt in the same plumbing; fix it there if the plan touches `info`.
@@ -922,13 +914,13 @@ Mark rows or pages as archived at archive time and sweep per class.
 
 ---
 
-##### Risks & Questions for Nathan
+##### Risks & Questions
 
-1. **Sets and the Confirmation:** deleting a Set always asks, whatever Confirm Before Deletion says (`confirmations.ts:29-38`). Should archiving a Set always ask too, with Confirm Before Archiving governing pages only, or should the one setting govern both? My lean is to mirror delete for consistency, but archiving is fully reversible and strips nothing, which argues for letting the setting govern both.
-2. **Wording:** a single archive mirrors delete's kind-agnostic copy: `Archive “Ideas”?` and the notice `Archived “Ideas”` with Undo, with no segment since no links are stripped. ArchiveView's batch Restore and Delete follow the Trash frame's `countPhrase` ("Restored 3 pages.", "2 Items" when mixed) and `askEmptyTrash`. Is the Set's notice fine as title-only, as delete's is, or do you want "N Pages" inside it?
-3. **The Lock Glyph:** a static glyph, or should it be the Restore control itself (hover cross-fades to the open lock, which reads as "unlock to restore") instead of a separate Restore button? It also overlaps the placeholder Page Lock (`PageMenu.tsx:32`): should those two mean the same thing?
-4. **SidePane:** core scope or later? It needs a read-only `PropertyPanel` mode, and its schema only resolves if the archive stays under its Collection in the tree's terms.
-5. **The Archive's Location vs. the Corpus:** both proposed locations are "hidden" to `outsideContent` today, so they're not indexed or cascade-reached. `<Collection>/.archive/` also doesn't sync under `manifestAdmits`, while `.nexus/archive/` does. Whichever location wins, the corpus rule has to admit it on purpose. That's the archive history's ID source too.
-6. **Size Memory:** should the ArchiveWindow share History's remembered size (one window id) or keep its own? I'd use one id under A.
-7. **A Stale Body:** a Reach-In cascade can rewrite an archived file while the ArchiveWindow shows it. Since the window is uncached, it shows the older text until reopened. Acceptable, or should the archive's change signal re-read it?
-8. **Range:** reusing 7-90 days with 90 as "follows live" — is that enough, or does the archive want longer steps (e.g., toward Auto-Delete's 30-days-to-a-year) that would then need a real "Same as Pages" value?
+1. **Sets and the Confirmation:** **Settled By:** I-2; Confirm Before Archiving governs pages and Sets alike, since archiving is undoable and removes nothing.
+2. **Wording:** a single archive mirrors delete's copy, `Archive “Ideas”?` and the notice `Archived “Ideas”` with Undo and no segment, and batches follow the Trash frame's `countPhrase` and `askEmptyTrash`. **Planner's Call:** Open Item 2.
+3. **The Lock Glyph:** **Settled By:** H-1; a static glyph in the leading slot meaning read-only, one meaning shared with File History and the planned Page Lock (`PageMenu.tsx:32`). Whether the reader window offers Restore is the plan's.
+4. **SidePane:** out of core scope (the decision log's *§Prospects · Read-Only Properties in the Reader Window*).
+5. **The Archive's Location vs. the Corpus:** **Settled By:** B-1 and B-2; the corpus admits `.nexus/archive/` on purpose, which is the archive history's id source too.
+6. **Size Memory:** whether the reader window's Archive branch shares History's remembered size (one window id). **Planner's Call.**
+7. **A Stale Body:** a Reach-In cascade can rewrite an archived file while the reader window shows it, and an uncached window shows the older text until reopened. **Planner's Call:** whether the Archive's change signal re-reads it.
+8. **Range:** **Settled By:** J-1; History Timeframe's steps, starting at its value, longer steps dimmed, and switched down when History Timeframe is shortened below it.

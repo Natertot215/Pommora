@@ -93,9 +93,10 @@ export function styleMenuItems(ctx: StyleMenuContext): ActionItem<StyleAction>[]
   }
 }
 
+/** Offered only where there's a choice to make: a lone row would only restate what renders. */
 export function styleBranch(ctx: StyleMenuContext): ActionItem<StyleAction>[] {
   const submenu = styleMenuItems(ctx)
-  return submenu.length > 0 ? [{ label: styleMenuLabel(ctx.type), submenu }] : []
+  return submenu.length > 1 ? [{ label: styleMenuLabel(ctx.type), submenu }] : []
 }
 
 export function columnMenuItems(ctx: ColumnMenuContext): ActionItem<ColumnMenuAction>[] {
