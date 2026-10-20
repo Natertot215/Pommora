@@ -9,7 +9,7 @@ import type { ConnEditAction } from '../../Actions/connectionMenu'
 import type { PropertyDefinition } from '../properties'
 import type { PropertyValue } from '../propertyValue'
 import { editorText, parseEditorValue } from '../parseEditorValue'
-import { numberAffixes } from '../formatValue'
+import { fractionDenominator, numberFormatGlyph } from '../formatValue'
 import { useEditorHost } from '../../Pages/editorHost'
 import { useSession } from '../../Session/store'
 import { TextPane } from './TextPane'
@@ -50,27 +50,30 @@ export function PropertyValueInput({
       commit(text)
       onClose()
     }
-    const { leading, trailing } = numberAffixes(def)
-    // Away from its column, the picker names even a plain number's format.
+    const glyph = numberFormatGlyph(def)
+    const denominator = fractionDenominator(def)
+    const hint = denominator === undefined ? undefined : `/ ${denominator}`
     if (popover)
       return (
         <FieldPicker
           {...popover}
           value={initial}
-          leading={(def.number_family ?? 'number') === 'number' ? '#' : leading}
-          trailing={trailing}
+          leading={glyph}
+          hint={hint}
           invalid={invalid}
           onCommit={close}
           onDismiss={onClose}
         />
       )
+    // In place, the glyph sits where the formatted value shows it, and a plain number shows none.
     return (
       <EditableInput
         initial={initial}
         className={fillInput}
         caretAtEnd
-        leading={leading}
-        trailing={trailing}
+        leading={def.number_family === 'currency' ? glyph : undefined}
+        trailing={def.number_family === 'percent' ? glyph : undefined}
+        hint={hint}
         invalid={invalid}
         onCommit={close}
         onCancel={onClose}

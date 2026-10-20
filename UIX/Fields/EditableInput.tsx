@@ -2,8 +2,9 @@ import { useEffect, useRef } from 'react'
 import { cx } from '../Utilities/cx'
 import { keepFocus } from '../Interactions/shared'
 import {
-  affix,
   affixed,
+  affixGlyph,
+  affixHint,
   affixRun,
   autoSizeWrap,
   autoSizeMirror,
@@ -31,6 +32,7 @@ export function EditableInput({
   required,
   leading,
   trailing,
+  hint,
   onCommit,
   onCancel,
 }: {
@@ -50,9 +52,10 @@ export function EditableInput({
   invalid?: (text: string) => boolean
   /** A blank commit restores the field and cancels: a name, not a value. */
   required?: boolean
-  /** Symbols beside the typed text, belonging to the field: pressing one keeps the caret, and its click never reaches the host. */
+  /** Symbols beside the typed text, and a hint after them, belonging to the field: pressing one keeps the caret, and its click never reaches the host. */
   leading?: string
   trailing?: string
+  hint?: string
   onCommit: (next: string, how: EditEnd) => void
   onCancel: (how: EditEnd) => void
 }): React.JSX.Element {
@@ -134,14 +137,15 @@ export function EditableInput({
   ) : (
     field
   )
-  if (leading === undefined && trailing === undefined) return sized
+  if (leading === undefined && trailing === undefined && hint === undefined) return sized
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: the symbols are the field's own, so the input inside stays the only control
     <span className={affixed} onMouseDown={keepFocus} onClick={(e) => e.stopPropagation()}>
       <span className={affixRun}>
-        {leading !== undefined && <span className={affix}>{leading}</span>}
+        {leading !== undefined && <span className={affixGlyph}>{leading}</span>}
         {sized}
-        {trailing !== undefined && <span className={affix}>{trailing}</span>}
+        {trailing !== undefined && <span className={affixGlyph}>{trailing}</span>}
+        {hint !== undefined && <span className={affixHint}>{hint}</span>}
       </span>
     </span>
   )

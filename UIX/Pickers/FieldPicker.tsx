@@ -9,7 +9,7 @@ type Typed = {
   onCommit: (next: string) => void
   invalid?: (text: string) => boolean
   leading?: string
-  trailing?: string
+  hint?: string
   children?: undefined
 }
 type Hosted = {
@@ -18,7 +18,7 @@ type Hosted = {
   onCommit?: undefined
   invalid?: undefined
   leading?: undefined
-  trailing?: undefined
+  hint?: undefined
 }
 
 /** A typed value's popover: one field wrapper owning the fill, stroke, focus ring, type, and width, around either the kit's input or an editor the caller mounts. */
@@ -50,7 +50,7 @@ export function FieldPicker({
             className={s.suffixInput}
             caretAtEnd
             leading={inner.leading}
-            trailing={inner.trailing}
+            hint={inner.hint}
             invalid={inner.invalid}
             onCommit={inner.onCommit}
             onCancel={onDismiss}
