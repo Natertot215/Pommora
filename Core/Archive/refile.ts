@@ -3,6 +3,9 @@
 
 import { basename, join, relDirname } from '../Paths/posix'
 import { isPlainObject } from '../Contract/validators'
+import { errText } from '../Contract/result'
+import { isContainerKind } from '../Nexus/entities'
+import { holdsName } from '../Paths/names'
 import { rmwJsonStrict } from '../Files/atomicWrite'
 import { sameItems } from '@pommora/uix/Utilities/same'
 import { liveTreeOf } from '../Nexus/liveTree'
@@ -34,6 +37,8 @@ async function refile(
   from: string,
   to: string,
 ): Promise<void> {
+  // An id names an Archive's folder, and a sidecar can carry any string as its id.
+  if (!holdsName(to)) return
   const bundle = join(root, bundlePath)
   if (from !== to)
     await moveIntoStore(root, bundle, { kind: 'archive', id: to }, { trail }, basename(bundle))
@@ -42,7 +47,7 @@ async function refile(
 }
 
 /** Each record in `from`'s Archive whose origin lies within the Set `setId` takes the trail the Set gives it now, and `to`'s Archive when the Set now sits in another Collection. An origin the tree holds is placed by its current trail, and one it no longer holds by the ids its record stored. */
-export async function refileArchived(
+async function refileArchived(
   root: string,
   setId: string,
   from: string,
@@ -50,7 +55,7 @@ export async function refileArchived(
   tree: NexusTree,
 ): Promise<void> {
   const above = trailAbove(tree, setId)
-  if (!above) return
+  if (!above || !holdsName(from)) return
   for (const { bundlePath, record } of await listBundles(root, { kind: 'archive', id: from })) {
     const origin = originOf(record)
     if (!origin) continue
@@ -62,21 +67,31 @@ export async function refileArchived(
   }
 }
 
+/** A carry never fails the landing it follows: a record it leaves misfiled is re-filed by the next open's pass. */
+async function carried(carry: () => Promise<void>): Promise<void> {
+  try {
+    await carry()
+  } catch (e) {
+    console.error('archive: the carry failed:', errText(e))
+  }
+}
+
 /** The restores' trigger: a Set landed in `dir` carries what was archived from within it out of `from`, the Archive of the Collection it left. */
-export async function refileLanded(
+export const refileLanded = (
   root: string,
   record: RecordFile,
   from: string,
   dir: string,
-): Promise<void> {
-  if (record.entity !== 'set' || !record.id) return
-  const tree = await liveTreeOf(root)
-  const to = owningCollection(tree, dir)?.id
-  if (to) await refileArchived(root, record.id, from, to, tree)
-}
+): Promise<void> =>
+  carried(async () => {
+    if (record.entity !== 'set' || !record.id) return
+    const tree = await liveTreeOf(root)
+    const to = owningCollection(tree, dir)?.id
+    if (to) await refileArchived(root, record.id, from, to, tree)
+  })
 
 const isContainerNode = (v: unknown): v is CollectionNode | SetNode =>
-  isPlainObject(v) && (v.kind === 'collection' || v.kind === 'set')
+  isPlainObject(v) && isContainerKind(v.kind)
 
 /** The comparison's trigger: a Set the difference sets in place, which `prev` held under another parent, moved, and carries what was archived from within it; a container `prev` never held arrived, and its own Sets are read the same way. A Collection is left alone, since what it holds moves inside it and trails name ids. */
 export async function refileMoved(
@@ -98,14 +113,14 @@ export async function refileMoved(
     if ('set' in d) for (const v of [d.set].flat()) if (isContainerNode(v)) await landed(v)
     if ('at' in d) for (const sub of Object.values(d.at)) await walk(sub)
   }
-  await walk(delta)
+  await carried(() => walk(delta))
 }
 
 /** The open pass, once per open before the index seed: an Archive filed under a live Collection re-files each record whose origin the tree holds, which a Set moved while Pommora was closed leaves misfiled; one whose id names no live Collection, no root-level excluded folder's sidecar, and no Collection in the Trash is orphaned, and its bundles move into `.trash` with their records whole. A root folder whose sidecar reads unreadable could be any Collection, so while one does, that open takes no Archive for orphaned. */
 export async function settleArchives(root: string, tree: NexusTree): Promise<void> {
   const unread = tree.unreadable?.some((u) => u.kind === 'collection') ?? false
-  let excluded: Set<string | undefined> | undefined
-  let trashed: Set<string | undefined> | undefined
+  let excluded: Set<string> | undefined
+  let trashed: Set<string> | undefined
   for (const { name: id, kind } of await listEntries(join(root, ARCHIVE_DIR_REL))) {
     if (kind !== 'dir') continue
     if (tree.collections.some((c) => c.id === id)) {
@@ -118,17 +133,15 @@ export async function settleArchives(root: string, tree: NexusTree): Promise<voi
       continue
     }
     if (unread) continue
-    excluded ??= new Set(
-      await Promise.all(
-        (await readWatchScope(root)).excluded
-          .filter((entry) => rootSegs(entry).length === 1)
-          .map((entry) => sidecarId(join(root, entry), 'collection')),
-      ),
-    )
+    if (!excluded) {
+      const atRoot = (await readWatchScope(root)).excluded.filter((e) => rootSegs(e).length === 1)
+      const ids = await Promise.all(atRoot.map((e) => sidecarId(join(root, e), 'collection')))
+      excluded = new Set(ids.flatMap((held) => held ?? []))
+    }
     if (excluded.has(id)) continue
     trashed ??= new Set(
-      (await listBundles(root, { kind: 'trash' })).map(({ record }) =>
-        record.entity === 'collection' ? record.id : undefined,
+      (await listBundles(root, { kind: 'trash' })).flatMap(({ record }) =>
+        record.entity === 'collection' && record.id ? record.id : [],
       ),
     )
     if (trashed.has(id)) continue

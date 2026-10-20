@@ -177,10 +177,7 @@ async function settle(pusher: Pusher, root: string): Promise<{ rescope: boolean 
   const map = getHeldAssetMap(root)
   if (assets && map) pusher.push('assets:changed', map)
   // A Set the window saw move carries what was archived from within it; its writes raise only events the tree ignores, and one that throws costs the settle nothing it pushed or owes. A first tree has no baseline, which the open pass covers.
-  if (handed && tree && delta)
-    await refileMoved(root, handed, tree, delta).catch((e) =>
-      console.error('archive: the carry failed:', errText(e)),
-    )
+  if (handed && tree && delta) await refileMoved(root, handed, tree, delta)
   return corpus || rescope ? { rescope } : null
 }
 
@@ -286,7 +283,7 @@ function paid(root: string, c: CascadeReport | undefined, what: string): void {
   oweCascade(root, c.pages, c.hosts)
 }
 
-// An outside move: a page whose rows left one path and whose id the tree now holds at another, paired whichever order its two events came in and however many settles apart; a vanish nothing holds yet waits for its id. Every other landed id the tree holds arrived outright, so only its collisions re-spell; a paired move's own row, landing a batch after its folder, is remembered as the move's and is no arrival. The world before is the tree's pages with each paired page back where it left and each arrival absent.
+// An outside move: a page whose rows left one path and whose id the tree now holds at another, paired whichever order its two events came in and however many settles apart; a vanish nothing holds yet waits for its id.
 async function payOutsideMoves(root: string): Promise<void> {
   const owed = owedFor(root)
   const tree = heldTreeOf(root)

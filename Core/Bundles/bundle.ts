@@ -137,14 +137,20 @@ export async function listBundles(root: string, store: BundleStore): Promise<Lis
   return out
 }
 
-export async function openBundle(
-  root: string,
-  bundleAbs: string,
-): Promise<Result<{ store: BundleStore; record: RecordFile }>> {
-  const store = storeOf(root, bundleAbs)
+/** A bundle as one open reads it: its store, its record, and the one artifact it holds, which a property's record holds none of and a bundle cut short may not. */
+export interface OpenBundle {
+  abs: string
+  store: BundleStore
+  record: RecordFile
+  artifact: string | null
+}
+
+export async function openBundle(root: string, abs: string): Promise<Result<OpenBundle>> {
+  const store = storeOf(root, abs)
   if (!store) return fault('Only a trash or archive record can be spent.')
-  const record = await readRecord(bundleAbs)
-  return record ? ok({ store, record }) : fault('That record is unreadable.')
+  const record = await readRecord(abs)
+  if (!record) return fault('That record is unreadable.')
+  return ok({ abs, store, record, artifact: await bundleArtifact(abs) })
 }
 
 export async function contentPages(

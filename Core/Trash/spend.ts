@@ -1,9 +1,9 @@
-import { basename, dirname, join, relative } from '../Paths/posix'
+import { basename, dirname, join } from '../Paths/posix'
 import { contextKey } from '../Contexts/contexts'
 import { spaceIdsIn, spaceSidecarsIn } from '../Contexts/spaceSidecar'
 import { rekeyContext } from '../Contexts/contextCascade'
 import type { MutateOutcome, MutateReply, RestoreDestination } from '../Nexus/mutateRequest'
-import { errText, fail, ok, type Result, fault } from '../Contract/result'
+import { fail, ok, type Result, fault } from '../Contract/result'
 import { mutateRegistryFile, withContextAt } from '../Contexts/contextsRegistry'
 import { restoreProperty } from './restoreProperty'
 import { repairLanded, scrubReturning } from './restoreScrub'
@@ -15,10 +15,10 @@ import { buildPageIndex } from '../Connections/pageIndex'
 import { linkDefsOf } from '../Properties/propertiesRegistry'
 import { refillValues } from '../Properties/assignment'
 import {
-  bundleArtifact,
   contentPages,
   mintBundle,
   openBundle,
+  type OpenBundle,
   originPagesOf,
   originPathOf,
   pageIdsOf,
@@ -58,7 +58,7 @@ export async function emptyBundle(
 ): Promise<MutateReply> {
   const opened = await openBundle(root, bundleAbs)
   if (!opened.ok) return opened
-  const { store, record } = opened.value
+  const { store, record, artifact: artifactAbs } = opened.value
   if (store.kind !== 'trash') return fault('Only a trash record can be emptied.')
   const dispose = async (abs: string): Promise<void> => {
     recordWrite(abs)
@@ -70,7 +70,6 @@ export async function emptyBundle(
     await dispose(bundleAbs)
     return ok({})
   }
-  const artifactAbs = await bundleArtifact(bundleAbs)
   if (!artifactAbs)
     return fail('not-found', "That deletion didn't finish, or something else is in with it.")
   const archive = record.entity === 'collection' ? await collectionArchive(root, record.id) : null
@@ -103,12 +102,10 @@ const restored = (unrestored: string[]): Restored => (unrestored.length ? { unre
 
 export async function restoreArtifact(
   root: string,
-  bundleAbs: string,
+  bundle: OpenBundle,
   destination?: RestoreDestination,
 ): Promise<Result<Restored>> {
-  const opened = await openBundle(root, bundleAbs)
-  if (!opened.ok) return opened
-  const { store, record: stored } = opened.value
+  const { abs: bundleAbs, store, record: stored, artifact: artifactAbs } = bundle
   if (stored.entity === 'property') {
     if (destination) return fault(NO_DESTINATION)
     const rebuilt = await restoreProperty(root, stored)
@@ -119,7 +116,6 @@ export async function restoreArtifact(
     await machine().remove(bundleAbs)
     return ok(restored(rebuilt.value.unrestored))
   }
-  const artifactAbs = await bundleArtifact(bundleAbs)
   if (!artifactAbs)
     return fail('not-found', 'That deletion never finished; there is nothing to restore.')
 
@@ -129,10 +125,9 @@ export async function restoreArtifact(
     root,
     stored,
     destination,
-    basename(artifactAbs),
+    { abs: bundleAbs, artifact: artifactAbs },
     tree,
     roots,
-    relative(root, bundleAbs),
   )
   if (!placed.ok) return placed
   const { record, placement, writeOrder, landedAs, into } = placed.value
@@ -199,7 +194,6 @@ export async function restoreArtifact(
   const returned = after ? returningNames(pageIndexOf(tree), after, back) : null
   const own = returned?.own ?? new Map<string, string>()
   const unswept: string[] = []
-  let cascade = after ? undefined : linksNotUpdated(title)
   if (after) {
     const repair = new Map<string, string>()
     for (const [key, { id, path }] of targets) {
@@ -208,9 +202,12 @@ export async function restoreArtifact(
       if (next) repair.set(key, next)
     }
     unswept.push(...(await repairLanded(root, tree, record.entity, targetAbs, repair)))
-    if (returned?.names.size)
-      cascade = await renameCascade(root, { names: returned.names, label: title })
   }
+  let cascade = !returned
+    ? linksNotUpdated(title)
+    : returned.names.size
+      ? await renameCascade(root, { names: returned.names, label: title })
+      : undefined
   const unspent: string[] = []
   const unlinked = new Set<string>()
   if (record.entity === 'context') {
@@ -283,10 +280,8 @@ export async function restoreArtifact(
     recordWrite(bundleAbs)
     await machine().remove(bundleAbs)
   }
-  if (stored.entity === 'set' && stored.parent.kind === 'container')
-    await refileLanded(root, record, stored.trail?.[0] ?? stored.parent.id, dir).catch((e) =>
-      console.error('archive: the carry failed:', errText(e)),
-    )
+  if (!into && stored.entity === 'set' && stored.parent.kind === 'container')
+    await refileLanded(root, record, stored.trail?.[0] ?? stored.parent.id, dir)
   return ok({
     ...restored([...unspent, ...unlinked].flatMap((id) => shownTitle(tree, roots, id) ?? [])),
     ...(cascade ? { cascade } : {}),

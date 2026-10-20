@@ -6,7 +6,10 @@ import type { MutateContext } from './mutate'
 import { movePage } from './page'
 import { landingRefusal, moveFolderEntity } from './folderEntity'
 import { liveTreeOf, mutableTarget } from './liveTree'
-import { goneEdit, reachConfig, reachReport } from './configReach'
+import { archivedSetIds, goneEdit, reachConfig, reachReport } from './configReach'
+import { owningCollection } from './treePatch'
+import { holdsName } from '../Paths/names'
+import { archiveDirRel } from '../Paths/nexusPaths'
 import { dropDeparture, setChildOrder } from './reorder'
 
 async function ends(
@@ -52,7 +55,13 @@ export async function moveSetOp(
   const diverge = from.findIndex((seg, i) => seg !== to[i])
   const left = diverge === -1 ? null : from.slice(0, diverge + 1).join('/')
   const held = await liveTreeOf(root)
-  const edit = left === null ? null : goneEdit(held, 'set', req.path)
+  const owner = owningCollection(held, req.path)?.id
+  // What was archived from within it moves with it, under the chain it left.
+  const archived =
+    left !== null && owner && holdsName(owner)
+      ? await archivedSetIds(root, join(root, archiveDirRel(owner), req.path))
+      : []
+  const edit = left === null ? null : goneEdit(held, 'set', req.path, archived)
   const r = await moveFolderEntity(root, at.value.src, at.value.dst)
   if (!r.ok) return r
   await dropDeparture(root, held, 'set', req.path)

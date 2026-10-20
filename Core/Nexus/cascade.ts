@@ -81,10 +81,13 @@ export async function deleteCascade(
   const inside = (rel: string): boolean => isAtOrUnder(rel, deleted)
   const tree = heldTreeOf(root)
   if (!tree) return NO_STRIP
-  // The held tree may still list the deleted pages, since its patch can fall to a walk, so they're left out by path.
-  const after = buildPageIndex(pagesOf(tree).filter((p) => !inside(p.path)))
-  const gone = new Set(paths.flatMap(pathKeys).filter((k) => after.resolve(k).status === 'phantom'))
   try {
+    // The held tree may still list the deleted pages, since its patch can fall to a walk, so they're left out by path.
+    const { byId, archived } = await nexusPages(root, tree)
+    const after = buildPageIndex([...pagesOf(tree).filter((p) => !inside(p.path)), ...archived])
+    const gone = new Set(
+      paths.flatMap(pathKeys).filter((k) => after.resolve(k).status === 'phantom'),
+    )
     const defs = byKey(linkDefsOf(tree.config.registry))
     if (!defs.size || !gone.size) return NO_STRIP
     const goneEntry = (value: unknown): string | null =>
@@ -103,7 +106,6 @@ export async function deleteCascade(
     const files = (await governedReach(root, queryMentions([...gone]))).filter(
       (file) => !inside(relative(root, file)),
     )
-    const { byId } = await nexusPages(root, tree)
     let heldOut = 0
     const swept = await sweepGovernedRoots(root, files, {
       raw: (raw, file) => {

@@ -9,7 +9,7 @@ import { machine } from '../Platform/machine'
 import { fault, ok, type Result } from '../Contract/result'
 import { emptyBundle, restoreArtifact } from '../Trash/spend'
 import { archiveOp, restoreArchived } from '../Archive/archive'
-import { storeOf } from '../Bundles/bundle'
+import { openBundle, storeOf } from '../Bundles/bundle'
 import { deleteOp } from '../Trash/delete'
 import { updateSettings } from '../Settings/settings'
 import { setProfileImageOp } from '../Assets/setProfileImage'
@@ -140,12 +140,17 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
     case 'restore': {
       const resolved = await resolveUnderRoot(root, req.bundlePath)
       if (!resolved.ok) return resolved
-      const store = storeOf(root, resolved.value)
-      return store?.kind === 'archive'
-        ? inSettleTurn(root, () => restoreArchived(root, resolved.value, store, req.destination))
-        : underContexts(() =>
-            inSettleTurn(root, () => restoreArtifact(root, resolved.value, req.destination)),
-          )
+      const restore = async (): Promise<MutateReply> => {
+        const opened = await openBundle(root, resolved.value)
+        if (!opened.ok) return opened
+        const { store } = opened.value
+        return store.kind === 'archive'
+          ? restoreArchived(root, opened.value, store, req.destination)
+          : restoreArtifact(root, opened.value, req.destination)
+      }
+      return storeOf(root, resolved.value)?.kind === 'archive'
+        ? inSettleTurn(root, restore)
+        : underContexts(() => inSettleTurn(root, restore))
     }
 
     case 'emptyBundle': {

@@ -1,13 +1,20 @@
 import { basename, dirname, isAtOrUnder, join, relative } from '../Paths/posix'
 import { resolveUnderRoot } from '../Paths/pathSafety'
 import { recordWrite } from '../Files/writeEcho'
-import { archivedSetIds, collectionArchive } from '../Archive/archive'
+import { collectionArchive } from '../Archive/archive'
 import { containerAt } from '../Nexus/treePatch'
 import { liveTreeOf, mutableTarget, NOT_HELD } from '../Nexus/liveTree'
 import { pagesOf } from '../Nexus/record'
 import { dropPageMetadata } from '../Nexus/pageMetadata'
 import { isContainer } from '../Nexus/entities'
-import { goneContainers, goneEdit, reachConfig, reachReport } from '../Nexus/configReach'
+import {
+  archivedSetIds,
+  goneContainers,
+  goneEdit,
+  reachConfig,
+  reachReport,
+} from '../Nexus/configReach'
+import { isArchived } from '../Paths/nexusPaths'
 import { pathExists, relocate } from '../Files/atomicWrite'
 import { fail, ok, valueOr } from '../Contract/result'
 import { mutateRegistryFile, readRegistryStrict, withContextAt } from '../Contexts/contextsRegistry'
@@ -18,42 +25,35 @@ import { deleteCascade, joinCascades } from '../Nexus/cascade'
 import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'
 import { machine } from '../Platform/machine'
 import { discardFile } from './discard'
-import {
-  bundleArtifact,
-  contentPages,
-  mintBundle,
-  originPathOf,
-  pageIdsOf,
-  storeOf,
-} from '../Bundles/bundle'
+import { contentPages, mintBundle, openBundle, originPathOf, pageIdsOf } from '../Bundles/bundle'
 import {
   buildContextRecord,
   gatherContextEvidence,
   gatherLinkTargets,
   gatherSpaceRecord,
 } from './gather'
-import { gatherContentRecord, type RecordFile, readRecord, writeRecord } from '../Bundles/record'
+import { gatherContentRecord, type RecordFile, writeRecord } from '../Bundles/record'
 import { liftSetAside } from '../Nexus/folderEntity'
 
 /** A delete naming an Archive bundle takes the item inside it to the Trash under the chain it was archived from, so a Trash restore returns it there, and its record keeps the bundle it left for the Undo. Its pages' index rows sit at their Archive paths, while Link values name them where they lived. */
 async function fromArchive(root: string, req: Extract<MutateRequest, { op: 'delete' }>) {
-  const bundle = await resolveUnderRoot(root, req.path)
-  const store = bundle.ok ? storeOf(root, bundle.value) : null
-  if (!bundle.ok || store?.kind !== 'archive') return null
-  const held = await readRecord(bundle.value)
-  const abs = await bundleArtifact(bundle.value)
-  if ((held?.entity !== 'page' && held?.entity !== 'set') || held.entity !== req.kind || !abs)
-    return NOT_HELD
+  if (!isArchived(req.path)) return null
+  const resolved = await resolveUnderRoot(root, req.path)
+  const opened = resolved.ok ? await openBundle(root, resolved.value) : null
+  if (!opened?.ok) return NOT_HELD
+  const { abs: bundle, store, record: held, artifact: abs } = opened.value
+  if (store.kind !== 'archive' || !abs) return NOT_HELD
+  if ((held.entity !== 'page' && held.entity !== 'set') || held.entity !== req.kind) return NOT_HELD
   const pages = await contentPages(held.entity, abs)
   const sets = held.entity === 'set' ? await archivedSetIds(root, abs) : []
   return ok({
-    bundle: bundle.value,
+    bundle,
     abs,
     origin: join(root, originPathOf(root, store, abs)),
     under: pages.map((file) => relative(root, file)),
     keys: pages.map((file) => originPathOf(root, store, file)),
     edit: sets.length ? goneContainers(sets) : null,
-    record: { ...held, archive: relative(root, bundle.value) },
+    record: { ...held, archive: relative(root, bundle) },
   })
 }
 
