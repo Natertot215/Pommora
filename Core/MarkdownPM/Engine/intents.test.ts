@@ -703,17 +703,14 @@ describe('outliner rails', () => {
 
   it('a parent heads its own rail, which runs through its children with caps only at each run’s ends', () => {
     const t = '- A\n\t- B\n\t\t- C\n\t- D\n- E'
-    const rs = rails(t)
-    const has = (level: number, head: boolean, first: boolean, last: boolean): number =>
-      rs.filter((r) => r.level === level && r.head === head && r.first === first && r.last === last)
-        .length
-    expect(rs).toHaveLength(6)
-    expect(has(0, true, true, false)).toBe(1)
-    expect(has(0, false, false, false)).toBe(2)
-    expect(has(0, false, false, true)).toBe(1)
-    expect(has(1, true, true, false)).toBe(1)
-    expect(has(1, false, false, true)).toBe(1)
-    expect(rs.some((r) => r.level >= 2)).toBe(false)
+    expect(rails(t).map((r) => [r.level, r.head, r.first, r.last])).toEqual([
+      [0, true, true, false],
+      [0, false, false, false],
+      [1, true, true, false],
+      [0, false, false, false],
+      [1, false, false, true],
+      [0, false, false, true],
+    ])
   })
 
   it('a rail takes its ANCESTOR’s marker type, not the descendant’s (the checkbox-center fix)', () => {

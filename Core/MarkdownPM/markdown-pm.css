@@ -382,7 +382,6 @@
 .outline-lines .md-outline-rail {
   --outline-width: var(--list-outline-width);
   --outline-gap: var(--list-outline-gap);
-  --outline-gap-top: var(--outline-gap);
   --outline-gap-bottom: var(--outline-gap);
   --outline-radius: var(--list-outline-radius);
   display: block;
@@ -405,7 +404,6 @@
   pointer-events: none;
 }
 .outline-lines :is(.md-outline-bullet, .md-outline-alpha) {
-  --outline-gap-top: -2px;
   --outline-gap-bottom: -2px;
 }
 .outline-lines .md-outline-bullet {
@@ -419,15 +417,15 @@
   --outline-gap-bottom: 8px;
 }
 .outline-lines .md-outline-first {
-  top: var(--outline-gap-top);
+  top: var(--outline-gap);
   border-top-left-radius: var(--outline-radius);
   border-top-right-radius: var(--outline-radius);
 }
 .outline-lines .md-outline-head {
-  top: calc(1lh + var(--outline-gap));
+  top: calc(var(--box-head-pad, 0px) + 1lh + var(--outline-gap));
 }
 .outline-lines .md-outline-last {
-  bottom: var(--outline-gap-bottom);
+  bottom: calc(var(--box-tail-pad, 0px) + var(--outline-gap-bottom));
   border-bottom-left-radius: var(--outline-radius);
   border-bottom-right-radius: var(--outline-radius);
 }
@@ -595,7 +593,8 @@
   padding-top: var(--box-head-pad);
 }
 .mdpm-editor .cm-line:is(.md-blockquote-last, .codeblock-last) {
-  padding-bottom: calc(var(--box-gap) + var(--box-pad));
+  --box-tail-pad: calc(var(--box-gap) + var(--box-pad));
+  padding-bottom: var(--box-tail-pad);
 }
 .mdpm-editor
   .cm-line:is(.md-blockquote-first, .codeblock-first, .md-blockquote-nested-first)::after {
@@ -691,10 +690,11 @@
   border-bottom-right-radius: var(--callout-radius);
 }
 .mdpm-editor .cm-line.md-callout.md-callout-last {
-  padding-bottom: calc(var(--callout-gap) + var(--callout-inner-pad));
+  --box-tail-pad: calc(var(--callout-gap) + var(--callout-inner-pad));
+  padding-bottom: var(--box-tail-pad);
 }
 .mdpm-editor .cm-content > .cm-line:first-child.md-callout-first {
-  padding-top: var(--callout-inner-pad);
+  --box-head-pad: var(--callout-inner-pad);
 }
 .mdpm-editor .cm-content > .cm-line:first-child.md-callout-first::before {
   top: 0;

@@ -373,8 +373,9 @@ export function railIntents(
     if (level < 0) continue
     railKind[level] = listKinds[i]
     railKind.length = level + 1
-    const parent = listLevels[i + 1] > level
-    for (let k = 0; k < (parent ? level + 1 : level); k++) {
+    const next = listLevels[i + 1] ?? -1
+    const span = next > level ? level + 1 : level
+    for (let k = 0; k < span; k++) {
       const typeClass = railKind[k]
       if (!typeClass) continue
       const head = k === level
@@ -385,8 +386,8 @@ export function railIntents(
         level: k,
         typeClass,
         head,
-        first: head || i === 0 || listLevels[i - 1] < k,
-        last: i === listLevels.length - 1 || listLevels[i + 1] <= k,
+        first: head || listLevels[i - 1] < k,
+        last: next <= k,
       })
     }
   }
