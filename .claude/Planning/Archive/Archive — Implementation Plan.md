@@ -38,12 +38,12 @@ The work is removal-first. Before anything archive-shaped lands, the Trash's han
 | Phase | Estimate | Written | Measured | Cumulative |
 | ----- | -------- | ------- | -------- | ---------- |
 | 1 | −17 | −6 | +11 (+99 / −88) | +11 |
-| 2 | +49 | +263 | | |
-| 3 | +10 | +109 | | |
-| 4 | +176 | +426 | | |
+| 2 | +49 | +263 | +268 (+893 / −625) | +279 |
+| 3 | +10 | +108 | | |
+| 4 | +176 | +432 | | |
 | 5 | −21 | +95 | | |
 | 6A | +57 | +102 | | |
-| 6B | +264 | +649 | | |
+| 6B | +264 | +644 | | |
 | 7 | docs | docs | | |
 | Final Verification | — | — | | |
 
@@ -54,8 +54,8 @@ Every file the work adds, moves, renames, splits, or removes, with its home, its
 | File | Change | Home and Why | Phase |
 | --- | --- | --- | --- |
 | `Core/Bundles/bundle.ts` | New, from `Core/Trash/bundle.ts:11-39`, `holdings.ts:18-96`, `record.ts:110-113`, `spend.ts:58-64` | The bundle format both stores share: `BundleStore`, `layoutOf`, `storeOf`, `fileStamp`, `stampedLeaf`, `chainDir`, `mintBundle`, `bundleArtifact`, `listBundles`, `openBundle`, `originPathOf`, `storedAtOf`, `contentPages`, `pageIdsOf`, `originPagesIn`, `originPagesOf`; `moveIntoStore` joins in Phase 4. One owner beside both stores (A-4). | 2 |
-| `Core/Bundles/record.ts` | New, from `Core/Trash/record.ts:11-84`, `:103-108` and `gather.ts:24-29`, `:61-74` | The record union, `RecordFile`, `readRecord`, `writeRecord`, `gatherContentRecord` (`gatherParentRef` folded in), `placeOf`; `place` (Phase 2), `trail`, `trailAbove`, and `archive` (Phase 4), `originOf` and `originWithin` (Phase 6B). | 2 |
-| `Core/Bundles/placement.ts` | New, from `Core/Trash/resolve.ts` (whole) and `spend.ts:51-56`, `:105-128` | Where any bundle lands: `resolveRecord`, `Refusal`, `ArtifactRecord`, `NO_DESTINATION`, `placeRecord`, `slotOf`, and the module-private `withDestination`, `REFUSAL_TEXT`, and `freeOnDisk`. | 2 |
+| `Core/Bundles/record.ts` | New, from `Core/Trash/record.ts:11-84`, `:103-108` and `gather.ts:24-29`, `:61-74` | The record union, `RecordFile`, `ArtifactRecord`, `readRecord`, `writeRecord`, `gatherContentRecord` (`gatherParentRef` folded in), `placeOf`; `place` (Phase 2), `trail`, `trailAbove`, and `archive` (Phase 4), `originOf` and `originWithin` (Phase 6B). | 2 |
+| `Core/Bundles/placement.ts` | New, from `Core/Trash/resolve.ts` (whole) and `spend.ts:51-56`, `:105-128` | Where any bundle lands: `resolveRecord`, `Refusal`, `NO_DESTINATION`, `placeRecord`, `slotOf`, and the module-private `withDestination`, `REFUSAL_TEXT`, and `freeOnDisk`. | 2 |
 | `Core/Bundles/rows.ts` | New, from `Core/Trash/trashRows.ts` (whole) and `trashRow.ts:5-28` | `BundleRow`, `BundleCrumb`, the row builders, `liveCrumbs`, `frozenCrumbs`, `homeResolvesFor`; host code with no React, so the bridge's type import stays engine-safe. The Set-origin narrowing and `icon?` join in Phase 6B. | 2 |
 | `Core/Bundles/handlers.ts` | New, from `Core/Trash/handlers.ts:12-14` | `bundles:list(store, within?)`, beside the format it lists; `within` from Task 6B-4. | 2, 6B |
 | `Core/Bundles/browser.ts` | New, from `TrashFrame.tsx:36-56`, `:64-199`, `:254-263` | Renderer-only: `useBundleBrowser` (its date column inside), `rulesOf`, `countPhrase`, `crumbSegments`, the in-place narrowing; one home for what both browsers present, never imported host-side. | 5 |
@@ -104,9 +104,9 @@ Every file the work adds, moves, renames, splits, or removes, with its home, its
 | `trail` • record field, `trailAbove` • function | The ids of the containers above an item's parent, Collection first, and their one derivation from the tree. | `Core/Bundles/record.ts` |
 | `originOf`, `originWithin` • functions | A record's origin trail, read from the tree while it holds the origin and from the stored `trail` once it doesn't; whether that origin lies within a Set (Findings 3.4). | `Core/Bundles/record.ts` |
 | `archive` • record field | On a Trash record alone: the Archive bundle a delete from the Archive took the item out of. | `Core/Bundles/record.ts` |
-| `placeRecord` • function | The restore's one placement step for either store: destination, resolution, the composed order, and the disk-asking name, answering the placement, the `writeOrder` step that lands it, `landedAs`, and `into` for an Undo back into the Archive. | `Core/Bundles/placement.ts` |
+| `placeRecord` • function | The restore's one placement step for either store: destination, resolution with the siblings and writer of the order it lands in, the composed order, and the disk-asking name, answering the placement, the `writeOrder` step that lands it, `landedAs`, and `into` for an Undo back into the Archive. | `Core/Bundles/placement.ts` |
 | `slotOf` • function | Where a returning id re-enters an order from its recorded neighbours: above, below, first, or last. | `Core/Bundles/placement.ts` |
-| `freeOnDisk` • function (module-private) | The one landing-name rule for a restore, asking the tree and the disk, stepping aside to `Name (2)`; F-080's seam. | `Core/Bundles/placement.ts` |
+| `freeOnDisk` • function (module-private) | The one landing-name rule for a restore, asking the tree and the disk for the item's own form, stepping aside to `Name (2)`; F-080's seam. | `Core/Bundles/placement.ts` |
 | `BundleRow`, `BundleCrumb` • types | A bundle as either browser reads it (`TrashRow`, `TrashCrumb` renamed), with `storedAt`, and for a page or Set row an optional `icon` and `stored` (its id and archive path). | `Core/Bundles/rows.ts` |
 | `bundleRows`, `bundleRowOf` • functions | The rows of a store's bundles (`trashRows`, `trashRowOf` generalized), an archive store narrowed by a Set's origin. | `Core/Bundles/rows.ts` |
 | `bundles:list` • channel | Lists a store's rows, narrowed to a top-level Set's origin by `within` (`trash:list` replaced). | `Core/Contract/bridge.ts`, `Core/Bundles/handlers.ts` |
@@ -118,6 +118,7 @@ Every file the work adds, moves, renames, splits, or removes, with its home, its
 | `archiveOp`, `restoreArchived`, `collectionArchive`, `archivedSetIds` • functions | The Archive's two ops; a Collection's Archive read once for F-4's disposal (its pages and its archived Sets' ids); the ids of the Sets a bundle holds, read from their sidecars, for the gone edit a Set's departure runs. | `Core/Archive/archive.ts` |
 | `refileArchived`, `refileMoved`, `refileLanded`, `settleArchives` • functions | F-6's carry and trail rewrite; its triggers at the settle's comparison of trees and at either restore's landing; the open pass (F-5's orphans, F-6's re-file). | `Core/Archive/refile.ts` |
 | `dropDeparture` • function | The one drop of a departing id from its order, by kind: a page's or Set's sidecar order, a Collection's or Space's `state.json` order. | `Core/Nexus/reorder.ts` |
+| `dropContextOrder` • function | A Context gone for good takes its panel id and its Space order from `state.json` (`dropSpaceOrder` renamed). | `Core/Nexus/reorder.ts` |
 | `findContainerById`, `containerTrailById` • functions | A container by id, and its trail, beside `findContainerWhere` and `containerTrailWhere`: one spelling for every by-id read. | `Core/Nexus/treePatch.ts` |
 | `returningNames` • function | The restore's two-map relink, hoisted for both restores. | `Core/Nexus/settle.ts` |
 | `goneContainers` • function | The configuration edit for containers that left, from their ids. | `Core/Nexus/configReach.ts` |
@@ -136,6 +137,7 @@ Every file the work adds, moves, renames, splits, or removes, with its home, its
 | `useVirtualRows` • hook | The one seam over `@tanstack/react-virtual`. | `UIX/Interactions/virtualRows.ts` |
 | `Swap` • component, `DONE_MS` • constant | The one face swap; the hold an acknowledgement keeps its done face (1500 ms). | `UIX/Animations/Swap.tsx`, `swap.css.ts`, `motion.ts` |
 | `ActionLabel` • component | The frame's one top-right label: a notice, else the shown view's bar (`NotificationLabel` renamed). | `Core/Interface/Notifications/ActionLabel.tsx` |
+| `notifyOutcome` • function | One notice for what an action did: its head, an optional segment, and the lines that didn't go as asked. | `Core/Interface/Notifications/notifications.ts` |
 | `ActionBar`, `useDeclareActions`, `useActionBar` • type, hooks | What a shown view declares for the bar, the hook that declares it while shown, and the label's reader. | `Core/Interface/Notifications/notifications.ts` |
 | `confirmArchive` • function | Asks under Confirm Before Archiving, archives, and posts the Undo notice. | `Core/Interface/Confirm/confirmations.ts` |
 | `spendUndo`, `offerUndo` • functions | Spends any armed Undo by its key (`spendBundle` renamed); offers the one restore-and-spend Undo a delete, an archive, or a batch arms. | `Core/Interface/Confirm/confirmations.ts` |
@@ -1925,17 +1927,15 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
    const opened = await openBundle(root, bundleAbs)
    if (!opened.ok) return opened
 -  if (opened.value.entity === 'property') {
-+  const { store } = opened.value
++  const { store, record: stored } = opened.value
 +  if (store.kind !== 'trash') return fault('Only a trash record can be spent.')
-+  if (opened.value.record.entity === 'property') {
++  if (stored.entity === 'property') {
      if (destination) return fault(NO_DESTINATION)
 -    const rebuilt = await restoreProperty(root, opened.value)
-+    const rebuilt = await restoreProperty(root, opened.value.record)
++    const rebuilt = await restoreProperty(root, stored)
  …
 -  const rehomed = destination ? withDestination(opened.value, destination, tree) : ok(opened.value)
-+  const rehomed = destination
-+    ? withDestination(opened.value.record, destination, tree)
-+    : ok(opened.value.record)
++  const rehomed = destination ? withDestination(stored, destination, tree) : ok(stored)
  …
 -  const back = await trashedPagesOf(root, bundleAbs, await contentPages(record.entity, artifactAbs))
 +  const back = await originPagesOf(root, store, await contentPages(record.entity, artifactAbs))
@@ -2122,7 +2122,7 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
-**Lines:** ≈ +55 (+351 / −296) (view-delta's Actionable column, moved lines on both sides), ≈ 245 of them moved, whole-file and elided removals counted from HEAD. By file: `Bundles/bundle.ts` +164, `Bundles/record.ts` +106, `Trash/bundle.ts` +3 / −32, `Trash/record.ts` −105, `holdings.ts` +14 / −85, `gather.ts` +2 / −25, `spend.ts` +24 / −21, `deleteProperty.ts` +12 / −2, `trashRows.ts` +3 / −11, `nexusPaths.ts` and `codec.ts` +11 / −3, import sweep +12 / −12. Tests: `bundle.test.ts` +94 (≈ 35 moved), the guard's `spend.test.ts` case, sweeps ±0.
+**Lines:** ≈ +53 (+349 / −296) (view-delta's Actionable column, moved lines on both sides), ≈ 245 of them moved, whole-file and elided removals counted from HEAD. By file: `Bundles/bundle.ts` +164, `Bundles/record.ts` +106, `Trash/bundle.ts` +3 / −32, `Trash/record.ts` −105, `holdings.ts` +14 / −85, `gather.ts` +2 / −25, `spend.ts` +22 / −21, `deleteProperty.ts` +12 / −2, `trashRows.ts` +3 / −11, `nexusPaths.ts` and `codec.ts` +11 / −3, import sweep +12 / −12. Tests: `bundle.test.ts` +94 (≈ 35 moved), the guard's `spend.test.ts` case, sweeps ±0.
 
 #### Task 2-2
 
@@ -2301,11 +2301,11 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 
 **CHANGE**
 
-- [ ] Write and watch fail: `Core/Bundles/rows.test.ts` (`git mv` from `trashRows.test.ts`): its `rows()` helper (`:24-25`) reads `bundleRows(await listBundles(root, { kind: 'trash' }), { kind: 'trash' }, await readNexus(root))`; the `trashRowOf(` calls at `:157`, `:194` read `bundleRowOf(…, { kind: 'trash' }, …)`; `TrashRow` → `BundleRow`, `deletedAt` → `storedAt`; "a missing parent falls back to the frozen chain and says its home is gone" gains an archive row built by `bundleRowOf` over a hand-made listing at `.nexus/archive/<ID>/Notes/Daily/<stamp>__Alpha.md.archived`, crumbs `[{ title: 'Notes' }, { title: 'Daily' }]`; the two `describe('trashRows — …')` titles read `bundleRows — …`. `Core/Bundles/placement.test.ts` (new) takes `spend.test.ts:734-916` whole, importing `resolveRecord` from `./placement`, with `spend.test.ts:30`'s `PAGE_A`. `Core/Bundles/handlers.test.ts` (new) › "lists the Trash’s rows for the trash store", "answers an empty list for an archive id that isn’t ULID-shaped" (`'../x'`), and "refuses a store it can’t read" (`null`, `{ kind: 'shelf' }`, and `{ kind: 'archive' }` without an id → `A store is required.`). `TrashFrame.test.tsx` › "lists the opened Nexus's trash after a switch" (in the AFTER); "lists a delete made elsewhere while it is open" (`:313`) pins `changesStores` through the slice. `Core/Nexus/treePatch.test.ts` › `describe('containerTrailWhere')` (`:233`) gains "finds a container and the trail down to it by id": `containerTrailById(t, 's1')` answers the ids `containerTrailWhere(t, (n) => n.id === 's1')` does, `findContainerById(t, 's1')?.id` is `'s1'`, and an unknown id answers null from both.
+- [ ] Write and watch fail: `Core/Bundles/rows.test.ts` (`git mv` from `trashRows.test.ts`): its `rows()` helper (`:24-25`) reads `bundleRows(await listBundles(root, { kind: 'trash' }), { kind: 'trash' }, await readNexus(root))`; the `trashRowOf(` calls at `:157`, `:194` read `bundleRowOf(…, { kind: 'trash' }, …)`; `TrashRow` → `BundleRow`, `deletedAt` → `storedAt`; "a missing parent falls back to the frozen chain and says its home is gone" gains an archive row built by `bundleRowOf` over a hand-made listing at `.nexus/archive/<ID>/Notes/Daily/<stamp>__Alpha.md.archived`, crumbs `[{ title: 'Notes' }, { title: 'Daily' }]`; the two `describe('trashRows — …')` titles read `bundleRows — …`. `Core/Bundles/placement.test.ts` (new) takes `spend.test.ts:734-916` whole, importing `resolveRecord` from `./placement`, with `spend.test.ts:30`'s `PAGE_A`. `Core/Bundles/handlers.test.ts` (new) › "lists the Trash’s rows for the trash store", "lists an Archive whose Collection id isn’t ULID-shaped" (a page bundle minted under `{ kind: 'archive', id: 'col-foreign' }`), "refuses an archive id that isn’t one safe path segment" (`'../x'`, `'a/b'`, `'..'`, and `''` → `A store is required.`), and "refuses a store it can’t read" (`null`, `{ kind: 'shelf' }`, and `{ kind: 'archive' }` without an id → `A store is required.`). `TrashFrame.test.tsx` › "lists the opened Nexus's trash after a switch" (in the AFTER); "lists a delete made elsewhere while it is open" (`:313`) pins `changesStores` through the slice. `Core/Nexus/treePatch.test.ts` › `describe('containerTrailWhere')` (`:233`) gains "finds a container and the trail down to it by id": `containerTrailById(t, 's1')` answers the ids `containerTrailWhere(t, (n) => n.id === 's1')` does, `findContainerById(t, 's1')?.id` is `'s1'`, and an unknown id answers null from both.
 - [ ] `Core/Bundles/rows.ts` (new, from `trashRow.ts:5-28` and `trashRows.ts` whole): `BundleCrumb`, `BundleRow` (`storedAt` for `deletedAt`), `frozenCrumbs(store, bundlePath)` stripping the store's root by `relative` instead of filtering a segment name, `liveCrumbs`, `homeResolvesFor`, `bundleRowOf(bundle, store, tree)`, `bundleRows(bundles, store, tree)`. No React: the bridge type-imports it.
-- [ ] `Core/Bundles/placement.ts` (new, from `resolve.ts` whole and `spend.ts:51-56`, `:105-128`): `Placement`, `Refusal`, `ArtifactRecord`, `resolveRecord`, `REFUSAL_TEXT`, `NO_DESTINATION`, `withDestination`; `findContainerById` goes to `treePatch.ts`.
+- [ ] `Core/Bundles/placement.ts` (new, from `resolve.ts` whole and `spend.ts:51-56`, `:105-128`): `Placement`, `Refusal`, `resolveRecord`, `REFUSAL_TEXT`, `NO_DESTINATION`, `withDestination`; `ArtifactRecord` goes to `record.ts` beside `RecordFile`, which `placement.ts` and `rows.ts` import it from, and `findContainerById` to `treePatch.ts`.
 - [ ] `Core/Nexus/treePatch.ts`: add `containerTrailById(tree, id)` and `findContainerById(tree, id)` beside the predicate pair; `rows.ts`' `liveCrumbs` reads `containerTrailById`, and `placement.ts` and (Take Along) `createActions.ts:67` and `tilesFile.ts:78` read `findContainerById`. `findSet` keeps its predicate.
-- [ ] `Core/Bundles/handlers.ts` (new): `'bundles:list'` narrows its argument through the module-private `storeFrom` (an object whose `kind` is `trash`, or `archive` with a string `id`), refusing anything else with `A store is required.`; an archive id failing `isUlidShaped` answers an empty list. `bridge.ts`: `'bundles:list': { args: [store: BundleStore]; reply: Result<BundleRow[]> }` replaces `'trash:list'`, its comment rewritten. `serve.ts` registers `bundlesHandlers`. `Core/Trash/handlers.ts` keeps `delete:facts` alone.
+- [ ] `Core/Bundles/handlers.ts` (new): `'bundles:list'` narrows its argument through the module-private `storeFrom` (an object whose `kind` is `trash`, or `archive` with a string `id` that `holdsName` keeps to one safe path segment, since it becomes one under the Archive's root), refusing anything else with `A store is required.` `bridge.ts`: `'bundles:list': { args: [store: BundleStore]; reply: Result<BundleRow[]> }` replaces `'trash:list'`, its comment rewritten. `serve.ts` registers `bundlesHandlers`. `Core/Trash/handlers.ts` keeps `delete:facts` alone.
 - [ ] Remove `Core/Trash/trashRow.ts` and `Core/Trash/trashRows.ts` (→ `rows.ts`) and `Core/Trash/resolve.ts` (→ `placement.ts`).
 - [ ] `mutateRequest.ts`: `changesStores(req)` beside `changesSettled`, taking the request (Phase 4's container-rename arm reads `req.kind`). `nexusSlice.ts`: `trashChanged` → `storesChanged`, its comment naming any open browser, emitted through `changesStores(req)` in place of the inline triple. `PropertyFrame.tsx:297` emits `storesChanged`.
 - [ ] `TrashFrame.tsx`: `TrashRow` → `BundleRow`, `deletedAt` → `storedAt`, asks `bundles:list` with `{ kind: 'trash' }`, subscribes to `storesChanged`; its look is untouched.
@@ -2324,7 +2324,8 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 +import { type PropertyType, propertyType } from '../Properties/properties'
 +import { contextWorldOf } from '../Contexts/contextResolve'
 +import { type BundleStore, type ListedBundle, layoutOf, storedAtOf } from './bundle'
-+import { type ArtifactRecord, resolveRecord } from './placement'
++import { resolveRecord } from './placement'
++import type { ArtifactRecord } from './record'
 +
 +/** `kind` is absent on a historical crumb, which is a frozen folder name rather than a live entity. */
 +export interface BundleCrumb {
@@ -2440,7 +2441,7 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 +import { recordById } from '../Nexus/record'
 +import { findContainerById } from '../Nexus/treePatch'
 +import { contextWorldOf } from '../Contexts/contextResolve'
-+import type { RecordFile } from './record'
++import type { ArtifactRecord } from './record'
 +
 +interface Placement {
 +  dir: string
@@ -2451,9 +2452,6 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 +
 +export type Refusal = 'parent-gone' | 'cannot-hold' | 'unaddressable' | 'id-live'
 +type Resolution = { place: Placement } | { refuse: Refusal }
-+
-+/** The property shape is artifact-less — there is nothing to place. */
-+export type ArtifactRecord = Exclude<RecordFile, { entity: 'property' }>
 +
 +/** THE decision, against the CURRENT tree — a renamed parent resolves to its renamed path. The acting code branches on nothing: every name and title choice is made here. A live id refusal outranks every other answer — nothing may write over a living identity. */
 +export function resolveRecord(
@@ -2553,27 +2551,38 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 +}
 ```
 
+```Core/Bundles/record.ts diff
+@@ after RecordFile @@
+ export type RecordFile = z.infer<typeof recordFile>
+ 
++/** The property shape is artifact-less — there is nothing to place. */
++export type ArtifactRecord = Exclude<RecordFile, { entity: 'property' }>
++
+ export async function writeRecord(bundleDir: string, record: RecordFile): Promise<void> {
+```
+
 ```Core/Bundles/handlers.ts diff
 +import { type Handlers, withRoot } from '../Contract/handlers'
 +import { fault, ok } from '../Contract/result'
 +import { isPlainObject, isString } from '../Contract/validators'
-+import { isUlidShaped } from '../Nexus/identityMark'
 +import { liveTreeOf } from '../Nexus/liveTree'
++import { holdsName } from '../Paths/names'
 +import { type BundleStore, listBundles } from './bundle'
 +import { bundleRows } from './rows'
 +
++// An archive's id becomes one path segment under the Archive's root, so one the renderer hands in must stay a single segment.
 +function storeFrom(raw: unknown): BundleStore | null {
 +  if (!isPlainObject(raw)) return null
 +  if (raw.kind === 'trash') return { kind: 'trash' }
-+  return raw.kind === 'archive' && isString(raw.id) ? { kind: 'archive', id: raw.id } : null
++  return raw.kind === 'archive' && isString(raw.id) && holdsName(raw.id)
++    ? { kind: 'archive', id: raw.id }
++    : null
 +}
 +
 +export const bundlesHandlers = {
-+  // An archive's id becomes a path segment, so one the renderer hands in must be ULID-shaped; any other names no Archive.
 +  'bundles:list': withRoot(async (root, _ctx, raw: unknown) => {
 +    const store = storeFrom(raw)
 +    if (!store) return fault('A store is required.')
-+    if (store.kind === 'archive' && !isUlidShaped(store.id)) return ok([])
 +    return ok(bundleRows(await listBundles(root, store), store, await liveTreeOf(root)))
 +  }),
 +} satisfies Partial<Handlers>
@@ -2788,27 +2797,27 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
-**Lines:** ≈ +29 (+286 / −257) (view-delta's Actionable column, moved lines on both sides), ≈ 213 of them moved, whole-file removals counted from HEAD as Tasks 2-1 and 2-2 leave them. By file: `rows.ts` +100, `placement.ts` +117, `treePatch.ts` +8, `createActions.ts` +2 / −3, `tilesFile.ts` +2 / −2, `Bundles/handlers.ts` +22, `trashRow.ts` −20, `trashRows.ts` −79, `resolve.ts` −88, `spend.ts` +1 / −34, `Trash/handlers.ts` +1 / −8, `TrashFrame.tsx` +15 / −15, `nexusSlice.ts` +8 / −4, `bridge.ts` +3 / −2, `serve.ts` +2, `mutateRequest.ts` +3, `PropertyFrame.tsx` +2 / −2. Tests: `handlers.test.ts` ≈ +38, `placement.test.ts` moved ≈ 180, the rows test's archive case +12.
+**Lines:** ≈ +31 (+288 / −257) (view-delta's Actionable column, moved lines on both sides), ≈ 213 of them moved, whole-file removals counted from HEAD as Tasks 2-1 and 2-2 leave them. By file: `rows.ts` +101, `placement.ts` +115, `record.ts` +2, `treePatch.ts` +8, `createActions.ts` +2 / −3, `tilesFile.ts` +2 / −2, `Bundles/handlers.ts` +23, `trashRow.ts` −20, `trashRows.ts` −79, `resolve.ts` −88, `spend.ts` +1 / −34, `Trash/handlers.ts` +1 / −8, `TrashFrame.tsx` +15 / −15, `nexusSlice.ts` +8 / −4, `bridge.ts` +3 / −2, `serve.ts` +2, `mutateRequest.ts` +3, `PropertyFrame.tsx` +2 / −2. Tests: `handlers.test.ts` ≈ +50, `placement.test.ts` moved ≈ 180, the rows test's archive case +12.
 
 #### Task 2-4
 
-**TASK:** Make every restore, returning by id to the Collection or Set it left (E-1), land at its exact place in that order (E-2) through a recorded `place` and `placeRecord`'s composed order write; move `spliceBeside` and `Slot` to `Core/Nexus/order.ts`; make a delete leave its order, as a move does, through one `dropDeparture`.
+**TASK:** Make every restore, returning by id to the Collection or Set it left (E-1), land at its exact place in that order (E-2) through a recorded `place` and `placeRecord`'s composed order write; move `spliceBeside` and `Slot` to `Core/Nexus/order.ts`; make a delete leave its order, as a move does, through one `dropDeparture`, and a Context gone for good take its panel id with its Space order.
 
-**NOW:** `spliceBeside` and `Slot` live in `Core/Views/creationOrder.ts:10-28`, importing `nextOrder` from `@pommora/uix/Utilities/moveItem` (already an engine-graph UIX leaf). The tree's child lists are already the resolved order. `reorder.ts`'s `setChildOrder`/`dropFromChildOrder` (`:66-79`) write a sidecar's `page_order`/`set_order`; `setCollectionOrder`/`setSpaceOrder` write `state.json` through `writeStateOrder` (`:13-21`). Only the move ops (`move.ts:34-38`, `:60-64`) call `dropFromChildOrder`; `deleteOp` drops nothing, so trashed ids linger in every order. `gatherContentRecord` calls `liveTreeOf` itself; `deleteOp` calls `gatherSpaceRecord(abs, registry, swept)` (`gather.ts:79-102`) at `delete.ts:69`, `:71`, after `before = await liveTreeOf(root)` (`:37`). `restoreArtifact` writes no order. Trap: `resolveRecord` is also the rows' per-row `homeResolves` probe, so the order is composed outside it. A Context returns to its slot through `at` (`spend.ts:208`). The `movePage` comment (`mutateRequest.ts:88`) is false: an absent order sorts the page among unnamed ids by title, or by id where the folder has none (`order.ts:11-14`, `:25`), and a move drops its own source id.
+**NOW:** `spliceBeside` and `Slot` live in `Core/Views/creationOrder.ts:10-28`, importing `nextOrder` from `@pommora/uix/Utilities/moveItem` (already an engine-graph UIX leaf). The tree's child lists are already the resolved order. `reorder.ts`'s `setChildOrder`/`dropFromChildOrder` (`:66-79`) write a sidecar's `page_order`/`set_order`; `setCollectionOrder`/`setSpaceOrder` write `state.json` through `writeStateOrder` (`:13-21`). Only the move ops (`move.ts:34-38`, `:60-64`) call `dropFromChildOrder`; `deleteOp` drops nothing, so trashed ids linger in every order. `gatherContentRecord` calls `liveTreeOf` itself; `deleteOp` calls `gatherSpaceRecord(abs, registry, swept)` (`gather.ts:79-102`) at `delete.ts:69`, `:71`, after `before = await liveTreeOf(root)` (`:37`). `restoreArtifact` writes no order. Trap: `resolveRecord` is also the rows' per-row `homeResolves` probe, so the order is composed outside it. A Context returns to its slot through `at` (`spend.ts:208`). `dropSpaceOrder` (`reorder.ts:50-55`) drops a Context's Space order when the Context is gone for good and leaves its panel id in `order.contexts`. The `movePage` comment (`mutateRequest.ts:88`) is false: an absent order sorts the page among unnamed ids by title, or by id where the folder has none (`order.ts:11-14`, `:25`), and a move drops its own source id.
 
 **CHANGE**
 
-- [ ] Write and watch fail: `Core/Bundles/placement.test.ts` › `describe('slotOf')`: "lands above the sibling it sat above while that one is live", "lands below the sibling it sat below once the one after it is gone", "lands first when nothing preceded it and its follower is gone", "lands last when neither neighbour is live, or the record holds no place"; `describe('placeRecord')`: "composes the parent’s full order with the item in its slot", "a picked destination drops the place and lands last". `Core/Trash/spend.test.ts` bundle describe (`:103`): "a page records its place between its neighbours as the tree shows them", "a Set records its place in its container’s set_order", "a Collection records its place among the root’s Collections", "a Space records its place in its Context’s order". `Core/Trash/trashRecovery.test.ts`: "a page deleted and restored comes back where it was, and leaves the list" (`:122`) becomes "a page deleted and restored comes back between its old neighbours, and leaves the list" (a sibling each side under a written `page_order`; restored between them); new: "a Set restored returns to its slot in set_order", "a Collection restored returns to its slot in state.order.collections", "a Space restored returns to its slot in its Context’s Space order", "a restore into a folder with no written order writes the order the folder showed, with the page in its slot", "a record from before the place was kept lands last, the order written whole" (`place` removed by hand). "restore — into a chosen destination" (`spend.test.ts:1854`) gains "a picked destination lands last in the destination’s order". `Core/Nexus/mutate.test.ts` › `describe('handleMutate — delete')` (`:621`) gains "a page delete drops its id from the source folder’s page_order, in either Trash Mode", "a Set delete drops its id from the source container’s set_order, and the key with its last id" (the container's only Set; `set_order` leaves the sidecar, as `reorder.test.ts:135` expected), "a Collection delete drops its id from state.json’s order.collections", "a Space delete drops its id from its Context’s order in state.json". `Core/Nexus/order.test.ts` takes `describe('spliceBeside')` from `creationOrder.test.ts:92-96`.
+- [ ] Write and watch fail: `Core/Bundles/placement.test.ts` › `describe('slotOf')`: "lands above the sibling it sat above while that one is live", "lands below the sibling it sat below once the one after it is gone", "lands first when nothing preceded it and its follower is gone", "lands last when neither neighbour is live, or the record holds no place"; `describe('placeRecord')`: "composes the parent’s full order with the item in its slot", "a picked destination drops the place and lands last", "writes a Space’s order under its own Context when another Context shares its title" (two Contexts titled `Areas`; the order lands under `ctx_b` alone). `Core/Nexus/reorder.test.ts`' two `dropSpaceOrder` cases become "dropContextOrder removes the Context’s panel id and its Space order, leaving the rest" and "dropContextOrder writes nothing when the Context has no order"; `spend.test.ts`' "emptying a Context’s bundle drops its Space order" and "a system-trash Context delete drops its Space order at once" become "emptying a Context’s bundle drops its panel id and its Space order" and "a system-trash Context delete drops its panel id and its Space order at once", each expecting `contexts: ['ctx_areas']`. `Core/Trash/spend.test.ts` bundle describe (`:103`): "a page records its place between its neighbours as the tree shows them", "a Set records its place in its container’s set_order", "a Collection records its place among the root’s Collections", "a Space records its place in its Context’s order". `Core/Trash/trashRecovery.test.ts`: "a page deleted and restored comes back where it was, and leaves the list" (`:122`) becomes "a page deleted and restored comes back between its old neighbours, and leaves the list" (a sibling each side under a written `page_order`; restored between them); new: "a Set restored returns to its slot in set_order", "a Collection restored returns to its slot in state.order.collections", "a Space restored returns to its slot in its Context’s Space order", "a restore into a folder with no written order writes the order the folder showed, with the page in its slot", "a record from before the place was kept lands last, the order written whole" (`place` removed by hand). "restore — into a chosen destination" (`spend.test.ts:1854`) gains "a picked destination lands last in the destination’s order". `Core/Nexus/mutate.test.ts` › `describe('handleMutate — delete')` (`:621`) gains "a page delete drops its id from the source folder’s page_order, in either Trash Mode", "a Set delete drops its id from the source container’s set_order, and the key with its last id" (the container's only Set; `set_order` leaves the sidecar, as `reorder.test.ts:135` expected), "a Collection delete drops its id from state.json’s order.collections", "a Space delete drops its id from its Context’s order in state.json". `Core/Nexus/order.test.ts` takes `describe('spliceBeside')` from `creationOrder.test.ts:92-96`.
 - [ ] `order.ts`: take `Slot` and `spliceBeside` from `creationOrder.ts:10-28` with the `nextOrder` import; `creationOrder.ts` imports them from `../Nexus/order` and drops `nextOrder`; `useViewCreation.ts:22` imports `type Slot` from `../../Nexus/order`.
 - [ ] `Core/Bundles/record.ts`: the content and Space records gain `place`; `placeOf(ids, id)` answers it from an id list; `gatherContentRecord(root, tree, kind, abs)` reads its parent and siblings from the passed tree (a page in its container's `pages`, a Set in `sets`, a Collection in `tree.collections`), dropping its `liveTreeOf` read and import.
 - [ ] `gather.ts`: `gatherSpaceRecord(tree, abs, registry, swept)` records `place` among its Context's `spaces`.
-- [ ] `Core/Bundles/placement.ts`: `slotOf(place, liveIds)`; module-private `siblingOrder(root, record, dir, tree)`, answering the origin's shown ids for the record's kind with the one writer that lands them (`setChildOrder` for a page or Set, `setCollectionOrder`, `setSpaceOrder`), or null where its parent isn't in the tree; `placeRecord(root, record, destination, baseName, tree)` runs `withDestination` and `resolveRecord`, answers `REFUSAL_TEXT`'s refusal, and, for a record with an id landing in an order, answers `siblingOrder`'s ids spliced through `slotOf` and `spliceBeside` with its write; `withDestination` drops `place`, so a picked destination lands last. Unexport `REFUSAL_TEXT` and `withDestination`.
+- [ ] `Core/Bundles/placement.ts`: `slotOf(place, liveIds)`; `resolveRecord`'s resolution carries `order?: SiblingOrder` beside its placement, built from the parent node it already holds: the siblings it lands among, as the tree holds them, and the one writer of their order (`setChildOrder` for a page or Set, `setCollectionOrder`, `setSpaceOrder`); `placeRecord(root, record, destination, baseName, tree)` runs `withDestination` and `resolveRecord`, answers `REFUSAL_TEXT`'s refusal, and, for a record with an id landing in an order, answers the order's ids spliced through `slotOf` and `spliceBeside` with its write; `withDestination` drops `place`, so a picked destination lands last. Unexport `REFUSAL_TEXT` and `withDestination`.
 - [ ] `spend.ts`: `restoreArtifact` places through `placeRecord` and runs its order write after the relocate; Contexts keep `at`.
-- [ ] `Core/Nexus/reorder.ts`: add `dropDeparture(root, tree, kind, rel)` beside `dropFromChildOrder`, mapping a departing kind to the order it leaves (a page's `page_order`, a Set's `set_order`, a Collection's `order.collections`, a Space's `order.spaces[<context id>]`, the last two through `writeStateOrder`), reading the id from the passed tree. Unexport `dropFromChildOrder`.
-- [ ] `delete.ts`: `deleteOp` calls `dropDeparture(root, before, req.kind, req.path)` after the move, in either Trash Mode, and passes `before` to `gatherContentRecord` and `gatherSpaceRecord`. An emptied Collection leaves no id in `state.json`; a Context keeps its panel id while bundled (`spend.test.ts:215-228`).
+- [ ] `Core/Nexus/reorder.ts`: add `dropDeparture(root, tree, kind, rel)` beside `dropFromChildOrder`, mapping a departing kind to the order it leaves (a page's `page_order`, a Set's `set_order`, a Collection's `order.collections`, a Space's `order.spaces[<context id>]`, the last two through `writeStateOrder`), reading the id from the passed tree. Unexport `dropFromChildOrder`. `dropSpaceOrder` becomes `dropContextOrder`, taking the Context's panel id from `order.contexts` with its Space order; `delete.ts`' system-trash Context delete and `spend.ts`' `emptyBundle` call it.
+- [ ] `delete.ts`: `deleteOp` calls `dropDeparture(root, before, req.kind, req.path)` after the move, in either Trash Mode, and passes `before` to `gatherContentRecord` and `gatherSpaceRecord`. An emptied Collection leaves no id in `state.json`; a Context keeps its panel id while bundled (`spend.test.ts:215-228`) and leaves it once gone for good.
 - [ ] `Core/Nexus/move.ts` (Take Along): `movePageOp` and `moveSetOp` drop through `dropDeparture` with the tree each already reads; the `containerAt`/`pageAt` import leaves; `mutate.test.ts:792`, `:807` pin both unchanged.
 - [ ] `mutateRequest.ts:88` (K-5): rewrite the comment to say what an absent order does, dropping its second sentence.
-- [ ] Sibling sweep: `creationOrder.test.ts:3` (`type Slot` from `../Nexus/order`; `spliceBeside` leaves its import); `reorder.test.ts:6` (the import) and `describe('dropFromChildOrder')` (`:134-148`) leave, the departure cases covering both arms and the key drop; every `gatherContentRecord`/`gatherSpaceRecord` call (`git grep -n "gatherContentRecord(\|gatherSpaceRecord(" -- Core` lists `delete.ts` alone); `spend.test.ts`'s `toMatchObject` record cases (`:104-185`) stay green with `place` added.
+- [ ] Sibling sweep: `placement.test.ts`' `resolveRecord` cases compare `'place' in r && r.place`, since a resolution carries its order beside its placement; `creationOrder.test.ts:3` (`type Slot` from `../Nexus/order`; `spliceBeside` leaves its import); `reorder.test.ts:6` (the import) and `describe('dropFromChildOrder')` (`:134-148`) leave, the departure cases covering both arms and the key drop; every `gatherContentRecord`/`gatherSpaceRecord` call (`git grep -n "gatherContentRecord(\|gatherSpaceRecord(" -- Core` lists `delete.ts` alone); `spend.test.ts`'s `toMatchObject` record cases (`:104-185`) stay green with `place` added.
 
 **AFTER**
 
@@ -2961,13 +2970,50 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 -import { titleFromPath } from '../Paths/posix'
 +import { join, titleFromPath } from '../Paths/posix'
  …
--import { findContainerById } from '../Nexus/treePatch'
-+import { containerAt, contextAt, findContainerById } from '../Nexus/treePatch'
+ import { findContainerById } from '../Nexus/treePatch'
 +import { type Slot, spliceBeside } from '../Nexus/order'
 +import { setChildOrder, setCollectionOrder, setSpaceOrder } from '../Nexus/reorder'
  import { contextWorldOf } from '../Contexts/contextResolve'
--import type { RecordFile } from './record'
-+import type { Place, RecordFile } from './record'
+-import type { ArtifactRecord } from './record'
++import type { ArtifactRecord, Place } from './record'
+@@ Resolution @@
++/** The siblings it lands among, held as the tree holds them, and the one writer of their order. */
++interface SiblingOrder {
++  siblings: readonly { id: string }[]
++  write: (root: string, ids: string[]) => Promise<unknown>
++}
++
+ export type Refusal = 'parent-gone' | 'cannot-hold' | 'unaddressable' | 'id-live'
+-type Resolution = { place: Placement } | { refuse: Refusal }
++type Resolution = { place: Placement; order?: SiblingOrder } | { refuse: Refusal }
+@@ resolveRecord — the Space arm @@
+     return {
+       place: { dir: contextDirRel(group.def.title), finalName: finalTitle, finalTitle },
++      order: {
++        siblings: group.spaces,
++        write: (root, ids) => setSpaceOrder(root, group.def.id, ids),
++      },
+     }
+@@ resolveRecord — the root arm @@
+-      return { place: { dir: '', finalName } }
++      return {
++        place: { dir: '', finalName },
++        order: { siblings: tree.collections, write: setCollectionOrder },
++      }
+@@ resolveRecord — the container arm @@
+       ]
++      const key = record.entity === 'page' ? 'page_order' : 'set_order'
++      const order: SiblingOrder = {
++        siblings: record.entity === 'page' ? parent.pages : (parent.sets ?? []),
++        write: (root, ids) => setChildOrder(join(root, parent.path), key, ids),
++      }
+       if (record.entity === 'page') {
+         const finalTitle = freeName(titleFromPath(baseName), siblings)
+-        return { place: { dir: parent.path, finalName: `${finalTitle}.md`, finalTitle } }
++        return { place: { dir: parent.path, finalName: `${finalTitle}.md`, finalTitle }, order }
+       }
+-      return { place: { dir: parent.path, finalName: freeName(baseName, siblings) } }
++      return { place: { dir: parent.path, finalName: freeName(baseName, siblings) }, order }
 @@ REFUSAL_TEXT @@
 -export const REFUSAL_TEXT: Record<Refusal, string> = {
 +const REFUSAL_TEXT: Record<Refusal, string> = {
@@ -2990,33 +3036,6 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 +  return { anchor: null, where: place && !place.below ? 'first' : 'last' }
 +}
 +
-+function siblingOrder(
-+  root: string,
-+  record: Exclude<ArtifactRecord, { entity: 'context' }>,
-+  dir: string,
-+  tree: NexusTree,
-+): { ids: string[]; write: (order: string[]) => Promise<unknown> } | null {
-+  switch (record.entity) {
-+    case 'collection':
-+      return { ids: tree.collections.map((c) => c.id), write: (o) => setCollectionOrder(root, o) }
-+    case 'space': {
-+      const group = contextAt(tree, dir)
-+      return group
-+        ? { ids: group.spaces.map((s) => s.id), write: (o) => setSpaceOrder(root, group.def.id, o) }
-+        : null
-+    }
-+    case 'page':
-+    case 'set': {
-+      const parent = containerAt(tree, dir)
-+      const key = record.entity === 'page' ? 'page_order' : 'set_order'
-+      const children = record.entity === 'page' ? parent?.pages : parent?.sets
-+      return children
-+        ? { ids: children.map((n) => n.id), write: (o) => setChildOrder(join(root, dir), key, o) }
-+        : null
-+    }
-+  }
-+}
-+
 +export function placeRecord(
 +  root: string,
 +  stored: ArtifactRecord,
@@ -3030,30 +3049,34 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 +  const resolution = resolveRecord(record, baseName, tree)
 +  if ('refuse' in resolution) return fault(REFUSAL_TEXT[resolution.refuse])
 +  const placement = resolution.place
-+  if (record.entity === 'context' || !record.id) return ok({ record, placement })
-+  const siblings = siblingOrder(root, record, placement.dir, tree)
-+  if (!siblings) return ok({ record, placement })
-+  const { anchor, where } = slotOf(record.place, siblings.ids)
-+  const order = spliceBeside(siblings.ids, anchor, record.id, where)
-+  return ok({ record, placement, writeOrder: () => siblings.write(order) })
++  const { order } = resolution
++  if (record.entity === 'context' || !record.id || !order) return ok({ record, placement })
++  const ids = order.siblings.map((n) => n.id)
++  const { anchor, where } = slotOf(record.place, ids)
++  const next = spliceBeside(ids, anchor, record.id, where)
++  return ok({ record, placement, writeOrder: () => order.write(root, next) })
 +}
 ```
 
 ```Core/Trash/spend.ts diff
 @@ imports @@
+-import { dropSpaceOrder } from '../Nexus/reorder'
++import { dropContextOrder } from '../Nexus/reorder'
+ …
 -import { NO_DESTINATION, REFUSAL_TEXT, resolveRecord, withDestination } from '../Bundles/placement'
 +import { NO_DESTINATION, placeRecord } from '../Bundles/placement'
+@@ emptyBundle @@
+-  if (record.entity === 'context') await dropSpaceOrder(root, record.registry.id)
++  if (record.entity === 'context') await dropContextOrder(root, record.registry.id)
 @@ restoreArtifact @@
    const tree = await liveTreeOf(root)
--  const rehomed = destination
--    ? withDestination(opened.value.record, destination, tree)
--    : ok(opened.value.record)
+-  const rehomed = destination ? withDestination(stored, destination, tree) : ok(stored)
 -  if (!rehomed.ok) return rehomed
 -  const record = rehomed.value
 -  const resolution = resolveRecord(record, basename(artifactAbs), tree)
 -  if ('refuse' in resolution) return fault(REFUSAL_TEXT[resolution.refuse])
 -  const { dir, finalName, finalTitle } = resolution.place
-+  const placed = placeRecord(root, opened.value.record, destination, basename(artifactAbs), tree)
++  const placed = placeRecord(root, stored, destination, basename(artifactAbs), tree)
 +  if (!placed.ok) return placed
 +  const { record, placement, writeOrder } = placed.value
 +  const { dir, finalName, finalTitle } = placement
@@ -3076,7 +3099,19 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 +import { CONTAINER_KINDS, type HeldKind } from './entities'
 +import type { NexusTree } from './tree'
 +import { containerAt, pageAt, spaceAt } from './treePatch'
-@@ dropFromChildOrder, now dropDeparture's alone @@
+@@ dropSpaceOrder → dropContextOrder @@
+-/** A Context gone for good takes its Space order with it. */
+-export const dropSpaceOrder = (nexusRoot: string, contextId: string): StateOrderWrite =>
++/** A Context gone for good takes its panel id and its Space order with it. */
++export const dropContextOrder = (nexusRoot: string, contextId: string): StateOrderWrite =>
+   writeStateOrder(nexusRoot, (order) => {
++    const panel = withoutId(order, 'contexts', contextId)
+     const { [contextId]: dropped, ...spaces } = spacesOf(order)
+-    return dropped === undefined ? null : { ...order, spaces }
++    if (dropped === undefined) return panel
++    return { ...(panel ?? order), spaces }
+   })
+@@ dropFromChildOrder, dropDeparture's alone @@
 -export const dropFromChildOrder = (
 +const dropFromChildOrder = (
    absFolder: string,
@@ -3148,7 +3183,7 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 ```Core/Trash/delete.ts diff
 @@ imports @@
 -import { dropSpaceOrder } from '../Nexus/reorder'
-+import { dropDeparture, dropSpaceOrder } from '../Nexus/reorder'
++import { dropContextOrder, dropDeparture } from '../Nexus/reorder'
 @@ deleteOp @@
    const before = await liveTreeOf(root)
    const edit = goneEdit(before, req.kind, req.path)
@@ -3158,6 +3193,9 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
  …
 -    if (write) await write(await gatherSpaceRecord(abs, registry, valueOr(swept, null)))
 +    if (write) await write(await gatherSpaceRecord(before, abs, registry, valueOr(swept, null)))
+ …
+-    if (entry && !bundle) await dropSpaceOrder(root, entry.id)
++    if (entry && !bundle) await dropContextOrder(root, entry.id)
  …
 -    record = write ? await gatherContentRecord(root, req.kind, abs) : null
 +    record = write ? await gatherContentRecord(root, before, req.kind, abs) : null
@@ -3179,7 +3217,26 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 @@ imports @@
  import {
 -  dropFromChildOrder,
-   dropSpaceOrder,
+-  dropSpaceOrder,
++  dropContextOrder,
+ …
+@@ dropContextOrder @@
+-  it('dropSpaceOrder removes the Context’s Space order and leaves the rest', async () => {
++  it('dropContextOrder removes the Context’s panel id and its Space order, leaving the rest', async () => {
+ …
+-    await dropSpaceOrder(root, 'ctx_projects')
++    await dropContextOrder(root, 'ctx_projects')
+     expect((await readState()).order).toEqual({
+       spaces: { ctx_areas: ['x'] },
+-      contexts: ['ctx_projects', 'ctx_areas'],
++      contexts: ['ctx_areas'],
+     })
+   })
+ 
+-  it('dropSpaceOrder writes nothing when the Context has no order', async () => {
+-    await dropSpaceOrder(root, 'ctx_projects')
++  it('dropContextOrder writes nothing when the Context has no order', async () => {
++    await dropContextOrder(root, 'ctx_projects')
 @@ dropFromChildOrder @@
 -describe('dropFromChildOrder', () => { … })
 -
@@ -3212,28 +3269,29 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 
 - [ ] The listed tests pass; "a Context in the Trash keeps its order, and its restore returns to its sidebar place" (`spend.test.ts:215`) and "a record from before the place was kept restores its Context at the end" (`:230`) pass unchanged.
 - [ ] `git grep -n "legacy append\|self-drop" -- Core/Nexus/mutateRequest.ts` finds nothing.
-- [ ] `mutate.test.ts` "movePage drops the page's id from the source folder's page_order" (`:792`) and "moveSet drops the Set's id from the source container's set_order" (`:807`) pass unchanged; `git grep -n "dropFromChildOrder" -- Core` finds `reorder.ts` alone.
+- [ ] `mutate.test.ts` "movePage drops the page's id from the source folder's page_order" (`:792`) and "moveSet drops the Set's id from the source container's set_order" (`:807`) pass unchanged; `git grep -n "dropFromChildOrder" -- Core` finds `reorder.ts` alone, and `git grep -n "dropSpaceOrder\|siblingOrder" -- Core` finds nothing.
 - [ ] `git grep -n "spliceBeside\|type Slot\b" -- Core ':!Core/MarkdownPM'` finds `Core/Nexus/order.ts` and its importers (`creationOrder.ts`, `useViewCreation.ts`, `placement.ts`, and the tests) only.
 - [ ] `npm run test -- engineGraph hostGraph` passes with its UIX leaf list unchanged: the host already reaches `UIX/Utilities/moveItem.ts` (`engineGraph.test.ts:31`), which `order.ts` now imports.
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
-**Lines:** +116 (+171 / −55) (view-delta's Actionable column, moved lines on both sides), 20 of them moved. By file: `placement.ts` +65 / −7, `record.ts` +23 / −4, `order.ts` +21, `reorder.ts` +38 / −2, `delete.ts` +5 / −4, `move.ts` +4 / −6, `gather.ts` +6 / −1, `spend.ts` +6 / −9, `creationOrder.ts` +1 / −21, `useViewCreation.ts` +2 / −1; the K-5 rewrite is a comment. Tests ≈ +170.
+**Lines:** +110 (+171 / −61) (view-delta's Actionable column, moved lines on both sides), 20 of them moved. By file: `placement.ts` +58 / −10, `record.ts` +23 / −4, `order.ts` +21, `reorder.ts` +42 / −4, `delete.ts` +6 / −5, `move.ts` +4 / −6, `gather.ts` +6 / −1, `spend.ts` +8 / −9, `creationOrder.ts` +1 / −21, `useViewCreation.ts` +2 / −1; the K-5 rewrite is a comment. Tests ≈ +185.
 
 #### Task 2-5
 
-**TASK:** Let a restore step aside past the disk (E-4): a module-private `freeOnDisk` inside `placeRecord` steps past an outside file, an excluded folder, or the asset directory, replacing the landing and `exists` refusals; the reply carries the title taken as `landedAs`, and the Trash's report names it in the approved copy, counts in Title Case (Take Along). Drive group 2 proves E-2 and E-4 on the running app.
+**TASK:** Let a restore step aside past the disk (E-4): a module-private `freeOnDisk` inside `placeRecord` steps past an outside file, an excluded folder, or the asset directory, replacing the landing and `exists` refusals; the reply carries the title taken as `landedAs`, and the Trash's notice names it in the approved copy through `notifyOutcome`, the one composer the delete's notice shares, counts in Title Case (Take Along). Drive group 2 proves E-2 and E-4 on the running app.
 
-**NOW:** `restoreArtifact` refuses an excluded landing through `landingRefusal` (HEAD `spend.ts:174-179`) and an occupant the tree can't see with `fail('exists', 'Something already sits at the restored location.')` and its squatter comment (`:180-182`). Task 2-4's `placeRecord` is synchronous and tree-only; `homeResolvesFor` calls `resolveRecord` alone. `createDisambiguated(name, attempt, taken)` (`names.ts:66-79`) retries on `'exists'` up to `(50)` under `freeName`'s base rule. `landingRefusal` and the `targetTaken`/`pathExists` refusals stay in create, rename, and move, where a user-chosen name is refused, not changed. `TrashFrame.tsx`'s report (`:129-151`) joins `Restored ${countPhrase(done)}.` with the unmet lines; the single-row path (`:99-101`) posts nothing on success; `countPhrase` (`:36-50`) answers lowercase kinds ("2 pages"). `notifyUndoable(message, undo?, tone, retry?, segment?)` (`notifications.ts:106-137`) carries a segment and posts a plain notice without `undo`, as `notifyDeleted` uses it; `notifyReport` carries none. `spend.test.ts:1506` "an occupant the tree cannot see refuses the restore — never a clobber" and `:1527` "a Set restored onto a folder Settings excludes refuses, the bundle intact" pin the refusals; `placement.test.ts`'s "disambiguates a taken title, matching the create convention" stays. The Archive Drive (`.claude/scripts/Archive Drive/live-drive.mjs`, `MATRIX.md`) holds group 1 alone.
+**NOW:** `restoreArtifact` refuses an excluded landing through `landingRefusal` (HEAD `spend.ts:174-179`) and an occupant the tree can't see with `fail('exists', 'Something already sits at the restored location.')` and its squatter comment (`:180-182`). Task 2-4's `placeRecord` is synchronous and tree-only; `homeResolvesFor` calls `resolveRecord` alone. `createDisambiguated(name, attempt, taken)` (`names.ts:66-79`) retries on `'exists'` up to `(50)` under `freeName`'s base rule. `landingRefusal` and the `targetTaken`/`pathExists` refusals stay in create, rename, and move, where a user-chosen name is refused, not changed. `TrashFrame.tsx`'s report (`:129-151`) joins `Restored ${countPhrase(done)}.` with the unmet lines; the single-row path (`:99-101`) posts nothing on success; `countPhrase` (`:36-50`) answers lowercase kinds ("2 pages"). `notifyUndoable(message, undo?, tone, retry?, segment?)` (`notifications.ts:106-137`) carries a segment and posts a plain notice without `undo`; `notifyDeleted` (`:84-101`) composes its head, link count, and warning inline before calling it; `notifyReport` carries none. `spend.test.ts:1506` "an occupant the tree cannot see refuses the restore — never a clobber" and `:1527` "a Set restored onto a folder Settings excludes refuses, the bundle intact" pin the refusals; `placement.test.ts`'s "disambiguates a taken title, matching the create convention" stays. The Archive Drive (`.claude/scripts/Archive Drive/live-drive.mjs`, `MATRIX.md`) holds group 1 alone.
 
 **CHANGE**
 
-- [ ] Write and watch fail: `spend.test.ts:1506` becomes "an occupant the tree cannot see is stepped around — never a clobber" (`landedAs: 'Alpha (2)'`, `Notes/Daily/Alpha (2).md` holds the page, the squatter's bytes unchanged, the bundle gone); `:1527` becomes "a Set restored onto a folder Settings excludes steps aside, the excluded entry untouched" (`landedAs: 'Daily (2)'`, `Notes/Daily (2)/_pageset.json` exists, `settings.json` as written); new: "a restore whose title the tree already holds answers the title it took" (a live `Alpha` → `landedAs: 'Alpha (2)'`), "a restore landing on its own title answers no landedAs", "a Space steps past a folder its Context holds that the tree doesn’t", "a Context steps past a folder under .nexus/contexts the registry doesn’t name, and the registry takes the stepped title". `Core/Bundles/placement.test.ts` takes its own temp root (`root = tempRoot('pom-placement-')` in a `beforeEach`, removed in an `afterEach`), passed to every `placeRecord` case; `describe('placeRecord')` (Task 2-4's two cases now awaiting it) gains "lands at the tree’s placement when the disk holds nothing there, answering no landedAs", "steps a page past a file of its name, answering the title it took", "steps a Set past an excluded entry with no folder on disk", and "steps a page past a folder of its name, and a Set past a page file of its name, since the two share one name" (an outside `Notes/Daily/Alpha/` steps page `Alpha` to `Alpha (2)`; an outside `Notes/Daily.md` steps Set `Daily` to `Daily (2)`). `TrashFrame.test.tsx`: `countPhrase`'s three kind cases flip to Title Case ("2 Pages", "2 Sets", "2 Contexts", "1 Page", "1 Space"); "carries what a Restore All couldn’t re-spell into its notice" (`:292`) and "carries what a Delete All couldn’t strip into its notice" (`:302`) read `Restored 2 Pages. ${warning}` and `Deleted 2 Pages. ${warning}`; new: "names the title a restore here stepped to" (`Restored “Alpha” as “Alpha (2)”`, tone normal), "a Restore All with one renamed names it in the segment" (`{ message: 'Restored 2 Pages', segment: '“Alpha” as “Alpha (2)”' }`), "a Restore All with several renamed counts them" (`segment: '2 Renamed'`).
-- [ ] `placement.ts`: module-private `freeOnDisk(root, entity, placement)` wraps `createDisambiguated` with a disk probe (a page's or Set's name in both forms, folder and `.md`, which share one name as `resolveRecord`'s container arm reads them, `Core/Trash/resolve.ts:81-85`; a Collection's or Set's `landingRefusal` counts as taken; a Collection's, Space's, or Context's folder) and answers the placement under the stepped title, or the last `'exists'` refusal after fifty steps. `placeRecord` becomes async, steps its resolved placement through it before composing the order, and answers `landedAs` when the title taken isn't the artifact's own. `homeResolvesFor` keeps calling `resolveRecord` alone, so a listing probes no disk. The header and `resolveRecord`'s doc name the disk step.
+- [ ] Write and watch fail: `spend.test.ts:1506` becomes "an occupant the tree cannot see is stepped around — never a clobber" (`landedAs: 'Alpha (2)'`, `Notes/Daily/Alpha (2).md` holds the page, the squatter's bytes unchanged, the bundle gone); `:1527` becomes "a Set restored onto a folder Settings excludes steps aside, the excluded entry untouched" (`landedAs: 'Daily (2)'`, `Notes/Daily (2)/_pageset.json` exists, `settings.json` as written); new: "a restore whose title the tree already holds answers the title it took" (a live `Alpha` → `landedAs: 'Alpha (2)'`), "a restore landing on its own title answers no landedAs", "a Space steps past a folder its Context holds that the tree doesn’t", "a Context steps past a folder under .nexus/contexts the registry doesn’t name, and the registry takes the stepped title". `Core/Bundles/placement.test.ts` takes its own temp root (`root = tempRoot('pom-placement-')` in a `beforeEach`, removed in an `afterEach`), passed to every `placeRecord` case; `describe('placeRecord')` (Task 2-4's two cases now awaiting it) gains "lands at the tree’s placement when the disk holds nothing there, answering no landedAs", "steps a page past a file of its name, answering the title it took", "steps a Set past an excluded entry with no folder on disk", "steps a page past a file of its name alone, and a Set past a folder of its name alone, leaving a namesake of the other form beside it" (an outside `Notes/Journal/Alpha/` leaves page `Alpha` at `Alpha.md`, and an outside `Notes/Daily.md` leaves Set `Daily` at `Daily`, neither answering `landedAs`), and "answers no landedAs for a Context whose registry title differs from its folder’s name only by case" (registry `Projects` restored from a `projects` folder keeps `Projects`). `TrashFrame.test.tsx`: `countPhrase`'s three kind cases flip to Title Case ("2 Pages", "2 Sets", "2 Contexts", "1 Page", "1 Space"); "carries what a Restore All couldn’t re-spell into its notice" (`:292`) and "carries what a Delete All couldn’t strip into its notice" (`:302`) read `Restored 2 Pages. ${warning}` and `Deleted 2 Pages. ${warning}`; new: "names the title a restore here stepped to" (`Restored “Alpha” as “Alpha (2)”`, tone normal), "a Restore All with one renamed names it in the segment" (`{ message: 'Restored 2 Pages', segment: '“Alpha” as “Alpha (2)”' }`), "a Restore All with several renamed counts them" (`segment: '2 Renamed'`).
+- [ ] `placement.ts`: module-private `freeOnDisk(root, entity, placement)` wraps `createDisambiguated` with a disk probe of the item's own form alone (a page's `.md` file, any other kind's folder), as E-4 reads a taken name, where a Collection's or Set's `landingRefusal` also counts as taken, and answers the placement under the stepped title, or the last `'exists'` refusal after fifty steps. `placeRecord` becomes async, steps its resolved placement through it before composing the order, and answers `landedAs` when the title taken isn't the one it asked for: a Context's registry title, any other kind's artifact name. `homeResolvesFor` keeps calling `resolveRecord` alone, so a listing probes no disk. The header and `resolveRecord`'s doc name the disk step.
 - [ ] `spend.ts`: the landing arm, the `exists` refusal, the squatter comment, and the `landingRefusal` and `pathExists` imports leave; `placeRecord`'s step runs before anything is written, so the Context's registry write reads the stepped title through `title = finalTitle ?? finalName`; the reply carries `landedAs`.
-- [ ] `mutateRequest.ts`: `MutateOutcome.landedAs?: string`.
-- [ ] `TrashFrame.tsx`: `countPhrase` in Title Case (Take Along); one `report(head, renamed, lines)` composes the batch and single-row notices, appending what didn't go as asked to the last part and posting through `notifyUndoable(message, undefined, tone, undefined, segment)`, so a clean batch reads `Restored 3 Pages` with no trailing period; `notifyReport` keeps `(message, failed)` and this file imports `notifyUndoable` instead; `many` gathers `“Title” as “Landed”` per step; the single-row path posts `Restored “Ideas” as “Ideas (2)”` when its reply carries `landedAs`, carrying the slice's unrestored line and warning.
-- [ ] Drive group 2 (written in full in the AFTER): `.claude/scripts/Archive Drive/live-drive.mjs` gains `group2(cdp)`, its run line `if (GROUPS.has('2')) await group2(cdp)`, `'2'` in `ALL`, and the helpers Phase 1's file lacks, copied from the Path Links Drive (`.claude/scripts/Path Links Drive/live-drive.mjs:43-44`, `:56`, `:59-64`) and the Metadata Drive (`.claude/scripts/Metadata Drive/live-drive.mjs:235-241`, `:1333`, `:1339-1348`); `MATRIX.md` gains its table. Checks: `[g2 E-2] a page restored between its neighbours`, `[g2 E-2] a Set restored to its slot`, `[g2 E-2] a Collection restored to its slot`, `[g2 E-2] a Space restored to its slot`, `[g2 E-4] an outside file in the way is stepped around`, `[g2 E-4] an excluded folder in the way is stepped around`, `[g2 A-3] the Trash browser keeps its look and lists through bundles:list`. Traps: a folded sidebar row unmounts its children, so the page check unfolds Collection A and Set Alpha through group 1's `unfold` before reading the DOM; the squatter's task-marked ID (index 10 `T`) is what keeps the tree from holding it; the group puts `excluded_folders` back as it found it, and the harness restores `~/Test` when the run ends.
+- [ ] `mutateRequest.ts`: `MutateOutcome.landedAs?: string`, its doc naming the title a restore stepped aside to.
+- [ ] `Core/Interface/Notifications/notifications.ts`: `notifyOutcome(head, segment, unmet, undo?, retry?)`, one notice for what an action did, folded from `notifyDeleted`'s composition: what didn't go as asked is appended to the last part, marks the notice failed, and offers the retry, posted through `notifyUndoable` with its segment and answering its spend; `notifyDeleted` composes its head and link count and calls it.
+- [ ] `TrashFrame.tsx`: `countPhrase` in Title Case (Take Along); the batch and single-row notices post through `notifyOutcome(head, segment, unmet)`, so a clean batch reads `Restored 3 Pages` with no trailing period; `notifyReport` keeps `(message, failed)` and this file imports `notifyOutcome` instead; `many` gathers `“Title” as “Landed”` per step; the single-row path posts `Restored “Ideas” as “Ideas (2)”` when its reply carries `landedAs`, carrying the slice's unrestored line and warning.
+- [ ] Drive group 2 (written in full in the AFTER): `.claude/scripts/Archive Drive/live-drive.mjs` gains `group2(cdp)`, its run line `if (GROUPS.has('2')) await group2(cdp)`, `'2'` in `ALL`, and the helpers Phase 1's file lacks, copied from the Path Links Drive (`.claude/scripts/Path Links Drive/live-drive.mjs:43-44`, `:56`, `:59-64`) and the Metadata Drive (`.claude/scripts/Metadata Drive/live-drive.mjs:235-241`, `:1333`, `:1339-1348`); `MATRIX.md` gains its table, and its pruned note on the Trash browser names group 2's Restore and Restore All. Checks: `[g2 E-2] a page restored between its neighbours`, `[g2 E-2] a Set restored to its slot`, `[g2 E-2] a Collection restored to its slot`, `[g2 E-2] a Space restored to its slot`, `[g2 E-4] an outside file in the way is stepped around`, `[g2 E-4] an excluded folder in the way is stepped around`, `[g2 A-3] the Trash browser keeps its look and lists through bundles:list`. Traps: a folded sidebar row unmounts its children, so the page check unfolds Collection A and Set Alpha through group 1's `unfold` before reading the DOM; the squatter's task-marked ID (index 10 `T`) is what keeps the tree from holding it; the group puts `excluded_folders` back as it found it, and the harness restores `~/Test` when the run ends.
 
 **AFTER**
 
@@ -3250,7 +3308,7 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 -/** THE decision, against the CURRENT tree — a renamed parent resolves to its renamed path. The acting code branches on nothing: every name and title choice is made here. A live id refusal outranks every other answer — nothing may write over a living identity. */
 +/** THE decision, against the CURRENT tree — a renamed parent resolves to its renamed path. Every name and title choice the tree can make is made here, and `freeOnDisk` steps it only past what the tree can't see. A live id refusal outranks every other answer — nothing may write over a living identity. */
 @@ freeOnDisk @@
-+/** The tree's free title stepped further past what the disk holds there that the tree can't see — an outside file, an excluded folder, the asset directory, either form of the one name a page and a Set share — so a restore lands beside it, never over it. */
++/** The tree's free title stepped further past what the disk holds there that the tree can't see — an outside file, an excluded folder, the asset directory — in the item's own form, so a restore lands beside it, never over it. */
 +async function freeOnDisk(
 +  root: string,
 +  entity: ArtifactRecord['entity'],
@@ -3258,12 +3316,10 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 +): Promise<Result<Placement>> {
 +  const parent = join(root, dir)
 +  const leaf = (title: string): string => (entity === 'page' ? `${title}.md` : title)
-+  const forms = (title: string): string[] =>
-+    entity === 'page' || entity === 'set' ? [title, `${title}.md`] : [title]
 +  const taken = async (title: string): Promise<boolean> =>
 +    ((entity === 'collection' || entity === 'set') &&
 +      (await landingRefusal(root, parent, title)) !== null) ||
-+    (await Promise.all(forms(title).map((name) => pathExists(join(parent, name))))).includes(true)
++    (await pathExists(join(parent, leaf(title))))
 +  const named = await createDisambiguated(
 +    finalTitle ?? finalName,
 +    async (title) =>
@@ -3300,20 +3356,21 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
    const resolution = resolveRecord(record, baseName, tree)
    if ('refuse' in resolution) return fault(REFUSAL_TEXT[resolution.refuse])
 -  const placement = resolution.place
--  if (record.entity === 'context' || !record.id) return ok({ record, placement })
 +  const named = await freeOnDisk(root, record.entity, resolution.place)
 +  if (!named.ok) return named
 +  const placement = named.value
 +  const title = placement.finalTitle ?? placement.finalName
-+  const landedAs = title === titleFromPath(baseName) ? undefined : title
-+  if (record.entity === 'context' || !record.id) return ok({ record, placement, landedAs })
-   const siblings = siblingOrder(root, record, placement.dir, tree)
--  if (!siblings) return ok({ record, placement })
-+  if (!siblings) return ok({ record, placement, landedAs })
-   const { anchor, where } = slotOf(record.place, siblings.ids)
-   const order = spliceBeside(siblings.ids, anchor, record.id, where)
--  return ok({ record, placement, writeOrder: () => siblings.write(order) })
-+  return ok({ record, placement, landedAs, writeOrder: () => siblings.write(order) })
++  const asked = record.entity === 'context' ? record.registry.title : titleFromPath(baseName)
++  const landedAs = title === asked ? undefined : title
+   const { order } = resolution
+-  if (record.entity === 'context' || !record.id || !order) return ok({ record, placement })
++  if (record.entity === 'context' || !record.id || !order)
++    return ok({ record, placement, landedAs })
+   const ids = order.siblings.map((n) => n.id)
+   const { anchor, where } = slotOf(record.place, ids)
+   const next = spliceBeside(ids, anchor, record.id, where)
+-  return ok({ record, placement, writeOrder: () => order.write(root, next) })
++  return ok({ record, placement, landedAs, writeOrder: () => order.write(root, next) })
  }
 ```
 
@@ -3327,14 +3384,8 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 -type Restored = Pick<MutateOutcome, 'unrestored' | 'cascade'>
 +type Restored = Pick<MutateOutcome, 'unrestored' | 'cascade' | 'landedAs'>
 @@ restoreArtifact @@
--  const placed = placeRecord(root, opened.value.record, destination, basename(artifactAbs), tree)
-+  const placed = await placeRecord(
-+    root,
-+    opened.value.record,
-+    destination,
-+    basename(artifactAbs),
-+    tree,
-+  )
+-  const placed = placeRecord(root, stored, destination, basename(artifactAbs), tree)
++  const placed = await placeRecord(root, stored, destination, basename(artifactAbs), tree)
    if (!placed.ok) return placed
 -  const { record, placement, writeOrder } = placed.value
 +  const { record, placement, writeOrder, landedAs } = placed.value
@@ -3360,8 +3411,57 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 @@ MutateOutcome @@
    /** The titles of what a restore brought back without all it held. */
    unrestored?: string[]
++  /** The title a restore stepped aside to, when it couldn't land under its own. */
 +  landedAs?: string
    retry?: MutateRequest
+```
+
+```Core/Interface/Notifications/notifications.ts diff
+@@ notifyDeleted → notifyOutcome @@
+-export function notifyDeleted(
+-  title: string,
++/** One notice for what an action did: its head, an optional segment, and whatever didn't go as asked, which marks it failed and offers the retry. */
++export function notifyOutcome(
++  head: string,
++  segment: string | undefined,
++  unmet: (string | false | undefined)[],
+   undo?: () => void | Promise<void>,
+-  { pages = [], warning }: Partial<Pick<CascadeReport, 'pages' | 'warning'>> = {},
+   retry?: () => void,
+ ): () => void {
+-  const parts = [`Deleted “${title}”`]
+-  if (pages.length) parts.push(`${pages.length} Internal ${pages.length === 1 ? 'Link' : 'Links'}`)
+-  if (warning) parts[parts.length - 1] += `. ${warning}`
+-  const [message, segment] = parts
++  const lines = unmet.filter(Boolean)
++  const parts = segment ? [head, segment] : [head]
++  if (lines.length) parts[parts.length - 1] += `. ${lines.join(' ')}`
++  const failed = lines.length > 0
+   return notifyUndoable(
+-    message,
++    parts[0],
+     undo,
+-    warning ? 'error' : 'normal',
+-    warning ? retry : undefined,
+-    segment,
++    failed ? 'error' : 'normal',
++    failed ? retry : undefined,
++    parts[1],
+   )
+ }
+ 
++export function notifyDeleted(
++  title: string,
++  undo?: () => void | Promise<void>,
++  { pages = [], warning }: Partial<Pick<CascadeReport, 'pages' | 'warning'>> = {},
++  retry?: () => void,
++): () => void {
++  const links = pages.length
++    ? `${pages.length} Internal ${pages.length === 1 ? 'Link' : 'Links'}`
++    : undefined
++  return notifyOutcome(`Deleted “${title}”`, links, [warning], undo, retry)
++}
++
 ```
 
 ```Core/Settings/TrashFrame.tsx diff
@@ -3370,7 +3470,7 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 +import { capitalize } from '@pommora/uix/Utilities/capitalize'
  …
 -import { notifyReport, unrestoredLine } from '../Interface/Notifications/notifications'
-+import { notifyUndoable, unrestoredLine } from '../Interface/Notifications/notifications'
++import { notifyOutcome, unrestoredLine } from '../Interface/Notifications/notifications'
 @@ PLURALS @@
  const PLURALS: Record<BundleRow['kind'], string> = {
 -  page: 'pages',
@@ -3392,14 +3492,6 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
  }
 +
 +const steppedTo = (title: string, landedAs: string): string => `“${title}” as “${landedAs}”`
-+
-+/** One notice for what a spend did: what it did, the title a restore stepped to, and whatever didn't go as asked, which marks it failed. */
-+function report(head: string, renamed: string | undefined, lines: (string | false)[]): void {
-+  const unmet = lines.filter(Boolean)
-+  const parts = renamed ? [head, renamed] : [head]
-+  if (unmet.length) parts[parts.length - 1] += `. ${unmet.join(' ')}`
-+  notifyUndoable(parts[0], undefined, unmet.length > 0 ? 'error' : 'normal', undefined, parts[1])
-+}
 @@ one @@
 -  const one = async (req: Extract<MutateRequest, { bundlePath: string }>): Promise<void> => {
 -    if (await mutate(req)) spendBundle(req.bundlePath)
@@ -3411,9 +3503,9 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 +    if (!done) return
 +    spendBundle(req.bundlePath)
 +    if (done.landedAs)
-+      report(`Restored ${steppedTo(row.title, done.landedAs)}`, undefined, [
++      notifyOutcome(`Restored ${steppedTo(row.title, done.landedAs)}`, undefined, [
 +        done.unrestored !== undefined && unrestoredLine(done.unrestored),
-+        done.cascade?.warning ?? false,
++        done.cascade?.warning,
 +      ])
    }
 @@ many @@
@@ -3450,7 +3542,7 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 -      ...warnings,
 -    ].filter(Boolean)
 -    notifyReport([`Restored ${countPhrase(done)}.`, ...unmet].join(' '), unmet.length > 0)
-+    report(
++    notifyOutcome(
 +      `Restored ${countPhrase(done)}`,
 +      renamed.length > 1 ? `${renamed.length} Renamed` : renamed[0],
 +      [
@@ -3465,7 +3557,7 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 @@ emptyBatch @@
      const { done, refused, warnings } = await many(targets, 'emptyBundle')
 -    const unmet = [
-+    report(`Deleted ${countPhrase(done)}`, undefined, [
++    notifyOutcome(`Deleted ${countPhrase(done)}`, undefined, [
        refused.length > 0 && `${countPhrase(refused)} couldn’t be deleted.`,
        ...warnings,
 -    ].filter(Boolean)
@@ -3571,14 +3663,19 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 +
 +  const coll = containerId()
 +  await must('create AR Coll', ask(cdp, 'mutate', { op: 'createContainer', id: coll, parentPath: '', kind: 'collection', name: 'AR Coll' }))
-+  const tops = (await heldTree(cdp)).collections.map((c) => c.id).filter((id) => id !== coll)
++  const held = (await heldTree(cdp)).collections.filter((c) => c.id !== coll)
++  const tops = held.map((c) => c.id)
 +  const a = (await collectionA(cdp)).id
 +  const next = tops[tops.indexOf(a) + 1]
++  const ring = [COLLECTION, 'AR Coll', held.find((c) => c.id === next)?.title]
 +  await must('place AR Coll', ask(cdp, 'mutate', { op: 'reorderTop', order: tops.flatMap((id) => (id === a ? [id, coll] : [id])) }))
 +  await deleteAt(cdp, 'AR Coll', 'collection')
 +  item(2, 2, 'E-2', 'a Collection delete drops its id from state.order.collections', !(stateOrder().collections ?? []).includes(coll), show(stateOrder().collections))
 +  await must('restore AR Coll', restoreRow(cdp, 'AR Coll'))
 +  item(2, 2, 'E-2', 'a Collection restored lands between its old neighbours in state.order.collections', between(stateOrder().collections ?? [], [a, coll, next]), show(stateOrder().collections))
++  await until('AR Coll in the sidebar', () => drawn(cdp, 'AR Coll'))
++  const topOrder = await cdp.evaluate(`[...document.querySelectorAll('.tree-item')].map((e) => e.textContent.trim()).filter((t) => ${JSON.stringify(ring)}.includes(t))`)
++  item(2, 2, 'E-2', 'the sidebar draws the restored Collection between them', show(topOrder) === show(ring), show(topOrder))
 +
 +  const group = (await heldTree(cdp)).contexts.find((g) => g.spaces.length >= 2)
 +  const space = containerId()
@@ -3604,9 +3701,10 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 +  await deleteAt(cdp, 'Collection A/AR Excl', 'set')
 +  const excluded = JSON.parse(readRel('.nexus/settings.json')).excluded_folders ?? []
 +  await must('exclude its origin', ask(cdp, 'exclusions:set', [...excluded, 'Collection A/AR Excl']))
++  const settingsBefore = readRel('.nexus/settings.json')
 +  const back = await restoreRow(cdp, 'AR Excl')
-+  item(2, 2, 'E-4', 'a Set restored onto an excluded entry steps aside, the entry untouched',
-+    back?.value?.landedAs === 'AR Excl (2)' && exists('Collection A/AR Excl (2)/_pageset.json') && (JSON.parse(readRel('.nexus/settings.json')).excluded_folders ?? []).includes('Collection A/AR Excl'), show(back))
++  item(2, 2, 'E-4', 'a Set restored onto an excluded entry steps aside, settings.json unchanged',
++    back?.value?.landedAs === 'AR Excl (2)' && exists('Collection A/AR Excl (2)/_pageset.json') && readRel('.nexus/settings.json') === settingsBefore, show(back))
 +  await must('the exclusions as they were', ask(cdp, 'exclusions:set', excluded))
 +
 +  for (const t of ['AR Look One', 'AR Look Two']) {
@@ -3614,9 +3712,9 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 +    await deleteAt(cdp, page(A_ALPHA, t), 'page')
 +  }
 +  await openSettings(cdp, 'Trash')
-+  const drawnRows = await cdp.evaluate(`document.querySelectorAll('.trash-row').length`)
-+  const answered = ((await ask(cdp, 'bundles:list', { kind: 'trash' })).value ?? []).length
-+  item(2, 2, 'A-3', 'the Trash browser draws a row for every row bundles:list answers', drawnRows === answered, show({ drawnRows, answered }))
++  const drawnRows = await cdp.evaluate(`[...document.querySelectorAll('.trash-row [role=checkbox]')].map((c) => c.getAttribute('aria-label').replace(/^Select /, ''))`)
++  const answered = ((await ask(cdp, 'bundles:list', { kind: 'trash' })).value ?? []).map((r) => r.title)
++  item(2, 2, 'A-3', 'the Trash browser draws the titles bundles:list answers, in its order', same(drawnRows, answered), show({ drawnRows, answered }))
 +  for (const t of ['AR Look One', 'AR Look Two']) await click(cdp, `${trashRowEl(t)}.querySelector('[role=checkbox]')`)
 +  const { chosen: all } = await chooseNative(cdp, trashRowEl('AR Look One'), 'Restore All')
 +  const batch = await settles(async () => (await notice(cdp)).startsWith('Restored 2 Pages'))
@@ -3624,6 +3722,7 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 +  await shot(cdp, 'trash-frame')
 +  await closeSettings(cdp)
 +}
++
 @@ the run @@
    if (GROUPS.has('1')) await group1(cdp)
 +  if (GROUPS.has('2')) await group2(cdp)
@@ -3633,7 +3732,7 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 @@ Group 2 @@
 +#### Group 2 — The Owner and the Format
 +
-+| Case | Holders | Operation | Expected | Decisions |
++| Case | Seeds | Operation | Expected | Decisions |
 +| --- | --- | --- | --- | --- |
 +| Page slot | `AR Before`, `AR Middle`, `AR After` in Set Alpha | `delete`, then `restore` | `page_order` drops the id at the delete and holds it between its neighbours after the restore; the sidebar draws them in that order | E-2 |
 +| Set slot | `AR Set One`–`Three` in Collection A | `delete`, then `restore` | `set_order` holds `AR Set Two` between the others | E-2 |
@@ -3642,6 +3741,10 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 +| Outside file | `AR Squat` and a task-marked squatter | Trash browser › Restore | `AR Squat (2).md` lands; the squatter's bytes hold; the notice reads `Restored “AR Squat” as “AR Squat (2)”` | E-4 |
 +| Excluded folder | Set `AR Excl` and the entry `Collection A/AR Excl` | `restore` | `landedAs: 'AR Excl (2)'`; the folder lands as `AR Excl (2)`; `settings.json` unchanged by the restore, the entry taken back out after | E-4 |
 +| The browser | every Trash row | Settings › Trash; Restore All of two | rows match `bundles:list`; the notice reads `Restored 2 Pages`; a shot beside it | A-3 |
++
+@@ Pruned @@
+-- **The Trash browser's Restore:** Phase 2 renames its channel and Phase 5 rebuilds the browser, so group 1 restores through `mutate` and later groups drive the browser in its final form.
++- **The Trash browser's Restore in group 1:** group 1 restores through `mutate`; group 2 drives today's browser through Restore and Restore All, and the groups after Phase 5 drive the rebuilt one.
 ```
 
 **VERIFY**
@@ -3652,7 +3755,7 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 - [ ] `POMMORA_ARCHIVE_LANDED=2 node ".claude/scripts/Archive Drive/live-drive.mjs" 1 2` passes every group 1 and group 2 item.
 - [ ] Check for unnecessary code or mistakes.
 
-**Lines:** +65 (+110 / −45) (view-delta's Actionable column, moved lines on both sides). By file: `TrashFrame.tsx` +52 / −26, `placement.ts` +46 / −7, `spend.ts` +11 / −12, `mutateRequest.ts` +1. Tests ≈ +120; the drive +131 / −2 (`.mjs` counts in view-delta's Code group) and `MATRIX.md` +11, apart.
+**Lines:** +65 (+120 / −55) (view-delta's Actionable column, moved lines on both sides). By file: `TrashFrame.tsx` +45 / −26, `placement.ts` +45 / −6, `notifications.ts` +24 / −11, `spend.ts` +5 / −12, `mutateRequest.ts` +1. Tests ≈ +130; the drive +138 / −2 (`.mjs` counts in view-delta's Code group) and `MATRIX.md` +13 / −1, apart.
 
 #### Review Checkpoint
 
@@ -3667,18 +3770,18 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 
 ##### Departures From the Findings
 
-- **`freeOnDisk(root, entity, placement): Promise<Result<Placement>>`, Inside `placeRecord` (2.4):** the Findings write `freeOnDisk(root, entity, dir, name)`; `createDisambiguated` refuses after fifty steps (`Core/Paths/names.ts:66-79`), so the answer is a `Result`, and taking and answering the placement keeps `finalName` and `finalTitle` one shape through `placeRecord`, which runs it as every restore's one landing rule, so the Context's registry write reads the stepped title with no new line. It stays module-private, so no restore lands past it, and `homeResolvesFor` reads `resolveRecord` alone, so a listing probes no disk. It probes a page's or Set's name in both forms, folder and `.md`, as the tree's shared namespace does (`Core/Trash/resolve.ts:81-85`). Phase 1's lift keeps `freeName` over a disk listing: `freeOnDisk` reads `folderEntity.ts`'s `landingRefusal`, so the lift reaching `freeOnDisk` would import `placement.ts` back from `folderEntity.ts`.
+- **`freeOnDisk(root, entity, placement): Promise<Result<Placement>>`, Inside `placeRecord` (2.4):** the Findings write `freeOnDisk(root, entity, dir, name)`; `createDisambiguated` refuses after fifty steps (`Core/Paths/names.ts:66-79`), so the answer is a `Result`, and taking and answering the placement keeps `finalName` and `finalTitle` one shape through `placeRecord`, which runs it as every restore's one landing rule, so the Context's registry write reads the stepped title with no new line. It stays module-private, so no restore lands past it, and `homeResolvesFor` reads `resolveRecord` alone, so a listing probes no disk. It probes the item's own form alone, a page's `.md` file or any other kind's folder, as E-4 and the decision log's sibling-name note read a taken name on disk: an excluded `Omega/` sits beside a page titled `Omega` untouched, and only two folders sharing a name collide, the same rule Phase 1's lift steps by. The tree's titles still block across forms, since `resolveRecord`'s container arm reads a page and a Set as one namespace. Phase 1's lift keeps `freeName` over a disk listing: `freeOnDisk` reads `folderEntity.ts`'s `landingRefusal`, so the lift reaching `freeOnDisk` would import `placement.ts` back from `folderEntity.ts`.
 
 ##### Behavior Changes and Disclosures
 
 - **`archiveSegs` and `archivedCollectionIdOf` Land in 2-1:** `storeOf`, their first consumer, answers an archive store's id from the path, so the Archive's location has one parse from the start, and Phase 3's `outsideContent` reads both as landed. `archiveSegs` answers the segments below `.nexus/archive` itself (`[]` for the folder, null outside it), so the Archive's own folder is admitted as Findings 1.1 requires: a hand removal of it raises one `unlinkDir` at `.nexus/archive`, and `deindexPath` (`indexSeed.ts:166-173`) prunes its rows only if `relCorpusPath` admits that path. The id segment is held to `hiddenFolder` too, which a ULID always passes.
 - **`originPathOf` Finds the Bundle by Its Stamp:** a chain folder (`spend.test.ts:695`, a Collection named `Archive.deleted`) and an artifact's interior folder (`:681`) can each wear the suffix, so the mint's stamp is the mark only a bundle carries. A bundle renamed by hand to drop its stamp (`trashRows.test.ts:179` lists one) reads its files' origin with the bundle folder kept, so its strip and relink find nothing: degraded, never wrong-pathed, and the listing still shows it.
-- **`placeRecord` Hands Back Its Order Write:** the order composed for four kinds needs one of three writers, so `placeRecord` answers `{ record, placement, writeOrder?, landedAs? }` and the restore makes one call after its relocate, on Phase 1's precedent of `carrySetAside` handing back its drop step. 2-4 lands it synchronous over the tree, and 2-5, where the step past the disk arrives, makes it async with `landedAs`, so the title test is stated once.
-- **Every Departure Leaves Its Order, in Either Trash Mode:** the delete reads the id from `before`, as the move ops do (`move.ts:34`, `:60`), so a system-trash delete leaves no tombstone either, and a Collection or Space leaves `state.json`'s order, so an emptied Collection leaves no id in the synced file. A Context keeps its panel id while bundled, the precedent `spend.test.ts:215` pins. The move ops' two inline drops fold into the same `dropDeparture` (Take Along).
+- **`placeRecord` Hands Back Its Order Write:** the order composed for four kinds needs one of three writers, and `resolveRecord` already holds the parent node each lands under, so its resolution carries that parent's siblings and writer, a Space's order landing under its own Context even when another Context shares its title; `placeRecord` composes the order from them and answers `{ record, placement, writeOrder?, landedAs? }` and the restore makes one call after its relocate, on Phase 1's precedent of `carrySetAside` handing back its drop step. 2-4 lands it synchronous over the tree, and 2-5, where the step past the disk arrives, makes it async with `landedAs`, so the title test is stated once.
+- **Every Departure Leaves Its Order, in Either Trash Mode:** the delete reads the id from `before`, as the move ops do (`move.ts:34`, `:60`), so a system-trash delete leaves no tombstone either, and a Collection or Space leaves `state.json`'s order, so an emptied Collection leaves no id in the synced file. A Context keeps its panel id while bundled, the precedent `spend.test.ts:215` pins, and one gone for good, deleted to the system Trash or emptied from the Trash, takes it from `order.contexts` with its Space order through `dropContextOrder`. The move ops' two inline drops fold into the same `dropDeparture` (Take Along).
 - **One By-Id Lookup (Take Along):** `containerTrailById` and `findContainerById` sit in `treePatch.ts` beside the predicate pair, since five sites spelled `(n) => n.id === id` themselves; `liveCrumbs`, `placement.ts`, `createActions.ts`, and `tilesFile.ts` read them, and so do Phases 4 and 6B's by-id readers. `findSet` keeps its predicate, which matches a kind beside the id.
 - **Exports Narrowed to Their Readers:** `withDestination` and `REFUSAL_TEXT` stop being exported once `placeRecord` is their one reader, and `dropFromChildOrder` once `dropDeparture` is its one caller; its `reorder.test.ts` describe leaves, both of its arms and its key drop pinned through 2-4's departure cases.
-- **`bundles:list` Reads What It's Handed:** the handler narrows its `unknown` argument through `storeFrom` and refuses anything but a store with `A store is required.`, internal copy no interface reaches; a malformed archive id answers `[]` rather than a refusal, which adds no copy and builds no path from it.
-- **The Trash's Report:** one `report` composes the batches' notices and the single row's on `notifyDeleted`'s convention (what didn't go as asked appended to the last part, posted through `notifyUndoable` with its segment), so `notifyReport` stays the one-line refusal it is. A clean batch now reads `Restored 3 Pages` and `Deleted 3 Pages`, without the trailing period `Restored 3 pages.` had; *§Copy*'s spelled lines carry none. A single restore with a `landedAs` re-posts the slice's unrestored line and warning inside its own notice; one without a step still posts nothing.
+- **`bundles:list` Reads What It's Handed:** the handler narrows its `unknown` argument through `storeFrom` and refuses anything but a store with `A store is required.`, internal copy no interface reaches. An archive id is held to the one rule the path built from it needs, a single safe segment (`holdsName`), so one that would leave the Archive's root refuses and any other names the folder it lists.
+- **One Notice Composer:** `notifyOutcome` composes the delete's notice and the Trash's batches' and single row's from one rule, folded from `notifyDeleted`'s (what didn't go as asked appended to the last part, marking the notice failed and offering its retry, posted through `notifyUndoable` with its segment), so `notifyDeleted` keeps only its head and link count, and `notifyReport` stays the one-line refusal it is. A clean batch now reads `Restored 3 Pages` and `Deleted 3 Pages`, without the trailing period `Restored 3 pages.` had; *§Copy*'s spelled lines carry none. A single restore with a `landedAs` re-posts the slice's unrestored line and warning inside its own notice; one without a step still posts nothing.
 - **`openBundle`'s Refusals:** "Only a trash or archive record can be spent." and "That record is unreadable." replace the Trash-only wording, since either store's bundle now opens; neither is reachable from the interface. The Trash's own `emptyBundle` and `restoreArtifact` refuse an Archive bundle from 2-1, `restoreArtifact` with HEAD's reply to that path, so nothing between Phase 2 and Phase 4 runs the Trash's disposal or reconcile on one; Phase 4-2's routing sends an Archive restore to `restoreArchived`, and `restoreArtifact`'s guard leaves there.
 
 ##### Found False at HEAD
@@ -3688,9 +3791,9 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 
 ##### Line Total
 
-- **≈ +263 (+984 / −721):** 2-1 ≈ +55, 2-2 −2, 2-3 ≈ +29, 2-4 +116, 2-5 +65, under the plan's one counting rule (`view-delta`'s Actionable column: source with imports and blank lines as Biome wraps them; comments, tests, documents, and the drive out; moved lines on both sides), ≈ 530 of them moved.
-- **Against the Estimate (≈ +49), Which Priced Logic Alone:** the rest is imports and Biome's wrapping, and what the decisions require that the estimate costed elsewhere or not at all: `layoutOf`'s exhaustive switch, `storeOf`, `archiveSegs` and `archivedCollectionIdOf` arriving early, `siblingOrder` landing four kinds through three writers, the departure drop's tree read, `dropDeparture` with the two `state.json` orders, `placeRecord` taking the disk step and `landedAs` (which the later restores' repeated title tests pay back), `bundles:list`'s narrowing of its argument (+9), and the Trash report's segment and single-row notice.
-- **What Leaves:** `NON_CORPUS_TOP`, `trashChainDir`, `deletedPathOf`, `deletedAtOf` (one stamp parse), the private `openBundle`, `trashedPage`, `trashedPages`, `trashedPagesOf`, three exports, five inline by-id predicates (for one pair in `treePatch.ts`), `gatherParentRef`, `trash:list`, `trashChanged`'s triple, the landing and `exists` refusals, the squatter comment, two `.filter(Boolean)` joins, the move ops' two inline order drops, and five files (`Trash/bundle.ts`, `record.ts`, `resolve.ts`, `trashRow.ts`, `trashRows.ts`) for seven (`Bundles/bundle.ts`, `record.ts`, `rows.ts`, `placement.ts`, `handlers.ts`, `Trash/trashMode.ts`, `discard.ts`).
+- **+268 (+893 / −625), Measured:** the tasks' AFTER blocks come to ≈ +257 (+994 / −737): 2-1 ≈ +53, 2-2 −2, 2-3 ≈ +31, 2-4 +110, 2-5 +65, under the plan's one counting rule (`view-delta`'s Actionable column: source with imports and blank lines as Biome wraps them; comments, tests, documents, and the drive out; moved lines on both sides), ≈ 530 of them moved. The phase's one commit never shows the lines one task writes and a later task rewrites, which the blocks count in both, and its net holds the rest in Biome's wrapping and the lines the blocks elide.
+- **Against the Estimate (≈ +49), Which Priced Logic Alone:** the rest is imports and Biome's wrapping, and what the decisions require that the estimate costed elsewhere or not at all: `layoutOf`'s exhaustive switch, `storeOf`, `archiveSegs` and `archivedCollectionIdOf` arriving early, the resolution's order landing four kinds through three writers, the departure drop's tree read, `dropDeparture` with the two `state.json` orders, `placeRecord` taking the disk step and `landedAs` (which the later restores' repeated title tests pay back), `bundles:list`'s narrowing of its argument (+9), and the notices' segment and single-row notice.
+- **What Leaves:** `NON_CORPUS_TOP`, `trashChainDir`, `deletedPathOf`, `deletedAtOf` (one stamp parse), the private `openBundle`, `trashedPage`, `trashedPages`, `trashedPagesOf`, three exports, five inline by-id predicates (for one pair in `treePatch.ts`), `gatherParentRef`, `trash:list`, `trashChanged`'s triple, the landing and `exists` refusals, the squatter comment, two `.filter(Boolean)` joins, `notifyDeleted`'s own composition, the move ops' two inline order drops, and five files (`Trash/bundle.ts`, `record.ts`, `resolve.ts`, `trashRow.ts`, `trashRows.ts`) for seven (`Bundles/bundle.ts`, `record.ts`, `rows.ts`, `placement.ts`, `handlers.ts`, `Trash/trashMode.ts`, `discard.ts`).
 
 ### Phase 3 — Reach
 
@@ -4318,11 +4421,8 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 @@ restoreArtifact — the tree and the placement (as Phase 2-5 left them) @@
    const tree = await liveTreeOf(root)
 +  const { byId: roots, archived } = await nexusPages(root, tree)
-   const placed = await placeRecord(
- …
-     tree,
-+    roots,
-   )
+-  const placed = await placeRecord(root, stored, destination, basename(artifactAbs), tree)
++  const placed = await placeRecord(root, stored, destination, basename(artifactAbs), tree, roots)
    if (!placed.ok) return placed
 @@ the world the returning pages are read against @@
    const targets = new Map(Object.entries(record.targets ?? {}))
@@ -4585,7 +4685,7 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
-**Lines:** +59 (+135 / −76), view-delta's Actionable rule. `heldPages.ts` +40 / −3, `spend.ts` +14 / −9, `assignment.ts` +15 / −11, `rows.ts` +12 / −4, `cascade.ts` +11 / −18, `restoreProperty.ts` +10 / −6, `governedSweep.ts` +8 / −5, `keyHolders.ts` +7 / −4, `placement.ts` +6 / −5, `handlers.ts` +4 / −1, `deleteProperty.ts` +4 / −1, `removeProperty.ts` +4, `record.ts` −9. Comments +1 / −2, six rewritten. Tests about +160, two inverted (`removeProperty.test.ts:143`, `deleteProperty.test.ts:174`).
+**Lines:** +58 (+135 / −77), view-delta's Actionable rule. `heldPages.ts` +40 / −3, `spend.ts` +14 / −10, `assignment.ts` +15 / −11, `rows.ts` +12 / −4, `cascade.ts` +11 / −18, `restoreProperty.ts` +10 / −6, `governedSweep.ts` +8 / −5, `keyHolders.ts` +7 / −4, `placement.ts` +6 / −5, `handlers.ts` +4 / −1, `deleteProperty.ts` +4 / −1, `removeProperty.ts` +4, `record.ts` −9. Comments +1 / −2, six rewritten. Tests about +160, two inverted (`removeProperty.test.ts:143`, `deleteProperty.test.ts:174`).
 
 #### Task 3-4
 
@@ -4885,9 +4985,9 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 | --- | --- | --- |
 | 3-1 | +43 | +68 / −25 |
 | 3-2 | −1 | +45 / −46 |
-| 3-3 | +59 | +135 / −76 |
+| 3-3 | +58 | +135 / −77 |
 | 3-4 | +8 | +24 / −16 |
-| **Phase 3** | **+109** | **+272 / −163** |
+| **Phase 3** | **+108** | **+272 / −164** |
 
 - **The Rule:** the plan's one counting rule (`view-delta`'s Actionable column: source with imports and blank lines as Biome wraps them; comments, tests, documents, and the drive out; moved lines on both sides). Moved lines: `sidecarsUnder`'s walk (4) and `collectionFolders` (5). Comments, net ±0: `contentRoots`', `archiveReach`'s, and `NexusPages`' docs added, each where the code alone would be misread (the Archive's separate walk, the whole-Archive scope, the two path conventions); `assetMigrate.ts`'s `sidecarsUnder` doc, `record.ts:48`, and `cascade.ts:101` removed; the rest rewritten in place.
 - **Against the Estimate (+10) and the Findings' Lane 1 (+14), Which Priced Logic Alone:** the growth is imports and Biome's wrapping, and the projection with its no-store scan, the refill sites' map form and `byId` threaded through `placeRecord`, the rows builder, and its handler, `keyedHolders`' callers taking the map, `sidecarsUnder` walking both roots, `containersOf`'s listing and id read, `archiveReach`, and the `:290` fix. The folds land as priced: `keyHolderFiles`, `corpusUnder`, `recordById`, and `folderCorpus` leave, three of four twin rules go, and `deleteCascade` shrinks by 7. What it buys is the reach itself: every governed, content, configuration, and by-id path now spans the Archive, which none did, with no new mechanism beside the one projection and the one scope rule.
@@ -5337,19 +5437,20 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
    destination?: RestoreDestination,
  ): Promise<Result<Restored>> {
  …
-   const { store } = opened.value
+   const { store, record: stored } = opened.value
 -  if (store.kind !== 'trash') return fault('Only a trash record can be spent.')
-   if (opened.value.record.entity === 'property') {
+   if (stored.entity === 'property') {
 @@ restoreArtifact — the placement (Phase 3-3) @@
-   const placed = await placeRecord(
-     root,
-     opened.value.record,
-     destination,
-     basename(artifactAbs),
-     tree,
-     roots,
+-  const placed = await placeRecord(root, stored, destination, basename(artifactAbs), tree, roots)
++  const placed = await placeRecord(
++    root,
++    stored,
++    destination,
++    basename(artifactAbs),
++    tree,
++    roots,
 +    relative(root, bundleAbs),
-   )
++  )
 ```
 
 **VERIFY**
@@ -5360,7 +5461,7 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
-**Lines:** +105 (+135 / −30). By file: `Core/Archive/archive.ts` +93, `mutate.ts` +16 / −3, `spend.ts` +4 / −20, `placement.ts` +9 / −3, `record.ts` +7 / −1, `rows.ts` +3 / −2, `mutateRequest.ts` +3 / −1.
+**Lines:** +112 (+143 / −31). By file: `Core/Archive/archive.ts` +93, `mutate.ts` +16 / −3, `spend.ts` +12 / −21, `placement.ts` +9 / −3, `record.ts` +7 / −1, `rows.ts` +3 / −2, `mutateRequest.ts` +3 / −1.
 
 #### Task 4-3
 
@@ -5429,7 +5530,7 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 
 ```Core/Bundles/placement.ts diff
 @@ imports (as 4-2 left them) @@
- import type { Place, RecordFile } from './record'
+ import type { ArtifactRecord, Place } from './record'
 +import { type BundleStore, storeOf } from './bundle'
 @@ withDestination (Phase 2-4) @@
  function withDestination(
@@ -5717,7 +5818,7 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 +  await dispose(artifactAbs)
 +  if (archive) await dispose(archive.abs)
    await dropPageMetadata(root, pageIds)
-   if (record.entity === 'context') await dropSpaceOrder(root, record.registry.id)
+   if (record.entity === 'context') await dropContextOrder(root, record.registry.id)
 -  // Permanent now: a Link value naming one of its pages, recorded by the delete or taken up since, names nothing any more unless another trashed page answers its key.
 -  const gone = pages.length
 -    ? await deleteCascade(
@@ -5967,7 +6068,6 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
      recordWrite(bundleAbs)
      await machine().remove(bundleAbs)
    }
-+  const stored = opened.value.record
 +  if (stored.entity === 'set' && stored.parent.kind === 'container')
 +    await refileLanded(root, record, stored.trail?.[0] ?? stored.parent.id, dir).catch((e) =>
 +      console.error('archive: the carry failed:', errText(e)),
@@ -6018,7 +6118,7 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
-**Lines:** +129 (+134 / −5). By file: `Core/Archive/refile.ts` +88, `bundle.ts` +20 / −1, `spend.ts` +7 / −1, `archive.ts` +5 / −1, `mutateRequest.ts` +7 / −1, `settle.ts` +7 / −1.
+**Lines:** +128 (+133 / −5). By file: `Core/Archive/refile.ts` +88, `bundle.ts` +20 / −1, `spend.ts` +6 / −1, `archive.ts` +5 / −1, `mutateRequest.ts` +7 / −1, `settle.ts` +7 / −1.
 
 #### Task 4-6
 
@@ -6177,7 +6277,7 @@ This plan's addition to its precedents (MetadataV3 and Path Links ran one neutra
 
 ##### Line Total
 
-- **+426 (+528 / −102):** 4-1 +8, 4-2 +105, 4-3 +93, 4-4 +40, 4-5 +129, 4-6 +51, under the plan's one counting rule (`view-delta`'s Actionable column: source with imports and blank lines as Biome wraps them; comments, tests, documents, and the drive out; moved lines on both sides). Tests (two new files and about thirty-five cases) and the drive group are apart.
+- **+432 (+535 / −103):** 4-1 +8, 4-2 +112, 4-3 +93, 4-4 +40, 4-5 +128, 4-6 +51, under the plan's one counting rule (`view-delta`'s Actionable column: source with imports and blank lines as Biome wraps them; comments, tests, documents, and the drive out; moved lines on both sides). Tests (two new files and about thirty-five cases) and the drive group are apart.
 - **Against the Estimate (+176: +4, +61, +43, +68, the last for the three tasks that were one), Which Priced Logic Alone:** about 70 of the difference is imports (`archive.ts`, `refile.ts`, and `delete.ts`'s second source carry most of them) and about 45 the wrapping of five- to seven-parameter signatures and long conditionals one argument per line. The rest is cost the estimate placed elsewhere or didn't carry: `moveIntoStore` in 4-5, while the delete's archive source through `deleteOp`'s chain costs what a source and a move together did; the comparison's trigger reading arrivals into new containers; F-4 deindexing the disposed Archive and folding the three repeated disposal lines; both restores running the carry through one `refileLanded`; `restoreArchived` running Phase 2's `placeRecord` and `writeOrder`. The Undo's retryable landing (+7), the Archive's Sets leaving every saved view at F-4 (+18), and the carries' catches (+3 in the settle, +4 across the two restores) buy the failure and configuration paths every other removal already has.
 - **What Leaves:** `restoreOp`, the inline relink, `goneEdit`'s literal, and `emptyBundle`'s two disposal triplets; the archive op's departure drop is one call to Phase 2-4's `dropDeparture`.
 
@@ -6185,7 +6285,7 @@ This plan's addition to its precedents (MetadataV3 and Path Links ran one neutra
 
 **GOAL:** Fold what the Trash and the Archive will share into one home each, proven on the Trash before the Archive's surface exists: `Swap` over one hold, `DONE_MS`, so Clear → Cleared and Sync Now → Synced cross-fade (G-6); ActionLabel, the frame's one top-right label (G-7), whose notice posted under the pointer drains (K-3); one Restore and Delete builder (K-4) and one checked-row rule, `actedOn`; the `useVirtualRows` seam; and the Trash's controller as `useBundleBrowser` in `Core/Bundles/browser.ts`, its search narrowing in place as every view's does (G-1). The Deletion section takes K-5's hint and two copy fixes; Task 6A-1 retitles it "Trash & Archive". The bar face, its channel, and `useDeclareActions` open Phase 6B. The user-visible changes are the hints, the Settings cross-fade, and the Trash's search order.
 
-Phases 2 and 4 rewrite `Core/Settings/TrashFrame.tsx`, `TrashFrame.test.tsx`, `Core/Session/nexusSlice.ts`, and `Core/Interface/Confirm/confirmations.ts` first; diffs on those files are written against their AFTER: `BundleRow` and `BundleCrumb` from `Core/Bundles/rows.ts`, `storedAt` for `deletedAt`, `bundles:list` with `{ kind: 'trash' }`, `storesChanged` for `trashChanged`, Task 2-5's report (`countPhrase` in Title Case through `PLURALS` and `capitalize`, `steppedTo`, `report(head, renamed, lines)` posting through `notifyUndoable(message, undefined, tone, undefined, segment)`, `one(req, row)`, and `many`'s `renamed`), and `bundled` for `trashed` (Task 4-1). `spendBundle` keeps its name until Task 6A-1 renames it `spendUndo`.
+Phases 2 and 4 rewrite `Core/Settings/TrashFrame.tsx`, `TrashFrame.test.tsx`, `Core/Session/nexusSlice.ts`, and `Core/Interface/Confirm/confirmations.ts` first; diffs on those files are written against their AFTER: `BundleRow` and `BundleCrumb` from `Core/Bundles/rows.ts`, `storedAt` for `deletedAt`, `bundles:list` with `{ kind: 'trash' }`, `storesChanged` for `trashChanged`, Task 2-5's notices (`countPhrase` in Title Case through `PLURALS` and `capitalize`, `steppedTo`, the batch and single-row notices posting through `notifyOutcome(head, segment, unmet)`, `one(req, row)`, and `many`'s `renamed`), and `bundled` for `trashed` (Task 4-1). `spendBundle` keeps its name until Task 6A-1 renames it `spendUndo`.
 
 #### Task 5-1
 
@@ -7038,12 +7138,12 @@ Phases 2 and 4 rewrite `Core/Settings/TrashFrame.tsx`, `TrashFrame.test.tsx`, `C
 
 **TASK:** Move the Trash browser's controller into `Core/Bundles/browser.ts` (renderer-only, never imported host-side) as `useBundleBrowser(store, { query, shown })`, answering the store's date column, `countPhrase`, and a narrowing that keeps order in place as every view's search does (ruling 15); TrashFrame draws its unchanged look on the hook.
 
-**NOW:** After Phases 2 and 4, `Core/Settings/TrashFrame.tsx` holds its presentation (HEAD `:58-62`, `:201-327`) and the controller: `PLURALS`, `countPhrase` (HEAD `:36-50`), `steppedTo`, and `report` (Task 2-5); `filterRows` ranking through `rankMatches` (`:52-56`); the date column's resolve (`:65-69`, comment `:67`), pick (`:153-159`), and format (`:254-263`), calling `styleMenuItems` directly since `styleBranch` hides a lone row (`Core/Actions/columnMenu.ts:96-100`); the rows, failure, checked set, and refresh over `bundles:list` (`:74-94`) on `storesChanged`; `one(req, row)` and the batch runner (`:99-151`); the menu (`:161-199`, Task 5-3). TrashFrame mounts only while shown; ArchiveView's parked host stays mounted behind another tab (`Core/Interface/ContentView.tsx:92-136`), hence `shown`. ViewSearch narrows in place through `matchScore` (`Core/Views/Pipeline/search.ts:4-14`, its needle folded by `matchQuery` at `Core/Views/Host/useViewHost.ts:55`); `rankMatches` keeps its other callers. `Core/Testing/fixtures.ts` holds the shared builders (`deviceRecord`, `detail`).
+**NOW:** After Phases 2 and 4, `Core/Settings/TrashFrame.tsx` holds its presentation (HEAD `:58-62`, `:201-327`) and the controller: `PLURALS`, `countPhrase` (HEAD `:36-50`), and `steppedTo` (Task 2-5); `filterRows` ranking through `rankMatches` (`:52-56`); the date column's resolve (`:65-69`, comment `:67`), pick (`:153-159`), and format (`:254-263`), calling `styleMenuItems` directly since `styleBranch` hides a lone row (`Core/Actions/columnMenu.ts:96-100`); the rows, failure, checked set, and refresh over `bundles:list` (`:74-94`) on `storesChanged`; `one(req, row)` and the batch runner (`:99-151`); the menu (`:161-199`, Task 5-3). TrashFrame mounts only while shown; ArchiveView's parked host stays mounted behind another tab (`Core/Interface/ContentView.tsx:92-136`), hence `shown`. ViewSearch narrows in place through `matchScore` (`Core/Views/Pipeline/search.ts:4-14`, its needle folded by `matchQuery` at `Core/Views/Host/useViewHost.ts:55`); `rankMatches` keeps its other callers. `Core/Testing/fixtures.ts` holds the shared builders (`deviceRecord`, `detail`).
 
 **CHANGE**
 
 - [ ] Write the tests and watch them fail: `Core/Bundles/browser.test.ts` (new) › `describe('filterRows')` takes `TrashFrame.test.tsx:33-64`'s six cases unchanged ("an empty query keeps the list whole and in the order it arrived" among them) plus "narrows in place, keeping the order it arrived in rather than ranking the best match first"; `describe('countPhrase')` takes `:66-85`'s four cases as Task 2-5 left them.
-- [ ] `Core/Bundles/browser.ts` (new): the controller moved as it stands (`countPhrase` with its `PLURALS`, `steppedTo`, `report`, the single-row path, the batch runner, and the two batch reports); `filterRows`, in place through `matchScore`; module-private `useDateColumn(key)`, answering the heading's right-click handler; `rulesOf(kind)`, the one `switch` on the store's kind; `useBundleBrowser(store, { query, shown })`, its refresh keyed on the store's fields (so a caller may pass a literal) and subscribed to `storesChanged` only while `shown`, listing again on each showing; `askEmptyTrash` called directly (the archive arm joins with ArchiveView in Phase 6B).
+- [ ] `Core/Bundles/browser.ts` (new): the controller moved as it stands (`countPhrase` with its `PLURALS`, `steppedTo`, the single-row path, the batch runner, and the two batch notices, each posting through `notifyOutcome`); `filterRows`, in place through `matchScore`; module-private `useDateColumn(key)`, answering the heading's right-click handler; `rulesOf(kind)`, the one `switch` on the store's kind; `useBundleBrowser(store, { query, shown })`, its refresh keyed on the store's fields (so a caller may pass a literal) and subscribed to `storesChanged` only while `shown`, listing again on each showing; `askEmptyTrash` called directly (the archive arm joins with ArchiveView in Phase 6B).
 - [ ] `Core/Settings/TrashFrame.tsx`: the controller and its imports leave; `TrashBody` holds the query and calls `useBundleBrowser({ kind: 'trash' }, { query, shown: true })`; the filtered rows read `matches`; the date head's right-click is `date.onContextMenu`, each row's time `date.when(row.storedAt)`.
 - [ ] `Core/Settings/personalization.ts`: `archiveColumnStyle: setting(columnStyle)` beside `trashColumnStyle` (`:197`), for `rulesOf`'s archive arm.
 - [ ] `Core/Testing/fixtures.ts`: `bundleRow(over)`, hoisted from `TrashFrame.test.tsx:19-31` for both test files and Phase 6B's `ArchiveView.test.tsx`.
@@ -7051,14 +7151,14 @@ Phases 2 and 4 rewrite `Core/Settings/TrashFrame.tsx`, `TrashFrame.test.tsx`, `C
 
 **AFTER**
 
-`PLURALS`, `countPhrase`, `steppedTo`, `report`, `one(req, row)`, and `many`'s `renamed` are Task 2-5's lines, moved unchanged, the batch restore's `report` call and the single-row delete in `openMenu` as 2-5 wraps them.
+`PLURALS`, `countPhrase`, `steppedTo`, `one(req, row)`, and `many`'s `renamed` are Task 2-5's lines, moved unchanged, the batch restore's `notifyOutcome` call and the single-row delete in `openMenu` as 2-5 wraps them.
 ```Core/Bundles/browser.ts diff
 +// The renderer's half of the bundle owner: what a store's browser does with the rows `rows.ts` builds host-side.
 +import { useCallback, useEffect, useMemo, useState } from 'react'
 +import { capitalize } from '@pommora/uix/Utilities/capitalize'
 +import { actedOn, retained, toggled } from '@pommora/uix/Utilities/checkSet'
 +import { askEmptyTrash, spendBundle } from '../Interface/Confirm/confirmations'
-+import { notifyUndoable, unrestoredLine } from '../Interface/Notifications/notifications'
++import { notifyOutcome, unrestoredLine } from '../Interface/Notifications/notifications'
 +import { changesSettled, type MutateRequest } from '../Nexus/mutateRequest'
 +import { matchQuery, matchScore } from '../Paths/caseFold'
 +import { itemCount } from '../Properties/properties'
@@ -7093,14 +7193,6 @@ Phases 2 and 4 rewrite `Core/Settings/TrashFrame.tsx`, `TrashFrame.test.tsx`, `C
 +}
 +
 +const steppedTo = (title: string, landedAs: string): string => `“${title}” as “${landedAs}”`
-+
-+/** One notice for what a spend did: what it did, the title a restore stepped to, and whatever didn't go as asked, which marks it failed. */
-+function report(head: string, renamed: string | undefined, lines: (string | false)[]): void {
-+  const unmet = lines.filter(Boolean)
-+  const parts = renamed ? [head, renamed] : [head]
-+  if (unmet.length) parts[parts.length - 1] += `. ${unmet.join(' ')}`
-+  notifyUndoable(parts[0], undefined, unmet.length > 0 ? 'error' : 'normal', undefined, parts[1])
-+}
 +
 +/** Typed search narrows in place, keeping the store's order, as a view's search does (`searchGroups`). */
 +export function filterRows(rows: BundleRow[], query: string): BundleRow[] {
@@ -7202,9 +7294,9 @@ Phases 2 and 4 rewrite `Core/Settings/TrashFrame.tsx`, `TrashFrame.test.tsx`, `C
 +    if (!done) return
 +    spendBundle(req.bundlePath)
 +    if (done.landedAs)
-+      report(`Restored ${steppedTo(row.title, done.landedAs)}`, undefined, [
++      notifyOutcome(`Restored ${steppedTo(row.title, done.landedAs)}`, undefined, [
 +        done.unrestored !== undefined && unrestoredLine(done.unrestored),
-+        done.cascade?.warning ?? false,
++        done.cascade?.warning,
 +      ])
 +  }
 +
@@ -7241,7 +7333,7 @@ Phases 2 and 4 rewrite `Core/Settings/TrashFrame.tsx`, `TrashFrame.test.tsx`, `C
 +    const addressable = targets.filter((r) => r.homeResolves)
 +    const { done, refused, unrestored, warnings, renamed } = await many(addressable, 'restore')
 +    const homeless = targets.filter((r) => !r.homeResolves)
-+    report(
++    notifyOutcome(
 +      `Restored ${countPhrase(done)}`,
 +      renamed.length > 1 ? `${renamed.length} Renamed` : renamed[0],
 +      [
@@ -7257,7 +7349,7 @@ Phases 2 and 4 rewrite `Core/Settings/TrashFrame.tsx`, `TrashFrame.test.tsx`, `C
 +  const emptyBatch = async (targets: BundleRow[]): Promise<void> => {
 +    if (!(await askEmptyTrash(targets.length))) return
 +    const { done, refused, warnings } = await many(targets, 'emptyBundle')
-+    report(`Deleted ${countPhrase(done)}`, undefined, [
++    notifyOutcome(`Deleted ${countPhrase(done)}`, undefined, [
 +      refused.length > 0 && `${countPhrase(refused)} couldn’t be deleted.`,
 +      ...warnings,
 +    ])
@@ -7330,7 +7422,7 @@ Phases 2 and 4 rewrite `Core/Settings/TrashFrame.tsx`, `TrashFrame.test.tsx`, `C
  import { useSession } from '../Session/store'
 -import { flushAllSaves, storesChanged } from '../Session/nexusSlice'
  import { personalizationOf } from '../Session/configSlice'
--import { notifyUndoable, unrestoredLine } from '../Interface/Notifications/notifications'
+-import { notifyOutcome, unrestoredLine } from '../Interface/Notifications/notifications'
 -import { dialer } from '../Platform/dialer'
 -import { popMenu } from '../Actions/menuActions'
 -import { restoreMenuItems } from '../Actions/restoreMenu'
@@ -7358,14 +7450,6 @@ Phases 2 and 4 rewrite `Core/Settings/TrashFrame.tsx`, `TrashFrame.test.tsx`, `C
 -}
 -
 -const steppedTo = (title: string, landedAs: string): string => `“${title}” as “${landedAs}”`
--
--/** One notice for what a spend did: what it did, the title a restore stepped to, and whatever didn't go as asked, which marks it failed. */
--function report(head: string, renamed: string | undefined, lines: (string | false)[]): void {
--  const unmet = lines.filter(Boolean)
--  const parts = renamed ? [head, renamed] : [head]
--  if (unmet.length) parts[parts.length - 1] += `. ${unmet.join(' ')}`
--  notifyUndoable(parts[0], undefined, unmet.length > 0 ? 'error' : 'normal', undefined, parts[1])
--}
 -
 -export function filterRows(rows: BundleRow[], query: string): BundleRow[] {
 -  const q = matchQuery(query)
@@ -7419,9 +7503,9 @@ Phases 2 and 4 rewrite `Core/Settings/TrashFrame.tsx`, `TrashFrame.test.tsx`, `C
 -    if (!done) return
 -    spendBundle(req.bundlePath)
 -    if (done.landedAs)
--      report(`Restored ${steppedTo(row.title, done.landedAs)}`, undefined, [
+-      notifyOutcome(`Restored ${steppedTo(row.title, done.landedAs)}`, undefined, [
 -        done.unrestored !== undefined && unrestoredLine(done.unrestored),
--        done.cascade?.warning ?? false,
+-        done.cascade?.warning,
 -      ])
 -  }
 -
@@ -7458,7 +7542,7 @@ Phases 2 and 4 rewrite `Core/Settings/TrashFrame.tsx`, `TrashFrame.test.tsx`, `C
 -    const addressable = targets.filter((r) => r.homeResolves)
 -    const { done, refused, unrestored, warnings, renamed } = await many(addressable, 'restore')
 -    const homeless = targets.filter((r) => !r.homeResolves)
--    report(
+-    notifyOutcome(
 -      `Restored ${countPhrase(done)}`,
 -      renamed.length > 1 ? `${renamed.length} Renamed` : renamed[0],
 -      [
@@ -7474,7 +7558,7 @@ Phases 2 and 4 rewrite `Core/Settings/TrashFrame.tsx`, `TrashFrame.test.tsx`, `C
 -  const emptyBatch = async (targets: BundleRow[]): Promise<void> => {
 -    if (!(await askEmptyTrash(targets.length))) return
 -    const { done, refused, warnings } = await many(targets, 'emptyBundle')
--    report(`Deleted ${countPhrase(done)}`, undefined, [
+-    notifyOutcome(`Deleted ${countPhrase(done)}`, undefined, [
 -      refused.length > 0 && `${countPhrase(refused)} couldn’t be deleted.`,
 -      ...warnings,
 -    ])
@@ -7702,7 +7786,7 @@ Phases 2 and 4 rewrite `Core/Settings/TrashFrame.tsx`, `TrashFrame.test.tsx`, `C
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
-**Lines:** +59 (+265 / −206): `browser.ts` +237 against TrashFrame's +11 / −206 (about 172 lines moved, counted on both sides); `rulesOf` +9; `archiveColumnStyle` +1; `Core/Testing/fixtures.ts`' `bundleRow` +16 (counted as code); the rest is the generalization and imports. Tests −25 apart (`browser.test.ts` +56, `TrashFrame.test.tsx` −81).
+**Lines:** +59 (+258 / −199): `browser.ts` +230 against TrashFrame's +11 / −199 (about 165 lines moved, counted on both sides); `rulesOf` +9; `archiveColumnStyle` +1; `Core/Testing/fixtures.ts`' `bundleRow` +16 (counted as code); the rest is the generalization and imports. Tests −25 apart (`browser.test.ts` +56, `TrashFrame.test.tsx` −81).
 
 #### Task 5-6
 
@@ -9726,7 +9810,6 @@ In the AFTER blocks below, a `~` line is context as an earlier phase leaves it (
 ~    const store = storeFrom(raw)
 ~    if (!store) return fault('A store is required.')
 +    if (within !== undefined && !isString(within)) return fault('Invalid Set id.')
-     if (store.kind === 'archive' && !isUlidShaped(store.id)) return ok([])
 ~    const tree = await liveTreeOf(root)
 ~    const { byId } = await nexusPages(root, tree)
 -    return ok(bundleRows(await listBundles(root, store), store, tree, byId))
@@ -9778,7 +9861,7 @@ In the AFTER blocks below, a `~` line is context as an earlier phase leaves it (
 
 - [ ] Write the tests and watch them fail: `Core/Interface/Confirm/confirmations.test.ts` › `describe('a delete through the confirmation')`: "answers whether the delete went through" (true, then false when declined); "an Undo given a destination restores its bundle there"; `describe('an Undo over several bundles')`: "asks once for a batch, unasked only when every item would be" (`askTrashing`: pages with the switch off pass, a Set always asks, detail `They will be moved…`); "offers one Undo returning every bundle it was handed to the destination given" (`offerUndo`); "gives up that Undo once one of its bundles is restored from elsewhere" (`spendUndo` on one). `TrashFrame.test.tsx` › "lists the opened Nexus's trash after a switch" expects `expect(list).toHaveBeenCalledWith({ kind: 'trash' }, undefined)`. `Core/Archive/archive.test.ts`: "an archive handed the bundle name its item left takes it back, and one naming another name or a path takes a fresh stamp" (4-2's `Beta`: archive, restore, re-archive with the first leaf → exactly the first `bundlePath`; restore, rename `Beta 2`, same leaf → fresh `<stamp>__Beta 2.md.archived`; restore, `leaf: '../' + <that leaf>` → fresh bundle under `Notes/Daily`, nothing outside the chain). `Core/Nexus/mutateRequest.test.ts` › "refuses a kind or key outside its finite set…" (`:14`) refuses `archive` with a non-string `leaf`.
 - [ ] `confirmations.ts`: export `offerUndo` with an optional destination, so the batch's Undo is the one `notifyTrashed` and `confirmArchive` end in; `notifyTrashed` takes `undoTo?`; extract `confirmDelete`'s question as `askTrashing(message, kinds)` for the batch ("They" for more than one kind); `confirmDelete` takes `undoTo?` and answers whether the delete went through.
-- [ ] `browser.ts`: add `crumbSegments` (hoisted from `TrashFrame.tsx:298-301`), `archivedKind`, `requestOf`, and `rearchive` (Sets found by `findContainerById`; each item handed its bundle's leaf). `rulesOf` gains the delete op, the batch-delete question, one row's delete (Trash: `askEmptyTrash` and `emptyBundle`; Archive: `confirmDelete` with `undoTo: { kind: 'archive' }`), and the Archive's Undos (`rearchive` after a restore, `{ kind: 'archive' }` after a delete). `report` takes an optional `undo` for `notifyUndoable` and answers its spend. `one` reports every restore its store gives an Undo (a batch of one names its title). `many` sends `delete` through `requestOf`, gathers the bundles a delete minted, and emits `storesChanged` with its refresh, so the other browser and an open reader hear a batch. `restoreBatch` passes `report` the restore Undo. `emptyBatch` → `deleteBatch`: the store's question and delete, then `offerUndo` over the gathered bundles (none for a Trash empty) with the delete Undo. `picked`: the checked rows still in view, through `checkedIn`, now exported from `checkSet.ts`. `restore(targets)` and `remove(targets)` take the arms out of `openMenu`, shared by the menu and the bar. A row whose place is gone runs `one` alone, and the slice's `mutate` reports the refusal (`The place this belonged to no longer exists.`); in a batch, the rest restore and the report adds `<count> had nowhere to go — restore those one at a time to choose where.` The hook takes `within?`, passes it to `bundles:list`, keys its refresh on it, and answers `picked`, `restore`, and `remove`.
+- [ ] `browser.ts`: add `crumbSegments` (hoisted from `TrashFrame.tsx:298-301`), `archivedKind`, `requestOf`, and `rearchive` (Sets found by `findContainerById`; each item handed its bundle's leaf). `rulesOf` gains the delete op, the batch-delete question, one row's delete (Trash: `askEmptyTrash` and `emptyBundle`; Archive: `confirmDelete` with `undoTo: { kind: 'archive' }`), and the Archive's Undos (`rearchive` after a restore, `{ kind: 'archive' }` after a delete). `one` reports every restore its store gives an Undo (a batch of one names its title). `many` sends `delete` through `requestOf`, gathers the bundles a delete minted, and emits `storesChanged` with its refresh, so the other browser and an open reader hear a batch. `restoreBatch` passes `notifyOutcome` the restore Undo as its `undo`. `emptyBatch` → `deleteBatch`: the store's question and delete, then `offerUndo` over the gathered bundles (none for a Trash empty) with the delete Undo. `picked`: the checked rows still in view, through `checkedIn`, now exported from `checkSet.ts`. `restore(targets)` and `remove(targets)` take the arms out of `openMenu`, shared by the menu and the bar. A row whose place is gone runs `one` alone, and the slice's `mutate` reports the refusal (`The place this belonged to no longer exists.`); in a batch, the rest restore and the notice adds `<count> had nowhere to go — restore those one at a time to choose where.` The hook takes `within?`, passes it to `bundles:list`, keys its refresh on it, and answers `picked`, `restore`, and `remove`.
 - [ ] `TrashFrame.tsx`: the row trail draws through `crumbSegments` and `historical`. `UIX/Elements/nav-trail.css.ts`: `historical`, the frozen trail's look, replacing `trash-frame.css`'s `.trash-frame .is-historical` (removed); the look is unchanged.
 - [ ] `mutateRequest.ts`: the `archive` op takes an optional `leaf`. `Core/Archive/archive.ts`: `archiveOp` passes `req.leaf` to `mintBundle`. `Core/Bundles/bundle.ts`: `mintBundle` takes a `leaf` only when the source could have been minted under it: one name (`holdsName`) carrying a stamp (`storedAtOf`) and ending in `__` plus the source's own name and the store's suffix, so a renderer's name can't leave the chain or name another item; anything else gets a fresh stamp, as a taken leaf does, and the doc says so.
 - [ ] Sibling sweep: `confirmations.test.ts:148-149`'s `del` answers `Promise<boolean>`; `confirmDelete`'s callers (`pageMenuActions.ts:67`, `entityMenuActions.ts:134`) keep `void`; `PropertyFrame.tsx:299` passes `notifyTrashed` no `undoTo`; `git grep -n "is-historical" -- Core` finds nothing; `mintBundle`'s other callers (`deleteOp`, the delete's Undo, `moveIntoStore`, Phase 2's property bundle) pass no leaf or one the check keeps (Phase 4's `archive.test.ts` cases pass unchanged).
@@ -9935,7 +10018,7 @@ In the AFTER blocks below, a `~` line is context as an earlier phase leaves it (
 +  offerUndo,
 +  spendUndo,
 +} from '../Interface/Confirm/confirmations'
- import { notifyUndoable, unrestoredLine } from '../Interface/Notifications/notifications'
+ import { notifyOutcome, unrestoredLine } from '../Interface/Notifications/notifications'
 -import { changesSettled, type MutateRequest } from '../Nexus/mutateRequest'
 +import { changesSettled, type MutateRequest, type RestoreDestination } from '../Nexus/mutateRequest'
 +import { pagesByIdOf } from '../Nexus/record'
@@ -9948,22 +10031,6 @@ In the AFTER blocks below, a `~` line is context as an earlier phase leaves it (
  import type { BundleStore } from './bundle'
 -import type { BundleRow } from './rows'
 +import type { BundleCrumb, BundleRow } from './rows'
-@@ report @@
--/** One notice for what a spend did: what it did, the title a restore stepped to, and whatever didn't go as asked, which marks it failed. */
--function report(head: string, renamed: string | undefined, lines: (string | false)[]): void {
-+/** One notice for what a spend did: what it did, the title a restore stepped to, and whatever didn't go as asked, which marks it failed; `undo` rides it where the spend can be reversed, and the notice's spend is the answer. */
-+function report(
-+  head: string,
-+  renamed: string | undefined,
-+  lines: (string | false)[],
-+  undo?: () => Promise<void>,
-+): () => void {
-   const unmet = lines.filter(Boolean)
-   const parts = renamed ? [head, renamed] : [head]
-   if (unmet.length) parts[parts.length - 1] += `. ${unmet.join(' ')}`
--  notifyUndoable(parts[0], undefined, unmet.length > 0 ? 'error' : 'normal', undefined, parts[1])
-+  return notifyUndoable(parts[0], undo, unmet.length > 0 ? 'error' : 'normal', undefined, parts[1])
- }
 @@ the row pieces both browsers share (after filterRows) @@
 +/** A row's origin trail as both browsers draw it, each live crumb wearing its kind's glyph. */
 +export const crumbSegments = (
@@ -10076,18 +10143,18 @@ In the AFTER blocks below, a `~` line is context as an earlier phase leaves it (
      if (!done) return
      spendUndo(req.bundlePath)
 -    if (done.landedAs)
--      report(`Restored ${steppedTo(row.title, done.landedAs)}`, undefined, [
+-      notifyOutcome(`Restored ${steppedTo(row.title, done.landedAs)}`, undefined, [
 -        done.unrestored !== undefined && unrestoredLine(done.unrestored),
--        done.cascade?.warning ?? false,
+-        done.cascade?.warning,
 -      ])
 +    // A restore the store can undo always reports, since its notice carries the Undo; the Trash's reports a step aside alone.
 +    if (done.landedAs || rules.restoreUndo)
-+      report(
++      notifyOutcome(
 +        `Restored ${done.landedAs ? steppedTo(row.title, done.landedAs) : `“${row.title}”`}`,
 +        undefined,
 +        [
 +          done.unrestored !== undefined && unrestoredLine(done.unrestored),
-+          done.cascade?.warning ?? false,
++          done.cascade?.warning,
 +        ],
 +        rules.restoreUndo?.([row]),
 +      )
@@ -10134,7 +10201,7 @@ In the AFTER blocks below, a `~` line is context as an earlier phase leaves it (
 -  const emptyBatch = async (targets: BundleRow[]): Promise<void> => {
 -    if (!(await askEmptyTrash(targets.length))) return
 -    const { done, refused, warnings } = await many(targets, 'emptyBundle')
--    report(`Deleted ${countPhrase(done)}`, undefined, [
+-    notifyOutcome(`Deleted ${countPhrase(done)}`, undefined, [
 -      refused.length > 0 && `${countPhrase(refused)} couldn’t be deleted.`,
 -      ...warnings,
 -    ])
@@ -10146,7 +10213,7 @@ In the AFTER blocks below, a `~` line is context as an earlier phase leaves it (
 +    offerUndo(
 +      bundled,
 +      (undo) =>
-+        report(
++        notifyOutcome(
 +          `Deleted ${countPhrase(done)}`,
 +          undefined,
 +          [refused.length > 0 && `${countPhrase(refused)} couldn’t be deleted.`, ...warnings],
@@ -10234,7 +10301,7 @@ In the AFTER blocks below, a `~` line is context as an earlier phase leaves it (
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
-**Lines:** +112 (+194 / −82): `browser.ts` +140 / −37, `confirmations.ts` +41 / −29, `TrashFrame.tsx` +4 / −6 and `trash-frame.css` −5, `bundle.ts` +5 / −2, `mutateRequest.ts` +1 / −1, `archive.ts` +1 / −1, `nav-trail.css.ts` +1, `checkSet.ts` +1 / −1. Tests apart.
+**Lines:** +107 (+187 / −80): `browser.ts` +133 / −35, `confirmations.ts` +41 / −29, `TrashFrame.tsx` +4 / −6 and `trash-frame.css` −5, `bundle.ts` +5 / −2, `mutateRequest.ts` +1 / −1, `archive.ts` +1 / −1, `nav-trail.css.ts` +1, `checkSet.ts` +1 / −1. Tests apart.
 
 #### Task 6B-6
 
@@ -10662,7 +10729,7 @@ In the AFTER blocks below, a `~` line is context as an earlier phase leaves it (
 - **`HostView`'s Archive Arm:** 6B-3 lands it as the blank frame (no copy, the placeholder rule), and 6B-6 fills it, so the phase boundary holds no placeholder. The frame stays only for the one render a lookup can miss (Cautionary 19), where the Collection and Set arms show "not found" copy; the Archive adds none.
 - **One Door for a Row's Actions:** the browser's one-row and batch arms move out of `openMenu` into `restore(targets)` and `remove(targets)`, which the menu and the bar both call, so one checked row behaves the same from either. A single restore runs through `one` in both stores; `one` reports every restore from the Archive, so a batch of one names its title (*§Copy*'s `Restored “Ideas”`) and carries `rearchive` as its Undo, while the Trash's single restore still reports a step aside alone. `emptyBatch` becomes `deleteBatch`, one batch delete for both stores: the Archive's asks `askTrashing` and sends `delete`, the Trash's asks `askEmptyTrash` and sends `emptyBundle`, and both report through `offerUndo`, which offers no Undo for an empty, since it mints no bundle. Each arm reads what differs from `rulesOf`, so the delete op, the questions, and the two Undos are stated once and the Trash's empty is handed no Archive Undo. A batch, asked through the channel rather than the slice, emits `storesChanged` itself, so the other browser and an open reader hear it. The Trash's arms and notices are unchanged.
 - **A Restore's Undo Keeps Its Archived Date (6B-5):** `rearchive` hands the `archive` op its row's bundle leaf, and `mintBundle` takes a leaf only when the item could have been minted under it, so the Undo returns each item under the stamp it left, as a delete's Undo from the Archive does (4-3). The check sits where a leaf is taken, so the host's own leaves pass the same rule. An item renamed or stepped aside between the restore and its Undo takes a fresh stamp, since its bundle's name no longer fits it.
-- **One Undo-Offering Function:** 6A-1's `offerUndo` is exported and takes an optional destination, so the Archive's batch delete arms its one Undo on every Trash bundle it minted (restoring one from the Trash browser spends the notice, as a single delete's is spent) through the function `notifyTrashed` and `confirmArchive` already end in. `report` answers its notice's spend so it can be `offerUndo`'s poster. `confirmDelete` answers a boolean and takes `undoTo`, so the browser spends the archived item's own `Archived “…”` Undo only once the delete went through; `askTrashing` is its question, extracted for the batch.
+- **One Undo-Offering Function:** 6A-1's `offerUndo` is exported and takes an optional destination, so the Archive's batch delete arms its one Undo on every Trash bundle it minted (restoring one from the Trash browser spends the notice, as a single delete's is spent) through the function `notifyTrashed` and `confirmArchive` already end in. `notifyOutcome` already takes an `undo` and answers its notice's spend, so it is `offerUndo`'s poster as it stands. `confirmDelete` answers a boolean and takes `undoTo`, so the browser spends the archived item's own `Archived “…”` Undo only once the delete went through; `askTrashing` is its question, extracted for the batch.
 - **The Frozen Trail (Take Along):** `crumbSegments` (the Trash's crumb mapping) and the `historical` style (the Trash's `.trash-frame .is-historical`) move to `browser.ts` and `UIX/Elements/nav-trail.css.ts` as the second consumer arrives; the Trash's look is unchanged.
 - **The Reader's Geometry:** the window's remembered size resets once, as its key becomes `'page-reader'`; the old `devicePrefs.windows['page-history']` entry stays in each device's prefs, unread, with no migration code.
 - **A Notice Under the Pointer on the Label Arms at Once (6B-1):** the bar's own press leaves the pointer on the label, so K-3's arming starts armed when the host matches `:hover` as the notice shows; closed, the host is `inert` and parked off-screen, so a notice posted by a press anywhere else starts unarmed as K-3 rules.
@@ -10680,9 +10747,9 @@ In the AFTER blocks below, a `~` line is context as an earlier phase leaves it (
 
 ##### Line Total
 
-- **+649 (+915 / −266):** 6B-1 +70, 6B-2 +99, 6B-3 +80, 6B-4 +48, 6B-5 +112, 6B-6 +240, under the plan's one counting rule (`view-delta`'s Actionable column: source with imports and blank lines as Biome wraps them; comments, tests, documents, and the drive out; moved lines on both sides, named apart).
-- **Against the Estimate (+264: +38, +38, +48, +140, the last for the three tasks that were one):** the +385 splits three ways.
-  - **Counting (≈ +125):** imports are +66 of the phase (6B-4 to 6B-6's +51, ArchiveView's 27 among them), measured; Biome's layout of signatures, argument lists, and one-attribute-per-line JSX is about +60 more (ArchiveView's table head and row, the reader's shell, the bar face, `report`, `askTrashing`, `offerUndo`, the row builders).
+- **+644 (+908 / −264):** 6B-1 +70, 6B-2 +99, 6B-3 +80, 6B-4 +48, 6B-5 +107, 6B-6 +240, under the plan's one counting rule (`view-delta`'s Actionable column: source with imports and blank lines as Biome wraps them; comments, tests, documents, and the drive out; moved lines on both sides, named apart).
+- **Against the Estimate (+264: +38, +38, +48, +140, the last for the three tasks that were one):** the +380 splits three ways.
+  - **Counting (≈ +120):** imports are +66 of the phase (6B-4 to 6B-6's +51, ArchiveView's 27 among them), measured; Biome's layout of signatures, argument lists, and one-attribute-per-line JSX is about +60 more (ArchiveView's table head and row, the reader's shell, the bar face, `askTrashing`, `offerUndo`, the row builders).
   - **Behavior the Estimate Didn't Cost (≈ +130):** `BundleRow.stored` and the Set's sidecar icon, with the row builders going async (+26 in `rows.ts`); the restore's Undo, *§Copy*'s `Restored 3 Pages` with Undo (+22), and its kept Archived date (+5); the batch delete from the Archive and its one Undo armed on every bundle (+25); the one door for the menu and the bar, with `rulesOf` naming every way the two stores differ (+19); the Set place's narrowing through `within`, read as `unknown`, and `originWithin` (+17); a batch's `storesChanged` (+1); the header's `trailing` and `searchView`'s admission (+10); `Swap`'s class (+3).
   - **The Estimate's Own Items, Written Larger (≈ +130):** chiefly ArchiveView (+195 against +95, its failed and per-owner lines among them) and the reader's shell and Archive branch (+79 against +31). ArchiveView's memoized `ArchiveRow` with `RowApi` and `useStableApi` (≈ 25) is TableView's and CardsView's idiom and keeps the bar's `api` stable; the Set row's sidecar icon with the builders' async turn (≈ 15) serves both browsers' rows.
 - **What Leaves, Inside the Totals:** `ViewMenu`'s inline rule and `findCollection`/`findSet`, the placeholder More button and its import, `confirmDelete`'s inline question, `emptyBatch`, the Trash's crumb mapping and its frozen-trail CSS, `fetchPageDetail`'s use, `historyTarget`'s three names, and the window markup the shell now owns once.
@@ -10873,3 +10940,11 @@ Phase 1 measured +11 (+99 / −88) against the written −6; the two entries bel
 
 - **The Crops (Task 1-1):** a carried or lifted asset directory's image crops were re-keyed through one `rekeyCrops`, which the asset migration now shares. The plan hadn't priced it, and the decision log promises no banner or attachment breaks; it netted 0, `settings.ts` +10 against `assetMigrate.ts` −10.
 - **The Undo (Task 1-1):** the carry held the asset directory's source excluded until the folder landed and wrote back its settings when the move threw, which closed a failed move stamping the asset folder as a Set and an in-between `settings.json` syncing. It added +17: `settings.ts` +8 and `folderEntity.ts` +9.
+
+Phase 2 measured +268 (+893 / −625) against the written +263; its review's fix was −6 of it, the five entries below −2 and its smaller changes −4 (`ArtifactRecord` beside `RecordFile` +1, a Context's `landedAs` read against its registry title +1, and the restore's record read once as `stored` −6, which writes Phase 3-3 at +58 and Phase 4-2 at +112, where its seven-argument call wraps), and the +11 before the fix landed across the tasks as Biome wrapped them.
+
+- **Own Form (Task 2-5):** `freeOnDisk` stepped aside past the item's own form alone, a page's `.md` file or any other kind's folder, following E-4 over the plan's departure that probed both forms, so an excluded folder stays beside a page of its name as the lift leaves it. It was −2 in `placement.ts`.
+- **The Composer (Task 2-5):** the delete's notice and the Trash's report folded into one `notifyOutcome` in `notifications.ts`, which `notifyDeleted` calls and which Phases 5 and 6B call where they had moved and extended the Trash's own composer. It added +6, `notifications.ts` +13 against `TrashFrame.tsx` −7; Phase 5-5 moves 7 fewer lines each side, and 6B-5 lands at +107.
+- **Contexts (Task 2-4):** a Context gone for good, deleted to the system Trash or emptied from the Trash, dropped its panel id with its Space order through `dropContextOrder` (`dropSpaceOrder` renamed), where the id had stayed in `order.contexts`. It added +2 in `reorder.ts`.
+- **The Id Rule (Task 2-3):** `bundles:list` held an archive id to one safe path segment through `holdsName` rather than to ULID shape, the one rule the path built from it needs, and refused an id that failed it rather than answering an empty list. It added +1 in `handlers.ts`.
+- **The Order Write (Task 2-4):** the restore's order write used the parent node its resolution already held, carried as the resolution's `order`, in place of a second lookup by path, which had written a Space restored under one of two same-titled Contexts into the other's order. It was −9 in `placement.ts`.
