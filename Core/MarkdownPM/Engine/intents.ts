@@ -69,6 +69,7 @@ type RailIntent = {
   from: number
   level: number
   typeClass: string
+  head: boolean
   first: boolean
   last: boolean
 }
@@ -98,8 +99,14 @@ export function railTypeClass(m: ListMarker): string | null {
   return null
 }
 
-export const railClass = (r: Pick<RailIntent, 'typeClass' | 'first' | 'last'>): string =>
-  cx('md-outline-rail', r.typeClass, r.first && 'md-outline-first', r.last && 'md-outline-last')
+export const railClass = (r: Pick<RailIntent, 'typeClass' | 'head' | 'first' | 'last'>): string =>
+  cx(
+    'md-outline-rail',
+    r.typeClass,
+    r.head && 'md-outline-head',
+    r.first && 'md-outline-first',
+    r.last && 'md-outline-last',
+  )
 
 // The form a marker is DRAWN as, and the line class that carries it — one answer for the editor's decorations and the resting cell's DOM alike.
 // Null where the source parses as a marker but nothing draws one: a bullet holding an empty box is prose, and both renderers have to agree on that.
@@ -366,16 +373,19 @@ export function railIntents(
     if (level < 0) continue
     railKind[level] = listKinds[i]
     railKind.length = level + 1
-    for (let k = 0; k < level; k++) {
+    const parent = listLevels[i + 1] > level
+    for (let k = 0; k < (parent ? level + 1 : level); k++) {
       const typeClass = railKind[k]
       if (!typeClass) continue
+      const head = k === level
       rails[i] ??= []
       rails[i].push({
         kind: 'rail',
         from: lineStarts[i],
         level: k,
         typeClass,
-        first: i === 0 || listLevels[i - 1] <= k,
+        head,
+        first: head || i === 0 || listLevels[i - 1] < k,
         last: i === listLevels.length - 1 || listLevels[i + 1] <= k,
       })
     }

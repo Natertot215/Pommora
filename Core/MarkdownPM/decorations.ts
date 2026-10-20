@@ -306,6 +306,7 @@ class OutlinerRailWidget extends WidgetType {
   constructor(
     readonly level: number,
     readonly typeClass: string,
+    readonly head: boolean,
     readonly first: boolean,
     readonly last: boolean,
   ) {
@@ -315,6 +316,7 @@ class OutlinerRailWidget extends WidgetType {
     return (
       o.level === this.level &&
       o.typeClass === this.typeClass &&
+      o.head === this.head &&
       o.first === this.first &&
       o.last === this.last
     )
@@ -522,7 +524,7 @@ function build(view: EditorView, scope: MarkdownScope): Built {
     if (it.kind === 'rail') {
       ranges.push(
         Decoration.widget({
-          widget: new OutlinerRailWidget(it.level, it.typeClass, it.first, it.last),
+          widget: new OutlinerRailWidget(it.level, it.typeClass, it.head, it.first, it.last),
           side: -1,
         }).range(it.from),
       )

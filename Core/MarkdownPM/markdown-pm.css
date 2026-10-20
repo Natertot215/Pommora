@@ -423,6 +423,9 @@
   border-top-left-radius: var(--outline-radius);
   border-top-right-radius: var(--outline-radius);
 }
+.outline-lines .md-outline-head {
+  top: calc(1lh + var(--outline-gap));
+}
 .outline-lines .md-outline-last {
   bottom: var(--outline-gap-bottom);
   border-bottom-left-radius: var(--outline-radius);
