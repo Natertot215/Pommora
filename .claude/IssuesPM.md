@@ -4,7 +4,7 @@
 
 | Total | Critical | High | Moderate | Low | Minimal |
 |-------|----------|------|----------|-----|---------|
-| 79 | 0 | 4 | 15 | 35 | 25 |
+| 80 | 0 | 4 | 15 | 35 | 26 |
 
 #### A1 • Sync & Devices
 
@@ -80,6 +80,7 @@
 | [F-074](#F-074 • A page dragged out of the Trash in Finder is read as an arrival, so its own stale links aren't repaired as a restore repairs them.) | A page dragged out of the Trash in Finder is read as an arrival, so its own stale links aren't repaired as a restore repairs them. | Minimal | Medium (=🟢+25=) | Parallel Build | `a0441edc9` | **Created:** 10-19-2026<br>**Updated:** 10-19-2026 |
 | [F-075](#F-075 • A Link value naming a title that two pages of one trashed bundle share is parked with neither.) | A Link value naming a title that two pages of one trashed bundle share is parked with neither. | Minimal | Mini (=🟢+2=) | Shortcut | `a0441edc9` | **Created:** 10-19-2026<br>**Updated:** 10-19-2026 |
 | [F-079](#F-079 • A Trash bundle whose record holds its link targets as bare IDs fails to decode and drops out of the Trash.) | A Trash bundle whose record holds its link targets as bare IDs fails to decode and drops out of the Trash. | Minimal | Mini (±0) | Residue | `a0441edc9` | **Created:** 10-19-2026<br>**Updated:** 10-19-2026 |
+| [F-080](#F-080 • A restore that lands on a taken name always renames the item coming back, and nothing chooses which side keeps the title.) | A restore that lands on a taken name always renames the item coming back, and nothing chooses which side keeps the title. | Minimal | Medium (=🟢+30=) | Shortcut | `213f95a3b` | **Created:** 10-19-2026<br>**Updated:** 10-19-2026 |
 
 #### A4 • Architecture
 
@@ -1042,6 +1043,20 @@ A Trash bundle written between `d5462735f` and `6231cb841` records its link targ
 
 Deferred by the owner, whose rule keeps no compatibility decode for a record format that changed within a plan. A bundle found this way is mended by editing its record by hand, or by emptying its folder.
 
+#### F-080 • A restore that lands on a taken name always renames the item coming back, and nothing chooses which side keeps the title.
+
+| Concern | Scale | Origin | Base | Date |
+|---------|-------|--------|------|------|
+| Minimal | Medium (=🟢+30=) | Shortcut | `213f95a3b` | **Created:** 10-19-2026<br>**Updated:** 10-19-2026 |
+
+**Description**
+
+A Trash restore names its landing against the titles the tree holds in the destination and steps aside to `Name (2)` through `freeName` when the title is taken, so the returning item always yields and the item already there keeps its name. A folder the tree doesn't hold isn't among those titles, so a restore landing on one refuses rather than stepping aside: a Collection or Set landing on an excluded folder is refused by the landing check as an excluded directory, and a landing on anything else written outside the app is refused with "Something already sits at the restored location." `createDisambiguated` already asks the disk for the same step-aside rule. *Archive — Decisions & Intention* (Decision 33) plans the Archive's restore on the same placement, stepping around both.[^80]
+
+**Solution** [Deferred]
+
+Deferred by the owner, who wants it once the Archive lands: a "Resolve Restoration Conflicts" setting beside the deletion settings, Preserve Existing Titles (today's rule, the default) or Preserve Restored Titles, governing the Trash's and the Archive's restores through their one placement owner. Preserve Restored Titles renames the item in the way through the rename path before the restore lands, which leaves two things to settle: the rename's link cascade moves every link resolving to that item, including links that named the returning item while it was away and resolved to its namesake, so those links don't follow the setting; and an excluded folder in the way is content Pommora is told to leave alone.
+
 ### A4 • Architecture
 
 #### F-049 • Every call site chooses for itself whether an error is shown, logged, or dropped, and about forty host-side failures reach no one.
@@ -1418,3 +1433,4 @@ Paths are relative to `Core/MarkdownPM/`, and the test's name settles any drift 
 [^77]: **F-077:** `Core/Connections/rewrite.ts:~76-110` (`follower`), `Core/Connections/connections.ts:~19-22` (`pageLinkPattern`), `Core/Connections/connections.ts:~132-143` (`expressibleInLink`, `spellsAsWiki`), `Core/MarkdownPM/Engine/detect.ts:~411-416` (`loneEmbedRe`, `loneEmbedTitle`)
 [^78]: **F-078:** `Core/MarkdownPM/Links/connectionsApi.ts:~24-33` (`headingMissing`), `Core/MarkdownPM/Autocomplete/useConnectionAutocomplete.ts:~138-151` (`commit`, `keptHeading`)
 [^79]: **F-079:** `Core/Trash/record.ts:~30-31` (`linkTargets`), `Core/Trash/record.ts:~103-108` (`readRecord`), `Core/Trash/holdings.ts:~24-46` (`listBundles`), `Core/Trash/spend.ts:~58-64` (`openBundle`)
+[^80]: **F-080:** `Core/Trash/resolve.ts:~66-91` (`resolveRecord`'s root and container arms, `freeName`), `Core/Trash/spend.ts:~174-182` (`landingRefusal` and the `exists` refusal), `Core/Nexus/folderEntity.ts:~20-28` (`landingRefusal`), `Core/Paths/names.ts:~56-79` (`freeName`, `createDisambiguated`)

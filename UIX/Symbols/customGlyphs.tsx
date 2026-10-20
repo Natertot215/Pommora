@@ -54,27 +54,24 @@ export const CardsGrid = glyph(
 )
 
 // Lucide's square-split-horizontal drawn to the full icon box, so it sits at the height of the glyphs beside it.
-const FIELD_EDGES = (
-  <>
-    <path d="M8 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3" />
-    <path d="M16 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3" />
-  </>
-)
+const FIELD_RIGHT_EDGE = <path d="M16 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3" />
 
 export const Alias = glyph(
   <>
-    {FIELD_EDGES}
+    <path d="M8 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3" />
+    {FIELD_RIGHT_EDGE}
     <line x1="12" y1="2" x2="12" y2="22" />
   </>,
 )
 
-// The alias field with two dots of text after its caret.
+// The alias field with its caret a quarter in and two dashes of text after it; the left edge drops its arms to clear the caret.
 export const MetadataLabel = glyph(
   <>
-    {FIELD_EDGES}
-    <line x1="12" y1="2" x2="12" y2="22" />
-    <line x1="15" y1="12" x2="15.5" y2="12" />
-    <line x1="18" y1="12" x2="18.5" y2="12" />
+    <path d="M5 21a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2" />
+    {FIELD_RIGHT_EDGE}
+    <line x1="7.5" y1="2" x2="7.5" y2="22" />
+    <line x1="11" y1="12" x2="12.5" y2="12" />
+    <line x1="16" y1="12" x2="17.5" y2="12" />
   </>,
 )
 

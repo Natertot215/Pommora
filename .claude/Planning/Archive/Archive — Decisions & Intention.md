@@ -120,7 +120,7 @@ Each Collection, and each top-level Set, gets an ArchiveView reached from an Arc
 
 - **J-1 [CONFIRMED]:** A Nexus-level history timeframe for archived pages should be part of the core scope, so later additions build on it rather than patching around it.
   - **[CONFIRMED]** Its row offers the History Timeframe's own steps and starts at the History Timeframe's value. Steps longer than the active History Timeframe show dimmed, and shortening the History Timeframe below it switches the archive timeframe down to match. The settings picker has no dimmed option today (`UIX/Pickers/PickerControl.tsx:10-14`), so the row needs one.
-  - **[ASSUMED]** Until a step is picked, the archive timeframe follows the History Timeframe, as the Trash's date column follows the Nexus's Date Format while unset; once picked, lengthening the History Timeframe leaves it where it is.
+  - **[CONFIRMED]** Until a step is picked, the archive timeframe follows the History Timeframe, as the Trash's date column follows the Nexus's Date Format while unset; once picked, lengthening the History Timeframe leaves it where it is.
 
 #### K - Ride-Alongs
 
@@ -206,6 +206,7 @@ Nathan's, verbatim.
 - **Auto-Delete:** a Nexus-level "delete after" setting, Never by default and ranging from about 30 days to a year, that moves archived items to wherever Trash Mode sends deletions once they've been archived that long.
 - **Read-Only Properties in the Reader Window:** the window showing an archived page's Spaces and properties read-only. `PropertyPanel` has no read-only mode, so it would need one.
 - **Resolve Restoration Conflicts:** the setting recorded as F-080 in *IssuesPM* (E-4).
+- **Clear Nexus Cache:** one maintenance action in place of Clear Exclusion Cache (`Core/Settings/exclusionScan.ts`) that also takes on F-5's orphaned-Archive sweep and any other cleanup of Pommora's own bookkeeping that nothing names any longer. The plan decides whether it lands in this work, taking it only where it leaves less than Clear Exclusion Cache and F-5's sweep would separately, and whether F-5 then runs at open, from the action, or both.
 
 ---
 
