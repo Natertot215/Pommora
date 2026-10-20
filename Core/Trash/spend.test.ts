@@ -1801,7 +1801,10 @@ describe('emptyBundle — giving a bundle up for good', () => {
       const r = await emptyNotes({
         ...nexusDeps,
         permanentDelete,
-        trashToSystem: async (p) => void handed.push(p),
+        trashToSystem: async (p) => {
+          handed.push(p)
+          await rm(p, { recursive: true })
+        },
       })
       expect(r.ok).toBe(true)
       if (permanentDelete) expect(await pathExists(join(root, ARCHIVED))).toBe(false)

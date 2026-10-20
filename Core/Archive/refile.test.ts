@@ -128,6 +128,91 @@ describe('the comparison — a Set the settle sees move carries what was archive
     expect(record && 'parent' in record && record.parent).toEqual({ kind: 'container', id: SUB })
   })
 
+  it('a Collection whose id would not make a folder name takes nothing outside the Archive', async () => {
+    await writeFile(at('Other', '_pagecollection.json'), JSON.stringify({ id: '../../Escape' }))
+    await reread()
+    const bundlePath = await archive('Notes/Daily/Sub/Note.md')
+    expect(
+      (
+        await mutate({
+          op: 'moveSet',
+          path: 'Notes/Daily/Sub',
+          newParentPath: 'Other',
+          order: [SUB],
+        })
+      ).ok,
+    ).toBe(true)
+    await settleArchives(root, await reread())
+    expect(await pathExists(at('Escape'))).toBe(false)
+    expect((await filed(IN_NOTES)).map((b) => b.bundlePath)).toEqual([bundlePath])
+  })
+
+  it('a Collection whose id would not make a folder name reaches no sidecar outside the Archive', async () => {
+    const INNER = '01KVGMT8BFP350FZZXAMG1QDJ0'
+    await writeFile(at('Other', '_pagecollection.json'), JSON.stringify({ id: '../../Escape' }))
+    await mkdir(at('Other', 'A', 'Inner'), { recursive: true })
+    await mkdir(at('Other', 'B'))
+    await writeFile(at('Other', 'A', '_pageset.json'), JSON.stringify({ id: GONE }))
+    await writeFile(at('Other', 'B', '_pageset.json'), JSON.stringify({ id: GONE_SET }))
+    await writeFile(at('Other', 'A', 'Inner', '_pageset.json'), JSON.stringify({ id: INNER }))
+    const outside = JSON.stringify({
+      id: DEEP,
+      views: [
+        {
+          id: 'view_1',
+          name: 'V',
+          type: 'table',
+          filter: {
+            match: 'all',
+            rules: [{ property_id: '_location', op: 'is', values: [INNER] }],
+          },
+        },
+      ],
+    })
+    await mkdir(at('Escape', 'X'), { recursive: true })
+    await writeFile(at('Escape', 'X', '_pageset.json'), outside)
+    await reread()
+    expect(
+      (
+        await mutate({
+          op: 'moveSet',
+          path: 'Other/A/Inner',
+          newParentPath: 'Other/B',
+          order: [INNER],
+        })
+      ).ok,
+    ).toBe(true)
+    expect(await readFile(at('Escape', 'X', '_pageset.json'), 'utf8')).toBe(outside)
+  })
+
+  it('a Set moved out of its Collection takes the archived Sets within it from the views it left', async () => {
+    const filter = (values: string[]) => ({
+      match: 'all',
+      rules: [{ property_id: '_location', op: 'is', values }],
+    })
+    await writeFile(
+      at('Notes', '_pagecollection.json'),
+      JSON.stringify({
+        id: NOTES,
+        views: [{ id: 'view_1', name: 'V', type: 'table', filter: filter([DEEP, 'set_keep']) }],
+      }),
+    )
+    await reread()
+    await archive('Notes/Daily/Sub/Deep', 'set')
+    expect(
+      (
+        await mutate({
+          op: 'moveSet',
+          path: 'Notes/Daily/Sub',
+          newParentPath: 'Other',
+          order: [SUB],
+        })
+      ).ok,
+    ).toBe(true)
+    const { views } = JSON.parse(await readFile(at('Notes', '_pagecollection.json'), 'utf8'))
+    expect(views[0].filter).toEqual(filter(['set_keep']))
+  })
+
   it('a Set moved within its Collection rewrites the trails alone', async () => {
     const bundlePath = await archive('Notes/Daily/Sub/Note.md')
     expect(

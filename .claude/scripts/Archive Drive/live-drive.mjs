@@ -516,6 +516,13 @@ async function group4() {
     exists(`${carried}/Drive Deep.md`) && same(recordAt(carried).trail, [colB, bAlphaId]),
     show(exists(carried) ? recordAt(carried) : null))
 
+  const collId = containerId()
+  await op('create Drive Coll', { op: 'createContainer', id: collId, parentPath: '', kind: 'collection', name: 'Drive Coll' })
+  const kept = await createAt(cdp, 'Drive Coll', 'Drive Kept')
+  await bundledBy('archive Drive Kept', { op: 'archive', path: kept, kind: 'page' })
+  await op('delete Drive Coll', { op: 'delete', path: 'Drive Coll', kind: 'collection' })
+  const collArchive = `.nexus/archive/${collId}`
+  // One relaunch serves both: the open pass sweeps an Archive whose Collection exists nowhere and keeps one whose Collection sits in the Trash.
   const gone = containerId()
   const orphanBundle = `.nexus/archive/${gone}/Drive Gone/2026-10-20T00-00-00-000Z__Drive Orphan.md.archived`
   const orphanRecord = { entity: 'page', parent: { id: containerId(), kind: 'container' } }
@@ -531,13 +538,6 @@ async function group4() {
     swept.length === 1 && same(recordAt(`.trash/Drive Gone/${swept[0]}`), orphanRecord) && !exists(`.nexus/archive/${gone}`),
     show({ swept, archive: exists(`.nexus/archive/${gone}`) }))
 
-  const collId = containerId()
-  await op('create Drive Coll', { op: 'createContainer', id: collId, parentPath: '', kind: 'collection', name: 'Drive Coll' })
-  const kept = await createAt(cdp, 'Drive Coll', 'Drive Kept')
-  await bundledBy('archive Drive Kept', { op: 'archive', path: kept, kind: 'page' })
-  await op('delete Drive Coll', { op: 'delete', path: 'Drive Coll', kind: 'collection' })
-  cdp = await relaunch(cdp, async () => {})
-  const collArchive = `.nexus/archive/${collId}`
   const standing = exists(collArchive)
   await must('permanentDelete on', ask(cdp, 'personalization:set', 'permanentDelete', true))
   const collRow = (await rows({ kind: 'trash' })).find((r) => r.title === 'Drive Coll')

@@ -11,6 +11,8 @@ import { extractPageIndex } from '../Index/indexSeed'
 import { valueLinks } from '../Connections/scan'
 import { ID_KEY } from '../Nexus/identityMark'
 import { pageIndexOf } from '../Nexus/record'
+import { nexusPages } from '../Nexus/heldPages'
+import { buildPageIndex } from '../Connections/pageIndex'
 import type { NexusTree } from '../Nexus/tree'
 import type { Relation } from '../Platform/stores'
 import { contextWorldOf } from '../Contexts/contextResolve'
@@ -27,17 +29,23 @@ async function pageRelationsOf(root: string, paths: readonly string[]): Promise<
   )
 }
 
-/** What each outbound link at or under `rel` named: the id and path of the page its key resolves to alone, from the rows of the pages there (`paths`) and the values the Spaces there hold. */
+/** What each outbound link at or under `rel` named: the id and path of the page its key resolves to alone, from the rows of the pages there (`paths`) and the values the Spaces there hold; a key no live page answers names the archived page that answers it. */
 export async function gatherLinkTargets(
   root: string,
   tree: NexusTree,
   rel: string,
   paths: readonly string[],
 ): Promise<Record<string, { id: string; path: string }>> {
-  const index = pageIndexOf(tree)
+  const live = pageIndexOf(tree)
+  const archived = buildPageIndex((await nexusPages(root, tree)).archived)
   const out = new Map<string, { id: string; path: string }>()
   const note = (key: string): void => {
-    const page = out.has(key) ? undefined : index.resolve(key).page
+    const hit = live.resolve(key)
+    const page = out.has(key)
+      ? undefined
+      : hit.status === 'phantom'
+        ? archived.resolve(key).page
+        : hit.page
     if (page) out.set(key, { id: page.id, path: page.path })
   }
   for (const row of await pageRelationsOf(root, paths)) note(row.target)

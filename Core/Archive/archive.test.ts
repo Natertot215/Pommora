@@ -23,6 +23,7 @@ import { writeExcludedFolders } from '../Settings/settings'
 import { type BundleStore, listBundles, mintBundle } from '../Bundles/bundle'
 import { readRecord, writeRecord } from '../Bundles/record'
 import { bundleRows } from '../Bundles/rows'
+import { NO_DESTINATION } from '../Bundles/placement'
 import type { TrashDeps } from '../Trash/discard'
 
 const NOTES = '01KVGMT8BFP350FZZXAMG1QDN0'
@@ -256,7 +257,10 @@ describe('a delete from the Archive', () => {
   const LINKER = `---\nID: ${PAGE_K}\nRelated: "[[Beta]]"\n---\nlinker\n`
   const related = async (): Promise<unknown> =>
     splitFrontmatter(await text('Notes', 'Linker.md')).Related
-  const trash = async (archived: string, kind: 'page' | 'set' = 'page'): Promise<string> => {
+  const trash = async (
+    archived: string,
+    kind: 'page' | 'set' | 'collection' = 'page',
+  ): Promise<string> => {
     const r = await mutate({ op: 'delete', path: archived, kind })
     expect(r.ok).toBe(true)
     return r.ok ? (r.value.bundled?.bundlePath ?? '') : ''
@@ -402,6 +406,106 @@ describe('a delete from the Archive', () => {
     expect((await restore(trashed)).ok).toBe(true)
     expect(await text('Notes', 'Daily', 'Beta.md')).toBe(BETA)
     expect(await pageOrder()).toEqual([PAGE_A, PAGE_B, PAGE_G])
+  })
+
+  it('leaves the Link values another archived page sharing its origin still answers', async () => {
+    const first = await archive('Notes/Daily/Beta.md')
+    expect(
+      (await mutate(minted({ op: 'createPage', parentPath: 'Notes/Daily', name: 'Beta' }))).ok,
+    ).toBe(true)
+    await archive('Notes/Daily/Beta.md')
+    await trash(first)
+    expect(await related()).toBe('[[Beta]]')
+  })
+
+  it('a live page’s delete leaves the Link values an archived page at its path still answers', async () => {
+    await archive('Notes/Daily/Beta.md')
+    expect(
+      (await mutate(minted({ op: 'createPage', parentPath: 'Notes/Daily', name: 'Beta' }))).ok,
+    ).toBe(true)
+    expect((await mutate({ op: 'delete', path: 'Notes/Daily/Beta.md', kind: 'page' })).ok).toBe(
+      true,
+    )
+    expect(await related()).toBe('[[Beta]]')
+  })
+
+  it('a trashed page’s link to an archived page follows it to where it lands on restore', async () => {
+    await writeFile(at('Notes', 'Daily', 'Gamma.md'), `---\nID: ${PAGE_G}\n---\n[[Alpha]]\n`)
+    await reseed()
+    const alpha = await archive('Notes/Daily/Alpha.md')
+    const gamma = await mutate({ op: 'delete', path: 'Notes/Daily/Gamma.md', kind: 'page' })
+    expect(
+      (await mutate(minted({ op: 'createPage', parentPath: 'Notes/Daily', name: 'Alpha' }))).ok,
+    ).toBe(true)
+    const back = await restore(alpha)
+    expect(back.ok && back.value.landedAs).toBe('Alpha (2)')
+    expect((await restore(gamma.ok ? (gamma.value.bundled?.bundlePath ?? '') : '')).ok).toBe(true)
+    expect(await text('Notes', 'Daily', 'Gamma.md')).toContain('[[Alpha (2)]]')
+  })
+
+  it('a trashed page’s link a live page and an archived page both answer names the live one', async () => {
+    await writeFile(at('Notes', 'Daily', 'Gamma.md'), `---\nID: ${PAGE_G}\n---\n[[Alpha]]\n`)
+    await reseed()
+    await archive('Notes/Daily/Alpha.md')
+    expect(
+      (await mutate(minted({ op: 'createPage', parentPath: 'Notes/Daily', name: 'Alpha' }))).ok,
+    ).toBe(true)
+    const gamma = await mutate({ op: 'delete', path: 'Notes/Daily/Gamma.md', kind: 'page' })
+    expect(
+      (
+        await mutate({
+          op: 'rename',
+          path: 'Notes/Daily/Alpha.md',
+          kind: 'page',
+          newName: 'Alpha 2',
+        })
+      ).ok,
+    ).toBe(true)
+    expect((await restore(gamma.ok ? (gamma.value.bundled?.bundlePath ?? '') : '')).ok).toBe(true)
+    expect(await text('Notes', 'Daily', 'Gamma.md')).toContain('[[Alpha 2]]')
+  })
+
+  it.each([
+    ['in the Trash', false],
+    ['gone for good', true],
+  ])('its Undo keeps the page’s values once its Collection is %s', async (_, forGood) => {
+    await writeFile(
+      at('.nexus', 'properties.json'),
+      JSON.stringify({
+        order: ['prop_related', 'prop_score'],
+        defs: {
+          prop_related: { id: 'prop_related', label: 'Related', key: 'Related', type: 'link' },
+          prop_score: { id: 'prop_score', label: 'Score', key: 'Score', type: 'number' },
+        },
+      }),
+    )
+    await writeFile(
+      at('Notes', '_pagecollection.json'),
+      JSON.stringify({ id: NOTES, properties: ['prop_score'] }),
+    )
+    await writeFile(at('Notes', 'Daily', 'Beta.md'), `---\nID: ${PAGE_B}\nScore: 3\n---\nbeta\n`)
+    await reseed()
+    const archived = await archive('Notes/Daily/Beta.md')
+    const trashed = await trash(archived)
+    const notes = await trash('Notes', 'collection')
+    if (forGood)
+      expect(
+        (
+          await settledMutate(
+            root,
+            { op: 'emptyBundle', bundlePath: notes },
+            { ...nexusDeps, permanentDelete: true },
+          )
+        ).ok,
+      ).toBe(true)
+    expect((await restore(trashed, UNDO)).ok).toBe(true)
+    expect(splitFrontmatter(await text(archived, 'Beta.md')).Score).toBe(3)
+  })
+
+  it('refuses the Archive as a destination for an Archive bundle', async () => {
+    const archived = await archive('Notes/Daily/Beta.md')
+    expect(message(await restore(archived, UNDO))).toBe(NO_DESTINATION)
+    expect(await text(archived, 'Beta.md')).toBe(BETA)
   })
 
   it('emptying it from the Trash gives it up for good', async () => {

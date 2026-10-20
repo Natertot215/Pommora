@@ -1,7 +1,7 @@
 // Where a recorded artifact re-enters: the placement resolved against the CURRENT tree and stepped past what the disk holds, the order it lands in, or the refusal that says why it cannot be placed.
 
 import { CONTEXTS_DIR_REL, contextDirRel } from '../Paths/nexusPaths'
-import { isAtOrUnder, join, titleFromPath } from '../Paths/posix'
+import { basename, isAtOrUnder, join, relative, titleFromPath } from '../Paths/posix'
 import { createDisambiguated, freeName } from '../Paths/names'
 import { pathExists } from '../Files/atomicWrite'
 import { landingRefusal } from '../Nexus/folderEntity'
@@ -20,7 +20,7 @@ import { type BundleStore, storeOf } from './bundle'
 interface Placement {
   dir: string
   finalName: string
-  /** For a page, Space, or Context: the final title restore writes everywhere (folder, registry, re-applied membership keys, the links its arrival re-spells). Recorded titles are labels; this is the decision. */
+  /** For a page, Space, or Context: the final title restore writes everywhere (folder, registry, re-applied membership keys, the links its arrival re-spells).*/
   finalTitle?: string
 }
 
@@ -37,7 +37,7 @@ type Resolution = { place: Placement; order?: SiblingOrder } | { refuse: Refusal
 const heldElsewhere = (held: EntityRecord | null | undefined, restoring: string): boolean =>
   held !== undefined && !(held && isAtOrUnder(held.path, restoring))
 
-/** THE decision, against the CURRENT tree — a renamed parent resolves to its renamed path. Every name and title choice the tree can make is made here, and `freeOnDisk` steps it only past what the tree can't see. A live id refusal, an id the tree or the Archive holds outside the restoring bundle, outranks every other answer: nothing may write over a living identity. */
+/** THE decision, against the CURRENT tree — a renamed parent resolves to its renamed path. Every name and title choice the tree can make is made here, and `freeOnDisk` steps it only past what the tree can't see.*/
 export function resolveRecord(
   record: ArtifactRecord,
   baseName: string,
@@ -186,10 +186,9 @@ export async function placeRecord(
   root: string,
   stored: ArtifactRecord,
   destination: RestoreDestination | undefined,
-  baseName: string,
+  bundle: { abs: string; artifact: string },
   tree: NexusTree,
   byId: NexusPages['byId'],
-  restoring: string,
 ): Promise<
   Result<{
     record: ArtifactRecord
@@ -199,6 +198,8 @@ export async function placeRecord(
     into?: BundleStore
   }>
 > {
+  const baseName = basename(bundle.artifact)
+  const restoring = relative(root, bundle.abs)
   if (destination?.kind === 'archive') {
     if ((stored.entity !== 'page' && stored.entity !== 'set') || !stored.archive)
       return fault(NO_DESTINATION)

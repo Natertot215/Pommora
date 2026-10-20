@@ -34,7 +34,7 @@ import { writeExcludedFolders } from '../Settings/settings'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import { buildPageIndex, connPage } from '../Connections/pageIndex'
-import * as refile from '../Archive/refile'
+import * as bundles from '../Bundles/bundle'
 import { handleMutate } from './mutate'
 
 const sweep = vi.hoisted(() => ({ hold: null as Promise<void> | null, entered: () => {} }))
@@ -655,7 +655,12 @@ describe('the settle', () => {
     await mkdir(abs('Other'))
     await writeFile(abs('Other', '_pagecollection.json'), JSON.stringify({ id: ULID_D }))
     shown = recordHanded(await refreshTree(root)).tree
-    const carry = vi.spyOn(refile, 'refileMoved').mockRejectedValueOnce(new Error('boom'))
+    const real = bundles.listBundles
+    const carry = vi
+      .spyOn(bundles, 'listBundles')
+      .mockImplementation((r, store) =>
+        store.kind === 'archive' ? Promise.reject(new Error('boom')) : real(r, store),
+      )
     const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
     const moved = await handleMutate(
       root,

@@ -67,6 +67,10 @@ const byIdOf = async (tree: import('../Nexus/tree').NexusTree) =>
   (await nexusPages(root, tree)).byId
 
 const RESTORING = '.trash/2026-10-20T12-00-00-000Z__Alpha.md.deleted'
+const bundleAt = (name: string) => ({
+  abs: join(root, RESTORING),
+  artifact: join(root, RESTORING, name),
+})
 
 const pageRecord = {
   entity: 'page' as const,
@@ -299,10 +303,9 @@ describe('placeRecord', () => {
       root,
       record,
       undefined,
-      'Alpha.md',
+      bundleAt('Alpha.md'),
       tree,
       await byIdOf(tree),
-      RESTORING,
     )
     if (!placed.ok) throw new Error('placement refused')
     expect(placed.value.placement.dir).toBe('Notes/Journal')
@@ -321,10 +324,9 @@ describe('placeRecord', () => {
       root,
       record,
       { kind: 'container', id: 'col-notes' },
-      'Alpha.md',
+      bundleAt('Alpha.md'),
       tree,
       await byIdOf(tree),
-      RESTORING,
     )
     if (!placed.ok) throw new Error('placement refused')
     expect(placed.value.record).toMatchObject({ place: undefined })
@@ -348,10 +350,9 @@ describe('placeRecord', () => {
       root,
       pageRecord,
       undefined,
-      'Alpha.md',
+      bundleAt('Alpha.md'),
       tree,
       await byIdOf(tree),
-      RESTORING,
     )
     if (!placed.ok) throw new Error('placement refused')
     expect(placed.value.placement).toEqual({
@@ -369,10 +370,9 @@ describe('placeRecord', () => {
       root,
       pageRecord,
       undefined,
-      'Alpha.md',
+      bundleAt('Alpha.md'),
       tree,
       await byIdOf(tree),
-      RESTORING,
     )
     if (!placed.ok) throw new Error('placement refused')
     expect(placed.value.placement).toEqual({
@@ -394,10 +394,9 @@ describe('placeRecord', () => {
       root,
       setRecord,
       undefined,
-      'Daily',
+      bundleAt('Daily'),
       tree,
       await byIdOf(tree),
-      RESTORING,
     )
     if (!placed.ok) throw new Error('placement refused')
     expect(placed.value.placement).toEqual({ dir: 'Notes', finalName: 'Daily (2)' })
@@ -412,19 +411,17 @@ describe('placeRecord', () => {
       root,
       pageRecord,
       undefined,
-      'Alpha.md',
+      bundleAt('Alpha.md'),
       tree,
       await byIdOf(tree),
-      RESTORING,
     )
     const set = await placeRecord(
       root,
       setRecord,
       undefined,
-      'Daily',
+      bundleAt('Daily'),
       tree,
       await byIdOf(tree),
-      RESTORING,
     )
     expect(page.ok && page.value.placement.finalName).toBe('Alpha.md')
     expect(page.ok && page.value.landedAs).toBeUndefined()
@@ -445,10 +442,9 @@ describe('placeRecord', () => {
       root,
       record,
       undefined,
-      'Pommora',
+      bundleAt('Pommora'),
       tree,
       await byIdOf(tree),
-      RESTORING,
     )
     if (!placed.ok) throw new Error('placement refused')
     await placed.value.writeOrder?.()
@@ -468,10 +464,9 @@ describe('placeRecord', () => {
       root,
       record,
       undefined,
-      'projects',
+      bundleAt('projects'),
       tree,
       await byIdOf(tree),
-      RESTORING,
     )
     if (!placed.ok) throw new Error('placement refused')
     expect(placed.value.placement.finalTitle).toBe('Projects')

@@ -2,17 +2,16 @@
 
 import { basename, dirname, join, relative } from '../Paths/posix'
 import { holdsName } from '../Paths/names'
-import { errText, fail, ok } from '../Contract/result'
+import { fail, ok } from '../Contract/result'
 import { pathExists, relocate } from '../Files/atomicWrite'
 import { recordWrite } from '../Files/writeEcho'
-import { sidecarId } from '../Files/sidecar'
-import { listMarkdownFiles, sidecarsUnder } from '../Files/walk'
+import { listMarkdownFiles } from '../Files/walk'
 import { archiveDirRel } from '../Paths/nexusPaths'
-import { readWatchScope } from '../Settings/settings'
 import { machine } from '../Platform/machine'
 import { liveTreeOf, mutableTarget, NOT_HELD } from '../Nexus/liveTree'
 import { owningCollection } from '../Nexus/treePatch'
 import { dropDeparture } from '../Nexus/reorder'
+import { archivedSetIds } from '../Nexus/configReach'
 import { pageIndexOf } from '../Nexus/record'
 import { nexusPages } from '../Nexus/heldPages'
 import { linksNotUpdated, renameCascade } from '../Nexus/cascade'
@@ -22,13 +21,13 @@ import type { MutateContext } from '../Nexus/mutate'
 import type { MutateReply, MutateRequest, RestoreDestination } from '../Nexus/mutateRequest'
 import {
   type BundleStore,
-  bundleArtifact,
   contentPages,
   mintBundle,
   originPagesOf,
   originPathOf,
+  type OpenBundle,
 } from '../Bundles/bundle'
-import { gatherContentRecord, readRecord, writeRecord } from '../Bundles/record'
+import { gatherContentRecord, writeRecord } from '../Bundles/record'
 import { placeRecord } from '../Bundles/placement'
 import { refileLanded } from './refile'
 
@@ -60,56 +59,45 @@ export async function archiveOp(
 /** An archived page or Set returns by a plain move to the place it left, or to `destination`, with nothing reconciled, repaired, or refilled, since every cascade kept it current; path links naming where it lived follow it. */
 export async function restoreArchived(
   root: string,
-  bundleAbs: string,
+  bundle: OpenBundle,
   store: Extract<BundleStore, { kind: 'archive' }>,
   destination?: RestoreDestination,
 ): Promise<MutateReply> {
-  const held = await readRecord(bundleAbs)
-  const artifactAbs = await bundleArtifact(bundleAbs)
-  if ((held?.entity !== 'page' && held?.entity !== 'set') || !artifactAbs) return NOT_HELD
+  const { record: held, artifact } = bundle
+  if ((held.entity !== 'page' && held.entity !== 'set') || !artifact) return NOT_HELD
   const tree = await liveTreeOf(root)
   const { byId } = await nexusPages(root, tree)
   const placed = await placeRecord(
     root,
     held,
     destination,
-    basename(artifactAbs),
+    { abs: bundle.abs, artifact },
     tree,
     byId,
-    relative(root, bundleAbs),
   )
   if (!placed.ok) return placed
   const { record, placement, writeOrder, landedAs } = placed.value
   const { dir, finalName, finalTitle } = placement
   const targetAbs = join(root, dir, finalName)
-  const back = await originPagesOf(root, store, await contentPages(record.entity, artifactAbs))
+  const back = await originPagesOf(root, store, await contentPages(record.entity, artifact))
   await machine().mkdir(dirname(targetAbs))
-  await relocate(artifactAbs, targetAbs)
+  await relocate(artifact, targetAbs)
   await writeOrder?.()
-  recordWrite(bundleAbs)
-  await machine().remove(bundleAbs)
+  recordWrite(bundle.abs)
+  await machine().remove(bundle.abs)
   const title = finalTitle ?? finalName
   const after = await settledIndex(root)
-  const names = after && returningNames(pageIndexOf(tree), after, back).names
-  const cascade = !names
+  const returned = after ? returningNames(pageIndexOf(tree), after, back) : null
+  const cascade = !returned
     ? linksNotUpdated(title)
-    : names.size
-      ? await renameCascade(root, { names, label: title })
+    : returned.names.size
+      ? await renameCascade(root, { names: returned.names, label: title })
       : undefined
-  await refileLanded(root, record, store.id, dir).catch((e) =>
-    console.error('archive: the carry failed:', errText(e)),
-  )
+  await refileLanded(root, record, store.id, dir)
   return ok({
     ...(cascade ? { cascade } : {}),
     ...(landedAs ? { landedAs } : {}),
   })
-}
-
-/** The ids of the Sets an archived folder holds, read from their sidecars, so every saved view drops them once the folder leaves for good. */
-export async function archivedSetIds(root: string, abs: string): Promise<string[]> {
-  const sidecars = await sidecarsUnder(root, await readWatchScope(root), abs)
-  const ids = await Promise.all(sidecars.map((file) => sidecarId(dirname(file), 'set')))
-  return ids.flatMap((id) => id ?? [])
 }
 
 /** A Collection's Archive, its pages at the paths they lived, and its Sets, which leave with the Collection once it leaves for good; null when it has none. The id names a folder, and a sidecar can carry any string. */

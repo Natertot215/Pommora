@@ -34,7 +34,8 @@ import { SIDECAR_FILENAME } from '../Paths/nexusPaths'
 import { asString } from './coerce'
 import { basename, dirname, isAtOrUnder, join, relative } from '../Paths/posix'
 import { sidecarsUnder } from '../Files/walk'
-import { scopeOf } from '../Settings/codec'
+import { readWatchScope } from '../Settings/settings'
+import { sidecarId } from '../Files/sidecar'
 import { isPlainObject } from '../Contract/validators'
 import type { CollectionNode, NexusTree, SetNode } from './tree'
 import type { CascadeReport } from './cascade'
@@ -319,13 +320,26 @@ type Container = { kind: ContainerKind; dir: string }
 
 const reaches = (dir: string, under?: string): boolean => !under || isAtOrUnder(dir, under)
 
+const setSidecarsUnder = async (root: string, abs: string): Promise<string[]> =>
+  (await sidecarsUnder(root, await readWatchScope(root), abs)).filter(
+    (file) => basename(file) === SIDECAR_FILENAME.set,
+  )
+
+/** The ids of the Sets an archived folder holds, read from their sidecars, so every saved view drops them once the folder leaves for good. */
+export async function archivedSetIds(root: string, abs: string): Promise<string[]> {
+  const ids = await Promise.all(
+    (await setSidecarsUnder(root, abs)).map((file) => sidecarId(dirname(file), 'set')),
+  )
+  return ids.flatMap((id) => id ?? [])
+}
+
 async function archivedSets(tree: NexusTree, root: string, under?: string): Promise<Container[]> {
   const archive = archiveReach(tree, under && relative(root, under))
   if (archive === null) return []
-  const files = await sidecarsUnder(root, scopeOf(tree.config), join(root, archive))
-  return files
-    .filter((file) => basename(file) === SIDECAR_FILENAME.set)
-    .map((file) => ({ kind: 'set', dir: dirname(file) }))
+  return (await setSidecarsUnder(root, join(root, archive))).map((file) => ({
+    kind: 'set',
+    dir: dirname(file),
+  }))
 }
 
 export async function reachConfig(
