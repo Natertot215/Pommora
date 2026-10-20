@@ -305,25 +305,16 @@ class CodeTagWidget extends WidgetType {
 class OutlinerRailWidget extends WidgetType {
   constructor(
     readonly level: number,
-    readonly typeClass: string,
-    readonly head: boolean,
-    readonly first: boolean,
-    readonly last: boolean,
+    readonly className: string,
   ) {
     super()
   }
   eq(o: OutlinerRailWidget): boolean {
-    return (
-      o.level === this.level &&
-      o.typeClass === this.typeClass &&
-      o.head === this.head &&
-      o.first === this.first &&
-      o.last === this.last
-    )
+    return o.level === this.level && o.className === this.className
   }
   toDOM(): HTMLElement {
     const el = document.createElement('span')
-    el.className = railClass(this)
+    el.className = this.className
     el.style.setProperty('--rail-level', String(this.level))
     el.setAttribute('aria-hidden', 'true')
     return el
@@ -524,7 +515,7 @@ function build(view: EditorView, scope: MarkdownScope): Built {
     if (it.kind === 'rail') {
       ranges.push(
         Decoration.widget({
-          widget: new OutlinerRailWidget(it.level, it.typeClass, it.head, it.first, it.last),
+          widget: new OutlinerRailWidget(it.level, railClass(it)),
           side: -1,
         }).range(it.from),
       )
