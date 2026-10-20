@@ -31,7 +31,7 @@ const TYPE_META: Record<PropertyType | 'title', TypeMeta> = {
   file: { label: 'File', icon: 'file-chart-column' },
   context: { label: 'Context', icon: DEFAULT_ENTITY_ICONS.context },
   createdTime: { label: RESERVED_LABEL[RESERVED_PROPERTY_ID.createdAt], icon: 'clock-plus' },
-  lastEditedTime: { label: RESERVED_LABEL[RESERVED_PROPERTY_ID.modifiedAt], icon: 'history' },
+  lastEditedTime: { label: RESERVED_LABEL[RESERVED_PROPERTY_ID.modifiedAt], icon: 'repeat' },
 }
 
 export const propertyTypeLabel = (type: PropertyType): string => TYPE_META[type].label
