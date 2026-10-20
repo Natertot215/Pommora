@@ -439,10 +439,18 @@
     2 -
     var(--outline-gap)
   );
-  border: 0 solid var(--list-outline-color);
-  border-width: 0 0 var(--outline-width) var(--outline-width);
-  border-radius: 0 0 0 8px;
-  background: none;
+  border-radius: 0;
+  clip-path: shape(
+    from 0 0,
+    hline to var(--outline-width),
+    vline to calc(100% - 8px),
+    arc to 8px calc(100% - var(--outline-width)) of calc(8px - var(--outline-width)),
+    hline to 100%,
+    vline to 100%,
+    hline to 8px,
+    arc to 0 calc(100% - 8px) of 8px cw,
+    close
+  );
 }
 
 .md-list-bullet {
