@@ -5,7 +5,9 @@ import type { EditorMenuRequest } from '../Actions/editorMenu'
 import type { EditMenuAction, KeyPress, MenuCommand, NativeEdit } from '../Actions/commands'
 import type { RemovedView, SavedView, ViewPatch } from '../Views/views'
 import type { BodyWrite, PageDetail } from '../Pages/pageDetail'
-import type { TrashMode, TrashRow } from '../Trash/trashRow'
+import type { BundleStore } from '../Bundles/bundle'
+import type { BundleRow } from '../Bundles/rows'
+import type { TrashMode } from '../Trash/trashMode'
 import type { ClearReport } from '../Settings/exclusionScan'
 import type { NavigationState, StoredTabSet } from '../Navigation/navRef'
 import type { MatrixConfig, MatrixPatch } from '../Matrix/matrixConfig'
@@ -255,8 +257,8 @@ export interface Asks {
   }
   'nav:evictThumbs': { args: [liveKeys: string[]]; reply: Result<null> }
 
-  // `.trash` is outside the watcher, so the browser asks again after every action it takes.
-  'trash:list': { args: []; reply: Result<TrashRow[]> }
+  // No push carries what a store holds, so a browser asks again after every action and on `storesChanged`.
+  'bundles:list': { args: [store: BundleStore]; reply: Result<BundleRow[]> }
   // Read at the moment of asking, never from the renderer's cache, so the confirmation can't promise the system trash while main erases outright.
   'delete:facts': { args: []; reply: Result<{ trashMode: TrashMode; permanentDelete: boolean }> }
 

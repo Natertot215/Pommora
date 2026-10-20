@@ -33,7 +33,7 @@ import {
 } from './mutateRequest'
 import { CONTAINER_KINDS } from './entities'
 import { setActiveView } from '../Views/viewsFile'
-import type { TrashDeps } from '../Trash/bundle'
+import type { TrashDeps } from '../Trash/discard'
 import { createContainerOp, createPageOp, createSpaceOp } from './create'
 import { movePageOp, moveSetOp } from './move'
 import { editPageAliases, writePageMeta } from './pageMetadata'

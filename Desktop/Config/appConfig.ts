@@ -3,7 +3,7 @@
 import { join } from '@pommora/core/Paths/posix'
 import { stat } from 'node:fs/promises'
 import { readJsonObject, rmwJsonStrict } from '@pommora/core/Files/atomicWrite'
-import { DEFAULT_TRASH_MODE, type TrashMode } from '@pommora/core/Trash/trashRow'
+import { DEFAULT_TRASH_MODE, type TrashMode } from '@pommora/core/Trash/trashMode'
 import { TRASH_DIR } from '@pommora/core/Paths/nexusPaths'
 import { foldKey } from '@pommora/core/Paths/caseFold'
 import type { SyncDevice } from '@pommora/core/Sync/Contract/wire'

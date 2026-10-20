@@ -1,4 +1,5 @@
-import { writePropertyBundle } from '../Trash/record'
+import { mintBundle } from '../Bundles/bundle'
+import { type RecordFile, writeRecord } from '../Bundles/record'
 import { assignedIds, collectionFolders } from './assignment'
 import { cachedValues, patchCacheBlock } from './propertyCache'
 import {
@@ -25,9 +26,18 @@ import { spaceSidecars, withoutOrderId } from '../Contexts/spaceSidecar'
 
 import { isPlainObject } from '../Contract/validators'
 import { ok, type Result } from '../Contract/result'
-import { relative } from '../Paths/posix'
+import { join, relative } from '../Paths/posix'
 import type { MutateOutcome } from '../Nexus/mutateRequest'
 import { type ConfigReach, reachConfig } from '../Nexus/configReach'
+
+export async function writePropertyBundle(
+  root: string,
+  record: Extract<RecordFile, { entity: 'property' }>,
+): Promise<string> {
+  const bundle = await mintBundle(root, { kind: 'trash' }, join(root, `property-${record.id}`))
+  await writeRecord(bundle, record)
+  return bundle
+}
 
 async function snapshot(
   root: string,

@@ -16,6 +16,7 @@ export interface MutateOutcome {
   trashed?: { bundlePath: string }
   /** The titles of what a restore brought back without all it held. */
   unrestored?: string[]
+  landedAs?: string
   retry?: MutateRequest
 }
 export type MutateReply = Result<MutateOutcome>
@@ -85,7 +86,7 @@ export const mutateRequest = z.discriminatedUnion('op', [
   op('restoreValue', { path: z.string(), propertyId: z.string(), held: z.unknown().optional() }),
   op('setPageMeta', { path: z.string(), patch: pageMetaPatch }),
   op('editAliases', { path: z.string(), edit: aliasEdit }),
-  // Absent order = legacy append. Stale ids in a source container self-drop on the next read.
+  // Absent an order, the destination's order stands, and the page sorts where `resolveOrder` places an id its order doesn't name.
   op('movePage', { path: z.string(), newParentPath: z.string(), order: ids.optional() }),
   op('moveSet', { path: z.string(), newParentPath: z.string(), order: ids }),
   op('reorderChildren', { parentPath: z.string(), key: childOrderKey, order: ids }),
@@ -145,3 +146,6 @@ export const changesSettled = (operation: MutateRequest['op']): boolean =>
   operation === 'delete' ||
   operation === 'restore' ||
   operation === 'emptyBundle'
+
+export const changesStores = (req: MutateRequest): boolean =>
+  req.op === 'delete' || req.op === 'restore' || req.op === 'emptyBundle'

@@ -31,7 +31,7 @@ import { readNexus, readNexusConfig } from './readNexus'
 import { asString } from './coerce'
 import { settleNow, recordHanded } from './settle'
 import type { NexusState } from './tree'
-import { trashDeps } from '../Trash/bundle'
+import { trashDeps } from '../Trash/discard'
 
 async function prepareOpenedNexus(path: string): Promise<string | null> {
   let nexusId: string | null = null

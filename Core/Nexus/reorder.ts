@@ -2,9 +2,12 @@ import { isPlainObject } from '../Contract/validators'
 import { pathExists, updateNexusConfig, withIds, withoutId } from '../Files/atomicWrite'
 import { patchSidecar } from '../Files/sidecar'
 import { sidecarPath } from '../Paths/paths'
+import { dirname, join } from '../Paths/posix'
 import { ok, type Result } from '../Contract/result'
 import type { ChildOrderKey } from './mutateRequest'
-import { CONTAINER_KINDS } from './entities'
+import { CONTAINER_KINDS, type HeldKind } from './entities'
+import type { NexusTree } from './tree'
+import { containerAt, pageAt, spaceAt } from './treePatch'
 
 type ContainerOrderKey = ChildOrderKey | 'page_order'
 
@@ -63,11 +66,45 @@ const patchContainer = async (
   return ok(null)
 }
 
-export const dropFromChildOrder = (
+const dropFromChildOrder = (
   absFolder: string,
   key: ContainerOrderKey,
   id: string,
 ): Promise<Result<unknown>> => patchContainer(absFolder, (cur) => withoutId(cur, key, id))
+
+/** A departing item leaves the order it sat in, its id read from `tree`, the tree from before it left. A Context keeps its panel id while bundled, as its restore returns to it. */
+export async function dropDeparture(
+  root: string,
+  tree: NexusTree,
+  kind: HeldKind,
+  rel: string,
+): Promise<void> {
+  switch (kind) {
+    case 'page':
+    case 'set': {
+      const id = (kind === 'page' ? pageAt(tree, rel) : containerAt(tree, rel))?.id
+      const key = kind === 'page' ? 'page_order' : 'set_order'
+      if (id) await dropFromChildOrder(dirname(join(root, rel)), key, id)
+      return
+    }
+    case 'collection': {
+      const id = containerAt(tree, rel)?.id
+      if (id) await writeStateOrder(root, (order) => withoutId(order, 'collections', id))
+      return
+    }
+    case 'space': {
+      const space = spaceAt(tree, rel)
+      if (space)
+        await writeStateOrder(root, (order) => {
+          const spaces = withoutId(spacesOf(order), space.contextId, space.id)
+          return spaces && { ...order, spaces }
+        })
+      return
+    }
+    case 'context':
+      return
+  }
+}
 
 export async function setChildOrder(
   absFolder: string,

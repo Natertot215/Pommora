@@ -5,7 +5,7 @@ import { settleNow } from '../Nexus/settle'
 import type { EditorMenuRequest } from '../Actions/editorMenu'
 import type { MenuRequest } from '../Actions/menuModel'
 import type { ThumbRect } from '../Interface/chrome'
-import type { TrashMode } from '../Trash/trashRow'
+import type { TrashMode } from '../Trash/trashMode'
 import type { SyncDevice } from '../Sync/Contract/wire'
 
 export type PickKind = 'file' | 'folder' | 'image' | 'exclusion'

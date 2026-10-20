@@ -9,20 +9,19 @@ import { fail, ok, valueOr } from '../Contract/result'
 import { mutateRegistryFile, readRegistryStrict, withContextAt } from '../Contexts/contextsRegistry'
 import { unlinkContextKey, unlinkSpaceValue } from '../Contexts/contextCascade'
 import type { MutateContext } from '../Nexus/mutate'
-import { dropSpaceOrder } from '../Nexus/reorder'
+import { dropDeparture, dropSpaceOrder } from '../Nexus/reorder'
 import { deleteCascade, joinCascades } from '../Nexus/cascade'
 import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'
 import { machine } from '../Platform/machine'
-import { discardFile, mintBundle } from './bundle'
-import { contentPages, pageIdsOf } from './holdings'
+import { discardFile } from './discard'
+import { contentPages, mintBundle, pageIdsOf } from '../Bundles/bundle'
 import {
   buildContextRecord,
-  gatherContentRecord,
   gatherContextEvidence,
   gatherLinkTargets,
   gatherSpaceRecord,
 } from './gather'
-import { type RecordFile, writeRecord } from './record'
+import { gatherContentRecord, type RecordFile, writeRecord } from '../Bundles/record'
 import { liftSetAside } from '../Nexus/folderEntity'
 
 export async function deleteOp(
@@ -43,7 +42,7 @@ export async function deleteOp(
     if (!lifted.ok) return lifted
   }
   // Write-ahead: the record lands before any sweep destroys what it describes; a Space or Context sweep runs before its artifact moves and refuses on failure, a content strip runs after, so a failed move strips nothing, and the artifact moves before the configuration pass, so a delete cut short leaves evidence rather than silence.
-  const bundle = deps.trashMode === 'system' ? null : await mintBundle(root, abs)
+  const bundle = deps.trashMode === 'system' ? null : await mintBundle(root, { kind: 'trash' }, abs)
   // With no bundle to keep them, the pages' metadata entries leave with the delete, by the ids their files carry before the move.
   const pageIds = bundle ? [] : await pageIdsOf(await contentPages(req.kind, abs))
   const under = pagesOf(before).flatMap((p) => (isAtOrUnder(p.path, rel) ? p.path : []))
@@ -66,9 +65,9 @@ export async function deleteOp(
   let paths: string[] | null = null
   if (req.kind === 'space') {
     const registry = write ? await readRegistryStrict(root) : null
-    if (write) await write(await gatherSpaceRecord(abs, registry, null))
+    if (write) await write(await gatherSpaceRecord(before, abs, registry, null))
     const swept = await unlinkSpaceValue(root, basename(dirname(abs)), basename(abs)).catch(unmint)
-    if (write) await write(await gatherSpaceRecord(abs, registry, valueOr(swept, null)))
+    if (write) await write(await gatherSpaceRecord(before, abs, registry, valueOr(swept, null)))
   } else if (req.kind === 'context') {
     const registry = contexts!.value
     const title = basename(abs)
@@ -92,12 +91,13 @@ export async function deleteOp(
     if (entry && !bundle) await dropSpaceOrder(root, entry.id)
     if (write && evidence) await write(buildContextRecord(evidence, valueOr(swept, null)))
   } else {
-    record = write ? await gatherContentRecord(root, req.kind, abs) : null
+    record = write ? await gatherContentRecord(root, before, req.kind, abs) : null
     if (write && record) await write({ ...record, partial: true })
     paths = under
   }
   if (bundle) await relocate(abs, join(bundle, basename(abs)))
   else await machine().lock(abs, () => discardFile(root, abs, deps))
+  await dropDeparture(root, before, req.kind, req.path)
   await dropPageMetadata(root, pageIds)
   const gone = paths ? await deleteCascade(root, abs, paths) : null
   if (write && record && gone)

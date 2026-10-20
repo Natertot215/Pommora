@@ -6,7 +6,12 @@ import {
   reportRefusal,
   unrestoredLine,
 } from '../Interface/Notifications/notifications'
-import { changesSettled, type MutateOutcome, type MutateRequest } from '../Nexus/mutateRequest'
+import {
+  changesSettled,
+  changesStores,
+  type MutateOutcome,
+  type MutateRequest,
+} from '../Nexus/mutateRequest'
 import { caught, type PommoraError, type Result, valueOr } from '../Contract/result'
 import type { NexusChange, NexusTree } from '../Nexus/tree'
 import type { SyncStatus } from '../Sync/Contract/wire'
@@ -67,8 +72,8 @@ export async function flushAllSaves(): Promise<void> {
   await Promise.all([flushAllWriters(), tileDocsSettled()])
 }
 
-/** A delete, restore, or emptied bundle landed, so an open Trash list reads again. */
-export const trashChanged = emitter()
+/** What a store holds changed, so an open browser of it lists again. */
+export const storesChanged = emitter()
 
 export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
   // One headings ask at a time, so an answer never lands over one asked after it.
@@ -245,8 +250,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       const { cascade, retry } = res.value
       if (req.op !== 'delete' && cascade)
         warnCascade(cascade, retry ? () => void get().mutate(retry) : undefined)
-      if (req.op === 'delete' || req.op === 'restore' || req.op === 'emptyBundle')
-        trashChanged.emit()
+      if (changesStores(req)) storesChanged.emit()
       // The host pushed what this write changed before it replied, so the tree already holds it.
       get().patchPagesFor(req)
       const tree = get().tree

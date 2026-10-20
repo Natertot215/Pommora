@@ -8,6 +8,7 @@ import { MenuItem } from '@pommora/uix/Menus'
 import { overlay } from '@pommora/uix/Menus/menu-row.css'
 import { retained, toggled } from '@pommora/uix/Utilities/checkSet'
 import { cx } from '@pommora/uix/Utilities/cx'
+import { capitalize } from '@pommora/uix/Utilities/capitalize'
 import { Icon } from '@pommora/uix/Symbols'
 import { entityIcon } from '../Assets/entityIconPolicy'
 import { itemCount } from '../Properties/properties'
@@ -15,15 +16,15 @@ import { text } from '@pommora/uix/Theme'
 import { askEmptyTrash, spendBundle } from '../Interface/Confirm/confirmations'
 import { changesSettled, type MutateRequest } from '../Nexus/mutateRequest'
 import type { Personalization } from './personalization'
-import type { TrashRow } from '../Trash/trashRow'
+import type { BundleRow } from '../Bundles/rows'
 import { PropertyTypeIcon, propertyTypeIconName } from '../Properties/Cells/PropertyTypes'
 import { formatDate } from '../Properties/formatValue'
 import { containerTargets, contextTargets } from '../Actions/destinationTree'
 import { matchQuery, rankMatches } from '../Paths/caseFold'
 import { useSession } from '../Session/store'
-import { flushAllSaves, trashChanged } from '../Session/nexusSlice'
+import { flushAllSaves, storesChanged } from '../Session/nexusSlice'
 import { personalizationOf } from '../Session/configSlice'
-import { notifyReport, unrestoredLine } from '../Interface/Notifications/notifications'
+import { notifyUndoable, unrestoredLine } from '../Interface/Notifications/notifications'
 import { dialer } from '../Platform/dialer'
 import { popMenu } from '../Actions/menuActions'
 import { trashMenuItems } from '../Actions/trashMenu'
@@ -33,23 +34,33 @@ import { useNexusForms } from '../Views/Host/useColumnStyles'
 import '../Navigation/nav-list.css'
 import './trash-frame.css'
 
-const PLURALS: Record<TrashRow['kind'], string> = {
-  page: 'pages',
-  collection: 'collections',
-  set: 'sets',
-  space: 'spaces',
-  context: 'contexts',
-  property: 'properties',
+const PLURALS: Record<BundleRow['kind'], string> = {
+  page: 'Pages',
+  collection: 'Collections',
+  set: 'Sets',
+  space: 'Spaces',
+  context: 'Contexts',
+  property: 'Properties',
 }
 
-export function countPhrase(rows: TrashRow[]): string {
+export function countPhrase(rows: BundleRow[]): string {
   const kinds = new Set(rows.map((r) => r.kind))
   const kind = kinds.size === 1 ? [...kinds][0] : null
   if (kind === null) return itemCount(rows.length)
-  return rows.length === 1 ? `1 ${kind}` : `${rows.length} ${PLURALS[kind]}`
+  return rows.length === 1 ? `1 ${capitalize(kind)}` : `${rows.length} ${PLURALS[kind]}`
 }
 
-export function filterRows(rows: TrashRow[], query: string): TrashRow[] {
+const steppedTo = (title: string, landedAs: string): string => `“${title}” as “${landedAs}”`
+
+/** One notice for what a spend did: what it did, the title a restore stepped to, and whatever didn't go as asked, which marks it failed. */
+function report(head: string, renamed: string | undefined, lines: (string | false)[]): void {
+  const unmet = lines.filter(Boolean)
+  const parts = renamed ? [head, renamed] : [head]
+  if (unmet.length) parts[parts.length - 1] += `. ${unmet.join(' ')}`
+  notifyUndoable(parts[0], undefined, unmet.length > 0 ? 'error' : 'normal', undefined, parts[1])
+}
+
+export function filterRows(rows: BundleRow[], query: string): BundleRow[] {
   const q = matchQuery(query)
   if (!q) return rows
   return rankMatches(rows, q, (row) => row.match)
@@ -71,13 +82,13 @@ function TrashBody(): React.JSX.Element {
   const defaultIcons = useSession((s) => personalizationOf(s).defaultIcons)
   const tree = useSession((s) => s.tree)
   const mutate = useSession((s) => s.mutate)
-  const [rows, setRows] = useState<TrashRow[] | null>(null)
+  const [rows, setRows] = useState<BundleRow[] | null>(null)
   const [failed, setFailed] = useState(false)
   const [query, setQuery] = useState('')
   const [checked, setChecked] = useState<ReadonlySet<string>>(new Set())
 
   const refresh = useCallback(async (): Promise<void> => {
-    const res = await dialer().ask('trash:list')
+    const res = await dialer().ask('bundles:list', { kind: 'trash' })
     if (!res.ok) {
       setFailed(true)
       return
@@ -90,29 +101,41 @@ function TrashBody(): React.JSX.Element {
 
   useEffect(() => {
     void refresh()
-    return trashChanged.subscribe(() => void refresh())
+    return storesChanged.subscribe(() => void refresh())
   }, [refresh])
 
   const shown = useMemo(() => filterRows(rows ?? [], query), [rows, query])
   const toggle = (bundlePath: string): void => setChecked((prev) => toggled(prev, bundlePath))
 
-  const one = async (req: Extract<MutateRequest, { bundlePath: string }>): Promise<void> => {
-    if (await mutate(req)) spendBundle(req.bundlePath)
+  const one = async (
+    req: Extract<MutateRequest, { bundlePath: string }>,
+    row: BundleRow,
+  ): Promise<void> => {
+    const done = await mutate(req)
+    if (!done) return
+    spendBundle(req.bundlePath)
+    if (done.landedAs)
+      report(`Restored ${steppedTo(row.title, done.landedAs)}`, undefined, [
+        done.unrestored !== undefined && unrestoredLine(done.unrestored),
+        done.cascade?.warning ?? false,
+      ])
   }
 
   const many = async (
-    targets: TrashRow[],
+    targets: BundleRow[],
     op: 'restore' | 'emptyBundle',
   ): Promise<{
-    done: TrashRow[]
-    refused: TrashRow[]
+    done: BundleRow[]
+    refused: BundleRow[]
     unrestored: string[]
     warnings: string[]
+    renamed: string[]
   }> => {
-    const done: TrashRow[] = []
-    const refused: TrashRow[] = []
+    const done: BundleRow[] = []
+    const refused: BundleRow[] = []
     const unrestored: string[] = []
     const warnings = new Set<string>()
+    const renamed: string[] = []
     if (changesSettled(op)) await flushAllSaves()
     for (const row of targets) {
       const res = await dialer().ask('mutate', { op, bundlePath: row.bundlePath })
@@ -121,33 +144,36 @@ function TrashBody(): React.JSX.Element {
       spendBundle(row.bundlePath)
       unrestored.push(...(res.value.unrestored ?? []))
       if (res.value.cascade?.warning) warnings.add(res.value.cascade.warning)
+      if (res.value.landedAs) renamed.push(steppedTo(row.title, res.value.landedAs))
     }
     await refresh()
-    return { done, refused, unrestored, warnings: [...warnings] }
+    return { done, refused, unrestored, warnings: [...warnings], renamed }
   }
 
-  const restoreBatch = async (targets: TrashRow[]): Promise<void> => {
+  const restoreBatch = async (targets: BundleRow[]): Promise<void> => {
     const addressable = targets.filter((r) => r.homeResolves)
-    const { done, refused, unrestored, warnings } = await many(addressable, 'restore')
+    const { done, refused, unrestored, warnings, renamed } = await many(addressable, 'restore')
     const homeless = targets.filter((r) => !r.homeResolves)
-    const unmet = [
-      homeless.length > 0 &&
-        `${countPhrase(homeless)} had nowhere to go — restore those one at a time to choose where.`,
-      refused.length > 0 && `${countPhrase(refused)} couldn’t be restored.`,
-      unrestored.length > 0 && unrestoredLine(unrestored),
-      ...warnings,
-    ].filter(Boolean)
-    notifyReport([`Restored ${countPhrase(done)}.`, ...unmet].join(' '), unmet.length > 0)
+    report(
+      `Restored ${countPhrase(done)}`,
+      renamed.length > 1 ? `${renamed.length} Renamed` : renamed[0],
+      [
+        homeless.length > 0 &&
+          `${countPhrase(homeless)} had nowhere to go — restore those one at a time to choose where.`,
+        refused.length > 0 && `${countPhrase(refused)} couldn’t be restored.`,
+        unrestored.length > 0 && unrestoredLine(unrestored),
+        ...warnings,
+      ],
+    )
   }
 
-  const emptyBatch = async (targets: TrashRow[]): Promise<void> => {
+  const emptyBatch = async (targets: BundleRow[]): Promise<void> => {
     if (!(await askEmptyTrash(targets.length))) return
     const { done, refused, warnings } = await many(targets, 'emptyBundle')
-    const unmet = [
+    report(`Deleted ${countPhrase(done)}`, undefined, [
       refused.length > 0 && `${countPhrase(refused)} couldn’t be deleted.`,
       ...warnings,
-    ].filter(Boolean)
-    notifyReport([`Deleted ${countPhrase(done)}.`, ...unmet].join(' '), unmet.length > 0)
+    ])
   }
 
   const openColumnMenu = async (): Promise<void> => {
@@ -158,7 +184,7 @@ function TrashBody(): React.JSX.Element {
     setPersonalization('trashColumnStyle', holdsStyle(next) ? next : undefined)
   }
 
-  const openMenu = async (row: TrashRow): Promise<void> => {
+  const openMenu = async (row: BundleRow): Promise<void> => {
     // Right-clicking an unchecked row acts on that row alone, whatever else is checked — a checked set is a deliberate construction. The batch is what the menu will actually act on: the CHECKED rows STILL IN VIEW, since deriving it from the unfiltered selection would let a filtered right-click read "Restore All", act on one row, and withhold the destination picker that row was owed.
     const inSet = checked.has(row.bundlePath) ? shown.filter((r) => checked.has(r.bundlePath)) : []
     const batch = inSet.length > 1
@@ -179,15 +205,16 @@ function TrashBody(): React.JSX.Element {
     if (!action) return
     if (action.startsWith('restoreTo:')) {
       const destination = { kind: destinationKind, id: action.slice('restoreTo:'.length) }
-      await one({ op: 'restore', bundlePath: row.bundlePath, destination })
+      await one({ op: 'restore', bundlePath: row.bundlePath, destination }, row)
       return
     }
     switch (action) {
       case 'restore':
-        await one({ op: 'restore', bundlePath: row.bundlePath })
+        await one({ op: 'restore', bundlePath: row.bundlePath }, row)
         break
       case 'delete':
-        if (await askEmptyTrash(1)) await one({ op: 'emptyBundle', bundlePath: row.bundlePath })
+        if (await askEmptyTrash(1))
+          await one({ op: 'emptyBundle', bundlePath: row.bundlePath }, row)
         break
       case 'restoreAll':
         await restoreBatch(targets)
@@ -252,10 +279,10 @@ function TrashBody(): React.JSX.Element {
                   }
                   defaultIcons={defaultIcons}
                   when={
-                    row.deletedAt === null
+                    row.storedAt === null
                       ? ''
                       : formatDate(
-                          new Date(row.deletedAt).toISOString(),
+                          new Date(row.storedAt).toISOString(),
                           style.date_format,
                           style.time_format,
                           style.weekday,
@@ -281,7 +308,7 @@ function TrashRowView({
   when,
   defaultIcons,
 }: {
-  row: TrashRow
+  row: BundleRow
   checked: boolean
   onToggle: () => void
   onMenu: () => void

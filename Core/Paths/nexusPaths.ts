@@ -4,8 +4,15 @@ export const NEXUS_DIR = '.nexus'
 
 export const TRASH_DIR = '.trash'
 
-/** The walk, the index, and every mutation refuse these. Not the watcher — it watches `.nexus`. */
-export const NON_CORPUS_TOP: ReadonlySet<string> = new Set([NEXUS_DIR, TRASH_DIR])
+export const ARCHIVE_DIR_REL = `${NEXUS_DIR}/archive`
+
+export const archiveDirRel = (collectionId: string): string => `${ARCHIVE_DIR_REL}/${collectionId}`
+
+export const archiveSegs = (segs: string[]): string[] | null =>
+  `${segs[0]}/${segs[1]}` === ARCHIVE_DIR_REL ? segs.slice(2) : null
+
+export const archivedCollectionIdOf = (rel: string): string | null =>
+  archiveSegs(rel.split('/'))?.[0] ?? null
 
 /** The bare name exists because the watcher matches path segments rather than prefixes. */
 export const CONTEXTS_DIRNAME = 'contexts'

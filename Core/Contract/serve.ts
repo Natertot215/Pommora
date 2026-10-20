@@ -1,5 +1,6 @@
 import { actionsHandlers } from '../Actions/handlers'
 import { assetsHandlers } from '../Assets/handlers'
+import { bundlesHandlers } from '../Bundles/handlers'
 import { interfaceHandlers } from '../Interface/handlers'
 import { matrixHandlers } from '../Matrix/handlers'
 import { navigationHandlers } from '../Navigation/handlers'
@@ -21,6 +22,7 @@ export const handlers: Handlers = {
   ...viewsHandlers,
   ...tilesHandlers,
   ...trashHandlers,
+  ...bundlesHandlers,
   ...assetsHandlers,
   ...settingsHandlers,
   ...syncHandlers,

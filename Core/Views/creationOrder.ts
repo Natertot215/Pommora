@@ -3,29 +3,9 @@
 import type { CreateRequest } from '../Nexus/mutateRequest'
 import type { NexusTree } from '../Nexus/tree'
 import { type Personalization, type Placement, settingOf } from '../Settings/personalization'
-import { nextOrder } from '@pommora/uix/Utilities/moveItem'
+import { type Slot, spliceBeside } from '../Nexus/order'
 import { containerAt, pageIdsIn } from '../Nexus/treePatch'
 import { contextWorldOf } from '../Contexts/contextResolve'
-
-export type Slot = 'above' | 'below' | 'first' | 'last'
-
-export function spliceBeside(
-  ids: string[],
-  anchorId: string | null,
-  item: string,
-  where: Slot,
-): string[] {
-  const at = anchorId === null ? -1 : ids.indexOf(anchorId)
-  const before =
-    where === 'first'
-      ? (ids[0] ?? null)
-      : where === 'above'
-        ? anchorId
-        : where === 'below' && at >= 0
-          ? (ids[at + 1] ?? null)
-          : null
-  return nextOrder(ids, item, before)
-}
 
 function mergedRanking(
   existing: string[] | undefined,

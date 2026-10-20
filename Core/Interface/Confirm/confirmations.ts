@@ -1,7 +1,7 @@
 import type { MutateOutcome } from '../../Nexus/mutateRequest'
 import type { HeldKind } from '../../Nexus/entities'
 import { valueOr } from '../../Contract/result'
-import { DEFAULT_TRASH_MODE } from '../../Trash/trashRow'
+import { DEFAULT_TRASH_MODE } from '../../Trash/trashMode'
 import { useSession } from '../../Session/store'
 import { personalizationOf } from '../../Session/configSlice'
 import { SETTING_DEFAULTS, settingOf } from '../../Settings/personalization'
