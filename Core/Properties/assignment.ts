@@ -6,8 +6,10 @@ import { readJsonObject } from '../Files/atomicWrite'
 import { patchSidecar } from '../Files/sidecar'
 import { cachedValues, patchCacheBlock } from './propertyCache'
 import { heldTreeOf, liveTreeOf } from '../Nexus/liveTree'
-import { type EntityRecord, pageIndexOf, recordById } from '../Nexus/record'
-import { damagedFolders } from '../Nexus/treePatch'
+import { pagesOf } from '../Nexus/record'
+import { type NexusPages, nexusPages } from '../Nexus/heldPages'
+import { owningCollection } from '../Nexus/treePatch'
+import { buildPageIndex } from '../Connections/pageIndex'
 import { readRegistry, serializeSchemaOp } from './propertiesRegistry'
 import { byKey, type PropertyDefinition } from './properties'
 import {
@@ -49,7 +51,7 @@ export async function assignedDefs(
 export async function refillValues(
   root: string,
   def: PropertyDefinition,
-  roots: Record<string, EntityRecord>,
+  roots: NexusPages['byId'],
   values: Record<string, unknown>,
   frozen: Frozen,
 ): Promise<Set<string>> {
@@ -76,19 +78,22 @@ async function restoreCachedValues(
   // No readable definition → the cache stays whole: a def that reappears later still finds everything waiting.
   const def = (await readRegistry(root)).defs[propertyId]
   if (!def) return ok(null)
-  const under = `${relative(root, collectionFolder)}/`
+  const rel = relative(root, collectionFolder)
   const tree = await liveTreeOf(root)
-  const live = recordById(tree)
-  const members = Object.fromEntries(
-    Object.keys(cached).flatMap((id) =>
-      live[id]?.kind === 'page' && live[id].path.startsWith(under) ? [[id, live[id]]] : [],
-    ),
+  const { byId, archived } = await nexusPages(root, tree)
+  const members = new Map(
+    Object.keys(cached).flatMap((id) => {
+      const r = byId.get(id)
+      return r?.kind === 'page' && owningCollection(tree, r.path)?.path === rel
+        ? [[id, r] as const]
+        : []
+    }),
   )
-  const frozen = frozenWorld(pageIndexOf(tree))
+  const frozen = frozenWorld(buildPageIndex([...pagesOf(tree), ...archived]))
   // A cached Link naming a page gone leaves the cache: one whose page the Trash holds joins its bundle, one naming nothing is dropped.
   const gone =
     def.type === 'link'
-      ? Object.keys(members).flatMap((id) => {
+      ? [...members.keys()].flatMap((id) => {
           const entry = gonePageEntry(cached[id], frozen)
           return entry === null ? [] : [{ page: id, property: propertyId, value: entry }]
         })
@@ -147,12 +152,6 @@ export function assignProperty(
     if (!a.ok || toIndex === undefined) return a
     return reorderInner(collectionFolder, propertyId, toIndex)
   })
-}
-
-export async function collectionFolders(root: string): Promise<string[]> {
-  const tree = await liveTreeOf(root)
-  const damaged = damagedFolders(tree.unreadable).filter((u) => u.kind === 'collection')
-  return [...tree.collections, ...damaged].map((c) => join(root, c.path))
 }
 
 export function reorderAssignment(

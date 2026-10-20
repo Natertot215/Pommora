@@ -35,10 +35,11 @@ import { dropContextOrder } from '../Nexus/reorder'
 import { machine } from '../Platform/machine'
 import { recordWrite } from '../Files/writeEcho'
 import { frozenWorld } from '../Properties/propertyValue'
-import { liveTreeOf } from '../Nexus/liveTree'
+import { heldTreeOf, liveTreeOf } from '../Nexus/liveTree'
 import { settledIndex } from '../Nexus/settle'
 
-import { type EntityRecord, pageIndexOf, pagesOf, recordById } from '../Nexus/record'
+import { pageIndexOf, pagesOf } from '../Nexus/record'
+import { type NexusPages, nexusPages } from '../Nexus/heldPages'
 import {
   deleteCascade,
   joinCascades,
@@ -129,14 +130,15 @@ async function restoreArtifact(
     return fail('not-found', 'That deletion never finished; there is nothing to restore.')
 
   const tree = await liveTreeOf(root)
-  const placed = await placeRecord(root, stored, destination, basename(artifactAbs), tree)
+  const { byId: roots, archived } = await nexusPages(root, tree)
+  const placed = await placeRecord(root, stored, destination, basename(artifactAbs), tree, roots)
   if (!placed.ok) return placed
   const { record, placement, writeOrder, landedAs } = placed.value
   const { dir, finalName, finalTitle } = placement
   const targetAbs = join(root, dir, finalName)
   const back = await originPagesOf(root, store, await contentPages(record.entity, artifactAbs))
   const targets = new Map(Object.entries(record.targets ?? {}))
-  const world = buildPageIndex([...pagesOf(tree), ...back])
+  const world = buildPageIndex([...pagesOf(tree), ...archived, ...back])
   const frozen = frozenWorld(world, targets)
   const owner =
     record.entity === 'collection'
@@ -177,6 +179,7 @@ async function restoreArtifact(
   await writeOrder?.()
   // Two maps rather than one `relink`: the arrival's collisions read against the live world alone, since beside the returning pages a twin's bare link reads ambiguous and a returning `Notes/Alpha` would take `notes/alpha` from a live `X/Notes/Alpha`. `backNames` reads the returning pages' own keys against themselves, feeding the refill whole and the cascade only where the live world names nothing.
   const after = await settledIndex(root)
+  const settled = after && heldTreeOf(root)
   const ids = back.map((p) => p.id)
   const backNames = after
     ? respellings(buildPageIndex(back), after, ids, [])
@@ -196,7 +199,6 @@ async function restoreArtifact(
     for (const [k, v] of backNames) if (live.resolve(k).status === 'phantom') names.set(k, v)
     if (names.size) cascade = await renameCascade(root, { names, label: title })
   }
-  const roots = recordById(tree)
   const unspent: string[] = []
   const unlinked = new Set<string>()
   if (record.entity === 'context') {
@@ -236,7 +238,9 @@ async function restoreArtifact(
     (await readLiveSetting(root, 'restoreLinksOnDeletion'))
   ) {
     const defs = linkDefsOf(tree.config.registry)
-    const refilled = frozenWorld(after ?? world)
+    const refilled = frozenWorld(
+      settled ? buildPageIndex([...pagesOf(settled), ...archived]) : world,
+    )
     const trashed: StrippedLink[] = []
     for (const def of defs) {
       const all = Object.fromEntries(
@@ -246,7 +250,7 @@ async function restoreArtifact(
       )
       const taken = await refillValues(root, def, roots, all, refilled)
       for (const id of Object.keys(all))
-        if (!roots[id]) trashed.push({ page: id, property: def.id, value: all[id] })
+        if (!roots.get(id)) trashed.push({ page: id, property: def.id, value: all[id] })
         else if (!taken.has(id)) unlinked.add(id)
     }
     // A page or Space in the Trash takes its value back into its trashed copy, so it returns with it.
@@ -266,7 +270,7 @@ async function restoreArtifact(
     await machine().remove(bundleAbs)
   }
   return ok({
-    ...restored([...unspent, ...unlinked].map((id) => roots[id].title)),
+    ...restored([...unspent, ...unlinked].flatMap((id) => roots.get(id)?.title ?? [])),
     ...(cascade ? { cascade } : {}),
     ...(landedAs ? { landedAs } : {}),
   })
@@ -275,12 +279,12 @@ async function restoreArtifact(
 /** The ids of what's still here and didn't take its tag back; a root gone since has nothing to take it. */
 async function reapply(
   root: string,
-  roots: Record<string, EntityRecord>,
+  roots: NexusPages['byId'],
   key: string,
   additions: Record<string, string[]>,
 ): Promise<string[]> {
   const taken = await sweepRootsById(root, roots, additions, (raw, titles) =>
     landValue(raw, key, joinValues(raw[key], titles)),
   )
-  return Object.keys(additions).filter((id) => roots[id] && !taken.has(id))
+  return Object.keys(additions).filter((id) => roots.get(id) && !taken.has(id))
 }

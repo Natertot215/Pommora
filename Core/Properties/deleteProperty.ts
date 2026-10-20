@@ -1,6 +1,6 @@
 import { mintBundle } from '../Bundles/bundle'
 import { type RecordFile, writeRecord } from '../Bundles/record'
-import { assignedIds, collectionFolders } from './assignment'
+import { assignedIds } from './assignment'
 import { cachedValues, patchCacheBlock } from './propertyCache'
 import {
   readRegistry,
@@ -9,7 +9,10 @@ import {
   serializeSchemaOp,
 } from './propertiesRegistry'
 import { removeFromRegistry } from './registryProperty'
-import { type KeyedHolders, keyedHolders, keyHolderFiles } from './keyHolders'
+import { collectionFolders, governedReach, type KeyedHolders, keyedHolders } from './keyHolders'
+import { queryKeyHolders } from '../Index/contentIndex'
+import { nexusPages } from '../Nexus/heldPages'
+import { liveTreeOf } from '../Nexus/liveTree'
 import {
   clearSchemaJournal,
   type SchemaCascade,
@@ -89,7 +92,7 @@ export type PropertyDeletion = SchemaCascade & Required<Pick<MutateOutcome, 'tra
 export async function propertyHolders(root: string, propertyId: string): Promise<Result<number>> {
   const def = (await readRegistry(root)).defs[propertyId]
   if (!def) return NO_PROPERTY
-  const { held, plan } = await deletePlan(root, propertyId, def.key, await collectionFolders(root))
+  const { held, plan } = await deletePlan(root, propertyId, def.key)
   return ok(await sweepCount(root, held.strip, plan))
 }
 
@@ -107,7 +110,7 @@ async function deleteInner(root: string, propertyId: string): Promise<Result<Pro
 
   // EVERY collection folder, not just current assigners — a Remove-cache block lives on a collection sidecar that no longer assigns the id, and pre-cache dormant values may sit on any page.
   const folders = await collectionFolders(root)
-  const planned = await deletePlan(root, propertyId, key, folders)
+  const planned = await deletePlan(root, propertyId, key)
   const bundle = await snapshot(root, propertyId, def, folders, planned.held)
   // Journaled AFTER the snapshot — a replay re-runs the strip tail, never the bundle mint.
   const record: SchemaJournal = { op: 'delete', id: propertyId, key }
@@ -128,9 +131,9 @@ export async function deletePlan(
   root: string,
   propertyId: string,
   key: string,
-  folders: string[],
 ): Promise<DeletePlan> {
-  const held = await keyedHolders(await keyHolderFiles(root, key, folders), key)
+  const { byId } = await nexusPages(root, await liveTreeOf(root))
+  const held = await keyedHolders(await governedReach(root, queryKeyHolders(key)), key, byId)
   const raw: Rewrite = (r) => stripKeys(r, [key])
   return { held, plan: { raw, sidecars: withoutOrderId(raw, propertyId) } }
 }

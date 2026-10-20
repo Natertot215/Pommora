@@ -2,7 +2,7 @@
 
 import { expressibleInLink } from '../Connections/connections'
 import { wikiTitle } from '../Connections/linkValue'
-import { ASSETS_DIR_REL, NEXUS_CONFIG_FILES, SIDECARS } from '../Paths/nexusPaths'
+import { ASSETS_DIR_REL, NEXUS_CONFIG_FILES } from '../Paths/nexusPaths'
 import { basename, titleFromPath, dirname, extname, join, relative } from '../Paths/posix'
 import { assetsDir, nexusConfig } from '../Paths/paths'
 import { machine } from '../Platform/machine'
@@ -15,8 +15,8 @@ import {
   readTextOrNull,
   updateNexusConfig,
 } from '../Files/atomicWrite'
-import { corpusFiles, listEntries, listFilesRecursive, listPathsUnder } from '../Files/walk'
-import { outsideContent, reachingExcluded, type WatchScope } from '../Paths/exclusion'
+import { corpusFiles, listEntries, listFilesRecursive, sidecarsUnder } from '../Files/walk'
+import { reachingExcluded } from '../Paths/exclusion'
 import { discardFile, type TrashDeps } from '../Trash/discard'
 import { readNavigationFile, writeNavigationState } from '../Navigation/navigationFile'
 import { readWatchScope, rekeyCrops, updateSettings } from '../Settings/settings'
@@ -114,7 +114,8 @@ async function collectRefs(root: string, skipped: AssetMigration['skipped']): Pr
   })
   // Links inside excluded folders move with the rest, or the sweep would trash files they still name.
   const scope = reachingExcluded(await readWatchScope(root))
-  for (const file of await sidecarsUnder(root, scope)) {
+  const sidecars = [...(await sidecarsUnder(root, scope)), ...(await spaceSidecars(root))]
+  for (const file of sidecars.sort()) {
     const fields = await readJsonObject(file)
     if (!fields) {
       skipped.push({ store: relative(root, file), why: 'it could not be read' })
@@ -152,15 +153,6 @@ async function collectRefs(root: string, skipped: AssetMigration['skipped']): Pr
       })
   }
   return refs
-}
-
-/** The containers `scope` admits, and every Space sidecar, which the content walk never enters. */
-async function sidecarsUnder(root: string, scope: WatchScope): Promise<string[]> {
-  const containers = await listPathsUnder(root, root, (rel, kind) =>
-    kind === 'dir' ? !outsideContent(rel, scope) : SIDECARS.has(basename(rel)),
-  )
-  const spaces = await spaceSidecars(root)
-  return [...containers.map((rel) => join(root, rel)), ...spaces].sort()
 }
 
 export async function migrateAssets(root: string, deps: TrashDeps): Promise<AssetMigration | null> {

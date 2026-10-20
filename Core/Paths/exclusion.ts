@@ -1,5 +1,6 @@
 import { foldKey } from './caseFold'
 import {
+  archiveSegs,
   ASSETS_DIRNAME,
   CONTEXT_JOURNAL_REL,
   NEXUS_DIR,
@@ -73,10 +74,10 @@ export interface WatchScope {
 
 export type OutsideReason = 'hidden' | 'asset' | 'excluded'
 
-/** What keeps a nexus-relative path outside the content the app reads, or null: a hidden folder or name on the way, the asset root (which holds files rather than content while remaining watched), or an excluded folder. */
+/** What keeps a nexus-relative path outside the content the app reads, or null: a hidden folder or name on the way, counted below `.nexus/archive` for a path inside it (the Archive is the one hidden folder read as content), the asset root (which holds files rather than content while remaining watched), or an excluded folder. */
 export function outsideContent(rel: string, scope: WatchScope): OutsideReason | null {
   const segs = rel.split('/')
-  if (segs.some(hiddenFolder)) return 'hidden'
+  if ((archiveSegs(segs) ?? segs).some(hiddenFolder)) return 'hidden'
   if (assetMatcher(scope.assetDir)(segs)) return 'asset'
   return excludedMatcher(scope.excluded)(segs) ? 'excluded' : null
 }

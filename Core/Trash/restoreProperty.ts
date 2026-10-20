@@ -3,7 +3,9 @@ import { patchSidecar } from '../Files/sidecar'
 import { fail, ok, type Result, fault } from '../Contract/result'
 import { readRegistry, serializeSchemaOp } from '../Properties/propertiesRegistry'
 import type { RecordFile } from '../Bundles/record'
-import { pageIndexOf, recordById } from '../Nexus/record'
+import { pagesOf } from '../Nexus/record'
+import { nexusPages } from '../Nexus/heldPages'
+import { buildPageIndex } from '../Connections/pageIndex'
 import { liveTreeOf } from '../Nexus/liveTree'
 import { join } from '../Paths/posix'
 import { assignInner, refillValues } from '../Properties/assignment'
@@ -54,13 +56,13 @@ async function restoreInner(
   }
 
   const tree = await liveTreeOf(root)
-  const roots = recordById(tree)
-  const frozen = frozenWorld(pageIndexOf(tree))
+  const { byId: roots, archived } = await nexusPages(root, tree)
+  const frozen = frozenWorld(buildPageIndex([...pagesOf(tree), ...archived]))
   const dropped: StrippedLink[] = []
   const values = Object.fromEntries(
     Object.entries(record.values).filter(([id, raw]) => {
-      if ((roots[id]?.kind !== 'page' && roots[id]?.kind !== 'space') || isBlankRaw(raw))
-        return false
+      const kind = roots.get(id)?.kind
+      if ((kind !== 'page' && kind !== 'space') || isBlankRaw(raw)) return false
       const entry = def.type === 'link' ? gonePageEntry(raw, frozen) : null
       if (entry === null) return true
       dropped.push({ page: id, property: def.id, value: entry })
@@ -69,7 +71,9 @@ async function restoreInner(
   )
   const taken = await refillValues(root, def, roots, values, frozen)
   return ok({
-    unrestored: Object.keys(values).flatMap((id) => (taken.has(id) ? [] : roots[id].title)),
+    unrestored: Object.keys(values).flatMap((id) =>
+      taken.has(id) ? [] : (roots.get(id)?.title ?? []),
+    ),
     dropped,
   })
 }

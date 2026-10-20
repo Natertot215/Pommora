@@ -16,7 +16,6 @@ import { editCaches } from '../Properties/propertyCache'
 import { heldTreeOf, liveTreeOf } from './liveTree'
 import { pageIndexOf, pagesOf } from './record'
 import type { NexusTree } from './tree'
-import { withheldIn } from './treePatch'
 import { rewriteConnections, rewriteHeadingConnections } from '../Connections/rewrite'
 import { headingOutline } from '../MarkdownPM/Engine/headingScan'
 import { queryMentions } from '../Index/contentIndex'
@@ -29,7 +28,8 @@ import type { TilesChanged } from '../Tiles/tiles'
 import { linkEntry } from '../Connections/linkValue'
 import { buildPageIndex, pageKey, pathKeys } from '../Connections/pageIndex'
 import { gonePageEntry } from '../Properties/propertyValue'
-import { liveIdIndex, livePathOf } from './heldPages'
+import { nexusPages } from './heldPages'
+import { governedReach } from '../Properties/keyHolders'
 import { ID_KEY } from './identityMark'
 import { asString } from './coerce'
 
@@ -69,7 +69,7 @@ export const joinCascades = (a: CascadeReport, b: CascadeReport): CascadeReport 
   warning: [a.warning, b.warning].filter(Boolean).join(' ') || undefined,
 })
 
-/** A delete strips every Link property value naming a page it took, by any key that now resolves to nothing, from the pages and Spaces the tree holds outside it; a key a page outside still answers is left to that page, and bodies keep their links and read unresolved. Nothing at or under `abs` is swept, since it left with the delete. */
+/** A delete strips every Link property value naming a page it took, by any key that now resolves to nothing, from the governed pages outside it, archived ones among them, and from every Space; a key a page the tree holds outside it still answers is left to that page, and bodies keep their links and read unresolved. A linker with no ID, or one of two files claiming one, keeps its value, since no restore could put it back. Nothing at or under `abs` is swept, since it left with the delete. */
 export async function deleteCascade(
   root: string,
   abs: string,
@@ -78,13 +78,12 @@ export async function deleteCascade(
   const deleted = relative(root, abs)
   const inside = (rel: string): boolean => isAtOrUnder(rel, deleted)
   const tree = heldTreeOf(root)
-  // The held tree may still list the deleted pages, since its patch can fall to a walk, so they're left out by path; with no tree, nothing answers and every key strips.
+  // The held tree may still list the deleted pages, since its patch can fall to a walk, so they're left out by path.
   const after = buildPageIndex(tree ? pagesOf(tree).filter((p) => !inside(p.path)) : [])
   const gone = new Set(paths.flatMap(pathKeys).filter((k) => after.resolve(k).status === 'phantom'))
   try {
     const defs = byKey(linkDefsOf(tree?.config.registry ?? []))
-    if (!defs.size || !gone.size) return { cascade: { pages: [], hosts: [] }, links: [] }
-    const rels = queryMentions([...gone]) ?? (await nexusCorpus(root))
+    if (!tree || !defs.size || !gone.size) return { cascade: { pages: [], hosts: [] }, links: [] }
     const goneEntry = (value: unknown): string | null =>
       gonePageEntry(value, { holds: (t) => !gone.has(pageKey(t)) })
     const named = (raw: Record<string, unknown>) =>
@@ -98,23 +97,16 @@ export async function deleteCascade(
         raw,
         named(raw).map(({ key }) => key),
       )
-    // Tree pages, and the pages beneath a folder the tree withholds: a loose file outside every Collection shows in no view and no restore could reach it; dropping this filter strips them too.
-    const held = liveIdIndex(root)
-    const withheld = withheldIn(tree?.unreadable)
-    const files = rels
-      .filter((rel) => (held.has(rel) || withheld(rel)) && !inside(rel))
-      .map((rel) => join(root, rel))
-    let twins = 0
+    const files = (await governedReach(root, queryMentions([...gone]))).filter(
+      (file) => !inside(relative(root, file)),
+    )
+    const { byId } = await nexusPages(root, tree)
+    let heldOut = 0
     const swept = await sweepGovernedRoots(root, files, {
       raw: (raw, file) => {
         const id = asString(raw[ID_KEY])
-        if (
-          named(raw).length &&
-          id !== undefined &&
-          livePathOf(root, id) === null &&
-          !withheld(relative(root, file))
-        ) {
-          twins++
+        if (named(raw).length && (id === undefined || byId.get(id) === null)) {
+          heldOut++
           return null
         }
         return strip(raw, file)
@@ -128,7 +120,7 @@ export async function deleteCascade(
       if (!id) continue
       for (const { def, value } of named(raw)) links.push({ page: id, property: def.id, value })
     }
-    const unswept = swept.skipped.length + twins
+    const unswept = swept.skipped.length + heldOut
     return {
       cascade: {
         pages: [...swept.touched.keys()].map((file) => relative(root, file)),

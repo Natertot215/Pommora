@@ -1,7 +1,7 @@
 import { mutateRegistry, readRegistry, NO_PROPERTY, serializeSchemaOp } from './propertiesRegistry'
 import { uniqueOptionGroups, validateOptionValues } from './schema'
-import { collectionFolders } from './assignment'
-import { keyHolderFiles } from './keyHolders'
+import { governedReach } from './keyHolders'
+import { queryKeyHolders } from '../Index/contentIndex'
 import { sweepCount, sweepGovernedRoots, type SweepPlan, unsweptLine } from './governedSweep'
 import { editList, valueEditRewrite, type ValueEdit } from './pageValue'
 import { editCaches } from './propertyCache'
@@ -194,7 +194,7 @@ async function valueEditPlan(
   def: PropertyDefinition,
   keys: ValueEdit,
 ): Promise<{ files: string[]; plan: SweepPlan }> {
-  const files = await keyHolderFiles(root, def.key, await collectionFolders(root))
+  const files = await governedReach(root, queryKeyHolders(def.key))
   const raw = valueEditRewrite(def, keys)
   return { files, plan: { raw, sidecars: raw } }
 }

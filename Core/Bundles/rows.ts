@@ -3,6 +3,7 @@ import { CONTEXTS_DIR_REL } from '../Paths/nexusPaths'
 import { type MatchKey, matchKey } from '../Paths/caseFold'
 import type { HeldKind } from '../Nexus/entities'
 import type { NexusTree } from '../Nexus/tree'
+import type { NexusPages } from '../Nexus/heldPages'
 import { containerTrailById } from '../Nexus/treePatch'
 import { type PropertyType, propertyType } from '../Properties/properties'
 import { contextWorldOf } from '../Contexts/contextResolve'
@@ -58,8 +59,13 @@ function liveCrumbs(record: ArtifactRecord, tree: NexusTree): BundleCrumb[] | nu
   return chain?.map((n) => ({ kind: n.kind, title: n.title })) ?? null
 }
 
-function homeResolvesFor(record: ArtifactRecord, artifactName: string, tree: NexusTree): boolean {
-  const resolution = resolveRecord(record, artifactName, tree)
+function homeResolvesFor(
+  record: ArtifactRecord,
+  artifactName: string,
+  tree: NexusTree,
+  byId: NexusPages['byId'],
+): boolean {
+  const resolution = resolveRecord(record, artifactName, tree, byId)
   return !('refuse' in resolution) || resolution.refuse === 'id-live'
 }
 
@@ -73,6 +79,7 @@ export function bundleRowOf(
   bundle: ListedBundle,
   store: BundleStore,
   tree: NexusTree,
+  byId: NexusPages['byId'],
 ): BundleRow | null {
   const { record, bundlePath, artifactName } = bundle
   if (record.entity === 'property') {
@@ -96,7 +103,7 @@ export function bundleRowOf(
     crumbs: live ?? frozenCrumbs(store, bundlePath),
     ...(live ? {} : { historical: true }),
     storedAt: storedAtOf(bundlePath),
-    homeResolves: homeResolvesFor(record, artifactName, tree),
+    homeResolves: homeResolvesFor(record, artifactName, tree, byId),
   })
 }
 
@@ -104,9 +111,10 @@ export function bundleRows(
   bundles: ListedBundle[],
   store: BundleStore,
   tree: NexusTree,
+  byId: NexusPages['byId'],
 ): BundleRow[] {
   return bundles
-    .map((b) => bundleRowOf(b, store, tree))
+    .map((b) => bundleRowOf(b, store, tree, byId))
     .filter((row) => row !== null)
     .sort((a, b) => (b.storedAt ?? -1) - (a.storedAt ?? -1))
 }

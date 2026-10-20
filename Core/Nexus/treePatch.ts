@@ -12,7 +12,13 @@ import type {
 } from './tree'
 import type { PropertyDefinition } from '../Properties/properties'
 import { basename, isAtOrUnder, relDirname, relJoin, titleFromPath } from '../Paths/posix'
-import { CONTEXTS_DIR_REL, contextDirRel } from '../Paths/nexusPaths'
+import {
+  ARCHIVE_DIR_REL,
+  archiveDirRel,
+  archivedCollectionIdOf,
+  CONTEXTS_DIR_REL,
+  contextDirRel,
+} from '../Paths/nexusPaths'
 import { asStringArray } from './coerce'
 import { resolveOrder } from './order'
 import { type ContainerKind, isContainer } from './entities'
@@ -88,14 +94,23 @@ export const containerTrailById = (
 export const findContainerById = (tree: NexusTree, id: string): CollectionNode | SetNode | null =>
   containerTrailById(tree, id)?.at(-1) ?? null
 
-/** A Collection owns itself; anything else is owned by the Collection its path starts in, since Collections sit only at the Nexus root. */
+/** A Collection owns itself; anything else is owned by the Collection its path starts in, since Collections sit only at the Nexus root, or by the one whose Archive holds it. */
 export function owningCollection(
   tree: NexusTree | null,
   of: string | CollectionNode | SetNode,
 ): CollectionNode | undefined {
   if (typeof of !== 'string' && of.kind === 'collection') return of
-  const top = (typeof of === 'string' ? of : of.path).split('/', 1)[0]
-  return tree?.collections.find((c) => c.path === top)
+  const path = typeof of === 'string' ? of : of.path
+  const filed = archivedCollectionIdOf(path)
+  const top = path.split('/', 1)[0]
+  return tree?.collections.find((c) => (filed === null ? c.path === top : c.id === filed))
+}
+
+/** The Archive a reach covers: every one across the whole Nexus, or all of the owning Collection's for a reach scoped under `rel`, since an archived chain spells its folders as they were named when it left. */
+export function archiveReach(tree: NexusTree, rel?: string): string | null {
+  if (rel === undefined) return ARCHIVE_DIR_REL
+  const owner = owningCollection(tree, rel)
+  return owner ? archiveDirRel(owner.id) : null
 }
 
 export const NO_SCHEMA: PropertyDefinition[] = []

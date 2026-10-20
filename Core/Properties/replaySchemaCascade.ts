@@ -3,7 +3,7 @@
 import { errText, fault, ok, type Result } from '../Contract/result'
 import { type ConfigReach, NO_REACH } from '../Nexus/configReach'
 import { readRegistry, serializeSchemaOp } from './propertiesRegistry'
-import { collectionFolders } from './assignment'
+import { collectionFolders } from './keyHolders'
 import { renameSweep } from './registryProperty'
 import { deletePlan, stripAndRemove } from './deleteProperty'
 import { dropOptionFromDef, optionCascade } from './optionOps'
@@ -58,7 +58,7 @@ async function replay(
         root,
         journal.id,
         folders,
-        await deletePlan(root, journal.id, journal.key, folders),
+        await deletePlan(root, journal.id, journal.key),
       )
       return { skipped: skipped + (crashed && !removed.ok ? 1 : 0), hosts }
     }

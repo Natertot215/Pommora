@@ -1,5 +1,6 @@
 import { hiddenFolder, hiddenName, outsideContent, type WatchScope } from '../Paths/exclusion'
-import { isMarkdownFile, join, relative } from '../Paths/posix'
+import { ARCHIVE_DIR_REL, SIDECARS } from '../Paths/nexusPaths'
+import { basename, isMarkdownFile, join, relative } from '../Paths/posix'
 import { type DirEntry, machine } from '../Platform/machine'
 
 export function isContentName(name: string): boolean {
@@ -28,7 +29,7 @@ async function filesUnder(dir: string): Promise<string[]> {
   return out
 }
 
-// The pages under a folder the tree doesn't hold (a trash bundle's artifact), held to the same hidden-name rule as the content walk.
+// The pages under a folder the tree doesn't hold (a bundle's artifact), every name below it held to the hidden-folder rule.
 export async function listMarkdownFiles(dir: string): Promise<string[]> {
   const rels = await listPathsUnder(
     dir,
@@ -38,8 +39,13 @@ export async function listMarkdownFiles(dir: string): Promise<string[]> {
   return rels.map((rel) => join(dir, rel))
 }
 
+/** The Nexus root, then its Archive: the one hidden folder read as content, which the root's own walk prunes with `.nexus`. */
+const contentRoots = (root: string): string[] => [root, join(root, ARCHIVE_DIR_REL)]
+
 export async function corpusFiles(root: string, scope: WatchScope): Promise<string[]> {
-  return corpusFilesUnder(root, root, scope)
+  const files: string[] = []
+  for (const dir of contentRoots(root)) files.push(...(await corpusFilesUnder(root, dir, scope)))
+  return files
 }
 
 /** The folders `dir` holds that the app enters: every one but a hidden one. */
@@ -80,6 +86,21 @@ export async function corpusFilesUnder(
     absDir,
     (rel, kind) => !outsideContent(rel, scope) && (kind === 'dir' || isMarkdownFile(rel)),
   )
+}
+
+export async function sidecarsUnder(
+  root: string,
+  scope: WatchScope,
+  under?: string,
+): Promise<string[]> {
+  const files: string[] = []
+  for (const dir of under === undefined ? contentRoots(root) : [under]) {
+    const rels = await listPathsUnder(root, dir, (rel, kind) =>
+      kind === 'dir' ? !outsideContent(rel, scope) : SIDECARS.has(basename(rel)),
+    )
+    files.push(...rels.map((rel) => join(root, rel)))
+  }
+  return files
 }
 
 export async function listFilesRecursive(dir: string, suffixes?: string[]): Promise<string[]> {
