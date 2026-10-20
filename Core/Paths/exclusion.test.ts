@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest'
-import { ASSETS_DIR_REL, thumbsRel } from './nexusPaths'
+import {
+  ARCHIVE_DIR_REL,
+  ASSETS_DIR_REL,
+  archiveSegs,
+  archivedCollectionIdOf,
+  thumbsRel,
+} from './nexusPaths'
 import {
   assetMatcher,
   excludedMatcher,
@@ -153,5 +159,25 @@ describe('manifestAdmits', () => {
 
   it('refuses a thumbnail cache under any nexus id', () => {
     expect(admits(`${ASSETS_DIR_REL}/OTHER-ID/thumbnails/a.jpg`)).toBe(false)
+  })
+})
+
+describe('the Archive’s segments', () => {
+  it('answers the segments below .nexus/archive, and null outside it', () => {
+    expect(archiveSegs(['.nexus', 'archive'])).toEqual([])
+    expect(archiveSegs(['.nexus', 'archive', 'C1', 'A.md'])).toEqual(['C1', 'A.md'])
+    expect(archiveSegs(['.nexus'])).toBeNull()
+    expect(archiveSegs(['.nexus', 'contexts'])).toBeNull()
+    expect(archiveSegs(['Notes', 'archive'])).toBeNull()
+  })
+
+  it('answers the Collection id an archived path files under, and null for the folder itself or outside it', () => {
+    expect(
+      archivedCollectionIdOf(
+        '.nexus/archive/C1/Alpha/2026-10-20T12-00-00-000Z__A.md.archived/A.md',
+      ),
+    ).toBe('C1')
+    expect(archivedCollectionIdOf(ARCHIVE_DIR_REL)).toBeNull()
+    expect(archivedCollectionIdOf('Notes/A.md')).toBeNull()
   })
 })

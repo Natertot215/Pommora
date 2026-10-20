@@ -5,7 +5,7 @@ import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'
 import { readNexus } from '../Nexus/readNexus'
 import { settleNow } from '../Nexus/settle'
 import { stabilize } from '../Nexus/treeStabilize'
-import type { TrashDeps } from '../Trash/bundle'
+import type { TrashDeps } from '../Trash/discard'
 
 const QUIET = { push: () => {}, watch: async () => {} }
 

@@ -80,6 +80,14 @@ export const findContainerWhere = (
   match: ContainerMatch,
 ): CollectionNode | SetNode | null => containerTrailWhere(tree, match)?.at(-1) ?? null
 
+export const containerTrailById = (
+  tree: NexusTree,
+  id: string,
+): (CollectionNode | SetNode)[] | null => containerTrailWhere(tree, (n) => n.id === id)
+
+export const findContainerById = (tree: NexusTree, id: string): CollectionNode | SetNode | null =>
+  containerTrailById(tree, id)?.at(-1) ?? null
+
 /** A Collection owns itself; anything else is owned by the Collection its path starts in, since Collections sit only at the Nexus root. */
 export function owningCollection(
   tree: NexusTree | null,

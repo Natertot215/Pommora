@@ -13,7 +13,7 @@ import { wikiTitle } from '../Connections/linkValue'
 import { splitFrontmatter } from '../Files/pageFile'
 import { contextsDir } from '../Paths/paths'
 import { SPACE_SIDECAR } from '../Paths/nexusPaths'
-import type { TrashDeps } from '../Trash/bundle'
+import type { TrashDeps } from '../Trash/discard'
 
 const nexusDeps: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
 

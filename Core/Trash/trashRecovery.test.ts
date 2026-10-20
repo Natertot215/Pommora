@@ -8,9 +8,10 @@ import * as atomicWrite from '../Files/atomicWrite'
 import { pathExists } from '../Files/atomicWrite'
 import { settledMutate } from '../Testing/settledMutate'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
-import { listBundles, parkLinks } from './holdings'
-import { readRecord } from './record'
-import { trashRows } from './trashRows'
+import { listBundles } from '../Bundles/bundle'
+import { parkLinks } from './holdings'
+import { readRecord } from '../Bundles/record'
+import { bundleRows } from '../Bundles/rows'
 import { readNexus } from '../Nexus/readNexus'
 import { closeSession, openSession } from '../Nexus/session'
 import { splitFrontmatter } from '../Files/pageFile'
@@ -23,7 +24,8 @@ import { settleNow } from '../Nexus/settle'
 import type { ValueChange } from '../Nexus/tree'
 import type { Pushes } from '../Contract/bridge'
 import { renameProperty } from '../Properties/registryProperty'
-import type { TrashDeps } from './bundle'
+import { setCollectionOrder, setSpaceOrder } from '../Nexus/reorder'
+import type { TrashDeps } from './discard'
 
 let root: string
 const handed: string[] = []
@@ -31,7 +33,8 @@ const deps: TrashDeps = {
   trashMode: 'nexus',
   trashToSystem: async (p) => void handed.push(p),
 }
-const rows = async () => trashRows(await listBundles(root), await readNexus(root))
+const rows = async () =>
+  bundleRows(await listBundles(root, { kind: 'trash' }), { kind: 'trash' }, await readNexus(root))
 const find = async (title: string) => {
   const hit = (await rows()).find((r) => r.title === title)
   expect(hit, `no row titled ${title}`).toBeDefined()
@@ -46,6 +49,18 @@ const beta = join('Journal', 'Daily', 'Beta.md')
 const BETA_ID = '01KVGMT8BFP350FZZXAMG1QDVC'
 const linker = (rel: string, id: string, keys: string) =>
   writeFile(join(root, rel), `---\nID: ${id}\n${keys}\n---\nlinker\n`)
+const ALPHA_ID = '01KVGMT8BFP350FZZXAMG1QDVA'
+const ALEPH_ID = '01KVGMT8BFP350FZZXAMG1QDV0'
+const page = (rel: string, id: string) => writeFile(join(root, rel), `---\nID: ${id}\n---\nbody\n`)
+const sidecarOrder = async (rel: string, key: string): Promise<unknown> =>
+  JSON.parse(await readFile(join(root, rel), 'utf8'))[key]
+const stateOrder = async (): Promise<Record<string, unknown>> =>
+  JSON.parse(await readFile(join(root, '.nexus', 'state.json'), 'utf8')).order
+const restoreRow = async (title: string) => {
+  const row = await find(title)
+  const r = await settledMutate(root, { op: 'restore', bundlePath: row.bundlePath }, deps)
+  expect(r.ok, `restore ${title}`).toBe(true)
+}
 const frontmatter = async (rel = beta) => splitFrontmatter(await readFile(join(root, rel), 'utf8'))
 
 beforeEach(async () => {
@@ -119,7 +134,12 @@ afterEach(async () => {
 })
 
 describe('end to end — deleted, listed, restored', () => {
-  it('a page deleted and restored comes back where it was, and leaves the list', async () => {
+  it('a page deleted and restored comes back between its old neighbours, and leaves the list', async () => {
+    await page(join('Journal', 'Daily', 'Aleph.md'), ALEPH_ID)
+    await writeFile(
+      join(root, 'Journal', 'Daily', '_pageset.json'),
+      JSON.stringify({ id: 'set-daily', page_order: [BETA_ID, ALPHA_ID, ALEPH_ID] }),
+    )
     await del('Journal/Daily/Alpha.md', 'page')
     const row = await find('Alpha')
     expect(row.homeResolves).toBe(true)
@@ -127,7 +147,89 @@ describe('end to end — deleted, listed, restored', () => {
     const r = await settledMutate(root, { op: 'restore', bundlePath: row.bundlePath }, deps)
     expect(r.ok).toBe(true)
     expect(await pathExists(join(root, 'Journal', 'Daily', 'Alpha.md'))).toBe(true)
+    expect(await sidecarOrder('Journal/Daily/_pageset.json', 'page_order')).toEqual([
+      BETA_ID,
+      ALPHA_ID,
+      ALEPH_ID,
+    ])
     expect(await rows()).toHaveLength(0)
+  })
+
+  it('a Set restored returns to its slot in set_order', async () => {
+    for (const [name, id] of [
+      ['Weekly', 'set-week'],
+      ['Monthly', 'set-month'],
+    ]) {
+      await mkdir(join(root, 'Journal', name), { recursive: true })
+      await writeFile(join(root, 'Journal', name, '_pageset.json'), JSON.stringify({ id }))
+    }
+    const journal = JSON.parse(
+      await readFile(join(root, 'Journal', '_pagecollection.json'), 'utf8'),
+    )
+    const order = ['set-week', 'set-daily', 'set-month']
+    await writeFile(
+      join(root, 'Journal', '_pagecollection.json'),
+      JSON.stringify({ ...journal, set_order: order }),
+    )
+    await del('Journal/Daily', 'set')
+    await restoreRow('Daily')
+    expect(await sidecarOrder('Journal/_pagecollection.json', 'set_order')).toEqual(order)
+  })
+
+  it('a Collection restored returns to its slot in state.order.collections', async () => {
+    await mkdir(join(root, 'Zed'), { recursive: true })
+    await writeFile(join(root, 'Zed', '_pagecollection.json'), JSON.stringify({ id: 'col-zed' }))
+    const order = ['col-plain', 'col-journal', 'col-zed']
+    await setCollectionOrder(root, order)
+    await del('Journal', 'collection')
+    await restoreRow('Journal')
+    expect((await stateOrder()).collections).toEqual(order)
+  })
+
+  it('a Space restored returns to its slot in its Context’s Space order', async () => {
+    for (const [space, id] of [
+      ['Sapphire', 'sp-sap'],
+      ['Zeta', 'sp-zeta'],
+    ]) {
+      await mkdir(join(contextsDir(root), 'Projects', space), { recursive: true })
+      await writeFile(
+        join(contextsDir(root), 'Projects', space, '_space.json'),
+        JSON.stringify({ id }),
+      )
+    }
+    const order = ['sp-sap', 'sp-pom', 'sp-zeta']
+    await setSpaceOrder(root, 'ctx_projects', order)
+    await del('.nexus/contexts/Projects/Pommora', 'space')
+    await restoreRow('Pommora')
+    expect((await stateOrder()).spaces).toMatchObject({ ctx_projects: order })
+  })
+
+  it('a restore into a folder with no written order writes the order the folder showed, with the page in its slot', async () => {
+    await page(join('Journal', 'Daily', 'Aleph.md'), ALEPH_ID)
+    await del('Journal/Daily/Alpha.md', 'page')
+    await restoreRow('Alpha')
+    expect(await sidecarOrder('Journal/Daily/_pageset.json', 'page_order')).toEqual([
+      ALEPH_ID,
+      ALPHA_ID,
+      BETA_ID,
+    ])
+  })
+
+  it('a record from before the place was kept lands last, the order written whole', async () => {
+    await page(join('Journal', 'Daily', 'Aleph.md'), ALEPH_ID)
+    await del('Journal/Daily/Alpha.md', 'page')
+    const row = await find('Alpha')
+    const recordFile = join(root, row.bundlePath, '_record.json')
+    const { place: _, ...older } = JSON.parse(await readFile(recordFile, 'utf8'))
+    await writeFile(recordFile, JSON.stringify(older))
+    expect(
+      (await settledMutate(root, { op: 'restore', bundlePath: row.bundlePath }, deps)).ok,
+    ).toBe(true)
+    expect(await sidecarOrder('Journal/Daily/_pageset.json', 'page_order')).toEqual([
+      ALEPH_ID,
+      BETA_ID,
+      ALPHA_ID,
+    ])
   })
 
   it('a renamed parent is followed — the row reads the new name and the file lands in it', async () => {
@@ -329,7 +431,7 @@ describe('links come back with the page', () => {
   it('a restored page writes its Link values back onto the pages they came from', async () => {
     await del('Journal/Daily/Alpha.md', 'page')
     expect((await frontmatter()).Related).toBeUndefined()
-    expect((await listBundles(root))[0].record).toMatchObject({
+    expect((await listBundles(root, { kind: 'trash' }))[0].record).toMatchObject({
       links: [{ page: BETA_ID, property: 'prop_related', value: '[[Alpha]]' }],
     })
     expect(await restore('Alpha')).toBeUndefined()
@@ -526,7 +628,7 @@ describe('links come back with the page', () => {
     await refreshTree(root)
     const r = await settledMutate(root, { op: 'delete', path: gamma, kind: 'page' }, deps)
     expect(r.ok).toBe(false)
-    expect(await listBundles(root)).toEqual([])
+    expect(await listBundles(root, { kind: 'trash' })).toEqual([])
     expect(await readFile(join(root, gamma), 'utf8')).toBe(content)
   })
 

@@ -5,24 +5,24 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { dropLiveTree } from '../Nexus/liveTree'
 import type { MutateReply } from '../Nexus/mutateRequest'
 import type { NexusTree } from '../Nexus/tree'
-import type { TrashRow } from './trashRow'
+import type { BundleRow } from './rows'
 import { settledMutate } from '../Testing/settledMutate'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
-import { writePropertyBundle } from './record'
-import { deletedPathOf } from './bundle'
-import { listBundles } from './holdings'
+import { writePropertyBundle } from '../Properties/deleteProperty'
+import { listBundles } from './bundle'
 import { readNexus } from '../Nexus/readNexus'
 import { closeSession, openSession } from '../Nexus/session'
-import { trashRowOf, trashRows } from './trashRows'
-import type { TrashDeps } from './bundle'
+import { bundleRowOf, bundleRows } from './rows'
+import type { TrashDeps } from '../Trash/discard'
 
 const PAGE_A = '01KVGMT8BFP350FZZXAMG1QDVA'
+const ARCHIVE_ID = '01KVGMT8BFP350FZZXAMG1QDVB'
 const nexusDeps: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
 
 let root: string
 
-const rows = async (): Promise<TrashRow[]> =>
-  trashRows(await listBundles(root), await readNexus(root))
+const rows = async (): Promise<BundleRow[]> =>
+  bundleRows(await listBundles(root, { kind: 'trash' }), { kind: 'trash' }, await readNexus(root))
 const del = (
   path: string,
   kind: 'page' | 'collection' | 'set' | 'space' | 'context',
@@ -61,7 +61,7 @@ afterEach(async () => {
   await rm(root, { recursive: true, force: true })
 })
 
-describe('trashRows — a bundle as the browser reads it', () => {
+describe('bundleRows — a bundle as the browser reads it', () => {
   it('a page keeps its title without the extension, and its live container chain', async () => {
     await del('Notes/Daily/Alpha.md', 'page')
     const [row] = await rows()
@@ -129,6 +129,19 @@ describe('trashRows — a bundle as the browser reads it', () => {
     })
     // Nothing climbs: the page is never re-homed into the Set's own Collection.
     expect(page?.crumbs.every((c) => c.kind === undefined)).toBe(true)
+    const archived = bundleRowOf(
+      {
+        bundlePath: `.nexus/archive/${ARCHIVE_ID}/Notes/Daily/2026-10-20T00-00-00-000Z__Alpha.md.archived`,
+        artifactName: 'Alpha.md',
+        record: { entity: 'page', id: PAGE_A, parent: { kind: 'container', id: 'set-daily' } },
+      },
+      { kind: 'archive', id: ARCHIVE_ID },
+      await readNexus(root),
+    )
+    expect(archived).toMatchObject({
+      historical: true,
+      crumbs: [{ title: 'Notes' }, { title: 'Daily' }],
+    })
   })
 
   it('a Space whose Context is gone reads its location, not the folders it was kept in', async () => {
@@ -149,16 +162,17 @@ describe('trashRows — a bundle as the browser reads it', () => {
     await del('Notes/Daily/Alpha.md', 'page')
     const property = (await rows()).find((r) => r.kind === 'property')
     expect(property).toMatchObject({ title: 'Stage', crumbs: [], homeResolves: true })
-    expect(property?.deletedAt).toEqual(expect.any(Number))
+    expect(property?.storedAt).toEqual(expect.any(Number))
   })
 
   it('a property record with no readable name lists under its id', () => {
     expect(
-      trashRowOf(
+      bundleRowOf(
         {
           bundlePath: '.trash/s__property-prop_x.deleted',
           record: { entity: 'property', id: 'prop_x', def: { id: 'prop_x' }, values: {} },
         },
+        { kind: 'trash' },
         { collections: [], contexts: [] } as unknown as NexusTree,
       )?.title,
     ).toBe('prop_x')
@@ -171,39 +185,42 @@ describe('trashRows — a bundle as the browser reads it', () => {
     const listed = await rows()
     expect(listed.map((r) => r.kind)).toEqual(['set', 'page'])
     const [newest, oldest] = listed
-    expect(newest.deletedAt).not.toBeNull()
-    expect(newest.deletedAt).toBeGreaterThanOrEqual(oldest.deletedAt as number)
-    expect(Math.abs(Date.now() - (newest.deletedAt as number))).toBeLessThan(60_000)
+    expect(newest.storedAt).not.toBeNull()
+    expect(newest.storedAt).toBeGreaterThanOrEqual(oldest.storedAt as number)
+    expect(Math.abs(Date.now() - (newest.storedAt as number))).toBeLessThan(60_000)
   })
 
   it('a hand-made bundle name still lists, dateless, and sorts last', async () => {
     await del('Notes/Daily/Alpha.md', 'page')
     await del('Notes/Daily', 'set')
-    const stamped = (await listBundles(root)).find((b) => b.artifactName === 'Alpha.md')
+    const stamped = (await listBundles(root, { kind: 'trash' })).find(
+      (b) => b.artifactName === 'Alpha.md',
+    )
     const handMade = (stamped as { bundlePath: string }).bundlePath.replace(
       /[^/]+$/,
       'Alpha.md.deleted',
     )
     await rename(join(root, (stamped as { bundlePath: string }).bundlePath), join(root, handMade))
     const listed = await rows()
-    expect(listed.find((r) => r.kind === 'page')).toMatchObject({ title: 'Alpha', deletedAt: null })
+    expect(listed.find((r) => r.kind === 'page')).toMatchObject({ title: 'Alpha', storedAt: null })
     expect(listed.at(-1)?.kind).toBe('page')
   })
 
   it('a record carrying no id still shapes a row', () => {
-    const row = trashRowOf(
+    const row = bundleRowOf(
       {
         bundlePath: '.trash/Notes/s__Alpha.md.deleted',
         artifactName: 'Alpha.md',
         record: { entity: 'page', parent: { kind: 'container', id: 'set-daily' } },
       },
+      { kind: 'trash' },
       { collections: [], contexts: [] } as unknown as NexusTree,
     )
     expect(row).toMatchObject({ kind: 'page', title: 'Alpha', historical: true })
   })
 })
 
-describe('trashRows — `homeResolves` agrees with the resolver', () => {
+describe('bundleRows — `homeResolves` agrees with the resolver', () => {
   it('a row it calls resolvable restores with no destination asked for', async () => {
     await del('Notes/Daily/Alpha.md', 'page')
     const [row] = await rows()
@@ -220,7 +237,7 @@ describe('trashRows — `homeResolves` agrees with the resolver', () => {
   it('a row it calls homeless refuses the plain restore, which is why it must be asked', async () => {
     await del('Notes/Daily/Alpha.md', 'page')
     await del('Notes/Daily', 'set')
-    const page = (await rows()).find((r) => r.kind === 'page') as TrashRow
+    const page = (await rows()).find((r) => r.kind === 'page') as BundleRow
     expect(page.homeResolves).toBe(false)
     const restored = await settledMutate(
       root,
@@ -228,14 +245,5 @@ describe('trashRows — `homeResolves` agrees with the resolver', () => {
       nexusDeps,
     )
     expect(restored.ok).toBe(false)
-  })
-})
-
-describe('deletedPathOf', () => {
-  it('reads a bundled file’s delete-time path from the bundle chain and the artifact’s own tree', () => {
-    const page = '/nexus/.trash/Studio/Pommora/2026-10-17T00-00-00-000Z__ClaudeMD.md.deleted'
-    expect(deletedPathOf('/nexus', page, `${page}/ClaudeMD.md`)).toBe('Studio/Pommora/ClaudeMD.md')
-    const set = '/nexus/.trash/Coll/2026-10-17T00-00-00-000Z__Set.deleted'
-    expect(deletedPathOf('/nexus', set, `${set}/Set/X.md`)).toBe('Coll/Set/X.md')
   })
 })

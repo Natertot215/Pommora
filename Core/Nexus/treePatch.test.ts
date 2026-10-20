@@ -3,7 +3,9 @@ import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
 import type { CollectionNode, NexusTree, SetNode, SpaceNode } from './tree'
 import {
   containerSchema,
+  containerTrailById,
   containerTrailWhere,
+  findContainerById,
   moveNodeInTree,
   NO_SCHEMA,
   owningCollection,
@@ -237,5 +239,15 @@ describe('containerTrailWhere', () => {
     expect(trail?.map((n) => n.id)).toEqual(['c1', 's1'])
     expect(containerTrailWhere(t, (n) => n.id === 'c2')?.map((n) => n.id)).toEqual(['c2'])
     expect(containerTrailWhere(t, () => false)).toBeNull()
+  })
+
+  it('finds a container and the trail down to it by id', () => {
+    const t = tree()
+    expect(containerTrailById(t, 's1')?.map((n) => n.id)).toEqual(
+      containerTrailWhere(t, (n) => n.id === 's1')?.map((n) => n.id),
+    )
+    expect(findContainerById(t, 's1')?.id).toBe('s1')
+    expect(containerTrailById(t, 'nope')).toBeNull()
+    expect(findContainerById(t, 'nope')).toBeNull()
   })
 })

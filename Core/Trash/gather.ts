@@ -1,9 +1,6 @@
-import { basename, dirname, isAtOrUnder, join, relative } from '../Paths/posix'
-import { stampedIdOf } from '../Files/pageFile'
+import { basename, dirname, isAtOrUnder, join } from '../Paths/posix'
 import type { ContextDef, ContextsRegistry } from '../Contexts/contexts'
 import type { Result } from '../Contract/result'
-import { liveTreeOf } from '../Nexus/liveTree'
-import { containerAt } from '../Nexus/treePatch'
 import type { SweepCapture, UnlinkOutcome } from '../Contexts/contextCascade'
 import { readTextOrNull } from '../Files/atomicWrite'
 import { spaceIdsIn } from '../Contexts/spaceSidecar'
@@ -16,16 +13,9 @@ import { ID_KEY } from '../Nexus/identityMark'
 import { pageIndexOf } from '../Nexus/record'
 import type { NexusTree } from '../Nexus/tree'
 import type { Relation } from '../Platform/stores'
+import { contextWorldOf } from '../Contexts/contextResolve'
 
-import type { RecordFile, ParentRef } from './record'
-import type { ContainerKind } from '../Nexus/entities'
-
-async function gatherParentRef(root: string, absEntity: string): Promise<ParentRef> {
-  const parentDir = dirname(absEntity)
-  if (parentDir === root) return { kind: 'root' }
-  const id = containerAt(await liveTreeOf(root), relative(root, parentDir))?.id
-  return id ? { kind: 'container', id } : { kind: 'unaddressable' }
-}
+import { placeOf, type RecordFile } from '../Bundles/record'
 
 /** The page-to-page rows of the pages at `paths`: the index's, or read from their files by the index's own extractor while it has none to answer with. */
 async function pageRelationsOf(root: string, paths: readonly string[]): Promise<Relation[]> {
@@ -57,24 +47,11 @@ export async function gatherLinkTargets(
   return Object.fromEntries(out)
 }
 
-export async function gatherContentRecord(
-  root: string,
-  kind: 'page' | ContainerKind,
-  abs: string,
-): Promise<RecordFile> {
-  const parent = await gatherParentRef(root, abs)
-  const id = kind === 'page' ? await stampedIdOf(abs) : await sidecarId(abs, kind)
-  return {
-    entity: kind,
-    ...(id ? { id } : {}),
-    parent,
-  }
-}
-
 const sweepIncomplete = (swept: UnlinkOutcome | null): boolean =>
   swept === null || swept.skipped.length > 0 || swept.refused.length > 0
 
 export async function gatherSpaceRecord(
+  tree: NexusTree,
   abs: string,
   registry: Result<ContextsRegistry> | null,
   swept: UnlinkOutcome | null,
@@ -85,6 +62,13 @@ export async function gatherSpaceRecord(
   const def = registry?.ok
     ? registry.value.contexts.find((c) => c.title === contextTitle)
     : undefined
+  const group = def && contextWorldOf(tree.contexts).groupById.get(def.id)
+  const place =
+    group &&
+    placeOf(
+      group.spaces.map((s) => s.id),
+      id,
+    )
   const captured = swept?.captured ?? []
   const members = captured
     .filter((c): c is SweepCapture & { id: string } => typeof c.id === 'string')
@@ -94,6 +78,7 @@ export async function gatherSpaceRecord(
     entity: 'space',
     id,
     parent: def ? { kind: 'context', id: def.id } : { kind: 'unaddressable' },
+    ...(place ? { place } : {}),
     members,
     ...(partial ? { partial: true as const } : {}),
   }

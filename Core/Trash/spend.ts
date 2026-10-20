@@ -3,17 +3,14 @@ import { resolveUnderRoot } from '../Paths/pathSafety'
 import { contextKey } from '../Contexts/contexts'
 import { spaceIdsIn, spaceSidecarsIn } from '../Contexts/spaceSidecar'
 import { rekeyContext } from '../Contexts/contextCascade'
-import { TRASH_DIR } from '../Paths/nexusPaths'
 import type {
   MutateOutcome,
   MutateReply,
   MutateRequest,
   RestoreDestination,
 } from '../Nexus/mutateRequest'
-import { landingRefusal } from '../Nexus/folderEntity'
 import type { MutateContext } from '../Nexus/mutate'
 import { fail, ok, type Result, fault } from '../Contract/result'
-import type { NexusTree } from '../Nexus/tree'
 import { mutateRegistryFile, withContextAt } from '../Contexts/contextsRegistry'
 import { restoreProperty } from './restoreProperty'
 import { repairLanded, scrubReturning } from './restoreScrub'
@@ -24,8 +21,15 @@ import { respellings, rewriteConnections } from '../Connections/rewrite'
 import { buildPageIndex } from '../Connections/pageIndex'
 import { linkDefsOf } from '../Properties/propertiesRegistry'
 import { refillValues } from '../Properties/assignment'
-import { BUNDLE_SUFFIX, deletedPathOf } from './bundle'
-import { pathExists, relocate, rmwJsonStrict } from '../Files/atomicWrite'
+import {
+  bundleArtifact,
+  contentPages,
+  openBundle,
+  originPagesOf,
+  originPathOf,
+  pageIdsOf,
+} from '../Bundles/bundle'
+import { relocate, rmwJsonStrict } from '../Files/atomicWrite'
 import { dropPageMetadata } from '../Nexus/pageMetadata'
 import { dropSpaceOrder } from '../Nexus/reorder'
 import { machine } from '../Platform/machine'
@@ -35,7 +39,6 @@ import { liveTreeOf } from '../Nexus/liveTree'
 import { settledIndex } from '../Nexus/settle'
 
 import { type EntityRecord, pageIndexOf, pagesOf, recordById } from '../Nexus/record'
-import { type RecordFile, readRecord, bundleArtifact } from './record'
 import {
   deleteCascade,
   joinCascades,
@@ -43,25 +46,10 @@ import {
   renameCascade,
   type StrippedLink,
 } from '../Nexus/cascade'
-import { contentPages, pageIdsOf, parkLinks, refillTrashed, trashedPagesOf } from './holdings'
-import { findContainerById, resolveRecord, type ArtifactRecord, type Refusal } from './resolve'
+import { parkLinks, refillTrashed } from './holdings'
+import { NO_DESTINATION, placeRecord } from '../Bundles/placement'
 import { owningCollection } from '../Nexus/treePatch'
 import { contextWorldOf } from '../Contexts/contextResolve'
-
-const REFUSAL_TEXT: Record<Refusal, string> = {
-  'parent-gone': 'The place this belonged to no longer exists.',
-  'cannot-hold': 'The place this belonged to can no longer hold it.',
-  unaddressable: 'Where this belonged was never recorded.',
-  'id-live': 'Something in the nexus already carries this identity.',
-}
-
-async function openBundle(root: string, bundleAbs: string): Promise<Result<RecordFile>> {
-  const trashPrefix = `${join(root, TRASH_DIR)}/`
-  if (!bundleAbs.startsWith(trashPrefix) || !bundleAbs.endsWith(BUNDLE_SUFFIX))
-    return fault('Only a trash record can be spent.')
-  const record = await readRecord(bundleAbs)
-  return record ? ok(record) : fault('That deletion record is unreadable.')
-}
 
 // Artifact first: a failed bundle removal then leaves a record with no artifact, litter the listing skips, where the reverse order would orphan a live artifact.
 export async function emptyBundle(
@@ -71,7 +59,9 @@ export async function emptyBundle(
 ): Promise<MutateReply> {
   const opened = await openBundle(root, bundleAbs)
   if (!opened.ok) return opened
-  if (opened.value.entity === 'property') {
+  const { store, record } = opened.value
+  if (store.kind !== 'trash') return fault('Only a trash record can be emptied.')
+  if (record.entity === 'property') {
     recordWrite(bundleAbs)
     if (deps.permanentDelete === true) await machine().remove(bundleAbs)
     else await deps.trashToSystem(bundleAbs)
@@ -80,54 +70,29 @@ export async function emptyBundle(
   const artifactAbs = await bundleArtifact(bundleAbs)
   if (!artifactAbs)
     return fail('not-found', "That deletion didn't finish, or something else is in with it.")
-  const pages = await contentPages(opened.value.entity, artifactAbs)
+  const pages = await contentPages(record.entity, artifactAbs)
   const pageIds = await pageIdsOf(pages)
   recordWrite(artifactAbs)
   if (deps.permanentDelete === true) await machine().remove(artifactAbs)
   else await deps.trashToSystem(artifactAbs)
   await dropPageMetadata(root, pageIds)
-  if (opened.value.entity === 'context') await dropSpaceOrder(root, opened.value.registry.id)
+  if (record.entity === 'context') await dropSpaceOrder(root, record.registry.id)
   // Permanent now: a Link value naming one of its pages, recorded by the delete or taken up since, names nothing any more unless another trashed page answers its key.
   const gone = pages.length
     ? await deleteCascade(
         root,
         artifactAbs,
-        pages.map((file) => deletedPathOf(root, bundleAbs, file)),
+        pages.map((file) => originPathOf(root, store, file)),
       )
     : null
   recordWrite(bundleAbs)
   await machine().remove(bundleAbs)
-  const recorded = 'links' in opened.value ? (opened.value.links ?? []) : []
+  const recorded = 'links' in record ? (record.links ?? []) : []
   await parkLinks(root, [...recorded, ...(gone?.links ?? [])])
   return ok(gone ? { cascade: gone.cascade } : {})
 }
 
-const NO_DESTINATION = 'That kind cannot be given a destination.'
-
-function withDestination(
-  record: ArtifactRecord,
-  destination: RestoreDestination,
-  tree: NexusTree,
-): Result<ArtifactRecord> {
-  switch (record.entity) {
-    case 'space':
-      if (destination.kind !== 'context') return fail('invalid-path', 'A Space lives in a Context.')
-      if (!contextWorldOf(tree.contexts).groupById.has(destination.id))
-        return fail('not-found', 'That Context no longer exists.')
-      return ok({ ...record, parent: { kind: 'context', id: destination.id } })
-    case 'page':
-    case 'set':
-      if (destination.kind !== 'container')
-        return fail('invalid-path', 'Pages and Sets live in Collections and Sets.')
-      if (!findContainerById(tree, destination.id))
-        return fail('not-found', 'That place no longer exists.')
-      return ok({ ...record, parent: { kind: 'container', id: destination.id } })
-    default:
-      return fault(NO_DESTINATION)
-  }
-}
-
-type Restored = Pick<MutateOutcome, 'unrestored' | 'cascade'>
+type Restored = Pick<MutateOutcome, 'unrestored' | 'cascade' | 'landedAs'>
 
 const restored = (unrestored: string[]): Restored => (unrestored.length ? { unrestored } : {})
 
@@ -147,9 +112,11 @@ async function restoreArtifact(
 ): Promise<Result<Restored>> {
   const opened = await openBundle(root, bundleAbs)
   if (!opened.ok) return opened
-  if (opened.value.entity === 'property') {
+  const { store } = opened.value
+  if (store.kind !== 'trash') return fault('Only a trash record can be spent.')
+  if (opened.value.record.entity === 'property') {
     if (destination) return fault(NO_DESTINATION)
-    const rebuilt = await restoreProperty(root, opened.value)
+    const rebuilt = await restoreProperty(root, opened.value.record)
     if (!rebuilt.ok) return rebuilt
     await parkLinks(root, rebuilt.value.dropped)
     // A value that no longer fits is named rather than kept: the property is back, so its record could only ever refuse.
@@ -162,22 +129,18 @@ async function restoreArtifact(
     return fail('not-found', 'That deletion never finished; there is nothing to restore.')
 
   const tree = await liveTreeOf(root)
-  const rehomed = destination ? withDestination(opened.value, destination, tree) : ok(opened.value)
-  if (!rehomed.ok) return rehomed
-  const record = rehomed.value
-  const resolution = resolveRecord(record, basename(artifactAbs), tree)
-  if ('refuse' in resolution) return fault(REFUSAL_TEXT[resolution.refuse])
-  const { dir, finalName, finalTitle } = resolution.place
-
+  const placed = await placeRecord(
+    root,
+    opened.value.record,
+    destination,
+    basename(artifactAbs),
+    tree,
+  )
+  if (!placed.ok) return placed
+  const { record, placement, writeOrder, landedAs } = placed.value
+  const { dir, finalName, finalTitle } = placement
   const targetAbs = join(root, dir, finalName)
-  if (record.entity === 'collection' || record.entity === 'set') {
-    const refused = await landingRefusal(root, join(root, dir), finalName)
-    if (refused) return refused
-  }
-  // The tree is the resolver's universe; a file the walk cannot see (an Unknown squatter) could still occupy the target — refuse rather than clobber what nothing adjudicated.
-  if (await pathExists(targetAbs))
-    return fail('exists', 'Something already sits at the restored location.')
-  const back = await trashedPagesOf(root, bundleAbs, await contentPages(record.entity, artifactAbs))
+  const back = await originPagesOf(root, store, await contentPages(record.entity, artifactAbs))
   const targets = new Map(Object.entries(record.targets ?? {}))
   const world = buildPageIndex([...pagesOf(tree), ...back])
   const frozen = frozenWorld(world, targets)
@@ -217,6 +180,7 @@ async function restoreArtifact(
       }))
     return fault(e)
   }
+  await writeOrder?.()
   // Two maps rather than one `relink`: the arrival's collisions read against the live world alone, since beside the returning pages a twin's bare link reads ambiguous and a returning `Notes/Alpha` would take `notes/alpha` from a live `X/Notes/Alpha`. `backNames` reads the returning pages' own keys against themselves, feeding the refill whole and the cascade only where the live world names nothing.
   const after = await settledIndex(root)
   const ids = back.map((p) => p.id)
@@ -310,6 +274,7 @@ async function restoreArtifact(
   return ok({
     ...restored([...unspent, ...unlinked].map((id) => roots[id].title)),
     ...(cascade ? { cascade } : {}),
+    ...(landedAs ? { landedAs } : {}),
   })
 }
 

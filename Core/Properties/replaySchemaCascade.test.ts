@@ -9,8 +9,9 @@ import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import { dropLiveTree } from '../Nexus/liveTree'
 import { indexWrittenPage, seedContentIndex } from '../Index/indexSeed'
-import { readRecord, writePropertyBundle } from '../Trash/record'
-import { listBundles } from '../Trash/holdings'
+import { readRecord } from '../Bundles/record'
+import { writePropertyBundle } from './deleteProperty'
+import { listBundles } from '../Bundles/bundle'
 import { mutateRegistry, readRegistry } from './propertiesRegistry'
 import { renameFrontmatterKey } from '../Files/pageFile'
 import { sidecarPath } from '../Paths/paths'
@@ -231,7 +232,7 @@ describe('delete replay', () => {
     expect((await readRegistry(crashed)).defs.prop_s).toBeUndefined()
     const sidecar = await readJsonObject(sidecarPath(join(crashed, 'Col'), 'collection'))
     expect((sidecar?.properties as string[] | undefined) ?? []).toEqual([])
-    expect(await listBundles(crashed)).toHaveLength(1)
+    expect(await listBundles(crashed, { kind: 'trash' })).toHaveLength(1)
     expect(await readSchemaJournal(crashed)).toBeNull()
   })
 

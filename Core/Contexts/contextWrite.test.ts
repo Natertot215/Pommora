@@ -22,7 +22,7 @@ import { settleNow } from '../Nexus/settle'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { createTestPage } from '../Testing/createTestPage'
 import { unsweptLine } from '../Properties/governedSweep'
-import type { TrashDeps } from '../Trash/bundle'
+import type { TrashDeps } from '../Trash/discard'
 import { createProperty } from '../Properties/registryProperty'
 import { readRegistry } from '../Properties/propertiesRegistry'
 

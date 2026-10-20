@@ -9,7 +9,7 @@ import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
 import { pathExists } from '../Files/atomicWrite'
 import { settledMutate } from '../Testing/settledMutate'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
-import { listBundles } from './holdings'
+import { listBundles } from '../Bundles/bundle'
 import { stampMissing } from '../Nexus/adopt'
 import { readNexus } from '../Nexus/readNexus'
 import { fault } from '../Contract/result'
@@ -18,7 +18,7 @@ import { memoryStores } from '../Testing/memoryStores'
 import { seedContentIndex } from '../Index/indexSeed'
 
 import { closeSession, openSession } from '../Nexus/session'
-import type { TrashDeps } from './bundle'
+import type { TrashDeps } from './discard'
 
 const trashWrites = vi.hoisted(() => ({ fail: false }))
 vi.mock('../Files/atomicWrite', async (importOriginal) => {
@@ -50,7 +50,7 @@ async function cycle(rel: string, kind: 'page' | 'set', mutateWorld: () => Promi
   expect(d.ok).toBe(true)
   await mutateWorld()
   await refreshTree(root)
-  const [listed] = await listBundles(root)
+  const [listed] = await listBundles(root, { kind: 'trash' })
   const r = await settledMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
   expect(r.ok).toBe(true)
 }
@@ -181,7 +181,7 @@ describe('a returning artifact is reconciled against the world it comes back to'
     expect(d.ok).toBe(true)
     await rm(join(contextsDir(root), 'Projects', 'Sapphire'), { recursive: true, force: true })
     await refreshTree(root)
-    const [listed] = await listBundles(root)
+    const [listed] = await listBundles(root, { kind: 'trash' })
     trashWrites.fail = true
     try {
       const r = await settledMutate(
@@ -193,7 +193,7 @@ describe('a returning artifact is reconciled against the world it comes back to'
     } finally {
       trashWrites.fail = false
     }
-    expect(await listBundles(root)).toHaveLength(1)
+    expect(await listBundles(root, { kind: 'trash' })).toHaveLength(1)
     expect(await pathExists(join(root, 'Notes', 'Alpha.md'))).toBe(false)
   })
 
@@ -345,7 +345,7 @@ describe('a returning artifact is reconciled against the world it comes back to'
       expect((await settledMutate(root, { op: 'delete', path, kind: 'page' }, nexusDeps)).ok).toBe(
         true,
       )
-    const bundles = await listBundles(root)
+    const bundles = await listBundles(root, { kind: 'trash' })
     const bundleOf = (name: string): string =>
       bundles.find((b) => b.artifactName === name)?.bundlePath ?? ''
     expect(
@@ -570,7 +570,7 @@ describe('a Space sidecar is a context root too', () => {
         )
       ).ok,
     ).toBe(true)
-    const projects = (await listBundles(root)).find(
+    const projects = (await listBundles(root, { kind: 'trash' })).find(
       (b) => b.record.entity === 'context' && b.bundlePath.includes('Projects'),
     )
     expect(projects).toBeDefined()
@@ -610,7 +610,7 @@ describe('a Space sidecar is a context root too', () => {
       JSON.stringify({ id: 'sp-live-pom' }),
     )
     await refreshTree(root)
-    const [listed] = await listBundles(root)
+    const [listed] = await listBundles(root, { kind: 'trash' })
     expect(
       (await settledMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)).ok,
     ).toBe(true)
@@ -648,7 +648,7 @@ describe('a Space sidecar is a context root too', () => {
       JSON.stringify({ id: 'sp-pom' }),
     )
     await refreshTree(root)
-    const [listed] = await listBundles(root)
+    const [listed] = await listBundles(root, { kind: 'trash' })
     expect(
       (await settledMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)).ok,
     ).toBe(true)
@@ -688,7 +688,7 @@ describe('a Space sidecar is a context root too', () => {
       JSON.stringify({ id: 'sp-pom' }),
     )
     await refreshTree(root)
-    const [listed] = await listBundles(root)
+    const [listed] = await listBundles(root, { kind: 'trash' })
     expect(
       (await settledMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)).ok,
     ).toBe(true)
@@ -719,7 +719,7 @@ describe('a Space sidecar is a context root too', () => {
       ).ok,
     ).toBe(true)
     await refreshTree(root)
-    const [listed] = await listBundles(root)
+    const [listed] = await listBundles(root, { kind: 'trash' })
     expect(
       (await settledMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)).ok,
     ).toBe(true)
@@ -738,7 +738,7 @@ describe('a Space sidecar is a context root too', () => {
         )
       ).ok,
     ).toBe(true)
-    const [listed] = await listBundles(root)
+    const [listed] = await listBundles(root, { kind: 'trash' })
     expect(
       (await settledMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)).ok,
     ).toBe(true)
@@ -799,7 +799,7 @@ describe('a parent the filesystem handed Pommora can still be named by id', () =
     )
     expect(d.ok).toBe(true)
 
-    const [listed] = await listBundles(root)
+    const [listed] = await listBundles(root, { kind: 'trash' })
     expect(listed.record).toMatchObject({ entity: 'page', parent: { kind: 'container' } })
     const r = await settledMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
     expect(r.ok).toBe(true)
@@ -818,7 +818,7 @@ describe('a parent the filesystem handed Pommora can still be named by id', () =
       nexusDeps,
     )
     expect(d.ok).toBe(false)
-    expect(await listBundles(root)).toEqual([])
+    expect(await listBundles(root, { kind: 'trash' })).toEqual([])
     expect(await readFile(join(root, 'Notes', 'Broken', 'Idea.md'), 'utf8')).toBe(page)
     expect(await readFile(join(root, 'Notes', 'Broken', '_pageset.json'), 'utf8')).toBe('{corrupt')
   })

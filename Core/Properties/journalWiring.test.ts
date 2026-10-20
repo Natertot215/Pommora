@@ -16,7 +16,7 @@ import { NEXUS_CONFIG_FILES } from '../Paths/nexusPaths'
 import { closeSession, openSession } from '../Nexus/session'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
 import { seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
-import { listBundles } from '../Trash/holdings'
+import { listBundles } from '../Bundles/bundle'
 import { readRegistry } from './propertiesRegistry'
 import { createProperty, editProperty, renameProperty } from './registryProperty'
 import { deleteProperty } from './deleteProperty'
@@ -177,7 +177,7 @@ describe('the delete writer', () => {
     expect(writes.length).toBe(2)
     expect(writes.every((w) => w.journaled)).toBe(true)
     expect(await readSchemaJournal(root)).toBeNull()
-    expect(await listBundles(root)).toHaveLength(1)
+    expect(await listBundles(root, { kind: 'trash' })).toHaveLength(1)
   })
 })
 

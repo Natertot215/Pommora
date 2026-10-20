@@ -2,7 +2,7 @@ import { DatabaseSync } from 'node:sqlite'
 import { existsSync, renameSync } from 'node:fs'
 import { basename } from 'node:path'
 import { errText } from '@pommora/core/Contract/result'
-import { fileStamp } from '@pommora/core/Trash/bundle'
+import { fileStamp } from '@pommora/core/Bundles/bundle'
 
 export type Db = DatabaseSync
 

@@ -9,11 +9,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { pathExists } from '../Files/atomicWrite'
 import { handleMutate } from '../Nexus/mutate'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
-import { listBundles } from './holdings'
+import { listBundles } from '../Bundles/bundle'
 import { machine } from '../Platform/machine'
 
 import { closeSession, openSession } from '../Nexus/session'
-import { BUNDLE_SUFFIX, type TrashDeps } from './bundle'
+import type { TrashDeps } from './discard'
 
 const PAGE_A = '01KVGMT8BFP350FZZXAMG1QDVA'
 const PAGE_B = '01KVGMT8BFP350FZZXAMG1QDVB'
@@ -72,7 +72,7 @@ vi.mock('../Files/atomicWrite', async (importOriginal) => {
     ...actual,
     relocate: async (...args: Parameters<typeof actual.relocate>) => {
       const bundleDir = dirname(args[1])
-      if (bundleDir.endsWith(BUNDLE_SUFFIX)) {
+      if (bundleDir.endsWith('.deleted')) {
         atSettle = await actual.readJsonObject(join(bundleDir, '_record.json'))
         if (settleFails) throw new Error('the process died before the artifact moved')
       }
@@ -285,7 +285,7 @@ describe('a deletion cut short leaves evidence, never silence', () => {
     expect(await pathExists(join(root, 'Notes', 'Alpha.md'))).toBe(true)
     // The record survives as evidence, and the listing refuses to offer an unfinished deletion.
     expect(await anyRecord()).toMatchObject({ entity: 'page', id: PAGE_A })
-    expect(await listBundles(root)).toHaveLength(0)
+    expect(await listBundles(root, { kind: 'trash' })).toHaveLength(0)
   })
 
   it('a Space delete that dies before the settle still names what the sweep took', async () => {
@@ -299,7 +299,7 @@ describe('a deletion cut short leaves evidence, never silence', () => {
     expect(await tagOf()).toBeUndefined()
     expect(await pathExists(join(contextsDir(root), 'Projects', 'Pommora'))).toBe(true)
     expect(await anyRecord()).toMatchObject({ members: [{ id: PAGE_A, kind: 'page' }] })
-    expect(await listBundles(root)).toHaveLength(0)
+    expect(await listBundles(root, { kind: 'trash' })).toHaveLength(0)
   })
 })
 

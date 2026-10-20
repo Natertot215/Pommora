@@ -8,7 +8,7 @@ const PORT = 9393
 // The plan's phases in order, named as the plan names them, so `6A` sorts before `6B`.
 const PHASES = ['1', '2', '3', '4', '5', '6A', '6B']
 const at = (phase) => PHASES.indexOf(String(phase))
-const ALL = ['1']
+const ALL = ['1', '2']
 const GROUPS = new Set(process.argv.slice(2))
 // The last plan phase landed in the build under test: an item owned by a later phase is expected to fail and doesn't fail the run.
 const LANDED = process.env.POMMORA_ARCHIVE_LANDED ?? '1'
@@ -57,10 +57,36 @@ function setAside(rel) {
 const untouched = (rel) => exists(`${rel}/Keep.md`) && readRel(`${rel}/Keep.md`) === KEEP && !exists(`${rel}/_pageset.json`)
 const bundleOf = (name) => readdirSync(abs(`.trash/${COLLECTION}`)).find((n) => n.endsWith(`__${name}.deleted`))
 const PIXEL = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64')
+const ids = {}
+const A_ALPHA = `${COLLECTION}/Set Alpha`
+const page = (parent, title) => `${parent}/${title}.md`
+async function createAt(cdp, parent, title, seeds = {}) {
+  const id = mintPageId()
+  await must(`createPage ${parent}/${title}`, ask(cdp, 'mutate', { op: 'createPage', id, parentPath: parent, name: title, seeds }))
+  ids[page(parent, title)] = id
+  return page(parent, title)
+}
 
 // ── The sidebar ─────────────────────────────────────────────────────────────
 
 const sidebarRow = (title) => `[...document.querySelectorAll('.row span')].findLast((e) => e.textContent.trim() === ${JSON.stringify(title)})`
+const ribbon = (label) => `document.querySelector('.sidebar-ribbon [aria-label="${label}"]')`
+async function sidebarTo(cdp, mode, title) {
+  if (!(await cdp.evaluate(`!!(${sidebarRow(title)})`))) await click(cdp, ribbon(mode))
+  await until(`${title} in the sidebar`, () => cdp.evaluate(`!!(${sidebarRow(title)})`))
+  await click(cdp, sidebarRow(title))
+}
+const RAIL = `[...document.querySelectorAll('.settings-rail [data-reveal-host]')]`
+async function openSettings(cdp, frame) {
+  if (!(await cdp.evaluate(`!!document.querySelector('.settings-rail')`))) await mouseClick(cdp, ribbon('Settings'))
+  await until('the Settings window', () => cdp.evaluate(`!!document.querySelector('.settings-rail')`))
+  await click(cdp, `${RAIL}.find((r) => r.textContent.trim() === ${JSON.stringify(frame)})`)
+  await sleep(800)
+}
+async function closeSettings(cdp) {
+  if (await cdp.evaluate(`!!document.querySelector('.settings-rail')`)) await mouseClick(cdp, ribbon('Settings'))
+  await sleep(600)
+}
 const drawn = (cdp, title) => cdp.evaluate(`!!(${sidebarRow(title)})`)
 const DIALOG = `document.querySelector('[role="alertdialog"]')`
 /** A folded row's chevron pressed as a pointer presses it, since the chevron is an svg, which takes no `.click()`. */
@@ -166,12 +192,121 @@ async function group1(cdp) {
   })
 }
 
+// ── Group 2 — every restore returns to its place and steps past the disk (Phase 2) ──
+
+const trashed = async (cdp, title) =>
+  ((await ask(cdp, 'bundles:list', { kind: 'trash' })).value ?? []).find((r) => r.title === title)
+const restoreRow = async (cdp, title) => {
+  const row = await trashed(cdp, title)
+  return row ? ask(cdp, 'mutate', { op: 'restore', bundlePath: row.bundlePath }) : null
+}
+const deleteAt = (cdp, path, kind) => must(`delete ${path}`, ask(cdp, 'mutate', { op: 'delete', path, kind }))
+const orderIn = (rel, key) => JSON.parse(readRel(rel))[key] ?? []
+const stateOrder = () => JSON.parse(readRel('.nexus/state.json')).order ?? {}
+const between = (order, [a, x, b]) =>
+  order.indexOf(a) >= 0 && order.indexOf(x) === order.indexOf(a) + 1 && order.indexOf(b) === order.indexOf(x) + 1
+const heldTree = async (cdp) => (await ask(cdp, 'nexus:state')).value.tree
+const collectionA = async (cdp) => (await heldTree(cdp)).collections.find((c) => c.path === 'Collection A')
+const notice = (cdp) => cdp.evaluate(`document.querySelector('[role=status], [role=alert]')?.textContent ?? ''`)
+const trashRowEl = (title) => `[...document.querySelectorAll('.trash-row')].find((r) => r.textContent.includes(${JSON.stringify(title)}))`
+
+async function createSetIn(cdp, name) {
+  const id = containerId()
+  const held = await collectionA(cdp)
+  await must(`create ${name}`, ask(cdp, 'mutate', { op: 'createContainer', id, parentPath: 'Collection A', kind: 'set', name, order: [...held.sets.map((s) => s.id), id] }))
+  return id
+}
+
+async function group2(cdp) {
+  const titles = ['AR Before', 'AR Middle', 'AR After']
+  for (const t of titles) await createAt(cdp, A_ALPHA, t)
+  const three = titles.map((t) => ids[page(A_ALPHA, t)])
+  const alpha = (await collectionA(cdp)).sets.find((s) => s.path === A_ALPHA)
+  const others = alpha.pages.map((p) => p.id).filter((id) => !three.includes(id))
+  await must('order the three', ask(cdp, 'mutate', { op: 'movePage', path: page(A_ALPHA, 'AR Middle'), newParentPath: A_ALPHA, order: [...others, ...three] }))
+  await deleteAt(cdp, page(A_ALPHA, 'AR Middle'), 'page')
+  const sidecar = `${A_ALPHA}/_pageset.json`
+  item(2, 2, 'E-2', 'a page delete drops its id from its folder’s page_order', !orderIn(sidecar, 'page_order').includes(three[1]), show(orderIn(sidecar, 'page_order')))
+  const listed = await trashed(cdp, 'AR Middle')
+  item(2, 2, 'A-3', 'bundles:list answers the Trash’s row with its stored time', typeof listed?.storedAt === 'number', show(listed))
+  await must('restore AR Middle', restoreRow(cdp, 'AR Middle'))
+  item(2, 2, 'E-2', 'a page restored lands between its old neighbours in page_order', between(orderIn(sidecar, 'page_order'), three), show(orderIn(sidecar, 'page_order')))
+  await sidebarTo(cdp, 'Collections', COLLECTION)
+  await unfold(cdp, COLLECTION, 'Set Alpha')
+  await unfold(cdp, 'Set Alpha', 'AR Middle')
+  const sidebarOrder = await cdp.evaluate(`[...document.querySelectorAll('.tree-item')].map((e) => e.textContent.trim()).filter((t) => ${JSON.stringify(titles)}.includes(t))`)
+  item(2, 2, 'E-2', 'the sidebar draws the three in that order', show(sidebarOrder) === show(titles), show(sidebarOrder))
+
+  const sets = []
+  for (const name of ['AR Set One', 'AR Set Two', 'AR Set Three']) sets.push(await createSetIn(cdp, name))
+  await deleteAt(cdp, 'Collection A/AR Set Two', 'set')
+  await must('restore AR Set Two', restoreRow(cdp, 'AR Set Two'))
+  const setOrder = orderIn('Collection A/_pagecollection.json', 'set_order')
+  item(2, 2, 'E-2', 'a Set restored lands between its old neighbours in set_order', between(setOrder, sets), show(setOrder))
+
+  const coll = containerId()
+  await must('create AR Coll', ask(cdp, 'mutate', { op: 'createContainer', id: coll, parentPath: '', kind: 'collection', name: 'AR Coll' }))
+  const tops = (await heldTree(cdp)).collections.map((c) => c.id).filter((id) => id !== coll)
+  const a = (await collectionA(cdp)).id
+  const next = tops[tops.indexOf(a) + 1]
+  await must('place AR Coll', ask(cdp, 'mutate', { op: 'reorderTop', order: tops.flatMap((id) => (id === a ? [id, coll] : [id])) }))
+  await deleteAt(cdp, 'AR Coll', 'collection')
+  item(2, 2, 'E-2', 'a Collection delete drops its id from state.order.collections', !(stateOrder().collections ?? []).includes(coll), show(stateOrder().collections))
+  await must('restore AR Coll', restoreRow(cdp, 'AR Coll'))
+  item(2, 2, 'E-2', 'a Collection restored lands between its old neighbours in state.order.collections', between(stateOrder().collections ?? [], [a, coll, next]), show(stateOrder().collections))
+
+  const group = (await heldTree(cdp)).contexts.find((g) => g.spaces.length >= 2)
+  const space = containerId()
+  const [s0, s1, ...rest] = group.spaces.map((s) => s.id)
+  await must('create AR Space', ask(cdp, 'mutate', { op: 'createSpace', id: space, contextId: group.def.id, name: 'AR Space', order: [s0, space, s1, ...rest] }))
+  await deleteAt(cdp, `.nexus/contexts/${group.def.title}/AR Space`, 'space')
+  item(2, 2, 'E-2', 'a Space delete drops its id from its Context’s order', !(stateOrder().spaces?.[group.def.id] ?? []).includes(space), show(stateOrder().spaces?.[group.def.id]))
+  await must('restore AR Space', restoreRow(cdp, 'AR Space'))
+  item(2, 2, 'E-2', 'a Space restored lands between its old neighbours in its Context’s order', between(stateOrder().spaces?.[group.def.id] ?? [], [s0, space, s1]), show(stateOrder().spaces?.[group.def.id]))
+
+  await createAt(cdp, A_ALPHA, 'AR Squat')
+  await deleteAt(cdp, page(A_ALPHA, 'AR Squat'), 'page')
+  writeFileSync(abs(page(A_ALPHA, 'AR Squat')), `---\nID: ${mintPageId().replace(/^(.{10})P/, '$1T')}\n---\nsquatter`)
+  await sleep(1500)
+  await openSettings(cdp, 'Trash')
+  const { chosen } = await chooseNative(cdp, trashRowEl('AR Squat'), 'Restore')
+  const said = await settles(async () => (await notice(cdp)).includes('Restored “AR Squat” as “AR Squat (2)”'))
+  item(2, 2, 'E-4', 'a page restored onto an outside file steps aside, and the Trash names the title it took',
+    chosen && said && exists(page(A_ALPHA, 'AR Squat (2)')) && readRel(page(A_ALPHA, 'AR Squat')).endsWith('squatter'), show({ chosen, notice: await notice(cdp) }))
+  await closeSettings(cdp)
+
+  await createSetIn(cdp, 'AR Excl')
+  await deleteAt(cdp, 'Collection A/AR Excl', 'set')
+  const excluded = JSON.parse(readRel('.nexus/settings.json')).excluded_folders ?? []
+  await must('exclude its origin', ask(cdp, 'exclusions:set', [...excluded, 'Collection A/AR Excl']))
+  const back = await restoreRow(cdp, 'AR Excl')
+  item(2, 2, 'E-4', 'a Set restored onto an excluded entry steps aside, the entry untouched',
+    back?.value?.landedAs === 'AR Excl (2)' && exists('Collection A/AR Excl (2)/_pageset.json') && (JSON.parse(readRel('.nexus/settings.json')).excluded_folders ?? []).includes('Collection A/AR Excl'), show(back))
+  await must('the exclusions as they were', ask(cdp, 'exclusions:set', excluded))
+
+  for (const t of ['AR Look One', 'AR Look Two']) {
+    await createAt(cdp, A_ALPHA, t)
+    await deleteAt(cdp, page(A_ALPHA, t), 'page')
+  }
+  await openSettings(cdp, 'Trash')
+  const drawnRows = await cdp.evaluate(`document.querySelectorAll('.trash-row').length`)
+  const answered = ((await ask(cdp, 'bundles:list', { kind: 'trash' })).value ?? []).length
+  item(2, 2, 'A-3', 'the Trash browser draws a row for every row bundles:list answers', drawnRows === answered, show({ drawnRows, answered }))
+  for (const t of ['AR Look One', 'AR Look Two']) await click(cdp, `${trashRowEl(t)}.querySelector('[role=checkbox]')`)
+  const { chosen: all } = await chooseNative(cdp, trashRowEl('AR Look One'), 'Restore All')
+  const batch = await settles(async () => (await notice(cdp)).startsWith('Restored 2 Pages'))
+  item(2, 2, 'A-3', 'a Restore All of two reads Restored 2 Pages', all && batch, show(await notice(cdp)))
+  await shot(cdp, 'trash-frame')
+  await closeSettings(cdp)
+}
+
 // ── The run ─────────────────────────────────────────────────────────────────
 
 let cdp
 try {
   cdp = (await launch(PORT, 'archive-shots')).cdp
   if (GROUPS.has('1')) await group1(cdp)
+  if (GROUPS.has('2')) await group2(cdp)
   cdp.close()
 } catch (e) {
   item(0, 1, '—', 'the run reached its end', false, String(e?.stack ?? e))

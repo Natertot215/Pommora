@@ -1,18 +1,11 @@
-import { type Handlers, withRoot } from '../Contract/handlers'
+import type { Handlers } from '../Contract/handlers'
 import { ok, type Result } from '../Contract/result'
-import { liveTreeOf } from '../Nexus/liveTree'
 import { sessionRoot } from '../Nexus/session'
-import { trashDeps } from './bundle'
-import { listBundles } from './holdings'
-import type { TrashMode } from './trashRow'
-import { trashRows } from './trashRows'
+import { trashDeps } from './discard'
+import type { TrashMode } from './trashMode'
 import { SETTING_DEFAULTS } from '../Settings/personalization'
 
 export const trashHandlers = {
-  'trash:list': withRoot(async (root) => {
-    return ok(trashRows(await listBundles(root), await liveTreeOf(root)))
-  }),
-
   'delete:facts': async (
     ctx,
   ): Promise<Result<{ trashMode: TrashMode; permanentDelete: boolean }>> => {

@@ -14,7 +14,7 @@ import { newId } from '../Nexus/ids'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { createTestPage } from '../Testing/createTestPage'
 import { createProperty } from './registryProperty'
-import type { TrashDeps } from '../Trash/bundle'
+import type { TrashDeps } from '../Trash/discard'
 
 const deps: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
 let root: string

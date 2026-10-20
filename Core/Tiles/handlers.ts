@@ -15,7 +15,7 @@ import {
   writeMarkdownTile,
 } from './tilesFile'
 import { hostDir } from './tileHosts'
-import { trashDeps } from '../Trash/bundle'
+import { trashDeps } from '../Trash/discard'
 import { captureLoser } from '../Sync/Arrival/captures'
 import { relative } from '../Paths/posix'
 import { tileFilePath } from '../Paths/paths'

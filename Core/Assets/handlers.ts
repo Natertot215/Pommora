@@ -14,7 +14,7 @@ import { validateAssetDir } from '../Settings/assetDirValidate'
 import { readWatchScope, writeAssetDirectory } from '../Settings/settings'
 import { liveAssetMap } from './assetMap'
 import { migrateAssets } from './assetMigrate'
-import { trashDeps } from '../Trash/bundle'
+import { trashDeps } from '../Trash/discard'
 
 export const assetsHandlers = {
   'assets:map': withRoot(async (root) => ok(await liveAssetMap(root)), ok(EMPTY_ASSET_MAP)),

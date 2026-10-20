@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import type { TrashRow } from '../Trash/trashRow'
+import type { BundleRow } from '../Bundles/rows'
 import { matchKey } from '../Paths/caseFold'
 import { countPhrase, filterRows, TrashFrame } from './TrashFrame'
 import { stubDialer } from '../vitest.setup'
@@ -16,14 +16,14 @@ import { pageIO, scheduleBodySave } from '../Session/saveScheduler'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
-const row = (over: Partial<TrashRow>): TrashRow => {
+const row = (over: Partial<BundleRow>): BundleRow => {
   const { title = 'Alpha', crumbs = [{ kind: 'collection', title: 'Notes' }] } = over
   return {
     bundlePath: `.trash/${over.title ?? 'x'}.deleted`,
     kind: 'page',
     title,
     crumbs,
-    deletedAt: 0,
+    storedAt: 0,
     homeResolves: true,
     match: matchKey(title, crumbs.map((c) => c.title).join('/')),
     ...over,
@@ -65,9 +65,9 @@ describe('filterRows', () => {
 
 describe('countPhrase', () => {
   it('names the kind when every row shares one', () => {
-    expect(countPhrase([row({}), row({})])).toBe('2 pages')
-    expect(countPhrase([row({ kind: 'set' }), row({ kind: 'set' })])).toBe('2 sets')
-    expect(countPhrase([row({ kind: 'context' }), row({ kind: 'context' })])).toBe('2 contexts')
+    expect(countPhrase([row({}), row({})])).toBe('2 Pages')
+    expect(countPhrase([row({ kind: 'set' }), row({ kind: 'set' })])).toBe('2 Sets')
+    expect(countPhrase([row({ kind: 'context' }), row({ kind: 'context' })])).toBe('2 Contexts')
   })
 
   it('generalizes when they do not', () => {
@@ -75,8 +75,8 @@ describe('countPhrase', () => {
   })
 
   it('stays singular for one', () => {
-    expect(countPhrase([row({})])).toBe('1 page')
-    expect(countPhrase([row({ kind: 'space' })])).toBe('1 space')
+    expect(countPhrase([row({})])).toBe('1 Page')
+    expect(countPhrase([row({ kind: 'space' })])).toBe('1 Space')
   })
 
   it('reports none honestly', () => {
@@ -90,7 +90,7 @@ describe('a Trash row', () => {
 
   beforeEach(() => {
     ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
-      'trash:list': vi.fn(async () => ({ ok: true, value: [row({ title: 'Alpha' })] })),
+      'bundles:list': vi.fn(async () => ({ ok: true, value: [row({ title: 'Alpha' })] })),
     })
   })
   afterEach(async () => {
@@ -117,7 +117,8 @@ describe('a Trash row', () => {
 describe('the Trash pane', () => {
   let host: HTMLDivElement | null = null
   let root: Root | null = null
-  let listed: TrashRow[]
+  let listed: BundleRow[]
+  let list: ReturnType<typeof vi.fn>
   let picked: string | null
   let mutated: ReturnType<typeof vi.fn>
 
@@ -134,8 +135,9 @@ describe('the Trash pane', () => {
     listed = [row({ title: 'Alpha' })]
     picked = null
     mutated = vi.fn(async () => ({ ok: true, value: {} }))
+    list = vi.fn(async () => ({ ok: true, value: listed }))
     ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
-      'trash:list': vi.fn(async () => ({ ok: true, value: listed })),
+      'bundles:list': list,
       menu: vi.fn(async () => ({ ok: true, value: picked })),
       'personalization:set': vi.fn(async () => ({ ok: true, value: null })),
       mutate: mutated,
@@ -160,6 +162,7 @@ describe('the Trash pane', () => {
 
   it("lists the opened Nexus's trash after a switch", async () => {
     expect(titles()).toEqual(['Alpha'])
+    expect(list).toHaveBeenCalledWith({ kind: 'trash' })
     listed = [row({ title: 'Beta' })]
     await act(async () => nexus('B'))
     expect(titles()).toEqual(['Beta'])
@@ -273,7 +276,7 @@ describe('the Trash pane', () => {
   it('a Restore All lands every pending save before its first restore', async () => {
     const order: string[] = []
     ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
-      'trash:list': vi.fn(async () => ({ ok: true, value: listed })),
+      'bundles:list': vi.fn(async () => ({ ok: true, value: listed })),
       menu: vi.fn(async () => ({ ok: true, value: picked })),
       'page:updateBody': vi.fn(async (path: string) => {
         order.push(`save ${path}`)
@@ -294,7 +297,7 @@ describe('the Trash pane', () => {
     mutated.mockResolvedValue({ ok: true, value: { cascade: { pages: [], hosts: [], warning } } })
     await pickForBoth('restoreAll')
     expect(currentNotification()).toMatchObject({
-      message: `Restored 2 pages. ${warning}`,
+      message: `Restored 2 Pages. ${warning}`,
       tone: 'error',
     })
   })
@@ -305,9 +308,39 @@ describe('the Trash pane', () => {
     mutated.mockResolvedValue({ ok: true, value: { cascade: { pages: [], hosts: [], warning } } })
     await pickForBoth('deleteAll')
     expect(currentNotification()).toMatchObject({
-      message: `Deleted 2 pages. ${warning}`,
+      message: `Deleted 2 Pages. ${warning}`,
       tone: 'error',
     })
+  })
+
+  it('names the title a restore here stepped to', async () => {
+    mutated.mockResolvedValue({ ok: true, value: { landedAs: 'Alpha (2)' } })
+    picked = 'restore'
+    const item = host?.querySelector('.trash-row') as HTMLElement
+    await act(async () => {
+      item.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
+    })
+    expect(currentNotification()).toMatchObject({
+      message: 'Restored “Alpha” as “Alpha (2)”',
+      tone: 'normal',
+    })
+  })
+
+  it('a Restore All with one renamed names it in the segment', async () => {
+    mutated.mockResolvedValueOnce({ ok: true, value: { landedAs: 'Alpha (2)' } })
+    await pickForBoth('restoreAll')
+    expect(currentNotification()).toMatchObject({
+      message: 'Restored 2 Pages',
+      segment: '“Alpha” as “Alpha (2)”',
+    })
+  })
+
+  it('a Restore All with several renamed counts them', async () => {
+    mutated
+      .mockResolvedValueOnce({ ok: true, value: { landedAs: 'Alpha (2)' } })
+      .mockResolvedValueOnce({ ok: true, value: { landedAs: 'Beta (2)' } })
+    await pickForBoth('restoreAll')
+    expect(currentNotification()).toMatchObject({ segment: '2 Renamed' })
   })
 
   it('lists a delete made elsewhere while it is open', async () => {

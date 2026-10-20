@@ -7,8 +7,7 @@ import { movePage } from './page'
 import { landingRefusal, moveFolderEntity } from './folderEntity'
 import { liveTreeOf, mutableTarget } from './liveTree'
 import { goneEdit, reachConfig, reachReport } from './configReach'
-import { dropFromChildOrder, setChildOrder } from './reorder'
-import { containerAt, pageAt } from './treePatch'
+import { dropDeparture, setChildOrder } from './reorder'
 
 async function ends(
   root: string,
@@ -30,10 +29,10 @@ export async function movePageOp(
   if (!at.ok) return at
   if (dirname(at.value.src) === at.value.dst)
     return req.order ? done(await setChildOrder(at.value.dst, 'page_order', req.order)) : ok({})
-  const id = pageAt(await liveTreeOf(root), req.path)?.id
+  const tree = await liveTreeOf(root)
   const r = await movePage(at.value.src, at.value.dst)
   if (!r.ok) return r
-  if (id) await dropFromChildOrder(dirname(at.value.src), 'page_order', id)
+  await dropDeparture(root, tree, 'page', req.path)
   if (req.order) await setChildOrder(at.value.dst, 'page_order', req.order)
   return ok({})
 }
@@ -54,10 +53,9 @@ export async function moveSetOp(
   const left = diverge === -1 ? null : from.slice(0, diverge + 1).join('/')
   const held = await liveTreeOf(root)
   const edit = left === null ? null : goneEdit(held, 'set', req.path)
-  const id = containerAt(held, req.path)?.id
   const r = await moveFolderEntity(root, at.value.src, at.value.dst)
   if (!r.ok) return r
-  if (id) await dropFromChildOrder(dirname(at.value.src), 'set_order', id)
+  await dropDeparture(root, held, 'set', req.path)
   await setChildOrder(at.value.dst, 'set_order', req.order)
   const reach = left && edit ? await reachConfig(root, edit, join(root, left)) : null
   return ok(reach ? { cascade: reachReport(reach) } : {})

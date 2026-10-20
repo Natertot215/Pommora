@@ -3,7 +3,7 @@ import { useRef, useState, type ReactNode } from 'react'
 import { Icon, type IconName } from '@pommora/uix/Symbols'
 import type { IconSize } from '@pommora/uix/Theme'
 import { useSession } from '../../Session/store'
-import { trashChanged } from '../../Session/nexusSlice'
+import { storesChanged } from '../../Session/nexusSlice'
 import {
   DEFAULT_LINK_DISPLAY,
   isReservedPropertyId,
@@ -294,7 +294,7 @@ export function PropertyFrame({
     else if (action === 'property:destroy' && (await askDestroyProperty(def.id, def.label))) {
       const deleted = await dialer().ask('property:delete', def.id)
       if (!reportRefusal(deleted)) return
-      trashChanged.emit()
+      storesChanged.emit()
       backToList()
       notifyTrashed(def.label, deleted.value, deleted.value.owed && replay(deleted.value.owed))
     }

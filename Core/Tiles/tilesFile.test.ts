@@ -21,7 +21,7 @@ import type { TileDoc } from './tiles'
 import { tileDocPath, tileFilePath, homepageDir } from '../Paths/paths'
 import { machine } from '../Platform/machine'
 import { rewriteConnections } from '../Connections/rewrite'
-import type { TrashDeps } from '../Trash/bundle'
+import type { TrashDeps } from '../Trash/discard'
 import { dropLiveTree } from '../Nexus/liveTree'
 
 const append = { kind: 'append' } as const

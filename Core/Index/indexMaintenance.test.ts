@@ -10,13 +10,13 @@ import { openSession, closeSession } from '../Nexus/session'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import { createProperty } from '../Properties/registryProperty'
-import { listBundles } from '../Trash/holdings'
+import { listBundles } from '../Bundles/bundle'
 import { seedContentIndex } from './indexSeed'
 import { queryKeyHolders, queryMembers, queryMentions } from './contentIndex'
 import { applyEvents, owedFor } from '../Nexus/fileEvents'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
 import { settleBatch } from '../Nexus/settle'
-import type { TrashDeps } from '../Trash/bundle'
+import type { TrashDeps } from '../Trash/discard'
 import { homepageDir } from '../Paths/paths'
 import { machine } from '../Platform/machine'
 import { createTile, writeMarkdownTile } from '../Tiles/tilesFile'
@@ -194,7 +194,7 @@ describe('the writers maintain the rows', () => {
     expect(del.ok).toBe(true)
     expect(queryMentions(['beta'])).toEqual(['Notes/Daily/Alpha.md'])
     await expectMaintained()
-    const [listed] = await listBundles(root)
+    const [listed] = await listBundles(root, { kind: 'trash' })
     const restored = await settledMutate(
       root,
       { op: 'restore', bundlePath: listed.bundlePath },
@@ -208,7 +208,7 @@ describe('the writers maintain the rows', () => {
     const del = await settledMutate(root, { op: 'delete', path: 'Notes/Daily', kind: 'set' }, deps)
     expect(del.ok).toBe(true)
     expect(queryMentions(['beta'])).toEqual([])
-    const [listed] = await listBundles(root)
+    const [listed] = await listBundles(root, { kind: 'trash' })
     const restored = await settledMutate(
       root,
       { op: 'restore', bundlePath: listed.bundlePath },

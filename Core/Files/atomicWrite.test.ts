@@ -1,6 +1,6 @@
 import { stableStringify } from './stableJson'
 import { ok } from '../Contract/result'
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { rm, mkdir, readFile, readdir, writeFile, stat, utimes } from 'node:fs/promises'
 import { dirname, join, basename } from '../Paths/posix'
 import { tempRoot, readJsonAt } from '../Testing/hostFs'
@@ -22,7 +22,8 @@ import {
   rewritePreservingTimes,
   updateNexusFile,
 } from './atomicWrite'
-import { discardFile, mintBundle, trashFileFlat } from '../Trash/bundle'
+import { mintBundle } from '../Bundles/bundle'
+import { discardFile, trashFileFlat } from '../Trash/discard'
 import { type FileEvent, isRecentWrite, setOwnTap, setWriteTap } from './writeEcho'
 import { machine } from '../Platform/machine'
 
@@ -270,48 +271,11 @@ describe('readAppFile and a repairable updateNexusFile', () => {
   })
 })
 
-describe('mintBundle', () => {
-  it('creates the bundle under the mirrored chain while the source stays live', async () => {
-    await mkdir(join(dir, 'Notes', 'Daily'), { recursive: true })
-    const p = join(dir, 'Notes', 'Daily', 'Beta.md')
-    await atomicWriteFile(p, 'bye')
-    const bundle = await mintBundle(dir, p)
-    expect(dirname(bundle)).toBe(join(dir, '.trash', 'Notes', 'Daily'))
-    expect(basename(bundle).endsWith('__Beta.md.deleted')).toBe(true)
-    expect((await stat(bundle)).isDirectory()).toBe(true)
-    expect(await readFile(p, 'utf8')).toBe('bye')
-  })
-
-  it('de-collides within one timestamp — two mints never share a bundle', async () => {
-    vi.useFakeTimers()
-    vi.setSystemTime(new Date('2026-08-01T12:00:00.000Z'))
-    try {
-      const p = join(dir, 'twice.md')
-      const first = await mintBundle(dir, p)
-      const second = await mintBundle(dir, p)
-      expect(second).not.toBe(first)
-      expect(basename(second)).toBe('2026-08-01T12-00-00-000Z__1__twice.md.deleted')
-    } finally {
-      vi.useRealTimers()
-    }
-  })
-
-  it('lands flat when the source is not under the root', async () => {
-    const outside = tempRoot('pom-out-')
-    try {
-      const bundle = await mintBundle(dir, join(outside, 'Stray.md'))
-      expect(dirname(bundle)).toBe(join(dir, '.trash'))
-    } finally {
-      await rm(outside, { recursive: true, force: true })
-    }
-  })
-})
-
 describe('relocate', () => {
   it('moves the artifact in under its original basename and clears the original', async () => {
     const p = join(dir, '12__Notes.md')
     await atomicWriteFile(p, 'bye')
-    const bundle = await mintBundle(dir, p)
+    const bundle = await mintBundle(dir, { kind: 'trash' }, p)
     const dest = join(bundle, '12__Notes.md')
     await relocate(p, dest)
     expect(await readFile(dest, 'utf8')).toBe('bye')
@@ -320,7 +284,7 @@ describe('relocate', () => {
 
   it('rejects when the source vanished — the caller surfaces it', async () => {
     const p = join(dir, 'ghost.md')
-    const bundle = await mintBundle(dir, p)
+    const bundle = await mintBundle(dir, { kind: 'trash' }, p)
     await expect(relocate(p, join(bundle, 'ghost.md'))).rejects.toThrow()
   })
 })

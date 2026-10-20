@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { MutateRequest } from '../Nexus/mutateRequest'
-import { placeAt, placeNew, type Slot, spliceBeside, tieOrderWith } from './creationOrder'
+import { placeAt, placeNew, tieOrderWith } from './creationOrder'
+import type { Slot } from '../Nexus/order'
 import { makeTree } from '../Testing/testTree'
 import { makeSorter } from './Pipeline/sort'
 import type { ViewRow } from './viewRow'
@@ -86,12 +87,6 @@ describe('placeNew', () => {
   it('leaves a Collection, which no placement setting governs, as its own request', () => {
     const collection = { ...set, kind: 'collection', parentPath: '' } as const
     expect(placeNew(makeTree(), collection, top)).toBe(collection)
-  })
-})
-
-describe('spliceBeside', () => {
-  it('appends for a null anchor — the drop that landed past the last visible card', () => {
-    expect(spliceBeside(['a', 'b'], null, 'x', 'above')).toEqual(['a', 'b', 'x'])
   })
 })
 

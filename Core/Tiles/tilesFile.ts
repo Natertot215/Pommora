@@ -24,17 +24,16 @@ import { newId } from '../Nexus/ids'
 import { mintDefaultView, mintViewId } from '../Views/views'
 import { readStoredView } from '../Views/viewsFile'
 import type { Json } from '../Files/stableJson'
-import { containerSchema, findContainerWhere } from '../Nexus/treePatch'
+import { containerSchema, findContainerById } from '../Nexus/treePatch'
 import { resolveUnderRoot } from '../Paths/pathSafety'
 import { atomicWriteFile, pathExists, rewritePageSerialized } from '../Files/atomicWrite'
 import { linksIn } from '../Connections/scan'
-import { discardFile } from '../Trash/bundle'
+import { discardFile, type TrashDeps } from '../Trash/discard'
 import { machine } from '../Platform/machine'
 import { liveTreeOf } from '../Nexus/liveTree'
 import { tileFilePath } from '../Paths/paths'
 import { tileHostsOf } from './tileHosts'
 import type { BodyWrite } from '../Pages/pageDetail'
-import type { TrashDeps } from '../Trash/bundle'
 
 // The entry and its leaf land in one write, so a board no window holds still shows the tile; a layout this build can't read seats as the empty board a window shows for it.
 const seatTile = (
@@ -75,7 +74,7 @@ const PICK_ENTRIES: Record<PickKind, (root: string, value: unknown) => Promise<R
   view: async (root, value) => {
     if (!isPlainObject(value) || typeof value.source_id !== 'string') return fault('Invalid pick.')
     const tree = await liveTreeOf(root)
-    const source = findContainerWhere(tree, (c) => c.id === value.source_id)
+    const source = findContainerById(tree, value.source_id)
     if (!source) return fail('not-found', 'That view’s source is gone.')
     let config: Json | null
     if (typeof value.view_id === 'string') {

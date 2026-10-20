@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { resolveOrder } from './order'
+import { resolveOrder, spliceBeside } from './order'
 
 const mk = (id: string, title: string): { id: string; title: string } => ({ id, title })
 
@@ -17,5 +17,11 @@ describe('resolveOrder', () => {
   it('drops tombstones (ids in order but not in items)', () => {
     const r = resolveOrder([mk('a', 'A')], ['x', 'a'])
     expect(r.map((x) => x.id)).toEqual(['a'])
+  })
+})
+
+describe('spliceBeside', () => {
+  it('appends for a null anchor — the drop that landed past the last visible card', () => {
+    expect(spliceBeside(['a', 'b'], null, 'x', 'above')).toEqual(['a', 'b', 'x'])
   })
 })

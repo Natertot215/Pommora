@@ -20,7 +20,7 @@ import { NEXUS_CONFIG_FILES, SIDECAR_FILENAME } from '../Paths/nexusPaths'
 import { unsweptLine } from '../Properties/governedSweep'
 import type { FilterGroup } from '../Views/filterRules'
 import { filterSeeds } from '../Views/Pipeline/creationSeeds'
-import type { TrashDeps } from './bundle'
+import type { TrashDeps } from './discard'
 
 type Raw = Record<string, unknown>
 

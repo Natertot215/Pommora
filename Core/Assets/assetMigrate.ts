@@ -17,7 +17,7 @@ import {
 } from '../Files/atomicWrite'
 import { corpusFiles, listEntries, listFilesRecursive, listPathsUnder } from '../Files/walk'
 import { outsideContent, reachingExcluded, type WatchScope } from '../Paths/exclusion'
-import { discardFile } from '../Trash/bundle'
+import { discardFile, type TrashDeps } from '../Trash/discard'
 import { readNavigationFile, writeNavigationState } from '../Navigation/navigationFile'
 import { readWatchScope, rekeyCrops, updateSettings } from '../Settings/settings'
 import {
@@ -29,7 +29,6 @@ import {
 } from './assetMap'
 import { assetFilePath } from './assetRoots'
 import { writeAssetFile } from './assetWrite'
-import type { TrashDeps } from '../Trash/bundle'
 import { spaceSidecars } from '../Contexts/spaceSidecar'
 
 interface AssetMigration {

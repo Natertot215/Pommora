@@ -3,7 +3,6 @@ import { rm, readFile, readdir, writeFile, mkdir } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot, readJsonAt } from '../Testing/hostFs'
 import {
-  dropFromChildOrder,
   dropSpaceOrder,
   setCollectionOrder,
   setSpaceOrder,
@@ -128,21 +127,5 @@ describe('setChildOrder', () => {
     const raw = join(root, 'Raw')
     await mkdir(raw, { recursive: true })
     expect((await setChildOrder(raw, 'page_order', ['p1'])).ok).toBe(true)
-  })
-})
-
-describe('dropFromChildOrder', () => {
-  it('drops the key once its last id leaves, for page and Set order alike', async () => {
-    const c = await createFolderEntity(root, 'collection', 'Notes', newId())
-    if (!c.ok) throw new Error('setup failed')
-    await setChildOrder(c.value.path, 'page_order', ['p1', 'p2'])
-    await setChildOrder(c.value.path, 'set_order', ['s1'])
-    await dropFromChildOrder(c.value.path, 'page_order', 'p1')
-    await dropFromChildOrder(c.value.path, 'set_order', 's1')
-    const raw = await readJsonAt(sidecarPath(c.value.path, 'collection'))
-    expect(raw.page_order).toEqual(['p2'])
-    expect('set_order' in raw).toBe(false)
-    await dropFromChildOrder(c.value.path, 'page_order', 'p2')
-    expect('page_order' in (await readJsonAt(sidecarPath(c.value.path, 'collection')))).toBe(false)
   })
 })

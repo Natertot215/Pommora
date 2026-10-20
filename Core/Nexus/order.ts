@@ -1,6 +1,7 @@
 // No persisted order sorts by id ascending (ULIDs are time-sortable); a persisted array takes known-in-array-order with tombstones dropped, then appends the unreferenced by title.
 
 import { compareTitles } from '../Paths/caseFold'
+import { nextOrder } from '@pommora/uix/Utilities/moveItem'
 
 interface Orderable {
   id: string
@@ -24,4 +25,24 @@ export function resolveOrder<T extends Orderable>(items: T[], order: string[] | 
   }
   const rest = [...byId.values()].sort((a, b) => compareTitles(a.title, b.title))
   return [...known, ...rest]
+}
+
+export type Slot = 'above' | 'below' | 'first' | 'last'
+
+export function spliceBeside(
+  ids: string[],
+  anchorId: string | null,
+  item: string,
+  where: Slot,
+): string[] {
+  const at = anchorId === null ? -1 : ids.indexOf(anchorId)
+  const before =
+    where === 'first'
+      ? (ids[0] ?? null)
+      : where === 'above'
+        ? anchorId
+        : where === 'below' && at >= 0
+          ? (ids[at + 1] ?? null)
+          : null
+  return nextOrder(ids, item, before)
 }

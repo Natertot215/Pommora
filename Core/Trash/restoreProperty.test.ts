@@ -9,7 +9,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { PropertyDefinition } from '../Properties/properties'
 import { handleMutate } from '../Nexus/mutate'
 import { readRegistry } from '../Properties/propertiesRegistry'
-import { listBundles } from './holdings'
+import { listBundles } from '../Bundles/bundle'
 import { splitFrontmatter } from '../Files/pageFile'
 import { readJsonObject } from '../Files/atomicWrite'
 import { closeSession, openSession } from '../Nexus/session'
@@ -19,7 +19,7 @@ import { createTestPage } from '../Testing/createTestPage'
 import { deleteProperty } from '../Properties/deleteProperty'
 import { removeProperty } from '../Properties/removeProperty'
 import { createProperty } from '../Properties/registryProperty'
-import type { TrashDeps } from './bundle'
+import type { TrashDeps } from './discard'
 
 const deps: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
 
@@ -58,7 +58,7 @@ async function seedPriority(): Promise<string> {
 }
 
 const onlyBundlePath = async (): Promise<string> => {
-  const listed = await listBundles(root)
+  const listed = await listBundles(root, { kind: 'trash' })
   expect(listed).toHaveLength(1)
   return listed[0].bundlePath
 }
@@ -149,7 +149,7 @@ describe('restoring a deleted property', () => {
     expect(await assigns(tasks, id)).toBe(true)
     expect(await valueOn(p1.value.path, 'Priority')).toEqual(['hi'])
     expect(await valueOn(p2.value.path, 'Priority')).toEqual(['lo'])
-    expect(await listBundles(root)).toHaveLength(0)
+    expect(await listBundles(root, { kind: 'trash' })).toHaveLength(0)
   })
 
   it('comes back with the option keys its record holds, refilling the pages that held them', async () => {
@@ -195,7 +195,7 @@ describe('restoring a deleted property', () => {
       label: 'Priority (2)',
       key: 'Priority (2)',
     })
-    expect(await listBundles(root)).toHaveLength(0)
+    expect(await listBundles(root, { kind: 'trash' })).toHaveLength(0)
   })
 
   it('refuses when the property id is live again', async () => {
@@ -212,7 +212,7 @@ describe('restoring a deleted property', () => {
     const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() }, deps)
     expect(r.ok).toBe(false)
     expect((await readRegistry(root)).defs[id]).toMatchObject({ label: 'Urgency', key: 'Urgency' })
-    expect(await listBundles(root)).toHaveLength(1)
+    expect(await listBundles(root, { kind: 'trash' })).toHaveLength(1)
   })
 
   it('a value that no longer validates does not return', async () => {
@@ -285,7 +285,7 @@ describe('restoring a deleted property', () => {
     expect(r.ok).toBe(true)
     expect(await assigns(notes, id)).toBe(true)
     expect(await valueOn(p1.value.path, 'Priority')).toEqual(['hi'])
-    expect(await listBundles(root)).toHaveLength(0)
+    expect(await listBundles(root, { kind: 'trash' })).toHaveLength(0)
   })
 
   it('a Space value comes back on its sidecar and decodes', async () => {

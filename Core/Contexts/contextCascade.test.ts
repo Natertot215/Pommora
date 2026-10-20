@@ -29,7 +29,7 @@ import '../Nexus/settle'
 import { spaceAt } from '../Nexus/treePatch'
 import { contextWorldOf } from './contextResolve'
 import { settledMutate } from '../Testing/settledMutate'
-import type { TrashDeps } from '../Trash/bundle'
+import type { TrashDeps } from '../Trash/discard'
 import { newId } from '../Nexus/ids'
 
 vi.mock('../Properties/governedSweep', async (importOriginal) => {

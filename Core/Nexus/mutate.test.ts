@@ -48,7 +48,7 @@ import { setWriteTap } from '../Files/writeEcho'
 import { readFileSync } from 'node:fs'
 import { createProperty } from '../Properties/registryProperty'
 import { liveAssetMap, resolveAssetName } from '../Assets/assetMap'
-import type { TrashDeps } from '../Trash/bundle'
+import type { TrashDeps } from '../Trash/discard'
 import type { HostContext } from '../Contract/handlers'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
@@ -62,9 +62,10 @@ import { seedContentIndex } from '../Index/indexSeed'
 import { createTile, readMarkdownTile, writeMarkdownTile } from '../Tiles/tilesFile'
 import { landedId } from '../Testing/tileLayouts'
 import { lockContention } from '../Testing/machines'
-import { listBundles } from '../Trash/holdings'
+import { listBundles } from '../Bundles/bundle'
 import { fault, ok } from '../Contract/result'
 import { nexusHandlers } from './handlers'
+import { setCollectionOrder, setSpaceOrder } from './reorder'
 import { updatePageMetadata } from './pageMetadata'
 
 let root: string
@@ -644,6 +645,61 @@ describe('handleMutate — delete', () => {
     expect(r.ok).toBe(true)
     expect(trashToSystem).toHaveBeenCalledOnce()
     expect(trashToSystem.mock.calls[0][0]).toContain('Beta.md')
+  })
+
+  const stateOrder = async (): Promise<Record<string, unknown>> =>
+    (await readJson('.nexus/state.json')).order as Record<string, unknown>
+
+  it('a page delete drops its id from the source folder’s page_order, in either Trash Mode', async () => {
+    await writeFile(
+      join(root, 'Notes', 'Daily', '_pageset.json'),
+      JSON.stringify({ id: 'col', page_order: [B_ID, A_ID] }),
+    )
+    await refreshTree(root)
+    await settledMutate(
+      root,
+      { op: 'delete', path: 'Notes/Daily/Beta.md', kind: 'page' },
+      nexusDeps,
+    )
+    expect((await readJson('Notes/Daily/_pageset.json')).page_order).toEqual([A_ID])
+    await settledMutate(
+      root,
+      { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' },
+      { trashMode: 'system', trashToSystem: (p) => rm(p, { force: true }) },
+    )
+    expect('page_order' in (await readJson('Notes/Daily/_pageset.json'))).toBe(false)
+  })
+
+  it('a Set delete drops its id from the source container’s set_order, and the key with its last id', async () => {
+    await writeFile(
+      join(root, 'Notes', '_pagecollection.json'),
+      JSON.stringify({ id: 'pt', set_order: ['col'] }),
+    )
+    await refreshTree(root)
+    await settledMutate(root, { op: 'delete', path: 'Notes/Daily', kind: 'set' }, nexusDeps)
+    expect('set_order' in (await readJson('Notes/_pagecollection.json'))).toBe(false)
+  })
+
+  it('a Collection delete drops its id from state.json’s order.collections', async () => {
+    await mkdir(join(root, 'Other'), { recursive: true })
+    await writeFile(join(root, 'Other', '_pagecollection.json'), JSON.stringify({ id: 'oth' }))
+    await setCollectionOrder(root, ['oth', 'pt'])
+    await refreshTree(root)
+    await settledMutate(root, { op: 'delete', path: 'Notes', kind: 'collection' }, nexusDeps)
+    expect((await stateOrder()).collections).toEqual(['oth'])
+  })
+
+  it('a Space delete drops its id from its Context’s order in state.json', async () => {
+    await seedTwoContexts()
+    await seedSpaceSidecar(root, 'Projects', 'Atlas', { id: 'sp-atlas' })
+    await setSpaceOrder(root, 'ctxP', ['sp-atlas', 'sp-pom'])
+    await refreshTree(root)
+    await settledMutate(
+      root,
+      { op: 'delete', path: '.nexus/contexts/Projects/Pommora', kind: 'space' },
+      nexusDeps,
+    )
+    expect((await stateOrder()).spaces).toEqual({ ctxP: ['sp-atlas'] })
   })
 })
 
@@ -2768,7 +2824,7 @@ describe('the Contexts lock', () => {
 
       it(`a page value written while a ${entity} restore stands ${when === 'before' ? 'after its move' : 'after its re-tag'} lands, and the tag is back`, async () => {
         expect((await settledMutate(root, op, nexusDeps)).ok).toBe(true)
-        const [bundle] = await listBundles(root)
+        const [bundle] = await listBundles(root, { kind: 'trash' })
         await valueDuring(
           { op: 'restore', bundlePath: bundle.bundlePath },
           () =>
