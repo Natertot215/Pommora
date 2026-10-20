@@ -64,9 +64,12 @@ commit, sort, filter, the link menu, and File values left as files); the index's
 generation; the writers and the picker; one search; the click rule; the in-app re-spell across
 renames, moves, folder renames, collisions, Space values, and markdown tiles; the outside-move lane,
 made with direct writes to `~/Test` and a closed-app rename across a relaunch; and the Trash's strip,
-record, restore, and repair. Each item names the decision it proves and the phase that owns it, and an
-item owned by a phase later than `POMMORA_PL_LANDED` (default 1) prints `AWAIT` and leaves the exit
-code alone, so the drive runs whole at every phase. It takes the groups to run as arguments —
+record, restore, and repair. A ninth group runs each mark, by its chord and by the editor menu's
+Format row, over a wikilink, an aliased wikilink, a path-and-heading wikilink, and a markdown
+link's label and destination, with selections inside, across, and into each link and a caret
+inside it, asserting the mark wraps the whole link and comes back off from inside it. Each item
+names the decision it proves and the phase that owns it, and an item owned by a phase later than
+`POMMORA_PL_LANDED` (default 1) prints `AWAIT` and leaves the exit code alone, so the drive runs whole at every phase. It takes the groups to run as arguments —
 `node live-drive.mjs 1 6` — and `scale` opens `~/Benchmark-Medium` (from `make-benchmark-nexus.mjs`),
 seeds a Twin in every Set, a page of fifty path links, and a path Link value on every page of its first
 Collection, and times the Link column's open, the decoration build on caret moves and edits, and a

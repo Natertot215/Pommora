@@ -5,16 +5,16 @@ import { join } from 'node:path'
 import { parse } from 'yaml'
 import {
   ask, boxOf, chooseNative, click, closePanel, escapeAll, field, fieldValue, FM, launch, META,
-  measure, mintPageId, mouseAt, mouseClick, must, NEXUS, openPane, openPanel, PAGE_VIEW, PANE_VIEW,
+  measure, mintPageId, mouseAt, mouseClick, must, NEXUS, openPane, openPanel, PAGE_VIEW, PANE_VIEW, pickNative, popNative,
   pressKey, refusal, relaunch, restore, results, selectField, settles, SHIFT, shot, sleep, typeText, until,
 } from '../drive-harness.mjs'
 
 const PORT = 9383
 const SCALE = process.argv.slice(2).includes('scale')
 const GROUPS = new Set(process.argv.slice(2).filter((a) => a !== 'scale').map(Number))
-const ALL = [1, 2, 3, 4, 5, 6, 7, 8]
+const ALL = [1, 2, 3, 4, 5, 6, 7, 8, 9]
 if ((GROUPS.size === 0 && !SCALE) || [...GROUPS].some((g) => !ALL.includes(g))) {
-  console.error('usage: node live-drive.mjs <group…> [scale]   (groups 1–8, each the plan phase of its number; scale times ~/Benchmark-Medium)')
+  console.error('usage: node live-drive.mjs <group…> [scale]   (groups 1–8, each the plan phase of its number, and 9, the marks over a link; scale times ~/Benchmark-Medium)')
   process.exit(2)
 }
 // The last plan phase landed in the build under test: an item owned by a later phase is expected to fail and doesn't fail the run.
@@ -1090,6 +1090,110 @@ async function group8(cdp) {
   item(8, 8, 'F-2', 'restored after its Set was deleted: [[Set G8/G8 Orphan]] follows it to Collection A as a move', back.ok && spells(lineOf(H_ORPHAN, 'p01'), 'Collection A/G8 Orphan', { aliases: [undefined, 'G8 Orphan'] }), show({ back: back.ok || back, line: lineOf(H_ORPHAN, 'p01') }))
 }
 
+// ── Group 9 — the marks over a link ─────────────────────────────────────────
+
+// ‹ › mark the selection and ‸ a caret; « » mark where the mark's opener and closer land, and the last field is a word inside the link to come back through.
+const MARK_CASES = [
+  ['wiki · part of title', 'foo [[B‹a›r]] baz', 'foo «[[Bar]]» baz', 'Bar'],
+  ['wiki · caret in title', 'foo [[Ba‸r]] baz', 'foo «[[Bar]]» baz', 'Bar'],
+  ['wiki · whole shown text', 'foo [[‹Bar›]] baz', 'foo «[[Bar]]» baz', 'Bar'],
+  ['wiki · prose into link', 'f‹oo [[Ba›r]] baz', 'f«oo [[Bar]]» baz', 'Bar'],
+  ['wiki · link into prose', 'foo [[B‹ar]] ba›z', 'foo «[[Bar]] ba»z', 'Bar'],
+  ['wiki path and heading · part', 'foo [[Notes/Ba‹r#Hea›d]] baz', 'foo «[[Notes/Bar#Head]]» baz', 'Bar'],
+  ['wiki alias · part of alias', 'foo [[Bar|Al‹ia›s]] baz', 'foo «[[Bar|Alias]]» baz', 'Alias'],
+  ['wiki alias · part of hidden title', 'foo [[B‹a›r|Alias]] baz', 'foo «[[Bar|Alias]]» baz', 'Alias'],
+  ['wiki alias · caret in alias', 'foo [[Bar|Ali‸as]] baz', 'foo «[[Bar|Alias]]» baz', 'Alias'],
+  ['wiki alias · across the pipe', 'foo [[Ba‹r|Al›ias]] baz', 'foo «[[Bar|Alias]]» baz', 'Alias'],
+  ['wiki alias · whole alias', 'foo [[Bar|‹Alias›]] baz', 'foo «[[Bar|Alias]]» baz', 'Alias'],
+  ['wiki alias · prose into alias', 'f‹oo [[Bar|Al›ias]] baz', 'f«oo [[Bar|Alias]]» baz', 'Alias'],
+  ['wiki alias · alias into prose', 'foo [[Bar|Al‹ias]] ba›z', 'foo «[[Bar|Alias]] ba»z', 'Alias'],
+  ['markdown · part of label', 'foo [La‹be›l](https://x.com) baz', 'foo «[Label](https://x.com)» baz', 'Label'],
+  ['markdown · caret in label', 'foo [Lab‸el](https://x.com) baz', 'foo «[Label](https://x.com)» baz', 'Label'],
+  ['markdown · whole label', 'foo [‹Label›](https://x.com) baz', 'foo «[Label](https://x.com)» baz', 'Label'],
+  ['markdown · part of destination', 'foo [Label](https://‹x.c›om) baz', 'foo «[Label](https://x.com)» baz', 'Label'],
+  ['markdown · caret in destination', 'foo [Label](https://x.c‸om) baz', 'foo «[Label](https://x.com)» baz', 'Label'],
+  ['markdown · label into destination', 'foo [Lab‹el](htt›ps://x.com) baz', 'foo «[Label](https://x.com)» baz', 'Label'],
+  ['markdown · prose into label', 'f‹oo [Lab›el](https://x.com) baz', 'f«oo [Label](https://x.com)» baz', 'Label'],
+  ['markdown · destination into prose', 'foo [Label](https://x.‹com) ba›z', 'foo «[Label](https://x.com) ba»z', 'Label'],
+  ['two links · wiki into markdown', 'see [[A‹lpha]] and [Be›ta](https://y.com) end', 'see «[[Alpha]] and [Beta](https://y.com)» end', 'Alpha'],
+  ['prose alone', 'f‹oo› [[Bar]] baz', 'f«oo» [[Bar]] baz', 'oo'],
+]
+const MARK_CHORDS = [
+  ['⌘B', 'b', META, '**', '**'],
+  ['⌘I', 'i', META, '*', '*'],
+  ['⌘⇧X', 'x', META | SHIFT, '~~', '~~'],
+  ['⌘E', 'e', META, '`', '`'],
+  ['⌘L', 'l', META, '==', '=='],
+]
+const MARK_MENUS = [
+  ['Format ▸ Bold', ['Format', 'Bold'], '**', '**'],
+  ['Format ▸ Italic', ['Format', 'Italic'], '*', '*'],
+  ['Format ▸ Strikethrough', ['Format', 'Strikethrough'], '~~', '~~'],
+  ['Format ▸ Inline Code', ['Format', 'Inline Code'], '`', '`'],
+  ['Format ▸ Text Color ▸ Red', ['Format', 'Text Color', 'Red'], '=🔴', '='],
+  ['Format ▸ Highlight ▸ Accent', ['Format', 'Highlight', 'Accent'], '==', '=='],
+  ['Format ▸ Highlight ▸ Red', ['Format', 'Highlight', 'Red'], '==🔴', '=='],
+]
+function marked(text) {
+  let line = ''
+  let anchor
+  let head
+  for (const ch of text) {
+    if (ch === '‹') anchor = line.length
+    else if (ch === '›') head = line.length
+    else if (ch === '‸') anchor = head = line.length
+    else line += ch
+  }
+  return { line, anchor, head }
+}
+const seat = (cdp, line, anchor, head) =>
+  cdp.evaluate(`(() => { const v = ${PAGE_VIEW}; v.focus(); v.dispatch({ changes: { from: 0, to: v.state.doc.length, insert: ${show(line)} } }); v.dispatch({ selection: { anchor: ${anchor}, head: ${head} } }) })()`)
+async function markChord(cdp, key, modifiers) {
+  for (const type of ['rawKeyDown', 'keyUp'])
+    await cdp.send('Input.dispatchKeyEvent', { type, key, code: `Key${key.toUpperCase()}`, windowsVirtualKeyCode: key.toUpperCase().charCodeAt(0), modifiers })
+  await sleep(250)
+  return null
+}
+// Pressed on the selection's first glyph, as a hand right-clicks a selection; answers why nothing was chosen, or null.
+async function markMenu(cdp, path, anchor, head) {
+  await sleep(150)
+  const at = await cdp.evaluate(`(() => { const v = ${PAGE_VIEW}; const p = Math.min(${anchor}, ${head}); const a = v.coordsAtPos(p, 1); const b = v.coordsAtPos(p + 1, -1); return { x: Math.round((a.left + b.right) / 2), y: Math.round((a.top + a.bottom) / 2) } })()`)
+  const rows = await popNative(cdp, at)
+  if (!rows) return 'no menu popped'
+  const chosen = await pickNative(path)
+  await sleep(300)
+  return chosen ? null : `the menu held ${show(rows.filter((r) => !r.separator).map((r) => r.label))}`
+}
+/** Each case wraps its link whole, then the same mark from inside the link takes it back off. A right-press selects the word it lands on, so the menu runs the selection cases and comes back through the probe word selected. */
+async function markPass(cdp, label, apply, open, close, { byMenu = false } = {}) {
+  for (const [name, text, expected, probe] of MARK_CASES) {
+    const { line, anchor, head } = marked(text)
+    if (byMenu && anchor === head) continue
+    const want = expected.replace('«', open).replace('»', close)
+    await seat(cdp, line, anchor, head)
+    const why = await apply(anchor, head)
+    const got = await docOf(cdp, PAGE_VIEW)
+    item(9, 1, '—', `${label} · ${name} wraps the link whole`, !why && got === want, why ?? show({ got, want }))
+    if (why || got !== want) continue
+    const at = got.indexOf(probe)
+    const [a, h] = byMenu ? [at, at + probe.length] : [at + 1, at + 1]
+    await seat(cdp, got, a, h)
+    const whyBack = await apply(a, h)
+    const back = await docOf(cdp, PAGE_VIEW)
+    item(9, 1, '—', `${label} · ${name} comes back off from inside the link`, !whyBack && back === line, whyBack ?? show({ back, line }))
+  }
+}
+
+async function group9(cdp) {
+  const marks = await createAt(cdp, A_ALPHA, 'PL Marks')
+  await home(cdp)
+  await openRow(cdp, marks)
+  for (const [label, key, mods, open, close] of MARK_CHORDS) await markPass(cdp, label, () => markChord(cdp, key, mods), open, close)
+  for (const [label, path, open, close] of MARK_MENUS)
+    await markPass(cdp, label, (a, h) => markMenu(cdp, path, a, h), open, close, { byMenu: true })
+  await shot(cdp, 'g9-marks')
+}
+
 // ── The scale pass ──────────────────────────────────────────────────────────
 
 const BENCH = join(homedir(), 'Benchmark-Medium')
@@ -1229,6 +1333,7 @@ try {
   if (GROUPS.has(5)) await group5(cdp)
   if (GROUPS.has(6)) await group6(cdp)
   if (GROUPS.has(8)) await group8(cdp)
+  if (GROUPS.has(9)) await group9(cdp)
   // The outside lane runs last: its closed-app item quits and reopens the app.
   if (GROUPS.has(7)) {
     const holder = await group7(cdp)
