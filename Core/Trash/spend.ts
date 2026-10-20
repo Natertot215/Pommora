@@ -31,7 +31,7 @@ import {
 } from '../Bundles/bundle'
 import { relocate, rmwJsonStrict } from '../Files/atomicWrite'
 import { dropPageMetadata } from '../Nexus/pageMetadata'
-import { dropSpaceOrder } from '../Nexus/reorder'
+import { dropContextOrder } from '../Nexus/reorder'
 import { machine } from '../Platform/machine'
 import { recordWrite } from '../Files/writeEcho'
 import { frozenWorld } from '../Properties/propertyValue'
@@ -76,7 +76,7 @@ export async function emptyBundle(
   if (deps.permanentDelete === true) await machine().remove(artifactAbs)
   else await deps.trashToSystem(artifactAbs)
   await dropPageMetadata(root, pageIds)
-  if (record.entity === 'context') await dropSpaceOrder(root, record.registry.id)
+  if (record.entity === 'context') await dropContextOrder(root, record.registry.id)
   // Permanent now: a Link value naming one of its pages, recorded by the delete or taken up since, names nothing any more unless another trashed page answers its key.
   const gone = pages.length
     ? await deleteCascade(
@@ -112,11 +112,11 @@ async function restoreArtifact(
 ): Promise<Result<Restored>> {
   const opened = await openBundle(root, bundleAbs)
   if (!opened.ok) return opened
-  const { store } = opened.value
+  const { store, record: stored } = opened.value
   if (store.kind !== 'trash') return fault('Only a trash record can be spent.')
-  if (opened.value.record.entity === 'property') {
+  if (stored.entity === 'property') {
     if (destination) return fault(NO_DESTINATION)
-    const rebuilt = await restoreProperty(root, opened.value.record)
+    const rebuilt = await restoreProperty(root, stored)
     if (!rebuilt.ok) return rebuilt
     await parkLinks(root, rebuilt.value.dropped)
     // A value that no longer fits is named rather than kept: the property is back, so its record could only ever refuse.
@@ -129,13 +129,7 @@ async function restoreArtifact(
     return fail('not-found', 'That deletion never finished; there is nothing to restore.')
 
   const tree = await liveTreeOf(root)
-  const placed = await placeRecord(
-    root,
-    opened.value.record,
-    destination,
-    basename(artifactAbs),
-    tree,
-  )
+  const placed = await placeRecord(root, stored, destination, basename(artifactAbs), tree)
   if (!placed.ok) return placed
   const { record, placement, writeOrder, landedAs } = placed.value
   const { dir, finalName, finalTitle } = placement

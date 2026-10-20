@@ -24,7 +24,7 @@ import { matchQuery, rankMatches } from '../Paths/caseFold'
 import { useSession } from '../Session/store'
 import { flushAllSaves, storesChanged } from '../Session/nexusSlice'
 import { personalizationOf } from '../Session/configSlice'
-import { notifyUndoable, unrestoredLine } from '../Interface/Notifications/notifications'
+import { notifyOutcome, unrestoredLine } from '../Interface/Notifications/notifications'
 import { dialer } from '../Platform/dialer'
 import { popMenu } from '../Actions/menuActions'
 import { trashMenuItems } from '../Actions/trashMenu'
@@ -51,14 +51,6 @@ export function countPhrase(rows: BundleRow[]): string {
 }
 
 const steppedTo = (title: string, landedAs: string): string => `“${title}” as “${landedAs}”`
-
-/** One notice for what a spend did: what it did, the title a restore stepped to, and whatever didn't go as asked, which marks it failed. */
-function report(head: string, renamed: string | undefined, lines: (string | false)[]): void {
-  const unmet = lines.filter(Boolean)
-  const parts = renamed ? [head, renamed] : [head]
-  if (unmet.length) parts[parts.length - 1] += `. ${unmet.join(' ')}`
-  notifyUndoable(parts[0], undefined, unmet.length > 0 ? 'error' : 'normal', undefined, parts[1])
-}
 
 export function filterRows(rows: BundleRow[], query: string): BundleRow[] {
   const q = matchQuery(query)
@@ -115,9 +107,9 @@ function TrashBody(): React.JSX.Element {
     if (!done) return
     spendBundle(req.bundlePath)
     if (done.landedAs)
-      report(`Restored ${steppedTo(row.title, done.landedAs)}`, undefined, [
+      notifyOutcome(`Restored ${steppedTo(row.title, done.landedAs)}`, undefined, [
         done.unrestored !== undefined && unrestoredLine(done.unrestored),
-        done.cascade?.warning ?? false,
+        done.cascade?.warning,
       ])
   }
 
@@ -154,7 +146,7 @@ function TrashBody(): React.JSX.Element {
     const addressable = targets.filter((r) => r.homeResolves)
     const { done, refused, unrestored, warnings, renamed } = await many(addressable, 'restore')
     const homeless = targets.filter((r) => !r.homeResolves)
-    report(
+    notifyOutcome(
       `Restored ${countPhrase(done)}`,
       renamed.length > 1 ? `${renamed.length} Renamed` : renamed[0],
       [
@@ -170,7 +162,7 @@ function TrashBody(): React.JSX.Element {
   const emptyBatch = async (targets: BundleRow[]): Promise<void> => {
     if (!(await askEmptyTrash(targets.length))) return
     const { done, refused, warnings } = await many(targets, 'emptyBundle')
-    report(`Deleted ${countPhrase(done)}`, undefined, [
+    notifyOutcome(`Deleted ${countPhrase(done)}`, undefined, [
       refused.length > 0 && `${countPhrase(refused)} couldn’t be deleted.`,
       ...warnings,
     ])

@@ -85,6 +85,9 @@ const recordFile = z.discriminatedUnion('entity', [
 
 export type RecordFile = z.infer<typeof recordFile>
 
+/** The property shape is artifact-less — there is nothing to place. */
+export type ArtifactRecord = Exclude<RecordFile, { entity: 'property' }>
+
 export async function writeRecord(bundleDir: string, record: RecordFile): Promise<void> {
   await writeJson(join(bundleDir, RECORD_FILENAME), record)
 }

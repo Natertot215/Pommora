@@ -50,11 +50,13 @@ export const setSpaceOrder = (
     spaces: { ...spacesOf(order), [contextId]: ids },
   }))
 
-/** A Context gone for good takes its Space order with it. */
-export const dropSpaceOrder = (nexusRoot: string, contextId: string): StateOrderWrite =>
+/** A Context gone for good takes its panel id and its Space order with it. */
+export const dropContextOrder = (nexusRoot: string, contextId: string): StateOrderWrite =>
   writeStateOrder(nexusRoot, (order) => {
+    const panel = withoutId(order, 'contexts', contextId)
     const { [contextId]: dropped, ...spaces } = spacesOf(order)
-    return dropped === undefined ? null : { ...order, spaces }
+    if (dropped === undefined) return panel
+    return { ...(panel ?? order), spaces }
   })
 
 const patchContainer = async (

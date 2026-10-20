@@ -81,23 +81,37 @@ export const persist = (
 export const unrestoredLine = (titles: string[]): string =>
   `${titles.join(', ')} didn’t get ${titles.length === 1 ? 'its' : 'their'} value back.`
 
+/** One notice for what an action did: its head, an optional segment, and whatever didn't go as asked, which marks it failed and offers the retry. */
+export function notifyOutcome(
+  head: string,
+  segment: string | undefined,
+  unmet: (string | false | undefined)[],
+  undo?: () => void | Promise<void>,
+  retry?: () => void,
+): () => void {
+  const lines = unmet.filter(Boolean)
+  const parts = segment ? [head, segment] : [head]
+  if (lines.length) parts[parts.length - 1] += `. ${lines.join(' ')}`
+  const failed = lines.length > 0
+  return notifyUndoable(
+    parts[0],
+    undo,
+    failed ? 'error' : 'normal',
+    failed ? retry : undefined,
+    parts[1],
+  )
+}
+
 export function notifyDeleted(
   title: string,
   undo?: () => void | Promise<void>,
   { pages = [], warning }: Partial<Pick<CascadeReport, 'pages' | 'warning'>> = {},
   retry?: () => void,
 ): () => void {
-  const parts = [`Deleted “${title}”`]
-  if (pages.length) parts.push(`${pages.length} Internal ${pages.length === 1 ? 'Link' : 'Links'}`)
-  if (warning) parts[parts.length - 1] += `. ${warning}`
-  const [message, segment] = parts
-  return notifyUndoable(
-    message,
-    undo,
-    warning ? 'error' : 'normal',
-    warning ? retry : undefined,
-    segment,
-  )
+  const links = pages.length
+    ? `${pages.length} Internal ${pages.length === 1 ? 'Link' : 'Links'}`
+    : undefined
+  return notifyOutcome(`Deleted “${title}”`, links, [warning], undo, retry)
 }
 
 const undoing = inTurns()

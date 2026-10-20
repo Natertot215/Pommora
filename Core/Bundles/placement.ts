@@ -9,11 +9,11 @@ import { fail, fault, ok, type Result } from '../Contract/result'
 import type { NexusTree } from '../Nexus/tree'
 import type { RestoreDestination } from '../Nexus/mutateRequest'
 import { recordById } from '../Nexus/record'
-import { containerAt, contextAt, findContainerById } from '../Nexus/treePatch'
+import { findContainerById } from '../Nexus/treePatch'
 import { type Slot, spliceBeside } from '../Nexus/order'
 import { setChildOrder, setCollectionOrder, setSpaceOrder } from '../Nexus/reorder'
 import { contextWorldOf } from '../Contexts/contextResolve'
-import type { Place, RecordFile } from './record'
+import type { ArtifactRecord, Place } from './record'
 
 interface Placement {
   dir: string
@@ -22,11 +22,14 @@ interface Placement {
   finalTitle?: string
 }
 
-export type Refusal = 'parent-gone' | 'cannot-hold' | 'unaddressable' | 'id-live'
-type Resolution = { place: Placement } | { refuse: Refusal }
+/** The siblings it lands among, held as the tree holds them, and the one writer of their order. */
+interface SiblingOrder {
+  siblings: readonly { id: string }[]
+  write: (root: string, ids: string[]) => Promise<unknown>
+}
 
-/** The property shape is artifact-less — there is nothing to place. */
-export type ArtifactRecord = Exclude<RecordFile, { entity: 'property' }>
+export type Refusal = 'parent-gone' | 'cannot-hold' | 'unaddressable' | 'id-live'
+type Resolution = { place: Placement; order?: SiblingOrder } | { refuse: Refusal }
 
 /** THE decision, against the CURRENT tree — a renamed parent resolves to its renamed path. Every name and title choice the tree can make is made here, and `freeOnDisk` steps it only past what the tree can't see. A live id refusal outranks every other answer — nothing may write over a living identity. */
 export function resolveRecord(
@@ -58,6 +61,10 @@ export function resolveRecord(
     )
     return {
       place: { dir: contextDirRel(group.def.title), finalName: finalTitle, finalTitle },
+      order: {
+        siblings: group.spaces,
+        write: (root, ids) => setSpaceOrder(root, group.def.id, ids),
+      },
     }
   }
 
@@ -72,7 +79,10 @@ export function resolveRecord(
         baseName,
         tree.collections.map((c) => c.title),
       )
-      return { place: { dir: '', finalName } }
+      return {
+        place: { dir: '', finalName },
+        order: { siblings: tree.collections, write: setCollectionOrder },
+      }
     }
     case 'container': {
       if (record.entity === 'collection') return { refuse: 'cannot-hold' }
@@ -84,11 +94,16 @@ export function resolveRecord(
         ...parent.pages.map((p) => p.title),
         ...(parent.sets ?? []).map((s) => s.title),
       ]
+      const key = record.entity === 'page' ? 'page_order' : 'set_order'
+      const order: SiblingOrder = {
+        siblings: record.entity === 'page' ? parent.pages : (parent.sets ?? []),
+        write: (root, ids) => setChildOrder(join(root, parent.path), key, ids),
+      }
       if (record.entity === 'page') {
         const finalTitle = freeName(titleFromPath(baseName), siblings)
-        return { place: { dir: parent.path, finalName: `${finalTitle}.md`, finalTitle } }
+        return { place: { dir: parent.path, finalName: `${finalTitle}.md`, finalTitle }, order }
       }
-      return { place: { dir: parent.path, finalName: freeName(baseName, siblings) } }
+      return { place: { dir: parent.path, finalName: freeName(baseName, siblings) }, order }
     }
   }
 }
@@ -134,34 +149,7 @@ export function slotOf(
   return { anchor: null, where: place && !place.below ? 'first' : 'last' }
 }
 
-function siblingOrder(
-  root: string,
-  record: Exclude<ArtifactRecord, { entity: 'context' }>,
-  dir: string,
-  tree: NexusTree,
-): { ids: string[]; write: (order: string[]) => Promise<unknown> } | null {
-  switch (record.entity) {
-    case 'collection':
-      return { ids: tree.collections.map((c) => c.id), write: (o) => setCollectionOrder(root, o) }
-    case 'space': {
-      const group = contextAt(tree, dir)
-      return group
-        ? { ids: group.spaces.map((s) => s.id), write: (o) => setSpaceOrder(root, group.def.id, o) }
-        : null
-    }
-    case 'page':
-    case 'set': {
-      const parent = containerAt(tree, dir)
-      const key = record.entity === 'page' ? 'page_order' : 'set_order'
-      const children = record.entity === 'page' ? parent?.pages : parent?.sets
-      return children
-        ? { ids: children.map((n) => n.id), write: (o) => setChildOrder(join(root, dir), key, o) }
-        : null
-    }
-  }
-}
-
-/** The tree's free title stepped further past what the disk holds there that the tree can't see — an outside file, an excluded folder, the asset directory, either form of the one name a page and a Set share — so a restore lands beside it, never over it. */
+/** The tree's free title stepped further past what the disk holds there that the tree can't see — an outside file, an excluded folder, the asset directory — in the item's own form, so a restore lands beside it, never over it. */
 async function freeOnDisk(
   root: string,
   entity: ArtifactRecord['entity'],
@@ -169,12 +157,10 @@ async function freeOnDisk(
 ): Promise<Result<Placement>> {
   const parent = join(root, dir)
   const leaf = (title: string): string => (entity === 'page' ? `${title}.md` : title)
-  const forms = (title: string): string[] =>
-    entity === 'page' || entity === 'set' ? [title, `${title}.md`] : [title]
   const taken = async (title: string): Promise<boolean> =>
     ((entity === 'collection' || entity === 'set') &&
       (await landingRefusal(root, parent, title)) !== null) ||
-    (await Promise.all(forms(title).map((name) => pathExists(join(parent, name))))).includes(true)
+    (await pathExists(join(parent, leaf(title))))
   const named = await createDisambiguated(
     finalTitle ?? finalName,
     async (title) =>
@@ -212,11 +198,13 @@ export async function placeRecord(
   if (!named.ok) return named
   const placement = named.value
   const title = placement.finalTitle ?? placement.finalName
-  const landedAs = title === titleFromPath(baseName) ? undefined : title
-  if (record.entity === 'context' || !record.id) return ok({ record, placement, landedAs })
-  const siblings = siblingOrder(root, record, placement.dir, tree)
-  if (!siblings) return ok({ record, placement, landedAs })
-  const { anchor, where } = slotOf(record.place, siblings.ids)
-  const order = spliceBeside(siblings.ids, anchor, record.id, where)
-  return ok({ record, placement, landedAs, writeOrder: () => siblings.write(order) })
+  const asked = record.entity === 'context' ? record.registry.title : titleFromPath(baseName)
+  const landedAs = title === asked ? undefined : title
+  const { order } = resolution
+  if (record.entity === 'context' || !record.id || !order)
+    return ok({ record, placement, landedAs })
+  const ids = order.siblings.map((n) => n.id)
+  const { anchor, where } = slotOf(record.place, ids)
+  const next = spliceBeside(ids, anchor, record.id, where)
+  return ok({ record, placement, landedAs, writeOrder: () => order.write(root, next) })
 }
