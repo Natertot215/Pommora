@@ -703,13 +703,13 @@ describe('outliner rails', () => {
 
   it('a parent heads its own rail, which runs through its children with caps only at each run’s ends', () => {
     const t = '- A\n\t- B\n\t\t- C\n\t- D\n- E'
-    expect(rails(t).map((r) => [r.level, r.head, r.first, r.last])).toEqual([
-      [0, true, true, false],
-      [0, false, false, false],
-      [1, true, true, false],
-      [0, false, false, false],
-      [1, false, false, true],
-      [0, false, false, true],
+    expect(rails(t).map((r) => [r.level, r.head, r.first, r.end])).toEqual([
+      [0, true, true, null],
+      [0, false, false, null],
+      [1, true, true, null],
+      [0, false, false, null],
+      [1, false, false, 'cap'],
+      [0, false, false, 'cap'],
     ])
   })
 
@@ -739,36 +739,36 @@ describe('outliner rails', () => {
 
   it('a blank line inside a loose list carries the rail across, and one leaving the run carries none', () => {
     const t = '- A\n\n\t- B\n\n\t- C\n\n- D'
-    expect(rails(t).map((r) => [r.from, r.head, r.first, r.last])).toEqual([
-      [0, true, true, false],
-      [4, false, false, false],
-      [5, false, false, false],
-      [10, false, false, false],
-      [11, false, false, true],
+    expect(rails(t).map((r) => [r.from, r.head, r.first, r.end])).toEqual([
+      [0, true, true, null],
+      [4, false, false, null],
+      [5, false, false, null],
+      [10, false, false, null],
+      [11, false, false, 'elbow'],
     ])
   })
 
-  it('a run curves into its last line unless the next line is an item at its own level', () => {
+  it('a run curves into its last line unless the next line is an item at its own level, and deeper runs ending there join the curve', () => {
     const ends = (t: string) =>
       rails(t)
-        .filter((r) => r.last)
-        .map((r) => [r.level, r.elbow])
-    expect(ends('- A\n\t- B\n- C')).toEqual([[0, false]])
-    expect(ends('- A\n\t- B\n\n- C')).toEqual([[0, true]])
+        .filter((r) => r.end)
+        .map((r) => [r.level, r.end])
+    expect(ends('- A\n\t- B\n- C')).toEqual([[0, 'cap']])
+    expect(ends('- A\n\t- B\n\n- C')).toEqual([[0, 'elbow']])
     expect(ends('- A\n\t- B\n\t\t- C\n\t- D')).toEqual([
-      [1, false],
-      [0, true],
+      [1, 'cap'],
+      [0, 'elbow'],
     ])
     expect(ends('- A\n\t- B\n\t\t- C\nprose')).toEqual([
-      [0, true],
-      [1, true],
+      [0, 'elbow'],
+      [1, 'join'],
     ])
   })
 
   it('a non-list line between siblings breaks the run (caps on both sides of the gap)', () => {
     const t = '- A\n\t- B\nprose\n\t- C'
     const rs = rails(t)
-    expect(rs.filter((r) => r.level === 0 && r.last).length).toBe(2)
+    expect(rs.filter((r) => r.level === 0 && r.end).length).toBe(2)
     expect(rs.filter((r) => r.level === 0 && r.first).length).toBe(2)
   })
 })

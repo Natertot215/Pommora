@@ -13,6 +13,7 @@ import {
   listLineClass,
   railClass,
   railIntents,
+  railStyle,
   railTypeClass,
   type ListGlyph,
 } from '../Engine/intents'
@@ -312,7 +313,7 @@ function renderCellBody(
           <span
             key={r.level}
             className={railClass(r)}
-            style={{ '--rail-level': r.level } as React.CSSProperties}
+            style={railStyle(r) as React.CSSProperties}
             aria-hidden="true"
           />
         ))}

@@ -59,6 +59,9 @@
   --bullet-zone: 16px;
   --task-zone: 1.8em;
   --bullet-size: 1.25em;
+  --md-outline-bullet-x: calc(var(--bullet-size) / 4);
+  --md-outline-alpha-x: calc(var(--number-zone) - var(--list-gap) - 0.6em);
+  --md-outline-task-x: calc(8.5px * var(--glyph-scale));
   --citation-divider-blur: 4px; /* KNOB: how softly the seam fades out as it closes */
   --citation-divider-gap: 14px; /* KNOB: the seam's breathing room */
   padding: var(--header-zone, 90px) 0 90px var(--rail-inset);
@@ -388,32 +391,34 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  left: round(
+  --rail-left: round(
     calc(
       var(--list-origin, 0px) +
-      (var(--rail-level, 0) + 1) *
+      (var(--rail-level) + 1) *
       var(--list-indent) +
-      var(--rail-x, 0px) -
+      var(--rail-x) -
       var(--outline-width) /
       2
     ),
     1px
   );
+  left: var(--rail-left);
+  box-sizing: border-box;
   width: var(--outline-width);
-  background: var(--list-outline-color);
+  border-left: var(--outline-width) solid var(--list-outline-color);
   pointer-events: none;
 }
 .outline-lines :is(.md-outline-bullet, .md-outline-alpha) {
   --outline-gap-bottom: -2px;
 }
 .outline-lines .md-outline-bullet {
-  --rail-x: calc(var(--bullet-size) / 4);
+  --rail-x: var(--md-outline-bullet-x);
 }
 .outline-lines .md-outline-alpha {
-  --rail-x: calc(var(--number-zone) - var(--list-gap) - 0.6em);
+  --rail-x: var(--md-outline-alpha-x);
 }
 .outline-lines .md-outline-task {
-  --rail-x: calc(8.5px * var(--glyph-scale));
+  --rail-x: var(--md-outline-task-x);
   --outline-gap-bottom: 8px;
 }
 .outline-lines .md-outline-first {
@@ -424,33 +429,30 @@
 .outline-lines .md-outline-head {
   top: calc(var(--box-head-pad, 0px) + 1lh + var(--outline-gap));
 }
-.outline-lines .md-outline-last {
+.outline-lines .md-outline-cap {
   bottom: calc(var(--box-tail-pad, 0px) + var(--outline-gap-bottom));
   border-bottom-left-radius: var(--outline-radius);
   border-bottom-right-radius: var(--outline-radius);
 }
-.outline-lines .md-outline-elbow {
+.outline-lines :is(.md-outline-elbow, .md-outline-join) {
+  --reach-left: round(
+    calc(
+      var(--list-origin, 0px) +
+      (var(--reach-level, var(--list-level)) + 1) *
+      var(--list-indent) +
+      var(--reach-x, calc(var(--outline-width) / 2 - var(--outline-gap))) -
+      var(--outline-width) /
+      2
+    ),
+    1px
+  );
   bottom: calc(100% - var(--box-head-pad, 0px) - 0.5lh - var(--outline-width) / 2);
-  width: calc(
-    (var(--list-level) - var(--rail-level)) *
-    var(--list-indent) -
-    var(--rail-x, 0px) +
-    var(--outline-width) /
-    2 -
-    var(--outline-gap)
-  );
+  width: calc(var(--reach-left) - var(--rail-left));
+  border-bottom: var(--outline-width) solid var(--list-outline-color);
   border-radius: 0;
-  clip-path: shape(
-    from 0 0,
-    hline to var(--outline-width),
-    vline to calc(100% - 8px),
-    arc to 8px calc(100% - var(--outline-width)) of calc(8px - var(--outline-width)),
-    hline to 100%,
-    vline to 100%,
-    hline to 8px,
-    arc to 0 calc(100% - 8px) of 8px cw,
-    close
-  );
+}
+.outline-lines .md-outline-elbow {
+  border-bottom-left-radius: 6px;
 }
 
 .md-list-bullet {
