@@ -748,6 +748,23 @@ describe('outliner rails', () => {
     ])
   })
 
+  it('a run curves into its last line unless the next line is an item at its own level', () => {
+    const ends = (t: string) =>
+      rails(t)
+        .filter((r) => r.last)
+        .map((r) => [r.level, r.elbow])
+    expect(ends('- A\n\t- B\n- C')).toEqual([[0, false]])
+    expect(ends('- A\n\t- B\n\n- C')).toEqual([[0, true]])
+    expect(ends('- A\n\t- B\n\t\t- C\n\t- D')).toEqual([
+      [1, false],
+      [0, true],
+    ])
+    expect(ends('- A\n\t- B\n\t\t- C\nprose')).toEqual([
+      [0, true],
+      [1, true],
+    ])
+  })
+
   it('a non-list line between siblings breaks the run (caps on both sides of the gap)', () => {
     const t = '- A\n\t- B\nprose\n\t- C'
     const rs = rails(t)

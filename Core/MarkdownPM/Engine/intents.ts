@@ -72,6 +72,7 @@ type RailIntent = {
   head: boolean
   first: boolean
   last: boolean
+  elbow: boolean
 }
 
 export type DecoIntent =
@@ -99,13 +100,16 @@ export function railTypeClass(m: ListMarker): string | null {
   return null
 }
 
-export const railClass = (r: Pick<RailIntent, 'typeClass' | 'head' | 'first' | 'last'>): string =>
+export const railClass = (
+  r: Pick<RailIntent, 'typeClass' | 'head' | 'first' | 'last' | 'elbow'>,
+): string =>
   cx(
     'md-outline-rail',
     r.typeClass,
     r.head && 'md-outline-head',
     r.first && 'md-outline-first',
     r.last && 'md-outline-last',
+    r.elbow && 'md-outline-elbow',
   )
 
 // The form a marker is DRAWN as, and the line class that carries it — one answer for the editor's decorations and the resting cell's DOM alike.
@@ -398,6 +402,7 @@ export function railIntents(
       const typeClass = railKind[k]
       if (!typeClass) continue
       const head = k === level
+      const last = k >= nextSpan
       rails[i] ??= []
       rails[i].push({
         kind: 'rail',
@@ -406,7 +411,8 @@ export function railIntents(
         typeClass,
         head,
         first: head || k >= prevSpan,
-        last: k >= nextSpan,
+        last,
+        elbow: last && listLevels[i + 1] !== k,
       })
     }
   }
