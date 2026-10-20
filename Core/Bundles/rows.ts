@@ -7,7 +7,8 @@ import { containerTrailById } from '../Nexus/treePatch'
 import { type PropertyType, propertyType } from '../Properties/properties'
 import { contextWorldOf } from '../Contexts/contextResolve'
 import { type BundleStore, type ListedBundle, layoutOf, storedAtOf } from './bundle'
-import { type ArtifactRecord, resolveRecord } from './placement'
+import { resolveRecord } from './placement'
+import type { ArtifactRecord } from './record'
 
 /** `kind` is absent on a historical crumb, which is a frozen folder name rather than a live entity. */
 export interface BundleCrumb {

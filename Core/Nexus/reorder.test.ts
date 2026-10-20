@@ -3,7 +3,7 @@ import { rm, readFile, readdir, writeFile, mkdir } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot, readJsonAt } from '../Testing/hostFs'
 import {
-  dropSpaceOrder,
+  dropContextOrder,
   setCollectionOrder,
   setSpaceOrder,
   setChildOrder,
@@ -74,19 +74,19 @@ describe('setCollectionOrder', () => {
     })
   })
 
-  it('dropSpaceOrder removes the Context’s Space order and leaves the rest', async () => {
+  it('dropContextOrder removes the Context’s panel id and its Space order, leaving the rest', async () => {
     await setSpaceOrder(root, 'ctx_areas', ['x'])
     await setSpaceOrder(root, 'ctx_projects', ['y'])
     await setPanelContextOrder(root, ['ctx_projects', 'ctx_areas'])
-    await dropSpaceOrder(root, 'ctx_projects')
+    await dropContextOrder(root, 'ctx_projects')
     expect((await readState()).order).toEqual({
       spaces: { ctx_areas: ['x'] },
-      contexts: ['ctx_projects', 'ctx_areas'],
+      contexts: ['ctx_areas'],
     })
   })
 
-  it('dropSpaceOrder writes nothing when the Context has no order', async () => {
-    await dropSpaceOrder(root, 'ctx_projects')
+  it('dropContextOrder writes nothing when the Context has no order', async () => {
+    await dropContextOrder(root, 'ctx_projects')
     expect(await pathExists(nexusConfig(root, NEXUS_CONFIG_FILES.state))).toBe(false)
   })
 

@@ -246,14 +246,19 @@ async function group2(cdp) {
 
   const coll = containerId()
   await must('create AR Coll', ask(cdp, 'mutate', { op: 'createContainer', id: coll, parentPath: '', kind: 'collection', name: 'AR Coll' }))
-  const tops = (await heldTree(cdp)).collections.map((c) => c.id).filter((id) => id !== coll)
+  const held = (await heldTree(cdp)).collections.filter((c) => c.id !== coll)
+  const tops = held.map((c) => c.id)
   const a = (await collectionA(cdp)).id
   const next = tops[tops.indexOf(a) + 1]
+  const ring = [COLLECTION, 'AR Coll', held.find((c) => c.id === next)?.title]
   await must('place AR Coll', ask(cdp, 'mutate', { op: 'reorderTop', order: tops.flatMap((id) => (id === a ? [id, coll] : [id])) }))
   await deleteAt(cdp, 'AR Coll', 'collection')
   item(2, 2, 'E-2', 'a Collection delete drops its id from state.order.collections', !(stateOrder().collections ?? []).includes(coll), show(stateOrder().collections))
   await must('restore AR Coll', restoreRow(cdp, 'AR Coll'))
   item(2, 2, 'E-2', 'a Collection restored lands between its old neighbours in state.order.collections', between(stateOrder().collections ?? [], [a, coll, next]), show(stateOrder().collections))
+  await until('AR Coll in the sidebar', () => drawn(cdp, 'AR Coll'))
+  const topOrder = await cdp.evaluate(`[...document.querySelectorAll('.tree-item')].map((e) => e.textContent.trim()).filter((t) => ${JSON.stringify(ring)}.includes(t))`)
+  item(2, 2, 'E-2', 'the sidebar draws the restored Collection between them', show(topOrder) === show(ring), show(topOrder))
 
   const group = (await heldTree(cdp)).contexts.find((g) => g.spaces.length >= 2)
   const space = containerId()
@@ -279,9 +284,10 @@ async function group2(cdp) {
   await deleteAt(cdp, 'Collection A/AR Excl', 'set')
   const excluded = JSON.parse(readRel('.nexus/settings.json')).excluded_folders ?? []
   await must('exclude its origin', ask(cdp, 'exclusions:set', [...excluded, 'Collection A/AR Excl']))
+  const settingsBefore = readRel('.nexus/settings.json')
   const back = await restoreRow(cdp, 'AR Excl')
-  item(2, 2, 'E-4', 'a Set restored onto an excluded entry steps aside, the entry untouched',
-    back?.value?.landedAs === 'AR Excl (2)' && exists('Collection A/AR Excl (2)/_pageset.json') && (JSON.parse(readRel('.nexus/settings.json')).excluded_folders ?? []).includes('Collection A/AR Excl'), show(back))
+  item(2, 2, 'E-4', 'a Set restored onto an excluded entry steps aside, settings.json unchanged',
+    back?.value?.landedAs === 'AR Excl (2)' && exists('Collection A/AR Excl (2)/_pageset.json') && readRel('.nexus/settings.json') === settingsBefore, show(back))
   await must('the exclusions as they were', ask(cdp, 'exclusions:set', excluded))
 
   for (const t of ['AR Look One', 'AR Look Two']) {
@@ -289,9 +295,9 @@ async function group2(cdp) {
     await deleteAt(cdp, page(A_ALPHA, t), 'page')
   }
   await openSettings(cdp, 'Trash')
-  const drawnRows = await cdp.evaluate(`document.querySelectorAll('.trash-row').length`)
-  const answered = ((await ask(cdp, 'bundles:list', { kind: 'trash' })).value ?? []).length
-  item(2, 2, 'A-3', 'the Trash browser draws a row for every row bundles:list answers', drawnRows === answered, show({ drawnRows, answered }))
+  const drawnRows = await cdp.evaluate(`[...document.querySelectorAll('.trash-row [role=checkbox]')].map((c) => c.getAttribute('aria-label').replace(/^Select /, ''))`)
+  const answered = ((await ask(cdp, 'bundles:list', { kind: 'trash' })).value ?? []).map((r) => r.title)
+  item(2, 2, 'A-3', 'the Trash browser draws the titles bundles:list answers, in its order', same(drawnRows, answered), show({ drawnRows, answered }))
   for (const t of ['AR Look One', 'AR Look Two']) await click(cdp, `${trashRowEl(t)}.querySelector('[role=checkbox]')`)
   const { chosen: all } = await chooseNative(cdp, trashRowEl('AR Look One'), 'Restore All')
   const batch = await settles(async () => (await notice(cdp)).startsWith('Restored 2 Pages'))

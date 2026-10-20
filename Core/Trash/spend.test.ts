@@ -299,7 +299,7 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
       expect(await registryIds()).toEqual(['ctx_areas', 'ctx_zeta', 'ctx_projects'])
     })
 
-    it('emptying a Context’s bundle drops its Space order', async () => {
+    it('emptying a Context’s bundle drops its panel id and its Space order', async () => {
       const r = await deleteProjects(nexusDeps)
       const listed = r.ok ? r.value.trashed : undefined
       expect(
@@ -313,16 +313,16 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
       ).toBe(true)
       expect(await stateOrder()).toEqual({
         spaces: { ctx_areas: ['sp-home'] },
-        contexts: ['ctx_projects', 'ctx_areas'],
+        contexts: ['ctx_areas'],
       })
     })
 
-    it('a system-trash Context delete drops its Space order at once', async () => {
+    it('a system-trash Context delete drops its panel id and its Space order at once', async () => {
       const r = await deleteProjects({ trashMode: 'system', trashToSystem: async () => {} })
       expect(r.ok).toBe(true)
       expect(await stateOrder()).toEqual({
         spaces: { ctx_areas: ['sp-home'] },
-        contexts: ['ctx_projects', 'ctx_areas'],
+        contexts: ['ctx_areas'],
       })
     })
   })

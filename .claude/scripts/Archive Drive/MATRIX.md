@@ -29,4 +29,4 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 
 - **The write order, a case-only rename, the single watcher restart, nesting, an entry naming no folder, and the corrupt-settings refusals:** none is visible, and `mutate.test.ts` and `settings.test.ts` pin each.
 - **The system Trash Mode:** the drive would leave its Set in the macOS Trash; `mutate.test.ts` pins the lift under it.
-- **The Trash browser's Restore:** Phase 2 renames its channel and Phase 5 rebuilds the browser, so group 1 restores through `mutate` and later groups drive the browser in its final form.
+- **The Trash browser's Restore in group 1:** group 1 restores through `mutate`; group 2 drives today's browser through Restore and Restore All, and the groups after Phase 5 drive the rebuilt one.

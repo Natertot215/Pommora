@@ -16,6 +16,7 @@ export interface MutateOutcome {
   trashed?: { bundlePath: string }
   /** The titles of what a restore brought back without all it held. */
   unrestored?: string[]
+  /** The title a restore stepped aside to, when it couldn't land under its own. */
   landedAs?: string
   retry?: MutateRequest
 }
