@@ -10,6 +10,7 @@ import {
   textColorRegex,
   inlineLatexRegex,
   markerRegex,
+  type BlockSpan,
 } from './detect'
 import { type LinkOccurrence, linkOccurrences, mapSpans } from '../../Connections/connections'
 import { markAfter, type Paint, type PaintColor } from './paints'
@@ -60,15 +61,12 @@ export const insideMark = (
 
 export function shiftToken(tk: Token, by: number): Token {
   const move = ([s, e]: Span): Span => [s + by, e + by]
-  const base: TokenBase = {
+  const ranges = {
     range: move(tk.range),
     contentRange: move(tk.contentRange),
     markerRanges: tk.markerRanges.map(move),
-    ...(tk.color ? { color: tk.color } : {}),
-    ...(tk.inHtml ? { inHtml: true } : {}),
   }
-  if (tk.kind !== 'wikiLink' && tk.kind !== 'link') return { ...base, kind: tk.kind }
-  return { ...base, kind: tk.kind, link: mapSpans(tk.link, move) }
+  return 'link' in tk ? { ...tk, ...ranges, link: mapSpans(tk.link, move) } : { ...tk, ...ranges }
 }
 
 const notOverlapping =
@@ -123,12 +121,12 @@ function pushEmphasis(
 
 const FLOW_CONTAINERS = new Set(['root', 'blockquote', 'list', 'listItem', 'footnoteDefinition'])
 
-function htmlBlockSpans(node: MdNode, out: Span[] = []): Span[] {
+function htmlBlockSpans(node: MdNode, out: BlockSpan[] = []): BlockSpan[] {
   if (!FLOW_CONTAINERS.has(node.type) || !('children' in node)) return out
   for (const child of node.children) {
-    const [s, e] = [child.position?.start.offset, child.position?.end.offset]
+    const [from, to] = [child.position?.start.offset, child.position?.end.offset]
     if (child.type !== 'html') htmlBlockSpans(child, out)
-    else if (s != null && e != null) out.push([s, e])
+    else if (from != null && to != null) out.push({ from, to })
   }
   return out
 }
@@ -210,8 +208,8 @@ function inlineCodeTokens(text: string, inCode: (offset: number) => boolean): To
   return tokens
 }
 
-function blockLatexTokens(text: string, maths: readonly [number, number][]): Token[] {
-  return maths.map(([f, t]) => {
+function blockLatexTokens(text: string, maths: readonly BlockSpan[]): Token[] {
+  return maths.map(({ from: f, to: t }) => {
     const open = text.indexOf('$$', f) + 2
     const close = text.lastIndexOf('$$', t)
     return {
@@ -261,14 +259,14 @@ function linkToken(text: string, o: LinkOccurrence): Token {
 /** Every token opens on one of these, so text holding none of them tokenizes to nothing. */
 export const holdsTokens = (text: string): boolean => /[*_~`=$[<]/.test(text)
 
-export function tokenizeChunk(text: string): { tokens: Token[]; html: Span[] } {
+export function tokenizeChunk(text: string): { tokens: Token[]; html: BlockSpan[] } {
   const scan = scanDoc(text)
   const ast = parse(text, scan)
   const tokens: Token[] = []
   walkEmphasis(ast, tokens)
   // The parser reads an HTML block as one opaque node, so its emphasis is read from the block alone, as prose.
   const blocks = htmlBlockSpans(ast)
-  for (const [f, t] of blocks) {
+  for (const { from: f, to: t } of blocks) {
     const inner: Token[] = []
     walkEmphasis(parseThroughHtml(text.slice(f, t)), inner)
     tokens.push(...inner.map((tk) => shiftToken(tk, f)))
@@ -304,7 +302,8 @@ export function tokenizeChunk(text: string): { tokens: Token[]; html: Span[] } {
   )
 
   tokens.push(...links, ...code, ...cites, ...highlights, ...textColors, ...blockTex, ...inlineTex)
-  for (const tk of tokens) if (blocks.some((b) => overlaps(b, tk.range))) tk.inHtml = true
+  for (const tk of tokens)
+    if (blocks.some((b) => overlaps([b.from, b.to], tk.range))) tk.inHtml = true
   tokens.push(...tags)
   tokens.sort((a, b) => a.range[0] - b.range[0])
   return { tokens, html: blocks }

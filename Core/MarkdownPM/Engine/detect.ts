@@ -68,10 +68,13 @@ export const signedLine = (f: FenceInfo | undefined): boolean =>
 export const awaitsSign = (f: FenceInfo | undefined): boolean =>
   f?.tally !== undefined && f.role === 'content' && f.diff === undefined
 
-export interface FenceInfo {
-  role: 'open' | 'content' | 'close'
+export interface BlockSpan {
   from: number
   to: number
+}
+
+export interface FenceInfo extends BlockSpan {
+  role: 'open' | 'content' | 'close'
   depth: number
   name?: CodeLangName
   path?: string
@@ -154,22 +157,19 @@ export function fenceBodyStart(line: string, f: FenceInfo): number {
 export const codeSeat = (line: string, f: FenceInfo): number =>
   fenceBodyStart(line, f) + (signedLine(f) ? 1 : 0)
 
-export function fenceRangesOf(fences: readonly (FenceInfo | undefined)[]): [number, number][] {
-  const out: [number, number][] = []
-  for (const f of fences) if (f?.role === 'open') out.push([f.from, f.to])
-  return out
-}
+export const fenceOpeners = (fences: readonly (FenceInfo | undefined)[]): FenceInfo[] =>
+  fences.filter((f): f is FenceInfo => f?.role === 'open')
 
-const inExcluded = (at: number, excluded: [number, number][]): boolean =>
-  excluded.some(([f, t]) => at >= f && at <= t)
+const inExcluded = (at: number, excluded: readonly BlockSpan[]): boolean =>
+  excluded.some((s) => at >= s.from && at <= s.to)
 
 /** A LONE `$$` line opens and the next lone `$$` closes — never the token layer's lazy span regex, which one stray `$$` would flip. */
 export function blockMathRanges(
   d: DocLines,
-  excluded: [number, number][],
-): { ranges: [number, number][]; open: number } {
+  excluded: readonly BlockSpan[],
+): { ranges: BlockSpan[]; open: number } {
   const { lines, lineStarts } = d
-  const ranges: [number, number][] = []
+  const ranges: BlockSpan[] = []
   let open = -1
   for (let i = 0; i < lines.length; i++) {
     if (lines[i].trim() !== '$$') continue
@@ -177,7 +177,7 @@ export function blockMathRanges(
     if (open < 0) {
       open = i
     } else {
-      ranges.push([lineStarts[open], lineEndOf(d, i)])
+      ranges.push({ from: lineStarts[open], to: lineEndOf(d, i) })
       open = -1
     }
   }
@@ -193,12 +193,9 @@ const HTML_RAW: [RegExp, RegExp][] = [
 ]
 const HTML_OPEN = /^ {0,3}<[A-Za-z/!?]/
 
-export function htmlBlocks(
-  d: DocLines,
-  fences: readonly (FenceInfo | undefined)[],
-): [number, number][] {
+export function htmlBlocks(d: DocLines, fences: readonly (FenceInfo | undefined)[]): BlockSpan[] {
   const { lines, lineStarts } = d
-  const out: [number, number][] = []
+  const out: BlockSpan[] = []
   for (let i = 0; i < lines.length; i++) {
     if (fences[i] || !HTML_OPEN.test(lines[i])) continue
     let j = i
@@ -208,7 +205,7 @@ export function htmlBlocks(
       if (end) while (e < lines.length - 1 && !end.test(lines[e])) e++
       j = Math.max(j, e)
     }
-    out.push([lineStarts[i], lineEndOf(d, j)])
+    out.push({ from: lineStarts[i], to: lineEndOf(d, j) })
     i = j
   }
   return out
@@ -216,11 +213,11 @@ export function htmlBlocks(
 
 function loneLines<T>(
   d: DocLines,
-  excluded: [number, number][],
+  excluded: readonly BlockSpan[],
   read: (line: string) => T | null,
-): (T & { from: number; to: number })[] {
+): (T & BlockSpan)[] {
   const { lines, lineStarts } = d
-  const out: (T & { from: number; to: number })[] = []
+  const out: (T & BlockSpan)[] = []
   for (let i = 0; i < lines.length; i++) {
     const v = read(lines[i])
     if (v === null || inExcluded(lineStarts[i], excluded)) continue
@@ -402,9 +399,7 @@ export const markersFor = (c: CitationScan, label: string): MarkerRef[] =>
 export const isLastReference = (c: CitationScan, marker: MarkerRef): boolean =>
   markersFor(c, marker.label).every((m) => m === marker)
 
-export interface EmbedLine {
-  from: number
-  to: number
+export interface EmbedLine extends BlockSpan {
   title: string
 }
 
@@ -439,21 +434,19 @@ function webpageEmbedLink(
 }
 
 /** Trailing whitespace doesn't break lone-ness, but a leading indent does — an indented line is a list continuation. */
-export function blockEmbedLines(d: DocLines, excluded: [number, number][]): EmbedLine[] {
+export function blockEmbedLines(d: DocLines, excluded: readonly BlockSpan[]): EmbedLine[] {
   return loneLines(d, excluded, (line) => {
     const title = loneEmbedTitle(line)
     return title === null ? null : { title }
   })
 }
 
-export interface WebpageLine {
-  from: number
-  to: number
+export interface WebpageLine extends BlockSpan {
   label: string
   url: string
 }
 
-export function blockWebpageLines(d: DocLines, excluded: [number, number][]): WebpageLine[] {
+export function blockWebpageLines(d: DocLines, excluded: readonly BlockSpan[]): WebpageLine[] {
   return loneLines(d, excluded, loneWebpageEmbed)
 }
 
@@ -533,31 +526,34 @@ export function indentLevel(ws: string): number {
   return Math.min(MAX_NESTING_LEVEL, tabs + Math.floor(spaces / 2))
 }
 
-export interface ListMarker {
-  kind: ListKind
-  bullet?: string
-  ordinal?: string
+interface MarkerSpan {
   level: number
   markerStart: number
   markerEnd: number
   contentStart: number
-  box?: { start: number; end: number; inner: string }
-  checked?: boolean
 }
+
+type Box = { start: number; end: number; inner: string }
+
+type SequencedKind = Extract<ListKind, 'ordered' | 'alphabetical'>
+
+export type SequencedMarker = MarkerSpan & { kind: SequencedKind; ordinal: string }
+
+export type ListMarker =
+  | SequencedMarker
+  | (MarkerSpan & { kind: 'checkbox'; bullet: string; box: Box; checked: boolean })
+  | (MarkerSpan & { kind: 'bullet'; bullet: string; box?: Box })
+  | (MarkerSpan & { kind: 'arrow'; bullet: '→' })
 
 // `-` and `+` are the only bullet characters: `*` and `•` stay prose, or the drag layer is handed items nothing draws.
 const LIST_MARKER_RE = /^([ \t]*)(?:(\d+|[A-Z])\.|([-+]))(?:[ \t]*(\[([ xX]?)\]))?([ \t]+)(.*)$/d
 const ARROW_MARKER_RE = /^([ \t]*)→([ \t]+)/
 
-type SequencedKind = Extract<ListKind, 'ordered' | 'alphabetical'>
+export const isSequenced = (lm: ListMarker): lm is SequencedMarker =>
+  lm.kind === 'ordered' || lm.kind === 'alphabetical'
 
-export const isSequenced = (kind: ListKind): kind is SequencedKind =>
-  kind === 'ordered' || kind === 'alphabetical'
-
-export const ordinalOf = (lm: ListMarker): number =>
-  lm.kind === 'alphabetical'
-    ? (lm.ordinal ?? 'A').charCodeAt(0) - 64
-    : parseInt(lm.ordinal ?? '0', 10)
+export const ordinalOf = (lm: SequencedMarker): number =>
+  lm.kind === 'alphabetical' ? lm.ordinal.charCodeAt(0) - 64 : parseInt(lm.ordinal, 10)
 
 // An alphabetical run past Z starts over at A.
 export const ordinalText = (kind: SequencedKind, n: number): string =>
@@ -566,11 +562,11 @@ export const ordinalText = (kind: SequencedKind, n: number): string =>
 export const nestedUnder = (line: string, indent: string): boolean =>
   line.trim() !== '' && line.startsWith(indent) && /^[ \t]/.test(line.slice(indent.length))
 
-export function parseListMarker(line: string): ListMarker | null {
+export function parseListMarker(line: string, offset = 0): ListMarker | null {
   if (isThematicBreakLine(line)) return null
   const arrow = ARROW_MARKER_RE.exec(line)
   if (arrow) {
-    const markerStart = arrow[1].length
+    const markerStart = offset + arrow[1].length
     return {
       kind: 'arrow',
       bullet: '→',
@@ -585,14 +581,24 @@ export function parseListMarker(line: string): ListMarker | null {
   const ws = idx?.[6]
   if (!m || !idx || !ws) return null
   const indent = m[1]
-  const markerStart = indent.length
+  const markerStart = offset + indent.length
   const level = indentLevel(indent)
-  const contentStart = ws[1]
+  const contentStart = offset + ws[1]
   const b = idx[4]
-  const box = b ? { start: b[0], end: b[1], inner: m[5] ?? '' } : undefined
-  const bullet = m[3]
+  const box = b ? { start: offset + b[0], end: offset + b[1], inner: m[5] ?? '' } : undefined
 
-  if (bullet !== undefined && box && box.inner !== '') {
+  if (m[2] !== undefined) {
+    return {
+      kind: /\d/.test(m[2]) ? 'ordered' : 'alphabetical',
+      ordinal: m[2],
+      level,
+      markerStart,
+      markerEnd: markerStart + m[2].length + 1,
+      contentStart,
+    }
+  }
+  const bullet = m[3]
+  if (box && box.inner !== '') {
     return {
       kind: 'checkbox',
       bullet,
@@ -604,41 +610,20 @@ export function parseListMarker(line: string): ListMarker | null {
       checked: box.inner !== ' ',
     }
   }
-  if (m[2] !== undefined) {
-    return {
-      kind: /\d/.test(m[2]) ? 'ordered' : 'alphabetical',
-      ordinal: m[2],
-      level,
-      markerStart,
-      markerEnd: markerStart + m[2].length + 1,
-      contentStart,
-      box,
-    }
-  }
   return {
     kind: 'bullet',
     bullet,
     level,
     markerStart,
-    markerEnd: markerStart + (bullet?.length ?? 1),
+    markerEnd: markerStart + 1,
     contentStart,
     box,
   }
 }
 
 export function parseListMarkerPrefixed(line: string): ListMarker | null {
-  const pfx = quotePrefix(line)
-  if (!pfx) return parseListMarker(line)
-  const lm = parseListMarker(line.slice(pfx.length))
-  if (!lm) return null
-  const s = pfx.length
-  return {
-    ...lm,
-    markerStart: lm.markerStart + s,
-    markerEnd: lm.markerEnd + s,
-    contentStart: lm.contentStart + s,
-    box: lm.box ? { ...lm.box, start: lm.box.start + s, end: lm.box.end + s } : undefined,
-  }
+  const offset = quotePrefix(line).length
+  return parseListMarker(line.slice(offset), offset)
 }
 
 const headingPrefilter = /^[ ]{0,3}#{1,6}([ \t]|$)/

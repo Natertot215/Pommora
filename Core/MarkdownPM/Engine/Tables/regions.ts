@@ -1,7 +1,7 @@
 import { perText } from '../perText'
 import { parse } from '../parser'
 import type { CodeMask } from '../markdownCode'
-import type { DocLines } from '../detect'
+import type { BlockSpan, DocLines } from '../detect'
 import { normalize, type Column, type TableModel } from './model'
 import { splitRow, parseDelimiter } from './codec'
 
@@ -13,9 +13,7 @@ interface RowGeom {
   to: number
 }
 
-export interface TableRegion {
-  from: number
-  to: number
+export interface TableRegion extends BlockSpan {
   rows: RowGeom[]
   columns: Column[]
 }

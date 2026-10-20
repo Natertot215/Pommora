@@ -1,6 +1,6 @@
-// `to` is EXCLUSIVE of the trailing newline, matching BlockRange.to / headingSections.to / TableRegion.to, which the drag's self-drop guard relies on.
-import { parseListMarkerPrefixed, type CalloutLine } from './detect'
-import { type DocScan, inJoinedMath, type SpanLike, fromOf, spanAt, toOf } from './docScan'
+// `to` is EXCLUSIVE of the trailing newline, matching subBlockAt, headingSections, and TableRegion, which the drag's self-drop guard relies on.
+import type { BlockSpan, CalloutLine } from './detect'
+import { type DocScan, inJoinedMath, perScan, spanAt } from './docScan'
 import { lineEndOf, lineIndexAt } from './markdownCode'
 import { headingSections } from './headingScan'
 
@@ -17,9 +17,7 @@ type BlockKind =
   | 'hr'
   | 'paragraph'
 
-export interface Block {
-  from: number
-  to: number
+export interface Block extends BlockSpan {
   kind: BlockKind
 }
 
@@ -38,12 +36,12 @@ function blockContext(scan: DocScan): BlockContext {
     quotes: bq,
     headings,
     breaks,
+    markers,
   } = scan
   const n = lines.length
-  const markerOf = lines.map(parseListMarkerPrefixed)
 
   // Only where a run actually holds a marker, so a bare indented paragraph isn't swept in. A math range whose opener joined the run rides it whole; one whose opener sits outside never gets pulled in.
-  const isMarker = (i: number): boolean => markerOf[i] !== null
+  const isMarker = (i: number): boolean => markers[i] !== null
   const isListCont = (i: number): boolean => lines[i].trim() !== '' && /^[ \t]/.test(lines[i])
   const listMember = new Array<boolean>(n).fill(false)
   for (let i = 0; i < n; ) {
@@ -61,10 +59,9 @@ function blockContext(scan: DocScan): BlockContext {
   }
 
   const ranged = new Array<BlockKind | undefined>(n)
-  const hold = (kind: BlockKind, spans: readonly SpanLike[]): void => {
+  const hold = (kind: BlockKind, spans: readonly BlockSpan[]): void => {
     for (const s of spans)
-      for (let k = lineIndexAt(scan, fromOf(s)); k < n && starts[k] <= toOf(s); k++)
-        ranged[k] ??= kind
+      for (let k = lineIndexAt(scan, s.from); k < n && starts[k] <= s.to; k++) ranged[k] ??= kind
   }
   hold('table', scan.tables)
   hold('math', scan.maths)
@@ -88,15 +85,7 @@ function blockContext(scan: DocScan): BlockContext {
 }
 
 // One per scan, so a hover, drag, or menu never re-walks the document the scan already walked.
-const contexts = new WeakMap<DocScan, BlockContext>()
-function blockContextOf(scan: DocScan): BlockContext {
-  let ctx = contexts.get(scan)
-  if (!ctx) {
-    ctx = blockContext(scan)
-    contexts.set(scan, ctx)
-  }
-  return ctx
-}
+const blockContextOf = perScan(blockContext)
 
 export function blockAt(scan: DocScan, pos: number): Block | null {
   const ctx = blockContextOf(scan)
@@ -134,7 +123,7 @@ export function blockAt(scan: DocScan, pos: number): Block | null {
     }
     case 'math': {
       const r = spanAt(scan.maths, starts[li])!
-      return { from: r[0], to: r[1], kind: 'math' }
+      return { from: r.from, to: r.to, kind: 'math' }
     }
     case 'heading': {
       const sec = headingSections(scan).find((s) => s.from === starts[li])
@@ -198,7 +187,7 @@ export function blockStarts(scan: DocScan): BlockStart[] {
         first = spanAt(scan.tables, starts[i])?.from === starts[i]
         break
       case 'math':
-        first = spanAt(scan.maths, starts[i])?.[0] === starts[i]
+        first = spanAt(scan.maths, starts[i])?.from === starts[i]
         break
       case 'list':
         first = !listMember[i - 1]

@@ -7,6 +7,7 @@ import { beginRelocateDrag, editorGestureCleanup } from './editorGesture'
 import { gutterLineAt, lineElementAt, textColumn } from '../lineDom'
 import { moveRange } from '../Engine/listDragModel'
 import { GRIP_LINE } from '../Engine/intents'
+import type { BlockSpan } from '../Engine/detect'
 
 function bottomAbove(view: EditorView, at: number): number | null {
   if (at === 0) return null
@@ -26,7 +27,7 @@ interface BlockShape {
   afterBlock: number
 }
 
-function blockShape(view: EditorView, block: { from: number; to: number }): BlockShape {
+function blockShape(view: EditorView, block: BlockSpan): BlockShape {
   const scan = docScan(view.state.doc)
   const starts = blockStarts(scan).map((b) => b.from)
   const end = scan.lineStarts[scan.citations.firstLine]
@@ -35,7 +36,7 @@ function blockShape(view: EditorView, block: { from: number; to: number }): Bloc
 
 function collectBoundaries(
   view: EditorView,
-  block: { from: number; to: number },
+  block: BlockSpan,
   shape: BlockShape,
 ): Boundary<Drop>[] {
   const { right } = textColumn(view)
@@ -62,10 +63,10 @@ function collectBoundaries(
 export function startBlockDrag(
   view: EditorView,
   e: PointerEvent,
-  block: { from: number; to: number },
+  block: BlockSpan,
   opts: {
     onClick?: (view: EditorView, line: HTMLElement) => void
-    onDragStart?: (view: EditorView, block: { from: number; to: number }) => void
+    onDragStart?: (view: EditorView, block: BlockSpan) => void
     line?: HTMLElement
   } = {},
 ): void {
@@ -88,7 +89,7 @@ export function startBlockDrag(
 interface DragConfig {
   selector: string
   onClick?: (view: EditorView, line: HTMLElement) => void
-  onDragStart?: (view: EditorView, block: { from: number; to: number }) => void
+  onDragStart?: (view: EditorView, block: BlockSpan) => void
 }
 
 export function createBlockDragGesture({ selector, onClick, onDragStart }: DragConfig): Extension {

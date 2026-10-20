@@ -37,7 +37,7 @@ import {
   drawnLast,
   perScopedDoc,
 } from './docCache'
-import type { DiffTally, MarkdownScope } from './Engine/detect'
+import type { BlockSpan, DiffTally, MarkdownScope } from './Engine/detect'
 import { sectionRunsIn } from '../Connections/scan'
 import { labelEscapes } from '../Connections/links'
 import { CHECK_GLYPH, CODE_TAGS, COPY_GLYPH, pathGlyph } from './codeGlyphs'
@@ -62,6 +62,7 @@ import {
   chunksOver,
   codeBlockTextAt,
   inCodeAt,
+  shiftSpan,
   signSeatAt,
   spanAt,
 } from './Engine/docScan'
@@ -371,12 +372,12 @@ function visibleInline(view: EditorView, scan: DocScan): ReturnType<typeof token
     lineIndexAt(scan, to),
   ])
   const tokens: Token[] = []
-  const html: [number, number][] = []
+  const html: BlockSpan[] = []
   chunkTokens(view, (read) => {
     for (const [a, b] of chunksOver(scan, spans)) {
       const chunk = read(scan.text.slice(a, b))
       for (const tk of chunk.tokens) tokens.push(shiftToken(tk, a))
-      for (const [f, t] of chunk.html) html.push([a + f, a + t])
+      for (const span of chunk.html) html.push(shiftSpan(span, a))
     }
   })
   return { tokens, html }

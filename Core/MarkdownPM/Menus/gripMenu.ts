@@ -4,7 +4,7 @@ import type { GripMenuContext, HeadingLevel, ListKind } from '../../Actions/grip
 import type { PickItem } from '../../Actions/menuModel'
 import { COPY_LINK_ROW } from '../../Actions/pageMenu'
 import { listKindOf, setHeading, setListKind } from '../Input/format'
-import { headingParts, webpageEmbedUrlSpan } from '../Engine/detect'
+import { type BlockSpan, headingParts, webpageEmbedUrlSpan } from '../Engine/detect'
 import { type Block, blockAt } from '../Engine/blockModel'
 import { docScan, docString } from '../docCache'
 import { HEADING_LINE } from '../folding'
@@ -36,10 +36,7 @@ export function embedPickTree(
 }
 
 /** Plus one fencing blank when the block sat between two (a single separator survives); at EOF the preceding newline goes. */
-export function blockDeleteSpan(
-  doc: string,
-  r: { from: number; to: number },
-): { from: number; to: number } {
+export function blockDeleteSpan(doc: string, r: BlockSpan): BlockSpan {
   const prevEnd = r.from - 1
   const prevStart = lineStartAt(doc, prevEnd)
   const prevBlank = r.from >= 2 && doc.slice(prevStart, prevEnd).trim() === ''

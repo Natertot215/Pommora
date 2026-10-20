@@ -249,7 +249,7 @@ function MarkerGlyph({
   at: number
 }): React.JSX.Element {
   const src = `${at},${at + lm.contentStart}`
-  if (glyph === 'checkbox')
+  if (lm.kind === 'checkbox')
     return (
       <span className="md-list-checkbox-seat" data-src={src}>
         <span className={checkboxClass(lm.checked)}>{lm.checked && <CheckMark size={12} />}</span>

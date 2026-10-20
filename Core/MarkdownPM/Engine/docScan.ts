@@ -16,20 +16,23 @@ import {
   calloutLines,
   codeSeat,
   fenceBodyStart,
-  fenceRangesOf,
+  fenceOpeners,
   htmlBlocks,
   isHeadingLine,
   isThematicBreakLine,
   lineRefs,
+  parseListMarkerPrefixed,
   scanFencedCode,
   signedLine,
   splitWithOffsets,
+  type BlockSpan,
   type CalloutLine,
   type CitationScan,
   type DocLines,
   type EmbedLine,
   type FenceInfo,
   type LineRef,
+  type ListMarker,
   type WebpageLine,
 } from './detect'
 import { tableRegions, type TableRegion } from './Tables/regions'
@@ -44,12 +47,13 @@ export interface DocScan extends DocLines {
   /** A blockquote line that draws quote chrome — a top-level fence owns its bytes outright, so a `>` inside one is code text. */
   quotes: boolean[]
   breaks: boolean[]
+  markers: (ListMarker | null)[]
   refs: (LineRef[] | undefined)[]
   tables: TableRegion[]
-  maths: [number, number][]
+  maths: BlockSpan[]
   embeds: EmbedLine[]
   webpages: WebpageLine[]
-  html: [number, number][]
+  html: BlockSpan[]
   fenceLines: number[]
   mathOpen: number
   fresh: [number, number]
@@ -58,8 +62,6 @@ export interface DocScan extends DocLines {
 
 type LineScan = Omit<DocScan, 'citations'>
 
-export type SpanLike = readonly [number, number] | { readonly from: number; readonly to: number }
-
 // ── Construction ────────────────────────────────────────────────────────
 
 function scanLines(d: DocLines): LineScan {
@@ -67,10 +69,7 @@ function scanLines(d: DocLines): LineScan {
   const fences = scanFencedCode(lines, lineStarts)
   const inCode: CodeMask = (p) => inCodeAt({ lines, lineStarts, fences }, p)
   const tables = tableRegions(d, inCode)
-  const base: [number, number][] = [
-    ...fenceRangesOf(fences),
-    ...tables.map((r): [number, number] => [r.from, r.to]),
-  ]
+  const base: BlockSpan[] = [...fenceOpeners(fences), ...tables]
   const math = blockMathRanges(d, base)
   const excluded = [...base, ...math.ranges]
   return {
@@ -80,6 +79,7 @@ function scanLines(d: DocLines): LineScan {
     headings: lines.map(isHeadingLine),
     quotes: lines.map((l, i) => isBlockquoteLine(l) && fences[i]?.depth !== 0),
     breaks: lines.map(isThematicBreakLine),
+    markers: lines.map(parseListMarkerPrefixed),
     refs: lines.map((l, i) => lineRefs(l, lineStarts[i], inCode)),
     tables,
     maths: math.ranges,
@@ -154,7 +154,8 @@ function pairsBelow(prev: DocScan, w: LineScan, b: number): boolean {
   if (lone && (prev.fenceLines.at(-1) ?? -1) >= b) return true
   const last = prev.maths.at(-1)
   return (
-    w.mathOpen >= 0 && (prev.mathOpen >= b || (last !== undefined && last[0] >= prev.lineStarts[b]))
+    w.mathOpen >= 0 &&
+    (prev.mathOpen >= b || (last !== undefined && last.from >= prev.lineStarts[b]))
   )
 }
 
@@ -175,15 +176,15 @@ function splice(
         by ? fresh.map((v) => by(v, start)) : fresh,
         by ? old.slice(b).map((v) => by(v, shift)) : old.slice(b),
       )
-  const spans = <S extends SpanLike>(
+  const spans = <S extends BlockSpan>(
     old: readonly S[],
     fresh: readonly S[],
     by: (s: S, d: number) => S,
   ): S[] => {
     const out: S[] = []
-    for (const s of old) if (fromOf(s) < start) out.push(s)
+    for (const s of old) if (s.from < start) out.push(s)
     for (const s of fresh) out.push(by(s, start))
-    for (const s of old) if (fromOf(s) >= tail) out.push(by(s, shift))
+    for (const s of old) if (s.from >= tail) out.push(by(s, shift))
     return out
   }
   const n = w.lines.length
@@ -197,17 +198,18 @@ function splice(
     text,
     lines: perLine(prev.lines, w.lines),
     lineStarts,
-    fences: perLine(prev.fences, w.fences, (f, d) => f && moveLine(f, d)),
+    fences: perLine(prev.fences, w.fences, (f, d) => f && shiftSpan(f, d)),
     callouts: perLine(prev.callouts, w.callouts),
     headings: perLine(prev.headings, w.headings),
     quotes: perLine(prev.quotes, w.quotes),
     breaks: perLine(prev.breaks, w.breaks),
+    markers: perLine(prev.markers, w.markers),
     refs: perLine(prev.refs, w.refs),
-    tables: spans(prev.tables, w.tables, moveTable),
-    maths: spans(prev.maths, w.maths, moveRange),
-    embeds: spans(prev.embeds, w.embeds, moveLine),
-    webpages: spans(prev.webpages, w.webpages, moveLine),
-    html: spans(prev.html, w.html, moveRange),
+    tables: spans(prev.tables, w.tables, shiftTable),
+    maths: spans(prev.maths, w.maths, shiftSpan),
+    embeds: spans(prev.embeds, w.embeds, shiftSpan),
+    webpages: spans(prev.webpages, w.webpages, shiftSpan),
+    html: spans(prev.html, w.html, shiftSpan),
     fenceLines: prev.fenceLines
       .filter((k) => k < a)
       .concat(
@@ -226,19 +228,17 @@ function splice(
   }
 }
 
-export const fromOf = (s: SpanLike): number => ('from' in s ? s.from : s[0])
-export const toOf = (s: SpanLike): number => ('to' in s ? s.to : s[1])
-const moveRange = ([f, t]: [number, number], d: number): [number, number] => [f + d, t + d]
-const moveLine = <L extends { from: number; to: number }>(l: L, d: number): L => ({
+const shiftRange = ([f, t]: [number, number], d: number): [number, number] => [f + d, t + d]
+export const shiftSpan = <L extends BlockSpan>(l: L, d: number): L => ({
   ...l,
   from: l.from + d,
   to: l.to + d,
 })
-const moveTable = (r: TableRegion, d: number): TableRegion => ({
-  ...moveLine(r, d),
+const shiftTable = (r: TableRegion, d: number): TableRegion => ({
+  ...shiftSpan(r, d),
   rows: r.rows.map((row) => ({
-    ...moveLine(row, d),
-    segments: row.segments.map((s) => moveRange(s, d)),
+    ...shiftSpan(row, d),
+    segments: row.segments.map((s) => shiftRange(s, d)),
   })),
 })
 
@@ -277,7 +277,7 @@ export function chunksOver(
     if (i > next && !cutAt(s, i)) {
       const at = s.lineStarts[top]
       const open = spanAt(s.maths, at) ?? spanAt(s.html, at)
-      i = open !== undefined ? Math.max(next, lineIndexAt(s, open[0])) : top
+      i = open !== undefined ? Math.max(next, lineIndexAt(s, open.from)) : top
       while (i > next && /^(?:[ \t]|\r?$)/.test(s.lines[i]) && s.fences[i - 1] === undefined) i--
     }
     if (i === next && out.length > 0 && !cutAt(s, i)) i = lineIndexAt(s, out.pop()![0])
@@ -294,7 +294,7 @@ export function chunksOver(
         const math = spanAt(s.maths, s.lineStarts[last])
         j =
           math !== undefined
-            ? lineIndexAt(s, math[1]) + 1
+            ? lineIndexAt(s, math.to) + 1
             : fence !== undefined
               ? lineIndexAt(s, fence.from)
               : last + 1
@@ -306,25 +306,39 @@ export function chunksOver(
   return out
 }
 
-export function spanAt<S extends SpanLike>(spans: readonly S[], pos: number): S | undefined {
+export function perScan<T>(derive: (scan: DocScan) => T): (scan: DocScan) => T {
+  const held = new WeakMap<DocScan, T>()
+  return (scan) => {
+    let v = held.get(scan)
+    if (v === undefined) {
+      v = derive(scan)
+      held.set(scan, v)
+    }
+    return v
+  }
+}
+
+export function spanAt<S extends BlockSpan>(spans: readonly S[], pos: number): S | undefined {
   let lo = 0
   let hi = spans.length - 1
   let hit = -1
   while (lo <= hi) {
     const mid = (lo + hi) >> 1
-    if (fromOf(spans[mid]) <= pos) {
+    if (spans[mid].from <= pos) {
       hit = mid
       lo = mid + 1
     } else hi = mid - 1
   }
   if (hit < 0) return undefined
   const s = spans[hit]
-  return pos <= toOf(s) ? s : undefined
+  return pos <= s.to ? s : undefined
 }
 
 export function inJoinedMath(scan: LineScan, i: number, first: number, last: number): boolean {
   const math = spanAt(scan.maths, scan.lineStarts[i])
-  return math !== undefined && math[0] >= scan.lineStarts[first] && math[0] <= lineEndOf(scan, last)
+  return (
+    math !== undefined && math.from >= scan.lineStarts[first] && math.from <= lineEndOf(scan, last)
+  )
 }
 
 /** Where a diff line's margin meets its code: past its sign, or at its start while it awaits one. */
