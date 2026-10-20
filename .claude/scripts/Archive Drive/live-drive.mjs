@@ -325,7 +325,8 @@ const STAMP = '2026-10-20T12-00-00-000Z'
 const rowIds = (cdp) => cdp.evaluate(`[...document.querySelectorAll('.data-row[data-rid]')].map((r) => r.dataset.rid)`)
 
 /** Seeds an archived page by hand, as the archive op will file one (Phase 4), and answers the relaunched window. */
-async function group3(cdp) {
+// Group 3 relaunches, so it drives the run's own `cdp`, and a failure inside it leaves the run holding the live session.
+async function group3() {
   const colA = JSON.parse(readRel('Collection A/_pagecollection.json')).id
   const alpha = JSON.parse(readRel('Collection A/Set Alpha/_pageset.json')).id
   const { id: stage } = await must('add Drive Stage', ask(cdp, 'schema:add', 'Collection A', {
@@ -392,7 +393,8 @@ async function group3(cdp) {
   await must('delete Drive Stage', ask(cdp, 'property:delete', stage))
   item(3, 3, 'C-2', 'the property delete strips the archived page as it strips the live one', !('Drive Stage' in frontOf(arc.rel)) && !('Drive Stage' in frontOf(live.rel)), show(frontOf(arc.rel)))
 
-  // The seeds leave as they came, from outside, and the deleted property's bundle is emptied, so a later group meets Collection A, its Archive, and the Trash as group 3 found them.
+  // The seeds leave as they came, from outside, and the deleted property's bundle is emptied, so a later group meets Collection A, its Archive, and the Trash as group 3 found them. The watcher holds a file the app just wrote until it's still for 200 ms, and an unlink inside that hold reaches the app as nothing, so the seeds leave once the delete's writes are still.
+  await sleep(400)
   for (const rel of [live.rel, linker.rel, withheld.dir, `.nexus/archive/${colA}`]) rmSync(abs(rel), { recursive: true, force: true })
   await until('the seeds out of the tree', async () => !treePaths((await must('nexus:state', ask(cdp, 'nexus:state'))).tree).has(live.rel))
   const stageRow = ((await ask(cdp, 'bundles:list', { kind: 'trash' })).value ?? []).find((r) => r.title === 'Drive Stage')
@@ -401,7 +403,6 @@ async function group3(cdp) {
   await must('permanentDelete off', ask(cdp, 'personalization:set', 'permanentDelete', false))
   const left = ((await ask(cdp, 'bundles:list', { kind: 'archive', id: colA })).value ?? []).length
   item(3, 3, '—', 'the group leaves Collection A’s Archive and the Trash as it found them', left === 0 && !exists(`.nexus/archive/${colA}`) && !((await ask(cdp, 'bundles:list', { kind: 'trash' })).value ?? []).some((r) => r.title === 'Drive Stage'), show({ left }))
-  return cdp
 }
 
 // ── The run ─────────────────────────────────────────────────────────────────
@@ -415,7 +416,7 @@ try {
   await must('show the Drive Table', ask(cdp, 'mutate', { op: 'setActiveView', path: 'Collection A', kind: 'collection', viewId: table.id }))
   if (GROUPS.has('1')) await group1(cdp)
   if (GROUPS.has('2')) await group2(cdp)
-  if (GROUPS.has('3')) cdp = await group3(cdp)
+  if (GROUPS.has('3')) await group3()
   cdp.close()
 } catch (e) {
   item(0, 1, '—', 'the run reached its end', false, String(e?.stack ?? e))

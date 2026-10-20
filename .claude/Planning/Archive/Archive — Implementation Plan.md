@@ -22,24 +22,24 @@ The Archive gives each Collection a place for pages and Sets that are finished w
 
 The work is removal-first. Before anything archive-shaped lands, the Trash's handling of excluded folders is replaced by one crash-safe carry and a lift that leaves excluded folders and the asset directory behind in the parent (Phase 1); the Trash's bundle format, record, placement, listing, and rows move into a neutral owner both stores share, and every restore gains its exact place and a disk-asking step-aside (Phase 2); the archive root becomes the one hidden folder read as content while three twin-id rules, two reach helpers, and the by-id record map become one of each (Phase 3); then the three ops, the disposal, the orphan sweep, and the Set-crossing carry complete the data layer, which a neutral reader judges before any surface exists (Phase 4). The interface follows the same order: everything two surfaces will share is folded into one home with the Trash as its proving consumer (Phase 5), the way in opens through the menus and the settings (Phase 6A), and the view, the reader, and the bar land last (Phase 6B). The documents are made true once, at the end (Phase 7). Nothing is checked by hand: an Archive Drive on the project's drive harness proves every claim over the Chrome DevTools Protocol at each review checkpoint.
 
-- **Phase 1 — The Lift and the Carry:** `carrySetAside` writes an excluded entry or the asset directory's setting at its landing before the folder moves and drops the source after; `liftSetAside` moves excluded folders and the asset directory up into the parent when their container is trashed, and the Trash's `excluded` record field, release, and reseat leave (F-2, F-3, K-1; F-007 closes).
+- **Phase 1 — The Lift and the Carry:** `carrySetAside` writes an excluded entry or the asset directory's setting at its landing before the folder moves and drops the source after; `liftSetAside` moves excluded folders and the asset directory up into the parent when their container is trashed, and the Trash's `excluded` record field, release, and reseat leave (F-2, F-3, K-1; I-007 closes).
 - **Phase 2 — The Owner and the Format:** `Core/Bundles/` holds one bundle format for two stores (`BundleStore`, `layoutOf`, `storeOf`), the record, the placement, the rows, and the `bundles:list` channel; `Core/Trash/` narrows to deletion, Trash Mode, parking and refill, and the reconcile; every restore returns to its exact place (`place`, `slotOf`) and steps aside past the disk (`freeOnDisk`), the Trash's report naming the title it took (A-4, B-2, E-2, E-4).
 - **Phase 3 — Reach:** `.nexus/archive` is admitted by `outsideContent`, walked by the corpus, listed by configuration reach, and read by one governed reach (`governedReach`) and one by-id projection (`nexusPages`) under one twin rule; counts and value loads stay with the tree, and the Matrix and headings leave archived pages out (B-1, C-1 to C-4, D-1, K-2).
 - **Phase 4 — The Archive's Ops:** the `archive` op, `restoreArchived` behind one `restore` routed by store, a delete from the Archive to the Trash with an Undo back (`moveIntoStore`, the `archive` field), F-4's disposal, the open pass (`settleArchives`: F-5's orphans, F-6's re-file), and `refileArchived` with three triggers; `returningNames` and `goneContainers` hoist, `trashed` becomes `bundled`. The first neutral gate reads the data layer here.
 - **Phase 5 — Shared Chrome:** one face swap (`Swap`, `DONE_MS`) for the lock glyph, the code block's pill, and Settings' timed labels; `NotificationLabel` becomes ActionLabel with K-3; one Restore and Delete builder and one checked-row rule; one TanStack seam with IconPicker on it; the Trash browser's controller becomes `useBundleBrowser` with one in-place search; the Deletion section's hints read true (G-6, G-7, K-3, K-4, K-5).
 - **Phase 6A — Archiving:** `confirmArchive` and "Confirm Before Archiving", the Deletion section becoming "Trash & Archive" with its first archive row; Archive above Delete in every page and Set menu; the archive history timeframe following History Timeframe (I-1 to I-3, J-1).
 - **Phase 6B — The Archive's View:** ActionLabel's bar; the reader window over one `Reader` slot; the archive place across navigation with its entry button; ArchiveView (G-1 to G-7, H-1).
-- **Phase 7 — Reconciliation:** the feature documents, the project's structure map, IssuesPM (F-007 closed, F-081 recorded), the scripts README, and the planning documents read true.
+- **Phase 7 — Reconciliation:** the feature documents, the project's structure map, IssuesPM (I-007 closed, the exclusion-scope entry recorded), the scripts README, and the planning documents read true.
 
 **The Number:** counted from the AFTER blocks under `view-delta`'s Actionable rule (source lines with imports and blank lines in, as Biome wraps them; comments, tests, documents, and the drive out; moved lines counted on both sides), the phases come to about **+1,638** net (+3,369 / −1,731, about 730 of them moved lines on each side), against the Findings' reconciled ≈ +514 (+993 / −479) and the Investigation's ≈ +580. The estimates priced neither the imports nor Biome's wrapping, both of which the measure counts, nor behavior the decisions require that the design left uncosted (the Archive's batch delete and its Undo, a restore's Undo, a row's stored id and icon, the order writers for four kinds). Phase 1 removes more than it adds: one carry and one lift replace the exclusion bookkeeping, its refusals, the record field, the release, and the reseat. Phases 3 and 5 fold `keyHolderFiles` and `corpusUnder`, `recordById`, three twin rules, two restore menus, three face swaps, and the Trash browser's inline controller into one each, and land positive because each shared home states the interface its single inline consumer never needed. Phases 2 and 4 carry the data layer the Archive requires, built on the Trash's mechanisms given a second store rather than beside them: the owner's parameterization, exact placement and the step-aside both stores gain, the three ops, the disposal, the open pass, and the carry. Phase 6B is the Archive's own surface and the largest additive block, with ArchiveView drawing on TableView's sheet and the browser hook rather than its own. Each phase's measured delta is recorded in the Net Ledger beside its written figure, and growth past it is reported before the next phase opens with what it buys.
 
-**Net Ledger** (the Actionable column of `view-delta --exclude .claude`, per phase, cumulative from the BASELINE head; *Estimate* is the pre-plan design's figure, *Written* the count of the phase's AFTER blocks under the same rule):
+**Net Ledger** (the Actionable column of `view-delta --exclude .claude`, each phase measured over its own commits, from the parent of its first commit to its last, its review's fix included, and the cumulative summing the rows; *Estimate* is the pre-plan design's figure, *Written* the count of the phase's AFTER blocks under the same rule):
 
 | Phase | Estimate | Written | Measured | Cumulative |
 | ----- | -------- | ------- | -------- | ---------- |
 | 1 | −17 | −6 | +11 (+99 / −88) | +11 |
 | 2 | +49 | +263 | +268 (+893 / −625) | +279 |
-| 3 | +10 | +108 | | |
+| 3 | +10 | +108 | +143 (+333 / −190) | +422 |
 | 4 | +176 | +432 | | |
 | 5 | −21 | +95 | | |
 | 6A | +57 | +102 | | |
@@ -67,15 +67,15 @@ Every file the work adds, moves, renames, splits, or removes, with its home, its
 | `Core/Archive/refile.ts` | New (4-5; `settleArchives` in 4-6) | `refileArchived` (F-6's carry and trail rewrite), `refileMoved` (the settle's comparison trigger), `refileLanded` (either restore's landing trigger), and `settleArchives` (the open pass: F-5's orphans and F-6's re-file). | 4 |
 | `Core/Archive/ArchiveView.tsx`, `archive-view.css` | New | The table place (G-1 to G-3), its rows, search, count, bar declaration, and opener; the title-over-trail stack, the virtual list's positioning, the trailing label. | 6B |
 | `Core/Archive/archivePlace.ts` | New | `ARCHIVE_ICON` and `archiveOwnerOf`, on `Core/Matrix/matrixKind.ts`'s precedent for a place that isn't a node. | 6B |
-| `Core/Paths/nexusPaths.ts` | Edited | The resolver block (`ARCHIVE_DIR_REL`, `archiveDirRel`, `archiveSegs`, and `archivedCollectionIdOf` over it, the last `storeOf`'s first consumer) beside every other `.nexus` location; `NON_CORPUS_TOP` leaves (K-5). | 2 |
+| `Core/Paths/nexusPaths.ts` | Edited | The resolver block (`ARCHIVE_DIR_REL`, `archiveDirRel`, `archiveSegs`, and `archivedCollectionIdOf` over it, the last `storeOf`'s first consumer) beside every other `.nexus` location, and `isArchived` (Phase 3) over it; `NON_CORPUS_TOP` leaves (K-5). | 2, 3 |
 | `Core/Nexus/order.ts` | Edited | Gains `spliceBeside` and `Slot` from `Core/Views/creationOrder.ts:10-28`: the one home for reading and splicing an id list, reachable by the host. | 2 |
 | `Core/Nexus/reorder.ts` | Edited | Gains `dropDeparture`, the one kind-to-order-key drop a departure makes, for the delete, both moves, and the archive op. | 2 |
 | `Core/Nexus/settle.ts` | Edited | Gains `returningNames` beside `relink`, and the F-6 observer at the tree comparison. | 4 |
 | `Core/Nexus/treePatch.ts` | Edited | Gains `findContainerById` and `containerTrailById` (Phase 2), `owningCollection`'s archive arm and `archiveReach` (Phase 3), and `isTopSet` (Phase 6B); host-safe, unlike `treeIndex.ts`. | 2, 3, 6B |
-| `Core/Nexus/heldPages.ts` | Edited | Gains `nexusPages`, the by-id projection beside the held tree's lookups; `recordById` leaves `record.ts`. | 3 |
+| `Core/Nexus/heldPages.ts` | Edited | Gains `nexusPages`, the by-id projection beside the held tree's lookups, over the memoized `entitiesById` that `writablePathsOf` reads too, with the twin predicate `addressable` and `shownTitle`; `recordById` leaves `record.ts`. | 3 |
 | `Core/Nexus/folderEntity.ts` | Edited | Gains `liftSetAside`; `relocateFolder` runs the carry and returns a `Result`. | 1 |
 | `Core/Settings/settings.ts` | Edited | `carrySetAside` replaces `followExcludedFolders`, `editExcluded`, `exclusionWriteRefusal`, `excludedWithin`, `releaseExcludedFolders`, `reseatExcludedFolders` (nine exclusion functions become four). | 1 |
-| `Core/Properties/keyHolders.ts` | Edited | `governedReach` replaces `keyHolderFiles` (and `indexSeed.ts`'s `corpusUnder`); gains `collectionFolders` from `assignment.ts:152-156`. | 3 |
+| `Core/Properties/governedSweep.ts` | Edited | Gains `governedReach`, which replaces `keyHolders.ts`' `keyHolderFiles` (and `indexSeed.ts`'s `corpusUnder`), and `collectionFolders` from `assignment.ts:152-156`, beside the sweep they feed. | 3 |
 | `Core/Files/walk.ts` | Edited | Gains `sidecarsUnder` from `assetMigrate.ts:158-165`; `corpusFiles` walks two roots. | 3 |
 | `Core/Actions/restoreMenu.ts` (+ `restoreMenu.test.ts`) | New, replacing `trashMenu.ts` and `fileHistoryMenu.ts` (both removed, tests merged) | One Restore and Delete builder (K-4). | 5 |
 | `Core/Interface/Notifications/ActionLabel.tsx`, `action-label.css.ts`, `ActionLabel.test.tsx` | Renamed from `NotificationLabel.tsx`, `notification-label.css.ts`, `NotificationLabel.test.tsx` | The frame's one top-right label (G-7); `App.tsx` follows; `notifications.ts` keeps its name and gains the bar's channel in Phase 6B; the folder keeps its name for its 38 importers. | 5, 6B |
@@ -106,7 +106,7 @@ Every file the work adds, moves, renames, splits, or removes, with its home, its
 | `archive` • record field | On a Trash record alone: the Archive bundle a delete from the Archive took the item out of. | `Core/Bundles/record.ts` |
 | `placeRecord` • function | The restore's one placement step for either store: destination, resolution with the siblings and writer of the order it lands in, the composed order, and the disk-asking name, answering the placement, the `writeOrder` step that lands it, `landedAs`, and `into` for an Undo back into the Archive. | `Core/Bundles/placement.ts` |
 | `slotOf` • function | Where a returning id re-enters an order from its recorded neighbours: above, below, first, or last. | `Core/Bundles/placement.ts` |
-| `freeOnDisk` • function (module-private) | The one landing-name rule for a restore, asking the tree and the disk for the item's own form, stepping aside to `Name (2)`; F-080's seam. | `Core/Bundles/placement.ts` |
+| `freeOnDisk` • function (module-private) | The one landing-name rule for a restore, asking the tree and the disk for the item's own form, stepping aside to `Name (2)`; I-074's seam. | `Core/Bundles/placement.ts` |
 | `BundleRow`, `BundleCrumb` • types | A bundle as either browser reads it (`TrashRow`, `TrashCrumb` renamed), with `storedAt`, and for a page or Set row an optional `icon` and `stored` (its id and archive path). | `Core/Bundles/rows.ts` |
 | `bundleRows`, `bundleRowOf` • functions | The rows of a store's bundles (`trashRows`, `trashRowOf` generalized), an archive store narrowed by a Set's origin. | `Core/Bundles/rows.ts` |
 | `bundles:list` • channel | Lists a store's rows, narrowed to a top-level Set's origin by `within` (`trash:list` replaced). | `Core/Contract/bridge.ts`, `Core/Bundles/handlers.ts` |
@@ -122,11 +122,14 @@ Every file the work adds, moves, renames, splits, or removes, with its home, its
 | `findContainerById`, `containerTrailById` • functions | A container by id, and its trail, beside `findContainerWhere` and `containerTrailWhere`: one spelling for every by-id read. | `Core/Nexus/treePatch.ts` |
 | `returningNames` • function | The restore's two-map relink, hoisted for both restores. | `Core/Nexus/settle.ts` |
 | `goneContainers` • function | The configuration edit for containers that left, from their ids. | `Core/Nexus/configReach.ts` |
-| `ARCHIVE_DIR_REL`, `archiveDirRel`, `archiveSegs`, `archivedCollectionIdOf` • constants, functions | The Archive's location behind one resolver. | `Core/Paths/nexusPaths.ts` |
-| `governedReach` • function | The one governed reach over every Collection and the Archive, or one Collection and its Archive. | `Core/Properties/keyHolders.ts` |
+| `ARCHIVE_DIR_REL`, `archiveDirRel`, `archiveSegs`, `archivedCollectionIdOf`, `isArchived` • constants, functions | The Archive's location behind one resolver, and the one predicate for a path inside it. | `Core/Paths/nexusPaths.ts` |
+| `governedReach`, `collectionFolders` • functions | The one governed reach over every Collection and the Archive, or one Collection and its Archive; every Collection folder the tree it's handed holds, damaged ones included (moved from `assignment.ts`). | `Core/Properties/governedSweep.ts` |
 | `nexusPages` • function, `NexusPages` • type | The by-id projection over the tree and the Archive (`byId`, null on a twin; `archived` pages at their origin paths). | `Core/Nexus/heldPages.ts` |
-| `archiveReach` • function | The Archive a configuration edit reaches: the whole store, or one Collection's. | `Core/Nexus/treePatch.ts` |
-| `sidecarsUnder` • function | Container sidecars under a folder (hoisted from the asset migration). | `Core/Files/walk.ts` |
+| `entitiesById` • memo (module-private) | The tree's entities by id under the one twin rule, memoized on the tree; `writablePathsOf` and `nexusPages` read it. | `Core/Nexus/heldPages.ts` |
+| `addressable`, `shownTitle` • functions | Whether `byId` addresses the one file carrying an id, the one twin predicate every strip and refill reads; the title the window shows for an id, the first-listed page's for a twin. | `Core/Nexus/heldPages.ts` |
+| `archiveReach` • function | The Archive a reach covers: the whole store, or the owning Collection's. | `Core/Nexus/treePatch.ts` |
+| `archivedSets` • function (module-private) | The archived Set sidecars a configuration edit reaches, in `archiveReach`'s Archive. | `Core/Nexus/configReach.ts` |
+| `sidecarsUnder` • function | Container sidecars under both content roots or one folder (hoisted from the asset migration). | `Core/Files/walk.ts` |
 | `carrySetAside` • function | Writes an excluded entry's or the asset directory's landing before its folder moves and drops the source after. | `Core/Settings/settings.ts` |
 | `liftSetAside` • function | Moves excluded folders and the asset directory out of a container being archived or trashed, into its parent. | `Core/Nexus/folderEntity.ts` |
 | `isTopSet` • function | Whether a Set path sits directly under its Collection. | `Core/Nexus/treePatch.ts` |
@@ -151,7 +154,7 @@ Every file the work adds, moves, renames, splits, or removes, with its home, its
 | `Reader`, `openReader`, `closeReader` • type, actions | The one read-only reader slot (`historyTarget`, `openHistory`, `closeHistory` replaced). | `Core/Session/windowSlice.ts` |
 | `PageReaderWindow` • component | The one read-only reader (`PageHistoryWindow` renamed), with History and Archive branches. | `Core/Interface/Windows/PageReaderWindow.tsx` |
 | Archive Drive • script | Groups 1 to 6B over CDP, gated by `POMMORA_ARCHIVE_LANDED`. | `.claude/scripts/Archive Drive/` |
-| F-081 • IssuesPM entry | Every exclusion write re-reads the Nexus; scope changes could land incrementally. | `.claude/IssuesPM.md` |
+| The exclusion-scope entry • IssuesPM entry | Every exclusion write re-reads the Nexus; scope changes could land incrementally. | `.claude/IssuesPM.md` |
 
 **REMOVED**
 
@@ -168,6 +171,7 @@ Every file the work adds, moves, renames, splits, or removes, with its home, its
 | `trashed` • outcome field | Renamed `bundled`. | `Core/Nexus/mutateRequest.ts` |
 | `keyHolderFiles`, `corpusUnder`, `folderCorpus` • functions | Folded into `governedReach`; inlined into `moveIndexPaths`. | `Core/Properties/keyHolders.ts`, `Core/Index/indexSeed.ts` |
 | `recordById` • function | Replaced by `nexusPages`'s `byId`. | `Core/Nexus/record.ts` |
+| `containersOf` • function | Its live listing inlined into `reachConfig`, its archived arm `archivedSets`. | `Core/Nexus/configReach.ts` |
 | `restoreOp` • function | A forwarder once `mutate.ts` resolves the bundle and routes the restore by store. | `Core/Trash/spend.ts` |
 | `gatherParentRef` • function | Folded into `gatherContentRecord`, which reads the tree it is handed. | `Core/Trash/gather.ts` |
 | `keyedHolders`'s `seen`, `deleteCascade`'s tree filter and twin branch | One twin rule through the map; one governed reach. | `Core/Properties/keyHolders.ts`, `Core/Nexus/cascade.ts` |
@@ -184,7 +188,7 @@ Every file the work adds, moves, renames, splits, or removes, with its home, its
 | `'delete'` • entity menu action | `'title:delete'` and `DELETE_ROW` serve containers and Spaces. | `Core/Actions/entityMenu.ts` |
 | The `// PLACEHOLDER` More button • element | The Archive button takes the footing. | `Core/Views/Settings/ViewFrame.tsx` |
 | `PageHistoryWindow`, `historyTarget`, `openHistory`, `closeHistory` • component, slot, actions | The reader and its slot replace them. | `Core/Interface/Windows/`, `Core/Session/windowSlice.ts` |
-| F-007 • IssuesPM entry | Closed by the lift. | `.claude/IssuesPM.md` |
+| I-007 • IssuesPM entry | Closed by the lift. | `.claude/IssuesPM.md` |
 
 #### Constraints
 
@@ -246,12 +250,12 @@ Nathan's, verbatim.
 - **Conventions:** "Cautionary N" and "ruling N" cite *Archive — Planning Findings*' *§Cautionary Items* and *§Nathan's Rulings*, and each task states the substance it leans on; a cited line is HEAD's, and where an earlier task moved it, the test's or function's title is the anchor; production comments carry no planning ids; finite states are unions plus exhaustive switches; `Core/Contract` is the one bridge, a channel is one `bridge.ts` entry and both sides derive; host-run code imports no React and no `.tsx`, and the engine graph follows `import type`, so every type the host reaches lives in a React-free file (`BundleRow`, `BundleStore`, `Reader` excepted as renderer-only); no O(N), allocating, or layout-reading work lands on a high-frequency trigger (the Archive costs a read only when a cascade's candidates name its files; the open pass and the history sweep run once at open; a browser re-lists only while shown); `UIX` reaches nothing outside itself (which is why TableView's shell is not hoisted there); user-facing copy is the decision log's *§Copy* verbatim (curly quotes around titles, a setting named inside another's hint in single quotes, Title Case counts everywhere, the Trash's reports included); a test whose body inverts takes a title stating the behavior it now asserts, and no production code exists as a test fixture; an AFTER block adds a comment only where the code would otherwise be misread; commit messages are past tense, one to four sentences, and carry no personal names (the `no-name-mentions` hook refuses them); nothing temporary, transitional, or compatibility-kept remains at a phase's end.
 - **Sequencing:** removal and consolidation precede anything additive, and changes to what exists precede new surface unless the new surface is foundational; a new type, field, channel, or function lands with its first consumer, in that consumer's task (so `trail`, `archive`, and `moveIntoStore` wait for Tasks 4-2, 4-3, and 4-5; `returningNames`, `goneContainers`, and `bundled` open Phase 4 in Task 4-1, ahead of their second consumers; the bar opens Phase 6B, and `BundleRow.icon` and the Set narrowing wait for Task 6B-4). `BundleStore`'s archive arm is the one foundational exception: it lands in Phase 2 with the format, so every exhaustive switch over a store carries its archive arm from the phase that writes the switch (`layoutOf` in 2-1, the browser's `rulesOf` and its `archiveColumnStyle` key in 5-5), and the guard that keeps an archive bundle out of the Trash's disposal and reconcile lands with `openBundle` in 2-1; nothing is added in one phase that a later phase's consolidation would make unnecessary. Code, comments, and tests are true at every phase boundary; the documents are made true once, in Phase 7.
 - **Shape:** a removal, a refactor, and a feature. The removal's inventory is *§Concepts › REMOVED* and the Findings' *§Removal & Consolidation*; its never-delete list is **Frozen** above. The refactor's baseline is today's behavior as the decision log's *§Context* and the Findings' *§Verified at HEAD* state it, kept except where a decision names a change (each named in its task as a behavior change) and proven by the tests each task rewrites or adds; every removal task lists its consumers. The feature's additions ride the Trash's mechanisms given a second store: one layout, two roots, two suffixes. The lift's write order (the entry before the move, the drop after) and the delete's record-ahead order are proven by vitest, never by the drive.
-- **The Number:** every phase's VERIFY runs `python3 ~/"The Studio/.claude/scripts/view-delta/view-delta.py" <BASELINE>..HEAD --exclude .claude --save <scratch>/phase-<N>-delta.md` (without `--save` it prints the viewer's URL and the all-inclusive summary alone) and records that file's **Actionable** column in the Net Ledger beside the phase's *Written* figure, removals and additions apart. A phase that lands above its written figure is reported in chat before the next phase opens, with what the increase buys.
+- **The Number:** every phase's VERIFY runs `python3 ~/"The Studio/.claude/scripts/view-delta/view-delta.py" <first>^..<last> --exclude .claude --save <scratch>/phase-<N>-delta.md` (without `--save` it prints the viewer's URL and the all-inclusive summary alone) over the phase's own commits, from the parent of its first commit to its last, its review's fix included, and records that file's **Actionable** column in the Net Ledger beside the phase's *Written* figure, removals and additions apart, the *Cumulative* column summing the rows. Other sessions commit to `active` between the plan's phases, so a range from the BASELINE head would count their work. A phase that lands above its written figure is reported in chat before the next phase opens, with what the increase buys.
 - **Execution:** the plan runs end to end through `c/plan-execution`, autonomously, Nathan reachable at the Stops, in the main checkout on `active`: executors edit in place, each phase commits its own files with `git commit --only`, and the Archive Drive builds and launches from the checkout. If Nathan's live app runs from this checkout, the drive instead runs from a worktree of the phase's head built by `editor-parity/worktree.sh` and named by `POMMORA_DRIVE_REPO`, as MetadataV3's did. Each task goes to an `execution-agent` (`opus-medium`) carrying *§Context*, *§Overview*, this *§Constraints* whole (Nathan's Approach, Principles, and Constraints verbatim), and its task, which reports insights, concerns, and suggestions rather than diverging; the orchestrator checks its result against the task's AFTER and VERIFY. Every Review Checkpoint dispatches two read-only `opus-high` agents to the `closeout-review` skill's standards (correctness, simplification, cohesiveness, consequences; its closing procedures, write-guards, and output format don't apply), each carrying *§Constraints* whole and a do-not-re-raise list of the rulings below, reading outward rather than in isolation, with no implementation running meanwhile; the orchestrator verifies each finding against the tree, fixes what holds, and weighs the landed work against the Approach and Principles before the next phase opens; the Archive Drive runs over every landed group at the same checkpoint. An in-flight call is weighed against *§Constraints* and the plan's objectives, disclosed in chat, and recorded under *§Deviations* where it changes an outcome. The three compaction checkpoints in *§Process Overview* sit before Phases 3, 6A, and 6B; each runs `c/pre-compaction`, repeats Nathan's Approach, Principles, and Constraints verbatim in the handoff, and stops until Nathan re-prompts; on the re-prompt the orchestrator rereads *§Constraints* and `c/plan-execution` from the files themselves, rather than from the handoff's summary of them, before the next phase opens.
 - **Neutral Gates:** two, each a `fable-high` agent that wrote and reviewed nothing, given only the BASELINE head, the HEAD named, and the intention statement, with no plan, log, or document; it answers, without hedging, whether the result holds to every principle under **Approach**, **Principles**, and **Nathan's Constraints** and what it would correct; a "no" routes back to the orchestrator, the fix lands, and the gate runs again. The first gate closes Phase 4, reading `BASELINE..<Phase 4's head>` with the data layer complete and nothing visible: *"Pommora removed a page or Set one way, into the Trash, where it left every cascade's reach and had to be reconciled on its way back; its excluded folders rode into the bundle, and a restore refused a landing anything outside the tree occupied. This work gives each Collection an Archive at `.nexus/archive/<id>/`, the one hidden folder every cascade and the content index reach into while the tree leaves it out, so an archived page stays current and returns by a plain move; it carries an excluded folder's entry crash-safely with its folder and lifts it out of a container being archived or trashed; it moves the Trash's bundle format, record, placement, and listing into one owner both stores share, gives every restore its exact former place and a step-aside past the disk, routes one restore by store, sends a delete from the Archive to the Trash with an Undo that returns it, sweeps an Archive whose Collection exists nowhere into the Trash at open, and carries archived items with a Set that changes Collection, with each rule stated once, built from what the architecture already had, and nothing left over."* The second gate runs after Phase 7 lands, over `BASELINE..HEAD`: *"Pommora had one way to remove a page or a Set: the Trash, where it left every cascade's reach and came back reconciled, and nothing marked work as finished without deleting it. This work gives each Collection an Archive at `.nexus/archive/<id>/`, the one hidden folder every cascade and the content index reach into while the tree, search, links, and the Matrix leave it out, so an archived page stays current and returns by a plain move to its exact former place; it puts Archive above Delete in every page and Set menu, asks under its own setting, posts an Undo, and lists a Collection's or top-level Set's archived items in an ArchiveView on the table's own look, acted on by right-click or the one top-right label that shows a notice or the shown view's actions; it opens an archived page in the one read-only reader the File History window became, and lets archived pages' snapshots be kept for a shorter time; and it moves the Trash's bundle format, record, placement, listing, and browser controller into one owner both stores share, carries an excluded folder's entry crash-safely with its folder and lifts it out of a container being archived or trashed, gives every restore its exact place and a step-aside past the disk, folds three face swaps into one, two restore menus into one, and three twin-id rules into one, with each rule stated once, built from what the architecture already had, and nothing left over."* The first gate is this plan's addition to the precedent's single end gate, seated where the data layer is whole and the interface hasn't yet leaned on it.
-- **Rulings (Not Re-Raised):** every decision in *Archive — Decisions & Intention* and its *§Rejected* list; the Findings' *§Nathan's Rulings* 1 to 22 and the CONFIRMED bullets they added (an unreadable Collection keeps its Archive; today's re-read on an exclusion write stays, incremental scope changes are F-081; Collections and Spaces restore to their exact place; one in-place search rule for both browsers; an archived Set is one row; a page row's title opens the reader and the reader's title isn't renamable; the full header with "Archive" trailing; the tab reads the title with the archive glyph; the toolbar's sliders open the empty pane; Restore wears `filled`; one cross-fade with a 1500 ms hold; no way back from a picked archive timeframe; Title Case counts; the approved *§Copy*); the ten Last Calls ruled at ratification (*§Open Items*); the folder model proceeds, and the mark model (*§Prospects*) is not this plan's concern. The Findings' *§Contradictions* are all ruled on; a new finding that contradicts a ratified decision goes to *§Open Items* with the evidence and the plan proceeds on the ratified reading.
+- **Rulings (Not Re-Raised):** every decision in *Archive — Decisions & Intention* and its *§Rejected* list; the Findings' *§Nathan's Rulings* 1 to 22 and the CONFIRMED bullets they added (an unreadable Collection keeps its Archive; today's re-read on an exclusion write stays, incremental scope changes are Phase 7's new IssuesPM entry; Collections and Spaces restore to their exact place; one in-place search rule for both browsers; an archived Set is one row; a page row's title opens the reader and the reader's title isn't renamable; the full header with "Archive" trailing; the tab reads the title with the archive glyph; the toolbar's sliders open the empty pane; Restore wears `filled`; one cross-fade with a 1500 ms hold; no way back from a picked archive timeframe; Title Case counts; the approved *§Copy*); the ten Last Calls ruled at ratification (*§Open Items*); the folder model proceeds, and the mark model (*§Prospects*) is not this plan's concern. The Findings' *§Contradictions* are all ruled on; a new finding that contradicts a ratified decision goes to *§Open Items* with the evidence and the plan proceeds on the ratified reading.
 - **Departures (Nathan, 10-19-2026, verbatim):** approaches may diverge from ratified decisions within reason; the "how" can alter slightly if it's genuinely best; the "what" actually gets built still gets brought to Nathan if there's conflict. Removal and consolidation come before anything truly additive, and changes to what exists come before new surface unless the new surface is foundational: never add something in one phase that a later phase's consolidation would have made unnecessary. Every departure the plan took from the Findings is recorded beside its task; one an executor takes in flight is recorded under *§Deviations*.
-- **Out of Scope Everywhere:** Indexed Trash, Auto-Delete, read-only properties in the reader window, Resolve Restoration Conflicts (F-080, deferred; `freeOnDisk` is its seam), Clear Nexus Cache, and the Mark Model (*§Prospects*); incremental exclusion-scope changes (F-081, recorded in Phase 7); `Core/Sync/`'s internals and Sapphire; the Agenda folders and pages outside every Collection; Mobile.
+- **Out of Scope Everywhere:** Indexed Trash, Auto-Delete, read-only properties in the reader window, Resolve Restoration Conflicts (I-074, deferred; `freeOnDisk` is its seam), Clear Nexus Cache, and the Mark Model (*§Prospects*); incremental exclusion-scope changes (recorded in IssuesPM in Phase 7); `Core/Sync/`'s internals and Sapphire; the Agenda folders and pages outside every Collection; Mobile.
 
 #### Process Overview
 
@@ -312,7 +316,7 @@ Nathan's, verbatim.
 
 ### Phase 1 — The Lift and the Carry
 
-**GOAL:** Excluded folders and the asset directory travel crash-safely with a renamed or moved Collection or Set, and stay behind when it leaves the tree (K-1, F-2, F-3). A rename or move writes the landing's entries and the asset directory's setting before the folder moves and drops the source's entries after, one settings write each, so a failed write refuses the move before anything moves, a crash never leaves the folder un-excluded, and a move that throws writes back what the carry read. A Set or Collection sent to the Trash first lifts its excluded folders and asset directory into its parent, each stepping aside past names already there and carrying its entry, so the Trash's own excluded-entry bookkeeping leaves. The nine exclusion functions in `Core/Settings/settings.ts` become four: `writeAssetDirectory`, `writeExcludedFolders`, `carrySetAside`, and `sanitizeExclusions`. Nothing here depends on another phase; Phase 4's `archive` op becomes the lift's second caller, and Phase 7 writes F-007's closure. The phase creates the Archive Drive with group 1.
+**GOAL:** Excluded folders and the asset directory travel crash-safely with a renamed or moved Collection or Set, and stay behind when it leaves the tree (K-1, F-2, F-3). A rename or move writes the landing's entries and the asset directory's setting before the folder moves and drops the source's entries after, one settings write each, so a failed write refuses the move before anything moves, a crash never leaves the folder un-excluded, and a move that throws writes back what the carry read. A Set or Collection sent to the Trash first lifts its excluded folders and asset directory into its parent, each stepping aside past names already there and carrying its entry, so the Trash's own excluded-entry bookkeeping leaves. The nine exclusion functions in `Core/Settings/settings.ts` become four: `writeAssetDirectory`, `writeExcludedFolders`, `carrySetAside`, and `sanitizeExclusions`. Nothing here depends on another phase; Phase 4's `archive` op becomes the lift's second caller, and Phase 7 writes I-007's closure. The phase creates the Archive Drive with group 1.
 
 #### Task 1-1
 
@@ -3810,9 +3814,9 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
   - `Core/Paths/exclusion.test.ts` `describe('outsideContent')`, beside "refuses hidden and package folders at any depth, and hidden names" (`:19`, unchanged): "admits the Archive, the one hidden folder read as content, while a hidden folder inside it stays hidden" — null: `.nexus/archive`, `.nexus/archive/C1`, `.nexus/archive/C1/Alpha/2026-10-20T12-00-00-000Z__Beta.archived/Beta/Notes.md`; `'hidden'`: `…/Beta/_raw/X.md`, `.nexus/settings.json`, `.nexus/contexts/Areas/Home`.
   - `Core/Files/walk.test.ts`: "yields the cascade corpus minus exclusions, as nexus-relative POSIX paths" (`:46`) adds `.nexus/archive/C1/sub/2026-10-20T12-00-00-000Z__z.md.archived/z.md` and `…/z.md.archived/_raw/h.md`; both expected lists gain only that `z.md`. "never reads inside `.trash`, `.nexus`, or an excluded folder" (`:69`) → "never reads inside `.trash`, `.nexus` outside its Archive, or an excluded folder"; spy: `['', 'sub', '.nexus/archive']`, in order. New `describe('sidecarsUnder')` › "lists every container sidecar under both content roots, or under one folder, and never inside a hidden folder": seed `Notes/_pagecollection.json`, `Notes/Deep/_pageset.json`, `Notes/_Drafts/_pageset.json`, `.nexus/archive/C1/Notes/2026-10-20T12-00-00-000Z__Old.archived/Old/_pageset.json`; `sidecarsUnder(root, scope())` → the archived one, `Notes/Deep/_pageset.json`, `Notes/_pagecollection.json` (sorted); with `join(root, '.nexus/archive')` → the archived one.
   - `Core/Index/indexSeed.test.ts` `describe('seedContentIndex')`, new: "seeds the Archive as the corpus’s second root, and a hidden folder inside an archived Set gets no rows" (archived `Old.md`, `ULID_B`, `[[Target]]`: in `readIndexedStats()` with `id: ULID_B` and in `queryMentions(['target'])`; `…/Set.archived/Set/_raw/X.md` in neither); "moves a page’s rows into the Archive and back, and a Set’s by prefix" (rename on disk, then `moveIndexPaths`: rows under `readIndexedStats('.nexus/archive')` keep `ULID_A`, none at the origin; then back); "a removal of the Archive itself prunes every row beneath it" (`deindexPath(root, abs('.nexus/archive'))` reports the page vanished; no row left under the prefix).
-  - `Core/Nexus/treePatch.test.ts`: "names the Collection a path starts in, a Collection its own owner" (`:215`) → "names the Collection a path starts in or whose Archive holds it, a Collection its own owner", plus `owningCollection(t, '.nexus/archive/c2/Old Name/2026-10-20T12-00-00-000Z__X.md.archived/X.md')` → `t.collections[1]`, `.nexus/archive/c9/…` → undefined, `.nexus/archive` → undefined. New `describe('archiveReach')`: unscoped → `.nexus/archive`; `'Notes/Sub'` → `.nexus/archive/c1`; `'Loose'` → null.
+  - `Core/Nexus/treePatch.test.ts`: "names the Collection a path starts in, a Collection its own owner" (`:215`) → "names the Collection a path starts in or whose Archive holds it, a Collection its own owner", plus `owningCollection(t, '.nexus/archive/c2/Old Name/2026-10-20T12-00-00-000Z__X.md.archived/X.md')` → `t.collections[1]`, `.nexus/archive/c9/…` → undefined, `.nexus/archive` → undefined. New `describe('archiveReach')` › "covers every Archive unscoped, the owning Collection’s whole Archive under a folder, and none for an unowned one": unscoped → `.nexus/archive`; `'Notes/Sub'` → `.nexus/archive/c1`; `'Loose'` → null.
   - `Core/Properties/repairSweep.test.ts`: "canonicalizes a drifted archived page against its own Collection’s definitions" — archived `Two.md` under the Collection's id, `Status: Open`; after `runRepairSweep(root, await seedContentIndex(root))`, `Status:\n  - Open`.
-  - `Core/Nexus/configReach.test.ts`: in `describe('an option rename')`, "reaches an archived Set’s sidecar as it reaches a live one" (`.nexus/archive/col_notes/Notes/2026-10-20T12-00-00-000Z__Old.archived/Old/_pageset.json` with `rich('view_o')` reads after `reachConfig(root, rename)` as the live `rich('view_s')` does, id aside); in `describe('a pass scoped under one Collection')`, "edits the Collection’s whole Archive and a tile sourcing an archived Set, and leaves another Collection’s Archive" (archived `set_old` under `col_notes`, chain `Old Name/`; one under `col_other`; a tile view sourcing `set_old`; after `reachConfig(root, clear, col())`, `set_old` and the tile view read `{ kind: 'structural' }`, `col_other`'s sidecar byte-identical).
+  - `Core/Nexus/configReach.test.ts`: in `describe('an option rename')`, "reaches an archived Set’s sidecar as it reaches a live one" (`.nexus/archive/col_notes/Notes/2026-10-20T12-00-00-000Z__Old.archived/Old/_pageset.json` with `rich('view_o')` reads after `reachConfig(root, rename)` as the live `rich('view_s')` does, id aside); in `describe('a pass scoped under one Collection')`, "edits the Collection’s whole Archive and a tile sourcing an archived Set, and leaves another Collection’s Archive" (archived `set_old` under `col_notes`, chain `Old Name/`; one under `col_other`; a tile view sourcing `set_old`; after `reachConfig(root, clear, col())`, `set_old` and the tile view read `{ kind: 'structural' }`, `col_other`'s sidecar byte-identical); in `describe('what the pass skips')`, `it.skipIf(noModeBits)`: "counts an archived Set’s sidecar it can’t read as one skip" (the archived sidecar at mode `0o000`; `reachConfig(root, rename)` answers `skipped` 1).
   - `Core/Nexus/normalizeSavedViews.test.ts`: "renames the Table view's old glyph key in sidecars, trashed sidecars, and every tile document" (`:81`) → "… in sidecars, trashed and archived sidecars, and every tile document", plus a Set sidecar at `.nexus/archive/col-notes/Notes/2026-10-20T12-00-00-000Z__Old.archived/Old` with `icon: 'table'` → `'view-table'`; comment `:41`: "the walk covers the Trash, the Archive, and tile documents".
   - `Core/Assets/assetMigrate.test.ts` (modeled on `:72`): "rewrites the links in an archived Set’s sidecar and an archived page before the sweep trashes the legacy folder" — `asset('a/Cover.png', 'cover')`; archived Set sidecar `banner` `.nexus/assets/a/Cover.png`; archived page `banner` `"[[Cover.png]]"`; `rewritten` 2, `trashed` 1, sidecar banner `[[Cover.png]]`, `file-assets/Cover.png` exists.
 - [ ] `Core/Paths/exclusion.ts`: `outsideContent` holds the hidden rule to `archiveSegs(segs) ?? segs`; its doc names the Archive.
@@ -3820,7 +3824,7 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 - [ ] `Core/Assets/assetMigrate.ts`: delete `sidecarsUnder`; `collectRefs` walks `sidecarsUnder(root, scope)` plus `spaceSidecars(root)`, sorted; drop the `SIDECARS`, `listPathsUnder`, `outsideContent`, and `WatchScope` imports.
 - [ ] `Core/Nexus/migrateConfig.ts`: `normalizeSavedViews` walks `TRASH_DIR` and `ARCHIVE_DIR_REL`; comment `:45` names the Archive.
 - [ ] `Core/Nexus/treePatch.ts`: `owningCollection` gains the Archive arm (by id segment); add `archiveReach(tree, rel?)`, the scope rule `containersOf` and Task 3-2's `governedReach` share.
-- [ ] `Core/Nexus/configReach.ts`: `containersOf` turns async and adds `archiveReach`'s archived Set sidecars via `sidecarsUnder` under `scopeOf(tree.config)` (`Core/Settings/codec.ts:99-101`; no settings read outside `reachConfig`'s guard), their ids joining `sources`; `reachConfig` awaits it.
+- [ ] `Core/Nexus/configReach.ts`: `containersOf`'s live listing moves inline into `reachConfig`, and `archivedSets(tree, root, under?)` lists the Set sidecars `sidecarsUnder` finds in `archiveReach`'s Archive under `scopeOf(tree.config)` (`Core/Settings/codec.ts:99-101`; no settings read outside `reachConfig`'s guard). `reachConfig` edits each through `written`, one read per sidecar, which counts an unreadable one among the skips as it counts a live one, and adds the id it reads to `sources`; `Container` drops its `id`.
 - [ ] Sibling sweep: `sidecarsUnder`'s callers are `assetMigrate.ts` and `configReach.ts`; `corpusFiles`' callers (`nexusCorpus`, `assetMigrate.ts:135`) need no change; `indexSeed.test.ts:62` holds; `treePatch.ts`'s new imports come from the leaf `nexusPaths.ts`, so the engine graph holds.
 
 **AFTER**
@@ -3964,38 +3968,58 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 @@ imports @@
  import { sidecarPath, tileDocPath } from '../Paths/paths'
 -import { isAtOrUnder, join } from '../Paths/posix'
-+import { dirname, isAtOrUnder, join, relative } from '../Paths/posix'
++import { SIDECAR_FILENAME } from '../Paths/nexusPaths'
++import { asString } from './coerce'
++import { basename, dirname, isAtOrUnder, join, relative } from '../Paths/posix'
 +import { sidecarsUnder } from '../Files/walk'
-+import { sidecarId } from '../Files/sidecar'
 +import { scopeOf } from '../Settings/codec'
  import { isPlainObject } from '../Contract/validators'
 @@
 -import { containerAt, contextAt, damagedFolders, spaceAt } from './treePatch'
 +import { archiveReach, containerAt, contextAt, damagedFolders, spaceAt } from './treePatch'
-@@ containersOf @@
+@@ containersOf → archivedSets @@
+-type Container = { kind: ContainerKind; id: string; dir: string }
++type Container = { kind: ContainerKind; dir: string }
+ 
+ const reaches = (dir: string, under?: string): boolean => !under || isAtOrUnder(dir, under)
+ 
 -function containersOf(tree: NexusTree, root: string, under?: string): Container[] {
 -  return tree.collections
-+async function containersOf(tree: NexusTree, root: string, under?: string): Promise<Container[]> {
-+  const live = tree.collections
-     .flatMap(within)
-     .map((node) => ({ kind: node.kind, id: node.id, dir: join(root, node.path) }))
-     .filter(({ dir }) => reaches(dir, under))
+-    .flatMap(within)
+-    .map((node) => ({ kind: node.kind, id: node.id, dir: join(root, node.path) }))
+-    .filter(({ dir }) => reaches(dir, under))
++async function archivedSets(tree: NexusTree, root: string, under?: string): Promise<Container[]> {
 +  const archive = archiveReach(tree, under && relative(root, under))
-+  if (archive === null) return live
++  if (archive === null) return []
 +  const files = await sidecarsUnder(root, scopeOf(tree.config), join(root, archive))
-+  const archived = await Promise.all(
-+    files.map(async (file): Promise<Container[]> => {
-+      const id = await sidecarId(dirname(file), 'set')
-+      return id === undefined ? [] : [{ kind: 'set', id, dir: dirname(file) }]
-+    }),
-+  )
-+  return [...live, ...archived.flat()]
++  return files
++    .filter((file) => basename(file) === SIDECAR_FILENAME.set)
++    .map((file) => ({ kind: 'set', dir: dirname(file) }))
  }
 @@ reachConfig @@
    const { view: edit, rule } = editsOf(e)
 -  const containers = containersOf(tree, root, under)
-+  const containers = await containersOf(tree, root, under)
++  const live = tree.collections
++    .flatMap(within)
++    .map((node) => ({ kind: node.kind, id: node.id, dir: join(root, node.path) }))
++    .filter(({ dir }) => reaches(dir, under))
++  const sources = new Set(live.map((c) => c.id))
    const damaged = damagedFolders(tree.unreadable)
+     .map((u) => ({ kind: u.kind, dir: join(root, u.path) }))
+     .filter(({ dir }) => reaches(dir, under))
+-  for (const { kind, dir } of [...containers, ...damaged]) {
++  for (const { kind, dir } of [...live, ...damaged]) {
+     await written(sidecarPath(dir, kind), (cur) => mapViews(cur, edit))
+   }
+-  const sources = new Set(containers.map((c) => c.id))
++  for (const { kind, dir } of await archivedSets(tree, root, under)) {
++    await written(sidecarPath(dir, kind), (cur) => {
++      const id = asString(cur.id)
++      if (id) sources.add(id)
++      return mapViews(cur, edit)
++    })
++  }
+   const inScope = (entry: unknown): boolean => {
 ```
 
 **VERIFY**
@@ -4007,56 +4031,54 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
-**Lines:** +43 (+68 / −25), view-delta's Actionable rule; moved: `sidecarsUnder`'s walk (4). `walk.ts` +22 / −2, `configReach.ts` +18 / −5, `treePatch.ts` +17 / −3, `assetMigrate.ts` +5 / −12, `migrateConfig.ts` +4 / −2, `exclusion.ts` +2 / −1. Comments +2 / −1, four rewritten. Tests about +110, nine files.
+**Lines:** +46 (+77 / −31), view-delta's Actionable rule; moved: `sidecarsUnder`'s walk (4). `configReach.ts` +27 / −11, `walk.ts` +22 / −2, `treePatch.ts` +17 / −3, `assetMigrate.ts` +5 / −12, `migrateConfig.ts` +4 / −2, `exclusion.ts` +2 / −1. Comments +2 / −1, four rewritten. Tests about +185, eight files.
 
 #### Task 3-2
 
-**TASK:** Add `governedReach(root, candidates, only?)`: the candidates (or, with no index, the corpus) inside every Collection folder and the Archive, or inside `only` and its own Archive, folding in `keyHolderFiles` and `corpusUnder`. Every property sweep, count, and clash check reaches archived holders through it (C-1, C-3).
+**TASK:** Add `governedReach(root, candidates, only?)` to `Core/Properties/governedSweep.ts`, beside the sweep it feeds: the candidates (or, with no index, the corpus) inside every Collection folder and the Archive, or inside `only` and its own Archive, folding in `keyHolderFiles` and `corpusUnder`. Every property sweep and count reaches archived holders through it, while the rename's both-keys refusal, like every confirmation, names only pages outside the Archive (C-1, C-3, C-4).
 
-**NOW:** `keyHolderFiles` (`Core/Properties/keyHolders.ts:12-18`) and `confirmedKeyHolders` (`:21-39`, inline at `:28`) intersect `queryKeyHolders(key) ?? nexusCorpus(root)` with the caller's folders through `corpusUnder` (`Core/Index/indexSeed.ts:78-82`): `collectionFolders(root)` (`assignment.ts:152-156`, the tree's Collections plus the `'unparsed'` damaged ones) or `removeInner`'s `[collectionFolder]`, so archived holders drop out. `collectionFolders` keeps its sidecar role (the snapshot, `stripAndRemove`, the replay). The rename clash (`bothKeyHolders`) must keep archived holders, or a rename silently drops the old value on an archived page holding both keys. `deleteCascade`'s strip is Task 3-3's.
+**NOW:** `keyHolderFiles` (`Core/Properties/keyHolders.ts:12-18`) and `confirmedKeyHolders` (`:21-39`, inline at `:28`) intersect `queryKeyHolders(key) ?? nexusCorpus(root)` with the caller's folders through `corpusUnder` (`Core/Index/indexSeed.ts:78-82`): `collectionFolders(root)` (`assignment.ts:152-156`, the tree's Collections plus the `'unparsed'` damaged ones) or `removeInner`'s `[collectionFolder]`, so archived holders drop out. `collectionFolders` reads `liveTreeOf` itself and keeps its sidecar role (the snapshot, `stripAndRemove`, the replay). The rename clash (`bothKeyHolders`) refuses a rename onto a key a page already holds beside the old one, through `confirmedKeyHolders`. `deleteCascade`'s strip is Task 3-3's.
 
 **CHANGE**
 
-- [ ] Write and watch fail, in `Core/Properties/keyHolders.test.ts` (`describe('keyHolderFiles')`, `:62-152`, → `describe('governedReach')`; helper `archived(name, fm, collection = 'c1')` writes `.nexus/archive/<collection>/Notes/2026-10-20T12-00-00-000Z__<name>.md.archived/<name>.md` and indexes it with `indexWrittenPage`):
+- [ ] Write and watch fail, in `Core/Properties/keyHolders.test.ts` (`describe('keyHolderFiles')`, `:62-152`, → `describe('governedReach')`; `page`'s text moves into `pageText(n, fm)`, whose ID is a ULID built from the name, and helper `archived(name, fm, collection = 'c1')` writes it at `.nexus/archive/<collection>/Notes/2026-10-20T12-00-00-000Z__<name>.md.archived/<name>.md` and indexes it with `indexWrittenPage`, since the index drops an ID that isn't a ULID):
   - "answers the queried holders intersected with the scope folders" (`:63`) → "answers the queried holders inside every Collection and the Archive": `governedReach(root, queryKeyHolders('Stage'))` → `HolderA`, `HolderB`, an archived holder; never `Loose/Note.md`.
   - "a name registered after the seed finds the pages already holding it, with no re-read" (`:71`) and the unreadable-holder case (`:95`) call `governedReach(root, queryKeyHolders(…))`.
   - "confirmedKeyHolders counts only the exact key, never a page or a Space holding another casing" (`:134`) calls `confirmedKeyHolders(root, 'Phase')`.
   - "with no index it answers the corpus intersected the same way" (`:146`): `governedReach(root, queryKeyHolders('Stage'))` under `NO_STORES`, still 30 files, no `Loose` path.
-  - New: "`only` reaches one Collection folder and its own Archive" — Collection `Other` (`c2`) with a holder; an archived holder under each Archive; `governedReach(root, queryKeyHolders('Stage'), abs('Notes'))` → `Notes`' two holders and `c1`'s archived one.
+  - New: "`only` reaches one Collection folder and its own Archive" — Collection `Other` (`c2`) with a holder; an archived holder under each Archive; `dropLiveTree()`, so the tree holds `Other`; `governedReach(root, queryKeyHolders('Stage'), abs('Notes'))` → `Notes`' two holders and `c1`'s archived one.
   - New: "reaches an Archive whose Collection the tree no longer holds" — an archived holder under `.nexus/archive/c9/…` is in the whole-Nexus answer.
-  - New: "a rename onto a key an archived page holds beside the old one is refused" — `archived('Q9A', 'Stage: s\nPhase: x\n')`; `renameProperty(root, 'prop_s', 'Phase')` not ok, `'Step'` ok.
-  - New: "an option rename rewrites an archived holder" — `archived('Q9B', 'Stage: Draft\n')`; after `renameOption(root, 'prop_s', 'Draft', 'Sketch')` it reads `Stage: Sketch`, `Loose/Note.md` keeps `Draft`.
-  - "collectionFolders lists every collection folder from the live tree" moves here from `Core/Properties/assignment.test.ts:48`, with its import.
+  - New: "a rename onto a key an archived page holds beside the old one goes through, the archived page keeping the new key’s value" — `archived('Q9A', 'Stage: s\nPhase: x\n')`; `renameProperty(root, 'prop_s', 'Phase')` ok, and the archived page reads `Phase: x` and holds no `Stage`.
+  - New: "an option rename rewrites an archived holder" — `archived('Q9B', 'Stage: Draft\n')`; after `renameOption(root, 'prop_s', 'Draft', 'Sketch')` its file contains `Sketch` (a select writes a one-item list), and `Loose/Note.md` keeps `Draft`.
+  - "collectionFolders lists every collection folder from the live tree" moves into `describe('governedReach')` from `Core/Properties/assignment.test.ts:48`, calling `collectionFolders(root, await liveTreeOf(root))` imported from `./governedSweep`.
 - [ ] `Core/Properties/deleteProperty.test.ts` `describe('propertyHolders')`: "a property delete strips an archived holder and files its value under its id" — archived page under `notes`' id, `Priority: hi`; after `deleteProperty`, no `Priority`, and the bundle's record maps its id to `hi`. `Core/Properties/removeProperty.test.ts`: "a Remove strips its own Collection’s archived holder and caches its value, and leaves another Collection’s" (archived holders under `folder`'s id and a second Collection's).
-- [ ] `Core/Properties/keyHolders.ts`: delete `keyHolderFiles`; add `collectionFolders` (moved from `assignment.ts`) and `governedReach`; `confirmedKeyHolders(root, key)` loops `governedReach(root, indexed)`; rewrite header `:1` to the reach's reason.
+- [ ] `Core/Properties/governedSweep.ts`: add `collectionFolders(root, tree)` (moved from `assignment.ts`, reading the tree it's handed) and `governedReach`, which reads `liveTreeOf` once for both its Archive and `collectionFolders`; the reach's reason is its doc.
+- [ ] `Core/Paths/nexusPaths.ts`: add `isArchived(rel)` over `archivedCollectionIdOf`, the one predicate for a path inside an Archive, which Task 3-4's three filters read too.
+- [ ] `Core/Properties/keyHolders.ts`: delete `keyHolderFiles`; `confirmedKeyHolders(root, key)` loops `governedReach(root, indexed)` and passes over an archived file, since a confirmation names only what's outside the Archive (C-4): an archived page holding both keys takes the rename, keeping the new key's value as `NEW_KEY_IS_FRESHER` writes it; its comment says so, and header `:1` names what the file holds.
 - [ ] `Core/Index/indexSeed.ts`: delete `corpusUnder` (`:78-82`).
 - [ ] `Core/Properties/assignment.ts`: delete `collectionFolders` (`:152-156`) and the `damagedFolders` import (`:10`), its last use.
-- [ ] `Core/Properties/deleteProperty.ts`: `deletePlan(root, propertyId, key)` reads `governedReach(root, queryKeyHolders(key))`; `propertyHolders` drops `collectionFolders`, which `deleteInner` keeps (snapshot, `stripAndRemove`), imported from `./keyHolders`.
-- [ ] `Core/Properties/removeProperty.ts`: `keyedHolders(await governedReach(root, queryKeyHolders(key), collectionFolder), key)`.
-- [ ] `Core/Properties/optionOps.ts:197` and `Core/Properties/registryProperty.ts:112`: `governedReach(root, queryKeyHolders(…))`; `bothKeyHolders` drops its `collectionFolders` call; both files drop the `collectionFolders` import.
-- [ ] `Core/Properties/replaySchemaCascade.ts`: `collectionFolders` imports from `./keyHolders`; `deletePlan` takes no `folders`.
-- [ ] Sibling sweep: `Core/Properties/governedWorld.test.ts:6` imports `collectionFolders` from `./keyHolders` (`describe('collectionFolders')`, `:86`, stays); `assignment.test.ts:4` drops it; no other caller of `keyHolderFiles`, `corpusUnder`, or `deletePlan`'s fourth argument (`git grep` below).
+- [ ] `Core/Properties/deleteProperty.ts`: `deletePlan(root, propertyId, key)` reads `governedReach(root, queryKeyHolders(key))`; `propertyHolders` drops `collectionFolders`, which `deleteInner` keeps (snapshot, `stripAndRemove`) as `collectionFolders(root, await liveTreeOf(root))`, both imported from `./governedSweep`; `deleteInner`'s comment drops "pre-cache dormant values may sit on any page", since its folders no longer feed the page strip.
+- [ ] `Core/Properties/removeProperty.ts`: `keyedHolders(await governedReach(root, queryKeyHolders(key), collectionFolder), key)`, `governedReach` imported from `./governedSweep`.
+- [ ] `Core/Properties/optionOps.ts:197` and `Core/Properties/registryProperty.ts:112`: `governedReach(root, queryKeyHolders(…))`, imported from `./governedSweep`; `bothKeyHolders` drops its `collectionFolders` call; both files drop the `collectionFolders` and `keyHolderFiles` imports.
+- [ ] `Core/Properties/replaySchemaCascade.ts`: `collectionFolders(root, await liveTreeOf(root))`, imported from `./governedSweep`; `deletePlan` takes no `folders`.
+- [ ] Sibling sweep: `Core/Properties/governedWorld.test.ts` drops `collectionFolders` from its import (`:6`) and its `describe('collectionFolders')` (`:86`), which pinned the tree read `collectionFolders` no longer makes; `assignment.test.ts:4` drops it; no other caller of `keyHolderFiles`, `corpusUnder`, or `deletePlan`'s fourth argument (`git grep` below).
 
 **AFTER**
 
 ```Core/Properties/keyHolders.ts diff
 @@ header @@
 -// Intersected with the sweep's own scope folders: the index answers over the whole nexus, so an unintersected query would strip keys from pages the sweeps were meant to leave alone.
-+// Governed reach: a property key means something only where a schema governs it, so a property sweep opens its candidates inside a Collection or an Archive, never a loose file the index or the corpus also names.
++// Key holders: the files holding a property's key, confirmed from disk, and the values they hold filed by ID for a strip to record.
 @@ imports @@
  import { queryKeyHolders } from '../Index/contentIndex'
 -import { corpusUnder, nexusCorpus } from '../Index/indexSeed'
-+import { nexusCorpus } from '../Index/indexSeed'
  import { readJsonObject, readTextOrNull } from '../Files/atomicWrite'
- import { splitFrontmatter } from '../Files/pageFile'
- import { ID_KEY } from '../Nexus/identityMark'
- import { asString } from '../Nexus/coerce'
-+import { liveTreeOf } from '../Nexus/liveTree'
-+import { archiveReach, damagedFolders } from '../Nexus/treePatch'
-+import { join, relative } from '../Paths/posix'
- import { isBlankRaw } from './propertyValue'
+ …
  import { spaceSidecars } from '../Contexts/spaceSidecar'
-@@ keyHolderFiles → collectionFolders, governedReach @@
++import { governedReach } from './governedSweep'
++import { isArchived } from '../Paths/nexusPaths'
++import { relative } from '../Paths/posix'
+@@ keyHolderFiles @@
 -export async function keyHolderFiles(
 -  root: string,
 -  key: string,
@@ -4064,38 +4086,69 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 -): Promise<string[]> {
 -  return corpusUnder(root, queryKeyHolders(key) ?? (await nexusCorpus(root)), folders)
 -}
-+export async function collectionFolders(root: string): Promise<string[]> {
-+  const tree = await liveTreeOf(root)
-+  const damaged = damagedFolders(tree.unreadable).filter((u) => u.kind === 'collection')
-+  return [...tree.collections, ...damaged].map((c) => join(root, c.path))
-+}
+-
+@@ confirmedKeyHolders @@
+-// Both loops answer from disk: the index holds a page as its last settled event read it, which an outside edit not yet settled can have changed, and the Spaces come from the folder enumeration the sweeps write through, which also finds those under a Context folder a rename cut short has moved ahead of the registry.
+-export async function confirmedKeyHolders(
+-  root: string,
+-  key: string,
+-  folders: string[],
+-): Promise<string[]> {
++// A confirmation names only what's outside the Archive. Both loops answer from disk: the index holds a page as its last settled event read it, which an outside edit not yet settled can have changed, and the Spaces come from the folder enumeration the sweeps write through, which also finds those under a Context folder a rename cut short has moved ahead of the registry.
++export async function confirmedKeyHolders(root: string, key: string): Promise<string[]> {
+   const holders: string[] = []
+   const indexed = queryKeyHolders(key)
+-  for (const file of corpusUnder(root, indexed ?? (await nexusCorpus(root)), folders)) {
++  for (const file of await governedReach(root, indexed)) {
++    if (isArchived(relative(root, file))) continue
+     const content = await readTextOrNull(file)
+     // An unreadable file holds the key when the index last read it holding it.
+     if (content === null ? indexed !== null : Object.hasOwn(splitFrontmatter(content), key))
+```
+
+```Core/Properties/governedSweep.ts diff
+@@ imports @@
+-import { isMarkdownFile, join } from '../Paths/posix'
++import { nexusCorpus } from '../Index/indexSeed'
++import { liveTreeOf } from '../Nexus/liveTree'
++import { archiveReach, damagedFolders } from '../Nexus/treePatch'
++import type { NexusTree } from '../Nexus/tree'
++import { isMarkdownFile, join, relative } from '../Paths/posix'
+@@ collectionFolders and governedReach, after SweepPlan @@
+ export type SweepPlan = ({ raw: Rewrite } | { text: RewriteText }) & { sidecars?: Rewrite }
+ 
++export const collectionFolders = (root: string, tree: NexusTree): string[] =>
++  [
++    ...tree.collections,
++    ...damagedFolders(tree.unreadable).filter((u) => u.kind === 'collection'),
++  ].map((c) => join(root, c.path))
 +
++/** A property key means something only where a schema governs it, so a property sweep opens its candidates inside a Collection or an Archive, never a loose file the index or the corpus also names. */
 +export async function governedReach(
 +  root: string,
 +  candidates: string[] | null,
 +  only?: string,
 +): Promise<string[]> {
-+  const archive = archiveReach(await liveTreeOf(root), only && relative(root, only))
++  const tree = await liveTreeOf(root)
++  const archive = archiveReach(tree, only && relative(root, only))
 +  const folders = [
-+    ...(only === undefined ? await collectionFolders(root) : [only]),
++    ...(only === undefined ? collectionFolders(root, tree) : [only]),
 +    ...(archive === null ? [] : [join(root, archive)]),
 +  ]
 +  return (candidates ?? (await nexusCorpus(root)))
 +    .map((rel) => join(root, rel))
 +    .filter((abs) => folders.some((folder) => abs.startsWith(`${folder}/`)))
 +}
-@@ confirmedKeyHolders @@
--export async function confirmedKeyHolders(
--  root: string,
--  key: string,
--  folders: string[],
--): Promise<string[]> {
-+export async function confirmedKeyHolders(root: string, key: string): Promise<string[]> {
-   const holders: string[] = []
-   const indexed = queryKeyHolders(key)
--  for (const file of corpusUnder(root, indexed ?? (await nexusCorpus(root)), folders)) {
-+  for (const file of await governedReach(root, indexed)) {
-     const content = await readTextOrNull(file)
++
+```
+
+```Core/Paths/nexusPaths.ts diff
+@@ isArchived, after archivedCollectionIdOf @@
+ export const archivedCollectionIdOf = (rel: string): string | null =>
+   archiveSegs(rel.split('/'))?.[0] ?? null
+ 
++export const isArchived = (rel: string): boolean => archivedCollectionIdOf(rel) !== null
++
 ```
 
 ```Core/Index/indexSeed.ts diff
@@ -4128,15 +4181,29 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 +import { assignedIds } from './assignment'
 @@
 -import { type KeyedHolders, keyedHolders, keyHolderFiles } from './keyHolders'
-+import { collectionFolders, governedReach, type KeyedHolders, keyedHolders } from './keyHolders'
++import { type KeyedHolders, keyedHolders } from './keyHolders'
 +import { queryKeyHolders } from '../Index/contentIndex'
++import { liveTreeOf } from '../Nexus/liveTree'
+@@
+-import { type Rewrite, sweepCount, sweepGovernedRoots, type SweepPlan } from './governedSweep'
++import {
++  collectionFolders,
++  governedReach,
++  type Rewrite,
++  sweepCount,
++  sweepGovernedRoots,
++  type SweepPlan,
++} from './governedSweep'
 @@ propertyHolders @@
 -  const { held, plan } = await deletePlan(root, propertyId, def.key, await collectionFolders(root))
 +  const { held, plan } = await deletePlan(root, propertyId, def.key)
    return ok(await sweepCount(root, held.strip, plan))
 @@ deleteInner @@
-   const folders = await collectionFolders(root)
+-  // EVERY collection folder, not just current assigners — a Remove-cache block lives on a collection sidecar that no longer assigns the id, and pre-cache dormant values may sit on any page.
+-  const folders = await collectionFolders(root)
 -  const planned = await deletePlan(root, propertyId, key, folders)
++  // EVERY collection folder, not just current assigners — a Remove-cache block lives on a collection sidecar that no longer assigns the id.
++  const folders = collectionFolders(root, await liveTreeOf(root))
 +  const planned = await deletePlan(root, propertyId, key)
    const bundle = await snapshot(root, propertyId, def, folders, planned.held)
 @@ deletePlan @@
@@ -4154,8 +4221,11 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 ```Core/Properties/removeProperty.ts diff
 @@ imports @@
 -import { keyedHolders, keyHolderFiles } from './keyHolders'
-+import { governedReach, keyedHolders } from './keyHolders'
++import { keyedHolders } from './keyHolders'
 +import { queryKeyHolders } from '../Index/contentIndex'
+@@
+-import { sweepGovernedRoots } from './governedSweep'
++import { governedReach, sweepGovernedRoots } from './governedSweep'
 @@ removeInner @@
    const { values, strip } = await keyedHolders(
 -    await keyHolderFiles(root, key, [collectionFolder]),
@@ -4168,8 +4238,15 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 @@ imports @@
 -import { collectionFolders } from './assignment'
 -import { keyHolderFiles } from './keyHolders'
-+import { governedReach } from './keyHolders'
+-import { sweepCount, sweepGovernedRoots, type SweepPlan, unsweptLine } from './governedSweep'
 +import { queryKeyHolders } from '../Index/contentIndex'
++import {
++  governedReach,
++  sweepCount,
++  sweepGovernedRoots,
++  type SweepPlan,
++  unsweptLine,
++} from './governedSweep'
 @@ valueEditPlan @@
 -  const files = await keyHolderFiles(root, def.key, await collectionFolders(root))
 +  const files = await governedReach(root, queryKeyHolders(def.key))
@@ -4180,8 +4257,10 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 @@ imports @@
 -import { collectionFolders } from './assignment'
 -import { confirmedKeyHolders, keyHolderFiles } from './keyHolders'
-+import { confirmedKeyHolders, governedReach } from './keyHolders'
+-import { sweepCount, sweepGovernedRoots, type SweepPlan } from './governedSweep'
++import { confirmedKeyHolders } from './keyHolders'
 +import { queryKeyHolders } from '../Index/contentIndex'
++import { governedReach, sweepCount, sweepGovernedRoots, type SweepPlan } from './governedSweep'
 @@ renamePlan @@
    // Queried by the OLD key: a page holding only the new one needs no rewrite, and one holding both holds the old one too.
 -  const files = await keyHolderFiles(root, from, await collectionFolders(root))
@@ -4200,9 +4279,11 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 ```Core/Properties/replaySchemaCascade.ts diff
 @@ imports @@
 -import { collectionFolders } from './assignment'
-+import { collectionFolders } from './keyHolders'
++import { collectionFolders } from './governedSweep'
++import { liveTreeOf } from '../Nexus/liveTree'
 @@ the delete arm @@
-       const folders = await collectionFolders(root)
+-      const folders = await collectionFolders(root)
++      const folders = collectionFolders(root, await liveTreeOf(root))
        const { skipped, hosts, removed } = await stripAndRemove(
          root,
          journal.id,
@@ -4216,46 +4297,46 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 
 - [ ] The listed tests pass; `keyHolders.test.ts`' "a property rename reaches the holders of a Collection whose sidecar doesn't parse" and "a corpus-wide governed sweep cannot reach an excluded folder" pass unchanged.
 - [ ] `git grep -n "keyHolderFiles\|corpusUnder" -- Core` finds nothing.
-- [ ] `git grep -n "collectionFolders" -- Core` finds `keyHolders.ts`, `deleteProperty.ts` (`deleteInner`), `replaySchemaCascade.ts`, and their tests.
+- [ ] `git grep -n "collectionFolders" -- Core` finds `governedSweep.ts`, `deleteProperty.ts` (`deleteInner`), `replaySchemaCascade.ts`, and `keyHolders.test.ts`; `git grep -n "isArchived" -- Core` finds `nexusPaths.ts` and `keyHolders.ts`.
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
-**Lines:** −1 (+45 / −46), view-delta's Actionable rule; moved: `collectionFolders` (5). `keyHolders.ts` +26 / −14, `assignment.ts` −7, `indexSeed.ts` −6, `deleteProperty.ts` +6 / −6, `registryProperty.ts` +5 / −6, `optionOps.ts` +3 / −3, `removeProperty.ts` +3 / −2, `replaySchemaCascade.ts` +2 / −2. Comments ±0. Tests about +70, one moved.
+**Lines:** +20 (+74 / −54), view-delta's Actionable rule; moved: `collectionFolders` (5). `governedSweep.ts` +27 / −1, `deleteProperty.ts` +16 / −8, `keyHolders.ts` +6 / −15, `optionOps.ts` +9 / −4, `assignment.ts` −7, `indexSeed.ts` −6, `registryProperty.ts` +6 / −7, `removeProperty.ts` +4 / −3, `replaySchemaCascade.ts` +4 / −3, `nexusPaths.ts` +2. Comments +1, three rewritten. Tests about +95, one moved, one removed.
 
 #### Task 3-3
 
-**TASK:** Replace `recordById` and every tree-only frozen world with one projection, `nexusPages(root, tree) → { byId, archived }`, whose one twin rule nulls an id two files claim, so no strip files a value under it and no refill writes it; a Link value naming an archived page then holds at every frozen world. Move the delete's Link strip onto `governedReach`, holding out a linker with no ID or a twin (C-2, C-3, D-1).
+**TASK:** Replace `recordById` and every tree-only frozen world with one projection, `nexusPages(root, tree) → { byId, archived }`, whose one twin rule nulls an id two files claim, read through one predicate, `addressable`, so no strip files a value under it and no refill writes it, and a restore names the value it couldn't put back; a Link value naming an archived page then holds at every frozen world. Move the delete's Link strip onto `governedReach`, holding out a linker with no ID or a twin (C-2, C-3, D-1).
 
 **NOW:**
 - `recordById` (`Core/Nexus/record.ts:48-56`) answers the first record per id; the reassign refill's member filter is `path.startsWith(under)` (`assignment.ts:81-86`), and `placeRecord` (async since 2-5) calls `resolveRecord` once per restore, `homeResolvesFor` once per row.
 - `frozenWorld` (`Core/Properties/propertyValue.ts:187-197`) is always handed the tree's index, including at `spend.ts:290`, whose `after` (`:230`) is `settledIndex`, so a Link value naming an archived page reads as gone and is dropped.
-- Twin rules: `recordById` first in tree order; `writablePathsOf` none (`heldPages.ts:8-13`, pinned by `heldPages.test.ts:54`), which stays; `keyedHolders` first claimant in path order (`keyHolders.ts:61-66`); `deleteCascade` none, withheld files exempt (`cascade.ts:107-121`, pinned by `deleteReach.test.ts:125`). `sweepRootsById`'s Space arm (`governedSweep.ts:158-166`) writes every sidecar `values` names, twins included.
+- Twin rules: `recordById` first in tree order; `writablePathsOf` none (`heldPages.ts:8-13`, pinned by `heldPages.test.ts:54`), over pages alone; `keyedHolders` first claimant in path order (`keyHolders.ts:61-66`); `deleteCascade` none, withheld files exempt (`cascade.ts:107-121`, pinned by `deleteReach.test.ts:125`). `sweepRootsById`'s Space arm (`governedSweep.ts:158-166`) writes every sidecar `values` names, twins included. The restores name what didn't take its value back by `roots[id].title` (`spend.ts`'s answer, `restoreProperty.ts`'s `unrestored`).
 - `deleteCascade` (`cascade.ts:73-146`) strips tree-held files plus those under a withheld folder (`:101-106`): an ID-less linker inside a Collection is never reached (`cascade.test.ts:714`, `deleteReach.test.ts:113`), one under a withheld folder is stripped unrecorded (`:127-128`), and the twin branch (`:110-115`) needs `id !== undefined`. With no held tree it returns at `:86` (`defs` come from its registry), so the `:81` comment is false.
 - `readIndexedStats(under)` (`Core/Index/contentIndex.ts:92-94`) answers `Map<path, { mtimeMs, size, id? }>` before the seed too, and null only with no store.
 
 **CHANGE**
 
 - [ ] Write and watch fail:
-  - `Core/Nexus/heldPages.test.ts`: fixture Collections and Set gain ids `cN`, `cI`, `sD`; the `./liveTree` mock (`:7-9`) spreads `await importOriginal()` under `heldTreeOf` (`nexusPages` pulls in `Settings/settings`, `Files/walk`, `Bundles/bundle`). New `describe('nexusPages — the tree and the Archive by id')`, temp root, memory stores, archived `.nexus/archive/cN/Notes/2026-10-20T12-00-00-000Z__Old.md.archived/Old.md` (id `pO`) via `indexWrittenPage`: "holds every entity the tree holds and every archived page, the archived one at the path a writer opens" (`byId.get('pO')` = `{ id: 'pO', kind: 'page', title: 'Old', path: <the archive path> }`, `byId.get('cN')` = the Collection's record); "answers each archived page at the path it left, where a path key naming its chain resolves" (`archived` = `[{ id: 'pO', title: 'Old', path: 'Notes/Old.md' }]`; `buildPageIndex([...pagesOf(t), ...archived]).resolve('Notes/Old').page?.id` = `'pO'`); "marks an id two files claim null, within the tree, within the Archive, or across them" (`:54`'s copy of `pA`; an archived `pA`); "reads the Archive off disk where no index store opened" (`NO_STORES`: same `byId`, `archived`). "an id two files claim answers no path to a writer" (`:54`) stays.
-  - `Core/Properties/keyHolders.test.ts` `describe('keyedHolders')`: "files no value for a page holding another casing of the key" (`:155`) passes `new Map()`; new "keeps both claimants of an id the map marks null out of the strip" (`keyedHolders([a, copy], 'Stage', new Map([[id, null]]))` → `{ values: {}, strip: [], partial: true }`) and "files and strips an archived holder by its id".
+  - `Core/Nexus/heldPages.test.ts`: fixture Collections and Set gain ids `cN`, `cI`, `sD`, and the tree a `config` (`archiveIds` reads `scopeOf(tree.config)`); the `./liveTree` mock (`:7-9`) spreads `await importOriginal()` under `heldTreeOf` (`nexusPages` pulls in `Settings/settings`, `Files/walk`, `Bundles/bundle`). New `describe('nexusPages — the tree and the Archive by id')`, temp root, memory stores, archived `.nexus/archive/cN/Notes/2026-10-20T12-00-00-000Z__Old.md.archived/Old.md` (id `PO`, a ULID) via `indexWrittenPage`: "holds every entity the tree holds and every archived page, the archived one at the path a writer opens" (`byId.get(PO)` = `{ id: PO, kind: 'page', title: 'Old', path: <the archive path> }`, `byId.get('cN')` and `byId.get('sD')` the containers' records); "answers each archived page at the path it left, where a path key naming its chain resolves" (`archived` = `[{ id: PO, title: 'Old', path: 'Notes/Old.md' }]`; `buildPageIndex([...pagesOf(t), ...archived]).resolve('Notes/Old').page?.id` = `PO`); "marks an id two files claim null, within the tree, within the Archive, or across them" (a copy of `pA` in the tree, a second archived `PO`, and `TWIN` both archived and in the tree; `pD` unaffected); "reads the Archive off disk where no index store opened" (`NO_STORES`: same `byId`, `archived`). "an id two files claim answers no path to a writer" (`:54`) stays.
+  - `Core/Properties/keyHolders.test.ts` `describe('keyedHolders')`: "files no value for a page holding another casing of the key" (`:155`) passes `new Map()`; new "keeps both claimants of an id the map marks null out of the strip" (`keyedHolders([a, copy], 'Stage', new Map([[id, null]]))` → `{ values: {}, strip: [], partial: true }`) and "files and strips an archived holder by its id" (`nexusPages`' `byId`).
   - `Core/Properties/removeProperty.test.ts`: "a copy sharing an id keeps its own value, and re-assigning fills the one Remove stripped" (`:143`) → "a page and its copy sharing one id both keep their values through Remove, so re-assigning has nothing to fill": both keep `['active']` and `['done']` through `removeProperty` and `assignProperty`; no cache block.
   - `Core/Properties/deleteProperty.test.ts`: "counts what the delete strips, writing nothing" (`:174`) → "counts what the delete strips, holding out an ID-less page and both claimants of one id, and writes nothing", expecting `ok(2)` (the two Space sidecars), not 3.
-  - `Core/Nexus/cascade.test.ts` `describe('deleteCascade')`: new "strips an archived linker’s Link value naming the page and records it under its id" and "still strips a linker inside a Collection whose sidecar doesn’t parse"; "an ID-less linker isn’t held, isn’t stamped by the sweep, and keeps its bytes" (`:714`) → "an ID-less linker keeps its bytes and its value, counted among the links left in place", plus `expect(r.cascade.warning).toBe(unsweptLine(1, 'links in '))`. Unchanged: "never reaches a loose file outside every Collection" (`:586`), "reaches its linkers through the corpus when there is no index" (`:619`, 4 files), `Core/Trash/deleteReach.test.ts:113` and `:125`.
+  - `Core/Nexus/cascade.test.ts` `describe('deleteCascade')`: new "strips an archived linker’s Link value naming the page and records it under its id" and "still strips a linker inside a Collection whose sidecar doesn’t parse"; "an ID-less linker isn’t held, isn’t stamped by the sweep, and keeps its bytes" (`:714`) → "an ID-less linker keeps its bytes and its value, counted among the links left in place", plus `expect(r.cascade.warning).toBe(unsweptLine(1, 'links in '))`; "a linker whose frontmatter can’t round-trip is listed unparsed, never swept, and left as it is" (`:785`) → "… listed unparsed, refused by the sweep, and left as it is", asserting the sweep's `refused` is `[broken]`, since `governedReach` hands an unparsed page inside a Collection to the sweep, which refuses it. Unchanged: "never reaches a loose file outside every Collection" (`:586`), "reaches its linkers through the corpus when there is no index" (`:619`, 4 files), `Core/Trash/deleteReach.test.ts:113` and `:125`.
   - `Core/Properties/assignment.test.ts` `describe('a re-assign puts a cached value back')`: new "refills an archived member of the Collection where the Archive holds it" and "keeps a cached Link value naming an archived page" (D-1).
-  - `Core/Trash/restoreProperty.test.ts`: new "a value comes back on an archived page, written where the Archive holds it" and "a Link value naming an archived page comes back" (D-1); "a Link value naming a page gone since comes back nowhere" (`:344`) stays.
-  - `Core/Bundles/placement.test.ts` (Phase 2-3's move of `spend.test.ts:734-916`): its `resolveRecord` cases and Phase 2-4's `describe('placeRecord')` gain `byIdOf = async (tree) => (await nexusPages(root, tree)).byId` over Phase 2-5's temp root, no store installed, so it scans that root's Archive; `resolveRecord` cases turn async and pass `await byIdOf(tree)`. New "an id the Archive holds refuses as live" (`PAGE_A` at `.nexus/archive/c1/Notes/2026-10-20T12-00-00-000Z__A.md.archived/A.md`). `Core/Trash/spend.test.ts`, new: "a restore keeps the returning page’s Link value naming an archived page" (HEAD drops it at `restoreScrub.ts:154`) and "a restore puts a stripped Link value back into the archived page that held it".
+  - `Core/Trash/restoreProperty.test.ts`: new "a value comes back on an archived page, written where the Archive holds it" and "a Link value naming an archived page comes back" (D-1), and "a value whose page shares its id with a copy goes back to neither, and is named" (`unrestored: ['A copy']`, neither file holding `Priority`); "a Link value naming a page gone since comes back nowhere" (`:344`) stays.
+  - `Core/Bundles/placement.test.ts` (Phase 2-3's move of `spend.test.ts:734-916`): its `resolveRecord` cases and Phase 2-4's `describe('placeRecord')` gain `byIdOf = async (tree) => (await nexusPages(root, tree)).byId` over Phase 2-5's temp root, hoisted from `describe('placeRecord')` to the file's scope, with no store installed, so it scans that root's Archive, and `treeOf` gains a `config`; `resolveRecord` cases turn async and pass `await byIdOf(tree)`. New "an id the Archive holds refuses as live" (`PAGE_A` at `.nexus/archive/c1/Notes/2026-10-20T12-00-00-000Z__A.md.archived/A.md`). `Core/Trash/spend.test.ts`, new: "a restore keeps the returning page’s Link value naming an archived page" (HEAD drops it at `restoreScrub.ts:154`), "a restore puts a stripped Link value back into the archived page that held it", "a restore leaves a stripped Link value out of both pages claiming its holder’s id, and names it" (`unrestored: ['Gamma']`), and "a tag neither of two pages claiming one id takes back is named, and the record stays".
   - `Core/Bundles/rows.test.ts` (Phase 2's move of `trashRows.test.ts`): `rows()` passes `(await nexusPages(root, tree)).byId`; direct `bundleRowOf` calls (HEAD `:157`, `:194`, Phase 2-3's archive-store row) pass `new Map()`; `Core/Trash/trashRecovery.test.ts:34`'s `rows` likewise.
-- [ ] `Core/Nexus/heldPages.ts`: add `NexusPages` and `nexusPages(root, tree)`; the Archive's half reads `readIndexedStats(ARCHIVE_DIR_REL)` or, with no store, its files, with origin paths from `originPathOf`; rewrite header `:1`.
+- [ ] `Core/Nexus/heldPages.ts`: `entitiesById`, memoized on the tree, holds every entity under the one twin rule (`claim`), and `writablePathsOf` reads it, so the rule spans kinds; add `NexusPages`, `nexusPages(root, tree)`, which copies `entitiesById` and claims the Archive's pages into it, `addressable(byId, id)`, the one twin predicate (an ID present and not null), and `shownTitle(tree, byId, id)`, the title the window shows (the first-listed page's for a twin). The Archive's half reads `readIndexedStats(ARCHIVE_DIR_REL)` or, with no store, its files under `scopeOf(tree.config)`, with origin paths from `originPathOf`; rewrite header `:1`.
 - [ ] `Core/Nexus/record.ts`: delete `recordById` (`:48-56`).
 - [ ] `Core/Bundles/placement.ts`: `resolveRecord(record, baseName, tree, byId)` reads `byId` for `id-live` and `cannot-hold`; `placeRecord` takes `byId` after `tree` and passes it on.
 - [ ] `Core/Bundles/rows.ts`: `homeResolvesFor`, `bundleRowOf`, and `bundleRows` take `byId` after `tree` (`bundleRowOf` already binds `live` to its crumbs); `Core/Bundles/handlers.ts`' `bundles:list` computes the projection once per listing.
-- [ ] `Core/Trash/spend.ts`: compute the projection once beside the restore's tree, for `placeRecord`, the returning world, the refill roots, and the Link refill's world (the settled tree's pages plus the Archive's, captured where `after` is).
-- [ ] `Core/Trash/restoreProperty.ts`, `Core/Properties/assignment.ts`: refill roots from `byId`, frozen world `buildPageIndex([...pagesOf(tree), ...archived])`; the reassign's member filter reads `owningCollection(tree, r.path)` (Task 3-1's arm).
-- [ ] `Core/Properties/governedSweep.ts`: `sweepRootsById` takes `NexusPages['byId']` and leaves a null id alone in both arms; its doc (`:150`) names the projection.
-- [ ] `Core/Properties/keyHolders.ts`: `keyedHolders(files, key, byId)` drops `seen` and keeps out a holder with no ID or a null one; its doc (`:47`) states the rule. `deletePlan` and `removeInner` pass the projection's `byId`.
-- [ ] `Core/Nexus/cascade.ts`: `deleteCascade`'s files are `governedReach(root, queryMentions([...gone]))` outside the delete; it holds out, and counts with the skips, `id === undefined || byId.get(id) === null`; drop the `withheldIn`, `liveIdIndex`, and `livePathOf` imports; spell out the `!tree` bail; rewrite doc `:72` and comment `:81`; `:101` goes with its filter. Behavior: a root folder withheld for a reason other than `'unparsed'` stops being stripped, like every property sweep; an archived linker is stripped and recorded under its id, so the Trash restore refills it.
+- [ ] `Core/Trash/spend.ts`: compute the projection once beside the restore's tree, for `placeRecord`, the returning world, the refill roots, and the Link refill's world (the settled tree's pages plus the Archive's, captured where `after` is). A stripped Link value whose holder is a twin is neither parked nor refilled and counts as unlinked, `reapply` counts a twin's tag as untaken, and the answer names both through `shownTitle`, so the record stays.
+- [ ] `Core/Trash/restoreProperty.ts`, `Core/Properties/assignment.ts`: refill roots from `byId`, frozen world `buildPageIndex([...pagesOf(tree), ...archived])`; the reassign's member filter reads `owningCollection(tree, r.path)` (Task 3-1's arm). The property restore keeps a twin's value among those it refills, which `refillValues` leaves alone, so `unrestored` names it through `shownTitle` and the record stays.
+- [ ] `Core/Properties/governedSweep.ts`: `sweepRootsById` takes `NexusPages['byId']` and leaves an id `addressable` refuses alone in both arms; its doc (`:150`) names the projection.
+- [ ] `Core/Properties/keyHolders.ts`: `keyedHolders(files, key, byId)` drops `seen` and keeps out a holder `addressable` refuses; its doc (`:47`) states the rule. `deletePlan` and `removeInner` pass the projection's `byId`.
+- [ ] `Core/Nexus/cascade.ts`: `deleteCascade`'s files are `governedReach(root, queryMentions([...gone]))` outside the delete; it holds out, and counts with the skips, a linker `addressable` refuses; drop the `withheldIn`, `liveIdIndex`, and `livePathOf` imports; one `if (!tree) return NO_STRIP` heads the delete, so `spaceArm` and every read below take a held tree; rewrite doc `:72` and comment `:81`; `:101` goes with its filter. Behavior: a root folder withheld for a reason other than `'unparsed'` stops being stripped, like every property sweep; an archived linker is stripped and recorded under its id, so the Trash restore refills it.
 - [ ] Stays tree-only: the delete's `after` (`cascade.ts:82`), discovery (`pageIndexOf(tree)`), the respell's `live` (`spend.ts:245`), `settledIndex`, and `livePathOf`, `liveIdIndex`, `liveIdOf`, and `idHeld` (`heldPages.ts:16-33`), which widened would pair an archive move as an ordinary move. Archived Set ids stay out of `byId` (no sidecar rows): a record whose parent Set is archived reads `parent-gone`, Phase 4's to route and carry. `dropPageMetadata`, sparing tree-held ids only, takes no guard.
-- [ ] Sibling sweep: every reader spells the type `NexusPages['byId']` (`placement.ts`, `rows.ts`, `governedSweep.ts`, `assignment.ts`, `spend.ts`, `keyHolders.ts`); `refillValues`' callers (`assignment.ts:96`, `restoreProperty.ts:70`, `spend.ts:298`) pass maps; `Core/Nexus/treeIndex.test.ts` drops `recordById` from its import (`:14`) and its two assertions in `describe('the record walk')` (`:26`, `:31`); no other reader.
+- [ ] Sibling sweep: every reader spells the type `NexusPages['byId']` (`placement.ts`, `rows.ts`, `governedSweep.ts`, `assignment.ts`, `spend.ts`, `keyHolders.ts`); `refillValues`' callers (`assignment.ts:96`, `restoreProperty.ts:70`, `spend.ts:298`) pass maps; `keyHolders.test.ts` reads `nexusPages` for its archived holder; `Core/Nexus/treeIndex.test.ts` drops `recordById` from its import (`:14`) and its two assertions in `describe('the record walk')` (`:26`, `:31`); no other reader.
 
 **AFTER**
 
@@ -4269,16 +4350,39 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 -import { pagesByPathOf, pagesOf } from './record'
 -import { entityMemo } from './tree'
 +import { join, relative, titleFromPath } from '../Paths/posix'
-+import { type EntityRecord, pagesByPathOf, pagesOf, recordsOf } from './record'
++import { type EntityRecord, pagesByIdOf, pagesByPathOf, pagesOf, recordsOf } from './record'
 +import { entityMemo, type NexusTree } from './tree'
 +import { readIndexedStats } from '../Index/contentIndex'
 +import { ARCHIVE_DIR_REL, archivedCollectionIdOf } from '../Paths/nexusPaths'
 +import { corpusFilesUnder } from '../Files/walk'
 +import { stampedIdOf } from '../Files/pageFile'
-+import { readWatchScope } from '../Settings/settings'
++import { scopeOf } from '../Settings/codec'
 +import { originPathOf } from '../Bundles/bundle'
 +import { type ConnPage, connPage } from '../Connections/pageIndex'
++
++type ById = Map<string, EntityRecord | null>
++
++const claim = (byId: ById, r: EntityRecord): void => {
++  byId.set(r.id, byId.has(r.id) ? null : r)
++}
+@@ writablePathsOf → entitiesById, and writablePathsOf over it @@
+ /** Null marks an id two files claim: the window shows the first listed (`record.ts`'s `pagesByIdOf`); a file writer refuses it. */
+-const writablePathsOf = entityMemo([], (tree): ReadonlyMap<string, string | null> => {
+-  const byId = new Map<string, string | null>()
+-  for (const p of pagesOf(tree)) byId.set(p.id, byId.has(p.id) ? null : p.path)
++const entitiesById = entityMemo([recordsOf], (tree): ReadonlyMap<string, EntityRecord | null> => {
++  const byId: ById = new Map()
++  for (const r of recordsOf(tree)) claim(byId, r)
+   return byId
+ })
+ 
++const writablePathsOf = entityMemo([recordsOf], (tree): ReadonlyMap<string, string | null> => {
++  const byId = entitiesById(tree)
++  return new Map(pagesOf(tree).map((p) => [p.id, byId.get(p.id)?.path ?? null]))
++})
++
 @@ after idHeld @@
+ }
 +
 +/** `byId` holds every entity the tree holds and every page the Archive holds, an archived one at the path a writer opens, and null where two files claim one id, so neither is addressed by it; `archived` holds the Archive's pages at the paths they left, where a link written before they left still names them. */
 +export interface NexusPages {
@@ -4286,29 +4390,35 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 +  archived: readonly ConnPage[]
 +}
 +
++/** Whether `byId` addresses the one file carrying `id`: not where the file carries no ID, nor where two files claim it, so no strip files a value under it and no refill writes it. */
++export const addressable = (byId: NexusPages['byId'], id: string | undefined): id is string =>
++  id !== undefined && byId.get(id) !== null
++
++/** The title the window shows for `id`: its one holder's, or the first-listed page's where two files claim it. */
++export const shownTitle = (
++  tree: NexusTree,
++  byId: NexusPages['byId'],
++  id: string,
++): string | undefined => byId.get(id)?.title ?? pagesByIdOf(tree).get(id)?.title
++
 +export async function nexusPages(root: string, tree: NexusTree): Promise<NexusPages> {
-+  const rows: ReadonlyMap<string, { id?: string | null }> =
-+    readIndexedStats(ARCHIVE_DIR_REL) ?? (await archiveIds(root))
-+  const byId = new Map<string, EntityRecord | null>()
-+  const add = (r: EntityRecord): void => {
-+    byId.set(r.id, byId.has(r.id) ? null : r)
-+  }
-+  recordsOf(tree).forEach(add)
++  const rows = readIndexedStats(ARCHIVE_DIR_REL) ?? (await archiveIds(root, tree))
++  const byId: ById = new Map(entitiesById(tree))
 +  const archived: ConnPage[] = []
 +  for (const [path, { id }] of rows) {
 +    const owner = archivedCollectionIdOf(path)
 +    if (!id || owner === null) continue
-+    add({ id, kind: 'page', title: titleFromPath(path), path })
++    claim(byId, { id, kind: 'page', title: titleFromPath(path), path })
 +    const left = originPathOf(root, { kind: 'archive', id: owner }, join(root, path))
 +    archived.push(connPage(id, left))
 +  }
 +  return { byId, archived }
 +}
 +
-+async function archiveIds(root: string): Promise<Map<string, { id: string | null }>> {
-+  const rels = await corpusFilesUnder(root, join(root, ARCHIVE_DIR_REL), await readWatchScope(root))
++async function archiveIds(root: string, tree: NexusTree): Promise<Map<string, { id?: string }>> {
++  const rels = await corpusFilesUnder(root, join(root, ARCHIVE_DIR_REL), scopeOf(tree.config))
 +  const ids = await Promise.all(rels.map((rel) => stampedIdOf(join(root, rel))))
-+  return new Map(rels.map((rel, i) => [rel, { id: ids[i] }]))
++  return new Map(rels.map((rel, i) => [rel, { id: ids[i] ?? undefined }]))
 +}
 ```
 
@@ -4416,11 +4526,11 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 @@
 -import { type EntityRecord, pageIndexOf, pagesOf, recordById } from '../Nexus/record'
 +import { pageIndexOf, pagesOf } from '../Nexus/record'
-+import { type NexusPages, nexusPages } from '../Nexus/heldPages'
++import { type NexusPages, nexusPages, shownTitle } from '../Nexus/heldPages'
 @@ restoreArtifact — the tree and the placement (as Phase 2-5 left them) @@
    const tree = await liveTreeOf(root)
-+  const { byId: roots, archived } = await nexusPages(root, tree)
 -  const placed = await placeRecord(root, stored, destination, basename(artifactAbs), tree)
++  const { byId: roots, archived } = await nexusPages(root, tree)
 +  const placed = await placeRecord(root, stored, destination, basename(artifactAbs), tree, roots)
    if (!placed.ok) return placed
 @@ the world the returning pages are read against @@
@@ -4445,15 +4555,18 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 @@
        for (const id of Object.keys(all))
 -        if (!roots[id]) trashed.push({ page: id, property: def.id, value: all[id] })
-+        if (!roots.get(id)) trashed.push({ page: id, property: def.id, value: all[id] })
++        if (roots.get(id) === undefined)
++          trashed.push({ page: id, property: def.id, value: all[id] })
          else if (!taken.has(id)) unlinked.add(id)
 @@ the answer @@
    return ok({
 -    ...restored([...unspent, ...unlinked].map((id) => roots[id].title)),
-+    ...restored([...unspent, ...unlinked].flatMap((id) => roots.get(id)?.title ?? [])),
++    ...restored([...unspent, ...unlinked].flatMap((id) => shownTitle(tree, roots, id) ?? [])),
      ...(cascade ? { cascade } : {}),
      ...(landedAs ? { landedAs } : {}),
 @@ reapply @@
+-/** The ids of what's still here and didn't take its tag back; a root gone since has nothing to take it. */
++/** The ids of what's still here and didn't take its tag back, one of two files claiming its id among them; a root gone since has nothing to take it. */
  async function reapply(
    root: string,
 -  roots: Record<string, EntityRecord>,
@@ -4463,7 +4576,7 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
  ): Promise<string[]> {
 @@
 -  return Object.keys(additions).filter((id) => roots[id] && !taken.has(id))
-+  return Object.keys(additions).filter((id) => roots.get(id) && !taken.has(id))
++  return Object.keys(additions).filter((id) => roots.get(id) !== undefined && !taken.has(id))
  }
 ```
 
@@ -4471,7 +4584,7 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 @@ imports @@
 -import { pageIndexOf, recordById } from '../Nexus/record'
 +import { pagesOf } from '../Nexus/record'
-+import { nexusPages } from '../Nexus/heldPages'
++import { nexusPages, shownTitle } from '../Nexus/heldPages'
 +import { buildPageIndex } from '../Connections/pageIndex'
 @@ restoreInner @@
    const tree = await liveTreeOf(root)
@@ -4483,15 +4596,15 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
    const values = Object.fromEntries(
      Object.entries(record.values).filter(([id, raw]) => {
 -      if ((roots[id]?.kind !== 'page' && roots[id]?.kind !== 'space') || isBlankRaw(raw))
--        return false
-+      const kind = roots.get(id)?.kind
-+      if ((kind !== 'page' && kind !== 'space') || isBlankRaw(raw)) return false
++      const at = roots.get(id)
++      if ((at !== null && at?.kind !== 'page' && at?.kind !== 'space') || isBlankRaw(raw))
+         return false
        const entry = def.type === 'link' ? gonePageEntry(raw, frozen) : null
 @@
    return ok({
 -    unrestored: Object.keys(values).flatMap((id) => (taken.has(id) ? [] : roots[id].title)),
 +    unrestored: Object.keys(values).flatMap((id) =>
-+      taken.has(id) ? [] : (roots.get(id)?.title ?? []),
++      taken.has(id) ? [] : (shownTitle(tree, roots, id) ?? []),
 +    ),
      dropped,
 ```
@@ -4523,7 +4636,9 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 +  const members = new Map(
 +    Object.keys(cached).flatMap((id) => {
 +      const r = byId.get(id)
-+      return r?.kind === 'page' && owningCollection(tree, r.path)?.path === rel ? [[id, r] as const] : []
++      return r?.kind === 'page' && owningCollection(tree, r.path)?.path === rel
++        ? [[id, r] as const]
++        : []
 +    }),
 +  )
 +  const frozen = frozenWorld(buildPageIndex([...pagesOf(tree), ...archived]))
@@ -4537,7 +4652,7 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 ```Core/Properties/governedSweep.ts diff
 @@ imports @@
 -import type { EntityRecord } from '../Nexus/record'
-+import type { NexusPages } from '../Nexus/heldPages'
++import { addressable, type NexusPages } from '../Nexus/heldPages'
 @@ sweepRootsById @@
 -/** Rewrites each page or Space whose ID is in `values` — found where `roots` places it, matched by the ID it carries — and answers the IDs whose root now holds what its rewrite asked for; a null rewrite leaves its root as it is. */
 +/** Rewrites each page or Space whose ID is in `values` — found where `roots`, the by-id projection, places it, matched by the ID it carries, and left alone where two files claim it — and answers the IDs whose root now holds what its rewrite asked for; a null rewrite leaves its root as it is. */
@@ -4549,7 +4664,7 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 @@
        const id = asString(raw[idKey])
 -      if (id === undefined || !Object.hasOwn(values, id)) return null
-+      if (id === undefined || !Object.hasOwn(values, id) || roots.get(id) === null) return null
++      if (!addressable(roots, id) || !Object.hasOwn(values, id)) return null
        const next = rewrite(raw, values[id])
 @@
    const ids = Object.keys(values)
@@ -4567,7 +4682,7 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 
 ```Core/Properties/keyHolders.ts diff
 @@ imports @@
-+import type { NexusPages } from '../Nexus/heldPages'
++import { addressable, type NexusPages } from '../Nexus/heldPages'
 @@ keyedHolders @@
 -/** The values of the pages holding `key`, filed by ID, the files a strip should reach, and whether the values miss a holder: a holder with no ID, or whose ID another already took, is kept out of the strip, and a file that can't be read is stripped once it reads. */
 -export async function keyedHolders(files: string[], key: string): Promise<KeyedHolders> {
@@ -4584,7 +4699,7 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 @@
      const id = asString(fields[ID_KEY])
 -    if (!id || seen.has(id)) {
-+    if (!id || byId.get(id) === null) {
++    if (!addressable(byId, id)) {
        kept.push(file)
        continue
      }
@@ -4594,8 +4709,9 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 
 ```Core/Properties/deleteProperty.ts diff
 @@ imports @@
+ import { queryKeyHolders } from '../Index/contentIndex'
 +import { nexusPages } from '../Nexus/heldPages'
-+import { liveTreeOf } from '../Nexus/liveTree'
+ import { liveTreeOf } from '../Nexus/liveTree'
 @@ deletePlan @@
  ): Promise<DeletePlan> {
 -  const held = await keyedHolders(await governedReach(root, queryKeyHolders(key)), key)
@@ -4606,6 +4722,7 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 
 ```Core/Properties/removeProperty.ts diff
 @@ imports @@
+ import { queryKeyHolders } from '../Index/contentIndex'
 +import { nexusPages } from '../Nexus/heldPages'
 +import { liveTreeOf } from '../Nexus/liveTree'
 @@ removeInner @@
@@ -4619,11 +4736,27 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 
 ```Core/Nexus/cascade.ts diff
 @@ imports @@
+ import {
+   type Rewrite,
+   type RewriteText,
++  governedReach,
+   governedRoot,
+   sweepGovernedRoots,
+@@
 -import { withheldIn } from './treePatch'
 @@
 -import { liveIdIndex, livePathOf } from './heldPages'
-+import { nexusPages } from './heldPages'
-+import { governedReach } from '../Properties/keyHolders'
++import { addressable, nexusPages } from './heldPages'
+@@ NO_STRIP, and spaceArm's held tree @@
++const NO_STRIP: DeleteCascade = { cascade: { pages: [], hosts: [] }, links: [] }
++
+ /** A sweep's Space sidecar arm, planned only when a Space the tree holds answers `rewrite`, since the arm reads every Space sidecar. */
+-const spaceArm = (tree: NexusTree | null, rewrite: Rewrite): { sidecars?: Rewrite } =>
+-  tree?.contexts.some((g) => g.spaces.some((s) => s.values && rewrite(s.values, '') !== null))
++const spaceArm = (tree: NexusTree, rewrite: Rewrite): { sidecars?: Rewrite } =>
++  tree.contexts.some((g) => g.spaces.some((s) => s.values && rewrite(s.values, '') !== null))
+     ? { sidecars: rewrite }
+     : {}
 @@ deleteCascade @@
 -/** A delete strips every Link property value naming a page it took, by any key that now resolves to nothing, from the pages and Spaces the tree holds outside it; a key a page outside still answers is left to that page, and bodies keep their links and read unresolved. Nothing at or under `abs` is swept, since it left with the delete. */
 +/** A delete strips every Link property value naming a page it took, by any key that now resolves to nothing, from the governed pages outside it, archived ones among them, and from every Space; a key a page the tree holds outside it still answers is left to that page, and bodies keep their links and read unresolved. A linker with no ID, or one of two files claiming one, keeps its value, since no restore could put it back. Nothing at or under `abs` is swept, since it left with the delete. */
@@ -4631,13 +4764,17 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 @@
    const tree = heldTreeOf(root)
 -  // The held tree may still list the deleted pages, since its patch can fall to a walk, so they're left out by path; with no tree, nothing answers and every key strips.
+-  const after = buildPageIndex(tree ? pagesOf(tree).filter((p) => !inside(p.path)) : [])
++  if (!tree) return NO_STRIP
 +  // The held tree may still list the deleted pages, since its patch can fall to a walk, so they're left out by path.
-   const after = buildPageIndex(tree ? pagesOf(tree).filter((p) => !inside(p.path)) : [])
-@@
-     const defs = byKey(linkDefsOf(tree?.config.registry ?? []))
++  const after = buildPageIndex(pagesOf(tree).filter((p) => !inside(p.path)))
+   const gone = new Set(paths.flatMap(pathKeys).filter((k) => after.resolve(k).status === 'phantom'))
+   try {
+-    const defs = byKey(linkDefsOf(tree?.config.registry ?? []))
 -    if (!defs.size || !gone.size) return { cascade: { pages: [], hosts: [] }, links: [] }
 -    const rels = queryMentions([...gone]) ?? (await nexusCorpus(root))
-+    if (!tree || !defs.size || !gone.size) return { cascade: { pages: [], hosts: [] }, links: [] }
++    const defs = byKey(linkDefsOf(tree.config.registry))
++    if (!defs.size || !gone.size) return NO_STRIP
      const goneEntry = (value: unknown): string | null =>
 @@ the strip's files and its held-out rule @@
 -    // Tree pages, and the pages beneath a folder the tree withholds: a loose file outside every Collection shows in no view and no restore could reach it; dropping this filter strips them too.
@@ -4662,7 +4799,7 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 -          !withheld(relative(root, file))
 -        ) {
 -          twins++
-+        if (named(raw).length && (id === undefined || byId.get(id) === null)) {
++        if (named(raw).length && !addressable(byId, id)) {
 +          heldOut++
            return null
          }
@@ -4679,12 +4816,12 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 
 - [ ] The listed tests pass; `heldPages.test.ts:54`, `deleteReach.test.ts:113` and `:125`, `cascade.test.ts:586`, and `restoreProperty.test.ts:344` pass unchanged.
 - [ ] `git grep -n "recordById" -- Core` finds nothing; `git grep -n "frozenWorld(pageIndexOf" -- Core` finds nothing; `git grep -n "withheldIn\|liveIdIndex\|livePathOf" -- Core/Nexus/cascade.ts` finds nothing.
-- [ ] `git grep -n "nexusPages(" -- Core` finds `heldPages.ts`, `Bundles/handlers.ts`, `spend.ts`, `restoreProperty.ts`, `assignment.ts`, `deleteProperty.ts`, `removeProperty.ts`, `cascade.ts`, their tests, `placement.test.ts`, `rows.test.ts`, and `trashRecovery.test.ts`: one projection per operation or listing, never on an event.
+- [ ] `git grep -n "nexusPages(" -- Core` finds `heldPages.ts`, `Bundles/handlers.ts`, `spend.ts`, `restoreProperty.ts`, `assignment.ts`, `deleteProperty.ts`, `removeProperty.ts`, `cascade.ts`, their tests, `keyHolders.test.ts`, `placement.test.ts`, `rows.test.ts`, and `trashRecovery.test.ts`: one projection per operation or listing, never on an event; `git grep -n "addressable(" -- Core ':!*.test.ts'` finds `heldPages.ts`, `governedSweep.ts`, `keyHolders.ts`, and `cascade.ts`.
 - [ ] `npm run test -- engineGraph hostGraph` passes (`rows.ts` and `placement.ts` take `heldPages.ts` as a type import only).
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
-**Lines:** +58 (+135 / −77), view-delta's Actionable rule. `heldPages.ts` +40 / −3, `spend.ts` +14 / −10, `assignment.ts` +15 / −11, `rows.ts` +12 / −4, `cascade.ts` +11 / −18, `restoreProperty.ts` +10 / −6, `governedSweep.ts` +8 / −5, `keyHolders.ts` +7 / −4, `placement.ts` +6 / −5, `handlers.ts` +4 / −1, `deleteProperty.ts` +4 / −1, `removeProperty.ts` +4, `record.ts` −9. Comments +1 / −2, six rewritten. Tests about +160, two inverted (`removeProperty.test.ts:143`, `deleteProperty.test.ts:174`).
+**Lines:** +79 (+160 / −81), view-delta's Actionable rule. `heldPages.ts` +58 / −6, `cascade.ts` +18 / −22, `assignment.ts` +16 / −10, `spend.ts` +15 / −10, `rows.ts` +12 / −4, `restoreProperty.ts` +10 / −5, `governedSweep.ts` +8 / −5, `keyHolders.ts` +7 / −4, `placement.ts` +6 / −5, `handlers.ts` +4 / −1, `removeProperty.ts` +4, `deleteProperty.ts` +2, `record.ts` −9. Comments +3 / −2, seven rewritten. Tests about +335, two inverted (`removeProperty.test.ts:143`, `deleteProperty.test.ts:174`) and one retitled (`cascade.test.ts:785`).
 
 #### Task 3-4
 
@@ -4697,28 +4834,27 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 - [ ] Write and watch fail:
   - `Core/Properties/governedSweep.test.ts` `describe('sweepCount')` (`:118`), new: "counts no file the Archive holds, while the sweep it previews writes it" — archived `.nexus/archive/C1/Notes/2026-10-20T12-00-00-000Z__C.md.archived/C.md`; `sweepCount(root, [a, archived], { text: (c) => `${c}x` })` is 1, `sweepGovernedRoots(root, [a, archived], { text: (c) => `${c}x` }, true).touched.size` is 2.
   - `Core/Matrix/matrixGraph.test.ts`, new: "drops an archived page’s rows, its links included" (upserted `.nexus/archive/C1/Notes/2026-10-20T12-00-00-000Z__D.md.archived/D.md`, ID D, a body relation: no `values[D]`, no link from it, `readMatrixGraph(false, [that path]).ids` is `[]`); other cases (`:58-155`) unchanged.
-  - `Core/Nexus/handlers.test.ts`, new `describe('index:headings')` › "answers every page’s headings but an archived page’s" — a page and an archived page, each with `## Setup`, indexed; `nexusHandlers['index:headings']` answers only the page's path, and `{}` asked for the archived one.
-  - `Core/Views/loadValues.test.ts`: `beforeEach` writes `.nexus/nexus.json`, `Col/_pagecollection.json`, `Col/SetA/_pageset.json`; `hold()` (`seedLiveTree(await readNexus(root))`) runs after each case's page writes; `afterEach` drops the tree. "maps page id → frontmatter across the container and its nested Sets" (`:22`) and every no-id case hold; "reads only the named pages, resolved through the live tree" (`:98`) drops its own seeding. New "reads the pages the tree holds under the container, never one the tree withholds": `Col/odd.md` with task-marked ID `${P1.slice(0, 10)}T${P1.slice(11)}` absent, `p1` present.
-- [ ] `Core/Properties/governedSweep.ts`: `sweepCount` filters `files` by `archivedCollectionIdOf(relative(root, file)) === null` before its dry run.
-- [ ] `Core/Matrix/matrixGraph.ts`: `readMatrixGraph` skips rows `archivedCollectionIdOf` files under an Archive (no node, no edge), keeping every other page; `:18` names the trim.
-- [ ] `Core/Nexus/handlers.ts`: `index:headings` drops paths `archivedCollectionIdOf` files under an Archive.
-- [ ] `Core/Views/loadValues.ts`: the no-id branch reads `pagePathsIn(containerAt(await liveTreeOf(rootPath), containerRelPath))`.
+  - `Core/Nexus/handlers.test.ts`, new `describe('index:headings')` › "answers every page’s headings but an archived page’s" — a page and an archived page, each with `## Setup`, indexed; `nexusHandlers['index:headings'](ctx, undefined)` answers only the page's path, and `{}` asked for the archived one.
+  - `Core/Views/loadValues.test.ts`: `beforeEach` writes `.nexus/nexus.json`, `Col/_pagecollection.json`, `Col/SetA/_pageset.json`; `hold()` (`seedLiveTree(await readNexus(root))`) runs after each case's page writes; `afterEach` drops the tree. "maps page id → frontmatter across the container and its nested Sets" (`:22`) and every no-id case hold; "reads only the named pages, resolved through the live tree" (`:98`) drops its own seeding. "returns an empty map for an absent container" holds too. New "reads the pages the tree holds under the container, never one the tree withholds": `Col/odd.md` with task-marked ID `${P1.slice(0, 10)}T${P1.slice(11)}` and `Col/Loose/p2.md`, in a folder with no sidecar the tree withholds and a folder walk reads, both absent, `p1` present.
+- [ ] `Core/Properties/governedSweep.ts`: `sweepCount` filters out the files `isArchived(relative(root, file))` names before its dry run.
+- [ ] `Core/Matrix/matrixGraph.ts`: `readMatrixGraph` skips the rows `isArchived` names (no node, no edge), keeping every other page; `:18` names the trim.
+- [ ] `Core/Nexus/handlers.ts`: `index:headings` drops the paths `isArchived` names.
+- [ ] `Core/Views/loadValues.ts`: the no-id branch reads `pagePathsIn(containerAt(await liveTreeOf(rootPath), containerRelPath))`; `corpus` answers the relative paths both branches hold, and `loadValues` joins each to the root once.
 - [ ] `Core/Index/indexSeed.ts`: delete `folderCorpus`; `moveIndexPaths`' arrival branch walks `corpusFilesUnder` itself.
-- [ ] Drive group 3 and the run's `Drive Table` prologue (below) in `.claude/scripts/Archive Drive/live-drive.mjs`, its table in `MATRIX.md`; the view's on-disk `active_view` outlasts group 3's relaunch.
+- [ ] Drive group 3 and the run's `Drive Table` prologue (below) in `.claude/scripts/Archive Drive/live-drive.mjs`, its table in `MATRIX.md`, its pruned checks in the file's *§Pruned* list; the view's on-disk `active_view` outlasts group 3's relaunch. Group 3 relaunches, so it drives the run's own `cdp`, which its relaunch reassigns, and a throw inside it leaves the run holding the live session; it waits on the search's rows with `until`, and waits out the watcher's write-finish hold before its seeds leave from outside, since an unlink inside that hold reaches the app as nothing. Its withheld page sits under a Set whose sidecar doesn't parse, which the index and a folder walk read and the tree withholds.
 - [ ] Sibling sweep: `readMatrixGraph`'s signature stands (`Matrix/handlers.ts` unchanged); `folderCorpus`' callers were `loadValues.ts` and `indexSeed.ts:183`; `useViewHost.test.tsx` mocks `view:loadValues`.
 
 **AFTER**
 
 ```Core/Properties/governedSweep.ts diff
 @@ imports @@
--import { isMarkdownFile, join } from '../Paths/posix'
-+import { isMarkdownFile, join, relative } from '../Paths/posix'
-+import { archivedCollectionIdOf } from '../Paths/nexusPaths'
+ import { isMarkdownFile, join, relative } from '../Paths/posix'
++import { isArchived } from '../Paths/nexusPaths'
 @@ sweepCount @@
 -export const sweepCount = async (root: string, files: string[], plan: SweepPlan): Promise<number> =>
 -  (await sweepGovernedRoots(root, files, plan, true)).touched.size
 +export async function sweepCount(root: string, files: string[], plan: SweepPlan): Promise<number> {
-+  const shown = files.filter((file) => archivedCollectionIdOf(relative(root, file)) === null)
++  const shown = files.filter((file) => !isArchived(relative(root, file)))
 +  return (await sweepGovernedRoots(root, shown, plan, true)).touched.size
 +}
 ```
@@ -4727,7 +4863,7 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 @@ imports @@
  import { readPageRelations } from '../Index/contentIndex'
  import { ID_KEY } from '../Nexus/identityMark'
-+import { archivedCollectionIdOf } from '../Paths/nexusPaths'
++import { isArchived } from '../Paths/nexusPaths'
  import type { PageRelationRow } from '../Platform/stores'
 @@ readMatrixGraph @@
 -// `null` when there is no index yet; the renderer keeps what it holds and the next push refetches. Without values, the store reads each page's ID alone. An ask for named paths also answers every page id at them, linked or not, so the renderer lets go of the rows a moved page held under its old path.
@@ -4737,28 +4873,30 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
    for (const [path, page] of Object.entries(rows.pages)) {
      const id = page.values[ID_KEY]
 -    if (typeof id !== 'string') continue
-+    if (typeof id !== 'string' || archivedCollectionIdOf(path) !== null) continue
++    if (typeof id !== 'string' || isArchived(path)) continue
      idOf.set(path, id)
 ```
 
 ```Core/Nexus/handlers.ts diff
 @@ imports @@
  import { readHeadings } from '../Index/contentIndex'
-+import { archivedCollectionIdOf } from '../Paths/nexusPaths'
++import { isArchived } from '../Paths/nexusPaths'
 @@ 'index:headings' @@
 -  'index:headings': withRoot(async (_root, _ctx, paths: unknown) =>
 -    ok(readHeadings(isStringArray(paths) ? paths : undefined) ?? {}),
 -  ),
 +  'index:headings': withRoot(async (_root, _ctx, paths: unknown) => {
 +    const headings = Object.entries(readHeadings(isStringArray(paths) ? paths : undefined) ?? {})
-+    return ok(
-+      Object.fromEntries(headings.filter(([path]) => archivedCollectionIdOf(path) === null)),
-+    )
++    return ok(Object.fromEntries(headings.filter(([path]) => !isArchived(path))))
 +  }),
 ```
 
 ```Core/Views/loadValues.ts diff
 @@ imports @@
+-import { join, relative } from '../Paths/posix'
++import { join } from '../Paths/posix'
+ import type { PageValues } from './viewRow'
+ …
  import { readPageRecord } from '../Nexus/readNexus'
 -import { folderCorpus } from '../Index/indexSeed'
 +import { liveTreeOf } from '../Nexus/liveTree'
@@ -4766,11 +4904,22 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
  import { livePathOf } from '../Nexus/heldPages'
 @@ corpus @@
 -  if (!pageIds) return folderCorpus(rootPath, join(rootPath, containerRelPath))
-+  if (!pageIds) {
-+    const tree = await liveTreeOf(rootPath)
-+    return pagePathsIn(containerAt(tree, containerRelPath)).map((rel) => join(rootPath, rel))
-+  }
-   return pageIds.flatMap((id) => {
+-  return pageIds.flatMap((id) => {
+-    const rel = livePathOf(rootPath, id)
+-    return rel ? [join(rootPath, rel)] : []
+-  })
++  if (!pageIds) return pagePathsIn(containerAt(await liveTreeOf(rootPath), containerRelPath))
++  return pageIds.flatMap((id) => livePathOf(rootPath, id) ?? [])
+ }
+@@ loadValues @@
+   const files = await corpus(rootPath, containerRelPath, pageIds)
+   const records = await Promise.all(
+-    files.map((absFile) => {
+-      const relFile = relative(rootPath, absFile)
+-      return readPageRecord(absFile, relFile).catch(() => null)
+-    }),
++    files.map((rel) => readPageRecord(join(rootPath, rel), rel).catch(() => null)),
+   )
 ```
 
 ```Core/Index/indexSeed.ts diff
@@ -4803,9 +4952,12 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 +  pageIds, pressKey, relaunch, restore, results, settles, shot, sleep, typeText, until,
  } from '../drive-harness.mjs'
 @@ ALL @@
+ const at = (phase) => PHASES.indexOf(String(phase))
 -const ALL = ['1', '2']
 +const ALL = ['1', '2', '3']
+ const GROUPS = new Set(process.argv.slice(2))
 @@ The Nexus on disk, after readRel @@
+ const readRel = (rel) => readFileSync(abs(rel), 'utf8')
 +const frontOf = (rel) => parse(FM.exec(readRel(rel))?.[1] ?? '') ?? {}
 +const bodyOf = (rel) => readRel(rel).replace(FM, '')
 +function treePaths(tree) {
@@ -4817,15 +4969,17 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 +  for (const c of tree.collections) walk(c)
 +  return out
 +}
-@@ Group 3 — Reach (Phase 3) @@
+ const settingsOnDisk = () => JSON.parse(readRel('.nexus/settings.json'))
+@@ Group 3 — Reach (Phase 3), after group2 @@
+ 
 +// ── Group 3 — Reach (Phase 3) ───────────────────────────────────────────────
 +
 +const STAMP = '2026-10-20T12-00-00-000Z'
-+const taskMarked = (id) => `${id.slice(0, 10)}T${id.slice(11)}`
 +const rowIds = (cdp) => cdp.evaluate(`[...document.querySelectorAll('.data-row[data-rid]')].map((r) => r.dataset.rid)`)
 +
 +/** Seeds an archived page by hand, as the archive op will file one (Phase 4), and answers the relaunched window. */
-+async function group3(cdp) {
++// Group 3 relaunches, so it drives the run's own `cdp`, and a failure inside it leaves the run holding the live session.
++async function group3() {
 +  const colA = JSON.parse(readRel('Collection A/_pagecollection.json')).id
 +  const alpha = JSON.parse(readRel('Collection A/Set Alpha/_pageset.json')).id
 +  const { id: stage } = await must('add Drive Stage', ask(cdp, 'schema:add', 'Collection A', {
@@ -4836,13 +4990,16 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 +  }))
 +  const live = { rel: 'Collection A/Set Alpha/Drive Live.md', id: mintPageId() }
 +  const linker = { rel: 'Collection A/Set Alpha/Drive Linker.md', id: mintPageId() }
-+  const odd = { rel: 'Collection A/Drive Odd.md', id: taskMarked(mintPageId()) }
++  // A Set whose sidecar doesn't parse is listed unreadable and never stamped, so the tree withholds its page while the index and a folder walk still read it.
++  const withheld = { dir: 'Collection A/Drive Damaged', rel: 'Collection A/Drive Damaged/Drive Withheld.md', id: mintPageId() }
 +  const bundle = `.nexus/archive/${colA}/Collection A/Set Alpha/${STAMP}__Drive Arc.md.archived`
 +  const arc = { rel: `${bundle}/Drive Arc.md`, id: mintPageId() }
 +  cdp = await relaunch(cdp, async () => {
 +    writeFileSync(abs(live.rel), `---\nID: ${live.id}\nDrive Stage: Draft\n---\nbody\n`)
 +    writeFileSync(abs(linker.rel), `---\nID: ${linker.id}\n---\n[[Drive Arc]]\n`)
-+    writeFileSync(abs(odd.rel), `---\nID: ${odd.id}\n---\nbody\n`)
++    mkdirSync(abs(withheld.dir), { recursive: true })
++    writeFileSync(abs(`${withheld.dir}/_pageset.json`), '{ not json')
++    writeFileSync(abs(withheld.rel), `---\nID: ${withheld.id}\n---\nbody\n`)
 +    mkdirSync(abs(bundle), { recursive: true })
 +    writeFileSync(abs(`${bundle}/_record.json`), JSON.stringify({ entity: 'page', id: arc.id, parent: { kind: 'container', id: alpha } }))
 +    writeFileSync(abs(arc.rel), `---\nID: ${arc.id}\nDrive Stage: Draft\n---\n## Drive Heading\n\nsee [[Drive Live]]\n`)
@@ -4855,8 +5012,9 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 +  const search = `document.querySelector('.detail-title-search')`
 +  await cdp.evaluate(`${search}.focus()`)
 +  await typeText(cdp, 'Drive')
-+  await sleep(900)
-+  const shown = await rowIds(cdp)
++  const drive = [live.id, linker.id, arc.id]
++  const filtered = async () => { const rows = await rowIds(cdp); return rows.length > 0 && rows.every((id) => drive.includes(id)) && rows }
++  const shown = await until('the search’s rows', filtered).catch(() => rowIds(cdp))
 +  item(3, 3, 'D-2', "Collection A's view search for Drive lists Drive Live and never Drive Arc", shown.includes(live.id) && !shown.includes(arc.id), show(shown))
 +  await shot(cdp, 'g3-view-search')
 +  await cdp.evaluate(`(() => { const i = ${search}; i.select() })()`)
@@ -4869,14 +5027,14 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 +  await escapeAll(cdp)
 +
 +  const graph = await must('matrix:graph', ask(cdp, 'matrix:graph', true))
-+  item(3, 3, 'K-2', 'the Matrix graph holds the live page and the one the tree withholds, and no archived page or edge', live.id in graph.values && odd.id in graph.values && !(arc.id in graph.values) && graph.links.every((l) => !l.path.startsWith('.nexus/')), show(Object.keys(graph.values).length))
++  item(3, 3, 'K-2', 'the Matrix graph holds the live page and the one the tree withholds, and no archived page or edge', live.id in graph.values && withheld.id in graph.values && !(arc.id in graph.values) && graph.links.every((l) => !l.path.startsWith('.nexus/')), show(Object.keys(graph.values).length))
 +  const asked = await must('matrix:graph by path', ask(cdp, 'matrix:graph', false, [arc.rel]))
 +  item(3, 3, 'K-2', 'the Matrix graph asked for the archived path answers no id', asked.ids.length === 0, show(asked.ids))
 +  const headings = await must('index:headings', ask(cdp, 'index:headings'))
 +  const archivedHeadings = await must('index:headings by path', ask(cdp, 'index:headings', [arc.rel]))
 +  item(3, 3, 'K-2', 'the headings answer no archived path, whole or asked by path', !Object.keys(headings).some((p) => p.startsWith('.nexus/')) && Object.keys(archivedHeadings).length === 0, show(Object.keys(archivedHeadings)))
 +  const loaded = await must('view:loadValues', ask(cdp, 'view:loadValues', 'Collection A'))
-+  item(3, 3, 'K-2', "Collection A's value load reads the tree's pages, never the archived one or one the tree withholds", live.id in loaded && !(arc.id in loaded) && !(odd.id in loaded), show(Object.keys(loaded).length))
++  item(3, 3, 'K-2', "Collection A's value load reads the tree's pages, never the archived one or one under a Set whose sidecar doesn't parse", live.id in loaded && !(arc.id in loaded) && !(withheld.id in loaded), show(Object.keys(loaded).length))
 +
 +  const count = await must('property:holders', ask(cdp, 'property:holders', stage))
 +  item(3, 3, 'C-4', 'the delete confirmation’s count leaves the archived holder out', count === 1, show(count))
@@ -4888,8 +5046,9 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 +  await must('delete Drive Stage', ask(cdp, 'property:delete', stage))
 +  item(3, 3, 'C-2', 'the property delete strips the archived page as it strips the live one', !('Drive Stage' in frontOf(arc.rel)) && !('Drive Stage' in frontOf(live.rel)), show(frontOf(arc.rel)))
 +
-+  // The seeds leave as they came, from outside, and the deleted property's bundle is emptied, so a later group meets Collection A, its Archive, and the Trash as group 3 found them.
-+  for (const rel of [live.rel, linker.rel, odd.rel, `.nexus/archive/${colA}`]) rmSync(abs(rel), { recursive: true, force: true })
++  // The seeds leave as they came, from outside, and the deleted property's bundle is emptied, so a later group meets Collection A, its Archive, and the Trash as group 3 found them. The watcher holds a file the app just wrote until it's still for 200 ms, and an unlink inside that hold reaches the app as nothing, so the seeds leave once the delete's writes are still.
++  await sleep(400)
++  for (const rel of [live.rel, linker.rel, withheld.dir, `.nexus/archive/${colA}`]) rmSync(abs(rel), { recursive: true, force: true })
 +  await until('the seeds out of the tree', async () => !treePaths((await must('nexus:state', ask(cdp, 'nexus:state'))).tree).has(live.rel))
 +  const stageRow = ((await ask(cdp, 'bundles:list', { kind: 'trash' })).value ?? []).find((r) => r.title === 'Drive Stage')
 +  await must('permanentDelete on', ask(cdp, 'personalization:set', 'permanentDelete', true))
@@ -4897,8 +5056,9 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 +  await must('permanentDelete off', ask(cdp, 'personalization:set', 'permanentDelete', false))
 +  const left = ((await ask(cdp, 'bundles:list', { kind: 'archive', id: colA })).value ?? []).length
 +  item(3, 3, '—', 'the group leaves Collection A’s Archive and the Trash as it found them', left === 0 && !exists(`.nexus/archive/${colA}`) && !((await ask(cdp, 'bundles:list', { kind: 'trash' })).value ?? []).some((r) => r.title === 'Drive Stage'), show({ left }))
-+  return cdp
 +}
++
+ // ── The run ─────────────────────────────────────────────────────────────────
 @@ the run @@
    cdp = (await launch(PORT, 'archive-shots')).cdp
 +  // Collection A's one saved view draws cards, so the run shows a table of its own, which the harness's restore takes back.
@@ -4907,14 +5067,16 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 +  await must('show the Drive Table', ask(cdp, 'mutate', { op: 'setActiveView', path: 'Collection A', kind: 'collection', viewId: table.id }))
    if (GROUPS.has('1')) await group1(cdp)
    if (GROUPS.has('2')) await group2(cdp)
-+  if (GROUPS.has('3')) cdp = await group3(cdp)
++  if (GROUPS.has('3')) await group3()
+   cdp.close()
 ```
 
 ```.claude/scripts/Archive Drive/MATRIX.md diff
 @@ after Group 2 @@
+ 
 +#### Group 3 — Reach (Phase 3)
 +
-+The run's prologue saves and shows `Drive Table`, a table view of its own on Collection A, since Collection A's one saved view draws cards; the harness's restore takes it back. Seeds, with the app closed and before a relaunch, so the open's seed reads the Archive as its second root: `Drive Stage` (a Select with `Draft`, added through `schema:add` on Collection A before the quit, its draft's `id` empty as `propertyDraft` requires, `Core/Properties/properties.ts:161`, `:198-200`); `Collection A/Set Alpha/Drive Live.md` holding `Drive Stage: Draft`; `Drive Linker.md` beside it, its body `[[Drive Arc]]`; `Collection A/Drive Odd.md` carrying a task-marked ID, which the tree withholds; and the archived page `.nexus/archive/<Collection A's id>/Collection A/Set Alpha/2026-10-20T12-00-00-000Z__Drive Arc.md.archived/Drive Arc.md` with its `_record.json`, holding `Drive Stage: Draft`, `## Drive Heading`, and `[[Drive Live]]`. The group removes its seeds and empties the deleted property's bundle before it ends, leaving nothing behind; the harness restores `~/Test` when the run ends.
++The run's prologue saves and shows `Drive Table`, a table view of its own on Collection A, since Collection A's one saved view draws cards; the harness's restore takes it back. Seeds, with the app closed and before a relaunch, so the open's seed reads the Archive as its second root: `Drive Stage` (a Select with `Draft`, added through `schema:add` on Collection A before the quit, its draft's `id` empty as `propertyDraft` requires, `Core/Properties/properties.ts:161`, `:198-200`); `Collection A/Set Alpha/Drive Live.md` holding `Drive Stage: Draft`; `Drive Linker.md` beside it, its body `[[Drive Arc]]`; `Collection A/Drive Damaged/Drive Withheld.md` under a `_pageset.json` that doesn't parse, so the tree lists the Set unreadable and withholds the page, which the index and a folder walk still read; and the archived page `.nexus/archive/<Collection A's id>/Collection A/Set Alpha/2026-10-20T12-00-00-000Z__Drive Arc.md.archived/Drive Arc.md` with its `_record.json`, holding `Drive Stage: Draft`, `## Drive Heading`, and `[[Drive Live]]`. The group removes its seeds and empties the deleted property's bundle before it ends, leaving nothing behind; the harness restores `~/Test` when the run ends.
 +
 +| Check | Decision | Asserts |
 +| --- | --- | --- |
@@ -4924,14 +5086,19 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 +| the Matrix graph holds the live page and the one the tree withholds, and no archived page or edge | K-2 | `matrix:graph` reply |
 +| the Matrix graph asked for the archived path answers no id | K-2 | `matrix:graph` reply |
 +| the headings answer no archived path, whole or asked by path | K-2 | `index:headings` reply |
-+| Collection A's value load reads the tree's pages, never the archived one or one the tree withholds | K-2 | `view:loadValues` reply |
++| Collection A's value load reads the tree's pages, never the archived one or one under a Set whose sidecar doesn't parse | K-2 | `view:loadValues` reply: the withheld page is one a walk of the Collection's folder would read |
 +| the delete confirmation’s count leaves the archived holder out | C-4 | `property:holders` reply is 1 |
 +| an option rename rewrites the archived page as it rewrites the live one | C-1 | disk: both frontmatters read `['Final']`, the one-item list the option cascade writes (`replaySchemaCascade.test.ts:523`) |
 +| renaming Drive Live re-spells the archived page's link | C-1 | disk: the archived body reads `[[Drive Live 2]]` |
 +| the property delete strips the archived page as it strips the live one | C-2 | disk: neither frontmatter holds `Drive Stage` |
-| the group leaves Collection A’s Archive and the Trash as it found them | — | the seeds removed from outside, `Drive Stage`'s bundle emptied under `permanentDelete` (then off again); `bundles:list` answers no archived row and no `Drive Stage` row |
++| the group leaves Collection A’s Archive and the Trash as it found them | — | the seeds removed from outside, `Drive Stage`'s bundle emptied under `permanentDelete` (then off again); `bundles:list` answers no archived row and no `Drive Stage` row |
 +
-+**Pruned:** the NavView sidebar search, which reads the same tree `nexus:state` answers and has no driven path in the harness (the Path Links Drive's `pending` at `:786`); link suggestions, which read the renderer's `pageIndexOf(tree)` and are covered by the tree check; Context and Space cascades into the Archive, which ride the content reach the link rename proves (`queryMembers ?? nexusCorpus`, `contextCascade.ts:72`) and are pinned in vitest.
+ #### Pruned
+@@ #### Pruned, its last entry @@
+ - **The Trash browser's Restore in group 1:** group 1 restores through `mutate`; group 2 drives today's browser through Restore and Restore All, and the groups after Phase 5 drive the rebuilt one.
++- **The NavView sidebar search in group 3:** it reads the same tree `nexus:state` answers and has no driven path in the harness (the Path Links Drive's `pending` at `:786`).
++- **Link suggestions in group 3:** they read the renderer's `pageIndexOf(tree)`, which the tree check covers.
++- **Context and Space cascades into the Archive in group 3:** they ride the content reach the link rename proves (`queryMembers ?? nexusCorpus`, `contextCascade.ts:72`), and vitest pins them.
 ```
 
 **VERIFY**
@@ -4942,11 +5109,11 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 - [ ] `POMMORA_ARCHIVE_LANDED=3 node live-drive.mjs 1 2 3` from `.claude/scripts/Archive Drive/` passes every landed item; group 3 prints no `FAIL` and no `AWAIT`.
 - [ ] Check for unnecessary code or mistakes.
 
-**Lines:** +8 (+24 / −16), view-delta's Actionable rule. `governedSweep.ts` +6 / −3, `Nexus/handlers.ts` +6 / −3, `loadValues.ts` +6 / −2, `indexSeed.ts` +4 / −7, `matrixGraph.ts` +2 / −1. Comments ±0. Tests about +90. Drive +97 / −2, `MATRIX.md` +19, apart.
+**Lines:** −2 (+22 / −24), view-delta's Actionable rule. `loadValues.ts` +6 / −11, `indexSeed.ts` +4 / −7, `governedSweep.ts` +5 / −2, `Nexus/handlers.ts` +5 / −3, `matrixGraph.ts` +2 / −1. Comments ±0, one rewritten. Tests about +60. Drive +106 / −2, `MATRIX.md` +22, apart.
 
 #### Review Checkpoint
 
-- [ ] Every test the four tasks name passes, with `exclusion.test.ts`, `walk.test.ts`, `indexSeed.test.ts`, `treePatch.test.ts`, `configReach.test.ts`, `normalizeSavedViews.test.ts`, `assetMigrate.test.ts`, `repairSweep.test.ts`, `keyHolders.test.ts`, `heldPages.test.ts`, `cascade.test.ts`, `deleteReach.test.ts`, `deleteProperty.test.ts`, `removeProperty.test.ts`, `assignment.test.ts`, `restoreProperty.test.ts`, `spend.test.ts`, `placement.test.ts`, `rows.test.ts`, `trashRecovery.test.ts`, `governedSweep.test.ts`, `matrixGraph.test.ts`, `Core/Nexus/handlers.test.ts`, and `loadValues.test.ts` green, and `engineGraph`/`hostGraph` unchanged.
+- [ ] Every test the four tasks name passes, with `exclusion.test.ts`, `walk.test.ts`, `indexSeed.test.ts`, `treePatch.test.ts`, `configReach.test.ts`, `normalizeSavedViews.test.ts`, `assetMigrate.test.ts`, `repairSweep.test.ts`, `keyHolders.test.ts`, `heldPages.test.ts`, `cascade.test.ts`, `deleteReach.test.ts`, `deleteProperty.test.ts`, `removeProperty.test.ts`, `assignment.test.ts`, `restoreProperty.test.ts`, `spend.test.ts`, `placement.test.ts`, `rows.test.ts`, `trashRecovery.test.ts`, `governedSweep.test.ts`, `matrixGraph.test.ts`, `Core/Nexus/handlers.test.ts`, `loadValues.test.ts`, and `governedWorld.test.ts` green, and `engineGraph`/`hostGraph` unchanged.
 - [ ] `git grep -n "keyHolderFiles\|corpusUnder\|recordById\|folderCorpus\|frozenWorld(pageIndexOf" -- Core Desktop` finds nothing.
 - [ ] Run the gates.
 - [ ] Archive Drive groups 1–3 pass under `POMMORA_ARCHIVE_LANDED=3`.
@@ -4961,13 +5128,16 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 
 ##### Behavior Changes and Disclosures
 
-- **The Delete Strip Holds Out an ID-Less Linker:** the held-out rule is `id === undefined || byId.get(id) === null`, `keyedHolders`' rule, so one rule serves both strips. An ID-less linker inside a Collection, which HEAD left untouched and silent, keeps its value and now counts in the unswept warning (`cascade.test.ts:714` pins `unsweptLine(1, 'links in ')`); one under a withheld folder, which HEAD stripped with nothing recorded (`cascade.ts:127-128`), is now held out. The live app stamps ID-less pages on admission, so both are brief states.
+- **The Delete Strip Holds Out an ID-Less Linker:** the held-out rule is `addressable`, which `keyedHolders` and `sweepRootsById` read too, so one predicate serves every strip and refill. An ID-less linker inside a Collection, which HEAD left untouched and silent, keeps its value and now counts in the unswept warning (`cascade.test.ts:714` pins `unsweptLine(1, 'links in ')`); one under a withheld folder, which HEAD stripped with nothing recorded (`cascade.ts:127-128`), is now held out. The live app stamps ID-less pages on admission, so both are brief states.
 - **Twins Inside an Unparsed Collection (3-3):** with one twin rule over the by-id map, two files sharing an id inside a Collection whose sidecar doesn't parse (reached through `collectionFolders`' damaged arm, while `byId` holds neither, answering `undefined` rather than null) are both stripped, and the second's value overwrites the first's, where HEAD's `seen` (`keyHolders.ts:61-66`) held the second out; a duplicated id nothing in-app produces (Cautionary 4's shape).
-- **`archiveReach(tree, rel?)` in `Core/Nexus/treePatch.ts`:** its two consumers are `containersOf` (3-1) and `governedReach` (3-2), and it states once the rule both scoped reaches follow: unscoped, every Archive; scoped, the owning Collection's whole Archive. `governedReach`'s `only` finds its Archive through it, by the tree, rather than through the folder's sidecar.
+- **`archiveReach(tree, rel?)` in `Core/Nexus/treePatch.ts`:** its two consumers are `archivedSets` (3-1) and `governedReach` (3-2), and it states once the rule both scoped reaches follow: unscoped, every Archive; scoped, the owning Collection's whole Archive. `governedReach`'s `only` finds its Archive through it, by the tree, rather than through the folder's sidecar.
 - **`contentRoots` Stays Module-Private:** `sidecarsUnder(root, scope, under?)` walks both roots by default, so the asset migration reaches archived Set sidecars, as Findings 1.1's hoisted walker does; `contentRoots(root)` states the pair once for `corpusFiles` and `sidecarsUnder` without the export Findings 1.2 sets aside.
-- **The Space Arm Leaves a Twin Alone:** `governedSweep.ts:150`'s rewrite reads `roots.get(id) === null` for a Space, since it sweeps every Space sidecar and would otherwise write both twins.
-- **`deleteProperty.ts:82` Drops `collectionFolders`:** it's `propertyHolders`' scope argument to `deletePlan`, which loses `folders` (Findings 1.3); `deleteInner` (`:99`) keeps it for the sidecar role.
-- **Take Along:** `cascade.ts:81`'s comment loses "with no tree, nothing answers and every key strips", false at HEAD since `defs` come from the held tree, and the bail spells `!tree` out (`:86`).
+- **The Space Arm Leaves a Twin Alone:** `sweepRootsById`'s one `byId(idKey)` rewrite reads `addressable(roots, id)` for both arms, so its Space arm, which sweeps every Space sidecar, writes neither twin.
+- **A Twin's Value on Restore (3-3):** the Space strips (`deleteCascade`'s Space arm, the property delete's Space sidecars and `snapshot`, `sweepMembers`) still strip a Space twin and file its value, since one takes a hand copy inside the hidden `.nexus/contexts`; the restore leaves the value out of both twins, as it does a page twin's, and keeps the record where the record outlives the restore. A Space twin goes unnamed, since the tree has no first-listed Space lookup (`shownTitle` falls back to `pagesByIdOf`).
+- **The Twin Rule Spans Kinds:** `entitiesById` claims every record by id, so a page sharing an id with a Set or a Collection reads null to every writer, `writablePathsOf` included, where that map once compared pages alone; only a hand edit makes one.
+- **An Archived Page Holding Both Keys (3-2):** the rename's both-keys refusal names only pages outside the Archive, as every confirmation does (C-4), so a rename onto a key an archived page holds beside the old one goes through, and the archived page keeps the new key's value (`NEW_KEY_IS_FRESHER`), its old key's value dropped.
+- **`deleteProperty.ts:82` Drops `collectionFolders`:** it's `propertyHolders`' scope argument to `deletePlan`, which loses `folders` (Findings 1.3); `deleteInner` (`:99`) keeps it for the sidecar role, handing it the tree.
+- **Take Along:** `cascade.ts:81`'s comment loses "with no tree, nothing answers and every key strips", false at HEAD since `defs` come from the held tree, and one `if (!tree) return NO_STRIP` heads the delete in place of the bail's reads (`:86`); `deleteInner`'s comment (`deleteProperty.ts:98`) loses "pre-cache dormant values may sit on any page", which its folders no longer serve; `loadValues`' `corpus` answers relative paths in both branches.
 
 ##### Found False at HEAD
 
@@ -4975,20 +5145,21 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 - 1.5's "`pages` replaces `pageIndexOf(tree)` at every `frozenWorld`" misses `spend.ts:290`, which reads `settledIndex` (above).
 - *What Becomes False* names `Core/Nexus/migrateConfig.test.ts` for `normalizeSavedViews`; its cases live in `Core/Nexus/normalizeSavedViews.test.ts`.
 - *What Becomes False*'s "the strip … keeps a value an archived page answers" contradicts 1.5, which keeps the delete's `after` tree-only for D-1's namesake ruling; the plan follows 1.5.
-- *What Becomes False* misses `removeProperty.test.ts:143`, which inverts (none wins holds both copies out of Remove), `deleteProperty.test.ts:174`, which counts 2 where it counted 3, `governedWorld.test.ts:6`'s import, and `trashRecovery.test.ts:34`'s `rows` helper.
+- *What Becomes False* misses `removeProperty.test.ts:143`, which inverts (none wins holds both copies out of Remove), `deleteProperty.test.ts:174`, which counts 2 where it counted 3, `governedWorld.test.ts`' import (`:6`) and `describe('collectionFolders')` (`:86`), and `trashRecovery.test.ts:34`'s `rows` helper.
 
 ##### Line Total
 
 | Task | Net | Added / Removed |
 | --- | --- | --- |
-| 3-1 | +43 | +68 / −25 |
-| 3-2 | −1 | +45 / −46 |
-| 3-3 | +58 | +135 / −77 |
-| 3-4 | +8 | +24 / −16 |
-| **Phase 3** | **+108** | **+272 / −164** |
+| 3-1 | +46 | +77 / −31 |
+| 3-2 | +20 | +74 / −54 |
+| 3-3 | +79 | +160 / −81 |
+| 3-4 | −2 | +22 / −24 |
+| **Phase 3, Measured** | **+143** | **+333 / −190** |
 
-- **The Rule:** the plan's one counting rule (`view-delta`'s Actionable column: source with imports and blank lines as Biome wraps them; comments, tests, documents, and the drive out; moved lines on both sides). Moved lines: `sidecarsUnder`'s walk (4) and `collectionFolders` (5). Comments, net ±0: `contentRoots`', `archiveReach`'s, and `NexusPages`' docs added, each where the code alone would be misread (the Archive's separate walk, the whole-Archive scope, the two path conventions); `assetMigrate.ts`'s `sidecarsUnder` doc, `record.ts:48`, and `cascade.ts:101` removed; the rest rewritten in place.
-- **Against the Estimate (+10) and the Findings' Lane 1 (+14), Which Priced Logic Alone:** the growth is imports and Biome's wrapping, and the projection with its no-store scan, the refill sites' map form and `byId` threaded through `placeRecord`, the rows builder, and its handler, `keyedHolders`' callers taking the map, `sidecarsUnder` walking both roots, `containersOf`'s listing and id read, `archiveReach`, and the `:290` fix. The folds land as priced: `keyHolderFiles`, `corpusUnder`, `recordById`, and `folderCorpus` leave, three of four twin rules go, and `deleteCascade` shrinks by 7. What it buys is the reach itself: every governed, content, configuration, and by-id path now spans the Archive, which none did, with no new mechanism beside the one projection and the one scope rule.
+- **The Rule:** the plan's one counting rule (`view-delta`'s Actionable column: source with imports and blank lines as Biome wraps them; comments, tests, documents, and the drive out; moved lines on both sides), measured over `deb61a449..69f599ab7`. Each task's row is its share of the landed lines, file by file: a line one task writes and a later task rewrites counts once, in its final form, where the AFTER blocks show it in both (`keyedHolders`' call in `deletePlan`). Moved lines: `sidecarsUnder`'s walk (4) and `collectionFolders` (5). Comments, net +3 (+21 / −18): `contentRoots`', `archiveReach`'s, `governedReach`'s, `NexusPages`', `addressable`'s, and `shownTitle`'s docs added, each where the code alone would be misread (the Archive's separate walk, the whole-Archive scope, the reach's reason, the two path conventions, the twin rule, the title a twin shows); `assetMigrate.ts`'s `sidecarsUnder` doc, `record.ts:48`, and `cascade.ts:101` removed; the rest rewritten in place.
+- **Against the Written +108:** the phase landed at +111 before its review, Biome's wrapping the difference, and its review's fix added +32 (*§Deviations*).
+- **Against the Estimate (+10) and the Findings' Lane 1 (+14), Which Priced Logic Alone:** the growth is imports and Biome's wrapping, and the projection with its memoized tree half and no-store scan, the twin predicate and the title a twin shows, the refill sites' map form and `byId` threaded through `placeRecord`, the rows builder, and its handler, `keyedHolders`' callers taking the map, `sidecarsUnder` walking both roots, `archivedSets` with its counted skip, `archiveReach`, and the `:290` fix. The folds land as priced: `keyHolderFiles`, `corpusUnder`, `recordById`, and `folderCorpus` leave, three of four twin rules go, and `deleteCascade` shrinks by 7. What it buys is the reach itself: every governed, content, configuration, and by-id path now spans the Archive, which none did, with no new mechanism beside the one projection and the one scope rule.
 
 ### Phase 4 — The Archive's Ops
 
@@ -6130,7 +6301,7 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 - [ ] Tests beside, failing: `Core/Nexus/handlers.test.ts`: "an open sweeps an Orphaned Archive into the Trash before the index seeds"; "a failing open pass leaves the open whole" (`settleArchives` rejects: the index still seeds; error logged).
 - [ ] `Core/Archive/refile.ts`: `settleArchives` over `refile` and `originOf`, plus the header's sentence, as AFTER.
 - [ ] `Core/Nexus/handlers.ts`: `settleArchives(root, tree)` after `runOpenLedger`, inside the seed's `try` and `root !== priorRoot`, with its own `.catch` (Cautionary 8).
-- [ ] Drive group 4: `.claude/scripts/Archive Drive/live-drive.mjs` gains `group4`, `MATRIX.md` its rows (*Drive Group 4*); `ALL` gains `'4'`; run line `if (GROUPS.has('4')) cdp = await group4(cdp)` (the group relaunches).
+- [ ] Drive group 4: `.claude/scripts/Archive Drive/live-drive.mjs` gains `group4`, `MATRIX.md` its rows (*Drive Group 4*); `ALL` gains `'4'`; run line `if (GROUPS.has('4')) await group4()`: the group relaunches, so it drives the run's own `cdp`, as group 3 does, and a throw inside it leaves the run holding the live session.
 **AFTER**
 
 ```Core/Archive/refile.ts diff
@@ -6202,7 +6373,7 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
      } catch (e) {
 ```
 
-**Drive Group 4** (`group4(cdp)`, all phase 4; seeds through `ask(cdp, 'mutate', …)` on `~/Test`, ids from the Collections' sidecars; `restore()` resets `~/Test` after the run):
+**Drive Group 4** (`group4()`, all phase 4; seeds through `ask(cdp, 'mutate', …)` on `~/Test`, ids from the Collections' sidecars; `restore()` resets `~/Test` after the run):
 
 - [ ] `[g4 A-2] a page archives into its Collection’s Archive under the chain it left` — seed `createPage Drive Arc` in `Collection A/Set Alpha` with an explicit `order`: Set Alpha's `pages` ids from `nexus:state`'s tree, the new id right after `Page A`'s (as group 2's `createSetIn`; a create without `order` leaves the id out, `Core/Nexus/create.ts:50`), so its neighbours are `Page A` and the page following it at group start (`Active Context` on `~/Test`, whose `page_order` reads Editor Test, Page A, Active Context, Page B, Page C), both ids read then; body `[[Drive Live]]`, beside a `createPage Drive Live`. `mutate { op: 'archive', path: 'Collection A/Set Alpha/Drive Arc.md', kind: 'page' }` → `bundled.bundlePath` matching `.nexus/archive/<A id>/Collection A/Set Alpha/<stamp>__Drive Arc.md.archived`, holding `Drive Arc.md` and a `_record.json` with `entity: 'page'`, the page's id, `parent` = Set Alpha's id, `place` with that follower above and `Page A` below, `trail: [<A id>]`; `Collection A/Set Alpha/Drive Arc.md` gone; Set Alpha's `page_order` lacks the id.
 - [ ] `[g4 D-2] the archived page leaves the tree and lists in its Archive` — no page with its id in `nexus:state`'s tree; `bundles:list({ kind: 'archive', id: <A id> })` → one row titled `Drive Arc`, crumbs `Collection A`, `Set Alpha`.
@@ -8605,7 +8776,7 @@ In the AFTER blocks below, a `~` line is context as an earlier phase leaves it (
 - **`LISTED` Moves to `driver.ts`:** the snapshot sweep binds its id list the way the index store already does, and `deleteSnapshots` its stamps (Take Along), the one list either store still bound a placeholder at a time.
 - **A Following Timeframe:** `PickerControl` treats picking the value already shown as no change (`PickerControl.tsx:112-113`), so picking the step a following Archive History Timeframe already shows leaves it following; lengthening History Timeframe afterwards moves it along. J-1's "until a step is picked" holds for every step other than the one on show.
 - **The Switch-Down Is the Host's Write:** after History Timeframe is shortened below a pick, the renderer shows the old archive pick, dimmed and above the cap, until the host's settings echo lands; the drive asserts the settled DOM through `until`.
-- **The Sweep's Twin Rule Stays `idHeld` (Cautionary 33):** Phase 3's `nexusPages(…).byId` would build origin paths and every kind's records to answer a question about ids alone, where `readIndexedStats(ARCHIVE_DIR_REL)` answers the ids directly.
+- **The Sweep's Twin Rule Stays `idHeld` (Cautionary 33):** Phase 3's `nexusPages(…).byId` would copy the tree's memoized by-id map and build an origin path for every archived page to answer a question about ids alone, where `readIndexedStats(ARCHIVE_DIR_REL)` answers the ids directly.
 
 ##### Found False at HEAD
 
@@ -10660,7 +10831,7 @@ In the AFTER blocks below, a `~` line is context as an earlier phase leaves it (
 ```
 
 
-**Drive group 6B** (`.claude/scripts/Archive Drive/live-drive.mjs` › `group6B(cdp)` + `MATRIX.md`; `ALL` gains `'6B'`, run after group 6A as `if (GROUPS.has('6B')) cdp = await group6B(cdp)`, since the group relaunches; each check an `item('6B', '6B', …)` gated by `POMMORA_ARCHIVE_LANDED` over Phase 1's `PHASES`). Seeds on `~/Test`, each archived through `ask(cdp, 'mutate', { op: 'archive', path, kind })` in this order, a beat apart: pages `Drive Arc 1` and `Drive Arc 2` (`Collection A/Set Alpha`), `Drive Arc Root` (`Collection A`), and Set `Drive Arc Set` (`Collection A`, one page); then sixty pages `Drive Bulk 01`–`60` (`Collection B`). A beat before the archives, `Drive Arc Root`'s file gains the body `Root body.` after its frontmatter, written from outside (`writeBody` covers Set Alpha's pages alone). Confirm Before Deletion on. Each state-changing check restores disk through the bridge and the renderer through the interface before the next; the harness restores `~/Test`. A check that undoes reads its result while the notice shows, presses Undo, then waits on disk with `until`. Group 2's `notice(cdp)` reads the shown face from here on (`document.querySelector('[role=status] [data-face="shown"], [role=alert] [data-face="shown"]')?.textContent ?? ''`).
+**Drive group 6B** (`.claude/scripts/Archive Drive/live-drive.mjs` › `group6B()` + `MATRIX.md`; `ALL` gains `'6B'`, run after group 6A as `if (GROUPS.has('6B')) await group6B()`, since the group relaunches and so drives the run's own `cdp`, as group 3 does; each check an `item('6B', '6B', …)` gated by `POMMORA_ARCHIVE_LANDED` over Phase 1's `PHASES`). Seeds on `~/Test`, each archived through `ask(cdp, 'mutate', { op: 'archive', path, kind })` in this order, a beat apart: pages `Drive Arc 1` and `Drive Arc 2` (`Collection A/Set Alpha`), `Drive Arc Root` (`Collection A`), and Set `Drive Arc Set` (`Collection A`, one page); then sixty pages `Drive Bulk 01`–`60` (`Collection B`). A beat before the archives, `Drive Arc Root`'s file gains the body `Root body.` after its frontmatter, written from outside (`writeBody` covers Set Alpha's pages alone). Confirm Before Deletion on. Each state-changing check restores disk through the bridge and the renderer through the interface before the next; the harness restores `~/Test`. A check that undoes reads its result while the notice shows, presses Undo, then waits on disk with `until`. Group 2's `notice(cdp)` reads the shown face from here on (`document.querySelector('[role=status] [data-face="shown"], [role=alert] [data-face="shown"]')?.textContent ?? ''`).
 
 - [ ] `[g6B G-4] the views footing holds New View and an Archive button, and no More button`: in Collection A's `button[title="Views"]` dropdown, a `button` reading `Archive` (`aria-pressed="false"`) sits beside the New View `+`; no `[aria-label="More"]`.
 - [ ] `[g6B G-4, G-5] Archive shows the archive place in the same tab, pressed`: press it; `[role=tab]` count unchanged, `aria-pressed="true"`, and `.detail-title` ends in `.archive-title-label` (`Archive`) after `.detail-title-clear`.
@@ -10758,7 +10929,7 @@ In the AFTER blocks below, a `~` line is context as an earlier phase leaves it (
 
 #### Task 7-1
 
-**TASK:** Rewrite every document claim the work makes false, close F-007, record F-081, and add the Archive Drive to the scripts README, each sentence replaced in place with no note of what it said before.
+**TASK:** Rewrite every document claim the work makes false, close I-007, record the exclusion-scope entry, and add the Archive Drive to the scripts README, each sentence replaced in place with no note of what it said before.
 
 **NOW:** Each CHANGE item cites the sentence it replaces. Stale names to expect there: the File History window and `PageHistoryWindow.tsx`, `HISTORY_ANCESTOR`, `recordById`, `trashedPagesOf`, `trashedPages`, `Core/Trash/resolve.ts`, `Core/Trash/record.ts`, `--fill-tertiary`, "Decision 33", and `// Trash` as "Deletion, bundling, and restore records". `~/The Studio/.claude/scripts/index-issues/index-issues.py <issues file>` closes ID gaps, re-points citations, and recomputes **TOTALS** from the index rows; it writes no row itself.
 
@@ -10774,15 +10945,15 @@ In the AFTER blocks below, a `~` line is context as an earlier phase leaves it (
 - [ ] `.claude/Features/ConnectionsPM.md:30`: a delete strips the Link values naming it from every page and Space the tree holds and every page the Archive holds, outside the delete (Task 3-3's governed reach); the rest of the paragraph stands.
 - [ ] `.claude/CLAUDE.md` *§Codebase Structure*, written by the orchestrator itself, not the executor: add `// Archive       | • The Archive's ops, re-filing, and ArchiveView` and `// Bundles       | • The bundle format, record, placement, rows, and browser both stores share` in alphabetical place; `// Trash` reads `• Deletion, Trash Mode, parking and refill, and the restore reconcile`.
 - [ ] `.claude/IssuesPM.md`:
-  - F-007's index row (`:13`), body (`:148-160`), and footnote (`:1363`) move to the closed section in the index's own format, the resolution naming Phase 1's lift.
-  - F-080 (`:1046-1058`): drop the sentence naming "Something already sits at the restored location."; "Decision 33" reads E-4; the footnote (`:1436`) cites `Core/Bundles/placement.ts` (`freeOnDisk`, `resolveRecord`) and `Core/Paths/names.ts`.
-  - F-038's citations (`:896`, `:1394`) follow `originPagesIn` in `Core/Bundles/bundle.ts`.
-  - F-046's body (`:817`): the window's `pagesByIdOf` and the reconcile index keep the first the walk listed, while the host's `nexusPages` `byId`, which a restore and every refill read, answers null and `livePathOf` none, the ledger listing the rest and picking the eldest; its footnote (`:1402`) cites `recordsOf` alone at `Core/Nexus/record.ts` and gains `Core/Nexus/heldPages.ts` (`nexusPages`).
-  - F-051's body (`:512`): the reader window for the history window, `READER_ANCESTOR` for `HISTORY_ANCESTOR`, and a page titled "page-reader" that can't be embedded inside the reader where it names "page-history" and a history snapshot (Task 6B-2's sentinel); its footnote (`:1407`) cites `Core/Interface/Windows/PageReaderWindow.tsx` (`READER_ANCESTOR`).
-  - F-075's body (`:1026`) reads `originPagesIn` for `trashedPages`; its footnote (`:1431`) cites `Core/Bundles/bundle.ts` (`originPagesIn`) and `parkLinks` in `Core/Trash/holdings.ts`.
-  - F-079's footnote (`:1435`) cites `Core/Bundles/record.ts` (`linkTargets`, `readRecord`) and `Core/Bundles/bundle.ts` (`listBundles`, `openBundle`).
-  - New **F-081 • Every write to the exclusion list re-reads the Nexus, restarts the watcher, and has sync re-check, carried entries included; scope changes could land incrementally.** in F-080's format (Concern Minimal, Origin Shortcut, Base the *§BASELINE* table's head, Created 10-20-2026). Description: `applySettings` patches the held scope and answers `'walk'` on any scope change, the settle restarts the watcher and sync reconciles; `carrySetAside`'s two writes per carried folder each take that path. Solution: an incremental rescope in `applySettings`, the watcher's captured filter, and sync's `rescope`, reaching every exclusion edit. Cites `Core/Nexus/fileEvents.ts:502-518`, `Core/Nexus/settle.ts:177-185`, `.claude/Features/DesktopPM.md:22`.
-  - Write F-007's move and F-081's row by hand in the index's format, then run `python3 ~/"The Studio/.claude/scripts/index-issues/index-issues.py" .claude/IssuesPM.md` to renumber and total.
+  - I-007's index row (`:13`), body (`:142-154`), and footnote (`:1273`) leave the index, as a resolved entry does; the commit names its resolution by Phase 1's lift.
+  - I-074 (`:956-968`): drop the sentence naming "Something already sits at the restored location."; "Decision 33" reads E-4; the footnote (`:1340`) cites `Core/Bundles/placement.ts` (`freeOnDisk`, `resolveRecord`) and `Core/Paths/names.ts`.
+  - I-034's citations (`:806`, `:1300`) follow `originPagesIn` in `Core/Bundles/bundle.ts`.
+  - I-042's body (`:727`): the window's `pagesByIdOf` and the reconcile index keep the first the walk listed, while the host's `nexusPages` `byId`, which a restore and every refill read, answers null and `livePathOf` none, the ledger listing the rest and picking the eldest; its footnote (`:1308`) cites `recordsOf` alone at `Core/Nexus/record.ts` and gains `Core/Nexus/heldPages.ts` (`nexusPages`).
+  - I-047's body (`:478`): the reader window for the history window, `READER_ANCESTOR` for `HISTORY_ANCESTOR`, and a page titled "page-reader" that can't be embedded inside the reader where it names "page-history" and a history snapshot (Task 6B-2's sentinel); its footnote (`:1313`) cites `Core/Interface/Windows/PageReaderWindow.tsx` (`READER_ANCESTOR`).
+  - I-069's body (`:936`) reads `originPagesIn` for `trashedPages`; its footnote (`:1335`) cites `Core/Bundles/bundle.ts` (`originPagesIn`) and `parkLinks` in `Core/Trash/holdings.ts`.
+  - I-073's footnote (`:1339`) cites `Core/Bundles/record.ts` (`linkTargets`, `readRecord`) and `Core/Bundles/bundle.ts` (`listBundles`, `openBundle`).
+  - New **Every write to the exclusion list re-reads the Nexus, restarts the watcher, and has sync re-check, carried entries included; scope changes could land incrementally.** under *A3 • Nexus & Data*, its id the next free `I-` number, in I-074's format (index row, `####` body with its one-row table, **Description**, **Solution**, and a `[^N]` footnote under *§Sources*; Concern Minimal, Origin Shortcut, Base the *§BASELINE* table's head, Created 10-20-2026). Description: `applySettings` patches the held scope and answers `'walk'` on any scope change, the settle restarts the watcher and sync reconciles; `carrySetAside`'s two writes per carried folder each take that path. Solution: an incremental rescope in `applySettings`, the watcher's captured filter, and sync's `rescope`, reaching every exclusion edit. Cites `Core/Nexus/fileEvents.ts:502-518`, `Core/Nexus/settle.ts:177-185`, `.claude/Features/DesktopPM.md:22`.
+  - Remove I-007 and write the new entry by hand in the index's format, then run `python3 ~/"The Studio/.claude/scripts/index-issues/index-issues.py" .claude/IssuesPM.md` to renumber and total.
 - [ ] `.claude/Features/PagesPM.md`, `NexusSyncPM.md`, `PropertiesPM.md`, `ContextsPM.md`, `CollectionsPM.md`, and `SurfacePM.md`: sweep for the VERIFY grep's retired names and for any claim that the Trash is the one removal path or that every hidden folder stays out of content, rewriting each hit in place. `PropertiesPM.md:128` (now: a cached Link naming a gone page always leaves the cache): a cached Link naming a page gone leaves the cache, joining that page's Trash bundle when it sits there, while one naming an archived page stays (D-1). `CollectionsPM.md:45` (now: a bare folder rename, only a move dropping an id from its container's order): a rename carries the folder's excluded entries and asset directory, a Set can also leave for its Collection's Archive, and a delete drops its id from its container's order as a move does. The other four read true at HEAD where they touch the Trash or `.nexus` (`NexusSyncPM.md:9`'s manifest carries the Archive inside `.nexus`).
 - [ ] `.claude/scripts/README.md`: a paragraph for `Archive Drive/live-drive.mjs` in its neighbours' register: what it drives, its groups 1 to 6B following the phases, `POMMORA_ARCHIVE_LANDED`, its seeds in `~/Test`, its debug port, and its non-zero exit on any failed check a landed phase owns.
 - [ ] `.claude/Planning/Archive/Archive — Investigation.md`: `:68` and `:336`: `readIndexedStats` answers before the seed and null only with no store; `:251`: the Trash restore's two-map relink, hoisted as `returningNames`, re-spells a restore's arrival; `:294`: the resolver's home is `Core/Paths/nexusPaths.ts` with its four exports; `:306-310`: the chain-mirrored layout.
@@ -10796,8 +10967,8 @@ Each document reads as its CHANGE item states, every sentence replaced in place;
 **VERIFY**
 
 - [ ] `node .claude/scripts/check-atlas.mjs` exits 0.
-- [ ] `git grep -n -i "PageHistoryWindow\|NotificationLabel\|trash:list\|trashChanged\|TrashRow\b\|deletedAt\|releaseExcludedFolders\|reseatExcludedFolders\|followExcludedFolders\|keyHolderFiles\|recordById\|fileHistoryMenu\|trashMenu\b\|useTimedLabel.ts\|glyphSwap\|trashedPages\|Trash/record\.ts\|HISTORY_ANCESTOR" -- .claude/Features .claude/CLAUDE.md .claude/IssuesPM.md .claude/scripts/README.md` returns nothing outside F-007's closed entry, whose body and footnote cite the code it closed against (`releaseExcludedFolders`, `Core/Trash/record.ts:34-35`).
-- [ ] `grep -n "Decision 33\|Something already sits" .claude/IssuesPM.md` returns nothing; `grep -n "F-081" .claude/IssuesPM.md` finds the index row, the body, and the footnote.
+- [ ] `git grep -n -i "PageHistoryWindow\|NotificationLabel\|trash:list\|trashChanged\|TrashRow\b\|deletedAt\|releaseExcludedFolders\|reseatExcludedFolders\|followExcludedFolders\|keyHolderFiles\|recordById\|fileHistoryMenu\|trashMenu\b\|useTimedLabel.ts\|glyphSwap\|trashedPages\|Trash/record\.ts\|HISTORY_ANCESTOR" -- .claude/Features .claude/CLAUDE.md .claude/IssuesPM.md .claude/scripts/README.md` returns nothing.
+- [ ] `grep -n "Decision 33\|Something already sits" .claude/IssuesPM.md` returns nothing; `grep -n "Every write to the exclusion list re-reads the Nexus" .claude/IssuesPM.md` finds the index row and the body's heading, and the footnote carries the entry's id.
 - [ ] Every cited line above is re-read after the edit and holds the replaced sentence alone.
 - [ ] Check for unnecessary code or mistakes.
 
@@ -10815,7 +10986,7 @@ Each document reads as its CHANGE item states, every sentence replaced in place;
 - **Completeness:** every task and checkpoint in *§Process Overview* is ticked; every removal *§Concepts* names is gone; no scaffolding, debug output, or unauthorized TODO remains; the drive's groups 1 to 6B all pass with `POMMORA_ARCHIVE_LANDED` at its last phase.
 - **Confirmation:** every "write and watch fail" test went red before its change and green after; every VERIFY ran and its output was read; no check was left to Nathan.
 - **Continuity:** *§Reconciliation* is walked; the documents Phase 7 names read true; every deviation is fixed or ruled on under *§Deviations*.
-- **Confidence:** the three gates are green from a clean checkout at HEAD; `view-delta <BASELINE>..HEAD` is reported with additions and removals apart, per phase and in total, against *§Overview › The Number*, and growth past it states what it bought; both neutral gates answered without ambiguity that the result holds to every principle this work set.
+- **Confidence:** the three gates are green from a clean checkout at HEAD; `view-delta` over each phase's own commits is reported with additions and removals apart, per phase and summed in total, against *§Overview › The Number*, and growth past it states what it bought; both neutral gates answered without ambiguity that the result holds to every principle this work set.
 
 #### Final Verification
 
@@ -10886,6 +11057,7 @@ Each document reads as its CHANGE item states, every sentence replaced in place;
 - `Core/Nexus/migrateConfig.ts:45` — "only the Trash and the tile documents are walked here" — Task 3-1
 - `Core/Nexus/treePatch.ts:83` — "since Collections sit only at the Nexus root" — Task 3-1
 - `Core/Properties/keyHolders.ts:1`, `:47` — the intersection's reason; "whose ID another already took" — Tasks 3-2, 3-3
+- `Core/Properties/deleteProperty.ts:98` — "pre-cache dormant values may sit on any page" — Task 3-2
 - `Core/Nexus/cascade.ts:72`, `:81`, `:101` — the strip's doc, the no-tree comment, the tree filter's comment — Task 3-3
 - `Core/Nexus/heldPages.ts:1` — "The held tree's pages by path and by id" — Task 3-3
 - `Core/Properties/governedSweep.ts:150` — "found where `roots` places it" — Task 3-3
@@ -10946,3 +11118,8 @@ Phase 2 measured +268 (+893 / −625) against the written +263; its review's fix
 - **Contexts (Task 2-4):** a Context gone for good, deleted to the system Trash or emptied from the Trash, dropped its panel id with its Space order through `dropContextOrder` (`dropSpaceOrder` renamed), where the id had stayed in `order.contexts`. It added +2 in `reorder.ts`.
 - **The Id Rule (Task 2-3):** `bundles:list` held an archive id to one safe path segment through `holdsName` rather than to ULID shape, the one rule the path built from it needs, and refused an id that failed it rather than answering an empty list. It added +1 in `handlers.ts`.
 - **The Order Write (Task 2-4):** the restore's order write used the parent node its resolution already held, carried as the resolution's `order`, in place of a second lookup by path, which had written a Space restored under one of two same-titled Contexts into the other's order. It was −9 in `placement.ts`.
+
+Phase 3 measured +143 (+333 / −190) against the written +108. It landed at +111 before its review, Biome's wrapping the difference, and its review's fix was +32: the twin's way back below +8; one memoized twin map, one predicate, and the Archive's scope read from the tree +9 in `heldPages.ts`; the governed reach moved beside the governed sweep, reading the tree once, +15 (`governedSweep.ts` +26, `deleteProperty.ts` +7, `optionOps.ts` +5, and `replaySchemaCascade.ts` +1 as their imports wrap, against `keyHolders.ts` −24); the rename's both-keys refusal leaving the Archive out (C-4) with one `isArchived` at its four sites +3; the archived arm of the configuration pass reading each sidecar once and counting an unreadable one +3; `deleteCascade`'s one bail +3; and `loadValues`' relative paths −9. The drive's withheld page below changed only the drive.
+
+- **The Twin's Way Back (Task 3-3):** the plan's restores dropped a value whose holder's id two files claim with nothing kept: the Link refill parked it as a trashed page's, and a tag's `reapply` and the property restore left it out unnamed, so the record went with it. A restore now leaves the value out of both twins, names it through `shownTitle` (the first-listed page's title, the one the window shows), and keeps the record where the record outlives the restore. It added +8: `heldPages.ts` +6, `spend.ts` +1, and `restoreProperty.ts` +1.
+- **The Drive's Withheld Page (Task 3-4):** the plan's group 3 witnessed K-2 with a page carrying a task-marked ID, which the value load's own record read already refuses, so its value-load item couldn't fail, and which the Matrix graph didn't hold, so its Matrix item failed. The landed witness is a page under a Set whose sidecar doesn't parse, which the index and a folder walk read and the tree withholds: the value-load item fails if the load walks the folder again, and the Matrix item proves the graph keeps a page the tree withholds. It changed the drive and `MATRIX.md` alone, apart from the count.
