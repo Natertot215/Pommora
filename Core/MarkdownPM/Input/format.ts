@@ -66,10 +66,10 @@ const LINKS: Record<LinkWrapKind, LinkWrap> = {
 const SWAPS: Partial<Record<TokenKind, TokenKind>> = { bold: 'italic', italic: 'bold' }
 const MARKER_CHARS = '*_~=`'
 
-/** Inline marks are line-local, so only the selection's line is tokenized, in line-relative coords; the marks covering it are read with the marker characters at its edges stripped, and a fenced line holds none. */
+/** Inline marks are line-local, so only the selection's line is tokenized, in line-relative coords; the marks covering it are read with the marker characters at its edges stripped, and a fenced line holds none. An edge inside a link widens to the whole link, so a mark wraps the link rather than splitting its syntax. */
 export function underSelection(scan: DocScan, selFrom: number, selTo: number) {
   const doc = scan.text
-  const [from, to] = trimmedRange(doc, selFrom, selTo)
+  let [from, to] = trimmedRange(doc, selFrom, selTo)
   const ls = lineStartAt(doc, from)
   const line = doc.slice(ls, lineEndAt(doc, from))
   const fenced = inFenceAt(scan, from)
@@ -78,6 +78,13 @@ export function underSelection(scan: DocScan, selFrom: number, selTo: number) {
   let t = to - ls
   while (f < t && MARKER_CHARS.includes(line[f])) f++
   while (t > f && MARKER_CHARS.includes(line[t - 1])) t--
+  for (const { kind, range } of tokens) {
+    if ((kind !== 'link' && kind !== 'wikiLink') || !overlaps(range, [f, t])) continue
+    f = Math.min(f, range[0])
+    t = Math.max(t, range[1])
+  }
+  from = Math.min(from, ls + f)
+  to = Math.max(to, ls + t)
   const covering = tokens.filter((tk) => insideMark(tk, f, t))
   return { fenced, from, to, ls, line, tokens, f, t, covering }
 }

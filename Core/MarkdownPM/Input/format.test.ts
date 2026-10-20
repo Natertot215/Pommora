@@ -97,6 +97,27 @@ describe('toggleInline', () => {
     const path = 'a [[A/B/Notes]] b'
     expect(apply(path, toggleInline(scanDoc(path), 10, 10, 'connection'))).toBe('a Notes b')
   })
+  it('widens an edge inside a link to the whole link, so the mark wraps it', () => {
+    const wrap = (doc: string, from: number, to: number, fmt: 'bold' | 'italic' | 'inlineCode') =>
+      apply(doc, toggleInline(scanDoc(doc), from, to, fmt))
+    expect(wrap('foo [[Bar]] baz', 6, 8, 'bold')).toBe('foo **[[Bar]]** baz')
+    expect(wrap('foo [[Bar]] baz', 0, 7, 'bold')).toBe('**foo [[Bar]]** baz')
+    expect(wrap('foo [[Bar]] baz', 7, 7, 'italic')).toBe('foo *[[Bar]]* baz')
+    expect(wrap('[[Bar|Alias]]', 7, 9, 'bold')).toBe('**[[Bar|Alias]]**')
+    expect(wrap('[label](https://x.com)', 16, 19, 'bold')).toBe('**[label](https://x.com)**')
+    expect(wrap('[[A]] and [[B]]', 3, 13, 'bold')).toBe('**[[A]] and [[B]]**')
+    expect(wrap('foo [[Bar]] baz', 6, 8, 'inlineCode')).toBe('foo `[[Bar]]` baz')
+    expect(wrap('foo **[[Bar]]** baz', 9, 9, 'bold')).toBe('foo [[Bar]] baz')
+  })
+  it('paints a link whole from an edge inside it', () => {
+    const doc = 'foo [[Bar]] baz'
+    expect(apply(doc, toggleInline(scanDoc(doc), 6, 8, 'textColor', 'red'))).toBe(
+      'foo =🔴[[Bar]]= baz',
+    )
+    expect(apply(doc, toggleInline(scanDoc(doc), 6, 8, 'highlight', 'accent'))).toBe(
+      'foo ==[[Bar]]== baz',
+    )
+  })
   it('stands down on a fenced line', () => {
     expect(toggleInline(scanDoc('```\n**b**\n```'), 6, 6, 'bold')).toBeNull()
   })
@@ -445,7 +466,6 @@ describe('text colors', () => {
     expect(refused('ab\ncd', 0, 5, 'textColor', 'red')).toBeNull()
     expect(refused('run `npm test` now', 5, 8, 'highlight', 'red')).toBeNull()
     expect(refused('a $x+y$ b', 3, 4, 'highlight', 'red')).toBeNull()
-    expect(refused('foo [[Bar]] baz', 6, 8, 'textColor', 'red')).toBeNull()
     expect(refused('🔴 Urgent now', 0, 9, 'highlight')).toBeNull()
     expect(toggleInline(scanDoc('🔴 Urgent now'), 0, 9, 'highlight', 'accent')).toBeNull()
   })
