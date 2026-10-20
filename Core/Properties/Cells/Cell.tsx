@@ -5,6 +5,7 @@ import type { ResolvedColumn, ViewRow } from '../../Views/viewRow'
 import { ProgressBar } from '@pommora/uix/Elements/ProgressBar'
 import { colorNameFor } from '@pommora/uix/Theme/ramp'
 import { OverScroll } from '@pommora/uix/Interactions/OverScroll'
+import { valueGlyph } from '@pommora/uix/Fields/fields.css'
 import { resolveFileValue } from '../../Assets/assetUrl'
 import { FILE_CHIP_INDEX_ATTR, fileValueWithout } from '../Pickers/filePick'
 import { fileName, resolveFieldValue } from '../value'
@@ -143,7 +144,20 @@ export function Cell({
           </span>
         )
       }
-      return <OverScroll className="cell-text-scroll">{formatNumber(v.value, def)}</OverScroll>
+      return (
+        <OverScroll className="cell-text-scroll">
+          {formatNumber(v.value, def).map((p, i) =>
+            p.glyph ? (
+              // biome-ignore lint/suspicious/noArrayIndexKey: the parts are rebuilt whole from the value, never reordered
+              <span key={i} className={valueGlyph}>
+                {p.text}
+              </span>
+            ) : (
+              p.text
+            ),
+          )}
+        </OverScroll>
+      )
     }
     case 'file':
       return (

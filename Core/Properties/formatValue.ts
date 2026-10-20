@@ -191,20 +191,30 @@ function fractionDigits(decimals: NumberConfig['number_decimals']): Intl.NumberF
   return {}
 }
 
+/** A run of a formatted number, flagged where it's the format's own glyph rather than the value. */
+export type NumberPart = { text: string; glyph: boolean }
+
 /** Percent is LITERAL — the number plus '%', never Intl's ×100 percent style. */
-function formatScalar(n: number, cfg: NumberConfig | undefined): string {
+function formatScalar(n: number, cfg: NumberConfig | undefined): NumberPart[] {
   const useGrouping = cfg?.number_separators !== false
   const digits = fractionDigits(cfg?.number_decimals)
   if (cfg?.number_family === 'currency') {
-    return numFmt({
+    const parts: NumberPart[] = []
+    for (const p of numFmt({
       style: 'currency',
       currency: cfg.number_currency ?? DEFAULT_CURRENCY,
       useGrouping,
       ...digits,
-    }).format(n)
+    }).formatToParts(n)) {
+      const glyph = p.type === 'currency'
+      const last = parts.at(-1)
+      if (last && !glyph && !last.glyph) last.text += p.value
+      else parts.push({ text: p.value, glyph })
+    }
+    return parts
   }
-  const num = numFmt({ useGrouping, ...digits }).format(n)
-  return cfg?.number_family === 'percent' ? `${num}%` : num
+  const num = { text: numFmt({ useGrouping, ...digits }).format(n), glyph: false }
+  return cfg?.number_family === 'percent' ? [num, { text: '%', glyph: true }] : [num]
 }
 
 /** Percent already reads out of 100, so it takes no fraction. */
@@ -213,11 +223,15 @@ export const fractionDenominator = (cfg: NumberConfig | undefined): number | und
     ? cfg.number_denominator
     : undefined
 
-export function formatNumber(n: number, cfg: NumberConfig | undefined): string {
+export function formatNumber(n: number, cfg: NumberConfig | undefined): NumberPart[] {
   const denominator = fractionDenominator(cfg)
   return denominator === undefined
     ? formatScalar(n, cfg)
-    : `${formatScalar(n, cfg)} out of ${formatScalar(denominator, cfg)}`
+    : [
+        ...formatScalar(n, cfg),
+        { text: ' out of ', glyph: false },
+        ...formatScalar(denominator, cfg),
+      ]
 }
 
 /** The divisor a bar fills against; undefined when there's none, so the bar never divides by zero. */
@@ -238,11 +252,12 @@ const currencySymbol = (currency: string): string =>
     .formatToParts(0)
     .find((p) => p.type === 'currency')?.value ?? currency
 
-/** A number's format glyph: its currency's symbol as a cell shows it, a percent sign, or `#` for a plain number. */
-export function numberFormatGlyph(cfg: NumberConfig): string {
+/** A number's format glyph: its currency's symbol as a cell shows it, or a percent sign; a plain number has none. */
+export function numberFormatGlyph(cfg: NumberConfig): string | undefined {
   if (cfg.number_family === 'percent') return '%'
-  if (cfg.number_family !== 'currency') return '#'
-  return currencySymbol(cfg.number_currency ?? DEFAULT_CURRENCY)
+  if (cfg.number_family === 'currency')
+    return currencySymbol(cfg.number_currency ?? DEFAULT_CURRENCY)
+  return undefined
 }
 
 const SYMBOL = CURRENCY_CODES.map((c) => escapeRegExp(currencySymbol(c))).join('|')
