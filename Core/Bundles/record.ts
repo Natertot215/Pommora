@@ -8,7 +8,7 @@ import { contextEntry } from '../Contexts/contexts'
 import type { StrippedLink } from '../Nexus/cascade'
 import type { ContainerKind } from '../Nexus/entities'
 import type { NexusTree } from '../Nexus/tree'
-import { containerAt } from '../Nexus/treePatch'
+import { containerAt, containerTrailById } from '../Nexus/treePatch'
 
 /** The underscore is load-bearing: the artifact shares this folder under its own real name, so the record wears a prefix no entity may. The atomic writer's temp sibling inherits it too, so it is skipped alongside Finder's litter. */
 export const RECORD_FILENAME = '_record.json'
@@ -43,13 +43,17 @@ const contentRecord = <E extends string>(entity: E) =>
     id: z.string().optional(),
     parent: parentRef,
     place,
+    /** The ids of the containers above `parent`, Collection first, so a Trash record's Collection is `trail[0] ?? parent.id`; read once the tree no longer holds `parent`, and kept current in the Archive by its carry. */
+    trail: z.array(z.string()).optional(),
+    /** A Trash record's only: the Archive bundle a delete took the item out of, where its Undo returns it. */
+    archive: z.string().optional(),
     /** Each Link value the delete stripped from a page outside it, by that page's id and the property's, so a restore can put it back. */
     links: z.array(strippedLink).optional(),
     targets: linkTargets,
     partial: z.literal(true).optional(),
   })
 
-// The record itself is never rewritten from its decode; `def` and `registry` decode loose because a restore writes them back.
+// The record itself is never rewritten from its decode; `def` and `registry` decode loose because a restore writes them back. A page's or Set's record decodes whole, so a delete from the Archive and its Undo each write the other store's record from it.
 const recordFile = z.discriminatedUnion('entity', [
   contentRecord('page'),
   contentRecord('collection'),
@@ -107,6 +111,11 @@ export function placeOf(ids: readonly string[], id: string): Place | undefined {
   return { ...(above ? { above } : {}), ...(below ? { below } : {}) }
 }
 
+export const trailAbove = (tree: NexusTree, containerId: string): string[] | null =>
+  containerTrailById(tree, containerId)
+    ?.slice(0, -1)
+    .map((n) => n.id) ?? null
+
 export async function gatherContentRecord(
   root: string,
   tree: NexusTree,
@@ -128,6 +137,7 @@ export async function gatherContentRecord(
           id,
         )
       : undefined
+  const trail = container ? trailAbove(tree, container.id) : null
   return {
     entity: kind,
     ...(id ? { id } : {}),
@@ -137,5 +147,6 @@ export async function gatherContentRecord(
         ? { kind: 'container', id: container.id }
         : { kind: 'unaddressable' },
     ...(placed ? { place: placed } : {}),
+    ...(trail ? { trail } : {}),
   }
 }

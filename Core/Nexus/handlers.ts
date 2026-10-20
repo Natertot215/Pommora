@@ -33,6 +33,7 @@ import { asString } from './coerce'
 import { settleNow, recordHanded } from './settle'
 import type { NexusState } from './tree'
 import { trashDeps } from '../Trash/discard'
+import { settleArchives } from '../Archive/refile'
 
 async function prepareOpenedNexus(path: string): Promise<string | null> {
   let nexusId: string | null = null
@@ -99,6 +100,9 @@ export async function openNexusSequence(
         tree = await readNexus(root)
       seedLiveTree(tree)
       if (latchRecord) await runOpenLedger(root, tree)
+      await settleArchives(root, tree).catch((e) =>
+        console.error('archive: the open pass failed:', errText(e)),
+      )
     } catch (e) {
       console.error('adopt: the seed walk failed; reads will retry:', errText(e))
     }

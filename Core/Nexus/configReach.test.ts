@@ -10,7 +10,7 @@ import { readNexus } from './readNexus'
 import { closeSession, openSession } from './session'
 import './settle'
 import { stabilize } from './treeStabilize'
-import { goneEdit, propertyClear, reachConfig, reachReport } from './configReach'
+import { goneContainers, goneEdit, propertyClear, reachConfig, reachReport } from './configReach'
 import { unsweptLine } from '../Properties/governedSweep'
 
 vi.mock('./liveTree', async (importOriginal) => {
@@ -636,6 +636,12 @@ describe('a gone edit', () => {
         { property_id: 'ctx_other', op: 'contains_any', values: ['sp_work'] },
       ],
     })
+  })
+
+  it('goneContainers names each id as a gone location', async () => {
+    await reachConfig(root, goneContainers(['set_gone', 'set_sub']))
+    expect((await viewsOf(setFile()))[0].filter).toEqual({ match: 'all', rules: strippedRules })
+    expect((await tileViews('t_deep'))[0].group_order).toEqual(['set_keep'])
   })
 
   it('leaves a tile view sourced from a gone container as written', async () => {

@@ -262,7 +262,7 @@ describe('restoring a deleted property', () => {
     expect(await valueOn(page.value.path, 'Priority')).toBeUndefined()
 
     const deleted = await deleteProperty(root, id)
-    expect(deleted.ok && deleted.value.trashed?.bundlePath).toBe(await onlyBundlePath())
+    expect(deleted.ok && deleted.value.bundled?.bundlePath).toBe(await onlyBundlePath())
     await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() }, deps)
     expect(await assigns(tasks, id)).toBe(false)
     expect(await valueOn(page.value.path, 'Priority')).toBeUndefined()

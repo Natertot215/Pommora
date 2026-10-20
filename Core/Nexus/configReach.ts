@@ -277,7 +277,19 @@ const within = (node: CollectionNode | SetNode): (CollectionNode | SetNode)[] =>
   ...(node.sets ?? []).flatMap(within),
 ]
 
-export function goneEdit(tree: NexusTree, kind: HeldKind, rel: string): ConfigEdit | null {
+/** The containers a removal took, as locations every saved view, View Tile, and filter drops: read from the tree, or from an archived Set's sidecars on disk. */
+export const goneContainers = (ids: string[]): ConfigEdit => ({
+  kind: 'gone',
+  propertyId: RESERVED_PROPERTY_ID.location,
+  ids,
+})
+
+export function goneEdit(
+  tree: NexusTree,
+  kind: HeldKind,
+  rel: string,
+  archived: string[] = [],
+): ConfigEdit | null {
   switch (kind) {
     case 'page':
       return null
@@ -292,13 +304,7 @@ export function goneEdit(tree: NexusTree, kind: HeldKind, rel: string): ConfigEd
     case 'collection':
     case 'set': {
       const node = containerAt(tree, rel)
-      return node
-        ? {
-            kind: 'gone',
-            propertyId: RESERVED_PROPERTY_ID.location,
-            ids: within(node).map((n) => n.id),
-          }
-        : null
+      return node ? goneContainers([...within(node).map((n) => n.id), ...archived]) : null
     }
   }
 }

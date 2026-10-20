@@ -213,7 +213,7 @@ describe('the Trash pane', () => {
     const older = vi.fn(() => true)
     pushUndo(older)
     const { bundlePath } = listed[0]
-    notifyTrashed('Alpha', { trashed: { bundlePath } })
+    notifyTrashed('Alpha', { bundled: { bundlePath } })
     useSession.setState({ askConfirm: async () => true })
     mutated.mockClear()
     picked = action
@@ -229,7 +229,7 @@ describe('the Trash pane', () => {
   it('a restore here that is refused leaves the bundle’s Undo on the chord', async () => {
     resetUndo()
     const { bundlePath } = listed[0]
-    notifyTrashed('Alpha', { trashed: { bundlePath } })
+    notifyTrashed('Alpha', { bundled: { bundlePath } })
     mutated.mockResolvedValue({ ok: false, error: { code: 'io', message: 'No.' } })
     picked = 'restore'
     const item = host?.querySelector('.trash-row') as HTMLElement
@@ -248,7 +248,7 @@ describe('the Trash pane', () => {
     resetUndo()
     const older = vi.fn(() => true)
     pushUndo(older)
-    notifyTrashed('Alpha', { trashed: { bundlePath: listed[0].bundlePath } })
+    notifyTrashed('Alpha', { bundled: { bundlePath: listed[0].bundlePath } })
     for (const box of host?.querySelectorAll('[role="checkbox"]') ?? [])
       await act(async () => (box as HTMLButtonElement).click())
     picked = 'restoreAll'

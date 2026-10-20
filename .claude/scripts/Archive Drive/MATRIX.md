@@ -44,6 +44,25 @@ The run's prologue saves and shows `Drive Table`, a table view of its own on Col
 | the property delete strips the archived page as it strips the live one | C-2 | disk: neither frontmatter holds `Drive Stage` |
 | the group leaves Collection A’s Archive and the Trash as it found them | — | the seeds removed from outside, `Drive Stage`'s bundle emptied under `permanentDelete` (then off again); `bundles:list` answers no archived row and no `Drive Stage` row |
 
+#### Group 4 — The Archive's Ops (Phase 4)
+
+Seeds through `mutate` on `~/Test`, Collection ids read from the sidecars at run time: `Drive Arc` in Set Alpha, created with an explicit `order` that places its id right after `Page A`'s in the `page_order` the group starts from, so its neighbours are `Page A` and the page following it then (`Page B` on `~/Test`), its body `[[Drive Live]]` written from outside, beside `Drive Live`; Set `Drive Sub` in Set Alpha holding `Drive Deep`; Collection `Drive Coll` holding `Drive Kept`. Two relaunches: the first writes, while the app is closed, an Archive under a fresh id holding `Drive Gone/2026-10-20T00-00-00-000Z__Drive Orphan.md.archived/` with `Drive Orphan.md` and a record whose parent is a second fresh id; the second follows `Drive Coll`'s delete. With `permanentDelete` on, the group deletes and empties everything it made, resets `permanentDelete`, removes Collection A's and B's Archive folders and the Trash chain folders it made where empty, and asserts the start-of-group orders, `bundles:list` lengths, and setting; the harness restores `~/Test` when the run ends.
+
+| Check | Decision | Asserts |
+| --- | --- | --- |
+| a page archives into its Collection’s Archive under the chain it left | A-2 | `bundled.bundlePath` under `.nexus/archive/<A id>/Collection A/Set Alpha/<stamp>__Drive Arc.md.archived`, holding the page and a record with `entity: 'page'`, its id, Set Alpha's id as `parent`, `place` with the follower above and `Page A` below, `trail: [<A id>]`; the page gone from Set Alpha and its id from `page_order` |
+| the archived page leaves the tree and lists in its Archive | D-2 | `nexus:state`'s tree holds no page with its id; `bundles:list({ kind: 'archive', id: <A id> })` answers one row titled `Drive Arc`, crumbs `Collection A`, `Set Alpha` |
+| a rename reaches the archived file | C-1 | disk: after `Drive Live`'s rename, the archived body reads `[[Drive Live Renamed]]` |
+| a restore returns it to its exact place by a plain move | E-2 | disk: `Drive Arc.md` back in Set Alpha byte-equal, between `Page A` and the follower in `page_order`; the bundle gone; no `unrestored` or `landedAs` |
+| a delete from the Archive goes to the Trash keeping the bundle it left | E-3 | `bundled.bundlePath` under `.trash/Collection A/Set Alpha/<stamp>__Drive Arc.md.deleted`, its record's `archive` naming the Archive bundle, which is gone |
+| its Undo returns it to the Archive under the same name | E-3 | `restore` with `destination: { kind: 'archive' }`: the Archive bundle holds the page and a record without `archive`, `links`, or `targets`; the Trash bundle gone; the tree holds no `Drive Arc` |
+| a Trash restore returns it to where it was archived from | E-3 | a plain `restore` of a second Trash bundle: `Collection A/Set Alpha/Drive Arc.md` |
+| a Set moved to another Collection carries what was archived from within it | F-6 | `moveSet` of `Drive Sub` into Collection B: `.nexus/archive/<B id>/Collection A/Set Alpha/Drive Sub/<the bundle's leaf>/Drive Deep.md`, `trail: [<B id>]`; the bundle gone from A's Archive |
+| a Set moved within its Collection rewrites the trail alone | F-6 | `moveSet` into Collection B's Set Alpha: the bundle stays, `trail: [<B id>, <B's Set Alpha id>]` |
+| an Archive whose Collection exists nowhere moves into the Trash at the next open | F-5 | disk after the relaunch: `.trash/Drive Gone/` holds one `__Drive Orphan.md.deleted` bundle with an equal record; the orphaned Archive's folder gone |
+| a Collection in the Trash keeps its Archive, and emptying it empties both | F-4 | disk after the second relaunch: `.nexus/archive/<Drive Coll id>/` stands; an `emptyBundle` of `Drive Coll`'s Trash row under `permanentDelete` leaves neither it nor the bundle |
+| the group leaves Collections A and B, their Archives, and the Trash as it found them | — | start-of-group values: Set Alpha's `page_order`, Collection B's and its Set Alpha's `set_order`, `state.json`'s `order.collections`, `bundles:list` lengths for the Trash and both Archives, `permanentDelete`, and which Trash chain folders exist |
+
 #### Pruned
 
 - **The write order, a case-only rename, the single watcher restart, nesting, an entry naming no folder, and the corrupt-settings refusals:** none is visible, and `mutate.test.ts` and `settings.test.ts` pin each.

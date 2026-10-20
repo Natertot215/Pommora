@@ -207,6 +207,19 @@ describe('the record is written before the destruction it describes', () => {
     expect(atSettle).toMatchObject({ entity: 'context', membership: [{ root: { id: PAGE_A } }] })
   })
 
+  it('a delete from the Archive records, with the bundle it left, before the artifact moves', async () => {
+    const archived = await handleMutate(
+      root,
+      { op: 'archive', path: 'Notes/Alpha.md', kind: 'page' },
+      nexusDeps,
+    )
+    const archive = archived.ok ? archived.value.bundled?.bundlePath : undefined
+    expect(archive).toBeDefined()
+    const r = await handleMutate(root, { op: 'delete', path: archive!, kind: 'page' }, nexusDeps)
+    expect(r.ok).toBe(true)
+    expect(atSettle).toMatchObject({ entity: 'page', archive, partial: true })
+  })
+
   it('system-trash mode records nothing and mints no bundle', async () => {
     const r = await handleMutate(
       root,
@@ -325,8 +338,8 @@ describe('a page delete waits out a save in flight', () => {
     release()
     await save
     const r = await del
-    if (!r.ok || !r.value.trashed) throw new Error('the delete did not trash')
+    if (!r.ok || !r.value.bundled) throw new Error('the delete did not trash')
     expect(await pathExists(file)).toBe(false)
-    expect(await readFile(join(root, r.value.trashed.bundlePath, 'Alpha.md'), 'utf8')).toBe('saved')
+    expect(await readFile(join(root, r.value.bundled.bundlePath, 'Alpha.md'), 'utf8')).toBe('saved')
   })
 })

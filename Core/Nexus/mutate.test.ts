@@ -3445,7 +3445,7 @@ describe('handleMutate — excluded entries follow their folders', () => {
       { op: 'delete', path: 'Other', kind: 'collection' },
       nexusDeps,
     )
-    const bundlePath = (deleted.ok && deleted.value.trashed?.bundlePath) || ''
+    const bundlePath = (deleted.ok && deleted.value.bundled?.bundlePath) || ''
     expect(await pathExists(join(root, 'Private'))).toBe(true)
     expect(await excludedOnDisk()).toEqual(['Private'])
     await refreshTree(root)
@@ -3468,7 +3468,7 @@ describe('handleMutate — excluded entries follow their folders', () => {
       { op: 'delete', path: 'Other', kind: 'collection' },
       nexusDeps,
     )
-    const bundlePath = deleted.ok ? (deleted.value.trashed?.bundlePath ?? '') : ''
+    const bundlePath = deleted.ok ? (deleted.value.bundled?.bundlePath ?? '') : ''
     expect(await readJson('Daily/_pageset.json')).toEqual({ id: 'od' })
     expect(await excludedOnDisk()).toEqual(['Daily'])
     expect(await readdir(join(root, bundlePath, 'Other'))).toEqual(['_pagecollection.json'])
@@ -3518,7 +3518,7 @@ describe('handleMutate — excluded entries follow their folders', () => {
       expect(renames[1].from).toBe(folder)
       expect(bundled.endsWith('.deleted/Other')).toBe(true)
       await refreshTree(root)
-      const bundlePath = deleted.ok ? (deleted.value.trashed?.bundlePath ?? '') : ''
+      const bundlePath = deleted.ok ? (deleted.value.bundled?.bundlePath ?? '') : ''
       const restored = await settledMutate(root, { op: 'restore', bundlePath }, nexusDeps)
       expect(restored.ok).toBe(true)
       expect(renames.map(({ from, to }) => [from, to])).toEqual([
@@ -3634,7 +3634,7 @@ describe('handleMutate — excluded entries follow their folders', () => {
       { op: 'delete', path: 'Notes/Daily', kind: 'set' },
       nexusDeps,
     )
-    const bundlePath = deleted.ok ? (deleted.value.trashed?.bundlePath ?? '') : ''
+    const bundlePath = deleted.ok ? (deleted.value.bundled?.bundlePath ?? '') : ''
     expect(await excludedOnDisk()).toEqual(['Notes/Omega', 'Notes/Omega (2)', 'Notes/Daily (2)'])
     for (const rel of ['Omega', 'Omega (2)', 'Daily (2)'])
       expect(await pathExists(join(root, 'Notes', rel))).toBe(true)

@@ -155,9 +155,9 @@ describe('a value write reconciles the Space it lands on', () => {
       { op: 'delete', path: spaceRel, kind: 'space' },
       settled,
     )
-    if (!deleted.ok || !deleted.value.trashed) throw new Error('delete failed')
+    if (!deleted.ok || !deleted.value.bundled) throw new Error('delete failed')
     expect((await removeOption(root, tagsId, 'beta')).ok).toBe(true)
-    const { bundlePath } = deleted.value.trashed
+    const { bundlePath } = deleted.value.bundled
     expect((await settledMutate(root, { op: 'restore', bundlePath }, settled)).ok).toBe(true)
     expect((await sidecar()).Tags).toEqual(['alpha'])
   })

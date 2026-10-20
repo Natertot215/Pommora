@@ -35,6 +35,7 @@ import { pageIndexOf, pagesOf } from './record'
 import { type CascadeReport, renameCascade } from './cascade'
 import { respellings } from '../Connections/rewrite'
 import { buildPageIndex, type ConnPage, type PageIndex } from '../Connections/pageIndex'
+import { refileMoved } from '../Archive/refile'
 
 // ── The app's own events ──
 
@@ -165,7 +166,8 @@ async function settle(pusher: Pusher, root: string): Promise<{ rescope: boolean 
   }
   const held = heldTreeOf(root)
   const tree = held && shown(held, stamp)
-  const delta = tree && deltaOf(pushed?.nexus.rootPath === root ? pushed : undefined, tree)
+  const handed = pushed?.nexus.rootPath === root ? pushed : undefined
+  const delta = tree && deltaOf(handed, tree)
   if (tree) pushed = tree
   if (delta) pusher.push('nexus:changed', { version: ++version, delta })
   if (pages.size) pusher.push('pages:changed', [...pages])
@@ -174,6 +176,11 @@ async function settle(pusher: Pusher, root: string): Promise<{ rescope: boolean 
   for (const { host, ids } of tiles.values()) pusher.push('tiles:changed', { host, ids: [...ids] })
   const map = getHeldAssetMap(root)
   if (assets && map) pusher.push('assets:changed', map)
+  // A Set the window saw move carries what was archived from within it; its writes raise only events the tree ignores, and one that throws costs the settle nothing it pushed or owes. A first tree has no baseline, which the open pass covers.
+  if (handed && tree && delta)
+    await refileMoved(root, handed, tree, delta).catch((e) =>
+      console.error('archive: the carry failed:', errText(e)),
+    )
   return corpus || rescope ? { rescope } : null
 }
 
@@ -245,7 +252,7 @@ export async function settledIndex(root: string): Promise<PageIndex | null> {
   return tree && pageIndexOf(tree)
 }
 
-/** The one re-spell, run inside the settle's turn: the map `respellings` builds from `before` to `after`, swept under `label`; undefined when nothing needs re-spelling. */
+/** A move's re-spell, run inside the settle's turn: the map `respellings` builds from `before` to `after`, swept under `label`; undefined when nothing needs re-spelling. A restore's arrival re-spells through `returningNames`. */
 export async function relink(
   root: string,
   before: PageIndex,
@@ -257,6 +264,19 @@ export async function relink(
   const names = respellings(before, after, moved, arriving)
   if (!names.size) return undefined
   return renameCascade(root, { names, label })
+}
+
+/** A restore's re-spell, two maps rather than one `relink`: the arrival's collisions read against the live world alone, since beside the returning pages a twin's bare link reads ambiguous and a returning `Notes/Alpha` would take `notes/alpha` from a live `X/Notes/Alpha`. `own` reads the returning pages' own keys against themselves and joins `names` only where the live world names nothing, so a title-only link that found a namesake meanwhile stays with it. */
+export function returningNames(
+  live: PageIndex,
+  after: PageIndex,
+  back: readonly ConnPage[],
+): { names: Map<string, string>; own: Map<string, string> } {
+  const ids = back.map((p) => p.id)
+  const own = respellings(buildPageIndex(back), after, ids, [])
+  const names = respellings(live, after, [], ids)
+  for (const [k, v] of own) if (live.resolve(k).status === 'phantom') names.set(k, v)
+  return { names, own }
 }
 
 // What an outside payment leaves: a warning logged, since no one is there to read a notice, and the files it wrote owed to the push.

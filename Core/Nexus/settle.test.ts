@@ -25,7 +25,7 @@ import { splitEnvelope, splitFrontmatter } from '../Files/pageFile'
 import { ID_KEY } from './identityMark'
 import { stabilize } from './treeStabilize'
 import { applyEvents, oweCascade, owedFor, oweWalk } from './fileEvents'
-import { settleNow, recordHanded, settleBatch } from './settle'
+import { settleNow, recordHanded, returningNames, settleBatch } from './settle'
 import type { NexusChange, NexusTree } from './tree'
 import { applyDelta } from './treeDelta'
 import * as session from './session'
@@ -33,6 +33,9 @@ import { closeSession, openSession, whileAdopting } from './session'
 import { writeExcludedFolders } from '../Settings/settings'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
+import { buildPageIndex, connPage } from '../Connections/pageIndex'
+import * as refile from '../Archive/refile'
+import { handleMutate } from './mutate'
 
 const sweep = vi.hoisted(() => ({ hold: null as Promise<void> | null, entered: () => {} }))
 vi.mock('../Properties/governedSweep', async (importOriginal) => {
@@ -644,6 +647,27 @@ describe('the settle', () => {
     await first
     expect(firstDone).toBe(true)
   })
+
+  it('a carry that throws leaves the settle whole', async () => {
+    await mkdir(abs('Notes', 'Box'))
+    await writeFile(abs('Notes', 'Box', '_pageset.json'), JSON.stringify({ id: ULID_C }))
+    await writeFile(abs('Notes', 'Box', 'B.md'), `---\nID: ${ULID_B}\n---\n\nbeta\n`)
+    await mkdir(abs('Other'))
+    await writeFile(abs('Other', '_pagecollection.json'), JSON.stringify({ id: ULID_D }))
+    shown = recordHanded(await refreshTree(root)).tree
+    const carry = vi.spyOn(refile, 'refileMoved').mockRejectedValueOnce(new Error('boom'))
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const moved = await handleMutate(
+      root,
+      { op: 'moveSet', path: 'Notes/Box', newParentPath: 'Other', order: [ULID_C] },
+      { trashMode: 'nexus', trashToSystem: async () => {} },
+    )
+    expect(moved.ok).toBe(true)
+    await settleNow(pusher, root)
+    expect(carry).toHaveBeenCalledTimes(1)
+    expect(channels()).toEqual(['nexus:changed', 'values:changed'])
+    expect(logged).toHaveBeenCalledWith('archive: the carry failed:', 'boom')
+  })
 })
 
 describe('an outside batch’s turn', () => {
@@ -1231,5 +1255,32 @@ describe('a page created while no watcher listened', () => {
     } finally {
       installStores(NO_STORES)
     }
+  })
+})
+
+describe('returningNames', () => {
+  const live = buildPageIndex([connPage('A', 'Notes/Alpha.md')])
+  const back = [connPage('B', 'Notes/Daily/Alpha.md')]
+  const after = buildPageIndex([
+    connPage('A', 'Notes/Alpha.md'),
+    connPage('B', 'Notes/Ideas/Alpha.md'),
+  ])
+  const { names, own } = returningNames(live, after, back)
+  const holder = (map: Map<string, string>, key: string) =>
+    after.resolve(map.get(key) ?? '').page?.id
+
+  it('the arrival’s collision re-spells the live page it took a key from', () => {
+    expect(holder(names, 'alpha')).toBe('A')
+  })
+
+  it('a key only the returning page answered follows it', () => {
+    expect(holder(own, 'daily/alpha')).toBe('B')
+    expect(live.resolve('daily/alpha').status).toBe('phantom')
+    expect(holder(names, 'daily/alpha')).toBe('B')
+  })
+
+  it('a key the live world still resolves stays out of the cascade', () => {
+    expect(holder(own, 'alpha')).toBe('B')
+    expect(holder(names, 'alpha')).toBe('A')
   })
 })

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { mutateRequest } from './mutateRequest'
+import { changesSettled, changesStores, mutateRequest } from './mutateRequest'
 
 describe('mutateRequest — what the window sends is held to the shape before anything is written', () => {
   const read = (raw: unknown): boolean => mutateRequest.safeParse(raw).success
@@ -15,6 +15,20 @@ describe('mutateRequest — what the window sends is held to the shape before an
     expect(read({ op: 'createContainer', parentPath: 'A', kind: 'space', name: 'x' })).toBe(false)
     expect(read({ op: 'reorderChildren', parentPath: 'A', key: 'id', order: [] })).toBe(false)
     expect(read({ op: 'rename', path: 'A', kind: 'context', newName: 'B' })).toBe(false)
+    expect(read({ op: 'archive', path: 'A', kind: 'collection' })).toBe(false)
+  })
+
+  it('an archive changes what the settle holds and what the stores list', () => {
+    expect(changesSettled('archive')).toBe(true)
+    expect(changesStores({ op: 'archive', path: 'A/B.md', kind: 'page' })).toBe(true)
+  })
+
+  it('a moved Set, a renamed container or Context, re-lists the stores, and a renamed page doesn’t', () => {
+    expect(changesStores({ op: 'moveSet', path: 'A/S', newParentPath: 'B', order: [] })).toBe(true)
+    expect(changesStores({ op: 'rename', path: 'A', kind: 'collection', newName: 'B' })).toBe(true)
+    expect(changesStores({ op: 'rename', path: 'A/S', kind: 'set', newName: 'T' })).toBe(true)
+    expect(changesStores({ op: 'renameContext', contextId: 'c', newName: 'D' })).toBe(true)
+    expect(changesStores({ op: 'rename', path: 'A/B.md', kind: 'page', newName: 'C' })).toBe(false)
   })
 
   it('drops a key the op does not name, so an extra field cannot steer the write', () => {
@@ -26,6 +40,20 @@ describe('mutateRequest — what the window sends is held to the shape before an
       title: 'Z',
     })
     expect(parsed).toEqual({ op: 'renameHeading', path: 'a.md', heading: 'H', to: 'I' })
+  })
+
+  it('reads an Undo back into the Archive as a destination carrying no id', () => {
+    expect(
+      mutateRequest.parse({
+        op: 'restore',
+        bundlePath: '.trash/A.md.deleted',
+        destination: { kind: 'archive', id: 'x' },
+      }),
+    ).toEqual({
+      op: 'restore',
+      bundlePath: '.trash/A.md.deleted',
+      destination: { kind: 'archive' },
+    })
   })
 
   it('holds a property value to a value shape and a crop to its numbers', () => {

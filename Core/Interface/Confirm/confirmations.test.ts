@@ -154,7 +154,7 @@ describe('a delete through the confirmation', () => {
       'delete:facts': async () => ok({ trashMode: 'nexus', permanentDelete: false }),
     })
     mutate.mockReset()
-    mutate.mockResolvedValue({ trashed: { bundlePath: '.trash/b1' } })
+    mutate.mockResolvedValue({ bundled: { bundlePath: '.trash/b1' } })
     useSession.setState({ mutate: mutate as never })
     clearNotification()
   })
@@ -193,7 +193,7 @@ describe('a delete through the confirmation', () => {
   it('carries the configuration pass’s warning in the Deleted notice', async () => {
     const warning = 'Couldn’t update 1 Item.'
     mutate.mockResolvedValue({
-      trashed: { bundlePath: '.trash/b1' },
+      bundled: { bundlePath: '.trash/b1' },
       cascade: { pages: [], hosts: [], warning },
     })
     await del('set')
@@ -203,7 +203,7 @@ describe('a delete through the confirmation', () => {
 
   it('counts the strip’s linkers behind a segment in the Deleted notice', async () => {
     mutate.mockResolvedValue({
-      trashed: { bundlePath: '.trash/b1' },
+      bundled: { bundlePath: '.trash/b1' },
       cascade: { pages: ['A.md', 'B.md'], hosts: [] },
     })
     await del('page')

@@ -48,20 +48,20 @@ export function spendBundle(bundlePath: string): void {
 /** A system-trash delete mints no bundle, so it offers no Undo — the artifact left the nexus and there is nothing to name. */
 export function notifyTrashed(
   title: string,
-  { trashed, cascade }: Pick<MutateOutcome, 'trashed' | 'cascade'>,
+  { bundled, cascade }: Pick<MutateOutcome, 'bundled' | 'cascade'>,
   retry?: () => void,
 ): void {
   const spend = notifyDeleted(
     title,
-    trashed &&
+    bundled &&
       (async () => {
-        spendBundle(trashed.bundlePath)
-        await useSession.getState().mutate({ op: 'restore', bundlePath: trashed.bundlePath })
+        spendBundle(bundled.bundlePath)
+        await useSession.getState().mutate({ op: 'restore', bundlePath: bundled.bundlePath })
       }),
     cascade,
     retry,
   )
-  if (trashed) armed.set(trashed.bundlePath, spend)
+  if (bundled) armed.set(bundled.bundlePath, spend)
 }
 
 export const confirmDelete = async (target: {

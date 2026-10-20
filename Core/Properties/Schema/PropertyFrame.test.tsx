@@ -71,7 +71,7 @@ beforeEach(() => {
   propertyMenuSpy = vi.fn(async () => null)
   destroySpy = vi.fn(async () => ({
     ok: true,
-    value: { trashed: { bundlePath: '.trash/s__property-prop_status.deleted' } },
+    value: { bundled: { bundlePath: '.trash/s__property-prop_status.deleted' } },
   }))
   unassignSpy = vi.fn(async () => ({ ok: true, value: null }))
   holdersSpy = vi.fn(async () => ok(3))

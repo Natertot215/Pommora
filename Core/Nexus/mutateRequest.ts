@@ -13,7 +13,8 @@ export interface MutateOutcome {
   created?: { path: string }
   cascade?: CascadeReport
   adopted?: string
-  trashed?: { bundlePath: string }
+  /** The bundle a removal minted, in the Trash or an Archive; absent when the system trash took it. */
+  bundled?: { bundlePath: string }
   /** The titles of what a restore brought back without all it held. */
   unrestored?: string[]
   /** The title a restore stepped aside to, when it couldn't land under its own. */
@@ -34,8 +35,11 @@ export type BannerOwnerKind = z.infer<typeof bannerOwner>
 
 const containerKind = z.enum(CONTAINER_KINDS)
 
-/** Checked against the write path's own destination rules: a contradicting claim is refused as malformed. */
-const restoreDestination = z.object({ kind: z.enum(['container', 'context']), id: z.string() })
+/** Checked against the write path's own destination rules: a contradicting claim is refused as malformed. `archive` is a delete from the Archive's Undo, returning the item to the bundle its record names. */
+const restoreDestination = z.discriminatedUnion('kind', [
+  z.object({ kind: z.enum(['container', 'context']), id: z.string() }),
+  z.object({ kind: z.literal('archive') }),
+])
 export type RestoreDestination = z.infer<typeof restoreDestination>
 
 const childOrderKey = z.literal('set_order')
@@ -72,6 +76,7 @@ export const mutateRequest = z.discriminatedUnion('op', [
   }),
   op('renameHeading', { path: z.string(), heading: z.string(), to: z.string() }),
   op('delete', { path: z.string(), kind: heldKind }),
+  op('archive', { path: z.string(), kind: z.enum(['page', 'set']) }),
   op('restore', { bundlePath: z.string(), destination: restoreDestination.optional() }),
   op('emptyBundle', { bundlePath: z.string() }),
   op('setProfileImage', { source: z.string().nullable() }),
@@ -145,8 +150,16 @@ export const changesSettled = (operation: MutateRequest['op']): boolean =>
   operation === 'moveSet' ||
   operation === 'renameHeading' ||
   operation === 'delete' ||
+  operation === 'archive' ||
   operation === 'restore' ||
   operation === 'emptyBundle'
 
+/** A moved Set carries what was archived from within it, and a container's or Context's new name, or a Set's new place, re-spells the rows' crumbs, so each re-lists an open browser too. */
 export const changesStores = (req: MutateRequest): boolean =>
-  req.op === 'delete' || req.op === 'restore' || req.op === 'emptyBundle'
+  req.op === 'delete' ||
+  req.op === 'archive' ||
+  req.op === 'restore' ||
+  req.op === 'emptyBundle' ||
+  req.op === 'moveSet' ||
+  req.op === 'renameContext' ||
+  (req.op === 'rename' && req.kind !== 'page')

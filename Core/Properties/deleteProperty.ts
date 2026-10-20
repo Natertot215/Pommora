@@ -94,7 +94,7 @@ async function snapshot(
   })
 }
 
-export type PropertyDeletion = SchemaCascade & Required<Pick<MutateOutcome, 'trashed'>>
+export type PropertyDeletion = SchemaCascade & Required<Pick<MutateOutcome, 'bundled'>>
 
 export async function propertyHolders(root: string, propertyId: string): Promise<Result<number>> {
   const def = (await readRegistry(root)).defs[propertyId]
@@ -126,7 +126,7 @@ async function deleteInner(root: string, propertyId: string): Promise<Result<Pro
   const { removed, ...reach } = await stripAndRemove(root, propertyId, folders, planned)
   if (!removed.ok) return removed
   if (!reach.skipped) await clearSchemaJournal(root, record)
-  return ok({ trashed: { bundlePath: relative(root, bundle) }, ...schemaCascade(reach, record) })
+  return ok({ bundled: { bundlePath: relative(root, bundle) }, ...schemaCascade(reach, record) })
 }
 
 interface DeletePlan {

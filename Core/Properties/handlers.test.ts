@@ -199,13 +199,13 @@ describe('the property channels', () => {
     await rm(setFile)
     await mkdir(setFile)
     const r = await propertiesHandlers['property:delete'](ctx, propId)
-    if (!r.ok || !r.value.owed || !r.value.trashed) throw new Error('setup failed')
+    if (!r.ok || !r.value.owed || !r.value.bundled) throw new Error('setup failed')
     const record = r.value.owed
     expect(await propertiesHandlers['property:replay'](ctx, record)).toEqual(fault(unsweptLine(1)))
     await rm(setFile, { recursive: true })
     await writeFile(setFile, held)
     await refreshTree(root)
-    const bundlePath = r.value.trashed.bundlePath
+    const bundlePath = r.value.bundled.bundlePath
     expect((await handleMutate(root, { op: 'restore', bundlePath }, deps)).ok).toBe(true)
     const page = await readFile(`${col}/A.md`, 'utf8')
     expect(await propertiesHandlers['property:replay'](ctx, record)).toEqual(ok(null))

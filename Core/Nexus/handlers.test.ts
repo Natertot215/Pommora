@@ -13,6 +13,9 @@ import { currentStatus } from '../Sync/Client/status'
 import { tempRoot, readJsonAt } from '../Testing/hostFs'
 import { memoryStores } from '../Testing/memoryStores'
 import { seedContentIndex } from '../Index/indexSeed'
+import * as indexSeedModule from '../Index/indexSeed'
+import * as refileModule from '../Archive/refile'
+import { jsonText, pathExists } from '../Files/atomicWrite'
 import { type HubHost, hubHost } from '../Testing/syncHub'
 import { nexusHandlers, openNexusSequence } from './handlers'
 import { dropLiveTree, heldTreeOf, refreshTree } from './liveTree'
@@ -471,6 +474,35 @@ describe('openNexusSequence', () => {
     await vi.waitFor(async () =>
       expect(await readFile(linker, 'utf8')).toContain('[[Archive/Notes|Notes]] and [[Notes]]'),
     )
+  })
+  it('an open sweeps an Orphaned Archive into the Trash before the index seeds', async () => {
+    const archive = join(root, '.nexus', 'archive', SHELF)
+    const bundle = join(archive, 'Gone', '2026-10-20T00-00-00-000Z__Orphan.md.archived')
+    await mkdir(bundle, { recursive: true })
+    await writeFile(join(bundle, 'Orphan.md'), `---\nID: ${THIRD_PAGE}\n---\norphan\n`)
+    await writeFile(
+      join(bundle, '_record.json'),
+      jsonText({ entity: 'page', parent: { kind: 'container', id: HOME } }),
+    )
+    const real = indexSeedModule.seedContentIndex
+    let heldAtSeed: boolean | undefined
+    vi.spyOn(indexSeedModule, 'seedContentIndex').mockImplementation(async (r) => {
+      heldAtSeed ??= await pathExists(archive)
+      return real(r)
+    })
+    await openNexusSequence(ctx, root, false)
+    expect(heldAtSeed).toBe(false)
+    expect(await pathExists(join(root, '.trash', 'Gone'))).toBe(true)
+  })
+
+  it('a failing open pass leaves the open whole', async () => {
+    vi.spyOn(refileModule, 'settleArchives').mockRejectedValueOnce(new Error('unreadable'))
+    const seeded = vi.spyOn(indexSeedModule, 'seedContentIndex')
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
+    await openNexusSequence(ctx, root, false)
+    expect(seeded).toHaveBeenCalledWith(root)
+    expect(logged).toHaveBeenCalledWith('archive: the open pass failed:', 'unreadable')
+    expect(heldTreeOf(root)?.collections[0]?.pages[0]?.id).toBe(NOTES)
   })
 })
 

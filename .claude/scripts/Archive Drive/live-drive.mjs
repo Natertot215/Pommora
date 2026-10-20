@@ -10,7 +10,7 @@ const PORT = 9393
 // The plan's phases in order, named as the plan names them, so `6A` sorts before `6B`.
 const PHASES = ['1', '2', '3', '4', '5', '6A', '6B']
 const at = (phase) => PHASES.indexOf(String(phase))
-const ALL = ['1', '2', '3']
+const ALL = ['1', '2', '3', '4']
 const GROUPS = new Set(process.argv.slice(2))
 // The last plan phase landed in the build under test: an item owned by a later phase is expected to fail and doesn't fail the run.
 const LANDED = process.env.POMMORA_ARCHIVE_LANDED ?? '1'
@@ -405,6 +405,175 @@ async function group3() {
   item(3, 3, '—', 'the group leaves Collection A’s Archive and the Trash as it found them', left === 0 && !exists(`.nexus/archive/${colA}`) && !((await ask(cdp, 'bundles:list', { kind: 'trash' })).value ?? []).some((r) => r.title === 'Drive Stage'), show({ left }))
 }
 
+// ── Group 4 — the Archive's ops (Phase 4) ───────────────────────────────────
+
+const rows = async (store) => (await ask(cdp, 'bundles:list', store)).value ?? []
+const recordAt = (bundle) => JSON.parse(readRel(`${bundle}/_record.json`))
+const heldIds = async () => {
+  const out = new Set()
+  const walk = (n) => {
+    for (const p of n.pages ?? []) out.add(p.id)
+    for (const s of n.sets ?? []) walk(s)
+  }
+  for (const c of (await heldTree(cdp)).collections) walk(c)
+  return out
+}
+const op = (what, req) => must(what, ask(cdp, 'mutate', req))
+const bundledBy = async (what, req) => (await op(what, req)).bundled?.bundlePath
+const emptyAt = (bundlePath) => op(`empty ${bundlePath}`, { op: 'emptyBundle', bundlePath })
+const leafOf = (bundlePath) => bundlePath.split('/').at(-1)
+const sidecarIdOf = (rel) => JSON.parse(readRel(rel)).id
+const stamped = (dir, name, suffix) => new RegExp(`^${dir.replaceAll('.', '\\.')}/[^/]+__${name}\\.md\\${suffix}$`)
+
+// Group 4 relaunches, so it drives the run's own `cdp`, and a failure inside it leaves the run holding the live session.
+async function group4() {
+  const colA = sidecarIdOf('Collection A/_pagecollection.json')
+  const colB = sidecarIdOf('Collection B/_pagecollection.json')
+  const alphaId = sidecarIdOf(`${A_ALPHA}/_pageset.json`)
+  const B_ALPHA = 'Collection B/Set Alpha'
+  const bAlphaId = sidecarIdOf(`${B_ALPHA}/_pageset.json`)
+  const A_SIDECAR = `${A_ALPHA}/_pageset.json`
+  const CHAINS = ['.trash/Collection A/Set Alpha/Drive Sub', '.trash/Collection A/Set Alpha', '.trash/Collection A', '.trash/Collection B/Set Alpha', '.trash/Collection B', '.trash/Drive Gone', '.trash']
+  const before = {
+    pageOrder: orderIn(A_SIDECAR, 'page_order'),
+    bSets: orderIn('Collection B/_pagecollection.json', 'set_order'),
+    bAlphaSets: orderIn(`${B_ALPHA}/_pageset.json`, 'set_order'),
+    collections: stateOrder().collections ?? [],
+    trash: (await rows({ kind: 'trash' })).length,
+    archiveA: (await rows({ kind: 'archive', id: colA })).length,
+    archiveB: (await rows({ kind: 'archive', id: colB })).length,
+    permanentDelete: (await config(cdp)).personalization.permanentDelete === true,
+    chains: CHAINS.filter(exists),
+  }
+
+  const pageA = frontOf(page(A_ALPHA, 'Page A')).ID
+  const arcId = mintPageId()
+  const arc = page(A_ALPHA, 'Drive Arc')
+  const slot = before.pageOrder.indexOf(pageA) + 1
+  const follower = before.pageOrder[slot]
+  await op('createPage Drive Arc', { op: 'createPage', id: arcId, parentPath: A_ALPHA, name: 'Drive Arc', order: [...before.pageOrder.slice(0, slot), arcId, ...before.pageOrder.slice(slot)] })
+  const live = await createAt(cdp, A_ALPHA, 'Drive Live')
+  await sleep(400)
+  writeFileSync(abs(arc), `${FM.exec(readRel(arc))[0]}[[Drive Live]]\n`)
+  await sleep(1000)
+
+  const A1 = await bundledBy('archive Drive Arc', { op: 'archive', path: arc, kind: 'page' })
+  const archived = A1 ? recordAt(A1) : null
+  item(4, 4, 'A-2', 'a page archives into its Collection’s Archive under the chain it left',
+    stamped(`.nexus/archive/${colA}/${A_ALPHA}`, 'Drive Arc', '.archived').test(A1) && exists(`${A1}/Drive Arc.md`) &&
+      archived?.entity === 'page' && archived.id === arcId && archived.parent?.id === alphaId &&
+      archived.place?.above === follower && archived.place?.below === pageA && same(archived.trail, [colA]) &&
+      !exists(arc) && !orderIn(A_SIDECAR, 'page_order').includes(arcId),
+    show({ A1, archived, pageOrder: orderIn(A_SIDECAR, 'page_order') }))
+
+  const listedA = await rows({ kind: 'archive', id: colA })
+  item(4, 4, 'D-2', 'the archived page leaves the tree and lists in its Archive',
+    !(await heldIds()).has(arcId) && listedA.length === 1 && listedA[0].title === 'Drive Arc' && same(listedA[0].crumbs.map((c) => c.title), ['Collection A', 'Set Alpha']),
+    show(listedA))
+
+  await sleep(1000)
+  await op('rename Drive Live', { op: 'rename', path: live, kind: 'page', newName: 'Drive Live Renamed' })
+  const renamed = page(A_ALPHA, 'Drive Live Renamed')
+  item(4, 4, 'C-1', 'a rename reaches the archived file', bodyOf(`${A1}/Drive Arc.md`).includes('[[Drive Live Renamed]]'), show(bodyOf(`${A1}/Drive Arc.md`)))
+
+  const bytes = readRel(`${A1}/Drive Arc.md`)
+  const back = await op('restore Drive Arc', { op: 'restore', bundlePath: A1 })
+  item(4, 4, 'E-2', 'a restore returns it to its exact place by a plain move',
+    exists(arc) && readRel(arc) === bytes && between(orderIn(A_SIDECAR, 'page_order'), [pageA, arcId, follower]) && !exists(A1) && !('unrestored' in back) && !('landedAs' in back),
+    show({ back, pageOrder: orderIn(A_SIDECAR, 'page_order') }))
+
+  const again = await bundledBy('archive Drive Arc again', { op: 'archive', path: arc, kind: 'page' })
+  const T1 = await bundledBy('delete from the Archive', { op: 'delete', path: again, kind: 'page' })
+  item(4, 4, 'E-3', 'a delete from the Archive goes to the Trash keeping the bundle it left',
+    stamped(`.trash/${A_ALPHA}`, 'Drive Arc', '.deleted').test(T1) && recordAt(T1).archive === again && !exists(again),
+    show({ again, T1, record: T1 && exists(T1) ? recordAt(T1) : null }))
+
+  await op('Undo to the Archive', { op: 'restore', bundlePath: T1, destination: { kind: 'archive' } })
+  const undone = exists(`${again}/_record.json`) ? recordAt(again) : null
+  item(4, 4, 'E-3', 'its Undo returns it to the Archive under the same name',
+    exists(`${again}/Drive Arc.md`) && !!undone && !('archive' in undone) && !('links' in undone) && !('targets' in undone) && !exists(T1) && !(await heldIds()).has(arcId),
+    show({ again, undone }))
+
+  const T2 = await bundledBy('delete from the Archive again', { op: 'delete', path: again, kind: 'page' })
+  await op('restore from the Trash', { op: 'restore', bundlePath: T2 })
+  item(4, 4, 'E-3', 'a Trash restore returns it to where it was archived from', exists(arc) && !exists(T2), show({ T2 }))
+
+  const subId = containerId()
+  const SUB = `${A_ALPHA}/Drive Sub`
+  await op('create Drive Sub', { op: 'createContainer', id: subId, parentPath: A_ALPHA, kind: 'set', name: 'Drive Sub' })
+  const deep = await createAt(cdp, SUB, 'Drive Deep')
+  const D1 = await bundledBy('archive Drive Deep', { op: 'archive', path: deep, kind: 'page' })
+  await op('move Drive Sub to Collection B', { op: 'moveSet', path: SUB, newParentPath: 'Collection B', order: [...orderIn('Collection B/_pagecollection.json', 'set_order'), subId] })
+  const carried = `.nexus/archive/${colB}/${SUB}/${leafOf(D1)}`
+  await settles(async () => exists(`${carried}/Drive Deep.md`) && !exists(D1))
+  item(4, 4, 'F-6', 'a Set moved to another Collection carries what was archived from within it',
+    exists(`${carried}/Drive Deep.md`) && same(recordAt(carried).trail, [colB]) && !exists(D1),
+    show({ carried, record: exists(carried) ? recordAt(carried) : null, D1: exists(D1) }))
+
+  await op('move Drive Sub into Set Alpha', { op: 'moveSet', path: 'Collection B/Drive Sub', newParentPath: B_ALPHA, order: [...before.bAlphaSets, subId] })
+  await settles(async () => same(recordAt(carried).trail, [colB, bAlphaId]))
+  item(4, 4, 'F-6', 'a Set moved within its Collection rewrites the trail alone',
+    exists(`${carried}/Drive Deep.md`) && same(recordAt(carried).trail, [colB, bAlphaId]),
+    show(exists(carried) ? recordAt(carried) : null))
+
+  const gone = containerId()
+  const orphanBundle = `.nexus/archive/${gone}/Drive Gone/2026-10-20T00-00-00-000Z__Drive Orphan.md.archived`
+  const orphanRecord = { entity: 'page', parent: { id: containerId(), kind: 'container' } }
+  cdp = await relaunch(cdp, async () => {
+    mkdirSync(abs(orphanBundle), { recursive: true })
+    writeFileSync(abs(`${orphanBundle}/Drive Orphan.md`), `---\nID: ${mintPageId()}\n---\norphan\n`)
+    writeFileSync(abs(`${orphanBundle}/_record.json`), JSON.stringify(orphanRecord))
+  })
+  const sweptBundles = () => (exists('.trash/Drive Gone') ? readdirSync(abs('.trash/Drive Gone')).filter((n) => n.endsWith('__Drive Orphan.md.deleted')) : [])
+  await settles(async () => sweptBundles().length === 1 && !exists(`.nexus/archive/${gone}`))
+  const swept = sweptBundles()
+  item(4, 4, 'F-5', 'an Archive whose Collection exists nowhere moves into the Trash at the next open',
+    swept.length === 1 && same(recordAt(`.trash/Drive Gone/${swept[0]}`), orphanRecord) && !exists(`.nexus/archive/${gone}`),
+    show({ swept, archive: exists(`.nexus/archive/${gone}`) }))
+
+  const collId = containerId()
+  await op('create Drive Coll', { op: 'createContainer', id: collId, parentPath: '', kind: 'collection', name: 'Drive Coll' })
+  const kept = await createAt(cdp, 'Drive Coll', 'Drive Kept')
+  await bundledBy('archive Drive Kept', { op: 'archive', path: kept, kind: 'page' })
+  await op('delete Drive Coll', { op: 'delete', path: 'Drive Coll', kind: 'collection' })
+  cdp = await relaunch(cdp, async () => {})
+  const collArchive = `.nexus/archive/${collId}`
+  const standing = exists(collArchive)
+  await must('permanentDelete on', ask(cdp, 'personalization:set', 'permanentDelete', true))
+  const collRow = (await rows({ kind: 'trash' })).find((r) => r.title === 'Drive Coll')
+  if (collRow) await emptyAt(collRow.bundlePath)
+  item(4, 4, 'F-4', 'a Collection in the Trash keeps its Archive, and emptying it empties both',
+    standing && !!collRow && !exists(collArchive) && !exists(collRow.bundlePath), show({ standing, collRow }))
+
+  const trashOf = async (title) => (await rows({ kind: 'trash' })).find((r) => r.title === title)?.bundlePath
+  for (const [title, rel] of [['Drive Arc', arc], ['Drive Live Renamed', renamed]]) {
+    await op(`delete ${title}`, { op: 'delete', path: rel, kind: 'page' })
+    await emptyAt(await trashOf(title))
+  }
+  await op('delete Drive Deep from the Archive', { op: 'delete', path: carried, kind: 'page' })
+  await emptyAt(await trashOf('Drive Deep'))
+  await op('delete Drive Sub', { op: 'delete', path: `${B_ALPHA}/Drive Sub`, kind: 'set' })
+  await emptyAt(await trashOf('Drive Sub'))
+  await emptyAt(`.trash/Drive Gone/${swept[0]}`)
+  await must('permanentDelete as it was', ask(cdp, 'personalization:set', 'permanentDelete', before.permanentDelete))
+  // The watcher holds a folder the app just wrote until it's still for 200 ms, and a removal inside that hold reaches the app as nothing, so the chain folders leave once the empties' writes are still.
+  await sleep(400)
+  for (const id of [colA, colB]) rmSync(abs(`.nexus/archive/${id}`), { recursive: true, force: true })
+  for (const rel of CHAINS) if (!before.chains.includes(rel) && exists(rel) && readdirSync(abs(rel)).length === 0) rmSync(abs(rel), { recursive: true })
+  const after = {
+    pageOrder: orderIn(A_SIDECAR, 'page_order'),
+    bSets: orderIn('Collection B/_pagecollection.json', 'set_order'),
+    bAlphaSets: orderIn(`${B_ALPHA}/_pageset.json`, 'set_order'),
+    collections: stateOrder().collections ?? [],
+    trash: (await rows({ kind: 'trash' })).length,
+    archiveA: (await rows({ kind: 'archive', id: colA })).length,
+    archiveB: (await rows({ kind: 'archive', id: colB })).length,
+    permanentDelete: (await config(cdp)).personalization.permanentDelete === true,
+    chains: CHAINS.filter(exists),
+  }
+  item(4, 4, '—', 'the group leaves Collections A and B, their Archives, and the Trash as it found them', same(after, before), show({ before, after }))
+}
+
 // ── The run ─────────────────────────────────────────────────────────────────
 
 let cdp
@@ -417,6 +586,7 @@ try {
   if (GROUPS.has('1')) await group1(cdp)
   if (GROUPS.has('2')) await group2(cdp)
   if (GROUPS.has('3')) await group3()
+  if (GROUPS.has('4')) await group4()
   cdp.close()
 } catch (e) {
   item(0, 1, '—', 'the run reached its end', false, String(e?.stack ?? e))

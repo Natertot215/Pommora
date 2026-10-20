@@ -648,7 +648,7 @@ describe('unreadable holders hold the record', () => {
       if (!deleted.ok) throw new Error('delete refused')
       expect(deleted.value.owed).toEqual({ op: 'delete', id: 'prop_s', key: 'Stage' })
       expect(deleted.value.cascade.warning).toBeDefined()
-      expect(await readRecord(join(root, deleted.value.trashed.bundlePath))).toMatchObject({
+      expect(await readRecord(join(root, deleted.value.bundled.bundlePath))).toMatchObject({
         partial: true,
       })
       await indexWrittenPage(root, b)

@@ -6,6 +6,7 @@ import { newContentId, newId } from '../Nexus/ids'
 import { ID_KEY } from '../Nexus/identityMark'
 import { join } from '../Paths/posix'
 import { noModeBits, putJson, readJsonAt, tempRoot } from '../Testing/hostFs'
+import { pathExists } from '../Files/atomicWrite'
 import { type ConfigSurfaces, seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
 import { settledMutate } from '../Testing/settledMutate'
 import { createFolderEntity } from '../Nexus/folderEntity'
@@ -116,9 +117,9 @@ describe('a page delete', () => {
     await writeFile(loose, content)
     await refreshTree(root)
     const r = await del('Notes/Target.md', 'page')
-    if (!r.ok || !r.value.trashed) throw new Error('the delete did not trash')
+    if (!r.ok || !r.value.bundled) throw new Error('the delete did not trash')
     expect(r.value.cascade?.pages ?? []).toEqual([])
-    expect((await recordOf(r.value.trashed.bundlePath)).links ?? []).toEqual([])
+    expect((await recordOf(r.value.bundled.bundlePath)).links ?? []).toEqual([])
     expect(await readFile(loose, 'utf8')).toBe(content)
   })
 
@@ -127,15 +128,15 @@ describe('a page delete', () => {
     await copyFile(twin, join(notes, 'Twin copy.md'))
     await refreshTree(root)
     const r = await del('Notes/Target.md', 'page')
-    if (!r.ok || !r.value.trashed) throw new Error('the delete did not trash')
+    if (!r.ok || !r.value.bundled) throw new Error('the delete did not trash')
     expect(r.value.cascade).toEqual({
       pages: [],
       hosts: [],
       warning: unsweptLine(2, 'links in '),
     })
     expect(splitFrontmatter(await readFile(twin, 'utf8')).Related).toBe('[[Target]]')
-    expect(await recordOf(r.value.trashed.bundlePath)).toMatchObject({ partial: true })
-    expect((await recordOf(r.value.trashed.bundlePath)).links).toBeUndefined()
+    expect(await recordOf(r.value.bundled.bundlePath)).toMatchObject({ partial: true })
+    expect((await recordOf(r.value.bundled.bundlePath)).links).toBeUndefined()
   })
 
   it('replies with an empty report when nothing links it', async () => {
@@ -255,7 +256,7 @@ describe('a Set delete', () => {
 
   const trashGone = async (): Promise<string> => {
     const r = await del('Notes/Gone', 'set')
-    const bundlePath = r.ok ? r.value.trashed?.bundlePath : undefined
+    const bundlePath = r.ok ? r.value.bundled?.bundlePath : undefined
     if (!bundlePath) throw new Error('the delete did not trash')
     return bundlePath
   }
@@ -327,7 +328,7 @@ describe('a Set delete', () => {
       { op: 'delete', path: 'Notes/Gone', kind: 'set' },
       systemDeps,
     )
-    expect(r.ok && r.value.trashed).toBeUndefined()
+    expect(r.ok && r.value.bundled).toBeUndefined()
     expect(r.ok && r.value.cascade?.hosts).toEqual([
       { host: { kind: 'space', id: 'sp_home' }, ids: [] },
     ])
@@ -344,16 +345,16 @@ describe('a Set delete', () => {
     const held = await readFile(inside, 'utf8')
     await refreshTree(root)
     const r = await del('Notes/Gone', 'set')
-    if (!r.ok || !r.value.trashed) throw new Error('the delete did not trash')
+    if (!r.ok || !r.value.bundled) throw new Error('the delete did not trash')
     r.value.cascade?.pages.sort()
     expect(r.value.cascade).toEqual({
       pages: ['Notes/Far.md', 'Notes/Outside.md'],
       hosts: [{ host: { kind: 'space', id: 'sp_home' }, ids: [] }],
     })
     expect(
-      await readFile(join(root, r.value.trashed.bundlePath, 'Gone', 'Inside.md'), 'utf8'),
+      await readFile(join(root, r.value.bundled.bundlePath, 'Gone', 'Inside.md'), 'utf8'),
     ).toBe(held)
-    expect((await recordOf(r.value.trashed.bundlePath)).links).toEqual(
+    expect((await recordOf(r.value.bundled.bundlePath)).links).toEqual(
       expect.arrayContaining([
         { page: await idOf(outside), property: 'prop_related', value: '[[Inner]]' },
         { page: await idOf(far), property: 'prop_related', value: '[[Deep]]' },
@@ -379,9 +380,9 @@ describe('a Set delete', () => {
     await chmod(locked.path, 0o555)
     try {
       const r = await del('Notes/Gone', 'set')
-      if (!r.ok || !r.value.trashed) throw new Error('the delete did not trash')
+      if (!r.ok || !r.value.bundled) throw new Error('the delete did not trash')
       expect(r.value.cascade?.warning).toBe(`${unsweptLine(1, 'links in ')} ${unsweptLine(1)}`)
-      expect((await recordOf(r.value.trashed.bundlePath)).partial).toBe(true)
+      expect((await recordOf(r.value.bundled.bundlePath)).partial).toBe(true)
     } finally {
       await chmod(locked.path, 0o755)
     }
@@ -429,6 +430,51 @@ describe('a Collection delete', () => {
       ...before,
       matrix: null,
       preview: null,
+    })
+  })
+  describe('to the system trash', () => {
+    const systemDeps: TrashDeps = {
+      trashMode: 'system',
+      trashToSystem: (abs) => rm(abs, { recursive: true, force: true }),
+    }
+    const archived = async (): Promise<string> =>
+      join(
+        root,
+        '.nexus',
+        'archive',
+        String((await readJsonAt(sidecarPath(notes, 'collection'))).id),
+      )
+    const deleteNotes = () =>
+      settledMutate(root, { op: 'delete', path: 'Notes', kind: 'collection' }, systemDeps)
+
+    it('a Collection deleted to the system trash takes its Archive, its pages’ links stripped', async () => {
+      await addRelated()
+      await page(notes, 'Gone')
+      const other = await entity(root, 'collection', 'Other')
+      const linker = await page(other.path, 'Linker', 'Gone')
+      await refreshTree(root)
+      await settledMutate(root, { op: 'archive', path: 'Notes/Gone.md', kind: 'page' }, nexusDeps)
+      const archive = await archived()
+      const r = await deleteNotes()
+      expect(r.ok && r.value.cascade?.pages).toEqual(['Other/Linker.md'])
+      expect(await pathExists(archive)).toBe(false)
+      expect(splitFrontmatter(await readFile(linker, 'utf8')).Related).toBeUndefined()
+    })
+
+    it('a Collection deleted to the system trash takes the saved views naming the Sets in its Archive', async () => {
+      const daily = await entity(notes, 'set', 'Daily')
+      const other = await entity(root, 'collection', 'Other')
+      const otherFile = sidecarPath(other.path, 'collection')
+      await putJson(otherFile, {
+        ...(await readJsonAt(otherFile)),
+        views: [view([{ property_id: '_location', op: 'is', values: [daily.id, other.id] }])],
+      })
+      await refreshTree(root)
+      await settledMutate(root, { op: 'archive', path: 'Notes/Daily', kind: 'set' }, nexusDeps)
+      expect((await deleteNotes()).ok).toBe(true)
+      expect((await readJsonAt(otherFile)).views).toEqual([
+        view([{ property_id: '_location', op: 'is', values: [other.id] }]),
+      ])
     })
   })
 })

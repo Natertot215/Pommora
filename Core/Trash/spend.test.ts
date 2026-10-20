@@ -121,6 +121,7 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
       entity: 'page',
       id: PAGE_A,
       parent: { kind: 'container', id: dailyId },
+      trail: ['col-notes'],
     })
   })
 
@@ -138,6 +139,7 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
       id: 'col-notes',
       parent: { kind: 'root' },
     })
+    expect(record).not.toHaveProperty('trail')
   })
 
   it('a Space delete records its context parent and the id-bearing roots that tagged it', async () => {
@@ -278,7 +280,7 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
       const r = await deleteProjects(nexusDeps)
       expect(r.ok).toBe(true)
       expect(await stateOrder()).toEqual(seeded)
-      const listed = r.ok ? r.value.trashed : undefined
+      const listed = r.ok ? r.value.bundled : undefined
       expect(
         (await settledMutate(root, { op: 'restore', bundlePath: listed!.bundlePath }, nexusDeps))
           .ok,
@@ -291,7 +293,7 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
 
     it('a record from before the place was kept restores its Context at the end', async () => {
       const r = await deleteProjects(nexusDeps)
-      const bundlePath = r.ok ? r.value.trashed!.bundlePath : ''
+      const bundlePath = r.ok ? r.value.bundled!.bundlePath : ''
       const recordFile = join(root, bundlePath, '_record.json')
       const { at: _, ...older } = await readJsonAt(recordFile)
       await writeFile(recordFile, JSON.stringify(older))
@@ -301,7 +303,7 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
 
     it('emptying a Context’s bundle drops its panel id and its Space order', async () => {
       const r = await deleteProjects(nexusDeps)
-      const listed = r.ok ? r.value.trashed : undefined
+      const listed = r.ok ? r.value.bundled : undefined
       expect(
         (
           await settledMutate(
@@ -1541,7 +1543,7 @@ describe('restore — the gate-four pins', () => {
     expect(await pathExists(join(root, 'Notes', 'fake.deleted', '_record.json'))).toBe(true)
   })
 
-  it('an Archive bundle is neither emptied nor restored as a Trash one', async () => {
+  it('an Archive bundle isn’t emptied as a Trash one', async () => {
     const bundle = await mintBundle(
       root,
       { kind: 'archive', id: '01KVGMT8BFP350FZZXAMG1QDVC' },
@@ -1552,8 +1554,6 @@ describe('restore — the gate-four pins', () => {
     const bundlePath = relative(root, bundle)
     const emptied = await settledMutate(root, { op: 'emptyBundle', bundlePath }, nexusDeps)
     expect(emptied.ok ? '' : emptied.error.message).toBe('Only a trash record can be emptied.')
-    const restored = await settledMutate(root, { op: 'restore', bundlePath }, nexusDeps)
-    expect(restored.ok ? '' : restored.error.message).toBe('Only a trash record can be spent.')
     expect(await pathExists(join(bundle, 'Beta.md'))).toBe(true)
     expect(await readRecord(bundle)).toEqual({ entity: 'page', parent: { kind: 'root' } })
   })
@@ -1574,6 +1574,11 @@ describe('restore — the gate-four pins', () => {
 })
 
 describe('restore — the attack folds', () => {
+  it('a bundle path that escapes the Nexus refuses before anything opens', async () => {
+    const r = await settledMutate(root, { op: 'restore', bundlePath: '../x' }, nexusDeps)
+    expect(r.ok ? '' : r.error.message).toBe('Path escapes the nexus root.')
+  })
+
   it('a record cannot steer the artifact outside the nexus', async () => {
     await settledMutate(
       root,
@@ -1749,6 +1754,82 @@ describe('emptyBundle — giving a bundle up for good', () => {
     expect(r.ok).toBe(true)
     const month = await readShard(root, shardOf(PAGE_A)!)
     expect(month.kind === 'ok' && month.pages).toEqual({ [PAGE_G]: { icon: 'moon' } })
+  })
+
+  describe('a Collection emptied for good', () => {
+    const ARCHIVED = join('.nexus', 'archive', 'col-notes')
+
+    beforeEach(async () => {
+      await writeFile(
+        join(root, '.nexus', 'properties.json'),
+        JSON.stringify({
+          order: ['prop_related'],
+          defs: {
+            prop_related: { id: 'prop_related', label: 'Related', key: 'Related', type: 'link' },
+          },
+        }),
+      )
+      await mkdir(join(root, 'Other'), { recursive: true })
+      await writeFile(
+        join(root, 'Other', '_pagecollection.json'),
+        JSON.stringify({ id: 'col-other' }),
+      )
+      await refreshTree(root)
+    })
+
+    const emptyNotes = async (deps: TrashDeps) => {
+      await settledMutate(root, { op: 'delete', path: 'Notes', kind: 'collection' }, nexusDeps)
+      const [listed] = await listBundles(root, { kind: 'trash' })
+      return settledMutate(root, { op: 'emptyBundle', bundlePath: listed.bundlePath }, deps)
+    }
+
+    it.each([
+      false,
+      true,
+    ])('a Collection emptied for good empties its Archive, its pages’ links stripped and their metadata dropped (permanentDelete %s)', async (permanentDelete) => {
+      await writeFile(join(root, 'Notes', 'Daily', 'Beta.md'), `---\nID: ${PAGE_B}\n---\nbeta`)
+      const linker = join(root, 'Other', 'Linker.md')
+      await writeFile(linker, `---\nID: ${PAGE_C}\nRelated: "[[Beta]]"\n---\nlinker`)
+      await refreshTree(root)
+      await settledMutate(
+        root,
+        { op: 'archive', path: 'Notes/Daily/Beta.md', kind: 'page' },
+        nexusDeps,
+      )
+      await updatePageMetadata(root, PAGE_B, { icon: 'star' })
+      const handed: string[] = []
+      const r = await emptyNotes({
+        ...nexusDeps,
+        permanentDelete,
+        trashToSystem: async (p) => void handed.push(p),
+      })
+      expect(r.ok).toBe(true)
+      if (permanentDelete) expect(await pathExists(join(root, ARCHIVED))).toBe(false)
+      else expect(handed).toContain(join(root, ARCHIVED))
+      expect(splitFrontmatter(await readFile(linker, 'utf8')).Related).toBeUndefined()
+      const month = await readShard(root, shardOf(PAGE_B)!)
+      expect(month.kind === 'ok' && month.pages).toEqual({})
+    })
+
+    it('a Collection emptied for good takes the saved views naming the Sets in its Archive', async () => {
+      const sidecar = join(root, 'Other', '_pagecollection.json')
+      const located = (values: string[]) => [
+        {
+          id: 'view_1',
+          name: 'V',
+          type: 'table',
+          filter: { match: 'all', rules: [{ property_id: '_location', op: 'is', values }] },
+        },
+      ]
+      await writeFile(
+        sidecar,
+        JSON.stringify({ id: 'col-other', views: located(['set-daily', 'col-other']) }),
+      )
+      await refreshTree(root)
+      await settledMutate(root, { op: 'archive', path: 'Notes/Daily', kind: 'set' }, nexusDeps)
+      expect((await emptyNotes(nexusDeps)).ok).toBe(true)
+      expect((await readJsonAt(sidecar)).views).toEqual(located(['col-other']))
+    })
   })
 
   it('emptying a copy’s bundle keeps the entry of the live page sharing its ID', async () => {
@@ -1977,6 +2058,50 @@ describe('restore — into a chosen destination', () => {
     )
     expect(r.ok).toBe(true)
     expect(await pathExists(join(contextsDir(root), 'Areas', 'Pommora', '_space.json'))).toBe(true)
+  })
+
+  it('refuses the Archive as a destination for a record that left none, a Space’s among them', async () => {
+    await settledMutate(
+      root,
+      { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' },
+      nexusDeps,
+    )
+    await settledMutate(
+      root,
+      { op: 'delete', path: '.nexus/contexts/Projects/Pommora', kind: 'space' },
+      nexusDeps,
+    )
+    for (const name of ['Alpha.md', 'Pommora']) {
+      const r = await settledMutate(
+        root,
+        { op: 'restore', bundlePath: await lastBundle(name), destination: { kind: 'archive' } },
+        nexusDeps,
+      )
+      expect(r.ok ? '' : r.error.message).toBe('That kind cannot be given a destination.')
+    }
+  })
+
+  it('refuses an Undo whose record names a path outside the Archive', async () => {
+    await settledMutate(
+      root,
+      { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' },
+      nexusDeps,
+    )
+    const bundlePath = await lastBundle('Alpha.md')
+    await writeRecord(join(root, bundlePath), {
+      entity: 'page',
+      id: PAGE_A,
+      parent: { kind: 'container', id: 'set-daily' },
+      archive: '../Notes/Beta.md.archived',
+    })
+    const r = await settledMutate(
+      root,
+      { op: 'restore', bundlePath, destination: { kind: 'archive' } },
+      nexusDeps,
+    )
+    expect(r.ok ? '' : r.error.message).toBe('That kind cannot be given a destination.')
+    expect(await pathExists(join(root, bundlePath, 'Alpha.md'))).toBe(true)
+    expect(await pathExists(join(root, 'Notes', 'Daily', 'Alpha.md'))).toBe(false)
   })
 
   it('refuses the destination the move check would refuse — a Space is not a container', async () => {
