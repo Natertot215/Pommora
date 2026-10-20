@@ -7,7 +7,9 @@ import { resolveUnderRoot } from '../Paths/pathSafety'
 import { contextsDir } from '../Paths/paths'
 import { machine } from '../Platform/machine'
 import { fault, ok, type Result } from '../Contract/result'
-import { emptyBundle, restoreOp } from '../Trash/spend'
+import { emptyBundle, restoreArtifact } from '../Trash/spend'
+import { archiveOp, restoreArchived } from '../Archive/archive'
+import { storeOf } from '../Bundles/bundle'
 import { deleteOp } from '../Trash/delete'
 import { updateSettings } from '../Settings/settings'
 import { setProfileImageOp } from '../Assets/setProfileImage'
@@ -131,8 +133,20 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
         ? underContexts(() => inSettleTurn(root, () => deleteOp(ctx, req)))
         : inSettleTurn(root, () => deleteOp(ctx, req))
 
-    case 'restore':
-      return underContexts(() => inSettleTurn(root, () => restoreOp(ctx, req)))
+    case 'archive':
+      return inSettleTurn(root, () => archiveOp(ctx, req))
+
+    // An Archive bundle holds a page or Set alone, so its restore changes no Context and takes no Contexts lock.
+    case 'restore': {
+      const resolved = await resolveUnderRoot(root, req.bundlePath)
+      if (!resolved.ok) return resolved
+      const store = storeOf(root, resolved.value)
+      return store?.kind === 'archive'
+        ? inSettleTurn(root, () => restoreArchived(root, resolved.value, store, req.destination))
+        : underContexts(() =>
+            inSettleTurn(root, () => restoreArtifact(root, resolved.value, req.destination)),
+          )
+    }
 
     case 'emptyBundle': {
       const resolved = await resolveUnderRoot(root, req.bundlePath)

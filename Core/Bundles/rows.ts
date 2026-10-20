@@ -64,8 +64,9 @@ function homeResolvesFor(
   artifactName: string,
   tree: NexusTree,
   byId: NexusPages['byId'],
+  restoring: string,
 ): boolean {
-  const resolution = resolveRecord(record, artifactName, tree, byId)
+  const resolution = resolveRecord(record, artifactName, tree, byId, restoring)
   return !('refuse' in resolution) || resolution.refuse === 'id-live'
 }
 
@@ -103,7 +104,7 @@ export function bundleRowOf(
     crumbs: live ?? frozenCrumbs(store, bundlePath),
     ...(live ? {} : { historical: true }),
     storedAt: storedAtOf(bundlePath),
-    homeResolves: homeResolvesFor(record, artifactName, tree, byId),
+    homeResolves: homeResolvesFor(record, artifactName, tree, byId, bundlePath),
   })
 }
 

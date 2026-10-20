@@ -7,7 +7,9 @@ import { fault, ok, type Result } from '../Contract/result'
 import { type ConnPage, connPage } from '../Connections/pageIndex'
 import { stampedIdOf } from '../Files/pageFile'
 import { listEntries, listMarkdownFiles } from '../Files/walk'
-import { type RecordFile, readRecord } from './record'
+import { readJsonObject, relocate, writeJson } from '../Files/atomicWrite'
+import { recordWrite } from '../Files/writeEcho'
+import { RECORD_FILENAME, type RecordFile, readRecord } from './record'
 
 export type BundleStore = { kind: 'trash' } | { kind: 'archive'; id: string }
 
@@ -55,12 +57,15 @@ export async function chainDir(
   return dir
 }
 
+/** `leaf` asks for one bundle name back, which a fresh stamp answers once something holds it. */
 export async function mintBundle(
   root: string,
   store: BundleStore,
   absSource: string,
+  leaf?: string,
 ): Promise<string> {
   const dir = await chainDir(root, store, absSource)
+  if (leaf && (await machine().mkdir(join(dir, leaf))) === 'created') return join(dir, leaf)
   const stamp = fileStamp()
   const base = `${basename(absSource)}${layoutOf(store).suffix}`
   for (let n = 0; ; n++) {
@@ -80,6 +85,25 @@ export function originPathOf(root: string, store: BundleStore, file: string): st
 export async function bundleArtifact(bundleDir: string): Promise<string | null> {
   const found = (await listEntries(bundleDir)).filter((e) => !hiddenName(e.name))
   return found.length === 1 ? join(bundleDir, found[0].name) : null
+}
+
+/** Moves a bundle's artifact into `to`, under the chain it left from, with its raw record spread with `extra` written ahead, and removes the emptied bundle; `leaf` asks for that bundle name back. */
+export async function moveIntoStore(
+  root: string,
+  fromBundle: string,
+  to: BundleStore,
+  extra: Record<string, unknown>,
+  leaf?: string,
+): Promise<void> {
+  const from = storeOf(root, fromBundle)
+  const artifact = await bundleArtifact(fromBundle)
+  const raw = await readJsonObject(join(fromBundle, RECORD_FILENAME))
+  if (!from || !artifact || !raw) return
+  const bundle = await mintBundle(root, to, join(root, originPathOf(root, from, artifact)), leaf)
+  await writeJson(join(bundle, RECORD_FILENAME), { ...raw, ...extra })
+  await relocate(artifact, join(bundle, basename(artifact)))
+  recordWrite(fromBundle)
+  await machine().remove(fromBundle)
 }
 
 export interface ListedBundle {

@@ -1,7 +1,7 @@
 // Where a recorded artifact re-enters: the placement resolved against the CURRENT tree and stepped past what the disk holds, the order it lands in, or the refusal that says why it cannot be placed.
 
 import { CONTEXTS_DIR_REL, contextDirRel } from '../Paths/nexusPaths'
-import { join, titleFromPath } from '../Paths/posix'
+import { isAtOrUnder, join, titleFromPath } from '../Paths/posix'
 import { createDisambiguated, freeName } from '../Paths/names'
 import { pathExists } from '../Files/atomicWrite'
 import { landingRefusal } from '../Nexus/folderEntity'
@@ -9,11 +9,13 @@ import { fail, fault, ok, type Result } from '../Contract/result'
 import type { NexusTree } from '../Nexus/tree'
 import type { RestoreDestination } from '../Nexus/mutateRequest'
 import type { NexusPages } from '../Nexus/heldPages'
+import type { EntityRecord } from '../Nexus/record'
 import { findContainerById } from '../Nexus/treePatch'
 import { type Slot, spliceBeside } from '../Nexus/order'
 import { setChildOrder, setCollectionOrder, setSpaceOrder } from '../Nexus/reorder'
 import { contextWorldOf } from '../Contexts/contextResolve'
 import type { ArtifactRecord, Place } from './record'
+import { type BundleStore, storeOf } from './bundle'
 
 interface Placement {
   dir: string
@@ -31,15 +33,20 @@ interface SiblingOrder {
 export type Refusal = 'parent-gone' | 'cannot-hold' | 'unaddressable' | 'id-live'
 type Resolution = { place: Placement; order?: SiblingOrder } | { refuse: Refusal }
 
-/** THE decision, against the CURRENT tree — a renamed parent resolves to its renamed path. Every name and title choice the tree can make is made here, and `freeOnDisk` steps it only past what the tree can't see. A live id refusal, an id the tree or the Archive holds, outranks every other answer: nothing may write over a living identity. */
+/** An id `byId` holds anywhere but inside the restoring bundle is live, and a twin (null) always is; only an archived page's own file sits inside its bundle, since the map holds no Set ids. */
+const heldElsewhere = (held: EntityRecord | null | undefined, restoring: string): boolean =>
+  held !== undefined && !(held && isAtOrUnder(held.path, restoring))
+
+/** THE decision, against the CURRENT tree — a renamed parent resolves to its renamed path. Every name and title choice the tree can make is made here, and `freeOnDisk` steps it only past what the tree can't see. A live id refusal, an id the tree or the Archive holds outside the restoring bundle, outranks every other answer: nothing may write over a living identity. */
 export function resolveRecord(
   record: ArtifactRecord,
   baseName: string,
   tree: NexusTree,
   byId: NexusPages['byId'],
+  restoring: string,
 ): Resolution {
   const recordId = record.entity === 'context' ? record.registry.id : record.id
-  if (recordId && byId.has(recordId)) return { refuse: 'id-live' }
+  if (recordId && heldElsewhere(byId.get(recordId), restoring)) return { refuse: 'id-live' }
 
   if (record.entity === 'context') {
     const finalTitle = freeName(
@@ -119,7 +126,7 @@ export const NO_DESTINATION = 'That kind cannot be given a destination.'
 
 function withDestination(
   record: ArtifactRecord,
-  destination: RestoreDestination,
+  destination: Exclude<RestoreDestination, { kind: 'archive' }>,
   tree: NexusTree,
 ): Result<ArtifactRecord> {
   switch (record.entity) {
@@ -182,18 +189,38 @@ export async function placeRecord(
   baseName: string,
   tree: NexusTree,
   byId: NexusPages['byId'],
+  restoring: string,
 ): Promise<
   Result<{
     record: ArtifactRecord
     placement: Placement
     writeOrder?: () => Promise<unknown>
     landedAs?: string
+    into?: BundleStore
   }>
 > {
+  if (destination?.kind === 'archive') {
+    if ((stored.entity !== 'page' && stored.entity !== 'set') || !stored.archive)
+      return fault(NO_DESTINATION)
+    // The bundle it names was removed, so no realpath answers for it; `join` collapses any `..` before the store's prefix test.
+    const into = storeOf(root, join(root, stored.archive))
+    if (into?.kind !== 'archive') return fault(NO_DESTINATION)
+    if (stored.id && heldElsewhere(byId.get(stored.id), restoring))
+      return fault(REFUSAL_TEXT['id-live'])
+    return ok({
+      record: stored,
+      placement: {
+        dir: stored.archive,
+        finalName: baseName,
+        ...(stored.entity === 'page' ? { finalTitle: titleFromPath(baseName) } : {}),
+      },
+      into,
+    })
+  }
   const rehomed = destination ? withDestination(stored, destination, tree) : ok(stored)
   if (!rehomed.ok) return rehomed
   const record = rehomed.value
-  const resolution = resolveRecord(record, baseName, tree, byId)
+  const resolution = resolveRecord(record, baseName, tree, byId, restoring)
   if ('refuse' in resolution) return fault(REFUSAL_TEXT[resolution.refuse])
   const named = await freeOnDisk(root, record.entity, resolution.place)
   if (!named.ok) return named
