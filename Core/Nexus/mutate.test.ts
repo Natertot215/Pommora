@@ -3360,21 +3360,9 @@ describe('handleMutate — excluded entries follow their folders', () => {
 
   it('refuses a Set moved with excluded entries while settings.json can’t be written', async () => {
     await mkdir(join(root, 'Notes', 'Daily', 'Private'), { recursive: true })
-    await mkdir(join(root, 'Other', 'Kept', 'Private'), { recursive: true })
-    await writeFile(join(root, 'Other', '_pagecollection.json'), JSON.stringify({ id: 'ot' }))
-    await writeFile(join(root, 'Other', 'Kept', '_pageset.json'), JSON.stringify({ id: 'ok' }))
     await mkdir(join(root, 'Third'))
     await writeFile(join(root, 'Third', '_pagecollection.json'), JSON.stringify({ id: 'th' }))
-    await exclude(['Notes/Daily/Private', 'Other/Kept/Private'])
-    const deleted = await settledMutate(
-      root,
-      { op: 'delete', path: 'Other', kind: 'collection' },
-      nexusDeps,
-    )
-    const bundlePath = (deleted.ok && deleted.value.trashed?.bundlePath) || ''
-    expect(await pathExists(join(root, 'Private'))).toBe(true)
-    expect(await excludedOnDisk()).toEqual(['Notes/Daily/Private', 'Private'])
-    await refreshTree(root)
+    await exclude(['Notes/Daily/Private'])
     await writeFile(join(root, '.nexus', 'settings.json'), '{ corrupt')
     const moved = await settledMutate(
       root,
@@ -3382,12 +3370,6 @@ describe('handleMutate — excluded entries follow their folders', () => {
       nexusDeps,
     )
     expect(moved.ok ? '' : moved.error.message).toContain('settings.json')
-    const restored = await settledMutate(root, { op: 'restore', bundlePath }, nexusDeps)
-    expect(restored.ok).toBe(true)
-    expect(await pathExists(join(root, 'Other', 'Kept', '_pageset.json'))).toBe(true)
-    expect(await pathExists(join(root, 'Other', 'Kept', 'Private'))).toBe(false)
-    expect(await pathExists(join(root, 'Private'))).toBe(true)
-    expect(await read('.nexus/settings.json')).toBe('{ corrupt')
     expect(await pathExists(join(root, 'Notes', 'Daily', 'Private'))).toBe(true)
     const reordered = await settledMutate(
       root,
@@ -3395,6 +3377,29 @@ describe('handleMutate — excluded entries follow their folders', () => {
       nexusDeps,
     )
     expect(reordered.ok).toBe(true)
+  })
+
+  it('a Collection restores under an unreadable settings.json, writing no settings', async () => {
+    await mkdir(join(root, 'Other', 'Kept', 'Private'), { recursive: true })
+    await writeFile(join(root, 'Other', '_pagecollection.json'), JSON.stringify({ id: 'ot' }))
+    await writeFile(join(root, 'Other', 'Kept', '_pageset.json'), JSON.stringify({ id: 'ok' }))
+    await exclude(['Other/Kept/Private'])
+    const deleted = await settledMutate(
+      root,
+      { op: 'delete', path: 'Other', kind: 'collection' },
+      nexusDeps,
+    )
+    const bundlePath = (deleted.ok && deleted.value.trashed?.bundlePath) || ''
+    expect(await pathExists(join(root, 'Private'))).toBe(true)
+    expect(await excludedOnDisk()).toEqual(['Private'])
+    await refreshTree(root)
+    await writeFile(join(root, '.nexus', 'settings.json'), '{ corrupt')
+    const restored = await settledMutate(root, { op: 'restore', bundlePath }, nexusDeps)
+    expect(restored.ok).toBe(true)
+    expect(await pathExists(join(root, 'Other', 'Kept', '_pageset.json'))).toBe(true)
+    expect(await pathExists(join(root, 'Other', 'Kept', 'Private'))).toBe(false)
+    expect(await pathExists(join(root, 'Private'))).toBe(true)
+    expect(await read('.nexus/settings.json')).toBe('{ corrupt')
   })
 
   it('lifts a trashed Collection’s excluded folder to the root, its entry following, and restores the Collection without it', async () => {
@@ -3506,6 +3511,64 @@ describe('handleMutate — excluded entries follow their folders', () => {
     expect(heldTreeOf(root)?.config.assetDirectory).toBe('Other/Daily/Media')
   })
 
+  it('restores the settings it carried when the folder move throws, so the walk never stamps the asset folder', async () => {
+    await mkdir(join(root, 'Notes', 'Media'), { recursive: true })
+    await writeFile(join(root, 'Notes', 'Media', 'Pic.png'), 'bytes')
+    const before = { excluded_folders: ['Notes/Daily/Old'], asset_directory: 'Notes/Media' }
+    await writeFile(join(root, '.nexus', 'settings.json'), JSON.stringify(before))
+    await refreshTree(root)
+    const m = machine()
+    const rename = m.rename.bind(m)
+    const held = vi.spyOn(m, 'rename').mockImplementation(async (from, to) => {
+      if (from === join(root, 'Notes')) throw new Error('held')
+      return rename(from, to)
+    })
+    try {
+      const r = await settledMutate(
+        root,
+        { op: 'rename', path: 'Notes', kind: 'collection', newName: 'Journal' },
+        nexusDeps,
+      )
+      expect(r.ok).toBe(false)
+    } finally {
+      held.mockRestore()
+    }
+    expect(await readJson('.nexus/settings.json')).toEqual(before)
+    expect(await pathExists(join(root, 'Notes', 'Media', '_pageset.json'))).toBe(false)
+  })
+
+  it('re-keys a crop to the asset’s new path through a rename and a trash of the container holding the asset directory', async () => {
+    await mkdir(join(root, 'Notes', 'Daily', 'Media'), { recursive: true })
+    await writeFile(join(root, 'Notes', 'Daily', 'Media', 'Pic.png'), 'bytes')
+    await writeFile(
+      join(root, '.nexus', 'settings.json'),
+      JSON.stringify({ asset_directory: 'Notes/Daily/Media' }),
+    )
+    const crop = { x: 0.3, y: 0.4, zoom: 1.5 }
+    await mkdir(join(root, '.nexus', 'assets'), { recursive: true })
+    await writeFile(
+      join(root, '.nexus', 'assets', 'crops.json'),
+      JSON.stringify({ byImage: { 'Notes/Daily/Media/Pic.png': crop } }),
+    )
+    await refreshTree(root)
+    const cropKeys = async (): Promise<unknown> =>
+      (await readJson('.nexus/assets/crops.json')).byImage
+    const renamed = await settledMutate(
+      root,
+      { op: 'rename', path: 'Notes', kind: 'collection', newName: 'Journal' },
+      nexusDeps,
+    )
+    expect(renamed.ok).toBe(true)
+    expect(await cropKeys()).toEqual({ 'Journal/Daily/Media/Pic.png': crop })
+    const trashed = await settledMutate(
+      root,
+      { op: 'delete', path: 'Journal/Daily', kind: 'set' },
+      nexusDeps,
+    )
+    expect(trashed.ok).toBe(true)
+    expect(await cropKeys()).toEqual({ 'Journal/Media/Pic.png': crop })
+  })
+
   it('steps a lifted folder aside past every name its parent holds, the Set’s own among them, and the Set’s restore keeps its name', async () => {
     for (const rel of ['Omega', 'Daily/Omega', 'Daily/Daily'])
       await mkdir(join(root, 'Notes', rel), { recursive: true })
@@ -3570,6 +3633,30 @@ describe('handleMutate — excluded entries follow their folders', () => {
     expect(trashToSystem.mock.calls).toEqual([[join(root, 'Notes', 'Daily')]])
     expect(await read('Notes/Private/Kept.md')).toBe('# Kept\n')
     expect(await excludedOnDisk()).toEqual(['Notes/Private'])
+  })
+
+  it('lifts an excluded folder and the asset directory spelled apart only by case once', async () => {
+    await mkdir(join(root, 'Notes', 'Daily', 'Media'), { recursive: true })
+    await writeFile(join(root, 'Notes', 'Daily', 'Media', 'Pic.png'), 'bytes')
+    await writeFile(
+      join(root, '.nexus', 'settings.json'),
+      JSON.stringify({
+        excluded_folders: ['Notes/Daily/Media'],
+        asset_directory: 'Notes/Daily/media',
+      }),
+    )
+    await refreshTree(root)
+    const r = await settledMutate(
+      root,
+      { op: 'delete', path: 'Notes/Daily', kind: 'set' },
+      nexusDeps,
+    )
+    expect(r.ok).toBe(true)
+    expect(await read('Notes/Media/Pic.png')).toBe('bytes')
+    expect(await readJson('.nexus/settings.json')).toEqual({
+      excluded_folders: ['Notes/Media'],
+      asset_directory: 'Notes/Media',
+    })
   })
 
   it('leaves an entry naming no folder where it stands, lifting nothing for it', async () => {

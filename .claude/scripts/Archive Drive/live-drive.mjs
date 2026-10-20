@@ -133,14 +133,22 @@ async function group1(cdp) {
     second.ok && untouched(`${LIFTED} (2)`) && untouched(LIFTED) && same(settingsOnDisk().excluded_folders, [LIFTED, `${LIFTED} (2)`]),
     show({ second, excluded: settingsOnDisk().excluded_folders }))
 
+  const CARRY = `${COLLECTION}/AR Carry`
   const MEDIA = `${COLLECTION}/AR Media`
-  await makeSet(cdp, 'AR Media')
+  await makeSet(cdp, 'AR Carry')
   // Written from outside, ahead of the folder: assets:setDir would refuse a folder the watcher already adopted as a Set, and its migration would move ~/Test's own assets.
-  writeFileSync(abs('.nexus/settings.json'), `${JSON.stringify({ ...settingsOnDisk(), asset_directory: `${MEDIA}/Media` }, null, 2)}\n`)
-  await until('the asset directory in the tree', async () => (await config(cdp)).assetDirectory === `${MEDIA}/Media`)
-  mkdirSync(abs(`${MEDIA}/Media`))
-  writeFileSync(abs(`${MEDIA}/Media/Pixel.png`), PIXEL)
+  writeFileSync(abs('.nexus/settings.json'), `${JSON.stringify({ ...settingsOnDisk(), asset_directory: `${CARRY}/Media` }, null, 2)}\n`)
+  await until('the asset directory in the tree', async () => (await config(cdp)).assetDirectory === `${CARRY}/Media`)
+  mkdirSync(abs(`${CARRY}/Media`))
+  writeFileSync(abs(`${CARRY}/Media/Pixel.png`), PIXEL)
   await sleep(1000)
+  const carriedAsset = await ask(cdp, 'mutate', { op: 'rename', path: CARRY, kind: 'set', newName: 'AR Media' })
+  await settles(async () => settingsOnDisk().asset_directory === `${MEDIA}/Media`)
+  item(1, 1, 'K-1', 'a renamed Set carries the asset directory to the landing, the asset file with it',
+    carriedAsset.ok && exists(`${MEDIA}/Media/Pixel.png`) && !exists(`${MEDIA}/Media/_pageset.json`) &&
+      (await config(cdp)).assetDirectory === `${MEDIA}/Media` && same(settingsOnDisk().excluded_folders, [LIFTED, `${LIFTED} (2)`]),
+    show({ carriedAsset, onDisk: settingsOnDisk() }))
+
   const media = await ask(cdp, 'mutate', { op: 'delete', path: MEDIA, kind: 'set' })
   await settles(async () => exists(`${COLLECTION}/Media/Pixel.png`))
   item(1, 1, 'F-2', 'the asset directory is left behind by a trashed Set, its setting following',

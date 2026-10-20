@@ -84,7 +84,7 @@ describe('carrySetAside', () => {
       'New/Deep/Raw',
       'Old/Deep/Raw',
     ])
-    await carried.value()
+    await carried.value.drop()
     expect((await readSettings()).excluded_folders).toEqual([
       'Archive',
       'New/Private',
@@ -92,9 +92,15 @@ describe('carrySetAside', () => {
     ])
   })
 
-  it('moves the asset directory in the same write', async () => {
+  it('moves the asset directory in the same write, holding its source as an excluded entry until the drop', async () => {
     await write({ asset_directory: 'Old/Media' })
-    expect((await carrySetAside(root, 'Old', 'New')).ok).toBe(true)
+    const carried = await carrySetAside(root, 'Old', 'New')
+    if (!carried.ok) throw new Error(carried.error.message)
+    expect(await readSettings()).toEqual({
+      asset_directory: 'New/Media',
+      excluded_folders: ['Old/Media'],
+    })
+    await carried.value.drop()
     expect(await readSettings()).toEqual({ asset_directory: 'New/Media' })
   })
 
@@ -112,7 +118,7 @@ describe('carrySetAside', () => {
     const before = await readFile(path(), 'utf8')
     const carried = await carrySetAside(root, 'Old', 'New')
     if (!carried.ok) throw new Error(carried.error.message)
-    await carried.value()
+    await carried.value.drop()
     expect(await readFile(path(), 'utf8')).toBe(before)
   })
 })

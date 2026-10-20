@@ -19,7 +19,7 @@ import { corpusFiles, listEntries, listFilesRecursive, listPathsUnder } from '..
 import { outsideContent, reachingExcluded, type WatchScope } from '../Paths/exclusion'
 import { discardFile } from '../Trash/bundle'
 import { readNavigationFile, writeNavigationState } from '../Navigation/navigationFile'
-import { readWatchScope, updateCrops, updateSettings } from '../Settings/settings'
+import { readWatchScope, rekeyCrops, updateSettings } from '../Settings/settings'
 import {
   AMBIGUOUS,
   buildAssetMap,
@@ -217,23 +217,12 @@ export async function migrateAssets(root: string, deps: TrashDeps): Promise<Asse
 
   await refreshAssetMap(root)
 
-  const rekeys: [string, string][] = []
+  const rekeys = new Map<string, string>()
   for (const { from, to } of result.moved) {
     const toRel = await assetFilePath(root, to)
-    if (toRel) rekeys.push([from, toRel])
+    if (toRel) rekeys.set(from, toRel)
   }
-  if (rekeys.length) {
-    // Best-effort: a corrupt crops.json must not block the change once references moved.
-    await updateCrops(root, (b) => {
-      const next = { ...b }
-      for (const [fromRel, toRel] of rekeys) {
-        if (next[fromRel] === undefined) continue
-        next[toRel] = next[fromRel]
-        delete next[fromRel]
-      }
-      return next
-    }).catch(() => {})
-  }
+  if (rekeys.size) await rekeyCrops(root, (key) => rekeys.get(key))
   // Last, so a discard the system trash refuses leaves the move itself whole.
   if (!result.skipped.length) result.trashed = await sweepLegacyRoot(root, deps)
   return result

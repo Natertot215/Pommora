@@ -28,7 +28,7 @@ export async function landingRefusal(
   return why && why !== 'hidden' ? fail('invalid-path', `"${name}" ${SET_ASIDE[why]}`) : null
 }
 
-/** A Collection or Set landing at a new path carries its excluded entries and the asset directory: the carry's write refuses the move before anything moves, and its drop runs as `landed`, so sync hears of the rename once, under the scope it settled. */
+/** A Collection or Set landing at a new path carries its excluded entries and the asset directory: the carry's write refuses the move before anything moves, and its drop runs as `landed`, so sync hears of the rename once, under the scope it settled; a move that throws before landing writes back what the carry read. */
 async function relocateFolder(
   root: string,
   from: string,
@@ -36,7 +36,16 @@ async function relocateFolder(
 ): Promise<Result<{ path: string }>> {
   const carried = await carrySetAside(root, relative(root, from), relative(root, to))
   if (!carried.ok) return carried
-  await relocate(from, to, carried.value)
+  let landed = false
+  try {
+    await relocate(from, to, () => {
+      landed = true
+      return carried.value.drop()
+    })
+  } catch (e) {
+    if (!landed) await carried.value.undo()
+    throw e
+  }
   return ok({ path: to })
 }
 
@@ -49,11 +58,11 @@ export async function liftSetAside(root: string, containerAbs: string): Promise<
   })
   const parent = dirname(containerAbs)
   for (const rest of inside) {
-    if (inside.some((outer) => outer !== rest && entryWithin(rest, outer))) continue
+    if (inside.some((outer) => (entryWithin(rest, outer)?.length ?? 0) > 0)) continue
     const abs = join(containerAbs, rest)
     // An entry can outlive its folder, whose spelling is read from its parent's listing.
-    if (!(await pathExists(abs))) continue
-    const name = (await heldName(abs)) ?? basename(abs)
+    const name = await heldName(abs)
+    if (name === null) continue
     const taken = (await listEntries(parent)).map((e) => e.name)
     const lifted = await relocateFolder(root, abs, join(parent, freeName(name, taken)))
     if (!lifted.ok) return lifted
