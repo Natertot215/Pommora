@@ -171,7 +171,8 @@ describe('EditableInput with symbols', () => {
             initial="30"
             className="field"
             leading="$"
-            trailing="/ 10"
+            trailing="%"
+            hint="/ 10"
             onCommit={() => {}}
             onCancel={() => {}}
           />
@@ -179,8 +180,12 @@ describe('EditableInput with symbols', () => {
       ),
     )
     const run = host.querySelector('input')?.parentElement
-    expect(run?.textContent).toBe('$/ 10')
-    expect([...(run?.children ?? [])].map((el) => el.tagName)).toEqual(['SPAN', 'INPUT', 'SPAN'])
+    expect([...(run?.children ?? [])].map((el) => el.textContent || el.tagName)).toEqual([
+      '$',
+      'INPUT',
+      '%',
+      '/ 10',
+    ])
     const symbol = run?.firstElementChild as HTMLElement
     const press = new MouseEvent('mousedown', { bubbles: true, cancelable: true })
     symbol.dispatchEvent(press)

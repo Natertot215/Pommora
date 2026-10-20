@@ -63,7 +63,7 @@ A Text property holds one free-typed string. It edits single-line wherever a val
 
 #### Number
 
-A number with a **property-wide format** and a **per-view look**. The format — a family (Number, Percent, Currency), a currency code, thousands separators, decimal places, and a Fraction toggle rendering "N out of denominator" — is set once in the Number editor and applies everywhere. Percent stores the literal value and appends the sign, keeping the file legible. The look is **Number** (formatted text) or **Bar**, a progress bar filling against a muted track. Typing a number keeps its format's symbols where the cell shows them — a currency's symbol before the digits, and a percent sign or the fraction's "/ denominator" after — whether in the cell itself or in the picker a Bar opens, which also leads a plain number with `#`.
+A number with a **property-wide format** and a **per-view look**. The format — a family (Number, Percent, Currency), a currency code, thousands separators, decimal places, and a Fraction toggle rendering "N out of denominator" — is set once in the Number editor and applies everywhere. Percent stores the literal value and appends the sign, keeping the file legible. The look is **Number** (formatted text) or **Bar**, a progress bar filling against a muted track. Typing a number in its cell keeps the format's glyph where the cell shows it — a currency's symbol before the digits, a percent sign after — with the fraction's "/ denominator" hint following. The picker a Bar opens leads with the glyph instead, `#` for a plain number, and pins the hint to its far edge.
 
 #### Date & Time
 

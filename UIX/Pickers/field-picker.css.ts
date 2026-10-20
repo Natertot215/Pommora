@@ -1,6 +1,6 @@
-import { style } from '@vanilla-extract/css'
+import { globalStyle, style } from '@vanilla-extract/css'
 import { font } from '../Theme/typography.css'
-import { base, field as kitField } from '../Fields/fields.css'
+import { affixRun, base, field as kitField } from '../Fields/fields.css'
 import { focusRing } from '../Fields/fieldRing'
 
 /** Left-anchored so the caret sits at the field's left edge, never centered. */
@@ -36,3 +36,6 @@ export const suffixInput = style([
     vars: { '--scroll-fade': 'var(--fade-light)' },
   },
 ])
+
+/** The run spans the field, so the text grows into it and the hint pins to the far edge. */
+globalStyle(`${field} ${affixRun}`, { display: 'flex' })

@@ -1,6 +1,6 @@
 import { style } from '@vanilla-extract/css'
 import { STATE_OPACITY, vars as colorVars } from '../Theme/color.css'
-import { text } from '../Theme/typography.css'
+import { font, text } from '../Theme/typography.css'
 import { fieldRing, focusRing } from './fieldRing'
 
 const c = colorVars.color
@@ -102,7 +102,17 @@ export const affixRun = style({
   verticalAlign: 'top',
 })
 
-export const affix = style({ flex: '0 0 auto', whiteSpace: 'nowrap', color: c.label.secondary })
+const affix = { flex: '0 0 auto', whiteSpace: 'nowrap' } as const
+
+/** The format's own symbol, read as part of the value. */
+export const affixGlyph = style({
+  ...affix,
+  color: c.label.secondary,
+  fontWeight: font.weight.semibold,
+})
+
+/** A hint about the value rather than part of it. */
+export const affixHint = style({ ...affix, color: c.label.tertiary })
 
 /** Never closer than the gap, so a content-sized field still separates the two. */
 export const trailing = style({

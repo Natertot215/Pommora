@@ -3,8 +3,8 @@ import {
   formatDate,
   formatNumber,
   fractionDenominator,
-  numberAffixes,
   numberDivisor,
+  numberFormatGlyph,
   readDate,
   readNumber,
   spelledNumber,
@@ -229,22 +229,15 @@ describe('fractionDenominator', () => {
   })
 })
 
-describe('numberAffixes', () => {
-  it("leads with the cell's currency symbol and trails with the percent sign or the fraction's ceiling", () => {
+describe('numberFormatGlyph', () => {
+  it('is %, #, or the currency symbol a cell shows', () => {
+    expect(numberFormatGlyph({ number_family: 'percent' })).toBe('%')
+    expect(numberFormatGlyph({})).toBe('#')
     expect(
-      CURRENCY_CODES.map(
-        (c) => numberAffixes({ number_family: 'currency', number_currency: c }).leading,
+      CURRENCY_CODES.map((c) =>
+        numberFormatGlyph({ number_family: 'currency', number_currency: c }),
       ),
     ).toEqual(['$', '€', '£', 'A$', 'CA$', '¥'])
-    expect(numberAffixes({ number_family: 'percent' })).toEqual({ trailing: '%' })
-    expect(
-      numberAffixes({
-        number_family: 'currency',
-        number_fraction: true,
-        number_denominator: 10,
-      }),
-    ).toEqual({ leading: '$', trailing: '/ 10' })
-    expect(numberAffixes({})).toEqual({})
   })
 })
 
