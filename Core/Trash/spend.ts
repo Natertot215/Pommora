@@ -39,7 +39,7 @@ import { heldTreeOf, liveTreeOf } from '../Nexus/liveTree'
 import { settledIndex } from '../Nexus/settle'
 
 import { pageIndexOf, pagesOf } from '../Nexus/record'
-import { type NexusPages, nexusPages } from '../Nexus/heldPages'
+import { type NexusPages, nexusPages, shownTitle } from '../Nexus/heldPages'
 import {
   deleteCascade,
   joinCascades,
@@ -250,7 +250,8 @@ async function restoreArtifact(
       )
       const taken = await refillValues(root, def, roots, all, refilled)
       for (const id of Object.keys(all))
-        if (!roots.get(id)) trashed.push({ page: id, property: def.id, value: all[id] })
+        if (roots.get(id) === undefined)
+          trashed.push({ page: id, property: def.id, value: all[id] })
         else if (!taken.has(id)) unlinked.add(id)
     }
     // A page or Space in the Trash takes its value back into its trashed copy, so it returns with it.
@@ -270,13 +271,13 @@ async function restoreArtifact(
     await machine().remove(bundleAbs)
   }
   return ok({
-    ...restored([...unspent, ...unlinked].flatMap((id) => roots.get(id)?.title ?? [])),
+    ...restored([...unspent, ...unlinked].flatMap((id) => shownTitle(tree, roots, id) ?? [])),
     ...(cascade ? { cascade } : {}),
     ...(landedAs ? { landedAs } : {}),
   })
 }
 
-/** The ids of what's still here and didn't take its tag back; a root gone since has nothing to take it. */
+/** The ids of what's still here and didn't take its tag back, one of two files claiming its id among them; a root gone since has nothing to take it. */
 async function reapply(
   root: string,
   roots: NexusPages['byId'],
@@ -286,5 +287,5 @@ async function reapply(
   const taken = await sweepRootsById(root, roots, additions, (raw, titles) =>
     landValue(raw, key, joinValues(raw[key], titles)),
   )
-  return Object.keys(additions).filter((id) => roots.get(id) && !taken.has(id))
+  return Object.keys(additions).filter((id) => roots.get(id) !== undefined && !taken.has(id))
 }

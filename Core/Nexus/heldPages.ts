@@ -2,21 +2,32 @@
 
 import { heldTreeOf } from './liveTree'
 import { join, relative, titleFromPath } from '../Paths/posix'
-import { type EntityRecord, pagesByPathOf, pagesOf, recordsOf } from './record'
+import { type EntityRecord, pagesByIdOf, pagesByPathOf, pagesOf, recordsOf } from './record'
 import { entityMemo, type NexusTree } from './tree'
 import { readIndexedStats } from '../Index/contentIndex'
 import { ARCHIVE_DIR_REL, archivedCollectionIdOf } from '../Paths/nexusPaths'
 import { corpusFilesUnder } from '../Files/walk'
 import { stampedIdOf } from '../Files/pageFile'
-import { readWatchScope } from '../Settings/settings'
+import { scopeOf } from '../Settings/codec'
 import { originPathOf } from '../Bundles/bundle'
 import { type ConnPage, connPage } from '../Connections/pageIndex'
 
+type ById = Map<string, EntityRecord | null>
+
+const claim = (byId: ById, r: EntityRecord): void => {
+  byId.set(r.id, byId.has(r.id) ? null : r)
+}
+
 /** Null marks an id two files claim: the window shows the first listed (`record.ts`'s `pagesByIdOf`); a file writer refuses it. */
-const writablePathsOf = entityMemo([], (tree): ReadonlyMap<string, string | null> => {
-  const byId = new Map<string, string | null>()
-  for (const p of pagesOf(tree)) byId.set(p.id, byId.has(p.id) ? null : p.path)
+const entitiesById = entityMemo([recordsOf], (tree): ReadonlyMap<string, EntityRecord | null> => {
+  const byId: ById = new Map()
+  for (const r of recordsOf(tree)) claim(byId, r)
   return byId
+})
+
+const writablePathsOf = entityMemo([recordsOf], (tree): ReadonlyMap<string, string | null> => {
+  const byId = entitiesById(tree)
+  return new Map(pagesOf(tree).map((p) => [p.id, byId.get(p.id)?.path ?? null]))
 })
 
 /** Empty when the tree is not this root's, so a stale tree never names ids for another nexus. */
@@ -45,27 +56,33 @@ export interface NexusPages {
   archived: readonly ConnPage[]
 }
 
+/** Whether `byId` addresses the one file carrying `id`: not where the file carries no ID, nor where two files claim it, so no strip files a value under it and no refill writes it. */
+export const addressable = (byId: NexusPages['byId'], id: string | undefined): id is string =>
+  id !== undefined && byId.get(id) !== null
+
+/** The title the window shows for `id`: its one holder's, or the first-listed page's where two files claim it. */
+export const shownTitle = (
+  tree: NexusTree,
+  byId: NexusPages['byId'],
+  id: string,
+): string | undefined => byId.get(id)?.title ?? pagesByIdOf(tree).get(id)?.title
+
 export async function nexusPages(root: string, tree: NexusTree): Promise<NexusPages> {
-  const rows: ReadonlyMap<string, { id?: string | null }> =
-    readIndexedStats(ARCHIVE_DIR_REL) ?? (await archiveIds(root))
-  const byId = new Map<string, EntityRecord | null>()
-  const add = (r: EntityRecord): void => {
-    byId.set(r.id, byId.has(r.id) ? null : r)
-  }
-  recordsOf(tree).forEach(add)
+  const rows = readIndexedStats(ARCHIVE_DIR_REL) ?? (await archiveIds(root, tree))
+  const byId: ById = new Map(entitiesById(tree))
   const archived: ConnPage[] = []
   for (const [path, { id }] of rows) {
     const owner = archivedCollectionIdOf(path)
     if (!id || owner === null) continue
-    add({ id, kind: 'page', title: titleFromPath(path), path })
+    claim(byId, { id, kind: 'page', title: titleFromPath(path), path })
     const left = originPathOf(root, { kind: 'archive', id: owner }, join(root, path))
     archived.push(connPage(id, left))
   }
   return { byId, archived }
 }
 
-async function archiveIds(root: string): Promise<Map<string, { id: string | null }>> {
-  const rels = await corpusFilesUnder(root, join(root, ARCHIVE_DIR_REL), await readWatchScope(root))
+async function archiveIds(root: string, tree: NexusTree): Promise<Map<string, { id?: string }>> {
+  const rels = await corpusFilesUnder(root, join(root, ARCHIVE_DIR_REL), scopeOf(tree.config))
   const ids = await Promise.all(rels.map((rel) => stampedIdOf(join(root, rel))))
-  return new Map(rels.map((rel, i) => [rel, { id: ids[i] }]))
+  return new Map(rels.map((rel, i) => [rel, { id: ids[i] ?? undefined }]))
 }

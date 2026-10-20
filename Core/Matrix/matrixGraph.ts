@@ -1,6 +1,6 @@
 import { readPageRelations } from '../Index/contentIndex'
 import { ID_KEY } from '../Nexus/identityMark'
-import { archivedCollectionIdOf } from '../Paths/nexusPaths'
+import { isArchived } from '../Paths/nexusPaths'
 import type { PageRelationRow } from '../Platform/stores'
 import { pageValuesOf } from '../Views/pageValues'
 import type { PageValues } from '../Views/viewRow'
@@ -24,7 +24,7 @@ export function readMatrixGraph(withValues: boolean, paths?: string[]): MatrixGr
   const values: MatrixGraphReply['values'] = withValues ? {} : null
   for (const [path, page] of Object.entries(rows.pages)) {
     const id = page.values[ID_KEY]
-    if (typeof id !== 'string' || archivedCollectionIdOf(path) !== null) continue
+    if (typeof id !== 'string' || isArchived(path)) continue
     idOf.set(path, id)
     if (values) values[id] = pageValuesOf(id, page.values, page.mtimeMs)
   }

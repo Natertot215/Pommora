@@ -14,6 +14,8 @@ export const archiveSegs = (segs: string[]): string[] | null =>
 export const archivedCollectionIdOf = (rel: string): string | null =>
   archiveSegs(rel.split('/'))?.[0] ?? null
 
+export const isArchived = (rel: string): boolean => archivedCollectionIdOf(rel) !== null
+
 /** The bare name exists because the watcher matches path segments rather than prefixes. */
 export const CONTEXTS_DIRNAME = 'contexts'
 const CONTEXTS_REGISTRY_FILENAME = 'contexts.json'

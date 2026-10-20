@@ -6,11 +6,15 @@ import {
   rewritePreservingTimes,
 } from '../Files/atomicWrite'
 import { machine } from '../Platform/machine'
+import { nexusCorpus } from '../Index/indexSeed'
+import { liveTreeOf } from '../Nexus/liveTree'
+import { archiveReach, damagedFolders } from '../Nexus/treePatch'
+import type { NexusTree } from '../Nexus/tree'
 import { isMarkdownFile, join, relative } from '../Paths/posix'
-import { archivedCollectionIdOf } from '../Paths/nexusPaths'
+import { isArchived } from '../Paths/nexusPaths'
 import { ID_KEY } from '../Nexus/identityMark'
 import { asString } from '../Nexus/coerce'
-import type { NexusPages } from '../Nexus/heldPages'
+import { addressable, type NexusPages } from '../Nexus/heldPages'
 import { splitFrontmatter, sweepParse, type SweptPage } from '../Files/pageFile'
 import type { Json } from '../Files/stableJson'
 import { spaceSidecars } from '../Contexts/spaceSidecar'
@@ -28,6 +32,29 @@ export type Rewrite = (raw: Json, file: string) => Json | null
 export type RewriteText = (content: string, file: string) => string | null
 
 export type SweepPlan = ({ raw: Rewrite } | { text: RewriteText }) & { sidecars?: Rewrite }
+
+export const collectionFolders = (root: string, tree: NexusTree): string[] =>
+  [
+    ...tree.collections,
+    ...damagedFolders(tree.unreadable).filter((u) => u.kind === 'collection'),
+  ].map((c) => join(root, c.path))
+
+/** A property key means something only where a schema governs it, so a property sweep opens its candidates inside a Collection or an Archive, never a loose file the index or the corpus also names. */
+export async function governedReach(
+  root: string,
+  candidates: string[] | null,
+  only?: string,
+): Promise<string[]> {
+  const tree = await liveTreeOf(root)
+  const archive = archiveReach(tree, only && relative(root, only))
+  const folders = [
+    ...(only === undefined ? collectionFolders(root, tree) : [only]),
+    ...(archive === null ? [] : [join(root, archive)]),
+  ]
+  return (candidates ?? (await nexusCorpus(root)))
+    .map((rel) => join(root, rel))
+    .filter((abs) => folders.some((folder) => abs.startsWith(`${folder}/`)))
+}
 
 export const unsweptLine = (count: number, what = ''): string =>
   `Couldn’t update ${what}${itemCount(count)}.`
@@ -112,7 +139,7 @@ export async function sweepGovernedRoots(
 }
 
 export async function sweepCount(root: string, files: string[], plan: SweepPlan): Promise<number> {
-  const shown = files.filter((file) => archivedCollectionIdOf(relative(root, file)) === null)
+  const shown = files.filter((file) => !isArchived(relative(root, file)))
   return (await sweepGovernedRoots(root, shown, plan, true)).touched.size
 }
 
@@ -162,7 +189,7 @@ export async function sweepRootsById<T>(
     (idKey: string): Rewrite =>
     (raw, file) => {
       const id = asString(raw[idKey])
-      if (id === undefined || !Object.hasOwn(values, id) || roots.get(id) === null) return null
+      if (!addressable(roots, id) || !Object.hasOwn(values, id)) return null
       const next = rewrite(raw, values[id])
       if (next !== null) asked.set(file, id)
       return next
