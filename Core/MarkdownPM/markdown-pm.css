@@ -429,6 +429,21 @@
   border-bottom-left-radius: var(--outline-radius);
   border-bottom-right-radius: var(--outline-radius);
 }
+.outline-lines .md-outline-elbow {
+  bottom: calc(100% - var(--box-head-pad, 0px) - 0.5lh - var(--outline-width) / 2);
+  width: calc(
+    (var(--list-level) - var(--rail-level)) *
+    var(--list-indent) -
+    var(--rail-x, 0px) +
+    var(--outline-width) /
+    2 -
+    var(--outline-gap)
+  );
+  border: 0 solid var(--list-outline-color);
+  border-width: 0 0 var(--outline-width) var(--outline-width);
+  border-radius: 0 0 0 8px;
+  background: none;
+}
 
 .md-list-bullet {
   color: var(--label-control);
