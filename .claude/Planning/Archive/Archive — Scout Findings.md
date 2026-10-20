@@ -1,7 +1,7 @@
 ### Archive — Scout Findings
 
 **DATE:** 10-19-2026
-**HEAD:** `213f95a3b`. The working tree now sits at `b439e56a1`, one commit ahead, whose changes touch no cited range.
+**HEAD:** verified at `213f95a3b`. HEAD has since moved to `5c2385f58` through unrelated number-picker and glyph commits, none of which touches a cited range.
 
 These are the five read-only scout reports behind *Archive — Investigation*: A on cascade reach; B on the index, discovery, the watcher, sync, and location; C on the Trash's machinery; D on views, the table, the menus, and batch actions; and E on windows, history, settings, confirmations, and notices. They're evidence of what the code does and of what each scout weighed, not direction. *Archive — Decisions & Intention* governs intent, and *Archive — Investigation* reconciles these reports against the code and the decisions, listing every claim it narrowed, corrected, dropped, or couldn't verify in its *§Reconciliation Log*. Each recommendation a decision has since settled differently is condensed to one line naming that decision, and each question to Nathan names the decision that answers it or marks it as the planner's.
 
@@ -663,7 +663,7 @@ The page or Set stays where it is and carries an `archived` mark that every read
 | One batch rule, "checked rows in view, or the clicked row alone", settling the History window's divergent rule | `TrashFrame.tsx:161-165`, `PageHistoryWindow.tsx:139` | −4 / +6 (the set helpers are already shared) |
 | One date-column hook: resolve the stored style, open the style menu, store the pick. Used by the Trash and the Archive, keyed by setting. | `TrashFrame.tsx:65-69, 153-159` → shared hook | −12 / +18 |
 | One batch runner: flush saves, run the op per item, collect done/refused/warnings, report with `countPhrase`. Trash restore and empty, Archive restore and delete. | `TrashFrame.tsx:99-151` → shared | −50 / +45 |
-| `countPhrase`/`PLURALS`, shared so mixed page and Set rows read "1 set, 3 pages" | `TrashFrame.tsx:36-50` | moved, ±0 |
+| `countPhrase`/`PLURALS`, shared so a uniform batch names its kind and a mixed one reads "N Items" | `TrashFrame.tsx:36-50` | moved, ±0 |
 | `DELETE_ROW` becomes a removal pair `[ARCHIVE_ROW, DELETE_ROW]`, plus one `title:archive` case in `runPageAction` | `pageMenu.ts:40, 104, 132`; `pageMenuActions.ts:66` | +6 |
 | The container branch's Delete moves into its own bottom section, paired with Archive for Sets and alone for Collections (I-1) | `entityMenu.ts:66`, `entityMenuActions.ts:134` | +5 |
 | TableView's shell CSS hoisted to `UIX/Table/`, so TableView and ArchiveView wear one shell instead of ArchiveView importing a view-private sheet | `table-view.css:3-22, 49-75` → `UIX/Table/table.css` | ±0 (moved, ~45) |
@@ -878,7 +878,7 @@ Tabs, `windowsFile` persistence, the warm cache, the Active Tab Cache, promote, 
 ###### A. One Sweep, Two Cutoffs, IDs From What Reach-In Enumerates (Recommended)
 
 - **Key:** `archiveHistoryDays: stepped(HISTORY_DAYS)`.
-- **Meaning:** the scout proposed `min(historyDays, archiveHistoryDays)` with 90 as the default; set aside by J-1, whose switch writes the archive timeframe down when History Timeframe is shortened below it.
+- **Meaning:** the scout proposed `min(historyDays, archiveHistoryDays)` with 90 as the default; set aside by J-1, under which the archive timeframe follows History Timeframe until a step is picked and a picked step switches down when History Timeframe is shortened below it.
 - **Row Placement:** an "Archive History Timeframe" `zoom` row with `unit: DAYS` sits directly under History Timeframe in **File History** (`frames.ts:615-620`), since it's a File History parameter. Trash & Archive gains only Confirm Before Archiving (I-2).
 - **Store:** `sweepSnapshots(liveCutoffMs, archived: { ids: readonly string[]; cutoffMs: number })` → `DELETE FROM snapshots WHERE ts < ? OR (ts < ? AND page_id IN (SELECT value FROM json_each(?)))`. One statement, one sweep; captures stay on the live cutoff. JSON1 is already relied on by the store (`json_extract` / `json_type` in `Desktop/Store/stores.ts:49`).
 - **No Index Yet:** when the ID query answers null (first open, a reseed, or a store that failed to open, per `contentIndex.ts:1`, `:44-62`), the sweep runs on the live cutoff alone for that pass. Since archived pages never keep more history than live ones, that deletes nothing it shouldn't; archived rows are kept until the next sweep.
@@ -923,4 +923,4 @@ Mark rows or pages as archived at archive time and sweep per class.
 5. **The Archive's Location vs. the Corpus:** **Settled By:** B-1 and B-2; the corpus admits `.nexus/archive/` on purpose, which is the archive history's id source too.
 6. **Size Memory:** whether the reader window's Archive branch shares History's remembered size (one window id). **Planner's Call.**
 7. **A Stale Body:** a Reach-In cascade can rewrite an archived file while the reader window shows it, and an uncached window shows the older text until reopened. **Planner's Call:** whether the Archive's change signal re-reads it.
-8. **Range:** **Settled By:** J-1; History Timeframe's steps, starting at its value, longer steps dimmed, and switched down when History Timeframe is shortened below it.
+8. **Range:** **Settled By:** J-1; History Timeframe's steps, following History Timeframe until a step is picked, longer steps dimmed and unpickable, and a picked step switched down when History Timeframe is shortened below it.
