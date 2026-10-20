@@ -30,9 +30,10 @@ import { editJsonStrict, type StrictEdit, updateNexusConfig } from '../Files/ato
 import { same } from '../Files/stableJson'
 import { errText } from '../Contract/result'
 import { sidecarPath, tileDocPath } from '../Paths/paths'
-import { dirname, isAtOrUnder, join, relative } from '../Paths/posix'
+import { SIDECAR_FILENAME } from '../Paths/nexusPaths'
+import { asString } from './coerce'
+import { basename, dirname, isAtOrUnder, join, relative } from '../Paths/posix'
 import { sidecarsUnder } from '../Files/walk'
-import { sidecarId } from '../Files/sidecar'
 import { scopeOf } from '../Settings/codec'
 import { isPlainObject } from '../Contract/validators'
 import type { CollectionNode, NexusTree, SetNode } from './tree'
@@ -308,25 +309,17 @@ const editStandalone = (rule: (r: Raw) => Raw | null, held: unknown): unknown =>
   return same(rules, held.rules) ? held : { ...held, rules: rules ?? null }
 }
 
-type Container = { kind: ContainerKind; id: string; dir: string }
+type Container = { kind: ContainerKind; dir: string }
 
 const reaches = (dir: string, under?: string): boolean => !under || isAtOrUnder(dir, under)
 
-async function containersOf(tree: NexusTree, root: string, under?: string): Promise<Container[]> {
-  const live = tree.collections
-    .flatMap(within)
-    .map((node) => ({ kind: node.kind, id: node.id, dir: join(root, node.path) }))
-    .filter(({ dir }) => reaches(dir, under))
+async function archivedSets(tree: NexusTree, root: string, under?: string): Promise<Container[]> {
   const archive = archiveReach(tree, under && relative(root, under))
-  if (archive === null) return live
+  if (archive === null) return []
   const files = await sidecarsUnder(root, scopeOf(tree.config), join(root, archive))
-  const archived = await Promise.all(
-    files.map(async (file): Promise<Container[]> => {
-      const id = await sidecarId(dirname(file), 'set')
-      return id === undefined ? [] : [{ kind: 'set', id, dir: dirname(file) }]
-    }),
-  )
-  return [...live, ...archived.flat()]
+  return files
+    .filter((file) => basename(file) === SIDECAR_FILENAME.set)
+    .map((file) => ({ kind: 'set', dir: dirname(file) }))
 }
 
 export async function reachConfig(
@@ -352,14 +345,24 @@ export async function reachConfig(
     return outcome === 'written'
   }
   const { view: edit, rule } = editsOf(e)
-  const containers = await containersOf(tree, root, under)
+  const live = tree.collections
+    .flatMap(within)
+    .map((node) => ({ kind: node.kind, id: node.id, dir: join(root, node.path) }))
+    .filter(({ dir }) => reaches(dir, under))
+  const sources = new Set(live.map((c) => c.id))
   const damaged = damagedFolders(tree.unreadable)
     .map((u) => ({ kind: u.kind, dir: join(root, u.path) }))
     .filter(({ dir }) => reaches(dir, under))
-  for (const { kind, dir } of [...containers, ...damaged]) {
+  for (const { kind, dir } of [...live, ...damaged]) {
     await written(sidecarPath(dir, kind), (cur) => mapViews(cur, edit))
   }
-  const sources = new Set(containers.map((c) => c.id))
+  for (const { kind, dir } of await archivedSets(tree, root, under)) {
+    await written(sidecarPath(dir, kind), (cur) => {
+      const id = asString(cur.id)
+      if (id) sources.add(id)
+      return mapViews(cur, edit)
+    })
+  }
   const inScope = (entry: unknown): boolean => {
     const source = isPlainObject(entry) ? String(entry.source_id) : ''
     return (!under || sources.has(source)) && !(e.kind === 'gone' && e.ids.includes(source))

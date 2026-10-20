@@ -12,9 +12,10 @@ import { newId } from '../Nexus/ids'
 import { createProperty, renameProperty } from './registryProperty'
 import { renameOption } from './optionOps'
 import { deleteProperty } from './deleteProperty'
-import { collectionFolders, confirmedKeyHolders, governedReach, keyedHolders } from './keyHolders'
+import { confirmedKeyHolders, keyedHolders } from './keyHolders'
 import { queryKeyHolders } from '../Index/contentIndex'
-import { sweepGovernedRoots } from './governedSweep'
+import { collectionFolders, governedReach, sweepGovernedRoots } from './governedSweep'
+import { splitFrontmatter } from '../Files/pageFile'
 
 vi.mock('./governedSweep', async (importOriginal) => {
   const mod = await importOriginal<typeof import('./governedSweep')>()
@@ -190,10 +191,12 @@ describe('governedReach', () => {
     expect(await governedReach(root, queryKeyHolders('Stage'))).toContain(orphan)
   })
 
-  it('a rename onto a key an archived page holds beside the old one is refused', async () => {
-    await archived('Q9A', 'Stage: s\nPhase: x\n')
-    expect((await renameProperty(root, 'prop_s', 'Phase')).ok).toBe(false)
-    expect((await renameProperty(root, 'prop_s', 'Step')).ok).toBe(true)
+  it('a rename onto a key an archived page holds beside the old one goes through, the archived page keeping the new key’s value', async () => {
+    const held = await archived('Q9A', 'Stage: s\nPhase: x\n')
+    expect((await renameProperty(root, 'prop_s', 'Phase')).ok).toBe(true)
+    const fm = splitFrontmatter(await readFile(held, 'utf8'))
+    expect(fm.Phase).toBe('x')
+    expect(fm).not.toHaveProperty('Stage')
   })
 
   it('an option rename rewrites an archived holder', async () => {
@@ -206,7 +209,9 @@ describe('governedReach', () => {
   it('collectionFolders lists every collection folder from the live tree', async () => {
     const t = await createFolderEntity(root, 'collection', 'Tasks', newId())
     if (!t.ok) throw new Error('setup failed')
-    expect((await collectionFolders(root)).sort()).toEqual([abs('Notes'), t.value.path].sort())
+    expect(collectionFolders(root, await liveTreeOf(root)).sort()).toEqual(
+      [abs('Notes'), t.value.path].sort(),
+    )
   })
 })
 

@@ -4,7 +4,6 @@ import { tempRoot } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as liveTree from '../Nexus/liveTree'
 import { assignedDefs, assignProperty } from './assignment'
-import { collectionFolders } from './keyHolders'
 import { pageWorldOf } from '../Contexts/contextWrite'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { newId } from '../Nexus/ids'
@@ -81,15 +80,5 @@ describe('pageWorldOf', () => {
     expect(await names(join(root, '.nexus', 'contexts', 'Areas', 'Home', '_space.json'))).toEqual(
       [],
     )
-  })
-})
-
-describe('collectionFolders', () => {
-  it('never walks the disk while the live tree holds this root', async () => {
-    await liveTree.refreshTree(root)
-    const spy = vi.spyOn(liveTree, 'refreshTree')
-    for (let i = 0; i < 10; i++) await collectionFolders(root)
-    expect(spy).not.toHaveBeenCalled()
-    spy.mockRestore()
   })
 })

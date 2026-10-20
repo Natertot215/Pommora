@@ -4,6 +4,7 @@ import { dirname, join } from '../Paths/posix'
 import { readJsonAt, tempRoot } from '../Testing/hostFs'
 import { placeRecord, resolveRecord, slotOf } from './placement'
 import { nexusPages } from '../Nexus/heldPages'
+import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
 
 const PAGE_A = '01KVGMT8BFP350FZZXAMG1QDVA'
 
@@ -18,7 +19,12 @@ const P = (over: Partial<import('../Nexus/tree').PageNode> = {}) =>
 const treeOf = (
   contexts: import('../Nexus/tree').ContextGroup[],
   collections: Partial<import('../Nexus/tree').CollectionNode>[],
-) => ({ contexts, collections }) as unknown as import('../Nexus/tree').NexusTree
+) =>
+  ({
+    contexts,
+    collections,
+    config: { excluded: [], assetDirectory: ASSETS_DIR_REL },
+  }) as unknown as import('../Nexus/tree').NexusTree
 
 const journal = (over: Partial<import('../Nexus/tree').SetNode> = {}) =>
   ({
@@ -66,7 +72,7 @@ const pageRecord = {
   parent: { kind: 'container' as const, id: 'set-daily' },
 }
 
-describe('resolveRecord — a placement with final names, or a typed refusal', async () => {
+describe('resolveRecord — a placement with final names, or a typed refusal', () => {
   it('places a page into its parent container at the container’s CURRENT path', async () => {
     const tree = treeOf([], [notes()])
     const r = resolveRecord(pageRecord, 'Alpha.md', tree, await byIdOf(tree))

@@ -13,6 +13,7 @@ import { listBundles } from '../Bundles/bundle'
 import { splitFrontmatter } from '../Files/pageFile'
 import { readJsonObject } from '../Files/atomicWrite'
 import { closeSession, openSession } from '../Nexus/session'
+import { refreshTree } from '../Nexus/liveTree'
 import { assignProperty } from '../Properties/assignment'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { createTestPage } from '../Testing/createTestPage'
@@ -374,6 +375,21 @@ describe('restoring a deleted property', () => {
     expect(r).toEqual({ ok: true, value: {} })
     expect(await valueOn(live.value.path, 'Related')).toBe('[[Target]]')
     expect(await valueOn(dead.value.path, 'Related')).toBeUndefined()
+  })
+
+  it('a value whose page shares its id with a copy goes back to neither, and is named', async () => {
+    const id = await seedPriority()
+    const page = await createTestPage(notes, 'A', { body: 'b' })
+    if (!page.ok) throw new Error('page failed')
+    await writePageValue(page.value.path, await liveDef(id), { kind: 'select', value: 'hi' })
+    expect((await deleteProperty(root, id)).ok).toBe(true)
+    const copy = join(notes, 'A copy.md')
+    await writeFile(copy, await readFile(page.value.path, 'utf8'))
+    await refreshTree(root)
+    const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() }, deps)
+    expect(r).toEqual({ ok: true, value: { unrestored: ['A copy'] } })
+    for (const file of [page.value.path, copy])
+      expect(await valueOn(file, 'Priority')).toBeUndefined()
   })
 
   it('a value comes back on an archived page, written where the Archive holds it', async () => {

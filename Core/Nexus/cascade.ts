@@ -7,6 +7,7 @@ import { splitEnvelope, mergeFrontmatter, splitFrontmatter, stampedId } from '..
 import {
   type Rewrite,
   type RewriteText,
+  governedReach,
   governedRoot,
   sweepGovernedRoots,
   unsweptLine,
@@ -28,8 +29,7 @@ import type { TilesChanged } from '../Tiles/tiles'
 import { linkEntry } from '../Connections/linkValue'
 import { buildPageIndex, pageKey, pathKeys } from '../Connections/pageIndex'
 import { gonePageEntry } from '../Properties/propertyValue'
-import { nexusPages } from './heldPages'
-import { governedReach } from '../Properties/keyHolders'
+import { addressable, nexusPages } from './heldPages'
 import { ID_KEY } from './identityMark'
 import { asString } from './coerce'
 
@@ -57,9 +57,11 @@ interface DeleteCascade {
   links: StrippedLink[]
 }
 
+const NO_STRIP: DeleteCascade = { cascade: { pages: [], hosts: [] }, links: [] }
+
 /** A sweep's Space sidecar arm, planned only when a Space the tree holds answers `rewrite`, since the arm reads every Space sidecar. */
-const spaceArm = (tree: NexusTree | null, rewrite: Rewrite): { sidecars?: Rewrite } =>
-  tree?.contexts.some((g) => g.spaces.some((s) => s.values && rewrite(s.values, '') !== null))
+const spaceArm = (tree: NexusTree, rewrite: Rewrite): { sidecars?: Rewrite } =>
+  tree.contexts.some((g) => g.spaces.some((s) => s.values && rewrite(s.values, '') !== null))
     ? { sidecars: rewrite }
     : {}
 
@@ -78,12 +80,13 @@ export async function deleteCascade(
   const deleted = relative(root, abs)
   const inside = (rel: string): boolean => isAtOrUnder(rel, deleted)
   const tree = heldTreeOf(root)
+  if (!tree) return NO_STRIP
   // The held tree may still list the deleted pages, since its patch can fall to a walk, so they're left out by path.
-  const after = buildPageIndex(tree ? pagesOf(tree).filter((p) => !inside(p.path)) : [])
+  const after = buildPageIndex(pagesOf(tree).filter((p) => !inside(p.path)))
   const gone = new Set(paths.flatMap(pathKeys).filter((k) => after.resolve(k).status === 'phantom'))
   try {
-    const defs = byKey(linkDefsOf(tree?.config.registry ?? []))
-    if (!tree || !defs.size || !gone.size) return { cascade: { pages: [], hosts: [] }, links: [] }
+    const defs = byKey(linkDefsOf(tree.config.registry))
+    if (!defs.size || !gone.size) return NO_STRIP
     const goneEntry = (value: unknown): string | null =>
       gonePageEntry(value, { holds: (t) => !gone.has(pageKey(t)) })
     const named = (raw: Record<string, unknown>) =>
@@ -105,7 +108,7 @@ export async function deleteCascade(
     const swept = await sweepGovernedRoots(root, files, {
       raw: (raw, file) => {
         const id = asString(raw[ID_KEY])
-        if (named(raw).length && (id === undefined || byId.get(id) === null)) {
+        if (named(raw).length && !addressable(byId, id)) {
           heldOut++
           return null
         }

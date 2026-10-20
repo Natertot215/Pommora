@@ -1,8 +1,13 @@
 import { mutateRegistry, readRegistry, NO_PROPERTY, serializeSchemaOp } from './propertiesRegistry'
 import { uniqueOptionGroups, validateOptionValues } from './schema'
-import { governedReach } from './keyHolders'
 import { queryKeyHolders } from '../Index/contentIndex'
-import { sweepCount, sweepGovernedRoots, type SweepPlan, unsweptLine } from './governedSweep'
+import {
+  governedReach,
+  sweepCount,
+  sweepGovernedRoots,
+  type SweepPlan,
+  unsweptLine,
+} from './governedSweep'
 import { editList, valueEditRewrite, type ValueEdit } from './pageValue'
 import { editCaches } from './propertyCache'
 import { editHeldList, memberKey } from '../Files/rootValues'

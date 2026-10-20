@@ -322,7 +322,6 @@ async function group2(cdp) {
 // ── Group 3 — Reach (Phase 3) ───────────────────────────────────────────────
 
 const STAMP = '2026-10-20T12-00-00-000Z'
-const taskMarked = (id) => `${id.slice(0, 10)}T${id.slice(11)}`
 const rowIds = (cdp) => cdp.evaluate(`[...document.querySelectorAll('.data-row[data-rid]')].map((r) => r.dataset.rid)`)
 
 /** Seeds an archived page by hand, as the archive op will file one (Phase 4), and answers the relaunched window. */
@@ -337,13 +336,16 @@ async function group3(cdp) {
   }))
   const live = { rel: 'Collection A/Set Alpha/Drive Live.md', id: mintPageId() }
   const linker = { rel: 'Collection A/Set Alpha/Drive Linker.md', id: mintPageId() }
-  const odd = { rel: 'Collection A/Drive Odd.md', id: taskMarked(mintPageId()) }
+  // A Set whose sidecar doesn't parse is listed unreadable and never stamped, so the tree withholds its page while the index and a folder walk still read it.
+  const withheld = { dir: 'Collection A/Drive Damaged', rel: 'Collection A/Drive Damaged/Drive Withheld.md', id: mintPageId() }
   const bundle = `.nexus/archive/${colA}/Collection A/Set Alpha/${STAMP}__Drive Arc.md.archived`
   const arc = { rel: `${bundle}/Drive Arc.md`, id: mintPageId() }
   cdp = await relaunch(cdp, async () => {
     writeFileSync(abs(live.rel), `---\nID: ${live.id}\nDrive Stage: Draft\n---\nbody\n`)
     writeFileSync(abs(linker.rel), `---\nID: ${linker.id}\n---\n[[Drive Arc]]\n`)
-    writeFileSync(abs(odd.rel), `---\nID: ${odd.id}\n---\nbody\n`)
+    mkdirSync(abs(withheld.dir), { recursive: true })
+    writeFileSync(abs(`${withheld.dir}/_pageset.json`), '{ not json')
+    writeFileSync(abs(withheld.rel), `---\nID: ${withheld.id}\n---\nbody\n`)
     mkdirSync(abs(bundle), { recursive: true })
     writeFileSync(abs(`${bundle}/_record.json`), JSON.stringify({ entity: 'page', id: arc.id, parent: { kind: 'container', id: alpha } }))
     writeFileSync(abs(arc.rel), `---\nID: ${arc.id}\nDrive Stage: Draft\n---\n## Drive Heading\n\nsee [[Drive Live]]\n`)
@@ -356,8 +358,9 @@ async function group3(cdp) {
   const search = `document.querySelector('.detail-title-search')`
   await cdp.evaluate(`${search}.focus()`)
   await typeText(cdp, 'Drive')
-  await sleep(900)
-  const shown = await rowIds(cdp)
+  const drive = [live.id, linker.id, arc.id]
+  const filtered = async () => { const rows = await rowIds(cdp); return rows.length > 0 && rows.every((id) => drive.includes(id)) && rows }
+  const shown = await until('the search’s rows', filtered).catch(() => rowIds(cdp))
   item(3, 3, 'D-2', "Collection A's view search for Drive lists Drive Live and never Drive Arc", shown.includes(live.id) && !shown.includes(arc.id), show(shown))
   await shot(cdp, 'g3-view-search')
   await cdp.evaluate(`(() => { const i = ${search}; i.select() })()`)
@@ -370,14 +373,14 @@ async function group3(cdp) {
   await escapeAll(cdp)
 
   const graph = await must('matrix:graph', ask(cdp, 'matrix:graph', true))
-  item(3, 3, 'K-2', 'the Matrix graph holds the live page and the one the tree withholds, and no archived page or edge', live.id in graph.values && odd.id in graph.values && !(arc.id in graph.values) && graph.links.every((l) => !l.path.startsWith('.nexus/')), show(Object.keys(graph.values).length))
+  item(3, 3, 'K-2', 'the Matrix graph holds the live page and the one the tree withholds, and no archived page or edge', live.id in graph.values && withheld.id in graph.values && !(arc.id in graph.values) && graph.links.every((l) => !l.path.startsWith('.nexus/')), show(Object.keys(graph.values).length))
   const asked = await must('matrix:graph by path', ask(cdp, 'matrix:graph', false, [arc.rel]))
   item(3, 3, 'K-2', 'the Matrix graph asked for the archived path answers no id', asked.ids.length === 0, show(asked.ids))
   const headings = await must('index:headings', ask(cdp, 'index:headings'))
   const archivedHeadings = await must('index:headings by path', ask(cdp, 'index:headings', [arc.rel]))
   item(3, 3, 'K-2', 'the headings answer no archived path, whole or asked by path', !Object.keys(headings).some((p) => p.startsWith('.nexus/')) && Object.keys(archivedHeadings).length === 0, show(Object.keys(archivedHeadings)))
   const loaded = await must('view:loadValues', ask(cdp, 'view:loadValues', 'Collection A'))
-  item(3, 3, 'K-2', "Collection A's value load reads the tree's pages, never the archived one or one the tree withholds", live.id in loaded && !(arc.id in loaded) && !(odd.id in loaded), show(Object.keys(loaded).length))
+  item(3, 3, 'K-2', "Collection A's value load reads the tree's pages, never the archived one or one under a Set whose sidecar doesn't parse", live.id in loaded && !(arc.id in loaded) && !(withheld.id in loaded), show(Object.keys(loaded).length))
 
   const count = await must('property:holders', ask(cdp, 'property:holders', stage))
   item(3, 3, 'C-4', 'the delete confirmation’s count leaves the archived holder out', count === 1, show(count))
@@ -390,7 +393,7 @@ async function group3(cdp) {
   item(3, 3, 'C-2', 'the property delete strips the archived page as it strips the live one', !('Drive Stage' in frontOf(arc.rel)) && !('Drive Stage' in frontOf(live.rel)), show(frontOf(arc.rel)))
 
   // The seeds leave as they came, from outside, and the deleted property's bundle is emptied, so a later group meets Collection A, its Archive, and the Trash as group 3 found them.
-  for (const rel of [live.rel, linker.rel, odd.rel, `.nexus/archive/${colA}`]) rmSync(abs(rel), { recursive: true, force: true })
+  for (const rel of [live.rel, linker.rel, withheld.dir, `.nexus/archive/${colA}`]) rmSync(abs(rel), { recursive: true, force: true })
   await until('the seeds out of the tree', async () => !treePaths((await must('nexus:state', ask(cdp, 'nexus:state'))).tree).has(live.rel))
   const stageRow = ((await ask(cdp, 'bundles:list', { kind: 'trash' })).value ?? []).find((r) => r.title === 'Drive Stage')
   await must('permanentDelete on', ask(cdp, 'personalization:set', 'permanentDelete', true))

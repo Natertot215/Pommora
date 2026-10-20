@@ -902,6 +902,23 @@ describe('restore — the record spends, headless', () => {
     expect(await pathExists(join(root, listed.bundlePath, '_record.json'))).toBe(true)
   })
 
+  it('a tag neither of two pages claiming one id takes back is named, and the record stays', async () => {
+    await settledMutate(
+      root,
+      { op: 'delete', path: '.nexus/contexts/Projects/Pommora', kind: 'space' },
+      nexusDeps,
+    )
+    const copy = join(root, 'Notes', 'Daily', 'Alpha copy.md')
+    await writeFile(copy, `---\nID: ${PAGE_A}\n---\ncopy`)
+    await refreshTree(root)
+    const [listed] = await listBundles(root, { kind: 'trash' })
+    const r = await settledMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
+    expect(r).toEqual({ ok: true, value: { unrestored: ['Alpha copy'] } })
+    expect(await pathExists(join(root, listed.bundlePath, '_record.json'))).toBe(true)
+    for (const file of [join(root, 'Notes', 'Daily', 'Alpha.md'), copy])
+      expect(splitFrontmatter(await readFile(file, 'utf8'))).not.toHaveProperty('<Projects>')
+  })
+
   it('a root gone since is no reason to keep the record', async () => {
     await settledMutate(
       root,
@@ -1153,6 +1170,17 @@ describe('restore — the returning page’s links follow the pages they named',
     expect(splitFrontmatter(await text(ARCHIVED('Old')))).not.toHaveProperty('Related')
     await restore('Alpha.md')
     expect(splitFrontmatter(await text(ARCHIVED('Old'))).Related).toBe('[[Alpha]]')
+  })
+
+  it('a restore leaves a stripped Link value out of both pages claiming its holder’s id, and names it', async () => {
+    await write('Notes/Gamma.md', PAGE_C, 'Related: "[[Alpha]]"\n', 'gamma')
+    await reseed()
+    await del(ALPHA)
+    await write('Notes/Other/Gamma.md', PAGE_C, '', 'copy')
+    await reseed()
+    expect(await restore('Alpha.md')).toEqual({ unrestored: ['Gamma'] })
+    for (const rel of ['Notes/Gamma.md', 'Notes/Other/Gamma.md'])
+      expect(splitFrontmatter(await text(rel))).not.toHaveProperty('Related')
   })
 
   it('keeps its body and parks its value for a page deleted meanwhile', async () => {

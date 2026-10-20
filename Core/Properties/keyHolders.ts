@@ -1,44 +1,23 @@
-// Governed reach: a property key means something only where a schema governs it, so a property sweep opens its candidates inside a Collection or an Archive, never a loose file the index or the corpus also names.
+// Key holders: the files holding a property's key, confirmed from disk, and the values they hold filed by ID for a strip to record.
 
 import { queryKeyHolders } from '../Index/contentIndex'
-import { nexusCorpus } from '../Index/indexSeed'
 import { readJsonObject, readTextOrNull } from '../Files/atomicWrite'
 import { splitFrontmatter } from '../Files/pageFile'
 import { ID_KEY } from '../Nexus/identityMark'
 import { asString } from '../Nexus/coerce'
-import { liveTreeOf } from '../Nexus/liveTree'
-import { archiveReach, damagedFolders } from '../Nexus/treePatch'
-import { join, relative } from '../Paths/posix'
 import { isBlankRaw } from './propertyValue'
 import { spaceSidecars } from '../Contexts/spaceSidecar'
-import type { NexusPages } from '../Nexus/heldPages'
+import { governedReach } from './governedSweep'
+import { isArchived } from '../Paths/nexusPaths'
+import { relative } from '../Paths/posix'
+import { addressable, type NexusPages } from '../Nexus/heldPages'
 
-export async function collectionFolders(root: string): Promise<string[]> {
-  const tree = await liveTreeOf(root)
-  const damaged = damagedFolders(tree.unreadable).filter((u) => u.kind === 'collection')
-  return [...tree.collections, ...damaged].map((c) => join(root, c.path))
-}
-
-export async function governedReach(
-  root: string,
-  candidates: string[] | null,
-  only?: string,
-): Promise<string[]> {
-  const archive = archiveReach(await liveTreeOf(root), only && relative(root, only))
-  const folders = [
-    ...(only === undefined ? await collectionFolders(root) : [only]),
-    ...(archive === null ? [] : [join(root, archive)]),
-  ]
-  return (candidates ?? (await nexusCorpus(root)))
-    .map((rel) => join(root, rel))
-    .filter((abs) => folders.some((folder) => abs.startsWith(`${folder}/`)))
-}
-
-// Both loops answer from disk: the index holds a page as its last settled event read it, which an outside edit not yet settled can have changed, and the Spaces come from the folder enumeration the sweeps write through, which also finds those under a Context folder a rename cut short has moved ahead of the registry.
+// A confirmation names only what's outside the Archive. Both loops answer from disk: the index holds a page as its last settled event read it, which an outside edit not yet settled can have changed, and the Spaces come from the folder enumeration the sweeps write through, which also finds those under a Context folder a rename cut short has moved ahead of the registry.
 export async function confirmedKeyHolders(root: string, key: string): Promise<string[]> {
   const holders: string[] = []
   const indexed = queryKeyHolders(key)
   for (const file of await governedReach(root, indexed)) {
+    if (isArchived(relative(root, file))) continue
     const content = await readTextOrNull(file)
     // An unreadable file holds the key when the index last read it holding it.
     if (content === null ? indexed !== null : Object.hasOwn(splitFrontmatter(content), key))
@@ -75,7 +54,7 @@ export async function keyedHolders(
     const fields = splitFrontmatter(content) as Record<string, unknown>
     if (!Object.hasOwn(fields, key)) continue
     const id = asString(fields[ID_KEY])
-    if (!id || byId.get(id) === null) {
+    if (!addressable(byId, id)) {
       kept.push(file)
       continue
     }

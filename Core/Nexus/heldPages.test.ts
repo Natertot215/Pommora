@@ -9,6 +9,7 @@ import { tempRoot } from '../Testing/hostFs'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import { indexWrittenPage } from '../Index/indexSeed'
+import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
 
 const held = { tree: null as NexusTree | null }
 vi.mock('./liveTree', async (importOriginal) => ({
@@ -45,6 +46,7 @@ const tree = (rootPath: string): NexusTree =>
         sets: [],
       },
     ],
+    config: { excluded: [], assetDirectory: ASSETS_DIR_REL },
   }) as unknown as NexusTree
 
 beforeEach(() => {

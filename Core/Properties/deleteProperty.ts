@@ -9,7 +9,7 @@ import {
   serializeSchemaOp,
 } from './propertiesRegistry'
 import { removeFromRegistry } from './registryProperty'
-import { collectionFolders, governedReach, type KeyedHolders, keyedHolders } from './keyHolders'
+import { type KeyedHolders, keyedHolders } from './keyHolders'
 import { queryKeyHolders } from '../Index/contentIndex'
 import { nexusPages } from '../Nexus/heldPages'
 import { liveTreeOf } from '../Nexus/liveTree'
@@ -20,7 +20,14 @@ import {
   type SchemaJournal,
   writeSchemaJournal,
 } from './propertyJournal'
-import { type Rewrite, sweepCount, sweepGovernedRoots, type SweepPlan } from './governedSweep'
+import {
+  collectionFolders,
+  governedReach,
+  type Rewrite,
+  sweepCount,
+  sweepGovernedRoots,
+  type SweepPlan,
+} from './governedSweep'
 import { stripKeys } from '../Files/rootValues'
 import { patchSidecar } from '../Files/sidecar'
 import { readJsonObject } from '../Files/atomicWrite'
@@ -108,8 +115,8 @@ async function deleteInner(root: string, propertyId: string): Promise<Result<Pro
   if (!def) return NO_PROPERTY
   const key = def.key
 
-  // EVERY collection folder, not just current assigners — a Remove-cache block lives on a collection sidecar that no longer assigns the id, and pre-cache dormant values may sit on any page.
-  const folders = await collectionFolders(root)
+  // EVERY collection folder, not just current assigners — a Remove-cache block lives on a collection sidecar that no longer assigns the id.
+  const folders = collectionFolders(root, await liveTreeOf(root))
   const planned = await deletePlan(root, propertyId, key)
   const bundle = await snapshot(root, propertyId, def, folders, planned.held)
   // Journaled AFTER the snapshot — a replay re-runs the strip tail, never the bundle mint.

@@ -360,6 +360,17 @@ describe('what the pass skips', () => {
     expect((await reachConfig(root, rename)).skipped).toBe(1)
   })
 
+  it.skipIf(noModeBits)('counts an archived Set’s sidecar it can’t read as one skip', async () => {
+    const archived = archivedFile('col_notes', 'Notes')
+    await putJson(archived, { id: 'set_old', views: [rich('view_o')] })
+    await chmod(archived, 0o000)
+    try {
+      expect((await reachConfig(root, rename)).skipped).toBe(1)
+    } finally {
+      await chmod(archived, 0o644)
+    }
+  })
+
   it('leaves a corrupt sidecar’s bytes and holds nothing owed for it', async () => {
     await writeFile(setFile(), '{ not json')
     expect((await reachConfig(root, rename)).skipped).toBe(0)

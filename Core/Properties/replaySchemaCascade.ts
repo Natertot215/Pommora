@@ -3,7 +3,8 @@
 import { errText, fault, ok, type Result } from '../Contract/result'
 import { type ConfigReach, NO_REACH } from '../Nexus/configReach'
 import { readRegistry, serializeSchemaOp } from './propertiesRegistry'
-import { collectionFolders } from './keyHolders'
+import { collectionFolders } from './governedSweep'
+import { liveTreeOf } from '../Nexus/liveTree'
 import { renameSweep } from './registryProperty'
 import { deletePlan, stripAndRemove } from './deleteProperty'
 import { dropOptionFromDef, optionCascade } from './optionOps'
@@ -53,7 +54,7 @@ async function replay(
       const crashed = !answered && def !== undefined && def.key === journal.key
       const freed = !def && !Object.values(defs).some((d) => d.key === journal.key)
       if (!crashed && !freed) return NO_REACH
-      const folders = await collectionFolders(root)
+      const folders = collectionFolders(root, await liveTreeOf(root))
       const { skipped, hosts, removed } = await stripAndRemove(
         root,
         journal.id,
