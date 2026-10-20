@@ -1,7 +1,7 @@
 ### Archive — Decisions & Intention
 
 **DATE:** 10-19-2026
-**STATUS:** ACTIVE
+**STATUS:** RATIFIED 10-19-2026
 
 ### Context
 
@@ -28,7 +28,7 @@ Each Collection, and each top-level Set, gets an ArchiveView reached from an Arc
 - **ArchiveView:** the table listing a Collection's or Set's archived items.
 - **ActionLabel:** the action bar in the window's top-right label position offering Restore and Delete for the checked rows.
 - **Reader Window:** the one read-only page window, generalized from the File History window, that File History and the Archive share.
-- **The Lift:** leaving an excluded folder behind in its parent when the Set or Collection around it is archived or trashed.
+- **The Lift:** leaving an excluded folder, or the asset directory, behind in its parent when the Set or Collection around it is archived or trashed.
 - **Orphaned Archive:** an Archive whose Collection exists nowhere: not live, not in the Trash, and not under an excluded folder.
 
 ---
@@ -74,7 +74,7 @@ Each Collection, and each top-level Set, gets an ArchiveView reached from an Arc
 - **E-1 [CONFIRMED]:** A restore should return an item to the Collection or Set it was archived from, resolved by id against the current tree after renames and moves. The Trash's placement logic is the starting point, reused, hoisted and shared, or reworked as the plan finds it.
 - **E-2 [CONFIRMED]:** A restored item should return to its exact place in its Collection's or Set's order, and the Trash's restore should inherit the same: one shared placement, reached through the highest-level fold of what already orders pages rather than a mechanism beside it.
 - **E-3 [CONFIRMED]:** An item deleted from the Archive and later restored from the Trash should return to the Collection or Set it was archived from, not to the Archive.
-  - **[INFERRED]** The Undo offered right after a Delete from the Archive returns the item to the Archive, since it reverses that delete; only a Restore from the Trash browser returns it to its origin.
+  - **[INFERRED]** The Undo offered right after a Delete from the Archive returns the item to the Archive, since it reverses that delete; only a Restore from the Trash browser returns it to its origin. The Trash record of an item deleted from the Archive keeps the Archive it left beside its origin, so both answers come from the record.
 - **E-4 [CONFIRMED]:** A restore landing on a taken name should step aside to `Name (2)` through the one naming rule, its notice naming the title it took, and should ask the disk as well as the tree, so an excluded folder or an outside file in the way is stepped around rather than refused, as today's landing check (`Core/Nexus/folderEntity.ts:20-28`) and `exists` refusal (`Core/Trash/spend.ts:181-182`) refuse them; the disk-asking rule is `createDisambiguated` (`Core/Paths/names.ts:66`). This holds for the Trash's restore and the Archive's alike.
   - **[CONFIRMED]** A "Resolve Restoration Conflicts" setting (Preserve Existing Titles | Preserve Restored Titles) is wanted later and is recorded as F-080 in *IssuesPM*; the plan folds it in only if it proves natural to.
 - **E-5 [INFERRED]:** An item archived out of a Set that's since been trashed finds that Set again by id once the Set is restored; restored first, it finds no parent and asks for a destination.
@@ -83,18 +83,19 @@ Each Collection, and each top-level Set, gets an ArchiveView reached from an Arc
 
 - **F-1 [CONFIRMED]:** Excluding a folder needs nothing new from the Archive: nothing inside an excluded folder can be archived, since it's outside the tree, and items archived before their Set or Collection was excluded stay in the Archive, inert in the interface. A restore whose origin has since been excluded finds no parent and asks for a destination, as the Trash's does.
   - **[INFERRED]** Clear Exclusion Cache deletes an excluded Collection's sidecar and with it the id its Archive is filed under (`Core/Settings/exclusionScan.ts:31-95`), so from then on that Archive is orphaned and F-5 moves its items into the Trash, recoverable.
-  - **[INFERRED]** "Inert" means only in the interface: the Archive of an excluded or trashed Collection stays in every cascade's reach, so it's current whenever its Collection returns. Nathan ruled out a rule reaching an Archive only while its Collection is live.
+  - **[CONFIRMED]** "Inert" means only in the interface: the Archive of an excluded or trashed Collection stays in every cascade's reach, so it's current whenever its Collection returns. Nathan ruled out a rule reaching an Archive only while its Collection is live.
 - **F-2 [CONFIRMED]:** Archiving a Set should leave every excluded folder inside it behind, as if the Set around it had been removed: the excluded folder takes the Set's place in the Set's parent, its excluded entry following it, and it stays there when the Set is restored. Excluded content never enters the Archive, and the Archive records nothing about it.
   - **Example:** `Alpha` is a Collection or Set holding a Set `Beta`, and inside `Beta` sits a folder `Omega` listed in Settings › Exclusions, so Pommora ignores it. Archiving `Beta` first moves `Omega` up into `Alpha`, where `Beta` was, and rewrites its exclusion entry to `Alpha/Omega`, so it stays excluded; then `Beta` and everything Pommora manages in it move into the Archive. `Alpha` now holds `Omega` and no `Beta`. Restoring `Beta` brings it back as `Alpha/Beta` without `Omega`, which stays at `Alpha/Omega`.
   - **[INFERRED]** An excluded folder deeper inside the archived Set, as `Omega` in `Alpha/Beta/Gamma/Omega`, also lands in the archived Set's parent (`Alpha/Omega`), since `Gamma` leaves with `Beta`.
   - **[INFERRED]** Excluded folders count toward no title: Pommora's sibling-name rule reads only the tree, so an excluded `Omega/` sits beside a page titled `Omega` untouched. Only two folders sharing a name in one parent collide, since the disk holds one folder per name (case-insensitively on macOS); there the lifted folder steps aside to `Omega (2)`, and a restore landing where an excluded folder sits steps aside the same way (E-4).
-  - **[CONFIRMED]** The asset directory, the other folder Pommora is told to leave alone, is left behind the same way when it sits inside an archived or trashed Set, its setting following it, so no banner or attachment breaks.
+  - **[CONFIRMED]** The asset directory, the other folder Pommora is told to leave alone, is left behind the same way when it sits inside an archived Set or a trashed Set or Collection, its setting following it, so no banner or attachment breaks.
 - **F-3 [CONFIRMED]:** The Trash should follow F-2's rule through the same shared logic: a Set or Collection sent to the Trash leaves its excluded folders behind in its parent, a Collection's landing at the Nexus root. The folders' new locations ride one clean chain, either the existing one that rewrites an excluded entry when its folder moves (`followExcludedFolders`, `Core/Settings/settings.ts:97-106`) or a clean replacement of it, and the Trash's own bookkeeping for excluded folders leaves: the record's `excluded` entries and `releaseExcludedFolders`/`reseatExcludedFolders` (`settings.ts:118-127`). F-007 leaves with them.
   - **[CONFIRMED]** This holds for a delete straight to the system trash as well, and emptying the Trash never deletes excluded content: Pommora doesn't destroy what it's told to leave alone.
 - **F-4 [CONFIRMED]:** A Collection's Archive should stay at `.nexus/archive/<Collection ID>/` while the Collection sits in the Trash and come back with it when the Collection is restored. Emptying the Collection from the Trash, or deleting it straight to the system trash, empties its Archive with it, wherever Trash Mode sends deletions.
 - **F-5 [CONFIRMED]:** An Orphaned Archive should have its items moved into Pommora's own `.trash` at the next open, whatever Trash Mode says, where they can be restored like any deletion, so a Collection whose sidecar is only briefly unreadable loses nothing. This is automatic safekeeping rather than a deletion the user asked for; the user's own deletions keep following Trash Mode, unchanged. No setting governs it.
+  - **[INFERRED]** An orphaned item's Trash record keeps its origin id and ancestry, so restoring it from the Trash returns it home if its Collection has come back, and otherwise asks for a destination. Where its bundle sits in `.trash` is the plan's to name, reading as the Collection it came from where that's known.
 - **F-6 [CONFIRMED]:** Moving a Set into another Collection should carry the archived items that came from within it into the destination Collection's Archive, so they belong to the new Collection, its ArchiveViews, and its properties exactly as the Set's live pages do.
-  - **[INFERRED]** The Set's move is the one place this happens, moving the records whose origin lies within the Set from one Archive to the other; nothing derives an item's Collection at read time.
+  - **[INFERRED]** F-6 holds for every way a Set lands in another Collection: an in-app move, a Trash or Archive restore given a destination in another Collection, and a move made in Finder. One carry, placed where every such landing is observed rather than in each path, moves the records whose origin lies within the Set from one Archive to the other. An origin still in the tree is placed by its current trail; an origin the tree no longer holds, such as a sub-Set that has itself since been archived, is placed by the ancestor ids its record stored. The same reading serves a Set's ArchiveView (G-4). Nothing derives an item's Collection at read time.
 
 #### G - ArchiveView
 
@@ -105,8 +106,11 @@ Each Collection, and each top-level Set, gets an ArchiveView reached from an Arc
   - **[CONFIRMED]** A top-level Set's views dropdown carries the button too, opening an ArchiveView of what was archived from within that Set.
   - **[INFERRED]** The Collection's ArchiveView lists everything archived from anywhere in the Collection, Sets included; the store stays one per Collection, and a Set's ArchiveView is that store narrowed by origin.
 - **G-5 [CONFIRMED]:** ArchiveView should be remembered like any place in the content pane, through Back and Forward and a tab reopened after relaunch; only the reader window is forgotten.
-- **G-6 [CONFIRMED]:** Batch actions should come two ways: the right-click menu on checked rows, as the Trash has, and ActionLabel reading `[Restore | N Pages  (trash icon)]` while rows are checked, its count phrased as the Trash's batches phrase theirs ("3 pages", "2 sets", "5 items" for a mix), Restore tinted and the trash destructive, either press posting the Undo notice. ActionLabel reuses the existing hover and reveal primitives rather than hand-rolling them.
-- **G-7 [CONFIRMED]:** ActionLabel should be its own component, separate from the notification label, as the long-term owner of action points in that position.
+- **G-6 [CONFIRMED]:** Batch actions should come two ways: the right-click menu on checked rows, as the Trash has, and ActionLabel while rows are checked, reading `[Restore | (N)    (Delete)]`. Restore takes the tint the File History window's Restore button wears; the segment and the count ride the notification label's existing styling; Delete is the trash icon in the destructive style. ActionLabel reuses the existing hover and reveal primitives rather than hand-rolling them.
+  - **[CONFIRMED]** Pressing Restore transforms the label into "Restored (N) Pages" with the same animation as MarkdownPM's code-block Copy turning to Copied and Settings' Clear turning to Cleared.
+  - **[INFERRED]** Pressing Delete transforms it into "Deleted (N) Pages" the same way, the transformed label carries the Undo countdown, and the count names the kind as the Trash's batches do ("3 Pages", "2 Sets", "5 Items" for a mix).
+  - **[INFERRED]** That transform exists twice today, as the code block's `.is-copied` fade (`Core/MarkdownPM/decorations.ts:208`, `markdown-pm.css:1008-1049`) and Settings' `useTimedLabel` swap (`Core/Settings/useTimedLabel.ts`), with different timings; one shared transform serves both and ActionLabel.
+- **G-7 [CONFIRMED]:** ActionLabel's shape is the plan's call among three: its own component beside the notification label; folded into `NotificationLabel`; or `NotificationLabel` restructured into ActionLabel around one shared component. Renaming the notification label and its index to ActionLabel, `actionLabel`, and their kin is welcome where it's the better long-term shape. The plan presents where ActionLabel's files sit among every file it adds, moves, or renames.
 
 #### H - The Reader Window
 
@@ -128,6 +132,7 @@ Each Collection, and each top-level Set, gets an ArchiveView reached from an Arc
   - **[CONFIRMED]** Its row offers the History Timeframe's own steps and starts at the History Timeframe's value. Steps longer than the active History Timeframe show dimmed, and shortening the History Timeframe below it switches the archive timeframe down to match. The settings picker has no dimmed option today (`UIX/Pickers/PickerControl.tsx:10-14`), so the row needs one.
   - **[CONFIRMED]** Until a step is picked, the archive timeframe follows the History Timeframe, as the Trash's date column follows the Nexus's Date Format while unset; once picked, lengthening the History Timeframe leaves it where it is.
   - **[INFERRED]** A dimmed step can't be picked, and a typed value clamps to the active History Timeframe, so the archive timeframe never exceeds it.
+  - **[INFERRED]** Picking a shorter archive step runs the history sweep at once, as changing the History Timeframe does.
 
 #### K - Ride-Alongs
 
@@ -186,6 +191,7 @@ Nathan's, verbatim.
 - **Re-Verify, Then Reuse:** *Archive — Investigation* and *Archive — Scout Findings* are leads verified at `213f95a3b`. A planning session re-verifies every claim it leans on against its own HEAD, and on the data layer and the Trash it rides the mechanism that already does the job before designing anything new.
 - **Intent Over Wording:** the decisions record intent. INFERRED and ASSUMED entries are readings the plan confirms against the code or puts to Nathan before building on them.
 - **Cost:** nothing the Archive adds runs on a high-frequency trigger. Archived files cost a read only when a cascade's candidates name them, and the orphan check and the history sweep run once at open.
+- **Take Along:** any trivial fixes to existing things, folds of existing duplication and divergence, or cleanup that would otherwise be risk-free, obvious, or stupid to ignore now are taken alongside this work.
 - **Gates:** `npm run typecheck`, `npm run test`, and `npm run lint` from the repo root; `.claude/Guidelines/Development-Environment.md` before driving the app; `~/Test` for live testing.
 - **Process:** planning runs on `~/NexusOS/Studio/Athena/II. Drafts/Plan-Creation.md`. Its blank sections take the installed `writing-plans` skill's guidance, and the processes it names without spelling out, such as Neutral Verification, take the shape of `.claude/Planning/Completed/MetadataV3/MetadataV3 — Implementation Plan.md` and `.claude/Planning/Path Links/Path Links — Plan.md`; the draft wins where they conflict.
 
@@ -205,7 +211,7 @@ Nathan's, verbatim.
 
 #### Open Items
 
-1. **The Origin Record (left to planning):** how an archived item's record is shaped and stored. It carries the item's kind, its origin's id (E-1), its archived time (B-4), its exact place in its origin's order (E-2), its origin path at archive time, so path links re-spell to where it lands (D-1), and enough of its origin's ancestry, by id, for a top-level Set's ArchiveView to list what was archived from anywhere within it (G-4), read from the origin's current place in the tree while it's live and from the stored path only once it's gone. *Archive — Investigation* recommends one Trash-style bundle per item, flat under the Collection's Archive, in the Trash's record format.
+1. **The Origin Record (left to planning):** how an archived item's record is shaped and stored. It carries the item's kind, its origin's id (E-1), its archived time (B-4), its exact place in its origin's order (E-2), its origin path at archive time, so path links re-spell to where it lands (D-1), and its origin's ancestor ids at archive time. An item's place within its Collection is read from its origin's current trail while the origin is in the tree, and from those stored ancestor ids and path only once it isn't; the F-6 carry and a top-level Set's ArchiveView (G-4) both read it that one way. *Archive — Investigation* recommends one Trash-style bundle per item, flat under the Collection's Archive, in the Trash's record format.
 2. **Confirmation Copy:** the words of "Confirm Before Archiving"'s dialog and of any new refusal or notice, set at the plan's review.
 
 #### Prospects
