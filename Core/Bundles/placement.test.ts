@@ -1,8 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { mkdir, rm, writeFile } from 'node:fs/promises'
-import { join } from '../Paths/posix'
+import { dirname, join } from '../Paths/posix'
 import { readJsonAt, tempRoot } from '../Testing/hostFs'
 import { placeRecord, resolveRecord, slotOf } from './placement'
+import { nexusPages } from '../Nexus/heldPages'
 
 const PAGE_A = '01KVGMT8BFP350FZZXAMG1QDVA'
 
@@ -42,15 +43,33 @@ const notes = (
   pages,
 })
 
+let root: string
+beforeEach(async () => {
+  root = tempRoot('pom-place-')
+  await mkdir(join(root, 'Notes', 'Journal'), { recursive: true })
+  await writeFile(join(root, 'Notes', '_pagecollection.json'), JSON.stringify({ id: 'col-notes' }))
+  await writeFile(
+    join(root, 'Notes', 'Journal', '_pageset.json'),
+    JSON.stringify({ id: 'set-daily' }),
+  )
+})
+afterEach(async () => {
+  await rm(root, { recursive: true, force: true })
+})
+
+const byIdOf = async (tree: import('../Nexus/tree').NexusTree) =>
+  (await nexusPages(root, tree)).byId
+
 const pageRecord = {
   entity: 'page' as const,
   id: PAGE_A,
   parent: { kind: 'container' as const, id: 'set-daily' },
 }
 
-describe('resolveRecord — a placement with final names, or a typed refusal', () => {
-  it('places a page into its parent container at the container’s CURRENT path', () => {
-    const r = resolveRecord(pageRecord, 'Alpha.md', treeOf([], [notes()]))
+describe('resolveRecord — a placement with final names, or a typed refusal', async () => {
+  it('places a page into its parent container at the container’s CURRENT path', async () => {
+    const tree = treeOf([], [notes()])
+    const r = resolveRecord(pageRecord, 'Alpha.md', tree, await byIdOf(tree))
     expect('place' in r && r.place).toEqual({
       dir: 'Notes/Journal',
       finalName: 'Alpha.md',
@@ -58,11 +77,12 @@ describe('resolveRecord — a placement with final names, or a typed refusal', (
     })
   })
 
-  it('disambiguates a taken title, matching the create convention', () => {
+  it('disambiguates a taken title, matching the create convention', async () => {
     const taken = journal({
       pages: [P({ id: 'page-o', title: 'Alpha', path: 'Notes/Journal/Alpha.md' })],
     })
-    const r = resolveRecord(pageRecord, 'Alpha.md', treeOf([], [notes([taken])]))
+    const tree = treeOf([], [notes([taken])])
+    const r = resolveRecord(pageRecord, 'Alpha.md', tree, await byIdOf(tree))
     expect('place' in r && r.place).toEqual({
       dir: 'Notes/Journal',
       finalName: 'Alpha (2).md',
@@ -70,11 +90,12 @@ describe('resolveRecord — a placement with final names, or a typed refusal', (
     })
   })
 
-  it('a set title also blocks a page name — one folder cannot hold both', () => {
+  it('a set title also blocks a page name — one folder cannot hold both', async () => {
     const inner = journal({
       sets: [journal({ id: 'set-inner', title: 'Alpha', path: 'Notes/Journal/Alpha' })],
     })
-    const r = resolveRecord(pageRecord, 'Alpha.md', treeOf([], [notes([inner])]))
+    const tree = treeOf([], [notes([inner])])
+    const r = resolveRecord(pageRecord, 'Alpha.md', tree, await byIdOf(tree))
     expect('place' in r && r.place).toEqual({
       dir: 'Notes/Journal',
       finalName: 'Alpha (2).md',
@@ -82,13 +103,14 @@ describe('resolveRecord — a placement with final names, or a typed refusal', (
     })
   })
 
-  it('refuses when the parent is gone — a still-trashed parent is the same answer', () => {
-    expect(resolveRecord(pageRecord, 'Alpha.md', treeOf([], [notes([])]))).toEqual({
+  it('refuses when the parent is gone — a still-trashed parent is the same answer', async () => {
+    const tree = treeOf([], [notes([])])
+    expect(resolveRecord(pageRecord, 'Alpha.md', tree, await byIdOf(tree))).toEqual({
       refuse: 'parent-gone',
     })
   })
 
-  it('refuses when the parent id resolves to a kind that cannot hold this one', () => {
+  it('refuses when the parent id resolves to a kind that cannot hold this one', async () => {
     const tree = treeOf(
       [
         {
@@ -106,39 +128,55 @@ describe('resolveRecord — a placement with final names, or a typed refusal', (
       ],
       [notes([])],
     )
-    expect(resolveRecord(pageRecord, 'Alpha.md', tree)).toEqual({ refuse: 'cannot-hold' })
+    expect(resolveRecord(pageRecord, 'Alpha.md', tree, await byIdOf(tree))).toEqual({
+      refuse: 'cannot-hold',
+    })
   })
 
-  it('a live id refuses, and it outranks every other answer', () => {
+  it('a live id refuses, and it outranks every other answer', async () => {
     const tree = treeOf(
       [],
       [notes([], [P({ id: PAGE_A, title: 'Elsewhere', path: 'Notes/Elsewhere.md' })])],
     )
-    expect(resolveRecord(pageRecord, 'Alpha.md', tree)).toEqual({ refuse: 'id-live' })
+    expect(resolveRecord(pageRecord, 'Alpha.md', tree, await byIdOf(tree))).toEqual({
+      refuse: 'id-live',
+    })
   })
 
-  it('an unaddressable parent refuses', () => {
+  it('an id the Archive holds refuses as live', async () => {
+    const file = join(root, '.nexus/archive/c1/Notes/2026-10-20T12-00-00-000Z__A.md.archived/A.md')
+    await mkdir(dirname(file), { recursive: true })
+    await writeFile(file, `---\nID: ${PAGE_A}\n---\nb\n`)
+    const tree = treeOf([], [notes()])
+    expect(resolveRecord(pageRecord, 'Alpha.md', tree, await byIdOf(tree))).toEqual({
+      refuse: 'id-live',
+    })
+  })
+
+  it('an unaddressable parent refuses', async () => {
     const record = {
       entity: 'page' as const,
       id: PAGE_A,
       parent: { kind: 'unaddressable' as const },
     }
-    expect(resolveRecord(record, 'Alpha.md', treeOf([], [notes()]))).toEqual({
+    const tree = treeOf([], [notes()])
+    expect(resolveRecord(record, 'Alpha.md', tree, await byIdOf(tree))).toEqual({
       refuse: 'unaddressable',
     })
   })
 
-  it('a collection returns to the root, disambiguated against its siblings', () => {
+  it('a collection returns to the root, disambiguated against its siblings', async () => {
     const record = {
       entity: 'collection' as const,
       id: 'col-back',
       parent: { kind: 'root' as const },
     }
-    const r = resolveRecord(record, 'Notes', treeOf([], [notes()]))
+    const tree = treeOf([], [notes()])
+    const r = resolveRecord(record, 'Notes', tree, await byIdOf(tree))
     expect('place' in r && r.place).toEqual({ dir: '', finalName: 'Notes (2)' })
   })
 
-  it('a Space follows its Context to the Context’s CURRENT title, colliding titles disambiguated', () => {
+  it('a Space follows its Context to the Context’s CURRENT title, colliding titles disambiguated', async () => {
     const tree = treeOf(
       [
         {
@@ -162,7 +200,7 @@ describe('resolveRecord — a placement with final names, or a typed refusal', (
       parent: { kind: 'context' as const, id: 'ctx_projects' },
       members: [],
     }
-    const r = resolveRecord(record, 'Pommora', tree)
+    const r = resolveRecord(record, 'Pommora', tree, await byIdOf(tree))
     expect('place' in r && r.place).toEqual({
       dir: '.nexus/contexts/Ventures',
       finalName: 'Pommora (2)',
@@ -170,14 +208,14 @@ describe('resolveRecord — a placement with final names, or a typed refusal', (
     })
   })
 
-  it('a Context re-enters the registry under a disambiguated final title', () => {
+  it('a Context re-enters the registry under a disambiguated final title', async () => {
     const tree = treeOf([{ def: { id: 'ctx_new', title: 'Projects' }, spaces: [] }], [])
     const record = {
       entity: 'context' as const,
       registry: { id: 'ctx_projects', title: 'Projects' },
       membership: [],
     }
-    const r = resolveRecord(record, 'Projects', tree)
+    const r = resolveRecord(record, 'Projects', tree, await byIdOf(tree))
     expect('place' in r && r.place).toEqual({
       dir: '.nexus/contexts',
       finalName: 'Projects (2)',
@@ -185,14 +223,16 @@ describe('resolveRecord — a placement with final names, or a typed refusal', (
     })
   })
 
-  it('a Context whose registry id is already live refuses', () => {
+  it('a Context whose registry id is already live refuses', async () => {
     const tree = treeOf([{ def: { id: 'ctx_projects', title: 'Elsewhere' }, spaces: [] }], [])
     const record = {
       entity: 'context' as const,
       registry: { id: 'ctx_projects', title: 'Projects' },
       membership: [],
     }
-    expect(resolveRecord(record, 'Projects', tree)).toEqual({ refuse: 'id-live' })
+    expect(resolveRecord(record, 'Projects', tree, await byIdOf(tree))).toEqual({
+      refuse: 'id-live',
+    })
   })
 })
 
@@ -219,23 +259,6 @@ describe('slotOf', () => {
 })
 
 describe('placeRecord', () => {
-  let root: string
-  beforeEach(async () => {
-    root = tempRoot('pom-place-')
-    await mkdir(join(root, 'Notes', 'Journal'), { recursive: true })
-    await writeFile(
-      join(root, 'Notes', '_pagecollection.json'),
-      JSON.stringify({ id: 'col-notes' }),
-    )
-    await writeFile(
-      join(root, 'Notes', 'Journal', '_pageset.json'),
-      JSON.stringify({ id: 'set-daily' }),
-    )
-  })
-  afterEach(async () => {
-    await rm(root, { recursive: true, force: true })
-  })
-
   const siblings = [
     P({ id: 'page-1', title: 'One', path: 'Notes/Journal/One.md' }),
     P({ id: 'page-2', title: 'Two', path: 'Notes/Journal/Two.md' }),
@@ -244,7 +267,7 @@ describe('placeRecord', () => {
   it('composes the parent’s full order with the item in its slot', async () => {
     const tree = treeOf([], [notes([journal({ pages: siblings })])])
     const record = { ...pageRecord, place: { above: 'page-2', below: 'page-1' } }
-    const placed = await placeRecord(root, record, undefined, 'Alpha.md', tree)
+    const placed = await placeRecord(root, record, undefined, 'Alpha.md', tree, await byIdOf(tree))
     if (!placed.ok) throw new Error('placement refused')
     expect(placed.value.placement.dir).toBe('Notes/Journal')
     await placed.value.writeOrder?.()
@@ -264,6 +287,7 @@ describe('placeRecord', () => {
       { kind: 'container', id: 'col-notes' },
       'Alpha.md',
       tree,
+      await byIdOf(tree),
     )
     if (!placed.ok) throw new Error('placement refused')
     expect(placed.value.record).toMatchObject({ place: undefined })
@@ -282,7 +306,15 @@ describe('placeRecord', () => {
   }
 
   it('lands at the tree’s placement when the disk holds nothing there, answering no landedAs', async () => {
-    const placed = await placeRecord(root, pageRecord, undefined, 'Alpha.md', treeOf([], [notes()]))
+    const tree = treeOf([], [notes()])
+    const placed = await placeRecord(
+      root,
+      pageRecord,
+      undefined,
+      'Alpha.md',
+      tree,
+      await byIdOf(tree),
+    )
     if (!placed.ok) throw new Error('placement refused')
     expect(placed.value.placement).toEqual({
       dir: 'Notes/Journal',
@@ -294,7 +326,15 @@ describe('placeRecord', () => {
 
   it('steps a page past a file of its name, answering the title it took', async () => {
     await writeFile(join(root, 'Notes', 'Journal', 'Alpha.md'), 'outside')
-    const placed = await placeRecord(root, pageRecord, undefined, 'Alpha.md', treeOf([], [notes()]))
+    const tree = treeOf([], [notes()])
+    const placed = await placeRecord(
+      root,
+      pageRecord,
+      undefined,
+      'Alpha.md',
+      tree,
+      await byIdOf(tree),
+    )
     if (!placed.ok) throw new Error('placement refused')
     expect(placed.value.placement).toEqual({
       dir: 'Notes/Journal',
@@ -310,7 +350,8 @@ describe('placeRecord', () => {
       join(root, '.nexus', 'settings.json'),
       JSON.stringify({ excluded_folders: ['Notes/Daily'] }),
     )
-    const placed = await placeRecord(root, setRecord, undefined, 'Daily', treeOf([], [notes()]))
+    const tree = treeOf([], [notes()])
+    const placed = await placeRecord(root, setRecord, undefined, 'Daily', tree, await byIdOf(tree))
     if (!placed.ok) throw new Error('placement refused')
     expect(placed.value.placement).toEqual({ dir: 'Notes', finalName: 'Daily (2)' })
     expect(placed.value.landedAs).toBe('Daily (2)')
@@ -320,8 +361,15 @@ describe('placeRecord', () => {
     await mkdir(join(root, 'Notes', 'Journal', 'Alpha'))
     await writeFile(join(root, 'Notes', 'Daily.md'), 'outside')
     const tree = treeOf([], [notes()])
-    const page = await placeRecord(root, pageRecord, undefined, 'Alpha.md', tree)
-    const set = await placeRecord(root, setRecord, undefined, 'Daily', tree)
+    const page = await placeRecord(
+      root,
+      pageRecord,
+      undefined,
+      'Alpha.md',
+      tree,
+      await byIdOf(tree),
+    )
+    const set = await placeRecord(root, setRecord, undefined, 'Daily', tree, await byIdOf(tree))
     expect(page.ok && page.value.placement.finalName).toBe('Alpha.md')
     expect(page.ok && page.value.landedAs).toBeUndefined()
     expect(set.ok && set.value.placement.finalName).toBe('Daily')
@@ -337,7 +385,7 @@ describe('placeRecord', () => {
       parent: { kind: 'context' as const, id: 'ctx_b' },
       members: [],
     }
-    const placed = await placeRecord(root, record, undefined, 'Pommora', tree)
+    const placed = await placeRecord(root, record, undefined, 'Pommora', tree, await byIdOf(tree))
     if (!placed.ok) throw new Error('placement refused')
     await placed.value.writeOrder?.()
     expect((await readJsonAt(join(root, '.nexus', 'state.json'))).order).toEqual({
@@ -351,7 +399,8 @@ describe('placeRecord', () => {
       registry: { id: 'ctx_projects', title: 'Projects' },
       membership: [],
     }
-    const placed = await placeRecord(root, record, undefined, 'projects', treeOf([], []))
+    const tree = treeOf([], [])
+    const placed = await placeRecord(root, record, undefined, 'projects', tree, await byIdOf(tree))
     if (!placed.ok) throw new Error('placement refused')
     expect(placed.value.placement.finalTitle).toBe('Projects')
     expect(placed.value.landedAs).toBeUndefined()

@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { writePageValue } from '../Testing/propertyWrites'
 import { ID_KEY } from '../Nexus/identityMark'
-import { chmod, rename, rm, readFile, stat, utimes, writeFile } from 'node:fs/promises'
-import { join, relative } from '../Paths/posix'
+import { chmod, mkdir, rename, rm, readFile, stat, utimes, writeFile } from 'node:fs/promises'
+import { dirname, join, relative } from '../Paths/posix'
 import { noModeBits, tempRoot, readJsonAt } from '../Testing/hostFs'
 import { fault, ok } from '../Contract/result'
 import { editJsonStrict, readJsonObject } from '../Files/atomicWrite'
@@ -15,7 +15,7 @@ import { removeProperty } from './removeProperty'
 import { assignedIds, assignProperty } from './assignment'
 import { createProperty, editProperty } from './registryProperty'
 import { createFolderEntity } from '../Nexus/folderEntity'
-import { newId } from '../Nexus/ids'
+import { newContentId, newId } from '../Nexus/ids'
 import { createTestPage } from '../Testing/createTestPage'
 import { patchSidecar } from '../Files/sidecar'
 import { readRegistry } from './propertiesRegistry'
@@ -140,16 +140,39 @@ describe('removeProperty — strip + cache (C-3/C-6)', () => {
     closeSession()
   })
 
-  it('a copy sharing an id keeps its own value, and re-assigning fills the one Remove stripped', async () => {
+  it('a page and its copy sharing one id both keep their values through Remove, so re-assigning has nothing to fill', async () => {
     const copy = join(folder, 'A copy.md')
     const raw = await readFile(pageA, 'utf8')
     await writeFile(copy, raw.replace('- active', '- done'))
     await removeProperty(root, folder, propId)
-    const [a, c] = [await pageValue(pageA), await pageValue(copy)]
-    expect([a, c].filter((v) => v === undefined)).toHaveLength(1)
+    expect([await pageValue(pageA), await pageValue(copy)]).toEqual([['active'], ['done']])
     await assignProperty(root, folder, propId)
     expect([await pageValue(pageA), await pageValue(copy)]).toEqual([['active'], ['done']])
     expect(await cacheBlock()).toBeUndefined()
+  })
+
+  it('a Remove strips its own Collection’s archived holder and caches its value, and leaves another Collection’s', async () => {
+    const other = await createFolderEntity(root, 'collection', 'Other', newId())
+    if (!other.ok) throw new Error('setup failed')
+    const archivedUnder = async (collection: string): Promise<{ file: string; id: string }> => {
+      const cid = (await readJsonObject(sidecarPath(collection, 'collection')))?.id as string
+      const file = join(
+        root,
+        '.nexus/archive',
+        cid,
+        'Notes/2026-10-20T12-00-00-000Z__Old.md.archived/Old.md',
+      )
+      const id = newContentId('page')
+      await mkdir(dirname(file), { recursive: true })
+      await writeFile(file, `---\n${ID_KEY}: ${id}\nStage:\n  - done\n---\nb\n`)
+      return { file, id }
+    }
+    const own = await archivedUnder(folder)
+    const theirs = await archivedUnder(other.value.path)
+    expect((await removeProperty(root, folder, propId)).ok).toBe(true)
+    expect(await pageValue(own.file)).toBeUndefined()
+    expect((await cacheBlock())?.values[own.id]).toEqual(['done'])
+    expect(await pageValue(theirs.file)).toEqual(['done'])
   })
 
   it('is a no-op when the property is not assigned — never overwrites a cache with emptiness (E-6)', async () => {

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
-import { mkdir, readFile, rm, unlink, utimes, writeFile } from 'node:fs/promises'
-import { join } from '../Paths/posix'
+import { mkdir, readFile, rename, rm, unlink, utimes, writeFile } from 'node:fs/promises'
+import { dirname, join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
 import { installStores, type Relation, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
@@ -22,6 +22,7 @@ import { newContentId } from '../Nexus/ids'
 const ULID_A = '01ARZ3NDEKPSV4RRFFQ69G5FAV'
 const ULID_B = '01BX5ZZKBKPCTAV9WEVGEMMVRZ'
 const ULID_C = '01CX5ZZKBKPCTAV9WEVGEMMVRC'
+const BUNDLES = '.nexus/archive/c1/Notes/2026-10-20T12-00-00-000Z'
 
 let root: string
 let mem: ReturnType<typeof memoryStores>
@@ -68,6 +69,51 @@ describe('seedContentIndex', () => {
     expect(queryMentions(['target'])?.sort()).toEqual(['Loose/Note.md', 'Notes/A.md'])
     expect(queryKeyHolders('Status')).toEqual(['Notes/A.md'])
     expect(stats?.has('Hidden/Secret.md')).toBe(false)
+  })
+
+  it('seeds the Archive as the corpus’s second root, and a hidden folder inside an archived Set gets no rows', async () => {
+    const page = `${BUNDLES}__Old.md.archived/Old.md`
+    const raw = `${BUNDLES}__Set.archived/Set/_raw/X.md`
+    for (const rel of [page, raw]) await mkdir(dirname(abs(rel)), { recursive: true })
+    await writeFile(abs(page), `---\nID: ${ULID_B}\n---\n\nlinks [[Target]]\n`)
+    await writeFile(abs(raw), 'links [[Target]]\n')
+    await seedContentIndex(root)
+    const stats = readIndexedStats()
+    expect(stats?.get(page)).toMatchObject({ id: ULID_B })
+    expect(queryMentions(['target'])?.sort()).toEqual(['Loose/Note.md', 'Notes/A.md', page].sort())
+    expect(stats?.has(raw)).toBe(false)
+  })
+
+  it('moves a page’s rows into the Archive and back, and a Set’s by prefix', async () => {
+    await mkdir(abs('Notes', 'Sub'), { recursive: true })
+    await writeFile(abs('Notes', 'Sub', 'B.md'), `---\nID: ${ULID_B}\n---\n\nbeta\n`)
+    await seedContentIndex(root)
+    const moves = [
+      ['Notes/A.md', `${BUNDLES}__A.md.archived/A.md`, 'Notes/A.md', ULID_A],
+      ['Notes/Sub', `${BUNDLES}__Sub.archived/Sub`, 'Notes/Sub/B.md', ULID_B],
+    ]
+    for (const [from, to, page, id] of moves) {
+      const archived = page.replace(from, to)
+      await mkdir(dirname(abs(to)), { recursive: true })
+      await rename(abs(from), abs(to))
+      await moveIndexPaths(root, abs(from), abs(to))
+      expect(readIndexedStats('.nexus/archive')?.get(archived)).toMatchObject({ id })
+      expect(readIndexedStats()?.has(page)).toBe(false)
+      await rename(abs(to), abs(from))
+      await moveIndexPaths(root, abs(to), abs(from))
+      expect(readIndexedStats()?.get(page)).toMatchObject({ id })
+      expect(readIndexedStats()?.has(archived)).toBe(false)
+    }
+  })
+
+  it('a removal of the Archive itself prunes every row beneath it', async () => {
+    const page = `${BUNDLES}__Old.md.archived/Old.md`
+    await mkdir(dirname(abs(page)), { recursive: true })
+    await writeFile(abs(page), `---\nID: ${ULID_B}\n---\n\nold\n`)
+    await seedContentIndex(root)
+    const seen = await deindexPath(root, abs('.nexus/archive'))
+    expect(seen.vanished).toEqual([{ id: ULID_B, title: 'Old', path: page }])
+    expect(readIndexedStats('.nexus/archive')?.size).toBe(0)
   })
 
   it('writes and moves index only what the corpus admits: hidden and excluded paths get no rows', async () => {

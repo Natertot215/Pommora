@@ -711,7 +711,7 @@ describe('deleteCascade', () => {
     expect(sweepSpy).not.toHaveBeenCalled()
   })
 
-  it('an ID-less linker isn’t held, isn’t stamped by the sweep, and keeps its bytes', async () => {
+  it('an ID-less linker keeps its bytes and its value, counted among the links left in place', async () => {
     const loose = join(dir, 'Loose.md')
     const content = '---\nRelated: "[[Target]]"\n---\n'
     await writeFile(loose, content)
@@ -723,7 +723,31 @@ describe('deleteCascade', () => {
     })
     const r = await deleteCascade(root, target(), ['Notes/Target.md'])
     expect(r.links).toEqual([])
+    expect(r.cascade.warning).toBe(unsweptLine(1, 'links in '))
     expect(await readFile(loose, 'utf8')).toBe(content)
+  })
+
+  it('strips an archived linker’s Link value naming the page and records it under its id', async () => {
+    const id = '01KVGMT8BFP350FZZXAMG1QARC'
+    const archived = join(
+      root,
+      '.nexus/archive/col-notes/Notes/2026-10-20T12-00-00-000Z__Old.md.archived/Old.md',
+    )
+    await mkdir(join(archived, '..'), { recursive: true })
+    await writeFile(archived, `---\nID: ${id}\nRelated: "[[Target]]"\n---\nb\n`)
+    await refreshTree(root)
+    const r = await deleteCascade(root, target(), ['Notes/Target.md'])
+    expect(await fmOf(archived)).not.toHaveProperty('Related')
+    expect(r.links).toEqual([{ page: id, property: related, value: '[[Target]]' }])
+  })
+
+  it('still strips a linker inside a Collection whose sidecar doesn’t parse', async () => {
+    const a = await linker('Cites', '[[Target]]')
+    await writeFile(join(dir, '_pagecollection.json'), '{ not json')
+    await refreshTree(root)
+    const r = await deleteCascade(root, target(), ['Notes/Target.md'])
+    expect(await fmOf(a.path)).not.toHaveProperty('Related')
+    expect(r.links).toEqual([{ page: a.id, property: related, value: '[[Target]]' }])
   })
 
   it('never sweeps a page under a deleted folder', async () => {
@@ -782,7 +806,7 @@ describe('deleteCascade', () => {
     },
   )
 
-  it('a linker whose frontmatter can’t round-trip is listed unparsed, never swept, and left as it is', async () => {
+  it('a linker whose frontmatter can’t round-trip is listed unparsed, refused by the sweep, and left as it is', async () => {
     const broken = join(dir, 'Broken.md')
     const content =
       '---\nID: 01KVGMT8BFP350FZZXAMG1QDVY\nRelated: "[[Target]]"\nsomething: *word\n---\nb'
@@ -795,7 +819,7 @@ describe('deleteCascade', () => {
       kind: 'page',
       reason: 'unparsed',
     })
-    expect(sweptFiles()).not.toContain(broken)
+    expect((await sweepSpy.mock.results[0]?.value)?.refused).toEqual([broken])
     expect(r).toEqual({ cascade: { pages: [], hosts: [] }, links: [] })
     expect(await readFile(broken, 'utf8')).toBe(content)
   })

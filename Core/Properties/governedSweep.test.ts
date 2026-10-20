@@ -124,4 +124,22 @@ describe('sweepCount', () => {
     expect(await readFile(a, 'utf8')).toBe(page)
     expect(await readFile(sidecar.file, 'utf8')).toBe(sidecar.text)
   })
+
+  it('counts no file the Archive holds, while the sweep it previews writes it', async () => {
+    const { root, a } = await seed()
+    const bundle = join(
+      root,
+      '.nexus',
+      'archive',
+      'C1',
+      'Notes',
+      '2026-10-20T12-00-00-000Z__C.md.archived',
+    )
+    await mkdir(bundle, { recursive: true })
+    const archived = join(bundle, 'C.md')
+    await writeFile(archived, '---\nID: 01KVGMT8BFP350FZZXAMG1QDRC\n---\nbody\n')
+    const textPlan: SweepPlan = { text: (c) => `${c}x` }
+    expect(await sweepCount(root, [a, archived], textPlan)).toBe(1)
+    expect((await sweepGovernedRoots(root, [a, archived], textPlan, true)).touched.size).toBe(2)
+  })
 })

@@ -11,6 +11,7 @@ import { contextsDir, contextsRegistryFile } from '../Paths/paths'
 import { writePropertyBundle } from '../Properties/deleteProperty'
 import { listBundles } from './bundle'
 import { readNexus } from '../Nexus/readNexus'
+import { nexusPages } from '../Nexus/heldPages'
 import { closeSession, openSession } from '../Nexus/session'
 import { bundleRowOf, bundleRows } from './rows'
 import type { TrashDeps } from '../Trash/discard'
@@ -21,8 +22,11 @@ const nexusDeps: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {}
 
 let root: string
 
-const rows = async (): Promise<BundleRow[]> =>
-  bundleRows(await listBundles(root, { kind: 'trash' }), { kind: 'trash' }, await readNexus(root))
+const rows = async (): Promise<BundleRow[]> => {
+  const tree = await readNexus(root)
+  const { byId } = await nexusPages(root, tree)
+  return bundleRows(await listBundles(root, { kind: 'trash' }), { kind: 'trash' }, tree, byId)
+}
 const del = (
   path: string,
   kind: 'page' | 'collection' | 'set' | 'space' | 'context',
@@ -137,6 +141,7 @@ describe('bundleRows — a bundle as the browser reads it', () => {
       },
       { kind: 'archive', id: ARCHIVE_ID },
       await readNexus(root),
+      new Map(),
     )
     expect(archived).toMatchObject({
       historical: true,
@@ -174,6 +179,7 @@ describe('bundleRows — a bundle as the browser reads it', () => {
         },
         { kind: 'trash' },
         { collections: [], contexts: [] } as unknown as NexusTree,
+        new Map(),
       )?.title,
     ).toBe('prop_x')
   })
@@ -215,6 +221,7 @@ describe('bundleRows — a bundle as the browser reads it', () => {
       },
       { kind: 'trash' },
       { collections: [], contexts: [] } as unknown as NexusTree,
+      new Map(),
     )
     expect(row).toMatchObject({ kind: 'page', title: 'Alpha', historical: true })
   })

@@ -1,10 +1,10 @@
 import { readFile, rename, rm, mkdir, stat, utimes, writeFile } from 'node:fs/promises'
 import { writePageValue, writeSpaceValue } from '../Testing/propertyWrites'
-import { join } from '../Paths/posix'
+import { dirname, join } from '../Paths/posix'
 import { contextsDir, contextsRegistryFile, sidecarPath } from '../Paths/paths'
 import { tempRoot, readJsonAt } from '../Testing/hostFs'
 import { createContextGroup, createSpace } from '../Contexts/contextWrite'
-import { newId } from '../Nexus/ids'
+import { newContentId, newId } from '../Nexus/ids'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { PropertyDefinition } from '../Properties/properties'
 import { handleMutate } from '../Nexus/mutate'
@@ -55,6 +55,19 @@ async function seedPriority(): Promise<string> {
   await assignProperty(root, notes, c.value.id)
   await assignProperty(root, tasks, c.value.id)
   return c.value.id
+}
+
+const archivedPage = async (fm: string): Promise<string> => {
+  const cid = (await readJsonObject(sidecarPath(notes, 'collection')))?.id as string
+  const file = join(
+    root,
+    '.nexus/archive',
+    cid,
+    'Notes/2026-10-20T12-00-00-000Z__Old.md.archived/Old.md',
+  )
+  await mkdir(dirname(file), { recursive: true })
+  await writeFile(file, `---\nID: ${newContentId('page')}\n${fm}---\nb\n`)
+  return file
 }
 
 const onlyBundlePath = async (): Promise<string> => {
@@ -361,6 +374,37 @@ describe('restoring a deleted property', () => {
     expect(r).toEqual({ ok: true, value: {} })
     expect(await valueOn(live.value.path, 'Related')).toBe('[[Target]]')
     expect(await valueOn(dead.value.path, 'Related')).toBeUndefined()
+  })
+
+  it('a value comes back on an archived page, written where the Archive holds it', async () => {
+    const id = await seedPriority()
+    const old = await archivedPage('Priority: hi\n')
+    expect((await deleteProperty(root, id)).ok).toBe(true)
+    expect(await valueOn(old, 'Priority')).toBeUndefined()
+    const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() }, deps)
+    expect(r).toEqual({ ok: true, value: {} })
+    expect(await valueOn(old, 'Priority')).toEqual(['hi'])
+  })
+
+  it('a Link value naming an archived page comes back', async () => {
+    const c = await createProperty(root, {
+      id: '',
+      label: 'Related',
+      type: 'link',
+    })
+    if (!c.ok) throw new Error('seed failed')
+    await assignProperty(root, notes, c.value.id)
+    await archivedPage('')
+    const live = await createTestPage(notes, 'Live', { body: 'b' })
+    if (!live.ok) throw new Error('page failed')
+    await writePageValue(live.value.path, await liveDef(c.value.id), {
+      kind: 'link',
+      value: '[[Old]]',
+    })
+    expect((await deleteProperty(root, c.value.id)).ok).toBe(true)
+    const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() }, deps)
+    expect(r).toEqual({ ok: true, value: {} })
+    expect(await valueOn(live.value.path, 'Related')).toBe('[[Old]]')
   })
 
   it('a cached Link value naming no page stays out when the property is assigned again', async () => {

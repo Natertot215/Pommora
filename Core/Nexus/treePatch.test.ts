@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
 import type { CollectionNode, NexusTree, SetNode, SpaceNode } from './tree'
 import {
+  archiveReach,
   containerSchema,
   containerTrailById,
   containerTrailWhere,
@@ -214,13 +215,17 @@ describe('moveNodeInTree', () => {
 })
 
 describe('owningCollection', () => {
-  it('names the Collection a path starts in, a Collection its own owner', () => {
+  it('names the Collection a path starts in or whose Archive holds it, a Collection its own owner', () => {
     const t = tree()
     for (const path of ['Notes', 'Notes/A.md', 'Notes/Sub', 'Notes/Sub/B.md'])
       expect(owningCollection(t, path)).toBe(t.collections[0])
     expect(owningCollection(t, 'Tasks/T.md')).toBeUndefined()
     expect(owningCollection(t, '.nexus/contexts/Areas/Home')).toBeUndefined()
     expect(owningCollection(t, 'Note')).toBeUndefined()
+    const archived = '2026-10-20T12-00-00-000Z__X.md.archived/X.md'
+    expect(owningCollection(t, `.nexus/archive/c2/Old Name/${archived}`)).toBe(t.collections[1])
+    expect(owningCollection(t, `.nexus/archive/c9/Gone/${archived}`)).toBeUndefined()
+    expect(owningCollection(t, '.nexus/archive')).toBeUndefined()
     expect(owningCollection(t, t.collections[0].sets[0])).toBe(t.collections[0])
     const detached = { ...t.collections[1] }
     expect(owningCollection(null, detached)).toBe(detached)
@@ -229,6 +234,14 @@ describe('owningCollection', () => {
   it('hands an unowned path the one empty schema', () => {
     expect(containerSchema(tree(), 'Tasks/T.md')).toBe(NO_SCHEMA)
     expect(containerSchema(null, 'Notes/A.md')).toBe(NO_SCHEMA)
+  })
+})
+
+describe('archiveReach', () => {
+  it('covers every Archive unscoped, the owning Collection’s whole Archive under a folder, and none for an unowned one', () => {
+    expect(archiveReach(tree())).toBe('.nexus/archive')
+    expect(archiveReach(tree(), 'Notes/Sub')).toBe('.nexus/archive/c1')
+    expect(archiveReach(tree(), 'Loose')).toBeNull()
   })
 })
 

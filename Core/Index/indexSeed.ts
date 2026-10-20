@@ -75,17 +75,6 @@ export async function nexusCorpus(root: string): Promise<string[]> {
   return corpusFiles(root, await readWatchScope(root))
 }
 
-export function corpusUnder(root: string, rels: string[], folders: string[]): string[] {
-  return rels
-    .map((rel) => join(root, rel))
-    .filter((abs) => folders.some((folder) => abs.startsWith(`${folder}/`)))
-}
-
-export async function folderCorpus(root: string, absFolder: string): Promise<string[]> {
-  const rels = await corpusFilesUnder(root, absFolder, await readWatchScope(root))
-  return rels.map((rel) => join(root, rel))
-}
-
 async function relCorpusPath(root: string, abs: string): Promise<string | null> {
   const rel = relative(root, abs)
   if (!rel || escapes(rel)) return null
@@ -180,8 +169,10 @@ export async function moveIndexPaths(root: string, oldAbs: string, newAbs: strin
     return
   }
   if (!oldRel) {
-    const landed = isMarkdownFile(newRel) ? [newAbs] : await folderCorpus(root, newAbs)
-    for (const abs of landed) await indexWrittenPage(root, abs)
+    const landed = isMarkdownFile(newRel)
+      ? [newRel]
+      : await corpusFilesUnder(root, newAbs, await readWatchScope(root))
+    for (const rel of landed) await indexWrittenPage(root, join(root, rel))
     return
   }
   if (isMarkdownFile(oldRel)) renamePathIndex(oldRel, newRel)

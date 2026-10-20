@@ -11,7 +11,7 @@ import {
   searchEntriesOf,
   spaceLinksOf,
 } from './treeIndex'
-import { pageIndexOf, pageMoves, pagesByIdOf, pagesOf, recordById, recordsOf } from './record'
+import { pageIndexOf, pageMoves, pagesByIdOf, pagesOf, recordsOf } from './record'
 
 describe('the record walk', () => {
   it('caches every projection on the tree identity — same tree, same object', () => {
@@ -23,12 +23,10 @@ describe('the record walk', () => {
     expect(pageIndexOf(t)).toBe(pageIndexOf(t))
     expect(navKeysOf(t)).toBe(navKeysOf(t))
     expect(recordsOf(t)).toBe(recordsOf(t))
-    expect(recordById(t)).toBe(recordById(t))
   })
 
   it('a different tree object derives fresh projections', () => {
     expect(reconcileIndexOf(makeTree())).not.toBe(reconcileIndexOf(makeTree()))
-    expect(recordById(makeTree())).not.toBe(recordById(makeTree()))
   })
 })
 

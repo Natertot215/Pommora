@@ -25,6 +25,27 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 | Excluded folder | Set `AR Excl` and the entry `Collection A/AR Excl` | `restore` | `landedAs: 'AR Excl (2)'`; the folder lands as `AR Excl (2)`; `settings.json` unchanged by the restore, the entry taken back out after | E-4 |
 | The browser | every Trash row | Settings › Trash; Restore All of two | rows match `bundles:list`; the notice reads `Restored 2 Pages`; a shot beside it | A-3 |
 
+#### Group 3 — Reach (Phase 3)
+
+The run's prologue saves and shows `Drive Table`, a table view of its own on Collection A, since Collection A's one saved view draws cards; the harness's restore takes it back. Seeds, with the app closed and before a relaunch, so the open's seed reads the Archive as its second root: `Drive Stage` (a Select with `Draft`, added through `schema:add` on Collection A before the quit, its draft's `id` empty as `propertyDraft` requires, `Core/Properties/properties.ts:161`, `:198-200`); `Collection A/Set Alpha/Drive Live.md` holding `Drive Stage: Draft`; `Drive Linker.md` beside it, its body `[[Drive Arc]]`; `Collection A/Drive Odd.md` carrying a task-marked ID, which the tree withholds; and the archived page `.nexus/archive/<Collection A's id>/Collection A/Set Alpha/2026-10-20T12-00-00-000Z__Drive Arc.md.archived/Drive Arc.md` with its `_record.json`, holding `Drive Stage: Draft`, `## Drive Heading`, and `[[Drive Live]]`. The group removes its seeds and empties the deleted property's bundle before it ends, leaving nothing behind; the harness restores `~/Test` when the run ends.
+
+| Check | Decision | Asserts |
+| --- | --- | --- |
+| the tree holds the live pages and never the archived one | D-2 | `nexus:state`'s tree |
+| Collection A's view search for Drive lists Drive Live and never Drive Arc | D-2 | DOM: `.data-row[data-rid]` |
+| a link naming the archived page draws unresolved | D-1 | DOM: `md-connection-phantom` on Drive Linker's line |
+| the Matrix graph holds the live page and the one the tree withholds, and no archived page or edge | K-2 | `matrix:graph` reply |
+| the Matrix graph asked for the archived path answers no id | K-2 | `matrix:graph` reply |
+| the headings answer no archived path, whole or asked by path | K-2 | `index:headings` reply |
+| Collection A's value load reads the tree's pages, never the archived one or one the tree withholds | K-2 | `view:loadValues` reply |
+| the delete confirmation’s count leaves the archived holder out | C-4 | `property:holders` reply is 1 |
+| an option rename rewrites the archived page as it rewrites the live one | C-1 | disk: both frontmatters read `['Final']`, the one-item list the option cascade writes (`replaySchemaCascade.test.ts:523`) |
+| renaming Drive Live re-spells the archived page's link | C-1 | disk: the archived body reads `[[Drive Live 2]]` |
+| the property delete strips the archived page as it strips the live one | C-2 | disk: neither frontmatter holds `Drive Stage` |
+| the group leaves Collection A’s Archive and the Trash as it found them | — | the seeds removed from outside, `Drive Stage`'s bundle emptied under `permanentDelete` (then off again); `bundles:list` answers no archived row and no `Drive Stage` row |
+
+**Pruned:** the NavView sidebar search, which reads the same tree `nexus:state` answers and has no driven path in the harness (the Path Links Drive's `pending` at `:786`); link suggestions, which read the renderer's `pageIndexOf(tree)` and are covered by the tree check; Context and Space cascades into the Archive, which ride the content reach the link rename proves (`queryMembers ?? nexusCorpus`, `contextCascade.ts:72`) and are pinned in vitest.
+
 #### Pruned
 
 - **The write order, a case-only rename, the single watcher restart, nesting, an entry naming no folder, and the corrupt-settings refusals:** none is visible, and `mutate.test.ts` and `settings.test.ts` pin each.

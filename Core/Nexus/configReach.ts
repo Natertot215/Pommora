@@ -30,12 +30,15 @@ import { editJsonStrict, type StrictEdit, updateNexusConfig } from '../Files/ato
 import { same } from '../Files/stableJson'
 import { errText } from '../Contract/result'
 import { sidecarPath, tileDocPath } from '../Paths/paths'
-import { isAtOrUnder, join } from '../Paths/posix'
+import { dirname, isAtOrUnder, join, relative } from '../Paths/posix'
+import { sidecarsUnder } from '../Files/walk'
+import { sidecarId } from '../Files/sidecar'
+import { scopeOf } from '../Settings/codec'
 import { isPlainObject } from '../Contract/validators'
 import type { CollectionNode, NexusTree, SetNode } from './tree'
 import type { CascadeReport } from './cascade'
 import type { ContainerKind, HeldKind } from './entities'
-import { containerAt, contextAt, damagedFolders, spaceAt } from './treePatch'
+import { archiveReach, containerAt, contextAt, damagedFolders, spaceAt } from './treePatch'
 
 // ── Roles ──
 type Role =
@@ -309,11 +312,21 @@ type Container = { kind: ContainerKind; id: string; dir: string }
 
 const reaches = (dir: string, under?: string): boolean => !under || isAtOrUnder(dir, under)
 
-function containersOf(tree: NexusTree, root: string, under?: string): Container[] {
-  return tree.collections
+async function containersOf(tree: NexusTree, root: string, under?: string): Promise<Container[]> {
+  const live = tree.collections
     .flatMap(within)
     .map((node) => ({ kind: node.kind, id: node.id, dir: join(root, node.path) }))
     .filter(({ dir }) => reaches(dir, under))
+  const archive = archiveReach(tree, under && relative(root, under))
+  if (archive === null) return live
+  const files = await sidecarsUnder(root, scopeOf(tree.config), join(root, archive))
+  const archived = await Promise.all(
+    files.map(async (file): Promise<Container[]> => {
+      const id = await sidecarId(dirname(file), 'set')
+      return id === undefined ? [] : [{ kind: 'set', id, dir: dirname(file) }]
+    }),
+  )
+  return [...live, ...archived.flat()]
 }
 
 export async function reachConfig(
@@ -339,7 +352,7 @@ export async function reachConfig(
     return outcome === 'written'
   }
   const { view: edit, rule } = editsOf(e)
-  const containers = containersOf(tree, root, under)
+  const containers = await containersOf(tree, root, under)
   const damaged = damagedFolders(tree.unreadable)
     .map((u) => ({ kind: u.kind, dir: join(root, u.path) }))
     .filter(({ dir }) => reaches(dir, under))

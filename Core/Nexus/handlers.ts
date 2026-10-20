@@ -4,6 +4,7 @@ import { replayPendingRename } from '../Contexts/contextCascade'
 import { ensureContextsRegistry } from '../Contexts/contextsRegistry'
 import { seedContentIndex } from '../Index/indexSeed'
 import { readHeadings } from '../Index/contentIndex'
+import { archivedCollectionIdOf } from '../Paths/nexusPaths'
 import { isStringArray } from '../Contract/validators'
 import { forgetLastReads, targetTaken } from '../Files/atomicWrite'
 import { nameError } from '../Paths/names'
@@ -164,9 +165,12 @@ export const nexusHandlers = {
     return ok(null)
   }),
 
-  'index:headings': withRoot(async (_root, _ctx, paths: unknown) =>
-    ok(readHeadings(isStringArray(paths) ? paths : undefined) ?? {}),
-  ),
+  'index:headings': withRoot(async (_root, _ctx, paths: unknown) => {
+    const headings = Object.entries(readHeadings(isStringArray(paths) ? paths : undefined) ?? {})
+    return ok(
+      Object.fromEntries(headings.filter(([path]) => archivedCollectionIdOf(path) === null)),
+    )
+  }),
 
   'path:reveal': withRoot(async (root, ctx, p: unknown) => {
     if (typeof p !== 'string') return ok(null)

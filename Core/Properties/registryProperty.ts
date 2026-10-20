@@ -18,8 +18,8 @@ import {
 } from './properties'
 import { ok, fail, type Result } from '../Contract/result'
 import { renameFrontmatterKey } from '../Files/pageFile'
-import { collectionFolders } from './assignment'
-import { confirmedKeyHolders, keyHolderFiles } from './keyHolders'
+import { confirmedKeyHolders, governedReach } from './keyHolders'
+import { queryKeyHolders } from '../Index/contentIndex'
 import { sweepCount, sweepGovernedRoots, type SweepPlan } from './governedSweep'
 import { rekeyHeld, type KeyCollision } from '../Files/rootValues'
 import {
@@ -109,7 +109,7 @@ async function renamePlan(
   to: string,
 ): Promise<{ files: string[]; plan: SweepPlan }> {
   // Queried by the OLD key: a page holding only the new one needs no rewrite, and one holding both holds the old one too.
-  const files = await keyHolderFiles(root, from, await collectionFolders(root))
+  const files = await governedReach(root, queryKeyHolders(from))
   const text = (content: string): string | null =>
     renameFrontmatterKey(content, from, to, NEW_KEY_IS_FRESHER)
   return { files, plan: { text, sidecars: (raw) => rekeyHeld(raw, from, to, NEW_KEY_IS_FRESHER) } }
@@ -123,10 +123,9 @@ export async function renameSweep(root: string, from: string, to: string): Promi
 export type PropertyRename = { from: string; to: string } & SchemaCascade
 
 async function bothKeyHolders(root: string, from: string, to: string): Promise<string[]> {
-  const folders = await collectionFolders(root)
-  const fromHolders = await confirmedKeyHolders(root, from, folders)
+  const fromHolders = await confirmedKeyHolders(root, from)
   if (fromHolders.length === 0) return []
-  const toHolders = new Set(await confirmedKeyHolders(root, to, folders))
+  const toHolders = new Set(await confirmedKeyHolders(root, to))
   return fromHolders.filter((f) => toHolders.has(f))
 }
 

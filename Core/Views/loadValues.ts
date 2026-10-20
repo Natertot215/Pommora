@@ -2,7 +2,8 @@ import { join, relative } from '../Paths/posix'
 import type { PageValues } from './viewRow'
 import { pageValuesOf } from './pageValues'
 import { readPageRecord } from '../Nexus/readNexus'
-import { folderCorpus } from '../Index/indexSeed'
+import { liveTreeOf } from '../Nexus/liveTree'
+import { containerAt, pagePathsIn } from '../Nexus/treePatch'
 import { livePathOf } from '../Nexus/heldPages'
 
 async function corpus(
@@ -10,7 +11,10 @@ async function corpus(
   containerRelPath: string,
   pageIds?: readonly string[],
 ): Promise<string[]> {
-  if (!pageIds) return folderCorpus(rootPath, join(rootPath, containerRelPath))
+  if (!pageIds) {
+    const tree = await liveTreeOf(rootPath)
+    return pagePathsIn(containerAt(tree, containerRelPath)).map((rel) => join(rootPath, rel))
+  }
   return pageIds.flatMap((id) => {
     const rel = livePathOf(rootPath, id)
     return rel ? [join(rootPath, rel)] : []

@@ -88,6 +88,25 @@ describe('migrateAssets', () => {
     expect(await pathExists(join(root, 'file-assets', 'Cover.png'))).toBe(true)
   })
 
+  it('rewrites the links in an archived Set’s sidecar and an archived page before the sweep trashes the legacy folder', async () => {
+    await asset('a/Cover.png', 'cover')
+    const bundles = '.nexus/archive/col-notes/Notes/2026-10-20T12-00-00-000Z'
+    const set = `${bundles}__Old.archived/Old`
+    const page = `${bundles}__Gone.md.archived`
+    await mkdir(join(root, set), { recursive: true })
+    await mkdir(join(root, page), { recursive: true })
+    await writeFile(
+      join(root, set, '_pageset.json'),
+      JSON.stringify({ id: 'old', banner: '.nexus/assets/a/Cover.png' }),
+    )
+    await writeFile(join(root, page, 'Gone.md'), '---\nbanner: "[[Cover.png]]"\n---\n\nbody')
+    const r = await migrateAssets(root, nexusDeps)
+    expect(r?.rewritten).toBe(2)
+    expect(r?.trashed).toBe(1)
+    expect((await readJson(`${set}/_pageset.json`)).banner).toBe('[[Cover.png]]')
+    expect(await pathExists(join(root, 'file-assets', 'Cover.png'))).toBe(true)
+  })
+
   it('holds the sweep when a store can’t be read', async () => {
     await asset('a/Cover.png', 'cover')
     await writeFile(join(root, 'Notes', '_pagecollection.json'), '{ not json')

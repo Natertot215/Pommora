@@ -1,15 +1,19 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { chmod, rm, mkdir, readFile, stat, utimes, writeFile } from 'node:fs/promises'
-import { join } from '../Paths/posix'
+import { dirname, join } from '../Paths/posix'
 import { noModeBits, seedSpaceSidecar, tempRoot } from '../Testing/hostFs'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import { indexWrittenPage, nexusCorpus, seedContentIndex } from '../Index/indexSeed'
-import { dropLiveTree } from '../Nexus/liveTree'
+import { dropLiveTree, liveTreeOf } from '../Nexus/liveTree'
+import { nexusPages } from '../Nexus/heldPages'
+import { createFolderEntity } from '../Nexus/folderEntity'
+import { newId } from '../Nexus/ids'
 import { createProperty, renameProperty } from './registryProperty'
 import { renameOption } from './optionOps'
 import { deleteProperty } from './deleteProperty'
-import { confirmedKeyHolders, keyedHolders, keyHolderFiles } from './keyHolders'
+import { collectionFolders, confirmedKeyHolders, governedReach, keyedHolders } from './keyHolders'
+import { queryKeyHolders } from '../Index/contentIndex'
 import { sweepGovernedRoots } from './governedSweep'
 
 vi.mock('./governedSweep', async (importOriginal) => {
@@ -22,11 +26,24 @@ const sweepSpy = vi.mocked(sweepGovernedRoots)
 let root: string
 const abs = (...segs: string[]): string => join(root, ...segs)
 const corpus = async (): Promise<string[]> => (await nexusCorpus(root)).map((rel) => abs(rel))
+const pageText = (n: string, fm: string): string =>
+  `---\nID: 01ARZ3NDEKPSV4RRFFQ69G5${n.padStart(3, 'F').slice(-3).toUpperCase()}\n${fm}---\n\nbody\n`
 const page = (n: string, fm: string): Promise<void> =>
-  writeFile(
-    abs('Notes', `${n}.md`),
-    `---\nID: 01ARZ3NDEKPSV4RRFFQ69G5${n.padStart(3, 'F').slice(-3).toUpperCase()}\n${fm}---\n\nbody\n`,
+  writeFile(abs('Notes', `${n}.md`), pageText(n, fm))
+const archived = async (name: string, fm: string, collection = 'c1'): Promise<string> => {
+  const file = abs(
+    '.nexus',
+    'archive',
+    collection,
+    'Notes',
+    `2026-10-20T12-00-00-000Z__${name}.md.archived`,
+    `${name}.md`,
   )
+  await mkdir(dirname(file), { recursive: true })
+  await writeFile(file, pageText(name, fm))
+  await indexWrittenPage(root, file)
+  return file
+}
 
 beforeEach(async () => {
   root = tempRoot('pom-keyh-')
@@ -59,17 +76,20 @@ afterEach(async () => {
   await rm(root, { recursive: true, force: true })
 })
 
-describe('keyHolderFiles', () => {
-  it('answers the queried holders intersected with the scope folders', async () => {
-    const files = await keyHolderFiles(root, 'Stage', [abs('Notes')])
-    expect(files.sort()).toEqual([abs('Notes', 'HolderA.md'), abs('Notes', 'HolderB.md')])
+describe('governedReach', () => {
+  it('answers the queried holders inside every Collection and the Archive', async () => {
+    const old = await archived('Q9C', 'Stage: Draft\n')
+    const files = await governedReach(root, queryKeyHolders('Stage'))
+    expect(files.sort()).toEqual(
+      [abs('Notes', 'HolderA.md'), abs('Notes', 'HolderB.md'), old].sort(),
+    )
   })
 
   it('a name registered after the seed finds the pages already holding it, with no re-read', async () => {
     await page('Late', 'Notes: x\n')
     await seedContentIndex(root)
     await createProperty(root, { id: 'prop_n', label: 'Notes', type: 'link' })
-    expect(await keyHolderFiles(root, 'Notes', [abs('Notes')])).toEqual([abs('Notes', 'Late.md')])
+    expect(await governedReach(root, queryKeyHolders('Notes'))).toEqual([abs('Notes', 'Late.md')])
   })
 
   it('a rename onto a key a page holds beside the old one is refused through the index, and the un-governed note never counts', async () => {
@@ -92,7 +112,7 @@ describe('keyHolderFiles', () => {
         await page('HolderB', 'Stage: Done\n')
         await chmod(b, 0o000)
         await seedContentIndex(root)
-        expect((await keyHolderFiles(root, 'Stage', [abs('Notes')])).sort()).toEqual([a, b])
+        expect((await governedReach(root, queryKeyHolders('Stage'))).sort()).toEqual([a, b])
       } finally {
         await chmod(a, 0o644)
         await chmod(b, 0o644)
@@ -135,19 +155,58 @@ describe('keyHolderFiles', () => {
     await page('Q9X', 'phase: x\n')
     await seedContentIndex(root)
     await seedSpaceSidecar(root, 'Projects', 'Pommora', { id: 'sp1', PHASE: 'y' })
-    expect(await confirmedKeyHolders(root, 'Phase', [abs('Notes')])).toEqual([])
+    expect(await confirmedKeyHolders(root, 'Phase')).toEqual([])
     await page('Q9Y', 'Phase: x\n')
     await seedContentIndex(root)
-    expect(await confirmedKeyHolders(root, 'Phase', [abs('Notes')])).toEqual([
-      abs('Notes', 'Q9Y.md'),
-    ])
+    expect(await confirmedKeyHolders(root, 'Phase')).toEqual([abs('Notes', 'Q9Y.md')])
   })
 
   it('with no index it answers the corpus intersected the same way', async () => {
     installStores(NO_STORES)
-    const files = await keyHolderFiles(root, 'Stage', [abs('Notes')])
+    const files = await governedReach(root, queryKeyHolders('Stage'))
     expect(files).toHaveLength(30)
     expect(files.some((f) => f.includes('Loose'))).toBe(false)
+  })
+
+  it('`only` reaches one Collection folder and its own Archive', async () => {
+    await mkdir(abs('Other'), { recursive: true })
+    await writeFile(
+      abs('Other', '_pagecollection.json'),
+      JSON.stringify({ id: 'c2', properties: ['prop_s'] }),
+    )
+    await writeFile(abs('Other', 'Elsewhere.md'), pageText('Elsewhere', 'Stage: Draft\n'))
+    await indexWrittenPage(root, abs('Other', 'Elsewhere.md'))
+    const own = await archived('Q9D', 'Stage: Draft\n')
+    await archived('Q9E', 'Stage: Draft\n', 'c2')
+    dropLiveTree()
+    const files = await governedReach(root, queryKeyHolders('Stage'), abs('Notes'))
+    expect(files.sort()).toEqual(
+      [abs('Notes', 'HolderA.md'), abs('Notes', 'HolderB.md'), own].sort(),
+    )
+  })
+
+  it('reaches an Archive whose Collection the tree no longer holds', async () => {
+    const orphan = await archived('Orphan', 'Stage: Draft\n', 'c9')
+    expect(await governedReach(root, queryKeyHolders('Stage'))).toContain(orphan)
+  })
+
+  it('a rename onto a key an archived page holds beside the old one is refused', async () => {
+    await archived('Q9A', 'Stage: s\nPhase: x\n')
+    expect((await renameProperty(root, 'prop_s', 'Phase')).ok).toBe(false)
+    expect((await renameProperty(root, 'prop_s', 'Step')).ok).toBe(true)
+  })
+
+  it('an option rename rewrites an archived holder', async () => {
+    const held = await archived('Q9B', 'Stage: Draft\n')
+    expect((await renameOption(root, 'prop_s', 'Draft', 'Sketch')).ok).toBe(true)
+    expect(await readFile(held, 'utf8')).toContain('Sketch')
+    expect(await readFile(abs('Loose', 'Note.md'), 'utf8')).toContain('Draft')
+  })
+
+  it('collectionFolders lists every collection folder from the live tree', async () => {
+    const t = await createFolderEntity(root, 'collection', 'Tasks', newId())
+    if (!t.ok) throw new Error('setup failed')
+    expect((await collectionFolders(root)).sort()).toEqual([abs('Notes'), t.value.path].sort())
   })
 })
 
@@ -155,9 +214,31 @@ describe('keyedHolders', () => {
   it('files no value for a page holding another casing of the key', async () => {
     await page('K1', 'tags: [a]\n')
     const file = abs('Notes', 'K1.md')
-    expect(await keyedHolders([file], 'Tags')).toEqual({
+    expect(await keyedHolders([file], 'Tags', new Map())).toEqual({
       values: {},
       strip: [file],
+      partial: false,
+    })
+  })
+
+  it('keeps both claimants of an id the map marks null out of the strip', async () => {
+    const a = abs('Notes', 'HolderA.md')
+    const copy = abs('Notes', 'HolderA copy.md')
+    await writeFile(copy, await readFile(a, 'utf8'))
+    const id = '01ARZ3NDEKPSV4RRFFQ69G5ERA'
+    expect(await keyedHolders([a, copy], 'Stage', new Map([[id, null]]))).toEqual({
+      values: {},
+      strip: [],
+      partial: true,
+    })
+  })
+
+  it('files and strips an archived holder by its id', async () => {
+    const old = await archived('Q9F', 'Stage: Draft\n')
+    const { byId } = await nexusPages(root, await liveTreeOf(root))
+    expect(await keyedHolders([old], 'Stage', byId)).toEqual({
+      values: { '01ARZ3NDEKPSV4RRFFQ69G5Q9F': 'Draft' },
+      strip: [old],
       partial: false,
     })
   })

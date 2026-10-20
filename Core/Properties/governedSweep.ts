@@ -6,10 +6,11 @@ import {
   rewritePreservingTimes,
 } from '../Files/atomicWrite'
 import { machine } from '../Platform/machine'
-import { isMarkdownFile, join } from '../Paths/posix'
+import { isMarkdownFile, join, relative } from '../Paths/posix'
+import { archivedCollectionIdOf } from '../Paths/nexusPaths'
 import { ID_KEY } from '../Nexus/identityMark'
 import { asString } from '../Nexus/coerce'
-import type { EntityRecord } from '../Nexus/record'
+import type { NexusPages } from '../Nexus/heldPages'
 import { splitFrontmatter, sweepParse, type SweptPage } from '../Files/pageFile'
 import type { Json } from '../Files/stableJson'
 import { spaceSidecars } from '../Contexts/spaceSidecar'
@@ -110,8 +111,10 @@ export async function sweepGovernedRoots(
   return out
 }
 
-export const sweepCount = async (root: string, files: string[], plan: SweepPlan): Promise<number> =>
-  (await sweepGovernedRoots(root, files, plan, true)).touched.size
+export async function sweepCount(root: string, files: string[], plan: SweepPlan): Promise<number> {
+  const shown = files.filter((file) => archivedCollectionIdOf(relative(root, file)) === null)
+  return (await sweepGovernedRoots(root, shown, plan, true)).touched.size
+}
 
 /** Returns the keys a sweep changed to what they held, each file whole while it still holds the sweep's write, so a write since to any other key or to the body is kept; answers the files it couldn't put back. */
 export async function undoSweep(touched: SweepResult['touched']): Promise<string[]> {
@@ -147,10 +150,10 @@ function keysPutBack(file: string, now: string, before: string, after: string): 
   return jsonText(putBack(raw, file))
 }
 
-/** Rewrites each page or Space whose ID is in `values` — found where `roots` places it, matched by the ID it carries — and answers the IDs whose root now holds what its rewrite asked for; a null rewrite leaves its root as it is. */
+/** Rewrites each page or Space whose ID is in `values` — found where `roots`, the by-id projection, places it, matched by the ID it carries, and left alone where two files claim it — and answers the IDs whose root now holds what its rewrite asked for; a null rewrite leaves its root as it is. */
 export async function sweepRootsById<T>(
   root: string,
-  roots: Record<string, EntityRecord>,
+  roots: NexusPages['byId'],
   values: Record<string, T>,
   rewrite: (raw: Json, value: T) => Json | null,
 ): Promise<Set<string>> {
@@ -159,16 +162,19 @@ export async function sweepRootsById<T>(
     (idKey: string): Rewrite =>
     (raw, file) => {
       const id = asString(raw[idKey])
-      if (id === undefined || !Object.hasOwn(values, id)) return null
+      if (id === undefined || !Object.hasOwn(values, id) || roots.get(id) === null) return null
       const next = rewrite(raw, values[id])
       if (next !== null) asked.set(file, id)
       return next
     }
   const ids = Object.keys(values)
-  const pages = ids.flatMap((id) => (roots[id]?.kind === 'page' ? join(root, roots[id].path) : []))
+  const pages = ids.flatMap((id) => {
+    const at = roots.get(id)
+    return at?.kind === 'page' ? join(root, at.path) : []
+  })
   const { skipped } = await sweepGovernedRoots(root, pages, {
     raw: byId(ID_KEY),
-    ...(ids.some((id) => roots[id]?.kind === 'space') ? { sidecars: byId('id') } : {}),
+    ...(ids.some((id) => roots.get(id)?.kind === 'space') ? { sidecars: byId('id') } : {}),
   })
   for (const file of skipped) asked.delete(file)
   return new Set(asked.values())

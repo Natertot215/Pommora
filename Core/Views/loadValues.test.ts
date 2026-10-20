@@ -13,14 +13,21 @@ const P2 = '01KVGMT8BFP350FZZXAMG1QDR2'
 let root: string
 beforeEach(async () => {
   root = tempRoot('pom-loadvalues-')
+  await mkdir(join(root, '.nexus'), { recursive: true })
+  await writeFile(join(root, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nxl' }))
+  await mkdir(join(root, 'Col', 'SetA'), { recursive: true })
+  await writeFile(join(root, 'Col', '_pagecollection.json'), JSON.stringify({ id: 'col' }))
+  await writeFile(join(root, 'Col', 'SetA', '_pageset.json'), JSON.stringify({ id: 'set' }))
 })
 afterEach(async () => {
+  dropLiveTree()
   await rm(root, { recursive: true, force: true })
 })
 
+const hold = async (): Promise<void> => seedLiveTree(await readNexus(root))
+
 describe('loadValues', () => {
   it('maps page id → frontmatter across the container and its nested Sets', async () => {
-    await mkdir(join(root, 'Col', 'SetA'), { recursive: true })
     await writeFile(
       join(root, 'Col', 'p1.md'),
       '---\nID: 01KVGMT8BFP350FZZXAMG1QDR1\n<Areas>:\n  - Work\nStatus: in_progress\n---\n\nbody\n',
@@ -29,6 +36,7 @@ describe('loadValues', () => {
       join(root, 'Col', 'SetA', 'p2.md'),
       '---\nID: 01KVGMT8BFP350FZZXAMG1QDR2\n<Count>: 7\n---\n\nbody\n',
     )
+    await hold()
 
     const values = await loadValues(root, 'Col')
     expect(Object.keys(values).sort()).toEqual([P1, P2])
@@ -42,11 +50,11 @@ describe('loadValues', () => {
     const tz = process.env.TZ
     process.env.TZ = 'America/New_York'
     try {
-      await mkdir(join(root, 'Col'), { recursive: true })
       const file = join(root, 'Col', 'p1.md')
       await writeFile(file, `---\nID: ${P1}\n---\n\nbody\n`)
       const modified = new Date('2026-09-02T00:30:00.000Z')
       await utimes(file, modified, modified)
+      await hold()
 
       const values = await loadValues(root, 'Col')
       expect(values[P1].modifiedAt).toBe('2026-09-01T20:30:00')
@@ -58,10 +66,10 @@ describe('loadValues', () => {
   })
 
   it('one undecodable ID leaves the rest of the batch intact', async () => {
-    await mkdir(join(root, 'Col'), { recursive: true })
     const bad = `8${P1.slice(1)}`
     await writeFile(join(root, 'Col', 'p1.md'), `---\nID: ${P1}\n---\n\nbody\n`)
     await writeFile(join(root, 'Col', 'bad.md'), `---\nID: ${bad}\n---\n\nbody\n`)
+    await hold()
 
     const values = await loadValues(root, 'Col')
     expect(values[bad].createdAt).toBeNull()
@@ -69,23 +77,23 @@ describe('loadValues', () => {
   })
 
   it('an ID-less page is absent from the values', async () => {
-    await mkdir(join(root, 'Col'), { recursive: true })
     await writeFile(join(root, 'Col', 'p1.md'), `---\nID: ${P1}\n---\n\nbody\n`)
     await writeFile(
       join(root, 'Col', 'noid.md'),
       '---\ntitle: x\n<Areas>:\n  - Work\nStatus: in_progress\n---\n\nbody\n',
     )
+    await hold()
 
     expect(Object.keys(await loadValues(root, 'Col'))).toEqual([P1])
   })
 
   // An editor that clears a field leaves `banner:` null; the page still has an id, properties, and a mtime — none of which a blank banner may take away.
   it('keeps a page whose icon or banner is null in the batch, values intact', async () => {
-    await mkdir(join(root, 'Col'), { recursive: true })
     await writeFile(
       join(root, 'Col', 'p1.md'),
       `---\nID: ${P1}\nbanner:\nStatus: Active\n---\n\nbody\n`,
     )
+    await hold()
 
     const values = await loadValues(root, 'Col')
     expect(values[P1]).toBeDefined()
@@ -96,24 +104,27 @@ describe('loadValues', () => {
 
   // A push names the pages it touched; reading only those keeps a body autosave from re-reading the whole container on every pause.
   it('reads only the named pages, resolved through the live tree', async () => {
-    await mkdir(join(root, '.nexus'), { recursive: true })
-    await writeFile(join(root, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nxl' }))
-    await mkdir(join(root, 'Col', 'SetA'), { recursive: true })
-    await writeFile(join(root, 'Col', '_pagecollection.json'), JSON.stringify({ id: 'col' }))
-    await writeFile(join(root, 'Col', 'SetA', '_pageset.json'), JSON.stringify({ id: 'set' }))
     await writeFile(join(root, 'Col', 'p1.md'), `---\nID: ${P1}\nStatus: a\n---\n\nbody\n`)
     await writeFile(join(root, 'Col', 'SetA', 'p2.md'), `---\nID: ${P2}\n---\n\nbody\n`)
-    seedLiveTree(await readNexus(root))
-    try {
-      const values = await loadValues(root, 'Col', [P2])
-      expect(Object.keys(values)).toEqual([P2])
-      expect(await loadValues(root, 'Col', ['01KVGMT8BFP350FZZXAMG1QDR9'])).toEqual({})
-    } finally {
-      dropLiveTree()
-    }
+    await hold()
+    const values = await loadValues(root, 'Col', [P2])
+    expect(Object.keys(values)).toEqual([P2])
+    expect(await loadValues(root, 'Col', ['01KVGMT8BFP350FZZXAMG1QDR9'])).toEqual({})
+  })
+
+  it('reads the pages the tree holds under the container, never one the tree withholds', async () => {
+    const odd = `${P1.slice(0, 10)}T${P1.slice(11)}`
+    await writeFile(join(root, 'Col', 'p1.md'), `---\nID: ${P1}\n---\n\nbody\n`)
+    await writeFile(join(root, 'Col', 'odd.md'), `---\nID: ${odd}\n---\n\nbody\n`)
+    await mkdir(join(root, 'Col', 'Loose'))
+    await writeFile(join(root, 'Col', 'Loose', 'p2.md'), `---\nID: ${P2}\n---\n\nbody\n`)
+    await hold()
+
+    expect(Object.keys(await loadValues(root, 'Col'))).toEqual([P1])
   })
 
   it('returns an empty map for an absent container', async () => {
+    await hold()
     expect(await loadValues(root, 'Nope')).toEqual({})
   })
 })

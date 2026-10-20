@@ -1,14 +1,16 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { parse } from 'yaml'
 import {
-  ask, chooseNative, click, launch, mintPageId, mouseClick, must, NEXUS, restore, results, settles, shot, sleep, until,
+  ask, chooseNative, click, escapeAll, FM, launch, mintPageId, mouseClick, must, NEXUS, openCollection, openPage,
+  pageIds, pressKey, relaunch, restore, results, settles, shot, sleep, typeText, until,
 } from '../drive-harness.mjs'
 
 const PORT = 9393
 // The plan's phases in order, named as the plan names them, so `6A` sorts before `6B`.
 const PHASES = ['1', '2', '3', '4', '5', '6A', '6B']
 const at = (phase) => PHASES.indexOf(String(phase))
-const ALL = ['1', '2']
+const ALL = ['1', '2', '3']
 const GROUPS = new Set(process.argv.slice(2))
 // The last plan phase landed in the build under test: an item owned by a later phase is expected to fail and doesn't fail the run.
 const LANDED = process.env.POMMORA_ARCHIVE_LANDED ?? '1'
@@ -37,6 +39,17 @@ const COLLECTION = 'Collection A'
 const abs = (rel) => join(NEXUS, rel)
 const exists = (rel) => existsSync(abs(rel))
 const readRel = (rel) => readFileSync(abs(rel), 'utf8')
+const frontOf = (rel) => parse(FM.exec(readRel(rel))?.[1] ?? '') ?? {}
+const bodyOf = (rel) => readRel(rel).replace(FM, '')
+function treePaths(tree) {
+  const out = new Set()
+  const walk = (n) => {
+    for (const p of n.pages ?? []) out.add(p.path)
+    for (const s of n.sets ?? []) walk(s)
+  }
+  for (const c of tree.collections) walk(c)
+  return out
+}
 const settingsOnDisk = () => JSON.parse(readRel('.nexus/settings.json'))
 const config = async (cdp) => (await ask(cdp, 'nexus:state')).value.tree.config
 const containerId = () => { const id = mintPageId(); return `${id.slice(0, 10)}0${id.slice(11)}` }
@@ -306,13 +319,100 @@ async function group2(cdp) {
   await closeSettings(cdp)
 }
 
+// ── Group 3 — Reach (Phase 3) ───────────────────────────────────────────────
+
+const STAMP = '2026-10-20T12-00-00-000Z'
+const taskMarked = (id) => `${id.slice(0, 10)}T${id.slice(11)}`
+const rowIds = (cdp) => cdp.evaluate(`[...document.querySelectorAll('.data-row[data-rid]')].map((r) => r.dataset.rid)`)
+
+/** Seeds an archived page by hand, as the archive op will file one (Phase 4), and answers the relaunched window. */
+async function group3(cdp) {
+  const colA = JSON.parse(readRel('Collection A/_pagecollection.json')).id
+  const alpha = JSON.parse(readRel('Collection A/Set Alpha/_pageset.json')).id
+  const { id: stage } = await must('add Drive Stage', ask(cdp, 'schema:add', 'Collection A', {
+    id: '',
+    label: 'Drive Stage',
+    type: 'select',
+    select_options: [{ key: 'Draft', label: 'Draft' }],
+  }))
+  const live = { rel: 'Collection A/Set Alpha/Drive Live.md', id: mintPageId() }
+  const linker = { rel: 'Collection A/Set Alpha/Drive Linker.md', id: mintPageId() }
+  const odd = { rel: 'Collection A/Drive Odd.md', id: taskMarked(mintPageId()) }
+  const bundle = `.nexus/archive/${colA}/Collection A/Set Alpha/${STAMP}__Drive Arc.md.archived`
+  const arc = { rel: `${bundle}/Drive Arc.md`, id: mintPageId() }
+  cdp = await relaunch(cdp, async () => {
+    writeFileSync(abs(live.rel), `---\nID: ${live.id}\nDrive Stage: Draft\n---\nbody\n`)
+    writeFileSync(abs(linker.rel), `---\nID: ${linker.id}\n---\n[[Drive Arc]]\n`)
+    writeFileSync(abs(odd.rel), `---\nID: ${odd.id}\n---\nbody\n`)
+    mkdirSync(abs(bundle), { recursive: true })
+    writeFileSync(abs(`${bundle}/_record.json`), JSON.stringify({ entity: 'page', id: arc.id, parent: { kind: 'container', id: alpha } }))
+    writeFileSync(abs(arc.rel), `---\nID: ${arc.id}\nDrive Stage: Draft\n---\n## Drive Heading\n\nsee [[Drive Live]]\n`)
+  })
+
+  const state = await must('nexus:state', ask(cdp, 'nexus:state'))
+  const held = treePaths(state.tree)
+  item(3, 3, 'D-2', 'the tree holds the live pages and never the archived one', held.has(live.rel) && ![...held].some((p) => p.startsWith('.nexus/') || p.endsWith('/Drive Arc.md')), show([...held].filter((p) => p.includes('Drive'))))
+  await openCollection(cdp)
+  const search = `document.querySelector('.detail-title-search')`
+  await cdp.evaluate(`${search}.focus()`)
+  await typeText(cdp, 'Drive')
+  await sleep(900)
+  const shown = await rowIds(cdp)
+  item(3, 3, 'D-2', "Collection A's view search for Drive lists Drive Live and never Drive Arc", shown.includes(live.id) && !shown.includes(arc.id), show(shown))
+  await shot(cdp, 'g3-view-search')
+  await cdp.evaluate(`(() => { const i = ${search}; i.select() })()`)
+  await pressKey(cdp, 'Backspace')
+  pageIds['Drive Linker'] = linker.id
+  await openPage(cdp, 'Drive Linker')
+  const drawn = await cdp.evaluate(`(() => { const line = [...document.querySelectorAll('.cm-content .cm-line')].find((l) => l.textContent.includes('Drive Arc')); return line ? { phantom: !!line.querySelector('.md-connection-phantom'), resolved: !!line.querySelector('.md-connection-resolved') } : null })()`)
+  item(3, 3, 'D-1', 'a link naming the archived page draws unresolved', drawn?.phantom === true && drawn.resolved === false, show(drawn))
+  await shot(cdp, 'g3-phantom')
+  await escapeAll(cdp)
+
+  const graph = await must('matrix:graph', ask(cdp, 'matrix:graph', true))
+  item(3, 3, 'K-2', 'the Matrix graph holds the live page and the one the tree withholds, and no archived page or edge', live.id in graph.values && odd.id in graph.values && !(arc.id in graph.values) && graph.links.every((l) => !l.path.startsWith('.nexus/')), show(Object.keys(graph.values).length))
+  const asked = await must('matrix:graph by path', ask(cdp, 'matrix:graph', false, [arc.rel]))
+  item(3, 3, 'K-2', 'the Matrix graph asked for the archived path answers no id', asked.ids.length === 0, show(asked.ids))
+  const headings = await must('index:headings', ask(cdp, 'index:headings'))
+  const archivedHeadings = await must('index:headings by path', ask(cdp, 'index:headings', [arc.rel]))
+  item(3, 3, 'K-2', 'the headings answer no archived path, whole or asked by path', !Object.keys(headings).some((p) => p.startsWith('.nexus/')) && Object.keys(archivedHeadings).length === 0, show(Object.keys(archivedHeadings)))
+  const loaded = await must('view:loadValues', ask(cdp, 'view:loadValues', 'Collection A'))
+  item(3, 3, 'K-2', "Collection A's value load reads the tree's pages, never the archived one or one the tree withholds", live.id in loaded && !(arc.id in loaded) && !(odd.id in loaded), show(Object.keys(loaded).length))
+
+  const count = await must('property:holders', ask(cdp, 'property:holders', stage))
+  item(3, 3, 'C-4', 'the delete confirmation’s count leaves the archived holder out', count === 1, show(count))
+  await must('rename the Draft option', ask(cdp, 'property:renameOption', stage, 'Draft', 'Final'))
+  item(3, 3, 'C-1', 'an option rename rewrites the archived page as it rewrites the live one', show(frontOf(arc.rel)['Drive Stage']) === show(['Final']) && show(frontOf(live.rel)['Drive Stage']) === show(['Final']), show([frontOf(arc.rel)['Drive Stage'], frontOf(live.rel)['Drive Stage']]))
+  await must('rename Drive Live', ask(cdp, 'mutate', { op: 'rename', path: live.rel, kind: 'page', newName: 'Drive Live 2' }))
+  live.rel = 'Collection A/Set Alpha/Drive Live 2.md'
+  item(3, 3, 'C-1', "renaming Drive Live re-spells the archived page's link", bodyOf(arc.rel).includes('[[Drive Live 2]]'), show(bodyOf(arc.rel)))
+  await must('delete Drive Stage', ask(cdp, 'property:delete', stage))
+  item(3, 3, 'C-2', 'the property delete strips the archived page as it strips the live one', !('Drive Stage' in frontOf(arc.rel)) && !('Drive Stage' in frontOf(live.rel)), show(frontOf(arc.rel)))
+
+  // The seeds leave as they came, from outside, and the deleted property's bundle is emptied, so a later group meets Collection A, its Archive, and the Trash as group 3 found them.
+  for (const rel of [live.rel, linker.rel, odd.rel, `.nexus/archive/${colA}`]) rmSync(abs(rel), { recursive: true, force: true })
+  await until('the seeds out of the tree', async () => !treePaths((await must('nexus:state', ask(cdp, 'nexus:state'))).tree).has(live.rel))
+  const stageRow = ((await ask(cdp, 'bundles:list', { kind: 'trash' })).value ?? []).find((r) => r.title === 'Drive Stage')
+  await must('permanentDelete on', ask(cdp, 'personalization:set', 'permanentDelete', true))
+  if (stageRow) await must('empty Drive Stage', ask(cdp, 'mutate', { op: 'emptyBundle', bundlePath: stageRow.bundlePath }))
+  await must('permanentDelete off', ask(cdp, 'personalization:set', 'permanentDelete', false))
+  const left = ((await ask(cdp, 'bundles:list', { kind: 'archive', id: colA })).value ?? []).length
+  item(3, 3, '—', 'the group leaves Collection A’s Archive and the Trash as it found them', left === 0 && !exists(`.nexus/archive/${colA}`) && !((await ask(cdp, 'bundles:list', { kind: 'trash' })).value ?? []).some((r) => r.title === 'Drive Stage'), show({ left }))
+  return cdp
+}
+
 // ── The run ─────────────────────────────────────────────────────────────────
 
 let cdp
 try {
   cdp = (await launch(PORT, 'archive-shots')).cdp
+  // Collection A's one saved view draws cards, so the run shows a table of its own, which the harness's restore takes back.
+  const table = { id: 'view_01KZARCHIVEDRIVE0000TABLE', name: 'Drive Table', type: 'table', property_order: ['_title'], hidden_properties: [] }
+  await must('save the Drive Table', ask(cdp, 'views:save', 'Collection A', 'collection', table, {}))
+  await must('show the Drive Table', ask(cdp, 'mutate', { op: 'setActiveView', path: 'Collection A', kind: 'collection', viewId: table.id }))
   if (GROUPS.has('1')) await group1(cdp)
   if (GROUPS.has('2')) await group2(cdp)
+  if (GROUPS.has('3')) cdp = await group3(cdp)
   cdp.close()
 } catch (e) {
   item(0, 1, '—', 'the run reached its end', false, String(e?.stack ?? e))

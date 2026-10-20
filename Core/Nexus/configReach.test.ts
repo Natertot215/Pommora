@@ -95,6 +95,12 @@ const spaceTiles = (): string => join(space(), TILE_DOC_FILENAME)
 const homeTiles = (): string => join(homepageDir(root), TILE_DOC_FILENAME)
 const matrixFile = (): string => nexusConfig(root, NEXUS_CONFIG_FILES.matrix)
 const settingsFile = (): string => nexusConfig(root, NEXUS_CONFIG_FILES.settings)
+const archivedFile = (collectionId: string, chain: string): string =>
+  join(
+    root,
+    `.nexus/archive/${collectionId}/${chain}/2026-10-20T12-00-00-000Z__Old.archived/Old`,
+    SIDECAR_FILENAME.set,
+  )
 
 const viewsOf = async (file: string): Promise<Raw[]> => (await readJsonAt(file)).views as Raw[]
 const tileViews = async (id: string): Promise<Raw[]> => {
@@ -188,6 +194,15 @@ describe('an option rename', () => {
     expect(((await readJsonAt(colFile())).property_cache as Raw).prop_s).toEqual({
       values: { p1: 'Done', p2: ['Done', 'Todo'], p3: 'Todo' },
     })
+  })
+
+  it('reaches an archived Set’s sidecar as it reaches a live one', async () => {
+    const archived = archivedFile('col_notes', 'Notes')
+    await putJson(archived, { id: 'set_old', views: [rich('view_o')] })
+    await reachConfig(root, rename)
+    const idAside = (view: Raw): Raw => ({ ...view, id: '', name: '' })
+    expect(idAside((await viewsOf(archived))[0])).toEqual(idAside((await viewsOf(setFile()))[0]))
+    expect((await viewsOf(archived))[0]).not.toEqual(rich('view_o'))
   })
 
   it('leaves the keys a view holds under another grouping, and an entry it cannot read', async () => {
@@ -415,6 +430,23 @@ describe('a pass scoped under one Collection', () => {
     }
     expect(await matrixRules()).toEqual(untouched)
     expect(await previewRules()).toEqual(untouched)
+  })
+
+  it('edits the Collection’s whole Archive and a tile sourcing an archived Set, and leaves another Collection’s Archive', async () => {
+    const archived = archivedFile('col_notes', 'Old Name')
+    const foreign = archivedFile('col_other', 'Other')
+    await putJson(archived, { id: 'set_old', views: [rich('view_o')] })
+    await putJson(foreign, { id: 'set_foreign', views: [rich('view_f')] })
+    await putJson(spaceTiles(), {
+      tiles: [
+        { id: 't_old', type: 'view', views: [{ source_id: 'set_old', config: rich('tv_old') }] },
+      ],
+    })
+    const untouched = await readFile(foreign, 'utf8')
+    await reachConfig(root, clear, col())
+    expect((await viewsOf(archived))[0].group).toEqual({ kind: 'structural' })
+    expect((await tileViews('t_old'))[0].group).toEqual({ kind: 'structural' })
+    expect(await readFile(foreign, 'utf8')).toBe(untouched)
   })
 
   it('edits only the views of a tile that source the Collection', async () => {

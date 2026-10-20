@@ -8,7 +8,7 @@ import { landingRefusal } from '../Nexus/folderEntity'
 import { fail, fault, ok, type Result } from '../Contract/result'
 import type { NexusTree } from '../Nexus/tree'
 import type { RestoreDestination } from '../Nexus/mutateRequest'
-import { recordById } from '../Nexus/record'
+import type { NexusPages } from '../Nexus/heldPages'
 import { findContainerById } from '../Nexus/treePatch'
 import { type Slot, spliceBeside } from '../Nexus/order'
 import { setChildOrder, setCollectionOrder, setSpaceOrder } from '../Nexus/reorder'
@@ -31,15 +31,15 @@ interface SiblingOrder {
 export type Refusal = 'parent-gone' | 'cannot-hold' | 'unaddressable' | 'id-live'
 type Resolution = { place: Placement; order?: SiblingOrder } | { refuse: Refusal }
 
-/** THE decision, against the CURRENT tree — a renamed parent resolves to its renamed path. Every name and title choice the tree can make is made here, and `freeOnDisk` steps it only past what the tree can't see. A live id refusal outranks every other answer — nothing may write over a living identity. */
+/** THE decision, against the CURRENT tree — a renamed parent resolves to its renamed path. Every name and title choice the tree can make is made here, and `freeOnDisk` steps it only past what the tree can't see. A live id refusal, an id the tree or the Archive holds, outranks every other answer: nothing may write over a living identity. */
 export function resolveRecord(
   record: ArtifactRecord,
   baseName: string,
   tree: NexusTree,
+  byId: NexusPages['byId'],
 ): Resolution {
-  const live = recordById(tree)
   const recordId = record.entity === 'context' ? record.registry.id : record.id
-  if (recordId && live[recordId]) return { refuse: 'id-live' }
+  if (recordId && byId.has(recordId)) return { refuse: 'id-live' }
 
   if (record.entity === 'context') {
     const finalTitle = freeName(
@@ -88,7 +88,7 @@ export function resolveRecord(
       if (record.entity === 'collection') return { refuse: 'cannot-hold' }
       const parent = findContainerById(tree, record.parent.id)
       if (!parent)
-        return live[record.parent.id] ? { refuse: 'cannot-hold' } : { refuse: 'parent-gone' }
+        return byId.has(record.parent.id) ? { refuse: 'cannot-hold' } : { refuse: 'parent-gone' }
       // A page and a Set share one folder namespace — both sibling sets block both kinds.
       const siblings = [
         ...parent.pages.map((p) => p.title),
@@ -181,6 +181,7 @@ export async function placeRecord(
   destination: RestoreDestination | undefined,
   baseName: string,
   tree: NexusTree,
+  byId: NexusPages['byId'],
 ): Promise<
   Result<{
     record: ArtifactRecord
@@ -192,7 +193,7 @@ export async function placeRecord(
   const rehomed = destination ? withDestination(stored, destination, tree) : ok(stored)
   if (!rehomed.ok) return rehomed
   const record = rehomed.value
-  const resolution = resolveRecord(record, baseName, tree)
+  const resolution = resolveRecord(record, baseName, tree, byId)
   if ('refuse' in resolution) return fault(REFUSAL_TEXT[resolution.refuse])
   const named = await freeOnDisk(root, record.entity, resolution.place)
   if (!named.ok) return named

@@ -32,6 +32,21 @@ describe('outsideContent', () => {
     expect(outsideContent('Notes/_Idea.md', scope())).toBe('hidden')
   })
 
+  it('admits the Archive, the one hidden folder read as content, while a hidden folder inside it stays hidden', () => {
+    const page = '.nexus/archive/C1/Alpha/2026-10-20T12-00-00-000Z__Beta.archived/Beta/Notes.md'
+    expect(outsideContent('.nexus/archive', scope())).toBeNull()
+    expect(outsideContent('.nexus/archive/C1', scope())).toBeNull()
+    expect(outsideContent(page, scope())).toBeNull()
+    expect(
+      outsideContent(
+        '.nexus/archive/C1/Alpha/2026-10-20T12-00-00-000Z__Beta.archived/Beta/_raw/X.md',
+        scope(),
+      ),
+    ).toBe('hidden')
+    expect(outsideContent('.nexus/settings.json', scope())).toBe('hidden')
+    expect(outsideContent('.nexus/contexts/Areas/Home', scope())).toBe('hidden')
+  })
+
   it('keeps normal paths', () => {
     expect(outsideContent('Vault A', scope())).toBeNull()
     expect(outsideContent('Vault A/Sub/Page.md', scope())).toBeNull()

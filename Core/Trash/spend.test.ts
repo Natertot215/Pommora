@@ -1133,6 +1133,28 @@ describe('restore — the returning page’s links follow the pages they named',
     )
   })
 
+  const ARCHIVED = (name: string): string =>
+    `.nexus/archive/col-notes/Notes/2026-10-20T12-00-00-000Z__${name}.md.archived/${name}.md`
+
+  it('a restore keeps the returning page’s Link value naming an archived page', async () => {
+    await del(ALPHA)
+    await mkdir(dirname(join(root, ARCHIVED('Beta'))), { recursive: true })
+    await rename(join(root, 'Notes', 'Beta.md'), join(root, ARCHIVED('Beta')))
+    await reseed()
+    await restore('Alpha.md')
+    expect(splitFrontmatter(await text(ALPHA)).Related).toBe('[[Beta]]')
+  })
+
+  it('a restore puts a stripped Link value back into the archived page that held it', async () => {
+    await mkdir(dirname(join(root, ARCHIVED('Old'))), { recursive: true })
+    await write(ARCHIVED('Old'), PAGE_C, 'Related: "[[Alpha]]"\n', 'old')
+    await reseed()
+    await del(ALPHA)
+    expect(splitFrontmatter(await text(ARCHIVED('Old')))).not.toHaveProperty('Related')
+    await restore('Alpha.md')
+    expect(splitFrontmatter(await text(ARCHIVED('Old'))).Related).toBe('[[Alpha]]')
+  })
+
   it('keeps its body and parks its value for a page deleted meanwhile', async () => {
     await del(ALPHA)
     await del('Notes/Beta.md')

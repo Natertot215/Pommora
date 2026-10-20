@@ -45,16 +45,6 @@ export const recordsOf = entityMemo([(t) => t.contexts], (tree): readonly Entity
   return records
 })
 
-/** The first record listed under each id. */
-export const recordById = entityMemo(
-  [recordsOf],
-  (tree): Readonly<Record<string, EntityRecord>> => {
-    const byId: Record<string, EntityRecord> = {}
-    for (const r of recordsOf(tree)) byId[r.id] ??= r
-    return byId
-  },
-)
-
 export const pagesOf = entityMemo([], (tree): readonly ConnPage[] =>
   recordsOf(tree)
     .filter((r) => r.kind === 'page')

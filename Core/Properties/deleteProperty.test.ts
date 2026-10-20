@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { writePageValue, writeSpaceValue } from '../Testing/propertyWrites'
 import { ID_KEY } from '../Nexus/identityMark'
-import { rm, readFile, readdir, writeFile } from 'node:fs/promises'
+import { mkdir, rm, readFile, readdir, writeFile } from 'node:fs/promises'
 import { dirname, join } from '../Paths/posix'
 import { seedSpaceSidecar, readJsonAt, tempRoot } from '../Testing/hostFs'
 import { deleteProperty, propertyHolders } from './deleteProperty'
@@ -13,7 +13,7 @@ import { type ConfigSurfaces, seedConfigSurfaces, viewOn } from '../Testing/conf
 import { assignProperty } from './assignment'
 import { removeProperty } from './removeProperty'
 import { createFolderEntity } from '../Nexus/folderEntity'
-import { newId } from '../Nexus/ids'
+import { newContentId, newId } from '../Nexus/ids'
 import { dropLiveTree } from '../Nexus/liveTree'
 import { createTestPage } from '../Testing/createTestPage'
 import { splitFrontmatter } from '../Files/pageFile'
@@ -171,7 +171,7 @@ describe('propertyHolders', () => {
     expect((await propertyHolders(root, 'prop_nope')).ok).toBe(false)
   })
 
-  it('counts what the delete strips, writing nothing', async () => {
+  it('counts what the delete strips, holding out an ID-less page and both claimants of one id, and writes nothing', async () => {
     const c = await createProperty(root, {
       id: '',
       label: 'Priority',
@@ -200,8 +200,35 @@ describe('propertyHolders', () => {
     ]
     const before = await Promise.all(files.map((f) => readFile(f, 'utf8')))
 
-    expect(await propertyHolders(root, c.value.id)).toEqual(ok(3))
+    expect(await propertyHolders(root, c.value.id)).toEqual(ok(2))
     expect(await Promise.all(files.map((f) => readFile(f, 'utf8')))).toEqual(before)
+  })
+
+  it('a property delete strips an archived holder and files its value under its id', async () => {
+    const c = await createProperty(root, {
+      id: '',
+      label: 'Priority',
+      type: 'select',
+      select_options: [{ key: 'hi', label: 'hi' }],
+    })
+    if (!c.ok) throw new Error('setup failed')
+    const notesId = (await readJsonObject(sidecarPath(notes, 'collection')))?.id as string
+    const held = join(
+      root,
+      '.nexus/archive',
+      notesId,
+      'Notes/2026-10-20T12-00-00-000Z__Old.md.archived/Old.md',
+    )
+    const pid = newContentId('page')
+    await mkdir(dirname(held), { recursive: true })
+    await writeFile(held, `---\n${ID_KEY}: ${pid}\nPriority: hi\n---\nb\n`)
+
+    expect((await deleteProperty(root, c.value.id)).ok).toBe(true)
+
+    expect(await readFile(held, 'utf8')).not.toContain('Priority')
+    const name = (await readdir(join(root, '.trash'))).find((f) => f.includes(c.value.id))
+    const record = await readRecord(join(root, '.trash', name ?? ''))
+    expect((record as { values: Record<string, unknown> }).values).toEqual({ [pid]: 'hi' })
   })
 })
 

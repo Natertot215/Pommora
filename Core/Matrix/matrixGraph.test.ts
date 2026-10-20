@@ -9,6 +9,7 @@ import { readMatrixGraph } from './matrixGraph'
 const A = '01KVGMT8BFP350FZZXAMG1QDRN'
 const B = '01KVGMT8BFP350FZZXAMG1QDRW'
 const C = '01KVGMT8BFP350FZZXAMG1QDRX'
+const D = '01KVGMT8BFP350FZZXAMG1QDRD'
 
 let stores: ReturnType<typeof memoryStores>
 
@@ -142,6 +143,21 @@ describe('readMatrixGraph', () => {
       },
     ])
     expect(readMatrixGraph(true, ['Notes/A.md'])!.links.map((l) => l.target)).toEqual(['beta'])
+  })
+
+  it('drops an archived page’s rows, its links included', () => {
+    const archived = '.nexus/archive/C1/Notes/2026-10-20T12-00-00-000Z__D.md.archived/D.md'
+    stores.stores.contentIndex!.upsertPageIndexes([
+      {
+        path: archived,
+        entry: { relations: [relation('body', 'alpha')], headings: [], values: { ID: D } },
+        stat: { mtimeMs: 5000, size: 50 },
+      },
+    ])
+    const reply = readMatrixGraph(true)!
+    expect(reply.values?.[D]).toBeUndefined()
+    expect(reply.links.some((l) => l.path === archived)).toBe(false)
+    expect(readMatrixGraph(false, [archived])!.ids).toEqual([])
   })
 
   it('reads no values when none are asked for', () => {

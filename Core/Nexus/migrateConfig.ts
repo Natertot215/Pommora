@@ -2,6 +2,7 @@ import { isPlainObject } from '../Contract/validators'
 import { rmwJsonStrict } from '../Files/atomicWrite'
 import { listFilesRecursive } from '../Files/walk'
 import {
+  ARCHIVE_DIR_REL,
   CONTEXTS_DIR_REL,
   NEXUS_CONFIG_FILES,
   SIDECARS,
@@ -42,10 +43,11 @@ export const renamedSidecar = (meta: unknown) =>
 const renamedTileDoc = (doc: unknown) =>
   isPlainObject(doc) ? mapTiles(doc, (tile) => mapViews(tile, renamedView)) : null
 
-// Containers in scope ride the adoption pass (`stampFolder`); only the Trash and the tile documents are walked here.
+// Containers in scope ride the adoption pass (`stampFolder`); only the Trash, the Archive, and the tile documents are walked here.
 export async function normalizeSavedViews(root: string): Promise<void> {
-  for (const file of await listFilesRecursive(join(root, TRASH_DIR), [...SIDECARS]))
-    await rmwJsonStrict(file, renamedSidecar)
+  for (const dir of [TRASH_DIR, ARCHIVE_DIR_REL])
+    for (const file of await listFilesRecursive(join(root, dir), [...SIDECARS]))
+      await rmwJsonStrict(file, renamedSidecar)
   // Runs at open, before a tree exists to ask TILE_HOSTS for its boards.
   for (const dir of [homepageDir(root), join(root, CONTEXTS_DIR_REL)])
     for (const file of await listFilesRecursive(dir, [TILE_DOC_FILENAME]))

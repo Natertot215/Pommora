@@ -38,7 +38,7 @@ const viewsIn = async (
 ): Promise<Record<string, unknown>[]> =>
   (await readJsonAt<{ views: Record<string, unknown>[] }>(sidecarAt(dir, kind))).views
 
-// The open sequence: the walk covers the Trash and tile documents, and adoption every container in scope.
+// The open sequence: the walk covers the Trash, the Archive, and tile documents, and adoption every container in scope.
 const open = async (): Promise<void> => {
   await normalizeSavedViews(root)
   await stampAdopted(root)
@@ -78,13 +78,15 @@ describe('normalizeSavedViews', () => {
     ])
   })
 
-  it("renames the Table view's old glyph key in sidecars, trashed sidecars, and every tile document", async () => {
+  it("renames the Table view's old glyph key in sidecars, trashed and archived sidecars, and every tile document", async () => {
     await seed('Notes', [
       { ...view('view_a'), icon: 'table' },
       { ...view('view_b'), icon: 'star' },
     ])
     const trashed = join('.trash', 'Old.deleted', 'Old')
     await seed(trashed, [{ ...view('view_t'), icon: 'table' }])
+    const archived = '.nexus/archive/col-notes/Notes/2026-10-20T12-00-00-000Z__Old.archived/Old'
+    await seed(archived, [{ ...view('view_r'), icon: 'table' }], 'set')
     const tileDoc = join(nexusDir(root), 'contexts', 'Areas', 'A', TILE_DOC_FILENAME)
     await mkdir(join(tileDoc, '..'), { recursive: true })
     const tile = (icon: string) => ({ config: { ...view('embed'), icon }, source_id: 's' })
@@ -101,6 +103,7 @@ describe('normalizeSavedViews', () => {
     await open()
     expect((await viewsIn('Notes')).map((v) => v.icon)).toEqual(['view-table', 'star'])
     expect((await viewsIn(trashed))[0].icon).toBe('view-table')
+    expect((await viewsIn(archived, 'set'))[0].icon).toBe('view-table')
     type TileDoc = { tiles: { views: { config: { icon: string } }[] }[] }
     const doc = await readJsonAt<TileDoc>(tileDoc)
     expect(doc.tiles[0].views.map((e) => e.config.icon)).toEqual(['view-table', 'star'])

@@ -1,6 +1,9 @@
 import { assignedIds } from './assignment'
 import { cachedValues, patchCacheBlock } from './propertyCache'
-import { keyedHolders, keyHolderFiles } from './keyHolders'
+import { governedReach, keyedHolders } from './keyHolders'
+import { queryKeyHolders } from '../Index/contentIndex'
+import { nexusPages } from '../Nexus/heldPages'
+import { liveTreeOf } from '../Nexus/liveTree'
 import { patchSidecar } from '../Files/sidecar'
 import { sidecarPath } from '../Paths/paths'
 import { readJsonObject } from '../Files/atomicWrite'
@@ -33,9 +36,11 @@ async function removeInner(
   if (!def) return NOTHING_TO_REMOVE
   const key = def.key
 
+  const { byId } = await nexusPages(root, await liveTreeOf(root))
   const { values, strip } = await keyedHolders(
-    await keyHolderFiles(root, key, [collectionFolder]),
+    await governedReach(root, queryKeyHolders(key), collectionFolder),
     key,
+    byId,
   )
   const clear = propertyClear(propertyId)
   // Views, cache, and the assignment change in ONE write under the sidecar's own lock, so the page-read window above can't revert a concurrent icon/banner/view write — THEN the pass and the page strip. The cache keeps the values it already holds, which a refill cut short left for pages it never reached.

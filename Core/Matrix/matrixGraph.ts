@@ -1,5 +1,6 @@
 import { readPageRelations } from '../Index/contentIndex'
 import { ID_KEY } from '../Nexus/identityMark'
+import { archivedCollectionIdOf } from '../Paths/nexusPaths'
 import type { PageRelationRow } from '../Platform/stores'
 import { pageValuesOf } from '../Views/pageValues'
 import type { PageValues } from '../Views/viewRow'
@@ -15,7 +16,7 @@ export interface MatrixGraphReply {
   ids?: string[]
 }
 
-// `null` when there is no index yet; the renderer keeps what it holds and the next push refetches. Without values, the store reads each page's ID alone. An ask for named paths also answers every page id at them, linked or not, so the renderer lets go of the rows a moved page held under its old path.
+// `null` when there is no index yet; the renderer keeps what it holds and the next push refetches. Without values, the store reads each page's ID alone. An ask for named paths also answers every page id at them, linked or not, so the renderer lets go of the rows a moved page held under its old path. An archived page answers nothing, so it draws no node and no edge.
 export function readMatrixGraph(withValues: boolean, paths?: string[]): MatrixGraphReply | null {
   const rows = readPageRelations(paths, withValues ? undefined : ID_KEY)
   if (!rows) return null
@@ -23,7 +24,7 @@ export function readMatrixGraph(withValues: boolean, paths?: string[]): MatrixGr
   const values: MatrixGraphReply['values'] = withValues ? {} : null
   for (const [path, page] of Object.entries(rows.pages)) {
     const id = page.values[ID_KEY]
-    if (typeof id !== 'string') continue
+    if (typeof id !== 'string' || archivedCollectionIdOf(path) !== null) continue
     idOf.set(path, id)
     if (values) values[id] = pageValuesOf(id, page.values, page.mtimeMs)
   }

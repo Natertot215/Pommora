@@ -13,6 +13,7 @@ import { parkLinks } from './holdings'
 import { readRecord } from '../Bundles/record'
 import { bundleRows } from '../Bundles/rows'
 import { readNexus } from '../Nexus/readNexus'
+import { nexusPages } from '../Nexus/heldPages'
 import { closeSession, openSession } from '../Nexus/session'
 import { splitFrontmatter } from '../Files/pageFile'
 import { deleteProperty } from '../Properties/deleteProperty'
@@ -33,8 +34,11 @@ const deps: TrashDeps = {
   trashMode: 'nexus',
   trashToSystem: async (p) => void handed.push(p),
 }
-const rows = async () =>
-  bundleRows(await listBundles(root, { kind: 'trash' }), { kind: 'trash' }, await readNexus(root))
+const rows = async () => {
+  const tree = await readNexus(root)
+  const { byId } = await nexusPages(root, tree)
+  return bundleRows(await listBundles(root, { kind: 'trash' }), { kind: 'trash' }, tree, byId)
+}
 const find = async (title: string) => {
   const hit = (await rows()).find((r) => r.title === title)
   expect(hit, `no row titled ${title}`).toBeDefined()

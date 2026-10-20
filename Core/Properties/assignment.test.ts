@@ -1,10 +1,11 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { dirname, join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
-import { assignProperty, reorderAssignment, collectionFolders } from './assignment'
+import { assignProperty, reorderAssignment } from './assignment'
 import { dropLiveTree } from '../Nexus/liveTree'
 import { createFolderEntity } from '../Nexus/folderEntity'
-import { newId } from '../Nexus/ids'
+import { newContentId, newId } from '../Nexus/ids'
 import { createTestPage } from '../Testing/createTestPage'
 import { sidecarPath } from '../Paths/paths'
 import { readJsonObject } from '../Files/atomicWrite'
@@ -43,12 +44,6 @@ it('reorder moves within the assignment array', async () => {
   await assignProperty(root, notes, 'prop_c')
   await reorderAssignment(root, notes, 'prop_c', 0)
   expect(await ids(notes)).toEqual(['prop_c', 'prop_a', 'prop_b'])
-})
-
-it('collectionFolders lists every collection folder from the live tree', async () => {
-  const t = await createFolderEntity(root, 'collection', 'Tasks', newId())
-  if (!t.ok) throw new Error('setup failed')
-  expect((await collectionFolders(root)).sort()).toEqual([notes, t.value.path].sort())
 })
 
 it('a Remove racing an Assign on ONE collection never loses either write (breaker H-2)', async () => {
@@ -134,5 +129,40 @@ describe('a re-assign puts a cached value back', () => {
 
   it('leaves a root whose key holds only words no option names as it is', async () => {
     expect((await reassigned('\nTags: [ideas]', tags, 'Tags: [Claude]')).Tags).toEqual(['ideas'])
+  })
+
+  const archivedPage = async (fm: string): Promise<string> => {
+    const cid = (await readJsonObject(sidecarPath(notes, 'collection')))?.id as string
+    const file = join(
+      root,
+      '.nexus/archive',
+      cid,
+      'Notes/2026-10-20T12-00-00-000Z__Old.md.archived/Old.md',
+    )
+    await mkdir(dirname(file), { recursive: true })
+    await writeFile(file, `---\nID: ${newContentId('page')}\n${fm}---\nb\n`)
+    return file
+  }
+
+  it('refills an archived member of the Collection where the Archive holds it', async () => {
+    const made = await createProperty(root, { id: '', ...status })
+    if (!made.ok) throw new Error('setup failed')
+    await assignProperty(root, notes, made.value.id)
+    const old = await archivedPage('Status: hi\n')
+    await refreshTree(root)
+    expect((await removeProperty(root, notes, made.value.id)).ok).toBe(true)
+    expect(splitFrontmatter(await readFile(old, 'utf8')).Status).toBeUndefined()
+    expect((await assignProperty(root, notes, made.value.id)).ok).toBe(true)
+    expect(splitFrontmatter(await readFile(old, 'utf8')).Status).toEqual(['hi'])
+  })
+
+  it('keeps a cached Link value naming an archived page', async () => {
+    await archivedPage('')
+    const fm = await reassigned(
+      '',
+      { label: 'Related', key: 'Related', type: 'link' },
+      'Related: "[[Old]]"',
+    )
+    expect(fm.Related).toBe('[[Old]]')
   })
 })

@@ -474,6 +474,21 @@ describe('openNexusSequence', () => {
   })
 })
 
+describe('index:headings', () => {
+  it('answers every page’s headings but an archived page’s', async () => {
+    const bundle = '.nexus/archive/col-lib/Library/2026-10-20T12-00-00-000Z__Arc.md.archived'
+    const archived = `${bundle}/Arc.md`
+    await writeFile(join(root, 'Library', 'Notes.md'), `---\nID: ${NOTES}\n---\n\n## Setup\n`)
+    await mkdir(join(root, bundle), { recursive: true })
+    await writeFile(join(root, archived), `---\nID: ${THIRD_PAGE}\n---\n\n## Setup\n`)
+    await openNexusSequence(ctx, root, false)
+
+    const all = await nexusHandlers['index:headings'](ctx, undefined)
+    expect(all.ok && Object.keys(all.value)).toEqual(['Library/Notes.md'])
+    expect(await nexusHandlers['index:headings'](ctx, [archived])).toEqual({ ok: true, value: {} })
+  })
+})
+
 describe('path:copy', () => {
   afterEach(() => installMachine(diskMachine()))
 

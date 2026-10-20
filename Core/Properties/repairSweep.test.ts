@@ -1,10 +1,10 @@
 import { mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
-import { join } from '../Paths/posix'
+import { dirname, join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { assignProperty } from './assignment'
 import { createFolderEntity } from '../Nexus/folderEntity'
-import { newId } from '../Nexus/ids'
+import { newContentId, newId } from '../Nexus/ids'
 import { createTestPage } from '../Testing/createTestPage'
 import { createProperty } from './registryProperty'
 import { seedContentIndex } from '../Index/indexSeed'
@@ -18,6 +18,7 @@ import { memoryStores } from '../Testing/memoryStores'
 let root: string
 let page: string
 let tagsId: string
+let colId: string
 
 const settings = (repairOnOpen: boolean): Promise<void> =>
   writeFile(
@@ -52,7 +53,8 @@ beforeEach(async () => {
   })
   if (!status.ok || !tags.ok) throw new Error('registry failed')
   tagsId = tags.value.id
-  const col = await createFolderEntity(root, 'collection', 'Col', newId())
+  colId = newId()
+  const col = await createFolderEntity(root, 'collection', 'Col', colId)
   if (!col.ok) throw new Error('folder failed')
   await assignProperty(root, col.value.path, status.value.id)
   await assignProperty(root, col.value.path, tagsId)
@@ -75,6 +77,17 @@ describe('runRepairSweep', () => {
     const out = await readFile(page, 'utf8')
     expect(out).toContain('Status:\n  - Open')
     expect(out).toContain('- zeta')
+  })
+
+  it('canonicalizes a drifted archived page against its own Collection’s definitions', async () => {
+    const archived = join(
+      root,
+      `.nexus/archive/${colId}/Col/2026-10-20T12-00-00-000Z__Two.md.archived/Two.md`,
+    )
+    await mkdir(dirname(archived), { recursive: true })
+    await writeFile(archived, `---\nID: ${newContentId('page')}\nStatus: Open\n---\n\nb\n`)
+    await runRepairSweep(root, await seedContentIndex(root))
+    expect(await readFile(archived, 'utf8')).toContain('Status:\n  - Open')
   })
 
   it('walks the tree once however many re-read pages it checks', async () => {

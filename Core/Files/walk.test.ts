@@ -4,9 +4,9 @@ import type { WatchScope } from '../Paths/exclusion'
 
 const scope = (excluded: string[] = []): WatchScope => ({ excluded, assetDir: ASSETS_DIR_REL })
 import { rm, mkdir, writeFile } from 'node:fs/promises'
-import { join, relative } from '../Paths/posix'
+import { dirname, join, relative } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
-import { corpusFiles, listMarkdownFiles, listPathsUnder } from './walk'
+import { corpusFiles, listMarkdownFiles, listPathsUnder, sidecarsUnder } from './walk'
 import { installMachine, machine } from '../Platform/machine'
 
 const base = machine()
@@ -30,6 +30,8 @@ afterEach(async () => {
   await rm(root, { recursive: true, force: true })
 })
 
+const ARCHIVED = '.nexus/archive/C1/sub/2026-10-20T12-00-00-000Z__z.md.archived'
+
 const rels = (paths: string[]) => paths.map((p) => relative(root, p)).sort()
 
 describe('listMarkdownFiles', () => {
@@ -48,7 +50,12 @@ describe('corpusFiles', () => {
     await writeFile(join(root, 'Hidden', 'h.md'), 'x', 'utf8')
     await writeFile(join(root, 'Hidden', 'deep', 'hh.md'), 'x', 'utf8')
     await writeFile(join(root, 'sub', 'CAPS.MD'), 'x', 'utf8')
+    const bundle = join(root, ARCHIVED)
+    await mkdir(join(bundle, '_raw'), { recursive: true })
+    await writeFile(join(bundle, 'z.md'), 'x', 'utf8')
+    await writeFile(join(bundle, '_raw', 'h.md'), 'x', 'utf8')
     expect((await corpusFiles(root, scope())).sort()).toEqual([
+      `${ARCHIVED}/z.md`,
       'Hidden/deep/hh.md',
       'Hidden/h.md',
       'a.md',
@@ -56,6 +63,7 @@ describe('corpusFiles', () => {
       'sub/b.md',
     ])
     expect((await corpusFiles(root, scope(['Hidden']))).sort()).toEqual([
+      `${ARCHIVED}/z.md`,
       'a.md',
       'sub/CAPS.MD',
       'sub/b.md',
@@ -66,13 +74,37 @@ describe('corpusFiles', () => {
     expect(await corpusFiles(join(root, 'nope'), scope())).toEqual([])
   })
 
-  it('never reads inside `.trash`, `.nexus`, or an excluded folder', async () => {
+  it('never reads inside `.trash`, `.nexus` outside its Archive, or an excluded folder', async () => {
     await mkdir(join(root, '.trash', 'deep'), { recursive: true })
     await mkdir(join(root, 'Hidden', 'deep'), { recursive: true })
     await writeFile(join(root, '.trash', 'deep', 'gone.md'), 'x', 'utf8')
     expect((await corpusFiles(root, scope(['Hidden']))).sort()).toEqual(['a.md', 'sub/b.md'])
     const opened = readSpy.mock.calls.map((c) => relative(root, String(c[0])))
-    expect(opened).toEqual(['', 'sub'])
+    expect(opened).toEqual(['', 'sub', '.nexus/archive'])
+  })
+})
+
+describe('sidecarsUnder', () => {
+  it('lists every container sidecar under both content roots, or under one folder, and never inside a hidden folder', async () => {
+    const archived =
+      '.nexus/archive/C1/Notes/2026-10-20T12-00-00-000Z__Old.archived/Old/_pageset.json'
+    for (const rel of [
+      'Notes/_pagecollection.json',
+      'Notes/Deep/_pageset.json',
+      'Notes/_Drafts/_pageset.json',
+      archived,
+    ]) {
+      await mkdir(dirname(join(root, rel)), { recursive: true })
+      await writeFile(join(root, rel), '{}', 'utf8')
+    }
+    expect(rels(await sidecarsUnder(root, scope()))).toEqual([
+      archived,
+      'Notes/Deep/_pageset.json',
+      'Notes/_pagecollection.json',
+    ])
+    expect(rels(await sidecarsUnder(root, scope(), join(root, '.nexus/archive')))).toEqual([
+      archived,
+    ])
   })
 })
 
