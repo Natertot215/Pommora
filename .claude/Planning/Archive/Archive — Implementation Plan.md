@@ -37,7 +37,7 @@ The work is removal-first. Before anything archive-shaped lands, the Trash's han
 
 | Phase | Estimate | Written | Measured | Cumulative |
 | ----- | -------- | ------- | -------- | ---------- |
-| 1 | −17 | −6 | | |
+| 1 | −17 | −6 | +11 (+99 / −88) | +11 |
 | 2 | +49 | +263 | | |
 | 3 | +10 | +109 | | |
 | 4 | +176 | +426 | | |
@@ -311,11 +311,11 @@ Nathan's, verbatim.
 
 ### Phase 1 — The Lift and the Carry
 
-**GOAL:** Excluded folders and the asset directory travel crash-safely with a renamed or moved Collection or Set, and stay behind when it leaves the tree (K-1, F-2, F-3). A rename or move writes the landing's entries and the asset directory's setting before the folder moves and drops the source's entries after, one settings write each, so a failed write refuses the move before anything moves and a crash never leaves the folder un-excluded. A Set or Collection sent to the Trash first lifts its excluded folders and asset directory into its parent, each stepping aside past names already there and carrying its entry, so the Trash's own excluded-entry bookkeeping leaves. The nine exclusion functions in `Core/Settings/settings.ts` become four: `writeAssetDirectory`, `writeExcludedFolders`, `carrySetAside`, and `sanitizeExclusions`. Nothing here depends on another phase; Phase 4's `archive` op becomes the lift's second caller, and Phase 7 writes F-007's closure. The phase creates the Archive Drive with group 1.
+**GOAL:** Excluded folders and the asset directory travel crash-safely with a renamed or moved Collection or Set, and stay behind when it leaves the tree (K-1, F-2, F-3). A rename or move writes the landing's entries and the asset directory's setting before the folder moves and drops the source's entries after, one settings write each, so a failed write refuses the move before anything moves, a crash never leaves the folder un-excluded, and a move that throws writes back what the carry read. A Set or Collection sent to the Trash first lifts its excluded folders and asset directory into its parent, each stepping aside past names already there and carrying its entry, so the Trash's own excluded-entry bookkeeping leaves. The nine exclusion functions in `Core/Settings/settings.ts` become four: `writeAssetDirectory`, `writeExcludedFolders`, `carrySetAside`, and `sanitizeExclusions`. Nothing here depends on another phase; Phase 4's `archive` op becomes the lift's second caller, and Phase 7 writes F-007's closure. The phase creates the Archive Drive with group 1.
 
 #### Task 1-1
 
-**TASK:** Replace the follow-after carry with `carrySetAside`, run first in `relocateFolder` so its write is the move's refusal, and remove the refusal arms in the rename and the Set move (K-1).
+**TASK:** Replace the follow-after carry with `carrySetAside`, run first in `relocateFolder` so its write is the move's refusal and its undo answers a move that throws, re-key the asset directory's image crops through one `rekeyCrops` that `migrateAssets` shares, and remove the refusal arms in the rename and the Set move (K-1).
 
 **NOW:** `relocateFolder` (`Core/Nexus/folderEntity.ts:30-32`, module-private) is `relocate(from, to, () => followExcludedFolders(…))`; `relocate` (`Core/Files/atomicWrite.ts:61-75`) runs `landed` after the move's own event, before `reportRename`. Because the follow writes after the move, `exclusionWriteRefusal` (`Core/Settings/settings.ts:108-116`) probes ahead in `renameOp`, `moveSetOp`, `deleteOp`, and the restore (the last two are Task 1-2's). `assets:setDir` (`Core/Assets/handlers.ts:42-60`) is the only writer of `asset_directory`; nothing moves it with its folder.
 
@@ -324,19 +324,30 @@ Nathan's, verbatim.
 **CHANGE**
 
 - [ ] Write the tests and watch them fail:
-  - `Core/Settings/settings.test.ts`, new `describe('carrySetAside')`: "writes each landing entry just ahead of its source, and its drop leaves the landing alone"; "moves the asset directory in the same write"; "refuses while settings.json can’t be written, leaving it byte-identical" (read once through `readWatchScope` before `{ corrupt` is written, so the disk read answers its last parse); "writes nothing when no entry or asset directory sits under the source".
-  - `Core/Nexus/mutate.test.ts`, in `describe('handleMutate — excluded entries follow their folders')` (`:3241-3448`): "writes a carried entry beside its source before the folder moves, and drops the source before Sync hears of the rename"; "carries the asset directory with a moved Set", beside "carries an entry with a moved Set".
+  - `Core/Settings/settings.test.ts`, new `describe('carrySetAside')`: "writes each landing entry just ahead of its source, and its drop leaves the landing alone"; "moves the asset directory in the same write, holding its source as an excluded entry until the drop" (`New/Media` with `Old/Media` excluded, then `New/Media` alone); "refuses while settings.json can’t be written, leaving it byte-identical" (read once through `readWatchScope` before `{ corrupt` is written, so the disk read answers its last parse); "writes nothing when no entry or asset directory sits under the source".
+  - `Core/Nexus/mutate.test.ts`, in `describe('handleMutate — excluded entries follow their folders')` (`:3241-3448`): "writes a carried entry beside its source before the folder moves, and drops the source before Sync hears of the rename"; "carries the asset directory with a moved Set", beside "carries an entry with a moved Set"; "restores the settings it carried when the folder move throws, so the walk never stamps the asset folder" (`rename` throwing for `Notes`: `settings.json` equals what it held, no `Notes/Media/_pageset.json`); "re-keys a crop to the asset’s new path through a rename and a trash of the container holding the asset directory" (`Journal/Daily/Media/Pic.png`, then `Journal/Media/Pic.png`).
   - Two pins, same describe, passing before and after: "keeps the landed spelling, as one entry, through a case-only rename"; "a carried landing restarts the watcher once and seeds nothing twice" (K-1).
   - Unchanged: "rewrites an entry under a renamed Collection and rescopes the session" (`:3252`, `['Archive', 'Elsewhere/Daily']`, order kept); "refuses a landing that carries excluded entries while settings.json can’t be written" (`:3276`, its rename half now refusing through the carry's write with the same message, its delete half through the gate Task 1-2 replaces); `:3412`; "writes nothing for a rename no entry sits under" (`:3425`); "rescopes a landing beneath an entry that already names the new path" (`:3437`, the `applyMove` arm with no carry); `Core/Nexus/fileEvents.test.ts:298` and `:307`, the two event arms.
-- [ ] `settings.ts`: replace `followExcludedFolders` (`:97-106`) with `carrySetAside(root, from, to): Promise<Result<() => Promise<void>>>`: one `readWatchScope`, then one `updateNexusConfig(root, 'settings', …)` whose failure is the answer, putting each entry's landing (re-rooted at `to`) just ahead of each entry at or under `from` (order kept; on a case-only rename `normalizeExclusions` keeps the landed spelling as the one entry) and moving an `asset_directory` at or under `from` to `to`; nothing under `from` writes nothing and answers a no-op step. The step drops entries within `from` not also within `to`, writing only when it drops one. `excludedWithin`, `editExcluded`, `exclusionWriteRefusal`, `releaseExcludedFolders`, and `reseatExcludedFolders` stay for Task 1-2.
-- [ ] `folderEntity.ts`: `relocateFolder` answers `Promise<Result<{ path: string }>>`: the carry first, its refusal returned before anything moves, then `relocate(from, to, carried.value)`, so the drop runs as `landed` and sync hears of the rename once, after it (Cautionary 18); rewrite its doc (`:30`). `renameFolderEntity` (`:52-64`) and `moveFolderEntity` (`:66-76`) return `relocateFolder(…)` directly; the import takes `carrySetAside` for `followExcludedFolders`.
+- [ ] `settings.ts`: replace `followExcludedFolders` (`:97-106`) with `carrySetAside(root, from, to): Promise<Result<{ drop: () => Promise<void>; undo: () => Promise<void> }>>`: one `readWatchScope`, then one `updateNexusConfig(root, 'settings', …)` whose failure is the answer, putting each entry's landing (re-rooted at `to`) just ahead of each entry at or under `from` (order kept; on a case-only rename `normalizeExclusions` keeps the landed spelling as the one entry), moving an `asset_directory` at or under `from` to `to`, and holding its source as an excluded entry, so the folder isn't adopted before it leaves; nothing under `from` writes nothing and answers no-op steps. `drop` writes the entries re-rooted, without the sources, writing only when it drops one, and re-keys the asset directory's crops; `undo` writes back the entries and asset directory it read. Add `rekeyCrops(root, remap)` beside `updateCrops`, hoisted from `migrateAssets` with its best-effort catch: each crop key `remap` answers moves, the rest stay. `excludedWithin`, `editExcluded`, `exclusionWriteRefusal`, `releaseExcludedFolders`, and `reseatExcludedFolders` stay for Task 1-2.
+- [ ] `folderEntity.ts`: `relocateFolder` answers `Promise<Result<{ path: string }>>`: the carry first, its refusal returned before anything moves, then `relocate` with a `landed` that sets a `landed` flag and runs `drop`, so sync hears of the rename once, after it (Cautionary 18); a move that throws before landing runs `undo` and rethrows; rewrite its doc (`:30`). `renameFolderEntity` (`:52-64`) and `moveFolderEntity` (`:66-76`) return `relocateFolder(…)` directly; the import takes `carrySetAside` for `followExcludedFolders`.
 - [ ] `Core/Nexus/rename.ts:20-23`: the refusal is `landingRefusal` alone; drop `:10`'s import (`:9`'s `pathExists` stays, used at `:31`). `Core/Nexus/move.ts:50-53`: likewise, dropping `:12`'s import.
 - [ ] `fileEvents.ts:574`: rewrite the comment: the arm serves a landing under an entry excluded from outside the move, which has no settings write of its own, so the walk reseeds and the watch stands; a landing the carry wrote ahead already owes the rescope.
+- [ ] `Core/Assets/assetMigrate.ts`: `migrateAssets` (`:220-236`) collects its re-keys into a `Map` and calls `rekeyCrops(root, (key) => rekeys.get(key))`; the import takes `rekeyCrops` for `updateCrops`.
 - [ ] Sibling sweep, nothing to change: `folderEntity.test.ts` (`:58-91`) and both ops take the unchanged reply shape; `relocate`'s `landed` contract and `atomicWrite.ts:61`'s doc stand; nothing else imports `followExcludedFolders`; `Core/Sync/Client/session.ts:135`'s comment stays true.
 
 **AFTER**
 
 ```Core/Settings/settings.ts diff
+@@ after updateCrops @@
++/** Best-effort: a corrupt crops.json must not block the change once what it keys has moved. */
++export async function rekeyCrops(
++  root: string,
++  remap: (key: string) => string | undefined,
++): Promise<void> {
++  await updateCrops(root, (byImage) =>
++    Object.fromEntries(Object.entries(byImage).map(([key, crop]) => [remap(key) ?? key, crop])),
++  ).catch(() => {})
++}
 @@ followExcludedFolders → carrySetAside @@
 -/** An excluded entry follows the folder it names: a Collection or Set landing at `to` carries every entry at or under `from` with it. */
 -export async function followExcludedFolders(root: string, from: string, to: string): Promise<void> {
@@ -348,12 +359,12 @@ Nathan's, verbatim.
 -    }),
 -  )
 -}
-+/** A Collection or Set moving from `from` to `to` carries every excluded entry and the asset directory at or under it. Each landing entry is written just ahead of its source before the folder moves, so the list keeps its order, a case-only rename keeps the landed spelling, and the write's refusal is the move's; the step answered drops the sources once the folder has landed. */
++/** A Collection or Set moving from `from` to `to` carries every excluded entry and the asset directory at or under it. Each landing entry is written just ahead of its source, and the asset directory's source held as an entry, before the folder moves, so the list keeps its order, a case-only rename keeps the landed spelling, a source stays out of the tree until the folder has left it, and the write's refusal is the move's. `drop` settles the landing and re-keys the asset directory's crops once the folder has landed; `undo` writes back what was read when the move fails. */
 +export async function carrySetAside(
 +  root: string,
 +  from: string,
 +  to: string,
-+): Promise<Result<() => Promise<void>>> {
++): Promise<Result<{ drop: () => Promise<void>; undo: () => Promise<void> }>> {
 +  const { excluded, assetDir } = await readWatchScope(root)
 +  const landing = (entry: string): string[] => {
 +    const rest = entryWithin(entry, from)
@@ -361,16 +372,25 @@ Nathan's, verbatim.
 +  }
 +  const ahead = excluded.flatMap((entry) => [...landing(entry), entry])
 +  const [asset] = landing(assetDir)
-+  if (ahead.length === excluded.length && !asset) return ok(async () => {})
-+  const folders = normalizeExclusions(ahead).folders
-+  const written = await updateNexusConfig(root, 'settings', (cur) => ({
-+    ...setOrDrop(cur, 'excluded_folders', folders.length > 0 && folders),
-+    ...(asset ? { asset_directory: asset } : {}),
-+  }))
++  if (ahead.length === excluded.length && !asset)
++    return ok({ drop: async () => {}, undo: async () => {} })
++  const write = (folders: string[], dir: string) =>
++    updateNexusConfig(root, 'settings', (cur) => ({
++      ...setOrDrop(cur, 'excluded_folders', folders.length > 0 && folders),
++      ...(asset ? { asset_directory: dir } : {}),
++    }))
++  const folders = normalizeExclusions(asset ? [...ahead, assetDir] : ahead).folders
++  const written = await write(folders, asset)
 +  if (!written.ok) return written
-+  const kept = folders.filter((entry) => !entryWithin(entry, from) || entryWithin(entry, to))
-+  return ok(async () => {
-+    if (kept.length < folders.length) await writeExcludedFolders(root, kept)
++  const kept = normalizeExclusions(excluded.map((entry) => landing(entry)[0] ?? entry)).folders
++  return ok({
++    drop: async () => {
++      if (kept.length < folders.length) await writeExcludedFolders(root, kept)
++      if (asset) await rekeyCrops(root, (key) => landing(key)[0])
++    },
++    undo: async () => {
++      await write(excluded, assetDir)
++    },
 +  })
 +}
 ```
@@ -383,7 +403,7 @@ Nathan's, verbatim.
 -/** A Collection or Set landing at a new path: excluded entries follow before sync hears of the rename, so it pushes under the new scope. */
 -const relocateFolder = (root: string, from: string, to: string): Promise<void> =>
 -  relocate(from, to, () => followExcludedFolders(root, relative(root, from), relative(root, to)))
-+/** A Collection or Set landing at a new path carries its excluded entries and the asset directory: the carry's write refuses the move before anything moves, and its drop runs as `landed`, so sync hears of the rename once, under the scope it settled. */
++/** A Collection or Set landing at a new path carries its excluded entries and the asset directory: the carry's write refuses the move before anything moves, and its drop runs as `landed`, so sync hears of the rename once, under the scope it settled; a move that throws before landing writes back what the carry read. */
 +async function relocateFolder(
 +  root: string,
 +  from: string,
@@ -391,7 +411,16 @@ Nathan's, verbatim.
 +): Promise<Result<{ path: string }>> {
 +  const carried = await carrySetAside(root, relative(root, from), relative(root, to))
 +  if (!carried.ok) return carried
-+  await relocate(from, to, carried.value)
++  let landed = false
++  try {
++    await relocate(from, to, () => {
++      landed = true
++      return carried.value.drop()
++    })
++  } catch (e) {
++    if (!landed) await carried.value.undo()
++    throw e
++  }
 +  return ok({ path: to })
 +}
 @@ renameFolderEntity @@
@@ -441,6 +470,38 @@ Nathan's, verbatim.
    if (tree && scopeOf(tree.config).excluded.some((entry) => entryWithin(entry, to) !== null)) {
 ```
 
+```Core/Assets/assetMigrate.ts diff
+@@ imports @@
+-import { readWatchScope, updateCrops, updateSettings } from '../Settings/settings'
++import { readWatchScope, rekeyCrops, updateSettings } from '../Settings/settings'
+@@ migrateAssets @@
+   await refreshAssetMap(root)
+ 
+-  const rekeys: [string, string][] = []
++  const rekeys = new Map<string, string>()
+   for (const { from, to } of result.moved) {
+     const toRel = await assetFilePath(root, to)
+-    if (toRel) rekeys.push([from, toRel])
+-  }
+-  if (rekeys.length) {
+-    // Best-effort: a corrupt crops.json must not block the change once references moved.
+-    await updateCrops(root, (b) => {
+-      const next = { ...b }
+-      for (const [fromRel, toRel] of rekeys) {
+-        if (next[fromRel] === undefined) continue
+-        next[toRel] = next[fromRel]
+-        delete next[fromRel]
+-      }
+-      return next
+-    }).catch(() => {})
++    if (toRel) rekeys.set(from, toRel)
+   }
++  if (rekeys.size) await rekeyCrops(root, (key) => rekeys.get(key))
+   // Last, so a discard the system trash refuses leaves the move itself whole.
+   if (!result.skipped.length) result.trashed = await sweepLegacyRoot(root, deps)
+   return result
+```
+
 ```Core/Settings/settings.test.ts diff
 @@ imports @@
  import {
@@ -464,13 +525,23 @@ Nathan's, verbatim.
 +      'New/Deep/Raw',
 +      'Old/Deep/Raw',
 +    ])
-+    await carried.value()
-+    expect((await readSettings()).excluded_folders).toEqual(['Archive', 'New/Private', 'New/Deep/Raw'])
++    await carried.value.drop()
++    expect((await readSettings()).excluded_folders).toEqual([
++      'Archive',
++      'New/Private',
++      'New/Deep/Raw',
++    ])
 +  })
 +
-+  it('moves the asset directory in the same write', async () => {
++  it('moves the asset directory in the same write, holding its source as an excluded entry until the drop', async () => {
 +    await write({ asset_directory: 'Old/Media' })
-+    expect((await carrySetAside(root, 'Old', 'New')).ok).toBe(true)
++    const carried = await carrySetAside(root, 'Old', 'New')
++    if (!carried.ok) throw new Error(carried.error.message)
++    expect(await readSettings()).toEqual({
++      asset_directory: 'New/Media',
++      excluded_folders: ['Old/Media'],
++    })
++    await carried.value.drop()
 +    expect(await readSettings()).toEqual({ asset_directory: 'New/Media' })
 +  })
 +
@@ -488,7 +559,7 @@ Nathan's, verbatim.
 +    const before = await readFile(path(), 'utf8')
 +    const carried = await carrySetAside(root, 'Old', 'New')
 +    if (!carried.ok) throw new Error(carried.error.message)
-+    await carried.value()
++    await carried.value.drop()
 +    expect(await readFile(path(), 'utf8')).toBe(before)
 +  })
 +})
@@ -575,6 +646,64 @@ Nathan's, verbatim.
 +    expect((await readJson('.nexus/settings.json')).asset_directory).toBe('Other/Daily/Media')
 +    expect(heldTreeOf(root)?.config.assetDirectory).toBe('Other/Daily/Media')
 +  })
++
++  it('restores the settings it carried when the folder move throws, so the walk never stamps the asset folder', async () => {
++    await mkdir(join(root, 'Notes', 'Media'), { recursive: true })
++    await writeFile(join(root, 'Notes', 'Media', 'Pic.png'), 'bytes')
++    const before = { excluded_folders: ['Notes/Daily/Old'], asset_directory: 'Notes/Media' }
++    await writeFile(join(root, '.nexus', 'settings.json'), JSON.stringify(before))
++    await refreshTree(root)
++    const m = machine()
++    const rename = m.rename.bind(m)
++    const held = vi.spyOn(m, 'rename').mockImplementation(async (from, to) => {
++      if (from === join(root, 'Notes')) throw new Error('held')
++      return rename(from, to)
++    })
++    try {
++      const r = await settledMutate(
++        root,
++        { op: 'rename', path: 'Notes', kind: 'collection', newName: 'Journal' },
++        nexusDeps,
++      )
++      expect(r.ok).toBe(false)
++    } finally {
++      held.mockRestore()
++    }
++    expect(await readJson('.nexus/settings.json')).toEqual(before)
++    expect(await pathExists(join(root, 'Notes', 'Media', '_pageset.json'))).toBe(false)
++  })
++
++  it('re-keys a crop to the asset’s new path through a rename and a trash of the container holding the asset directory', async () => {
++    await mkdir(join(root, 'Notes', 'Daily', 'Media'), { recursive: true })
++    await writeFile(join(root, 'Notes', 'Daily', 'Media', 'Pic.png'), 'bytes')
++    await writeFile(
++      join(root, '.nexus', 'settings.json'),
++      JSON.stringify({ asset_directory: 'Notes/Daily/Media' }),
++    )
++    const crop = { x: 0.3, y: 0.4, zoom: 1.5 }
++    await mkdir(join(root, '.nexus', 'assets'), { recursive: true })
++    await writeFile(
++      join(root, '.nexus', 'assets', 'crops.json'),
++      JSON.stringify({ byImage: { 'Notes/Daily/Media/Pic.png': crop } }),
++    )
++    await refreshTree(root)
++    const cropKeys = async (): Promise<unknown> =>
++      (await readJson('.nexus/assets/crops.json')).byImage
++    const renamed = await settledMutate(
++      root,
++      { op: 'rename', path: 'Notes', kind: 'collection', newName: 'Journal' },
++      nexusDeps,
++    )
++    expect(renamed.ok).toBe(true)
++    expect(await cropKeys()).toEqual({ 'Journal/Daily/Media/Pic.png': crop })
++    const trashed = await settledMutate(
++      root,
++      { op: 'delete', path: 'Journal/Daily', kind: 'set' },
++      nexusDeps,
++    )
++    expect(trashed.ok).toBe(true)
++    expect(await cropKeys()).toEqual({ 'Journal/Media/Pic.png': crop })
++  })
 ```
 
 **VERIFY**
@@ -584,7 +713,7 @@ Nathan's, verbatim.
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
-**Lines:** +15 (+39 / −24), none moved. By file: `settings.ts` +24 / −9, `folderEntity.ts` +13 / −7, and `rename.ts` and `move.ts` +1 / −4 each. Comments: three rewritten in place, none added. Tests about +125 apart.
+**Lines:** +32 (+68 / −36), none moved. By file: `settings.ts` +40 / −7 (the carry +34 and `rekeyCrops` +9 against `followExcludedFolders`' −10, three lines matching Task 1-2's removals), `folderEntity.ts` +22 / −7, `assetMigrate.ts` +4 / −14, and `rename.ts` and `move.ts` +1 / −4 each. Comments: three rewritten in place, and `migrateAssets`' best-effort note moved into `rekeyCrops`' doc. Tests about +190 apart.
 
 #### Task 1-2
 
@@ -592,7 +721,7 @@ Nathan's, verbatim.
 
 **NOW:** Task 1-1 has landed: `relocateFolder` (`Core/Nexus/folderEntity.ts`) answers `Result<{ path }>` and carries through `carrySetAside`. `deleteOp` (`Core/Trash/delete.ts:28-116`) gates on `exclusionWriteRefusal`, mints the bundle (`:46`; none in system mode), records the excluded entries, moves the folder with them inside (`:99-100`), then releases them; system mode drops the metadata of every page under the folder, excluded ones included (`:48`). The restore (`Core/Trash/spend.ts:143`) refuses on recorded entries while settings can't be written and reseats them after the move's own event, so excluded subfolders arrive read as Sets owed stamps. No record on disk holds a non-empty `excluded` (`~/NexusOS/.trash` and `~/Test/.trash` hold only `excluded: []`), and the record's `z.object` strips the key on decode once the field leaves.
 
-The lift's parts: `readWatchScope`, `entryWithin`, `pathExists` (catches), `heldName` (`Core/Files/atomicWrite.ts:340-345`, reads its parent uncaught), `listEntries`, and `freeName` (folds case). An entry outlives its folder and `relocate` throws on a missing source (`atomicWrite.ts:70`), so the lift checks the disk before reading the spelling (Cautionary 16). A folder landing in a Collection with no entry naming it is stamped as a Set (`Core/Nexus/fileEvents.ts:153-159`), so each lifted folder's entry is written ahead of its move.
+The lift's parts: `readWatchScope`, `entryWithin`, `pathExists` (catches), `heldName` (`Core/Files/atomicWrite.ts:340-345`, reads its parent uncaught), `listEntries`, and `freeName` (folds case). An entry outlives its folder and `relocate` throws on a missing source (`atomicWrite.ts:70`), so the lift reads the spelling through `heldName`, whose `null` for a folder gone from its parent's listing skips the entry (Cautionary 16). A folder landing in a Collection with no entry naming it is stamped as a Set (`Core/Nexus/fileEvents.ts:153-159`), so each lifted folder's entry is written ahead of its move.
 
 `~/Test` holds no excluded folder or asset directory, and already holds `Collection A/Set Alpha` and `Set Beta`, so the drive seeds its own. A folder made inside a Set is adopted as a Set before `assets:setDir` could validate it, and `assets:setDir`'s `migrateAssets` would move `~/Test`'s own `.nexus/assets`, so the drive writes `asset_directory` into `settings.json` from outside before making the folder, and resets it through `assets:setDir ''`, whose migration answers null at the default. The drive builds on `.claude/scripts/Path Links Drive/live-drive.mjs:20-39` and `.claude/scripts/drive-harness.mjs`'s `chooseNative`, `ask`, `launch`, and `restore`. A Set's delete always asks through a `[role="alertdialog"]` labelled by its message; a collapsed sidebar container unmounts its children (`UIX/Animations/Reveal.tsx:21-41`).
 
@@ -602,12 +731,12 @@ The lift's parts: `readWatchScope`, `entryWithin`, `pathExists` (catches), `held
 
 - [ ] Write the tests and watch them fail, in `mutate.test.ts`'s `describe('handleMutate — excluded entries follow their folders')`:
   - `:3276` unchanged; its delete half now refuses through the lift's carry (`Notes/Private` stays, no `.trash`, the file stays `{ corrupt`).
-  - `:3300`, "refuses a Set moved, or a Collection restored, with excluded entries while settings.json can’t be written", becomes "refuses a Set moved with excluded entries while settings.json can’t be written": the good-settings delete lifts `Private` to the root first, which lets the restore succeed under `{ corrupt`.
+  - `:3300`, "refuses a Set moved, or a Collection restored, with excluded entries while settings.json can’t be written", splits in two: "refuses a Set moved with excluded entries while settings.json can’t be written" (the move refuses, `Notes/Daily/Private` stays, a reorder in place succeeds) and "a Collection restores under an unreadable settings.json, writing no settings" (the good-settings delete lifts `Private` to the root, `['Private']` on disk, and the restore succeeds under `{ corrupt`, which stays).
   - `:3334`, "takes a trashed Collection’s entries with it and lands them wherever it is restored", becomes "lifts a trashed Collection’s excluded folder to the root, its entry following, and restores the Collection without it".
   - `:3362`, "reports a Collection delete and its restore to Sync as one rename each, the restore after its entries hold again", becomes "reports the lift, the Collection delete, and its restore to Sync as one rename each, every one under settings already excluding the lifted folder".
-  - New: "steps a lifted folder aside past every name its parent holds, the Set’s own among them, and the Set’s restore keeps its name" (the listing counts the Set's own name, so `Notes/Daily/Daily` lands as `Daily (2)`); "lifts only the outermost of nested excluded folders, the inner one riding inside it"; "lifts the asset directory out of a trashed Set, its setting following"; "lifts under the system Trash Mode too, so the system trash never takes an excluded folder"; "leaves an entry naming no folder where it stands, lifting nothing for it".
+  - New: "steps a lifted folder aside past every name its parent holds, the Set’s own among them, and the Set’s restore keeps its name" (the listing counts the Set's own name, so `Notes/Daily/Daily` lands as `Daily (2)`); "lifts only the outermost of nested excluded folders, the inner one riding inside it"; "lifts the asset directory out of a trashed Set, its setting following"; "lifts under the system Trash Mode too, so the system trash never takes an excluded folder"; "lifts an excluded folder and the asset directory spelled apart only by case once" (`Notes/Daily/Media` excluded, `Notes/Daily/media` the asset directory: both read `Notes/Media`); "leaves an entry naming no folder where it stands, lifting nothing for it".
   - `Core/Trash/spend.test.ts:1527` "a Set restored onto a folder Settings excludes refuses, the bundle intact" unchanged (it pins `landingRefusal`, which stays until Phase 2); `deleteOrder.test.ts` and `trashRecovery.test.ts` need nothing.
-- [ ] `folderEntity.ts`: add `liftSetAside(root, containerAbs): Promise<Result<null>>` beside `relocateFolder`: one `readWatchScope`; the candidates are the excluded entries and the asset directory at or under the container, as remainders, skipping one under another (it rides inside) and one missing on disk, checked before its spelling is read (Cautionary 16); each lands at `join(dirname(container), freeName(heldName(abs) ?? basename(abs), listEntries(parent) names))`, listed per lift so the container's own name and each earlier lift count, and moves through `relocateFolder`, its entry written ahead; the first refusal is the answer. Imports gain `heldName`, `freeName`, `entryWithin`, and `listEntries`.
+- [ ] `folderEntity.ts`: add `liftSetAside(root, containerAbs): Promise<Result<null>>` beside `relocateFolder`: one `readWatchScope`; the candidates are the excluded entries and the asset directory at or under the container, as remainders, skipping one strictly beneath another (it rides inside; an entry and the asset directory spelled apart only by case lift once, the second's `heldName` answering `null` after the first's move) and one whose `heldName` answers `null`, gone from its parent's listing (Cautionary 16); each lands at `join(dirname(container), freeName(heldName(abs), listEntries(parent) names))`, listed per lift so the container's own name and each earlier lift count, and moves through `relocateFolder`, its entry written ahead; the first refusal is the answer. Imports gain `heldName`, `freeName`, `entryWithin`, and `listEntries`.
 - [ ] `delete.ts`: the gate at `:41-44` becomes the lift, still ahead of the mint, the system-mode page ids, and the move; drop `:109`'s release; `:26` imports `liftSetAside` from `../Nexus/folderEntity`.
 - [ ] `Core/Trash/gather.ts`: `gatherContentRecord` (`:61-74`) drops the `excluded` branch (`:72`) and `:2`'s import. `Core/Trash/record.ts`: drop the `excluded` field and its doc (`:38-39`); `:3` imports `hiddenName` alone (used at `:111`).
 - [ ] `spend.ts`: the container refusal is `landingRefusal` alone (`:175-177`; the `exists` refusal at `:181-182` stays for Phase 2); drop `targetRel` (`:173`); `relocate(artifactAbs, targetAbs)` takes no `landed` (`:214-220`); `:1` drops `relative`; `:20` imports `readLiveSetting` alone.
@@ -625,7 +754,8 @@ The lift's parts: `readWatchScope`, `entryWithin`, `pathExists` (catches), `held
   - `[g1 F-2] the sidebar draws the Set again, and never the folder`.
   - Seeds `AR Second` with its own excluded `Private`.
   - `[g1 F-2] a folder lifted onto a namesake steps aside to Private (2), its entry following`.
-  - Seeds `AR Media`, its `asset_directory` written into `settings.json` from outside before `Media/Pixel.png` exists.
+  - Seeds `AR Carry`, its `asset_directory` written into `settings.json` from outside before `Media/Pixel.png` exists.
+  - `[g1 K-1] a renamed Set carries the asset directory to the landing, the asset file with it`: renamed to `AR Media`, `excluded_folders` holding only the two lifted folders.
   - `[g1 F-2] the asset directory is left behind by a trashed Set, its setting following`.
   - Cleanup removes the lifted folders while still set aside, so none is adopted, then clears the exclusions and the asset directory; the harness restores `~/Test` at the run's end.
 - [ ] Sibling sweep, nothing to change: `deleteOp` is the lift's only caller until Phase 4's `archive` op; `Core/Trash/deleteOrder.test.ts:69-82`'s `relocate` mock passes the lift's moves through; `git grep "record.excluded"` finds only `spend.ts`; `delete.ts:45`'s write-ahead comment stays true; the drive's `.claude/scripts/README.md` paragraph is Phase 7's.
@@ -659,11 +789,11 @@ The lift's parts: `readWatchScope`, `entryWithin`, `pathExists` (catches), `held
 +  })
 +  const parent = dirname(containerAbs)
 +  for (const rest of inside) {
-+    if (inside.some((outer) => outer !== rest && entryWithin(rest, outer))) continue
++    if (inside.some((outer) => (entryWithin(rest, outer)?.length ?? 0) > 0)) continue
 +    const abs = join(containerAbs, rest)
 +    // An entry can outlive its folder, whose spelling is read from its parent's listing.
-+    if (!(await pathExists(abs))) continue
-+    const name = (await heldName(abs)) ?? basename(abs)
++    const name = await heldName(abs)
++    if (name === null) continue
 +    const taken = (await listEntries(parent)).map((e) => e.name)
 +    const lifted = await relocateFolder(root, abs, join(parent, freeName(name, taken)))
 +    if (!lifted.ok) return lifted
@@ -793,21 +923,20 @@ The lift's parts: `readWatchScope`, `entryWithin`, `pathExists` (catches), `held
 -  it('refuses a Set moved, or a Collection restored, with excluded entries while settings.json can’t be written', async () => {
 +  it('refuses a Set moved with excluded entries while settings.json can’t be written', async () => {
      await mkdir(join(root, 'Notes', 'Daily', 'Private'), { recursive: true })
-     await mkdir(join(root, 'Other', 'Kept', 'Private'), { recursive: true })
-     await writeFile(join(root, 'Other', '_pagecollection.json'), JSON.stringify({ id: 'ot' }))
-     await writeFile(join(root, 'Other', 'Kept', '_pageset.json'), JSON.stringify({ id: 'ok' }))
+-    await mkdir(join(root, 'Other', 'Kept', 'Private'), { recursive: true })
+-    await writeFile(join(root, 'Other', '_pagecollection.json'), JSON.stringify({ id: 'ot' }))
+-    await writeFile(join(root, 'Other', 'Kept', '_pageset.json'), JSON.stringify({ id: 'ok' }))
      await mkdir(join(root, 'Third'))
      await writeFile(join(root, 'Third', '_pagecollection.json'), JSON.stringify({ id: 'th' }))
-     await exclude(['Notes/Daily/Private', 'Other/Kept/Private'])
-     const deleted = await settledMutate(
-       root,
-       { op: 'delete', path: 'Other', kind: 'collection' },
-       nexusDeps,
-     )
-     const bundlePath = (deleted.ok && deleted.value.trashed?.bundlePath) || ''
-+    expect(await pathExists(join(root, 'Private'))).toBe(true)
-+    expect(await excludedOnDisk()).toEqual(['Notes/Daily/Private', 'Private'])
-     await refreshTree(root)
+-    await exclude(['Notes/Daily/Private', 'Other/Kept/Private'])
+-    const deleted = await settledMutate(
+-      root,
+-      { op: 'delete', path: 'Other', kind: 'collection' },
+-      nexusDeps,
+-    )
+-    const bundlePath = (deleted.ok && deleted.value.trashed?.bundlePath) || ''
+-    await refreshTree(root)
++    await exclude(['Notes/Daily/Private'])
      await writeFile(join(root, '.nexus', 'settings.json'), '{ corrupt')
      const moved = await settledMutate(
        root,
@@ -815,16 +944,40 @@ The lift's parts: `readWatchScope`, `entryWithin`, `pathExists` (catches), `held
        nexusDeps,
      )
      expect(moved.ok ? '' : moved.error.message).toContain('settings.json')
-     const restored = await settledMutate(root, { op: 'restore', bundlePath }, nexusDeps)
+-    const restored = await settledMutate(root, { op: 'restore', bundlePath }, nexusDeps)
 -    expect(restored.ok ? '' : restored.error.message).toContain('settings.json')
+     expect(await pathExists(join(root, 'Notes', 'Daily', 'Private'))).toBe(true)
+-    expect(await pathExists(join(root, 'Other'))).toBe(false)
+     const reordered = await settledMutate(
+       root,
+       { op: 'moveSet', path: 'Notes/Daily', newParentPath: 'Notes', order: [] },
+       nexusDeps,
+     )
+     expect(reordered.ok).toBe(true)
+   })
++
++  it('a Collection restores under an unreadable settings.json, writing no settings', async () => {
++    await mkdir(join(root, 'Other', 'Kept', 'Private'), { recursive: true })
++    await writeFile(join(root, 'Other', '_pagecollection.json'), JSON.stringify({ id: 'ot' }))
++    await writeFile(join(root, 'Other', 'Kept', '_pageset.json'), JSON.stringify({ id: 'ok' }))
++    await exclude(['Other/Kept/Private'])
++    const deleted = await settledMutate(
++      root,
++      { op: 'delete', path: 'Other', kind: 'collection' },
++      nexusDeps,
++    )
++    const bundlePath = (deleted.ok && deleted.value.trashed?.bundlePath) || ''
++    expect(await pathExists(join(root, 'Private'))).toBe(true)
++    expect(await excludedOnDisk()).toEqual(['Private'])
++    await refreshTree(root)
++    await writeFile(join(root, '.nexus', 'settings.json'), '{ corrupt')
++    const restored = await settledMutate(root, { op: 'restore', bundlePath }, nexusDeps)
 +    expect(restored.ok).toBe(true)
 +    expect(await pathExists(join(root, 'Other', 'Kept', '_pageset.json'))).toBe(true)
 +    expect(await pathExists(join(root, 'Other', 'Kept', 'Private'))).toBe(false)
 +    expect(await pathExists(join(root, 'Private'))).toBe(true)
 +    expect(await read('.nexus/settings.json')).toBe('{ corrupt')
-     expect(await pathExists(join(root, 'Notes', 'Daily', 'Private'))).toBe(true)
--    expect(await pathExists(join(root, 'Other'))).toBe(false)
-     const reordered = await settledMutate(
++  })
 @@ :3334 @@
 -  it('takes a trashed Collection’s entries with it and lands them wherever it is restored', async () => {
 +  it('lifts a trashed Collection’s excluded folder to the root, its entry following, and restores the Collection without it', async () => {
@@ -953,6 +1106,30 @@ The lift's parts: `readWatchScope`, `entryWithin`, `pathExists` (catches), `held
 +    expect(trashToSystem.mock.calls).toEqual([[join(root, 'Notes', 'Daily')]])
 +    expect(await read('Notes/Private/Kept.md')).toBe('# Kept\n')
 +    expect(await excludedOnDisk()).toEqual(['Notes/Private'])
++  })
++
++  it('lifts an excluded folder and the asset directory spelled apart only by case once', async () => {
++    await mkdir(join(root, 'Notes', 'Daily', 'Media'), { recursive: true })
++    await writeFile(join(root, 'Notes', 'Daily', 'Media', 'Pic.png'), 'bytes')
++    await writeFile(
++      join(root, '.nexus', 'settings.json'),
++      JSON.stringify({
++        excluded_folders: ['Notes/Daily/Media'],
++        asset_directory: 'Notes/Daily/media',
++      }),
++    )
++    await refreshTree(root)
++    const r = await settledMutate(
++      root,
++      { op: 'delete', path: 'Notes/Daily', kind: 'set' },
++      nexusDeps,
++    )
++    expect(r.ok).toBe(true)
++    expect(await read('Notes/Media/Pic.png')).toBe('bytes')
++    expect(await readJson('.nexus/settings.json')).toEqual({
++      excluded_folders: ['Notes/Media'],
++      asset_directory: 'Notes/Media',
++    })
 +  })
 +
 +  it('leaves an entry naming no folder where it stands, lifting nothing for it', async () => {
@@ -1106,14 +1283,22 @@ async function group1(cdp) {
     second.ok && untouched(`${LIFTED} (2)`) && untouched(LIFTED) && same(settingsOnDisk().excluded_folders, [LIFTED, `${LIFTED} (2)`]),
     show({ second, excluded: settingsOnDisk().excluded_folders }))
 
+  const CARRY = `${COLLECTION}/AR Carry`
   const MEDIA = `${COLLECTION}/AR Media`
-  await makeSet(cdp, 'AR Media')
+  await makeSet(cdp, 'AR Carry')
   // Written from outside, ahead of the folder: assets:setDir would refuse a folder the watcher already adopted as a Set, and its migration would move ~/Test's own assets.
-  writeFileSync(abs('.nexus/settings.json'), `${JSON.stringify({ ...settingsOnDisk(), asset_directory: `${MEDIA}/Media` }, null, 2)}\n`)
-  await until('the asset directory in the tree', async () => (await config(cdp)).assetDirectory === `${MEDIA}/Media`)
-  mkdirSync(abs(`${MEDIA}/Media`))
-  writeFileSync(abs(`${MEDIA}/Media/Pixel.png`), PIXEL)
+  writeFileSync(abs('.nexus/settings.json'), `${JSON.stringify({ ...settingsOnDisk(), asset_directory: `${CARRY}/Media` }, null, 2)}\n`)
+  await until('the asset directory in the tree', async () => (await config(cdp)).assetDirectory === `${CARRY}/Media`)
+  mkdirSync(abs(`${CARRY}/Media`))
+  writeFileSync(abs(`${CARRY}/Media/Pixel.png`), PIXEL)
   await sleep(1000)
+  const carriedAsset = await ask(cdp, 'mutate', { op: 'rename', path: CARRY, kind: 'set', newName: 'AR Media' })
+  await settles(async () => settingsOnDisk().asset_directory === `${MEDIA}/Media`)
+  item(1, 1, 'K-1', 'a renamed Set carries the asset directory to the landing, the asset file with it',
+    carriedAsset.ok && exists(`${MEDIA}/Media/Pixel.png`) && !exists(`${MEDIA}/Media/_pageset.json`) &&
+      (await config(cdp)).assetDirectory === `${MEDIA}/Media` && same(settingsOnDisk().excluded_folders, [LIFTED, `${LIFTED} (2)`]),
+    show({ carriedAsset, onDisk: settingsOnDisk() }))
+
   const media = await ask(cdp, 'mutate', { op: 'delete', path: MEDIA, kind: 'set' })
   await settles(async () => exists(`${COLLECTION}/Media/Pixel.png`))
   item(1, 1, 'F-2', 'the asset directory is left behind by a trashed Set, its setting following',
@@ -1167,7 +1352,8 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 | The lift, by gesture | as above | the sidebar row's right-click › Delete › the confirmation's Delete | the question reads `Delete “AR Moved”?`; `Collection A/Private` holds `Keep.md` untouched; the entry reads `Collection A/Private`; the bundle holds no `Private` and its record no `excluded`; the sidebar draws neither row | F-3 |
 | The restore | the bundle above, found under `.trash/Collection A/` | `mutate` restore | `AR Moved` returns without `Private`, which stays where it was left; the entry is unchanged; the sidebar draws the Set and never the folder | F-2 |
 | A namesake | Set `AR Second`; `AR Second/Private` excluded beside `Collection A/Private` | `mutate` delete | the folder lands as `Private (2)`, both folders untouched and both entries held | F-2 |
-| The asset directory | Set `AR Media`; `asset_directory` written from outside ahead of `AR Media/Media/Pixel.png` | `mutate` delete | `Collection A/Media/Pixel.png`, no sidecar; `asset_directory` and the held scope read `Collection A/Media` | F-2 |
+| The asset directory's carry | Set `AR Carry`; `asset_directory` written from outside ahead of `AR Carry/Media/Pixel.png` | `mutate` rename to `AR Media` | `AR Media/Media/Pixel.png`, no sidecar; `asset_directory` and the held scope read `Collection A/AR Media/Media`; `excluded_folders` holds only the two lifted folders | K-1 |
+| The asset directory | the carry above | `mutate` delete | `Collection A/Media/Pixel.png`, no sidecar; `asset_directory` and the held scope read `Collection A/Media` | F-2 |
 
 #### Pruned
 
@@ -1186,11 +1372,11 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 - [ ] `node ".claude/scripts/Archive Drive/live-drive.mjs" 1` exits 0 with every group-1 check `PASS`, and `~/Test` is restored.
 - [ ] Check for unnecessary code or mistakes.
 
-**Lines:** −21 (+31 / −52), none moved. By file: `folderEntity.ts` +23 / −3 (the lift +19, imports +4 / −3); `delete.ts` +3 / −4, `gather.ts` −2, `record.ts` +1 / −2, and `spend.ts` +4 / −13, the F-3 removals −13 across the four; `settings.ts` −28. Comments apart, −3. Tests about +95 apart; the Archive Drive apart: `live-drive.mjs` +164 and `MATRIX.md` +19.
+**Lines:** −21 (+31 / −52), none moved. By file: `folderEntity.ts` +23 / −3 (the lift +19, imports +4 / −3); `delete.ts` +3 / −4, `gather.ts` −2, `record.ts` +1 / −2, and `spend.ts` +4 / −13, the F-3 removals −13 across the four; `settings.ts` −28. Comments apart, −3. Tests about +111 apart; the Archive Drive apart: `live-drive.mjs` +189 and `MATRIX.md` +20.
 
 #### Review Checkpoint
 
-- [ ] `Core/Settings/settings.test.ts › carrySetAside` (four cases) and the twelve new or rewritten cases in `Core/Nexus/mutate.test.ts › handleMutate — excluded entries follow their folders` pass, with `:3252`, `:3276`, `:3412`, `:3425`, `:3437`, `fileEvents.test.ts:298`, `:307`, and `spend.test.ts:1527` unchanged.
+- [ ] `Core/Settings/settings.test.ts › carrySetAside` (four cases) and the sixteen new or rewritten cases in `Core/Nexus/mutate.test.ts › handleMutate — excluded entries follow their folders` pass, with `:3252`, `:3276`, `:3412`, `:3425`, `:3437`, `fileEvents.test.ts:298`, `:307`, and `spend.test.ts:1527` unchanged.
 - [ ] Both VERIFY greps of Task 1-2 find nothing, and the exclusion block exports four functions.
 - [ ] The gates pass from a clean state.
 - [ ] Archive Drive group 1 passes in full under `POMMORA_ARCHIVE_LANDED=1`.
@@ -1207,7 +1393,8 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 ##### Behavior Changes and Disclosures
 
 - **Empty Successes:** `relocateFolder` answers `Result<{ path }>` and `liftSetAside` `Result<null>`, the codebase's spelling of an empty success (`Core/Nexus/reorder.ts:72-79`); answering the path lets `renameFolderEntity` and `moveFolderEntity` return `relocateFolder(…)` directly.
-- **The Asset Directory's One Value:** the carry can't hold both ends of a single setting, so a crash between the write ahead and the rename leaves `asset_directory` naming the landing while the source folder sits unprotected. K-1's crash safety covers the excluded entries; the asset directory is moved, which nothing did before.
+- **The Asset Directory's One Value:** the carry can't hold both ends of a single setting, so a crash between the write ahead and the rename leaves `asset_directory` naming the landing with its source excluded: nothing is adopted, but its images don't resolve until the folder lands or the setting is picked again. A move that throws writes back what the carry read. K-1's crash safety covers the excluded entries; the asset directory is moved, which nothing did before.
+- **A Delete Refused After the Lift:** a container delete refused once the lift has run, by the system trash refusing or a discard or bundle move throwing, leaves the lifted folders in the parent with the settings consistent; Phase 4's `archive` op lifts before it mints and inherits the same.
 - **A Stale Entry:** an entry under a trashed container that names no folder on disk stays in Settings, where `releaseExcludedFolders` removed it with the delete; Task 1-2 states it.
 - **No Record Loses Anything:** Findings 3.5's "no live record holds a non-empty `excluded`" holds at HEAD: the eight records under `~/NexusOS/.trash` and `~/Test/.trash` that carry the key all hold `excluded: []`.
 - **The Drive's Asset Directory:** a folder made inside a Set in the running app is stamped as a Set first (`stampable` admits every container missing its sidecar, `Core/Nexus/fileEvents.ts:153-159`), which `validateAssetDir` then refuses (`Core/Settings/assetDirValidate.ts:31`), and `assets:setDir` runs `migrateAssets`, which would move `~/Test`'s `.nexus/assets` banners and profile image (`Core/Assets/assetMigrate.ts:167-170`). Group 1 writes the setting first and the folder after, from outside, and resets it through `assets:setDir ''`, whose migration answers null at the default.
@@ -1219,8 +1406,8 @@ The drive's cases, derived from *Archive — Decisions & Intention* and written 
 
 ##### Line Total
 
-- **−6 (+70 / −76):** 1-1 +15, 1-2 −21, under the plan's one counting rule (`view-delta`'s Actionable column: source with imports and blank lines as Biome wraps them; comments, tests, documents, and the drive out; moved lines on both sides, none moving here). Imports are −2 of it (+9 / −11), and comments −3 more. The drive group is apart: `live-drive.mjs` +164 and `MATRIX.md` +19.
-- **Against the Estimate:** the estimate's ≈ −17 counted `editExcluded`'s removal in both tasks; counted once, it sits near the Findings' *§Removal & Consolidation* rows for this work (≈ −4: the carry −16 / +20, the refusal arms −15, `excludedWithin` −3, the release and reseat −9, the record −4, the release at delete −1, the restore −4, `relocateFolder` +6, the lift +22). The phase lands within a couple of lines of those rows: the carry is +24 where +20 was costed, since it also moves the asset directory, keeps the list's order, and answers the drop; the lift is +19 against +22; the removals land as costed, the five `settings.ts` functions at −28 once the blank lines between them count. What the phase adds is the behavior K-1 and F-2 require in its minimal form: one carry where four functions and two refusal arms stood, and one lift where the record field, its gather, the release, the reseat, and the restore's refusal stood.
+- **+11 (+99 / −88):** 1-1 +32, 1-2 −21, under the plan's one counting rule (`view-delta`'s Actionable column: source with imports and blank lines as Biome wraps them; comments, tests, documents, and the drive out; moved lines on both sides, none moving here). Imports are −2 of it (+10 / −12), and comments −3 more. The drive group is apart: `live-drive.mjs` +189 and `MATRIX.md` +20.
+- **Against the Estimate:** the estimate's ≈ −17 counted `editExcluded`'s removal in both tasks; counted once, it sits near the Findings' *§Removal & Consolidation* rows for this work (≈ −4: the carry −16 / +20, the refusal arms −15, `excludedWithin` −3, the release and reseat −9, the record −4, the release at delete −1, the restore −4, `relocateFolder` +6, the lift +22). The phase lands fifteen lines past those rows, in the carry: it is +34 where +20 was costed, since it also moves the asset directory and holds its source excluded until the folder lands, keeps the list's order, and answers the drop and the undo; `relocateFolder` runs the undo when the move throws, and `rekeyCrops` re-keys the asset directory's crops in the code `migrateAssets` gave up; the lift is +19 against +22; the removals land as costed, the five `settings.ts` functions at −28 once the blank lines between them count. What the phase adds is the behavior K-1 and F-2 require in its minimal form: one carry where four functions and two refusal arms stood, one crop re-key where `migrateAssets` held its own, and one lift where the record field, its gather, the release, the reseat, and the restore's refusal stood.
 
 ### Phase 2 — The Owner and the Format
 
@@ -10672,7 +10859,7 @@ Each document reads as its CHANGE item states, every sentence replaced in place;
 - **F-5's Unreadable Open (Task 4-6):** no Archive is swept as orphaned on an open where any root-level container reads unreadable, and no counter is kept, since `Unreadable` carries no id and no retry record exists on disk (`oweRetry` is in-memory); the sweep waits for an open where every root folder reads.
 - **Finder Litter (Task 4-6):** an emptied orphan `<id>/` holding only a `.DS_Store` stays on disk, and each open walks it again; no guard is added (Cautionary 7's shape).
 - **A Collection Twin (Task 4-4):** a Finder copy of a Collection folder carries its sidecar id, so two Collections can share one Archive, and emptying the trashed twin disposes the Archive the live one reads; no guard (Cautionary 4: a duplicated id nothing in-app produces).
-- **The Asset Directory's One Value (Task 1-1):** the carry can't hold both ends of a single setting, so a crash between the write ahead and the rename leaves `asset_directory` naming the landing.
+- **The Asset Directory's One Value (Task 1-1):** a crash between the write ahead and the rename leaves `asset_directory` naming the landing with its source excluded, so nothing is adopted, but its images don't resolve until the folder lands or the setting is picked again.
 - **A Stale Entry (Task 1-2):** an entry under a trashed container that names no folder on disk stays in Settings, where the release removed it.
 - **Twins Inside an Unparsed Collection (Task 3-3):** with one twin rule over the by-id map, two files sharing an id inside a Collection whose sidecar doesn't parse are both stripped, and the second's value overwrites the first's; a duplicated id nothing in-app produces (Cautionary 4's shape).
 - **The Strip's Held-Out Rule (Task 3-3):** a Link holder with no ID now appears in the "not updated" warning, and one under a withheld folder is held out rather than stripped with nothing recorded.
@@ -10682,4 +10869,7 @@ Each document reads as its CHANGE item states, every sentence replaced in place;
 
 #### Deviations
 
-(Empty at ratification; filled during implementation.)
+Phase 1 measured +11 (+99 / −88) against the written −6; the two entries below were +17 of it, and the rest landed as written.
+
+- **The Crops (Task 1-1):** a carried or lifted asset directory's image crops were re-keyed through one `rekeyCrops`, which the asset migration now shares. The plan hadn't priced it, and the decision log promises no banner or attachment breaks; it netted 0, `settings.ts` +10 against `assetMigrate.ts` −10.
+- **The Undo (Task 1-1):** the carry held the asset directory's source excluded until the folder landed and wrote back its settings when the move threw, which closed a failed move stamping the asset folder as a Set and an in-between `settings.json` syncing. It added +17: `settings.ts` +8 and `folderEntity.ts` +9.
