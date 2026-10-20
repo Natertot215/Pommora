@@ -701,31 +701,37 @@ describe('outliner rails', () => {
     expect(rails('- solo')).toHaveLength(0)
   })
 
-  it('nesting emits one rail per ancestor level, with caps only at each run’s ends', () => {
+  it('a parent heads its own rail, which runs through its children with caps only at each run’s ends', () => {
     const t = '- A\n\t- B\n\t\t- C\n\t- D\n- E'
     const rs = rails(t)
-    const has = (level: number, first: boolean, last: boolean): number =>
-      rs.filter((r) => r.level === level && r.first === first && r.last === last).length
-    expect(rs).toHaveLength(4)
-    expect(has(0, true, false)).toBe(1)
-    expect(has(0, false, false)).toBe(1)
-    expect(has(0, false, true)).toBe(1)
-    expect(has(1, true, true)).toBe(1)
+    const has = (level: number, head: boolean, first: boolean, last: boolean): number =>
+      rs.filter((r) => r.level === level && r.head === head && r.first === first && r.last === last)
+        .length
+    expect(rs).toHaveLength(6)
+    expect(has(0, true, true, false)).toBe(1)
+    expect(has(0, false, false, false)).toBe(2)
+    expect(has(0, false, false, true)).toBe(1)
+    expect(has(1, true, true, false)).toBe(1)
+    expect(has(1, false, false, true)).toBe(1)
     expect(rs.some((r) => r.level >= 2)).toBe(false)
   })
 
   it('a rail takes its ANCESTOR’s marker type, not the descendant’s (the checkbox-center fix)', () => {
-    const bulletParent = rails('- parent\n\t- [ ] child')
-    expect(bulletParent).toHaveLength(1)
-    expect(bulletParent[0].typeClass).toBe('md-outline-bullet')
-
-    const taskParent = rails('- [ ] parent\n\t- child')
-    expect(taskParent).toHaveLength(1)
-    expect(taskParent[0].typeClass).toBe('md-outline-task')
+    expect(rails('- parent\n\t- [ ] child').map((r) => r.typeClass)).toEqual([
+      'md-outline-bullet',
+      'md-outline-bullet',
+    ])
+    expect(rails('- [ ] parent\n\t- child').map((r) => r.typeClass)).toEqual([
+      'md-outline-task',
+      'md-outline-task',
+    ])
   })
 
   it('an alphabetical ancestor draws its own rail', () => {
-    expect(rails('A. parent\n\t- child').map((r) => r.typeClass)).toEqual(['md-outline-alpha'])
+    expect(rails('A. parent\n\t- child').map((r) => r.typeClass)).toEqual([
+      'md-outline-alpha',
+      'md-outline-alpha',
+    ])
   })
 
   it('rails are scoped to bullets, checkboxes, and letters — ordered / arrow / + ancestors get none (deferred)', () => {
