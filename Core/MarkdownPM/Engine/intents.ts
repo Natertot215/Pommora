@@ -362,19 +362,38 @@ export function lineIntentsInto(
 }
 
 export function railIntents(
+  lines: string[],
   lineStarts: number[],
   listLevels: number[],
   listKinds: string[],
 ): RailIntent[][] {
-  const rails: RailIntent[][] = new Array(listLevels.length)
+  const n = listLevels.length
+  const rails: RailIntent[][] = new Array(n)
+  const blank = (i: number): boolean => listLevels[i] < 0 && !/\S/.test(lines[i])
+  const ahead: number[] = new Array(n)
+  for (let i = n - 1, next = -1; i >= 0; i--) {
+    ahead[i] = next
+    if (!blank(i)) next = listLevels[i]
+  }
   const railKind: string[] = []
-  for (let i = 0; i < listLevels.length; i++) {
+  let behind = -1
+  let span = 0
+  for (let i = 0; i < n; i++) {
     const level = listLevels[i]
-    if (level < 0) continue
-    railKind[level] = listKinds[i]
-    railKind.length = level + 1
-    const next = listLevels[i + 1] ?? -1
-    const span = next > level ? level + 1 : level
+    const prevSpan = span
+    if (blank(i)) span = Math.min(ahead[i], behind + 1)
+    else if (level < 0) {
+      behind = -1
+      span = 0
+      continue
+    } else {
+      railKind[level] = listKinds[i]
+      railKind.length = level + 1
+      behind = level
+      span = ahead[i] > level ? level + 1 : level
+    }
+    const nextSpan =
+      i + 1 === n ? 0 : blank(i + 1) ? Math.min(ahead[i + 1], behind + 1) : listLevels[i + 1]
     for (let k = 0; k < span; k++) {
       const typeClass = railKind[k]
       if (!typeClass) continue
@@ -386,8 +405,8 @@ export function railIntents(
         level: k,
         typeClass,
         head,
-        first: head || listLevels[i - 1] < k,
-        last: next <= k,
+        first: head || k >= prevSpan,
+        last: k >= nextSpan,
       })
     }
   }
@@ -424,7 +443,11 @@ function deriveLines(
 }
 
 function withRails(scan: DocScan, facts: LineFacts, fresh: [number, number][]): CachedLineIntents {
-  return { ...facts, rails: railIntents(scan.lineStarts, facts.listLevels, facts.listKinds), fresh }
+  return {
+    ...facts,
+    rails: railIntents(scan.lines, scan.lineStarts, facts.listLevels, facts.listKinds),
+    fresh,
+  }
 }
 
 export function docLineIntents(scan: DocScan, scope: MarkdownScope = 'page'): CachedLineIntents {

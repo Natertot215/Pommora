@@ -55,6 +55,10 @@
 .mdpm-editor .cm-content {
   color: var(--label-primary);
   --number-zone: 1.3em;
+  --list-indent: 20px;
+  --bullet-zone: 16px;
+  --task-zone: 1.8em;
+  --bullet-size: 1.25em;
   --citation-divider-blur: 4px; /* KNOB: how softly the seam fades out as it closes */
   --citation-divider-gap: 14px; /* KNOB: the seam's breathing room */
   padding: var(--header-zone, 90px) 0 90px var(--rail-inset);
@@ -359,12 +363,8 @@
   text-indent: 0;
 }
 
-/* KNOBS: --list-indent, --list-gap, --bullet-zone / --number-zone / --task-zone, --bullet-size. --number-zone lives on .cm-content rather than .md-list-item so a citation row, which hangs in the same column but isn't a list line, still gets one. */
+/* KNOBS: --list-indent, --list-gap, --bullet-zone / --number-zone / --task-zone, --bullet-size. They live on .cm-content rather than .md-list-item so a citation row or a blank line a rail crosses, which sit in the same columns but aren't list lines, still get them. */
 .mdpm-editor :is(.cm-line.md-list-item, .mdpm-tbl-cell-static .md-list-item) {
-  --list-indent: 20px;
-  --bullet-zone: 16px;
-  --task-zone: 1.8em;
-  --bullet-size: 1.25em;
   white-space: pre;
   --list-origin: 0px;
 
@@ -376,7 +376,7 @@
 .md-outline-rail {
   display: none;
 }
-.outline-lines .mdpm-editor :is(.cm-line.md-list-item, .mdpm-tbl-cell-static .md-list-item) {
+.outline-lines .mdpm-editor :has(> .md-outline-rail) {
   position: relative;
 }
 .outline-lines .md-outline-rail {

@@ -737,6 +737,17 @@ describe('outliner rails', () => {
     expect(rails('+ parent\n\t- child')).toHaveLength(0)
   })
 
+  it('a blank line inside a loose list carries the rail across, and one leaving the run carries none', () => {
+    const t = '- A\n\n\t- B\n\n\t- C\n\n- D'
+    expect(rails(t).map((r) => [r.from, r.head, r.first, r.last])).toEqual([
+      [0, true, true, false],
+      [4, false, false, false],
+      [5, false, false, false],
+      [10, false, false, false],
+      [11, false, false, true],
+    ])
+  })
+
   it('a non-list line between siblings breaks the run (caps on both sides of the gap)', () => {
     const t = '- A\n\t- B\nprose\n\t- C'
     const rs = rails(t)
