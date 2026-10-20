@@ -1,4 +1,4 @@
-import { basename, dirname, join, relative } from '../Paths/posix'
+import { basename, dirname, join } from '../Paths/posix'
 import { resolveUnderRoot } from '../Paths/pathSafety'
 import { contextKey } from '../Contexts/contexts'
 import { spaceIdsIn, spaceSidecarsIn } from '../Contexts/spaceSidecar'
@@ -17,7 +17,7 @@ import type { NexusTree } from '../Nexus/tree'
 import { mutateRegistryFile, withContextAt } from '../Contexts/contextsRegistry'
 import { restoreProperty } from './restoreProperty'
 import { repairLanded, scrubReturning } from './restoreScrub'
-import { exclusionWriteRefusal, readLiveSetting, reseatExcludedFolders } from '../Settings/settings'
+import { readLiveSetting } from '../Settings/settings'
 import { sweepRootsById, unsweptLine } from '../Properties/governedSweep'
 import { joinValues, landValue } from '../Files/rootValues'
 import { respellings, rewriteConnections } from '../Connections/rewrite'
@@ -170,11 +170,8 @@ async function restoreArtifact(
   const { dir, finalName, finalTitle } = resolution.place
 
   const targetAbs = join(root, dir, finalName)
-  const targetRel = relative(root, targetAbs)
   if (record.entity === 'collection' || record.entity === 'set') {
-    const refused =
-      (await landingRefusal(root, join(root, dir), finalName)) ??
-      (await exclusionWriteRefusal(root, record.excluded ?? []))
+    const refused = await landingRefusal(root, join(root, dir), finalName)
     if (refused) return refused
   }
   // The tree is the resolver's universe; a file the walk cannot see (an Unknown squatter) could still occupy the target — refuse rather than clobber what nothing adjudicated.
@@ -211,13 +208,7 @@ async function restoreArtifact(
   }
   try {
     await machine().mkdir(dirname(targetAbs))
-    await relocate(
-      artifactAbs,
-      targetAbs,
-      record.entity === 'collection' || record.entity === 'set'
-        ? () => reseatExcludedFolders(root, targetRel, record.excluded ?? [])
-        : undefined,
-    )
+    await relocate(artifactAbs, targetAbs)
   } catch (e) {
     // The move is the irreversible half; the entry is the reversible one. Reversing it keeps the failure retryable — a ghost entry would trip the next attempt's own id-live guard.
     if (record.entity === 'context')

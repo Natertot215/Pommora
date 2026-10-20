@@ -23,7 +23,7 @@ import {
   gatherSpaceRecord,
 } from './gather'
 import { type RecordFile, writeRecord } from './record'
-import { excludedWithin, exclusionWriteRefusal, releaseExcludedFolders } from '../Settings/settings'
+import { liftSetAside } from '../Nexus/folderEntity'
 
 export async function deleteOp(
   { root, deps }: MutateContext,
@@ -39,8 +39,8 @@ export async function deleteOp(
   const contexts = req.kind === 'context' ? await readRegistryStrict(root) : null
   if (contexts && !contexts.ok) return contexts
   if (isContainer(req)) {
-    const refused = await exclusionWriteRefusal(root, await excludedWithin(root, req.path))
-    if (refused) return refused
+    const lifted = await liftSetAside(root, abs)
+    if (!lifted.ok) return lifted
   }
   // Write-ahead: the record lands before any sweep destroys what it describes; a Space or Context sweep runs before its artifact moves and refuses on failure, a content strip runs after, so a failed move strips nothing, and the artifact moves before the configuration pass, so a delete cut short leaves evidence rather than silence.
   const bundle = deps.trashMode === 'system' ? null : await mintBundle(root, abs)
@@ -106,7 +106,6 @@ export async function deleteOp(
       ...(gone.links.length ? { links: gone.links } : {}),
       ...(gone.cascade.warning ? { partial: true as const } : {}),
     })
-  if (isContainer(req)) await releaseExcludedFolders(root, rel)
   const reach = edit ? reachReport(await reachConfig(root, edit)) : null
   const cascade = gone && reach ? joinCascades(gone.cascade, reach) : (gone?.cascade ?? reach)
   return ok({

@@ -9,7 +9,6 @@ import { liveTreeOf, mutableTarget } from './liveTree'
 import { goneEdit, reachConfig, reachReport } from './configReach'
 import { dropFromChildOrder, setChildOrder } from './reorder'
 import { containerAt, pageAt } from './treePatch'
-import { excludedWithin, exclusionWriteRefusal } from '../Settings/settings'
 
 async function ends(
   root: string,
@@ -47,9 +46,7 @@ export async function moveSetOp(
   if (!at.ok) return at
   if (dirname(at.value.src) === at.value.dst)
     return done(await setChildOrder(at.value.dst, 'set_order', req.order))
-  const refused =
-    (await landingRefusal(root, at.value.dst, basename(at.value.src))) ??
-    (await exclusionWriteRefusal(root, await excludedWithin(root, req.path)))
+  const refused = await landingRefusal(root, at.value.dst, basename(at.value.src))
   if (refused) return refused
   const from = dirname(req.path).split('/')
   const to = req.newParentPath.split('/')

@@ -3273,6 +3273,67 @@ describe('handleMutate — excluded entries follow their folders', () => {
     expect(push.mock.calls.map(([name]) => name)).toContain('nexus:changed')
   })
 
+  it('writes a carried entry beside its source before the folder moves, and drops the source before Sync hears of the rename', async () => {
+    await exclude(['Archive', 'Notes/Daily/Old'])
+    const settings = join(root, '.nexus', 'settings.json')
+    const to = join(root, 'Journal')
+    const seen: [string, unknown][] = []
+    const note = (at: string): void => {
+      seen.push([at, JSON.parse(readFileSync(settings, 'utf8')).excluded_folders])
+    }
+    setWriteTap({
+      wrote: (path) => {
+        if (path === settings) note('settings write')
+        if (path === to) note('move')
+      },
+      renamed: () => note('renamed'),
+    })
+    try {
+      const r = await settledMutate(
+        root,
+        { op: 'rename', path: 'Notes', kind: 'collection', newName: 'Journal' },
+        nexusDeps,
+      )
+      expect(r.ok).toBe(true)
+    } finally {
+      setWriteTap(null)
+    }
+    const both = ['Archive', 'Journal/Daily/Old', 'Notes/Daily/Old']
+    expect(seen).toEqual([
+      ['settings write', ['Archive', 'Notes/Daily/Old']],
+      ['move', both],
+      ['settings write', both],
+      ['renamed', ['Archive', 'Journal/Daily/Old']],
+    ])
+  })
+
+  it('keeps the landed spelling, as one entry, through a case-only rename', async () => {
+    await exclude(['Notes/Daily/Old'])
+    const r = await settledMutate(
+      root,
+      { op: 'rename', path: 'Notes', kind: 'collection', newName: 'notes' },
+      nexusDeps,
+    )
+    expect(r.ok).toBe(true)
+    expect(await excludedOnDisk()).toEqual(['notes/Daily/Old'])
+  })
+
+  it('a carried landing restarts the watcher once and seeds nothing twice', async () => {
+    await exclude(['Notes/Daily/Old'])
+    const seed = vi.spyOn(indexSeed, 'seedContentIndex')
+    const watch = vi.fn(async () => {})
+    const r = await handleMutate(
+      root,
+      { op: 'rename', path: 'Notes', kind: 'collection', newName: 'Journal' },
+      nexusDeps,
+    )
+    await settleNow({ push: () => {}, watch }, root)
+    expect(r.ok).toBe(true)
+    expect(watch).toHaveBeenCalledTimes(1)
+    expect(seed).not.toHaveBeenCalled()
+    seed.mockRestore()
+  })
+
   it('refuses a landing that carries excluded entries while settings.json can’t be written', async () => {
     await mkdir(join(root, 'Notes', 'Private'), { recursive: true })
     await mkdir(join(root, 'Other'), { recursive: true })
@@ -3297,7 +3358,7 @@ describe('handleMutate — excluded entries follow their folders', () => {
     expect(landed.ok).toBe(true)
   })
 
-  it('refuses a Set moved, or a Collection restored, with excluded entries while settings.json can’t be written', async () => {
+  it('refuses a Set moved with excluded entries while settings.json can’t be written', async () => {
     await mkdir(join(root, 'Notes', 'Daily', 'Private'), { recursive: true })
     await mkdir(join(root, 'Other', 'Kept', 'Private'), { recursive: true })
     await writeFile(join(root, 'Other', '_pagecollection.json'), JSON.stringify({ id: 'ot' }))
@@ -3311,6 +3372,8 @@ describe('handleMutate — excluded entries follow their folders', () => {
       nexusDeps,
     )
     const bundlePath = (deleted.ok && deleted.value.trashed?.bundlePath) || ''
+    expect(await pathExists(join(root, 'Private'))).toBe(true)
+    expect(await excludedOnDisk()).toEqual(['Notes/Daily/Private', 'Private'])
     await refreshTree(root)
     await writeFile(join(root, '.nexus', 'settings.json'), '{ corrupt')
     const moved = await settledMutate(
@@ -3320,9 +3383,12 @@ describe('handleMutate — excluded entries follow their folders', () => {
     )
     expect(moved.ok ? '' : moved.error.message).toContain('settings.json')
     const restored = await settledMutate(root, { op: 'restore', bundlePath }, nexusDeps)
-    expect(restored.ok ? '' : restored.error.message).toContain('settings.json')
+    expect(restored.ok).toBe(true)
+    expect(await pathExists(join(root, 'Other', 'Kept', '_pageset.json'))).toBe(true)
+    expect(await pathExists(join(root, 'Other', 'Kept', 'Private'))).toBe(false)
+    expect(await pathExists(join(root, 'Private'))).toBe(true)
+    expect(await read('.nexus/settings.json')).toBe('{ corrupt')
     expect(await pathExists(join(root, 'Notes', 'Daily', 'Private'))).toBe(true)
-    expect(await pathExists(join(root, 'Other'))).toBe(false)
     const reordered = await settledMutate(
       root,
       { op: 'moveSet', path: 'Notes/Daily', newParentPath: 'Notes', order: [] },
@@ -3331,7 +3397,7 @@ describe('handleMutate — excluded entries follow their folders', () => {
     expect(reordered.ok).toBe(true)
   })
 
-  it('takes a trashed Collection’s entries with it and lands them wherever it is restored', async () => {
+  it('lifts a trashed Collection’s excluded folder to the root, its entry following, and restores the Collection without it', async () => {
     await mkdir(join(root, 'Other', 'Daily'), { recursive: true })
     await writeFile(join(root, 'Other', '_pagecollection.json'), JSON.stringify({ id: 'ot' }))
     await writeFile(join(root, 'Other', 'Daily', '_pageset.json'), JSON.stringify({ id: 'od' }))
@@ -3341,25 +3407,23 @@ describe('handleMutate — excluded entries follow their folders', () => {
       { op: 'delete', path: 'Other', kind: 'collection' },
       nexusDeps,
     )
-    const bundlePath = deleted.ok ? deleted.value.trashed?.bundlePath : undefined
-    expect(bundlePath).toBeDefined()
-    expect(await excludedOnDisk()).toBeUndefined()
-    await settledMutate(
-      root,
-      { op: 'createContainer', id: newId(), parentPath: '', kind: 'collection', name: 'Other' },
-      nexusDeps,
-    )
-    await writeFile(
-      join(root, '.nexus', 'settings.json'),
-      JSON.stringify({ excluded_folders: ['Other/Drafts'] }),
-    )
-    await refreshTree(root)
-    const r = await settledMutate(root, { op: 'restore', bundlePath: bundlePath ?? '' }, nexusDeps)
+    const bundlePath = deleted.ok ? (deleted.value.trashed?.bundlePath ?? '') : ''
+    expect(await readJson('Daily/_pageset.json')).toEqual({ id: 'od' })
+    expect(await excludedOnDisk()).toEqual(['Daily'])
+    expect(await readdir(join(root, bundlePath, 'Other'))).toEqual(['_pagecollection.json'])
+    expect('excluded' in (await readJson(`${bundlePath}/_record.json`))).toBe(false)
+    const r = await settledMutate(root, { op: 'restore', bundlePath }, nexusDeps)
     expect(r).toEqual({ ok: true, value: {} })
-    expect(await excludedOnDisk()).toEqual(['Other/Drafts', 'Other (2)/Daily'])
+    expect(await readdir(join(root, 'Other'))).toEqual(['_pagecollection.json'])
+    expect(await excludedOnDisk()).toEqual(['Daily'])
+    expect(
+      heldTreeOf(root)
+        ?.collections.map((c) => c.path)
+        .sort(),
+    ).toEqual(['Notes', 'Other'])
   })
 
-  it('reports a Collection delete and its restore to Sync as one rename each, the restore after its entries hold again', async () => {
+  it('reports the lift, the Collection delete, and its restore to Sync as one rename each, every one under settings already excluding the lifted folder', async () => {
     await mkdir(join(root, 'Other', 'Daily'), { recursive: true })
     await writeFile(join(root, 'Other', '_pagecollection.json'), JSON.stringify({ id: 'ot' }))
     await writeFile(join(root, 'Other', 'Daily', '_pageset.json'), JSON.stringify({ id: 'od' }))
@@ -3388,22 +3452,23 @@ describe('handleMutate — excluded entries follow their folders', () => {
         nexusDeps,
       )
       expect(deleted.ok).toBe(true)
-      expect(renames).toHaveLength(1)
-      const bundled = renames[0].to
-      expect(renames[0].from).toBe(folder)
+      expect(renames).toHaveLength(2)
+      const bundled = renames[1].to
+      expect(renames[1].from).toBe(folder)
       expect(bundled.endsWith('.deleted/Other')).toBe(true)
       await refreshTree(root)
       const bundlePath = deleted.ok ? (deleted.value.trashed?.bundlePath ?? '') : ''
       const restored = await settledMutate(root, { op: 'restore', bundlePath }, nexusDeps)
       expect(restored.ok).toBe(true)
       expect(renames.map(({ from, to }) => [from, to])).toEqual([
+        [join(folder, 'Daily'), join(root, 'Daily')],
         [folder, bundled],
         [bundled, folder],
       ])
-      expect(renames[1].excluded).toEqual(['Other/Daily'])
+      expect(renames.map(({ excluded }) => excluded)).toEqual([['Daily'], ['Daily'], ['Daily']])
       const inside = (path: string): boolean =>
         path.startsWith(`${folder}/`) || path.startsWith(`${bundled}/`)
-      expect(wrote.filter(inside)).toEqual([])
+      expect(wrote.filter(inside)).toEqual([join(folder, 'Daily')])
     } finally {
       setWriteTap(null)
     }
@@ -3420,6 +3485,103 @@ describe('handleMutate — excluded entries follow their folders', () => {
     )
     expect(r).toEqual({ ok: true, value: { cascade: { pages: [], hosts: [] } } })
     expect(await excludedOnDisk()).toEqual(['Other/Daily/Old'])
+  })
+
+  it('carries the asset directory with a moved Set', async () => {
+    await mkdir(join(root, 'Other'), { recursive: true })
+    await writeFile(join(root, 'Other', '_pagecollection.json'), JSON.stringify({ id: 'ot' }))
+    await mkdir(join(root, 'Notes', 'Daily', 'Media'), { recursive: true })
+    await writeFile(
+      join(root, '.nexus', 'settings.json'),
+      JSON.stringify({ asset_directory: 'Notes/Daily/Media' }),
+    )
+    await refreshTree(root)
+    const r = await settledMutate(
+      root,
+      { op: 'moveSet', path: 'Notes/Daily', newParentPath: 'Other', order: [] },
+      nexusDeps,
+    )
+    expect(r.ok).toBe(true)
+    expect((await readJson('.nexus/settings.json')).asset_directory).toBe('Other/Daily/Media')
+    expect(heldTreeOf(root)?.config.assetDirectory).toBe('Other/Daily/Media')
+  })
+
+  it('steps a lifted folder aside past every name its parent holds, the Set’s own among them, and the Set’s restore keeps its name', async () => {
+    for (const rel of ['Omega', 'Daily/Omega', 'Daily/Daily'])
+      await mkdir(join(root, 'Notes', rel), { recursive: true })
+    await exclude(['Notes/Omega', 'Notes/Daily/Omega', 'Notes/Daily/Daily'])
+    const deleted = await settledMutate(
+      root,
+      { op: 'delete', path: 'Notes/Daily', kind: 'set' },
+      nexusDeps,
+    )
+    const bundlePath = deleted.ok ? (deleted.value.trashed?.bundlePath ?? '') : ''
+    expect(await excludedOnDisk()).toEqual(['Notes/Omega', 'Notes/Omega (2)', 'Notes/Daily (2)'])
+    for (const rel of ['Omega', 'Omega (2)', 'Daily (2)'])
+      expect(await pathExists(join(root, 'Notes', rel))).toBe(true)
+    const restored = await settledMutate(root, { op: 'restore', bundlePath }, nexusDeps)
+    expect(restored.ok).toBe(true)
+    expect(await pathExists(join(root, 'Notes', 'Daily', 'Alpha.md'))).toBe(true)
+  })
+
+  it('lifts only the outermost of nested excluded folders, the inner one riding inside it', async () => {
+    await mkdir(join(root, 'Notes', 'Daily', 'Gamma', 'Omega', 'Deep'), { recursive: true })
+    await exclude(['Notes/Daily/Gamma/Omega', 'Notes/Daily/Gamma/Omega/Deep'])
+    const r = await settledMutate(
+      root,
+      { op: 'delete', path: 'Notes/Daily', kind: 'set' },
+      nexusDeps,
+    )
+    expect(r.ok).toBe(true)
+    expect(await pathExists(join(root, 'Notes', 'Omega', 'Deep'))).toBe(true)
+    expect(await excludedOnDisk()).toEqual(['Notes/Omega', 'Notes/Omega/Deep'])
+  })
+
+  it('lifts the asset directory out of a trashed Set, its setting following', async () => {
+    await mkdir(join(root, 'Notes', 'Daily', 'Media'), { recursive: true })
+    await writeFile(join(root, 'Notes', 'Daily', 'Media', 'Pic.png'), 'bytes')
+    await writeFile(
+      join(root, '.nexus', 'settings.json'),
+      JSON.stringify({ asset_directory: 'Notes/Daily/Media' }),
+    )
+    await refreshTree(root)
+    const r = await settledMutate(
+      root,
+      { op: 'delete', path: 'Notes/Daily', kind: 'set' },
+      nexusDeps,
+    )
+    expect(r.ok).toBe(true)
+    expect(await read('Notes/Media/Pic.png')).toBe('bytes')
+    expect((await readJson('.nexus/settings.json')).asset_directory).toBe('Notes/Media')
+    expect(heldTreeOf(root)?.config.assetDirectory).toBe('Notes/Media')
+  })
+
+  it('lifts under the system Trash Mode too, so the system trash never takes an excluded folder', async () => {
+    await mkdir(join(root, 'Notes', 'Daily', 'Private'), { recursive: true })
+    await writeFile(join(root, 'Notes', 'Daily', 'Private', 'Kept.md'), '# Kept\n')
+    await exclude(['Notes/Daily/Private'])
+    const trashToSystem = vi.fn((p: string) => rm(p, { recursive: true, force: true }))
+    const r = await settledMutate(
+      root,
+      { op: 'delete', path: 'Notes/Daily', kind: 'set' },
+      { trashMode: 'system', trashToSystem },
+    )
+    expect(r.ok).toBe(true)
+    expect(trashToSystem.mock.calls).toEqual([[join(root, 'Notes', 'Daily')]])
+    expect(await read('Notes/Private/Kept.md')).toBe('# Kept\n')
+    expect(await excludedOnDisk()).toEqual(['Notes/Private'])
+  })
+
+  it('leaves an entry naming no folder where it stands, lifting nothing for it', async () => {
+    await exclude(['Notes/Daily/Gone'])
+    const r = await settledMutate(
+      root,
+      { op: 'delete', path: 'Notes/Daily', kind: 'set' },
+      nexusDeps,
+    )
+    expect(r.ok).toBe(true)
+    expect(await excludedOnDisk()).toEqual(['Notes/Daily/Gone'])
+    expect(await pathExists(join(root, 'Notes', 'Gone'))).toBe(false)
   })
 
   it('writes nothing for a rename no entry sits under', async () => {

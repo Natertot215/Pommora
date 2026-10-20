@@ -571,7 +571,7 @@ async function applyMove(root: string, ev: Moved, owed: Owed): Promise<Applied> 
   const from = relative(root, ev.from)
   const to = relative(root, ev.absPath)
   const tree = heldTreeOf(root)
-  // A folder landing where an excluded entry already names a path at or beneath it moves the corpus with no settings write to report it, so it walks and reseeds; the entries themselves are unchanged, so the watch stands.
+  // A folder landing where an excluded entry already names a path at or beneath it moves the corpus, so it walks. An entry excluded from outside the move has no settings write of its own, so the walk reseeds and the watch stands; one the move's carry wrote ahead already owes the rescope, whose restarted watcher seeds in the reseed's place.
   if (tree && scopeOf(tree.config).excluded.some((entry) => entryWithin(entry, to) !== null)) {
     owed.corpus = true
     return 'walk'

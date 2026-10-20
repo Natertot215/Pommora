@@ -7,7 +7,6 @@ import type { MutateContext } from './mutate'
 import { renamePage } from './page'
 import { landingRefusal, renameFolderEntity } from './folderEntity'
 import { pathExists } from '../Files/atomicWrite'
-import { excludedWithin, exclusionWriteRefusal } from '../Settings/settings'
 
 export async function renameOp(
   { root }: MutateContext,
@@ -17,9 +16,7 @@ export async function renameOp(
   if (!resolved.ok) return resolved
   const abs = resolved.value
   if (req.kind !== 'page') {
-    const refused =
-      (await landingRefusal(root, dirname(abs), req.newName)) ??
-      (await exclusionWriteRefusal(root, await excludedWithin(root, req.path)))
+    const refused = await landingRefusal(root, dirname(abs), req.newName)
     if (refused) return refused
     const r = await renameFolderEntity(root, abs, req.newName)
     return r.ok ? ok({}) : r

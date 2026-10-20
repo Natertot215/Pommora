@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { rm, mkdir, writeFile, readFile, readdir } from 'node:fs/promises'
 import { tempRoot, readJsonAt } from '../Testing/hostFs'
 import {
+  carrySetAside,
   readWatchScope,
   readLiveSetting,
   updateSettings,
@@ -68,6 +69,51 @@ describe('writeExcludedFolders', () => {
     expect(s.time_format).toBe('twentyFourHour')
     expect(s.personalization).toEqual({ permanentDelete: true })
     expect(s.excluded_folders).toEqual(['Archive'])
+  })
+})
+
+describe('carrySetAside', () => {
+  it('writes each landing entry just ahead of its source, and its drop leaves the landing alone', async () => {
+    await write({ excluded_folders: ['Archive', 'Old/Private', 'Old/Deep/Raw'] })
+    const carried = await carrySetAside(root, 'Old', 'New')
+    if (!carried.ok) throw new Error(carried.error.message)
+    expect((await readSettings()).excluded_folders).toEqual([
+      'Archive',
+      'New/Private',
+      'Old/Private',
+      'New/Deep/Raw',
+      'Old/Deep/Raw',
+    ])
+    await carried.value()
+    expect((await readSettings()).excluded_folders).toEqual([
+      'Archive',
+      'New/Private',
+      'New/Deep/Raw',
+    ])
+  })
+
+  it('moves the asset directory in the same write', async () => {
+    await write({ asset_directory: 'Old/Media' })
+    expect((await carrySetAside(root, 'Old', 'New')).ok).toBe(true)
+    expect(await readSettings()).toEqual({ asset_directory: 'New/Media' })
+  })
+
+  it('refuses while settings.json can’t be written, leaving it byte-identical', async () => {
+    await write({ excluded_folders: ['Old/Private'] })
+    await readWatchScope(root)
+    await writeFile(path(), '{ corrupt', 'utf8')
+    const carried = await carrySetAside(root, 'Old', 'New')
+    expect(carried.ok ? '' : carried.error.message).toContain('settings.json')
+    expect(await readFile(path(), 'utf8')).toBe('{ corrupt')
+  })
+
+  it('writes nothing when no entry or asset directory sits under the source', async () => {
+    await write({ excluded_folders: ['Archive'] })
+    const before = await readFile(path(), 'utf8')
+    const carried = await carrySetAside(root, 'Old', 'New')
+    if (!carried.ok) throw new Error(carried.error.message)
+    await carried.value()
+    expect(await readFile(path(), 'utf8')).toBe(before)
   })
 })
 
