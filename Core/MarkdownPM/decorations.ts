@@ -50,6 +50,7 @@ import {
   GLYPH_CLASS,
   NO_CARET,
   railClass,
+  railStyle,
   prefixEndAt,
   seatPastMarker,
   tokenIntents,
@@ -304,18 +305,18 @@ class CodeTagWidget extends WidgetType {
 
 class OutlinerRailWidget extends WidgetType {
   constructor(
-    readonly level: number,
     readonly className: string,
+    readonly style: string,
   ) {
     super()
   }
   eq(o: OutlinerRailWidget): boolean {
-    return o.level === this.level && o.className === this.className
+    return o.className === this.className && o.style === this.style
   }
   toDOM(): HTMLElement {
     const el = document.createElement('span')
     el.className = this.className
-    el.style.setProperty('--rail-level', String(this.level))
+    el.style.cssText = this.style
     el.setAttribute('aria-hidden', 'true')
     return el
   }
@@ -515,7 +516,12 @@ function build(view: EditorView, scope: MarkdownScope): Built {
     if (it.kind === 'rail') {
       ranges.push(
         Decoration.widget({
-          widget: new OutlinerRailWidget(it.level, railClass(it)),
+          widget: new OutlinerRailWidget(
+            railClass(it),
+            Object.entries(railStyle(it))
+              .map(([k, v]) => `${k}:${v}`)
+              .join(';'),
+          ),
           side: -1,
         }).range(it.from),
       )

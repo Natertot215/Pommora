@@ -71,8 +71,8 @@ type RailIntent = {
   typeClass: string
   head: boolean
   first: boolean
-  last: boolean
-  elbow: boolean
+  end: 'cap' | 'elbow' | 'join' | null
+  reach: { level: number; typeClass: string } | null
 }
 
 export type DecoIntent =
@@ -100,17 +100,22 @@ export function railTypeClass(m: ListMarker): string | null {
   return null
 }
 
-export const railClass = (
-  r: Pick<RailIntent, 'typeClass' | 'head' | 'first' | 'last' | 'elbow'>,
-): string =>
+export const railClass = (r: Pick<RailIntent, 'typeClass' | 'head' | 'first' | 'end'>): string =>
   cx(
     'md-outline-rail',
     r.typeClass,
     r.head && 'md-outline-head',
     r.first && 'md-outline-first',
-    r.last && 'md-outline-last',
-    r.elbow && 'md-outline-elbow',
+    r.end && `md-outline-${r.end}`,
   )
+
+export const railStyle = (r: Pick<RailIntent, 'level' | 'reach'>): Record<string, string> => ({
+  '--rail-level': String(r.level),
+  ...(r.reach && {
+    '--reach-level': String(r.reach.level),
+    '--reach-x': `var(--${r.reach.typeClass}-x)`,
+  }),
+})
 
 // The form a marker is DRAWN as, and the line class that carries it — one answer for the editor's decorations and the resting cell's DOM alike.
 // Null where the source parses as a marker but nothing draws one: a bullet holding an empty box is prose, and both renderers have to agree on that.
@@ -398,22 +403,28 @@ export function railIntents(
     }
     const nextSpan =
       i + 1 === n ? 0 : blank(i + 1) ? Math.min(ahead[i + 1], behind + 1) : listLevels[i + 1]
+    let reaching: RailIntent | null = null
     for (let k = 0; k < span; k++) {
       const typeClass = railKind[k]
       if (!typeClass) continue
       const head = k === level
-      const last = k >= nextSpan
-      rails[i] ??= []
-      rails[i].push({
+      const hangs = listLevels[i + 1] !== k
+      const end: RailIntent['end'] =
+        k < nextSpan ? null : !hangs ? 'cap' : reaching ? 'join' : 'elbow'
+      const rail: RailIntent = {
         kind: 'rail',
         from: lineStarts[i],
         level: k,
         typeClass,
         head,
         first: head || k >= prevSpan,
-        last,
-        elbow: last && listLevels[i + 1] !== k,
-      })
+        end,
+        reach: null,
+      }
+      if (end === 'join' && reaching) reaching.reach = { level: k, typeClass }
+      if (end === 'elbow' || end === 'join') reaching = rail
+      rails[i] ??= []
+      rails[i].push(rail)
     }
   }
   return rails
