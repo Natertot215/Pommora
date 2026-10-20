@@ -1,13 +1,14 @@
 import { join, dirname, basename, relative } from '../Paths/posix'
 import { machine } from '../Platform/machine'
 import { recordWrite } from '../Files/writeEcho'
-import { pathExists, relocate, targetTaken, writeJson } from '../Files/atomicWrite'
-import { nameError } from '../Paths/names'
+import { heldName, pathExists, relocate, targetTaken, writeJson } from '../Files/atomicWrite'
+import { listEntries } from '../Files/walk'
+import { freeName, nameError } from '../Paths/names'
 import { sidecarPath } from '../Paths/paths'
 import type { SidecarKind } from '../Paths/nexusPaths'
 import { ok, fail, type Result } from '../Contract/result'
-import { outsideContent } from '../Paths/exclusion'
-import { followExcludedFolders, readWatchScope } from '../Settings/settings'
+import { entryWithin, outsideContent } from '../Paths/exclusion'
+import { carrySetAside, readWatchScope } from '../Settings/settings'
 
 const SET_ASIDE = {
   excluded:
@@ -27,9 +28,38 @@ export async function landingRefusal(
   return why && why !== 'hidden' ? fail('invalid-path', `"${name}" ${SET_ASIDE[why]}`) : null
 }
 
-/** A Collection or Set landing at a new path: excluded entries follow before sync hears of the rename, so it pushes under the new scope. */
-const relocateFolder = (root: string, from: string, to: string): Promise<void> =>
-  relocate(from, to, () => followExcludedFolders(root, relative(root, from), relative(root, to)))
+/** A Collection or Set landing at a new path carries its excluded entries and the asset directory: the carry's write refuses the move before anything moves, and its drop runs as `landed`, so sync hears of the rename once, under the scope it settled. */
+async function relocateFolder(
+  root: string,
+  from: string,
+  to: string,
+): Promise<Result<{ path: string }>> {
+  const carried = await carrySetAside(root, relative(root, from), relative(root, to))
+  if (!carried.ok) return carried
+  await relocate(from, to, carried.value)
+  return ok({ path: to })
+}
+
+/** A Collection or Set leaving the tree leaves every excluded folder and the asset directory inside it in its parent, the outermost of a nesting, under its own name or the next one free there, each one's entry carried ahead of it. */
+export async function liftSetAside(root: string, containerAbs: string): Promise<Result<null>> {
+  const { excluded, assetDir } = await readWatchScope(root)
+  const inside = [...excluded, assetDir].flatMap((entry) => {
+    const rest = entryWithin(entry, relative(root, containerAbs))
+    return rest ? [rest.join('/')] : []
+  })
+  const parent = dirname(containerAbs)
+  for (const rest of inside) {
+    if (inside.some((outer) => outer !== rest && entryWithin(rest, outer))) continue
+    const abs = join(containerAbs, rest)
+    // An entry can outlive its folder, whose spelling is read from its parent's listing.
+    if (!(await pathExists(abs))) continue
+    const name = (await heldName(abs)) ?? basename(abs)
+    const taken = (await listEntries(parent)).map((e) => e.name)
+    const lifted = await relocateFolder(root, abs, join(parent, freeName(name, taken)))
+    if (!lifted.ok) return lifted
+  }
+  return ok(null)
+}
 
 export async function createFolderEntity(
   parentDir: string,
@@ -59,8 +89,7 @@ export async function renameFolderEntity(
   const target = join(dirname(absFolder), newName)
   if (target === absFolder) return ok({ path: absFolder })
   if (await targetTaken(absFolder, target)) return fail('exists', `"${newName}" already exists.`)
-  await relocateFolder(root, absFolder, target)
-  return ok({ path: target })
+  return relocateFolder(root, absFolder, target)
 }
 
 export async function moveFolderEntity(
@@ -71,6 +100,5 @@ export async function moveFolderEntity(
   const target = join(newParentDir, basename(absFolder))
   if (await pathExists(target))
     return fail('exists', `"${basename(absFolder)}" already exists there.`)
-  await relocateFolder(root, absFolder, target)
-  return ok({ path: target })
+  return relocateFolder(root, absFolder, target)
 }

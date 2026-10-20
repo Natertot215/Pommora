@@ -1,5 +1,4 @@
 import { basename, dirname, isAtOrUnder, join, relative } from '../Paths/posix'
-import { excludedWithin } from '../Settings/settings'
 import { stampedIdOf } from '../Files/pageFile'
 import type { ContextDef, ContextsRegistry } from '../Contexts/contexts'
 import type { Result } from '../Contract/result'
@@ -69,7 +68,6 @@ export async function gatherContentRecord(
     entity: kind,
     ...(id ? { id } : {}),
     parent,
-    ...(kind === 'page' ? {} : { excluded: await excludedWithin(root, relative(root, abs)) }),
   }
 }
 

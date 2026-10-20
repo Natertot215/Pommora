@@ -83,48 +83,31 @@ export function writeExcludedFolders(root: string, folders: string[]): Promise<v
   )
 }
 
-/** The excluded entries at or under `rel`, each relative to it. */
-export const excludedWithin = async (root: string, rel: string): Promise<string[]> =>
-  (await readWatchScope(root)).excluded.flatMap((entry) => entryWithin(entry, rel)?.join('/') ?? [])
-
-async function editExcluded(root: string, edit: (excluded: string[]) => string[]): Promise<void> {
-  const { excluded } = await readWatchScope(root)
-  const next = normalizeExclusions(edit(excluded)).folders
-  if (next.length !== excluded.length || next.some((entry, i) => entry !== excluded[i]))
-    await writeExcludedFolders(root, next)
-}
-
-/** An excluded entry follows the folder it names: a Collection or Set landing at `to` carries every entry at or under `from` with it. */
-export async function followExcludedFolders(root: string, from: string, to: string): Promise<void> {
-  if (from === to) return
-  await editExcluded(root, (excluded) =>
-    excluded.map((entry) => {
-      const rest = entryWithin(entry, from)
-      return rest ? [to, ...rest].join('/') : entry
-    }),
-  )
-}
-
-/** A landing that moves excluded entries rewrites the settings file, so it refuses before anything moves while that file can't be written. */
-export async function exclusionWriteRefusal(
+/** A Collection or Set moving from `from` to `to` carries every excluded entry and the asset directory at or under it. Each landing entry is written just ahead of its source before the folder moves, so the list keeps its order, a case-only rename keeps the landed spelling, and the write's refusal is the move's; the step answered drops the sources once the folder has landed. */
+export async function carrySetAside(
   root: string,
-  entries: readonly string[],
-): Promise<Result<never> | null> {
-  if (!entries.length) return null
-  const settings = await updateNexusConfig(root, 'settings', () => null)
-  return settings.ok ? null : settings
+  from: string,
+  to: string,
+): Promise<Result<() => Promise<void>>> {
+  const { excluded, assetDir } = await readWatchScope(root)
+  const landing = (entry: string): string[] => {
+    const rest = entryWithin(entry, from)
+    return rest ? [[to, ...rest].join('/')] : []
+  }
+  const ahead = excluded.flatMap((entry) => [...landing(entry), entry])
+  const [asset] = landing(assetDir)
+  if (ahead.length === excluded.length && !asset) return ok(async () => {})
+  const folders = normalizeExclusions(ahead).folders
+  const written = await updateNexusConfig(root, 'settings', (cur) => ({
+    ...setOrDrop(cur, 'excluded_folders', folders.length > 0 && folders),
+    ...(asset ? { asset_directory: asset } : {}),
+  }))
+  if (!written.ok) return written
+  const kept = folders.filter((entry) => !entryWithin(entry, from) || entryWithin(entry, to))
+  return ok(async () => {
+    if (kept.length < folders.length) await writeExcludedFolders(root, kept)
+  })
 }
-
-/** A trashed Collection or Set takes its excluded entries with it; its record keeps them relative to it. */
-export async function releaseExcludedFolders(root: string, rel: string): Promise<void> {
-  await editExcluded(root, (excluded) =>
-    excluded.filter((entry) => entryWithin(entry, rel) === null),
-  )
-}
-
-/** A restored Collection or Set lands with the entries its record kept. */
-export const reseatExcludedFolders = (root: string, rel: string, within: string[]): Promise<void> =>
-  editExcluded(root, (excluded) => [...excluded, ...within.map((rest) => `${rel}/${rest}`)])
 
 /** An `undefined` value resets the key to its built-in default — JSON omits it. */
 export function writePersonalization(root: string, key: string, value: unknown): Promise<void> {

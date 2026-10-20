@@ -1,6 +1,6 @@
 import { join } from '../Paths/posix'
 import { z } from 'zod'
-import { hiddenName, rootSegs } from '../Paths/exclusion'
+import { hiddenName } from '../Paths/exclusion'
 import { mintBundle } from './bundle'
 import { readJsonObject, rmwJsonStrict, writeJson } from '../Files/atomicWrite'
 import { index } from '../Files/decoders'
@@ -35,8 +35,6 @@ const contentRecord = <E extends string>(entity: E) =>
     entity: z.literal(entity),
     id: z.string().optional(),
     parent: parentRef,
-    /** The excluded entries a Collection or Set held, relative to it, so a restore lands with them wherever it lands. */
-    excluded: z.array(z.string().refine((p) => rootSegs(p).length > 0)).optional(),
     /** Each Link value the delete stripped from a page outside it, by that page's id and the property's, so a restore can put it back. */
     links: z.array(strippedLink).optional(),
     targets: linkTargets,
