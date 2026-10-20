@@ -53,14 +53,14 @@ export const CardsGrid = glyph(
   </>,
 )
 
-// Lucide's text-cursor-input field, its I-beam caret and the field's opening around it placed at x.
+// Lucide's text-cursor-input field drawn to the full icon height, its I-beam caret and the field's opening around it placed at x.
 const caretField = (x: number) => (
   <>
-    <path d={`M${x - 4} 16H4a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2H${x - 4}`} />
-    <path d={`M${x + 4} 8H20a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2H${x + 4}`} />
-    <path d={`M${x - 3} 4h1a2 2 0 0 1 2 2 2 2 0 0 1 2-2h1`} />
-    <path d={`M${x + 3} 20h-1a2 2 0 0 1-2-2 2 2 0 0 1-2 2h-1`} />
-    <line x1={x} y1="6" x2={x} y2="18" />
+    <path d={`M${x - 5} 21H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2H${x - 5}`} />
+    <path d={`M${x + 5} 3H20a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H${x + 5}`} />
+    <path d={`M${x - 3} 1h1a2 2 0 0 1 2 2 2 2 0 0 1 2-2h1`} />
+    <path d={`M${x + 3} 23h-1a2 2 0 0 1-2-2 2 2 0 0 1-2 2h-1`} />
+    <line x1={x} y1="3" x2={x} y2="21" />
   </>
 )
 
