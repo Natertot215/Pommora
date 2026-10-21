@@ -52,6 +52,7 @@
   display: flex;
   align-items: center;
   padding-left: var(--trash-date-inset);
+  padding-right: 0; /* the lane is the measured date plus its inset, as the rows' cells are */
 }
 .trash-head-label {
   display: flex;
