@@ -41,7 +41,7 @@ The work is removal-first. Before anything archive-shaped lands, the Trash's han
 | 2 | +49 | +263 | +268 (+893 / −625) | +279 |
 | 3 | +10 | +108 | +143 (+333 / −190) | +422 |
 | 4 | +176 | +432 | +485 (+606 / −121) | +907 |
-| 5 | −21 | +95 | | |
+| 5 | −21 | +95 | +125 (+503 / −378) | +1,032 |
 | 6A | +57 | +102 | | |
 | 6B | +264 | +644 | | |
 | 7 | docs | docs | | |
@@ -11134,3 +11134,7 @@ Phase 4 measured +485 (+606 / −121) against the written +432. It landed at +43
 - **The Id Rule, Again (Tasks 4-2, 4-4, 4-5):** `archiveOp` and `collectionArchive` held the Collection id to one safe path segment through `holdsName`, the rule `bundles:list` took in Phase 2, rather than to ULID shape, so a Collection whose sidecar carries a hand-written id archives like any other; the carry, its re-file, and `archiveReach` took the same gate, so no Archive path built from a Collection id leaves `.nexus/archive`. About +5, the gates in `refile.ts` and `treePatch.ts`.
 - **One Link World (Tasks 4-3, 4-4):** the delete's strip judged what a Link value still names against the tree and the Archive, as every refill and frozen world does since Phase 3, so a value an archived page still answers stays in place (D-1) whether the page deleted was archived or live; the Trash recorded a trashed page's link to an archived page as its target where no live page answers its key, so the link follows that page wherever it returns. About +8, `cascade.ts` and `gather.ts`.
 - **The Moved Set's Views (Task 4-5):** a Set moved to another Collection took the archived Sets carried with it out of the saved views it left, as it takes its live descendants, finding them by their records' ids, and the configuration pass left those Sets' own views alone. About +12, `move.ts` and `refile.ts`.
+
+Phase 5 measured +125 (+503 / −378) against the written +95. It landed at its written +95 before its review, and its review's fix was +30: the browser hook's one load state and TrashFrame's switch over it, a batch a Nexus switch stops posting nothing, a batch with nowhere to restore posting only that, and the code block tally's hidden face taking `Swap`'s `inert` and `aria-hidden`, against the batch's dead page patch and one `matches` for three searches.
+
+- **One Path for a Batch (Task 5-5):** the batch runner moved into `useBundleBrowser` took the single action's path where the plan moved it as it stood: it stops at a Nexus switch as `mutate` does, and signals `storesChanged` once per batch, which the browser's own subscription re-lists on, rather than awaiting a re-list of its own, so a batch in one store tells the other to re-list (Phase 6B's delete from the Archive to the Trash) and its notice posts before the re-list lands, as a single action's does. About +4.
