@@ -132,6 +132,13 @@ export function dropPageDetail(path: string): void {
   inFlight.delete(path)
 }
 
+/** A container that left takes its pages' cached details with it, so none returns from its old path. */
+export function dropPageDetailsUnder(dir: string): void {
+  const prefix = `${dir}/`
+  for (const map of [detailByPath, slots, baseByPath, inFlight])
+    for (const key of map.keys()) if (key.startsWith(prefix)) map.delete(key)
+}
+
 /** A returning reader would otherwise see the pre-write value. Editor state and scroll stay warm; only the detail refetches. */
 export function dropCacheDetail(path: string): void {
   detailByPath.delete(path)

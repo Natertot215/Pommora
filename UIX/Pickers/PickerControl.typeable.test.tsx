@@ -156,12 +156,12 @@ describe('a type-only picker', () => {
   })
 })
 
-describe('a stepped picker held under a cap', () => {
+describe('a stepped picker held within a range', () => {
   const onPick = vi.fn()
   beforeEach(() => {
     onPick.mockClear()
     const props = steppedPickerProps({
-      range: { ...steppedRange([7, 14, 30, 60, 90]), max: 30 },
+      range: { ...steppedRange([7, 14, 30, 60, 90]), min: 14, max: 30 },
       value: 14,
       unit: { scale: 1, suffix: ' Days', digits: 0 },
       onPick,
@@ -173,10 +173,10 @@ describe('a stepped picker held under a cap', () => {
   const capped = (): HTMLButtonElement =>
     host.querySelector('button[aria-label="Archive History Timeframe"]') as HTMLButtonElement
 
-  it('dims the steps above the cap in the list', () => {
+  it('dims the steps outside the range in the list', () => {
     press(capped(), 'click', { detail: 1 })
     expect(door.mock.calls[0][0].map((r) => [r.label, r.disabled])).toEqual([
-      ['7 Days', false],
+      ['7 Days', true],
       ['14 Days', false],
       ['30 Days', false],
       ['60 Days', true],

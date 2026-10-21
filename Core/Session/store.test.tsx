@@ -422,6 +422,25 @@ describe('store — page slots', () => {
     })
   }
 
+  it('an archive drops the page’s detail, base, and slot as a delete does', () => {
+    seed({ pages: { a: ready('a') } })
+    cachePageDetail(detail('a'))
+    useSession.getState().patchPagesFor({ op: 'archive', path: pg('a').path, kind: 'page' })
+    expect(readPageDetail(pg('a').path)).toBeUndefined()
+    expect(readBodyBase(pg('a').path)).toBeNull()
+    expect(useSession.getState().pages.a).toBeUndefined()
+  })
+
+  it('a Set’s delete or archive drops the cached details of the pages under it', () => {
+    cachePageDetail(detail('a', 'Notes/Daily/a.md'))
+    cachePageDetail(detail('b', 'Notes/Daily/b.md'))
+    cachePageDetail(detail('c', 'Notes/Dailyish/c.md'))
+    useSession.getState().patchPagesFor({ op: 'archive', path: 'Notes/Daily', kind: 'set' })
+    expect(readPageDetail('Notes/Daily/a.md')).toBeUndefined()
+    expect(readPageDetail('Notes/Daily/b.md')).toBeUndefined()
+    expect(readPageDetail('Notes/Dailyish/c.md')).toBeDefined()
+  })
+
   it('a rename re-paths only the renamed page’s slot and leaves the shown linker to the push', async () => {
     seedLinkerAndParked()
     setBodyBase('Notes/tile.md', { text: 'seen', hash: 'h' })

@@ -173,14 +173,8 @@ describe('every decode helper at its boundary', () => {
 
 describe('settingWithin', () => {
   it('follows its bound until picked, then holds the pick', () => {
-    expect(settingWithin({}, 'archiveHistoryDays', 'historyDays')).toBe(HISTORY_DAYS.default)
-    expect(settingWithin({ historyDays: 14 }, 'archiveHistoryDays', 'historyDays')).toBe(14)
-    expect(
-      settingWithin(
-        { historyDays: 14, archiveHistoryDays: 7 },
-        'archiveHistoryDays',
-        'historyDays',
-      ),
-    ).toBe(7)
+    expect(settingWithin({}, 'archiveHistoryDays')).toBe(HISTORY_DAYS.default)
+    expect(settingWithin({ historyDays: 14 }, 'archiveHistoryDays')).toBe(14)
+    expect(settingWithin({ historyDays: 14, archiveHistoryDays: 7 }, 'archiveHistoryDays')).toBe(7)
   })
 })

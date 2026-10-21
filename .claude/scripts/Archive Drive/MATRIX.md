@@ -87,7 +87,7 @@ Seeds through `mutate` on `~/Test`: `G5 One`, `G5 Two`, `G5 Note`, `G5 Note Long
 
 #### Group 6A — Archiving (Phase 6A)
 
-Seeds through `mutate` on `~/Test`, each with an explicit `order` built from the held tree's drawn children: `Arc Page`, second among Set Alpha's pages, and Set `Arc Set`, second among Collection A's Sets, so a restore's exact place has neighbours. Each archive is undone in its own check and each declined question changes nothing; the group saves `historyDays`, `archiveHistoryDays`, and `confirmArchiving` from `settings.json`'s personalization at its start and writes each back through `personalization:set` at its end, an absent key as `null`; the harness restores `~/Test` when the run ends.
+Seeds through `mutate` on `~/Test`, each with an explicit `order` built from the held tree's drawn children: `Arc Page`, second among Set Alpha's pages, and Set `Arc Set`, second among Collection A's Sets, so a restore's exact place has neighbours. Each archive is undone in its own check and each declined question changes nothing; the group saves `historyDays`, `archiveHistoryDays`, `confirmArchiving`, and `permanentDelete` from `settings.json`'s personalization at its start and writes each back through `personalization:set` at its end, an absent key as `null`, after deleting both seeds and emptying their bundles under `permanentDelete` and removing the empty chain folders its archives left under `.nexus/archive/<A id>/`; the harness restores `~/Test` when the run ends.
 
 | Check | Decision | Asserts |
 | --- | --- | --- |
@@ -108,6 +108,7 @@ Seeds through `mutate` on `~/Test`, each with an explicit `order` built from the
 | a pick stores, and a typed value clamps to History Timeframe | J-1 | disk and DOM: picking `14 Days` writes `archiveHistoryDays: 14`; a right press, `60` typed, and Enter write 30, the picker reading `30 Days` |
 | shortening History Timeframe switches the archive timeframe down in one write | J-1 | disk and DOM: under `watch`, picking History Timeframe `7 Days` lands one `settings.json` write holding `historyDays: 7` and `archiveHistoryDays: 7`; the archive picker reads `7 Days` once the host's echo lands |
 | lengthening History Timeframe leaves the pick where it is | J-1 | disk and DOM: picking History Timeframe `60 Days` leaves `archiveHistoryDays` at 7, the archive picker reading `7 Days` and its list dimming `90 Days` alone |
+| the group leaves Set Alpha, Collection A, its Archive, and the Trash as it found them | — | start-of-group values: Set Alpha's `page_order`, Collection A's `set_order`, the Trash's `bundles:list` length, what `.nexus/archive/<A id>/` holds, and `permanentDelete`; no `Arc Page` file or `Arc Set` folder in Collection A |
 
 #### Pruned
 
@@ -121,4 +122,4 @@ Seeds through `mutate` on `~/Test`, each with an explicit `order` built from the
 - **File History's batch offering Delete All alone in group 5:** two snapshots need two saves a Snapshot Interval apart; `restoreMenu.test.ts` pins the rows and `actedOn` the batch.
 - **A delete under the system Trash Mode naming the system trash in group 5:** the Trash Mode is device configuration the harness doesn't write; `confirmations.test.ts` pins the detail.
 - **The archive timeframe's sweep in group 6A:** the snapshot store is device-local and a snapshot's age can't be driven without faking time; `fileHistory.test.ts` and the store contract pin the sweep.
-- **The archive refusal in group 6A:** `Only pages and Sets inside a Collection can be archived.` needs a Collection whose id isn't ULID-shaped, which nothing in-app writes; `archive.test.ts` pins its copy, and the menu reaches it through `mutate`'s `reportRefusal`.
+- **The archive refusal in group 6A:** `Only pages and Sets inside a Collection can be archived.` needs an item no Collection owns, or a Collection whose id is missing or isn't a safe path segment, which no menu offers and nothing in-app writes; `archive.test.ts` pins its copy, and the menu reaches it through `mutate`'s `reportRefusal`.

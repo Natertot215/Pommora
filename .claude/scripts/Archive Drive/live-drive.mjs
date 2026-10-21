@@ -103,6 +103,13 @@ async function closeSettings(cdp) {
 }
 const drawn = (cdp, title) => cdp.evaluate(`!!(${sidebarRow(title)})`)
 const DIALOG = `document.querySelector('[role="alertdialog"]')`
+const pressDialog = (cdp, label) => click(cdp, `[...${DIALOG}.querySelectorAll('button')].find((b) => b.textContent.trim() === ${JSON.stringify(label)})`)
+/** Scrolled into the Settings body's view first, since a press lands where the element is drawn. */
+async function press(cdp, expr) {
+  await cdp.evaluate(`(${expr}).scrollIntoView({ block: 'center' })`)
+  await sleep(300)
+  await mouseClick(cdp, expr)
+}
 /** A folded row's chevron pressed as a pointer presses it, since the chevron is an svg, which takes no `.click()`. */
 async function unfold(cdp, title, child) {
   if (await drawn(cdp, child)) return
@@ -116,7 +123,7 @@ async function deleteFromSidebar(cdp, title) {
   const menu = await chooseNative(cdp, sidebarRow(title), 'Delete')
   await until('the confirmation', () => cdp.evaluate(`!!${DIALOG}`))
   const asked = await cdp.evaluate(`${DIALOG}.getAttribute('aria-label')`)
-  await click(cdp, `[...${DIALOG}.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Delete')`)
+  await pressDialog(cdp, 'Delete')
   return { menu, asked }
 }
 
@@ -659,7 +666,7 @@ async function group5(cdp) {
   const { chosen: deletedAll } = await chooseNative(cdp, g5Row('G5 Note'), 'Delete All')
   await until('the confirmation', () => cdp.evaluate(`!!${DIALOG}`))
   const asked = await cdp.evaluate(`${DIALOG}.getAttribute('aria-label')`)
-  await click(cdp, `[...${DIALOG}.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Delete')`)
+  await pressDialog(cdp, 'Delete')
   const deletedSaid = await settles(async () => (await notice(cdp)).startsWith('Deleted 2 Pages'))
   const far = await cdp.evaluate(`({ x: 8, y: innerHeight - 8 })`)
   await moveTo(cdp, far)
@@ -720,13 +727,11 @@ async function group5(cdp) {
 
   await openSettings(cdp, 'Files & Links')
   const CLEAR = `${settingRow('Clear History')}.querySelector('button')`
-  await cdp.evaluate(`${CLEAR}.scrollIntoView({ block: 'center' })`)
-  await sleep(300)
   const idle = await facesOf(cdp, CLEAR)
   const w = await widthOf(cdp, CLEAR)
-  await mouseClick(cdp, CLEAR)
+  await press(cdp, CLEAR)
   await until('the confirmation', () => cdp.evaluate(`!!${DIALOG}`))
-  await click(cdp, `[...${DIALOG}.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Clear')`)
+  await pressDialog(cdp, 'Clear')
   const marked = await settles(async () => (await facesOf(cdp, CLEAR)).find(loud)?.text === 'Cleared')
   const [clearFace] = await facesOf(cdp, CLEAR)
   const markedWidth = await widthOf(cdp, CLEAR)
@@ -789,7 +794,6 @@ const groupsOf = (rows) => (rows ?? []).reduce((out, r) => (r.separator ? [...ou
 const popAt = async (cdp, expr) => popNative(cdp, await boxOf(cdp, expr))
 const dialogRead = (cdp) =>
   cdp.evaluate(`(() => { const d = ${DIALOG}; return d && { message: d.getAttribute('aria-label'), detail: [...d.querySelectorAll('span')].find((e) => e.textContent === d.getAttribute('aria-label'))?.nextElementSibling?.textContent ?? null, actions: [...d.querySelectorAll('button')].map((b) => b.textContent.trim()).filter((t) => t !== 'Cancel') } })()`)
-const pressDialog = (cdp, label) => click(cdp, `[...${DIALOG}.querySelectorAll('button')].find((b) => b.textContent.trim() === ${JSON.stringify(label)})`)
 /** The notice while its label is up: its text, message then button, and its buttons' text. */
 const noticeUp = async (cdp, text) =>
   (await settles(async () => !(await drained(cdp)) && (await notice(cdp)) === text)) && same(await cdp.evaluate(`[...${LABEL}.querySelectorAll('button')].map((b) => b.textContent.trim())`), ['Undo'])
@@ -802,12 +806,6 @@ const PICKER = (label) => `document.querySelector('.settings-section button[aria
 const pickerText = (cdp, label) => cdp.evaluate(`(${PICKER(label)})?.textContent.trim() ?? null`)
 const stepEl = (label) => `[...document.querySelectorAll('[data-picker-portal] *')].find((e) => e.children.length === 0 && e.textContent.trim() === ${JSON.stringify(label)})`
 const pickable = (cdp, labels) => cdp.evaluate(`${JSON.stringify(labels)}.map((l) => !!([...document.querySelectorAll('[data-picker-portal] *')].find((e) => e.children.length === 0 && e.textContent.trim() === l)?.closest('[role="button"]')))`)
-/** Scrolled into the Settings body's view first, since a press lands where the element is drawn. */
-async function press(cdp, expr) {
-  await cdp.evaluate(`(${expr}).scrollIntoView({ block: 'center' })`)
-  await sleep(300)
-  await mouseClick(cdp, expr)
-}
 async function openPicker(cdp, label) {
   await press(cdp, PICKER(label))
   await until(`${label}'s list`, () => portalOpen(cdp))
@@ -826,6 +824,15 @@ async function group6A(cdp) {
   const COLL_SIDECAR = `${COLLECTION}/_pagecollection.json`
   const ARC = page(A_ALPHA, 'Arc Page')
   const ARC_SET = `${COLLECTION}/Arc Set`
+  const ARCHIVE_A = `.nexus/archive/${sidecarIdOf(COLL_SIDECAR)}`
+  const standing = async () => ({
+    pageOrder: orderIn(ALPHA_SIDECAR, 'page_order'),
+    setOrder: orderIn(COLL_SIDECAR, 'set_order'),
+    trash: (await rows({ kind: 'trash' })).length,
+    archive: exists(ARCHIVE_A) && readdirSync(abs(ARCHIVE_A), { recursive: true }),
+    permanentDelete: (await config(cdp)).personalization.permanentDelete === true,
+  })
+  const start = await standing()
 
   const alphaPages = (await collectionA(cdp)).sets.find((s) => s.path === A_ALPHA).pages.map((p) => p.id)
   const pageId = mintPageId()
@@ -991,7 +998,18 @@ async function group6A(cdp) {
     lengthened && held && same(dimmedAfter, [true, true, true, true, false]), show({ personalization: personal(), dimmedAfter }))
   await closeSettings(cdp)
 
-  for (const key of ['historyDays', 'archiveHistoryDays', 'confirmArchiving']) await must(`${key} as it was`, ask(cdp, 'personalization:set', key, kept[key] ?? null))
+  await must('permanentDelete on', ask(cdp, 'personalization:set', 'permanentDelete', true))
+  for (const [title, rel, kind] of [['Arc Page', ARC, 'page'], ['Arc Set', ARC_SET, 'set']]) {
+    await deleteAt(cdp, rel, kind)
+    await must(`empty ${title}`, ask(cdp, 'mutate', { op: 'emptyBundle', bundlePath: (await trashed(cdp, title))?.bundlePath }))
+  }
+  for (const key of ['historyDays', 'archiveHistoryDays', 'confirmArchiving', 'permanentDelete']) await must(`${key} as it was`, ask(cdp, 'personalization:set', key, kept[key] ?? null))
+  // The watcher holds a folder the app just wrote until it's still for 200 ms, so the empty chain folders the archives and Undos left leave once those writes are still.
+  await sleep(400)
+  if (!start.archive) rmSync(abs(ARCHIVE_A), { recursive: true, force: true })
+  const ended = await standing()
+  item('6A', '6A', '—', 'the group leaves Set Alpha, Collection A, its Archive, and the Trash as it found them',
+    same(ended, start) && !exists(ARC) && !exists(ARC_SET), show({ start, ended }))
 }
 
 // ── The run ─────────────────────────────────────────────────────────────────

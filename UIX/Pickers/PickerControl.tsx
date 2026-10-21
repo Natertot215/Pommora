@@ -33,7 +33,7 @@ const labelOf = <T extends string>(opts: readonly PickerOption<T>[], v: T): stri
 const stepsWith = (steps: readonly number[], current: number): number[] =>
   steps.some((f) => f === current) ? [...steps] : [...steps, current].sort((a, b) => a - b)
 
-// Every stepped number control — a list of step rows, and the same field behind a right press; a typed value is divided back by `scale` and held within the steps' ends.
+// Every stepped number control — a list of step rows, and the same field behind a right press; a typed value is divided back by `scale` and held within the range.
 export function steppedPickerProps({
   range,
   value,
@@ -55,7 +55,7 @@ export function steppedPickerProps({
     options: stepsWith(range.steps, value).map((f) => ({
       value: String(f),
       label: unitLabel(f, unit),
-      disabled: f > range.max,
+      disabled: f < range.min || f > range.max,
     })),
     onPick: (v) => onPick(Number(v)),
     typeable: {

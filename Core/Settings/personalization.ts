@@ -260,9 +260,13 @@ export type SteppedKey = {
 export const settingOf = <K extends SettingKey>(p: Personalization, key: K): SettingValue<K> =>
   (p[key] ?? SETTING_DEFAULTS[key]) as SettingValue<K>
 
-/** A stepped setting that follows `within` until it's picked. */
-export const settingWithin = (p: Personalization, key: SteppedKey, within: SteppedKey): number =>
-  (p[key] ?? settingOf(p, within)) as number
+/** A stepped setting with a bound follows it until picked, and never exceeds it. */
+export const SETTING_BOUNDS: Readonly<Partial<Record<SettingKey, SteppedKey>>> = {
+  archiveHistoryDays: 'historyDays',
+}
+
+export const settingWithin = (p: Personalization, key: SteppedKey): number =>
+  (p[key] ?? settingOf(p, SETTING_BOUNDS[key] ?? key)) as number
 
 // A Collection's Sets sit above or below its pages by setPlacement, a Set's by subSetPlacement.
 export const placementOf = (p: Personalization, containerKind: string): Placement =>

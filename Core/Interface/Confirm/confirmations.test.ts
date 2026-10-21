@@ -288,16 +288,20 @@ describe('an archive through the confirmation', () => {
   })
 
   it('posts Archived “A” with an Undo that restores its bundle, whatever the switch says', async () => {
-    useSession.setState({ tree: makeTree({ personalization: { confirmArchiving: false } }) })
-    await archive('page')
-    expect(currentNotification()).toMatchObject({
-      message: 'Archived “A”',
-      tone: 'normal',
-      action: { label: 'Undo' },
-    })
-    expect(currentNotification()?.segment).toBeUndefined()
-    await currentNotification()?.action?.run()
-    expect(mutate).toHaveBeenLastCalledWith({ op: 'restore', bundlePath: BUNDLE })
+    for (const confirmArchiving of [false, true]) {
+      useSession.setState({ tree: makeTree({ personalization: { confirmArchiving } }) })
+      clearNotification()
+      await archive('page')
+      expect(currentNotification()).toMatchObject({
+        message: 'Archived “A”',
+        tone: 'normal',
+        action: { label: 'Undo' },
+      })
+      expect(currentNotification()?.segment).toBeUndefined()
+      await currentNotification()?.action?.run()
+      expect(mutate).toHaveBeenLastCalledWith({ op: 'restore', bundlePath: BUNDLE })
+    }
+    expect(asked).toEqual(['Archive “A”?'])
   })
 
   it('archives nothing when the question is declined', async () => {

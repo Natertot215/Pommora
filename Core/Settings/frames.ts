@@ -84,7 +84,6 @@ type PickerControlRow<T extends string> = RowText & {
 
 type ZoomSpec = RowText & {
   unit?: NumberUnit
-  within?: SteppedKey
 }
 
 type InheritSentinel = 'system' | 'accent' | 'default'
@@ -627,7 +626,6 @@ export const FRAMES = roster([
           {
             kind: 'zoom',
             key: 'archiveHistoryDays',
-            within: 'historyDays',
             label: 'Archive History Timeframe',
             hint: "How long archived pages keep their snapshots; it follows 'History Timeframe' until set, and never exceeds it.",
             unit: DAYS,

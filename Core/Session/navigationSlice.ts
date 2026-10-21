@@ -49,6 +49,7 @@ import {
   bumpBodyEpoch,
   clearCache,
   dropPageDetail,
+  dropPageDetailsUnder,
   dropCacheDetail,
   fetchPageDetail,
   fetchPageResult,
@@ -694,7 +695,9 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
     patchPagesFor: (req) => {
       switch (req.op) {
         case 'delete':
+        case 'archive':
           dropPageDetail(req.path)
+          if (req.kind !== 'page') dropPageDetailsUnder(req.path)
           keepSlots((_, slot) => slot.target.path !== req.path)
           break
         case 'setBanner':
