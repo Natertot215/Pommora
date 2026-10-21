@@ -86,7 +86,7 @@ export interface SnapshotStore {
   readSnapshot(pageId: string, ts: number): string | null
   deleteSnapshots(pageId: string, ts: readonly number[]): number
   clearSnapshots(): number
-  sweepSnapshots(cutoffMs: number): number
+  sweepSnapshots(cutoffMs: number, archived: { ids: readonly string[]; cutoffMs: number }): number
 }
 
 export interface BaseRecord {

@@ -33,12 +33,13 @@ describe('the sidebar entity menu', () => {
       'title:copypath',
       'title:history',
       'title:reveal',
+      'title:archive',
       'title:delete',
     ])
     expect(items[0].label).toBe('Open')
   })
 
-  it('a sidebar collection opens, creates, renames, deletes, locks, copies its path, and reveals in four groups', () => {
+  it('a sidebar collection opens, creates, renames, locks, copies its path, and reveals, closing on Delete alone', () => {
     const items = entityMenuItems(
       { kind: 'collection', id: 'c1', path: 'Notes', title: 'Notes', host: 'sidebar' },
       creators,
@@ -49,27 +50,41 @@ describe('the sidebar entity menu', () => {
       'New Page',
       '—',
       'Rename',
-      'Delete',
       '—',
       'Lock Folder',
       'Copy Path',
       'Reveal Location',
+      '—',
+      'Delete',
     ])
+    expect(items.some((i) => i.action === 'title:archive')).toBe(false)
+    expect(items.at(-1)?.action).toBe('title:delete')
     expect(items.find((i) => i.action === 'lock')?.label).toBe('Lock Folder')
     expect(items.find((i) => i.label === 'Reveal Location')?.action).toBe('title:reveal')
   })
 
-  it('a band set neither opens nor locks, and a context without creators starts at Rename', () => {
+  it('a band set neither opens nor locks and closes on Archive above Delete, and a context without creators starts at Rename', () => {
     expect(
       shape(
         entityMenuItems({ kind: 'set', path: 'Notes/S', title: 'S', host: 'detail' }, creators),
       ),
-    ).toEqual(['New Page', '—', 'Rename', 'Delete', '—', 'Copy Path', 'Reveal Location'])
-    expect(
-      shape(
-        entityMenuItems({ kind: 'context', path: 'Areas', title: 'Areas', host: 'sidebar' }, []),
-      ),
-    ).toEqual(['Rename', 'Edit Icon', '—', 'Delete'])
+    ).toEqual([
+      'New Page',
+      '—',
+      'Rename',
+      '—',
+      'Copy Path',
+      'Reveal Location',
+      '—',
+      'Archive',
+      'Delete',
+    ])
+    const context = entityMenuItems(
+      { kind: 'context', path: 'Areas', title: 'Areas', host: 'sidebar' },
+      [],
+    )
+    expect(shape(context)).toEqual(['Rename', 'Edit Icon', '—', 'Delete'])
+    expect(context.at(-1)?.action).toBe('title:delete')
   })
 
   it('a Space draws its identity rows, then its two branches', () => {

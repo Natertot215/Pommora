@@ -2,16 +2,16 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync
 import { join } from 'node:path'
 import { parse } from 'yaml'
 import {
-  ask, boxOf, chooseNative, click, createPage, escapeAll, FM, holds, hover, launch, mintPageId, mouseClick, must, NEXUS,
-  openCollection, openPage, PAGE_VIEW, pageIds, portalOpen, pressKey, relaunch, restore, results, sel, settles, shot, sleep,
-  textEl, typeText, until, writeBody,
+  ask, boxOf, chooseNative, click, createPage, escapeAll, FM, holds, hover, launch, mintPageId, mouseAt, mouseClick, must, NEXUS,
+  openCollection, openPage, PAGE_VIEW, pageIds, pickNative, popNative, portalOpen, pressKey, relaunch, restore, results, row, sel,
+  settles, shot, sleep, textEl, typeText, until, watch, writeBody,
 } from '../drive-harness.mjs'
 
 const PORT = 9393
 // The plan's phases in order, named as the plan names them, so `6A` sorts before `6B`.
 const PHASES = ['1', '2', '3', '4', '5', '6A', '6B']
 const at = (phase) => PHASES.indexOf(String(phase))
-const ALL = ['1', '2', '3', '4', '5']
+const ALL = ['1', '2', '3', '4', '5', '6A']
 const GROUPS = new Set(process.argv.slice(2))
 // The last plan phase landed in the build under test: an item owned by a later phase is expected to fail and doesn't fail the run.
 const LANDED = process.env.POMMORA_ARCHIVE_LANDED ?? '1'
@@ -758,7 +758,7 @@ async function group5(cdp) {
   await openSettings(cdp, 'Files & Links')
   const permanentHint = await captionOf(cdp, 'Permanently Delete Files')
   const confirmHint = await captionOf(cdp, 'Confirm Before Deletion')
-  item(5, 5, 'K-5', "Settings › Files & Links' Deletion section reads its rewritten hints",
+  item(5, 5, 'K-5', "Settings › Files & Links' Trash & Archive section reads its rewritten hints",
     permanentHint === 'Erase items emptied from the Trash instead of moving them to the system trash.' &&
       !!confirmHint?.endsWith('Collections, Sets, Contexts, Spaces, views and properties always ask.'),
     show({ permanentHint, confirmHint }))
@@ -775,6 +775,225 @@ async function group5(cdp) {
     same(ended, start) && !made.some((t) => exists(page(A_ALPHA, t))), show({ start, ended }))
 }
 
+// ── Group 6A — Archiving (Phase 6A) ─────────────────────────────────────────
+
+/** The bundle under Collection A's Archive whose stamped leaf names `title`, as a page's or a Set's. */
+const archivedBundle = (title) => {
+  const dir = `.nexus/archive/${JSON.parse(readRel('Collection A/_pagecollection.json')).id}`
+  if (!exists(dir)) return undefined
+  const leaf = readdirSync(abs(dir), { recursive: true }).find((n) => n.endsWith(`__${title}.md.archived`) || n.endsWith(`__${title}.archived`))
+  return leaf && `${dir}/${leaf}`
+}
+const tailOf = (rows, n) => (rows ?? []).slice(-n).map((r) => (r.separator ? { separator: true } : { label: r.label, enabled: r.enabled }))
+const groupsOf = (rows) => (rows ?? []).reduce((out, r) => (r.separator ? [...out, []] : [...out.slice(0, -1), [...out.at(-1), r.label]]), [[]])
+const popAt = async (cdp, expr) => popNative(cdp, await boxOf(cdp, expr))
+const dialogRead = (cdp) =>
+  cdp.evaluate(`(() => { const d = ${DIALOG}; return d && { message: d.getAttribute('aria-label'), detail: [...d.querySelectorAll('span')].find((e) => e.textContent === d.getAttribute('aria-label'))?.nextElementSibling?.textContent ?? null, actions: [...d.querySelectorAll('button')].map((b) => b.textContent.trim()).filter((t) => t !== 'Cancel') } })()`)
+const pressDialog = (cdp, label) => click(cdp, `[...${DIALOG}.querySelectorAll('button')].find((b) => b.textContent.trim() === ${JSON.stringify(label)})`)
+/** The notice while its label is up: its text, message then button, and its buttons' text. */
+const noticeUp = async (cdp, text) =>
+  (await settles(async () => !(await drained(cdp)) && (await notice(cdp)) === text)) && same(await cdp.evaluate(`[...${LABEL}.querySelectorAll('button')].map((b) => b.textContent.trim())`), ['Undo'])
+const pressUndo = (cdp) => click(cdp, `[...${LABEL}.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Undo')`)
+const SWITCH = (label) => `document.querySelector('[role="switch"][aria-label="${label}"]')`
+const sectionOf = (heading) => `[...document.querySelectorAll('.settings-section')].find((s) => s.firstElementChild?.textContent.trim().toLowerCase() === ${JSON.stringify(heading.toLowerCase())})`
+const controlsOf = (cdp, heading) => cdp.evaluate(`[...(${sectionOf(heading)}).querySelectorAll('[role="switch"][aria-label], button[aria-label]')].map((e) => e.getAttribute('aria-label'))`)
+const adjacent = (list, a, b) => list.indexOf(a) >= 0 && list.indexOf(b) === list.indexOf(a) + 1
+const PICKER = (label) => `document.querySelector('.settings-section button[aria-label="${label}"]')`
+const pickerText = (cdp, label) => cdp.evaluate(`(${PICKER(label)})?.textContent.trim() ?? null`)
+const stepEl = (label) => `[...document.querySelectorAll('[data-picker-portal] *')].find((e) => e.children.length === 0 && e.textContent.trim() === ${JSON.stringify(label)})`
+const pickable = (cdp, labels) => cdp.evaluate(`${JSON.stringify(labels)}.map((l) => !!([...document.querySelectorAll('[data-picker-portal] *')].find((e) => e.children.length === 0 && e.textContent.trim() === l)?.closest('[role="button"]')))`)
+/** Scrolled into the Settings body's view first, since a press lands where the element is drawn. */
+async function press(cdp, expr) {
+  await cdp.evaluate(`(${expr}).scrollIntoView({ block: 'center' })`)
+  await sleep(300)
+  await mouseClick(cdp, expr)
+}
+async function openPicker(cdp, label) {
+  await press(cdp, PICKER(label))
+  await until(`${label}'s list`, () => portalOpen(cdp))
+}
+async function pickStep(cdp, label, step) {
+  await openPicker(cdp, label)
+  await mouseClick(cdp, stepEl(step))
+  await until(`${label}'s list closed`, async () => !(await portalOpen(cdp)))
+}
+const personal = () => settingsOnDisk().personalization ?? {}
+const STEPS = ['7 Days', '14 Days', '30 Days', '60 Days', '90 Days']
+
+async function group6A(cdp) {
+  const kept = personal()
+  const ALPHA_SIDECAR = `${A_ALPHA}/_pageset.json`
+  const COLL_SIDECAR = `${COLLECTION}/_pagecollection.json`
+  const ARC = page(A_ALPHA, 'Arc Page')
+  const ARC_SET = `${COLLECTION}/Arc Set`
+
+  const alphaPages = (await collectionA(cdp)).sets.find((s) => s.path === A_ALPHA).pages.map((p) => p.id)
+  const pageId = mintPageId()
+  await must('create Arc Page', ask(cdp, 'mutate', { op: 'createPage', id: pageId, parentPath: A_ALPHA, name: 'Arc Page', order: [alphaPages[0], pageId, ...alphaPages.slice(1)] }))
+  pageIds['Arc Page'] = pageId
+  const pageRing = [alphaPages[0], pageId, alphaPages[1]]
+  const aSets = (await collectionA(cdp)).sets.map((s) => s.id)
+  const setId = containerId()
+  await must('create Arc Set', ask(cdp, 'mutate', { op: 'createContainer', id: setId, parentPath: COLLECTION, kind: 'set', name: 'Arc Set', order: [aSets[0], setId, ...aSets.slice(1)] }))
+  const setRing = [aSets[0], setId, aSets[1]]
+
+  await openCollection(cdp)
+  const CELL = `${row('Arc Page')}.querySelector('.cell-title-text')`
+  await until('Arc Page in the table', () => cdp.evaluate(`!!(${row('Arc Page')})`))
+  const pageMenu = await popAt(cdp, CELL)
+  await pickNative([])
+  item('6A', '6A', 'I-1', "a page's row menu closes on Archive above Delete",
+    same(tailOf(pageMenu, 3), [{ separator: true }, { label: 'Archive', enabled: true }, { label: 'Delete', enabled: true }]), show(tailOf(pageMenu, 3)))
+
+  const { chosen: askedArchive } = await chooseNative(cdp, CELL, 'Archive')
+  await until('the confirmation', () => cdp.evaluate(`!!${DIALOG}`)).catch(() => {})
+  const question = await dialogRead(cdp)
+  item('6A', '6A', 'I-2 §Copy', 'Archive asks its question',
+    askedArchive && question?.message === 'Archive “Arc Page”?' && question.detail === '“Arc Page” will be moved to this Collection’s archive, where it can be restored.' && same(question.actions, ['Archive']),
+    show(question))
+  if (question) await pressDialog(cdp, 'Archive')
+  const pageSaid = await noticeUp(cdp, 'Archived “Arc Page”Undo')
+  const bundle = archivedBundle('Arc Page')
+  const moved = {
+    gone: !exists(ARC),
+    bundled: !!bundle && exists(`${bundle}/Arc Page.md`) && frontOf(`${bundle}/Arc Page.md`).ID === pageId,
+    unordered: !orderIn(ALPHA_SIDECAR, 'page_order').includes(pageId),
+    unlisted: !(await cdp.evaluate(`!!(${row('Arc Page')})`)),
+  }
+  if (pageSaid) await pressUndo(cdp)
+  item('6A', '6A', 'I-3 §Copy', 'the notice reads Archived “Arc Page” with Undo', pageSaid, show(await notice(cdp)))
+  item('6A', '6A', 'I-1', "pressing Archive moved the page into its Collection's Archive", Object.values(moved).every(Boolean), show({ bundle, moved }))
+  const pageBack = await settles(async () => exists(ARC) && !!bundle && !exists(bundle) && between(orderIn(ALPHA_SIDECAR, 'page_order'), pageRing))
+  item('6A', '6A', 'I-3', 'Undo returns the page to its exact place', pageBack, show({ bundle, pageOrder: orderIn(ALPHA_SIDECAR, 'page_order') }))
+
+  await openSettings(cdp, 'Files & Links')
+  const headings = await cdp.evaluate(`[...document.querySelectorAll('.settings-section')].map((s) => s.firstElementChild?.textContent.trim().toLowerCase())`)
+  const removal = await controlsOf(cdp, 'Trash & Archive')
+  const removalText = await cdp.evaluate(`(${sectionOf('Trash & Archive')})?.textContent ?? ''`)
+  const switchOn = await cdp.evaluate(`(${SWITCH('Confirm Before Archiving')})?.getAttribute('aria-checked')`)
+  item('6A', '6A', 'I-2 §Copy', 'Settings › Trash & Archive holds Confirm Before Archiving under Confirm Before Deletion, on',
+    !headings.includes('deletion') && adjacent(removal, 'Confirm Before Deletion', 'Confirm Before Archiving') && removalText.includes('Ask before archiving a page or a Set.') && switchOn === 'true',
+    show({ headings, removal, switchOn }))
+
+  await press(cdp, SWITCH('Confirm Before Archiving'))
+  const switchedOff = await settles(async () => personal().confirmArchiving === false)
+  item('6A', '6A', 'I-2', 'the switch off writes confirmArchiving: false', switchedOff, show(personal()))
+
+  await closeSettings(cdp)
+  await popAt(cdp, CELL)
+  await pickNative(['Archive'])
+  const [pageUnasked, unaskedSaid] = await Promise.all([
+    holds(async () => !(await cdp.evaluate(`!!${DIALOG}`)), 1500),
+    noticeUp(cdp, 'Archived “Arc Page”Undo'),
+  ])
+  const unaskedBundle = archivedBundle('Arc Page')
+  if (unaskedSaid) await pressUndo(cdp)
+  const unaskedBack = await settles(async () => exists(ARC) && !!unaskedBundle && !exists(unaskedBundle))
+  item('6A', '6A', 'I-3', 'with the switch off, Archive asks nothing and still posts its Undo',
+    pageUnasked && unaskedSaid && !!unaskedBundle && unaskedBack, show({ pageUnasked, unaskedSaid, unaskedBundle, unaskedBack }))
+
+  await unfold(cdp, COLLECTION, 'Arc Set')
+  const setMenu = await popAt(cdp, sidebarRow('Arc Set'))
+  await pickNative([])
+  const renameGroup = groupsOf(setMenu).find((g) => g.includes('Rename'))
+  item('6A', '6A', 'I-1', "a Set's menu holds Rename alone and closes on Archive above Delete",
+    same(renameGroup, ['Rename']) && same(tailOf(setMenu, 3).map((r) => r.label ?? '|'), ['|', 'Archive', 'Delete']),
+    show({ groups: groupsOf(setMenu) }))
+
+  await popAt(cdp, sidebarRow('Arc Set'))
+  await pickNative(['Archive'])
+  const [setUnasked, setSaid] = await Promise.all([
+    holds(async () => !(await cdp.evaluate(`!!${DIALOG}`)), 1500),
+    noticeUp(cdp, 'Archived “Arc Set”Undo'),
+  ])
+  const setBundle = archivedBundle('Arc Set')
+  const setMoved = !!setBundle && exists(`${setBundle}/Arc Set/_pageset.json`) && !exists(ARC_SET) && !(await drawn(cdp, 'Arc Set'))
+  if (setSaid) await pressUndo(cdp)
+  const setBack = await settles(async () => exists(`${ARC_SET}/_pageset.json`) && !!setBundle && !exists(setBundle) && (await drawn(cdp, 'Arc Set')) && between(orderIn(COLL_SIDECAR, 'set_order'), setRing))
+  item('6A', '6A', 'I-2', 'with the switch off, a Set archives unasked',
+    setUnasked && setSaid && setMoved && setBack, show({ setUnasked, setSaid, setBundle, setMoved, setOrder: orderIn(COLL_SIDECAR, 'set_order') }))
+
+  await openSettings(cdp, 'Files & Links')
+  await press(cdp, SWITCH('Confirm Before Archiving'))
+  const switchedOn = await settles(async () => (await cdp.evaluate(`(${SWITCH('Confirm Before Archiving')})?.getAttribute('aria-checked')`)) === 'true' && !('confirmArchiving' in personal()))
+  await closeSettings(cdp)
+  await unfold(cdp, COLLECTION, 'Arc Set')
+  const { chosen: setAsk } = await chooseNative(cdp, sidebarRow('Arc Set'), 'Archive')
+  await until('the confirmation', () => cdp.evaluate(`!!${DIALOG}`)).catch(() => {})
+  const setQuestion = await dialogRead(cdp)
+  if (setQuestion) await pressDialog(cdp, 'Cancel')
+  await sleep(600)
+  item('6A', '6A', 'I-2', 'with the switch on, a Set asks',
+    switchedOn && setAsk && setQuestion?.message === 'Archive “Arc Set”?' && exists(`${ARC_SET}/_pageset.json`) && !archivedBundle('Arc Set'),
+    show({ switchedOn, setQuestion }))
+
+  const collectionBefore = readRel(COLL_SIDECAR)
+  const collMenu = await popAt(cdp, sidebarRow(COLLECTION))
+  const collDelete = await pickNative(['Delete'])
+  await until('the confirmation', () => cdp.evaluate(`!!${DIALOG}`)).catch(() => {})
+  const collQuestion = await dialogRead(cdp)
+  if (collQuestion) await pressDialog(cdp, 'Cancel')
+  await sleep(600)
+  item('6A', '6A', 'I-1', "a Collection's menu closes on Delete alone, which still asks",
+    !groupsOf(collMenu).flat().includes('Archive') && same(tailOf(collMenu, 2).map((r) => r.label ?? '|'), ['|', 'Delete']) &&
+      collDelete && collQuestion?.message === 'Delete “Collection A”?' && readRel(COLL_SIDECAR) === collectionBefore && exists(ARC_SET),
+    show({ tail: tailOf(collMenu, 2), collQuestion }))
+
+  await openSettings(cdp, 'Files & Links')
+  if ((await pickerText(cdp, 'History Timeframe')) !== '30 Days') await pickStep(cdp, 'History Timeframe', '30 Days')
+  await settles(async () => (await pickerText(cdp, 'History Timeframe')) === '30 Days')
+  const history = await controlsOf(cdp, 'File History')
+  const historyText = await cdp.evaluate(`(${sectionOf('File History')})?.textContent ?? ''`)
+  const following = await pickerText(cdp, 'Archive History Timeframe')
+  item('6A', '6A', 'J-1 §Copy', 'Archive History Timeframe follows History Timeframe until picked',
+    adjacent(history, 'History Timeframe', 'Archive History Timeframe') &&
+      historyText.includes("How long archived pages keep their snapshots; it follows 'History Timeframe' until set, and never exceeds it.") &&
+      following === '30 Days' && !('archiveHistoryDays' in personal()),
+    show({ history, following, personalization: personal() }))
+
+  await openPicker(cdp, 'Archive History Timeframe')
+  const dimmed = await pickable(cdp, STEPS)
+  await mouseClick(cdp, stepEl('90 Days'))
+  await sleep(600)
+  const unwritten = !('archiveHistoryDays' in personal())
+  await pressKey(cdp, 'Escape')
+  const listClosed = await settles(async () => !(await portalOpen(cdp)))
+  item('6A', '6A', 'J-1', "steps above History Timeframe show dimmed and can't be picked",
+    same(dimmed, [true, true, true, false, false]) && unwritten && listClosed, show({ dimmed, unwritten, listClosed }))
+
+  await pickStep(cdp, 'Archive History Timeframe', '14 Days')
+  const picked = await settles(async () => personal().archiveHistoryDays === 14)
+  await mouseAt(cdp, await boxOf(cdp, PICKER('Archive History Timeframe')), { button: 'right' })
+  await until('the typed field', () => cdp.evaluate(`!!document.querySelector('.settings-section input[aria-label="Archive History Timeframe"]')`))
+  await typeText(cdp, '60')
+  await pressKey(cdp, 'Enter')
+  const clamped = await settles(async () => personal().archiveHistoryDays === 30 && (await pickerText(cdp, 'Archive History Timeframe')) === '30 Days')
+  item('6A', '6A', 'J-1', 'a pick stores, and a typed value clamps to History Timeframe', picked && clamped, show({ picked, personalization: personal(), shown: await pickerText(cdp, 'Archive History Timeframe') }))
+
+  const watched = await watch(['.nexus/settings.json'])
+  await pickStep(cdp, 'History Timeframe', '7 Days')
+  const lowered = await settles(async () => (await pickerText(cdp, 'Archive History Timeframe')) === '7 Days')
+  await sleep(400)
+  const { writes, final } = await watched.stop()
+  const landed = JSON.parse(final['.nexus/settings.json'] ?? '{}').personalization ?? {}
+  item('6A', '6A', 'J-1', 'shortening History Timeframe switches the archive timeframe down in one write',
+    writes['.nexus/settings.json'] === 1 && landed.historyDays === 7 && landed.archiveHistoryDays === 7 && lowered,
+    show({ writes, landed, lowered }))
+
+  await pickStep(cdp, 'History Timeframe', '60 Days')
+  const lengthened = await settles(async () => personal().historyDays === 60)
+  const held = personal().archiveHistoryDays === 7 && (await pickerText(cdp, 'Archive History Timeframe')) === '7 Days'
+  await openPicker(cdp, 'Archive History Timeframe')
+  const dimmedAfter = await pickable(cdp, STEPS)
+  await pressKey(cdp, 'Escape')
+  await settles(async () => !(await portalOpen(cdp)))
+  item('6A', '6A', 'J-1', 'lengthening History Timeframe leaves the pick where it is',
+    lengthened && held && same(dimmedAfter, [true, true, true, true, false]), show({ personalization: personal(), dimmedAfter }))
+  await closeSettings(cdp)
+
+  for (const key of ['historyDays', 'archiveHistoryDays', 'confirmArchiving']) await must(`${key} as it was`, ask(cdp, 'personalization:set', key, kept[key] ?? null))
+}
+
 // ── The run ─────────────────────────────────────────────────────────────────
 
 let cdp
@@ -789,6 +1008,7 @@ try {
   if (GROUPS.has('3')) await group3()
   if (GROUPS.has('4')) await group4()
   if (GROUPS.has('5')) await group5(cdp)
+  if (GROUPS.has('6A')) await group6A(cdp)
   cdp.close()
 } catch (e) {
   item(0, 1, '—', 'the run reached its end', false, String(e?.stack ?? e))

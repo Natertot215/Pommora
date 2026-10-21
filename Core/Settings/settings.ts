@@ -5,11 +5,18 @@ import {
   type SettingKey,
   type SettingValue,
   settingOf,
+  settingWithin,
 } from './personalization'
 import { setOrDrop, updateNexusConfig } from '../Files/atomicWrite'
 import { heldTreeOf } from '../Nexus/liveTree'
 import { sessionRoot } from '../Nexus/session'
-import { normalizeExclusions, readSettings, scopeOf, type SettingsLeaves } from './codec'
+import {
+  normalizeExclusions,
+  readPersonalization,
+  readSettings,
+  scopeOf,
+  type SettingsLeaves,
+} from './codec'
 import { entryWithin, type WatchScope } from '../Paths/exclusion'
 import { fail, ok, type Result, fault } from '../Contract/result'
 
@@ -73,12 +80,13 @@ const DAY_MS = 86_400_000
 
 export async function readFileHistoryConfig(
   root: string,
-): Promise<{ enabled: boolean; intervalMs: number; keepMs: number }> {
+): Promise<{ enabled: boolean; intervalMs: number; keepMs: number; archiveKeepMs: number }> {
   const p = await readLivePersonalization(root)
   return {
     enabled: settingOf(p, 'fileHistory'),
     intervalMs: settingOf(p, 'historyInterval') * MINUTE_MS,
     keepMs: settingOf(p, 'historyDays') * DAY_MS,
+    archiveKeepMs: settingWithin(p, 'archiveHistoryDays', 'historyDays') * DAY_MS,
   }
 }
 
@@ -128,11 +136,17 @@ export async function carrySetAside(
   })
 }
 
-/** An `undefined` value resets the key to its built-in default — JSON omits it. */
+/** An `undefined` value resets the key to its built-in default — JSON omits it. A picked archive timeframe above the History Timeframe lowers to it in the same write. */
 export function writePersonalization(root: string, key: string, value: unknown): Promise<void> {
   return updateSettings(root, (cur) => {
-    const p = isPlainObject(cur.personalization) ? cur.personalization : {}
-    return { ...cur, personalization: { ...p, [key]: value } }
+    const p = { ...(isPlainObject(cur.personalization) ? cur.personalization : {}), [key]: value }
+    const read = readPersonalization(p)
+    const history = settingOf(read, 'historyDays')
+    return {
+      ...cur,
+      personalization:
+        (read.archiveHistoryDays ?? 0) > history ? { ...p, archiveHistoryDays: history } : p,
+    }
   })
 }
 

@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { capitalize } from '@pommora/uix/Utilities/capitalize'
 import { actedOn, retained, toggled } from '@pommora/uix/Utilities/checkSet'
-import { askEmptyTrash, spendBundle } from '../Interface/Confirm/confirmations'
+import { askEmptyTrash, spendUndo } from '../Interface/Confirm/confirmations'
 import {
   notifyOutcome,
   notifyReport,
@@ -152,7 +152,7 @@ export function useBundleBrowser(
   ): Promise<void> => {
     const done = await mutate(req)
     if (!done) return
-    spendBundle(req.bundlePath)
+    spendUndo(req.bundlePath)
     if (done.landedAs)
       notifyOutcome(`Restored ${steppedTo(row.title, done.landedAs)}`, undefined, [
         done.unrestored !== undefined && unrestoredLine(done.unrestored),
@@ -184,7 +184,7 @@ export function useBundleBrowser(
       const res = await dialer().ask('mutate', { op, bundlePath: row.bundlePath })
       ;(res.ok ? done : refused).push(row)
       if (!res.ok) continue
-      spendBundle(row.bundlePath)
+      spendUndo(row.bundlePath)
       unrestored.push(...(res.value.unrestored ?? []))
       if (res.value.cascade?.warning) warnings.add(res.value.cascade.warning)
       if (res.value.landedAs) renamed.push(steppedTo(row.title, res.value.landedAs))

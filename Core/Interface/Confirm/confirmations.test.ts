@@ -6,8 +6,9 @@ import {
   askDestroyProperty,
   askFormatChange,
   askRemoveOption,
+  confirmArchive,
   confirmDelete,
-  spendBundle,
+  spendUndo,
 } from './confirmations'
 import { resetUndo, undoValue } from '../../Session/undo'
 import { useSession } from '../../Session/store'
@@ -200,7 +201,7 @@ describe('a delete through the confirmation', () => {
   it('gives up its Undo and the chord once the Trash spends its bundle', async () => {
     resetUndo()
     await del('page')
-    spendBundle('.trash/b1')
+    spendUndo('.trash/b1')
     expect(currentNotification()).toBeNull()
     expect(undoValue(null)).toBe(false)
     expect(mutate).not.toHaveBeenCalledWith({ op: 'restore', bundlePath: '.trash/b1' })
@@ -238,5 +239,70 @@ describe('a delete through the confirmation', () => {
       segment: '1 Internal Link',
     })
     expect(currentNotification()?.action).toBeUndefined()
+  })
+})
+
+describe('an archive through the confirmation', () => {
+  const BUNDLE = '.nexus/archive/c1/Notes/1__A.archived'
+  const mutate = vi.fn()
+  const archive = (kind: 'page' | 'set'): Promise<void> =>
+    confirmArchive({ path: 'Notes/A', kind, title: 'A' })
+
+  beforeEach(() => {
+    mutate.mockReset()
+    mutate.mockResolvedValue({ bundled: { bundlePath: BUNDLE } })
+    useSession.setState({ mutate: mutate as never })
+    clearNotification()
+  })
+
+  it('asks “Archive “A”?” in the positive tone and sends the archive', async () => {
+    const seen: unknown[] = []
+    useSession.setState({
+      tree: makeTree(),
+      askConfirm: async (req) => {
+        seen.push(req)
+        return true
+      },
+    })
+    await archive('page')
+    expect(seen).toEqual([
+      {
+        message: 'Archive “A”?',
+        detail: '“A” will be moved to this Collection’s archive, where it can be restored.',
+        action: 'Archive',
+        tone: 'positive',
+      },
+    ])
+    expect(mutate).toHaveBeenCalledWith({ op: 'archive', path: 'Notes/A', kind: 'page' })
+  })
+
+  it('with Confirm Before Archiving off, archives a page and a Set unasked, and Confirm Before Deletion has no say', async () => {
+    useSession.setState({ tree: makeTree({ personalization: { confirmArchiving: false } }) })
+    await archive('page')
+    await archive('set')
+    expect(asked).toEqual([])
+    useSession.setState({ tree: makeTree({ personalization: { confirmDeletion: false } }) })
+    await archive('set')
+    expect(asked).toHaveLength(1)
+    expect(mutate).toHaveBeenCalledTimes(3)
+  })
+
+  it('posts Archived “A” with an Undo that restores its bundle, whatever the switch says', async () => {
+    useSession.setState({ tree: makeTree({ personalization: { confirmArchiving: false } }) })
+    await archive('page')
+    expect(currentNotification()).toMatchObject({
+      message: 'Archived “A”',
+      tone: 'normal',
+      action: { label: 'Undo' },
+    })
+    expect(currentNotification()?.segment).toBeUndefined()
+    await currentNotification()?.action?.run()
+    expect(mutate).toHaveBeenLastCalledWith({ op: 'restore', bundlePath: BUNDLE })
+  })
+
+  it('archives nothing when the question is declined', async () => {
+    useSession.setState({ tree: makeTree(), askConfirm: async () => false })
+    await archive('page')
+    expect(mutate).not.toHaveBeenCalled()
   })
 })

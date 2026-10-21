@@ -229,10 +229,12 @@ const snapshots = (): SnapshotStore => {
       pages.clear()
       return n
     },
-    sweepSnapshots: (cutoffMs) => {
+    sweepSnapshots: (cutoffMs, archived) => {
+      const short = new Set(archived.ids)
       let n = 0
-      for (const p of pages.values())
-        for (const ts of [...p.keys()]) if (ts < cutoffMs && p.delete(ts)) n++
+      for (const [id, p] of pages)
+        for (const ts of [...p.keys()])
+          if ((ts < cutoffMs || (short.has(id) && ts < archived.cutoffMs)) && p.delete(ts)) n++
       return n
     },
   }

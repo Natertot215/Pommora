@@ -187,10 +187,11 @@ const SETTINGS = {
   dismissPreviewOnPointer: flag(false),
   fileHistory: flag(true),
   historyDays: stepped(HISTORY_DAYS),
+  archiveHistoryDays: setting(numberCheck(HISTORY_DAYS, true), undefined, HISTORY_DAYS),
   historyInterval: stepped(HISTORY_INTERVAL),
   permanentDelete: flag(false),
-  // Off skips the confirmation only where nothing owns a schema: a page, a tile, a bare folder.
   confirmDeletion: flag(true),
+  confirmArchiving: flag(true),
   restoreLinksOnDeletion: flag(true),
   dateFormat: oneOf(DATE_FORMATS, 'full'),
   timeFormat: oneOf(TIME_FORMAT_SETTINGS, 'twelveHour'),
@@ -258,6 +259,10 @@ export type SteppedKey = {
 
 export const settingOf = <K extends SettingKey>(p: Personalization, key: K): SettingValue<K> =>
   (p[key] ?? SETTING_DEFAULTS[key]) as SettingValue<K>
+
+/** A stepped setting that follows `within` until it's picked. */
+export const settingWithin = (p: Personalization, key: SteppedKey, within: SteppedKey): number =>
+  (p[key] ?? settingOf(p, within)) as number
 
 // A Collection's Sets sit above or below its pages by setPlacement, a Set's by subSetPlacement.
 export const placementOf = (p: Personalization, containerKind: string): Placement =>

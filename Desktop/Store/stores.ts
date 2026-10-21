@@ -10,11 +10,8 @@ import type {
   PageRelationRow,
   SyncStore,
 } from '@pommora/core/Platform/stores'
-import { type Db, inTransaction } from './driver'
+import { type Db, inTransaction, LISTED } from './driver'
 import { INDEX_TABLES } from './ddl'
-
-// A list binds as one JSON argument: a placeholder per value fails past SQLite's variable limit.
-const LISTED = '(SELECT value FROM json_each(?))'
 
 // A folder's descendants by range, bound to the folder twice: from `dir/` up to `dir0`, exact because '0' is the code point after '/', where a LIKE would let a legal '%' in a folder name over-match.
 const UNDER = (column: string): string => `${column} >= ? || '/' AND ${column} < ? || '0'`

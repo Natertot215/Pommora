@@ -5,7 +5,7 @@ import { dateDefaults } from '../Properties/columnStyles'
 const DATES = dateDefaults('full')
 
 describe('cellMenuModel', () => {
-  it('title: Preview + stateful Open row + Rename + Edit Icon + New Page pair + the send block + separator-gated Delete', () => {
+  it('title: Preview + stateful Open row + Rename + Edit Icon + New Page pair + the send block + separator-gated Archive and Delete', () => {
     const m = cellMenuModel({ kind: 'title' })
     expect(m.map((i) => [i.label, i.action])).toEqual([
       ['Preview', 'title:window'],
@@ -17,11 +17,13 @@ describe('cellMenuModel', () => {
       ['Copy Link', 'title:copylink'],
       ['Copy Path', 'title:copypath'],
       ['View History', 'title:history'],
+      ['Archive', 'title:archive'],
       ['Delete', 'title:delete'],
     ])
     expect(cellMenuModel({ kind: 'title', alreadyOpen: true })[0].label).toBe('Open')
     expect(m.find((i) => i.action === 'title:rename')?.separatorBefore).toBe(true)
-    expect(m.find((i) => i.action === 'title:delete')?.separatorBefore).toBe(true)
+    expect(m.find((i) => i.action === 'title:archive')?.separatorBefore).toBe(true)
+    expect(m.find((i) => i.action === 'title:delete')?.separatorBefore).toBeUndefined()
     expect(m.some((i) => i.submenu)).toBe(false)
   })
 

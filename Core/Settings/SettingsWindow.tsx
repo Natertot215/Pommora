@@ -16,7 +16,14 @@ import { WindowBase } from '@pommora/uix/Windows/WindowBase'
 import { SETTINGS_RAIL, SETTINGS_WIN } from '@pommora/uix/Windows/windowBounds'
 import { steppedPickerProps } from '@pommora/uix/Pickers/PickerControl'
 import { resolveColor } from '@pommora/uix/Theme/ramp'
-import { SETTING_DEFAULTS, SETTING_RANGES, type SettingKey, settingOf } from './personalization'
+import {
+  SETTING_DEFAULTS,
+  SETTING_RANGES,
+  type SettingKey,
+  type SteppedKey,
+  settingOf,
+  settingWithin,
+} from './personalization'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { Scrollbar } from '@pommora/uix/Interactions/Scrollbar'
 import { useExitPresence } from '@pommora/uix/Animations/useExitPresence'
@@ -226,13 +233,16 @@ function ColorRow({ row }: { row: RowOf<'color'> }): React.JSX.Element {
 function useRowValue<V>(row: {
   key: SettingKey | DeviceDefaultKey
   device?: true
+  within?: SteppedKey
 }): [V, (next: V) => void] {
   const setPersonalization = useSession((s) => s.setPersonalization)
   const setDevicePref = useSession((s) => s.setDevicePref)
   const value = useSession((s) =>
     row.device
       ? devicePref(s.devicePrefs, row.key as DeviceDefaultKey)
-      : settingOf(personalizationOf(s), row.key as SettingKey),
+      : row.within
+        ? settingWithin(personalizationOf(s), row.key as SteppedKey, row.within)
+        : settingOf(personalizationOf(s), row.key as SettingKey),
   ) as V
   const set = (next: V): void => {
     if (row.device) {
@@ -254,7 +264,9 @@ function ToggleRow({ row }: { row: RowOf<'toggle'> }): React.JSX.Element {
 
 function ZoomRow({ row }: { row: RowOf<'zoom'> }): React.JSX.Element {
   const [value, set] = useRowValue<number>(row)
-  const range = row.device ? DEVICE_RANGES[row.key] : SETTING_RANGES[row.key]
+  const declared = row.device ? DEVICE_RANGES[row.key] : SETTING_RANGES[row.key]
+  const ceiling = useSession((s) => row.within && settingOf(personalizationOf(s), row.within))
+  const range = ceiling ? { ...declared, max: ceiling } : declared
   return (
     <MenuRowView
       row={settingsRow(row, {

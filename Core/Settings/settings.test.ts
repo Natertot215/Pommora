@@ -166,6 +166,31 @@ describe('the permanent-delete switch — what emptying the trash means', () => 
   })
 })
 
+describe('the archive timeframe never exceeds History Timeframe', () => {
+  const personalization = async (): Promise<unknown> => (await readSettings()).personalization
+
+  it('shortening History Timeframe below a picked archive timeframe lowers it in the same write', async () => {
+    await write({ personalization: { historyDays: 60, archiveHistoryDays: 30 } })
+    await writePersonalization(root, 'historyDays', 14)
+    expect(await personalization()).toEqual({ historyDays: 14, archiveHistoryDays: 14 })
+  })
+
+  it('lengthening History Timeframe leaves a pick where it is, and an unpicked one unwritten', async () => {
+    await write({ personalization: { historyDays: 14, archiveHistoryDays: 7 } })
+    await writePersonalization(root, 'historyDays', 60)
+    expect(await personalization()).toEqual({ historyDays: 60, archiveHistoryDays: 7 })
+    await write({ personalization: {} })
+    await writePersonalization(root, 'historyDays', 7)
+    expect(await personalization()).toEqual({ historyDays: 7 })
+  })
+
+  it('a pick above History Timeframe lands at it', async () => {
+    await write({ personalization: { historyDays: 14 } })
+    await writePersonalization(root, 'archiveHistoryDays', 60)
+    expect(await personalization()).toEqual({ historyDays: 14, archiveHistoryDays: 14 })
+  })
+})
+
 describe('the live-tree fast path', () => {
   afterEach(() => dropLiveTree())
 

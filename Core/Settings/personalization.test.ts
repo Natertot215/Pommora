@@ -1,11 +1,13 @@
 import { describe, it, expect } from 'vitest'
 import { readPersonalization } from './codec'
 import {
+  HISTORY_DAYS,
   type Personalization,
   TAB_MIN_WIDTH,
   PREVIEW_LINGER_MS,
   SETTING_DEFAULTS,
   settingValue,
+  settingWithin,
 } from './personalization'
 
 describe('readPersonalization previewPersistence', () => {
@@ -166,5 +168,19 @@ describe('every decode helper at its boundary', () => {
     expect(readPersonalization(null)).toEqual({})
     expect(readPersonalization('nope')).toEqual({})
     expect(readPersonalization([1, 2])).toEqual({})
+  })
+})
+
+describe('settingWithin', () => {
+  it('follows its bound until picked, then holds the pick', () => {
+    expect(settingWithin({}, 'archiveHistoryDays', 'historyDays')).toBe(HISTORY_DAYS.default)
+    expect(settingWithin({ historyDays: 14 }, 'archiveHistoryDays', 'historyDays')).toBe(14)
+    expect(
+      settingWithin(
+        { historyDays: 14, archiveHistoryDays: 7 },
+        'archiveHistoryDays',
+        'historyDays',
+      ),
+    ).toBe(7)
   })
 })

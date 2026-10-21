@@ -31,6 +31,7 @@ describe('the page menu', () => {
       'View History',
       'Reveal Location',
       '—',
+      'Archive',
       'Delete',
     ])
     expect(pageMetaMenuItems(false).some((i) => i.action === 'title:reveal')).toBe(false)
@@ -84,7 +85,7 @@ describe('the page menu', () => {
 })
 
 describe('the page action rows', () => {
-  it('hold Rename, the send and locate rows as one group without Move To, and Delete', () => {
+  it('hold Rename, the send and locate rows as one group without Move To, and Archive above Delete', () => {
     expect(shape(PAGE_ACTION_ROWS)).toEqual([
       'Rename',
       '—',
@@ -93,6 +94,7 @@ describe('the page action rows', () => {
       'View History',
       'Reveal Location',
       '—',
+      'Archive',
       'Delete',
     ])
   })

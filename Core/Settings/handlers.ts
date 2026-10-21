@@ -43,7 +43,7 @@ export const settingsHandlers = {
     if (!isKeyOf(personalizationSchema.shape, key)) return fault('Invalid personalization key.')
     await writePersonalization(root, key, settingValue(key, value))
     if (key === 'webZoomFactor') await ctx.applyZoom()
-    if (key === 'historyDays') void sweepFileHistory(root)
+    if (key === 'historyDays' || key === 'archiveHistoryDays') void sweepFileHistory(root)
     return ok(null)
   }),
 

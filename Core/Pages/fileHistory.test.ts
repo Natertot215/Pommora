@@ -4,6 +4,7 @@ import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
 import type { Result } from '../Contract/result'
 import { HISTORY_INTERVAL } from '../Settings/personalization'
+import { ARCHIVE_DIR_REL } from '../Paths/nexusPaths'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
 import { splitEnvelope } from '../Files/pageFile'
 import { machine } from '../Platform/machine'
@@ -381,5 +382,22 @@ describe('sweepFileHistory', () => {
     captures.addCapture('Notes/B.md', Date.now(), 'remote-lost', new Uint8Array([2]))
     await sweepFileHistory(root)
     expect(captures.sweepCaptures(Number.MAX_SAFE_INTEGER)).toBe(1)
+  })
+
+  it('sweeps an archived page at the archive timeframe while a twin the tree holds keeps the History Timeframe', async () => {
+    await settle({ historyDays: 30, archiveHistoryDays: 7 })
+    await captureIfDue(root, PAGE, 'held', 'edit')
+    await captureIfDue(root, OTHER, 'archived', 'edit')
+    vi.advanceTimersByTime(8 * DAY)
+    mem.stores.contentIndex?.upsertPageIndexes(
+      [PAGE, OTHER].map((id) => ({
+        path: `${ARCHIVE_DIR_REL}/c1/Notes/1__${id}.archived/${id}.md`,
+        entry: { relations: [], headings: [], values: { ID: id } },
+        stat: { mtimeMs: 0, size: 0 },
+      })),
+    )
+    await sweepFileHistory(root)
+    expect(rows(OTHER)).toEqual([])
+    expect(rows()).toHaveLength(1)
   })
 })

@@ -353,15 +353,18 @@ export function describeSnapshotStore(name: string, make: () => SnapshotStore): 
       expect(store.listSnapshots('p1')).toEqual([{ ts: 200, source: 'edit' }])
     })
 
-    it('sweeps snapshots older than a cutoff', () => {
-      store.addSnapshot('p1', 100, 'edit', 'a')
-      store.addSnapshot('p1', 200, 'edit', 'b')
-      store.addSnapshot('p1', 300, 'edit', 'c')
-      expect(store.sweepSnapshots(200)).toBe(1)
+    it('sweeps snapshots older than the live cutoff, and an archived page’s older than its own', () => {
+      for (const id of ['p1', 'p2']) {
+        store.addSnapshot(id, 100, 'edit', 'a')
+        store.addSnapshot(id, 200, 'edit', 'b')
+        store.addSnapshot(id, 300, 'edit', 'c')
+      }
+      expect(store.sweepSnapshots(200, { ids: ['p2'], cutoffMs: 300 })).toBe(3)
       expect(store.listSnapshots('p1')).toEqual([
         { ts: 300, source: 'edit' },
         { ts: 200, source: 'edit' },
       ])
+      expect(store.listSnapshots('p2')).toEqual([{ ts: 300, source: 'edit' }])
     })
 
     it('clears every snapshot and reports the count', () => {

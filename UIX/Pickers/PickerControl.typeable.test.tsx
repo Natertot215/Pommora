@@ -2,7 +2,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { type MenuDoor, PickerControl, setMenuDoor } from './PickerControl'
+import { type MenuDoor, PickerControl, setMenuDoor, steppedPickerProps } from './PickerControl'
+import { steppedRange } from '../Utilities/clamp'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 const OPTIONS = [
@@ -152,5 +153,45 @@ describe('a type-only picker', () => {
       input?.blur()
     })
     expect(onCommit).toHaveBeenCalledWith('12')
+  })
+})
+
+describe('a stepped picker held under a cap', () => {
+  const onPick = vi.fn()
+  beforeEach(() => {
+    onPick.mockClear()
+    const props = steppedPickerProps({
+      range: { ...steppedRange([7, 14, 30, 60, 90]), max: 30 },
+      value: 14,
+      unit: { scale: 1, suffix: ' Days', digits: 0 },
+      onPick,
+    })
+    act(() => {
+      root.render(<PickerControl ariaLabel="Archive History Timeframe" {...props} />)
+    })
+  })
+  const capped = (): HTMLButtonElement =>
+    host.querySelector('button[aria-label="Archive History Timeframe"]') as HTMLButtonElement
+
+  it('dims the steps above the cap in the list', () => {
+    press(capped(), 'click', { detail: 1 })
+    expect(door.mock.calls[0][0].map((r) => [r.label, r.disabled])).toEqual([
+      ['7 Days', false],
+      ['14 Days', false],
+      ['30 Days', false],
+      ['60 Days', true],
+      ['90 Days', true],
+    ])
+  })
+
+  it('holds a typed value at the cap', () => {
+    press(capped(), 'contextmenu', { button: 2 })
+    act(() => {
+      const input = field() as HTMLInputElement
+      input.value = '60'
+      input.dispatchEvent(new Event('input', { bubbles: true }))
+      input.blur()
+    })
+    expect(onPick).toHaveBeenCalledWith(30)
   })
 })

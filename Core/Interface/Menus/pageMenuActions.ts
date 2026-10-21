@@ -6,7 +6,7 @@ import { containerTargets } from '../../Actions/destinationTree'
 import { useSession } from '../../Session/store'
 import { pageIndexOf } from '../../Nexus/record'
 import { dialer } from '../../Platform/dialer'
-import { confirmDelete } from '../Confirm/confirmations'
+import { confirmArchive, confirmDelete } from '../Confirm/confirmations'
 import { popMenu } from '../../Actions/menuActions'
 import { PAGE_ACTION_ROWS } from '../../Actions/pageMenu'
 
@@ -62,6 +62,9 @@ export function runPageAction(
       return true
     case 'title:history':
       s.openHistory(ref)
+      return true
+    case 'title:archive':
+      void confirmArchive({ path, kind: 'page', title })
       return true
     case 'title:delete':
       void confirmDelete({ path, kind: 'page', title })

@@ -12,11 +12,13 @@ describe('cardMenuModel', () => {
       ['Copy Link', 'title:copylink'],
       ['Copy Path', 'title:copypath'],
       ['View History', 'title:history'],
+      ['Archive', 'title:archive'],
       ['Delete', 'title:delete'],
     ])
     expect(m.find((i) => i.action === 'title:rename')?.separatorBefore).toBe(true)
     expect(m.find((i) => i.action === 'title:newbelow')?.separatorBefore).toBe(true)
-    expect(m.find((i) => i.action === 'title:delete')?.separatorBefore).toBe(true)
+    expect(m.find((i) => i.action === 'title:archive')?.separatorBefore).toBe(true)
+    expect(m.find((i) => i.action === 'title:delete')?.separatorBefore).toBeUndefined()
   })
 
   it('carries both page branches after Edit Icon', () => {
