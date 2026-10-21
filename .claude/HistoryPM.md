@@ -2,8 +2,8 @@
 
 | Date                    | ID     | Entry                                                |
 | ----------------------- | ------ | ---------------------------------------------------- |
-| 10-20-2026 → 10-21      | PM-154 | Collection Archives                                  |
-| 10-18-2026 → 10-19      | PM-153 | MetadataV3 — Keys & Labels                           |
+| 10-20-2026              | PM-154 | Collection Archives                                  |
+| 10-18-2026              | PM-153 | MetadataV3 — Keys & Labels                           |
 | 10-15-2026              | PM-152 | Text Colors & Highlighting                           |
 | 10-14-2026              | PM-151 | Improved Alias Management                            |
 | 10-13-2026              | PM-150 | Previews & Filtering Improvements                    |
@@ -159,9 +159,9 @@
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot                                 |
 
 #### PM-154 || Collection Archives
-**DATE:** 10-20-2026 → 10-21
+**DATE:** 10-20-2026
 
-Every Collection gained an Archive, a hidden store at `.nexus/archive/<Collection ID>/` holding archived pages and Sets as Trash-style bundles, mirroring the chain they came from. An archived item stays inside every cascade and the content index — property changes, renames, moves, and the Link values a deletion strips all reach it — while the tree, search, links, the Matrix, and every count leave it out, so it returns by a plain move to its exact former place with nothing to reconcile. Archive sits above Delete in every page and Set menu under its own confirmation setting with an Undo, and a Collection's or top-level Set's archived items list in an ArchiveView reached from an Archive row beneath the views in the views dropdown, on the table's own look, with gutter checks, origin trails, a measured date column, in-place search, and a right-click menu or the top-right label's Restore and Delete bar acting on the picked rows. An archived page opens in the read-only reader window File History became, and a shorter Archive History Timeframe governs how long its snapshots are kept.
+Every Collection gained an Archive, a hidden store at `.nexus/archive/<collection-id>/` holding archived pages and Sets as Trash-style bundles, mirroring the chain they came from. An archived item stays inside every cascade and the content index — property changes, renames, moves, and the Link values a deletion strips all reach it — while the tree, search, links, the Matrix, and every count leave it out, so it returns by a plain move to its exact former place with nothing to reconcile. Archive sits above Delete in every page and Set menu under its own confirmation setting with an Undo, and a Collection's or top-level Set's archived items list in an ArchiveView reached from an Archive row beneath the views in the views dropdown, on the table's own look, with gutter checks, origin trails, a measured date column, in-place search, and a right-click menu or the top-right label's Restore and Delete bar acting on the picked rows. An archived page opens in the read-only reader window File History became, and a shorter Archive History Timeframe governs how long its snapshots are kept.
 
 The Trash and the Archive now share one owner for the bundle format, record, placement, listing, rows, and browser controller, so the two stores differ only in their rules. A container's excluded folders and the asset directory are carried crash-safely through a rename or move and lifted into the parent when a Set is archived or a Collection or Set is trashed; every restore lands in its exact place between the siblings it left and steps aside past anything the tree or the disk holds there; both restores repair the returning files before the live world's sweep; and an Archive whose Collection exists nowhere moves into the Trash at open, recoverable.
 
@@ -169,7 +169,7 @@ The Trash and the Archive now share one owner for the bundle format, record, pla
 - **Delta:** +2,101 (+3,910 / -1,809)
 
 #### PM-153 || MetadataV3 — Keys & Labels
-**DATE:** 10-18-2026 → 10-19
+**DATE:** 10-18-2026
 
 Every property and every Select, Status, and Multi-Select option gained a label shown in the app and a key written to disk, replacing the one name that had served as both and the case-insensitive matching behind it. A property's Label Format and, for the option-holding types, its Value Format write each key from its label through one converter offering Match Title and nine conventions, with a change confirmed by the count of Items it rewrites and carried on the rename journal and its Try Again. Keys, option words, Context keys, and Space titles match exactly: a key in another casing is a foreign key, a Multi-Select keeps the foreign words a page holds after its picked options, and adoption registers only a word its Value Format could have written.
 
