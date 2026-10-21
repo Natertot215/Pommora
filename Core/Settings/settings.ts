@@ -2,8 +2,10 @@ import { isPlainObject } from '../Contract/validators'
 import { type Commands, DEFAULT_COMMANDS } from '../Actions/commands'
 import {
   type Personalization,
+  SETTING_BOUNDS,
   type SettingKey,
   type SettingValue,
+  type SteppedKey,
   settingOf,
   settingWithin,
 } from './personalization'
@@ -86,7 +88,7 @@ export async function readFileHistoryConfig(
     enabled: settingOf(p, 'fileHistory'),
     intervalMs: settingOf(p, 'historyInterval') * MINUTE_MS,
     keepMs: settingOf(p, 'historyDays') * DAY_MS,
-    archiveKeepMs: settingWithin(p, 'archiveHistoryDays', 'historyDays') * DAY_MS,
+    archiveKeepMs: settingWithin(p, 'archiveHistoryDays') * DAY_MS,
   }
 }
 
@@ -136,17 +138,16 @@ export async function carrySetAside(
   })
 }
 
-/** An `undefined` value resets the key to its built-in default — JSON omits it. A picked archive timeframe above the History Timeframe lowers to it in the same write. */
+/** An `undefined` value resets the key to its built-in default — JSON omits it. A picked value above its bound lowers to it in the same write. */
 export function writePersonalization(root: string, key: string, value: unknown): Promise<void> {
   return updateSettings(root, (cur) => {
     const p = { ...(isPlainObject(cur.personalization) ? cur.personalization : {}), [key]: value }
     const read = readPersonalization(p)
-    const history = settingOf(read, 'historyDays')
-    return {
-      ...cur,
-      personalization:
-        (read.archiveHistoryDays ?? 0) > history ? { ...p, archiveHistoryDays: history } : p,
+    for (const [bounded, bound] of Object.entries(SETTING_BOUNDS) as [SteppedKey, SteppedKey][]) {
+      const cap = settingOf(read, bound) as number
+      if ((read[bounded] ?? 0) > cap) p[bounded] = cap
     }
+    return { ...cur, personalization: p }
   })
 }
 
