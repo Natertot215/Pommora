@@ -104,8 +104,12 @@ export function bundleRowOf(
   const path = relJoin(bundlePath, artifactName)
   const icon =
     record.entity === 'page'
-      ? record.id && tree.config.pageMetadata[record.id]?.icon
-      : 'icon' in record && record.icon
+      ? record.id
+        ? tree.config.pageMetadata[record.id]?.icon
+        : undefined
+      : record.entity === 'context'
+        ? undefined
+        : record.icon
   return matched({
     bundlePath,
     kind: record.entity,

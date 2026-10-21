@@ -15,7 +15,7 @@ import { type Slot, spliceBeside } from '../Nexus/order'
 import { setChildOrder, setCollectionOrder, setSpaceOrder } from '../Nexus/reorder'
 import { contextWorldOf } from '../Contexts/contextResolve'
 import type { ArtifactRecord, Place } from './record'
-import { type BundleStore, collectionsElsewhere, storeOf } from './bundle'
+import { archiveOwned, type BundleStore, collectionsElsewhere, storeOf } from './bundle'
 
 interface Placement {
   dir: string
@@ -207,10 +207,8 @@ export async function placeRecord(
     const into = storeOf(root, join(root, stored.archive))
     if (into?.kind !== 'archive') return fault(NO_DESTINATION)
     // A Collection in the Trash keeps its Archive; one gone for good would leave the item filed where no view reaches it.
-    const kept =
-      tree.collections.some((c) => c.id === into.id) ||
-      (await collectionsElsewhere(root, tree)).has(into.id)
-    if (!kept) return fault(REFUSAL_TEXT['parent-gone'])
+    if (!(await archiveOwned(tree, into.id, () => collectionsElsewhere(root, tree))))
+      return fault(REFUSAL_TEXT['parent-gone'])
     if (stored.id && heldElsewhere(byId.get(stored.id), restoring))
       return fault(REFUSAL_TEXT['id-live'])
     return ok({
