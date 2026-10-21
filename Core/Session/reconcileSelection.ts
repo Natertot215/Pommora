@@ -40,10 +40,12 @@ export function reconcileWith(index: ReconcileIndex, selection: SelectionState):
       }
       return path === selection.path ? selection : { kind: 'page', id: selection.id, path }
     }
-    case 'archive':
-      return index.collections.has(selection.id) || isTopSet(index.sets.get(selection.id) ?? '')
+    case 'archive': {
+      const setPath = index.sets.get(selection.id)
+      return index.collections.has(selection.id) || (setPath !== undefined && isTopSet(setPath))
         ? selection
         : { kind: 'none' }
+    }
   }
 }
 

@@ -228,7 +228,7 @@ export function DetailTitleHeader({
       ) : (
         label
       )}
-      {trailing}
+      {trailing && <span className="detail-title-trailing">{trailing}</span>}
     </div>
   )
 }

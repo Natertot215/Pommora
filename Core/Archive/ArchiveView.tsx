@@ -13,7 +13,7 @@ import { entityIcon } from '../Assets/entityIconPolicy'
 import { archivedKind, countPhrase, crumbSegments, useBundleBrowser } from '../Bundles/browser'
 import type { BundleRow } from '../Bundles/rows'
 import { InterfaceScaffold } from '../Interface/InterfaceScaffold'
-import { useContentHost } from '../Interface/contentHost'
+import { useContentHost, useHostShown } from '../Interface/contentHost'
 import { type ActionBar, useDeclareActions } from '../Interface/Notifications/notifications'
 import { usePublishCount } from '../Interface/Subfield/publish'
 import type { CollectionNode, SetNode } from '../Nexus/tree'
@@ -27,7 +27,6 @@ import '../Views/Table/table-view.css'
 import './archive-view.css'
 
 const ROW_H = 48
-const ARCHIVE_COLS = `minmax(${WIDTHS.title.default}px, 1fr) ${WIDTHS.dateTime.default}px`
 
 type RowApi = {
   toggle: (row: BundleRow) => void
@@ -38,7 +37,7 @@ type RowApi = {
 /** A Collection's or a top-level Set's archived items on TableView's sheet: checked for Restore and Delete, a page opened in the reader. */
 export function ArchiveView({ owner }: { owner: CollectionNode | SetNode }): React.JSX.Element {
   const host = useContentHost()
-  const shown = host !== null && !host.parked
+  const shown = useHostShown()
   const query = useSession((s) => (host ? s.viewSearch[host.tabId]?.query : undefined)) ?? ''
   const defaultIcons = useSession((s) => personalizationOf(s).defaultIcons)
   const openReader = useSession((s) => s.openReader)
@@ -49,12 +48,17 @@ export function ArchiveView({ owner }: { owner: CollectionNode | SetNode }): Rea
     { query, shown, within: owner.kind === 'set' ? owner.id : undefined },
   )
   const { listing, visible } = browser
+  const dateTrack =
+    browser.date.width === null
+      ? `${WIDTHS.dateTime.default}px`
+      : `calc(${browser.date.width}px + 2 * var(--cell-padding-x))`
+  const cols = `minmax(${WIDTHS.title.default}px, 1fr) ${dateTrack}`
 
   const [listEl, setListEl] = useState<HTMLDivElement | null>(null)
   const scrollEl = useMemo(() => listEl?.closest<HTMLElement>('.detail-scroll') ?? null, [listEl])
   const { rows: slots, height } = useVirtualRows(
     { count: visible.length, rowHeight: ROW_H, listEl, scrollEl },
-    [owner.banner],
+    [],
   )
 
   const api = useStableApi({
@@ -99,20 +103,22 @@ export function ArchiveView({ owner }: { owner: CollectionNode | SetNode }): Rea
   }
 
   return (
-    <InterfaceScaffold
-      owner={containerOwner(owner)}
-      trailing={<span className="archive-title-label">Archive</span>}
-    >
+    <InterfaceScaffold owner={containerOwner(owner)} trailing="Archive" plain>
       <div className="table table-view">
         <div
           className={cx('table-grid', text.body.standard)}
-          style={{ '--cols': ARCHIVE_COLS } as React.CSSProperties}
+          style={{ '--cols': cols } as React.CSSProperties}
         >
           <div className="table-head">
             <div className="col-header">Title</div>
             {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a column label, as TableView's headings are */}
             <div className="col-header archive-date" onContextMenu={browser.date.onContextMenu}>
-              Archived
+              <span ref={browser.date.measureRef} className="col-measure">
+                <span>Archived</span>
+                <span className={text.body.standard} aria-hidden>
+                  {browser.date.sample}
+                </span>
+              </span>
             </div>
           </div>
           <div ref={setListEl} className="archive-rows" style={{ height }}>

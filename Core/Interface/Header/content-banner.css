@@ -56,6 +56,7 @@
 .banner-title .detail-title,
 .banner-empty-title .detail-title {
   --detail-title-size: var(--text-title-small-size);
+  --detail-title-trailing-size: var(--text-headline-size);
   min-width: 0;
 }
 .banner-title .detail-title-icon,
@@ -67,10 +68,11 @@
 }
 .banner-title .detail-title-text,
 .banner-title .detail-title-input.detail-title-input,
+.banner-title .detail-title-trailing,
 .banner-empty-title .detail-title-text,
-.banner-empty-title .detail-title-input.detail-title-input {
+.banner-empty-title .detail-title-input.detail-title-input,
+.banner-empty-title .detail-title-trailing {
   font-weight: var(--weight-semibold);
-  color: var(--label-primary);
 }
 
 /* Inset like every other title divider: the margin holds the content edges, so the rule stops where the title starts. */

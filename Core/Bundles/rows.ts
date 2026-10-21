@@ -1,7 +1,5 @@
 import { dirname, join, relative, relJoin, titleFromPath } from '../Paths/posix'
-import { sidecarPath } from '../Paths/paths'
-import { readJsonObject } from '../Files/atomicWrite'
-import { asString } from '../Nexus/coerce'
+import { sidecarString } from '../Files/sidecar'
 import { CONTEXTS_DIR_REL } from '../Paths/nexusPaths'
 import { type MatchKey, matchKey } from '../Paths/caseFold'
 import type { HeldKind } from '../Nexus/entities'
@@ -37,7 +35,7 @@ export interface BundleRow {
   homeResolves: boolean
   /** The search's key: the title, placed by the crumbs. */
   match: MatchKey
-  /** The item's own icon: a page's from the metadata the tree holds, a Set's from the sidecar it took into its bundle. */
+  /** The item's own icon: a page's from the metadata the tree holds, a container's or a Space's from the sidecar it took into its bundle. */
   icon?: string
   /** A page or Set as stored, by its record's id and its path inside the bundle: what the reader opens and a restore's Undo finds again. */
   stored?: { id: string; path: string }
@@ -91,8 +89,10 @@ async function iconOf(
   switch (record.entity) {
     case 'page':
       return record.id === undefined ? undefined : tree.config.pageMetadata[record.id]?.icon
+    case 'collection':
     case 'set':
-      return asString((await readJsonObject(sidecarPath(join(root, path), 'set')))?.icon)
+    case 'space':
+      return sidecarString(join(root, path), record.entity, 'icon')
     default:
       return undefined
   }
@@ -122,6 +122,7 @@ export async function bundleRowOf(
   if (!artifactName) return null
   const live = liveCrumbs(record, tree)
   const path = relJoin(bundlePath, artifactName)
+  const icon = await iconOf(root, record, path, tree)
   return matched({
     bundlePath,
     kind: record.entity,
@@ -129,7 +130,7 @@ export async function bundleRowOf(
     crumbs: live ?? frozenCrumbs(store, bundlePath),
     ...(live ? {} : { historical: true }),
     storedAt: storedAtOf(bundlePath),
-    icon: await iconOf(root, record, path, tree),
+    ...(icon ? { icon } : {}),
     ...((record.entity === 'page' || record.entity === 'set') && record.id
       ? { stored: { id: record.id, path } }
       : {}),

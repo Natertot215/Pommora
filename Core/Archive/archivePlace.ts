@@ -4,11 +4,15 @@ import { findContainerById, isTopSet } from '../Nexus/treePatch'
 
 export const ARCHIVE_ICON: IconName = 'archive'
 
-/** The Collection or top-level Set with this id, what owns an archive place and saved views of its own; none once it's gone or sits deeper. */
+/** A Collection or a top-level Set: what owns an archive place and saved views of its own. */
+export const ownsArchivePlace = (n: { kind: string; path: string }): boolean =>
+  n.kind === 'collection' || (n.kind === 'set' && isTopSet(n.path))
+
+/** The Collection or top-level Set with this id; none once it's gone or sits deeper. */
 export function archiveOwnerOf(
   tree: NexusTree | null,
   id: string,
 ): CollectionNode | SetNode | undefined {
   const node = tree && findContainerById(tree, id)
-  return node && (node.kind === 'collection' || isTopSet(node.path)) ? node : undefined
+  return node && ownsArchivePlace(node) ? node : undefined
 }

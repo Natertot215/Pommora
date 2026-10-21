@@ -79,15 +79,17 @@ export function Banner({
   )
 }
 
-/** A homepage, Collection, Set, or Space's banner, titled by its renamable name. */
+/** A homepage, Collection, Set, or Space's banner, titled by its renamable name; `plain` seats the title as a bannerless owner's, with no image and no way to add one. */
 export function EntityBanner({
   owner,
   chrome = 'detail',
   trailing,
+  plain,
 }: {
   owner: BannerOwner
   chrome?: 'detail' | 'window'
   trailing?: ReactNode
+  plain?: true
 }): React.JSX.Element {
   const mutate = useSession((s) => s.mutate)
   const submitRename = useSession((s) => s.submitRename)
@@ -169,24 +171,29 @@ export function EntityBanner({
       }
     />
   )
+  const empty = (add?: () => void): React.JSX.Element => (
+    <div className={cx('banner-empty', surfaceClass)}>
+      {add && chrome === 'detail' && <AddBannerButton onClick={add} />}
+      <div className="banner-empty-title">{titleHeader}</div>
+    </div>
+  )
   return (
     <>
-      <Banner
-        path={owner.path}
-        kind={owner.kind}
-        value={owner.banner}
-        chrome={chrome}
-        className={surfaceClass}
-        titleClassName={cx('banner-title', search && 'is-searchable')}
-        onSearch={search?.start}
-        title={titleHeader}
-        empty={(add) => (
-          <div className={cx('banner-empty', surfaceClass)}>
-            {chrome === 'detail' && <AddBannerButton onClick={add} />}
-            <div className="banner-empty-title">{titleHeader}</div>
-          </div>
-        )}
-      />
+      {plain ? (
+        empty()
+      ) : (
+        <Banner
+          path={owner.path}
+          kind={owner.kind}
+          value={owner.banner}
+          chrome={chrome}
+          className={surfaceClass}
+          titleClassName={cx('banner-title', search && 'is-searchable')}
+          onSearch={search?.start}
+          title={titleHeader}
+          empty={empty}
+        />
+      )}
       {iconPicker}
     </>
   )

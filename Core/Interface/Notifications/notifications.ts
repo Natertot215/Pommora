@@ -7,7 +7,7 @@ import type { Unreadable } from '../../Nexus/tree'
 import { titleFromPath } from '../../Paths/posix'
 import { inTurns } from '../../Platform/inTurns'
 import { channel } from '@pommora/uix/Utilities/subscribable'
-import { useContentHost } from '../contentHost'
+import { useHostShown } from '../contentHost'
 
 export interface Notification {
   message: string
@@ -39,13 +39,12 @@ export const useActionBar = (): ActionBar | null =>
 
 /** Declared only while its view shows, as the count publishes: a parked view's bar would stand over another tab's view. */
 export function useDeclareActions(bar: ActionBar | null): void {
-  const host = useContentHost()
-  const live = host !== null && !host.parked
+  const shown = useHostShown()
   useEffect(() => {
-    if (!live) return
+    if (!shown) return
     declared.set(bar)
     return () => declared.set(null)
-  }, [live, bar])
+  }, [shown, bar])
 }
 
 export function dismissNotification(id: number): void {

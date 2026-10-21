@@ -1,13 +1,12 @@
 import { useCallback, useEffect } from 'react'
 import type { PageStats } from '../../MarkdownPM/Engine/subfieldStats'
 import { useSession } from '../../Session/store'
-import { useContentHost } from '../contentHost'
+import { useHostShown } from '../contentHost'
 
 /** The shown content view publishes its own resolved count, because the Subfield renders beside it and never sees the pipeline that produced the rows. */
 export function usePublishCount(count: number | null): void {
   const setDetailCount = useSession((s) => s.setDetailCount)
-  const host = useContentHost()
-  const shown = host !== null && !host.parked
+  const shown = useHostShown()
   useEffect(() => {
     if (shown) setDetailCount(count)
   }, [shown, count, setDetailCount])

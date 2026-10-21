@@ -1,5 +1,5 @@
 // The renderer's half of the bundle owner: what a store's browser does with the rows `rows.ts` builds host-side.
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { capitalize } from '@pommora/uix/Utilities/capitalize'
 import { actedOn, checkedIn, retained, toggled } from '@pommora/uix/Utilities/checkSet'
@@ -17,16 +17,22 @@ import {
   unrestoredLine,
 } from '../Interface/Notifications/notifications'
 import { changesSettled, type MutateRequest, type RestoreDestination } from '../Nexus/mutateRequest'
-import { pagesByIdOf } from '../Nexus/record'
-import { findContainerById } from '../Nexus/treePatch'
+import { nodesByIdOf } from '../Nexus/treeIndex'
 import { matches, matchQuery } from '../Paths/caseFold'
 import { basename } from '../Paths/posix'
 import { itemCount } from '../Properties/properties'
 import { formatDate } from '../Properties/formatValue'
-import { dateDefaults, holdsStyle, resolveStyle, storedPick } from '../Properties/columnStyles'
+import {
+  type DateStyle,
+  dateDefaults,
+  holdsStyle,
+  resolveStyle,
+  storedPick,
+} from '../Properties/columnStyles'
 import { parseStyleAction, styleMenuItems } from '../Actions/columnMenu'
 import { containerTargets, contextTargets } from '../Actions/destinationTree'
 import { popMenu } from '../Actions/menuActions'
+import { destinationRows } from '../Actions/pageMenu'
 import { restoreMenuItems } from '../Actions/restoreMenu'
 import { useNexusForms } from '../Views/Host/useColumnStyles'
 import { useSession } from '../Session/store'
@@ -94,8 +100,7 @@ const rearchive = (rows: BundleRow[]) => async (): Promise<void> => {
     const { tree, mutate } = useSession.getState()
     const id = row.stored?.id
     if (!id || !tree) continue
-    const path =
-      row.kind === 'set' ? findContainerById(tree, id)?.path : pagesByIdOf(tree).get(id)?.path
+    const path = nodesByIdOf(tree).get(id)?.path
     if (path)
       await mutate({ op: 'archive', path, kind: archivedKind(row), leaf: basename(row.bundlePath) })
   }
@@ -103,10 +108,28 @@ const rearchive = (rows: BundleRow[]) => async (): Promise<void> => {
 
 type DateKey = 'trashColumnStyle' | 'archiveColumnStyle'
 
-/** A store's date column: its stored style over the Nexus's date form, and the heading's right-click, which picks one. */
+const WIDEST_AT = new Date(2026, 8, 30, 12, 0)
+const DAY_MS = 86_400_000
+
+/** The widest a style writes: September, a Wednesday, the 30th, and a two-digit hour, each where the style shows it; a relative style's widest is a week ago with its clock, else a year's last month. */
+export function widestDate(style: DateStyle): string {
+  const now = new Date(WIDEST_AT.getTime() + (style.time_format === 'none' ? 350 : 7) * DAY_MS)
+  return formatDate(
+    WIDEST_AT.toISOString(),
+    style.date_format,
+    style.time_format,
+    style.weekday,
+    now,
+  )
+}
+
+/** A store's date column: its stored style over the Nexus's date form, the heading's right-click, which picks one, and its width: the wider of the heading and its widest date, the hidden `sample`, as the host the view draws under `measureRef` measures them. */
 function useDateColumn(key: DateKey): {
   when: (storedAt: number | null) => string
   onContextMenu: (e: React.MouseEvent) => Promise<void>
+  sample: string
+  measureRef: (el: HTMLElement | null) => void
+  width: number | null
 } {
   const nexus = useNexusForms()
   const stored = useSession((s) => personalizationOf(s)[key])
@@ -114,6 +137,13 @@ function useDateColumn(key: DateKey): {
   // A store shows when each item entered it, where a view's date column leaves the time hidden.
   const defaults = { ...dateDefaults(nexus.dateFormat), time_format: nexus.clock }
   const style = resolveStyle(stored, defaults, nexus.clock)
+  const sample = widestDate(style)
+  const [measured, measureRef] = useState<HTMLElement | null>(null)
+  const [width, setWidth] = useState<number | null>(null)
+  useLayoutEffect(() => {
+    // A whole pixel over, since `offsetWidth` rounds and a cell's ellipsis engages on a fraction.
+    if (measured) setWidth(measured.offsetWidth + 1)
+  }, [measured, sample])
   return {
     when: (storedAt) =>
       storedAt === null
@@ -135,6 +165,9 @@ function useDateColumn(key: DateKey): {
       }
       setPersonalization(key, holdsStyle(next) ? next : undefined)
     },
+    sample,
+    measureRef,
+    width,
   }
 }
 
@@ -227,13 +260,41 @@ export function useBundleBrowser(
   const picked = useMemo(() => checkedIn(checked, visible, (r) => r.bundlePath), [checked, visible])
   const toggle = (bundlePath: string): void => setChecked((prev) => toggled(prev, bundlePath))
 
-  const one = async (
-    req: Extract<MutateRequest, { bundlePath: string }>,
-    row: BundleRow,
-  ): Promise<void> => {
-    const done = await mutate(req)
+  // One action in flight: a press before it settles is dropped, rather than acting on a row the first already moved.
+  const busy = useRef(false)
+  const flight = async (act: () => Promise<void>): Promise<void> => {
+    if (busy.current) return
+    busy.current = true
+    try {
+      await act()
+    } finally {
+      busy.current = false
+    }
+  }
+
+  const placesFor = (row: BundleRow) => {
+    const { tree } = useSession.getState()
+    return row.kind === 'space'
+      ? { kind: 'context' as const, targets: contextTargets(tree) }
+      : { kind: 'container' as const, targets: containerTargets(tree) }
+  }
+
+  /** A row whose place is gone asks where to go first, unless the menu's submenu already chose. */
+  const restoreOne = async (row: BundleRow, destination?: RestoreDestination): Promise<void> => {
+    let to = destination
+    if (!to && !row.homeResolves) {
+      const places = placesFor(row)
+      const id = await popMenu(destinationRows(places.targets, (t) => t.id))
+      if (!id) return
+      to = { kind: places.kind, id }
+    }
+    const done = await mutate({
+      op: 'restore',
+      bundlePath: row.bundlePath,
+      ...(to ? { destination: to } : {}),
+    })
     if (!done) return
-    spendUndo(req.bundlePath)
+    spendUndo(row.bundlePath)
     // A restore the store can undo always reports, since its notice carries the Undo; the Trash's reports a step aside alone.
     if (done.landedAs || rules.restoreUndo)
       notifyOutcome(
@@ -321,36 +382,25 @@ export function useBundleBrowser(
   }
 
   const restore = (targets: BundleRow[]): Promise<void> =>
-    targets.length === 1
-      ? one({ op: 'restore', bundlePath: targets[0].bundlePath }, targets[0])
-      : restoreBatch(targets)
+    flight(() => (targets.length === 1 ? restoreOne(targets[0]) : restoreBatch(targets)))
 
-  const remove = async (targets: BundleRow[]): Promise<void> => {
-    if (targets.length > 1) return deleteBatch(targets)
-    if (await rules.deleteOne(targets[0])) spendUndo(targets[0].bundlePath)
-  }
+  const remove = (targets: BundleRow[]): Promise<void> =>
+    flight(async () => {
+      if (targets.length > 1) return deleteBatch(targets)
+      if (await rules.deleteOne(targets[0])) spendUndo(targets[0].bundlePath)
+    })
 
   const openMenu = async (row: BundleRow): Promise<void> => {
     const targets = actedOn(checked, visible, row, (r) => r.bundlePath)
     const batch = targets.length > 1
-    const destinationKind = row.kind === 'space' ? ('context' as const) : ('container' as const)
-    const { tree } = useSession.getState()
+    const places = !batch && !row.homeResolves ? placesFor(row) : null
     const action = await popMenu(
-      restoreMenuItems({
-        batch,
-        ...(!batch && !row.homeResolves
-          ? {
-              destinations:
-                destinationKind === 'context' ? contextTargets(tree) : containerTargets(tree),
-            }
-          : {}),
-      }),
+      restoreMenuItems({ batch, ...(places ? { destinations: places.targets } : {}) }),
     )
     if (!action) return
-    if (action.startsWith('restoreTo:')) {
-      const destination = { kind: destinationKind, id: action.slice('restoreTo:'.length) }
-      await one({ op: 'restore', bundlePath: row.bundlePath, destination }, row)
-      return
+    if (action.startsWith('restoreTo:') && places) {
+      const id = action.slice('restoreTo:'.length)
+      return flight(() => restoreOne(row, { kind: places.kind, id }))
     }
     switch (action) {
       case 'restore':
