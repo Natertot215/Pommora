@@ -91,11 +91,7 @@ const HostView = memo(function HostView({ host }: { host: Host }): React.JSX.Ele
       return <MatrixView />
     case 'archive': {
       const owner = archiveOwnerOf(tree, target.id)
-      return owner ? (
-        <ArchiveView key={owner.id} owner={owner} />
-      ) : (
-        <div className="detail interface-inset" />
-      )
+      return owner ? <ArchiveView owner={owner} /> : <div className="detail interface-inset" />
     }
   }
 })

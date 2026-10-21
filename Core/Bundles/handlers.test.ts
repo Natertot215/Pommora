@@ -99,6 +99,12 @@ describe('bundles:list', () => {
     ).toEqual(fault('Invalid Set id.'))
   })
 
+  it('refuses a `within` on the Trash, which holds no Set’s place', async () => {
+    expect(await bundlesHandlers['bundles:list'](ctx, { kind: 'trash' }, 'set-daily')).toEqual(
+      fault('Only an Archive lists within a Set.'),
+    )
+  })
+
   it('refuses a store it can’t read', async () => {
     for (const store of [null, { kind: 'shelf' }, { kind: 'archive' }])
       expect(await bundlesHandlers['bundles:list'](ctx, store)).toEqual(

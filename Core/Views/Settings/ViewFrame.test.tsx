@@ -139,11 +139,12 @@ describe('ViewFrame — the Archive toggle', () => {
     select = vi.fn(async () => {})
   })
 
-  it('the footing holds New View and an Archive button, and no More button', async () => {
+  it('the footing holds New View at its left and the Archive button at its right, and no More button', async () => {
     shown('collection')
     await mount(source([view('view_a', 'Table')]))
-    expect(document.querySelector('[aria-label="New View"]')).not.toBeNull()
-    expect(archiveButton()).toBeDefined()
+    const newView = document.querySelector('[aria-label="New View"]') as HTMLElement
+    expect(newView.parentElement?.firstElementChild).toBe(newView)
+    expect(newView.parentElement?.lastElementChild).toBe(archiveButton())
     expect(document.querySelector('[aria-label="More"]')).toBeNull()
   })
 

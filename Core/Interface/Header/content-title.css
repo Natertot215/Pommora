@@ -4,6 +4,7 @@
   gap: 8px;
   min-width: 0;
   --detail-title-size: var(--text-title-medium-size);
+  --detail-title-trailing-size: var(--text-title-small-size);
 }
 
 .title-icon-reveal {
@@ -33,12 +34,21 @@
   border-radius: 6px;
 }
 .detail-title-text,
+.detail-title-input.detail-title-input,
+.detail-title-trailing {
+  font-weight: var(--weight-bold);
+  line-height: 1.15;
+}
+.detail-title-text,
 /* Doubled: the family reset also states `font`/`color` at this weight, and the title's own scale must win on specificity, not on stylesheet order. */
 .detail-title-input.detail-title-input {
   font-size: var(--detail-title-size);
-  font-weight: var(--weight-bold);
   color: var(--label-primary);
-  line-height: 1.15;
+}
+.detail-title-trailing {
+  flex: none;
+  font-size: var(--detail-title-trailing-size);
+  color: var(--label-secondary);
 }
 .detail-title-text {
   overflow: hidden;

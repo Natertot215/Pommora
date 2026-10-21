@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Checkbox } from '@pommora/uix/Controls/Checkbox'
 import { SearchField } from '@pommora/uix/Fields/SearchField'
-import { overScrollEllipsis } from '@pommora/uix/Interactions/OverScroll'
 import { Scrollbar } from '@pommora/uix/Interactions/Scrollbar'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
 import { historical } from '@pommora/uix/Elements/nav-trail.css'
@@ -80,7 +79,16 @@ function TrashBody(): React.JSX.Element {
   }
 
   return (
-    <div className={cx('trash-frame table is-clear', checked.size > 0 && 'has-checked')}>
+    <div
+      className={cx('trash-frame table is-clear', checked.size > 0 && 'has-checked')}
+      style={
+        date.width === null
+          ? undefined
+          : ({
+              '--trash-date-lane': `calc(${date.width}px + var(--trash-date-inset))`,
+            } as React.CSSProperties)
+      }
+    >
       <div className="nav-search-row">
         <SearchField className={text.body.standard} value={query} onValueChange={setQuery} />
       </div>
@@ -94,8 +102,15 @@ function TrashBody(): React.JSX.Element {
         </span>
         {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a column label — it carries no click and no keyboard gesture of its own, exactly as the banner's and the cards' right-click surfaces do */}
         <span className="trash-head-date col-header" onContextMenu={date.onContextMenu}>
-          <Icon name="clock-fading" size="body" />
-          Time Deleted
+          <span ref={date.measureRef} className="col-measure">
+            <span className="trash-head-label">
+              <Icon name="clock-fading" size="body" />
+              Time Deleted
+            </span>
+            <span className={text.caption.standard} aria-hidden>
+              {date.sample}
+            </span>
+          </span>
         </span>
       </div>
 
@@ -132,9 +147,7 @@ function TrashRowView({
           className={cx('trash-trail', row.historical && historical)}
         />
       }
-      trailing={
-        <span className={cx('trash-date', text.caption.standard, overScrollEllipsis)}>{when}</span>
-      }
+      trailing={<span className={cx('trash-date', text.caption.standard)}>{when}</span>}
       overlay={
         <Checkbox
           className={overlay}

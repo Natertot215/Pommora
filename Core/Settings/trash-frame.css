@@ -1,5 +1,4 @@
 .trash-frame.table {
-  --trash-date-lane: 140px; /* KNOB — fixed, so the dates line up down the list */
   --trash-date-inset: 8px; /* KNOB — clears the column divider, heading and rows alike */
   --cell-padding-x: var(--surface-inset);
   --heading-padding-y: 6px; /* KNOB */
@@ -52,8 +51,12 @@
   flex: 0 0 var(--trash-date-lane);
   display: flex;
   align-items: center;
-  gap: 6px;
   padding-left: var(--trash-date-inset);
+}
+.trash-head-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .trash-scroll {
@@ -83,6 +86,7 @@
 .trash-date {
   flex: 0 0 var(--trash-date-lane);
   padding-left: var(--trash-date-inset);
+  white-space: nowrap;
   color: var(--label-secondary);
 }
 

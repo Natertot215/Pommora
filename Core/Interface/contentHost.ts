@@ -10,3 +10,9 @@ export interface ContentHost {
 export const ContentHostContext = createContext<ContentHost | null>(null)
 
 export const useContentHost = (): ContentHost | null => useContext(ContentHostContext)
+
+/** Whether this view is the one shown, rather than parked behind another tab's. */
+export const useHostShown = (): boolean => {
+  const host = useContentHost()
+  return host !== null && !host.parked
+}

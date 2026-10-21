@@ -266,6 +266,26 @@ describe('bundleRows — a bundle as the browser reads it', () => {
   })
 })
 
+describe('bundleRows — a container’s and a Space’s own icons', () => {
+  it('a Collection row and a Space row carry their sidecars’ icons, and a row with none carries no icon', async () => {
+    await writeFile(
+      join(root, 'Notes', '_pagecollection.json'),
+      JSON.stringify({ id: 'col-notes', icon: 'book' }),
+    )
+    await writeFile(
+      join(contextsDir(root), 'Projects', 'Pommora', '_space.json'),
+      JSON.stringify({ id: 'sp-pom', icon: 'rocket' }),
+    )
+    await del('Notes/Daily/Alpha.md', 'page')
+    await del('Notes', 'collection')
+    await del('.nexus/contexts/Projects/Pommora', 'space')
+    const byKind = Object.fromEntries((await rows()).map((r) => [r.kind, r]))
+    expect(byKind.collection.icon).toBe('book')
+    expect(byKind.space.icon).toBe('rocket')
+    expect('icon' in byKind.page).toBe(false)
+  })
+})
+
 describe('bundleRows — `homeResolves` agrees with the resolver', () => {
   it('a row it calls resolvable restores with no destination asked for', async () => {
     await del('Notes/Daily/Alpha.md', 'page')

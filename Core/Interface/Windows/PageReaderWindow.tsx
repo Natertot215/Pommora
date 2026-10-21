@@ -24,7 +24,11 @@ import { useSession, useSetting } from '../../Session/store'
 import type { Reader } from '../../Session/windowSlice'
 import type { PageTarget } from '../../Navigation/navRef'
 import { askDeleteSnapshots, askRestoreSnapshot } from '../Confirm/confirmations'
-import { WINDOW_BASE_PANEL, WindowBase } from '@pommora/uix/Windows/WindowBase'
+import {
+  WINDOW_BASE_PANEL,
+  WindowBase,
+  type WindowBasePanel,
+} from '@pommora/uix/Windows/WindowBase'
 import { Scrollbar } from '@pommora/uix/Interactions/Scrollbar'
 import { dialer } from '../../Platform/dialer'
 import { popMenu } from '../../Actions/menuActions'
@@ -70,7 +74,7 @@ function ReaderShell({
   trail,
   body,
   embedPath,
-  panel,
+  right,
 }: {
   reader: Reader
   closing: boolean
@@ -78,7 +82,7 @@ function ReaderShell({
   trail: TrailSegment[]
   body: string | null
   embedPath: string
-  panel?: React.ReactNode
+  right?: WindowBasePanel
 }): React.JSX.Element {
   const closeReader = useSession((s) => s.closeReader)
   const geometry = useWindowGeometry('page-reader')
@@ -93,7 +97,7 @@ function ReaderShell({
       ariaLabel={ariaLabel}
       lead={
         <span className="reader-lock" role="img" aria-label="Read Only" title="Read Only">
-          <Icon name="locked" size="body" />
+          <Icon name="lock" size="body" />
         </span>
       }
       title={
@@ -101,17 +105,7 @@ function ReaderShell({
           <NavTrail segments={trail} selected className="page-window-crumbs" />
         </div>
       }
-      right={
-        panel === undefined
-          ? undefined
-          : {
-              windowId: 'page-history-list',
-              bounds: WINDOW_BASE_PANEL,
-              mode: 'overlay',
-              open: true,
-              children: panel,
-            }
-      }
+      right={right}
     >
       <div className="window-body scroll-fade page-tile-grows">
         {body !== null && (
@@ -301,7 +295,13 @@ function HistoryReader({ reader, closing }: Branch<'history'>): React.JSX.Elemen
       trail={trail}
       body={body}
       embedPath={livePath}
-      panel={list}
+      right={{
+        windowId: 'page-history-list',
+        bounds: WINDOW_BASE_PANEL,
+        mode: 'overlay',
+        open: true,
+        children: list,
+      }}
     />
   )
 }

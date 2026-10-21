@@ -77,10 +77,12 @@ describe('ArchiveView', () => {
   const empty = (): string | null => host.querySelector('.archive-empty')?.textContent ?? null
   const face = (): Element | null =>
     host.querySelector('[role=status] [data-face="shown"], [role=alert] [data-face="shown"]')
-  const pressBar = async (label: 'Restore' | 'Delete'): Promise<void> => {
-    const button = [...(face()?.querySelectorAll('button') ?? [])].find((b) =>
+  const barButton = (label: 'Restore' | 'Delete'): HTMLElement =>
+    [...(face()?.querySelectorAll('button') ?? [])].find((b) =>
       label === 'Delete' ? b.getAttribute('title') === 'Delete' : b.textContent === label,
     ) as HTMLElement
+  const pressBar = async (label: 'Restore' | 'Delete'): Promise<void> => {
+    const button = barButton(label)
     await act(async () => button.click())
   }
   const check = async (...rows: string[]): Promise<void> => {
@@ -147,7 +149,7 @@ describe('ArchiveView', () => {
     expect(dates[0]).not.toBe(dates[1])
   })
 
-  it('a click on a row checks it, and a page row’s title opens the reader titled by its trail', async () => {
+  it('a click on a row checks it, and a page row’s title opens the reader titled by its trail under the stroked lock', async () => {
     await render()
     await check('A')
     expect(boxOf('A')?.getAttribute('aria-checked')).toBe('true')
@@ -159,6 +161,7 @@ describe('ArchiveView', () => {
       page: { kind: 'page', id: 'p1', path: 'x/A.md' },
       trail: [expect.objectContaining({ title: 'Notes' }), expect.objectContaining({ title: 'A' })],
     })
+    expect(host.querySelector('.reader-lock svg')?.classList.contains('lucide-lock')).toBe(true)
   })
 
   it('a Set row’s title opens nothing and checks its row', async () => {
@@ -170,14 +173,22 @@ describe('ArchiveView', () => {
     expect(boxOf('Ideas')?.getAttribute('aria-checked')).toBe('true')
   })
 
-  it('the header names its owner with Archive trailing after the search’s clear button', async () => {
+  it('the header names its owner with Archive in its trailing slot after the search’s clear button', async () => {
     await render()
     const header = host.querySelector('.detail-title')
     expect(header?.querySelector('.detail-title-text')?.textContent).toBe('Notes')
+    expect(header?.lastElementChild?.className).toBe('detail-title-trailing')
     expect(header?.lastElementChild?.textContent).toBe('Archive')
     expect(
       header?.lastElementChild?.previousElementSibling?.classList.contains('detail-title-clear'),
     ).toBe(true)
+  })
+
+  it('draws its owner’s title with no banner image and no add-banner button', async () => {
+    await render({ ...collection, banner: 'assets/cover.png' })
+    expect(host.querySelector('.banner')).toBeNull()
+    expect(host.querySelector('[aria-label="Add banner"]')).toBeNull()
+    expect(host.querySelector('.banner-empty .detail-title-text')?.textContent).toBe('Notes')
   })
 
   it('an empty archive reads its one line', async () => {
@@ -303,16 +314,22 @@ describe('ArchiveView', () => {
     )
   })
 
-  it('the bar’s Restore of a row whose place is gone posts the placement’s refusal, and a batch restores the rest and says what had nowhere to go', async () => {
+  it('the bar’s Restore of a row whose place is gone asks where and restores there, and a batch restores the rest and says what had nowhere to go', async () => {
     listed = [archived('Gone', { homeResolves: false }), archived('Kept')]
-    mutated.mockResolvedValueOnce({
-      ok: false,
-      error: { code: 'conflict', message: 'Its place is gone.' },
-    })
+    picked = collection.id
     await render()
     await check('Gone')
     await pressBar('Restore')
-    expect(currentNotification()).toMatchObject({ message: 'Its place is gone.', tone: 'error' })
+    expect(mutated.mock.calls).toEqual([
+      [
+        {
+          op: 'restore',
+          bundlePath: listed[0].bundlePath,
+          destination: { kind: 'container', id: collection.id },
+        },
+      ],
+    ])
+    expect(currentNotification()?.message).toBe('Restored “Gone”')
     act(() => clearNotification())
     await check('Kept')
     mutated.mockClear()
@@ -323,6 +340,25 @@ describe('ArchiveView', () => {
         'Restored 1 Page. 1 Page had nowhere to go — restore those one at a time to choose where.',
       tone: 'error',
     })
+  })
+
+  it('two presses of the bar’s Restore or Delete in one tick act once', async () => {
+    listed = [archived('A')]
+    await render()
+    await check('A')
+    const twice = async (label: 'Restore' | 'Delete'): Promise<void> => {
+      const button = barButton(label)
+      await act(async () => {
+        button.click()
+        button.click()
+      })
+    }
+    await twice('Restore')
+    expect(mutated).toHaveBeenCalledOnce()
+    act(() => clearNotification())
+    mutated.mockClear()
+    await twice('Delete')
+    expect(mutated).toHaveBeenCalledOnce()
   })
 
   it('a batch restore closes an open reader of one of its pages', async () => {

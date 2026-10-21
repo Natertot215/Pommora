@@ -13,13 +13,7 @@ import type { CollectionNode, NexusTree, SetNode } from '../Nexus/tree'
 import type { Delta } from '../Nexus/treeDelta'
 import { findContainerById, owningCollection } from '../Nexus/treePatch'
 import { listBundles, moveIntoStore } from '../Bundles/bundle'
-import {
-  originOf,
-  originWithin,
-  RECORD_FILENAME,
-  type RecordFile,
-  trailAbove,
-} from '../Bundles/record'
+import { RECORD_FILENAME, type RecordFile, trailAbove } from '../Bundles/record'
 import { ARCHIVE_DIR_REL, archiveDirRel } from '../Paths/nexusPaths'
 import { rootSegs } from '../Paths/exclusion'
 import { sidecarId } from '../Files/sidecar'
@@ -27,6 +21,19 @@ import { listEntries, listFilesRecursive } from '../Files/walk'
 import { recordWrite } from '../Files/writeEcho'
 import { machine } from '../Platform/machine'
 import { readWatchScope } from '../Settings/settings'
+
+/** The container an archived page or Set left, and the ids it stored above it. */
+const originOf = (record: RecordFile): { parent: string; trail: string[] } | null =>
+  (record.entity === 'page' || record.entity === 'set') && record.parent.kind === 'container'
+    ? { parent: record.parent.id, trail: record.trail ?? [] }
+    : null
+
+/** Whether an origin lies within the Set `setId`: by `held`, the tree's trail above its parent, while the tree holds the parent, else by the trail it stored. */
+const originWithin = (
+  origin: { parent: string; trail: string[] },
+  setId: string,
+  held: string[] | null,
+): boolean => origin.parent === setId || (held ?? origin.trail).includes(setId)
 
 /** Writes `trail` onto an archived record, moving its bundle into `to`'s Archive when its origin now sits in another Collection; the bundle keeps its name, since its stamp is the archived time. */
 async function refile(
@@ -49,14 +56,12 @@ async function refile(
 /** The bundles in `from`'s Archive archived from within the Set `setId`, by ids rather than by the folder names their chains were spelled with: each origin is the Set or lies beneath it, on the trail the tree gives the origin now, or on the one its record stored once the tree no longer holds it. */
 export async function archivedWithin(root: string, setId: string, from: string, tree: NexusTree) {
   if (!holdsName(from)) return []
-  return (await listBundles(root, { kind: 'archive', id: from })).flatMap(
-    ({ bundlePath, record }) => {
-      const origin = originOf(record)
-      if (!origin) return []
-      const held = trailAbove(tree, origin.parent)
-      return originWithin(origin, setId, held) ? [{ bundlePath, record, origin, held }] : []
-    },
-  )
+  return (await listBundles(root, { kind: 'archive', id: from })).flatMap((listed) => {
+    const origin = originOf(listed.record)
+    if (!origin) return []
+    const held = trailAbove(tree, origin.parent)
+    return originWithin(origin, setId, held) ? [{ ...listed, origin, held }] : []
+  })
 }
 
 /** Each record archived from within the Set `setId` takes the trail the Set gives it now, and `to`'s Archive when the Set now sits in another Collection. An origin the tree holds is placed by its current trail, and one it no longer holds by the ids its record stored. */

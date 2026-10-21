@@ -110,19 +110,17 @@ export function ViewFrame({
     <MenuScrollFrame
       footer={
         <MenuFooting
-          leading={
-            <>
-              <FootingCreate ariaLabel="New View" onClick={() => void createView()} />
-              <Button
-                type={inArchive ? 'tinted' : 'filled'}
-                size="button-inline"
-                label="Archive"
-                outline={inArchive}
-                pressed={inArchive}
-                showSelection={false}
-                onClick={() => showArchive(!inArchive)}
-              />
-            </>
+          leading={<FootingCreate ariaLabel="New View" onClick={() => void createView()} />}
+          trailing={
+            <Button
+              type={inArchive ? 'tinted' : 'filled'}
+              size="button-inline"
+              label="Archive"
+              outline={inArchive}
+              pressed={inArchive}
+              showSelection={false}
+              onClick={() => showArchive(!inArchive)}
+            />
           }
         />
       }

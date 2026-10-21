@@ -4,7 +4,7 @@ import { type ContainerKind, isContainer } from '../../Nexus/entities'
 import type { SelectionState, SelectTarget } from '../../Navigation/navRef'
 import { titleFromPath } from '../../Paths/posix'
 import type { TrailSegment } from '@pommora/uix/Elements/NavTrail'
-import { ancestryOf, type TrailNode, findSpace } from '../../Nexus/treeIndex'
+import { ancestryOf, type TrailNode, findSpace, nodesByIdOf } from '../../Nexus/treeIndex'
 import { ARCHIVE_ICON } from '../../Archive/archivePlace'
 
 type SpineTarget = Extract<SelectTarget, { kind: ContainerKind | 'page' }>
@@ -89,17 +89,15 @@ export function subfieldCrumbs(
       return crumbsOver(spine, currentPos)
     }
     case 'archive': {
-      const chain =
-        ancestryOf(tree, { kind: 'collection', id: selection.id }) ??
-        ancestryOf(tree, { kind: 'set', id: selection.id })
-      const owner = chain?.at(-1)
-      if (!chain || !owner) return []
+      const owner = nodesByIdOf(tree).get(selection.id)
+      if (!owner) return []
       return crumbsOver(
         [
-          ...chain,
+          ...owner.parents,
+          owner,
           { kind: 'archive', id: owner.id, title: 'Archive', path: owner.path, icon: ARCHIVE_ICON },
         ],
-        chain.length,
+        owner.parents.length + 1,
       )
     }
   }

@@ -56,9 +56,12 @@
   transform: translateY(-50%);
   justify-content: center;
 }
-.row-grip {
+.row-grip,
+.row-check {
   display: inline-flex;
   align-items: center;
+}
+.row-grip {
   color: var(--label-tertiary);
   cursor: grab;
   touch-action: none;

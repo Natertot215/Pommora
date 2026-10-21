@@ -4,8 +4,8 @@ import { isPlainObject, isString } from '../Contract/validators'
 import { liveTreeOf } from '../Nexus/liveTree'
 import { nexusPages } from '../Nexus/heldPages'
 import { holdsName } from '../Paths/names'
+import { archivedWithin } from '../Archive/refile'
 import { type BundleStore, listBundles } from './bundle'
-import { originOf, originWithin, trailAbove } from './record'
 import { bundleRows } from './rows'
 
 // An archive's id becomes one path segment under the Archive's root, so one the renderer hands in must stay a single segment.
@@ -22,16 +22,14 @@ export const bundlesHandlers = {
     const store = storeFrom(raw)
     if (!store) return fault('A store is required.')
     if (within !== undefined && !isString(within)) return fault('Invalid Set id.')
+    if (within !== undefined && store.kind !== 'archive')
+      return fault('Only an Archive lists within a Set.')
     const tree = await liveTreeOf(root)
     const { byId } = await nexusPages(root, tree)
-    const bundles = await listBundles(root, store)
     const listed =
-      within === undefined
-        ? bundles
-        : bundles.filter(({ record }) => {
-            const origin = originOf(record)
-            return origin !== null && originWithin(origin, within, trailAbove(tree, origin.parent))
-          })
+      store.kind === 'archive' && within !== undefined
+        ? await archivedWithin(root, within, store.id, tree)
+        : await listBundles(root, store)
     return ok(await bundleRows(root, listed, store, tree, byId))
   }),
 } satisfies Partial<Handlers>

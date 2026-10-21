@@ -4,10 +4,10 @@ import { type EntityRecord, pagesByIdOf, pagesByPathOf, recordsOf } from './reco
 import type { BannerOwnerKind } from './mutateRequest'
 import { navKey, type NavRef, type SelectTarget, toNavRef } from '../Navigation/navRef'
 import { MATRIX_ICON, MATRIX_TITLE } from '../Matrix/matrixKind'
-import { ARCHIVE_ICON } from '../Archive/archivePlace'
+import { ARCHIVE_ICON, ownsArchivePlace } from '../Archive/archivePlace'
 import type { CollectionNode, NexusTree, SetNode, SpaceNode } from './tree'
 import { entityMemo } from './tree'
-import { findContainerWhere, isTopSet, withheldIn } from './treePatch'
+import { findContainerWhere, withheldIn } from './treePatch'
 import { iconNameOr } from '@pommora/uix/Symbols'
 import { DEFAULT_NEXUS_ICON, entityIcon } from '../Assets/entityIconPolicy'
 import { NO_TRAIL, type TrailSegment } from '@pommora/uix/Elements/NavTrail'
@@ -126,7 +126,7 @@ export const reconcileIndexOf = entityMemo(
 /** One display core per Archive place, each Collection's and each top-level Set's, titled by its owner and trailed by the owner's ancestry. */
 const archiveCoresOf = entityMemo([nodesOf], (tree): [string, NavCore][] =>
   nodesOf(tree).flatMap((r): [string, NavCore][] =>
-    r.kind === 'collection' || (r.kind === 'set' && isTopSet(r.path))
+    ownsArchivePlace(r)
       ? [
           [
             navKey({ kind: 'archive', id: r.id }),
