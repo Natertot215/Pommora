@@ -64,7 +64,8 @@ export interface NexusSlice {
   choose: () => Promise<void>
   openPath: (path: string) => Promise<void>
   openDropped: (file: File) => Promise<void>
-  mutate: (req: MutateRequest) => Promise<MutateOutcome | null>
+  /** `quiet` posts nothing — no refusal, report, warning, or store change — for a batch that reports once for all its rows. */
+  mutate: (req: MutateRequest, opts?: { quiet?: true }) => Promise<MutateOutcome | null>
 }
 
 /** Every save the window still owes, landed ahead of a switch, a quit, or a write that moves, renames, or deletes: a page write after a switch's root flip would overwrite a same-relative-path file in the new Nexus. */
@@ -238,19 +239,24 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
     openPath: (path) => openVia(() => dialer().ask('nexus:openPath', path)),
     openDropped: (file) => openVia(() => dialer().openDropped(file)),
 
-    mutate: async (req) => {
+    mutate: async (req, { quiet } = {}) => {
       const held = get().tree
       const moves = req.op === 'rename' || req.op === 'movePage' || req.op === 'moveSet'
       if (changesSettled(req.op)) await flushAllSaves()
       // A flush held by a Nexus switch resumes after it, when the path this op names belongs to the Nexus it left.
       if (get().tree?.nexus.id !== held?.nexus.id) return null
       const res = await dialer().ask('mutate', req)
-      if (!reportRefusal(res)) return null
-      if (res.value.unrestored) notifyReport(unrestoredLine(res.value.unrestored), true)
-      const { cascade, retry } = res.value
-      if (req.op !== 'delete' && cascade)
-        warnCascade(cascade, retry ? () => void get().mutate(retry) : undefined)
-      if (changesStores(req)) storesChanged.emit()
+      if (!res.ok) {
+        if (!quiet) reportRefusal(res)
+        return null
+      }
+      if (!quiet) {
+        if (res.value.unrestored) notifyReport(unrestoredLine(res.value.unrestored), true)
+        const { cascade, retry } = res.value
+        if (req.op !== 'delete' && cascade)
+          warnCascade(cascade, retry ? () => void get().mutate(retry) : undefined)
+        if (changesStores(req)) storesChanged.emit()
+      }
       // The host pushed what this write changed before it replied, so the tree already holds it.
       get().patchPagesFor(req)
       const tree = get().tree

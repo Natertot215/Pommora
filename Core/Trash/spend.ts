@@ -30,6 +30,7 @@ import { machine } from '../Platform/machine'
 import { noteOwn, recordWrite } from '../Files/writeEcho'
 import { goneContainers, reachConfig, reachReport } from '../Nexus/configReach'
 import { collectionArchive } from '../Archive/archive'
+import { scopeOf } from '../Settings/codec'
 import { refileLanded } from '../Archive/refile'
 import { frozenWorld } from '../Properties/propertyValue'
 import { heldTreeOf, liveTreeOf } from '../Nexus/liveTree'
@@ -64,7 +65,10 @@ export async function emptyBundle(
   }
   if (!artifactAbs)
     return fail('not-found', "That deletion didn't finish, or something else is in with it.")
-  const archive = record.entity === 'collection' ? await collectionArchive(root, record.id) : null
+  const archive =
+    record.entity === 'collection'
+      ? await collectionArchive(root, record.id, scopeOf((await liveTreeOf(root)).config))
+      : null
   const pages = await contentPages(record.entity, artifactAbs)
   const pageIds = await pageIdsOf([...pages, ...(archive?.files ?? [])])
   await dispose(artifactAbs)

@@ -33,9 +33,15 @@ import {
 } from './gather'
 import { gatherContentRecord, type RecordFile, writeRecord } from '../Bundles/record'
 import { liftSetAside } from '../Nexus/folderEntity'
+import { scopeOf } from '../Settings/codec'
+import type { WatchScope } from '../Paths/exclusion'
 
 /** A delete naming an Archive bundle takes the item inside it to the Trash under the chain it was archived from, so a Trash restore returns it there, and its record keeps the bundle it left for the Undo. Its pages' index rows sit at their Archive paths, while Link values name them where they lived. */
-async function fromArchive(root: string, req: Extract<MutateRequest, { op: 'delete' }>) {
+async function fromArchive(
+  root: string,
+  req: Extract<MutateRequest, { op: 'delete' }>,
+  scope: WatchScope,
+) {
   if (!isArchived(req.path)) return null
   const resolved = await resolveUnderRoot(root, req.path)
   const opened = resolved.ok ? await openBundle(root, resolved.value) : null
@@ -44,7 +50,7 @@ async function fromArchive(root: string, req: Extract<MutateRequest, { op: 'dele
   if (store.kind !== 'archive' || !abs) return NOT_HELD
   if ((held.entity !== 'page' && held.entity !== 'set') || held.entity !== req.kind) return NOT_HELD
   const pages = await contentPages(held.entity, abs)
-  const sets = held.entity === 'set' ? await archivedSetIds(root, abs) : []
+  const sets = held.entity === 'set' ? await archivedSetIds(root, abs, scope) : []
   return ok({
     bundle,
     abs,
@@ -60,7 +66,9 @@ export async function deleteOp(
   { root, deps }: MutateContext,
   req: Extract<MutateRequest, { op: 'delete' }>,
 ): Promise<MutateReply> {
-  const archived = await fromArchive(root, req)
+  const before = await liveTreeOf(root)
+  const scope = scopeOf(before.config)
+  const archived = await fromArchive(root, req, scope)
   if (archived && !archived.ok) return archived
   const from = archived?.value
   const resolved = from ? ok(from.abs) : await mutableTarget(root, req.path, [req.kind])
@@ -68,13 +76,10 @@ export async function deleteOp(
   const abs = resolved.value
   const rel = relative(root, abs)
   if (!(await pathExists(abs))) return fail('not-found', 'Nothing to delete.')
-  const before = await liveTreeOf(root)
   const contexts = req.kind === 'context' ? await readRegistryStrict(root) : null
   if (contexts && !contexts.ok) return contexts
-  if (!from && isContainer(req)) {
-    const lifted = await liftSetAside(root, abs)
-    if (!lifted.ok) return lifted
-  }
+  const lifted = !from && isContainer(req) ? await liftSetAside(root, abs) : null
+  if (lifted && !lifted.ok) return lifted
   // Write-ahead: the record lands before any sweep destroys what it describes; a Space or Context sweep runs before its artifact moves and refuses on failure, a content strip runs after, so a failed move strips nothing, and the artifact moves before the configuration pass, so a delete cut short leaves evidence rather than silence.
   const bundle =
     deps.trashMode === 'system'
@@ -82,7 +87,7 @@ export async function deleteOp(
       : await mintBundle(root, { kind: 'trash' }, from?.origin ?? abs)
   const archive =
     !bundle && req.kind === 'collection'
-      ? await collectionArchive(root, containerAt(before, req.path)?.id)
+      ? await collectionArchive(root, containerAt(before, req.path)?.id, scope)
       : null
   const edit = from ? from.edit : goneEdit(before, req.kind, req.path, archive?.sets)
   // With no bundle to keep them, the pages' metadata entries leave with the delete, by the ids their files carry before the move.
@@ -142,8 +147,13 @@ export async function deleteOp(
     if (write && record) await write({ ...record, partial: true })
     paths = from?.keys ?? under
   }
-  if (bundle) await relocate(abs, join(bundle, basename(abs)))
-  else await machine().lock(abs, () => discardFile(root, abs, deps))
+  await (bundle
+    ? relocate(abs, join(bundle, basename(abs)))
+    : machine().lock(abs, () => discardFile(root, abs, deps))
+  ).catch(async (e: unknown) => {
+    await lifted?.value.undo()
+    throw e
+  })
   if (archive) await machine().lock(archive.abs, () => discardFile(root, archive.abs, deps))
   if (from) await removeOwn(from.bundle)
   else await dropDeparture(root, before, req.kind, req.path)

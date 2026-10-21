@@ -4,15 +4,19 @@ import { fail, type Result } from '../Contract/result'
 import { asString } from '../Nexus/coerce'
 import { readJsonObject, rmwJsonStrict } from './atomicWrite'
 
-export const sidecarString = async (
+/** The id and icon a sidecar names, from one read. */
+export async function sidecarIdentity(
   absFolder: string,
   kind: SidecarKind,
-  key: string,
-): Promise<string | undefined> =>
-  asString((await readJsonObject(sidecarPath(absFolder, kind)))?.[key])
+): Promise<{ id?: string; icon?: string }> {
+  const raw = await readJsonObject(sidecarPath(absFolder, kind))
+  return { id: asString(raw?.id), icon: asString(raw?.icon) }
+}
 
-export const sidecarId = (absFolder: string, kind: SidecarKind): Promise<string | undefined> =>
-  sidecarString(absFolder, kind, 'id')
+export const sidecarId = async (
+  absFolder: string,
+  kind: SidecarKind,
+): Promise<string | undefined> => (await sidecarIdentity(absFolder, kind)).id
 
 export type Refuse = (why: Result<never>) => null
 

@@ -49,14 +49,18 @@ async function relocateFolder(
   return ok({ path: to })
 }
 
-/** A Collection or Set leaving the tree leaves every excluded folder and the asset directory inside it in its parent, the outermost of a nesting, under its own name or the next one free there, each one's entry carried ahead of it. */
-export async function liftSetAside(root: string, containerAbs: string): Promise<Result<null>> {
+/** A Collection or Set leaving the tree leaves every excluded folder and the asset directory inside it in its parent, the outermost of a nesting, under its own name or the next one free there, each one's entry carried ahead of it. `undo` moves each back, its entry with it, when the container's own move fails. */
+export async function liftSetAside(
+  root: string,
+  containerAbs: string,
+): Promise<Result<{ undo: () => Promise<void> }>> {
   const { excluded, assetDir } = await readWatchScope(root)
   const inside = [...excluded, assetDir].flatMap((entry) => {
     const rest = entryWithin(entry, relative(root, containerAbs))
     return rest ? [rest.join('/')] : []
   })
   const parent = dirname(containerAbs)
+  const lifted: { from: string; to: string }[] = []
   for (const rest of inside) {
     if (inside.some((outer) => (entryWithin(rest, outer)?.length ?? 0) > 0)) continue
     const abs = join(containerAbs, rest)
@@ -64,10 +68,16 @@ export async function liftSetAside(root: string, containerAbs: string): Promise<
     const name = await heldName(abs)
     if (name === null) continue
     const taken = (await listEntries(parent)).map((e) => e.name)
-    const lifted = await relocateFolder(root, abs, join(parent, freeName(name, taken)))
-    if (!lifted.ok) return lifted
+    const to = join(parent, freeName(name, taken))
+    const moved = await relocateFolder(root, abs, to)
+    if (!moved.ok) return moved
+    lifted.push({ from: abs, to })
   }
-  return ok(null)
+  return ok({
+    undo: async () => {
+      for (const { from, to } of [...lifted].reverse()) await relocateFolder(root, to, from)
+    },
+  })
 }
 
 export async function createFolderEntity(

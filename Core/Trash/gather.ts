@@ -4,7 +4,7 @@ import type { Result } from '../Contract/result'
 import type { SweepCapture, UnlinkOutcome } from '../Contexts/contextCascade'
 import { readTextOrNull } from '../Files/atomicWrite'
 import { spaceIdsIn } from '../Contexts/spaceSidecar'
-import { sidecarId } from '../Files/sidecar'
+import { sidecarIdentity } from '../Files/sidecar'
 import { exactTitle } from '../Paths/caseFold'
 import { readPageRelations } from '../Index/contentIndex'
 import { extractPageIndex } from '../Index/indexSeed'
@@ -64,7 +64,7 @@ export async function gatherSpaceRecord(
   registry: Result<ContextsRegistry> | null,
   swept: UnlinkOutcome | null,
 ): Promise<RecordFile | null> {
-  const id = await sidecarId(abs, 'space')
+  const { id, icon } = await sidecarIdentity(abs, 'space')
   if (!id) return null
   const contextTitle = basename(dirname(abs))
   const def = registry?.ok
@@ -85,6 +85,7 @@ export async function gatherSpaceRecord(
   return {
     entity: 'space',
     id,
+    ...(icon ? { icon } : {}),
     parent: def ? { kind: 'context', id: def.id } : { kind: 'unaddressable' },
     ...(place ? { place } : {}),
     members,

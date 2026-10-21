@@ -12,10 +12,9 @@ import { liveTreeOf } from '../Nexus/liveTree'
 import type { CollectionNode, NexusTree, SetNode } from '../Nexus/tree'
 import type { Delta } from '../Nexus/treeDelta'
 import { containerTrailById, owningCollection } from '../Nexus/treePatch'
-import { archivedWithin, listBundles, moveIntoStore } from '../Bundles/bundle'
+import { archivedWithin, collectionsElsewhere, listBundles, moveIntoStore } from '../Bundles/bundle'
 import { collectionOf, originOf, patchRecord, type RecordFile, trailAbove } from '../Bundles/record'
-import { ARCHIVE_DIR_REL, archiveDirRel, NEXUS_DIR, TRASH_DIR } from '../Paths/nexusPaths'
-import { sidecarId } from '../Files/sidecar'
+import { ARCHIVE_DIR_REL, archiveDirRel } from '../Paths/nexusPaths'
 import { listEntries, listFilesRecursive } from '../Files/walk'
 
 /** Writes `trail` onto an archived record, moving its bundle into `to`'s Archive when its origin now sits in another Collection; the bundle keeps its name, since its stamp is the archived time. */
@@ -97,20 +96,6 @@ export async function refileMoved(
     if ('at' in d) for (const sub of Object.values(d.at)) await walk(sub)
   }
   await carried(() => walk(delta))
-}
-
-// The Collections outside the tree: in a root folder it doesn't hold, hidden or excluded alike, or in the Trash.
-async function collectionsElsewhere(root: string, tree: NexusTree): Promise<Set<string>> {
-  const held = new Set(tree.collections.map((c) => c.path))
-  const unheld = (await listEntries(root)).filter(
-    ({ name, kind }) =>
-      kind === 'dir' && name !== NEXUS_DIR && name !== TRASH_DIR && !held.has(name),
-  )
-  const ids = await Promise.all(unheld.map(({ name }) => sidecarId(join(root, name), 'collection')))
-  const trashed = (await listBundles(root, { kind: 'trash' })).flatMap(({ record }) =>
-    record.entity === 'collection' && record.id ? record.id : [],
-  )
-  return new Set([...ids.flatMap((id) => id ?? []), ...trashed])
 }
 
 /** The open pass, once per open before the index seed: an Archive filed under a live Collection re-files each record whose origin the tree holds, which a Set moved while Pommora was closed leaves misfiled; one whose id names no Collection the tree holds, none in a root folder it doesn't hold, and none in the Trash is orphaned, and its bundles move into `.trash` with their records whole. A root folder whose sidecar reads unreadable could be any Collection, so while one does, that open takes no Archive for orphaned. */

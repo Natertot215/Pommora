@@ -58,7 +58,7 @@ export function ArchiveView({ owner }: { owner: CollectionNode | SetNode }): Rea
   const cols = `minmax(${WIDTHS.title.default}px, 1fr) ${dateTrack}`
 
   const [listEl, setListEl] = useState<HTMLDivElement | null>(null)
-  const scrollEl = useMemo(() => listEl?.closest<HTMLElement>('.detail-scroll') ?? null, [listEl])
+  const [scrollEl, setScrollEl] = useState<HTMLDivElement | null>(null)
   const { rows: slots, height } = useVirtualRows(
     { count: visible.length, rowHeight: ROW_H, listEl, scrollEl },
     [],
@@ -97,11 +97,14 @@ export function ArchiveView({ owner }: { owner: CollectionNode | SetNode }): Rea
       case 'failed':
         return <div className="archive-empty">The archive couldn't be read.</div>
       case 'ready':
-        return listing.rows.length === 0 ? (
+        if (visible.length > 0) return null
+        return (
           <div className="archive-empty">
-            This {owner.kind === 'set' ? 'Set' : 'Collection'}'s archive is empty.
+            {listing.rows.length === 0
+              ? `This ${owner.kind === 'set' ? 'Set' : 'Collection'}'s archive is empty.`
+              : 'Nothing matches.'}
           </div>
-        ) : null
+        )
     }
   }
 
@@ -111,6 +114,7 @@ export function ArchiveView({ owner }: { owner: CollectionNode | SetNode }): Rea
       trailing={ARCHIVE_TITLE}
       plain
       ready={listing.status !== 'loading'}
+      scrollRef={setScrollEl}
     >
       <div className="table table-view">
         <div

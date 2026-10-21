@@ -76,7 +76,7 @@ import { checkMarkSvg, checkboxClass } from '@pommora/uix/Controls/Checkbox'
 import * as btn from '@pommora/uix/Buttons/button-base.css'
 import { buttonClass, segmentDivider } from '@pommora/uix/Buttons/Button'
 import { DONE_MS } from '@pommora/uix/Animations/motion'
-import { faceAttrs } from '@pommora/uix/Animations/Swap'
+import { setFace } from '@pommora/uix/Animations/Swap'
 import * as swap from '@pommora/uix/Animations/swap.css'
 import * as trail from '@pommora/uix/Elements/nav-trail.css'
 import { svgFrame } from '@pommora/uix/Symbols/svgFrame'
@@ -285,16 +285,8 @@ class CodeTagWidget extends WidgetType {
         if (name.textContent) name.replaceChildren(...(on ? ['Copied'] : resting))
         return
       }
-      for (const [face, hidden] of [
-        [counts, on],
-        [copied, !on],
-      ] as const) {
-        const { inert, ...named } = faceAttrs(hidden)
-        face.toggleAttribute('inert', inert)
-        for (const [attr, value] of Object.entries(named))
-          if (value === undefined) face.removeAttribute(attr)
-          else face.setAttribute(attr, value)
-      }
+      setFace(counts, on)
+      setFace(copied, !on)
     }
     showCopied(false)
 

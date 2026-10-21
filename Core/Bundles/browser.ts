@@ -16,7 +16,7 @@ import {
   notifyReport,
   unrestoredLine,
 } from '../Interface/Notifications/notifications'
-import { changesSettled, type RestoreDestination } from '../Nexus/mutateRequest'
+import type { RestoreDestination } from '../Nexus/mutateRequest'
 import { nodesByIdOf } from '../Nexus/treeIndex'
 import { matches, matchQuery } from '../Paths/caseFold'
 import { basename } from '../Paths/posix'
@@ -36,7 +36,7 @@ import { restoreMenuItems } from '../Actions/restoreMenu'
 import { useNexusForms } from '../Views/Host/useColumnStyles'
 import { useSession } from '../Session/store'
 import { personalizationOf } from '../Session/configSlice'
-import { flushAllSaves, storesChanged } from '../Session/nexusSlice'
+import { storesChanged } from '../Session/nexusSlice'
 import { dialer } from '../Platform/dialer'
 import type { Personalization } from '../Settings/personalization'
 import type { BundleStore } from './bundle'
@@ -301,22 +301,21 @@ export function useBundleBrowser(
     const renamed: string[] = []
     const bundled: string[] = []
     const switched = (): boolean => useSession.getState().tree?.nexus.id !== nexusId
-    if (changesSettled(op)) await flushAllSaves()
     for (const row of targets) {
       if (switched()) break
-      const res = await dialer().ask(
-        'mutate',
+      const res = await mutate(
         op === 'delete'
           ? { op, path: row.bundlePath, kind: archivedKind(row) }
           : { op, bundlePath: row.bundlePath },
+        { quiet: true },
       )
-      ;(res.ok ? done : refused).push(row)
-      if (!res.ok) continue
+      ;(res ? done : refused).push(row)
+      if (!res) continue
       spendUndo(row.bundlePath)
-      unrestored.push(...(res.value.unrestored ?? []))
-      if (res.value.cascade?.warning) warnings.add(res.value.cascade.warning)
-      if (res.value.landedAs) renamed.push(steppedTo(row.title, res.value.landedAs))
-      if (res.value.bundled) bundled.push(res.value.bundled.bundlePath)
+      unrestored.push(...(res.unrestored ?? []))
+      if (res.cascade?.warning) warnings.add(res.cascade.warning)
+      if (res.landedAs) renamed.push(steppedTo(row.title, res.landedAs))
+      if (res.bundled) bundled.push(res.bundled.bundlePath)
     }
     storesChanged.emit()
     return switched()
