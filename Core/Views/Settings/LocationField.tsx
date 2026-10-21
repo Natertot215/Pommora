@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from 'react'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import { Icon } from '@pommora/uix/Symbols'
 import { TokenField } from '@pommora/uix/Fields/TokenField'
-import { foldKey, matchKey, matchQuery, matchScore } from '../../Paths/caseFold'
+import { foldKey, matches, matchKey, matchQuery } from '../../Paths/caseFold'
 import { EntityIcon } from '../../Assets/EntityIcon'
 import { DisclosureRow, MenuScrollFrame, pickRuns, useDisclosureSet } from '@pommora/uix/Menus'
 import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
@@ -25,7 +25,7 @@ function narrowed(nodes: Folder[], query: string): { nodes: Folder[]; leads: Set
     ns.flatMap((n) => {
       const sets = walk(n.sets ?? [], place ? `${place}/${n.title}` : n.title)
       if (sets.length > 0) leads.add(n.id)
-      const kept = sets.length > 0 || matchScore(matchKey(n.title, place), query) !== null
+      const kept = sets.length > 0 || matches(matchKey(n.title, place), query)
       return kept ? [{ ...n, sets }] : []
     })
   return { nodes: walk(nodes, ''), leads }

@@ -67,6 +67,8 @@ export function matchScore(key: MatchKey, q: string): number | null {
   return place === null ? null : place - UNDER_NAMES
 }
 
+export const matches = (key: MatchKey, q: string): boolean => matchScore(key, q) !== null
+
 type Ranked<T> = { item: T; score: number; name: string }
 
 /** The items whose key matches `q`, best first, a tie broken by name. */
