@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useState } from 'react'
 import { Checkbox } from '@pommora/uix/Controls/Checkbox'
 import { SearchField } from '@pommora/uix/Fields/SearchField'
 import { overScrollEllipsis } from '@pommora/uix/Interactions/OverScroll'
@@ -6,57 +6,18 @@ import { Scrollbar } from '@pommora/uix/Interactions/Scrollbar'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
 import { MenuItem } from '@pommora/uix/Menus'
 import { overlay } from '@pommora/uix/Menus/menu-row.css'
-import { retained, toggled } from '@pommora/uix/Utilities/checkSet'
 import { cx } from '@pommora/uix/Utilities/cx'
-import { capitalize } from '@pommora/uix/Utilities/capitalize'
 import { Icon } from '@pommora/uix/Symbols'
 import { entityIcon } from '../Assets/entityIconPolicy'
-import { itemCount } from '../Properties/properties'
 import { text } from '@pommora/uix/Theme'
-import { askEmptyTrash, spendBundle } from '../Interface/Confirm/confirmations'
-import { changesSettled, type MutateRequest } from '../Nexus/mutateRequest'
 import type { Personalization } from './personalization'
 import type { BundleRow } from '../Bundles/rows'
 import { PropertyTypeIcon, propertyTypeIconName } from '../Properties/Cells/PropertyTypes'
-import { formatDate } from '../Properties/formatValue'
-import { containerTargets, contextTargets } from '../Actions/destinationTree'
-import { matchQuery, rankMatches } from '../Paths/caseFold'
 import { useSession } from '../Session/store'
-import { flushAllSaves, storesChanged } from '../Session/nexusSlice'
 import { personalizationOf } from '../Session/configSlice'
-import { notifyOutcome, unrestoredLine } from '../Interface/Notifications/notifications'
-import { dialer } from '../Platform/dialer'
-import { popMenu } from '../Actions/menuActions'
-import { trashMenuItems } from '../Actions/trashMenu'
-import { parseStyleAction, styleMenuItems } from '../Actions/columnMenu'
-import { dateDefaults, holdsStyle, resolveStyle, storedPick } from '../Properties/columnStyles'
-import { useNexusForms } from '../Views/Host/useColumnStyles'
+import { useBundleBrowser } from '../Bundles/browser'
 import '../Navigation/nav-list.css'
 import './trash-frame.css'
-
-const PLURALS: Record<BundleRow['kind'], string> = {
-  page: 'Pages',
-  collection: 'Collections',
-  set: 'Sets',
-  space: 'Spaces',
-  context: 'Contexts',
-  property: 'Properties',
-}
-
-export function countPhrase(rows: BundleRow[]): string {
-  const kinds = new Set(rows.map((r) => r.kind))
-  const kind = kinds.size === 1 ? [...kinds][0] : null
-  if (kind === null) return itemCount(rows.length)
-  return rows.length === 1 ? `1 ${capitalize(kind)}` : `${rows.length} ${PLURALS[kind]}`
-}
-
-const steppedTo = (title: string, landedAs: string): string => `“${title}” as “${landedAs}”`
-
-export function filterRows(rows: BundleRow[], query: string): BundleRow[] {
-  const q = matchQuery(query)
-  if (!q) return rows
-  return rankMatches(rows, q, (row) => row.match)
-}
 
 // Keyed on the nexus so a switch with Settings open mounts a body with its own list.
 export function TrashFrame(): React.JSX.Element {
@@ -65,157 +26,12 @@ export function TrashFrame(): React.JSX.Element {
 }
 
 function TrashBody(): React.JSX.Element {
-  const nexus = useNexusForms()
-  const stored = useSession((s) => personalizationOf(s).trashColumnStyle)
-  // The Trash shows each deletion's time, where a view's date column leaves it hidden.
-  const defaults = { ...dateDefaults(nexus.dateFormat), time_format: nexus.clock }
-  const style = resolveStyle(stored, defaults, nexus.clock)
-  const setPersonalization = useSession((s) => s.setPersonalization)
-  const defaultIcons = useSession((s) => personalizationOf(s).defaultIcons)
-  const tree = useSession((s) => s.tree)
-  const mutate = useSession((s) => s.mutate)
-  const [rows, setRows] = useState<BundleRow[] | null>(null)
-  const [failed, setFailed] = useState(false)
   const [query, setQuery] = useState('')
-  const [checked, setChecked] = useState<ReadonlySet<string>>(new Set())
-
-  const refresh = useCallback(async (): Promise<void> => {
-    const res = await dialer().ask('bundles:list', { kind: 'trash' })
-    if (!res.ok) {
-      setFailed(true)
-      return
-    }
-    setFailed(false)
-    setRows(res.value)
-    const live = new Set(res.value.map((r) => r.bundlePath))
-    setChecked((prev) => retained(prev, live))
-  }, [])
-
-  useEffect(() => {
-    void refresh()
-    return storesChanged.subscribe(() => void refresh())
-  }, [refresh])
-
-  const shown = useMemo(() => filterRows(rows ?? [], query), [rows, query])
-  const toggle = (bundlePath: string): void => setChecked((prev) => toggled(prev, bundlePath))
-
-  const one = async (
-    req: Extract<MutateRequest, { bundlePath: string }>,
-    row: BundleRow,
-  ): Promise<void> => {
-    const done = await mutate(req)
-    if (!done) return
-    spendBundle(req.bundlePath)
-    if (done.landedAs)
-      notifyOutcome(`Restored ${steppedTo(row.title, done.landedAs)}`, undefined, [
-        done.unrestored !== undefined && unrestoredLine(done.unrestored),
-        done.cascade?.warning,
-      ])
-  }
-
-  const many = async (
-    targets: BundleRow[],
-    op: 'restore' | 'emptyBundle',
-  ): Promise<{
-    done: BundleRow[]
-    refused: BundleRow[]
-    unrestored: string[]
-    warnings: string[]
-    renamed: string[]
-  }> => {
-    const done: BundleRow[] = []
-    const refused: BundleRow[] = []
-    const unrestored: string[] = []
-    const warnings = new Set<string>()
-    const renamed: string[] = []
-    if (changesSettled(op)) await flushAllSaves()
-    for (const row of targets) {
-      const res = await dialer().ask('mutate', { op, bundlePath: row.bundlePath })
-      ;(res.ok ? done : refused).push(row)
-      if (!res.ok) continue
-      spendBundle(row.bundlePath)
-      unrestored.push(...(res.value.unrestored ?? []))
-      if (res.value.cascade?.warning) warnings.add(res.value.cascade.warning)
-      if (res.value.landedAs) renamed.push(steppedTo(row.title, res.value.landedAs))
-    }
-    await refresh()
-    return { done, refused, unrestored, warnings: [...warnings], renamed }
-  }
-
-  const restoreBatch = async (targets: BundleRow[]): Promise<void> => {
-    const addressable = targets.filter((r) => r.homeResolves)
-    const { done, refused, unrestored, warnings, renamed } = await many(addressable, 'restore')
-    const homeless = targets.filter((r) => !r.homeResolves)
-    notifyOutcome(
-      `Restored ${countPhrase(done)}`,
-      renamed.length > 1 ? `${renamed.length} Renamed` : renamed[0],
-      [
-        homeless.length > 0 &&
-          `${countPhrase(homeless)} had nowhere to go — restore those one at a time to choose where.`,
-        refused.length > 0 && `${countPhrase(refused)} couldn’t be restored.`,
-        unrestored.length > 0 && unrestoredLine(unrestored),
-        ...warnings,
-      ],
-    )
-  }
-
-  const emptyBatch = async (targets: BundleRow[]): Promise<void> => {
-    if (!(await askEmptyTrash(targets.length))) return
-    const { done, refused, warnings } = await many(targets, 'emptyBundle')
-    notifyOutcome(`Deleted ${countPhrase(done)}`, undefined, [
-      refused.length > 0 && `${countPhrase(refused)} couldn’t be deleted.`,
-      ...warnings,
-    ])
-  }
-
-  const openColumnMenu = async (): Promise<void> => {
-    const action = await popMenu(styleMenuItems({ type: 'dateTime', current: style }))
-    const pick = action ? parseStyleAction(action) : null
-    if (!pick) return
-    const next = { ...stored, [pick.key]: storedPick(pick.key, pick.value, defaults, nexus.clock) }
-    setPersonalization('trashColumnStyle', holdsStyle(next) ? next : undefined)
-  }
-
-  const openMenu = async (row: BundleRow): Promise<void> => {
-    // Right-clicking an unchecked row acts on that row alone, whatever else is checked — a checked set is a deliberate construction. The batch is what the menu will actually act on: the CHECKED rows STILL IN VIEW, since deriving it from the unfiltered selection would let a filtered right-click read "Restore All", act on one row, and withhold the destination picker that row was owed.
-    const inSet = checked.has(row.bundlePath) ? shown.filter((r) => checked.has(r.bundlePath)) : []
-    const batch = inSet.length > 1
-    const targets = batch ? inSet : [row]
-    const homeless = !batch && !row.homeResolves
-    const destinationKind = row.kind === 'space' ? ('context' as const) : ('container' as const)
-    const action = await popMenu(
-      trashMenuItems({
-        batch,
-        ...(homeless
-          ? {
-              destinations:
-                destinationKind === 'context' ? contextTargets(tree) : containerTargets(tree),
-            }
-          : {}),
-      }),
-    )
-    if (!action) return
-    if (action.startsWith('restoreTo:')) {
-      const destination = { kind: destinationKind, id: action.slice('restoreTo:'.length) }
-      await one({ op: 'restore', bundlePath: row.bundlePath, destination }, row)
-      return
-    }
-    switch (action) {
-      case 'restore':
-        await one({ op: 'restore', bundlePath: row.bundlePath }, row)
-        break
-      case 'delete':
-        if (await askEmptyTrash(1))
-          await one({ op: 'emptyBundle', bundlePath: row.bundlePath }, row)
-        break
-      case 'restoreAll':
-        await restoreBatch(targets)
-        break
-      case 'deleteAll':
-        await emptyBatch(targets)
-        break
-    }
-  }
+  const { rows, failed, matches, checked, toggle, openMenu, date } = useBundleBrowser(
+    { kind: 'trash' },
+    { query, shown: true },
+  )
+  const defaultIcons = useSession((s) => personalizationOf(s).defaultIcons)
 
   return (
     <div className={cx('trash-frame table is-clear', checked.size > 0 && 'has-checked')}>
@@ -231,13 +47,7 @@ function TrashBody(): React.JSX.Element {
           File Name
         </span>
         {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a column label — it carries no click and no keyboard gesture of its own, exactly as the banner's and the cards' right-click surfaces do */}
-        <span
-          className="trash-head-date col-header"
-          onContextMenu={(e) => {
-            e.preventDefault()
-            void openColumnMenu()
-          }}
-        >
+        <span className="trash-head-date col-header" onContextMenu={date.onContextMenu}>
           <Icon name="clock-fading" size="body" />
           Time Deleted
         </span>
@@ -247,7 +57,7 @@ function TrashBody(): React.JSX.Element {
         <div className={cx('trash-empty', text.body.standard)}>The trash couldn't be read.</div>
       ) : rows === null ? (
         <div className="trash-empty" />
-      ) : shown.length === 0 ? (
+      ) : matches.length === 0 ? (
         <div className={cx('trash-empty', text.body.standard)}>
           {rows.length === 0 ? 'Trash is empty.' : 'Nothing matches.'}
         </div>
@@ -255,7 +65,7 @@ function TrashBody(): React.JSX.Element {
         <>
           <div className="trash-scroll scroll-fade">
             <div className="nav-list">
-              {shown.map((row) => (
+              {matches.map((row) => (
                 <TrashRowView
                   key={row.bundlePath}
                   row={row}
@@ -270,16 +80,7 @@ function TrashBody(): React.JSX.Element {
                       : entityIcon(row.kind, undefined, defaultIcons)
                   }
                   defaultIcons={defaultIcons}
-                  when={
-                    row.storedAt === null
-                      ? ''
-                      : formatDate(
-                          new Date(row.storedAt).toISOString(),
-                          style.date_format,
-                          style.time_format,
-                          style.weekday,
-                        )
-                  }
+                  when={date.when(row.storedAt)}
                 />
               ))}
             </div>

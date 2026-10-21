@@ -18,6 +18,9 @@ export const ms = (d: (typeof duration)[keyof typeof duration]): number => Numbe
 /** An exit's beat plus slack for the frame that paints its last state. */
 export const exitWait = (exit: keyof typeof duration): number => ms(duration[exit]) + 30
 
+/** How long an acknowledgement (Copied, Cleared, Synced) holds its done face. */
+export const DONE_MS = 1500
+
 export const prefersReducedMotion = (): boolean =>
   window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
 

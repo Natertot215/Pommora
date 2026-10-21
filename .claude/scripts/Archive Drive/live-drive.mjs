@@ -2,15 +2,16 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync
 import { join } from 'node:path'
 import { parse } from 'yaml'
 import {
-  ask, chooseNative, click, escapeAll, FM, launch, mintPageId, mouseClick, must, NEXUS, openCollection, openPage,
-  pageIds, pressKey, relaunch, restore, results, settles, shot, sleep, typeText, until,
+  ask, boxOf, chooseNative, click, createPage, escapeAll, FM, holds, hover, launch, mintPageId, mouseClick, must, NEXUS,
+  openCollection, openPage, PAGE_VIEW, pageIds, portalOpen, pressKey, relaunch, restore, results, sel, settles, shot, sleep,
+  textEl, typeText, until, writeBody,
 } from '../drive-harness.mjs'
 
 const PORT = 9393
 // The plan's phases in order, named as the plan names them, so `6A` sorts before `6B`.
 const PHASES = ['1', '2', '3', '4', '5', '6A', '6B']
 const at = (phase) => PHASES.indexOf(String(phase))
-const ALL = ['1', '2', '3', '4']
+const ALL = ['1', '2', '3', '4', '5']
 const GROUPS = new Set(process.argv.slice(2))
 // The last plan phase landed in the build under test: an item owned by a later phase is expected to fail and doesn't fail the run.
 const LANDED = process.env.POMMORA_ARCHIVE_LANDED ?? '1'
@@ -574,6 +575,191 @@ async function group4() {
   item(4, 4, '—', 'the group leaves Collections A and B, their Archives, and the Trash as it found them', same(after, before), show({ before, after }))
 }
 
+// ── Group 5 — Shared Chrome (Phase 5) ───────────────────────────────────────
+
+const LABEL = `document.querySelector('[role=status], [role=alert]')`
+const drained = (cdp) => cdp.evaluate(`${LABEL}.hasAttribute('inert')`)
+const moveTo = (cdp, { x, y }) => cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y, button: 'none' })
+const g5Row = (title) => `[...document.querySelectorAll('.trash-row')].find((r) => r.querySelector('[role=checkbox]')?.getAttribute('aria-label') === ${JSON.stringify(`Select ${title}`)})`
+const checkRow = (cdp, title) => click(cdp, `${g5Row(title)}.querySelector('[role=checkbox]')`)
+const listedTitles = (cdp) => cdp.evaluate(`[...document.querySelectorAll('.trash-row [role=checkbox]')].map((c) => c.getAttribute('aria-label').replace(/^Select /, ''))`)
+/** Each face of the one swap inside `expr`, in its order: shown or hidden, and whether it's inert and unnamed. */
+const facesOf = (cdp, expr) =>
+  cdp.evaluate(`[...(${expr}).querySelectorAll('[data-face]')].map((f) => ({ face: f.dataset.face, text: f.textContent.trim(), inert: f.hasAttribute('inert'), hidden: f.getAttribute('aria-hidden') === 'true' }))`)
+const quiet = (f) => f.face === 'hidden' && f.inert && f.hidden
+const loud = (f) => f.face === 'shown' && !f.inert && !f.hidden
+const widthOf = (cdp, expr) => cdp.evaluate(`(${expr}).getBoundingClientRect().width`)
+/** A settings row from its label's own text: the label, its title column, then the row. */
+const settingRow = (label) => `${textEl('span', label)}.parentElement.parentElement`
+const captionOf = (cdp, label) => cdp.evaluate(`${textEl('span', label)}.nextElementSibling?.textContent ?? null`)
+
+async function group5(cdp) {
+  const kept = settingsOnDisk().personalization ?? {}
+  const titles = ['G5 One', 'G5 Two', 'G5 Note', 'G5 Note Long']
+  for (const t of titles) await createPage(cdp, t)
+  await createPage(cdp, 'G5 Diff')
+  await sleep(400)
+  writeBody('G5 Diff', '```diff\n+a\n+b\n-c\n```\n')
+  for (const t of titles) {
+    await deleteAt(cdp, page(A_ALPHA, t), 'page')
+    await sleep(50)
+  }
+  const bundles = {}
+  for (const t of titles) bundles[t] = (await trashed(cdp, t))?.bundlePath
+
+  await openSettings(cdp, 'Trash')
+  await until('the Trash rows', async () => (await listedTitles(cdp)).includes('G5 One'))
+  const look = await cdp.evaluate(`(() => { const f = document.querySelector('.trash-frame.table'); const [search, head] = f?.children ?? []; const rows = [...(f?.querySelectorAll('.trash-row.table-divider') ?? [])]; return !!f && !!search?.matches('.nav-search-row') && !!head?.matches('.trash-head.table-head') && !!head.querySelector('.trash-head-name') && !!head.querySelector('.trash-head-date') && rows.length > 0 && rows.every((r) => head.compareDocumentPosition(r) & Node.DOCUMENT_POSITION_FOLLOWING) })()`)
+  const listed = await listedTitles(cdp)
+  item(5, 5, 'G-1', 'the Trash keeps its look and lists newest first',
+    look && same(listed.slice(0, 4), [...titles].reverse()), show({ look, listed }))
+  await shot(cdp, 'g5-trash')
+
+  const SEARCH = `document.querySelector('.trash-frame .nav-search-row input')`
+  await cdp.evaluate(`${SEARCH}.focus()`)
+  await typeText(cdp, 'g5 note')
+  const narrowed = await settles(async () => same(await listedTitles(cdp), ['G5 Note Long', 'G5 Note']))
+  const found = await listedTitles(cdp)
+  await cdp.evaluate(`${SEARCH}.select()`)
+  await pressKey(cdp, 'Backspace')
+  const cleared = await settles(async () => same(await listedTitles(cdp), listed))
+  item(5, 5, 'G-1', 'typed search narrows in place, keeping newest first', narrowed && cleared, show({ found, after: await listedTitles(cdp) }))
+
+  const single = await chooseNative(cdp, g5Row('G5 One'), [])
+  item(5, 5, 'K-4', "one row's menu reads Restore and Delete", same(single.rows, ['Restore', 'Delete']), show(single.rows))
+
+  for (const t of ['G5 One', 'G5 Two']) await checkRow(cdp, t)
+  const onChecked = await chooseNative(cdp, g5Row('G5 Two'), [])
+  const onUnchecked = await chooseNative(cdp, g5Row('G5 Note'), [])
+  item(5, 5, 'K-4', "a checked row's menu names the batch; an unchecked one acts alone",
+    same(onChecked.rows, ['Restore All', 'Delete All']) && same(onUnchecked.rows, ['Restore', 'Delete']), show({ onChecked, onUnchecked }))
+
+  const { chosen: restoredAll } = await chooseNative(cdp, g5Row('G5 Two'), 'Restore All')
+  const restoredSaid = await settles(async () => (await notice(cdp)).startsWith('Restored 2 Pages'))
+  const near = await boxOf(cdp, LABEL)
+  await moveTo(cdp, near)
+  await moveTo(cdp, { x: near.x + 10, y: near.y })
+  const drainedUnder = await settles(() => drained(cdp), 4500)
+  const back = ['G5 One', 'G5 Two']
+  const after = await listedTitles(cdp)
+  item(5, 5, 'K-4', 'Restore All restores the checked rows',
+    restoredAll && restoredSaid && back.every((t) => exists(page(A_ALPHA, t)) && !!bundles[t] && !exists(bundles[t])) && !after.some((t) => back.includes(t)),
+    show({ restoredAll, after, notice: await notice(cdp) }))
+  item(5, 5, 'K-3', 'a notice posted under the pointer drains', drainedUnder)
+
+  await must('permanentDelete on', ask(cdp, 'personalization:set', 'permanentDelete', true))
+  for (const t of ['G5 Note', 'G5 Note Long']) await checkRow(cdp, t)
+  const { chosen: deletedAll } = await chooseNative(cdp, g5Row('G5 Note'), 'Delete All')
+  await until('the confirmation', () => cdp.evaluate(`!!${DIALOG}`))
+  const asked = await cdp.evaluate(`${DIALOG}.getAttribute('aria-label')`)
+  await click(cdp, `[...${DIALOG}.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Delete')`)
+  const deletedSaid = await settles(async () => (await notice(cdp)).startsWith('Deleted 2 Pages'))
+  const far = await cdp.evaluate(`({ x: 8, y: innerHeight - 8 })`)
+  await moveTo(cdp, far)
+  const band = await boxOf(cdp, LABEL)
+  await moveTo(cdp, band)
+  const stalled = await holds(async () => !(await drained(cdp)), 5000)
+  await moveTo(cdp, far)
+  const drainedAway = await settles(() => drained(cdp), 4500)
+  const gone = ['G5 Note', 'G5 Note Long']
+  item(5, 5, 'K-4', 'Delete All empties the checked rows',
+    deletedAll && asked === 'Delete these 2 Items?' && gone.every((t) => !!bundles[t] && !exists(bundles[t])) && deletedSaid,
+    show({ deletedAll, asked, notice: await notice(cdp) }))
+  item(5, 5, 'K-3', 'once the pointer has left its band, returning stalls the drain and leaving drains it', stalled && drainedAway, show({ stalled, drainedAway }))
+
+  const trashStyle = () => (settingsOnDisk().personalization ?? {}).trashColumnStyle
+  const { chosen: short } = await chooseNative(cdp, sel('.trash-head-date'), 'Short Date')
+  const picked = await settles(async () => same(trashStyle(), { date_format: 'short' }))
+  const { chosen: full } = await chooseNative(cdp, sel('.trash-head-date'), 'Full Date')
+  const returned = await settles(async () => !('trashColumnStyle' in (settingsOnDisk().personalization ?? {})))
+  item(5, 5, 'G-1', "the date column's right-click picks a style and returns to the Nexus's own",
+    short && picked && full && returned, show({ short, full, style: trashStyle() }))
+
+  await must('iconFavorites', ask(cdp, 'personalization:set', 'iconFavorites', ['alarm-clock']))
+  await until('the favorites in the tree', async () => same((await config(cdp)).personalization.iconFavorites, ['alarm-clock']))
+  await closeSettings(cdp)
+  await openCollection(cdp)
+  await openPage(cdp, 'G5 One')
+  const TITLE = `[...document.querySelectorAll('.detail-title-text')].find((e) => !e.closest('[inert]') && e.textContent.trim() === 'G5 One')`
+  const { chosen: editIcon } = await chooseNative(cdp, TITLE, 'Edit Icon')
+  const GRID = `document.querySelector('[data-picker-portal] .scroll-fade')`
+  const geometry = () =>
+    cdp.evaluate(`(() => { const grid = ${GRID}; const list = grid.lastElementChild; const strip = grid.firstElementChild === list ? null : grid.firstElementChild; const rows = [...list.children].map((r) => r.getBoundingClientRect()); const g = grid.getBoundingClientRect(); return { stripBottom: strip?.getBoundingClientRect().bottom ?? null, listTop: list.getBoundingClientRect().top, listHeight: list.offsetHeight, gridTop: g.top, gridHeight: grid.clientHeight, rows: rows.map((r) => ({ top: r.top, bottom: r.bottom })) } })()`)
+  const atTop = await until('the icon list', async () => { const g = await geometry(); return g.rows.length > 0 && g.listHeight > g.gridHeight + 600 && g })
+  await cdp.evaluate(`${GRID}.scrollTop = 600`)
+  await sleep(300)
+  const scrolled = await geometry()
+  const total = Math.round(scrolled.listHeight / (scrolled.rows[0].bottom - scrolled.rows[0].top))
+  await pressKey(cdp, 'Escape')
+  const closed = await settles(async () => !(await portalOpen(cdp)))
+  item(5, 5, '4.7', "the icon picker's rows sit where its list starts and virtualize while scrolled",
+    editIcon && atTop.stripBottom !== null && atTop.listTop >= atTop.stripBottom && Math.abs(atTop.rows[0].top - atTop.listTop) < 0.5 &&
+      scrolled.rows.length < total && scrolled.rows.some((r) => r.top <= scrolled.gridTop && r.bottom > scrolled.gridTop) && closed,
+    show({ editIcon, atTop: { ...atTop, rows: atTop.rows.slice(0, 2) }, scrolled: { ...scrolled, rows: scrolled.rows.length }, total, closed }))
+
+  const ROW = `${sidebarRow(COLLECTION)}.closest('.row')`
+  const lockButton = (label) => `${ROW}.querySelector('[aria-label="${label}"]')`
+  await must('lock Collection A', ask(cdp, 'mutate', { op: 'setDisclosureLock', path: COLLECTION, kind: 'collection', locked: true }))
+  await until('the Unlock Folder button', () => cdp.evaluate(`!!${lockButton('Unlock Folder')}`))
+  const [openFace, closedFace] = await facesOf(cdp, lockButton('Unlock Folder'))
+  await must('unlock Collection A', ask(cdp, 'mutate', { op: 'setDisclosureLock', path: COLLECTION, kind: 'collection', locked: false }))
+  await until('the lock released', () => cdp.evaluate(`!${lockButton('Unlock Folder')}`))
+  await hover(cdp, ROW)
+  const lockShown = await settles(() => cdp.evaluate(`!!${lockButton('Lock Folder')}`))
+  const [openAgain, closedAgain] = lockShown ? await facesOf(cdp, lockButton('Lock Folder')) : []
+  item(5, 5, 'G-6', 'the lock glyph cross-fades through the one swap',
+    !!openFace && loud(closedFace) && quiet(openFace) && lockShown && loud(openAgain) && quiet(closedAgain),
+    show({ locked: [openFace, closedFace], unlocked: [openAgain, closedAgain] }))
+
+  await openSettings(cdp, 'Files & Links')
+  const CLEAR = `${settingRow('Clear History')}.querySelector('button')`
+  await cdp.evaluate(`${CLEAR}.scrollIntoView({ block: 'center' })`)
+  await sleep(300)
+  const idle = await facesOf(cdp, CLEAR)
+  const w = await widthOf(cdp, CLEAR)
+  await mouseClick(cdp, CLEAR)
+  await until('the confirmation', () => cdp.evaluate(`!!${DIALOG}`))
+  await click(cdp, `[...${DIALOG}.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Clear')`)
+  const marked = await settles(async () => (await facesOf(cdp, CLEAR)).find(loud)?.text === 'Cleared')
+  const [clearFace] = await facesOf(cdp, CLEAR)
+  const markedWidth = await widthOf(cdp, CLEAR)
+  await sleep(1800)
+  const returnedFace = (await facesOf(cdp, CLEAR)).find(loud)?.text
+  item(5, 5, 'G-6', 'Clear History cross-fades to Cleared, holds, and returns',
+    idle.find(loud)?.text === 'Clear' && marked && clearFace?.text === 'Clear' && quiet(clearFace) && Math.abs(markedWidth - w) < 0.5 && returnedFace === 'Clear',
+    show({ idle, w, marked, clearFace, markedWidth, returnedFace }))
+
+  await closeSettings(cdp)
+  await openCollection(cdp)
+  await openPage(cdp, 'G5 Diff')
+  // The tag draws only off the fence line, so the caret rests past the block.
+  await cdp.evaluate(`(() => { const v = ${PAGE_VIEW}; v.dispatch({ selection: { anchor: v.state.doc.length } }) })()`)
+  const TALLY = `[...document.querySelectorAll('.codeblock-tally')].find((e) => !e.closest('[inert]'))`
+  await until('the diff tally', () => cdp.evaluate(`!!${TALLY}`))
+  const pillWidth = await widthOf(cdp, TALLY)
+  await mouseClick(cdp, TALLY)
+  const [counts, copied] = await facesOf(cdp, TALLY)
+  const copiedWidth = await widthOf(cdp, TALLY)
+  const tagged = await cdp.evaluate(`(${TALLY}).closest('.codeblock-language').classList.contains('is-copied')`)
+  await sleep(1800)
+  const [countsBack] = await facesOf(cdp, TALLY)
+  const untagged = await cdp.evaluate(`!(${TALLY}).closest('.codeblock-language').classList.contains('is-copied')`)
+  item(5, 5, 'G-6', 'the diff tally swaps its counts for Copied in place',
+    counts?.face === 'hidden' && copied?.face === 'shown' && copied.text === 'Copied' && Math.abs(copiedWidth - pillWidth) < 0.5 && tagged && countsBack?.face === 'shown' && untagged,
+    show({ counts, copied, pillWidth, copiedWidth, tagged, countsBack, untagged }))
+
+  await openSettings(cdp, 'Files & Links')
+  const permanentHint = await captionOf(cdp, 'Permanently Delete Files')
+  const confirmHint = await captionOf(cdp, 'Confirm Before Deletion')
+  item(5, 5, 'K-5', "Settings › Files & Links' Deletion section reads its rewritten hints",
+    permanentHint === 'Erase items emptied from the Trash instead of moving them to the system trash.' &&
+      !!confirmHint?.endsWith('Collections, Sets, Contexts, Spaces, views and properties always ask.'),
+    show({ permanentHint, confirmHint }))
+  await closeSettings(cdp)
+
+  for (const key of ['permanentDelete', 'iconFavorites']) await must(`${key} as it was`, ask(cdp, 'personalization:set', key, kept[key] ?? null))
+}
+
 // ── The run ─────────────────────────────────────────────────────────────────
 
 let cdp
@@ -587,6 +773,7 @@ try {
   if (GROUPS.has('2')) await group2(cdp)
   if (GROUPS.has('3')) await group3()
   if (GROUPS.has('4')) await group4()
+  if (GROUPS.has('5')) await group5(cdp)
   cdp.close()
 } catch (e) {
   item(0, 1, '—', 'the run reached its end', false, String(e?.stack ?? e))

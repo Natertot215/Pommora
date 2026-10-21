@@ -10,7 +10,7 @@ import { MenuFooting, MenuItem, MenuSeparator } from '@pommora/uix/Menus'
 import { Segments } from '@pommora/uix/Elements/Segments'
 import { gutter } from '@pommora/uix/Menus/menu-row.css'
 import { useHeldPresence } from '@pommora/uix/Animations/useExitPresence'
-import { retained, toggled } from '@pommora/uix/Utilities/checkSet'
+import { actedOn, retained, toggled } from '@pommora/uix/Utilities/checkSet'
 import { MarkdownEditor } from '../../MarkdownPM/MarkdownEditor'
 import { useEditorHost } from '../../Pages/editorHost'
 import { clockOf, formatDate } from '../../Properties/formatValue'
@@ -26,7 +26,7 @@ import { WINDOW_BASE_PANEL, WindowBase } from '@pommora/uix/Windows/WindowBase'
 import { Scrollbar } from '@pommora/uix/Interactions/Scrollbar'
 import { dialer } from '../../Platform/dialer'
 import { popMenu } from '../../Actions/menuActions'
-import { fileHistoryMenuItems } from '../../Actions/fileHistoryMenu'
+import { restoreMenuItems } from '../../Actions/restoreMenu'
 import { useWindowGeometry } from './useWindowGeometry'
 import '../../Navigation/nav-list.css'
 import '../../Tiles/tile-base.css'
@@ -137,8 +137,8 @@ function PageHistoryBody({
     await refresh()
   }
   const openMenu = async (ts: number): Promise<void> => {
-    const keys = checked.has(ts) ? [...checked] : [ts]
-    const action = await popMenu(fileHistoryMenuItems(keys.length > 1))
+    const keys = actedOn(checked, rows, ts, (t) => t)
+    const action = await popMenu(restoreMenuItems({ batch: keys.length > 1, restoresBatch: false }))
     if (action === 'restore') await restore(ts)
     else if (action === 'delete') await remove(keys)
   }

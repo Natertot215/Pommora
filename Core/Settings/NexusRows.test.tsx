@@ -67,7 +67,7 @@ const render = async (
 
 const buttons = (): HTMLButtonElement[] => Array.from(host.querySelectorAll('button'))
 const button = (label: string): HTMLButtonElement | undefined =>
-  buttons().find((b) => b.textContent === label)
+  buttons().find((b) => (b.querySelector('[data-face="shown"]') ?? b).textContent === label)
 
 const refuse = (message: string) =>
   vi.fn(async () => ({ ok: false, error: { code: 'operation-failed', message } }))

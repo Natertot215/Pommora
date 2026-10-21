@@ -1050,12 +1050,11 @@
 .mdpm-editor .codeblock .codeblock-language .codeblock-name:not(:empty) + .codeblock-tally {
   margin-left: 4px;
 }
-/* A diff block's tag is a Segmented run on plain DOM, outlined rather than glass. A copy keeps the pill's size: its counts fade out as "Copied" fades in over them, at the pill's own start. */
+/* A diff block's tag is a Segmented run on plain DOM, outlined rather than glass. Its counts and "Copied" are the shared swap's two faces, so a copy keeps the pill's size. The glyph slot keeps its own stack, since its copy glyph also fades in with the continuous `--reveal` on hover; the bare name swaps its text outright, since two faces would hold a short name's tag at Copied's width. */
 .mdpm-editor .codeblock .codeblock-language .codeblock-tally {
   --btn-radius: var(--radius-full);
   --button-outline-width: var(--width-175);
   --segment-color: var(--border-strong);
-  position: relative;
   height: auto;
   padding: 2px;
   color: var(--label-secondary);
@@ -1064,18 +1063,6 @@
 .mdpm-editor .codeblock-tally-counts {
   display: flex;
   align-items: center;
-  transition: opacity var(--reveal-fade) var(--ease-base);
-}
-.mdpm-editor .codeblock-tally .codeblock-tally-copied {
-  position: absolute;
-  inset: 2px auto 2px 2px;
-  opacity: 0;
-}
-.mdpm-editor .codeblock-language.is-copied .codeblock-tally-counts {
-  opacity: 0;
-}
-.mdpm-editor .codeblock-language.is-copied .codeblock-tally .codeblock-tally-copied {
-  opacity: 1;
 }
 .mdpm-editor .codeblock-tally :is(.md-diff-add, .md-diff-del) {
   color: color-mix(in srgb, var(--diff-color) var(--tint-primary), var(--label-secondary));

@@ -1,20 +1,20 @@
 import { describe, expect, it } from 'vitest'
-import { trashMenuItems } from './trashMenu'
+import { restoreMenuItems } from './restoreMenu'
 
-describe('the trash row menu', () => {
+describe('the restore menu', () => {
   it('restores and deletes one row, the plural for a batch', () => {
-    expect(trashMenuItems({ batch: false })).toEqual([
+    expect(restoreMenuItems({ batch: false })).toEqual([
       { label: 'Restore', action: 'restore' },
       { label: 'Delete', action: 'delete', separatorBefore: true },
     ])
-    expect(trashMenuItems({ batch: true }).map((i) => [i.label, i.action])).toEqual([
-      ['Restore All', 'restoreAll'],
-      ['Delete All', 'deleteAll'],
+    expect(restoreMenuItems({ batch: true }).map((i) => [i.label, i.action])).toEqual([
+      ['Restore All', 'restore'],
+      ['Delete All', 'delete'],
     ])
   })
 
   it('a homeless row turns Restore into a destination drill keyed by id', () => {
-    const items = trashMenuItems({
+    const items = restoreMenuItems({
       batch: false,
       destinations: [
         {
@@ -33,9 +33,19 @@ describe('the trash row menu', () => {
   })
 
   it('nowhere to put it keeps the row, refused', () => {
-    expect(trashMenuItems({ batch: false, destinations: [] })[0]).toEqual({
+    expect(restoreMenuItems({ batch: false, destinations: [] })[0]).toEqual({
       label: 'Restore',
       submenu: [],
     })
+  })
+
+  it('where one item restores at a time, a batch offers Delete All alone', () => {
+    expect(restoreMenuItems({ batch: true, restoresBatch: false })).toEqual([
+      { label: 'Delete All', action: 'delete' },
+    ])
+    expect(restoreMenuItems({ batch: false, restoresBatch: false })).toEqual([
+      { label: 'Restore', action: 'restore' },
+      { label: 'Delete', action: 'delete', separatorBefore: true },
+    ])
   })
 })

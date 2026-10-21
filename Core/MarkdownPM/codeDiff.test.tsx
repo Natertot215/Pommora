@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
+import { DONE_MS } from '@pommora/uix/Animations/motion'
 import { EditorSelection, EditorState } from '@codemirror/state'
 import { EditorView, runScopeHandlers } from '@codemirror/view'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '../Testing/editorHarness'
@@ -33,6 +34,28 @@ describe('a diff fence’s tally', () => {
     const at = view.state.doc.toString().indexOf('+a')
     await act(async () => view.dispatch({ changes: { from: at, to: at + 1, insert: '~' } }))
     expect(pill(view)).toBe('±0+1 / −1')
+  })
+
+  it('swaps its counts for Copied while a copy holds, then back', async () => {
+    const view = await mountEditor({ initialBody: doc })
+    const tally = view.contentDOM.querySelector<HTMLElement>('.codeblock-tally')!
+    const faces = (): (string | null | undefined)[][] =>
+      [...tally.querySelectorAll<HTMLElement>('[data-face]')].map((f) => [
+        f.textContent,
+        f.dataset.face,
+      ])
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    tally.click()
+    expect(faces()).toEqual([
+      ['+1+2 / −1', 'hidden'],
+      ['Copied', 'shown'],
+    ])
+    vi.advanceTimersByTime(DONE_MS)
+    expect(faces()).toEqual([
+      ['+1+2 / −1', 'shown'],
+      ['Copied', 'hidden'],
+    ])
+    vi.useRealTimers()
   })
 })
 

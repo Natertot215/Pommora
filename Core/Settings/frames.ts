@@ -586,13 +586,13 @@ export const FRAMES = roster([
             kind: 'toggle',
             key: 'confirmDeletion',
             label: 'Confirm Before Deletion',
-            hint: 'Ask before deleting a page, a tile, or a folder that carries no schema. Collections, Sets, views and properties always ask.',
+            hint: 'Ask before deleting a page, a tile, or a folder that carries no schema. Collections, Sets, Contexts, Spaces, views and properties always ask.',
           },
           {
             kind: 'toggle',
             key: 'permanentDelete',
             label: 'Permanently Delete Files',
-            hint: 'Permanently deleted files will be deleted from this computer, keeping this off will move them to system trash.',
+            hint: 'Erase items emptied from the Trash instead of moving them to the system trash.',
           },
           {
             kind: 'toggle',

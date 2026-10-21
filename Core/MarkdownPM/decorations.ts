@@ -75,6 +75,8 @@ import { drawsRawHtml, editorHost, type OwnPage, ownPage, redrawNudge } from './
 import { checkMarkSvg, checkboxClass } from '@pommora/uix/Controls/Checkbox'
 import * as btn from '@pommora/uix/Buttons/button-base.css'
 import { buttonClass, segmentDivider } from '@pommora/uix/Buttons/Button'
+import { DONE_MS } from '@pommora/uix/Animations/motion'
+import * as swap from '@pommora/uix/Animations/swap.css'
 import * as trail from '@pommora/uix/Elements/nav-trail.css'
 import { svgFrame } from '@pommora/uix/Symbols/svgFrame'
 import { cx } from '@pommora/uix/Utilities/cx'
@@ -207,8 +209,6 @@ function mark(body: string, className: string): SVGSVGElement {
   return svg
 }
 
-const COPIED_MS = 1000
-
 const count = (kind: keyof DiffTally, n: number): string =>
   `<b class="md-diff-${kind}">${kind === 'add' ? '+' : '−'}${Math.abs(n)}</b>`
 
@@ -229,7 +229,7 @@ function tallyPill({ add, del }: DiffTally): HTMLElement {
     btn.type.base,
     btn.outlined,
   )
-  pill.innerHTML = `<span class="codeblock-tally-counts"><span class="${run}">${net}</span><span class="${segmentDivider}"></span><span class="${run}"><span>${count('add', add)} / ${count('del', del)}</span></span></span><span class="${cx('codeblock-tally-copied', run)}">Copied</span>`
+  pill.innerHTML = `<span class="${swap.swap}"><span class="${swap.face}" data-face="shown"><span class="codeblock-tally-counts"><span class="${run}">${net}</span><span class="${segmentDivider}"></span><span class="${run}"><span>${count('add', add)} / ${count('del', del)}</span></span></span></span><span class="${swap.face}" data-face="hidden"><span class="${run}">Copied</span></span></span>`
   return pill
 }
 
@@ -277,6 +277,13 @@ class CodeTagWidget extends WidgetType {
     name.className = cx('codeblock-name', this.path && trail.option)
     name.replaceChildren(...resting)
     const pill = this.tally ? el.appendChild(tallyPill(this.tally)) : null
+    const [counts, copied] = pill ? pill.querySelectorAll<HTMLElement>('[data-face]') : []
+    const showCopied = (on: boolean): void => {
+      el.classList.toggle('is-copied', on)
+      if (!pill) return
+      counts.dataset.face = on ? 'hidden' : 'shown'
+      copied.dataset.face = on ? 'shown' : 'hidden'
+    }
 
     let timer: number | undefined
     const copy = (e: MouseEvent): void => {
@@ -284,13 +291,13 @@ class CodeTagWidget extends WidgetType {
       const text = codeBlockTextAt(docScan(view.state.doc), view.posAtDOM(el))
       if (!text) return
       void view.state.facet(editorHost).clipboard.write(text)
-      el.classList.add('is-copied')
+      showCopied(true)
       if (!pill && name.textContent) name.textContent = 'Copied'
       window.clearTimeout(timer)
       timer = window.setTimeout(() => {
-        el.classList.remove('is-copied')
+        showCopied(false)
         name.replaceChildren(...resting)
-      }, COPIED_MS)
+      }, DONE_MS)
     }
     // Swallowed: a caret on the fence line trades the tag back for the raw info word, unmounting what is being pressed.
     for (const target of pill ? [slot, name, pill] : [slot, name]) {

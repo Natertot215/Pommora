@@ -142,6 +142,22 @@ describe('what the Confirm Before Deletion switch governs', () => {
     expect(asked[0]).toContain('from the container')
     expect(asked[1]).toContain('from the tile')
   })
+
+  it('a delete under the system Trash Mode says it moves to the system trash', async () => {
+    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+      'delete:facts': async () => ok({ trashMode: 'system', permanentDelete: false }),
+    })
+    const details: string[] = []
+    useSession.setState({
+      tree: makeTree(),
+      askConfirm: async (r) => {
+        details.push(r.detail)
+        return false
+      },
+    })
+    await confirmDelete({ path: 'Notes/Alpha.md', kind: 'page', title: 'Alpha' })
+    expect(details).toEqual(['It will be moved to the system trash.'])
+  })
 })
 
 describe('a delete through the confirmation', () => {

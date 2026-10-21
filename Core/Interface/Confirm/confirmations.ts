@@ -75,7 +75,7 @@ export const confirmDelete = async (target: {
       message: `Delete “${target.title}”?`,
       detail:
         trashMode === 'system'
-          ? 'It will be moved to the system Trash.'
+          ? 'It will be moved to the system trash.'
           : 'It will be moved to the nexus’s .trash folder (recoverable).',
       action: 'Delete',
       tone: 'destructive',

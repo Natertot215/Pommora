@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { NotificationLabel } from './NotificationLabel'
+import { ActionLabel } from './ActionLabel'
 import { clearNotification, notifyDeleted } from './notifications'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -12,7 +12,7 @@ let root: Root
 beforeEach(() => {
   host = document.body.appendChild(document.createElement('div'))
   root = createRoot(host)
-  act(() => root.render(<NotificationLabel />))
+  act(() => root.render(<ActionLabel />))
 })
 
 afterEach(() => {
@@ -25,7 +25,7 @@ afterEach(() => {
 
 const label = (): Element | null => host.querySelector('[role=status]')
 
-describe('NotificationLabel', () => {
+describe('ActionLabel', () => {
   it('draws the count after the title behind one hidden divider', () => {
     act(() => notifyDeleted('Ideas', vi.fn(), { pages: ['A.md', 'B.md'] }))
     const dividers = label()?.querySelectorAll('[aria-hidden="true"]') ?? []
@@ -73,7 +73,15 @@ describe('the drain near the pointer', () => {
     vi.useRealTimers()
   })
 
-  it('stalls within its band and drains once the pointer leaves it', () => {
+  it('a notice posted under the pointer drains while the pointer stays in its band', () => {
+    move(400)
+    move(390)
+    run(10_000)
+    expect(showing()).toBe(false)
+  })
+
+  it('stalls within its band once the pointer has been outside it, and drains once it leaves again', () => {
+    move(401)
     move(400)
     run(10_000)
     expect(showing()).toBe(true)
@@ -82,7 +90,8 @@ describe('the drain near the pointer', () => {
     expect(showing()).toBe(false)
   })
 
-  it('holds where it stands through a press', () => {
+  it('holds where it stands through a press, once the pointer has been outside its band', () => {
+    move(401)
     move(400)
     move(1000, 1)
     run(10_000)

@@ -3,8 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import type { BundleRow } from '../Bundles/rows'
-import { matchKey } from '../Paths/caseFold'
-import { countPhrase, filterRows, TrashFrame } from './TrashFrame'
+import { TrashFrame } from './TrashFrame'
+import { bundleRow as row } from '../Testing/fixtures'
 import { stubDialer } from '../vitest.setup'
 import { useSession } from '../Session/store'
 import { makeTree } from '../Testing/testTree'
@@ -15,74 +15,6 @@ import { pushUndo, resetUndo, undoValue } from '../Session/undo'
 import { pageIO, scheduleBodySave } from '../Session/saveScheduler'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
-
-const row = (over: Partial<BundleRow>): BundleRow => {
-  const { title = 'Alpha', crumbs = [{ kind: 'collection', title: 'Notes' }] } = over
-  return {
-    bundlePath: `.trash/${over.title ?? 'x'}.deleted`,
-    kind: 'page',
-    title,
-    crumbs,
-    storedAt: 0,
-    homeResolves: true,
-    match: matchKey(title, crumbs.map((c) => c.title).join('/')),
-    ...over,
-  }
-}
-
-describe('filterRows', () => {
-  const rows = [
-    row({ title: 'Alpha', crumbs: [{ kind: 'collection', title: 'Notes' }] }),
-    row({ title: 'Beta', crumbs: [{ kind: 'collection', title: 'Journals' }] }),
-    row({ title: 'Gamma', crumbs: [] }),
-  ]
-
-  it('an empty query keeps the list whole and in the order it arrived', () => {
-    expect(filterRows(rows, '').map((r) => r.title)).toEqual(['Alpha', 'Beta', 'Gamma'])
-    expect(filterRows(rows, '   ')).toBe(rows)
-  })
-
-  it('matches a title', () => {
-    expect(filterRows(rows, 'bet').map((r) => r.title)).toEqual(['Beta'])
-  })
-
-  it('matches a location, so a row is findable by where it lived', () => {
-    expect(filterRows(rows, 'journ').map((r) => r.title)).toEqual(['Beta'])
-  })
-
-  it('matches a location and a title together, a / reading as a word break', () => {
-    expect(filterRows(rows, 'notes/alpha').map((r) => r.title)).toEqual(['Alpha'])
-  })
-
-  it('a query nothing answers yields nothing', () => {
-    expect(filterRows(rows, 'zzz')).toEqual([])
-  })
-
-  it('a row with no location is still matched on its title alone', () => {
-    expect(filterRows(rows, 'gamma').map((r) => r.title)).toEqual(['Gamma'])
-  })
-})
-
-describe('countPhrase', () => {
-  it('names the kind when every row shares one', () => {
-    expect(countPhrase([row({}), row({})])).toBe('2 Pages')
-    expect(countPhrase([row({ kind: 'set' }), row({ kind: 'set' })])).toBe('2 Sets')
-    expect(countPhrase([row({ kind: 'context' }), row({ kind: 'context' })])).toBe('2 Contexts')
-  })
-
-  it('generalizes when they do not', () => {
-    expect(countPhrase([row({}), row({ kind: 'space' })])).toBe('2 Items')
-  })
-
-  it('stays singular for one', () => {
-    expect(countPhrase([row({})])).toBe('1 Page')
-    expect(countPhrase([row({ kind: 'space' })])).toBe('1 Space')
-  })
-
-  it('reports none honestly', () => {
-    expect(countPhrase([])).toBe('0 Items')
-  })
-})
 
 describe('a Trash row', () => {
   let host: HTMLDivElement | null = null
@@ -251,7 +183,7 @@ describe('the Trash pane', () => {
     notifyTrashed('Alpha', { bundled: { bundlePath: listed[0].bundlePath } })
     for (const box of host?.querySelectorAll('[role="checkbox"]') ?? [])
       await act(async () => (box as HTMLButtonElement).click())
-    picked = 'restoreAll'
+    picked = 'restore'
     const item = host?.querySelector('.trash-row') as HTMLElement
     await act(async () => {
       item.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
@@ -288,14 +220,14 @@ describe('the Trash pane', () => {
       }),
     })
     scheduleBodySave('Notes/A.md', 'typed', pageIO)
-    await pickForBoth('restoreAll')
+    await pickForBoth('restore')
     expect(order).toEqual(['save Notes/A.md', 'mutate', 'mutate'])
   })
 
   it('carries what a Restore All couldn’t re-spell into its notice', async () => {
     const warning = 'Couldn’t update links in “Alpha” across 1 Item.'
     mutated.mockResolvedValue({ ok: true, value: { cascade: { pages: [], hosts: [], warning } } })
-    await pickForBoth('restoreAll')
+    await pickForBoth('restore')
     expect(currentNotification()).toMatchObject({
       message: `Restored 2 Pages. ${warning}`,
       tone: 'error',
@@ -306,7 +238,7 @@ describe('the Trash pane', () => {
     useSession.setState({ askConfirm: async () => true })
     const warning = 'Couldn’t update links in 1 Item.'
     mutated.mockResolvedValue({ ok: true, value: { cascade: { pages: [], hosts: [], warning } } })
-    await pickForBoth('deleteAll')
+    await pickForBoth('delete')
     expect(currentNotification()).toMatchObject({
       message: `Deleted 2 Pages. ${warning}`,
       tone: 'error',
@@ -328,7 +260,7 @@ describe('the Trash pane', () => {
 
   it('a Restore All with one renamed names it in the segment', async () => {
     mutated.mockResolvedValueOnce({ ok: true, value: { landedAs: 'Alpha (2)' } })
-    await pickForBoth('restoreAll')
+    await pickForBoth('restore')
     expect(currentNotification()).toMatchObject({
       message: 'Restored 2 Pages',
       segment: '“Alpha” as “Alpha (2)”',
@@ -339,7 +271,7 @@ describe('the Trash pane', () => {
     mutated
       .mockResolvedValueOnce({ ok: true, value: { landedAs: 'Alpha (2)' } })
       .mockResolvedValueOnce({ ok: true, value: { landedAs: 'Beta (2)' } })
-    await pickForBoth('restoreAll')
+    await pickForBoth('restore')
     expect(currentNotification()).toMatchObject({ segment: '2 Renamed' })
   })
 

@@ -1,6 +1,6 @@
 import { Button } from '@pommora/uix/Buttons/Button'
+import { useTimedLabel } from '@pommora/uix/Animations/useTimedLabel'
 import { SettingsFieldRow } from './SettingsFieldRow'
-import { useTimedLabel } from './useTimedLabel'
 
 export function ClearActionRow({
   label,

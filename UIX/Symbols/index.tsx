@@ -99,8 +99,8 @@ import {
 import { fileTypeGlyphs } from './fileTypes'
 import { ICON_NAMES } from './iconNames'
 import { size as sizeTokens, type IconSize } from '../Theme/theme-vars.css'
-import { cx } from '../Utilities/cx'
 import { channel } from '../Utilities/subscribable'
+import { Swap } from '../Animations/Swap'
 import * as sym from './symbols.css'
 
 /** This registry IS the roster: to add an icon, import it above and add a line here. */
@@ -259,7 +259,6 @@ export function Icon({
   return <Curated {...rest} {...sized} />
 }
 
-// Both faces stay mounted in one grid cell so a toggle cross-fades rather than swapping glyphs outright.
 export function LockGlyph({
   locked,
   size = 'control',
@@ -268,19 +267,10 @@ export function LockGlyph({
   size?: IconSize
 }): React.JSX.Element {
   return (
-    <span className={sym.glyphSwap}>
-      <Icon
-        name="locked"
-        size={size}
-        className={sym.glyphSwapFace}
-        data-face={locked ? 'shown' : 'hidden'}
-      />
-      <Icon
-        name="lock-outline"
-        size={size}
-        className={cx(sym.glyphSwapFace, sym.lockOpenFace)}
-        data-face={locked ? 'hidden' : 'shown'}
-      />
-    </span>
+    <Swap
+      swapped={locked}
+      from={<Icon name="lock-outline" size={size} className={sym.lockOpenFace} />}
+      to={<Icon name="locked" size={size} />}
+    />
   )
 }
