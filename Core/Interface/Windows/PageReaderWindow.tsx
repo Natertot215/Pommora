@@ -97,7 +97,7 @@ function ReaderShell({
       ariaLabel={ariaLabel}
       lead={
         <span className="reader-lock" role="img" aria-label="Read Only" title="Read Only">
-          <Icon name="lock" size="body" />
+          <Icon name="locked" size="body" />
         </span>
       }
       title={
