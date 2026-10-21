@@ -1,5 +1,6 @@
 import {
   AppWindow,
+  Archive,
   ArrowUpDown,
   Atom,
   Calendar,
@@ -133,6 +134,7 @@ export const icons = {
   zap: Zap,
   command: Command,
   trash: Trash,
+  archive: Archive,
   'chevron-left': ChevronLeft,
   'chevron-right': ChevronRight,
   'chevron-up': ChevronUp,

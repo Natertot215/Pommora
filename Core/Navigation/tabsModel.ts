@@ -27,7 +27,8 @@ export function pinTabId(target: SelectTarget): string {
 }
 
 export function liveTarget(index: ReconcileIndex, ref: NavRef): SelectTarget | null {
-  const probe = isSingleton(ref) ? ref : selectTargetOf({ ...ref, path: '' })
+  const probe =
+    isSingleton(ref) || ref.kind === 'archive' ? ref : selectTargetOf({ ...ref, path: '' })
   const r = reconcileWith(index, probe)
   return r.kind === 'none' ? null : r
 }

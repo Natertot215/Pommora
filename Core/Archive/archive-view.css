@@ -1,0 +1,34 @@
+/* ArchiveView on TableView's sheet: the virtual list, each title over the trail it left, the check in the rail gutter, the Archived column, and the header's trailing label. */
+.archive-rows {
+  position: relative;
+}
+.archive-rows > .data-row {
+  position: absolute;
+  inset-inline: 0;
+}
+.archive-rows .data-cell {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px; /* KNOB — the title from its trail */
+}
+.archive-date {
+  align-items: center;
+  text-align: center;
+}
+.row-check {
+  display: inline-flex;
+  align-items: center;
+}
+.archive-empty {
+  padding: var(--cell-padding-y) var(--cell-padding-x);
+  color: var(--label-tertiary);
+}
+/* At the title's size, so the clear button's auto margin pads against it. */
+.archive-title-label {
+  flex: none;
+  font-size: var(--detail-title-size);
+  font-weight: var(--weight-bold);
+  line-height: 1.15;
+  color: var(--label-secondary);
+}

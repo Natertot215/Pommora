@@ -5,21 +5,23 @@ import { fetchPageValues } from '../../Properties/pageRow'
 import { relDirname } from '../../Paths/posix'
 import { Button } from '@pommora/uix/Buttons/Button'
 import { Checkbox } from '@pommora/uix/Controls/Checkbox'
-import { NavTrail } from '@pommora/uix/Elements/NavTrail'
+import { NavTrail, type TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { MenuFooting, MenuItem, MenuSeparator } from '@pommora/uix/Menus'
 import { Segments } from '@pommora/uix/Elements/Segments'
 import { gutter } from '@pommora/uix/Menus/menu-row.css'
 import { useHeldPresence } from '@pommora/uix/Animations/useExitPresence'
 import { actedOn, retained, toggled } from '@pommora/uix/Utilities/checkSet'
+import { Icon } from '@pommora/uix/Symbols'
 import { MarkdownEditor } from '../../MarkdownPM/MarkdownEditor'
 import { useEditorHost } from '../../Pages/editorHost'
 import { clockOf, formatDate } from '../../Properties/formatValue'
 import { pageWriter } from '../../Session/saveScheduler'
-import { fetchPageDetail } from '../../Session/pageDetailCache'
+import { storesChanged } from '../../Session/nexusSlice'
 import { livePagePath } from '../../Nexus/record'
 import { trailOf } from '../../Nexus/treeIndex'
 import { useConnections } from '../../Session/pageConnections'
 import { useSession, useSetting } from '../../Session/store'
+import type { Reader } from '../../Session/windowSlice'
 import type { PageTarget } from '../../Navigation/navRef'
 import { askDeleteSnapshots, askRestoreSnapshot } from '../Confirm/confirmations'
 import { WINDOW_BASE_PANEL, WindowBase } from '@pommora/uix/Windows/WindowBase'
@@ -32,8 +34,10 @@ import '../../Navigation/nav-list.css'
 import '../../Tiles/tile-base.css'
 import './page-window.css'
 
-// A non-path host chain: embeds inside a snapshot render inert, and no page path can collide with it.
-const HISTORY_ANCESTOR = 'page-history'
+// A non-path host chain: embeds inside the reader render inert, and no page path can collide with it.
+const READER_ANCESTOR = 'page-reader'
+
+type Branch<K extends Reader['kind']> = { reader: Extract<Reader, { kind: K }>; closing: boolean }
 
 async function restoreFromHistory(target: PageTarget, ts: number): Promise<Result<null>> {
   const { tree, replaceBody } = useSession.getState()
@@ -45,22 +49,91 @@ async function restoreFromHistory(target: PageTarget, ts: number): Promise<Resul
     : fault('The page was restored but could not be reread.')
 }
 
-export function PageHistoryWindow(): React.JSX.Element | null {
-  const target = useSession((s) => s.historyTarget)
-  const shown = useHeldPresence(target, 'fast')
+export function PageReaderWindow(): React.JSX.Element | null {
+  const reader = useSession((s) => s.reader)
+  const shown = useHeldPresence(reader, 'fast')
   if (!shown) return null
-  return <PageHistoryBody key={shown.held.id} target={shown.held} closing={shown.closing} />
+  const { held, closing } = shown
+  switch (held.kind) {
+    case 'history':
+      return <HistoryReader key={`history:${held.page.id}`} reader={held} closing={closing} />
+    case 'archive':
+      return <ArchiveReader key={`archive:${held.page.path}`} reader={held} closing={closing} />
+  }
 }
 
-function PageHistoryBody({
-  target,
+/** The one read-only page window: the lock where the open-fullscreen glyph sits, an inert editor, and a trail that names the page without renaming it. */
+function ReaderShell({
+  reader,
   closing,
+  ariaLabel,
+  trail,
+  body,
+  embedPath,
+  panel,
 }: {
-  target: PageTarget
+  reader: Reader
   closing: boolean
+  ariaLabel: string
+  trail: TrailSegment[]
+  body: string | null
+  embedPath: string
+  panel?: React.ReactNode
 }): React.JSX.Element {
-  const closeHistory = useSession((s) => s.closeHistory)
-  const geometry = useWindowGeometry('page-history')
+  const closeReader = useSession((s) => s.closeReader)
+  const geometry = useWindowGeometry('page-reader')
+  const resolveOnly = useConnections('inert')
+  const editorHost = useEditorHost({ connections: resolveOnly, inert: true })
+  return (
+    <WindowBase
+      {...geometry}
+      closing={closing}
+      onClose={closeReader}
+      raiseOn={reader}
+      ariaLabel={ariaLabel}
+      lead={
+        <span className="reader-lock" role="img" aria-label="Read Only" title="Read Only">
+          <Icon name="locked" size="body" />
+        </span>
+      }
+      title={
+        <div className="window-toolbar-title">
+          <NavTrail segments={trail} selected className="page-window-crumbs" />
+        </div>
+      }
+      right={
+        panel === undefined
+          ? undefined
+          : {
+              windowId: 'page-history-list',
+              bounds: WINDOW_BASE_PANEL,
+              mode: 'overlay',
+              open: true,
+              children: panel,
+            }
+      }
+    >
+      <div className="window-body scroll-fade page-tile-grows">
+        {body !== null && (
+          <div className="page-tile page-reader-page">
+            <MarkdownEditor
+              initialBody={body}
+              onChange={() => {}}
+              host={editorHost}
+              readOnly
+              embedAncestors={[READER_ANCESTOR, embedPath]}
+              edgeFade
+            />
+          </div>
+        )}
+      </div>
+      <Scrollbar page />
+    </WindowBase>
+  )
+}
+
+function HistoryReader({ reader, closing }: Branch<'history'>): React.JSX.Element {
+  const target = reader.page
   const tree = useSession((s) => s.tree)
   const nexusClock = useSetting('timeFormat')
   const dateFormat = useSetting('dateFormat')
@@ -103,7 +176,9 @@ function PageHistoryBody({
     setBody(null)
     const read =
       shown === null
-        ? fetchPageDetail(livePath).then((d) => d?.body ?? null)
+        ? dialer()
+            .ask('page:open', livePath)
+            .then((r) => valueOr(r, null)?.body ?? null)
         : dialer()
             .ask('history:read', target.id, shown)
             .then((r) => valueOr(r, null))
@@ -115,8 +190,6 @@ function PageHistoryBody({
     }
   }, [shown, reload, target.id, livePath])
 
-  const resolveOnly = useConnections('inert')
-  const editorHost = useEditorHost({ connections: resolveOnly, inert: true })
   const trail = trailOf(tree, { kind: 'page', id: target.id })
 
   const toggle = (ts: number): void => setChecked((prev) => toggled(prev, ts))
@@ -221,40 +294,48 @@ function PageHistoryBody({
   )
 
   return (
-    <WindowBase
-      {...geometry}
+    <ReaderShell
+      reader={reader}
       closing={closing}
-      onClose={closeHistory}
-      raiseOn={target}
       ariaLabel="File History"
-      title={
-        <div className="window-toolbar-title">
-          <NavTrail segments={trail} selected className="page-window-crumbs" />
-        </div>
-      }
-      right={{
-        windowId: 'page-history-list',
-        bounds: WINDOW_BASE_PANEL,
-        mode: 'overlay',
-        open: true,
-        children: list,
-      }}
-    >
-      <div className="window-body scroll-fade page-tile-grows">
-        {body !== null && (
-          <div className="page-tile page-history-page">
-            <MarkdownEditor
-              initialBody={body}
-              onChange={() => {}}
-              host={editorHost}
-              readOnly
-              embedAncestors={[HISTORY_ANCESTOR, livePath]}
-              edgeFade
-            />
-          </div>
-        )}
-      </div>
-      <Scrollbar page />
-    </WindowBase>
+      trail={trail}
+      body={body}
+      embedPath={livePath}
+      panel={list}
+    />
+  )
+}
+
+/** An archived page as it stood when opened, read uncached, and closed once a change to either store leaves its file gone. */
+function ArchiveReader({ reader, closing }: Branch<'archive'>): React.JSX.Element {
+  const closeReader = useSession((s) => s.closeReader)
+  const { path } = reader.page
+  const [body, setBody] = useState<string | null>(null)
+  useEffect(() => {
+    let live = true
+    const read = (): void =>
+      void dialer()
+        .ask('page:open', path)
+        .then((r) => {
+          if (!live) return
+          if (r.ok) setBody((was) => was ?? r.value.body)
+          else closeReader()
+        })
+    read()
+    const stop = storesChanged.subscribe(read)
+    return () => {
+      live = false
+      stop()
+    }
+  }, [path, closeReader])
+  return (
+    <ReaderShell
+      reader={reader}
+      closing={closing}
+      ariaLabel="Archived Page"
+      trail={reader.trail}
+      body={body}
+      embedPath={path}
+    />
   )
 }

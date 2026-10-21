@@ -116,6 +116,19 @@ export const trailAbove = (tree: NexusTree, containerId: string): string[] | nul
     ?.slice(0, -1)
     .map((n) => n.id) ?? null
 
+/** The container an archived page or Set left, and the ids it stored above it. */
+export const originOf = (record: RecordFile): { parent: string; trail: string[] } | null =>
+  (record.entity === 'page' || record.entity === 'set') && record.parent.kind === 'container'
+    ? { parent: record.parent.id, trail: record.trail ?? [] }
+    : null
+
+/** Whether an origin lies within the Set `setId`: by `held`, the tree's trail above its parent, while the tree holds the parent, else by the trail it stored. */
+export const originWithin = (
+  origin: { parent: string; trail: string[] },
+  setId: string,
+  held: string[] | null,
+): boolean => origin.parent === setId || (held ?? origin.trail).includes(setId)
+
 export async function gatherContentRecord(
   root: string,
   tree: NexusTree,

@@ -1,6 +1,7 @@
 import { basename, dirname, join, relative } from '../Paths/posix'
 import { escapes } from '../Paths/pathSafety'
 import { hiddenName } from '../Paths/exclusion'
+import { holdsName } from '../Paths/names'
 import { archiveDirRel, archivedCollectionIdOf, TRASH_DIR } from '../Paths/nexusPaths'
 import { machine } from '../Platform/machine'
 import { fault, ok, type Result } from '../Contract/result'
@@ -57,7 +58,7 @@ export async function chainDir(
   return dir
 }
 
-/** `leaf` asks for one bundle name back, which a fresh stamp answers once something holds it. */
+/** `leaf` asks for one bundle name back, tried only when the source could have been minted under it: one name, stamped, ending in the source's own; a fresh stamp answers anything else, and a leaf something holds. */
 export async function mintBundle(
   root: string,
   store: BundleStore,
@@ -65,9 +66,11 @@ export async function mintBundle(
   leaf?: string,
 ): Promise<string> {
   const dir = await chainDir(root, store, absSource)
-  if (leaf && (await machine().mkdir(join(dir, leaf))) === 'created') return join(dir, leaf)
-  const stamp = fileStamp()
   const base = `${basename(absSource)}${layoutOf(store).suffix}`
+  const own =
+    leaf !== undefined && holdsName(leaf) && storedAtOf(leaf) !== null && leaf.endsWith(`__${base}`)
+  if (own && (await machine().mkdir(join(dir, leaf))) === 'created') return join(dir, leaf)
+  const stamp = fileStamp()
   for (let n = 0; ; n++) {
     const bundle = join(dir, stampedLeaf(stamp, n, base))
     if ((await machine().mkdir(bundle)) === 'created') return bundle

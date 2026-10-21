@@ -63,7 +63,8 @@ export async function newPage(inWindow: boolean): Promise<void> {
   if (!tree) return
   const from = inWindow ? windowTargetOf(s) : s.selection
   let parentPath: string | null = null
-  if (isContainer(from)) parentPath = findContainerById(tree, from.id)?.path ?? null
+  if (isContainer(from) || from?.kind === 'archive')
+    parentPath = findContainerById(tree, from.id)?.path ?? null
   else if (from?.kind === 'page') parentPath = relDirname(from.path)
   if (parentPath === null) parentPath = tree.collections[0]?.path ?? null
   if (parentPath === null) return

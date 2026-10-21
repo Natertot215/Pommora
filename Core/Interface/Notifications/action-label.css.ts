@@ -15,7 +15,6 @@ export const host = style({
   zIndex: stack.top.interrupt,
   display: 'flex',
   flexDirection: 'column',
-  gap: SIZE.padX,
   minWidth: 220,
   maxWidth: 420,
   padding: SIZE.roomyPadX,
@@ -28,6 +27,10 @@ export const host = style({
 })
 
 export const error = style({ borderColor: 'var(--error)' })
+
+export const faces = style({ placeItems: 'stretch' })
+
+export const face = style({ display: 'flex', flexDirection: 'column', gap: SIZE.padX })
 
 export const row = style({
   display: 'flex',

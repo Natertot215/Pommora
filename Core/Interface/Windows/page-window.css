@@ -27,10 +27,17 @@
 .page-history-row {
   --row-pad-trail: 2px;
 }
-/* A snapshot is a record, not a writing surface: the text stays selectable, but no caret ever seats in it and the pointer keeps its arrow. */
-.page-history-page .mdpm-caret-layer {
+/* A read-only page is a record, not a writing surface: the text stays selectable, but no caret ever seats in it and the pointer keeps its arrow. */
+.page-reader-page .mdpm-caret-layer {
   display: none;
 }
-.page-history-page .cm-editor .cm-scroller .cm-content {
+.page-reader-page .cm-editor .cm-scroller .cm-content {
   cursor: default;
+}
+/* At an inline button's height, so the glyph sits level with the window's other toolbar controls. */
+.reader-lock {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding-inline: 2px;
 }

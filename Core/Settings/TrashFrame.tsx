@@ -4,6 +4,7 @@ import { SearchField } from '@pommora/uix/Fields/SearchField'
 import { overScrollEllipsis } from '@pommora/uix/Interactions/OverScroll'
 import { Scrollbar } from '@pommora/uix/Interactions/Scrollbar'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
+import { historical } from '@pommora/uix/Elements/nav-trail.css'
 import { MenuItem } from '@pommora/uix/Menus'
 import { overlay } from '@pommora/uix/Menus/menu-row.css'
 import { cx } from '@pommora/uix/Utilities/cx'
@@ -15,7 +16,7 @@ import type { BundleRow } from '../Bundles/rows'
 import { PropertyTypeIcon, propertyTypeIconName } from '../Properties/Cells/PropertyTypes'
 import { useSession } from '../Session/store'
 import { personalizationOf } from '../Session/configSlice'
-import { useBundleBrowser } from '../Bundles/browser'
+import { crumbSegments, useBundleBrowser } from '../Bundles/browser'
 import '../Navigation/nav-list.css'
 import './trash-frame.css'
 
@@ -27,7 +28,7 @@ export function TrashFrame(): React.JSX.Element {
 
 function TrashBody(): React.JSX.Element {
   const [query, setQuery] = useState('')
-  const { listing, matches, checked, toggle, openMenu, date } = useBundleBrowser(
+  const { listing, visible, checked, toggle, openMenu, date } = useBundleBrowser(
     { kind: 'trash' },
     { query, shown: true },
   )
@@ -42,7 +43,7 @@ function TrashBody(): React.JSX.Element {
           <div className={cx('trash-empty', text.body.standard)}>The trash couldn't be read.</div>
         )
       case 'ready':
-        if (matches.length === 0)
+        if (visible.length === 0)
           return (
             <div className={cx('trash-empty', text.body.standard)}>
               {listing.rows.length === 0 ? 'Trash is empty.' : 'Nothing matches.'}
@@ -52,7 +53,7 @@ function TrashBody(): React.JSX.Element {
           <>
             <div className="trash-scroll scroll-fade">
               <div className="nav-list">
-                {matches.map((row) => (
+                {visible.map((row) => (
                   <TrashRowView
                     key={row.bundlePath}
                     row={row}
@@ -64,7 +65,7 @@ function TrashBody(): React.JSX.Element {
                         ? row.propertyType
                           ? propertyTypeIconName(row.propertyType)
                           : 'tag'
-                        : entityIcon(row.kind, undefined, defaultIcons)
+                        : entityIcon(row.kind, row.icon, defaultIcons)
                     }
                     defaultIcons={defaultIcons}
                     when={date.when(row.storedAt)}
@@ -126,12 +127,9 @@ function TrashRowView({
       leading={<Icon name={icon} size="headline" />}
       detail={
         <NavTrail
-          segments={row.crumbs.map((crumb) => ({
-            title: crumb.title,
-            icon: crumb.kind && entityIcon(crumb.kind, undefined, defaultIcons),
-          }))}
+          segments={crumbSegments(row.crumbs, defaultIcons)}
           iconSize="control"
-          className={cx('trash-trail', row.historical && 'is-historical')}
+          className={cx('trash-trail', row.historical && historical)}
         />
       }
       trailing={

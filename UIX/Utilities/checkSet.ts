@@ -9,7 +9,11 @@ export function retained<T>(prev: ReadonlySet<T>, live: ReadonlySet<T>): Readonl
   return next.size === prev.size ? prev : next
 }
 
-function checkedIn<T, K>(checked: ReadonlySet<K>, shown: readonly T[], keyOf: (item: T) => K): T[] {
+export function checkedIn<T, K>(
+  checked: ReadonlySet<K>,
+  shown: readonly T[],
+  keyOf: (item: T) => K,
+): T[] {
   return shown.filter((item) => checked.has(keyOf(item)))
 }
 

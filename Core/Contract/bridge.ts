@@ -258,7 +258,8 @@ export interface Asks {
   'nav:evictThumbs': { args: [liveKeys: string[]]; reply: Result<null> }
 
   // No push carries what a store holds, so a browser asks again after every action and on `storesChanged`.
-  'bundles:list': { args: [store: BundleStore]; reply: Result<BundleRow[]> }
+  // `within` narrows a Collection's Archive to what left from within one of its top-level Sets.
+  'bundles:list': { args: [store: BundleStore, within?: string]; reply: Result<BundleRow[]> }
   // Read at the moment of asking, never from the renderer's cache, so the confirmation can't promise the system trash while main erases outright.
   'delete:facts': { args: []; reply: Result<{ trashMode: TrashMode; permanentDelete: boolean }> }
 

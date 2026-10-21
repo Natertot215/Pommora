@@ -76,7 +76,7 @@ export const mutateRequest = z.discriminatedUnion('op', [
   }),
   op('renameHeading', { path: z.string(), heading: z.string(), to: z.string() }),
   op('delete', { path: z.string(), kind: heldKind }),
-  op('archive', { path: z.string(), kind: z.enum(['page', 'set']) }),
+  op('archive', { path: z.string(), kind: z.enum(['page', 'set']), leaf: z.string().optional() }),
   op('restore', { bundlePath: z.string(), destination: restoreDestination.optional() }),
   op('emptyBundle', { bundlePath: z.string() }),
   op('setProfileImage', { source: z.string().nullable() }),

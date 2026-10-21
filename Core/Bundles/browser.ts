@@ -1,15 +1,26 @@
 // The renderer's half of the bundle owner: what a store's browser does with the rows `rows.ts` builds host-side.
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import type { TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { capitalize } from '@pommora/uix/Utilities/capitalize'
-import { actedOn, retained, toggled } from '@pommora/uix/Utilities/checkSet'
-import { askEmptyTrash, spendUndo } from '../Interface/Confirm/confirmations'
+import { actedOn, checkedIn, retained, toggled } from '@pommora/uix/Utilities/checkSet'
+import { entityIcon } from '../Assets/entityIconPolicy'
+import {
+  askEmptyTrash,
+  askTrashing,
+  confirmDelete,
+  offerUndo,
+  spendUndo,
+} from '../Interface/Confirm/confirmations'
 import {
   notifyOutcome,
   notifyReport,
   unrestoredLine,
 } from '../Interface/Notifications/notifications'
-import { changesSettled, type MutateRequest } from '../Nexus/mutateRequest'
+import { changesSettled, type MutateRequest, type RestoreDestination } from '../Nexus/mutateRequest'
+import { pagesByIdOf } from '../Nexus/record'
+import { findContainerById } from '../Nexus/treePatch'
 import { matches, matchQuery } from '../Paths/caseFold'
+import { basename } from '../Paths/posix'
 import { itemCount } from '../Properties/properties'
 import { formatDate } from '../Properties/formatValue'
 import { dateDefaults, holdsStyle, resolveStyle, storedPick } from '../Properties/columnStyles'
@@ -22,8 +33,9 @@ import { useSession } from '../Session/store'
 import { personalizationOf } from '../Session/configSlice'
 import { flushAllSaves, storesChanged } from '../Session/nexusSlice'
 import { dialer } from '../Platform/dialer'
+import type { Personalization } from '../Settings/personalization'
 import type { BundleStore } from './bundle'
-import type { BundleRow } from './rows'
+import type { BundleCrumb, BundleRow } from './rows'
 
 const PLURALS: Record<BundleRow['kind'], string> = {
   page: 'Pages',
@@ -51,6 +63,42 @@ const steppedTo = (title: string, landedAs: string): string => `“${title}” a
 export function filterRows(rows: BundleRow[], query: string): BundleRow[] {
   const q = matchQuery(query)
   return q ? rows.filter((row) => matches(row.match, q)) : rows
+}
+
+/** A row's origin trail as both browsers draw it, each live crumb wearing its kind's glyph. */
+export const crumbSegments = (
+  crumbs: BundleCrumb[],
+  icons: Personalization['defaultIcons'],
+): TrailSegment[] =>
+  crumbs.map((crumb) => ({
+    title: crumb.title,
+    icon: crumb.kind && entityIcon(crumb.kind, undefined, icons),
+  }))
+
+/** What the Archive stores: a page or a Set. */
+export const archivedKind = (row: BundleRow): 'page' | 'set' =>
+  row.kind === 'set' ? 'set' : 'page'
+
+const ARCHIVE_UNDO: RestoreDestination = { kind: 'archive' }
+
+type BatchOp = 'restore' | 'emptyBundle' | 'delete'
+
+const requestOf = (op: BatchOp, row: BundleRow): MutateRequest =>
+  op === 'delete'
+    ? { op, path: row.bundlePath, kind: archivedKind(row) }
+    : { op, bundlePath: row.bundlePath }
+
+/** A restore from the Archive undoes by archiving each item again, found by id so it follows a rename made since, under the bundle name it left, so it keeps its Archived date; one renamed or stepped aside since takes a fresh stamp, since that name no longer fits it. */
+const rearchive = (rows: BundleRow[]) => async (): Promise<void> => {
+  for (const row of rows) {
+    const { tree, mutate } = useSession.getState()
+    const id = row.stored?.id
+    if (!id || !tree) continue
+    const path =
+      row.kind === 'set' ? findContainerById(tree, id)?.path : pagesByIdOf(tree).get(id)?.path
+    if (path)
+      await mutate({ op: 'archive', path, kind: archivedKind(row), leaf: basename(row.bundlePath) })
+  }
 }
 
 type DateKey = 'trashColumnStyle' | 'archiveColumnStyle'
@@ -90,29 +138,61 @@ function useDateColumn(key: DateKey): {
   }
 }
 
-/** What the Trash and the Archive do differently under one browser. */
-function rulesOf(kind: BundleStore['kind']): { dateKey: DateKey } {
+/** What the Trash and the Archive do differently under one browser: the date column's setting, what a delete sends and how it asks, for one row and for a batch, and what a restore's and a delete's Undo do. */
+function rulesOf(kind: BundleStore['kind']): {
+  dateKey: DateKey
+  deleteOp: 'emptyBundle' | 'delete'
+  askBatch: (targets: BundleRow[]) => Promise<boolean>
+  deleteOne: (row: BundleRow) => Promise<boolean>
+  restoreUndo?: (rows: BundleRow[]) => () => Promise<void>
+  deleteUndo?: RestoreDestination
+} {
   switch (kind) {
     case 'trash':
-      return { dateKey: 'trashColumnStyle' }
+      return {
+        dateKey: 'trashColumnStyle',
+        deleteOp: 'emptyBundle',
+        askBatch: (targets) => askEmptyTrash(deleteQuestion(targets)),
+        deleteOne: async (row) =>
+          (await askEmptyTrash(deleteQuestion([row]))) &&
+          (await useSession
+            .getState()
+            .mutate({ op: 'emptyBundle', bundlePath: row.bundlePath })) !== null,
+      }
     case 'archive':
-      return { dateKey: 'archiveColumnStyle' }
+      return {
+        dateKey: 'archiveColumnStyle',
+        deleteOp: 'delete',
+        askBatch: (targets) => askTrashing(deleteQuestion(targets), targets.map(archivedKind)),
+        deleteOne: (row) =>
+          confirmDelete({
+            path: row.bundlePath,
+            kind: archivedKind(row),
+            title: row.title,
+            undoTo: ARCHIVE_UNDO,
+          }),
+        restoreUndo: rearchive,
+        deleteUndo: ARCHIVE_UNDO,
+      }
   }
 }
 
 type Listing = { status: 'loading' } | { status: 'failed' } | { status: 'ready'; rows: BundleRow[] }
 
-/** A store's browser: its rows, listed again on each change while shown and on each showing; the checked set; the right-click menu's Restore and Delete over a row or the checked rows in view; and its date column. */
+/** A store's browser, narrowed `within` a top-level Set when given: its rows, listed again on each change while shown and on each showing; the checked set, and the checked rows in view; Restore and Delete, run by the right-click menu over a row or the checked rows in view and by the bar over the checked rows; and its date column. */
 export function useBundleBrowser(
   store: BundleStore,
-  { query, shown }: { query: string; shown: boolean },
+  { query, shown, within }: { query: string; shown: boolean; within?: string },
 ): {
   listing: Listing
-  matches: BundleRow[]
+  visible: BundleRow[]
   checked: ReadonlySet<string>
+  picked: BundleRow[]
   toggle: (bundlePath: string) => void
   openMenu: (row: BundleRow) => Promise<void>
   date: ReturnType<typeof useDateColumn>
+  restore: (targets: BundleRow[]) => Promise<void>
+  remove: (targets: BundleRow[]) => Promise<void>
 } {
   const rules = rulesOf(store.kind)
   const date = useDateColumn(rules.dateKey)
@@ -123,7 +203,7 @@ export function useBundleBrowser(
 
   // Keyed on the store's fields rather than the object, so a caller may pass a fresh literal.
   const refresh = useCallback(async (): Promise<void> => {
-    const res = await dialer().ask('bundles:list', store)
+    const res = await dialer().ask('bundles:list', store, within)
     if (!res.ok) {
       setListing({ status: 'failed' })
       return
@@ -131,7 +211,7 @@ export function useBundleBrowser(
     setListing({ status: 'ready', rows: res.value })
     const live = new Set(res.value.map((r) => r.bundlePath))
     setChecked((prev) => retained(prev, live))
-  }, [store.kind, store.kind === 'archive' ? store.id : null])
+  }, [store.kind, store.kind === 'archive' ? store.id : null, within])
 
   // A parked browser stays mounted, so it lists again on its next showing rather than on every change behind another tab.
   useEffect(() => {
@@ -140,10 +220,11 @@ export function useBundleBrowser(
     return storesChanged.subscribe(() => void refresh())
   }, [refresh, shown])
 
-  const matches = useMemo(
+  const visible = useMemo(
     () => (listing.status === 'ready' ? filterRows(listing.rows, query) : []),
     [listing, query],
   )
+  const picked = useMemo(() => checkedIn(checked, visible, (r) => r.bundlePath), [checked, visible])
   const toggle = (bundlePath: string): void => setChecked((prev) => toggled(prev, bundlePath))
 
   const one = async (
@@ -153,44 +234,50 @@ export function useBundleBrowser(
     const done = await mutate(req)
     if (!done) return
     spendUndo(req.bundlePath)
-    if (done.landedAs)
-      notifyOutcome(`Restored ${steppedTo(row.title, done.landedAs)}`, undefined, [
-        done.unrestored !== undefined && unrestoredLine(done.unrestored),
-        done.cascade?.warning,
-      ])
+    // A restore the store can undo always reports, since its notice carries the Undo; the Trash's reports a step aside alone.
+    if (done.landedAs || rules.restoreUndo)
+      notifyOutcome(
+        `Restored ${done.landedAs ? steppedTo(row.title, done.landedAs) : `“${row.title}”`}`,
+        undefined,
+        [done.unrestored !== undefined && unrestoredLine(done.unrestored), done.cascade?.warning],
+        rules.restoreUndo?.([row]),
+      )
   }
 
   /** Answers null when a Nexus switch stopped it, as the slice's `mutate` drops a held op: the paths left belong to the Nexus it left, so the batch reports nothing. */
   const many = async (
     targets: BundleRow[],
-    op: 'restore' | 'emptyBundle',
+    op: BatchOp,
   ): Promise<{
     done: BundleRow[]
     refused: BundleRow[]
     unrestored: string[]
     warnings: string[]
     renamed: string[]
+    bundled: string[]
   } | null> => {
     const done: BundleRow[] = []
     const refused: BundleRow[] = []
     const unrestored: string[] = []
     const warnings = new Set<string>()
     const renamed: string[] = []
+    const bundled: string[] = []
     let stopped = false
     if (changesSettled(op)) await flushAllSaves()
     for (const row of targets) {
       stopped = useSession.getState().tree?.nexus.id !== nexusId
       if (stopped) break
-      const res = await dialer().ask('mutate', { op, bundlePath: row.bundlePath })
+      const res = await dialer().ask('mutate', requestOf(op, row))
       ;(res.ok ? done : refused).push(row)
       if (!res.ok) continue
       spendUndo(row.bundlePath)
       unrestored.push(...(res.value.unrestored ?? []))
       if (res.value.cascade?.warning) warnings.add(res.value.cascade.warning)
       if (res.value.landedAs) renamed.push(steppedTo(row.title, res.value.landedAs))
+      if (res.value.bundled) bundled.push(res.value.bundled.bundlePath)
     }
     storesChanged.emit()
-    return stopped ? null : { done, refused, unrestored, warnings: [...warnings], renamed }
+    return stopped ? null : { done, refused, unrestored, warnings: [...warnings], renamed, bundled }
   }
 
   const restoreBatch = async (targets: BundleRow[]): Promise<void> => {
@@ -210,22 +297,41 @@ export function useBundleBrowser(
         unrestored.length > 0 && unrestoredLine(unrestored),
         ...warnings,
       ],
+      done.length > 0 ? rules.restoreUndo?.(done) : undefined,
     )
   }
 
-  const emptyBatch = async (targets: BundleRow[]): Promise<void> => {
-    if (!(await askEmptyTrash(deleteQuestion(targets)))) return
-    const ran = await many(targets, 'emptyBundle')
+  const deleteBatch = async (targets: BundleRow[]): Promise<void> => {
+    if (!(await rules.askBatch(targets))) return
+    const ran = await many(targets, rules.deleteOp)
     if (!ran) return
-    const { done, refused, warnings } = ran
-    notifyOutcome(`Deleted ${countPhrase(done)}`, undefined, [
-      refused.length > 0 && `${countPhrase(refused)} couldn’t be deleted.`,
-      ...warnings,
-    ])
+    const { done, refused, warnings, bundled } = ran
+    // An empty mints no bundle, so only a batch the Archive moved into the Trash offers its Undo.
+    offerUndo(
+      bundled,
+      (undo) =>
+        notifyOutcome(
+          `Deleted ${countPhrase(done)}`,
+          undefined,
+          [refused.length > 0 && `${countPhrase(refused)} couldn’t be deleted.`, ...warnings],
+          undo,
+        ),
+      rules.deleteUndo,
+    )
+  }
+
+  const restore = (targets: BundleRow[]): Promise<void> =>
+    targets.length === 1
+      ? one({ op: 'restore', bundlePath: targets[0].bundlePath }, targets[0])
+      : restoreBatch(targets)
+
+  const remove = async (targets: BundleRow[]): Promise<void> => {
+    if (targets.length > 1) return deleteBatch(targets)
+    if (await rules.deleteOne(targets[0])) spendUndo(targets[0].bundlePath)
   }
 
   const openMenu = async (row: BundleRow): Promise<void> => {
-    const targets = actedOn(checked, matches, row, (r) => r.bundlePath)
+    const targets = actedOn(checked, visible, row, (r) => r.bundlePath)
     const batch = targets.length > 1
     const destinationKind = row.kind === 'space' ? ('context' as const) : ('container' as const)
     const { tree } = useSession.getState()
@@ -248,16 +354,11 @@ export function useBundleBrowser(
     }
     switch (action) {
       case 'restore':
-        if (batch) await restoreBatch(targets)
-        else await one({ op: 'restore', bundlePath: row.bundlePath }, row)
-        break
+        return restore(targets)
       case 'delete':
-        if (batch) await emptyBatch(targets)
-        else if (await askEmptyTrash(deleteQuestion([row])))
-          await one({ op: 'emptyBundle', bundlePath: row.bundlePath }, row)
-        break
+        return remove(targets)
     }
   }
 
-  return { listing, matches, checked, toggle, openMenu, date }
+  return { listing, visible, checked, picked, toggle, openMenu, date, restore, remove }
 }

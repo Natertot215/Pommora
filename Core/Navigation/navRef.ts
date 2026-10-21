@@ -7,11 +7,15 @@ type NodeTarget = {
     : { kind: K; id: string }
 }[NodeKind]
 
+/** A Collection's or a top-level Set's Archive, addressed by its owner's id: a place of its own, not a node. */
+type ArchiveTarget = { kind: 'archive'; id: string }
+
 export type SelectionState =
   | { kind: 'none' }
   | { kind: 'homepage' }
   | { kind: 'matrix' }
   | NodeTarget
+  | ArchiveTarget
 
 export type SelectTarget = Exclude<SelectionState, { kind: 'none' }>
 
@@ -31,7 +35,11 @@ export function selectTargetOf(t: { kind: NodeKind; id: string; path: string }):
 export type PageTarget = Extract<SelectTarget, { kind: 'page' }>
 export type SpaceTarget = Extract<SelectTarget, { kind: 'space' }>
 
-export type NavRef = { kind: 'homepage' } | { kind: 'matrix' } | { kind: NodeKind; id: string }
+export type NavRef =
+  | { kind: 'homepage' }
+  | { kind: 'matrix' }
+  | { kind: NodeKind; id: string }
+  | ArchiveTarget
 
 export const isSingleton = (t: { kind?: unknown }): t is { kind: 'homepage' | 'matrix' } =>
   t.kind === 'homepage' || t.kind === 'matrix'
@@ -48,6 +56,7 @@ const NAV_KINDS: ReadonlySet<string> = new Set<NavRef['kind']>([
   'homepage',
   'matrix',
   ...NODE_KINDS,
+  'archive',
 ])
 
 export function isNavRef(v: unknown): v is NavRef {

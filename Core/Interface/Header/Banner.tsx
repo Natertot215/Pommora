@@ -83,9 +83,11 @@ export function Banner({
 export function EntityBanner({
   owner,
   chrome = 'detail',
+  trailing,
 }: {
   owner: BannerOwner
   chrome?: 'detail' | 'window'
+  trailing?: ReactNode
 }): React.JSX.Element {
   const mutate = useSession((s) => s.mutate)
   const submitRename = useSession((s) => s.submitRename)
@@ -146,6 +148,7 @@ export function EntityBanner({
         })
       }
       search={search}
+      trailing={trailing}
     />
   )
   const iconPicker = home ? (

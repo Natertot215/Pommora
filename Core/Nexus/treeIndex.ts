@@ -4,9 +4,10 @@ import { type EntityRecord, pagesByIdOf, pagesByPathOf, recordsOf } from './reco
 import type { BannerOwnerKind } from './mutateRequest'
 import { navKey, type NavRef, type SelectTarget, toNavRef } from '../Navigation/navRef'
 import { MATRIX_ICON, MATRIX_TITLE } from '../Matrix/matrixKind'
+import { ARCHIVE_ICON } from '../Archive/archivePlace'
 import type { CollectionNode, NexusTree, SetNode, SpaceNode } from './tree'
 import { entityMemo } from './tree'
-import { findContainerWhere, withheldIn } from './treePatch'
+import { findContainerWhere, isTopSet, withheldIn } from './treePatch'
 import { iconNameOr } from '@pommora/uix/Symbols'
 import { DEFAULT_NEXUS_ICON, entityIcon } from '../Assets/entityIconPolicy'
 import { NO_TRAIL, type TrailSegment } from '@pommora/uix/Elements/NavTrail'
@@ -20,7 +21,8 @@ import type { ReconcileIndex } from '../Session/reconcileSelection'
 /** `id` and `path` are '' for the two folderless singletons, the Homepage and the Matrix. */
 interface NodeRecord extends TrailNode {
   key: string
-  kind: NavRef['kind']
+  /** Every place but an Archive, which shares its owner's id: nav search lists none, and none overwrites its owner by id. */
+  kind: Exclude<NavRef['kind'], 'archive'>
   /** The raw icon field — surfaces that render absence read this, not the resolved glyph. */
   ownIcon?: string
   parents: TrailNode[]
@@ -121,12 +123,30 @@ export const reconcileIndexOf = entityMemo(
   },
 )
 
+/** One display core per Archive place, each Collection's and each top-level Set's, titled by its owner and trailed by the owner's ancestry. */
+const archiveCoresOf = entityMemo([nodesOf], (tree): [string, NavCore][] =>
+  nodesOf(tree).flatMap((r): [string, NavCore][] =>
+    r.kind === 'collection' || (r.kind === 'set' && isTopSet(r.path))
+      ? [
+          [
+            navKey({ kind: 'archive', id: r.id }),
+            { icon: ARCHIVE_ICON, title: r.title, path: [...r.parents, r] },
+          ],
+        ]
+      : [],
+  ),
+)
+
 export const resolveIndexOf = entityMemo(
   [nodesOf],
   (tree): ResolveIndex =>
-    new Map<string, NavCore>(
-      nodesOf(tree).map((r) => [r.key, { icon: r.icon, title: r.title, path: r.parents }]),
-    ),
+    new Map<string, NavCore>([
+      ...nodesOf(tree).map((r): [string, NavCore] => [
+        r.key,
+        { icon: r.icon, title: r.title, path: r.parents },
+      ]),
+      ...archiveCoresOf(tree),
+    ]),
 )
 
 export const trailOf = (tree: NexusTree | null, ref: NavRef | SelectTarget): TrailSegment[] =>
@@ -183,10 +203,11 @@ export const nodesByIdOf = entityMemo(
     ),
 )
 
-/** The closed set thumbnail eviction prunes against — nothing selects a Context group, so the records are the complete universe of capturable keys. */
-export const navKeysOf = entityMemo([(t) => t.contexts], (tree): string[] =>
-  nodesOf(tree).map((r) => r.key),
-)
+/** The closed set thumbnail eviction prunes against — nothing selects a Context group, so the records and their Archive places are the complete universe of capturable keys. */
+export const navKeysOf = entityMemo([(t) => t.contexts], (tree): string[] => [
+  ...nodesOf(tree).map((r) => r.key),
+  ...archiveCoresOf(tree).map(([key]) => key),
+])
 
 /** `icon` is raw and unvalidated; NavView is excluded because its banner is treated separately. */
 export interface BannerOwner {

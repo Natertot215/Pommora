@@ -29,7 +29,7 @@ interface ColumnWidth {
 
 // Only `title` is UNCAPPED — a resize past the pane h-scrolls instead of hitting a wall. Mins stay so a stale saved value can't squash a column below legibility.
 const UNCAPPED = Number.POSITIVE_INFINITY
-const WIDTHS: Record<PropertyType | 'title', ColumnWidth> = {
+export const WIDTHS: Record<PropertyType | 'title', ColumnWidth> = {
   title: { min: 120, default: 280, max: UNCAPPED },
   context: { min: 80, default: 140, max: 350 },
   status: { min: 65, default: 120, max: 250 },

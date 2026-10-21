@@ -24,7 +24,7 @@ export const createViewSearchSlice: Slice<ViewSearchSlice> = (set, get) => ({
   viewSearch: {},
   searchView: (tabId) => {
     const target = tabOf(get(), tabId)?.target
-    if (!isContainer(target)) return false
+    if (!isContainer(target) && target?.kind !== 'archive') return false
     const { viewSearch } = get()
     const open = viewSearch[tabId] ?? { key: tabKey(target), query: '', summon: 0 }
     set({ viewSearch: { ...viewSearch, [tabId]: { ...open, summon: open.summon + 1 } } })

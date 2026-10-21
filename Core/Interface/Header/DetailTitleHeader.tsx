@@ -38,6 +38,8 @@ interface Props {
   iconEditing?: boolean
   search?: TitleSearch
   renameSummon?: number
+  /** Drawn after the title and its search's clear button, which pads against it. */
+  trailing?: React.ReactNode
 }
 
 export function DetailTitleHeader({
@@ -53,6 +55,7 @@ export function DetailTitleHeader({
   iconEditing,
   search,
   renameSummon,
+  trailing,
 }: Props): React.JSX.Element {
   const [editing, setEditing] = useState(false)
   const searching = search?.query != null
@@ -225,6 +228,7 @@ export function DetailTitleHeader({
       ) : (
         label
       )}
+      {trailing}
     </div>
   )
 }

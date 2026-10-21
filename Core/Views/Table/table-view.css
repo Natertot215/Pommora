@@ -1,4 +1,4 @@
-/* TableView's layer over the Tables chrome: shell width, grid density, hide/slide beat, grip gutter, and group-band rhythm. Values live in Tables/table-tokens.css. */
+/* The layer TableView and ArchiveView wear over the Tables chrome: shell width, grid density, hide/slide beat, the rail gutter's grip and check, and group-band rhythm. Values live in Tables/table-tokens.css. */
 
 .table-view {
   /* Width is auto so the negative side margins widen the box to both glass edges while the grid's content box (and so every row) stays exactly where it was. */
@@ -47,6 +47,7 @@
   background: var(--col-highlight);
 }
 .row-grip,
+.row-check,
 .table-view .group-band-drop-outline {
   position: absolute;
   left: calc(-1 * var(--rail-inset));

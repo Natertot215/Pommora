@@ -12,7 +12,6 @@ import {
   MenuItem,
   MenuFooting,
   MenuScrollFrame,
-  AccessoryButton,
   FootingCreate,
   menuDropLine,
 } from '@pommora/uix/Menus'
@@ -34,6 +33,7 @@ import * as vd from '../../Interface/Toolbar/toolbar-menu.css'
 import { dialer } from '../../Platform/dialer'
 import { popMenu } from '../../Actions/menuActions'
 import { viewRowMenuItems } from '../../Actions/viewRowMenu'
+import { selectTargetOf } from '../../Navigation/navRef'
 
 const PANE_SQUARE = 225
 
@@ -47,6 +47,8 @@ export function ViewFrame({
   onClose: () => void
 }): React.JSX.Element {
   const mutate = useSession((s) => s.mutate)
+  const select = useSession((s) => s.select)
+  const inArchive = useSession((s) => s.selection.kind === 'archive')
   const saveView = useSaveView(node)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [renamingId, setRenamingId] = useState<string | null>(null)
@@ -62,7 +64,11 @@ export function ViewFrame({
     : undefined
   const editingLive = useLiveView(node.id, editing ?? active)
 
+  // In place: under New Tab, `select`'s default would open a tab per press.
+  const showArchive = (shown: boolean): void =>
+    void select(shown ? { kind: 'archive', id: node.id } : selectTargetOf(node), { newTab: false })
   const switchTo = (id: string): void => {
+    if (inArchive) showArchive(false)
     if (id === active.id) return
     void mutate({ op: 'setActiveView', path: node.path, kind: node.kind, viewId: id })
   }
@@ -104,16 +110,19 @@ export function ViewFrame({
     <MenuScrollFrame
       footer={
         <MenuFooting
-          leading={<FootingCreate ariaLabel="New View" onClick={() => void createView()} />}
-          trailing={
-            // PLACEHOLDER
-            <AccessoryButton
-              icon="dots"
-              size="control"
-              ariaLabel="More"
-              disabled
-              onClick={() => {}}
-            />
+          leading={
+            <>
+              <FootingCreate ariaLabel="New View" onClick={() => void createView()} />
+              <Button
+                type={inArchive ? 'tinted' : 'filled'}
+                size="button-inline"
+                label="Archive"
+                outline={inArchive}
+                pressed={inArchive}
+                showSelection={false}
+                onClick={() => showArchive(!inArchive)}
+              />
+            </>
           }
         />
       }
