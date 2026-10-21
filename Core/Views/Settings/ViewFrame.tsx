@@ -193,7 +193,7 @@ export function ViewFrame({
             className={vd.archiveRow}
             picked={inArchive ? 'solo' : undefined}
             leading={<Icon name={ARCHIVE_ICON} size="headline" className={vd.archiveGlyph} />}
-            trailing={<Icon name="lock" size="headline" />}
+            trailing={<Icon name="locked" size="headline" className={vd.archiveGlyph} />}
             onClick={() => showArchive(true)}
           >
             {ARCHIVE_TITLE}
