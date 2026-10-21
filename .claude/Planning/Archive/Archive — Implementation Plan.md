@@ -42,7 +42,7 @@ The work is removal-first. Before anything archive-shaped lands, the Trash's han
 | 3 | +10 | +108 | +143 (+333 / −190) | +422 |
 | 4 | +176 | +432 | +485 (+606 / −121) | +907 |
 | 5 | −21 | +95 | +125 (+503 / −378) | +1,032 |
-| 6A | +57 | +102 | | |
+| 6A | +57 | +102 | +120 (+190 / −70) | +1,152 |
 | 6B | +264 | +644 | | |
 | 7 | docs | docs | | |
 | Final Verification | — | — | | |
@@ -8782,6 +8782,10 @@ In the AFTER blocks below, a `~` line is context as an earlier phase leaves it (
 - **A Following Timeframe:** `PickerControl` treats picking the value already shown as no change (`PickerControl.tsx:112-113`), so picking the step a following Archive History Timeframe already shows leaves it following; lengthening History Timeframe afterwards moves it along. J-1's "until a step is picked" holds for every step other than the one on show.
 - **The Switch-Down Is the Host's Write:** after History Timeframe is shortened below a pick, the renderer shows the old archive pick, dimmed and above the cap, until the host's settings echo lands; the drive asserts the settled DOM through `until`.
 - **The Sweep's Twin Rule Stays `idHeld` (Cautionary 33):** Phase 3's `nexusPages(…).byId` would copy the tree's memoized by-id map and build an origin path for every archived page to answer a question about ids alone, where `readIndexedStats(ARCHIVE_DIR_REL)` answers the ids directly.
+- **One Reader for the Archive's Ids (Task 6A-3):** `heldPages.ts` already read the Archive's indexed rows with a disk walk as its no-index-store fallback, so that read is exported as `archivedPageIds(root, tree)` and the sweep takes its ids from it with the held tree, `ids: []` when none is held, rather than reading `readIndexedStats(ARCHIVE_DIR_REL)` a second way; a missing index store then sweeps archived pages by the walk instead of at the live cutoff.
+- **One Bound (Task 6A-3):** "Archive History Timeframe never exceeds History Timeframe" is declared once, `SETTING_BOUNDS` beside `SETTING_RANGES`, which `settingWithin`, the Settings row's value and cap, and `writePersonalization`'s cap all read, in place of a `within` named on the row, in the reader, and in the writer.
+- **An Archive Clears the Cache (Task 6A-1):** `patchPagesFor` drops a page's cached detail and slot for an archive as it does for a delete, and a container's delete or archive drops its pages' cached details with it (`dropPageDetailsUnder`), so a page restored after a cascade rewrote it in the Archive opens as the file stands rather than from the body it had when it left.
+- **Drive Group 6A Leaves `~/Test` as It Found It:** the group's seeds are deleted and emptied at its end and the Archive folder it made removed, closing on a start-against-end check as groups 3 to 5 do; the task text named no cleanup.
 
 ##### Found False at HEAD
 
@@ -11108,6 +11112,7 @@ Each document reads as its CHANGE item states, every sentence replaced in place;
 - **The Reader's Geometry (Task 6B-2):** the window's remembered size resets once, as its key becomes `'page-reader'`.
 - **The Swap's Fixed Cell (Task 5-1):** "Copied" sits centered in the code block's pill, and Settings' Clear button holds "Cleared"'s width at rest.
 - **A Following Timeframe (Task 6A-3):** picking the step a following Archive History Timeframe already shows leaves it following, since the picker ignores a pick of the current value.
+- **An Undo Across a Set's Move (Task 6A-1):** an archive's Undo names the bundle path the archive minted; moving the item's Set into another Collection carries that bundle, so an Undo pressed afterwards posts a refusal, the item sitting restorable in the new Collection's Archive. A delete's Undo from the Archive (Task 6B-5) shares the shape; the Trash's bundles never move.
 
 #### Deviations
 
@@ -11138,3 +11143,7 @@ Phase 4 measured +485 (+606 / −121) against the written +432. It landed at +43
 Phase 5 measured +125 (+503 / −378) against the written +95. It landed at its written +95 before its review, and its review's fix was +30: the browser hook's one load state and TrashFrame's switch over it, a batch a Nexus switch stops posting nothing, a batch with nowhere to restore posting only that, and the code block tally's hidden face taking `Swap`'s `inert` and `aria-hidden`, against the batch's dead page patch and one `matches` for three searches.
 
 - **One Path for a Batch (Task 5-5):** the batch runner moved into `useBundleBrowser` took the single action's path where the plan moved it as it stood: it stops at a Nexus switch as `mutate` does, and signals `storesChanged` once per batch, which the browser's own subscription re-lists on, rather than awaiting a re-list of its own, so a batch in one store tells the other to re-list (Phase 6B's delete from the Archive to the Trash) and its notice posts before the re-list lands, as a single action's does. About +4.
+
+Phase 6A measured +120 (+190 / −70) against the written +102. It landed at +107 before its review, five lines above the written figure for the one reader of the Archive's ids, and its review's fix was +13: the archive arm of the page cache, a container's pages dropped with it, and the one bound, against the row's `within` and the reader's and writer's spellings of it.
+
+- **An Archive Clears the Page Cache (Task 6A-1):** the plan's `confirmArchive` left the archived page's cached detail and slot at its old path, where a delete drops them, so a page restored after a cascade rewrote it in the Archive would have opened from the body it had when it left and saved against a stale base. The archive takes the delete's arm, and a container's delete or archive drops its pages' details with it. About +8, `navigationSlice.ts` and `pageDetailCache.ts`.
