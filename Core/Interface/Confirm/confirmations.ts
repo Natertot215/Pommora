@@ -159,10 +159,10 @@ export const askFormatChange = (propertyId: string, change: FormatChange): Promi
     true,
   )
 
-export const askEmptyTrash = async (count: number): Promise<boolean> => {
+export const askEmptyTrash = async (message: string): Promise<boolean> => {
   const { permanentDelete } = valueOr(await dialer().ask('delete:facts'), DELETE_FACTS_FALLBACK)
   return ask({
-    message: count === 1 ? 'Delete this Item?' : `Delete these ${itemCount(count)}?`,
+    message,
     detail: permanentDelete
       ? 'It will be erased from this computer. This cannot be undone.'
       : 'It will move to your system trash, which is where you would get it back from.',

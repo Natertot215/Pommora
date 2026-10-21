@@ -670,7 +670,7 @@ async function group5(cdp) {
   const drainedAway = await settles(() => drained(cdp), 4500)
   const gone = ['G5 Note', 'G5 Note Long']
   item(5, 5, 'K-4', 'Delete All empties the checked rows',
-    deletedAll && asked === 'Delete these 2 Items?' && gone.every((t) => !!bundles[t] && !exists(bundles[t])) && deletedSaid,
+    deletedAll && asked === 'Delete these 2 Pages?' && gone.every((t) => !!bundles[t] && !exists(bundles[t])) && deletedSaid,
     show({ deletedAll, asked, notice: await notice(cdp) }))
   item(5, 5, 'K-3', 'once the pointer has left its band, returning stalls the drain and leaving drains it', stalled && drainedAway, show({ stalled, drainedAway }))
 

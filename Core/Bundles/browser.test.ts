@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { countPhrase, filterRows } from './browser'
+import { countPhrase, deleteQuestion, filterRows } from './browser'
 import { bundleRow as row } from '../Testing/fixtures'
 
 describe('filterRows', () => {
@@ -40,6 +40,14 @@ describe('filterRows', () => {
       row({ title: 'Notes', crumbs: [] }),
     ]
     expect(filterRows(listed, 'notes').map((r) => r.title)).toEqual(['Notes Archive', 'Notes'])
+  })
+})
+
+describe('deleteQuestion', () => {
+  it('asks of one row by its title, of more by their count, Items where the kinds mix', () => {
+    expect(deleteQuestion([row({ title: 'Ideas' })])).toBe('Delete “Ideas”?')
+    expect(deleteQuestion([row({}), row({})])).toBe('Delete these 2 Pages?')
+    expect(deleteQuestion([row({}), row({ kind: 'set' })])).toBe('Delete these 2 Items?')
   })
 })
 

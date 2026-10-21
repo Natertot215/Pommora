@@ -41,6 +41,10 @@ export function countPhrase(rows: BundleRow[]): string {
   return rows.length === 1 ? `1 ${capitalize(kind)}` : `${rows.length} ${PLURALS[kind]}`
 }
 
+/** What a delete asks of the rows it acts on: one by its title, more by their count. */
+export const deleteQuestion = (rows: BundleRow[]): string =>
+  rows.length === 1 ? `Delete “${rows[0].title}”?` : `Delete these ${countPhrase(rows)}?`
+
 const steppedTo = (title: string, landedAs: string): string => `“${title}” as “${landedAs}”`
 
 /** Typed search narrows in place, keeping the store's order, as a view's search does (`searchGroups`). */
@@ -210,7 +214,7 @@ export function useBundleBrowser(
   }
 
   const emptyBatch = async (targets: BundleRow[]): Promise<void> => {
-    if (!(await askEmptyTrash(targets.length))) return
+    if (!(await askEmptyTrash(deleteQuestion(targets)))) return
     const ran = await many(targets, 'emptyBundle')
     if (!ran) return
     const { done, refused, warnings } = ran
@@ -249,7 +253,7 @@ export function useBundleBrowser(
         break
       case 'delete':
         if (batch) await emptyBatch(targets)
-        else if (await askEmptyTrash(1))
+        else if (await askEmptyTrash(deleteQuestion([row])))
           await one({ op: 'emptyBundle', bundlePath: row.bundlePath }, row)
         break
     }
