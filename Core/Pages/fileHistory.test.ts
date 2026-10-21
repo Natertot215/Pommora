@@ -5,6 +5,7 @@ import { tempRoot } from '../Testing/hostFs'
 import type { Result } from '../Contract/result'
 import { HISTORY_INTERVAL } from '../Settings/personalization'
 import { ARCHIVE_DIR_REL } from '../Paths/nexusPaths'
+import { markIndexReady } from '../Index/contentIndex'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
 import { splitEnvelope } from '../Files/pageFile'
 import { machine } from '../Platform/machine'
@@ -396,6 +397,7 @@ describe('sweepFileHistory', () => {
         stat: { mtimeMs: 0, size: 0 },
       })),
     )
+    markIndexReady()
     await sweepFileHistory(root)
     expect(rows(OTHER)).toEqual([])
     expect(rows()).toHaveLength(1)

@@ -4,7 +4,7 @@ import { heldTreeOf } from './liveTree'
 import { join, relative, titleFromPath } from '../Paths/posix'
 import { type EntityRecord, pagesByIdOf, pagesByPathOf, pagesOf, recordsOf } from './record'
 import { entityMemo, type NexusTree } from './tree'
-import { readIndexedStats } from '../Index/contentIndex'
+import { indexReady, readIndexedStats } from '../Index/contentIndex'
 import { ARCHIVE_DIR_REL, archivedCollectionIdOf } from '../Paths/nexusPaths'
 import { corpusFilesUnder } from '../Files/walk'
 import { stampedIdOf } from '../Files/pageFile'
@@ -85,7 +85,7 @@ export async function archivedPageIds(
   root: string,
   tree: NexusTree,
 ): Promise<ReadonlyMap<string, { id?: string }>> {
-  const indexed = readIndexedStats(ARCHIVE_DIR_REL)
+  const indexed = indexReady() ? readIndexedStats(ARCHIVE_DIR_REL) : null
   if (indexed) return indexed
   const rels = await corpusFilesUnder(root, join(root, ARCHIVE_DIR_REL), scopeOf(tree.config))
   const ids = await Promise.all(rels.map((rel) => stampedIdOf(join(root, rel))))

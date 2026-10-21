@@ -1,39 +1,24 @@
 // Every archived record stays filed in the Archive of the Collection its origin sits in now, its trail current. One carry, `refileArchived`, serves each landing that moves a Set: the settle's comparison of trees and a restore.
-// The open pass is its third landing, and moves an Archive whose Collection exists nowhere into the Trash, recoverable.
+// The open pass, `settleArchives`, re-files each record a Set moved while Pommora was closed left misfiled, and moves an Archive whose Collection exists nowhere into the Trash, recoverable.
 
-import { basename, join, relDirname } from '../Paths/posix'
+import { basename, join } from '../Paths/posix'
 import { isPlainObject } from '../Contract/validators'
 import { errText } from '../Contract/result'
 import { isContainerKind } from '../Nexus/entities'
-import { holdsName } from '../Paths/names'
-import { rmwJsonStrict } from '../Files/atomicWrite'
+import { archiveStoreOf } from '../Paths/names'
+import { removeOwn } from '../Files/atomicWrite'
 import { sameItems } from '@pommora/uix/Utilities/same'
 import { liveTreeOf } from '../Nexus/liveTree'
 import type { CollectionNode, NexusTree, SetNode } from '../Nexus/tree'
 import type { Delta } from '../Nexus/treeDelta'
-import { findContainerById, owningCollection } from '../Nexus/treePatch'
-import { listBundles, moveIntoStore } from '../Bundles/bundle'
-import { RECORD_FILENAME, type RecordFile, trailAbove } from '../Bundles/record'
+import { containerTrailById, owningCollection } from '../Nexus/treePatch'
+import { archivedWithin, listBundles, moveIntoStore } from '../Bundles/bundle'
+import { collectionOf, originOf, patchRecord, type RecordFile, trailAbove } from '../Bundles/record'
 import { ARCHIVE_DIR_REL, archiveDirRel } from '../Paths/nexusPaths'
 import { rootSegs } from '../Paths/exclusion'
 import { sidecarId } from '../Files/sidecar'
 import { listEntries, listFilesRecursive } from '../Files/walk'
-import { recordWrite } from '../Files/writeEcho'
-import { machine } from '../Platform/machine'
 import { readWatchScope } from '../Settings/settings'
-
-/** The container an archived page or Set left, and the ids it stored above it. */
-const originOf = (record: RecordFile): { parent: string; trail: string[] } | null =>
-  (record.entity === 'page' || record.entity === 'set') && record.parent.kind === 'container'
-    ? { parent: record.parent.id, trail: record.trail ?? [] }
-    : null
-
-/** Whether an origin lies within the Set `setId`: by `held`, the tree's trail above its parent, while the tree holds the parent, else by the trail it stored. */
-const originWithin = (
-  origin: { parent: string; trail: string[] },
-  setId: string,
-  held: string[] | null,
-): boolean => origin.parent === setId || (held ?? origin.trail).includes(setId)
 
 /** Writes `trail` onto an archived record, moving its bundle into `to`'s Archive when its origin now sits in another Collection; the bundle keeps its name, since its stamp is the archived time. */
 async function refile(
@@ -44,24 +29,11 @@ async function refile(
   from: string,
   to: string,
 ): Promise<void> {
-  // An id names an Archive's folder, and a sidecar can carry any string as its id.
-  if (!holdsName(to)) return
+  const into = archiveStoreOf(to)
+  if (!into) return
   const bundle = join(root, bundlePath)
-  if (from !== to)
-    await moveIntoStore(root, bundle, { kind: 'archive', id: to }, { trail }, basename(bundle))
-  else if (!sameItems(stored, trail))
-    await rmwJsonStrict(join(bundle, RECORD_FILENAME), (raw) => ({ ...raw, trail }))
-}
-
-/** The bundles in `from`'s Archive archived from within the Set `setId`, by ids rather than by the folder names their chains were spelled with: each origin is the Set or lies beneath it, on the trail the tree gives the origin now, or on the one its record stored once the tree no longer holds it. */
-export async function archivedWithin(root: string, setId: string, from: string, tree: NexusTree) {
-  if (!holdsName(from)) return []
-  return (await listBundles(root, { kind: 'archive', id: from })).flatMap((listed) => {
-    const origin = originOf(listed.record)
-    if (!origin) return []
-    const held = trailAbove(tree, origin.parent)
-    return originWithin(origin, setId, held) ? [{ ...listed, origin, held }] : []
-  })
+  if (from !== to) await moveIntoStore(root, bundle, into, { trail }, basename(bundle))
+  else if (!sameItems(stored, trail)) await patchRecord(bundle, () => ({ trail }))
 }
 
 /** Each record archived from within the Set `setId` takes the trail the Set gives it now, and `to`'s Archive when the Set now sits in another Collection. An origin the tree holds is placed by its current trail, and one it no longer holds by the ids its record stored. */
@@ -93,11 +65,11 @@ async function carried(carry: () => Promise<void>): Promise<void> {
 export const refileLanded = (
   root: string,
   record: RecordFile,
-  from: string,
+  from: string | null,
   dir: string,
 ): Promise<void> =>
   carried(async () => {
-    if (record.entity !== 'set' || !record.id) return
+    if (record.entity !== 'set' || record.parent.kind !== 'container' || !record.id || !from) return
     const tree = await liveTreeOf(root)
     const to = owningCollection(tree, dir)?.id
     if (to) await refileArchived(root, record.id, from, to, tree)
@@ -106,7 +78,7 @@ export const refileLanded = (
 const isContainerNode = (v: unknown): v is CollectionNode | SetNode =>
   isPlainObject(v) && isContainerKind(v.kind)
 
-/** The comparison's trigger: a Set the difference sets in place, which `prev` held under another parent, moved, and carries what was archived from within it; a container `prev` never held arrived, and its own Sets are read the same way. A Collection is left alone, since what it holds moves inside it and trails name ids. */
+/** The comparison's trigger: a Set the difference sets in place, which `prev` held under another parent, moved, and carries what was archived from within it; a container `prev` never held arrived, or held at another path was renamed or moved, and its own Sets are read the same way. A Collection is left alone, since what it holds moves inside it and trails name ids. */
 export async function refileMoved(
   root: string,
   prev: NexusTree,
@@ -114,13 +86,13 @@ export async function refileMoved(
   delta: Delta,
 ): Promise<void> {
   const landed = async (node: CollectionNode | SetNode): Promise<void> => {
-    const was = findContainerById(prev, node.id)
-    if (!was) for (const set of node.sets ?? []) await landed(set)
-    else if (node.kind === 'set' && relDirname(was.path) !== relDirname(node.path)) {
-      const from = owningCollection(prev, was)
-      const to = owningCollection(next, node)
-      if (from && to) await refileArchived(root, node.id, from.id, to.id, next)
-    }
+    const was = containerTrailById(prev, node.id)
+    if (was?.at(-1)?.path !== node.path) for (const set of node.sets ?? []) await landed(set)
+    if (!was || node.kind !== 'set') return
+    if (was.at(-2)?.id === containerTrailById(next, node.id)?.at(-2)?.id) return
+    const from = owningCollection(prev, was[was.length - 1])
+    const to = owningCollection(next, node)
+    if (from && to) await refileArchived(root, node.id, from.id, to.id, next)
   }
   const walk = async (d: Delta): Promise<void> => {
     if ('set' in d) for (const v of [d.set].flat()) if (isContainerNode(v)) await landed(v)
@@ -141,7 +113,14 @@ export async function settleArchives(root: string, tree: NexusTree): Promise<voi
         const origin = originOf(record)
         const trail = origin && trailAbove(tree, origin.parent)
         if (origin && trail)
-          await refile(root, bundlePath, origin.trail, trail, id, trail[0] ?? origin.parent)
+          await refile(
+            root,
+            bundlePath,
+            origin.trail,
+            trail,
+            id,
+            collectionOf({ parent: origin.parent, trail }),
+          )
       }
       continue
     }
@@ -163,8 +142,7 @@ export async function settleArchives(root: string, tree: NexusTree): Promise<voi
     // A bundle that won't parse stays as evidence; the folder goes once nothing is left beneath it.
     const archive = join(root, archiveDirRel(id))
     if (!(await listFilesRecursive(archive)).length) {
-      recordWrite(archive)
-      await machine().remove(archive)
+      await removeOwn(archive)
     }
   }
 }

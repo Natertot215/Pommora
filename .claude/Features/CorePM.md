@@ -10,6 +10,9 @@ A Nexus is a single folder, opened through a picker and treated as canonical con
 // <Nexus>                               | • The picked folder — canonical content; travels through Pommora Sync
 ├── // .nexus                            | • App-internal config
 │   ├── // archive/<Collection ID>       | • Archived pages and Sets, mirroring the chain they came from
+│   │   └── // <stamp>__<Page>.archived  | • An archive bundle — the artifact beside its record
+│   │       ├── [<Page>.md]
+│   │       └── _record.json
 │   ├── // assets                        | • The default asset directory — banners, files, thumbnails
 │   │   └── crops.json                   | • Per-image framing, keyed by the image
 │   ├── // contexts                      | • One folder per Context, one per Space beneath it

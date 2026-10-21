@@ -655,9 +655,9 @@ describe('the settle', () => {
     await mkdir(abs('Other'))
     await writeFile(abs('Other', '_pagecollection.json'), JSON.stringify({ id: ULID_D }))
     shown = recordHanded(await refreshTree(root)).tree
-    const real = bundles.listBundles
+    const real = bundles.archivedWithin
     const carry = vi
-      .spyOn(bundles, 'listBundles')
+      .spyOn(bundles, 'archivedWithin')
       .mockImplementationOnce(real)
       .mockRejectedValue(new Error('boom'))
     const logged = vi.spyOn(console, 'error').mockImplementation(() => {})

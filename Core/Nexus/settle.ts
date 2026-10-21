@@ -32,7 +32,7 @@ import type { NexusTree, Unreadable, ValueChange } from './tree'
 import { deltaOf } from './treeDelta'
 import { liveIdIndex, livePathOf } from './heldPages'
 import { pageIndexOf, pagesOf } from './record'
-import { type CascadeReport, renameCascade } from './cascade'
+import { type CascadeReport, linksNotUpdated, renameCascade } from './cascade'
 import { respellings } from '../Connections/rewrite'
 import { buildPageIndex, type ConnPage, type PageIndex } from '../Connections/pageIndex'
 import { refileMoved } from '../Archive/refile'
@@ -276,6 +276,20 @@ export function returningNames(
   return { names, own }
 }
 
+/** A restore's arrival under `title`: the index settled with `back` landed, the returning pages' own re-spellings, and the relink's cascade, or the notice that links weren't updated when the index can't settle. */
+export async function returningCascade(
+  root: string,
+  tree: NexusTree,
+  back: readonly ConnPage[],
+  title: string,
+): Promise<{ after: PageIndex | null; own: Map<string, string>; cascade?: CascadeReport }> {
+  const after = await settledIndex(root)
+  if (!after) return { after, own: new Map(), cascade: linksNotUpdated(title) }
+  const { names, own } = returningNames(pageIndexOf(tree), after, back)
+  if (!names.size) return { after, own }
+  return { after, own, cascade: await renameCascade(root, { names, label: title }) }
+}
+
 // What an outside payment leaves: a warning logged, since no one is there to read a notice, and the files it wrote owed to the push.
 function paid(root: string, c: CascadeReport | undefined, what: string): void {
   if (!c) return
@@ -283,7 +297,7 @@ function paid(root: string, c: CascadeReport | undefined, what: string): void {
   oweCascade(root, c.pages, c.hosts)
 }
 
-// An outside move: a page whose rows left one path and whose id the tree now holds at another, paired whichever order its two events came in and however many settles apart; a vanish nothing holds yet waits for its id.
+// An outside move: a page whose rows left one path and whose id the tree now holds at another, paired whichever order its two events came in and however many settles apart; a vanish nothing holds yet waits for its id. Every other landed id the tree holds arrived outright, so only its collisions re-spell; a paired move's own row, landing a batch after its folder, is remembered as the move's and is no arrival. The world before is the tree's pages with each paired page back where it left and each arrival absent.
 async function payOutsideMoves(root: string): Promise<void> {
   const owed = owedFor(root)
   const tree = heldTreeOf(root)

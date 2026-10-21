@@ -1,5 +1,5 @@
 import { applyEvents } from '../Nexus/fileEvents'
-import * as settle from '../Nexus/settle'
+import * as liveTree from '../Nexus/liveTree'
 import { settleNow } from '../Nexus/settle'
 import { handleMutate } from '../Nexus/mutate'
 import { mkdir, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
@@ -1323,7 +1323,7 @@ describe('restore — the returning page’s links follow the pages they named',
 
   it('a restore that finds no settled world says its links weren’t updated', async () => {
     await del(ALPHA)
-    const unsettled = vi.spyOn(settle, 'settledIndex').mockResolvedValue(null)
+    const unsettled = vi.spyOn(liveTree, 'heldTreeOf').mockReturnValue(null)
     try {
       const reply = await restore('Alpha.md')
       expect(reply?.cascade?.warning).toBe("Links to “Alpha” weren't updated.")

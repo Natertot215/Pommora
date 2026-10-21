@@ -17,13 +17,11 @@ import { SETTINGS_RAIL, SETTINGS_WIN } from '@pommora/uix/Windows/windowBounds'
 import { steppedPickerProps } from '@pommora/uix/Pickers/PickerControl'
 import { resolveColor } from '@pommora/uix/Theme/ramp'
 import {
-  SETTING_BOUNDS,
+  boundOf,
   SETTING_DEFAULTS,
   SETTING_RANGES,
   type SettingKey,
-  type SteppedKey,
   settingOf,
-  settingWithin,
 } from './personalization'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { Scrollbar } from '@pommora/uix/Interactions/Scrollbar'
@@ -240,9 +238,7 @@ function useRowValue<V>(row: {
   const value = useSession((s) =>
     row.device
       ? devicePref(s.devicePrefs, row.key as DeviceDefaultKey)
-      : SETTING_BOUNDS[row.key as SettingKey]
-        ? settingWithin(personalizationOf(s), row.key as SteppedKey)
-        : settingOf(personalizationOf(s), row.key as SettingKey),
+      : settingOf(personalizationOf(s), row.key as SettingKey),
   ) as V
   const set = (next: V): void => {
     if (row.device) {
@@ -265,7 +261,7 @@ function ToggleRow({ row }: { row: RowOf<'toggle'> }): React.JSX.Element {
 function ZoomRow({ row }: { row: RowOf<'zoom'> }): React.JSX.Element {
   const [value, set] = useRowValue<number>(row)
   const declared = row.device ? DEVICE_RANGES[row.key] : SETTING_RANGES[row.key]
-  const bound = row.device ? undefined : SETTING_BOUNDS[row.key]
+  const bound = row.device ? undefined : boundOf(row.key)
   const ceiling = useSession((s) => bound && settingOf(personalizationOf(s), bound))
   const range = ceiling ? { ...declared, max: ceiling } : declared
   return (

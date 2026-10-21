@@ -2,6 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   askClearOption,
+  askEmptyTrash,
   askDeleteView,
   askDestroyProperty,
   askFormatChange,
@@ -9,6 +10,8 @@ import {
   askTrashing,
   confirmArchive,
   confirmDelete,
+  countPhrase,
+  deleteQuestion,
   offerUndo,
   spendUndo,
 } from './confirmations'
@@ -23,6 +26,7 @@ import {
 import type { HeldKind } from '../../Nexus/entities'
 import { stubDialer } from '../../vitest.setup'
 import { fault, ok, type Result } from '../../Contract/result'
+import { bundleRow as row } from '../../Testing/fixtures'
 
 const asked: string[] = []
 
@@ -278,6 +282,22 @@ describe('an Undo over several bundles', () => {
     clearNotification()
   })
 
+  it('an empty of one says It, and of more They', async () => {
+    const details: string[] = []
+    useSession.setState({
+      askConfirm: async (r) => {
+        details.push(r.detail)
+        return true
+      },
+    })
+    await askEmptyTrash('Delete “A”?', 1)
+    await askEmptyTrash('Delete these 2 Pages?', 2)
+    expect(details).toEqual([
+      'It will move to your system trash, which is where you would get it back from.',
+      'They will move to your system trash, which is where you would get them back from.',
+    ])
+  })
+
   it('asks once for a batch, unasked only when every item would be', async () => {
     const details: string[] = []
     useSession.setState({
@@ -381,5 +401,34 @@ describe('an archive through the confirmation', () => {
     useSession.setState({ tree: makeTree(), askConfirm: async () => false })
     await archive('page')
     expect(mutate).not.toHaveBeenCalled()
+  })
+})
+
+describe('deleteQuestion', () => {
+  it('asks of one row by its title, of more by their count, Items where the kinds mix', () => {
+    expect(deleteQuestion([row({ title: 'Ideas' })])).toBe('Delete “Ideas”?')
+    expect(deleteQuestion([row({}), row({})])).toBe('Delete these 2 Pages?')
+    expect(deleteQuestion([row({}), row({ kind: 'set' })])).toBe('Delete these 2 Items?')
+  })
+})
+
+describe('countPhrase', () => {
+  it('names the kind when every row shares one', () => {
+    expect(countPhrase([row({}), row({})])).toBe('2 Pages')
+    expect(countPhrase([row({ kind: 'set' }), row({ kind: 'set' })])).toBe('2 Sets')
+    expect(countPhrase([row({ kind: 'context' }), row({ kind: 'context' })])).toBe('2 Contexts')
+  })
+
+  it('generalizes when they do not', () => {
+    expect(countPhrase([row({}), row({ kind: 'space' })])).toBe('2 Items')
+  })
+
+  it('stays singular for one', () => {
+    expect(countPhrase([row({})])).toBe('1 Page')
+    expect(countPhrase([row({ kind: 'space' })])).toBe('1 Space')
+  })
+
+  it('reports none honestly', () => {
+    expect(countPhrase([])).toBe('0 Items')
   })
 })

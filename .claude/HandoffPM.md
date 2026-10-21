@@ -34,7 +34,7 @@ The ledger reads +553 over eight code phases against the plan's roughly +390 est
 - **The one key and naming rule:** `pageKey`, `writtenName`, `namesOf`, `respell` in `Core/Connections/pageIndex.ts`; `respellings` and `rewriteConnections` in `Core/Connections/rewrite.ts`.
 - **The one matcher:** `matchKey`, `matchQuery`, `matchScore`, `rankMatches` in `Core/Paths/caseFold.ts`.
 - **The settle's turn:** `inSettleTurn`, `settledIndex`, `relink`, `payOutsideMoves`, `paid` in `Core/Nexus/settle.ts`; `addressed` in `Core/Nexus/mutate.ts`; `IndexSeen` and `oweSeen` in `Core/Index/indexSeed.ts` and `Core/Nexus/fileEvents.ts`.
-- **The Trash:** `gatherLinkTargets` in `Core/Trash/gather.ts`; `trashedPages`, `trashedPagesOf`, `parkLinks` in `Core/Trash/holdings.ts`; `repairLanded` in `Core/Trash/restoreScrub.ts`; the restore's repair and cascade in `Core/Trash/spend.ts`; `frozenWorld` in `Core/Properties/propertyValue.ts`.
+- **The Trash:** `gatherLinkTargets` in `Core/Trash/gather.ts`; `originPagesIn`, `originPagesOf` in `Core/Bundles/bundle.ts`; `parkLinks` in `Core/Trash/holdings.ts`; `repairLanded` in `Core/Trash/restoreScrub.ts`; the restore's repair and cascade in `Core/Trash/spend.ts`; `frozenWorld` in `Core/Properties/propertyValue.ts`.
 
 #### Working Notes
 

@@ -40,10 +40,10 @@ describe('a Trash row', () => {
     await act(async () => root?.render(<TrashFrame />))
     const box = host.querySelector('[role="checkbox"]') as HTMLButtonElement
     expect(box.getAttribute('aria-checked')).toBe('false')
-    expect(host.querySelector('.has-checked')).toBeNull()
+    expect(host.querySelector('[data-reveal-host="on"]')).toBeNull()
     await act(async () => box.click())
     expect(box.getAttribute('aria-checked')).toBe('true')
-    expect(host.querySelector('.has-checked')).not.toBeNull()
+    expect(host.querySelector('[data-reveal-host="on"]')).not.toBeNull()
   })
 
   it('draws its item’s own icon ahead of its kind’s', async () => {

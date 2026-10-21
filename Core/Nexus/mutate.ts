@@ -7,7 +7,7 @@ import { resolveUnderRoot } from '../Paths/pathSafety'
 import { contextsDir } from '../Paths/paths'
 import { machine } from '../Platform/machine'
 import { fault, ok, type Result } from '../Contract/result'
-import { emptyBundle, restoreArtifact } from '../Trash/spend'
+import { emptyBundle, restoreTrashed } from '../Trash/spend'
 import { archiveOp, restoreArchived } from '../Archive/archive'
 import { openBundle, storeOf } from '../Bundles/bundle'
 import { deleteOp } from '../Trash/delete'
@@ -143,10 +143,9 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
       const restore = async (): Promise<MutateReply> => {
         const opened = await openBundle(root, resolved.value)
         if (!opened.ok) return opened
-        const { store } = opened.value
-        return store.kind === 'archive'
-          ? restoreArchived(root, opened.value, store, req.destination)
-          : restoreArtifact(root, opened.value, req.destination)
+        return opened.value.store.kind === 'archive'
+          ? restoreArchived(root, opened.value, req.destination)
+          : restoreTrashed(root, opened.value, req.destination)
       }
       return storeOf(root, resolved.value)?.kind === 'archive'
         ? inSettleTurn(root, restore)

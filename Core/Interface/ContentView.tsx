@@ -16,7 +16,7 @@ import { FooterToggle } from '@pommora/uix/Interactions/FooterToggle'
 import { findCollection, findSet } from '../Nexus/treeIndex'
 import { ContainerView } from '../Views/ContainerView'
 import { ArchiveView } from '../Archive/ArchiveView'
-import { archiveOwnerOf } from '../Archive/archivePlace'
+import { topContainerOf } from '../Archive/archivePlace'
 import { HomepageView } from './Homepage/HomepageView'
 import { SpaceView } from '../Contexts/SpaceView'
 import { PageView } from '../Pages/PageView'
@@ -90,7 +90,7 @@ const HostView = memo(function HostView({ host }: { host: Host }): React.JSX.Ele
     case 'matrix':
       return <MatrixView />
     case 'archive': {
-      const owner = archiveOwnerOf(tree, target.id)
+      const owner = topContainerOf(tree, target.id)
       return owner ? <ArchiveView owner={owner} /> : <div className="detail interface-inset" />
     }
   }

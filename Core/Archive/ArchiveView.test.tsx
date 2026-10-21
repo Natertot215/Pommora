@@ -149,6 +149,12 @@ describe('ArchiveView', () => {
     expect(dates[0]).not.toBe(dates[1])
   })
 
+  it('its Title and Archived headings each wear their type’s glyph, as a table’s headings do', async () => {
+    await render()
+    const heads = [...host.querySelectorAll('.table-head .col-header')]
+    expect(heads.map((h) => h.querySelectorAll('.col-header-icon svg').length)).toEqual([1, 1])
+  })
+
   it('a click on a row checks it, and a page row’s title opens the reader titled by its trail under the stroked lock', async () => {
     await render()
     await check('A')
@@ -312,6 +318,31 @@ describe('ArchiveView', () => {
         },
       ]),
     )
+  })
+
+  it('a listing answered after a later one leaves the later one shown', async () => {
+    let answerFirst: (value: unknown) => void = () => {}
+    list.mockImplementationOnce(() => new Promise((answer) => (answerFirst = answer)))
+    await render()
+    listed = [archived('B')]
+    await act(async () => storesChanged.emit())
+    expect(titles()).toEqual(['B'])
+    await act(async () => answerFirst({ ok: true, value: [archived('A')] }))
+    expect(titles()).toEqual(['B'])
+  })
+
+  it('a batch whose last ask lands after a Nexus switch posts nothing', async () => {
+    listed = [archived('A'), archived('B')]
+    await render()
+    await check('A', 'B')
+    mutated.mockImplementation(async () => {
+      if (mutated.mock.calls.length === 2)
+        useSession.setState({ tree: { ...tree, nexus: { ...tree.nexus, id: 'elsewhere' } } })
+      return { ok: true, value: {} }
+    })
+    await pressBar('Delete')
+    expect(mutated).toHaveBeenCalledTimes(2)
+    expect(currentNotification()).toBeNull()
   })
 
   it('the bar’s Restore of a row whose place is gone asks where and restores there, and a batch restores the rest and says what had nowhere to go', async () => {

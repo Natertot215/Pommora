@@ -1,10 +1,9 @@
-// The Archive's own ops: a page or Set leaves its Collection for the Collection's Archive, where every cascade still reaches it (Reach-In), and comes back by a plain move to its exact place, with nothing to reconcile.
+// The Archive's own ops: a page or Set leaves its Collection for the Collection's Archive, where every cascade still reaches it, and comes back by a plain move to its exact place, with nothing to reconcile.
 
-import { basename, dirname, join, relative } from '../Paths/posix'
-import { holdsName } from '../Paths/names'
+import { dirname, join, relative } from '../Paths/posix'
+import { archiveStoreOf } from '../Paths/names'
 import { fail, ok } from '../Contract/result'
-import { pathExists, relocate } from '../Files/atomicWrite'
-import { recordWrite } from '../Files/writeEcho'
+import { pathExists, relocate, removeOwn } from '../Files/atomicWrite'
 import { listMarkdownFiles } from '../Files/walk'
 import { archiveDirRel } from '../Paths/nexusPaths'
 import { machine } from '../Platform/machine'
@@ -12,22 +11,19 @@ import { liveTreeOf, mutableTarget, NOT_HELD } from '../Nexus/liveTree'
 import { owningCollection } from '../Nexus/treePatch'
 import { dropDeparture } from '../Nexus/reorder'
 import { archivedSetIds } from '../Nexus/configReach'
-import { pageIndexOf } from '../Nexus/record'
 import { nexusPages } from '../Nexus/heldPages'
-import { linksNotUpdated, renameCascade } from '../Nexus/cascade'
-import { returningNames, settledIndex } from '../Nexus/settle'
+import { returningCascade } from '../Nexus/settle'
 import { liftSetAside } from '../Nexus/folderEntity'
 import type { MutateContext } from '../Nexus/mutate'
 import type { MutateReply, MutateRequest, RestoreDestination } from '../Nexus/mutateRequest'
 import {
-  type BundleStore,
   contentPages,
-  mintBundle,
+  fileInto,
   originPagesOf,
   originPathOf,
   type OpenBundle,
 } from '../Bundles/bundle'
-import { gatherContentRecord, writeRecord } from '../Bundles/record'
+import { gatherContentRecord } from '../Bundles/record'
 import { placeRecord } from '../Bundles/placement'
 import { refileLanded } from './refile'
 
@@ -40,18 +36,15 @@ export async function archiveOp(
   if (!resolved.ok) return resolved
   const abs = resolved.value
   const tree = await liveTreeOf(root)
-  const id = owningCollection(tree, req.path)?.id
-  // The id names the Archive's folder, and a sidecar can carry any string as its id.
-  if (!id || !holdsName(id))
+  const store = archiveStoreOf(owningCollection(tree, req.path)?.id)
+  if (!store)
     return fail('invalid-path', 'Only pages and Sets inside a Collection can be archived.')
   if (req.kind === 'set') {
     const lifted = await liftSetAside(root, abs)
     if (!lifted.ok) return lifted
   }
   const record = await gatherContentRecord(root, tree, req.kind, abs)
-  const bundle = await mintBundle(root, { kind: 'archive', id }, abs, req.leaf)
-  await writeRecord(bundle, record)
-  await relocate(abs, join(bundle, basename(abs)))
+  const bundle = await fileInto(root, store, abs, abs, record, req.leaf)
   await dropDeparture(root, tree, req.kind, req.path)
   return ok({ bundled: { bundlePath: relative(root, bundle) } })
 }
@@ -60,11 +53,11 @@ export async function archiveOp(
 export async function restoreArchived(
   root: string,
   bundle: OpenBundle,
-  store: Extract<BundleStore, { kind: 'archive' }>,
   destination?: RestoreDestination,
 ): Promise<MutateReply> {
-  const { record: held, artifact } = bundle
-  if ((held.entity !== 'page' && held.entity !== 'set') || !artifact) return NOT_HELD
+  const { store, record: held, artifact } = bundle
+  if (store.kind !== 'archive' || (held.entity !== 'page' && held.entity !== 'set') || !artifact)
+    return NOT_HELD
   const tree = await liveTreeOf(root)
   const { byId } = await nexusPages(root, tree)
   const placed = await placeRecord(
@@ -83,16 +76,9 @@ export async function restoreArchived(
   await machine().mkdir(dirname(targetAbs))
   await relocate(artifact, targetAbs)
   await writeOrder?.()
-  recordWrite(bundle.abs)
-  await machine().remove(bundle.abs)
+  await removeOwn(bundle.abs)
   const title = finalTitle ?? finalName
-  const after = await settledIndex(root)
-  const returned = after ? returningNames(pageIndexOf(tree), after, back) : null
-  const cascade = !returned
-    ? linksNotUpdated(title)
-    : returned.names.size
-      ? await renameCascade(root, { names: returned.names, label: title })
-      : undefined
+  const { cascade } = await returningCascade(root, tree, back, title)
   await refileLanded(root, record, store.id, dir)
   return ok({
     ...(cascade ? { cascade } : {}),
@@ -100,19 +86,20 @@ export async function restoreArchived(
   })
 }
 
-/** A Collection's Archive, its pages at the paths they lived, and its Sets, which leave with the Collection once it leaves for good; null when it has none. The id names a folder, and a sidecar can carry any string. */
+/** A Collection's Archive, its pages at the paths they lived, and its Sets, which leave with the Collection once it leaves for good; null when it has none. */
 export async function collectionArchive(
   root: string,
   id: string | undefined,
 ): Promise<{ abs: string; files: string[]; origins: string[]; sets: string[] } | null> {
-  if (!id || !holdsName(id)) return null
-  const abs = join(root, archiveDirRel(id))
+  const store = archiveStoreOf(id)
+  if (!store) return null
+  const abs = join(root, archiveDirRel(store.id))
   if (!(await pathExists(abs))) return null
   const files = await listMarkdownFiles(abs)
   return {
     abs,
     files,
-    origins: files.map((f) => originPathOf(root, { kind: 'archive', id }, f)),
+    origins: files.map((f) => originPathOf(root, store, f)),
     sets: await archivedSetIds(root, abs),
   }
 }

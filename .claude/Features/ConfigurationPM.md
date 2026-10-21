@@ -216,7 +216,7 @@ Keyboard shortcuts are data: the `commands` object in `settings.json` maps comma
 
 #### Trash
 
-The one frame that is a surface of its own, anchored below the rail's separator. Its body is the deletion record's browser, and its column heading's menu carries the same Style list a view's date column does.
+The one frame that is a surface of its own, anchored below the rail's separator. Its body is the deletion record's browser, and its column heading's menu carries the same Style list a view's date column does, and ArchiveView's date column is set here too.
 
 | Setting | Key | Description | Options |
 | --- | --- | --- | --- |

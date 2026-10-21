@@ -7,7 +7,7 @@ import { MATRIX_ICON, MATRIX_TITLE } from '../Matrix/matrixKind'
 import { ARCHIVE_ICON, ownsArchivePlace } from '../Archive/archivePlace'
 import type { CollectionNode, NexusTree, SetNode, SpaceNode } from './tree'
 import { entityMemo } from './tree'
-import { findContainerWhere, withheldIn } from './treePatch'
+import { findContainerById, withheldIn } from './treePatch'
 import { iconNameOr } from '@pommora/uix/Symbols'
 import { DEFAULT_NEXUS_ICON, entityIcon } from '../Assets/entityIconPolicy'
 import { NO_TRAIL, type TrailSegment } from '@pommora/uix/Elements/NavTrail'
@@ -225,8 +225,8 @@ export function findCollection(tree: NexusTree | null, id: string): CollectionNo
 }
 
 export function findSet(tree: NexusTree | null, id: string): SetNode | undefined {
-  const hit = tree && findContainerWhere(tree, (n) => n.kind === 'set' && n.id === id)
-  return hit && hit.kind === 'set' ? hit : undefined
+  const hit = tree && findContainerById(tree, id)
+  return hit?.kind === 'set' ? hit : undefined
 }
 
 /** Tile surfaces run tight tile gutters instead of the content inset. Drives `is-surface`. */

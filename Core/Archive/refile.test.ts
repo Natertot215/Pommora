@@ -332,9 +332,28 @@ describe('the comparison — a Set the settle sees move carries what was archive
     ])
   })
 
+  it('a Set moved in Finder into a Collection renamed in the same settle is carried', async () => {
+    const bundlePath = await archive('Notes/Daily/Sub/Note.md')
+    await rename(at('Notes', 'Daily', 'Sub'), at('Other', 'Sub'))
+    await rename(at('Other'), at('Elsewhere'))
+    await settleBatch(QUIET, root, [
+      ev('unlinkDir', 'Notes', 'Daily', 'Sub'),
+      ev('unlinkDir', 'Other'),
+      ev('addDir', 'Elsewhere'),
+    ])
+    expect(heldTreeOf(root)?.collections.find((c) => c.id === OTHER)?.sets[0]?.id).toBe(SUB)
+    expect(await filed(IN_OTHER)).toEqual([
+      {
+        bundlePath: `.nexus/archive/${OTHER}/Notes/Daily/Sub/${leafOf(bundlePath)}`,
+        id: PAGE_N,
+        trail: [OTHER],
+      },
+    ])
+  })
+
   it('a rename moves nothing and reads no Archive', async () => {
     const bundlePath = await archive('Notes/Daily/Sub/Note.md')
-    const listed = vi.spyOn(bundles, 'listBundles')
+    const listed = vi.spyOn(bundles, 'archivedWithin')
     expect(
       (await mutate({ op: 'rename', path: 'Notes/Daily', kind: 'set', newName: 'Days' })).ok,
     ).toBe(true)
@@ -408,10 +427,7 @@ describe('the restore — a Set landing in another Collection carries what was a
   ] as const)('a carry that throws leaves a restored Set restored, from %s', async (_, op) => {
     await archive('Notes/Daily/Sub/Note.md')
     const stored = await bundled({ op, path: 'Notes/Daily/Sub', kind: 'set' })
-    const real = bundles.listBundles
-    vi.spyOn(bundles, 'listBundles').mockImplementation((r, store) =>
-      store.kind === 'archive' ? Promise.reject(new Error('unreadable')) : real(r, store),
-    )
+    vi.spyOn(bundles, 'archivedWithin').mockRejectedValue(new Error('unreadable'))
     const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
     expect((await mutate({ op: 'restore', bundlePath: stored, destination: INTO_OTHER })).ok).toBe(
       true,

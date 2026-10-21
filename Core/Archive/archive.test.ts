@@ -127,6 +127,19 @@ describe('archive — a page or Set leaves for its Collection’s Archive', () =
     expect(await text(bundlePath, 'Beta.md')).toBe(`---\nID: ${PAGE_B}\n---\n[[Alpha 2]]`)
   })
 
+  it('a rename’s cascade through an archived linker reports no archived path', async () => {
+    await writeFile(at('Notes', 'Daily', 'Beta.md'), `---\nID: ${PAGE_B}\n---\n[[Alpha]]`)
+    await reseed()
+    await archive('Notes/Daily/Beta.md')
+    const renamed = await mutate({
+      op: 'rename',
+      path: 'Notes/Daily/Alpha.md',
+      kind: 'page',
+      newName: 'Alpha 2',
+    })
+    expect(renamed.ok && renamed.value.cascade?.pages).toEqual([])
+  })
+
   it('a Set archives once the excluded folder inside it is lifted to its parent', async () => {
     await mkdir(at('Notes', 'Daily', 'Private'), { recursive: true })
     await writeFile(at('Notes', 'Daily', 'Private', 'Secret.md'), 'secret\n')
@@ -186,6 +199,16 @@ describe('archive — a page or Set leaves for its Collection’s Archive', () =
   it('refuses what the tree doesn’t hold as the kind it names', async () => {
     const r = await mutate({ op: 'archive', path: 'Notes', kind: 'set' })
     expect(message(r)).toBe('That item can’t be changed.')
+  })
+
+  it('an archive whose move fails leaves no bundle in the Archive', async () => {
+    vi.spyOn(atomicWrite, 'relocate').mockRejectedValueOnce(new Error('the move failed'))
+    expect((await mutate({ op: 'archive', path: 'Notes/Daily/Beta.md', kind: 'page' })).ok).toBe(
+      false,
+    )
+    expect(await listBundles(root, ARCHIVE)).toEqual([])
+    expect(await readdir(at('.nexus', 'archive', NOTES, 'Notes', 'Daily'))).toEqual([])
+    expect(await text('Notes', 'Daily', 'Beta.md')).toBe(BETA)
   })
 })
 
@@ -445,6 +468,17 @@ describe('a delete from the Archive', () => {
     await archive('Notes/Daily/Beta.md')
     await trash(first)
     expect(await related()).toBe('[[Beta]]')
+  })
+
+  it('a live page’s delete counts no archived linker whose strip failed in its warning', async () => {
+    const linker = await archive('Notes/Linker.md')
+    const real = atomicWrite.rewritePreservingTimes
+    vi.spyOn(atomicWrite, 'rewritePreservingTimes').mockImplementation((file, data) =>
+      file.startsWith(at(linker)) ? Promise.reject(new Error('refused')) : real(file, data),
+    )
+    const r = await mutate({ op: 'delete', path: 'Notes/Daily/Beta.md', kind: 'page' })
+    expect(r.ok && r.value.cascade?.warning).toBeUndefined()
+    expect(splitFrontmatter(await text(linker, 'Linker.md')).Related).toBe('[[Beta]]')
   })
 
   it('a live page’s delete leaves the Link values an archived page at its path still answers', async () => {

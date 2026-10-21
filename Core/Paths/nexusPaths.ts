@@ -6,6 +6,8 @@ export const TRASH_DIR = '.trash'
 
 export const ARCHIVE_DIR_REL = `${NEXUS_DIR}/archive`
 
+export type ArchiveStore = { kind: 'archive'; id: string }
+
 export const archiveDirRel = (collectionId: string): string => `${ARCHIVE_DIR_REL}/${collectionId}`
 
 export const archiveSegs = (segs: string[]): string[] | null =>

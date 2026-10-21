@@ -1,6 +1,5 @@
 import { basename, dirname, isAtOrUnder, join, relative } from '../Paths/posix'
 import { resolveUnderRoot } from '../Paths/pathSafety'
-import { recordWrite } from '../Files/writeEcho'
 import { collectionArchive } from '../Archive/archive'
 import { containerAt } from '../Nexus/treePatch'
 import { liveTreeOf, mutableTarget, NOT_HELD } from '../Nexus/liveTree'
@@ -15,7 +14,7 @@ import {
   reachReport,
 } from '../Nexus/configReach'
 import { isArchived } from '../Paths/nexusPaths'
-import { pathExists, relocate } from '../Files/atomicWrite'
+import { pathExists, relocate, removeOwn } from '../Files/atomicWrite'
 import { fail, ok, valueOr } from '../Contract/result'
 import { mutateRegistryFile, readRegistryStrict, withContextAt } from '../Contexts/contextsRegistry'
 import { unlinkContextKey, unlinkSpaceValue } from '../Contexts/contextCascade'
@@ -72,7 +71,7 @@ export async function deleteOp(
   const before = await liveTreeOf(root)
   const contexts = req.kind === 'context' ? await readRegistryStrict(root) : null
   if (contexts && !contexts.ok) return contexts
-  if (isContainer(req)) {
+  if (!from && isContainer(req)) {
     const lifted = await liftSetAside(root, abs)
     if (!lifted.ok) return lifted
   }
@@ -104,7 +103,7 @@ export async function deleteOp(
     : null
   // A refused unlink leaves nothing deleted, so its bundle goes with it.
   const unmint = async (e: unknown): Promise<never> => {
-    if (bundle) await machine().remove(bundle)
+    if (bundle) await removeOwn(bundle)
     throw e
   }
   let record: RecordFile | null = null
@@ -126,7 +125,7 @@ export async function deleteOp(
       entry ? { contexts: cur.contexts.filter((c) => c.id !== entry.id) } : cur,
     )
     if (!removed.ok) {
-      if (bundle) await machine().remove(bundle)
+      if (bundle) await removeOwn(bundle)
       return removed
     }
     const swept = await unlinkContextKey(root, title, entry?.id, abs).catch(async (e) => {
@@ -147,10 +146,9 @@ export async function deleteOp(
   else await machine().lock(abs, () => discardFile(root, abs, deps))
   if (archive) await machine().lock(archive.abs, () => discardFile(root, archive.abs, deps))
   if (from) {
-    recordWrite(from.bundle)
-    await machine().remove(from.bundle)
+    await removeOwn(from.bundle)
   }
-  await dropDeparture(root, before, req.kind, req.path)
+  if (!from) await dropDeparture(root, before, req.kind, req.path)
   await dropPageMetadata(root, pageIds)
   const gone = paths
     ? await deleteCascade(root, abs, [...paths, ...(archive?.origins ?? [])])

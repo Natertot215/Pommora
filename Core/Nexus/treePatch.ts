@@ -23,7 +23,7 @@ import { asStringArray } from './coerce'
 import { resolveOrder } from './order'
 import { type ContainerKind, isContainer } from './entities'
 import { contextWorldOf } from '../Contexts/contextResolve'
-import { holdsName } from '../Paths/names'
+import { archiveStoreOf } from '../Paths/names'
 import { sameItems } from '@pommora/uix/Utilities/same'
 
 /** The ORIGINAL paths thread through: swapping against an already-swapped child re-prepends. */
@@ -110,8 +110,8 @@ export function owningCollection(
 /** The Archive a reach covers: every one across the whole Nexus, or all of the owning Collection's for a reach scoped under `rel`, since an archived chain spells its folders as they were named when it left. A Collection whose id can't name a folder has none. */
 export function archiveReach(tree: NexusTree, rel?: string): string | null {
   if (rel === undefined) return ARCHIVE_DIR_REL
-  const owner = owningCollection(tree, rel)
-  return owner && holdsName(owner.id) ? archiveDirRel(owner.id) : null
+  const store = archiveStoreOf(owningCollection(tree, rel)?.id)
+  return store ? archiveDirRel(store.id) : null
 }
 
 /** A Set directly inside its Collection: the depth that keeps views of its own and an Archive place. */

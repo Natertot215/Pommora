@@ -6,8 +6,8 @@ import {
   TAB_MIN_WIDTH,
   PREVIEW_LINGER_MS,
   SETTING_DEFAULTS,
+  settingOf,
   settingValue,
-  settingWithin,
 } from './personalization'
 
 describe('readPersonalization previewPersistence', () => {
@@ -171,10 +171,10 @@ describe('every decode helper at its boundary', () => {
   })
 })
 
-describe('settingWithin', () => {
+describe('settingOf on a bounded setting', () => {
   it('follows its bound until picked, then holds the pick', () => {
-    expect(settingWithin({}, 'archiveHistoryDays')).toBe(HISTORY_DAYS.default)
-    expect(settingWithin({ historyDays: 14 }, 'archiveHistoryDays')).toBe(14)
-    expect(settingWithin({ historyDays: 14, archiveHistoryDays: 7 }, 'archiveHistoryDays')).toBe(7)
+    expect(settingOf({}, 'archiveHistoryDays')).toBe(HISTORY_DAYS.default)
+    expect(settingOf({ historyDays: 14 }, 'archiveHistoryDays')).toBe(14)
+    expect(settingOf({ historyDays: 14, archiveHistoryDays: 7 }, 'archiveHistoryDays')).toBe(7)
   })
 })

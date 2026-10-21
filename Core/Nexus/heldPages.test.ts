@@ -143,6 +143,13 @@ describe('nexusPages — the tree and the Archive by id', () => {
     expect(byId.get('pD')?.path).toBe('Notes/Deep/D.md')
   })
 
+  it('reads the Archive off disk while the open store’s index was never marked ready', async () => {
+    const LATE = '.nexus/archive/cN/2026-10-20T12-00-00-000Z__Late.md.archived/Late.md'
+    await mkdir(dirname(join(root, LATE)), { recursive: true })
+    await writeFile(join(root, LATE), `---\nID: ${TWIN}\n---\nb\n`)
+    expect((await nexusPages(root, tree(root))).byId.get(TWIN)?.path).toBe(LATE)
+  })
+
   it('reads the Archive off disk where no index store opened', async () => {
     const indexed = await nexusPages(root, tree(root))
     installStores(NO_STORES)

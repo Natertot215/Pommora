@@ -8,28 +8,23 @@ import {
 } from '../drive-harness.mjs'
 
 const PORT = 9393
-// The plan's phases in order, named as the plan names them, so `6A` sorts before `6B`.
+// The plan's phases in order, named as the plan names them.
 const PHASES = ['1', '2', '3', '4', '5', '6A', '6B']
-const at = (phase) => PHASES.indexOf(String(phase))
-const ALL = ['1', '2', '3', '4', '5', '6A', '6B']
 const GROUPS = new Set(process.argv.slice(2))
-// The last plan phase landed in the build under test: an item owned by a later phase is expected to fail and doesn't fail the run.
-const LANDED = process.env.POMMORA_ARCHIVE_LANDED ?? '1'
-if (GROUPS.size === 0 || [...GROUPS].some((g) => !ALL.includes(g)) || at(LANDED) < 0) {
-  console.error(`usage: POMMORA_ARCHIVE_LANDED=<${PHASES.join('|')}> node live-drive.mjs <group…>   (groups ${ALL.join(', ')}, each the plan phase of its name)`)
+if (GROUPS.size === 0 || [...GROUPS].some((g) => !PHASES.includes(g))) {
+  console.error(`usage: node live-drive.mjs <group…>   (groups ${PHASES.join(', ')}, each the plan phase of its name)`)
   process.exit(2)
 }
 
 // ── Items ───────────────────────────────────────────────────────────────────
 
 const ledger = []
-/** One assertion, owned by the plan phase that lands it and the decision it proves, printed as MATRIX.md lists it. */
-function item(group, phase, decision, name, pass, detail) {
-  const awaited = at(phase) > at(LANDED)
-  const mark = pass ? (awaited ? 'AHEAD' : 'PASS') : awaited ? 'AWAIT' : 'FAIL'
+/** One assertion, owned by the group that lands it and the decision it proves, printed as MATRIX.md lists it. */
+function item(group, decision, name, pass, detail) {
+  const mark = pass ? 'PASS' : 'FAIL'
   console.log(`${mark.padEnd(5)}  [g${group} ${decision}] ${name}${!pass && detail ? `\n       ${detail}` : ''}`)
-  results.push({ name, pass: !!pass || awaited })
-  ledger.push({ group: String(group), phase, decision, name, mark })
+  results.push({ name, pass: !!pass })
+  ledger.push({ group: String(group), decision, name, mark })
 }
 const show = (v) => JSON.stringify(v)
 const same = (a, b) => show(a) === show(b)
@@ -140,10 +135,10 @@ async function group1(cdp) {
   const renamed = await ask(cdp, 'mutate', { op: 'rename', path: LIFT, kind: 'set', newName: 'AR Moved' })
   await settles(async () => same(settingsOnDisk().excluded_folders, [`${MOVED}/Private`]))
   const carried = (await config(cdp)).excluded
-  item(1, 1, 'K-1', 'a renamed Set carries its excluded entry to the landing',
+  item(1, 'K-1', 'a renamed Set carries its excluded entry to the landing',
     renamed.ok && same(settingsOnDisk().excluded_folders, [`${MOVED}/Private`]) && same(carried, [`${MOVED}/Private`]),
     show({ renamed, onDisk: settingsOnDisk().excluded_folders, carried }))
-  item(1, 1, 'K-1', 'the carried folder moves with the Set and is never read as one',
+  item(1, 'K-1', 'the carried folder moves with the Set and is never read as one',
     untouched(`${MOVED}/Private`) && !exists(LIFT), show(exists(MOVED) && readdirSync(abs(MOVED))))
 
   const { menu, asked } = await deleteFromSidebar(cdp, 'AR Moved')
@@ -152,23 +147,23 @@ async function group1(cdp) {
   await shot(cdp, 'g1-lifted')
   const bundle = bundleOf('AR Moved')
   const record = bundle ? JSON.parse(readRel(`.trash/${COLLECTION}/${bundle}/_record.json`)) : null
-  item(1, 1, 'F-3', "the sidebar's Delete asks, and the Set goes to the Trash",
+  item(1, 'F-3', "the sidebar's Delete asks, and the Set goes to the Trash",
     menu.chosen && asked === 'Delete “AR Moved”?' && !exists(MOVED) && !!bundle, show({ menu, asked, bundle }))
-  item(1, 1, 'F-3', 'its excluded folder is left behind in Collection A, untouched',
+  item(1, 'F-3', 'its excluded folder is left behind in Collection A, untouched',
     untouched(LIFTED), show(exists(LIFTED) && readdirSync(abs(LIFTED))))
-  item(1, 1, 'F-3', "the folder's entry follows it",
+  item(1, 'F-3', "the folder's entry follows it",
     same(settingsOnDisk().excluded_folders, [LIFTED]), show(settingsOnDisk().excluded_folders))
-  item(1, 1, 'F-3', 'the bundle holds no excluded folder, and its record names none',
+  item(1, 'F-3', 'the bundle holds no excluded folder, and its record names none',
     !!record && !exists(`.trash/${COLLECTION}/${bundle}/AR Moved/Private`) && !('excluded' in record), show(record))
-  item(1, 1, 'F-3', 'the sidebar draws neither the Set nor the lifted folder',
+  item(1, 'F-3', 'the sidebar draws neither the Set nor the lifted folder',
     !(await drawn(cdp, 'AR Moved')) && !(await drawn(cdp, 'Private')))
 
   const back = await ask(cdp, 'mutate', { op: 'restore', bundlePath: `.trash/${COLLECTION}/${bundle}` })
   await settles(() => drawn(cdp, 'AR Moved'))
-  item(1, 1, 'F-2', 'the restored Set returns without the folder, which stays where it was left',
+  item(1, 'F-2', 'the restored Set returns without the folder, which stays where it was left',
     back.ok && exists(`${MOVED}/_pageset.json`) && !exists(`${MOVED}/Private`) && untouched(LIFTED) && same(settingsOnDisk().excluded_folders, [LIFTED]),
     show({ back, moved: exists(MOVED) && readdirSync(abs(MOVED)), excluded: settingsOnDisk().excluded_folders }))
-  item(1, 1, 'F-2', 'the sidebar draws the Set again, and never the folder',
+  item(1, 'F-2', 'the sidebar draws the Set again, and never the folder',
     (await drawn(cdp, 'AR Moved')) && !(await drawn(cdp, 'Private')))
 
   await makeSet(cdp, 'AR Second')
@@ -176,7 +171,7 @@ async function group1(cdp) {
   setAside(`${COLLECTION}/AR Second/Private`)
   const second = await ask(cdp, 'mutate', { op: 'delete', path: `${COLLECTION}/AR Second`, kind: 'set' })
   await settles(async () => exists(`${LIFTED} (2)`))
-  item(1, 1, 'F-2', 'a folder lifted onto a namesake steps aside to Private (2), its entry following',
+  item(1, 'F-2', 'a folder lifted onto a namesake steps aside to Private (2), its entry following',
     second.ok && untouched(`${LIFTED} (2)`) && untouched(LIFTED) && same(settingsOnDisk().excluded_folders, [LIFTED, `${LIFTED} (2)`]),
     show({ second, excluded: settingsOnDisk().excluded_folders }))
 
@@ -191,14 +186,14 @@ async function group1(cdp) {
   await sleep(1000)
   const carriedAsset = await ask(cdp, 'mutate', { op: 'rename', path: CARRY, kind: 'set', newName: 'AR Media' })
   await settles(async () => settingsOnDisk().asset_directory === `${MEDIA}/Media`)
-  item(1, 1, 'K-1', 'a renamed Set carries the asset directory to the landing, the asset file with it',
+  item(1, 'K-1', 'a renamed Set carries the asset directory to the landing, the asset file with it',
     carriedAsset.ok && exists(`${MEDIA}/Media/Pixel.png`) && !exists(`${MEDIA}/Media/_pageset.json`) &&
       (await config(cdp)).assetDirectory === `${MEDIA}/Media` && same(settingsOnDisk().excluded_folders, [LIFTED, `${LIFTED} (2)`]),
     show({ carriedAsset, onDisk: settingsOnDisk() }))
 
   const media = await ask(cdp, 'mutate', { op: 'delete', path: MEDIA, kind: 'set' })
   await settles(async () => exists(`${COLLECTION}/Media/Pixel.png`))
-  item(1, 1, 'F-2', 'the asset directory is left behind by a trashed Set, its setting following',
+  item(1, 'F-2', 'the asset directory is left behind by a trashed Set, its setting following',
     media.ok && exists(`${COLLECTION}/Media/Pixel.png`) && !exists(`${COLLECTION}/Media/_pageset.json`) &&
       settingsOnDisk().asset_directory === `${COLLECTION}/Media` && (await config(cdp)).assetDirectory === `${COLLECTION}/Media`,
     show({ media, onDisk: settingsOnDisk().asset_directory }))
@@ -247,23 +242,23 @@ async function group2(cdp) {
   await must('order the three', ask(cdp, 'mutate', { op: 'movePage', path: page(A_ALPHA, 'AR Middle'), newParentPath: A_ALPHA, order: [...others, ...three] }))
   await deleteAt(cdp, page(A_ALPHA, 'AR Middle'), 'page')
   const sidecar = `${A_ALPHA}/_pageset.json`
-  item(2, 2, 'E-2', 'a page delete drops its id from its folder’s page_order', !orderIn(sidecar, 'page_order').includes(three[1]), show(orderIn(sidecar, 'page_order')))
+  item(2, 'E-2', 'a page delete drops its id from its folder’s page_order', !orderIn(sidecar, 'page_order').includes(three[1]), show(orderIn(sidecar, 'page_order')))
   const listed = await trashed(cdp, 'AR Middle')
-  item(2, 2, 'A-3', 'bundles:list answers the Trash’s row with its stored time', typeof listed?.storedAt === 'number', show(listed))
+  item(2, 'A-3', 'bundles:list answers the Trash’s row with its stored time', typeof listed?.storedAt === 'number', show(listed))
   await must('restore AR Middle', restoreRow(cdp, 'AR Middle'))
-  item(2, 2, 'E-2', 'a page restored lands between its old neighbours in page_order', between(orderIn(sidecar, 'page_order'), three), show(orderIn(sidecar, 'page_order')))
+  item(2, 'E-2', 'a page restored lands between its old neighbours in page_order', between(orderIn(sidecar, 'page_order'), three), show(orderIn(sidecar, 'page_order')))
   await sidebarTo(cdp, 'Collections', COLLECTION)
   await unfold(cdp, COLLECTION, 'Set Alpha')
   await unfold(cdp, 'Set Alpha', 'AR Middle')
   const sidebarOrder = await cdp.evaluate(`[...document.querySelectorAll('.tree-item')].map((e) => e.textContent.trim()).filter((t) => ${JSON.stringify(titles)}.includes(t))`)
-  item(2, 2, 'E-2', 'the sidebar draws the three in that order', show(sidebarOrder) === show(titles), show(sidebarOrder))
+  item(2, 'E-2', 'the sidebar draws the three in that order', show(sidebarOrder) === show(titles), show(sidebarOrder))
 
   const sets = []
   for (const name of ['AR Set One', 'AR Set Two', 'AR Set Three']) sets.push(await createSetIn(cdp, name))
   await deleteAt(cdp, 'Collection A/AR Set Two', 'set')
   await must('restore AR Set Two', restoreRow(cdp, 'AR Set Two'))
   const setOrder = orderIn('Collection A/_pagecollection.json', 'set_order')
-  item(2, 2, 'E-2', 'a Set restored lands between its old neighbours in set_order', between(setOrder, sets), show(setOrder))
+  item(2, 'E-2', 'a Set restored lands between its old neighbours in set_order', between(setOrder, sets), show(setOrder))
 
   const coll = containerId()
   await must('create AR Coll', ask(cdp, 'mutate', { op: 'createContainer', id: coll, parentPath: '', kind: 'collection', name: 'AR Coll' }))
@@ -274,21 +269,21 @@ async function group2(cdp) {
   const ring = [COLLECTION, 'AR Coll', held.find((c) => c.id === next)?.title]
   await must('place AR Coll', ask(cdp, 'mutate', { op: 'reorderTop', order: tops.flatMap((id) => (id === a ? [id, coll] : [id])) }))
   await deleteAt(cdp, 'AR Coll', 'collection')
-  item(2, 2, 'E-2', 'a Collection delete drops its id from state.order.collections', !(stateOrder().collections ?? []).includes(coll), show(stateOrder().collections))
+  item(2, 'E-2', 'a Collection delete drops its id from state.order.collections', !(stateOrder().collections ?? []).includes(coll), show(stateOrder().collections))
   await must('restore AR Coll', restoreRow(cdp, 'AR Coll'))
-  item(2, 2, 'E-2', 'a Collection restored lands between its old neighbours in state.order.collections', between(stateOrder().collections ?? [], [a, coll, next]), show(stateOrder().collections))
+  item(2, 'E-2', 'a Collection restored lands between its old neighbours in state.order.collections', between(stateOrder().collections ?? [], [a, coll, next]), show(stateOrder().collections))
   await until('AR Coll in the sidebar', () => drawn(cdp, 'AR Coll'))
   const topOrder = await cdp.evaluate(`[...document.querySelectorAll('.tree-item')].map((e) => e.textContent.trim()).filter((t) => ${JSON.stringify(ring)}.includes(t))`)
-  item(2, 2, 'E-2', 'the sidebar draws the restored Collection between them', show(topOrder) === show(ring), show(topOrder))
+  item(2, 'E-2', 'the sidebar draws the restored Collection between them', show(topOrder) === show(ring), show(topOrder))
 
   const group = (await heldTree(cdp)).contexts.find((g) => g.spaces.length >= 2)
   const space = containerId()
   const [s0, s1, ...rest] = group.spaces.map((s) => s.id)
   await must('create AR Space', ask(cdp, 'mutate', { op: 'createSpace', id: space, contextId: group.def.id, name: 'AR Space', order: [s0, space, s1, ...rest] }))
   await deleteAt(cdp, `.nexus/contexts/${group.def.title}/AR Space`, 'space')
-  item(2, 2, 'E-2', 'a Space delete drops its id from its Context’s order', !(stateOrder().spaces?.[group.def.id] ?? []).includes(space), show(stateOrder().spaces?.[group.def.id]))
+  item(2, 'E-2', 'a Space delete drops its id from its Context’s order', !(stateOrder().spaces?.[group.def.id] ?? []).includes(space), show(stateOrder().spaces?.[group.def.id]))
   await must('restore AR Space', restoreRow(cdp, 'AR Space'))
-  item(2, 2, 'E-2', 'a Space restored lands between its old neighbours in its Context’s order', between(stateOrder().spaces?.[group.def.id] ?? [], [s0, space, s1]), show(stateOrder().spaces?.[group.def.id]))
+  item(2, 'E-2', 'a Space restored lands between its old neighbours in its Context’s order', between(stateOrder().spaces?.[group.def.id] ?? [], [s0, space, s1]), show(stateOrder().spaces?.[group.def.id]))
 
   await createAt(cdp, A_ALPHA, 'AR Squat')
   await deleteAt(cdp, page(A_ALPHA, 'AR Squat'), 'page')
@@ -297,7 +292,7 @@ async function group2(cdp) {
   await openSettings(cdp, 'Trash')
   const { chosen } = await chooseNative(cdp, trashRowEl('AR Squat'), 'Restore')
   const said = await settles(async () => (await notice(cdp)).includes('Restored “AR Squat” as “AR Squat (2)”'))
-  item(2, 2, 'E-4', 'a page restored onto an outside file steps aside, and the Trash names the title it took',
+  item(2, 'E-4', 'a page restored onto an outside file steps aside, and the Trash names the title it took',
     chosen && said && exists(page(A_ALPHA, 'AR Squat (2)')) && readRel(page(A_ALPHA, 'AR Squat')).endsWith('squatter'), show({ chosen, notice: await notice(cdp) }))
   await closeSettings(cdp)
 
@@ -307,7 +302,7 @@ async function group2(cdp) {
   await must('exclude its origin', ask(cdp, 'exclusions:set', [...excluded, 'Collection A/AR Excl']))
   const settingsBefore = readRel('.nexus/settings.json')
   const back = await restoreRow(cdp, 'AR Excl')
-  item(2, 2, 'E-4', 'a Set restored onto an excluded entry steps aside, settings.json unchanged',
+  item(2, 'E-4', 'a Set restored onto an excluded entry steps aside, settings.json unchanged',
     back?.value?.landedAs === 'AR Excl (2)' && exists('Collection A/AR Excl (2)/_pageset.json') && readRel('.nexus/settings.json') === settingsBefore, show(back))
   await must('the exclusions as they were', ask(cdp, 'exclusions:set', excluded))
 
@@ -318,11 +313,11 @@ async function group2(cdp) {
   await openSettings(cdp, 'Trash')
   const drawnRows = await cdp.evaluate(`[...document.querySelectorAll('.trash-row [role=checkbox]')].map((c) => c.getAttribute('aria-label').replace(/^Select /, ''))`)
   const answered = ((await ask(cdp, 'bundles:list', { kind: 'trash' })).value ?? []).map((r) => r.title)
-  item(2, 2, 'A-3', 'the Trash browser draws the titles bundles:list answers, in its order', same(drawnRows, answered), show({ drawnRows, answered }))
+  item(2, 'A-3', 'the Trash browser draws the titles bundles:list answers, in its order', same(drawnRows, answered), show({ drawnRows, answered }))
   for (const t of ['AR Look One', 'AR Look Two']) await click(cdp, `${trashRowEl(t)}.querySelector('[role=checkbox]')`)
   const { chosen: all } = await chooseNative(cdp, trashRowEl('AR Look One'), 'Restore All')
   const batch = await settles(async () => (await notice(cdp)).startsWith('Restored 2 Pages'))
-  item(2, 2, 'A-3', 'a Restore All of two reads Restored 2 Pages', all && batch, show(await notice(cdp)))
+  item(2, 'A-3', 'a Restore All of two reads Restored 2 Pages', all && batch, show(await notice(cdp)))
   await shot(cdp, 'trash-frame')
   await closeSettings(cdp)
 }
@@ -362,7 +357,7 @@ async function group3() {
 
   const state = await must('nexus:state', ask(cdp, 'nexus:state'))
   const held = treePaths(state.tree)
-  item(3, 3, 'D-2', 'the tree holds the live pages and never the archived one', held.has(live.rel) && ![...held].some((p) => p.startsWith('.nexus/') || p.endsWith('/Drive Arc.md')), show([...held].filter((p) => p.includes('Drive'))))
+  item(3, 'D-2', 'the tree holds the live pages and never the archived one', held.has(live.rel) && ![...held].some((p) => p.startsWith('.nexus/') || p.endsWith('/Drive Arc.md')), show([...held].filter((p) => p.includes('Drive'))))
   await openCollection(cdp)
   const search = `document.querySelector('.detail-title-search')`
   await cdp.evaluate(`${search}.focus()`)
@@ -370,36 +365,36 @@ async function group3() {
   const drive = [live.id, linker.id, arc.id]
   const filtered = async () => { const rows = await rowIds(cdp); return rows.length > 0 && rows.every((id) => drive.includes(id)) && rows }
   const shown = await until('the search’s rows', filtered).catch(() => rowIds(cdp))
-  item(3, 3, 'D-2', "Collection A's view search for Drive lists Drive Live and never Drive Arc", shown.includes(live.id) && !shown.includes(arc.id), show(shown))
+  item(3, 'D-2', "Collection A's view search for Drive lists Drive Live and never Drive Arc", shown.includes(live.id) && !shown.includes(arc.id), show(shown))
   await shot(cdp, 'g3-view-search')
   await cdp.evaluate(`(() => { const i = ${search}; i.select() })()`)
   await pressKey(cdp, 'Backspace')
   pageIds['Drive Linker'] = linker.id
   await openPage(cdp, 'Drive Linker')
   const drawn = await cdp.evaluate(`(() => { const line = [...document.querySelectorAll('.cm-content .cm-line')].find((l) => l.textContent.includes('Drive Arc')); return line ? { phantom: !!line.querySelector('.md-connection-phantom'), resolved: !!line.querySelector('.md-connection-resolved') } : null })()`)
-  item(3, 3, 'D-1', 'a link naming the archived page draws unresolved', drawn?.phantom === true && drawn.resolved === false, show(drawn))
+  item(3, 'D-1', 'a link naming the archived page draws unresolved', drawn?.phantom === true && drawn.resolved === false, show(drawn))
   await shot(cdp, 'g3-phantom')
   await escapeAll(cdp)
 
   const graph = await must('matrix:graph', ask(cdp, 'matrix:graph', true))
-  item(3, 3, 'K-2', 'the Matrix graph holds the live page and the one the tree withholds, and no archived page or edge', live.id in graph.values && withheld.id in graph.values && !(arc.id in graph.values) && graph.links.every((l) => !l.path.startsWith('.nexus/')), show(Object.keys(graph.values).length))
+  item(3, 'K-2', 'the Matrix graph holds the live page and the one the tree withholds, and no archived page or edge', live.id in graph.values && withheld.id in graph.values && !(arc.id in graph.values) && graph.links.every((l) => !l.path.startsWith('.nexus/')), show(Object.keys(graph.values).length))
   const asked = await must('matrix:graph by path', ask(cdp, 'matrix:graph', false, [arc.rel]))
-  item(3, 3, 'K-2', 'the Matrix graph asked for the archived path answers no id', asked.ids.length === 0, show(asked.ids))
+  item(3, 'K-2', 'the Matrix graph asked for the archived path answers no id', asked.ids.length === 0, show(asked.ids))
   const headings = await must('index:headings', ask(cdp, 'index:headings'))
   const archivedHeadings = await must('index:headings by path', ask(cdp, 'index:headings', [arc.rel]))
-  item(3, 3, 'K-2', 'the headings answer no archived path, whole or asked by path', !Object.keys(headings).some((p) => p.startsWith('.nexus/')) && Object.keys(archivedHeadings).length === 0, show(Object.keys(archivedHeadings)))
+  item(3, 'K-2', 'the headings answer no archived path, whole or asked by path', !Object.keys(headings).some((p) => p.startsWith('.nexus/')) && Object.keys(archivedHeadings).length === 0, show(Object.keys(archivedHeadings)))
   const loaded = await must('view:loadValues', ask(cdp, 'view:loadValues', 'Collection A'))
-  item(3, 3, 'K-2', "Collection A's value load reads the tree's pages, never the archived one or one under a Set whose sidecar doesn't parse", live.id in loaded && !(arc.id in loaded) && !(withheld.id in loaded), show(Object.keys(loaded).length))
+  item(3, 'K-2', "Collection A's value load reads the tree's pages, never the archived one or one under a Set whose sidecar doesn't parse", live.id in loaded && !(arc.id in loaded) && !(withheld.id in loaded), show(Object.keys(loaded).length))
 
   const count = await must('property:holders', ask(cdp, 'property:holders', stage))
-  item(3, 3, 'C-4', 'the delete confirmation’s count leaves the archived holder out', count === 1, show(count))
+  item(3, 'C-4', 'the delete confirmation’s count leaves the archived holder out', count === 1, show(count))
   await must('rename the Draft option', ask(cdp, 'property:renameOption', stage, 'Draft', 'Final'))
-  item(3, 3, 'C-1', 'an option rename rewrites the archived page as it rewrites the live one', show(frontOf(arc.rel)['Drive Stage']) === show(['Final']) && show(frontOf(live.rel)['Drive Stage']) === show(['Final']), show([frontOf(arc.rel)['Drive Stage'], frontOf(live.rel)['Drive Stage']]))
+  item(3, 'C-1', 'an option rename rewrites the archived page as it rewrites the live one', show(frontOf(arc.rel)['Drive Stage']) === show(['Final']) && show(frontOf(live.rel)['Drive Stage']) === show(['Final']), show([frontOf(arc.rel)['Drive Stage'], frontOf(live.rel)['Drive Stage']]))
   await must('rename Drive Live', ask(cdp, 'mutate', { op: 'rename', path: live.rel, kind: 'page', newName: 'Drive Live 2' }))
   live.rel = 'Collection A/Set Alpha/Drive Live 2.md'
-  item(3, 3, 'C-1', "renaming Drive Live re-spells the archived page's link", bodyOf(arc.rel).includes('[[Drive Live 2]]'), show(bodyOf(arc.rel)))
+  item(3, 'C-1', "renaming Drive Live re-spells the archived page's link", bodyOf(arc.rel).includes('[[Drive Live 2]]'), show(bodyOf(arc.rel)))
   await must('delete Drive Stage', ask(cdp, 'property:delete', stage))
-  item(3, 3, 'C-2', 'the property delete strips the archived page as it strips the live one', !('Drive Stage' in frontOf(arc.rel)) && !('Drive Stage' in frontOf(live.rel)), show(frontOf(arc.rel)))
+  item(3, 'C-2', 'the property delete strips the archived page as it strips the live one', !('Drive Stage' in frontOf(arc.rel)) && !('Drive Stage' in frontOf(live.rel)), show(frontOf(arc.rel)))
 
   // The seeds leave as they came, from outside, and the deleted property's bundle is emptied, so a later group meets Collection A, its Archive, and the Trash as group 3 found them. The watcher holds a file the app just wrote until it's still for 200 ms, and an unlink inside that hold reaches the app as nothing, so the seeds leave once the delete's writes are still.
   await sleep(400)
@@ -410,7 +405,7 @@ async function group3() {
   if (stageRow) await must('empty Drive Stage', ask(cdp, 'mutate', { op: 'emptyBundle', bundlePath: stageRow.bundlePath }))
   await must('permanentDelete off', ask(cdp, 'personalization:set', 'permanentDelete', false))
   const left = ((await ask(cdp, 'bundles:list', { kind: 'archive', id: colA })).value ?? []).length
-  item(3, 3, '—', 'the group leaves Collection A’s Archive and the Trash as it found them', left === 0 && !exists(`.nexus/archive/${colA}`) && !((await ask(cdp, 'bundles:list', { kind: 'trash' })).value ?? []).some((r) => r.title === 'Drive Stage'), show({ left }))
+  item(3, '—', 'the group leaves Collection A’s Archive and the Trash as it found them', left === 0 && !exists(`.nexus/archive/${colA}`) && !((await ask(cdp, 'bundles:list', { kind: 'trash' })).value ?? []).some((r) => r.title === 'Drive Stage'), show({ left }))
 }
 
 // ── Group 4 — the Archive's ops (Phase 4) ───────────────────────────────────
@@ -467,7 +462,7 @@ async function group4() {
 
   const A1 = await bundledBy('archive Drive Arc', { op: 'archive', path: arc, kind: 'page' })
   const archived = A1 ? recordAt(A1) : null
-  item(4, 4, 'A-2', 'a page archives into its Collection’s Archive under the chain it left',
+  item(4, 'A-2', 'a page archives into its Collection’s Archive under the chain it left',
     stamped(`.nexus/archive/${colA}/${A_ALPHA}`, 'Drive Arc', '.archived').test(A1) && exists(`${A1}/Drive Arc.md`) &&
       archived?.entity === 'page' && archived.id === arcId && archived.parent?.id === alphaId &&
       archived.place?.above === follower && archived.place?.below === pageA && same(archived.trail, [colA]) &&
@@ -475,36 +470,36 @@ async function group4() {
     show({ A1, archived, pageOrder: orderIn(A_SIDECAR, 'page_order') }))
 
   const listedA = await rows({ kind: 'archive', id: colA })
-  item(4, 4, 'D-2', 'the archived page leaves the tree and lists in its Archive',
+  item(4, 'D-2', 'the archived page leaves the tree and lists in its Archive',
     !(await heldIds()).has(arcId) && listedA.length === 1 && listedA[0].title === 'Drive Arc' && same(listedA[0].crumbs.map((c) => c.title), ['Collection A', 'Set Alpha']),
     show(listedA))
 
   await sleep(1000)
   await op('rename Drive Live', { op: 'rename', path: live, kind: 'page', newName: 'Drive Live Renamed' })
   const renamed = page(A_ALPHA, 'Drive Live Renamed')
-  item(4, 4, 'C-1', 'a rename reaches the archived file', bodyOf(`${A1}/Drive Arc.md`).includes('[[Drive Live Renamed]]'), show(bodyOf(`${A1}/Drive Arc.md`)))
+  item(4, 'C-1', 'a rename reaches the archived file', bodyOf(`${A1}/Drive Arc.md`).includes('[[Drive Live Renamed]]'), show(bodyOf(`${A1}/Drive Arc.md`)))
 
   const bytes = readRel(`${A1}/Drive Arc.md`)
   const back = await op('restore Drive Arc', { op: 'restore', bundlePath: A1 })
-  item(4, 4, 'E-2', 'a restore returns it to its exact place by a plain move',
+  item(4, 'E-2', 'a restore returns it to its exact place by a plain move',
     exists(arc) && readRel(arc) === bytes && between(orderIn(A_SIDECAR, 'page_order'), [pageA, arcId, follower]) && !exists(A1) && !('unrestored' in back) && !('landedAs' in back),
     show({ back, pageOrder: orderIn(A_SIDECAR, 'page_order') }))
 
   const again = await bundledBy('archive Drive Arc again', { op: 'archive', path: arc, kind: 'page' })
   const T1 = await bundledBy('delete from the Archive', { op: 'delete', path: again, kind: 'page' })
-  item(4, 4, 'E-3', 'a delete from the Archive goes to the Trash keeping the bundle it left',
+  item(4, 'E-3', 'a delete from the Archive goes to the Trash keeping the bundle it left',
     stamped(`.trash/${A_ALPHA}`, 'Drive Arc', '.deleted').test(T1) && recordAt(T1).archive === again && !exists(again),
     show({ again, T1, record: T1 && exists(T1) ? recordAt(T1) : null }))
 
   await op('Undo to the Archive', { op: 'restore', bundlePath: T1, destination: { kind: 'archive' } })
   const undone = exists(`${again}/_record.json`) ? recordAt(again) : null
-  item(4, 4, 'E-3', 'its Undo returns it to the Archive under the same name',
+  item(4, 'E-3', 'its Undo returns it to the Archive under the same name',
     exists(`${again}/Drive Arc.md`) && !!undone && !('archive' in undone) && !('links' in undone) && !('targets' in undone) && !exists(T1) && !(await heldIds()).has(arcId),
     show({ again, undone }))
 
   const T2 = await bundledBy('delete from the Archive again', { op: 'delete', path: again, kind: 'page' })
   await op('restore from the Trash', { op: 'restore', bundlePath: T2 })
-  item(4, 4, 'E-3', 'a Trash restore returns it to where it was archived from', exists(arc) && !exists(T2), show({ T2 }))
+  item(4, 'E-3', 'a Trash restore returns it to where it was archived from', exists(arc) && !exists(T2), show({ T2 }))
 
   const subId = containerId()
   const SUB = `${A_ALPHA}/Drive Sub`
@@ -514,13 +509,13 @@ async function group4() {
   await op('move Drive Sub to Collection B', { op: 'moveSet', path: SUB, newParentPath: 'Collection B', order: [...orderIn('Collection B/_pagecollection.json', 'set_order'), subId] })
   const carried = `.nexus/archive/${colB}/${SUB}/${leafOf(D1)}`
   await settles(async () => exists(`${carried}/Drive Deep.md`) && !exists(D1))
-  item(4, 4, 'F-6', 'a Set moved to another Collection carries what was archived from within it',
+  item(4, 'F-6', 'a Set moved to another Collection carries what was archived from within it',
     exists(`${carried}/Drive Deep.md`) && same(recordAt(carried).trail, [colB]) && !exists(D1),
     show({ carried, record: exists(carried) ? recordAt(carried) : null, D1: exists(D1) }))
 
   await op('move Drive Sub into Set Alpha', { op: 'moveSet', path: 'Collection B/Drive Sub', newParentPath: B_ALPHA, order: [...before.bAlphaSets, subId] })
   await settles(async () => same(recordAt(carried).trail, [colB, bAlphaId]))
-  item(4, 4, 'F-6', 'a Set moved within its Collection rewrites the trail alone',
+  item(4, 'F-6', 'a Set moved within its Collection rewrites the trail alone',
     exists(`${carried}/Drive Deep.md`) && same(recordAt(carried).trail, [colB, bAlphaId]),
     show(exists(carried) ? recordAt(carried) : null))
 
@@ -542,7 +537,7 @@ async function group4() {
   const sweptBundles = () => (exists('.trash/Drive Gone') ? readdirSync(abs('.trash/Drive Gone')).filter((n) => n.endsWith('__Drive Orphan.md.deleted')) : [])
   await settles(async () => sweptBundles().length === 1 && !exists(`.nexus/archive/${gone}`))
   const swept = sweptBundles()
-  item(4, 4, 'F-5', 'an Archive whose Collection exists nowhere moves into the Trash at the next open',
+  item(4, 'F-5', 'an Archive whose Collection exists nowhere moves into the Trash at the next open',
     swept.length === 1 && same(recordAt(`.trash/Drive Gone/${swept[0]}`), orphanRecord) && !exists(`.nexus/archive/${gone}`),
     show({ swept, archive: exists(`.nexus/archive/${gone}`) }))
 
@@ -550,7 +545,7 @@ async function group4() {
   await must('permanentDelete on', ask(cdp, 'personalization:set', 'permanentDelete', true))
   const collRow = (await rows({ kind: 'trash' })).find((r) => r.title === 'Drive Coll')
   if (collRow) await emptyAt(collRow.bundlePath)
-  item(4, 4, 'F-4', 'a Collection in the Trash keeps its Archive, and emptying it empties both',
+  item(4, 'F-4', 'a Collection in the Trash keeps its Archive, and emptying it empties both',
     standing && !!collRow && !exists(collArchive) && !exists(collRow.bundlePath), show({ standing, collRow }))
 
   const trashOf = async (title) => (await rows({ kind: 'trash' })).find((r) => r.title === title)?.bundlePath
@@ -579,7 +574,7 @@ async function group4() {
     permanentDelete: (await config(cdp)).personalization.permanentDelete === true,
     chains: CHAINS.filter(exists),
   }
-  item(4, 4, '—', 'the group leaves Collections A and B, their Archives, and the Trash as it found them', same(after, before), show({ before, after }))
+  item(4, '—', 'the group leaves Collections A and B, their Archives, and the Trash as it found them', same(after, before), show({ before, after }))
 }
 
 // ── Group 5 — Shared Chrome (Phase 5) ───────────────────────────────────────
@@ -625,7 +620,7 @@ async function group5(cdp) {
   await until('the Trash rows', async () => (await listedTitles(cdp)).includes('G5 One'))
   const look = await cdp.evaluate(`(() => { const f = document.querySelector('.trash-frame.table'); const [search, head] = f?.children ?? []; const rows = [...(f?.querySelectorAll('.trash-row.table-divider') ?? [])]; return !!f && !!search?.matches('.nav-search-row') && !!head?.matches('.trash-head.table-head') && !!head.querySelector('.trash-head-name') && !!head.querySelector('.trash-head-date') && rows.length > 0 && rows.every((r) => head.compareDocumentPosition(r) & Node.DOCUMENT_POSITION_FOLLOWING) })()`)
   const listed = await listedTitles(cdp)
-  item(5, 5, 'G-1', 'the Trash keeps its look and lists newest first',
+  item(5, 'G-1', 'the Trash keeps its look and lists newest first',
     look && same(listed.slice(0, 4), [...titles].reverse()), show({ look, listed }))
   await shot(cdp, 'g5-trash')
 
@@ -637,15 +632,15 @@ async function group5(cdp) {
   await cdp.evaluate(`${SEARCH}.select()`)
   await pressKey(cdp, 'Backspace')
   const cleared = await settles(async () => same(await listedTitles(cdp), listed))
-  item(5, 5, 'G-1', 'typed search narrows in place, keeping newest first', narrowed && cleared, show({ found, after: await listedTitles(cdp) }))
+  item(5, 'G-1', 'typed search narrows in place, keeping newest first', narrowed && cleared, show({ found, after: await listedTitles(cdp) }))
 
   const single = await chooseNative(cdp, g5Row('G5 One'), [])
-  item(5, 5, 'K-4', "one row's menu reads Restore and Delete", same(single.rows, ['Restore', 'Delete']), show(single.rows))
+  item(5, 'K-4', "one row's menu reads Restore and Delete", same(single.rows, ['Restore', 'Delete']), show(single.rows))
 
   for (const t of ['G5 One', 'G5 Two']) await checkRow(cdp, t)
   const onChecked = await chooseNative(cdp, g5Row('G5 Two'), [])
   const onUnchecked = await chooseNative(cdp, g5Row('G5 Note'), [])
-  item(5, 5, 'K-4', "a checked row's menu names the batch; an unchecked one acts alone",
+  item(5, 'K-4', "a checked row's menu names the batch; an unchecked one acts alone",
     same(onChecked.rows, ['Restore All', 'Delete All']) && same(onUnchecked.rows, ['Restore', 'Delete']), show({ onChecked, onUnchecked }))
 
   const { chosen: restoredAll } = await chooseNative(cdp, g5Row('G5 Two'), 'Restore All')
@@ -656,10 +651,10 @@ async function group5(cdp) {
   const drainedUnder = await settles(() => drained(cdp), 4500)
   const back = ['G5 One', 'G5 Two']
   const after = await listedTitles(cdp)
-  item(5, 5, 'K-4', 'Restore All restores the checked rows',
+  item(5, 'K-4', 'Restore All restores the checked rows',
     restoredAll && restoredSaid && back.every((t) => exists(page(A_ALPHA, t)) && !!bundles[t] && !exists(bundles[t])) && !after.some((t) => back.includes(t)),
     show({ restoredAll, after, notice: await notice(cdp) }))
-  item(5, 5, 'K-3', 'a notice posted under the pointer drains', drainedUnder)
+  item(5, 'K-3', 'a notice posted under the pointer drains', drainedUnder)
 
   await must('permanentDelete on', ask(cdp, 'personalization:set', 'permanentDelete', true))
   for (const t of ['G5 Note', 'G5 Note Long']) await checkRow(cdp, t)
@@ -676,24 +671,24 @@ async function group5(cdp) {
   await moveTo(cdp, far)
   const drainedAway = await settles(() => drained(cdp), 4500)
   const gone = ['G5 Note', 'G5 Note Long']
-  item(5, 5, 'K-4', 'Delete All empties the checked rows',
+  item(5, 'K-4', 'Delete All empties the checked rows',
     deletedAll && asked === 'Delete these 2 Pages?' && gone.every((t) => !!bundles[t] && !exists(bundles[t])) && deletedSaid,
     show({ deletedAll, asked, notice: await notice(cdp) }))
-  item(5, 5, 'K-3', 'once the pointer has left its band, returning stalls the drain and leaving drains it', stalled && drainedAway, show({ stalled, drainedAway }))
+  item(5, 'K-3', 'once the pointer has left its band, returning stalls the drain and leaving drains it', stalled && drainedAway, show({ stalled, drainedAway }))
 
   const trashStyle = () => (settingsOnDisk().personalization ?? {}).trashColumnStyle
   const { chosen: short } = await chooseNative(cdp, sel('.trash-head-date'), 'Short Date')
   const picked = await settles(async () => same(trashStyle(), { date_format: 'short' }))
   const { chosen: full } = await chooseNative(cdp, sel('.trash-head-date'), 'Full Date')
   const returned = await settles(async () => !('trashColumnStyle' in (settingsOnDisk().personalization ?? {})))
-  item(5, 5, 'G-1', "the date column's right-click picks a style and returns to the Nexus's own",
+  item(5, 'G-1', "the date column's right-click picks a style and returns to the Nexus's own",
     short && picked && full && returned, show({ short, full, style: trashStyle() }))
 
   const { chosen: widest } = await chooseNative(cdp, sel('.trash-head-date'), 'Full')
   const fit = await settles(() => cdp.evaluate(`(() => { const cells = [...document.querySelectorAll('.trash-frame .trash-date')]; const head = document.querySelector('.trash-frame .trash-head-date'); return cells.length > 0 && cells.every((c) => /day, /.test(c.textContent) && c.scrollWidth <= c.clientWidth) && !!head && head.scrollWidth <= head.clientWidth })()`))
   const { chosen: unweekdayed } = await chooseNative(cdp, sel('.trash-head-date'), 'Hidden')
   const settled = await settles(async () => !('trashColumnStyle' in (settingsOnDisk().personalization ?? {})))
-  item(5, 5, 'G-1', 'under its widest style no Trash date and not its heading is cut',
+  item(5, 'G-1', 'under its widest style no Trash date and not its heading is cut',
     widest && fit && unweekdayed && settled, show({ widest, fit, style: trashStyle() }))
 
   await must('iconFavorites', ask(cdp, 'personalization:set', 'iconFavorites', ['alarm-clock']))
@@ -713,7 +708,7 @@ async function group5(cdp) {
   const total = Math.round(scrolled.listHeight / (scrolled.rows[0].bottom - scrolled.rows[0].top))
   await pressKey(cdp, 'Escape')
   const closed = await settles(async () => !(await portalOpen(cdp)))
-  item(5, 5, '4.7', "the icon picker's rows sit where its list starts and virtualize while scrolled",
+  item(5, '4.7', "the icon picker's rows sit where its list starts and virtualize while scrolled",
     editIcon && atTop.stripBottom !== null && atTop.listTop >= atTop.stripBottom && Math.abs(atTop.rows[0].top - atTop.listTop) < 0.5 &&
       scrolled.rows.length < total && scrolled.rows.some((r) => r.top <= scrolled.gridTop && r.bottom > scrolled.gridTop) && closed,
     show({ editIcon, atTop: { ...atTop, rows: atTop.rows.slice(0, 2) }, scrolled: { ...scrolled, rows: scrolled.rows.length }, total, closed }))
@@ -728,7 +723,7 @@ async function group5(cdp) {
   await mouseClick(cdp, lockButton('Unlock Folder'))
   const lockShown = await settles(() => cdp.evaluate(`!!${lockButton('Lock Folder')}`))
   const [openAgain, closedAgain] = lockShown ? await facesOf(cdp, lockButton('Lock Folder')) : []
-  item(5, 5, 'G-6', 'the lock glyph cross-fades through the one swap',
+  item(5, 'G-6', 'the lock glyph cross-fades through the one swap',
     !!openFace && loud(closedFace) && quiet(openFace) && lockShown && loud(openAgain) && quiet(closedAgain),
     show({ locked: [openFace, closedFace], unlocked: [openAgain, closedAgain] }))
 
@@ -744,7 +739,7 @@ async function group5(cdp) {
   const markedWidth = await widthOf(cdp, CLEAR)
   await sleep(1800)
   const returnedFace = (await facesOf(cdp, CLEAR)).find(loud)?.text
-  item(5, 5, 'G-6', 'Clear History cross-fades to Cleared, holds, and returns',
+  item(5, 'G-6', 'Clear History cross-fades to Cleared, holds, and returns',
     idle.find(loud)?.text === 'Clear' && marked && clearFace?.text === 'Clear' && quiet(clearFace) && Math.abs(markedWidth - w) < 0.5 && returnedFace === 'Clear',
     show({ idle, w, marked, clearFace, markedWidth, returnedFace }))
 
@@ -763,14 +758,14 @@ async function group5(cdp) {
   await sleep(1800)
   const [countsBack] = await facesOf(cdp, TALLY)
   const untagged = await cdp.evaluate(`!(${TALLY}).closest('.codeblock-language').classList.contains('is-copied')`)
-  item(5, 5, 'G-6', 'the diff tally swaps its counts for Copied in place',
+  item(5, 'G-6', 'the diff tally swaps its counts for Copied in place',
     counts?.face === 'hidden' && copied?.face === 'shown' && copied.text === 'Copied' && Math.abs(copiedWidth - pillWidth) < 0.5 && tagged && countsBack?.face === 'shown' && untagged,
     show({ counts, copied, pillWidth, copiedWidth, tagged, countsBack, untagged }))
 
   await openSettings(cdp, 'Files & Links')
   const permanentHint = await captionOf(cdp, 'Permanently Delete Files')
   const confirmHint = await captionOf(cdp, 'Confirm Before Deletion')
-  item(5, 5, 'K-5', "Settings › Files & Links' Trash & Archive section reads its rewritten hints",
+  item(5, 'K-5', "Settings › Files & Links' Trash & Archive section reads its rewritten hints",
     permanentHint === 'Erase items emptied from the Trash instead of moving them to the system trash.' &&
       !!confirmHint?.endsWith('Collections, Sets, Contexts, Spaces, views and properties always ask.'),
     show({ permanentHint, confirmHint }))
@@ -783,7 +778,7 @@ async function group5(cdp) {
   }
   for (const key of ['permanentDelete', 'iconFavorites']) await must(`${key} as it was`, ask(cdp, 'personalization:set', key, kept[key] ?? null))
   const ended = await standing()
-  item(5, 5, '—', 'the group leaves Set Alpha and the Trash as it found them',
+  item(5, '—', 'the group leaves Set Alpha and the Trash as it found them',
     same(ended, start) && !made.some((t) => exists(page(A_ALPHA, t))), show({ start, ended }))
 }
 
@@ -856,13 +851,13 @@ async function group6A(cdp) {
   await until('Arc Page in the table', () => cdp.evaluate(`!!(${row('Arc Page')})`))
   const pageMenu = await popAt(cdp, CELL)
   await pickNative([])
-  item('6A', '6A', 'I-1', "a page's row menu closes on Archive above Delete",
+  item('6A', 'I-1', "a page's row menu closes on Archive above Delete",
     same(tailOf(pageMenu, 3), [{ separator: true }, { label: 'Archive', enabled: true }, { label: 'Delete', enabled: true }]), show(tailOf(pageMenu, 3)))
 
   const { chosen: askedArchive } = await chooseNative(cdp, CELL, 'Archive')
   await until('the confirmation', () => cdp.evaluate(`!!${DIALOG}`)).catch(() => {})
   const question = await dialogRead(cdp)
-  item('6A', '6A', 'I-2 §Copy', 'Archive asks its question',
+  item('6A', 'I-2 §Copy', 'Archive asks its question',
     askedArchive && question?.message === 'Archive “Arc Page”?' && question.detail === '“Arc Page” will be moved to this Collection’s archive, where it can be restored.' && same(question.actions, ['Archive']),
     show(question))
   if (question) await pressDialog(cdp, 'Archive')
@@ -875,23 +870,23 @@ async function group6A(cdp) {
     unlisted: !(await cdp.evaluate(`!!(${row('Arc Page')})`)),
   }
   if (pageSaid) await pressUndo(cdp)
-  item('6A', '6A', 'I-3 §Copy', 'the notice reads Archived “Arc Page” with Undo', pageSaid, show(await notice(cdp)))
-  item('6A', '6A', 'I-1', "pressing Archive moved the page into its Collection's Archive", Object.values(moved).every(Boolean), show({ bundle, moved }))
+  item('6A', 'I-3 §Copy', 'the notice reads Archived “Arc Page” with Undo', pageSaid, show(await notice(cdp)))
+  item('6A', 'I-1', "pressing Archive moved the page into its Collection's Archive", Object.values(moved).every(Boolean), show({ bundle, moved }))
   const pageBack = await settles(async () => exists(ARC) && !!bundle && !exists(bundle) && between(orderIn(ALPHA_SIDECAR, 'page_order'), pageRing))
-  item('6A', '6A', 'I-3', 'Undo returns the page to its exact place', pageBack, show({ bundle, pageOrder: orderIn(ALPHA_SIDECAR, 'page_order') }))
+  item('6A', 'I-3', 'Undo returns the page to its exact place', pageBack, show({ bundle, pageOrder: orderIn(ALPHA_SIDECAR, 'page_order') }))
 
   await openSettings(cdp, 'Files & Links')
   const headings = await cdp.evaluate(`[...document.querySelectorAll('.settings-section')].map((s) => s.firstElementChild?.textContent.trim().toLowerCase())`)
   const removal = await controlsOf(cdp, 'Trash & Archive')
   const removalText = await cdp.evaluate(`(${sectionOf('Trash & Archive')})?.textContent ?? ''`)
   const switchOn = await cdp.evaluate(`(${SWITCH('Confirm Before Archiving')})?.getAttribute('aria-checked')`)
-  item('6A', '6A', 'I-2 §Copy', 'Settings › Trash & Archive holds Confirm Before Archiving under Confirm Before Deletion, on',
+  item('6A', 'I-2 §Copy', 'Settings › Trash & Archive holds Confirm Before Archiving under Confirm Before Deletion, on',
     !headings.includes('deletion') && adjacent(removal, 'Confirm Before Deletion', 'Confirm Before Archiving') && removalText.includes('Ask before archiving a page or a Set.') && switchOn === 'true',
     show({ headings, removal, switchOn }))
 
   await press(cdp, SWITCH('Confirm Before Archiving'))
   const switchedOff = await settles(async () => personal().confirmArchiving === false)
-  item('6A', '6A', 'I-2', 'the switch off writes confirmArchiving: false', switchedOff, show(personal()))
+  item('6A', 'I-2', 'the switch off writes confirmArchiving: false', switchedOff, show(personal()))
 
   await closeSettings(cdp)
   await popAt(cdp, CELL)
@@ -903,14 +898,14 @@ async function group6A(cdp) {
   const unaskedBundle = archivedBundle('Arc Page')
   if (unaskedSaid) await pressUndo(cdp)
   const unaskedBack = await settles(async () => exists(ARC) && !!unaskedBundle && !exists(unaskedBundle))
-  item('6A', '6A', 'I-3', 'with the switch off, Archive asks nothing and still posts its Undo',
+  item('6A', 'I-3', 'with the switch off, Archive asks nothing and still posts its Undo',
     pageUnasked && unaskedSaid && !!unaskedBundle && unaskedBack, show({ pageUnasked, unaskedSaid, unaskedBundle, unaskedBack }))
 
   await unfold(cdp, COLLECTION, 'Arc Set')
   const setMenu = await popAt(cdp, sidebarRow('Arc Set'))
   await pickNative([])
   const renameGroup = groupsOf(setMenu).find((g) => g.includes('Rename'))
-  item('6A', '6A', 'I-1', "a Set's menu holds Rename alone and closes on Archive above Delete",
+  item('6A', 'I-1', "a Set's menu holds Rename alone and closes on Archive above Delete",
     same(renameGroup, ['Rename']) && same(tailOf(setMenu, 3).map((r) => r.label ?? '|'), ['|', 'Archive', 'Delete']),
     show({ groups: groupsOf(setMenu) }))
 
@@ -924,7 +919,7 @@ async function group6A(cdp) {
   const setMoved = !!setBundle && exists(`${setBundle}/Arc Set/_pageset.json`) && !exists(ARC_SET) && !(await drawn(cdp, 'Arc Set'))
   if (setSaid) await pressUndo(cdp)
   const setBack = await settles(async () => exists(`${ARC_SET}/_pageset.json`) && !!setBundle && !exists(setBundle) && (await drawn(cdp, 'Arc Set')) && between(orderIn(COLL_SIDECAR, 'set_order'), setRing))
-  item('6A', '6A', 'I-2', 'with the switch off, a Set archives unasked',
+  item('6A', 'I-2', 'with the switch off, a Set archives unasked',
     setUnasked && setSaid && setMoved && setBack, show({ setUnasked, setSaid, setBundle, setMoved, setOrder: orderIn(COLL_SIDECAR, 'set_order') }))
 
   await openSettings(cdp, 'Files & Links')
@@ -937,7 +932,7 @@ async function group6A(cdp) {
   const setQuestion = await dialogRead(cdp)
   if (setQuestion) await pressDialog(cdp, 'Cancel')
   await sleep(600)
-  item('6A', '6A', 'I-2', 'with the switch on, a Set asks',
+  item('6A', 'I-2', 'with the switch on, a Set asks',
     switchedOn && setAsk && setQuestion?.message === 'Archive “Arc Set”?' && exists(`${ARC_SET}/_pageset.json`) && !archivedBundle('Arc Set'),
     show({ switchedOn, setQuestion }))
 
@@ -948,7 +943,7 @@ async function group6A(cdp) {
   const collQuestion = await dialogRead(cdp)
   if (collQuestion) await pressDialog(cdp, 'Cancel')
   await sleep(600)
-  item('6A', '6A', 'I-1', "a Collection's menu closes on Delete alone, which still asks",
+  item('6A', 'I-1', "a Collection's menu closes on Delete alone, which still asks",
     !groupsOf(collMenu).flat().includes('Archive') && same(tailOf(collMenu, 2).map((r) => r.label ?? '|'), ['|', 'Delete']) &&
       collDelete && collQuestion?.message === 'Delete “Collection A”?' && readRel(COLL_SIDECAR) === collectionBefore && exists(ARC_SET),
     show({ tail: tailOf(collMenu, 2), collQuestion }))
@@ -959,7 +954,7 @@ async function group6A(cdp) {
   const history = await controlsOf(cdp, 'File History')
   const historyText = await cdp.evaluate(`(${sectionOf('File History')})?.textContent ?? ''`)
   const following = await pickerText(cdp, 'Archive History Timeframe')
-  item('6A', '6A', 'J-1 §Copy', 'Archive History Timeframe follows History Timeframe until picked',
+  item('6A', 'J-1 §Copy', 'Archive History Timeframe follows History Timeframe until picked',
     adjacent(history, 'History Timeframe', 'Archive History Timeframe') &&
       historyText.includes("How long archived pages keep their snapshots; it follows 'History Timeframe' until set, and never exceeds it.") &&
       following === '30 Days' && !('archiveHistoryDays' in personal()),
@@ -972,7 +967,7 @@ async function group6A(cdp) {
   const unwritten = !('archiveHistoryDays' in personal())
   await pressKey(cdp, 'Escape')
   const listClosed = await settles(async () => !(await portalOpen(cdp)))
-  item('6A', '6A', 'J-1', "steps above History Timeframe show dimmed and can't be picked",
+  item('6A', 'J-1', "steps above History Timeframe show dimmed and can't be picked",
     same(dimmed, [true, true, true, false, false]) && unwritten && listClosed, show({ dimmed, unwritten, listClosed }))
 
   await pickStep(cdp, 'Archive History Timeframe', '14 Days')
@@ -982,7 +977,7 @@ async function group6A(cdp) {
   await typeText(cdp, '60')
   await pressKey(cdp, 'Enter')
   const clamped = await settles(async () => personal().archiveHistoryDays === 30 && (await pickerText(cdp, 'Archive History Timeframe')) === '30 Days')
-  item('6A', '6A', 'J-1', 'a pick stores, and a typed value clamps to History Timeframe', picked && clamped, show({ picked, personalization: personal(), shown: await pickerText(cdp, 'Archive History Timeframe') }))
+  item('6A', 'J-1', 'a pick stores, and a typed value clamps to History Timeframe', picked && clamped, show({ picked, personalization: personal(), shown: await pickerText(cdp, 'Archive History Timeframe') }))
 
   const watched = await watch(['.nexus/settings.json'])
   await pickStep(cdp, 'History Timeframe', '7 Days')
@@ -990,7 +985,7 @@ async function group6A(cdp) {
   await sleep(400)
   const { writes, final } = await watched.stop()
   const landed = JSON.parse(final['.nexus/settings.json'] ?? '{}').personalization ?? {}
-  item('6A', '6A', 'J-1', 'shortening History Timeframe switches the archive timeframe down in one write',
+  item('6A', 'J-1', 'shortening History Timeframe switches the archive timeframe down in one write',
     writes['.nexus/settings.json'] === 1 && landed.historyDays === 7 && landed.archiveHistoryDays === 7 && lowered,
     show({ writes, landed, lowered }))
 
@@ -1001,7 +996,7 @@ async function group6A(cdp) {
   const dimmedAfter = await pickable(cdp, STEPS)
   await pressKey(cdp, 'Escape')
   await settles(async () => !(await portalOpen(cdp)))
-  item('6A', '6A', 'J-1', 'lengthening History Timeframe leaves the pick where it is',
+  item('6A', 'J-1', 'lengthening History Timeframe leaves the pick where it is',
     lengthened && held && same(dimmedAfter, [true, true, true, true, false]), show({ personalization: personal(), dimmedAfter }))
   await closeSettings(cdp)
 
@@ -1015,7 +1010,7 @@ async function group6A(cdp) {
   await sleep(400)
   if (!start.archive) rmSync(abs(ARCHIVE_A), { recursive: true, force: true })
   const ended = await standing()
-  item('6A', '6A', '—', 'the group leaves Set Alpha, Collection A, its Archive, and the Trash as it found them',
+  item('6A', '—', 'the group leaves Set Alpha, Collection A, its Archive, and the Trash as it found them',
     same(ended, start) && !exists(ARC) && !exists(ARC_SET), show({ start, ended }))
 }
 
@@ -1092,7 +1087,7 @@ async function group6B() {
   await mouseClick(cdp, live('button[title="Views"]'))
   await until('the views dropdown', () => cdp.evaluate(`!!(${ARCHIVE_BUTTON})`)).catch(() => {})
   const footing = await cdp.evaluate(`(() => { const f = (${NEW_VIEW})?.closest('div'); const a = ${ARCHIVE_BUTTON}; return { archive: a?.getAttribute('aria-pressed') ?? null, right: !!a && f?.lastElementChild === a, more: !!f?.querySelector('[aria-label="More"]') } })()`)
-  item('6B', '6B', 'G-4', "the views footing holds New View and, at its right, an Archive button, and no More button",
+  item('6B', 'G-4', "the views footing holds New View and, at its right, an Archive button, and no More button",
     footing.archive === 'false' && footing.right && !footing.more, show(footing))
 
   const tabsBefore = await tabCount(cdp)
@@ -1101,26 +1096,26 @@ async function group6B() {
   const pressed = await cdp.evaluate(`(${ARCHIVE_BUTTON})?.getAttribute('aria-pressed') ?? null`)
   await pressKey(cdp, 'Escape')
   const header = await cdp.evaluate(`(() => { const t = ${live('.detail-title')}; const last = t?.lastElementChild; return { last: last?.className ?? null, text: last?.textContent ?? null, before: last?.previousElementSibling?.classList.contains('detail-title-clear') ?? false } })()`)
-  item('6B', '6B', 'G-4, G-5', 'Archive shows the archive place in the same tab, pressed',
+  item('6B', 'G-4, G-5', 'Archive shows the archive place in the same tab, pressed',
     (await tabCount(cdp)) === tabsBefore && pressed === 'true' && header.last === 'detail-title-trailing' && header.text === 'Archive' && header.before,
     show({ tabsBefore, tabs: await tabCount(cdp), pressed, header }))
 
   const title = await cdp.evaluate(`(${live('.detail-title-text')})?.textContent ?? null`)
   const banner = await cdp.evaluate(`({ image: !!(${live('.banner')}), add: !!(${live('[aria-label="Add banner"]')}), seat: !!(${live('.banner-empty')}) })`)
   const titleMenu = await chooseNative(cdp, live('.detail-title-text'), [])
-  item('6B', '6B', 'G-3', "the header keeps the owner's title with no banner",
+  item('6B', 'G-3', "the header keeps the owner's title with no banner",
     title === COLLECTION && !banner.image && !banner.add && banner.seat && titleMenu.rows.includes('Rename'), show({ title, banner, menu: titleMenu.rows }))
 
   const tab = await activeTab(cdp)
   const glyph = await cdp.evaluate(`!!document.querySelector('[role=tab][aria-selected=true] svg.lucide-archive')`)
-  item('6B', '6B', 'G-3 ruling 9', "the tab reads the owner's title with the archive glyph", tab === COLLECTION && glyph, show({ tab, glyph }))
+  item('6B', 'G-3 ruling 9', "the tab reads the owner's title with the archive glyph", tab === COLLECTION && glyph, show({ tab, glyph }))
 
   await until('the archived rows', async () => (await arcTitles(cdp)).length === 4).catch(() => {})
   const listed = await arcTitles(cdp)
   const arc1Trail = await trailOf(cdp, `(${arcRow('Drive Arc 1')})?.querySelector('.cell-lead')?.lastElementChild`)
   const dates = await cdp.evaluate(`[...document.querySelectorAll('.archive-rows .data-cell.archive-date')].filter((c) => !c.closest('[inert]')).map((c) => c.textContent)`)
   const counted = await cdp.evaluate(`(${live('[title="Results"]')})?.textContent.trim() ?? null`)
-  item('6B', '6B', 'G-1, G-2', 'rows list each archived item with its trail and time, newest first',
+  item('6B', 'G-1, G-2', 'rows list each archived item with its trail and time, newest first',
     same(listed, ['Drive Arc Set', 'Drive Arc Root', 'Drive Arc 2', 'Drive Arc 1']) && same(arc1Trail, [COLLECTION, 'Set Alpha']) && dates.length === 4 && dates.every((d) => d !== '') && counted === '4',
     show({ listed, arc1Trail, dates, counted }))
   await shot(cdp, 'g6b-archive')
@@ -1128,7 +1123,7 @@ async function group6B() {
   await checkArc(cdp, 'Drive Arc 1')
   await checkArc(cdp, 'Drive Arc 2')
   const bar = await cdp.evaluate(`(() => { const f = ${SHOWN}; return f && { text: f.textContent, delete: !!f.querySelector('button[title="Delete"]') } })()`)
-  item('6B', '6B', 'G-6', 'two checks declare the bar', bar?.text === 'Restore2 Pages' && bar.delete, show(bar))
+  item('6B', 'G-6', 'two checks declare the bar', bar?.text === 'Restore2 Pages' && bar.delete, show(bar))
 
   const before = Object.fromEntries((await rows(ARCHIVE_A)).map((r) => [r.title, r.bundlePath]))
   await pressBar(cdp, 'Restore', 'Restore2 Pages')
@@ -1142,7 +1137,7 @@ async function group6B() {
     return ['Drive Arc 1', 'Drive Arc 2'].every((t) => now[t] === before[t] && now[t]?.startsWith(`.nexus/archive/${colA}/${A_ALPHA}/`) && exists(now[t])) && !exists(arc1) && !exists(arc2)
   })
   const rowsBack = await settles(async () => same(await arcTitles(cdp), listed))
-  item('6B', '6B', 'G-6', 'Restore cross-fades to Restored 2 Pages, and its Undo archives them again',
+  item('6B', 'G-6', 'Restore cross-fades to Restored 2 Pages, and its Undo archives them again',
     restoredSaid && restoredGone && placed && rearchived && rowsBack, show({ restoredSaid, restoredGone, placed, rearchived, rowsBack, notice: await notice(cdp) }))
 
   await until('the notice drained', () => drained(cdp)).catch(() => {})
@@ -1157,7 +1152,7 @@ async function group6B() {
   if (deletedSaid) await pressUndo(cdp)
   await pointerAway(cdp)
   const deleteBack = await settles(async () => exists(before['Drive Arc 1']) && !!trashBundle && !exists(trashBundle))
-  item('6B', '6B', 'E-3', 'Delete from the bar moves one row into the Trash, and its Undo returns it to the Archive',
+  item('6B', 'E-3', 'Delete from the bar moves one row into the Trash, and its Undo returns it to the Archive',
     asked?.message === 'Delete “Drive Arc 1”?' && deletedSaid && intoTrash && deleteBack, show({ asked, deletedSaid, trashBundle, intoTrash, deleteBack }))
 
   await until('the notice drained', () => drained(cdp)).catch(() => {})
@@ -1175,7 +1170,7 @@ async function group6B() {
   if (batchSaid) await pressUndo(cdp)
   await pointerAway(cdp)
   const batchBack = await settles(async () => ['Drive Arc 1', 'Drive Arc 2'].every((t) => exists(before[t])) && batchTrashed.every((r) => !exists(r.bundlePath)))
-  item('6B', '6B', 'G-6', 'a batch Delete asks once and offers one Undo',
+  item('6B', 'G-6', 'a batch Delete asks once and offers one Undo',
     batchAsked?.message === 'Delete these 2 Pages?' && askedOnce && batchSaid && batchTrashed.length === 2 && batchBack, show({ batchAsked, askedOnce, batchSaid, batchTrashed: batchTrashed.length, batchBack }))
 
   await until('the notice drained', () => drained(cdp)).catch(() => {})
@@ -1187,7 +1182,7 @@ async function group6B() {
   await checkArc(cdp, 'Drive Arc 1')
   await checkArc(cdp, 'Drive Arc 2')
   const withdrawn = await settles(() => drained(cdp))
-  item('6B', '6B', 'G-6', 'the right-click menu acts on the checked rows',
+  item('6B', 'G-6', 'the right-click menu acts on the checked rows',
     same(onChecked.rows, ['Restore All', 'Delete All']) && same(onUnchecked.rows, ['Restore', 'Delete']) && withdrawn, show({ onChecked: onChecked.rows, onUnchecked: onUnchecked.rows, withdrawn }))
 
   await mouseClick(cdp, live('.detail-title-text'))
@@ -1199,7 +1194,7 @@ async function group6B() {
   const alone = await settles(async () => same(await arcTitles(cdp), ['Drive Arc 2']))
   await mouseClick(cdp, live('.detail-title-clear button'))
   const unsearched = await settles(async () => (await arcTitles(cdp)).length === order.length)
-  item('6B', '6B', 'G-1 ruling 15', 'search narrows in place, keeping archived order',
+  item('6B', 'G-1 ruling 15', 'search narrows in place, keeping archived order',
     narrowed && alone && unsearched, show({ order, shown: await arcTitles(cdp) }))
 
   await mouseClick(cdp, `(${arcRow('Drive Arc Root')}).querySelector('.cell-title-text')`)
@@ -1212,7 +1207,7 @@ async function group6B() {
   await shot(cdp, 'g6b-reader')
   if (reader) await click(cdp, `(${READER}).querySelector('button[title="Close"]')`)
   const closed = await settles(async () => !(await cdp.evaluate(`!!${READER}`)))
-  item('6B', '6B', 'H-1', "a page row's title opens the read-only reader",
+  item('6B', 'H-1', "a page row's title opens the read-only reader",
     reader?.lock && !reader.input && !reader.restore && reader.doc?.includes('Root body.') && same(crumbTrail, [COLLECTION, 'Drive Arc Root']) && closed,
     show({ reader, crumbTrail, closed }))
 
@@ -1227,7 +1222,7 @@ async function group6B() {
   await until('Drive Arc Root restored', async () => exists(arcRoot)).catch(() => {})
   await sleep(400)
   await op('archive Drive Arc Root again', { op: 'archive', path: arcRoot, kind: 'page' })
-  item('6B', '6B', 'H-1 Cautionary 32', 'the reader closes once its item leaves the Archive',
+  item('6B', 'H-1 Cautionary 32', 'the reader closes once its item leaves the Archive',
     stillChecked && oneBar && readerGone, show({ stillChecked, oneBar, readerGone }))
 
   await until('the notice drained', () => drained(cdp)).catch(() => {})
@@ -1235,7 +1230,7 @@ async function group6B() {
   const setOpened = await cdp.evaluate(`!!${READER}`)
   const setChecked = await arcChecked(cdp, 'Drive Arc Set')
   await checkArc(cdp, 'Drive Arc Set')
-  item('6B', '6B', 'G-2 ruling 11', "a Set row's title opens nothing and checks its row", !setOpened && setChecked && !(await arcChecked(cdp, 'Drive Arc Set')), show({ setOpened, setChecked }))
+  item('6B', 'G-2 ruling 11', "a Set row's title opens nothing and checks its row", !setOpened && setChecked && !(await arcChecked(cdp, 'Drive Arc Set')), show({ setOpened, setChecked }))
 
   const archiveStyle = () => personal().archiveColumnStyle
   const HEADING = live('.col-header.archive-date')
@@ -1246,14 +1241,14 @@ async function group6B() {
   const changed = await settles(async () => (await firstDate()) !== dateBefore)
   const { chosen: full } = await chooseNative(cdp, HEADING, 'Full Date')
   const unstyled = await settles(async () => !('archiveColumnStyle' in personal()))
-  item('6B', '6B', 'G-1', "the Archived heading's right-click picks its date style",
+  item('6B', 'G-1', "the Archived heading's right-click picks its date style",
     short && styled && changed && full && unstyled, show({ short, full, dateBefore, style: archiveStyle() }))
 
   const { chosen: widest } = await chooseNative(cdp, HEADING, 'Full')
   const fit = await settles(() => cdp.evaluate(`(() => { const cells = [...document.querySelectorAll('.archive-rows .data-cell.archive-date')].filter((c) => !c.closest('[inert]')); const head = ${HEADING}; return cells.length > 0 && cells.every((c) => /day, /.test(c.textContent) && c.scrollWidth <= c.clientWidth) && !!head && head.scrollWidth <= head.clientWidth })()`))
   const { chosen: unweekdayed } = await chooseNative(cdp, HEADING, 'Hidden')
   const restyled = await settles(async () => !('archiveColumnStyle' in personal()))
-  item('6B', '6B', 'G-1', 'under its widest style no Archived date and not its heading is cut',
+  item('6B', 'G-1', 'under its widest style no Archived date and not its heading is cut',
     widest && fit && unweekdayed && restyled, show({ widest, fit, style: archiveStyle() }))
 
   await mouseClick(cdp, SETTINGS_BUTTON)
@@ -1261,17 +1256,17 @@ async function group6B() {
   const pane = await cdp.evaluate(`(() => { const s = [...document.querySelectorAll('div')].find((d) => d.style.minHeight === '24px'); return { spacer: !!s, frame: !!document.querySelector('[aria-label="Add Property"]') } })()`)
   await mouseClick(cdp, SETTINGS_BUTTON)
   await sleep(600)
-  item('6B', '6B', 'G-3 ruling 12', "the toolbar's settings pane is the empty one", pane.spacer && !pane.frame, show(pane))
+  item('6B', 'G-3 ruling 12', "the toolbar's settings pane is the empty one", pane.spacer && !pane.frame, show(pane))
 
   await mouseClick(cdp, sel('button[title="Back"]'))
   const backed = await settles(async () => !(await cdp.evaluate(`!!(${live('.detail-title-trailing')})`)) && (await cdp.evaluate(`!!(${live('.table-view .data-row')})`)))
   await mouseClick(cdp, sel('button[title="Forward"]'))
   const forwarded = await settles(() => cdp.evaluate(`!!(${live('.detail-title-trailing')})`))
-  item('6B', '6B', 'G-5', 'Back returns to the view and Forward to the archive', backed && forwarded, show({ backed, forwarded }))
+  item('6B', 'G-5', 'Back returns to the view and Forward to the archive', backed && forwarded, show({ backed, forwarded }))
 
   cdp = await relaunch(cdp, async () => {})
   const reopened = await settles(async () => (await activeTab(cdp)) === COLLECTION && (await cdp.evaluate(`!!document.querySelector('[role=tab][aria-selected=true] svg.lucide-archive') && !!(${live('.detail-title-trailing')})`)), 15000)
-  item('6B', '6B', 'G-5', 'relaunch reopens the archive tab', reopened, show({ tab: await activeTab(cdp) }))
+  item('6B', 'G-5', 'relaunch reopens the archive tab', reopened, show({ tab: await activeTab(cdp) }))
 
   if (!(await drawn(cdp, COLLECTION))) await click(cdp, ribbon('Collections'))
   await until(`${COLLECTION} in the sidebar`, () => drawn(cdp, COLLECTION))
@@ -1281,7 +1276,7 @@ async function group6B() {
   await toArchive(cdp)
   const within = await archivedTitles(ARCHIVE_A, alphaId)
   const alphaShown = await settles(async () => same(await arcTitles(cdp), within))
-  item('6B', '6B', 'G-4', "a top-level Set's archive lists only what left from within it",
+  item('6B', 'G-4', "a top-level Set's archive lists only what left from within it",
     alphaShown && same([...within].sort(), ['Drive Arc 1', 'Drive Arc 2']), show({ within, shown: await arcTitles(cdp) }))
 
   await sidebarTo(cdp, 'Collections', 'Collection B')
@@ -1292,7 +1287,7 @@ async function group6B() {
   const sized = await cdp.evaluate(`(() => { const l = ${live('.archive-rows')}; return { height: l?.getBoundingClientRect().height ?? null, drawn: l?.querySelectorAll('.data-row').length ?? 0 } })()`)
   await cdp.evaluate(`(() => { const s = ${live('.detail-scroll')}; s.scrollTop = s.scrollHeight })()`)
   const bottomed = await settles(async () => (await arcTitles(cdp)).includes('Drive Bulk 01'))
-  item('6B', '6B', '4.7', 'virtual rows render a window of a long archive',
+  item('6B', '4.7', 'virtual rows render a window of a long archive',
     bulkCount === 60 && Math.round(sized.height) === 48 * bulkCount && sized.drawn < bulkCount && bottomed, show({ bulkCount, sized, bottomed }))
 
   await checkArc(cdp, 'Drive Bulk 01')
@@ -1302,7 +1297,7 @@ async function group6B() {
   await mouseClick(cdp, `document.querySelectorAll('[role=tab]')[${archiveTab}]`)
   const returned = await settles(async () => (await notice(cdp)) === 'Restore1 Page' && !(await drained(cdp)))
   await checkArc(cdp, 'Drive Bulk 01')
-  item('6B', '6B', 'G-6', 'the bar withdraws when its tab parks', parkedOut && returned, show({ parkedOut, returned }))
+  item('6B', 'G-6', 'the bar withdraws when its tab parks', parkedOut && returned, show({ parkedOut, returned }))
 
   for (const key of ['confirmDeletion', 'archiveColumnStyle']) await must(`${key} as it was`, ask(cdp, 'personalization:set', key, kept[key] ?? null))
 }
@@ -1325,16 +1320,16 @@ try {
   if (GROUPS.has('6B')) await group6B()
   cdp.close()
 } catch (e) {
-  item(0, 1, '—', 'the run reached its end', false, String(e?.stack ?? e))
+  item(0, '—', 'the run reached its end', false, String(e?.stack ?? e))
   if (cdp) await shot(cdp, 'failure').catch(() => {})
 } finally {
   await restore()
 }
 const count = (f) => ledger.filter(f).length
-console.log('\ngroup  pass  fail  ahead  await')
-for (const g of ['0', ...ALL].filter((g) => g === '0' || GROUPS.has(g))) {
+console.log('\ngroup  pass  fail')
+for (const g of ['0', ...PHASES].filter((g) => g === '0' || GROUPS.has(g))) {
   const of = (m) => count((r) => r.group === g && r.mark === m)
-  console.log(`${g.padStart(5)} ${String(of('PASS')).padStart(5)} ${String(of('FAIL')).padStart(5)} ${String(of('AHEAD')).padStart(6)} ${String(of('AWAIT')).padStart(6)}`)
+  console.log(`${g.padStart(5)} ${String(of('PASS')).padStart(5)} ${String(of('FAIL')).padStart(5)}`)
 }
-console.log(`${results.filter((r) => r.pass).length}/${results.length} held (an item awaiting a later phase than ${LANDED} holds by definition)`)
+console.log(`${results.filter((r) => r.pass).length}/${results.length} held`)
 process.exit(results.every((r) => r.pass) ? 0 : 1)

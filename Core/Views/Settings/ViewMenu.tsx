@@ -2,7 +2,7 @@ import { reportRefusal } from '../../Interface/Notifications/notifications'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import { MenuDropdown } from '@pommora/uix/Menus'
 import { useSession } from '../../Session/store'
-import { archiveOwnerOf } from '../../Archive/archivePlace'
+import { namesContainer, topContainerOf } from '../../Archive/archivePlace'
 import { containerSchema } from '../../Nexus/treePatch'
 import { pickView } from '../Pipeline/pickView'
 import { ViewFrame } from './ViewFrame'
@@ -16,10 +16,7 @@ import { viewButtonMenuItems } from '../../Actions/viewMenus'
 export function ViewMenu(): React.JSX.Element | null {
   const selection = useSession((st) => st.selection)
   const tree = useSession((st) => st.tree)
-  const node =
-    selection.kind === 'collection' || selection.kind === 'set' || selection.kind === 'archive'
-      ? archiveOwnerOf(tree, selection.id)
-      : undefined
+  const node = namesContainer(selection) ? topContainerOf(tree, selection.id) : undefined
   if (!node) return null
   return <ViewMenuInner key={node.id} node={node} />
 }

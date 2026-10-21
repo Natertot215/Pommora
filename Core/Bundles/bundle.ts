@@ -1,18 +1,32 @@
 import { basename, dirname, join, relative } from '../Paths/posix'
 import { escapes } from '../Paths/pathSafety'
 import { hiddenName } from '../Paths/exclusion'
-import { holdsName } from '../Paths/names'
-import { archiveDirRel, archivedCollectionIdOf, TRASH_DIR } from '../Paths/nexusPaths'
+import { archiveStoreOf, holdsName } from '../Paths/names'
+import {
+  type ArchiveStore,
+  archiveDirRel,
+  archivedCollectionIdOf,
+  TRASH_DIR,
+} from '../Paths/nexusPaths'
 import { machine } from '../Platform/machine'
 import { fault, ok, type Result } from '../Contract/result'
 import { type ConnPage, connPage } from '../Connections/pageIndex'
 import { stampedIdOf } from '../Files/pageFile'
 import { listEntries, listMarkdownFiles } from '../Files/walk'
-import { readJsonObject, relocate, writeJson } from '../Files/atomicWrite'
-import { recordWrite } from '../Files/writeEcho'
-import { RECORD_FILENAME, type RecordFile, readRecord } from './record'
+import { relocate, removeOwn } from '../Files/atomicWrite'
+import type { NexusTree } from '../Nexus/tree'
+import {
+  originOf,
+  originWithin,
+  type RawRecord,
+  type RecordFile,
+  readRawRecord,
+  readRecord,
+  trailAbove,
+  writeRecord,
+} from './record'
 
-export type BundleStore = { kind: 'trash' } | { kind: 'archive'; id: string }
+export type BundleStore = { kind: 'trash' } | ArchiveStore
 
 export function layoutOf(store: BundleStore): { dir: string; suffix: string } {
   switch (store.kind) {
@@ -90,7 +104,27 @@ export async function bundleArtifact(bundleDir: string): Promise<string | null> 
   return found.length === 1 ? join(bundleDir, found[0].name) : null
 }
 
-/** Moves a bundle's artifact into `to`, under the chain it left from, with its raw record spread with `extra` written ahead, and removes the emptied bundle; `leaf` asks for that bundle name back. */
+/** Files `artifact` into a bundle minted in `to` for `origin`, `leaf` asked back, its record written ahead; a failed move takes the bundle back, since a ghost bundle would take the name a retry asks for. */
+export async function fileInto(
+  root: string,
+  to: BundleStore,
+  origin: string,
+  artifact: string,
+  record: RecordFile | RawRecord,
+  leaf?: string,
+): Promise<string> {
+  const bundle = await mintBundle(root, to, origin, leaf)
+  try {
+    await writeRecord(bundle, record)
+    await relocate(artifact, join(bundle, basename(artifact)))
+  } catch (e) {
+    await removeOwn(bundle)
+    throw e
+  }
+  return bundle
+}
+
+/** Moves a bundle's artifact into `to`, under the chain it left from, with its raw record spread with `extra`, and removes the emptied bundle; `leaf` asks for that bundle name back. */
 export async function moveIntoStore(
   root: string,
   fromBundle: string,
@@ -100,19 +134,29 @@ export async function moveIntoStore(
 ): Promise<void> {
   const from = storeOf(root, fromBundle)
   const artifact = await bundleArtifact(fromBundle)
-  const raw = await readJsonObject(join(fromBundle, RECORD_FILENAME))
+  const raw = await readRawRecord(fromBundle)
   if (!from || !artifact || !raw) return
-  const bundle = await mintBundle(root, to, join(root, originPathOf(root, from, artifact)), leaf)
-  await writeJson(join(bundle, RECORD_FILENAME), { ...raw, ...extra })
-  await relocate(artifact, join(bundle, basename(artifact)))
-  recordWrite(fromBundle)
-  await machine().remove(fromBundle)
+  const origin = join(root, originPathOf(root, from, artifact))
+  await fileInto(root, to, origin, artifact, { ...raw, ...extra }, leaf)
+  await removeOwn(fromBundle)
 }
 
 export interface ListedBundle {
   bundlePath: string
   record: RecordFile
   artifactName?: string
+}
+
+/** The bundles in `from`'s Archive archived from within the Set `setId`, by ids rather than by the folder names their chains were spelled with: each origin is the Set or lies beneath it, on the trail the tree gives the origin now, or on the one its record stored once the tree no longer holds it. */
+export async function archivedWithin(root: string, setId: string, from: string, tree: NexusTree) {
+  const store = archiveStoreOf(from)
+  if (!store) return []
+  return (await listBundles(root, store)).flatMap((listed) => {
+    const origin = originOf(listed.record)
+    if (!origin) return []
+    const held = trailAbove(tree, origin.parent)
+    return originWithin(origin, setId, held) ? [{ ...listed, origin, held }] : []
+  })
 }
 
 export async function listBundles(root: string, store: BundleStore): Promise<ListedBundle[]> {

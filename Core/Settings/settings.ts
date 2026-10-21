@@ -7,7 +7,6 @@ import {
   type SettingValue,
   type SteppedKey,
   settingOf,
-  settingWithin,
 } from './personalization'
 import { setOrDrop, updateNexusConfig } from '../Files/atomicWrite'
 import { heldTreeOf } from '../Nexus/liveTree'
@@ -88,7 +87,7 @@ export async function readFileHistoryConfig(
     enabled: settingOf(p, 'fileHistory'),
     intervalMs: settingOf(p, 'historyInterval') * MINUTE_MS,
     keepMs: settingOf(p, 'historyDays') * DAY_MS,
-    archiveKeepMs: settingWithin(p, 'archiveHistoryDays') * DAY_MS,
+    archiveKeepMs: settingOf(p, 'archiveHistoryDays') * DAY_MS,
   }
 }
 
