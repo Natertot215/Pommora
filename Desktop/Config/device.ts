@@ -76,9 +76,8 @@ async function ensureAgreementKey(
 export async function ensureDevice(userDataDir: string): Promise<HostDevice> {
   const stored = (await readAppConfig(userDataDir)).device
   const loaded = stored ? await load(userDataDir) : null
-  if (stored && !loaded) {
+  if (stored && !loaded)
     console.error('Device key missing from the secret store; minting a new identity')
-  }
   const { device, key } =
     stored && loaded ? { device: stored, key: loaded } : await mint(userDataDir)
   const agreement = await ensureAgreementKey(userDataDir, device)

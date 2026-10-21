@@ -12,15 +12,11 @@ export function escapes(rel: string): boolean {
 }
 
 export async function resolveUnderRoot(root: string, relPath: unknown): Promise<Result<string>> {
-  if (typeof relPath !== 'string' || relPath.length === 0) {
+  if (typeof relPath !== 'string' || relPath.length === 0)
     return fail('invalid-path', 'A path is required.')
-  }
-  if (isAbsolute(relPath)) {
-    return fail('invalid-path', 'Absolute paths are not allowed.')
-  }
-  if (escapes(relative(root, join(root, relPath)))) {
+  if (isAbsolute(relPath)) return fail('invalid-path', 'Absolute paths are not allowed.')
+  if (escapes(relative(root, join(root, relPath))))
     return fail('invalid-path', 'Path escapes the nexus root.')
-  }
   // Canonicalize both sides so an in-nexus symlink can't smuggle the target out.
   let realRoot: string
   let realTarget: string
@@ -31,8 +27,6 @@ export async function resolveUnderRoot(root: string, relPath: unknown): Promise<
     return fail('not-found', 'Path not found.')
   }
   const rel = relative(realRoot, realTarget)
-  if (rel !== '' && escapes(rel)) {
-    return fail('invalid-path', 'Path escapes the nexus root.')
-  }
+  if (rel !== '' && escapes(rel)) return fail('invalid-path', 'Path escapes the nexus root.')
   return ok(realTarget)
 }

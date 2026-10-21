@@ -113,9 +113,8 @@ export function continueBlockquoteOnEnter(
   const pfx = blockPrefix(doc.slice(ls, lineEnd))
   if (pfx === '' || selStart < ls + pfx.length) return null
   // Callouts keep continuing — their documented exit is caret placement below the box, and stripping a body `> ` would split it.
-  if (doc.slice(ls + pfx.length, lineEnd).trim() === '' && !inCalloutAt(scan, selStart)) {
+  if (doc.slice(ls + pfx.length, lineEnd).trim() === '' && !inCalloutAt(scan, selStart))
     return { from: ls, to: lineEnd, insert: '', selection: ls }
-  }
   const insert = `\n${pfx.replace(/[ \t]+$/, '')} `
   return { from: selStart, to: selStart, insert, selection: selStart + insert.length }
 }

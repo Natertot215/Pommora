@@ -14,7 +14,6 @@ import { usePublishSelection } from '../../Interface/Subfield/publish'
 import { Banner } from '../../Interface/Header/Banner'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
 import { ancestryOf, reconcileIndexOf } from '../../Nexus/treeIndex'
-
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import { cx } from '@pommora/uix/Utilities/cx'
 import '../tile-base.css'

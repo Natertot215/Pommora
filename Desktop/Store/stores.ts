@@ -87,14 +87,12 @@ export const contentIndexStore = (db: Db): ContentIndexStore => ({
     clearPath(db, path)
   },
   renamePathIndex(oldPath, newPath) {
-    for (const table of INDEX_TABLES) {
+    for (const table of INDEX_TABLES)
       db.prepare(`UPDATE OR REPLACE ${table} SET path = ? WHERE path = ?`).run(newPath, oldPath)
-    }
   },
   removePathPrefixIndex(dir) {
-    for (const table of INDEX_TABLES) {
+    for (const table of INDEX_TABLES)
       db.prepare(`DELETE FROM ${table} WHERE ${UNDER('path')}`).run(dir, dir)
-    }
   },
   renamePathPrefixIndex(oldDir, newDir) {
     for (const table of INDEX_TABLES) {

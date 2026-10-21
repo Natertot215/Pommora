@@ -66,9 +66,7 @@ export async function agendaContext(
   identity: Record<string, unknown> | null,
 ): Promise<FolderKindContext> {
   const registered = readAgendaRegistration(identity)
-  if (Object.keys(registered).length === 0) {
-    return { agenda: {}, homed: new Set(), root }
-  }
+  if (Object.keys(registered).length === 0) return { agenda: {}, homed: new Set(), root }
 
   // An unreadable root yields no entries, so no claims are counted and the recorded registration stands — a root Pommora cannot list is no evidence that anything duplicated it.
   const folders = await visibleFolders(root)

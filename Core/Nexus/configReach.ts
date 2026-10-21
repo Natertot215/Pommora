@@ -375,9 +375,8 @@ export async function reachConfig(
   const damaged = damagedFolders(tree.unreadable)
     .map((u) => ({ kind: u.kind, dir: join(root, u.path) }))
     .filter(({ dir }) => reaches(dir, under))
-  for (const { kind, dir } of [...live, ...damaged]) {
+  for (const { kind, dir } of [...live, ...damaged])
     await written(sidecarPath(dir, kind), (cur) => mapViews(cur, edit))
-  }
   for (const { kind, dir } of await archivedSets(tree, root, under)) {
     await written(sidecarPath(dir, kind), (cur) => {
       const id = asString(cur.id)

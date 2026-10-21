@@ -167,9 +167,8 @@ export function openTab(
   const active = all.find((t) => t.id === activeTabId)
   const activeIsPinned = active ? pinned.some((p) => p.id === active.id) : false
   // activeIsPinned tabs are protected from being overwritten; reuse also covers replacing a NavView scratch tab.
-  if (opts.newTab || activeIsPinned || !active) {
+  if (opts.newTab || activeIsPinned || !active)
     return { tabs: [...tabs, tabFor(newId, target)], activeTabId: newId }
-  }
   const nextTabs = tabs.map((t) =>
     t.id === active.id
       ? {

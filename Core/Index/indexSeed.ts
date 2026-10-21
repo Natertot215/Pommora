@@ -34,7 +34,6 @@ import { outsideContent } from '../Paths/exclusion'
 import { type ConnPage, connPage, headingKeys } from '../Connections/pageIndex'
 import { asString } from '../Nexus/coerce'
 import { ID_KEY } from '../Nexus/identityMark'
-
 import { readWatchScope } from '../Settings/settings'
 
 const NO_ROWS: PageIndexEntry = { relations: [], headings: [], values: {} }

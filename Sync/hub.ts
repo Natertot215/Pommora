@@ -132,9 +132,8 @@ async function bytes(
   )
   if ('status' in id) return id
   if (d.store.log.seqOf(params.nexusId) === null) return refuse(404, 'not-found')
-  if (method === 'GET') {
+  if (method === 'GET')
     return verify(id, method, path, sha256Hex(Buffer.alloc(0))) ?? d.blobs.get(params, res)
-  }
   const bad = verify(id, method, path, params.sha256)
   if (bad) return bad
   const spool = await spoolBody(req, BLOB_CAP, d.spoolDir)

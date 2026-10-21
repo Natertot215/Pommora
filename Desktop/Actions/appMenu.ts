@@ -40,9 +40,7 @@ export async function installAppMenu(
   const stored = (await readAppConfig(userData)).recents ?? []
   // Drop trashed nexuses so Open Recent never lists a dead path.
   const recents = await pruneRecents(stored)
-  if (recents.length !== stored.length) {
-    await updateAppConfig(userData, () => ({ recents }))
-  }
+  if (recents.length !== stored.length) await updateAppConfig(userData, () => ({ recents }))
   const hasSession = sessionRoot() !== null
   const isMac = process.platform === 'darwin'
   const send = (action: Pushes['menu:action']): void => push(win, 'menu:action', action)

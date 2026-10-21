@@ -135,9 +135,8 @@ function walkEmphasis(node: MdNode, out: Token[]): void {
   if (node.type === 'emphasis') pushEmphasis(node, 'italic', 1, out)
   else if (node.type === 'strong') pushEmphasis(node, 'bold', 2, out)
   else if (node.type === 'delete') pushEmphasis(node, 'strikethrough', 2, out)
-  if ('children' in node && node.children) {
+  if ('children' in node && node.children)
     for (const child of node.children) walkEmphasis(child as MdNode, out)
-  }
 }
 
 interface RegexSpec {

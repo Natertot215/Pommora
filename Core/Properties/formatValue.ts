@@ -126,9 +126,8 @@ function formatPoint(
       break
   }
 
-  if ((dateFormat === 'short' || dateFormat === 'full') && weekday !== 'none') {
+  if ((dateFormat === 'short' || dateFormat === 'full') && weekday !== 'none')
     out = `${dateFmt({ weekday: weekday === 'long' ? 'long' : 'short' }).format(date)}, ${out}`
-  }
   if (hasTime && timeFormat !== 'none') out += ` ${clockOf(date, timeFormat)}`
   return out
 }

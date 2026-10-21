@@ -131,8 +131,6 @@ export async function settleArchives(root: string, tree: NexusTree): Promise<voi
       await moveIntoStore(root, join(root, bundlePath), { kind: 'trash' }, {})
     // A bundle that won't parse stays as evidence; the folder goes once nothing is left beneath it.
     const archive = join(root, archiveDirRel(id))
-    if (!(await listFilesRecursive(archive)).length) {
-      await removeOwn(archive)
-    }
+    if (!(await listFilesRecursive(archive)).length) await removeOwn(archive)
   }
 }

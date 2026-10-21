@@ -64,9 +64,8 @@ export function validateDefinition(
   if (isReservedPropertyId(def.id)) return fail('invalid-property', 'That property id is reserved.')
   if (PROPERTY_TYPES[def.type].origin !== 'user')
     return fail('invalid-property', 'A Context or timestamp column is not a property.')
-  if (existing.some((d) => d.id === def.id)) {
+  if (existing.some((d) => d.id === def.id))
     return fail('invalid-property', 'That property id already exists.')
-  }
   if (PROPERTY_TYPES[def.type].options) {
     const check = validateOptionValues(optionsOf(def))
     if (!check.ok) return check

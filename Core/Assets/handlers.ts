@@ -6,7 +6,6 @@ import { assetSubRoot } from '../Paths/nexusPaths'
 import { resolveUnderRoot } from '../Paths/pathSafety'
 import { assetsDir } from '../Paths/paths'
 import { join, relative } from '../Paths/posix'
-
 import { adoptFile } from './adoptFile'
 import { sessionRoot } from '../Nexus/session'
 import { EMPTY_ASSET_MAP } from '../Nexus/tree'
@@ -50,7 +49,7 @@ export const assetsHandlers = {
     }
     await writeAssetDirectory(root, next)
     try {
-      const migrated = await migrateAssets(root, await trashDeps(root, ctx))
+      const migrated = await migrateAssets(root, await trashDeps(ctx))
       for (const { store, why } of migrated?.skipped ?? [])
         console.error(`assets: the legacy folder stays — ${store}: ${why}`)
     } catch (e) {

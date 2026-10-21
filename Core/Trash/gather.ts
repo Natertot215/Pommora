@@ -16,7 +16,6 @@ import { buildPageIndex } from '../Connections/pageIndex'
 import type { NexusTree } from '../Nexus/tree'
 import type { Relation } from '../Platform/stores'
 import { contextWorldOf } from '../Contexts/contextResolve'
-
 import { placeOf, type RecordFile } from '../Bundles/record'
 
 /** The page-to-page rows of the pages at `paths`: the index's, or read from their files by the index's own extractor while it has none to answer with. */
