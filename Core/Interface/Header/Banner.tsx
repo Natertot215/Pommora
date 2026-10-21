@@ -173,7 +173,8 @@ export function EntityBanner({
   )
   const empty = (add?: () => void): React.JSX.Element => (
     <div className={cx('banner-empty', surfaceClass)}>
-      {add && chrome === 'detail' && <AddBannerButton onClick={add} />}
+      {chrome === 'detail' &&
+        (add ? <AddBannerButton onClick={add} /> : <div className="add-banner-strip" />)}
       <div className="banner-empty-title">{titleHeader}</div>
     </div>
   )
