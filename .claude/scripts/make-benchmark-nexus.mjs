@@ -1,6 +1,7 @@
-// Builds a deterministic benchmark Nexus at one of four sizes into ~/Benchmark-<Size>, after sweeping every earlier benchmark
-// Nexus (each size, and the legacy ~/Benchmark) along with the index database Pommora keeps for it under userData/Nexuses.
-// Run: node .claude/scripts/make-benchmark-nexus.mjs [small|medium|large|xlarge]   (default medium)
+// Builds a deterministic Nexus: a benchmark at one of four sizes into ~/Benchmark-<Size>, after sweeping every earlier benchmark
+// Nexus (each size, and the legacy ~/Benchmark), or the drives' fixed starting state into ~/Test, after sweeping the earlier ~/Test;
+// each sweep takes the index database Pommora keeps for the Nexus under userData/Nexuses with it.
+// Run: node .claude/scripts/make-benchmark-nexus.mjs [small|medium|large|xlarge|test]   (default medium)
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
@@ -11,6 +12,18 @@ const PRESETS = {
   medium: { folder: 'Benchmark-Medium', pages: 10000, collections: 20, sets: 5, spaces: [150, 150, 200], optionProps: 3, options: 10, plainProps: 2 },
   large: { folder: 'Benchmark-Large', pages: 25000, collections: 25, sets: 5, spaces: [250, 250, 300], optionProps: 5, options: 25, plainProps: 5 },
   xlarge: { folder: 'Benchmark-XLarge', pages: 50000, collections: 50, sets: 5, spaces: [400, 400, 500], optionProps: 10, options: 50, plainProps: 10 },
+  test: {
+    folder: 'Test',
+    spaces: [['Area One', 'Area Two'], ['Topic One'], ['Project One']],
+    collections: {
+      'Collection A': {
+        banner: 'Collection A Banner.jpg',
+        views: [{ name: 'Cards', type: 'cards' }],
+        sets: { 'Set Alpha': ['Page A', 'Page B', 'Page C'], 'Set Beta': { 'Sub-Set A': ['Alpha 1', 'Alpha 2', 'Alpha 3'], 'Sub-Set B': ['Beta 1'] } },
+      },
+      'Collection B': { sets: { 'Set Alpha': [], 'Set Beta': [] } },
+    },
+  },
 }
 const presetName = (process.argv[2] ?? 'medium').toLowerCase()
 const preset = PRESETS[presetName]
@@ -19,6 +32,7 @@ if (!preset) {
   process.exit(1)
 }
 
+const TEST = presetName === 'test'
 const MARKER = '.pommora-benchmark-nexus'
 const ULID = /^[0-9A-HJKMNP-TV-Z]{26}$/
 const BASE_TIME = 1780000000000
@@ -50,7 +64,8 @@ function sweep(dir) {
   rmSync(dir, { recursive: true, force: true })
   console.log(`Swept ${dir}`)
 }
-for (const dir of [join(homedir(), 'Benchmark'), ...Object.values(PRESETS).map((p) => join(homedir(), p.folder))]) sweep(dir)
+const benchmarks = Object.values(PRESETS).filter((p) => p !== PRESETS.test)
+for (const dir of TEST ? [target] : [join(homedir(), 'Benchmark'), ...benchmarks.map((p) => join(homedir(), p.folder))]) sweep(dir)
 
 mkdirSync(target, { recursive: true })
 writeFileSync(join(target, MARKER), 'Written by make-benchmark-nexus.mjs; the next build sweeps it.\n')
@@ -136,7 +151,7 @@ const TYPES = [
   { type: 'link', name: 'Source', count: preset.plainProps, make: () => `https://${pick(DOMAINS)}/${pick(NOUNS).toLowerCase()}/${int(9999)}` },
 ]
 
-const PROPS = TYPES.flatMap(({ type, name, count, make }) =>
+const PROPS = (TEST ? [] : TYPES).flatMap(({ type, name, count, make }) =>
   Array.from({ length: count }, (_, k) => {
     const options = type === 'select' || type === 'multiSelect' || type === 'status' ? sample(OPTION_WORDS, preset.options) : null
     return { id: `prop_${plainId()}`, name: k === 0 ? name : `${name} ${k + 1}`, type, primary: k === 0, options, make: () => make(options) }
@@ -169,10 +184,9 @@ const spacesByGroup = contextDefs.map(() => [])
 const allSpaces = []
 contextDefs.forEach((group, gi) => {
   const used = new Set()
-  for (let i = 0; i < preset.spaces[gi]; i++) {
-    let title
-    do title = `${pick(ADJECTIVES)} ${group.singular} ${pick(NOUNS)}`
-    while (used.has(title))
+  for (let i = 0; i < (TEST ? preset.spaces[gi].length : preset.spaces[gi]); i++) {
+    let title = TEST ? preset.spaces[gi][i] : undefined
+    while (!title || used.has(title)) title = `${pick(ADJECTIVES)} ${group.singular} ${pick(NOUNS)}`
     used.add(title)
     const space = { id: plainId(), title, group }
     spacesByGroup[gi].push(space)
@@ -181,7 +195,7 @@ contextDefs.forEach((group, gi) => {
 })
 for (const space of allSpaces) {
   const links = {}
-  if (rand() < 0.3) {
+  if (!TEST && rand() < 0.3) {
     const other = contextDefs.filter((g) => g !== space.group)
     for (const g of sample(other, 1 + int(2))) {
       const pool = spacesByGroup[contextDefs.indexOf(g)]
@@ -193,12 +207,48 @@ for (const space of allSpaces) {
 
 const agendaIds = { events: plainId(), tasks: plainId() }
 write('.nexus/nexus.json', json({ agenda_folders: agendaIds, createdAt: '2026-06-25T03:05:42Z', id: plainId() }))
-write('.nexus/state.json', json({}))
 write('.nexus/settings.json', json({ personalization: { accent: 'cyan' } }))
 write('.nexus/interface/homepage/homepage.json', json({}))
 mkdirSync(join(target, '.nexus/assets'), { recursive: true })
 write('Tasks/_taskconfig.json', json({ id: agendaIds.tasks }))
 write('Events/_eventconfig.json', json({ id: agendaIds.events }))
+
+if (TEST) {
+  mkdirSync(join(target, '.nexus/metadata'), { recursive: true })
+  const BANNER = Buffer.from(
+    '/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAAAP/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AP//Z',
+    'base64',
+  )
+  const writeSets = (dir, sets) => {
+    for (const [name, held] of Object.entries(sets)) {
+      const pages = Array.isArray(held) ? held.map((title) => ({ title, id: pageId() })) : []
+      write(`${dir}/${name}/_pageset.json`, json({ id: plainId(), ...(pages.length && { page_order: pages.map((p) => p.id) }) }))
+      for (const page of pages) write(`${dir}/${name}/${page.title}.md`, `---\nID: ${page.id}\n---\n`)
+      if (!Array.isArray(held)) writeSets(`${dir}/${name}`, held)
+    }
+  }
+  const order = []
+  for (const [name, { banner, views, sets }] of Object.entries(preset.collections)) {
+    const id = plainId()
+    order.push(id)
+    if (banner) write(`.nexus/assets/${banner}`, BANNER)
+    write(
+      `${name}/_pagecollection.json`,
+      json({
+        id,
+        properties: [],
+        ...(banner && { banner: `[[${banner}]]` }),
+        ...(views && { views: views.map((v) => ({ id: `view_${plainId()}`, ...v, property_order: ['_title'], hidden_properties: [] })) }),
+      }),
+    )
+    writeSets(name, sets)
+  }
+  write('.nexus/state.json', json({ order: { collections: order } }))
+  console.log(`Built test: the drives' starting state at ${target}`)
+  process.exit(0)
+}
+
+write('.nexus/state.json', json({}))
 
 const pagesPerCollection = preset.pages / preset.collections
 const rootPages = Math.round(pagesPerCollection * ROOT_PAGE_SHARE)

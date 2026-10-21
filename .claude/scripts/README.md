@@ -110,7 +110,7 @@ Collection's assigned properties, and the values its pages hold through `view:lo
 gesture — one channel call, or an outside edit of a page's frontmatter key as another editor would
 make — it runs it and prints every value that moved, polling until the Nexus is still.
 
-`make-benchmark-nexus.mjs` builds a deterministic benchmark Nexus at one of four sizes (`small`, `medium`, `large`, `xlarge`, default `medium`) into `~/Benchmark-<Size>`. Before building, it sweeps every earlier benchmark Nexus (each size and the legacy `~/Benchmark`) along with its index database under the Pommora userData folder, and it refuses to touch an existing folder that it didn't write. It uses only Node's built-in modules.
+`make-benchmark-nexus.mjs` builds a deterministic Nexus: a benchmark at one of four sizes (`small`, `medium`, `large`, `xlarge`, default `medium`) into `~/Benchmark-<Size>`, or, with `test`, the drives' starting state into `~/Test`. Before building, a benchmark sweeps every earlier benchmark Nexus (each size and the legacy `~/Benchmark`) and `test` sweeps the earlier `~/Test`, each along with its index database under the Pommora userData folder, and it refuses to touch an existing folder that it didn't write. It uses only Node's built-in modules.
 
 `check-atlas.mjs` runs before every commit through the versioned git hook `../hooks/pre-commit`. Its
 partner `../hooks/post-commit` runs the Studio dashboard's `sync.mjs`, which folds the commit into
