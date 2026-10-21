@@ -1,6 +1,6 @@
 import { copyFile, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { join } from '../Paths/posix'
+import { basename, join } from '../Paths/posix'
 import { readJsonAt, tempRoot } from '../Testing/hostFs'
 import { settledMutate } from '../Testing/settledMutate'
 import * as atomicWrite from '../Files/atomicWrite'
@@ -145,6 +145,35 @@ describe('archive — a page or Set leaves for its Collection’s Archive', () =
     expect(await readdir(at(bundlePath, 'Daily'))).not.toContain('Private')
   })
 
+  it('an archive handed the bundle name its item left takes it back, and one naming another name or a path takes a fresh stamp', async () => {
+    const rearchive = async (path: string, leaf: string): Promise<string> => {
+      const r = await mutate({ op: 'archive', path, kind: 'page', leaf })
+      expect(r.ok).toBe(true)
+      return r.ok ? (r.value.bundled?.bundlePath ?? '') : ''
+    }
+    const first = await archive('Notes/Daily/Beta.md')
+    expect((await restore(first)).ok).toBe(true)
+    expect(await rearchive('Notes/Daily/Beta.md', basename(first))).toBe(first)
+    expect((await restore(first)).ok).toBe(true)
+    const renamed = await mutate({
+      op: 'rename',
+      path: 'Notes/Daily/Beta.md',
+      kind: 'page',
+      newName: 'Beta 2',
+    })
+    expect(renamed.ok).toBe(true)
+    const second = await rearchive('Notes/Daily/Beta 2.md', basename(first))
+    expect(second).toMatch(
+      new RegExp(`^\\.nexus/archive/${NOTES}/Notes/Daily/[^/]+__Beta 2\\.md\\.archived$`),
+    )
+    expect((await restore(second)).ok).toBe(true)
+    const third = await rearchive('Notes/Daily/Beta 2.md', `../${basename(second)}`)
+    expect(third).toMatch(
+      new RegExp(`^\\.nexus/archive/${NOTES}/Notes/Daily/[^/]+__Beta 2\\.md\\.archived$`),
+    )
+    expect(await readdir(at('.nexus', 'archive', NOTES, 'Notes'))).toEqual(['Daily'])
+  })
+
   it('refuses a page whose Collection’s id would not make a folder name', async () => {
     await writeFile(at('Notes', '_pagecollection.json'), JSON.stringify({ id: 'notes/col' }))
     await refreshTree(root)
@@ -228,7 +257,7 @@ describe('restore — an archived item comes back by a plain move', () => {
     const homes = async (): Promise<Record<string, boolean>> => {
       const tree = await readNexus(root)
       const { byId } = await nexusPages(root, tree)
-      const rows = bundleRows(await listBundles(root, ARCHIVE), ARCHIVE, tree, byId)
+      const rows = await bundleRows(root, await listBundles(root, ARCHIVE), ARCHIVE, tree, byId)
       return Object.fromEntries(rows.map((r) => [r.bundlePath, r.homeResolves]))
     }
     expect(await homes()).toEqual({ [beta]: false, [gamma]: false })

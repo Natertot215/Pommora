@@ -61,7 +61,7 @@ export function runPageAction(
       )
       return true
     case 'title:history':
-      s.openHistory(ref)
+      s.openReader({ kind: 'history', page: ref })
       return true
     case 'title:archive':
       void confirmArchive({ path, kind: 'page', title })

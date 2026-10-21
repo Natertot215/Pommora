@@ -37,7 +37,7 @@ const deps: TrashDeps = {
 const rows = async () => {
   const tree = await readNexus(root)
   const { byId } = await nexusPages(root, tree)
-  return bundleRows(await listBundles(root, { kind: 'trash' }), { kind: 'trash' }, tree, byId)
+  return bundleRows(root, await listBundles(root, { kind: 'trash' }), { kind: 'trash' }, tree, byId)
 }
 const find = async (title: string) => {
   const hit = (await rows()).find((r) => r.title === title)

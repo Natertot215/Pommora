@@ -63,6 +63,31 @@ describe('tabsModel — the Matrix kind', () => {
   })
 })
 
+describe('tabsModel — the archive place', () => {
+  it('liveTarget keeps an archive place while its Collection stands, and drops one whose owner is gone', () => {
+    const index = reconcileIndexOf(mkTree('a'))
+    expect(liveTarget(index, { kind: 'archive', id: 'col' })).toEqual({
+      kind: 'archive',
+      id: 'col',
+    })
+    expect(liveTarget(index, { kind: 'archive', id: 'gone' })).toBeNull()
+  })
+
+  it('opening an archive place from a pinned tab spawns a tab rather than replacing the pin', () => {
+    const pinned = derivePinnedTabs([pin('p')], reconcileIndexOf(mkTree('p')), [])
+    const r = openTab(
+      [],
+      pinTabId(pt('p')),
+      pinned,
+      { kind: 'archive', id: 'col' },
+      { newTab: false },
+      'A1',
+    )
+    expect(r.tabs.map((t) => t.id)).toEqual(['A1'])
+    expect(r.activeTabId).toBe('A1')
+  })
+})
+
 describe('tabsModel — openTab', () => {
   it('focuses an already-open tab instead of duplicating (I-1)', () => {
     const tabs = [tab('t1', 'a'), tab('t2', 'b')]

@@ -13,7 +13,7 @@ import { SidePane } from './SidePane/SidePane'
 import { NavWindow } from './Windows/NavWindow'
 import { MatrixWindow } from '../Matrix/MatrixWindow'
 import { PageWindow } from './Windows/PageWindow'
-import { PageHistoryWindow } from './Windows/PageHistoryWindow'
+import { PageReaderWindow } from './Windows/PageReaderWindow'
 import { WebWindow } from './Windows/WebWindow'
 import { SettingsWindow } from '../Settings/SettingsWindow'
 import { IterationWindow } from './Windows/IterationWindow'
@@ -188,7 +188,7 @@ export function App(): React.JSX.Element {
         {status === 'ready' && <NavWindow />}
         {status === 'ready' && <MatrixWindow />}
         {status === 'ready' && <PageWindow />}
-        {status === 'ready' && <PageHistoryWindow />}
+        {status === 'ready' && <PageReaderWindow />}
         {status === 'ready' && <WebWindow />}
         {status === 'ready' && <SettingsWindow />}
         {status === 'ready' && <IterationWindow />}

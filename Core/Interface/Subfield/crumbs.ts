@@ -5,6 +5,7 @@ import type { SelectionState, SelectTarget } from '../../Navigation/navRef'
 import { titleFromPath } from '../../Paths/posix'
 import type { TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { ancestryOf, type TrailNode, findSpace } from '../../Nexus/treeIndex'
+import { ARCHIVE_ICON } from '../../Archive/archivePlace'
 
 type SpineTarget = Extract<SelectTarget, { kind: ContainerKind | 'page' }>
 
@@ -47,6 +48,20 @@ export function subfieldCrumbs(
   foldersOpen: boolean,
 ): TrailSegment[] {
   if (!tree) return []
+  const crumbsOver = (spine: TrailNode[], currentPos: number): TrailSegment[] =>
+    spine.map((node, i) => {
+      const forwardCrumb = i > currentPos
+      // Up the spine the collection (0) and depth-1 set (1) open a detail surface; deeper Sets open only when folders do.
+      const navigable = forwardCrumb || (i < currentPos && (i <= 1 || foldersOpen))
+      const target = navigable ? targetOf(node) : null
+      return {
+        title: node.title,
+        ghost: forwardCrumb || undefined,
+        onSelect: target
+          ? (e: React.MouseEvent) => navigate(target, forwardCrumb ? 'forward' : 'back', isCmd(e))
+          : undefined,
+      }
+    })
   switch (selection.kind) {
     case 'none':
     case 'matrix':
@@ -71,19 +86,21 @@ export function subfieldCrumbs(
         currentChain.every((n, i) => n.id === deepChain[i]?.id)
           ? deepChain
           : currentChain
-      return spine.map((node, i) => {
-        const forwardCrumb = i > currentPos
-        // Up the spine the collection (0) and depth-1 set (1) open a detail surface; deeper Sets open only when folders do.
-        const navigable = forwardCrumb || (i < currentPos && (i <= 1 || foldersOpen))
-        const target = navigable ? targetOf(node) : null
-        return {
-          title: node.title,
-          ghost: forwardCrumb || undefined,
-          onSelect: target
-            ? (e: React.MouseEvent) => navigate(target, forwardCrumb ? 'forward' : 'back', isCmd(e))
-            : undefined,
-        }
-      })
+      return crumbsOver(spine, currentPos)
+    }
+    case 'archive': {
+      const chain =
+        ancestryOf(tree, { kind: 'collection', id: selection.id }) ??
+        ancestryOf(tree, { kind: 'set', id: selection.id })
+      const owner = chain?.at(-1)
+      if (!chain || !owner) return []
+      return crumbsOver(
+        [
+          ...chain,
+          { kind: 'archive', id: owner.id, title: 'Archive', path: owner.path, icon: ARCHIVE_ICON },
+        ],
+        chain.length,
+      )
     }
   }
 }

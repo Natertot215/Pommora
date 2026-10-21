@@ -1,4 +1,4 @@
-import type { MutateOutcome } from '../../Nexus/mutateRequest'
+import type { MutateOutcome, RestoreDestination } from '../../Nexus/mutateRequest'
 import type { HeldKind } from '../../Nexus/entities'
 import { valueOr } from '../../Contract/result'
 import { DEFAULT_TRASH_MODE } from '../../Trash/trashMode'
@@ -45,16 +45,18 @@ export function spendUndo(bundlePath: string): void {
   armed.delete(bundlePath)
 }
 
-function offerUndo(
+/** Posts through `post` with the one Undo that restores every bundle an act minted, to `destination` when given, arming each so a restore of any one from elsewhere spends it; an act that minted none offers none. */
+export function offerUndo(
   bundlePaths: readonly string[],
   post: (undo?: () => Promise<void>) => () => void,
+  destination?: RestoreDestination,
 ): void {
   const spend = post(
     bundlePaths.length > 0
       ? async () => {
           for (const bundlePath of bundlePaths) {
             spendUndo(bundlePath)
-            await useSession.getState().mutate({ op: 'restore', bundlePath })
+            await useSession.getState().mutate({ op: 'restore', bundlePath, destination })
           }
         }
       : undefined,
@@ -62,39 +64,51 @@ function offerUndo(
   for (const bundlePath of bundlePaths) armed.set(bundlePath, spend)
 }
 
-/** A system-trash delete mints no bundle, so it offers no Undo — the artifact left the nexus and there is nothing to name. */
+/** A system-trash delete mints no bundle, so it offers no Undo — the artifact left the nexus and there is nothing to name. `undoTo` returns it where the delete took it from rather than to its origin. */
 export function notifyTrashed(
   title: string,
   { bundled, cascade }: Pick<MutateOutcome, 'bundled' | 'cascade'>,
   retry?: () => void,
+  undoTo?: RestoreDestination,
 ): void {
-  offerUndo(bundled ? [bundled.bundlePath] : [], (undo) =>
-    notifyDeleted(title, undo, cascade, retry),
+  offerUndo(
+    bundled ? [bundled.bundlePath] : [],
+    (undo) => notifyDeleted(title, undo, cascade, retry),
+    undoTo,
   )
+}
+
+/** The one question a move into the Trash asks, put once for a batch: unasked only while Confirm Before Deletion is off and nothing in it always asks. */
+export const askTrashing = async (
+  message: string,
+  kinds: readonly HeldKind[],
+): Promise<boolean> => {
+  if (kinds.every((kind) => waived('confirmDeletion', kind))) return true
+  const { trashMode } = valueOr(await dialer().ask('delete:facts'), DELETE_FACTS_FALLBACK)
+  const it = kinds.length > 1 ? 'They' : 'It'
+  return ask({
+    message,
+    detail:
+      trashMode === 'system'
+        ? `${it} will be moved to the system trash.`
+        : `${it} will be moved to the nexus’s .trash folder (recoverable).`,
+    action: 'Delete',
+    tone: 'destructive',
+  })
 }
 
 export const confirmDelete = async (target: {
   path: string
   kind: HeldKind
   title: string
-}): Promise<void> => {
-  if (!waived('confirmDeletion', target.kind)) {
-    const { trashMode } = valueOr(await dialer().ask('delete:facts'), DELETE_FACTS_FALLBACK)
-    const yes = await ask({
-      message: `Delete “${target.title}”?`,
-      detail:
-        trashMode === 'system'
-          ? 'It will be moved to the system trash.'
-          : 'It will be moved to the nexus’s .trash folder (recoverable).',
-      action: 'Delete',
-      tone: 'destructive',
-    })
-    if (!yes) return
-  }
+  undoTo?: RestoreDestination
+}): Promise<boolean> => {
+  if (!(await askTrashing(`Delete “${target.title}”?`, [target.kind]))) return false
   const done = await useSession
     .getState()
     .mutate({ op: 'delete', path: target.path, kind: target.kind })
-  if (done) notifyTrashed(target.title, done)
+  if (done) notifyTrashed(target.title, done, undefined, target.undoTo)
+  return done !== null
 }
 
 export const confirmArchive = async (target: {

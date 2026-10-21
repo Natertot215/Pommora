@@ -2,6 +2,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { ReconcileIndex } from './reconcileSelection'
 import { useSession } from './store'
+import type { Reader } from './windowSlice'
 import { stubDialer } from '../vitest.setup'
 
 beforeEach(() => {
@@ -20,27 +21,39 @@ const indexOf = (pages: Record<string, string>): ReconcileIndex => ({
 
 describe('reconcileWindow', () => {
   it('keeps the history window while the tree holds its page, and closes it once the page is gone', () => {
-    useSession.setState({ historyTarget: { kind: 'page', id: 'a', path: 'Notes/a.md' } })
+    const page = { kind: 'page', id: 'a', path: 'Notes/a.md' } as const
+    useSession.setState({ reader: { kind: 'history', page } })
     useSession.getState().reconcileWindow(indexOf({ a: 'Notes/a.md' }))
-    expect(useSession.getState().historyTarget).toEqual({
-      kind: 'page',
-      id: 'a',
-      path: 'Notes/a.md',
-    })
+    expect(useSession.getState().reader).toEqual({ kind: 'history', page })
     useSession.getState().reconcileWindow(indexOf({}))
-    expect(useSession.getState().historyTarget).toBeNull()
+    expect(useSession.getState().reader).toBeNull()
+  })
+
+  it('keeps an archive reader through a tree change that holds none of its page', () => {
+    const reader: Reader = {
+      kind: 'archive',
+      page: {
+        kind: 'page',
+        id: 'a',
+        path: '.nexus/archive/c1/Notes/2026-10-20T00-00-00-000Z__A.archived/A.md',
+      },
+      trail: [],
+    }
+    useSession.setState({ reader })
+    useSession.getState().reconcileWindow(indexOf({}))
+    expect(useSession.getState().reader).toBe(reader)
   })
 })
 
 describe('reconcileWindow — a page re-keyed at its path', () => {
-  it('re-keys a window tab and the history target to the page now at their path', () => {
+  it('re-keys a window tab and the history reader to the page now at their path', () => {
     const dead = { kind: 'page', id: '01KZSWEW0WPF1PFWWJSKE8Q83P', path: 'Notes/x.md' } as const
     useSession.getState().openWindowTab(dead)
-    useSession.setState({ historyTarget: dead })
+    useSession.setState({ reader: { kind: 'history', page: dead } })
     useSession.getState().reconcileWindow(indexOf({ x: 'Notes/x.md' }))
     const live = { kind: 'page', id: 'x', path: 'Notes/x.md' }
     expect(useSession.getState().windowSlot?.tabs.map((t) => t.target)).toEqual([live])
-    expect(useSession.getState().historyTarget).toEqual(live)
+    expect(useSession.getState().reader).toEqual({ kind: 'history', page: live })
   })
 })
 

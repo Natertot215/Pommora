@@ -8,9 +8,11 @@ import { captureWarm, readWarm } from '../Session/warmCache'
 
 export function InterfaceScaffold({
   owner,
+  trailing,
   children,
 }: {
   owner: BannerOwner | null
+  trailing?: React.ReactNode
   children?: React.ReactNode
 }): React.JSX.Element {
   const ref = useRef<HTMLDivElement>(null)
@@ -39,7 +41,7 @@ export function InterfaceScaffold({
   return (
     <>
       <div ref={ref} className={cx('detail-scroll', owner && 'has-header')}>
-        {owner ? <EntityBanner owner={owner} /> : null}
+        {owner ? <EntityBanner owner={owner} trailing={trailing} /> : null}
         <div className={cx(surface ? 'tile-host-frame' : 'detail-body', 'interface-inset')}>
           {children}
         </div>

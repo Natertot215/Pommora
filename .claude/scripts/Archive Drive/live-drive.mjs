@@ -2,16 +2,16 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync
 import { join } from 'node:path'
 import { parse } from 'yaml'
 import {
-  ask, boxOf, chooseNative, click, createPage, escapeAll, FM, holds, hover, launch, mintPageId, mouseAt, mouseClick, must, NEXUS,
+  activeTab, ask, boxOf, chooseNative, click, createPage, doubleClick, escapeAll, FM, holds, hover, launch, mintPageId, mouseAt, mouseClick, must, NEXUS,
   openCollection, openPage, PAGE_VIEW, pageIds, pickNative, popNative, portalOpen, pressKey, relaunch, restore, results, row, sel,
-  settles, shot, sleep, textEl, typeText, until, watch, writeBody,
+  SETTINGS_BUTTON, settles, shot, sleep, textEl, typeText, until, watch, writeBody,
 } from '../drive-harness.mjs'
 
 const PORT = 9393
 // The plan's phases in order, named as the plan names them, so `6A` sorts before `6B`.
 const PHASES = ['1', '2', '3', '4', '5', '6A', '6B']
 const at = (phase) => PHASES.indexOf(String(phase))
-const ALL = ['1', '2', '3', '4', '5', '6A']
+const ALL = ['1', '2', '3', '4', '5', '6A', '6B']
 const GROUPS = new Set(process.argv.slice(2))
 // The last plan phase landed in the build under test: an item owned by a later phase is expected to fail and doesn't fail the run.
 const LANDED = process.env.POMMORA_ARCHIVE_LANDED ?? '1'
@@ -228,7 +228,7 @@ const between = (order, [a, x, b]) =>
   order.indexOf(a) >= 0 && order.indexOf(x) === order.indexOf(a) + 1 && order.indexOf(b) === order.indexOf(x) + 1
 const heldTree = async (cdp) => (await ask(cdp, 'nexus:state')).value.tree
 const collectionA = async (cdp) => (await heldTree(cdp)).collections.find((c) => c.path === 'Collection A')
-const notice = (cdp) => cdp.evaluate(`document.querySelector('[role=status], [role=alert]')?.textContent ?? ''`)
+const notice = (cdp) => cdp.evaluate(`document.querySelector('[role=status] [data-face="shown"], [role=alert] [data-face="shown"]')?.textContent ?? ''`)
 const trashRowEl = (title) => `[...document.querySelectorAll('.trash-row')].find((r) => r.textContent.includes(${JSON.stringify(title)}))`
 
 async function createSetIn(cdp, name) {
@@ -1012,6 +1012,280 @@ async function group6A(cdp) {
     same(ended, start) && !exists(ARC) && !exists(ARC_SET), show({ start, ended }))
 }
 
+// ── Group 6B — the Archive's view (Phase 6B) ────────────────────────────────
+
+/** The first match a shown view holds, past every parked host. */
+const live = (css) => `[...document.querySelectorAll(${JSON.stringify(css)})].find((e) => !e.closest('[inert]'))`
+const SHOWN = `document.querySelector('[role=status] [data-face="shown"], [role=alert] [data-face="shown"]')`
+const barButton = (label) =>
+  label === 'Delete' ? `${SHOWN}.querySelector('button[title="Delete"]')` : `[...${SHOWN}.querySelectorAll('button')].find((b) => b.textContent.trim() === ${JSON.stringify(label)})`
+const arcRow = (title) => `[...document.querySelectorAll('.archive-rows .data-row')].find((r) => !r.closest('[inert]') && r.querySelector('.cell-title-text')?.textContent === ${JSON.stringify(title)})`
+const arcTitles = (cdp) => cdp.evaluate(`[...document.querySelectorAll('.archive-rows .data-row')].filter((r) => !r.closest('[inert]')).map((r) => r.querySelector('.cell-title-text')?.textContent)`)
+const arcChecked = (cdp, title) => cdp.evaluate(`(${arcRow(title)})?.querySelector('[role=checkbox]')?.getAttribute('aria-checked') === 'true'`)
+/** A press on the row's Archived cell, outside its title, as a user checks a row. */
+const checkArc = (cdp, title) => mouseClick(cdp, `(${arcRow(title)}).querySelector('.data-cell.archive-date')`)
+const trailOf = (cdp, expr) => cdp.evaluate(`(${expr})?.textContent.split('›') ?? null`)
+const READER = `document.querySelector('[aria-label="Archived Page"]')`
+const tabCount = (cdp) => cdp.evaluate(`document.querySelectorAll('[role=tab]').length`)
+const NEW_VIEW = live('[aria-label="New View"]')
+const ARCHIVE_BUTTON = `[...(${NEW_VIEW})?.closest('div')?.querySelectorAll('button') ?? []].find((b) => b.textContent.trim() === 'Archive')`
+/** The views dropdown opened, its Archive toggle pressed, and the archive place up, the dropdown closed after. */
+async function toArchive(cdp) {
+  await mouseClick(cdp, live('button[title="Views"]'))
+  await until('the views dropdown', () => cdp.evaluate(`!!(${ARCHIVE_BUTTON})`))
+  await mouseClick(cdp, ARCHIVE_BUTTON)
+  await until('the archive place', () => cdp.evaluate(`!!(${live('.archive-title-label')})`))
+  await pressKey(cdp, 'Escape')
+}
+/** The pointer off the label, since a notice the bar's own press posts holds while the pointer stays on it. */
+const pointerAway = async (cdp) => moveTo(cdp, { x: 10, y: await cdp.evaluate('innerHeight - 10') })
+/** The bar's `label` pressed once its face reads `face`, after any notice has drained. */
+async function pressBar(cdp, label, face) {
+  await until(`the bar reading ${face}`, async () => (await notice(cdp)) === face).catch(() => {})
+  await mouseClick(cdp, barButton(label))
+}
+const archivedTitles = async (store, within) => (await ask(cdp, 'bundles:list', store, within)).value?.map((r) => r.title) ?? []
+
+// Group 6B relaunches, so it drives the run's own `cdp`, and a failure inside it leaves the run holding the live session.
+async function group6B() {
+  const kept = personal()
+  const colA = sidecarIdOf(`${COLLECTION}/_pagecollection.json`)
+  const colB = sidecarIdOf('Collection B/_pagecollection.json')
+  const alphaId = sidecarIdOf(`${A_ALPHA}/_pageset.json`)
+  const ARCHIVE_A = { kind: 'archive', id: colA }
+  const ARCHIVE_B = { kind: 'archive', id: colB }
+  const ALPHA_SIDECAR = `${A_ALPHA}/_pageset.json`
+  await must('confirmDeletion on', ask(cdp, 'personalization:set', 'confirmDeletion', true))
+  const arc1 = await createAt(cdp, A_ALPHA, 'Drive Arc 1')
+  const arc2 = await createAt(cdp, A_ALPHA, 'Drive Arc 2')
+  const arcRoot = await createAt(cdp, COLLECTION, 'Drive Arc Root')
+  const arcSet = `${COLLECTION}/Drive Arc Set`
+  await makeSet(cdp, 'Drive Arc Set')
+  await createAt(cdp, arcSet, 'Drive Arc Inside')
+  const bulk = []
+  for (let i = 1; i <= 60; i++) bulk.push(await createAt(cdp, 'Collection B', `Drive Bulk ${String(i).padStart(2, '0')}`))
+  const seededOrder = orderIn(ALPHA_SIDECAR, 'page_order')
+  // Outside the app, once its create is still past the watcher's 200 ms hold.
+  await sleep(400)
+  writeFileSync(abs(arcRoot), `${FM.exec(readRel(arcRoot))[0]}Root body.\n`)
+  await sleep(600)
+  for (const [rel, kind] of [[arc1, 'page'], [arc2, 'page'], [arcRoot, 'page'], [arcSet, 'set'], ...bulk.map((rel) => [rel, 'page'])]) {
+    await op(`archive ${rel}`, { op: 'archive', path: rel, kind })
+    await sleep(20)
+  }
+
+  await sidebarTo(cdp, 'Collections', COLLECTION)
+  await sleep(1200)
+  await mouseClick(cdp, live('button[title="Views"]'))
+  await until('the views dropdown', () => cdp.evaluate(`!!(${ARCHIVE_BUTTON})`)).catch(() => {})
+  const footing = await cdp.evaluate(`(() => { const f = (${NEW_VIEW})?.closest('div'); const a = ${ARCHIVE_BUTTON}; return { archive: a?.getAttribute('aria-pressed') ?? null, more: !!f?.querySelector('[aria-label="More"]') } })()`)
+  item('6B', '6B', 'G-4', 'the views footing holds New View and an Archive button, and no More button',
+    footing.archive === 'false' && !footing.more, show(footing))
+
+  const tabsBefore = await tabCount(cdp)
+  await mouseClick(cdp, ARCHIVE_BUTTON)
+  await until('the archive place', () => cdp.evaluate(`!!(${live('.archive-title-label')})`)).catch(() => {})
+  const pressed = await cdp.evaluate(`(${ARCHIVE_BUTTON})?.getAttribute('aria-pressed') ?? null`)
+  await pressKey(cdp, 'Escape')
+  const header = await cdp.evaluate(`(() => { const t = ${live('.detail-title')}; const last = t?.lastElementChild; return { last: last?.className ?? null, text: last?.textContent ?? null, before: last?.previousElementSibling?.classList.contains('detail-title-clear') ?? false } })()`)
+  item('6B', '6B', 'G-4, G-5', 'Archive shows the archive place in the same tab, pressed',
+    (await tabCount(cdp)) === tabsBefore && pressed === 'true' && header.last === 'archive-title-label' && header.text === 'Archive' && header.before,
+    show({ tabsBefore, tabs: await tabCount(cdp), pressed, header }))
+
+  const title = await cdp.evaluate(`(${live('.detail-title-text')})?.textContent ?? null`)
+  const banner = await cdp.evaluate(`!!(${live('.banner')}) || !!(${live('.banner-empty')})`)
+  const titleMenu = await chooseNative(cdp, live('.detail-title-text'), [])
+  item('6B', '6B', 'G-3', "the header keeps the owner's whole header",
+    title === COLLECTION && banner && titleMenu.rows.includes('Rename'), show({ title, banner, menu: titleMenu.rows }))
+
+  const tab = await activeTab(cdp)
+  const glyph = await cdp.evaluate(`!!document.querySelector('[role=tab][aria-selected=true] svg.lucide-archive')`)
+  item('6B', '6B', 'G-3 ruling 9', "the tab reads the owner's title with the archive glyph", tab === COLLECTION && glyph, show({ tab, glyph }))
+
+  await until('the archived rows', async () => (await arcTitles(cdp)).length === 4).catch(() => {})
+  const listed = await arcTitles(cdp)
+  const arc1Trail = await trailOf(cdp, `(${arcRow('Drive Arc 1')})?.querySelector('.cell-lead')?.lastElementChild`)
+  const dates = await cdp.evaluate(`[...document.querySelectorAll('.archive-rows .data-cell.archive-date')].filter((c) => !c.closest('[inert]')).map((c) => c.textContent)`)
+  const counted = await cdp.evaluate(`(${live('[title="Results"]')})?.textContent.trim() ?? null`)
+  item('6B', '6B', 'G-1, G-2', 'rows list each archived item with its trail and time, newest first',
+    same(listed, ['Drive Arc Set', 'Drive Arc Root', 'Drive Arc 2', 'Drive Arc 1']) && same(arc1Trail, [COLLECTION, 'Set Alpha']) && dates.length === 4 && dates.every((d) => d !== '') && counted === '4',
+    show({ listed, arc1Trail, dates, counted }))
+  await shot(cdp, 'g6b-archive')
+
+  await checkArc(cdp, 'Drive Arc 1')
+  await checkArc(cdp, 'Drive Arc 2')
+  const bar = await cdp.evaluate(`(() => { const f = ${SHOWN}; return f && { text: f.textContent, delete: !!f.querySelector('button[title="Delete"]') } })()`)
+  item('6B', '6B', 'G-6', 'two checks declare the bar', bar?.text === 'Restore2 Pages' && bar.delete, show(bar))
+
+  const before = Object.fromEntries((await rows(ARCHIVE_A)).map((r) => [r.title, r.bundlePath]))
+  await pressBar(cdp, 'Restore', 'Restore2 Pages')
+  const restoredSaid = await noticeUp(cdp, 'Restored 2 PagesUndo')
+  const restoredGone = await settles(async () => !(await arcTitles(cdp)).some((t) => t === 'Drive Arc 1' || t === 'Drive Arc 2'), 3000)
+  const placed = exists(arc1) && exists(arc2) && same(orderIn(ALPHA_SIDECAR, 'page_order'), seededOrder)
+  if (restoredSaid) await pressUndo(cdp)
+  await pointerAway(cdp)
+  const rearchived = await settles(async () => {
+    const now = Object.fromEntries((await rows(ARCHIVE_A)).map((r) => [r.title, r.bundlePath]))
+    return ['Drive Arc 1', 'Drive Arc 2'].every((t) => now[t] === before[t] && now[t]?.startsWith(`.nexus/archive/${colA}/${A_ALPHA}/`) && exists(now[t])) && !exists(arc1) && !exists(arc2)
+  })
+  const rowsBack = await settles(async () => same(await arcTitles(cdp), listed))
+  item('6B', '6B', 'G-6', 'Restore cross-fades to Restored 2 Pages, and its Undo archives them again',
+    restoredSaid && restoredGone && placed && rearchived && rowsBack, show({ restoredSaid, restoredGone, placed, rearchived, rowsBack, notice: await notice(cdp) }))
+
+  await until('the notice drained', () => drained(cdp)).catch(() => {})
+  await checkArc(cdp, 'Drive Arc 1')
+  await pressBar(cdp, 'Delete', 'Restore1 Page')
+  await until('the confirmation', () => cdp.evaluate(`!!${DIALOG}`)).catch(() => {})
+  const asked = await dialogRead(cdp)
+  if (asked) await pressDialog(cdp, 'Delete')
+  const deletedSaid = await noticeUp(cdp, 'Deleted “Drive Arc 1”Undo')
+  const trashBundle = (await trashed(cdp, 'Drive Arc 1'))?.bundlePath
+  const intoTrash = !!trashBundle && stamped(`.trash/${A_ALPHA}`, 'Drive Arc 1', '.deleted').test(trashBundle) && recordAt(trashBundle).archive === before['Drive Arc 1'] && !exists(before['Drive Arc 1'])
+  if (deletedSaid) await pressUndo(cdp)
+  await pointerAway(cdp)
+  const deleteBack = await settles(async () => exists(before['Drive Arc 1']) && !!trashBundle && !exists(trashBundle))
+  item('6B', '6B', 'E-3', 'Delete from the bar moves one row into the Trash, and its Undo returns it to the Archive',
+    asked?.message === 'Delete “Drive Arc 1”?' && deletedSaid && intoTrash && deleteBack, show({ asked, deletedSaid, trashBundle, intoTrash, deleteBack }))
+
+  await until('the notice drained', () => drained(cdp)).catch(() => {})
+  await until('Drive Arc 1 back', async () => (await arcTitles(cdp)).includes('Drive Arc 1')).catch(() => {})
+  await checkArc(cdp, 'Drive Arc 1')
+  await checkArc(cdp, 'Drive Arc 2')
+  await pressBar(cdp, 'Delete', 'Restore2 Pages')
+  await until('the confirmation', () => cdp.evaluate(`!!${DIALOG}`)).catch(() => {})
+  const batchAsked = await dialogRead(cdp)
+  if (batchAsked) await pressDialog(cdp, 'Delete')
+  const askedOnce = await holds(async () => !(await cdp.evaluate(`!!${DIALOG}`)), 1500)
+  const batchSaid = await noticeUp(cdp, 'Deleted 2 PagesUndo')
+  const batchTrashed = (await rows({ kind: 'trash' })).filter((r) => r.title === 'Drive Arc 1' || r.title === 'Drive Arc 2')
+  if (batchSaid) await pressUndo(cdp)
+  await pointerAway(cdp)
+  const batchBack = await settles(async () => ['Drive Arc 1', 'Drive Arc 2'].every((t) => exists(before[t])) && batchTrashed.every((r) => !exists(r.bundlePath)))
+  item('6B', '6B', 'G-6', 'a batch Delete asks once and offers one Undo',
+    batchAsked?.message === 'Delete these 2 Pages?' && askedOnce && batchSaid && batchTrashed.length === 2 && batchBack, show({ batchAsked, askedOnce, batchSaid, batchTrashed: batchTrashed.length, batchBack }))
+
+  await until('the notice drained', () => drained(cdp)).catch(() => {})
+  await until('both back', async () => ['Drive Arc 1', 'Drive Arc 2'].every((t) => listed.includes(t)) && same(await arcTitles(cdp), listed)).catch(() => {})
+  await checkArc(cdp, 'Drive Arc 1')
+  await checkArc(cdp, 'Drive Arc 2')
+  const onChecked = await chooseNative(cdp, arcRow('Drive Arc 1'), [])
+  const onUnchecked = await chooseNative(cdp, arcRow('Drive Arc Root'), [])
+  await checkArc(cdp, 'Drive Arc 1')
+  await checkArc(cdp, 'Drive Arc 2')
+  const withdrawn = await settles(() => drained(cdp))
+  item('6B', '6B', 'G-6', 'the right-click menu acts on the checked rows',
+    same(onChecked.rows, ['Restore All', 'Delete All']) && same(onUnchecked.rows, ['Restore', 'Delete']) && withdrawn, show({ onChecked: onChecked.rows, onUnchecked: onUnchecked.rows, withdrawn }))
+
+  await mouseClick(cdp, `(${arcRow('Drive Arc Root')}).querySelector('.cell-title-text')`)
+  await until('the reader', () => cdp.evaluate(`!!${READER}`)).catch(() => {})
+  await until('the reader’s body', () => cdp.evaluate(`(${READER})?.querySelector('.cm-content')?.textContent.includes('Root body.') ?? false`)).catch(() => {})
+  const crumbs = `(${READER})?.querySelector('.page-window-crumbs')`
+  const crumbTrail = await trailOf(cdp, crumbs)
+  if (await cdp.evaluate(`!!(${crumbs})`)) await doubleClick(cdp, `(${crumbs}).lastElementChild`)
+  const reader = await cdp.evaluate(`(() => { const w = ${READER}; return w && { lock: !!w.querySelector('.reader-lock[title="Read Only"]'), input: !!w.querySelector('input'), restore: [...w.querySelectorAll('button')].some((b) => b.textContent.trim() === 'Restore'), doc: w.querySelector('.cm-content')?.textContent ?? null } })()`)
+  await shot(cdp, 'g6b-reader')
+  if (reader) await click(cdp, `(${READER}).querySelector('button[title="Close"]')`)
+  const closed = await settles(async () => !(await cdp.evaluate(`!!${READER}`)))
+  item('6B', '6B', 'H-1', "a page row's title opens the read-only reader",
+    reader?.lock && !reader.input && !reader.restore && reader.doc?.includes('Root body.') && same(crumbTrail, [COLLECTION, 'Drive Arc Root']) && closed,
+    show({ reader, crumbTrail, closed }))
+
+  await checkArc(cdp, 'Drive Arc Root')
+  await mouseClick(cdp, `(${arcRow('Drive Arc Root')}).querySelector('.cell-title-text')`)
+  await until('the reader', () => cdp.evaluate(`!!${READER}`)).catch(() => {})
+  const stillChecked = await arcChecked(cdp, 'Drive Arc Root')
+  const oneBar = await settles(async () => (await notice(cdp)) === 'Restore1 Page')
+  await mouseClick(cdp, barButton('Restore'))
+  await pointerAway(cdp)
+  const readerGone = await settles(async () => !(await cdp.evaluate(`!!${READER}`)))
+  await until('Drive Arc Root restored', async () => exists(arcRoot)).catch(() => {})
+  await sleep(400)
+  await op('archive Drive Arc Root again', { op: 'archive', path: arcRoot, kind: 'page' })
+  item('6B', '6B', 'H-1 Cautionary 32', 'the reader closes once its item leaves the Archive',
+    stillChecked && oneBar && readerGone, show({ stillChecked, oneBar, readerGone }))
+
+  await until('the notice drained', () => drained(cdp)).catch(() => {})
+  await mouseClick(cdp, `(${arcRow('Drive Arc Set')}).querySelector('.cell-title-text')`)
+  const setOpened = await cdp.evaluate(`!!${READER}`)
+  const setChecked = await arcChecked(cdp, 'Drive Arc Set')
+  await checkArc(cdp, 'Drive Arc Set')
+  item('6B', '6B', 'G-2 ruling 11', "a Set row's title opens nothing and checks its row", !setOpened && setChecked && !(await arcChecked(cdp, 'Drive Arc Set')), show({ setOpened, setChecked }))
+
+  await mouseClick(cdp, live('.detail-title-text'))
+  await until('the search field', () => cdp.evaluate(`document.activeElement?.matches('.detail-title-search') ?? false`)).catch(() => {})
+  await typeText(cdp, 'Arc')
+  const order = (await archivedTitles(ARCHIVE_A)).filter((t) => t.toLowerCase().includes('arc'))
+  const narrowed = await settles(async () => same(await arcTitles(cdp), order))
+  await typeText(cdp, ' 2')
+  const alone = await settles(async () => same(await arcTitles(cdp), ['Drive Arc 2']))
+  await mouseClick(cdp, live('.detail-title-clear button'))
+  const unsearched = await settles(async () => (await arcTitles(cdp)).length === order.length)
+  item('6B', '6B', 'G-1 ruling 15', 'search narrows in place, keeping archived order',
+    narrowed && alone && unsearched, show({ order, shown: await arcTitles(cdp) }))
+
+  const archiveStyle = () => personal().archiveColumnStyle
+  const HEADING = live('.col-header.archive-date')
+  const firstDate = () => cdp.evaluate(`(${live('.archive-rows .data-cell.archive-date')})?.textContent ?? null`)
+  const dateBefore = await firstDate()
+  const { chosen: short } = await chooseNative(cdp, HEADING, 'Short Date')
+  const styled = await settles(async () => same(archiveStyle(), { date_format: 'short' }))
+  const changed = await settles(async () => (await firstDate()) !== dateBefore)
+  const { chosen: full } = await chooseNative(cdp, HEADING, 'Full Date')
+  const unstyled = await settles(async () => !('archiveColumnStyle' in personal()))
+  item('6B', '6B', 'G-1', "the Archived heading's right-click picks its date style",
+    short && styled && changed && full && unstyled, show({ short, full, dateBefore, style: archiveStyle() }))
+
+  await mouseClick(cdp, SETTINGS_BUTTON)
+  await sleep(600)
+  const pane = await cdp.evaluate(`(() => { const s = [...document.querySelectorAll('div')].find((d) => d.style.minHeight === '24px'); return { spacer: !!s, frame: !!document.querySelector('[aria-label="Add Property"]') } })()`)
+  await mouseClick(cdp, SETTINGS_BUTTON)
+  await sleep(600)
+  item('6B', '6B', 'G-3 ruling 12', "the toolbar's settings pane is the empty one", pane.spacer && !pane.frame, show(pane))
+
+  await mouseClick(cdp, sel('button[title="Back"]'))
+  const backed = await settles(async () => !(await cdp.evaluate(`!!(${live('.archive-title-label')})`)) && (await cdp.evaluate(`!!(${live('.table-view .data-row')})`)))
+  await mouseClick(cdp, sel('button[title="Forward"]'))
+  const forwarded = await settles(() => cdp.evaluate(`!!(${live('.archive-title-label')})`))
+  item('6B', '6B', 'G-5', 'Back returns to the view and Forward to the archive', backed && forwarded, show({ backed, forwarded }))
+
+  cdp = await relaunch(cdp, async () => {})
+  const reopened = await settles(async () => (await activeTab(cdp)) === COLLECTION && (await cdp.evaluate(`!!document.querySelector('[role=tab][aria-selected=true] svg.lucide-archive') && !!(${live('.archive-title-label')})`)), 15000)
+  item('6B', '6B', 'G-5', 'relaunch reopens the archive tab', reopened, show({ tab: await activeTab(cdp) }))
+
+  if (!(await drawn(cdp, COLLECTION))) await click(cdp, ribbon('Collections'))
+  await until(`${COLLECTION} in the sidebar`, () => drawn(cdp, COLLECTION))
+  await unfold(cdp, COLLECTION, 'Set Alpha')
+  await click(cdp, sidebarRow('Set Alpha'))
+  await sleep(1200)
+  await toArchive(cdp)
+  const within = await archivedTitles(ARCHIVE_A, alphaId)
+  const alphaShown = await settles(async () => same(await arcTitles(cdp), within))
+  item('6B', '6B', 'G-4', "a top-level Set's archive lists only what left from within it",
+    alphaShown && same([...within].sort(), ['Drive Arc 1', 'Drive Arc 2']), show({ within, shown: await arcTitles(cdp) }))
+
+  await sidebarTo(cdp, 'Collections', 'Collection B')
+  await sleep(1200)
+  await toArchive(cdp)
+  const bulkCount = (await rows(ARCHIVE_B)).length
+  await until('the bulk rows', async () => (await arcTitles(cdp)).length > 0).catch(() => {})
+  const sized = await cdp.evaluate(`(() => { const l = ${live('.archive-rows')}; return { height: l?.getBoundingClientRect().height ?? null, drawn: l?.querySelectorAll('.data-row').length ?? 0 } })()`)
+  await cdp.evaluate(`(() => { const s = ${live('.detail-scroll')}; s.scrollTop = s.scrollHeight })()`)
+  const bottomed = await settles(async () => (await arcTitles(cdp)).includes('Drive Bulk 01'))
+  item('6B', '6B', '4.7', 'virtual rows render a window of a long archive',
+    bulkCount === 60 && sized.height === 48 * bulkCount && sized.drawn < bulkCount && bottomed, show({ bulkCount, sized, bottomed }))
+
+  await checkArc(cdp, 'Drive Bulk 01')
+  const archiveTab = await cdp.evaluate(`[...document.querySelectorAll('[role=tab]')].findIndex((t) => t.getAttribute('aria-selected') === 'true')`)
+  await mouseClick(cdp, sel('[aria-label="New Tab"]'))
+  const parkedOut = await settles(() => drained(cdp))
+  await mouseClick(cdp, `document.querySelectorAll('[role=tab]')[${archiveTab}]`)
+  const returned = await settles(async () => (await notice(cdp)) === 'Restore1 Page' && !(await drained(cdp)))
+  await checkArc(cdp, 'Drive Bulk 01')
+  item('6B', '6B', 'G-6', 'the bar withdraws when its tab parks', parkedOut && returned, show({ parkedOut, returned }))
+
+  for (const key of ['confirmDeletion', 'archiveColumnStyle']) await must(`${key} as it was`, ask(cdp, 'personalization:set', key, kept[key] ?? null))
+}
+
 // ── The run ─────────────────────────────────────────────────────────────────
 
 let cdp
@@ -1027,6 +1301,7 @@ try {
   if (GROUPS.has('4')) await group4()
   if (GROUPS.has('5')) await group5(cdp)
   if (GROUPS.has('6A')) await group6A(cdp)
+  if (GROUPS.has('6B')) await group6B()
   cdp.close()
 } catch (e) {
   item(0, 1, '—', 'the run reached its end', false, String(e?.stack ?? e))

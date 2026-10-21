@@ -13,7 +13,13 @@ import type { CollectionNode, NexusTree, SetNode } from '../Nexus/tree'
 import type { Delta } from '../Nexus/treeDelta'
 import { findContainerById, owningCollection } from '../Nexus/treePatch'
 import { listBundles, moveIntoStore } from '../Bundles/bundle'
-import { RECORD_FILENAME, type RecordFile, trailAbove } from '../Bundles/record'
+import {
+  originOf,
+  originWithin,
+  RECORD_FILENAME,
+  type RecordFile,
+  trailAbove,
+} from '../Bundles/record'
 import { ARCHIVE_DIR_REL, archiveDirRel } from '../Paths/nexusPaths'
 import { rootSegs } from '../Paths/exclusion'
 import { sidecarId } from '../Files/sidecar'
@@ -21,12 +27,6 @@ import { listEntries, listFilesRecursive } from '../Files/walk'
 import { recordWrite } from '../Files/writeEcho'
 import { machine } from '../Platform/machine'
 import { readWatchScope } from '../Settings/settings'
-
-/** The container an archived page or Set left, and the ids it stored above it. */
-const originOf = (record: RecordFile): { parent: string; trail: string[] } | null =>
-  (record.entity === 'page' || record.entity === 'set') && record.parent.kind === 'container'
-    ? { parent: record.parent.id, trail: record.trail ?? [] }
-    : null
 
 /** Writes `trail` onto an archived record, moving its bundle into `to`'s Archive when its origin now sits in another Collection; the bundle keeps its name, since its stamp is the archived time. */
 async function refile(
@@ -54,9 +54,7 @@ export async function archivedWithin(root: string, setId: string, from: string, 
       const origin = originOf(record)
       if (!origin) return []
       const held = trailAbove(tree, origin.parent)
-      return origin.parent === setId || (held ?? origin.trail).includes(setId)
-        ? [{ bundlePath, record, origin, held }]
-        : []
+      return originWithin(origin, setId, held) ? [{ bundlePath, record, origin, held }] : []
     },
   )
 }

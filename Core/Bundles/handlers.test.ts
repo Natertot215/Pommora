@@ -60,6 +60,45 @@ describe('bundles:list', () => {
       )
   })
 
+  it('listed within a top-level Set, a Collection’s Archive holds only what left from within it', async () => {
+    for (const [dir, id] of [
+      ['Notes/Daily/Morning', 'set-morning'],
+      ['Notes/Weekly', 'set-weekly'],
+    ])
+      await mkdir(join(root, dir), { recursive: true }).then(() =>
+        writeFile(join(root, dir, '_pageset.json'), JSON.stringify({ id })),
+      )
+    await writeFile(
+      join(root, 'Notes', 'Daily', '_pageset.json'),
+      JSON.stringify({ id: 'set-daily' }),
+    )
+    await writeFile(
+      join(root, 'Notes', '_pagecollection.json'),
+      JSON.stringify({ id: 'col-notes' }),
+    )
+    const store = { kind: 'archive', id: 'col-notes' } as const
+    const archived = async (from: string, title: string, parent: string, trail?: string[]) => {
+      const bundle = await mintBundle(root, store, join(root, from, `${title}.md`))
+      await writeFile(join(bundle, `${title}.md`), `# ${title}\n`)
+      await writeRecord(bundle, {
+        entity: 'page',
+        parent: { kind: 'container', id: parent },
+        ...(trail ? { trail } : {}),
+      })
+    }
+    await archived('Notes/Daily/Morning', 'Held', 'set-morning')
+    await archived('Notes/Daily/Evening', 'Stored', 'set-evening', ['col-notes', 'set-daily'])
+    await archived('Notes/Weekly', 'Elsewhere', 'set-weekly', ['col-notes'])
+    const listed = await bundlesHandlers['bundles:list'](ctx, store, 'set-daily')
+    expect(listed.ok && listed.value.map((r) => r.title).sort()).toEqual(['Held', 'Stored'])
+  })
+
+  it('refuses a `within` that isn’t a string', async () => {
+    expect(
+      await bundlesHandlers['bundles:list'](ctx, { kind: 'archive', id: 'col-notes' }, 7),
+    ).toEqual(fault('Invalid Set id.'))
+  })
+
   it('refuses a store it can’t read', async () => {
     for (const store of [null, { kind: 'shelf' }, { kind: 'archive' }])
       expect(await bundlesHandlers['bundles:list'](ctx, store)).toEqual(

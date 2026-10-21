@@ -6,8 +6,9 @@ describe('subfield item registry', () => {
     expect(DEFAULT_ITEMS.none).toEqual(['count'])
   })
 
-  it('a container states its result count', () => {
+  it('a container and its archive state their result count', () => {
     expect(DEFAULT_ITEMS.collection).toEqual(['count'])
     expect(DEFAULT_ITEMS.set).toEqual(['count'])
+    expect(DEFAULT_ITEMS.archive).toEqual(['count'])
   })
 })

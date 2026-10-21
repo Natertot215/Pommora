@@ -18,6 +18,7 @@ export const DEFAULT_ITEMS: Record<SelectionState['kind'], SubfieldItemId[]> = {
   collection: ['count'],
   set: ['count'],
   page: ['pageStats'],
+  archive: ['count'],
 }
 
 /** A highlight retires the document's own figures: what is measured is what is selected, and the caret alone restores the whole page. */

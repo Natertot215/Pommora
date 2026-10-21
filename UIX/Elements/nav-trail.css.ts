@@ -20,6 +20,9 @@ export const option = style({
   vars: { '--nav-trail-glyph': c.label.secondary },
 })
 
+/** A trail of frozen names, whose places no longer exist. */
+export const historical = style({ fontStyle: 'italic', color: c.label.tertiary })
+
 export const segment = style({
   appearance: 'none',
   border: 0,

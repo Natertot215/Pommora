@@ -114,6 +114,9 @@ export function archiveReach(tree: NexusTree, rel?: string): string | null {
   return owner && holdsName(owner.id) ? archiveDirRel(owner.id) : null
 }
 
+/** A Set directly inside its Collection: the depth that keeps views of its own and an Archive place. */
+export const isTopSet = (path: string): boolean => path.split('/').length === 2
+
 export const NO_SCHEMA: PropertyDefinition[] = []
 
 /** A Set or page takes its Collection's schema; the one empty schema when nothing owns it. */

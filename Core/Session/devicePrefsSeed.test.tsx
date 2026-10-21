@@ -224,7 +224,7 @@ describe('a nexus switch keeps none of the old nexus', () => {
     const page = { kind: 'page', id: 'x', path: 'x.md' } as const
     const s = useSession.getState()
     s.openWindowTab(page)
-    s.openHistory(page)
+    s.openReader({ kind: 'history', page })
     s.toggleSettings()
     s.openBrowser('https://example.com')
     s.toggleIteration()
@@ -239,7 +239,7 @@ describe('a nexus switch keeps none of the old nexus', () => {
     await useSession.getState().choose()
     expect(atChoose).toMatchObject({
       windowSlot: null,
-      historyTarget: null,
+      reader: null,
       settingsOpen: false,
       browserSummon: null,
       iterationOpen: false,

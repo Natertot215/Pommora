@@ -61,6 +61,12 @@ describe('newPage', () => {
     expect(asked).toMatchObject([{ parentPath: 'Notes/Ideas' }])
   })
 
+  it('creates in the Set whose archive shows', async () => {
+    seed({ kind: 'archive', id: 's1' })
+    await newPage(false)
+    expect(asked).toMatchObject([{ parentPath: 'Notes/Ideas' }])
+  })
+
   it('falls back to the first Collection, and creates nothing without one', async () => {
     seed({ kind: 'none' })
     await newPage(false)

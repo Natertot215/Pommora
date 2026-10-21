@@ -45,6 +45,17 @@ describe('a Trash row', () => {
     expect(box.getAttribute('aria-checked')).toBe('true')
     expect(host.querySelector('.has-checked')).not.toBeNull()
   })
+
+  it('draws its item’s own icon ahead of its kind’s', async () => {
+    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+      'bundles:list': vi.fn(async () => ({ ok: true, value: [row({ icon: 'hash' })] })),
+    })
+    host = document.createElement('div')
+    document.body.appendChild(host)
+    root = createRoot(host)
+    await act(async () => root?.render(<TrashFrame />))
+    expect(host.querySelector('.lucide-hash')).not.toBeNull()
+  })
 })
 
 describe('the Trash pane', () => {
@@ -95,7 +106,7 @@ describe('the Trash pane', () => {
 
   it("lists the opened Nexus's trash after a switch", async () => {
     expect(titles()).toEqual(['Alpha'])
-    expect(list).toHaveBeenCalledWith({ kind: 'trash' })
+    expect(list).toHaveBeenCalledWith({ kind: 'trash' }, undefined)
     listed = [row({ title: 'Beta' })]
     await act(async () => nexus('B'))
     expect(titles()).toEqual(['Beta'])

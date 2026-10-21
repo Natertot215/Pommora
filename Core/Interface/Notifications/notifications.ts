@@ -1,5 +1,5 @@
-// Store-free, since the slices report through these writers: the notice on screen lives here, beside them.
-import { useSyncExternalStore } from 'react'
+// Store-free, since the slices report through these writers: the notice on screen and the bar the shown view declares live here, beside them.
+import { useEffect, useSyncExternalStore } from 'react'
 import type { Result } from '../../Contract/result'
 import { pushUndo } from '../../Session/undo'
 import type { CascadeReport } from '../../Nexus/cascade'
@@ -7,6 +7,7 @@ import type { Unreadable } from '../../Nexus/tree'
 import { titleFromPath } from '../../Paths/posix'
 import { inTurns } from '../../Platform/inTurns'
 import { channel } from '@pommora/uix/Utilities/subscribable'
+import { useContentHost } from '../contentHost'
 
 export interface Notification {
   message: string
@@ -23,6 +24,29 @@ let seq = 0
 export const currentNotification = shown.get
 
 export const useNotification = (): Posted | null => useSyncExternalStore(shown.subscribe, shown.get)
+
+/** What a shown view offers for its checked rows: the count the bar reads and the two actions it runs. */
+export interface ActionBar {
+  count: string
+  restore: () => void
+  remove: () => void
+}
+
+const declared = channel<ActionBar | null>(null)
+
+export const useActionBar = (): ActionBar | null =>
+  useSyncExternalStore(declared.subscribe, declared.get)
+
+/** Declared only while its view shows, as the count publishes: a parked view's bar would stand over another tab's view. */
+export function useDeclareActions(bar: ActionBar | null): void {
+  const host = useContentHost()
+  const live = host !== null && !host.parked
+  useEffect(() => {
+    if (!live) return
+    declared.set(bar)
+    return () => declared.set(null)
+  }, [live, bar])
+}
 
 export function dismissNotification(id: number): void {
   if (shown.get()?.id === id) shown.set(null)

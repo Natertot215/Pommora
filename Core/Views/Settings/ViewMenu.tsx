@@ -2,7 +2,7 @@ import { reportRefusal } from '../../Interface/Notifications/notifications'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import { MenuDropdown } from '@pommora/uix/Menus'
 import { useSession } from '../../Session/store'
-import { findCollection, findSet } from '../../Nexus/treeIndex'
+import { archiveOwnerOf } from '../../Archive/archivePlace'
 import { containerSchema } from '../../Nexus/treePatch'
 import { pickView } from '../Pipeline/pickView'
 import { ViewFrame } from './ViewFrame'
@@ -12,17 +12,14 @@ import { dialer } from '../../Platform/dialer'
 import { popMenu } from '../../Actions/menuActions'
 import { viewButtonMenuItems } from '../../Actions/viewMenus'
 
-/** Renders only on a Collection / depth-1 Set; a sub-Set's edits save to its one view. */
+/** Renders on a Collection or a top-level Set and on either's Archive, so the dropdown holds across the toggle; a sub-Set's edits save to its one view. */
 export function ViewMenu(): React.JSX.Element | null {
   const selection = useSession((st) => st.selection)
   const tree = useSession((st) => st.tree)
-  const set = selection.kind === 'set' ? findSet(tree, selection.id) : undefined
   const node =
-    selection.kind === 'collection'
-      ? findCollection(tree, selection.id)
-      : set?.path.split('/').length === 2
-        ? set
-        : undefined
+    selection.kind === 'collection' || selection.kind === 'set' || selection.kind === 'archive'
+      ? archiveOwnerOf(tree, selection.id)
+      : undefined
   if (!node) return null
   return <ViewMenuInner key={node.id} node={node} />
 }

@@ -6,6 +6,12 @@ describe('isNavRef', () => {
     expect(isNavRef({ kind: 'matrix' })).toBe(true)
     expect(isNavRef({ kind: 'matrix', id: 'x' })).toBe(false)
   })
+
+  it("admits an archive place by its owner's id and refuses one without", () => {
+    expect(isNavRef({ kind: 'archive', id: 'c1' })).toBe(true)
+    expect(isNavRef({ kind: 'archive' })).toBe(false)
+    expect(isForeignRef({ kind: 'archive', id: 'c1' })).toBe(false)
+  })
 })
 
 describe('isForeignRef', () => {

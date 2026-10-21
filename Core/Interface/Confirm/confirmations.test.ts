@@ -6,14 +6,20 @@ import {
   askDestroyProperty,
   askFormatChange,
   askRemoveOption,
+  askTrashing,
   confirmArchive,
   confirmDelete,
+  offerUndo,
   spendUndo,
 } from './confirmations'
 import { resetUndo, undoValue } from '../../Session/undo'
 import { useSession } from '../../Session/store'
 import { makeTree } from '../../Testing/testTree'
-import { clearNotification, currentNotification } from '../Notifications/notifications'
+import {
+  clearNotification,
+  currentNotification,
+  notifyUndoable,
+} from '../Notifications/notifications'
 import type { HeldKind } from '../../Nexus/entities'
 import { stubDialer } from '../../vitest.setup'
 import { fault, ok, type Result } from '../../Contract/result'
@@ -163,7 +169,7 @@ describe('what the Confirm Before Deletion switch governs', () => {
 
 describe('a delete through the confirmation', () => {
   const mutate = vi.fn()
-  const del = (kind: HeldKind): Promise<void> =>
+  const del = (kind: HeldKind): Promise<boolean> =>
     confirmDelete({ path: 'Notes/A', kind, title: 'A' })
 
   beforeEach(() => {
@@ -190,6 +196,23 @@ describe('a delete through the confirmation', () => {
     useSession.setState({ askConfirm: async () => false })
     await del('page')
     expect(mutate).not.toHaveBeenCalled()
+  })
+
+  it('answers whether the delete went through', async () => {
+    switchOn()
+    expect(await del('page')).toBe(true)
+    useSession.setState({ askConfirm: async () => false })
+    expect(await del('page')).toBe(false)
+  })
+
+  it('an Undo given a destination restores its bundle there', async () => {
+    await confirmDelete({ path: 'Notes/A', kind: 'page', title: 'A', undoTo: { kind: 'archive' } })
+    await currentNotification()?.action?.run()
+    expect(mutate).toHaveBeenLastCalledWith({
+      op: 'restore',
+      bundlePath: '.trash/b1',
+      destination: { kind: 'archive' },
+    })
   })
 
   it('offers an Undo that restores the bundle the delete answered with', async () => {
@@ -239,6 +262,56 @@ describe('a delete through the confirmation', () => {
       segment: '1 Internal Link',
     })
     expect(currentNotification()?.action).toBeUndefined()
+  })
+})
+
+describe('an Undo over several bundles', () => {
+  const mutate = vi.fn()
+
+  beforeEach(() => {
+    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+      'delete:facts': async () => ok({ trashMode: 'nexus', permanentDelete: false }),
+    })
+    mutate.mockReset()
+    mutate.mockResolvedValue({})
+    useSession.setState({ mutate: mutate as never })
+    clearNotification()
+  })
+
+  it('asks once for a batch, unasked only when every item would be', async () => {
+    const details: string[] = []
+    useSession.setState({
+      askConfirm: async (r) => {
+        asked.push(r.message)
+        details.push(r.detail)
+        return true
+      },
+    })
+    switchOff()
+    expect(await askTrashing('Delete these 2 Pages?', ['page', 'page'])).toBe(true)
+    expect(asked).toEqual([])
+    expect(await askTrashing('Delete these 2 Items?', ['page', 'set'])).toBe(true)
+    expect(asked).toEqual(['Delete these 2 Items?'])
+    expect(details).toEqual(['They will be moved to the nexus’s .trash folder (recoverable).'])
+  })
+
+  it('offers one Undo returning every bundle it was handed to the destination given', async () => {
+    offerUndo(['.trash/b1', '.trash/b2'], (undo) => notifyUndoable('Deleted 2 Pages', undo), {
+      kind: 'archive',
+    })
+    await currentNotification()?.action?.run()
+    await vi.waitFor(() => expect(mutate).toHaveBeenCalledTimes(2))
+    expect(mutate.mock.calls).toEqual([
+      [{ op: 'restore', bundlePath: '.trash/b1', destination: { kind: 'archive' } }],
+      [{ op: 'restore', bundlePath: '.trash/b2', destination: { kind: 'archive' } }],
+    ])
+  })
+
+  it('gives up that Undo once one of its bundles is restored from elsewhere', async () => {
+    offerUndo(['.trash/b1', '.trash/b2'], (undo) => notifyUndoable('Deleted 2 Pages', undo))
+    spendUndo('.trash/b2')
+    expect(currentNotification()).toBeNull()
+    expect(mutate).not.toHaveBeenCalled()
   })
 })
 

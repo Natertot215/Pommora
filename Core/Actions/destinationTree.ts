@@ -1,4 +1,4 @@
-// Both askers read the one walk in `record.ts` — the card's Move To ▸, which relocates a live page by path, and the trash's Restore ▸, which files a returning one by id — so the two menus can never disagree about what the nexus will hold.
+// Every asker reads `nodesOf` — the card's Move To ▸, which relocates a live page by path, and the Trash's and the Archive's Restore ▸, which file a returning item by id — so the menus can never disagree about what the Nexus will hold.
 
 import type { MoveTarget } from './pageMenu'
 import { contextDirRel } from '../Paths/nexusPaths'

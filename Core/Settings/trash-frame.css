@@ -86,11 +86,6 @@
   color: var(--label-secondary);
 }
 
-.trash-frame .is-historical {
-  font-style: italic;
-  color: var(--label-tertiary);
-}
-
 .trash-empty {
   flex: 1;
   display: flex;

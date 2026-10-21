@@ -49,7 +49,7 @@ export async function archiveOp(
     if (!lifted.ok) return lifted
   }
   const record = await gatherContentRecord(root, tree, req.kind, abs)
-  const bundle = await mintBundle(root, { kind: 'archive', id }, abs)
+  const bundle = await mintBundle(root, { kind: 'archive', id }, abs, req.leaf)
   await writeRecord(bundle, record)
   await relocate(abs, join(bundle, basename(abs)))
   await dropDeparture(root, tree, req.kind, req.path)

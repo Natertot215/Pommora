@@ -15,11 +15,11 @@ export function ProgressBar({
   ref,
 }: {
   fill: number
-  ref?: Ref<HTMLDivElement>
+  ref?: Ref<HTMLSpanElement>
 }): React.JSX.Element {
   const pct = percent(fill)
   return (
-    <div
+    <span
       ref={ref}
       className={s.track}
       style={{ '--fill': pct } as CSSProperties}
@@ -28,7 +28,7 @@ export function ProgressBar({
       aria-valuemin={0}
       aria-valuemax={100}
     >
-      <div className={s.fill} />
-    </div>
+      <span className={s.fill} />
+    </span>
   )
 }

@@ -35,4 +35,10 @@ describe('subfieldCrumbs', () => {
     collection?.onSelect?.({ metaKey: false, ctrlKey: false } as React.MouseEvent)
     expect(navigate.mock.calls.map((c) => c[2])).toEqual([true, false])
   })
+
+  it("an archive's crumbs are its owner's ancestry, each navigable, then a plain Archive", () => {
+    const crumbs = subfieldCrumbs(tree, { kind: 'archive', id: 's1' }, null, () => {}, false)
+    expect(crumbs.map((c) => c.title)).toEqual(['Notes', 'Ideas', 'Archive'])
+    expect(crumbs.map((c) => c.onSelect !== undefined)).toEqual([true, true, false])
+  })
 })

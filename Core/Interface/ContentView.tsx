@@ -15,6 +15,8 @@ import { slideIn } from '@pommora/uix/Animations/motion'
 import { FooterToggle } from '@pommora/uix/Interactions/FooterToggle'
 import { findCollection, findSet } from '../Nexus/treeIndex'
 import { ContainerView } from '../Views/ContainerView'
+import { ArchiveView } from '../Archive/ArchiveView'
+import { archiveOwnerOf } from '../Archive/archivePlace'
 import { HomepageView } from './Homepage/HomepageView'
 import { SpaceView } from '../Contexts/SpaceView'
 import { PageView } from '../Pages/PageView'
@@ -39,6 +41,7 @@ const SUBFIELD: Record<Exclude<SelectionState['kind'], 'none'>, boolean> = {
   set: true,
   page: true,
   matrix: true,
+  archive: true,
 }
 const keyOf = (target: SelectionState): string =>
   target.kind === 'none' ? target.kind : navKey(target)
@@ -86,6 +89,14 @@ const HostView = memo(function HostView({ host }: { host: Host }): React.JSX.Ele
       return <PageView tabId={host.tabId} pageId={target.id} parked={host.parked} />
     case 'matrix':
       return <MatrixView />
+    case 'archive': {
+      const owner = archiveOwnerOf(tree, target.id)
+      return owner ? (
+        <ArchiveView key={owner.id} owner={owner} />
+      ) : (
+        <div className="detail interface-inset" />
+      )
+    }
   }
 })
 

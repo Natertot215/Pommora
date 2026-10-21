@@ -4,6 +4,7 @@ import {
   type WindowsFile,
 } from '../Interface/Windows/windowRecord'
 import { isWindowTarget, type PageTarget, toNavRef, type WindowTarget } from '../Navigation/navRef'
+import type { TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { type ReconcileIndex, reconcileHeld, reconcileWith } from './reconcileSelection'
 import { reconcileIndexOf } from '../Nexus/treeIndex'
 import { liveTarget, makeTabId } from '../Navigation/tabsModel'
@@ -21,15 +22,20 @@ import { sessionWriter } from './saveScheduler'
 import { dialer } from '../Platform/dialer'
 import { normalizeLinkUrl } from '../Paths/urlPath'
 
+/** The one read-only reader: a page's File History, or an archived page titled by the trail it left. */
+export type Reader =
+  | { kind: 'history'; page: PageTarget }
+  | { kind: 'archive'; page: PageTarget; trail: TrailSegment[] }
+
 export interface WindowSlice {
   windowSlot: WindowState | null
   windowsFile: WindowsFile
   windowSlide: { dir: 'back' | 'fwd'; seq: number } | null
   windowExit: 'dismiss' | 'engulf' | 'morph'
   windowSummon: number
-  historyTarget: PageTarget | null
-  openHistory: (target: PageTarget) => void
-  closeHistory: () => void
+  reader: Reader | null
+  openReader: (reader: Reader) => void
+  closeReader: () => void
   openWindowTab: (target: WindowTarget, opts?: { at?: number; heading?: string }) => void
   activateWindowTab: (id: string) => void
   reorderWindowTabs: (id: string, beforeId: string | null) => void
@@ -63,14 +69,14 @@ export const windowTargetOf = (s: SessionState): WindowTarget | null => {
 
 export const windowsOpen = (s: SessionState): boolean =>
   s.windowSlot !== null ||
-  s.historyTarget !== null ||
+  s.reader !== null ||
   s.browserSummon !== null ||
   s.settingsOpen ||
   s.iterationOpen
 
 const CLOSED = {
   windowSlot: null,
-  historyTarget: null,
+  reader: null,
   browserSummon: null,
   settingsOpen: false,
   iterationOpen: false,
@@ -139,8 +145,8 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
   return {
     ...PER_NEXUS,
     windowExit: 'dismiss',
-    openHistory: (target) => set({ historyTarget: target }),
-    closeHistory: () => set({ historyTarget: null }),
+    openReader: (reader) => set({ reader }),
+    closeReader: () => set({ reader: null }),
     openWindowTab: (target, { at, heading } = {}) => {
       const travel =
         heading && target.kind === 'page'
@@ -276,9 +282,18 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
           commitWindow(closed && { ...closed, tabs })
         }
       }
-      const history = get().historyTarget
-      const r = history && reconcileWith(index, history)
-      if (r && r !== history) set({ historyTarget: r.kind === 'page' ? r : null })
+      const reader = get().reader
+      if (reader)
+        switch (reader.kind) {
+          case 'history': {
+            const r = reconcileWith(index, reader.page)
+            if (r !== reader.page)
+              set({ reader: r.kind === 'page' ? { kind: 'history', page: r } : null })
+            break
+          }
+          case 'archive':
+            break
+        }
     },
 
     resetWindow: () => {

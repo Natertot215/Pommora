@@ -54,6 +54,23 @@ describe('reconcileIndexOf', () => {
     })
   })
 
+  it('an archive place holds while its owner is a Collection or a top-level Set, and reconciles to none once the owner is gone or the Set sits deeper', () => {
+    const t = makeTree()
+    t.collections[0].sets?.[0].sets?.push({
+      kind: 'set',
+      id: 's2',
+      title: 'Deep',
+      path: 'Notes/Ideas/Deep',
+      pages: [],
+      sets: [],
+    })
+    const ix = reconcileIndexOf(t)
+    for (const id of ['c1', 's1'])
+      expect(reconcileWith(ix, { kind: 'archive', id })).toEqual({ kind: 'archive', id })
+    for (const id of ['gone', 's2'])
+      expect(reconcileWith(ix, { kind: 'archive', id })).toEqual({ kind: 'none' })
+  })
+
   it('a page whose ID vanished with nothing at its path reconciles to none', () => {
     const ix = reconcileIndexOf(makeTree())
     expect(reconcileWith(ix, { kind: 'page', id: 'gone', path: 'Notes/Gone.md' })).toEqual({
@@ -63,7 +80,7 @@ describe('reconcileIndexOf', () => {
 })
 
 describe('resolveIndexOf', () => {
-  it('holds display cores for the homepage, the Matrix, spaces, collections, sets, and pages — never groups', () => {
+  it("holds display cores for the homepage, the Matrix, spaces, collections, sets, pages, and each Collection's and top-level Set's archive — never groups", () => {
     const ix = resolveIndexOf(makeTree())
     expect(ix.get('homepage')?.title).toBe('TestNexus')
     expect(ix.get('matrix')?.title).toBe('Matrix')
@@ -71,6 +88,9 @@ describe('resolveIndexOf', () => {
     expect(ix.get('page:p1')?.path.map((c) => c.title)).toEqual(['Notes'])
     expect(ix.get('page:p2')?.path.map((c) => c.title)).toEqual(['Notes', 'Ideas'])
     expect(ix.get('set:s1')?.path.map((c) => c.title)).toEqual(['Notes'])
+    expect(ix.get('archive:c1')).toMatchObject({ title: 'Notes', icon: 'archive' })
+    expect(ix.get('archive:c1')?.path.map((c) => c.title)).toEqual(['Notes'])
+    expect(ix.get('archive:s1')?.path.map((c) => c.title)).toEqual(['Notes', 'Ideas'])
     expect(ix.has('context:g1')).toBe(false)
   })
   it('a page in a set inside a set trails through both', () => {
@@ -109,6 +129,12 @@ describe('searchEntriesOf', () => {
     expect(byKind('collection')).toEqual(['Notes'])
     expect(byKind('set')).toEqual(['Ideas'])
     expect(byKind('page').sort()).toEqual(['Alpha', 'Nested Beta'])
+  })
+
+  it('never lists an archive place the resolve index holds', () => {
+    const t = makeTree()
+    expect(resolveIndexOf(t).has('archive:c1')).toBe(true)
+    expect(searchEntriesOf(t).filter((e) => e.key.startsWith('archive:'))).toEqual([])
   })
 })
 
@@ -191,6 +217,8 @@ describe('navKeysOf', () => {
       'set:s1',
       'page:p1',
       'page:p2',
+      'archive:c1',
+      'archive:s1',
     ])
       expect(keys.has(k)).toBe(true)
     expect(keys.has('context:g1')).toBe(false)

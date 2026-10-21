@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { dismissNotification, useNotification } from './notifications'
+import { dismissNotification, useActionBar, useNotification } from './notifications'
 import { duration, ms } from '@pommora/uix/Animations/motion'
 import { paneSlide } from '@pommora/uix/Animations/paneSlide'
+import { Swap } from '@pommora/uix/Animations/Swap'
+import { Button } from '@pommora/uix/Buttons/Button'
 import { ProgressBar, paintProgress } from '@pommora/uix/Elements/ProgressBar'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
 import { cx } from '@pommora/uix/Utilities/cx'
@@ -15,8 +17,9 @@ const MAX_STEP_MS = 100
 
 export function ActionLabel(): React.JSX.Element {
   const note = useNotification()
+  const bar = useActionBar()
   const hostRef = useRef<HTMLDivElement>(null)
-  const barRef = useRef<HTMLDivElement>(null)
+  const progressRef = useRef<HTMLSpanElement>(null)
   const nearRef = useRef(false)
   const [shown, setShown] = useState(false)
 
@@ -25,7 +28,7 @@ export function ActionLabel(): React.JSX.Element {
       setShown(false)
       return
     }
-    if (barRef.current) paintProgress(barRef.current, 1)
+    if (progressRef.current) paintProgress(progressRef.current, 1)
     nearRef.current = false
     setShown(true)
   }, [note])
@@ -43,7 +46,7 @@ export function ActionLabel(): React.JSX.Element {
       rate = clamp(rate + (nearRef.current ? -step : step) / BASE_MS, 0, 1)
       spent += step * rate
       const remaining = 1 - spent / s.DWELL_MS
-      if (barRef.current) paintProgress(barRef.current, remaining)
+      if (progressRef.current) paintProgress(progressRef.current, remaining)
       if (remaining > 0) raf = requestAnimationFrame(tick)
       else setShown(false)
     }
@@ -57,11 +60,11 @@ export function ActionLabel(): React.JSX.Element {
     return () => clearTimeout(t)
   }, [note, shown])
 
-  // Proximity rather than hover: the pointer heading for the action reaches the drain before it does, so the label can't leave out from under a reach. A press holds the drain where it stands. A notice stays unarmed until the pointer has been seen outside its band once, since the press that posted it can leave the pointer inside.
+  // Proximity rather than hover: the pointer heading for the action reaches the drain before it does, so the label can't leave out from under a reach. A press holds the drain where it stands. A notice stays unarmed until the pointer has been seen outside its band once, since the press that posted it can leave the pointer inside; one posted with the pointer on the label itself, as a press of the bar's own leaves it, arms at once.
   useEffect(() => {
     const host = hostRef.current
     if (!note || !shown || !host) return
-    let armed = false
+    let armed = host.matches(':hover')
     return trackNear({
       anchor: host,
       measure: () => {
@@ -76,39 +79,76 @@ export function ActionLabel(): React.JSX.Element {
     }).stop
   }, [note, shown])
 
-  // Held so the label paints its own exit instead of retracting empty.
+  const face = note && shown ? 'notice' : bar ? 'bar' : null
+  const open = face !== null
+  // Held so the label paints its own exit, and cross-fades between faces, instead of retracting or fading to an empty one.
   const held = useHeld(note, note !== null)
+  const heldBar = useHeld(bar, bar !== null)
+  const heldFace = useHeld(face, open)
+  const error = heldFace === 'notice' && held?.tone === 'error'
 
   return (
     <div
       ref={hostRef}
-      className={cx(
-        s.host,
-        paneSlide({ side: 'right', mode: 'overlay', open: shown }),
-        held?.tone === 'error' && s.error,
-      )}
-      role={held?.tone === 'error' ? 'alert' : 'status'}
-      inert={!shown}
+      className={cx(s.host, paneSlide({ side: 'right', mode: 'overlay', open }), error && s.error)}
+      role={error ? 'alert' : 'status'}
+      inert={!open}
     >
-      <div className={s.row}>
-        <span className={s.message}>
-          {held?.segment ? <Segments parts={[held.message, held.segment]} /> : held?.message}
-        </span>
-        {held?.action ? (
-          <button
-            type="button"
-            className={s.action}
-            onClick={() => {
-              if (!shown) return
-              void held.action?.run()
-              setShown(false)
-            }}
-          >
-            {held.action.label}
-          </button>
-        ) : null}
-      </div>
-      <ProgressBar ref={barRef} fill={1} />
+      <Swap
+        className={s.faces}
+        swapped={heldFace === 'notice'}
+        from={
+          heldBar && (
+            <span className={s.row}>
+              <span className={s.message}>
+                <Segments
+                  parts={[
+                    <Button
+                      key="restore"
+                      type="filled"
+                      size="button-inline"
+                      label="Restore"
+                      onClick={heldBar.restore}
+                    />,
+                    heldBar.count,
+                  ]}
+                />
+              </span>
+              <Button
+                type="destructive"
+                size="button-inline"
+                icon="trash"
+                iconSize="body"
+                title="Delete"
+                onClick={heldBar.remove}
+              />
+            </span>
+          )
+        }
+        to={
+          <span className={s.face}>
+            <span className={s.row}>
+              <span className={s.message}>
+                {held?.segment ? <Segments parts={[held.message, held.segment]} /> : held?.message}
+              </span>
+              {held?.action ? (
+                <button
+                  type="button"
+                  className={s.action}
+                  onClick={() => {
+                    if (!shown) return
+                    void held.action?.run()
+                    setShown(false)
+                  }}
+                >
+                  {held.action.label}
+                </button>
+              ) : null}
+            </span>
+            <ProgressBar ref={progressRef} fill={1} />
+          </span>
+        }
+      />
     </div>
   )
 }

@@ -1452,6 +1452,20 @@ describe('store — view search', () => {
     })
   })
 
+  it('opens a search on an archive place', () => {
+    const archive: SelectTarget = { kind: 'archive', id: 'c1' }
+    seed({
+      tabs: [uTab('t1', archive, [archive], 0)],
+      activeTabId: 't1',
+      selection: archive,
+      viewSearch: {},
+    })
+    expect(useSession.getState().searchView('t1')).toBe(true)
+    expect(useSession.getState().viewSearch).toEqual({
+      t1: { key: 'archive:c1', query: '', summon: 1 },
+    })
+  })
+
   it('a second summon keeps the query and raises the summon', () => {
     onContainer()
     useSession.getState().searchView('t1')

@@ -126,3 +126,50 @@ describe('ViewFrame — reordering views', () => {
     expect(reorder).not.toHaveBeenCalled()
   })
 })
+
+describe('ViewFrame — the Archive toggle', () => {
+  let select: ReturnType<typeof vi.fn>
+  const archiveButton = (): HTMLElement =>
+    [...document.querySelectorAll('button')].find((b) => b.textContent === 'Archive')!
+  const shown = (selection: 'collection' | 'archive'): void => {
+    useSession.setState({ selection: { kind: selection, id: 'col1' }, select: select as never })
+  }
+
+  beforeEach(() => {
+    select = vi.fn(async () => {})
+  })
+
+  it('the footing holds New View and an Archive button, and no More button', async () => {
+    shown('collection')
+    await mount(source([view('view_a', 'Table')]))
+    expect(document.querySelector('[aria-label="New View"]')).not.toBeNull()
+    expect(archiveButton()).toBeDefined()
+    expect(document.querySelector('[aria-label="More"]')).toBeNull()
+  })
+
+  it('pressing Archive shows the archive in place, and pressing it there returns to the view', async () => {
+    shown('collection')
+    await mount(source([view('view_a', 'Table')]))
+    expect(archiveButton().getAttribute('aria-pressed')).toBe('false')
+    await act(async () => archiveButton().click())
+    expect(select).toHaveBeenLastCalledWith({ kind: 'archive', id: 'col1' }, { newTab: false })
+    shown('archive')
+    await mount(source([view('view_a', 'Table')]))
+    expect(archiveButton().getAttribute('aria-pressed')).toBe('true')
+    await act(async () => archiveButton().click())
+    expect(select).toHaveBeenLastCalledWith({ kind: 'collection', id: 'col1' }, { newTab: false })
+  })
+
+  it('picking a view from the archive returns to it', async () => {
+    shown('archive')
+    await mount(source([view('view_a', 'Table'), view('view_b', 'Board')]))
+    await clickRow('Board')
+    expect(select).toHaveBeenCalledWith({ kind: 'collection', id: 'col1' }, { newTab: false })
+    expect(mutate).toHaveBeenCalledWith({
+      op: 'setActiveView',
+      path: 'Col',
+      kind: 'collection',
+      viewId: 'view_b',
+    })
+  })
+})

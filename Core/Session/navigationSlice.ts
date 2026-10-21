@@ -612,6 +612,9 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
         case 'set':
           set({ selection: { kind: 'set', id: target.id, path: target.path } })
           break
+        case 'archive':
+          set({ selection: { kind: 'archive', id: target.id } })
+          break
         case 'page':
           if (!(await landPage({ kind: 'page', id: target.id, path: target.path }))) return
           break
